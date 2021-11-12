@@ -76,7 +76,10 @@ spec:
           # specific number of regex capture group.
           found := {f |
             path := obj.spec.rules[_].http.paths[_].path
-            capture_groups := regex.find_n(`\(.*?\)`, path, -1)
+            # Note: the following will also match literal "(" and non-capture groups. For our
+            # use case, it should be enough to check if there are any capture groups at all in
+            # the paths.
+            capture_groups := regex.find_n(`\(`, path, -1)
             capture_groups_n := count(capture_groups)
             capture_groups_n >= placeholder_no
             f = true
