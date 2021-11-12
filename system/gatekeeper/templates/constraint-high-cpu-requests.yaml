@@ -37,17 +37,13 @@ spec:
           new := to_number(replace(orig, "m", "")) / 1000
         }
 
-        high_cpu_requests_on_pod[container.name] {
-          input.review.object.kind == "Pod"
-          container := input.review.object.spec.containers[_]
-          container.resources.requests.cpu
-          cpu := canonify_cpu(container.resources.requests.cpu)
-          cpu > max_cpu
-        }
+        cpu_requests = [canonify_cpu(c) | c = input.review.object.spec.containers[_].resources.requests.cpu]
 
         violation[{"msg": msg}] {
-          count(high_cpu_requests_on_pod) > 0
-          msg := "high cpu request on some or all containers"
+          input.review.object.kind == "Pod"
+          total_cpu := sum(cpu_requests)
+          total_cpu > max_cpu
+          msg := sprintf("requests %v CPU in total", [total_cpu])
         }
 
 {{- end -}}
