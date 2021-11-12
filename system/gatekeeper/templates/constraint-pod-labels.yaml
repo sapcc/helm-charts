@@ -28,9 +28,14 @@ spec:
         # Either tier or service label is required. However, when tier == os then service is also required.
         required_labels = {"tier", "service"}
 
-        missing_labels = [l |
+        missing_labels_on_pod = [l |
           required_labels[l]
           not input.review.object.metadata.labels[l]
+        ]
+
+        missing_labels_on_pod_template = [l |
+          required_labels[l]
+          not input.review.object.spec.template.metadata.labels[l]
         ]
 
         pod_owners = {"ReplicaSet", "DaemonSet", "StatefulSet"}
@@ -44,8 +49,8 @@ spec:
         violation[{"msg": msg}] {
           input.review.object.kind == "Pod"
           count(pod_belongs_to) == 0 # otherwise the violation will be reported on the DaemonSet or Deployment instead
-          count(missing_labels) > 1
-          msg := sprintf("pod does not have either one of the required labels: %s", [missing_labels])
+          count(missing_labels_on_pod) > 1
+          msg := sprintf("pod does not have either one of the required labels: %s", [missing_labels_on_pod])
         }
 
         violation[{"msg": msg}] {
@@ -67,16 +72,16 @@ spec:
 
         violation[{"msg": msg}] {
           input.review.object.kind == violation_owners[_]
-          count(missing_labels) > 1
-          msg := sprintf("pod does not have either one of the required labels: %s", [missing_labels])
+          count(missing_labels_on_pod_template) > 1
+          msg := sprintf("pod does not have either one of the required labels: %s", [missing_labels_on_pod_template])
         }
 
         violation[{"msg": msg}] {
           obj := input.review.object
           obj.kind == violation_owners[_]
 
-          obj.metadata.labels.tier == "os"
-          srv := object.get(obj.metadata.labels, "service", "")
+          obj.spec.template.metadata.labels.tier == "os"
+          srv := object.get(obj.spec.template.metadata.labels, "service", "")
           found := {f | srv == os_services[_]; f = true}
           count(found) == 0
           msg := sprintf(
