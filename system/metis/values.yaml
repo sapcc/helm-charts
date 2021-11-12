@@ -73,9 +73,7 @@ metis:
   views_enabled: false
   views:
     - name: openstack_ips
-      definition: "create or replace table metis.openstack_ips
-         ( floating_ip_id varchar(36) NOT NULL,
-           primary key ( floating_ip_id ) )
+      definition: "create or replace view metis.openstack_ips
        as
            select  f.floating_ip_address AS floating_ip_address,
                  f.id as floating_ip_id,
@@ -114,9 +112,7 @@ metis:
                      left join metis.nova_instances i on i.uuid = fixed_port.device_id
                      left join metis.cc_billing b on b.project_id = f.project_id;"
     - name: glance_images
-      definition: "create or replace table metis.glance_images
-                  ( id varchar(36) NOT NULL,
-                    primary key ( id, instance_name, instance_id, created_at ) )
+      definition: "create or replace view metis.glance_images
                     as
                     select  g.id AS id,
                           g.name AS name,
