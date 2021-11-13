@@ -75,6 +75,18 @@ spec:
         role: cloud_network_admin
       - project: l3admin
         role: cloud_compute_admin
+{{- if and (.Values.interconnection.enabled) (.Values.interconnection.service_password) }}
+    - name: {{ .Values.interconnection.service_user }}
+      description: Neutron Interconnection Plugin User
+      password: {{ .Values.interconnection.service_password }}
+      role_assignments:
+      - project: service
+        role: service
+      - project: service
+        role: cloud_network_admin
+      - project: l3admin
+        role: cloud_network_admin
+{{- end }}
     - name: admin
       role_assignments:
       - domain: Default
