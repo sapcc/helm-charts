@@ -25,6 +25,7 @@ worker-reload-mercy = 90
 exit-on-reload = false
 die-on-term = true
 hook-master-start = unix_signal:15 gracefully_kill_them_all
+py-call-osafterfork = true
 
 # logging and metrics
 log-format = [pid: %(pid)] %(addr) {%(vars) vars in %(pktsize) bytes} [%(ctime)] %(method) %(uri) [%(request_id) g%(global_request_id) %(user_id)/%(user_project_id)@%(project_id)] => generated %(rsize) bytes in %(msecs) msecs (%(proto) %(status)) %(headers) headers in %(hsize) bytes
