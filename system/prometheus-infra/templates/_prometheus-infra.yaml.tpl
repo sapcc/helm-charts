@@ -34,6 +34,7 @@
       - '{job="netbox"}'
       - '{job="firmware-exporter"}'
       - '{job="windows-exporter"}'
+      - '{job="windows-update"}'
       - '{job="jumpserver"}'
       - '{__name__=~"^probe_success",job=~"(infra|cc3test)-probe-.+"}'
       - '{__name__=~"^probe_success",job="docs-urls"}'

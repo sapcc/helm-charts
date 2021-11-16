@@ -526,6 +526,35 @@
       regex: 'windows_service_state;(.*)'
       replacement: '$1'
       target_label: 'service_state'
+      
+- job_name: 'windows-update'
+  scrape_interval: {{$values.scrapeInterval}}
+  scrape_timeout: {{$values.scrapeTimeout}}
+  file_sd_configs:
+      - files :
+        - /etc/prometheus/configmaps/atlas-netbox-sd/netbox.json
+  metrics_path: /metrics
+  relabel_configs:
+    - source_labels: [job]
+      regex: windows-update
+      action: keep
+    - source_labels: [__address__]
+      replacement: $1:{{$values.listen_port}}
+      target_label: __address__
+    - regex: 'name|state'
+      action: labeldrop
+  metric_relabel_configs:
+    - source_labels: [__name__]
+      regex: '^go_.+'
+      action: drop
+    - source_labels: ['__name__','exported_name']
+      regex: 'windows_service_state;(.*)'
+      replacement: '$1'
+      target_label: 'service_name'
+    - source_labels: ['__name__','exported_state']
+      regex: 'windows_service_state;(.*)'
+      replacement: '$1'
+      target_label: 'service_state'
 {{- end }}
         
 {{- $values := .Values.vasa_exporter -}}
