@@ -74,10 +74,10 @@ spec:
             - bash
             - -c
             - eval $(cat /etc/ironic/ironic.conf | grep -Pzo '\[service_catalog\][^[]*' | tr -d '\000' | grep '='  | while read LINE; do var="${LINE% =*}" ; val="${LINE#*= }" ; echo export OS_${var^^}=${val} ; done); OS_IDENTITY_API_VERSION=3 openstack baremetal driver list -f csv | grep 'ironic-conductor-{{$conductor.name}}[,"]' >/dev/null
-          initialDelaySeconds: 60
+          initialDelaySeconds: 100
           periodSeconds: 10
           failureThreshold: 3
-          timeoutSeconds: 2
+          timeoutSeconds: 3
         {{- end }}
         volumeMounts:
         - mountPath: /etc/ironic
