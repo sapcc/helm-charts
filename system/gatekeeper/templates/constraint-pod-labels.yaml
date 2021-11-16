@@ -8,8 +8,11 @@ spec:
       names:
         kind: GkPodLabels
       validation:
+        # Schema for the `parameters` field
         openAPIV3Schema:
-          properties: {}
+          properties:
+            osServices:
+              type: string
 
   targets:
     - target: admission.k8s.gatekeeper.sh
@@ -19,18 +22,23 @@ spec:
         # Since we are going to have a lot of violations initially therefore we report on the
         # Deployment/DaemonSet level, where possible, to avoid useless duplication of violations.
 
-        required_labels["service"]
-        required_labels["tier"]
+        default os_services = []
+        os_services = sort(split(input.parameters.osServices, "|"))
 
-        missing_labels[l] {
-          obj := input.review.object
+        # Either tier or service label is required. However, when tier == os then service is also required.
+        required_labels = {"tier", "service"}
+
+        missing_labels_on_pod = [l |
           required_labels[l]
-          not obj.metadata.labels[l]
-        }
+          not input.review.object.metadata.labels[l]
+        ]
 
-        pod_owners["ReplicaSet"]
-        pod_owners["DaemonSet"]
-        pod_owners["StatefulSet"]
+        missing_labels_on_pod_template = [l |
+          required_labels[l]
+          not input.review.object.spec.template.metadata.labels[l]
+        ]
+
+        pod_owners = {"ReplicaSet", "DaemonSet", "StatefulSet"}
 
         pod_belongs_to[kind] {
           ref := input.review.object.metadata.ownerReferences[_]
@@ -41,16 +49,43 @@ spec:
         violation[{"msg": msg}] {
           input.review.object.kind == "Pod"
           count(pod_belongs_to) == 0 # otherwise the violation will be reported on the DaemonSet or Deployment instead
-          count(missing_labels) > 0
-          msg := sprintf("pod does not have required labels: %s", [json.marshal(missing_labels)])
+          count(missing_labels_on_pod) == 2
+          msg := sprintf("pod does not have either one of the required labels: %s", [json.marshal(required_labels)])
         }
 
-        violation_owners["Deployment"]
-        violation_owners["DaemonSet"]
-        violation_owners["StatefulSet"]
+        violation[{"msg": msg}] {
+          obj := input.review.object
+          obj.kind == "Pod"
+          count(pod_belongs_to) == 0 # otherwise the violation will be reported on the DaemonSet or Deployment instead
+
+          obj.metadata.labels.tier == "os"
+          srv := object.get(obj.metadata.labels, "service", "")
+          found := {f | srv == os_services[_]; f = true}
+          count(found) == 0
+          msg := sprintf(
+            "pod has %q label, but %q label is missing or does not have a valid value (got: %s, valid: %s)",
+            ["tier: os", "service", json.marshal(srv), os_services],
+          )
+        }
+
+        violation_owners = {"Deployment", "DaemonSet", "StatefulSet"}
 
         violation[{"msg": msg}] {
           input.review.object.kind == violation_owners[_]
-          count(missing_labels) > 0
-          msg := sprintf("pod does not have required labels: %s", [json.marshal(missing_labels)])
+          count(missing_labels_on_pod_template) == 2
+          msg := sprintf("pod does not have either one of the required labels: %s", [json.marshal(required_labels)])
+        }
+
+        violation[{"msg": msg}] {
+          obj := input.review.object
+          obj.kind == violation_owners[_]
+
+          obj.spec.template.metadata.labels.tier == "os"
+          srv := object.get(obj.spec.template.metadata.labels, "service", "")
+          found := {f | srv == os_services[_]; f = true}
+          count(found) == 0
+          msg := sprintf(
+            "pod has %q label, but %q label is missing or does not have a valid value (got: %s, valid: %s)",
+            ["tier: os", "service", json.marshal(srv), os_services],
+          )
         }
