@@ -74,43 +74,77 @@ metis:
   views:
     - name: openstack_ips
       definition: "create or replace view metis.openstack_ips
-       as
-           select  f.floating_ip_address AS floating_ip_address,
-                 f.id as floating_ip_id,
-                 port.id AS port,p.name AS project,
-                 p.id AS project_id,
-                 d.name AS domain,
-                 n.name AS network,
-                 n.id AS network_id,
-                 s.name AS subnet,
-                 s.id AS subnet_id,
-                 sn.name AS subnetpool,
-                 sn.id AS subnetpool_id,
-                 r.id AS router_id,
-                 r.name AS router,
-                 fixed_port.device_id as instance_id,
-                 fixed_port.device_owner as owner,
-                 i.display_name as instance_name,
-                 i.host as host,
-                 i.availability_zone as availability_zone, 
-                 b.cost_object_name as cost_object,
-                 b.cost_object_type as cost_object_type,
-                 b.primary_contact_user_id as primary_contact,
-                 b.primary_contact_email as primary_contact_email,
-                 b.business_criticality as business_criticality,
-                 b.number_of_endusers as number_of_endusers
-                 from neutron.floatingips f
-                     left join keystone.project p on f.project_id = p.id
-                     left join keystone.project d on p.domain_id = d.id
-                     left join neutron.ipallocations ip on f.floating_ip_address = ip.ip_address
-                     left join neutron.networks n on f.floating_network_id = n.id
-                     left join neutron.subnets s on ip.subnet_id = s.id
-                     left join neutron.subnetpools sn on s.subnetpool_id = sn.id
-                     left join neutron.ports port on ip.port_id = port.id
-                     left join neutron.ports fixed_port on f.fixed_port_id = fixed_port.id
-                     left join neutron.routers r on r.id = f.router_id
-                     left join metis.nova_instances i on i.uuid = fixed_port.device_id
-                     left join metis.cc_billing b on b.project_id = f.project_id;"
+                    as select
+                          ip.ip_address as ip_address,
+                          nf.id as floating_ip_id,
+                          kp.id as project_id,
+                          kp.name as project_name,
+                          kd.id as domain_id,
+                          kd.name as domain_name,
+                          nn.name AS network,
+                          nn.id AS network_id,
+                          ns.name AS subnet,
+                          ns.id AS subnet_id,
+                          nsp.name AS subnetpool,
+                          nsp.id AS subnetpool_id,
+                          nr.id as router_id,
+                          nr.name as router_name,
+                          np.id as port_id, 
+                          np.name as port_name,
+                          nfp.device_id as instance_id,
+                          nfp.device_owner as owner,
+                          b.cost_object_name as cost_object,
+                          b.cost_object_type as cost_object_type,
+                          b.primary_contact_user_id as primary_contact,
+                          b.primary_contact_email as primary_contact_email,
+                          b.business_criticality as business_criticality,
+                          b.number_of_endusers as number_of_endusers
+                          from neutron.ipallocations as ip
+                          inner join neutron.ports np on np.id = ip.port_id and np.device_owner = 'network:floatingip'
+                          inner join neutron.floatingips nf on nf.id = np.device_id
+                          left join keystone.project kp on kp.id = nf.project_id
+                          inner join keystone.project kd on kd.id = kp.domain_id
+                          left join neutron.routers nr on nr.id = nf.router_id
+                          left join neutron.networks nn on nn.id = nf.floating_network_id
+                          inner join neutron.subnets ns on ns.id = ip.subnet_id
+                          inner join neutron.subnetpools nsp on nsp.id = ns.subnetpool_id
+                          inner join neutron.ports nfp on nfp.id = nf.floating_port_id
+                          left join metis.cc_billing b on b.project_id = nf.project_id
+                    union all
+                    select
+                          ni.ip_address as ip_address,
+                          NULL as floating_ip_id,
+                          kp.id as project_id,
+                          kp.name as project_name,
+                          kd.id as domain_id,
+                          kd.name as domain_name,
+                          nn.name AS network,
+                          nn.id AS network_id,
+                          ns.name AS subnet,
+                          ns.id AS subnet_id,
+                          nsp.name AS subnetpool,
+                          nsp.id AS subnetpool_id,
+                          nr.id as router_id,
+                          nr.name as router_name,
+                          np.id as port_id, 
+                          np.name as port_name,
+                          NULL as instance_id,
+                          np.device_owner as owner,
+                          b.cost_object_name as cost_object,
+                          b.cost_object_type as cost_object_type,
+                          b.primary_contact_user_id as primary_contact,
+                          b.primary_contact_email as primary_contact_email,
+                          b.business_criticality as business_criticality,
+                          b.number_of_endusers as number_of_endusers
+                          from neutron.ipallocations as ni
+                          inner join neutron.ports as np on np.id = ni.port_id and np.device_owner = 'network:router_gateway'
+                          inner join neutron.routers nr on nr.id = np.device_id
+                          left join keystone.project kp on kp.id = nr.project_id
+                          inner join keystone.project kd on kd.id = kp.domain_id
+                          left join neutron.networks nn on nn.id = ni.network_id
+                          left join neutron.subnets ns on ns.id = ni.subnet_id
+                          left join neutron.subnetpools nsp on nsp.id = ns.subnetpool_id
+                          left join metis.cc_billing b on b.project_id = nr.project_id;"
     - name: glance_images
       definition: "create or replace view metis.glance_images
                     as
