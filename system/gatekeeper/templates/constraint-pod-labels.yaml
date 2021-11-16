@@ -49,8 +49,8 @@ spec:
         violation[{"msg": msg}] {
           input.review.object.kind == "Pod"
           count(pod_belongs_to) == 0 # otherwise the violation will be reported on the DaemonSet or Deployment instead
-          count(missing_labels_on_pod) > 1
-          msg := sprintf("pod does not have either one of the required labels: %s", [missing_labels_on_pod])
+          count(missing_labels_on_pod) == 2
+          msg := sprintf("pod does not have either one of the required labels: %s", [json.marshal(required_labels)])
         }
 
         violation[{"msg": msg}] {
@@ -72,8 +72,8 @@ spec:
 
         violation[{"msg": msg}] {
           input.review.object.kind == violation_owners[_]
-          count(missing_labels_on_pod_template) > 1
-          msg := sprintf("pod does not have either one of the required labels: %s", [missing_labels_on_pod_template])
+          count(missing_labels_on_pod_template) == 2
+          msg := sprintf("pod does not have either one of the required labels: %s", [json.marshal(required_labels)])
         }
 
         violation[{"msg": msg}] {
