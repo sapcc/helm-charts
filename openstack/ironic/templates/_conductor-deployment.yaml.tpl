@@ -77,6 +77,7 @@ spec:
           initialDelaySeconds: 60
           periodSeconds: 10
           failureThreshold: 3
+          timeoutSeconds: 2
         {{- end }}
         volumeMounts:
         - mountPath: /etc/ironic
