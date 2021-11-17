@@ -9,12 +9,11 @@ backup:
   full_backup_cron_schedule: {{ .common.full_backup_cron_schedule }}
   incremental_backup_in_minutes: {{ .common.incremental_backup_in_minutes }}
   backup_dir: {{ .common.backup_dir }}
-  enable_init_restore: {{ .common.enable_init_restore }}
+  enable_init_restore: false
   disable_binlog_purge_on_rotate: true
 database:
   type: "mariadb"
   user: root
-  version: {{ .backup.maria_db.version }}
   password: {{ .backup.root_password }}
   host: {{ .backup.name }}-mariadb.{{ .backup.namespace }}
   port: 3306
@@ -27,7 +26,7 @@ database:
   {{- end }}
 storages:
   maria_db:
-    -   name: datahub
+    -   name: metis
         host: {{ .mariadb.name }}-mariadb
         port: {{ .mariadb.port_public }}
         user: root
