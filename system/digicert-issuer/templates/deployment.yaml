@@ -29,13 +29,10 @@ spec:
           image: {{ include "image" . }}
           imagePullPolicy: {{ default "IfNotPresent" .Values.image.pullPolicy }}
           name: digicert-issuer
+{{- if .Values.resources }}
           resources:
-            limits:
-              cpu: 100m
-              memory: 200Mi
-            requests:
-              cpu: 100m
-              memory: 20Mi
+{{ toYaml .Values.resources | indent 12 }}
+{{- end }}
           ports:
             - name: metrics
               containerPort: {{ required ".Values.metrics.port missing" .Values.metrics.port }}
