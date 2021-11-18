@@ -2,7 +2,7 @@ groups:
 - name: ad-win-exporter.alerts
   rules:      
   - alert: ADMetricsDownInfo
-    expr: count(up{job="windows-exporter"} == 0) by (server_name, model, manufacturer, serial) 
+    expr: count(up{job="win-exporter-ad"} == 0) by (server_name, model, manufacturer, serial) 
     for: 20m
     labels:
       severity: warning
@@ -15,7 +15,7 @@ groups:
       summary: "Windows metrics cannot be fetched from node {{ $labels.server_name }}"
 
   - alert: ADServiceDownInfo
-    expr: count(windows_service_state{state!="running"} > 0) by (server_name, name, state) 
+    expr: count(windows_service_state{state!="running", job="win-exporter-ad"} > 0) by (server_name, name, state) 
     for: 20m
     labels:
       severity: info
@@ -28,7 +28,7 @@ groups:
       summary: "Service {{ $labels.name }} in State {{ $labels.state }} on node {{ $labels.server_name }}"
 
   - alert: ADDiskFullInfo
-    expr: count(100 - (windows_logical_disk_free_bytes{volume!~"HarddiskVolume.*"}*100/windows_logical_disk_size_bytes{volume!~"HarddiskVolume.*"}) > 80) by (server_name, volume) 
+    expr: count(100 - (windows_logical_disk_free_bytes{volume!~"HarddiskVolume.*",job="win-exporter-ad"}*100/windows_logical_disk_size_bytes{volume!~"HarddiskVolume.*",job="win-exporter-ad"}) > 80) by (server_name, volume) 
     for: 20m
     labels:
       severity: info
@@ -41,7 +41,7 @@ groups:
       summary: "Drive {{ $labels.volume }} is getting full on node {{ $labels.server_name }}"
 
   - alert: ADTooManyProcesses
-    expr: count(windows_os_processes > 200) by (server_name) 
+    expr: count(windows_os_processes{job="win-exporter-ad"} > 200) by (server_name) 
     for: 20m
     labels:
       severity: warning
@@ -54,7 +54,7 @@ groups:
       summary: "Too many processes running on node {{ $labels.server_name }}"
 
   - alert: ADHighCpuLoad
-    expr: count(avg by (server_name) (100 - (irate(windows_cpu_time_total{mode="idle"}[10m]) * 100)) > 80) 
+    expr: count(avg by (server_name) (100 - (irate(windows_cpu_time_total{mode="idle", job="win-exporter-ad"}[10m]) * 100)) > 80) 
     for: 20m
     labels:
       severity: info
@@ -67,7 +67,7 @@ groups:
       summary: "High CPU Load on node {{ $labels.server_name }}"
 
   - alert: ADHighMemUsage
-    expr: count((100 - (100 * windows_os_physical_memory_free_bytes / windows_cs_physical_memory_bytes)) > 80) by (server_name)
+    expr: count((100 - (100 * windows_os_physical_memory_free_bytes{job="win-exporter-ad"} / windows_cs_physical_memory_bytes{job="win-exporter-ad"})) > 80) by (server_name)
     for: 20m
     labels:
       severity: info
@@ -80,7 +80,7 @@ groups:
       summary: "High Memory usage on node {{ $labels.server_name }}"
 
   - alert: ADPendingReplications
-    expr: count(windows_ad_replication_pending_synchronizations > 0) by (server_name)
+    expr: count(windows_ad_replication_pending_synchronizations{job="win-exporter-ad"} > 0) by (server_name)
     for: 20m
     labels:
       severity: info
@@ -93,7 +93,7 @@ groups:
       summary: "Pending replications on node {{ $labels.server_name }}"
 
   - alert: ADHighAccountChangeAmount
-    expr: count(windows_ad_replication_pending_synchronizations > 0) by (server_name)
+    expr: count(windows_ad_replication_pending_synchronizations{job="win-exporter-ad"} > 0) by (server_name)
     for: 20m
     labels:
       severity: info

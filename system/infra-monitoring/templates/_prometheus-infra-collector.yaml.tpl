@@ -498,7 +498,7 @@
 
 {{- $values := .Values.windows_exporter -}}
 {{- if $values.enabled }}
-- job_name: 'windows-exporter'
+- job_name: 'win-exporter-ad'
   scrape_interval: {{$values.scrapeInterval}}
   scrape_timeout: {{$values.scrapeTimeout}}
   file_sd_configs:
@@ -507,7 +507,7 @@
   metrics_path: /metrics
   relabel_configs:
     - source_labels: [job]
-      regex: windows-exporter
+      regex: win-exporter-ad
       action: keep
     - source_labels: [__address__]
       replacement: $1:{{$values.listen_port}}
@@ -527,7 +527,7 @@
       replacement: '$1'
       target_label: 'service_state'
       
-- job_name: 'windows-update'
+- job_name: 'win-exporter-wsus'
   scrape_interval: {{$values.scrapeInterval}}
   scrape_timeout: {{$values.scrapeTimeout}}
   file_sd_configs:
@@ -536,7 +536,7 @@
   metrics_path: /metrics
   relabel_configs:
     - source_labels: [job]
-      regex: windows-update
+      regex: win-exporter-wsus
       action: keep
     - source_labels: [__address__]
       replacement: $1:{{$values.listen_port}}

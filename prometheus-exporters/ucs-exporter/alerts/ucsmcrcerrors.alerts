@@ -30,3 +30,19 @@ groups:
     annotations:
       description: "CRC errors on server {{ $labels.server }} and port : {{ $labels.port }} are increasing"
       summary: "CRC errors on server {{ $labels.server }} and port : {{ $labels.port }} are increasing"
+
+  - alert: UcsPortErrorCritical
+    expr: count(max_over_time(ucs_port_err_rcv_total{port_name !~ ".+/(aggr-port-|pc-).+"}[30m]) > 20 or max_over_time(ucs_port_err_xmit_total{port_name !~ ".+/(aggr-port-|pc-).+"}[30m]) > 20) by (server, port_name)
+    for: 20m
+    labels:
+      severity: critical
+      tier: metal
+      service: baremetal
+      context: "{{ $labels.server }}_{{ $labels.port }}"
+      meta: "Server {{ $labels.server }} has an increase of more than 50 crc errors for port {{ $labels.port }}"
+      no_alert_on_absence: "true"
+      playbook: docs/devops/alert/baremetal/ucs.html
+    annotations:
+      description: "CRC errors on server {{ $labels.server }} and port : {{ $labels.port }} are increasing"
+      summary: "CRC errors on server {{ $labels.server }} and port : {{ $labels.port }} are increasing"
+
