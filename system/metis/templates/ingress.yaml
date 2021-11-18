@@ -2,19 +2,19 @@ apiVersion: networking.k8s.io/v1beta1
 kind: Ingress
 
 metadata:
-  name: datahubdb-mariadb
-  namespace: datahub
+  name: metisdb-mariadb
+  namespace: {{ .Values.namespace }}
   annotations:
-    app.kubernetes.io/name: datahubdb-mariadb
-    helm.sh/chart: {{ include "datahub.chart" . }}
-    app.kubernetes.io/instance: datahubdb-mariadb-{{ .Release.Name }}
+    app.kubernetes.io/name: metisdb-mariadb
+    helm.sh/chart: {{ include "metis.chart" . }}
+    app.kubernetes.io/instance: metisdb-mariadb-{{ .Release.Name }}
     app.kubernetes.io/managed-by: {{ .Release.Service }}
     kubernetes.io/tls-acme: "true"
     disco: {{ default true .Values.ingress.disco | quote }}
 
 spec:
   tls:
-     - secretName: datahubdb
+     - secretName: metisdb
        hosts: [{{.Values.mariadb.name}}.{{.Values.global.region}}.{{.Values.global.tld}}]
   rules:
     - host: {{.Values.mariadb.name}}.{{.Values.global.region}}.{{.Values.global.tld}}
@@ -22,5 +22,5 @@ spec:
         paths:
         - path: /
           backend:
-            serviceName: datahubdb-mariadb
+            serviceName: metisdb-mariadb
             servicePort: {{.Values.mariadb.port_public}}

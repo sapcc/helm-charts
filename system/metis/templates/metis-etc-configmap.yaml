@@ -1,0 +1,56 @@
+{{- if .Values.metis.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name:  metis-etc
+  namespace: {{ .Values.namespace }}
+  labels:
+    app.kubernetes.io/name: metis
+    helm.sh/chart: {{ include "metis.chart" $ }}
+    app.kubernetes.io/instance: metis-{{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+data:
+  config.yaml: |
+    billing:
+      sync_cron_schedule: "0 */6 * * *"
+      api_host: {{ required "Missing required global billing API endpoint" .Values.metis.billingApiHost}}
+      region: {{ .Values.global.region }}
+    db:
+      user: "root"
+      host: metisdb-mariadb.metis
+      port: 3306
+      ronly_user: "ronly"
+{{- if .Values.metis.views_enabled }}
+      views:
+  {{- if or ( .Values.metis.requiredDatabases ) ( .Values.metis.extraRequiredDatabases)}}
+        required_databases:
+    {{- if .Values.metis.requiredDatabases }}
+{{ toYaml .Values.metis.requiredDatabases | indent 10 }}
+    {{- end }}
+    {{- if .Values.metis.extraRequiredDatabases }}
+{{ toYaml .Values.metis.extraRequiredDatabases | indent 10 }}
+    {{- end }}
+  {{- end }}
+  {{- if or ( .Values.metis.requiredTables ) ( .Values.metis.extraRequiredTables )}}
+        required_tables:
+    {{- if .Values.metis.requiredTables }}
+{{ toYaml .Values.metis.requiredTables | indent 10 }}
+    {{- end }}
+    {{- if .Values.metis.extraRequiredTables }}
+{{ toYaml .Values.metis.extraRequiredTables | indent 10 }}
+    {{- end }}
+  {{- end }}
+  {{- if or .Values.metis.views .Values.metis.extraViews  }}
+        definitions:
+    {{- if .Values.metis.views }}
+{{ toYaml $.Values.metis.views | indent 10 }}
+    {{- end }}
+    {{- if .Values.metis.extraViews }}
+{{ toYaml $.Values.metis.extraViews | indent 10 }}
+    {{- end }}
+  {{ end }}
+{{- end }}
+    metrics:
+      port: {{ .Values.metis.metrics.port }}
+      path: {{ .Values.metis.metrics.path }}
+{{ end }}
