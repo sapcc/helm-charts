@@ -19,6 +19,8 @@ spec:
     metadata:
       labels:
         name: image-migration-dashboard
+      annotations:
+        checksum/secret: {{ include "image-migration-dashboard/templates/secret.yaml" . | sha256sum }}
     spec:
       serviceAccount: {{.Release.Name}}-service-user
       serviceAccountName: {{.Release.Name}}-service-user
@@ -37,8 +39,11 @@ spec:
               value: '3'
             - name: OS_INTERFACE
               value: 'internal'
-            - name: OS_PASSWORD
-              value: {{ quote .Values.keppel.service_password }}
+            - name:  OS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: image-migration-dashboard-secret
+                  key: service_user_password
             - name: OS_PROJECT_DOMAIN_NAME
               value: 'ccadmin'
             - name: OS_PROJECT_NAME
