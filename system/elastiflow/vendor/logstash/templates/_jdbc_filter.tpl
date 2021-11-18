@@ -15,7 +15,7 @@ filter {
               local_db_objects => [
                   {
                   name => "ips"
-                  index_columns => ["floating_ip_address"]
+                  index_columns => ["ip_address"]
                   columns => [
                       ["ip_address", "varchar(64)"],
                       ["floating_ip_id", "varchar(36)"],                    
