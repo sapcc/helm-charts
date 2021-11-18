@@ -30,6 +30,9 @@ spec:
         - name: config
           configMap:
             name: keppel
+        - name: keys
+          secret:
+            secretName: keppel-keys
       containers:
         - name: janitor
           image: {{include "keppel_image" .}}
@@ -39,6 +42,8 @@ spec:
           volumeMounts:
             - mountPath: /etc/keppel
               name: config
+            - mountPath: /etc/keppel-keys
+              name: keys
           livenessProbe:
             httpGet:
               path: /healthcheck
