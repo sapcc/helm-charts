@@ -129,15 +129,15 @@
   </parse>
 </filter>
 
-{{- if .Values.datahub.enabled }}
+{{- if .Values.metis.enabled }}
 <filter kubernetes.var.log.containers.kube-system-nginx-ingress-controller**>
   @type mysql_enrich
   @log_level info
-  host {{.Values.datahub.host}}
-  port {{.Values.datahub.port}}
-  database {{.Values.datahub.db}}
-  username {{.Values.global.datahub.user}}
-  password {{.Values.global.datahub.password}}
+  host {{.Values.metis.host}}
+  port {{.Values.metis.port}}
+  database {{.Values.metis.db}}
+  username {{.Values.global.metis.user}}
+  password {{.Values.global.metis.password}}
   sql select * from openstack_ips;
   sql_key floating_ip_address
   record_key remote_addr
