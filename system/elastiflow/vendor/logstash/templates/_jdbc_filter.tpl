@@ -5,7 +5,7 @@ filter {
               loaders =>[
                   {
                   id => "metisdb"
-                  query => "select ip_address, floating_ip_id, port, port_id, project, project_id, domain, domain_id, network, network_id, subnet, subnet_id,
+                  query => "select ip_address, floating_ip_id, port_id, project, project_id, domain, domain_id, network, network_id, subnet, subnet_id,
                   subnetpool, subnetpool_id, router, router_id, instance_id, owner, cost_object, cost_object_type, 
                   primary_contact, primary_contact_email, business_criticality from openstack_ips"
                   local_table => "ips"
@@ -18,8 +18,7 @@ filter {
                   index_columns => ["ip_address"]
                   columns => [
                       ["ip_address", "varchar(64)"],
-                      ["floating_ip_id", "varchar(36)"],                    
-                      ["port", "varchar(255)" ],
+                      ["floating_ip_id", "varchar(36)"],
                       ["port_id", "varchar(36)" ],
                       ["project", "varchar(64)" ],
                       ["project_id", "varchar(64)" ],
@@ -47,13 +46,13 @@ filter {
               local_lookups => [
                   {
                   id => "lookup_source"
-                  query => "select domain, domain_id, project, project_id, port, port_id, network, network_id, subnet, subnet_id, subnetpool, subnetpool_id, router, router_id, instance_id, cost_object, cost_object_type, primary_contact, primary_contact_email, business_criticality from ips where ip_address = ?"
+                  query => "select domain, domain_id, project, project_id, port_id, network, network_id, subnet, subnet_id, subnetpool, subnetpool_id, router, router_id, instance_id, cost_object, cost_object_type, primary_contact, primary_contact_email, business_criticality from ips where ip_address = ?"
                   prepared_parameters => ["[source][domain]"]
                   target => "source_data"
                   },
                   {
                   id => "lookup_destination"
-                  query => "select domain, domain_id, project, project_id, port, port_id, network, network_id, subnet, subnet_id, subnetpool, subnetpool_id, router, router_id, instance_id, cost_object, cost_object_type, primary_contact, primary_contact_email, business_criticality from ips where ip_address = ?"
+                  query => "select domain, domain_id, project, project_id, port_id, network, network_id, subnet, subnet_id, subnetpool, subnetpool_id, router, router_id, instance_id, cost_object, cost_object_type, primary_contact, primary_contact_email, business_criticality from ips where ip_address = ?"
                   prepared_parameters => ["[destination][domain]"]
                   target => "destination_data"
                   }
@@ -71,9 +70,7 @@ filter {
 
           if [source_data] and [source_data][0] {
                   mutate {
-                      add_field => { "[source][cc_port]" => "%{[source_data][0][port]}"
-                                     "cc_port" => "%{[source_data][0][port]}"
-                                     "[source][cc_port_id]" => "%{[source_data][0][port_id]}"
+                      add_field => { "[source][cc_port_id]" => "%{[source_data][0][port_id]}"
                                      "cc_port_id" => "%{[source_data][0][port_id]}"
                                      "[source][cc_domain]" => "%{[source_data][0][domain]}"
                                      "cc_domain" => "%{[source_data][0][domain]}"
@@ -120,9 +117,7 @@ filter {
 
           if [destination_data] and [destination_data][0] {
                   mutate {
-                      add_field => {  "[destination][cc_port]" => "%{[destination_data][0][port]}"
-                                     "cc_port" => "%{[destination_data][0][port]}"
-                                      "[destination][cc_port_id]" => "%{[destination_data][0][port_id]}"
+                      add_field => { "[destination][cc_port_id]" => "%{[destination_data][0][port_id]}"
                                      "cc_port_id" => "%{[destination_data][0][port_id]}"
                                      "[destination][cc_domain]" => "%{[destination_data][0][domain]}"
                                      "cc_domain" => "%{[destination_data][0][domain]}"
