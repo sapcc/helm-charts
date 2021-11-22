@@ -70,6 +70,8 @@
       - '{__name__=~"^nsxt_trim_exception"}'
       - '{__name__=~"^filebeat_.+"}'
       - '{__name__=~"^logstash_node_.+"}'
+      - '{__name__=~"^metis_.+"}'
+      - '{__name__=~"^maria_backup.+"}'
       - '{__name__=~"vrops_inventory_collection_time_seconds|vrops_inventory_iteration_total"}'
       - '{__name__=~"netapp_aggregate_.+"}'
       - '{__name__=~"netapp_volume_.+"}'
