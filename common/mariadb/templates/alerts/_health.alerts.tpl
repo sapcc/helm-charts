@@ -6,9 +6,9 @@
     labels:
       context: availability
       service: {{ include "alerts.service" . }}
-      severity: warning
+      severity: critical
       tier: {{ required ".Values.alerts.tier missing" .Values.alerts.tier }}
       playbook: 'docs/support/playbook/db_crashloop.html'
     annotations:
       description: {{ include "fullName" . }} database is not ready for 5 minutes.
-      summary: {{ include "fullName" . }} is not ready for 5 minutes.
+      summary: {{ include "fullName" . }} is not ready for 5 minutes. Please check the pod.
