@@ -138,7 +138,8 @@ route:
   - receiver: octobus
     continue: true
     match_re:
-      severity: critical
+      severity: info|warning|critical
+      tier: metal|net|vmware|os|k8s|kks
       region: ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|ap-sa-2|eu-de-1|eu-de-2|eu-nl-1|eu-ru-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3
 
   - receiver: awx
