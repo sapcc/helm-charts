@@ -284,6 +284,15 @@
     "delete_log": "rule:context_is_network_admin",
     "get_logs": "rule:context_is_network_viewer",
     "get_log": "rule:context_is_network_viewer",
+{{ if .Values.interconnection.enabled }}
+    "create_interconnection": "rule:context_is_editor",
+    "update_interconnection": "rule:context_is_editor",
+    "update_interconnection:name": "rule:context_is_editor",
+    "update_interconnection:state": "rule:context_is_admin",
+    "update_interconnection:remote_interconnection_id": "rule:context_is_admin",
+    "delete_interconnection": "rule:context_is_editor",
+    "get_interconnection": "rule:context_is_editor",
+{{- end }}
 {{ if or (.Values.bgp_vpn.import_target_auto_allocation) (.Values.bgp_vpn.export_target_auto_allocation) (.Values.bgp_vpn.route_target_auto_allocation) }}
     "create_bgpvpn": "rule:context_is_editor or rule:context_is_admin",
 {{- else }}
@@ -332,14 +341,5 @@
     "update_bgpvpn_router_association": "rule:context_is_editor or rule:shared_bgpvpns",
     "delete_bgpvpn_router_association": "rule:context_is_editor or rule:shared_bgpvpns",
     "get_bgpvpn_router_association": "rule:context_is_viewer or rule:shared_bgpvpns",
-    "get_bgpvpn_router_association:tenant_id": "rule:context_is_viewer or rule:shared_bgpvpns",
-{{ if .Values.interconnection.enabled }}
-    "create_interconnection": "rule:context_is_editor",
-    "update_interconnection": "rule:context_is_editor",
-    "update_interconnection:name": "rule:context_is_editor",
-    "update_interconnection:state": "rule:context_is_admin",
-    "update_interconnection:remote_interconnection_id": "rule:context_is_admin",
-    "delete_interconnection": "rule:context_is_editor",
-    "get_interconnection": "rule:context_is_editor"
-{{- end }}
+    "get_bgpvpn_router_association:tenant_id": "rule:context_is_viewer or rule:shared_bgpvpns"
 }
