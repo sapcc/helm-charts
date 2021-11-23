@@ -63,8 +63,8 @@ groups:
     expr: (sum by(pod, namespace, container) (rate(kube_pod_container_status_restarts_total[15m]))) * on (pod) group_left(label_tier, label_service) kube_pod_labels{} > 0
     for: 1h
     labels:
-      tier: "{{`{{ if $labels.label_tier }}`}}{{`{{ $labels.label_tier}}`}}{{`{{ else }}`}}{{ required ".Values.tier missing" .Values.tier }}{{`{{ end }}`}}"
-      service: "{{`{{ if $labels.label_service }}`}}{{`{{ $labels.label_service}}`}}{{`{{ else }}`}}resources{{`{{ end }}`}}"
+      tier: {{ include "tierLabelOrDefault" (dict "default" .Values.tier) }}
+      service: {{ include "serviceLabelOrDefault" (dict "default" "resources") }}
       severity: warning
       context: pod
       meta: "Pod {{`{{ $labels.namespace }}`}}/{{`{{ $labels.pod }}`}} is restarting constantly"
