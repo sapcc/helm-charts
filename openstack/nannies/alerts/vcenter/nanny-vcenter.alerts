@@ -339,16 +339,6 @@ groups:
       description: "ESXi host {{ $labels.kubernetes_name }} physical memory not enough to host all VMs >= 256GB which are placed on the host overbooked is {{ $labels.consolidated_needed }} => No suggestion from nanny and consolidated_needed in BB:"
       summary: "ESXi host {{ $labels.kubernetes_name }} physical memory not enough to host all VMs >= 256GB which are placed on the host"
 
-  - alert: ESXiHostOverutilizedConfiguredMemoryGB
-    expr: (vm_balance_nanny_host_size_consume_all_vm_bytes - vm_balance_nanny_host_size_bytes)/1024/1024/1024 > 400
-    for: 10m
-    labels:
-      service: compute
-      severity: info
-      tier: vmware
-    annotations:
-      description: "ESXi host {{ $labels.nodename }} overutilized by more then 400 GB on host configured memory size"
-
   - alert: ESXiClusterOverutilizedConfiguredMemoryPercentage
     expr: (vm_balance_building_block_consume_all_vm_bytes * 100 / (vm_balance_building_block_total_size_bytes )) > 95
     for: 10m
@@ -358,13 +348,3 @@ groups:
       tier: vmware
     annotations:
       description: "BuildingBlock_BB{{ $labels.Building_block }} more then 95% utilized on configured memory"
-
-  - alert: PredictHostMemoryBallooning
-    expr: (vm_balance_nanny_host_size_consume_all_vm_bytes{region=~"eu-de-1|eu-de-2"} - vm_balance_nanny_host_size_bytes{region=~"eu-de-1|eu-de-2"})/1024/1024/1024 > 200 and abs(vm_balance_nanny_host_size_consume_big_vm_bytes{region=~"eu-de-1|eu-de-2"} - vm_balance_nanny_host_size_bytes{region=~"eu-de-1|eu-de-2"})/1024/1024/1024 < 200
-    for: 10m
-    labels:
-      service: compute
-      severity: info
-      tier: vmware
-    annotations:
-      description: "ESXi host {{ $labels.nodename }} having chances of host memory Ballooning on configured memory"
