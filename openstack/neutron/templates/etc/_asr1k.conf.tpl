@@ -50,12 +50,6 @@ nc_timeout = {{$hosting_device.nc_timeout | default 20}}
 use_bdvif = {{$hosting_device.use_bdvif | default "True"}}
 {{end}}
 
-[asr1k-address-scopes]
-{{ $cloud_asn := required "A valid .Values.global_cloud_asn entry required!" .Values.global_cloud_asn }}
-{{ range $i, $address_scope := concat .Values.global_address_scopes .Values.local_address_scopes -}}
-{{required "A valid address-scope required!" $address_scope.name}} = {{required "A valid address-scope required!" (default (print $cloud_asn ":1" ($address_scope.vrf | replace "cc-cloud" "")) $address_scope.rd) }}
-{{end}}
-
 {{- if $config_agent.availability_zone }}
 [AGENT]
 availability_zone = {{$config_agent.availability_zone}}
