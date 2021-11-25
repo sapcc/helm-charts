@@ -1,3 +1,7 @@
+## 4.4.0
+
+* Update Prometheus to `v2.31.1`.
+
 ## 4.3.0
 
 * Fix Thanos cross-domain authentication in config.
