@@ -5,7 +5,7 @@
     for: 5m
     labels:
       severity: info
-      tier: os
+      tier: {{ required "$.Values.backup_v2.alerts.tier missing" $.Values.backup_v2.alerts.tier }}
       service: metis
     annotations:
       description: "Restore of Openstack DB backups into datahubdb failed. Check job logs."
