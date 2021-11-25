@@ -16,11 +16,24 @@
     "os_load-balancer_api:flavor:put": "rule:context_is_loadbalancer_admin",
     "os_load-balancer_api:flavor:get_one": "rule:context_is_viewer",
     "os_load-balancer_api:flavor:delete": "rule:context_is_loadbalancer_admin",
-    "os_load-balancer_api:flavor-profile:get_all": "rule:context_is_loadbalancer_admin",
-    "os_load-balancer_api:flavor-profile:post": "rule:context_is_loadbalancer_admin",
-    "os_load-balancer_api:flavor-profile:put": "rule:context_is_loadbalancer_admin",
-    "os_load-balancer_api:flavor-profile:get_one": "rule:context_is_loadbalancer_admin",
-    "os_load-balancer_api:flavor-profile:delete": "rule:context_is_loadbalancer_admin",
+
+    "os_load-balancer_api:flavor-profile:get_all": "rule:context_is_admin",
+    "os_load-balancer_api:flavor-profile:post": "rule:context_is_admin",
+    "os_load-balancer_api:flavor-profile:put": "rule:context_is_admin",
+    "os_load-balancer_api:flavor-profile:get_one": "rule:context_is_admin",
+    "os_load-balancer_api:flavor-profile:delete": "rule:context_is_admin",
+
+    "os_load-balancer_api:availability-zone:get_all": "rule:context_is_viewer",
+    "os_load-balancer_api:availability-zone:post": "rule:context_is_admin",
+    "os_load-balancer_api:availability-zone:put": "rule:context_is_admin",
+    "os_load-balancer_api:availability-zone:get_one": "rule:context_is_viewer",
+    "os_load-balancer_api:availability-zone:delete": "rule:context_is_admin",
+
+    "os_load-balancer_api:availability-zone-profile:get_all": "rule:context_is_admin",
+    "os_load-balancer_api:availability-zone-profile:post": "rule:context_is_admin",
+    "os_load-balancer_api:availability-zone-profile:put": "rule:context_is_admin",
+    "os_load-balancer_api:availability-zone-profile:get_one": "rule:context_is_admin",
+    "os_load-balancer_api:availability-zone-profile:delete": "rule:context_is_admin",
 
     "os_load-balancer_api:healthmonitor:get_all": "rule:context_is_viewer",
     "os_load-balancer_api:healthmonitor:get_all-global": "rule:context_is_editor",
@@ -81,11 +94,12 @@
     "os_load-balancer_api:quota:delete": "role:resource_service",
     "os_load-balancer_api:quota:get_defaults": "rule:context_is_editor or role:resource_service",
 
-    "os_load-balancer_api:amphora:get_all": "rule:context_is_loadbalancer_admin",
-    "os_load-balancer_api:amphora:get_one": "rule:context_is_loadbalancer_admin",
-    "os_load-balancer_api:amphora:put_config": "rule:context_is_loadbalancer_admin",
-    "os_load-balancer_api:amphora:put_failover": "rule:context_is_loadbalancer_admin",
-    "os_load-balancer_api:amphora:get_stats": "rule:context_is_loadbalancer_admin",
+    "os_load-balancer_api:amphora:get_all": "rule:context_is_admin",
+    "os_load-balancer_api:amphora:get_one": "rule:context_is_admin",
+    "os_load-balancer_api:amphora:put_config": "rule:context_is_admin",
+    "os_load-balancer_api:amphora:put_failover": "rule:context_is_admin",
+    "os_load-balancer_api:amphora:get_stats": "rule:context_is_admin",
 
-    "os_load-balancer_api:provider-flavor:get_all": "rule:context_is_loadbalancer_admin"
+    "os_load-balancer_api:provider-flavor:get_all": "rule:context_is_admin",
+    "os_load-balancer_api:provider-availability-zone:get_all": "rule:context_is_admin"
 }
