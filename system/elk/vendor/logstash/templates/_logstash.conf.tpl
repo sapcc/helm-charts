@@ -25,7 +25,7 @@ input {
     type => deployment
     codec => plain
   }
-{{- if tls.enabled }}	
+{{- if .Values.tls.enabled }}	
   http {
     port  => {{.Values.input_http_port}}
     type => awx
@@ -74,7 +74,7 @@ filter {
          }
        }
     }
-{{- if tls.enabled }}
+{{- if .Values.tls.enabled }}
     if [type] == "awx" {
        json {
          source => "message"
@@ -168,7 +168,7 @@ output {
       ssl => true
     }
   }
-{{- if tls.enabled }}
+{{- if .Values.tls.enabled }}
   elseif [type] == "awx" {
     elasticsearch {
       index => "deployments-%{+YYYY}"
