@@ -29,8 +29,8 @@ input {
   http {
     port  => {{.Values.input_http_port}}
     type => awx
-    user => '{{.Values.global.elk_elasticsearch_data_user}}'
-    password => '{{.Values.global.elk_elasticsearch_data_password}}'
+    user => '{{.Values.global.elk_elasticsearch_awx_user}}'
+    password => '{{.Values.global.elk_elasticsearch_awx_password}}'
     ssl => true
     ssl_certificate => '/tls-secret/tls.crt'
     ssl_key => '/tls-secret/tls.key'
