@@ -25,15 +25,15 @@ input {
     type => deployment
     codec => plain
   }
-{{- if .Values.tls.enabled }}	
+{{- if .Values.tls.enabled }}
   http {
     port  => {{.Values.input_http_port}}
     type => awx
-    user => {{.Values.global.elk_elasticsearch_data_user}}
-    password => {{.Values.global.elk_elasticsearch_data_password}}
+    user => '{{.Values.global.elk_elasticsearch_data_user}}'
+    password => '{{.Values.global.elk_elasticsearch_data_password}}'
     ssl => true
-    ssl_certificate => /tls-secret/tls.crt
-    ssl_key => /tls-secret/tls.key
+    ssl_certificate => '/tls-secret/tls.crt'
+    ssl_key => '/tls-secret/tls.key'
   }
 {{- end}}
 }
