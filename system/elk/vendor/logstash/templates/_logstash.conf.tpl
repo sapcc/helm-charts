@@ -25,6 +25,17 @@ input {
     type => deployment
     codec => plain
   }
+{{- if logstash.tls.enabled }}	
+  http {
+    port  => {{.Values.input_http_port}}
+    type => awx
+    user => {{.Values.global.elk_elasticsearch_data_user}}
+    password => {{.Values.global.elk_elasticsearch_data_password}}
+    ssl => true
+    ssl_certificate => /tls-secret/tls.crt
+    ssl_key => /tls-secret/tls.key
+  }
+{{- end}}
 }
 
 filter {
@@ -63,7 +74,14 @@ filter {
          }
        }
     }
-}
+{{- if logstash.tls.enabled }}
+    if [type] == "awx" {
+       json {
+         source => "message"
+       }
+    }
+{{- end}}
+}	
 
 output {
   if  [type] == "netflow" {
@@ -150,4 +168,18 @@ output {
       ssl => true
     }
   }
+{{- if logstash.tls.enabled }}
+  elseif [type] == "awx" {
+    elasticsearch {
+      index => "deployments-%{+YYYY}"
+      template => "/elk-etc/deployments.json"
+      template_name => "deployments"
+      template_overwrite => true
+      hosts => ["{{.Values.global.elk_elasticsearch_endpoint_host_scaleout}}.{{.Values.global.elk_cluster_region}}.{{.Values.global.tld}}:{{.Values.global.elk_elasticsearch_ssl_port}}"]
+      user => "{{.Values.global.elk_elasticsearch_data_user}}"
+      password => "{{.Values.global.elk_elasticsearch_data_password}}"
+      ssl => true
+    }
+  }
+{{- end}}
 }

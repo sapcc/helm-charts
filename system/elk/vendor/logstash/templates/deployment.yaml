@@ -28,6 +28,11 @@ spec:
         - name: elk-etc
           configMap:
             name: logstash-etc
+{{- if logstash.tls.enabled }}	
+        - name: tls-secret
+          secret:
+            secretName: tls-logstash
+{{- end}}
       containers:
         - name: logstash-external
           image: {{.Values.global.registry}}/elk-logstash:{{.Values.image_version}}
@@ -67,6 +72,10 @@ spec:
           volumeMounts:
             - name: elk-etc
               mountPath: /elk-etc
+{{- if logstash.tls.enabled }}
+            - mountPath: /tls-secret
+              name: tls-secret
+{{- end}}
 #          livenessProbe:
 #            exec:
 #              command:

@@ -1,0 +1,15 @@
+{{- if logstash.tls.enabled }}
+apiVersion: cert-manager.io/v1alpha3
+kind: Certificate
+metadata:
+  name: tls-logstash
+  namespace: elk
+spec:
+  dnsNames:
+  - elk-netflow.{{.Values.global.region}}.{{.Values.global.tld}}
+  issuerRef:
+    group: certmanager.cloud.sap
+    kind: DigicertIssuer
+    name: digicert-issuer
+  secretName: tls-logstash
+{{- end}}
