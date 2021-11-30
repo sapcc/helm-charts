@@ -33,7 +33,7 @@ input {
     password => '{{.Values.global.elk_elasticsearch_awx_password}}'
     ssl => true
     ssl_certificate => '/tls-secret/tls.crt'
-    ssl_key => '/tls-secret/tls.key'
+    ssl_key => '/usr/share/logstash/config/tls.key'
   }
 {{- end}}
 }

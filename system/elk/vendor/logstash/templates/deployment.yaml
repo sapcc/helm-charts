@@ -56,14 +56,7 @@ spec:
             - name: deploymentstcp
               containerPort: {{.Values.input_deployments_port}}
               protocol: TCP
-          command:
-            - /usr/share/logstash/bin/logstash
-          args:
-            - -f
-            - /elk-etc/logstash.conf
-            - --config.reload.automatic
-            - --path.settings
-            - /elk-etc/
+          command: ["dumb-init","/bin/bash","/logstash-etc/start.sh"]
           env:
             - name: NAMESPACE
               valueFrom:
