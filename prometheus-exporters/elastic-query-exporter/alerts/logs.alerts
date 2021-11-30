@@ -68,7 +68,7 @@ groups:
           summary: "Octobus Jumpserver  endpoint: `in-beats` is down in region `{{ $labels.region }}`"
       - alert: OctobusESXiHostLogShippingNotWorking
         expr: |
-                vrops_hostsystem_runtime_connectionstate{state="connected", vcenter!~"vc-mgmt.*"} and
+                vrops_hostsystem_runtime_connectionstate{state="connected"} and
                 on (hostsystem) vrops_hostsystem_runtime_maintenancestate{state="notInMaintenance"} unless
                 on (hostsystem) elasticsearch_octobus_esx_hostsystem_doc_count
         for: 15m
@@ -82,7 +82,9 @@ groups:
           description: "ESXi logs missing in Octobus for host {{ $labels.hostsystem }}."
           summary: "ESXi logs missing in Octobus for host {{ $labels.hostsystem }}."
       - alert: OctobusVCSALogShippingNotWorking
-        expr: vrops_vcenter_vc_fullname_info{vcenter!~"vc-mgmt.*"} unless on(vcenter) elasticsearch_octobus_vcsa_vcenter_doc_count
+        expr: |
+                vrops_vcenter_vc_fullname_info unless
+                on(vcenter) elasticsearch_octobus_vcsa_vcenter_doc_count
         for: 15m
         labels:
           severity: critical
