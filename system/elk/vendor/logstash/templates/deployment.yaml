@@ -56,6 +56,11 @@ spec:
             - name: deploymentstcp
               containerPort: {{.Values.input_deployments_port}}
               protocol: TCP
+{{- if .Values.tls.enabled }}
+            - name: https
+              containerPort: {{.Values.input_http_port}}
+              protocol: TCP
+{{- end}}
           command: ["dumb-init","/bin/bash","/elk-etc/start.sh"]
           env:
             - name: NAMESPACE
