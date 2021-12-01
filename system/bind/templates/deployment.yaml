@@ -46,7 +46,7 @@ spec:
         {{ end }} 
       containers:
       - name: {{ .Release.Name }}
-        image: {{.Values.image_bind}}:{{ .Values.image_bind_tag}}
+        image: {{ required ".Values.global.registry is missing" .Values.global.registry }}/{{.Values.image_bind}}:{{ .Values.image_bind_tag}}
         imagePullPolicy: {{ .Values.image_pullPolicy }}
         ports:
           - name: dns-tcp
@@ -80,7 +80,7 @@ spec:
           timeoutSeconds: 3
           periodSeconds: 10
       - name: metric
-        image: {{.Values.image_bind_exporter}}:{{ .Values.image_bind_exporter_tag}}
+        image: {{ required ".Values.global.registry is missing" .Values.global.registry }}/{{.Values.image_bind_exporter}}:{{ .Values.image_bind_exporter_tag}}
         imagePullPolicy: {{ .Values.image_pullPolicy }}
         ports:
           - name: metrics
