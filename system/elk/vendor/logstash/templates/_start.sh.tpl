@@ -1,6 +1,6 @@
 #!/bin/bash
 
-if test -f "/tls-secrets/tls.key"; then
+if test -f "/tls-secret/tls.key"; then
    openssl pkcs8 -in /tls-secret/tls.key -topk8 -nocrypt -out /usr/share/logstash/config/tls.key
 fi
 
