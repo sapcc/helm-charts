@@ -33,12 +33,17 @@ spec:
         image: "{{ $.Values.concourse.image }}:{{ $.Values.concourse.imageTag }}"
         imagePullPolicy: {{ $.Values.concourse.imagePullPolicy | quote }}
         command:
-        - dumb-init
-        args:
         - /bin/sh
-        - -ec
+        args:
+        - -ce
         - |-
+          # fix for cgroups v2, move process to own cgroup
+          mkdir /sys/fs/cgroup/entrypoint
+          echo 1 > /sys/fs/cgroup/entrypoint/cgroup.procs
+
           update-ca-certificates
+
+          #rm -rf /concourse-work-dir/*
           exec /usr/local/concourse/bin/concourse worker --name=${NODE_NAME}
         livenessProbe:
           failureThreshold: 5
@@ -82,6 +87,10 @@ spec:
           value: "500"
         - name: CONCOURSE_CONTAINERD_NETWORK_POOL
           value: 10.254.0.0/16
+        - name: CONCOURSE_CONTAINERD_DNS_PROXY_ENABLE
+          value: "false"
+        - name: CONCOURSE_GARDEN_DNS_PROXY_ENABLE
+          value: "false"
         - name: CONCOURSE_BAGGAGECLAIM_DRIVER
           value: overlay
         - name: LIVENESS_PROBE_FATAL_ERRORS
