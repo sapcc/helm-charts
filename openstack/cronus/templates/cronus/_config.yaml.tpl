@@ -73,7 +73,18 @@ cronus:
   smtpBackends:
 {{- range $k, $v := .Values.config.smtpBackends }}
     {{ $k }}:
-      host: {{ $v.host }}
+{{- if $v.host }}
+      host: {{$v.host }}
+{{- end }}
+{{- if $v.hosts }}
+      hosts:
+{{- range $k, $v := $v.hosts }}
+        {{ $k }}:
+{{- range $v := $v }}
+          - {{ $v }}
+{{- end }}
+{{- end }}
+{{- end }}
 {{- if $v.domains }}
       domains:
 {{- range $kd, $vd := $v.domains }}
