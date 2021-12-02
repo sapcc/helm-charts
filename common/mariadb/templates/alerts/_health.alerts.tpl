@@ -2,7 +2,7 @@
   rules:
   - alert: {{ include "alerts.service" . | title }}MariaDBNotReady
     expr: (kube_pod_status_ready_normalized{condition="true", pod=~"{{ include "fullName" . }}.*", pod!~"{{ include "fullName" . }}-backup.*", pod!~"{{ include "fullName" . }}-verification.*"} < 1)
-    for: 5m
+    for: 10m
     labels:
       context: availability
       service: {{ include "alerts.service" . }}
