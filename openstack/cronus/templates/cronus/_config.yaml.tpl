@@ -16,6 +16,10 @@ cronus:
 {{- end }}
   aws:
     forwardUserAgent: {{ .Values.config.forwardUserAgent }}
+    replaceServices:
+    {{- range $key, $value := .Values.config.replaceServices }}
+      {{ $key | quote }}: {{ $value }}
+    {{- end }}
     allowedServices:
     {{- range $key, $value := .Values.config.allowedServices }}
       {{ $key }}: {{ $value }}
