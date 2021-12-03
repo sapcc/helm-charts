@@ -30,7 +30,10 @@ data:
         <dt>Why is this a problem?</dt>
         <dd>We cannot upgrade to Kubernetes 1.16 or newer before all such references are removed.</dd>
         <dt>How to fix?</dt>
-        <dd>In your Helm chart templates, replace the deprecated API versions with their newer counterparts, <a href="https://kubernetes.io/blog/2019/07/18/api-deprecations-in-1-16/">as explained in this article</a>. After this change, <code>helm diff upgrade</code> will show a diff that deletes the object with the old API version and recreates it with the new API version, but <code>helm upgrade</code> will understand that we're still talking about the same object and not touch it. But regardless, it's recommended to perform the API version change when you do not have any other diffs in your pipeline, because those other diffs might be obscured by this fake diff.</dd>
+        <dd>
+          In your Helm chart templates, replace the deprecated API versions with their newer counterparts (refer to the <a href="https://kubernetes.io/docs/reference/using-api/deprecation-guide/#v1-16">v1.16</a> and <a href="https://kubernetes.io/docs/reference/using-api/deprecation-guide/#v1-22">v1.22</a> deprecation docs). After this change, <code>helm diff upgrade</code> will show a diff that deletes the object with the old API version and recreates it with the new API version, but <code>helm upgrade</code> will understand that we're still talking about the same object and not touch it. But regardless, it's recommended to perform the API version change when you do not have any other diffs in your pipeline, because those other diffs might be obscured by this fake diff.<br><br>
+          Note: some clusters are still using k8s v1.15.9 and you might need to add an extra check (e.g. <code>{{- if .Capabilities.APIVersions.Has $newer-api-version }}</code>) in your helm template in order to stay backwards-compatible.
+        </dd>
         <dt>There is a violation report for a Helm 2 release, but we have already migrated to Helm 3. What's going on?</dt>
         <dd>
           You probably forgot to cleanup your Helm 2 releases after migrating to Helm 3. Double-check with <code>helm3 ls</code> that you are really deploying with Helm 3, then cleanup the old Helm 2 releases manually. You can find them with:
