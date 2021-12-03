@@ -21,18 +21,55 @@ var (
 	apiVersionRx = regexp.MustCompile(`^\s*apiVersion:\s*(\S+)\s*$`)
 
 	isDeprecatedAPIVersion = map[string]bool{
+		// since v1.16
 		"extensions/v1beta1": true,
 		"apps/v1beta1":       true,
 		"apps/v1beta2":       true,
+
+		// since v1.22
+		"admissionregistration.k8s.io/v1beta1": true,
+		"apiextensions.k8s.io/v1beta1":         true,
+		"apiregistration.k8s.io/v1beta1":       true,
+		"authentication.k8s.io/v1beta1":        true,
+		"authorization.k8s.io/v1beta1":         true,
+		"certificates.k8s.io/v1beta1":          true,
+		"coordination.k8s.io/v1beta1":          true,
+		"networking.k8s.io/v1beta1":            true,
+		"rbac.authorization.k8s.io/v1beta1":    true,
+		"scheduling.k8s.io/v1beta1":            true,
+		"storage.k8s.io/v1beta1":               true,
 	}
 
 	correctAPIVersions = map[string]string{
+		// as of v1.16
 		"NetworkPolicy":     "networking.k8s.io/v1",
 		"PodSecurityPolicy": "policy/v1beta1",
 		"DaemonSet":         "apps/v1",
 		"Deployment":        "apps/v1",
 		"StatefulSet":       "apps/v1",
-		"Ingress":           "networking.k8s.io/v1beta1",
+
+		// as of v1.22
+		"APIService":                     "apiregistration.k8s.io/v1",
+		"TokenReview":                    "authentication.k8s.io/v1",
+		"LocalSubjectAccessReview":       "authorization.k8s.io/v1",
+		"SelfSubjectAccessReview":        "authorization.k8s.io/v1",
+		"SubjectAccessReview":            "authorization.k8s.io/v1",
+		"Lease":                          "coordination.k8s.io/v1 ",
+		"ClusterRole":                    "rbac.authorization.k8s.io/v1",
+		"ClusterRoleBinding":             "rbac.authorization.k8s.io/v1",
+		"Role":                           "rbac.authorization.k8s.io/v1",
+		"RoleBinding":                    "rbac.authorization.k8s.io/v1",
+		"PriorityClass":                  "scheduling.k8s.io/v1",
+		"StorageClass":                   "storage.k8s.io/v1",
+		"VolumeAttachment":               "storage.k8s.io/v1",
+		"MutatingWebhookConfiguration":   "admissionregistration.k8s.io/v1", // available on >= v1.16
+		"ValidatingWebhookConfiguration": "admissionregistration.k8s.io/v1", // available on >= v1.16
+		"CustomResourceDefinition":       "apiextensions.k8s.io/v1",         // available on >= v1.16
+		"CSINode":                        "storage.k8s.io/v1",               // available on >= v1.17
+		"CertificateSigningRequest":      "certificates.k8s.io/v1",          // available on >= v1.19
+		"Ingress":                        "networking.k8s.io/v1",            // available on >= v1.19
+		"IngressClass":                   "networking.k8s.io/v1",            // available on >= v1.19
+		"CSIDriver":                      "storage.k8s.io/v1",               // available on >= v1.19
 	}
 )
 
@@ -43,6 +80,10 @@ func main() {
 	}
 
 	for _, path := range os.Args[1:] {
+		if strings.Contains(path, "vendor") {
+			continue // skip templates in vendored charts
+		}
+
 		contents, err := ioutil.ReadFile(path)
 		must(err)
 		lines := strings.SplitAfter(string(contents), "\n")
