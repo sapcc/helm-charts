@@ -119,26 +119,44 @@ gitResourceProxy:
   imageTag: 0.5.0
   imagePullPolicy: IfNotPresent
 
-ingress-nginx:
+kubernetes-ingress:
   controller:
+    kind: Deployment
+    replicaCount: 1
     image:
-      registry: keppel.eu-de-2.cloud.sap
-      image: ccloud-k8sgcr-mirror/ingress-nginx/controller
-      tag: "v1.1.0"
-    #ingressClassByName: true
+      repository: keppel.eu-de-2.cloud.sap/ccloud-dockerhub-mirror/haproxytech/kubernetes-ingress
+      tag: 1.7.3
+    ingressClass: git-proxy
     ingressClassResource:
       name: git-proxy
-    scope:
-      enabled: true
-    config:
-      proxy-send-timeout: "300"
-      proxy-read-timeout: "300"
-      proxy-body-size: "0k"
-      disable-ipv6: "true"
-      #load-balance: "least_conn"
     service:
       enabled: false
-    admissionWebhooks:
+      type: ClusterIP
+      sessionAffinity: None
+      ports:
+        http: 8080
+      targetPorts:
+        http: 80
+      enablePorts:
+        https: false
+        stat: false
+    publishService:
+      enabled: false
+    extraArgs:
+      - --disable-ipv6
+      - --namespace-whitelist=concourse
+    config:
+      http-keep-alive: "false"
+      timeout-client: "5m"
+      timeout-server: "5m"
+      load-balance: "leastconn"
+    logging:
+      level: info
+      traffic:
+        address:  "stdout"
+        format:   "raw"
+        facility: "daemon"
+    defaultTLSSecret:
       enabled: false
   defaultBackend:
     enabled: false
