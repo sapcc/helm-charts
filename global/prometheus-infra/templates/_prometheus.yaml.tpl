@@ -34,6 +34,7 @@
       - '{__name__=~"^snmp_n7k_cntpSysRootDispersion"}'
       - '{__name__=~"^snmp_pxdlrouternxos_sysDescr"}'
       - '{__name__=~"^snmp_pxdlrouternxos_rttMon.+"}'
+      - '{__name__=~"^snmp_pxgeneric.+"}'
       - '{__name__=~"^snmp_pxdlrouternxos_if.+"}'
       - '{__name__=~"^snmp_n9kpx_ciscoImageString"}'
       - '{__name__=~"^snmp_ipn_sysDescr"}'
