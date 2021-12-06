@@ -9,7 +9,7 @@
 "get_image": "rule:context_is_viewer"
 "get_images": "rule:context_is_viewer"
 "modify_image": "rule:context_is_image_admin"
-"publicize_image": "rule:context_is_cloud_admin"
+"publicize_image": "rule:context_is_cloud_admin" or "role:image_publicize_admin"
 "communitize_image": "rule:context_is_editor"
 
 "download_image": "rule:context_is_editor"
