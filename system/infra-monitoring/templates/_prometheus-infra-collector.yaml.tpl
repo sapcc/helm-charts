@@ -264,7 +264,7 @@
       replacement: '$3'
       target_label: image_version
     - source_labels: [__name__, snmp_pxgeneric_sysDescr]
-      regex: 'snmp_pxgeneric_sysDescr;(?s)(.*)(Version )([0-9().a-zIU]*)(,.*)'
+      regex: 'snmp_pxgeneric_sysDescr;(.*)(Version )([0-9().a-zIU]*)'
       replacement: '$3'
       target_label: image_version
     - source_labels: [__name__, snmp_n9kpx_ciscoImageString]
@@ -526,7 +526,7 @@
       regex: 'windows_service_state;(.*)'
       replacement: '$1'
       target_label: 'service_state'
-      
+
 - job_name: 'win-exporter-wsus'
   scrape_interval: {{$values.scrapeInterval}}
   scrape_timeout: {{$values.scrapeTimeout}}
