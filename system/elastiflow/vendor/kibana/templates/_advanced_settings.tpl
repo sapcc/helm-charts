@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 export STDOUT_LOC=${STDOUT_LOC:-/proc/1/fd/1}  
 export STDERR_LOC=${STDERR_LOC:-/proc/1/fd/2}
