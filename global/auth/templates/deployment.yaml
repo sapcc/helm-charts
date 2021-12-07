@@ -1,0 +1,79 @@
+# prettier-ignore
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    k8s-app: oauth2-proxy
+    version: {{.Values.version}}
+  name: oauth2-proxy
+spec:
+  replicas: {{ .Values.replica_count }}
+  selector:
+    matchLabels:
+      k8s-app: oauth2-proxy
+  template:
+    metadata:
+      labels:
+        k8s-app: oauth2-proxy
+    spec:
+      containers:
+        - args:
+            - --provider=oidc
+            - --email-domain=*
+            - --provider-display-name="{{ .Values.oauth_proxy.provider_display_name }}"
+            - --upstream=file:///dev/null
+            - --http-address=0.0.0.0:4180
+            - --redirect-url="{{ include "host" .}}/oauth2/callback"
+            - --oidc-issuer-url={{ .Values.oauth_proxy.oidc_issuer_url }}
+            - --scope="{{ .Values.oauth_proxy.oidc_scope }}"
+            - --pass-user-headers=true
+            - --set-xauthrequest=true
+            - --whitelist-domain="{{ .Values.oauth_proxy.cookie_domain }}"
+            - --cookie-domain="{{ .Values.oauth_proxy.cookie_domain }}"
+
+          # Register a new application
+          # https://github.com/settings/applications/new
+          env:
+            - name: OAUTH2_PROXY_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: oauth-secret
+                  key: OAUTH_PROXY_CLIENT_ID
+            - name: OAUTH2_PROXY_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: oauth-secret
+                  key: OAUTH_PROXY_CLIENT_SECRET
+            # docker run -ti --rm python:3-alpine python -c 'import secrets,base64; print(base64.b64encode(base64.b64encode(secrets.token_bytes(16))));'
+            - name: OAUTH2_PROXY_COOKIE_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: oauth-secret
+                  key: OAUTH_PROXY_COOKIE_SECRET
+          image: "{{ .Values.global.registry }}/{{.Values.image.name}}:{{ .Values.image.tag }}"    
+          imagePullPolicy: {{.Values.image.pullPolicy}}
+          name: oauth2-proxy
+          securityContext:
+            runAsUser: 0
+          ports:
+            - containerPort: 4180
+              protocol: TCP
+          
+          livenessProbe:
+            httpGet:
+              path: /ping
+              port: 4180
+            timeoutSeconds: 10
+            periodSeconds: 60
+            initialDelaySeconds: 60
+          readinessProbe:
+            httpGet:
+              path: /ping
+              port: 4180
+            timeoutSeconds: 5
+            periodSeconds: 5
+          lifecycle:
+            preStop:
+              exec:
+                #Give the ingress some time to reload its config
+                command: ["/bin/sh","-c","sleep 30"]

@@ -1,0 +1,32 @@
+# prettier-ignore
+
+kind: Ingress
+apiVersion: networking.k8s.io/v1beta1
+
+metadata:
+  name: global-auth
+  annotations:
+{{- if .Values.ingress.internet_facing }}
+    ingress.kubernetes.io/ingress.class: "nginx-internet"
+    kubernetes.io/ingress.class: "nginx-internet"
+{{- end }}  
+    ingress.kubernetes.io/ssl-redirect: "true"
+    kubernetes.io/tls-acme: "true"
+
+    ingress.kubernetes.io/enable-cors: "true"
+    ingress.kubernetes.io/cors-allow-origin: "*"
+    # cookie stickines allows us to send requests to the same server
+    ingress.kubernetes.io/affinity: cookie
+    ingress.kubernetes.io/session-cookie-path: /
+spec:
+  tls:
+     - secretName: global-auth
+       hosts: [{{ include "host" . }}]
+  rules:
+  - host: [{{ include "host" . }}]
+    http:
+      paths:
+        - backend:
+            serviceName: oauth2-proxy
+            servicePort: 4180
+          path: /oauth2
