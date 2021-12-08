@@ -18,8 +18,9 @@ groups:
 
   - alert: VCenterRedundancyLostHAPolicyFaulty
     expr: |
-      sum by (vccluster, vcenter) (vrops_cluster_configuration_dasconfig_enabled{vccluster=~"production.*"}) unless
-      sum by (vccluster, vcenter) (vrops_hostsystem_configuration_dasconfig_admissioncontrolpolicy_failoverhost{vccluster=~"production.*"}) != 0
+      sum by (vccluster, vcenter) (vrops_cluster_configuration_dasconfig_enabled{vccluster=~"production.*"}) unless (
+      sum by (vccluster, vcenter) (vrops_hostsystem_configuration_dasconfig_admissioncontrolpolicy_failoverhost{vccluster=~"production.*"}) != 0 and 
+      sum by (vccluster, vcenter) (vrops_hostsystem_runtime_maintenancestate{state="notInMaintenance"}))
     for: 30m
     labels:
       severity: critical
