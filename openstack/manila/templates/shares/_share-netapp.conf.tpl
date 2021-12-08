@@ -50,7 +50,7 @@ netapp_trace_flags=api,method
 
 # Enable the net_capacity provisioning
 netapp_volume_provision_net_capacity = True
-netapp_volume_snapshot_reserve_percent = {{ $context.Values.netapp_volume_snapshot_reserve_percent | default 50 }}
+netapp_volume_snapshot_reserve_percent = {{ $share.netapp_volume_snapshot_reserve_percent | default $context.Values.netapp_volume_snapshot_reserve_percent | default 50 }}
 
 # The percentage of backend capacity reserved. Default 0 (integer value)
 reserved_share_percentage = {{ $share.reserved_share_percentage | default 50 }}
