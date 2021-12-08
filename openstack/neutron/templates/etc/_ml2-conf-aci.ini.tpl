@@ -32,6 +32,9 @@ default_baremetal_pc_policy_group = {{ .Values.aci.default_baremetal_pc_policy_g
 {{- if .Values.aci.baremetal_reserved_vlan_ids }}
 baremetal_reserved_vlan_ids = {{ .Values.aci.baremetal_reserved_vlan_ids }}
 {{- end }}
+{{- if .Values.aci.az_checks_enabled }}
+az_checks_enabled = {{ .Values.aci.az_checks_enabled }}
+{{- end }}
 
 {{- if .Values.aci.pc_policy_groups }}
 {{ range $i, $pc_policy_group := .Values.aci.pc_policy_groups }}
