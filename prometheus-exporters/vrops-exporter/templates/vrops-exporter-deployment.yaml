@@ -33,6 +33,10 @@ spec:
                       values:
                         - {{ $vropshostname._0 }}
                 topologyKey: kubernetes.io/hostname
+      volumes:
+        - name: vrops-config
+          configMap:
+            name: vrops-exporter-collector-config
       containers:
          - name: vrops-exporter
            image: {{ required ".Values.global.registry variable missing" $.Values.global.registry }}/{{ required ".Values.vrops.image.name variable missing" $.Values.vrops.image.name }}:{{ required ".Values.vrops.image.tag variable missing" $.Values.vrops.image.tag }}
@@ -65,20 +69,15 @@ spec:
                memory: {{ required "$exporter_type.resources.requests.memory missing" $exporter_type.resources.requests.memory }}
                cpu: {{ required "$exporter_type.resources.requests.cpu missing" $exporter_type.resources.requests.cpu }}
            volumeMounts:
-             - mountPath: /config
-               name: vrops-config
+             - name: vrops-config
+               mountPath: "/config"
                readOnly: true
-
            #livenessProbe:
              #tcpSocket:
                #port: {{ required ".Values.vrops.port_number missing" $.Values.vrops.port_number }}
              #initialDelaySeconds: 60
              #periodSeconds: 15
              #timeoutSeconds: 10
-      volumes:
-        - configMap:
-            name: vrops-exporter-collector-config
-          name: vrops-config
 {{- end }}
 {{- end }}
 {{- end }}
