@@ -3,33 +3,33 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   labels:
-    k8s-app: oauth-proxy
+    k8s-app: oauth2-proxy
     version: {{.Values.version | quote}}
-  name: oauth-proxy
+  name: oauth2-proxy
 spec:
   replicas: {{ .Values.replica_count }}
   selector:
     matchLabels:
-      k8s-app: oauth-proxy
+      k8s-app: oauth2-proxy
   template:
     metadata:
       labels:
-        k8s-app: oauth-proxy
+        k8s-app: oauth2-proxy
     spec:
       containers:
         - args:
             - --provider=oidc
             - --email-domain=*
-            - --provider-display-name="{{ .Values.oauth_proxy.provider_display_name }}"
+            - --provider-display-name={{ .Values.oauth_proxy.provider_display_name }}
             - --upstream=file:///dev/null
             - --http-address=0.0.0.0:4180
-            - --redirect-url="{{ include "host" .}}/oauth2/callback"
+            - --redirect-url=oauth2/callback
             - --oidc-issuer-url={{ .Values.oauth_proxy.oidc_issuer_url }}
-            - --scope="{{ .Values.oauth_proxy.oidc_scope }}"
+            - --scope={{ .Values.oauth_proxy.oidc_scope }}
             - --pass-user-headers=true
             - --set-xauthrequest=true
-            - --whitelist-domain="{{ .Values.oauth_proxy.cookie_domain }}"
-            - --cookie-domain="{{ .Values.oauth_proxy.cookie_domain }}"
+            - --whitelist-domain={{ .Values.oauth_proxy.cookie_domain }}
+            - --cookie-domain={{ .Values.oauth_proxy.cookie_domain }}
 
           # Register a new application
           # https://github.com/settings/applications/new
@@ -52,7 +52,7 @@ spec:
                   key: OAUTH_PROXY_COOKIE_SECRET
           image: "{{ .Values.image.registry }}/{{.Values.image.name}}:{{ .Values.image.tag }}"    
           imagePullPolicy: {{.Values.image.pullPolicy}}
-          name: oauth-proxy
+          name: oauth2-proxy
           securityContext:
             runAsUser: 0
           ports:
