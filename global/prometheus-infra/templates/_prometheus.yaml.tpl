@@ -99,6 +99,7 @@
       - '{__name__=~"^es_index_store_size_bytes"}'
       - '{__name__=~"^es_fs_path_total_bytes"}'
       - '{__name__=~"^es_fs_path_available_bytes"}'
+      - '{__name__=~"^filebeat_filebeat_input_netflow"}'
       - '{__name__=~"elastiflow_thousandeyes_probes_hits"}'
       - '{__name__=~"^metis_.+"}'
       - '{__name__=~"^maria_backup_.+"}'
