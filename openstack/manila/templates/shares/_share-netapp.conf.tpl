@@ -52,6 +52,9 @@ netapp_trace_flags=api,method
 netapp_volume_provision_net_capacity = True
 netapp_volume_snapshot_reserve_percent = {{ $share.netapp_volume_snapshot_reserve_percent | default $context.Values.netapp_volume_snapshot_reserve_percent | default 50 }}
 
+# Enable logical space reporting
+netapp_enable_logical_space_reporting = True
+
 # The percentage of backend capacity reserved. Default 0 (integer value)
 reserved_share_percentage = {{ $share.reserved_share_percentage | default 50 }}
 # Time to kepp deleted volumes in recovery queue until space is reclaimed
