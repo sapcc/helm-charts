@@ -501,11 +501,11 @@ metrics:
     regex: >-
       ^.*?(\*|#|\+|-|x|~)+(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\svrf\s(\S*)\s*(\.\S*\s*\.|\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\s.*?(-?\d{1,2}\.\d{1,3})\s.*?(-?\d{1,2}\.\d{1,3})\s.*?(-?\d{1,2}\.\d{1,3})..*?(\*|#|\+|-|x|~)+(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\svrf\s(\S*)\s*(\.\S*\s*\.|\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\s.*?(-?\d{1,2}\.\d{1,3})\s.*?(-?\d{1,2}\.\d{1,3})\s.*?(-?\d{1,2}\.\d{1,3})..*?(\*|#|\+|-|x|~)+(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\svrf\s(\S*)\s*(\.\S*\s*\.|\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\s.*?(-?\d{1,2}\.\d{1,3})\s.*?(-?\d{1,2}\.\d{1,3})\s.*?(-?\d{1,2}\.\d{1,3})
     multi_value: false
-    value: $5
+    value: $12
     labels:
-      address: $2
-      vrf: $3
-      reference_clock: $4
+      address: $9
+      vrf: $10
+      reference_clock: $11
     description: Configured peer 0 delay.
     metric_type_name: gauge
     command: show ntp associations
@@ -515,11 +515,11 @@ metrics:
     regex: >-
       ^.*?(\*|#|\+|-|x|~)+(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\svrf\s(\S*)\s*(\.\S*\s*\.|\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\s.*?(-?\d{1,2}\.\d{1,3})\s.*?(-?\d{1,2}\.\d{1,3})\s.*?(-?\d{1,2}\.\d{1,3})..*?(\*|#|\+|-|x|~)+(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\svrf\s(\S*)\s*(\.\S*\s*\.|\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\s.*?(-?\d{1,2}\.\d{1,3})\s.*?(-?\d{1,2}\.\d{1,3})\s.*?(-?\d{1,2}\.\d{1,3})..*?(\*|#|\+|-|x|~)+(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\svrf\s(\S*)\s*(\.\S*\s*\.|\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\s.*?(-?\d{1,2}\.\d{1,3})\s.*?(-?\d{1,2}\.\d{1,3})\s.*?(-?\d{1,2}\.\d{1,3})
     multi_value: false
-    value: $6
+    value: $13
     labels:
-      address: $2
-      vrf: $3
-      reference_clock: $4
+      address: $9
+      vrf: $10
+      reference_clock: $11
     description: Configured peer 0 offset.
     metric_type_name: gauge
     command: show ntp associations
@@ -529,11 +529,11 @@ metrics:
     regex: >-
       ^.*?(\*|#|\+|-|x|~)+(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\svrf\s(\S*)\s*(\.\S*\s*\.|\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\s.*?(-?\d{1,2}\.\d{1,3})\s.*?(-?\d{1,2}\.\d{1,3})\s.*?(-?\d{1,2}\.\d{1,3})..*?(\*|#|\+|-|x|~)+(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\svrf\s(\S*)\s*(\.\S*\s*\.|\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\s.*?(-?\d{1,2}\.\d{1,3})\s.*?(-?\d{1,2}\.\d{1,3})\s.*?(-?\d{1,2}\.\d{1,3})..*?(\*|#|\+|-|x|~)+(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\svrf\s(\S*)\s*(\.\S*\s*\.|\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\s.*?(-?\d{1,2}\.\d{1,3})\s.*?(-?\d{1,2}\.\d{1,3})\s.*?(-?\d{1,2}\.\d{1,3})
     multi_value: false
-    value: $7
+    value: $14
     labels:
-      address: $2
-      vrf: $3
-      reference_clock: $4
+      address: $9
+      vrf: $10
+      reference_clock: $11
     description: Configured peer 0 dispersion.
     metric_type_name: gauge
     command: show ntp associations
@@ -543,11 +543,11 @@ metrics:
     regex: >-
       ^.*?(\*|#|\+|-|x|~)+(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\svrf\s(\S*)\s*(\.\S*\s*\.|\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\s.*?(-?\d{1,2}\.\d{1,3})\s.*?(-?\d{1,2}\.\d{1,3})\s.*?(-?\d{1,2}\.\d{1,3})..*?(\*|#|\+|-|x|~)+(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\svrf\s(\S*)\s*(\.\S*\s*\.|\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\s.*?(-?\d{1,2}\.\d{1,3})\s.*?(-?\d{1,2}\.\d{1,3})\s.*?(-?\d{1,2}\.\d{1,3})..*?(\*|#|\+|-|x|~)+(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\svrf\s(\S*)\s*(\.\S*\s*\.|\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\s.*?(-?\d{1,2}\.\d{1,3})\s.*?(-?\d{1,2}\.\d{1,3})\s.*?(-?\d{1,2}\.\d{1,3})
     multi_value: false
-    value: $5
+    value: $19
     labels:
-      address: $2
-      vrf: $3
-      reference_clock: $4
+      address: $16
+      vrf: $17
+      reference_clock: $18
     description: Configured peer 0 delay.
     metric_type_name: gauge
     command: show ntp associations
@@ -557,11 +557,11 @@ metrics:
     regex: >-
       ^.*?(\*|#|\+|-|x|~)+(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\svrf\s(\S*)\s*(\.\S*\s*\.|\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\s.*?(-?\d{1,2}\.\d{1,3})\s.*?(-?\d{1,2}\.\d{1,3})\s.*?(-?\d{1,2}\.\d{1,3})..*?(\*|#|\+|-|x|~)+(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\svrf\s(\S*)\s*(\.\S*\s*\.|\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\s.*?(-?\d{1,2}\.\d{1,3})\s.*?(-?\d{1,2}\.\d{1,3})\s.*?(-?\d{1,2}\.\d{1,3})..*?(\*|#|\+|-|x|~)+(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\svrf\s(\S*)\s*(\.\S*\s*\.|\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\s.*?(-?\d{1,2}\.\d{1,3})\s.*?(-?\d{1,2}\.\d{1,3})\s.*?(-?\d{1,2}\.\d{1,3})
     multi_value: false
-    value: $6
+    value: $20
     labels:
-      address: $2
-      vrf: $3
-      reference_clock: $4
+      address: $16
+      vrf: $17
+      reference_clock: $18
     description: Configured peer 0 offset.
     metric_type_name: gauge
     command: show ntp associations
@@ -571,11 +571,11 @@ metrics:
     regex: >-
       ^.*?(\*|#|\+|-|x|~)+(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\svrf\s(\S*)\s*(\.\S*\s*\.|\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\s.*?(-?\d{1,2}\.\d{1,3})\s.*?(-?\d{1,2}\.\d{1,3})\s.*?(-?\d{1,2}\.\d{1,3})..*?(\*|#|\+|-|x|~)+(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\svrf\s(\S*)\s*(\.\S*\s*\.|\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\s.*?(-?\d{1,2}\.\d{1,3})\s.*?(-?\d{1,2}\.\d{1,3})\s.*?(-?\d{1,2}\.\d{1,3})..*?(\*|#|\+|-|x|~)+(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\svrf\s(\S*)\s*(\.\S*\s*\.|\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\s.*?(-?\d{1,2}\.\d{1,3})\s.*?(-?\d{1,2}\.\d{1,3})\s.*?(-?\d{1,2}\.\d{1,3})
     multi_value: false
-    value: $7
+    value: $21
     labels:
-      address: $2
-      vrf: $3
-      reference_clock: $4
+      address: $16
+      vrf: $17
+      reference_clock: $18
     description: Configured peer 0 dispersion.
     metric_type_name: gauge
     command: show ntp associations
