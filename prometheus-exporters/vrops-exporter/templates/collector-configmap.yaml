@@ -6,8 +6,15 @@ data:
   collector_config.yaml: |
     default_collectors:
     #    - 'NSXTMgmtClusterStatsCollector'
+    #    - 'NSXTMgmtClusterPropertiesCollector'
+    #    - 'NSXTLogicalSwitchPropertiesCollector'
+    #    - 'NSXTMgmtNodeStatsCollector'
+    #    - 'NSXTMgmtNodePropertiesCollector'
+    #    - 'NSXTTransportNodePropertiesCollector'
+        - 'CustomInfoMetricsGenerator'
         - 'ClusterStatsCollector'
         - 'ClusterPropertiesCollector'
+        - 'DistributedvSwitchPropertiesCollector'
         - 'DatastoreStatsCollector'
         - 'DatastorePropertiesCollector'
     #    - 'HostSystemStatsCollector'
@@ -20,16 +27,22 @@ data:
     #    - 'VMStatsVirtualDiskCollector'
     #    - 'VMStatsMemoryCollector'
     #    - 'VMStatsDefaultCollector'
-    #  INFO - Alerts
+        - 'VcopsSelfMonitoringPropertiesCollector'
+        - 'VcopsSelfMonitoringStatsCollector'
+    ##  INFO - Alerts
     #    - 'NSXTAdapterAlertCollector'
     #    - 'NSXTMgmtClusterAlertCollector'
     #    - 'NSXTMgmtServiceAlertCollector'
     #    - 'NSXTMgmtNodeAlertCollector'
+    #    - 'NSXTTransportNodeAlertCollector'
+    #    - 'NSXTLogicalSwitchAlertCollector'
     #    - 'ClusterAlertCollector'
     #    - 'DatastoreAlertCollector'
     #    - 'HostSystemAlertCollector'
     #    - 'VCenterAlertCollector'
     #    - 'VMAlertCollector'
+        - 'VcopsSelfMonitoringAlertCollector'
+        - 'SDDCAlertCollector'
 
     alerts:
       alertCriticality:
@@ -37,6 +50,13 @@ data:
         - 'WARNING'
         - 'IMMEDIATE'
       activeOnly: True
+
+    CustomInfoMetricsGenerator:
+       - metric: 'vrops_virtualmachine_guest_tools_target_version'
+         values_dict:
+           # A dict with your static input > label: label_value
+           guest_tools_target_version: '10.2.0'
+
 
     ClusterPropertiesCollector:
     # INFO - Prefix: vrops_cluster_
@@ -83,6 +103,11 @@ data:
         key: "summary|total_number_vms"
       - metric_suffix: "cpu_contention_percentage"
         key: "cpu|capacity_contentionPct"
+
+    DistributedvSwitchPropertiesCollector:
+    # INFO - Prefix: vrops_distributed_virtual_switch_
+      - metric_suffix: "summary_version"
+        key: "summary|version"
 
     DatastoreStatsCollector:
     # INFO - Prefix: vrops_datastore_
@@ -468,7 +493,7 @@ data:
       - metric_suffix: "connectivity_status"
         expected: "CONNECTED"
         key: "ConnectivityStatus|ManagerConnectivityProperty"
-        
+
     NSXTTransportNodePropertiesCollector:
     # INFO - Prefix: vrops_nsxt_transport_node_
       - metric_suffix: "connectivity_status"
@@ -476,3 +501,24 @@ data:
         key: "ConnectivityStatus|TransportNodeState"
       - metric_suffix: "summary_version"
         key: "summary|SoftwareVersion"
+
+    NSXTLogicalSwitchPropertiesCollector:
+    # INFO - Prefix: vrops_nsxt_logical_switch_
+       - metric_suffix: "state"
+         expected: "SUCCESS"
+         key: "summary|LogicalSwitchStateProperty"
+
+    VcopsSelfMonitoringStatsCollector:
+    # INFO - Prefix: vrops_self_
+       - metric_suffix: "primary_objects_count"
+         key: "PrimaryResourcesCount"
+       - metric_suffix: "primary_metrics_count"
+         key: "PrimaryMetricsCount"
+
+    VcopsSelfMonitoringPropertiesCollector:
+    # INFO - Prefix: vrops_self_
+       - metric_suffix: "build_number"
+         key: "build_number"
+       - metric_suffix: "cluster_state"
+         expected: "ONLINE"
+         key: "ClusterState"

@@ -99,6 +99,7 @@
       - '{__name__=~"^es_index_store_size_bytes"}'
       - '{__name__=~"^es_fs_path_total_bytes"}'
       - '{__name__=~"^es_fs_path_available_bytes"}'
+      - '{__name__=~"^filebeat_filebeat_input_netflow"}'
       - '{__name__=~"elastiflow_thousandeyes_probes_hits"}'
       - '{__name__=~"^metis_.+"}'
       - '{__name__=~"^maria_backup_.+"}'
@@ -197,7 +198,6 @@
       - '{__name__=~"^vrops_virtualmachine_summary_ethernetcards"}'
       - '{__name__=~"^vrops_virtualmachine_runtime_connectionstate",state="disconnected"}'
       - '{__name__=~"^vrops_virtualmachine_runtime_powerstate"}'
-      - '{__name__=~"^vrops_virtualmachine_guest_tools_version"}'
       - '{__name__=~"^vrops_datastore_.+", type!~"local"}'
       - '{__name__=~"^vrops_nsxt.*"}'
 

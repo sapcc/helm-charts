@@ -34,6 +34,12 @@ readonlyrest:
         indices: ["jump-*"]
         auth_key: {{.Values.global.jump_user}}:{{.Values.global.jump_password}}
 
+      # access for logstash to write to the audit indexes
+      - name: audit
+        actions: ["indices:admin/types/exists","indices:data/read/*","indices:data/write/*","indices:admin/template/*","indices:admin/create","cluster:monitor/*"]
+        indices: ["audit-*"]
+        auth_key: {{.Values.global.audit_user}}:{{.Values.global.audit_password}}
+
       # access for jaeger to write traces indexes
       - name: jaeger
         actions: ["indices:admin/types/exists","indices:data/read/*","indices:data/write/*","indices:admin/template/*","indices:admin/create","cluster:monitor/*"]
