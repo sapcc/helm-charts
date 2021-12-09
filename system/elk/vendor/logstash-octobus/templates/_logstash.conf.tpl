@@ -10,22 +10,42 @@ input {
   }
   target => "token_response"
   request_timeout => 60
-  schedule => { every => "1m"}
+  schedule => { cron => "0 */1 * * *"}
   codec => "json"
   }
 }
 filter {
+
+ ruby {
+    init => "require 'time'"
+    code => '
+             upper = Time.now
+             upper = upper - upper.sec - 60 * upper.min
+             lower = upper - 3600
+             lower = lower.strftime "%Y-%m-%dT%H.%M.%S"
+             upper = upper.strftime "%Y-%m-%dT%H.%M.%S"
+             event.set("[timerange][lower]", lower)
+             event.set("[timerange][upper]", upper)
+            '
+  }
+
   http {
     body_format => "json"
     follow_redirects => true
-    url => "{{.Values.http_poller.url.api}}"
+    url => "{{.Values.http_poller.url.api}}?$filter=Time%20gt%20'%{[timerange][lower]}'%20and%20Time%20le%20'%{[timerange][upper]}'"
     verb => "GET"
     headers => { "Authorization" => "Bearer %{[token_response][access_token]}" }
     request_timeout => 60
     socket_timeout => 30
   }
- mutate {
-  remove_field => [ "token_response" ]
+
+  split{
+    field => "[body][value]"
+    target => "event"
+  }
+
+  mutate {
+    remove_field => [ "token_response", "timerange", "headers", "body" ]
   }
 }
 output {
