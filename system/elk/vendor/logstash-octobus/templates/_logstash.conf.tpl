@@ -60,8 +60,16 @@ filter {
     '
   }
 
+  date{
+    match => [ "[event][Time]" , "ISO8601" , "yyyy-MM-dd'T'HH.mm.ss.SSSZ" ]
+    locale => "en"
+    timezone => "UTC"
+}
+
   mutate {
     remove_field => [ "token_response", "timerange", "headers", "body" ]
+    add_tag => [ "{{.Values.http_poller.url.api}}"]
+    }
   }
 }
 output {
