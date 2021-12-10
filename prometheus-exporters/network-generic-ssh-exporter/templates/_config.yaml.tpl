@@ -454,129 +454,48 @@ metrics:
     metric_type_name: string
     command: show ntp config
     timeout_secs: 5
-  
-  xr_ntp_peer0_delay:
-    regex: >-
-      ^.*?(\*|#|\+|-|x|~)+(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\svrf\s(\S*)\s*(\.\S*\s*\.|\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\s.*?(-?\d{1,2}\.\d{1,3})\s.*?(-?\d{1,2}\.\d{1,3})\s.*?(-?\d{1,2}\.\d{1,3})..*?(\*|#|\+|-|x|~)+(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\svrf\s(\S*)\s*(\.\S*\s*\.|\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\s.*?(-?\d{1,2}\.\d{1,3})\s.*?(-?\d{1,2}\.\d{1,3})\s.*?(-?\d{1,2}\.\d{1,3})..*?(\*|#|\+|-|x|~)+(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\svrf\s(\S*)\s*(\.\S*\s*\.|\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\s.*?(-?\d{1,2}\.\d{1,3})\s.*?(-?\d{1,2}\.\d{1,3})\s.*?(-?\d{1,2}\.\d{1,3})
-    multi_value: false
-    value: $5
+
+  xr_ntp_peer_delay:
+    regex: |
+      ^\s*?(\*|#|\+|-|x|~)+(\S+)\s+vrf\s(\S+)\s*?$
+      ^\s+((\.\S+\s*\.)|(\d+|\.)+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+(\.\d+)*)\s+(-?\d+(\.\d+)*)\s+(-?\d+(\.\d+)*)
+    multi_value: true
+    value: $11
     labels:
       address: $2
       vrf: $3
       reference_clock: $4
-    description: Configured peer 0 delay.
+    description: NTP server delay
     metric_type_name: gauge
     command: show ntp associations
     timeout_secs: 5
-  
-  xr_ntp_peer0_offset:
-    regex: >-
-      ^.*?(\*|#|\+|-|x|~)+(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\svrf\s(\S*)\s*(\.\S*\s*\.|\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\s.*?(-?\d{1,2}\.\d{1,3})\s.*?(-?\d{1,2}\.\d{1,3})\s.*?(-?\d{1,2}\.\d{1,3})..*?(\*|#|\+|-|x|~)+(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\svrf\s(\S*)\s*(\.\S*\s*\.|\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\s.*?(-?\d{1,2}\.\d{1,3})\s.*?(-?\d{1,2}\.\d{1,3})\s.*?(-?\d{1,2}\.\d{1,3})..*?(\*|#|\+|-|x|~)+(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\svrf\s(\S*)\s*(\.\S*\s*\.|\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\s.*?(-?\d{1,2}\.\d{1,3})\s.*?(-?\d{1,2}\.\d{1,3})\s.*?(-?\d{1,2}\.\d{1,3})
-    multi_value: false
-    value: $6
-    labels:
-      address: $2
-      vrf: $3
-      reference_clock: $4
-    description: Configured peer 0 offset.
-    metric_type_name: gauge
-    command: show ntp associations
-    timeout_secs: 5
-  
-  xr_ntp_peer0_dispersion:
-    regex: >-
-      ^.*?(\*|#|\+|-|x|~)+(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\svrf\s(\S*)\s*(\.\S*\s*\.|\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\s.*?(-?\d{1,2}\.\d{1,3})\s.*?(-?\d{1,2}\.\d{1,3})\s.*?(-?\d{1,2}\.\d{1,3})..*?(\*|#|\+|-|x|~)+(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\svrf\s(\S*)\s*(\.\S*\s*\.|\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\s.*?(-?\d{1,2}\.\d{1,3})\s.*?(-?\d{1,2}\.\d{1,3})\s.*?(-?\d{1,2}\.\d{1,3})..*?(\*|#|\+|-|x|~)+(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\svrf\s(\S*)\s*(\.\S*\s*\.|\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\s.*?(-?\d{1,2}\.\d{1,3})\s.*?(-?\d{1,2}\.\d{1,3})\s.*?(-?\d{1,2}\.\d{1,3})
-    multi_value: false
-    value: $7
-    labels:
-      address: $2
-      vrf: $3
-      reference_clock: $4
-    description: Configured peer 0 dispersion.
-    metric_type_name: gauge
-    command: show ntp associations
-    timeout_secs: 5
-  
-  xr_ntp_peer1_delay:
-    regex: >-
-      ^.*?(\*|#|\+|-|x|~)+(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\svrf\s(\S*)\s*(\.\S*\s*\.|\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\s.*?(-?\d{1,2}\.\d{1,3})\s.*?(-?\d{1,2}\.\d{1,3})\s.*?(-?\d{1,2}\.\d{1,3})..*?(\*|#|\+|-|x|~)+(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\svrf\s(\S*)\s*(\.\S*\s*\.|\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\s.*?(-?\d{1,2}\.\d{1,3})\s.*?(-?\d{1,2}\.\d{1,3})\s.*?(-?\d{1,2}\.\d{1,3})..*?(\*|#|\+|-|x|~)+(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\svrf\s(\S*)\s*(\.\S*\s*\.|\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\s.*?(-?\d{1,2}\.\d{1,3})\s.*?(-?\d{1,2}\.\d{1,3})\s.*?(-?\d{1,2}\.\d{1,3})
-    multi_value: false
-    value: $12
-    labels:
-      address: $9
-      vrf: $10
-      reference_clock: $11
-    description: Configured peer 0 delay.
-    metric_type_name: gauge
-    command: show ntp associations
-    timeout_secs: 5
-  
-  xr_ntp_peer1_offset:
-    regex: >-
-      ^.*?(\*|#|\+|-|x|~)+(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\svrf\s(\S*)\s*(\.\S*\s*\.|\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\s.*?(-?\d{1,2}\.\d{1,3})\s.*?(-?\d{1,2}\.\d{1,3})\s.*?(-?\d{1,2}\.\d{1,3})..*?(\*|#|\+|-|x|~)+(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\svrf\s(\S*)\s*(\.\S*\s*\.|\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\s.*?(-?\d{1,2}\.\d{1,3})\s.*?(-?\d{1,2}\.\d{1,3})\s.*?(-?\d{1,2}\.\d{1,3})..*?(\*|#|\+|-|x|~)+(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\svrf\s(\S*)\s*(\.\S*\s*\.|\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\s.*?(-?\d{1,2}\.\d{1,3})\s.*?(-?\d{1,2}\.\d{1,3})\s.*?(-?\d{1,2}\.\d{1,3})
-    multi_value: false
+
+  xr_ntp_peer_offset:
+    regex: |
+      ^\s*?(\*|#|\+|-|x|~)+(\S+)\s+vrf\s(\S+)\s*?$
+      ^\s+((\.\S+\s*\.)|(\d+|\.)+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+(\.\d+)*)\s+(-?\d+(\.\d+)*)\s+(-?\d+(\.\d+)*)
+    multi_value: true
     value: $13
     labels:
-      address: $9
-      vrf: $10
-      reference_clock: $11
-    description: Configured peer 0 offset.
+      address: $2
+      vrf: $3
+      reference_clock: $4
+    description: NTP server delay
     metric_type_name: gauge
     command: show ntp associations
     timeout_secs: 5
-  
-  xr_ntp_peer1_dispersion:
-    regex: >-
-      ^.*?(\*|#|\+|-|x|~)+(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\svrf\s(\S*)\s*(\.\S*\s*\.|\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\s.*?(-?\d{1,2}\.\d{1,3})\s.*?(-?\d{1,2}\.\d{1,3})\s.*?(-?\d{1,2}\.\d{1,3})..*?(\*|#|\+|-|x|~)+(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\svrf\s(\S*)\s*(\.\S*\s*\.|\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\s.*?(-?\d{1,2}\.\d{1,3})\s.*?(-?\d{1,2}\.\d{1,3})\s.*?(-?\d{1,2}\.\d{1,3})..*?(\*|#|\+|-|x|~)+(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\svrf\s(\S*)\s*(\.\S*\s*\.|\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\s.*?(-?\d{1,2}\.\d{1,3})\s.*?(-?\d{1,2}\.\d{1,3})\s.*?(-?\d{1,2}\.\d{1,3})
-    multi_value: false
-    value: $14
+
+  xr_ntp_peer_dispersion:
+    regex: |
+      ^\s*?(\*|#|\+|-|x|~)+(\S+)\s+vrf\s(\S+)\s*?$
+      ^\s+((\.\S+\s*\.)|(\d+|\.)+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+(\.\d+)*)\s+(-?\d+(\.\d+)*)\s+(-?\d+(\.\d+)*)
+    multi_value: true
+    value: $15
     labels:
-      address: $9
-      vrf: $10
-      reference_clock: $11
-    description: Configured peer 0 dispersion.
-    metric_type_name: gauge
-    command: show ntp associations
-    timeout_secs: 5
-  
-  xr_ntp_peer2_delay:
-    regex: >-
-      ^.*?(\*|#|\+|-|x|~)+(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\svrf\s(\S*)\s*(\.\S*\s*\.|\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\s.*?(-?\d{1,2}\.\d{1,3})\s.*?(-?\d{1,2}\.\d{1,3})\s.*?(-?\d{1,2}\.\d{1,3})..*?(\*|#|\+|-|x|~)+(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\svrf\s(\S*)\s*(\.\S*\s*\.|\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\s.*?(-?\d{1,2}\.\d{1,3})\s.*?(-?\d{1,2}\.\d{1,3})\s.*?(-?\d{1,2}\.\d{1,3})..*?(\*|#|\+|-|x|~)+(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\svrf\s(\S*)\s*(\.\S*\s*\.|\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\s.*?(-?\d{1,2}\.\d{1,3})\s.*?(-?\d{1,2}\.\d{1,3})\s.*?(-?\d{1,2}\.\d{1,3})
-    multi_value: false
-    value: $19
-    labels:
-      address: $16
-      vrf: $17
-      reference_clock: $18
-    description: Configured peer 0 delay.
-    metric_type_name: gauge
-    command: show ntp associations
-    timeout_secs: 5
-  
-  xr_ntp_peer2_offset:
-    regex: >-
-      ^.*?(\*|#|\+|-|x|~)+(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\svrf\s(\S*)\s*(\.\S*\s*\.|\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\s.*?(-?\d{1,2}\.\d{1,3})\s.*?(-?\d{1,2}\.\d{1,3})\s.*?(-?\d{1,2}\.\d{1,3})..*?(\*|#|\+|-|x|~)+(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\svrf\s(\S*)\s*(\.\S*\s*\.|\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\s.*?(-?\d{1,2}\.\d{1,3})\s.*?(-?\d{1,2}\.\d{1,3})\s.*?(-?\d{1,2}\.\d{1,3})..*?(\*|#|\+|-|x|~)+(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\svrf\s(\S*)\s*(\.\S*\s*\.|\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\s.*?(-?\d{1,2}\.\d{1,3})\s.*?(-?\d{1,2}\.\d{1,3})\s.*?(-?\d{1,2}\.\d{1,3})
-    multi_value: false
-    value: $20
-    labels:
-      address: $16
-      vrf: $17
-      reference_clock: $18
-    description: Configured peer 0 offset.
-    metric_type_name: gauge
-    command: show ntp associations
-    timeout_secs: 5
-  
-  xr_ntp_peer2_dispersion:
-    regex: >-
-      ^.*?(\*|#|\+|-|x|~)+(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\svrf\s(\S*)\s*(\.\S*\s*\.|\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\s.*?(-?\d{1,2}\.\d{1,3})\s.*?(-?\d{1,2}\.\d{1,3})\s.*?(-?\d{1,2}\.\d{1,3})..*?(\*|#|\+|-|x|~)+(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\svrf\s(\S*)\s*(\.\S*\s*\.|\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\s.*?(-?\d{1,2}\.\d{1,3})\s.*?(-?\d{1,2}\.\d{1,3})\s.*?(-?\d{1,2}\.\d{1,3})..*?(\*|#|\+|-|x|~)+(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\svrf\s(\S*)\s*(\.\S*\s*\.|\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\s.*?(-?\d{1,2}\.\d{1,3})\s.*?(-?\d{1,2}\.\d{1,3})\s.*?(-?\d{1,2}\.\d{1,3})
-    multi_value: false
-    value: $21
-    labels:
-      address: $16
-      vrf: $17
-      reference_clock: $18
-    description: Configured peer 0 dispersion.
+      address: $2
+      vrf: $3
+      reference_clock: $4
+    description: NTP server delay
     metric_type_name: gauge
     command: show ntp associations
     timeout_secs: 5
@@ -682,15 +601,9 @@ batches:
     - xr_ntp_root_delay
     - xr_ntp_root_dispersion
     - xr_ntp_drift
-    - xr_ntp_peer0_delay
-    - xr_ntp_peer0_offset
-    - xr_ntp_peer0_dispersion
-    - xr_ntp_peer1_delay
-    - xr_ntp_peer1_offset
-    - xr_ntp_peer1_dispersion
-    - xr_ntp_peer2_delay
-    - xr_ntp_peer2_offset
-    - xr_ntp_peer2_dispersion
+    - xr_ntp_peer_delay
+    - xr_ntp_peer_offset
+    - xr_ntp_peer_dispersion
 
 devices:
   cisco-ios-xe:
