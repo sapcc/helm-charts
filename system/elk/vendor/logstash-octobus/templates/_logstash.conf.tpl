@@ -53,7 +53,7 @@ filter {
   ruby {
     code => '
       event.get("[event][details]").to_hash.keys.each { |k|
-      if k.start_with?('202')
+      if k.start_with?("202")
         event.remove("[event][details]" + "[" + k + "]")
       end
       }
