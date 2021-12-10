@@ -69,7 +69,6 @@ filter {
   mutate {
     remove_field => [ "token_response", "timerange", "headers", "body" ]
     add_tag => [ "{{.Values.http_poller.url.api}}"]
-    }
   }
 }
 output {
