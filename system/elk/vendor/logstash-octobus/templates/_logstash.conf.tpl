@@ -44,6 +44,12 @@ filter {
     target => "event"
   }
 
+   kv {
+     source => "[event][Message]"
+     target => "[event][details]"
+     field_split_pattern => "," 
+     }
+
   mutate {
     remove_field => [ "token_response", "timerange", "headers", "body" ]
   }
