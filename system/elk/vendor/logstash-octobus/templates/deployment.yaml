@@ -25,22 +25,22 @@ spec:
       nodeSelector:
         zone: farm
       volumes:
-        - name: logstash-etc
+        - name: logstash-octobus
           configMap:
-            name: logstash-etc
+            name: logstash-octobus
       containers:
         - name: logstash-octobus
           image: {{.Values.global.registry}}/elk-logstash:{{.Values.image_version}}
           imagePullPolicy: IfNotPresent
-          command: ["dumb-init /usr/share/logstash/bin/logstash -f /logstash-etc/logstash.conf --config.reload.automatic --path.settings /logstash-etc/"]
+          command: ["dumb-init /usr/share/logstash/bin/logstash -f /logstash-octobus/logstash.conf --config.reload.automatic --path.settings /logstash-octobus/"]
           env:
             - name: NAMESPACE
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.namespace
           volumeMounts:
-            - name: logstash-etc
-              mountPath: /logstash-etc
+            - name: logstash-octobus
+              mountPath: /logstash-octobus
 #          livenessProbe:
 #            exec:
 #              command:
