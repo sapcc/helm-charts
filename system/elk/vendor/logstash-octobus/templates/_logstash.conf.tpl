@@ -44,11 +44,21 @@ filter {
     target => "event"
   }
 
-   kv {
+  kv {
      source => "[event][Message]"
      target => "[event][details]"
      field_split_pattern => "," 
      }
+
+  ruby {
+    code => '
+      event.get("[event][details]").to_hash.keys.each { |k|
+      if k.start_with?('202')
+        event.remove("[event][details]" + "[" + k + "]")
+      end
+      }
+    '
+  }
 
   mutate {
     remove_field => [ "token_response", "timerange", "headers", "body" ]
