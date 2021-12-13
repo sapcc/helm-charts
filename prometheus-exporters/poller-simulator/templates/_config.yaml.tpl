@@ -58,5 +58,9 @@ poller:
     sesRegion: {{ .Values.config.allowedServices.email }}
     recipient: {{ .Values.simulator.recipient }}
     sender: {{ .Values.simulator.sender }}
+    tests:
+    {{- range $key, $value := .Values.simulator.poller.simulator.tests }}
+      - {{ $value }}
+  {{- end -}}
   {{- end -}}
 {{- end -}}
