@@ -1,11 +1,11 @@
 groups:
 - name: CronusAlerts
   rules:
-  - alert: CronusSendEmail
-    expr: sum(sum_over_time(aws_ses_cronus_provider_send[5m])) < 5
+  - alert: CronusSendEmails
+    expr: sum(sum_over_time(aws_ses_cronus_provider_send[5m])) < 5 or sum_over_time(cronus_simulator_send_email_rate[5m]) < 5
     for: 5m
     labels:
-      meta: Cronus - sending emails is below expected in region {{ $labels.region }}
+      meta: Cronus - sending emails is below the threshold in the region {{ $labels.region }}
       service: cronus
       severity: critical
       tier: os
@@ -13,7 +13,7 @@ groups:
     annotations:
       description: grafana - https://grafana.global.cloud.sap/d/cronushealth/cronushealth?orgId=1 , slack-cronus-dev - https://convergedcloud.slack.com/archives/G01SLHXERL5
       summary: problem with sending emails in region {{ $labels.region }}
-  - alert: CronusClusterHealth
+  - alert: CronusPodsHanging
     expr: kube_pod_container_status_running{namespace="cronus"} == 0
     for: 5m
     labels:
@@ -25,15 +25,16 @@ groups:
     annotations:
       description: grafana - https://grafana.{{ $labels.region }}.cloud.sap/d/cronushealth/cronushealth?orgId=1 , slack-cronus-dev - https://convergedcloud.slack.com/archives/G01SLHXERL5
       summary: Cronus cluster - pods fails in region {{ $labels.region }} pod {{ $labels.pod }}
-  - alert: CronusMaiaDown
-    expr: (count(aws_ses_cronus_provider_send) OR on() vector(0)) == 0
+  - alert: CronusDeliveryEmails
+    expr: sum(sum_over_time(aws_ses_cronus_provider_delivery[5m])) < 5 or sum(sum_over_time(cronus_simulator_receiving_confirmed_email_rate[5m])) < 5
     for: 5m
     labels:
-      meta: cronus maia metrics system is down
+      meta: Cronus delivery emails is below the threshold in the region {{ $labels.region }} pod {{ $labels.pod }}
       service: cronus
       severity: critical
       tier: os
-      playbook: docs/devops/alert/cronus/#maia_down
+      playbook: docs/devops/alert/cronus/#sending_email_quick_test
     annotations:
       description: grafana - https://grafana.{{ $labels.region }}.cloud.sap/d/cronushealth/cronushealth?orgId=1 , slack-cronus-dev - https://convergedcloud.slack.com/archives/G01SLHXERL5
-      summary: cronus maia metrics system is down
+      summary: problem with delivery emails in region {{ $labels.region }}
+
