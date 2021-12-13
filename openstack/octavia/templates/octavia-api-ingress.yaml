@@ -28,12 +28,13 @@ spec:
       http:
         paths:
           - path: /
-            pathType: Prefix
-            backend:
 {{- if .Capabilities.APIVersions.Has "networking.k8s.io/v1beta1" }}
+            backend:
               serviceName: octavia-api
               servicePort: {{.Values.api_port_internal}}
 {{- else }}
+            pathType: Prefix
+            backend:
               service:
                 name: octavia-api
                 port:
