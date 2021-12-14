@@ -5,6 +5,10 @@ This chart deploys a ConfigMap that contains owner info about a chart.
 This chart **should not** be deployed stand-alone, it is meant to be used as a dependency
 by other charts.
 
+**Caveat:** Only use `owner-info` for the top-level chart (i.e. the chart that you're
+deploying). If you use it for any dependencies of your top-level chart then you will get
+multiple ConfigMaps with name clash.
+
 ## Usage
 
 Add `owner-info` as a dependency to your chart's `Chart.yaml` file:
