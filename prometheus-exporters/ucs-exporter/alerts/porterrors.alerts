@@ -2,7 +2,7 @@ groups:
 - name: porterrors.alerts
   rules:
   - alert: UcsPortErrorCritical
-    expr: count(max_over_time(ucs_port_err_rcv_total{port_name !~ ".+/(aggr-port-|pc-).+"}[30m]) > 50 or max_over_time(ucs_port_err_xmit_total{port_name !~ ".+/(aggr-port-|pc-).+"}[30m]) > 50) by (server, port_name)
+    expr: delta(ucs_port_err_rcv_total{port_name !~ ".+/(aggr-port-|pc-).+"}[4h]) > 50 or delta(ucs_port_err_xmit_total{port_name !~ ".+/(aggr-port-|pc-).+"}[4h]) > 50
     for: 20m
     labels:
       severity: critical

@@ -2,14 +2,14 @@ groups:
 - name: ucsmcrcerrors.alerts
   rules:
   - alert: UcsmCRCErrorCritical
-    expr: delta(ucsm_crc_error[30m]) > 100
+    expr: delta(ucsm_crc_error[4h]) > 10
     for: 20m
     labels:
       severity: critical
       tier: metal
       service: baremetal
       context: "{{ $labels.server }}_{{ $labels.port }}"
-      meta: "Server {{ $labels.server }} has an increase of more than 100 crc errors for port {{ $labels.port }}"
+      meta: "Server {{ $labels.server }} has an increase of more than 10 crc errors in 2 days for port {{ $labels.port }}"
       no_alert_on_absence: "true"
       playbook: docs/devops/alert/baremetal/ucs.html
     annotations:
@@ -17,14 +17,14 @@ groups:
       summary: "CRC errors on server {{ $labels.server }} and port : {{ $labels.port }} are increasing"
 
   - alert: UcsmCRCErrorWarn
-    expr: delta(ucsm_crc_error[30m]) > 50
+    expr: delta(ucsm_crc_error[2h]) > 10
     for: 20m
     labels:
       severity: warning
       tier: metal
       service: baremetal
       context: "{{ $labels.server }}_{{ $labels.port }}"
-      meta: "Server {{ $labels.server }} has an increase of more than 50 crc errors for port {{ $labels.port }}"
+      meta: "Server {{ $labels.server }} has an increase of more than 10 crc errors in 1 day for port {{ $labels.port }}"
       no_alert_on_absence: "true"
       playbook: docs/devops/alert/baremetal/ucs.html
     annotations:
