@@ -5,10 +5,10 @@ metadata:
   name: owner-of-{{ .Release.Name }}
   labels:
     {{- if not (eq 0 (len .Values.maintainers)) }}
-    primary-maintainer: {{ index .Values.maintainers 0 }}
+    primary-maintainer: {{ index .Values.maintainers 0 | lower | replace " " "-" }}
     {{- end }}
 
 data:
   {{- if not (eq 0 (len .Values.maintainers)) }}
-  maintainers: {{ .Values.maintainers }}
+  maintainers: {{ join ", " .Values.maintainers | title | quote }}
   {{- end }}
