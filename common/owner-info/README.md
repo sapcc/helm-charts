@@ -1,0 +1,31 @@
+# owner-info
+
+This chart deploys a ConfigMap that contains owner info about a chart.
+
+This chart **should not** be deployed stand-alone, it is meant to be used as a dependency
+by other charts.
+
+## Usage
+
+Add `owner-info` as a dependency to your chart's `Chart.yaml` file:
+
+```yaml
+dependencies:
+  - name: owner-info
+    repository: file://../../common/owner-info # relative path from your chart
+    version: # use owner-info's current version from Chart.yaml
+```
+
+then run:
+
+```sh
+$ helm dep update
+```
+
+## Configuration
+
+The following table lists the configurable parameters of the `owner-info` chart and their default values.
+
+| Parameter | Description | Default |
+| ---       | ---         | ---     |
+| `maintainers` | List of people that maintain your chart. The list should be ordered by priority, i.e. primary maintainer should be at the top. | `[]` |
