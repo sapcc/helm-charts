@@ -92,6 +92,7 @@
       - '{__name__=~"^thousandeyes_requests_fails"}'
       - '{__name__=~"^ssh_(nx|xe)_ntp_configured"}'
       - '{__name__=~"^ssh_redundancy_state"}'
+      - '{__name__=~"^ssh_xr_ntp_*"}'
       - '{__name__=~"^fluentd_.+"}'
       - '{__name__=~"^es_cluster_status"}'
       - '{__name__=~"^es_fs_path_.+"}'
