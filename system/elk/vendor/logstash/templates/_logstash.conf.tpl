@@ -81,6 +81,7 @@ filter {
        }
     }
 {{- end}}
+  }
 
 
 output {
