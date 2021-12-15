@@ -233,21 +233,19 @@ groups:
       service: compute
       context: "{{ $labels.hostsystem }} packets dropped"
       meta: "`{{ $labels.hostsystem }}` is experiencing high number of packets dropped. ({{ $labels.vcenter }})."
-      playbook: docs/devops/alert/vcenter
       no_alert_on_absence: "true"
     annotations:
       description: "`{{ $labels.hostsystem }}` is experiencing high number of packets dropped. ({{ $labels.vcenter }})."
       summary: "`{{ $labels.hostsystem }}` is experiencing high number of packets dropped. ({{ $labels.vcenter }})."
 
   - alert: HostNicLinkFlappingAlert
-    expr: vrops_hostsystem_alert_info{alert_name=~"ESXi host has detected a link status.*"}
+    expr: vrops_hostsystem_alert_info{alert_name=~"ESXi host has detected a link status /"flapping"/ on a physical NIC"}
     labels:
       severity: info
       tier: vmware
       service: compute
       context: "{{ $labels.hostsystem }} link flapping"
       meta: "`{{ $labels.hostsystem }}` has detected a link status flapping on a physical NIC. ({{ $labels.vcenter }})."
-      playbook: docs/devops/alert/vcenter
       no_alert_on_absence: "true"
     annotations:
       description: "`{{ $labels.hostsystem }}` has detected a link status flapping on a physical NIC. ({{ $labels.vcenter }})."
@@ -261,7 +259,6 @@ groups:
       service: compute
       context: "{{ $labels.hostsystem }} IPMI log"
       meta: "IPMI System Event Log for `{{ $labels.hostsystem }}` is becoming full. ({{ $labels.vcenter }}) {{ $labels.recommendation_1 }}"
-      playbook: docs/devops/alert/vcenter
       no_alert_on_absence: "true"
     annotations:
       description: "IPMI System Event Log for `{{ $labels.hostsystem }}` is becoming full. ({{ $labels.vcenter }}) {{ $labels.recommendation_1 }}"
@@ -275,7 +272,6 @@ groups:
       service: compute
       context: "{{ $labels.hostsystem }} root fs"
       meta: "`{{ $labels.hostsystem }}` root filesystem not present through CMMDS or is not responsive. ({{ $labels.vcenter }})"
-      playbook: docs/devops/alert/vcenter
       no_alert_on_absence: "true"
     annotations:
       description: "`{{ $labels.hostsystem }}` root filesystem not present through CMMDS or is not responsive. ({{ $labels.vcenter }})"
