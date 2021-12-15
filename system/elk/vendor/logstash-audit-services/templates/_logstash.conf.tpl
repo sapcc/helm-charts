@@ -74,7 +74,7 @@ filter {
 output {
     elasticsearch {
       index => "audit-%{+YYYY.MM.dd}"
-      template => "/logstash-octobus/audit.json"
+      template => "/logstash-audit-services/audit.json"
       template_name => "audit"
       template_overwrite => true
       hosts => ["{{.Values.global.elk_elasticsearch_endpoint_host_scaleout}}.{{.Values.global.elk_cluster_region}}.{{.Values.global.tld}}:{{.Values.global.elk_elasticsearch_ssl_port}}"]
