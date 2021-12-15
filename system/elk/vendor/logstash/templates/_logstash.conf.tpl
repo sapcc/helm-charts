@@ -81,7 +81,7 @@ filter {
        }
     }
 {{- end}}
-}	
+
 
 output {
   if  [type] == "netflow" {
