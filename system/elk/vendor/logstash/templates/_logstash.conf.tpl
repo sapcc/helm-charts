@@ -39,6 +39,21 @@ input {
 }
 
 filter {
+  if  [type] == "syslog" {
+    mutate {
+      replace => { "host" => "[host][ip]"}
+      copy => { "[host][ip]" => "[host][name]"}
+    }
+
+    dns {
+      reverse => [ "[host][name]" ]
+      action => "replace"
+      hit_cache_size => "100"
+      hit_cache_ttl => "2678600"
+      failed_cache_size => "100"
+      failed_cache_ttl => "3600"
+    }
+  }
     if  [type] == "bigiplogs" {
            grok {
          tag_on_failure => ["bigiplogs_grok_parse-failure", "grok"]
