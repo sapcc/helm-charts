@@ -199,7 +199,7 @@ groups:
       description: "vSphere High Availability (HA) has detected a possible host failure for `{{ $labels.hostsystem }}`. ({{ $labels.vcenter }})"
       summary: "vSphere High Availability (HA) has detected a possible host failure for `{{ $labels.hostsystem }}`. ({{ $labels.vcenter }})."
 
-  - alert: HostMemoryUtilizationHigh
+  - alert: APodMemoryUtilizationHigh
     expr: vrops_hostsystem_memory_usage_percentage{vccluster=~".*management.*"} > 90
     for: 30m
     labels:
@@ -207,12 +207,12 @@ groups:
       tier: vmware
       service: compute
       context: "{{ $labels.hostsystem }} memory"
-      meta: "Memory utilization of host {{ $labels.hostsystem }} is above 90%. ({{ $labels.vcenter }}, {{ $labels.vccluster }})"
+      meta: "Memory utilization of host {{ $labels.hostsystem }} is above 90%. ({{ $labels.vcenter }})"
     annotations:
-      description: "Memory utilization of host {{ $labels.hostsystem }} is above 90%. ({{ $labels.vcenter }}, {{ $labels.vccluster }})"
-      summary: "Memory utilization of host {{ $labels.hostsystem }} is above 90%. ({{ $labels.vcenter }}, {{ $labels.vccluster }})"
+      description: "Memory utilization of host {{ $labels.hostsystem }} is above 90%. ({{ $labels.vcenter }})"
+      summary: "Memory utilization of host {{ $labels.hostsystem }} is above 90%. ({{ $labels.vcenter }})"
 
-  - alert: HostCPUUtilizationHigh
+  - alert: APodCPUUtilizationHigh
     expr: vrops_hostsystem_cpu_usage_average_percentage{vccluster=~".*management.*"} > 90
     for: 30m
     labels:
@@ -220,7 +220,59 @@ groups:
       tier: vmware
       service: compute
       context: "{{ $labels.hostsystem }} cpu"
-      meta: "CPU utilization of host {{ $labels.hostsystem }} is above 90%. ({{ $labels.vcenter }}, {{ $labels.vccluster }})"
+      meta: "CPU utilization of host {{ $labels.hostsystem }} is above 90%. ({{ $labels.vcenter }})"
     annotations:
-      description: "CPU utilization of host {{ $labels.hostsystem }} is above 90%. ({{ $labels.vcenter }}, {{ $labels.vccluster }})"
-      summary: "CPU utilization of host {{ $labels.hostsystem }} is above 90%. ({{ $labels.vcenter }}, {{ $labels.vccluster }})"
+      description: "CPU utilization of host {{ $labels.hostsystem }} is above 90%. ({{ $labels.vcenter }})"
+      summary: "CPU utilization of host {{ $labels.hostsystem }} is above 90%. ({{ $labels.vcenter }})"
+
+  - alert: HostHighNumberOfPacketsDropped
+    expr: vrops_hostsystem_alert_info{alert_name="Host is experiencing high number of packets dropped"}
+    labels:
+      severity: info
+      tier: vmware
+      service: compute
+      context: "{{ $labels.hostsystem }} packets dropped"
+      meta: "`{{ $labels.hostsystem }}` is experiencing high number of packets dropped. ({{ $labels.vcenter }})."
+      no_alert_on_absence: "true"
+    annotations:
+      description: "`{{ $labels.hostsystem }}` is experiencing high number of packets dropped. ({{ $labels.vcenter }})."
+      summary: "`{{ $labels.hostsystem }}` is experiencing high number of packets dropped. ({{ $labels.vcenter }})."
+
+  - alert: HostNicLinkFlappingAlert
+    expr: vrops_hostsystem_alert_info{alert_name=~"ESXi host has detected a link status.*flapping.*on a physical NIC"}
+    labels:
+      severity: info
+      tier: vmware
+      service: compute
+      context: "{{ $labels.hostsystem }} link flapping"
+      meta: "`{{ $labels.hostsystem }}` has detected a link status flapping on a physical NIC. ({{ $labels.vcenter }})."
+      no_alert_on_absence: "true"
+    annotations:
+      description: "`{{ $labels.hostsystem }}` has detected a link status flapping on a physical NIC. ({{ $labels.vcenter }})."
+      summary: "`{{ $labels.hostsystem }}` has detected a link status flapping on a physical NIC. ({{ $labels.vcenter }})."
+
+  - alert: HostSystemEventLogSensorAlert
+    expr: vrops_hostsystem_alert_info{alert_name="IPMI System Event Log for the host is becoming full"}
+    labels:
+      severity: info
+      tier: vmware
+      service: compute
+      context: "{{ $labels.hostsystem }} IPMI log"
+      meta: "IPMI System Event Log for `{{ $labels.hostsystem }}` is becoming full. ({{ $labels.vcenter }}) {{ $labels.recommendation_1 }}"
+      no_alert_on_absence: "true"
+    annotations:
+      description: "IPMI System Event Log for `{{ $labels.hostsystem }}` is becoming full. ({{ $labels.vcenter }}) {{ $labels.recommendation_1 }}"
+      summary: "IPMI System Event Log for `{{ $labels.hostsystem }}` is becoming full. ({{ $labels.vcenter }}) {{ $labels.recommendation_1 }}"
+
+  - alert: HostRootFilesystemUnhealthy
+    expr: vrops_hostsystem_alert_info{alert_name="Root filesystem not present through CMMDS or is not responsive."}
+    labels:
+      severity: info
+      tier: vmware
+      service: compute
+      context: "{{ $labels.hostsystem }} root fs"
+      meta: "`{{ $labels.hostsystem }}` root filesystem not present through CMMDS or is not responsive. ({{ $labels.vcenter }})"
+      no_alert_on_absence: "true"
+    annotations:
+      description: "`{{ $labels.hostsystem }}` root filesystem not present through CMMDS or is not responsive. ({{ $labels.vcenter }})"
+      summary: "`{{ $labels.hostsystem }}` root filesystem not present through CMMDS or is not responsive. ({{ $labels.vcenter }})"
