@@ -52,6 +52,18 @@ concourse:
         operator: Equal
         value: "system"
         effect: "NoSchedule"
+    additionalAffinities:
+      podAntiAffinity:
+        preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                  - key: app
+                    operator: In
+                    values:
+                    - concourse-main-web
+              topologyKey: "kubernetes.io/hostname"
 
   persistence:
     enabled: false
