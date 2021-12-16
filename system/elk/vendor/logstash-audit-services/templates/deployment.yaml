@@ -1,14 +1,14 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: logstash-octobus
+  name: logstash-audit-services
   namespace: elk
   labels:
-    component: logstash-octobus
+    component: logstash-audit-services
 spec:
   selector:
     matchLabels:
-      component: logstash-octobus
+      component: logstash-audit-services
   replicas: 1
   strategy:
     type: RollingUpdate
@@ -18,33 +18,33 @@ spec:
   template:
     metadata:
       labels:
-        component: logstash-octobus
+        component: logstash-audit-services
       annotations:
         checksum/configmap.yaml: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
     spec:
       nodeSelector:
         zone: farm
       volumes:
-        - name: logstash-octobus
+        - name: logstash-etc
           configMap:
-            name: logstash-octobus
+            name: logstash-audit-services
       containers:
-        - name: logstash-octobus
+        - name: logstash-audit-services
           image: {{.Values.global.registry}}/elk-logstash:{{.Values.image_version}}
           imagePullPolicy: IfNotPresent
           command:
             - /usr/share/logstash/bin/logstash
           args:
             - -f
-            - /logstash-octobus/logstash.conf
+            - /logstash-etc/logstash.conf
           env:
             - name: NAMESPACE
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.namespace
           volumeMounts:
-            - name: logstash-octobus
-              mountPath: /logstash-octobus
+            - name: logstash-etc
+              mountPath: /logstash-etc
 #          livenessProbe:
 #            exec:
 #              command:

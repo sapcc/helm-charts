@@ -2,13 +2,13 @@ apiVersion: v1
 kind: Service
 
 metadata:
-  name: logstash-external
+  name: logstash-audit-external
   annotations:
     parrot.sap.cc/announce: 'true'
 
 spec:
   selector:
-    component: logstash-external
+    component: logstash-audit-external
   type: NodePort
   externalTrafficPolicy: Local
   ports:
@@ -36,10 +36,8 @@ spec:
       protocol: TCP
       port: {{.Values.input_deployments_port}}
       targetPort: {{.Values.input_deployments_port}}
-{{- if .Values.tls.enabled }}
     - name: https
       protocol: TCP
       port: {{.Values.input_http_port}}
       targetPort: {{.Values.input_http_port}}
-{{- end}}
   externalIPs: ["{{.Values.external_ip}}"]

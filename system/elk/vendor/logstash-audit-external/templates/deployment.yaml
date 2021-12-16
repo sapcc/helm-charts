@@ -1,14 +1,14 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: logstash-external
+  name: logstash-audit-external
   namespace: elk
   labels:
-    component: logstash-external
+    component: logstash-audit-external
 spec:
   selector:
     matchLabels:
-      component: logstash-external
+      component: logstash-audit-external
   replicas: 1
   strategy:
     type: RollingUpdate
@@ -18,7 +18,7 @@ spec:
   template:
     metadata:
       labels:
-        component: logstash-external
+        component: logstash-audit-external
       annotations:
         checksum/configmap.yaml: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
     spec:
@@ -27,14 +27,12 @@ spec:
       volumes:
         - name: elk-etc
           configMap:
-            name: logstash-etc
-{{- if .Values.tls.enabled }}	
+            name: logstash-audit-external-etc
         - name: tls-secret
           secret:
-            secretName: tls-logstash
-{{- end}}
+            secretName: tls-logstash-audit-external
       containers:
-        - name: logstash-external
+        - name: logstash-audit-external
           image: {{.Values.global.registry}}/elk-logstash:{{.Values.image_version}}
           imagePullPolicy: IfNotPresent
           ports:
@@ -56,11 +54,9 @@ spec:
             - name: deploymentstcp
               containerPort: {{.Values.input_deployments_port}}
               protocol: TCP
-{{- if .Values.tls.enabled }}
             - name: https
               containerPort: {{.Values.input_http_port}}
               protocol: TCP
-{{- end}}
           command: ["dumb-init","/bin/bash","/elk-etc/start.sh"]
           env:
             - name: NAMESPACE
@@ -70,10 +66,8 @@ spec:
           volumeMounts:
             - name: elk-etc
               mountPath: /elk-etc
-{{- if .Values.tls.enabled }}
             - mountPath: /tls-secret
               name: tls-secret
-{{- end}}
 #          livenessProbe:
 #            exec:
 #              command:

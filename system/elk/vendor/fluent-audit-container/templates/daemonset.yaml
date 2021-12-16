@@ -2,14 +2,14 @@ kind: DaemonSet
 apiVersion: apps/v1
 
 metadata:
-  name: fluent-octobus
+  name: fluent-audit-container
   namespace: elk
   labels:
-    component: fluent-octobus
+    component: fluent-audit-container
 spec:
   selector:
     matchLabels:
-      component: fluent-octobus
+      component: fluent-audit-container
   minReadySeconds: 15
   updateStrategy:
     type: RollingUpdate
@@ -18,9 +18,9 @@ spec:
   template:
     metadata:
       labels:
-        component: fluent-octobus
+        component: fluent-audit-container
       annotations:
-        checksum/fluent-octobus-bin-configmap.yaml: {{ include  (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        checksum/fluent-audit-container-bin-configmap.yaml: {{ include  (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
         checksum/fluent.conf: {{ include  (print $.Template.BasePath "/_fluent.conf.tpl") . | sha256sum }}
         checksum/prometheus.conf: {{ include  (print $.Template.BasePath "/_prometheus.conf.tpl") . | sha256sum }}
         checksum/fluent-start: {{ include  (print $.Template.BasePath "/_fluent-start.tpl") . | sha256sum }}
@@ -37,7 +37,7 @@ spec:
       volumes:
         - name: fluent-bin
           configMap:
-            name: fluent-octobus-bin
+            name: fluent-audit-container-bin
         - name: varlog
           hostPath:
             path: /var/log
@@ -45,7 +45,7 @@ spec:
           hostPath:
             path: /var/lib/docker/containers
       containers:
-        - name: fluent-octobus
+        - name: fluent-audit-container
           image: {{.Values.global.registry}}/elk-fluent:{{.Values.image_version}}
           imagePullPolicy: IfNotPresent
           command: ["/usr/local/bin/dumb-init", "/bin/bash", "/fluent-bin/fluent-start"]

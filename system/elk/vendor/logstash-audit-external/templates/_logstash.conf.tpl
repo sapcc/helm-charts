@@ -25,17 +25,15 @@ input {
     type => deployment
     codec => plain
   }
-{{- if .Values.tls.enabled }}
   http {
     port  => {{.Values.input_http_port}}
-    type => awx
-    user => '{{.Values.global.elk_elasticsearch_awx_user}}'
-    password => '{{.Values.global.elk_elasticsearch_awx_password}}'
+    type => audit
+    user => '{{.Values.global.elk_elasticsearch_http_user}}'
+    password => '{{.Values.global.elk_elasticsearch_http_password}}'
     ssl => true
     ssl_certificate => '/tls-secret/tls.crt'
     ssl_key => '/usr/share/logstash/config/tls.key'
   }
-{{- end}}
 }
 
 filter {
@@ -89,26 +87,19 @@ filter {
          }
        }
     }
-{{- if .Values.tls.enabled }}
-    if [type] == "awx" {
-       json {
-         source => "message"
-       }
-    }
-{{- end}}
   }
 
 
 output {
-  if  [type] == "netflow" {
+  if [type] == "audit" {
     elasticsearch {
-      index => "netflow-%{+YYYY.MM.dd}"
-      template => "/elk-etc/netflow.json"
-      template_name => "netflow"
+      index => "audit-%{+YYYY}"
+      template => "/elk-etc/audit.json"
+      template_name => "audit"
       template_overwrite => true
       hosts => ["{{.Values.global.elk_elasticsearch_endpoint_host_scaleout}}.{{.Values.global.elk_cluster_region}}.{{.Values.global.tld}}:{{.Values.global.elk_elasticsearch_ssl_port}}"]
-      user => "{{.Values.global.elk_elasticsearch_data_user}}"
-      password => "{{.Values.global.elk_elasticsearch_data_password}}"
+      user => "{{.Values.global.elk_elasticsearch_audit_user}}"
+      password => "{{.Values.global.elk_elasticsearch_audit_password}}"
       ssl => true
     }
   }
@@ -184,12 +175,11 @@ output {
       ssl => true
     }
   }
-{{- if .Values.tls.enabled }}
-  elseif [type] == "awx" {
+  elseif  [type] == "netflow" {
     elasticsearch {
-      index => "deployments-%{+YYYY}"
-      template => "/elk-etc/deployments.json"
-      template_name => "deployments"
+      index => "netflow-%{+YYYY.MM.dd}"
+      template => "/elk-etc/netflow.json"
+      template_name => "netflow"
       template_overwrite => true
       hosts => ["{{.Values.global.elk_elasticsearch_endpoint_host_scaleout}}.{{.Values.global.elk_cluster_region}}.{{.Values.global.tld}}:{{.Values.global.elk_elasticsearch_ssl_port}}"]
       user => "{{.Values.global.elk_elasticsearch_data_user}}"
@@ -197,5 +187,4 @@ output {
       ssl => true
     }
   }
-{{- end}}
 }
