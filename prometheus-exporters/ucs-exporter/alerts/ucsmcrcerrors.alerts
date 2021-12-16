@@ -1,8 +1,10 @@
+# Alerts for port CRC errors
 groups:
 - name: ucsmcrcerrors.alerts
   rules:
-  - alert: UcsmCRCErrorCritical
-    expr: delta(ucsm_crc_error[4h]) > 10
+  - alert: UcsmPortCrcCritical
+    # Filter out Breakout Ports (aggr-port) and Portchannels (pc-)
+    expr: delta(ucsm_crc_error{port !~ ".+/(aggr-port-|pc-).+"}[4h]) > 5
     for: 20m
     labels:
       severity: critical
@@ -16,8 +18,9 @@ groups:
       description: "CRC errors on server {{ $labels.server }} and port : {{ $labels.port }} are increasing"
       summary: "CRC errors on server {{ $labels.server }} and port : {{ $labels.port }} are increasing"
 
-  - alert: UcsmCRCErrorWarn
-    expr: delta(ucsm_crc_error[2h]) > 10
+  - alert: UcsmBreakoutPortCrcCritical
+    # Only alert on Breakout Ports (aggr-port)
+    expr: delta(ucsm_crc_error{port =~ ".+/aggr-port-.+"}[4h]) > 1000
     for: 20m
     labels:
       severity: warning
