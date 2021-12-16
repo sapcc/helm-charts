@@ -16,7 +16,7 @@ Add `owner-info` as a dependency to your chart's `Chart.yaml` file:
 ```yaml
 dependencies:
   - name: owner-info
-    repository: file://../../common/owner-info # relative path from your chart
+    repository: https://charts.eu-de-2.cloud.sap
     version: # use owner-info's current version from Chart.yaml
 ```
 
@@ -30,6 +30,6 @@ $ helm dep update
 
 The following table lists the configurable parameters of the `owner-info` chart and their default values.
 
-| Parameter | Required | Description |
+| Parameter | Default | Description |
 | ---       | ---         | ---     |
-| `maintainers` | yes | List of people that maintain your chart. The list should be ordered by priority, i.e. primary maintainer should be at the top. |
+| `maintainers` | `[]` | List of people that maintain your chart. The list should be ordered by priority, i.e. primary maintainer should be at the top. |
