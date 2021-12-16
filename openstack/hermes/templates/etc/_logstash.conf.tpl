@@ -164,6 +164,56 @@ filter {
   clone {
     clones => ['clone_for_audit', 'clone_for_swift', 'clone_for_cc']
   }
+
+  if [initiator][id]{
+    jdbc_static {
+      id => "jdbc"
+      loaders => [
+        {
+          id  => "keystone_user_domain"
+          query => "select u.id as user_id, m.local_id as user_name, p.id as domain_id, p.name as domain_name  from keystone.user as u left join keystone.id_mapping m on m.public_id = u.id left join keystone.project as p on p.id = u.domain_id where p.name = \"ccadmin\";"
+        }
+      ]
+
+      local_db_objects => [
+        {
+          name => "user_domain_mapping"
+          index_columns => ["user_id"]
+          columns => [
+            ["user_id", "varchar(64)"],
+            ["user_name", "varchar(64)"],
+            ["domain_id", "varchar(64)"],
+            ["domain_name", "varchar(64)"]
+          ]
+        }
+      ]
+
+      local_lookups => [
+        {
+          id => "domain_lookup"
+          query => "select user_name, domain_id, domain_name from user_domain_mapping where user_id = ?;"
+          prepared_parameters => ["[initiator][id]"]
+          target => "domain_mapping"
+        }
+      ]
+      staging_directory => "/tmp/logstash/jdbc_static/import_data"
+      loader_schedule => "{{ .Values.logstash.jdbc.schedule }}"
+      jdbc_user => "{{ .Values.global.metis.user }}"
+      jdbc_password => "${METIS_PASSWORD}"
+      jdbc_driver_class => "com.mysql.cj.jdbc.Driver"
+      jdbc_driver_library => ""
+      jdbc_connection_string => "jdbc:mysql://{{ .Values.logstash.jdbc.service }}.{{ .Values.logstash.jdbc.namespace }}:3306/{{ .Values.logstash.jdbc.db }}"
+  }
+  if [domain_mapping] and [domain_mapping][0]{
+    mutate {
+      add_field => {
+          "[initiator][user]" => "%{[domain_mapping][0][user_name]}"
+          "[initiator][domain_id]" => "%{[domain_mapping][0][domain_id]}"
+          "[initiator][domain_name]" => "%{[domain_mapping][0][domain_name]}"
+      }
+      remove_field => { [ "domain_mapping" ] }
+    }
+  }
 }
 
 output {
