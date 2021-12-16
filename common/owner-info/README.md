@@ -30,6 +30,6 @@ $ helm dep update
 
 The following table lists the configurable parameters of the `owner-info` chart and their default values.
 
-| Parameter | Description | Default |
+| Parameter | Required | Description |
 | ---       | ---         | ---     |
-| `maintainers` | List of people that maintain your chart. The list should be ordered by priority, i.e. primary maintainer should be at the top. | `[]` |
+| `maintainers` | yes | List of people that maintain your chart. The list should be ordered by priority, i.e. primary maintainer should be at the top. |
