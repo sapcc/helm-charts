@@ -1,0 +1,42 @@
+# prettier-ignore
+apiVersion: networking.k8s.io/v1beta1
+kind: Ingress
+metadata:
+  name: cypress-ingress
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    kubernetes.io/tls-acme: "true"
+spec:
+  tls:
+    - hosts:
+        - "*.cypress.{{ .Values.region }}.cloud.sap"
+      secretName: tls-cypress-ingress
+  rules:
+    - host: api.cypress.{{ .Values.region }}.cloud.sap
+      http:
+        paths:
+          - path: /
+            backend:
+              serviceName: cypress-service
+              servicePort: 4000
+    - host: dashboard.cypress.{{ .Values.region }}.cloud.sap
+      http:
+        paths:
+          - path: /
+            backend:
+              serviceName: cypress-service
+              servicePort: 8080
+    - host: director.cypress.{{ .Values.region }}.cloud.sap
+      http:
+        paths:
+          - path: /
+            backend:
+              serviceName: cypress-service
+              servicePort: 1234
+    - host: storage.cypress.{{ .Values.region }}.cloud.sap
+      http:
+        paths:
+          - path: /
+            backend:
+              serviceName: cypress-service
+              servicePort: 9000

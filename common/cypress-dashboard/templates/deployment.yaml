@@ -1,0 +1,159 @@
+# prettier-ignore
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: cypress-dashboard
+    version: {{ .Values.version | quote }}
+  name: cypress-dashboard
+spec:
+  strategy:
+    type: Recreate
+  replicas: {{ .Values.replica_count}}
+  selector:
+    matchLabels:
+      app: cypress-dashboard
+  template:
+    metadata:
+      labels:
+        app: cypress-dashboard
+    spec:
+      volumes:
+        - name: cypress-data
+          persistentVolumeClaim:
+            claimName: cypress-pvc
+
+      # https://docs.sorry-cypress.dev/configuration/persistent
+      containers:
+        - name: mongo
+          image: keppel.eu-de-1.cloud.sap/ccloud-dockerhub-mirror/library/mongo:{{ .Values.version.mongo }}
+          volumeMounts:
+            - name: cypress-data
+              subPath: mongo
+              mountPath: /data/db
+          ports:
+            - containerPort: 27017
+              protocol: TCP
+
+        # https://docs.sorry-cypress.dev/configuration/director-configuration
+        - name: director
+          image: keppel.eu-de-1.cloud.sap/ccloud-dockerhub-mirror/agoldis/sorry-cypress-director:{{ .Values.version.directory }}
+          env:
+            - name: DASHBOARD_URL
+              value: "https://dashboard.cypress.{{ .Values.region }}.cloud.sap"
+            - name: EXECUTION_DRIVER
+              value: "../execution/mongo/driver"
+            - name: MONGODB_URI
+              value: "mongodb://localhost:27017"
+            - name: MONGODB_DATABASE
+              value: "sorry-cypress"
+            - name: SCREENSHOTS_DRIVER
+              value: "../screenshots/minio.driver"
+            - name: MINIO_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: cypress-dashboard-secret
+                  key: MINIO_ACCESS_KEY
+            - name: MINIO_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: cypress-dashboard-secret
+                  key: MINIO_SECRET_KEY
+            - name: MINIO_ENDPOINT
+              value: "storage.cypress.{{ .Values.region }}.cloud.sap"
+            - name: MINIO_URL
+              value: "https://storage.cypress.{{ .Values.region }}.cloud.sap"
+            - name: MINIO_PORT
+              value: "443"
+            - name: MINIO_USESSL
+              value: "true"
+            - name: MINIO_BUCKET
+              value: "sorry-cypress"
+          ports:
+            - containerPort: 1234
+              protocol: TCP
+
+        # https://docs.sorry-cypress.dev/configuration/api-configuration
+        - name: api
+          image: keppel.eu-de-1.cloud.sap/ccloud-dockerhub-mirror/agoldis/sorry-cypress-api:{{ .Values.version.api }}
+          env:
+            - name: MONGODB_URI
+              value: "mongodb://localhost:27017"
+            - name: MONGODB_DATABASE
+              value: "sorry-cypress"
+          ports:
+            - containerPort: 4000
+              protocol: TCP
+#          livenessProbe:
+#            httpGet:
+#              path: /
+#              port: 4000
+#            timeoutSeconds: 10
+#            periodSeconds: 60
+#            initialDelaySeconds: 60
+#          readinessProbe:
+#            httpGet:
+#              path: /
+#              port: 4000
+#            timeoutSeconds: 5
+#            periodSeconds: 5
+
+        # https://docs.sorry-cypress.dev/configuration/dashboard-configuration/configuration
+        - name: dashboard
+          image: keppel.eu-de-1.cloud.sap/ccloud-dockerhub-mirror/agoldis/sorry-cypress-dashboard:{{ .Values.version.dashboard }}
+          env:
+            - name: GRAPHQL_SCHEMA_URL
+              value: "https://api.cypress.{{ .Values.region }}.cloud.sap"
+            - name: GRAPHQL_CLIENT_CREDENTIALS
+              value: ""
+            - name: PORT
+              value: "8080"
+            - name: CI_URL
+              value: ""
+          ports:
+            - containerPort: 8080
+              protocol: TCP
+
+        # https://docs.sorry-cypress.dev/configuration/director-configuration/minio-configuration
+        - name: storage
+          image: keppel.eu-de-1.cloud.sap/ccloud-dockerhub-mirror/minio/minio:{{ .Values.version.minio }}
+          args: ["server", "/data"]
+          env:
+            - name: MINIO_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: cypress-dashboard-secret
+                  key: MINIO_ACCESS_KEY
+            - name: MINIO_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: cypress-dashboard-secret
+                  key: MINIO_SECRET_KEY
+          volumeMounts:
+            - name: cypress-data
+              subPath: minio
+              mountPath: /data
+          ports:
+            - containerPort: 9000
+              protocol: TCP
+
+        # this is to create the sorry cypress bucket for first time
+        - name: createbuckets
+          image: keppel.eu-de-1.cloud.sap/ccloud-dockerhub-mirror/minio/mc:{{ .Values.version.mc }}
+          env:
+            - name: MINIO_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: cypress-dashboard-secret
+                  key: MINIO_ACCESS_KEY
+            - name: MINIO_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: cypress-dashboard-secret
+                  key: MINIO_SECRET_KEY
+          command:
+            [
+              "/bin/sh",
+              "-c",
+              "sleep 10; /usr/bin/mc config host add myminio http://localhost:9000 $MINIO_ACCESS_KEY $MINIO_SECRET_KEY; /usr/bin/mc rm -r --dangerous --force myminio/sorry-cypress; /usr/bin/mc mb myminio/sorry-cypress; /usr/bin/mc policy set download myminio/sorry-cypress; /usr/bin/mc policy set public myminio/sorry-cypress; tail -f /dev/null",
+            ]
