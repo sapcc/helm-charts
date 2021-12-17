@@ -39,12 +39,11 @@ input {
 filter {
  if  [type] == "syslog" {
    mutate {
-     rename => { "host" => "[host][ip]"}
-     copy => { "[host][ip]" => "[host][name]"}
+     copy => { "host" => "hostname"}
    }
 
    dns {
-     reverse => [ "[host][name]" ]
+     reverse => [ "hostname" ]
      action => "replace"
      hit_cache_size => "100"
      hit_cache_ttl => "2678600"
