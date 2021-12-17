@@ -1,3 +1,8 @@
+## 4.4.7
+
+* Added alert for duplicate scraping of targets.
+* Fix double scraping of kube-dns.
+
 ## 4.4.0
 
 * Update Prometheus to `v2.31.1`.
