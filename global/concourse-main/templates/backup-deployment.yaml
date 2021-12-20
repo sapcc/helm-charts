@@ -17,7 +17,7 @@ spec:
         image: "{{ index .Values "backup" "image" }}:{{ index .Values "backup" "imageTag" }}"
         env:
         - name: MY_POD_NAME
-          value: "concourse-postgresql"
+          value: "{{ .Release.Name }}-postgresql"
         - name: MY_POD_NAMESPACE
           value: {{ .Release.Namespace | quote }}
         - name: OS_AUTH_URL
@@ -35,13 +35,19 @@ spec:
         - name: OS_REGION_NAME
           value: {{ .Values.backup.os_region_name | quote }}
         - name: OS_PASSWORD
-          value: {{ .Values.backup.os_password | quote }}
+          valueFrom:
+            secretKeyRef:
+              name: concourse-backup
+              key: os-password
         - name: BACKUP_PGSQL_FULL
           value: {{ .Values.backup.interval_full | quote }}
         - name: PGSQL_HOST
-          value: {{ .Values.concourse.concourse.web.postgres.host | quote }}
+          value: {{ .Release.Name }}-postgresql
         - name: PGSQL_USER
           value: {{ .Values.concourse.postgresql.postgresqlUsername | quote }}
         - name: PGPASSWORD
-          value: {{ .Values.concourse.postgresql.postgresqlPassword | quote }}
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Release.Name }}-postgresql
+              key: postgresql-password
 {{- end }}
