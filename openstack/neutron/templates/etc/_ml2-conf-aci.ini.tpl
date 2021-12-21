@@ -32,6 +32,9 @@ default_baremetal_pc_policy_group = {{ .Values.aci.default_baremetal_pc_policy_g
 {{- if .Values.aci.baremetal_reserved_vlan_ids }}
 baremetal_reserved_vlan_ids = {{ .Values.aci.baremetal_reserved_vlan_ids }}
 {{- end }}
+{{- if .Values.aci.az_checks_enabled }}
+az_checks_enabled = {{ .Values.aci.az_checks_enabled }}
+{{- end }}
 
 {{- if .Values.aci.pc_policy_groups }}
 {{ range $i, $pc_policy_group := .Values.aci.pc_policy_groups }}
@@ -101,13 +104,14 @@ segment_id = {{ $fixed_binding.segment_id }}
 {{ end }}
 
 #AddressScope
-{{- range $i, $address_scope := .Values.aci.address_scopes }}
+{{ range $i, $address_scope := concat .Values.global_address_scopes .Values.local_address_scopes -}}
 {{ $address_scope.description }}
 [address-scope:{{ $address_scope.name }}]
-l3_outs = {{ $address_scope.l3_outs }}
-contracts = {{ $address_scope.contracts }}
+l3_outs = {{ default (print "common/"  $address_scope.vrf) $address_scope.l3_outs}}
+consumed_contracts = {{ default $address_scope.vrf (join "," $address_scope.consumed_contracts) }}
+provided_contracts = {{ default $address_scope.vrf (join "," $address_scope.provided_contracts) }}
 scope = {{ default "public" $address_scope.scope }}
-vrf={{ $address_scope.vrf }}
+vrf = {{ $address_scope.vrf }}
 {{ end }}
 
 {{- else -}}

@@ -17,6 +17,7 @@ spec:
         checksum/bind.config: {{ include "bind/templates/config.yaml" . | sha256sum }}
     spec:
       affinity:
+        {{ if not .Values.anti_affinity_disabled }}
         podAntiAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
             - labelSelector:
@@ -42,9 +43,10 @@ spec:
                     {{ if eq .Values.name (printf "bind1-global-%s" (.Values.global.region)) }}- bind2-global-{{.Values.global.region}}{{ end }}
                     {{ if eq .Values.name (printf "bind2-global-%s" (.Values.global.region)) }}- bind1-global-{{.Values.global.region}}{{ end }}
               topologyKey: "failure-domain.beta.kubernetes.io/zone"
+        {{ end }} 
       containers:
       - name: {{ .Release.Name }}
-        image: {{.Values.image_bind}}:{{ .Values.image_bind_tag}}
+        image: {{ required ".Values.global.registryAlternateRegion is missing" .Values.global.registryAlternateRegion }}/{{.Values.image_bind}}:{{ .Values.image_bind_tag}}
         imagePullPolicy: {{ .Values.image_pullPolicy }}
         ports:
           - name: dns-tcp
@@ -78,7 +80,7 @@ spec:
           timeoutSeconds: 3
           periodSeconds: 10
       - name: metric
-        image: {{.Values.image_bind_exporter}}:{{ .Values.image_bind_exporter_tag}}
+        image: {{ required ".Values.global.registryAlternateRegion is missing" .Values.global.registryAlternateRegion }}/{{.Values.image_bind_exporter}}:{{ .Values.image_bind_exporter_tag}}
         imagePullPolicy: {{ .Values.image_pullPolicy }}
         ports:
           - name: metrics

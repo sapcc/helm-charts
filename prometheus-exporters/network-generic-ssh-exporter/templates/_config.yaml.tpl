@@ -455,6 +455,99 @@ metrics:
     command: show ntp config
     timeout_secs: 5
 
+  xr_ntp_peer_delay:
+    regex: |
+      ^\s*?(\*|#|\+|-|x|~)+(\S+)\s+vrf\s(\S+)\s*?$
+      ^\s+((\.\S+\s*\.)|(\d+|\.)+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+(\.\d+)*)\s+(-?\d+(\.\d+)*)\s+(-?\d+(\.\d+)*)
+    multi_value: true
+    value: $11
+    labels:
+      address: $2
+      vrf: $3
+      reference_clock: $4
+    description: NTP server delay
+    metric_type_name: gauge
+    command: show ntp associations
+    timeout_secs: 5
+
+  xr_ntp_peer_offset:
+    regex: |
+      ^\s*?(\*|#|\+|-|x|~)+(\S+)\s+vrf\s(\S+)\s*?$
+      ^\s+((\.\S+\s*\.)|(\d+|\.)+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+(\.\d+)*)\s+(-?\d+(\.\d+)*)\s+(-?\d+(\.\d+)*)
+    multi_value: true
+    value: $13
+    labels:
+      address: $2
+      vrf: $3
+      reference_clock: $4
+    description: NTP server delay
+    metric_type_name: gauge
+    command: show ntp associations
+    timeout_secs: 5
+
+  xr_ntp_peer_dispersion:
+    regex: |
+      ^\s*?(\*|#|\+|-|x|~)+(\S+)\s+vrf\s(\S+)\s*?$
+      ^\s+((\.\S+\s*\.)|(\d+|\.)+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+(\.\d+)*)\s+(-?\d+(\.\d+)*)\s+(-?\d+(\.\d+)*)
+    multi_value: true
+    value: $15
+    labels:
+      address: $2
+      vrf: $3
+      reference_clock: $4
+    description: NTP server delay
+    metric_type_name: gauge
+    command: show ntp associations
+    timeout_secs: 5
+  
+  xr_ntp_offset:
+    regex: >-
+      ^.*(reference is)\s(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}).*(clock offset is)\s(-?\d{1,3}\.\d{1,3})\s(msec).*$
+    multi_value: false
+    value: $4
+    labels:
+      reference_clock: $2
+    description: The offset of the router
+    metric_type_name: gauge
+    command: show ntp status
+    timeout_secs: 5
+    
+  xr_ntp_root_delay:
+    regex: >-
+      ^.*(reference is)\s(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}).*(root delay is)\s(-?\d{1,3}\.\d{1,3})\s(msec).*$
+    multi_value: false
+    value: $4
+    labels:
+      reference_clock: $2
+    description: The root delay of the router
+    metric_type_name: gauge
+    command: show ntp status
+    timeout_secs: 5
+    
+  xr_ntp_root_dispersion:
+    regex: >-
+      ^.*(reference is)\s(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}).*(root dispersion is)\s(-?\d{1,3}\.\d{1,3})\s(msec).*$
+    multi_value: false
+    value: $4
+    labels:
+      reference_clock: $2
+    description: The root dispersion of the router
+    metric_type_name: gauge
+    command: show ntp status
+    timeout_secs: 5
+    
+  xr_ntp_drift:
+    regex: >-
+      ^.*(reference is)\s(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}).*(drift is)\s(-?\d{1,3}\.\d{1,112})\s.*$
+    multi_value: false
+    value: $4
+    labels:
+      reference_clock: $2
+    description: The drift of the router in seconds
+    metric_type_name: gauge
+    command: show ntp status
+    timeout_secs: 5
+
 batches:
   test:
     - redundancy_send_queue
@@ -503,10 +596,22 @@ batches:
   cisco-ios-xe_core-router:
     - xe_ntp_configured
 
+  cisco-ios-xr_core-router:
+    - xr_ntp_offset
+    - xr_ntp_root_delay
+    - xr_ntp_root_dispersion
+    - xr_ntp_drift
+    - xr_ntp_peer_delay
+    - xr_ntp_peer_offset
+    - xr_ntp_peer_dispersion
+
 devices:
   cisco-ios-xe:
     prompt_regex: ^\S+\#$
     init_command: terminal length 0
   cisco-nx-os:
     prompt_regex: ^\S+\# $
+    init_command: terminal length 0
+  cisco-ios-xr:
+    prompt_regex: ^\S+\#$
     init_command: terminal length 0

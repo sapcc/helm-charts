@@ -1,3 +1,17 @@
+## 4.4.7
+
+* Added alert for duplicate scraping of targets.
+* Fix double scraping of kube-dns.
+
+## 4.4.0
+
+* Update Prometheus to `v2.31.1`.
+
+## 4.3.0
+
+* Fix Thanos cross-domain authentication in config.
+* Update Thanos to `v0.23.1`.
+
 ## 4.2.2
 
 * Enables podMonitorSelector by default. Previously it was toggled by `.Values.serviceDiscoveries.pods.enabled` or `.Values.serviceDiscoveries.kubeDNS.enabled`

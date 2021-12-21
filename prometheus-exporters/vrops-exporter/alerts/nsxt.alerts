@@ -211,6 +211,19 @@ groups:
       description: "NSX-T Node {{ $labels.nsxt_mgmt_node }} of cluster {{ $labels.nsxt_adapter }} has memory usage of over 95%"
       summary: "NSX-T Node {{ $labels.nsxt_mgmt_node }} of cluster {{ $labels.nsxt_adapter }} has memory usage of over 95%"
 
+  - alert: NSXTNodeConnectivityBroken
+    expr: vrops_nsxt_mgmt_node_connectivity_status{state="DISCONNECTED"}
+    for: 5m
+    labels:
+      severity: info
+      tier: vmware
+      service: compute
+      meta: "NSX-T Node `{{ $labels.nsxt_mgmt_node }}` connectivity is broken. ({{ $labels.nsxt_adapter }})"
+      playbook: docs/devops/alert/nsxt
+    annotations:
+      description: "NSX-T Node {{ $labels.nsxt_mgmt_node }} connectivity is broken. ({{ $labels.nsxt_adapter }})"
+      summary: "NSX-T Node {{ $labels.nsxt_mgmt_node }} connectivity is broken. ({{ $labels.nsxt_adapter }})"
+
   - alert: NSXTManagementServiceHasFailed
     expr: |
         vrops_nsxt_mgmt_service_alert_info{alert_name="NSX-T Management service has failed|Management service monitor runtime state has failed",
@@ -256,7 +269,7 @@ groups:
   - alert: VROpsNSXTAdapterNotReceivingData
     expr: vrops_nsxt_adapter_alert_info{alert_name="Adapter instance is not receiving data"}
     labels:
-      severity: critical
+      severity: warning
       tier: vmware
       service: nsxt adapter
       playbook: docs/devops/alert/nsxt/#vrops-nsx-t-adapter-is-not-receiving-data-vropsnsxtadapternotreceivingdata
@@ -265,3 +278,15 @@ groups:
     annotations:
       description: "vROPs NSX-T adapter is not receiving data for `{{ $labels.nsxt_adapter }}`. {{ $labels.recommendation_2 }}"
       summary: "vROPs NSX-T adapter is not receiving data for `{{ $labels.nsxt_adapter }}`. {{ $labels.recommendation_2 }}"
+
+  - alert: NSXTLogicalSwitchStateFailed
+    expr: vrops_nsxt_logical_switch_state{state="FAILED"}
+    for: 5m
+    labels:
+      severity: info
+      tier: vmware
+      meta: "NSX-T logical switch `{{ $labels.nsxt_logical_switch }}` state is {{ $labels.state }}. ({{ $labels.nsxt_adapter }})."
+      no_alert_on_absence: "true"
+    annotations:
+      description: "NSX-T logical switch `{{ $labels.nsxt_logical_switch }}` state is {{ $labels.state }}. ({{ $labels.nsxt_adapter }})."
+      summary: "NSX-T logical switch `{{ $labels.nsxt_logical_switch }}` state is {{ $labels.state }}. ({{ $labels.nsxt_adapter }})."

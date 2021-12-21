@@ -12,6 +12,7 @@ bigip_token = true
 esd_dir = /etc/octavia/esd
 sync_to_group = {{ default "" $loadbalancer.sync_to_group }}
 persist_every = {{ $envAll.Values.persist_every }}
+availability_zone = {{ default "" $loadbalancer.availability_zone }}
 
 # Use FastL4 for TCP listener if possible
 tcp_service_type = Service_L4

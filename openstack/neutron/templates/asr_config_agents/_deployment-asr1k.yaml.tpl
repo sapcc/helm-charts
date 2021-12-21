@@ -29,14 +29,14 @@ spec:
         name: neutron-asr1k-{{ $config_agent.name }}
 {{ tuple $context "neutron" "asr1k-agent" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
       annotations:
-        pod.beta.kubernetes.io/hostname:  {{ $config_agent.hostname }}
+        pod.beta.kubernetes.io/hostname:  asr1k-{{ $config_agent.name }}
         prometheus.io/scrape: "true"
         prometheus.io/port: "{{$context.Values.l3_port_metrics |  default 9103}}"
         prometheus.io/port_1: "{{$context.Values.l2_port_metrics |  default 9102}}"
         prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" $context.Values.alerts.prometheus | quote }}
         configmap-asr1k-{{ $config_agent.name }}: {{ tuple $context $config_agent |include "asr1k_configmap" | sha256sum  }}
     spec:
-      hostname:  {{ $config_agent.hostname }}
+      hostname:  asr1k-{{ $config_agent.name }}
       containers:
         - name: neutron-asr1k
           image: {{$context.Values.global.registry}}/loci-neutron:{{$context.Values.imageVersionASR1k | default $context.Values.imageVersion | required "Please set neutron.imageVersionASR1k or similar"}}

@@ -6,3 +6,4 @@ no-negcache
 {{- range .Values.dnsmasq.dhcp_options }}
 dhcp-option={{ . }}
 {{- end }}
+local=/{{required "A valid .Values.dns_local_domain is required!" .Values.dns_local_domain }}/

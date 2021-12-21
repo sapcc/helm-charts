@@ -44,8 +44,10 @@ cleanup_interval = {{ .Values.house_keeping.cleanup_interval }}
 load_balancer_expiry_age = {{ .Values.house_keeping.expiry_age }}
 {{- end }}
 
-{{ if .Values.network_segment_physical_network }}
 [networking]
+caching = {{ .Values.caching | default "true" }}
+cache_time = {{ .Values.cache_time | default "90" }}
+{{ if .Values.network_segment_physical_network }}
 f5_network_segment_physical_network = {{ .Values.network_segment_physical_network }}
 {{- end }}
 

@@ -124,6 +124,19 @@ groups:
       description: 'Prometheus {{`{{ $labels.prometheus }}`}} has many scrapes that exceed the sample limit'
       summary: Prometheus fails to scrape targets.
 
+  - alert: PrometheusMultipleTargetScrapes
+    expr: sum by (job) (up * on(instance) group_left() (sum by(instance) (up) > 1))
+    for: 30m
+    labels:
+      tier: {{ include "alerts.tier" . }}
+      service: prometheus
+      severity: warning
+      playbook: docs/support/playbook/kubernetes/target_scraped_multiple_times.html
+      meta: 'Prometheus is scraping targets of job {{`{{ $labels.job }}`}} more than once.'
+    annotations:
+      description: Prometheus is scraping individual targets of the job `{{`{{ $labels.job }}`}}` more than once. This is likely caused due to incorrectly placed scrape annotations.  <https://{{ include "prometheus.externalURL" . }}/graph?g0.expr={{ urlquery `up * on(instance) group_left() (sum by(instance) (up{job="PLACEHOLDER"}) > 1)` | replace "PLACEHOLDER" "{{ $labels.job }}"}}|Affected targets>
+      summary: Prometheus target scraped multiple times
+
   {{- if and .Values.alertmanagers (gt (len .Values.alertmanagers) 0) }}
   - alert: PrometheusNotConnectedToAlertmanagers
     expr: prometheus_notifications_alertmanagers_discovered{prometheus="{{ include "prometheus.name" . }}"} == 0

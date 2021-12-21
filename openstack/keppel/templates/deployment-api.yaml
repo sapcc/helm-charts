@@ -19,14 +19,20 @@ spec:
     metadata:
       labels:
         name: keppel-api
+        alert-tier: os
+        alert-service: keppel
       annotations:
         checksum/configmap: {{ include "keppel/templates/configmap.yaml" . | sha256sum }}
         checksum/secret: {{ include "keppel/templates/secret.yaml" . | sha256sum }}
+        checksum/secret-keys: {{ include "keppel/templates/secret-keys.yaml" . | sha256sum }}
     spec:
       volumes:
         - name: config
           configMap:
             name: keppel
+        - name: keys
+          secret:
+            secretName: keppel-keys
       containers:
         - name: api
           image: {{include "keppel_image" .}}
@@ -36,6 +42,8 @@ spec:
           volumeMounts:
             - mountPath: /etc/keppel
               name: config
+            - mountPath: /etc/keppel-keys
+              name: keys
           livenessProbe:
             httpGet:
               path: /healthcheck

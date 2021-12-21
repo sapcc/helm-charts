@@ -19,6 +19,8 @@ spec:
     metadata:
       labels:
         name: clair
+        alert-tier: os
+        alert-service: keppel
       annotations:
         checksum/configmap: {{ include "clair/templates/configmap.yaml" . | sha256sum }}
         checksum/secret: {{ include "clair/templates/secret.yaml" . | sha256sum }}
@@ -29,7 +31,7 @@ spec:
             name: clair-etc
       containers:
         - name: clair
-          image: {{.Values.global.quayIoMirror}}/projectquay/clair:4.3.0
+          image: {{.Values.global.quayIoMirror}}/projectquay/clair:4.3.5
           imagePullPolicy: IfNotPresent
           command: [ /bin/sh, /etc/clair/start.sh ]
           env:

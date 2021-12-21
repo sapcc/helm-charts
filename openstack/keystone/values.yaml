@@ -385,17 +385,21 @@ mysql_metrics:
       help: User list based on last_active_at
       labels:
         - "user_id"
-        - "user_name"
+        - "sap_id"
         - "created_at"
         - "last_active_at"
         - "domain_name"
+        - "user_name"
+        - "email_id"
       query: |
         SELECT
           COUNT(*) as user_count,
           user.id as user_id,
-          COALESCE(id_mapping.local_id, "No User Name") as user_name,
+          COALESCE(id_mapping.local_id, "No User Name") as sap_id,
           user.created_at as created_at,
           COALESCE(user.last_active_at, "No last_active_at timestamp") as last_active_at,
+          COALESCE(json_extract(user.extra, '$**.email'), "No Email-ID") AS email_id, 
+          json_extract(user.extra, '$**.description') AS user_name,
           domain.name as domain_name
         FROM user
         LEFT JOIN id_mapping ON user.id = id_mapping.public_id

@@ -64,12 +64,43 @@ kube-prometheus-stack:
     enabled: false
   kubeScheduler:
     enabled: false
-  kubeStateMetrics:
-    enabled: false
   nodeExporter:
     enabled: false
   grafana:
     enabled: false
+
+  kube-state-metrics:
+    image:
+      repository: keppel.eu-de-1.cloud.sap/ccloud-quay-mirror/coreos/kube-state-metrics
+    podSecurityPolicy:
+      enabled: false
+
+    customLabels:
+      app: kube-state-metrics
+
+    prometheusScrape: false
+
+    collectors:
+      # Not useful.
+      configmaps: false
+      secrets: false
+      mutatingwebhookconfigurations: false
+      validatingwebhookconfigurations: false
+      certificatesigningrequests: false
+      ingresses: false
+      verticalpodautoscalers: true
+
+    prometheus:
+      monitor:
+        enabled: false
+        honorLabels: true
+        additionalLabels:
+          prometheus: collector-kubernetes
+
+    resources:
+      requests:
+        memory: 150Mi
+        cpu: 100m
 
 absent-metrics-operator:
   enabled: true
@@ -102,8 +133,12 @@ prometheus-collector:
   serviceDiscoveries:
     additionalTargets:
       - kubernetes
+    endpoints:
+      enabled: true
     pods:
       enabled: false
+    probes:
+      enabled: true
     kubeAPIServer:
       enabled: true
     cAdvisor:
@@ -205,27 +240,6 @@ prometheus-node-exporter:
   resources:
     requests:
       memory: 100Mi
-      cpu: 100m
-
-kube-state-metrics:
-  customLabels:
-    app: kube-state-metrics
-
-  prometheusScrape: false
-
-  collectors:
-    # Not useful.
-    configmaps: false
-    secrets: false
-    horizontalpodautoscalers: false
-    verticalpodautoscalers: false
-    validatingwebhookconfigurations: false
-    certificatesigningrequests: false
-    ingresses: false
-
-  resources:
-    requests:
-      memory: 150Mi
       cpu: 100m
 
 kube-state-metrics-exporter:

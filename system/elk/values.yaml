@@ -1,6 +1,11 @@
 global:
   region: DEFINED-IN-SECRETS
   tld: DEFINED-IN-SECRETS
+  elk_elasticsearch_audit_user: DEFINED-IN-SECRETS
+  elk_elasticsearch_audit_password: DEFINED-IN-SECRETS
+  elk_elasticsearch_http_user: DEFINED-IN-SECRETS
+  elk_elasticsearch_http_password: DEFINED-IN-SECRETS
+
 
 es_master:
   enabled: false
@@ -42,15 +47,29 @@ wall_e:
 kibana:
   enabled: false
 
-logstash:
+logstash_audit_external:
   enabled: false
-  image_version: '20211015145157'
+  image_version: '20211213084134'
   input_netflow_port: 2055
   input_syslog_port: 514
   input_bigiplogs_port: 1513
   input_alertmanager_port: 1515
   input_deployments_port: 1516
+  input_http_port: 443
+  tls:
+    crt: DEFINED-IN-SECRETS
+    key: DEFINED-IN-SECRETS
 
+logstash_audit_services:
+  enabled: false
+  image_version: '20211213084134'
+  http_poller:
+    user: DEFINED-IN-SECRETS
+    password: DEFINED-IN-SECRETS
+    url:
+      api: DEFINED-IN-SECRETS
+      token: DEFINED-IN-SECRETS
+      
 fluent:
   enabled: false
   port: 8885
@@ -60,15 +79,13 @@ fluent:
   alerts:
     enabled: false
     prometheus: infra-collector
-  datahub:
+  metis:
     enabled: false
-    host: datahubdb-mariadb.datahub
+    host: metisdb-mariadb.metis
     port: 3306
-    db: datahub
-    username: DEFINED-IN-SECRETS
-    password: DEFINED-IN-SECRETS
+    db: metis
 
-fluent_octobus:
+fluent_audit_container:
   enabled: false
   port: 8887
   image_version: '20211110123325'
@@ -102,8 +119,8 @@ fluent_scaleout:
   port: 8885
   logstash_shards: 3
   indexname: logstash
-  datahub:
+  metis:
     enabled: false
-    host: datahubdb
-    db: datahub
+    host: metisdb
+    db: metis
     port: 443

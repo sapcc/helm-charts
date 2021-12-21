@@ -263,8 +263,8 @@
       regex: 'snmp_n3k_sysDescr;(?s)(.*)(Version )([0-9().a-zIU]*)(,.*)'
       replacement: '$3'
       target_label: image_version
-    - source_labels: [__name__, snmp_pxdlrouternxos_sysDescr]
-      regex: 'snmp_pxdlrouternxos_sysDescr;(?s)(.*)(Version )([0-9().a-zIU]*)(,.*)'
+    - source_labels: [__name__, snmp_pxgeneric_sysDescr]
+      regex: 'snmp_pxgeneric_sysDescr;(.*)(Version )([0-9().a-zIU]*)(.*)'
       replacement: '$3'
       target_label: image_version
     - source_labels: [__name__, snmp_n9kpx_ciscoImageString]
@@ -498,7 +498,7 @@
 
 {{- $values := .Values.windows_exporter -}}
 {{- if $values.enabled }}
-- job_name: 'windows-exporter'
+- job_name: 'win-exporter-ad'
   scrape_interval: {{$values.scrapeInterval}}
   scrape_timeout: {{$values.scrapeTimeout}}
   file_sd_configs:
@@ -507,7 +507,36 @@
   metrics_path: /metrics
   relabel_configs:
     - source_labels: [job]
-      regex: windows-exporter
+      regex: win-exporter-ad
+      action: keep
+    - source_labels: [__address__]
+      replacement: $1:{{$values.listen_port}}
+      target_label: __address__
+    - regex: 'name|state'
+      action: labeldrop
+  metric_relabel_configs:
+    - source_labels: [__name__]
+      regex: '^go_.+'
+      action: drop
+    - source_labels: ['__name__','exported_name']
+      regex: 'windows_service_state;(.*)'
+      replacement: '$1'
+      target_label: 'service_name'
+    - source_labels: ['__name__','exported_state']
+      regex: 'windows_service_state;(.*)'
+      replacement: '$1'
+      target_label: 'service_state'
+
+- job_name: 'win-exporter-wsus'
+  scrape_interval: {{$values.scrapeInterval}}
+  scrape_timeout: {{$values.scrapeTimeout}}
+  file_sd_configs:
+      - files :
+        - /etc/prometheus/configmaps/atlas-netbox-sd/netbox.json
+  metrics_path: /metrics
+  relabel_configs:
+    - source_labels: [job]
+      regex: win-exporter-wsus
       action: keep
     - source_labels: [__address__]
       replacement: $1:{{$values.listen_port}}
@@ -527,7 +556,7 @@
       replacement: '$1'
       target_label: 'service_state'
 {{- end }}
-        
+
 {{- $values := .Values.vasa_exporter -}}
 {{- if $values.enabled }}
 - job_name: 'vasa'

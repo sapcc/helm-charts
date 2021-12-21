@@ -45,6 +45,8 @@ spec:
     metadata:
       labels:
         component: swift-haproxy-{{ $cluster_id }}
+        alert-tier: os
+        alert-service: swift
         from: deployment
         os-cluster: {{ $cluster_id }}
         for-service: swift-proxy-{{ $cluster_id }}
@@ -56,6 +58,13 @@ spec:
         prometheus.io/scrape: "true"
         prometheus.io/targets: {{ required ".Values.alerts.prometheus.openstack missing" $.Values.alerts.prometheus.openstack }}
     spec:
+      {{- if (index $cluster (printf "haproxy_deployment_tolerate_swift_%s_%s" $az $apod)) }}
+      tolerations:
+      - key: "species"
+        operator: "Equal"
+        value: "swift-storage"
+        effect: "NoSchedule"
+      {{- end }}
       nodeSelector:
         {{- if eq $apod "cp" }}
         failure-domain.beta.kubernetes.io/zone: {{ $az }}
