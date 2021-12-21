@@ -65,3 +65,16 @@ groups:
     annotations:
       description: "The git-proxy worker {{ $labels.pod }} seems stalled. Check its logs in the conourse namespace."
       summary: Git-proxy worker stalled
+
+  - alert: ConcourseWorkerNodeFullWorkdir
+    expr: min by (node) (predict_linear(node_filesystem_free_bytes{mountpoint="/",node=~"kks-ci-.*-ci.*"}[1d], 2 * 24 * 3600) < 0) * on (node) kube_node_info
+    for: 30m
+    labels:
+      tier: ci
+      service: concourse
+      severity: warning
+      context: concourse
+      meta: "Worker node {{ $labels.node }} workdir is most likely out of disk space in 2 days"
+    annotations:
+      description: "Worker node `{{ $labels.node }}` workdir is most likely out of disk space in 2 days. Drain and terminate node to create a worker with empty workdir. Node creation and volume provisioning will happen automatically."
+      summary: "Worker node workdir out of disk space in the near future"
