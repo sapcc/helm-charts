@@ -14,7 +14,7 @@ groups:
       description: grafana - https://grafana.global.cloud.sap/d/cronushealth/cronushealth?orgId=1 , slack-cronus-dev - https://convergedcloud.slack.com/archives/G01SLHXERL5
       summary: problem with sending emails in region {{ $labels.region }}
   - alert: CronusPodsHanging
-    expr: kube_pod_container_status_running{namespace="cronus"} == 0
+    expr: sum (kube_pod_container_status_running{namespace="cronus"}) by (container) == 0
     for: 5m
     labels:
       meta: Cronus cluster - pods fails in region {{ $labels.region }} pod {{ $labels.pod }}
