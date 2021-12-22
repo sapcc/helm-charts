@@ -1,5 +1,5 @@
 [asr1k]
-ignore_invalid_az_hint_for_router = {{ default ".Values.asr.ignore_invalid_az_hint_for_router" "False"}}
+ignore_invalid_az_hint_for_router = {{ default "False" .Values.asr.ignore_invalid_az_hint_for_router}}
 
 [asr1k-address-scopes]
 {{ $cloud_asn := required "A valid .Values.global_cloud_asn entry required!" .Values.global_cloud_asn }}
