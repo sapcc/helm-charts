@@ -11,8 +11,10 @@ metadata:
     ingress.kubernetes.io/use-regex: "true"
     ingress.kubernetes.io/configuration-snippet: |
       {{- range $name, $config := .Values.consoles }}
+        {{- if $config.enabled }}
       rewrite "(?i)/{{ $name }}/(.*)" /$1 break;
       rewrite "(?i)/{{ $name }}$" / break;
+        {{- end }}
       {{- end }}
   {{- if .Values.use_tls_acme }}
     kubernetes.io/tls-acme: "true"
@@ -26,14 +28,18 @@ spec:
     http:
       paths:
       {{- range $name, $config := .Values.consoles }}
+        {{- if $config.enabled }}
       - path: /{{ $name }}/?(.*)
         backend:
           serviceName: nova-console-{{ $name }}
           servicePort: {{ $name }}
+        {{- end }}
       {{- end }}
 
 {{ $envAll := . }}
 {{- range $name, $config := .Values.consoles }}
+  {{- if $config.enabled }}
 ---
 {{ tuple $envAll $name $config | include "nova.console_service"  }}
+  {{- end }}
 {{- end }}
