@@ -48,7 +48,7 @@
     pattern sshd
   </regexp>
   <exclude>
-    key message
+    key syslog_identifier
     pattern sssd
   </exclude>
 </filter>
@@ -59,8 +59,8 @@
     @type elasticsearch_dynamic
     host {{.Values.global.elk_elasticsearch_endpoint_host_scaleout}}.{{.Values.global.elk_cluster_region}}.{{.Values.global.tld}}
     port {{.Values.global.elk_elasticsearch_ssl_port}}
-    user {{.Values.global.elk_elasticsearch_data_user}}
-    password {{.Values.global.elk_elasticsearch_data_password}}
+    user {{.Values.global.elk_elasticsearch_audit_user}}
+    password {{.Values.global.elk_elasticsearch_audit_password}}
     scheme https
     ssl_verify false
     ssl_version TLSv1_2
@@ -91,7 +91,7 @@
   <store>
     @type prometheus
     <metric>
-      name fluentd_output_status_num_records_total
+      name fluentd_audit_systemd_output_status_num_records_total
       type counter
       desc The total number of outgoing records
       <labels>
