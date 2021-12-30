@@ -41,11 +41,7 @@
   @type grep
   <regexp>
     key message
-    pattern audit 
-  </regexp>
-  <regexp>
-    key message
-    pattern sshd
+    pattern /(audit|sshd)/
   </regexp>
   <exclude>
     key syslog_identifier
