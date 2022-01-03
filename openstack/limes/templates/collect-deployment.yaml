@@ -45,27 +45,7 @@ spec:
             - /etc/limes/limes.yaml
             - {{$cluster_id}}
           env:
-            - name: LIMES_DB_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: limes-secret
-                  key: postgres_password
-{{- range $inner_cluster_id, $inner_cfg := $.Values.limes.clusters }}
-            - name: {{ $inner_cluster_id | upper }}_AUTH_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: limes-secret
-                  key: {{$inner_cluster_id}}_auth_password
-            - name: {{ $inner_cluster_id | upper }}_RABBITMQ_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: limes-secret
-                  key: {{$inner_cluster_id}}_rabbitmq_password
-{{- end }}
-            - name: LIMES_DEBUG
-              value: '0'
-            - name: LIMES_DEBUG_SQL
-              value: '0'
+            {{ include "limes_common_envvars" $ | indent 12 }}
             {{- if eq $cluster_id "monsoon2" }}
             - name: LIMES_INSECURE
               value: '1' # SSL certificates are hard :(
