@@ -271,7 +271,8 @@ groups:
         Check the logs of keppel-janitor for details.
 
   - alert: OpenstackKeppelClairIndexingErrors
-    expr: 'keppel_vuln_scan_error_counts{message!=""} > 0'
+    # NOTE: The exclusion pattern is for indexing that fails because the image is too large to unpack into tmpfs. We only support reasonably-sized images until further notice.
+    expr: 'keppel_vuln_scan_error_counts{message!="",message!~"failed to fetch layers: encountered error while fetching a layer: write /tmp/sha256:.*: no space left on device"} > 0'
     for: 5m
     labels:
       context: clair-indexing
