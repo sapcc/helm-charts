@@ -1,3 +1,7 @@
+## 4.5.0
+
+* Bump Prometheus to `v2.32.1`.
+
 ## 4.4.7
 
 * Added alert for duplicate scraping of targets.
