@@ -7,6 +7,8 @@
 {{- end -}}
 
 {{- define "limes_common_envvars" }}
+- name: LIMES_DEBUG
+  value: '0'
 - name: LIMES_DB_PASSWORD
   valueFrom:
     secretKeyRef:
@@ -40,8 +42,4 @@
       name: limes-secret
       key: {{ $cluster_id }}_rabbitmq_password
 {{- end }}
-- name: LIMES_DEBUG
-  value: '0'
-- name: LIMES_DEBUG_SQL
-  value: '0'
 {{- end -}}
