@@ -5,6 +5,14 @@
 [DEFAULT]
 host = {{ $lb_name }}
 
+[networking]
+{{- if $loadbalancer.physical_interface_mapping }}
+physical_interface_mapping = {{ $loadbalancer.physical_interface_mapping }}
+{{- end }}
+{{- if $loadbalancer.vcmps }}
+vcmp_urls = {{ tuple $envAll $loadbalancer.vcmps | include "utils.bigip_urls" -}}
+{{- end }}
+
 [f5_agent]
 bigip_urls = {{ if $loadbalancer.devices -}}{{- tuple $envAll $loadbalancer.devices | include "utils.bigip_urls" -}}{{- else -}}{{ $loadbalancer.bigip_urls | join ", " }}{{- end }}
 bigip_verify = false
