@@ -65,6 +65,7 @@ swift_buffer_on_upload = True
 swift_upload_buffer_dir = /upload
 swift_store_expire_soon_interval = 1800
 swift_store_thread_pool_size = 10
+swift_container_delete_timeout = 2
 {{- if .Values.swift.multi_tenant }}
 swift_store_multi_tenant = True
 # swift_store_large_object_size = 5120
