@@ -156,15 +156,6 @@ filter {
 
   kv { source => "_source" }
 
-  # The following line will create 2 additional
-  # copies of each document (i.e. including the
-  # original, 3 in total).
-  # Each copy will automatically have a "type" field added
-  # corresponding to the name given in the array.
-  clone {
-    clones => ['clone_for_audit', 'clone_for_swift', 'clone_for_cc']
-  }
-
   if [initiator][id]{
     jdbc_static {
       id => "jdbc"
@@ -213,6 +204,15 @@ filter {
       }
       remove_field => { [ "domain_mapping" ] }
     }
+  }
+
+  # The following line will create 2 additional
+  # copies of each document (i.e. including the
+  # original, 3 in total).
+  # Each copy will automatically have a "type" field added
+  # corresponding to the name given in the array.
+  clone {
+    clones => ['clone_for_audit', 'clone_for_swift', 'clone_for_cc']
   }
 }
 
