@@ -202,7 +202,7 @@ filter {
           "[initiator][domain_id]" => "%{[domain_mapping][0][domain_id]}"
           "[initiator][domain_name]" => "%{[domain_mapping][0][domain_name]}"
       }
-      remove_field => { [ "domain_mapping" ] }
+      remove_field => [ "domain_mapping" ]
     }
   }
 
