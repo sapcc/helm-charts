@@ -165,3 +165,31 @@ groups:
       annotations:
         description: "BGP peering on `{{ $labels.server_name }}` to `{{ $labels.peer_ip }}` ) (core) went down. L3VPN impacted."
         summary: "BGP peering on `{{ $labels.server_name }}` to `{{ $labels.peer_ip }}` ) (core) went down. L3VPN impacted."
+
+    - alert: NetworkAsr9kHighNtpRootDispersion
+      expr: avg_over_time(ssh_xr_ntp_root_dispersion[10m]) > 2000
+      for: 10m
+      labels:
+        severity: critical
+        tier: net
+        service: asr
+        context: asr
+        meta: "Cisco ASR990x device `{{ $labels.server_name }}` with reference clock `{{ $labels.reference_clock }}` has a high root dispersion."
+        playbook: /docs/devops/alert/network/ntp.html
+      annotations:
+        description: "Cisco ASR990x device `{{ $labels.server_name }}` has a high root dispersion."
+        summary: "Cisco ASR990x  device `{{ $labels.server_name }}` has a high root dispersion."
+
+    - alert: NetworkAsr9kHighNtpTimeOffset
+      expr: avg_over_time(ssh_xr_ntp_offset[10m]) < -100 or avg_over_time(ssh_xr_ntp_offset[10m]) > 100 
+      for: 10m
+      labels:
+        severity: critical
+        tier: net
+        service: asr
+        context: asr
+        meta: "Cisco ASR990x device `{{ $labels.server_name }}` with reference clock `{{ $labels.reference_clock }}` has a high NTP offset."
+        playbook: /docs/devops/alert/network/ntp.html
+      annotations:
+        description: "Cisco ASR990x device `{{ $labels.server_name }}` has a high NTP offset."
+        summary: "Cisco ASR990x device `{{ $labels.server_name }}` has a high NTP offset."
