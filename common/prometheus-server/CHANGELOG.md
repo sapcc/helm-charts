@@ -1,3 +1,7 @@
+## 4.5.1
+
+* [kube-dns SD] Label change: instance=address, node=kubernetes node name
+
 ## 4.5.0
 
 * Bump Prometheus to `v2.32.1`.
