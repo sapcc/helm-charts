@@ -149,14 +149,29 @@ mysql_metrics:
       labels:
         - "octavia_host"
       query: |
-        SELECT
-          compute_flavor AS octavia_host,
-          (UNIX_TIMESTAMP(NOW()) - UNIX_TIMESTAMP(MAX(updated_at))) AS heartbeat_seconds
+        SELECT 
+          compute_flavor AS octavia_host, 
+          IFNULL((UNIX_TIMESTAMP(NOW()) - UNIX_TIMESTAMP(MAX(updated_at))), 1000) AS heartbeat_seconds 
         FROM amphora
-        WHERE role = 'MASTER'
+        WHERE role = 'MASTER' or role = 'BACKUP'
         GROUP BY compute_flavor;
       values:
         - "heartbeat_seconds"
+    - name: octavia_agent_schedulable
+      help: Octavia target agents ready for scheduling
+      labels:
+        - "agent"
+      query: |
+        SELECT 
+          compute_flavor as agent,
+          sum(case role WHEN 'MASTER' THEN 1 WHEN 'BACKUP' THEN 0 END) AS schedulable 
+        FROM amphora 
+        WHERE 
+          (vrrp_interface != 'enabled' OR vrrp_interface IS Null) AND 
+          cached_zone is not NULL 
+        GROUP BY compute_flavor;
+      values:
+        - "schedulable"
 
 pod:
   replicas:
