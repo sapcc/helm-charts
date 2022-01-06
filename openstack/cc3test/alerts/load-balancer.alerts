@@ -38,6 +38,22 @@ groups:
       description: 'Openstack Octavia API is flapping'
       summary: 'Openstack Octavia API is flapping'
 
+  - alert: OpenstackOctaviaCanaryCreatelbaasDown
+    expr: cc3test_status{service="octavia",name=~"TestOctaviaLbaas_create_lbaas.+"} == 0
+    for: 3h
+    labels:
+      severity: warning
+      tier: os
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.service }}'
+      dashboard: cc3test-overview?var-service={{ $labels.service }}
+      meta: 'Canary {{ $labels.service }} is down for 3 hour. See report for details'
+      playbook: 'docs/devops/alert/{{ $labels.service }}/#test_create_lbaas'
+      report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
+    annotations:
+      description: 'Canary {{ $labels.service }} is down for 3 hour. See report for details'
+      summary: 'Canary {{ $labels.service }}  is down'
+
 - name: cc3test-f5.alerts
   rules:
   - alert: NetworkF5McpDown
