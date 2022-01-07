@@ -71,6 +71,18 @@ groups:
       description: Manila Shares taking more than 2 minutes to resize in {{ $labels.manila_host }}
       summary: Manila Shares taking more than 2 minutes to resize
 
+  - alert: OpenstackManilaShareServersStuck
+    expr: (sum(openstack_manila_share_servers_stuck_count_gauge) BY (manila_host, status)) > 0
+    for: 5m
+    labels:
+      dashboard: manila
+      service: manila
+      severity: info
+      tier: os
+    annotations:
+      description: Sum of Openstack Manila Share Servers Stuck is more than 1
+      summary: Manila share servers in stuck state
+
   - alert: OpenstackManilaShareServersStuckCreate
     expr: max(openstack_manila_share_servers_stuck_max_duration_gauge{status="creating"})
       BY (id, manila_host) > 120
