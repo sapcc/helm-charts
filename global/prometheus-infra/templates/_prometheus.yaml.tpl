@@ -201,6 +201,7 @@
       - '{__name__=~"^vrops_virtualmachine_runtime_powerstate"}'
       - '{__name__=~"^vrops_datastore_.+", type!~"local"}'
       - '{__name__=~"^vrops_nsxt.*"}'
+      - '{__name__=~"^vrops_distributed_virtual_switch_summary_version"}'
 
   relabel_configs:
     - action: replace
