@@ -1,7 +1,7 @@
 [uwsgi]
 # This is running standalone
 master = true
-pyargv = --config-file /etc/neutron/neutron.conf --config-file /etc/neutron/plugins/ml2/ml2-conf.ini --config-file /etc/neutron/plugins/ml2/ml2-conf-aci.ini --config-file /etc/neutron/plugins/ml2/ml2-conf-manila.ini --config-file /etc/neutron/plugins/ml2/ml2-conf-arista.ini --config-file /etc/neutron/plugins/ml2/ml2-conf-asr1k.ini {{- if .Values.bgp_vpn.enabled }} --config-file /etc/neutron/networking-bgpvpn.conf{{- end }}{{- if .Values.fwaas.enabled }} --config-file /etc/neutron/neutron-fwaas.ini{{- end }}
+pyargv = --config-file /etc/neutron/neutron.conf --config-file /etc/neutron/plugins/ml2/ml2-conf.ini --config-file /etc/neutron/plugins/ml2/ml2-conf-aci.ini --config-file /etc/neutron/plugins/ml2/ml2-conf-manila.ini --config-file /etc/neutron/plugins/ml2/ml2-conf-arista.ini --config-file /etc/neutron/plugins/ml2/ml2-conf-asr1k.ini --config-file /etc/neutron/plugins/asr1k-global.ini {{- if .Values.bgp_vpn.enabled }} --config-file /etc/neutron/networking-bgpvpn.conf{{- end }}{{- if .Values.interconnection.enabled }} --config-file /etc/neutron/networking-interconnection.conf{{- end }}{{- if .Values.fwaas.enabled }} --config-file /etc/neutron/neutron-fwaas.ini{{- end }}
 wsgi-file = /var/lib/openstack/bin/neutron-api
 enable-threads = true
 processes = {{.Values.api.processes}}
@@ -25,9 +25,10 @@ worker-reload-mercy = 90
 exit-on-reload = false
 die-on-term = true
 hook-master-start = unix_signal:15 gracefully_kill_them_all
+py-call-osafterfork = true
 
 # logging and metrics
-log-format = [pid: %(pid)] %(addr) {%(vars) vars in %(pktsize) bytes} [%(ctime)] %(method) %(uri) => generated %(rsize) bytes in %(msecs) msecs (%(proto) %(status)) %(headers) headers in %(hsize) bytes
+log-format = [pid: %(pid)] %(addr) {%(vars) vars in %(pktsize) bytes} [%(ctime)] %(method) %(uri) [%(request_id) g%(global_request_id) %(user_id)/%(user_project_id)@%(project_id)] => generated %(rsize) bytes in %(msecs) msecs (%(proto) %(status)) %(headers) headers in %(hsize) bytes
 plugin = dogstatsd
 stats-push = dogstatsd:127.0.0.1:9125
 dogstatsd-all-gauges = true

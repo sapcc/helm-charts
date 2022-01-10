@@ -25,11 +25,11 @@
 - name: CASTELLUM_LOG_SCRAPES
   value: "true"
 - name: CASTELLUM_MAX_ASSET_SIZES
-  value: "nfs-shares=8192" # 8192 GiB = 8 TiB
+  value: "nfs-shares=16384" # 16384 GiB = 16 TiB
 - name: CASTELLUM_NFS_PROMETHEUS_URL
   value: "http://prometheus-infra-collector.infra-monitoring.svc:9090"
 - name: CASTELLUM_OSLO_POLICY_PATH
-  value: /etc/castellum/policy.json
+  value: /etc/castellum/policy.yaml
 - name: CASTELLUM_RABBITMQ_QUEUE_NAME
   value: "{{ .Values.castellum.rabbitmq.queue_name }}"
 - name: CASTELLUM_RABBITMQ_USERNAME

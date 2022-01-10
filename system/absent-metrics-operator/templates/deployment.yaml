@@ -19,6 +19,8 @@ spec:
     metadata:
       labels:
         name: absent-metrics-operator
+        alert-tier: k8s
+        alert-service: prometheus
       annotations:
         prometheus.io/scrape: "true"
         prometheus.io/targets: "kubernetes"
@@ -27,16 +29,18 @@ spec:
       serviceAccountName: absent-metrics-operator-service-user
       containers:
         - name: operator
-          image: {{required ".Values.image.repository missing" .Values.image.repository}}:{{required ".Values.image.tag missing" .Values.image.tag}}
+          image: {{ .Values.global.registry }}/absent-metrics-operator:{{ .Values.imageTag }}
           imagePullPolicy: IfNotPresent
+          # NOTE: observed usage in eu-de-1 (as of 2021-10)
+          # - CPU: ~10m during load
+          # - RAM: ~45Mi during load
           resources:
-            # observed max usage: CPU = 10m, RAM = 20 MiB
             requests:
               cpu: "20m"
-              memory: "50Mi"
+              memory: "100Mi"
             limits:
               cpu: "20m"
-              memory: "50Mi"
+              memory: "100Mi"
           ports:
             - name: metrics
               containerPort: 9659

@@ -29,6 +29,22 @@
     "numeric_detection": true,
     "dynamic_templates": [
       {
+        "cc_cost_object": {
+          "path_match": "cc_cost_object",
+          "mapping": {
+            "type": "text"
+          }
+        }
+      },
+      {
+        "source.cc_cost_object": {
+          "path_match": "*.cc_cost_object",
+          "mapping": {
+            "type": "text"
+          }
+        }
+      },
+      {
         "ipfix.octetDeltaCount": {
           "path_match": "ipfix.octetDeltaCount",
           "mapping": {
@@ -26621,7 +26637,7 @@
         "netflow.cisco_fw_ext_event": {
           "path_match": "netflow.cisco_fw_ext_event",
           "mapping": {
-            "type": "keyword"
+            "type": "long"
           }
         }
       },

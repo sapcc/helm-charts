@@ -70,47 +70,6 @@ groups:
       description: All keystone-api server pods are down.
       summary: Keystone is unavailable.
 
-  - alert: OpenstackActiveDirectoryNodeDown
-    expr: blackbox_datapath_status_gauge{service="keystone", check="ad_node"} == 1
-    for: 5m
-    labels:
-      context: availability
-      dashboard: keystone
-      service: keystone
-      severity: warning
-      tier: os
-    annotations:
-      description: An ActiveDirectory node is not accepting connections. The remaining node should continue service.
-      summary: An ActiveDirectory node is down
-
-  - alert: OpenstackActiveDirectoryConnectFailed
-    expr: blackbox_datapath_status_gauge{service="keystone", check="ad_dns"} == 1
-    for: 5m
-    labels:
-      context: availability
-      service: keystone
-      severity: critical
-      tier: os
-      dashboard: keystone
-      playbook: 'docs/devops/alert/keystone/#ldap_fail'
-    annotations:
-      description: The LDAP-LB endpoint (active directory) is not accepting connections.
-      summary: ldap.global.cloud.sap is down
-
-  - alert: OpenstackActiveDirectorySearchGroupsFailed
-    expr: blackbox_datapath_status_gauge{service="keystone", check="ad_search_group"} == 1
-    for: 5m
-    labels:
-      context: availability
-      service: keystone
-      severity: critical
-      tier: os
-      dashboard: keystone
-      playbook: 'docs/devops/alert/keystone/#ldap_fail'
-    annotations:
-      description: LDAP (active directory) group searches are failing.
-      summary: LDAP group searches are failing.
-  
   - alert: OpenstackKeystoneDatabaseSize
     expr: predict_linear(pg_database_size_bytes{datname="keystone"}[1h], 24 * 3600) >= 10 * 1024^3
     for: 5m

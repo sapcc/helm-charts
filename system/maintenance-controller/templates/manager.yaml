@@ -5,9 +5,12 @@ metadata:
   namespace: kube-system
 type: Opaque
 data: 
-  maintenance.yaml: {{ tpl .Values.config . | b64enc }}
+  maintenance.yaml: {{ required "A maintenance configuration is required" .Values.config | b64enc }}
   {{- if .Values.esx.enabled }}
   esx.yaml: {{ required "A esx maintenance configuration is required" .Values.esx.config | b64enc }}
+  {{- end }}
+  {{- if .Values.kubernikus.enabled }}
+  kubernikus.yaml: {{ required "A kubernikus configuration is required" .Values.kubernikus.config | b64enc }}
   {{- end }}
 
 ---
@@ -49,6 +52,9 @@ spec:
         {{- if .Values.esx.enabled }}
         - --enable-esx-maintenance
         {{- end }}
+        {{- if .Values.kubernikus.enabled }}
+        - --enable-kubernikus-maintenance
+        {{- end }}
         image: "{{required ".Values.global.registry is missing" .Values.global.registry }}/{{ .Values.image.repository }}:{{required ".Values.image.tag is missing" .Values.image.tag }}"
         imagePullPolicy: {{ .Values.image.pullPolicy }}
         name: manager
@@ -56,6 +62,11 @@ spec:
         - name: config
           mountPath: "/config"
           readOnly: true
+        {{- if .Values.kubernikus.enabled }}
+        - name: cloudconfig
+          mountPath: "/provider"
+          readOnly: true
+        {{- end }}
         resources:
           limits:
             cpu: 200m
@@ -76,6 +87,11 @@ spec:
       - name: config
         secret:
           secretName: maintenance-controller-config
+      {{- if .Values.kubernikus.enabled }}
+      - name: cloudconfig
+        secret:
+          secretName: {{ .Values.kubernikus.cloudconfig }}
+      {{- end }}
       terminationGracePeriodSeconds: 10
       {{- if .Values.rbac.create }}
       serviceAccountName: {{ .Values.rbac.serviceAccountName }}

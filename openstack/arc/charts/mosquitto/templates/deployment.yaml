@@ -14,6 +14,10 @@ spec:
     metadata:
       annotations:
         checksum/secrets: {{ include (print $.Template.BasePath  "/secret.yaml") . | sha256sum }}
+        {{- if .Values.metrics.enabled }}
+        prometheus.io/scrape: "true"
+        prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
+        {{- end }}
       labels:
         app: mosquitto
     spec:
@@ -23,7 +27,7 @@ spec:
             secretName: mosquitto
       containers:
       - name: {{ .Chart.Name }}
-        image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+        image: "{{required ".Values.global.registry is missing" .Values.global.registry }}/{{ .Values.image.repository }}:{{.Values.image.tag }}"
         command: [mosquitto, -c, /mosquitto/mosquitto.conf]
         imagePullPolicy: {{ .Values.image.pullPolicy }}
         ports:
@@ -38,8 +42,9 @@ spec:
             readOnly: true
 {{- if .Values.metrics.enabled }}
       - name: metrics
-        image: "{{ .Values.metrics.image.repository }}:{{ .Values.metrics.image.tag }}"
+        image: "{{required ".Values.global.dockerHubMirror is missing" .Values.global.dockerHubMirror }}/{{ .Values.metrics.image.repository }}:{{.Values.metrics.image.tag }}"
         imagePullPolicy: {{ .Values.metrics.image.pullPolicy }}
         ports:
         - containerPort: {{.Values.metrics.port}}
+          name: metrics
 {{ end }}

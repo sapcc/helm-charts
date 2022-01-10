@@ -18,9 +18,14 @@ spec:
       labels:
         name: kube-parrot
         k8s-app: kube-parrot
+        service: kube-parrot
       annotations:
     spec:
       priorityClassName: system-node-critical
+      {{- if .Values.imagePullSecrets }}
+      imagePullSecrets:
+{{ toYaml .Values.imagePullSecrets | indent 8 }}
+      {{- end }}
       containers:
       - name: parrot
         image: "{{ $.Values.images.parrot.repository }}:{{ $.Values.images.parrot.tag }}"

@@ -263,8 +263,8 @@
       regex: 'snmp_n3k_sysDescr;(?s)(.*)(Version )([0-9().a-zIU]*)(,.*)'
       replacement: '$3'
       target_label: image_version
-    - source_labels: [__name__, snmp_pxdlrouternxos_sysDescr]
-      regex: 'snmp_pxdlrouternxos_sysDescr;(?s)(.*)(Version )([0-9().a-zIU]*)(,.*)'
+    - source_labels: [__name__, snmp_pxgeneric_sysDescr]
+      regex: 'snmp_pxgeneric_sysDescr;(.*)(Version )([0-9().a-zIU]*)(.*)'
       replacement: '$3'
       target_label: image_version
     - source_labels: [__name__, snmp_n9kpx_ciscoImageString]
@@ -368,87 +368,6 @@
       regex: '(\w*-\w*-\w*)-(\S*)'
       replacement: '$2'
       target_label: device
-
-{{- $values := .Values.bios_exporter -}}
-{{- if $values.enabled }}
-- job_name: 'bios/ironic'
-  params:
-    job: [bios/ironic]
-  scrape_interval: {{$values.ironic_scrapeInterval}}
-  scrape_timeout: {{$values.ironic_scrapeTimeout}}
-  file_sd_configs:
-      - files :
-        - /etc/prometheus/configmaps/atlas-netbox-sd/netbox.json
-  metrics_path: /
-  relabel_configs:
-    - source_labels: [job]
-      regex: bios/ironic
-      action: keep
-    - source_labels: [server_name]
-      target_label: __param_target
-    - source_labels: [__param_target]
-      target_label: instance
-    - target_label: __address__
-      replacement: bios-exporter:{{$values.listen_port}}
-    - source_labels: [manufacturer]
-      target_label:  __param_manufacturer
-    - source_labels: [model]
-      target_label:  __param_model
-    - source_labels: [job]
-      target_label: __param_job
-- job_name: 'bios/vpod'
-  params:
-    job: [bios/vpod]
-  scrape_interval: {{$values.vpod_scrapeInterval}}
-  scrape_timeout: {{$values.vpod_scrapeTimeout}}
-  file_sd_configs:
-      - files :
-        - /etc/prometheus/configmaps/atlas-netbox-sd/netbox.json
-  metrics_path: /
-  relabel_configs:
-    - source_labels: [job]
-      regex: bios/vpod
-      action: keep
-    - source_labels: [server_name]
-      target_label: __param_target
-    - source_labels: [__param_target]
-      target_label: instance
-    - target_label: __address__
-      replacement: bios-exporter:{{$values.listen_port}}
-    - source_labels: [manufacturer]
-      target_label:  __param_manufacturer
-    - source_labels: [model]
-      target_label:  __param_model
-    - source_labels: [job]
-      target_label: __param_job
-- job_name: 'bios/cisco_cp'
-  params:
-    job: [bios/cisco_cp]
-  scrape_interval: {{$values.cisco_cp_scrapeInterval}}
-  scrape_timeout: {{$values.cisco_cp_scrapeTimeout}}
-  file_sd_configs:
-      - files :
-        - /etc/prometheus/configmaps/atlas-netbox-sd/netbox.json
-  metrics_path: /
-  relabel_configs:
-    - source_labels: [job]
-      regex: bios/cisco_cp
-      action: keep
-    - source_labels: [__address__]
-      target_label: __param_target
-    - source_labels: [__param_target]
-      target_label: instance
-    - target_label: __address__
-      replacement: bios-exporter:{{$values.listen_port}}
-    - source_labels: [manufacturer]
-      target_label:  __param_manufacturer
-    - source_labels: [model]
-      target_label:  __param_model
-    - source_labels: [server_name]
-      target_label: __param_name
-    - source_labels: [job]
-      target_label: __param_job
-{{- end }}
 
 {{- $values := .Values.ipmi_exporter -}}
 {{- if $values.enabled }}
@@ -579,7 +498,7 @@
 
 {{- $values := .Values.windows_exporter -}}
 {{- if $values.enabled }}
-- job_name: 'windows-exporter'
+- job_name: 'win-exporter-ad'
   scrape_interval: {{$values.scrapeInterval}}
   scrape_timeout: {{$values.scrapeTimeout}}
   file_sd_configs:
@@ -588,7 +507,36 @@
   metrics_path: /metrics
   relabel_configs:
     - source_labels: [job]
-      regex: windows-exporter
+      regex: win-exporter-ad
+      action: keep
+    - source_labels: [__address__]
+      replacement: $1:{{$values.listen_port}}
+      target_label: __address__
+    - regex: 'name|state'
+      action: labeldrop
+  metric_relabel_configs:
+    - source_labels: [__name__]
+      regex: '^go_.+'
+      action: drop
+    - source_labels: ['__name__','exported_name']
+      regex: 'windows_service_state;(.*)'
+      replacement: '$1'
+      target_label: 'service_name'
+    - source_labels: ['__name__','exported_state']
+      regex: 'windows_service_state;(.*)'
+      replacement: '$1'
+      target_label: 'service_state'
+
+- job_name: 'win-exporter-wsus'
+  scrape_interval: {{$values.scrapeInterval}}
+  scrape_timeout: {{$values.scrapeTimeout}}
+  file_sd_configs:
+      - files :
+        - /etc/prometheus/configmaps/atlas-netbox-sd/netbox.json
+  metrics_path: /metrics
+  relabel_configs:
+    - source_labels: [job]
+      regex: win-exporter-wsus
       action: keep
     - source_labels: [__address__]
       replacement: $1:{{$values.listen_port}}
@@ -608,7 +556,7 @@
       replacement: '$1'
       target_label: 'service_state'
 {{- end }}
-        
+
 {{- $values := .Values.vasa_exporter -}}
 {{- if $values.enabled }}
 - job_name: 'vasa'

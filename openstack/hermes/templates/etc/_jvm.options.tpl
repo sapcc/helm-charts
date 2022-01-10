@@ -19,8 +19,8 @@
 # Xms represents the initial size of total heap space
 # Xmx represents the maximum size of total heap space
 
--Xms16g
--Xmx16g
+-Xms22g
+-Xmx22g
 
 ## Force the JVM to use IPv4 stack
 -Djava.net.preferIPv4Stack=true
@@ -72,6 +72,7 @@
 -Dlog4j.shutdownHookEnabled=false
 -Dlog4j2.disable.jmx=true
 -Dlog4j.skipJansi=true
+-Dlog4j2.formatMsgNoLookups=true
 
 ## heap dumps
 

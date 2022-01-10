@@ -29,13 +29,15 @@ periodic_interval = {{ .Values.periodic_interval | default 300 }}
 rpc_response_timeout = {{ .Values.rpc_response_timeout | default .Values.global.rpc_response_timeout | default 300 }}
 rpc_workers = {{ .Values.rpc_workers | default .Values.global.rpc_workers | default 1 }}
 
+netapp_volume_snapshot_reserve_percent = {{ .Values.netapp_volume_snapshot_reserve_percent | default 50 }}
+
 wsgi_default_pool_size = {{ .Values.wsgi_default_pool_size | default .Values.global.wsgi_default_pool_size | default 100 }}
 
 delete_share_server_with_last_share = {{ .Values.delete_share_server_with_last_share | default false }}
 
 use_scheduler_creating_share_from_snapshot = {{ .Values.use_scheduler_creating_share_from_snapshot | default false }}
 
-scheduler_default_filters = {{ .Values.scheduler_default_filters | default "AvailabilityZoneFilter,CapacityFilter,CapabilitiesFilter,ShareReplicationFilter,AffinityFilter,AntiAffinityFilter" }}
+scheduler_default_filters = {{ .Values.scheduler_default_filters | default "AvailabilityZoneFilter,CapacityFilter,CapabilitiesFilter,ShareReplicationFilter,AffinityFilter,AntiAffinityFilter,OnlyHostFilter" }}
 # TODO: train does not have HostAffinityWeigher, add in victoria
 scheduler_default_weighers = CapacityWeigher
 scheduler_default_share_group_filters = AvailabilityZoneFilter,ConsistentSnapshotFilter,CapabilitiesFilter,DriverFilter
@@ -45,15 +47,16 @@ migration_ignore_scheduler = True
 migration_wait_access_rules_timeout = 3600
 
 # all default quotas are 0 to enforce usage of the Resource Management tool in Elektra
-quota_shares = 0
-quota_gigabytes = 0
-quota_snapshots = 0
-quota_snapshot_gigabytes = 0
-quota_share_networks = 0
-quota_share_groups = 0
-quota_share_group_snapshots = 0
-quota_share_replicas = 0
-quota_replica_gigabytes = 0
+[quota]
+shares = 0
+gigabytes = 0
+snapshots = 0
+snapshot_gigabytes = 0
+share_networks = 0
+share_groups = 0
+share_group_snapshots = 0
+share_replicas = 0
+replica_gigabytes = 0
 
 {{- template "utils.snippets.debug.eventlet_backdoor_ini" "manila" }}
 
@@ -70,6 +73,9 @@ project_name = {{.Values.global.keystone_service_project |  default "service"}}
 project_domain_name = {{.Values.global.keystone_service_domain | default "Default"}}
 endpoint_type = internalURL
 insecure = True
+
+[oslo_policy]
+policy_file = /etc/manila/policy.yaml
 
 [oslo_messaging_rabbit]
 rabbit_ha_queues = {{ .Values.rabbitmq.ha_queues | default "true" }}

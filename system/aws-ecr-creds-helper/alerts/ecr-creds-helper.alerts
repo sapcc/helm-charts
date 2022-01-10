@@ -1,0 +1,17 @@
+groups:
+- name: ecr-creds-helper.alerts
+  rules:
+
+    ### ecr-creds-helper ###
+
+    - alert: EcrCredsHelperJobFailed
+      expr: count(time() - kube_job_status_completion_time{job_name=~"aws-ecr-creds-helper-.+"} < 8*60*60 and kube_job_status_succeeded{job_name=~"aws-ecr-creds-helper-.+"} == 1) < 2
+      for: 15m
+      labels:
+        tier: k8s
+        service: aws-ecr-creds-helper
+        severity: warning
+        context: aws-ecr-creds-helper
+      annotations:
+        description: Creds helper failed to fetch AWS ECR Public registry creds 2 times in the row in last 8 hours. Check aws-ecr-creds-helper CronJob.
+        summary: AWS creds helper failed.

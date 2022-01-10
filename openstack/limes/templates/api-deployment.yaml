@@ -24,6 +24,8 @@ spec:
       labels:
         name: limes-api-{{$cluster_id}}
         app: limes-api
+        alert-tier: os
+        alert-service: limes
       annotations:
         checksum/configmap: {{ include "limes/templates/configmap.yaml" $ | sha256sum }}
         checksum/secret: {{ include "limes/templates/secret.yaml" $ | sha256sum }}
@@ -41,27 +43,7 @@ spec:
             - /etc/limes/limes.yaml
             - {{$cluster_id}}
           env:
-            - name: LIMES_DB_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: limes-secret
-                  key: postgres_password
-{{- range $inner_cluster_id, $inner_cfg := $.Values.limes.clusters }}
-            - name: {{ $inner_cluster_id | upper }}_AUTH_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: limes-secret
-                  key: {{$inner_cluster_id}}_auth_password
-            - name: {{ $inner_cluster_id | upper }}_RABBITMQ_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: limes-secret
-                  key: {{$inner_cluster_id}}_rabbitmq_password
-{{- end }}
-            - name: LIMES_DEBUG
-              value: '0'
-            - name: LIMES_DEBUG_SQL
-              value: '0'
+            {{ include "limes_common_envvars" $ | indent 12 }}
             {{- if $.Values.limes.clusters.monsoon2 }}
             - name: LIMES_INSECURE
               value: '1' # SSL certificates are hard :(
@@ -84,7 +66,7 @@ spec:
             periodSeconds: 5
           {{- if $.Values.limes.resources.enabled }}
           resources:
-            # observed usage: CPU <= 20m, RAM = 25-70 MiB
+            # observed usage: CPU <= 50m, RAM = 25-70 MiB
             #
             # However, we have some very significant spikes esp. when billing
             # scrapes us, so we give some extra headroom to stay performant.
@@ -98,12 +80,12 @@ spec:
               cpu: '1'
               memory: '500Mi'
               {{- else }}
-              cpu: '50m'
-              memory: '300Mi'
+              cpu: '500m'
+              memory: '500Mi'
               {{- end }}
             requests:
-              cpu: '50m'
-              memory: '300Mi'
+              cpu: '250m'
+              memory: '500Mi'
           {{- end }}
 ---
 {{end}}

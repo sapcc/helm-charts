@@ -4,6 +4,7 @@ path_keywords:
   - availability_zones
   - bandwidth_limit_rules
   - bgpvpns
+  - interconnections
   - dscp_marking_rules
   - endpoint-groups
   - extensions

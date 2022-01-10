@@ -6,8 +6,15 @@ data:
   collector_config.yaml: |
     default_collectors:
     #    - 'NSXTMgmtClusterStatsCollector'
+    #    - 'NSXTMgmtClusterPropertiesCollector'
+    #    - 'NSXTLogicalSwitchPropertiesCollector'
+    #    - 'NSXTMgmtNodeStatsCollector'
+    #    - 'NSXTMgmtNodePropertiesCollector'
+    #    - 'NSXTTransportNodePropertiesCollector'
+        - 'CustomInfoMetricsGenerator'
         - 'ClusterStatsCollector'
         - 'ClusterPropertiesCollector'
+        - 'DistributedvSwitchPropertiesCollector'
         - 'DatastoreStatsCollector'
         - 'DatastorePropertiesCollector'
     #    - 'HostSystemStatsCollector'
@@ -20,16 +27,22 @@ data:
     #    - 'VMStatsVirtualDiskCollector'
     #    - 'VMStatsMemoryCollector'
     #    - 'VMStatsDefaultCollector'
-    #  INFO - Alerts
+        - 'VcopsSelfMonitoringPropertiesCollector'
+        - 'VcopsSelfMonitoringStatsCollector'
+    ##  INFO - Alerts
     #    - 'NSXTAdapterAlertCollector'
     #    - 'NSXTMgmtClusterAlertCollector'
     #    - 'NSXTMgmtServiceAlertCollector'
     #    - 'NSXTMgmtNodeAlertCollector'
+    #    - 'NSXTTransportNodeAlertCollector'
+    #    - 'NSXTLogicalSwitchAlertCollector'
     #    - 'ClusterAlertCollector'
     #    - 'DatastoreAlertCollector'
     #    - 'HostSystemAlertCollector'
     #    - 'VCenterAlertCollector'
     #    - 'VMAlertCollector'
+    #    - 'VcopsSelfMonitoringAlertCollector'
+    #    - 'SDDCAlertCollector'
 
     alerts:
       alertCriticality:
@@ -37,6 +50,13 @@ data:
         - 'WARNING'
         - 'IMMEDIATE'
       activeOnly: True
+
+    CustomInfoMetricsGenerator:
+       - metric: 'vrops_virtualmachine_guest_tools_target_version'
+         values_dict:
+           # A dict with your static input > label: label_value
+           guest_tools_target_version: '11.3.5'
+
 
     ClusterPropertiesCollector:
     # INFO - Prefix: vrops_cluster_
@@ -83,6 +103,11 @@ data:
         key: "summary|total_number_vms"
       - metric_suffix: "cpu_contention_percentage"
         key: "cpu|capacity_contentionPct"
+
+    DistributedvSwitchPropertiesCollector:
+    # INFO - Prefix: vrops_distributed_virtual_switch_
+      - metric_suffix: "summary_version"
+        key: "summary|version"
 
     DatastoreStatsCollector:
     # INFO - Prefix: vrops_datastore_
@@ -242,6 +267,12 @@ data:
         key: "config|guestFullName"
       - metric_suffix: "config_hardware_memory_kilobytes"
         key: "config|hardware|memoryKB"
+      - metric_suffix: "disk_space_snapshot_age_days"
+        key: "diskspace|snapshot|snapshotAge"
+      - metric_suffix: "guest_tools_running_status"
+        key: "summary|guest|toolsRunningStatus"
+      - metric_suffix: "guest_tools_version_status"
+        key: "summary|guest|toolsVersionStatus2"
 
     VMStatsMemoryCollector:
     # INFO - Prefix: vrops_virtualmachine_
@@ -274,6 +305,8 @@ data:
         key: "cpu|usage_average"
       - metric_suffix: "cpu_usage_average_mhz"
         key: "cpu|usagemhz_average"
+      - metric_suffix: "cpu_workload_percentage"
+        key: "cpu|workload"
       - metric_suffix: "cpu_contention_ratio"
         key: "cpu|capacity_contentionPct"
       - metric_suffix: "cpu_ready_ratio"
@@ -321,6 +354,8 @@ data:
 
     VMStatsDefaultCollector:
     # INFO - Prefix: vrops_virtualmachine_
+      - metric_suffix: "health"
+        key: "badge|health"
       - metric_suffix: "disk_usage_average_kilobytes_per_second"
         key: "disk|usage_average"
       - metric_suffix: "diskspace_virtual_machine_used_gigabytes"
@@ -429,26 +464,6 @@ data:
       - metric_suffix: "sys_capacity_groups_based_in_ip_usage_count"
         key: "System Capacity|Groups Based on IP Sets|UsageCount"
 
-     # NSX-T 2.5
-      - metric_suffix: "sys_capacity_logical_switch_ports_usage_count"
-        key: "System Capacity|System Wide Logical Switch Ports|UsageCount"
-      - metric_suffix: "sys_capacity_logical_switch_ports_max_supported_count"
-        key: "System Capacity|System Wide Logical Switch Ports|MaxSupportedCount"
-
-     # NSX-T 2.4
-      - metric_suffix: "sys_capacity_distributed_firewall_rules_usage_count"
-        key: "System Capacity|System Wide Firewall Rules|UsageCount"
-      - metric_suffix: "sys_capacity_distributed_firewall_rules_max_supported_count"
-        key: "System Capacity|System Wide Firewall Rules|MaxSupportedCount"
-      - metric_suffix: "sys_capacity_distributed_firewall_section_max_supported_count"
-        key: "System Capacity|Firewall Sections|MaxSupportedCount"
-      - metric_suffix: "sys_capacity_distributed_firewall_section_usage_count"
-        key: "System Capacity|Firewall Sections|UsageCount"
-      - metric_suffix: "sys_capacity_nsgroups_max_supported_count"
-        key: "System Capacity|Network and Security Groups|MaxSupportedCount"
-      - metric_suffix: "sys_capacity_nsgroups_usage_count"
-        key: "System Capacity|Network and Security Groups|UsageCount"
-
     NSXTMgmtClusterPropertiesCollector:
     # INFO - Prefix: vrops_nsxt_mgmt_cluster_
       - metric_suffix: "product_version"
@@ -478,9 +493,32 @@ data:
       - metric_suffix: "connectivity_status"
         expected: "CONNECTED"
         key: "ConnectivityStatus|ManagerConnectivityProperty"
-        
+
     NSXTTransportNodePropertiesCollector:
     # INFO - Prefix: vrops_nsxt_transport_node_
       - metric_suffix: "connectivity_status"
         expected: "SUCCESS"
         key: "ConnectivityStatus|TransportNodeState"
+      - metric_suffix: "summary_version"
+        key: "summary|SoftwareVersion"
+
+    NSXTLogicalSwitchPropertiesCollector:
+    # INFO - Prefix: vrops_nsxt_logical_switch_
+       - metric_suffix: "state"
+         expected: "SUCCESS"
+         key: "summary|LogicalSwitchStateProperty"
+
+    VcopsSelfMonitoringStatsCollector:
+    # INFO - Prefix: vrops_self_
+       - metric_suffix: "primary_objects_count"
+         key: "PrimaryResourcesCount"
+       - metric_suffix: "primary_metrics_count"
+         key: "PrimaryMetricsCount"
+
+    VcopsSelfMonitoringPropertiesCollector:
+    # INFO - Prefix: vrops_self_
+       - metric_suffix: "build_number"
+         key: "build_number"
+       - metric_suffix: "cluster_state"
+         expected: "ONLINE"
+         key: "ClusterState"

@@ -16,7 +16,7 @@ max_routes = {{.Values.max_routes | default 256}}
 allow_overlapping_ips = true
 core_plugin = ml2
 
-service_plugins = {{required "A valid .Values.service_plugins required!" .Values.service_plugins}}
+service_plugins = {{required "A valid .Values.service_plugins required!" .Values.service_plugins}}{{- if .Values.interconnection.enabled }},networking-interconnection{{- end}}
 
 default_router_type = {{required "A valid .Values.default_router_type required!" .Values.default_router_type}}
 router_scheduler_driver = {{required "A valid .Values.router_scheduler_driver required!" .Values.router_scheduler_driver}}

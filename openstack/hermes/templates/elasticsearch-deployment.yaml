@@ -39,7 +39,8 @@ spec:
               cp /hermes-etc/* /data/es-config &&
               mkdir -p /data/es-config/scripts &&
               mkdir -p /data/snapshots &&
-              chown -R 1000:1000 /data/snapshots
+              chown -R 1000:1000 /data/snapshots &&
+              touch /data/es-config/elasticsearch.keystore && rm /data/es-config/elasticsearch.keystore
           volumeMounts:
             - name: data
               mountPath: /data
@@ -64,7 +65,7 @@ spec:
           command: [elasticsearch]
           env:
             # tell elasticsearch where to find jvm.options
-            - name: ES_JVM_OPTIONS
+            - name: ES_JVM_OPTS
               value: "/data/es-config/jvm.options"
             - name: ES_PATH_CONF
               value: "/data/es-config/"

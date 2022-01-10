@@ -1,10 +1,27 @@
 {{- range $cluster_id, $cluster := .Values.clusters }}
+{{- $az_apods := dict }}
+{{- /*
+If aPod design is available take availability zones from there, with a list of aPods
+Else construct the same structure from the AZ list
+This and the affinities for 'cp' can go if aPod rollout is completed globally
+*/ -}}
+{{- if $.Values.global.apods }}
+{{- $az_apods = $.Values.global.apods }}
+{{- else }}
 {{- range $az := $.Values.global.availability_zones }}
+{{- $az_apods = set $az_apods $az list }}
+{{- end }}
+{{- end }}
+{{- range $az, $apods := $az_apods }}
+{{- if $.Values.global.cp }}
+{{- $apods = append $apods "cp" }}
+{{- end }}
+{{- range $apod := $apods }}
 kind: Deployment
 apiVersion: apps/v1
 
 metadata:
-  name: swift-haproxy-{{ $cluster_id }}-{{ $az }}
+  name: swift-haproxy-{{ $cluster_id }}-{{ $az }}{{ if ne $apod "cp" }}-{{ $apod }}{{ end }}
   labels:
     release: "{{ $.Release.Name }}"
     os-cluster: {{ $cluster_id }}
@@ -28,20 +45,41 @@ spec:
     metadata:
       labels:
         component: swift-haproxy-{{ $cluster_id }}
+        alert-tier: os
+        alert-service: swift
         from: deployment
         os-cluster: {{ $cluster_id }}
         for-service: swift-proxy-{{ $cluster_id }}
         availability-zone: {{ $az }}
+        apod: {{ $apod }}
       annotations:
         checksum/haproxy.bin: {{ include "swift/templates/haproxy-bin-configmap.yaml" $ | sha256sum }}
         checksum/haproxy-cluster.etc: {{ include "swift/templates/etc/haproxy-cluster-configmap.yaml" $ | sha256sum }}
         prometheus.io/scrape: "true"
         prometheus.io/targets: {{ required ".Values.alerts.prometheus.openstack missing" $.Values.alerts.prometheus.openstack }}
     spec:
-      # No tolerations for swift nodes
+      {{- if (index $cluster (printf "haproxy_deployment_tolerate_swift_%s_%s" $az $apod)) }}
+      tolerations:
+      - key: "species"
+        operator: "Equal"
+        value: "swift-storage"
+        effect: "NoSchedule"
+      {{- end }}
       nodeSelector:
+        {{- if eq $apod "cp" }}
         failure-domain.beta.kubernetes.io/zone: {{ $az }}
+        {{- else }}
+        kubernetes.cloud.sap/apod: {{ $apod }}
+        {{- end }}
       affinity:
+        {{- if eq $apod "cp" }}
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: kubernetes.cloud.sap/apod
+                operator: DoesNotExist
+        {{- end }}
         podAntiAffinity:
           # Prefere to be scheduled on nodes not yet running this proxy from a deplyoment
           # kubernetes.io/hostname legacy control plane
@@ -112,10 +150,10 @@ spec:
           resources:
             requests:
               cpu: "1500m"
-              memory: "200Mi"
+              memory: "400Mi"
             limits:
               cpu: "1500m"
-              memory: "200Mi"
+              memory: "400Mi"
           volumeMounts:
             - mountPath: /tls-secret
               name: tls-secret
@@ -147,5 +185,6 @@ spec:
               containerPort: 8404
 
 ---
+{{- end }}
 {{- end }}
 {{- end }}

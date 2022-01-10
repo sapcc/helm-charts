@@ -21,11 +21,13 @@ spec:
     metadata:
       labels:
         app: keep-image-pulled
+        alert-tier: os
+        alert-service: swift
     spec:
       # NOTE: observed resource usage in eu-de-1 (as of 2020-02-26)
       # - no measurable CPU usage once started
       # - RAM max. 1.5 MiB (but it turns out that k8s itself runs into OOM when
-      #   starting a container with less than 16 MiB RAM limit)
+      #   starting a container with less than 28 MiB RAM limit)
       containers:
         - name: swift
           image: {{ include "swift_image" . }}
@@ -34,10 +36,10 @@ spec:
           resources:
             requests:
               cpu: "1m"
-              memory: "20Mi"
+              memory: "32Mi"
             limits:
               cpu: "1m"
-              memory: "20Mi"
+              memory: "32Mi"
         - name: haproxy
           image: {{ $.Values.global.registryAlternateRegion}}/swift-haproxy:{{ $.Values.image_version_haproxy }}
           imagePullPolicy: IfNotPresent
@@ -45,10 +47,10 @@ spec:
           resources:
             requests:
               cpu: "1m"
-              memory: "20Mi"
+              memory: "32Mi"
             limits:
               cpu: "1m"
-              memory: "20Mi"
+              memory: "32Mi"
         - name: statsd
           image: {{ .Values.global.dockerHubMirrorAlternateRegion }}/prom/statsd-exporter:{{ .Values.image_version_auxiliary_statsd_exporter }}
           imagePullPolicy: IfNotPresent
@@ -56,7 +58,7 @@ spec:
           resources:
             requests:
               cpu: "1m"
-              memory: "20Mi"
+              memory: "32Mi"
             limits:
               cpu: "1m"
-              memory: "20Mi"
+              memory: "32Mi"

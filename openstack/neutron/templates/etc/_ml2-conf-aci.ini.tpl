@@ -32,6 +32,9 @@ default_baremetal_pc_policy_group = {{ .Values.aci.default_baremetal_pc_policy_g
 {{- if .Values.aci.baremetal_reserved_vlan_ids }}
 baremetal_reserved_vlan_ids = {{ .Values.aci.baremetal_reserved_vlan_ids }}
 {{- end }}
+{{- if .Values.aci.az_checks_enabled }}
+az_checks_enabled = {{ .Values.aci.az_checks_enabled }}
+{{- end }}
 
 {{- if .Values.aci.pc_policy_groups }}
 {{ range $i, $pc_policy_group := .Values.aci.pc_policy_groups }}
@@ -59,6 +62,18 @@ physical_domain = {{ default $.Values.aci.aci_hostgroups.physical_domains $aci_h
 physical_network = {{ default $aci_hostgroup.name $aci_hostgroup.physical_network }}
 segment_type  = {{ $.Values.aci.aci_hostgroups.segment_type }}
 segment_range = {{ default $.Values.aci.aci_hostgroups.segment_ranges $aci_hostgroup.segment_ranges | join "," }}
+{{- if $aci_hostgroup.finalize_binding }}
+finalize_binding = True
+{{- end }}
+availability_zones = {{ default "" $aci_hostgroup.availability_zones | join "," }}
+{{- if not (empty $aci_hostgroup.host_azs) }}
+host_azs = {{ range $az, $hosts := $aci_hostgroup.host_azs -}}
+        {{- range $n, $host := $hosts -}}
+            {{ $host }}:{{ $az }}
+            {{- if lt $n (sub (len $hosts) 1) -}},{{- end -}}
+        {{- end -}}
+    {{- end -}}
+{{ end -}}
 {{- range $i, $subgroup := $aci_hostgroup.subgroups }}
 
 [aci-hostgroup:{{ $subgroup.name }}]
@@ -89,13 +104,14 @@ segment_id = {{ $fixed_binding.segment_id }}
 {{ end }}
 
 #AddressScope
-{{- range $i, $address_scope := .Values.aci.address_scopes }}
+{{ range $i, $address_scope := concat .Values.global_address_scopes .Values.local_address_scopes -}}
 {{ $address_scope.description }}
 [address-scope:{{ $address_scope.name }}]
-l3_outs = {{ $address_scope.l3_outs }}
-contracts = {{ $address_scope.contracts }}
+l3_outs = {{ default (print "common/"  $address_scope.vrf) $address_scope.l3_outs}}
+consumed_contracts = {{ default $address_scope.vrf (join "," $address_scope.consumed_contracts) }}
+provided_contracts = {{ default $address_scope.vrf (join "," $address_scope.provided_contracts) }}
 scope = {{ default "public" $address_scope.scope }}
-vrf={{ $address_scope.vrf }}
+vrf = {{ $address_scope.vrf }}
 {{ end }}
 
 {{- else -}}

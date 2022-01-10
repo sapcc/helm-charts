@@ -12,15 +12,19 @@
 - name:  KEPPEL_API_LISTEN_ADDRESS
   value: ':80'
 {{- if $.Values.keppel.anycast_domain_name }}
-- name:  KEPPEL_API_ANYCAST_URL
-  value: 'https://{{$.Values.keppel.anycast_domain_name}}'
+- name:  KEPPEL_API_ANYCAST_FQDN
+  value: '{{$.Values.keppel.anycast_domain_name}}'
 {{- end }}
 {{- if (index $.Values.keppel "anycast_issuer_key.pem") }}
 - name:  KEPPEL_ANYCAST_ISSUER_KEY
-  value: '/etc/keppel/anycast-issuer-key.pem'
+  value: '/etc/keppel-keys/anycast-issuer-key.pem'
 {{- end }}
-- name:  KEPPEL_API_PUBLIC_URL
-  value: 'https://keppel.{{$.Values.global.region}}.{{$.Values.global.tld}}'
+{{- if (index .Values.keppel "anycast_previous_issuer_key.pem") }}
+- name:  KEPPEL_ANYCAST_PREVIOUS_ISSUER_KEY
+  value: '/etc/keppel-keys/anycast-previous-issuer-key.pem'
+{{- end }}
+- name:  KEPPEL_API_PUBLIC_FQDN
+  value: 'keppel.{{$.Values.global.region}}.{{$.Values.global.tld}}'
 - name:  KEPPEL_AUDIT_SILENT
   value: "{{ ne $.Values.keppel.rabbitmq.queue_name "" }}"
 - name:  KEPPEL_AUDIT_RABBITMQ_QUEUE_NAME
@@ -127,11 +131,15 @@
 - name:  KEPPEL_INBOUND_CACHE_SWIFT_CONTAINER
   value: 'keppel_inbound_cache'
 - name:  KEPPEL_ISSUER_KEY
-  value: '/etc/keppel/issuer-key.pem'
+  value: '/etc/keppel-keys/issuer-key.pem'
+{{- if (index .Values.keppel "previous_issuer_key.pem") }}
+- name:  KEPPEL_PREVIOUS_ISSUER_KEY
+  value: '/etc/keppel-keys/previous-issuer-key.pem'
+{{- end }}
 - name:  KEPPEL_JANITOR_LISTEN_ADDRESS
   value: ':80'
 - name:  KEPPEL_OSLO_POLICY_PATH
-  value: '/etc/keppel/policy.json'
+  value: '/etc/keppel/policy.yaml'
 - name:  KEPPEL_PEERS
   value: "{{ range .Values.keppel.peers }}{{ .hostname }},{{ end }}"
 - name:  KEPPEL_RATELIMIT_ANYCAST_BLOB_PULL_BYTES

@@ -21,6 +21,8 @@ spec:
     metadata:
       labels:
         name: swift-{{ $memcached }}
+        alert-tier: os
+        alert-service: swift
     spec:
       containers:
         - name: memcached
@@ -43,12 +45,12 @@ spec:
             - name: metrics
               containerPort: 9150
           resources:
-            # observed usage: CPU <= 2m-4m, RAM = 18-20 MiB
+            # observed usage: CPU <= 2m-4m, RAM = up to 50 MiB
             requests:
-              cpu: '10m'
-              memory: '36Mi'
-            limits:
-              cpu: '50m'
+              cpu: '20m'
               memory: '64Mi'
+            limits:
+              cpu: '100m'
+              memory: '128Mi'
 ---
 {{end}}

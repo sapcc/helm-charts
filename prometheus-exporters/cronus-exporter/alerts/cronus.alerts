@@ -1,11 +1,11 @@
 groups:
 - name: CronusAlerts
   rules:
-  - alert: CronusSendEmail
-    expr: sum(sum_over_time(aws_ses_cronus_provider_send[5m])) < 50
+  - alert: CronusSendEmails
+    expr: sum(sum_over_time(aws_ses_cronus_provider_send[5m])) < 5 or sum_over_time(cronus_simulator_send_email_rate[5m]) < 5
     for: 5m
     labels:
-      meta: Cronus - sending emails is below expected in region {{ $labels.region }}
+      meta: Cronus - sending emails is below the threshold in the region {{ $labels.region }}
       service: cronus
       severity: critical
       tier: os
@@ -13,8 +13,8 @@ groups:
     annotations:
       description: grafana - https://grafana.global.cloud.sap/d/cronushealth/cronushealth?orgId=1 , slack-cronus-dev - https://convergedcloud.slack.com/archives/G01SLHXERL5
       summary: problem with sending emails in region {{ $labels.region }}
-  - alert: CronusClusterHealth
-    expr: kube_pod_container_status_running{namespace="cronus"} == 0
+  - alert: CronusPodsHanging
+    expr: sum (kube_pod_container_status_running{namespace="cronus"}) by (container) == 0
     for: 5m
     labels:
       meta: Cronus cluster - pods fails in region {{ $labels.region }} pod {{ $labels.pod }}
@@ -24,55 +24,17 @@ groups:
       playbook: docs/devops/alert/cronus/#cronus_health
     annotations:
       description: grafana - https://grafana.{{ $labels.region }}.cloud.sap/d/cronushealth/cronushealth?orgId=1 , slack-cronus-dev - https://convergedcloud.slack.com/archives/G01SLHXERL5
-      summary: problem with sending emails in region {{ $labels.region }}
-  - alert: CronusMaiaDown
-    expr: (count(aws_ses_cronus_provider_send) OR on() vector(0)) == 0
+      summary: Cronus cluster - pods fails in region {{ $labels.region }} pod {{ $labels.pod }}
+  - alert: CronusDeliveryEmails
+    expr: sum(sum_over_time(aws_ses_cronus_provider_delivery[5m])) < 5 or sum(sum_over_time(cronus_simulator_receiving_confirmed_email_rate[5m])) < 5
     for: 5m
     labels:
-      meta: cronus maia metrics system is down
+      meta: Cronus delivery emails is below the threshold in the region {{ $labels.region }} pod {{ $labels.pod }}
       service: cronus
       severity: critical
       tier: os
-      playbook: docs/devops/alert/cronus/#maia_down
+      playbook: docs/devops/alert/cronus/#sending_email_quick_test
     annotations:
       description: grafana - https://grafana.{{ $labels.region }}.cloud.sap/d/cronushealth/cronushealth?orgId=1 , slack-cronus-dev - https://convergedcloud.slack.com/archives/G01SLHXERL5
-      summary: cronus maia metrics system is down
+      summary: problem with delivery emails in region {{ $labels.region }}
 
-- name: NebulaAlerts
-  rules:
-  - alert: NebulaReconcile
-    expr: cronus_simulator_event_test_passed{action="reconcile"} == 0
-    for: 10m
-    labels:
-      meta: Nebula - reconcile account fails in {{ $labels.region }} with message {{ $labels.message }} 
-      service: cronus
-      severity: warning
-      tier: os
-      playbook: docs/devops/alert/cronus/#nebula_reconcile
-    annotations:
-      description: multicloud-api -  https://db.multicloud.int.sap , multicloud-jira - https://jira.multicloud.int.sap , slack-cc-cronus-dev - https://convergedcloud.slack.com/archives/G01SLHXERL5, log - https://sentry.{{ $labels.region }}.cloud.sap/monsoon/nebula/?query=requestID:{{ $labels.request_id }}
-      summary: problem with reconciling an account 
-  - alert: NebulaProductionReady24h
-    expr: sum by (account_id, project_id) (cronus_updater_production_ready{status="active"} offset 24h)  ==  sum by (account_id, project_id) (cronus_updater_production_ready{status="active"}) == 0
-    for: 10m
-    labels:
-      meta: Nebula - the SES accounts are still in Sandbox for more than 24 hours in the region {{ $labels.region }}
-      service: cronus
-      severity: warning
-      tier: os
-      playbook: docs/devops/alert/cronus/#production_ready
-    annotations:
-      description: multicloud-api -  https://db.multicloud.int.sap , multicloud-jira - https://jira.multicloud.int.sap , slack-cc-cronus-dev - https://convergedcloud.slack.com/archives/G01SLHXERL5
-      summary: accounts are still in sandbox after 24 hours
-  - alert: NebulaDeleteNotCompleted
-    expr: (cronus_updater_production_ready{tags=~".*terminated*.", status="active"}  offset 24h) * on(exported_instance, account_id) group_left(tags) cronus_updater_production_ready{tags=~".*terminated*.", status="active"} 
-    for: 10m
-    labels:
-      meta: Nebula - Multicloud fails to delete accounts for more than 24 hours in a region {{ $labels.region }}
-      service: cronus
-      severity: warning
-      tier: os
-      playbook: docs/devops/alert/cronus/#delete_account
-    annotations:
-      description: multicloud-api -  https://db.multicloud.int.sap , multicloud-jira - https://jira.multicloud.int.sap , slack-cc-cronus-dev - https://convergedcloud.slack.com/archives/G01SLHXERL5
-      summary: accounts weren't deleted properly within 24 hours

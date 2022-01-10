@@ -19,8 +19,13 @@ spec:
     metadata:
       labels:
         name: {{ .Release.Name }}
+        alert-tier: k8s
+        alert-service: gatekeeper
       annotations:
         checksum/configmap: {{ include "doop-central/templates/configmap.yaml" $ | sha256sum }}
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8080"
+        prometheus.io/targets: openstack
     spec:
       automountServiceAccountToken: false
       enableServiceLinks: false

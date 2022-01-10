@@ -299,6 +299,15 @@ checksum/object.ring: {{ include "swift/templates/object-ring.yaml" . | sha256su
 {{- end -}}
 
 {{- /**********************************************************************************/ -}}
+{{- define "swift_log_statsd" -}}
+log_statsd_host = localhost
+log_statsd_port = 9125
+log_statsd_default_sample_rate = 1.0
+log_statsd_sample_rate_factor = 1.0
+log_statsd_metric_prefix = swift
+{{- end -}}
+
+{{- /**********************************************************************************/ -}}
 {{- define "swift_haproxy_backend" -}}
 {{- $cluster_id := index . 0 -}}
 {{- $cluster := index . 1 -}}

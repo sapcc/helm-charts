@@ -72,13 +72,14 @@ spec:
           # The system container POD is used for networking.
           regex: POD
           action: drop
-        {{ end }}
+      {{ end }}
 
 {{- if semverCompare ">=1.20" .Capabilities.KubeVersion.Version }}
     - port: https-metrics
       path: /metrics/probes
       scheme: https
-      interval: {{ required ".Values.serviceDiscoveries.scrapeInterval missing" .Values.serviceDiscoveries.scrapeInterval }}
+      interval: {{ required ".Values.serviceDiscoveries.scrapeInterval  missing" .Values.serviceDiscoveries.scrapeInterval }}
+      scrapeTimeout: {{ required ".Values.serviceDiscoveries.scrapeTimeout  missing" .Values.serviceDiscoveries.scrapeTimeout }}
       honorLabels: true
       tlsConfig:
         caFile: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
@@ -111,5 +112,20 @@ spec:
         - sourceLabels: [ pod_name ]
           regex: (.+)
           targetLabel: pod
+          {{ if .Values.serviceDiscoveries.kubelet.allowedMetrics }}
+        - sourceLabels:
+            - container_name
+            - __name__
+          # The system container POD is used for networking.
+          regex: POD;({{ .Values.serviceDiscoveries.kubelet.allowedMetrics | join "|" }})
+          action: drop
+{{ include "prometheus.keep-metrics.metric-relabel-config" .Values.serviceDiscoveries.kubelet.allowedMetrics | indent 8 }}
+        {{ else }}
+        - sourceLabels:
+            - container_name
+          # The system container POD is used for networking.
+          regex: POD
+          action: drop
+        {{ end }}
 {{- end }}
 {{- end }}

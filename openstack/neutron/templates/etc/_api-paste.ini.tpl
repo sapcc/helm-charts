@@ -15,14 +15,14 @@ use = egg:Paste#urlmap
 {{- if .Values.sentry.enabled }} raven{{- end -}}
 {{- end }}
 
-{{- define "manhole_pipe" -}}
-{{ if .Values.api.uwsgi }} manhole{{- end -}}
+{{- define "uwsgi_pipe" -}}
+{{ if .Values.api.uwsgi }} uwsgi manhole{{- end -}}
 {{- end }}
 
 [composite:neutronapi_v2_0]
 use = call:neutron.auth:pipeline_factory
-noauth = cors healthcheck http_proxy_to_wsgi request_id  {{- include "watcher_pipe" . }} catch_errors {{- include "osprofiler_pipe" . }} {{- include "sentry_pipe" . }} {{- include "manhole_pipe" . }} extensions neutronapiapp_v2_0
-keystone = cors healthcheck http_proxy_to_wsgi request_id catch_errors {{- include "osprofiler_pipe" . }} {{- include "sentry_pipe" . }} authtoken keystonecontext {{- include "watcher_pipe" . }} {{- include "audit_pipe" . }} {{- include "manhole_pipe" . }} extensions neutronapiapp_v2_0
+noauth = cors healthcheck http_proxy_to_wsgi request_id  {{- include "watcher_pipe" . }} catch_errors {{- include "osprofiler_pipe" . }} {{- include "sentry_pipe" . }} {{- include "uwsgi_pipe" . }} extensions neutronapiapp_v2_0
+keystone = cors healthcheck http_proxy_to_wsgi request_id catch_errors {{- include "osprofiler_pipe" . }} {{- include "sentry_pipe" . }} authtoken keystonecontext {{- include "watcher_pipe" . }} {{- include "audit_pipe" . }} {{- include "uwsgi_pipe" . }} extensions neutronapiapp_v2_0
 
 [filter:healthcheck]
 paste.filter_factory = oslo_middleware:Healthcheck.factory
@@ -91,4 +91,7 @@ config_file = /etc/neutron/watcher.yaml
 {{ if .Values.api.uwsgi -}}
 [filter:manhole]
 paste.filter_factory = manhole_middleware:Manhole.factory
+
+[filter:uwsgi]
+paste.filter_factory = uwsgi_middleware:Uwsgi.factory
 {{- end }}

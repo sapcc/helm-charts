@@ -17,6 +17,8 @@ spec:
     metadata:
       labels:
         name: keppel-anycast-monitor
+        alert-tier: os
+        alert-service: keppel
       annotations:
         prometheus.io/scrape: "true"
         prometheus.io/port: "8080"
@@ -30,6 +32,7 @@ spec:
             - server
             - anycastmonitor
             - "https://{{ .Values.keppel.anycast_domain_name }}"
+            - "keppel.{{ .Values.global.region }}.{{ .Values.global.tld }}"
             - {{ quote .Values.keppel.healthcheck_account }}
             {{- range .Values.keppel.peers }}
             - {{ quote .healthcheck_account }}

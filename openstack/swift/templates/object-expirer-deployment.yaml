@@ -19,9 +19,12 @@ spec:
     metadata:
       labels:
         component: swift-object-expirer
+        alert-tier: os
+        alert-service: swift
       annotations:
         {{- include "swift_conf_annotations" . | indent 8 }}
         {{- include "swift_ring_annotations" . | indent 8 }}
+        {{- include "swift_prometheus_annotations" . | indent 8 }}
     spec:
       volumes:
         - name: swift-etc
@@ -79,3 +82,23 @@ spec:
             - mountPath: /swift-rings/object
               name: swift-object-ring
         {{- end }}
+        - name: statsd
+          image: {{ .Values.global.dockerHubMirrorAlternateRegion }}/prom/statsd-exporter:{{ .Values.image_version_auxiliary_statsd_exporter }}
+          args: [ --statsd.mapping-config=/swift-etc/statsd-exporter.yaml ]
+          resources:
+            # observed usage: CPU = 10m-100m, RAM = 550-950 MiB
+            requests:
+              cpu: "200m"
+              memory: "1024Mi"
+            limits:
+              cpu: "200m"
+              memory: "1024Mi"
+          ports:
+            - name: statsd
+              containerPort: 9125
+              protocol: UDP
+            - name: metrics
+              containerPort: 9102
+          volumeMounts:
+            - mountPath: /swift-etc
+              name: swift-etc

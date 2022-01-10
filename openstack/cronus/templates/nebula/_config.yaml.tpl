@@ -13,6 +13,9 @@ nebula:
   listenAddr:
     http: :{{ .Values.nebula.http }} # default :1080
     shutdownTimeout: {{ .Values.config.accountStatusTimeout }}s
+    readTimeout: {{ .Values.nebula.readTimeout | default 30 }}s
+    writeTimeout: {{ .Values.nebula.writeTimeout | default 30 }}s
+    keepAliveTimeout: {{ .Values.nebula.keepAliveTimeout | default 60 }}s
   keystone:
 {{- if .Values.config.keystone }}
 {{- range $key, $value := .Values.config.keystone }}
@@ -34,10 +37,14 @@ nebula:
     endpoint: {{ .Values.config.multiCloud.endpoint }}
     username: {{ .Values.config.multiCloud.username }}
     password: {{ .Values.config.multiCloud.password }}
-  # TODO: needs to be deleted in newer versions
-  serviceUser:
-    username: {{ .Values.config.serviceUsername }}
-    password: {{ .Values.config.servicePassword }}
+  intSMTP:
+    endpoint: {{ .Values.config.intSMTP.endpoint }}
+    username: {{ .Values.config.intSMTP.username }}
+    password: {{ .Values.config.intSMTP.password }}
+    owners:
+{{- range $v := .Values.config.intSMTP.owners }}
+      - {{ $v }}
+{{- end }}
   jira:
     endpoint: {{ .Values.config.jira.endpoint }}
     username: {{ .Values.config.jira.username }}
@@ -57,6 +64,12 @@ nebula:
     secret: {{ .Values.config.awsSecret }}
     technicalUsername: {{ .Values.config.technicalUsername }}
     policyName: {{ .Values.config.policyName }}
+    roleName: {{ .Values.config.roleName }}
+    iamRolePolicyName: {{ .Values.config.iamRolePolicyName }}
+    iamRolePolicy: |
+{{ .Values.config.iamRolePolicy | indent 6 }}
+    iamRoleTrustPolicy: |
+{{ .Values.config.iamRoleTrustPolicy | indent 6 }}
     iamPolicy: |
 {{ .Values.config.iamPolicy | indent 6 }}
     verifyEmailDomain: {{ .Values.config.verifyEmailDomain }}
@@ -119,5 +132,32 @@ nebula:
 {{- end }}
 {{- if .Values.nebula.leasedUntilUpdateBefore }}
   leasedUntilUpdateBefore: {{ .Values.nebula.leasedUntilUpdateBefore }}
+{{- end }}
+{{- if .Values.notifier.enabled }}
+  notifier:
+    host: {{ .Values.notifier.host }}
+    smtpUsername: {{ .Values.notifier.smtpUsername }}
+    smtpPassword: {{ .Values.notifier.smtpPassword }}
+    sender: {{ .Values.notifier.sender }}
+    recipients:
+  {{- range $key, $value := .Values.config.sesAdditionalContactEmails }}
+      - {{ $value }}
+  {{- end }}
+    activationTitle: {{ .Values.notifier.activationTitle }}
+    activationBody: |
+{{ .Values.notifier.activationBody | indent 6 }}
+    deletionTitle: {{ .Values.notifier.deletionTitle }}
+    deletionBody: |
+{{ .Values.notifier.deletionBody | indent 6 }}
+{{- end }}
+{{- if .Values.pki.enabled }}
+  pki:
+    clientID: {{ .Values.pki.clientID }}
+    accountID: {{ .Values.pki.accountID }}
+    clientSecret: {{ .Values.pki.clientSecret }}
+    authEndpoint: {{ .Values.pki.authEndpoint }}
+    enrollEndpoint: {{ .Values.pki.enrollEndpoint }}
+    subjectPattern: {{ .Values.pki.subjectPattern }}
+    validityDays: {{ .Values.pki.validityDays }}
 {{- end }}
 {{- end -}}

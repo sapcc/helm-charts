@@ -143,33 +143,35 @@ groups:
     annotations:
       description: "VMFS Datastore {{ $labels.datastore }} utilization > 90%. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
       summary: "VMFS Datastore {{ $labels.datastore }} utilization > 90%. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
-      
+
   - alert: AverageVmfsDataStoreCapacityWarning
     expr: >
       avg by (type, vcenter) (vrops_datastore_diskspace_total_usage_gigabytes{type=~"vmfs_p_ssd|vmfs_s_hdd"} / vrops_datastore_diskspace_capacity_gigabytes) > 0.7
     for: 20m
     labels:
-      severity: info
+      severity: warning
       tier: os
       service: storage
       context: "vrops-exporter {{ $labels.type }}"
       meta: "Average utilization for `{{ $labels.type }}` Datastores per vCenter is above 70%. ({{ $labels.vcenter }})"
       dashboard: vcenter-datastore-utilization
+      playbook: docs/support/playbook/storage/new_storage_lun_request.html
     annotations:
       description: "Average utilization for `{{ $labels.type }}` Datastores per vCenter is above 70%. ({{ $labels.vcenter }})"
       summary: "Average utilization for `{{ $labels.type }}` Datastores per vCenter is above 70%. ({{ $labels.vcenter }})"
-       
+
   - alert: AverageVmfsDataStoreCapacityCritical
     expr: >
       avg by (type, vcenter) (vrops_datastore_diskspace_total_usage_gigabytes{type=~"vmfs_p_ssd|vmfs_s_hdd"} / vrops_datastore_diskspace_capacity_gigabytes) > 0.8
     for: 20m
     labels:
-      severity: info
+      severity: critical
       tier: os
       service: storage
       context: "vrops-exporter {{ $labels.type }}"
       meta: "Average utilization for `{{ $labels.type }}` Datastores per vCenter is above 80%. ({{ $labels.vcenter }})"
       dashboard: vcenter-datastore-utilization
+      playbook: docs/support/playbook/storage/new_storage_lun_request.html
     annotations:
       description: "Average utilization for `{{ $labels.type }}` Datastores per vCenter is above 80%. ({{ $labels.vcenter }})"
       summary: "Average utilization for `{{ $labels.type }}` Datastores per vCenter is above 80%. ({{ $labels.vcenter }})"
@@ -224,8 +226,9 @@ groups:
 
   - alert: DatastoreDisconnectedWithVmsOnIt
     expr: >
-      vrops_datastore_summary_total_number_vms > 0
-      and on (datastore) vrops_datastore_summary_datastore_accessible{type!~"local", state="PoweredOff"}
+      (label_replace(vrops_datastore_summary_total_number_vms, "hostsystem", "$1", "datastore", "(node.*)(-.*)") > 0 and on(datastore) 
+      vrops_datastore_summary_datastore_accessible{state="PoweredOff",type!~"local"}) unless on (hostsystem)
+      label_replace(vrops_hostsystem_runtime_maintenancestate{state="inMaintenance"}, "hostsystem", "$1", "hostsystem", "(node.*)(.cc.*)")
     for: 20m
     labels:
       severity: critical
@@ -240,8 +243,9 @@ groups:
 
   - alert: DatastoreDisconnectedWithoutVmsOnIt
     expr: >
-      vrops_datastore_summary_total_number_vms == 0
-      and on (datastore) vrops_datastore_summary_datastore_accessible{type!~"local", state="PoweredOff"}
+      (label_replace(vrops_datastore_summary_total_number_vms, "hostsystem", "$1", "datastore", "(node.*)(-.*)") == 0 and on(datastore) 
+      vrops_datastore_summary_datastore_accessible{state="PoweredOff",type!~"local"}) unless on (hostsystem)
+      label_replace(vrops_hostsystem_runtime_maintenancestate{state="inMaintenance"}, "hostsystem", "$1", "hostsystem", "(node.*)(.cc.*)")
     for: 20m
     labels:
       severity: warning
@@ -256,15 +260,32 @@ groups:
 
   - alert: DatastoreHasLostConnectivityToAStorageDevice
     expr: >
-      vrops_datastore_alert_info{alert_name="Datastore has lost connectivity to a storage device"}
+      label_replace(vrops_datastore_alert_info{alert_name="Datastore has lost connectivity to a storage device"}, "hostsystem", "$1", "datastore", "(node.*)(-.*)") 
+      unless on (hostsystem) label_replace(vrops_hostsystem_runtime_maintenancestate{state="inMaintenance"}, "hostsystem", "$1", "hostsystem", "(node.*)(.cc.*)")
     labels:
-      severity: info
+      severity: warning
       tier: vmware
       service: storage
-      context: "vrops-exporter {{ $labels.datastore }}"
-      meta: "Datastore {{ $labels.datastore }} has lost connectivity to a storage device. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
+      context: "{{ $labels.datastore }} connectivity"
+      meta: "Datastore `{{ $labels.datastore }}` has lost connectivity to a storage device. ({{ $labels.vcenter }})"
       playbook: docs/devops/alert/vcenter/#datastore_has_lost_connectivity_to_a_storage_device
       no_alert_on_absence: "true"
     annotations:
-      description: "Datastore {{ $labels.datastore }} has lost connectivity to a storage device. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
-      summary: "Datastore {{ $labels.datastore }} has lost connectivity to a storage device. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
+      description: "Datastore `{{ $labels.datastore }}` has lost connectivity to a storage device. ({{ $labels.vcenter }})"
+      summary: "Datastore `{{ $labels.datastore }}` has lost connectivity to a storage device. ({{ $labels.vcenter }})"
+
+  - alert: DatastoreHasHostsThatHaveLostRedundantPathsToAStorageDevice
+    expr: >
+      label_replace(vrops_datastore_alert_info{alert_name="Datastore has one or more hosts that have lost redundant paths to a storage device"}, "hostsystem", "$1", "datastore", "(node.*)(-.*)") 
+      unless on (hostsystem) label_replace(vrops_hostsystem_runtime_maintenancestate{state="inMaintenance"}, "hostsystem", "$1", "hostsystem", "(node.*)(.cc.*)")
+    labels:
+      severity: warning
+      tier: vmware
+      service: storage
+      context: "{{ $labels.datastore }} host connectivity"
+      meta: "Datastore `{{ $labels.datastore }}` has hosts that have lost all of the redundant paths to a storage device. ({{ $labels.vcenter }})"
+      playbook: docs/devops/alert/vcenter/#datastore_has_lost_connectivity_to_a_storage_device
+      no_alert_on_absence: "true"
+    annotations:
+      description: "Datastore `{{ $labels.datastore }}` has hosts that have lost all of the redundant paths to a storage device. ({{ $labels.vcenter }})"
+      summary: "Datastore `{{ $labels.datastore }}` has hosts that have lost all of the redundant paths to a storage device. ({{ $labels.vcenter }})"

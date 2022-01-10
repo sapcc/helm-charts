@@ -14,9 +14,9 @@
       - '{__name__=~"prometheus_build_info"}'
       - '{__name__=~"blackbox_regression_status_gauge"}'
       - '{__name__=~"^openstack_ironic_nodes_.+"}'
-      - '{__name__=~"^openstack_ironic_leftover_ports$"}'      
-      - '{__name__=~"^limes_domain_quota$", resource=~"instances_z.*"}'
-      - '{__name__=~"^limes_project_.+$", resource=~"instances_z.*"}'
+      - '{__name__=~"^openstack_ironic_leftover_ports$"}'
+      - '{__name__=~"^limes_domain_quota$", resource=~"instances_.*"}'
+      - '{__name__=~"^limes_project_.+$", resource=~"instances_.*"}'
       - '{__name__=~"^nsxv3_cluster_(management|control)_status$"}'
       - '{__name__=~"^nsxv3_management_node_version$"}'
       - '{__name__=~"^nsxv3_scheduler.*$"}'
@@ -28,6 +28,7 @@
       - '{__name__=~"^nginx_ingress_controller_requests", ingress=~"keystone"}'
       - '{__name__=~"^nginx_ingress_controller_requests", ingress=~"neutron-server"}'
       - '{__name__=~"^nginx_ingress_controller_requests", ingress=~"elektra"}'
+      - '{__name__=~"^pg_database_size_bytes$", namespace=~"(arc|lyra|elektra)"}'
 
   relabel_configs:
     - action: replace

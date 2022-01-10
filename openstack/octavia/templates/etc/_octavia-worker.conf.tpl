@@ -5,6 +5,14 @@
 [DEFAULT]
 host = {{ $lb_name }}
 
+[networking]
+{{- if $loadbalancer.physical_interface_mapping }}
+physical_interface_mapping = {{ $loadbalancer.physical_interface_mapping }}
+{{- end }}
+{{- if $loadbalancer.vcmps }}
+vcmp_urls = {{ tuple $envAll $loadbalancer.vcmps | include "utils.bigip_urls" -}}
+{{- end }}
+
 [f5_agent]
 bigip_urls = {{ if $loadbalancer.devices -}}{{- tuple $envAll $loadbalancer.devices | include "utils.bigip_urls" -}}{{- else -}}{{ $loadbalancer.bigip_urls | join ", " }}{{- end }}
 bigip_verify = false
@@ -12,6 +20,7 @@ bigip_token = true
 esd_dir = /etc/octavia/esd
 sync_to_group = {{ default "" $loadbalancer.sync_to_group }}
 persist_every = {{ $envAll.Values.persist_every }}
+availability_zone = {{ default "" $loadbalancer.availability_zone }}
 
 # Use FastL4 for TCP listener if possible
 tcp_service_type = Service_L4

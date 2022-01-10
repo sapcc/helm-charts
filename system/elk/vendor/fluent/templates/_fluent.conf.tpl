@@ -124,25 +124,26 @@
   reserve_data true
   <parse>
     @type grok
-    grok_pattern %{IPV4:remote_addr} %{GREEDYDATA}] "%{WORD:method} %{IMAGE_METHOD:path}%{GREEDYDATA}1" %{NUMBER:response} %{GREEDYDATA}
+    grok_pattern %{IP:remote_addr} %{NOTSPACE:ident} %{NOTSPACE:auth} \[%{HAPROXYDATE:timestamp}\] "%{WORD:request_method} %{NOTSPACE:request_path} %{NOTSPACE:httpversion}" %{NUMBER:response} %{NUMBER:content_length} \"(?<referer>[^\"]{,255}).*?" "%{GREEDYDATA:user_agent}" %{GREEDYDATA} \[%{NOTSPACE:service}\] %{NOTSPACE:target} %{NUMBER} %{NUMBER:response_time} %{NOTSPACE} %{NOTSPACE:requestid}
     custom_pattern_path /fluent-bin/pattern
   </parse>
 </filter>
 
-{{- if .Values.datahub.enabled }}
+{{- if .Values.metis.enabled }}
 <filter kubernetes.var.log.containers.kube-system-nginx-ingress-controller**>
   @type mysql_enrich
   @log_level info
-  host {{.Values.datahub.host}}
-  port {{.Values.datahub.port}}
-  database {{.Values.datahub.db}}
-  username {{.Values.global.datahub.user}}
-  password {{.Values.global.datahub.password}}
-  sql select * from openstack_ips;
-  sql_key floating_ip_address
+  host {{.Values.metis.host}}
+  port {{.Values.metis.port}}
+  database {{.Values.metis.db}}
+  username {{.Values.global.metis.user}}
+  password {{.Values.global.metis.password}}
+  sql select ip_address, floating_ip_id, project, project_id, domain, domain_id, network, network_id, subnet, subnet_id, subnetpool, subnetpool_id, router, router_id, port_id, instance_id, owner from openstack_ips;
+  sql_key ip_address
   record_key remote_addr
-  columns project_id, project, port, domain, network, network_id, subnet, subnet_id, subnetpool, subnetpool_id, router, router_id, instance_id, owner, instance_name, host, availability_zone
-  refresh_interval 60
+  columns project, project_id, domain, domain_id, port_id, network, network_id, subnet, subnet_id, subnetpool, subnetpool_id, router, router_id, instance_id, owner
+  record_mapping project_id:cc_project_id,project:cc_project,port_id:cc_port_id,domain:cc_domain,domain_id:cc_domain_id,network:cc_network,network_id:cc_network_id,subnet:cc_subnet,subnet_id:cc_subnet_id,subnetpool:cc_subnetpool,subnetpool_id:cc_subnetpool_id,router:cc_router,router_id:cc_router_id,instance_id:cc_instance_id,owner:cc_owner
+  refresh_interval 600
 </filter>
 {{- end }}
 
@@ -298,7 +299,7 @@
   reserve_data true
   <parse>
     @type grok
-    grok_pattern %{DATE_EU:timestamp} %{TIME:timestamp} %{NUMBER} %{NOTSPACE:loglevel} %{JAVACLASS:component} \[%{NOTSPACE:requestid} usr %{DATA:usr} prj %{DATA:prj} dom %{DATA:dom} usr-dom %{DATA:usr_domain} prj-dom %{DATA}\] %{GREEDYDATA:action} %{METHOD:method} %{URIPATH:pri_path} %{LOWER:action} %{NOTSPACE:user} %{WORD:domain} %{GREEDYDATA:action}
+    grok_pattern %{DATE_EU:timestamp} %{TIME:timestamp} %{NUMBER} %{NOTSPACE:loglevel} %{JAVACLASS:component} \[%{NOTSPACE:requestid} %{NOTSPACE:global_request_id} usr %{DATA:usr} prj %{DATA:prj} dom %{DATA:dom} usr-dom %{DATA:usr_domain} prj-dom %{DATA}\] %{DATA:action} %{METHOD:method} %{URIPATH:pri_path}, %{LOWER:action} (?:b\')?%{NOTSPACE:user}(?:\') (?:b\')?%{WORD:domain}(?:\') %{GREEDYDATA:action}
     custom_pattern_path /fluent-bin/pattern
     grok_failure_key grok_failure
   </parse>

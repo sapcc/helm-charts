@@ -1,6 +1,20 @@
 groups:
 - name: octavia.alerts
   rules:
+  - alert: OpenstackOctaviaAgentNotSchedulable
+    expr: octavia_agent_schedulable == 0
+    for: 10m
+    labels:
+      context: Agent not schedulable
+      dashboard: octavia
+      service: octavia
+      severity: info
+      tier: os
+      meta: 'The active Octavia Agent `{{ $labels.agent }}` is not scheduable'
+      playbook: docs/support/playbook/octavia/agent_heartbeat.html
+    annotations:
+      description: 'The active Octavia Agent `{{ $labels.agent }}` is not scheduable'
+      summary: Openstack Octavia Metric to check agent availability
   - alert: OpenstackOctaviaMonitorAgentHeartbeat
     expr: max(octavia_monitor_agents_heartbeat_seconds) > 120
     for: 10m
@@ -8,12 +22,12 @@ groups:
       context: Agent Heartbeat
       dashboard: octavia
       service: octavia
-      severity: info
+      severity: warning
       tier: os
-      meta: 'Agent Heartbeat is above 75secs in {{ $labels.octavia_host }}'
+      meta: 'Agent Heartbeat is above 120secs in {{ $labels.octavia_host }}'
       playbook: docs/support/playbook/octavia/agent_heartbeat.html
     annotations:
-      description: Agent Heartbeat is above 75secs in {{ $labels.octavia_host }}
+      description: Agent Heartbeat is above 120secs in {{ $labels.octavia_host }}
       summary: Openstack Octavia Metric to monitor Agents Heartbeat
   - alert: OpenstackOctaviaWorkerConnectionError
     expr: rate(octavia_as3_failover_total{job="pods"}[5m]) > 0
@@ -65,7 +79,7 @@ groups:
       severity: critical
       tier: os
       meta: 'Load Balancer for agent {{ $labels.octavia_host }} stuck in `{{ $labels.current_status }}` state'
-      playbook: docs/support/playbook/octavia/stuck_pending_update.html
+      playbook: docs/support/playbook/octavia/stuck_pending.html
       cloudops: "?searchTerm={{ $labels.loadbalancer_id }}&type=loadbalancer"
     annotations:
       description: 'The Load Balancer `{{ $labels.loadbalancer_name }}` of agent `{{ $labels.octavia_host }}` stuck in {{ $labels.current_status }} state (<https://dashboard.{{ $externalLabels.region }}.cloud.sap/ccadmin/cloud_admin/cloudops#/universal-search/?searchTerm={{ $labels.loadbalancer_id }}&type=loadbalancer|{{ $labels.loadbalancer_id }}>)'

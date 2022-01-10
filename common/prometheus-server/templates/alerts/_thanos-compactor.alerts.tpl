@@ -2,7 +2,7 @@ groups:
 - name: thanos-compactor.alerts
   rules:
     - alert: ThanosCompactHalted
-      expr: thanos_compactor_halted{app="thanos-compactor", prometheus="{{ include "prometheus.name" . }}"} == 1
+      expr: thanos_compact_halted{app="thanos-compactor", prometheus="{{ include "prometheus.name" . }}"} == 1
       for: 5m
       labels:
         context: thanos

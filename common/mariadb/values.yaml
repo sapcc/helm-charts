@@ -4,7 +4,7 @@
 # name: value
 
 name: DEFINED-IN-COMPONENT-CHART
-image: mariadb:10.5.12
+image: library/mariadb:10.5.12
 imagePullPolicy: IfNotPresent
 port_public: 3306
 max_connections: 1024
@@ -22,7 +22,7 @@ expire_logs_days: 10
 #custom_initdb_configmap:
 
 # name of priorityClass to influence scheduling priority
-#priority_class:
+priority_class: "openstack-service-critical"
 
 persistence_claim:
   enabled: true
@@ -40,15 +40,15 @@ livenessProbe:
   ##
   ## Initializing the database could take some time
   initialDelaySeconds: 120
-  periodSeconds: 15
-  timeoutSeconds: 3
+  periodSeconds: 20
+  timeoutSeconds: 5
   successThreshold: 1
   failureThreshold: 3
 readinessProbe:
   enabled: true
-  initialDelaySeconds: 30
-  periodSeconds: 15
-  timeoutSeconds: 3
+  initialDelaySeconds: 10
+  periodSeconds: 20
+  timeoutSeconds: 5
   successThreshold: 1
   failureThreshold: 3
 
@@ -89,11 +89,13 @@ backup_v2:
   enabled: false
   backup_dir: "./backup"
   image: maria-back-me-up
-  image_version: "20210812101719"
+  image_version: "20211116094800"
   full_backup_cron_schedule: "0 0 * * *"
   incremental_backup_in_minutes: 5
-  verification_interval: 60
+  purge_binlog_after_minutes: 60
   enable_init_restore: false
+  verification:
+    run_after_inc_backups: 12
   swift:
     user_name: db_backup
     user_domain_name: Default
@@ -127,6 +129,8 @@ metrics:
 # Default Prometheus alerts and rules.
 alerts:
   enabled: true
+  # this enables alert of level Critical, could wake somebody at night!
+  alert_db_not_ready: true
 
   # Name of the Prometheus supposed to scrape the metrics and to which alerts are assigned.
   prometheus: openstack

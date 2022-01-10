@@ -4,13 +4,8 @@ metadata:
   name: mosquitto
   labels:
     chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
-{{- if .Values.metrics.enabled }}
-  annotations:
-    prometheus.io/scrape: "true"
-    prometheus.io/port: "{{ .Values.metrics.port }}"
-    prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
-{{- end }}
 spec:
+  externalTrafficPolicy: {{ .Values.service.externalTrafficPolicy }}
   type: {{ .Values.service.type }}
   ports:
   - port: {{ .Values.service.externalPort }}

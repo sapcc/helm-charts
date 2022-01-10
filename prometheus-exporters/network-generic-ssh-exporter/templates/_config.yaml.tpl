@@ -12,7 +12,7 @@ metrics:
     metric_type_name: gauge
     command: show ip nat statistic | include active
     timeout_secs: 3
-    
+
   nat_dynamic:
     regex: >-
       Total active translations: (\d+) \((\d+) static, (\d+) dynamic; (\d+) extended\)
@@ -21,7 +21,7 @@ metrics:
     metric_type_name: gauge
     command: show ip nat statistic | include active
     timeout_secs: 3
-  
+
   nat_misses:
     regex: >-
       Hits:\s+(\d+)\s+Misses:\s(\d+)
@@ -30,7 +30,7 @@ metrics:
     metric_type_name: gauge
     command: show ip nat statistics | incl Misses
     timeout_secs: 3
-  
+
   nat_hits:
     regex: >-
       Hits:\s+(\d+)\s+Misses:\s(\d+)
@@ -47,7 +47,7 @@ metrics:
     value: $2
     labels:
       start: $2
-    description: show portblock start handed out to NAT 
+    description: show portblock start handed out to NAT
     metric_type_name: gauge
     command: show ip nat portblock dynamic global | sec tcp
     timeout_secs: 4
@@ -59,7 +59,7 @@ metrics:
     value: $3
     labels:
       start: $2
-    description: show portblock start handed out to NAT 
+    description: show portblock start handed out to NAT
     metric_type_name: gauge
     command: show ip nat portblock dynamic global | sec tcp
     timeout_secs: 4
@@ -71,7 +71,7 @@ metrics:
     value: $2
     labels:
       start: $2
-    description: show portblock start handed out to NAT 
+    description: show portblock start handed out to NAT
     metric_type_name: gauge
     command: show ip nat portblock dynamic global | sec udp
     timeout_secs: 4
@@ -83,7 +83,7 @@ metrics:
     value: $3
     labels:
       start: $2
-    description: show portblock start handed out to NAT 
+    description: show portblock start handed out to NAT
     metric_type_name: gauge
     command: show ip nat portblock dynamic global | sec udp
     timeout_secs: 4
@@ -118,7 +118,7 @@ metrics:
     metric_type_name: counter
     command: "show plat hard qfp act feat nat data ha | b Send Fails:"
     timeout_secs: 5
-         
+
   redundancy_send_queue:
     value: $1
     regex: >-
@@ -132,7 +132,7 @@ metrics:
     metric_type_name: string
     command: "show platform hardware qfp active system rg 1 stat | incl tx_seq_flags"
     timeout_secs: 5
- 
+
   openstack_vrf_count_total:
     regex: "Number of lines which match regexp = (\\d+)"
     value: $1
@@ -180,7 +180,7 @@ metrics:
     metric_type_name: gauge
     command: show ip access-lists | count Extended IP access list (NAT|PBR)-
     timeout_secs: 5
-  
+
   qfp_punt_inject_received:
     regex: >-
       ^\s{2}(\d+)\s{2,}((\S|\s)+?)\s{2,}(\d+)\s{2,}(\d+)\s*?$
@@ -258,7 +258,7 @@ metrics:
     metric_type_name: counter
     command: show platform software punt-policer
     timeout_secs: 10
-  
+
   software_nat_counter_received_nat:
     regex: >-
       ((\d+) (.+?)\n)+
@@ -337,7 +337,7 @@ metrics:
     metric_type_name: gauge
     command: show platform hardware qfp active feature nat datapath gatein activity
     timeout_secs: 3
-  
+
   qfp_nat_datapath_gateout:
     regex: >-
       (\w+) (\d+)
@@ -349,7 +349,7 @@ metrics:
     metric_type_name: gauge
     command: show platform hardware qfp active feature nat datapath gateout activity
     timeout_secs: 3
-  
+
   tcam_total:
     regex: >-
       ^Total.*?(regions|used cell entries|free cell entries) +: (\d+)
@@ -455,6 +455,99 @@ metrics:
     command: show ntp config
     timeout_secs: 5
 
+  xr_ntp_peer_delay:
+    regex: |
+      ^\s*?(\*|#|\+|-|x|~)+(\S+)\s+vrf\s(\S+)\s*?$
+      ^\s+((\.\S+\s*\.)|(\d+|\.)+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+(\.\d+)*)\s+(-?\d+(\.\d+)*)\s+(-?\d+(\.\d+)*)
+    multi_value: true
+    value: $11
+    labels:
+      address: $2
+      vrf: $3
+      reference_clock: $4
+    description: NTP server delay
+    metric_type_name: gauge
+    command: show ntp associations
+    timeout_secs: 5
+
+  xr_ntp_peer_offset:
+    regex: |
+      ^\s*?(\*|#|\+|-|x|~)+(\S+)\s+vrf\s(\S+)\s*?$
+      ^\s+((\.\S+\s*\.)|(\d+|\.)+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+(\.\d+)*)\s+(-?\d+(\.\d+)*)\s+(-?\d+(\.\d+)*)
+    multi_value: true
+    value: $13
+    labels:
+      address: $2
+      vrf: $3
+      reference_clock: $4
+    description: NTP server delay
+    metric_type_name: gauge
+    command: show ntp associations
+    timeout_secs: 5
+
+  xr_ntp_peer_dispersion:
+    regex: |
+      ^\s*?(\*|#|\+|-|x|~)+(\S+)\s+vrf\s(\S+)\s*?$
+      ^\s+((\.\S+\s*\.)|(\d+|\.)+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+(\.\d+)*)\s+(-?\d+(\.\d+)*)\s+(-?\d+(\.\d+)*)
+    multi_value: true
+    value: $15
+    labels:
+      address: $2
+      vrf: $3
+      reference_clock: $4
+    description: NTP server delay
+    metric_type_name: gauge
+    command: show ntp associations
+    timeout_secs: 5
+  
+  xr_ntp_offset:
+    regex: >-
+      ^.*(reference is)\s(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}).*(clock offset is)\s(-?\d{1,3}\.\d{1,3})\s(msec).*$
+    multi_value: false
+    value: $4
+    labels:
+      reference_clock: $2
+    description: The offset of the router
+    metric_type_name: gauge
+    command: show ntp status
+    timeout_secs: 5
+    
+  xr_ntp_root_delay:
+    regex: >-
+      ^.*(reference is)\s(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}).*(root delay is)\s(-?\d{1,3}\.\d{1,3})\s(msec).*$
+    multi_value: false
+    value: $4
+    labels:
+      reference_clock: $2
+    description: The root delay of the router
+    metric_type_name: gauge
+    command: show ntp status
+    timeout_secs: 5
+    
+  xr_ntp_root_dispersion:
+    regex: >-
+      ^.*(reference is)\s(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}).*(root dispersion is)\s(-?\d{1,3}\.\d{1,3})\s(msec).*$
+    multi_value: false
+    value: $4
+    labels:
+      reference_clock: $2
+    description: The root dispersion of the router
+    metric_type_name: gauge
+    command: show ntp status
+    timeout_secs: 5
+    
+  xr_ntp_drift:
+    regex: >-
+      ^.*(reference is)\s(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}).*(drift is)\s(-?\d{1,3}\.\d{1,112})\s.*$
+    multi_value: false
+    value: $4
+    labels:
+      reference_clock: $2
+    description: The drift of the router in seconds
+    metric_type_name: gauge
+    command: show ntp status
+    timeout_secs: 5
+
 batches:
   test:
     - redundancy_send_queue
@@ -503,10 +596,22 @@ batches:
   cisco-ios-xe_core-router:
     - xe_ntp_configured
 
+  cisco-ios-xr_core-router:
+    - xr_ntp_offset
+    - xr_ntp_root_delay
+    - xr_ntp_root_dispersion
+    - xr_ntp_drift
+    - xr_ntp_peer_delay
+    - xr_ntp_peer_offset
+    - xr_ntp_peer_dispersion
+
 devices:
   cisco-ios-xe:
     prompt_regex: ^\S+\#$
     init_command: terminal length 0
   cisco-nx-os:
     prompt_regex: ^\S+\# $
+    init_command: terminal length 0
+  cisco-ios-xr:
+    prompt_regex: ^\S+\#$
     init_command: terminal length 0

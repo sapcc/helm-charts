@@ -71,6 +71,44 @@ groups:
       description: Manila Shares taking more than 2 minutes to resize in {{ $labels.manila_host }}
       summary: Manila Shares taking more than 2 minutes to resize
 
+  - alert: OpenstackManilaShareServersStuck
+    expr: (sum(openstack_manila_share_servers_stuck_count_gauge) BY (manila_host, status)) > 0
+    for: 24h
+    labels:
+      dashboard: manila
+      service: manila
+      severity: info
+      tier: os
+    annotations:
+      description: Sum of Openstack Manila Share Servers Stuck is more than 1
+      summary: Manila share servers in stuck state
+
+  - alert: OpenstackManilaShareServersStuckCreate
+    expr: max(openstack_manila_share_servers_stuck_max_duration_gauge{status="creating"})
+      BY (id, manila_host) > 120
+    for: 24h
+    labels:
+      dashboard: manila
+      service: manila
+      severity: info
+      tier: os
+    annotations:
+      description: Manila Share server {{ $labels.id }} taking more than 2 minutes to create on {{ $labels.manila_host }}
+      summary: Manila Share servers taking more than 2 minutes to create
+
+  - alert: OpenstackManilaShareServersStuckError
+    expr: max(openstack_manila_share_servers_stuck_max_duration_gauge{status=~"error|error_unmanage|error_manage"})
+      BY (manila_host) > 120
+    for: 24h
+    labels:
+      dashboard: manila
+      service: manila
+      severity: info
+      tier: os
+    annotations:
+      description: Manila Share server stuck more than 2 minutes in error status {{ $labels.status }}
+      summary: Manila Share servers stuck more than 2 minutes in error
+
   - alert: OpenstackManilaShareServerHigh
     expr: label_replace(count(openstack_manila_share_servers_count_gauge{status!="deleted"}) BY (manila_host),
       "short_hostname", "$1", "manila_host", "(.*)@.*") >= 240
@@ -210,23 +248,6 @@ groups:
     annotations:
       description: 'Canary {{ $labels.service }} {{ $labels.check }} is flapping for 2 hours. See Sentry for details'
       summary: 'Canary {{ $labels.service }} {{ $labels.check }} is flapping'
-
-# alerts for other cert checks are in blackbox chart, this is filer cert only
-  - alert: OpenstackManilaFilerCertificateExpires
-    expr: blackbox_certificates_status_gauge{check=~".*stnpca.*cc"} == 1
-    # starts firing on expiration in 30 days (CERTS_ALERT_PERIOD) -> we want a warning 14 days before (30-16)
-    for: 16d
-    labels:
-      context: '{{ $labels.check }}'
-      meta: '{{ $labels.check }}'
-      sentry: blackbox/?query=test_{{ $labels.check }}
-      severity: warning
-      tier: os
-      playbook: 'docs/support/playbook/manila/filer_cert_expired.html'
-      support_component: manila_netapp
-    annotations:
-      description: Certificate {{ $labels.check }} expires in less than 14 days. See Sentry for details
-      summary: Certificates
 
 # row locks
   - alert: OpenstackManilaMariadbRowLocks

@@ -5,20 +5,23 @@
 #  caCertificate:
 #  privateKey:
 #  certificate:
+#  crl:
 
 tls:
   enabled: false
   #caCertificate:
   #privateKey:
   #certificate:
+  #crl:
 
 image:
-  repository: sapcc/mosquitto
+  repository: mosquitto #global.registry is prepended
   tag: latest
   pullPolicy: IfNotPresent
 service:
+  externalTrafficPolicy: Cluster
   name: mosquitto
-  type: ClusterIP
+  type: NodePort
   externalPort: 8883
   internalPort: 8883
   externalIPs: [1.2.3.4]
@@ -26,6 +29,6 @@ metrics:
   enabled: false #TODO figure out how to connect using tls
   port: 9234
   image:
-    repository: sapcc/mosquitto-exporter
-    tag: 0.3.0
+    repository: sapcc/mosquitto-exporter #global.dockerHubMirror is prepended 
+    tag: 0.8.0
     pullPolicy: IfNotPresent

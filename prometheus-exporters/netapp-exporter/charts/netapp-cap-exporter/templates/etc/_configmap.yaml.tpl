@@ -8,8 +8,8 @@ metadata:
     app.kubernetes.io/component: {{ .appComponent }}
 data:
   {{- if eq .appComponent "manila" }}
-  netapp-filers.yaml: |
+  filers.yaml: |
   {{- .manilaFilerYaml | nindent 4 }}
   {{- else }}
-  netapp-filers.yaml: ""
+  filers.yaml: ""
   {{- end }}

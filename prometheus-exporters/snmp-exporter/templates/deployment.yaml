@@ -29,6 +29,17 @@ spec:
         prometheus.io/targets: infra-collector
         prometheus.io/port: "9116"
     spec:
+{{- if .Values.snmp_exporter.controlplane.enabled }}
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: cloud.sap/maintenance-profile
+                operator: NotIn
+                values:
+                - flatcar--esx
+{{- end }}
       nodeSelector:
         zone: farm
       volumes:

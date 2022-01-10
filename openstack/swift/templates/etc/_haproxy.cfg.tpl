@@ -3,10 +3,14 @@
 {{- $cluster    := index . 1 -}}
 {{- $context    := index . 2 -}}
 global
+  # Drop privileges after root started haproxy (user:haproxy / group:haproxy)
+  uid 99
+  gid 99
+
   log stdout format raw local0 info
   zero-warning
 
-  maxconn 2000
+  maxconn 4000
 
   # TODO: Should be replaced by https://ssl-config.mozilla.org/#server=haproxy&version=2.3&config=intermediate&openssl=1.1.1d&guideline=5.6
   # AES256-SHA256 seems to be needed for iPXE with tlsv1.2
