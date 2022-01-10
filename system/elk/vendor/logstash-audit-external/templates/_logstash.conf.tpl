@@ -87,10 +87,8 @@ filter {
        }
     }
     if [type] == "audit"{
-      filter {
-        clone {
-          clones => ['octobus', 'elk']
-        }
+      clone {
+        clones => ['octobus', 'elk']
       }
     }
   }
