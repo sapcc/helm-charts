@@ -86,11 +86,18 @@ filter {
          }
        }
     }
+    if [type] == "audit"{
+      filter {
+        clone {
+          clones => ['octobus', 'elk']
+        }
+      }
+    }
   }
 
 
 output {
-  if [type] == "audit" {
+  if [type] == "elk" {
     elasticsearch {
       index => "audit-%{+YYYY.MM.dd}"
       template => "/elk-etc/audit.json"
@@ -100,6 +107,14 @@ output {
       user => "{{.Values.global.elk_elasticsearch_audit_user}}"
       password => "{{.Values.global.elk_elasticsearch_audit_password}}"
       ssl => true
+    }
+  }
+  elseif [type] == "octobus" {
+    http {
+      cacert => "/usr/share/logstash/config/ca-cert.crt"
+      url => "{{ .Values.forwarding.audit.host }}"
+      format => "json"
+      http_method => "post"
     }
   }
   elseif [type] == "syslog" {
