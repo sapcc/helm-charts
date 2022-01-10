@@ -163,6 +163,7 @@ filter {
         {
           id  => "keystone_user_domain"
           query => "select u.id as user_id, m.local_id as user_name, p.id as domain_id, p.name as domain_name  from keystone.user as u left join keystone.id_mapping m on m.public_id = u.id left join keystone.project as p on p.id = u.domain_id where p.name = \"ccadmin\";"
+          local_table => "user_domain_mapping"
         }
       ]
 
@@ -194,15 +195,17 @@ filter {
       jdbc_driver_class => "com.mysql.cj.jdbc.Driver"
       jdbc_driver_library => ""
       jdbc_connection_string => "jdbc:mysql://{{ .Values.logstash.jdbc.service }}.{{ .Values.logstash.jdbc.namespace }}:3306/{{ .Values.logstash.jdbc.db }}"
-  }
-  if [domain_mapping] and [domain_mapping][0]{
-    mutate {
-      add_field => {
-          "[initiator][user]" => "%{[domain_mapping][0][user_name]}"
-          "[initiator][domain_id]" => "%{[domain_mapping][0][domain_id]}"
-          "[initiator][domain_name]" => "%{[domain_mapping][0][domain_name]}"
+    }
+
+    if [domain_mapping] and [domain_mapping][0]{
+      mutate {
+        add_field => {
+            "[initiator][user]" => "%{[domain_mapping][0][user_name]}"
+            "[initiator][domain_id]" => "%{[domain_mapping][0][domain_id]}"
+            "[initiator][domain_name]" => "%{[domain_mapping][0][domain_name]}"
+        }
+        remove_field => [ "domain_mapping" ]
       }
-      remove_field => [ "domain_mapping" ]
     }
   }
 
