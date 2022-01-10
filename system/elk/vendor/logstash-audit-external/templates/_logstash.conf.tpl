@@ -111,7 +111,7 @@ output {
   }
   elseif [type] == "octobus" {
     http {
-      cacert => "/usr/share/logstash/config/ca-cert.crt"
+      cacert => "/usr/share/logstash/config/ca.pem"
       url => "{{ .Values.forwarding.audit.host }}"
       format => "json"
       http_method => "post"
