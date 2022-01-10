@@ -47,15 +47,16 @@ migration_ignore_scheduler = True
 migration_wait_access_rules_timeout = 3600
 
 # all default quotas are 0 to enforce usage of the Resource Management tool in Elektra
-quota_shares = 0
-quota_gigabytes = 0
-quota_snapshots = 0
-quota_snapshot_gigabytes = 0
-quota_share_networks = 0
-quota_share_groups = 0
-quota_share_group_snapshots = 0
-quota_share_replicas = 0
-quota_replica_gigabytes = 0
+[quota]
+shares = 0
+gigabytes = 0
+snapshots = 0
+snapshot_gigabytes = 0
+share_networks = 0
+share_groups = 0
+share_group_snapshots = 0
+share_replicas = 0
+replica_gigabytes = 0
 
 {{- template "utils.snippets.debug.eventlet_backdoor_ini" "manila" }}
 
