@@ -92,7 +92,7 @@ filter {
 output {
   if [type] == "audit" {
     elasticsearch {
-      index => "audit-%{+YYYY}"
+      index => "audit-%{+YYYY.MM.dd}"
       template => "/elk-etc/audit.json"
       template_name => "audit"
       template_overwrite => true
