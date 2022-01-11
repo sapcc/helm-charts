@@ -90,7 +90,7 @@
     json_array true
   </store>
   <store>
-@type http
+    @type http
     endpoint "https://logstash-audit-external.{{.Values.global.region}}.{{.Values.global.tld}}"
     <auth>
       method basic

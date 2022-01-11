@@ -52,37 +52,28 @@
 <match **>
   @type copy
   <store>
-    @type elasticsearch_dynamic
-    host {{.Values.global.elk_elasticsearch_endpoint_host_scaleout}}.{{.Values.global.elk_cluster_region}}.{{.Values.global.tld}}
-    port {{.Values.global.elk_elasticsearch_ssl_port}}
-    user {{.Values.global.elk_elasticsearch_audit_user}}
-    password {{.Values.global.elk_elasticsearch_audit_password}}
-    scheme https
-    ssl_verify false
-    ssl_version TLSv1_2
-    index_name audit
-    type_name _doc
-    logstash_prefix audit
-    logstash_format true
-    template_name audit
-    template_file /fluent-etc/audit.json
-    template_overwrite true
-    time_as_integer false
-    @log_level info
-    slow_flush_log_threshold 50.0
-    request_timeout 60s
-    include_tag_key true
-    resurrect_after 120
-    reconnect_on_error true
+    @type http
+    endpoint "https://logstash-audit-external.{{.Values.global.region}}.{{.Values.global.tld}}"
+    <auth>
+      method basic
+      username {{.Values.global.elk_elasticsearch_http_user}}
+      password {{.Values.global.elk_elasticsearch_http_password}}
+    </auth>
+    slow_flush_log_threshold 105.0
+    retryable_response_codes [503]
     <buffer>
+      queue_limit_length 24
+      chunk_limit_size 8MB
       flush_at_shutdown true
-      flush_thread_interval 5
       overflow_action block
       retry_forever true
-      retry_wait 2s
-      flush_thread_count 4
-      flush_interval 3s
+      retry_type periodic
+      flush_interval 8s
     </buffer>
+    <format>
+      @type json
+    </format>
+    json_array true
   </store>
   <store>
     @type prometheus
