@@ -90,6 +90,30 @@
     json_array true
   </store>
   <store>
+@type http
+    endpoint "https://logstash-audit-external.{{.Values.global.region}}.{{.Values.global.tld}}"
+    <auth>
+      method basic
+      username {{.Values.global.elk_elasticsearch_http_user}}
+      password {{.Values.global.elk_elasticsearch_http_password}}
+    </auth>
+    slow_flush_log_threshold 105.0
+    retryable_response_codes [503]
+    <buffer>
+      queue_limit_length 24
+      chunk_limit_size 8MB
+      flush_at_shutdown true
+      overflow_action block
+      retry_forever true
+      retry_type periodic
+      flush_interval 8s
+    </buffer>
+    <format>
+      @type json
+    </format>
+    json_array true
+  </store>
+  <store>
     @type prometheus
     <metric>
       name fluentd_output_status_num_records_total
