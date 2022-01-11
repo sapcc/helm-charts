@@ -45,7 +45,7 @@
   </regexp>
   <regexp>
     key syslog_identifier
-    pattern sssd
+    pattern /sssd/
   </regexp>
 </filter>
 
