@@ -43,10 +43,10 @@
     key message
     pattern /(audit|sshd)/
   </regexp>
-  <exclude>
+  <regexp>
     key syslog_identifier
     pattern sssd
-  </exclude>
+  </regexp>
 </filter>
 
 <match **>
