@@ -55,6 +55,7 @@ filter {
            grok {
          tag_on_failure => ["bigiplogs_grok_parse-failure", "grok"]
          tag_on_timeout => ["_groktimeout"]
+         patterns_dir => "/elk-etc/*.grok"
          timeout_millis => [15000]
                    match => { "message" => "%{SYSLOG5424PRI}%{NONNEGINT:syslog_version} +(?:%{TIMESTAMP_ISO8601:timestamp}|-) +(?:%{HOSTNAME:syslog_host}|-) +(?:%{WORD:syslog_level}|-) +(?:%{WORD:syslog_proc}|-) +(?:%{WORD:syslog_msgid}|-) +(?:%{SYSLOG5424SD:syslog_sd}|-|) +%{GREEDYDATA:syslog_msg}" }
                    overwrite => [ "message" ]
