@@ -24,7 +24,7 @@
 # All the auto-generated files should use the tag "file.<filename>".
 <source>
   @type tail
-  path /var/log/containers/keystone-api-*.log
+  path /var/log/containers/keystone-api-*.log,/var/log/containers/keystone-global-api-*.log
   exclude_path /var/log/containers/fluentd*
   pos_file /var/log/es-containers-octobus.log.pos
   time_format %Y-%m-%dT%H:%M:%S.%N
