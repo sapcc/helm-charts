@@ -33,7 +33,8 @@ spec:
         image: "{{ $.Values.concourse.image }}:{{ $.Values.concourse.imageTag }}"
         imagePullPolicy: {{ $.Values.concourse.imagePullPolicy | quote }}
         command:
-        - /bin/sh
+        - dumb-init
+        - sh
         args:
         - -ce
         - |-
@@ -43,7 +44,6 @@ spec:
 
           update-ca-certificates
 
-          #rm -rf /concourse-work-dir/*
           exec /usr/local/concourse/bin/concourse worker --name=${NODE_NAME}
         livenessProbe:
           failureThreshold: 5
