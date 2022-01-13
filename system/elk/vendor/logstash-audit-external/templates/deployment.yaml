@@ -18,7 +18,7 @@ spec:
   template:
     metadata:
       labels:
-        component: logstash
+        component: logstash-audit-external
       annotations:
         checksum/configmap.yaml: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
     spec:
@@ -32,7 +32,7 @@ spec:
           secret:
             secretName: tls-logstash-audit-external
       containers:
-        - name: logstash-audit-external
+        - logstash
           image: {{.Values.global.registry}}/elk-logstash:{{.Values.image_version}}
           imagePullPolicy: IfNotPresent
           ports:
