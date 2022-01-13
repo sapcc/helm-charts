@@ -50,12 +50,29 @@ filter {
      failed_cache_size => "100"
      failed_cache_ttl => "3600"
    }
+  if [message] {
+    grok {
+      match => {
+        "message" => [
+                      "<%{NONNEGINT:syslog_pri}>: %{SYSLOGCISCOTIMESTAMP:syslog_timestamp}: %{SYSLOGCISCOSTRING}: %{GREEDYDATA:syslog_message}",
+                      "<%{NONNEGINT:syslog_pri}>%{SYSLOGTIMESTAMP:syslog_timestamp} %{SYSLOGHOST:syslog_hostname} %{SYSLOGPROG:syslog_program}: (?<UCSM_FACILITY>[%A-Z]+)-(?<UCSM_SEVERITY>\d)-(?<UCSMi_PROG>[A-Z]+_[A-Z]+): %{GREEDYDATA:syslog_message}",
+                      "<%{NONNEGINT:syslog_pri}>%{SYSLOGTIMESTAMP:syslog_timestamp} %{SYSLOGHOST:syslog_hostname} %{SYSLOGPROG:syslog_program}%{GREEDYDATA:syslog_message}",
+                      "<%{NONNEGINT:syslog_pri}>%{PROG:program}\[%{POSINT:pid}\]: %{GREEDYDATA:syslog_message}",
+                      "<%{NONNEGINT:syslog_pri}>%{GREEDYDATA:syslog_message}"
+                      ] 
+                }
+      overwrite => ["message"]
+      patterns_dir => ["/elk-etc/*.grok"]
+      tag_on_failure => ["_syslog_grok_failure"]
+    }
+  }
+
  }
     if  [type] == "bigiplogs" {
            grok {
          tag_on_failure => ["bigiplogs_grok_parse-failure", "grok"]
          tag_on_timeout => ["_groktimeout"]
-         patterns_dir => "/elk-etc/*.grok"
+         patterns_dir => ["/elk-etc/*.grok"]
          timeout_millis => [15000]
                    match => { "message" => "%{SYSLOG5424PRI}%{NONNEGINT:syslog_version} +(?:%{TIMESTAMP_ISO8601:timestamp}|-) +(?:%{HOSTNAME:syslog_host}|-) +(?:%{WORD:syslog_level}|-) +(?:%{WORD:syslog_proc}|-) +(?:%{WORD:syslog_msgid}|-) +(?:%{SYSLOG5424SD:syslog_sd}|-|) +%{GREEDYDATA:syslog_msg}" }
                    overwrite => [ "message" ]
