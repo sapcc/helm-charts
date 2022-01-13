@@ -82,9 +82,6 @@ filter {
       }
   }
 
-
-  }
-
  }
     if  [type] == "bigiplogs" {
            grok {
