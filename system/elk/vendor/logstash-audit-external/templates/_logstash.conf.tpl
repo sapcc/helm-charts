@@ -50,21 +50,39 @@ filter {
      failed_cache_size => "100"
      failed_cache_ttl => "3600"
    }
-  if [message] {
     grok {
       match => {
         "message" => [
-                      "<%{NONNEGINT:syslog_pri}>: %{SYSLOGCISCOTIMESTAMP:syslog_timestamp}: %{SYSLOGCISCOFACILITY:syslogcisco_facility}-%{SYSLOGCISCOSEVERITY:syslogcisco_severity}-%{SYSLOGCISCOCODE:syslogcisco_code}: %{GREEDYDATA:syslog_message}",
-                      "<%{NONNEGINT:syslog_pri}>%{SYSLOGTIMESTAMP:syslog_timestamp} %{SYSLOGHOST:syslog_hostname} %{SYSLOGPROG:syslog_program}: %{SYSLOGCISCOFACILITY:syslogcisco_facility}-%{SYSLOGCISCOSEVERITY:syslogcisco_severity}-%{SYSLOGCISCOCODE:syslogcisco_code}: %{GREEDYDATA:syslog_message}",
-                      "<%{NONNEGINT:syslog_pri}>%{SYSLOGTIMESTAMP:syslog_timestamp} %{SYSLOGHOST:syslog_hostname} %{SYSLOGPROG:syslog_program}%{GREEDYDATA:syslog_message}",
+                      "<%{NONNEGINT:syslog_pri}>: %{SYSLOGCISCOTIMESTAMP:syslog_timestamp}: %{SYSLOGCISCOSTRING}: %{GREEDYDATA:syslog_message}",
+                      "<%{NONNEGINT:syslog_pri}>%{SYSLOGTIMESTAMP:syslog_timestamp} %{SYSLOGHOST:syslog_hostname} %{SYSLOGPROG:syslog_program}: %{SYSLOGCISCOSTRING}: %{GREEDYDATA:syslog_message}",
+                      "<%{NONNEGINT:syslog_pri}>%{SYSLOGTIMESTAMP:syslog_timestamp} %{SYSLOGHOST:syslog_hostname} %{SYSLOGPROG:syslog_program}: %{GREEDYDATA:syslog_message}",
                       "<%{NONNEGINT:syslog_pri}>%{PROG:program}\[%{POSINT:pid}\]: %{GREEDYDATA:syslog_message}",
                       "<%{NONNEGINT:syslog_pri}>%{GREEDYDATA:syslog_message}"
-                      ] 
+                      ]
                 }
+      break_on_match => "true"
       overwrite => ["message"]
       patterns_dir => ["/elk-etc/*.grok"]
       tag_on_failure => ["_syslog_grok_failure"]
     }
+
+# Change type of audit relevant UCSM syslogs to "audit"
+  if [syslogcisco_facility] {
+    if [syslogcisco_facility] == "%UCSM"  and [syslogcisco_code] == "AUDIT" {
+      mutate {
+        replace => { "type" => "audit" }
+      }
+    }
+  }
+
+# Change type of audit relevant HSM syslogs
+  if [syslog_hostname] and [syslog_hostname] == "hsm01" {
+    mutate {
+        replace => { "type" => "audit" }
+      }
+  }
+
+
   }
 
  }
