@@ -55,7 +55,7 @@ filter {
       match => {
         "message" => [
                       "<%{NONNEGINT:syslog_pri}>: %{SYSLOGCISCOTIMESTAMP:syslog_timestamp}: %{SYSLOGCISCOSTRING}: %{GREEDYDATA:syslog_message}",
-                      "<%{NONNEGINT:syslog_pri}>%{SYSLOGTIMESTAMP:syslog_timestamp} %{SYSLOGHOST:syslog_hostname} %{SYSLOGPROG:syslog_program}: (?<UCSM_FACILITY>[%A-Z]+)-(?<UCSM_SEVERITY>\d)-(?<UCSMi_PROG>[A-Z]+_[A-Z]+): %{GREEDYDATA:syslog_message}",
+                      "<%{NONNEGINT:syslog_pri}>%{SYSLOGTIMESTAMP:syslog_timestamp} %{SYSLOGHOST:syslog_hostname} %{SYSLOGPROG:syslog_program}: %{SYSLOGCISCOSTRING}: %{GREEDYDATA:syslog_message}",
                       "<%{NONNEGINT:syslog_pri}>%{SYSLOGTIMESTAMP:syslog_timestamp} %{SYSLOGHOST:syslog_hostname} %{SYSLOGPROG:syslog_program}%{GREEDYDATA:syslog_message}",
                       "<%{NONNEGINT:syslog_pri}>%{PROG:program}\[%{POSINT:pid}\]: %{GREEDYDATA:syslog_message}",
                       "<%{NONNEGINT:syslog_pri}>%{GREEDYDATA:syslog_message}"
