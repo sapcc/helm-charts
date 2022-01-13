@@ -106,7 +106,7 @@
       overflow_action block
       retry_forever true
       retry_type periodic
-      flush_interval 8s
+      flush_interval 1s
     </buffer>
     <format>
       @type json
