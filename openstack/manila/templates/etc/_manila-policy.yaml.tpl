@@ -38,6 +38,7 @@
 "share:allow_access": "rule:context_is_editor"
 "share:deny_access": "rule:context_is_editor"
 "share:extend": "rule:context_is_editor"
+"share:force_extend": "rule:context_is_editor"
 "share:shrink": "rule:context_is_editor"
 "share:get_share_metadata": "rule:context_is_viewer"
 "share:delete_share_metadata": "rule:context_is_editor"

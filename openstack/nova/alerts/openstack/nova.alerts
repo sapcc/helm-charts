@@ -118,38 +118,6 @@ groups:
       description: Nova Instance Stuck in Rebooting state over 15mins in {{ $labels.nova_host }}
       summary: Openstack Nova Instance Stuck in Rebooting state metric
 
-  - alert: OpenstackNovaCanaryCreateServerDown
-    expr: blackbox_canary_status_gauge{service=~"nova", check=~"create_server-.+"} == 1
-    for: 3h
-    labels:
-      severity: warning
-      tier: os
-      service: '{{ $labels.service }}'
-      context: '{{ $labels.service }}'
-      dashboard: blackbox-test-building-block-health
-      meta: 'Canary {{ $labels.service }} {{ $labels.check }} is down for 3 hour. See Sentry for details'
-      sentry: 'blackbox/?query=test_{{ $labels.check }}'
-      playbook: 'docs/devops/alert/{{ $labels.service }}/#test_create_server'
-    annotations:
-      description: 'Canary {{ $labels.service }} {{ $labels.check }} is down for 3 hour. See Sentry for details'
-      summary: 'Canary {{ $labels.service }} {{ $labels.check }} is down'
-
-  - alert: OpenstackNovaCanaryCreateServerTimeout
-    expr: blackbox_canary_status_gauge{service=~"nova", check=~"create_server-.+"} == 0.5
-    for: 3h
-    labels:
-      severity: warning
-      tier: os
-      service: '{{ $labels.service }}'
-      context: '{{ $labels.service }}'
-      dashboard: blackbox-test-building-block-health
-      meta: 'Canary {{ $labels.service }} {{ $labels.check }} is timing out for 3 hour. See Sentry for details'
-      sentry: 'blackbox/?query=test_{{ $labels.check }}'
-      playbook: 'docs/devops/alert/{{ $labels.service }}/#test_create_server'
-    annotations:
-      description: 'Canary {{ $labels.service }} {{ $labels.check }} is timing out for 3 hour. See Sentry for details'
-      summary: 'Canary {{ $labels.service }} {{ $labels.check }} is down'
-
   - alert: OpenstackNovaCanaryDown
     expr: blackbox_canary_status_gauge{service=~"nova", check!~"create_server-.+"} == 1
     for: 1h
@@ -166,22 +134,6 @@ groups:
       description: 'Canary {{ $labels.service }} {{ $labels.check }} is down for 1 hour. See Sentry for details'
       summary: 'Canary {{ $labels.service }} {{ $labels.check }} is down'
 
-  - alert: OpenstackNovaCanaryCreateServerTimeout
-    expr: blackbox_canary_status_gauge{service=~"nova", check=~"create_server-.+"} == 0.5
-    for: 1h
-    labels:
-      severity: info
-      tier: os
-      service: '{{ $labels.service }}'
-      context: '{{ $labels.service }}'
-      dashboard: ccloud-health-canary-details
-      meta: 'Canary {{ $labels.service }} {{ $labels.check }} is timing out for 1 hour. See Sentry for details'
-      sentry: 'blackbox/?query=test_{{ $labels.check }}'
-      playbook: 'docs/devops/alert/{{ $labels.service }}/#test_create_server'
-    annotations:
-      description: 'Canary {{ $labels.service }} {{ $labels.check }} is timing out for 1 hour. See Sentry for details'
-      summary: 'Canary {{ $labels.service }} {{ $labels.check }} is timing out'
-
   - alert: OpenstackNovaCanaryTimeout
     expr: blackbox_canary_status_gauge{service=~"nova", check!~"create_server-.+"} == 0.5
     for: 1h
@@ -197,21 +149,6 @@ groups:
     annotations:
       description: 'Canary {{ $labels.service }} {{ $labels.check }} is timing out for 1 hour. See Sentry for details'
       summary: 'Canary {{ $labels.service }} {{ $labels.check }} is timing out'
-
-  - alert: OpenstackNovaCanaryCreateServerFlapping
-    expr: changes(blackbox_canary_status_gauge{service=~"nova", check=~"create_server-.+"}[2h]) > 8
-    labels:
-      severity: info
-      tier: os
-      service: '{{ $labels.service }}'
-      context: '{{ $labels.service }}'
-      dashboard: ccloud-health-canary-details
-      meta: 'Canary {{ $labels.service }} {{ $labels.check }} is flapping for 2 hours. See Sentry for details'
-      sentry: 'blackbox/?query=test_{{ $labels.check }}'
-      playbook: 'docs/devops/alert/{{ $labels.service }}/#test_create_server'
-    annotations:
-      description: 'Canary {{ $labels.service }} {{ $labels.check }} is flapping for 2 hours. See Sentry for details'
-      summary: 'Canary {{ $labels.service }} {{ $labels.check }} is flapping'
 
   - alert: OpenstackNovaCanaryFlapping
     expr: changes(blackbox_canary_status_gauge{service=~"nova", check!~"create_server-.+"}[2h]) > 8
