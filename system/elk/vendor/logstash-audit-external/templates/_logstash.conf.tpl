@@ -50,11 +50,44 @@ filter {
      failed_cache_size => "100"
      failed_cache_ttl => "3600"
    }
+    grok {
+      match => {
+        "message" => [
+                      "<%{NONNEGINT:syslog_pri}>: %{SYSLOGCISCOTIMESTAMP:syslog_timestamp}: %{SYSLOGCISCOSTRING}: %{GREEDYDATA:syslog_message}",
+                      "<%{NONNEGINT:syslog_pri}>%{SYSLOGTIMESTAMP:syslog_timestamp} %{SYSLOGHOST:syslog_hostname} %{SYSLOGPROG:syslog_process}: %{SYSLOGCISCOSTRING}: %{GREEDYDATA:syslog_message}",
+                      "<%{NONNEGINT:syslog_pri}>%{SYSLOGTIMESTAMP:syslog_timestamp} %{SYSLOGHOST:syslog_hostname} %{SYSLOGPROG:syslog_process}: %{GREEDYDATA:syslog_message}",
+                      "<%{NONNEGINT:syslog_pri}>%{PROG:syslog_process}\[%{POSINT:pid}\]: %{GREEDYDATA:syslog_message}",
+                      "<%{NONNEGINT:syslog_pri}>%{GREEDYDATA:syslog_message}"
+                      ]
+                }
+      break_on_match => "true"
+      overwrite => ["message"]
+      patterns_dir => ["/elk-etc/*.grok"]
+      tag_on_failure => ["_syslog_grok_failure"]
+    }
+
+# Change type of audit relevant UCSM syslogs to "audit"
+  if [syslogcisco_facility] {
+    if [syslogcisco_facility] == "%UCSM"  and [syslogcisco_code] == "AUDIT" {
+      mutate {
+        replace => { "type" => "audit" }
+      }
+    }
+  }
+
+# Change type of audit relevant HSM syslogs
+  if [syslog_hostname] and [syslog_hostname] == "hsm01" {
+    mutate {
+        replace => { "type" => "audit" }
+      }
+  }
+
  }
     if  [type] == "bigiplogs" {
            grok {
          tag_on_failure => ["bigiplogs_grok_parse-failure", "grok"]
          tag_on_timeout => ["_groktimeout"]
+         patterns_dir => ["/elk-etc/*.grok"]
          timeout_millis => [15000]
                    match => { "message" => "%{SYSLOG5424PRI}%{NONNEGINT:syslog_version} +(?:%{TIMESTAMP_ISO8601:timestamp}|-) +(?:%{HOSTNAME:syslog_host}|-) +(?:%{WORD:syslog_level}|-) +(?:%{WORD:syslog_proc}|-) +(?:%{WORD:syslog_msgid}|-) +(?:%{SYSLOG5424SD:syslog_sd}|-|) +%{GREEDYDATA:syslog_msg}" }
                    overwrite => [ "message" ]
@@ -86,13 +119,18 @@ filter {
          }
        }
     }
+    if [type] == "audit"{
+      clone {
+        clones => ['octobus', 'elk']
+      }
+    }
   }
 
 
 output {
-  if [type] == "audit" {
+  if [type] == "elk" {
     elasticsearch {
-      index => "audit-%{+YYYY}"
+      index => "audit-%{+YYYY.MM.dd}"
       template => "/elk-etc/audit.json"
       template_name => "audit"
       template_overwrite => true
@@ -100,6 +138,14 @@ output {
       user => "{{.Values.global.elk_elasticsearch_audit_user}}"
       password => "{{.Values.global.elk_elasticsearch_audit_password}}"
       ssl => true
+    }
+  }
+  elseif [type] == "octobus" {
+    http {
+      cacert => "/usr/share/logstash/config/ca.pem"
+      url => "https://{{ .Values.forwarding.audit.host }}"
+      format => "json"
+      http_method => "post"
     }
   }
   elseif [type] == "syslog" {

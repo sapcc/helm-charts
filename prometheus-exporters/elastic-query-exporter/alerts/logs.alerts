@@ -41,7 +41,7 @@ groups:
           description: "Octobus Keystone endpoint: `in-https` is down in region `{{ $labels.region }}`"
           summary: "Octobus Keystone endpoint: `in-https` is down in region `{{ $labels.region }}`"
       - alert: OctobusJumpserverLogShipping
-        expr: elasticsearch_octobus_jumpserver_logs_doc_count == 0
+        expr: label_replace(node_uname_info, "logs", "$0", "nodename", ".*") unless on (logs) (elasticsearch_octobus_jumpserver_logs_doc_count > 0)
         for: 15m
         labels:
           severity: warning
@@ -51,7 +51,7 @@ groups:
           playbook: 'docs/support/playbook/elastic_kibana_issues.html#jumpserver-logs-missing-in-octobus'
           dashboard: octobus-logshipping
         annotations:
-          description: "Jumpserver logs shipping to Octobus not working"
+          description: "Jumpserver log shipping to Octobus not working for `{{ $labels.server_name }}`"
           summary: "JumpserverLogs2Octobus not working"
       - alert: OctobusJumpserverLogshipperEndpointDown
         expr: elasticsearch_octobus_jumpserver_logs_doc_count == 0 and on  (region) {target=~"in-beats.*"} == 0

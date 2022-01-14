@@ -9,7 +9,7 @@ spec:
   selector:
     matchLabels:
       component: logstash-audit-external
-  replicas: 1
+  replicas: {{.Values.replicas}}
   strategy:
     type: RollingUpdate
     rollingUpdate:
@@ -32,7 +32,7 @@ spec:
           secret:
             secretName: tls-logstash-audit-external
       containers:
-        - name: logstash-audit-external
+        - name: logstash
           image: {{.Values.global.registry}}/elk-logstash:{{.Values.image_version}}
           imagePullPolicy: IfNotPresent
           ports:
@@ -73,4 +73,15 @@ spec:
 #              command:
 #                - /bin/false
 #            initialDelaySeconds: 60
-#            periodSeconds: 3600 # Restart once per hour in case of rabbitmq shutdown
+        - name: exporter
+          image: {{ .Values.global.dockerHubMirror | required ".Values.global.dockerHubMirror is missing" }}/bonniernews/logstash_exporter:v0.1.2
+          ports:
+            - name: metrics
+              containerPort: 9198
+          resources:
+            limits:
+              memory: 45Mi
+              cpu: 100m
+            requests:
+              memory: 45Mi
+              cpu: 10m

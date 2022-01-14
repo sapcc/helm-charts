@@ -40,16 +40,28 @@ spec:
             value: {{ .Values.volta.secret_id }}
           - name: ENV_VOLTA_API_PORT
             value: "{{ .Values.volta.port }}"
+          - name: ENV_VOLTA_OIDC_PROVIDER
+            value: {{ .Values.volta.oidc_provider }}
+          - name: ENV_VOLTA_OIDC_CLIENT_ID
+            value: {{ .Values.volta.oidc_client_id }}
+          - name: ENV_VOLTA_OIDC_CLIENT_SECRET
+            value: {{ .Values.volta.oidc_client_secret }}
+          - name: ENV_VOLTA_OIDC_CALLBACK_URL
+            value: {{ .Values.volta.oidc_callback_url }}
           - name: ENV_VOLTA_VAULT_URL
-            value: {{ .Values.vault.url }}
+            value: {{ .Values.volta.vault_url }}
           ports:
             - name: http
-              containerPort: 8080
+              containerPort: 2345
               protocol: TCP
           readinessProbe:
             httpGet:
-              path: /api/status
-              port: 8080
+              path: /ready
+              port: 8086
+          livenessProbe:
+            httpGet:
+              path: /live
+              port: 8086
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
       {{- with .Values.nodeSelector }}

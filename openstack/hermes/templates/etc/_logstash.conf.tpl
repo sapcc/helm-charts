@@ -133,29 +133,6 @@ filter {
      }
   }
 
-  # Calculate the variable index name part from payload (@metadata will not be part of the event)
-
-  # primary index
-  if [initiator][project_id] {
-    mutate { add_field => { "[@metadata][index]" => "%{[initiator][project_id]}" } }
-  } else if [initiator][domain_id] {
-    mutate { add_field => { "[@metadata][index]" => "%{[initiator][domain_id]}" } }
-  }
-
-  # secondary index
-  if [target][project_id] {
-    mutate { add_field => { "[@metadata][index2]" => "%{[target][project_id]}" } }
-  } else if [target][domain_id] {
-    mutate { add_field => { "[@metadata][index2]" => "%{[target][domain_id]}" } }
-  }
-
-  # remove keystone specific fields after they have been mapped to standard attachments
-  mutate {
-    remove_field => ["[domain]", "[project]", "[user]", "[role]", "[group]", "[inherited_to_projects]"]
-  }
-
-  kv { source => "_source" }
-
   if [initiator][id]{
     jdbc_static {
       id => "jdbc"
@@ -163,6 +140,7 @@ filter {
         {
           id  => "keystone_user_domain"
           query => "select u.id as user_id, m.local_id as user_name, p.id as domain_id, p.name as domain_name  from keystone.user as u left join keystone.id_mapping m on m.public_id = u.id left join keystone.project as p on p.id = u.domain_id where p.name = \"ccadmin\";"
+          local_table => "user_domain_mapping"
         }
       ]
 
@@ -194,17 +172,41 @@ filter {
       jdbc_driver_class => "com.mysql.cj.jdbc.Driver"
       jdbc_driver_library => ""
       jdbc_connection_string => "jdbc:mysql://{{ .Values.logstash.jdbc.service }}.{{ .Values.logstash.jdbc.namespace }}:3306/{{ .Values.logstash.jdbc.db }}"
-  }
-  if [domain_mapping] and [domain_mapping][0]{
-    mutate {
-      add_field => {
-          "[initiator][user]" => "%{[domain_mapping][0][user_name]}"
-          "[initiator][domain_id]" => "%{[domain_mapping][0][domain_id]}"
-          "[initiator][domain_name]" => "%{[domain_mapping][0][domain_name]}"
+    }
+
+    if [domain_mapping] and [domain_mapping][0]{
+      mutate {
+        add_field => {
+            "[initiator][user]" => "%{[domain_mapping][0][user_name]}"
+            "[initiator][domain_id]" => "%{[domain_mapping][0][domain_id]}"
+            "[initiator][domain_name]" => "%{[domain_mapping][0][domain_name]}"
+        }
+        remove_field => [ "domain_mapping" ]
       }
-      remove_field => [ "domain_mapping" ]
     }
   }
+  # Calculate the variable index name part from payload (@metadata will not be part of the event)
+
+  # primary index
+  if [initiator][project_id] {
+    mutate { add_field => { "[@metadata][index]" => "%{[initiator][project_id]}" } }
+  } else if [initiator][domain_id] {
+    mutate { add_field => { "[@metadata][index]" => "%{[initiator][domain_id]}" } }
+  }
+
+  # secondary index
+  if [target][project_id] {
+    mutate { add_field => { "[@metadata][index2]" => "%{[target][project_id]}" } }
+  } else if [target][domain_id] {
+    mutate { add_field => { "[@metadata][index2]" => "%{[target][domain_id]}" } }
+  }
+
+  # remove keystone specific fields after they have been mapped to standard attachments
+  mutate {
+    remove_field => ["[domain]", "[project]", "[user]", "[role]", "[group]", "[inherited_to_projects]"]
+  }
+
+  kv { source => "_source" }
 
   # The following line will create 2 additional
   # copies of each document (i.e. including the
