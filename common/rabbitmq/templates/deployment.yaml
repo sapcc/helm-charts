@@ -93,7 +93,11 @@ spec:
           - name: metrics
             containerPort: {{ default "9150" .Values.metrics.port }}
 {{- end }}
-      priorityClassName: {{ default "openstack-service-critical" .Values.priority_class | quote }}
+{{- if kindIs "invalid" .Values.priority_class }}
+      priorityClassName: "openstack-service-critical"
+{{- else }}
+      priorityClassName: {{ quote .Values.priority_class }}
+{{ end }}
       volumes:
         - name: rabbitmq-persistent-storage
         {{- if .Values.persistence.enabled }}
