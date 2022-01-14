@@ -12,16 +12,12 @@ metadata:
 {{- end }}  
     ingress.kubernetes.io/ssl-redirect: "true"
     kubernetes.io/tls-acme: "true"
-
-    # cookie stickines allows us to send requests to the same server
-    ingress.kubernetes.io/affinity: cookie
-    ingress.kubernetes.io/session-cookie-path: /
 spec:
   tls:
-    - secretName: tls-global-auth
-      hosts: [{{ include "host" . }}]
+    - secretName: tls-oauth-proxy
+      hosts: [auth.{{.Values.global.region}}.{{ .Values.global.tld }}]
   rules:
-  - host: {{ include "host" . }}
+  - host: auth.{{.Values.global.region}}.{{ .Values.global.tld }}
     http:
       paths:
         - path: /
