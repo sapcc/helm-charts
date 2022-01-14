@@ -24,6 +24,7 @@
 # All the auto-generated files should use the tag "file.<filename>".
 <source>
   @type tail
+  @id tail
   path /var/log/containers/keystone-api-*.log,/var/log/containers/keystone-global-api-*.log
   exclude_path /var/log/containers/fluentd*
   pos_file /var/log/es-containers-octobus.log.pos
@@ -43,6 +44,7 @@
 
 <filter kubernetes.**>
   @type kubernetes_metadata
+  @id kubernetes
   kubernetes_url https://KUBERNETES_SERVICE_HOST
   bearer_token_file /var/run/secrets/kubernetes.io/serviceaccount/token
   ca_file /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
@@ -52,6 +54,7 @@
 
 <filter kubernetes.**>
   @type parser
+  @id grok_parser
   key_name log
   reserve_data true
   <parse>
@@ -64,13 +67,16 @@
 
 <filter kubernetes.**>
   @type record_modifier
+  @id remove
     remove_keys message,stream
 </filter>
 
 <match kubernetes.**>
   @type copy
+  @id duplicate
   <store>
     @type http
+    @id to_octobus
     endpoint "https://{{.Values.forwarding.keystone.host}}"
     tls_ca_cert_path "/etc/ssl/certs/ca-certificates.crt"
     slow_flush_log_threshold 105.0
@@ -91,6 +97,7 @@
   </store>
   <store>
     @type http
+    @id to_logstash
     endpoint "https://logstash-audit-external.{{.Values.global.region}}.{{.Values.global.tld}}"
     <auth>
       method basic
@@ -115,6 +122,7 @@
   </store>
   <store>
     @type prometheus
+    @id to_prometheus
     <metric>
       name fluentd_output_status_num_records_total
       type counter
