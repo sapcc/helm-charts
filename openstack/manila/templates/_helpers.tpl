@@ -16,4 +16,5 @@ netapp:thin_provisioned: "True"
 create_share_from_snapshot_support: "True"
 revert_to_snapshot_support: "True"
 replication_type: "dr"
+provisioning:max_share_size: "16384"  # 16 TB
 {{- end }}
