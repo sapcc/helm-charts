@@ -57,6 +57,10 @@ netapp_enable_logical_space_reporting = True
 
 # The percentage of backend capacity reserved. Default 0 (integer value)
 reserved_share_percentage = {{ $share.reserved_share_percentage | default 50 }}
+# If there is lower number reserved for shares from snapshots
+# this means when you can no longer create shares, you can still create them
+# from snapshot
+reserved_share_from_snapshot_percentage = {{ $share.reserved_share_from_snapshot_percentage | default 30 }}
 # Time to kepp deleted volumes in recovery queue until space is reclaimed
 netapp_delete_retention_hours = {{ $context.Values.delete_retention_hours | default 12 }}
 
