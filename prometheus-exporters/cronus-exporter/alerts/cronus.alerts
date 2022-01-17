@@ -2,39 +2,71 @@ groups:
 - name: CronusAlerts
   rules:
   - alert: CronusSendEmails
-    expr: sum(sum_over_time(aws_ses_cronus_provider_send[5m])) < 5 or sum_over_time(cronus_simulator_send_email_rate[5m]) < 5
+    expr: sum(sum_over_time(aws_ses_cronus_provider_send[15m])) < 15 or sum(sum_over_time(cronus_simulator_send_email_rate[15m])) < 15
     for: 5m
     labels:
-      meta: Cronus - sending emails is below the threshold in the region {{ $labels.region }}
+      meta: Cronus - sending emails is below the threshold of 15 emails per 15 minutes in region {{ $labels.region }}
       service: cronus
       severity: critical
       tier: os
       playbook: docs/devops/alert/cronus/#send_email
     annotations:
       description: grafana - https://grafana.global.cloud.sap/d/cronushealth/cronushealth?orgId=1 , slack-cronus-dev - https://convergedcloud.slack.com/archives/G01SLHXERL5
-      summary: problem with sending emails in region {{ $labels.region }}
-  - alert: CronusPodsHanging
-    expr: sum (kube_pod_container_status_running{namespace="cronus"}) by (container) == 0
+      summary: Cronus - sending emails is below the threshold of 15 emails in the past 15 minutes, in region {{ $labels.region }}
+  - alert: CronusPodMalfunction
+    expr: sum (kube_pod_container_status_running{namespace="cronus", container="cronus"}) by (container) == 0
     for: 5m
     labels:
-      meta: Cronus cluster - pods fails in region {{ $labels.region }} pod {{ $labels.pod }}
+      meta: All cronus pods in cluster s-{{ $labels.region }} are malfunction for more than 5 minutes, mails can't be sent
       service: cronus
       severity: critical
       tier: os
-      playbook: docs/devops/alert/cronus/#cronus_health
+      playbook: docs/devops/alert/cronus/#send_email
     annotations:
       description: grafana - https://grafana.{{ $labels.region }}.cloud.sap/d/cronushealth/cronushealth?orgId=1 , slack-cronus-dev - https://convergedcloud.slack.com/archives/G01SLHXERL5
-      summary: Cronus cluster - pods fails in region {{ $labels.region }} pod {{ $labels.pod }}
-  - alert: CronusDeliveryEmails
-    expr: sum(sum_over_time(aws_ses_cronus_provider_delivery[5m])) < 5 or sum(sum_over_time(cronus_simulator_receiving_confirmed_email_rate[5m])) < 5
-    for: 5m
+      summary: All cronus pods in cluster s-{{ $labels.region }} are malfunction for more than 5 minutes, mails can't be send
+- name: NebulaAlerts
+  rules:
+  - alert: NebulaReconcileAccount
+    expr: avg_over_time(cronus_simulator_event_test_passed[20m]) < 1
+    for: 20m
     labels:
-      meta: Cronus delivery emails is below the threshold in the region {{ $labels.region }} pod {{ $labels.pod }}
+      meta: Simulator Nebula Reconcile - reconcile account fails for more than 20 minutes in the region {{ $labels.region }}
       service: cronus
-      severity: critical
+      severity: warning
+      tier: os
+      playbook: docs/devops/alert/cronus/#nebula_reconcile
+    annotations:
+      description: grafana - https://grafana.global.cloud.sap/d/cronushealth/cronushealth?orgId=1 , slack-cronus-dev - https://convergedcloud.slack.com/archives/G01SLHXERL5
+      summary: Simulator Nebula Reconcile - reconcile account fails for more than 20 minutes in the region {{ $labels.region }}
+  - alert: NebulaPodMalfunction
+    expr: sum (kube_pod_container_status_running{namespace="cronus", container="nebula"}) by (container) == 0
+    for: 20m
+    labels:
+      meta: All neula pods in cluster s-{{ $labels.region }} are malfunction for more than 20 minutes, can't create new accounts or manage accounts  
+      service: cronus
+      severity: warning
       tier: os
       playbook: docs/devops/alert/cronus/#sending_email_quick_test
     annotations:
       description: grafana - https://grafana.{{ $labels.region }}.cloud.sap/d/cronushealth/cronushealth?orgId=1 , slack-cronus-dev - https://convergedcloud.slack.com/archives/G01SLHXERL5
-      summary: problem with delivery emails in region {{ $labels.region }}
+      summary: All neula pods in cluster s-{{ $labels.region }} are malfunction for more than 20 minutes, can't create new accounts or manage accounts  
+- name: CronusTools
+  rules:
+  - alert: CronusToolsPods
+    expr: sum (kube_pod_container_status_running{namespace="cronus", container=~'cronus-updater|poller-simulator|cronus-exporter|cronus-simulator'}) by (container) == 0
+    for: 15m
+    labels:
+      meta: Cronus tools in cluster s-{{ $labels.region }} are malfunction for more than 15 minutes, failures in scrapping delivery emails statistics, maintaining accounts security attributes, sending emails simulation  
+      service: cronus
+      severity: warning
+      tier: os
+      playbook: docs/devops/alert/cronus/#sending_email_quick_test 
+    annotations:
+      description: grafana - https://grafana.{{ $labels.region }}.cloud.sap/d/cronushealth/cronushealth?orgId=1 , slack-cronus-dev - https://convergedcloud.slack.com/archives/G01SLHXERL5
+      summary: Cronus tools in cluster s-{{ $labels.region }} are malfunction for more than 15 minutes, failures in scrapping delivery emails statistics, maintaining accounts security attributes, sending emails simulation  
+
+
+
+
 

@@ -1,0 +1,25 @@
+# prettier-ignore
+
+apiVersion: networking.k8s.io/v1beta1
+kind: Ingress
+
+metadata:
+  name: global-auth
+  annotations:
+    ingress.kubernetes.io/ssl-redirect: "true"
+    kubernetes.io/tls-acme: "true"
+    dns-manager: "true"
+    dns-manager/zone-name: auth.{{.Values.global.region}}.{{ .Values.global.tld }}
+spec:
+  tls:
+    - secretName: tls-oauth-proxy
+      hosts: [auth.{{.Values.global.region}}.{{ .Values.global.tld }}]
+  rules:
+  - host: auth.{{.Values.global.region}}.{{ .Values.global.tld }}
+    http:
+      paths:
+        - path: /
+          backend:
+            serviceName: oauth2-proxy
+            servicePort: 4180
+          
