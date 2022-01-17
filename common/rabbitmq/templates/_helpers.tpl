@@ -37,3 +37,11 @@ rabbit://{{ default "" $envAll.Values.global.user_suffix | print $rabbitmq.users
 {{- .Release.Name -}}
 {{- end -}}
 {{- end -}}
+
+{{- define "dockerHubMirror" -}}
+{{- if .Values.use_alternate_registry -}}
+{{- .Values.global.dockerHubMirrorAlternateRegion -}}
+{{- else -}}
+{{- .Values.global.dockerHubMirror -}}
+{{- end -}}
+{{- end -}}
