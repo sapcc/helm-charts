@@ -127,6 +127,10 @@ filter {
     }
     if [type] == "audit"{
 
+      mutate{
+          add_field => { "sap.cc.region" => "{{ .Values.global.region }}"}
+      }
+
       if [apiVersion] and [apiVersion] == "audit.k8s.io/v1" {
         mutate {
           add_field => { "sap.cc.audit.source"  => "Kube-API" }
