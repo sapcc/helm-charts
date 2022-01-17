@@ -68,6 +68,8 @@ filter {
       tag_on_failure => ["_syslog_grok_failure"]
     }
 
+    syslog_pri { }
+
 # Change type of audit relevant UCSM syslogs to "audit"
   if [syslogcisco_facility] {
     if [syslogcisco_facility] == "%UCSM"  and [syslogcisco_code] == "AUDIT" {
