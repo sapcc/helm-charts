@@ -75,6 +75,7 @@ filter {
     if [syslogcisco_facility] == "%UCSM"  and [syslogcisco_code] == "AUDIT" {
       mutate {
         replace => { "type" => "audit" }
+        add_field => { "sap.cc.audit.source" => "UCSM" }
       }
     }
   }
@@ -83,6 +84,7 @@ filter {
   if [syslog_hostname] and [syslog_hostname] == "hsm01" {
     mutate {
         replace => { "type" => "audit" }
+        add_field => { "sap.cc.audit.source" => "HSM" }
       }
   }
 
@@ -124,6 +126,27 @@ filter {
        }
     }
     if [type] == "audit"{
+
+      if [apiVersion] and [apiVersion] == "audit.k8s.io/v1" {
+        mutate {
+          add_field => { "sap.cc.audit.source"  => "Kube-API" }
+        }
+      }
+
+      if [kubernetes.labels.name] and [kubernetes.labels.name] == "keystone-api" {
+        mutate {
+          add_field => { "sap.cc.audit.source" => "Keystone-API" }
+        }
+      }
+
+      if [syslog_identifier] {
+        if [syslog_identifier] == "audit" or [syslog_identifier] == "sshd" or [syslog_identifier] == "sssd" {
+          mutate {
+            add_field => { "sap.cc.audit.source" => "Flatcar ControlPlane"}
+          }
+        }
+      }
+
       clone {
         clones => ['octobus', 'elk']
       }
