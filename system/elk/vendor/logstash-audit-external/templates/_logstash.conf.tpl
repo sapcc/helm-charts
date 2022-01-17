@@ -137,9 +137,9 @@ filter {
         }
       }
 
-      if [kubernetes.labels.name] and [kubernetes.labels.name] == "keystone-api" {
+      if [kubernetes][labels][name] {
         mutate {
-          add_field => { "sap.cc.audit.source" => "Keystone-API" }
+          add_field => { "sap.cc.audit.source" => %{[kubernetes][labels][name]} }
         }
       }
 
