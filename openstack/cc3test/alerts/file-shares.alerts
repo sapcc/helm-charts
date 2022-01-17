@@ -86,3 +86,19 @@ groups:
     annotations:
       description: Certificate on {{ $labels.host }} expires in less than 15 days
       summary: Certificate expires
+
+  - alert: OpenstackFileShareCanaryAttachShareDown
+    expr: cc3test_status{service="manila",name=~"TestFileShare_attach_share.+"} == 0
+    for: 2h
+    labels:
+      severity: warning
+      tier: os
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.service }}'
+      meta: 'Openstack File Share Canary: {{ $labels.name }} is down, see report for more details'
+      dashboard: cc3test-overview?var-service={{ $labels.service }}
+      playbook: 'docs/devops/alert/{{ $labels.service }}/#test_attach_share'
+      report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
+    annotations:
+      description: 'Openstack File Share Canary: {{ $labels.name }} is down, see report for more details'
+      summary: 'Openstack File Share Canary: {{ $labels.name }} is down, see report for more details'
