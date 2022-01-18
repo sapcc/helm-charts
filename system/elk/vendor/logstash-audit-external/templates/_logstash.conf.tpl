@@ -1,3 +1,4 @@
+{{ if .Values.syslog.enabled -}}
 input {
   udp {
     port  => {{.Values.input_netflow_port}}
@@ -25,18 +26,22 @@ input {
     type => deployment
     codec => plain
   }
+{{- end }}
   http {
     port  => {{.Values.input_http_port}}
     type => audit
     user => '{{.Values.global.elk_elasticsearch_http_user}}'
     password => '{{.Values.global.elk_elasticsearch_http_password}}'
+{{ if .Values.syslog.enabled -}}
     ssl => true
     ssl_certificate => '/tls-secret/tls.crt'
     ssl_key => '/usr/share/logstash/config/tls.key'
+{{- end }}
   }
 }
 
 filter {
+{{ if .Values.syslog.enabled -}}
  if  [type] == "syslog" {
    mutate {
      copy => { "host" => "hostname"}
@@ -123,6 +128,7 @@ filter {
          }
        }
     }
+{{- end }}
     if [type] == "audit"{
       clone {
         clones => ['octobus', 'elk']
@@ -152,6 +158,7 @@ output {
       http_method => "post"
     }
   }
+{{ if .Values.syslog.enabled }}
   elseif [type] == "syslog" {
     elasticsearch {
       index => "syslog-%{+YYYY.MM.dd}"
@@ -236,4 +243,5 @@ output {
       ssl => true
     }
   }
+{{- end }}
 }

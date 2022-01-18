@@ -10,7 +10,7 @@ spec:
   selector:
     matchLabels:
       component: logstash-audit-external
-  replicas: {{.Values.replicas}}
+  replicas: {{ .Values.replicas }}
   updateStrategy:
     type: RollingUpdate
   template:
@@ -26,34 +26,38 @@ spec:
         - name: elk-etc
           configMap:
             name: logstash-audit-external-etc
+      {{ if .Values.syslog.enabled }}
         - name: tls-secret
           secret:
             secretName: tls-logstash-audit-external
+      {{- end }}
       containers:
         - name: logstash
-          image: {{.Values.global.registry}}/elk-logstash:{{.Values.image_version}}
+          image: {{ .Values.global.registry }}/elk-logstash:{{ .Values.image_version }}
           imagePullPolicy: IfNotPresent
           ports:
+          {{ if .Values.syslog.enabled }}
             - name: netflow
-              containerPort: {{.Values.input_netflow_port}}
+              containerPort: {{ .Values.input_netflow_port }}
               protocol: UDP
             - name: syslogudp
-              containerPort: {{.Values.input_syslog_port}}
+              containerPort: {{ .Values.input_syslog_port }}
               protocol: UDP
             - name: syslogtcp
-              containerPort: {{.Values.input_syslog_port}}
+              containerPort: {{ .Values.input_syslog_port }}
               protocol: TCP
             - name: bigiplogsudp
-              containerPort: {{.Values.input_bigiplogs_port}}
+              containerPort: {{ .Values.input_bigiplogs_port }}
               protocol: UDP
             - name: alertmanagertcp
-              containerPort: {{.Values.input_alertmanager_port}}
+              containerPort: {{ .Values.input_alertmanager_port }}
               protocol: TCP
             - name: deploymentstcp
-              containerPort: {{.Values.input_deployments_port}}
-              protocol: TCP
+              containerPort: {{ .Values.input_deployments_port }}
+              protocol: TCPA
+           {{ end }}
             - name: https
-              containerPort: {{.Values.input_http_port}}
+              containerPort: {{ .Values.input_http_port }}
               protocol: TCP
           command: ["dumb-init","/bin/bash","/elk-etc/start.sh"]
           env:

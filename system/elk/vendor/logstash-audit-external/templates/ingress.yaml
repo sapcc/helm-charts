@@ -1,0 +1,24 @@
+{{ if .Values.global.clusterType }}
+apiVersion: networking.k8s.io/v1beta1
+kind: Ingress
+
+metadata:
+  name: logstash-audit-external
+  namespace: elk
+  annotations:
+    kubernetes.io/tls-acme: "true"
+    disco: true
+
+spec:
+  tls:
+     - secretName: tls-logstash-audit-external
+       hosts: logstash-audit-external.scaleout.{{.Values.global.region}}.{{.Values.global.tld}}]
+  rules:
+    - host: logstash-audit-external.scaleout.{{.Values.global.region}}.{{.Values.global.tld}}
+      http:
+        paths:
+        - path: /
+          backend:
+            serviceName: https
+            servicePort: {{.Values.input_http_port}}
+{{ end }}
