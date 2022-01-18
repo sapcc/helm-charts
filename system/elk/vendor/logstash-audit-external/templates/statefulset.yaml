@@ -21,7 +21,11 @@ spec:
         checksum/configmap.yaml: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
     spec:
       nodeSelector:
+    {{- if .Values.global.clusterType }}
+        ccloud.sap.com/nodepool: payload
+    {{- else }}
         zone: farm
+    {{- end }}
       volumes:
         - name: elk-etc
           configMap:
