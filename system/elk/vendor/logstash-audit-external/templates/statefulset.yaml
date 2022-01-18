@@ -26,7 +26,7 @@ spec:
         - name: elk-etc
           configMap:
             name: logstash-audit-external-etc
-      {{ if .Values.syslog.enabled }}
+      {{- if .Values.syslog.enabled }}
         - name: tls-secret
           secret:
             secretName: tls-logstash-audit-external
@@ -36,7 +36,7 @@ spec:
           image: {{ .Values.global.registry }}/elk-logstash:{{ .Values.image_version }}
           imagePullPolicy: IfNotPresent
           ports:
-          {{ if .Values.syslog.enabled }}
+          {{- if .Values.syslog.enabled }}
             - name: netflow
               containerPort: {{ .Values.input_netflow_port }}
               protocol: UDP
@@ -55,7 +55,7 @@ spec:
             - name: deploymentstcp
               containerPort: {{ .Values.input_deployments_port }}
               protocol: TCPA
-           {{ end }}
+           {{- end }}
             - name: https
               containerPort: {{ .Values.input_http_port }}
               protocol: TCP
