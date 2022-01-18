@@ -26,7 +26,7 @@ input {
     type => deployment
     codec => plain
   }
-{{- end }}
+{{ end -}}
   http {
     port  => {{.Values.input_http_port}}
     type => audit
@@ -36,7 +36,7 @@ input {
     ssl => true
     ssl_certificate => '/tls-secret/tls.crt'
     ssl_key => '/usr/share/logstash/config/tls.key'
-{{- end }}
+{{ end -}}
   }
 }
 
@@ -128,7 +128,7 @@ filter {
          }
        }
     }
-{{- end }}
+{{ end -}}
     if [type] == "audit"{
       clone {
         clones => ['octobus', 'elk']
@@ -158,7 +158,7 @@ output {
       http_method => "post"
     }
   }
-{{ if .Values.syslog.enabled }}
+{{ if .Values.syslog.enabled -}}
   elseif [type] == "syslog" {
     elasticsearch {
       index => "syslog-%{+YYYY.MM.dd}"
@@ -243,5 +243,5 @@ output {
       ssl => true
     }
   }
-{{- end }}
+{{ end -}}
 }
