@@ -2,15 +2,23 @@ apiVersion: v1
 kind: Service
 
 metadata:
+  {{- if .Values.global.clusterType }}
+  name: logstash-audit-external
+  {{- else }}
   name: logstash-audit-external
   annotations:
     parrot.sap.cc/announce: 'true'
-
+  {{- end }}
 spec:
   selector:
     component: logstash-audit-external
+  {{- if .Values.global.clusterType }}
+  type: LoadBalancer
+  ports:
+  {{- else }}
   type: NodePort
   externalTrafficPolicy: Local
+  externalIPs: ["{{.Values.external_ip}}"]
   ports:
     - name: netflow
       protocol: UDP
@@ -36,8 +44,8 @@ spec:
       protocol: TCP
       port: {{.Values.input_deployments_port}}
       targetPort: {{.Values.input_deployments_port}}
+  {{- end }}
     - name: https
       protocol: TCP
       port: {{.Values.input_http_port}}
       targetPort: {{.Values.input_http_port}}
-  externalIPs: ["{{.Values.external_ip}}"]
