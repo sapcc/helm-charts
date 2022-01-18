@@ -171,9 +171,15 @@ output {
       template => "/elk-etc/audit.json"
       template_name => "audit"
       template_overwrite => true
+      {{- if .Values.global.clusterType }}
+      hosts => ["{{.Values.global.endpoint_host_internal}}.elk:{{.Values.global.http_port}}"]
+      user => "{{.Values.global.audit_user}}"
+      password => "{{.Values.global.audit_password}}"
+      {{- else }}
       hosts => ["{{.Values.global.elk_elasticsearch_endpoint_host_scaleout}}.{{.Values.global.elk_cluster_region}}.{{.Values.global.tld}}:{{.Values.global.elk_elasticsearch_ssl_port}}"]
       user => "{{.Values.global.elk_elasticsearch_audit_user}}"
       password => "{{.Values.global.elk_elasticsearch_audit_password}}"
+      {{- end }}
       ssl => true
     }
   }
