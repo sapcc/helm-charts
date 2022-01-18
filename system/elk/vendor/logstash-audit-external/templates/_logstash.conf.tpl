@@ -139,7 +139,7 @@ filter {
 
       if [kubernetes][labels][name] {
         mutate {
-          add_field => { "sap.cc.audit.source" => %{[kubernetes][labels][name]} }
+          add_field => { "sap.cc.audit.source" => "%{[kubernetes][labels][name]}" }
         }
       }
 
