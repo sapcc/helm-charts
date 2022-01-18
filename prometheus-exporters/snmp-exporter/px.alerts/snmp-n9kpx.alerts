@@ -3,8 +3,9 @@ groups:
   rules:
   - alert: PXSwitchOspfNeighborDown
     expr: |
-      (sum(snmp_n9kpx_ospfIfState ==bool 4) by (devicename)
-      - sum(snmp_n9kpx_ospfNbrState ==bool 8) by(devicename)) or (sum(snmp_n9kpx_ospfIfState  ==bool 4)  by (devicename) unless sum(snmp_n9kpx_ospfNbrState ==bool 8) by(devicename))
+      ((sum(snmp_n9kpx_ospfIfState ==bool 4) by (devicename)
+      - sum(snmp_n9kpx_ospfNbrState ==bool 8) by(devicename)) or (sum(snmp_n9kpx_ospfIfState  ==bool 4)  by (devicename) unless sum(snmp_n9kpx_ospfNbrState ==bool 8) by(devicename)))
+      != 0
     for: 5m
     labels:
       severity: warning
