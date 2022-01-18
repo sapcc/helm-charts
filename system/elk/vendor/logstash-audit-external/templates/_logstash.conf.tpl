@@ -179,8 +179,8 @@ output {
       hosts => ["{{.Values.global.elk_elasticsearch_endpoint_host_scaleout}}.{{.Values.global.elk_cluster_region}}.{{.Values.global.tld}}:{{.Values.global.elk_elasticsearch_ssl_port}}"]
       user => "{{.Values.global.elk_elasticsearch_audit_user}}"
       password => "{{.Values.global.elk_elasticsearch_audit_password}}"
-      {{- end }}
       ssl => true
+      {{- end }}
     }
   }
   elseif [type] == "octobus" {
