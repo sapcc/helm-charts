@@ -5,14 +5,14 @@ groups:
     expr: (sum(sum_over_time(aws_ses_cronus_provider_send[15m])) < 50 or sum(sum_over_time(cronus_simulator_send_email_rate[15m])) < 50) and (absent(cronus_simulator_send_email_rate) OR on() vector(0) == 0)
     for: 5m
     labels:
-      meta: Cronus - sending emails is below a threshold for 15 minutes
+      meta: Cronus - sending emails is below threshold for more than 15 minutes
       service: cronus
       severity: critical
       tier: os
       playbook: docs/devops/alert/cronus/#send_email
     annotations:
       description: grafana - https://grafana.global.cloud.sap/d/cronushealth/cronushealth?orgId=1 , slack-cronus-dev - https://convergedcloud.slack.com/archives/G01SLHXERL5
-      summary: Cronus - sending emails is below a threshold for 15 minutes
+      summary: Cronus - sending emails is below threshold for more than 15 minutes
   - alert: CronusPodMalfunction
     expr: sum (kube_pod_container_status_running{namespace="cronus", container="cronus"}) by (container) == 0
     for: 5m
