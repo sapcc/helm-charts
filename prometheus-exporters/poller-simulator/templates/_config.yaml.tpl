@@ -58,6 +58,9 @@ poller:
     sesRegion: {{ .Values.config.allowedServices.email }}
     recipient: {{ .Values.simulator.recipient }}
     sender: {{ .Values.simulator.sender }}
+    prometheus: {{ .Values.simulator.poller.prometheus }}
+    charSet: {{ .Values.simulator.poller.charSet }}
+    period: {{ .Values.simulator.poller.period }}
     tests:
     {{- range $key, $value := .Values.simulator.poller.simulator.tests }}
       - {{ $value }}
