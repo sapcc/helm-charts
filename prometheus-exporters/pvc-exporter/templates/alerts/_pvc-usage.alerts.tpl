@@ -7,11 +7,11 @@ groups:
     labels:
       tier: k8s
       service: resources
-      severity: info
+      severity: warning
       context: storage
       meta: "PVC {{`{{ $labels.persistentvolumeclaim }}`}} is predicted to exceed 90% storage consumption in the next 7 days"
       playbook: '/docs/support/playbook/kubernetes/pvc_usage.html'
       no_alert_on_absence: "true"
     annotations:
       description: "The PVC {{`{{ $labels.persistentvolumeclaim }}`}} mounted by {{`{{ $labels.mountedby }}`}} with volume name {{`{{ $labels.volumename }}`}} is predicted to exceed 90% storage consumption in the next 7 days"
-      summary: "PVC {{`{{ $labels.persistentvolumeclaim }}`}} is predicted to exceed 90% storage consumption in the next 7 days" 
+      summary: "PVC {{`{{ $labels.persistentvolumeclaim }}`}} is predicted to exceed 90% storage consumption in the next 7 days"
