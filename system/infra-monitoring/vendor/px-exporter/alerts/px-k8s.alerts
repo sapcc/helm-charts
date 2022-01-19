@@ -2,10 +2,11 @@ groups:
 - name: alerts for PX kubernetes resources
   rules:
   - alert: PXServiceDown
-    expr: sum
-      by (px_service) (label_replace((sum by (pod) ((kube_pod_info{namespace="px"} * on(node) group_left() sum by(node) (kube_node_status_condition{node=~"^px.+",condition="Ready",status="true"})
-      * on(pod) group_left() sum by(pod) (kube_pod_status_phase{namespace="px", phase="Running"})
-      == 1) * on(pod) group_left() sum by(pod) (kube_pod_status_ready{namespace="px", condition="true"}))), "px_service", "$1", "pod", ".+-pxrs-[0-9]-s([0-9])-[0-9]-.{14,17}"))
+    expr: |
+      sum by(px_service) (label_replace((sum by(pod) ((kube_pod_info{namespace="px"}
+      * on(node) group_left() sum by(node) (kube_node_status_condition{condition="Ready",node=~"^px.+",status="true"})
+      * on(pod) group_left() sum by(pod) (kube_pod_status_phase{namespace="px",phase="Running", pod=~".+-pxrs-[0-9]-s([0-9])-[0-9]-.{14,17}"}) == 1)
+      * on(pod) group_left() sum by(pod) (kube_pod_status_ready{condition="true",namespace="px"}))), "px_service", "$1", "pod", ".+-pxrs-[0-9]-s([0-9])-[0-9]-.{14,17}"))
       < 1
     for: 0s
     labels:
@@ -19,11 +20,12 @@ groups:
       summary: "PX Service is down"
 
   - alert: PXServiceOnRisk
-    expr: sum
-      by (px_service) (label_replace((sum by (pod) ((kube_pod_info{namespace="px"} * on(node) group_left() sum by(node) (kube_node_status_condition{node=~"^px.+",condition="Ready",status="true"})
-      * on(pod) group_left() sum by(pod) (kube_pod_status_phase{namespace="px", phase="Running"})
-      == 1) * on(pod) group_left() sum by(pod) (kube_pod_status_ready{namespace="px", condition="true"}))), "px_service", "$1", "pod", ".+-pxrs-[0-9]-s([0-9])-[0-9]-.{14,17}"))
-      < 3
+    expr: |
+      sum by(px_service) (label_replace((sum by(pod) ((kube_pod_info{namespace="px"}
+      * on(node) group_left() sum by(node) (kube_node_status_condition{condition="Ready",node=~"^px.+",status="true"})
+      * on(pod) group_left() sum by(pod) (kube_pod_status_phase{namespace="px",phase="Running", pod=~".+-pxrs-[0-9]-s([0-9])-[0-9]-.{14,17}"}) == 1)
+      * on(pod) group_left() sum by(pod) (kube_pod_status_ready{condition="true",namespace="px"}))), "px_service", "$1", "pod", ".+-pxrs-[0-9]-s([0-9])-[0-9]-.{14,17}"))
+      <= 3
     for: 0s
     labels:
       severity: warning
