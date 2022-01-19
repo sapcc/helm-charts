@@ -2,7 +2,7 @@ groups:
 - name: CronusAlerts
   rules:
   - alert: CronusSendEmails
-    expr: sum(sum_over_time(aws_ses_cronus_provider_send[15m])) < 15 or sum(sum_over_time(cronus_simulator_send_email_rate[15m])) < 15
+    expr: (sum(sum_over_time(aws_ses_cronus_provider_send[15m])) < 150 or sum(sum_over_time(cronus_simulator_send_email_rate[15m])) < 150) and (absent(cronus_simulator_send_email_rate) OR on() vector(0) == 0)
     for: 5m
     labels:
       meta: Cronus - sending emails is below the threshold of 15 emails per 15 minutes in region {{ $labels.region }}
@@ -53,18 +53,18 @@ groups:
       summary: All neula pods in cluster s-{{ $labels.region }} are malfunction for more than 20 minutes, can't create new accounts or manage accounts  
 - name: CronusTools
   rules:
-  - alert: CronusToolsPods
-    expr: sum (kube_pod_container_status_running{namespace="cronus", container=~'cronus-updater|poller-simulator|cronus-exporter|cronus-simulator'}) by (container) == 0
+  - alert: CronusSimulatorPod
+    expr: sum (kube_pod_container_status_running{namespace="cronus", container=~'poller-simulator'}) by (container) == 0
     for: 15m
     labels:
-      meta: Cronus tools in cluster s-{{ $labels.region }} are malfunction for more than 15 minutes, failures in scrapping delivery emails statistics, maintaining accounts security attributes, sending emails simulation  
+      meta: Cronus simulator, that helps to monitor sending emails, malfunction in region s-{{ $labels.region }} for more than 15 minutes.
       service: cronus
       severity: warning
       tier: os
       playbook: docs/devops/alert/cronus/#sending_email_quick_test 
     annotations:
       description: grafana - https://grafana.{{ $labels.region }}.cloud.sap/d/cronushealth/cronushealth?orgId=1 , slack-cronus-dev - https://convergedcloud.slack.com/archives/G01SLHXERL5
-      summary: Cronus tools in cluster s-{{ $labels.region }} are malfunction for more than 15 minutes, failures in scrapping delivery emails statistics, maintaining accounts security attributes, sending emails simulation  
+      summary: Cronus simulator, that helps to monitor sending emails, malfunction in region s-{{ $labels.region }} for more than 15 minutes.  
 
 
 
