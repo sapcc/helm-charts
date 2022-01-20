@@ -135,3 +135,9 @@ prometheus-{{- (include "prometheus.name" .) -}}
   regex: ^({{ . | join "|" }})$
   action: keep
 {{- end -}}
+
+{{- define "prometheus.drop-metrics.metric-relabel-config" -}}
+- sourceLabels: [ __name__ ]
+  regex: ^({{ . | join "|" }})$
+  action: drop
+{{- end -}}
