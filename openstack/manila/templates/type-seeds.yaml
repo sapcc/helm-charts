@@ -30,23 +30,18 @@ spec:
     extra_specs:
       share_backend_name: "integration"
     {{- include "manila_type_seed.extra_specs" . | indent 6 }}
-{{- if .Values.share_types.hypervisor_storage }}
-  - name: hypervisor_storage
+  {{- range $shareTypeName, $shareTypeEnabled := .Values.share_types }}
+  {{- if $shareTypeName | hasPrefix "hypervisor_storage" }}
+  {{- if $shareTypeEnabled }}
+  - name: {{ $shareTypeName }}
     is_public: false
     specs:
     {{- include "manila_type_seed.specs" . | indent 6 }}
     extra_specs:
-      share_backend_name: "hypervisor_storage"
+      share_backend_name: {{ $shareTypeName | quote }}
     {{- include "manila_type_seed.extra_specs" . | indent 6 }}
-{{- end }}
-{{- if .Values.share_types.hypervisor_storage_hanalytics }}
-  - name: hypervisor_storage_hanalytics
-    is_public: false
-    specs:
-    {{- include "manila_type_seed.specs" . | indent 6 }}
-    extra_specs:
-      share_backend_name: "hypervisor_storage_hanalytics"
-    {{- include "manila_type_seed.extra_specs" . | indent 6 }}
-{{- end }}
+  {{- end }}
+  {{- end }}
+  {{- end }}
 {{- end }}
 {{- end }}
