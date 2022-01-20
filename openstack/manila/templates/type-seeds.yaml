@@ -38,13 +38,17 @@ spec:
     extra_specs:
       share_backend_name: "hypervisor_storage"
     {{- include "manila_type_seed.extra_specs" . | indent 6 }}
-  - name: hypervisor_storage_hanalytics
+{{- end }}
+{{- if .Values.share_types.btp_backup}}
+  - name: btp_backup
     is_public: false
     specs:
     {{- include "manila_type_seed.specs" . | indent 6 }}
     extra_specs:
-      share_backend_name: "hypervisor_storage_hanalytics"
+      share_backend_name: "netapp-multi"
     {{- include "manila_type_seed.extra_specs" . | indent 6 }}
+      netapp:snapshot_policy: "BTP_Backup"
+      netapp:hide_snapdir: "False"
 {{- end }}
 {{- end }}
 {{- end }}
