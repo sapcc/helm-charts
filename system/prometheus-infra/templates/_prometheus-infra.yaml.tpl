@@ -65,8 +65,6 @@
       - '{__name__=~"^ssh_.+"}'
       - '{__name__=~"^up"}'
       - '{__name__=~"^redfish_.+"}'
-      - '{__name__=~"^cablecheck_error_status"}'
-      - '{__name__=~"^cablecheck_runs_counter_total"}'
       - '{__name__=~"^nsxt_trim_exception"}'
       - '{__name__=~"^filebeat_.+"}'
       - '{__name__=~"^logstash_node_.+"}'
