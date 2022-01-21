@@ -121,9 +121,14 @@ groups:
     annotations:
       description: "VASA Provider disconnected from {{ $labels.vcenter}}."
       summary: "VASA Provider disconnected from {{ $labels.vcenter}}."
-   
+
   - alert: VCenterHasMultipleGreyVMs
-    expr: count by (vcenter) (vrops_virtualmachine_health == -1) > 0
+    expr: |
+      count by(vcenter)
+      ((vrops_virtualmachine_health == -1)
+      and on(hostsystem) (vrops_hostsystem_runtime_powerstate{state="Powered On"})
+      and on(hostsystem) (vrops_hostsystem_runtime_connectionstate{state="connected"})
+      and on(hostsystem) (vrops_hostsystem_runtime_maintenancestate{state="notInMaintenance"})) > 0
     for: 15m
     labels:
       severity: warning
