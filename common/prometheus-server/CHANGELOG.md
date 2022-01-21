@@ -1,3 +1,8 @@
+## 4.5.4
+
+* [endpoint/service SD] Exclude set of metrics from being scrapped.
+* [pod/service SD] Exclude set of metrics from being scrapped.
+
 ## 4.5.3
 
 * [endpoint/service SD] Fix scraping of ports declared by the pod but not the service

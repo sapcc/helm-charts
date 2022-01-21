@@ -66,6 +66,11 @@ spec:
           targetLabel: kubernetes_pod_name
 {{ include "prometheus.defaultRelabelConfig" . | indent 8 }}
 
+{{ if .Values.serviceDiscoveries.pods.forbiddenMetrics }}
+      metricRelabelings:
+{{ include "prometheus.drop-metrics.metric-relabel-config" .Values.serviceDiscoveries.pods.forbiddenMetrics | indent 8 }}
+{{ end }}
+
     - interval: {{ required ".Values.serviceDiscoveries.scrapeInterval  missing" .Values.serviceDiscoveries.scrapeInterval }}
       scrapeTimeout: {{ required ".Values.serviceDiscoveries.scrapeTimeout  missing" .Values.serviceDiscoveries.scrapeTimeout }}
       scheme: http
@@ -112,4 +117,9 @@ spec:
             - __meta_kubernetes_pod_name
           targetLabel: kubernetes_pod_name
 {{ include "prometheus.defaultRelabelConfig" . | indent 8 }}
+
+{{ if .Values.serviceDiscoveries.pods.forbiddenMetrics }}
+      metricRelabelings:
+{{ include "prometheus.drop-metrics.metric-relabel-config" .Values.serviceDiscoveries.pods.forbiddenMetrics | indent 8 }}
+{{ end }}
 {{ end }}
