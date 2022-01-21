@@ -7,11 +7,10 @@
 {{- end -}}
 
 {{- define "vcf_environment" }}
-
 - name:  AUTOMATION_PORT
-  value: '80'
+  value: "80"
 - name: AUTOMATION_OS_REGION
-  value: '{{ .Values.global.region }}'
+  value: "{{ .Values.global.region }}"
 - name: PULUMI_BACKEND_URL
   value: file:///pulumi/automation/etc
 - name: AUTOMATION_WORK_DIR
@@ -24,12 +23,6 @@
   value: /pulumi/automation/static
 - name: AUTOMATION_TEMPLATE_PATH
   value: /pulumi/automation/templates
-
-- name: PULUMI_CONFIG_PASSPHRASE
-  valueFrom:
-    secretKeyRef:
-      name: vcf-secret
-      key: pulumi_config_passphrase
 - name: AUTOMATION_OS_PASSWORD
   valueFrom:
     secretKeyRef:
@@ -45,4 +38,17 @@
     secretKeyRef:
       name: vcf-secret
       key: vmware_password
+{{- if hasKey .Values "esxi_password" }}
+- name: AUTOMATION_ESXI_PASSWORD
+  valueFrom:
+    secretKeyRef:
+      name: vcf-secret
+      key: esxi_password
+{{- end }}
+- name: PULUMI_CONFIG_PASSPHRASE
+  valueFrom:
+    secretKeyRef:
+      name: vcf-secret
+      key: pulumi_config_passphrase
+
 {{- end -}}
