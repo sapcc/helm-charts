@@ -2,7 +2,6 @@ apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: logstash-audit-external
-  namespace: elk
   labels:
     component: logstash-audit-external
 spec:
@@ -27,7 +26,7 @@ spec:
         zone: farm
     {{- end }}
       volumes:
-        - name: elk-etc
+        - name: audit-etc
           configMap:
             name: logstash-audit-external-etc
       {{- if .Values.syslog.enabled }}
@@ -63,15 +62,15 @@ spec:
             - name: https
               containerPort: {{ .Values.input_http_port }}
               protocol: TCP
-          command: ["dumb-init","/bin/bash","/elk-etc/start.sh"]
+          command: ["dumb-init","/bin/bash","/audit-etc/start.sh"]
           env:
             - name: NAMESPACE
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.namespace
           volumeMounts:
-            - name: elk-etc
-              mountPath: /elk-etc
+            - name: audit-etc
+              mountPath: /audit-etc
       {{- if .Values.syslog.enabled }}
             - mountPath: /tls-secret
               name: tls-secret

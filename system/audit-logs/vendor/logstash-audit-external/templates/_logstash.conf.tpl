@@ -69,7 +69,7 @@ filter {
                 }
       break_on_match => "true"
       overwrite => ["message"]
-      patterns_dir => ["/elk-etc/*.grok"]
+      patterns_dir => ["/audit-etc/*.grok"]
       tag_on_failure => ["_syslog_grok_failure"]
     }
 
@@ -98,7 +98,7 @@ filter {
            grok {
          tag_on_failure => ["bigiplogs_grok_parse-failure", "grok"]
          tag_on_timeout => ["_groktimeout"]
-         patterns_dir => ["/elk-etc/*.grok"]
+         patterns_dir => ["/audit-etc/*.grok"]
          timeout_millis => [15000]
                    match => { "message" => "%{SYSLOG5424PRI}%{NONNEGINT:syslog_version} +(?:%{TIMESTAMP_ISO8601:timestamp}|-) +(?:%{HOSTNAME:syslog_host}|-) +(?:%{WORD:syslog_level}|-) +(?:%{WORD:syslog_proc}|-) +(?:%{WORD:syslog_msgid}|-) +(?:%{SYSLOG5424SD:syslog_sd}|-|) +%{GREEDYDATA:syslog_msg}" }
                    overwrite => [ "message" ]
@@ -134,7 +134,11 @@ filter {
     if [type] == "audit"{
 
       mutate{
+        {{ if .Values.global.cluster -}}
+          add_field => { "sap.cc.region" => "{{ .Values.global.cluster }}"}
+        {{ else -}}
           add_field => { "sap.cc.region" => "{{ .Values.global.region }}"}
+        {{ end -}}
       }
 
       if [apiVersion] and [apiVersion] == "audit.k8s.io/v1" {
@@ -168,10 +172,10 @@ output {
   if [type] == "elk" {
     elasticsearch {
       index => "audit-%{+YYYY.MM.dd}"
-      template => "/elk-etc/audit.json"
+      template => "/audit-etc/audit.json"
       template_name => "audit"
       template_overwrite => true
-      {{- if .Values.global.clusterType }}
+      {{- if .Values.global.clusterType }} # test if clusterType is scaleout
       hosts => ["{{.Values.global.endpoint_host_internal}}.elk:{{.Values.global.http_port}}"]
       user => "{{.Values.global.audit_user}}"
       password => "{{.Values.global.audit_password}}"
@@ -195,7 +199,7 @@ output {
   elseif [type] == "syslog" {
     elasticsearch {
       index => "syslog-%{+YYYY.MM.dd}"
-      template => "/elk-etc/syslog.json"
+      template => "/audit-etc/syslog.json"
       template_name => "syslog"
       template_overwrite => true
       hosts => ["{{.Values.global.elk_elasticsearch_endpoint_host_scaleout}}.{{.Values.global.elk_cluster_region}}.{{.Values.global.tld}}:{{.Values.global.elk_elasticsearch_ssl_port}}"]
@@ -207,7 +211,7 @@ output {
   elseif [type] == "bigiplogs" {
     elasticsearch {
       index => "bigiplogs-%{+YYYY.MM.dd}"
-      template => "/elk-etc/bigiplogs.json"
+      template => "/audit-etc/bigiplogs.json"
       template_name => "bigiplogs"
       template_overwrite => true
       hosts => ["{{.Values.global.elk_elasticsearch_endpoint_host_scaleout}}.{{.Values.global.elk_cluster_region}}.{{.Values.global.tld}}:{{.Values.global.elk_elasticsearch_ssl_port}}"]
@@ -219,7 +223,7 @@ output {
   elseif [type] == "alert" and [alerts][labels][severity] == "critical"{
     elasticsearch {
       index => "alerts-critical-%{+YYYY}"
-      template => "/elk-etc/alerts.json"
+      template => "/audit-etc/alerts.json"
       template_name => "alerts"
       template_overwrite => true
       hosts => ["{{.Values.global.elk_elasticsearch_endpoint_host_scaleout}}.{{.Values.global.elk_cluster_region}}.{{.Values.global.tld}}:{{.Values.global.elk_elasticsearch_ssl_port}}"]
@@ -231,7 +235,7 @@ output {
   elseif [type] == "alert" and [alerts][labels][severity] == "warning"{
       elasticsearch {
         index => "alerts-warning-%{+YYYY}"
-        template => "/elk-etc/alerts.json"
+        template => "/audit-etc/alerts.json"
         template_name => "alerts"
         template_overwrite => true
         hosts => ["{{.Values.global.elk_elasticsearch_endpoint_host_scaleout}}.{{.Values.global.elk_cluster_region}}.{{.Values.global.tld}}:{{.Values.global.elk_elasticsearch_ssl_port}}"]
@@ -243,7 +247,7 @@ output {
   elseif [type] == "alert"{
     elasticsearch {
       index => "alerts-other-%{+YYYY}"
-      template => "/elk-etc/alerts.json"
+      template => "/audit-etc/alerts.json"
       template_name => "alerts"
       template_overwrite => true
       hosts => ["{{.Values.global.elk_elasticsearch_endpoint_host_scaleout}}.{{.Values.global.elk_cluster_region}}.{{.Values.global.tld}}:{{.Values.global.elk_elasticsearch_ssl_port}}"]
@@ -255,7 +259,7 @@ output {
   elseif [type] == "deployment" {
     elasticsearch {
       index => "deployments-%{+YYYY}"
-      template => "/elk-etc/deployments.json"
+      template => "/audit-etc/deployments.json"
       template_name => "deployments"
       template_overwrite => true
       hosts => ["{{.Values.global.elk_elasticsearch_endpoint_host_scaleout}}.{{.Values.global.elk_cluster_region}}.{{.Values.global.tld}}:{{.Values.global.elk_elasticsearch_ssl_port}}"]
@@ -267,7 +271,7 @@ output {
   elseif  [type] == "netflow" {
     elasticsearch {
       index => "netflow-%{+YYYY.MM.dd}"
-      template => "/elk-etc/netflow.json"
+      template => "/audit-etc/netflow.json"
       template_name => "netflow"
       template_overwrite => true
       hosts => ["{{.Values.global.elk_elasticsearch_endpoint_host_scaleout}}.{{.Values.global.elk_cluster_region}}.{{.Values.global.tld}}:{{.Values.global.elk_elasticsearch_ssl_port}}"]

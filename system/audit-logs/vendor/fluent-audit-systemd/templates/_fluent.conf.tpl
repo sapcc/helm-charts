@@ -53,7 +53,11 @@
   @type copy
   <store>
     @type http
+    {{ if eq .Values.global.clusterType "scaleout" -}}
+    endpoint "https://logstash-audit-external.elk:{{.Values.global.https_port}}"
+    {{ else -}}
     endpoint "https://logstash-audit-external.{{.Values.global.region}}.{{.Values.global.tld}}"
+    {{ end -}}
     <auth>
       method basic
       username {{.Values.global.elk_elasticsearch_http_user}}
