@@ -321,11 +321,18 @@ simulator:
   remotePassword:
   slack: slack-url
   recipient: recipient-email
+  sender: sender-email
   cronuscli: cronuscli
   timeWaitInterval: 60
   shellToUse: bash
   projectDomainName: project-domain
   projectName: project-name
+  sesUsername: key-name
+  sesSecret: secret-name
+  smtpPassword: smtp-password
+
+
+
 
 exporter:
   duration: "10m"
@@ -363,7 +370,7 @@ poller: # service that handles received emails
     imagePullSecrets: []
   statefulSet:
     enabled: false
-  action: forwardEmail # supported values: forwardEmail, activateEmail
+  action: forwardEmail # supported values: forwardEmail, activateEmail, simulator
   pollInterval: 5 # should be less than a default cronus ResponseHeaderTimeout (9 seconds)
   maxThreads: 5 # maximum amount of queue processing threads.will generate N threads = maxThreads * (maxSendThreads + maxBounceThreads)
   maxSendThreads: 5 # maximum amount of SMTP send threads per one processing thread
@@ -377,6 +384,49 @@ poller: # service that handles received emails
   prettyPrint: false # pretty print message events while uploading them to swift containers
   printMessage: false # whether to print email details
   queueName: my-queue-name # a queue name to listen from
+  emailPassVerdicts:
+    enabled: true
+    spam:
+      # The spam scan determined that the message is unlikely to contain spam
+      - PASS
+      # The spam scan determined that the message is likely to contain spam
+      #- FAIL
+      # Amazon SES scanned the email but could not determine with confidence whether it is spam
+      #- GRAY
+      # Amazon SES was unable to scan the email. For example, the email is not a valid MIME message
+      #- PROCESSING_FAILED
+    virus:
+      # The message does not contain a virus
+      - PASS
+      # The message contains a virus
+      #- FAIL
+      # Amazon SES scanned the email but could not determine with confidence whether it contains a virus
+      #- GRAY
+      # Amazon SES is unable to scan the content of the email. For example, the email is not a valid MIME message
+      #- PROCESSING_FAILED
+    spf:
+      # The message passed SPF authentication
+      - PASS
+      # The message failed SPF authentication
+      #- FAIL
+      # There is no SPF policy under the domain used in the MAIL FROM command
+      #- GRAY
+      # There is an issue that prevents Amazon SES from checking the SPF record. For example, DNS queries are failing
+      #- PROCESSING_FAILED
+    dkim:
+      # The message passed DKIM authentication
+      - PASS
+      # The message failed DKIM authentication
+      #- FAIL
+      # # The message is not DKIM-signed
+      #- GRAY
+      # # There is an issue that prevents Amazon SES from checking the DKIM signature. For example, DNS queries are failing or the DKIM signature header is not formatted properly
+      #- PROCESSING_FAILED
+    dmarc:
+      - PASS # The message passed DMARC authentication
+      #- FAIL # The message failed DMARC authentication
+      #- GRAY # At least one of SPF or DKIM passed authentication, but the sending domain does not have a DMARC policy or uses the p=none policy
+      #- PROCESSING_FAILED # There is an issue that prevents Amazon SES from providing a DMARC verdict
   debug: false # debug HTTP requests
   retry: # retry settings for failed connections
     maxConnectionRetries: 5 # 5 retries per connection
@@ -416,6 +466,10 @@ poller: # service that handles received emails
     userDomainName: default
     username: username
     password: password
+  prometheus: 2112 # relevant for action: simulator
+  charSet: UTF-8 # relevant for action: simulator
+  period: 60 # in seconds, relevant for action: simulator
+
 
 notifier:
   enabled: false
