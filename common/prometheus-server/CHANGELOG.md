@@ -1,3 +1,7 @@
+## 4.5.5
+
+* [pod service SD] fix regex for disovering `(9102;.*;.*)|(.*;metrics;.*)|(\d+;.*;\d+)|(.*;.*;\d+)`
+
 ## 4.5.4
 
 * [endpoint/service SD] Exclude set of metrics from being scrapped.
