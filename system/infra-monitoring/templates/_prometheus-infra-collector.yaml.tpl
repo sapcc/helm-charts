@@ -347,7 +347,7 @@
   metrics_path: /snmp
   relabel_configs:
     - source_labels: [job]
-      regex: snmp
+      regex: snmp-apod
       action: keep
     - source_labels: [__address__]
       target_label: __param_target
