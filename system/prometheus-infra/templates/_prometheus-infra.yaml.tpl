@@ -20,6 +20,7 @@
       - '{job="ipmi/ironic"}'
       - '{job="vmware-esxi"}'
       - '{job="snmp"}'
+      - '{job="snmp-apod"}'
       - '{job="snmp-ntp"}'
       - '{job="infra-monitoring-atlas-sd"}'
       - '{job="esxi-config"}'
