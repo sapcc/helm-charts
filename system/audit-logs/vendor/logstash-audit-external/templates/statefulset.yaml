@@ -25,6 +25,16 @@ spec:
     {{- else }}
         zone: farm
     {{- end }}
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              - key: component
+                operator: In
+                values:
+                - "logstash-audit-external"
+            topologyKey: "kubernetes.io/hostname"
       volumes:
         - name: audit-etc
           configMap:
