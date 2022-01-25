@@ -17,3 +17,18 @@ groups:
     annotations:
       description: PX-Switch {{ $labels.devicename }} has at least one missing OSPF adjacency. Redundancy impaired.
       summary: PX-Switch {{ $labels.devicename }} has at least one missing OSPF adjacency. Redundancy impaired.
+  
+  - alert: PXSwitchBgpDown
+    expr: |
+      (snmp_pxgeneric_cbgpPeer2State{role="px-switch"} + ((snmp_pxgeneric_cbgpPeer2AdminStatus == 2) *0)) !=6
+    for: 5m
+    labels:
+      severity: warning
+      tier: net
+      service: px
+      context: px
+      dashboard: px-switches-routing
+      playbook: docs/devops/alert/network/px.html#PXSwitchBgpDown
+    annotations:
+      description: PX-Switch {{ $labels.devicename }} has lost its BGP EVPN session to {{ $labels.cbgpPeer2RemoteAddr }}. Service impact!
+      summary: PX-Switch {{ $labels.devicename }} has lost its BGP EVPN session to {{ $labels.cbgpPeer2RemoteAddr }}. Service impact!
