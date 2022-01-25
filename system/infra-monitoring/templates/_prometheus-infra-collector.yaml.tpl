@@ -338,6 +338,26 @@
       regex: 'snmp_ucs_cucsFcErrStats.+;.+(port)-([3-9]|\d{2}).+'
       action: drop
 
+- job_name: 'snmp-apod'
+  scrape_interval: {{.Values.snmp_exporter.scrapeInterval}}
+  scrape_timeout: {{.Values.snmp_exporter.scrapeTimeout}}
+  file_sd_configs:
+      - files :
+        - /etc/prometheus/configmaps/atlas-netbox-sd/netbox.json
+  metrics_path: /snmp
+  relabel_configs:
+    - source_labels: [job]
+      regex: snmp
+      action: keep
+    - source_labels: [__address__]
+      target_label: __param_target
+    - source_labels: [__param_target]
+      target_label: instance
+    - target_label: __address__
+      replacement: snmp-exporter-apod:{{.Values.snmp_exporter.listen_port}}
+    - source_labels: [module]
+      target_label: __param_module
+
 - job_name: 'snmp-ntp'
   scrape_interval: {{.Values.snmp_exporter.scrapeInterval}}
   scrape_timeout: {{.Values.snmp_exporter.scrapeTimeout}}
