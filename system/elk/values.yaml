@@ -9,6 +9,8 @@ global:
 
 es_master:
   enabled: false
+  http_port: 9200
+  cluster_port: 9301
   legacy_service_name: true
   master_dummy_port: '63062'
   client_replicas: '3'
@@ -22,6 +24,8 @@ es_data:
   enabled: false
   qalogs:
     enabled: false
+  http_port: 9200
+  cluster_port: 9301
   resources:
     requests:
       cpu: "2000m"
@@ -33,53 +37,34 @@ es_data:
 
 es_client:
   enabled: false
+  http_port: 9200
+  cluster_port: 9301
+  cluster_name: elk-elasticsearch.scaleout
   qalogs:
     enabled: false
 
 es_manager:
   enabled: false
+  http_port: 9200
+  cluster_port: 9301
+  endpoint_host_internal: es-client
   image_elasticsearch_manager: lmenezes/cerebro:0.9.4
-  ingress:
-    enabled: false
-  
+
 
 wall_e:
   enabled: false
+  http_port: 9200
+  kibana_service: 'kibana'
+  kibana_port_public: 5601
+  endpoint_host_internal: es-client
 
 kibana:
   enabled: false
+  service_name: 'kibana'
+  port_public: 5601
+  http_port: 9200
+  endpoint_host_internal: es-client
 
-logstash_audit_external:
-  enabled: false
-  image_version: '20220110143833'
-  replicas: 1
-  input_netflow_port: 2055
-  input_syslog_port: 514
-  input_bigiplogs_port: 1513
-  input_alertmanager_port: 1515
-  input_deployments_port: 1516
-  input_http_port: 443
-  syslog:
-    enabled: false
-  tls:
-    crt: DEFINED-IN-SECRETS
-    key: DEFINED-IN-SECRETS
-  forwarding:
-    audit:
-      host: None
-  ingress:
-    enabled: false
-
-logstash_audit_services:
-  enabled: false
-  image_version: '20211213084134'
-  http_poller:
-    user: DEFINED-IN-SECRETS
-    password: DEFINED-IN-SECRETS
-    url:
-      api: DEFINED-IN-SECRETS
-      token: DEFINED-IN-SECRETS
-      
 fluent:
   enabled: false
   port: 8885
@@ -95,17 +80,6 @@ fluent:
     port: 3306
     db: metis
 
-fluent_audit_container:
-  enabled: false
-  port: 8887
-  image_version: '20211110123325'
-  forwarding:
-    keystone:
-      host: none
-  alerts:
-    enabled: false
-    prometheus: infra-collector
-
 fluent_systemd:
   enabled: false
   image_version: '20211110123325'
@@ -113,14 +87,6 @@ fluent_systemd:
     enabled: false
     prometheus: infra-collector
   port: 8886
-
-fluent_audit_systemd:
-  enabled: false
-  image_version: '20211110123325'
-  alerts:
-    enabled: false
-    prometheus: infra-collector
-  port: 8888
 
 fluent_vcenter:
   enabled: false
@@ -135,6 +101,8 @@ fluent_scaleout:
   image_version: '20211110123325'
   prometheus: infra-frontend
   port: 8885
+  http_port: 9200
+  endpoint_host_internal: es-client
   logstash_shards: 3
   indexname: logstash
   metis:
