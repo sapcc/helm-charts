@@ -47,7 +47,8 @@ filter {
   kv {
      source => "[event][Message]"
      target => "[event][details]"
-     field_split_pattern => "," 
+     field_split_pattern => ","
+     whitespace => "strict"
      }
 
   ruby {
@@ -72,14 +73,14 @@ filter {
   }
 }
 output {
-    elasticsearch {
-      index => "audit-%{+YYYY.MM.dd}"
-      template => "/logstash-etc/audit.json"
-      template_name => "audit"
-      template_overwrite => true
-      hosts => ["{{.Values.global.elk_elasticsearch_endpoint_host_scaleout}}.{{.Values.global.elk_cluster_region}}.{{.Values.global.tld}}:{{.Values.global.elk_elasticsearch_ssl_port}}"]
-      user => "{{.Values.global.elk_elasticsearch_audit_user}}"
-      password => "{{.Values.global.elk_elasticsearch_audit_password}}"
-      ssl => true
+    http{
+    {{ if eq .Values.global.clusterType "scaleout" -}}
+      url => "https://logstash-audit-external.elk:{{.Values.global.https_port}}"
+    {{ else -}}
+      url => "https://logstash-audit-external.{{.Values.global.region}}.{{.Values.global.tld}}"
+    {{ end -}}
+    format => "json"
+    http_method => "post"
+    headers => { "Authorization" =>  "Basic {{ template "httpBasicAuth" . }}" }
     }
 }
