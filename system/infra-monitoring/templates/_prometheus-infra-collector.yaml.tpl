@@ -360,6 +360,7 @@
   metric_relabel_configs:
     - source_labels: [job]
       replacement: snmp-apod
+      target_label: job
 
 - job_name: 'snmp-ntp'
   scrape_interval: {{.Values.snmp_exporter.scrapeInterval}}
