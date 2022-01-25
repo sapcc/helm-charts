@@ -77,7 +77,7 @@ filter {
 
 # Change type of audit relevant UCSM syslogs to "audit"
   if [syslogcisco_facility] {
-    if [syslogcisco_facility] == "%UCSM"  and [syslogcisco_code] == "AUDIT" {
+    if [syslogcisco_facility] == "%UCSM"  and [syslogcisco_code] == "AUDIT" or [syslogcisco_facility] == "%USER" and [syslogcisco_code] == "SYSTEM_MSG" {
       mutate {
         replace => { "type" => "audit" }
         add_field => { "sap.cc.audit.source" => "UCSM" }
