@@ -82,6 +82,9 @@ filter {
         replace => { "type" => "audit" }
         add_field => { "sap.cc.audit.source" => "UCSM" }
       }
+      clone {
+       clones => ['audit', 'syslog']
+      }
     }
   }
 
@@ -90,9 +93,11 @@ filter {
     mutate {
         replace => { "type" => "audit" }
         add_field => { "sap.cc.audit.source" => "HSM" }
-      }
+    }
+    clone {
+      clones => ['audit', 'syslog']
+    }
   }
-
  }
     if  [type] == "bigiplogs" {
            grok {
