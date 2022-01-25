@@ -1,34 +1,18 @@
 groups:
 - name: alerts for PX N9K switches
   rules:
-  - alert: PXSwitchOspfNeighborDown
+  - alert: PXSwitchInterfaceDown
     expr: |
-      ((sum(snmp_n9kpx_ospfIfState ==bool 4) by (devicename)
-      - sum(snmp_n9kpx_ospfNbrState ==bool 8) by(devicename)) or (sum(snmp_n9kpx_ospfIfState  ==bool 4)  by (devicename) unless sum(snmp_n9kpx_ospfNbrState ==bool 8) by(devicename)))
-      != 0
+      snmp_pxgeneric_ifOperStatus{role="px-switch", ifAdminStatus="1", ifAlias=~"^(TRANSPORT|ROUTE-SERVER|CONSUMER|IPN).*"}
+      != 1
     for: 5m
     labels:
       severity: warning
       tier: net
       service: px
       context: px
-      dashboard: px-switches-routing
-      playbook: docs/devops/alert/network/px .html#PXSwitchOspfNeighborDown
+      dashboard: px-switches-interfaces
+      playbook: docs/devops/alert/network/px.html#PXSwitchInterfaceDown
     annotations:
-      description: PX-Switch {{ $labels.devicename }} has at least one missing OSPF adjacency. Redundancy impaired.
-      summary: PX-Switch {{ $labels.devicename }} has at least one missing OSPF adjacency. Redundancy impaired.
-  
-  - alert: PXSwitchBgpDown
-    expr: |
-      (snmp_pxgeneric_cbgpPeer2State{role="px-switch"} + ((snmp_pxgeneric_cbgpPeer2AdminStatus == 2) *0)) !=6
-    for: 5m
-    labels:
-      severity: warning
-      tier: net
-      service: px
-      context: px
-      dashboard: px-switches-routing
-      playbook: docs/devops/alert/network/px.html#PXSwitchBgpDown
-    annotations:
-      description: PX-Switch {{ $labels.devicename }} has lost its BGP EVPN session to {{ $labels.cbgpPeer2RemoteAddr }}. Service impact!
-      summary: PX-Switch {{ $labels.devicename }} has lost its BGP EVPN session to {{ $labels.cbgpPeer2RemoteAddr }}. Service impact!
+      description: Interface {{ $labels.ifDescr }} with description {{ $labels.ifAlias }} on {{ $labels.devicename }} is down.
+      summary: Interface {{ $labels.ifDescr }} with description {{ $labels.ifAlias }} on {{ $labels.devicename }} is down.
