@@ -347,7 +347,7 @@
   metrics_path: /snmp
   relabel_configs:
     - source_labels: [job]
-      regex: snmp-apod
+      regex: snmp
       action: keep
     - source_labels: [__address__]
       target_label: __param_target
@@ -357,6 +357,9 @@
       replacement: snmp-exporter-apod:{{.Values.snmp_exporter.listen_port}}
     - source_labels: [module]
       target_label: __param_module
+  metric_relabel_configs:
+    - source_labels: [job]
+      replacement: snmp-apod
 
 - job_name: 'snmp-ntp'
   scrape_interval: {{.Values.snmp_exporter.scrapeInterval}}
