@@ -339,8 +339,8 @@
       action: drop
 
 - job_name: 'snmp-apod'
-  scrape_interval: {{.Values.snmp_exporter.scrapeInterval}}
-  scrape_timeout: {{.Values.snmp_exporter.scrapeTimeout}}
+  scrape_interval: {{.Values.snmp_exporter_apod.scrapeInterval}}
+  scrape_timeout: {{.Values.snmp_exporter_apod.scrapeTimeout}}
   file_sd_configs:
       - files :
         - /etc/prometheus/configmaps/atlas-netbox-sd/netbox.json
