@@ -8,9 +8,9 @@ import sys
 from datadog import initialize, statsd
 
 es = Elasticsearch(
-['{{.Values.global.endpoint_host_internal}}:{{.Values.global.http_port}}'],
+['{{.Values.endpoint_host_internal}}:{{.Values.http_port}}'],
  connection_class=RequestsHttpConnection,
-http_auth=('{{.Values.global.admin_user}}', '{{.Values.global.admin_password}}'),
+http_auth=('{{.Values.global.elk_elasticsearch_admin_user}}', '{{.Values.global.elk_elasticsearch_admin_password}}'),
 use_ssl=False)
 
 initialize(statsd_host='blackbox-tests-canary.blackbox.svc.kubernetes.scaleout.{{.Values.global.region}}.cloud.sap', statsd_port=9125)
