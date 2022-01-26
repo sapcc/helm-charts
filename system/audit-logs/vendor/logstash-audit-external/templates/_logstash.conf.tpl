@@ -187,8 +187,8 @@ output {
       template => "/audit-etc/audit.json"
       template_name => "audit"
       template_overwrite => true
-      {{- if .Values.global.clusterType }} # test if clusterType is scaleout
-      hosts => ["{{.Values.global.endpoint_host_internal}}.elk:{{.Values.global.http_port}}"]
+      {{- if eq .Values.global.clusterType "scaleout" }}
+      hosts => ["{{.Values.elk_elasticsearch_endpoint_host_internal}}.elk:{{.Values.elk_elasticsearch_http_port_internal}}"]
       user => "{{.Values.global.audit_user}}"
       password => "{{.Values.global.audit_password}}"
       {{- else }}
