@@ -9,7 +9,7 @@ input {
      }
   }
   target => "token_response"
-  request_timeout => 60
+  automatic_retries => 3
   schedule => { cron => "0 */1 * * *"}
   codec => "json"
   }
@@ -35,41 +35,43 @@ filter {
     url => "{{.Values.http_poller.url.api}}?$filter=Time%20gt%20'%{[timerange][lower]}'%20and%20Time%20le%20'%{[timerange][upper]}'"
     verb => "GET"
     headers => { "Authorization" => "Bearer %{[token_response][access_token]}" }
-    request_timeout => 60
-    socket_timeout => 30
+    automatic_retries => 3
   }
 
-  split{
-    field => "[body][value]"
-    target => "event"
-  }
+  if [body][value] {
 
-  kv {
-     source => "[event][Message]"
-     target => "[event][details]"
-     field_split_pattern => ","
-     whitespace => "strict"
-     }
+    split {
+      field => "[body][value]"
+      target => "event"
+    }
 
-  ruby {
-    code => '
-      event.get("[event][details]").to_hash.keys.each { |k|
-      if k.start_with?("202")
-        event.remove("[event][details]" + "[" + k + "]")
-      end
+    kv {
+      source => "[event][Message]"
+      target => "[event][details]"
+      field_split_pattern => ", "
+      whitespace => "strict"
       }
-    '
-  }
 
-  date{
-    match => [ "[event][Time]" , "ISO8601" , "yyyy-MM-dd'T'HH.mm.ss.SSSZ" ]
-    locale => "en"
-    timezone => "UTC"
-}
+    ruby {
+      code => '
+        event.get("[event][details]").to_hash.keys.each { |k|
+        if k.start_with?("202")
+          event.remove("[event][details]" + "[" + k + "]")
+        end
+        }
+      '
+    }
 
-  mutate {
-    remove_field => [ "token_response", "timerange", "headers", "body" ]
-    add_tag => [ "{{.Values.http_poller.url.api}}"]
+    date{
+      match => [ "[event][Time]" , "ISO8601" , "yyyy-MM-dd'T'HH.mm.ss.SSSZ" ]
+      locale => "en"
+      timezone => "UTC"
+    }
+
+    mutate {
+      remove_field => [ "token_response", "timerange", "headers", "body" ]
+      add_tag => [ "{{.Values.http_poller.url.api}}"]
+    }
   }
 }
 output {
