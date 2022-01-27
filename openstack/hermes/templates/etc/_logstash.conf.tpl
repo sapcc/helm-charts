@@ -216,7 +216,7 @@ filter {
   # Each copy will automatically have a "type" field added
   # corresponding to the name given in the array.
   clone {
-    clones => ['clone_for_audit', 'clone_for_swift', 'clone_for_cc']
+    clones => ['clone_for_audit', 'clone_for_swift', 'clone_for_cc', 'clone_for_pss']
   }
 }
 
@@ -273,6 +273,15 @@ output {
       additional_settings => {
         "force_path_style" => true
       }
+    }
+  }
+  {{- end}}
+
+  {{ if .Values.logstash.pss -}}
+  if [type] == 'clone_for_pss' {
+    http {
+      url => "https://logstash-audit-external.{{.Values.global.region}}.{{.Values.global.tld}}"
+      http_method => "post"
     }
   }
   {{- end}}
