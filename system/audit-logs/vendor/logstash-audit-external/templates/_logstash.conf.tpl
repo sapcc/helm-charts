@@ -159,6 +159,12 @@ filter {
         }
       }
 
+      if [cluster_host_id] and [cluster_host_id] =~ /^awx-.+$/ {
+        mutate {
+          add_field => { "sap.cc.audit.source"  => "AWX" }
+        }
+      }
+
       if [kubernetes][labels][name] {
         mutate {
           add_field => { "sap.cc.audit.source" => "%{[kubernetes][labels][name]}" }
