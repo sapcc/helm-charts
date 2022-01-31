@@ -78,14 +78,14 @@ filter {
     syslog_pri { }
 
   if [hostname] =~ "^node\d{3}r" {
-    grok {
-      match => {
-        "syslog_message" => [
-                              "Alert Text: (?<alert_text>.*)",
-                              "Type of Alert: (?<alert_type>.*)"
-        ]
-      }
-    }
+    # grok {
+    #   match => {
+    #     "message" => [
+    #                     "Alert Text: (?<alert_text>.*\n)",
+    #                     "Type of Alert: (?<alert_type>.*\n)"
+    #     ]
+    #   }
+    # }
     mutate {
       replace => { "type" => "audit" }
       add_field => { "sap.cc.audit.source" => "Remoteboard"}
