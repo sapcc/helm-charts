@@ -77,6 +77,25 @@ filter {
 
     syslog_pri { }
 
+  if [hostname] =~ "^node\d{3}r" {
+    grok {
+      match => {
+        "syslog_message" => [
+                              "Alert Text: (?<alert_text>.*)",
+                              "Type of Alert: (?<alert_type>.*)"
+        ]
+      }
+    }
+    mutate {
+      replace => { "type" => "audit" }
+      add_field => { "sap.cc.audit.source" => "Remoteboard"}
+      remove_field => ["syslog_message"]
+    }
+    clone {
+      clones => ['audit', 'syslog']
+    }
+  }
+
 # Change type of audit relevant UCSM syslogs to "audit"
   if [syslogcisco_facility] {
     if [syslogcisco_facility] == "%UCSM"  and [syslogcisco_code] == "AUDIT" or [syslogcisco_facility] == "%USER" and [syslogcisco_code] == "SYSTEM_MSG" {
