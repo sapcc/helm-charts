@@ -89,7 +89,6 @@ filter {
     mutate {
       replace => { "type" => "audit" }
       add_field => { "sap.cc.audit.source" => "Remoteboard"}
-      remove_field => ["syslog_message"]
     }
     clone {
       clones => ['audit', 'syslog']
