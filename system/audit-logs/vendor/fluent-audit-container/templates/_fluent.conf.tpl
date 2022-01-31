@@ -42,6 +42,7 @@
 
 @include /fluent-bin/prometheus.conf
 
+{{- if eq .Values.global.clusterType "metal" }}
 <filter kubernetes.**>
   @type kubernetes_metadata
   @id kubernetes
@@ -51,6 +52,7 @@
   use_journal 'false'
   container_name_to_kubernetes_regexp '^(?<name_prefix>[^_]+)_(?<container_name>[^\._]+)(\.(?<container_hash>[^_]+))?_(?<pod_name>[^_]+)_(?<namespace>[^_]+)_[^_]+_[^_]+$'
 </filter>
+{{- end }}
 
 <filter kubernetes.**>
   @type parser

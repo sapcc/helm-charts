@@ -1,20 +1,22 @@
 input {
 {{- if .Values.syslog.enabled }}
   udp {
-    port  => {{.Values.input_netflow_port}}
-    type => netflow
-  }
-  udp {
     port  => {{.Values.input_syslog_port}}
     type => syslog
-  }
-  udp {
-    port  => {{.Values.input_bigiplogs_port}}
-    type => bigiplogs
   }
   tcp {
     port  => {{.Values.input_syslog_port}}
     type => syslog
+  }
+{{- end }}
+{{- if eq .Values.global.clusterType "metal" }}
+  udp {
+    port  => {{.Values.input_netflow_port}}
+    type => netflow
+  }
+  udp {
+    port  => {{.Values.input_bigiplogs_port}}
+    type => bigiplogs
   }
   http {
     port  => {{.Values.input_alertmanager_port}}
@@ -32,7 +34,7 @@ input {
     type => audit
     user => '{{.Values.global.elk_elasticsearch_http_user}}'
     password => '{{.Values.global.elk_elasticsearch_http_password}}'
-{{ if .Values.syslog.enabled -}}
+{{ if eq .Values.global.clusterType "metal" -}}
     ssl => true
     ssl_certificate => '/tls-secret/tls.crt'
     ssl_key => '/usr/share/logstash/config/tls.key'
@@ -106,6 +108,8 @@ filter {
   }
 
  }
+ {{- end }}
+ {{- if eq .Values.global.clusterType "metal" }}
     if  [type] == "bigiplogs" {
            grok {
          tag_on_failure => ["bigiplogs_grok_parse-failure", "grok"]
@@ -226,6 +230,8 @@ output {
       ssl => true
     }
   }
+{{- end }}
+{{- if eq .Values.global.clusterType "metal" }}
   elseif [type] == "bigiplogs" {
     elasticsearch {
       index => "bigiplogs-%{+YYYY.MM.dd}"
