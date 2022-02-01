@@ -76,10 +76,10 @@ filter {
 }
 output {
     http{
-    {{ if eq .Values.global.clusterType "scaleout" -}}
-      url => "https://logstash-audit-external.elk:{{.Values.global.https_port}}"
-    {{ else -}}
+    {{ if eq .Values.global.clusterType "metal" -}}
       url => "https://logstash-audit-external.{{.Values.global.region}}.{{.Values.global.tld}}"
+    {{ else -}}
+      url => "https://logstash-audit-external.audit-logs:{{.Values.global.https_port}}"
     {{ end -}}
     format => "json"
     http_method => "post"
