@@ -211,7 +211,8 @@
       - '{__name__=~"^vrops_datastore_.+", type!~"local"}'
       - '{__name__=~"^vrops_nsxt.*"}'
       - '{__name__=~"^vrops_distributed_virtual_switch_summary_version"}'
-
+      - '{__name__=~"^vrops_self_object_build_number"}'
+      
   relabel_configs:
     - action: replace
       source_labels: [__address__]
