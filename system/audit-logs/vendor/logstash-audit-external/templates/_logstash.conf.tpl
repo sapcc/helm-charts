@@ -169,8 +169,9 @@ filter {
 
       mutate{
         {{ if .Values.global.cluster -}}
-          add_field => { "sap.cc.region" => "{{ .Values.global.cluster }}"}
-        {{ else -}}
+          add_field => { "sap.cc.cluster" => "{{ .Values.global.cluster }}"}
+        {{ end -}}
+        {{ if .Values.global.region -}}
           add_field => { "sap.cc.region" => "{{ .Values.global.region }}"}
         {{ end -}}
       }

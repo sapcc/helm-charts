@@ -25,7 +25,7 @@
 <source>
   @type tail
   @id tail
-  path /var/log/containers/keystone-api-*.log,/var/log/containers/keystone-global-api-*.log
+  path {{ .Values.container_logs_path }}
   exclude_path /var/log/containers/fluentd*
   pos_file /var/log/es-containers-octobus.log.pos
   time_format %Y-%m-%dT%H:%M:%S.%N
@@ -76,6 +76,7 @@
 <match kubernetes.**>
   @type copy
   @id duplicate
+{{- if eq .Values.global.clusterType "metal"}}
   <store>
     @type http
     @id to_octobus
@@ -97,6 +98,7 @@
     </format>
     json_array true
   </store>
+{{- end }}
   <store>
     @type http
     @id to_logstash
