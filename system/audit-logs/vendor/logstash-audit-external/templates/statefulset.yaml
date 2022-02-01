@@ -19,10 +19,11 @@ spec:
       annotations:
         checksum/configmap.yaml: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
     spec:
+    {{- if eq .Values.global.clusterType "scaleout" }}
       nodeSelector:
-    {{- if ne .Values.global.clusterType "metal" }}
         ccloud.sap.com/nodepool: payload
-    {{- else }}
+    {{- else if eq .Values.global.clusterType "metal" }}
+      nodeSelector:
         zone: farm
     {{- end }}
       affinity:
