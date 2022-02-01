@@ -112,38 +112,6 @@ groups:
       description: "vVOL Datastore {{ $labels.datastore }} utilization > 90%. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
       summary: "vVOL Datastore {{ $labels.datastore }} utilization > 90%. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
 
-  - alert: VmfsDataStoreCapacityWarning
-    expr: >
-      vrops_datastore_diskspace_total_usage_gigabytes{type=~"vmfs.+"} / vrops_datastore_diskspace_capacity_gigabytes >= 0.8
-    for: 20m
-    labels:
-      severity: warning
-      tier: os
-      service: storage
-      context: "vrops-exporter {{ $labels.datastore }}"
-      meta: "VMFS Datastore {{ $labels.datastore }} utilization > 80%. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
-      dashboard: vcenter-datastore-utilization
-      playbook: docs/support/playbook/cinder/balancing/cinder_balance_alert.html
-    annotations:
-      description: "VMFS Datastore {{ $labels.datastore }} utilization > 80%. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
-      summary: "VMFS Datastore {{ $labels.datastore }} utilization > 80%. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
-
-  - alert: VmfsDataStoreCapacityCritical
-    expr: >
-      vrops_datastore_diskspace_total_usage_gigabytes{type=~"vmfs.+"} / vrops_datastore_diskspace_capacity_gigabytes >=  0.9
-    for: 20m
-    labels:
-      severity: critical
-      tier: os
-      service: storage
-      context: "vrops-exporter {{ $labels.datastore }}"
-      meta: "VMFS Datastore {{ $labels.datastore }} utilization > 90%. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
-      dashboard: vcenter-datastore-utilization
-      playbook: docs/support/playbook/cinder/balancing/cinder_balance_alert.html
-    annotations:
-      description: "VMFS Datastore {{ $labels.datastore }} utilization > 90%. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
-      summary: "VMFS Datastore {{ $labels.datastore }} utilization > 90%. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
-
   - alert: AverageVmfsDataStoreCapacityWarning
     expr: >
       avg by (type, vcenter) (vrops_datastore_diskspace_total_usage_gigabytes{type=~"vmfs_p_ssd|vmfs_s_hdd"} / vrops_datastore_diskspace_capacity_gigabytes) > 0.7
@@ -226,7 +194,7 @@ groups:
 
   - alert: DatastoreDisconnectedWithVmsOnIt
     expr: >
-      (label_replace(vrops_datastore_summary_total_number_vms, "hostsystem", "$1", "datastore", "(node.*)(-.*)") > 0 and on(datastore) 
+      (label_replace(vrops_datastore_summary_total_number_vms, "hostsystem", "$1", "datastore", "(node.*)(-.*)") > 0 and on(datastore)
       vrops_datastore_summary_datastore_accessible{state="PoweredOff",type!~"local"}) unless on (hostsystem)
       label_replace(vrops_hostsystem_runtime_maintenancestate{state="inMaintenance"}, "hostsystem", "$1", "hostsystem", "(node.*)(.cc.*)")
     for: 20m
@@ -243,7 +211,7 @@ groups:
 
   - alert: DatastoreDisconnectedWithoutVmsOnIt
     expr: >
-      (label_replace(vrops_datastore_summary_total_number_vms, "hostsystem", "$1", "datastore", "(node.*)(-.*)") == 0 and on(datastore) 
+      (label_replace(vrops_datastore_summary_total_number_vms, "hostsystem", "$1", "datastore", "(node.*)(-.*)") == 0 and on(datastore)
       vrops_datastore_summary_datastore_accessible{state="PoweredOff",type!~"local"}) unless on (hostsystem)
       label_replace(vrops_hostsystem_runtime_maintenancestate{state="inMaintenance"}, "hostsystem", "$1", "hostsystem", "(node.*)(.cc.*)")
     for: 20m
@@ -260,7 +228,7 @@ groups:
 
   - alert: DatastoreHasLostConnectivityToAStorageDevice
     expr: >
-      label_replace(vrops_datastore_alert_info{alert_name="Datastore has lost connectivity to a storage device"}, "hostsystem", "$1", "datastore", "(node.*)(-.*)") 
+      label_replace(vrops_datastore_alert_info{alert_name="Datastore has lost connectivity to a storage device"}, "hostsystem", "$1", "datastore", "(node.*)(-.*)")
       unless on (hostsystem) label_replace(vrops_hostsystem_runtime_maintenancestate{state="inMaintenance"}, "hostsystem", "$1", "hostsystem", "(node.*)(.cc.*)")
     labels:
       severity: warning
@@ -276,7 +244,7 @@ groups:
 
   - alert: DatastoreHasHostsThatHaveLostRedundantPathsToAStorageDevice
     expr: >
-      label_replace(vrops_datastore_alert_info{alert_name="Datastore has one or more hosts that have lost redundant paths to a storage device"}, "hostsystem", "$1", "datastore", "(node.*)(-.*)") 
+      label_replace(vrops_datastore_alert_info{alert_name="Datastore has one or more hosts that have lost redundant paths to a storage device"}, "hostsystem", "$1", "datastore", "(node.*)(-.*)")
       unless on (hostsystem) label_replace(vrops_hostsystem_runtime_maintenancestate{state="inMaintenance"}, "hostsystem", "$1", "hostsystem", "(node.*)(.cc.*)")
     labels:
       severity: warning
