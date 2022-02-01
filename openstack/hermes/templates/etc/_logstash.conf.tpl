@@ -278,13 +278,11 @@ output {
   {{- end}}
 
   if [type] == 'clone_for_pss' {
-    output {
-      http{
-        url => "https://logstash-audit-external.{{.Values.global.region}}.{{.Values.global.tld}}"
-        format => "json"
-        http_method => "post"
-        headers => { "Authorization" =>  "Basic {{ template "httpBasicAuth" . }}" }
-      }
+    http{
+      url => "https://logstash-audit-external.{{.Values.global.region}}.{{.Values.global.tld}}"
+      format => "json"
+      http_method => "post"
+      headers => { "Authorization" =>  "Basic {{ template "httpBasicAuth" . }}" }
     }
   }
 }
