@@ -26,6 +26,7 @@ spec:
       hostNetwork: true
       hostPID: true  # Required by auditd module
       dnsPolicy: ClusterFirstWithHostNet
+{{- if .enable-pamd-tty }}
       initContainers:
       - name: enable-pamd-tty
         image: keppel.eu-de-1.cloud.sap/ccloud-dockerhub-mirror/library/alpine:latest
@@ -43,6 +44,7 @@ spec:
         - name: hostfs
           mountPath: /hostfs
           readOnly: false
+{{- end }}
       containers:
       - name: exporter
         image: "{{ .Values.exporter.image.repository }}:{{ .Values.exporter.image.tag }}"
