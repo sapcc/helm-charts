@@ -43,6 +43,7 @@ input {
 {{- if .Values.beats.enabled }}
   beats {
     port => {{ .Values.beats.port }}
+    type => audit
   }
 {{- end }}
 }
