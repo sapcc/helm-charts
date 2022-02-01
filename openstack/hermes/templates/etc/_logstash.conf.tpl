@@ -280,14 +280,10 @@ output {
   if [type] == 'clone_for_pss' {
     output {
       http{
-      {{ if eq .Values.global.clusterType "scaleout" -}}
-        url => "https://logstash-audit-external.elk:{{.Values.global.https_port}}"
-      {{ else -}}
         url => "https://logstash-audit-external.{{.Values.global.region}}.{{.Values.global.tld}}"
-      {{ end -}}
-      format => "json"
-      http_method => "post"
-      headers => { "Authorization" =>  "Basic {{ template "httpBasicAuth" . }}" }
+        format => "json"
+        http_method => "post"
+        headers => { "Authorization" =>  "Basic {{ template "httpBasicAuth" . }}" }
       }
     }
   }
