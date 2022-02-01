@@ -40,12 +40,8 @@
 <filter **>
   @type grep
   <regexp>
-    key message
-    pattern /(audit|sshd)/
-  </regexp>
-  <regexp>
-    key syslog_identifier
-    pattern /sssd/
+    key "syslog_identifier"
+    pattern /(sshd|systemd-timesyncd|useradd)/
   </regexp>
 </filter>
 
