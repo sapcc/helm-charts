@@ -25,7 +25,7 @@
 <source>
   @type tail
   @id tail
-  path {{ .Values.container_logs_path }}
+  path /var/log/containers/keystone-api-*.log,/var/log/containers/keystone-global-api-*.log,/var/log/containers/qa-de-1-*-apiserver-*_kubernikus_fluentd-*.log
   exclude_path /var/log/containers/fluentd*
   pos_file /var/log/es-containers-octobus.log.pos
   time_format %Y-%m-%dT%H:%M:%S.%N
@@ -105,7 +105,7 @@
     {{ if eq .Values.global.clusterType "metal" -}}
     endpoint "https://logstash-audit-external.{{.Values.global.region}}.{{.Values.global.tld}}"
     {{ else -}}
-    endpoint "https://logstash-audit-external.audit-logs:{{.Values.global.https_port}}"
+    endpoint "http://logstash-audit-external.audit-logs:{{.Values.global.https_port}}"
     {{ end -}}
     <auth>
       method basic
