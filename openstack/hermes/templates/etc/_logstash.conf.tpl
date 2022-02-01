@@ -216,7 +216,7 @@ filter {
   # Each copy will automatically have a "type" field added
   # corresponding to the name given in the array.
   clone {
-    clones => ['clone_for_audit', 'clone_for_swift', 'clone_for_cc', 'clone_for_pss']
+    clones => ['clone_for_audit', 'clone_for_swift', 'clone_for_cc', 'audit']
   }
 }
 
@@ -277,7 +277,7 @@ output {
   }
   {{- end}}
 
-  if [type] == 'clone_for_pss' {
+  if [type] == 'audit' {
     http{
       url => "https://logstash-audit-external.{{.Values.global.region}}.{{.Values.global.tld}}"
       format => "json"
