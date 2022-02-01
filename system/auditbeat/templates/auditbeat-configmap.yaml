@@ -42,11 +42,20 @@ data:
           matchers:
             - fields.lookup_fields: ['container.id']
 
+{{- if .Values.elasticsearch.enabled }}
     output.elasticsearch:
-      hosts: ['https://${ELASTICSEARCH_HOST:elasticsearch}:${ELASTICSEARCH_PORT:9200}']
+      enabled: true
+      hosts: ['${ELASTICSEARCH_PROTOCOL:https}://${ELASTICSEARCH_HOST:elasticsearch}:${ELASTICSEARCH_PORT:9200}']
       username: ${ELASTICSEARCH_USERNAME}
       password: ${ELASTICSEARCH_PASSWORD}
       index: ""
+{{- end }}
+
+{{- if .Values.logstash.enabled }}
+    output.logstash:
+      enabled: true
+      hosts: ['${LOGSTASH_HOST:logstash}:${LOGSTASH_PORT:5044}']
+{{- end }}
 
     http:
       enabled: true

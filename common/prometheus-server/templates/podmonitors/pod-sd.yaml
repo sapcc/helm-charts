@@ -41,7 +41,7 @@ spec:
             - __meta_kubernetes_pod_container_port_number
             - __meta_kubernetes_pod_container_port_name
             - __meta_kubernetes_pod_annotation_prometheus_io_port
-          regex: '(9102;.*;.*)|(.*;metrics;.*)|(\d+;.*;\d+)|(.*;.+;\d+)'
+          regex: '(9102;.*;.*)|(.*;metrics;.*)|(\d+;.*;\d+)|(.*;.*;\d+)'
         - sourceLabels:
             - __meta_kubernetes_pod_annotation_prometheus_io_scheme
           targetLabel: __scheme__
@@ -66,6 +66,11 @@ spec:
           targetLabel: kubernetes_pod_name
 {{ include "prometheus.defaultRelabelConfig" . | indent 8 }}
 
+{{ if .Values.serviceDiscoveries.pods.forbiddenMetrics }}
+      metricRelabelings:
+{{ include "prometheus.drop-metrics.metric-relabel-config" .Values.serviceDiscoveries.pods.forbiddenMetrics | indent 8 }}
+{{ end }}
+
     - interval: {{ required ".Values.serviceDiscoveries.scrapeInterval  missing" .Values.serviceDiscoveries.scrapeInterval }}
       scrapeTimeout: {{ required ".Values.serviceDiscoveries.scrapeTimeout  missing" .Values.serviceDiscoveries.scrapeTimeout }}
       scheme: http
@@ -88,7 +93,7 @@ spec:
             - __meta_kubernetes_pod_container_port_number
             - __meta_kubernetes_pod_container_port_name
             - __meta_kubernetes_pod_annotation_prometheus_io_port_1
-          regex: '(9102;.*;.*)|(.*;metrics;.*)|(\d+;.*;\d+)|(.*;.+;\d+)'
+          regex: '(9102;.*;.*)|(.*;metrics;.*)|(\d+;.*;\d+)|(.*;.*;\d+)'
         - sourceLabels:
             - __meta_kubernetes_pod_annotation_prometheus_io_scheme
           targetLabel: __scheme__
@@ -112,4 +117,9 @@ spec:
             - __meta_kubernetes_pod_name
           targetLabel: kubernetes_pod_name
 {{ include "prometheus.defaultRelabelConfig" . | indent 8 }}
+
+{{ if .Values.serviceDiscoveries.pods.forbiddenMetrics }}
+      metricRelabelings:
+{{ include "prometheus.drop-metrics.metric-relabel-config" .Values.serviceDiscoveries.pods.forbiddenMetrics | indent 8 }}
+{{ end }}
 {{ end }}

@@ -2,7 +2,14 @@
 hsm:
   walk:
   - 1.3.6.1.2.1.1.3.0
+  - 1.3.6.1.2.1.2.2.1.2
+  - 1.3.6.1.2.1.2.2.1.3
+  - 1.3.6.1.2.1.2.2.1.4
+  - 1.3.6.1.2.1.2.2.1.6
+  - 1.3.6.1.2.1.2.2.1.7
   - 1.3.6.1.2.1.2.2.1.8
+  - 1.3.6.1.4.1.2021.13.16.2.1.2
+  - 1.3.6.1.4.1.2021.13.16.2.1.3
   - 1.3.6.1.4.1.23629.1.5.1.2.1.1
   - 1.3.6.1.4.1.23629.1.5.1.2.1.10
   - 1.3.6.1.4.1.23629.1.5.1.2.1.11
@@ -28,6 +35,9 @@ hsm:
   - 1.3.6.1.4.1.23629.1.5.1.4.1.3
   - 1.3.6.1.4.1.23629.1.5.1.4.1.4
   - 1.3.6.1.4.1.23629.1.5.1.4.1.6
+  - 1.3.6.1.4.1.23629.1.5.1.4.1.7
+  - 1.3.6.1.4.1.23629.1.5.1.7.1.1
+  - 1.3.6.1.4.1.23629.1.5.1.7.1.2
   get:
   - 1.3.6.1.4.1.12383.3.1.1.1.0
   - 1.3.6.1.4.1.12383.3.1.1.2.0
@@ -56,6 +66,37 @@ hsm:
     help: The current operational state of the interface - 1.3.6.1.2.1.2.2.1.8
     indexes:
     - labelname: ifIndex
+      type: gauge
+    lookups:
+    - labels:
+      - ifIndex
+      labelname: ifDescr
+      oid: 1.3.6.1.2.1.2.2.1.2
+      type: DisplayString
+    - labels:
+      - ifIndex
+      labelname: ifType
+      oid: 1.3.6.1.2.1.2.2.1.3
+      type: gauge
+    - labels:
+      - ifIndex
+      labelname: ifMtu
+      oid: 1.3.6.1.2.1.2.2.1.4
+      type: gauge
+    - labels:
+      - ifIndex
+      labelname: ifPhysAddress
+      oid: 1.3.6.1.2.1.2.2.1.6
+      type: PhysAddress48
+    - labels:
+      - ifIndex
+      labelname: ifAdminStatus
+      oid: 1.3.6.1.2.1.2.2.1.7
+      type: gauge
+    - labels:
+      - ifIndex
+      labelname: ifOperStatus
+      oid: 1.3.6.1.2.1.2.2.1.8
       type: gauge
     enum_values:
       1: up
@@ -112,6 +153,19 @@ hsm:
     type: DisplayString
     help: This object indicates the expiry date of the NTLS server certificate. -
       1.3.6.1.4.1.12383.3.1.2.6
+  - name: snmp_hsm_lmTempSensorsValue
+    oid: 1.3.6.1.4.1.2021.13.16.2.1.3
+    type: gauge
+    help: The temperature of this sensor in mC. - 1.3.6.1.4.1.2021.13.16.2.1.3
+    indexes:
+    - labelname: lmTempSensorsIndex
+      type: gauge
+    lookups:
+    - labels:
+      - lmTempSensorsIndex
+      labelname: lmTempSensorsDevice
+      oid: 1.3.6.1.4.1.2021.13.16.2.1.2
+      type: DisplayString
   - name: snmp_hsm_memTotalFree
     oid: 1.3.6.1.4.1.2021.4.11
     type: gauge
@@ -159,12 +213,24 @@ hsm:
     indexes:
     - labelname: hsmSerialNumber
       type: DisplayString
+    lookups:
+    - labels:
+      - hsmSerialNumber
+      labelname: hsmModel
+      oid: 1.3.6.1.4.1.23629.1.5.1.2.1.4
+      type: DisplayString
   - name: snmp_hsm_hsmStorageAllocatedBytes
     oid: 1.3.6.1.4.1.23629.1.5.1.2.1.10
     type: gauge
     help: The number of allocated bytes on the HSM. - 1.3.6.1.4.1.23629.1.5.1.2.1.10
     indexes:
     - labelname: hsmSerialNumber
+      type: DisplayString
+    lookups:
+    - labels:
+      - hsmSerialNumber
+      labelname: hsmModel
+      oid: 1.3.6.1.4.1.23629.1.5.1.2.1.4
       type: DisplayString
   - name: snmp_hsm_hsmStorageAvailableBytes
     oid: 1.3.6.1.4.1.23629.1.5.1.2.1.11
@@ -173,12 +239,24 @@ hsm:
     indexes:
     - labelname: hsmSerialNumber
       type: DisplayString
+    lookups:
+    - labels:
+      - hsmSerialNumber
+      labelname: hsmModel
+      oid: 1.3.6.1.4.1.23629.1.5.1.2.1.4
+      type: DisplayString
   - name: snmp_hsm_hsmMaximumPartitions
     oid: 1.3.6.1.4.1.23629.1.5.1.2.1.12
     type: gauge
     help: The maximum number of partitions allowed on the HSM. - 1.3.6.1.4.1.23629.1.5.1.2.1.12
     indexes:
     - labelname: hsmSerialNumber
+      type: DisplayString
+    lookups:
+    - labels:
+      - hsmSerialNumber
+      labelname: hsmModel
+      oid: 1.3.6.1.4.1.23629.1.5.1.2.1.4
       type: DisplayString
   - name: snmp_hsm_hsmPartitionsCreated
     oid: 1.3.6.1.4.1.23629.1.5.1.2.1.13
@@ -187,6 +265,12 @@ hsm:
     indexes:
     - labelname: hsmSerialNumber
       type: DisplayString
+    lookups:
+    - labels:
+      - hsmSerialNumber
+      labelname: hsmModel
+      oid: 1.3.6.1.4.1.23629.1.5.1.2.1.4
+      type: DisplayString
   - name: snmp_hsm_hsmPartitionsFree
     oid: 1.3.6.1.4.1.23629.1.5.1.2.1.14
     type: gauge
@@ -194,12 +278,24 @@ hsm:
     indexes:
     - labelname: hsmSerialNumber
       type: DisplayString
+    lookups:
+    - labels:
+      - hsmSerialNumber
+      labelname: hsmModel
+      oid: 1.3.6.1.4.1.23629.1.5.1.2.1.4
+      type: DisplayString
   - name: snmp_hsm_hsmBackupProtocol
     oid: 1.3.6.1.4.1.23629.1.5.1.2.1.15
     type: gauge
     help: The backup protocol used on the HSM. - 1.3.6.1.4.1.23629.1.5.1.2.1.15
     indexes:
     - labelname: hsmSerialNumber
+      type: DisplayString
+    lookups:
+    - labels:
+      - hsmSerialNumber
+      labelname: hsmModel
+      oid: 1.3.6.1.4.1.23629.1.5.1.2.1.4
       type: DisplayString
     enum_values:
       1: unknown
@@ -214,12 +310,24 @@ hsm:
     indexes:
     - labelname: hsmSerialNumber
       type: DisplayString
+    lookups:
+    - labels:
+      - hsmSerialNumber
+      labelname: hsmModel
+      oid: 1.3.6.1.4.1.23629.1.5.1.2.1.4
+      type: DisplayString
   - name: snmp_hsm_hsmAuditRoleInitialized
     oid: 1.3.6.1.4.1.23629.1.5.1.2.1.17
-    type: gauge
+    type: DisplayString
     help: The flag that specifies if the audit role is initialized. - 1.3.6.1.4.1.23629.1.5.1.2.1.17
     indexes:
     - labelname: hsmSerialNumber
+      type: DisplayString
+    lookups:
+    - labels:
+      - hsmSerialNumber
+      labelname: hsmModel
+      oid: 1.3.6.1.4.1.23629.1.5.1.2.1.4
       type: DisplayString
     enum_values:
       0: notSupported
@@ -227,10 +335,16 @@ hsm:
       2: "no"
   - name: snmp_hsm_hsmManuallyZeroized
     oid: 1.3.6.1.4.1.23629.1.5.1.2.1.18
-    type: gauge
+    type: DisplayString
     help: The flag that specifies if HSM has been manually zeroized. - 1.3.6.1.4.1.23629.1.5.1.2.1.18
     indexes:
     - labelname: hsmSerialNumber
+      type: DisplayString
+    lookups:
+    - labels:
+      - hsmSerialNumber
+      labelname: hsmModel
+      oid: 1.3.6.1.4.1.23629.1.5.1.2.1.4
       type: DisplayString
     enum_values:
       1: "true"
@@ -242,12 +356,24 @@ hsm:
     indexes:
     - labelname: hsmSerialNumber
       type: DisplayString
+    lookups:
+    - labels:
+      - hsmSerialNumber
+      labelname: hsmModel
+      oid: 1.3.6.1.4.1.23629.1.5.1.2.1.4
+      type: DisplayString
   - name: snmp_hsm_hsmFirmwareVersion
     oid: 1.3.6.1.4.1.23629.1.5.1.2.1.2
     type: DisplayString
     help: The version of firmware executing on the HSM. - 1.3.6.1.4.1.23629.1.5.1.2.1.2
     indexes:
     - labelname: hsmSerialNumber
+      type: DisplayString
+    lookups:
+    - labels:
+      - hsmSerialNumber
+      labelname: hsmModel
+      oid: 1.3.6.1.4.1.23629.1.5.1.2.1.4
       type: DisplayString
   - name: snmp_hsm_hsmBusyTime
     oid: 1.3.6.1.4.1.23629.1.5.1.2.1.20
@@ -257,12 +383,24 @@ hsm:
     indexes:
     - labelname: hsmSerialNumber
       type: DisplayString
+    lookups:
+    - labels:
+      - hsmSerialNumber
+      labelname: hsmModel
+      oid: 1.3.6.1.4.1.23629.1.5.1.2.1.4
+      type: DisplayString
   - name: snmp_hsm_hsmLabel
     oid: 1.3.6.1.4.1.23629.1.5.1.2.1.3
     type: DisplayString
     help: The label associated with the HSM. - 1.3.6.1.4.1.23629.1.5.1.2.1.3
     indexes:
     - labelname: hsmSerialNumber
+      type: DisplayString
+    lookups:
+    - labels:
+      - hsmSerialNumber
+      labelname: hsmModel
+      oid: 1.3.6.1.4.1.23629.1.5.1.2.1.4
       type: DisplayString
   - name: snmp_hsm_hsmModel
     oid: 1.3.6.1.4.1.23629.1.5.1.2.1.4
@@ -271,12 +409,24 @@ hsm:
     indexes:
     - labelname: hsmSerialNumber
       type: DisplayString
+    lookups:
+    - labels:
+      - hsmSerialNumber
+      labelname: hsmModel
+      oid: 1.3.6.1.4.1.23629.1.5.1.2.1.4
+      type: DisplayString
   - name: snmp_hsm_hsmAuthenticationMethod
     oid: 1.3.6.1.4.1.23629.1.5.1.2.1.5
     type: gauge
     help: The authentication mode of the HSM. - 1.3.6.1.4.1.23629.1.5.1.2.1.5
     indexes:
     - labelname: hsmSerialNumber
+      type: DisplayString
+    lookups:
+    - labels:
+      - hsmSerialNumber
+      labelname: hsmModel
+      oid: 1.3.6.1.4.1.23629.1.5.1.2.1.4
       type: DisplayString
     enum_values:
       1: unknown
@@ -289,16 +439,28 @@ hsm:
     indexes:
     - labelname: hsmSerialNumber
       type: DisplayString
+    lookups:
+    - labels:
+      - hsmSerialNumber
+      labelname: hsmModel
+      oid: 1.3.6.1.4.1.23629.1.5.1.2.1.4
+      type: DisplayString
     enum_values:
       1: notSupported
       2: uninitialized
       3: initialized
   - name: snmp_hsm_hsmFipsMode
     oid: 1.3.6.1.4.1.23629.1.5.1.2.1.7
-    type: gauge
+    type: DisplayString
     help: The FIPS 140-2 operation mode enabled flag of the HSM. - 1.3.6.1.4.1.23629.1.5.1.2.1.7
     indexes:
     - labelname: hsmSerialNumber
+      type: DisplayString
+    lookups:
+    - labels:
+      - hsmSerialNumber
+      labelname: hsmModel
+      oid: 1.3.6.1.4.1.23629.1.5.1.2.1.4
       type: DisplayString
     enum_values:
       1: "true"
@@ -310,12 +472,24 @@ hsm:
     indexes:
     - labelname: hsmSerialNumber
       type: DisplayString
+    lookups:
+    - labels:
+      - hsmSerialNumber
+      labelname: hsmModel
+      oid: 1.3.6.1.4.1.23629.1.5.1.2.1.4
+      type: DisplayString
   - name: snmp_hsm_hsmStorageTotalBytes
     oid: 1.3.6.1.4.1.23629.1.5.1.2.1.9
     type: gauge
     help: The total storage capacity in bytes of the HSM. - 1.3.6.1.4.1.23629.1.5.1.2.1.9
     indexes:
     - labelname: hsmSerialNumber
+      type: DisplayString
+    lookups:
+    - labels:
+      - hsmSerialNumber
+      labelname: hsmModel
+      oid: 1.3.6.1.4.1.23629.1.5.1.2.1.4
       type: DisplayString
   - name: snmp_hsm_hsmPartitionSerialNumber
     oid: 1.3.6.1.4.1.23629.1.5.1.4.1.1
@@ -326,14 +500,16 @@ hsm:
       type: DisplayString
     - labelname: hsmPartitionSerialNumber
       type: DisplayString
-  - name: snmp_hsm_hsmPartitionLabel
-    oid: 1.3.6.1.4.1.23629.1.5.1.4.1.2
-    type: DisplayString
-    help: The label assigned to the partition. - 1.3.6.1.4.1.23629.1.5.1.4.1.2
-    indexes:
-    - labelname: hsmSerialNumber
+    lookups:
+    - labels:
+      - hsmPartitionSerialNumber
+      labelname: hsmPartitionLabel
+      oid: 1.3.6.1.4.1.23629.1.5.1.4.1.2
       type: DisplayString
-    - labelname: hsmPartitionSerialNumber
+    - labels:
+      - hsmSerialNumber
+      labelname: hsmModel
+      oid: 1.3.6.1.4.1.23629.1.5.1.2.1.4
       type: DisplayString
   - name: snmp_hsm_hsmPartitionActivated
     oid: 1.3.6.1.4.1.23629.1.5.1.4.1.3
@@ -343,6 +519,17 @@ hsm:
     - labelname: hsmSerialNumber
       type: DisplayString
     - labelname: hsmPartitionSerialNumber
+      type: DisplayString
+    lookups:
+    - labels:
+      - hsmPartitionSerialNumber
+      labelname: hsmPartitionLabel
+      oid: 1.3.6.1.4.1.23629.1.5.1.4.1.2
+      type: DisplayString
+    - labels:
+      - hsmSerialNumber
+      labelname: hsmModel
+      oid: 1.3.6.1.4.1.23629.1.5.1.2.1.4
       type: DisplayString
     enum_values:
       1: "true"
@@ -356,6 +543,17 @@ hsm:
       type: DisplayString
     - labelname: hsmPartitionSerialNumber
       type: DisplayString
+    lookups:
+    - labels:
+      - hsmPartitionSerialNumber
+      labelname: hsmPartitionLabel
+      oid: 1.3.6.1.4.1.23629.1.5.1.4.1.2
+      type: DisplayString
+    - labels:
+      - hsmSerialNumber
+      labelname: hsmModel
+      oid: 1.3.6.1.4.1.23629.1.5.1.2.1.4
+      type: DisplayString
   - name: snmp_hsm_hsmPartitionStorageAvailableBytes
     oid: 1.3.6.1.4.1.23629.1.5.1.4.1.6
     type: gauge
@@ -364,6 +562,50 @@ hsm:
     - labelname: hsmSerialNumber
       type: DisplayString
     - labelname: hsmPartitionSerialNumber
+      type: DisplayString
+    lookups:
+    - labels:
+      - hsmPartitionSerialNumber
+      labelname: hsmPartitionLabel
+      oid: 1.3.6.1.4.1.23629.1.5.1.4.1.2
+      type: DisplayString
+    - labels:
+      - hsmSerialNumber
+      labelname: hsmModel
+      oid: 1.3.6.1.4.1.23629.1.5.1.2.1.4
+      type: DisplayString
+  - name: snmp_hsm_hsmPartitionObjectCount
+    oid: 1.3.6.1.4.1.23629.1.5.1.4.1.7
+    type: gauge
+    help: The number of objects in the partition. - 1.3.6.1.4.1.23629.1.5.1.4.1.7
+    indexes:
+    - labelname: hsmSerialNumber
+      type: DisplayString
+    - labelname: hsmPartitionSerialNumber
+      type: DisplayString
+    lookups:
+    - labels:
+      - hsmPartitionSerialNumber
+      labelname: hsmPartitionLabel
+      oid: 1.3.6.1.4.1.23629.1.5.1.4.1.2
+      type: DisplayString
+    - labels:
+      - hsmSerialNumber
+      labelname: hsmModel
+      oid: 1.3.6.1.4.1.23629.1.5.1.2.1.4
+      type: DisplayString
+  - name: snmp_hsm_hsmClientName
+    oid: 1.3.6.1.4.1.23629.1.5.1.7.1.1
+    type: DisplayString
+    help: The name of the client - 1.3.6.1.4.1.23629.1.5.1.7.1.1
+    indexes:
+    - labelname: hsmClientName
+      type: DisplayString
+    lookups:
+    - labels:
+      - hsmClientName
+      labelname: hsmClientAddress
+      oid: 1.3.6.1.4.1.23629.1.5.1.7.1.2
       type: DisplayString
   - name: snmp_hsm_appSoftwareVersion
     oid: 1.3.6.1.4.1.23629.1.5.2.1

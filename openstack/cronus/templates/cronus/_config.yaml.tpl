@@ -80,12 +80,13 @@ cronus:
     workerPrefetchCount: {{ .Values.config.workQueue.workerPrefetchCount }}
     workerPrefetchSize: {{ .Values.config.workQueue.workerPrefetchSize }}
     maxContainerNum: {{ .Values.config.workQueue.maxContainerNum }}
+    reconnectWatcherLimit: {{ .Values.config.workQueue.reconnectWatcherLimit }}
 {{- end }}
 {{- if .Values.config.smtpBackends }}
   # extra SMTP backends and a list of recipient domains
   smtpBackends:
-{{- range $k, $v := .Values.config.smtpBackends }}
-    {{ $k }}:
+{{- range $v := .Values.config.smtpBackends }}
+    - name: {{ $v.name }}
 {{- if $v.host }}
       host: {{$v.host }}
 {{- end }}

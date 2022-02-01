@@ -30,25 +30,18 @@ spec:
     extra_specs:
       share_backend_name: "integration"
     {{- include "manila_type_seed.extra_specs" . | indent 6 }}
-{{- if .Values.share_types.hypervisor_storage }}
-  - name: hypervisor_storage
+  {{- range $shareTypeName, $shareTypeEnabled := .Values.share_types }}
+  {{- if $shareTypeName | hasPrefix "hypervisor_storage" }}
+  {{- if $shareTypeEnabled }}
+  - name: {{ $shareTypeName }}
     is_public: false
     specs:
     {{- include "manila_type_seed.specs" . | indent 6 }}
     extra_specs:
-      share_backend_name: "hypervisor_storage"
+      share_backend_name: {{ $shareTypeName | quote }}
     {{- include "manila_type_seed.extra_specs" . | indent 6 }}
-{{- end }}
-{{- if .Values.share_types.btp_backup}}
-  - name: btp_backup
-    is_public: false
-    specs:
-    {{- include "manila_type_seed.specs" . | indent 6 }}
-    extra_specs:
-      share_backend_name: "netapp-multi"
-    {{- include "manila_type_seed.extra_specs" . | indent 6 }}
-      netapp:snapshot_policy: "BTP_Backup"
-      netapp:hide_snapdir: "False"
-{{- end }}
+  {{- end }}
+  {{- end }}
+  {{- end }}
 {{- end }}
 {{- end }}

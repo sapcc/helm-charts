@@ -338,6 +338,30 @@
       regex: 'snmp_ucs_cucsFcErrStats.+;.+(port)-([3-9]|\d{2}).+'
       action: drop
 
+- job_name: 'snmp-apod'
+  scrape_interval: {{.Values.snmp_exporter_apod.scrapeInterval}}
+  scrape_timeout: {{.Values.snmp_exporter_apod.scrapeTimeout}}
+  file_sd_configs:
+      - files :
+        - /etc/prometheus/configmaps/atlas-netbox-sd/netbox.json
+  metrics_path: /snmp
+  relabel_configs:
+    - source_labels: [job]
+      regex: snmp
+      action: keep
+    - source_labels: [__address__]
+      target_label: __param_target
+    - source_labels: [__param_target]
+      target_label: instance
+    - target_label: __address__
+      replacement: snmp-exporter-apod:{{.Values.snmp_exporter.listen_port}}
+    - source_labels: [module]
+      target_label: __param_module
+  metric_relabel_configs:
+    - source_labels: [job]
+      replacement: snmp-apod
+      target_label: job
+
 - job_name: 'snmp-ntp'
   scrape_interval: {{.Values.snmp_exporter.scrapeInterval}}
   scrape_timeout: {{.Values.snmp_exporter.scrapeTimeout}}
@@ -598,40 +622,6 @@
       - {{ . }}
       {{- end }}
   scheme: https
-{{- end }}
-
-#normal scrape intervals are too frequent, that's why we only occasionally want to query here.
-{{- $values := .Values.bm_cablecheck_exporter -}}
-{{- if $values.enabled }}
-- job_name: 'bm-cablecheck-exporter'
-  params:
-    job: [bm-cablecheck-exporter]
-  scrape_interval: {{$values.scrapeInterval}}
-  scrape_timeout: {{$values.scrapeTimeout}}
-  static_configs:
-    - targets : ['bm-cablecheck-exporter:9100']
-  metrics_path: /
-  relabel_configs:
-    - source_labels: [job]
-      regex: bm-cablecheck-exporter
-      action: keep
-{{- end }}
-
-#normal scrape intervals are too frequent, that's why we only occasionally want to query here.
-{{- $values := .Values.vpod_cablecheck_exporter -}}
-{{- if $values.enabled }}
-- job_name: 'vpod-cablecheck-exporter'
-  params:
-    job: [vpod-cablecheck-exporter]
-  scrape_interval: {{$values.scrapeInterval}}
-  scrape_timeout: {{$values.scrapeTimeout}}
-  static_configs:
-    - targets : ['vpod-cablecheck-exporter:9100']
-  metrics_path: /
-  relabel_configs:
-    - source_labels: [job]
-      regex: vpod-cablecheck-exporter
-      action: keep
 {{- end }}
 
 #exporter is leveraging service discovery but not part of infrastructure monitoring project itself.

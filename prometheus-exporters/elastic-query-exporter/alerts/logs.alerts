@@ -95,3 +95,16 @@ groups:
         annotations:
           description: "VCSA logs missing in Octobus for vCenter {{ $labels.vcenter }}."
           summary: "VCSA logs missing in Octobus for vCenter {{ $labels.vcenter }}."
+      - alert: OctobusNSXLogShippingNotWorking
+        expr: |
+                vrops_nsxt_mgmt_node_connectivity_status unless
+                on(nsxt_mgmt_node) elasticsearch_octobus_nsx_nsxt_mgmt_node_doc_count > 0
+        for: 15m
+        labels:
+          severity: info
+          tier: vmware
+          service: audit
+          meta: "NSX-T logs missing in Octobus for {{ $labels.nsxt_mgmt_node }}."
+        annotations:
+          description: "NSX-T logs missing in Octobus for {{ $labels.nsxt_mgmt_node }}."
+          summary: "NSX-T logs missing in Octobus for {{ $labels.nsxt_mgmt_node }}."

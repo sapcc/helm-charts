@@ -2,7 +2,7 @@ groups:
 - name: openstack-barbican.alerts
   rules:
   - alert: OpenstackBarbicanUserCertificateExpiresIn30days
-    expr: '0 <= round((openstack_barbican_certificate_expiration_date - time()) / 60 / 60 / 24 <= 30)'
+    expr: 'label_replace(label_replace(openstack_user_last_active_at{email_id!~"No Email-ID"}, "email", "$1", "email_id","(?:\\[\")(.*)(?:\"\\])"),"full_name","$1","user_name","(?:\\[\")(.*)(?:\"\\])") +on (user_id) group_right (email, full_name) (0 <= round((label_replace(openstack_barbican_certificate_expiration_date, "user_id", "$1", "creator_id","(.+)") - time()) / 86400 <= 30))'
     for: 1h
     labels:
       severity: info
@@ -12,7 +12,7 @@ groups:
       dashboard: barbican
       meta: 'Certificate {{ $labels.certificate_name }} will expire in {{ $value }} Days'
     annotations:
-      description: 'Certificate {{ $labels.certificate_name }} created by user_id {{ $labels.creator_id }} in Project_id {{ $labels.project_id }} will expire in {{ $value }} Days'
+      description: 'Certificate {{ $labels.certificate_name }} created by {{ $labels.full_name }} in Project_id {{ $labels.project_id }} will expire in {{ $value }} Days'
       summary: 'Certificate will expire soon'
 
   - alert: OpenstackBarbicanUnresolvedSentryIssues

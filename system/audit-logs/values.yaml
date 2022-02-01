@@ -1,0 +1,60 @@
+global:
+  https_port: 443
+logstash_audit_external:
+  enabled: false
+  image_version: '20220110143833'
+  replicas: 1
+  input_netflow_port: 2055
+  input_syslog_port: 514
+  input_bigiplogs_port: 1513
+  input_alertmanager_port: 1515
+  input_deployments_port: 1516
+  input_http_port: 443
+  syslog:
+    enabled: false
+  tls:
+    crt: DEFINED-IN-SECRETS
+    key: DEFINED-IN-SECRETS
+  forwarding:
+    audit:
+      host: None
+  ingress:
+    enabled: false
+  elk_elasticsearch_endpoint_host_internal: "es-client"
+  elk_elasticsearch_http_port_internal: 9200
+  beats:
+    enabled: true
+    port: 5044
+
+logstash_audit_services:
+  enabled: false
+  image_version: '20211213084134'
+  http_poller:
+    user: DEFINED-IN-SECRETS
+    password: DEFINED-IN-SECRETS
+    url:
+      api: DEFINED-IN-SECRETS
+      token: DEFINED-IN-SECRETS
+
+fluent_audit_container:
+  enabled: false
+  port: 8887
+  image_version: '20211110123325'
+  container_logs_path: /var/log/containers/keystone-api-*.log,/var/log/containers/keystone-global-api-*.log
+  forwarding:
+    keystone:
+      host: none
+  alerts:
+    enabled: false
+    prometheus: infra-collector
+
+fluent_audit_systemd:
+  enabled: false
+  image_version: '20211110123325'
+  alerts:
+    enabled: false
+    prometheus: infra-collector
+  port: 8888
+
+auditbeat:
+  enabled: false
