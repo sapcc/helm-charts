@@ -188,7 +188,7 @@ filter {
         }
       }
 
-      if [typeURI] and [typeURI] == "http://schemas.dmtf.org/cloud/audit/1" {
+      if [typeURI] and [typeURI] == "http://schemas.dmtf.org/cloud/audit/1.0/event" {
         mutate {
           add_field => { "sap.cc.audit.source" => "Hermes" }
         }
