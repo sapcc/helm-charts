@@ -56,7 +56,7 @@
     {{ if eq .Values.global.clusterType "metal" -}}
     endpoint "https://logstash-audit-external.{{.Values.global.region}}.{{.Values.global.tld}}"
     {{ else -}}
-    endpoint "https://logstash-audit-external.audit-logs:{{.Values.global.https_port}}"
+    endpoint "http://logstash-audit-external.audit-logs:{{.Values.global.https_port}}"
     {{ end -}}
     <auth>
       method basic
