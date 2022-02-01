@@ -282,7 +282,7 @@ output {
       url => "https://logstash-audit-external.{{.Values.global.region}}.{{.Values.global.tld}}"
       format => "json"
       http_method => "post"
-      headers => { "Authorization" =>  "Basic {{ template "httpBasicAuth" . }}" }
+      headers => { "Authorization" =>  Basic {{ template "httpBasicAuth" . }} }
     }
   }
 }
