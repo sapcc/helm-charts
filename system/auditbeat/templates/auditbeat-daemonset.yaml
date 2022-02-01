@@ -63,6 +63,7 @@ spec:
           "-e",
         ]
         env:
+{{- if .Values.elasticsearch.enabled }}
         - name: ELASTICSEARCH_HOST
           value: {{ .Values.elasticsearch.host }}
         - name: ELASTICSEARCH_PORT
@@ -78,7 +79,14 @@ spec:
           valueFrom:
             secretKeyRef:
               name: {{ include "auditbeat.fullname" . }}
-              key: es-password   
+              key: es-password
+{{- end }}
+{{- if .Values.logstash.enabled }}
+        - name: LOGSTASH_HOST
+          value: {{ .Values.logstash.host }}
+        - name: LOGSTASH_PORT
+          value: "{{ .Values.logstash.port }}"
+{{- end }}
         - name: NODE_NAME
           valueFrom:
             fieldRef:
