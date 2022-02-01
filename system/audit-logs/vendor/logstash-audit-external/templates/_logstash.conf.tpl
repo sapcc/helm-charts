@@ -40,6 +40,11 @@ input {
     ssl_key => '/usr/share/logstash/config/tls.key'
 {{- end }}
   }
+{{- if .Values.beats.enabled }}
+  beats {
+    port => {{ .Values.beats.port }}
+  }
+{{- end }}
 }
 
 filter {
