@@ -31,7 +31,7 @@ input {
 {{- end }}
   http {
     port  => {{.Values.input_http_port}}
-    type => audit
+    tags => ["audit"]
     user => '{{.Values.global.elk_elasticsearch_http_user}}'
     password => '{{.Values.global.elk_elasticsearch_http_password}}'
 {{ if eq .Values.global.clusterType "metal" -}}
@@ -43,7 +43,7 @@ input {
 {{- if .Values.beats.enabled }}
   beats {
     port => {{ .Values.beats.port }}
-    type => audit
+    tags => ["audit"]
   }
 {{- end }}
 }
@@ -171,7 +171,7 @@ filter {
        }
     }
 {{- end }}
-    if [type] == "audit"{
+    if [type] == "audit" or "audit" in [tags] {
 
       mutate{
         {{ if .Values.global.cluster -}}
@@ -218,7 +218,7 @@ filter {
 
 
 output {
-  if [type] == "audit" {
+  if [type] == "audit" or "audit" in [tags] {
     http {
       cacert => "/usr/share/logstash/config/ca.pem"
       url => "https://{{ .Values.forwarding.audit.host }}"
