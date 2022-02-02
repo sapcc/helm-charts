@@ -14,6 +14,13 @@ spec:
         app: vrops-inventory
         type: inventorycollector
     spec:
+      volumes:
+        - name: vrops-exporter-inventory-config
+          configMap:
+            name: vrops-exporter-inventory-config
+        - name: atlas-output
+          configMap:
+            name: {{ .Values.vrops.atlas_configmap }}
       containers:
          - name: vrops-inventory
            image: {{ required ".Values.global.registry variable missing" .Values.global.registry }}/{{ required ".Values.vrops.image.name variable missing" .Values.vrops.image.name }}:{{ required ".Values.vrops.inventory.tag variable missing" .Values.vrops.inventory.tag }}
@@ -25,6 +32,8 @@ spec:
            args:
              - -a
              - /atlas/netbox.json
+             - -m
+             - /config/inventory_config.yaml
            env:
            - name: USER
              value: {{ required ".Values.vrops.user variable is missing" .Values.vrops.user }}
@@ -52,8 +61,11 @@ spec:
                memory: {{ required ".Values.vrops.inventory.resources.requests.memory missing" .Values.vrops.inventory.resources.requests.memory }}
                cpu: {{ required ".Values.vrops.inventory.resources.requests.cpu missing" .Values.vrops.inventory.resources.requests.cpu }}
            volumeMounts:
-             - mountPath: /atlas
-               name: atlas-output
+             - name: vrops-exporter-inventory-config
+               mountPath: "/config"
+               readOnly: true
+             - name: atlas-output
+               mountPath: /atlas
                readOnly: true
            livenessProbe:
              httpGet:
@@ -68,7 +80,3 @@ spec:
            #     port: {{ required ".Values.vrops.inventory.port_number missing" .Values.vrops.inventory.port_number }}
            #   failureThreshold: 30
            #   periodSeconds: 10
-      volumes:
-        - configMap:
-            name: {{ .Values.vrops.atlas_configmap }}
-          name: atlas-output

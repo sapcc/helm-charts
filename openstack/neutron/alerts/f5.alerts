@@ -10,6 +10,7 @@ groups:
       tier: os
       meta: 'F5 Network Agent not syncing since 20m: {{ $labels.name }}, please try restarting pod'
       dashboard: octavia
+      no_alert_on_absence: "true"
     annotations:
       description: 'F5 Network Agent not syncing since 20m: {{ $labels.name }}, please try restarting pod'
       summary: 'F5 Network Agent not syncing'
@@ -22,6 +23,7 @@ groups:
       tier: os
       meta: 'F5 Network Agent {{ $labels.name }} full sync aborted: check log'
       dashboard: octavia
+      no_alert_on_absence: "true"
     annotations:
       description: 'F5 Network Agent {{ $labels.name }} full sync aborted: check log'
       summary: 'F5 Network Agent not syncing'
@@ -34,6 +36,7 @@ groups:
       tier: os
       meta: 'F5 Network Agent {{ $labels.name }} has unusual high exception rate for {{ $labels.type }}: check log'
       dashboard: octavia
+      no_alert_on_absence: "true"
     annotations:
       description: 'F5 Network Agent {{ $labels.name }} has unusual high exception rate for {{ $labels.type }}: check log'
       summary: 'F5 Network Agent Exception count'
@@ -41,12 +44,12 @@ groups:
     expr: sum(rate(networking_f5_sync_iteration_total[30m])) by (name, type) == 0
     for: 60m
     labels:
-      no_alert_on_absence: "true"
       severity: info
       service: octavia
       tier: os
       meta: 'F5 Network Agent {{ $labels.name }} is missing reports about sync loop {{ $labels.type }}'
       dashboard: octavia
+      no_alert_on_absence: "true"
     annotations:
       description: 'F5 Network Agent {{ $labels.name }} is missing reports about sync loop {{ $labels.type }}: restart pod'
       summary: 'F5 Network Agent missing sync iterations'

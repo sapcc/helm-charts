@@ -1,0 +1,69 @@
+{{- if $.Values.metis.enabled }}
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: metis
+  namespace: {{ .Values.namespace }}
+  labels:
+    app.kubernetes.io/name: metis
+    helm.sh/chart: {{ include "metis.chart" $ }}
+    app.kubernetes.io/instance: metis-{{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: metis
+      app.kubernetes.io/instance: metis-{{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: metis
+        app.kubernetes.io/instance: metis-{{ .Release.Name }}
+      annotations:
+        checksum/config: {{ include ( print $.Template.BasePath "/metis-etc-configmap.yaml" ) . | sha256sum }}
+        checksum/secret: {{ include ( print $.Template.BasePath "/metis-secrets.yaml" ) . | sha256sum }}
+    spec:
+      affinity:
+        podAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - "metisdb-mariadb"
+            topologyKey: kubernetes.io/hostname
+      containers:
+      - name: metis
+        image: "{{ required ".Values.global.registry variable missing" .Values.global.registry }}/{{ .Values.metis.image }}:{{ .Values.metis.imageTag }}"
+        ports:
+        - name: metrics
+          containerPort: {{ .Values.metis.metrics.port }}
+          protocol: TCP
+        env:
+          - name: API_TOKEN
+            valueFrom:
+              secretKeyRef:
+                name: metis-secrets
+                key: billingToken
+          - name: DB_PASSWD
+            valueFrom:
+              secretKeyRef:
+                name: metis-secrets
+                key: metisAdminPW
+          - name: DB_RONLY_PASSWD
+            valueFrom:
+              secretKeyRef:
+                name: metis-secrets
+                key: metisRonlyPW
+        volumeMounts:
+          - name: metis-etc
+            mountPath: /config
+            readOnly: true
+      volumes:
+        - name: metis-etc
+          configMap:
+            name: metis-etc
+{{- end }}

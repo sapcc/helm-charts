@@ -1,0 +1,46 @@
+image:
+  repository: keppel.eu-de-1.cloud.sap/ccloud/auditbeat-oss
+  pullPolicy: IfNotPresent
+  tag: "7.16.0"
+
+enable_pamd_tty: true
+
+elasticsearch:
+  enabled: false
+  #host:
+  port: "443"
+  #username:
+  #password:
+  protocol: https
+
+logstash:
+  enabled: true
+  host: logstash-audit-external-beats
+  port: "5044"
+
+labels: {}
+
+serviceAccount:
+  create: true
+  name: auditbeat
+
+resources:
+  limits:
+    memory: 200Mi
+  requests:
+    cpu: 100m
+    memory: 100Mi
+
+exporter:
+  image:
+    repository: keppel.eu-de-1.cloud.sap/ccloud-dockerhub-mirror/sepa/beats-exporter
+    tag: "220124"
+    pullPolicy: IfNotPresent
+  metrics:
+    port: "5971"
+  resources:
+    limits:
+      memory: 50Mi
+    requests:
+      cpu: 100m
+      memory: 25Mi

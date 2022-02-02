@@ -37,10 +37,14 @@ nebula:
     endpoint: {{ .Values.config.multiCloud.endpoint }}
     username: {{ .Values.config.multiCloud.username }}
     password: {{ .Values.config.multiCloud.password }}
-  # TODO: needs to be deleted in newer versions
-  serviceUser:
-    username: {{ .Values.config.serviceUsername }}
-    password: {{ .Values.config.servicePassword }}
+  intSMTP:
+    endpoint: {{ .Values.config.intSMTP.endpoint }}
+    username: {{ .Values.config.intSMTP.username }}
+    password: {{ .Values.config.intSMTP.password }}
+    owners:
+{{- range $v := .Values.config.intSMTP.owners }}
+      - {{ $v }}
+{{- end }}
   jira:
     endpoint: {{ .Values.config.jira.endpoint }}
     username: {{ .Values.config.jira.username }}
@@ -142,6 +146,9 @@ nebula:
     activationTitle: {{ .Values.notifier.activationTitle }}
     activationBody: |
 {{ .Values.notifier.activationBody | indent 6 }}
+    deletionTitle: {{ .Values.notifier.deletionTitle }}
+    deletionBody: |
+{{ .Values.notifier.deletionBody | indent 6 }}
 {{- end }}
 {{- if .Values.pki.enabled }}
   pki:

@@ -107,7 +107,7 @@ elasticsearch:
     ingest: "false"
     data: "false"
   replicas: 3
-  esJavaOpts: "-Xmx2G -Xms2G"
+  esJavaOpts: "-Dlog4j2.formatMsgNoLookups=true -Xmx2G -Xms2G"
   esConfig:
     elasticsearch.yml: |
       indices.query.bool.max_clause_count: 8192
@@ -146,7 +146,7 @@ elasticsearch-data:
     ingest: "true"
     data: "true"
   replicas: 2
-  esJavaOpts: "-Xmx10G -Xms10G"
+  esJavaOpts: "-Dlog4j2.formatMsgNoLookups=true -Xmx10G -Xms10G"
   resources:
     requests:
       cpu: "4000m"
@@ -215,7 +215,7 @@ logstash:
     enabled: false
     configMap: "jdbc-filter"
     configFile: "20_filter_95_enrich_ips.conf"
-    schedule: "30 1 * * *"
+    schedule: "*/10 * * * *"
   fw:
     enabled: true
     configMap: "fw-output"
@@ -262,7 +262,7 @@ logstash:
     httpGet: null
     tcpSocket:
       port: 5044
-    initialDelaySeconds: 180
+    initialDelaySeconds: 60
     periodSeconds: 30
     failureThreshold: 20
     successThreshold: 1

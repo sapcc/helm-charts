@@ -145,19 +145,20 @@
   </parse>
 </filter>
 
-{{- if .Values.datahub.enabled }}
+{{- if .Values.metis.enabled }}
 <filter kubernetes.var.log.containers.kube-system-nginx-ingress-controller**>
   @type mysql_enrich
-  host {{.Values.datahub.host}}.{{.Values.global.region}}.{{.Values.global.tld}}
-  port {{.Values.datahub.port}}
-  database {{.Values.datahub.db}}
-  username {{.Values.global.datahub.user}}
-  password {{.Values.global.datahub.password}}
-  sql select * from test;
-  sql_key floating_ip_address
+  host {{.Values.metis.host}}.{{.Values.global.region}}.{{.Values.global.tld}}
+  port {{.Values.metis.port}}
+  database {{.Values.metis.db}}
+  username {{.Values.global.metis.user}}
+  password {{.Values.global.metis.password}}
+  sql select ip_address, floating_ip_id, project, project_id, domain, domain_id, network, network_id, subnet, subnet_id, subnetpool, subnetpool_id, router, router_id, port_id, instance_id, owner from openstack_ips;
+  sql_key ip_address
   record_key remote_addr
-  columns project_id, project, port, domain
-  refresh_interval 60
+  columns project, project_id, domain, domain_id, port_id, network, network_id, subnet, subnet_id, subnetpool, subnetpool_id, router, router_id, instance_id, owner
+  record_mapping project_id:cc_project_id,project:cc_project,port_id:cc_port_id,domain:cc_domain,domain_id:cc_domain_id,network:cc_network,network_id:cc_network_id,subnet:cc_subnet,subnet_id:cc_subnet_id,subnetpool:cc_subnetpool,subnetpool_id:cc_subnetpool_id,router:cc_router,router_id:cc_router_id,instance_id:cc_instance_id,owner:cc_owner
+  refresh_interval 600
 </filter>
 {{- end }}
 
@@ -168,10 +169,10 @@
   @type copy
   <store>
     @type elasticsearch
-    host {{.Values.global.endpoint_host_internal}}
-    port {{.Values.global.http_port}}
-    user {{.Values.global.data_user}}
-    password {{.Values.global.data_password}}
+    host {{.Values.endpoint_host_internal}}
+    port {{.Values.http_port}}
+    user {{.Values.global.elk_elasticsearch_data_user}}
+    password {{.Values.global.elk_elasticsearch_data_password}}
     ssl_verify false
     ssl_version TLSv1_2
     logstash_prefix {{.Values.indexname}}

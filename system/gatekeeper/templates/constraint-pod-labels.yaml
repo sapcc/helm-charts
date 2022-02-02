@@ -25,8 +25,12 @@ spec:
         default os_services = []
         os_services = sort(split(input.parameters.osServices, "|"))
 
-        # Either tier or service label is required. However, when tier == os then service is also required.
-        required_labels = {"tier", "service"}
+        # Defining variables because they are referenced in multiple places.
+        alert_tier = "alert-tier"
+        alert_service = "alert-service"
+
+        # Either alert-tier or alert-service label is required. However, when alert-tier == os then alert-service is also required.
+        required_labels = {alert_tier, alert_service}
 
         missing_labels_on_pod = [l |
           required_labels[l]
@@ -58,13 +62,14 @@ spec:
           obj.kind == "Pod"
           count(pod_belongs_to) == 0 # otherwise the violation will be reported on the DaemonSet or Deployment instead
 
-          obj.metadata.labels.tier == "os"
-          srv := object.get(obj.metadata.labels, "service", "")
+          t := object.get(obj.metadata.labels, alert_tier, "")
+          t == "os"
+          srv := object.get(obj.metadata.labels, alert_service, "")
           found := {f | srv == os_services[_]; f = true}
           count(found) == 0
           msg := sprintf(
-            "pod has %q label, but %q label is missing or does not have a valid value (got: %s, valid: %s)",
-            ["tier: os", "service", json.marshal(srv), os_services],
+            "pod has %q label with value: os, but %q label is missing or does not have a valid value (got: %s, valid: %s)",
+            [alert_tier, alert_service, json.marshal(srv), os_services],
           )
         }
 
@@ -80,12 +85,13 @@ spec:
           obj := input.review.object
           obj.kind == violation_owners[_]
 
-          obj.spec.template.metadata.labels.tier == "os"
-          srv := object.get(obj.spec.template.metadata.labels, "service", "")
+          t := object.get(obj.spec.template.metadata.labels, alert_tier, "")
+          t == "os"
+          srv := object.get(obj.spec.template.metadata.labels, alert_service, "")
           found := {f | srv == os_services[_]; f = true}
           count(found) == 0
           msg := sprintf(
-            "pod has %q label, but %q label is missing or does not have a valid value (got: %s, valid: %s)",
-            ["tier: os", "service", json.marshal(srv), os_services],
+            "pod has %q label with value: os, but %q label is missing or does not have a valid value (got: %s, valid: %s)",
+            [alert_tier, alert_service, json.marshal(srv), os_services],
           )
         }

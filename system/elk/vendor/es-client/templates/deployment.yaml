@@ -37,7 +37,7 @@ spec:
             name: es-client-etc
       initContainers:
       - name: sysctl
-        image: {{.Values.global.registry}}/elk-elasticsearch:{{.Values.global.image_version_elasticsearch}}
+        image: {{.Values.global.registry}}/elk-elasticsearch:{{.Values.image_version_elasticsearch}}
         imagePullPolicy: IfNotPresent
         command: ['sysctl', '-w', 'vm.max_map_count=262144']
         securityContext:
@@ -50,7 +50,7 @@ spec:
               add:
                 - IPC_LOCK
                 - SYS_RESOURCE
-          image: {{.Values.global.registry}}/elk-elasticsearch:{{.Values.global.image_version_elasticsearch}}
+          image: {{.Values.global.registry}}/elk-elasticsearch:{{.Values.image_version_elasticsearch}}
           imagePullPolicy: IfNotPresent
 #          command: ["/usr/local/bin/dumb-init", "/bin/bash", "-c", "while true; do sleep 1000; done"]
           command: ["/usr/local/bin/dumb-init", "/bin/bash", "/es-etc/elasticsearch-start"]
@@ -75,7 +75,7 @@ spec:
             - name: HTTP_ENABLE
               value: "true"
             - name: ES_JAVA_OPTS
-              value: "-XX:MaxRAM=5g -XX:MaxGCPauseMillis=5000 -Xms1g -Xmx1g"
+              value: "-Dlog4j2.formatMsgNoLookups=true -XX:MaxRAM=5g -XX:MaxGCPauseMillis=5000 -Xms1g -Xmx1g"
             - name: READONLYREST_ENABLE
               value: "true"
           volumeMounts:
@@ -83,10 +83,10 @@ spec:
               name: es-etc
           ports:
             - name: transport
-              containerPort: {{.Values.global.cluster_port}}
+              containerPort: {{.Values.cluster_port}}
               protocol: TCP
             - name: http
-              containerPort: {{.Values.global.http_port}}
+              containerPort: {{.Values.http_port}}
               protocol: TCP
           livenessProbe:
           livenessProbe:
@@ -94,6 +94,6 @@ spec:
               command:
               - bash
               - -c
-              - 'curl http://{{.Values.global.admin_user}}:{{.Values.global.admin_password}}@localhost:9200/_cluster/health?local=true'
+              - 'curl http://{{.Values.global.elk_elasticsearch_admin_user}}:{{.Values.global.elk_elasticsearch_admin_password}}@localhost:9200/_cluster/health?local=true'
             initialDelaySeconds: 90
             periodSeconds: 60

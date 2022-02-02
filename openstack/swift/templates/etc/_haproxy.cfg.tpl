@@ -3,6 +3,10 @@
 {{- $cluster    := index . 1 -}}
 {{- $context    := index . 2 -}}
 global
+  # Drop privileges after root started haproxy (user:haproxy / group:haproxy)
+  uid 99
+  gid 99
+
   log stdout format raw local0 info
   zero-warning
 

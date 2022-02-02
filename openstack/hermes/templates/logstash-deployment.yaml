@@ -32,7 +32,7 @@ spec:
             name: logstash-etc
       containers:
         - name: logstash
-          image: docker.elastic.co/logstash/logstash:{{.Values.hermes_image_version_logstash}}
+          image: {{.Values.global.registry}}/hermes-logstash:{{.Values.hermes_image_version_logstash}}
           imagePullPolicy: IfNotPresent
           command:
             - logstash
@@ -52,6 +52,11 @@ spec:
                   fieldPath: metadata.namespace
             - name: LS_JAVA_OPTS
               value: "-Dnetworkaddress.cache.ttl=1"
+            - name: METIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: logstash-secret
+                  key: METIS_PASSWORD
           volumeMounts:
             - name: hermes-etc
               mountPath: /hermes-etc

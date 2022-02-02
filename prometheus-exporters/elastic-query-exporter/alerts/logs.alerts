@@ -41,7 +41,7 @@ groups:
           description: "Octobus Keystone endpoint: `in-https` is down in region `{{ $labels.region }}`"
           summary: "Octobus Keystone endpoint: `in-https` is down in region `{{ $labels.region }}`"
       - alert: OctobusJumpserverLogShipping
-        expr: elasticsearch_octobus_jumpserver_logs_doc_count == 0
+        expr: label_replace(node_uname_info, "logs", "$0", "nodename", ".*") unless on (logs) (elasticsearch_octobus_jumpserver_logs_doc_count > 0)
         for: 15m
         labels:
           severity: warning
@@ -51,7 +51,7 @@ groups:
           playbook: 'docs/support/playbook/elastic_kibana_issues.html#jumpserver-logs-missing-in-octobus'
           dashboard: octobus-logshipping
         annotations:
-          description: "Jumpserver logs shipping to Octobus not working"
+          description: "Jumpserver log shipping to Octobus not working for `{{ $labels.server_name }}`"
           summary: "JumpserverLogs2Octobus not working"
       - alert: OctobusJumpserverLogshipperEndpointDown
         expr: elasticsearch_octobus_jumpserver_logs_doc_count == 0 and on  (region) {target=~"in-beats.*"} == 0
@@ -68,9 +68,9 @@ groups:
           summary: "Octobus Jumpserver  endpoint: `in-beats` is down in region `{{ $labels.region }}`"
       - alert: OctobusESXiHostLogShippingNotWorking
         expr: |
-                vrops_hostsystem_runtime_connectionstate{state="connected", vcenter!~"vc-mgmt.*"} and
+                vrops_hostsystem_runtime_connectionstate{state="connected"} and
                 on (hostsystem) vrops_hostsystem_runtime_maintenancestate{state="notInMaintenance"} unless
-                on (hostsystem) elasticsearch_octobus_esx_hostsystem_doc_count
+                on (hostsystem) elasticsearch_octobus_esx_hostsystem_doc_count > 0
         for: 15m
         labels:
           severity: critical
@@ -82,7 +82,9 @@ groups:
           description: "ESXi logs missing in Octobus for host {{ $labels.hostsystem }}."
           summary: "ESXi logs missing in Octobus for host {{ $labels.hostsystem }}."
       - alert: OctobusVCSALogShippingNotWorking
-        expr: vrops_vcenter_vc_fullname_info{vcenter!~"vc-mgmt.*"} unless on(vcenter) elasticsearch_octobus_vcsa_vcenter_doc_count
+        expr: |
+                vrops_vcenter_vc_fullname_info unless
+                on(vcenter) elasticsearch_octobus_vcsa_vcenter_doc_count > 0
         for: 15m
         labels:
           severity: critical
@@ -93,3 +95,16 @@ groups:
         annotations:
           description: "VCSA logs missing in Octobus for vCenter {{ $labels.vcenter }}."
           summary: "VCSA logs missing in Octobus for vCenter {{ $labels.vcenter }}."
+      - alert: OctobusNSXLogShippingNotWorking
+        expr: |
+                vrops_nsxt_mgmt_node_connectivity_status unless
+                on(nsxt_mgmt_node) elasticsearch_octobus_nsx_nsxt_mgmt_node_doc_count > 0
+        for: 15m
+        labels:
+          severity: info
+          tier: vmware
+          service: audit
+          meta: "NSX-T logs missing in Octobus for {{ $labels.nsxt_mgmt_node }}."
+        annotations:
+          description: "NSX-T logs missing in Octobus for {{ $labels.nsxt_mgmt_node }}."
+          summary: "NSX-T logs missing in Octobus for {{ $labels.nsxt_mgmt_node }}."

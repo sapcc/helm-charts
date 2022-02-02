@@ -18,6 +18,7 @@ spec:
       labels:
         name: kube-parrot
         k8s-app: kube-parrot
+        service: kube-parrot
       annotations:
     spec:
       priorityClassName: system-node-critical
@@ -27,7 +28,7 @@ spec:
       {{- end }}
       containers:
       - name: parrot
-        image: "{{ $.Values.images.parrot.repository }}:{{ $.Values.images.parrot.tag }}"
+        image: "{{ required ".Values.global.registryAlternateRegion is missing" .Values.global.registryAlternateRegion }}/{{ .Values.images.parrot.image }}:{{ .Values.images.parrot.tag }}"
         imagePullPolicy: IfNotPresent
         command:
           - /parrot

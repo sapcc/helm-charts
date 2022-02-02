@@ -15,6 +15,7 @@ octavia_plugins = f5_plugin
 [api_settings]
 bind_host = 0.0.0.0
 bind_port = {{.Values.global.octavia_port_internal | default 9876}}
+healthcheck_enabled = True
 
 # Enable/disable exposing API endpoints. By default, both v1 and v2 are enabled.
 api_v1_enabled = False
@@ -28,6 +29,9 @@ enabled_provider_drivers = {{ .Values.providers }}
 
 # Default provider driver
 default_provider_driver = {{ .Values.default_provider | default "noop_driver" }}
+
+[healthcheck]
+backends = octavia_db_check
 
 [controller_worker]
 worker = {{ .Values.worker | default 1 }}
@@ -44,10 +48,15 @@ cleanup_interval = {{ .Values.house_keeping.cleanup_interval }}
 load_balancer_expiry_age = {{ .Values.house_keeping.expiry_age }}
 {{- end }}
 
-{{ if .Values.network_segment_physical_network }}
 [networking]
+caching = {{ .Values.caching | default "true" }}
+cache_time = {{ .Values.cache_time | default "90" }}
+{{ if .Values.network_segment_physical_network }}
 f5_network_segment_physical_network = {{ .Values.network_segment_physical_network }}
 {{- end }}
+
+[task_flow]
+max_workers = {{ .Values.max_workers | default "10" }}
 
 [database]
 connection = {{ include "db_url_mysql" . }}
@@ -99,7 +108,7 @@ service_type = load-balancer
 
 {{- include "ini_sections.cache" . }}
 
-{{- if .Values.cors.enabled }}
+{{ if .Values.cors.enabled -}}
 [cors]
 allowed_origin = {{ .Values.cors.allowed_origin | default "*"}}
 allow_credentials = true
@@ -107,20 +116,20 @@ expose_headers = Content-Type,Cache-Control,Content-Language,Expires,Last-Modifi
 allow_headers = Content-Type,Cache-Control,Content-Language,Expires,Last-Modified,Pragma,X-Auth-Token,X-Openstack-Request-Id,X-Subject-Token,X-Project-Id,X-Project-Name,X-Project-Domain-Id,X-Project-Domain-Name,X-Domain-Id,X-Domain-Name,X-User-Id,X-User-Name,X-User-Domain-name
 {{- end }}
 
-{{ if .Values.watcher.enabled }}
+{{ if .Values.watcher.enabled -}}
 [watcher]
 enabled = true
 service_type = loadbalancer
 config_file = /etc/octavia/watcher.yaml
-{{ end }}
+{{- end }}
 
-{{ if .Values.audit.enabled }}
+{{ if .Values.audit.enabled -}}
 [audit]
 enabled = True
 audit_map_file = /etc/octavia/octavia_api_audit_map.yaml
 ignore_req_list = GET, HEAD
 record_payloads = {{ if .Values.audit.record_payloads -}}True{{- else -}}False{{- end }}
 metrics_enabled = {{ if .Values.audit.metrics_enabled -}}True{{- else -}}False{{- end }}
-
 {{- include "ini_sections.audit_middleware_notifications" . }}
 {{- end }}
+

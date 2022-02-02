@@ -24,8 +24,13 @@ concourse:
     web:
       clusterName: "Concourse CI"
 
-      defaultBuildLogsToRetain: "50"
-      maxBuildLogsToRetain: "100"
+      resourceCheckingInterval: 2m
+      resourceTypeCheckingInterval: 2m
+      buildTrackerInterval: 20s
+      defaultBuildLogsToRetain: "25"
+      maxBuildLogsToRetain: "50"
+      defaultDaysToRetainBuildLogs: "90"
+      maxDaysToRetainBuildLogs: "180"
 
       bindIp: 0.0.0.0
       bindPort: "8080"
@@ -124,6 +129,10 @@ concourse:
 
   postgresql:
     enabled: true
+
+    image:
+      registry: keppel.eu-de-2.cloud.sap/ccloud-dockerhub-mirror
+
     postgresqlUsername: concourse
     # postgresqlPassword:
     postgresqlDatabase: concourse
@@ -137,18 +146,22 @@ concourse:
 
     master:
       nodeSelector:
-        ccloud.sap.com/nodepool: "ci-web-db"
+        ccloud.sap.com/nodepool: "ci-db"
 
       tolerations:
         - key: "ci"
           operator: Equal
-          value: "system"
+          value: "db"
           effect: "NoSchedule"
 
     resources:
       requests:
         memory: 12Gi
         cpu: 1
+
+    volumePermissions:
+      image:
+        registry: keppel.eu-de-2.cloud.sap/ccloud-dockerhub-mirror
 
   rbac:
     create: true
@@ -193,7 +206,7 @@ backup:
   #os_project_name:
   #os_project_domain:
 gitResourceProxy:
-  replicas: 10
+  replicas: 15
   timeout: 60s
   enabled: true
   debug: true

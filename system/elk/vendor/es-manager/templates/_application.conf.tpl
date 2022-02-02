@@ -25,16 +25,16 @@ data.path = "./cerebro.db"
 # A list of known hosts
 hosts = [
   {
-    host = "http://{{.Values.global.endpoint_host_internal}}:{{.Values.global.http_port}}"
-    name = "elk cluster"
+    host = "http://{{.Values.endpoint_host_internal}}:{{.Values.http_port}}"
+    name = "{{ .Values.global.cluster }} elk cluster"
     auth = {
-      username = "{{.Values.global.admin_user}}"
-      password = "{{.Values.global.admin_password}}"
+      username = "{{.Values.global.elk_elasticsearch_admin_user}}"
+      password = "{{.Values.global.elk_elasticsearch_admin_password}}"
     }
   },
   {
     host = "http://elastiflow-master.elastiflow:9200"
-    name = "elastiflow cluster"
+    name = "{{ .Values.global.cluster }} elastiflow cluster"
     auth = {
       username = "{{.Values.global.elastiflow_admin_user}}"
       password = "{{.Values.global.elastiflow_admin_password}}"

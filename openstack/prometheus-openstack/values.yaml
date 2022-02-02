@@ -10,9 +10,9 @@ openstack-prometheus:
 
   retentionTime: 7d
 
-  additionalScrapeConfigs:
-    name: openstack-additional-scrape-config
-    key: scrape-config.yaml
+#  additionalScrapeConfigs:
+#    name: openstack-additional-scrape-config
+#    key: scrape-config.yaml
 
   ingress:
     enabled: true
@@ -33,6 +33,25 @@ openstack-prometheus:
 
   serviceAccount:
     create: true
+
+  serviceDiscoveries:
+    endpoints:
+      forbiddenMetrics:
+        - openstack_http_response_time_bucket
+        - openstack_http_response_time_count
+        - openstack_http_response_time_created
+        - openstack_http_response_time_sum
+        - openstack_http_requests_created
+        - openstack_http_requests_total
+    pods:
+      enabled: true
+      forbiddenMetrics:
+        - openstack_http_response_time_bucket
+        - openstack_http_response_time_count
+        - openstack_http_response_time_created
+        - openstack_http_response_time_sum
+        - openstack_http_requests_created
+        - openstack_http_requests_total
 
   alertmanagers:
     # Enabled via secrets

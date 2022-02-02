@@ -10,10 +10,24 @@ data:
   # The format definition for this file is in the sapcc/gatekeeper-addons repository at <doop-central/README.md>.
   docs.html.yaml: |
     Header: |
-      <p>To perform automatic validations on Kubernetes objects, we run a deployment of <a href="https://github.com/open-policy-agent/gatekeeper">OPA Gatekeeper</a> in each cluster (in audit-only mode). This dashboard aggregates all policy violations reported by those Gatekeeper instances.</p>
+      <p>
+        To perform automatic validations on Kubernetes objects, we run a deployment of
+        <a href="https://github.com/open-policy-agent/gatekeeper">OPA Gatekeeper</a> in each
+        cluster (in audit-only mode). This dashboard aggregates all policy violations
+        reported by those Gatekeeper instances.
+      </p>
       <dl>
         <dt>Where are checks defined? How can I add or modifiy them?</dt>
-        <dd>Each check consists of a constraint template in the <a href="https://github.com/sapcc/helm-charts/tree/master/system/gatekeeper/templates"><code>gatekeeper</code> chart</a>, one or more constraint configurations in the <a href="https://github.com/sapcc/helm-charts/tree/master/system/gatekeeper-config/templates"><code>gatekeeper-config</code> chart</a>, and a documentation string in the <a href="https://github.com/sapcc/helm-charts/blob/master/system/doop-central/templates/configmap.yaml">config for this dashboard</a>. For how to write constraint templates and configs, check out <a href="https://open-policy-agent.github.io/gatekeeper/website/docs/howto/">this guide from the Gatekeeper documentation</a>.</dd>
+        <dd>
+          Each check consists of a constraint template in the
+          <a href="https://github.com/sapcc/helm-charts/tree/master/system/gatekeeper/templates"><code>gatekeeper</code> chart</a>,
+          one or more constraint configurations in the
+          <a href="https://github.com/sapcc/helm-charts/tree/master/system/gatekeeper-config/templates"><code>gatekeeper-config</code> chart</a>,
+          and a documentation string in the
+          <a href="https://github.com/sapcc/helm-charts/blob/master/system/doop-central/templates/configmap.yaml">config for this dashboard</a>.
+          For how to write constraint templates and configs, check out
+          <a href="https://open-policy-agent.github.io/gatekeeper/website/docs/howto/">this guide from the Gatekeeper documentation</a>.
+        </dd>
         <dt>Did we improve over time?</dt>
         <dd>To see historical trends, check out the <a href="https://grafana.global.cloud.sap/d/doop-overview/doop-overview?orgId=1">Grafana dashboard</a>.<dd>
         {{- if .Values.kubernikus }}
@@ -21,122 +35,14 @@ data:
         <dd>All other clusters report into the main dashboard at <a href="https://doop.global.{{ $tld }}">doop.global.{{ $tld }}</a>.</dd>
         {{- else }}
         <dt>Where are the a/k/v-clusters?</dt>
-        <dd>The Kubernikus-related clusters report into a separate dashboard at <a href="https://doop-kubernikus.global.{{ $tld }}">doop-kubernikus.global.{{ $tld }}</a>, in order to keep this dashboard at a more manageable size.</dd>
+        <dd>
+          The Kubernikus-related clusters report into a separate dashboard at <a href="https://doop-kubernikus.global.{{ $tld }}">doop-kubernikus.global.{{ $tld }}</a>,
+          in order to keep this dashboard at a more manageable size.
+        </dd>
         {{- end }}
       </dl>
-    GkDeprecatedApiVersions: |
-      <p>This check finds references to several deprecated API versions in Helm manifests.</p>
-      <dl>
-        <dt>Why is this a problem?</dt>
-        <dd>We cannot upgrade to Kubernetes 1.16 or newer before all such references are removed.</dd>
-        <dt>How to fix?</dt>
-        <dd>In your Helm chart templates, replace the deprecated API versions with their newer counterparts, <a href="https://kubernetes.io/blog/2019/07/18/api-deprecations-in-1-16/">as explained in this article</a>. After this change, <code>helm diff upgrade</code> will show a diff that deletes the object with the old API version and recreates it with the new API version, but <code>helm upgrade</code> will understand that we're still talking about the same object and not touch it. But regardless, it's recommended to perform the API version change when you do not have any other diffs in your pipeline, because those other diffs might be obscured by this fake diff.</dd>
-        <dt>There is a violation report for a Helm 2 release, but we have already migrated to Helm 3. What's going on?</dt>
-        <dd>
-          You probably forgot to cleanup your Helm 2 releases after migrating to Helm 3. Double-check with <code>helm3 ls</code> that you are really deploying with Helm 3, then cleanup the old Helm 2 releases manually. You can find them with:
-          <pre><code>kubectl get configmaps -n kube-system -l OWNER=TILLER | grep $RELEASE_NAME</code></pre>
-        </dd>
-      </dl>
-    GkHelm2Releases: |
-      <p>This check finds Helm 2 releases.</p>
-      <dl>
-        <dt>Why is this a problem?</dt>
-        <dd>Helm 2 does not support Kubernetes 1.17 or newer. We have to migrate all Helm 2 releases to Helm 3 before upgrading.</dd>
-        <dt>How to migrate from Helm 2 to Helm 3?</dt>
-        <dd>There is a detailed presentation in SharePoint in the folder for the July 2020 Demo Day.</dd>
-        <dt>My release is listed here, but we have already migrated to Helm 3. What's going on?</dt>
-        <dd>
-          You probably forgot to cleanup your Helm 2 releases after migrating to Helm 3. Double-check with <code>helm3 ls</code> that you are really deploying with Helm 3, then cleanup the old Helm 2 releases manually. You can find them with:
-          <pre><code>kubectl get configmaps -n kube-system -l OWNER=TILLER | grep $RELEASE_NAME</code></pre>
-        </dd>
-      </dl>
-    GkImagesFromDockerhub: |
-      <p>This check finds containers that pull their image from Docker Hub.</p>
-      <dl>
-        <dt>Why is this a problem?</dt>
-        <dd>Docker Hub has rather severe rate limits for image pulls. If we need to pull several images at once, e.g. to recover from a region-wide outage, the recovery may be significantly slowed down by the rate limiting.</p>
-        <dt>How to fix?</dt>
-        <dd>We have set up a Docker Hub mirror at <code>keppel.$REGION.cloud.sap/ccloud-dockerhub-mirror</code>. The regional mirror is defined in globals.yaml and can be referenced as <code>$.Values.global.dockerHubMirror</code> in most Helm charts (<a href="https://github.com/sapcc/helm-charts/blob/409aa9940ecb600dafc0f9a20c973566af9eaf1f/openstack/backup-replication/templates/statsd-deployment.yaml#L29">example</a>).<br><br>If a particular image has not been mirrored yet, you need to <code>docker pull</code> it once from eu-de-1 with your logged-in Docker client. Afterwards, the image can be pulled from all regions without login.</dd>
-        <dt>What about circular dependencies?</dt>
-        <dd>If your pod pulls an image from Keppel, but Keppel needs that pod up and running to work, that's probably not a good idea. Get in touch with Stefan Majewsky and we'll figure out how to proceed.</dd>
-      </dl>
-    GkPrometheusruleAlertLabels: |
-      <p>This check finds alert rules that do not have all required labels and annotations.</p>
-      <dl>
-        <dt>Why is this a problem?</dt>
-        <dd>
-          Without the <code>severity</code> and <code>tier</code> label, alerts cannot be routed to the right Slack channels.<br>
-          Without the <code>playbook</code> label, operators will not know how to fix the alert.<br>
-          Without the <code>summary</code> and <code>description</code> annotations, operators will not know what the alert is about.<br>
-        </dd>
-        <dt>How to fix?</dt>
-        <dd>Add the missing labels and annotations, as reported. Note that <code>severity</code> only accepts the values <code>critical</code>, <code>warning</code> and <code>info</code>.</dd>
-      </dl>
-    GkRegionValueMissing: |
-      <p>This check finds Helm releases that do not set <code>.Values.global.region</code>.</p>
-      <dl>
-        <dt>Why is this a problem?</dt>
-        <dd>We had some incidents where configuration for one region was accidentally deployed in a different region. We want to introduce a check that forbids such deployments, but for this check to be effective, we must be able to identify which region a Helm release belongs to.</dd>
-        <dt>How to fix?</dt>
-        <dd>Amend your deployment process to include the values file <code>$REGION/values/globals.yaml</code> from the cc/secrets repo in your <code>helm upgrade</code> invocation. If you are using the shared Helm tasks, this is done by adjusting the <code>VALUES</code> parameter to include <code>local:globals</code>.</dd>
-      </dl>
-    GkResourceLimits: |
-      <p>This check finds containers that do not have CPU and memory limits configured.</p>
-      <dl>
-        <dt>Why is this a problem?</dt>
-        <dd>Such containers could use an unbounded amount of resources (for example, because of a memory leak). Those resources would then not be available to other (potentially more important) containers running on the same node. We have already had API outages because of this.</dd>
-        <dt>How to fix?</dt>
-        <dd>Configure requests and limits for &quot;cpu&quot; and &quot;memory&quot; as described in <a href="https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/">this article</a>. Choose values based on historical usage, by looking at the <code>container_cpu_usage_seconds_total</code> and <code>container_memory_working_set_bytes</code> metrics in prometheus-kubernetes. The Grafana dashboard <a href="https://grafana.eu-de-1.cloud.sap/d/kubernetes-container-resources/kubernetes-container-resources">Container Resources</a> shows these metrics in the &quot;CPU Usage&quot; and &quot;Memory Usage&quot; panels. <strong>Set the memory request equal to the memory limit to avoid unexpected scheduling behavior.</strong> For CPU, request and limit can and should diverge: The request represents the baseline load, the limit encompasses all expected spikes.</dd>
-      </dl>
-    GkVulnerableImages: |
-      <p>This check finds containers whose image contains known vulnerabilities.</p>
-      <dl>
-        <dt>Where to find vulnerability reports?</dt>
-        <dd>Copy-paste the path part of the image (e.g. &quot;keppel.eu-de-1.cloud.sap/ccloud/limes&quot;) into your browser address bar. This opens the image list for that repo in Elektra's Keppel UI. Find the relevant image (look for a vulnerability status other than &quot;Clean&quot;) and open its details view to find the vulnerabilities, down near the image layers where they were introduced.</dd>
-      </dl>
-    GkHighCPURequests: |
-      <p>This check finds Pods that request more than 6 CPU.</p>
-      <dl>
-        <dt>Why is this a problem?</dt>
-        <dd>aPod VM(s) all have 10 CPU in total. Pods that request more than 6 CPU will have difficulties getting scheduled due to the number of DaemonSet (logging, monitoring, etc.) already running on all nodes.</dd>
-        <dt>How to fix?</dt>
-        <dd>Consider scaling by number of Pods (don't use a single Pod). You can also consider deploying to other clusters (i.e Scaleout) instead of Baremetal control plane.</dd>
-      </dl>
-    GkImagesFromCorrectRegistry: |
-      <p>This check finds containers that do not pull their images from Keppel in the correct region.</p>
-      <dl>
-        <dt>Why is this a problem?</dt>
-        <dd>By pulling your images from the same region as your Pod deployment, you benefit from higher download bandwidth and lower latencies compared to pulling from a different region. This is especially true for big images.</dd>
-        <dt>How to fix?</dt>
-        <dd>
-          Replace your current registry with the appropriate regional registry value as defined in <code>$REGION/values/globals.yaml</code> file from cc/secrets repo.<br><br>
-          Instead of manually specifying the regional registry value, it is recommended to amend your deployment process to include the <code>globals.yaml</code> file in your <code>helm upgrade</code> invocation,
-          then you can reference the specific value directly in your Helm chart (<a href="https://github.com/sapcc/helm-charts/blob/f1e70530f2f7e7784ac9c15886dfe57914b5ca2d/system/doop-central/templates/deployment.yaml#L36">example</a>).
-        </dd>
-      </dl>
-    GkIngressAnnotations: |
-      <p>This check validates annotations on Ingress objects.</p>
-      <dl>
-        <dt>Why is this a problem?</dt>
-        <dd>
-          Usage of <code>-snippet</code> annotations is not allowed to prevent unauthorized access to Kubernetes objects as described in CVE-2021-25742.<br><br>
-          Starting in v0.22.0, Ingress definitions using the annotation <code>rewrite-target</code> are not backwards compatible with previous versions.
-          In v0.22.0 and beyond, any substrings within the request URI that need to be passed to the rewritten path must explicitly be defined in a capture group.
-        </dd>
-        <dt>How to fix?</dt>
-        <dd>
-          If you specify a <code>-snippet</code> annotation on your Ingress, it is essentially a no-op (i.e. ineffective). If needed, they must go to the Ingress controller configuration. Get in touch with Arno Uhlig for a solution.<br><br>
-          For <code>rewrite-target</code> annotation, you must switch to the new syntax (<a href="https://github.com/kubernetes/ingress-nginx/blob/main/docs/examples/rewrite/README.md#rewrite-target">example</a>).
-        </dd>
-      </dl>
-    GkPodLabels: |
-      <p>This check validates required labels on Pods.</p>
-      <dl>
-        <dt>Why is this a problem?</dt>
-        <dd>
-          Each Pod should define at least a <code>tier</code> or <code>service</code> label that correspond to an alert channel (similar to the labels on your alert definitions) to enable delivery of generic Kubernetes-level alerts like <code>KubernetesPodRestartingTooMuch</code> to the more specific channels that the service owners observe.<br>
-          When value of <code>tier</code> label is <code>os</code> then <code>service</code> label is also required and must have a value as per the Alertmanager config.
-        </dd>
-        <dt>How to fix?</dt>
-        <dd>Add the missing labels, as reported.</dd>
-      </dl>
+
+{{- range $path, $bytes :=  .Files.Glob  "files/**.html" }}
+{{ printf "%s" $path | trimPrefix "files/" | trimSuffix ".html" | indent 4 }}: |
+{{ printf "%s" $bytes | indent 6 }}
+{{- end -}}

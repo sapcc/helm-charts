@@ -1,9 +1,16 @@
 global:
   region: DEFINED-IN-SECRETS
   tld: DEFINED-IN-SECRETS
+  elk_elasticsearch_audit_user: DEFINED-IN-SECRETS
+  elk_elasticsearch_audit_password: DEFINED-IN-SECRETS
+  elk_elasticsearch_http_user: DEFINED-IN-SECRETS
+  elk_elasticsearch_http_password: DEFINED-IN-SECRETS
+
 
 es_master:
   enabled: false
+  http_port: 9200
+  cluster_port: 9301
   legacy_service_name: true
   master_dummy_port: '63062'
   client_replicas: '3'
@@ -17,6 +24,8 @@ es_data:
   enabled: false
   qalogs:
     enabled: false
+  http_port: 9200
+  cluster_port: 9301
   resources:
     requests:
       cpu: "2000m"
@@ -28,28 +37,33 @@ es_data:
 
 es_client:
   enabled: false
+  http_port: 9200
+  cluster_port: 9301
+  cluster_name: elk-elasticsearch.scaleout
   qalogs:
     enabled: false
 
 es_manager:
   enabled: false
+  http_port: 9200
+  cluster_port: 9301
+  endpoint_host_internal: es-client
   image_elasticsearch_manager: lmenezes/cerebro:0.9.4
-  
+
 
 wall_e:
   enabled: false
+  http_port: 9200
+  kibana_service: 'kibana'
+  kibana_port_public: 5601
+  endpoint_host_internal: es-client
 
 kibana:
   enabled: false
-
-logstash:
-  enabled: false
-  image_version: '20211015145157'
-  input_netflow_port: 2055
-  input_syslog_port: 514
-  input_bigiplogs_port: 1513
-  input_alertmanager_port: 1515
-  input_deployments_port: 1516
+  service_name: 'kibana'
+  port_public: 5601
+  http_port: 9200
+  endpoint_host_internal: es-client
 
 fluent:
   enabled: false
@@ -60,24 +74,11 @@ fluent:
   alerts:
     enabled: false
     prometheus: infra-collector
-  datahub:
+  metis:
     enabled: false
-    host: datahubdb-mariadb.datahub
+    host: metisdb-mariadb.metis
     port: 3306
-    db: datahub
-    username: DEFINED-IN-SECRETS
-    password: DEFINED-IN-SECRETS
-
-fluent_octobus:
-  enabled: false
-  port: 8887
-  image_version: '20211110123325'
-  forwarding:
-    keystone:
-      host: none
-  alerts:
-    enabled: false
-    prometheus: infra-collector
+    db: metis
 
 fluent_systemd:
   enabled: false
@@ -100,10 +101,12 @@ fluent_scaleout:
   image_version: '20211110123325'
   prometheus: infra-frontend
   port: 8885
+  http_port: 9200
+  endpoint_host_internal: es-client
   logstash_shards: 3
   indexname: logstash
-  datahub:
+  metis:
     enabled: false
-    host: datahubdb
-    db: datahub
+    host: metisdb
+    db: metis
     port: 443

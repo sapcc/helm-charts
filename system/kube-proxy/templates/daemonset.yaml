@@ -18,6 +18,7 @@ spec:
       labels:
         name: kube-proxy
         k8s-app: kube-proxy
+        service: kube-parrot
       annotations:
         configmap-kube-proxy-hash: {{ include (print $.Template.BasePath "/configmap-kube-proxy.yaml") $ | sha256sum }}
 {{- if .Values.sidecars.ipmasq }}
@@ -36,7 +37,7 @@ spec:
       {{- end }}
       containers:
       - name: proxy
-        image: "{{ .Values.images.proxy.repository }}:{{ .Values.images.proxy.tag }}"
+        image: "{{ required ".Values.global.registryAlternateRegion is missing" .Values.global.registryAlternateRegion }}/{{ .Values.images.proxy.image }}:{{ .Values.images.proxy.tag }}"
         imagePullPolicy: IfNotPresent
         lifecycle:
           postStart:
@@ -80,7 +81,7 @@ spec:
         {{- end }}
 {{- if .Values.sidecars.parrot }}
       - name: parrot
-        image: "{{ .Values.images.parrot.repository }}:{{ .Values.images.parrot.tag }}"
+        image: "{{ required ".Values.global.registryAlternateRegion is missing" .Values.global.registryAlternateRegion }}/{{ .Values.images.parrot.image }}:{{ .Values.images.parrot.tag }}"
         imagePullPolicy: IfNotPresent
         command:
           - /parrot
@@ -117,7 +118,7 @@ spec:
 {{- end }}
 {{- if .Values.sidecars.externalip }}
       - name: externalip
-        image: "{{ .Values.images.externalip.repository }}:{{ .Values.images.externalip.tag }}"
+        image: "{{ required ".Values.global.registryAlternateRegion is missing" .Values.global.registryAlternateRegion }}/{{ .Values.images.externalip.image }}:{{ .Values.images.externalip.tag }}"
         command:
           - /externalip 
 {{- if .Values.externalip.ignoreaddress }}
@@ -137,7 +138,7 @@ spec:
 {{- if .Values.sidecars.nanny }}
       - name: nanny
         imagePullPolicy: IfNotPresent
-        image: "{{ .Values.images.nanny.repository }}:{{ .Values.images.nanny.tag }}"
+        image: "{{ required ".Values.global.registryAlternateRegion is missing" .Values.global.registryAlternateRegion }}/{{ .Values.images.nanny.image }}:{{ .Values.images.nanny.tag }}"
         resources:
           limits:
             cpu: 100m
@@ -152,7 +153,7 @@ spec:
 {{- end }}
 {{- if .Values.sidecars.ipmasq }}
       - name: ipmasq
-        image: "{{ .Values.images.ipmasq.repository }}:{{ .Values.images.ipmasq.tag }}"
+        image: "{{ required ".Values.global.registryAlternateRegion is missing" .Values.global.registryAlternateRegion }}/{{ .Values.images.ipmasq.image }}:{{ .Values.images.ipmasq.tag }}"
         securityContext:
           privileged: false
           capabilities:

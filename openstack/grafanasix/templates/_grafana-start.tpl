@@ -18,19 +18,17 @@ function start_application {
   export GRAFANA_LOCAL_USER={{.Values.grafana.local.user}}
   export GRAFANA_LOCAL_PASSWORD={{.Values.grafana.local.password}}
   # install some plugins
-  grafana-cli plugins install grafana-piechart-panel
-  grafana-cli plugins install flant-statusmap-panel
-  grafana-cli plugins install natel-discrete-panel
-  grafana-cli plugins install vonage-status-panel
-  grafana-cli plugins install blackmirror1-statusbygroup-panel
-  grafana-cli plugins install digrich-bubblechart-panel
-  grafana-cli plugins install briangann-datatable-panel
-  # since grafana version 4.6.2 the histogram feature is part of the normal graph in the axes tab, so this plugin is no longer needed
-  # grafana-cli plugins install mtanda-histogram-panel
-  grafana-cli plugins install grafana-worldmap-panel
-  grafana-cli plugins install yesoreyeram-boomtable-panel
-  grafana-cli plugins install jdbranham-diagram-panel
-  grafana-cli plugins install agenty-flowcharting-panel
+  grafana-cli plugins install grafana-piechart-panel 1.6.2
+  grafana-cli plugins install flant-statusmap-panel 0.4.2
+  grafana-cli plugins install natel-discrete-panel 0.1.1
+  grafana-cli plugins install vonage-status-panel 1.0.11
+  grafana-cli plugins install blackmirror1-statusbygroup-panel 1.1.2
+  grafana-cli plugins install digrich-bubblechart-panel 1.2.0
+  grafana-cli plugins install briangann-datatable-panel 1.0.3
+  grafana-cli plugins install grafana-worldmap-panel 0.3.3
+  grafana-cli plugins install yesoreyeram-boomtable-panel 1.4.1
+  grafana-cli plugins install jdbranham-diagram-panel 1.7.3
+  grafana-cli plugins install agenty-flowcharting-panel 0.9.1
   # install sapcc/grafana-prometheus-alertmanager-datasource
   grafana-cli --pluginUrl https://github.com/sapcc/grafana-prometheus-alertmanager-datasource/archive/master.zip plugins install prometheus-alertmanager
   # install sapcc/Grafana_Status_panel
@@ -55,7 +53,7 @@ function start_application {
   # do not do the above if the are in author more - then we do not provision anything
   if [ "{{.Values.grafana.mode}}" != "author" ]; then
     rm -rf /var/lib/grafana/provisioning/dashboards
-    cp -a /git/grafana-content/dashboards-config-{{.Values.grafana.mode}} /var/lib/grafana/provisioning/dashboards
+    cp -r /git/grafana-content/dashboards-config-{{.Values.grafana.mode}} /var/lib/grafana/provisioning/dashboards
   fi
   rm -rf /var/lib/grafana/provisioning/datasources
   mkdir -p /var/lib/grafana/provisioning/datasources

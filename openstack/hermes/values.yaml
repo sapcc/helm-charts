@@ -14,6 +14,12 @@ hermes:
         host: "keystone-rabbitmq.monsoon3"
 logstash:
   debug: false
+  jdbc:
+    enabled: false
+    schedule: "0 */1 * * *"
+    namespace: metis
+    service: metisdb-mariadb
+    db: keystone
 
 ## Configure resource requests and limits
 ## ref: http://kubernetes.io/docs/user-guide/compute-resources/
@@ -45,6 +51,8 @@ deploy_kibana: false # true in staging values
 rabbitmq_notifications:
   ## default: {{.Release.Name}}-rabbitmq.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}
   # host: rabbitmq
+  persistence: 
+    enabled: true
   users:
     default:
       user: openstack

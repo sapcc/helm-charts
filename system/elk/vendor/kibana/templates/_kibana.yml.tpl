@@ -8,7 +8,7 @@ server.host: "0.0.0.0"
 # server.maxPayloadBytes: 1048576
 
 # The Elasticsearch instance to use for all your queries.
-elasticsearch.hosts: http://{{.Values.global.endpoint_host_internal}}:{{.Values.global.http_port}}
+elasticsearch.hosts: http://{{.Values.endpoint_host_internal}}:{{.Values.http_port}}
 
 # preserve_elasticsearch_host true will send the hostname specified in `elasticsearch`. If you set it to false,
 # then the host you use to connect to *this* Kibana instance will be sent.
@@ -25,8 +25,8 @@ kibana.defaultAppId: "discover"
 # used by the Kibana server to perform maintenance on the kibana_index at startup. Your Kibana
 # users will still need to authenticate with Elasticsearch (which is proxied through
 # the Kibana server)
-elasticsearch.username: "{{.Values.global.admin_user}}"
-elasticsearch.password: "{{.Values.global.admin_password}}"
+elasticsearch.username: "{{.Values.global.elk_elasticsearch_admin_user}}"
+elasticsearch.password: "{{.Values.global.elk_elasticsearch_admin_password}}"
 
 # SSL for outgoing requests from the Kibana Server to the browser (PEM formatted)
 # server.ssl.cert: /path/to/your/server.crt

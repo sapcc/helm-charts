@@ -1,0 +1,18 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: ingress-nginx
+  labels:
+    prometheus: openstack
+spec:
+  namespaceSelector:
+    matchNames:
+      - kube-system
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: controller
+      app.kubernetes.io/instance: kube-system-metal
+      app.kubernetes.io/name: ingress-nginx
+  endpoints:
+  - interval: 30s
+    port: metrics

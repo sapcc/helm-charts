@@ -11,6 +11,11 @@
   scrape_timeout: 55s
   kubernetes_sd_configs:
   - role: pod
+# drop metrics with very high cardinality filling the tsdb
+  metric_relabel_configs:
+  - action: drop
+    source_labels: [__name__]
+    regex: 'regex: ^(openstack_http_response_time_bucket|openstack_http_response_time_count|openstack_http_response_time_created|openstack_http_response_time_sum|openstack_http_requests_created|openstack_http_requests_total)$'
   relabel_configs:
   - action: keep
     source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
@@ -59,6 +64,11 @@
   scrape_timeout: 55s
   kubernetes_sd_configs:
   - role: pod
+# drop metrics with very high cardinality filling the tsdb
+  metric_relabel_configs:
+  - action: drop
+    source_labels: [__name__]
+    regex: 'regex: ^(openstack_http_response_time_bucket|openstack_http_response_time_count|openstack_http_response_time_created|openstack_http_response_time_sum|openstack_http_requests_created|openstack_http_requests_total)$'
   relabel_configs:
   - action: keep
     source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]

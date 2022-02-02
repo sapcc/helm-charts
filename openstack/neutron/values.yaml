@@ -11,6 +11,7 @@ global:
   # imageRegistry:
   metadata_workers: 1
   rpc_response_timeout: 60
+  interconnection_user: interconnection
 
 pod:
   replicas:
@@ -81,17 +82,17 @@ pod:
         memory: "128Mi"
     dhcp_agent:
       requests:
-        cpu: "256m"
+        cpu: "1000m"
         memory: "1Gi"
       limits:
-        cpu: "512m"
+        cpu: "4000m"
         memory: "2.5Gi"
     linuxbridge_agent:
       requests:
         cpu: "256m"
         memory: "512Mi"
       limits:
-        cpu: "1000m"
+        cpu: "2000m"
         memory: "1Gi"
     nsxv3_agent:
       requests:
@@ -157,8 +158,8 @@ arista:
   sync_interval: 60
   conn_timeout: 30
   lossy_consolidation_limit: 50
-  # eapi_host:
-  # eapi_username:
+  eapi_host: TODO_REMOVE_ME
+  eapi_username: TODO_REMOVE_ME
   # eapi_password:
   # switches:
   #  - host:
@@ -170,13 +171,17 @@ bgp_vpn:
 
 interconnection:
   enabled: false
-  service_user: interconnection
+  service_password:
 
 fwaas:
   enabled: false
 
 asr:
   config_agents: []
+
+global_cloud_asn: None
+global_address_scopes: []
+local_address_scopes: []
 
 f5:
   snat_per_subnet: 1
@@ -215,6 +220,7 @@ drivers:
       NSXV3:
         nsxv3_connection_retry_count: 2
         nsxv3_connection_retry_sleep: 2
+        nsxv3_realization_timeout: 300
         nsxv3_login_port: 443
         nsxv3_suppress_ssl_wornings: true
         nsxv3_max_records_per_query: 1000
@@ -458,7 +464,7 @@ sentry:
   enabled: true
 
 audit:
-  enabled: false 
+  enabled: false
   # do by default not attach the request payloads of create/update calls to the event
   record_payloads: false
   metrics_enabled: true

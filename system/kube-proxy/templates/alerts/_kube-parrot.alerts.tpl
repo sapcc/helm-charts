@@ -6,7 +6,7 @@ groups:
 
     - alert: KubeParrotBgpNeighborSessionDown
       expr: sum by (node) (kube_parrot_bgp_neighbor_session_status{status="established"}) < {{ .Values.parrot.bgpNeighborCount }}
-      for: 5m
+      for: 10m
       labels:
         tier: k8s
         service: kube-parrot
@@ -19,7 +19,7 @@ groups:
 
     - alert: KubeParrotBgpNeighborMissingRouteAdvertisement
       expr: sum by (node,neighbor) (kube_parrot_bgp_neighbor_advertised_route_count_total) < 1
-      for: 5m
+      for: 10m
       labels:
         tier: k8s
         service: kube-parrot

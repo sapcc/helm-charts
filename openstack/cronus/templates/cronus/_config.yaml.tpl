@@ -16,6 +16,10 @@ cronus:
 {{- end }}
   aws:
     forwardUserAgent: {{ .Values.config.forwardUserAgent }}
+    replaceServices:
+    {{- range $key, $value := .Values.config.replaceServices }}
+      {{ $key | quote }}: {{ $value }}
+    {{- end }}
     allowedServices:
     {{- range $key, $value := .Values.config.allowedServices }}
       {{ $key }}: {{ $value }}
@@ -57,19 +61,44 @@ cronus:
 {{- if .Values.global.cronus_service_password }}
     password: {{ .Values.global.cronus_service_password }}
 {{- end }}
-{{ else }}
+{{- else }}
     authUrl: {{ .Values.config.authUrl }}
     applicationCredentialID: {{ .Values.config.applicationCredentialID }}
     applicationCredentialSecret: {{ .Values.config.applicationCredentialSecret }}
     region: {{ .Values.config.region }}
     endpointType: {{ .Values.config.endpointType }}
 {{- end }}
+{{- if .Values.config.workQueue }}
+{{- $r_user := .Values.rabbitmq.users.default.user }}
+{{- $r_creds := .Values.rabbitmq.users.default.password }}
+  workQueue:
+    enabled: {{ .Values.config.workQueue.enabled }}
+    rabbitmqUri: amqp://{{ $r_user }}:{{ $r_creds }}@cronus-rabbitmq:5672/
+    queueName: {{ .Values.config.workQueue.queueName }}
+    exchangeName: {{ .Values.config.workQueue.exchangeName }}
+    trailLimit: {{ .Values.config.workQueue.trailLimit }}
+    workerPrefetchCount: {{ .Values.config.workQueue.workerPrefetchCount }}
+    workerPrefetchSize: {{ .Values.config.workQueue.workerPrefetchSize }}
+    maxContainerNum: {{ .Values.config.workQueue.maxContainerNum }}
+    reconnectWatcherLimit: {{ .Values.config.workQueue.reconnectWatcherLimit }}
+{{- end }}
 {{- if .Values.config.smtpBackends }}
   # extra SMTP backends and a list of recipient domains
   smtpBackends:
-{{- range $k, $v := .Values.config.smtpBackends }}
-    {{ $k }}:
-      host: {{ $v.host }}
+{{- range $v := .Values.config.smtpBackends }}
+    - name: {{ $v.name }}
+{{- if $v.host }}
+      host: {{$v.host }}
+{{- end }}
+{{- if $v.hosts }}
+      hosts:
+{{- range $k, $v := $v.hosts }}
+        {{ $k }}:
+{{- range $v := $v }}
+          - {{ $v }}
+{{- end }}
+{{- end }}
+{{- end }}
 {{- if $v.domains }}
       domains:
 {{- range $kd, $vd := $v.domains }}

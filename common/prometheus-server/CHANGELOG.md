@@ -1,3 +1,42 @@
+## 4.5.5
+
+* [pod service SD] fix regex for disovering `(9102;.*;.*)|(.*;metrics;.*)|(\d+;.*;\d+)|(.*;.*;\d+)`
+
+## 4.5.4
+
+* [endpoint/service SD] Exclude set of metrics from being scrapped.
+* [pod/service SD] Exclude set of metrics from being scrapped.
+
+## 4.5.3
+
+* [endpoint/service SD] Fix scraping of ports declared by the pod but not the service
+
+## 4.5.2
+
+* [cadvisor/kubelet SD] Exclude cadvisor/kubelet in PrometheusMultipleTargetScrapes as the instance is the same but the metric path is different. 
+
+## 4.5.1
+
+* [kube-dns SD] Label change: instance=address, node=kubernetes node name
+
+## 4.5.0
+
+* Bump Prometheus to `v2.32.1`.
+
+## 4.4.7
+
+* Added alert for duplicate scraping of targets.
+* Fix double scraping of kube-dns.
+
+## 4.4.0
+
+* Update Prometheus to `v2.31.1`.
+
+## 4.3.0
+
+* Fix Thanos cross-domain authentication in config.
+* Update Thanos to `v0.23.1`.
+
 ## 4.2.2
 
 * Enables podMonitorSelector by default. Previously it was toggled by `.Values.serviceDiscoveries.pods.enabled` or `.Values.serviceDiscoveries.kubeDNS.enabled`
