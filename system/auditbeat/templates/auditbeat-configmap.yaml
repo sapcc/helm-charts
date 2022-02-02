@@ -41,6 +41,9 @@ data:
             - container:
           matchers:
             - fields.lookup_fields: ['container.id']
+      - add_fields:
+          fields:
+            sap.cc.audit.source: flatcar
       - drop_fields:
           fields: ["host"]
 
@@ -187,14 +190,14 @@ data:
 
         ## 10.4.2b Time data is protected.
         ## We will place rules to check time synchronization
-        -a always,exit -F arch=b32 -S adjtimex,settimeofday,stime -F key=10.4.2b-time-change
-        -a always,exit -F arch=b64 -S adjtimex,settimeofday -F key=10.4.2b-time-change
-        -a always,exit -F arch=b32 -S clock_settime -F a0=0x0 -F key=10.4.2b-time-change
-        -a always,exit -F arch=b64 -S clock_settime -F a0=0x0 -F key=10.4.2b-time-change
+        #-a always,exit -F arch=b32 -S adjtimex,settimeofday,stime -F key=10.4.2b-time-change
+        #-a always,exit -F arch=b64 -S adjtimex,settimeofday -F key=10.4.2b-time-change
+        #-a always,exit -F arch=b32 -S clock_settime -F a0=0x0 -F key=10.4.2b-time-change
+        #-a always,exit -F arch=b64 -S clock_settime -F a0=0x0 -F key=10.4.2b-time-change
         # Introduced in 2.6.39, commented out because it can make false positives
         #-a always,exit -F arch=b32 -S clock_adjtime -F key=10.4.2b-time-change
         #-a always,exit -F arch=b64 -S clock_adjtime -F key=10.4.2b-time-change
-        -w /hostfs/etc/localtime -p wa -k 10.4.2b-time-change
+        #-w /hostfs/etc/localtime -p wa -k 10.4.2b-time-change
 
         ## 10.5 Secure audit trails so they cannot be altered
         ## The audit system protects audit logs by virtue of being the root user.
