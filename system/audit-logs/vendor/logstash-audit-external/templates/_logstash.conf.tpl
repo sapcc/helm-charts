@@ -237,7 +237,7 @@ output {
       template => "/audit-etc/syslog.json"
       template_name => "syslog"
       template_overwrite => true
-      hosts => ["{{.Values.global.elk_elasticsearch_endpoint_host_scaleout}}.{{.Values.global.elk_cluster_region}}.{{.Values.global.tld}}:{{.Values.global.elk_elasticsearch_ssl_port}}"]
+      hosts => ["{{.Values.global.elk_elasticsearch_endpoint_host_scaleout}}.{{.Values.global.region}}.{{.Values.global.tld}}:{{.Values.global.elk_elasticsearch_ssl_port}}"]
       user => "{{.Values.global.elk_elasticsearch_data_user}}"
       password => "{{.Values.global.elk_elasticsearch_data_password}}"
       ssl => true
@@ -251,7 +251,7 @@ output {
       template => "/audit-etc/bigiplogs.json"
       template_name => "bigiplogs"
       template_overwrite => true
-      hosts => ["{{.Values.global.elk_elasticsearch_endpoint_host_scaleout}}.{{.Values.global.elk_cluster_region}}.{{.Values.global.tld}}:{{.Values.global.elk_elasticsearch_ssl_port}}"]
+      hosts => ["{{.Values.global.elk_elasticsearch_endpoint_host_scaleout}}.{{.Values.global.region}}.{{.Values.global.tld}}:{{.Values.global.elk_elasticsearch_ssl_port}}"]
       user => "{{.Values.global.elk_elasticsearch_data_user}}"
       password => "{{.Values.global.elk_elasticsearch_data_password}}"
       ssl => true
@@ -263,7 +263,7 @@ output {
       template => "/audit-etc/alerts.json"
       template_name => "alerts"
       template_overwrite => true
-      hosts => ["{{.Values.global.elk_elasticsearch_endpoint_host_scaleout}}.{{.Values.global.elk_cluster_region}}.{{.Values.global.tld}}:{{.Values.global.elk_elasticsearch_ssl_port}}"]
+      hosts => ["{{.Values.global.elk_elasticsearch_endpoint_host_scaleout}}.{{.Values.global.region}}.{{.Values.global.tld}}:{{.Values.global.elk_elasticsearch_ssl_port}}"]
       user => "{{.Values.global.elk_elasticsearch_data_user}}"
       password => "{{.Values.global.elk_elasticsearch_data_password}}"
       ssl => true
@@ -275,7 +275,7 @@ output {
         template => "/audit-etc/alerts.json"
         template_name => "alerts"
         template_overwrite => true
-        hosts => ["{{.Values.global.elk_elasticsearch_endpoint_host_scaleout}}.{{.Values.global.elk_cluster_region}}.{{.Values.global.tld}}:{{.Values.global.elk_elasticsearch_ssl_port}}"]
+        hosts => ["{{.Values.global.elk_elasticsearch_endpoint_host_scaleout}}.{{.Values.global.region}}.{{.Values.global.tld}}:{{.Values.global.elk_elasticsearch_ssl_port}}"]
         user => "{{.Values.global.elk_elasticsearch_data_user}}"
         password => "{{.Values.global.elk_elasticsearch_data_password}}"
         ssl => true
@@ -287,7 +287,7 @@ output {
       template => "/audit-etc/alerts.json"
       template_name => "alerts"
       template_overwrite => true
-      hosts => ["{{.Values.global.elk_elasticsearch_endpoint_host_scaleout}}.{{.Values.global.elk_cluster_region}}.{{.Values.global.tld}}:{{.Values.global.elk_elasticsearch_ssl_port}}"]
+      hosts => ["{{.Values.global.elk_elasticsearch_endpoint_host_scaleout}}.{{.Values.global.region}}.{{.Values.global.tld}}:{{.Values.global.elk_elasticsearch_ssl_port}}"]
       user => "{{.Values.global.elk_elasticsearch_data_user}}"
       password => "{{.Values.global.elk_elasticsearch_data_password}}"
       ssl => true
@@ -299,7 +299,7 @@ output {
       template => "/audit-etc/deployments.json"
       template_name => "deployments"
       template_overwrite => true
-      hosts => ["{{.Values.global.elk_elasticsearch_endpoint_host_scaleout}}.{{.Values.global.elk_cluster_region}}.{{.Values.global.tld}}:{{.Values.global.elk_elasticsearch_ssl_port}}"]
+      hosts => ["{{.Values.global.elk_elasticsearch_endpoint_host_scaleout}}.{{.Values.global.region}}.{{.Values.global.tld}}:{{.Values.global.elk_elasticsearch_ssl_port}}"]
       user => "{{.Values.global.elk_elasticsearch_data_user}}"
       password => "{{.Values.global.elk_elasticsearch_data_password}}"
       ssl => true
@@ -311,7 +311,7 @@ output {
       template => "/audit-etc/netflow.json"
       template_name => "netflow"
       template_overwrite => true
-      hosts => ["{{.Values.global.elk_elasticsearch_endpoint_host_scaleout}}.{{.Values.global.elk_cluster_region}}.{{.Values.global.tld}}:{{.Values.global.elk_elasticsearch_ssl_port}}"]
+      hosts => ["{{.Values.global.elk_elasticsearch_endpoint_host_scaleout}}.{{.Values.global.region}}.{{.Values.global.tld}}:{{.Values.global.elk_elasticsearch_ssl_port}}"]
       user => "{{.Values.global.elk_elasticsearch_data_user}}"
       password => "{{.Values.global.elk_elasticsearch_data_password}}"
       ssl => true
