@@ -14,6 +14,29 @@ poller:
   prettyPrint: {{ .Values.poller.prettyPrint }}
   printMessage: {{ .Values.poller.printMessage }}
   queueName: {{ .Values.poller.queueName }}
+  {{- if .Values.poller.emailPassVerdicts.enabled }}
+  emailPassVerdicts:
+    spam:
+    {{- range $key, $value := .Values.poller.emailPassVerdicts.spam }}
+      - {{ $value }}
+    {{- end }}
+    virus:
+    {{- range $key, $value := .Values.poller.emailPassVerdicts.virus }}
+      - {{ $value }}
+    {{- end }}
+    spf:
+    {{- range $key, $value := .Values.poller.emailPassVerdicts.spf }}
+      - {{ $value }}
+    {{- end }}
+    dkim:
+    {{- range $key, $value := .Values.poller.emailPassVerdicts.dkim }}
+      - {{ $value }}
+    {{- end }}
+    dmarc:
+    {{- range $key, $value := .Values.poller.emailPassVerdicts.dmarc }}
+      - {{ $value }}
+    {{- end }}
+  {{- end }}
   debug: {{ .Values.poller.debug }}
   retry:
     {{- range $key, $value := .Values.poller.retry }}
@@ -46,4 +69,19 @@ poller:
     {{ $key }}: {{ $value }}
   {{- end -}}
   {{- end -}}
+  {{- if eq .Values.poller.action "simulator" }}
+  simulator:
+    region: {{ .Values.config.keystone.region }}
+    sesUsername: {{ .Values.simulator.sesUsername }}
+    sesSecret: {{ .Values.simulator.sesSecret }}
+    smtpPassword: {{ .Values.simulator.smtpPassword }}
+    smtpHost: cronus.{{ .Values.config.keystone.region }}.cloud.sap
+    sesApiEndpoint: https://cronus.{{ .Values.config.keystone.region }}.cloud.sap
+    sesRegion: {{ .Values.config.allowedServices.email }}
+    recipient: {{ .Values.simulator.recipient }}
+    sender: {{ .Values.simulator.sender }}
+    prometheus: {{ .Values.poller.prometheus }}
+    charSet: {{ .Values.poller.charSet }}
+    period: {{ .Values.poller.period }}
+  {{- end }}
 {{- end -}}
