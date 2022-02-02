@@ -25,13 +25,29 @@
 <source>
   @type tail
   @id tail
-  path /var/log/containers/keystone-api-*.log,/var/log/containers/keystone-global-api-*.log,/var/log/containers/qa-de-1-*-apiserver-*_kubernikus_fluentd-*.log
+  path /var/log/containers/keystone-api-*.log,/var/log/containers/keystone-global-api-*.log
   exclude_path /var/log/containers/fluentd*
   pos_file /var/log/es-containers-octobus.log.pos
   time_format %Y-%m-%dT%H:%M:%S.%N
   tag kubernetes.*
-  format json
+  <parse>
+    @type json
+  </parse>
   keep_time_key true
+</source>
+
+<source>
+  @type tail
+  @id kube-api
+  path /var/log/containers/qa-de-1-*-apiserver-*_kubernikus_fluentd-*.log
+  exclude_path /var/log/containers/fluentd*
+  pos_file /var/log/kube-api-octobus.log.pos
+  tag kubeapi.*
+  <parse>
+    @type json
+    time_format %Y-%m-%dT%H:%M:%S.%N
+    keep_time_key true
+  </parse>
 </source>
 
 <match fluent.**>
@@ -42,8 +58,7 @@
 
 @include /fluent-bin/prometheus.conf
 
-{{- if eq .Values.global.clusterType "metal" }}
-<filter kubernetes.**>
+<filter **>
   @type kubernetes_metadata
   @id kubernetes
   kubernetes_url https://KUBERNETES_SERVICE_HOST
@@ -52,8 +67,8 @@
   use_journal 'false'
   container_name_to_kubernetes_regexp '^(?<name_prefix>[^_]+)_(?<container_name>[^\._]+)(\.(?<container_hash>[^_]+))?_(?<pod_name>[^_]+)_(?<namespace>[^_]+)_[^_]+_[^_]+$'
 </filter>
-{{- end }}
 
+{{- if eq .Values.global.clusterType "metal" }}
 <filter kubernetes.**>
   @type parser
   @id grok_parser
@@ -66,14 +81,28 @@
     grok_failure_key grok_failure
   </parse>
 </filter>
+{{- end }}
 
-<filter kubernetes.**>
+<filter kubeapi.**>
+  @type parser
+  @id json_parser
+  key_name log
+  reserve_data true
+  <parse>
+    @type json
+    time_format %Y-%m-%dT%H:%M:%S.%N
+    keep_time_key true
+  </parse>
+</filter>
+
+
+<filter **>
   @type record_modifier
   @id remove
     remove_keys message,stream
 </filter>
 
-<match kubernetes.**>
+<match **>
   @type copy
   @id duplicate
 {{- if eq .Values.global.clusterType "metal"}}
