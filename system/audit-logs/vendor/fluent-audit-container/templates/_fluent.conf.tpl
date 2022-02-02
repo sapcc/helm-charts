@@ -87,7 +87,6 @@
   @type parser
   @id json_parser
   key_name log
-  reserve_data true
   <parse>
     @type json
     time_format %Y-%m-%dT%H:%M:%S.%N
