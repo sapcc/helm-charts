@@ -206,6 +206,12 @@ filter {
         }
       }
 
+      if [event.details.serviceProvider] {
+        mutate {
+            add_field => { "sap.cc.audit.source" => "%{[event.details.serviceProvider]}" }
+        }
+      }
+
       if [syslog_identifier] {
         if [syslog_identifier] == "audit" or [syslog_identifier] == "sshd" or [syslog_identifier] == "sssd" {
           mutate {
