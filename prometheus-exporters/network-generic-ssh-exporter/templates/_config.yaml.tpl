@@ -547,6 +547,30 @@ metrics:
     metric_type_name: gauge
     command: show ntp status
     timeout_secs: 5
+    
+  port_utilization_TCP:
+    regex: >-
+      \s*(\d+)\s{3}TCP\sIPv4
+    multi_value: true
+    metric_type_name: gauge
+    value: $1
+    labels:
+        port: $1
+    command: show ip ports reservation | ex TPM
+    description: Plot the number of reserved TPA ports (UDP/TCP) to check if unused ports get released again.
+    timeout_secs: 3
+
+  port_utilization_UDP:
+    regex: >-
+      \s*(\d+)\s{3}.*\s+UDP\sIPv4
+    multi_value: true
+    metric_type_name: gauge
+    value: $1
+    labels:
+        port: $1
+    command: show ip ports reservation | ex TPM
+    description: Plot the number of reserved TPA ports (UDP/TCP) to check if unused ports get released again.
+    timeout_secs: 3
 
 batches:
   test:
@@ -588,8 +612,10 @@ batches:
     - firewall_vrf_stats_half_open_udp
     - firewall_vrf_stats_half_open_tcp
     - firewall_vrf_stats_half_open_icmp
-
-
+  {{- if (hasPrefix "qa-de-".Values.global.region) }}
+    - port_utilization_TCP
+    - port_utilization_TCP
+  {{- end }}
   cisco-nx-os_core-router:
     - nx_ntp_configured
 
