@@ -206,9 +206,9 @@ filter {
         }
       }
 
-      if [event.details.serviceProvider] {
+      if [event][details][serviceProvider] {
         mutate {
-            add_field => { "sap.cc.audit.source" => "%{[event.details.serviceProvider]}" }
+            add_field => { "sap.cc.audit.source" => "%{[event][details][serviceProvider]}" }
         }
       }
 
