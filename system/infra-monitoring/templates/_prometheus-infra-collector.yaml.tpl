@@ -653,66 +653,6 @@
       regex: "instance"
 {{- end }}
 
-#exporter is leveraging service discovery but not part of infrastructure monitoring project itself.
-{{- $values := .Values.esxi_config_exporter -}}
-{{- if $values.enabled }}
-- job_name: 'esxi-config'
-  scrape_interval: {{$values.scrapeInterval}}
-  scrape_timeout: {{$values.scrapeTimeout}}
-  file_sd_configs:
-      - files :
-        - /etc/prometheus/configmaps/atlas-netbox-sd/netbox.json
-  metrics_path: /
-  relabel_configs:
-    - source_labels: [job]
-      regex: vcenter
-      action: keep
-    - source_labels: [server_name]
-      target_label: __param_target
-    - target_label: __address__
-      replacement: esxi-exporter-configcollector:9203
-{{- end }}
-
-#exporter is leveraging service discovery but not part of infrastructure monitoring project itself.
-{{- $values := .Values.esxi_service_exporter -}}
-{{- if $values.enabled }}
-- job_name: 'esxi-service'
-  scrape_interval: {{$values.scrapeInterval}}
-  scrape_timeout: {{$values.scrapeTimeout}}
-  file_sd_configs:
-      - files :
-        - /etc/prometheus/configmaps/atlas-netbox-sd/netbox.json
-  metrics_path: /
-  relabel_configs:
-    - source_labels: [job]
-      regex: vcenter
-      action: keep
-    - source_labels: [server_name]
-      target_label: __param_target
-    - target_label: __address__
-      replacement: esxi-exporter-criticalservicecollector:9203
-{{- end }}
-
-#exporter is leveraging service discovery but not part of infrastructure monitoring project itself.
-{{- $values := .Values.esxi_syslog_exporter -}}
-{{- if $values.enabled }}
-- job_name: 'esxi-logforwarding'
-  scrape_interval: {{$values.scrapeInterval}}
-  scrape_timeout: {{$values.scrapeTimeout}}
-  file_sd_configs:
-      - files :
-        - /etc/prometheus/configmaps/atlas-netbox-sd/netbox.json
-  metrics_path: /
-  relabel_configs:
-    - source_labels: [job]
-      regex: vcenter
-      action: keep
-    - source_labels: [server_name]
-      target_label: __param_target
-    - target_label: __address__
-      replacement: esxi-exporter-syslogconnectioncollector:9203
-{{- end }}
-
 {{- $values := .Values.firmware_exporter -}}
 {{- if $values.enabled }}
 - job_name: 'firmware-exporter'
@@ -909,21 +849,3 @@
     - action: labeldrop
       regex: "metrics_label"
 {{ end }}
-
-#exporter is leveraging service discovery but not part of infrastructure monitoring project itself.
-{{- $values := .Values.esxi_host_exporter -}}
-{{- if $values.enabled }}
-- job_name: 'esxi-host'
-  scrape_interval: {{$values.scrapeInterval}}
-  scrape_timeout: {{$values.scrapeTimeout}}
-  kubernetes_sd_configs:
-  - role: service
-    namespaces:
-      names:
-      - infra-monitoring
-  metrics_path: /
-  relabel_configs:
-    - source_labels: [__meta_kubernetes_service_name]
-      regex: esxi-host-exporter
-      action: keep
-{{- end }}
