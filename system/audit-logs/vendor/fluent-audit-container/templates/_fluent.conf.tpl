@@ -28,18 +28,18 @@
   path /var/log/containers/keystone-api-*.log,/var/log/containers/keystone-global-api-*.log
   exclude_path /var/log/containers/fluentd*
   pos_file /var/log/es-containers-octobus.log.pos
-  time_format %Y-%m-%dT%H:%M:%S.%N
   tag kubernetes.*
   <parse>
     @type json
+    time_format %Y-%m-%dT%H:%M:%S.%N
+    keep_time_key true
   </parse>
-  keep_time_key true
 </source>
 
 <source>
   @type tail
   @id kube-api
-  path /var/log/containers/qa-de-1-*-apiserver-*_kubernikus_fluentd-*.log
+  path /var/log/containers/{{ .Values.global.region }}-*-apiserver-*_kubernikus_fluentd-*.log
   exclude_path /var/log/containers/fluentd*
   pos_file /var/log/kube-api-octobus.log.pos
   tag kubeapi.*
