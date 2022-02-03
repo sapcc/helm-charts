@@ -217,6 +217,12 @@ filter {
           add_field => { "sap.cc.audit.source" => "flatcar"}
         }
       }
+
+      if [sap][cc][audit][source] =~ /keystone-api.*/ and "" in [user] and !( "" in [user][name]) {
+        mutate {
+          rename => { "[user]" => "[user][name]"}
+        }
+      }
     }
   }
 
