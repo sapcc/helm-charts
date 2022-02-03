@@ -41,6 +41,10 @@ function process_config {
     cp /neutron-etc/neutron-fwaas.ini /etc/neutron/neutron-fwaas.ini
     {{- end }}
 
+    {{- if .Values.interconnection.enabled }}
+    cp /neutron-etc/networking-interconnection.conf /etc/neutron/networking-interconnection.conf
+    {{- end }}
+
 }
 
 function _start_application {
