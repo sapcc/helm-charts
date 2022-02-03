@@ -1,0 +1,29 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+
+metadata:
+  name: fluent-audit-systemd
+  labels:
+    prometheus: {{ required ".Values.global.prometheus missing" .Values.global.prometheus }}
+
+spec:
+  jobLabel: fluent-audit-systemd
+
+  selector:
+    matchLabels:
+      component: fluent-audit-systemd
+
+  # Find pods in any namespace.
+  namespaceSelector:
+    matchNames: [audit-logs]
+
+  podMetricsEndpoints:
+    - interval: 60s
+      scrapeTimeout: 50s
+      port: metrics
+      scheme: http
+      relabelings:
+        - action: labelmap
+          regex: '__meta_kubernetes_pod_label_(.+)'
+        - targetLabel: job
+          replacement: fluent-audit-systemd

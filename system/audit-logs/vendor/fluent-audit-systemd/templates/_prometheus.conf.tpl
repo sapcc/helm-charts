@@ -3,7 +3,7 @@
 <source>
   @type prometheus
   bind 0.0.0.0
-  port 24231
+  port {{.Values.metrics_port}}
   metrics_path /metrics
 </source>
 
