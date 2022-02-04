@@ -218,10 +218,10 @@ filter {
         }
       }
 
-      if [sap][cc][audit][source] == "keystone-api" or  [sap][cc][audit][source] == "keystone-global-api{
+      if [sap][cc][audit][source] == "keystone-api" or  [sap][cc][audit][source] == "keystone-global-api" {
         if [user] and ![user][name] {
             mutate {
-              rename => { "[user]" => "[user][name]"}
+              rename => { "[user]" => "[user][name]" }
             }
         }
       }
