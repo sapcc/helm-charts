@@ -50,20 +50,22 @@
   </parse>
 </source>
 
-{{- if .Values.additional_container_logs_path }}
+{{- if .Values.additional_container_logs }}
+{{- range .Values.additional_container_logs }}
 <source>
   @type tail
-  @id {{ .Values.additional_container_logs_id | default "additional" }}
-  path {{ .Values.additional_container_logs_path }}
+  @id {{ .id }}
+  path {{ .path }}
   exclude_path /var/log/containers/fluentd*
-  pos_file /var/log/additional-containers-octobus.log.pos
-  tag {{ .Values.additional_container_logs_tag | default "additional.*" }}
+  pos_file /var/log/additional-containers-{{ .id }}-octobus.log.pos
+  tag {{ .tag }}
   <parse>
     @type json
     time_format %Y-%m-%dT%H:%M:%S.%N
     keep_time_key true
   </parse>
 </source>
+{{- end }}
 {{- end }}
 
 <match fluent.**>
