@@ -125,9 +125,9 @@ filter {
     }
   }
 
-  if [type] == "syslog" and [[sap][cc][audit][source]] {
+  if [type] == "syslog" and [sap][cc][audit][source] {
     mutate{
-      remove_field => ["[sap][cc][audit][source]"]
+      remove_field => "[sap][cc][audit][source]"
     }
   }
 
