@@ -176,12 +176,30 @@ filter {
     }
 
     if [domain_mapping] and [domain_mapping][0]{
-      mutate {
-        add_field => {
-            "[initiator][user]" => "%{[domain_mapping][0][user_name]}"
-            "[initiator][domain_id]" => "%{[domain_mapping][0][domain_id]}"
-            "[initiator][domain_name]" => "%{[domain_mapping][0][domain_name]}"
+      # Add Fields to audit events, checking if the field exists first to not overwrite.
+      if ![initiator][user_name] {
+        mutate {
+          add_field => {
+              "[initiator][user_name]" => "%{[domain_mapping][0][user_name]}"
+          }
         }
+      }
+      if ![initiator][domain_id] {
+        mutate {
+          add_field => {
+              "[initiator][domain_id]" => "%{[domain_mapping][0][domain_id]}"
+          }
+        }
+      }
+      if ![initiator][domain] {
+        mutate {
+          add_field => {
+              "[initiator][domain]" => "%{[domain_mapping][0][domain_name]}"
+          }
+        }
+      }
+      # Cleanup
+      mutate {
         remove_field => [ "domain_mapping" ]
       }
     }
