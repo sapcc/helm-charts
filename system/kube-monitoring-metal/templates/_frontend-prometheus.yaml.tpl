@@ -73,6 +73,7 @@
       - '{__name__=~"^success"}'
       - '{__name__=~"^latency"}'
       - '{__name__=~"^pvc_usage"}'
+      - '{__name__=~"^envoy_.+"}'
 
   # Add region label to all metrics, don't delete this without knowing what you are doing.
   relabel_configs:
