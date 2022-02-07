@@ -2,9 +2,7 @@ groups:
 - name: vcenter.alerts
   rules:
   - alert: VcsaSslCertificateExpiryWarning
-    expr: |
-      (vrops_vcenter_summary_certificate_expiry_date / 1000) - time() < (31*86400) 
-      and on(vcenter) (vrops_vcenter_summary_certificate_expiry_date / 1000) - time() > (15*86400)
+    expr: 15 > round(((vrops_vcenter_summary_certificate_expiry_date / 1000) - time()) / 86400) < 31
     for: 20m
     labels:
       severity: warning
