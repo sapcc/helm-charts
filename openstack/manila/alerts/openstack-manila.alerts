@@ -2,7 +2,7 @@ groups:
 - name: openstack-manila.alerts
   rules:
   - alert: OpenstackManilaSharesStuck
-    expr: (sum(openstack_manila_shares_stuck_count_gauge) BY (manila_host, status)) > 0
+    expr: (sum(manila_shares_stuck_count_gauge) BY (manila_host, status)) > 0
     for: 5m
     labels:
       dashboard: manila
@@ -16,7 +16,7 @@ groups:
       summary: Manila shares in stuck state
 
   - alert: OpenstackManilaShareSnapshotsStuck
-    expr: (sum(openstack_manila_snapshot_stuck_count_gauge) BY (share_id, status)) > 0
+    expr: (sum(manila_snapshot_stuck_count_gauge) BY (share_id, status)) > 0
     for: 5m
     labels:
       dashboard: manila
@@ -30,7 +30,7 @@ groups:
       summary: Manila share snapshots in stuck state
 
   - alert: OpenstackManilaSharesStuckCreate
-    expr: max(openstack_manila_shares_stuck_max_duration_gauge{status="creating"})
+    expr: max(manila_shares_stuck_max_duration_gauge{status="creating"})
       BY (manila_host) > 120
     for: 5m
     labels:
@@ -44,7 +44,7 @@ groups:
       summary: Manila Shares taking more than 2 minutes to create
 
   - alert: OpenstackManilaSharesStuckDelete
-    expr: max(openstack_manila_shares_stuck_max_duration_gauge{status="deleting"})
+    expr: max(manila_shares_stuck_max_duration_gauge{status="deleting"})
       BY (manila_host) > 120
     for: 5m
     labels:
@@ -58,7 +58,7 @@ groups:
       summary: Manila Shares taking more than 2 minutes to delete
 
   - alert: OpenstackManilaSharesStuckResize
-    expr: max(openstack_manila_shares_stuck_max_duration_gauge{status=~"shrinking|extending"})
+    expr: max(manila_shares_stuck_max_duration_gauge{status=~"shrinking|extending"})
       BY (manila_host) > 120
     for: 5m
     labels:
@@ -72,7 +72,7 @@ groups:
       summary: Manila Shares taking more than 2 minutes to resize
 
   - alert: OpenstackManilaShareServersStuck
-    expr: (sum(openstack_manila_share_servers_stuck_count_gauge) BY (manila_host, status)) > 0
+    expr: (sum(manila_share_servers_stuck_count_gauge) BY (manila_host, status)) > 0
     for: 24h
     labels:
       dashboard: manila
@@ -84,7 +84,7 @@ groups:
       summary: Manila share servers in stuck state
 
   - alert: OpenstackManilaShareServersStuckCreate
-    expr: max(openstack_manila_share_servers_stuck_max_duration_gauge{status="creating"})
+    expr: max(manila_share_servers_stuck_max_duration_gauge{status="creating"})
       BY (id, manila_host) > 120
     for: 24h
     labels:
@@ -97,7 +97,7 @@ groups:
       summary: Manila Share servers taking more than 2 minutes to create
 
   - alert: OpenstackManilaShareServersStuckError
-    expr: max(openstack_manila_share_servers_stuck_max_duration_gauge{status=~"error|error_unmanage|error_manage"})
+    expr: max(manila_share_servers_stuck_max_duration_gauge{status=~"error|error_unmanage|error_manage"})
       BY (manila_host) > 120
     for: 24h
     labels:
@@ -110,7 +110,7 @@ groups:
       summary: Manila Share servers stuck more than 2 minutes in error
 
   - alert: OpenstackManilaShareServerHigh
-    expr: label_replace(count(openstack_manila_share_servers_count_gauge{status!="deleted"}) BY (manila_host),
+    expr: label_replace(count(manila_share_servers_count_gauge{status!="deleted"}) BY (manila_host),
       "short_hostname", "$1", "manila_host", "(.*)@.*") >= 240
     labels:
       dashboard: manila
@@ -125,7 +125,7 @@ groups:
       summary: High number of share servers on {{ $labels.short_hostname }}
 
   - alert: OpenstackManilaShareServerFull
-    expr: label_replace(count(openstack_manila_share_servers_count_gauge{status!="deleted"}) BY (manila_host),
+    expr: label_replace(count(manila_share_servers_count_gauge{status!="deleted"}) BY (manila_host),
       "short_hostname", "$1", "manila_host", "(.*)@.*") >= 250
     labels:
       dashboard: manila
