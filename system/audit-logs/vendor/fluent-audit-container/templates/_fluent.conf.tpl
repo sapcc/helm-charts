@@ -28,7 +28,7 @@
   path /var/log/containers/keystone-api-*.log,/var/log/containers/keystone-global-api-*.log
   exclude_path /var/log/containers/fluentd*
   pos_file /var/log/es-containers-octobus.log.pos
-  tag kubernetes.*
+  tag keystone.*
   <parse>
     @type json
     time_format %Y-%m-%dT%H:%M:%S.%N
@@ -95,7 +95,7 @@
 </filter>
 
 {{- if eq .Values.global.clusterType "metal" }}
-<filter kubernetes.**>
+<filter keystone.**>
   @type parser
   @id grok_parser
   key_name log
@@ -127,7 +127,7 @@
     remove_keys message,stream
 </filter>
 
-<match **>
+<match keystone.**>
   @type copy
   @id duplicate
 {{- if eq .Values.global.clusterType "metal"}}
@@ -153,6 +153,53 @@
     json_array true
   </store>
 {{- end }}
+  <store>
+    @type http
+    @id to_logstash
+    {{ if eq .Values.global.clusterType "metal" -}}
+    endpoint "https://logstash-audit-external.{{.Values.global.region}}.{{.Values.global.tld}}"
+    {{ else -}}
+    endpoint "http://logstash-audit-external.audit-logs:{{.Values.global.https_port}}"
+    {{ end -}}
+    <auth>
+      method basic
+      username {{.Values.global.elk_elasticsearch_http_user}}
+      password {{.Values.global.elk_elasticsearch_http_password}}
+    </auth>
+    slow_flush_log_threshold 105.0
+    retryable_response_codes [503]
+    <buffer>
+      queue_limit_length 24
+      chunk_limit_size 8MB
+      flush_at_shutdown true
+      overflow_action block
+      retry_forever true
+      retry_type periodic
+      flush_interval 1s
+    </buffer>
+    <format>
+      @type json
+    </format>
+    json_array true
+  </store>
+  <store>
+    @type prometheus
+    @id to_prometheus
+    <metric>
+      name fluentd_output_status_num_records_total
+      type counter
+      desc The total number of outgoing records
+      <labels>
+        node "#{ENV['K8S_NODE_NAME']}"
+        container $.kubernetes.container_name
+      </labels>
+    </metric>
+  </store>
+</match>
+
+<match (?!keystone\.).**>
+  @type copy
+  @id duplicate
   <store>
     @type http
     @id to_logstash
