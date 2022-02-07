@@ -66,11 +66,11 @@
   </parse>
 </source>
 {{- if .field }}
-<filter {{ .tag }}>
+<filter {{ .tag }}*>
   @type record_transformer
-    <record>
-      {{ .field.name }} {{ .field.value | quote }}
-    </record>
+  <record>
+    {{ .field.name }} {{ .field.value | quote }}
+  </record>
 </filter>
 {{- end }}
 {{- end }}
