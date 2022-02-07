@@ -2,8 +2,7 @@ groups:
 - name: vcenter.alerts
   rules:
   - alert: VcsaSslCertificateExpiryWarning
-    expr: >
-      vrops_vcenter_vcsa_certificate_remaining_days < 31 and vrops_vcenter_vcsa_certificate_remaining_days > 15
+    expr: 15 > round(((vrops_vcenter_summary_certificate_expiry_date / 1000) - time()) / 86400) < 31
     for: 20m
     labels:
       severity: warning
@@ -17,7 +16,7 @@ groups:
       summary: "SSL Certificate of vCSA {{ $labels.vcenter}} expires in {{ $value }} days. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
 
   - alert: VcsaSslCertificateExpiryCritical
-    expr: vrops_vcenter_vcsa_certificate_remaining_days < 16
+    expr: round(((vrops_vcenter_summary_certificate_expiry_date / 1000) - time()) / 86400) < 16
     for: 20m
     labels:
       severity: critical
