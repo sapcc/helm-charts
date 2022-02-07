@@ -65,6 +65,14 @@
     keep_time_key true
   </parse>
 </source>
+{{- if .field }}
+<filter {{ .tag }}>
+  @type record_transformer
+    <record>
+      {{ .field.name }} {{ .field.value | quote }}
+    </record>
+</filter>
+{{- end }}
 {{- end }}
 {{- end }}
 
