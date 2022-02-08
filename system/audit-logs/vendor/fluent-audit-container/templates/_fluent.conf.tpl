@@ -127,10 +127,10 @@
     remove_keys message,stream
 </filter>
 
+{{- if eq .Values.global.clusterType "metal"}}
 <match keystone.**>
   @type copy
   @id duplicate_keystone
-{{- if eq .Values.global.clusterType "metal"}}
   <store>
     @type http
     @id to_octobus
@@ -152,10 +152,9 @@
     </format>
     json_array true
   </store>
-{{- end }}
   <store>
     @type http
-    @id to_logstash
+    @id to_logstash_keystone
     {{ if eq .Values.global.clusterType "metal" -}}
     endpoint "https://logstash-audit-external.{{.Values.global.region}}.{{.Values.global.tld}}"
     {{ else -}}
@@ -184,7 +183,7 @@
   </store>
   <store>
     @type prometheus
-    @id to_prometheus
+    @id to_prometheus_keystone
     <metric>
       name fluentd_output_status_num_records_total
       type counter
@@ -196,6 +195,7 @@
     </metric>
   </store>
 </match>
+{{- end }}
 
 <match (?!keystone\.).**>
   @type copy
