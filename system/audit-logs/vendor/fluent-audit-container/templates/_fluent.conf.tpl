@@ -197,7 +197,7 @@
 </match>
 {{- end }}
 
-<match (?!keystone\.).**>
+<match **>
   @type copy
   @id duplicate
   <store>
