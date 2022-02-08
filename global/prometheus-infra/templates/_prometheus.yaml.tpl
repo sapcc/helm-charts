@@ -117,7 +117,7 @@
       - '{__name__=~"^cronus_simulator_.+"}'
       - '{__name__=~"^cronus_updater_.+"}'
       - '{__name__=~"^network_apic_(free|used|down)_port_count"}'
-      - '{__name__=~"^node_logind_sessions", class="user", job="jumpserver"}'
+      - '{__name__=~"^node_logind_sessions", class="user", job="jumpserver", type="tty"}'
 
   relabel_configs:
     - action: replace
