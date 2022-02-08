@@ -10,7 +10,7 @@ input {
   }
   target => "token_response"
   automatic_retries => 3
-  schedule => { cron => "*/10 * * * *"}
+  schedule => { cron => "*/5 * * * *"}
   codec => "json"
   }
 }
@@ -20,7 +20,7 @@ filter {
     init => "require 'time'"
     code => '
              upper = Time.now
-             lower = upper - 600
+             lower = upper - 300
              lower = lower.strftime "%Y-%m-%dT%H.%M.%S"
              upper = upper.strftime "%Y-%m-%dT%H.%M.%S"
              event.set("[timerange][lower]", lower)
@@ -34,6 +34,7 @@ filter {
     url => "{{.Values.http_poller.url.api}}?$filter=Time%20gt%20'%{[timerange][lower]}'%20and%20Time%20le%20'%{[timerange][upper]}'"
     verb => "GET"
     headers => { "Authorization" => "Bearer %{[token_response][access_token]}" }
+    socket_timeout => 20s
     automatic_retries => 3
   }
 
