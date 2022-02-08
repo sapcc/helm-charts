@@ -74,12 +74,10 @@ spec:
           {{- end }}
           livenessProbe:
             exec:
-              command:
-              - cat
-              - /etc/manila/probe
-            timeoutSeconds: 3
-            periodSeconds: 10
-            initialDelaySeconds: 15
+              command: ["openstack-agent-liveness", "--config-dir", "/etc/manila"]
+            initialDelaySeconds: 60
+            periodSeconds: 60
+            timeoutSeconds: 20
           readinessProbe:
             exec:
               command:

@@ -29,7 +29,7 @@
       - '{job="redfish/cp"}'
       - '{job="ucs"}'
       - '{job="vrops",__name__!~"^vrops_virtualmachine_.*"}'
-      - '{job="vrops",__name__=~"^vrops_virtualmachine_.*", vccluster=~"^managementbb.+"}'
+      - '{job="vrops",__name__=~"^vrops_virtualmachine_.*", vccluster=~".*management.*"}'
       - '{job="vrops",__name__=~"vrops_api_response"}'
       - '{job="ucs"}'
       - '{job="netbox"}'

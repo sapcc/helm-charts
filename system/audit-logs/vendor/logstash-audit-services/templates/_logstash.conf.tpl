@@ -10,7 +10,7 @@ input {
   }
   target => "token_response"
   automatic_retries => 3
-  schedule => { cron => "0 */1 * * *"}
+  schedule => { cron => "*/10 * * * *"}
   codec => "json"
   }
 }
@@ -20,8 +20,7 @@ filter {
     init => "require 'time'"
     code => '
              upper = Time.now
-             upper = upper - upper.sec - 60 * upper.min
-             lower = upper - 3600
+             lower = upper - 600
              lower = lower.strftime "%Y-%m-%dT%H.%M.%S"
              upper = upper.strftime "%Y-%m-%dT%H.%M.%S"
              event.set("[timerange][lower]", lower)

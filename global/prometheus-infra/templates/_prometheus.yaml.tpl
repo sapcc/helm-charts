@@ -89,11 +89,7 @@
       - '{__name__=~"^netapp_filer_.*"}'
       - '{__name__=~"^vasa_.*"}'
       - '{__name__=~"^vcenter_esxi_mem_swapout_.*"}'
-      - '{__name__=~"^bios_exporter",setting_name=~"memory_memorymode|biosvfselectmemoryrasconfiguration|memory_ras_configuration|bios_memsettings_adddcsetting|bios_memsettings_memopmode"}'
-      - '{__name__=~"^bios_exporter_up"}'
       - '{__name__=~"^pxcloudprober_.+"}'
-      - '{__name__=~"^cablecheck_error_status"}'
-      - '{__name__=~"^cablecheck_runs_counter_total"}'
       - '{__name__=~"^thousandeyes_test_html_loss_percentage", test_name=~"[A-Z]{2}-[A-Z]{2}-[A-Z0-9]{2}.+"}'
       - '{__name__=~"^thousandeyes_test_html_avg_latency_milliseconds", test_name=~"[A-Z]{2}-[A-Z]{2}-[A-Z0-9]{2}.+"}'
       - '{__name__=~"^thousandeyes_test_html_response_code", test_name=~"[A-Z]{2}-[A-Z]{2}-[A-Z0-9]{2}.+"}'
@@ -121,6 +117,7 @@
       - '{__name__=~"^cronus_simulator_.+"}'
       - '{__name__=~"^cronus_updater_.+"}'
       - '{__name__=~"^network_apic_(free|used|down)_port_count"}'
+      - '{__name__=~"^node_logind_sessions", class="user", job="jumpserver", type="tty"}'
 
   relabel_configs:
     - action: replace
