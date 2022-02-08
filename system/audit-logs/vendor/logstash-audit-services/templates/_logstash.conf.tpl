@@ -34,7 +34,7 @@ filter {
     url => "{{.Values.http_poller.url.api}}?$filter=Time%20gt%20'%{[timerange][lower]}'%20and%20Time%20le%20'%{[timerange][upper]}'"
     verb => "GET"
     headers => { "Authorization" => "Bearer %{[token_response][access_token]}" }
-    socket_timeout => 20s
+    socket_timeout => 20
     automatic_retries => 3
   }
 
