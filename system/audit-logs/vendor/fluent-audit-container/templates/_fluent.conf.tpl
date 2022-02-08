@@ -129,7 +129,7 @@
 
 <match keystone.**>
   @type copy
-  @id duplicate
+  @id duplicate_keystone
 {{- if eq .Values.global.clusterType "metal"}}
   <store>
     @type http
