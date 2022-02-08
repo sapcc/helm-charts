@@ -39,7 +39,7 @@
 <source>
   @type tail
   @id kube-api
-  path /var/log/containers/{{ .Values.global.region }}-*-apiserver-*_kubernikus_fluentd-*.log
+  path /var/log/containers/{{ .Values.global.region }}-*-apiserver-*_kubernikus_fluentd-*.log,/var/log/containers/s-{{ .Values.global.region }}-*-apiserver-*_kubernikus_fluentd-*.log,/var/log/containers/c-{{ .Values.global.region }}-*-apiserver-*_kubernikus_fluentd-*.log
   exclude_path /var/log/containers/fluentd*
   pos_file /var/log/kube-api-octobus.log.pos
   tag kubeapi.*
