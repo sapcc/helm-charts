@@ -19,6 +19,7 @@ pybasedir = /
 state_path = /var/lib/designate
 
 log_config_append = /etc/designate/logging.conf
+{{- include "ini_sections.logging_format" . }}
 
 # path to api-paste configuration
 api_paste_config = /etc/designate/api-paste.ini
