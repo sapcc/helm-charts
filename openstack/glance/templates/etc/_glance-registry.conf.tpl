@@ -3,6 +3,7 @@
 debug = {{.Values.registry.debug}}
 
 log_config_append = /etc/glance/logging.ini
+{{- include "ini_sections.logging_format" . }}
 
 #disable default admin rights for role 'admin'
 admin_role = ''
