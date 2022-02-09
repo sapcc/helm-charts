@@ -28,6 +28,7 @@ hook-master-start = unix_signal:15 gracefully_kill_them_all
 py-call-osafterfork = true
 
 # logging and metrics, sadly no sub-seconds
+log-x-forwarded-for = true
 log-date = %%Y-%%m-%%d %%H:%%M:%%S,000
 log-format-strftime = true
 log-format = %(ftime) %(pid) INFO uWSGI [%(request_id) g%(global_request_id) %(user_id) %(project) %(domain) %(user_domain) %(project_domain)] %(addr) "%(method) %(uri) %(proto)" status: %(status) len: %(size) time: %(secs) agent: %(uagent)
