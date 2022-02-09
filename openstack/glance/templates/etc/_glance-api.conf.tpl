@@ -6,7 +6,6 @@ registry_host = 127.0.0.1
 image_member_quota = 500
 
 log_config_append = /etc/glance/logging.ini
-{{- include "ini_sections.logging_format" . }}
 
 node_staging_uri = file:///tmp/staging
 

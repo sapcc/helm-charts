@@ -4,7 +4,7 @@ debug = {{.Values.debug}}
 verbose = True
 
 log_config_append = /etc/neutron/logging.conf
-{{ include "ini_sections.logging_format" . }}
+logging_context_format_string = %(asctime)s.%(msecs)03d %(process)d %(levelname)s %(name)s [%(request_id)s g%(global_request_id)s %(user_identity)s] %(instance)s%(message)s
 
 api_paste_config = /etc/neutron/api-paste.ini
 {{ include "ini_sections.default_transport_url" . }}
