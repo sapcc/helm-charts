@@ -177,10 +177,10 @@ filter {
 
     if [domain_mapping] and [domain_mapping][0]{
       # Add Fields to audit events, checking if the field exists first to not overwrite.
-      if ![initiator][user_name] {
+      if ![initiator][name] {
         mutate {
           add_field => {
-              "[initiator][user_name]" => "%{[domain_mapping][0][user_name]}"
+              "[initiator][name]" => "%{[domain_mapping][0][user_name]}"
           }
         }
       }
