@@ -43,11 +43,13 @@ spec:
             - name: DEPENDENCY_SERVICE
               value: "{{ .Release.Name }}-mariadb,{{ .Release.Name }}-rabbitmq"
             {{- if .Values.sentry.enabled }}
-            - name: SENTRY_DSN
+            - name: SENTRY_DSN_SSL
               valueFrom:
                 secretKeyRef:
                   name: sentry
-                  key: manila.DSN.python
+                  key: manila.DSN
+            - name: SENTRY_DSN
+              value: $(SENTRY_DSN_SSL)?verify_ssl=0
             {{- end }}
           volumeMounts:
             - name: etcmanila
