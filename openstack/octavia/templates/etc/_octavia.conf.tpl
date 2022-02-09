@@ -2,6 +2,7 @@
 # Print debugging output (set logging level to DEBUG instead of default WARNING level).
 debug = {{.Values.debug | default "false" }}
 log_config_append = /etc/octavia/logging.ini
+{{- include "ini_sections.logging_format" . }}
 
 # Plugin options are hot_plug_plugin (Hot-pluggable controller plugin)
 octavia_plugins = f5_plugin
