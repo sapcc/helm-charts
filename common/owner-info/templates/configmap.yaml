@@ -7,6 +7,10 @@ metadata:
     {{- if not (eq 0 (len .Values.maintainers)) }}
     primary-maintainer: {{ index .Values.maintainers 0 | lower | replace " " "-" }}
     {{- end }}
+    helm-chart-url: {{ if (index .Values "helm-chart-url" | hasPrefix "http") }}{{ quote (index .Values "helm-chart-url") }}{{ else }}{{ required "Please enter the GitHub URL for your chart into .Values.owner-info.helm-chart-url!" "" }}{{ end }}
+
+    # This can be used to validate via policy that everyone uses a reasonably up-to-date version of this chart.
+    owner-info-version: {{ quote .Chart.Version }}
 
 data:
   {{- if not (eq 0 (len .Values.maintainers)) }}
