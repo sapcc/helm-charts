@@ -3,7 +3,7 @@ groups:
   rules:      
   - alert: ADPendingReplications
     expr: count(windows_ad_replication_pending_synchronizations{job="win-exporter-ad"} > 0) by (server_name)
-    for: 20m
+    for: 30m
     labels:
       severity: warning
       tier: ad
@@ -14,9 +14,9 @@ groups:
       description: "Pending replications on node {{ $labels.server_name }}"
       summary: "Pending replications on node {{ $labels.server_name }}"
 
-  - alert: ADReplicationsUnsuccessfull
+  - alert: ADReplicationFailed
     expr: count(windows_ad_replication_last_result{job="win-exporter-ad"} > 0) by (server_name, partner)
-    for: 20m
+    for: 30m
     labels:
       severity: info
       tier: ad
