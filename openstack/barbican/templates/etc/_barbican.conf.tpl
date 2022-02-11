@@ -3,6 +3,7 @@
 debug = {{.Values.debug}}
 
 log_config_append = /etc/barbican/logging.ini
+{{- include "ini_sections.logging_format" . }}
 
 # Address to bind the API server
 bind_host = 0.0.0.0
