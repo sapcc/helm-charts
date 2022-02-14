@@ -16,7 +16,7 @@ subjects:
   name: {{ $val }}
 {{- end }}
 {{ range $index, $ns := (lookup "v1" "Namespace" "" "").items }}
-{{- if not (has $ns.metadata.name .Values.adminNamespaces) }}
+{{- if not (has $ns.metadata.name $.Values.adminNamespaces) }}
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
@@ -28,11 +28,11 @@ roleRef:
   kind: ClusterRole
   name: cc:admin
 subjects:
-{{- range $val := .Values.oidcIAS.developerGroups }}
+{{- range $val := $.Values.oidcIAS.developerGroups }}
 - kind: Group
   name: {{ $val }}
 {{- end }}
-{{- range $val := .Values.oidcIAS.developerUsers }}
+{{- range $val := $.Values.oidcIAS.developerUsers }}
 - kind: User
   name: {{ $val }}
 {{- end }}
