@@ -191,5 +191,4 @@ output {
       ssl => true
     }
   }
-{{- end }}
 }
