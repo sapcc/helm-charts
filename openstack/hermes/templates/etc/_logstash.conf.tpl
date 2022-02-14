@@ -295,7 +295,8 @@ output {
   }
   {{- end}}
 
-  if [type] == 'audit' {
+# Limit events to audit pod to ccadmin domain
+  if [type] == 'audit' and [initiator][domain] = "ccadmin" {
     http{
       url => "https://logstash-audit-external.{{.Values.global.region}}.{{.Values.global.tld}}"
       format => "json"
