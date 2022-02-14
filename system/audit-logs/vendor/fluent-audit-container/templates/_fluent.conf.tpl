@@ -22,12 +22,13 @@
 </label>
 
 # All the auto-generated files should use the tag "file.<filename>".
+{{- if eq .Values.global.clusterType "metal" }}
 <source>
   @type tail
-  @id tail
-  path /var/log/containers/keystone-api-*.log,/var/log/containers/keystone-global-api-*.log
+  @id keystone
+  path /var/log/containers/keystone-api-*.log
   exclude_path /var/log/containers/fluentd*
-  pos_file /var/log/es-containers-octobus.log.pos
+  pos_file /var/log/keystone-octobus.log.pos
   tag keystone.*
   <parse>
     @type json
@@ -35,6 +36,33 @@
     keep_time_key true
   </parse>
 </source>
+<filter keystone.**>
+  @type record_transformer
+  <record>
+    sap.cc.audit.source "keystone-api"
+  </record>
+</filter>
+
+<source>
+  @type tail
+  @id keystone-global
+  path /var/log/containers/keystone-global-api-*.log
+  exclude_path /var/log/containers/fluentd*
+  pos_file /var/log/keystone-global-octobus.log.pos
+  tag keystone-global.*
+  <parse>
+    @type json
+    time_format %Y-%m-%dT%H:%M:%S.%N
+    keep_time_key true
+  </parse>
+</source>
+<filter keystone-global.**>
+  @type record_transformer
+  <record>
+    sap.cc.audit.source "keystone-gobal-api"
+  </record>
+</filter>
+{{- end }}
 
 <source>
   @type tail
@@ -49,6 +77,12 @@
     keep_time_key true
   </parse>
 </source>
+<filter kubeapi.**>
+  @type record_transformer
+  <record>
+    sap.cc.audit.source "kube-api"
+  </record>
+</filter>
 
 {{- if .Values.additional_container_logs }}
 {{- range .Values.additional_container_logs }}
@@ -84,7 +118,8 @@
 
 @include /fluent-bin/prometheus.conf
 
-<filter **>
+{{- if eq .Values.global.clusterType "metal" }}
+<filter keystone.** keystone-global.**>
   @type kubernetes_metadata
   @id kubernetes
   kubernetes_url https://KUBERNETES_SERVICE_HOST
@@ -94,8 +129,7 @@
   container_name_to_kubernetes_regexp '^(?<name_prefix>[^_]+)_(?<container_name>[^\._]+)(\.(?<container_hash>[^_]+))?_(?<pod_name>[^_]+)_(?<namespace>[^_]+)_[^_]+_[^_]+$'
 </filter>
 
-{{- if eq .Values.global.clusterType "metal" }}
-<filter keystone.**>
+<filter keystone.** keystone-global.**>
   @type parser
   @id grok_parser
   key_name log
@@ -128,7 +162,7 @@
 </filter>
 
 {{- if eq .Values.global.clusterType "metal"}}
-<match keystone.**>
+<match keystone.** keystone-global.**>
   @type copy
   @id duplicate_keystone
   <store>

@@ -200,12 +200,6 @@ filter {
         }
       }
 
-      if [kubernetes][labels][name] {
-        mutate {
-          add_field => { "[sap][cc][audit][source]" => "%{[kubernetes][labels][name]}" }
-        }
-      }
-
       if [event][details][serviceProvider] {
         mutate {
             add_field => { "[sap][cc][audit][source]" => "%{[event][details][serviceProvider]}" }
