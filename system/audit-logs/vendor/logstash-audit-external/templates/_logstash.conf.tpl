@@ -182,12 +182,6 @@ filter {
         {{ end -}}
       }
 
-      if [apiVersion] and [apiVersion] == "audit.k8s.io/v1" {
-        mutate {
-          add_field => { "[sap][cc][audit][source]"  => "Kube-API" }
-        }
-      }
-
       if [typeURI] and [typeURI] == "http://schemas.dmtf.org/cloud/audit/1.0/event" {
         mutate {
           add_field => { "[sap][cc][audit][source]" => "Hermes" }
