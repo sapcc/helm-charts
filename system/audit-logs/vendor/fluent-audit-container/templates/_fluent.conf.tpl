@@ -78,6 +78,16 @@
   </parse>
 </source>
 <filter kubeapi.**>
+  @type parser
+  @id json_parser
+  key_name log
+  <parse>
+    @type json
+    time_format %Y-%m-%dT%H:%M:%S.%N
+    keep_time_key true
+  </parse>
+</filter>
+<filter kubeapi.**>
   @type record_transformer
   <record>
     sap.cc.audit.source "kube-api"
@@ -142,18 +152,6 @@
   </parse>
 </filter>
 {{- end }}
-
-<filter kubeapi.**>
-  @type parser
-  @id json_parser
-  key_name log
-  <parse>
-    @type json
-    time_format %Y-%m-%dT%H:%M:%S.%N
-    keep_time_key true
-  </parse>
-</filter>
-
 
 <filter **>
   @type record_modifier
