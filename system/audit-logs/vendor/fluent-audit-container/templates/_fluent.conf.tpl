@@ -36,12 +36,6 @@
     keep_time_key true
   </parse>
 </source>
-<filter keystone.**>
-  @type record_transformer
-  <record>
-    sap.cc.audit.source "keystone-api"
-  </record>
-</filter>
 
 <source>
   @type tail
@@ -56,12 +50,6 @@
     keep_time_key true
   </parse>
 </source>
-<filter keystone-global.**>
-  @type record_transformer
-  <record>
-    sap.cc.audit.source "keystone-gobal-api"
-  </record>
-</filter>
 {{- end }}
 
 <source>
@@ -151,6 +139,21 @@
     grok_failure_key grok_failure
   </parse>
 </filter>
+
+<filter keystone.**>
+  @type record_transformer
+  <record>
+    sap.cc.audit.source "keystone-api"
+  </record>
+</filter>
+
+<filter keystone-global.**>
+  @type record_transformer
+  <record>
+    sap.cc.audit.source "keystone-gobal-api"
+  </record>
+</filter>
+
 {{- end }}
 
 <filter **>
