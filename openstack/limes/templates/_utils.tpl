@@ -21,11 +21,7 @@
 - name: LIMES_API_REQUEST_LOG_EXCEPT_STATUS_CODES
   value: "300"
 - name: LIMES_API_CORS_ALLOWED_ORIGINS
-  {{- if .Values.limes.relaxed_cors }}
   value: "*"
-  {{- else }}
-  value: "https://dashboard.{{.Values.global.region}}.{{.Values.global.tld}}"
-  {{- end }}
 - name: LIMES_COLLECTOR_DATA_METRICS_EXPOSE
   value: "true"
 - name: LIMES_COLLECTOR_DATA_METRICS_SKIP_ZERO
