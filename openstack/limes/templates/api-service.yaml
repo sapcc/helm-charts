@@ -1,10 +1,8 @@
-{{ $values := .Values }}
-{{ range $cluster_id, $config := .Values.limes.clusters }}
 kind: Service
 apiVersion: v1
 
 metadata:
-  name: limes-api-{{$cluster_id}}
+  name: limes-api-ccloud
   labels:
     app: limes-api
   annotations:
@@ -12,13 +10,10 @@ metadata:
     prometheus.io/scrape: "true"
     prometheus.io/port: "80"
     # The `openstack` Prometheus shall scrape metrics of OpenStack services.
-    prometheus.io/targets: {{ required ".Values.alerts.prometheus.openstack missing" $values.alerts.prometheus.openstack | quote }}
+    prometheus.io/targets: {{ required ".Values.alerts.prometheus.openstack missing" .Values.alerts.prometheus.openstack | quote }}
 
 spec:
   selector:
-    name: limes-api-{{$cluster_id}}
+    name: limes-api-ccloud
   ports:
     - port: 80
-
----
-{{end}}
