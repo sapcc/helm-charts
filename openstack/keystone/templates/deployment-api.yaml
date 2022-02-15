@@ -101,8 +101,14 @@ spec:
           image: {{ required ".Values.global.registryAlternateRegion is missing" .Values.global.registryAlternateRegion }}/{{ .Values.api.image }}:{{ required ".Values.api.imageTag is missing" .Values.api.imageTag }}
           imagePullPolicy: {{ .Values.api.imagePullPolicy | default "IfNotPresent" | quote }}
           command:
+            {{- if .Values.api.uwsgi }}
+            - uwsgi
+            - --ini
+            - /etc/keystone/uwsgi-keystone.conf
+            {{- else }}
             - /scripts/keystone-api.sh
             - start
+            {{- end }}
           env:
             {{- if .Values.sentry.enabled }}
             - name: SENTRY_DSN
@@ -132,8 +138,13 @@ spec:
             preStop:
               exec:
                 command:
+                  {{- if .Values.api.uwsgi }}
+                  - /bin/sleep
+                  - "5"
+                  {{- else }}
                   - /scripts/keystone-api.sh
                   - stop
+                  {{- end }}
           readinessProbe:
             tcpSocket:
               port: 5000
@@ -180,6 +191,12 @@ spec:
               subPath: watcher.yaml
               readOnly: true
             {{- end }}
+{{- if .Values.api.uwsgi }}
+            - name: keystone-etc
+              mountPath: /etc/keystone/uwsgi-keystone.conf
+              subPath: uwsgi-keystone.conf
+              readOnly: true
+{{- else }}
             - name: keystone-etc
               mountPath: /etc/apache2/conf-enabled/wsgi-keystone.conf
               subPath: wsgi-keystone.conf
@@ -188,6 +205,7 @@ spec:
               mountPath: /etc/apache2/mods-available/mpm_event.conf
               subPath: mpm_event.conf
               readOnly: true
+  {{- end }}
             {{- if ne .Values.release "rocky" }}
             - name: keystone-etc
               mountPath: /etc/keystone/access_rules.json

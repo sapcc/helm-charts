@@ -31,6 +31,8 @@ methods = {{ .Values.api.auth.methods | default "password,token,application_cred
 {{ if .Values.api.auth.password }}password = {{ .Values.api.auth.password }}{{ end }}
 {{ if .Values.api.auth.totp }}totp = {{ .Values.api.auth.totp }}{{ end }}
 {{- end }}
+[cc_password]
+url = https://accounts.sap.com/service/users/password
 
 {{- if hasKey .Values.global "api"}}
 {{- if hasKey .Values.global.api "cc_password"}}
