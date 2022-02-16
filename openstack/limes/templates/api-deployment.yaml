@@ -1,9 +1,8 @@
-{{ range $cluster_id, $config := .Values.limes.clusters }}
 kind: Deployment
 apiVersion: apps/v1
 
 metadata:
-  name: limes-api-{{$cluster_id}}
+  name: limes-api-ccloud
   labels:
     app: limes-api
     release: "{{$.Release.Name}}"
@@ -18,17 +17,17 @@ spec:
       maxSurge: 2
   selector:
     matchLabels:
-      name: limes-api-{{$cluster_id}}
+      name: limes-api-ccloud
   template:
     metadata:
       labels:
-        name: limes-api-{{$cluster_id}}
+        name: limes-api-ccloud
         app: limes-api
         alert-tier: os
         alert-service: limes
       annotations:
-        checksum/configmap: {{ include "limes/templates/configmap.yaml" $ | sha256sum }}
-        checksum/secret: {{ include "limes/templates/secret.yaml" $ | sha256sum }}
+        checksum/configmap: {{ include "limes/templates/configmap.yaml" . | sha256sum }}
+        checksum/secret: {{ include "limes/templates/secret.yaml" . | sha256sum }}
     spec:
       volumes:
         - name: config
@@ -36,18 +35,14 @@ spec:
             name: limes
       containers:
         - name: api
-          image: {{include "limes_image" $}}
+          image: {{ include "limes_image" . }}
           imagePullPolicy: IfNotPresent
           args:
             - serve
             - /etc/limes/limes.yaml
-            - {{$cluster_id}}
+            - ccloud
           env:
-            {{ include "limes_common_envvars" $ | indent 12 }}
-            {{- if $.Values.limes.clusters.monsoon2 }}
-            - name: LIMES_INSECURE
-              value: '1' # SSL certificates are hard :(
-            {{- end }}
+            {{ include "limes_common_envvars" . | indent 12 }}
           volumeMounts:
             - mountPath: /etc/limes
               name: config
@@ -64,14 +59,14 @@ spec:
               port: 80
             timeoutSeconds: 5
             periodSeconds: 5
-          {{- if $.Values.limes.resources.enabled }}
+          {{- if .Values.limes.resources.enabled }}
           resources:
             # observed usage: CPU <= 50m, RAM = 25-70 MiB
             #
             # However, we have some very significant spikes esp. when billing
             # scrapes us, so we give some extra headroom to stay performant.
             limits:
-              {{- if eq $.Values.global.region "qa-de-1" }}
+              {{- if eq .Values.global.region "qa-de-1" }}
               # In qa-de-1, we also need some extra headroom because of the sheer size
               # of some reports rendered by billing. The "tempest" domain has
               # ~2000 projects in order to test the behavior of large-scale
@@ -87,5 +82,3 @@ spec:
               cpu: '250m'
               memory: '500Mi'
           {{- end }}
----
-{{end}}

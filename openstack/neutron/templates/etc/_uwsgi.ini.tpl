@@ -27,8 +27,11 @@ die-on-term = true
 hook-master-start = unix_signal:15 gracefully_kill_them_all
 py-call-osafterfork = true
 
-# logging and metrics
-log-format = [pid: %(pid)] %(addr) {%(vars) vars in %(pktsize) bytes} [%(ctime)] %(method) %(uri) [%(request_id) g%(global_request_id) %(user_id)/%(user_project_id)@%(project_id)] => generated %(rsize) bytes in %(msecs) msecs (%(proto) %(status)) %(headers) headers in %(hsize) bytes
+# logging and metrics, sadly no sub-seconds
+log-x-forwarded-for = true
+log-date = %%Y-%%m-%%d %%H:%%M:%%S,000
+log-format-strftime = true
+log-format = %(ftime) %(pid) INFO uWSGI [%(request_id) g%(global_request_id) %(user_id) %(project) %(domain) %(user_domain) %(project_domain)] %(addr) "%(method) %(uri) %(proto)" status: %(status) len: %(size) time: %(secs) agent: %(uagent)
 plugin = dogstatsd
 stats-push = dogstatsd:127.0.0.1:9125
 dogstatsd-all-gauges = true
