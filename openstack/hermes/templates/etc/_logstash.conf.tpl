@@ -345,6 +345,7 @@ output {
   }
   {{- end}}
 
+  {{ if .Values.logstash.audit -}}
   if [type] == 'audit' {
     if [initator][domain] == 'ccadmin' or ([observer][typeURI] == "service/security" and [action] == "authenticate" and [outcome] == "failure") {
       http{
@@ -355,4 +356,5 @@ output {
       }
     }
   }
+  {{- end}}
 }
