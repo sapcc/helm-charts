@@ -2,6 +2,7 @@
 debug = {{.Values.debug }}
 
 log_config_append = /etc/manila/logging.ini
+{{- include "ini_sections.logging_format" . }}
 
 use_forwarded_for = true
 # rate limiting is handled outside

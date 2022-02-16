@@ -36,20 +36,48 @@ spec:
           env:
           - name: ENV_VOLTA_ROLE_ID
             value: {{ .Values.volta.role_id }}
+          # - name: ENV_VOLTA_SECRET_ID
+          #   value: {{ .Values.volta.secret_id }}
           - name: ENV_VOLTA_SECRET_ID
-            value: {{ .Values.volta.secret_id }}
+            valueFrom:
+              secretKeyRef:
+                name: volta-secrets
+                key: secret_id
           - name: ENV_VOLTA_API_PORT
             value: "{{ .Values.volta.port }}"
           - name: ENV_VOLTA_OIDC_PROVIDER
             value: {{ .Values.volta.oidc_provider }}
+          # - name: ENV_VOLTA_OIDC_CLIENT_ID
+          #   value: {{ .Values.volta.oidc_client_id }}
           - name: ENV_VOLTA_OIDC_CLIENT_ID
-            value: {{ .Values.volta.oidc_client_id }}
+            valueFrom:
+              secretKeyRef:
+                name: volta-secrets
+                key: oidc_client_id
+          # - name: ENV_VOLTA_OIDC_CLIENT_SECRET
+          #   value: {{ .Values.volta.oidc_client_secret }}
           - name: ENV_VOLTA_OIDC_CLIENT_SECRET
-            value: {{ .Values.volta.oidc_client_secret }}
+            valueFrom:
+              secretKeyRef:
+                name: volta-secrets
+                key: oidc_client_secret
           - name: ENV_VOLTA_OIDC_CALLBACK_URL
             value: {{ .Values.volta.oidc_callback_url }}
           - name: ENV_VOLTA_VAULT_URL
             value: {{ .Values.volta.vault_url }}
+          - name: ENV_LDAP_HOST
+            value: {{ .Values.volta.ldap_host }}
+          - name: ENV_LDAP_BIND_DN
+            value: {{ .Values.volta.ldap_bind_dn }}
+          # - name: ENV_LDAP_BIND_PW
+          #   value: {{ .Values.volta.ldap_bind_pw }}
+          - name: ENV_LDAP_BIND_PW
+            valueFrom:
+              secretKeyRef:
+                name: volta-secrets
+                key: ldap_bind_pw
+          - name: ENV_LDAP_BASEDN
+            value: {{ .Values.volta.ldap_base_dn }}
           ports:
             - name: http
               containerPort: 2345

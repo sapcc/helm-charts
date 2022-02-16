@@ -4,10 +4,17 @@ apiVersion: v1
 metadata:
   name: neutron-server
   labels:
+    app: {{ template "fullname" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
     system: openstack
-    type: api
     component: neutron
+    type: api
   annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "{{ required ".Values.port_metrics missing" .Values.port_metrics }}"
+    prometheus.io/targets: "{{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus }}"
     maia.io/scrape: "true"
 spec:
   selector:

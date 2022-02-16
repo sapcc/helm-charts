@@ -1,12 +1,11 @@
-{{ range $cluster_id, $config := .Values.limes.clusters }}
 kind: Deployment
 apiVersion: apps/v1
 
 metadata:
-  name: limes-collect-{{$cluster_id}}
+  name: limes-collect-ccloud
   labels:
     app: limes-collect
-    release: "{{$.Release.Name}}"
+    release: "{{.Release.Name}}"
 
 spec:
   minReadySeconds: 10 # to capture errors from config/constraint parsing
@@ -16,21 +15,21 @@ spec:
     type: Recreate
   selector:
     matchLabels:
-      name: limes-collect-{{$cluster_id}}
+      name: limes-collect-ccloud
   template:
     metadata:
       labels:
-        name: limes-collect-{{$cluster_id}}
+        name: limes-collect-ccloud
         app: limes-collect
         alert-tier: os
         alert-service: limes
       annotations:
-        checksum/configmap: {{ include "limes/templates/configmap.yaml" $ | sha256sum }}
-        checksum/secret: {{ include "limes/templates/secret.yaml" $ | sha256sum }}
+        checksum/configmap: {{ include "limes/templates/configmap.yaml" . | sha256sum }}
+        checksum/secret: {{ include "limes/templates/secret.yaml" . | sha256sum }}
         prometheus.io/scrape: "true"
         prometheus.io/port: "8080"
         # The `openstack` Prometheus shall scrape metrics of OpenStack services.
-        prometheus.io/targets: {{ required ".Values.alerts.prometheus.openstack missing" $.Values.alerts.prometheus.openstack | quote }}
+        prometheus.io/targets: {{ required ".Values.alerts.prometheus.openstack missing" .Values.alerts.prometheus.openstack | quote }}
     spec:
       volumes:
         - name: config
@@ -38,44 +37,26 @@ spec:
             name: limes
       containers:
         - name: collect
-          image: {{include "limes_image" $}}
+          image: {{ include "limes_image" . }}
           imagePullPolicy: IfNotPresent
           args:
             - collect
             - /etc/limes/limes.yaml
-            - {{$cluster_id}}
           env:
-            {{ include "limes_common_envvars" $ | indent 12 }}
-            {{- if eq $cluster_id "monsoon2" }}
-            - name: LIMES_INSECURE
-              value: '1' # SSL certificates are hard :(
-            {{- end }}
+            {{ include "limes_common_envvars" . | indent 12 }}
           volumeMounts:
             - mountPath: /etc/limes
               name: config
           ports:
             - name: metrics
               containerPort: 8080
-          {{- if $.Values.limes.resources.enabled }}
+          {{- if .Values.limes.resources.enabled }}
           resources:
-            # observed usage for non-CCloud clusters: CPU <= 10m, RAM <= 50 MiB
-            # observed usage for CCloud clusters: CPU = 50m-500m, RAM = 100-250 MiB
+            # observed usage: CPU = 50m-500m, RAM = 100-250 MiB
             limits:
-              {{- if eq $cluster_id "ccloud" }}
                 cpu: '1000m'
                 memory: '400Mi'
-              {{- else }}
-                cpu: '20m'
-                memory: '100Mi'
-              {{- end }}
             requests:
-              {{- if eq $cluster_id "ccloud" }}
                 cpu: '250m'
                 memory: '400Mi'
-              {{- else }}
-                cpu: '10m'
-                memory: '100Mi'
-              {{- end }}
           {{- end }}
----
-{{end}}

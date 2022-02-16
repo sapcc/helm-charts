@@ -44,28 +44,31 @@ filter {
       field => "[body][value]"
       target => "event"
     }
+    if [event][Message] {
+      kv {
+        source => "[event][Message]"
+        target => "[event][details]"
+        field_split_pattern => ", "
+        whitespace => "strict"
+        }
 
-    kv {
-      source => "[event][Message]"
-      target => "[event][details]"
-      field_split_pattern => ", "
-      whitespace => "strict"
+      if [event][details]{
+        ruby {
+          code => '
+            event.get("[event][details]").to_hash.keys.each { |k|
+            if k.start_with?("202")
+              event.remove("[event][details]" + "[" + k + "]")
+            end
+            }
+          '
+        }
       }
 
-    ruby {
-      code => '
-        event.get("[event][details]").to_hash.keys.each { |k|
-        if k.start_with?("202")
-          event.remove("[event][details]" + "[" + k + "]")
-        end
-        }
-      '
-    }
-
-    date{
-      match => [ "[event][Time]" , "ISO8601" , "yyyy-MM-dd'T'HH.mm.ss.SSSZ" ]
-      locale => "en"
-      timezone => "UTC"
+      date{
+        match => [ "[event][Time]" , "ISO8601" , "yyyy-MM-dd'T'HH.mm.ss.SSSZ" ]
+        locale => "en"
+        timezone => "UTC"
+      }
     }
 
     mutate {

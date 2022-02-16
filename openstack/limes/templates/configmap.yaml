@@ -8,15 +8,7 @@ data:
   policy.yaml: |
 {{ .Files.Get "files/policy.yaml" | indent 4 }}
   limes.yaml: |
-    clusters:
-{{ toYaml .Values.limes.clusters | indent 6 }}
-  migrate.sh: |
-    #!/bin/sh
-    set -euo pipefail
-    limes migrate /etc/limes/limes.yaml
-    exec tail -f /dev/null
-
-{{- range $constraint_name, $constraint := .Values.limes.constraints }}
-  constraints-{{ $constraint_name }}.yaml: |
-{{ toYaml $constraint | indent 4 }}
-{{- end }}
+    cluster_id: ccloud
+{{ toYaml .Values.limes.clusters.ccloud | indent 4 }}
+  constraints-ccloud.yaml: |
+{{ toYaml .Values.limes.constraints.ccloud | indent 4 }}
