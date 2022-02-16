@@ -345,12 +345,14 @@ output {
   }
   {{- end}}
 
-  if [type] == 'audit' and [initator][domain] == 'ccadmin' {
-    http{
-      url => "https://logstash-audit-external.{{.Values.global.region}}.{{.Values.global.tld}}"
-      format => "json"
-      http_method => "post"
-      headers => { "Authorization" =>  "Basic {{ template "httpBasicAuth" . }}" }
+  if [type] == 'audit' {
+    if [initator][domain] == 'ccadmin' or ([observer][typeURI] == "service/security" and [action] == "authenticate" and [outcome] == "failure") {
+      http{
+        url => "https://logstash-audit-external.{{.Values.global.region}}.{{.Values.global.tld}}"
+        format => "json"
+        http_method => "post"
+        headers => { "Authorization" =>  "Basic {{ template "httpBasicAuth" . }}" }
+      }
     }
   }
 }
