@@ -172,14 +172,14 @@
     endpoint "https://{{.Values.forwarding.keystone.host}}"
     tls_ca_cert_path "/etc/ssl/certs/ca-certificates.crt"
     slow_flush_log_threshold 105.0
-    retryable_response_codes [503]
+    retryable_response_codes [429,503]
     <buffer>
-      queue_limit_length 24
       chunk_limit_size 8MB
       flush_at_shutdown true
       overflow_action block
       retry_forever true
-      retry_type periodic
+      retry_type exponential_backup
+      retry_max_interval 60s
       flush_interval 1s
     </buffer>
     <format>
@@ -201,14 +201,14 @@
       password {{.Values.global.elk_elasticsearch_http_password}}
     </auth>
     slow_flush_log_threshold 105.0
-    retryable_response_codes [503]
+    retryable_response_codes [429,503]
     <buffer>
-      queue_limit_length 24
       chunk_limit_size 8MB
       flush_at_shutdown true
       overflow_action block
       retry_forever true
-      retry_type periodic
+      retry_type exponential_backup
+      retry_max_interval 60s
       flush_interval 1s
     </buffer>
     <format>
@@ -226,6 +226,7 @@
       <labels>
         node "#{ENV['K8S_NODE_NAME']}"
         container $.kubernetes.container_name
+        source keystone
       </labels>
     </metric>
   </store>
@@ -249,14 +250,14 @@
       password {{.Values.global.elk_elasticsearch_http_password}}
     </auth>
     slow_flush_log_threshold 105.0
-    retryable_response_codes [503]
+    retryable_response_codes [429,503]
     <buffer>
-      queue_limit_length 24
       chunk_limit_size 8MB
       flush_at_shutdown true
       overflow_action block
       retry_forever true
-      retry_type periodic
+      retry_type exponential_backup
+      retry_max_interval 60s
       flush_interval 1s
     </buffer>
     <format>
@@ -274,6 +275,7 @@
       <labels>
         node "#{ENV['K8S_NODE_NAME']}"
         container $.kubernetes.container_name
+        source all
       </labels>
     </metric>
   </store>

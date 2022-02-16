@@ -27,7 +27,7 @@
 
 # metrics
 # # count number of incoming records per tag
-<filter kubernetes.**>
+<filter keystone.** keystone-global.** >
   @type prometheus
   <metric>
     name fluentd_input_status_num_records_total
@@ -36,6 +36,7 @@
     <labels>
       hostname ${hostname}
       node "#{ENV['K8S_NODE_NAME']}"
+      source keystone
     </labels>
   </metric>
 </filter>

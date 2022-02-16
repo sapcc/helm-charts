@@ -38,6 +38,7 @@ input {
     ssl => true
     ssl_certificate => '/tls-secret/tls.crt'
     ssl_key => '/usr/share/logstash/config/tls.key'
+    threads => 8
 {{- end }}
   }
 {{- if .Values.beats.enabled }}
