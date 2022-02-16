@@ -5,14 +5,14 @@ groups:
     expr: sum by (target) (vrops_api_response) / count by (target) (vrops_api_response) > 500
     for: 10m
     labels:
-      severity: info
+      severity: warning
       tier: vmware
       service: vrops-exporter
-      meta: "`{{ $labels.target }}` API is down. Monitoring of the vCenter is no longer available."
+      meta: "`https://{{ $labels.target }}` API is down. Monitoring of the vCenter and NSX-T is no longer available."
       playbook: docs/devops/alert/vcenter/vrops.html#vrops_api_down
     annotations:
-      description: "`{{ $labels.target }}` API is down. Monitoring of vCenter and NSX-T is no longer available."
-      summary: "`{{ $labels.target }}` API is down. Monitoring of vCenter and NSX-T is no longer available."
+      description: "`https://{{ $labels.target }}` API is down. Monitoring of the vCenter and NSX-T is no longer available."
+      summary: "`https://{{ $labels.target }}` API is down. Monitoring of the vCenter and NSX-T is no longer available."
 
   - alert: VROpsExporterDegraded
     expr: 200 < sum by (target) (vrops_api_response) / count by (target) (vrops_api_response) <= 499
@@ -55,15 +55,15 @@ groups:
   - alert: VROpsVCenterAdapterNotReceivingData
     expr: vrops_vcenter_alert_info{alert_name="Adapter instance is not receiving data"}
     labels:
-      severity: info
+      severity: warning
       tier: vmware
       service: vcenter adapter
-      meta: "vROPs vCenter adapter is not receiving data for {{ $labels.vcenter }}. {{ $labels.recommendation_2 }}"
+      meta: "The vCenter adapter for https://vrops-{{ $labels.vcenter }} is not receiving data. {{ $labels.recommendation_2 }}"
       playbook: docs/devops/alert/vcenter/vrops.html#revalidatecertificate
       no_alert_on_absence: "true"
     annotations:
-      description: "vROPs vCenter adapter is not receiving data for {{ $labels.vcenter }}. {{ $labels.recommendation_2 }}"
-      summary: "vROPs vCenter adapter is not receiving data for {{ $labels.vcenter }}. {{ $labels.recommendation_2 }}"
+      description: "The vCenter adapter for https://vrops-{{ $labels.vcenter }} is not receiving data. {{ $labels.recommendation_2 }}"
+      summary: "The vCenter adapter for https://vrops-{{ $labels.vcenter }} is not receiving data. {{ $labels.recommendation_2 }}"
 
   - alert: VROpsVCenterObjectsNotReceivingData
     expr: vrops_vcenter_alert_info{alert_name="Objects are not receiving data from adapter instance"}
