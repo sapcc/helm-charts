@@ -134,7 +134,7 @@ filter {
   }
 
   # Enrich keystone events with domain mapping from Metis
-  if [initiator][id]{
+  if [initiator][id] or [initiator][project_id]{
     jdbc_static {
       id => "jdbc"
       loaders => [
@@ -183,8 +183,8 @@ filter {
         {
           id => "project_name_lookup"
           query => "select project_name, domain_id, domain_name from project_domain_mapping where project_id = ?"
-          prepared_parameters => ["[initiator][id]"]
-          target => "domain_mapping"
+          prepared_parameters => ["[initiator][project_id]"]
+          target => "project_mapping"
         }
       ]
       staging_directory => "/tmp/logstash/jdbc_static/import_data"
@@ -222,6 +222,35 @@ filter {
       # Cleanup
       mutate {
         remove_field => [ "domain_mapping" ]
+      }
+    }
+
+    if [project_mapping] and [project_mapping][0]{
+      # Add Fields to audit events, checking if the field exists first to not overwrite.
+      if ![initiator][project] {
+        mutate {
+          add_field => {
+              "[initiator][project]" => "%{[project_mapping][0][project_name]}"
+          }
+        }
+      }
+      if ![initiator][domain_id] {
+        mutate {
+          add_field => {
+              "[initiator][domain_id]" => "%{[project_mapping][0][domain_id]}"
+          }
+        }
+      }
+      if ![initiator][domain] {
+        mutate {
+          add_field => {
+              "[initiator][domain]" => "%{[project_mapping][0][domain_name]}"
+          }
+        }
+      }
+      # Cleanup
+      mutate {
+        remove_field => [ "project_mapping" ]
       }
     }
   }
