@@ -178,7 +178,7 @@
       flush_at_shutdown true
       overflow_action block
       retry_forever true
-      retry_type exponential_backup
+      retry_type exponential_backoff
       retry_max_interval 60s
       flush_interval 1s
     </buffer>
@@ -207,7 +207,7 @@
       flush_at_shutdown true
       overflow_action block
       retry_forever true
-      retry_type exponential_backup
+      retry_type exponential_backoff
       retry_max_interval 60s
       flush_interval 1s
     </buffer>
@@ -256,7 +256,7 @@
       flush_at_shutdown true
       overflow_action block
       retry_forever true
-      retry_type exponential_backup
+      retry_type exponential_backoff
       retry_max_interval 60s
       flush_interval 1s
     </buffer>
