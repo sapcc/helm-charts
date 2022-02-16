@@ -45,6 +45,13 @@
   </regexp>
 </filter>
 
+<filter **>
+  @type record_transformer
+  <record>
+    sap.cc.audit.source "flatcar"
+  </record>
+</filter>
+
 <match **>
   @type copy
   <store>

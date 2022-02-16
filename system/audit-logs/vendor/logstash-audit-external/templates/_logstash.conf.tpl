@@ -95,7 +95,7 @@ filter {
     # }
     mutate {
       replace => { "type" => "audit" }
-      add_field => { "[sap][cc][audit][source]" => "Remoteboard"}
+      add_field => { "[sap][cc][audit][source]" => "remoteboard"}
     }
     clone {
       clones => ['audit', 'syslog']
@@ -107,7 +107,7 @@ filter {
     if [syslogcisco_facility] == "%UCSM"  and [syslogcisco_code] == "AUDIT" or [syslogcisco_facility] == "%USER" and [syslogcisco_code] == "SYSTEM_MSG" {
       mutate {
         replace => { "type" => "audit" }
-        add_field => { "[sap][cc][audit][source]" => "UCSM" }
+        add_field => { "[sap][cc][audit][source]" => "ucsm" }
       }
       clone {
        clones => ['audit', 'syslog']
@@ -119,7 +119,7 @@ filter {
   if [syslog_hostname] and [syslog_hostname] == "hsm01" {
     mutate {
         replace => { "type" => "audit" }
-        add_field => { "[sap][cc][audit][source]" => "HSM" }
+        add_field => { "[sap][cc][audit][source]" => "hsm" }
     }
     clone {
       clones => ['audit', 'syslog']
@@ -185,25 +185,19 @@ filter {
 
       if [typeURI] and [typeURI] == "http://schemas.dmtf.org/cloud/audit/1.0/event" {
         mutate {
-          add_field => { "[sap][cc][audit][source]" => "Hermes" }
+          add_field => { "[sap][cc][audit][source]" => "hermes" }
         }
       }
 
       if "awx" in [cluster_host_id] {
         mutate {
-          add_field => { "[sap][cc][audit][source]"  => "AWX" }
+          add_field => { "[sap][cc][audit][source]"  => "awx" }
         }
       }
 
       if [event][details][serviceProvider] {
         mutate {
             add_field => { "[sap][cc][audit][source]" => "%{[event][details][serviceProvider]}" }
-        }
-      }
-
-      if [syslog_identifier] {
-        mutate {
-          add_field => { "[sap][cc][audit][source]" => "flatcar"}
         }
       }
 
