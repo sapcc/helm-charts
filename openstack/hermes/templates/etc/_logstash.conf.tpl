@@ -345,7 +345,7 @@ output {
   }
   {{- end}}
 
-  if [type] == 'audit' {
+  if [type] == 'audit' and [initator][domain] == 'ccadmin' {
     http{
       url => "https://logstash-audit-external.{{.Values.global.region}}.{{.Values.global.tld}}"
       format => "json"
