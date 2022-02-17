@@ -183,12 +183,6 @@ filter {
         {{ end -}}
       }
 
-      if [typeURI] and [typeURI] == "http://schemas.dmtf.org/cloud/audit/1.0/event" {
-        mutate {
-          add_field => { "[sap][cc][audit][source]" => "hermes" }
-        }
-      }
-
       if "awx" in [cluster_host_id] {
         mutate {
           add_field => { "[sap][cc][audit][source]"  => "awx" }

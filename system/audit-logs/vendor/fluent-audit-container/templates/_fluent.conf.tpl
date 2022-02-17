@@ -180,7 +180,7 @@
       retry_forever true
       retry_type exponential_backoff
       retry_max_interval 60s
-      flush_interval 1s
+      flush_thread_count 2
     </buffer>
     <format>
       @type json
@@ -191,7 +191,8 @@
     @type http
     @id to_logstash_keystone
     {{ if eq .Values.global.clusterType "metal" -}}
-    endpoint "https://logstash-audit-external.{{.Values.global.region}}.{{.Values.global.tld}}"
+    # endpoint "https://logstash-audit-external.{{.Values.global.region}}.{{.Values.global.tld}}"
+    endpoint "http://logstash-audit-external-http.audit-logs:443"
     {{ else -}}
     endpoint "http://logstash-audit-external.audit-logs:{{.Values.global.https_port}}"
     {{ end -}}
@@ -209,7 +210,7 @@
       retry_forever true
       retry_type exponential_backoff
       retry_max_interval 60s
-      flush_interval 1s
+      flush_thread_count 2
     </buffer>
     <format>
       @type json
@@ -240,7 +241,8 @@
     @type http
     @id to_logstash
     {{ if eq .Values.global.clusterType "metal" -}}
-    endpoint "https://logstash-audit-external.{{.Values.global.region}}.{{.Values.global.tld}}"
+    # endpoint "https://logstash-audit-external.{{.Values.global.region}}.{{.Values.global.tld}}"
+    endpoint "http://logstash-audit-external-http.audit-logs:443"
     {{ else -}}
     endpoint "http://logstash-audit-external.audit-logs:{{.Values.global.https_port}}"
     {{ end -}}
@@ -258,7 +260,7 @@
       retry_forever true
       retry_type exponential_backoff
       retry_max_interval 60s
-      flush_interval 1s
+      flush_thread_count 2
     </buffer>
     <format>
       @type json
