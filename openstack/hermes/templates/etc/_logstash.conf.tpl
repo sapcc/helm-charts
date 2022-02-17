@@ -266,21 +266,21 @@ filter {
       if ![target][project] {
         mutate {
           add_field => {
-              "[target][project]" => "%{[project_mapping][0][project_name]}"
+              "[target][project]" => "%{[project_target_mapping][0][project_name]}"
           }
         }
       }
       if ![target][domain_id] {
         mutate {
           add_field => {
-              "[target][domain_id]" => "%{[project_mapping][0][domain_id]}"
+              "[target][domain_id]" => "%{[project_target_mapping][0][domain_id]}"
           }
         }
       }
       if ![target][domain] {
         mutate {
           add_field => {
-              "[target][domain]" => "%{[project_mapping][0][domain_name]}"
+              "[target][domain]" => "%{[project_target_mapping][0][domain_name]}"
           }
         }
       }
