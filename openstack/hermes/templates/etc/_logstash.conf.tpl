@@ -292,6 +292,13 @@ filter {
     }
   }
 
+  # Octobus setting Source to TypeURI. Unused in Hermes.
+  if [observer][typeURI] {
+    mutate {
+        add_field => {  [sap][cc][audit][source]" => "%{[observer][typeURI]}" }
+    }
+  }
+
   # Calculate the variable index name part from payload (@metadata will not be part of the event)
 
   # primary index
