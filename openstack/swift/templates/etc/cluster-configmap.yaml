@@ -1,8 +1,7 @@
-{{- range $cluster_id, $cluster := .Values.clusters }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: swift-etc-{{$cluster_id}}
+  name: swift-etc-{{ .Values.cluster_name }}
   labels:
     system: openstack
     service: objectstore
@@ -11,9 +10,6 @@ metadata:
 data:
   # swift
   container-sync-realms.conf: |
-{{ tuple $cluster $.Values | include "container-sync-realms.conf" | indent 4 }}
+{{ include "container-sync-realms.conf" . | indent 4 }}
   proxy-server.conf: |
-{{ tuple $cluster $.Values $.Release | include "proxy-server.conf" | indent 4 }}
-
----
-{{- end }}
+{{ include "proxy-server.conf" . | indent 4 }}

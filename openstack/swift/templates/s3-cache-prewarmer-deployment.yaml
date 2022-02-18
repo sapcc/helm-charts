@@ -1,13 +1,12 @@
-{{- range $cluster_id, $cluster := .Values.clusters }}
-{{- if $cluster.s3_cred_cache_prewarm_credentials }}
+{{- if .Values.s3_cred_cache_prewarm_credentials }}
 
 kind: Deployment
 apiVersion: apps/v1
 
 metadata:
-  name: swift-s3-cache-prewarmer-{{ $cluster_id }}
+  name: swift-s3-cache-prewarmer-{{ .Values.cluster_name }}
   labels:
-    release: "{{$.Release.Name}}"
+    release: "{{ .Release.Name }}"
 spec:
   revisionHistoryLimit: 5
   replicas: 1
@@ -15,30 +14,30 @@ spec:
     type: Recreate
   selector:
     matchLabels:
-      component: swift-s3-cache-prewarmer-{{ $cluster_id }}
+      component: swift-s3-cache-prewarmer-{{ .Values.cluster_name }}
   template:
     metadata:
       labels:
-        component: swift-s3-cache-prewarmer-{{ $cluster_id }}
+        component: swift-s3-cache-prewarmer-{{ .Values.cluster_name }}
         alert-tier: os
         alert-service: swift
       annotations:
         prometheus.io/scrape: "true"
         prometheus.io/port: "8080"
-        prometheus.io/targets: {{ required ".Values.alerts.prometheus.openstack missing" $.Values.alerts.prometheus.openstack }}
+        prometheus.io/targets: {{ required ".Values.alerts.prometheus.openstack missing" .Values.alerts.prometheus.openstack }}
     spec:
       containers:
         - name: prewarmer
-          image: {{ include "swift_image" $ }}
+          image: {{ include "swift_image" . }}
           command:
             - /usr/bin/swift-s3-cache-prewarmer
             - 'prewarm'
             - '--conservative'
             - '--expiry'
-            - "{{$cluster.s3_cred_cache_time}}s"
+            - "{{ .Values.s3_cred_cache_time }}s"
             - '--servers'
-            - "memcached.{{$.Release.Namespace}}.svc:11211"
-          args: {{ toJson $cluster.s3_cred_cache_prewarm_credentials }}
+            - "memcached.{{ .Release.Namespace }}.svc:11211"
+          args: {{ toJson .Values.s3_cred_cache_prewarm_credentials }}
           ports:
             - name: metrics
               containerPort: 8080
@@ -48,21 +47,20 @@ spec:
               memory: "50Mi"
           env:
             - name: OS_AUTH_URL
-              value: {{ $cluster.keystone_auth_url }}
+              value: {{ .Values.keystone_auth_url }}
             - name: OS_INTERFACE
-              value: {{$cluster.keystone_interface | default "admin"}}
+              value: {{ .Values.keystone_interface | default "admin" }}
             - name: OS_PASSWORD
-              value: {{ quote $cluster.swift_service_password }}
+              value: {{ quote .Values.swift_service_password }}
             - name: OS_PROJECT_DOMAIN_NAME
-              value: {{ $cluster.swift_service_project_domain }}
+              value: {{ .Values.swift_service_project_domain }}
             - name: OS_PROJECT_NAME
-              value: {{ $cluster.swift_service_project }}
+              value: {{ .Values.swift_service_project }}
             - name: OS_REGION_NAME
-              value: {{ $cluster.region_name | default $.Values.global.region }}
+              value: {{ .Values.region_name | default .Values.global.region }}
             - name: OS_USER_DOMAIN_NAME
-              value: {{ $cluster.swift_service_user_domain }}
+              value: {{ .Values.swift_service_user_domain }}
             - name: OS_USERNAME
-              value: {{ $cluster.swift_service_user }}
+              value: {{ .Values.swift_service_user }}
 
-{{- end }}
 {{- end }}

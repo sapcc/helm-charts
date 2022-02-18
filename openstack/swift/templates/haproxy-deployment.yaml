@@ -1,14 +1,13 @@
-{{- range $cluster_id, $cluster := .Values.clusters }}
 {{- $az_apods := dict }}
 {{- /*
 If aPod design is available take availability zones from there, with a list of aPods
 Else construct the same structure from the AZ list
 This and the affinities for 'cp' can go if aPod rollout is completed globally
 */ -}}
-{{- if $.Values.global.apods }}
-{{- $az_apods = $.Values.global.apods }}
+{{- if .Values.global.apods }}
+{{- $az_apods = .Values.global.apods }}
 {{- else }}
-{{- range $az := $.Values.global.availability_zones }}
+{{- range $az := .Values.global.availability_zones }}
 {{- $az_apods = set $az_apods $az list }}
 {{- end }}
 {{- end }}
@@ -21,13 +20,13 @@ kind: Deployment
 apiVersion: apps/v1
 
 metadata:
-  name: swift-haproxy-{{ $cluster_id }}-{{ $az }}{{ if ne $apod "cp" }}-{{ $apod }}{{ end }}
+  name: swift-haproxy-{{ $.Values.cluster_name }}-{{ $az }}{{ if ne $apod "cp" }}-{{ $apod }}{{ end }}
   labels:
     release: "{{ $.Release.Name }}"
-    os-cluster: {{ $cluster_id }}
+    os-cluster: {{ $.Values.cluster_name }}
 spec:
   revisionHistoryLimit: 5
-  {{- $replicas_az := default 2.0 (index $cluster (printf "haproxy_deployment_replicas_%s" $az)) }}
+  {{- $replicas_az := default 2.0 (index $.Values (printf "haproxy_deployment_replicas_%s" $az)) }}
   replicas: {{ $replicas_az }}
   strategy:
     type: RollingUpdate
@@ -40,16 +39,16 @@ spec:
       maxSurge: 2
   selector:
     matchLabels:
-      component: swift-haproxy-{{ $cluster_id }}
+      component: swift-haproxy-{{ $.Values.cluster_name }}
   template:
     metadata:
       labels:
-        component: swift-haproxy-{{ $cluster_id }}
+        component: swift-haproxy-{{ $.Values.cluster_name }}
         alert-tier: os
         alert-service: swift
         from: deployment
-        os-cluster: {{ $cluster_id }}
-        for-service: swift-proxy-{{ $cluster_id }}
+        os-cluster: {{ $.Values.cluster_name }}
+        for-service: swift-proxy-{{ $.Values.cluster_name }}
         availability-zone: {{ $az }}
         apod: {{ $apod }}
       annotations:
@@ -58,7 +57,7 @@ spec:
         prometheus.io/scrape: "true"
         prometheus.io/targets: {{ required ".Values.alerts.prometheus.openstack missing" $.Values.alerts.prometheus.openstack }}
     spec:
-      {{- if (index $cluster (printf "haproxy_deployment_tolerate_swift_%s_%s" $az $apod)) }}
+      {{- if (index $.Values (printf "haproxy_deployment_tolerate_swift_%s_%s" $az $apod)) }}
       tolerations:
       - key: "species"
         operator: "Equal"
@@ -92,7 +91,7 @@ spec:
                 - key: component
                   operator: In
                   values:
-                  - swift-haproxy-{{ $cluster_id }}
+                  - swift-haproxy-{{ $.Values.cluster_name }}
                 - key: from
                   operator: In
                   values:
@@ -105,7 +104,7 @@ spec:
                 - key: component
                   operator: In
                   values:
-                  - swift-haproxy-{{ $cluster_id }}
+                  - swift-haproxy-{{ $.Values.cluster_name }}
                 - key: from
                   operator: In
                   values:
@@ -119,18 +118,18 @@ spec:
                 - key: component
                   operator: In
                   values:
-                  - swift-proxy-{{ $cluster_id }}
+                  - swift-proxy-{{ $.Values.cluster_name }}
               topologyKey: "kubernetes.io/hostname"
       volumes:
         - name: tls-secret
           secret:
-            secretName: tls-swift-{{ $cluster_id }}
+            secretName: tls-swift-{{ $.Values.cluster_name }}
         - name: haproxy-bin
           configMap:
             name: haproxy-bin
         - name: haproxy-etc-cluster
           configMap:
-            name: haproxy-etc-{{ $cluster_id }}
+            name: haproxy-etc-{{ $.Values.cluster_name }}
       containers:
         - name: haproxy
           image: {{ $.Values.global.registryAlternateRegion }}/swift-haproxy:{{ $.Values.image_version_haproxy }}
@@ -172,11 +171,11 @@ spec:
           readinessProbe:
             httpGet:
               path: /healthcheck
-              port: {{ $cluster.proxy_public_port }}
+              port: {{ $.Values.proxy_public_port }}
               scheme: HTTPS
               httpHeaders:
                 - name: Host
-                  value: {{ tuple $cluster $.Values | include "swift_endpoint_host" }}
+                  value: {{ include "swift_endpoint_host" $ }}
             initialDelaySeconds: 10
             timeoutSeconds: 1
             periodSeconds: 5
@@ -185,6 +184,5 @@ spec:
               containerPort: 8404
 
 ---
-{{- end }}
 {{- end }}
 {{- end }}

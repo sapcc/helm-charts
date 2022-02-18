@@ -1,7 +1,4 @@
 {{- define "envoy.yaml" -}}
-{{- $cluster := index . 0 -}}
-{{- $context := index . 1 -}}
-{{- $upstream := index . 2 -}}
 node:
   id: lb
   cluster: swift-cluster
@@ -60,7 +57,7 @@ static_resources:
           xff_num_trusted_hops: 0
           skip_xff_append: false
           common_http_protocol_options:
-            idle_timeout: {{ add $context.client_timeout $context.node_timeout 5 }}s
+            idle_timeout: {{ add .Values.client_timeout .Values.node_timeout 5 }}s
           route_config:
             name: swift-service
             virtual_hosts:
@@ -70,7 +67,7 @@ static_resources:
               - match: { prefix: "/" }
                 route:
                   cluster: swift-cluster
-                  idle_timeout: {{ add $context.client_timeout 5 }}s
+                  idle_timeout: {{ add .Values.client_timeout 5 }}s
           http_filters:
           - name: envoy.filters.http.router
       transport_socket:
@@ -113,18 +110,18 @@ static_resources:
           xff_num_trusted_hops: 0
           skip_xff_append: false
           common_http_protocol_options:
-            idle_timeout: {{ add $context.client_timeout $context.node_timeout 5 }}s
+            idle_timeout: {{ add .Values.client_timeout .Values.node_timeout 5 }}s
           route_config:
             name: swift-service
             virtual_hosts:
-            {{ range $index, $san := $cluster.sans_http -}}
+            {{ range $index, $san := .Values.sans_http -}}
             - name: swift-service
-              domains: ["{{ $san }}.{{ $context.global.region }}.{{ $context.global.tld }}:{{ $cluster.proxy_public_http_port }}"]
+              domains: ["{{ $san }}.{{ $.Values.global.region }}.{{ $.Values.global.tld }}:{{ $.Values.proxy_public_http_port }}"]
               routes:
               - match: { prefix: "/" }
                 route:
                   cluster: swift-cluster
-                  idle_timeout: {{ add $context.client_timeout 5 }}s
+                  idle_timeout: {{ add $.Values.client_timeout 5 }}s
             {{- end }}
             - name: redirect
               domains: ["*"]
@@ -146,7 +143,7 @@ static_resources:
         - endpoint:
             address:
               socket_address:
-                address: {{ $upstream }}
+                address: {{ printf "swift-proxy-internal-%s.swift.svc" .Values.cluster_name }}
                 port_value: 8080
   - name: envoy_admin
     connect_timeout: 0.25s
