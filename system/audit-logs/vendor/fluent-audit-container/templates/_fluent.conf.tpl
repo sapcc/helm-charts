@@ -104,8 +104,8 @@
   @type record_transformer
   <record>
     {{ .field.name }} {{ .field.value | quote }}
-    sap.cc.cluster "{{ .Values.global.cluster }}"
-    sap.cc.region "{{ .Values.global.region }}"
+    sap.cc.cluster "{{ $.Values.global.cluster }}"
+    sap.cc.region "{{ $.Values.global.region }}"
   </record>
 </filter>
 {{- end }}
@@ -219,8 +219,8 @@
   <store>
     @type http
     @id to_logstash
-    {{ if eq .Values.global.clusterType "metal" -}}
-    endpoint "https://{{.Values.forwarding.audit.host}}"
+    {{ if or (eq .Values.global.clusterType "metal") (eq .Values.global.clusterType "scaleout") -}}
+    endpoint "https://{{.Values.globals.auditLogsForwarding.audit.host}}"
     tls_ca_cert_path "/etc/ssl/certs/ca-certificates.crt"
     {{ else -}}
     endpoint "http://logstash-audit-external.audit-logs:{{.Values.global.https_port}}"
