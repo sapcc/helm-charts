@@ -79,6 +79,8 @@
   @type record_transformer
   <record>
     sap.cc.audit.source "kube-api"
+    sap.cc.cluster "{{ .Values.global.cluster }}"
+    sap.cc.region "{{ .Values.global.region }}"
   </record>
 </filter>
 
@@ -102,6 +104,8 @@
   @type record_transformer
   <record>
     {{ .field.name }} {{ .field.value | quote }}
+    sap.cc.cluster "{{ .Values.global.cluster }}"
+    sap.cc.region "{{ .Values.global.region }}"
   </record>
 </filter>
 {{- end }}
@@ -144,6 +148,17 @@
   @type record_transformer
   <record>
     sap.cc.audit.source "keystone-api"
+    sap.cc.cluster "{{ .Values.global.cluster }}"
+    sap.cc.region "{{ .Values.global.region }}"
+  </record>
+</filter>
+
+<filter keystone-global.**>
+  @type record_transformer
+  <record>
+    sap.cc.audit.source "keystone-gobal-api"
+    sap.cc.cluster "{{ .Values.global.cluster }}"
+    sap.cc.region "{{ .Values.global.region }}"
   </record>
 </filter>
 
@@ -189,36 +204,6 @@
     json_array true
   </store>
   <store>
-    @type http
-    @id to_logstash_keystone
-    {{ if eq .Values.global.clusterType "metal" -}}
-    endpoint "https://logstash-audit-external.{{.Values.global.region}}.{{.Values.global.tld}}"
-    {{ else -}}
-    endpoint "http://logstash-audit-external.audit-logs:{{.Values.global.https_port}}"
-    {{ end -}}
-    <auth>
-      method basic
-      username {{.Values.global.elk_elasticsearch_http_user}}
-      password {{.Values.global.elk_elasticsearch_http_password}}
-    </auth>
-    slow_flush_log_threshold 105.0
-    retryable_response_codes [429,503]
-    <buffer>
-      chunk_limit_size 8MB
-      flush_at_shutdown true
-      overflow_action block
-      retry_forever true
-      retry_type exponential_backoff
-      retry_max_interval 60s
-      flush_interval 15s
-      flush_thread_count 2
-    </buffer>
-    <format>
-      @type json
-    </format>
-    json_array true
-  </store>
-  <store>
     @type prometheus
     @id to_prometheus_keystone
     <metric>
@@ -242,15 +227,16 @@
     @type http
     @id to_logstash
     {{ if eq .Values.global.clusterType "metal" -}}
-    endpoint "https://logstash-audit-external.{{.Values.global.region}}.{{.Values.global.tld}}"
+    endpoint "https://{{.Values.forwarding.audit.host}}"
+    tls_ca_cert_path "/etc/ssl/certs/ca-certificates.crt"
     {{ else -}}
     endpoint "http://logstash-audit-external.audit-logs:{{.Values.global.https_port}}"
-    {{ end -}}
     <auth>
       method basic
       username {{.Values.global.elk_elasticsearch_http_user}}
       password {{.Values.global.elk_elasticsearch_http_password}}
     </auth>
+    {{ end -}}
     slow_flush_log_threshold 105.0
     retryable_response_codes [429,503]
     <buffer>

@@ -38,7 +38,7 @@ input {
     ssl => true
     ssl_certificate => '/tls-secret/tls.crt'
     ssl_key => '/usr/share/logstash/config/tls.key'
-    threads => 8
+    threads => 12
 {{- end }}
   }
 {{- if .Values.beats.enabled }}
@@ -199,7 +199,7 @@ filter {
         if [user] and ![user][name] {
             mutate {
               rename => { "[user]" => "[user][name]" }
-            }
+          }
         }
       }
     }
