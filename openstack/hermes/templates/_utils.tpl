@@ -12,5 +12,5 @@
 
 {{/* Generate the full name to match requirement in rabbitmq chart. Temp fix. */}}
 {{- define "fullName" -}}
-{{- required ".Values.name missing" .Values.name -}}
+{{- required ".Values.hermes.name missing" .Values.hermes.name -}}
 {{- end -}}
