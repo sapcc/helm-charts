@@ -162,13 +162,6 @@
   </record>
 </filter>
 
-<filter keystone-global.**>
-  @type record_transformer
-  <record>
-    sap.cc.audit.source "keystone-gobal-api"
-  </record>
-</filter>
-
 {{- end }}
 
 <filter **>
