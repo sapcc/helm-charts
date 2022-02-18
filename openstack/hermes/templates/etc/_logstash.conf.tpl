@@ -134,7 +134,7 @@ filter {
   }
 
   # Enrich keystone events with domain mapping from Metis
-  if [initiator][id]{
+  if [initiator][id] or [initiator][project_id] {
     jdbc_static {
       id => "jdbc"
       loaders => [
@@ -142,6 +142,11 @@ filter {
           id  => "keystone_user_domain"
           query => "select u.id as user_id, m.local_id as user_name, p.id as domain_id, p.name as domain_name  from keystone.user as u left join keystone.id_mapping m on m.public_id = u.id left join keystone.project as p on p.id = u.domain_id where p.name = 'ccadmin'"
           local_table => "user_domain_mapping"
+        },
+        {
+          id  => "keystone_project_domain"
+          query => "select project.name as project_name, project.id as project_id, domain.name as domain_name, domain.id as domain_id from keystone.project join keystone.project domain on project.domain_id = domain.id where project.id = 'ccadmin'"
+          local_table => "project_domain_mapping"
         }
       ]
 
@@ -155,6 +160,16 @@ filter {
             ["domain_id", "varchar(64)"],
             ["domain_name", "varchar(64)"]
           ]
+        },
+        {
+          name => "project_domain_mapping"
+          index_columns => ["project_id"]
+          columns => [
+            ["project_name", "varchar(64)"],
+            ["project_id", "varchar(64)"],
+            ["domain_name", "varchar(64)"],
+            ["domain_id", "varchar(64)"]
+          ]
         }
       ]
 
@@ -164,6 +179,18 @@ filter {
           query => "select user_name, domain_id, domain_name from user_domain_mapping where user_id = ?"
           prepared_parameters => ["[initiator][id]"]
           target => "domain_mapping"
+        },
+        {
+          id => "project_name_lookup"
+          query => "select project_name, domain_id, domain_name from project_domain_mapping where project_id = ?"
+          prepared_parameters => ["[initiator][project_id]"]
+          target => "project_mapping"
+        },
+        {
+          id => "project_target_lookup"
+          query => "select project_name, domain_id, domain_name from project_domain_mapping where project_id = ?"
+          prepared_parameters => ["[target][project_id]"]
+          target => "project_target_mapping"
         }
       ]
       staging_directory => "/tmp/logstash/jdbc_static/import_data"
@@ -202,6 +229,73 @@ filter {
       mutate {
         remove_field => [ "domain_mapping" ]
       }
+    }
+
+    if [project_mapping] and [project_mapping][0]{
+      # Add Fields to audit events, checking if the field exists first to not overwrite.
+      if ![initiator][project] {
+        mutate {
+          add_field => {
+              "[initiator][project]" => "%{[project_mapping][0][project_name]}"
+          }
+        }
+      }
+      if ![initiator][domain_id] {
+        mutate {
+          add_field => {
+              "[initiator][domain_id]" => "%{[project_mapping][0][domain_id]}"
+          }
+        }
+      }
+      if ![initiator][domain] {
+        mutate {
+          add_field => {
+              "[initiator][domain]" => "%{[project_mapping][0][domain_name]}"
+          }
+        }
+      }
+
+      # Cleanup
+      mutate {
+        remove_field => [ "project_mapping" ]
+      }
+    }
+
+    if [project_target_mapping] and [project_target_mapping][0]{
+      # Add Fields to audit events, checking if the field exists first to not overwrite.
+      if ![target][project] {
+        mutate {
+          add_field => {
+              "[target][project]" => "%{[project_target_mapping][0][project_name]}"
+          }
+        }
+      }
+      if ![target][domain_id] {
+        mutate {
+          add_field => {
+              "[target][domain_id]" => "%{[project_target_mapping][0][domain_id]}"
+          }
+        }
+      }
+      if ![target][domain] {
+        mutate {
+          add_field => {
+              "[target][domain]" => "%{[project_target_mapping][0][domain_name]}"
+          }
+        }
+      }
+
+      # Cleanup
+      mutate {
+        remove_field => [ "project_target_mapping" ]
+      }
+    }
+  }
+
+  # Octobus setting Source to TypeURI. Unused in Hermes.
+  if [observer][typeURI] {
+    mutate {
+        add_field => {  [sap][cc][audit][source]" => "%{[observer][typeURI]}" }
     }
   }
 
@@ -295,13 +389,16 @@ output {
   }
   {{- end}}
 
-# Limit events to audit pod to ccadmin domain
-  #if [type] == 'audit' and [initiator][domain] == 'ccadmin' {
-  #  http{
-  #    url => "https://logstash-audit-external.{{.Values.global.region}}.{{.Values.global.tld}}"
-  #    format => "json"
-  #    http_method => "post"
-  #    headers => { "Authorization" =>  "Basic {{ template "httpBasicAuth" . }}" }
-  #  }
-  #}
+  {{ if .Values.logstash.audit -}}
+  if [type] == 'audit' {
+    if [initator][domain] == 'ccadmin' or ([observer][typeURI] == "service/security" and [action] == "authenticate" and [outcome] == "failure") {
+      http{
+        url => "https://logstash-audit-external.{{.Values.global.region}}.{{.Values.global.tld}}"
+        format => "json"
+        http_method => "post"
+        headers => { "Authorization" =>  "Basic {{ template "httpBasicAuth" . }}" }
+      }
+    }
+  }
+  {{- end}}
 }
