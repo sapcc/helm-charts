@@ -1,7 +1,4 @@
 {{- define "haproxy.cfg" -}}
-{{- $cluster_id := index . 0 -}}
-{{- $cluster    := index . 1 -}}
-{{- $context    := index . 2 -}}
 global
   # Drop privileges after root started haproxy (user:haproxy / group:haproxy)
   uid 99
@@ -33,8 +30,8 @@ defaults
   option redispatch
 
   timeout connect 10s
-  timeout client {{ add $context.client_timeout 5 }}s
-  timeout server {{ add $context.client_timeout $context.node_timeout 5 }}s
+  timeout client {{ add .Values.client_timeout 5 }}s
+  timeout server {{ add .Values.client_timeout .Values.node_timeout 5 }}s
 
 listen stats
   bind *:8404
@@ -59,9 +56,9 @@ frontend api-http
   bind *:80
   monitor-uri /haproxy_test
 
-  {{- $allowed := join " or " $cluster.sans_http }}
-  {{- range $index, $san := $cluster.sans_http }}
-  acl {{ $san }} hdr(host) -i {{ $san }}.{{$context.global.region}}.{{$context.global.tld}}:{{ $cluster.proxy_public_http_port }}
+  {{- $allowed := join " or " .Values.sans_http }}
+  {{- range $index, $san := .Values.sans_http }}
+  acl {{ $san }} hdr(host) -i {{ $san }}.{{ $.Values.global.region }}.{{ $.Values.global.tld }}:{{ $.Values.proxy_public_http_port }}
   {{- end }}
 
   http-request redirect scheme https code 301 {{- if $allowed}} unless {{ $allowed }}
@@ -73,11 +70,11 @@ frontend api-http
 # metrics. (The backend name shows up as a metric label.)
 
 backend swift_proxy
-{{- tuple $cluster_id $cluster | include "swift_haproxy_backend" | nindent 2 }}
+{{- include "swift_haproxy_backend" . | nindent 2 }}
 
 backend swift_proxy_s3
   # No retries on 503, which is the rate limit repsonse from S3
   retry-on conn-failure empty-response junk-response response-timeout 0rtt-rejected 500 502 504
-{{- tuple $cluster_id $cluster | include "swift_haproxy_backend" | nindent 2 }}
+{{- include "swift_haproxy_backend" . | nindent 2 }}
 
 {{- end }}

@@ -1,9 +1,8 @@
-{{- if $.Values.envoy_external }}
-{{- range $cluster_id, $cluster := .Values.clusters }}
+{{- if .Values.envoy_external }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: envoy-etc-{{ $cluster_id }}
+  name: envoy-etc-{{ .Values.cluster_name }}
   labels:
     system: openstack
     service: objectstore
@@ -11,8 +10,6 @@ metadata:
 
 data:
   envoy.yaml: |
-{{ tuple $cluster $.Values (printf "swift-proxy-internal-%s.swift.svc" $cluster_id) | include "envoy.yaml" | indent 4 }}
+{{ include "envoy.yaml" . | indent 4 }}
 
----
-{{- end }}
 {{- end }}

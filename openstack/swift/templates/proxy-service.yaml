@@ -1,28 +1,25 @@
-{{- range $cluster_id, $cluster := .Values.clusters }}
 kind: Service
 apiVersion: v1
 metadata:
-  name: swift-proxy-{{ $cluster_id }}
+  name: swift-proxy-{{ .Values.cluster_name }}
   labels:
-    release: "{{ $.Release.Name }}"
-    os-cluster: {{ $cluster_id }}
+    release: "{{ .Release.Name }}"
+    os-cluster: {{ .Values.cluster_name }}
 spec:
-  {{- if $.Values.external_traffic_policy_local }}
+  {{- if .Values.external_traffic_policy_local }}
   type: NodePort
   externalTrafficPolicy: Local
   {{- end }}
   selector:
-    for-service: swift-proxy-{{ $cluster_id }}
+    for-service: swift-proxy-{{ .Values.cluster_name }}
   ports:
     - name: api
-      port: {{ $cluster.proxy_public_port }}
+      port: {{ .Values.proxy_public_port }}
       targetPort: 443
-    {{- if and $cluster.proxy_public_http_port $cluster.sans_http }}
+    {{- if and .Values.proxy_public_http_port .Values.sans_http }}
     - name: api-http
-      port: {{ $cluster.proxy_public_http_port }}
+      port: {{ .Values.proxy_public_http_port }}
       targetPort: 80
     {{- end }}
   externalIPs:
-    - {{ $cluster.proxy_public_ip }}
----
-{{- end }}
+    - {{ .Values.proxy_public_ip }}

@@ -5,7 +5,7 @@ apiVersion: apps/v1
 metadata:
   name: swift-account-caretaker-mergify
   labels:
-    release: "{{.Release.Name}}"
+    release: "{{ .Release.Name }}"
 
 spec:
   revisionHistoryLimit: 5
@@ -51,13 +51,6 @@ spec:
                 secretKeyRef:
                   name: swift-utils-secret
                   key: caretaker_password
-            {{- range $cluster, $config := .Values.swift_account_caretaker.additional_clusters }}
-            - name: {{ $cluster | upper }}_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: swift-utils-secret
-                  key: {{ $cluster }}_password
-            {{- end }}
           volumeMounts:
             - mountPath: /caretaker-etc
               name: caretaker-etc

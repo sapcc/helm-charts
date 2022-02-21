@@ -1,15 +1,13 @@
 {{- $domains := list "ccadmin" "bs" "cis" "cp" "fsn" "hcm" "hcp03" "hec" "monsoon3" "neo" "s4" "wbs"}}
-{{- range $cluster_id, $cluster := .Values.clusters }}
-{{- if $cluster.seed }}
 apiVersion: "openstack.stable.sap.cc/v1"
 kind: "OpenstackSeed"
 metadata:
   name: swift-support-seed
   labels:
-    app: {{ tuple $.Release $.Chart $.Values | include "fullname" }}
-    chart: "{{ $.Chart.Name }}-{{ $.Chart.Version }}"
-    release: "{{ $.Release.Name }}"
-    heritage: "{{ $.Release.Service }}"
+    app: {{ tuple .Release .Chart .Values | include "fullname" }}
+    chart: "{{ .Chart.Name }}-{{ $.Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
     component: objectstore
     type: seed
 spec:
@@ -71,5 +69,3 @@ spec:
           role: swiftoperator
         # No readonly role to inherit within domain
     {{- end }}
-{{- end }}
-{{- end }}

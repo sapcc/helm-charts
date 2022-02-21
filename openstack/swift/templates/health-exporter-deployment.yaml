@@ -1,12 +1,12 @@
-{{- if $.Values.health_exporter }}
-{{- if not $.Values.health_statsd }}
+{{- if .Values.health_exporter }}
+{{- if not .Values.health_statsd }}
 kind: Deployment
 apiVersion: apps/v1
 
 metadata:
   name: swift-health-exporter
   labels:
-    release: "{{$.Release.Name}}"
+    release: "{{ .Release.Name }}"
 spec:
   revisionHistoryLimit: 5
   replicas: 1
@@ -25,11 +25,11 @@ spec:
         alert-tier: os
         alert-service: swift
       annotations:
-        {{- include "swift_ring_annotations" $ | indent 8 }}
-        {{- include "swift_conf_annotations" $ | indent 8 }}
+        {{- include "swift_ring_annotations" . | indent 8 }}
+        {{- include "swift_conf_annotations" . | indent 8 }}
         prometheus.io/scrape: "true"
         prometheus.io/port: "9520"
-        prometheus.io/targets: {{ required ".Values.alerts.prometheus.openstack missing" $.Values.alerts.prometheus.openstack }}
+        prometheus.io/targets: {{ required ".Values.alerts.prometheus.openstack missing" .Values.alerts.prometheus.openstack }}
     spec:
       volumes:
         - name: swift-etc
@@ -46,7 +46,7 @@ spec:
             name: swift-object-ring
       containers:
         - name: collector
-          image: {{ include "swift_image" $ }}
+          image: {{ include "swift_image" . }}
           command:
             - /usr/bin/dumb-init
           # enable all collectors except recon.md5 (it is enabled within the proxy pods)

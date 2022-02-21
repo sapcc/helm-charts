@@ -5,7 +5,7 @@ apiVersion: apps/v1
 metadata:
   name: swift-account-caretaker-collect
   labels:
-    release: "{{.Release.Name}}"
+    release: "{{ .Release.Name }}"
     on-upgrade: recreate
 
 spec:
@@ -29,11 +29,11 @@ spec:
       tolerations:
       - key: "species"
         operator: "Equal"
-        value: "{{.Values.species}}"
+        value: "{{ .Values.species }}"
         effect: "NoSchedule"
       - key: "species"
         operator: "Equal"
-        value: "{{.Values.species}}-multipath"
+        value: "{{ .Values.species }}-multipath"
         effect: "NoSchedule"
       # Run daemonset in Hostnetwork to get the real hostname
       hostNetwork: true
@@ -71,13 +71,6 @@ spec:
                 secretKeyRef:
                   name: swift-utils-secret
                   key: caretaker_password
-            {{- range $cluster, $config := .Values.swift_account_caretaker.additional_clusters }}
-            - name: {{ $cluster | upper }}_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: swift-utils-secret
-                  key: {{ $cluster }}_password
-            {{- end }}
           volumeMounts:
             - mountPath: /caretaker-etc
               name: caretaker-etc
