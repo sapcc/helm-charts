@@ -849,3 +849,9 @@
     - action: labeldrop
       regex: "metrics_label"
 {{ end }}
+
+{{- with .Values.awx_prometheus }}
+{{- if .enabled }}
+{{- append list (omit . "enabled") | toYaml }}
+{{- end }}
+{{- end }}
