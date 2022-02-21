@@ -247,10 +247,10 @@ filter {
           }
         }
       }
-      if ![initiator][domain] {
+      if ![initiator][project_domain_name] {
         mutate {
           add_field => {
-              "[initiator][domain]" => "%{[project_mapping][0][domain_name]}"
+              "[initiator][project_domain_name]" => "%{[project_mapping][0][domain_name]}"
           }
         }
       }
@@ -277,10 +277,10 @@ filter {
           }
         }
       }
-      if ![target][domain] {
+      if ![target][project_domain_name] {
         mutate {
           add_field => {
-              "[target][domain]" => "%{[project_target_mapping][0][domain_name]}"
+              "[target][project_domain_name]" => "%{[project_target_mapping][0][domain_name]}"
           }
         }
       }
