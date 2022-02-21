@@ -29,7 +29,7 @@ groups:
       description: Predicting more than 2000 database connections for {{ template "alerts.service" . }} within the next 3 hours and might be unavailable soon.
 
   - alert: {{ include "alerts.service" . | title }}StuckTransactions
-    expr: max(pg_stat_activity_tx_max_duration{datname="{{ default .Release.Name .Values.db_name }}"}) > 300
+    expr: max(pg_stat_activity_max_tx_duration{datname="{{ default .Release.Name .Values.db_name }}"}) > 300
     for: 5m
     labels:
       context: database
