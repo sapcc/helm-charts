@@ -176,7 +176,7 @@
   @id duplicate_keystone
   <store>
     @type http
-    @id to_octobus
+    @id ocb_keystone
     endpoint "https://{{.Values.forwarding.keystone.host}}"
     tls_ca_cert_path "/etc/ssl/certs/ca-certificates.crt"
     slow_flush_log_threshold 105.0
@@ -218,18 +218,9 @@
   @id duplicate
   <store>
     @type http
-    @id to_logstash
-    {{ if eq .Values.global.clusterType "metal" -}}
+    @id ocb_audit
     endpoint "https://{{.Values.forwarding.audit.host}}"
     tls_ca_cert_path "/etc/ssl/certs/ca-certificates.crt"
-    {{ else -}}
-    endpoint "http://logstash-audit-external.audit-logs:{{.Values.global.https_port}}"
-    <auth>
-      method basic
-      username {{.Values.global.elk_elasticsearch_http_user}}
-      password {{.Values.global.elk_elasticsearch_http_password}}
-    </auth>
-    {{ end -}}
     slow_flush_log_threshold 105.0
     retryable_response_codes [429,503]
     <buffer>
