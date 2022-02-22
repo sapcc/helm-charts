@@ -69,3 +69,21 @@ trace_sqlalchemy = {{ .Values.global.osprofiler.trace_sqlalchemy }}
     - --log-level=debug
 {{- end }}
 {{- end }}
+
+{{- define "kubernetes_maintenance_affinity" }}
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+{{- if .Values.nodeAffinity }}
+      {{- with .Values.nodeAffinity }}
+{{ toYaml . | indent 12 }}
+      {{- end }}
+{{- end }}
+          - weight: 1
+            preference:
+              matchExpressions:
+                - key: cloud.sap/maintenance-state
+                  operator: In
+                  values:
+                  - operational
+{{- end }}
