@@ -50,5 +50,19 @@
     secretKeyRef:
       name: vcf-secret
       key: pulumi_config_passphrase
-
+- name: VCF_ESXI_LICENSE_MANAGEMENT
+  valueFrom:
+    secretKeyRef:
+      name: vcf-secret
+      key: esxi_license_management
+- name: VCF_ESXI_LICENSE
+  valueFrom:
+    secretKeyRef:
+      name: vcf-secret
+      key: esxi_license
+- name: VCF_NSXT_LICENSE
+  valueFrom:
+    secretKeyRef:
+      name: vcf-secret
+      key: nsxt_license
 {{- end -}}
