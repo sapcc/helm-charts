@@ -71,14 +71,6 @@ trace_sqlalchemy = {{ .Values.global.osprofiler.trace_sqlalchemy }}
 {{- end }}
 
 {{- define "kubernetes_maintenance_affinity" }}
-      affinity:
-        nodeAffinity:
-          preferredDuringSchedulingIgnoredDuringExecution:
-{{- if .Values.nodeAffinity }}
-      {{- with .Values.nodeAffinity }}
-{{ toYaml . | indent 12 }}
-      {{- end }}
-{{- end }}
           - weight: 1
             preference:
               matchExpressions:
