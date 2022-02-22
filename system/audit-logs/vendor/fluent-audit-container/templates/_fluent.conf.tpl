@@ -59,7 +59,7 @@
   exclude_path /var/log/containers/fluentd*
   pos_file /var/log/kube-api-octobus.log.pos
   tag kubeapi.*
-  {{- if eq .global.clusterType "admin" }}
+  {{- if eq .Values.global.clusterType "admin" }}
   <parse>
     @type cri
   </parse>
@@ -74,7 +74,7 @@
 <filter kubeapi.**>
   @type parser
   @id json_parser
-{{- if eq .global.clusterType "admin" }}
+{{- if eq .Values.global.clusterType "admin" }}
   key_name message
 {{- else }}
   key_name log
