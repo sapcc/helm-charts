@@ -76,3 +76,31 @@ groups:
     annotations:
       description: 'CCloud Lyra API is flapping'
       summary: 'CCloud Lyra API is flapping'
+
+  - alert: ArcBrokerCertificateExpiresInLessThan1Week
+    expr: cc3test_cert_expires_in_days{type="arc-broker"} < 8
+    # we want a critical alert 7 days before (fixing during business hours is sufficient -> warning)
+    labels:
+      severity: warning
+      tier: os
+      service: arc
+      context: arc-broker
+      meta: 'Certificate on {{ $labels.host }} expires in less than 8 days'
+      playbook: 'docs/devops/alert/arc/#OpenstackCertificateExpires'
+    annotations:
+      description: Certificate on {{ $labels.host }} expires in less than 8 days
+      summary: Certificate expires
+
+  - alert: ArcBrokerCertificateExpiresInLessThan2Weeks
+    expr: cc3test_cert_expires_in_days{type="arc-broker"} < 15
+    # we want a warning alert 14 days before
+    labels:
+      severity: warning
+      tier: os
+      service: arc
+      context: arc-broker
+      meta: 'Certificate on {{ $labels.host }} expires in less than 15 days'
+      playbook: 'docs/devops/alert/arc/#OpenstackCertificateExpires'
+    annotations:
+      description: Certificate on {{ $labels.host }} expires in less than 15 days
+      summary: Certificate expires
