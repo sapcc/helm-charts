@@ -26,6 +26,8 @@ spec:
         - name: recommender
           image: {{ include "recommender.image" . }}
           imagePullPolicy: {{ default "IfNotPresent" .Values.recommender.image.pullPolicy }}
+          args:
+            - --recommender-interval={{ required ".Values.recommender.interval missing" .Values.recommender.interval }}
           resources:
             limits:
               cpu: 200m
@@ -34,5 +36,5 @@ spec:
               cpu: 50m
               memory: 500Mi
           ports:
-            - name: prometheus
+            - name: metrics
               containerPort: 8942
