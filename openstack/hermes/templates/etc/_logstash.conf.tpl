@@ -299,26 +299,6 @@ filter {
     }
   }
 
-  # Clean up any null or empty string fields
-  ruby {
-    init => "
-        def removeEmptyField(event,h,name)
-            h.each do |k,v|
-                    if (v.is_a?(Hash) || v.is_a?(Array)) && v.to_s != '{}'
-                        removeEmptyField(event,v,String.new(name.to_s) << '[' << k.to_s << ']')
-                    else
-                    if v == '' || v.to_s == '{}' || v == '-'
-                        event.remove(String.new(name.to_s) << '[' << k.to_s << ']')
-                    end
-                end
-            end
-        end
-    "
-    code => "
-        removeEmptyField event,event.to_hash,''
-    "
-  }
-
   # Calculate the variable index name part from payload (@metadata will not be part of the event)
 
   # primary index
@@ -338,6 +318,11 @@ filter {
   # remove keystone specific fields after they have been mapped to standard attachments
   mutate {
     remove_field => ["[domain]", "[project]", "[user]", "[role]", "[group]", "[inherited_to_projects]"]
+  }
+
+  # remove enrichment fields after they have been mapped.
+  mutate {
+    remove_field => ["[project_mapping]", "[project_target_mapping]", "[domain_mapping]"]
   }
 
   kv { source => "_source" }
