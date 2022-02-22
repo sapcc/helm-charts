@@ -59,19 +59,29 @@
   exclude_path /var/log/containers/fluentd*
   pos_file /var/log/kube-api-octobus.log.pos
   tag kubeapi.*
+  {{- if eq .global.clusterType "admin" }}
+  <parse>
+    @type cri
+  </parse>
+  {{- else }}
   <parse>
     @type json
-    time_format %Y-%m-%dT%H:%M:%S.%N
+    time_format %Y-%m-%dT%T.%L%Z
     keep_time_key true
   </parse>
+  {{- end }}
 </source>
 <filter kubeapi.**>
   @type parser
   @id json_parser
+{{- if eq .global.clusterType "admin" }}
+  key_name message
+{{- else }}
   key_name log
+{{- end }}
   <parse>
     @type json
-    time_format %Y-%m-%dT%H:%M:%S.%N
+    time_format %Y-%m-%dT%T.%L%Z
     keep_time_key true
   </parse>
 </filter>
