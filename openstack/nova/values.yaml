@@ -660,35 +660,6 @@ mysql_metrics:
         WHERE deleted_at is NULL;
       values:
       - "version"
-    - help: Seconds since the latest instance_action was created
-      labels:
-      - "nova_host"
-      name: openstack_compute_node_last_action_interval_seconds_interval
-      query: |
-        SELECT
-          coalesce(i.host, 'N/A') AS nova_host,
-          (NOW() - MAX(ia.created_at)) AS `interval`
-        FROM instance_actions AS ia
-        JOIN instances AS i ON i.uuid = ia.instance_uuid
-        WHERE ia.deleted = 0 AND i.host is not NULL
-        GROUP by i.host;
-      values:
-      - "interval"
-    - help: instance_actions entries without instance instance_action_events entries
-      labels:
-      - "nova_host"
-      name: openstack_compute_node_actions_without_events_actions
-      query: |
-        SELECT
-          coalesce(i.host, 'N/A') AS nova_host,
-          COUNT(*) - COUNT(iae.start_time) AS actions
-        FROM instance_actions
-        AS ia JOIN instances AS i ON i.uuid = ia.instance_uuid LEFT OUTER JOIN instance_actions_events
-        AS iae ON iae.action_id = ia.id
-        WHERE ia.deleted = 0 AND i.deleted_at is NULL
-        AND (ia.created_at > DATE_SUB(now(), INTERVAL 1 WEEK)) GROUP by i.host;
-      values:
-      - "actions"
 
 postgresql:
   enabled: false
