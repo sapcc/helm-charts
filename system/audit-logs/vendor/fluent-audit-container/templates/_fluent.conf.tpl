@@ -229,7 +229,7 @@
   <store>
     @type http
     @id ocb_audit
-    endpoint "https://{{.Values.forwarding.audit.host}}"
+    endpoint "https://{{.Values.global.forwarding.audit.host}}"
     tls_ca_cert_path "/etc/ssl/certs/ca-certificates.crt"
     slow_flush_log_threshold 105.0
     retryable_response_codes [429,503]

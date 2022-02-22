@@ -210,7 +210,7 @@ output {
   if [type] == "audit" or "audit" in [tags] {
     http {
       cacert => "/usr/share/logstash/config/ca.pem"
-      url => "https://{{ .Values.forwarding.audit.host }}"
+      url => "https://{{ .Values.global.forwarding.audit.host }}"
       format => "json"
       http_method => "post"
     }
