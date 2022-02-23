@@ -458,13 +458,14 @@ output {
   {{ if .Values.logstash.audit -}}
   if [type] == 'audit' {
     if [initator][domain] == 'ccadmin' or ([observer][typeURI] == "service/security" and [action] == "authenticate" and [outcome] == "failure") {
-      http{
-        url => "https://logstash-audit-external.{{.Values.global.region}}.{{.Values.global.tld}}"
+      http {
+        cacert => "/usr/share/logstash/config/ca.pem"
+        url => "https://{{ .Values.global.forwarding.audit.host }}"
         format => "json"
         http_method => "post"
-        headers => { "Authorization" =>  "Basic {{ template "httpBasicAuth" . }}" }
       }
     }
   }
+}
   {{- end}}
 }
