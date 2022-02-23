@@ -75,6 +75,14 @@ filter {
     }
   }
 
+  # rename intiator domain_name into initiator domain field for consistency.
+  if [initiator][domain_name] {
+    mutate {
+      replace => { "[initiator][domain]" => "%{[initiator][domain_name]}" }
+      remove_field => ["[initiator][domain_name]"]
+    }
+  }
+
   # normalize role-assignment call eventsi
   # see https://sourcegraph.com/github.com/openstack/keystone@81f9fe6fed62ec629804c9367fbb9ebfd584388c/-/blob/keystone/notifications.py#L590
   if [project] {
