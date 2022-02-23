@@ -112,3 +112,20 @@ groups:
         over 3-5 connections to retain some budget for request spikes. Going
         high on connections for a long time indicates that the pod might be
         starved for CPU time, so try checking the CPU throttling metrics.
+
+  - alert: OpenstackKeppelAuditEventPublishFailing
+    # Usually, you would check increase() here, but audit events *can* be quite
+    # rare, so we alert if there are any failed audit events at all. To clear this alert,
+    # delete the respective
+    expr: max by (pod) (keppel_failed_auditevent_publish > 0)
+    for: 1h
+    labels:
+      context: auditeventpublish
+      dashboard: keppel-overview
+      service: keppel
+      severity: info
+      tier: os
+      meta: {{ $labels.pod }}
+    annotations:
+      summary: "{{ $labels.pod }} cannot publish audit events"
+      description: "Audit events could not be published to the RabbitMQ server. Check the pod log for details. Once the underlying issue was addressed, delete the offending pod to clear this alert."
