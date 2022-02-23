@@ -457,7 +457,7 @@ output {
 
   {{ if .Values.logstash.audit -}}
   if [type] == 'audit' {
-    if [initator][domain] == 'ccadmin' or ([observer][typeURI] == "service/security" and [action] == "authenticate" and [outcome] == "failure") {
+    if ([initiator][domain] == 'ccadmin' or [target][project_domain_name] == 'ccadmin') or ([observer][typeURI] == "service/security" and [action] == "authenticate" and [outcome] == "failure") {
       http {
         cacert => "/usr/share/logstash/config/ca.pem"
         url => "https://{{ .Values.global.forwarding.audit.host }}"
