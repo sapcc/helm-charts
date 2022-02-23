@@ -136,7 +136,7 @@ filter {
   # Enrich keystone events with domain mapping from Metis
   if [initiator][project_id] {
     jdbc_static {
-      id => "jdbc"
+      id => "jdbc_project_id"
       loaders => [
         {
           id  => "keystone_project_domain"
@@ -202,14 +202,88 @@ filter {
 
       # Cleanup
       mutate {
-        remove_field => [ "project_mapping" ]
+        remove_field => ["project_mapping"]
       }
     }
   }
 
+  if [target][project_id] {
+    jdbc_static {
+      id => "jdbc_target_project_id"
+      loaders => [
+        {
+          id  => "keystone_target_project_domain"
+          query => "select project.name as project_name, project.id as project_id, domain.name as domain_name, domain.id as domain_id from keystone.project join keystone.project domain on project.domain_id = domain.id where project.id = 'ccadmin'"
+          local_table => "target_project_mapping"
+        }
+      ]
+
+      local_db_objects => [
+        {
+          name => "target_project_mapping"
+          index_columns => ["project_id"]
+          columns => [
+            ["project_name", "varchar(64)"],
+            ["project_id", "varchar(64)"],
+            ["domain_name", "varchar(64)"],
+            ["domain_id", "varchar(64)"]
+          ]
+        }
+      ]
+
+      local_lookups => [
+        {
+          id => "project_name_lookup"
+          query => "select project_name, domain_id, domain_name from target_project_mapping where project_id = ?"
+          prepared_parameters => ["[target][project_id]"]
+          target => "target_project_mapping"
+          tag_on_failure => "Target_Project_Mapping"
+        }
+      ]
+      staging_directory => "/tmp/logstash/jdbc_static/import_data"
+      loader_schedule => "{{ .Values.logstash.jdbc.schedule }}"
+      jdbc_user => "{{ .Values.global.metis.user }}"
+      jdbc_password => "${METIS_PASSWORD}"
+      jdbc_driver_class => "com.mysql.cj.jdbc.Driver"
+      jdbc_driver_library => ""
+      jdbc_connection_string => "jdbc:mysql://{{ .Values.logstash.jdbc.service }}.{{ .Values.logstash.jdbc.namespace }}:3306/{{ .Values.logstash.jdbc.db }}"
+    }
+
+    if [target_project_mapping] and [target_project_mapping][0]{
+      # Add Fields to audit events, checking if the field exists first to not overwrite.
+      if ![target][project] {
+        mutate {
+          add_field => {
+              "[target][project]" => "%{[target_project_mapping][0][project_name]}"
+          }
+        }
+      }
+      if ![target][domain_id] {
+        mutate {
+          add_field => {
+              "[target][domain_id]" => "%{[target_project_mapping][0][domain_id]}"
+          }
+        }
+      }
+      if ![target][project_domain_name] {
+        mutate {
+          add_field => {
+              "[target][project_domain_name]" => "%{[target_project_mapping][0][domain_name]}"
+          }
+        }
+      }
+
+      # Cleanup
+      mutate {
+        remove_field => ["target_project_mapping"]
+      }
+    }
+  }
+
+
   if [initiator][id] { #  or [initiator][project_id] or [target][project_id] {
     jdbc_static {
-      id => "jdbc"
+      id => "jdbc_initiator_id"
       loaders => [
         {
           id  => "keystone_user_domain"
@@ -274,7 +348,7 @@ filter {
       }
       # Cleanup
       mutate {
-        remove_field => [ "domain_mapping" ]
+        remove_field => ["domain_mapping"]
       }
     }
   }
