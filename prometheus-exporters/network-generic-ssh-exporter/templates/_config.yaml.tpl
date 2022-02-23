@@ -385,6 +385,14 @@ metrics:
     command: show bgp vpnv4 unicast all neighbors | include (BGP neighbor is|BGP state)
     timeout_secs: 4
 
+  arp_drop_input_queue_full:
+    regex: "Drop due to input queue full: (\\d+)"
+    value: $1
+    description: ARP drop due to input queue full
+    metric_type_name: gauge
+    command: show ip traffic | in Drop due to input queue
+    timeout_secs: 5
+
   firewall_vrf_stats_total:
     regex: >-
       VRF: (\S+).*?Total Session Count\(estab \+ half-open\): (\d+), Exceed: (\d+)
@@ -599,6 +607,7 @@ batches:
     - firewall_vrf_stats_half_open_udp
     - firewall_vrf_stats_half_open_tcp
     - firewall_vrf_stats_half_open_icmp
+    - arp_drop_input_queue_full
 
 
   cisco-nx-os_core-router:
