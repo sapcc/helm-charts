@@ -507,7 +507,7 @@ metrics:
     metric_type_name: gauge
     command: show ntp associations
     timeout_secs: 5
-  
+
   xr_ntp_offset:
     regex: >-
       ^.*(reference is)\s(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}).*(clock offset is)\s(-?\d{1,3}\.\d{1,3})\s(msec).*$
@@ -519,7 +519,7 @@ metrics:
     metric_type_name: gauge
     command: show ntp status
     timeout_secs: 5
-    
+
   xr_ntp_root_delay:
     regex: >-
       ^.*(reference is)\s(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}).*(root delay is)\s(-?\d{1,3}\.\d{1,3})\s(msec).*$
@@ -531,7 +531,7 @@ metrics:
     metric_type_name: gauge
     command: show ntp status
     timeout_secs: 5
-    
+
   xr_ntp_root_dispersion:
     regex: >-
       ^.*(reference is)\s(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}).*(root dispersion is)\s(-?\d{1,3}\.\d{1,3})\s(msec).*$
@@ -543,7 +543,7 @@ metrics:
     metric_type_name: gauge
     command: show ntp status
     timeout_secs: 5
-    
+
   xr_ntp_drift:
     regex: >-
       ^.*(reference is)\s(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}).*(drift is)\s(-?\d{1,3}\.\d{1,112})\s.*$
