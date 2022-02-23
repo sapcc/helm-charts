@@ -140,7 +140,7 @@ filter {
       loaders => [
         {
           id  => "keystone_project_domain"
-          query => "select project.name as project_name, project.id as project_id, domain.name as domain_name, domain.id as domain_id from keystone.project join keystone.project domain on project.domain_id = domain.id where project.id = 'ccadmin'"
+          query => "select project.name as project_name, project.id as project_id, domain.name as domain_name, domain.id as domain_id from keystone.project join keystone.project domain on project.domain_id = domain.id"
           local_table => "project_domain_mapping"
         }
       ]
@@ -213,7 +213,7 @@ filter {
       loaders => [
         {
           id  => "keystone_target_project_domain"
-          query => "select project.name as project_name, project.id as project_id, domain.name as domain_name, domain.id as domain_id from keystone.project join keystone.project domain on project.domain_id = domain.id where project.id = 'ccadmin'"
+          query => "select project.name as project_name, project.id as project_id, domain.name as domain_name, domain.id as domain_id from keystone.project join keystone.project domain on project.domain_id = domain.id"
           local_table => "target_project_mapping"
         }
       ]
