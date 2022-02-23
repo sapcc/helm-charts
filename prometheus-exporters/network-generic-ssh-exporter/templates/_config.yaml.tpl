@@ -548,6 +548,17 @@ metrics:
     command: show ntp status
     timeout_secs: 5
 
+  xr_ntp_configured:
+    regex: >-
+      ^\s+server vrf (\S+) (\S+) source (\S+)
+    multi_value: true
+    labels:
+      ntp_configured: $2
+    description: NTP server configured on the router
+    metric_type_name: string
+    command: show run ntp | include server
+    timeout_secs: 5
+
 batches:
   test:
     - redundancy_send_queue
@@ -604,6 +615,7 @@ batches:
     - xr_ntp_peer_delay
     - xr_ntp_peer_offset
     - xr_ntp_peer_dispersion
+    - xr_ntp_configured
 
 devices:
   cisco-ios-xe:
