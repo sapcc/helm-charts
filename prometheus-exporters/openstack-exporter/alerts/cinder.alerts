@@ -1,48 +1,39 @@
 groups:
 - name: cinder
   rules:
-  - alert: CinderBackendShardLowOvercommitWarning
-    expr: >
-      sum(cinder_free_until_overcommit_gib) by (region, shard, backend) / 1024 + sum(cinder_free_until_overcommit_gib / cinder_total_capacity_gib * 100 < 20) by (region, shard, backend) * 0
+  - alert: CinderReservedPercentLow
+    expr: sum(cinder_reserved_percent_available) by (shard, backend, pool) < 30
+    for: 15m
+    labels:
+      severity: info
+      tier: os
+      service: cinder
+      playbook: docs/support/playbook/cinder/cinder_reserved_percent_low.html
+    annotations:
+      description: 'Cinder backend {{ $labels.backend }}, pool {{ $labels.pool }}, shard {{ $labels.shard }}'
+      summary: 'Cinder reserved percentage is low'
+  - alert: CinderShardWarning
+    expr: count (sum(cinder_reserved_percent_available) by (shard, backend, pool) < 30) by (backend,shard) == 2
     for: 15m
     labels:
       severity: warning
-      tier: vmware
+      tier: os
       service: cinder
-      context: "openstack-exporter"
-      meta: "Cinder backend {{ $labels.shard }}/{{ $labels.backend }} has less than 20% storage left before overcommit is reached."
-      playbook: docs/support/playbook/cinder/cinder_low_overcommit_ratio.html
+      playbook: docs/support/playbook/cinder/cinder_reserved_percent_low.html
     annotations:
-      description: "Cinder backend {{ $labels.shard }}/{{ $labels.backend }} has less than 20% storage left before overcommit is reached."
-      summary: "Cinder backend {{ $labels.shard }}/{{ $labels.backend }} has less than 20% storage left before overcommit is reached."
-  - alert: CinderBackendShardLowFreeSpaceWarning
-    expr: >
-      sum(cinder_free_capacity_gib) by (region, shard, backend) / 1024 + sum(cinder_free_capacity_gib == 0 or cinder_free_capacity_gib / cinder_total_capacity_gib * 100 < 25) by (region, shard, backend)
+      description: 'Cinder backend {{ $labels.backend }}, shard {{ $labels.shard }}'
+      summary: 'Cinder Shard reserved space available count warning'
+  - alert: CinderShardCritical
+    expr: count (sum(cinder_reserved_percent_available) by (shard, backend, pool) < 30) by (backend,shard) < 2
     for: 15m
     labels:
       severity: warning
-      tier: vmware
+      tier: os
       service: cinder
-      context: "openstack-exporter"
-      meta: "Cinder backend {{ $labels.shard }}/{{ $labels.backend }} has less than 25% free storage left."
-      playbook: docs/support/playbook/cinder/cinder_low_overcommit_ratio.html
+      playbook: docs/support/playbook/cinder/cinder_reserved_percent_low.html
     annotations:
-      description: "Cinder backend {{ $labels.shard }}/{{ $labels.backend }} has less than 25% free storage left."
-      summary: "Cinder backend {{ $labels.shard }}/{{ $labels.backend }} has less than 25% free storage left."
-  - alert: CinderBackendShardLowFreeSpaceCritical
-    expr: >
-      sum(cinder_free_capacity_gib) by (region, shard, backend) / 1024 + sum(cinder_free_capacity_gib == 0 or cinder_free_capacity_gib / cinder_total_capacity_gib * 100 < 10) by (region, shard, backend)
-    for: 15m
-    labels:
-      severity: critical
-      tier: vmware
-      service: cinder
-      context: "openstack-exporter"
-      meta: "Cinder backend {{ $labels.shard }}/{{ $labels.backend }} has less than 10% free storage left."
-      playbook: docs/support/playbook/cinder/cinder_low_overcommit_ratio.html
-    annotations:
-      description: "Cinder backend {{ $labels.shard }}/{{ $labels.backend }} has less than 10% free storage left."
-      summary: "Cinder backend {{ $labels.shard }}/{{ $labels.backend }} has less than 10% free storage left."
+      description: 'Cinder backend {{ $labels.backend }}, shard {{ $labels.shard }}'
+      summary: 'Cinder Shard reserved space available count critical'
   - alert: CinderBackendStorageEmptyCritical
     expr: >
       sum(cinder_free_capacity_gib == 0) by (region, shard, backend) or sum(cinder_total_capacity_gib == 0) by (region, shard, backend)
