@@ -85,9 +85,9 @@ spec:
             - eval $(cat /etc/ironic/ironic.conf | grep -Pzo '\[service_catalog\][^[]*'
               | tr -d '\000' | grep '='  | while read LINE; do var="${LINE% =*}" ;
               val="${LINE#*= }" ; echo export OS_${var^^}=${val} ; done); OS_IDENTITY_API_VERSION=3
-              openstack baremetal conductor list -f csv | grep 'ironic-conductor-bm090'
+              openstack baremetal conductor list -f csv | grep 'ironic-conductor-{{$conductor.name}}'
               | grep True >/dev/null
-          failureThreshold: 30
+          failureThreshold: 12
           periodSeconds: 10
           timeoutSeconds: 5
         {{- end }}
