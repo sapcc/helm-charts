@@ -24,6 +24,7 @@
       description: {{ include "fullName" . }} incremental backup missing. Please check the backup container.
       summary: {{ include "fullName" . }} incremental backup missing
 
+{{- if .Values.backup_v2.verification.enabled }}
   - alert: {{ include "alerts.service" . | title }}MariaDatabaseBackupVerificationFailed
     expr: sum(maria_backup_verify_status{service=~"{{  include "alerts.service" . }}.*" }) < 1
     for: 16h
@@ -35,3 +36,4 @@
     annotations:
       description: All {{ include "fullName" . }} backup verifications failed for both storage backends. Check the backup container.
       summary: {{ include "fullName" . }} backup failed all verifications
+{{- end }}
