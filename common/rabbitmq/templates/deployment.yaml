@@ -32,7 +32,14 @@ spec:
     spec:
       affinity:
         nodeAffinity:
+{{- if .Values.nodeAffinity }}
+      {{- with .Values.nodeAffinity }}
+{{ toYaml . | indent 12 }}
+      {{- end }}
+{{- end }}
+{{- if not .Values.nodeAffinity }}
           preferredDuringSchedulingIgnoredDuringExecution:
+{{- end }}
           - weight: 1
             preference:
               matchExpressions:
@@ -40,11 +47,6 @@ spec:
                   operator: In
                   values:
                   - operational
-{{- if .Values.nodeAffinity }}
-      {{- with .Values.nodeAffinity }}
-{{ toYaml . | indent 10 }}
-      {{- end }}
-{{- end }}
       hostname: {{ template "fullname" . }}
       containers:
       - name: rabbitmq
