@@ -249,3 +249,20 @@ groups:
           Castellum encountered backend errors while resizing some assets.
           Check <https://dashboard.{{ $labels.region }}.cloud.sap/ccadmin/cloud_admin/cc-tools/castellum#/asset-resize-errors|the Castellum Errors view in Elektra>.
         summary: Castellum encountered backend errors while resizing some assets
+
+    - alert: OpenstackCastellumAuditEventPublishFailing
+      # Usually, you would check increase() here, but audit events *can* be quite
+      # rare, so we alert if there are any failed audit events at all. To clear this alert,
+      # delete the respective
+      expr: max by (pod) (castellum_failed_auditevent_publish > 0)
+      for: 1h
+      labels:
+        context: auditeventpublish
+        service: castellum
+        severity: info
+        tier: os
+        dashboard: castellum
+        meta: '{{ $labels.pod }}'
+      annotations:
+        summary: "{{ $labels.pod }} cannot publish audit events"
+        description: "Audit events could not be published to the RabbitMQ server. Check the pod log for details. Once the underlying issue was addressed, delete the offending pod to clear this alert."

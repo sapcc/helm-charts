@@ -385,6 +385,14 @@ metrics:
     command: show bgp vpnv4 unicast all neighbors | include (BGP neighbor is|BGP state)
     timeout_secs: 4
 
+  arp_drop_input_queue_full:
+    regex: "Drop due to input queue full: (\\d+)"
+    value: $1
+    description: ARP drop due to input queue full
+    metric_type_name: gauge
+    command: show ip traffic | in Drop due to input queue
+    timeout_secs: 5
+
   firewall_vrf_stats_total:
     regex: >-
       VRF: (\S+).*?Total Session Count\(estab \+ half-open\): (\d+), Exceed: (\d+)
@@ -499,7 +507,7 @@ metrics:
     metric_type_name: gauge
     command: show ntp associations
     timeout_secs: 5
-  
+
   xr_ntp_offset:
     regex: >-
       ^.*(reference is)\s(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}).*(clock offset is)\s(-?\d{1,3}\.\d{1,3})\s(msec).*$
@@ -511,7 +519,7 @@ metrics:
     metric_type_name: gauge
     command: show ntp status
     timeout_secs: 5
-    
+
   xr_ntp_root_delay:
     regex: >-
       ^.*(reference is)\s(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}).*(root delay is)\s(-?\d{1,3}\.\d{1,3})\s(msec).*$
@@ -523,7 +531,7 @@ metrics:
     metric_type_name: gauge
     command: show ntp status
     timeout_secs: 5
-    
+
   xr_ntp_root_dispersion:
     regex: >-
       ^.*(reference is)\s(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}).*(root dispersion is)\s(-?\d{1,3}\.\d{1,3})\s(msec).*$
@@ -535,7 +543,7 @@ metrics:
     metric_type_name: gauge
     command: show ntp status
     timeout_secs: 5
-    
+
   xr_ntp_drift:
     regex: >-
       ^.*(reference is)\s(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}).*(drift is)\s(-?\d{1,3}\.\d{1,112})\s.*$
@@ -546,6 +554,17 @@ metrics:
     description: The drift of the router in seconds
     metric_type_name: gauge
     command: show ntp status
+    timeout_secs: 5
+
+  xr_ntp_configured:
+    regex: >-
+      ^\s+server vrf (\S+) (\S+) source (\S+)
+    multi_value: true
+    labels:
+      ntp_configured: $2
+    description: NTP server configured on the router
+    metric_type_name: string
+    command: show run ntp | include server
     timeout_secs: 5
 
 batches:
@@ -588,6 +607,7 @@ batches:
     - firewall_vrf_stats_half_open_udp
     - firewall_vrf_stats_half_open_tcp
     - firewall_vrf_stats_half_open_icmp
+    - arp_drop_input_queue_full
 
 
   cisco-nx-os_core-router:
@@ -604,6 +624,7 @@ batches:
     - xr_ntp_peer_delay
     - xr_ntp_peer_offset
     - xr_ntp_peer_dispersion
+    - xr_ntp_configured
 
 devices:
   cisco-ios-xe:

@@ -75,7 +75,15 @@ filter {
     }
   }
 
-  # normalize role-assignment call eventsi
+  # rename intiator domain_name into initiator domain field for consistency.
+  if [initiator][domain_name] {
+    mutate {
+      replace => { "[initiator][domain]" => "%{[initiator][domain_name]}" }
+      remove_field => ["[initiator][domain_name]"]
+    }
+  }
+
+  # normalize role-assignment call events
   # see https://sourcegraph.com/github.com/openstack/keystone@81f9fe6fed62ec629804c9367fbb9ebfd584388c/-/blob/keystone/notifications.py#L590
   if [project] {
     mutate {
@@ -287,7 +295,7 @@ filter {
       loaders => [
         {
           id  => "keystone_user_domain"
-          query => "select u.id as user_id, m.local_id as user_name, p.id as domain_id, p.name as domain_name  from keystone.user as u left join keystone.id_mapping m on m.public_id = u.id left join keystone.project as p on p.id = u.domain_id where p.name = 'ccadmin'"
+          query => "select u.id as user_id, m.local_id as user_name, p.id as domain_id, p.name as domain_name  from keystone.user as u left join keystone.id_mapping m on m.public_id = u.id left join keystone.project as p on p.id = u.domain_id"
           local_table => "user_domain_mapping"
         }
       ]
@@ -457,12 +465,12 @@ output {
 
   {{ if .Values.logstash.audit -}}
   if [type] == 'audit' {
-    if [initator][domain] == 'ccadmin' or ([observer][typeURI] == "service/security" and [action] == "authenticate" and [outcome] == "failure") {
-      http{
-        url => "https://logstash-audit-external.{{.Values.global.region}}.{{.Values.global.tld}}"
+    if ([initiator][domain] == 'ccadmin' or [target][project_domain_name] == 'ccadmin' or [initiator][project_domain_name] == 'ccadmin') or ([observer][typeURI] == 'service/security' and [action] == "authenticate" and [outcome] == 'failure') or ([observer][typeURI] == 'service/security' and ([action] == 'create/user') or [action] == 'delete/user') {
+      http {
+        cacert => "/usr/share/logstash/config/ca.pem"
+        url => "https://{{ .Values.global.forwarding.audit.host }}"
         format => "json"
         http_method => "post"
-        headers => { "Authorization" =>  "Basic {{ template "httpBasicAuth" . }}" }
       }
     }
   }
