@@ -1,0 +1,28 @@
+# the cc:developer role is aggregated from other cluster roles:
+# currenlty it build from the cc:supporter role and optionaly the qa specifc role
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: cc:developer
+aggregationRule:
+  clusterRoleSelectors:
+  - matchLabels:
+      ccloud.sap/aggregate-to-developer: "true"
+{{ if ((.Values.global).region) }}
+{{ if hasPrefix "qa" .Values.global.region }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: cc:developer-qa
+  labels:
+    ccloud.sap/aggregate-to-developer: "true"
+rules:
+- apiGroups:
+  - ''
+  resources:
+  - namespaces
+  verbs:
+  - '*'
+{{ end }}
+{{ end }}

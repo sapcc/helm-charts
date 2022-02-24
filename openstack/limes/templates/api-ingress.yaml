@@ -1,28 +1,24 @@
-{{ range $cluster_id, $config := .Values.limes.certs }}
+{{- $domain := printf "limes-3.%s.%s" .Values.global.region .Values.global.tld -}}
+
 kind: Ingress
 apiVersion: networking.k8s.io/v1beta1
 
 metadata:
-  name: limes-api-{{$cluster_id}}
+  name: limes-api-ccloud
   labels:
     app: limes-api
-  {{- if $config.vice_president }}
   annotations:
     kubernetes.io/tls-acme: "true"
-  {{- end }}
 
 spec:
   tls:
-    - secretName: limes-api-{{$cluster_id}}
-      hosts: [ {{ $config.domain }} ]
+    - secretName: limes-api-ccloud
+      hosts: [ {{ $domain }} ]
   rules:
-    - host: {{ $config.domain }}
+    - host: {{ $domain }}
       http:
         paths:
           - path: /
             backend:
-              serviceName: limes-api-{{$cluster_id}}
+              serviceName: limes-api-ccloud
               servicePort: 80
-
----
-{{end}}

@@ -22,12 +22,13 @@
 </label>
 
 # All the auto-generated files should use the tag "file.<filename>".
+{{- if eq .Values.global.clusterType "metal" }}
 <source>
   @type tail
-  @id tail
-  path /var/log/containers/keystone-api-*.log,/var/log/containers/keystone-global-api-*.log
+  @id keystone
+  path /var/log/containers/keystone-api-*.log
   exclude_path /var/log/containers/fluentd*
-  pos_file /var/log/es-containers-octobus.log.pos
+  pos_file /var/log/keystone-octobus.log.pos
   tag keystone.*
   <parse>
     @type json
@@ -38,17 +39,60 @@
 
 <source>
   @type tail
-  @id kube-api
-  path /var/log/containers/{{ .Values.global.region }}-*-apiserver-*_kubernikus_fluentd-*.log,/var/log/containers/*-{{ .Values.global.region }}-*-apiserver-*_kubernikus_fluentd-*.log
+  @id keystone-global
+  path /var/log/containers/keystone-global-api-*.log
   exclude_path /var/log/containers/fluentd*
-  pos_file /var/log/kube-api-octobus.log.pos
-  tag kubeapi.*
+  pos_file /var/log/keystone-global-octobus.log.pos
+  tag keystone-global.*
   <parse>
     @type json
     time_format %Y-%m-%dT%H:%M:%S.%N
     keep_time_key true
   </parse>
 </source>
+{{- end }}
+
+<source>
+  @type tail
+  @id kube-api
+  path /var/log/containers/{{ .Values.global.region }}-*-apiserver-*_kubernikus_fluentd-*.log,/var/log/containers/*-{{ .Values.global.region }}-*-apiserver-*_kubernikus_fluentd-*.log
+  exclude_path /var/log/containers/fluentd*
+  pos_file /var/log/kube-api-octobus.log.pos
+  tag kubeapi.*
+  {{- if eq .Values.global.clusterType "admin" }}
+  <parse>
+    @type cri
+  </parse>
+  {{- else }}
+  <parse>
+    @type json
+    time_format %Y-%m-%dT%T.%L%Z
+    keep_time_key true
+  </parse>
+  {{- end }}
+</source>
+<filter kubeapi.**>
+  @type parser
+  @id json_parser
+{{- if eq .Values.global.clusterType "admin" }}
+  key_name message
+{{- else }}
+  key_name log
+{{- end }}
+  <parse>
+    @type json
+    time_format %Y-%m-%dT%T.%L%Z
+    keep_time_key true
+  </parse>
+</filter>
+<filter kubeapi.**>
+  @type record_transformer
+  <record>
+    sap.cc.audit.source "kube-api"
+    sap.cc.cluster "{{ .Values.global.cluster }}"
+    sap.cc.region "{{ .Values.global.region }}"
+  </record>
+</filter>
 
 {{- if .Values.additional_container_logs }}
 {{- range .Values.additional_container_logs }}
@@ -70,6 +114,8 @@
   @type record_transformer
   <record>
     {{ .field.name }} {{ .field.value | quote }}
+    sap.cc.cluster "{{ $.Values.global.cluster }}"
+    sap.cc.region "{{ $.Values.global.region }}"
   </record>
 </filter>
 {{- end }}
@@ -84,7 +130,8 @@
 
 @include /fluent-bin/prometheus.conf
 
-<filter **>
+{{- if eq .Values.global.clusterType "metal" }}
+<filter keystone.** keystone-global.**>
   @type kubernetes_metadata
   @id kubernetes
   kubernetes_url https://KUBERNETES_SERVICE_HOST
@@ -94,8 +141,7 @@
   container_name_to_kubernetes_regexp '^(?<name_prefix>[^_]+)_(?<container_name>[^\._]+)(\.(?<container_hash>[^_]+))?_(?<pod_name>[^_]+)_(?<namespace>[^_]+)_[^_]+_[^_]+$'
 </filter>
 
-{{- if eq .Values.global.clusterType "metal" }}
-<filter keystone.**>
+<filter keystone.** keystone-global.**>
   @type parser
   @id grok_parser
   key_name log
@@ -107,19 +153,26 @@
     grok_failure_key grok_failure
   </parse>
 </filter>
-{{- end }}
 
-<filter kubeapi.**>
-  @type parser
-  @id json_parser
-  key_name log
-  <parse>
-    @type json
-    time_format %Y-%m-%dT%H:%M:%S.%N
-    keep_time_key true
-  </parse>
+<filter keystone.**>
+  @type record_transformer
+  <record>
+    sap.cc.audit.source "keystone-api"
+    sap.cc.cluster "{{ .Values.global.cluster }}"
+    sap.cc.region "{{ .Values.global.region }}"
+  </record>
 </filter>
 
+<filter keystone-global.**>
+  @type record_transformer
+  <record>
+    sap.cc.audit.source "keystone-gobal-api"
+    sap.cc.cluster "{{ .Values.global.cluster }}"
+    sap.cc.region "{{ .Values.global.region }}"
+  </record>
+</filter>
+
+{{- end }}
 
 <filter **>
   @type record_modifier
@@ -128,53 +181,25 @@
 </filter>
 
 {{- if eq .Values.global.clusterType "metal"}}
-<match keystone.**>
+<match keystone.** keystone-global.**>
   @type copy
   @id duplicate_keystone
   <store>
     @type http
-    @id to_octobus
+    @id ocb_keystone
     endpoint "https://{{.Values.forwarding.keystone.host}}"
     tls_ca_cert_path "/etc/ssl/certs/ca-certificates.crt"
     slow_flush_log_threshold 105.0
-    retryable_response_codes [503]
+    retryable_response_codes [429,503]
     <buffer>
-      queue_limit_length 24
       chunk_limit_size 8MB
       flush_at_shutdown true
       overflow_action block
       retry_forever true
-      retry_type periodic
-      flush_interval 1s
-    </buffer>
-    <format>
-      @type json
-    </format>
-    json_array true
-  </store>
-  <store>
-    @type http
-    @id to_logstash_keystone
-    {{ if eq .Values.global.clusterType "metal" -}}
-    endpoint "https://logstash-audit-external.{{.Values.global.region}}.{{.Values.global.tld}}"
-    {{ else -}}
-    endpoint "http://logstash-audit-external.audit-logs:{{.Values.global.https_port}}"
-    {{ end -}}
-    <auth>
-      method basic
-      username {{.Values.global.elk_elasticsearch_http_user}}
-      password {{.Values.global.elk_elasticsearch_http_password}}
-    </auth>
-    slow_flush_log_threshold 105.0
-    retryable_response_codes [503]
-    <buffer>
-      queue_limit_length 24
-      chunk_limit_size 8MB
-      flush_at_shutdown true
-      overflow_action block
-      retry_forever true
-      retry_type periodic
-      flush_interval 1s
+      retry_type exponential_backoff
+      retry_max_interval 60s
+      flush_interval 15s
+      flush_thread_count 2
     </buffer>
     <format>
       @type json
@@ -191,6 +216,7 @@
       <labels>
         node "#{ENV['K8S_NODE_NAME']}"
         container $.kubernetes.container_name
+        source keystone
       </labels>
     </metric>
   </store>
@@ -202,27 +228,20 @@
   @id duplicate
   <store>
     @type http
-    @id to_logstash
-    {{ if eq .Values.global.clusterType "metal" -}}
-    endpoint "https://logstash-audit-external.{{.Values.global.region}}.{{.Values.global.tld}}"
-    {{ else -}}
-    endpoint "http://logstash-audit-external.audit-logs:{{.Values.global.https_port}}"
-    {{ end -}}
-    <auth>
-      method basic
-      username {{.Values.global.elk_elasticsearch_http_user}}
-      password {{.Values.global.elk_elasticsearch_http_password}}
-    </auth>
+    @id ocb_audit
+    endpoint "https://{{.Values.global.forwarding.audit.host}}"
+    tls_ca_cert_path "/etc/ssl/certs/ca-certificates.crt"
     slow_flush_log_threshold 105.0
-    retryable_response_codes [503]
+    retryable_response_codes [429,503]
     <buffer>
-      queue_limit_length 24
       chunk_limit_size 8MB
       flush_at_shutdown true
       overflow_action block
       retry_forever true
-      retry_type periodic
-      flush_interval 1s
+      retry_type exponential_backoff
+      retry_max_interval 60s
+      flush_interval 15s
+      flush_thread_count 2
     </buffer>
     <format>
       @type json
@@ -239,6 +258,7 @@
       <labels>
         node "#{ENV['K8S_NODE_NAME']}"
         container $.kubernetes.container_name
+        source all
       </labels>
     </metric>
   </store>

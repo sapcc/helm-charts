@@ -45,30 +45,30 @@
   </regexp>
 </filter>
 
+<filter **>
+  @type record_transformer
+  <record>
+    sap.cc.audit.source "flatcar"
+  </record>
+</filter>
+
 <match **>
   @type copy
   <store>
     @type http
-    {{ if eq .Values.global.clusterType "metal" -}}
-    endpoint "https://logstash-audit-external.{{.Values.global.region}}.{{.Values.global.tld}}"
-    {{ else -}}
-    endpoint "http://logstash-audit-external.audit-logs:{{.Values.global.https_port}}"
-    {{ end -}}
-    <auth>
-      method basic
-      username {{.Values.global.elk_elasticsearch_http_user}}
-      password {{.Values.global.elk_elasticsearch_http_password}}
-    </auth>
+    endpoint "https://{{.Values.global.forwarding.audit.host}}"
+    tls_ca_cert_path "/etc/ssl/certs/ca-certificates.crt"
     slow_flush_log_threshold 105.0
     retryable_response_codes [503]
     <buffer>
-      queue_limit_length 24
       chunk_limit_size 8MB
       flush_at_shutdown true
       overflow_action block
       retry_forever true
-      retry_type periodic
-      flush_interval 8s
+      retry_type exponential_backoff
+      retry_max_interval 60s
+      flush_interval 15s
+      flush_thread_count 2
     </buffer>
     <format>
       @type json

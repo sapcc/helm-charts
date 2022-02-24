@@ -1,17 +1,16 @@
-{{- range $cluster_id, $cluster := .Values.clusters }}
-{{- if $cluster.proxy_deployment_enabled }}
-{{- range $az := $.Values.global.availability_zones }}
+{{- if .Values.proxy_deployment_enabled }}
+{{- range $az := .Values.global.availability_zones }}
 kind: Deployment
 apiVersion: apps/v1
 
 metadata:
-  name: swift-proxy-{{ $cluster_id }}-{{ $az }}
+  name: swift-proxy-{{ $.Values.cluster_name }}-{{ $az }}
   labels:
     release: "{{ $.Release.Name }}"
-    os-cluster: {{ $cluster_id }}
+    os-cluster: {{ $.Values.cluster_name }}
 spec:
   revisionHistoryLimit: 5
-  {{- $replicas_az := default 0.0 (index $cluster (printf "proxy_deployment_replicas_%s" $az)) }}
+  {{- $replicas_az := default 0.0 (index $.Values (printf "proxy_deployment_replicas_%s" $az)) }}
   replicas: {{ $replicas_az }}
   strategy:
     type: RollingUpdate
@@ -24,15 +23,15 @@ spec:
       maxSurge: 2
   selector:
     matchLabels:
-      component: swift-proxy-{{ $cluster_id }}
+      component: swift-proxy-{{ $.Values.cluster_name }}
   template:
     metadata:
       labels:
-        component: swift-proxy-{{ $cluster_id }}
+        component: swift-proxy-{{ $.Values.cluster_name }}
         alert-tier: os
         alert-service: swift
         from: deployment
-        os-cluster: {{ $cluster_id }}
+        os-cluster: {{ $.Values.cluster_name }}
       annotations:
         checksum/swift-cluster.etc: {{ include "swift/templates/etc/cluster-configmap.yaml" $ | sha256sum }}
         {{- include "swift_conf_annotations" $ | indent 8 }}
@@ -60,7 +59,7 @@ spec:
                 - key: component
                   operator: In
                   values:
-                  - swift-proxy-{{ $cluster_id }}
+                  - swift-proxy-{{ $.Values.cluster_name }}
                 - key: from
                   operator: In
                   values:
@@ -73,7 +72,7 @@ spec:
                 - key: component
                   operator: In
                   values:
-                  - swift-proxy-{{ $cluster_id }}
+                  - swift-proxy-{{ $.Values.cluster_name }}
                 - key: from
                   operator: In
                   values:
@@ -87,14 +86,13 @@ spec:
                 - key: component
                   operator: In
                   values:
-                  - swift-haproxy-{{ $cluster_id }}
+                  - swift-haproxy-{{ $.Values.cluster_name }}
               topologyKey: "kubernetes.io/hostname"
       volumes:
-        {{- tuple $cluster_id | include "swift_proxy_volumes" | indent 8 }}
+        {{- include "swift_proxy_volumes" $ | indent 8 }}
       containers:
-        {{- tuple "deployment" $cluster_id $cluster $ | include "swift_proxy_containers" | indent 8 }}
+        {{- tuple "deployment" $ | include "swift_proxy_containers" | indent 8 }}
 
 ---
-{{- end }}
 {{- end }}
 {{- end }}

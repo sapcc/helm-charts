@@ -83,20 +83,6 @@ groups:
         annotations:
           description: Big-IP device {{ $labels.devicename }} reports config sync failure. See the exact reason on the device itself and resolve.
           summary: Configuration failed to synchronize
-      - alert: NetworkF5MemoryDrop
-        expr: min_over_time(delta(snmp_f5_sysGlobalHostOtherMemUsedKb{module="f5customer"}[15m])[2h:]) < bool -500000 == 1
-        for: 10m
-        labels:
-          context: f5
-          dashboard: f5-memory-utilization-regional
-          meta: "Big-IP device {{ $labels.devicename }} reports major drop in memory utilization."
-          playbook: 'docs/devops/alert/network/f5.html#f5_memory_drop'
-          service: f5
-          severity: critical
-          tier: net
-        annotations:
-          description: Big-IP device {{ $labels.devicename }} reports major drop in memory utilization, usually caused by API failure. Proceed with playbook instructions.
-          summary: Possible API failure.
       - alert: NetworkF5PoolsFlapping
         expr: (ceil((count by (devicename) (changes(snmp_f5_ltmPoolStatusAvailState[10m]) > 5) / sum by (devicename) (snmp_f5_ltmPoolNumber)) * 100)) > 50
         for: 5m

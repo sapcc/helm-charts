@@ -1,13 +1,12 @@
-{{- range $cluster_id, $cluster := .Values.clusters }}
-{{- if $cluster.proxy_daemonset_enabled }}
+{{- if .Values.proxy_daemonset_enabled }}
 kind: DaemonSet
 apiVersion: apps/v1
 
 metadata:
-  name: swift-proxy-{{ $cluster_id }}
+  name: swift-proxy-{{ .Values.cluster_name }}
   labels:
-    release: "{{ $.Release.Name }}"
-    os-cluster: {{ $cluster_id }}
+    release: "{{ .Release.Name }}"
+    os-cluster: {{ .Values.cluster_name }}
 
 spec:
   minReadySeconds: 15
@@ -15,35 +14,33 @@ spec:
     type: RollingUpdate
   selector:
     matchLabels:
-      component: swift-proxy-{{ $cluster_id }}
+      component: swift-proxy-{{ .Values.cluster_name }}
   template:
     metadata:
       labels:
-        component: swift-proxy-{{ $cluster_id }}
+        component: swift-proxy-{{ .Values.cluster_name }}
         alert-tier: os
         alert-service: swift
         from: daemonset
         restart: carefully
-        os-cluster: {{ $cluster_id }}
+        os-cluster: {{ .Values.cluster_name }}
       annotations:
-        checksum/swift-cluster.etc: {{ include "swift/templates/etc/cluster-configmap.yaml" $ | sha256sum }}
-        {{- include "swift_conf_annotations" $ | indent 8 }}
-        {{- include "swift_ring_annotations" $ | indent 8 }}
-        {{- if $.Values.health_exporter }}
+        checksum/swift-cluster.etc: {{ include "swift/templates/etc/cluster-configmap.yaml" . | sha256sum }}
+        {{- include "swift_conf_annotations" . | indent 8 }}
+        {{- include "swift_ring_annotations" . | indent 8 }}
+        {{- if .Values.health_exporter }}
         # Prometheus annotations on pod level without port
         # discovery will find all exposed container ports for exporters running in containers
         prometheus.io/scrape: "true"
-        prometheus.io/targets: {{ required ".Values.alerts.prometheus.openstack missing" $.Values.alerts.prometheus.openstack }}
+        prometheus.io/targets: {{ required ".Values.alerts.prometheus.openstack missing" .Values.alerts.prometheus.openstack }}
         {{- end }}
     spec:
-      {{- include "swift_daemonset_tolerations" $ | indent 6 }}
+      {{- include "swift_daemonset_tolerations" . | indent 6 }}
       nodeSelector:
-        species: {{ $.Values.species }}
+        species: {{ .Values.species }}
       volumes:
-        {{- tuple $cluster_id | include "swift_proxy_volumes" | indent 8 }}
+        {{- include "swift_proxy_volumes" . | indent 8 }}
       containers:
-        {{- tuple "daemonset" $cluster_id $cluster $ | include "swift_proxy_containers" | indent 8 }}
+        {{- tuple "daemonset" . | include "swift_proxy_containers" | indent 8 }}
 
----
-{{- end }}
 {{- end }}

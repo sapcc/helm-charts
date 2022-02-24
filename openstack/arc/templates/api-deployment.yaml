@@ -21,6 +21,10 @@ spec:
     metadata:
       labels:
         app: arc-api
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "{{ .Values.api.service.internalPort }}"
+        prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
     spec:
       volumes:
         - name: secrets
@@ -46,6 +50,10 @@ spec:
           ports:
             - name: api
               containerPort: {{ .Values.api.service.internalPort }}
+{{- if .Values.api.tls.enabled }}
+            - name: tls
+              containerPort: {{ .Values.api.service.internalTLSPort }}
+{{- end }}
           readinessProbe:
             httpGet:
               path: /readiness

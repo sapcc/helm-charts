@@ -1,0 +1,24 @@
+{{- if .Values.api.uwsgi }}
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: neutron-rpc-server
+  namespace: {{ .Release.Namespace }}
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: neutron-rpc-server
+  updatePolicy:
+    updateMode: "Auto"
+  resourcePolicy:
+    containerPolicies:
+      - containerName: '*'
+        controlledResources:
+          - cpu
+          - memory
+{{- if .Values.pod.resources.rpc_server }}
+        maxAllowed:
+{{ toYaml .Values.pod.resources.rpc_server.limits | indent 10 }}
+{{- end }}
+{{- end }}

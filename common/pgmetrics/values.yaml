@@ -130,6 +130,25 @@ customMetrics:
           usage: "GAUGE"
           description: "Time at which postmaster started"
 
+  pg_stat_activity_by_client:
+    query: "SELECT datname, CONCAT(COALESCE(HOST(client_addr), 'localhost'), ':', client_port) AS client_addr, application_name, state, COUNT(*) AS count FROM pg_stat_activity WHERE client_port IS NOT NULL GROUP BY datname, client_addr, client_port, application_name, state"
+    metrics:
+      - datname:
+          usage: LABEL
+          description: Database name
+      - client_addr:
+          usage: LABEL
+          description: IP address and port from which client connected
+      - application_name:
+          usage: LABEL
+          description: Application name as supplied by client
+      - state:
+          usage: LABEL
+          description: Current state of connection
+      - count:
+          usage: GAUGE
+          description: Number of open connections per client and connection state
+
 replicas: 1
 
 upgrades:

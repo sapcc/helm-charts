@@ -33,6 +33,9 @@ spec:
       serviceAccountName: {{ .Release.Name }}
 {{- end }}
 {{ tuple . "designate" "mdns" | include "kubernetes_pod_anti_affinity" | indent 6 }}
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+{{- include "kubernetes_maintenance_affinity" . }}
       containers:
         - name: designate-mdns
           image: {{ required ".Values.global.registry is missing" .Values.global.registry }}/loci-designate:{{ required ".Values.image_version_designate is missing" .Values.image_version_designate }}

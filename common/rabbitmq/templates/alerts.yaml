@@ -16,4 +16,25 @@ metadata:
 spec:
 {{ include (print .Template.BasePath "/alerts/_rabbitmq.alerts.tpl") . | indent 2 }}
 
+{{- if .Values.alerts.critical_readiness_enabled }}
+---
+
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+
+metadata:
+  name: {{ include "fullname" . }}-health-alerts
+  labels:
+    app: {{ include "fullname" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+    component: rabbitmq
+    prometheus: "kubernetes"
+
+spec:
+  groups:
+{{ include (print .Template.BasePath "/alerts/_health.alerts.tpl") . | indent 2 }}
+{{- end }}
+
 {{- end }}

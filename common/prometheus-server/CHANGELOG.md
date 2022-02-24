@@ -1,3 +1,7 @@
+## 4.6.0
+
+* Adds VerticalPodAutoscaler for Prometheus StatefulSet in recommendation mode
+
 ## 4.5.5
 
 * [pod service SD] fix regex for disovering `(9102;.*;.*)|(.*;metrics;.*)|(\d+;.*;\d+)|(.*;.*;\d+)`

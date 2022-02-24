@@ -1,19 +1,18 @@
-{{- if $.Values.envoy_external }}
-{{- range $cluster_id, $cluster := .Values.clusters }}
-{{- range $az := $.Values.global.availability_zones }}
+{{- if .Values.envoy_external }}
+{{- range $az := .Values.global.availability_zones }}
 kind: Deployment
 apiVersion: apps/v1
 
 metadata:
-  name: swift-envoy-{{ $cluster_id }}-{{ $az }}
+  name: swift-envoy-{{ $.Values.cluster_name }}-{{ $az }}
   labels:
     release: "{{ $.Release.Name }}"
-    os-cluster: {{ $cluster_id }}
+    os-cluster: {{ $.Values.cluster_name }}
 spec:
   revisionHistoryLimit: 5
   {{- $replicas_az := 0.0 }}
   {{- if $.Values.envoy_external }}
-  {{- $replicas_az = default 2.0 (index $cluster (printf "envoy_deployment_replicas_%s" $az)) }}
+  {{- $replicas_az = default 2.0 (index $.Values (printf "envoy_deployment_replicas_%s" $az)) }}
   {{- end }}
   replicas: {{ $replicas_az }}
   strategy:
@@ -27,16 +26,16 @@ spec:
       maxSurge: 2
   selector:
     matchLabels:
-      component: swift-envoy-{{ $cluster_id }}
+      component: swift-envoy-{{ $.Values.cluster_name }}
   template:
     metadata:
       labels:
-        component: swift-envoy-{{ $cluster_id }}
+        component: swift-envoy-{{ $.Values.cluster_name }}
         alert-tier: os
         alert-service: swift
         from: deployment
-        os-cluster: {{ $cluster_id }}
-        for-service: swift-proxy-{{ $cluster_id }}
+        os-cluster: {{ $.Values.cluster_name }}
+        for-service: swift-proxy-{{ $.Values.cluster_name }}
       annotations:
         checksum/envoy.bin: {{ include "swift/templates/envoy-bin-configmap.yaml" $ | sha256sum }}
         checksum/envoy-cluster.etc: {{ include "swift/templates/etc/envoy-cluster-configmap.yaml" $ | sha256sum }}
@@ -59,7 +58,7 @@ spec:
                 - key: component
                   operator: In
                   values:
-                  - swift-envoy-{{ $cluster_id }}
+                  - swift-envoy-{{ $.Values.cluster_name }}
                 - key: from
                   operator: In
                   values:
@@ -72,7 +71,7 @@ spec:
                 - key: component
                   operator: In
                   values:
-                  - swift-envoy-{{ $cluster_id }}
+                  - swift-envoy-{{ $.Values.cluster_name }}
                 - key: from
                   operator: In
                   values:
@@ -81,13 +80,13 @@ spec:
       volumes:
         - name: tls-secret
           secret:
-            secretName: tls-swift-{{ $cluster_id }}
+            secretName: tls-swift-{{ $.Values.cluster_name }}
         - name: envoy-bin
           configMap:
             name: envoy-bin
         - name: envoy-etc-cluster
           configMap:
-            name: envoy-etc-{{ $cluster_id }}
+            name: envoy-etc-{{ $.Values.cluster_name }}
       containers:
         - name: envoy
           image: {{ $.Values.global.registryAlternateRegion }}/swift-envoy:{{ default $.Values.image_version_envoy "v1.17.1-20210317124712" }}
@@ -124,11 +123,11 @@ spec:
           readinessProbe:
             httpGet:
               path: /healthcheck
-              port: {{ $cluster.proxy_public_port }}
+              port: {{ $.Values.proxy_public_port }}
               scheme: HTTPS
               httpHeaders:
                 - name: Host
-                  value: {{ tuple $cluster $.Values | include "swift_endpoint_host" }}
+                  value: {{ include "swift_endpoint_host" $ }}
             initialDelaySeconds: 10
             timeoutSeconds: 1
             periodSeconds: 5
@@ -137,6 +136,5 @@ spec:
               containerPort: 9902
 
 ---
-{{- end }}
 {{- end }}
 {{- end }}

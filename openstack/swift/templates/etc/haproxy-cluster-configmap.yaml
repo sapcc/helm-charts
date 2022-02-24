@@ -1,8 +1,7 @@
-{{- range $cluster_id, $cluster := .Values.clusters }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: haproxy-etc-{{ $cluster_id }}
+  name: haproxy-etc-{{ .Values.cluster_name }}
   labels:
     system: openstack
     service: objectstore
@@ -13,7 +12,4 @@ data:
 {{ include "swift/templates/etc/_dhparam.pem.tpl" . | indent 4 }}
 
   haproxy.cfg: |
-{{ tuple $cluster_id $cluster $.Values | include "haproxy.cfg" | indent 4 }}
-
----
-{{- end }}
+{{ include "haproxy.cfg" . | indent 4 }}

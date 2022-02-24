@@ -39,7 +39,6 @@ methods = {{ .Values.api.auth.methods | default "password,token,application_cred
 {{- if hasKey .Values.global.api "cc_password"}}
 [cc_password]
 url = {{ required "missing global.api.cc_password.url" .Values.global.api.cc_password.url }}
-secure = {{ .Values.global.api.cc_password.secure }}
 {{- end }}
 {{- end }}
 

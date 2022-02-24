@@ -37,3 +37,13 @@ affinity:
               values:
                 - {{$availability_zone}}
 {{- end }}
+
+{{- define "kubernetes_maintenance_affinity" }}
+          - weight: 1
+            preference:
+              matchExpressions:
+                - key: cloud.sap/maintenance-state
+                  operator: In
+                  values:
+                  - operational
+{{- end }}

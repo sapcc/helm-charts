@@ -40,7 +40,7 @@ groups:
       summary: Server errors on {{ $labels.kubernetes_name }}
 
   - alert: OpenstackLimesNotScraping
-    expr: absent(rate(limes_successful_scrapes{os_cluster="ccloud"}[30m]) > 0)
+    expr: absent(rate(limes_successful_scrapes[30m]) > 0)
     for: 5m
     labels:
       context: failedscrapes
@@ -49,12 +49,12 @@ groups:
       severity: warning
       tier: os
     annotations:
-      description: There have been no successful scrapes in the last hour in
-        the ccloud cluster, so limes-collect-ccloud is probably dead.
+      description: There have been no successful scrapes in the last hour,
+        so limes-collect-ccloud is probably dead.
       summary: Limes is not scraping
 
   - alert: OpenstackLimesFailedCapacityScrapes
-    expr: sum(increase(limes_failed_capacity_scrapes[5m])) BY (os_cluster, capacitor) > 0
+    expr: sum(increase(limes_failed_capacity_scrapes[5m])) BY (capacitor) > 0
     for: 1h
     labels:
       context: failedcapacityscrapes
@@ -65,7 +65,7 @@ groups:
     annotations:
       description: Limes cannot scrape capapcity from {{ title $labels.capacitor }}
         for more than an hour.
-        The `kubectl logs` for limes-collect-{{ $labels.os_cluster }} contain additional info.
+        The `kubectl logs` for limes-collect-ccloud contain additional info.
       summary: Limes cannot scrape capacity {{ title $labels.capacitor }}
 
   - alert: OpenstackLimesMissingCapacity
@@ -76,7 +76,7 @@ groups:
     # The check for non-zero domain quota skips resources that only report
     # usage, not quota nor capacity (at the moment, those are
     # "compute/{cores,ram}_{bigvm,regular}").
-    expr: global:limes_consolidated_cluster_capacity{full_resource!~"compute/instances_.*"} == 0 and on (full_resource, os_cluster) global:limes_consolidated_domain_quota{full_resource!~"compute/instances_*"} > 0
+    expr: global:limes_consolidated_cluster_capacity{full_resource!~"compute/instances_.*"} == 0 and on (full_resource) global:limes_consolidated_domain_quota{full_resource!~"compute/instances_*"} > 0
     for: 1h
     labels:
       context: failedcapacityscrapes
@@ -89,11 +89,11 @@ groups:
       description: Limes reports no capacity for {{ $labels.full_resource }}.
         This usually means that the backend service reported weirdly-shaped data
         to Limes' capacity scanner.
-        The `kubectl logs` for limes-collect-{{ $labels.os_cluster }} may contain additional info.
+        The `kubectl logs` for limes-collect-ccloud may contain additional info.
       summary: Limes reports zero capacity for {{ $labels.full_resource }}
 
   - alert: OpenstackLimesFailedScrapes
-    expr: sum(increase(limes_failed_scrapes[5m])) BY (os_cluster, service, service_name) > 0
+    expr: sum(increase(limes_failed_scrapes[5m])) BY (service, service_name) > 0
     for: 1h
     labels:
       context: failedscrapes
@@ -105,13 +105,13 @@ groups:
     annotations:
       description: Limes cannot scrape data from {{ title $labels.service_name }}
         for more than an hour. Please check if {{ title $labels.service_name }} is working.
-        The `kubectl logs` for limes-collect-{{ $labels.os_cluster }} contain additional info.
+        The `kubectl logs` for limes-collect-ccloud contain additional info.
       summary: Limes cannot scrape {{ title $labels.service_name }}
 
   - alert: OpenstackLimesSuspendedScrapes
     # this has [15m] instead of [5m] because suspensions last for 10 minutes,
     # therefore the limes_suspended_scrapes counter only increments that often
-    expr: sum(increase(limes_suspended_scrapes[15m])) BY (os_cluster, service, service_name) > 0
+    expr: sum(increase(limes_suspended_scrapes[15m])) BY (service, service_name) > 0
     for: 1h
     labels:
       context: failedscrapes
@@ -123,11 +123,11 @@ groups:
       description: Limes has suspended scraping from {{ title $labels.service_name }}
         for more than an hour. Please check if the internal endpoint for
         {{ title $labels.service_name }} is correctly entered in the Keystone catalog.
-        The `kubectl logs` for limes-collect-{{ $labels.os_cluster }} contain additional info.
+        The `kubectl logs` for limes-collect-ccloud contain additional info.
       summary: Limes cannot find {{ title $labels.service_name }} endpoint
 
   - alert: OpenstackLimesFailedRateScrapes
-    expr: sum(increase(limes_failed_rate_scrapes[5m])) BY (os_cluster, service, service_name) > 0
+    expr: sum(increase(limes_failed_rate_scrapes[5m])) BY (service, service_name) > 0
     for: 1h
     labels:
       context: failedratescrapes
@@ -139,13 +139,13 @@ groups:
     annotations:
       description: Limes cannot scrape rate data from {{ title $labels.service_name }}
         for more than an hour. Please check if {{ title $labels.service_name }} is working.
-        The `kubectl logs` for limes-collect-{{ $labels.os_cluster }} contain additional info.
+        The `kubectl logs` for limes-collect-ccloud contain additional info.
       summary: Limes cannot scrape {{ title $labels.service_name }}
 
   - alert: OpenstackLimesSuspendedRateScrapes
     # this has [15m] instead of [5m] because suspensions last for 10 minutes,
     # therefore the limes_suspended_rate_scrapes counter only increments that often
-    expr: sum(increase(limes_suspended_rate_scrapes[15m])) BY (os_cluster, service, service_name) > 0
+    expr: sum(increase(limes_suspended_rate_scrapes[15m])) BY (service, service_name) > 0
     for: 1h
     labels:
       context: failedratescrapes
@@ -157,7 +157,7 @@ groups:
       description: Limes has suspended rate scraping from {{ title $labels.service_name }}
         for more than an hour. Please check if the internal endpoint for
         {{ title $labels.service_name }} is correctly entered in the Keystone catalog.
-        The `kubectl logs` for limes-collect-{{ $labels.os_cluster }} contain additional info.
+        The `kubectl logs` for limes-collect-ccloud contain additional info.
       summary: Limes cannot find {{ title $labels.service_name }} endpoint
 
   - alert: OpenstackLimesMissingSwiftMetrics
@@ -173,11 +173,11 @@ groups:
     annotations:
       description: The project {{ $labels.domain }}/{{ $labels.project }} (UUID {{ $labels.project_id }})
         has Swift containers, but Limes does not submit Swift usage metrics to Maia.
-        Check the `kubectl logs` for limes-collect-{{ $labels.os_cluster }} for additional info.
+        Check the `kubectl logs` for limes-collect-ccloud for additional info.
       summary: Limes cannot submit Swift usage metrics
 
   - alert: OpenstackLimesFailedDomainDiscoveries
-    expr: sum(increase(limes_failed_domain_discoveries[5m])) BY (os_cluster) > 0
+    expr: sum(increase(limes_failed_domain_discoveries[5m])) > 0
     for: 30m
     labels:
       context: faileddiscoveries
@@ -186,12 +186,12 @@ groups:
       severity: warning
       tier: os
     annotations:
-      description: Limes cannot discover domains for cluster {{ $labels.os_cluster }}.
+      description: Limes cannot discover domains.
         Please check if "openstack domain list" is working.
       summary: Limes cannot discover domains.
 
   - alert: OpenstackLimesFailedProjectDiscoveries
-    expr: sum(increase(limes_failed_project_discoveries[5m])) BY (os_cluster, domain) > 0
+    expr: sum(increase(limes_failed_project_discoveries[5m])) BY (domain) > 0
     for: 30m
     labels:
       context: faileddiscoveries
@@ -200,13 +200,15 @@ groups:
       severity: warning
       tier: os
     annotations:
-      description: Limes cannot discover projects in domain {{ $labels.domain }}
-        of cluster {{ $labels.os_cluster }}. Please check if "openstack project
-        list --domain {{ $labels.domain }}" is working.
+      description: Limes cannot discover projects in domain {{ $labels.domain }}.
+        Please check if "openstack project list --domain {{ $labels.domain }}" is working.
       summary: Limes cannot discover projects.
 
   - alert: OpenstackLimesAuditEventPublishFailing
-    expr: sum(increase(limes_failed_auditevent_publish[10m])) > 0
+    # Usually, you would check increase() here, but audit events *can* be quite
+    # rare, so we alert if there are any failed audit events at all. To clear this alert,
+    # delete the respective
+    expr: max by (pod) (limes_failed_auditevent_publish > 0)
     for: 1h
     labels:
       context: auditeventpublish
@@ -214,9 +216,10 @@ groups:
       service: limes
       severity: info
       tier: os
+      meta: '{{ $labels.pod }}'
     annotations:
-      description: "Audit events could not be published to the RabbitMQ server."
-      summary: "Audit events publish failing"
+      summary: "{{ $labels.pod }} cannot publish audit events"
+      description: "Audit events could not be published to the RabbitMQ server. Check the pod log for details. Once the underlying issue was addressed, delete the offending pod to clear this alert."
 
   - alert: OpenstackLimesPodSchedulingFailedInsufficientCPU
     expr: sum(rate(kube_pod_failed_scheduling_cpu_total{pod_name=~"limes-.+"}[30m])) by (pod_name) > 0

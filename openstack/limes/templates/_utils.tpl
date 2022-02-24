@@ -21,25 +21,19 @@
 - name: LIMES_API_REQUEST_LOG_EXCEPT_STATUS_CODES
   value: "300"
 - name: LIMES_API_CORS_ALLOWED_ORIGINS
-  {{- if .Values.limes.relaxed_cors }}
   value: "*"
-  {{- else }}
-  value: "https://dashboard.{{.Values.global.region}}.{{.Values.global.tld}}"
-  {{- end }}
 - name: LIMES_COLLECTOR_DATA_METRICS_EXPOSE
   value: "true"
 - name: LIMES_COLLECTOR_DATA_METRICS_SKIP_ZERO
   value: "true"
-{{- range $cluster_id, $cfg := .Values.limes.clusters }}
-- name: {{ $cluster_id | upper }}_AUTH_PASSWORD
+- name: CCLOUD_AUTH_PASSWORD
   valueFrom:
     secretKeyRef:
       name: limes-secret
-      key: {{ $cluster_id }}_auth_password
-- name: {{ $cluster_id | upper }}_RABBITMQ_PASSWORD
+      key: ccloud_auth_password
+- name: CCLOUD_RABBITMQ_PASSWORD
   valueFrom:
     secretKeyRef:
       name: limes-secret
-      key: {{ $cluster_id }}_rabbitmq_password
-{{- end }}
+      key: ccloud_rabbitmq_password
 {{- end -}}

@@ -72,7 +72,7 @@ spec:
         - name: CONCOURSE_LOG_LEVEL
           value: info
         - name: CONCOURSE_TSA_HOST
-          value: concourse-main-web-worker-gateway:2222
+          value: {{ $.Release.Name }}-web-worker-gateway:2222
         - name: CONCOURSE_TSA_PUBLIC_KEY
           value: /concourse-keys/host_key.pub
         - name: CONCOURSE_TSA_WORKER_PRIVATE_KEY
@@ -121,7 +121,7 @@ spec:
         - name: concourse-keys
           mountPath: /concourse-keys
           readOnly: true
-        - name: sap-root-certs 
+        - name: sap-root-certs
           mountPath: /usr/local/share/ca-certificates
         - name: pre-stop
           mountPath: /land-worker
@@ -129,10 +129,10 @@ spec:
       volumes:
       - name: sap-root-certs
         secret:
-          secretName: {{ $.Release.Name }}-web
+          secretName: concourse-worker
           defaultMode: 256
           items:
-          - key: github-ca-cert
+          - key: worker-additional-certs
             path: sap-root-certs.crt
       - name: concourse-keys
         secret:

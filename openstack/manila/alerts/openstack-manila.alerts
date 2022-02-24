@@ -72,15 +72,15 @@ groups:
       summary: Manila Shares taking more than 2 minutes to resize
 
   - alert: OpenstackManilaShareServersStuck
-    expr: (sum(manila_share_servers_stuck_count_gauge) BY (manila_host, status)) > 0
-    for: 24h
+    expr: delta(sum(manila_share_servers_stuck_count_gauge) by (manila_host)[1d:]) > 0
+    for: 15m
     labels:
       dashboard: manila
       service: manila
       severity: info
       tier: os
     annotations:
-      description: Sum of Openstack Manila Share Servers Stuck is more than 1
+      description: More Share servers stuck on {{ $labels.manila_host }} than yesterday
       summary: Manila share servers in stuck state
 
   - alert: OpenstackManilaShareServersStuckCreate
@@ -93,21 +93,8 @@ groups:
       severity: info
       tier: os
     annotations:
-      description: Manila Share server {{ $labels.id }} taking more than 2 minutes to create on {{ $labels.manila_host }}
-      summary: Manila Share servers taking more than 2 minutes to create
-
-  - alert: OpenstackManilaShareServersStuckError
-    expr: max(manila_share_servers_stuck_max_duration_gauge{status=~"error|error_unmanage|error_manage"})
-      BY (manila_host) > 120
-    for: 24h
-    labels:
-      dashboard: manila
-      service: manila
-      severity: info
-      tier: os
-    annotations:
-      description: Manila Share server stuck more than 2 minutes in error status {{ $labels.status }}
-      summary: Manila Share servers stuck more than 2 minutes in error
+      description: Manila Share server {{ $labels.id }} stuck in creating on {{ $labels.manila_host }} for a day
+      summary: Manila Share servers taking too long to create
 
   - alert: OpenstackManilaShareServerHigh
     expr: label_replace(count(manila_share_servers_count_gauge{status!="deleted"}) BY (manila_host),

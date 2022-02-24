@@ -1,7 +1,5 @@
 {{- define "swift_endpoint_host" -}}
-{{- $cluster := index . 0 -}}
-{{- $context := index . 1 -}}
-{{$cluster.endpoint_host}}.{{$context.global.region}}.{{$context.global.tld}}
+{{ .Values.endpoint_host}}.{{ .Values.global.region }}.{{ .Values.global.tld }}
 {{- end -}}
 
 {{/*
@@ -76,13 +74,12 @@ checksum/object.ring: {{ include "swift/templates/object-ring.yaml" . | sha256su
 
 {{- /**********************************************************************************/ -}}
 {{- define "swift_proxy_volumes" }}
-{{- $cluster := index . 0 }}
 - name: swift-etc
   configMap:
     name: swift-etc
 - name: swift-etc-cluster
   configMap:
-    name: swift-etc-{{ $cluster }}
+    name: swift-etc-{{ .Values.cluster_name }}
 - name: swift-account-ring
   configMap:
     name: swift-account-ring
@@ -97,9 +94,7 @@ checksum/object.ring: {{ include "swift/templates/object-ring.yaml" . | sha256su
 {{- /**********************************************************************************/ -}}
 {{- define "swift_proxy_containers" }}
 {{- $kind       := index . 0 -}}
-{{- $cluster_id := index . 1 -}}
-{{- $cluster    := index . 2 -}}
-{{- $context    := index . 3 }}
+{{- $context    := index . 1 }}
 - name: proxy
   image: {{ include "swift_image" $context }}
   command:
@@ -125,9 +120,9 @@ checksum/object.ring: {{ include "swift/templates/object-ring.yaml" . | sha256su
       valueFrom:
         secretKeyRef:
           name: swift-secret
-          key: {{ $cluster_id }}_service_password
-  {{- $resources_cpu := index $cluster (printf "proxy_%s_resources_cpu" $kind) }}
-  {{- $resources_memory := index $cluster (printf "proxy_%s_resources_memory" $kind) }}
+          key: {{ $context.Values.cluster_name }}_service_password
+  {{- $resources_cpu := index $context.Values (printf "proxy_%s_resources_cpu" $kind) }}
+  {{- $resources_memory := index $context.Values (printf "proxy_%s_resources_memory" $kind) }}
   resources:
     requests:
       cpu: {{ required (printf "proxy_%s_resources_cpu is required" $kind) $resources_cpu | quote }}
@@ -289,12 +284,10 @@ checksum/object.ring: {{ include "swift/templates/object-ring.yaml" . | sha256su
 
 {{- /* Generate backend host for sapcc/openstack-ratelimit-middleware */ -}}
 {{- define "sapcc_ratelimit_backend_host" -}}
-{{- $release := index . 0 -}}
-{{- $context := index . 1 -}}
-{{- if $context.sapcc_ratelimit.backend.host -}}
-{{- $context.sapcc_ratelimit.backend.host -}}
+{{- if .Values.sapcc_ratelimit.backend.host -}}
+{{- .Values.sapcc_ratelimit.backend.host -}}
 {{- else -}}
-{{- $release.Name -}}-sapcc-ratelimit-redis
+{{- .Release.Name -}}-sapcc-ratelimit-redis
 {{- end -}}
 {{- end -}}
 
@@ -309,18 +302,16 @@ log_statsd_metric_prefix = swift
 
 {{- /**********************************************************************************/ -}}
 {{- define "swift_haproxy_backend" -}}
-{{- $cluster_id := index . 0 -}}
-{{- $cluster := index . 1 -}}
 #option http-server-close
-{{- if $cluster.upstreams }}
+{{- if .Values.upstreams }}
 balance roundrobin
 option httpchk HEAD /healthcheck
 default-server check downinter 30s maxconn 500
-{{- range $index, $upstream := $cluster.upstreams }}
+{{- range $index, $upstream := .Values.upstreams }}
 {{- $short_name := splitn "." 2  $upstream.name }}
-server {{ printf "%9s" $short_name._0 }} {{ $upstream.target }}:{{ default 8080 $cluster.svc_node_port }} # {{ $upstream.name }}
+server {{ printf "%9s" $short_name._0 }} {{ $upstream.target }}:{{ default 8080 $.Values.svc_node_port }} # {{ $upstream.name }}
 {{- end }}
 {{- else }}
-server swift-svc swift-proxy-internal-{{ $cluster_id }}:8080
+server swift-svc swift-proxy-internal-{{ .Values.cluster_name }}:8080
 {{- end }}
 {{- end -}}

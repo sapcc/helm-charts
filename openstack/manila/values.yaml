@@ -179,6 +179,7 @@ mysql_metrics:
           COUNT(*) AS count_gauge
         FROM share_snapshots
         INNER JOIN share_snapshot_instances ON share_snapshots.id=share_snapshot_instances.snapshot_id
+        WHERE share_snapshots.deleted = 'False'
         GROUP BY
           share_snapshots.id,
           share_snapshots.project_id,
@@ -202,6 +203,7 @@ mysql_metrics:
           SUM(share_snapshots.size) size_gauge
         FROM share_snapshots
         INNER JOIN share_snapshot_instances ON share_snapshots.id=share_snapshot_instances.snapshot_id
+        WHERE share_snapshots.deleted = 'False'
         GROUP BY
           share_snapshots.id,
           share_snapshots.project_id,
@@ -434,7 +436,7 @@ pod:
       requests:
         memory: "256Mi"
         cpu: "1000m"
-    share:      # is not scalable -> qosClass: guaranteed
+    share:      # is not scalable -> qosClass: burstable
       requests:
         memory: "1Gi"
         cpu: "100m"
@@ -462,9 +464,6 @@ mariadb:
   resources:
     requests:
       memory: 6144Mi
-  backup:
-    enabled: false
-    os_password: null      # use dbBackupServicePassword from globals
   backup_v2:
     enabled: true
     databases:
@@ -490,6 +489,7 @@ postgresql:
   enabled: false
 
 rabbitmq:
+  name: manila
   persistence:
     enabled: false
 
