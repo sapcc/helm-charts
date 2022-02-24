@@ -203,11 +203,11 @@ domain_allowlist = {{ .Values.lifesaver.domain_allowlist | default "Default, tem
 user_allowlist = {{ .Values.lifesaver.user_allowlist | default "admin, keystone, nova, neutron, cinder, glance, designate, barbican, dashboard, manila, swift" }}
 user_blocklist = {{ .Values.lifesaver.user_blocklist | default "" }}
 # initial user credit
-initial_credit = {{ .Values.lifesaver.initial_credit | default 100 }}
+initial_credit = {{ .Values.lifesaver.initial_credit | default 500 }}
 # how often do we refill credit
 refill_seconds = {{ .Values.lifesaver.refill_seconds | default 60 }}
 # and with what amount
-refill_amount = {{ .Values.lifesaver.refill_amount | default 1 }}
+refill_amount = {{ .Values.lifesaver.refill_amount | default 5 }}
 # cost of each status
 status_cost = {{ .Values.lifesaver.status_cost | default "default:1,401:10,403:5,404:0,429:0" }}
 
