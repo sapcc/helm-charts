@@ -186,10 +186,10 @@ filter {
 
     if [project_mapping] and [project_mapping][0]{
       # Add Fields to audit events, checking if the field exists first to not overwrite.
-      if ![initiator][project] {
+      if ![initiator][project_name] {
         mutate {
           add_field => {
-              "[initiator][project]" => "%{[project_mapping][0][project_name]}"
+              "[initiator][project_name]" => "%{[project_mapping][0][project_name]}"
           }
         }
       }
@@ -259,10 +259,10 @@ filter {
 
     if [target_project_mapping] and [target_project_mapping][0]{
       # Add Fields to audit events, checking if the field exists first to not overwrite.
-      if ![target][project] {
+      if ![target][project_name] {
         mutate {
           add_field => {
-              "[target][project]" => "%{[target_project_mapping][0][project_name]}"
+              "[target][project_name]" => "%{[target_project_mapping][0][project_name]}"
           }
         }
       }
