@@ -118,6 +118,15 @@
     sap.cc.region "{{ $.Values.global.region }}"
   </record>
 </filter>
+{{- if .filter }}
+<filter {{ .tag }}*>
+  @type grep
+  <regexp>
+    key {{ .filter.key }}
+    pattern {{ .filter.pattern }}
+  </regexp>
+</filter>
+{{- end }}
 {{- end }}
 {{- end }}
 {{- end }}
