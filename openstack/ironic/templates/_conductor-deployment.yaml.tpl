@@ -68,6 +68,7 @@ spec:
         {{- if not $conductor.debug }}
         resources:
 {{ toYaml .Values.pod.resources.conductor | indent 10 }}
+{{- if or (eq .Values.global.region "ap-ae-1") (eq .Values.global.region "ap-sa-1") }}
         livenessProbe:
           exec:
             command:
@@ -90,6 +91,7 @@ spec:
           failureThreshold: 12
           periodSeconds: 10
           timeoutSeconds: 5
+        {{- end }}
         {{- end }}
         volumeMounts:
         - mountPath: /etc/ironic
