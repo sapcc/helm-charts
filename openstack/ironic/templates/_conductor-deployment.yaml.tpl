@@ -68,7 +68,7 @@ spec:
         {{- if not $conductor.debug }}
         resources:
 {{ toYaml .Values.pod.resources.conductor | indent 10 }}
-{{- if or (eq .Values.global.region "ap-ae-1") (eq .Values.global.region "ap-sa-1") }}
+{{- if and (ne .Values.global.region "ap-ae-1") (ne .Values.global.region "ap-sa-1") }}
         livenessProbe:
           exec:
             command:
