@@ -158,6 +158,7 @@ filter {
         {
           name => "project_domain_mapping"
           index_columns => ["project_id"]
+          preserve_existing => true
           columns => [
             ["project_name", "varchar(64)"],
             ["project_id", "varchar(64)"],
@@ -231,6 +232,7 @@ filter {
         {
           name => "target_project_mapping"
           index_columns => ["project_id"]
+          preserve_existing => true
           columns => [
             ["project_name", "varchar(64)"],
             ["project_id", "varchar(64)"],
@@ -305,6 +307,7 @@ filter {
         {
           name => "user_domain_mapping"
           index_columns => ["user_id"]
+          preserve_existing => true
           columns => [
             ["user_id", "varchar(64)"],
             ["user_name", "varchar(64)"],
