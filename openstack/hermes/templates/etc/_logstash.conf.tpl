@@ -414,6 +414,7 @@ output {
   if [type] == 'clone_for_audit' {
     if ([@metadata][index]) {
       elasticsearch {
+          id => "clone_for_audit_1"
           index => "audit-%{[@metadata][index]}-6-%{+YYYY.MM}"
           template => "/hermes-etc/audit.json"
           template_name => "audit"
@@ -421,9 +422,12 @@ output {
           hosts => ["{{.Values.hermes_elasticsearch_host}}:{{.Values.hermes_elasticsearch_port}}"]
           # retry_max_interval default 64
           retry_max_interval => 10
+          # validate_after_inactivity default 10000
+          validate_after_inactivity => 1000
       }
     } else {
       elasticsearch {
+          id => "clone_for_audit_2"
           index => "audit-default-6-%{+YYYY.MM}"
           template => "/hermes-etc/audit.json"
           template_name => "audit"
@@ -431,12 +435,15 @@ output {
           hosts => ["{{.Values.hermes_elasticsearch_host}}:{{.Values.hermes_elasticsearch_port}}"]
           # retry_max_interval default 64
           retry_max_interval => 10
+          # validate_after_inactivity default 10000
+          validate_after_inactivity => 1000
       }
     }
   }
   # cc the target tenant
   if ([@metadata][index2] and [@metadata][index2] != [@metadata][index] and [type] == 'clone_for_cc') {
     elasticsearch {
+        id => "clone_for_cc"
         index => "audit-%{[@metadata][index2]}-6-%{+YYYY.MM}"
         template => "/hermes-etc/audit.json"
         template_name => "audit"
@@ -444,6 +451,8 @@ output {
         hosts => ["{{.Values.hermes_elasticsearch_host}}:{{.Values.hermes_elasticsearch_port}}"]
         # retry_max_interval default 64
         retry_max_interval => 10
+        # validate_after_inactivity default 10000
+        validate_after_inactivity => 1000
     }
   }
 
