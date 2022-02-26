@@ -13,7 +13,7 @@ rabbitmq {
     subscription_retry_interval_seconds => 60
     automatic_recovery => true
     connection_timeout => 1000
-    heartbeat => 30
+    heartbeat => 5
     connect_retry_interval => 60
     durable => {{ $value.durable | default false }}
   }
