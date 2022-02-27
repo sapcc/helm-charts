@@ -143,6 +143,7 @@ filter {
   }
 
   # Enrich keystone events with domain mapping from Metis
+  {{ if .Values.logstash.audit -}}
   if [initiator][project_id] {
     jdbc_static {
       id => "jdbc_project_id"
@@ -364,6 +365,7 @@ filter {
       }
     }
   }
+  {{- end}}
 
   # Octobus setting Source to TypeURI. Unused in Hermes.
   if [observer][typeURI] {
