@@ -36,9 +36,6 @@ spec:
       {{- with .Values.nodeAffinity }}
 {{ toYaml . | indent 12 }}
       {{- end }}
-{{- else }}
-          preferredDuringSchedulingIgnoredDuringExecution:
-{{- end }}
           - weight: 1
             preference:
               matchExpressions:
@@ -46,6 +43,16 @@ spec:
                   operator: In
                   values:
                   - operational
+{{- else }}
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 1
+            preference:
+              matchExpressions:
+                - key: cloud.sap/maintenance-state
+                  operator: In
+                  values:
+                  - operational
+{{- end }}
       hostname: {{ template "fullname" . }}
       containers:
       - name: rabbitmq
