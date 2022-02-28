@@ -30,14 +30,14 @@ spec:
             - name: NAMESPACE
               value: "andromeda"
             - name: DEPENDENCY_JOBS
-              value: {{ include "andromeda.fullname" . }}-migration
+              value: {{ include "andromeda.fullname" . }}-migration-{{ .Values.image.tag | required ".Values.image.tag is required" }}
             - name: COMMAND
               value: "true"
       containers:
         - name: {{ .Chart.Name }}-server
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
-          image: "{{ .Values.image.repository }}:{{ .Values.andromeda.image_tag }}"
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           args: ["--config-file", "/etc/andromeda/andromeda.conf", "server", "--port", "8000"]
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           env:

@@ -1,9 +1,15 @@
-{{- if and .Values.tls.enabled (not .Values.tls.certs.provided) (not .Values.tls.certs.certManager) }}
-kind: ClusterRoleBinding
+{{- if and .Values.tls.enabled .Values.tls.certs.selfSigner.enabled }}
+kind: RoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: {{ template "cockroachdb.fullname" . }}
+  name: {{ template "selfcerts.fullname" . }}
   namespace: {{ .Release.Namespace | quote }}
+  annotations:
+    # This is what defines this resource as a hook. Without this line, the
+    # job is considered part of the release.
+    "helm.sh/hook": pre-install,pre-upgrade
+    "helm.sh/hook-weight": "3"
+    "helm.sh/hook-delete-policy": hook-succeeded,hook-failed
   labels:
     helm.sh/chart: {{ template "cockroachdb.chart" . }}
     app.kubernetes.io/name: {{ template "cockroachdb.name" . }}
@@ -14,10 +20,10 @@ metadata:
   {{- end }}
 roleRef:
   apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: {{ template "cockroachdb.fullname" . }}
+  kind: Role
+  name: {{ template "selfcerts.fullname" . }}
 subjects:
   - kind: ServiceAccount
-    name: {{ template "cockroachdb.tls.serviceAccount.name" . }}
+    name: {{ template "selfcerts.fullname" . }}
     namespace: {{ .Release.Namespace | quote }}
 {{- end }}

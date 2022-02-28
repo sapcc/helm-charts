@@ -1,5 +1,5 @@
-kind: Deployment
-apiVersion: apps/v1
+kind: StatefulSet
+apiVersion: {{ template "cockroachdb.statefulset.apiVersion" . }}
 metadata:
   name: {{ template "cockroachdb.fullname" . }}
   namespace: {{ .Release.Namespace | quote }}
@@ -8,25 +8,22 @@ metadata:
     app.kubernetes.io/name: {{ template "cockroachdb.name" . }}
     app.kubernetes.io/instance: {{ .Release.Name | quote }}
     app.kubernetes.io/managed-by: {{ .Release.Service | quote }}
-  {{- with .Values.deployment.labels }}
+  {{- with .Values.statefulset.labels }}
     {{- toYaml . | nindent 4 }}
   {{- end }}
   {{- with .Values.labels }}
     {{- toYaml . | nindent 4 }}
   {{- end }}
 spec:
-  replicas: {{ .Values.deployment.replicas | int64 }}
-  strategy:
-    type: {{ .Values.deployment.updateStrategy.type }}
-    {{ if eq .Values.deployment.updateStrategy.type "RollingUpdate" }}
-    rollingUpdate:
-      maxUnavailable: {{ .Values.deployment.budget.maxUnavailable }}
-  {{ end }}
+  serviceName: {{ template "cockroachdb.fullname" . }}
+  replicas: {{ .Values.statefulset.replicas | int64 }}
+  updateStrategy: {{- toYaml .Values.statefulset.updateStrategy | nindent 4 }}
+  podManagementPolicy: {{ .Values.statefulset.podManagementPolicy | quote }}
   selector:
     matchLabels:
       app.kubernetes.io/name: {{ template "cockroachdb.name" . }}
       app.kubernetes.io/instance: {{ .Release.Name | quote }}
-    {{- with .Values.deployment.labels }}
+    {{- with .Values.statefulset.labels }}
       {{- toYaml . | nindent 6 }}
     {{- end }}
   template:
@@ -34,54 +31,36 @@ spec:
       labels:
         app.kubernetes.io/name: {{ template "cockroachdb.name" . }}
         app.kubernetes.io/instance: {{ .Release.Name | quote }}
-      {{- with .Values.deployment.labels }}
+      {{- with .Values.statefulset.labels }}
         {{- toYaml . | nindent 8 }}
       {{- end }}
       {{- with .Values.labels }}
         {{- toYaml . | nindent 8 }}
       {{- end }}
-    {{- with .Values.deployment.annotations }}
+    {{- with .Values.statefulset.annotations }}
       annotations: {{- toYaml . | nindent 8 }}
     {{- end }}
     spec:
-    {{- if or .Values.image.credentials (and .Values.tls.enabled .Values.tls.init.image.credentials (not .Values.tls.certs.provided)) }}
+    {{- if or .Values.image.credentials (and .Values.tls.enabled .Values.tls.selfSigner.image.credentials (not .Values.tls.certs.provided) (not .Values.tls.certs.certManager)) }}
       imagePullSecrets:
       {{- if .Values.image.credentials }}
         - name: {{ template "cockroachdb.fullname" . }}.db.registry
       {{- end }}
-      {{- if and .Values.tls.enabled .Values.tls.init.image.credentials (not .Values.tls.certs.provided) }}
-        - name: {{ template "cockroachdb.fullname" . }}.init-certs.registry
+      {{- if and .Values.tls.enabled .Values.tls.selfSigner.image.credentials (not .Values.tls.certs.provided) (not .Values.tls.certs.certManager) }}
+        - name: {{ template "cockroachdb.fullname" . }}.self-signed-certs.registry
       {{- end }}
     {{- end }}
     {{- if .Values.tls.enabled }}
       serviceAccountName: {{ template "cockroachdb.tls.serviceAccount.name" . }}
-      {{- if not .Values.tls.certs.provided }}
+      {{- if .Values.tls.enabled }}
       initContainers:
-        # The init-certs container sends a CSR (certificate signing request) to
-        # the Kubernetes cluster.
-        # You can see pending requests using:
-        #   kubectl get csr
-        # CSRs can be approved using:
-        #   kubectl certificate approve <csr-name>
-        #
-        # All addresses used to contact a Node must be specified in the
-        # `--addresses` arg.
-        #
-        # In addition to the Node certificate and key, the init-certs entrypoint
-        # will symlink the cluster CA to the certs directory.
-        - name: init-certs
-          image: "{{ .Values.tls.init.image.repository }}:{{ .Values.tls.init.image.tag }}"
-          imagePullPolicy: {{ .Values.tls.init.image.pullPolicy | quote }}
+        - name: copy-certs
+          image: "busybox"
+          imagePullPolicy: {{ .Values.tls.selfSigner.image.pullPolicy | quote }}
           command:
-            - /bin/ash
-            - -ecx
-            - >-
-              /request-cert
-              -namespace=${POD_NAMESPACE}
-              -certs-dir=/cockroach-certs/
-              -symlink-ca-from=/var/run/secrets/kubernetes.io/serviceaccount/ca.crt
-              -type=node
-              -addresses=localhost,127.0.0.1,$(hostname -f),$(hostname -f|cut -f 1-2 -d '.'),{{ template "cockroachdb.fullname" . }}-public,{{ template "cockroachdb.fullname" . }}-public.$(hostname -f|cut -f 3- -d '.')
+            - /bin/sh
+            - -c
+            - "cp -f /certs/* /cockroach-certs/; chmod 0400 /cockroach-certs/*.key"
           env:
             - name: POD_NAMESPACE
               valueFrom:
@@ -90,69 +69,71 @@ spec:
           volumeMounts:
             - name: certs
               mountPath: /cockroach-certs/
+            - name: certs-secret
+              mountPath: /certs/
       {{- end }}
     {{- end }}
-    {{- if or .Values.deployment.nodeAffinity .Values.deployment.podAffinity .Values.deployment.podAntiAffinity }}
+    {{- if or .Values.statefulset.nodeAffinity .Values.statefulset.podAffinity .Values.statefulset.podAntiAffinity }}
       affinity:
-      {{- with .Values.deployment.nodeAffinity }}
+      {{- with .Values.statefulset.nodeAffinity }}
         nodeAffinity: {{- toYaml . | nindent 10 }}
       {{- end }}
-      {{- with .Values.deployment.podAffinity }}
+      {{- with .Values.statefulset.podAffinity }}
         podAffinity: {{- toYaml . | nindent 10 }}
       {{- end }}
-      {{- if .Values.deployment.podAntiAffinity }}
+      {{- if .Values.statefulset.podAntiAffinity }}
         podAntiAffinity:
-        {{- if .Values.deployment.podAntiAffinity.type }}
-        {{- if eq .Values.deployment.podAntiAffinity.type "hard" }}
+        {{- if .Values.statefulset.podAntiAffinity.type }}
+        {{- if eq .Values.statefulset.podAntiAffinity.type "hard" }}
           requiredDuringSchedulingIgnoredDuringExecution:
-            - topologyKey: {{ .Values.deployment.podAntiAffinity.topologyKey }}
+            - topologyKey: {{ .Values.statefulset.podAntiAffinity.topologyKey }}
               labelSelector:
                 matchLabels:
                   app.kubernetes.io/name: {{ template "cockroachdb.name" . }}
                   app.kubernetes.io/instance: {{ .Release.Name | quote }}
-                {{- with .Values.deployment.labels }}
+                {{- with .Values.statefulset.labels }}
                   {{- toYaml . | nindent 18 }}
                 {{- end }}
-        {{- else if eq .Values.deployment.podAntiAffinity.type "soft" }}
+        {{- else if eq .Values.statefulset.podAntiAffinity.type "soft" }}
           preferredDuringSchedulingIgnoredDuringExecution:
-            - weight: {{ .Values.deployment.podAntiAffinity.weight | int64 }}
+            - weight: {{ .Values.statefulset.podAntiAffinity.weight | int64 }}
               podAffinityTerm:
-                topologyKey: {{ .Values.deployment.podAntiAffinity.topologyKey }}
+                topologyKey: {{ .Values.statefulset.podAntiAffinity.topologyKey }}
                 labelSelector:
                   matchLabels:
                     app.kubernetes.io/name: {{ template "cockroachdb.name" . }}
                     app.kubernetes.io/instance: {{ .Release.Name | quote }}
-                  {{- with .Values.deployment.labels }}
+                  {{- with .Values.statefulset.labels }}
                     {{- toYaml . | nindent 20 }}
                   {{- end }}
         {{- end }}
         {{- else }}
-          {{- toYaml .Values.deployment.podAntiAffinity | nindent 10 }}
+          {{- toYaml .Values.statefulset.podAntiAffinity | nindent 10 }}
         {{- end }}
       {{- end }}
     {{- end }}
-    {{- if semverCompare ">=1.16-0" .Capabilities.KubeVersion.GitVersion }}
+    {{- if semverCompare ">=1.16-0" .Capabilities.KubeVersion.Version }}
       topologySpreadConstraints:
       - labelSelector:
           matchLabels:
             app.kubernetes.io/name: {{ template "cockroachdb.name" . }}
             app.kubernetes.io/instance: {{ .Release.Name | quote }}
-          {{- with .Values.deployment.labels }}
+          {{- with .Values.statefulset.labels }}
             {{- toYaml . | nindent 12 }}
           {{- end }}
-      {{- with .Values.deployment.topologySpreadConstraints }}
+      {{- with .Values.statefulset.topologySpreadConstraints }}
         maxSkew: {{ .maxSkew }}
         topologyKey: {{ .topologyKey }}
         whenUnsatisfiable: {{ .whenUnsatisfiable }}
       {{- end }}
     {{- end }}
-    {{- with .Values.deployment.nodeSelector }}
+    {{- with .Values.statefulset.nodeSelector }}
       nodeSelector: {{- toYaml . | nindent 8 }}
     {{- end }}
-    {{- if .Values.deployment.priorityClassName }}
-      priorityClassName: {{ .Values.deployment.priorityClassName }}
+    {{- if .Values.statefulset.priorityClassName }}
+      priorityClassName: {{ .Values.statefulset.priorityClassName }}
     {{- end }}
-    {{- with .Values.deployment.tolerations }}
+    {{- with .Values.statefulset.tolerations }}
       tolerations: {{- toYaml . | nindent 8 }}
     {{- end }}
       # No pre-stop hook is required, a SIGTERM plus some time is all that's
@@ -169,6 +150,10 @@ spec:
             # Other nodes aren't able to look up the unqualified hostname.
             #
             # `--join` CLI flag is hardcoded to exactly 3 Pods, because:
+            # 1. Having `--join` value depending on `statefulset.replicas`
+            #    will trigger undesired restart of existing Pods when
+            #    StatefulSet is scaled up/down. We want to scale without
+            #    restarting existing Pods.
             # 2. At least one Pod in `--join` is enough to successfully
             #    join CockroachDB cluster and gossip with all other existing
             #    Pods, even if there are 3 or more Pods.
@@ -179,18 +164,26 @@ spec:
             # https://github.com/helm/charts/pull/18993#issuecomment-558795102
             - >-
               exec /cockroach/cockroach
-            {{- if .Values.conf.join }}
+            {{- if index .Values.conf `single-node` }}
+              start-single-node
+            {{- else }}
               start --join=
+              {{- if .Values.conf.join }}
                 {{- join `,` .Values.conf.join -}}
-            {{- end }}
-              --advertise-host={{ template "cockroachdb.fqdn" . }}
+              {{- else }}
+                {{- range $i, $_ := until 3 -}}
+                  {{- if gt $i 0 -}},{{- end -}}
+                  ${STATEFULSET_NAME}-{{ $i }}.${STATEFULSET_FQDN}:{{ $.Values.service.ports.grpc.internal.port | int64 -}}
+                {{- end -}}
+              {{- end }}
             {{- with index .Values.conf `cluster-name` }}
               --cluster-name={{ . }}
             {{- if index $.Values.conf `disable-cluster-name-verification` }}
               --disable-cluster-name-verification
             {{- end }}
             {{- end }}
-              --logtostderr={{ .Values.conf.logtostderr }}
+            {{- end }}
+              --advertise-host=$(hostname).${STATEFULSET_FQDN}
             {{- if .Values.tls.enabled }}
               --certs-dir=/cockroach/cockroach-certs/
             {{- else }}
@@ -215,13 +208,25 @@ spec:
             {{- with index .Values.conf `sql-audit-dir` }}
               --sql-audit-dir={{ . }}
             {{- end }}
-            {{- range .Values.deployment.args }}
+            {{- if .Values.conf.store.enabled }}
+              --store={{ template "cockroachdb.conf.store" . }}
+            {{- end }}
+            {{- if .Values.conf.log.enabled }}
+              --log-config-file=/cockroach/log-config/log-config.yaml
+            {{- else }}
+              --logtostderr={{ .Values.conf.logtostderr }}
+            {{- end }}
+            {{- range .Values.statefulset.args }}
               {{ . }}
             {{- end }}
           env:
+            - name: STATEFULSET_NAME
+              value: {{ template "cockroachdb.fullname" . }}
+            - name: STATEFULSET_FQDN
+              value: {{ template "cockroachdb.fullname" . }}.{{ .Release.Namespace }}.svc.{{ .Values.clusterDomain }}
             - name: COCKROACH_CHANNEL
               value: kubernetes-helm
-          {{- with .Values.deployment.env }}
+          {{- with .Values.statefulset.env }}
             {{- toYaml . | nindent 12 }}
           {{- end }}
           ports:
@@ -233,17 +238,29 @@ spec:
               protocol: TCP
           volumeMounts:
             - name: datadir
-              mountPath: /cockroach/cockroach-data/
+              mountPath: /cockroach/{{ .Values.conf.path }}/
           {{- if .Values.tls.enabled }}
             - name: certs
               mountPath: /cockroach/cockroach-certs/
+              {{- if .Values.tls.certs.provided }}
+            - name: certs-secret
+              mountPath: /cockroach/certs/
+              {{- end }}
           {{- end }}
-          {{- range .Values.deployment.secretMounts }}
+          {{- range .Values.statefulset.secretMounts }}
             - name: {{ printf "secret-%s" . | quote }}
               mountPath: {{ printf "/etc/cockroach/secrets/%s" . | quote }}
               readOnly: true
           {{- end }}
+          {{- if .Values.conf.log.enabled }}
+            - name: log-config
+              mountPath: /cockroach/log-config
+              readOnly: true
+          {{- end }}
           livenessProbe:
+          {{- if .Values.statefulset.customLivenessProbe }}
+            {{ toYaml .Values.statefulset.customLivenessProbe | nindent 12 }}
+          {{- else }}
             httpGet:
               path: /health
               port: http
@@ -252,7 +269,11 @@ spec:
             {{- end }}
             initialDelaySeconds: 30
             periodSeconds: 5
+          {{- end }}
           readinessProbe:
+          {{- if .Values.statefulset.customReadinessProbe }}
+            {{ toYaml .Values.statefulset.customReadinessProbe | nindent 12 }}
+          {{- else }}
             httpGet:
               path: /health?ready=1
               port: http
@@ -262,45 +283,15 @@ spec:
             initialDelaySeconds: 10
             periodSeconds: 5
             failureThreshold: 2
-        {{- with .Values.deployment.resources }}
+          {{- end }}
+        {{- with .Values.statefulset.resources }}
           resources: {{- toYaml . | nindent 12 }}
-        {{- end }}
-        {{- if eq ( include "cockroachdb.fqdn" . ) ( first .Values.conf.join ) }}
-        - name: cluster-init
-          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
-          imagePullPolicy: {{ .Values.image.pullPolicy | quote }}
-          command:
-            - /bin/bash
-            - -c
-            - >-
-              while true; do
-              initOUT=$(set -x;
-              /cockroach/cockroach init
-              {{- if .Values.tls.enabled }}
-              --certs-dir=/cockroach-certs/
-              {{- else }}
-              --insecure
-              {{- end }}
-              {{- with index .Values.conf "cluster-name" }}
-              --cluster-name={{.}}
-              {{- end }}
-              --host=127.0.0.1:{{ .Values.service.ports.grpc.internal.port | int64 }}
-              2>&1);
-              initRC="$?";
-              echo $initOUT;
-              [[ "$initRC" == "0" ]] && sleep infinity;
-              [[ "$initOUT" == *"cluster has already been initialized"* ]] && sleep infinity;
-              sleep 5;
-              done
-        {{- with .Values.deployment.resources }}
-          resources: {{- toYaml . | nindent 12 }}
-        {{- end }}
         {{- end }}
       volumes:
         - name: datadir
         {{- if .Values.storage.persistentVolume.enabled }}
           persistentVolumeClaim:
-            claimName: {{ .Values.storage.existingClaim | default (include "cockroachdb.fullname" .) }}
+            claimName: datadir
         {{- else if .Values.storage.hostPath }}
           hostPath:
             path: {{ .Values.storage.hostPath | quote }}
@@ -309,33 +300,71 @@ spec:
         {{- end }}
       {{- if .Values.tls.enabled }}
         - name: certs
-          {{- if .Values.tls.certs.provided }}
-          {{- if .Values.tls.certs.tlsSecret }}
+          emptyDir: {}
+          {{- if or .Values.tls.certs.provided .Values.tls.certs.certManager  .Values.tls.certs.selfSigner.enabled }}
+        - name: certs-secret
+          {{- if or .Values.tls.certs.tlsSecret .Values.tls.certs.certManager .Values.tls.certs.selfSigner.enabled }}
           projected:
             sources:
             - secret:
+                {{- if .Values.tls.certs.selfSigner.enabled }}
+                name: {{ template "cockroachdb.fullname" . }}-node-secret
+                {{ else }}
                 name: {{ .Values.tls.certs.nodeSecret }}
+                {{ end -}}
                 items:
                 - key: ca.crt
                   path: ca.crt
-                  mode: 0400
+                  mode: 256
                 - key: tls.crt
                   path: node.crt
-                  mode: 0400
+                  mode: 256
                 - key: tls.key
                   path: node.key
-                  mode: 0400
+                  mode: 256
           {{- else }}
           secret:
             secretName: {{ .Values.tls.certs.nodeSecret }}
-            defaultMode: 0400
+            defaultMode: 256
           {{- end }}
-          {{- else }}
-          emptyDir: {}
           {{- end }}
       {{- end }}
-      {{- range .Values.deployment.secretMounts }}
+      {{- range .Values.statefulset.secretMounts }}
         - name: {{ printf "secret-%s" . | quote }}
           secret:
             secretName: {{ . | quote }}
       {{- end }}
+      {{- if .Values.conf.log.enabled }}
+        - name: log-config
+          secret:
+            secretName: {{ template "cockroachdb.fullname" . }}-log-config
+      {{- end }}
+{{- if .Values.storage.persistentVolume.enabled }}
+  volumeClaimTemplates:
+    - metadata:
+        name: datadir
+        labels:
+          app.kubernetes.io/name: {{ template "cockroachdb.name" . }}
+          app.kubernetes.io/instance: {{ .Release.Name | quote }}
+        {{- with .Values.storage.persistentVolume.labels }}
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
+        {{- with .Values.labels }}
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
+      {{- with .Values.storage.persistentVolume.annotations }}
+        annotations: {{- toYaml . | nindent 10 }}
+      {{- end }}
+      spec:
+        accessModes: ["ReadWriteOnce"]
+      {{- if .Values.storage.persistentVolume.storageClass }}
+      {{- if (eq "-" .Values.storage.persistentVolume.storageClass) }}
+        storageClassName: ""
+      {{- else }}
+        storageClassName: {{ .Values.storage.persistentVolume.storageClass | quote}}
+      {{- end }}
+      {{- end }}
+        resources:
+          requests:
+            storage: {{ .Values.storage.persistentVolume.size | quote }}
+{{- end }}

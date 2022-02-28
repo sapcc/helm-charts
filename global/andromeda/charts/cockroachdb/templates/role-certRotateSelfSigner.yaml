@@ -1,8 +1,8 @@
-{{- if .Values.tls.enabled }}
+{{- if and .Values.tls.enabled .Values.tls.certs.selfSigner.enabled }}
 kind: Role
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: {{ template "cockroachdb.fullname" . }}
+  name: {{ template "rotatecerts.fullname" . }}
   namespace: {{ .Release.Namespace | quote }}
   labels:
     helm.sh/chart: {{ template "cockroachdb.chart" . }}
@@ -15,9 +15,13 @@ metadata:
 rules:
   - apiGroups: [""]
     resources: ["secrets"]
-    {{- if or .Values.tls.certs.provided .Values.tls.certs.certManager }}
+    verbs: ["create", "get", "update", "delete"]
+  - apiGroups: ["apps"]
+    resources: ["statefulsets"]
     verbs: ["get"]
-    {{- else }}
-    verbs: ["create", "get"]
-    {{- end }}
+    resourceNames:
+      - {{ template "cockroachdb.fullname" . }}
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["delete", "get"]
 {{- end }}

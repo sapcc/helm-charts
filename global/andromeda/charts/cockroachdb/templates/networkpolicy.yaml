@@ -17,7 +17,7 @@ spec:
     matchLabels:
       app.kubernetes.io/name: {{ template "cockroachdb.name" . }}
       app.kubernetes.io/instance: {{ .Release.Name | quote }}
-    {{- with .Values.deployment.labels }}
+    {{- with .Values.statefulset.labels }}
       {{- toYaml . | nindent 6 }}
     {{- end }}
   ingress:
@@ -36,10 +36,10 @@ spec:
             matchLabels:
               app.kubernetes.io/name: {{ template "cockroachdb.name" . }}
               app.kubernetes.io/instance: {{ .Release.Name | quote }}
-            {{- with .Values.deployment.labels }}
+            {{- with .Values.statefulset.labels }}
               {{- toYaml . | nindent 14 }}
             {{- end }}
-      {{- if gt (.Values.deployment.replicas | int64) 1 }}
+      {{- if gt (.Values.statefulset.replicas | int64) 1 }}
         # Allow init Job to connect to bootstrap a cluster.
         - podSelector:
             matchLabels:

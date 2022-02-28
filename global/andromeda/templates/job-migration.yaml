@@ -1,18 +1,14 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: {{ include "andromeda.fullname" . }}-migration
+  name: {{ include "andromeda.fullname" . }}-migration-{{ .Values.image.tag | required ".Values.image.tag is required" }}
   labels:
-    helm.sh/chart: {{ template "cockroachdb.chart" . }}
-    app.kubernetes.io/name: {{ template "cockroachdb.name" . }}-migration
+    helm.sh/chart: {{ template "andromeda.chart" . }}
+    app.kubernetes.io/name: {{ template "andromeda.name" . }}-migration
     app.kubernetes.io/instance: {{ .Release.Name | quote }}
-    app.kubernetes.io/managed-by: {{ .Release.Service | quote }}
   {{- with .Values.labels }}
     {{- toYaml . | nindent 4 }}
   {{- end }}
-  annotations:
-    "helm.sh/hook": post-install,post-upgrade
-    "helm.sh/hook-delete-policy": before-hook-creation
 spec:
   template:
     spec:
@@ -25,11 +21,11 @@ spec:
             - name: NAMESPACE
               value: "andromeda"
             - name: DEPENDENCY_SERVICE
-              value: "andromeda-cockroachdb"
+              value: "{{ include "andromeda.fullname" . }}-cockroachdb"
             - name: COMMAND
               value: "true"
         - name: create-database
-          image: "cockroachdb/cockroach:v20.2.3"
+          image: "cockroachdb/cockroach:v21.2.6"
           command:
           - /cockroach/cockroach
           - sql
@@ -40,7 +36,7 @@ spec:
           - CREATE DATABASE IF NOT EXISTS {{ include "andromeda.name" . }};
       containers:
         - name: {{ include "andromeda.fullname" . }}-migration
-          image: "{{ .Values.image.repository }}:{{ .Values.andromeda.image_tag }}"
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | required ".Values.image.tag is required" }}"
           args: ["--config-file", "/etc/andromeda/andromeda.conf", "migrate"]
           volumeMounts:
             - name: etc-andromeda
