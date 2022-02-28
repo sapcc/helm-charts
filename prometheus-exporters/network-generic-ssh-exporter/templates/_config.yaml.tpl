@@ -558,13 +558,15 @@ metrics:
 
   xr_ntp_configured:
     regex: >-
-      ^\s+server vrf (\S+) (\S+) source (\S+)
+      ^\s+(server|peer) vrf (\S+) (\S+) source (\S+)
     multi_value: true
+    value: $2
     labels:
-      ntp_configured: $2
-    description: NTP server configured on the router
+      ntp_configured: $3
+      association_type: $1
+    description: NTP server|peer configured on the router
     metric_type_name: string
-    command: show run ntp | include server
+    command: show run ntp | in "peer|server"
     timeout_secs: 5
 
 batches:
