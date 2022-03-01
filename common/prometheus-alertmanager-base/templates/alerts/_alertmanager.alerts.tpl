@@ -8,7 +8,7 @@ groups:
       context: availability
       service: alertmanager
       severity: critical
-      playbook: 'docs/support/playbook/prometheus/failed_config_reload.html'
+      playbook: 'docs/support/playbook/prometheus/failed_config_reload'
       meta: 'Alertmanager {{`{{ $labels.alertmanager }}`}} failed to load it`s configuration.'
       support_group: {{ include "alerts.support_group" . }}
     annotations:
@@ -22,7 +22,7 @@ groups:
       context: availability
       service: alertmanager
       severity: warning
-      playbook: 'docs/support/playbook/prometheus/alertmanager_failed_notifications.html'
+      playbook: 'docs/support/playbook/prometheus/alertmanager_failed_notifications'
       meta: 'Alertmanager {{`{{ $labels.alertmanager }}`}} failing sending notifications.'
       support_group: {{ include "alerts.support_group" . }}
     annotations:
@@ -36,7 +36,7 @@ groups:
       context: availability
       service: alertmanager
       severity: warning
-      playbook: 'docs/support/playbook/prometheus/alertmanager_cluster_failures.html'
+      playbook: 'docs/support/playbook/prometheus/alertmanager_cluster_failures'
       meta: 'Alertmanager {{`{{ $labels.alertmanager }}`}} failing sending notifications.'
       support_group: {{ include "alerts.support_group" . }}
     annotations:
@@ -55,3 +55,4 @@ groups:
     annotations:
       description: 'Alertmanager {{`{{ $labels.alertmanager }}`}} receives invalid alerts and discards them. Check the Alertmanagers log for details.'
       summary: Alertmanager receives invalid alerts.
+
