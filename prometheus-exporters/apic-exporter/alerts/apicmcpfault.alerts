@@ -1,0 +1,16 @@
+groups:
+  - name: apicmcpfault.alerts
+    rules:
+    - alert: NetworkApicMcpFaults
+      expr: increase(network_apic_mcp_fault_counter_total[5m]) >0
+      for: 5m
+      labels:
+        severity: info
+        tier: net
+        service: apic
+        context: apic-health
+        dashboard: apic-health
+        playbook: /docs/devops/alert/network/aci.html#Mcp_Fault_Alert
+      annotations:
+        description: "{{ $labels.fault_desc }}, Fault Status is {{ $labels.fault_lifecyle }} for object {{ $labels.fault_summary }} for 5 minutes"
+        summary: "MCP Fault is {{ $labels.fault_lifecyle }} with fault summary as {{ $labels.fault_summary }} for 5 minutes"
