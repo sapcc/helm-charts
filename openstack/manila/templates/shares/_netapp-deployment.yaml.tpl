@@ -28,8 +28,9 @@ spec:
         configmap-etc-hash: {{ include (print .Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
         configmap-netapp-hash: {{ list . $share | include "share_netapp_configmap" | sha256sum }}
     spec:
-      nodeAffinity:
-        preferredDuringSchedulingIgnoredDuringExecution:
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
 {{- include "kubernetes_maintenance_affinity" . }}
       containers:
         - name: manila-share-netapp-{{$share.name}}
