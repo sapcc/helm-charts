@@ -30,6 +30,9 @@ periodic_interval = {{ .Values.periodic_interval | default 300 }}
 rpc_response_timeout = {{ .Values.rpc_response_timeout | default .Values.global.rpc_response_timeout | default 300 }}
 rpc_workers = {{ .Values.rpc_workers | default .Values.global.rpc_workers | default 1 }}
 
+# time to live in sec of idle connections in the pool:
+conn_pool_ttl = {{ .Values.rpc_conn_pool_ttl | default 600 }}
+
 netapp_volume_snapshot_reserve_percent = {{ .Values.netapp_volume_snapshot_reserve_percent | default 50 }}
 
 wsgi_default_pool_size = {{ .Values.wsgi_default_pool_size | default .Values.global.wsgi_default_pool_size | default 100 }}
@@ -81,6 +84,7 @@ policy_file = /etc/manila/policy.yaml
 [oslo_messaging_rabbit]
 rabbit_ha_queues = {{ .Values.rabbitmq.ha_queues | default "true" }}
 rabbit_transient_queues_ttl={{ .Values.rabbit_transient_queues_ttl | default .Values.global.rabbit_transient_queues_ttl | default 60 }}
+rabbit_interval_max = {{ .Values.rabbitmq.max_reconnect_interval | default 3 }}
 
 [oslo_concurrency]
 lock_path = /var/lib/manila/tmp
