@@ -118,6 +118,16 @@
     sap.cc.region "{{ $.Values.global.region }}"
   </record>
 </filter>
+<filter {{ .tag }}*>
+  @type parser
+  @id {{ .id }}-json_parser
+  key_name log
+  <parse>
+    @type json
+    time_format %Y-%m-%dT%T.%L%Z
+    keep_time_key true
+  </parse>
+</filter>
 {{- if .filter }}
 <filter {{ .tag }}*>
   @type grep
