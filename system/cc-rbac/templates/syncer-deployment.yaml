@@ -74,7 +74,7 @@ spec:
             chmod +x /usr/local/bin/kubectl
             while true
             do
-              namespaces=$(kubectl get ns -ocustom-columns=NAME:.metadata.name --no-headers| grep -v{{ range $ns := .Values.adminNamespaces }} -F {{ . | quote}}{{ end }})
+              namespaces=$(kubectl get ns -o jsonpath='{range .items[?(@.status.phase=="Active")]}{.metadata.name}{"\n"}{end}'| grep -v{{ range $ns := .Values.adminNamespaces }} -F {{ . | quote}}{{ end }})
               for ns in $namespaces
               do
                 echo "Namespace $ns:"
