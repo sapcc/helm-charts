@@ -109,6 +109,16 @@
     keep_time_key true
   </parse>
 </source>
+<filter {{ .tag }}*>
+  @type parser
+  @id {{ .id }}_json_parser
+  key_name log
+  <parse>
+    @type json
+    time_format %Y-%m-%dT%T.%L%Z
+    keep_time_key true
+  </parse>
+</filter>
 {{- if .field }}
 <filter {{ .tag }}*>
   @type record_transformer
@@ -117,16 +127,6 @@
     sap.cc.cluster "{{ $.Values.global.cluster }}"
     sap.cc.region "{{ $.Values.global.region }}"
   </record>
-</filter>
-<filter {{ .tag }}*>
-  @type parser
-  @id {{ .id }}-json_parser
-  key_name log
-  <parse>
-    @type json
-    time_format %Y-%m-%dT%T.%L%Z
-    keep_time_key true
-  </parse>
 </filter>
 {{- if .filter }}
 <filter {{ .tag }}*>
