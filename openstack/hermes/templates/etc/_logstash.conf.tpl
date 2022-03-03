@@ -299,7 +299,7 @@ filter {
       loaders => [
         {
           id  => "keystone_user_domain"
-          query => "select u.id as user_id, m.local_id as user_name, p.id as domain_id, p.name as domain_name  from keystone.user as u left join keystone.id_mapping m on m.public_id = u.id left join keystone.project as p on p.id = u.domain_id"
+          query => "select u.id as user_id, CONCAT_WS('', m.local_id, lu.name) as user_name, p.id as domain_id, p.name as domain_name  from keystone.user as u left join keystone.id_mapping m on m.public_id = u.id left join keystone.local_user lu on lu.user_id = u.id left join keystone.project as p on p.id = u.domain_id"
           local_table => "user_domain_mapping"
         }
       ]
