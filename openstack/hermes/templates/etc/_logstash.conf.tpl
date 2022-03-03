@@ -144,185 +144,200 @@ filter {
 
   # Enrich keystone events with domain mapping from Metis
   {{ if .Values.logstash.audit -}}
+  # Fill in lookup fields with "unavailable" to provide the lookup with a field so it doesn't error
+  # pipeline shutsdown if a lookup field is not available.
+
+  if ![initiator][project_id] {
+    mutate { add_field => { "[initiator][project_id]" => "unavailable" } }
+  }
+
+  if ![target][project_id] {
+    mutate { add_field => { "[target][project_id]" => "unavailable" } }
+  }
+
+  if ![initiator][id] {
+    mutate { add_field => { "[initiator][id]" => "unavailable" } }
+  }
+
   # With several different event types using jdbc_static, not sure an if makes sense.
   # we will have to handle several events that don't match a query
-  if [initiator][project_id] {
-    jdbc_static {
-      id => "jdbc_project_id"
-      loaders => [
-        {
-          id  => "keystone_project_domain"
-          query => "select project.name as project_name, project.id as project_id, domain.name as domain_name, domain.id as domain_id from keystone.project join keystone.project domain on project.domain_id = domain.id"
-          local_table => "project_domain_mapping"
-        },
-        {
-          id  => "keystone_target_project_domain"
-          query => "select project.name as project_name, project.id as project_id, domain.name as domain_name, domain.id as domain_id from keystone.project join keystone.project domain on project.domain_id = domain.id"
-          local_table => "target_project_mapping"
-        },
-        {
-          id  => "keystone_user_domain"
-          query => "select u.id as user_id, CONCAT_WS('', m.local_id, lu.name) as user_name, p.id as domain_id, p.name as domain_name  from keystone.user as u left join keystone.id_mapping m on m.public_id = u.id left join keystone.local_user lu on lu.user_id = u.id left join keystone.project as p on p.id = u.domain_id"
-          local_table => "user_domain_mapping"
-        }
-      ]
-
-      local_db_objects => [
-        {
-          name => "project_domain_mapping"
-          index_columns => ["project_id"]
-          preserve_existing => true
-          columns => [
-            ["project_name", "varchar(64)"],
-            ["project_id", "varchar(64)"],
-            ["domain_name", "varchar(64)"],
-            ["domain_id", "varchar(64)"]
-          ]
-        },
-        {
-          name => "target_project_mapping"
-          index_columns => ["project_id"]
-          preserve_existing => true
-          columns => [
-            ["project_name", "varchar(64)"],
-            ["project_id", "varchar(64)"],
-            ["domain_name", "varchar(64)"],
-            ["domain_id", "varchar(64)"]
-          ]
-        },
-        {
-          name => "user_domain_mapping"
-          index_columns => ["user_id"]
-          preserve_existing => true
-          columns => [
-            ["user_id", "varchar(64)"],
-            ["user_name", "varchar(64)"],
-            ["domain_id", "varchar(64)"],
-            ["domain_name", "varchar(64)"]
-          ]
-        }
-      ]
-
-      local_lookups => [
-        {
-          id => "project_name_lookup"
-          query => "select project_name, domain_id, domain_name from project_domain_mapping where project_id = ?"
-          prepared_parameters => ["[initiator][project_id]"]
-          target => "project_mapping"
-          tag_on_failure => "Project_Mapping"
-        },
-        {
-          id => "target_project_name_lookup"
-          query => "select project_name, domain_id, domain_name from target_project_mapping where project_id = ?"
-          prepared_parameters => ["[target][project_id]"]
-          target => "target_project_mapping"
-          tag_on_failure => "Target_Project_Mapping"
-        },
-        {
-          id => "domain_lookup"
-          query => "select user_name, domain_id, domain_name from user_domain_mapping where user_id = ?"
-          prepared_parameters => ["[initiator][id]"]
-          target => "domain_mapping"
-          tag_on_failure => "Domain_Mapping"
-        }
-      ]
-      staging_directory => "/tmp/logstash/jdbc_static/import_data"
-      loader_schedule => "{{ .Values.logstash.jdbc.schedule }}"
-      jdbc_user => "{{ .Values.global.metis.user }}"
-      jdbc_password => "${METIS_PASSWORD}"
-      jdbc_driver_class => "com.mysql.cj.jdbc.Driver"
-      jdbc_driver_library => ""
-      jdbc_connection_string => "jdbc:mysql://{{ .Values.logstash.jdbc.service }}.{{ .Values.logstash.jdbc.namespace }}:3306/{{ .Values.logstash.jdbc.db }}"
-    }
-
-    if [project_mapping] and [project_mapping][0]{
-      # Add Fields to audit events, checking if the field exists first to not overwrite.
-      if ![initiator][project_name] {
-        mutate {
-          add_field => {
-              "[initiator][project_name]" => "%{[project_mapping][0][project_name]}"
-          }
-        }
+  
+  jdbc_static {
+    id => "jdbc_project_id"
+    loaders => [
+      {
+        id  => "keystone_project_domain"
+        query => "select project.name as project_name, project.id as project_id, domain.name as domain_name, domain.id as domain_id from keystone.project join keystone.project domain on project.domain_id = domain.id"
+        local_table => "project_domain_mapping"
+      },
+      {
+        id  => "keystone_target_project_domain"
+        query => "select project.name as project_name, project.id as project_id, domain.name as domain_name, domain.id as domain_id from keystone.project join keystone.project domain on project.domain_id = domain.id"
+        local_table => "target_project_mapping"
+      },
+      {
+        id  => "keystone_user_domain"
+        query => "select u.id as user_id, CONCAT_WS('', m.local_id, lu.name) as user_name, p.id as domain_id, p.name as domain_name  from keystone.user as u left join keystone.id_mapping m on m.public_id = u.id left join keystone.local_user lu on lu.user_id = u.id left join keystone.project as p on p.id = u.domain_id"
+        local_table => "user_domain_mapping"
       }
-      if ![initiator][domain_id] {
-        mutate {
-          add_field => {
-              "[initiator][domain_id]" => "%{[project_mapping][0][domain_id]}"
-          }
-        }
-      }
-      if ![initiator][project_domain_name] {
-        mutate {
-          add_field => {
-              "[initiator][project_domain_name]" => "%{[project_mapping][0][domain_name]}"
-          }
-        }
-      }
+    ]
 
-      # Cleanup
+    local_db_objects => [
+      {
+        name => "project_domain_mapping"
+        index_columns => ["project_id"]
+        preserve_existing => true
+        columns => [
+          ["project_name", "varchar(64)"],
+          ["project_id", "varchar(64)"],
+          ["domain_name", "varchar(64)"],
+          ["domain_id", "varchar(64)"]
+        ]
+      },
+      {
+        name => "target_project_mapping"
+        index_columns => ["project_id"]
+        preserve_existing => true
+        columns => [
+          ["project_name", "varchar(64)"],
+          ["project_id", "varchar(64)"],
+          ["domain_name", "varchar(64)"],
+          ["domain_id", "varchar(64)"]
+        ]
+      },
+      {
+        name => "user_domain_mapping"
+        index_columns => ["user_id"]
+        preserve_existing => true
+        columns => [
+          ["user_id", "varchar(64)"],
+          ["user_name", "varchar(64)"],
+          ["domain_id", "varchar(64)"],
+          ["domain_name", "varchar(64)"]
+        ]
+      }
+    ]
+
+    local_lookups => [
+      {
+        id => "project_name_lookup"
+        query => "select project_name, domain_id, domain_name from project_domain_mapping where project_id = ?"
+        prepared_parameters => ["[initiator][project_id]"]
+        target => "project_mapping"
+        tag_on_failure => "Project_Mapping"
+      },
+      {
+        id => "target_project_name_lookup"
+        query => "select project_name, domain_id, domain_name from target_project_mapping where project_id = ?"
+        prepared_parameters => ["[target][project_id]"]
+        target => "target_project_mapping"
+        tag_on_failure => "Target_Project_Mapping"
+      },
+      {
+        id => "domain_lookup"
+        query => "select user_name, domain_id, domain_name from user_domain_mapping where user_id = ?"
+        prepared_parameters => ["[initiator][id]"]
+        target => "domain_mapping"
+        tag_on_failure => "Domain_Mapping"
+      }
+    ]
+    staging_directory => "/tmp/logstash/jdbc_static/import_data"
+    loader_schedule => "{{ .Values.logstash.jdbc.schedule }}"
+    jdbc_user => "{{ .Values.global.metis.user }}"
+    jdbc_password => "${METIS_PASSWORD}"
+    jdbc_driver_class => "com.mysql.cj.jdbc.Driver"
+    jdbc_driver_library => ""
+    jdbc_connection_string => "jdbc:mysql://{{ .Values.logstash.jdbc.service }}.{{ .Values.logstash.jdbc.namespace }}:3306/{{ .Values.logstash.jdbc.db }}"
+  }
+
+  if [project_mapping] and [project_mapping][0]{
+    # Add Fields to audit events, checking if the field exists first to not overwrite.
+    if ![initiator][project_name] {
       mutate {
-        remove_field => ["[project_mapping]"]
+        add_field => {
+            "[initiator][project_name]" => "%{[project_mapping][0][project_name]}"
+        }
       }
     }
-
-    if [target_project_mapping] and [target_project_mapping][0]{
-      # Add Fields to audit events, checking if the field exists first to not overwrite.
-      if ![target][project_name] {
-        mutate {
-          add_field => {
-              "[target][project_name]" => "%{[target_project_mapping][0][project_name]}"
-          }
-        }
-      }
-      if ![target][domain_id] {
-        mutate {
-          add_field => {
-              "[target][domain_id]" => "%{[target_project_mapping][0][domain_id]}"
-          }
-        }
-      }
-      if ![target][project_domain_name] {
-        mutate {
-          add_field => {
-              "[target][project_domain_name]" => "%{[target_project_mapping][0][domain_name]}"
-          }
-        }
-      }
-
-      # Cleanup
+    if ![initiator][domain_id] {
       mutate {
-        remove_field => ["[target_project_mapping]"]
+        add_field => {
+            "[initiator][domain_id]" => "%{[project_mapping][0][domain_id]}"
+        }
+      }
+    }
+    if ![initiator][project_domain_name] {
+      mutate {
+        add_field => {
+            "[initiator][project_domain_name]" => "%{[project_mapping][0][domain_name]}"
+        }
       }
     }
 
-    if [domain_mapping] and [domain_mapping][0]{
-      # Add Fields to audit events, checking if the field exists so it doesn't create an array.
-      if ![initiator][name] {
-        mutate {
-          add_field => {
-              "[initiator][name]" => "%{[domain_mapping][0][user_name]}"
-          }
-        }
-      }
-      if ![initiator][domain_id] {
-        mutate {
-          add_field => {
-              "[initiator][domain_id]" => "%{[domain_mapping][0][domain_id]}"
-          }
-        }
-      }
-      if ![initiator][domain] {
-        mutate {
-          add_field => {
-              "[initiator][domain]" => "%{[domain_mapping][0][domain_name]}"
-          }
-        }
-      }
-      # Cleanup
+    # Cleanup
+    mutate {
+      remove_field => ["[project_mapping]"]
+    }
+  }
+
+  if [target_project_mapping] and [target_project_mapping][0]{
+    # Add Fields to audit events, checking if the field exists first to not overwrite.
+    if ![target][project_name] {
       mutate {
-        remove_field => ["[domain_mapping]"]
+        add_field => {
+            "[target][project_name]" => "%{[target_project_mapping][0][project_name]}"
+        }
       }
     }
+    if ![target][domain_id] {
+      mutate {
+        add_field => {
+            "[target][domain_id]" => "%{[target_project_mapping][0][domain_id]}"
+        }
+      }
+    }
+    if ![target][project_domain_name] {
+      mutate {
+        add_field => {
+            "[target][project_domain_name]" => "%{[target_project_mapping][0][domain_name]}"
+        }
+      }
+    }
+
+    # Cleanup
+    mutate {
+      remove_field => ["[target_project_mapping]"]
+    }
+  }
+
+  if [domain_mapping] and [domain_mapping][0]{
+    # Add Fields to audit events, checking if the field exists so it doesn't create an array.
+    if ![initiator][name] {
+      mutate {
+        add_field => {
+            "[initiator][name]" => "%{[domain_mapping][0][user_name]}"
+        }
+      }
+    }
+    if ![initiator][domain_id] {
+      mutate {
+        add_field => {
+            "[initiator][domain_id]" => "%{[domain_mapping][0][domain_id]}"
+        }
+      }
+    }
+    if ![initiator][domain] {
+      mutate {
+        add_field => {
+            "[initiator][domain]" => "%{[domain_mapping][0][domain_name]}"
+        }
+      }
+    }
+    # Cleanup
+    mutate {
+      remove_field => ["[domain_mapping]"]
+    }
+    
   }
   {{- end}}
 
