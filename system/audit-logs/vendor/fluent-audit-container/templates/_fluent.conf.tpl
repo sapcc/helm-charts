@@ -109,6 +109,7 @@
     keep_time_key true
   </parse>
 </source>
+{{- if .parser }}
 <filter {{ .tag }}*>
   @type parser
   @id {{ .id }}_json_parser
@@ -119,6 +120,7 @@
     keep_time_key true
   </parse>
 </filter>
+{{- end }}
 {{- if .field }}
 <filter {{ .tag }}*>
   @type record_transformer
