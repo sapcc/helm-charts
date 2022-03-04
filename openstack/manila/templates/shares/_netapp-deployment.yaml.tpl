@@ -93,6 +93,22 @@ spec:
             timeoutSeconds: 3
             periodSeconds: 5
             initialDelaySeconds: 5
+        - name: rabbit-liveness
+          image: {{.Values.global.dockerHubMirror}}/activatedgeek/rabbitmqadmin:latest
+          imagePullPolicy: IfNotPresent
+          command: [ '/bin/sleep', '365d' ]
+          env:
+            - name: RABBIT_HOST
+              value: {{ include "rabbitmq.release_host" .}}
+            - name: RABBIT_PASSWORD
+              value: {{ .Values.rabbitmq.users.admin.password }}
+          livenessProbe:
+            exec:
+              command: ["rabbitmqadmin", "-H", "$RABBIT_HOST", "-u", "admin", "-p" , "$RABBIT_PASSWORD", "list", "bindings", "|", "grep", "manila-share-netapp-{{$share.name}}"]
+            initialDelaySeconds: 60
+            periodSeconds: 60
+            timeoutSeconds: 20
+
       hostname: manila-share-netapp-{{$share.name}}
       volumes:
         - name: etcmanila
