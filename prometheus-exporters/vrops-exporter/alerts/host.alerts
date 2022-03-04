@@ -196,7 +196,9 @@ groups:
       summary: "Host `{{ $labels.hostsystem }}` is in maintenance mode for at least 72 hours. ({{ $labels.vcenter }})."
 
   - alert: HADetectedAPossibleHostFailure
-    expr: vrops_hostsystem_alert_info{alert_name="vSphere High Availability (HA) has detected a possible host failure"}
+    expr: |
+      vrops_hostsystem_alert_info{alert_name="vSphere High Availability (HA) has detected a possible host failure"} 
+      and on (hostsystem) vrops_hostsystem_runtime_maintenancestate{state!~"inMaintenance"}
     labels:
       severity: critical
       tier: vmware
@@ -236,7 +238,9 @@ groups:
       summary: "CPU utilization of host {{ $labels.hostsystem }} is above 90%. ({{ $labels.vcenter }})"
 
   - alert: HostHighNumberOfPacketsDropped
-    expr: vrops_hostsystem_alert_info{alert_name="Host is experiencing high number of packets dropped"}
+    expr: |
+      vrops_hostsystem_alert_info{alert_name="Host is experiencing high number of packets dropped"}
+      and on (hostsystem) vrops_hostsystem_runtime_maintenancestate{state!~"inMaintenance"}
     labels:
       severity: info
       tier: vmware
@@ -249,7 +253,9 @@ groups:
       summary: "`{{ $labels.hostsystem }}` is experiencing high number of packets dropped. ({{ $labels.vcenter }})."
 
   - alert: HostNicLinkFlappingAlert
-    expr: vrops_hostsystem_alert_info{alert_name=~"ESXi host has detected a link status.*flapping.*on a physical NIC"}
+    expr: |
+      vrops_hostsystem_alert_info{alert_name=~"ESXi host has detected a link status.*flapping.*on a physical NIC"}
+      and on (hostsystem) vrops_hostsystem_runtime_maintenancestate{state!~"inMaintenance"}
     labels:
       severity: info
       tier: vmware
@@ -262,7 +268,9 @@ groups:
       summary: "`{{ $labels.hostsystem }}` has detected a link status flapping on a physical NIC. ({{ $labels.vcenter }})."
 
   - alert: HostSystemEventLogSensorAlert
-    expr: vrops_hostsystem_alert_info{alert_name="IPMI System Event Log for the host is becoming full"}
+    expr: |
+      vrops_hostsystem_alert_info{alert_name="IPMI System Event Log for the host is becoming full"}
+      and on (hostsystem) vrops_hostsystem_runtime_maintenancestate{state!~"inMaintenance"}
     labels:
       severity: info
       tier: vmware
@@ -275,7 +283,9 @@ groups:
       summary: "IPMI System Event Log for `{{ $labels.hostsystem }}` is becoming full. ({{ $labels.vcenter }}) {{ $labels.recommendation_1 }}"
 
   - alert: HostRootFilesystemUnhealthy
-    expr: vrops_hostsystem_alert_info{alert_name="Root filesystem not present through CMMDS or is not responsive."}
+    expr: |
+      vrops_hostsystem_alert_info{alert_name="Root filesystem not present through CMMDS or is not responsive."}
+      and on (hostsystem) vrops_hostsystem_runtime_maintenancestate{state!~"inMaintenance"}
     labels:
       severity: info
       tier: vmware
