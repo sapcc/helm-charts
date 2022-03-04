@@ -32,6 +32,16 @@ spec:
         nodeAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
 {{- include "kubernetes_maintenance_affinity" . }}
+      initContainers:
+        - name: fetch-rabbitmqadmin
+          image: {{.Values.global.dockerHubMirror}}/library/busybox
+          command: ["/scripts/fetch-rabbitmqadmin.sh"]
+          volumeMounts:
+            - name: manila-bin
+              mountPath: /scripts
+              readOnly: true
+            - name: etcmanila
+              mountPath: /shared
       containers:
         - name: manila-share-netapp-{{$share.name}}
           image: {{.Values.global.registry}}/loci-manila:{{.Values.loci.imageVersion}}
@@ -80,7 +90,7 @@ spec:
           {{- end }}
           livenessProbe:
             exec:
-              command: ["openstack-agent-liveness", "--config-dir", "/etc/manila"]
+              command: ["/etc/manila/rabbitmqadmin", "-H", "manila-rabbitmq", "-u", "admin", "-p" , "{{ .Values.rabbitmq.users.admin.password }}", "list", "bindings", "|", "grep", "manila-share-netapp-{{$share.name}}"]
             initialDelaySeconds: 60
             periodSeconds: 60
             timeoutSeconds: 20
@@ -93,26 +103,14 @@ spec:
             timeoutSeconds: 3
             periodSeconds: 5
             initialDelaySeconds: 5
-        - name: rabbit-liveness
-          image: {{.Values.global.dockerHubMirror}}/activatedgeek/rabbitmqadmin:latest
-          imagePullPolicy: IfNotPresent
-          command: [ '/bin/sleep', '365d' ]
-          env:
-            - name: RABBIT_HOST
-              value: {{ include "rabbitmq.release_host" .}}
-            - name: RABBIT_PASSWORD
-              value: {{ .Values.rabbitmq.users.admin.password }}
-          livenessProbe:
-            exec:
-              command: ["rabbitmqadmin", "-H", "$RABBIT_HOST", "-u", "admin", "-p" , "$RABBIT_PASSWORD", "list", "bindings", "|", "grep", "manila-share-netapp-{{$share.name}}"]
-            initialDelaySeconds: 60
-            periodSeconds: 60
-            timeoutSeconds: 20
-
       hostname: manila-share-netapp-{{$share.name}}
       volumes:
         - name: etcmanila
           emptyDir: {}
+        - name: manila-bin
+          configMap:
+            name: manila-bin
+            defaultMode: 0555
         - name: manila-etc
           configMap:
             name: manila-etc
