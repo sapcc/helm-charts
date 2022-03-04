@@ -338,17 +338,23 @@ filter {
       remove_field => ["[domain_mapping]"]
     }
     
-    # Cleanup unavailable entries 
-     if [initiator][project_id] == "unavailable" {
-      remove_field => ["[initiator][project_id]"]
+    # Cleanup unavailable entries
+    if [initiator][project_id] == "unavailable" {
+      mutate {
+        remove_field => ["[initiator][project_id]"]
+      }
     }
 
     if [target][project_id] == "unavailable" {
-      remove_field => ["[target][project_id]"]
+      mutate {
+        remove_field => ["[target][project_id]"]
+      }
     }
 
     if [initiator][id] == "unavailable" {
-      remove_field => ["[initiator][id]"]
+      mutate {
+        remove_field => ["[initiator][id]"]
+      }
     }
   }
   {{- end}}
