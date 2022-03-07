@@ -86,7 +86,7 @@
 {{- end }}
 <filter kubeapi.**>
   @type parser
-  @id {{.}}json_parser
+  @id json_parser
 {{- if eq $.Values.global.clusterType "admin" }}
   key_name message
 {{- else }}
