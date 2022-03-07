@@ -220,6 +220,7 @@ mysql_metrics:
         - "id"
         - "share_id"
         - "status"
+        - "replica_state"
       name: openstack_manila_replicas_count_gauge
       query: |
         SELECT
@@ -229,7 +230,8 @@ mysql_metrics:
           shares.project_id,
           replicas.id,
           replicas.share_id,
-          replicas.replica_state as status,
+          replicas.status,
+          replicas.replica_state,
           COUNT(*) AS count_gauge
         FROM share_instances AS replicas
         JOIN availability_zones ON replicas.availability_zone_id=availability_zones.id
@@ -242,6 +244,7 @@ mysql_metrics:
           shares.project_id,
           replicas.id,
           replicas.share_id,
+          replicas.status,
           replicas.replica_state;
       values:
         - "count_gauge"
