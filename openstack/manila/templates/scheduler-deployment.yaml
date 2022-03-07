@@ -25,6 +25,16 @@ spec:
       annotations:
         configmap-etc-hash: {{ include (print .Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
     spec:
+      initContainers:
+        - name: fetch-rabbitmqadmin
+          image: {{.Values.global.dockerHubMirror}}/library/busybox
+          command: ["/scripts/fetch-rabbitmqadmin.sh"]
+          volumeMounts:
+            - name: manila-bin
+              mountPath: /scripts
+              readOnly: true
+            - name: etcmanila
+              mountPath: /shared
       containers:
         - name: manila-scheduler
           image: {{.Values.global.registry}}/loci-manila:{{.Values.loci.imageVersion}}
@@ -50,7 +60,7 @@ spec:
             {{- end }}
           livenessProbe:
             exec:
-              command: ["openstack-agent-liveness", "--config-file", "/etc/manila/manila.conf"]
+              command: ["/etc/manila/rabbitmqadmin", "-H", "manila-rabbitmq", "-u", "admin", "-p" , "{{ .Values.rabbitmq.users.admin.password }}", "list", "bindings", "|", "grep", "manila-scheduler"]
             initialDelaySeconds: 60
             periodSeconds: 60
             timeoutSeconds: 20
@@ -86,6 +96,10 @@ spec:
       volumes:
         - name: etcmanila
           emptyDir: {}
+        - name: manila-bin
+          configMap:
+            name: manila-bin
+            defaultMode: 0555
         - name: manila-etc
           configMap:
             name: manila-etc
