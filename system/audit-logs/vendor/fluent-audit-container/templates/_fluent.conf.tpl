@@ -52,14 +52,17 @@
 </source>
 {{- end }}
 
+{{- if .Values.kubeAPIServer }}
+{{- range $.Values.kubeAPIServer }}
+
 <source>
   @type tail
   @id kube-api
-  path /var/log/containers/{{ .Values.global.region }}-*-apiserver-*_kubernikus_fluentd-*.log,/var/log/containers/*-{{ .Values.global.region }}-*-apiserver-*_kubernikus_fluentd-*.log
+  path /var/log/containers/{{ . }}{{ $.Values.global.region }}-*-apiserver-*_kubernikus_fluentd-*.log
   exclude_path /var/log/containers/fluentd*
-  pos_file /var/log/kube-api-octobus.log.pos
-  tag kubeapi.*
-  {{- if eq .Values.global.clusterType "admin" }}
+  pos_file /var/log/{{ . }}kube-api-octobus.log.pos
+  tag kubeapi.{{ . }}{{ $.Values.global.region }}.*
+  {{- if eq $.Values.global.clusterType "admin" }}
   <parse>
     @type cri
   </parse>
@@ -71,28 +74,33 @@
   </parse>
   {{- end }}
 </source>
+<filter kubeapi.{{ . }}{{ $.Values.global.region }}.**>
+  @type record_transformer
+  <record>
+    sap.cc.audit.source "kube-api"
+    sap.cc.cluster "{{ . }}{{ $.Values.global.region }}"
+    sap.cc.region "{{ $.Values.global.region }}"
+  </record>
+</filter>
+
+{{- end }}
 <filter kubeapi.**>
   @type parser
   @id json_parser
-{{- if eq .Values.global.clusterType "admin" }}
+{{- if eq $.Values.global.clusterType "admin" }}
   key_name message
 {{- else }}
   key_name log
 {{- end }}
+  reserve_data true
+  remove_key_name_field true
   <parse>
     @type json
     time_format %Y-%m-%dT%T.%L%Z
     keep_time_key true
   </parse>
 </filter>
-<filter kubeapi.**>
-  @type record_transformer
-  <record>
-    sap.cc.audit.source "kube-api"
-    sap.cc.cluster "{{ .Values.global.cluster }}"
-    sap.cc.region "{{ .Values.global.region }}"
-  </record>
-</filter>
+{{- end }}
 
 {{- if .Values.additional_container_logs }}
 {{- range .Values.additional_container_logs }}
