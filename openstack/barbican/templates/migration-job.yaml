@@ -1,7 +1,7 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: barbican-migration
+  name: barbican-migration-job-{{ required "Please set barbican.imageVersionBarbicanApi or similar" .Values.imageVersionBarbicanApi }}
   labels:
     system: openstack
     type: configuration
@@ -12,6 +12,9 @@ metadata:
     "helm.sh/hook-delete-policy": "before-hook-creation"
 spec:
   template:
+    metadata:
+      labels:
+{{ tuple . "barbican" "migration" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
     spec:
       restartPolicy: OnFailure
       containers:
