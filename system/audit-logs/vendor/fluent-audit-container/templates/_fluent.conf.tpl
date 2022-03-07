@@ -57,7 +57,7 @@
 
 <source>
   @type tail
-  @id kube-api
+  @id {{.}}kube-api
   path /var/log/containers/{{ . }}{{ $.Values.global.region }}-*-apiserver-*_kubernikus_fluentd-*.log
   exclude_path /var/log/containers/fluentd*
   pos_file /var/log/{{ . }}kube-api-octobus.log.pos
@@ -86,7 +86,7 @@
 {{- end }}
 <filter kubeapi.**>
   @type parser
-  @id json_parser
+  @id {{.}}json_parser
 {{- if eq $.Values.global.clusterType "admin" }}
   key_name message
 {{- else }}
