@@ -54,7 +54,6 @@
 
 {{- if .Values.kubeAPIServer }}
 {{- range $.Values.kubeAPIServer }}
-
 <source>
   @type tail
   @id {{.}}kube-api
@@ -76,6 +75,9 @@
 </source>
 <filter kubeapi.{{ . }}{{ $.Values.global.region }}.**>
   @type record_transformer
+{{- if eq $.Values.global.clusterType "admin" }}
+  remove_keys logtag
+{{- end }}
   <record>
     sap.cc.audit.source "kube-api"
     sap.cc.cluster "{{ . }}{{ $.Values.global.region }}"
