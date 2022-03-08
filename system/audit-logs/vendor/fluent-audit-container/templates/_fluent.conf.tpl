@@ -84,11 +84,7 @@
 </filter>
 
 {{- end }}
-{{- $apiServer := list }}
-{{- range $.Values.kubeAPIServer }}
-{{-   $apiServer = printf " kubeapi.%s%s.**" . $.Values.global.region | append $apiServer }}
-{{- end}}
-<filter {{- $apiServer | join " " }}>
+<filter kubeapi.**>
   @type parser
   @id json_parser
 {{- if eq $.Values.global.clusterType "admin" }}
