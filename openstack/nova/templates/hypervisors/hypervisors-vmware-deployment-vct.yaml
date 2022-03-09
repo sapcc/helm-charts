@@ -42,6 +42,7 @@ template: |
           configmap-nova-compute-hash: {= "vcenter_cluster/{{ .Release.Namespace }}/vcenter-cluster-nova-compute-configmap.yaml.j2" | render | sha256sum =}
       spec:
 {{ tuple "{= availability_zone =}" | include "kubernetes_pod_az_affinity" | indent 8 }}
+{{- include "kubernetes_maintenance_affinity" . | indent 4 }}
         containers:
         - name: nova-compute
           image: {{ required ".Values.global.registry is missing" .Values.global.registry}}/ubuntu-source-nova-compute:{{ .Values.imageVersionNovaCompute | default .Values.imageVersionNova | default .Values.imageVersion | required "Please set .imageVersion or similar" }}
