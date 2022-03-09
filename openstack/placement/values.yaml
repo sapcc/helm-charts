@@ -1,0 +1,101 @@
+# Default values for placement
+# This is a YAML-formatted file.
+# Declare name/value pairs to be passed into your templates.
+# name: value
+global:
+  placementApiPortAdmin: '8778'
+  placementApiPortInternal: '8778'
+  placementApiPortPublic: '443'
+  dbUser: placement
+  placement_service_user: placement
+
+  osprofiler: {}
+
+osprofiler: {}
+
+use_tls_acme: true
+
+defaults:
+  default:
+    graceful_shutdown_timeout: 60
+
+pod:
+  replicas:
+    placement: 2
+  lifecycle:
+    upgrades:
+      deployments:
+        revision_history: 5
+        podReplacementStrategy: RollingUpdate
+        rollingUpdate:
+          maxUnavailable: 0
+          maxSurge: 1
+  resources:
+    placement:
+      requests:
+        cpu: "400m"
+        memory: "150Mi"
+
+uwsgi:
+  processes: 10
+  wsgi_file: "/var/lib/kolla/venv/bin/nova-placement-api"
+
+max_pool_size: 10
+max_overflow: 5
+
+postgresql:
+  enabled: false
+
+
+api_db: # Only used when mariadb.enabled=False to connect to the nova-api-mariadb
+  name: nova_api
+  user: nova_api
+  password: null
+
+mariadb:
+  enabled: true
+  name: placement
+
+logging:
+  formatters:
+    context:
+      class: oslo_log.formatters.ContextFormatter
+    default:
+      format: "%(message)s"
+  handlers:
+    stdout:
+      class: StreamHandler
+      args: "(sys.stdout,)"
+      formatter: context
+    "null":
+      class: logging.NullHandler
+      args: "()"
+      formatter: default
+    sentry:
+      class: raven.handlers.logging.SentryHandler
+      level: ERROR
+      args: "()"
+  loggers:
+    root:
+      handlers: stdout, sentry
+      level: WARNING
+    migrate:
+      handlers: stdout, sentry
+      level: INFO
+    nova:
+      handlers: stdout, sentry
+      level: INFO
+
+# Deploy Prometheus alerts.
+alerts:
+  enabled: true
+  # Name of the Prometheus to which metrics should be exported
+  prometheus: openstack
+
+sentry:
+  enabled: true
+
+# Additional sections and values for the placement.conf file
+# Each first level item will become a section, and only on the second-level
+# we have key value pairs
+placement_conf: {}

@@ -1,0 +1,90 @@
+kind: Deployment
+apiVersion: apps/v1
+
+metadata:
+  name: placement-api
+  labels:
+    system: openstack
+    type: api
+    component: placement
+spec:
+  replicas: {{ .Values.pod.replicas.placement }}
+  revisionHistoryLimit: {{ .Values.pod.lifecycle.upgrades.deployments.revision_history }}
+  strategy:
+    type: {{ .Values.pod.lifecycle.upgrades.deployments.podReplacementStrategy }}
+    {{ if eq .Values.pod.lifecycle.upgrades.deployments.podReplacementStrategy "RollingUpdate" }}
+    rollingUpdate:
+      maxUnavailable: {{ .Values.pod.lifecycle.upgrades.deployments.rollingUpdate.maxUnavailable }}
+      maxSurge: {{ .Values.pod.lifecycle.upgrades.deployments.rollingUpdate.maxSurge }}
+    {{ end }}
+  selector:
+    matchLabels:
+      name: placement-api
+  template:
+    metadata:
+      labels:
+        name: placement-api
+{{ tuple . "placement" "api" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
+        alert-tier: os
+        alert-service: nova
+      annotations:
+        configmap-etc-hash: {{ include (print $.Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
+    spec:
+{{ tuple . "placement" "api" | include "kubernetes_pod_anti_affinity" | indent 6 }}
+      containers:
+      - name: placement-api
+        image: {{ required ".Values.global.registry is missing" .Values.global.registry}}/ubuntu-source-nova-placement-api:{{.Values.imageVersion | required "Please set .imageVersion or similar" }}
+        imagePullPolicy: IfNotPresent
+        command:
+        - dumb-init
+        - kubernetes-entrypoint
+        env:
+        - name: COMMAND
+          value: "uwsgi --ini /etc/{{ include "placement_project" . }}/uwsgi.ini"
+        - name: NAMESPACE
+          value: {{ .Release.Namespace }}
+        - name: DEPENDENCY_SERVICE
+          value: {{ if .Values.mariadb.enabled -}}
+            "{{ .Values.mariadb.name }}-mariadb"
+            {{- else -}}
+              "nova-api-mariadb"
+            {{- end }}
+          {{- if .Values.sentry.enabled }}
+        - name: SENTRY_DSN
+          valueFrom:
+            secretKeyRef:
+              name: sentry
+              key: {{ .Chart.Name }}.DSN.python
+          {{- end }}
+{{- if .Values.python_warnings }}
+        - name: PYTHONWARNINGS
+          value: {{ .Values.python_warnings | quote }}
+{{- end }}
+        lifecycle:
+          preStop:
+              {{- include "utils.snippets.pre_stop_graceful_shutdown" . | indent 14 }}
+        livenessProbe:
+          httpGet:
+            path: /
+            port: {{.Values.global.placementApiPortInternal}}
+          initialDelaySeconds: 60
+          timeoutSeconds: 30
+          periodSeconds: 30
+        readinessProbe:
+          httpGet:
+            path: /
+            port: {{.Values.global.placementApiPortInternal}}
+          initialDelaySeconds: 15
+          timeoutSeconds: 5
+        resources:
+{{ toYaml .Values.pod.resources.placement | indent 8 }}
+        ports:
+        - name: placement-api
+          containerPort: {{.Values.global.placementApiPortInternal}}
+        volumeMounts:
+        - mountPath: /etc/{{ include "placement_project" . }}
+          name: placement-etc
+      volumes:
+      - name: placement-etc
+        configMap:
+          name: placement-etc
