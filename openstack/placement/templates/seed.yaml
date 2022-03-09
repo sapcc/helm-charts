@@ -1,0 +1,43 @@
+apiVersion: "openstack.stable.sap.cc/v1"
+kind: "OpenstackSeed"
+metadata:
+  name: placement-seed
+spec:
+  requires:
+  - monsoon3/domain-default-seed
+
+  roles:
+  - name: compute_admin
+  - name: compute_viewer
+  - name: cloud_compute_admin
+  - name: cloud_network_admin
+  - name: cloud_volume_admin
+  - name: cloud_baremetal_admin
+  - name: swiftoperator
+
+  services:
+  - name: placement
+    type: placement
+    description: Openstack Placement API
+    endpoints:
+    - interface: admin
+      region: '{{ .Values.global.region }}'
+      url: 'http://placement-api.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}:{{.Values.global.placementApiPortAdmin}}'
+    - interface: internal
+      region: '{{ .Values.global.region }}'
+      url: 'http://placement-api.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}:{{.Values.global.placementApiPortInternal}}'
+    - interface: public
+      region: '{{ .Values.global.region }}'
+      url: 'https://{{include "placement_api_endpoint_host_public" .}}:{{.Values.global.placementApiPortPublic}}'
+
+  domains:
+  - name: Default
+    users:
+    - name: placement
+      description: Placement API Service User
+      password: {{ required ".Values.global.placement_service_password is missing" .Values.global.placement_service_password }}
+      role_assignments:
+      - project: service
+        role: service
+      - project: service
+        role: admin
