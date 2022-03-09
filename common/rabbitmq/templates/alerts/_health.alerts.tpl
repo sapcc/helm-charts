@@ -1,7 +1,7 @@
 - name: health.alerts
   rules:
   - alert: {{ include "alerts.service" . | title }}RabbitMQNotReady
-    expr: (kube_pod_status_ready_normalized{condition="true", pod=~"{{ include "fullname" . }}.*"} < 1)
+    expr: (kube_pod_status_ready_normalized{condition="true", pod=~"{{ include "fullname" . }}.*", pod!~"{{ include "fullName" . }}-notifications.*"} < 1)
     for: 10m
     labels:
       severity: critical
