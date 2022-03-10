@@ -1,0 +1,59 @@
+apiVersion: apps/v1
+kind: Deployment
+
+metadata:
+  name: git-cert-shim
+
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: git-cert-shim
+  template:
+    metadata:
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/targets: kubernetes
+      labels:
+        app: git-cert-shim
+    spec:
+      terminationGracePeriodSeconds: 20
+      volumes:
+      - name: git-cert-shim
+        secret:
+          secretName: git-cert-shim
+      containers:
+      - name: manager
+        image: {{ .Values.global.dockerHubMirror | required "need .Values.global.dockerHubMirror" }}/sapcc/git-cert-shim:v1.0.0
+        imagePullPolicy: IfNotPresent
+        args:
+        - --enable-leader-election
+        - --default-issuer-name=digicert-issuer
+        - --default-issuer-kind=DigicertIssuer
+        - --default-issuer-group=certmanager.cloud.sap
+        command:
+        - /git-cert-shim
+        env:
+        - name: NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: GIT_REMOTE_URL
+          value: {{ quote .Values.git.repository }}
+        - name: GIT_SSH_PRIVKEY_FILE
+          value: '/git-cert-shim.key'
+        ports:
+        - containerPort: 8080
+          name: metrics
+        resources:
+          limits:
+            cpu: 200m
+            memory: 200Mi
+          requests:
+            cpu: 100m
+            memory: 20Mi
+        volumeMounts:
+        - mountPath: /git-cert-shim.key
+          name: git-cert-shim
+          readOnly: true
+          subPath: git-cert-shim.key
