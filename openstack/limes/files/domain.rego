@@ -1,0 +1,5 @@
+package limes
+
+violations[{ }] {
+  false
+}
