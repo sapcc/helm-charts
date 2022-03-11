@@ -118,6 +118,7 @@
       - '{__name__=~"^cronus_updater_.+"}'
       - '{__name__=~"^network_apic_(free|used|down)_port_count"}'
       - '{__name__=~"^node_logind_sessions", class="user", job="jumpserver", type="tty"}'
+      - '{__name__=~"^bastion_audit_log.+"}'
 
   relabel_configs:
     - action: replace
