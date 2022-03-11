@@ -33,3 +33,4 @@ The following table lists the configurable parameters of the `owner-info` chart 
 | Parameter | Default | Description |
 | ---       | ---         | ---     |
 | `maintainers` | `[]` | List of people that maintain your chart. The list should be ordered by priority, i.e. primary maintainer should be at the top. |
+| `helm-chart-url` | `WHERE-TO-FIND-THE-CHART-IN-GITHUB` | URL to your chart in github, e.g. `https://github.com/sapcc/helm-charts/tree/master/common/owner-info` |
