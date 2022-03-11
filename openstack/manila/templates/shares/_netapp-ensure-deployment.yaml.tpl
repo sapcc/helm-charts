@@ -8,6 +8,8 @@ metadata:
   labels:
     system: openstack
     component: manila
+    alert-tier: os
+    alert-service: manila
 spec:
   replicas: 1
   revisionHistoryLimit: 2

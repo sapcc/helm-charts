@@ -9,6 +9,8 @@ metadata:
     system: openstack
     type: backend
     component: manila
+    alert-tier: os
+    alert-service: manila
 spec:
   replicas: 1
   revisionHistoryLimit: 5
