@@ -174,8 +174,15 @@ filter {
       }
 
       if "awx" in [cluster_host_id] {
-        mutate {
-          add_field => { "[sap][cc][audit][source]"  => "awx" }
+        if [event]{
+          mutate {
+            add_field => { "[sap][cc][audit][source]"  => "awx" }
+            rename => { "[event]" => "[event_name]"}
+          }
+        } else {
+          mutate {
+            add_field => { "[sap][cc][audit][source]"  => "awx" }
+          }
         }
       }
 
