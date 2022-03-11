@@ -1,6 +1,7 @@
 {{- define "share_netapp" -}}
 {{$share := index . 1 -}}
 {{with index . 0}}
+{{$availability_zone := $share.availability_zone | default .Values.default_availability_zone | default .Values.global.default_availability_zone }}
 kind: Deployment
 apiVersion: apps/v1
 metadata:
@@ -30,10 +31,7 @@ spec:
         configmap-etc-hash: {{ include (print .Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
         configmap-netapp-hash: {{ list . $share | include "share_netapp_configmap" | sha256sum }}
     spec:
-      affinity:
-        nodeAffinity:
-          preferredDuringSchedulingIgnoredDuringExecution:
-{{- include "kubernetes_maintenance_affinity" . }}
+{{ tuple $availability_zone | include "kubernetes_pod_az_affinity" | indent 6 }}
       initContainers:
         - name: fetch-rabbitmqadmin
           image: {{.Values.global.dockerHubMirror}}/library/busybox

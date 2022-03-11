@@ -27,6 +27,18 @@ spec:
       annotations:
         configmap-etc-hash: {{ include (print .Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
     spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: name
+                  operator: In
+                  values:
+                  - manila-scheduler
+              topologyKey: "failure-domain.beta.kubernetes.io/zone"
       initContainers:
         - name: fetch-rabbitmqadmin
           image: {{.Values.global.dockerHubMirror}}/library/busybox
