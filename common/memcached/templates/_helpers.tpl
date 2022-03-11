@@ -23,3 +23,11 @@ We truncate at 63 chars because some Kubernetes name fields are limited to this 
 {{- .Release.Name -}}
 {{- end -}}
 {{- end -}}
+
+{{- define "dockerHubMirror" -}}
+{{- if .Values.use_alternate_registry -}}
+{{- .Values.global.dockerHubMirrorAlternateRegion -}}
+{{- else -}}
+{{- .Values.global.dockerHubMirror -}}
+{{- end -}}
+{{- end -}}

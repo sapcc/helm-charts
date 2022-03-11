@@ -44,7 +44,7 @@ spec:
                   - operational
       containers:
       - name: memcached
-        image: "{{ .Values.image }}:{{ .Values.imageTag }}"
+        image: "{{include "dockerHubMirror" .}}/{{ .Values.image }}:{{.Values.imageTag }}"
         imagePullPolicy: {{ default "IfNotPresent" .Values.imagePullPolicy | quote }}
         command:
         - memcached
@@ -77,10 +77,7 @@ spec:
         {{- end }}
       {{- if .Values.metrics.enabled }}
       - name: metrics
-        {{- if hasKey .Values.global "dockerHubMirror"}}
-        image: {{.Values.global.dockerHubMirror}}/{{ .Values.metrics.image }}:{{ .Values.metrics.imageTag }}
-        {{- else }}
-        image: "{{ .Values.metrics.image }}:{{ .Values.metrics.imageTag }}"
+        image: {{include "dockerHubMirror" .}}/{{ .Values.metrics.image }}:{{ .Values.metrics.imageTag }}
         {{- end }}
         imagePullPolicy: {{ default "IfNotPresent" .Values.metrics.imagePullPolicy | quote }}
         ports:
