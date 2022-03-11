@@ -24,13 +24,16 @@ spec:
           secretName: git-cert-shim
       containers:
       - name: manager
-        image: {{ .Values.global.dockerHubMirror | required "need .Values.global.dockerHubMirror" }}/sapcc/git-cert-shim:v1.0.0
+        image: {{ .Values.global.registry | required "need .Values.global.registry" }}/git-cert-shim:v1.1.0
         imagePullPolicy: IfNotPresent
         args:
         - --enable-leader-election
         - --default-issuer-name=digicert-issuer
         - --default-issuer-kind=DigicertIssuer
         - --default-issuer-group=certmanager.cloud.sap
+        - --git-push-certs=true
+        - --vault-push-certs=true
+        - --vault-kv-engine=secrets
         command:
         - /git-cert-shim
         env:
@@ -42,6 +45,18 @@ spec:
           value: {{ quote .Values.git.repository }}
         - name: GIT_SSH_PRIVKEY_FILE
           value: '/git-cert-shim.key'
+        - name: VAULT_ADDR
+          value: {{ quote .Values.vault.addr }}
+        - name: VAULT_ROLE_ID
+          valueFrom:
+            secretKeyRef:
+              name: git-cert-shim
+              key:  vault_role_id
+        - name: VAULT_SECRET_ID
+          valueFrom:
+            secretKeyRef:
+              name: git-cert-shim
+              key:  vault_secret_id
         ports:
         - containerPort: 8080
           name: metrics
