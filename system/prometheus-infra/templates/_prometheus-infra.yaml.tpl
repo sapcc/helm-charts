@@ -139,6 +139,6 @@
       - '{__name__=~"^bastion_audit_log.+"}'
   static_configs:
     - targets:
-#      - 'bastion.{{ .Values.global.region }}.cloud.sap:443'
-      - 'bastion.eu-de-1.cloud.sap:443'
+#      - 'bastion.{{ .Values.global.region }}.cloud.sap'
+      - 'bastion.eu-de-1.cloud.sap'
 {{- end }}
