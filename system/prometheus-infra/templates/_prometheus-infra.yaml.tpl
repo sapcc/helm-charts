@@ -126,3 +126,18 @@
       {{ end }}
   scrape_interval: 5m
 {{ end }}
+
+# exporter for user inactivity but not part of infrastructure monitoring project itself.
+{{ if .Values.bastion.enabled }}
+- job_name: 'bastion'
+  scrape_interval: {{ .Values.bastion.scrapeInterval }}
+  scrape_timeout: {{ .Values.bastion.scrapeTimeout }}
+
+  metrics_path: /metrics
+  params:
+    'match[]':
+      - '{__name__=~"^bastion_audit_log.+"}'
+  static_configs:
+    - targets:
+      - 'bastion.{{ .Values.global.region }}.cloud.sap:443'
+{{- end }}
