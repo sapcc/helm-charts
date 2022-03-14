@@ -4,13 +4,13 @@ package limes
 violations[{"msg": msg, "service": "keppel", "resource": "images"}] {
   srv1 := input.targetprojectreport.services[_]
   srv1.type == "keppel"
-  res1 := srv.resources[_]
+  res1 := srv1.resources[_]
   res1.name == "images"
   res1.quota != 0
 
   srv2 := input.targetprojectreport.services[_]
   srv2.type == "object-store"
-  res2 := srv.resources[_]
+  res2 := srv2.resources[_]
   res2.name == "capacity"
   res2.quota == 0
 
