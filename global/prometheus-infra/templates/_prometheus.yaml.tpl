@@ -202,6 +202,7 @@
       - '{__name__=~"^vrops_hostsystem_configuration_dasconfig_admissioncontrolpolicy_failoverhost"}'
       - '{__name__=~"^vrops_hostsystem_hardware_bios_version"}'
       - '{__name__=~"^vrops_hostsystem_hardware_model"}'
+      - '{__name__=~"^vrops_hostsystem_memory_useable_kilobytes"}'
       - '{__name__=~"^vrops_virtualmachine_cpu_workload_percentage"}'
       - '{__name__=~"^vrops_virtualmachine_memory_usage_average"}'
       - '{__name__=~"^vrops_virtualmachine_memory_kilobytes"}'
