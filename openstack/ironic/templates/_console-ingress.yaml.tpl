@@ -21,6 +21,7 @@ spec:
       http:
         paths:
         - path: /{{$conductor.name}}
+          pathType: Prefix
           backend:
             service:
               name: ironic-conductor-{{$conductor.name}}-console
