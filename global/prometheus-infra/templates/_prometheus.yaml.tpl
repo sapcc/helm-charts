@@ -203,6 +203,8 @@
       - '{__name__=~"^vrops_hostsystem_hardware_bios_version"}'
       - '{__name__=~"^vrops_hostsystem_hardware_model"}'
       - '{__name__=~"^vrops_hostsystem_memory_useable_kilobytes"}'
+      - '{__name__=~"^vrops_hostsystem_cpu_model"}'
+      - '{__name__=~"^vrops_hostsystem_hardware_number_of_cpu_cores_info"}'
       - '{__name__=~"^vrops_virtualmachine_cpu_workload_percentage"}'
       - '{__name__=~"^vrops_virtualmachine_memory_usage_average"}'
       - '{__name__=~"^vrops_virtualmachine_memory_kilobytes"}'
