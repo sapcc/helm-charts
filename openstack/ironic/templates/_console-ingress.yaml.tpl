@@ -22,7 +22,9 @@ spec:
         paths:
         - path: /{{$conductor.name}}
           backend:
-            serviceName: ironic-conductor-{{$conductor.name}}-console
-            servicePort: 80
+            service:
+              name: ironic-conductor-{{$conductor.name}}-console
+              port: 
+                number: 80
     {{- end }}
 {{- end }}
