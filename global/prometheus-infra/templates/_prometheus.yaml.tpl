@@ -118,7 +118,6 @@
       - '{__name__=~"^cronus_updater_.+"}'
       - '{__name__=~"^network_apic_(free|used|down)_port_count"}'
       - '{__name__=~"^node_logind_sessions", class="user", job="jumpserver", type="tty"}'
-      - '{__name__=~"^bastion_audit_log.+"}'
 
   relabel_configs:
     - action: replace
@@ -224,6 +223,52 @@
       - '{__name__=~"^vrops_self_object_primary_metrics_count"}'
       - '{__name__=~"^vrops_self_object_primary_objects_count"}'
       
+  relabel_configs:
+    - action: replace
+      source_labels: [__address__]
+      target_label: region
+      regex: prometheus-infra.scaleout.(.+).cloud.sap
+      replacement: $1
+    - action: replace
+      target_label: cluster_type
+      replacement: controlplane
+
+  metric_relabel_configs:
+    - action: replace
+      source_labels: [__name__]
+      target_label: __name__
+      regex: global:(.+)
+      replacement: $1
+    - source_labels: [__name__, prometheus_source, prometheus]
+      regex: '^up;^$;(.+)'
+      replacement: '$1'
+      target_label: prometheus_source
+      action: replace
+
+  {{ if .Values.authentication.enabled }}
+  tls_config:
+    cert_file: /etc/prometheus/secrets/prometheus-infra-sso-cert/sso.crt
+    key_file: /etc/prometheus/secrets/prometheus-infra-sso-cert/sso.key
+  {{ end }}
+
+  static_configs:
+    - targets:
+{{- range $region := .Values.regionList }}
+      - "prometheus-infra.scaleout.{{ $region }}.cloud.sap"
+{{- end }}
+
+- job_name: 'prometheus-regions-bastion-federation'
+  scheme: https
+  scrape_interval: 2m
+  scrape_timeout: 115s
+
+  honor_labels: true
+  metrics_path: '/federate'
+
+  params:
+    'match[]':
+      - '{__name__=~"^bastion_audit_log.+"}'
+
   relabel_configs:
     - action: replace
       source_labels: [__address__]
