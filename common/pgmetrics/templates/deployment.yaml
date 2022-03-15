@@ -1,13 +1,9 @@
-{{- if .Release.IsUpgrade }}
 kind: Deployment
 apiVersion: apps/v1
 metadata:
-  name: {{ template "fullname" . }}
+  name: {{ .Release.Name }}-pgmetrics
   labels:
-    app: {{ template "fullname" . }}
     chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
-    release: "{{ .Release.Name }}"
-    heritage: "{{ .Release.Service }}"
 spec:
   replicas: {{ .Values.replicas }}
   revisionHistoryLimit: {{ .Values.upgrades.revisionHistory }}
@@ -20,11 +16,11 @@ spec:
     {{ end }}
   selector:
     matchLabels:
-      app: {{ template "fullname" . }}
+      app: {{ .Release.Name }}-{{ .Chart.Name }}
   template:
     metadata:
       labels:
-        app: {{ template "fullname" . }}
+        app: {{ .Release.Name }}-{{ .Chart.Name }}
         component: {{ default .Release.Name .Values.db_name }}
         type: metrics
       annotations:
@@ -82,9 +78,8 @@ spec:
       {{- if .Values.customMetrics }}
       - name: custom-metrics
         configMap:
-          name: {{ template "fullname" . }}-etc
+          name: {{ .Release.Name }}-{{ .Chart.Name }}-etc
           items:
           - key: custom-metrics.yaml
             path: custom-metrics.yaml
       {{- end }}
-{{- end }}
