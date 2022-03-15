@@ -1,4 +1,3 @@
-{{- define "tempest-base.extra_options" }}
 [DEFAULT]
 debug = True
 use_stderr = True
@@ -51,10 +50,9 @@ project_network_cidr = 10.199.0.0/16
 public_network_id = {{ .Values.tempest_common.public_network_id }}
 endpoint_type = internal
 shared_physical_network= {{ .Values.tempest_common.shared_physical_network | default true }}
-floating_network_name = FloatingIP-sap-monsoon3-01-03
 
 [network-feature-enabled]
-ipv6 = False
+ipv6 = false
 
 [baremetal]
 min_microversion = 1.46
@@ -117,10 +115,20 @@ max_microversion = latest
 vendor_name = VMware
 storage_protocol = vmdk
 disk_format = vmdk
-volume_size = 10
 
 [volume-feature-enabled]
 backup = true
+
+[load_balancer]
+admin_role = admin
+octavia_svc_username = admin
+member_role = admin
+observer_role = admin
+global_observer_role = admin
+provider = f5
+RBAC_test_type = none
+test_with_ipv6 = False
+create_security_group = True
 
 [service_available]
 manila = True
@@ -134,5 +142,3 @@ ironic = True
 barbican = True
 keystone = True
 octavia = True
-
-{{ end }}
