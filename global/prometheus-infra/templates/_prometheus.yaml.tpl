@@ -267,7 +267,7 @@
 
   params:
     'match[]':
-      - '{__name__=~"^bastion_audit_log.+"}'
+      - '{__name__=~"^bastion_audit_log"}'
 
   relabel_configs:
     - action: replace
