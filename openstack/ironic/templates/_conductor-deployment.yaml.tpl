@@ -68,30 +68,17 @@ spec:
         {{- if not $conductor.debug }}
         resources:
 {{ toYaml .Values.pod.resources.conductor | indent 10 }}
-{{- if and (ne .Values.global.region "ap-ae-1") (ne .Values.global.region "ap-sa-1") }}
         livenessProbe:
           exec:
             command:
             - bash
             - -c
-            - eval $(cat /etc/ironic/ironic.conf | grep -Pzo '\[service_catalog\][^[]*' | tr -d '\000' | grep '='  | while read LINE; do var="${LINE% =*}" ; val="${LINE#*= }" ; echo export OS_${var^^}=${val} ; done); OS_IDENTITY_API_VERSION=3 openstack baremetal conductor list -f csv | grep 'ironic-conductor-{{$conductor.name}}' | grep True >/dev/null
-          periodSeconds: 61
-          failureThreshold: 2
-          timeoutSeconds: 5
-        startupProbe:
-          exec:
-            command:
-            - bash
-            - -c
-            - eval $(cat /etc/ironic/ironic.conf | grep -Pzo '\[service_catalog\][^[]*'
-              | tr -d '\000' | grep '='  | while read LINE; do var="${LINE% =*}" ;
-              val="${LINE#*= }" ; echo export OS_${var^^}=${val} ; done); OS_IDENTITY_API_VERSION=3
-              openstack baremetal conductor list -f csv | grep 'ironic-conductor-{{$conductor.name}}'
-              | grep True >/dev/null
-          failureThreshold: 12
+            - curl -u {{ .Values.rabbitmq.metrics.user }}:{{ .Values.rabbitmq.metrics.rabbitmq }} ironic-rabbitmq:{{.Values.rabbitmq.ports.management}}/api/consumers 
+              | sed 's/,/\n/g' | grep ironic-conductor-{{$conductor.name}} >/dev/null
           periodSeconds: 10
-          timeoutSeconds: 5
-        {{- end }}
+          failureThreshold: 1
+          initialDelaySeconds: 30
+          timeoutSeconds: 2
         {{- end }}
         volumeMounts:
         - mountPath: /etc/ironic
