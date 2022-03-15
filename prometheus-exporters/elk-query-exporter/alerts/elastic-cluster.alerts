@@ -1,8 +1,8 @@
 groups:
 - name: elastic.alerts
   rules:
-  - alert: ElasticOutOfDiskSpace
-    expr: es_fs_path_available_bytes{node=~".*data.*"} * 100 /  es_fs_path_total_bytes{node=~".*data.*"} < 10
+  - alert: ELKClusterLowDiskSpace
+    expr: (100 / (count by (elastic_cluster) (es_fs_path_available_bytes{node=~".*data.*",elastic_cluster="elkelasticsearch"}))) * (count by (elastic_cluster) (es_fs_path_available_bytes{node=~".*data.*",elastic_cluster="elkelasticsearch"} * 100 /  es_fs_path_total_bytes{node=~".*data.*",elastic_cluster="elkelasticsearch"} < 20)) > 60
     for: 60m
     labels:
       context: diskspace
@@ -10,14 +10,14 @@ groups:
       severity: info
       tier: os
       playbook: docs/support/playbook/elastic_kibana_issues.html#elasticpredictoutofdiskspace-alert
-      dashboard: elasticsearch?var-cluster={{ $labels.elastic_cluster }}
+      dashboard: elasticsearch?var-cluster=elkelasticsearch
     annotations:
-      description: '*{{ $labels.region }}* The disk usage for node `{{ $labels.node }}` in cluster `{{ $labels.elastic_cluster }}` is above 90% now.
+      description: '*{{ $labels.region }}* ELK cluster 60 % of all data nodes are more than 80 % full.
                    Please consider cleaning up elasticsearch or lower the retention period for the logs.'
-      summary: '*{{ $labels.elastic_cluster }}* in `{{ $labels.region }}` is out of disk space'
+      summary: '*ELK cluster* in `{{ $labels.region }}` is out of disk space'
 
-  - alert: ElasticPredictOutOfDiskSpace
-    expr: es_fs_path_available_bytes{node=~".*data.*"} * 100 /  es_fs_path_total_bytes{node=~".*data.*"} < 20
+  - alert: ELKClusterOutOfDiskSpace
+    expr: (100 / (count by (elastic_cluster) (es_fs_path_available_bytes{node=~".*data.*",elastic_cluster="elkelasticsearch"}))) * (count by (elastic_cluster) (es_fs_path_available_bytes{node=~".*data.*",elastic_cluster="elkelasticsearch"} * 100 /  es_fs_path_total_bytes{node=~".*data.*",elastic_cluster="elkelasticsearch"} < 20)) > 80
     for: 60m
     labels:
       context: diskspace
@@ -25,11 +25,41 @@ groups:
       severity: info
       tier: os
       playbook: docs/support/playbook/elastic_kibana_issues.html#elasticpredictoutofdiskspace-alert
-      dashboard: elasticsearch?var-cluster={{ $labels.elastic_cluster }}
+      dashboard: elasticsearch?var-cluster=elkelasticsearch
     annotations:
-      description: '*{{ $labels.region }}* The disk usage for node `{{ $labels.node }}` in cluster `{{ $labels.elastic_cluster }}` is above 80% now.
+      description: '*{{ $labels.region }}* ELK cluster 80 % of all data nodes are more than 80 % full.
                    Please consider cleaning up elasticsearch or lower the retention period for the logs.'
-      summary: '*{{ $labels.elastic_cluster }}* in `{{ $labels.region }}` is out of disk space'
+      summary: '*ELK cluster* in `{{ $labels.region }}` is out of disk space'
+
+  - alert: ElastiflowClusterLowDiskSpace
+    expr: (100 / (count by (elastic_cluster) (es_fs_path_available_bytes{node=~".*data.*",elastic_cluster="elastiflow"}))) * (count by (elastic_cluster) (es_fs_path_available_bytes{node=~".*data.*",elastic_cluster="elastiflow"} * 100 /  es_fs_path_total_bytes{node=~".*data.*",elastic_cluster="elastiflow"} < 20)) > 60
+    for: 60m
+    labels:
+      context: diskspace
+      service: elk
+      severity: info
+      tier: os
+      playbook: docs/support/playbook/elastic_kibana_issues.html#elasticpredictoutofdiskspace-alert
+      dashboard: elasticsearch?var-cluster=elastiflow
+    annotations:
+      description: '*{{ $labels.region }}* Elastiflow cluster 60 % of all data nodes are more than 80 % full.
+                   Please consider cleaning up elasticsearch or lower the retention period for the logs.'
+      summary: '*Elastiflow cluster* in `{{ $labels.region }}` is out of disk space'
+
+  - alert: ElastiflowClusterOutOfDiskSpace
+    expr: (100 / (count by (elastic_cluster) (es_fs_path_available_bytes{node=~".*data.*",elastic_cluster="elastiflow"}))) * (count by (elastic_cluster) (es_fs_path_available_bytes{node=~".*data.*",elastic_cluster="elastiflow"} * 100 /  es_fs_path_total_bytes{node=~".*data.*",elastic_cluster="elastiflow"} < 20)) > 80
+    for: 60m
+    labels:
+      context: diskspace
+      service: elk
+      severity: info
+      tier: os
+      playbook: docs/support/playbook/elastic_kibana_issues.html#elasticpredictoutofdiskspace-alert
+      dashboard: elasticsearch?var-cluster=elastiflow
+    annotations:
+      description: '*{{ $labels.region }}* Elastiflow cluster 80 % of all data nodes are more than 80 % full.
+                   Please consider cleaning up elasticsearch or lower the retention period for the logs.'
+      summary: '*Elastiflow cluster* in `{{ $labels.region }}` is out of disk space'
 
   - alert: ElasticClusterRed
     expr: es_cluster_status{pod=~".*-master-0"} == 2
