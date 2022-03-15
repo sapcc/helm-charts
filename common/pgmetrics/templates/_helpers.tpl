@@ -16,12 +16,3 @@ We truncate at 63 chars because some Kubernetes name fields are limited to this 
 {{- end -}}
 
 {{define "db_host"}}{{.Release.Name}}-postgresql.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}{{end}}
-
-{{/* Generate the service label for the templated Prometheus alerts. */}}
-{{- define "alerts.service" -}}
-{{- if .Values.alerts.service -}}
-{{- .Values.alerts.service -}}
-{{- else -}}
-{{- .Release.Name -}}
-{{- end -}}
-{{- end -}}
