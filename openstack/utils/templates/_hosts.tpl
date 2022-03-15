@@ -1,17 +1,21 @@
+{{- define "host_fqdn" -}}
+{{ .Values.global.region }}.{{ .Values.global.tld }}
+{{- end }}
+
 {{- define "svc_fqdn" -}}
-{{ .Release.Namespace }}.svc.kubernetes.{{ .Values.global.region }}.{{ .Values.global.tld }}
+{{ .Release.Namespace }}.svc.kubernetes.{{ include "host_fqdn" . }}
 {{- end }}
 
 {{define "db_url" }}
     {{- if kindIs "map" . -}}
-postgresql+psycopg2://{{default .Values.dbUser .Values.global.dbUser}}:{{(default .Values.dbPassword .Values.global.dbPassword) | default (tuple . (default .Values.dbUser .Values.global.dbUser) | include "postgres.password_for_user")}}@{{.Chart.Name}}-postgresql.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}:5432/{{.Values.postgresql.postgresDatabase}}
+postgresql+psycopg2://{{default .Values.dbUser .Values.global.dbUser}}:{{(default .Values.dbPassword .Values.global.dbPassword) | default (tuple . (default .Values.dbUser .Values.global.dbUser) | include "postgres.password_for_user")}}@{{.Chart.Name}}-postgresql.{{ include "svc_fqdn" . }}:5432/{{.Values.postgresql.postgresDatabase}}
     {{- else }}
         {{- $envAll := index . 0 }}
         {{- $name := index . 1 }}
         {{- $user := index . 2 }}
         {{- $password := index . 3 }}
         {{- with $envAll -}}
-postgresql+psycopg2://{{$user}}:{{$password | urlquery}}@{{.Chart.Name}}-postgresql.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}:5432/{{$name}}
+postgresql+psycopg2://{{$user}}:{{$password | urlquery}}@{{.Chart.Name}}-postgresql.{{ include "svc_fqdn" . }}:5432/{{$name}}
         {{- end }}
     {{- end -}}
 ?connect_timeout=10&keepalives_idle=5&keepalives_interval=5&keepalives_count=10
@@ -30,26 +34,26 @@ mysql+pymysql://{{ coalesce .Values.dbUser .Values.global.dbUser "root" }}:{{ co
         {{- $user := index . 2 }}
         {{- $password := index . 3 }}
         {{- with $envAll -}}
-mysql+pymysql://{{$user}}:{{$password | urlquery}}@{{include "db_host_mysql" .}}/{{$name}}
+mysql+pymysql://{{$user}}:{{$password | urlquery}}@{{ include "db_host_mysql" .}}/{{$name}}
         {{- end }}
     {{- end -}}
 ?charset=utf8
 {{- end}}
 
-{{define "db_host_pxc"}}{{.Release.Name}}-percona-pxc.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.db_region}}.{{.Values.global.tld}}{{end}}
+{{define "db_host_pxc"}}{{.Release.Name}}-percona-pxc.{{ include "svc_fqdn" . }}{{end}}
 
 {{define "db_url_pxc" }}mysql+pymysql://{{.Values.percona_cluster.db_user }}:{{.Values.percona_cluster.dbPassword }}@{{include "db_host_pxc" .}}/{{.Values.percona_cluster.db_name}}?charset=utf8{{end}}
 
-{{define "nova_db_host"}}nova-mariadb.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}{{end}}
-{{define "nova_api_endpoint_host_admin"}}nova-api.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}{{end}}
-{{define "nova_api_endpoint_host_internal"}}nova-api.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}{{end}}
-{{define "nova_api_endpoint_host_public"}}compute-3.{{.Values.global.region}}.{{.Values.global.tld}}{{end}}
+{{define "nova_db_host"}}nova-mariadb.{{ include "svc_fqdn" . }}{{end}}
+{{define "nova_api_endpoint_host_admin"}}nova-api.{{ include "svc_fqdn" . }}{{end}}
+{{define "nova_api_endpoint_host_internal"}}nova-api.{{ include "svc_fqdn" . }}{{end}}
+{{define "nova_api_endpoint_host_public"}}compute-3.{{ include "host_fqdn" . }}{{end}}
 
-{{define "nova_api_metadata_endpoint_host_internal"}}nova-api-metadata.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}{{end}}
+{{define "nova_api_metadata_endpoint_host_internal"}}nova-api-metadata.{{ include "svc_fqdn" . }}{{end}}
 
-{{define "placement_api_endpoint_host_admin"}}nova-placement-api.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}{{end}}
-{{define "placement_api_endpoint_host_internal"}}nova-placement-api.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}{{end}}
-{{define "placement_api_endpoint_host_public"}}placement-3.{{.Values.global.region}}.{{.Values.global.tld}}{{end}}
+{{define "placement_api_endpoint_host_admin"}}nova-placement-api.{{ include "svc_fqdn" . }}{{end}}
+{{define "placement_api_endpoint_host_internal"}}nova-placement-api.{{ include "svc_fqdn" . }}{{end}}
+{{define "placement_api_endpoint_host_public"}}placement-3.{{ include "host_fqdn" . }}{{end}}
 
 {{define "internal_service"}}{{ $envAll := index . 0 }}{{ $service := index . 1 }}{{$service}}.{{$envAll.Release.Namespace}}.svc.kubernetes.{{$envAll.Values.global.region}}.{{$envAll.Values.global.tld}}{{ end }}
 
@@ -60,67 +64,67 @@ mysql+pymysql://{{$user}}:{{$password | urlquery}}@{{include "db_host_mysql" .}}
     {{- tuple $envAll ( $envAll.Values.global.user_suffix | default "" | print $user ) ( tuple $envAll $service | include "internal_service" ) ("long") }}
 {{- end }}
 
-{{define "nova_console_endpoint_host_public"}}compute-console-3.{{.Values.global.region}}.{{.Values.global.tld}}{{end}}
+{{define "nova_console_endpoint_host_public"}}compute-console-3.{{ include "host_fqdn" . }}{{end}}
 
-{{define "horizon_endpoint_host"}}horizon-3.{{.Values.global.region}}.{{.Values.global.tld}}{{end}}
+{{define "horizon_endpoint_host"}}horizon-3.{{ include "host_fqdn" . }}{{end}}
 
-{{define "keystone_api_endpoint_host_admin"}}keystone.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}{{end}}
-{{define "keystone_api_endpoint_host_internal"}}keystone.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}{{end}}
-{{define "keystone_api_endpoint_host_public"}}identity-3.{{.Values.global.region}}.{{.Values.global.tld}}{{end}}
+{{define "keystone_api_endpoint_host_admin"}}keystone.{{ include "svc_fqdn" . }}{{end}}
+{{define "keystone_api_endpoint_host_internal"}}keystone.{{ include "svc_fqdn" . }}{{end}}
+{{define "keystone_api_endpoint_host_public"}}identity-3.{{ include "host_fqdn" . }}{{end}}
 
-{{define "glance_db_host"}}glance-mariadb.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}{{end}}
-{{define "glance_api_endpoint_host_admin"}}glance.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}{{end}}
-{{define "glance_api_endpoint_host_internal"}}glance.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}{{end}}
-{{define "glance_api_endpoint_host_public"}}image-3.{{.Values.global.region}}.{{.Values.global.tld}}{{end}}
+{{define "glance_db_host"}}glance-mariadb.{{ include "svc_fqdn" . }}{{end}}
+{{define "glance_api_endpoint_host_admin"}}glance.{{ include "svc_fqdn" . }}{{end}}
+{{define "glance_api_endpoint_host_internal"}}glance.{{ include "svc_fqdn" . }}{{end}}
+{{define "glance_api_endpoint_host_public"}}image-3.{{ include "host_fqdn" . }}{{end}}
 
-{{define "neutron_db_host"}}neutron-mariadb.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}{{end}}
-{{define "neutron_api_endpoint_host_admin"}}neutron-server.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}{{end}}
-{{define "neutron_api_endpoint_host_internal"}}neutron-server.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}{{end}}
-{{define "neutron_api_endpoint_host_public"}}network-3.{{.Values.global.region}}.{{.Values.global.tld}}{{end}}
+{{define "neutron_db_host"}}neutron-mariadb.{{ include "svc_fqdn" . }}{{end}}
+{{define "neutron_api_endpoint_host_admin"}}neutron-server.{{ include "svc_fqdn" . }}{{end}}
+{{define "neutron_api_endpoint_host_internal"}}neutron-server.{{ include "svc_fqdn" . }}{{end}}
+{{define "neutron_api_endpoint_host_public"}}network-3.{{ include "host_fqdn" . }}{{end}}
 
-{{define "ironic_db_host"}}ironic-mariadb.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}{{end}}
-{{define "ironic_api_endpoint_host_admin"}}ironic-api.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}{{end}}
-{{define "ironic_api_endpoint_host_internal"}}ironic-api.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}{{end}}
-{{define "ironic_api_endpoint_host_public"}}baremetal-3.{{.Values.global.region}}.{{.Values.global.tld}}{{end}}
+{{define "ironic_db_host"}}ironic-mariadb.{{ include "svc_fqdn" . }}{{end}}
+{{define "ironic_api_endpoint_host_admin"}}ironic-api.{{ include "svc_fqdn" . }}{{end}}
+{{define "ironic_api_endpoint_host_internal"}}ironic-api.{{ include "svc_fqdn" . }}{{end}}
+{{define "ironic_api_endpoint_host_public"}}baremetal-3.{{ include "host_fqdn" . }}{{end}}
 
-{{define "ironic_console_endpoint_host_public"}}baremetal-console-3.{{.Values.global.region}}.{{.Values.global.tld}}{{end}}
+{{define "ironic_console_endpoint_host_public"}}baremetal-console-3.{{ include "host_fqdn" . }}{{end}}
 
-{{define "ironic_inspector_endpoint_host_admin"}}ironic-inspector.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}{{end}}
-{{define "ironic_inspector_endpoint_host_internal"}}ironic-inspector.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}{{end}}
-{{define "ironic_inspector_endpoint_host_public"}}baremetal-inspector-3.{{.Values.global.region}}.{{.Values.global.tld}}{{end}}
+{{define "ironic_inspector_endpoint_host_admin"}}ironic-inspector.{{ include "svc_fqdn" . }}{{end}}
+{{define "ironic_inspector_endpoint_host_internal"}}ironic-inspector.{{ include "svc_fqdn" . }}{{end}}
+{{define "ironic_inspector_endpoint_host_public"}}baremetal-inspector-3.{{ include "host_fqdn" . }}{{end}}
 
-{{define "barbican_db_host"}}barbican-mariadb.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}{{end}}
-{{define "barbican_api_endpoint_host_admin"}}barbican-api.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}{{end}}
-{{define "barbican_api_endpoint_host_internal"}}barbican-api.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}{{end}}
-{{define "barbican_api_endpoint_host_public"}}keymanager-3.{{.Values.global.region}}.{{.Values.global.tld}}{{end}}
+{{define "barbican_db_host"}}barbican-mariadb.{{ include "svc_fqdn" . }}{{end}}
+{{define "barbican_api_endpoint_host_admin"}}barbican-api.{{ include "svc_fqdn" . }}{{end}}
+{{define "barbican_api_endpoint_host_internal"}}barbican-api.{{ include "svc_fqdn" . }}{{end}}
+{{define "barbican_api_endpoint_host_public"}}keymanager-3.{{ include "host_fqdn" . }}{{end}}
 
-{{define "cinder_db_host"}}cinder-mariadb.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}{{end}}
-{{define "cinder_api_endpoint_host_admin"}}cinder-api.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}{{end}}
-{{define "cinder_api_endpoint_host_internal"}}cinder-api.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}{{end}}
-{{define "cinder_api_endpoint_host_public"}}volume-3.{{.Values.global.region}}.{{.Values.global.tld}}{{end}}
+{{define "cinder_db_host"}}cinder-mariadb.{{ include "svc_fqdn" . }}{{end}}
+{{define "cinder_api_endpoint_host_admin"}}cinder-api.{{ include "svc_fqdn" . }}{{end}}
+{{define "cinder_api_endpoint_host_internal"}}cinder-api.{{ include "svc_fqdn" . }}{{end}}
+{{define "cinder_api_endpoint_host_public"}}volume-3.{{ include "host_fqdn" . }}{{end}}
 
-{{define "manila_db_host"}}manila-mariadb.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}{{end}}
-{{define "manila_api_endpoint_host_admin"}}manila-api.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}{{end}}
-{{define "manila_api_endpoint_host_internal"}}manila-api.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}{{end}}
-{{define "manila_api_endpoint_host_public"}}share-3.{{.Values.global.region}}.{{.Values.global.tld}}{{end}}
+{{define "manila_db_host"}}manila-mariadb.{{ include "svc_fqdn" . }}{{end}}
+{{define "manila_api_endpoint_host_admin"}}manila-api.{{ include "svc_fqdn" . }}{{end}}
+{{define "manila_api_endpoint_host_internal"}}manila-api.{{ include "svc_fqdn" . }}{{end}}
+{{define "manila_api_endpoint_host_public"}}share-3.{{ include "host_fqdn" . }}{{end}}
 
-{{define "designate_db_host"}}designate-mariadb.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}{{end}}
-{{define "designate_api_endpoint_host_admin"}}designate-api.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}{{end}}
-{{define "designate_api_endpoint_host_internal"}}designate-api.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}{{end}}
-{{define "designate_api_endpoint_host_public"}}dns-3.{{.Values.global.region}}.{{.Values.global.tld}}{{end}}
+{{define "designate_db_host"}}designate-mariadb.{{ include "svc_fqdn" . }}{{end}}
+{{define "designate_api_endpoint_host_admin"}}designate-api.{{ include "svc_fqdn" . }}{{end}}
+{{define "designate_api_endpoint_host_internal"}}designate-api.{{ include "svc_fqdn" . }}{{end}}
+{{define "designate_api_endpoint_host_public"}}dns-3.{{ include "host_fqdn" . }}{{end}}
 
-{{define "octavia_db_host"}}octavia-mariadb.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}{{end}}
-{{define "octavia_api_endpoint_host_admin"}}octavia-api.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}{{end}}
-{{define "octavia_api_endpoint_host_internal"}}octavia-api.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}{{end}}
-{{define "octavia_api_endpoint_host_public"}}loadbalancer-3.{{.Values.global.region}}.{{.Values.global.tld}}{{end}}
+{{define "octavia_db_host"}}octavia-mariadb.{{ include "svc_fqdn" . }}{{end}}
+{{define "octavia_api_endpoint_host_admin"}}octavia-api.{{ include "svc_fqdn" . }}{{end}}
+{{define "octavia_api_endpoint_host_internal"}}octavia-api.{{ include "svc_fqdn" . }}{{end}}
+{{define "octavia_api_endpoint_host_public"}}loadbalancer-3.{{ include "host_fqdn" . }}{{end}}
 
-{{define "arc_api_endpoint_host_public"}}arc.{{.Values.global.region}}.{{.Values.global.tld}}{{end}}
-{{define "lyra_api_endpoint_host_public"}}lyra.{{.Values.global.region}}.{{.Values.global.tld}}{{end}}
-{{define "webcli_api_endpoint_host_public"}}webcli.{{.Values.global.region}}.{{.Values.global.tld}}{{end}}
+{{define "arc_api_endpoint_host_public"}}arc.{{ include "host_fqdn" . }}{{end}}
+{{define "lyra_api_endpoint_host_public"}}lyra.{{ include "host_fqdn" . }}{{end}}
+{{define "webcli_api_endpoint_host_public"}}webcli.{{ include "host_fqdn" . }}{{end}}
 
-{{define "swift_endpoint_host"}}objectstore-3.{{.Values.global.region}}.{{.Values.global.tld}}{{end}}
+{{define "swift_endpoint_host"}}objectstore-3.{{ include "host_fqdn" . }}{{end}}
 
-{{define "cfm_api_endpoint_host_public"}}cfm.{{.Values.global.region}}.{{.Values.global.tld}}{{end}}
+{{define "cfm_api_endpoint_host_public"}}cfm.{{ include "host_fqdn" . }}{{end}}
 
 {{define "sftp_api_endpoint_host"}}sftp-bridge.{{ .Values.global.region }}.{{ .Values.global.tld }}{{end}}
 
