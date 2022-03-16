@@ -1,20 +1,23 @@
-{{- $values := .Values }}
-{{- if $values.alerts.enabled }}
+{{- if .Values.alerts.enabled }}
 {{- range $path, $bytes := .Files.Glob "alerts/*.alerts" }}
 ---
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
 
+{{ $name := trimSuffix ".alerts" $path }}
 metadata:
-  name: {{ printf "octobus-query-exporter-%s" $path | replace "/" "-" }}
+  name: {{ printf "octobus-query-exporter-%s" $name | replace "/" "-" }}
   labels:
     app: octobus-query-exporter
     tier: infra
     type: alerting-rules
-    prometheus: {{ required ".Values.alerts.prometheus missing" $values.alerts.prometheus | quote }}
+    prometheus: {{ required ".Values.alerts.prometheus missing" $.Values.alerts.prometheus | quote }}
 
 spec:
 {{ printf "%s" $bytes | indent 2 }}
 
 {{- end }}
+
+{{ include (print .Template.BasePath "/alerts/_audit.tpl") $ }}
+
 {{- end }}
