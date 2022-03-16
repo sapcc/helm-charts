@@ -21,7 +21,7 @@ postgresql+psycopg2://{{$user}}:{{$password | urlquery}}@{{.Chart.Name}}-postgre
 
 {{define "db_url_mysql" }}
     {{- if kindIs "map" . -}}
-mysql+pymysql://root:{{.Values.mariadb.root_password | required ".Values.mariadb.root_password is required!" }}@{{include "db_host_mysql" .}}/{{.Values.db_name}}
+mysql+pymysql://{{ coalesce .Values.dbUser .Values.global.dbUser "root" }}:{{ coalesce .Values.dbPassword .Values.global.dbPassword .Values.mariadb.root_password | required ".Values.mariadb.root_password is required!" }}@{{ include "db_host_mysql" . }}/{{.Values.db_name}}
     {{- else }}
         {{- $envAll := index . 0 }}
         {{- $name := index . 1 }}
