@@ -14,13 +14,13 @@ groups:
       description: 'es-query-exporter in {{ $labels.region }} is missing.'
       summary: 'es-query-exporter in {{ $labels.region }} is missing.'
   - alert: OctobusQueryExporterError
-    expr: elasticsearch_octobus_exporter_error_hits
+    expr: elasticsearch_octobus_exporter_error_hits > 0
     labels:
       severity: warning
       tier: monitor
     annotations:
-      description: 'elastic-query-exporter in {{ $labels.region }} had an error: {{ $labels.log }}'
-      summary: 'elastic-query-exporter in {{ $labels.region }} had an error.'
+      description: 'elastic-query-exporter had an error in the pod log'
+      summary: 'elastic-query-exporter had an error in the pod log.'
 
   - alert: OpenstackGlanceReturn50xCode
     expr: sum(rate(elasticsearch_openstack_glance_query_return_code_doc_count{glance="/v2/images", code=~"50.*"}[30m]))by(query, code) > 0
