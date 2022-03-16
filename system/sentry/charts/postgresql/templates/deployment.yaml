@@ -98,30 +98,6 @@ spec:
           - name: BACKUP_PGSQL_FULL
             value: {{.Values.backup.interval_full | quote}}
 {{- end }}
-{{- if .Values.metrics.enabled }}
-      - name: metrics
-        {{- if hasKey .Values.global "dockerHubMirror"}}
-        image: {{.Values.global.dockerHubMirror}}/{{ .Values.metrics.image }}:{{ .Values.metrics.imageTag }}
-        {{- else }}
-        image: "{{ .Values.metrics.image }}:{{ .Values.metrics.imageTag }}"
-        {{- end }}
-        imagePullPolicy: {{ default "" .Values.metrics.imagePullPolicy | quote }}
-        env:
-        - name: DATA_SOURCE_NAME
-          value: postgresql://postgres@localhost:5432?sslmode=disable
-        ports:
-        - name: metrics
-          containerPort: 9187
-        {{- if .Values.metrics.customMetrics }}
-        args: ["-extend.query-path", "/conf/custom-metrics.yaml"]
-        volumeMounts:
-          - name: custom-metrics
-            mountPath: /conf
-            readOnly: true
-        {{- end }}
-        resources:
-{{ toYaml .Values.metrics.resources | indent 10 }}
-{{- end }}
       volumes:
       - name: postgres-etc
         configMap:
@@ -132,12 +108,4 @@ spec:
           claimName: {{ if .Values.persistence.existingClaim }}{{ .Values.persistence.existingClaim }}{{- else }}{{ template "fullname" . }}{{- end }}
       {{- else }}
         emptyDir: {}
-      {{- end }}
-      {{- if and .Values.metrics.enabled .Values.metrics.customMetrics }}
-      - name: custom-metrics
-        secret:
-          secretName: {{ template "fullname" . }}
-          items:
-            - key: custom-metrics.yaml
-              path: custom-metrics.yaml
       {{- end }}
