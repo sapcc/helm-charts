@@ -136,7 +136,7 @@
   metrics_path: /metrics
   params:
     'match[]':
-      - '{__name__=~"^bastion_audit_log.+"}'
+      - '{__name__=~"^bastion_audit_log"}'
   scheme: https
   static_configs:
     - targets:
