@@ -64,7 +64,7 @@ filter {
 
     syslog_pri { }
 
-  if [hostname] =~ "^node\d{3}r" {
+  if [hostname] =~ "^node\d{1,3}r" {
     # grok {
     #   match => {
     #     "message" => [
