@@ -3,9 +3,9 @@ apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
 
 metadata:
-  name: elastic-query-exporter-audit
+  name: octobus-query-exporter-audit-alerts
   labels:
-    app: elastic-query-exporter
+    app: octobus-query-exporter
     tier: infra
     type: alerting-rules
     prometheus: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
@@ -38,6 +38,7 @@ spec:
           annotations:
             description: "Audit Logs are not indexed correctly"
             summary: "Audit Logs indexing not working"
+    {{- if .Values.auditSources }}
     {{- range .Values.auditSources }}
     {{- $name := .name }}
     {{- if contains "-" $name }}
@@ -56,4 +57,5 @@ spec:
           annotations:
             description: "There have been no logs for {{ .name }} in the last {{ .interval }}"
             summary: "Audit logs missing for {{ .name }}"
+    {{- end }}
     {{- end }}
