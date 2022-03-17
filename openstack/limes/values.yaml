@@ -53,9 +53,9 @@ pgmetrics:
   db_name: limes
 
   customMetrics:
-    limes_failed_project_scrapes:
+    limes_failing_scrapes:
       query: >
-        SELECT ps.type AS service, COUNT(ps.project_id) AS gauge
+        SELECT ps.type AS service_name, COUNT(ps.project_id) AS gauge
           FROM project_services ps
           WHERE ps.scrape_error_message != ''
          GROUP BY ps.type
@@ -65,11 +65,11 @@ pgmetrics:
             description: "Service type"
         - gauge:
             usage: "GAUGE"
-            description: "Total number of projects that failed quota/usage scrape"
+            description: "Total number of projects that are failing quota/usage scrape"
 
-    limes_failed_project_rate_scrapes:
+    limes_failing_rate_scrapes:
       query: >
-        SELECT ps.type AS service, COUNT(ps.project_id) AS gauge
+        SELECT ps.type AS service_name, COUNT(ps.project_id) AS gauge
           FROM project_services ps
           WHERE ps.rates_scrape_error_message != ''
          GROUP BY ps.type
@@ -79,7 +79,7 @@ pgmetrics:
             description: "Service type"
         - gauge:
             usage: "GAUGE"
-            description: "Total number of projects that failed rate data scrape"
+            description: "Total number of projects that are failing rate data scrape"
 
 # Deploy limes Prometheus alerts.
 alerts:
