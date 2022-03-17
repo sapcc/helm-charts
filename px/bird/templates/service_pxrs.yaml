@@ -1,0 +1,36 @@
+{{- range $service, $service_config := .Values.config -}}
+{{ if and (hasPrefix "service_" $service) (has $service $.Values.deploy) }}
+{{- $service_number := trimPrefix "service_" $service | int -}}
+
+{{- range $domain, $domain_config := $service_config -}}
+{{ if and (hasPrefix "domain_" $domain) (has $domain $.Values.deploy) }}
+{{- $domain_number := trimPrefix "domain_" $domain | int -}}
+
+{{- range $instance, $instance_config := $domain_config -}}
+{{ if and (hasPrefix "instance_" $instance) (has $instance $.Values.deploy) }}
+{{- $instance_number := trimPrefix "instance_" $instance | int -}}
+{{- $deployment_name := printf "%s-pxrs-%d-s%d-%d" $.Values.region $domain_number $service_number $instance_number -}}
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $deployment_name }}
+  namespace: px
+spec:
+  ports:
+{{- range $lg, $lg_config := $.Values.looking_glass }}
+  - name: {{ $lg }}proxy
+    protocol: TCP
+    port: {{ $lg_config.proxy_port }}
+    targetPort: {{ $lg }}proxy
+{{- end }}
+  selector:
+    app: {{ $deployment_name }}
+
+{{ end -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
