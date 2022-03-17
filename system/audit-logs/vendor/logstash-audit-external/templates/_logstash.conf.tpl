@@ -204,7 +204,21 @@ filter {
 
 
 output {
-  if [type] == "audit" or "audit" in [tags] {
+  if [sap][cc][audit][source] == "awx" {
+    http {
+      cacert => "/usr/share/logstash/config/ca.pem"
+      url => "https://{{ .Values.global.forwarding.audit_awx.host }}"
+      format => "json"
+      http_method => "post"
+    }
+  } else if [sap][cc][audit][source] == "flatcar" {
+    http {
+      cacert => "/usr/share/logstash/config/ca.pem"
+      url => "https://{{ .Values.global.forwarding.audit_auditbeat.host }}"
+      format => "json"
+      http_method => "post"
+    }
+  } else if [type] == "audit" or "audit" in [tags] {
     http {
       cacert => "/usr/share/logstash/config/ca.pem"
       url => "https://{{ .Values.global.forwarding.audit.host }}"
