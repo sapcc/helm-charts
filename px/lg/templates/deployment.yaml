@@ -1,0 +1,53 @@
+{{ range $lg, $lg_config := .Values.looking_glass -}}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $.Values.region }}-pxrs-{{ $lg }}
+  namespace: px
+  labels:
+    app: {{ $.Values.region }}-pxrs-{{ $lg }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ $.Values.region }}-pxrs-{{ $lg }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+  template:
+    metadata:
+      labels:
+        app: {{ $.Values.region }}-pxrs-{{ $lg }}
+    spec:
+{{- if not $.Values.apod }}
+      tolerations:
+      - key: species
+        operator: Equal
+        value: px
+        effect: NoSchedule
+{{- end }}
+      containers:
+      - name: {{ $.Values.region }}-pxrs-{{ $lg }}
+        image: keppel.{{ $.Values.region }}.cloud.sap/{{ $.Values.lg_image }}
+        imagePullPolicy: Always
+        volumeMounts:
+        - name: vol-{{ $.Values.region }}-pxrs-{{ $lg }}
+          mountPath: /etc/bird-lg
+        - name: vol-{{ $.Values.region }}-pxrs-lg-communities
+          mountPath: /etc/bird-lg-communities
+        command: ["python3"]
+        args: ["lg.py", "{{ $.Values.region }}-pxrs-{{ $lg }}.cfg"]
+        ports:
+        - containerPort: 80
+          name: {{ $lg }}web
+      volumes:
+        - name: vol-{{ $.Values.region }}-pxrs-{{ $lg }}
+          configMap:
+            name: cfg-{{ $.Values.region }}-pxrs-{{ $lg }}
+        - name: vol-{{ $.Values.region }}-pxrs-lg-communities
+          configMap:
+            name: cfg-{{ $.Values.region }}-pxrs-lg-communities
+{{ end }}
