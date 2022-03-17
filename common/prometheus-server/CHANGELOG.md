@@ -1,3 +1,8 @@
+## 5.0.0
+
+* Add OAUTH2 support on ingress level.
+* **Breaking change**: Helm values for ingress level authentication were moved one level down to `.Values.ingress.authentication.sso`
+
 ## 4.6.0
 
 * Adds VerticalPodAutoscaler for Prometheus StatefulSet in recommendation mode
