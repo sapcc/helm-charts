@@ -1,0 +1,29 @@
+{{- range $service, $service_config := .Values.config -}}
+{{ if and (hasPrefix "service_" $service) (has $service $.Values.deploy) }}
+{{- $service_number := trimPrefix "service_" $service | int -}}
+
+{{- range $domain, $domain_config := $service_config -}}
+{{ if and (hasPrefix "domain_" $domain) (has $domain $.Values.deploy) }}
+{{- $domain_number := trimPrefix "domain_" $domain | int -}}
+
+{{- range $instance, $instance_config := $domain_config -}}
+{{ if and (hasPrefix "instance_" $instance) (has $instance $.Values.deploy) }}
+{{- $instance_number := trimPrefix "instance_" $instance | int -}}
+{{- $deployment_name := printf "%s-pxrs-%d-s%d" $.Values.region $domain_number $service_number -}}
+
+{{- $config_path := printf "%s%s.json" $.Values.bird_config_path "lg_px_communities_v2" -}}
+---
+kind: ConfigMap
+apiVersion: v1
+metadata:
+    name: cfg-{{ $.Values.region }}-pxrs-lg-communities
+data:
+    "cfg-{{ $.Values.region }}-pxrs-lg-communities.cfg": |
+{{ $.Files.Get $config_path | indent 8}}
+
+{{ end -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
