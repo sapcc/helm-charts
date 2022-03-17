@@ -39,6 +39,13 @@ inhibit_rules:
       alertname: 'PodNotReady|ManyPodsNotReadyOnNode'
     equal: ['node']
 
+  # Inhibit kubelet alerts for nodes that are in maintenance.
+  - source_match:
+      'cloud.sap/maintenance-state': 'in-maintenance'
+    target_matchers:
+      alertname: '.*KubeletDown'
+    equal: ['node']
+
 route:
   group_by: ['region', 'service', 'alertname', 'cluster']
   group_wait: 1m
