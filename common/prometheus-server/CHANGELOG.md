@@ -1,3 +1,7 @@
+## 5.2.0
+
+* Use internal ingress with SSO authentication for federation.
+
 ## 5.1.0
 
 * Update Prometheus to `v2.34.0`.

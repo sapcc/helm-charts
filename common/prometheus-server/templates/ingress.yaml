@@ -1,6 +1,6 @@
 {{- if .Values.ingress.enabled }}
 {{- $root := . }}
-apiVersion: networking.k8s.io/v1beta1
+apiVersion: networking.k8s.io/v1
 kind: Ingress
 
 metadata:
@@ -16,7 +16,7 @@ metadata:
     {{ end }}
     {{- if .Values.ingress.authentication.sso.enabled}}
     ingress.kubernetes.io/auth-tls-secret: {{ required ".Values.ingress.authentication.sso.authTLSSecret missing" .Values.ingress.authentication.sso.authTLSSecret | quote }}
-    ingress.kubernetes.io/auth-tls-verify-depth: {{ required ".Values.ingress.authentication.sso.authTLSVerifyDepth missing" .Values.ingress.authentication.authTLSVerifyDepth | quote }}
+    ingress.kubernetes.io/auth-tls-verify-depth: {{ required ".Values.ingress.authentication.sso.authTLSVerifyDepth missing" .Values.ingress.authentication.sso.authTLSVerifyDepth | quote }}
     ingress.kubernetes.io/auth-tls-verify-client: {{ required ".Values.ingress.authentication.sso.authTLSVerifyClient missing" .Values.ingress.authentication.sso.authTLSVerifyClient | quote }}
     {{ end }}
     {{- if .Values.ingress.annotations }}
@@ -31,13 +31,17 @@ spec:
         paths:
         - path: /
           backend:
-            serviceName: {{ include "prometheus.fullName" $root }}
-            servicePort: http
+            service:
+              name: {{ include "prometheus.fullName" $root }}
+              port:
+                name: http
         {{- if $root.Values.thanos.enabled }}
         - path: {{ required ".Values.thanos.querier.webRouteprefix missing" $root.Values.thanos.querier.webRouteprefix }}
           backend:
-            serviceName: {{ include "prometheus.fullName" $root }}-thanos-query
-            servicePort: http
+            service:
+              name: {{ include "prometheus.fullName" $root }}-thanos-query
+              port:
+                name: http
         {{- end }}
     {{- end }}
     {{- range $host := .Values.ingress.hostsFQDN }}
@@ -46,13 +50,17 @@ spec:
         paths:
         - path: /
           backend:
-            serviceName: {{ include "prometheus.fullName" $root }}
-            servicePort: http
+            service:
+              name: {{ include "prometheus.fullName" $root }}
+              port:
+                name: http
         {{- if $root.Values.thanos.enabled }}
         - path: {{ required ".Values.thanos.querier.webRouteprefix missing" $root.Values.thanos.querier.webRouteprefix }}
           backend:
-            serviceName: {{ include "prometheus.fullName" $root }}-thanos-query
-            servicePort: http
+            service:
+              name: {{ include "prometheus.fullName" $root }}-thanos-query
+              port:
+                name: http
         {{- end }}
     {{- end }}
   tls:
