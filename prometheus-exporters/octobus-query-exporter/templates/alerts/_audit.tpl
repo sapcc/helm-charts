@@ -3,7 +3,7 @@ apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
 
 metadata:
-  name: octobus-query-exporter-audit-alerts
+  name: octobus-query-exporter-alerts-audit
   labels:
     app: octobus-query-exporter
     tier: infra
