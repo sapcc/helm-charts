@@ -4,7 +4,7 @@ groups:
 - name: maintenance.alerts
   rules:
   - alert: NodeInMaintenance
-    expr: kube_node_labels{label_cloud_sap_maintenance_state="in-maintenance"} == 1
+    expr: max by (node) (kube_node_labels{label_cloud_sap_maintenance_state="in-maintenance"}) == 1
     for: 2m
     labels:
       tier: {{ required ".Values.tier missing" .Values.tier }}
