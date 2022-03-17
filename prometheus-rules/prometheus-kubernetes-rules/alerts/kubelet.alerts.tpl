@@ -12,6 +12,7 @@ groups:
       context: kubelet
       dashboard: kubernetes-health
       playbook: docs/support/playbook/kubernetes/k8s_node_not_ready.html
+      inhibited-by: node-maintenance
     annotations:
       description: Many Kubelets are DOWN
       summary: More than 2 Kubelets are DOWN
@@ -27,6 +28,7 @@ groups:
       meta: "{{`{{ $labels.node }}`}}"
       dashboard: kubernetes-health
       playbook: docs/support/playbook/kubernetes/k8s_node_not_ready.html
+      inhibited-by: node-maintenance
     annotations:
       description: Kublet on {{`{{ $labels.node }}`}} is DOWN.
       summary: A Kubelet is DOWN
