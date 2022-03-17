@@ -1,3 +1,7 @@
+## 5.1.0
+
+* Update Prometheus to `v2.34.0`.
+
 ## 5.0.0
 
 * Add OAUTH2 support on ingress level.
