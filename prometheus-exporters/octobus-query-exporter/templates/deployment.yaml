@@ -2,14 +2,14 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: elastic-query-exporter
+  name: octobus-query-exporter
   namespace: infra-monitoring
   labels:
-    component: elastic-query-exporter
+    component: octobus-query-exporter
 spec:
   selector:
     matchLabels:
-      component: elastic-query-exporter
+      component: octobus-query-exporter
   replicas: 1
   strategy:
     type: RollingUpdate
@@ -19,7 +19,7 @@ spec:
   template:
     metadata:
       labels:
-        component: elastic-query-exporter
+        component: octobus-query-exporter
       annotations:
         checksum/configmap.yaml: {{ include  (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
     spec:
@@ -30,17 +30,17 @@ spec:
         runAsNonRoot: true
         runAsUser: 1000
       volumes:
-        - name: elastic-query-exporter
+        - name: octobus-query-exporter
           configMap:
-            name: elastic-query-exporter
+            name: octobus-query-exporter
       containers:
-        - name: elastic-query-exporter
-          image: keppel.eu-de-1.cloud.sap/ccloud/elastic-query-exporter:{{ .Values.version }}
+        - name: octobus-query-exporter
+          image: keppel.eu-de-1.cloud.sap/ccloud/prometheus-es-exporter:{{ .Values.version }}
           imagePullPolicy: IfNotPresent
           command: [ "prometheus-es-exporter",
                      "--cluster-health-disable", "--nodes-stats-disable",
                      "--indices-stats-disable", "--indices-aliases-disable", "--indices-mappings-disable",
-                     "--config-dir", "/elastic-query-exporter/",
+                     "--config-dir", "/octobus-query-exporter/",
                      "--port", "{{ .Values.listen_port }}",
                      "--log-level", "{{ .Values.log_level }}",
                      "--es-cluster", "{{ .Values.global.octobus.protocol }}://{{ .Values.global.octobus.host }}.{{ regexReplaceAll "-" .Values.global.region "" | replace "qade1" "eude2" }}.{{ .Values.global.octobus.domain }}:{{ .Values.global.octobus.port }}",
@@ -49,8 +49,8 @@ spec:
             - name: metrics
               containerPort: {{ .Values.listen_port }}
           volumeMounts:
-            - mountPath: /elastic-query-exporter
-              name: elastic-query-exporter
+            - mountPath: /octobus-query-exporter
+              name: octobus-query-exporter
           securityContext:
             capabilities:
               drop:
