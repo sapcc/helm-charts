@@ -56,7 +56,7 @@
   @type copy
   <store>
     @type http
-    endpoint "https://{{.Values.global.forwarding.audit.host}}"
+    endpoint "https://{{.Values.global.forwarding.audit_auditbeat.host}}"
     tls_ca_cert_path "/etc/ssl/certs/ca-certificates.crt"
     slow_flush_log_threshold 105.0
     retryable_response_codes [503]
