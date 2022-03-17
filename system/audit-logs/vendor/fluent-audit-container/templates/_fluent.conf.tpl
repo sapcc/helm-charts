@@ -281,7 +281,7 @@
   </store>
   <store>
     @type prometheus
-    @id to_prometheus
+    @id to_prometheus_tools
     <metric>
       name fluentd_output_status_num_records_total
       type counter
