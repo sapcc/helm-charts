@@ -99,11 +99,27 @@ groups:
       context: failedscrapes
       dashboard: limes-overview
       service: '{{ $labels.service_name }}'
-      severity: warning
+      severity: info
       tier: os
       playbook: docs/support/playbook/limes/failed_scrapes.html
     annotations:
       description: Limes cannot scrape data from {{ title $labels.service_name }}
+        for more than an hour. Please check if {{ title $labels.service_name }} is working.
+        The `kubectl logs` for limes-collect-ccloud contain additional info.
+      summary: Limes cannot scrape {{ title $labels.service_name }}
+
+  - alert: OpenstackLimesFailingScrapes
+    expr: max(limes_failing_scrapes_gauge[5m]) BY (service_name) > 0
+    for: 1h
+    labels:
+      context: failedscrapes
+      dashboard: limes-overview
+      service: '{{ $labels.service_name }}'
+      severity: warning
+      tier: os
+      playbook: docs/support/playbook/limes/failed_scrapes.html
+    annotations:
+      description: Limes cannot scrape data for projects from {{ title $labels.service_name }}
         for more than an hour. Please check if {{ title $labels.service_name }} is working.
         The `kubectl logs` for limes-collect-ccloud contain additional info.
       summary: Limes cannot scrape {{ title $labels.service_name }}
@@ -133,11 +149,27 @@ groups:
       context: failedratescrapes
       dashboard: limes-overview
       service: '{{ $labels.service_name }}'
-      severity: warning
+      severity: info
       tier: os
       playbook: docs/support/playbook/limes/failed_scrapes.html
     annotations:
       description: Limes cannot scrape rate data from {{ title $labels.service_name }}
+        for more than an hour. Please check if {{ title $labels.service_name }} is working.
+        The `kubectl logs` for limes-collect-ccloud contain additional info.
+      summary: Limes cannot scrape {{ title $labels.service_name }}
+
+  - alert: OpenstackLimesFailingRateScrapes
+    expr: max(limes_failing_rate_scrapes_gauge[5m]) BY (service_name) > 0
+    for: 1h
+    labels:
+      context: failedscrapes
+      dashboard: limes-overview
+      service: '{{ $labels.service_name }}'
+      severity: warning
+      tier: os
+      playbook: docs/support/playbook/limes/failed_scrapes.html
+    annotations:
+      description: Limes cannot scrape rate data for projects from {{ title $labels.service_name }}
         for more than an hour. Please check if {{ title $labels.service_name }} is working.
         The `kubectl logs` for limes-collect-ccloud contain additional info.
       summary: Limes cannot scrape {{ title $labels.service_name }}
