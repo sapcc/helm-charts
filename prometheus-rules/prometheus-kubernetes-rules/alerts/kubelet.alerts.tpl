@@ -3,7 +3,7 @@ groups:
 - name: kubelet.alerts
   rules:
   - alert: ManyKubeletDown
-    expr: count(up{job="kubernetes-kubelet"}) - sum(up{job="kubernetes-kubelet"}) > 2
+    expr: count(up{job="kubernetes-kubelet"} unless on (node) kube_node_labels{label_cloud_sap_maintenance_state="in-maintenance"}) - sum(up{job="kubernetes-kubelet"} unless on (node) kube_node_labels{label_cloud_sap_maintenance_state="in-maintenance"})
     for: 10m
     labels:
       tier: {{ required ".Values.tier missing" .Values.tier }}
@@ -12,7 +12,6 @@ groups:
       context: kubelet
       dashboard: kubernetes-health
       playbook: docs/support/playbook/kubernetes/k8s_node_not_ready.html
-      inhibited-by: node-maintenance
     annotations:
       description: Many Kubelets are DOWN
       summary: More than 2 Kubelets are DOWN
