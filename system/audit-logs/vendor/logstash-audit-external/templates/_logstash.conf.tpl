@@ -64,7 +64,7 @@ filter {
 
     syslog_pri { }
 
-  if [hostname] =~ "^node\d{1,3}r" {
+  if [hostname] =~ "^node\d{1,3}r" or [host] == "10.46.22.24" or [host] == "10.67.75.240" {
     # grok {
     #   match => {
     #     "message" => [
