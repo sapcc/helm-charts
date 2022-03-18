@@ -1,4 +1,4 @@
-{{- if .Values.ingress.enabled }}
+{{- if .Values.internalIngress.enabled }}
 {{- $root := . }}
 apiVersion: networking.k8s.io/v1
 kind: Ingress
@@ -10,22 +10,27 @@ metadata:
   annotations:
     kubernetes.io/tls-acme: "true"
     disco: "true"
-    {{- if .Values.ingress.authentication.sso.enabled}}
-    ingress.kubernetes.io/auth-tls-secret: {{ required ".Values.ingress.authentication.sso.authTLSSecret missing" .Values.ingress.authentication.sso.authTLSSecret | quote }}
-    ingress.kubernetes.io/auth-tls-verify-depth: {{ required ".Values.ingress.authentication.sso.authTLSVerifyDepth missing" .Values.ingress.authentication.sso.authTLSVerifyDepth | quote }}
-    ingress.kubernetes.io/auth-tls-verify-client: {{ required ".Values.ingress.authentication.sso.authTLSVerifyClient missing" .Values.ingress.authentication.sso.authTLSVerifyClient | quote }}
+    {{- if .Values.internalIngress.authentication.oauth.enabled }}
+    ingress.kubernetes.io/auth-url: {{ required ".Values.internalIngress.authentication.oauth.authURL missing" .Values.internalIngress.authentication.oauth.authURL }}
+    {{ if .Values.internalIngress.authentication.oauth.authSignInURL }}ingress.kubernetes.io/auth-signin: {{ .Values.internalIngress.authentication.oauth.authSignInURL }} {{ end }}
     {{ end }}
-    {{- if .Values.ingress.annotations }}
-{{ toYaml .Values.ingress.annotations | indent 4 }}
+    {{- if .Values.internalIngress.authentication.sso.enabled}}
+    ingress.kubernetes.io/auth-tls-secret: {{ required ".Values.internalIngress.authentication.sso.authTLSSecret missing" .Values.internalIngress.authentication.sso.authTLSSecret | quote }}
+    ingress.kubernetes.io/auth-tls-verify-depth: {{ required ".Values.internalIngress.authentication.sso.authTLSVerifyDepth missing" .Values.internalIngress.authentication.sso.authTLSVerifyDepth | quote }}
+    ingress.kubernetes.io/auth-tls-verify-client: {{ required ".Values.internalIngress.authentication.sso.authTLSVerifyClient missing" .Values.internalIngress.authentication.sso.authTLSVerifyClient | quote }}
+    {{ end }}
+    {{- if .Values.internalIngress.annotations }}
+{{ toYaml .Values.internalIngress.annotations | indent 4 }}
     {{ end }}
 
 spec:
   rules:
-    {{- range $host := .Values.ingress.hosts }}
-    - host: {{ include "fqdnHelper" (list (printf "%s-internal" $host) $root) }}
+    {{- range $host := .Values.internalIngress.hosts }}
+    - host: {{ include "fqdnHelper" (list $host $root) }}
       http:
         paths:
           - path: /
+            pathType: ImplementationSpecific
             backend:
               service:
                 name: {{ include "prometheus.fullName" $root }}
@@ -33,6 +38,7 @@ spec:
                   name: http
         {{- if $root.Values.thanos.enabled }}
           - path: {{ required ".Values.thanos.querier.webRouteprefix missing" $root.Values.thanos.querier.webRouteprefix }}
+            pathType: ImplementationSpecific
             backend:
               service:
                 name: {{ include "prometheus.fullName" $root }}-thanos-query
@@ -40,11 +46,12 @@ spec:
                   name: http
         {{- end }}
     {{- end }}
-    {{- range $host := .Values.ingress.hostsFQDN }}
-    - host: {{ printf "%s-internal" $host }}
+    {{- range $host := .Values.internalIngress.hostsFQDN }}
+    - host: {{ $host }}
       http:
         paths:
           - path: /
+            pathType: ImplementationSpecific
             backend:
               service:
                 name: {{ include "prometheus.fullName" $root }}
@@ -52,6 +59,7 @@ spec:
                   name: http
         {{- if $root.Values.thanos.enabled }}
           - path: {{ required ".Values.thanos.querier.webRouteprefix missing" $root.Values.thanos.querier.webRouteprefix }}
+            pathType: ImplementationSpecific
             backend:
               service:
                 name: {{ include "prometheus.fullName" $root }}-thanos-query
@@ -62,10 +70,10 @@ spec:
   tls:
     - secretName: tls-internal-{{ include "prometheus.externalURL" $root | replace "." "-" }}
       hosts:
-        {{- range $host := .Values.ingress.hosts }}
-        - {{ include "fqdnHelper" (list (printf "%s-internal" $host) $root) }}
+        {{- range $host := .Values.internalIngress.hosts }}
+        - {{ include "fqdnHelper" (list $host $root) }}
         {{- end }}
-        {{- range $host := .Values.ingress.hostsFQDN }}
-        - {{ printf "%s-internal" $host }}
+        {{- range $host := .Values.internalIngress.hostsFQDN }}
+        - {{ $host }}
         {{- end }}
 {{- end }}

@@ -1,3 +1,7 @@
+## 5.3.0
+
+* Allow separate configuration of internal ingress via values. 
+
 ## 5.2.0
 
 * Use internal ingress with SSO authentication for federation.
