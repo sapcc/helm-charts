@@ -13,6 +13,7 @@
 ## 5.0.0
 
 * Add OAUTH2 support on ingress level.
+* Use ingress API version `networking.k8s.io/v1`.
 * **Breaking change**: Helm values for ingress level authentication were moved one level down to `.Values.ingress.authentication.sso`
 
 ## 4.6.0
