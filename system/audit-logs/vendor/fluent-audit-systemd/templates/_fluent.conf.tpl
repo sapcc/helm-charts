@@ -49,6 +49,8 @@
   @type record_transformer
   <record>
     sap.cc.audit.source "flatcar"
+    sap.cc.cluster "{{ .Values.global.cluster }}"
+    sap.cc.region "{{ .Values.global.region }}"
   </record>
 </filter>
 
