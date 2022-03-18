@@ -52,3 +52,21 @@ rabbit://{{ default "" .Values.global.user_suffix | print .Values.rabbitmq_cell2
 
   {{- end -}}
 {{- end -}}
+
+{{- define "job_metadata" }}
+  {{- $name := index . 1 }}
+  {{- with index . 0 }}
+labels:
+{{ tuple . .Release.Name $name | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 2 }}
+annotations:
+  bin-hash: {{ include (print .Template.BasePath "/bin/_" $name ".tpl") . | sha256sum }}
+  {{- end }}
+{{- end }}
+
+{{- define "job_name" }}
+  {{- $name := index . 1 }}
+  {{- with index . 0 }}
+    {{- $hash := include (print .Template.BasePath "/bin/_" $name ".tpl") . | sha256sum }}
+{{- .Release.Name }}-{{ $name }}-{{ substr 0 4 $hash }}-{{ .Values.imageVersion | required "Please set nova.imageVersion or similar"}}
+  {{- end }}
+{{- end }}
