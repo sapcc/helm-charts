@@ -849,3 +849,25 @@
     - action: labeldrop
       regex: "metrics_label"
 {{ end }}
+
+{{- if .Values.vault_qa_exporter.enabled -}}
+- job_name: 'vault/qa'
+  scrape_interval: 120s
+  scrape_timeout: 60s
+  metrics_path: /v1/sys/metrics
+  params:
+    format: ['prometheus']
+  static_configs:
+    - targets: ['https://vault.qa-de-1.cloud.sap/']
+{{ end }}
+
+{{- if .Values.vault_prod_exporter.enabled -}}
+- job_name: 'vault/prod'
+  scrape_interval: 120s
+  scrape_timeout: 60s
+  metrics_path: /v1/sys/metrics
+  params:
+    format: ['prometheus']
+  static_configs:
+    - targets: ['https://vault.global.cloud.sap/']
+{{ end }}
