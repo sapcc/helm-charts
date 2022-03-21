@@ -54,10 +54,13 @@ pgmetrics:
 
   customMetrics:
     limes_failing_scrapes:
+      # The `SUM(...)` has mostly the same effect as `COUNT(*) ... WHERE
+      # ps.scrape_error_message != ''`, but generates zero-valued results for
+      # all service types without scrape errors. This ensures that an absence
+      # of errors does not trigger a metric absence alert.
       query: >
-        SELECT ps.type AS service_name, COUNT(ps.project_id) AS gauge
+        SELECT ps.type AS service_name, SUM(CASE WHEN ps.scrape_error_message = '' THEN 0 ELSE 1 END) AS gauge
           FROM project_services ps
-          WHERE ps.scrape_error_message != ''
          GROUP BY ps.type
       metrics:
         - service_name:
@@ -68,10 +71,10 @@ pgmetrics:
             description: "Total number of projects that are failing quota/usage scrape"
 
     limes_failing_rate_scrapes:
+      # Same strategy as above for `limes_failing_scrapes`.
       query: >
-        SELECT ps.type AS service_name, COUNT(ps.project_id) AS gauge
+        SELECT ps.type AS service_name, SUM(CASE WHEN ps.rates_scrape_error_message = '' THEN 0 ELSE 1 END) AS gauge
           FROM project_services ps
-          WHERE ps.rates_scrape_error_message != ''
          GROUP BY ps.type
       metrics:
         - service_name:
