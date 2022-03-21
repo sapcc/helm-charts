@@ -1,3 +1,7 @@
+## 5.3.2
+
+* Optional additional internal ingress is limited to `/federate` and thanos paths. 
+
 ## 5.3.1
 
 * Make ingress API version depend on k8s version.
