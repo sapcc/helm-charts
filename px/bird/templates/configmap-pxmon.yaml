@@ -1,0 +1,119 @@
+{{- range $service, $service_config := .Values.config -}}
+{{ if and (hasPrefix "service_" $service) (has $service $.Values.deploy) }}
+{{- $service_number := trimPrefix "service_" $service | int -}}
+
+{{- range $domain, $domain_config := $service_config -}}
+{{ if and (hasPrefix "domain_" $domain) (has $domain $.Values.deploy) }}
+{{- $domain_number := trimPrefix "domain_" $domain | int -}}
+
+{{- range $instance, $instance_config := $domain_config -}}
+{{ if and (hasPrefix "instance_" $instance) (has $instance $.Values.deploy) }}
+{{- $instance_number := trimPrefix "instance_" $instance | int -}}
+{{- if get $instance_config "pxmon_ip" -}}
+
+{{- $deployment_name := printf "%s-pxrs-%d-s%d-%d-pxmon" $.Values.region $domain_number $service_number $instance_number -}}
+{{- $other_domain := printf "domain_%d" (add (mod $domain_number 2) 1) -}}
+{{- $other_instance := printf "instance_%d" (add (mod $instance_number 2) 1) -}}
+
+---
+kind: ConfigMap
+apiVersion: v1
+metadata:
+    name: cfg-{{ $deployment_name }}
+data:
+  "cfg-{{ $deployment_name }}": |
+    #PX Monitor
+
+    timeformat protocol iso long;
+
+    protocol kernel kernel4 {
+      scan time 20;
+      ipv4 {
+        export where source != RTS_STATIC;
+      };
+    }
+
+    protocol device {
+      scan time 10;
+    }
+
+    protocol static {
+      ipv4;
+      route {{ $instance_config | trunc 3 }}/32 via {{ $instance_config | trunc 3 }};
+    }
+
+    router id from "vlan*";
+
+    define PREFIX_PXMON = [ 10.0.0.0/8{32,32} ];
+
+    template bgp IPV4_S2_TPL_BGP_DEFAULT
+    {
+      #debug { states, interfaces, events };
+      local as 4294705168;
+      graceful restart;
+      interpret communities on;
+      enable as4 on;
+      hold time 3;
+      startup hold time 240;
+      passive off;
+      keepalive time 1;
+      ipv4 {
+      };
+    }
+
+    filter IPV4_S2_IMPORT_PXMON
+    {
+      if (net ~ PREFIX_PXMON ) then
+      {
+        if (100,7000) ~ bgp_community then
+        {
+          if !(net ~ [ 10.218.255.157/32 ] ) then
+          {
+            accept;
+          }
+        }
+      }
+      reject;
+    }
+
+    filter IPV4_S2_EXPORT_PXMON
+    {
+      if (net ~ [ 10.218.255.157/32 ] ) then
+      {
+        bgp_community.add((100,7000));
+        #Test extended community
+        bgp_ext_community.add((ro,100,7000));
+        #Test large community
+        bgp_large_community.add((100, 0, 7000));
+        
+        accept;
+      }
+      reject;
+    }
+
+    protocol bgp 'eu-de-1-pxrs-1-s2-1' from IPV4_S2_TPL_BGP_DEFAULT
+    {
+      neighbor 10.218.255.129 as 4294705153;
+      ipv4 {
+          import filter IPV4_S2_IMPORT_PXMON;
+          export filter IPV4_S2_EXPORT_PXMON;
+        };
+    }
+
+    protocol bgp 'eu-de-1-pxrs-1-s2-2' from IPV4_S2_TPL_BGP_DEFAULT
+    {
+      neighbor 10.218.255.130 as 4294705153;
+      ipv4 {
+          import filter IPV4_S2_IMPORT_PXMON;
+          export filter IPV4_S2_EXPORT_PXMON;
+        };
+    }
+      
+
+{{ end -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}

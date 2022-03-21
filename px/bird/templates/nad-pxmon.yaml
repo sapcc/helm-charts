@@ -1,0 +1,30 @@
+{{- range $service, $service_config := .Values.config -}}
+{{ if and (hasPrefix "service_" $service) (has $service $.Values.deploy) }}
+{{- $service_number := trimPrefix "service_" $service | int -}}
+
+{{- range $domain, $domain_config := $service_config -}}
+{{ if and (hasPrefix "domain_" $domain) (has $domain $.Values.deploy) }}
+{{- $domain_number := trimPrefix "domain_" $domain | int -}}
+
+{{- range $instance, $instance_config := $domain_config -}}
+{{ if and (hasPrefix "instance_" $instance) (has $instance $.Values.deploy) }}
+{{- $instance_number := trimPrefix "instance_" $instance | int -}}
+{{- $deployment_name := printf "%s-pxrs-%d-s%d-%d-pxmon" $.Values.region $domain_number $service_number $instance_number -}}
+{{- if hasKey $instance_config "pxmon_ip" -}}
+---
+apiVersion: "k8s.cni.cncf.io/v1"
+kind: NetworkAttachmentDefinition
+metadata:
+  name: {{ $deployment_name  }} 
+  namespace: px
+spec:
+  config: |
+{{ tuple $domain_config.vlan $instance_config.pxmon_ip | include "multus_config" | indent 4 }}
+
+{{ end -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
