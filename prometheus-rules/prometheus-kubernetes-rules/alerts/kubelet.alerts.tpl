@@ -27,7 +27,7 @@ groups:
       meta: "{{`{{ $labels.node }}`}}"
       dashboard: kubernetes-health
       playbook: docs/support/playbook/kubernetes/k8s_node_not_ready.html
-      inhibited-by: node-maintenance
+      inhibited_by: node-maintenance
     annotations:
       description: Kublet on {{`{{ $labels.node }}`}} is DOWN.
       summary: A Kubelet is DOWN

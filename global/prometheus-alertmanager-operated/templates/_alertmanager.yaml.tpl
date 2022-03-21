@@ -43,7 +43,7 @@ inhibit_rules:
   - source_match:
       alertname: NodeInMaintenance
     target_match:
-      inhibited-by: node-maintenance
+      inhibited_by: node-maintenance
     equal: ['node']
 
 route:
