@@ -14,4 +14,4 @@ groups:
       meta: "Node {{`{{ $labels.node }}`}} is in maintenance."
     annotations:
       summary: Node in maintenance
-      description: "Node {{`{{ $labels.node }}`}} is in scheduled maintenance. Add the label `inhibited-by: node-maintenance` to alerts that should be inhibited while a node is in maintenance"
+      description: "Node {{`{{ $labels.node }}`}} is in scheduled maintenance. Add the label `inhibited_by: node-maintenance` to alerts that should be inhibited while a node is in maintenance"

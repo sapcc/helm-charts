@@ -28,7 +28,7 @@ groups:
       meta: "{{`{{ $labels.node }}`}} is NotReady"
       dashboard: nodes?var-server={{`{{$labels.node}}`}}
       playbook: docs/support/playbook/kubernetes/k8s_node_not_ready.html
-      inhibited-by: node-maintenance
+      inhibited_by: node-maintenance
     annotations:
       summary: Node status is NotReady
       description: Node {{`{{ $labels.node }}`}} is NotReady for more than an hour
