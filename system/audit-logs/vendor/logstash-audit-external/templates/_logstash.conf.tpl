@@ -64,7 +64,7 @@ filter {
 
     syslog_pri { }
 
-  if [hostname] =~ "^node\d{1,3}r" or [host] == "10.46.22.24" or [host] == "10.67.75.240" {
+  if [hostname] =~ "^node\d{2,3}r" {
     # grok {
     #   match => {
     #     "message" => [
@@ -82,6 +82,13 @@ filter {
       clones => ['audit', 'syslog']
     }
     {{- end }}
+  }
+
+# Set source for ucs central instances
+  if [host] == "10.46.22.24" or [host] == "10.67.75.240" {
+    mutate {
+      add_field => { "[sap][cc][audit][source]" => "ucsc" }
+    }
   }
 
 # Change type of audit relevant UCSM syslogs to "audit"
