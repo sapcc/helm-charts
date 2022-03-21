@@ -87,6 +87,7 @@ filter {
 # Set source for ucs central instances
   if [host] == "10.46.22.24" or [host] == "10.67.75.240" {
     mutate {
+      replace => { "type" => "audit" }
       add_field => { "[sap][cc][audit][source]" => "ucsc" }
     }
   }
