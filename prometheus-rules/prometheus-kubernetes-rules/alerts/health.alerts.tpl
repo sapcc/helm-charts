@@ -3,7 +3,7 @@ groups:
 - name: kubernetes.alerts
   rules:
   - alert: KubernetesNodeManyNotReady
-    expr: count(kube_node_status_condition{condition="Ready",status="true"} == 0) > 2
+    expr: count((kube_node_status_condition{condition="Ready",status="true"} unless on (node) kube_node_labels{label_cloud_sap_maintenance_state="in-maintenance"}) == 0) > 2
     for: 1h
     labels:
       tier: {{ required ".Values.tier missing" .Values.tier }}
@@ -28,6 +28,7 @@ groups:
       meta: "{{`{{ $labels.node }}`}} is NotReady"
       dashboard: nodes?var-server={{`{{$labels.node}}`}}
       playbook: docs/support/playbook/kubernetes/k8s_node_not_ready.html
+      inhibited-by: node-maintenance
     annotations:
       summary: Node status is NotReady
       description: Node {{`{{ $labels.node }}`}} is NotReady for more than an hour

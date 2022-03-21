@@ -39,6 +39,13 @@ inhibit_rules:
       alertname: 'PodNotReady|ManyPodsNotReadyOnNode'
     equal: ['node']
 
+  # If the alert NodeInMaintenance is firing other alerts with the label inhibited-by: node-maintenance are being inhibited on the same node.
+  - source_match:
+      alertname: NodeInMaintenance
+    target_match:
+      inhibited-by: node-maintenance
+    equal: ['node']
+
 route:
   group_by: ['region', 'service', 'alertname', 'cluster']
   group_wait: 1m
