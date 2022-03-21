@@ -31,3 +31,23 @@ We truncate at 63 chars because some Kubernetes name fields are limited to this 
 {{- .Values.global.dockerHubMirror -}}
 {{- end -}}
 {{- end -}}
+
+{{- define "memcached_maintenance_affinity" }}
+          - weight: 1
+            preference:
+              matchExpressions:
+              - key: cloud.sap/maintenance-state
+                operator: In
+                values:
+                - operational
+{{- end }}
+
+{{- define "memcached_node_reinstall_affinity" }}
+          - weight: 1
+            preference:
+              matchExpressions:
+              - key: cloud.sap/deployment-state
+                operator: NotIn
+                values:
+                - reinstalling
+{{- end }}
