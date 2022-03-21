@@ -33,6 +33,8 @@ spec:
         nodeAffinity:
 {{ toYaml . | indent 10 }}
       {{- end }}
+{{- include "mariadb_maintenance_affinity" . }}
+{{- include "mariadb_node_reinstall_affinity" . }}
 {{- else }}
         nodeAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
@@ -43,13 +45,8 @@ spec:
                   operator: In
                   values:
                   - {{.Values.global.region}}a
-          - weight: 1
-            preference:
-              matchExpressions:
-                - key: cloud.sap/maintenance-state
-                  operator: In
-                  values:
-                  - operational
+{{- include "mariadb_maintenance_affinity" . }}
+{{- include "mariadb_node_reinstall_affinity" . }}
 {{- end }}
       containers:
       - name: backup
