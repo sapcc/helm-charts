@@ -1,3 +1,7 @@
+## 5.3.1
+
+* Make ingress API version depend on k8s version.
+
 ## 5.3.0
 
 * Allow separate configuration of internal ingress via values. 
