@@ -264,7 +264,7 @@
       replacement: '$3'
       target_label: image_version
     - source_labels: [__name__, snmp_pxgeneric_sysDescr]
-      regex: 'snmp_pxgeneric_sysDescr;(.*)(Version )([0-9().a-zIU]*)(.*)'
+      regex: 'snmp_pxgeneric_sysDescr;(.*)(, Version )([0-9().a-zIU]*)((?s).*)'
       replacement: '$3'
       target_label: image_version
     - source_labels: [__name__, snmp_n9kpx_ciscoImageString]

@@ -1,3 +1,10 @@
+## 2.0.0
+
+* [Breaking change] Ingress related values changed. Configurable authentication on ingress level. Added OAUTH support.
+* Optional additional ingress for API only with separate configuration.
+* Ingress API version updated depending on k8s version.
+* Bump Alertmanager to `v0.23.0`.
+
 ## 1.5.0
 
 * Bump Alertmanager to `v0.22.0`.

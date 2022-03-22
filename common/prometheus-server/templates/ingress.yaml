@@ -1,6 +1,10 @@
 {{- if .Values.ingress.enabled }}
 {{- $root := . }}
+{{- if $root.Capabilities.APIVersions.Has "networking.k8s.io/v1/Ingress" }}
+apiVersion: networking.k8s.io/v1
+{{- else -}}
 apiVersion: networking.k8s.io/v1beta1
+{{- end }}
 kind: Ingress
 
 metadata:
@@ -9,11 +13,15 @@ metadata:
     prometheus: {{ include "prometheus.name" . }}
   annotations:
     kubernetes.io/tls-acme: "true"
-    disco: {{ required ".Values.ingress.disco missing" .Values.ingress.disco | quote }}
-    {{- if .Values.ingress.authentication.enabled}}
-    ingress.kubernetes.io/auth-tls-secret: {{ required ".Values.ingress.authentication.authTLSSecret missing" .Values.ingress.authentication.authTLSSecret | quote }}
-    ingress.kubernetes.io/auth-tls-verify-depth: {{ required ".Values.ingress.authentication.authTLSVerifyDepth missing" .Values.ingress.authentication.authTLSVerifyDepth | quote }}
-    ingress.kubernetes.io/auth-tls-verify-client: {{ required ".Values.ingress.authentication.authTLSVerifyClient missing" .Values.ingress.authentication.authTLSVerifyClient | quote }}
+    disco: "true"
+    {{- if .Values.ingress.authentication.oauth.enabled }}
+    ingress.kubernetes.io/auth-url: {{ required ".Values.ingress.authentication.oauth.authURL missing" .Values.ingress.authentication.oauth.authURL }}
+    {{ if .Values.ingress.authentication.oauth.authSignInURL }}ingress.kubernetes.io/auth-signin: {{ .Values.ingress.authentication.oauth.authSignInURL }} {{ end }}
+    {{ end }}
+    {{- if .Values.ingress.authentication.sso.enabled}}
+    ingress.kubernetes.io/auth-tls-secret: {{ required ".Values.ingress.authentication.sso.authTLSSecret missing" .Values.ingress.authentication.sso.authTLSSecret | quote }}
+    ingress.kubernetes.io/auth-tls-verify-depth: {{ required ".Values.ingress.authentication.sso.authTLSVerifyDepth missing" .Values.ingress.authentication.sso.authTLSVerifyDepth | quote }}
+    ingress.kubernetes.io/auth-tls-verify-client: {{ required ".Values.ingress.authentication.sso.authTLSVerifyClient missing" .Values.ingress.authentication.sso.authTLSVerifyClient | quote }}
     {{ end }}
     {{- if .Values.ingress.annotations }}
 {{ toYaml .Values.ingress.annotations | indent 4 }}
@@ -26,14 +34,32 @@ spec:
       http:
         paths:
         - path: /
+          {{- if $root.Capabilities.APIVersions.Has "networking.k8s.io/v1/Ingress" }}
+          pathType: ImplementationSpecific
+          backend:
+            service:
+              name: {{ include "prometheus.fullName" $root }}
+              port:
+                name: http
+          {{- else }}
           backend:
             serviceName: {{ include "prometheus.fullName" $root }}
             servicePort: http
+          {{- end }}
         {{- if $root.Values.thanos.enabled }}
         - path: {{ required ".Values.thanos.querier.webRouteprefix missing" $root.Values.thanos.querier.webRouteprefix }}
+          {{- if $root.Capabilities.APIVersions.Has "networking.k8s.io/v1/Ingress" }}
+          pathType: ImplementationSpecific
+          backend:
+            service:
+              name: {{ include "prometheus.fullName" $root }}-thanos-query
+              port:
+                name: http
+          {{- else }}
           backend:
             serviceName: {{ include "prometheus.fullName" $root }}-thanos-query
             servicePort: http
+          {{- end }}
         {{- end }}
     {{- end }}
     {{- range $host := .Values.ingress.hostsFQDN }}
@@ -41,14 +67,32 @@ spec:
       http:
         paths:
         - path: /
+          {{- if $root.Capabilities.APIVersions.Has "networking.k8s.io/v1/Ingress" }}
+          pathType: ImplementationSpecific
+          backend:
+            service:
+              name: {{ include "prometheus.fullName" $root }}
+              port:
+                name: http
+          {{- else }}
           backend:
             serviceName: {{ include "prometheus.fullName" $root }}
             servicePort: http
+          {{- end }}
         {{- if $root.Values.thanos.enabled }}
         - path: {{ required ".Values.thanos.querier.webRouteprefix missing" $root.Values.thanos.querier.webRouteprefix }}
+          {{- if $root.Capabilities.APIVersions.Has "networking.k8s.io/v1/Ingress" }}
+          pathType: ImplementationSpecific
+          backend:
+            service:
+              name: {{ include "prometheus.fullName" $root }}-thanos-query
+              port:
+                name: http
+          {{- else }}
           backend:
             serviceName: {{ include "prometheus.fullName" $root }}-thanos-query
             servicePort: http
+          {{- end }}
         {{- end }}
     {{- end }}
   tls:

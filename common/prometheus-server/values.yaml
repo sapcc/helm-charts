@@ -87,24 +87,66 @@ ingress:
   # If the ingress is enabled, it's also used for the ingress host.
   hostsFQDN: []
 
-  # Automate certificate management via vice-president.
-  vicePresident: true
+  # Client certificate authentication on ingress level.
+  authentication:
+    oauth:
+      enabled: false
 
-  # Automate DNS management via disco.
-  disco: true
+      # The URL to the authentication service.
+      authURL:
+
+      # Optional URL to specify the location of the error page.
+      authSignInURL:
+
+    sso:
+      enabled: true
+      # The key (<namespace>/<name>) of the secret containing the CA certificate (`ca.crt`) that is enabled to authenticate against this Ingress.
+      authTLSSecret: kube-system/ingress-cacrt
+
+      # The validation depth between the provided client certificate and the certification authority chain.
+      authTLSVerifyDepth: 3
+
+      # Enables verification of client certificates.
+      authTLSVerifyClient: on
+
+  # Additional annotations for the ingress.
+  annotations: {}
+
+# Optional additional ingress for this Prometheus.
+internalIngress:
+  enabled: false
+
+  # List of hostnames for this Prometheus server. FQDN will be generated using the pattern  <host>.<region>.<domain> .
+  # The first host is used to generate the external URL for the Prometheus. Remaining hosts will be used as SANs.
+  # If the ingress is enabled, it's also used for the ingress host.
+  hosts: []
+
+  # List of fully qualified host names to be used for this Prometheus server. Mutually exclusive with hosts.
+  # The first host is used to generate the external URL for the Prometheus. Remaining hosts will be used as SANs.
+  # If the ingress is enabled, it's also used for the ingress host.
+  hostsFQDN: []
 
   # Client certificate authentication on ingress level.
   authentication:
-    enabled: true
+    oauth:
+      enabled: false
 
-    # The key (<namespace>/<name>) of the secret containing the CA certificate (`ca.crt`) that is enabled to authenticate against this Ingress.
-    authTLSSecret: kube-system/ingress-cacrt
+      # The URL to the authentication service.
+      authURL:
 
-    # The validation depth between the provided client certificate and the certification authority chain.
-    authTLSVerifyDepth: 3
+      # Optional URL to specify the location of the error page.
+      authSignInURL:
 
-    # Enables verification of client certificates.
-    authTLSVerifyClient: on
+    sso:
+      enabled: true
+      # The key (<namespace>/<name>) of the secret containing the CA certificate (`ca.crt`) that is enabled to authenticate against this Ingress.
+      authTLSSecret: kube-system/ingress-cacrt
+
+      # The validation depth between the provided client certificate and the certification authority chain.
+      authTLSVerifyDepth: 3
+
+      # Enables verification of client certificates.
+      authTLSVerifyClient: on
 
   # Additional annotations for the ingress.
   annotations: {}

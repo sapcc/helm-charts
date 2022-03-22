@@ -64,7 +64,7 @@ filter {
 
     syslog_pri { }
 
-  if [hostname] =~ "^node\d{1,3}r" {
+  if [hostname] =~ "^node\d{2,3}r" {
     # grok {
     #   match => {
     #     "message" => [
@@ -82,6 +82,14 @@ filter {
       clones => ['audit', 'syslog']
     }
     {{- end }}
+  }
+
+# Set source for ucs central instances
+  if [host] == "10.46.22.24" or [host] == "10.67.75.240" {
+    mutate {
+      replace => { "type" => "audit" }
+      add_field => { "[sap][cc][audit][source]" => "ucsc" }
+    }
   }
 
 # Change type of audit relevant UCSM syslogs to "audit"
@@ -174,15 +182,8 @@ filter {
       }
 
       if "awx" in [cluster_host_id] {
-        if [event]{
-          mutate {
-            add_field => { "[sap][cc][audit][source]"  => "awx" }
-            rename => { "[event]" => "[event_name]"}
-          }
-        } else {
-          mutate {
-            add_field => { "[sap][cc][audit][source]"  => "awx" }
-          }
+        mutate {
+          add_field => { "[sap][cc][audit][source]"  => "awx" }
         }
       }
 
@@ -204,7 +205,21 @@ filter {
 
 
 output {
-  if [type] == "audit" or "audit" in [tags] {
+  if [sap][cc][audit][source] == "awx" {
+    http {
+      cacert => "/usr/share/logstash/config/ca.pem"
+      url => "https://{{ .Values.global.forwarding.audit_awx.host }}"
+      format => "json"
+      http_method => "post"
+    }
+  } else if [sap][cc][audit][source] == "flatcar" {
+    http {
+      cacert => "/usr/share/logstash/config/ca.pem"
+      url => "https://{{ .Values.global.forwarding.audit_auditbeat.host }}"
+      format => "json"
+      http_method => "post"
+    }
+  } else if [type] == "audit" or "audit" in [tags] {
     http {
       cacert => "/usr/share/logstash/config/ca.pem"
       url => "https://{{ .Values.global.forwarding.audit.host }}"

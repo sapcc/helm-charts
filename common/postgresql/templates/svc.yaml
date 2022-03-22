@@ -9,12 +9,6 @@ metadata:
     heritage: "{{ .Release.Service }}"
     component: "{{ .Values.postgresDatabase }}"
     type: database
-{{- if .Values.metrics.enabled }}
-  annotations:
-    prometheus.io/scrape: "true"
-    prometheus.io/port: {{ required ".Values.metrics.port missing" .Values.metrics.port | quote }}
-    prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
-{{- end }}
 spec:
   selector:
 {{- if or .Values.pgbouncer.enabled .Values.global.pgbouncer.enabled }}

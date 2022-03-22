@@ -39,6 +39,7 @@
       - '{__name__=~"^kubelet_.+"}'
       - '{__name__=~"^machine_cpu_cores"}'
       - '{__name__=~"^machine_memory_bytes"}'
+      - '{__name__=~"^maintenance_controller_.+"}'
       - '{__name__=~"^metrics_.+"}'
       - '{__name__=~"^nginx_.+"}'
       - '{__name__=~"^node_.+"}'

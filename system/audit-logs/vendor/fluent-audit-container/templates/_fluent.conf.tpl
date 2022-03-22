@@ -254,6 +254,47 @@
 </match>
 {{- end }}
 
+<match iasapi.** iaschangelog.** vault.** github-guard.** github-guard-tools.** github-guard-corp.** >
+  @type copy
+  @id duplicate_tools
+  <store>
+    @type http
+    @id ocb_audit_tools
+    endpoint "https://{{.Values.global.forwarding.audit_tools.host}}"
+    tls_ca_cert_path "/etc/ssl/certs/ca-certificates.crt"
+    slow_flush_log_threshold 105.0
+    retryable_response_codes [429,503]
+    <buffer>
+      chunk_limit_size 8MB
+      flush_at_shutdown true
+      overflow_action block
+      retry_forever true
+      retry_type exponential_backoff
+      retry_max_interval 60s
+      flush_interval 15s
+      flush_thread_count 2
+    </buffer>
+    <format>
+      @type json
+    </format>
+    json_array true
+  </store>
+  <store>
+    @type prometheus
+    @id to_prometheus_tools
+    <metric>
+      name fluentd_output_status_num_records_total
+      type counter
+      desc The total number of outgoing records
+      <labels>
+        node "#{ENV['K8S_NODE_NAME']}"
+        container $.kubernetes.container_name
+        source all
+      </labels>
+    </metric>
+  </store>
+</match>
+
 <match **>
   @type copy
   @id duplicate

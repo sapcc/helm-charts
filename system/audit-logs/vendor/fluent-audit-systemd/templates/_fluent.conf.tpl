@@ -49,6 +49,8 @@
   @type record_transformer
   <record>
     sap.cc.audit.source "flatcar"
+    sap.cc.cluster "{{ .Values.global.cluster }}"
+    sap.cc.region "{{ .Values.global.region }}"
   </record>
 </filter>
 
@@ -56,7 +58,7 @@
   @type copy
   <store>
     @type http
-    endpoint "https://{{.Values.global.forwarding.audit.host}}"
+    endpoint "https://{{.Values.global.forwarding.audit_auditbeat.host}}"
     tls_ca_cert_path "/etc/ssl/certs/ca-certificates.crt"
     slow_flush_log_threshold 105.0
     retryable_response_codes [503]

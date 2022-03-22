@@ -150,41 +150,6 @@ spec:
             memory: {{ .Values.backup.resources.requests.memory | quote }}
         {{- end }}
 {{- end }}
-{{- if .Values.metrics.enabled }}
-      - name: metrics
-        image: "{{ .Values.metrics.image }}:{{ .Values.metrics.imageTag }}"
-        imagePullPolicy: {{ default "IfNotPresent" .Values.metrics.imagePullPolicy | quote }}
-        env:
-        {{- if .Values.metrics.postgresPassword }}
-        # we need support for password overrides in case passwords have a / in them (that breaks the go pq url connection parser)
-        # hence this special sauce (a %2F replacement for the / will help to please go)
-        # PLEASE DO NOT REMOVE THIS
-        - name: DATA_SOURCE_NAME
-          value: postgresql://{{ default .Values.global.dbUser .Values.metrics.postgresUser }}:{{ .Values.metrics.postgresPassword }}@127.0.0.1:5432/{{.Values.postgresDatabase}}?sslmode=disable
-        {{ else }}
-        - name: DATA_SOURCE_NAME
-          value: postgresql://{{ default .Values.postgresUser .Values.global.dbUser }}:{{ default .Values.postgresPassword .Values.global.dbPassword }}@127.0.0.1:5432/{{.Values.postgresDatabase}}?sslmode=disable
-        {{- end }}
-        ports:
-        - name: metrics
-          containerPort: {{ default 9187 .Values.metrics.port }}
-        {{- if .Values.metrics.customMetrics }}
-        args: ["--extend.query-path", "/conf/custom-metrics.yaml"]
-        volumeMounts:
-          - name: custom-metrics
-            mountPath: /conf
-            readOnly: true
-        {{- end }}
-        {{- if .Values.metrics.resources.enabled }}
-        resources:
-          limits:
-            cpu: {{ .Values.metrics.resources.limits.cpu | quote }}
-            memory: {{ .Values.metrics.resources.limits.memory | quote }}
-          requests:
-            cpu: {{ .Values.metrics.resources.requests.cpu | quote }}
-            memory: {{ .Values.metrics.resources.requests.memory | quote }}
-        {{- end }}
-{{- end }}
       volumes:
       - name: postgres-etc
         configMap:
@@ -195,14 +160,6 @@ spec:
           claimName: {{ .Values.persistence.existingClaim | default (include "fullname" .) }}
       {{- else }}
         emptyDir: {}
-      {{- end }}
-      {{- if and  .Values.metrics.enabled .Values.metrics.customMetrics }}
-      - name: custom-metrics
-        configMap:
-          name: {{ template "fullname" . }}-etc
-          items:
-          - key: custom-metrics.yaml
-            path: custom-metrics.yaml
       {{- end }}
 {{- if .Values.dbInit }}
       - name: db-init

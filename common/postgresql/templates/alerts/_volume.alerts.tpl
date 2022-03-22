@@ -3,11 +3,7 @@ groups:
   rules:
   - alert: {{ include "alerts.name_prefix" . }}PostgresVolumeNearlyFull
     {{- $pvc := .Values.persistence.existingClaim | default (include "fullname" .) }}
-    {{- if .Values.alerts.use_pvc_exporter_metrics }}
-    expr: pvc_usage{persistentvolumeclaim="{{ $pvc }}"} > 0.95
-    {{- else }}
     expr: kubelet_volume_stats_available_bytes{persistentvolumeclaim="{{ $pvc }}"}/kubelet_volume_stats_capacity_bytes{persistentvolumeclaim="{{ $pvc }}"} < 0.05
-    {{- end }}
     for: 10m
     labels:
       context: volumefull
