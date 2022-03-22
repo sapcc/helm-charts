@@ -254,7 +254,7 @@
 </match>
 {{- end }}
 
-<match iasapi.** iaschangelog.** vault.** github-guard.** github-guard-tools.** github-guard-corp.** >
+<match iasapi.** iaschangelog.** vault.** github-guard.** github-guard-tools.** github-guard-corp.** concourse.** >
   @type copy
   @id duplicate_tools
   <store>
