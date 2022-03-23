@@ -12,7 +12,8 @@ rabbitmq {
     queue => {{ $value.queue_name | default $.Values.hermes.rabbitmq.queue_name | quote }}
     subscription_retry_interval_seconds => 60
     automatic_recovery => true
-    heartbeat => 30
+    connection_timeout => 1000
+    heartbeat => 5
     connect_retry_interval => 60
     durable => {{ $value.durable | default false }}
   }
@@ -142,224 +143,203 @@ filter {
   }
 
   # Enrich keystone events with domain mapping from Metis
-  if [initiator][project_id] {
-    jdbc_static {
-      id => "jdbc_project_id"
-      loaders => [
-        {
-          id  => "keystone_project_domain"
-          query => "select project.name as project_name, project.id as project_id, domain.name as domain_name, domain.id as domain_id from keystone.project join keystone.project domain on project.domain_id = domain.id"
-          local_table => "project_domain_mapping"
-        }
-      ]
+  {{ if .Values.logstash.audit -}}
+  # Fill in lookup fields with "unavailable" to provide the lookup with a field so it doesn't error
+  # pipeline shutsdown if a lookup field is not available.
 
-      local_db_objects => [
-        {
-          name => "project_domain_mapping"
-          index_columns => ["project_id"]
-          columns => [
-            ["project_name", "varchar(64)"],
-            ["project_id", "varchar(64)"],
-            ["domain_name", "varchar(64)"],
-            ["domain_id", "varchar(64)"]
-          ]
-        }
-      ]
+  if ![initiator][project_id] {
+    mutate { add_field => { "[initiator][project_id]" => "unavailable" } }
+  }
 
-      local_lookups => [
-        {
-          id => "project_name_lookup"
-          query => "select project_name, domain_id, domain_name from project_domain_mapping where project_id = ?"
-          prepared_parameters => ["[initiator][project_id]"]
-          target => "project_mapping"
-          tag_on_failure => "Project_Mapping"
+  if ![target][project_id] {
+    mutate { add_field => { "[target][project_id]" => "unavailable" } }
+  }
+
+  if ![initiator][id] {
+    mutate { add_field => { "[initiator][id]" => "unavailable" } }
+  }
+
+  # With several different event types using jdbc_static, not sure an if makes sense.
+  # we will have to handle several events that don't match a query
+  
+  jdbc_static {
+    id => "jdbc_project_id"
+    loaders => [
+      {
+        id  => "keystone_project_domain"
+        query => "select project.name as project_name, project.id as project_id, domain.name as domain_name, domain.id as domain_id from keystone.project join keystone.project domain on project.domain_id = domain.id"
+        local_table => "project_domain_mapping"
+      },
+      {
+        id  => "keystone_user_domain"
+        query => "select u.id as user_id, CONCAT_WS('', m.local_id, lu.name) as user_name, p.id as domain_id, p.name as domain_name  from keystone.user as u left join keystone.id_mapping m on m.public_id = u.id left join keystone.local_user lu on lu.user_id = u.id left join keystone.project as p on p.id = u.domain_id where p.name <> 'kubernikus'"
+        local_table => "user_domain_mapping"
+      }
+    ]
+
+    local_db_objects => [
+      {
+        name => "project_domain_mapping"
+        index_columns => ["project_id"]
+        columns => [
+          ["project_name", "varchar(64)"],
+          ["project_id", "varchar(64)"],
+          ["domain_name", "varchar(64)"],
+          ["domain_id", "varchar(64)"]
+        ]
+      },
+      {
+        name => "user_domain_mapping"
+        index_columns => ["user_id"]
+        columns => [
+          ["user_id", "varchar(64)"],
+          ["user_name", "varchar(64)"],
+          ["domain_id", "varchar(64)"],
+          ["domain_name", "varchar(64)"]
+        ]
+      }
+    ]
+
+    local_lookups => [
+      {
+        id => "project_name_lookup"
+        query => "select project_name, domain_id, domain_name from project_domain_mapping where project_id = ?"
+        prepared_parameters => ["[initiator][project_id]"]
+        target => "project_mapping"
+        tag_on_failure => "Project_Mapping"
+      },
+      {
+        id => "target_project_name_lookup"
+        query => "select project_name, domain_id, domain_name from project_domain_mapping where project_id = ?"
+        prepared_parameters => ["[target][project_id]"]
+        target => "target_project_mapping"
+        tag_on_failure => "Target_Project_Mapping"
+      },
+      {
+        id => "domain_lookup"
+        query => "select user_name, domain_id, domain_name from user_domain_mapping where user_id = ?"
+        prepared_parameters => ["[initiator][id]"]
+        target => "domain_mapping"
+        tag_on_failure => "Domain_Mapping"
+      }
+    ]
+    staging_directory => "/tmp/logstash/jdbc_static/import_data"
+    loader_schedule => "{{ .Values.logstash.jdbc.schedule }}"
+    jdbc_user => "{{ .Values.global.metis.user }}"
+    jdbc_password => "${METIS_PASSWORD}"
+    jdbc_driver_class => "com.mysql.cj.jdbc.Driver"
+    jdbc_driver_library => ""
+    jdbc_connection_string => "jdbc:mysql://{{ .Values.logstash.jdbc.service }}.{{ .Values.logstash.jdbc.namespace }}:3306/{{ .Values.logstash.jdbc.db }}"
+  }
+
+  if [project_mapping] and [project_mapping][0]{
+    # Add Fields to audit events, checking if the field exists first to not overwrite.
+    if ![initiator][project_name] {
+      mutate {
+        add_field => {
+            "[initiator][project_name]" => "%{[project_mapping][0][project_name]}"
         }
-      ]
-      staging_directory => "/tmp/logstash/jdbc_static/import_data"
-      loader_schedule => "{{ .Values.logstash.jdbc.schedule }}"
-      jdbc_user => "{{ .Values.global.metis.user }}"
-      jdbc_password => "${METIS_PASSWORD}"
-      jdbc_driver_class => "com.mysql.cj.jdbc.Driver"
-      jdbc_driver_library => ""
-      jdbc_connection_string => "jdbc:mysql://{{ .Values.logstash.jdbc.service }}.{{ .Values.logstash.jdbc.namespace }}:3306/{{ .Values.logstash.jdbc.db }}"
+      }
+    }
+    if ![initiator][domain_id] {
+      mutate {
+        add_field => {
+            "[initiator][domain_id]" => "%{[project_mapping][0][domain_id]}"
+        }
+      }
+    }
+    if ![initiator][project_domain_name] {
+      mutate {
+        add_field => {
+            "[initiator][project_domain_name]" => "%{[project_mapping][0][domain_name]}"
+        }
+      }
     }
 
-    if [project_mapping] and [project_mapping][0]{
-      # Add Fields to audit events, checking if the field exists first to not overwrite.
-      if ![initiator][project] {
-        mutate {
-          add_field => {
-              "[initiator][project]" => "%{[project_mapping][0][project_name]}"
-          }
-        }
-      }
-      if ![initiator][domain_id] {
-        mutate {
-          add_field => {
-              "[initiator][domain_id]" => "%{[project_mapping][0][domain_id]}"
-          }
-        }
-      }
-      if ![initiator][project_domain_name] {
-        mutate {
-          add_field => {
-              "[initiator][project_domain_name]" => "%{[project_mapping][0][domain_name]}"
-          }
-        }
-      }
-
-      # Cleanup
-      mutate {
-        remove_field => ["project_mapping"]
-      }
+    # Cleanup
+    mutate {
+      remove_field => ["[project_mapping]"]
     }
   }
 
-  if [target][project_id] {
-    jdbc_static {
-      id => "jdbc_target_project_id"
-      loaders => [
-        {
-          id  => "keystone_target_project_domain"
-          query => "select project.name as project_name, project.id as project_id, domain.name as domain_name, domain.id as domain_id from keystone.project join keystone.project domain on project.domain_id = domain.id"
-          local_table => "target_project_mapping"
+  if [target_project_mapping] and [target_project_mapping][0]{
+    # Add Fields to audit events, checking if the field exists first to not overwrite.
+    if ![target][project_name] {
+      mutate {
+        add_field => {
+            "[target][project_name]" => "%{[target_project_mapping][0][project_name]}"
         }
-      ]
-
-      local_db_objects => [
-        {
-          name => "target_project_mapping"
-          index_columns => ["project_id"]
-          columns => [
-            ["project_name", "varchar(64)"],
-            ["project_id", "varchar(64)"],
-            ["domain_name", "varchar(64)"],
-            ["domain_id", "varchar(64)"]
-          ]
+      }
+    }
+    if ![target][domain_id] {
+      mutate {
+        add_field => {
+            "[target][domain_id]" => "%{[target_project_mapping][0][domain_id]}"
         }
-      ]
-
-      local_lookups => [
-        {
-          id => "project_name_lookup"
-          query => "select project_name, domain_id, domain_name from target_project_mapping where project_id = ?"
-          prepared_parameters => ["[target][project_id]"]
-          target => "target_project_mapping"
-          tag_on_failure => "Target_Project_Mapping"
+      }
+    }
+    if ![target][project_domain_name] {
+      mutate {
+        add_field => {
+            "[target][project_domain_name]" => "%{[target_project_mapping][0][domain_name]}"
         }
-      ]
-      staging_directory => "/tmp/logstash/jdbc_static/import_data"
-      loader_schedule => "{{ .Values.logstash.jdbc.schedule }}"
-      jdbc_user => "{{ .Values.global.metis.user }}"
-      jdbc_password => "${METIS_PASSWORD}"
-      jdbc_driver_class => "com.mysql.cj.jdbc.Driver"
-      jdbc_driver_library => ""
-      jdbc_connection_string => "jdbc:mysql://{{ .Values.logstash.jdbc.service }}.{{ .Values.logstash.jdbc.namespace }}:3306/{{ .Values.logstash.jdbc.db }}"
+      }
     }
 
-    if [target_project_mapping] and [target_project_mapping][0]{
-      # Add Fields to audit events, checking if the field exists first to not overwrite.
-      if ![target][project] {
-        mutate {
-          add_field => {
-              "[target][project]" => "%{[target_project_mapping][0][project_name]}"
-          }
-        }
-      }
-      if ![target][domain_id] {
-        mutate {
-          add_field => {
-              "[target][domain_id]" => "%{[target_project_mapping][0][domain_id]}"
-          }
-        }
-      }
-      if ![target][project_domain_name] {
-        mutate {
-          add_field => {
-              "[target][project_domain_name]" => "%{[target_project_mapping][0][domain_name]}"
-          }
-        }
-      }
-
-      # Cleanup
-      mutate {
-        remove_field => ["target_project_mapping"]
-      }
+    # Cleanup
+    mutate {
+      remove_field => ["[target_project_mapping]"]
     }
   }
 
-
-  if [initiator][id] { #  or [initiator][project_id] or [target][project_id] {
-    jdbc_static {
-      id => "jdbc_initiator_id"
-      loaders => [
-        {
-          id  => "keystone_user_domain"
-          query => "select u.id as user_id, m.local_id as user_name, p.id as domain_id, p.name as domain_name  from keystone.user as u left join keystone.id_mapping m on m.public_id = u.id left join keystone.project as p on p.id = u.domain_id"
-          local_table => "user_domain_mapping"
+  if [domain_mapping] and [domain_mapping][0]{
+    # Add Fields to audit events, checking if the field exists so it doesn't create an array.
+    if ![initiator][name] {
+      mutate {
+        add_field => {
+            "[initiator][name]" => "%{[domain_mapping][0][user_name]}"
         }
-      ]
-
-      local_db_objects => [
-        {
-          name => "user_domain_mapping"
-          index_columns => ["user_id"]
-          columns => [
-            ["user_id", "varchar(64)"],
-            ["user_name", "varchar(64)"],
-            ["domain_id", "varchar(64)"],
-            ["domain_name", "varchar(64)"]
-          ]
+      }
+    }
+    if ![initiator][domain_id] {
+      mutate {
+        add_field => {
+            "[initiator][domain_id]" => "%{[domain_mapping][0][domain_id]}"
         }
-      ]
-
-      local_lookups => [
-        {
-          id => "domain_lookup"
-          query => "select user_name, domain_id, domain_name from user_domain_mapping where user_id = ?"
-          prepared_parameters => ["[initiator][id]"]
-          target => "domain_mapping"
-          tag_on_failure => "Domain_Mapping"
+      }
+    }
+    if ![initiator][domain] {
+      mutate {
+        add_field => {
+            "[initiator][domain]" => "%{[domain_mapping][0][domain_name]}"
         }
-      ]
-      staging_directory => "/tmp/logstash/jdbc_static/import_data"
-      loader_schedule => "{{ .Values.logstash.jdbc.schedule }}"
-      jdbc_user => "{{ .Values.global.metis.user }}"
-      jdbc_password => "${METIS_PASSWORD}"
-      jdbc_driver_class => "com.mysql.cj.jdbc.Driver"
-      jdbc_driver_library => ""
-      jdbc_connection_string => "jdbc:mysql://{{ .Values.logstash.jdbc.service }}.{{ .Values.logstash.jdbc.namespace }}:3306/{{ .Values.logstash.jdbc.db }}"
+      }
+    }
+    # Cleanup
+    mutate {
+      remove_field => ["[domain_mapping]"]
+    }
+    
+    # Cleanup unavailable entries
+    if [initiator][project_id] == "unavailable" {
+      mutate {
+        remove_field => ["[initiator][project_id]"]
+      }
     }
 
-    if [domain_mapping] and [domain_mapping][0]{
-      # Add Fields to audit events, checking if the field exists so it doesn't create an array.
-      if ![initiator][name] {
-        mutate {
-          add_field => {
-              "[initiator][name]" => "%{[domain_mapping][0][user_name]}"
-          }
-        }
-      }
-      if ![initiator][domain_id] {
-        mutate {
-          add_field => {
-              "[initiator][domain_id]" => "%{[domain_mapping][0][domain_id]}"
-          }
-        }
-      }
-      if ![initiator][domain] {
-        mutate {
-          add_field => {
-              "[initiator][domain]" => "%{[domain_mapping][0][domain_name]}"
-          }
-        }
-      }
-      # Cleanup
+    if [target][project_id] == "unavailable" {
       mutate {
-        remove_field => ["domain_mapping"]
+        remove_field => ["[target][project_id]"]
+      }
+    }
+
+    if [initiator][id] == "unavailable" {
+      mutate {
+        remove_field => ["[initiator][id]"]
       }
     }
   }
+  {{- end}}
 
   # Octobus setting Source to TypeURI. Unused in Hermes.
   if [observer][typeURI] {
@@ -389,11 +369,6 @@ filter {
     remove_field => ["[domain]", "[project]", "[user]", "[role]", "[group]", "[inherited_to_projects]"]
   }
 
-  # remove enrichment fields after they have been mapped.
-  mutate {
-    remove_field => ["[project_mapping]", "[project_target_mapping]", "[domain_mapping]"]
-  }
-
   kv { source => "_source" }
 
   # The following line will create 2 additional
@@ -410,6 +385,7 @@ output {
   if [type] == 'clone_for_audit' {
     if ([@metadata][index]) {
       elasticsearch {
+          id => "clone_for_audit_1"
           index => "audit-%{[@metadata][index]}-6-%{+YYYY.MM}"
           template => "/hermes-etc/audit.json"
           template_name => "audit"
@@ -417,9 +393,12 @@ output {
           hosts => ["{{.Values.hermes_elasticsearch_host}}:{{.Values.hermes_elasticsearch_port}}"]
           # retry_max_interval default 64
           retry_max_interval => 10
+          # validate_after_inactivity default 10000
+          validate_after_inactivity => 1000
       }
     } else {
       elasticsearch {
+          id => "clone_for_audit_2"
           index => "audit-default-6-%{+YYYY.MM}"
           template => "/hermes-etc/audit.json"
           template_name => "audit"
@@ -427,12 +406,15 @@ output {
           hosts => ["{{.Values.hermes_elasticsearch_host}}:{{.Values.hermes_elasticsearch_port}}"]
           # retry_max_interval default 64
           retry_max_interval => 10
+          # validate_after_inactivity default 10000
+          validate_after_inactivity => 1000
       }
     }
   }
   # cc the target tenant
   if ([@metadata][index2] and [@metadata][index2] != [@metadata][index] and [type] == 'clone_for_cc') {
     elasticsearch {
+        id => "clone_for_cc"
         index => "audit-%{[@metadata][index2]}-6-%{+YYYY.MM}"
         template => "/hermes-etc/audit.json"
         template_name => "audit"
@@ -440,6 +422,8 @@ output {
         hosts => ["{{.Values.hermes_elasticsearch_host}}:{{.Values.hermes_elasticsearch_port}}"]
         # retry_max_interval default 64
         retry_max_interval => 10
+        # validate_after_inactivity default 10000
+        validate_after_inactivity => 1000
     }
   }
 

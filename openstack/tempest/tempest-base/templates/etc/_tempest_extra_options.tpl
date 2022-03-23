@@ -51,9 +51,10 @@ project_network_cidr = 10.199.0.0/16
 public_network_id = {{ .Values.tempest_common.public_network_id }}
 endpoint_type = internal
 shared_physical_network= {{ .Values.tempest_common.shared_physical_network | default true }}
+floating_network_name = FloatingIP-sap-monsoon3-01-03
 
 [network-feature-enabled]
-ipv6 = false
+ipv6 = False
 
 [baremetal]
 min_microversion = 1.46
@@ -105,6 +106,9 @@ endpoint_type = internalURL
 v3_endpoint_type = internalURL
 region = {{ .Values.global.region }}
 
+[validation]
+image_ssh_user = ccloud
+
 [volume]
 catalog_type = volumev3
 endpoint_type = internal
@@ -113,6 +117,7 @@ max_microversion = latest
 vendor_name = VMware
 storage_protocol = vmdk
 disk_format = vmdk
+volume_size = 10
 
 [volume-feature-enabled]
 backup = true
@@ -128,5 +133,6 @@ designate = True
 ironic = True
 barbican = True
 keystone = True
+octavia = True
 
 {{ end }}

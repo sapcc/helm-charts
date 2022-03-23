@@ -57,6 +57,20 @@ groups:
       description: Manila Shares taking more than 2 minutes to delete in {{ $labels.manila_host }}
       summary: Manila Shares taking more than 2 minutes to delete
 
+  - alert: OpenstackManilaSharesStuckErrorDelete
+    expr: max(manila_shares_stuck_max_duration_gauge{status="error_deleting"})
+      BY (manila_host) > 120
+    for: 5m
+    labels:
+      dashboard: manila
+      playbook: docs/support/playbook/manila/shares_stuck.html
+      service: manila
+      severity: info
+      tier: os
+    annotations:
+      description: Manila Shares taking more than 2 minutes to delete in {{ $labels.manila_host }}
+      summary: Manila Shares taking more than 2 minutes to delete
+
   - alert: OpenstackManilaSharesStuckResize
     expr: max(manila_shares_stuck_max_duration_gauge{status=~"shrinking|extending"})
       BY (manila_host) > 120

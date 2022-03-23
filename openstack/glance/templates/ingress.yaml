@@ -1,7 +1,6 @@
 kind: Ingress
 apiVersion: networking.k8s.io/v1beta1
 
-
 metadata:
   name: glance
   labels:
@@ -9,10 +8,12 @@ metadata:
     type: api
     component: glance
   annotations:
-     ingress.kubernetes.io/proxy-request-buffering: "off"
-     {{- if .Values.tlsacme }}
-     kubernetes.io/tls-acme: "true"
-     {{- end }}
+    ingress.kubernetes.io/proxy-request-buffering: "off"
+    ingress.kubernetes.io/configuration-snippet: |
+      {{- include "utils.snippets.set_openstack_request_id" . | indent 6 }}
+    {{- if .Values.tlsacme }}
+    kubernetes.io/tls-acme: "true"
+    {{- end }}
 spec:
   tls:
     - secretName: tls-{{ include "glance_api_endpoint_host_public" . | replace "." "-" }}

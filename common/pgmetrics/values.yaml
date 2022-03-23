@@ -1,42 +1,34 @@
+# these values must be supplied by the regional globals.yaml
 global:
-  tld: cloud.sap
-  region: local
-  user_suffix: ""
-  # dbPassword: DEFINED-IN-COMPONENT-CHART
-  ## the database user to use
-  # dbUser: postgres
+  tld: ""
+  region: ""
+  quayIoMirror: ""
 
-## image repository
-image: "wrouesnel/postgres_exporter"
-## image version
-imageTag: "v0.4.6"
+# database name (default is .Release.Name)
+db_name: ""
+# password for the "postgres" database user (required)
+db_password: ""
 
-## log level, valid values are: debug, info, warn, error, fatal
-log_level: info
+# resource requests and limits <http://kubernetes.io/docs/user-guide/compute-resources/>
+resources:
+  limits:
+    memory: 128Mi
+    cpu: 100m
+  requests:
+    memory: 64Mi
+    cpu: 50m
 
-## Specify a imagePullPolicy
-## 'Always' if imageTag is 'latest', else set to 'IfNotPresent'
-## ref: http://kubernetes.io/docs/user-guide/images/#pre-pulling-images
-##
-# imagePullPolicy: IfNotPresent
-
-## metrics exporter port to be scraped by prometheus
-port: '9187'
-
-## the database name (default: helm release name)
-# db_name:
-
-# an optional password override from global.dbPassword
-# db_password:
-
-## the database user to use
-# db_user: postgres
-
-## the database port to use
-# db_port: 5432
-
-## job to wait for
-# dependencyJobs: 'db-namespace:db-migration-pod'
+# alert configuration for Prometheus
+alerts:
+  enabled: true
+  # whether to enable the alert for large DB size
+  large_database_size_enabled: true
+  # name of the Prometheus that scrapes the metrics and produces alerts
+  prometheus: openstack
+  # The tier of the alert.
+  tier: os
+  # Configurable service label of the alerts. Defaults to `.Release.Name`.
+  service: ""
 
 customMetrics:
   pg_database:
@@ -148,38 +140,3 @@ customMetrics:
       - count:
           usage: GAUGE
           description: Number of open connections per client and connection state
-
-replicas: 1
-
-upgrades:
-  revisionHistory: 3
-  podReplacementStrategy: Recreate
-
-## Configure resource requests and limits
-## ref: http://kubernetes.io/docs/user-guide/compute-resources/
-##
-resources:
-  enabled: true
-  limits:
-    memory: 128Mi
-    cpu: 100m
-  requests:
-    memory: 64Mi
-    cpu: 50m
-
-
-# Default Prometheus alerts and rules.
-alerts:
-  enabled: true
-
-  # Name of the Prometheus supposed to scrape the metrics and to which alerts are assigned.
-  prometheus: openstack
-
-  # The tier of the alert.
-  tier: os
-
-  # Configurable service label of the alerts. Defaults to `.Release.Name`.
-  # service:
-
-  # enable alert for large database size
-  large_database_size_enabled: true

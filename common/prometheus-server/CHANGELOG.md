@@ -1,3 +1,33 @@
+## 5.3.3
+
+* Adds `/api` endpoint to internal Ingress.
+
+## 5.3.2
+
+* Optional additional internal ingress is limited to `/federate` and thanos paths. 
+
+## 5.3.1
+
+* Make ingress API version depend on k8s version.
+
+## 5.3.0
+
+* Allow separate configuration of internal ingress via values. 
+
+## 5.2.0
+
+* Use internal ingress with SSO authentication for federation.
+
+## 5.1.0
+
+* Update Prometheus to `v2.34.0`.
+
+## 5.0.0
+
+* Add OAUTH2 support on ingress level.
+* Use ingress API version `networking.k8s.io/v1`.
+* **Breaking change**: Helm values for ingress level authentication were moved one level down to `.Values.ingress.authentication.sso`
+
 ## 4.6.0
 
 * Adds VerticalPodAutoscaler for Prometheus StatefulSet in recommendation mode

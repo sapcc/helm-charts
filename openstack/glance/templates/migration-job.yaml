@@ -1,7 +1,10 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: glance-migration-job
+  # since this name changes with every image change, removal and creation of
+  # this Job happens on nearly every deployment. Check the helm-chart changes
+  # to see if this needs more review.
+  name: glance-migration-job-{{ required "Please set glance.imageVersion or similar" .Values.imageVersion }}
   labels:
     app: {{ template "name" . }}
     chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
@@ -12,7 +15,7 @@ spec:
   template:
     metadata:
       labels:
-        app: {{ template "name" . }}
+{{ tuple . "glance" "migration" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
       annotations:
         chart-version: {{.Chart.Version}}
         checksum/etc-configmap.conf: {{ include (print $.Template.BasePath "/etc-configmap.yaml") . | sha256sum }}

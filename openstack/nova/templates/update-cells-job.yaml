@@ -12,10 +12,7 @@ metadata:
 spec:
   template:
     metadata:
-      labels:
-{{ tuple . "nova" "online-migration" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
-      annotations:
-        configmap-bin-hash: {{ include (print $.Template.BasePath "/bin-configmap.yaml") . | sha256sum }}
+      {{- tuple . "db-update-cells" | include "job_metadata" | indent 6 }}
     spec:
       restartPolicy: OnFailure
       containers:
@@ -30,7 +27,7 @@ spec:
         - name: NAMESPACE
           value: {{ .Release.Namespace }}
         - name: DEPENDENCY_JOBS
-          value: nova-migration-{{.Values.imageVersion | required "Please set nova.imageVersion or similar"}}
+          value: {{ tuple . "db-migrate" | include "job_name" }}
         - name: DEPENDENCY_SERVICE
           value: "{{ .Release.Name }}-mariadb,{{ .Release.Name }}-api-mariadb,{{ .Release.Name }}-rabbitmq"
         - name: PGAPPNAME

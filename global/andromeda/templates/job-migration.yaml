@@ -1,0 +1,54 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "andromeda.fullname" . }}-migration-{{ .Values.image.tag | required ".Values.image.tag is required" }}
+  labels:
+    helm.sh/chart: {{ template "andromeda.chart" . }}
+    app.kubernetes.io/name: {{ template "andromeda.name" . }}-migration
+    app.kubernetes.io/instance: {{ .Release.Name | quote }}
+  {{- with .Values.labels }}
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  template:
+    spec:
+      restartPolicy: OnFailure
+      serviceAccountName: {{ template "andromeda.serviceAccountName" . }}
+      initContainers:
+        - name: wait-for-db
+          image: "quay.io/stackanetes/kubernetes-entrypoint:v0.3.1"
+          env:
+            - name: NAMESPACE
+              value: "andromeda"
+            - name: DEPENDENCY_SERVICE
+              value: "{{ include "andromeda.fullname" . }}-cockroachdb"
+            - name: COMMAND
+              value: "true"
+        - name: create-database
+          image: "cockroachdb/cockroach:v21.2.6"
+          command:
+          - /cockroach/cockroach
+          - sql
+          - --insecure
+          - --host
+          - {{ include "andromeda.name" . }}-cockroachdb
+          - --execute
+          - CREATE DATABASE IF NOT EXISTS {{ include "andromeda.name" . }};
+      containers:
+        - name: {{ include "andromeda.fullname" . }}-migration
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | required ".Values.image.tag is required" }}"
+          args: ["--config-file", "/etc/andromeda/andromeda.conf", "migrate"]
+          volumeMounts:
+            - name: etc-andromeda
+              mountPath: /etc/andromeda
+              readOnly: true
+      volumes:
+        - name: etc-andromeda
+          projected:
+            defaultMode: 420
+            sources:
+              - configMap:
+                  name: andromeda-etc
+                  items:
+                    - key: andromeda.conf
+                      path: andromeda.conf

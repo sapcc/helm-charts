@@ -32,18 +32,16 @@ spec:
     spec:
       affinity:
         nodeAffinity:
-          preferredDuringSchedulingIgnoredDuringExecution:
-          - weight: 1
-            preference:
-              matchExpressions:
-                - key: cloud.sap/maintenance-state
-                  operator: In
-                  values:
-                  - operational
 {{- if .Values.nodeAffinity }}
       {{- with .Values.nodeAffinity }}
-{{ toYaml . | indent 12 }}
+{{ toYaml . | indent 10 }}
       {{- end }}
+{{- include "rabbitmq_maintenance_affinity" . }}
+{{- include "rabbitmq_node_reinstall_affinity" . }}
+{{- else }}
+          preferredDuringSchedulingIgnoredDuringExecution:
+{{- include "rabbitmq_maintenance_affinity" . }}
+{{- include "rabbitmq_node_reinstall_affinity" . }}
 {{- end }}
       hostname: {{ template "fullname" . }}
       containers:

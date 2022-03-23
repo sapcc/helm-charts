@@ -1,0 +1,14 @@
+{{- range $path, $bytes := .Files.Glob "aggregations/*.rules" }}
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+
+metadata:
+  name: {{ printf "%s" $path | replace "/" "-" }}
+  labels:
+    type: aggregation-rules
+    prometheus: kubernetes
+
+spec:
+{{ printf "%s" $bytes | indent 2 }}
+{{- end }}

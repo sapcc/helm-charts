@@ -40,6 +40,26 @@
 {{- end -}}
 {{- end -}}
 
+{{- define "mariadb_maintenance_affinity" }}
+          - weight: 1
+            preference:
+              matchExpressions:
+              - key: cloud.sap/maintenance-state
+                operator: In
+                values:
+                - operational
+{{- end }}
+
+{{- define "mariadb_node_reinstall_affinity" }}
+          - weight: 1
+            preference:
+              matchExpressions:
+              - key: cloud.sap/deployment-state
+                operator: NotIn
+                values:
+                - reinstalling
+{{- end }}
+
 {{/* Needed for testing purposes only. */}}
 {{define "RELEASE-NAME_db_host"}}testRelease-mariadb.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}{{end}}
 {{define "testRelease_db_host"}}testRelease-mariadb.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}{{end}}

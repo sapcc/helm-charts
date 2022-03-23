@@ -1,6 +1,7 @@
 {{- define "share_netapp" -}}
 {{$share := index . 1 -}}
 {{with index . 0}}
+{{$availability_zone := $share.availability_zone | default .Values.default_availability_zone | default .Values.global.default_availability_zone }}
 kind: Deployment
 apiVersion: apps/v1
 metadata:
@@ -9,6 +10,8 @@ metadata:
     system: openstack
     type: backend
     component: manila
+    alert-tier: os
+    alert-service: manila
 spec:
   replicas: 1
   revisionHistoryLimit: 5
@@ -28,6 +31,17 @@ spec:
         configmap-etc-hash: {{ include (print .Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
         configmap-netapp-hash: {{ list . $share | include "share_netapp_configmap" | sha256sum }}
     spec:
+{{ tuple $availability_zone | include "kubernetes_pod_az_affinity" | indent 6 }}
+      initContainers:
+        - name: fetch-rabbitmqadmin
+          image: {{.Values.global.dockerHubMirror}}/library/busybox
+          command: ["/scripts/fetch-rabbitmqadmin.sh"]
+          volumeMounts:
+            - name: manila-bin
+              mountPath: /scripts
+              readOnly: true
+            - name: etcmanila
+              mountPath: /shared
       containers:
         - name: manila-share-netapp-{{$share.name}}
           image: {{.Values.global.registry}}/loci-manila:{{.Values.loci.imageVersion}}
@@ -76,7 +90,7 @@ spec:
           {{- end }}
           livenessProbe:
             exec:
-              command: ["openstack-agent-liveness", "--config-dir", "/etc/manila"]
+              command: ["/etc/manila/rabbitmqadmin", "-H", "manila-rabbitmq", "-u", "admin", "-p" , "{{ .Values.rabbitmq.users.admin.password }}", "list", "bindings", "|", "grep", "manila-share-netapp-{{$share.name}}"]
             initialDelaySeconds: 60
             periodSeconds: 60
             timeoutSeconds: 20
@@ -93,6 +107,10 @@ spec:
       volumes:
         - name: etcmanila
           emptyDir: {}
+        - name: manila-bin
+          configMap:
+            name: manila-bin
+            defaultMode: 0555
         - name: manila-etc
           configMap:
             name: manila-etc

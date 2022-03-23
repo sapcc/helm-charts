@@ -39,6 +39,13 @@ inhibit_rules:
       alertname: 'PodNotReady|ManyPodsNotReadyOnNode'
     equal: ['node']
 
+  # If the alert NodeInMaintenance is firing other alerts with the label inhibited-by: node-maintenance are being inhibited on the same node.
+  - source_match:
+      alertname: NodeInMaintenance
+    target_match:
+      inhibited_by: node-maintenance
+    equal: ['node']
+
 route:
   group_by: ['region', 'service', 'alertname', 'cluster']
   group_wait: 1m
@@ -47,6 +54,14 @@ route:
   receiver: dev-null
 
   routes:
+  - receiver: slack_hsm
+    continue: false
+    match_re:
+      service: barbican
+      context: hsm
+      severity: info
+      region: ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|ap-sa-2|eu-de-1|eu-de-2|eu-nl-1|eu-ru-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3|qa-de-1
+
   - receiver: slack_barbican_certificate
     continue: false
     match_re:
@@ -118,7 +133,7 @@ route:
     match_re:
       tier: os
       severity: info|warning|critical
-      service: arc|backup|barbican|castellum|cinder|cfm|cronus|designate|documentation|elektra|elk|glance|hermes|ironic|keppel|keystone|limes|lyra|maia|manila|neutron|nova|octavia|sentry|swift
+      service: arc|backup|barbican|castellum|cinder|cfm|cronus|designate|documentation|elektra|elk|glance|hermes|ironic|keppel|keystone|limes|lyra|maia|manila|metis|neutron|nova|octavia|sentry|swift
       region: qa-de-1|ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|ap-sa-2|eu-de-1|eu-de-2|eu-nl-1|eu-ru-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3
 
   - receiver: slack_sre
@@ -784,6 +799,19 @@ receivers:
   - name: slack_barbican_certificate
     slack_configs:
       - channel: '#cc-os-barbican-cert-expiry'
+        api_url: {{ required ".Values.slack.webhookURL undefined" .Values.slack.webhookURL | quote }}
+        username: "Pulsar"
+        title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
+        title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
+        text: {{"'{{template \"slack.sapcc.text\" . }}'"}}
+        pretext: {{"'{{template \"slack.sapcc.pretext\" . }}'"}}
+        icon_emoji: {{"'{{template \"slack.sapcc.iconemoji\" . }}'"}}
+        color: {{`'{{template "slack.sapcc.color" . }}'`}}
+        send_resolved: true
+
+  - name: slack_hsm
+    slack_configs:
+      - channel: '#cc-os-hsm'
         api_url: {{ required ".Values.slack.webhookURL undefined" .Values.slack.webhookURL | quote }}
         username: "Pulsar"
         title: {{"'{{template \"slack.sapcc.title\" . }}'"}}

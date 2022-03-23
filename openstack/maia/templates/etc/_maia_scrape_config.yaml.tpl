@@ -48,7 +48,7 @@
       source_labels: [vmware_name]
       regex: c_blackbox.*|c_regression.*
     - action: labeldrop
-      regex: "instance|job"
+      regex: "instance|job|alert_tier|alert_service"
     - source_labels: [ltmVirtualServStatName]
       target_label: project_id
       regex: /Project_(.*)/Project_.*
@@ -85,7 +85,7 @@
   static_configs:
     - targets: ['prometheus-openstack.prometheus-openstack:9090']
   metric_relabel_configs:
-    - regex: "instance|job|kubernetes_namespace|kubernetes_pod_name|kubernetes_name|pod_template_hash|exported_instance|exported_job|type|name|component|app|system"
+    - regex: "instance|job|kubernetes_namespace|kubernetes_pod_name|kubernetes_name|pod_template_hash|exported_instance|exported_job|type|name|component|app|system|alert_tier|alert_service"
       action: labeldrop
   metrics_path: '/federate'
   params:
@@ -102,7 +102,7 @@
   static_configs:
     - targets: ['prometheus-infra-collector.infra-monitoring:9090']
   metric_relabel_configs:
-    - regex: "cluster|cluster_type|instance|job|kubernetes_namespace|kubernetes_pod_name|kubernetes_name|pod_template_hash|exported_instance|exported_job|type|name|component|app|system|thanos_cluster|thanos_cluster_type|thanos_region"
+    - regex: "cluster|cluster_type|instance|job|kubernetes_namespace|kubernetes_pod_name|kubernetes_name|pod_template_hash|exported_instance|exported_job|type|name|component|app|system|thanos_cluster|thanos_cluster_type|thanos_region|alert_tier|alert_service"
       action: labeldrop
     - action: drop
       source_labels: [vmware_name]
@@ -190,5 +190,5 @@
       - '{__name__="aws_ses_cronus_provider_send"}'
   metric_relabel_configs:
     - action: labeldrop
-      regex: "exported_instance|exported_job|instance|job|tags|cluster|cluster_type|multicloud_id"
+      regex: "exported_instance|exported_job|instance|job|tags|cluster|cluster_type|multicloud_id|alert_tier|alert_service"
 {{ end }}

@@ -1,0 +1,53 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: {{ include "ldap-named-user.fullname" . }}
+  annotations:
+    secret/checksum: {{ include ( print $.Template.BasePath "/secret.yaml" ) . | sha256sum }}
+  labels:
+    k8s-app: ldap-named-user
+spec:
+  selector:
+    matchLabels:
+      k8s-app: ldap-named-user
+  template:
+    metadata:
+      labels:
+        k8s-app: ldap-named-user
+        {{- include "ldap-named-user.labels" . | nindent 8 }}
+    spec:
+      tolerations:
+      - operator: Exists
+      hostPID: true
+      initContainers:
+      - name: enable-sssd-named-user
+        image: keppel.eu-de-1.cloud.sap/ccloud-dockerhub-mirror/library/alpine:latest
+        securityContext:
+          privileged: true
+        command:
+        - sh
+        - -c
+        args:
+        - |-
+          set -xe
+          cp -f /secret/sssd.conf /hostfs/etc/sssd
+          cp -f /secret/sudoers-ldap /hostfs/etc/sudoers.d
+          chroot /hostfs systemctl enable sssd
+          chroot /hostfs systemctl restart sssd
+        volumeMounts:
+        - name: hostfs
+          mountPath: /hostfs
+          readOnly: false
+        - name: secret
+          mountPath: /secret  
+      containers:
+        - name: pause
+          image: keppel.eu-de-1.cloud.sap/ccloud-dockerhub-mirror/sapcc/pause-amd64:3.1
+      volumes:
+      - name: hostfs
+        hostPath:
+          path: /
+      - name: secret
+        secret:
+          secretName: {{ include "ldap-named-user.fullname" . }}
+          defaultMode: 0600

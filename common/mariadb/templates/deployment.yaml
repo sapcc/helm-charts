@@ -31,12 +31,17 @@ spec:
     spec:
       affinity:
         nodeAffinity:
-          preferredDuringSchedulingIgnoredDuringExecution:
 {{- if .Values.nodeAffinity }}
       {{- with .Values.nodeAffinity }}
-{{ toYaml . | indent 12 }}
+{{ toYaml . | indent 10 }}
       {{- end }}
+{{- include "mariadb_maintenance_affinity" . }}
+{{- include "mariadb_node_reinstall_affinity" . }}
 {{- else }}
+          preferredDuringSchedulingIgnoredDuringExecution:
+{{- include "mariadb_maintenance_affinity" . }}
+{{- include "mariadb_node_reinstall_affinity" . }}
+{{- end }}
           - weight: 1
             preference:
               matchExpressions:
@@ -44,14 +49,6 @@ spec:
                   operator: In
                   values:
                   - {{.Values.global.region}}a
-          - weight: 1
-            preference:
-              matchExpressions:
-                - key: cloud.sap/maintenance-state
-                  operator: In
-                  values:
-                  - operational
-{{- end }}
       containers:
       - name: mariadb
         image: {{ required ".Values.global.dockerHubMirrorAlternateRegion is missing" .Values.global.dockerHubMirrorAlternateRegion }}/{{ .Values.image }}

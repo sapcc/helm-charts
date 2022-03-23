@@ -72,21 +72,65 @@ ingress:
   # However the full host name can be set explicitly via the hostNameOverride parameter.
   # hostNameOverride: something.subDomain.tld
 
-  # Automate DNS management via disco.
-  disco: true
+  # Client certificate authentication on ingress level.
+  authentication:
+    oauth:
+      enabled: false
+
+      # The URL to the authentication service.
+      authURL:
+
+      # Optional URL to specify the location of the error page.
+      authSignInURL:
+
+    sso:
+      enabled: true
+
+      # The key (<namespace>/<name>) of the secret containing the CA certificate (`ca.crt`) that is enabled to authenticate against this Ingress.
+      authTLSSecret: kube-system/ingress-cacrt
+
+      # The validation depth between the provided client certificate and the certification authority chain.
+      authTLSVerifyDepth: 3
+
+      # Enables verification of client certificates.
+      authTLSVerifyClient: on
+
+  # Additional annotations for the ingress.
+  annotations: {}
+
+# Optional additional ingress for this Alertmanager.
+internalIngress:
+  enabled: false
+
+  # The name is used to generate the internal URL Alertmanager will be available under: <host>.<region>.<domain>.
+  # If the ingress is enabled, it's also used for the ingress host.
+  host:
+
+  # Per default the host name is generated following the pattern `<host>.<region>.<domain>.
+  # However the full host name can be set explicitly via the hostNameOverride parameter.
+  # hostNameOverride: something.subDomain.tld
 
   # Client certificate authentication on ingress level.
   authentication:
-    enabled: true
+    oauth:
+      enabled: false
 
-    # The key (<namespace>/<name>) of the secret containing the CA certificate (`ca.crt`) that is enabled to authenticate against this Ingress.
-    authTLSSecret: kube-system/ingress-cacrt
+      # The URL to the authentication service.
+      authURL:
 
-    # The validation depth between the provided client certificate and the certification authority chain.
-    authTLSVerifyDepth: 3
+      # Optional URL to specify the location of the error page.
+      authSignInURL:
 
-    # Enables verification of client certificates.
-    authTLSVerifyClient: on
+    sso:
+      enabled: true
+      # The key (<namespace>/<name>) of the secret containing the CA certificate (`ca.crt`) that is enabled to authenticate against this Ingress.
+      authTLSSecret: kube-system/ingress-cacrt
+
+      # The validation depth between the provided client certificate and the certification authority chain.
+      authTLSVerifyDepth: 3
+
+      # Enables verification of client certificates.
+      authTLSVerifyClient: on
 
   # Additional annotations for the ingress.
   annotations: {}

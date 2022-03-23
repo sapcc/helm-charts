@@ -1,90 +1,63 @@
-{{- if .Release.IsUpgrade }}
+{{- $region  := .Values.global.region       | required "missing value for .Values.global.region" -}}
+{{- $tld     := .Values.global.tld          | required "missing value for .Values.global.tld" -}}
+{{- $mirror  := .Values.global.quayIoMirror | required "missing value for .Values.global.quayIoMirror" -}}
+{{- $db_name := .Values.db_name             | default .Release.Name -}}
+{{- $db_pass := .Values.db_password         | required "missing value for .Values.db_password" -}}
+{{- $db_host := printf "%s-postgresql.%s.svc.kubernetes.%s.%s" .Release.Name .Release.Namespace $region $tld -}}
+
 kind: Deployment
 apiVersion: apps/v1
 metadata:
-  name: {{ template "fullname" . }}
+  name: {{ .Release.Name }}-pgmetrics
   labels:
-    app: {{ template "fullname" . }}
     chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
-    release: "{{ .Release.Name }}"
-    heritage: "{{ .Release.Service }}"
 spec:
-  replicas: {{ .Values.replicas }}
-  revisionHistoryLimit: {{ .Values.upgrades.revisionHistory }}
+  replicas: 1
+  revisionHistoryLimit: 3
   strategy:
-    type: {{ .Values.upgrades.podReplacementStrategy }}
-    {{ if eq .Values.upgrades.podReplacementStrategy "RollingUpdate" }}
-    rollingUpdate:
-      maxUnavailable: {{ .Values.upgrades.rollingUpdate.maxUnavailable }}
-      maxSurge: {{ .Values.upgrades.rollingUpdate.maxSurge }}
-    {{ end }}
+    type: Recreate
   selector:
     matchLabels:
-      app: {{ template "fullname" . }}
+      app: {{ .Release.Name }}-pgmetrics
   template:
     metadata:
       labels:
-        app: {{ template "fullname" . }}
-        component: {{ default .Release.Name .Values.db_name }}
+        app: {{ .Release.Name }}-pgmetrics
+        component: {{ $db_name }}
+        chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
         type: metrics
       annotations:
-        chart-version: {{.Chart.Version}}
         configmap-etc-hash: {{ include (print $.Template.BasePath "/configmap-etc.yaml") . | sha256sum }}
-        # Would be nice to have metrics in Maia as well: maia.io/scrape: "true"
         prometheus.io/scrape: "true"
-        prometheus.io/port: {{ default 9187 .Values.port | quote }}
-        prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
+        prometheus.io/port: "9187"
+        prometheus.io/targets: {{ quote .Values.alerts.prometheus }}
     spec:
       containers:
       - name: metrics
-        {{- if contains "." .Values.image }}
-        image: "{{ .Values.image }}:{{ .Values.imageTag }}"
-        {{- else }}
-        image: "{{ required ".Values.global.dockerHubMirror missing" .Values.global.dockerHubMirror }}/{{ .Values.image }}:{{ .Values.imageTag }}"
-        {{- end }}
-        imagePullPolicy: {{ default "IfNotPresent" .Values.imagePullPolicy | quote }}
+        image: "{{ $mirror }}/prometheuscommunity/postgres-exporter:v0.10.1"
+        imagePullPolicy: IfNotPresent
         env:
         - name: DATA_SOURCE_NAME
-          value: postgresql://{{ .Values.global.dbUser | default "postgres" }}:{{ .Values.db_password | default .Values.global.dbPassword }}@{{include "db_host" .}}:{{ default 5432 .Values.db_port }}/{{ default .Release.Name .Values.db_name}}?sslmode=disable
+          value: postgresql://postgres:{{ $db_pass }}@{{ $db_host }}:5432/{{ $db_name }}?sslmode=disable
         ports:
           - name: metrics
-            containerPort: {{ default 9187 .Values.port }}
-        {{- if .Values.customMetrics }}
-        args: ["--extend.query-path", "/conf/custom-metrics.yaml", "--log.level", {{ .Values.log_level }}]
+            containerPort: 9187
+        args: ["--extend.query-path", "/conf/custom-metrics.yaml", "--log.level", "info" ]
         volumeMounts:
           - name: custom-metrics
             mountPath: /conf
             readOnly: true
-        {{- end }}
-        {{- if .Values.resources.enabled }}
         resources:
           limits:
-            cpu: {{ .Values.resources.limits.cpu | quote }}
-            memory: {{ .Values.resources.limits.memory | quote }}
+            cpu:    {{ quote .Values.resources.limits.cpu }}
+            memory: {{ quote .Values.resources.limits.memory }}
           requests:
-            cpu: {{ .Values.resources.requests.cpu | quote }}
-            memory: {{ .Values.resources.requests.memory | quote }}
-        {{- end }}
-      {{- if .Values.dependencyJobs }}
-      initContainers:
-        - name: init
-          image: quay.io/stackanetes/kubernetes-entrypoint:v0.2.1
-          imagePullPolicy: {{ default "IfNotPresent" .Values.imagePullPolicy | quote }}
-          env:
-            - name: DEPENDENCY_JOBS
-              value: {{ .Values.dependencyJobs | quote }}
-            - name: COMMAND
-              value: "echo done"
-          command:
-            - kubernetes-entrypoint
-      {{- end }}
+            cpu:    {{ quote .Values.resources.requests.cpu }}
+            memory: {{ quote .Values.resources.requests.memory }}
       volumes:
-      {{- if .Values.customMetrics }}
       - name: custom-metrics
         configMap:
-          name: {{ template "fullname" . }}-etc
+          name: {{ .Release.Name }}-pgmetrics-etc
           items:
           - key: custom-metrics.yaml
             path: custom-metrics.yaml
-      {{- end }}
-{{- end }}

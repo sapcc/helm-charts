@@ -5,7 +5,7 @@ metadata:
   namespace: kube-system
 type: Opaque
 data: 
-  maintenance.yaml: {{ required "A maintenance configuration is required" .Values.config | b64enc }}
+  maintenance.yaml: {{ tpl ( required "A maintenance configuration is required" .Values.config ) . | b64enc }}
   {{- if .Values.esx.enabled }}
   esx.yaml: {{ required "A esx maintenance configuration is required" .Values.esx.config | b64enc }}
   {{- end }}
@@ -44,6 +44,10 @@ spec:
                 values:
                 - maintenance-controller
             topologyKey: kubernetes.io/hostname
+      {{- if .Values.tolerations }}
+      tolerations:
+        {{- toYaml .Values.tolerations | nindent 8 }}
+      {{- end }}
       containers:
       - command:
         - /manager
@@ -69,11 +73,11 @@ spec:
         {{- end }}
         resources:
           limits:
-            cpu: 200m
-            memory: 256Mi
+            cpu: {{ .Values.limits.cpu }}
+            memory: {{ .Values.limits.memory }}
           requests:
-            cpu: 200m
-            memory: 128Mi
+            cpu: {{ .Values.limits.cpu }}
+            memory: {{ .Values.limits.memory }}
         livenessProbe:
           httpGet:
             path: /healthz

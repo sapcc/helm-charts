@@ -8,6 +8,8 @@ metadata:
   labels:
     system: openstack
     component: manila
+    alert-tier: os
+    alert-service: manila
 spec:
   replicas: 1
   revisionHistoryLimit: 2
@@ -27,6 +29,18 @@ spec:
         configmap-etc-hash: {{ include (print .Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
         configmap-netapp-hash: {{ list . $share | include "share_netapp_configmap" | sha256sum }}
     spec:
+      affinity:
+        podAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: name
+                  operator: In
+                  values:
+                  - manila-share-netapp-{{$share.name}}
+              topologyKey: kubernetes.io/hostname
       containers:
         - name: reexport
           image: "{{.Values.global.registry}}/manila-ensure:{{.Values.loci.imageVersionEnsure}}"

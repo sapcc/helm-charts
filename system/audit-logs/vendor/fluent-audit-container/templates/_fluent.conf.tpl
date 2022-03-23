@@ -52,14 +52,16 @@
 </source>
 {{- end }}
 
+{{- if .Values.kubeAPIServer }}
+{{- range $.Values.kubeAPIServer }}
 <source>
   @type tail
-  @id kube-api
-  path /var/log/containers/{{ .Values.global.region }}-*-apiserver-*_kubernikus_fluentd-*.log,/var/log/containers/*-{{ .Values.global.region }}-*-apiserver-*_kubernikus_fluentd-*.log
+  @id {{.}}kube-api
+  path /var/log/containers/{{ . }}{{ $.Values.global.region }}-*-apiserver-*_kubernikus_fluentd-*.log
   exclude_path /var/log/containers/fluentd*
-  pos_file /var/log/kube-api-octobus.log.pos
-  tag kubeapi.*
-  {{- if eq .Values.global.clusterType "admin" }}
+  pos_file /var/log/{{ . }}kube-api-octobus.log.pos
+  tag kubeapi.{{ . }}{{ $.Values.global.region }}.*
+  {{- if eq $.Values.global.clusterType "admin" }}
   <parse>
     @type cri
   </parse>
@@ -71,28 +73,36 @@
   </parse>
   {{- end }}
 </source>
+<filter kubeapi.{{ . }}{{ $.Values.global.region }}.**>
+  @type record_transformer
+{{- if eq $.Values.global.clusterType "admin" }}
+  remove_keys logtag
+{{- end }}
+  <record>
+    sap.cc.audit.source "kube-api"
+    sap.cc.cluster "{{ . }}{{ $.Values.global.region }}"
+    sap.cc.region "{{ $.Values.global.region }}"
+  </record>
+</filter>
+
+{{- end }}
 <filter kubeapi.**>
   @type parser
   @id json_parser
-{{- if eq .Values.global.clusterType "admin" }}
+{{- if eq $.Values.global.clusterType "admin" }}
   key_name message
 {{- else }}
   key_name log
 {{- end }}
+  reserve_data true
+  remove_key_name_field true
   <parse>
     @type json
     time_format %Y-%m-%dT%T.%L%Z
     keep_time_key true
   </parse>
 </filter>
-<filter kubeapi.**>
-  @type record_transformer
-  <record>
-    sap.cc.audit.source "kube-api"
-    sap.cc.cluster "{{ .Values.global.cluster }}"
-    sap.cc.region "{{ .Values.global.region }}"
-  </record>
-</filter>
+{{- end }}
 
 {{- if .Values.additional_container_logs }}
 {{- range .Values.additional_container_logs }}
@@ -109,6 +119,18 @@
     keep_time_key true
   </parse>
 </source>
+{{- if .parse }}
+<filter {{ .tag }}*>
+  @type parser
+  @id {{ .id }}_json_parser
+  key_name log
+  <parse>
+    @type json
+    time_format %Y-%m-%dT%T.%L%Z
+    keep_time_key true
+  </parse>
+</filter>
+{{- end }}
 {{- if .field }}
 <filter {{ .tag }}*>
   @type record_transformer
@@ -118,6 +140,15 @@
     sap.cc.region "{{ $.Values.global.region }}"
   </record>
 </filter>
+{{- if .filter }}
+<filter {{ .tag }}*>
+  @type grep
+  <regexp>
+    key {{ .filter.key }}
+    pattern {{ .filter.pattern }}
+  </regexp>
+</filter>
+{{- end }}
 {{- end }}
 {{- end }}
 {{- end }}
@@ -222,6 +253,47 @@
   </store>
 </match>
 {{- end }}
+
+<match iasapi.** iaschangelog.** vault.** github-guard.** github-guard-tools.** github-guard-corp.** concourse.** >
+  @type copy
+  @id duplicate_tools
+  <store>
+    @type http
+    @id ocb_audit_tools
+    endpoint "https://{{.Values.global.forwarding.audit_tools.host}}"
+    tls_ca_cert_path "/etc/ssl/certs/ca-certificates.crt"
+    slow_flush_log_threshold 105.0
+    retryable_response_codes [429,503]
+    <buffer>
+      chunk_limit_size 8MB
+      flush_at_shutdown true
+      overflow_action block
+      retry_forever true
+      retry_type exponential_backoff
+      retry_max_interval 60s
+      flush_interval 15s
+      flush_thread_count 2
+    </buffer>
+    <format>
+      @type json
+    </format>
+    json_array true
+  </store>
+  <store>
+    @type prometheus
+    @id to_prometheus_tools
+    <metric>
+      name fluentd_output_status_num_records_total
+      type counter
+      desc The total number of outgoing records
+      <labels>
+        node "#{ENV['K8S_NODE_NAME']}"
+        container $.kubernetes.container_name
+        source all
+      </labels>
+    </metric>
+  </store>
+</match>
 
 <match **>
   @type copy

@@ -1,0 +1,23 @@
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+
+metadata:
+  name: git-cert-shim
+
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: git-cert-shim
+  resourcePolicy:
+    containerPolicies:
+    - containerName: manager
+      controlledResources:
+      - cpu
+      - memory
+      maxAllowed:
+        cpu: 1
+        memory: 512Mi
+      minAllowed:
+        cpu: 50m
+        memory: 50Mi

@@ -4,7 +4,7 @@ metadata:
   # since this name changes with every image change, removal and creation of
   # this Job happens on nearly every deployment. Check the helm-chart changes
   # to see if this needs more review.
-  name: nova-migration-{{.Values.imageVersion | required "Please set nova.imageVersion or similar"}}
+  name: {{ tuple . "db-migrate" | include "job_name" }}
   labels:
     system: openstack
     type: configuration
@@ -12,10 +12,7 @@ metadata:
 spec:
   template:
     metadata:
-      labels:
-{{ tuple . "nova" "migration" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
-      annotations:
-        configmap-bin-hash: {{ include (print $.Template.BasePath "/bin-configmap.yaml") . | sha256sum }}
+      {{- tuple . "db-migrate" | include "job_metadata" | indent 6 }}
     spec:
       restartPolicy: OnFailure
       containers:

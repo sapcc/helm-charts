@@ -172,6 +172,7 @@
       - '{__name__=~"^vrops_vcenter_diskspace_usage_gigabytes"}'
       - '{__name__=~"^vrops_vcenter_vcsa_certificate_remaining_days"}'
       - '{__name__=~"^vrops_vcenter_summary_version_info"}'
+      - '{__name__=~"^vrops_vcenter_memory_reserved_capacity_average"}'
       - '{__name__=~"^vrops_cluster_cluster_running_hosts"}'
       - '{__name__=~"^vrops_cluster_configuration_drsconfig_targetbalance"}'
       - '{__name__=~"^vrops_cluster_cpu_capacity_mhz"}'
@@ -180,6 +181,9 @@
       - '{__name__=~"^vrops_cluster_memory_capacity_kilobytes"}'
       - '{__name__=~"^vrops_cluster_memory_usage_percentage"}'
       - '{__name__=~"^vrops_cluster_services_totalimbalance"}'
+      - '{__name__=~"^vrops_cluster_summary_drs_unhappy_vms"}'
+      - '{__name__=~"^vrops_cluster_badge_efficiency_percentage"}'
+      - '{__name__=~"^vrops_cluster_badge_health_percentage"}'
       - '{__name__=~"^vrops_hostsystem_cpu_usage_average_percentage"}'
       - '{__name__=~"^vrops_hostsystem_cpu_sockets_number"}'
       - '{__name__=~"^vrops_hostsystem_cpu_usage_megahertz"}'
@@ -189,6 +193,7 @@
       - '{__name__=~"^vrops_hostsystem_memory_usage_percentage"}'
       - '{__name__=~"^vrops_hostsystem_memory_swap_out_rate_kbps"}'
       - '{__name__=~"^vrops_hostsystem_memory_swap_used_rate_kbps"}'
+      - '{__name__=~"^vrops_hostsystem_memory_reserved_capacity_percentage"}'
       - '{__name__=~"^vrops_hostsystem_summary_number_vms_total"}'
       - '{__name__=~"^vrops_hostsystem_summary_version_info"}'
       - '{__name__=~"^vrops_hostsystem_summary_number_vmotion_total"}'
@@ -198,6 +203,9 @@
       - '{__name__=~"^vrops_hostsystem_configuration_dasconfig_admissioncontrolpolicy_failoverhost"}'
       - '{__name__=~"^vrops_hostsystem_hardware_bios_version"}'
       - '{__name__=~"^vrops_hostsystem_hardware_model"}'
+      - '{__name__=~"^vrops_hostsystem_memory_useable_kilobytes"}'
+      - '{__name__=~"^vrops_hostsystem_cpu_model"}'
+      - '{__name__=~"^vrops_hostsystem_hardware_number_of_cpu_cores_info"}'
       - '{__name__=~"^vrops_virtualmachine_cpu_workload_percentage"}'
       - '{__name__=~"^vrops_virtualmachine_memory_usage_average"}'
       - '{__name__=~"^vrops_virtualmachine_memory_kilobytes"}'
@@ -207,6 +215,8 @@
       - '{__name__=~"^vrops_virtualmachine_runtime_connectionstate",state="disconnected"}'
       - '{__name__=~"^vrops_virtualmachine_runtime_powerstate"}'
       - '{__name__=~"^vrops_virtualmachine_guestfilesystem_storage_db_percentage"}'
+      - '{__name__=~"^vrops_virtualmachine_cpu_contention_ratio"}'
+      - '{__name__=~"^vrops_virtualmachine_memory_contention_ratio"}'
       - '{__name__=~"^vrops_datastore_.+", type!~"local"}'
       - '{__name__=~"^vrops_nsxt.*"}'
       - '{__name__=~"^vrops_distributed_virtual_switch_summary_version"}'
@@ -215,6 +225,52 @@
       - '{__name__=~"^vrops_self_object_primary_metrics_count"}'
       - '{__name__=~"^vrops_self_object_primary_objects_count"}'
       
+  relabel_configs:
+    - action: replace
+      source_labels: [__address__]
+      target_label: region
+      regex: prometheus-infra.scaleout.(.+).cloud.sap
+      replacement: $1
+    - action: replace
+      target_label: cluster_type
+      replacement: controlplane
+
+  metric_relabel_configs:
+    - action: replace
+      source_labels: [__name__]
+      target_label: __name__
+      regex: global:(.+)
+      replacement: $1
+    - source_labels: [__name__, prometheus_source, prometheus]
+      regex: '^up;^$;(.+)'
+      replacement: '$1'
+      target_label: prometheus_source
+      action: replace
+
+  {{ if .Values.authentication.enabled }}
+  tls_config:
+    cert_file: /etc/prometheus/secrets/prometheus-infra-sso-cert/sso.crt
+    key_file: /etc/prometheus/secrets/prometheus-infra-sso-cert/sso.key
+  {{ end }}
+
+  static_configs:
+    - targets:
+{{- range $region := .Values.regionList }}
+      - "prometheus-infra.scaleout.{{ $region }}.cloud.sap"
+{{- end }}
+
+- job_name: 'prometheus-regions-bastion-federation'
+  scheme: https
+  scrape_interval: 2m
+  scrape_timeout: 115s
+
+  honor_labels: true
+  metrics_path: '/federate'
+
+  params:
+    'match[]':
+      - '{__name__=~"^bastion_audit_log"}'
+
   relabel_configs:
     - action: replace
       source_labels: [__address__]

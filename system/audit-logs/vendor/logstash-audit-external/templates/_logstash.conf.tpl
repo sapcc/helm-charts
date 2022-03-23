@@ -9,26 +9,6 @@ input {
     type => syslog
   }
 {{- end }}
-{{- if eq .Values.global.clusterType "metal" }}
-  udp {
-    port  => {{.Values.input_netflow_port}}
-    type => netflow
-  }
-  udp {
-    port  => {{.Values.input_bigiplogs_port}}
-    type => bigiplogs
-  }
-  http {
-    port  => {{.Values.input_alertmanager_port}}
-    type => alert
-    codec => plain
-  }
-  tcp {
-    port  => {{.Values.input_deployments_port}}
-    type => deployment
-    codec => plain
-  }
-{{- end }}
   http {
     port  => {{.Values.input_http_port}}
     tags => ["audit"]
@@ -84,7 +64,7 @@ filter {
 
     syslog_pri { }
 
-  if [hostname] =~ "^node\d{3}r" {
+  if [hostname] =~ "^node\d{2,3}r" {
     # grok {
     #   match => {
     #     "message" => [
@@ -97,8 +77,18 @@ filter {
       replace => { "type" => "audit" }
       add_field => { "[sap][cc][audit][source]" => "remoteboard"}
     }
+    {{- if .Values.syslog.elk_output_enabled }}
     clone {
       clones => ['audit', 'syslog']
+    }
+    {{- end }}
+  }
+
+# Set source for ucs central instances
+  if [host] == "10.46.22.24" or [host] == "10.67.75.240" {
+    mutate {
+      replace => { "type" => "audit" }
+      add_field => { "[sap][cc][audit][source]" => "ucsc" }
     }
   }
 
@@ -109,9 +99,11 @@ filter {
         replace => { "type" => "audit" }
         add_field => { "[sap][cc][audit][source]" => "ucsm" }
       }
+    {{- if .Values.syslog.elk_output_enabled }}
       clone {
-       clones => ['audit', 'syslog']
+        clones => ['audit', 'syslog']
       }
+    {{- end }}
     }
   }
 
@@ -121,17 +113,23 @@ filter {
         replace => { "type" => "audit" }
         add_field => { "[sap][cc][audit][source]" => "hsm" }
     }
+    {{- if .Values.syslog.elk_output_enabled }}
     clone {
       clones => ['audit', 'syslog']
     }
+    {{- end }}
   }
-
+  {{- if .Values.syslog.elk_output_enabled }}
   if [type] == "syslog" and [sap][cc][audit][source] {
     mutate{
       remove_field => "[sap][cc][audit][source]"
     }
   }
-
+  {{- else}}
+  if [type] == "syslog" {
+    drop{}
+  }
+  {{- end }}
  }
  {{- end }}
  {{- if eq .Values.global.clusterType "metal" }}
@@ -186,6 +184,7 @@ filter {
       if "awx" in [cluster_host_id] {
         mutate {
           add_field => { "[sap][cc][audit][source]"  => "awx" }
+          remove_field => [ "event_data" ]
         }
       }
 
@@ -207,7 +206,21 @@ filter {
 
 
 output {
-  if [type] == "audit" or "audit" in [tags] {
+  if [sap][cc][audit][source] == "awx" {
+    http {
+      cacert => "/usr/share/logstash/config/ca.pem"
+      url => "https://{{ .Values.global.forwarding.audit_awx.host }}"
+      format => "json"
+      http_method => "post"
+    }
+  } else if [sap][cc][audit][source] == "flatcar" {
+    http {
+      cacert => "/usr/share/logstash/config/ca.pem"
+      url => "https://{{ .Values.global.forwarding.audit_auditbeat.host }}"
+      format => "json"
+      http_method => "post"
+    }
+  } else if [type] == "audit" or "audit" in [tags] {
     http {
       cacert => "/usr/share/logstash/config/ca.pem"
       url => "https://{{ .Values.global.forwarding.audit.host }}"
@@ -215,86 +228,12 @@ output {
       http_method => "post"
     }
   }
-{{- if .Values.syslog.enabled }}
+{{- if .Values.syslog.elkOutputEnabled }}
   elseif [type] == "syslog" {
     elasticsearch {
       index => "syslog-%{+YYYY.MM.dd}"
       template => "/audit-etc/syslog.json"
       template_name => "syslog"
-      template_overwrite => true
-      hosts => ["{{.Values.global.elk_elasticsearch_endpoint_host_scaleout}}.{{.Values.global.region}}.{{.Values.global.tld}}:{{.Values.global.elk_elasticsearch_ssl_port}}"]
-      user => "{{.Values.global.elk_elasticsearch_data_user}}"
-      password => "{{.Values.global.elk_elasticsearch_data_password}}"
-      ssl => true
-    }
-  }
-{{- end }}
-{{- if eq .Values.global.clusterType "metal" }}
-  elseif [type] == "bigiplogs" {
-    elasticsearch {
-      index => "bigiplogs-%{+YYYY.MM.dd}"
-      template => "/audit-etc/bigiplogs.json"
-      template_name => "bigiplogs"
-      template_overwrite => true
-      hosts => ["{{.Values.global.elk_elasticsearch_endpoint_host_scaleout}}.{{.Values.global.region}}.{{.Values.global.tld}}:{{.Values.global.elk_elasticsearch_ssl_port}}"]
-      user => "{{.Values.global.elk_elasticsearch_data_user}}"
-      password => "{{.Values.global.elk_elasticsearch_data_password}}"
-      ssl => true
-    }
-  }
-  elseif [type] == "alert" and [alerts][labels][severity] == "critical"{
-    elasticsearch {
-      index => "alerts-critical-%{+YYYY}"
-      template => "/audit-etc/alerts.json"
-      template_name => "alerts"
-      template_overwrite => true
-      hosts => ["{{.Values.global.elk_elasticsearch_endpoint_host_scaleout}}.{{.Values.global.region}}.{{.Values.global.tld}}:{{.Values.global.elk_elasticsearch_ssl_port}}"]
-      user => "{{.Values.global.elk_elasticsearch_data_user}}"
-      password => "{{.Values.global.elk_elasticsearch_data_password}}"
-      ssl => true
-    }
-  }
-  elseif [type] == "alert" and [alerts][labels][severity] == "warning"{
-      elasticsearch {
-        index => "alerts-warning-%{+YYYY}"
-        template => "/audit-etc/alerts.json"
-        template_name => "alerts"
-        template_overwrite => true
-        hosts => ["{{.Values.global.elk_elasticsearch_endpoint_host_scaleout}}.{{.Values.global.region}}.{{.Values.global.tld}}:{{.Values.global.elk_elasticsearch_ssl_port}}"]
-        user => "{{.Values.global.elk_elasticsearch_data_user}}"
-        password => "{{.Values.global.elk_elasticsearch_data_password}}"
-        ssl => true
-    }
-  }
-  elseif [type] == "alert"{
-    elasticsearch {
-      index => "alerts-other-%{+YYYY}"
-      template => "/audit-etc/alerts.json"
-      template_name => "alerts"
-      template_overwrite => true
-      hosts => ["{{.Values.global.elk_elasticsearch_endpoint_host_scaleout}}.{{.Values.global.region}}.{{.Values.global.tld}}:{{.Values.global.elk_elasticsearch_ssl_port}}"]
-      user => "{{.Values.global.elk_elasticsearch_data_user}}"
-      password => "{{.Values.global.elk_elasticsearch_data_password}}"
-      ssl => true
-    }
-  }
-  elseif [type] == "deployment" {
-    elasticsearch {
-      index => "deployments-%{+YYYY}"
-      template => "/audit-etc/deployments.json"
-      template_name => "deployments"
-      template_overwrite => true
-      hosts => ["{{.Values.global.elk_elasticsearch_endpoint_host_scaleout}}.{{.Values.global.region}}.{{.Values.global.tld}}:{{.Values.global.elk_elasticsearch_ssl_port}}"]
-      user => "{{.Values.global.elk_elasticsearch_data_user}}"
-      password => "{{.Values.global.elk_elasticsearch_data_password}}"
-      ssl => true
-    }
-  }
-  elseif  [type] == "netflow" {
-    elasticsearch {
-      index => "netflow-%{+YYYY.MM.dd}"
-      template => "/audit-etc/netflow.json"
-      template_name => "netflow"
       template_overwrite => true
       hosts => ["{{.Values.global.elk_elasticsearch_endpoint_host_scaleout}}.{{.Values.global.region}}.{{.Values.global.tld}}:{{.Values.global.elk_elasticsearch_ssl_port}}"]
       user => "{{.Values.global.elk_elasticsearch_data_user}}"

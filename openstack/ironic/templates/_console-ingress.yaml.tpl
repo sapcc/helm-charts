@@ -1,7 +1,7 @@
 {{- define "ironic_conductor_console_ingress" }}
     {{- $conductor := index . 1 }}
     {{- with index . 0 }}
-apiVersion: networking.k8s.io/v1beta1
+apiVersion: networking.k8s.io/v1
 kind: Ingress
 
 metadata:
@@ -21,8 +21,11 @@ spec:
       http:
         paths:
         - path: /{{$conductor.name}}
+          pathType: Prefix
           backend:
-            serviceName: ironic-conductor-{{$conductor.name}}-console
-            servicePort: 80
+            service:
+              name: ironic-conductor-{{$conductor.name}}-console
+              port: 
+                number: 80
     {{- end }}
 {{- end }}

@@ -117,11 +117,13 @@ prometheus-server:
 
   ingress:
     enabled: true
-    vicePresident: false
-    annotations:
-      kubernetes.io/tls-acme: "true"
     hosts:
       - prometheus.kubernikus
+
+  internalIngress:
+    enabled: true
+    hosts:
+      - prometheus-internal.kubernikus
 
   persistence:
     enabled: true
@@ -163,8 +165,8 @@ prometheus-server:
       enabled: false
 
     hosts:
-      - alertmanager.scaleout.eu-de-1.cloud.sap
-      - alertmanager.scaleout.eu-nl-1.cloud.sap
+      - alertmanager-internal.scaleout.eu-de-1.cloud.sap
+      - alertmanager-internal.scaleout.eu-nl-1.cloud.sap
 
 prometheus-kubernetes-rules:
   prometheusName: kubernikus
@@ -386,9 +388,11 @@ fluent-bit:
       subPath: labelmap.json
 
 promtail:
+  enabled: false
   pipelineStages:
     - docker: {}
 
-# loki:
-    # user:
-    # password:
+loki:
+  enabled: false
+  # user:
+  # password:

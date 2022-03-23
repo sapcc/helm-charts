@@ -4,9 +4,6 @@
 
 replicaCount: 1
 
-andromeda:
-  image_tag: stable
-
 image:
   repository: keppel.eu-de-1.cloud.sap/ccloud/andromeda
   pullPolicy: IfNotPresent
@@ -24,7 +21,8 @@ cockroachdb:
   storage:
     persistentVolume:
       size: 10Gi
-  tls.enabled: false
+  tls:
+    enabled: false
   ingress:
     enabled: true
     annotations:
@@ -32,6 +30,15 @@ cockroachdb:
       disco: "true"
   serviceMonitor:
     enabled: true
+  conf:
+    single-node: true
+
+postgresql:
+  image: keppel.eu-de-1.cloud.sap/ccloud-dockerhub-mirror/library/postgres
+  imageTag: 14-alpine
+  postgresDatabase: andromeda
+  enabled: false
+
 nats:
   auth:
     enabled: false

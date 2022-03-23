@@ -39,7 +39,7 @@
   static_configs:
     - targets:
 {{- range $region := .Values.regionList }}
-      - "prometheus.admin.{{ $region }}.cloud.sap"
+      - "prometheus-internal.admin.{{ $region }}.cloud.sap"
 {{- end }}
 
 - job_name: 'metal-federation'
@@ -56,7 +56,7 @@
     - action: replace
       source_labels: [__address__]
       target_label: region
-      regex: prometheus-kubernetes.(.+).cloud.sap
+      regex: prometheus-internal.metal.(.+).cloud.sap
       replacement: $1
     - action: replace
       source_labels: [region]
@@ -81,7 +81,7 @@
   static_configs:
     - targets:
 {{- range $region := .Values.regionList }}
-      - "prometheus-kubernetes.{{ $region }}.cloud.sap"
+      - "prometheus-internal.metal.{{ $region }}.cloud.sap"
 {{- end }}
 
 - job_name: 'scaleout-federation'
@@ -125,7 +125,7 @@
   static_configs:
     - targets:
 {{- range $region := .Values.regionList }}
-      - "prometheus-kubernetes.scaleout.{{ $region }}.cloud.sap"
+      - "prometheus-internal.scaleout.{{ $region }}.cloud.sap"
 {{- end }}
 
 - job_name: 'internet-federation'
@@ -168,7 +168,7 @@
 
   static_configs:
     - targets:
-      - "prometheus.internet.eu-de-2.cloud.sap"
+      - "prometheus-internal.internet.eu-de-2.cloud.sap"
 
 - job_name: 'customer-federation'
   scheme: https
@@ -210,7 +210,7 @@
 
   static_configs:
     - targets:
-      - "prometheus.customer.eu-de-2.cloud.sap"
+      - "prometheus-internal.customer.eu-de-2.cloud.sap"
 
 - job_name: 'virtual-federation'
   scheme: https
@@ -253,5 +253,5 @@
   static_configs:
     - targets:
 {{- range $region := .Values.regionList }}
-      - prometheus.virtual.{{ $region }}.cloud.sap
+      - prometheus-internal.virtual.{{ $region }}.cloud.sap
 {{- end }}
