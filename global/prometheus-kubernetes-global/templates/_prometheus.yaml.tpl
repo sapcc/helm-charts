@@ -56,7 +56,7 @@
     - action: replace
       source_labels: [__address__]
       target_label: region
-      regex: prometheus-kubernetes.(.+).cloud.sap
+      regex: prometheus-internal.metal.(.+).cloud.sap
       replacement: $1
     - action: replace
       source_labels: [region]
@@ -81,7 +81,7 @@
   static_configs:
     - targets:
 {{- range $region := .Values.regionList }}
-      - "prometheus-kubernetes.{{ $region }}.cloud.sap"
+      - "prometheus-internal.metal.{{ $region }}.cloud.sap"
 {{- end }}
 
 - job_name: 'scaleout-federation'
