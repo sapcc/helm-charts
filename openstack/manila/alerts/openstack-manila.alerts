@@ -250,6 +250,20 @@ groups:
       description: 'Canary {{ $labels.service }} {{ $labels.check }} is flapping for 2 hours. See Sentry for details'
       summary: 'Canary {{ $labels.service }} {{ $labels.check }} is flapping'
 
+  - alert: OpenstackManilaApiPodDown
+    expr: up{component="manila",type="api"} == 0
+    for: 10m
+    labels:
+      context: availability
+      dashboard: manila
+      meta: a manila api instance went down
+      service: manila
+      severity: info
+      tier: os
+    annotations:
+      description: "{{ $labels.pod }} pod on {{ $labels.instance }} is DOWN. The remaining ones should keep the service up."
+      summary: "A manila api pod is DOWN"
+
 # row locks
   - alert: OpenstackManilaMariadbRowLocks
     expr: mysql_global_status_innodb_row_lock_current_waits{app="manila-mariadb"} > 0
