@@ -1,6 +1,6 @@
-{{- if eq .Values.kind "deployment" }}
+{{- if eq .Values.kind "statefulset" }}
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
   name: {{ template "fullname" . }}
   labels:
@@ -14,13 +14,7 @@ metadata:
 spec:
   replicas: {{ .Values.replicas }}
   revisionHistoryLimit: {{ .Values.upgrades.revisionHistory }}
-  strategy:
-    type: {{ .Values.upgrades.podReplacementStrategy }}
-    {{ if eq .Values.upgrades.podReplacementStrategy "RollingUpdate" }}
-    rollingUpdate:
-      maxUnavailable: {{ .Values.upgrades.rollingUpdate.maxUnavailable }}
-      maxSurge: {{ .Values.upgrades.rollingUpdate.maxSurge }}
-    {{ end }}
+  serviceName: {{ template "fullname" . }}
   selector:
     matchLabels:
       app: {{ template "fullname" . }}
@@ -100,17 +94,31 @@ spec:
 {{- end }}
       priorityClassName: {{ default "openstack-service-critical" .Values.priority_class | quote }}
       volumes:
+      {{- if not .Values.persistence.enabled }}
         - name: rabbitmq-persistent-storage
-        {{- if .Values.persistence.enabled }}
-          persistentVolumeClaim:
-            claimName: {{ .Values.persistence.existingClaim | default (include "fullname" .) }}
-          {{- if gt (int .Values.replicas) 1 }}
-            {{- fail "Persistence doesn't work with kind Deployment, and more than one replica" }}
-          {{- end}}
-        {{- else }}
           emptyDir: {}
-        {{- end }}
+      {{- end }}
         - name: container-init
           configMap:
             name: {{ template "fullname" . }}-bin
+  {{- if .Values.persistence.enabled }}
+  volumeClaimTemplates:
+  - metadata:
+      name: rabbitmq-persistent-storage
+      labels:
+        app: {{ template "fullname" . }}
+        chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+        release: "{{ .Release.Name }}"
+        heritage: "{{ .Release.Service }}"
+        component: rabbitmq
+    spec:
+      accessModes:
+      - {{ .Values.persistence.accessMode | quote }}
+      {{- if .Values.persistence.storageClass }}
+      storageClassName: {{ .Values.persistence.storageClass | quote }}
+      {{- end }}
+      resources:
+        requests:
+          storage: {{ .Values.persistence.size | quote }}
+  {{- end }}
 {{- end }}
