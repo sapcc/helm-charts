@@ -1,0 +1,89 @@
+global:
+  domain: cloud.sap
+  clusterType: controlplane
+
+image:
+  repository: keppel.eu-de-1.cloud.sap/ccloud-dockerhub-mirror/prom/prometheus
+
+name: vmware
+
+retentionTime: 8h
+
+additionalScrapeConfigs: {}
+
+scrapeInterval: "60s"
+
+configMaps:
+  - atlas-netbox-sd
+
+alertmanagers:
+  hosts:
+   - alertmanager.scaleout.eu-de-1.cloud.sap
+   - alertmanager.scaleout.eu-nl-1.cloud.sap
+
+ingress:
+  enabled: true
+  hosts:
+    - prometheus-vmware
+  authentication:
+    sso:
+      enabled: true
+      authTLSSecret: kube-system/ingress-cacrt
+      authTLSVerifyDepth: 3
+      authTLSVerifyClient: on
+
+internalIngress:
+  enabled: true
+  hosts:
+    - prometheus-vmware-internal
+  authentication:
+    sso:
+      enabled: true
+      authTLSSecret: kube-system/ingress-cacrt
+      authTLSVerifyDepth: 3
+      authTLSVerifyClient: on
+
+persistence:
+  enabled: true
+  accessMode: ReadWriteOnce
+  size: 100Gi
+
+rbac:
+  create: true
+
+serviceAccount:
+  create: true
+
+logLevel: info
+
+resources:
+  requests:
+    cpu: 500m
+    memory: 4Gi
+
+securityContext:
+  fsGroup: 0
+  runAsUser: 0
+
+serviceDiscoveries:
+  scrapeInterval: 30s
+  scrapeTimeout: 25s
+  endpoints:
+    enabled: true
+    limitToPrometheusTargets: true
+
+alerts:
+  tier: monitor
+
+kube_state_metrics_exporter:
+  enabled: true
+  prometheusName: vmware
+
+prometheus_vmware:
+  name: vmware
+  enabled: true
+
+vrops_exporter:
+  enabled: false
+  scrapeInterval: 180s
+  scrapeTimeout: 175s
