@@ -1,4 +1,3 @@
-
 # expose metrics in prometheus format
 <source>
   @type prometheus
