@@ -26,6 +26,10 @@ spec:
         app: {{ template "fullname" . }}
         component: "{{ .Values.postgresDatabase }}"
         type: database
+        {{- if .Values.alerts.enabled }}
+        alert-tier: {{ required ".Values.alerts.tier missing" .Values.alerts.tier }}
+        alert-service: {{ include "alerts.service" . }}
+        {{- end }}
       annotations:
         checksum/secrets: {{ include (print $.Template.BasePath  "/secrets.yaml") . | sha256sum }}
         checksum/etc: {{ include (print $.Template.BasePath  "/etc-configmap.yaml") . | sha256sum }}

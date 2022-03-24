@@ -26,6 +26,10 @@ spec:
         component: {{ $db_name }}
         chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
         type: metrics
+        {{- if .Values.alerts.enabled }}
+        alert-tier: {{ required ".Values.alerts.tier missing" .Values.alerts.tier }}
+        alert-service: {{ .Values.alerts.service | default .Release.Name }}
+        {{- end }}
       annotations:
         configmap-etc-hash: {{ include (print $.Template.BasePath "/configmap-etc.yaml") . | sha256sum }}
         prometheus.io/scrape: "true"
