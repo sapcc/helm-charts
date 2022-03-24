@@ -232,9 +232,9 @@
 - job_name: 'snmp'
   scrape_interval: {{.Values.snmp_exporter.scrapeInterval}}
   scrape_timeout: {{.Values.snmp_exporter.scrapeTimeout}}
-  file_sd_configs:
-      - files :
-        - /etc/prometheus/configmaps/atlas-netbox-sd/netbox.json
+  http_sd_config:
+  url: http://atlas:8080/service_discovery/netbox
+  refresh_interval: 120s
   metrics_path: /snmp
   relabel_configs:
     - source_labels: [job]
