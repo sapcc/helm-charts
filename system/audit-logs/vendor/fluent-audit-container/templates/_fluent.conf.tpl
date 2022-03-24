@@ -102,6 +102,11 @@
     keep_time_key true
   </parse>
 </filter>
+# remove fields which cause parsing errors in elastic and are not audit relevant
+<filter kubeapi.**>
+  @type record_transformer
+  remove_keys $["requestObject"]["metadata"]["labels"]["app.kubernetes.io/managed-by"]
+</filter>
 {{- end }}
 
 {{- if .Values.additional_container_logs }}
