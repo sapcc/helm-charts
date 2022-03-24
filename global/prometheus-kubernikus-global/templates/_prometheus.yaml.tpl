@@ -19,7 +19,7 @@
     - action: replace
       source_labels: [__address__]
       target_label: region
-      regex: prometheus.kubernikus.(.+).cloud.sap
+      regex: prometheus-internal.kubernikus.(.+).cloud.sap
       replacement: $1
     - action: replace
       target_label: cluster_type
@@ -41,5 +41,5 @@
   static_configs:
     - targets:
 {{- range $region := .Values.regionList }}
-      - "prometheus.kubernikus.{{ $region }}.cloud.sap"
+      - "prometheus-internal.kubernikus.{{ $region }}.cloud.sap"
 {{- end }}

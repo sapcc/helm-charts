@@ -1,3 +1,7 @@
+## 5.3.3
+
+* Adds `/api` endpoint to internal Ingress.
+
 ## 5.3.2
 
 * Optional additional internal ingress is limited to `/federate` and thanos paths. 
