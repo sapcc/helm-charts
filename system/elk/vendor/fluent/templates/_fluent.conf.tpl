@@ -459,10 +459,6 @@
   @type null
 </match>
 
-<match kubernetes.var.log.containers.logstash**>
-  @type null
-</match>
-
 # count number of outgoing records per tag
 <match kubernetes.**>
   @type copy
