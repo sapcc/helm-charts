@@ -38,6 +38,10 @@ spec:
 {{- include "rabbitmq_maintenance_affinity" . }}
 {{- include "rabbitmq_node_reinstall_affinity" . }}
 {{- end }}
+      securityContext:
+        runAsUser: 999
+        runAsGroup: 999
+        fsGroup: 999
       containers:
       - name: rabbitmq
         image: "{{include "dockerHubMirror" .}}/{{ .Values.image }}:{{.Values.imageTag }}"
@@ -76,8 +80,8 @@ spec:
           - name: management
             containerPort: {{ default "15672" .Values.ports.management }}
         volumeMounts:
-          - name: rabbitmq-persistent-storage
-            mountPath: /var/lib/rabbitmq
+          - mountPath: /var/lib/rabbitmq
+            name: rabbitmq-persistent-storage
           - mountPath: /container.init
             name: container-init
 {{- if .Values.metrics.enabled }}
