@@ -213,9 +213,8 @@
 - job_name: 'arista'
   scrape_interval: {{$values.scrapeInterval}}
   scrape_timeout: {{$values.scrapeTimeout}}
-  file_sd_configs:
-      - files :
-        - /etc/prometheus/configmaps/atlas-netbox-sd/netbox.json
+  http_sd_configs:
+    - url: http://atlas:8080/service_discovery/netbox
   metrics_path: /arista
   relabel_configs:
     - source_labels: [job]
