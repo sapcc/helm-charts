@@ -214,7 +214,7 @@
   scrape_interval: {{$values.scrapeInterval}}
   scrape_timeout: {{$values.scrapeTimeout}}
   http_sd_configs:
-    - url: http://atlas:8080/service_discovery/netbox
+    - url: "http://atlas:8080/service_discovery/netbox"
   metrics_path: /arista
   relabel_configs:
     - source_labels: [job]
@@ -232,7 +232,7 @@
   scrape_interval: {{.Values.snmp_exporter.scrapeInterval}}
   scrape_timeout: {{.Values.snmp_exporter.scrapeTimeout}}
   http_sd_configs:
-    - url: http://atlas:8080/service_discovery/netbox
+    - url: "http://atlas:8080/service_discovery/netbox"
   metrics_path: /snmp
   relabel_configs:
     - source_labels: [job]
