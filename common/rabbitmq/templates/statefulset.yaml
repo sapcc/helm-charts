@@ -38,6 +38,7 @@ spec:
 {{- include "rabbitmq_maintenance_affinity" . }}
 {{- include "rabbitmq_node_reinstall_affinity" . }}
 {{- end }}
+      shareProcessNamespace: true
       securityContext:
         runAsUser: 999
         runAsGroup: 999
@@ -47,10 +48,7 @@ spec:
         image: "{{include "dockerHubMirror" .}}/{{ .Values.image }}:{{.Values.imageTag }}"
         imagePullPolicy: {{ default "IfNotPresent" .Values.imagePullPolicy | quote }}
         command:
-          - bash
-        args:
-          - /container.init/rabbitmq-start
-        {{- if .Values.livenessProbe.enabled }}
+          - rabbitmq-server
         livenessProbe:
           exec:
             command:
@@ -79,6 +77,20 @@ spec:
             containerPort: {{ default "5672" .Values.ports.public }}
           - name: management
             containerPort: {{ default "15672" .Values.ports.management }}
+        volumeMounts:
+          - mountPath: /var/lib/rabbitmq
+            name: rabbitmq-persistent-storage
+          - mountPath: /container.init
+            name: container-init
+      - name: configure
+        image: "{{include "dockerHubMirror" .}}/{{ .Values.image }}:{{.Values.imageTag }}"
+        imagePullPolicy: {{ default "IfNotPresent" .Values.imagePullPolicy | quote }}
+        command:
+          - bash
+        args:
+          - /container.init/rabbitmq-start
+        resources:
+{{ toYaml .Values.configure.resources | indent 10 }}
         volumeMounts:
           - mountPath: /var/lib/rabbitmq
             name: rabbitmq-persistent-storage

@@ -1,11 +1,5 @@
 #!/usr/bin/env bash
-set -exuo pipefail
-
-LOCKFILE=/var/lib/rabbitmq/rabbitmq-server.lock
-echo "Starting RabbitMQ with lock ${LOCKFILE}"
-exec 9>${LOCKFILE}
-/usr/bin/flock -n 9
-
+set -euo pipefail
 declare -A users
 
 function upsert_user {
@@ -26,14 +20,6 @@ function upsert_user {
         fi
     fi
 }
-
-rabbitmq-server &
-PID=$!
-function cleanup() {
-    kill -SIGTERM $PID
-    wait $(jobs -rp) || true
-}
-trap cleanup EXIT
 
 timeout 60 rabbitmqctl wait /var/lib/rabbitmq/mnesia/rabbit@$HOSTNAME.pid
 
