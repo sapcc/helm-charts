@@ -234,7 +234,6 @@
   scrape_timeout: {{.Values.snmp_exporter.scrapeTimeout}}
   http_sd_configs:
     - url: http://atlas:8080/service_discovery/netbox
-      refresh_interval: 120s
   metrics_path: /snmp
   relabel_configs:
     - source_labels: [job]
