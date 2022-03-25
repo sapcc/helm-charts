@@ -23,7 +23,7 @@ spec:
       labels:
         app: {{ template "fullname" . }}
       annotations:
-        checksum/container.init: {{ include (print $.Template.BasePath "/bin-configmap.yaml") . | sha256sum }}
+        checksum/poll_configmap: {{ .Files.Get "bin/_poll_configmap" | sha256sum }}
     spec:
       affinity:
         nodeAffinity:
@@ -85,10 +85,12 @@ spec:
       - name: configure
         image: "{{include "dockerHubMirror" .}}/{{ .Values.image }}:{{.Values.imageTag }}"
         imagePullPolicy: {{ default "IfNotPresent" .Values.imagePullPolicy | quote }}
+        workingDir: "/tmp"
         command:
-          - bash
+          - python3
         args:
-          - /container.init/rabbitmq-start
+          - /container.init/_poll_configmap
+          - metadata.name={{ template "fullname" . }}-bin
         resources:
 {{ toYaml .Values.configure.resources | indent 10 }}
         volumeMounts:
