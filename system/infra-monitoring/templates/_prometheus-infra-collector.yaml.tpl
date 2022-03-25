@@ -192,10 +192,9 @@
 - job_name: 'jumpserver'
   params:
     job: [jumpserver]
-  file_sd_configs:
-      - files :
-        - /etc/prometheus/configmaps/atlas-netbox-sd/netbox.json
   metrics_path: /metrics
+  http_sd_configs:
+    - url: "http://infra-monitoring-atlas-sd:8080/service_discovery/netbox"
   relabel_configs:
     - source_labels: [job]
       regex: jumpserver
@@ -213,9 +212,8 @@
 - job_name: 'arista'
   scrape_interval: {{$values.scrapeInterval}}
   scrape_timeout: {{$values.scrapeTimeout}}
-  file_sd_configs:
-      - files :
-        - /etc/prometheus/configmaps/atlas-netbox-sd/netbox.json
+  http_sd_configs:
+    - url: "http://infra-monitoring-atlas-sd:8080/service_discovery/netbox"
   metrics_path: /arista
   relabel_configs:
     - source_labels: [job]
@@ -232,9 +230,8 @@
 - job_name: 'snmp'
   scrape_interval: {{.Values.snmp_exporter.scrapeInterval}}
   scrape_timeout: {{.Values.snmp_exporter.scrapeTimeout}}
-  file_sd_configs:
-      - files :
-        - /etc/prometheus/configmaps/atlas-netbox-sd/netbox.json
+  http_sd_configs:
+    - url: "http://infra-monitoring-atlas-sd:8080/service_discovery/netbox"
   metrics_path: /snmp
   relabel_configs:
     - source_labels: [job]
@@ -341,9 +338,8 @@
 - job_name: 'snmp-apod'
   scrape_interval: {{.Values.snmp_exporter_apod.scrapeInterval}}
   scrape_timeout: {{.Values.snmp_exporter_apod.scrapeTimeout}}
-  file_sd_configs:
-      - files :
-        - /etc/prometheus/configmaps/atlas-netbox-sd/netbox.json
+  http_sd_configs:
+    - url: "http://infra-monitoring-atlas-sd:8080/service_discovery/netbox"
   metrics_path: /snmp
   relabel_configs:
     - source_labels: [job]
@@ -365,9 +361,8 @@
 - job_name: 'snmp-ntp'
   scrape_interval: {{.Values.snmp_exporter.scrapeInterval}}
   scrape_timeout: {{.Values.snmp_exporter.scrapeTimeout}}
-  file_sd_configs:
-      - files :
-        - /etc/prometheus/configmaps/atlas-netbox-sd/netbox.json
+  http_sd_configs:
+    - url: "http://infra-monitoring-atlas-sd:8080/service_discovery/netbox"
   metrics_path: /snmp
   relabel_configs:
     - source_labels: [job]
@@ -400,9 +395,8 @@
     job: [baremetal/ironic]
   scrape_interval: {{$values.ironic_scrapeInterval}}
   scrape_timeout: {{$values.ironic_scrapeTimeout}}
-  file_sd_configs:
-      - files :
-        - /etc/prometheus/configmaps/atlas-ironic-sd/ironic.json
+  http_sd_configs:
+    - url: "http://infra-monitoring-atlas-sd:8080/service_discovery/ironic"
   metrics_path: /ipmi
   relabel_configs:
     - source_labels: [__address__]
@@ -417,9 +411,8 @@
     job: [cp/netbox]
   scrape_interval: {{$values.cp_scrapeInterval}}
   scrape_timeout: {{$values.cp_scrapeTimeout}}
-  file_sd_configs:
-      - files :
-        - /etc/prometheus/configmaps/atlas-netbox-sd/netbox.json
+  http_sd_configs:
+    - url: "http://infra-monitoring-atlas-sd:8080/service_discovery/netbox"
   metrics_path: /ipmi
   relabel_configs:
     - source_labels: [job]
@@ -439,9 +432,8 @@
     job: [esxi]
   scrape_interval: {{$values.esxi_scrapeInterval}}
   scrape_timeout: {{$values.esxi_scrapeTimeout}}
-  file_sd_configs:
-      - files :
-        - /etc/prometheus/configmaps/atlas-netbox-sd/netbox.json
+  http_sd_configs:
+    - url: "http://infra-monitoring-atlas-sd:8080/service_discovery/netbox"
   metrics_path: /ipmi
   relabel_configs:
     - source_labels: [job]
@@ -462,9 +454,8 @@
     job: [redfish/bm]
   scrape_interval: {{$values.redfish_scrapeInterval}}
   scrape_timeout: {{$values.redfish_scrapeTimeout}}
-  file_sd_configs:
-      - files :
-        - /etc/prometheus/configmaps/atlas-netbox-sd/netbox.json
+  http_sd_configs:
+    - url: "http://infra-monitoring-atlas-sd:8080/service_discovery/netbox"
   metrics_path: /redfish
   relabel_configs:
     - source_labels: [job]
@@ -482,9 +473,8 @@
     job: [redfish/cp]
   scrape_interval: {{$values.redfish_scrapeInterval}}
   scrape_timeout: {{$values.redfish_scrapeTimeout}}
-  file_sd_configs:
-      - files :
-        - /etc/prometheus/configmaps/atlas-netbox-sd/netbox.json
+  http_sd_configs:
+    - url: "http://infra-monitoring-atlas-sd:8080/service_discovery/netbox"
   metrics_path: /redfish
   relabel_configs:
     - source_labels: [job]
@@ -504,9 +494,8 @@
     job: [redfish/bb]
   scrape_interval: {{$values.redfish_scrapeInterval}}
   scrape_timeout: {{$values.redfish_scrapeTimeout}}
-  file_sd_configs:
-      - files :
-        - /etc/prometheus/configmaps/atlas-netbox-sd/netbox.json
+  http_sd_configs:
+    - url: "http://infra-monitoring-atlas-sd:8080/service_discovery/netbox"
   metrics_path: /redfish
   relabel_configs:
     - source_labels: [job]
@@ -525,9 +514,8 @@
 - job_name: 'win-exporter-ad'
   scrape_interval: {{$values.scrapeInterval}}
   scrape_timeout: {{$values.scrapeTimeout}}
-  file_sd_configs:
-      - files :
-        - /etc/prometheus/configmaps/atlas-netbox-sd/netbox.json
+  http_sd_configs:
+    - url: "http://infra-monitoring-atlas-sd:8080/service_discovery/netbox"
   metrics_path: /metrics
   relabel_configs:
     - source_labels: [job]
@@ -554,9 +542,8 @@
 - job_name: 'win-exporter-wsus'
   scrape_interval: {{$values.scrapeInterval}}
   scrape_timeout: {{$values.scrapeTimeout}}
-  file_sd_configs:
-      - files :
-        - /etc/prometheus/configmaps/atlas-netbox-sd/netbox.json
+  http_sd_configs:
+    - url: "http://infra-monitoring-atlas-sd:8080/service_discovery/netbox"
   metrics_path: /metrics
   relabel_configs:
     - source_labels: [job]
@@ -586,9 +573,8 @@
 - job_name: 'vasa'
   scrape_interval: {{$values.scrapeInterval}}
   scrape_timeout: {{$values.scrapeTimeout}}
-  file_sd_configs:
-      - files :
-        - /etc/prometheus/configmaps/atlas-netbox-sd/netbox.json
+  http_sd_configs:
+    - url: "http://infra-monitoring-atlas-sd:8080/service_discovery/netbox"
   metrics_path: /
   relabel_configs:
     - source_labels: [job]
@@ -825,9 +811,8 @@
 - job_name: 'network/ssh'
   scrape_interval: 120s
   scrape_timeout: 60s
-  file_sd_configs:
-      - files :
-        - /etc/prometheus/configmaps/atlas-netbox-sd/netbox.json
+  http_sd_configs:
+    - url: "http://infra-monitoring-atlas-sd:8080/service_discovery/netbox"
   metrics_path: /ssh
   relabel_configs:
     - source_labels: [job]

@@ -1,3 +1,7 @@
+## 5.3.4
+
+* Adds `/-/healthy` endpoint to internal ingress.
+
 ## 5.3.3
 
 * Adds `/api` endpoint to internal Ingress.

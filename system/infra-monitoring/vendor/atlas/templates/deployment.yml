@@ -54,6 +54,8 @@ spec:
         - name: WRITE_TO
           value: "{{ .Values.write_to }}"
         volumeMounts:
+        - mountPath: "/targets"
+          name: atlas-targets
         - name: config
           mountPath: /etc/config
           readOnly: true
@@ -64,10 +66,13 @@ spec:
         image: {{ .Values.global.dockerHubMirror }}/jimmidyson/configmap-reload:v0.3.0
         imagePullPolicy: IfNotPresent
         volumeMounts:
-        - mountPath: /etc/config
+        - mountPath: "/etc/config"
           name: config
           readOnly: true 
       volumes:
+        - name: atlas-targets
+          persistentVolumeClaim:
+            claimName: atlas-targets
         - name: config
           configMap:
             name: {{ include "atlas.fullname" . }}
