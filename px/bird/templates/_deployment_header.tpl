@@ -5,8 +5,11 @@
 {{ $px_availability_zones := index . 3 }}
 {{ $multus_vlan := index . 4 }}
 {{ $service_number := index . 5 }}
-{{ $domain_number := index . 6}}
-{{ $instance_number := index . 7}}
+{{ $service := index . 6 }}
+{{ $domain_number := index . 7}}
+{{ $domain := index . 8}}
+{{ $instance_number := index . 9}}
+{{ $instance := index . 10}}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -54,7 +57,7 @@ spec:
               - key: failure-domain.beta.kubernetes.io/zone
                 operator: In
                 values:
-                - {{ index $px_availability_zones (mod (sub $domain_number 1) (len  $px_availability_zones)) }}
+                - {{ index $px_availability_zones (mod (sub $domain_number 1) (len  $px_availability_zones)) }}                
         podAntiAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
           - labelSelector:
@@ -71,6 +74,7 @@ spec:
             value: px
             effect: NoSchedule
         nodeSelector:
-            domain: "{{ $scheduling_labels }}"
+            # This calculation only works if we have no more than 2 instances and no more than 2 scheduling labels per domain
+            pxdomain: "{{ index (get $scheduling_labels $domain) (sub $instance_number 1) }}"
 {{- end }}
 {{- end }}
