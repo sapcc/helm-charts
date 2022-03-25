@@ -38,4 +38,3 @@ upsert_user {{ .Values.metrics.user | include "rabbitmq.shell_quote" }} {{ requi
 upsert_user guest {{ required ".Values.users.default.password missing" .Values.users.default.password | include "rabbitmq.shell_quote" }} monitoring
 
 wait $(jobs -rp) || true
-
