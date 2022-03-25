@@ -34,7 +34,7 @@ spec:
              - -o
              - {{ required ".Values.vcsa.port_number missing" .Values.vcsa.port_number | quote }}
              - -a
-             - /atlas/netbox.json 
+             - infra-monitoring-atlas-sd 
              {{- if .Values.vcsa.password }}
              - -p
              - {{ .Values.vcsa.password }}
@@ -53,10 +53,6 @@ spec:
              requests:
                 memory: {{ required ".Values.vcsa.resources.memory missing" .Values.vcsa.resources.memory }}
                 cpu: {{ required ".Values.vcsa.resources.cpu missing" .Values.vcsa.resources.cpu }}
-           volumeMounts:
-             - mountPath: /atlas
-               name: atlas-output
-               readOnly: true
            livenessProbe:
               httpGet:
                  path: /metrics
@@ -64,7 +60,3 @@ spec:
               initialDelaySeconds: 30
               periodSeconds: 300
               timeoutSeconds: 55
-      volumes:
-        - configMap:
-            name: {{ .Values.vcsa.atlas_configmap }}
-          name: atlas-output
