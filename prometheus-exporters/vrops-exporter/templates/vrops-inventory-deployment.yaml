@@ -18,9 +18,6 @@ spec:
         - name: vrops-exporter-inventory-config
           configMap:
             name: vrops-exporter-inventory-config
-        - name: atlas-output
-          configMap:
-            name: {{ .Values.vrops.atlas_configmap }}
       containers:
          - name: vrops-inventory
            image: {{ required ".Values.global.registry variable missing" .Values.global.registry }}/{{ required ".Values.vrops.image.name variable missing" .Values.vrops.image.name }}:{{ required ".Values.vrops.inventory.tag variable missing" .Values.vrops.inventory.tag }}
@@ -31,7 +28,7 @@ spec:
              - ./inventory.py
            args:
              - -a
-             - /atlas/netbox.json
+             - infra-monitoring-atlas-sd
              - -m
              - /config/inventory_config.yaml
            env:
@@ -63,9 +60,6 @@ spec:
            volumeMounts:
              - name: vrops-exporter-inventory-config
                mountPath: "/config"
-               readOnly: true
-             - name: atlas-output
-               mountPath: /atlas
                readOnly: true
            livenessProbe:
              httpGet:
