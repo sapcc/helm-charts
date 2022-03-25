@@ -64,10 +64,15 @@ spec:
         image: {{ .Values.global.dockerHubMirror }}/jimmidyson/configmap-reload:v0.3.0
         imagePullPolicy: IfNotPresent
         volumeMounts:
-        - mountPath: /etc/config
+        - mountPath: "/targets"
+          name: atlas-targets
+        - mountPath: "/etc/config"
           name: config
           readOnly: true 
       volumes:
+        - name: atlas-targets
+          persistentVolumeClaim:
+            claimName: atlas-targets
         - name: config
           configMap:
             name: {{ include "atlas.fullname" . }}
