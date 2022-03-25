@@ -21,7 +21,7 @@ spec:
             severity: info
             tier: monitor
             service: audit
-            meta: "Audit events has no source set"
+            meta: "Audit events have no source set"
             dashboard: audit-log-shipping
           annotations:
             description: "Audit Logs should have field `sap.cc.audit.source`"
@@ -37,7 +37,7 @@ spec:
             dashboard: audit-log-shipping
           annotations:
             description: "Audit Logs are not indexed correctly"
-            summary: "Audit Logs indexing not working"
+            summary: "Check `*deadletter*` index for the reason"
     {{- if .Values.auditSources }}
     {{- range .Values.auditSources }}
     {{- $name := .name }}
