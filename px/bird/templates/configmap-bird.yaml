@@ -16,7 +16,10 @@ metadata:
     name: cfg-{{ $deployment_name }}
 data:
     "{{ $deployment_name }}.cfg": |
-{{ $.Files.Get $config_path | indent 8 }}
+{{- if not ($.Files.Glob $config_path) -}}
+{{- fail (printf "bird config file %s does not exist."  $config_path ) -}}
+{{- end }}
+{{ $.Files.Get $config_path | indent 6 }}
 
 {{ end -}}
 {{- end -}}
