@@ -1,112 +1,68 @@
 {{- if .Values.enabled }}
-{{- range $i, $config := .Values.servers -}}
+{{- $values := .Values -}}
+
+{{- range $i, $prober := .Values.probers -}}
 {{ if ne $i 0 }}---{{ end }}
 
 kind: Deployment
 apiVersion: apps/v1
 
 metadata:
-  name: cloudprober-exporter-{{$config.name}}
+  name: cloudprober-{{$prober.zone}}
   labels:
-    app: cloudprober-exporter
-    release: "{{$.Release.Name}}"
+    app: cloudprober
 
 spec:
-  revisionHistoryLimit: 5
-  replicas: 1
+  revisionHistoryLimit: {{ $values.revisionHistoryLimit }}
+  replicas: {{ $values.replicaCount }}
   template:
     metadata:
       labels:
-        name: cloudprober-exporter-{{$config.name}}
-        app: cloudprober-exporter
+        name: cloudprober-{{$prober.zone}}
+        app: cloudprober
+        src_zone: {{$prober.zone}}
+        src_ip: {{$prober.ip}}
       annotations:
         checksum/config: {{ include (print $.Template.BasePath "/config.yaml") $ | sha256sum }}
     spec:
       nodeSelector:
-        failure-domain.beta.kubernetes.io/zone: {{$config.name}}
+        failure-domain.beta.kubernetes.io/zone: {{$prober.name}}
       volumes:
-        - name: cloudprober-exporter
+        - name: cloudprober
           configMap:
-            name: cloudprober-exporter
+            name: cloudprober
 
       containers:
         - name: prober
-          image: cloudprober/cloudprober@sha256:e018162dfbe43fa5f2ead9471cefe31d537652dc6f318a50477b66da0aad94b6
-          imagePullPolicy: IfNotPresent
+          image: {{$values.global.dockerHubMirror}}/{{ required ".Values.image.name variable missing" $values.image.name }}:{{ required ".Values.image.tag variable missing" $values.image.tag }}
+          imagePullPolicy: {{ required ".Values.image.pullPolicy variable missing" $values.image.pullPolicy }}
           args: [
             "--config_file","/cfg/cloudprober.cfg",
             "--logtostderr"
           ]
           volumeMounts:
-          - name: cloudprober-exporter
+          - name: cloudprober
             mountPath: /cfg
           ports:
-          - name: http
+          - name: metrics
             containerPort: 9313
+          - name: web_server
+            containerPort: 80
           env:
           - name: CLOUDPROBER_PORT
-            value: "9313"
+            value: 9313
           livenessProbe:
             httpGet:
-              path: /status
-              port: 9313
+              path: /metrics
+              port: metrics
             timeoutSeconds: 10
             periodSeconds: 15
           readinessProbe:
             httpGet:
-              path: /status
-              port: 9313
+              path: /config
+              port: metrics
             timeoutSeconds: 5
             periodSeconds: 15
-
-        - name: nginx
-          image: nginx:alpine
-          imagePullPolicy: IfNotPresent
-          volumeMounts:
-            - name: cloudprober-exporter
-              mountPath: /usr/share/nginx/html
-          ports:
-            - name: http
-              containerPort: 80
-              protocol: TCP
-          livenessProbe:
-            httpGet:
-              path: /
-              port: 80
-            timeoutSeconds: 10
-            periodSeconds: 15
-          readinessProbe:
-            httpGet:
-              path: /
-              port: 80
-            timeoutSeconds: 5
-            periodSeconds: 15
-
-        - name: iperf3-server
-          image: hub.global.cloud.sap/monsoon/iperf3
-          imagePullPolicy: IfNotPresent
-          command:
-          - iperf3
-          - -s
-          ports:
-            - name: tcp
-              containerPort: 5201
-              protocol: TCP
-            - name: udp
-              containerPort: 5201
-              protocol: UDP
-          livenessProbe:
-            exec:
-              command: ["/bin/sh", "-c", "nc -v -n -z localhost 5201"]
-            timeoutSeconds: 5
-            periodSeconds: 60
-            initialDelaySeconds: 15
-          readinessProbe:
-            exec:
-              command: ["/bin/sh", "-c", "nc -v -n -z localhost 5201"]
-            timeoutSeconds: 5
-            periodSeconds: 60
-            initialDelaySeconds: 15
 
 ---
 {{ end -}}
