@@ -37,7 +37,7 @@
           initialDelaySeconds: 5
           periodSeconds: 5
       - name: {{ $deployment_name }}-exporter
-        image: keppel.{{ $.Values.region }}.cloud.sap/{{$.Values.bird_exporter_image}}
+        image: keppel.{{ $.Values.registry }}.cloud.sap/{{$.Values.bird_exporter_image}}
         args: ["-format.new=true", "-bird.v2", "-bird.socket=/var/run/bird/bird.ctl", "-proto.ospf=false", "-proto.direct=false"]
         volumeMounts:
         - name: bird-socket
@@ -47,7 +47,7 @@
         - containerPort: 9324
           name: metrics
       - name: {{ $deployment_name }}-lgproxy
-        image: keppel.{{ $.Values.region }}.cloud.sap/{{ $.Values.lg_image }}
+        image: keppel.{{ $.Values.registry }}.cloud.sap/{{ $.Values.lg_image }}
         command: ["python3"]
         args: ["lgproxy.py"]
         volumeMounts:
@@ -58,7 +58,7 @@
         - containerPort: 5000
           name: lgproxy
       - name: {{ $deployment_name }}-lgadminproxy
-        image: keppel.{{ $.Values.region }}.cloud.sap/{{ $.Values.lg_image }}
+        image: keppel.{{ $.Values.registry }}.cloud.sap/{{ $.Values.lg_image }}
         command: ["python3"]
         args: ["lgproxy.py", "priv"]
         volumeMounts:
