@@ -8,7 +8,7 @@ apiVersion: networking.k8s.io/v1beta1
 kind: Ingress
 
 metadata:
-  name: cloudprober-{{$prober.zone}}
+  name: cloudprober-{{$prober.dc}}
   labels:
     app: cloudprober-exporter
   annotations:
@@ -17,23 +17,23 @@ metadata:
 
 spec:
   tls:
-    - secretName: cloudprober-{{ $prober.zone }}
-      hosts: [{{ $values.ingress.hostName_prefix }}-{{ $prober.zone }}.{{ $values.global.region }}.{{ $values.global.tld }}]
+    - secretName: cloudprober-{{ $prober.dc }}
+      hosts: [{{ $values.ingress.hostName_prefix }}-{{ $prober.dc }}.{{ $values.global.region }}.{{ $values.global.tld }}]
   rules:
-    - host: {{ $values.ingress.hostName_prefix }}-{{ $prober.zone }}.{{ $values.global.region }}.{{ $values.global.tld }}
+    - host: {{ $values.ingress.hostName_prefix }}-{{ $prober.dc }}.{{ $values.global.region }}.{{ $values.global.tld }}
       http:
         paths:
         - path: /metrics
           backend:
-            serviceName: cloudprober-{{ $prober.zone }}
+            serviceName: cloudprober-{{ $prober.dc }}
             servicePort: metrics
         - path: /config
           backend:
-            serviceName: cloudprober-{{ $prober.zone }}
+            serviceName: cloudprober-{{ $prober.dc }}
             servicePort: metrics
         - path: /
           backend:
-            serviceName: cloudprober-{{ $prober.zone }}
+            serviceName: cloudprober-{{ $prober.dc }}
             servicePort: web
 ---
 {{- end }}
