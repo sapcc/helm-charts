@@ -37,6 +37,8 @@ spec:
              - -p
              - {{ .Values.vcsa.password }}
              {{- end }}
+             - -a
+             - {{ required ".Values.vcsa.atlas missing" .Values.vcsa.atlas  }}
            env:
            - name: PORT
              value: {{ required ".Values.vcsa.port_number missing" .Values.vcsa.port_number | quote }}
@@ -44,8 +46,6 @@ spec:
              value: {{ .Values.vcsa.debug | quote }}
            - name: INVENTORY
              value: vcsa-inventory
-           - name: ATLAS
-             value: {{ .Values.vcsa.atlas }}
            resources:
              limits:
                 memory: {{ required ".Values.vcsa.limits.memory missing" .Values.vcsa.limits.memory }}
