@@ -30,14 +30,18 @@ spec:
     {{- end }}
     spec:
       affinity:
+        nodeAffinity:
 {{- if .Values.nodeAffinity }}
       {{- with .Values.nodeAffinity }}
-        nodeAffinity:
 {{ toYaml . | indent 10 }}
       {{- end }}
+{{- include "pxc_maintenance_affinity" . }}
+{{- include "pxc_node_reinstall_affinity" . }}
 {{- else }}
-        nodeAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
+{{- include "pxc_maintenance_affinity" . }}
+{{- include "pxc_node_reinstall_affinity" . }}
+{{- end }}
           - weight: 1
             preference:
               matchExpressions:
@@ -45,7 +49,6 @@ spec:
                   operator: In
                   values:
                   - {{.Values.global.db_region}}a
-{{- end }}
       initContainers:
       - name: "remove-lost-found"
         image: "busybox:1.25.0"

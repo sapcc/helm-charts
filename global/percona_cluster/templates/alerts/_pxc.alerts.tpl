@@ -56,7 +56,7 @@
     labels:
       context: database
       service: {{ include "alerts.service" . }}
-      severity: info
+      severity: warning
       tier: {{ required ".Values.alerts.tier missing" .Values.alerts.tier }}
       playbook: ''
     annotations:

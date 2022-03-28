@@ -40,3 +40,23 @@ https://www.percona.com/doc/percona-xtradb-cluster/LATEST/wsrep-system-index.htm
 {{- .Release.Name -}}
 {{- end -}}
 {{- end -}}
+
+{{- define "pxc_maintenance_affinity" }}
+          - weight: 1
+            preference:
+              matchExpressions:
+              - key: cloud.sap/maintenance-state
+                operator: In
+                values:
+                - operational
+{{- end }}
+
+{{- define "pxc_node_reinstall_affinity" }}
+          - weight: 1
+            preference:
+              matchExpressions:
+              - key: cloud.sap/deployment-state
+                operator: NotIn
+                values:
+                - reinstalling
+{{- end }}
