@@ -73,9 +73,31 @@ redis:
 
   # evict unused keys automatically
   config:
-    maxmemory: 1gb
+    maxmemory: 100mb # chosen to match resource limit below
     maxmemory-policy: allkeys-lru
     maxmemory-samples: 5
+
+  # observed resource usage for keppel-redis pod as of 2022-03:
+  #   CPU up to 0.32% = 3.2m (average!)
+  #   MEM up to 16Mi
+  resources:
+    limits:
+      memory: 128Mi
+      cpu: 100m
+    requests:
+      memory: 128Mi
+      cpu: 10m
+
+  # observed resource usage for keppel-redis-metrics pod as of 2022-03:
+  #   CPU up to 0.03% = 0.3m (average!)
+  #   MEM up to 16Mi
+  resources:
+    limits:
+      memory: 32Mi
+      cpu: 50m
+    requests:
+      memory: 32Mi
+      cpu: 5m
 
 postgresql:
   log_min_duration_statement: 250
