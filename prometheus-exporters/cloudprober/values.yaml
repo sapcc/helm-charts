@@ -1,5 +1,38 @@
-# Default values for cloudprober-exporter.
+# Default values for cloudprober.
 # This is a YAML-formatted file.
-index: >-
-  <h1>Hello</h1>
-  <p>This is a test</p>
+# Declare variables to be passed into your templates.
+enabled: false
+
+image:
+  name: cloudprober/cloudprober
+  tag: v0.11.6
+  pullPolicy: IfNotPresent
+
+fullnameOverride: cloudprober-exporter
+replicaCount: 1
+revisionHistoryLimit: 5
+
+metrics:
+  scrape: true
+  port: 9313
+  prometheus: infra-collector
+
+ingress:
+  tls: true
+  disco: true
+  hostName_prefix: cloudprober
+
+icmpIntervalMsec: 5000  # 5s
+icmpTimeoutMsec: 3000   # 3s
+httpIntervalMsec: 5000  # 5s
+httpTimeoutMsec: 3000   # 3s
+httpServerPort: 80
+
+probers:
+  - DEFINED-IN-REGIONS-SECRETS
+
+targets_icmp:
+  - DEFINED-IN-REGIONS-SECRETS
+
+targets_http:
+  - DEFINED-IN-REGIONS-SECRETS

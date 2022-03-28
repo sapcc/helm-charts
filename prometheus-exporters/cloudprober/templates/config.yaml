@@ -1,56 +1,86 @@
 {{ if .Values.enabled }}
+{{- $values := .Values -}}
 
 apiVersion: v1
 kind: ConfigMap
 
 metadata:
-  name: cloudprober-exporter
+  name: cloudprober
   labels:
-    app: cloudprober-exporter
-    release: "{{$.Release.Name}}"
+    app: cloudprober
 
 data:
-  index.html: {{ .Values.index }}
   cloudprober.cfg: |
-    {{- range $i, $config := .Values.static_ping_targets }}
+    {{- range $i, $config := .Values.targets_icmp }}
     probe {
       type: PING
-      name: "probe-ping-{{ $config.name }}"
+      name: "icmp-{{ $config.name }}"
       targets {
-        host_names: "{{ $config.target }}"
+        host_names: "{{ $config.ipt }}"
       }
+
+      {{- if $config.zone }}
+      additional_label {
+        key: "dst_zone"
+        value: "{{ $config.zone }}"
+      }
+      {{- end }}
+
+
       ping_probe {
         use_datagram_socket: false
       }
-      interval_msec: 15000  # 15s
-      timeout_msec: 1000   # 1s
+      interval_msec: {{ .Values.icmpIntervalMsec }}
+      timeout_msec: {{ .Values.icmpTimeoutMsec }}
+
+      latency_unit: "ms"
+      latency_distribution {
+              explicit_buckets: "2,4,8,16,32,64,128,256,512"
+      }
     }
     {{- end }}
-    {{- range $i, $config := .Values.static_http_targets }}
+
+    {{- range $i, $config := .Values.targets_http }}
     probe {
       type: HTTP
-      name: "probe-http-{{ $config.name }}"
+      name: "http-{{ $config.name }}"
       targets {
-        host_names: "{{ $config.target }}"
+        host_names: "{{ $config.ip }}"
       }
+
+     {{- if $config.zone }}
+     additional_label {
+       key: "dst_zone"
+       value: "{{ $config.zone }}"
+     }
+     {{- end }}
+
       http_probe {
         port: {{ $config.port }}
       }
-      interval_msec: 15000  # 15s
-      timeout_msec: 1000   # 1s
-    }
-    {{- end }}
-    {{- range $i, $config := .Values.static_udp_targets }}
-    probe {
-      type: UDP
-      name: "probe-udp-{{ $config.name }}"
-      targets {
-        host_names: "{{ $config.target }}"
-      }
-      udp_probe {
-        port: {{ $config.port }}
+
+      interval_msec: {{ .Values.httpIntervalMsec }}
+      timeout_msec: {{ .Values.httpTimeoutMsec }}
+
+      latency_unit: "ms"
+      latency_distribution {
+              explicit_buckets: "2,4,8,16,32,64,128,256,512"
       }
     }
     {{- end }}
+
+    server {
+      type: HTTP
+      http_server {
+        port: {{ .Values.httpServerPort }}
+      }
+    }
+    surfacer {
+      type: PROMETHEUS
+
+      prometheus_surfacer {
+        metrics_prefix: "cprober_"
+      }
+    }
 
   {{ end -}}
