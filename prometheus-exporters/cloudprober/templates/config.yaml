@@ -1,11 +1,14 @@
 {{ if .Values.enabled }}
 {{- $values := .Values -}}
 
+{{- range $i, $prober := .Values.probers -}}
+{{ if ne $i 0 }}---{{ end }}
+
 apiVersion: v1
 kind: ConfigMap
 
 metadata:
-  name: cloudprober
+  name: cloudprober-{{$prober.dc}}
   labels:
     app: cloudprober
 
@@ -14,18 +17,27 @@ data:
     {{- range $i, $config := .Values.targets_icmp }}
     probe {
       type: PING
-      name: "icmp-{{ $config.name }}"
+      name: "{{ $config.name }}"
       targets {
         host_names: "{{ $config.ip }}"
       }
 
       {{- if $config.zone }}
       additional_label {
-        key: "dst_zone"
-        value: "{{ $config.zone }}"
+        key: "dst_dc"
+        value: "{{ $config.dc }}"
       }
       {{- end }}
 
+      additional_label {
+        key: "src"
+        value: "{{ $prober.ip }}"
+      }
+
+      additional_label {
+        key: "src_dc"
+        value: "{{ $prober.dc }}"
+      }
 
       ping_probe {
         use_datagram_socket: false
@@ -43,17 +55,27 @@ data:
     {{- range $i, $config := .Values.targets_http }}
     probe {
       type: HTTP
-      name: "http-{{ $config.name }}"
+      name: "{{ $config.name }}"
       targets {
         host_names: "{{ $config.ip }}"
       }
 
      {{- if $config.zone }}
      additional_label {
-       key: "dst_zone"
-       value: "{{ $config.zone }}"
+       key: "dst_dc"
+       value: "{{ $config.dc }}"
      }
      {{- end }}
+
+      additional_label {
+        key: "src"
+        value: "{{ $prober.ip }}"
+      }
+
+      additional_label {
+        key: "src_dc"
+        value: "{{ $prober.dc }}"
+      }
 
       http_probe {
         port: {{ $config.port }}
@@ -83,4 +105,6 @@ data:
       }
     }
 
-  {{ end -}}
+---
+{{ end -}}
+{{ end -}}

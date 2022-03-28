@@ -8,7 +8,7 @@ kind: Deployment
 apiVersion: apps/v1
 
 metadata:
-  name: cloudprober-{{$prober.zone}}
+  name: cloudprober-{{$prober.dc}}
   labels:
     app: cloudprober
 
@@ -17,23 +17,21 @@ spec:
   replicas: {{ $values.replicaCount }}
   selector:
     matchLabels:
-      name: cloudprober-{{$prober.zone}}
+      name: cloudprober-{{$prober.dc}}
   template:
     metadata:
       labels:
-        name: cloudprober-{{$prober.zone}}
+        name: cloudprober-{{$prober.dc}}
         app: cloudprober
-        src_zone: {{$prober.zone}}
-        src_ip: {{$prober.ip}}
       annotations:
         checksum/config: {{ include (print $.Template.BasePath "/config.yaml") $ | sha256sum }}
     spec:
       nodeSelector:
-        failure-domain.beta.kubernetes.io/zone: {{$prober.zone}}
+        failure-domain.beta.kubernetes.io/zone: {{$prober.dc}}
       volumes:
         - name: cloudprober
           configMap:
-            name: cloudprober
+            name: cloudprober-{{$prober.dc}}
 
       containers:
         - name: prober
