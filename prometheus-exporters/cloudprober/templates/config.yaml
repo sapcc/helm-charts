@@ -57,7 +57,12 @@ data:
       type: HTTP
       name: "{{ $config.name }}"
       targets {
-        host_names: "{{ $config.ip }}/data_1024"
+        host_names: "{{ $config.ip }}"
+      }
+
+      http_probe {
+        port: {{ $config.port }}
+        relative_url: "/data_1024"
       }
 
      {{- if $config.dc }}
@@ -75,10 +80,6 @@ data:
       additional_label {
         key: "src_dc"
         value: "{{ $prober.dc }}"
-      }
-
-      http_probe {
-        port: {{ $config.port }}
       }
 
       interval_msec: {{ $values.httpIntervalMsec }}
