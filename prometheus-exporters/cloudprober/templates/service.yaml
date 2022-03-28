@@ -1,4 +1,6 @@
 {{- if .Values.enabled }}
+{{- $values := .Values -}}
+
 {{- range $i, $prober := .Values.probers -}}
 {{ if ne $i 0 }}---{{ end }}
 
@@ -10,9 +12,9 @@ metadata:
   labels:
     app: cloudprober
   annotations:
-    prometheus.io/scrape: {{ required ".Values.metrics.scrape variable missing" .Values.metrics.scrape | quote }}
-    prometheus.io/port: {{ required ".Values.metrics.port variable missing" .Values.metrics.port | quote }}
-    prometheus.io/targets: {{ required ".Values.metrics.prometheus variable missing" .Values.metrics.prometheus | quote }}
+    prometheus.io/scrape: {{ required ".Values.metrics.scrape variable missing" $values.metrics.scrape | quote }}
+    prometheus.io/port: {{ required ".Values.metrics.port variable missing" $values.metrics.port | quote }}
+    prometheus.io/targets: {{ required ".Values.metrics.prometheus variable missing" $values.metrics.prometheus | quote }}
 spec:
   selector:
     name: cloudprober-{{$prober.zone}}
