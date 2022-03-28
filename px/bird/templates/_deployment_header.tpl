@@ -63,7 +63,7 @@ spec:
               - key: pxservice
                 operator: In
                 values:
-                - {{ $service_number }}
+                - {{ $service_number | quote }}
             topologyKey: "kubernetes.cloud.sap/host"
 {{- else }}
         tolerations:
