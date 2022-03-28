@@ -6,9 +6,6 @@
 {{ if and (hasPrefix "domain_" $domain) (has $domain $.Values.deploy) }}
 {{- $domain_number := trimPrefix "domain_" $domain | int -}}
 
-{{- range $instance, $instance_config := $domain_config -}}
-{{ if and (hasPrefix "instance_" $instance) (has $instance $.Values.deploy) }}
-{{- $instance_number := trimPrefix "instance_" $instance | int -}}
 {{- $deployment_name := printf "%s-pxrs-%d-s%d" $.Values.region $domain_number $service_number -}}
 
 {{- $config_path := printf "%s%s.conf" $.Values.bird_config_path $deployment_name -}}
@@ -22,8 +19,6 @@ data:
 {{ $.Files.Get $config_path | indent 8 }}
 
 {{ end -}}
-{{- end -}}
-{{- end -}}
 {{- end -}}
 {{- end -}}
 {{- end -}}
