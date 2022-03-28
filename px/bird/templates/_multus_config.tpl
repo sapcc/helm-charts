@@ -4,7 +4,7 @@
 {
     "cniVersion": "0.3.0",
     "type": "macvlan",
-    "master": "vlan{{ $vlan }}",
+    "master": "vlan_{{ required "Multus VLAN must be present" $vlan }}",
     "mode": "bridge",
     "ipam": {
     "type": "static",
