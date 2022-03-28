@@ -41,9 +41,7 @@ spec:
         pxdomain: '{{ $domain_number }}'
         pxinstance: '{{ $instance_number }}'
       annotations:
-        k8s.v1.cni.cncf.io/networks: |
-            [{ 'name': '{{ $deployment_name }}',
-            'interface': 'vlan{{ required "multus_vlan is required for every domain"  $multus_vlan}}'}]
+        k8s.v1.cni.cncf.io/networks: '[{ "name": "{{ $deployment_name }}", "interface": "vlan{{ required "multus_vlan is required for every domain"  $multus_vlan}}"}]'
         prometheus.io/scrape: "true"
         prometheus.io/port: "9324"
         prometheus.io/targets: "infra-collector"
