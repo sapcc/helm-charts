@@ -74,3 +74,17 @@ groups:
     annotations:
       description: "VC {{ $labels.vcenter }} {{ $labels.vccluster }} has NO failover host amount configured, this should be 1"
       summary: "VC {{ $labels.vcenter }} {{ $labels.vccluster }} has NO failover host amount configured, this should be 1"
+
+  - alert: VCClusterDRSNotFullyAutomated
+    expr: vrops_cluster_configuration_drsconfig_defaultvmbehavior{state != "fullyAutomated"} == 0
+    for: 10m
+    labels:
+      severity: info
+      tier: vmware
+      service: compute
+      context: "Cluster DRS configuration"
+      meta: "Cluster {{ $labels.vccluster }} DRS configuration is not set to fully automated."
+      playbook: docs/devops/alert/vcenter/
+    annotations:
+      description: "Cluster {{ $labels.vccluster }} DRS configuration is not set to fully automated."
+      summary: "Cluster {{ $labels.vccluster }} DRS configuration is not set to fully automated."
