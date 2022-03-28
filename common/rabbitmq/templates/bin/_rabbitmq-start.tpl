@@ -44,8 +44,9 @@ rabbitmqctl trace_on
 
 eval $(timeout 5.0 rabbitmqctl list_users -q | awk '{printf "users[\"%s\"]=\"%s\"\n", $1, substr($2, 2, length($2)-2)}')
 
-upsert_user {{ .Values.users.default.user | include "rabbitmq.shell_quote" }} {{ required ".Values.users.default.password missing" .Values.users.default.password | include "rabbitmq.shell_quote" }}
-upsert_user {{ .Values.users.admin.user | include "rabbitmq.shell_quote" }} {{ required ".Values.users.admin.password missing" .Values.users.admin.password | include "rabbitmq.shell_quote" }} administrator
+{{- range $k, $v := .Values.users }}
+upsert_user {{ $v.user | include "rabbitmq.shell_quote" }} {{ required (printf ".Values.users.%v.password missing" $k) $v.password | include "rabbitmq.shell_quote" }}{{ if $v.tag }} {{ $v.tag | include "rabbitmq.shell_quote" }}{{ end }}
+{{- end }}
 {{- if .Values.metrics.enabled }}
 upsert_user {{ .Values.metrics.user | include "rabbitmq.shell_quote" }} {{ required ".Values.metrics.password missing" .Values.metrics.password | include "rabbitmq.shell_quote" }} monitoring
 {{- end }}
