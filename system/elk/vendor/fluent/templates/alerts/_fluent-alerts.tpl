@@ -14,13 +14,13 @@ groups:
       description: 'ELK in {{`{{ $labels.region }}`}} {{`{{ $labels.kubernetes_pod_name }}`}} pod on {{`{{ $labels.nodename }}`}} is not shipping any log line. Please check'
       summary:  logstash log shipper missing check
   - alert: ElkControlplaneLogsIncreasing
-    expr: sum(rate(fluentd_output_status_emit_records{component="fluent",type="elasticsearch"}[15m])) > {{ .Values.alerts.max_events }}
-    for: 60m
+    expr: (sum(increase(fluentd_output_status_emit_records{component="fluent",type="elasticsearch"}[1h])) / sum(increase(fluentd_output_status_emit_records{component="fluent",type="elasticsearch"}[1h]offset 1d))) > 1.2
+    for: 1h
     labels:
       context: logshipping
       service: elk
       severity: info
       tier: os
     annotations:
-      description: 'ELK in {{`{{ $labels.region }}`}} is getting more logs, than usual in the last 1h.'
+      description: 'ELK in {{`{{ $labels.region }}`}} is receiving more logs in the last 1h compared to 24h ago.'
       summary:  fluentd controlplane, check log volume.
