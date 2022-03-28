@@ -39,3 +39,8 @@ We truncate at 24 chars because some Kubernetes name fields are limited to this 
     {{- required ".Values.global.dockerHubMirror missing" .Values.global.dockerHubMirror -}}/{{- $repo -}}:{{- $tag -}}
   {{- end -}}
 {{- end -}}
+
+{{/* Generate the service label for the templated Prometheus alerts. */}}
+{{- define "alerts.service" -}}
+{{- .Values.alerts.service | default .Release.Name -}}
+{{- end -}}

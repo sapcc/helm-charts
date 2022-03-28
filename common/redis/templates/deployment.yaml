@@ -15,6 +15,10 @@ spec:
     metadata:
       labels:
         app: {{ template "redis.fullname" . }}
+        {{- if .Values.alerts.enabled }}
+        alert-tier: {{ required ".Values.alerts.tier missing" .Values.alerts.tier }}
+        alert-service: {{ include "alerts.service" . }}
+        {{- end }}
     spec:
       containers:
       - name: {{ template "redis.fullname" . }}
