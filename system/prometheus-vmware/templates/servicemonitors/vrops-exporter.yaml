@@ -1,0 +1,39 @@
+{{- if .Values.vropsExporter.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+
+metadata:
+  name: prometheus-{{ .Values.vropsExporter.prometheusName }}-vrops-exporters
+  labels:
+    prometheus: {{ .Values.vropsExporter.prometheusName }}
+
+spec:
+  jobLabel: vrops-exporters
+
+  selector:
+    matchLabels:
+      app: vrops-exporter
+
+  endpoints:
+    - port: metrics
+      bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+      interval: {{ required ".Values.vropsExporter.scrapeInterval  missing" .Values.vropsExporter.scrapeInterval }}
+      scrapeTimeout: {{ required ".Values.vropsExporter.scrapeTimeout  missing" .Values.vropsExporter.scrapeTimeout }}
+      scheme: http
+      honorLabels: true
+      relabelings:
+        - action: keep
+          source_labels: [__meta_kubernetes_service_name]
+          regex: .*vrops-exporter.*
+        - source_labels: [__address__]
+          regex: (vrops.*)(.infra?.*[c])(:.*)
+          target_label: __address__
+          replacement: ${1}${3}
+        - source_labels: [__meta_kubernetes_service_name]
+          regex: (vrops-exporter-)(vrops-vc-.+)
+          target_label: collector
+          replacement: ${2}
+      metricRelabelings:
+        - action: labeldrop
+          regex: "instance"
+{{- end }}
