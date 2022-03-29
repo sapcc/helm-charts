@@ -127,7 +127,7 @@ groups:
   - alert: PrometheusMultipleTargetScrapes
     # we exclude cadvisor metrics because it has the same instance as the kubelet but a different path
     # e.g. 10.246.204.80:10250/metrics vs. 10.246.204.80:10250/metrics/cadvisor
-    expr: sum by (job) (up * on(instance) group_left() (sum by(instance) (up{component!="cadvisor"}) > 1))
+    expr: sum by (job) (up * on(instance) group_left() (sum by(instance) (up{component!="cadvisor",prometheus=""}) > 1))
     for: 30m
     labels:
       tier: {{ include "alerts.tier" . }}

@@ -1,3 +1,7 @@
+## 5.3.5
+
+* Avoid double alerting for `PrometheusMultipleTargetScrapes` when `up` metric is being federated.
+
 ## 5.3.4
 
 * Adds `/-/healthy` endpoint to internal ingress.
