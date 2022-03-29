@@ -50,5 +50,8 @@
   "hcm_rmk_restrict_internal": {
     "lbaas_ctcp": "cc_tcp_profile",
     "lbaas_irule": ["cc_hcm_rmk_restrict_internal"]
+  },
+  "no_snat": {
+    "snat": "none"
   }
 }
