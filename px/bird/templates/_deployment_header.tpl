@@ -70,16 +70,17 @@ spec:
                 - {{ $service_number | quote }}
             topologyKey: "kubernetes.cloud.sap/host"
 {{- else }}
-{{- if len (get ($scheduling_labels $domain)) | eq 0 -}}
+{{ $domain_scheduling_labels := get $scheduling_labels $domain }}
+{{- if $domain_scheduling_labels | len | eq 0 -}}
 {{- fail "scheduling_labels must be set if not apod" -}}
 {{- end }}
-        tolerations:
-            key: species
-            operator: Equal
-            value: px
-            effect: NoSchedule
-        nodeSelector:
-            # This calculation only works if we have no more than 2 instances and no more than 2 scheduling labels per domain
-            pxdomain: "{{ index (get $scheduling_labels $domain) (sub $instance_number 1) }}"
+      tolerations:
+          key: species
+          operator: Equal
+          value: px
+          effect: NoSchedule
+      nodeSelector:
+          # This calculation only works if we have no more than 2 instances and no more than 2 scheduling labels per domain
+          pxdomain: "{{ index $domain_scheduling_labels (mod (sub $instance_number 1) (len $domain_scheduling_labels)) }}"
 {{- end }}
 {{- end }}
