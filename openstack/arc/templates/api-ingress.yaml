@@ -1,25 +1,13 @@
 {{- if .Values.api.ingress.enabled }}
-{{- if .Values.api.ingress.tlsCertificate }}
-kind: Secret
-apiVersion: v1
-
-metadata:
-  name: arc-api-ingress
-  labels:
-    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
-data:
-  tls.crt: {{ .Values.api.ingress.tlsCertificate | b64enc }}
-  tls.key: {{ .Values.api.ingress.tlsKey | b64enc }}
----
-{{- end }}
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: arc-api
   labels:
     chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
-  {{- if .Values.api.ingress.cert_manager}}
   annotations:
+    nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
+  {{- if .Values.api.ingress.cert_manager}}
     kubernetes.io/tls-acme: "true"
   {{- end }}
 spec:
@@ -38,5 +26,5 @@ spec:
           service:
             name: arc-api
             port:
-              number: {{ .Values.api.service.externalPort }}
+              number: {{ .Values.api.service.externalTLSPort }}
 {{- end }}
