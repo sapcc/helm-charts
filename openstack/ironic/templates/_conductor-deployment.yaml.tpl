@@ -73,8 +73,7 @@ spec:
             command:
             - bash
             - -c
-            - curl -u {{ .Values.rabbitmq.metrics.user }}:{{ .Values.rabbitmq.metrics.rabbitmq }} ironic-rabbitmq:{{.Values.rabbitmq.ports.management}}/api/consumers 
-              | sed 's/,/\n/g' | grep ironic-conductor-{{$conductor.name}} >/dev/null
+            - curl -u {{ .Values.rabbitmq.metrics.user }}:{{ .Values.rabbitmq.metrics.rabbitmq }} ironic-rabbitmq:{{.Values.rabbitmq.ports.management}}/api/consumers | sed 's/,/\n/g' | grep ironic-conductor-{{$conductor.name}} >/dev/null
           periodSeconds: 10
           failureThreshold: 1
           initialDelaySeconds: 30
