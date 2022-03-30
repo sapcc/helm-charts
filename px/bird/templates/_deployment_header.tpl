@@ -75,7 +75,7 @@ spec:
 {{- fail "scheduling_labels must be set if not apod" -}}
 {{- end }}
       tolerations:
-          key: species
+        - key: species
           operator: Equal
           value: px
           effect: NoSchedule
