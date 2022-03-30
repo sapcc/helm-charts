@@ -30,6 +30,9 @@ cronus:
 {{- if .Values.cronus.listenProxyProtocol }}
     proxyProtocol: {{ .Values.cronus.listenProxyProtocol }}
 {{- end }}
+{{- if .Values.cronus.proxyHeaderTimeout }}
+    proxyHeaderTimeout: {{ .Values.cronus.proxyHeaderTimeout }}
+{{- end }}
     shutdownTimeout: {{ .Values.cronus.terminationGracePeriod | default 60 }}s
     readTimeout: {{ .Values.cronus.readTimeout | default 30 }}s
     writeTimeout: {{ .Values.cronus.writeTimeout | default 30 }}s
