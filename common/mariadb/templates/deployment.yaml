@@ -103,7 +103,7 @@ spec:
           - name: initdb
             mountPath: /docker-entrypoint-initdb.d
 {{ end }}
-{{- if .Values.backup_v2.enabled }}
+{{- if or .Values.backup_v2.enabled .Values.readiness.useSidecar }}
       - name: readiness
         image: "{{ required ".Values.global.registryAlternateRegion is missing" .Values.global.registryAlternateRegion }}/{{ .Values.readiness.image }}:{{ .Values.readiness.image_version }}"
         command:
