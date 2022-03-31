@@ -51,7 +51,7 @@ spec:
                   - {{.Values.global.db_region}}a
       initContainers:
       - name: "remove-lost-found"
-        image: "busybox:1.25.0"
+        image: "{{ required ".Values.global.dockerHubMirrorAlternateRegion is missing" .Values.global.dockerHubMirrorAlternateRegion }}/library/busybox:1.25.0"
         imagePullPolicy: IfNotPresent
         command:
         - "rm"
@@ -62,7 +62,7 @@ spec:
           mountPath: /var/lib/mysql
       containers:
       - name: database
-        image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+        image: "{{ required ".Values.global.dockerHubMirrorAlternateRegion is missing" .Values.global.dockerHubMirrorAlternateRegion }}/{{ .Values.image.repository }}:{{ .Values.image.tag }}"
         imagePullPolicy: {{ .Values.image.pullPolicy | quote }}
         command:
         - "/bin/bash"
@@ -154,7 +154,7 @@ spec:
         {{- end }}
       {{ if .Values.logTail }}
       - name: "logs"
-        image: "busybox:1.25.0"
+        image: "{{ required ".Values.global.dockerHubMirrorAlternateRegion is missing" .Values.global.dockerHubMirrorAlternateRegion }}/library/busybox:1.25.0"
         imagePullPolicy: IfNotPresent
         command:
         - "tail"
@@ -167,9 +167,9 @@ spec:
       {{ if .Values.metricsExporter.enabled }}
       - name: metrics
         {{- if .Values.metricsExporter.tag }}
-        image: prom/mysqld-exporter:{{ .Values.metricsExporter.tag }}
+        image: {{ required ".Values.global.dockerHubMirrorAlternateRegion is missing" .Values.global.dockerHubMirrorAlternateRegion }}/prom/mysqld-exporter:{{ .Values.metricsExporter.tag }}
         {{- else }}
-        image: prom/mysqld-exporter
+        image: {{ required ".Values.global.dockerHubMirrorAlternateRegion is missing" .Values.global.dockerHubMirrorAlternateRegion }}/prom/mysqld-exporter
         {{- end }}
         imagePullPolicy: IfNotPresent
 {{- if .Values.metricsExporter.commandOverrides }}
