@@ -52,6 +52,15 @@ spec:
               value: "{{ .Release.Name }}-mariadb,{{ .Release.Name }}-rabbitmq,{{ .Release.Name }}-memcached"
             - name: COMMAND
               value: "true"
+      - name: fetch-rabbitmqadmin
+        image: {{.Values.global.dockerHubMirror}}/library/busybox
+        command: ["/scripts/fetch-rabbitmqadmin.sh"]
+        volumeMounts:
+          - name: manila-bin
+            mountPath: /scripts
+            readOnly: true
+          - name: etcmanila
+            mountPath: /shared
       containers:
         - name: manila-api
           image: {{.Values.global.registry}}/loci-manila:{{.Values.loci.imageVersion}}
@@ -72,7 +81,7 @@ spec:
             - name: OS_OSLO_MESSAGING_RABBIT__HEARTBEAT_IN_PTHREAD
               value: "true"
             - name: OS_OSLO_REPORTS__FILE_EVENT_HANDLER
-              value: "/tmp/guru_report"
+              value: "/etc/manila/guru"
           {{- end }}
             - name: NAMESPACE
               value: {{ .Release.Namespace }}
