@@ -9,6 +9,12 @@ awsRegion: {{ .Values.config.allowedServices.email }}
 awsAccess: {{ .Values.config.awsAccess }}
 awsSecret: {{ .Values.config.awsSecret }}
 keystoneRegion: {{ .Values.config.keystone.region }}
+{{- if .Values.config.sesAdditionalContactEmails }}
+sesAdditionalContactEmails:
+{{- range $key, $value := .Values.config.sesAdditionalContactEmails }}
+  - {{ $value }}
+{{- end }}
+{{- end }}
 
 secAttNotifier:
   enabled: {{ .Values.secAttNotifier.enabled }}
