@@ -1,0 +1,53 @@
+{{- if .Values.vropsExporter.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+
+metadata:
+  name: prometheus-{{ .Values.vropsExporter.prometheusName }}-vrops-exporters
+  labels:
+    prometheus: {{ .Values.vropsExporter.prometheusName }}
+
+spec:
+  jobLabel: vrops-exporters
+
+  selector:
+    matchLabels:
+      target: vrops-exporter
+
+  endpoints:
+    - port: metrics
+      bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+      interval: {{ required ".Values.vropsExporter.scrapeInterval  missing" .Values.vropsExporter.scrapeInterval }}
+      scrapeTimeout: {{ required ".Values.vropsExporter.scrapeTimeout  missing" .Values.vropsExporter.scrapeTimeout }}
+      scheme: http
+      honorLabels: true
+      relabelings:
+        - action: keep
+          sourceLabels: [__meta_kubernetes_service_name]
+          regex: .*vrops-exporter.*
+        - sourceLabels: [__address__]
+          regex: (vrops.*)(.infra?.*[c])(:.*)
+          targetLabel: __address__
+          replacement: ${1}${3}
+        - sourceLabels: [job]
+          regex: (vrops-exporter-)(vrops-vc-.+)
+          targetLabel: collector
+          replacement: ${2}
+        - sourceLabels: [job]
+          regex: (vrops)(-exporter-)(vrops-vc-.+)
+          targetLabel: job
+          replacement: ${1}
+      metricRelabelings:
+        - action: labeldrop
+          regex: "container"
+        - action: labeldrop
+          regex: "instance"
+        - action: labeldrop
+          regex: "endpoint"
+        - action: labeldrop
+          regex: "pod"
+        - action: labeldrop
+          regex: "namespace"
+        - action: labeldrop
+          regex: "service"
+{{- end }}
