@@ -84,16 +84,17 @@ poller:
     smtpHost: cronus.{{ .Values.config.keystone.region }}.cloud.sap
     sesApiEndpoint: https://cronus.{{ .Values.config.keystone.region }}.cloud.sap
     sesRegion: {{ .Values.config.allowedServices.email }}
-    recipient: {{ .Values.simulator.recipient }}
+    envelopeFrom: {{ .Values.simulator.poller.envelopeFrom }}
+    headerFrom: {{ .Values.simulator.poller.headerFrom }}
+    insecureTLS: {{ .Values.simulator.poller.insecureTLS }}
+    certPem: {{ .Values.simulator.poller.certPem }}
+    keyPem: {{ .Values.simulator.poller.keyPem }}
     recipients:
     {{- range $key, $value := .Values.simulator.poller.recipients }}
      - {{ $value }}
     {{- end }}
     emailSubject: {{ .Values.simulator.poller.emailSubject }}
     emailBody: {{ .Values.simulator.poller.emailBody | quote }}
-    sender: {{ .Values.simulator.sender }}
-    from: {{ .Values.simulator.poller.from }}
-    frindlyFrom: {{ .Values.simulator.poller.frindlyFrom }}
     prometheus: {{ .Values.simulator.poller.prometheus }}
     charSet: {{ .Values.simulator.poller.charSet }}
     period: {{ .Values.simulator.poller.period }}
