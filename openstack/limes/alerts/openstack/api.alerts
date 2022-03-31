@@ -93,7 +93,7 @@ groups:
       summary: Limes reports zero capacity for {{ $labels.full_resource }}
 
   - alert: OpenstackLimesFailedScrapes
-    expr: sum(increase(limes_failed_scrapes[5m])) BY (service, service_name) > 0
+    expr: sum(increase(limes_failed_scrapes[5m])) BY (service, service_name, region) > 0
     for: 1h
     labels:
       context: failedscrapes
@@ -109,7 +109,7 @@ groups:
       summary: Limes cannot scrape {{ title $labels.service_name }}
 
   - alert: OpenstackLimesFailingScrapes
-    expr: max(limes_failing_scrapes_gauge) BY (service_name) > 0
+    expr: max(limes_failing_scrapes_gauge) BY (service_name, region) > 0
     for: 1h
     labels:
       context: failedscrapes
@@ -143,7 +143,7 @@ groups:
       summary: Limes cannot find {{ title $labels.service_name }} endpoint
 
   - alert: OpenstackLimesFailedRateScrapes
-    expr: sum(increase(limes_failed_rate_scrapes[5m])) BY (service, service_name) > 0
+    expr: sum(increase(limes_failed_rate_scrapes[5m])) BY (service, service_name, region) > 0
     for: 1h
     labels:
       context: failedratescrapes
@@ -159,7 +159,7 @@ groups:
       summary: Limes cannot scrape {{ title $labels.service_name }}
 
   - alert: OpenstackLimesFailingRateScrapes
-    expr: max(limes_failing_rate_scrapes_gauge) BY (service_name) > 0
+    expr: max(limes_failing_rate_scrapes_gauge) BY (service_name, region) > 0
     for: 1h
     labels:
       context: failedscrapes
