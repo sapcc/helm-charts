@@ -4,8 +4,6 @@ apiVersion: apps/v1
 metadata:
   name: vrops-inventory-exporter
   namespace: {{ required ".Values.vrops.namespace variable missing" $.Values.vrops.namespace }}
-  labels:
-    target: vrops-exporter
 spec:
   selector:
     matchLabels:
@@ -16,6 +14,7 @@ spec:
       labels:
         app: vrops-inventory-exporter
         type: exporter
+        target: vrops-exporter
       annotations:
         prometheus.io/scrape: "true"
         prometheus.io/port: {{ required ".Values.vrops.inventory_exporter.port_number missing" .Values.vrops.inventory_exporter.port_number | quote}}
