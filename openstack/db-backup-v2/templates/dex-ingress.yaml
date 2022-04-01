@@ -1,4 +1,4 @@
-apiVersion: networking.k8s.io/v1beta1
+apiVersion: networking.k8s.io/v1
 kind: Ingress
 
 metadata:
@@ -12,9 +12,12 @@ spec:
       http:
         paths:
           - path: /
+            pathType: Prefix
             backend:
-              serviceName:  db-backup-dex
-              servicePort: 80
+              service:
+                name:  db-backup-dex
+                port:
+                  number: 80
   tls:
     - hosts:
       - auth.mariabackup.{{ .Values.global.region }}.cloud.sap
