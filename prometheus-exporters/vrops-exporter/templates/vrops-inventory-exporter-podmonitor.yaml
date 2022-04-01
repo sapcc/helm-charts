@@ -1,0 +1,33 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+
+metadata:
+  name: prometheus-{{ .Values.vrops.prometheusName }}-vrops-inventory-exporter
+  labels:
+    prometheus: {{ .Values.alerts.prometheus }}
+
+spec:
+  jobLabel: vrops-inventory-exporter
+
+  selector:
+    matchLabels:
+      target: vrops-inventory-exporter
+
+  # Find pods in any namespace.
+  namespaceSelector:
+    matchNames: [vmware-monitoring]
+
+  podMetricsEndpoints:
+    - interval: 60s
+      scrapeTimeout: 50s
+      path: /metrics
+      scheme: http
+      port: metrics
+      relabelings:
+        - sourceLabels: [job]
+          regex: (vrops)(-exporter-)(vrops-vc-.+)
+          targetLabel: job
+          replacement: ${1}
+      metricRelabelings:
+        - action: labeldrop
+          regex: "container|instance|endpoint|pod|namespace|service"
