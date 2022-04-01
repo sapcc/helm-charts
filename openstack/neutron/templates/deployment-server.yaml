@@ -40,6 +40,9 @@ spec:
         - name: neutron-server
           image: {{.Values.global.registry}}/loci-neutron:{{.Values.imageVersionServerAPI | default .Values.imageVersionServer | default .Values.imageVersion | required "Please set neutron.imageVersion or similar"}}
           imagePullPolicy: IfNotPresent
+          lifecycle:
+            preStop:
+              {{- include "utils.snippets.pre_stop_graceful_shutdown" . | indent 14 }}
 {{- if not .Values.pod.debug.server }}
 {{- if not .Values.api.uwsgi }}
           livenessProbe:
