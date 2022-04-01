@@ -1,5 +1,5 @@
 {{- $ussuri := hasPrefix "ussuri" (default .Values.imageVersion .Values.imageVersionServerAPI) -}}
-apiVersion: networking.k8s.io/v1beta1
+apiVersion: networking.k8s.io/v1
 kind: Ingress
 
 metadata:
@@ -22,14 +22,17 @@ spec:
         paths:
         {{- if $ussuri }}
         - path: /v2.0/lbaas
-          {{- if ge (.Capabilities.KubeVersion.Minor | atoi) 18 }}
           pathType: Prefix
-          {{- end }}
           backend:
-            serviceName: octavia-api
-            servicePort: {{.Values.global.octavia_api_port_internal | default 9876}}
+            service:
+              name: octavia-api
+              port:
+                number: {{.Values.global.octavia_api_port_internal | default 9876}}
         {{- end }}
         - path: /
+          pathType: Prefix
           backend:
-            serviceName: neutron-server
-            servicePort: {{.Values.global.neutron_api_port_internal | default 9696}}
+            service:
+              name: neutron-server
+              port:
+                number: {{.Values.global.neutron_api_port_internal | default 9696}}
