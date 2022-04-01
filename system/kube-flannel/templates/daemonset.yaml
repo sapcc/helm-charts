@@ -39,9 +39,21 @@ spec:
           - "--ip-masq"
           - "--kube-subnet-mgr"
           - "--iface=$(POD_IP)"
+          - "--healthz-port=30670"
           - "-kubeconfig-file={{ .Values.kubeConfig }}"
         securityContext:
           privileged: true
+        ports:
+          - name: healthz
+            containerPort: 30670
+            protocol: TCP
+        livenessProbe:
+          httpGet:
+            host: 127.0.0.1
+            path: /healthz
+            port: 30670
+          initialDelaySeconds: 10
+          timeoutSeconds: 3
         env:
         - name: POD_NAME
           valueFrom:
