@@ -1,6 +1,6 @@
-{{- if .Values.podMonitor.enabled }}
+{{- if .Values.serviceMonitor.enabled }}
 apiVersion: monitoring.coreos.com/v1
-kind: PodMonitor
+kind: ServiceMonitor
 
 metadata:
   name: apic-exporter
@@ -20,14 +20,14 @@ spec:
     matchNames:
       - {{ .Values.exporter.namespace }}
 
-  podMetricsEndpoints:
+  endpoint:
     - interval: 120s
       scrapeTimeout: 115s
       port: metrics
       scheme: http
       relabelings:
         - action: labelmap
-          regex: '__meta_kubernetes_pod_label_(.+)'
+          regex: '__meta_kubernetes_service_label_(.+)'
         - targetLabel: job
           replacement: apic-exporter
 {{- end -}}
