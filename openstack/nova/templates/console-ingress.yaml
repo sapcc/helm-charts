@@ -1,5 +1,5 @@
 kind: Ingress
-apiVersion: networking.k8s.io/v1beta1
+apiVersion: networking.k8s.io/v1
 
 metadata:
   name: nova-console
@@ -30,9 +30,12 @@ spec:
       {{- range $name, $config := .Values.consoles }}
         {{- if $config.enabled }}
       - path: /{{ $name }}/?(.*)
+        pathType: Prefix
         backend:
-          serviceName: nova-console-{{ $name }}
-          servicePort: {{ $name }}
+          service:
+            name: nova-console-{{ $name }}
+            port:
+              name: {{ $name }}
         {{- end }}
       {{- end }}
 
