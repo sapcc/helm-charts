@@ -1,21 +1,19 @@
 # prettier-ignore
 {{- if .Values.ingress.enabled }}
 kind: Ingress
-apiVersion: networking.k8s.io/v1beta1
+apiVersion: networking.k8s.io/v1
 
 metadata:
   name: supernova
   annotations:
     ingress.kubernetes.io/affinity: "cookie"
-
-{{- if .Values.ingress.internet_facing }}
-    ingress.kubernetes.io/ingress.class: "nginx-internet"
-    kubernetes.io/ingress.class: "nginx-internet"
-{{- end }}  
     ingress.kubernetes.io/ssl-redirect: "true"
     kubernetes.io/tls-acme: "true"
 
 spec:
+{{- if .Values.ingress.internet_facing }}
+  ingressClassName: "nginx-internet"
+{{- end }}  
   tls:
      - secretName: supernova
        hosts: [{{ .Values.ingress.host }}]
@@ -24,7 +22,10 @@ spec:
     http:
       paths:
       - path: /
+        pathType: Prefix
         backend:
-          serviceName: supernova
-          servicePort: 80
+          service:
+            name: supernova
+            port:
+              number: 80
 {{- end }}
