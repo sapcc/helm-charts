@@ -40,6 +40,15 @@ spec:
         - name: neutron-server
           image: {{.Values.global.registry}}/loci-neutron:{{.Values.imageVersionServerAPI | default .Values.imageVersionServer | default .Values.imageVersion | required "Please set neutron.imageVersion or similar"}}
           imagePullPolicy: IfNotPresent
+          lifecycle:
+            preStop:
+              exec:
+                command: [
+                  # Introduce a delay to the shutdown sequence to wait for the
+                  # pod eviction event to propagate.
+                  "/bin/sleep",
+                  "{{ .Values.api.shutdownDelaySeconds }}"
+                ]
 {{- if not .Values.pod.debug.server }}
 {{- if not .Values.api.uwsgi }}
           livenessProbe:
