@@ -80,6 +80,9 @@ spec:
                   name: sentry
                   key: {{ .Release.Name }}.DSN.python
             {{- end }}
+          lifecycle:
+            preStop:
+              {{- include "utils.snippets.pre_stop_graceful_shutdown" . | indent 14 }}
           livenessProbe:
             httpGet:
               path: /
@@ -127,7 +130,7 @@ spec:
             name: designate-etc
         - name: designate-etc-wsgi
           configMap:
-            name: designate-etc-wsgi         
+            name: designate-etc-wsgi
         - name: wsgi-designate
           emptyDir: {}
         - name: container-init
