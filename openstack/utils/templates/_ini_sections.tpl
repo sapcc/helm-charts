@@ -68,8 +68,8 @@ mem_queue_size = {{ .Values.audit.mem_queue_size }}
 {{- define "ini_sections.transport_url" }}rabbit://{{ default "" .Values.global.user_suffix | print (default .Values.global.rabbitmq_default_user .Values.rabbitmq_user) }}:{{ .Values.rabbitmq_pass | default .Values.global.rabbitmq_default_pass | default (tuple . (default .Values.global.rabbitmq_default_user .Values.rabbitmq_user) "rabbitmq" | include "svc.password_for_user_and_service" | urlquery ) }}@{{ include "rabbitmq_host" . }}{{- end }}
 
 {{- define "ini_sections.logging_format"}}
-logging_context_format_string = %(asctime)s %(process)d %(levelname)s %(name)s [%(request_id)s g%(global_request_id)s %(user_identity)s] %(instance)s%(message)s
-logging_default_format_string = %(asctime)s %(process)d %(levelname)s %(name)s [-] %(instance)s%(message)s
+logging_context_format_string = %(asctime)s %(process)d %(levelname)s %(name)s [%(request_id)s g%(global_request_id)s %(user_identity)s] %(resource)s%(instance)s%(message)s
+logging_default_format_string = %(asctime)s %(process)d %(levelname)s %(name)s [-] %(resource)s%(instance)s%(message)s
 logging_user_identity_format = %(user)s %(tenant)s %(domain)s %(user_domain)s %(project_domain)s
-logging_exception_prefix = %(asctime)s %(process)d ERROR %(name)s %(instance)s
+logging_exception_prefix = %(asctime)s %(process)d ERROR %(name)s %(resource)s%(instance)s
 {{- end }}
