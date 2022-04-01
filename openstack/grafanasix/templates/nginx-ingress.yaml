@@ -1,6 +1,6 @@
 {{- if .Values.nginx.enabled }}
 kind: Ingress
-apiVersion: networking.k8s.io/v1beta1
+apiVersion: networking.k8s.io/v1
 
 metadata:
   name: grafana-kiosk
@@ -19,7 +19,10 @@ spec:
       http:
         paths:
         - path: /
+          pathType: Prefix
           backend:
-            serviceName: grafana
-            servicePort: {{.Values.nginx.endpoint.port.public}}
+            service:
+              name: grafana
+              port:
+                number: {{.Values.nginx.endpoint.port.public}}
 {{- end }}

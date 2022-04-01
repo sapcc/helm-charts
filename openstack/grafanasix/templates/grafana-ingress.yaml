@@ -1,6 +1,6 @@
 {{- if .Values.ingress.enabled }}
 kind: Ingress
-apiVersion: networking.k8s.io/v1beta1
+apiVersion: networking.k8s.io/v1
 
 metadata:
   name: grafana
@@ -22,13 +22,16 @@ spec:
       http:
         paths:
         - path: /
+          pathType: Prefix
           backend:
-            serviceName: grafana
-            servicePort: {{.Values.grafana.endpoint.port.public}}
+            service:
+              name: grafana
+              port:
+                number: {{.Values.grafana.endpoint.port.public}}
 {{- if .Values.ingress.global }}
---- 
+---
 kind: Ingress
-apiVersion: networking.k8s.io/v1beta1
+apiVersion: networking.k8s.io/v1
 
 metadata:
   name: grafana-global
@@ -51,8 +54,11 @@ spec:
       http:
         paths:
         - path: /
+          pathType: Prefix
           backend:
-            serviceName: grafana
-            servicePort: {{.Values.grafana.endpoint.port.public}}
+            service:
+              name: grafana
+              port:
+                number: {{.Values.grafana.endpoint.port.public}}
 {{- end }}
 {{- end }}
