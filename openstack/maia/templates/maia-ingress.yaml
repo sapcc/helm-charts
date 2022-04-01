@@ -1,5 +1,5 @@
 {{- if .Values.maia.enabled }}
-apiVersion: networking.k8s.io/v1beta1
+apiVersion: networking.k8s.io/v1
 kind: Ingress
 
 metadata:
@@ -19,9 +19,12 @@ spec:
       http:
         paths:
         - path: /
+          pathType: Prefix
           backend:
-            serviceName: maia
-            servicePort: {{.Values.maia.listen_port}}
+            service:
+              name: maia
+              port:
+                number: {{.Values.maia.listen_port}}
 # uncomment to expose Prometheus UI instead of Maia
 #            serviceName: prometheus-maia
 #            servicePort: 9090 
