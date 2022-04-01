@@ -4,7 +4,7 @@
 {{- range $i, $prober := .Values.probers }}
 {{ if ne $i 0 }}---{{ end }}
 
-apiVersion: networking.k8s.io/v1beta1
+apiVersion: networking.k8s.io/v1
 kind: Ingress
 
 metadata:
@@ -25,17 +25,26 @@ spec:
       http:
         paths:
         - path: /metrics
+          pathType: Prefix
           backend:
-            serviceName: cloudprober-exporter-{{ $prober.name }}
-            servicePort: 9313
+            service:
+              name: cloudprober-exporter-{{ $prober.name }}
+              port:
+                number: 9313
         - path: /config
+          pathType: Prefix
           backend:
-            serviceName: cloudprober-exporter-{{ $prober.name }}
-            servicePort: 9313
+            service:
+              name: cloudprober-exporter-{{ $prober.name }}
+            port:
+              number: 9313
         - path: /web
+          pathType: Prefix
           backend:
-            serviceName: cloudprober-exporter-{{ $prober.name }}
-            servicePort: 1080
+            service:
+              name: cloudprober-exporter-{{ $prober.name }}
+              port:
+                number: 1080
 ---
 {{- end }}
 {{- end }}
