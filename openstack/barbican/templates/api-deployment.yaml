@@ -68,13 +68,7 @@ spec:
           {{- end }}
           lifecycle:
             preStop:
-              exec:
-                command: [
-                  # Introduce a delay to the shutdown sequence to wait for the
-                  # pod eviction event to propagate.
-                  "/bin/sleep",
-                  "{{ .Values.shutdownDelaySeconds }}"
-                ]
+              {{- include "utils.snippets.pre_stop_graceful_shutdown" . | indent 14 }}
           livenessProbe:
             httpGet:
               path: /
