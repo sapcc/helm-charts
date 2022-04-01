@@ -49,6 +49,9 @@ spec:
                   operator: In
                   values:
                   - {{.Values.global.region}}a
+      {{- if ne .Values.terminationGracePeriodSeconds 30.0 }}
+      terminationGracePeriodSeconds: {{ .Values.terminationGracePeriodSeconds }}
+      {{- end }}
       containers:
       - name: mariadb
         image: {{ required ".Values.global.dockerHubMirrorAlternateRegion is missing" .Values.global.dockerHubMirrorAlternateRegion }}/{{ .Values.image }}
@@ -57,6 +60,22 @@ spec:
           postStart:
             exec:
               command: ["sh", "-c", "while ! mysqladmin ping -uroot -p$MYSQL_ROOT_PASSWORD --silent; do sleep 1; done; mysql_upgrade"]
+          {{- if .Values.gracefulShutDown.enabled }}
+            {{- if gt .Values.gracefulShutDown.shutdownPeriodSeconds .Values.terminationGracePeriodSeconds }}{{ fail ".gracefulShutDown.shutdownPeriodSeconds needs to be smaller than .terminationGracePeriodSeconds"}}{{ end }}
+          preStop:
+            exec:
+              command:
+              - /usr/bin/bash
+              - -c
+              - |
+                # Wait for existing connections to close (within a certain grace-period)
+                for ((i=0;i<{{ mul 2 .Values.gracefulShutDown.shutdownPeriodSeconds }};++i)); do
+                  if [ $(mysqladmin processlist | grep -vE 'localhost|Binlog' | wc -l) > 4 ];
+                    then sleep 0.5
+                    else break
+                  fi
+                done
+          {{- end }}
         env:
         - name: MYSQL_ROOT_PASSWORD
           valueFrom:
