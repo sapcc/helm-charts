@@ -1,4 +1,4 @@
-apiVersion: networking.k8s.io/v1beta1
+apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: webhook-broadcaster
@@ -12,9 +12,13 @@ spec:
   - host: webhook.{{ .Values.concourse.concourse.web.externalDomain }}
     http:
       paths:
-      - backend:
-          serviceName: webhook-broadcaster
-          servicePort: 8080
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: webhook-broadcaster
+            port:
+              number: 8080
   tls:
   - hosts:
     - webhook.{{ .Values.concourse.concourse.web.externalDomain }}
