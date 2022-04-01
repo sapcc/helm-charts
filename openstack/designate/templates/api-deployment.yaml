@@ -80,6 +80,15 @@ spec:
                   name: sentry
                   key: {{ .Release.Name }}.DSN.python
             {{- end }}
+          lifecycle:
+            preStop:
+              exec:
+                command: [
+                  # Introduce a delay to the shutdown sequence to wait for the
+                  # pod eviction event to propagate.
+                  "/bin/sleep",
+                  "{{ .Values.shutdownDelaySeconds }}"
+                ]
           livenessProbe:
             httpGet:
               path: /
@@ -127,7 +136,7 @@ spec:
             name: designate-etc
         - name: designate-etc-wsgi
           configMap:
-            name: designate-etc-wsgi         
+            name: designate-etc-wsgi
         - name: wsgi-designate
           emptyDir: {}
         - name: container-init
