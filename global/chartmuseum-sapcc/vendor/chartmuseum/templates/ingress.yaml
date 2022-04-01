@@ -2,7 +2,7 @@
 {{- $serviceName := include "chartmuseum.fullname" . -}}
 {{- if .Values.ingress.enabled }}
 ---
-apiVersion: networking.k8s.io/v1beta1
+apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: {{ include "chartmuseum.fullname" . }}
@@ -20,9 +20,12 @@ spec:
     http:
       paths:
       - path: {{ default "/" .path | quote }}
+        pathType: ImplementationSpecific
         backend:
-          serviceName: {{ default $serviceName .serviceName }}
-          servicePort: {{ default $servicePort .servicePort }}
+          service:
+            name: {{ default $serviceName .serviceName }}
+            port:
+              number: {{ default $servicePort .servicePort }}
   {{- end }}
   tls:
   {{- range .Values.ingress.hosts }}
