@@ -1,5 +1,7 @@
 #!/bin/bash
 #set -x
+export GENERATOR_PATH=/gopath/snmp_exporter/generator
+
 
 if [[ $# -eq 0 ]] ; then
     echo 'Please set the module name like "asr" or "all" to create snmp config'
@@ -45,7 +47,7 @@ for i in $modules;
             mv /usr/share/snmp/CISCO-UNIFIED-COMPUTING-TC-MIB.mib /usr/share/snmp/mibs/
         fi
 
-        /gopath/bin/generator generate || exit
+        $GENERATOR_PATH/generator generate || exit
 
         if [ $i = "ucs" ]; then # This mib makes other generators fail...
             mv /usr/share/snmp/mibs/CISCO-UNIFIED-COMPUTING-TC-MIB.mib /usr/share/snmp/
