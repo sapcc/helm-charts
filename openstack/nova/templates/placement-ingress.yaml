@@ -1,5 +1,5 @@
 kind: Ingress
-apiVersion: networking.k8s.io/v1beta1
+apiVersion: networking.k8s.io/v1
 
 metadata:
   name: nova-placement-api
@@ -22,6 +22,9 @@ spec:
       http:
         paths:
         - path: /
+          pathType: Prefix
           backend:
-            serviceName: nova-placement-api
-            servicePort: {{.Values.global.placementApiPortInternal}}
+            service:
+              name: nova-placement-api
+              port:
+                number: {{.Values.global.placementApiPortInternal}}
