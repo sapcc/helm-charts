@@ -13,7 +13,14 @@ spec:
       {{ required ".Values.labelSelector missing" .Values.labelSelector | toYaml | nindent 6 }}
 
   namespaceSelector:
+  {{ if len .Values.nameSpaces -}}
+    matchNames:
+      {{- range $namespace := $.Values.nameSpaces }}
+      - {{ $namespace }}
+      {{- end }}
+  {{ else }}
     any: true
+  {{- end }}
 
   endpoints:
     - port: http
