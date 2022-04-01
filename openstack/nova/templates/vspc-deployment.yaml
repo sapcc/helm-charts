@@ -46,6 +46,9 @@ spec:
             - name: PYTHONWARNINGS
               value: {{ .Values.python_warnings | quote }}
 {{- end }}
+          lifecycle:
+            preStop:
+              {{- include "utils.snippets.pre_stop_graceful_shutdown" . | indent 14 }}
           livenessProbe:
             exec:
               command: ["sh", "-c", "echo '' | curl -m 20 telnet://localhost:1333"]
