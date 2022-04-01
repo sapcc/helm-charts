@@ -1,7 +1,7 @@
 {{- $domain := printf "limes-3.%s.%s" .Values.global.region .Values.global.tld -}}
 
 kind: Ingress
-apiVersion: networking.k8s.io/v1beta1
+apiVersion: networking.k8s.io/v1
 
 metadata:
   name: limes-api-ccloud
@@ -19,6 +19,9 @@ spec:
       http:
         paths:
           - path: /
+            pathType: Prefix
             backend:
-              serviceName: limes-api-ccloud
-              servicePort: 80
+              service:
+                name: limes-api-ccloud
+                port:
+                  number: 80
