@@ -1,6 +1,5 @@
 kind: Ingress
-apiVersion: networking.k8s.io/v1beta1
-
+apiVersion: networking.k8s.io/v1
 
 metadata:
   name: manila-api
@@ -23,6 +22,9 @@ spec:
       http:
         paths:
         - path: /
+          pathType: Prefix
           backend:
-            serviceName: manila-api
-            servicePort: {{.Values.api_port_internal}}
+            service:
+              name: manila-api
+              port:
+                number: {{.Values.api_port_internal}}
