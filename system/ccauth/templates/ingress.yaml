@@ -1,4 +1,4 @@
-apiVersion: networking.k8s.io/v1beta1
+apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: {{ include "ccauth.fullname" . }}
@@ -13,9 +13,12 @@ spec:
     http:
         paths:
         - backend:
-            serviceName: {{ include "ccauth.fullname" . }}
-            servicePort: 80
+            service:
+              name: {{ include "ccauth.fullname" . }}
+              port:
+                number: 80
           path: /
+          pathType: Prefix
   tls:
   - hosts:
     - {{ include "ccauth.hostname" . }}
