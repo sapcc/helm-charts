@@ -44,6 +44,7 @@ function start () {
 }
 
 function stop () {
+  sleep {{ .Values.api.shutdownDelaySeconds }}
   apachectl -k graceful-stop
 }
 
