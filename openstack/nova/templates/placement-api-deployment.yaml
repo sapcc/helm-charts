@@ -60,6 +60,15 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.name
+          lifecycle:
+            preStop:
+              exec:
+                command: [
+                  # Introduce a delay to the shutdown sequence to wait for the
+                  # pod eviction event to propagate.
+                  "/bin/sleep",
+                  "{{ .Values.shutdownDelaySeconds }}"
+                ]
 {{- if not .Values.pod.debug.api }}
           livenessProbe:
             httpGet:

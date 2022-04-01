@@ -54,6 +54,15 @@ spec:
         - name: PYTHONWARNINGS
           value: {{ .Values.python_warnings | quote }}
 {{- end }}
+        lifecycle:
+          preStop:
+            exec:
+              command: [
+                # Introduce a delay to the shutdown sequence to wait for the
+                # pod eviction event to propagate.
+                "/bin/sleep",
+                "{{ .Values.shutdownDelaySeconds }}"
+              ]
         volumeMounts:
         - name: etcnova
           mountPath: /etc/nova
