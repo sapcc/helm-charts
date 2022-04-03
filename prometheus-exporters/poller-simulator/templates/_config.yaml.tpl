@@ -87,8 +87,11 @@ poller:
     envelopeFrom: {{ .Values.simulator.poller.envelopeFrom }}
     headerFrom: {{ .Values.simulator.poller.headerFrom }}
     insecureTLS: {{ .Values.simulator.poller.insecureTLS }}
-    certPem: {{ .Values.simulator.poller.certPem }}
-    keyPem: {{ .Values.simulator.poller.keyPem }}
+    certPem: |
+    {{ .Values.simulator.poller.certPem | nindent 6 }}
+    keyPem: |
+    {{ .Values.simulator.poller.keyPem | nindent 6 }}
+
     recipients:
     {{- range $key, $value := .Values.simulator.poller.recipients }}
      - {{ $value }}
