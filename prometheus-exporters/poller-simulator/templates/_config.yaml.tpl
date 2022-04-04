@@ -85,7 +85,9 @@ poller:
     sesApiEndpoint: https://cronus.{{ .Values.config.keystone.region }}.cloud.sap
     sesRegion: {{ .Values.config.allowedServices.email }}
     envelopeFrom: {{ .Values.simulator.poller.envelopeFrom }}
+    {{- if .Values.simulator.poller.headerFrom }}
     headerFrom: {{ .Values.simulator.poller.headerFrom }}
+    {{- end }}
     insecureTLS: {{ .Values.simulator.poller.insecureTLS }}
     certPem: |
     {{ .Values.simulator.poller.certPem | nindent 6 }}
