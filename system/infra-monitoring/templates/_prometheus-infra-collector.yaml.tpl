@@ -260,6 +260,10 @@
       regex: 'snmp_n3k_sysDescr;(?s)(.*)(Version )([0-9().a-zIU]*)(,.*)'
       replacement: '$3'
       target_label: image_version
+    - source_labels: [__name__, snmp_coreasr9k_sysDescr]
+      regex: 'snmp_n3k_sysDescr;(?s)(.*)(Version )([0-9().a-zIU]*)( .*)'
+      replacement: '$3'
+      target_label: image_version
     - source_labels: [__name__, snmp_pxgeneric_sysDescr]
       regex: 'snmp_pxgeneric_sysDescr;(.*)(, Version )([0-9().a-zIU]*)((?s).*)'
       replacement: '$3'
