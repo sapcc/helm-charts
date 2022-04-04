@@ -24,11 +24,15 @@ spec:
       scheme: http
       honorLabels: true
       relabelings:
-        - targetLabel: pod
+        - sourceLabels:
+            - pod
+          targetLabel: collector
           regex: (vrops-exporter-)(vrops-vc-.+)
           replacement: ${2}
-        - targetLabel: pod
-          regex: (vrops)(-exporter-)(vrops-vc-.+)
+        - sourceLabels:
+            - pod
+          targetLabel: job
+          regex: (vrops-exporter)(-vrops-vc-.+)
           replacement: ${1}
       metricRelabelings:
         - action: labeldrop
