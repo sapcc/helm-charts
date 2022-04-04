@@ -98,8 +98,6 @@ poller:
     {{- range $key, $value := .Values.simulator.poller.recipients }}
      - {{ $value }}
     {{- end }}
-    emailSubject: {{ .Values.simulator.poller.emailSubject }}
-    emailBody: {{ .Values.simulator.poller.emailBody | quote }}
     prometheus: {{ .Values.simulator.poller.prometheus }}
     charSet: {{ .Values.simulator.poller.charSet }}
     period: {{ .Values.simulator.poller.period }}
