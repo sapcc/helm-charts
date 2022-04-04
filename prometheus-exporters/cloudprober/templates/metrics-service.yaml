@@ -1,0 +1,41 @@
+{{- if .Values.enabled }}
+{{- $values := .Values -}}
+
+{{- range $i, $prober := .Values.probers -}}
+{{ if ne $i 0 }}---{{ end }}
+
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+
+metadata:
+  name: cloudprober-{{$prober.dc}}
+  namespace: {{ $values.namespace }}
+  labels:
+    prometheus: {{ required ".Values.metrics.prometheus" $values.metrics.prometheus }}
+
+spec:
+  jobLabel: cloudprober-{{$prober.dc}}
+
+  selector:
+    matchLabels:
+      app: cloudprober-{{$prober.dc}}
+
+  # Find pods in any namespace.
+  namespaceSelector:
+    matchNames:
+      - {{ $values.namespace }}
+
+  endpoints:
+    - interval: {{ $values.metrics.scrapeInterval }}
+      scrapeTimeout: {{ $values.metrics.scrapeTimeout }}
+      port: metrics
+      scheme: http
+      relabelings:
+        - action: labelmap
+          regex: '__meta_kubernetes_service_label_(.+)'
+        - targetLabel: job
+          replacement: cloudprober-{{$prober.dc}}
+
+---
+{{ end -}}
+{{ end -}}
