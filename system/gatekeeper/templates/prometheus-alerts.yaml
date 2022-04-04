@@ -1,0 +1,24 @@
+{{- $no_validatingwebhook := index $.Values "gatekeeper-upstream" "disableValidatingWebhook" }}
+
+{{- range $target := list "kubernetes" "openstack" }}
+{{- range $path, $bytes := $.Files.Glob (printf "alerts/%s/*.alerts" $target) }}
+{{- if or (not ($path | contains "validatingwebhook")) (not $no_validatingwebhook) }}
+
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+
+metadata:
+  name: {{ replace "/" "-" $path }}
+  labels:
+    app: gatekeeper
+    tier: k8s
+    type: alerting-rules
+    prometheus: {{ $target }}
+
+spec:
+{{ printf "%s" $bytes | indent 2 }}
+
+{{- end }}
+{{- end }}
+{{- end }}
