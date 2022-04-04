@@ -175,19 +175,25 @@ mysql_metrics:
       name: openstack_manila_snapshot_count_gauge
       query: |
         SELECT
-          share_snapshots.project_id,
-          share_snapshots.share_id,
-          share_snapshots.id,
-          share_snapshot_instances.status,
+          snap.project_id as project_id,
+          snap.share_id as share_id,
+          snap.id as id,
+          si.status as status,
           COUNT(*) AS count_gauge
-        FROM share_snapshots
-        INNER JOIN share_snapshot_instances ON share_snapshots.id=share_snapshot_instances.snapshot_id
-        WHERE share_snapshots.deleted = 'False'
+        FROM share_snapshots AS snap
+        INNER JOIN share_snapshot_instances AS si ON snap.id=si.snapshot_id
+        WHERE snap.deleted = 'False'
         GROUP BY
-          share_snapshots.id,
-          share_snapshots.project_id,
-          share_snapshots.share_id,
-          share_snapshot_instances.status;
+          snap.id,
+          snap.project_id,
+          snap.share_id,
+          si.status
+        UNION SELECT
+          'none' AS id,
+          'none' AS project_id,
+          'none' AS share_id,
+          'none' AS status,
+          0 AS count_gauge;
       values:
         - "count_gauge"
     - help: Manila Snapshot Size
