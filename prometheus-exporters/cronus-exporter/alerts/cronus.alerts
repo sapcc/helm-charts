@@ -76,16 +76,20 @@ groups:
     annotations:
       description: grafana - https://grafana.{{ $labels.region }}.cloud.sap/d/cronushealth/cronushealth?orgId=1 , slack-cronus-dev - https://convergedcloud.slack.com/archives/G01SLHXERL5
       summary: Cronus simulator, that helps to monitor sending emails, malfunction for more than 15 minutes.
-  - alert: CronusMQEmailsQueueSize
-    expr: sum(rabbitmq_queue_messages_ready{container="cronusmq-exporter"}) by (queue) > 5
-    for: 5m
+- name: CronusNamespace
+  rules:
+  - alert: CronusNamesapcePodsDown
+    expr: kube_pod_container_status_running{namespace="cronus"} == 0
+    for: 24h
     labels:
+      meta: Cronus namesapce pods are down for the last 24h
       service: cronus
-      severity: warning
+      severity: info
       tier: os
+      playbook: docs/devops/alert/cronus/#sending_email_quick_test 
     annotations:
       description: grafana - https://grafana.{{ $labels.region }}.cloud.sap/d/cronushealth/cronushealth?orgId=1 , slack-cronus-dev - https://convergedcloud.slack.com/archives/G01SLHXERL5
-      summary: Cronus rabbitmq emails count in queue is > 5 in the past 5 minutes
+      summary: Cronus namesapce pods are down for the last 24h
 
 
 
