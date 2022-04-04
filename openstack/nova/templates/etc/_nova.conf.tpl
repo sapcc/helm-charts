@@ -5,7 +5,7 @@
 {{- end }}
 
 log_config_append = /etc/nova/logging.ini
-logging_context_format_string = %(asctime)s.%(msecs)03d %(process)d %(levelname)s %(name)s [%(request_id)s g%(global_request_id)s %(user_identity)s] %(instance)s%(message)s
+{{- include "ini_sections.logging_format" . }}
 state_path = /var/lib/nova
 
 # we patched this to be treated as force_resize_to_same_host for mitaka

@@ -15,19 +15,18 @@ modules:
             cbgpPeerAdvertisedPrefixes,
             ccmHistoryRunningLastChanged,
             ccmHistoryRunningLastSaved,
-            cefcFRUPowerAdminStatus,
-            cefcFRUPowerOperStatus,
-            cntpSysPeer,
             cntpSysLeap,
             cntpSysStratum,
             cntpSysPrecision,
             cntpSysPoll,
+            cntpSysPeer,
             cntpSysRootDelay,
             cntpSysRootDispersion,
             cntpSysRefId,
             cntpSysRefTime,
             cntpSysClock,
-            cntpSysSrvStatus,
+            cefcFRUPowerAdminStatus,
+            cefcFRUPowerOperStatus,
             cpmCPUTotal1minRev,
             cpmCPUTotal5minRev,
             cpmCPUTotalPhysicalIndex,
@@ -78,7 +77,21 @@ modules:
         lookup: entSensorType
       - source_indexes: [entPhysicalIndex]
         lookup: entSensorThresholdSeverity
-    overrides:
+      - source_indexes: [cempMemPoolIndex]
+        lookup: cempMemPoolName
+      - source_indexes: [cempMemPoolIndex]
+        lookup: cempMemPoolType
+    overrides: 
+      cntpSysRootDelay:
+        regex_extracts: 
+          '': 
+            - regex: '(.*)' 
+              value: '$1'
+      cntpSysRootDispersion:
+        regex_extracts: 
+          '': 
+            - regex: '(.*)' 
+              value: '$1'
       ifAlias:
         ignore: true # Lookup metric
       ifDescr:
@@ -113,3 +126,9 @@ modules:
         ignore: true
       entSensorThresholdSeverity:
         ignore: true
+      entPhysicalName:
+        ignore: true
+      cntpSysClock:
+        type: DisplayString
+      cntpSysRefTime:
+        type: DisplayString
