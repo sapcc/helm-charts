@@ -66,6 +66,15 @@ spec:
               cpu: {{ .Values.api.resources.requests.cpu | quote }}
               memory: {{ .Values.api.resources.requests.memory | quote }}
           {{- end }}
+          lifecycle:
+            preStop:
+              exec:
+                command: [
+                  # Introduce a delay to the shutdown sequence to wait for the
+                  # pod eviction event to propagate.
+                  "/bin/sleep",
+                  "{{ .Values.shutdownDelaySeconds }}"
+                ]
           livenessProbe:
             httpGet:
               path: /
@@ -123,7 +132,7 @@ spec:
           image: {{.Values.global.dockerHubMirror}}/{{ .Values.statsd.image.repository }}:{{ .Values.statsd.image.tag }}
           {{- else }}
           image: "{{ .Values.statsd.image.repository }}:{{ .Values.statsd.image.tag }}"
-          {{- end }}          
+          {{- end }}
           imagePullPolicy: IfNotPresent
           args: [ --statsd.mapping-config=/etc/statsd/statsd-exporter.yaml ]
           {{- if .Values.statsd.resources.enabled }}
@@ -134,7 +143,7 @@ spec:
             requests:
               cpu: {{ .Values.statsd.resources.requests.cpu | quote }}
               memory: {{ .Values.statsd.resources.requests.memory | quote }}
-          {{- end }}          
+          {{- end }}
           ports:
             - name: statsd
               containerPort: 9125
