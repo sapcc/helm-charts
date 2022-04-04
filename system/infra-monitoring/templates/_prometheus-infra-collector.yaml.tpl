@@ -809,3 +809,44 @@
     - action: labeldrop
       regex: "metrics_label"
 {{ end }}
+
+job_name: 'prometheus-vmware'
+ scheme: https
+ scrape_interval: {{ .Values.prometheus_vmware.scrapeInterval }}
+ scrape_timeout: {{ .Values.prometheus_vmware.scrapeTimeout }}
+
+ honor_labels: true
+ metrics_path: '/metrics'
+
+ params:
+   'match[]':
+     - '{__name__=~"vrops_hostsystem_runtime_maintenance"}'
+
+ metric_relabel_configs:
+   - source_labels: [__name__, prometheus]
+     regex: '^up;(.+)'
+     replacement: '$1'
+     target_label: prometheus_source
+     action: replace
+   - source_labels: [__name__, ifIndex, server_id]
+     regex: '^snmp_[a-z0-9]*_if.+;(.+);(.+)'
+     replacement: '$1@$2'
+     target_label: uniqueident
+     action: replace
+   - source_labels: [__name__, instance]
+     regex: '^probe_success;(.+)'
+     replacement: '$1'
+     target_label: target
+     action: replace
+   - regex: "prometheus_replica|kubernetes_namespace|kubernetes_name|namespace|pod|pod_template_hash|instance"
+     action: labeldrop
+
+ {{ if .Values.prometheus_vmware.authentication.enabled }}
+ tls_config:
+   cert_file: /etc/prometheus/secrets/prometheus-sso-cert/sso.crt
+   key_file: /etc/prometheus/secrets/prometheus-sso-cert/sso.key
+ {{ end }}
+
+ static_configs:
+   - targets:
+     - "prometheus-vmware.{{ .Values.global.region }}.cloud.sap"
