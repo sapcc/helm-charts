@@ -2,7 +2,7 @@ status = warn
 
 # log action execution errors for easier debugging
 logger.action.name = org.elasticsearch.action
-logger.action.level = debug
+logger.action.level = warn
 
 appender.console.type = Console
 appender.console.name = console
@@ -20,7 +20,7 @@ appender.rolling.policies.time.type = TimeBasedTriggeringPolicy
 appender.rolling.policies.time.interval = 1
 appender.rolling.policies.time.modulate = true
 
-rootLogger.level = debug
+rootLogger.level = warn
 rootLogger.appenderRef.console.ref = console
 #rootLogger.appenderRef.rolling.ref = rolling
 
@@ -89,6 +89,6 @@ appender.access_log_rolling.policies.time.interval = 1
 appender.access_log_rolling.policies.time.modulate = true
 
 logger.access_log_rolling.name = org.elasticsearch.plugin.readonlyrest.acl
-logger.access_log_rolling.level = debug
+logger.access_log_rolling.level = warn
 logger.access_log_rolling.appenderRef.console.ref = console
 logger.access_log_rolling.additivity = false
