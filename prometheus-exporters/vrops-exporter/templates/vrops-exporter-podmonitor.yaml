@@ -1,6 +1,6 @@
 {{- if .Values.vrops.enabled }}
 apiVersion: monitoring.coreos.com/v1
-kind: ServiceMonitor
+kind: PodMonitor
 
 metadata:
   name: prometheus-{{ .Values.vrops.prometheusName }}-vrops-exporters
@@ -14,26 +14,21 @@ spec:
     matchLabels:
       target: vrops-exporter
 
-  endpoints:
+  namespaceSelector:
+    matchNames: [vmware-monitoring]
+
+  podMetricsEndpoints:
     - port: metrics
-      bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
       interval: {{ required ".Values.vrops.scrapeInterval  missing" .Values.vrops.scrapeInterval }}
       scrapeTimeout: {{ required ".Values.vrops.scrapeTimeout  missing" .Values.vrops.scrapeTimeout }}
       scheme: http
       honorLabels: true
       relabelings:
-        - action: keep
-          sourceLabels: [__meta_kubernetes_service_name]
-          regex: .*vrops-exporter.*
-        - sourceLabels: [__address__]
-          regex: (vrops.*)(.infra?.*[c])(:.*)
-          targetLabel: __address__
-          replacement: ${1}${3}
-        - sourceLabels: [job]
+        - sourceLabels: job
           regex: (vrops-exporter-)(vrops-vc-.+)
           targetLabel: collector
           replacement: ${2}
-        - sourceLabels: [job]
+        - sourceLabels: job
           regex: (vrops)(-exporter-)(vrops-vc-.+)
           targetLabel: job
           replacement: ${1}
