@@ -1,6 +1,6 @@
 {{- if not .Values.tls_crt }}
 kind: Ingress
-apiVersion: networking.k8s.io/v1beta1
+apiVersion: networking.k8s.io/v1
 
 metadata:
   name: swift-{{ .Values.cluster_name }}
@@ -29,7 +29,9 @@ spec:
       http:
         paths:
         - path: /
+          pathType: Prefix
           backend:
-            serviceName: swift-{{ .Values.cluster_name }}
-            servicePort: 9090
+            service:
+              name: swift-{{ .Values.cluster_name }}
+              port: 9090
 {{- end }}
