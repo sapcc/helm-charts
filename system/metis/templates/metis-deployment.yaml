@@ -10,6 +10,8 @@ metadata:
     helm.sh/chart: {{ include "metis.chart" $ }}
     app.kubernetes.io/instance: metis-{{ .Release.Name }}
     app.kubernetes.io/managed-by: {{ .Release.Service }}
+    alert-service: "metis"
+    alert-tier: {{ required "$.Values.backup_v2.alerts.tier missing" $.Values.backup_v2.alerts.tier }}
 spec:
   replicas: 1
   selector:
@@ -42,6 +44,14 @@ spec:
         - name: metrics
           containerPort: {{ .Values.metis.metrics.port }}
           protocol: TCP
+        resources:
+          requests:
+            memory: 25Mi
+            cpu: 10m
+          limits:
+            memory: 100Mi
+            cpu: 50m
+
         env:
           - name: API_TOKEN
             valueFrom:

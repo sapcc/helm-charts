@@ -1,5 +1,10 @@
 namespace: metis
 
+owner-info:
+  maintainers:
+    - "Ivo Gosemann"
+  helm-chart-url: "https://github.com/sapcc/helm-charts/tree/master/system/metis"
+
 mariadb:
   name: metisdb
   enabled: true
@@ -11,6 +16,9 @@ mariadb:
     enabled: false
   readinessProbe:
     enabled: false
+  readiness:
+    useSidecar: true
+    image_version: "20220404160600-test"
   metrics:
     enabled: true
   priority_class: ""
@@ -27,9 +35,9 @@ mariadb:
       memory: 8192Mi
       cpu: 1000m
   extraConfigFiles:
-      metisdb.cnf: |+
-        [mysqld]
-        relay_log = mysql-relay-bin
+    metisdb.cnf: |+
+      [mysqld]
+      relay_log = mysql-relay-bin
 
   alerts:
     enabled: false
