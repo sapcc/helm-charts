@@ -30,6 +30,7 @@
       - '{__name__=~"^doop_agent_.+"}'
       - '{__name__=~"^etcd_.+"}'
       - '{__name__=~"^etcdbr_.+"}'
+      - '{__name__=~"^gatekeeper_.+"}'
       - '{__name__=~"^go_.+"}'
       - '{__name__=~"^http_.+"}'
       - '{__name__=~"^ingress_.+"}'
