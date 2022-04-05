@@ -1,4 +1,3 @@
-{{- if .Values.sidecars.parrot }}
 apiVersion: v1
 kind: Service
 metadata:
@@ -8,14 +7,13 @@ metadata:
 
   annotations:
     prometheus.io/scrape: "true"
-    prometheus.io/port: {{ required ".Values.parrot.metricPort missing" .Values.parrot.metricPort | quote }}
+    prometheus.io/port: {{ required ".Values.metricPort missing" .Values.metricPort | quote }}
     prometheus.io/targets: "kubernetes"
 
 spec:
   ports:
   - name: metrics
-    port: {{ required ".Values.parrot.metricPort missing" .Values.parrot.metricPort }}
+    port: {{ required ".Values.metricPort missing" .Values.metricPort }}
 
   selector:
     service: kube-parrot
-{{- end }}
