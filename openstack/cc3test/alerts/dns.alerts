@@ -135,22 +135,39 @@ groups:
 
   - alert: DnsLookupPublicFails
     expr: |
-        (sum by (type, service) (cc3test_status{type="datapath", name=~"TestDnsLookup_public_dns.+"})
+        (sum by (type, service) (cc3test_status{type="datapath", name=~"TestDnsLookup_public.+"})
         /
-        count by (type, service) (cc3test_status{type="datapath", name=~"TestDnsLookup_public_dns.+"})) >0 < 0.2
+        count by (type, service) (cc3test_status{type="datapath", name=~"TestDnsLookup_public.+"})) >0 < 0.2
     for: 10m
     labels:
       severity: warning
       tier: os
       service: '{{ $labels.service }}'
       context: '{{ $labels.service }}'
-      meta: 'Some dns lookups on public hosts fail'
+      meta: 'Some dns lookups on public name servers fail'
       dashboard: 'cc3test-overview?var-service={{ $labels.service }}'
       playbook: 'docs/devops/alert/designate/#test_public'
       report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
     annotations:
-      description: 'Some dns lookups on public hosts fail'
-      summary: 'Some dns lookups on public hosts fail'
+      description: 'Some dns lookups on public name servers fail'
+      summary: 'Some dns lookups on public name servers fail'
+
+  - alert: DnsLookupSAPFails
+    expr: |
+        cc3test_status{type="datapath", name=~"TestDnsLookup_sap.+"}) == 0
+    for: 10m
+    labels:
+      severity: info
+      tier: net
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.service }}'
+      meta: 'dns lookup on sap name server fails'
+      dashboard: 'cc3test-overview?var-service={{ $labels.service }}'
+      playbook: 'docs/devops/alert/designate/#test_sap'
+      report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
+    annotations:
+      description: 'dns lookup on name server {{ $labels.name }} fails'
+      summary: 'dns lookup on name server {{ $labels.name }} fails'
 
   - alert: DnsZoneTransferAXFRFails
     expr: |
