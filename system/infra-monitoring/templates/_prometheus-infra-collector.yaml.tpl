@@ -842,9 +842,9 @@ job_name: 'prometheus-vmware'
      action: labeldrop
 
  {{ if .Values.prometheus_vmware.authentication.enabled }}
- tls_config:
-   cert_file: /etc/prometheus/secrets/prometheus-sso-cert/sso.crt
-   key_file: /etc/prometheus/secrets/prometheus-sso-cert/sso.key
+ - tls_config:
+     cert_file: /etc/prometheus/secrets/prometheus-vmware-alertmanager-sso-cert/sso.crt
+     key_file: /etc/prometheus/secrets/prometheus-vmware-alertmanager-sso-cert/sso.key
  {{ end }}
 
  static_configs:
