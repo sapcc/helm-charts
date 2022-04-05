@@ -4,6 +4,6 @@ exec:
     # Introduce a delay to the shutdown sequence to wait for the
     # pod eviction event to propagate.
     "/bin/sleep",
-    "{{ coalesce .Values.shutdownDelaySeconds .Values.global.shutdownDelaySeconds }}"
+    "{{ coalesce .Values.shutdownDelaySeconds .Values.global.shutdownDelaySeconds 10 }}"
   ]
 {{- end }}
