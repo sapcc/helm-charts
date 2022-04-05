@@ -56,13 +56,7 @@ spec:
         imagePullPolicy: IfNotPresent
         lifecycle:
           preStop:
-            exec:
-              command: [
-                # Introduce a delay to the shutdown sequence to wait for the
-                # pod eviction event to propagate.
-                "/bin/sleep",
-                "{{ .Values.api.shutdownDelaySeconds }}"
-              ]
+            {{- include "utils.snippets.pre_stop_graceful_shutdown" . | indent 12 }}
         livenessProbe:
           httpGet:
             path: /
@@ -181,13 +175,7 @@ spec:
         - kubernetes-entrypoint
         lifecycle:
           preStop:
-            exec:
-              command: [
-                # Introduce a delay to the shutdown sequence to wait for the
-                # pod eviction event to propagate.
-                "/bin/sleep",
-                "{{ .Values.api.shutdownDelaySeconds }}"
-              ]
+            {{- include "utils.snippets.pre_stop_graceful_shutdown" . | indent 12 }}
         livenessProbe:
           httpGet:
             path: /healthcheck
