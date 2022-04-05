@@ -77,7 +77,7 @@ filter {
       replace => { "type" => "audit" }
       add_field => { "[sap][cc][audit][source]" => "remoteboard"}
     }
-    {{- if .Values.syslog.elk_output_enabled }}
+    {{- if .Values.syslog.elkOutputEnabled }}
     clone {
       clones => ['audit', 'syslog']
     }
@@ -99,7 +99,7 @@ filter {
         replace => { "type" => "audit" }
         add_field => { "[sap][cc][audit][source]" => "ucsm" }
       }
-    {{- if .Values.syslog.elk_output_enabled }}
+    {{- if .Values.syslog.elkOutputEnabled }}
       clone {
         clones => ['audit', 'syslog']
       }
@@ -113,13 +113,13 @@ filter {
         replace => { "type" => "audit" }
         add_field => { "[sap][cc][audit][source]" => "hsm" }
     }
-    {{- if .Values.syslog.elk_output_enabled }}
+    {{- if .Values.syslog.elkOutputEnabled }}
     clone {
       clones => ['audit', 'syslog']
     }
     {{- end }}
   }
-  {{- if .Values.syslog.elk_output_enabled }}
+  {{- if .Values.syslog.elkOutputEnabled }}
   if [type] == "syslog" and [sap][cc][audit][source] {
     mutate{
       remove_field => "[sap][cc][audit][source]"
