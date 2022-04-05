@@ -112,7 +112,6 @@
   static_configs:
     - targets:
       - "prometheus-infra-collector.{{ .Values.global.region }}.cloud.sap"
-      - "prometheus-vmware.{{ .Values.global.region }}.cloud.sap"
 
 {{ if or .Values.pushgateway_infra.enabled .Values.cronus.enabled }}
 - job_name: pushgateway
