@@ -2,6 +2,8 @@
 # Scheduling
 scheduler_host_manager = {{ if .Values.global.hypervisors_ironic }}ironic_host_manager{{ else }}host_manager{{ end }}
 scheduler_driver = {{ .Values.scheduler.driver }}
+statsd_port = {{ .Values.scheduler.rpc_statsd_port }}
+statsd_enabled = {{ .Values.scheduler.rpc_statsd_enabled }}
 
 [scheduler]
 discover_hosts_in_cells_interval = 60

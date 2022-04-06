@@ -27,6 +27,11 @@ spec:
         name: nova-compute-{{$hypervisor.name}}
         hypervisor: "ironic"
       annotations:
+        {{- if $hypervisor.default.statsd_enabled }}
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9102"
+        prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
+        {{- end }}
         configmap-etc-hash: {{ include (print .Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
         configmap-ironic-etc-hash: {{ tuple . $hypervisor | include "ironic_configmap" | sha256sum }}
     spec:
@@ -83,6 +88,23 @@ spec:
               readOnly: true
             - mountPath: /nova-patches
               name: nova-patches
+        {{- if $hypervisor.default.statsd_enabled }}
+        - name: statsd
+          image: {{ required ".Values.global.dockerHubMirror is missing" .Values.global.dockerHubMirror}}/prom/statsd-exporter:v0.8.1
+          imagePullPolicy: IfNotPresent
+          args: [ --statsd.mapping-config=/etc/statsd/statsd-exporter.yaml ]
+          ports:
+          - name: statsd
+            containerPort: {{ $hypervisor.default.statsd_port }}
+            protocol: UDP
+          - name: metrics
+            containerPort: 9102
+          volumeMounts:
+            - name: nova-etc
+              mountPath: /etc/statsd/statsd-exporter.yaml
+              subPath: statsd-exporter.yaml
+              readOnly: true
+        {{- end }}
       volumes:
         - name: etcnova
           emptyDir: {}
