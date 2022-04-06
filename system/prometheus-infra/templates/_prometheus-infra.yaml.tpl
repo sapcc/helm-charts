@@ -46,6 +46,7 @@
   metrics_path: '/federate'
 
   params:
+    'match[]':
       - '{job="snmp"}'
       - '{job="snmp-apod"}'
       - '{job="snmp-ntp"}'
