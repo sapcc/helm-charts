@@ -65,31 +65,6 @@
       regex: '^ping_.+;cloudprober-(\w*-\w*-\w*).+'
       replacement: '$1'
       target_label: probed_to
-    - source_labels: [__name__, probe]
-      regex: '^cloudprober_.+;(ping|http)-([a-zA-Z]*)-(.+)'
-      replacement: '$2'
-      target_label: probed_to_type
-    - source_labels: [__name__, probe]
-      regex: '^cloudprober_.+;(ping|http)-([a-zA-Z]*)-(.+)'
-      replacement: '$3'
-      target_label: probed_to
-    - source_labels: [__name__, dst_zone]
-      target_label: probed_to
-      regex: '^cloudprober_.+;(.+)'
-      action: replace
-      replacement: '$1'
-    - source_labels: [__name__]
-      regex: '^cloudprober_.+'
-      replacement: 'region'
-      target_label: interconnect_type
-    - source_labels: [__name__, probe]
-      regex: '^cloudprober_.+;(ping|http)-[a-zA-Z]*-{{ .Values.global.region }}.+'
-      replacement: 'dc'
-      target_label: interconnect_type
-    - source_labels: [__name__, dst_zone]
-      regex: '^cloudprober_.+;{{ .Values.global.region }}.+'
-      replacement: 'dc'
-      target_label: interconnect_type
     - source_labels: [__name__]
       regex: '^ping_.+'
       replacement: 'region'
