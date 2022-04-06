@@ -1,3 +1,7 @@
+## 6.0.1
+
+* Allow setting minimal resource requirements to be considered by VPA.
+
 ## 6.0.0
 
 * The VPA update mode was set to `Initial` to enable metric-based adjustment of resource constraints on pod creation.
