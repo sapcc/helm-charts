@@ -163,11 +163,6 @@
       replacement: '$1'
       target_label: prometheus_source
       action: replace
-    - source_labels: [__name__, ifIndex, server_id]
-      regex: '^snmp_[a-z0-9]*_if.+;(.+);(.+)'
-      replacement: '$1@$2'
-      target_label: uniqueident
-      action: replace
     - source_labels: [__name__, instance]
       regex: '^probe_success;(.+)'
       replacement: '$1'
