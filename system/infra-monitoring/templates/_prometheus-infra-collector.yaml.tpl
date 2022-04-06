@@ -809,3 +809,23 @@
     - action: labeldrop
       regex: "metrics_label"
 {{ end }}
+
+- job_name: 'prometheus-vmware'
+  scheme: https
+  scrape_interval: {{ .Values.prometheus_vmware.scrapeInterval }}
+  scrape_timeout: {{ .Values.prometheus_vmware.scrapeTimeout }}
+
+  honor_labels: true
+  metrics_path: '/federate'
+
+  params:
+    'match[]':
+      - '{__name__=~"vrops_hostsystem_runtime_maintenancestate"}'
+
+  tls_config:
+    cert_file: /etc/prometheus/secrets/prometheus-infra-collector-alertmanager-sso-cert/sso.crt
+    key_file: /etc/prometheus/secrets/prometheus-infra-collector-alertmanager-sso-cert/sso.key
+
+  static_configs:
+    - targets:
+      - "prometheus-vmware.{{ .Values.global.region }}.cloud.sap"
