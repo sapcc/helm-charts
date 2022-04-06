@@ -37,7 +37,11 @@ cell2:
   name: cell2
   enabled: false
   conductor:
-    config_file: {}
+    config_file:
+      DEFAULT:
+        statsd_port: 9125
+        # enables collecting metrics for rpc calls
+        statsd_enabled: false
 
 defaults:
   default:
@@ -48,11 +52,14 @@ defaults:
         reserved_host_memory_mb: 512
         disk_allocation_ratio: "1.0"
         reserved_host_disk_mb: "0"
+        statsd_port: 9125
     ironic:
       default:
         reserved_host_memory_mb: "0"
         compute_driver: ironic.IronicDriver
         graceful_shutdown_timeout: 1800
+        # enables collecting metrics for RPC calls
+        statsd_enabled: false
       ironic:
         serial_console_state_timeout: 10
     kvm:
@@ -60,6 +67,8 @@ defaults:
         compute_driver: libvirt.LibvirtDriver
         firewall_driver: nova.virt.firewall.NoopFirewallDriver
         resume_guests_state_on_host_boot: true
+        # enables collecting metrics for RPC calls
+        statsd_enabled: false
 
 pod:
   replicas:
@@ -254,6 +263,9 @@ scheduler:
   driver: "filter_scheduler"
   scheduler_tracks_instance_changes: false
   scheduler_instance_sync_interval: 120
+  rpc_statsd_port: 9125
+  # enables collecting metrics for RPC calls
+  rpc_statsd_enabled: false
   default_filters: "AvailabilityZoneFilter, CpuInfoMigrationFilter, ShardFilter, AggregateMultiTenancyIsolation, RamFilter, DiskFilter, ComputeFilter, ComputeCapabilitiesFilter, BigVmFlavorHostSizeFilter, VmSizeThresholdFilter, ImagePropertiesFilter, ServerGroupAntiAffinityFilter, ServerGroupAffinityFilter"
   vm_size_threshold_vm_size_mb: "8193"
   vm_size_threshold_hv_size_mb: "819200"
@@ -280,6 +292,9 @@ compute:
       cpu_allocation_ratio: 4.0
       # this will set a 15 mins timeout for blockdevice mapping
       block_device_allocate_retries: 300
+      rpc_statsd_port: 9125
+      # enables collecting metrics for RPC calls
+      rpc_statsd_enabled: false
     vmware:
       insecure: true
       use_linked_clone: false
@@ -296,6 +311,10 @@ compute:
 
 conductor:
   config_file:
+    DEFAULT:
+      statsd_port: 9125
+      # enables collecting metrics for rpc calls
+      statsd_enabled: false
     conductor:
       workers: 8
 
