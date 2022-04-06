@@ -1,0 +1,20 @@
+groups:
+  - name: kube-state-metrics-normalization.rules
+    rules:
+      - record: success_ratio_5m
+        expr: |
+            rate(cloudprober_success[5m])
+            /
+            rate(cloudprober_total[5m])
+
+      - record: failure_ratio_5m
+        expr: |
+            (rate(cloudprober_total[5m]) - rate(cloudprober_success[5m]))
+            /
+            rate(cloudprober_total[5m])
+
+      - record: avg_latency_microsec_5m
+        expr: |
+            rate(cloudprober_latency[5m])
+            /
+            rate(cloudprober_success[5m])
