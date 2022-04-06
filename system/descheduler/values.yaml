@@ -6,7 +6,7 @@
 kind: CronJob
 
 image:
-  repository: k8s.gcr.io/descheduler/descheduler
+  repository: keppel.eu-de-1.cloud.sap/ccloud-k8sgcr-mirror/descheduler/descheduler
   # Overrides the image tag whose default is the chart version
   tag: ""
   pullPolicy: IfNotPresent
@@ -27,19 +27,19 @@ fullnameOverride: ""
 # labels that'll be applied to all resources
 commonLabels: {}
 
-cronJobApiVersion: "batch/v1"  # Use "batch/v1beta1" for k8s version < 1.21.0. TODO(@7i) remove with 1.23 release
-schedule: "*/2 * * * *"
+cronJobApiVersion: "batch/v1"
+schedule: "0 1 * * *"
 suspend: false
+successfulJobsHistoryLimit: 10
+failedJobsHistoryLimit: 10
 #startingDeadlineSeconds: 200
-#successfulJobsHistoryLimit: 1
-#failedJobsHistoryLimit: 1
 
 # Required when running as a Deployment
 deschedulingInterval: 5m
 
 cmdOptions:
-  v: 3
-  # evict-local-storage-pods:
+  v: 4
+  evict-local-storage-pods: false
   # max-pods-to-evict-per-node: 10
   # node-selector: "key1=value1,key2=value2"
 
@@ -68,6 +68,14 @@ deschedulerPolicy:
             cpu: 50
             memory: 50
             pods: 50
+    HighNodeUtilization:
+      enabled: true
+      params:
+        nodeResourceUtilizationThresholds:
+          thresholds:
+            "cpu" : 20
+            "memory": 20
+            "pods": 20
 
 priorityClassName: system-cluster-critical
 
