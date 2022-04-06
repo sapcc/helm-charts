@@ -1,3 +1,7 @@
+## 6.0.0
+
+* The VPA update mode was set to `Initial` to enable metric-based adjustment of resource constraints on pod creation.
+
 ## 5.3.5
 
 * Avoid double alerting for `PrometheusMultipleTargetScrapes` when `up` metric is being federated.
