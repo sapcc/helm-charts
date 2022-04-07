@@ -64,6 +64,10 @@ spec:
           initialDelaySeconds: 5
           timeoutSeconds: 3
         {{- end }}
+        lifecycle:
+          preStop:
+            exec:
+              command: ["sh", "-c 'sleep 5; while true; do rabbitmq-queues check_if_node_is_mirror_sync_critical --quiet; if [ $(echo $?) -eq 69 ]; then sleep 2; continue; fi; break; done'"]
         env:
           - name: MY_POD_NAME
             valueFrom:

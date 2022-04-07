@@ -21,6 +21,20 @@
 {{- end }}
         {"name":"guest","password":"{{ tuple . .Values.users.default.user .Values.users.default.password | include "rabbitmq_pass" }}","tags":"monitoring"}
     ],
+{{- if .Values.cluster.ha }}
+    "policies": [
+        {
+            "vhost": "/",
+            "name": "ha",
+            "pattern": "",
+            "apply-to": "all",
+            "definition": {
+            "ha-mode": "all"
+        },
+            "priority": 0
+        }
+    ],
+{{- end }}
     "vhosts": [
         {"name":"/"}
     ]

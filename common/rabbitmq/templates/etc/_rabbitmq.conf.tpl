@@ -1,4 +1,4 @@
-management.load_definitions = /etc/rabbitmq/definitions.json
+load_definitions = /etc/rabbitmq/definitions.json
 
 vm_memory_high_watermark.relative = 0.6
 {{- if .Values.resources.limits.memory }}
