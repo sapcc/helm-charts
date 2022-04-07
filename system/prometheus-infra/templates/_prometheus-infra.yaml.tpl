@@ -50,19 +50,6 @@
       - '{job="snmp"}'
       - '{job="snmp-apod"}'
       - '{job="snmp-ntp"}'
-      - '{__name__=~"^snmp_(ipn|acispine|acileaf)_ifLastChange"}'
-      - '{__name__=~"^snmp_(ipn|acispine|acileaf)_sysUpTime"}'
-      - '{__name__=~"^snmp_asr03_rttMonLatestRttOperCompletionTime"}'
-      - '{__name__=~"^snmp_asr03_rttMonLatestRttOperSense"}'
-      - '{__name__=~"^snmp_asr03_rttMonLatestRttOperTime"}'
-      - '{__name__=~"^snmp_asr03_rttMonJitterStatsCompletions"}'
-      - '{__name__=~"^snmp_asr03_rttMonJitterStatsPacketLossSD"}'
-      - '{__name__=~"^snmp_asr03_rttMonJitterStatsPacketLossDS"}'
-      - '{__name__=~"^snmp_asr03_rttMonJitterStatsPacketOutOfSequence"}'
-      - '{__name__=~"^snmp_cucsFcErrStatsLinkFailures"}'
-      - '{__name__=~"^snmp_cucsFcErrStatsSignalLosses"}'
-      - '{__name__=~"^snmp_cucsFcErrStatsSyncLosses"}'
-      - '{__name__=~"^snmp_cucsFcErrStatsCrcRx"}'
 
   relabel_configs:
     - action: replace
