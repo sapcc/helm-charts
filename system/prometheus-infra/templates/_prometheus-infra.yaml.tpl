@@ -90,7 +90,6 @@
 
   params:
     'match[]':
-      - '{app="cloudprober-exporter"}'
       - '{app="thousandeyes-exporter"}'
       - '{app="ping-exporter"}'
       - '{app="vcsa-exporter"}'
@@ -113,6 +112,7 @@
       - '{job="win-exporter-ad"}'
       - '{job="win-exporter-wsus"}'
       - '{job="jumpserver"}'
+      - '{__name__=~"^global:cloudprober.+"}'
       - '{__name__=~"^probe_success",job=~"(infra|cc3test)-probe-.+"}'
       - '{__name__=~"^probe_success",job="docs-urls"}'
       - '{__name__=~"^probe_http_duration_seconds",job="docs-home-content"}'
