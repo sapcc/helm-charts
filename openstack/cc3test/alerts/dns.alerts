@@ -124,50 +124,76 @@ groups:
       severity: critical
       tier: os
       service: '{{ $labels.service }}'
-      context: '{{ $labels.service }}'
-      meta: 'All dns lookups on public hosts fail'
+      context: dns_public
+      meta: 'No public dns server responds'
       dashboard: 'cc3test-overview?var-service={{ $labels.service }}'
       playbook: 'docs/devops/alert/designate/#test_public'
       report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
     annotations:
-      description: 'All dns lookups on public hosts fail'
-      summary: 'All dns lookups on public hosts fail'
+      description: 'no public dns server responds'
+      summary: 'No public dns server responds'
 
   - alert: DnsLookupPublicFails
     expr: |
         (sum by (type, service) (cc3test_status{type="datapath", name=~"TestDnsLookup_public.+"})
         /
-        count by (type, service) (cc3test_status{type="datapath", name=~"TestDnsLookup_public.+"})) >0 < 0.2
+        count by (type, service) (cc3test_status{type="datapath", name=~"TestDnsLookup_public.+"})) >0 <= 0.5
     for: 10m
     labels:
       severity: warning
       tier: os
       service: '{{ $labels.service }}'
-      context: '{{ $labels.service }}'
-      meta: 'Some dns lookups on public name servers fail'
+      context: dns_public
+      meta: 'Half or less of public dns servers responds'
       dashboard: 'cc3test-overview?var-service={{ $labels.service }}'
       playbook: 'docs/devops/alert/designate/#test_public'
       report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
     annotations:
-      description: 'Some dns lookups on public name servers fail'
-      summary: 'Some dns lookups on public name servers fail'
+      description: 'half or less of public dns servers responds'
+      summary: 'Half or less of SAP dns servers responds'
+
+  - alert: DnsLookupSAPDown
+    expr: |
+        sum (cc3test_status{type="datapath", service="designate", name=~"TestDnsLookup_sap.+"})
+        /
+        count (cc3test_status{type="datapath", service="designate", name=~"TestDnsLookup_sap.+"})
+        )
+        == 0
+    for: 5m
+    labels:
+      severity: info
+      tier: net
+      service: '{{ $labels.service }}'
+      context: dns_sap
+      meta: 'No SAP dns server responds'
+      dashboard: 'cc3test-overview?var-service={{ $labels.service }}'
+      playbook: 'docs/devops/alert/designate/#test_sap'
+      report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
+    annotations:
+      description: 'no SAP dns server responds'
+      summary: 'No SAP dns server responds'
+
 
   - alert: DnsLookupSAPFails
     expr: |
-        cc3test_status{type="datapath", name=~"TestDnsLookup_sap.+"} == 0
+        sum (cc3test_status{type="datapath", service="designate", name=~"TestDnsLookup_sap.+"})
+        /
+        count (cc3test_status{type="datapath", service="designate", name=~"TestDnsLookup_sap.+"})
+        )
+        > 0 <= 0.5
     for: 10m
     labels:
       severity: info
       tier: net
       service: '{{ $labels.service }}'
-      context: '{{ $labels.service }}'
-      meta: 'dns lookup on sap name server fails'
+      context: dns_sap
+      meta: 'Half or less of SAP dns servers responds'
       dashboard: 'cc3test-overview?var-service={{ $labels.service }}'
       playbook: 'docs/devops/alert/designate/#test_sap'
       report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
     annotations:
-      description: 'dns lookup on name server {{ $labels.name }} fails'
-      summary: 'dns lookup on name server {{ $labels.name }} fails'
+      description: 'half or less of SAP dns servers responds'
+      summary: 'Half or less of SAP dns servers responds'
 
   - alert: DnsZoneTransferAXFRFails
     expr: |
