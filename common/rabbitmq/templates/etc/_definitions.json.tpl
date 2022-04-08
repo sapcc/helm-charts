@@ -21,20 +21,8 @@
 {{- end }}
         {"name":"guest","password":"{{ tuple . .Values.users.default.user .Values.users.default.password | include "rabbitmq_pass" }}","tags":"monitoring"}
     ],
-{{- if .Values.cluster.ha }}
-    "policies": [
-        {
-            "vhost": "/",
-            "name": "ha",
-            "pattern": "",
-            "apply-to": "all",
-            "definition": {
-            "ha-mode": "all"
-        },
-            "priority": 0
-        }
-    ],
-{{- end }}
+{{- $policies := append .Values.policies (ternary .Values.ha_policy dict .Values.cluster.ha) }}
+    "policies": {{- toPrettyJson $policies | indent 4 }},
     "vhosts": [
         {"name":"/"}
     ]
