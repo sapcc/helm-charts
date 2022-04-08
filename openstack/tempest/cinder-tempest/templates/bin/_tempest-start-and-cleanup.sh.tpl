@@ -19,7 +19,7 @@ function cleanup_tempest_leftovers() {
     done
 
     for backup in $(openstack volume backup list -f value -c ID); do
-      openstack backup delete ${backup}
+      openstack volume backup delete ${backup}
     done
 
     for snapshot in $(openstack volume snapshot list -f value -c ID); do
@@ -36,7 +36,9 @@ function cleanup_tempest_leftovers() {
       if [ "$?" != "0" ]; then
         # we try to delete again after setting the volume state to something
         # that should be deletable
+        echo "Retrying to delete volume ${volume}"
         openstack volume set --state error ${volume}
+        openstack volume set --detached ${volume}
         openstack volume delete ${volume}
       fi
     done

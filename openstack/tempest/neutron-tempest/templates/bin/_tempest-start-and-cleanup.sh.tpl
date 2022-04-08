@@ -4,6 +4,37 @@ set -o pipefail
 
 {{- include "tempest-base.function_start_tempest_tests" . }}
 
+function cleanup_ports_and_networks() {
+  for network in $(openstack network list | grep -E "tempest-test-network" | awk '{ print $4 }');
+  do
+      for port in $(openstack port list --network $network | awk 'NR > 3 { print $2 }');
+      do
+          echo "Port $port will be disabled and deleted";
+          openstack port set ${port} --disable --no-fixed-ip && openstack port delete ${port};
+      done
+      echo "Network $network will be deleted";
+      openstack network delete $network;
+  done
+ for network in $(openstack network list | grep -oP "tempest-\w*[A-Z]+\S+");
+ do
+      for port in $(openstack port list --network $network | awk 'NR > 3 { print $2 }');
+      do
+          echo "Port $port will be disabled and deleted";
+          openstack port set ${port} --disable --no-fixed-ip && openstack port delete ${port};
+      done
+      echo "Network $network will be deleted";
+      openstack network delete $network;
+ done
+}
+
+function cleanup_security_groups() {
+  for secgroup in $(openstack security group list | awk 'NR > 3 { print $4 }' | grep tempest);
+  do
+    echo "Security group $secgroup will be deleted";
+    openstack security group delete ${secgroup};
+  done
+}
+
 function cleanup_tempest_leftovers() {
   
   echo "Run cleanup"
@@ -46,16 +77,21 @@ function cleanup_tempest_leftovers() {
     export OS_TENANT_NAME=$TEMPESTPROJECT
     export OS_PROJECT_NAME=$TEMPESTPROJECT
     for ip in $(openstack floating ip list | grep 10. | awk '{ print $2 }'); do openstack floating ip delete ${ip}; done
-    for network in $(openstack network list | awk 'NR > 3 { print $2 }' | head -n -1); do openstack network delete ${network}; done 
     for router in $(openstack router list | grep -E "tempest|test|abc" | awk '{ print $2 }'); do openstack router delete ${router}; done
+    for subnet in $(openstack subnet list | grep -E "tempest-lb_member" | awk '{ print $4 }'); do echo Subnet ${subnet} will be deleted; openstack subnet delete ${subnet}; done
+    for pool in $(openstack subnet pool list | grep -E "tempest" | awk '{ print $2 }'); do openstack subnet pool delete ${pool}; done
+    cleanup_ports_and_networks
+    cleanup_security_groups
   done
 
-  # Delete all networks, routers and subnet pools for Admin
+  # Delete all networks, routers, subnets and subnet pools for Admin
   export OS_USERNAME='neutron-tempestadmin1'
   export OS_TENANT_NAME='neutron-tempest-admin1'
   export OS_PROJECT_NAME='neutron-tempest-admin1'
-  for network in $(openstack network list | grep -E "tempest" | awk '{ print $2 }'); do openstack network delete ${network}; done
-  for pool in $(openstack subnet pool list | grep -E "tempest" | awk '{ print $2 }'); do openstack subnet pool delete ${pool}; done 
+  cleanup_ports_and_networks
+  for subnet in $(openstack subnet list | grep -E "tempest-lb_member" | awk '{ print $4 }'); do echo Subnet ${subnet} will be deleted; openstack subnet delete ${subnet}; done
+  for pool in $(openstack subnet pool list | grep -E "tempest" | awk '{ print $2 }'); do openstack subnet pool delete ${pool}; done
+  cleanup_security_groups
 }
 
 {{- include "tempest-base.function_main" . }}
