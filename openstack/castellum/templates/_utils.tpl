@@ -44,7 +44,7 @@
 - name: CASTELLUM_SERVERGROUPS_LOCAL_ROLES
   value: "member,keymanager_viewer"
 - name: CASTELLUM_SERVERGROUPS_PROMETHEUS_URL
-  value: "http://prometheus-infra-collector.infra-monitoring.svc:9090"
+  value: "http://prometheus-vmware.vmware-monitoring.svc:9090"
 - name: OS_AUTH_URL
   value: "http://keystone.{{ .Values.global.keystoneNamespace }}.svc.kubernetes.{{ .Values.global.region }}.{{ .Values.global.tld }}:5000/v3"
 - name: OS_AUTH_VERSION
