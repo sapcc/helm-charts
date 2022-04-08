@@ -83,11 +83,6 @@ route:
       context: nanny-automation
       region: ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|ap-sa-2|eu-de-1|eu-de-2|eu-nl-1|eu-ru-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3
 
-  - receiver: slack_snmp
-    continue: true
-    match_re:
-      context: snmp
-
   - receiver: slack_k8s
     continue: true
     match_re:
@@ -133,7 +128,7 @@ route:
     match_re:
       tier: os
       severity: info|warning|critical
-      service: arc|backup|barbican|castellum|cinder|cfm|cronus|designate|documentation|elektra|elk|glance|hermes|ironic|keppel|keystone|limes|lyra|maia|manila|metis|neutron|nova|octavia|sentry|swift
+      service: arc|backup|barbican|castellum|cinder|cfm|cronus|designate|documentation|elektra|elk|glance|hermes|ironic|keppel|keystone|limes|lyra|maia|manila|metis|neutron|nova|octavia|sentry|swift|snmp
       region: qa-de-1|ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|ap-sa-2|eu-de-1|eu-de-2|eu-nl-1|eu-ru-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3
 
   - receiver: slack_sre
@@ -747,19 +742,6 @@ receivers:
   - name: slack_nannies_automation
     slack_configs:
       - channel: '#cc-nannies-automation'
-        api_url: {{ required ".Values.slack.webhookURL undefined" .Values.slack.webhookURL | quote }}
-        username: "Pulsar"
-        title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
-        title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
-        text: {{"'{{template \"slack.sapcc.text\" . }}'"}}
-        pretext: {{"'{{template \"slack.sapcc.pretext\" . }}'"}}
-        icon_emoji: {{"'{{template \"slack.sapcc.iconemoji\" . }}'"}}
-        color: {{`'{{template "slack.sapcc.color" . }}'`}}
-        send_resolved: true
-
-  - name: slack_snmp
-    slack_configs:
-      - channel: '#cc-snmp'
         api_url: {{ required ".Values.slack.webhookURL undefined" .Values.slack.webhookURL | quote }}
         username: "Pulsar"
         title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
