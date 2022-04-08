@@ -80,6 +80,10 @@ spec:
               mountPath: /etc/manila/logging.ini
               subPath: logging.ini
               readOnly: true
+            - name: manila-etc
+              mountPath: /etc/manila/healthz
+              subPath: healthz
+              readOnly: true
             - name: backend-config
               mountPath: /etc/manila/backend.conf
               subPath: backend.conf
@@ -90,19 +94,21 @@ spec:
           {{- end }}
           livenessProbe:
             exec:
-              command: ["/etc/manila/rabbitmqadmin", "-H", "manila-rabbitmq", "-u", "admin", "-p" , "{{ .Values.rabbitmq.users.admin.password }}", "list", "bindings", "|", "grep", "manila-share-netapp-{{$share.name}}"]
+              command:
+              - cat
+              - /etc/manila/probe
             initialDelaySeconds: 60
-            periodSeconds: 60
+            periodSeconds: 10
             timeoutSeconds: 20
           readinessProbe:
             exec:
               command:
-              - grep
-              - 'ready'
-              - /etc/manila/probe
-            timeoutSeconds: 3
+              - sh
+              - /etc/manila/healthz
+            timeoutSeconds: 10
             periodSeconds: 5
             initialDelaySeconds: 5
+            failureThreshold: 1
       hostname: manila-share-netapp-{{$share.name}}
       volumes:
         - name: etcmanila
