@@ -44,7 +44,7 @@ function cleanup_tempest_leftovers() {
   cleanup_pools_and_members
   cleanup_ports_and_networks
   for lb in $(openstack loadbalancer list | grep -E "tempest-lb_member" | awk '{ print $4 }'); do echo loadbalancer ${lb} will be deleted; openstack loadbalancer delete ${lb}; done
-  for flavor in $(openstack loadbalancer flavor list | grep -E "tempest-lb" | awk '{ print $4 }'); do echo flavor ${flavor} will be deleted; openstack loadbalancer flavor delete ${pool}; done
+  for flavor in $(openstack loadbalancer flavor list | grep -E "tempest-lb" | awk '{ print $4 }'); do echo flavor ${flavor} will be deleted; openstack loadbalancer flavor delete ${flavor}; done
   for subnet in $(openstack subnet list | grep -E "tempest-lb_member" | awk '{ print $4 }'); do echo Subnet ${subnet} will be deleted; openstack subnet delete ${subnet}; done
   for secgroup in $(openstack security group list | grep -oP "tempest-\w*[A-Z]+\S+"); do openstack security group delete ${secgroup}; done
 }
