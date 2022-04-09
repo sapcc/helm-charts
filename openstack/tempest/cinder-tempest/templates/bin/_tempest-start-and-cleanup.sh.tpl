@@ -68,7 +68,6 @@ function cleanup_tempest_leftovers() {
   for i in $(seq 1 18); do
     export OS_USERNAME=nova-tempestuser${i}
     export OS_PROJECT_NAME=nova-tempest${i}
-    delete_groups
     delete_dependencies
     delete_groups
   done
@@ -76,7 +75,6 @@ function cleanup_tempest_leftovers() {
   for i in $(seq 1 8); do
     export OS_USERNAME=nova-tempestadmin${i}
     export OS_PROJECT_NAME=nova-tempest-admin${i}
-    delete_groups
     delete_dependencies
     delete_groups
   done
