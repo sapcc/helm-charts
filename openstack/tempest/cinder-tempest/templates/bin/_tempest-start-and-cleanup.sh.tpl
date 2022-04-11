@@ -22,7 +22,7 @@ function cleanup_tempest_leftovers() {
       openstack volume backup delete ${backup}
     done
 
-    for snapshot in $(openstack volume snapshot list -f value -c Name --allopenstack volume snapshot list -f value -c Name --all | grep tempest); do
+    for snapshot in $(openstack volume snapshot list -f value -c Name --all | grep tempest); do
       openstack volume snapshot delete ${snapshot}
       if [ "$?" != "0" ]; then
         cinder group-snapshot-delete ${snapshot}
