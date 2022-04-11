@@ -1,6 +1,6 @@
 {{- $fullName := include "pulsar.fullname" . -}}
 {{- $svcPort := .Values.service.port -}}
-apiVersion: networking.k8s.io/v1beta1
+apiVersion: networking.k8s.io/v1
 kind: Ingress
 
 metadata:
@@ -19,9 +19,12 @@ spec:
       http:
         paths:
           - path: /
+            pathType: Prefix
             backend:
-              serviceName: {{ $fullName }}
-              servicePort: {{ $svcPort }}
+              service:
+                name: {{ $fullName }}
+                port:
+                  number: {{ $svcPort }}
   {{- end }}
   tls:
     - hosts:
