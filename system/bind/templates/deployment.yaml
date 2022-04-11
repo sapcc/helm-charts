@@ -23,6 +23,9 @@ spec:
         checksum/bind.config: {{ include "bind/templates/config.yaml" . | sha256sum }}
     spec:
       affinity:
+        nodeAffinity:
+{{- include "node_maintenance_affinity" . }}
+{{- include "node_reinstall_affinity" . }}
         {{ if not .Values.anti_affinity_disabled }}
         podAntiAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
