@@ -15,14 +15,14 @@ function cleanup_tempest_leftovers() {
 
   delete_dependencies() {
     for group_snap in $(openstack volume group snapshot list --os-volume-api-version 3.14 | grep -v -e ID -e '^+' | awk '{print $2;}'); do
-      openstack volume group snapshot delete ${group_snap}
+      openstack volume group snapshot delete ${group_snap} --os-volume-api-version 3.14
     done
 
     for backup in $(openstack volume backup list -f value -c Name --all | grep tempest); do
       openstack volume backup delete ${backup}
     done
 
-    for snapshot in $(openstack volume snapshot list -f value -c Name --all | grep tempest); do
+    for snapshot in $(openstack volume snapshot list -f value -c Name --allopenstack volume snapshot list -f value -c Name --all | grep tempest); do
       openstack volume snapshot delete ${snapshot}
       if [ "$?" != "0" ]; then
         cinder group-snapshot-delete ${snapshot}
