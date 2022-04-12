@@ -25,6 +25,11 @@ spec:
       labels:
         name: manila-scheduler
       annotations:
+        {{- if .Values.rpc_statsd_enabled }}
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9102"
+        prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
+        {{- end }}
         configmap-etc-hash: {{ include (print .Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
     spec:
       affinity:
@@ -112,6 +117,23 @@ spec:
           resources:
 {{ toYaml .Values.pod.resources.scheduler | indent 13 }}
           {{- end }}
+        {{- if .Values.rpc_statsd_enabled }}
+        - name: statsd
+          image: {{ required ".Values.global.dockerHubMirror is missing" .Values.global.dockerHubMirror}}/prom/statsd-exporter:v0.8.1
+          imagePullPolicy: IfNotPresent
+          args: [ --statsd.mapping-config=/etc/statsd/statsd-exporter.yaml ]
+          ports:
+          - name: statsd
+            containerPort: {{ .Values.rpc_statsd_port }}
+            protocol: UDP
+          - name: metrics
+            containerPort: 9102
+          volumeMounts:
+            - name: manila-etc
+              mountPath: /etc/statsd/statsd-exporter.yaml
+              subPath: statsd-exporter.yaml
+              readOnly: true
+        {{- end }}
       hostname: manila-scheduler
       volumes:
         - name: etcmanila
