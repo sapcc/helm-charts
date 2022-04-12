@@ -11,10 +11,6 @@ input {
     port  => {{.Values.input_netflow_port}}
     type => netflow
   }
-  udp {
-    port  => {{.Values.input_bigiplogs_port}}
-    type => bigiplogs
-  }
   http {
     port  => {{.Values.input_alertmanager_port}}
     type => alert
@@ -68,16 +64,6 @@ filter {
     }
   }
 
-  if  [type] == "bigiplogs" {
-         grok {
-       tag_on_failure => ["bigiplogs_grok_parse-failure", "grok"]
-       tag_on_timeout => ["_groktimeout"]
-       patterns_dir => ["/logstash-etc/*.grok"]
-       timeout_millis => [15000]
-                 match => { "message" => "%{SYSLOG5424PRI}%{NONNEGINT:syslog_version} +(?:%{TIMESTAMP_ISO8601:timestamp}|-) +(?:%{HOSTNAME:syslog_host}|-) +(?:%{WORD:syslog_level}|-) +(?:%{WORD:syslog_proc}|-) +(?:%{WORD:syslog_msgid}|-) +(?:%{SYSLOG5424SD:syslog_sd}|-|) +%{GREEDYDATA:syslog_msg}" }
-                 overwrite => [ "message" ]
-              }
-  }
     if [type] == "alert" {
        json {
          source => "message"
@@ -113,18 +99,6 @@ output {
       index => "syslog-%{+YYYY.MM.dd}"
       template => "/logstash-etc/syslog.json"
       template_name => "syslog"
-      template_overwrite => true
-      hosts => ["{{.Values.global.elk_elasticsearch_endpoint_host_scaleout}}.{{.Values.global.region}}.{{.Values.global.tld}}:{{.Values.global.elk_elasticsearch_ssl_port}}"]
-      user => "{{.Values.global.elk_elasticsearch_data_user}}"
-      password => "{{.Values.global.elk_elasticsearch_data_password}}"
-      ssl => true
-    }
-  }
-  elseif [type] == "bigiplogs" {
-    elasticsearch {
-      index => "bigiplogs-%{+YYYY.MM.dd}"
-      template => "/logstash-etc/bigiplogs.json"
-      template_name => "bigiplogs"
       template_overwrite => true
       hosts => ["{{.Values.global.elk_elasticsearch_endpoint_host_scaleout}}.{{.Values.global.region}}.{{.Values.global.tld}}:{{.Values.global.elk_elasticsearch_ssl_port}}"]
       user => "{{.Values.global.elk_elasticsearch_data_user}}"
