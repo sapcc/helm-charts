@@ -160,7 +160,7 @@ spec:
       - name: oslo-exporter
         image: {{ .Values.global.dockerHubMirror }}/prom/statsd-exporter
         args:
-        - --statsd.mapping-config=/etc/mapping.yaml
+        - --statsd.mapping-config=/etc/statsd/statsd-rpc-exporter.yaml
         ports:
         - name: metrics
           containerPort: 9102
@@ -168,6 +168,11 @@ spec:
         - name: statsd-udp
           containerPort: {{ $conductor.conductor.statsd_port }}
           protocol: UDP
+        volumeMounts:
+        - name: ironic-etc
+          mountPath: /etc/statsd/statsd-rpc-exporter.yaml
+          subPath: statsd-rpc-exporter.yaml
+          readOnly: true
       {{- end }}
       volumes:
       - name: etcironic
