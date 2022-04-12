@@ -11,7 +11,7 @@ data:
 {{- end }}
 
 kind: Ingress
-apiVersion: networking.k8s.io/v1beta1
+apiVersion: networking.k8s.io/v1
 
 metadata:
   name: elektra
@@ -39,14 +39,17 @@ spec:
     http:
       paths:
       - path: /
+        pathType: Prefix
         backend:
-          serviceName: elektra
-          servicePort: 80
+          service:
+            name: elektra
+            port:
+              number: 80
 # additional domain for e2e tests
 {{- if .Values.ingress.e2e_domain }}
 ---
 kind: Ingress
-apiVersion: networking.k8s.io/v1beta1
+apiVersion: networking.k8s.io/v1
 
 metadata:
   name: elektra-e2e
@@ -70,9 +73,12 @@ spec:
     http:
       paths:
       - path: /
+        pathType: Prefix
         backend:
-          serviceName: elektra
-          servicePort: 80
-{{- end }}     
+          service:
+            name: elektra
+            port:
+              number: 80
+{{- end }}
 
 {{- end }}

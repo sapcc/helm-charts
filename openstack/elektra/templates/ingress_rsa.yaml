@@ -2,7 +2,7 @@
 # instead it enables the builtin TFA method
 {{- if .Values.ingress.enabled }}
 kind: Ingress
-apiVersion: networking.k8s.io/v1beta1
+apiVersion: networking.k8s.io/v1
 
 metadata:
   name: elektra-rsa
@@ -28,8 +28,10 @@ spec:
     http:
       paths:
       - path: /
+        pathType: Prefix
         backend:
-          serviceName: elektra
-          servicePort: 80
-    
+          service:
+            name: elektra
+            port:
+              number: 80
 {{- end }}

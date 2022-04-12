@@ -3,7 +3,7 @@ groups:
   rules:
   - alert: ElkControlplaneLogstashLogsMissing
     expr: sum(rate(fluentd_output_status_num_records_total{component="fluent"}[30m])) by (nodename,kubernetes_pod_name) == 0
-    for: 30m
+    for: 60m
     labels:
       context: logshipping
       service: elk
