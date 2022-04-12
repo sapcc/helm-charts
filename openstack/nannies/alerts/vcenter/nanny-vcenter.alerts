@@ -260,91 +260,91 @@ groups:
 #       description: "The {{ $labels.kubernetes_name }} discovered that not all vc hosts are properly configured in the vc-* aggregates - should be investigated ..."
 #       summary: "The {{ $labels.kubernetes_name }} discovered that not all vc hosts are properly configured in the vc-* aggregates - should be investigated ..."
 
-  - alert: ESXiHostOverbooked
-    expr: vm_balance_nanny_suggestion_bytes > 0
-    for: 5m
-    labels:
-      service: compute
-      severity: info
-      tier: vmware
-      no_alert_on_absence: "true"
-      playbook: docs/devops/alert/vcenter/#test_esxi_hs_4
-    annotations:
-      description: "ESXi host {{ $labels.kubernetes_name }} physical memory not enough to host all VMs >= 256GB which are placed on the host => suggestion: VMotion Big_vm {{ $labels.big_vm_name}} from source {{ $labels.source_node}} to target {{ $labels.target_node}} "
-      summary: "ESXi host {{ $labels.kubernetes_name }} physical memory not enough to host all VMs >= 256GB which are placed on the host"
+#  - alert: ESXiHostOverbooked
+#    expr: vm_balance_nanny_suggestion_bytes > 0
+#    for: 5m
+#    labels:
+#      service: compute
+#      severity: info
+#      tier: vmware
+#      no_alert_on_absence: "true"
+#      playbook: docs/devops/alert/vcenter/#test_esxi_hs_4
+#    annotations:
+#      description: "ESXi host {{ $labels.kubernetes_name }} physical memory not enough to host all VMs >= 256GB which are placed on the host => suggestion: VMotion Big_vm {{ $labels.big_vm_name}} from source {{ $labels.source_node}} to target {{ $labels.target_node}} "
+#      summary: "ESXi host {{ $labels.kubernetes_name }} physical memory not enough to host all VMs >= 256GB which are placed on the host"
 
-  - alert: ESXiHostOverbookedAutomation
-    expr: vm_balance_vmotion_status > 0
-    for: 5m
-    labels:
-      context: nanny-automation
-      service: nanny
-      severity: info
-      tier: vmware
-      no_alert_on_absence: "true"
-      playbook: docs/devops/alert/vcenter/#test_esxi_hs_4
-    annotations:
-      description: "ESXi host {{ $labels.kubernetes_name }} VMotion Big_vm {{ $labels.big_vm_name}} from source {{ $labels.source_node}} to target {{ $labels.target_node}} successful "
-      summary: "Overbooked ESXi host cleared successfully for below host by automatic nannies"
+#  - alert: ESXiHostOverbookedAutomation
+#    expr: vm_balance_vmotion_status > 0
+#    for: 5m
+#    labels:
+#      context: nanny-automation
+#      service: nanny
+#      severity: info
+#      tier: vmware
+#      no_alert_on_absence: "true"
+#      playbook: docs/devops/alert/vcenter/#test_esxi_hs_4
+#    annotations:
+#      description: "ESXi host {{ $labels.kubernetes_name }} VMotion Big_vm {{ $labels.big_vm_name}} from source {{ $labels.source_node}} to target {{ $labels.target_node}} successful "
+#      summary: "Overbooked ESXi host cleared successfully for below host by automatic nannies"
 
-  - alert: ESXiHostOverbookedNoSuitableVM
-    expr: vm_balance_no_suitable_vm > 0
-    for: 5m
-    labels:
-      service: compute
-      severity: warning
-      tier: vmware
-      no_alert_on_absence: "true"
-      playbook: docs/devops/alert/vcenter/#test_esxi_hs_4
-    annotations:
-      description: "ESXi host {{ $labels.kubernetes_name }} and source {{ $labels.source_node}} is overbooked dont find any large VM till 512GB for movement after considering considering vm_readiness and host_contention metrics"
-      summary: "ESXi host {{ $labels.kubernetes_name }} and source {{ $labels.source_node}} is overbooked"
+#  - alert: ESXiHostOverbookedNoSuitableVM
+#    expr: vm_balance_no_suitable_vm > 0
+#    for: 5m
+#    labels:
+#      service: compute
+#      severity: warning
+#      tier: vmware
+#      no_alert_on_absence: "true"
+#      playbook: docs/devops/alert/vcenter/#test_esxi_hs_4
+#    annotations:
+#      description: "ESXi host {{ $labels.kubernetes_name }} and source {{ $labels.source_node}} is overbooked dont find any large VM till 512GB for movement after considering considering vm_readiness and host_contention metrics"
+#      summary: "ESXi host {{ $labels.kubernetes_name }} and source {{ $labels.source_node}} is overbooked"
 
-  - alert: ESXiHostOverbookedAutomationError
-    expr: vm_balance_error_count > 0
-    for: 5m
-    labels:
-      context: nanny
-      service: nanny
-      severity: info
-      tier: os
-      no_alert_on_absence: "true"
-    annotations:
-      description: "The vcenter {{ $labels.kubernetes_name }} with Overbooked node Automation found error {{ $labels.error_type }} should be investigated"
-      summary: "The vcenter {{ $labels.kubernetes_name }} with Overbooked node Automation found error {{ $labels.error_type }} should be investigated"
+#  - alert: ESXiHostOverbookedAutomationError
+#    expr: vm_balance_error_count > 0
+#    for: 5m
+#    labels:
+#      context: nanny
+#      service: nanny
+#      severity: info
+#      tier: os
+#      no_alert_on_absence: "true"
+#    annotations:
+#      description: "The vcenter {{ $labels.kubernetes_name }} with Overbooked node Automation found error {{ $labels.error_type }} should be investigated"
+#      summary: "The vcenter {{ $labels.kubernetes_name }} with Overbooked node Automation found error {{ $labels.error_type }} should be investigated"
 
-  - alert: ESXiHostOverbookedManualwithNannySuggestion
-    expr: vm_balance_nanny_manual_suggestion_bytes > 0
-    for: 10m
-    labels:
-      service: compute
-      severity: warning
-      tier: vmware
-      no_alert_on_absence: "true"
-      playbook: docs/devops/alert/vcenter/#test_esxi_hs_4
-    annotations:
-      description: "ESXi host {{ $labels.kubernetes_name }} physical memory not enough to host all VMs >= 256GB which are placed on the host => suggestion: VMotion Big_vm {{ $labels.big_vm_name}} from source {{ $labels.source_node}} to target {{ $labels.target_node}} "
-      summary: "ESXi host {{ $labels.kubernetes_name }} physical memory not enough to host all VMs >= 256GB which are placed on the host"
+#  - alert: ESXiHostOverbookedManualwithNannySuggestion
+#    expr: vm_balance_nanny_manual_suggestion_bytes > 0
+#    for: 10m
+#    labels:
+#      service: compute
+#      severity: warning
+#      tier: vmware
+#      no_alert_on_absence: "true"
+#      playbook: docs/devops/alert/vcenter/#test_esxi_hs_4
+#    annotations:
+#      description: "ESXi host {{ $labels.kubernetes_name }} physical memory not enough to host all VMs >= 256GB which are placed on the host => suggestion: VMotion Big_vm {{ $labels.big_vm_name}} from source {{ $labels.source_node}} to target {{ $labels.target_node}} "
+#      summary: "ESXi host {{ $labels.kubernetes_name }} physical memory not enough to host all VMs >= 256GB which are placed on the host"
 
-  - alert: ESXiHostOverbookedManualwithoutNannySuggestion
-    expr: vm_balance_too_full_building_block > 0
-    for: 10m
-    labels:
-      service: compute
-      severity: warning
-      tier: vmware
-      no_alert_on_absence: "true"
-      playbook: docs/devops/alert/vcenter/#test_esxi_hs_4
-    annotations:
-      description: "ESXi host {{ $labels.kubernetes_name }} physical memory not enough to host all VMs >= 256GB which are placed on the host overbooked is {{ $labels.consolidated_needed }} => No suggestion from nanny and consolidated_needed in BB:"
-      summary: "ESXi host {{ $labels.kubernetes_name }} physical memory not enough to host all VMs >= 256GB which are placed on the host"
+#  - alert: ESXiHostOverbookedManualwithoutNannySuggestion
+#    expr: vm_balance_too_full_building_block > 0
+#    for: 10m
+#    labels:
+#      service: compute
+#      severity: warning
+#      tier: vmware
+#      no_alert_on_absence: "true"
+#      playbook: docs/devops/alert/vcenter/#test_esxi_hs_4
+#    annotations:
+#      description: "ESXi host {{ $labels.kubernetes_name }} physical memory not enough to host all VMs >= 256GB which are placed on the host overbooked is {{ $labels.consolidated_needed }} => No suggestion from nanny and consolidated_needed in BB:"
+#      summary: "ESXi host {{ $labels.kubernetes_name }} physical memory not enough to host all VMs >= 256GB which are placed on the host"
 
-  - alert: ESXiClusterOverutilizedConfiguredMemoryPercentage
-    expr: (vm_balance_building_block_consume_all_vm_bytes * 100 / (vm_balance_building_block_total_size_bytes )) > 95
-    for: 10m
-    labels:
-      service: compute
-      severity: info
-      tier: vmware
-    annotations:
-      description: "BuildingBlock_BB{{ $labels.Building_block }} more then 95% utilized on configured memory"
+#  - alert: ESXiClusterOverutilizedConfiguredMemoryPercentage
+#    expr: (vm_balance_building_block_consume_all_vm_bytes * 100 / (vm_balance_building_block_total_size_bytes )) > 95
+#    for: 10m
+#    labels:
+#      service: compute
+#      severity: info
+#      tier: vmware
+#    annotations:
+#      description: "BuildingBlock_BB{{ $labels.Building_block }} more then 95% utilized on configured memory"
