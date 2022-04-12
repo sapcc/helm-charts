@@ -817,42 +817,25 @@ receivers:
         color: {{`'{{template "slack.sapcc.color" . }}'`}}
         send_resolved: true
 
+  {{- if `{{template \"email.sapcc.email\" . }}` }}
   - name: email_barbican_certificate
     email_configs:
-    - to: "{{ .CommonLabels.email }}"
+    - to: {{"'{{template \"email.sapcc.email\" . }}'"}}
       from: 'CCloud <noreply+ccloud@email.global.cloud.sap>'
       require_tls: false
       headers:
-        subject: "Your Barbican Certificate {{ .CommonLabels.certificate_name }} Is About To Expired"
+        subject: "Your Barbican Certificate Is About To Expired"
         cc: ""
-      html: |
-        <p>
-        Hi,
-        <br>
-        <b>{{ .CommonAnnotations.description }}</b>
-        <br>
-        Please take necessary actions to prevent possible service outage value 
-        <br>
-        If this certificate is no longer needed please remove it to prevent false alarms.
-        </p>
-
+      text: {{"'{{template \"email.sapcc.description\" . }}'"}}
     {{- range $key, $value := .Values.certificate.recipients }}
     - to: {{ $value }}
       from: 'CCloud <noreply+ccloud@email.global.cloud.sap>'
       require_tls: false
       headers:
-        subject: "Your Barbican Certificate {{ .CommonLabels.certificate_name }} Is About To Expired"
+        subject: "Your Barbican Certificate Is About To Expired"
         cc: ""
-      html: |
-        <p>
-        Hi,
-        <br>
-        <b>{{ .CommonAnnotations.description }}</b>
-        <br>
-        Please take necessary actions to prevent possible service outage value 
-        <br>
-        If this certificate is no longer needed please remove it to prevent false alarms.
-        </p>
+      text:  {{"'{{template \"email.sapcc.description\" . }}'"}}
+    {{- end }}
     {{- end }}
 
   - name: slack_hsm
