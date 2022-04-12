@@ -100,6 +100,7 @@ output {
       template => "/logstash-etc/syslog.json"
       template_name => "syslog"
       template_overwrite => true
+      data_stream => false
       hosts => ["{{.Values.global.elk_elasticsearch_endpoint_host_scaleout}}.{{.Values.global.region}}.{{.Values.global.tld}}:{{.Values.global.elk_elasticsearch_ssl_port}}"]
       user => "{{.Values.global.elk_elasticsearch_data_user}}"
       password => "{{.Values.global.elk_elasticsearch_data_password}}"
@@ -112,6 +113,7 @@ output {
       template => "/logstash-etc/alerts.json"
       template_name => "alerts"
       template_overwrite => true
+      data_stream => false
       hosts => ["{{.Values.global.elk_elasticsearch_endpoint_host_scaleout}}.{{.Values.global.region}}.{{.Values.global.tld}}:{{.Values.global.elk_elasticsearch_ssl_port}}"]
       user => "{{.Values.global.elk_elasticsearch_data_user}}"
       password => "{{.Values.global.elk_elasticsearch_data_password}}"
@@ -124,6 +126,7 @@ output {
         template => "/logstash-etc/alerts.json"
         template_name => "alerts"
         template_overwrite => true
+        data_stream => false
         hosts => ["{{.Values.global.elk_elasticsearch_endpoint_host_scaleout}}.{{.Values.global.region}}.{{.Values.global.tld}}:{{.Values.global.elk_elasticsearch_ssl_port}}"]
         user => "{{.Values.global.elk_elasticsearch_data_user}}"
         password => "{{.Values.global.elk_elasticsearch_data_password}}"
@@ -136,6 +139,7 @@ output {
       template => "/logstash-etc/alerts.json"
       template_name => "alerts"
       template_overwrite => true
+      data_stream => false
       hosts => ["{{.Values.global.elk_elasticsearch_endpoint_host_scaleout}}.{{.Values.global.region}}.{{.Values.global.tld}}:{{.Values.global.elk_elasticsearch_ssl_port}}"]
       user => "{{.Values.global.elk_elasticsearch_data_user}}"
       password => "{{.Values.global.elk_elasticsearch_data_password}}"
@@ -148,6 +152,7 @@ output {
       template => "/logstash-etc/deployments.json"
       template_name => "deployments"
       template_overwrite => true
+      data_stream => false
       hosts => ["{{.Values.global.elk_elasticsearch_endpoint_host_scaleout}}.{{.Values.global.region}}.{{.Values.global.tld}}:{{.Values.global.elk_elasticsearch_ssl_port}}"]
       user => "{{.Values.global.elk_elasticsearch_data_user}}"
       password => "{{.Values.global.elk_elasticsearch_data_password}}"
@@ -160,6 +165,7 @@ output {
       template => "/logstash-etc/netflow.json"
       template_name => "netflow"
       template_overwrite => true
+      data_stream => false
       hosts => ["{{.Values.global.elk_elasticsearch_endpoint_host_scaleout}}.{{.Values.global.region}}.{{.Values.global.tld}}:{{.Values.global.elk_elasticsearch_ssl_port}}"]
       user => "{{.Values.global.elk_elasticsearch_data_user}}"
       password => "{{.Values.global.elk_elasticsearch_data_password}}"
