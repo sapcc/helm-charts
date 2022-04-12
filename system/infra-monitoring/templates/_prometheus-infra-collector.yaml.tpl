@@ -37,42 +37,6 @@
   metric_relabel_configs:
     - regex: "instance|pod_template_hash|exported_instance"
       action: labeldrop
-    - source_labels: [__name__, target]
-      regex: '^ping_.+;www-(\w*)-(\w*-\w*-\w*).+'
-      replacement: '$1'
-      target_label: probed_to_type
-    - source_labels: [__name__, target]
-      regex: '^ping_.+;([a-zA-Z]*)(\d)\.cc\.(.+)\.cloud\.sap'
-      replacement: '$1'
-      target_label: probed_to_type
-    - source_labels: [__name__, target]
-      regex: '^ping_.+;cloudprober-.+'
-      replacement: 'pod'
-      target_label: probed_to_type
-    - source_labels: [__name__, target]
-      regex: '^ping_.+;www-(\w*)-(\w*-\w*-\w*).+'
-      replacement: '$2'
-      target_label: probed_to
-    - source_labels: [__name__, target]
-      regex: '^ping_.+;([a-zA-Z]*)0\.cc\.(.+)\.cloud\.sap'
-      replacement: ${2}a
-      target_label: probed_to
-    - source_labels: [__name__, target]
-      regex: '^ping_.+;([a-zA-Z]*)1\.cc\.(.+)\.cloud\.sap'
-      replacement: ${2}b
-      target_label: probed_to
-    - source_labels: [__name__, target]
-      regex: '^ping_.+;cloudprober-(\w*-\w*-\w*).+'
-      replacement: '$1'
-      target_label: probed_to
-    - source_labels: [__name__]
-      regex: '^ping_.+'
-      replacement: 'region'
-      target_label: interconnect_type
-    - source_labels: [__name__, target]
-      regex: '^ping_.+;([a-zA-Z]*)\d\.cc\.{{ .Values.global.region }}\.cloud\.sap'
-      replacement: 'dc'
-      target_label: interconnect_type
     - source_labels: [__name__, app]
       regex: '^bird_.+;{{ .Values.global.region }}-pxrs-([0-9])-s([0-9])-([0-9])'
       replacement: '$1'
@@ -155,14 +119,6 @@
   metric_relabel_configs:
     - regex: "instance|job|kubernetes_namespace|kubernetes_pod_name|kubernetes_name|pod_template_hash|exported_instance|exported_job|type|name|component|system"
       action: labeldrop
-    - source_labels: [__name__, target]
-      regex: 'ping_.+;www-(\w*)-(\w*-\w*-\w*).+'
-      replacement: '$2'
-      target_label: probed_to
-    - source_labels: [__name__, target]
-      regex: 'ping_.+;www-(\w*)-(\w*-\w*-\w*).+'
-      replacement: '$1'
-      target_label: probed_to_type
 
 - job_name: 'jumpserver'
   params:
