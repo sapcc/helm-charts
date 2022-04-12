@@ -2,6 +2,7 @@
 [oslo_messaging_rabbit]
 rabbit_ha_queues = {{ .Values.rabbitmq_ha_queues | default .Values.global.rabbitmq_ha_queues | default "true" }}
 rabbit_transient_queues_ttl = {{ .Values.rabbit_transient_queues_ttl | default .Values.global.rabbit_transient_queues_ttl | default 60 }}
+heartbeat_in_pthread = False
 {{- end }}
 
 {{- define "ini_sections.default_transport_url" }}
