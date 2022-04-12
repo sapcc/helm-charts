@@ -9,6 +9,8 @@ debug = true
 standalone = {{ .Values.inspector.standalone }}
 executor_thread_pool_size = 128
 rpc_response_timeout = 60
+statsd_port = {{ .Values.inspector.rpc_statsd_port }}
+statsd_enabled = {{ .Values.inspector.rpc_statsd_enabled }}
 
 [ironic]
 region_name = {{.Values.global.region}}
