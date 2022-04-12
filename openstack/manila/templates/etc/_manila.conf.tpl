@@ -50,6 +50,9 @@ migration_ignore_scheduler = True
 # default time to wait for access rules to become active in migration cutover was 180 seconds
 migration_wait_access_rules_timeout = 3600
 
+statsd_port = {{ .Values.rpc_statsd_port }}
+statsd_enabled = {{ .Values.rpc_statsd_enabled }}
+
 # all default quotas are 0 to enforce usage of the Resource Management tool in Elektra
 [quota]
 shares = 0
