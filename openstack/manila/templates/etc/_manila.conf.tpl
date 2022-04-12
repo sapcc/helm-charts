@@ -82,6 +82,7 @@ insecure = True
 policy_file = /etc/manila/policy.yaml
 
 {{- include "ini_sections.oslo_messaging_rabbit" .}}
+rabbit_interval_max = {{ .Values.rabbitmq.max_reconnect_interval | default 3 }}
 
 [oslo_concurrency]
 lock_path = /var/lib/manila/tmp
