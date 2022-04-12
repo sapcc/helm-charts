@@ -81,11 +81,7 @@ insecure = True
 [oslo_policy]
 policy_file = /etc/manila/policy.yaml
 
-[oslo_messaging_rabbit]
-rabbit_ha_queues = {{ .Values.rabbitmq.ha_queues | default "true" }}
-rabbit_transient_queues_ttl={{ .Values.rabbit_transient_queues_ttl | default .Values.global.rabbit_transient_queues_ttl | default 60 }}
-rabbit_interval_max = {{ .Values.rabbitmq.max_reconnect_interval | default 3 }}
-heartbeat_in_pthread = False
+{{- include "ini_sections.oslo_messaging_rabbit" .}}
 
 [oslo_concurrency]
 lock_path = /var/lib/manila/tmp
