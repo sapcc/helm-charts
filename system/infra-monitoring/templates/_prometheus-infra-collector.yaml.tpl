@@ -822,10 +822,5 @@
     'match[]':
       - '{__name__=~"vrops_hostsystem_runtime_maintenancestate"}'
 
-  tls_config:
-    cert_file: /etc/prometheus/secrets/prometheus-infra-collector-alertmanager-sso-cert/sso.crt
-    key_file: /etc/prometheus/secrets/prometheus-infra-collector-alertmanager-sso-cert/sso.key
-
   static_configs:
-    - targets:
-      - "prometheus-vmware.{{ .Values.global.region }}.cloud.sap"
+     - targets: ['prometheus-vmware.vmware:9090']
