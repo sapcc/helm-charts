@@ -81,22 +81,6 @@
       regex: '^thousandeyes_test_html_.+;(.+),\s(\w*)\s*(.*);(.+)'
       replacement: '$4, $1'
       target_label: probed_from
-    - source_labels: [__name__, ifAlias]
-      regex: '^snmp_asr_.+;([a-z:]+);(project|)*:?([a-z0-9)]*);?router:([a-z0-9-]*);network:([a-z0-9-]*);subnet:([a-z0-9-]*)'
-      replacement: '$3'
-      target_label: project_id
-    - source_labels: [__name__, ifAlias]
-      regex: '^snmp_asr_.+;([a-z:]+);(project|)*:?([a-z0-9)]*);?router:([a-z0-9-]*);network:([a-z0-9-]*);subnet:([a-z0-9-]*)'
-      replacement: '$4'
-      target_label: router_id
-    - source_labels: [__name__, ifAlias]
-      regex: '^snmp_asr_.+;([a-z:]+);(project|)*:?([a-z0-9)]*);?router:([a-z0-9-]*);network:([a-z0-9-]*);subnet:([a-z0-9-]*)'
-      replacement: '$5'
-      target_label: network_id
-    - source_labels: [__name__, ifAlias]
-      regex: '^snmp_asr_.+;([a-z:]+);(project|)*:?([a-z0-9)]*);?router:([a-z0-9-]*);network:([a-z0-9-]*);subnet:([a-z0-9-]*)'
-      replacement: '$6'
-      target_label: subnet_id
 
 # Scrape config for pods with an additional port for metrics via `prometheus.io/port_1` annotation.
 #
@@ -285,6 +269,22 @@
     - source_labels: [__name__, cucsFcErrStatsDn]
       regex: 'snmp_ucs_cucsFcErrStats.+;.+(port)-([3-9]|\d{2}).+'
       action: drop
+    - source_labels: [__name__, ifAlias]
+      regex: '^snmp_asr_.+;([a-z:]+);(project|)*:?([a-z0-9)]*);?router:([a-z0-9-]*);network:([a-z0-9-]*);subnet:([a-z0-9-]*)'
+      replacement: '$3'
+      target_label: project_id
+    - source_labels: [__name__, ifAlias]
+      regex: '^snmp_asr_.+;([a-z:]+);(project|)*:?([a-z0-9)]*);?router:([a-z0-9-]*);network:([a-z0-9-]*);subnet:([a-z0-9-]*)'
+      replacement: '$4'
+      target_label: router_id
+    - source_labels: [__name__, ifAlias]
+      regex: '^snmp_asr_.+;([a-z:]+);(project|)*:?([a-z0-9)]*);?router:([a-z0-9-]*);network:([a-z0-9-]*);subnet:([a-z0-9-]*)'
+      replacement: '$5'
+      target_label: network_id
+    - source_labels: [__name__, ifAlias]
+      regex: '^snmp_asr_.+;([a-z:]+);(project|)*:?([a-z0-9)]*);?router:([a-z0-9-]*);network:([a-z0-9-]*);subnet:([a-z0-9-]*)'
+      replacement: '$6'
+      target_label: subnet_id
 
 - job_name: 'snmp-apod'
   scrape_interval: {{.Values.snmp_exporter_apod.scrapeInterval}}
