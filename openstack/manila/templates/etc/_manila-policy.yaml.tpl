@@ -142,7 +142,7 @@
 "scheduler_stats:pools:index": "rule:context_is_cloud_viewer"
 "scheduler_stats:pools:detail": "rule:context_is_cloud_viewer"
 
-"share_group:create" : "rule:context_is_admin"
+"share_group:create": "rule:context_is_admin"
 "share_group:delete": "rule:context_is_admin"
 "share_group:update": "rule:context_is_admin"
 "share_group:get": "rule:context_is_sharedfilesystem_admin"
@@ -150,9 +150,9 @@
 "share_group:force_delete": "rule:context_is_admin"
 "share_group:reset_status": "rule:context_is_admin"
 
-"share_group_snapshot:create" : "rule:context_is_admin"
+"share_group_snapshot:create": "rule:context_is_admin"
 "share_group_snapshot:delete": "rule:context_is_admin"
-"share_group_snapshot:update" : "rule:context_is_admin"
+"share_group_snapshot:update": "rule:context_is_admin"
 "share_group_snapshot:get": "rule:context_is_cloud_viewer"
 "share_group_snapshot:get_all": "rule:context_is_cloud_viewer"
 "share_group_snapshot:force_delete": "rule:context_is_admin"
@@ -160,11 +160,11 @@
 
 "share_replica:get_all": "rule:context_is_sharedfilesystem_admin"
 "share_replica:show": "rule:context_is_sharedfilesystem_admin"
-"share_replica:create" : "rule:context_is_sharedfilesystem_admin"
+"share_replica:create": "rule:context_is_sharedfilesystem_admin"
 "share_replica:delete": "rule:context_is_sharedfilesystem_admin"
 "share_replica:promote": "rule:context_is_sharedfilesystem_admin"
 "share_replica:resync": "rule:context_is_sharedfilesystem_admin"
-"share_replica:reset_status": "rule:context_is_admin"
+"share_replica:reset_status": "rule:context_is_sharedfilesystem_admin"
 "share_replica:force_delete": "rule:context_is_admin"
 "share_replica:reset_replica_state": "rule:context_is_admin"
 
