@@ -9,7 +9,7 @@ auto-procname = true
 procname-prefix = neutron-api-
 uid = neutron
 gid = neutron
-http-socket = :{{.Values.global.neutron_api_port_internal | default 9696}}
+http = :{{.Values.global.neutron_api_port_internal | default 9696}}
 plugins-dir = /var/lib/openstack/lib
 need-plugins = dogstatsd,shortmsecs
 
