@@ -96,6 +96,7 @@
     - source_labels: [__name__, ifAlias]
       regex: '^snmp_asr_.+;([a-z:]+);(project|)*:?([a-z0-9)]*);?router:([a-z0-9-]*);network:([a-z0-9-]*);subnet:([a-z0-9-]*)'
       replacement: '$6'
+      target_label: subnet_id
 
 # Scrape config for pods with an additional port for metrics via `prometheus.io/port_1` annotation.
 #
