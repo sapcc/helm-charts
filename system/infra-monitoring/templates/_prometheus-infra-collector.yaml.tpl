@@ -81,6 +81,21 @@
       regex: '^thousandeyes_test_html_.+;(.+),\s(\w*)\s*(.*);(.+)'
       replacement: '$4, $1'
       target_label: probed_from
+    - source_labels: [__name__, ifAlias]
+      regex: '^snmp_asr_.+;([a-z:]+);(project|)*:?([a-z0-9)]*);?router:([a-z0-9-]*);network:([a-z0-9-]*);subnet:([a-z0-9-]*)'
+      replacement: '$3'
+      target_label: project_id
+    - source_labels: [__name__, ifAlias]
+      regex: '^snmp_asr_.+;([a-z:]+);(project|)*:?([a-z0-9)]*);?router:([a-z0-9-]*);network:([a-z0-9-]*);subnet:([a-z0-9-]*)'
+      replacement: '$4'
+      target_label: router_id
+    - source_labels: [__name__, ifAlias]
+      regex: '^snmp_asr_.+;([a-z:]+);(project|)*:?([a-z0-9)]*);?router:([a-z0-9-]*);network:([a-z0-9-]*);subnet:([a-z0-9-]*)'
+      replacement: '$5'
+      target_label: network_id
+    - source_labels: [__name__, ifAlias]
+      regex: '^snmp_asr_.+;([a-z:]+);(project|)*:?([a-z0-9)]*);?router:([a-z0-9-]*);network:([a-z0-9-]*);subnet:([a-z0-9-]*)'
+      replacement: '$6'
 
 # Scrape config for pods with an additional port for metrics via `prometheus.io/port_1` annotation.
 #
