@@ -130,7 +130,6 @@ provider = f5
 RBAC_test_type = none
 test_with_ipv6 = False
 test_server_path = /rally/xrally_openstack/octavia-tempest-plugin/test_server.bin
-security_group_id = 665bd901-8889-4057-a7a3-bb414960aa5f
 
 [service_available]
 manila = True
