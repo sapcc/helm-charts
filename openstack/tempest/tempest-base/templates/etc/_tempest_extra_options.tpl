@@ -81,10 +81,10 @@ unified_limits = False
 cold_migration = False
 live_migration = False
 live_migrate_back_and_forth = False
-vnc_console = True
+vnc_console = False
 vnc_server_header = WebSockify
-serial_console = True
-spice_console = True
+serial_console = False
+spice_console = False
 attach_encrypted_volume = False
 
 [share]
