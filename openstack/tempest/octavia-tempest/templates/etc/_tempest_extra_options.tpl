@@ -54,6 +54,7 @@ floating_network_name = FloatingIP-external-monsoon3-01
 
 [network-feature-enabled]
 ipv6 = false
+port_security = True
 
 [baremetal]
 min_microversion = 1.46
@@ -129,8 +130,8 @@ global_observer_role = admin
 provider = f5
 RBAC_test_type = none
 test_with_ipv6 = False
-create_security_group = True
 test_server_path = /rally/xrally_openstack/octavia-tempest-plugin/test_server.bin
+enable_security_groups = True
 
 [service_available]
 manila = True
