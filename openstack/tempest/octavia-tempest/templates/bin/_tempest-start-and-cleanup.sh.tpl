@@ -43,6 +43,7 @@ function cleanup_tempest_leftovers() {
   export OS_PROJECT_NAME='neutron-tempest-admin1'
   cleanup_pools_and_members
   cleanup_ports_and_networks
+  for server in $(openstack server list --all | grep -E "tempest-lb_member" | grep -v -e ID -e '^+' | awk '{print $2;}'); do echo server ${server} will be deleted; openstack server delete ${server}; done
   for lb in $(openstack loadbalancer list | grep -E "tempest-lb_member" | awk '{ print $4 }'); do echo loadbalancer ${lb} will be deleted; openstack loadbalancer delete ${lb}; done
   for flavor in $(openstack loadbalancer flavor list | grep -E "tempest-lb" | awk '{ print $4 }'); do echo flavor ${flavor} will be deleted; openstack loadbalancer flavor delete ${flavor}; done
   for subnet in $(openstack subnet list | grep -E "tempest-lb_member" | awk '{ print $4 }'); do echo Subnet ${subnet} will be deleted; openstack subnet delete ${subnet}; done
