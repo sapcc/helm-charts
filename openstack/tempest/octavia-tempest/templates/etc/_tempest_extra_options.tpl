@@ -108,6 +108,9 @@ RBAC_test_type = none
 test_with_ipv6 = False
 test_server_path = /rally/xrally_openstack/octavia-tempest-plugin/test_server.bin
 create_security_group = True
+vip_subnet_cidr = 10.180.0.0/24
+member_1_ipv4_subnet_cidr = 10.180.1.0/24
+member_2_ipv4_subnet_cidr = 10.180.2.0/24
 
 [service_available]
 manila = True
