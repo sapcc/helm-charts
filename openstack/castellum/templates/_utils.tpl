@@ -45,7 +45,7 @@
   value: "member,keymanager_viewer"
 - name: CASTELLUM_SERVERGROUPS_PROMETHEUS_URL
   {{- if .Values.global.region | contains "qa" }}
-  value: "http://prometheus-vmware.vmware.svc:9090"
+  value: "http://prometheus-vmware.vmware-monitoring.svc:9090"
   {{- else }}
   value: "http://prometheus-infra-collector.infra-monitoring.svc:9090"
   {{- end }}
