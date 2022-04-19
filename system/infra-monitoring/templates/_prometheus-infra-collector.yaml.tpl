@@ -768,7 +768,20 @@
   params:
     'match[]':
       - '{__name__=~"vrops_hostsystem_runtime_maintenancestate"}'
+      
+  relabel_configs:
+    - action: replace
+      source_labels: [__address__]
+      target_label: region
+      regex: prometheus-vmware.(.+).cloud.sap
+      replacement: $1
+
+  metric_relabel_configs:
+    - source_labels: [__name__, prometheus]
+      regex: '^up;(.+)'
+      replacement: '$1'
+      target_label: prometheus_source
+      action: replace
 
   static_configs:
-     - targets:
-        - prometheus-vmware.vmware-monitoring.svc:9090'
+    - targets: ['prometheus-vmware.vmware-monitoring.svc:9090']
