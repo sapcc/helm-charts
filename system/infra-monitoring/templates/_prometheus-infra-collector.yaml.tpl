@@ -811,7 +811,7 @@
 {{ end }}
 
 - job_name: 'prometheus-vmware'
-  scheme: https
+  scheme: http
   scrape_interval: {{ .Values.prometheus_vmware.scrapeInterval }}
   scrape_timeout: {{ .Values.prometheus_vmware.scrapeTimeout }}
 
@@ -823,4 +823,5 @@
       - '{__name__=~"vrops_hostsystem_runtime_maintenancestate"}'
 
   static_configs:
-     - targets: ['prometheus-vmware.vmware:9090']
+     - targets:
+        - prometheus-vmware.vmware-monitoring.svc:9090'
