@@ -78,6 +78,8 @@ spec:
             - containerPort: {{$context.Values.port_l3_metrics |  default 9103}}
               name: metrics
               protocol: TCP
+          resources:
+{{ toYaml $context.Values.pod.resources.asr1k | indent 12 }}
 
         - name: neutron-asr1k-ml2
           image: {{$context.Values.global.registry}}/loci-neutron:{{$context.Values.imageVersionASR1kML2 | default $context.Values.imageVersionASR1k | default $context.Values.imageVersion | required "Please set neutron.imageVersionASR1kML2 or similar"}}
@@ -119,6 +121,8 @@ spec:
             - containerPort: {{$context.Values.port_l2_metrics |  default 9102}}
               name: metrics
               protocol: TCP
+          resources:
+{{ toYaml $context.Values.pod.resources.asr1k_ml2 | indent 12 }}
       volumes:
         - name: neutron-etc
           configMap:
