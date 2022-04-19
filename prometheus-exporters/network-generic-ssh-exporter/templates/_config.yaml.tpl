@@ -3,6 +3,16 @@ credentials:
     username: {{ .Values.network_generic_ssh_exporter.user }}
     password: {{ .Values.network_generic_ssh_exporter.password }}
 
+lookup_sources:
+  metis:
+    host: {{ .Values.network_generic_ssh_exporter.metis.host }}
+    port: 3306
+    username: {{ .Values.network_generic_ssh_exporter.metis.user }}
+    password: {{ .Values.network_generic_ssh_exporter.metis.password }}
+    driver: mysql
+    mappings:
+      router_project: SELECT DISTINCT id, project_id FROM neutron.routers
+
 metrics:
   nat_static:
     regex: >-
@@ -22,35 +32,34 @@ metrics:
     command: show ip nat statistic | include active
     timeout_secs: 3
   
-  nat_limits_use:
+  nat_limits_use: &nat_limits_use
     regex: >-
-      ^([a-z0-9]+)\n\s+(\d+)\s+(\d+)\s+(\d+)
+      ^(([a-z0-9]{8})([a-z0-9]{4})([a-z0-9]{4})([a-z0-9]{4})([a-z0-9]{12}))\n\s+(\d+)\s+(\d+)\s+(\d+)
     multi_value: true
     metric_type_name: gauge
-    value: $3
+    value: $8
     labels:
         vrf: $1
+        router_id: $2-$3-$4-$5-$6
     command: show ip nat limits all-vrf
     description: The number of dynamic translatrions in a VRF if any
     timeout_secs: 5
+    label_lookups:
+      - label_name: project_id
+        lookup_source: metis
+        lookup_mapping: router_project
+        key: $2-$3-$4-$5-$6
 
-  nat_limits_miss:
-    regex: >-
-      ^([a-z0-9]+)\n\s+(\d+)\s+(\d+)\s+(\d+)
-    multi_value: true
-    metric_type_name: gauge
-    value: $4
-    labels:
-        vrf: $1
-    command: show ip nat limits all-vrf
+  nat_limits_miss: 
+    <<: *nat_limits_use
     description: The number of tranlations that hit the limit
-    timeout_secs: 5
+    value: $9
   
-  nat_misses:
+  nat_misses: &nat_misses
     regex: >-
       Hits:\s+(\d+)\s+Misses:\s(\d+)
     value: $2
-    description: Indicates how many packets did not find a match in the current NAT database
+    description: Indicates how many packets did find a match in the current NAT database
     metric_type_name: gauge
     command: show ip nat statistics | incl Misses
     timeout_secs: 3
