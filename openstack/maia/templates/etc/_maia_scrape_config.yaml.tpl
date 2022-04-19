@@ -143,7 +143,7 @@
       - '{__name__=~"^netapp_volume_.+", app="netapp-capacity-exporter-manila"}'
       - '{__name__=~"^openstack_manila_share_.+", project_id!=""}'
 
-- job_name: 'prometheus-vmware
+- job_name: 'prometheus-vmware'
   scheme: http
   scrape_interval: 1m
   scrape_timeout: 55s
