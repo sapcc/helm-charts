@@ -144,10 +144,11 @@
       - '{__name__=~"^openstack_manila_share_.+", project_id!=""}'
 
 - job_name: 'prometheus-vmware
+  scheme: http
   scrape_interval: 1m
   scrape_timeout: 55s
   static_configs:
-    - targets: ['prometheus-vmware.vmware:9090']
+    - targets: ['prometheus-vmware.vmware-monitoring.svc:9090']
   metric_relabel_configs:
     - source_labels: [__name__, project ]
       regex: '^vrops_virtualmachine_.+;(.+)'
