@@ -1,0 +1,11 @@
+{{ range $lg, $lg_config := .Values.looking_glass -}}
+---
+kind: ConfigMap
+apiVersion: v1
+metadata:
+    name: cfg-{{ $.Values.global.region }}-pxrs-{{ $lg }}
+data:
+    "{{ $.Values.global.region }}-pxrs-{{ $lg }}.cfg": |
+{{ tuple $.Values.global.region $lg_config | include "lg_conf" | indent 8 }}
+
+{{ end }}
