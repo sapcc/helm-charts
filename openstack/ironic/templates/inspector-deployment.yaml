@@ -28,6 +28,10 @@ spec:
       annotations:
         configmap-etc-hash: {{ include (print $.Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
         configmap-inspector-etc-hash: {{ include (print $.Template.BasePath "/inspector-etc-configmap.yaml") . | sha256sum }}
+        {{- if .Values.inspector.rpc_statsd_enabled }}
+        prometheus.io/scrape: "true"
+        prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
+        {{- end }}
     spec:
 {{ tuple . "ironic" "inspector" | include "kubernetes_pod_anti_affinity" | indent 6 }}
       containers:
@@ -117,25 +121,23 @@ spec:
         - mountPath: /conf
           name: dhcp-config
       {{- end }}
-      {{- if .Values.oslo_metrics.enabled }}
+      {{- if .Values.inspector.rpc_statsd_enabled }}
       - name: oslo-exporter
         image: {{ .Values.global.dockerHubMirror }}/prom/statsd-exporter
         args:
-        - --web.listen-address=:9102
-        - --web.telemetry-path=/metrics
-        - --statsd.listen-udp=:8125
-        - --statsd.listen-tcp=
-        - --statsd.cache-size=1000
-        - --statsd.event-queue-size=10000
-        - --statsd.event-flush-threshold=1000
-        - --statsd.event-flush-interval=200ms
+        - --statsd.mapping-config=/etc/statsd/statsd-rpc-exporter.yaml
         ports:
-        - name: web
+        - name: metrics
           containerPort: 9102
           protocol: TCP
         - name: statsd-udp
-          containerPort: 8125
+          containerPort: {{ .Values.inspector.rpc_statsd_port }}
           protocol: UDP
+        volumeMounts:
+        - name: ironic-etc
+          mountPath: /etc/statsd/statsd-rpc-exporter.yaml
+          subPath: statsd-rpc-exporter.yaml
+          readOnly: true
       {{- end }}
       volumes:
       - name: etcironic

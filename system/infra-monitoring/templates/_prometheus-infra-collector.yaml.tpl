@@ -37,42 +37,6 @@
   metric_relabel_configs:
     - regex: "instance|pod_template_hash|exported_instance"
       action: labeldrop
-    - source_labels: [__name__, target]
-      regex: '^ping_.+;www-(\w*)-(\w*-\w*-\w*).+'
-      replacement: '$1'
-      target_label: probed_to_type
-    - source_labels: [__name__, target]
-      regex: '^ping_.+;([a-zA-Z]*)(\d)\.cc\.(.+)\.cloud\.sap'
-      replacement: '$1'
-      target_label: probed_to_type
-    - source_labels: [__name__, target]
-      regex: '^ping_.+;cloudprober-.+'
-      replacement: 'pod'
-      target_label: probed_to_type
-    - source_labels: [__name__, target]
-      regex: '^ping_.+;www-(\w*)-(\w*-\w*-\w*).+'
-      replacement: '$2'
-      target_label: probed_to
-    - source_labels: [__name__, target]
-      regex: '^ping_.+;([a-zA-Z]*)0\.cc\.(.+)\.cloud\.sap'
-      replacement: ${2}a
-      target_label: probed_to
-    - source_labels: [__name__, target]
-      regex: '^ping_.+;([a-zA-Z]*)1\.cc\.(.+)\.cloud\.sap'
-      replacement: ${2}b
-      target_label: probed_to
-    - source_labels: [__name__, target]
-      regex: '^ping_.+;cloudprober-(\w*-\w*-\w*).+'
-      replacement: '$1'
-      target_label: probed_to
-    - source_labels: [__name__]
-      regex: '^ping_.+'
-      replacement: 'region'
-      target_label: interconnect_type
-    - source_labels: [__name__, target]
-      regex: '^ping_.+;([a-zA-Z]*)\d\.cc\.{{ .Values.global.region }}\.cloud\.sap'
-      replacement: 'dc'
-      target_label: interconnect_type
     - source_labels: [__name__, app]
       regex: '^bird_.+;{{ .Values.global.region }}-pxrs-([0-9])-s([0-9])-([0-9])'
       replacement: '$1'
@@ -155,14 +119,6 @@
   metric_relabel_configs:
     - regex: "instance|job|kubernetes_namespace|kubernetes_pod_name|kubernetes_name|pod_template_hash|exported_instance|exported_job|type|name|component|system"
       action: labeldrop
-    - source_labels: [__name__, target]
-      regex: 'ping_.+;www-(\w*)-(\w*-\w*-\w*).+'
-      replacement: '$2'
-      target_label: probed_to
-    - source_labels: [__name__, target]
-      regex: 'ping_.+;www-(\w*)-(\w*-\w*-\w*).+'
-      replacement: '$1'
-      target_label: probed_to_type
 
 - job_name: 'jumpserver'
   params:
@@ -313,6 +269,22 @@
     - source_labels: [__name__, cucsFcErrStatsDn]
       regex: 'snmp_ucs_cucsFcErrStats.+;.+(port)-([3-9]|\d{2}).+'
       action: drop
+    - source_labels: [__name__, ifAlias]
+      regex: '^snmp_asr_.+;([a-z:]+);(project|)*:?([a-z0-9)]*);?router:([a-z0-9-]*);network:([a-z0-9-]*);subnet:([a-z0-9-]*)'
+      replacement: '$3'
+      target_label: project_id
+    - source_labels: [__name__, ifAlias]
+      regex: '^snmp_asr_.+;([a-z:]+);(project|)*:?([a-z0-9)]*);?router:([a-z0-9-]*);network:([a-z0-9-]*);subnet:([a-z0-9-]*)'
+      replacement: '$4'
+      target_label: router_id
+    - source_labels: [__name__, ifAlias]
+      regex: '^snmp_asr_.+;([a-z:]+);(project|)*:?([a-z0-9)]*);?router:([a-z0-9-]*);network:([a-z0-9-]*);subnet:([a-z0-9-]*)'
+      replacement: '$5'
+      target_label: network_id
+    - source_labels: [__name__, ifAlias]
+      regex: '^snmp_asr_.+;([a-z:]+);(project|)*:?([a-z0-9)]*);?router:([a-z0-9-]*);network:([a-z0-9-]*);subnet:([a-z0-9-]*)'
+      replacement: '$6'
+      target_label: subnet_id
 
 - job_name: 'snmp-apod'
   scrape_interval: {{.Values.snmp_exporter_apod.scrapeInterval}}
@@ -784,3 +756,32 @@
     - action: labeldrop
       regex: "metrics_label"
 {{ end }}
+
+- job_name: 'prometheus-vmware'
+  scheme: http
+  scrape_interval: {{ .Values.prometheus_vmware.scrapeInterval }}
+  scrape_timeout: {{ .Values.prometheus_vmware.scrapeTimeout }}
+
+  honor_labels: true
+  metrics_path: '/federate'
+
+  params:
+    'match[]':
+      - '{__name__=~"vrops_hostsystem_runtime_maintenancestate"}'
+      
+  relabel_configs:
+    - action: replace
+      source_labels: [__address__]
+      target_label: region
+      regex: prometheus-vmware.(.+).cloud.sap
+      replacement: $1
+
+  metric_relabel_configs:
+    - source_labels: [__name__, prometheus]
+      regex: '^up;(.+)'
+      replacement: '$1'
+      target_label: prometheus_source
+      action: replace
+
+  static_configs:
+    - targets: ['prometheus-vmware.vmware-monitoring.svc:9090']

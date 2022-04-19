@@ -21,7 +21,31 @@ metrics:
     metric_type_name: gauge
     command: show ip nat statistic | include active
     timeout_secs: 3
+  
+  nat_limits_use:
+    regex: >-
+      ^([a-z0-9]+)\n\s+(\d+)\s+(\d+)\s+(\d+)
+    multi_value: true
+    metric_type_name: gauge
+    value: $3
+    labels:
+        vrf: $1
+    command: show ip nat limits all-vrf
+    description: The number of dynamic translatrions in a VRF if any
+    timeout_secs: 5
 
+  nat_limits_miss:
+    regex: >-
+      ^([a-z0-9]+)\n\s+(\d+)\s+(\d+)\s+(\d+)
+    multi_value: true
+    metric_type_name: gauge
+    value: $4
+    labels:
+        vrf: $1
+    command: show ip nat limits all-vrf
+    description: The number of tranlations that hit the limit
+    timeout_secs: 5
+  
   nat_misses:
     regex: >-
       Hits:\s+(\d+)\s+Misses:\s(\d+)
@@ -575,6 +599,8 @@ batches:
   neutron-router:
     - nat_dynamic
     - nat_static
+    - nat_limits_use
+    - nat_limits_miss
     - nat_misses
     - nat_hits
     - nat_portblock_tcp_start

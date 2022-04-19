@@ -27,6 +27,10 @@ spec:
         configmap-etc-conductor-hash: {{ tuple . $conductor | include "ironic_conductor_configmap" | sha256sum }}{{- if $conductor.jinja2 }}{{`
         configmap-etc-jinja2-hash: {{ block | safe | sha256sum }}
 `}}{{- end }}
+        {{- if $conductor.conductor.statsd_enabled }}
+        prometheus.io/scrape: "true"
+        prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
+        {{- end }}
     spec:
       containers:
       - name: ironic-conductor
@@ -156,25 +160,23 @@ spec:
             port: ironic-console
           initialDelaySeconds: 5
           periodSeconds: 3
-      {{- if .Values.oslo_metrics.enabled }}
+      {{- if $conductor.conductor.statsd_enabled }}
       - name: oslo-exporter
         image: {{ .Values.global.dockerHubMirror }}/prom/statsd-exporter
         args:
-        - --web.listen-address=:9102
-        - --web.telemetry-path=/metrics
-        - --statsd.listen-udp=:8125
-        - --statsd.listen-tcp=
-        - --statsd.cache-size=1000
-        - --statsd.event-queue-size=10000
-        - --statsd.event-flush-threshold=1000
-        - --statsd.event-flush-interval=200ms
+        - --statsd.mapping-config=/etc/statsd/statsd-rpc-exporter.yaml
         ports:
-        - name: web
+        - name: metrics
           containerPort: 9102
           protocol: TCP
         - name: statsd-udp
-          containerPort: 8125
+          containerPort: {{ $conductor.conductor.statsd_port }}
           protocol: UDP
+        volumeMounts:
+        - name: ironic-etc
+          mountPath: /etc/statsd/statsd-rpc-exporter.yaml
+          subPath: statsd-rpc-exporter.yaml
+          readOnly: true
       {{- end }}
       volumes:
       - name: etcironic

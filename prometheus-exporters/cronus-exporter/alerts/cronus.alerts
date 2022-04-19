@@ -2,8 +2,8 @@ groups:
 - name: CronusAlerts
   rules:
   - alert: CronusSendEmails
-    expr: (sum(sum_over_time(aws_ses_cronus_provider_send[15m])) < 50 or sum(sum_over_time(cronus_simulator_send_email_rate[15m])) < 50) and (absent(cronus_simulator_send_email_rate) OR on() vector(0) == 0)
-    for: 5m
+    expr: (sum(sum_over_time(aws_ses_cronus_provider_send[15m])) < 30 or sum(sum_over_time(cronus_simulator_send_email_rate[15m])) < 30) and (absent(cronus_simulator_send_email_rate) OR on() vector(0) == 0)
+    for: 15m
     labels:
       service: cronus
       severity: critical
@@ -39,7 +39,7 @@ groups:
 - name: NebulaAlerts
   rules:
   - alert: NebulaReconcileAccount
-    expr: avg_over_time(cronus_simulator_event_test_passed[20m]) < 1
+    expr: cronus_simulator_event_test_passed == 0
     for: 20m
     labels:
       meta: Simulator Nebula Reconcile - reconcile account fails for more than 20 minutes in the region {{ $labels.region }}

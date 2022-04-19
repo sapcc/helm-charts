@@ -46,18 +46,28 @@ spec:
           - bash
         args:
           - /container.init/rabbitmq-start
+        {{- if .Values.livenessProbe.enabled }}
         livenessProbe:
           exec:
             command:
             - rabbitmqctl
             - status
-          initialDelaySeconds: 60
-          timeoutSeconds: 5
+          failureThreshold: {{ .Values.livenessProbe.failureThreshold }}
+          initialDelaySeconds: {{ .Values.livenessProbe.initialDelaySeconds }}
+          periodSeconds: {{ .Values.livenessProbe.periodSeconds }}
+          successThreshold: {{ .Values.livenessProbe.successThreshold }}
+          timeoutSeconds: {{ .Values.livenessProbe.timeoutSeconds }}
+        {{- end }}
+        {{- if .Values.readinessProbe.enabled }}
         readinessProbe:
           exec:
             command: ["rabbitmqctl", "node_health_check"]
-          initialDelaySeconds: 5
-          timeoutSeconds: 3
+          failureThreshold: {{ .Values.readinessProbe.failureThreshold }}
+          initialDelaySeconds: {{ .Values.readinessProbe.initialDelaySeconds }}
+          periodSeconds: {{ .Values.readinessProbe.periodSeconds }}
+          successThreshold: {{ .Values.readinessProbe.successThreshold }}
+          timeoutSeconds: {{ .Values.readinessProbe.timeoutSeconds }}
+        {{- end }}
         resources:
 {{ toYaml .Values.resources | indent 10 }}
         ports:

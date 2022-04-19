@@ -1,3 +1,7 @@
+## 6.2.0
+
+* Only set resource requests via VPA.
+
 ## 6.0.1
 
 * Allow setting minimal resource requirements to be considered by VPA.

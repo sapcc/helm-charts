@@ -50,6 +50,9 @@ migration_ignore_scheduler = True
 # default time to wait for access rules to become active in migration cutover was 180 seconds
 migration_wait_access_rules_timeout = 3600
 
+statsd_port = {{ .Values.rpc_statsd_port }}
+statsd_enabled = {{ .Values.rpc_statsd_enabled }}
+
 # all default quotas are 0 to enforce usage of the Resource Management tool in Elektra
 [quota]
 shares = 0
@@ -81,14 +84,14 @@ insecure = True
 [oslo_policy]
 policy_file = /etc/manila/policy.yaml
 
-[oslo_messaging_rabbit]
-rabbit_ha_queues = {{ .Values.rabbitmq.ha_queues | default "true" }}
-rabbit_transient_queues_ttl={{ .Values.rabbit_transient_queues_ttl | default .Values.global.rabbit_transient_queues_ttl | default 60 }}
+{{- include "ini_sections.oslo_messaging_rabbit" .}}
 rabbit_interval_max = {{ .Values.rabbitmq.max_reconnect_interval | default 3 }}
-heartbeat_in_pthread = False
 
 [oslo_concurrency]
 lock_path = /var/lib/manila/tmp
+
+[coordination]
+backend_url = memcached://{{ .Chart.Name }}-memcached.{{ include "svc_fqdn" . }}:{{ .Values.memcached.memcached.port | default 11211 }}
 
 {{- include "ini_sections.database" . }}
 

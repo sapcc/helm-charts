@@ -28,6 +28,12 @@ spec:
       labels:
         name: manila-share-netapp-{{$share.name}}
       annotations:
+        {{- if .Values.rpc_statsd_enabled }}
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9102"
+        prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
+        {{- end }}
+        kubectl.kubernetes.io/default-container: manila-share-netapp-{{$share.name}}
         configmap-etc-hash: {{ include (print .Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
         configmap-netapp-hash: {{ list . $share | include "share_netapp_configmap" | sha256sum }}
     spec:
@@ -80,6 +86,10 @@ spec:
               mountPath: /etc/manila/logging.ini
               subPath: logging.ini
               readOnly: true
+            - name: manila-etc
+              mountPath: /etc/manila/healthz
+              subPath: healthz
+              readOnly: true
             - name: backend-config
               mountPath: /etc/manila/backend.conf
               subPath: backend.conf
@@ -90,19 +100,38 @@ spec:
           {{- end }}
           livenessProbe:
             exec:
-              command: ["/etc/manila/rabbitmqadmin", "-H", "manila-rabbitmq", "-u", "admin", "-p" , "{{ .Values.rabbitmq.users.admin.password }}", "list", "bindings", "|", "grep", "manila-share-netapp-{{$share.name}}"]
+              command:
+              - cat
+              - /etc/manila/probe
             initialDelaySeconds: 60
-            periodSeconds: 60
+            periodSeconds: 10
             timeoutSeconds: 20
           readinessProbe:
             exec:
               command:
-              - grep
-              - 'ready'
-              - /etc/manila/probe
-            timeoutSeconds: 3
+              - sh
+              - /etc/manila/healthz
+            timeoutSeconds: 10
             periodSeconds: 5
             initialDelaySeconds: 5
+            failureThreshold: 1
+        {{- if .Values.rpc_statsd_enabled }}
+        - name: statsd
+          image: {{ required ".Values.global.dockerHubMirror is missing" .Values.global.dockerHubMirror}}/prom/statsd-exporter:v0.8.1
+          imagePullPolicy: IfNotPresent
+          args: [ --statsd.mapping-config=/etc/statsd/statsd-rpc-exporter.yaml ]
+          ports:
+          - name: statsd
+            containerPort: {{ .Values.rpc_statsd_port }}
+            protocol: UDP
+          - name: metrics
+            containerPort: 9102
+          volumeMounts:
+            - name: manila-etc
+              mountPath: /etc/statsd/statsd-rpc-exporter.yaml
+              subPath: statsd-rpc-exporter.yaml
+              readOnly: true
+        {{- end }}
       hostname: manila-share-netapp-{{$share.name}}
       volumes:
         - name: etcmanila

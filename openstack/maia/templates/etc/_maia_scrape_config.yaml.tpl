@@ -133,6 +133,24 @@
       target_label: __name__
       regex: netapp_volume_(.*)
       replacement: openstack_manila_share_${1}
+
+  metrics_path: '/federate'
+  params:
+    'match[]':
+      # import any tenant-specific metric, except for those which already have been imported
+      - '{__name__=~"^snmp_f5_.+"}'
+      - '{__name__=~"^snmp_asr_ifHC.+"}'
+      - '{__name__=~"^netapp_capacity_.+"}'
+      - '{__name__=~"^netapp_volume_.+", app="netapp-capacity-exporter-manila"}'
+      - '{__name__=~"^openstack_manila_share_.+", project_id!=""}'
+
+- job_name: 'prometheus-vmware'
+  scheme: http
+  scrape_interval: 1m
+  scrape_timeout: 55s
+  static_configs:
+    - targets: ['prometheus-vmware.vmware-monitoring.svc:9090']
+  metric_relabel_configs:
     - source_labels: [__name__, project ]
       regex: '^vrops_virtualmachine_.+;(.+)'
       replacement: '$1'
@@ -150,10 +168,6 @@
   params:
     'match[]':
       # import any tenant-specific metric, except for those which already have been imported
-      - '{__name__=~"^snmp_f5_.+"}'
-      - '{__name__=~"^netapp_capacity_.+"}'
-      - '{__name__=~"^netapp_volume_.+", app="netapp-capacity-exporter-manila"}'
-      - '{__name__=~"^openstack_manila_share_.+", project_id!=""}'
       - '{__name__=~"^vrops_virtualmachine_cpu_.+"}'
       - '{__name__=~"^vrops_virtualmachine_disk_.+"}'
       - '{__name__=~"^vrops_virtualmachine_memory_.+"}'
