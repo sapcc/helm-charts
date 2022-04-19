@@ -1,4 +1,4 @@
-- job_name: 'prometheus-infra-vrops'
+- job_name: 'prometheus-vmware'
   scheme: https
   scrape_interval: {{ .Values.collector.scrapeInterval }}
   scrape_timeout: {{ .Values.collector.scrapeTimeout }}
@@ -17,7 +17,7 @@
     - action: replace
       source_labels: [__address__]
       target_label: region
-      regex: prometheus-infra-collector.(.+).cloud.sap
+      regex: prometheus-vmware.(.+).cloud.sap
       replacement: $1
 
   metric_relabel_configs:
@@ -35,7 +35,7 @@
 
   static_configs:
     - targets:
-      - "prometheus-infra-collector.{{ .Values.global.region }}.cloud.sap"
+      - "prometheus-vmware.{{ .Values.global.region }}.cloud.sap"
 
 - job_name: 'prometheus-infra-snmp'
   scheme: https
