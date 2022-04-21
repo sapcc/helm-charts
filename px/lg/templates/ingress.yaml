@@ -25,19 +25,19 @@ spec:
           path: /
           backend:
             service:
-              name: {{ $.Values.region }}-pxrs-lgadmin
+              name: {{ $.Values.region }}-pxrs-{{ $lg }}
               port:
-                number: 80          
+                number: 80
 
   tls:
   - hosts:
-    - pxadmin.{{ $.Values.region }}.cloud.sap
-    secretName: {{ $.Values.region }}-pxrs-lgadmin
+    - {{ $lg_config.subdomain }}.{{ $.Values.region }}.cloud.sap
+    secretName: {{ $.Values.region }}-pxrs-{{ $lg }}
 ---
-{{ end -}}
 apiVersion: v1
 kind: Secret
 metadata:
-    name: {{ $.Values.region }}-pxrs-lgadmin
+    name: {{ $.Values.region }}-pxrs-{{ $lg }}
     namespace: px
 type: Opaque
+{{ end -}}
