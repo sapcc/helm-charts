@@ -10,8 +10,7 @@
     'match[]':
       - '{job="vrops-exporter",__name__!~"^vrops_virtualmachine_.*"}'
       - '{job="vrops-exporter",__name__=~"^vrops_virtualmachine_.*", vccluster=~".*management.*"}'
-      - '{job="vrops-exporter",__name__=~"vrops_api_response"}'
-      - '{__name__=~"vrops_inventory_.+"}'
+      - '{job="vrops-inventory-exporter"}'
 
   relabel_configs:
     - action: replace
