@@ -20,6 +20,7 @@ database:
   server_id: 998
   data_dir: /var/lib/mysql
   log_name_format: mysqld-bin
+  binlog_max_retry_attempts: {{.common.binlogMaxRetryAttempts}}
   databases:
   {{- range $db := .backup.databases }}
     - "{{$db}}"
