@@ -1,8 +1,4 @@
-{{- if .Capabilities.APIVersions.Has "networking.k8s.io/v1beta1" }}
-apiVersion: networking.k8s.io/v1beta1
-{{- else }}
 apiVersion: networking.k8s.io/v1
-{{- end }}
 kind: Ingress
 
 metadata:
@@ -28,15 +24,9 @@ spec:
       http:
         paths:
           - path: /
-{{- if .Capabilities.APIVersions.Has "networking.k8s.io/v1beta1" }}
-            backend:
-              serviceName: octavia-api
-              servicePort: {{.Values.api_port_internal}}
-{{- else }}
             pathType: Prefix
             backend:
               service:
                 name: octavia-api
                 port:
                   number: {{.Values.api_port_internal}}
-{{- end }}
