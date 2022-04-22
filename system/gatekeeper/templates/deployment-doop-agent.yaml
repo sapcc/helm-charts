@@ -29,8 +29,8 @@ spec:
         - name: parser
           image: {{.Values.global.registry | required ".Values.global.registry not found"}}/gatekeeper-addons:{{.Values.gatekeeper_addons.image_tag | required ".Values.gatekeeper_addons.image_tag not found"}}
           imagePullPolicy: IfNotPresent
+          command: [ doop-agent ]
           args: [
-            'doop-agent',
           {{- if .Values.cluster_name | required ".Values.cluster_name not found" | regexMatch "^[akv]-" }}
             '-container', 'doop-agent-kubernikus', # the Kubernikus-related clusters report into a separate dashboard since they usually have a ton of very similar violations that would clutter up the main dashboard
           {{- else }}
