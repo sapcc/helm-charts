@@ -422,6 +422,31 @@ mysql_metrics:
         UNION SELECT 'none' AS manila_host, 'none' AS id, 'none' AS share_network_subnet_id, 'none' AS status, 0 AS max_duration_gauge;
       values:
         - "max_duration_gauge"
+    - help: Manila Share Access Stuck Max Duration
+      labels:
+        - "access_id"
+        - "share_id"
+        - "share_instance_id"
+        - "state"
+      name: manila_share_access_stuck_max_duration_gauge
+      query: |
+        SELECT
+          access_id,
+          share_instances.share_id as share_id,
+          share_instance_id,
+          state,
+          MAX(NOW() - COALESCE(access.updated_at, access.created_at)) AS max_duration_gauge
+        FROM share_instance_access_map as access
+        JOIN share_instances on share_instances.id = access.share_instance_id
+        WHERE access.deleted='False' AND access.state != 'active' AND (COALESCE(access.updated_at, access.created_at) < DATE_SUB(now(), INTERVAL 15 MINUTE))
+        GROUP BY
+          access_id,
+          share_id,
+          share_instance_id,
+          state
+        UNION SELECT 'none' AS access_id, 'none' AS share_id, 'none' AS share_instance_id, 'none' AS state, 0 AS max_duration_gauge;
+      values:
+        - "max_duration_gauge"
 
 pod:
   replicas:
