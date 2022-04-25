@@ -9,10 +9,6 @@ metadata:
     kubernetes.io/cluster-service: "true"
     addonmanager.kubernetes.io/mode: Reconcile
     kubernetes.io/name: "CoreDNS"
-  annotations:
-    prometheus.io/scrape: "true"
-    prometheus.io/port: "9153"
-    prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
 spec:
   replicas: 4
   strategy:
@@ -28,6 +24,9 @@ spec:
         k8s-app: kube-dns
       annotations:
         seccomp.security.alpha.kubernetes.io/pod: 'docker/default'
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9153"
+        prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
     spec:
       affinity:
         podAntiAffinity:
