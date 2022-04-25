@@ -19,6 +19,7 @@ lazy-apps = true
 need-app = true
 thunder-lock = true
 buffer-size = 65535
+listen = 4096
 add-header = Connection: close
 single-interpreter = true
 worker-reload-mercy = 90
