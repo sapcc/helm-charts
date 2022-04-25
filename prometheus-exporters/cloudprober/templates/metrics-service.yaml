@@ -8,17 +8,17 @@ apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 
 metadata:
-  name: cloudprober-{{$prober.dc}}
+  name: cloudprober-{{ printf "%s" $prober.dc | replace "-" "" }}
   namespace: {{ $values.namespace }}
   labels:
     prometheus: {{ required ".Values.metrics.prometheus" $values.metrics.prometheus }}
 
 spec:
-  jobLabel: cloudprober-{{$prober.dc}}
+  jobLabel: cloudprober-{{ $prober.dc }}
 
   selector:
     matchLabels:
-      app: cloudprober-{{$prober.dc}}
+      app: cloudprober-{{ printf "%s" $prober.dc | replace "-" "" }}
 
   # Find pods in any namespace.
   namespaceSelector:
