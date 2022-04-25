@@ -13,6 +13,8 @@ http.max_content_length: 1000mb
 http.compression: true
 cluster.max_shards_per_node: 10000
 
+index.max_result_window: 20000
+
 discovery.zen.minimum_master_nodes: 1
 discovery.type: single-node
 
