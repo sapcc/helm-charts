@@ -14,7 +14,7 @@ metadata:
     prometheus: {{ required ".Values.metrics.prometheus" $values.metrics.prometheus }}
 
 spec:
-  jobLabel: cloudprober-{{ $prober.dc }}
+  jobLabel: cloudprober-{{ printf "%s" $prober.dc | replace "-" "" }}
 
   selector:
     matchLabels:
@@ -34,7 +34,7 @@ spec:
         - action: labelmap
           regex: '__meta_kubernetes_service_label_(.+)'
         - targetLabel: job
-          replacement: cloudprober-{{$prober.dc}}
+          replacement: cloudprober-{{ printf "%s" $prober.dc | replace "-" "" }}
 
 ---
 {{ end -}}
