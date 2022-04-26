@@ -9,13 +9,7 @@ metadata:
     component: nova
   annotations:
     ingress.kubernetes.io/use-regex: "true"
-    ingress.kubernetes.io/configuration-snippet: |
-      {{- range $name, $config := .Values.consoles }}
-        {{- if $config.enabled }}
-      rewrite "(?i)/{{ $name }}/(.*)" /$1 break;
-      rewrite "(?i)/{{ $name }}$" / break;
-        {{- end }}
-      {{- end }}
+    ingress.kubernetes.io/rewrite-target: "/$1"
   {{- if .Values.use_tls_acme }}
     kubernetes.io/tls-acme: "true"
   {{- end }}
