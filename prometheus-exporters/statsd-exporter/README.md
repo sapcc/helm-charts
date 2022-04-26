@@ -6,4 +6,4 @@ The chart is a lightweight version of the [original chart](https://github.com/ha
 
 ## Installation
 
-    helm3 upgrade statsd-exporter helm-charts/prometheus-exporters/statsd-exporter --install --namespace cc3test --timeout 300s --values secrets/scaleout/s-na-us-3/values/statsd-exporter.yaml
+With Concourse Pipeline *monitoring -> statsd-exporter*
