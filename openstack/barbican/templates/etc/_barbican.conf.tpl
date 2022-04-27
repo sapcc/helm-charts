@@ -82,7 +82,7 @@ mem_queue_size = 1000
 
 policy_file = /etc/barbican/policy.yaml
 
-{{- if .Values.hsm.enabled }}
+{{- if .Values.hsm.multistore.enabled }}
 [secretstore]
 enable_multiple_secret_stores = True
 stores_lookup_suffix = software, pkcs11
