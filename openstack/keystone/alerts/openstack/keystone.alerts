@@ -84,3 +84,17 @@ groups:
     annotations:
       description: "The keystone database is predicted to exceed the PV size in the next 24h"
       summary: Keystone database is running out of PV space
+
+  - alert: OpenstackKeystoneApiRequestsExceeded
+    expr: sum(irate(openstack_watcher_api_requests_total{service="identity"} [1m])) by (status) > 300
+    for: 1m
+    labels:
+      context: availability
+      meta: Api Requests to Keystone Exceeds 300ops
+      service: keystone
+      severity: info
+      tier: os
+      dashboard: keystone
+    annotations:
+      description: Api Requests to Keystone is {{ $value }}ops/s
+      summary: Api Requests to Keystone is {{ $value }}ops/s
