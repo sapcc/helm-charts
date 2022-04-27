@@ -22,3 +22,15 @@ tar xf toolbox.tar -C "${TOOLBOX_PATH}"
 ls -la ${TOOLBOX_PATH}
 
 echo "toolbox image ${TOOLBOX_DOCKER_IMAGE}:${TOOLBOX_DOCKER_TAG} exported to ${TOOLBOX_PATH} and is ready! "
+
+
+{{ if .Values.supporToolbox.enabled -}}
+TOOLBOX_SUPPORT_SUDO_PATH=( {{ required ".Values.supporToolbox.sudoConfigPath is missing" .Values.supporToolbox.sudoConfigPath }} )
+TOOLBOX_SUPPORT_PATH=( {{ required ".Values.supporToolbox.path is missing" .Values.supporToolbox.path }} )
+
+cp /scripts/toolbox/etc-sudoers-d-toolbox ${TOOLBOX_SUPPORT_SUDO_PATH}
+chmod 0130 ${TOOLBOX_SUPPORT_SUDO_PATH}
+cp ${TOOLBOX_SUPPORT_PATH} /host/${TOOLBOX_SUPPORT_PATH}
+
+echo "support-toolbox is ready!"
+{{- end }}

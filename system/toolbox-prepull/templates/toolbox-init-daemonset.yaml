@@ -19,7 +19,7 @@ spec:
         configmap-toolbox-hash: {{ include (print $.Template.BasePath "/toolbox-init-configmap.yaml") $ | sha256sum }}
     spec:
       initContainers:
-        - name: toolbox-init
+        - name: init
           image: "{{ required ".Values.global.registry is missing" .Values.global.registry }}/toolbox-docker:{{ required ".Values.images.init.tag is missing" .Values.images.init.tag }}"
           command:
             - /scripts/toolbox/toolbox-init.sh
@@ -28,6 +28,10 @@ spec:
           volumeMounts:
             - name: var-lib
               mountPath: /host/var/lib
+            - name: opt-bin
+              mountPath: /host/opt/bin
+            - name: etc-sudoers
+              mountPath: /host/etc/sudoers.d
             - name: docker
               mountPath: /var/run/docker.sock
             - name: toolbox-init
@@ -52,6 +56,12 @@ spec:
         - name: var-lib
           hostPath:
             path: /var/lib
+        - name: etc-sudoers
+          hostPath:
+            path: /etc/sudoers.d/
+        - name: opt-bin
+          hostPath:
+            path: /opt/bin/
         - name: docker
           hostPath:
             path: /var/run/docker.sock
