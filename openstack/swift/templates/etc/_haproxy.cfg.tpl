@@ -35,7 +35,6 @@ defaults
 
 listen stats
   bind *:8404
-  option http-use-htx
   http-request use-service prometheus-exporter if { path /metrics }
   stats enable
   stats uri /stats
