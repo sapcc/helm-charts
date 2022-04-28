@@ -14,6 +14,7 @@ updaterConfig:
     awsAccess: {{ .Values.secAttNotifier.awsAccess }}
     awsSecret: {{ .Values.secAttNotifier.awsSecret }}
     endpoint: {{ .Values.secAttNotifier.cronusEndpoint }}
+    leasedUntilLteMonths: {{ .Values.secAttNotifier.leasedUntilLteMonths }}
     hour: {{ .Values.secAttNotifier.secAttNotificationHour }}
     day: {{ .Values.secAttNotifier.secAttNotificationDay }}
     sender: {{ .Values.secAttNotifier.sourceEmail }}
@@ -21,4 +22,8 @@ updaterConfig:
     contact:
       - {{ $value }}
     {{- end }}
+    body: |
+{{ .Values.secAttNotifier.body | indent 8 }}
+    subject: {{ .Values.secAttNotifier.subject }}
+    charSet: {{ .Values.secAttNotifier.charSet }}
 {{- end }}
