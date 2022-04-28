@@ -1,0 +1,22 @@
+# The alerts apply both to doop-central and doop-central-kubernikus, but to avoid conflicts, they're only deployed as part of doop-central.
+{{- if not .Values.kubernikus }}
+{{- range $target := list "openstack" }}
+{{- range $path, $bytes := $.Files.Glob (printf "alerts/%s/*.alerts" $target) }}
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+
+metadata:
+  name: {{ replace "/" "-" $path }}
+  labels:
+    app: gatekeeper
+    tier: k8s
+    type: alerting-rules
+    prometheus: {{ $target }}
+
+spec:
+{{ printf "%s" $bytes | indent 2 }}
+
+{{- end }}
+{{- end }}
+{{- end }}
