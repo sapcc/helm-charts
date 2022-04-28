@@ -24,6 +24,6 @@ updaterConfig:
     {{- end }}
     body: |
 {{ .Values.secAttNotifier.body | indent 8 }}
-    subject: {{ .Values.secAttNotifier.subject }}
+    subject: {{ .Values.secAttNotifier.subject | quote }}
     charSet: {{ .Values.secAttNotifier.charSet }}
 {{- end }}
