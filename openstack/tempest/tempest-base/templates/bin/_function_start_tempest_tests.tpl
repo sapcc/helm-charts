@@ -37,11 +37,13 @@ function start_tempest_tests {
   # configure tempest verifier taking into account the auth section values provided in tempest_extra_options file
   # use config file from PRE_CONFIG STEP from /tmp directory
   rally --debug verify configure-verifier --extend /tmp/tempest_extra_options
-  mkdir -p /etc/tempest
-  rally --debug verify configure-verifier --show > /etc/tempest/tempest.conf
+  rally --debug verify configure-verifier --show > /tmp/tempest.conf
   RALLY_EXIT_CODE=$(($RALLY_EXIT_CODE + $?))
 
   # create tempest cleanup report
+  sudo mkdir -p /etc/tempest
+  sudo chown -R rally:rally /etc/tempest
+  sudo mv /tmp/tempest.conf /etc/tempest/tempest.conf
   cat /etc/tempest/tempest.conf
   tempest cleanup --init-saved-state
 
