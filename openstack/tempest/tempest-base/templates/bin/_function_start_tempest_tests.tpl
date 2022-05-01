@@ -39,10 +39,18 @@ function start_tempest_tests {
   rally --debug verify configure-verifier --extend /tmp/tempest_extra_options
   rally --debug verify configure-verifier --show
   RALLY_EXIT_CODE=$(($RALLY_EXIT_CODE + $?))
+
+  # create tempest cleanup report
+  tempest cleanup --init-saved-state
+
   # run the actual tempest tests for neutron
   echo -e "\n === STARTING TEMPEST TESTS FOR {{ .Chart.Name }} === \n"
   rally --debug verify start --concurrency {{ default "1" .Values.concurrency }} --detailed --pattern '{{ required "Missing run_pattern value!" .Values.run_pattern }}' --skip-list /{{ .Chart.Name }}-etc/tempest_skip_list.yaml --xfail-list /{{ .Chart.Name }}-etc/tempest_expected_failures_list.yaml
   RALLY_EXIT_CODE=$(($RALLY_EXIT_CODE + $?))
+
+  # show tempest cleanup report
+  tempest cleanup --dry-run  --debug
+  cat dry_run.json
 
   # generate html report
   rally verify report --type html --to /tmp/report.html
