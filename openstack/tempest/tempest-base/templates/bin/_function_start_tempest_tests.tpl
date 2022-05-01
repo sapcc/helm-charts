@@ -41,6 +41,7 @@ function start_tempest_tests {
   RALLY_EXIT_CODE=$(($RALLY_EXIT_CODE + $?))
 
   # create tempest cleanup report
+  cat /etc/tempest/tempest.conf
   tempest cleanup --init-saved-state
 
   # run the actual tempest tests for neutron

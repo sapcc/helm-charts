@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 set -o pipefail
+set -x
 
 {{- include "tempest-base.function_start_tempest_tests" . }}
 
