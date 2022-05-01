@@ -44,6 +44,7 @@ function start_tempest_tests {
   export TEMPEST_CONFIG=$HOME/tempest.conf
   cd $HOME
   tempest cleanup --init-saved-state
+  cat saved_state.json
 
   # run the actual tempest tests for neutron
   echo -e "\n === STARTING TEMPEST TESTS FOR {{ .Chart.Name }} === \n"
