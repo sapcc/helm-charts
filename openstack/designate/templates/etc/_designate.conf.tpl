@@ -62,7 +62,7 @@ max_overflow = {{ .Values.max_overflow | default .Values.global.max_overflow | d
 transport_url = rabbit://{{ .Values.rabbitmq.users.default.user | default "rabbitmq" }}:{{ .Values.rabbitmq.users.default.password }}@{{ include "rabbitmq_host" . }}:{{ .Values.rabbitmq.port | default 5672 }}/
 
 [oslo_policy]
-policy_file = policy.json
+policy_file = policy.yaml
 
 [oslo_messaging_notifications]
 driver = noop
