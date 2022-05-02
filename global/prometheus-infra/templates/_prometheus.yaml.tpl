@@ -183,6 +183,7 @@
       - '{__name__=~"^vrops_vcenter_memory_reserved_capacity_average"}'
       - '{__name__=~"^vrops_cluster_cluster_running_hosts"}'
       - '{__name__=~"^vrops_cluster_configuration_drsconfig_targetbalance"}'
+      - '{__name__=~"^vrops_cluster_configuration_drsconfig_defaultvmbehavior"}'
       - '{__name__=~"^vrops_cluster_cpu_capacity_mhz"}'
       - '{__name__=~"^vrops_cluster_cpu_capacity_usage_percentage"}'
       - '{__name__=~"^vrops_cluster_cpu_contention_percentage"}'
