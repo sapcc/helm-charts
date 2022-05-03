@@ -39,7 +39,7 @@ spec:
             name: elastiflow-query-exporter
       containers:
         - name: elastiflow-query-exporter
-          image: keppel.eu-de-1.cloud.sap/ccloud/prometheus-es-exporter:{{ .Values.version }}
+          image: "{{ required ".Values.global.registry variable missing" .Values.global.registry }}/prometheus-es-exporter:{{ .Values.version }}
           imagePullPolicy: IfNotPresent
           command: [ "prometheus-es-exporter", "-p", "{{.Values.listen_port}}", "--config-dir", "/elastiflow-query-exporter/", "--cluster-health-disable", "--indices-stats-disable", "--basic-user", "{{ .Values.global.prom_user }}", "--basic-password", "{{ .Values.global.prom_password }}", "-e", "{{.Values.queryExporter.es.uri}}", "--nodes-stats-disable" ]
           ports:
