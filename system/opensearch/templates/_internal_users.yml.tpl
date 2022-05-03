@@ -9,68 +9,68 @@ _meta:
 # Define your internal users here
 
 data:
-  hash: "{{ .Values.global.opensearch_logs.users.data.hash }}"
+  hash: "{{ .Values.users.data.hash }}"
   reserved: true
   backend_roles:
   - "data"
 
 {{- if .Values.qalogs.enabled }}
 dataqade2:
-  hash: "{{ .Values.global.opensearch_logs.users.qade2.hash }}"
+  hash: "{{ .Values.users.dataqade2.hash }}"
   reserved: true
   backend_roles:
   - "qade2"
 
 dataqade3:
-  hash: "{{ .Values.global.opensearch_logs.users.qade3.hash }}"
+  hash: "{{ .Values.users.dataqade3.hash }}"
   reserved: true
   backend_roles:
   - "qade3"
 
 dataqade5:
-  hash: "{{ .Values.global.opensearch_logs.users.qade5.hash }}"
+  hash: "{{ .Values.users.dataqade5.hash }}"
   reserved: true
   backend_roles:
   - "qade5"
 {{- end }}
 
 jump:
-  hash: "{{ .Values.global.opensearch_logs.users.jump.hash }}"
+  hash: "{{ .Values.users.jump.hash }}"
   reserved: true
   backend_roles:
   - "jump"
 
 jaeger:
-  hash: "{{ .Values.global.opensearch_logs.users.jaeger.hash }}"
+  hash: "{{ .Values.users.jaeger.hash }}"
   reserved: true
   backend_roles:
   - "jaeger"
 
 winbeat:
-  hash: "{{ .Values.global.opensearch_logs.users.winbeat.hash }}"
+  hash: "{{ .Values.users.winbeat.hash }}"
   reserved: true
   backend_roles:
   - "winbeat"
 
 promuser:
-  hash: "{{ .Values.global.opensearch_logs.users.promuser.hash }}"
+  hash: "{{ .Values.users.promuser.hash }}"
   reserved: true
   backend_roles:
   - "promuser"
 
 admin:
-  hash: "{{ .Values.global.opensearch_logs.users.admin.hash }}"
+  hash: "{{ .Values.users.admin.hash }}"
   reserved: true
   backend_roles:
   - "adminrole"
 
 kibanaserver:
-  hash: "{{ .Values.global.opensearch_logs.users.kibanaserver.hash }}"
+  hash: "{{ .Values.users.kibanaserver.hash }}"
   reserved: true
   description: "Demo OpenSearch Dashboards user"
 
 kibanaro:
-  hash: "{{ .Values.global.opensearch_logs.users.kibanaro.hash }}"
+  hash: "{{ .Values.users.kibanaro.hash }}"
   reserved: false
   backend_roles:
   - "kibanauser"

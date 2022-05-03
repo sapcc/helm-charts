@@ -1,3 +1,6 @@
+qalogs:
+  enabled: false
+
 opensearch_master:
   clusterName: "opensearch-logs"
   nodeGroup: "master"
@@ -45,10 +48,10 @@ opensearch_master:
             admin_dn:
               - CN=kirk,OU=client,O=client,L=test,C=de
           audit.type: internal_opensearch
-          enable_snapshot_restore_privilege: true
-          check_snapshot_restore_write_privileges: true
+          enable_snapshot_restore_privilege: false
+          check_snapshot_restore_write_privileges: false
           restapi:
-            roles_enabled: ["adminrole", "security_rest_api_access", "data", "kibanaro"]
+            roles_enabled: ["adminrole", "security_rest_api_access"]
           system_indices:
             enabled: true
             indices:
@@ -64,6 +67,10 @@ opensearch_master:
                 ".opendistro-notebooks",
                 ".opendistro-asynchronous-search-response*",
               ]
+
+  securityConfig:
+    config:
+      securityConfigSecret: "security-config"
 
 opensearch_client:
   clusterName: "opensearch-logs"
@@ -122,7 +129,7 @@ opensearch_client:
           enable_snapshot_restore_privilege: true
           check_snapshot_restore_write_privileges: true
           restapi:
-            roles_enabled: ["all_access", "security_rest_api_access"]
+            roles_enabled: ["adminrole", "all_access", "security_rest_api_access"]
           system_indices:
             enabled: true
             indices:
@@ -138,6 +145,10 @@ opensearch_client:
                 ".opendistro-notebooks",
                 ".opendistro-asynchronous-search-response*",
               ]
+
+  securityConfig:
+    config:
+      securityConfigSecret: "security-config"
 
 opensearch_data:
   clusterName: "opensearch-logs"
@@ -185,7 +196,7 @@ opensearch_data:
           enable_snapshot_restore_privilege: true
           check_snapshot_restore_write_privileges: true
           restapi:
-            roles_enabled: ["all_access", "security_rest_api_access"]
+            roles_enabled: ["adminrole", "all_access", "security_rest_api_access"]
           system_indices:
             enabled: true
             indices:
@@ -201,3 +212,7 @@ opensearch_data:
                 ".opendistro-notebooks",
                 ".opendistro-asynchronous-search-response*",
               ]
+
+  securityConfig:
+    config:
+      securityConfigSecret: "security-config"

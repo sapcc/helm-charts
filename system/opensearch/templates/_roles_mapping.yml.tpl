@@ -14,7 +14,7 @@ adminrole:
   reserved: false
   cluster_permissions: "cluster_all"
   backend_roles:
-  - "{{ .Values.opensearch.ldap.admin_group}}"
+  - "{{ .Values.global.ldap.admin_group}}"
 
 own_index:
   reserved: false
@@ -30,7 +30,7 @@ logstash:
 kibana_user:
   reserved: false
   backend_roles:
-  - "{{ .Values.opensearch.ldap.kibana_group}} "
+  - "{{ .Values.global.ldap.kibana_group}} "
   description: "Maps kibanauser to kibana_user"
 
 readall:
