@@ -143,7 +143,7 @@
     "hw:cpu_cores": "3"
     "vmware:hw_version": "vmx-18"
 - name: "hana_c448_m11671"
-  id: "312"
+  id: "313"
   vcpus: 448
   ram: 11950772
   disk: 64
