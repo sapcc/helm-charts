@@ -4,7 +4,11 @@ groups:
   - name: doop-central.alerts
     rules:
       - alert: GatekeeperOutdatedAuditResults
-        expr: max by (cluster) (doop_oldest_audit_age_seconds) > 3600
+        # In some cases when audits are not being conducted, we are seeing a metric value of 0 here, so alert on that as
+        # well.  This will not produce false positives since the age will always be at least a few seconds for
+        # successful audits, since it takes a bit of time for the results to pass from gatekeeper-audit into doop-agent
+        # into doop-central.
+        expr: max by (cluster) (doop_oldest_audit_age_seconds) > 3600 or max by (cluster) (doop_oldest_audit_age_seconds) == 0
         for: 5m
         labels:
           context: gatekeeperaudit
