@@ -14,15 +14,15 @@ function cleanup_tempest_leftovers() {
   # need to build some waiting function
 
   delete_dependencies() {
-    for group_snap in $(cinder group-snapshot-list | grep -v -e ID -e '^+' | awk '{print $2;}'); do
-      cinder group-snapshot-delete ${group_snap}
+    for group_snap in $(openstack volume group snapshot list --os-volume-api-version 3.14 | grep -v -e ID -e '^+' | awk '{print $2;}'); do
+      openstack volume group snapshot delete ${group_snap} --os-volume-api-version 3.14
     done
 
-    for backup in $(openstack volume backup list -f value -c ID); do
-      openstack backup delete ${backup}
+    for backup in $(openstack volume backup list -f value -c Name --all | grep tempest); do
+      openstack volume backup delete ${backup}
     done
 
-    for snapshot in $(openstack volume snapshot list -f value -c ID); do
+    for snapshot in $(openstack volume snapshot list -f value -c Name --all | grep tempest); do
       openstack volume snapshot delete ${snapshot}
       if [ "$?" != "0" ]; then
         cinder group-snapshot-delete ${snapshot}
@@ -31,12 +31,15 @@ function cleanup_tempest_leftovers() {
   }
 
   delete_volumes() {
-    for volume in $(openstack volume list -f value -c ID); do
+    for volume in $(openstack volume list -f value -c Name --all | grep tempest); do
       openstack volume delete ${volume}
       if [ "$?" != "0" ]; then
         # we try to delete again after setting the volume state to something
         # that should be deletable
+        echo "Retrying to delete volume ${volume}"
         openstack volume set --state error ${volume}
+        cinder reset-state --reset-migration-status ${volume}
+        openstack volume set --detached ${volume}
         openstack volume delete ${volume}
       fi
     done
@@ -45,14 +48,14 @@ function cleanup_tempest_leftovers() {
   delete_groups() {
     # this will be called twice, because there are groups created from snapshot
     # which need to go before we can delete the snapshots in other groups
-    for group in $(cinder group-list | grep -v -e ID -e '^+' | awk '{print $2;}'); do
-      cinder group-delete --delete-volumes ${group}
+    for group in $(openstack volume group list --os-volume-api-version=3.13 | grep -v -e ID -e '^+' | awk '{print $2;}'); do
+      openstack volume group delete --os-volume-api-version=3.13 --force ${group}
     done
   }
 
   delete_group_types() {
-    for group_type in $(cinder group-type-list | grep -v -e ID -e '^+' | grep tempest | awk '{print $2;}'); do
-      cinder group-type-delete ${group_type}
+    for group_type in $(openstack volume group type list --os-volume-api-version 3.11 | grep -v -e ID -e '^+' | grep tempest | awk '{print $2;}'); do
+      openstack volume group type delete --os-volume-api-version 3.11 ${group_type}
     done
   }
 
@@ -66,7 +69,6 @@ function cleanup_tempest_leftovers() {
   for i in $(seq 1 18); do
     export OS_USERNAME=nova-tempestuser${i}
     export OS_PROJECT_NAME=nova-tempest${i}
-    delete_groups
     delete_dependencies
     delete_groups
   done
@@ -74,7 +76,6 @@ function cleanup_tempest_leftovers() {
   for i in $(seq 1 8); do
     export OS_USERNAME=nova-tempestadmin${i}
     export OS_PROJECT_NAME=nova-tempest-admin${i}
-    delete_groups
     delete_dependencies
     delete_groups
   done

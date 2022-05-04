@@ -80,7 +80,29 @@ live_migration = false
 live_migrate_back_and_forth = false
 vnc_console = true
 vnc_server_header = WebSockify
+serial_console = true
+spice_console = true
 attach_encrypted_volume = false
+
+[share]
+share_network_id = {{ (index .Values (print .Chart.Name | replace "-" "_")).tempest.share_network_id }}
+alt_share_network_id = {{ (index .Values (print .Chart.Name | replace "-" "_")).tempest.alt_share_network_id }}
+admin_share_network_id = {{ (index .Values (print .Chart.Name | replace "-" "_")).tempest.admin_share_network_id }}
+run_revert_to_snapshot_tests = False
+run_multiple_share_replicas_tests = False
+run_share_group_tests = False
+run_quota_tests = False
+run_public_tests = False
+create_networks_when_multitenancy_enabled = False
+default_share_type_name = default
+catalog_type = sharev2
+max_api_microversion = 2.49
+suppress_errors_in_cleanup = True
+enable_ip_rules_for_protocols = nfs
+enable_protocols = nfs
+endpoint_type = internalURL
+v3_endpoint_type = internalURL
+region = {{ .Values.global.region }}
 
 [validation]
 image_ssh_user = ccloud
@@ -93,21 +115,10 @@ max_microversion = latest
 vendor_name = VMware
 storage_protocol = vmdk
 disk_format = vmdk
+volume_size = 1
 
 [volume-feature-enabled]
 backup = true
-
-[load_balancer]
-admin_role = admin
-octavia_svc_username = admin
-member_role = admin
-observer_role = admin
-global_observer_role = admin
-provider = f5
-RBAC_test_type = none
-test_with_ipv6 = False
-test_server_path = /rally/xrally_openstack/octavia-tempest-plugin/test_server.bin
-create_security_group = True
 
 [service_available]
 manila = True
@@ -120,4 +131,3 @@ designate = True
 ironic = True
 barbican = True
 keystone = True
-octavia = True
