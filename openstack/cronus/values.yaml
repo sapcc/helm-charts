@@ -232,7 +232,7 @@ config:
       hosts:
         10:
           - scheme://server:port
-      # a list of recipient domains, which will be redirected to this backend
+      # a list of sender/recipient domains, which will be redirected to this backend
       domains:
         - corp.int
         - int.corp
@@ -245,11 +245,37 @@ config:
     workerPrefetchSize: 0
     maxContainerNum: 6
     reconnectWatcherLimit: 15
-  # the list of domains to be blocked by a proxy server on ses email identity create/delete actions
+  # TODO: remove after upgrade
   blockedDomains:
     - example.com # the exact domain
     - .example.com # all subdomains
     - sub.example.com # the exact subdomain
+  requestValidate:
+    # the list of domains to be blocked by a proxy server on ses email identity create/delete actions
+    blockedDomains:
+      - example.com # the exact domain
+      - .example.com # all subdomains
+      - sub.example.com # the exact subdomain
+    # A map of headers to track in audit event
+    auditHeaders:
+      ReturnPath: HeaderReturnPath
+      Reply-To: HeaderReplyTo
+    # A map of originator headers to validate https://datatracker.ietf.org/doc/html/rfc5322#section-3.6.2
+    # and a corresponding audit event field
+    # key is a header name to check, value is an audit event key to store the value
+    originatorHeaders:
+      From: HeaderFrom
+      Sender: HeaderSender
+    # a map of SESv1 actions and identity field names to check
+    sesV1CheckKeys:
+      VerifyEmailIdentity: EmailAddress
+      VerifyEmailAddress: EmailAddress
+      DeleteIdentity: Identity
+      SendEmail: Source
+      SendRawEmail: Source
+      SendTemplatedEmail: Source
+      SendBulkTemplatedEmail: Source
+      SendCustomVerificationEmail: EmailAddress
   cronusPolicy:
     project_scope: project_id:%(project_id)s and (role:email_admin or role:email_user or role:cloud_email_admin)
     domain_scope: domain_id:%(target.project.domain.id)s and (role:email_admin or role:email_user or role:cloud_email_admin)
@@ -281,7 +307,7 @@ config:
       - Message.Body.Text.Data
       - Message.Body.Html.Charset
       - Message.Body.Html.Data
-      - RawMessage
+      - RawMessage.Data
     jsonKeysToMask:
       ses:
       - Content
