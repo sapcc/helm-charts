@@ -36,6 +36,17 @@ groups:
     annotations:
       description: grafana - https://grafana.{{ $labels.region }}.cloud.sap/d/cronushealth/cronushealth?orgId=1 , slack-cronus-dev - https://convergedcloud.slack.com/archives/G01SLHXERL5
       summary: Cronus simulator, that helps to monitor sending emails, malfunction for more than 15 minutes.
+  - alert: CronusProductionReadyFails24h
+    expr: (sum (cronus_updater_production_ready offset 1d) by (project_id)) + (sum (cronus_updater_production_ready) by (project_id)) == 0
+    for: 60m
+    labels:
+      meta: Cronus Activation to Production Fails For More Than 24H
+      service: cronus
+      severity: warning
+      tier: os 
+    annotations:
+      description: Cronus Activation to Production Fails For More Than 24H
+      summary: Cronus Activation to Production Fails For More Than 24H
 - name: NebulaAlerts
   rules:
   - alert: NebulaReconcileAccount
