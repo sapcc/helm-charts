@@ -81,3 +81,27 @@ mem_queue_size = 1000
 [oslo_policy]
 
 policy_file = /etc/barbican/policy.yaml
+
+{{- if .Values.hsm.multistore.enabled }}
+[secretstore]
+enable_multiple_secret_stores = True
+stores_lookup_suffix = software, pkcs11
+namespace = barbican.secretstore.plugin
+
+[secretstore:software]
+secret_store_plugin = store_crypto
+crypto_plugin = simple_crypto
+
+[secretstore:pkcs11]
+secret_store_plugin = store_crypto
+crypto_plugin = p11_crypto
+global_default = True
+
+[p11_crypto_plugin]
+library_path = {{ .Values.lunaclient.conn.library_path }}
+login = {{ .Values.lunaclient.conn.login }}
+mkek_label = {{ .Values.lunaclient.conn.mkek_label }}
+mkek_length = {{ .Values.lunaclient.conn.mkek_length }}
+hmac_label = {{ .Values.lunaclient.conn.hmac_label }}
+slot_id = {{ .Values.lunaclient.conn.slot_id }}
+{{- end }}
