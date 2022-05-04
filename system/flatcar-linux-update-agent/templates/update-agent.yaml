@@ -18,7 +18,7 @@ spec:
       - operator: "Exists"
       containers:
       - name: update-agent
-        image: "{{ .Values.image.registry }}/{{ .Values.image.repository }}:{{ required ".Values.image.tag is missing" .Values.image.tag }}"
+        image: "{{required ".Values.global.registry is missing" .Values.global.registry }}/{{ .Values.image.repository }}:{{ required ".Values.image.tag is missing" .Values.image.tag }}"
         imagePullPolicy: {{ .Values.image.pullPolicy }}
         resources:
           limits:
@@ -48,10 +48,6 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: metadata.namespace
-        # CCloud has patched versions of FLUO which allow to sleep for some seconds before rebooting
-        # so volumes can detach.
-        - name: REBOOT_SLEEP
-          value: "{{ .Values.rebootSleep }}"
         # Update agent must run with a UID that is allowed to reboot nodes via logind using the D-Bus interface.
         # FLUO Docker image runs as 65534 (nobody) by default, so we need to escalate the privileges here,
         # as we cannot ensure, that host configuration of PolicyKit and D-Bus allows UID 65534 to execute that.

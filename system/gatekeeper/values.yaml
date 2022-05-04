@@ -7,10 +7,11 @@ owner-info:
   helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/system/gatekeeper
 
 # documentation for this section: <https://github.com/open-policy-agent/gatekeeper/tree/master/charts/gatekeeper>
-gatekeeper-upstream:
+gatekeeper-upstream: &upstream-config
   createNamespace: false
   constraintViolationsLimit: 250
   logDenies: true
+  disabledBuiltins: [] # do not disable `http.send`
 
   # We only use Gatekeeper for auditing, not as a validating webhook. Therefore
   # we don't need multiple replicas for the controller manager: It only needs
@@ -34,11 +35,6 @@ gatekeeper-upstream:
         cpu: 500m
         memory: 256Mi
 
-  postInstall:
-    labelNamespace:
-      image:
-        repository: keppel.eu-de-1.cloud.sap/ccloud-dockerhub-mirror/line/kubectl-kustomize
-
   podLabels:
     alert-tier: k8s
   podAnnotations:
@@ -52,18 +48,19 @@ cluster_layer: null
 # Must be provided via --set-string; e.g. "baremetal" or "scaleout".
 cluster_type: null
 
-helm_manifest_parser:
-  image_tag: 8816460a9f # Git commit for <https://github.com/sapcc/gatekeeper-addons>
-
-doop_agent:
-  enabled: true
-  image_tag: 8816460a9f # Git commit for <https://github.com/sapcc/gatekeeper-addons>
-
-doop_image_checker:
-  image_tag: 412838a036 # Git commit for <https://github.com/sapcc/gatekeeper-addons>
+gatekeeper_addons:
+  image_tag: null # Must be provided via --set-string.
 
 # NOTE: This section is shared with the `system/doop-central` chart.
 doop:
   # values with default value null must be provided by values.yaml
   swift_region: null
   swift_password: null
+
+# deployments need to set exactly one of these to true to pick which Gatekeeper version to use
+use_latest_gatekeeper: false
+use_legacy_gatekeeper: false
+gatekeeper-upstream-legacy:
+  nameOverride: gatekeeper-upstream
+  <<: *upstream-config
+# ^ TODO: remove this section after the remaining clusters were upgraded from k8s 1.15 to >=1.20

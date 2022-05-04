@@ -11,6 +11,7 @@ backup:
   backup_dir: {{ .common.backup_dir }}
   enable_init_restore: false
   disable_binlog_purge_on_rotate: true
+  binlog_max_reconnect_attempts: {{ .common.binlog_max_reconnect_attempts }}
 database:
   type: "mariadb"
   user: root
@@ -36,4 +37,5 @@ storages:
         {{- range $db := .backup.databases }}
           - "{{$db}}"
         {{- end }}
+        dump_filter_buffer_size_mb: {{ .common.dump_filter_buffer_size_mb }}
 {{- end -}}

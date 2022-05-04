@@ -2,7 +2,7 @@
   rules:
 {{- range $backup := .Values.backup_v2.backups }}
   - alert: {{$backup.name}}ReplicationErrorsHigh
-    expr: increase(maria_backup_errors{app_kubernetes_io_instance=~"mariadb-replication-{{$backup.name}}-metis"}[15m]) > 6
+    expr: increase(maria_backup_errors{app_kubernetes_io_instance=~"mariadb-replication-{{$backup.name}}-metis"}[15m]) > 2
     for: 15m
     labels:
       context: replicationerrors

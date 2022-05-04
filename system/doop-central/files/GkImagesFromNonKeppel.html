@@ -1,0 +1,26 @@
+<p>This check finds containers that do not pull their image from Keppel.</p>
+<dl>
+  <dt>Why is this a problem?</dt>
+  <dd>
+    Docker Hub has rather severe rate limits for image pulls. If we need to pull several
+    images at once, e.g. to recover from a region-wide outage, the recovery may be
+    significantly slowed down by the rate limiting.
+  </dd>
+  <dt>How to fix?</dt>
+  <dd>
+    We have set up a Docker Hub mirror at <code>keppel.$REGION.cloud.sap/ccloud-dockerhub-mirror</code>.
+    The regional mirror is defined in globals.yaml and can be referenced as <code>$.Values.global.dockerHubMirror</code>
+    in most Helm charts
+    (<a href="https://github.com/sapcc/helm-charts/blob/409aa9940ecb600dafc0f9a20c973566af9eaf1f/openstack/backup-replication/templates/statsd-deployment.yaml#L29">example</a>).
+    <br><br>
+    If a particular image has not been mirrored yet, you need to <code>docker pull</code>
+    it once from eu-de-1 with your logged-in Docker client. Afterwards, the image can be
+    pulled from all regions without login.
+  </dd>
+  <dt>What about circular dependencies?</dt>
+  <dd>
+    If your pod pulls an image from Keppel, but Keppel needs that pod up and running to
+    work, that's probably not a good idea. Get in touch with Stefan Majewsky and we'll
+    figure out how to proceed.
+  </dd>
+</dl>

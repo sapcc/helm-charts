@@ -8,21 +8,21 @@ kind: Deployment
 apiVersion: apps/v1
 
 metadata:
-  name: cloudprober-{{$prober.dc}}
+  name: cloudprober-{{ printf "%s" $prober.dc | replace "-" "" }}
   labels:
-    app: cloudprober-{{$prober.dc}}
+    app: cloudprober-{{ printf "%s" $prober.dc | replace "-" "" }}
 
 spec:
   revisionHistoryLimit: {{ $values.revisionHistoryLimit }}
   replicas: {{ $values.replicaCount }}
   selector:
     matchLabels:
-      name: cloudprober-{{$prober.dc}}
+      name: cloudprober-{{ printf "%s" $prober.dc | replace "-" "" }}
   template:
     metadata:
       labels:
-        name: cloudprober-{{$prober.dc}}
-        app: cloudprober-{{$prober.dc}}
+        name: cloudprober-{{ printf "%s" $prober.dc | replace "-" "" }}
+        app: cloudprober-{{ printf "%s" $prober.dc | replace "-" "" }}
       annotations:
         checksum/config: {{ include (print $.Template.BasePath "/config.yaml") $ | sha256sum }}
     spec:
@@ -31,12 +31,11 @@ spec:
       volumes:
         - name: cloudprober
           configMap:
-            name: cloudprober-{{$prober.dc}}
+            name: cloudprober-{{ printf "%s" $prober.dc | replace "-" "" }}
 
       containers:
         - name: prober
-          #image: {{$values.global.dockerHubMirror}}/{{ required ".Values.image.name variable missing" $values.image.name }}:{{ required ".Values.image.tag variable missing" $values.image.tag }}
-          image: {{$values.global.registry}}/{{ required ".Values.image.name variable missing" $values.image.name }}:{{ required ".Values.image.tag variable missing" $values.image.tag }}
+          image: {{$values.global.dockerHubMirror}}/{{ required ".Values.image.name variable missing" $values.image.name }}:{{ required ".Values.image.tag variable missing" $values.image.tag }}
           imagePullPolicy: {{ required ".Values.image.pullPolicy variable missing" $values.image.pullPolicy }}
           securityContext:
             capabilities:

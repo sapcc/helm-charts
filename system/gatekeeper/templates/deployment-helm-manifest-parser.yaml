@@ -26,8 +26,10 @@ spec:
       enableServiceLinks: false
       containers:
         - name: parser
-          image: {{.Values.global.registry | required ".Values.global.registry"}}/helm-manifest-parser:{{.Values.helm_manifest_parser.image_tag}}
+          image: {{.Values.global.registry | required ".Values.global.registry"}}/gatekeeper-addons:{{.Values.gatekeeper_addons.image_tag | required ".Values.gatekeeper_addons.image_tag not found"}}
           imagePullPolicy: IfNotPresent
+          command: [ helm-manifest-parser ]
+          args: [ ':8080' ]
           env:
             - name: LOG_ALL_REQUESTS
               value: 'false'

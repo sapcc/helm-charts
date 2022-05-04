@@ -3,11 +3,11 @@ groups:
   rules:
   - alert: HostWithRunningVMsNotResponding
     expr: |
-      avg_over_time(vrops_hostsystem_runtime_connectionstate{state="notResponding"}[15m])
-      and on (hostsystem) avg_over_time(vrops_hostsystem_runtime_powerstate{state="Unknown"}[15m])
-      and on (hostsystem) avg_over_time(vrops_hostsystem_runtime_maintenancestate{state="notInMaintenance"}[15m])
+      avg_over_time(vrops_hostsystem_runtime_connectionstate{state="notResponding"}[5m])
+      and on (hostsystem) avg_over_time(vrops_hostsystem_runtime_powerstate{state="Unknown"}[5m])
+      and on (hostsystem) vrops_hostsystem_runtime_maintenancestate{state="notInMaintenance"}
       and on (hostsystem) count(vrops_virtualmachine_runtime_powerstate{virtualmachine!~"vCLS.*", state="Powered On"}) by (hostsystem) > 0
-    for: 10m
+    for: 5m
     labels:
       severity: critical
       tier: vmware

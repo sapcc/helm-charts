@@ -44,10 +44,10 @@ default_soa_minimum = 300
 
 # Setting default quotas
 # most default quotas are 0 to enforce usage of the Resource Management tool in Elektra
-quota_zones = 0
-quota_zone_recordsets = 0
-quota_zone_records = 0
-quota_recordset_records = 20
+quota_zones = {{ .Values.quota_zones | default 0 }}
+quota_zone_recordsets = {{ .Values.quota_zone_recordsets | default 0 }}
+quota_zone_records = {{ .Values.quota_zone_records | default 0 }}
+quota_recordset_records = {{ .Values.quota_recordset_records | default 20 }}
 quota_api_export_size = {{ .Values.quota_api_export_size | default 1000 }}
 
 rpc_response_timeout = {{ .Values.rpc_response_timeout | default .Values.global.rpc_response_timeout | default 300 }}
@@ -62,7 +62,7 @@ max_overflow = {{ .Values.max_overflow | default .Values.global.max_overflow | d
 transport_url = rabbit://{{ .Values.rabbitmq.users.default.user | default "rabbitmq" }}:{{ .Values.rabbitmq.users.default.password }}@{{ include "rabbitmq_host" . }}:{{ .Values.rabbitmq.port | default 5672 }}/
 
 [oslo_policy]
-policy_file = policy.json
+policy_file = policy.yaml
 
 [oslo_messaging_notifications]
 driver = noop

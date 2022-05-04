@@ -4,37 +4,46 @@
 {{- range $i, $prober := .Values.probers }}
 {{ if ne $i 0 }}---{{ end }}
 
-apiVersion: networking.k8s.io/v1beta1
+apiVersion: networking.k8s.io/v1
 kind: Ingress
 
 metadata:
-  name: cloudprober-{{$prober.dc}}
+  name: cloudprober-{{ printf "%s" $prober.dc | replace "-" "" }}
   labels:
-    app: cloudprober-{{$prober.dc}}
+    app: cloudprober-{{ printf "%s" $prober.dc | replace "-" "" }}
   annotations:
     kubernetes.io/tls-acme: {{ default false $values.ingress.tls | quote }}
     disco: {{ default false $values.ingress.disco | quote }}
 
 spec:
   tls:
-    - secretName: cloudprober-{{ $prober.dc }}
-      hosts: [{{ $values.ingress.hostName_prefix }}-{{ $prober.dc }}.{{ $values.global.region }}.{{ $values.global.tld }}]
+    - secretName: cloudprober-{{ printf "%s" $prober.dc | replace "-" "" }}
+      hosts: [{{ $values.ingress.hostName_prefix }}-{{ printf "%s" $prober.dc | replace "-" ""}}.{{ $values.global.region }}.{{ $values.global.tld }}]
   rules:
-    - host: {{ $values.ingress.hostName_prefix }}-{{ $prober.dc }}.{{ $values.global.region }}.{{ $values.global.tld }}
+    - host: {{ $values.ingress.hostName_prefix }}-{{ printf "%s" $prober.dc | replace "-" ""}}.{{ $values.global.region }}.{{ $values.global.tld }}
       http:
         paths:
         - path: /metrics
+          pathType: Prefix
           backend:
-            serviceName: cloudprober-{{ $prober.dc }}
-            servicePort: metrics
+            service:
+              name: cloudprober-{{ printf "%s" $prober.dc | replace "-" "" }}
+              port:
+                name: metrics
         - path: /config
+          pathType: Prefix
           backend:
-            serviceName: cloudprober-{{ $prober.dc }}
-            servicePort: metrics
+            service:
+              name: cloudprober-{{ printf "%s" $prober.dc | replace "-" "" }}
+              port:
+                name: metrics
         - path: /
+          pathType: Prefix
           backend:
-            serviceName: cloudprober-{{ $prober.dc }}
-            servicePort: web
+            service:
+              name: cloudprober-{{ printf "%s" $prober.dc | replace "-" "" }}
+              port:
+                name: web
 ---
 {{- end }}
 {{- end }}

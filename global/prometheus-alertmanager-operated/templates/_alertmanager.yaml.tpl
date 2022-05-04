@@ -123,6 +123,14 @@ route:
       tier: test-tier
       region: area51
 
+  - receiver: slack_by_k8s_service
+    continue: true
+    match_re:
+      tier: k8s
+      severity: info|warning|critical
+      service: gatekeeper
+      region: qa-de-1|ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|ap-sa-2|eu-de-1|eu-de-2|eu-nl-1|eu-ru-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3
+
   - receiver: slack_by_os_service
     continue: true
     match_re:
@@ -638,6 +646,19 @@ receivers:
         pretext: {{"'{{template \"slack.sapcc.pretext\" . }}'"}}
         icon_emoji: {{"'{{template \"slack.sapcc.iconemoji\" . }}'"}}
         callback_id: "alertmanager"
+        color: {{`'{{template "slack.sapcc.color" . }}'`}}
+        send_resolved: true
+
+  - name: slack_by_k8s_service
+    slack_configs:
+      - channel: '#cc-k8s-{{"{{ .CommonLabels.service }}"}}'
+        api_url: {{ required ".Values.slack.webhookURL undefined" .Values.slack.webhookURL | quote }}
+        username: "Pulsar"
+        title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
+        title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
+        text: {{"'{{template \"slack.sapcc.text\" . }}'"}}
+        pretext: {{"'{{template \"slack.sapcc.pretext\" . }}'"}}
+        icon_emoji: {{"'{{template \"slack.sapcc.iconemoji\" . }}'"}}
         color: {{`'{{template "slack.sapcc.color" . }}'`}}
         send_resolved: true
 

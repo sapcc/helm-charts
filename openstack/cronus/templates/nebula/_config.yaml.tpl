@@ -45,17 +45,6 @@ nebula:
 {{- range $v := .Values.config.intSMTP.owners }}
       - {{ $v }}
 {{- end }}
-  jira:
-    endpoint: {{ .Values.config.jira.endpoint }}
-    username: {{ .Values.config.jira.username }}
-    password: {{ .Values.config.jira.password }}
-    serviceDeskID: {{ .Values.config.jira.serviceDeskID }}
-    requestTypeID: {{ .Values.config.jira.requestTypeID }}
-    customFieldID: {{ .Values.config.jira.customFieldID }}
-    ticketSummaryTemplate: |
-{{ .Values.config.jira.ticketSummaryTemplate | indent 6 }}
-    ticketDescriptionTemplate: |
-{{ .Values.config.jira.ticketDescriptionTemplate | indent 6 }}
   group: {{ .Values.config.group }}
   technicalResponsible: {{ .Values.config.technicalResponsible }}
   aws:

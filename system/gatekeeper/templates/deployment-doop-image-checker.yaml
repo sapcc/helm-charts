@@ -26,8 +26,10 @@ spec:
       enableServiceLinks: false
       containers:
         - name: parser
-          image: {{.Values.global.registry | required ".Values.global.registry"}}/doop-image-checker:{{.Values.doop_image_checker.image_tag}}
+          image: {{.Values.global.registry | required ".Values.global.registry"}}/gatekeeper-addons:{{.Values.gatekeeper_addons.image_tag | required ".Values.gatekeeper_addons.image_tag not found"}}
           imagePullPolicy: IfNotPresent
+          command: [ doop-image-checker ]
+          args: [ ':8080' ]
           env:
             - name: LOG_ALL_REQUESTS
               value: 'false'
@@ -56,4 +58,3 @@ spec:
               memory: "64Mi"
           securityContext:
             allowPrivilegeEscalation: false
-

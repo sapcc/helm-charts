@@ -88,7 +88,7 @@ groups:
       summary: High number of Go routines
 
   - alert: KubeletPredictHighNumberOfGoRoutines
-    expr: abs(predict_linear(go_goroutines{job="kubernetes-kubelet"}[1h], 2*3600)) > 10000
+    expr: abs(predict_linear(go_goroutines{job="kubernetes-kubelet"}[1h], 2*3600)) > {{ default "10000" .Values.kubelet.goroutinesPredictHighCount }}
     for: 5m
     labels:
       tier: {{ required ".Values.tier missing" .Values.tier }}

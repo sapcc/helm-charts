@@ -315,3 +315,26 @@ server {{ printf "%9s" $short_name._0 }} {{ $upstream.target }}:{{ default 8080 
 server swift-svc swift-proxy-internal-{{ .Values.cluster_name }}:8080
 {{- end }}
 {{- end -}}
+
+{{- /**********************************************************************************/ -}}
+{{- /* Generate a VerticalPodAutoscaler object that ensures that our daemonsets never get automated CPU/memory requests. */ -}}
+{{- define "swift_vpa_no_autoupdates" -}}
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: {{ . }}
+
+spec:
+  targetRef:
+    apiVersion: v1
+    kind: DaemonSet
+    name: {{ . }}
+  resourcePolicy:
+    containerPolicies:
+    - containerName: '*'
+      controlledResources:
+      - cpu
+      - memory
+  updatePolicy:
+    updateMode: 'Off'
+{{- end -}}

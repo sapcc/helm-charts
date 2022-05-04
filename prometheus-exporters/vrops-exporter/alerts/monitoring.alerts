@@ -77,3 +77,36 @@ groups:
     annotations:
       description: "vROPs vCenter adapter is not receiving data for some objects. ({{ $labels.vcenter }}). {{ $labels.recommendation_2 }}"
       summary: "vROPs vCenter adapter is not receiving data for some objects. ({{ $labels.vcenter }}). {{ $labels.recommendation_2 }}"
+
+  - alert: VMRightsizingDataMissing
+    expr: |
+      absent({__name__="vrops_virtualmachine_number_vcpus_total", vccluster=~"production.*"}) or
+      absent({__name__="vrops_virtualmachine_oversized_vcpus", vccluster=~"production.*"}) or
+      absent({__name__="vrops_virtualmachine_config_hardware_memory_kilobytes", vccluster=~"production.*"}) or
+      absent({__name__="vrops_virtualmachine_oversized_memory", vccluster=~"production.*"})
+    for: 30m
+    labels:
+      severity: warning
+      tier: monitor
+      service: compute
+      meta: "Elektra dashboard: vROPs data is missing to serve customers with VM rightsizing recommendations"
+      no_alert_on_absence: "true"
+    annotations:
+      description: "Elektra dashboard: vROPs data is missing to serve customers with VM rightsizing recommendations"
+      summary: "Elektra dashboard: vROPs data is missing to serve customers with VM rightsizing recommendations"
+
+  - alert: VMToolsDataMissing
+    expr: |
+      absent({__name__="vrops_virtualmachine_guest_tools_target_version_info"}) or
+      absent({__name__="vrops_virtualmachine_guest_tools_version", vccluster=~"production.*"}) or
+      absent({__name__="vrops_virtualmachine_runtime_powerstate", vccluster=~"production.*"})
+    for: 30m
+    labels:
+      severity: warning
+      tier: monitor
+      service: compute
+      meta: "Elektra dashboard: vROPs data is missing to serve customers with VM tools upgrade recommendations"
+      no_alert_on_absence: "true"
+    annotations:
+      description: "Elektra dashboard: vROPs data is missing to serve customers with VM tools upgrade recommendations"
+      summary: "Elektra dashboard: vROPs data is missing to serve customers with VM tools upgrade recommendations"

@@ -31,3 +31,11 @@ spec:
       metricRelabelings:
         - regex: "pod|app_kubernetes_io_managed_by|container|cluster_type|cluster|pod_template_hash"
           action: labeldrop
+        - sourceLabels: [__name__, failed]
+          regex: '^elasticsearch_rabbitmq_.+;([a-z]+)-(.*)'
+          replacement: '$1'
+          targetLabel: service
+        - sourceLabels: [__name__, failed]
+          regex: '^elasticsearch_dbconnection_.+;([a-z]+)-(.*)'
+          replacement: '$1'
+          targetLabel: service

@@ -1,0 +1,58 @@
+groups:
+- name: snmp-hsm.alerts
+  rules:
+  - alert: hsmPartitionStorageAvailibilityLessThan5Percentage
+    expr: snmp_hsm_hsmPartitionStorageAvailableBytes < 5000
+    for: 15m
+    labels:
+      severity: info
+      service: barbican
+      context: hsm
+      meta: "Partition {{ $labels.hsmPartitionSerialNumber }} has less than 5% storage availability"
+      dashboard: hsm
+      no_alert_on_absence: "true"
+    annotations:
+      description: "Partition {{ $labels.hsmPartitionSerialNumber }} in {{ $labels.devicename }} has {{ $value }}kb storage availability"
+      summary: "Partition {{ $labels.hsmPartitionSerialNumber }} has less than 5% storage availability"
+
+  - alert: hsmAribaClientsMoreThan10
+    expr: sum(snmp_hsm_hsmClientName{hsmClientName=~"ariba.+"}) by (devicename) >= 10
+    for: 15m
+    labels:
+      severity: info
+      service: barbican
+      context: hsm
+      meta: "HSM Client License in {{ $labels.devicename }} is more than 10"
+      dashboard: hsm
+      no_alert_on_absence: "true"
+    annotations:
+      description: "HSM Client License in {{ $labels.devicename }} is more than 10"
+      summary: "HSM Client License in {{ $labels.devicename }} is more than 10"
+
+  - alert: hsmOperationalErrors
+    expr: sum(rate(snmp_hsm_hsmOperationErrors[5m])) by (devicename) > 0
+    for: 15m
+    labels:
+      severity: info
+      service: barbican
+      context: hsm
+      meta: "HSM Operational Errors in {{ $labels.devicename }}"
+      dashboard: hsm
+      no_alert_on_absence: "true"
+    annotations:
+      description: "HSM Operational Errors in {{ $labels.devicename }}"
+      summary: "HSM Operational Errors in {{ $labels.devicename }}"
+
+  - alert: hsmSensorTemperatureIsCritical
+    expr: sum(snmp_hsm_lmTempSensorsValue) by(devicename, lmTempSensorsDevice) > 34000
+    for: 15m
+    labels:
+      severity: info
+      service: barbican
+      context: hsm
+      meta: "HSM Sensor {{ $labels.lmTempSensorsDevice }} in {{ $labels.devicename }} Temperature is Critical"
+      dashboard: hsm
+      no_alert_on_absence: "true"
+    annotations:
+      description: "HSM Sensor {{ $labels.lmTempSensorsDevice }} in {{ $labels.devicename }} Temperature is {{ $value }}"
+      summary: "HSM Sensor {{ $labels.lmTempSensorsDevice }} in {{ $labels.devicename }} Temperature is {{ $value }}"
