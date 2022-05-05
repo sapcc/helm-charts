@@ -27,7 +27,7 @@ containers:
     exec:
       command: ["bird-command", "--liveness"]
     initialDelaySeconds: 5
-    periodSeconds: 5
+    periodSeconds: 5  
 - name: {{ $deployment_name }}-exporter
   image: keppel.{{ $values.registry }}.cloud.sap/{{required "bird_exporter_image must be set" $values.bird_exporter_image}}
   args: ["-format.new=true", "-bird.v2", "-bird.socket=/var/run/bird/bird.ctl", "-proto.ospf=false", "-proto.direct=false"]
@@ -65,5 +65,7 @@ volumes:
     configMap:
       name: cfg-{{ $values.region }}-pxrs-{{ $domain_number }}-s{{ $service_number }}
   - name: bird-socket
-    emptyDir: {}
+    persistentVolumeClaim: 
+      claimName: {{ $deployment_name }}
+
 {{- end }}
