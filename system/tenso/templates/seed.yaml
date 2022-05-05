@@ -1,0 +1,27 @@
+apiVersion: "openstack.stable.sap.cc/v1"
+kind: OpenstackSeed
+metadata:
+  name: tenso-seed
+
+spec:
+  requires:
+    - {{ .Values.global.keystoneNamespace }}/keystone-seed
+    - monsoon3/domain-default-seed
+    - monsoon3/domain-ccadmin-seed
+    - swift/swift-seed
+
+  domains:
+    - name: Default
+      users:
+        - name: tenso
+          description: Tenso Service
+          password: '{{.Values.tenso.service_password}}'
+
+    - name: ccadmin
+      projects:
+        - name: master
+          role_assignments:
+            - user: tenso@Default
+              role: service       # to validate users' Keysotne tokens
+            - user: tenso@Default
+              role: swiftoperator # to persist events into Swift
