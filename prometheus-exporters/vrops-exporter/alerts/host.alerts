@@ -296,3 +296,16 @@ groups:
     annotations:
       description: "`{{ $labels.hostsystem }}` root filesystem not present through CMMDS or is not responsive. ({{ $labels.vcenter }})"
       summary: "`{{ $labels.hostsystem }}` root filesystem not present through CMMDS or is not responsive. ({{ $labels.vcenter }})"
+
+  - alert: HostStoragePathsDegraded
+    expr: vrops_hostsystem_storage_number_of_path - vrops_hostsystem_storage_number_of_active_path > 4
+    labels:
+      severity: info
+      tier: vmware
+      service: compute
+      context: "{{ $labels.hostsystem }} storage paths"
+      meta: "Active storage paths for `{{ $labels.hostsystem }}` degraded. ({{ $labels.vcenter }})"
+      no_alert_on_absence: "true"
+    annotations:
+      description: "Active storage paths for `{{ $labels.hostsystem }}` degraded. ({{ $labels.vcenter }})"
+      summary: "Active storage paths for `{{ $labels.hostsystem }}` degraded. ({{ $labels.vcenter }})"
