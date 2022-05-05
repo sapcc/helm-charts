@@ -7,11 +7,22 @@ set -o pipefail
 function cleanup_tempest_leftovers() {
   
   echo "Run cleanup"
+  unset OS_PROJECT_DOMAIN_NAME
+  unset OS_PROJECT_NAME
+  unset OS_TENANT_NAME
+  unset OS_USERNAME
+  unset OS_USER_DOMAIN_NAME
+
+  export OS_USERNAME=admin
+  export OS_PROJECT_DOMAIN_NAME=tempest
+  export OS_DOMAIN_NAME=tempest
+  export OS_USER_DOMAIN_NAME=tempest
 
   for service in $(openstack service list | grep -E 'tempest-service' | awk '{ print $2 }'); do openstack service delete ${service}; done
   for region in $(openstack region list | grep -E 'tempest-region' | awk '{ print $2 }'); do openstack region delete ${region}; done
-  for project in $(openstack project list --domain tempest | grep -E 'tempest-Domains' | awk '{ print $2 }'); do openstack project delete ${project}; done
   for domain in $(openstack domain list | grep -E 'tempest-test_domain' | awk '{ print $2 }'); do openstack domain set --disable ${domain}; openstack domain delete ${domain}; done
+  for project in $(openstack project list --domain tempest | grep -oP "tempest-\w*[A-Z]+\S+"); do openstack --os-username=admin --os-user-domain-name=tempest --os-domain-name=tempest project delete ${project}; done
+  for user in $(openstack user list --domain tempest | grep -oP "tempest-\w*[A-Z]+\S+"); do echo "Deleting user ${user}"; openstack --os-username=admin --os-user-domain-name=tempest --os-domain-name=tempest user delete --domain tempest ${user}; done
 
 }
 
