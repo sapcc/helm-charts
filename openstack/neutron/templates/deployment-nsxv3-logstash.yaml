@@ -3,31 +3,28 @@ kind: Deployment
 apiVersion: apps/v1
 
 metadata:
-  name: neutron-logger-logstash
+  name: neutron-nsxv3-logstash
   labels:
     system: openstack
     type: backend
     component: neutron
 spec:
-  replicas: 3
+  replicas: {{ .Values.logger.logstash.replicas | default 3 }}
   revisionHistoryLimit: {{ .Values.pod.lifecycle.upgrades.deployments.revision_history }}
   strategy:
     type: RollingUpdate
-    rollingUpdate:
-      maxUnavailable: 1
-      maxSurge: 0
   selector:
     matchLabels:
-      name: neutron-logger-logstash
+      name: neutron-nsxv3-logstash
   template:
     metadata:
       labels:
-        name: neutron-logger-logstash
+        name: neutron-nsxv3-logstash
       annotations:
-        configmap-logger-hash: {{ include (print .Template.BasePath "/configmap-logger.yaml") . | sha256sum }}
+        configmap-logger-hash: {{ include (print .Template.BasePath "/configmap-nsxv3-logstash.yaml") . | sha256sum }}
     spec:
       containers:
-        - name: logger-logstash
+        - name: neutron-nsxv3-logstash
           image: {{.Values.global.dockerHubMirror}}/library/logstash:{{.Values.imageVersionLogstash | required "Please set neutron.imageVersionLogstash"}}
           env:
           - name: XPACK_MONITORING_ENABLED
@@ -38,17 +35,11 @@ spec:
           - mountPath: /usr/share/logstash/pipeline/logstash.conf
             subPath: pipeline.conf
             name: logger-config
-          - mountPath: /var/run/redis
-            name: logger-redis-socket
       volumes:
         - name: logger-config
           configMap:
-            name: neutron-logger
+            name: neutron-nsxv3-logstash
             items:
-            - key: config
-              path: redis.conf
             - key: pipeline
               path: pipeline.conf
-        - name: logger-redis-socket
-          emptyDir: {}
 {{- end -}}

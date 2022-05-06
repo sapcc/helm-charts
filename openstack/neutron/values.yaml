@@ -156,9 +156,8 @@ imageNameNetworkAgentDHCPInit: alpine
 # imageVersionNetworkAgentL3:
 # imageVersionNetworkAgentOVS:
 # imageVersionIronicAgent:
-imageVersionRedis: 6.0.9-alpine
-imageVersionLogstash: 7.10.1
-imageVersionNSXTNanny: "1.5"
+imageVersionRedis: 7.0.0-alpine
+imageVersionLogstash: 8.2.0
 imageVersionNetworkAgentDHCPInit: 3.8
 
 api:
@@ -532,9 +531,16 @@ logger:
   enabled: false
   logstash: {}
 
-logger-redis:
+nsxv3-redis:
   persistence:
     enabled: false
+  config:
+    # Limit databases to default "0"
+    databases: 1
+    # Cache size
+    maxmemory: 500mb
+    # Clean up by removing random key having an expire set.
+    maxmemory-policy: volatile-random
 
 agent:
   controlplane: true
