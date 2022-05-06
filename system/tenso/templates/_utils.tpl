@@ -39,6 +39,8 @@
   value: "{{ .Release.Name }}-postgresql"
 - name: TENSO_DB_CONNECTION_OPTIONS
   value: 'sslmode=disable'
+- name: TENSO_ROUTES
+  value: 'helm-release-from-concourse.v1 -> helm-release-to-elk.v1'
 - name:  TENSO_WORKER_LISTEN_ADDRESS
   value: ':80'
 {{- end -}}
