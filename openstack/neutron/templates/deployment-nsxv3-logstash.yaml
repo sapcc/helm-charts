@@ -35,6 +35,20 @@ spec:
           - mountPath: /usr/share/logstash/pipeline/logstash.conf
             subPath: pipeline.conf
             name: logger-config
+        {{- if .Values.logger.persistence.enabled }}
+          - name: logstash-data
+            mountPath: /data
+        - name: logrotate
+          image: {{.Values.global.dockerHubMirror}}/blacklabelops/logrotate:1.3
+          env:
+          - name: LOGS_DIRECTORIES
+            value: /data
+          - name: LOGROTATE_SIZE
+            value: 10M
+          volumeMounts:
+          - name: logstash-data
+            mountPath: /data
+        {{- end }}
       volumes:
         - name: logger-config
           configMap:
@@ -42,4 +56,9 @@ spec:
             items:
             - key: pipeline
               path: pipeline.conf
+        {{- if .Values.logger.persistence.enabled }}
+        - name: logstash-data
+          persistentVolumeClaim:
+            claimName: neutron-nsxv3-logstash
+        {{- end }}
 {{- end -}}
