@@ -76,7 +76,7 @@ spec:
             - -c
             - exec pg_isready --host $POD_IP
           initialDelaySeconds: 120
-          timeoutSeconds: 3
+          timeoutSeconds: {{ .Values.probe_timeout_secs }}
           failureThreshold: 6
         # We use the POD_IP to not have the pod become ready during the inital database setup
         # where the docker image briefly starts the db  for creating the user,
@@ -88,7 +88,7 @@ spec:
             - -c
             - exec pg_isready --host $POD_IP
           initialDelaySeconds: 5
-          timeoutSeconds: 3
+          timeoutSeconds: {{ .Values.probe_timeout_secs }}
         resources:
 {{ toYaml (required "missing .resources" .Values.resources) | indent 10 }}
         volumeMounts:
