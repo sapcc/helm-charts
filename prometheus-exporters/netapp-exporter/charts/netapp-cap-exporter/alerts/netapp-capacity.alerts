@@ -99,6 +99,34 @@ groups:
           description: '{{ $labels.availability_zone }} has less than 5% capacity for new shares'
           summary: '{{ $labels.availability_zone }} usage above 45%'
 
+      - alert: ManilaShareInodeUsageHigh
+        expr: max_over_time(netapp_volume_inode_files_used_percentage{app="netapp-capacity-exporter-manila"}[1h]) > 0.85
+        for: 1h
+        labels:
+            severity: info
+            tier: os
+            service: manila
+            context: netapp-volume-inode-usage
+            support_component: manila_netapp
+            playbook: 'docs/support/playbook/manila/share_inode_usage'
+        annotations:
+            summary: 'inode usage above 85%'
+            description: 'inode usage of Manila share {{ $labels.share_id }} is {{ $value }}'
+
+      - alert: ManilaShareInodeUsageVeryHigh
+        expr: max_over_time(netapp_volume_inode_files_used_percentage{app="netapp-capacity-exporter-manila"}[1h]) > 0.95
+        for: 1h
+        labels:
+            severity: warning
+            tier: os
+            service: manila
+            context: netapp-volume-inode-usage
+            support_component: manila_netapp
+            playbook: 'docs/support/playbook/manila/share_inode_usage'
+        annotations:
+            summary: 'inode usage above 95%'
+            description: 'inode usage of Manila share {{ $labels.share_id }} is {{ $value }}'
+
       - alert: CinderStorageAggregateHighUsage
         expr: netapp_aggregate_used_percentage{app=~".*cinder",availability_zone!~"eu-nl-1a|eu-nl-1b|eu-de-1a|eu-de-1d|eu-de-2a|na-us-3a"} > 80 or netapp_aggregate_used_percentage{app=~".*cinder",availability_zone=~"eu-de-1a|eu-de-1d|eu-nl-1a|eu-nl-1b|na-us-3a"} > 88 or netapp_aggregate_used_percentage{app=~".*cinder",availability_zone=~"eu-de-2a"} > 84
         labels:

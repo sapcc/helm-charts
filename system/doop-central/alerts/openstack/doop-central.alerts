@@ -1,0 +1,24 @@
+# vim: set ft=yaml:
+
+groups:
+  - name: doop-central.alerts
+    rules:
+      - alert: GatekeeperOutdatedAuditResults
+        # In some cases when audits are not being conducted, we are seeing a metric value of 0 here, so alert on that as
+        # well.  This will not produce false positives since the age will always be at least a few seconds for
+        # successful audits, since it takes a bit of time for the results to pass from gatekeeper-audit into doop-agent
+        # into doop-central.
+        expr: max by (cluster) (doop_oldest_audit_age_seconds) > 3600 or max by (cluster) (doop_oldest_audit_age_seconds) == 0
+        for: 5m
+        labels:
+          context: gatekeeperaudit
+          tier: k8s
+          service: gatekeeper
+          severity: info
+          meta: "Outdated audit results for cluster {{ $labels.cluster }}"
+        annotations:
+          summary: Gatekeeper audit results are outdated
+          description: |
+            The gatekeeper-audit instance in cluster {{ $labels.cluster }} is not
+            publishing any new audit results. Please check the logs of the
+            gatekeeper-audit pod, it's probably getting stuck on an error.

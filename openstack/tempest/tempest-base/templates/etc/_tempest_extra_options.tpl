@@ -51,7 +51,7 @@ project_network_cidr = 10.199.0.0/16
 public_network_id = {{ .Values.tempest_common.public_network_id }}
 endpoint_type = internal
 shared_physical_network= {{ .Values.tempest_common.shared_physical_network | default true }}
-floating_network_name = FloatingIP-sap-monsoon3-01-03
+floating_network_name = FloatingIP-external-monsoon3-01
 
 [network-feature-enabled]
 ipv6 = False
@@ -76,15 +76,16 @@ max_microversion = latest
 fixed_network_name = {{ (index .Values (print .Chart.Name | replace "-" "_")).tempest.fixed_network_name }}
 
 [compute-feature-enabled]
-resize = true
-cold_migration = false
-live_migration = false
-live_migrate_back_and_forth = false
-vnc_console = true
+resize = True
+unified_limits = False
+cold_migration = False
+live_migration = False
+live_migrate_back_and_forth = False
+vnc_console = False
 vnc_server_header = WebSockify
-serial_console = true
-spice_console = true
-attach_encrypted_volume = false
+serial_console = False
+spice_console = False
+attach_encrypted_volume = False
 
 [share]
 share_network_id = {{ (index .Values (print .Chart.Name | replace "-" "_")).tempest.share_network_id }}
@@ -108,6 +109,7 @@ region = {{ .Values.global.region }}
 
 [validation]
 image_ssh_user = ccloud
+ssh_key_type = rsa
 
 [volume]
 catalog_type = volumev3

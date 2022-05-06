@@ -1,33 +1,120 @@
-openstack_master:
-  clusterName: "opensearch-logs"
+qalogs:
+  enabled: false
+persistence:
+  image: "docker-library/busybox"
+  image:
+    tag: "1.3.1"
+  config:
+    opensearch.yml: |
+      cluster.name: opensearch-logs
+      # Bind to all interfaces because we don't know what IP address Docker will assign to us.
+      network.host: 0.0.0.0
+      # # minimum_master_nodes need to be explicitly set when bound on a public IP
+      # # set to 1 to allow single node clusters
+      # discovery.zen.minimum_master_nodes: 1
+      # Setting network.host to a non-loopback address enables the annoying bootstrap checks. "Single-node" mode disables them again.
+      # discovery.type: single-node
+      # Start OpenSearch Security Demo Configuration
+      # WARNING: revise all the lines below before you go into production
+      plugins:
+        security:
+          ssl:
+            transport:
+              pemcert_filepath: /usr/share/opensearch/config/certs/wildcard-tp-opensearch.pem
+              pemkey_filepath: /usr/share/opensearch/config/certs/wildcard-tp-opensearch.key
+              pemtrustedcas_filepath: /usr/share/opensearch/config/certs/opensearchCA.key
+              enforce_hostname_verification: false
+            http:
+              enabled: false
+          allow_unsafe_democertificates: true
+          allow_default_init_securityindex: true
+          authcz:
+            admin_dn:
+              - CN=OpensearchAdmin
+          audit.type: internal_opensearch
+          enable_snapshot_restore_privilege: true
+          check_snapshot_restore_write_privileges: true
+          restapi:
+            roles_enabled: ["adminrole", "all_access", "security_rest_api_access"]
+          system_indices:
+            enabled: true
+            indices:
+              [
+                ".opendistro-alerting-config",
+                ".opendistro-alerting-alert*",
+                ".opendistro-anomaly-results*",
+                ".opendistro-anomaly-detector*",
+                ".opendistro-anomaly-checkpoints",
+                ".opendistro-anomaly-detection-state",
+                ".opendistro-reports-*",
+                ".opendistro-notifications-*",
+                ".opendistro-notebooks",
+                ".opendistro-asynchronous-search-response*",
+              ]
+
+  securityConfig:
+    config:
+      securityConfigSecret: "security-config"
+
+opensearch_master:
   nodeGroup: "master"
   masterService: "opensearch-logs-master"
   roles:
-   master: "true"
-   ingest: "false"
-   data: "false"
-   remote_cluster_client: "false"
+   - master
   replicas: 3
+  opensearchJavaOpts: "-Dlog4j2.formatMsgNoLookups=true -XX:MaxRAM=5g -XX:MaxGCPauseMillis=5000"
+  persistence:
+    enabled: true
+    enableInitChown: true
+    size: 1Gi
+  secretMounts:
+    - name: opensearch-certificates
+      secretName: opensearch-certs
+      path: /usr/share/opensearch/config/certs/
+      defaultMode: 0644
 
-openstack_client:
-  clusterName: "opensearch-logs"
+opensearch_client:
   nodeGroup: "client"
   masterService: "opensearch-logs-master"
   roles:
-   master: "false"
-   ingest: "false"
-   data: "false"
-   remote_cluster_client: "false"
+   - remote_cluster_client
   replicas: 2
+  opensearchJavaOpts: "-Dlog4j2.formatMsgNoLookups=true -XX:MaxRAM=5g -XX:MaxGCPauseMillis=5000 -Xms1g -Xmx1g"
+  persistence:
+    enabled: false
+    enableInitChown: false
+  service:
+    type: LoadBalancer
+  ingress:
+    enabled: false
 
-
-openstack_data:
-  clusterName: "opensearch-logs"
-  nodeGroup: "client"
+opensearch_data:
+  nodeGroup: "data"
   masterService: "opensearch-logs-master"
   roles:
-   master: "false"
-   ingest: "true"
-   data: "true"
-   remote_cluster_client: "false"
+   - ingest
+   - data
   replicas: 3
+  opensearchJavaOpts: "-Dlog4j2.formatMsgNoLookups=true -XX:MaxRAM=7g -XX:MaxGCPauseMillis=500 -Xms5g -Xmx5g"
+  persistence:
+    enabled: true
+    enableInitChown: true
+    size: 500Gi
+
+
+opensearch_dashboards:
+  serviceAccount:
+    create: true
+    name: "opensearch-logs-dashboards"
+  config:
+    opensearch_dashboards.yml: |
+      server:
+        name: dashboards
+        host: 0.0.0.0
+        ssl:
+          enabled: false
+
+
+  ingress:
+    enabled: false
+ 

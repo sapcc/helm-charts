@@ -10,8 +10,6 @@ metadata:
     heritage: {{ .Release.Service }}
     system: openstack
     component: manila
-    alert-tier: os
-    alert-service: manila
     type: api
 spec:
   replicas: {{ .Values.pod.replicas.api }}
@@ -30,6 +28,8 @@ spec:
     metadata:
       labels:
         name: manila-api
+        alert-tier: os
+        alert-service: manila
 {{ tuple . "manila" "api" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
       annotations:
         configmap-etc-hash: {{ include (print $.Template.BasePath "/etc-configmap.yaml") . | sha256sum }}

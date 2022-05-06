@@ -110,12 +110,40 @@ cronus:
 {{- end }}
 {{- end }}
 {{- end }}
+{{- if .Values.config.blockedDomains }}
   # blocked sender domains
+  # TODO: delete after upgrade
   blockedDomains:
 {{- range $k, $v := .Values.config.blockedDomains }}
     - {{ $v }}
 {{- end }}
     - {{ .Values.config.verifyEmailDomain }}
+{{- end }}
+{{- if .Values.config.requestValidate }}
+  requestValidate:
+    blockedDomains:
+{{- range $k, $v := .Values.config.requestValidate.blockedDomains }}
+      - {{ $v }}
+{{- end }}
+{{- if .Values.config.requestValidate.auditHeaders }}
+    auditHeaders:
+{{- range $k, $v := .Values.config.requestValidate.auditHeaders }}
+      {{ $k }}: {{ $v }}
+{{- end }}
+{{- end }}
+{{- if .Values.config.requestValidate.originatorHeaders }}
+    originatorHeaders:
+{{- range $k, $v := .Values.config.requestValidate.originatorHeaders }}
+      {{ $k }}: {{ $v }}
+{{- end }}
+{{- end }}
+{{- if .Values.config.requestValidate.sesV1CheckKeys }}
+    sesV1CheckKeys:
+{{- range $k, $v := .Values.config.requestValidate.sesV1CheckKeys }}
+      {{ $k }}: {{ $v }}
+{{- end }}
+{{- end }}
+{{- end }}
   debug: {{ .Values.cronus.debug }}
   policy:
 {{- range $key, $value := .Values.config.cronusPolicy }}

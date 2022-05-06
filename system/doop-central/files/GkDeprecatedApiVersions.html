@@ -1,7 +1,10 @@
 <p>This check finds references to several deprecated API versions in Helm manifests.</p>
 <dl>
   <dt>Why is this a problem?</dt>
-  <dd>We cannot upgrade to Kubernetes 1.16 or newer before all such references are removed.</dd>
+  <dd>
+    We need to regularly upgrade Kubernetes to stay within the supported version range, but we can
+    not upgrade when references to old API versions are still around.
+  </dd>
   <dt>How to fix?</dt>
   <dd>
     In your Helm chart templates, replace the deprecated API versions with their newer
@@ -18,12 +21,5 @@
     Note: some clusters are still using k8s v1.15.9 and you might need to add an extra
     check (e.g. <code>{{- if .Capabilities.APIVersions.Has $newer-api-version }}</code>)
     in your helm template in order to stay backwards-compatible.
-  </dd>
-  <dt>There is a violation report for a Helm 2 release, but we have already migrated to Helm 3. What's going on?</dt>
-  <dd>
-    You probably forgot to cleanup your Helm 2 releases after migrating to Helm 3.
-    Double-check with <code>helm3 ls</code> that you are really deploying with Helm 3,
-    then cleanup the old Helm 2 releases manually. You can find them with:
-    <pre><code>kubectl get configmaps -n kube-system -l OWNER=TILLER | grep $RELEASE_NAME</code></pre>
   </dd>
 </dl>

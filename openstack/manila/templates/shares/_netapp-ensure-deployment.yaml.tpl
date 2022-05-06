@@ -8,8 +8,6 @@ metadata:
   labels:
     system: openstack
     component: manila
-    alert-tier: os
-    alert-service: manila
 spec:
   replicas: 1
   revisionHistoryLimit: 2
@@ -25,6 +23,8 @@ spec:
     metadata:
       labels:
         name: manila-share-netapp-{{$share.name}}-ensure
+        alert-tier: os
+        alert-service: manila
       annotations:
         configmap-etc-hash: {{ include (print .Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
         configmap-netapp-hash: {{ list . $share | include "share_netapp_configmap" | sha256sum }}
