@@ -12,4 +12,15 @@
     annotations:
       description: The replication for mariadb-replication-{{$backup.name}}-metis restarts frequently
       summary: Database replication restarting frequently
+  - alert: {{$backup.name}}ReplicationMissing
+    expr: maria_backup_status{kind="full_backup",kubernetes_pod_name=~"mariadb-replication-{{$backup.name}}.*"} == 0
+    for: 30m
+    labels:
+      context: replicationerrors
+      service: "metis"
+      severity: info
+      tier: {{ required "$.Values.backup_v2.alerts.tier missing" $.Values.backup_v2.alerts.tier }}
+    annotations:
+      description: The replication for mariadb-replication-{{$backup.name}}-metis has not completed for >30 minutes
+      summary: Database replication is incomplete
 {{- end }}
