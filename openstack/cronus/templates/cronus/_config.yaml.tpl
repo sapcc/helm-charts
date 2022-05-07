@@ -143,6 +143,15 @@ cronus:
       {{ $k }}: {{ $v }}
 {{- end }}
 {{- end }}
+{{- if .Values.config.requestValidate.sesV2ForbidURLs }}
+    sesV2ForbidURLs:
+{{- range $k, $v := .Values.config.requestValidate.sesV2ForbidURLs }}
+      {{ quote $k }}:
+{{- range $k, $v := $v }}
+        - {{ $v }}
+{{- end }}
+{{- end }}
+{{- end }}
 {{- end }}
   debug: {{ .Values.cronus.debug }}
   policy:
