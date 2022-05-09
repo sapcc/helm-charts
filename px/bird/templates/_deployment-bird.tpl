@@ -71,7 +71,7 @@ containers:
 volumes:
   - name: vol-{{ $deployment_name }}
     configMap:
-      name: cfg-{{ $values.region }}-pxrs-{{ $domain_number }}-s{{ $service_number }}
+      name: cfg-{{ $values.global.region }}-pxrs-{{ $domain_number }}-s{{ $service_number }}
   - name: bird-socket
     emptyDir: {}
 {{- end }}
