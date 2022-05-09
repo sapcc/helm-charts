@@ -128,7 +128,7 @@
 <filter {{ .tag }}*>
   @type parser
   @id {{ .id }}_json_parser
-  key_name {{ .parseKey | default "log" }}
+  key_name log
   <parse>
     @type json
     time_format %Y-%m-%dT%T.%L%Z
@@ -210,7 +210,7 @@
 
 {{- end }}
 
-<filter **>
+<filter kubernetes.**>
   @type record_modifier
   @id remove
     remove_keys message,stream
