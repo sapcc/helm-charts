@@ -128,7 +128,7 @@
 <filter {{ .tag }}*>
   @type parser
   @id {{ .id }}_json_parser
-  key_name log
+  key_name {{ .parseKey | default "log" }}
   <parse>
     @type json
     time_format %Y-%m-%dT%T.%L%Z
