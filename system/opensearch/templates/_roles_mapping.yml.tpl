@@ -12,7 +12,6 @@ _meta:
 
 adminrole:
   reserved: false
-  cluster_permissions: "cluster_all"
   users:
   -  "admin"
 
