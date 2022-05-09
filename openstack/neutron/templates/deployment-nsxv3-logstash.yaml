@@ -26,6 +26,20 @@ spec:
       containers:
         - name: neutron-nsxv3-logstash
           image: {{.Values.global.dockerHubMirror}}/library/logstash:{{.Values.imageVersionLogstash | required "Please set neutron.imageVersionLogstash"}}
+          args: ["sh", "-c", "logstash-plugin install logstash-filter-jdbc_mysql && logstash"]
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 9600
+            initialDelaySeconds: 30
+            timeoutSeconds: 30
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 9600
+            initialDelaySeconds: 180
+            timeoutSeconds: 30
+            periodSeconds: 60
           env:
           - name: XPACK_MONITORING_ENABLED
             value: "false"
