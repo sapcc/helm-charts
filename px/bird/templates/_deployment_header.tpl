@@ -25,6 +25,8 @@ spec:
   replicas: 1
   selector:
     matchLabels:
+      alert-tier: px
+      alert-service: px
       app: {{ $deployment_name | quote }}
       pxservice: '{{ $service_number }}'
       pxdomain: '{{ $domain_number }}'
