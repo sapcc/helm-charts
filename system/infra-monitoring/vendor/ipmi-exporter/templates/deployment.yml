@@ -13,7 +13,7 @@ spec:
     matchLabels:
      app: {{ include "infraMonitoring.name" . }}
   revisionHistoryLimit: 5
-  replicas: 1
+  replicas: {{ .Values.replicas }}
   strategy:
     type: RollingUpdate
     rollingUpdate:
@@ -28,6 +28,13 @@ spec:
     spec:
       containers:
       - name: {{ include "infraMonitoring.name" . }}
+        resources:
+          requests:
+            memory: "{{ .Values.resources.requests.memory }}"
+            cpu: "{{ .Values.resources.requests.cpu }}"
+          limits:
+            cpu: "{{ .Values.resources.limits.cpu }}"
+            memory: "{{ .Values.resources.limits.memory }}""
         image: "{{ .Values.global.registry }}/{{ .Values.image }}:{{ .Values.tag }}"
         env:
         - name: APP_ENV
