@@ -16,7 +16,7 @@ groups:
       description: "Cinder backend {{ $labels.shard }}/{{ $labels.backend }} has no storage capacity."
       summary: "Cinder backend {{ $labels.shard }}/{{ $labels.backend }} has no storage capacity."
   - alert: CinderShardFreeSpaceWarning
-    expr: count by (shard, backend) (sum(cinder_virtual_free_capacity_gib / cinder_available_capacity_gib) by (shard, backend, pool) > .30) < 2
+    expr: count by (shard, backend) (sum(cinder_available_capacity_gib) by (shard, backend, pool)) - (count by (shard,backend) (sum(cinder_virtual_free_capacity_gib / cinder_available_capacity_gib) by (shard, backend, pool) < .3)) < 2
     for: 15m
     labels:
       severity: warning
@@ -27,7 +27,7 @@ groups:
       description: 'Cinder backend {{ $labels.shard }}/{{ $labels.backend }} has 3 or less datastores with > 30% free space left'
       summary: 'Cinder backend {{ $labels.shard }}/{{ $labels.backend }} has 3 or less3 datastores with > 30% free space left'
   - alert: CinderShardFreeSpaceCritical
-    expr: count by (shard, backend) (sum(cinder_virtual_free_capacity_gib / cinder_available_capacity_gib) by (shard, backend, pool) > .30) < 1
+    expr: count by (shard, backend) (sum(cinder_available_capacity_gib) by (shard, backend, pool)) - (count by (shard,backend) (sum(cinder_virtual_free_capacity_gib / cinder_available_capacity_gib) by (shard, backend, pool) < .3)) < 1
     for: 15m
     labels:
       severity: warning
