@@ -9,272 +9,372 @@ kibana_read_only:
 # The security REST API access role is used to assign specific users access to change the security settings through the REST API.
 security_rest_api_access:
   reserved: true
- 
+
 
 data:
   reserved: true
   index_permissions:
     - index_patterns:
-        - 'logstash-*'
-        - 'netflow-*'
-        - 'systemd-*'
-        - 'syslog-*'
-        - 'scaleout-*'
-        - 'virtual-*'
-        - 'alerts-*'
-        - 'deployments-*'
-        - 'nsxt-*'
+      - "logstash-*"
       allowed_actions:
-        - 'indices:admin/types/exists'
-        - 'indices:data/read/*'
-        - 'indices:data/write/*'
-        - 'indices:admin/template/*'
-        - 'indices:admin/create'
-        - 'cluster:monitor/*'
-
-{{- if .Values.qalogs.enabled }}
-dataqade2:
-  reserved: true
-  index_permissions:
+        - "indices:admin/types/exists"
+        - "indices:data/read/*"
+        - "indices:data/write/*"
+        - "indices:admin/template/*"
+        - "indices:admin/create"
+        - "cluster:monitor/*"
     - index_patterns:
-        - 'qade2-logstash-*'
+      - "netflow-*"
       allowed_actions:
-        - 'indices:admin/types/exists'
-        - 'indices:data/read/*'
-        - 'indices:data/write/*'
-        - 'indices:admin/template/*'
-        - 'indices:admin/create'
-        - 'cluster:monitor/*'
-
-dataqade3:
-  reserved: true
-  index_permissions:
+        - "indices:admin/types/exists"
+        - "indices:data/read/*"
+        - "indices:data/write/*"
+        - "indices:admin/template/*"
+        - "indices:admin/create"
+        - "cluster:monitor/*"
     - index_patterns:
-        - 'qade3-logstash-*'
+      - "systemd-*"
       allowed_actions:
-        - 'indices:admin/types/exists'
-        - 'indices:data/read/*'
-        - 'indices:data/write/*'
-        - 'indices:admin/template/*'
-        - 'indices:admin/create'
-        - 'cluster:monitor/*'
-
-dataqade5:
-  reserved: true
-  index_permissions:
+        - "indices:admin/types/exists"
+        - "indices:data/read/*"
+        - "indices:data/write/*"
+        - "indices:admin/template/*"
+        - "indices:admin/create"
+        - "cluster:monitor/*"
     - index_patterns:
-        - 'qade5-logstash-*'
+      - "syslog-*"
       allowed_actions:
-        - 'indices:admin/types/exists'
-        - 'indices:data/read/*'
-        - 'indices:data/write/*'
-        - 'indices:admin/template/*'
-        - 'indices:admin/create'
-        - 'cluster:monitor/*'
-{{- end }}
+        - "indices:admin/types/exists"
+        - "indices:data/read/*"
+        - "indices:data/write/*"
+        - "indices:admin/template/*"
+        - "indices:admin/create"
+        - "cluster:monitor/*"
+    - index_patterns:
+      - "scaleout-*"
+      allowed_actions:
+        - "indices:admin/types/exists"
+        - "indices:data/read/*"
+        - "indices:data/write/*"
+        - "indices:admin/template/*"
+        - "indices:admin/create"
+        - "cluster:monitor/*"
+    - index_patterns:
+      - "virtual-*"
+      allowed_actions:
+        - "indices:admin/types/exists"
+        - "indices:data/read/*"
+        - "indices:data/write/*"
+        - "indices:admin/template/*"
+        - "indices:admin/create"
+        - "cluster:monitor/*"
+    - index_patterns:
+      - "alerts-*"
+      allowed_actions:
+        - "indices:admin/types/exists"
+        - "indices:data/read/*"
+        - "indices:data/write/*"
+        - "indices:admin/template/*"
+        - "indices:admin/create"
+        - "cluster:monitor/*"
+    - index_patterns:
+      - "deployments-*"
+      allowed_actions:
+        - "indices:admin/types/exists"
+        - "indices:data/read/*"
+        - "indices:data/write/*"
+        - "indices:admin/template/*"
+        - "indices:admin/create"
+        - "cluster:monitor/*"
+    - index_patterns:
+      - "nsxt-*"
+      allowed_actions:
+        - "indices:admin/types/exists"
+        - "indices:data/read/*"
+        - "indices:data/write/*"
+        - "indices:admin/template/*"
+        - "indices:admin/create"
+        - "cluster:monitor/*"
 
 jump:
   reserved: true
   index_permissions:
     - index_patterns:
-        - 'jump-*'
+      - "jump-*"
       allowed_actions:
-        - 'indices:admin/types/exists'
-        - 'indices:data/read/*'
-        - 'indices:data/write/*'
-        - 'indices:admin/template/*'
-        - 'indices:admin/create'
-        - 'cluster:monitor/*'
+        - "indices:admin/types/exists"
+        - "indices:data/read/*"
+        - "indices:data/write/*"
+        - "indices:admin/template/*"
+        - "indices:admin/create"
+        - "cluster:monitor/*"
 
 jaeger:
   reserved: true
   index_permissions:
     - index_patterns:
-        - 'jaeger-*'
+      - "jaeger-*"
       allowed_actions:
-        - 'indices:admin/types/exists'
-        - 'indices:data/read/*'
-        - 'indices:data/write/*'
-        - 'indices:admin/template/*'
-        - 'indices:admin/create'
-        - 'cluster:monitor/*'
+        - "indices:admin/types/exists"
+        - "indices:data/read/*"
+        - "indices:data/write/*"
+        - "indices:admin/template/*"
+        - "indices:admin/create"
+        - "cluster:monitor/*"
 
 winbeat:
   reserved: true
   index_permissions:
     - index_patterns:
-        - 'winbeat-*'
+      - "winbeat-*"
       allowed_actions:
-        - 'indices:admin/types/exists'
-        - 'indices:data/read/*'
-        - 'indices:data/write/*'
-        - 'indices:admin/template/*'
-        - 'indices:admin/create'
-        - 'cluster:monitor/*'
+        - "indices:admin/types/exists"
+        - "indices:data/read/*"
+        - "indices:data/write/*"
+        - "indices:admin/template/*"
+        - "indices:admin/create"
+        - "cluster:monitor/*"
 
 promuser:
   reserved: true
   index_permissions:
     - index_patterns:
-        - 'logstash-*'
-        - 'netflow-*'
-        - 'systemd-*'
-        - 'syslog-*'
-        - 'scaleout-*'
-        - 'virtual-*'
-        - 'alerts-*'
-        - 'deployments-*'
-        - 'nsxt-*
+      - "logstash-*"
       allowed_actions:
-        - 'indices:data/read/*'
-        - 'cluster:monitor/state'
-        - 'indices:admin/get'
-        - 'indices:admin/mappings/fields/get'
-        - 'indices:admin/mappings/get'
-        - 'indices:admin/aliases/get'
-        - 'indices:admin/template/get'
+        - "indices:data/read/*"
+        - "cluster:monitor/state"
+        - "indices:admin/get"
+        - "indices:admin/mappings/fields/get"
+        - "indices:admin/mappings/get"
+        - "indices:admin/aliases/get"
+        - "indices:admin/template/get"
+    - index_patterns:
+      - "netflow-*"
+      allowed_actions:
+        - "indices:data/read/*"
+        - "cluster:monitor/state"
+        - "indices:admin/get"
+        - "indices:admin/mappings/fields/get"
+        - "indices:admin/mappings/get"
+        - "indices:admin/aliases/get"
+        - "indices:admin/template/get"
+    - index_patterns:
+      - "systemd-*"
+      allowed_actions:
+        - "indices:data/read/*"
+        - "cluster:monitor/state"
+        - "indices:admin/get"
+        - "indices:admin/mappings/fields/get"
+        - "indices:admin/mappings/get"
+        - "indices:admin/aliases/get"
+        - "indices:admin/template/get"
+    - index_patterns:
+      - "syslog-*"
+      allowed_actions:
+        - "indices:data/read/*"
+        - "cluster:monitor/state"
+        - "indices:admin/get"
+        - "indices:admin/mappings/fields/get"
+        - "indices:admin/mappings/get"
+        - "indices:admin/aliases/get"
+        - "indices:admin/template/get"
+    - index_patterns:
+      - "scaleout-*"
+      allowed_actions:
+        - "indices:data/read/*"
+        - "cluster:monitor/state"
+        - "indices:admin/get"
+        - "indices:admin/mappings/fields/get"
+        - "indices:admin/mappings/get"
+        - "indices:admin/aliases/get"
+        - "indices:admin/template/get"
+    - index_patterns:
+      - "virtual-*"
+      allowed_actions:
+        - "indices:data/read/*"
+        - "cluster:monitor/state"
+        - "indices:admin/get"
+        - "indices:admin/mappings/fields/get"
+        - "indices:admin/mappings/get"
+        - "indices:admin/aliases/get"
+        - "indices:admin/template/get"
+    - index_patterns:
+      - "alerts-*"
+      allowed_actions:
+        - "indices:data/read/*"
+        - "cluster:monitor/state"
+        - "indices:admin/get"
+        - "indices:admin/mappings/fields/get"
+        - "indices:admin/mappings/get"
+        - "indices:admin/aliases/get"
+        - "indices:admin/template/get"
+    - index_patterns:
+      - "deployments-*"
+      allowed_actions:
+        - "indices:data/read/*"
+        - "cluster:monitor/state"
+        - "indices:admin/get"
+        - "indices:admin/mappings/fields/get"
+        - "indices:admin/mappings/get"
+        - "indices:admin/aliases/get"
+        - "indices:admin/template/get"
+    - index_patterns:
+      - "nsxt-*"
+      allowed_actions:
+        - "indices:data/read/*"
+        - "cluster:monitor/state"
+        - "indices:admin/get"
+        - "indices:admin/mappings/fields/get"
+        - "indices:admin/mappings/get"
+        - "indices:admin/aliases/get"
+        - "indices:admin/template/get"
 
 adminrole:
   reserved: false
   hidden: false
   cluster_permissions:
-    - 'cluster:*'
+    - "cluster:*"
+  index_permissions:
+    - index_patterns:
+        - "*"
+      allowed_actions:
+        - "*"
 
 # Allows users to view monitors, destinations and alerts
 alerting_read_access:
   reserved: true
   cluster_permissions:
-    - 'cluster:admin/opendistro/alerting/alerts/get'
-    - 'cluster:admin/opendistro/alerting/destination/get'
-    - 'cluster:admin/opendistro/alerting/monitor/get'
-    - 'cluster:admin/opendistro/alerting/monitor/search'
+    - "cluster:admin/opendistro/alerting/alerts/get"
+    - "cluster:admin/opendistro/alerting/destination/get"
+    - "cluster:admin/opendistro/alerting/monitor/get"
+    - "cluster:admin/opendistro/alerting/monitor/search"
 
 # Allows users to view and acknowledge alerts
 alerting_ack_alerts:
   reserved: true
   cluster_permissions:
-    - 'cluster:admin/opendistro/alerting/alerts/*'
+    - "cluster:admin/opendistro/alerting/alerts/*"
 
 # Allows users to use all alerting functionality
 alerting_full_access:
   reserved: true
   cluster_permissions:
-    - 'cluster_monitor'
-    - 'cluster:admin/opendistro/alerting/*'
+    - "cluster_monitor"
+    - "cluster:admin/opendistro/alerting/*"
   index_permissions:
     - index_patterns:
-        - '*'
+      - "*"
       allowed_actions:
-        - 'indices_monitor'
-        - 'indices:admin/aliases/get'
-        - 'indices:admin/mappings/get'
+        - "indices_monitor"
+        - "indices:admin/aliases/get"
+        - "indices:admin/mappings/get"
 
 # Allow users to read Anomaly Detection detectors and results
 anomaly_read_access:
   reserved: true
   cluster_permissions:
-    - 'cluster:admin/opendistro/ad/detector/info'
-    - 'cluster:admin/opendistro/ad/detector/search'
-    - 'cluster:admin/opendistro/ad/detectors/get'
-    - 'cluster:admin/opendistro/ad/result/search'
-    - 'cluster:admin/opendistro/ad/tasks/search'
-    - 'cluster:admin/opendistro/ad/detector/validate'
-    - 'cluster:admin/opendistro/ad/result/topAnomalies'
+    - "cluster:admin/opendistro/ad/detector/info"
+    - "cluster:admin/opendistro/ad/detector/search"
+    - "cluster:admin/opendistro/ad/detectors/get"
+    - "cluster:admin/opendistro/ad/result/search"
+    - "cluster:admin/opendistro/ad/tasks/search"
+    - "cluster:admin/opendistro/ad/detector/validate"
+    - "cluster:admin/opendistro/ad/result/topAnomalies"
 
 # Allows users to use all Anomaly Detection functionality
 anomaly_full_access:
   reserved: true
   cluster_permissions:
-    - 'cluster_monitor'
-    - 'cluster:admin/opendistro/ad/*'
+    - "cluster_monitor"
+    - "cluster:admin/opendistro/ad/*"
   index_permissions:
     - index_patterns:
-        - '*'
+      - "*"
       allowed_actions:
-        - 'indices_monitor'
-        - 'indices:admin/aliases/get'
-        - 'indices:admin/mappings/get'
+        - "indices_monitor"
+        - "indices:admin/aliases/get"
+        - "indices:admin/mappings/get"
 
 # Allows users to read Notebooks
 notebooks_read_access:
   reserved: true
   cluster_permissions:
-    - 'cluster:admin/opendistro/notebooks/list'
-    - 'cluster:admin/opendistro/notebooks/get'
+    - "cluster:admin/opendistro/notebooks/list"
+    - "cluster:admin/opendistro/notebooks/get"
 
 # Allows users to all Notebooks functionality
 notebooks_full_access:
   reserved: true
   cluster_permissions:
-    - 'cluster:admin/opendistro/notebooks/create'
-    - 'cluster:admin/opendistro/notebooks/update'
-    - 'cluster:admin/opendistro/notebooks/delete'
-    - 'cluster:admin/opendistro/notebooks/get'
-    - 'cluster:admin/opendistro/notebooks/list'
+    - "cluster:admin/opendistro/notebooks/create"
+    - "cluster:admin/opendistro/notebooks/update"
+    - "cluster:admin/opendistro/notebooks/delete"
+    - "cluster:admin/opendistro/notebooks/get"
+    - "cluster:admin/opendistro/notebooks/list"
 
 # Allows users to read observability objects
 observability_read_access:
   reserved: true
   cluster_permissions:
-    - 'cluster:admin/opensearch/observability/get'
+    - "cluster:admin/opensearch/observability/get"
 
 # Allows users to all Observability functionality
 observability_full_access:
   reserved: true
   cluster_permissions:
-    - 'cluster:admin/opensearch/observability/create'
-    - 'cluster:admin/opensearch/observability/update'
-    - 'cluster:admin/opensearch/observability/delete'
-    - 'cluster:admin/opensearch/observability/get'
+    - "cluster:admin/opensearch/observability/create"
+    - "cluster:admin/opensearch/observability/update"
+    - "cluster:admin/opensearch/observability/delete"
+    - "cluster:admin/opensearch/observability/get"
 
 # Allows users to read and download Reports
 reports_instances_read_access:
   reserved: true
   cluster_permissions:
-    - 'cluster:admin/opendistro/reports/instance/list'
-    - 'cluster:admin/opendistro/reports/instance/get'
-    - 'cluster:admin/opendistro/reports/menu/download'
+    - "cluster:admin/opendistro/reports/instance/list"
+    - "cluster:admin/opendistro/reports/instance/get"
+    - "cluster:admin/opendistro/reports/menu/download"
 
 # Allows users to read and download Reports and Report-definitions
 reports_read_access:
   reserved: true
   cluster_permissions:
-    - 'cluster:admin/opendistro/reports/definition/get'
-    - 'cluster:admin/opendistro/reports/definition/list'
-    - 'cluster:admin/opendistro/reports/instance/list'
-    - 'cluster:admin/opendistro/reports/instance/get'
-    - 'cluster:admin/opendistro/reports/menu/download'
+    - "cluster:admin/opendistro/reports/definition/get"
+    - "cluster:admin/opendistro/reports/definition/list"
+    - "cluster:admin/opendistro/reports/instance/list"
+    - "cluster:admin/opendistro/reports/instance/get"
+    - "cluster:admin/opendistro/reports/menu/download"
 
 # Allows users to all Reports functionality
 reports_full_access:
   reserved: true
   cluster_permissions:
-    - 'cluster:admin/opendistro/reports/definition/create'
-    - 'cluster:admin/opendistro/reports/definition/update'
-    - 'cluster:admin/opendistro/reports/definition/on_demand'
-    - 'cluster:admin/opendistro/reports/definition/delete'
-    - 'cluster:admin/opendistro/reports/definition/get'
-    - 'cluster:admin/opendistro/reports/definition/list'
-    - 'cluster:admin/opendistro/reports/instance/list'
-    - 'cluster:admin/opendistro/reports/instance/get'
-    - 'cluster:admin/opendistro/reports/menu/download'
+    - "cluster:admin/opendistro/reports/definition/create"
+    - "cluster:admin/opendistro/reports/definition/update"
+    - "cluster:admin/opendistro/reports/definition/on_demand"
+    - "cluster:admin/opendistro/reports/definition/delete"
+    - "cluster:admin/opendistro/reports/definition/get"
+    - "cluster:admin/opendistro/reports/definition/list"
+    - "cluster:admin/opendistro/reports/instance/list"
+    - "cluster:admin/opendistro/reports/instance/get"
+    - "cluster:admin/opendistro/reports/menu/download"
 
 # Allows users to use all asynchronous-search functionality
 asynchronous_search_full_access:
   reserved: true
   cluster_permissions:
-    - 'cluster:admin/opendistro/asynchronous_search/*'
+    - "cluster:admin/opendistro/asynchronous_search/*"
   index_permissions:
     - index_patterns:
-        - '*'
+      - "*"
       allowed_actions:
-        - 'indices:data/read/search*'
+        - "indices:data/read/search*"
 
 # Allows users to read stored asynchronous-search results
 asynchronous_search_read_access:
   reserved: true
   cluster_permissions:
-    - 'cluster:admin/opendistro/asynchronous_search/get'
+    - "cluster:admin/opendistro/asynchronous_search/get"
 
 # Allows user to use all index_management actions - ism policies, rollups, transforms
 index_management_full_access:
@@ -285,16 +385,16 @@ index_management_full_access:
     - "cluster:admin/opendistro/transform/*"
   index_permissions:
     - index_patterns:
-        - '*'
+      - "*"
       allowed_actions:
-        - 'indices:admin/opensearch/ism/*'
+        - "indices:admin/opensearch/ism/*"
 
 # Allows users to use all cross cluster replication functionality at leader cluster
 cross_cluster_replication_leader_full_access:
   reserved: true
   index_permissions:
     - index_patterns:
-        - '*'
+      - "*"
       allowed_actions:
         - "indices:admin/plugins/replication/index/setup/validate"
         - "indices:data/read/plugins/replication/changes"
@@ -307,7 +407,7 @@ cross_cluster_replication_follower_full_access:
     - "cluster:admin/plugins/replication/autofollow/update"
   index_permissions:
     - index_patterns:
-        - '*'
+      - "*"
       allowed_actions:
         - "indices:admin/plugins/replication/index/setup/validate"
         - "indices:data/write/plugins/replication/changes"
@@ -322,20 +422,20 @@ cross_cluster_replication_follower_full_access:
 ml_read_access:
   reserved: true
   cluster_permissions:
-    - 'cluster:admin/opensearch/ml/stats/nodes'
-    - 'cluster:admin/opensearch/ml/models/get'
-    - 'cluster:admin/opensearch/ml/models/search'
-    - 'cluster:admin/opensearch/ml/tasks/get'
-    - 'cluster:admin/opensearch/ml/tasks/search'
+    - "cluster:admin/opensearch/ml/stats/nodes"
+    - "cluster:admin/opensearch/ml/models/get"
+    - "cluster:admin/opensearch/ml/models/search"
+    - "cluster:admin/opensearch/ml/tasks/get"
+    - "cluster:admin/opensearch/ml/tasks/search"
 
 # Allows users to use all ML functionality
 ml_full_access:
   reserved: true
   cluster_permissions:
-    - 'cluster_monitor'
-    - 'cluster:admin/opensearch/ml/*'
+    - "cluster_monitor"
+    - "cluster:admin/opensearch/ml/*"
   index_permissions:
     - index_patterns:
-        - '*'
+      - "*"
       allowed_actions:
-        - 'indices_monitor'
+        - "indices_monitor"
