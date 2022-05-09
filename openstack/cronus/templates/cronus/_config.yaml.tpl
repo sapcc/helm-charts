@@ -119,33 +119,34 @@ cronus:
 {{- end }}
     - {{ .Values.config.verifyEmailDomain }}
 {{- end }}
-{{- if .Values.config.requestValidate }}
+{{- $requestValidate := .Values.global.requestValidate | default .Values.config.requestValidate }}
+{{- if $requestValidate }}
   requestValidate:
     blockedDomains:
-{{- range $k, $v := .Values.config.requestValidate.blockedDomains }}
+{{- range $k, $v := $requestValidate.blockedDomains }}
       - {{ $v }}
 {{- end }}
-{{- if .Values.config.requestValidate.auditHeaders }}
+{{- if $requestValidate.auditHeaders }}
     auditHeaders:
-{{- range $k, $v := .Values.config.requestValidate.auditHeaders }}
+{{- range $k, $v := $requestValidate.auditHeaders }}
       {{ $k }}: {{ $v }}
 {{- end }}
 {{- end }}
-{{- if .Values.config.requestValidate.originatorHeaders }}
+{{- if $requestValidate.originatorHeaders }}
     originatorHeaders:
-{{- range $k, $v := .Values.config.requestValidate.originatorHeaders }}
+{{- range $k, $v := $requestValidate.originatorHeaders }}
       {{ $k }}: {{ $v }}
 {{- end }}
 {{- end }}
-{{- if .Values.config.requestValidate.sesV1CheckKeys }}
+{{- if $requestValidate.sesV1CheckKeys }}
     sesV1CheckKeys:
-{{- range $k, $v := .Values.config.requestValidate.sesV1CheckKeys }}
+{{- range $k, $v := $requestValidate.sesV1CheckKeys }}
       {{ $k }}: {{ $v }}
 {{- end }}
 {{- end }}
-{{- if .Values.config.requestValidate.sesV2ForbidURLs }}
+{{- if $requestValidate.sesV2ForbidURLs }}
     sesV2ForbidURLs:
-{{- range $k, $v := .Values.config.requestValidate.sesV2ForbidURLs }}
+{{- range $k, $v := $requestValidate.sesV2ForbidURLs }}
       {{ quote $k }}:
 {{- range $k, $v := $v }}
         - {{ $v }}
