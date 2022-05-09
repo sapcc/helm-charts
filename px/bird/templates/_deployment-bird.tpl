@@ -28,9 +28,13 @@ containers:
       command: ["bird-command", "--liveness"]
     initialDelaySeconds: 5
     periodSeconds: 5
+  resources:
+{{ toYaml $values.resources.bird | indent 4 }}
 - name: {{ $deployment_name }}-exporter
   image: keppel.{{ $values.registry }}.cloud.sap/{{required "bird_exporter_image must be set" $values.bird_exporter_image}}
   args: ["-format.new=true", "-bird.v2", "-bird.socket=/var/run/bird/bird.ctl", "-proto.ospf=false", "-proto.direct=false"]
+  resources:
+{{ toYaml $values.resources.exporter | indent 4 }}
   volumeMounts:
   - name: bird-socket
     mountPath: /var/run/bird
@@ -42,6 +46,8 @@ containers:
   image: keppel.{{ $values.registry }}.cloud.sap/{{ required "lg_image must be set" $values.lg_image }}
   command: ["python3"]
   args: ["lgproxy.py"]
+  resources:
+{{ toYaml $values.resources.proxy | indent 4 }}
   volumeMounts:
   - name: bird-socket
     mountPath: /var/run/bird
@@ -53,6 +59,8 @@ containers:
   image: keppel.{{ $values.registry }}.cloud.sap/{{ $values.lg_image }}
   command: ["python3"]
   args: ["lgproxy.py", "priv"]
+  resources:
+{{ toYaml $values.resources.proxy | indent 4 }}
   volumeMounts:
   - name: bird-socket
     mountPath: /var/run/bird
