@@ -73,7 +73,8 @@ use = egg:swift#gatekeeper
 use = egg:swift#keystoneauth
 operator_roles = admin, objectstore_admin, swiftoperator
 is_admin = false
-reseller_admin_role = cloud_objectstore_admin, swiftreseller
+# TODO: Replace by cloud_objectstore_admin when rolled out
+reseller_admin_role = swiftreseller
 system_reader_roles = cloud_objectstore_viewer
 project_reader_roles = objectstore_viewer
 default_domain_id = default
