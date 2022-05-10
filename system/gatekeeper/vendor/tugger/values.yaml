@@ -1,0 +1,112 @@
+# Default values for tugger.
+# This is a YAML-formatted file.
+
+replicaCount: 1
+
+## Role Based Access Control
+## Ref: https://kubernetes.io/docs/admin/authorization/rbac/
+rbac:
+  create: true
+
+## Service Account
+## Ref: https://kubernetes.io/docs/admin/service-accounts-admin/
+##
+serviceAccount:
+  create: true
+  ## The name of the ServiceAccount to use.
+  ## If not set and create is true, a name is generated using the fullname template
+  name:
+
+image:
+  repository: jainishshah17/tugger
+  tag:
+  pullPolicy: IfNotPresent
+  pullSecret:
+
+service:
+  type: ClusterIP
+  port: 443
+
+docker:
+  ifExists: false
+  registryUrl: jainishshah17
+  registrySecret: regsecret
+
+# Use regex patterns for image name matching and replacement. See readme.
+# Disables/replaces docker.registryUrl and docker.ifExists.
+rules: []
+# Disabled for backwards compatibility.
+# Configuring this section is recommended for new installations.
+# - pattern: ^jainishshah17/.*
+# - pattern: (.*)
+#   replacement: jainishshah17/$1
+
+# Whitelist namespaces e.g "[kubesystem,default,development]"
+whitelistNamespaces:
+  - kube-system
+
+# Whitelist docker registries within non-whitelisted namespaces
+# e.g "[jainishshah17,10.110.50.0:5000,docker.artifactory.com]"
+whitelistRegistries: []
+
+tls:
+  # Optional existing certificate secret to use.
+  # A certificate is generated if not specified
+  secretName:
+  # CA Certificate for cert in secretName (required if using secretName)
+  caCert:
+
+# Slack webhook URL e.g "https://hooks.slack.com/services/X1234"
+webhookUrl:
+slackDedupeTTL: # default: 3m0s, value must be acceptable to time.ParseDuration() https://golang.org/pkg/time/#ParseDuration
+
+# Optional webhook namespace selector based on labels
+# Ref: https://kubernetes.io/docs/reference/access-authn-authz/extensible-admission-controllers/#matching-requests-objectselector
+namespaceSelector:
+  # matchExpressions:
+  # - key: runlevel
+  #   operator: NotIn
+  #   values: ["0","1"]
+
+createValidatingWebhook: false
+createMutatingWebhook: false
+
+resources: {}
+  # We usually recommend not to specify default resources and to leave this as a conscious
+  # choice for the user. This also increases chances charts run on environments with little
+  # resources, such as Minikube. If you do want to specify resources, uncomment the following
+  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+  # limits:
+  #  cpu: 100m
+  #  memory: 128Mi
+  # requests:
+  #  cpu: 100m
+  #  memory: 128Mi
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+livenessProbe:
+  httpGet:
+    scheme: HTTPS
+    path: /ping
+    port: https
+  initialDelaySeconds: 5
+  periodSeconds: 10
+  timeoutSeconds: 3
+  failureThreshold: 12
+  successThreshold: 1
+
+readinessProbe:
+  httpGet:
+    scheme: HTTPS
+    path: /ping
+    port: https
+  initialDelaySeconds: 5
+  periodSeconds: 10
+  timeoutSeconds: 3
+  failureThreshold: 1
+  successThreshold: 1

@@ -1,0 +1,116 @@
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ template "tugger.fullname" . }}
+  labels:
+    app: {{ template "tugger.name" . }}
+    chart: {{ template "tugger.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ template "tugger.name" . }}
+      release: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app: {{ template "tugger.name" . }}
+        release: {{ .Release.Name }}
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/admission-registration.yaml") . | sha256sum }}
+    spec:
+      {{- with .Values.image.pullSecret }}
+      imagePullSecrets:
+      - name: {{ . }}
+      {{- end }}
+      containers:
+        - name: {{ .Chart.Name }}
+          image: "{{ .Values.image.repository }}:{{ default .Chart.AppVersion .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          args:
+            - /tugger
+            - --port
+            - {{ .Values.service.port | quote }}
+            {{- if .Values.docker.ifExists }}
+            - --if-exists
+            {{- end }}
+            {{- if .Values.rules }}
+            - --policy-file
+            - /etc/tugger/policy.yaml
+            {{- end }}
+            {{- with .Values.slackDedupeTTL }}
+            - --slack-dedupe-ttl
+            - {{ . }}
+            {{- end }}
+          env:
+            {{- with .Values.env }}
+            - name: ENV
+              value: {{ . }}
+            {{- end }}
+            - name: DOCKER_REGISTRY_URL
+              value: {{ .Values.docker.registryUrl }}
+            - name: REGISTRY_SECRET_NAME
+              value: {{ .Values.docker.registrySecret }}
+            - name: WHITELIST_NAMESPACES
+              value: {{ join "," .Values.whitelistNamespaces }}
+            - name: WHITELIST_REGISTRIES
+              value: {{ join "," (append .Values.whitelistRegistries .Values.docker.registryUrl) }}
+            - name: WEBHOOK_URL
+              value: {{ .Values.webhookUrl }}
+          ports:
+            - name: https
+              containerPort: {{ .Values.service.port }}
+              protocol: TCP
+          volumeMounts:
+          {{- if .Values.rules }}
+          - name: policy
+            mountPath: /etc/tugger
+          {{- end }}
+          {{- if .Values.image.pullSecret }}
+          - name: pullsecret
+            mountPath: /root/.docker/
+          {{- end }}
+          - name: tls
+            mountPath: /etc/admission-controller/tls
+          resources:
+{{ toYaml .Values.resources | indent 12 }}
+        {{ with .Values.livenessProbe }}
+          livenessProbe:
+{{ toYaml . | indent 12 }}
+        {{- end }}
+        {{- with .Values.readinessProbe }}
+          readinessProbe:
+{{ toYaml . | indent 12 }}
+        {{- end }}
+    {{- with .Values.nodeSelector }}
+      nodeSelector:
+{{ toYaml . | indent 8 }}
+    {{- end }}
+    {{- with .Values.affinity }}
+      affinity:
+{{ toYaml . | indent 8 }}
+    {{- end }}
+    {{- with .Values.tolerations }}
+      tolerations:
+{{ toYaml . | indent 8 }}
+    {{- end }}
+      volumes:
+        {{- if .Values.rules }}
+        - name: policy
+          configMap:
+            name: {{ template "tugger.fullname" . }}
+        {{- end }}
+        {{- with .Values.image.pullSecret }}
+        - name: pullsecret
+          secret:
+            secretName: {{ . }}
+            items:
+              - key: .dockerconfigjson
+                path: config.json
+        {{- end }}
+        - name: tls
+          secret:
+            secretName: {{ default (printf "%s-cert" (include "tugger.fullname" . )) .Values.tls.secretName }}
