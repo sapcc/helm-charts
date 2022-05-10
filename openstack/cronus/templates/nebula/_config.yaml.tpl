@@ -81,10 +81,11 @@ nebula:
 {{- end }}
 {{- if .Values.hermes }}
 {{- $user := .Values.rabbitmq_notifications.users.default.user }}
-{{- $creds := .Values.hermes.rabbitmq.targets.cronus }}
+{{- $password := .Values.rabbitmq_notifications.users.default.password }}
+{{- $host := printf "%s.%s.%s:5672" "hermes-rabbitmq-notifications" .Values.global.region .Values.global.tld }}
   auditSink:
-    rabbitmqUrl: amqp://{{ $user }}:{{ $creds.password }}@{{ if .Values.config.nebulaAuditSink.host }}{{ .Values.config.nebulaAuditSink.host }}{{ else }}{{ $creds.host }}.{{ .Values.global.region }}.{{ .Values.global.tld }}:5672{{ end }}
-    queueName: {{ $creds.queue_name }}
+    rabbitmqUrl: amqp://{{ $user }}:{{ $password }}@{{ if .Values.config.nebulaAuditSink.host }}{{ .Values.config.nebulaAuditSink.host }}{{ else }}{{ $host }}{{ end }}
+    queueName: {{ .Values.config.nebulaAuditSink.queueName }}
     internalQueueSize: {{ .Values.config.nebulaAuditSink.internalQueueSize }}
     maxContentLen: {{ .Values.config.nebulaAuditSink.maxContentLen | int64 }}
 {{- if .Values.config.nebulaAuditSink.contentTypePrefixes }}
