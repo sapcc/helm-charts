@@ -11,14 +11,3 @@
       annotations:
         description: High PVC usage of 'metis-pvclaim'
         summary: MetisDB pvc is almost full
-    - alert: MetisMetadataLocksIncreased
-      expr: metis_metadata_locks > 0
-      for: 15m
-      labels:
-        context: db
-        service: metis
-        severity: info
-        tier: {{ required "$.Values.backup_v2.alerts.tier missing" $.Values.backup_v2.alerts.tier }}
-      annotations:
-        description: MetisDB has 1 or more metadata locks for >15m
-        summary: MetisDB has metadata locks
