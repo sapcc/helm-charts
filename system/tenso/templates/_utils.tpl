@@ -42,7 +42,7 @@
 - name: TENSO_OSLO_POLICY_PATH
   value: '/etc/tenso/policy.yaml'
 - name: TENSO_ROUTES
-  value: 'helm-release-from-concourse.v1 -> helm-release-to-elk.v1'
+  value: 'helm-deployment-from-concourse.v1 -> helm-deployment-to-elk.v1'
 - name:  TENSO_WORKER_LISTEN_ADDRESS
   value: ':80'
 {{- end -}}
