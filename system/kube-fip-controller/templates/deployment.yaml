@@ -12,10 +12,8 @@ spec:
       app: kube-fip-controller
   template:
     metadata:
-
       labels:
         app: kube-fip-controller
-
       annotations:
         checksum/config: {{ include (print $.Template.BasePath "/config.yaml") . | sha256sum }}
         prometheus.io/scrape: "true"
@@ -35,7 +33,7 @@ spec:
 
       containers:
         - name: controller
-          image: {{ include "image" . }}
+          image: {{ required ".Values.image.repository missing" .Values.image.repository }}:{{ required ".Values.image.tag missing" .Values.image.tag }}
           imagePullPolicy: {{ required ".Values.image.pullPolicy missing" .Values.image.pullPolicy }}
           env:
             - name: OS_PASSWORD
