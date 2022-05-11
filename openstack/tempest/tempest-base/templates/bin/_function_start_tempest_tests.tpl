@@ -44,8 +44,9 @@ function start_tempest_tests {
   rally --debug verify start --concurrency {{ default "1" .Values.concurrency }} --detailed --pattern '{{ required "Missing run_pattern value!" .Values.run_pattern }}' --skip-list /{{ .Chart.Name }}-etc/tempest_skip_list.yaml --xfail-list /{{ .Chart.Name }}-etc/tempest_expected_failures_list.yaml
   RALLY_EXIT_CODE=$(($RALLY_EXIT_CODE + $?))
 
-  # generate html report
+  # generate html and json reports
   rally verify report --type html --to /tmp/report.html
+  rally verify report --type json --to /tmp/report.json
 
   # upload report and logfile to swift container of neutron-tempestadmin1 as there is a permalink in the slack message
   export OS_USERNAME="neutron-tempestadmin1"
@@ -57,6 +58,8 @@ function start_tempest_tests {
   openstack object create reports/{{ index (split "-" .Chart.Name)._0 }} /tmp/tempest-log.tar.gz --name $(echo $OS_REGION_NAME)-log-latest.tar.gz
   openstack object create reports/{{ index (split "-" .Chart.Name)._0 }} /tmp/report.html --name $(echo $OS_REGION_NAME)-$(echo $MYTIMESTAMP).html
   openstack object create reports/{{ index (split "-" .Chart.Name)._0 }} /tmp/report.html --name $(echo $OS_REGION_NAME)-latest.html
+  openstack object create reports/{{ index (split "-" .Chart.Name)._0 }} /tmp/report.json --name $(echo $OS_REGION_NAME)-$(echo $MYTIMESTAMP).json
+  openstack object create reports/{{ index (split "-" .Chart.Name)._0 }} /tmp/report.json --name $(echo $OS_REGION_NAME)-latest.json
 }
 
 {{- end }}
