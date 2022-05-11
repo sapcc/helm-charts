@@ -39,7 +39,11 @@ spec:
         - name: vol-{{ $.Values.global.region }}-pxrs-lg-communities
           mountPath: /etc/bird-lg-communities
         command: ["python3"]
+{{- if $lg_config.privileged }}
+        args: ["lg.py", "{{ $.Values.global.region }}-pxrs-{{ $lg }}.cfg", "priv"]
+{{- else }}
         args: ["lg.py", "{{ $.Values.global.region }}-pxrs-{{ $lg }}.cfg"]
+{{- end }}
         ports:
         - containerPort: 80
           name: {{ $lg }}web
