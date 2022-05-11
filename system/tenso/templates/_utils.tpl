@@ -39,6 +39,8 @@
   value: "{{ .Release.Name }}-postgresql"
 - name: TENSO_DB_CONNECTION_OPTIONS
   value: 'sslmode=disable'
+- name: TENSO_HELM_DEPLOYMENT_LOGSTASH_HOST
+  value: "elk-netflow.eu-de-1.cloud.sap:1516"
 - name: TENSO_OSLO_POLICY_PATH
   value: '/etc/tenso/policy.yaml'
 - name: TENSO_ROUTES
