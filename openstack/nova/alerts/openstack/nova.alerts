@@ -165,35 +165,6 @@ groups:
       description: 'Canary {{ $labels.service }} {{ $labels.check }} is flapping for 2 hours. See Sentry for details'
       summary: 'Canary {{ $labels.service }} {{ $labels.check }} is flapping'
 
-  - alert: OpenstackNovaComputeAgentDown
-    expr: blackbox_integrity_status_gauge{check=~"host_status-.+"} == 1
-    for: 20m
-    labels:
-      severity: warning
-      tier: os
-      service: nova
-      context: '{{ $labels.context }}'
-      meta: '{{ $labels.check }}: nova-compute node is enabled but is down for 20 minutes. See Sentry for details.'
-      sentry: 'blackbox/?query=test_{{ $labels.check }}'
-      playbook: 'docs/devops/alert/nova/#OpenstackNovaComputeAgentDown'
-    annotations:
-      description: '{{ $labels.check }}: nova-compute node is enabled but is down for 20 minutes. See Sentry for details.'
-      summary: '{{ $labels.check }}: nova-compute node is enabled but is down'
-
-  - alert: OpenstackNovaComputeServiceDisabled
-    expr: blackbox_integrity_status_gauge{check=~"host_status-.+"} == 2
-    for: 20m
-    labels:
-      severity: info
-      tier: os
-      service: nova
-      context: '{{ $labels.context }}'
-      meta: '{{ $labels.check }}: host is disabled without reason. See Sentry for details.'
-      sentry: blackbox/?query=test_{{ $labels.check }}
-    annotations:
-      description: '{{ $labels.check }}: host is disabled without reason. See Sentry for details.'
-      summary: '{{ $labels.check }}: host is disabled without reason'
-
   - alert: OpenstackNovaComputeServiceVersionsMismatch
     expr: count(count_values('service_version', openstack_compute_service_version)) != 1
     for: 1h
