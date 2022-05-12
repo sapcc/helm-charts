@@ -5,14 +5,14 @@
 {{- range $domain, $domain_config := $service_config -}}
 {{ if and (hasPrefix "domain_" $domain) (has $domain $.Values.deploy) }}
 {{- $domain_number := trimPrefix "domain_" $domain | int -}}
-{{- $config_name := printf "%s-pxrs-%d-s%d" $.Values.region $domain_number $service_number -}}
+{{- $config_name := printf "%s-pxrs-%d-s%d" $.Values.global.region $domain_number $service_number -}}
 
 {{ tuple $.Files $.Values.bird_config_path $config_name | include "configmap_bird" }}
 
 {{- range $instance, $instance_config := $domain_config -}}
 {{ if and (hasPrefix "instance_" $instance) (has $instance $.Values.deploy) }}
 {{- $instance_number := trimPrefix "instance_" $instance | int -}}
-{{- $deployment_name := printf "%s-pxrs-%d-s%d-%d" $.Values.region $domain_number $service_number $instance_number -}}
+{{- $deployment_name := printf "%s-pxrs-%d-s%d-%d" $.Values.global.region $domain_number $service_number $instance_number -}}
 
 ---
 {{ tuple $deployment_name $domain_config.multus_vlan $instance_config.bird_ip | include "nad_multus"}}

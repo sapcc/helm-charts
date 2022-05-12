@@ -64,3 +64,35 @@ gatekeeper-upstream-legacy:
   nameOverride: gatekeeper-upstream
   <<: *upstream-config
 # ^ TODO: remove this section after the remaining clusters were upgraded from k8s 1.15 to >=1.20
+
+# configuration for Tugger
+use_tugger: false
+
+tugger:
+  createMutatingWebhook: true
+  resources:
+    limits:
+      cpu: 100m
+      memory: 128Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi
+  rules:
+    - pattern: '^docker\.elastic\.co/(.+)$'
+      replacement: 'keppel.global.cloud.sap/ccloud-elastic-mirror/$1'
+
+    - pattern: '^k8s\.gcr\.io/(.+)$'
+      replacement: 'keppel.global.cloud.sap/ccloud-k8sgcr-mirror/$1'
+
+    - pattern: '^quay\.io/(.+)$'
+      replacement: 'keppel.global.cloud.sap/ccloud-quay-mirror/$1'
+
+    - pattern: '^(?:docker\.io/)?([^/]+)$'
+      replacement: 'keppel.global.cloud.sap/ccloud-dockerhub-mirror/library/$1'
+
+    - pattern: '^(?:docker\.io/)?([^/.]+/.+)$'
+      replacement: 'keppel.global.cloud.sap/ccloud-dockerhub-mirror/$1'
+
+    # enforcement is done by gatekeeper
+    - pattern: '.*'
+  whitelistNamespaces: []

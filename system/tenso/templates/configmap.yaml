@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: ConfigMap
+
+metadata:
+  name: tenso
+
+data:
+  policy.yaml: |
+    # rules expected by Tenso
+    'event:create': 'rule:match_concourse_event and rule:match_concourse_user'
+
+    # building blocks
+    'match_concourse_event': '"helm-deployment-from-concourse.v1":%(target.payload_type)s'
+    'match_concourse_user': '"tenso-concourse":%(user_name)s and "Default":%(user_domain_name)s'

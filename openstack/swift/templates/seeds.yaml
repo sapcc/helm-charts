@@ -1,3 +1,4 @@
+{{- $swift_release := include "swift_release" . -}}
 apiVersion: "openstack.stable.sap.cc/v1"
 kind: "OpenstackSeed"
 metadata:
@@ -19,7 +20,12 @@ spec:
   roles:
   - name: swiftoperator
   - name: swiftreseller
-
+{{- if ge $swift_release "yoga" }}
+  - name: cloud_objectstore_admin
+  - name: cloud_objectstore_viewer
+  - name: objectstore_admin
+  - name: objectstore_viewer
+{{- end }}
   services:
   - name: swift
     type: object-store

@@ -277,9 +277,9 @@ checksum/object.ring: {{ include "swift/templates/object-ring.yaml" . | sha256su
 
 {{- /**********************************************************************************/ -}}
 {{- define "swift_release" -}}
-{{- if ne .image_version "DEFINED_BY_PIPELINE" -}}
-    {{ $v := .image_version | split "-"}}{{ $v._0 | lower }}
-  {{- end -}}
+{{- if ne .Values.image_version "DEFINED_BY_PIPELINE" -}}
+  {{ $v := .Values.image_version | split "-"}}{{ $v._0 | lower }}
+{{- end -}}
 {{- end }}
 
 {{- /* Generate backend host for sapcc/openstack-ratelimit-middleware */ -}}

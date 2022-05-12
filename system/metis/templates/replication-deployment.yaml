@@ -37,6 +37,22 @@ spec:
 {{- end }}
     spec:
       affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 1
+              preference:
+                matchExpressions:
+                - key: cloud.sap/maintenance-state
+                  operator: In
+                  values:
+                  - operational
+            - weight: 1
+              preference:
+                matchExpressions:
+                - key: cloud.sap/deployment-state
+                  operator: NotIn
+                  values:
+                  - reinstalling
         podAntiAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
           - weight: 1

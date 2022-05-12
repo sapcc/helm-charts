@@ -1,6 +1,6 @@
 {
-    "context_is_cloud_admin":  "role:cloud_network_admin",
-    "context_is_admin":  "rule:context_is_cloud_admin",
+    "context_is_cloud_admin": "role:cloud_network_admin",
+    "context_is_admin": "rule:context_is_cloud_admin",
     "owner": "tenant_id:%(tenant_id)s or project_id:%(project_id)s",
     "member": "role:member and rule:owner",
     "viewer": "role:network_viewer and rule:owner",
@@ -8,7 +8,7 @@
     "compute_admin_wsg": "role:compute_admin_wsg and rule:owner",
     "context_is_network_admin": "rule:context_is_admin or rule:admin",
     "context_is_editor": "rule:context_is_network_admin or rule:member or rule:compute_admin_wsg",
-    "context_is_viewer":  "rule:context_is_editor or rule:viewer",
+    "context_is_viewer": "rule:context_is_editor or rule:viewer",
     "network_view_all": "role:network_viewer or role:member or role:network_admin or rule:context_is_admin",
 
     "network_owner": "tenant_id:%(network:tenant_id)s",
@@ -278,7 +278,7 @@
     "add_subports": "rule:context_is_network_admin",
     "remove_subports": "rule:context_is_network_admin",
 
-    "get_loggable_resources": "rule:context_is_admin",
+    "get_loggable_resources": "rule:network_view_all",
     "create_log": "rule:context_is_network_admin",
     "update_log": "rule:context_is_network_admin",
     "delete_log": "rule:context_is_network_admin",

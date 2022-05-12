@@ -3,14 +3,16 @@
 {{- end -}}
 
 {{- define "tenso_environment" }}
+- name:  TENSO_DEBUG
+  value: 'false'
 - name:  OS_AUTH_URL
-  value: "http://keystone.{{ $.Values.global.keystoneNamespace }}.svc.kubernetes.{{ $.Values.global.region }}.{{ $.Values.global.tld }}:5000/v3"
+  value: "http://identity-3.{{ $.Values.global.region }}.{{ $.Values.global.tld }}/v3"
 - name:  OS_AUTH_VERSION
   value: '3'
 - name:  OS_IDENTITY_API_VERSION
   value: '3'
 - name:  OS_INTERFACE
-  value: internal
+  value: public # Tenso lives in scaleout and thus needs to go through the public API endpoints
 - name:  OS_PASSWORD
   valueFrom:
     secretKeyRef:
@@ -26,8 +28,6 @@
   value: 'Default'
 - name:  OS_USERNAME
   value: 'tenso'
-- name:  TENSO_DEBUG
-  value: 'false'
 - name:  TENSO_API_LISTEN_ADDRESS
   value: ':80'
 - name:  TENSO_DB_PASSWORD
@@ -39,6 +39,12 @@
   value: "{{ .Release.Name }}-postgresql"
 - name: TENSO_DB_CONNECTION_OPTIONS
   value: 'sslmode=disable'
+- name: TENSO_HELM_DEPLOYMENT_LOGSTASH_HOST
+  value: {{ quote $.Values.tenso.elk_logstash_host }}
+- name: TENSO_OSLO_POLICY_PATH
+  value: '/etc/tenso/policy.yaml'
+- name: TENSO_ROUTES
+  value: 'helm-deployment-from-concourse.v1 -> helm-deployment-to-elk.v1'
 - name:  TENSO_WORKER_LISTEN_ADDRESS
   value: ':80'
 {{- end -}}

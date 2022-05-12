@@ -25,14 +25,22 @@ spec:
         alert-tier: os
         alert-service: tenso
       annotations:
+        checksum/configmap: {{ include "tenso/templates/configmap.yaml" . | sha256sum }}
         checksum/secret: {{ include "tenso/templates/secret.yaml" . | sha256sum }}
     spec:
+      volumes:
+        - name: config
+          configMap:
+            name: tenso
       containers:
         - name: api
           image: {{ include "tenso_image" $ }}
           imagePullPolicy: IfNotPresent
           args: [ api ]
           env: {{ include "tenso_environment" $ | indent 12 }}
+          volumeMounts:
+            - mountPath: /etc/tenso
+              name: config
           livenessProbe:
             httpGet:
               path: /healthcheck

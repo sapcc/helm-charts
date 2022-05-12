@@ -270,12 +270,17 @@ config:
     sesV1CheckKeys:
       VerifyEmailIdentity: EmailAddress
       VerifyEmailAddress: EmailAddress
-      DeleteIdentity: Identity
       SendEmail: Source
       SendRawEmail: Source
       SendTemplatedEmail: Source
       SendBulkTemplatedEmail: Source
       SendCustomVerificationEmail: EmailAddress
+      PutIdentityPolicy: Identity
+    # URL regular expressions and methods to block
+    sesV2ForbidURLs:
+      "/+v2/+email/+identities/+([^/]+)/+policies":
+        - POST
+        - PUT
   cronusPolicy:
     project_scope: project_id:%(project_id)s and (role:email_admin or role:email_user or role:cloud_email_admin)
     domain_scope: domain_id:%(target.project.domain.id)s and (role:email_admin or role:email_user or role:cloud_email_admin)
@@ -293,6 +298,7 @@ config:
     nebula:client: rule:project_client_scope or rule:project_scope or rule:cluster_or_domain_scope
     nebula:cloud_admin: rule:cluster_or_domain_scope
   cronusAuditSink:
+    queueName: notifications.info
     internalQueueSize: 20
     contentTypePrefixes:
       - application/x-www-form-urlencoded
@@ -315,6 +321,7 @@ config:
     maxContentLen: 102400 # 100Kb max
     debug: false
   nebulaAuditSink:
+    queueName: notifications.info
     internalQueueSize: 20
     contentTypePrefixes:
       - application/json

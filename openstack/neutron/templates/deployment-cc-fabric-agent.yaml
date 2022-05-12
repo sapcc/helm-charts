@@ -1,0 +1,99 @@
+{{- if .Values.cc_fabric.agent.enabled }}
+{{- range $platform := .Values.cc_fabric.agent.platforms }}
+---
+kind: Deployment
+apiVersion: apps/v1
+
+metadata:
+  name: neutron-cc-fabric-{{ $platform }}-agent
+  labels:
+    system: openstack
+    type: backend
+    component: neutron
+spec:
+  replicas: 1
+  revisionHistoryLimit: 5
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 3
+  selector:
+    matchLabels:
+      name: neutron-cc-fabric-{{ $platform }}-agent
+  template:
+    metadata:
+      labels:
+        name: neutron-cc-fabric-{{ $platform }}-agent
+{{ tuple $ "neutron" (printf "cc-fabric-%s-agent" $platform) | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
+      annotations:
+        pod.beta.kubernetes.io/hostname:  cc-fabric-{{ $platform }}-agent
+        configmap-etc-hash: {{ include (print $.Template.BasePath "/configmap-etc.yaml") $ | sha256sum }}
+        configmap-etc-cc-fabric: {{ include (print $.Template.BasePath "/configmap-etc-cc-fabric.yaml") $ | sha256sum }}
+    spec:
+      hostname: cc-fabric-{{ $platform }}-agent
+      containers:
+        - name: neutron-cc-fabric-{{ $platform }}-agent
+          image: {{$.Values.global.registry}}/loci-neutron:{{ $.Values.imageVersionCCFabric | default $.Values.imageVersion | required "Please set neutron.imageVersionCCFabric or similar"}}
+          imagePullPolicy: IfNotPresent
+          command:
+            - cc-{{ $platform }}-switch-agent
+          args:
+            - --config-file
+            - /etc/neutron/neutron.conf
+            - --config-file
+            - /etc/neutron/plugins/ml2/ml2-conf.ini
+            - --config-file
+            - /etc/neutron/plugins/ml2/ml2_conf_cc-fabric.ini
+          livenessProbe:
+            exec:
+              command: ["neutron-agent-liveness", "--agent-type", "CC fabric agent", "--config-file", "/etc/neutron/neutron.conf"]
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            timeoutSeconds: 10
+          resources:
+{{ toYaml $.Values.pod.resources.cc_fabric_agent | indent 12 }}
+          env:
+            - name: SENTRY_DSN
+              valueFrom:
+                secretKeyRef:
+                  name: sentry
+                  key: neutron.DSN.python
+          volumeMounts:
+            - mountPath: /etc/neutron/neutron.conf
+              name: neutron-etc
+              subPath: neutron.conf
+              readOnly: true
+            - mountPath: /etc/neutron/plugins/ml2/
+              name: empty-neutron-ml2
+            - mountPath: /etc/neutron/plugins/ml2/ml2_conf_cc-fabric.ini
+              name: neutron-etc-cc-fabric
+              subPath: ml2_conf_cc-fabric.ini
+              readOnly: true
+            - mountPath: /etc/neutron/plugins/ml2/cc-fabric-driver-config.yaml
+              name: neutron-etc-cc-fabric
+              subPath: cc-fabric-driver-config.yaml
+              readOnly: true
+            - mountPath: /etc/neutron/plugins/ml2/ml2-conf.ini
+              name: neutron-etc
+              subPath: ml2-conf.ini
+              readOnly: true
+            - mountPath: /etc/neutron/rootwrap.conf
+              name: neutron-etc
+              subPath: rootwrap.conf
+              readOnly: true
+            - mountPath: /etc/neutron/logging.conf
+              name: neutron-etc
+              subPath: logging.conf
+              readOnly: true
+      volumes:
+        - name: empty-neutron-ml2
+          emptyDir: {}
+        - name: neutron-etc
+          configMap:
+            name: neutron-etc
+        - name: neutron-etc-cc-fabric
+          configMap:
+            name: neutron-etc-cc-fabric
+{{- end }}
+{{- end }}

@@ -210,7 +210,7 @@
 
 {{- end }}
 
-<filter **>
+<filter kubernetes.**>
   @type record_modifier
   @id remove
     remove_keys message,stream

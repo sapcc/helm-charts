@@ -3,15 +3,15 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ $.Values.region }}-pxrs-{{ $lg }}
+  name: {{ $.Values.global.region }}-pxrs-{{ $lg }}
   namespace: px
   labels:
-    app: {{ $.Values.region }}-pxrs-{{ $lg }}
+    app: {{ $.Values.global.region }}-pxrs-{{ $lg }}
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: {{ $.Values.region }}-pxrs-{{ $lg }}
+      app: {{ $.Values.global.region }}-pxrs-{{ $lg }}
   strategy:
     type: RollingUpdate
     rollingUpdate:
@@ -20,7 +20,9 @@ spec:
   template:
     metadata:
       labels:
-        app: {{ $.Values.region }}-pxrs-{{ $lg }}
+        alert-tier: px
+        alert-service: px
+        app: {{ $.Values.global.region }}-pxrs-{{ $lg }}
     spec:
       tolerations:
       - key: species
@@ -28,24 +30,28 @@ spec:
         value: px
         effect: NoSchedule
       containers:
-      - name: {{ $.Values.region }}-pxrs-{{ $lg }}
-        image: keppel.eu-de-1.cloud.sap/{{ $.Values.lg_image }}
+      - name: {{ $.Values.global.region }}-pxrs-{{ $lg }}
+        image: keppel.{{ $.Values.registry }}.cloud.sap/{{ $.Values.lg_image }}
         imagePullPolicy: Always
         volumeMounts:
-        - name: vol-{{ $.Values.region }}-pxrs-{{ $lg }}
+        - name: vol-{{ $.Values.global.region }}-pxrs-{{ $lg }}
           mountPath: /etc/bird-lg
-        - name: vol-{{ $.Values.region }}-pxrs-lg-communities
+        - name: vol-{{ $.Values.global.region }}-pxrs-lg-communities
           mountPath: /etc/bird-lg-communities
         command: ["python3"]
-        args: ["lg.py", "{{ $.Values.region }}-pxrs-{{ $lg }}.cfg"]
+{{- if $lg_config.privileged }}
+        args: ["lg.py", "{{ $.Values.global.region }}-pxrs-{{ $lg }}.cfg", "priv"]
+{{- else }}
+        args: ["lg.py", "{{ $.Values.global.region }}-pxrs-{{ $lg }}.cfg"]
+{{- end }}
         ports:
         - containerPort: 80
           name: {{ $lg }}web
       volumes:
-        - name: vol-{{ $.Values.region }}-pxrs-{{ $lg }}
+        - name: vol-{{ $.Values.global.region }}-pxrs-{{ $lg }}
           configMap:
-            name: cfg-{{ $.Values.region }}-pxrs-{{ $lg }}
-        - name: vol-{{ $.Values.region }}-pxrs-lg-communities
+            name: cfg-{{ $.Values.global.region }}-pxrs-{{ $lg }}
+        - name: vol-{{ $.Values.global.region }}-pxrs-lg-communities
           configMap:
-            name: cfg-{{ $.Values.region }}-pxrs-lg-communities
+            name: cfg-{{ $.Values.global.region }}-pxrs-lg-communities
 {{ end }}

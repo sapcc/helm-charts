@@ -119,28 +119,38 @@ cronus:
 {{- end }}
     - {{ .Values.config.verifyEmailDomain }}
 {{- end }}
-{{- if .Values.config.requestValidate }}
+{{- $requestValidate := .Values.global.requestValidate | default .Values.config.requestValidate }}
+{{- if $requestValidate }}
   requestValidate:
     blockedDomains:
-{{- range $k, $v := .Values.config.requestValidate.blockedDomains }}
+{{- range $k, $v := $requestValidate.blockedDomains }}
       - {{ $v }}
 {{- end }}
-{{- if .Values.config.requestValidate.auditHeaders }}
+{{- if $requestValidate.auditHeaders }}
     auditHeaders:
-{{- range $k, $v := .Values.config.requestValidate.auditHeaders }}
+{{- range $k, $v := $requestValidate.auditHeaders }}
       {{ $k }}: {{ $v }}
 {{- end }}
 {{- end }}
-{{- if .Values.config.requestValidate.originatorHeaders }}
+{{- if $requestValidate.originatorHeaders }}
     originatorHeaders:
-{{- range $k, $v := .Values.config.requestValidate.originatorHeaders }}
+{{- range $k, $v := $requestValidate.originatorHeaders }}
       {{ $k }}: {{ $v }}
 {{- end }}
 {{- end }}
-{{- if .Values.config.requestValidate.sesV1CheckKeys }}
+{{- if $requestValidate.sesV1CheckKeys }}
     sesV1CheckKeys:
-{{- range $k, $v := .Values.config.requestValidate.sesV1CheckKeys }}
+{{- range $k, $v := $requestValidate.sesV1CheckKeys }}
       {{ $k }}: {{ $v }}
+{{- end }}
+{{- end }}
+{{- if $requestValidate.sesV2ForbidURLs }}
+    sesV2ForbidURLs:
+{{- range $k, $v := $requestValidate.sesV2ForbidURLs }}
+      {{ quote $k }}:
+{{- range $k, $v := $v }}
+        - {{ $v }}
+{{- end }}
 {{- end }}
 {{- end }}
 {{- end }}
@@ -151,10 +161,11 @@ cronus:
 {{- end }}
 {{- if .Values.hermes }}
 {{- $user := .Values.rabbitmq_notifications.users.default.user }}
-{{- $creds := .Values.hermes.rabbitmq.targets.cronus }}
+{{- $password := .Values.rabbitmq_notifications.users.default.password }}
+{{- $host := printf "%s.%s.%s:5672" "hermes-rabbitmq-notifications" .Values.global.region .Values.global.tld }}
   auditSink:
-    rabbitmqUrl: amqp://{{ $user }}:{{ $creds.password }}@{{ if .Values.config.cronusAuditSink.host }}{{ .Values.config.cronusAuditSink.host }}{{ else }}{{ $creds.host }}.{{ .Values.global.region }}.{{ .Values.global.tld }}:5672{{ end }}
-    queueName: {{ $creds.queue_name }}
+    rabbitmqUrl: amqp://{{ $user }}:{{ $password }}@{{ if .Values.config.cronusAuditSink.host }}{{ .Values.config.cronusAuditSink.host }}{{ else }}{{ $host }}{{ end }}
+    queueName: {{ .Values.config.cronusAuditSink.queueName }}
     internalQueueSize: {{ .Values.config.cronusAuditSink.internalQueueSize }}
     maxContentLen: {{ .Values.config.cronusAuditSink.maxContentLen | int64 }}
 {{- if .Values.config.cronusAuditSink.contentTypePrefixes }}

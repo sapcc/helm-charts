@@ -71,9 +71,12 @@ use = egg:swift#gatekeeper
 # swift3 requires keystoneauth with exact name
 [filter:keystoneauth]
 use = egg:swift#keystoneauth
-operator_roles = admin, swiftoperator
+operator_roles = admin, objectstore_admin, swiftoperator
 is_admin = false
-reseller_admin_role = {{ .Values.reseller_admin_role | default "swiftreseller" }}
+# TODO: Replace by cloud_objectstore_admin when rolled out
+reseller_admin_role = swiftreseller
+system_reader_roles = cloud_objectstore_viewer
+project_reader_roles = objectstore_viewer
 default_domain_id = default
 {{- if .Values.debug }}
 set log_level = DEBUG
