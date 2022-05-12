@@ -65,6 +65,9 @@ segment_range = {{ default $.Values.aci.aci_hostgroups.segment_ranges $aci_hostg
 {{- if $aci_hostgroup.finalize_binding }}
 finalize_binding = True
 {{- end }}
+{{- if $aci_hostgroup.fabric_transit }}
+fabric_transit = True
+{{- end }}
 availability_zones = {{ default "" $aci_hostgroup.availability_zones | join "," }}
 {{- if not (empty $aci_hostgroup.host_azs) }}
 host_azs = {{ range $az, $hosts := $aci_hostgroup.host_azs -}}
