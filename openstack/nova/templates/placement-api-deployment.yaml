@@ -1,3 +1,4 @@
+{{- if .Values.placement.enabled }}
 kind: Deployment
 apiVersion: apps/v1
 
@@ -28,7 +29,7 @@ spec:
         alert-service: nova
 {{ tuple . "nova" "placement-api" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
       annotations:
-        configmap-etc-hash: {{ include (print $.Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
+        configmap-etc-hash: {{ include (print $.Template.BasePath "/placement-configmap.yaml") . | sha256sum }}
     spec:
 {{ tuple . "nova" "placement-api" | include "kubernetes_pod_anti_affinity" | indent 6 }}
       containers:
@@ -91,24 +92,25 @@ spec:
             - mountPath: /etc/nova
               name: etcnova
             - mountPath: /etc/nova/nova.conf
-              name: nova-etc
+              name: nova-placement
               subPath: nova.conf
               readOnly: true
             - mountPath: /etc/nova/policy.json
-              name: nova-etc
+              name: nova-placement
               subPath: policy.json
               readOnly: true
             - mountPath: /etc/nova/logging.ini
-              name: nova-etc
+              name: nova-placement
               subPath: logging.ini
               readOnly: true
             - mountPath: /etc/nova/placement_uwsgi.ini
-              name: nova-etc
+              name: nova-placement
               subPath: placement_uwsgi.ini
               readOnly: true
       volumes:
         - name: etcnova
           emptyDir: {}
-        - name: nova-etc
+        - name: nova-placement
           configMap:
-            name: nova-etc
+            name: nova-placement
+{{- end }}
