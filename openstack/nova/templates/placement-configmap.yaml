@@ -10,6 +10,14 @@ metadata:
 data:
   nova.conf: |
 {{ include (print .Template.BasePath "/etc/_nova.conf.tpl") . | indent 4 }}
+    [placement_database]
+    connection = mysql+pymysql://
+    {{- if .Values.placementdbPassword -}}
+    {{ .Values.placementdbUser }}:{{ .Values.placementdbPassword | urlquery }}@nova-api-mariadb/{{ .Values.placementdbName }}?charset=utf8
+    {{- else -}}
+    {{ .Values.apidbUser }}:{{ .Values.apidbPassword | urlquery }}@nova-api-mariadb/{{ .Values.apidbName }}?charset=utf8
+    {{- end }}
+    {{- include "ini_sections.database_options_mysql" . | indent 4 }}
   policy.json: |
 {{ include (print .Template.BasePath "/etc/_nova-policy.json.tpl") . | indent 4 }}
   logging.ini: |
