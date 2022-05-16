@@ -15,6 +15,8 @@ metadata:
   labels:
     app.kubernetes.io/name: {{ $.Values.fullname }}
     app.kubernetes.io/component: {{ $app.component }}
+    alert-tier: storage
+    alert-service: netapp-exporter
 spec:
   revisionHistoryLimit: 5
   selector:
@@ -33,7 +35,7 @@ spec:
     spec:
       containers:
       - name: harvest
-        image: {{ $.Values.harvest.image }}:{{ $.Values.harvest.imageTag }}
+        image: {{ $.Values.global.registry }}/{{ $.Values.harvest.image }}:{{ $.Values.harvest.imageTag }}
         resources:
           requests:
             memory: {{ $.Values.harvest.memory }}
@@ -59,7 +61,7 @@ spec:
         - name: {{ $fullNameWithComponent }}
           mountPath: /opt/netapp-harvest/config
       - name: exporter                      # container: exporter
-        image: {{ $.Values.exporter.image }}
+        image: {{ $.Values.global.dockerHubMirror }}/{{ $.Values.exporter.image }}:{{ $.Values.exporter.imageTag }}
         args: [ "--graphite.mapping-config", "/graphite-mapping.conf" ]
         ports:
         - containerPort: {{ $.Values.ports.graphiteExporterInPort }}
@@ -96,7 +98,7 @@ spec:
       */ -}}
       {{- else }}
       - name: sd
-        image: {{ $.Values.netappsd.image }}:{{ $.Values.netappsd.imageTag }}
+        image: {{ $.Values.global.registry }}/{{ $.Values.netappsd.image }}:{{ $.Values.netappsd.imageTag }}
         args:
           - -configmap
           - {{ $fullNameWithComponent }}
