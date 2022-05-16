@@ -25,6 +25,8 @@ spec:
       labels:
 {{ tuple . "nova" "compute" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
         name: nova-compute-{{$hypervisor.name}}
+        alert-tier: os
+        alert-service: nova
         hypervisor: "ironic"
       annotations:
         {{- if $hypervisor.default.statsd_enabled }}
