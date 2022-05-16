@@ -45,12 +45,20 @@ spec:
           valueFrom:
             secretKeyRef:
               name: {{ $.Values.fullname }}
+              {{- if eq $name "manila" }}
+              key: manilaNetappUser
+              {{- else }}
               key: netappUser
+              {{- end }}
         - name: NETAPP_PASSWORD
           valueFrom:
             secretKeyRef:
               name: {{ $.Values.fullname }}
+              {{- if eq $name "manila" }}
+              key: manilaNetappPassword
+              {{- else }}
               key: netappPassword
+              {{- end }}
         ports:
           {{- if $app.dupEnabled }}
           - containerPort: {{ $.Values.ports.dupInPort }}
