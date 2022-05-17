@@ -119,7 +119,11 @@ cronus:
 {{- end }}
     - {{ .Values.config.verifyEmailDomain }}
 {{- end }}
-{{- $requestValidate := .Values.global.requestValidate | default .Values.config.requestValidate }}
+{{- if .Values.global.requestValidate }}
+{{- $requestValidate := .Values.global.requestValidate }}
+{{- else }}
+{{- $requestValidate := .Values.config.requestValidate }}
+{{- end }}
 {{- if $requestValidate }}
   requestValidate:
     blockedDomains:
