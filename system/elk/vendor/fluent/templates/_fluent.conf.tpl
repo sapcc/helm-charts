@@ -482,6 +482,8 @@
     slow_flush_log_threshold 50.0
     request_timeout 60s
     include_tag_key true
+    reload_connections false
+    reload_on_failure true
     resurrect_after 120
     reconnect_on_error true
     <buffer>
@@ -492,7 +494,7 @@
       retry_forever true
       retry_wait 2s
       flush_thread_count 2
-      flush_interval 1s
+      flush_interval 2s
     </buffer>
   </store>
   <store>
