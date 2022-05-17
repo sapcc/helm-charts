@@ -41,10 +41,12 @@
   value: 'sslmode=disable'
 - name: TENSO_HELM_DEPLOYMENT_LOGSTASH_HOST
   value: {{ quote $.Values.tenso.elk_logstash_host }}
+- name: TENSO_HELM_DEPLOYMENT_SWIFT_CONTAINER
+  value: tenso-deployment-events
 - name: TENSO_OSLO_POLICY_PATH
   value: '/etc/tenso/policy.yaml'
 - name: TENSO_ROUTES
-  value: 'helm-deployment-from-concourse.v1 -> helm-deployment-to-elk.v1'
+  value: 'helm-deployment-from-concourse.v1 -> helm-deployment-to-elk.v1, helm-deployment-from-concourse.v1 -> helm-deployment-to-swift.v1'
 - name:  TENSO_WORKER_LISTEN_ADDRESS
   value: ':80'
 {{- end -}}
