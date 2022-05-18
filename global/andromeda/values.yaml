@@ -11,6 +11,12 @@ image:
 
 cockroachdb:
   statefulset:
+    customLivenessProbe:
+      periodSeconds: 60
+      initialDelaySeconds: 60
+      httpGet:
+        path: /health
+        port: http
     replicas: 1
     resources:
       limits:
@@ -31,8 +37,20 @@ cockroachdb:
       disco: "true"
   serviceMonitor:
     enabled: true
-  conf:
-    single-node: true
+  service:
+    public:
+      annotations:
+        disco: "true"
+  init:
+    provisioning:
+      enabled: true
+      databases:
+        - name: andromeda
+          options: [encoding='utf-8']
+          owners: []
+      clusterSettings:
+        cluster:
+          organization: "Andromeda - Test Instance"
 
 postgresql:
   image: keppel.eu-de-1.cloud.sap/ccloud-dockerhub-mirror/library/postgres

@@ -1,5 +1,4 @@
-{{- if false }}
-kind: StatefulSet
+kind: Deployment
 apiVersion: {{ template "cockroachdb.statefulset.apiVersion" . }}
 metadata:
   name: {{ template "cockroachdb.fullname" . }}
@@ -16,10 +15,8 @@ metadata:
     {{- toYaml . | nindent 4 }}
   {{- end }}
 spec:
-  serviceName: {{ template "cockroachdb.fullname" . }}
   replicas: {{ .Values.statefulset.replicas | int64 }}
-  updateStrategy: {{- toYaml .Values.statefulset.updateStrategy | nindent 4 }}
-  podManagementPolicy: {{ .Values.statefulset.podManagementPolicy | quote }}
+  strategy: {{- toYaml .Values.statefulset.updateStrategy | nindent 4 }}
   selector:
     matchLabels:
       app.kubernetes.io/name: {{ template "cockroachdb.name" . }}
@@ -172,10 +169,7 @@ spec:
               {{- if .Values.conf.join }}
                 {{- join `,` .Values.conf.join -}}
               {{- else }}
-                {{- range $i, $_ := until 3 -}}
-                  {{- if gt $i 0 -}},{{- end -}}
-                  ${STATEFULSET_NAME}-{{ $i }}.${STATEFULSET_FQDN}:{{ $.Values.service.ports.grpc.internal.port | int64 -}}
-                {{- end -}}
+                {{- template "cockroachdb.fullname" . }}.cc.{{.Values.global.region}}.{{.Values.global.tld -}}
               {{- end }}
             {{- with index .Values.conf `cluster-name` }}
               --cluster-name={{ . }}
@@ -184,7 +178,7 @@ spec:
             {{- end }}
             {{- end }}
             {{- end }}
-              --advertise-host=$(hostname).${STATEFULSET_FQDN}
+              --advertise-host={{ template "cockroachdb.fullname" . }}.cc.{{.Values.global.region}}.{{.Values.global.tld}}
             {{- if .Values.tls.enabled }}
               --certs-dir=/cockroach/cockroach-certs/
             {{- else }}
@@ -292,7 +286,7 @@ spec:
         - name: datadir
         {{- if .Values.storage.persistentVolume.enabled }}
           persistentVolumeClaim:
-            claimName: datadir
+            claimName: datadir-{{ template "cockroachdb.fullname" . }}
         {{- else if .Values.storage.hostPath }}
           hostPath:
             path: {{ .Values.storage.hostPath | quote }}
@@ -340,33 +334,3 @@ spec:
           secret:
             secretName: {{ template "cockroachdb.fullname" . }}-log-config
       {{- end }}
-{{- if .Values.storage.persistentVolume.enabled }}
-  volumeClaimTemplates:
-    - metadata:
-        name: datadir
-        labels:
-          app.kubernetes.io/name: {{ template "cockroachdb.name" . }}
-          app.kubernetes.io/instance: {{ .Release.Name | quote }}
-        {{- with .Values.storage.persistentVolume.labels }}
-          {{- toYaml . | nindent 10 }}
-        {{- end }}
-        {{- with .Values.labels }}
-          {{- toYaml . | nindent 10 }}
-        {{- end }}
-      {{- with .Values.storage.persistentVolume.annotations }}
-        annotations: {{- toYaml . | nindent 10 }}
-      {{- end }}
-      spec:
-        accessModes: ["ReadWriteOnce"]
-      {{- if .Values.storage.persistentVolume.storageClass }}
-      {{- if (eq "-" .Values.storage.persistentVolume.storageClass) }}
-        storageClassName: ""
-      {{- else }}
-        storageClassName: {{ .Values.storage.persistentVolume.storageClass | quote}}
-      {{- end }}
-      {{- end }}
-        resources:
-          requests:
-            storage: {{ .Values.storage.persistentVolume.size | quote }}
-{{- end }}
-{{- end }}
