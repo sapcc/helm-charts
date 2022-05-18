@@ -25,6 +25,15 @@ network_vlan_ranges = {{ range $i, $aci_hostgroup := .Values.aci.aci_hostgroups.
         {{ $physical_network }}:{{ $range }}
     {{- end -}}
 {{- end }}
+{{- if .Values.cc_fabric.enabled }}
+    {{- range $i, $switchgroup := .Values.cc_fabric.driver_config.switchgroups -}}
+        {{- if or (ne $i 0) ((($.Values.aci|default).aci_hostgroups|default).hostgroups|default) }},{{ end -}}
+        {{- range $x, $range := $switchgroup.vlan_ranges | default $.Values.cc_fabric.driver_config.global_config.default_vlan_ranges -}}
+            {{- if ne $x 0 }},{{ end -}}
+            {{ $switchgroup.name}}:{{ $range }}
+        {{- end -}}
+    {{- end -}}
+{{- end }}
 
 [ml2_type_vxlan]
 vni_ranges = 10000:20000
