@@ -1,3 +1,4 @@
+{{- if and .Values.placement.enabled }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -10,6 +11,7 @@ metadata:
 data:
   nova.conf: |
 {{ include (print .Template.BasePath "/etc/_nova.conf.tpl") . | indent 4 }}
+{{- if not .Values.placement.unsplit }}
     [placement_database]
     connection = mysql+pymysql://
     {{- if .Values.placementdbPassword -}}
@@ -18,9 +20,9 @@ data:
     {{ .Values.apidbUser }}:{{ .Values.apidbPassword | urlquery }}@nova-api-mariadb/{{ .Values.apidbName }}?charset=utf8
     {{- end }}
     {{- include "ini_sections.database_options_mysql" . | indent 4 }}
-  policy.json: |
-{{ include (print .Template.BasePath "/etc/_nova-policy.json.tpl") . | indent 4 }}
+{{- end }}
   logging.ini: |
 {{ include "loggerIni" .Values.logging | indent 4 }}
   placement_uwsgi.ini: |
 {{ include (print .Template.BasePath "/etc/_placement_uwsgi.ini.tpl") . | indent 4 }}
+{{- end }}
