@@ -1,0 +1,52 @@
+{{- if and .Values.placement.enabled (not .Values.placement.unsplit) .Values.placementdbUser .Values.placementdbPassword .Values.placementdbName }}
+{{- /* See: https://github.com/openstack/placement/blob/master/placement_db_tools/mysql-migrate-db.sh */}}
+{{- $envAll := . }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: "{{ .Release.Name }}-placement-db-split"
+  labels:
+    app.kubernetes.io/managed-by: {{ .Release.Service | quote }}
+    app.kubernetes.io/instance: {{ .Release.Name | quote }}
+    app.kubernetes.io/version: {{ default "unknown" .Chart.AppVersion }}
+    helm.sh/chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+  annotations:
+    "helm.sh/hook": pre-upgrade
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+spec:
+  template:
+    metadata:
+      name: "{{ .Release.Name }}-placement-db-split"
+      labels:
+        app.kubernetes.io/managed-by: {{ .Release.Service | quote }}
+        app.kubernetes.io/instance: {{ .Release.Name | quote }}
+        helm.sh/chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    spec:
+      restartPolicy: Never
+      serviceAccountName: {{ .Release.Name }}-pod-exec
+      containers:
+      - name: placement-db-split
+        image: "{{ required ".Values.global.registry is missing" .Values.global.registry}}/{{ .Values.pre_change_hook.image }}:{{ .Values.pre_change_hook.image_version }}"
+        command:
+        - kubectl-v{{ .Values.pre_change_hook.kubectl_version }}
+        - exec
+        - -c
+        - mariadb
+        - deploy/nova-api-mariadb
+        - --
+        - mariadb
+        - -uroot
+        - --batch
+        - -e
+        - |
+          SET character_set_server = 'utf8';
+          SET collation_server = 'utf8_general_ci';
+          CREATE DATABASE IF NOT EXISTS {{ .Values.placementdbName }};
+          CREATE USER IF NOT EXISTS {{ .Values.placementdbUser }};
+          ALTER USER {{ .Values.placementdbUser }} IDENTIFIED BY '{{ .Values.placementdbPassword }}';
+          GRANT ALL PRIVILEGES ON {{ .Values.placementdbName }}.* TO {{ .Values.placementdbUser }};
+
+          {{- range .Values.placement.tables }}
+            {{- list $envAll . | include "helpers.table_alias" | indent 10 }}
+          {{- end }}
+{{- end }}

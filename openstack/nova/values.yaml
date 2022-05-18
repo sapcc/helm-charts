@@ -153,6 +153,10 @@ apidbName: nova_api
 apidbUser: nova_api
 apidbPassword: null
 
+placementdbName: placement
+placementdbUser: placement
+placementdbPassword: null
+
 loci:
   nova: false
   openvswitch: false
@@ -331,6 +335,20 @@ quota:
 placement:
   enabled: true
   wsgi_processes: 10
+  unsplit: false  # True: Revert split triggered by setting placementdbPassword
+  finalize_split: false # True: Remove placement table views from nova (after a migration)
+  tables:   # Do not modify, this is the list of all tables
+  - allocations
+  - consumers
+  - inventories
+  - placement_aggregates
+  - projects
+  - resource_classes
+  - resource_provider_aggregates
+  - resource_provider_traits
+  - resource_providers
+  - traits
+  - users
 
 mysql_metrics:
   db_name: nova
@@ -859,3 +877,8 @@ sentry:
   enabled: true
 
 nova_bigvm_enabled: true
+
+pre_change_hook:
+  image: "sapcc/unified-kubernetes-toolbox"
+  image_version: "20220525082919"
+  kubectl_version: 1.21.8
