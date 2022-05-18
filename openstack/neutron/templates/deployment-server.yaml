@@ -31,7 +31,7 @@ spec:
         configmap-etc-vendor-hash: {{ include (print $.Template.BasePath "/configmap-etc-vendor.yaml") . | sha256sum }}
 {{- if .Values.api.uwsgi }}
         configmap-etc-api-hash: {{ include (print $.Template.BasePath "/configmap-etc-api.yaml") . | sha256sum }}
-{{- if .Values.cc_fabric.agent.enabled }}
+{{- if .Values.cc_fabric.enabled }}
         configmap-etc-cc-fabric: {{ include (print $.Template.BasePath "/configmap-etc-cc-fabric.yaml") . | sha256sum }}
 {{- end }}
 {{- else }}
@@ -141,7 +141,7 @@ spec:
               name: neutron-etc
               subPath: logging.conf
               readOnly: true
-{{- if .Values.cc_fabric.agent.enabled }}
+{{- if .Values.cc_fabric.enabled }}
             - mountPath: /etc/neutron/plugins/ml2/ml2_conf_cc-fabric.ini
               name: neutron-etc-cc-fabric
               subPath: ml2_conf_cc-fabric.ini
@@ -249,7 +249,7 @@ spec:
         - name: neutron-etc
           configMap:
             name: neutron-etc
-{{- if .Values.cc_fabric.agent.enabled }}
+{{- if .Values.cc_fabric.enabled }}
         - name: neutron-etc-cc-fabric
           configMap:
             name: neutron-etc-cc-fabric
