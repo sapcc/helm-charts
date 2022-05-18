@@ -178,6 +178,7 @@
       - '{__name__=~"^vrops_api_response"}'
       - '{__name__=~"^vrops_inventory_collection_time_seconds"}'
       - '{__name__=~"^vrops_inventory_iteration_total"}'
+      - '{__name__=~"^vrops_inventory_target"}'
       - '{__name__=~"^vrops_vcenter_cpu_used_percent"}'
       - '{__name__=~"^vrops_vcenter_memory_used_percent"}'
       - '{__name__=~"^vrops_vcenter_diskspace_total_gigabytes"}'
