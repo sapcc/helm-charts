@@ -7,7 +7,7 @@
 {{- $domain_config := index . 5 }}
 initContainers:
 - name: {{ $deployment_name }}-init
-  image: busybox
+  image: keppel.{{ required "A registry mus be set" $values.registry }}.cloud.sap/ccloud-dockerhub-mirror/library/alpine:latest
   command: ["sh", "-c", "ip link set vlan{{ $domain_config.multus_vlan }} promisc on"]
   securityContext:
     privileged: true
