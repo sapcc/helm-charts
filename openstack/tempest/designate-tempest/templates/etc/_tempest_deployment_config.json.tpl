@@ -11,17 +11,17 @@
     },
     "users": [
         {
-            "username": "tempestuser3",
+            "username": "tempestuser1",
             "password": {{ .Values.tempestAdminPassword | quote }},
             "user_domain_name": "tempest",
-            "project_name": "tempest3",
+            "project_name": "tempest1",
             "project_domain_name": "tempest"
         },
         {
-            "username": "tempestuser4",
+            "username": "tempestuser2",
             "password": {{ .Values.tempestAdminPassword | quote }},
             "user_domain_name": "tempest",
-            "project_name": "tempest4",
+            "project_name": "tempest2",
             "project_domain_name": "tempest"
         }
     ],

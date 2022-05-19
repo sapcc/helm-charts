@@ -4,11 +4,11 @@
   project_name: 'admin'
   types:
    - admin
-- username: 'tempestuser3'
-  tenant_name: 'tempest3'
+- username: 'tempestuser1'
+  tenant_name: 'tempest1'
   password: {{ .Values.tempestAdminPassword | quote }}
-  project_name: 'tempest3'
-- username: 'tempestuser4'
-  tenant_name: 'tempest4'
+  project_name: 'tempest1'
+- username: 'tempestuser2'
+  tenant_name: 'tempest2'
   password: {{ .Values.tempestAdminPassword | quote }}
-  project_name: 'tempest4'
+  project_name: 'tempest2'
