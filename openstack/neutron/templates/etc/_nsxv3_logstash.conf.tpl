@@ -19,7 +19,7 @@ filter {
           if event.get("length").nil?
             event.set("length", event.get("in_size").to_i + event.get("out_size").to_i)
           end
-          event.set("port", res[:target_id].nil? ? target_suffix : res[:target_id])
+          event.set("port", res[:target_id].nil? ? event.get("target_suffix") : res[:target_id])
           event.set("project", res[:project_id])
           event.set("security_group", res[:resource_id])
           event.remove("target_suffix")
