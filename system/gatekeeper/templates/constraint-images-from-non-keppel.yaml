@@ -33,13 +33,25 @@ spec:
           input.review.object.kind == "Pod"
           count(pod_belongs_to) == 0 # otherwise the violation will be reported on the owning object (see `violation_owners`)
           pod_spec := input.review.object.spec
-          container := array.concat(pod_spec.containers, pod_spec.initContainers)[_]
+
+          # We have to use object.get() to get a zero value in case the key doesn't exist
+          # because array.concat() only works if both of its arguments are non-nil (i.e.
+          # an array, even if it's empty).
+          cntrs := object.get(pod_spec, "containers", [])
+          initCntrs := object.get(pod_spec, "initContainers", [])
+          container := array.concat(cntrs, initCntrs)[_]
         }
 
         containers[container] {
           input.review.object.kind == violation_owners[_]
           pod_spec := input.review.object.spec.template.spec
-          container := array.concat(pod_spec.containers, pod_spec.initContainers)[_]
+
+          # We have to use object.get() to get a zero value in case the key doesn't exist
+          # because array.concat() only works if both of its arguments are non-nil (i.e.
+          # an array, even if it's empty).
+          cntrs := object.get(pod_spec, "containers", [])
+          initCntrs := object.get(pod_spec, "initContainers", [])
+          container := array.concat(cntrs, initCntrs)[_]
         }
 
         violation[{"msg": msg, "details": {"container": container_name, "image": image}}] {
