@@ -46,7 +46,7 @@ trace_sqlalchemy = {{ .Values.global.osprofiler.trace_sqlalchemy }}
 
 {{- define "jaeger_agent_sidecar" }}
 {{- if .Values.osprofiler.enabled }}
-- image: jaegertracing/jaeger-agent:{{ .Values.global.osprofiler.jaeger.version }}
+- image: {{.Values.global.dockerHubMirrorAlternateRegion}}/jaegertracing/jaeger-agent:{{ .Values.global.osprofiler.jaeger.version }}
   name: jaeger-agent
   ports:
     - containerPort: 5775
