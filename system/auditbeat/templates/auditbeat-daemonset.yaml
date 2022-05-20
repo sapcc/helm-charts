@@ -28,7 +28,7 @@ spec:
 {{- if .Values.enable_pamd_tty }}
       initContainers:
       - name: enable-pamd-tty
-        image: {{ required ".Values.global.dockerHubMirror variable missing" $global.dockerHubMirror }}/library/alpine:latest
+        image: {{ required ".Values.global.dockerHubMirror variable missing" .Values.global.dockerHubMirror }}/library/alpine:latest
         securityContext:
           privileged: true
         command:
@@ -46,7 +46,7 @@ spec:
 {{- end }}
       containers:
       - name: exporter
-        image: "{{ required ".Values.global.dockerHubMirror variable missing" $global.dockerHubMirror }}/{{ .Values.exporter.image.repository }}:{{ .Values.exporter.image.tag }}"
+        image: "{{ required ".Values.global.dockerHubMirror variable missing" .Values.global.dockerHubMirror }}/{{ .Values.exporter.image.repository }}:{{ .Values.exporter.image.tag }}"
         imagePullPolicy: {{ .Values.exporter.image.pullPolicy }}
         args:
           - -p=5066
@@ -58,7 +58,7 @@ spec:
         resources:
           {{- toYaml .Values.exporter.resources | nindent 10 }}
       - name: auditbeat
-        image: "{{ required ".Values.global.registry variable missing" $global.registry }}/{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+        image: "{{ required ".Values.global.registry variable missing" .Values.global.registry }}/{{ .Values.image.repository }}:{{ .Values.image.tag }}"
         imagePullPolicy: {{ .Values.image.pullPolicy }}
         args: [
           "-c", "/etc/auditbeat.yml",
