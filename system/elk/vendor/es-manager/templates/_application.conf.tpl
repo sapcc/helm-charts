@@ -39,7 +39,15 @@ hosts = [
       username = "{{.Values.global.elastiflow_admin_user}}"
       password = "{{.Values.global.elastiflow_admin_password}}"
     }
-  }
+  },
+  {
+    host = "http://opensearch-logs-client:9200"
+    name = "Opensearch Logs Cluster"
+    auth = {
+      username = "{{.Values.global.elk_elasticsearch_admin_user}}"
+      password = "{{.Values.global.elk_elasticsearch_admin_password}}"
+    }
+  },
 ]
 
 # Authentication
