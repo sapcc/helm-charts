@@ -17,7 +17,9 @@ postgresql+psycopg2://{{$user}}:{{$password | urlquery}}@{{.Chart.Name}}-postgre
 ?connect_timeout=10&keepalives_idle=5&keepalives_interval=5&keepalives_count=10
 {{- end}}
 
-{{define "db_host_mysql"}}{{.Release.Name}}-mariadb.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}{{end}}
+{{- define "db_host_mysql" -}}
+{{ .Values.mariadb.name }}-mariadb.{{ .Release.Namespace }}.svc.kubernetes.{{ .Values.global.region }}.{{ .Values.global.tld }}
+{{- end }}
 
 {{define "db_url_mysql" }}
     {{- if kindIs "map" . -}}
