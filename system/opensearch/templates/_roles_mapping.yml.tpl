@@ -15,23 +15,22 @@ adminrole:
   users:
   -  "admin"
 
-own_index:
-  reserved: false
-  users:
-  - "*"
-  description: "Allow full access to an index named like the username"
-
 logstash:
   reserved: false
   backend_roles:
   - "logstash"
 
+complex-role:
+  reserved: false
+  hidden: false
+  backend_roles:
+  - "CCADMIN_DOMAIN_USERS"
+
 kibana_user:
   reserved: false
   backend_roles:
-  {{- range .Values.global.ldap.opensearch_groups }}
-  - {{ . | title | quote }}
-  {{- end }} 
+  - "CCADMIN_DOMAIN_USERS"
+  - "CCADMIN_MONITORING_USERS"
   description: "Maps kibanauser to kibana_user"
 
 readall:
