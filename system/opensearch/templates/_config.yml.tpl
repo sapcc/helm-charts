@@ -38,14 +38,14 @@ config:
         order: 5
         http_authenticator:
           type: basic
-          challenge: false
+          challenge: true
         authentication_backend:
           type: ldap
           config:
-            enable_ssl: false
+            enable_ssl: true
             enable_start_tls: false
             enable_ssl_client_auth: false
-            verify_hostnames: true
+            verify_hostnames: false
             hosts:
             - {{ .Values.global.ldap.host }}:{{ .Values.global.ldap.port }}
             bind_dn: {{ .Values.global.ldap.bind_dn }},{{ .Values.global.ldap.suffix }}
@@ -57,13 +57,13 @@ config:
       roles_ldap:
         description: "Authorize via LDAP or Active Directory"
         http_enabled: true
-        transport_enabled: false
+        transport_enabled: true
         authorization_backend:
           type: ldap
           config:
             enable_ssl: true
             enable_start_tls: false
-            enable_ssl_client_auth: true
+            enable_ssl_client_auth: false
             verify_hostnames: false
             hosts:
             - {{ .Values.global.ldap.host }}:{{ .Values.global.ldap.port }}
