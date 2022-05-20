@@ -50,7 +50,7 @@ config:
             - {{ .Values.global.ldap.host }}:{{ .Values.global.ldap.port }}
             bind_dn: {{ .Values.global.ldap.bind_dn }},{{ .Values.global.ldap.suffix }}
             password: {{ .Values.global.ldap.password }}
-            userbase: '{{ .Values.global.ldap.userdomain }}'
+            userbase: '{{ .Values.global.ldap.user_search_base_dns }}'
             usersearch: '(sAMAccountName={0})'
             username_attribute: null
     authz:
@@ -75,5 +75,5 @@ config:
             userrolename: disabled
             rolename: cn
             resolve_nested_roles: true
-            userbase: '{{ .Values.global.ldap.userdomain }}'
+            userbase: '{{ .Values.global.ldap.user_search_base_dns }}'
             usersearch: '(uid={0})'
