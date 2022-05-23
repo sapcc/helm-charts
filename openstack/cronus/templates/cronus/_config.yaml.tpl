@@ -144,7 +144,13 @@ cronus:
 {{- if $requestValidate.sesV1CheckKeys }}
     sesV1CheckKeys:
 {{- range $k, $v := $requestValidate.sesV1CheckKeys }}
-      {{ $k }}: {{ quote $v }}
+      {{ $k }}: {{ $v | toJson }}
+{{- end }}
+{{- end }}
+{{- if $requestValidate.sesV2CheckKeys }}
+    sesV2CheckKeys:
+{{- range $k, $v := $requestValidate.sesV2CheckKeys }}
+      - {{ quote $v}}
 {{- end }}
 {{- end }}
 {{- if $requestValidate.sesV2ForbidURLs }}
