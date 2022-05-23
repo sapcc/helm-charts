@@ -31,7 +31,6 @@ spec:
       annotations:
         {{- if $hypervisor.default.statsd_enabled }}
         prometheus.io/scrape: "true"
-        prometheus.io/port: "9102"
         prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
         {{- end }}
         configmap-etc-hash: {{ include (print .Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
