@@ -37,21 +37,17 @@ spec:
           # We have to use object.get() to get a zero value in case the key doesn't exist
           # because array.concat() only works if both of its arguments are non-nil (i.e.
           # an array, even if it's empty).
-          cntrs := object.get(pod_spec, "containers", [])
           initCntrs := object.get(pod_spec, "initContainers", [])
-          container := array.concat(cntrs, initCntrs)[_]
+          container := array.concat(pod_spec.containers, initCntrs)[_]
         }
 
         containers[container] {
           input.review.object.kind == violation_owners[_]
           pod_spec := input.review.object.spec.template.spec
 
-          # We have to use object.get() to get a zero value in case the key doesn't exist
-          # because array.concat() only works if both of its arguments are non-nil (i.e.
-          # an array, even if it's empty).
-          cntrs := object.get(pod_spec, "containers", [])
+          # Same as above.
           initCntrs := object.get(pod_spec, "initContainers", [])
-          container := array.concat(cntrs, initCntrs)[_]
+          container := array.concat(object.containers, initCntrs)[_]
         }
 
         violation[{"msg": msg, "details": {"container": container_name, "image": image}}] {
