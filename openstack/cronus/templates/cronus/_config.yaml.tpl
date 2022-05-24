@@ -80,6 +80,8 @@ cronus:
     queueName: {{ .Values.config.workQueue.queueName }}
     exchangeName: {{ .Values.config.workQueue.exchangeName }}
     trailLimit: {{ .Values.config.workQueue.trailLimit }}
+    trailTimeBaseFactor: {{ .Values.config.workQueue.trailTimeBaseFactor }}
+    trailTimeRandMaxNumber: {{ .Values.config.workQueue.trailTimeRandMaxNumber }}
     workerPrefetchCount: {{ .Values.config.workQueue.workerPrefetchCount }}
     workerPrefetchSize: {{ .Values.config.workQueue.workerPrefetchSize }}
     maxContainerNum: {{ .Values.config.workQueue.maxContainerNum }}
