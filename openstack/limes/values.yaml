@@ -84,6 +84,31 @@ pgmetrics:
             usage: "GAUGE"
             description: "Total number of projects that are failing rate data scrape"
 
+    limes_project:
+      query: >
+        SELECT COUNT(*) AS count FROM projects
+      metrics:
+        - count:
+            usage: "GAUGE"
+            description: "Number of projects in the Limes DB"
+
+    limes_project_resources_by_type:
+      query: >
+        SELECT ps.type AS service, pr.name AS resource, COUNT(*) AS count
+          FROM project_resources pr JOIN project_services ps ON ps.id = pr.service_id
+         GROUP BY ps.type, pr.name
+      metrics:
+        - service:
+            usage: "LABEL"
+            description: "Service type"
+        - resource:
+            usage: "LABEL"
+            description: "Resource name"
+        - count:
+            usage: "GAUGE"
+            description: "Number of projects that have a project_resources entry for this service and resource"
+
+
 # Deploy limes Prometheus alerts.
 alerts:
   enabled: true

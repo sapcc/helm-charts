@@ -25,6 +25,8 @@ spec:
     metadata:
       labels:
         app: {{ $fullNameWithComponent }}
+        alert-tier: storage
+        alert-service: netapp-exporter
       annotations:
         prometheus.io/scrape: {{ $.Values.prometheus.scrape | quote }}
         prometheus.io/targets: {{ $.Values.global.prometheus.targets | quote }}
@@ -33,7 +35,7 @@ spec:
     spec:
       containers:
       - name: harvest
-        image: {{ $.Values.harvest.image }}:{{ $.Values.harvest.imageTag }}
+        image: {{ $.Values.global.registry }}/{{ $.Values.harvest.image }}:{{ $.Values.harvest.imageTag }}
         resources:
           requests:
             memory: {{ $.Values.harvest.memory }}
@@ -43,12 +45,20 @@ spec:
           valueFrom:
             secretKeyRef:
               name: {{ $.Values.fullname }}
+              {{- if eq $name "manila" }}
+              key: manilaNetappUser
+              {{- else }}
               key: netappUser
+              {{- end }}
         - name: NETAPP_PASSWORD
           valueFrom:
             secretKeyRef:
               name: {{ $.Values.fullname }}
+              {{- if eq $name "manila" }}
+              key: manilaNetappPassword
+              {{- else }}
               key: netappPassword
+              {{- end }}
         ports:
           {{- if $app.dupEnabled }}
           - containerPort: {{ $.Values.ports.dupInPort }}
@@ -59,7 +69,7 @@ spec:
         - name: {{ $fullNameWithComponent }}
           mountPath: /opt/netapp-harvest/config
       - name: exporter                      # container: exporter
-        image: {{ $.Values.exporter.image }}
+        image: {{ $.Values.global.dockerHubMirror }}/{{ $.Values.exporter.image }}:{{ $.Values.exporter.imageTag }}
         args: [ "--graphite.mapping-config", "/graphite-mapping.conf" ]
         ports:
         - containerPort: {{ $.Values.ports.graphiteExporterInPort }}
@@ -96,7 +106,7 @@ spec:
       */ -}}
       {{- else }}
       - name: sd
-        image: {{ $.Values.netappsd.image }}:{{ $.Values.netappsd.imageTag }}
+        image: {{ $.Values.global.registry }}/{{ $.Values.netappsd.image }}:{{ $.Values.netappsd.imageTag }}
         args:
           - -configmap
           - {{ $fullNameWithComponent }}

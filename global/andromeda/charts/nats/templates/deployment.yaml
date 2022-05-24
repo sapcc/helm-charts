@@ -38,9 +38,9 @@ spec:
           - /etc/nats/nats-server.conf
           - --cluster_advertise
           - "{{ template "nats.fqdn" . }}"
-          {{- if not ( eq ( include "nats.fqdn" . ) .Values.seed.host ) }}
+          {{- if .Values.seed.join }}
           - --routes
-          - "nats-route://{{ .Values.seed.user }}:{{ .Values.seed.pass }}@{{ .Values.seed.host }}:6222"
+          - "nats-route://{{ .Values.seed.user }}:{{ .Values.seed.pass }}@{{ .Values.seed.join }}:6222"
           {{- end }}
           - -V
           imagePullPolicy: {{ .Values.image.pullPolicy }}

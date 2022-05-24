@@ -25,11 +25,12 @@ spec:
       labels:
 {{ tuple . "nova" "compute" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
         name: nova-compute-{{$hypervisor.name}}
+        alert-tier: os
+        alert-service: nova
         hypervisor: "ironic"
       annotations:
         {{- if $hypervisor.default.statsd_enabled }}
         prometheus.io/scrape: "true"
-        prometheus.io/port: "9102"
         prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
         {{- end }}
         configmap-etc-hash: {{ include (print .Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
@@ -92,7 +93,7 @@ spec:
         - name: statsd
           image: {{ required ".Values.global.dockerHubMirror is missing" .Values.global.dockerHubMirror}}/prom/statsd-exporter:v0.8.1
           imagePullPolicy: IfNotPresent
-          args: [ --statsd.mapping-config=/etc/statsd/statsd-rpc-exporter.yaml ]
+          args: [ --statsd.mapping-config=/etc/statsd/statsd-exporter.yaml ]
           ports:
           - name: statsd
             containerPort: {{ $hypervisor.default.statsd_port }}
@@ -101,8 +102,8 @@ spec:
             containerPort: 9102
           volumeMounts:
             - name: nova-etc
-              mountPath: /etc/statsd/statsd-rpc-exporter.yaml
-              subPath: statsd-rpc-exporter.yaml
+              mountPath: /etc/statsd/statsd-exporter.yaml
+              subPath: statsd-exporter.yaml
               readOnly: true
         {{- end }}
       volumes:

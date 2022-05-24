@@ -62,6 +62,8 @@
     include_tag_key true
     resurrect_after 120
     reconnect_on_error true
+    reload_connections false
+    reload_on_failure true
     <buffer>
       flush_at_shutdown true
       flush_thread_interval 5

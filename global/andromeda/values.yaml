@@ -6,10 +6,21 @@ replicaCount: 1
 
 image:
   repository: keppel.eu-de-1.cloud.sap/ccloud/andromeda
+  kubernetes_entrypoint_version: v0.3.1
   pullPolicy: IfNotPresent
 
 cockroachdb:
+  image:
+    repository: keppel.eu-de-1.cloud.sap/ccloud-dockerhub-mirror/cockroachdb/cockroach
   statefulset:
+    updateStrategy:
+      type: Recreate
+    customLivenessProbe:
+      periodSeconds: 60
+      initialDelaySeconds: 60
+      httpGet:
+        path: /health
+        port: http
     replicas: 1
     resources:
       limits:
@@ -30,8 +41,20 @@ cockroachdb:
       disco: "true"
   serviceMonitor:
     enabled: true
-  conf:
-    single-node: true
+  service:
+    public:
+      annotations:
+        disco: "true"
+
+  init:
+    provisioning:
+      enabled: true
+      databases:
+        - name: andromeda
+          options: [encoding='utf-8']
+          owners: []
+      clusterSettings:
+        cluster.organization: "Andromeda - Test Instance"
 
 postgresql:
   image: keppel.eu-de-1.cloud.sap/ccloud-dockerhub-mirror/library/postgres
@@ -40,6 +63,8 @@ postgresql:
   enabled: false
 
 nats:
+  image:
+    repository: keppel.eu-de-1.cloud.sap/ccloud-dockerhub-mirror/library/nats
   auth:
     enabled: false
 

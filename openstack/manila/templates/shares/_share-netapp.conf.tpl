@@ -8,6 +8,10 @@ host = manila-share-netapp-{{$enabled_share.name}}
 # Values are conf groupnames that contain per manila-share service opts.
 enabled_share_backends = {{$enabled_share.name}}
 
+[coordination]
+# overrides configuration from manila.conf
+backend_url = file://$state_path
+
 {{- range $i, $share := $context.Values.global.netapp.filers }}
 {{- $share_backend := $share.backend_name | default $share.vserver | default "netapp-multi"}}
 

@@ -24,11 +24,12 @@ spec:
     metadata:
       labels:
         name: nova-scheduler
+        alert-tier: os
+        alert-service: nova
 {{ tuple . "nova" "scheduler" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
       annotations:
         {{- if .Values.scheduler.rpc_statsd_enabled }}
         prometheus.io/scrape: "true"
-        prometheus.io/port: "9102"
         prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
         {{- end }}
         configmap-etc-hash: {{ include (print $.Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
@@ -99,7 +100,7 @@ spec:
         - name: statsd
           image: {{ required ".Values.global.dockerHubMirror is missing" .Values.global.dockerHubMirror}}/prom/statsd-exporter:v0.8.1
           imagePullPolicy: IfNotPresent
-          args: [ --statsd.mapping-config=/etc/statsd/statsd-rpc-exporter.yaml ]
+          args: [ --statsd.mapping-config=/etc/statsd/statsd-exporter.yaml ]
           ports:
           - name: statsd
             containerPort: {{ .Values.scheduler.rpc_statsd_port }}
@@ -108,8 +109,8 @@ spec:
             containerPort: 9102
           volumeMounts:
             - name: nova-etc
-              mountPath: /etc/statsd/statsd-rpc-exporter.yaml
-              subPath: statsd-rpc-exporter.yaml
+              mountPath: /etc/statsd/statsd-exporter.yaml
+              subPath: statsd-exporter.yaml
               readOnly: true
         {{- end }}
       volumes:

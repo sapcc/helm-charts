@@ -24,6 +24,8 @@ spec:
     metadata:
       labels:
         app: {{ $fullNameWithComponent }}
+        alert-tier: storage
+        alert-service: netapp-exporter
       {{- if eq $shortAppName "manila" }}
       annotations:
         checksum/configmap.yaml: {{ include $configmapTemplate (dict "fullname" $.Values.fullname "appComponent" $app.component "manilaFilerYaml" $manilaFilerYaml) | sha256sum }}
@@ -42,7 +44,7 @@ spec:
 {{/***/}}
       containers:
         - name: exporter
-          image: "{{ required ".Values.exporter.image.repository" $.Values.exporter.image.repository }}:{{ required ".Values.exporter.image.tag" $.Values.exporter.image.tag }}"
+          image: {{ $.Values.global.registry }}/{{ required ".Values.exporter.image.repository" $.Values.exporter.image.repository }}:{{ required ".Values.exporter.image.tag" $.Values.exporter.image.tag }}
           imagePullPolicy: {{ $.Values.exporter.image.pullPolicy | default "IfNotPresent" }}
           args: [ --config=/etc/netapp/filers.yaml ]
           env:
@@ -50,12 +52,20 @@ spec:
             valueFrom:
               secretKeyRef:
                 name: {{ $secretName }}
+                {{- if eq $shortAppName "manila" }}
+                key: manilaNetappUser
+                {{- else }}
                 key: netappUser
+                {{- end }}
           - name: NETAPP_PASSWORD
             valueFrom:
               secretKeyRef:
                 name: {{ $secretName }}
+                {{- if eq $shortAppName "manila" }}
+                key: manilaNetappPassword
+                {{- else }}
                 key: netappPassword
+                {{- end }}
           ports:
             - name: prometheus
               containerPort: {{ $.Values.prometheus.port }}
@@ -89,7 +99,7 @@ spec:
             - {{ required ".Values.global.region" $.Values.global.region }}
             - -query
             - {{ required ".Values.apps[].netappsd.query" $app.netappsd.query }}
-          image: "{{ required ".Values.netappsd.image.repository" $.Values.netappsd.image.repository }}:{{ required ".Values.netappsd.image.tag" $.Values.netappsd.image.tag }}"
+          image: {{ $.Values.global.registry }}/{{ required ".Values.netappsd.image.repository" $.Values.netappsd.image.repository }}:{{ required ".Values.netappsd.image.tag" $.Values.netappsd.image.tag }}
           imagePullPolicy: {{ $.Values.netappsd.image.pullPolicy | default "IfNotPresent" }}
           resources:
             {{- toYaml $.Values.netappsd.resources | nindent 12 }}

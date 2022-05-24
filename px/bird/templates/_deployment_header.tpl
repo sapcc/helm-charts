@@ -37,6 +37,8 @@ spec:
   template:
     metadata:
       labels:
+        alert-tier: px
+        alert-service: px
         app: {{ $deployment_name }}
         pxservice: '{{ $service_number }}'
         pxdomain: '{{ $domain_number }}'

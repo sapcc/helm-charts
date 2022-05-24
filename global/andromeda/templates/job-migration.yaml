@@ -16,7 +16,8 @@ spec:
       serviceAccountName: {{ template "andromeda.serviceAccountName" . }}
       initContainers:
         - name: wait-for-db
-          image: "quay.io/stackanetes/kubernetes-entrypoint:v0.3.1"
+          image: "{{ .Values.global.registry }}/kubernetes-entrypoint:{{ .Values.image.kubernetes_entrypoint_version }}"
+          imagePullPolicy: Always
           env:
             - name: NAMESPACE
               value: "andromeda"
@@ -24,16 +25,6 @@ spec:
               value: "{{ include "andromeda.fullname" . }}-cockroachdb"
             - name: COMMAND
               value: "true"
-        - name: create-database
-          image: "cockroachdb/cockroach:v21.2.6"
-          command:
-          - /cockroach/cockroach
-          - sql
-          - --insecure
-          - --host
-          - {{ include "andromeda.name" . }}-cockroachdb
-          - --execute
-          - CREATE DATABASE IF NOT EXISTS {{ include "andromeda.name" . }};
       containers:
         - name: {{ include "andromeda.fullname" . }}-migration
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | required ".Values.image.tag is required" }}"

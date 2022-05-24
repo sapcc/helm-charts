@@ -29,6 +29,8 @@ spec:
       labels:
         app: {{ template "fullname" . }}
         name: barbican-api
+        alert-tier: os
+        alert-service: barbican
 {{ tuple . "barbican" "api" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
       annotations:
         configmap-etc-hash: {{ include (print $.Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
@@ -56,6 +58,10 @@ spec:
                 secretKeyRef:
                   name: sentry
                   key: barbican.DSN.python
+            {{- end }}
+            {{- if .Values.hsm.enabled }}
+            - name: ChrystokiConfigurationPath
+              value: "/thales/safenet/lunaclient/config"
             {{- end }}
           {{- if .Values.api.resources.enabled }}
           resources:
@@ -121,6 +127,29 @@ spec:
               subPath: ratelimit.yaml
               readOnly: true
             {{- end }}
+        {{- if .Values.hsm.enabled }}
+            - name: luna
+              mountPath: /thales/
+        - name: lunaclient
+          image: {{required ".Values.global.registry is missing" .Values.global.registry }}/loci-barbican:{{required "Values.hsm.luna.image is missing" .Values.hsm.luna.image }}
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: ChrystokiConfigurationPath
+              value: "/thales/safenet/lunaclient/config"
+          command: [ "/bin/bash", "-c", "--" ]
+          args: [ "mv /usr/safenet /thales; while true; do sleep 30; done;" ]
+          lifecycle:
+            postStart:
+              exec:
+                command: [ "/bin/bash", "/scripts/barbican_lunaclient.sh" ]
+          volumeMounts:
+            - name: hsm
+              mountPath: /scripts/barbican_lunaclient.sh
+              subPath: barbican_lunaclient.sh
+              readOnly: true
+            - name: luna
+              mountPath: /thales/
+        {{- end }}       
         - name: statsd
           {{- if hasKey .Values.global "dockerHubMirror"}}
           image: {{.Values.global.dockerHubMirror}}/{{ .Values.statsd.image.repository }}:{{ .Values.statsd.image.tag }}
@@ -156,3 +185,11 @@ spec:
             name: barbican-etc
         - name: etcbarbican
           emptyDir: {}
+        {{- if .Values.hsm.enabled }}
+        - name: hsm
+          configMap:
+            name: barbican-etc
+            defaultMode: 0744
+        - name: luna
+          emptyDir: {}
+        {{ end }}

@@ -61,6 +61,13 @@ pod:
       limits:
         cpu: "128m"
         memory: "256Mi"
+    cc_fabric_agent:
+      limits:
+        cpu: '1000m'
+        memory: '1Gi'
+      requests:
+        cpu: '250m'
+        memory: '512Mi' 
     server:
       requests:
         cpu: "4000m"
@@ -145,6 +152,7 @@ imageNameNetworkAgentDHCPInit: alpine
 # imageVersionServerRPC:
 # imageVersionServerAPI:
 # imageVersionACI:
+# imageVersionCCFabric:
 # imageVersionASR1kML2:
 # imageVersionASR1k:
 # imageVersionUCSM:
@@ -156,9 +164,8 @@ imageNameNetworkAgentDHCPInit: alpine
 # imageVersionNetworkAgentL3:
 # imageVersionNetworkAgentOVS:
 # imageVersionIronicAgent:
-imageVersionRedis: 6.0.9-alpine
-imageVersionLogstash: 7.10.1
-imageVersionNSXTNanny: "1.5"
+imageVersionRedis: 7.0.0-alpine
+imageVersionLogstash: 8.2.0
 imageVersionNetworkAgentDHCPInit: 3.8
 
 api:
@@ -179,6 +186,11 @@ aci:
   # apic_user: null
   # apic_password: null
   # apic_tenant_name: null
+
+cc_fabric:
+  agent:
+    enabled: false
+    platforms: ['eos', 'nxos']
 
 arista:
   api_type: nocvx
@@ -531,10 +543,10 @@ alerts:
 logger:
   enabled: false
   logstash: {}
-
-logger-redis:
   persistence:
-    enabled: false
+    enabled: true
+    accessMode: ReadWriteMany
+    size: 1Gi
 
 agent:
   controlplane: true

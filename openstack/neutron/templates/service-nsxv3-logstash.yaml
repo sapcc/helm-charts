@@ -1,0 +1,26 @@
+{{- if .Values.logger.enabled }}
+kind: Service
+apiVersion: v1
+
+metadata:
+  name: neutron-nsxv3-logstash
+  labels:
+    system: openstack
+    type: backend
+    component: neutron-logger
+  annotations:
+    disco: "true"
+    disco/record: "esxi-log.cc.{{.Values.global.region}}.{{.Values.global.tld}}."
+    disco/zone-name: "cc.{{.Values.global.region}}.{{.Values.global.tld}}."
+spec:
+  externalIPs: {{ .Values.logger.externalIPs }}
+  ports:
+  - name: esxi-log
+    port: 514
+    protocol: UDP
+    targetPort: 5514
+  selector:
+    name: neutron-nsxv3-logstash
+  sessionAffinity: None
+  type: ClusterIP
+{{- end }}

@@ -283,3 +283,20 @@ groups:
       description: Limes cannot determine the AZ of the hypervisor
         {{$labels.hypervisor}}. Its capacity will be reported in the AZ
         "unknown" in the resource management UI until this issue is fixed.
+
+  - alert: OpenstackLimesIncompleteProjectResourceData
+    expr: max by (service, resource) (limes_project_resources_by_type_count) != on () group_left max(limes_project_count)
+    for: 15m
+    labels:
+      severity: info
+      tier: os
+      service: limes
+      context: data-completeness
+      meta: "Incomplete project resource data for {{$labels.service}}/{{$labels.resource}}"
+    annotations:
+      summary: Incomplete project resource data in Limes DB
+      description: Some or all projects are missing an entry in the "project_resources" table for resource
+        {{$labels.service}}/{{$labels.resource}}. Until this is resolved, PUT requests on the API may fail. Check the
+        log for limes-collect; its consistency check should create any missing entries. If this alert only appears for
+        baremetal flavor resources, try restarting all nova-api pods, then afterwards restart all limes-api and
+        limes-collect pods.

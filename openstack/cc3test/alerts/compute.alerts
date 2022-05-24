@@ -262,3 +262,35 @@ groups:
     annotations:
       description: 'Openstack Compute Canary is flapping for 2 hours, see last three reports for more details'
       summary: 'Openstack Compute Canary is flapping for 2 hours, see last three reports for more details'
+
+  - alert: OpenstackNovaComputeAgentDown
+    expr: cc3test_compute_host_status{type="host_status"} == 2
+    for: 20m
+    labels:
+      severity: warning
+      tier: os
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.service }}'
+      meta: '{{ $labels.host }}: nova-compute node is enabled but is down for 20 minutes. see last three reports for more details'
+      dashboard: cc3test-overview?var-service={{ $labels.service }}
+      playbook: 'docs/devops/alert/{{ $labels.service }}/#openstacknovaintegrityhost_status'
+      report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.check }}'
+    annotations:
+      description: '{{ $labels.host }}: host is enabled but is down for 20 minutes. see last three reports for more details'
+      summary: '{{ $labels.host }}: host is enabled but is down'
+
+  - alert: OpenstackNovaComputeServiceDisabled
+    expr: cc3test_compute_host_status{type="host_status"} == 3
+    for: 20m
+    labels:
+      severity: info
+      tier: os
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.service }}'
+      meta: '{{ $labels.host }}: nova-compute host is disabled without reason. see last three reports for more details'
+      dashboard: cc3test-overview?var-service={{ $labels.service }}
+      playbook: 'docs/devops/alert/{{ $labels.service }}/#openstacknovaintegrityhost_status'
+      report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.check }}'
+    annotations:
+      description: '{{ $labels.host }}: host is disabled without reason. see last three reports for more details'
+      summary: '{{ $labels.host }}: host is disabled without reason'

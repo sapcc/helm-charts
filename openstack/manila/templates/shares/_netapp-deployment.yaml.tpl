@@ -10,8 +10,6 @@ metadata:
     system: openstack
     type: backend
     component: manila
-    alert-tier: os
-    alert-service: manila
 spec:
   replicas: 1
   revisionHistoryLimit: 5
@@ -27,11 +25,12 @@ spec:
     metadata:
       labels:
         name: manila-share-netapp-{{$share.name}}
+        alert-tier: os
+        alert-service: manila
       annotations:
         {{- if .Values.rpc_statsd_enabled }}
         prometheus.io/scrape: "true"
-        prometheus.io/port: "9102"
-        prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
+        prometheus.io/targets: {{ required ".Values.alerts.prometheus.openstack missing" .Values.alerts.prometheus.openstack | quote }}
         {{- end }}
         kubectl.kubernetes.io/default-container: manila-share-netapp-{{$share.name}}
         configmap-etc-hash: {{ include (print .Template.BasePath "/etc-configmap.yaml") . | sha256sum }}

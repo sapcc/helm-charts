@@ -1,0 +1,47 @@
+owner-info:
+  maintainers:
+    - Stefan Majewsky
+    - Sandro Jäckel
+    - Falk Reimann
+    - Muhammad Talal Anwar
+  helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/system/tenso
+
+# NOTE: This chart shares the regional values.yaml file with the `system/tenso-seeds` chart.
+
+tenso:
+  image_tag: null         # provided by pipeline
+  service_password: null  # provided by regional values.yaml
+  elk_logstash_host: null # provided by regional values.yaml
+
+prometheus:
+  targets:
+    openstack: infra-frontend # there is no prometheus-openstack in scaleout, so we need to improvise :|
+
+postgresql:
+  log_min_duration_statement: 250
+  # less than the postgresql chart's default; I want to know early when connections start getting out of hand
+  max_connections: 128
+
+  persistence:
+    enabled: true
+    accessMode: ReadWriteOnce
+    size: 10Gi
+
+  resources:
+    # estimated based on resource usage of other Postgres instances; may be
+    # useful to adjust later on
+    limits:
+      memory: 512Mi
+      cpu: '0.5'
+    requests:
+      memory: 512Mi
+      cpu: '0.5'
+
+  backup:
+    enabled: true
+
+pgmetrics:
+  db_name: tenso
+  customMetrics: {}
+  alerts:
+    prometheus: infra-frontend # see above

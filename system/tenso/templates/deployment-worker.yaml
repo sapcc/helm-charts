@@ -1,0 +1,59 @@
+kind: Deployment
+apiVersion: apps/v1
+
+metadata:
+  name: tenso-worker
+
+spec:
+  revisionHistoryLimit: 5
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  selector:
+    matchLabels:
+      name: tenso-worker
+  selector:
+    matchLabels:
+      name: tenso-worker
+  template:
+    metadata:
+      labels:
+        name: tenso-worker
+        alert-tier: os
+        alert-service: tenso
+      annotations:
+        checksum/secret: {{ include "tenso/templates/secret.yaml" . | sha256sum }}
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "80"
+        prometheus.io/targets: {{ .Values.prometheus.targets.openstack }}
+    spec:
+      containers:
+        - name: worker
+          image: {{ include "tenso_image" $ }}
+          imagePullPolicy: IfNotPresent
+          args: [ worker ]
+          env: {{ include "tenso_environment" $ | indent 12 }}
+          livenessProbe:
+            httpGet:
+              path: /healthcheck
+              port: 80
+            timeoutSeconds: 10
+            periodSeconds: 60
+            initialDelaySeconds: 60
+          readinessProbe:
+            httpGet:
+              path: /healthcheck
+              port: 80
+            timeoutSeconds: 5
+            periodSeconds: 5
+          resources:
+            # TODO: adjust once we have some operating experience
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "200m"
+              memory: "128Mi"

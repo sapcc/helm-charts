@@ -10,7 +10,7 @@ spec:
   restartPolicy: Never
   containers:
     - name: {{ .Chart.Name }}
-      image: {{ default "keppel.eu-de-1.cloud.sap/ccloud" .Values.global.registry}}/{{ default .Chart.Name (index .Values (print .Chart.Name | replace "-" "_")).tempest.imageNameOverride }}-plugin:{{ default "latest" (index .Values (print .Chart.Name | replace "-" "_")).tempest.imageTag}}
+      image: {{ default "keppel.eu-de-1.cloud.sap/ccloud" .Values.global.registry}}/{{ default .Chart.Name (index .Values (print .Chart.Name | replace "-" "_")).tempest.imageNameOverride }}-plugin-python3:{{ default "latest" (index .Values (print .Chart.Name | replace "-" "_")).tempest.imageTag}}
       command:
         - kubernetes-entrypoint
       env:

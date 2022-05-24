@@ -11,6 +11,7 @@ backup:
   backup_dir: {{ .common.backup_dir }}
   enable_init_restore: false
   disable_binlog_purge_on_rotate: true
+  binlog_max_reconnect_attempts: {{ .common.binlog_max_reconnect_attempts }}
 database:
   type: "mariadb"
   user: root
@@ -20,7 +21,6 @@ database:
   server_id: 998
   data_dir: /var/lib/mysql
   log_name_format: mysqld-bin
-  binlog_max_reconnect_attempts: {{.common.binlogMaxReconnectAttempts}}
   databases:
   {{- range $db := .backup.databases }}
     - "{{$db}}"
@@ -37,4 +37,5 @@ storages:
         {{- range $db := .backup.databases }}
           - "{{$db}}"
         {{- end }}
+        dump_filter_buffer_size_mb: {{ .common.dump_filter_buffer_size_mb }}
 {{- end -}}

@@ -1,0 +1,25 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+
+metadata:
+  name: opensearch-logs-client
+  namespace: opensearch
+  annotations:
+    kubernetes.io/tls-acme: "true"
+    disco: "true"
+
+spec:
+  tls:
+    - secretName: opensearch-logs-client
+      hosts: [ opensearch-logs-client.{{ .Values.global.clusterType }}.{{ .Values.global.region }}.{{ .Values.global.tld }} ]
+  rules:
+    - host: opensearch-logs-client.{{ .Values.global.clusterType }}.{{ .Values.global.region }}.{{ .Values.global.tld }}
+      http:
+        paths:
+        - path: /
+          pathType: Prefix
+          backend:
+            service:
+              name: opensearch-logs-client
+              port:
+                number: {{ .Values.httpPort }}

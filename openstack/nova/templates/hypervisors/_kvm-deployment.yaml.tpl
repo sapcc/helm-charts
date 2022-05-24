@@ -22,6 +22,8 @@ spec:
       labels:
 {{ tuple . "nova" "compute" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
         name: nova-compute-{{$hypervisor.name}}
+        alert-tier: os
+        alert-service: nova
         hypervisor: "kvm"
       annotations:
         configmap-etc-hash: {{ include (print .Template.BasePath "/etc-configmap.yaml") . | sha256sum }}

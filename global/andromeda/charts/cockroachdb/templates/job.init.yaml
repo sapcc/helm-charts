@@ -49,7 +49,7 @@ spec:
       serviceAccountName: {{ template "cockroachdb.tls.serviceAccount.name" . }}
       initContainers:
         - name: copy-certs
-          image: "busybox"
+          image: {{ .Values.tls.copyCerts.image | quote }}
           imagePullPolicy: {{ .Values.tls.selfSigner.image.pullPolicy | quote }}
           command:
             - /bin/sh
@@ -106,8 +106,8 @@ spec:
                       {{- with index .Values.conf "cluster-name" }}
                       --cluster-name={{.}} \
                       {{- end }}
-                      --host={{ template "cockroachdb.fullname" . }}-0.{{ template "cockroachdb.fullname" . -}}
-                              :{{ .Values.service.ports.grpc.internal.port | int64 }}
+                      --host={{ template "cockroachdb.fullname" . -}}
+                              -internal:{{ .Values.service.ports.grpc.internal.port | int64 }}
                   2>&1);
 
                   local exitCode="$?";
@@ -133,8 +133,8 @@ spec:
                     {{- else }}
                     --insecure \
                     {{- end }}
-                    --host={{ template "cockroachdb.fullname" . }}-0.{{ template "cockroachdb.fullname" . -}}
-                            :{{ .Values.service.ports.grpc.internal.port | int64 }} \
+                    --host={{ template "cockroachdb.fullname" . -}}
+                            -internal:{{ .Values.service.ports.grpc.internal.port | int64 }} \
                     --execute="
                       {{- range $clusterSetting, $clusterSettingValue := .Values.init.provisioning.clusterSettings }}
                         SET CLUSTER SETTING {{ $clusterSetting }} = '${{ $clusterSetting | replace "." "_" }}_CLUSTER_SETTING';

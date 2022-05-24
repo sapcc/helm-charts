@@ -27,13 +27,14 @@ spec:
           # check each pod container
           obj := input.review.object
           obj.kind == "Pod"
-          container := obj.spec.containers[_]
+          container := obj.status.containerStatuses[_]
 
           # only consider images stored in Keppel since we want to inspect the X-Keppel-Vulnerability-Status header
           regex.match("^keppel", container.image)
 
           # query vulnerability status through helper API
-          url := sprintf("http://doop-image-checker.kube-system.svc/v1/headers?image=%s", [container.image])
+          imgID := trim_prefix(container.imageID, "docker-pullable://")
+          url := sprintf("http://doop-image-checker.kube-system.svc/v1/headers?image=%s", [imgID])
           resp := http.send({"url": url, "method": "GET", "timeout": "10s"})
           resp.status_code == 200
           status := trim_space(object.get(resp.body, "X-Keppel-Vulnerability-Status", "Unclear"))

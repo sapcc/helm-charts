@@ -31,6 +31,9 @@ spec:
         configmap-etc-region-hash: {{ include (print $.Template.BasePath "/configmap-etc-region.yaml") . | sha256sum }}
         configmap-etc-vendor-hash: {{ include (print $.Template.BasePath "/configmap-etc-vendor.yaml") . | sha256sum }}
         configmap-bin-hash: {{ include (print $.Template.BasePath "/configmap-bin.yaml") . | sha256sum }}
+{{- if .Values.cc_fabric.enabled }}
+        configmap-etc-cc-fabric: {{ include (print $.Template.BasePath "/configmap-etc-cc-fabric.yaml") . | sha256sum }}
+{{- end }}
     spec:
 {{ tuple . "neutron" "rpc" | include "kubernetes_pod_anti_affinity" | indent 6 }}
       containers:
@@ -40,7 +43,7 @@ spec:
           command: ['dumb-init', 'kubernetes-entrypoint']
           env:
             - name: COMMAND
-              value: "neutron-rpc-server --config-file /etc/neutron/neutron.conf --config-file /etc/neutron/plugins/ml2/ml2-conf.ini --config-file /etc/neutron/plugins/ml2/ml2-conf-aci.ini --config-file /etc/neutron/plugins/ml2/ml2-conf-manila.ini --config-file /etc/neutron/plugins/ml2/ml2-conf-arista.ini --config-file /etc/neutron/plugins/ml2/ml2-conf-asr1k.ini {{- if .Values.bgp_vpn.enabled }} --config-file /etc/neutron/networking-bgpvpn.conf{{- end }}{{- if .Values.interconnection.enabled }} --config-file /etc/neutron/networking-interconnection.conf{{- end }}{{- if .Values.fwaas.enabled }} --config-file /etc/neutron/neutron-fwaas.ini{{- end }}"
+              value: "neutron-rpc-server --config-file /etc/neutron/neutron.conf --config-file /etc/neutron/plugins/ml2/ml2-conf.ini --config-file /etc/neutron/plugins/ml2/ml2-conf-aci.ini --config-file /etc/neutron/plugins/ml2/ml2-conf-manila.ini --config-file /etc/neutron/plugins/ml2/ml2-conf-arista.ini --config-file /etc/neutron/plugins/ml2/ml2-conf-asr1k.ini {{- if .Values.bgp_vpn.enabled }} --config-file /etc/neutron/networking-bgpvpn.conf{{- end }}{{- if .Values.interconnection.enabled }} --config-file /etc/neutron/networking-interconnection.conf{{- end }}{{- if .Values.fwaas.enabled }} --config-file /etc/neutron/neutron-fwaas.ini{{- end }}{{- if .Values.cc_fabric.enabled }} --config-file /etc/neutron/plugins/ml2/ml2_conf_cc-fabric.ini {{- end }}"
             - name: NAMESPACE
               value: {{ .Release.Namespace }}
             - name: DEPENDENCY_JOBS
@@ -77,6 +80,16 @@ spec:
               name: neutron-etc
               subPath: logging.conf
               readOnly: true
+{{- if .Values.cc_fabric.enabled }}
+            - mountPath: /etc/neutron/plugins/ml2/ml2_conf_cc-fabric.ini
+              name: neutron-etc-cc-fabric
+              subPath: ml2_conf_cc-fabric.ini
+              readOnly: true
+            - mountPath: /etc/neutron/plugins/ml2/cc-fabric-driver-config.yaml
+              name: neutron-etc-cc-fabric
+              subPath: cc-fabric-driver-config.yaml
+              readOnly: true
+{{- end }}
             - mountPath: /etc/neutron/plugins/ml2/ml2-conf.ini
               name: neutron-etc
               subPath: ml2-conf.ini
@@ -121,6 +134,11 @@ spec:
         - name: neutron-etc
           configMap:
             name: neutron-etc
+{{- if .Values.cc_fabric.enabled }}
+        - name: neutron-etc-cc-fabric
+          configMap:
+            name: neutron-etc-cc-fabric
+{{- end }}
         - name: neutron-etc-vendor
           configMap:
             name: neutron-etc-vendor

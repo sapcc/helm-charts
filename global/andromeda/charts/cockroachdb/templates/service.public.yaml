@@ -4,7 +4,7 @@
 kind: Service
 apiVersion: v1
 metadata:
-  name: {{ template "cockroachdb.fullname" . }}-public
+  name: {{ template "cockroachdb.fullname" . }}
   namespace: {{ .Release.Namespace | quote }}
   labels:
     helm.sh/chart: {{ template "cockroachdb.chart" . }}
@@ -19,6 +19,8 @@ metadata:
   {{- end }}
   {{- if or .Values.service.public.annotations .Values.tls.enabled .Values.iap.enabled }}
   annotations:
+    disco/record: {{ template "cockroachdb.fullname" . }}.cc.{{.Values.global.region}}.{{.Values.global.tld}}.
+    disco/zone-name: "cc.{{.Values.global.region}}.{{.Values.global.tld}}"
   {{- with .Values.service.public.annotations }}
     {{- toYaml . | nindent 4 }}
   {{- end }}
@@ -31,6 +33,10 @@ metadata:
   {{- end }}
 spec:
   type: {{ .Values.service.public.type | quote }}
+  {{- if.Values.service.externalIP }}
+  externalIPs:
+    - {{ .Values.service.externalIP }}
+  {{- end }}
   ports:
   {{- $ports := .Values.service.ports }}
     # The main port, served by gRPC, serves Postgres-flavor SQL, inter-node

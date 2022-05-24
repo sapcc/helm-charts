@@ -24,6 +24,8 @@ spec:
     metadata:
       labels:
         component: manila-nanny
+        alert-tier: os
+        alert-service: manila
     spec:
       nodeSelector:
         zone: farm
@@ -31,6 +33,9 @@ spec:
         - name: manila-etc
           configMap:
             name: manila-etc
+        - name: netapp-filers
+          configMap:
+            name: manila-netapp-filers
       containers:
 {{- if .Values.manila_nanny.db_purge.enabled }}
         - name: db-consistency-and-purge
@@ -291,6 +296,57 @@ spec:
           volumeMounts:
             - mountPath: /manila-etc
               name: manila-etc
+          {{- if .Values.manila_nanny.snapshot.resources }}
+          resources:
+            {{- toYaml .Values.manila_nanny.snapshot.resources | nindent 13 }}
+          {{- else if .Values.manila_nanny.resources }}
+          resources:
+            {{- toYaml .Values.manila_nanny.resources | nindent 13 }}
+          {{- end }}
+{{- end }}
+{{- if .Values.manila_nanny.snapshot_missing.enabled }}
+        - name: snapshot-missing
+          image: {{.Values.global.registry}}/manila-nanny:{{.Values.manila_nanny.image_version}}
+          imagePullPolicy: IfNotPresent
+          command:
+            - dumb-init
+            - kubernetes-entrypoint
+          env:
+            - name: COMMAND
+              value: "/bin/bash /scripts/manila-missing-snapshot.sh"
+            - name: NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: PYTHONUNBUFFERED
+              value: "1"
+            - name: DEPENDENCY_SERVICE
+              value: "manila-mariadb,manila-api"
+            - name: MANILA_NANNY_CONFIG
+              value: /manila-etc/manila.conf
+            - name: MANILA_NANNY_NETAPP_FILERS
+              value: /manila-etc/netapp-filers.yaml
+            - name: MANILA_NANNY_INTERVAL
+              value: {{ .Values.manila_nanny.interval | quote }}
+            - name: MANILA_NANNY_PROMETHEUS_PORT
+              value: {{ .Values.manila_nanny.snapshot_missing.prometheus_port | quote }}
+            - name: MANILA_NANNY_NETAPP_API_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: manila-nanny-secret
+                  key: manila_netapp_api_username
+            - name: MANILA_NANNY_NETAPP_API_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: manila-nanny-secret
+                  key: manila_netapp_api_password
+          volumeMounts:
+            - name: manila-etc
+              mountPath: /manila-etc/manila.conf
+              subPath: manila.conf
+            - name: netapp-filers
+              mountPath: /manila-etc/netapp-filers.yaml
+              subPath: netapp-filers.yaml
           {{- if .Values.manila_nanny.snapshot.resources }}
           resources:
             {{- toYaml .Values.manila_nanny.snapshot.resources | nindent 13 }}

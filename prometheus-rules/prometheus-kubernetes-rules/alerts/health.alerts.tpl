@@ -61,7 +61,7 @@ groups:
       summary: Kube state metrics scrape failed
 
   - alert: KubernetesPodRestartingTooMuch
-    expr: (sum by(pod, namespace, container, ) (rate(kube_pod_container_status_restarts_total[15m]))) * on (pod, container) group_left(label_alert_tier, label_alert_service) kube_pod_labels{} > 0
+    expr: (sum by(pod, namespace, container, ) (rate(kube_pod_container_status_restarts_total[15m]))) * on (pod, container) group_left(label_alert_tier, label_alert_service) (max without (uid) (kube_pod_labels)) > 0
     for: 1h
     labels:
       tier: {{ include "alertTierLabelOrDefault" .Values.tier }}

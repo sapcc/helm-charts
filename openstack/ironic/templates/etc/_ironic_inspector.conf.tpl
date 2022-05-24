@@ -41,6 +41,7 @@ keep_ports = all
 ipmi_address_fields = ilo_address
 log_bmc_address = true
 node_not_found_hook = enroll
+power_off = False
 default_processing_hooks = ramdisk_error,root_disk_selection,scheduler,validate_interfaces,capabilities,pci_devices,extra_hardware
 processing_hooks = $default_processing_hooks,local_link_connection
 #default_processing_hooks = ramdisk_error,root_disk_selection,scheduler,validate_interfaces,capabilities,pci_devices

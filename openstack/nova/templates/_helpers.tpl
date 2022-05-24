@@ -57,6 +57,8 @@ rabbit://{{ default "" .Values.global.user_suffix | print .Values.rabbitmq_cell2
   {{- $name := index . 1 }}
   {{- with index . 0 }}
 labels:
+  alert-tier: os
+  alert-service: nova
 {{ tuple . .Release.Name $name | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 2 }}
 annotations:
   bin-hash: {{ include (print .Template.BasePath "/bin/_" $name ".tpl") . | sha256sum }}

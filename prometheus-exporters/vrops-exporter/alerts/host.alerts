@@ -40,10 +40,10 @@ groups:
 
   - alert: HostInMaintenanceWithoutCustomAttribute
     expr: |
-      count(((max_over_time(vrops_hostsystem_runtime_maintenancestate{state="inMaintenance"}[10m]) == 0)
-      AND ON(hostsystem) max_over_time(vrops_hostsystem_custom_attributes_hw_info{custom_attributes_hw=''}[10m]))
-      OR ON(hostsystem) ((max_over_time(vrops_hostsystem_runtime_maintenancestate{state="inMaintenance"}[10m]) == 0)
-      unless ON(hostsystem) max_over_time(vrops_hostsystem_custom_attributes_hw_info[10m])))
+      count(((avg_over_time(vrops_hostsystem_runtime_maintenancestate{state="inMaintenance"}[10m]))
+      AND ON(hostsystem) avg_over_time(vrops_hostsystem_custom_attributes_hw_info{custom_attributes_hw=' '}[10m]))
+      OR ON(hostsystem) ((avg_over_time(vrops_hostsystem_runtime_maintenancestate{state="inMaintenance"}[10m]))
+      unless ON(hostsystem) avg_over_time(vrops_hostsystem_custom_attributes_hw_info[10m])))
     for: 20m
     labels:
       severity: info
@@ -296,3 +296,17 @@ groups:
     annotations:
       description: "`{{ $labels.hostsystem }}` root filesystem not present through CMMDS or is not responsive. ({{ $labels.vcenter }})"
       summary: "`{{ $labels.hostsystem }}` root filesystem not present through CMMDS or is not responsive. ({{ $labels.vcenter }})"
+
+  - alert: HostStoragePathsDown
+    expr: vrops_hostsystem_storage_number_of_path - vrops_hostsystem_storage_number_of_active_path > 4
+    for: 30m
+    labels:
+      severity: info
+      tier: vmware
+      service: compute
+      context: "{{ $labels.hostsystem }} storage paths"
+      meta: "More than 4 active storage paths for `{{ $labels.hostsystem }}` down. ({{ $labels.vcenter }})"
+      no_alert_on_absence: "true"
+    annotations:
+      description: "More than 4 active storage paths for `{{ $labels.hostsystem }}` down. ({{ $labels.vcenter }})"
+      summary: "More than 4 active storage paths for `{{ $labels.hostsystem }}` down. ({{ $labels.vcenter }})"

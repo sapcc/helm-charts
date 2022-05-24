@@ -33,10 +33,11 @@ template: |
         labels:
 {{ tuple . "nova" "compute" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 10 }}
           name: nova-compute-{= name =}
+          alert-tier: os
+          alert-service: nova
           hypervisor: "vmware"
         annotations:
           prometheus.io/scrape: "true"
-          prometheus.io/port: "9102"
           prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
           configmap-etc-hash: {{ include (print .Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
           configmap-nova-compute-hash: {= "vcenter_cluster/{{ .Release.Namespace }}/vcenter-cluster-nova-compute-configmap.yaml.j2" | render | sha256sum =}

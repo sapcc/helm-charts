@@ -59,3 +59,24 @@ spec:
             summary: "Audit logs missing for {{ .name }}"
     {{- end }}
     {{- end }}
+    {{- if .Values.auditSourcesRegional }}
+    {{- range .Values.auditSourcesRegional }}
+    {{- $name := .name }}
+    {{- if contains "-" $name }}
+    {{- $name = replace "-" "_" $name }}
+    {{- end }}
+    {{- $name = camelcase $name }}
+        - alert: OctobusAuditLogs{{ $name }}Missing
+          expr: elasticsearch_octobus_audit_source_doc_count{source="{{ .name }}"} == 0
+          for: {{ .interval }}
+          labels:
+            severity: info
+            tier: monitor
+            service: audit
+            meta: "Audit events for {{ .name }} missing"
+            dashboard: audit-log-shipping
+          annotations:
+            description: "There have been no logs for {{ .name }} in the last {{ .interval }}"
+            summary: "Audit logs missing for {{ .name }}"
+    {{- end }}
+    {{- end }}

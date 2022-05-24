@@ -9,11 +9,15 @@ metadata:
     ingress.kubernetes.io/affinity: "cookie"
     ingress.kubernetes.io/ssl-redirect: "true"
     kubernetes.io/tls-acme: "true"
+    
+    {{- if .Values.ingress.internet_facing }}
+    kubernetes.io/ingress.class: nginx-internet
+    {{- end }} 
 
 spec:
-{{- if .Values.ingress.internet_facing }}
-  ingressClassName: "nginx-internet"
-{{- end }}  
+  #{{- if .Values.ingress.internet_facing }}
+  #ingressClassName: "nginx-internet"
+  #{{- end }}  
   tls:
      - secretName: supernova
        hosts: [{{ .Values.ingress.host }}]
