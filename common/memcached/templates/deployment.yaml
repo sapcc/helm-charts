@@ -7,10 +7,6 @@ metadata:
     chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
     release: "{{ .Release.Name }}"
     heritage: "{{ .Release.Service }}"
-    {{- if .Values.alerts.enabled }}
-    alert-tier: {{ required ".Values.alerts.tier missing" .Values.alerts.tier }}
-    alert-service: {{ include "alerts.service" . }}
-    {{- end }}
 spec:
   replicas: {{ .Values.replicas }}
   revisionHistoryLimit: {{ .Values.upgrades.revisionHistory }}
@@ -29,6 +25,10 @@ spec:
       labels:
         app: {{ template "fullname" . }}
         component: memcached
+        {{- if .Values.alerts.enabled }}
+        alert-tier: {{ required ".Values.alerts.tier missing" .Values.alerts.tier }}
+        alert-service: {{ include "alerts.service" . }}
+        {{- end }}
     spec:
       affinity:
         nodeAffinity:
