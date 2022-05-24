@@ -77,15 +77,37 @@ cronus:
   workQueue:
     enabled: {{ .Values.config.workQueue.enabled }}
     rabbitmqUri: amqp://{{ $r_user }}:{{ $r_creds }}@cronus-rabbitmq:5672/
-    queueName: {{ .Values.config.workQueue.queueName }}
-    exchangeName: {{ .Values.config.workQueue.exchangeName }}
     trailLimit: {{ .Values.config.workQueue.trailLimit }}
     trailTimeBaseFactor: {{ .Values.config.workQueue.trailTimeBaseFactor }}
     trailTimeRandMaxNumber: {{ .Values.config.workQueue.trailTimeRandMaxNumber }}
-    workerPrefetchCount: {{ .Values.config.workQueue.workerPrefetchCount }}
-    workerPrefetchSize: {{ .Values.config.workQueue.workerPrefetchSize }}
     maxContainerNum: {{ .Values.config.workQueue.maxContainerNum }}
     reconnectWatcherLimit: {{ .Values.config.workQueue.reconnectWatcherLimit }}
+    jobQueue:
+      deadLetterEnabled: {{ .Values.config.workQueue.jobQueue.deadLetterEnabled }}
+      queueName: {{ .Values.config.workQueue.jobQueue.queueName }}
+      exchangeName: {{ .Values.config.workQueue.jobQueue.exchangeName }}
+      workerPrefetchCount: {{ .Values.config.workQueue.jobQueue.workerPrefetchCount }}
+      workerPrefetchSize: {{ .Values.config.workQueue.jobQueue.workerPrefetchSize }}
+      routingKey: {{ .Values.config.workQueue.jobQueue.routingKey }}
+{{- if .Values.config.workQueue.jobQueue.maxTTL }}
+      maxTTL: {{ .Values.config.workQueue.jobQueue.maxTTL }}
+{{- end }}
+{{- if .Values.config.workQueue.jobQueue.deadLetterExchange }}
+      deadLetterExchange: {{ .Values.config.workQueue.jobQueue.deadLetterExchange }}
+{{- end }}
+{{- if .Values.config.workQueue.jobQueue.deadLetterRoutingKey }}
+      deadLetterRoutingKey: {{ .Values.config.workQueue.jobQueue.deadLetterRoutingKey }}
+{{- end }}
+    waitingQueue:
+      deadLetterEnabled: {{ .Values.config.workQueue.waitingQueue.deadLetterEnabled }}
+      queueName: {{ .Values.config.workQueue.waitingQueue.queueName }}
+      exchangeName: {{ .Values.config.workQueue.waitingQueue.exchangeName }}
+      workerPrefetchCount: {{ .Values.config.workQueue.waitingQueue.workerPrefetchCount }}
+      workerPrefetchSize: {{ .Values.config.workQueue.waitingQueue.workerPrefetchSize }}
+      routingKey: {{ .Values.config.workQueue.waitingQueue.routingKey }}
+      maxTTL: {{ .Values.config.workQueue.waitingQueue.maxTTL }}
+      deadLetterExchange: {{ .Values.config.workQueue.waitingQueue.deadLetterExchange }}
+      deadLetterRoutingKey: {{ .Values.config.workQueue.waitingQueue.deadLetterRoutingKey }}
 {{- end }}
 {{- if .Values.config.smtpBackends }}
   # extra SMTP backends and a list of recipient domains

@@ -238,15 +238,28 @@ config:
         - int.corp
   workQueue:
     enabled: false
-    queueName: cronus_work_queue
-    exchangeName: cronus_work_queue_exchange
-    trailLimit: 5
+    trailLimit: 6
     trailTimeBaseFactor: 5 # in sec
     trailTimeRandMaxNumber: 300 # in sec
-    workerPrefetchCount: 1
-    workerPrefetchSize: 0
     maxContainerNum: 6
-    reconnectWatcherLimit: 15
+    reconnectWatcherLimit: 10
+    jobQueue:
+      deadLetterEnabled: false
+      queueName: cronus_work_queue
+      exchangeName: cronus_work_queue_exchange
+      workerPrefetchCount: 1
+      workerPrefetchSize: 0
+      routingKey: cronus.job
+    waitingQueue:
+      queueName: cronus_waiting_queue
+      exchangeName: cronus_waiting_queue_exchange
+      workerPrefetchCount: 1
+      workerPrefetchSize: 0
+      routingKey: cronus.delayedjob
+      deadLetterEnabled: true
+      maxTTL: 1 # in days
+      deadLetterExchange: cronus_work_queue_exchange
+      deadLetterRoutingKey: cronus.job
   # the list of domains to be blocked by a proxy server on ses email identity create/delete actions
   blockedDomains:
     - example.com # the exact domain
