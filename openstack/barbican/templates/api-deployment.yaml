@@ -11,8 +11,6 @@ metadata:
     system: openstack
     type: api
     component: barbican
-    alert-tier: os
-    alert-service: barbican
 spec:
   replicas: {{ required ".Values.api.replicas is missing" .Values.api.replicas }}
   revisionHistoryLimit: {{ .Values.pod.lifecycle.upgrades.deployments.revisionHistory }}
@@ -31,6 +29,8 @@ spec:
       labels:
         app: {{ template "fullname" . }}
         name: barbican-api
+        alert-tier: os
+        alert-service: barbican
 {{ tuple . "barbican" "api" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
       annotations:
         configmap-etc-hash: {{ include (print $.Template.BasePath "/etc-configmap.yaml") . | sha256sum }}

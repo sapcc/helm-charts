@@ -6,8 +6,6 @@ metadata:
     system: openstack
     type: configuration
     component: barbican
-    alert-tier: os
-    alert-service: barbican
   annotations:
     "helm.sh/hook": "post-install,pre-upgrade"
     "helm.sh/hook-weight": "-1"
@@ -16,6 +14,8 @@ spec:
   template:
     metadata:
       labels:
+        alert-tier: os
+        alert-service: barbican
 {{ tuple . "barbican" "migration" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
     spec:
       restartPolicy: OnFailure
