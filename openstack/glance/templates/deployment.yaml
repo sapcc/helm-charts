@@ -10,8 +10,6 @@ metadata:
     heritage: "{{ .Release.Service }}"
     type: api
     component: glance
-    alert-tier: os
-    alert-service: glance
 spec:
   replicas: {{ .Values.replicas }}
   revisionHistoryLimit: {{ .Values.upgrades.revisionHistory }}
@@ -30,6 +28,8 @@ spec:
       labels:
         app: {{ template "name" . }}
         name: glance
+        alert-tier: os
+        alert-service: glance
       annotations:
         chart-version: {{.Chart.Version}}
         checksum/etc-configmap.conf: {{ include (print $.Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
