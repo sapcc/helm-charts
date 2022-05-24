@@ -115,7 +115,7 @@ workers = 2
 #threads = 1000
 
 # Enable host request headers
-#enable_host_header = False
+enable_host_header = false
 
 # Make Zone description field mandatory
 #description_field_mandatory = False
