@@ -1,0 +1,36 @@
+apiVersion: templates.gatekeeper.sh/v1beta1
+kind: ConstraintTemplate
+metadata:
+  name: gkforbiddenadmissionwebhooks
+spec:
+  crd:
+    spec:
+      names:
+        kind: GkForbiddenAdmissionWebhooks
+      validation:
+        openAPIV3Schema:
+          properties: {}
+
+  targets:
+    - target: admission.k8s.gatekeeper.sh
+      rego: |
+        package forbiddenadmissionwebhooks
+
+        # Violations act like a blocklist, but we want to have an allowlist, so
+        # we go through `allowed_webhook` as an intermediate level.
+        violation[{"msg": msg}] {
+          webhook := input.review.object.webhooks[_]
+          count({ x | x := allowed_webhook[_]; x.name == webhook.name }) == 0
+          msg := sprintf("webhook %q does not match our allowlist", [webhook.name])
+        }
+
+        allowed_webhook[{ "name": webhook.name, "reason": "allow-gatekeeper" }] {
+          input.review.object.kind == "ValidatingWebhookConfiguration"
+          input.review.object.name == "gatekeeper-validating-webhook-configuration"
+
+          webhook := input.review.object.webhooks[_]
+          webhook.clientConfig.service.namespace == "kube-system"
+          webhook.clientConfig.service.name == "gatekeeper-webhook-service"
+        }
+
+        # TODO: we need many more
