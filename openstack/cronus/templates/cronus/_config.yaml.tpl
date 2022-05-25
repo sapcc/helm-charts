@@ -77,6 +77,18 @@ cronus:
   workQueue:
     enabled: {{ .Values.config.workQueue.enabled }}
     rabbitmqUri: amqp://{{ $r_user }}:{{ $r_creds }}@cronus-rabbitmq:5672/
+{{- if .Values.config.workQueue.queueName }}
+    queueName: {{ .Values.config.workQueue.queueName }}
+{{- end }}
+{{- if .Values.config.workQueue.exchangeName }}
+    exchangeName: {{ .Values.config.workQueue.exchangeName }}
+{{- end }}
+{{- if .Values.config.workQueue.workerPrefetchCount }}
+    workerPrefetchCount: {{ .Values.config.workQueue.workerPrefetchCount }}
+{{- end }}
+{{- if .Values.config.workQueue.workerPrefetchSize }}
+    workerPrefetchSize: {{ .Values.config.workQueue.workerPrefetchSize }}
+{{- end }}
     trailLimit: {{ .Values.config.workQueue.trailLimit }}
     trailTimeBaseFactor: {{ .Values.config.workQueue.trailTimeBaseFactor }}
     trailTimeRandMaxNumber: {{ .Values.config.workQueue.trailTimeRandMaxNumber }}
