@@ -24,7 +24,7 @@
 - name: AUTOMATION_OS_REGION
   value: "{{ .Values.global.region }}"
 - name: PULUMI_BACKEND_URL
-  value: file:///pulumi/automation/etc
+  value: file:///pulumi/etc
 - name: PULUMI_CONFIG_PASSPHRASE
   valueFrom:
     secretKeyRef:
