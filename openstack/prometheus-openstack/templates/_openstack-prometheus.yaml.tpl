@@ -25,7 +25,7 @@
     regex: .*openstack.*
   - action: keep
     source_labels: [__meta_kubernetes_pod_container_port_number, __meta_kubernetes_pod_container_port_name, __meta_kubernetes_pod_annotation_prometheus_io_port]
-    regex: (9102;.*;.*)|(.*;metrics;.*)|(.*;.*;\d+)
+    regex: (9102;.*;.*)|(.*;metrics(-.*)?;.*)|(.*;.*;\d+)
   - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]
     target_label: __metrics_path__
     regex: (.+)
@@ -81,7 +81,7 @@
     regex: \d+
   - action: keep
     source_labels: [__meta_kubernetes_pod_container_port_number, __meta_kubernetes_pod_container_port_name, __meta_kubernetes_pod_annotation_prometheus_io_port_1]
-    regex: (9102;.*;.*)|(.*;metrics;.*)|(.*;.*;\d+)
+    regex: (9102;.*;.*)|(.*;metrics(-.*)?;.*)|(.*;.*;\d+)
   - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]
     target_label: __metrics_path__
     regex: (.+)
