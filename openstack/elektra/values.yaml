@@ -16,10 +16,10 @@ monsoon_dashboard_cam_url: https://spc40-emea.byd.sap.corp/sap/bc/webdynpro/a1ss
 #monsoon_openstack_auth_api_endpoint:
 monsoon_openstack_auth_api_userid: dashboard
 monsoon_openstack_auth_api_domain: Default
-two_factor_authentication: 'off'
-two_factor_auth_domains: 'hcp03,cp,s4,wbs,fsn'
+two_factor_authentication: "off"
+two_factor_auth_domains: "hcp03,cp,s4,wbs,fsn"
 # When to delete old sessions every day
-session_cleanup_time: '0415' #4:15 UTC
+session_cleanup_time: "0415" #4:15 UTC
 #arc_updates_url:
 #arc_pki_url:
 #arc_broker_url:
@@ -46,3 +46,43 @@ alerts:
   prometheus: openstack
 
 galvani: DEFINED_IN_VALUES_FILE
+
+postgresql:
+  log_min_duration_statement: 250
+  # less than the postgresql chart's default; I want to know early when connections start getting out of hand
+  max_connections: 128
+
+  image: keppel.eu-de-1.cloud.sap/ccloud/postgres
+  imageTag: "12.10"
+  persistence:
+    enabled: true
+    accessMode: ReadWriteMany
+    size: 10Gi
+  resources:
+    # observed on qa-de-1: 10m-15m CPU usage, 75-90 Mi RAM usage
+    limits:
+      memory: 128Mi
+      cpu: 30m
+    requests:
+      memory: 128Mi
+      cpu: 30m
+
+  backup:
+    enabled: true
+    image: keppel.eu-de-1.cloud.sap/ccloud/backup-tools
+    imageTag: v0.6.5
+    custom_repository: true
+  probe_timeout_secs: 10 # instead of 3
+
+pgmetrics:
+  db_name: monsoon-dashboard_production
+  customMetrics:
+    pg_database:
+      query: "SELECT d.datname AS datname, CASE WHEN pg_catalog.has_database_privilege(d.datname, 'CONNECT') THEN pg_catalog.pg_database_size(d.datname) ELSE 0 END AS size_bytes FROM pg_catalog.pg_database d where datname not in ('template0', 'template1', 'postgres')"
+      metrics:
+        - datname:
+            usage: "LABEL"
+            description: "Name of the database"
+        - size_bytes:
+            usage: "GAUGE"
+            description: "Size of the database in bytes"
