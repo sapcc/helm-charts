@@ -19,30 +19,18 @@ spec:
             env:
             - name: KIBANA_API_ENDPOINT
               value: "{{ .Values.kibanaObjecter.kibana_api_endpoint }}"
-            - name: GIT_REPO_REMOTE
+            - name: ENV_GIT_REPO
               value: "{{ .Values.kibanaObjecter.git_repo_remote }}"
-            - name: GIT_REPO_LOCAL
+            - name: ENV_REPO_LOCAL
               value: "{{ .Values.kibanaObjecter.git_repo_local }}"
-            - name: KIBANA_API_TOKEN
+            - name: ENV_KIBANA_API_TOKEN
               valueFrom:
                 secretKeyRef:
                   name: kibana-objecter-secret
-                  key: KIBANA_API_TOKEN
-            - name: GIT_TOKEN
+                  key: ENV_KIBANA_API_TOKEN
+            - name: ENV_GIT_TOKEN
               valueFrom:
                 secretKeyRef:
                   name: kibana-objecter-secret
-                  key: GIT_TOKEN
-            command:
-            - python3 kibana-objecter.py
-            - --kibana_api_endpoint
-            - KIBANA_API_ENDPOINT
-            - --kibana_api_token
-            - KIBANA_API_TOKEN
-            - --git_repo_remote
-            - GIT_REPO_REMOTE
-            - --git_repo_local
-            - GIT_REPO_LOCAL
-            - --git_token
-            - KIBANA_API_TOKEN
+                  key: ENV_GIT_TOKEN
           restartPolicy: OnFailure
