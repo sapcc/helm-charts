@@ -1,0 +1,21 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: fluent-bin
+  labels:
+    system: openstack
+    service: logging
+    component: configuration
+
+data:
+  fluent-start: |
+{{ include (print .Template.BasePath "/_fluent-start.tpl") . | indent 4 }}
+  fluent.conf: |
+{{ include (print .Template.BasePath "/_fluent.conf.tpl") . | indent 4 }}
+  prometheus.conf: |
+{{ include (print .Template.BasePath "/_prometheus.conf.tpl") . | indent 4 }}
+  pattern: |
+{{ include (print .Template.BasePath "/_pattern.tpl") . | indent 4 }}
+  logstash.json: |
+{{ include (print .Template.BasePath "/_logstash.json.tpl") . | indent 4 }}
