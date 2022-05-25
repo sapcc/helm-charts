@@ -30,16 +30,6 @@ config:
           config:
           challenge: false
         authentication_backend:
-          type: noop
-      ldap:
-        description: "Authenticate via LDAP or Active Directory"
-        http_enabled: true
-        transport_enabled: false
-        order: 5
-        http_authenticator:
-          type: basic
-          challenge: true
-        authentication_backend:
           type: ldap
           config:
             enable_ssl: true
@@ -74,6 +64,10 @@ config:
             userroleattribute: null
             userrolename: disabled
             rolename: cn
-            resolve_nested_roles: true
+            resolve_nested_roles: false
             userbase: '{{ .Values.global.ldap.user_search_base_dns }}'
             usersearch: '(uid={0})'
+            skip_users:
+            {{- range .Values.nonldap.users }}
+            - {{ . | title | lower }}
+            {{- end }}    
