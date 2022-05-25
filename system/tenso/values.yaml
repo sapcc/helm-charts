@@ -42,6 +42,49 @@ postgresql:
 
 pgmetrics:
   db_name: tenso
-  customMetrics: {}
   alerts:
     prometheus: infra-frontend # see above
+
+  customMetrics:
+    tenso_events:
+      # The final UNION SELECT adds a dummy row to ensure that all derived
+      # timeseries always exist.  Therefore we can have absence alerts that are
+      # useful, but do not mis-trigger when the event queue is empty.
+      query: >
+        SELECT payload_type, COUNT(*) AS count, EXTRACT(epoch FROM MIN(created_at)) AS min_created_at
+          FROM events
+         GROUP BY payload_type
+         UNION SELECT 'none' AS payload_type, 0 AS count, EXTRACT(epoch FROM NOW()) as min_created_at
+      metrics:
+        - payload_type:
+            usage: LABEL
+            description: "Payload type of ingested event"
+        - count:
+            usage: GAUGE
+            description: "Total number of events currently enqueued in the Tenso database"
+        - min_created_at:
+            usage: GAUGE
+            description: "UNIX timestamp on oldest event that currently exists in the Tenso database"
+    tenso_pending_deliveries:
+      # See above for why we have a UNION SELECT at the end.
+      query: >
+        SELECT d.payload_type AS payload_type, COUNT(*) AS count, EXTRACT(epoch FROM MIN(e.created_at)) AS min_created_at, SUM(failed_conversions) AS conversion_failures, SUM(failed_deliveries) AS delivery_failures
+          FROM pending_deliveries d JOIN events e ON d.event_id = e.id
+         GROUP BY d.payload_type
+         UNION SELECT 'none' AS payload_type, 0 AS count, EXTRACT(epoch FROM NOW()) AS min_created_at, 0 AS conversion_failures, 0 AS delivery_failures
+      metrics:
+        - payload_type:
+            usage: LABEL
+            description: "Deliverable payload type"
+        - count:
+            usage: GAUGE
+            description: "Total number of deliveries currently enqueued in the Tenso database"
+        - min_created_at:
+            usage: GAUGE
+            description: "UNIX timestamp on oldest ingested event that did not have its converted payload delivered"
+        - failed_conversions:
+            usage: GAUGE
+            description: "Total number of failed conversion operations for payloads of this type that are still pending delivery"
+        - failed_deliveries:
+            usage: GAUGE
+            description: "Total number of failed delivery operations for payloads of this type that are still pending delivery"
