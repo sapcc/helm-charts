@@ -84,6 +84,7 @@ max_shares_per_share_server = {{ $share.max_shares_per_share_server | default $c
 max_share_server_size  = {{ $share.max_share_server_size | default $context.Values.max_share_server_size | default 10240 }}
 
 filter_function = {{ $share.filter_function | default "stats.provisioned_capacity_gb / stats.total_capacity_gb <= 0.7" }}
+goodness_function = {{ $share.goodness_function | default "((share.share_proto == "CIFS") and (capabilities.channel_binding_support)) ? 100 : 50" }}
 
 {{- end -}}
 {{- end }}
