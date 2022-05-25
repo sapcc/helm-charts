@@ -40,11 +40,13 @@
     secretKeyRef:
       name: vcf-secret
       key: esxi_license_management
+{{- if hasKey .Values "esxi_password" }}
 - name: VCF_ESXI_PASSWORD
   valueFrom:
     secretKeyRef:
       name: vcf-secret
       key: esxi_password
+{{- end }}
 - name: VCF_VMWARE_PASSWORD
   valueFrom:
     secretKeyRef:
