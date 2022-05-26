@@ -674,6 +674,9 @@ db_name: nova
 max_pool_size: 10
 max_overflow: 5
 
+proxysql:
+  mode: ""
+
 mariadb:
   enabled: false
   max_connections: 2048
@@ -681,6 +684,18 @@ mariadb:
   log_file_size: "1024M"
   name: nova
   custom_initdb_configmap: nova-mysql-db-init
+  databases:
+  - nova
+  - nova_cell0
+  users:
+    nova:
+      name: nova
+      grants:
+      - "ALL PRIVILEGES on nova.*"
+    nova_cell0:
+      name: nova_cell0
+      grants:
+      - "ALL PRIVILEGES on nova_cell0.*"
   persistence_claim:
     name: db-nova-pvc
     size: "50Gi"
@@ -704,6 +719,13 @@ mariadb_api:
   log_file_size: "1024M"
   name: nova-api
   custom_initdb_configmap: nova-api-db-init
+  databases:
+  - nova_api
+  users:
+    nova_api:
+      name: nova_api
+      grants:
+      - "ALL PRIVILEGES on nova_api.*"
   persistence_claim:
     name: db-nova-api-pvc
     size: "50Gi"
