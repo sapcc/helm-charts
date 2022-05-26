@@ -21,23 +21,52 @@ postgresql+psycopg2://{{$user}}:{{$password | urlquery}}@{{.Chart.Name}}-postgre
 ?connect_timeout=10&keepalives_idle=5&keepalives_interval=5&keepalives_count=10
 {{- end}}
 
-{{- define "db_host_mysql" -}}
-{{ .Values.mariadb.name }}-mariadb.{{ .Release.Namespace }}.svc.kubernetes.{{ .Values.global.region }}.{{ .Values.global.tld }}
-{{- end }}
-
-{{define "db_url_mysql" }}
-    {{- if kindIs "map" . -}}
-mysql+pymysql://{{ coalesce .Values.dbUser .Values.global.dbUser "root" }}:{{ coalesce .Values.dbPassword .Values.global.dbPassword .Values.mariadb.root_password | required ".Values.mariadb.root_password is required!" }}@{{ include "db_host_mysql" . }}/{{.Values.db_name}}
+{{- define "db_credentials" }}
+    {{- if kindIs "map" . }}
+        {{- coalesce .Values.dbUser .Values.global.dbUser "root" }}:{{ coalesce .Values.dbPassword .Values.global.dbPassword .Values.mariadb.root_password | required ".Values.mariadb.root_password is required!" | urlquery }}
     {{- else }}
-        {{- $envAll := index . 0 }}
-        {{- $name := index . 1 }}
         {{- $user := index . 2 }}
         {{- $password := index . 3 }}
-        {{- with $envAll -}}
-mysql+pymysql://{{$user}}:{{$password | urlquery}}@{{ include "db_host_mysql" .}}/{{$name}}
+        {{- $user }}:{{ $password | urlquery }}
+    {{- end }}
+{{- end }}
+
+{{- define "db_host_mysql" }}
+    {{- if kindIs "map" . }}
+        {{- .Values.mariadb.name }}
+    {{- else }}
+        {{- $envAll := index . 0 }}
+        {{- if lt 4  (len .) }}
+            {{- index . 4 }}
+        {{- else }}
+            {{- $envAll.Values.mariadb.name }}
         {{- end }}
-    {{- end -}}
-?charset=utf8
+    {{- end }}-mariadb
+{{- end }}
+
+{{- define "db_url_mysql" }}
+    {{- if kindIs "map" . }}
+        {{- tuple . (coalesce .Values.dbName .Values.db_name) (coalesce .Values.dbUser .Values.global.dbUser "root") (coalesce .Values.dbPassword .Values.global.dbPassword .Values.mariadb.root_password | required ".Values.mariadb.root_password is required!") .Values.mariadb.name | include "db_url_mysql" }}
+    {{- else -}}
+mysql+pymysql://{{ include "db_credentials" . }}@
+        {{- $allArgs := . }}
+        {{- $schemaName := index . 1 }}
+        {{- with $envAll := index . 0 }}
+            {{- if not .Values.proxysql }}
+                {{- include "db_host_mysql" $allArgs }}
+            {{- else if ne $envAll.Values.proxysql.mode "unix_socket" }}
+                {{- $_ := mustHas $envAll.Values.proxysql.mode (list "unix_socket" "host_alias") }}
+                {{- include "db_host_mysql" $allArgs }}
+            {{- end -}}
+            /{{ $schemaName }}?
+            {{- if .Values.proxysql }}
+                {{- if eq .Values.proxysql.mode "unix_socket" -}}
+                    unix_socket=/run/proxysql/mysql.sock&
+                {{- end }}
+            {{- end }}
+        {{- end -}}
+        charset=utf8
+    {{- end }}
 {{- end}}
 
 {{define "db_host_pxc"}}{{.Release.Name}}-percona-pxc.{{ include "svc_fqdn" . }}{{end}}
