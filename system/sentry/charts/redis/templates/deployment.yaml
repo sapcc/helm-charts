@@ -20,7 +20,7 @@ spec:
     spec:
       containers:
       - name: {{ template "fullname" . }}
-        image: "{{ .Values.image }}"
+        image: "{{required ".Values.global.dockerHubMirror is missing" .Values.global.dockerHubMirror }}/{{ required ".Values.image.repository is missing" .Values.image.repository }}:{{ required ".Values.image.tag is missing" .Values.image.tag }}"
         imagePullPolicy: {{ default "" .Values.imagePullPolicy | quote }}
         args: [ --requirepass, $(REDIS_PASSWORD) ]
         env:
