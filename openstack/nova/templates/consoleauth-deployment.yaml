@@ -32,6 +32,7 @@ spec:
         configmap-etc-hash: {{ include (print $.Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
     spec:
 {{ tuple . "nova" "console-auth" | include "kubernetes_pod_anti_affinity" | indent 6 }}
+{{ include "utils.proxysql.pod_settings" . | indent 6 }}
       hostname: nova-console
       volumes:
       - name: etcnova
@@ -39,6 +40,7 @@ spec:
       - name: nova-etc
         configMap:
           name: nova-etc
+      {{- include "utils.proxysql.volumes" . | indent 6 }}
       containers:
       - name: nova-consoleauth
         image: {{ required ".Values.global.registry is missing" .Values.global.registry}}/ubuntu-source-nova-consoleauth:{{.Values.imageVersionNovaConsoleauth |  default .Values.imageVersionNova | default .Values.imageVersion | required "Please set nova.imageVersion or similar" }}
@@ -75,6 +77,8 @@ spec:
           mountPath: /etc/nova/logging.ini
           subPath: logging.ini
           readOnly: true
+        {{- include "utils.proxysql.volume_mount" . | indent 8 }}
+      {{- include "utils.proxysql.container" . | indent 6 }}
 {{- end }}
 {{ $envAll := . }}
 {{- range $name, $config := .Values.consoles }}

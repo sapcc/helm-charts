@@ -1,12 +1,12 @@
-{{- define "cell0_db_path" -}}
-mysql+pymysql://{{.Values.cell0dbUser}}:{{ default .Values.cell0dbPassword .Values.global.dbPassword | urlquery }}@{{.Chart.Name}}-mariadb.{{include "svc_fqdn" .}}:3306/{{.Values.cell0dbName}}?charset=utf8
-{{- end -}}
+{{- define "cell0_db_path" }}
+    {{- tuple . .Values.cell0dbName .Values.cell0dbUser (default .Values.cell0dbPassword .Values.global.dbPassword) | include "db_url_mysql" }}
+{{- end }}
 
 {{- define "cell2_db_path" -}}
-{{- if eq .Values.cell2.enabled true -}}
-mysql+pymysql://{{.Values.cell2dbUser}}:{{ default .Values.cell2dbPassword .Values.global.dbPassword | urlquery }}@{{.Chart.Name}}-{{.Values.cell2.name}}-mariadb.{{include "svc_fqdn" .}}:3306/{{.Values.cell2dbName}}?charset=utf8
-{{- end -}}
-{{- end -}}
+    {{- if eq .Values.cell2.enabled true -}}
+        {{- tuple . .Values.cell2dbName .Values.cell2dbUser (default .Values.cell2dbPassword .Values.global.dbPassword) .Values.mariadb_cell2.name | include "db_url_mysql" }}
+    {{- end }}
+{{- end }}
 
 {{- define "cell2_db_path_for_exporter" -}}
 {{- if eq .Values.cell2.enabled true -}}

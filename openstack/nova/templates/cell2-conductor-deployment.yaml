@@ -29,29 +29,43 @@ spec:
         alert-service: nova
 {{ tuple . "nova" "conductor" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
       annotations:
-        {{- if .Values.cell2.conductor.config_file.DEFAULT.statsd_enabled }}
+        {{- if or .Values.cell2.conductor.config_file.DEFAULT.statsd_enabled .Values.proxysql.mode }}
         prometheus.io/scrape: "true"
         prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
         {{- end }}
         configmap-etc-hash: {{ include (print $.Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
     spec:
 {{ tuple . "nova" "conductor" | include "kubernetes_pod_anti_affinity" | indent 6 }}
+{{ include "utils.proxysql.pod_settings" . | indent 6 }}
       terminationGracePeriodSeconds: {{ .Values.defaults.default.graceful_shutdown_timeout | add 5 }}
       hostname: nova-conductor
+      initContainers:
+        - name: dependencies
+          image: {{ required ".Values.global.registry is missing" .Values.global.registry}}/ubuntu-source-nova-conductor:{{.Values.imageVersionNovaConductor | default .Values.imageVersionNova | default .Values.imageVersion | required "Please set nova.imageVersion or similar"}}
+          imagePullPolicy: IfNotPresent
+          command:
+            - kubernetes-entrypoint
+          env:
+            - name: COMMAND
+              value: "true"
+            - name: NAMESPACE
+              value: {{ .Release.Namespace }}
+            - name: DEPENDENCY_SERVICE
+              value: "{{ .Release.Name }}-{{ .Values.cell2.name }}-rabbitmq,{{ .Release.Name }}-{{ .Values.cell2.name }}-mariadb"      
       containers:
         - name: nova-conductor
           image: {{ required ".Values.global.registry is missing" .Values.global.registry}}/ubuntu-source-nova-conductor:{{.Values.imageVersionNovaConductor | default .Values.imageVersionNova | default .Values.imageVersion | required "Please set nova.imageVersion or similar"}}
           imagePullPolicy: IfNotPresent
           command:
             - dumb-init
-            - kubernetes-entrypoint
+            - nova-conductor
+            - --config-file
+            - /etc/nova/nova.conf
+            - --config-file
+            - /etc/nova/nova-conductor.conf
+            - --config-file
+            - /etc/nova/nova-cell2.conf
           env:
-            - name: COMMAND
-              value: "nova-conductor --config-file etc/nova/nova.conf --config-file /etc/nova/nova-conductor.conf --config-file /etc/nova/nova-cell2.conf"
-            - name: NAMESPACE
-              value: {{ .Release.Namespace }}
-            - name: DEPENDENCY_SERVICE
-              value: "{{ .Release.Name }}-{{ .Values.cell2.name }}-rabbitmq,{{ .Release.Name }}-{{ .Values.cell2.name }}-mariadb"
             {{- if .Values.sentry.enabled }}
             - name: SENTRY_DSN
               valueFrom:
@@ -96,6 +110,8 @@ spec:
               name: nova-etc
               subPath: logging.ini
               readOnly: true
+            {{- include "utils.proxysql.volume_mount" . | indent 12 }}
+        {{- include "utils.proxysql.container" . | indent 8 }}
         {{- if .Values.cell2.conductor.config_file.DEFAULT.statsd_enabled }}
         - name: statsd
           image: {{ required ".Values.global.dockerHubMirror is missing" .Values.global.dockerHubMirror}}/prom/statsd-exporter:v0.8.1
@@ -119,4 +135,5 @@ spec:
         - name: nova-etc
           configMap:
             name: nova-etc
+        {{- include "utils.proxysql.volumes" . | indent 8 }}
 {{- end }}

@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/bash
 set -euo pipefail
 
 # First create/update the api db, as it contains the cell-mappings
@@ -109,3 +109,5 @@ nova-manage --config-file /etc/nova/nova-cell2.conf db null_instance_uuid_scan -
 {{- end }}
 
 # online data migration run by online-migration-job
+
+{{ include "utils.proxysql.proxysql_signal_stop_script" . }}
