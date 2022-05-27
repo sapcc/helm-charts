@@ -62,11 +62,11 @@ spec:
 
         allowed_webhook[{ "name": webhook.name, "reason": "allow-gatekeeper" }] {
           # NOTE: both kinds are allowed
-          input.review.object.metadata.name == kubeSystemReleaseName + "-cert-manager-webhook"
+          input.review.object.metadata.name == sprintf("%s-cert-manager-webhook", [kubeSystemReleaseName])
 
           webhook := input.review.object.webhooks[_]
           webhook.clientConfig.service.namespace == "kube-system"
-          webhook.clientConfig.service.name == kubeSystemReleaseName + "-cert-manager-webhook"
+          webhook.clientConfig.service.name == sprintf("%s-cert-manager-webhook", [kubeSystemReleaseName])
           [ a | a := webhook.rules[_].apiGroups ] == [ [ "cert-manager.io", "acme.cert-manager.io" ] ]
         }
 
