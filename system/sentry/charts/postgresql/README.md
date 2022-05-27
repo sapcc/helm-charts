@@ -56,7 +56,7 @@ The following tables lists the configurable parameters of the PostgresSQL chart 
 | `persistence.accessMode`   | Use volume as ReadOnly or ReadWrite        | `ReadWriteMany`                                            |
 | `persistence.size`         | Size of data volume                        | `10Gi`                                                     |
 | `persistence.existingClaim`| Re-Use existing PVC                        |                                                            |
-| `resources`                | CPU/Memory resource requests/limits        | Memory: `256Mi`, CPU: `100m`                               |
+| `resources`                | CPU/Memory resource requests/limits        | Memory: `256Mi`, CPU: `200m`                               |
 
 The above parameters map to the env variables defined in [postgres](http://github.com/docker-library/postgres). For more information please refer to the [postgres](http://github.com/docker-library/postgres) image documentation.
 
