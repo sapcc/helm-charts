@@ -33,16 +33,53 @@ spec:
           msg := sprintf("webhook %q does not match our allowlist", [webhook.name])
         }
 
+        # validating webhook: kube-system/gatekeeper (we don't have mutation enabled for Gatekeeper)
         allowed_webhook[{ "name": webhook.name, "reason": "allow-gatekeeper" }] {
           input.review.object.kind == "ValidatingWebhookConfiguration"
-          input.review.object.name == "gatekeeper-validating-webhook-configuration"
+          input.review.object.metadata.name == "gatekeeper-validating-webhook-configuration"
 
           webhook := input.review.object.webhooks[_]
           webhook.clientConfig.service.namespace == "kube-system"
           webhook.clientConfig.service.name == "gatekeeper-webhook-service"
         }
 
-        # TODO: we need many more
+        # mutating webhook: kube-system/gatekeeper-tugger
+        allowed_webhook[{ "name": webhook.name, "reason": "allow-tugger" }] {
+          input.review.object.kind == "MutatingWebhookConfiguration"
+          input.review.object.metadata.name == "gatekeeper-tugger"
+
+          webhook := input.review.object.webhooks[_]
+          webhook.clientConfig.service.namespace == "kube-system"
+          webhook.clientConfig.service.name == "gatekeeper-tugger"
+        }
+
+        # validating AND mutating webhook: kube-system/cert-manager-webhook
+        {{- if eq .Values.cluster_type "kubernikus" "virtual" "metal" }}
+        kubeSystemReleaseName = "kube-system-{{ .Values.cluster_type }}"
+        {{- else }}
+        kubeSystemReleaseName = "kube-system"
+        {{- end }}
+
+        allowed_webhook[{ "name": webhook.name, "reason": "allow-gatekeeper" }] {
+          # NOTE: both kinds are allowed
+          input.review.object.metadata.name == kubeSystemReleaseName + "-cert-manager-webhook"
+
+          webhook := input.review.object.webhooks[_]
+          webhook.clientConfig.service.namespace == "kube-system"
+          webhook.clientConfig.service.name == kubeSystemReleaseName + "-cert-manager-webhook"
+          [ a | a := webhook.rules[_].apiGroups ] == [ [ "cert-manager.io", "acme.cert-manager.io" ] ]
+        }
+
+        # validating webhooks: monsoon3/ccloud-seeder, allowed if the webhook
+        # only works on objects from ccloud-seeder's own CRDs
+        allowed_webhook[{ "name": webhook.name, "reason": "allow-ccloud-seeder" }] {
+          input.review.object.kind == "ValidatingWebhookConfiguration"
+          input.review.object.metadata.name == "gatekeeper-validating-webhook-configuration"
+
+          webhook := input.review.object.webhooks[_]
+          webhook.clientConfig.service.namespace == "monsoon3"
+          [ a | a := webhook.rules[_].apiGroups ] == [ [ "seeder.cloud.sap" ] ]
+        }
 
         ########################################################################
         # TODO: consider additional cluster-scoped objects (see `k api-resources --namespaced=false`)
