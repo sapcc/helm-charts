@@ -5,17 +5,25 @@ apiVersion: templates.gatekeeper.sh/v1beta1
 {{- end }}
 kind: ConstraintTemplate
 metadata:
-  name: gkforbiddenadmissionwebhooks
+  name: gkforbiddenclusterwideobjects
 spec:
   crd:
     spec:
       names:
-        kind: GkForbiddenAdmissionWebhooks
+        kind: GkForbiddenClusterwideObjects
 
   targets:
     - target: admission.k8s.gatekeeper.sh
       rego: |
-        package forbiddenadmissionwebhooks
+        package forbiddenclusterwideobjects
+
+        ########################################################################
+        # admission webhooks
+
+        webhook_config_kinds = {
+          "MutatingWebhookConfiguration",
+          "ValidatingWebhookConfiguration",
+        }
 
         # Violations act like a blocklist, but we want to have an allowlist, so
         # we go through `allowed_webhook` as an intermediate level.
@@ -35,3 +43,6 @@ spec:
         }
 
         # TODO: we need many more
+
+        ########################################################################
+        # TODO: consider additional cluster-scoped objects (see `k api-resources --namespaced=false`)

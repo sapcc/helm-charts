@@ -1,0 +1,16 @@
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: GkForbiddenClusterwideObjects
+metadata:
+  name: forbiddenclusterwideobjects-dryrun
+  labels:
+    on-prod-ui: 'false'
+spec:
+  enforcementAction: dryrun
+  match:
+    kinds:
+      - apiGroups: [ admissionregistration.k8s.io ]
+        kinds: [ MutatingWebhookConfiguration, ValidatingWebhookConfiguration ]
+
+# NOTE: When we want to move into `enforcementMode: deny` for some of these
+# kinds, the plan is to make a new constraint config and move the respective
+# kinds over into it.
