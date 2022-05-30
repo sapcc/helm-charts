@@ -1,0 +1,77 @@
+# Default values for rabbitmq managed with a help of operators.
+# name: value
+
+image: library/rabbitmq
+imageTag: 3.9-management
+
+# name of priorityClass to influence scheduling priority
+# priority_class: "openstack-service-critical"
+
+users:
+  default:
+    user: rabbitmq
+    password: null
+  admin:
+    user: admin
+    password: null
+
+persistence:
+  enabled: false
+  size: "10Gi"
+
+livenessProbe:
+  enabled: true
+  failureThreshold: 3
+  initialDelaySeconds: 60
+  periodSeconds: 10
+  successThreshold: 1
+  timeoutSeconds: 10
+readinessProbe:
+  enabled: true
+  failureThreshold: 3
+  initialDelaySeconds: 15
+  periodSeconds: 10
+  successThreshold: 1
+  timeoutSeconds: 5
+
+resources:
+  requests:
+    memory: 512Mi
+    cpu: 800m
+  limits:
+    cpu: 5000m
+
+metrics:
+  enabled: false
+  image: kbudde/rabbitmq-exporter
+  imageTag: 0.16.0
+  user: monitoring
+  password: null
+  port: 9150
+  resources:
+    limits:
+      memory: 512Mi
+      cpu: 500m
+    requests:
+      memory: 64Mi
+      cpu: 100m
+
+# Default Prometheus alerts and rules.
+alerts:
+  enabled: false
+  # Enables Critical alert if pod not ready for 10 mins.
+  critical_readiness_enabled: false
+
+  # Name of the Prometheus supposed to scrape the metrics and to which alerts are assigned.
+  prometheus: openstack
+
+  # The tier of the alert.
+  tier: os
+
+  # Configurable service label of the alerts. Defaults to `.Release.Name`.
+  # service:
+
+replicas: 3
+
+pdb:
+  enabled: true
