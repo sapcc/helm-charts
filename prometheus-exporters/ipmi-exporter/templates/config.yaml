@@ -1,0 +1,81 @@
+apiVersion: v1
+kind: ConfigMap
+
+metadata:
+  name: {{ include "infraMonitoring.fullname" . }}
+
+data:
+  ipmi_sap.yaml: |
+    modules:
+      default:
+        # These settings are used if no module is specified, the
+        # specified module doesn't exist, or of course if
+        # module=default is specified.
+        user: "default_user"
+        pass: "default_pw"
+        # The below settings correspond to driver-type, privilege-level, and
+        # session-timeout respectively, see `man 5 freeipmi.conf` (and e.g.
+        # `man 8 ipmi-sensors` for a list of driver types).
+        driver: "LAN_2_0"
+        privilege: "user"
+        # The session timeout is in milliseconds. Note that a scrape can take up
+        # to (session-timeout * #-of-collectors) milliseconds, so set the scrape
+        # timeout in Prometheus accordingly.
+        # Must be larger than the retransmission timeout, which defaults to 1000.
+        timeout: 10000
+        # Available collectors are bmc, ipmi, chassis, dcmi, sel, and sm-lan-mode
+        # If _not_ specified, bmc, ipmi, chassis, and dcmi are used
+        collectors:
+        - sel
+        - ipmi
+        include_sensor_types:
+        - "Memory"
+        - "Processor"
+        - "Critical Interrupt"
+        - "Drive Slot"
+      baremetal/ironic:
+        user: "{{ .Values.global.ipmi_username | default .Values.ipmi_username }}"
+        pass: "{{ .Values.global.ipmi_password | default .Values.ipmi_password }}"
+        privilege: "admin"
+        driver: "LAN_2_0"
+        collectors:
+        - ipmi
+        - sel
+        include_sensor_types:
+        - "Memory"
+        - "Processor"
+        - "Critical Interrupt"
+        - "Drive Slot"
+        - "Version Change"
+        - "Power Supply"
+        - "Cable/Interconnect"
+      cp/netbox:
+        user: "{{ required "ipmi_username_cp needs to be defined in global values" .Values.global.ipmi_username_cp }}"
+        pass: "{{ required "ipmi_password_cp needs to be defined in global values" .Values.global.ipmi_password_cp }}"
+        privilege: "admin"
+        driver: "LAN_2_0"
+        collectors:
+        - ipmi
+        include_sensor_types:
+        - "Memory"
+        - "Processor"
+        - "Critical Interrupt"
+        - "Drive Slot"
+        - "Version Change"
+        - "Power Supply"
+      esxi:
+        user: "{{ required "ipmi_username_bb needs to be defined in global values" .Values.global.ipmi_username_bb }}"
+        pass: "{{ required "ipmi_password_bb needs to be defined in global values" .Values.global.ipmi_password_bb }}"
+        privilege: "admin"
+        driver: "LAN_2_0"
+        collectors:
+        - ipmi
+        - sel
+        include_sensor_types:
+        - "Memory"
+        - "Processor"
+        - "Critical Interrupt"
+        - "Drive Slot"
+        - "Power Supply"
+        - "Cable/Interconnect"
+        - "Version Change"

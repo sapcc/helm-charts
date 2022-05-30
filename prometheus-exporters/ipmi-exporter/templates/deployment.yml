@@ -26,8 +26,15 @@ spec:
         release: {{ .Release.Name }}
         component: ipmi
     spec:
+      volumes:
+      - name: config
+        configMap:
+          name:  {{ include "infraMonitoring.fullname" . }}
       containers:
       - name: {{ include "infraMonitoring.name" . }}
+        volumeMounts:
+        - mountPath: /etc/config
+          name: config
         resources:
           requests:
             memory: "{{ .Values.resources.requests.memory }}"
@@ -39,23 +46,5 @@ spec:
         env:
         - name: APP_ENV
           value: "{{ .Values.app_env }}"
-        {{- if .Values.ironic.enabled }}
-        - name: IPMI_USER
-          value: "{{ .Values.global.ipmi_username | default .Values.ipmi_username }}"
-        - name: IPMI_PASSWORD
-          value: "{{ .Values.global.ipmi_password | default .Values.ipmi_password }}"
-        {{- end }}
-        {{- if .Values.netbox.enabled }}
-        - name: NETBOX_CP_USER
-          value: {{ required "ipmi_username_cp needs to be defined in global values" .Values.global.ipmi_username_cp }}
-        - name: NETBOX_CP_PASSWORD
-          value: {{ required "ipmi_password_cp needs to be defined in global values" .Values.global.ipmi_password_cp }}
-        {{- end }}
-        {{- if .Values.global.ipmi_username_bb }}
-        - name: ESXI_USER
-          value: {{ required "ipmi_username_bb needs to be defined in global values" .Values.global.ipmi_username_bb }}
-        - name: ESXI_PASSWORD
-          value: {{ required "ipmi_password_bb needs to be defined in global values" .Values.global.ipmi_password_bb }}
-        {{- end }}
         ports:
         - containerPort: {{ .Values.listen_port }}
