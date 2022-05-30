@@ -1,8 +1,8 @@
 {{- define "deployment_header" -}}
 {{- $deployment_name := index . 0 | required "deployment_name cannot be empty"}}
-{{- $apod := index . 1 | required "apod must be set" }}
+{{- $azs := index . 1}}
 {{- $scheduling_labels := index . 2 }}
-{{- $px_availability_zones := index . 3 }}
+{{- $apods := index . 3 }}
 {{- $multus_vlan := index . 4 | required "multus_vlan is required for every domain" }}
 {{- $service_number := index . 5 }}
 {{- $service := index . 6 }}
@@ -49,32 +49,49 @@ spec:
         prometheus.io/port: "9324"
         prometheus.io/targets: "infra-collector"
     spec:
-{{- if $apod }}
-{{- if len $px_availability_zones | eq 0 -}}
-{{- fail "px_availability_zones must contain members if apod" -}}
-{{- end }}
+{{- if len $apods | ne 0 }}
       affinity:
         nodeAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
             nodeSelectorTerms:
             - matchExpressions:
-              - key: failure-domain.beta.kubernetes.io/zone
+              - key: kubernetes.cloud.sap/apod
                 operator: In
-                values:
-                - {{ index $px_availability_zones (mod (sub $domain_number 1) (len  $px_availability_zones)) }}                
+                values: 
+{{- range $az_apods := values $apods }}
+{{- range $az_apods }}
+                - {{ . }}
+{{- end }}
+{{- end }}
         podAntiAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
-          - labelSelector:
+          - topologyKey: "kubernetes.cloud.sap/host"
+            labelSelector:
               matchExpressions:
               - key: pxservice
                 operator: In
                 values:
                 - {{ $service_number | quote }}
-            topologyKey: "kubernetes.cloud.sap/host"
+{{- if ge (len $azs) 2 }}
+{{- if lt (len (keys $apods))  2  }}
+{{- fail "If the region consists of multiple AZs, PX must be scheduled in at least 2" -}}
+{{- end }}
+          - topologyKey: failure-domain.beta.kubernetes.io/zone
+            labelSelector:
+              matchExpressions:
+              - key: pxservice
+                operator: In
+                values:
+                - {{ $service_number | quote }}
+              - key: pxdomain
+                operator: In
+                values:
+                - {{ $domain_number | quote }}
+{{- end }}
 {{- else }}
 {{ $domain_scheduling_labels := get $scheduling_labels $domain }}
 {{- if $domain_scheduling_labels | len | eq 0 -}}
-{{- fail "scheduling_labels must be set if not apod" -}}
+{{- fail "scheduling_labels must be set if not running on apod" -}}
 {{- end }}
       tolerations:
         - key: species
