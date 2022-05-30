@@ -46,7 +46,25 @@
 - name: TENSO_OSLO_POLICY_PATH
   value: '/etc/tenso/policy.yaml'
 - name: TENSO_ROUTES
-  value: 'helm-deployment-from-concourse.v1 -> helm-deployment-to-elk.v1, helm-deployment-from-concourse.v1 -> helm-deployment-to-swift.v1'
+  value: >
+    helm-deployment-from-concourse.v1 -> helm-deployment-to-elk.v1,
+    helm-deployment-from-concourse.v1 -> helm-deployment-to-swift.v1,
+    {{- if .Values.tenso.servicenow.create_change_url }}
+    helm-deployment-from-concourse.v1 -> helm-deployment-to-servicenow.v1,
+    {{- end }}
+{{- if .Values.tenso.servicenow.create_change_url }}
+- name:  TENSO_SERVICENOW_CREATE_CHANGE_URL
+  value: {{ quote $.Values.tenso.servicenow.create_change_url }}
+- name:  TENSO_SERVICENOW_TOKEN_URL
+  value: {{ quote $.Values.tenso.servicenow.auth_url }}
+- name:  TENSO_SERVICENOW_USERNAME
+  value: {{ quote $.Values.tenso.servicenow.username }}
+- name:  TENSO_SERVICENOW_PASSWORD
+  valueFrom:
+    secretKeyRef:
+      name: tenso-secret
+      key: servicenow_password
+{{- end }}
 - name:  TENSO_WORKER_LISTEN_ADDRESS
   value: ':80'
 {{- end -}}
