@@ -1,16 +1,22 @@
-global:
-  #  imageRegistry:
-  ipmi_exporter:
-    ironic:
-      enabled: false
-    netbox:
-      enabled: false
-      #  ipmi_username_cp:
-      #  ipmi_password_cp:
-
+enabled: false
 app_env: "production"
-image: monsoon/ipmi-exporter
-tag: 1.6.3.2
+image: ipmi-exporter
+replicas: 2
+fullnameOverride: ipmi-exporter
+listen_port: 9290
+ironic:
+  enabled: DEFINED-IN-REGION
+netbox:
+  enabled: DEFINED-IN-REGION
 
-#ipmi_username:
-#ipmi_password:
+resources: 
+  requests:
+    memory: 250Mi
+    cpu: 800m
+  limits:
+    memory: 500Mi
+    cpu: 1600m
+
+aggregations:
+  enabled: true
+  prometheus: infra-collector

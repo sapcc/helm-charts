@@ -1,36 +1,61 @@
-apiVersion: apps/v1
 kind: Deployment
+apiVersion: apps/v1
 metadata:
-  name: ipmi-exporter
+  name: {{ include "infraMonitoring.fullname" . }}
+  labels:
+    app: {{ include "infraMonitoring.name" . }}
+    chart: {{ include "infraMonitoring.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+    system: infra_monitoring
 spec:
-  replicas: 1
   selector:
     matchLabels:
-      app: ipmi-exporter
-      type: exporter
+     app: {{ include "infraMonitoring.name" . }}
+  revisionHistoryLimit: 5
+  replicas: {{ .Values.replicas }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
   template:
     metadata:
       labels:
-        app: ipmi-exporter
-        type: exporter
+        app: {{ include "infraMonitoring.name" . }}
+        release: {{ .Release.Name }}
+        component: ipmi
     spec:
       containers:
-      - name: ipmi-exporter
-        image: "{{ .Values.global.imageRegistry }}/{{ .Values.image }}:{{ .Values.tag }}"
+      - name: {{ include "infraMonitoring.name" . }}
+        resources:
+          requests:
+            memory: "{{ .Values.resources.requests.memory }}"
+            cpu: "{{ .Values.resources.requests.cpu }}"
+          limits:
+            cpu: "{{ .Values.resources.limits.cpu }}"
+            memory: "{{ .Values.resources.limits.memory }}"
+        image: "{{ .Values.global.registry }}/{{ .Values.image }}:{{ .Values.tag }}"
         env:
         - name: APP_ENV
           value: "{{ .Values.app_env }}"
-        {{- if .Values.global.ipmi_exporter.ironic.enabled }}
+        {{- if .Values.ironic.enabled }}
         - name: IPMI_USER
           value: "{{ .Values.global.ipmi_username | default .Values.ipmi_username }}"
         - name: IPMI_PASSWORD
           value: "{{ .Values.global.ipmi_password | default .Values.ipmi_password }}"
         {{- end }}
-        {{- if .Values.global.ipmi_exporter.netbox.enabled }}
+        {{- if .Values.netbox.enabled }}
         - name: NETBOX_CP_USER
           value: {{ required "ipmi_username_cp needs to be defined in global values" .Values.global.ipmi_username_cp }}
         - name: NETBOX_CP_PASSWORD
           value: {{ required "ipmi_password_cp needs to be defined in global values" .Values.global.ipmi_password_cp }}
         {{- end }}
+        {{- if .Values.global.ipmi_username_bb }}
+        - name: ESXI_USER
+          value: {{ required "ipmi_username_bb needs to be defined in global values" .Values.global.ipmi_username_bb }}
+        - name: ESXI_PASSWORD
+          value: {{ required "ipmi_password_bb needs to be defined in global values" .Values.global.ipmi_password_bb }}
+        {{- end }}
         ports:
-        - containerPort: 9290
+        - containerPort: {{ .Values.listen_port }}

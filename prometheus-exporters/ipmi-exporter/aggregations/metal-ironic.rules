@@ -1,0 +1,14 @@
+groups:
+- name: sentry
+  rules:
+  - record: MetalIronicSensorCritical
+    expr: count(ipmi_sensor_state{type=~"(Memory|Processor|Critical Interrupt)", maintenance="false", provision_state=~"(deploy|active)"} == 2) by (instance, type, name, manufacturer, model, provision_state, server_id, project_id)
+
+  - record: MetalIronicSensorWarning
+    expr: count((ipmi_sensor_state{type=~"(Memory|Processor|Critical Interrupt|Version Change)", maintenance="false", provision_state=~"(manageable|available)"} == 2) or (ipmi_sensor_state{type=~"(Drive Slot|Version Change|Cable/Interconnect)", maintenance="false"} == 2)) by (instance, type, name, manufacturer, model, provision_state, server_id, project_id)
+
+  - record: MetalIronicSensorInfo
+    expr: count(ipmi_sensor_state{type=~"(Memory|Processor|Critical Interrupt|Version Change|Drive Slot|Power Supply|Cable/Interconnect)"} == 2) by (instance, type, name, manufacturer, model, provision_state, server_id, project_id)
+
+  - record: MetalIronicMetricsDown
+    expr: count(ipmi_up{job="baremetal/ironic"} == 0) by (server_name, maintenance) or count(up{job="baremetal/ironic"} == 0) by (server_name, maintenance)
