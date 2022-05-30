@@ -18,7 +18,7 @@ updaterConfig:
     hour: {{ .Values.secAttNotifier.secAttNotificationHour }}
     day: {{ .Values.secAttNotifier.secAttNotificationDay }}
     sender: {{ .Values.secAttNotifier.sourceEmail }}
-    {{- range $key, $value := .Values.updater.contacts }}
+    {{- range $key, $value := .Values.secAttNotifier.contact }}
     contact:
       - {{ $value }}
     {{- end }}
