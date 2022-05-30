@@ -7,22 +7,6 @@
 {{- end -}}
 
 {{- define "vcf_environment" }}
-- name: AUTOMATION_WORK_DIR
-  value: /pulumi/vcf
-- name: AUTOMATION_CONFIG_DIR
-  value: /pulumi/etc
-- name: AUTOMATION_OS_PASSWORD
-  valueFrom:
-    secretKeyRef:
-      name: vcf-secret
-      key: os_password
-- name: AUTOMATION_OS_USERNAME
-  valueFrom:
-    secretKeyRef:
-      name: vcf-secret
-      key: os_username
-- name: AUTOMATION_OS_REGION
-  value: "{{ .Values.global.region }}"
 - name: PULUMI_BACKEND_URL
   value: file:///pulumi/etc
 - name: PULUMI_CONFIG_PASSPHRASE
@@ -30,6 +14,22 @@
     secretKeyRef:
       name: vcf-secret
       key: pulumi_config_passphrase
+- name: VCF_OS_USERNAME
+  valueFrom:
+    secretKeyRef:
+      name: vcf-secret
+      key: os_username
+- name: VCF_OS_PASSWORD
+  valueFrom:
+    secretKeyRef:
+      name: vcf-secret
+      key: os_password
+- name: VCF_OS_REGION
+  value: "{{ .Values.global.region }}"
+- name: VCF_CONFIG_DIR
+  value: /pulumi/etc
+- name: VCF_WORK_DIR
+  value: /pulumi/vcf
 - name: VCF_ESXI_LICENSE
   valueFrom:
     secretKeyRef:
@@ -40,12 +40,14 @@
     secretKeyRef:
       name: vcf-secret
       key: esxi_license_management
-{{- if hasKey .Values "esxi_password" }}
 - name: VCF_ESXI_PASSWORD
   valueFrom:
     secretKeyRef:
       name: vcf-secret
+{{- if hasKey .Values "esxi_password" }}
       key: esxi_password
+{{- else }}
+      key: vmware_password
 {{- end }}
 - name: VCF_VMWARE_PASSWORD
   valueFrom:
