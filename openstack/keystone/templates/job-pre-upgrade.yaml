@@ -12,9 +12,18 @@ metadata:
     "helm.sh/hook": "pre-upgrade"
     "helm.sh/hook-weight": "-42"
     "helm.sh/hook-delete-policy": "before-hook-creation"
+
 spec:
   backoffLimit: 2
   template:
+    metadata:
+      labels:
+        name: {{ .Release.Name }}-job-pre-upgrade
+        system: openstack
+        component: keystone
+        type: job
+        alert-tier: os
+        alert-service: keystone  
     spec:
 {{- if .Values.rbac.enabled }}
       serviceAccountName: {{ .Release.Name }}
