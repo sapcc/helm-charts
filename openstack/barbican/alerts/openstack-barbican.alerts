@@ -91,3 +91,70 @@ groups:
     annotations:
       description: 'User {{ $labels.initiator_user_name }} has initiated more than 50 {{ $labels.action }} operations' 
       summary: 'Project {{ $labels.initiator_project_id }} has more than 50 {{ $labels.action }} operations'
+
+  - alert: OpenstackBarbicanScrapeMissing
+    expr: absent(up{component="barbican",type="api"})
+    for: 1h
+    labels:
+      context: availability
+      dashboard: barbican
+      service: barbican
+      severity: info
+      tier: os
+    annotations:
+      description: barbican failed to be scraped. Monitoring might miss metrics it needs to alert on.
+      summary: barbican cannot be scraped
+
+  - alert: OpenstackBarbicanDatabaseScrapeMissing
+    expr: absent(up{app="barbican-mariadb"})
+    for: 1h
+    labels:
+      context: availability
+      dashboard: barbican
+      service: barbican
+      severity: info
+      tier: os
+    annotations:
+      description: barbicans database running status failed to be scraped. Monitoring might miss metrics it needs to alert on
+      summary: barbican database cannot be scraped
+
+  - alert: OpenstackBarbicanApiUp
+    expr: up{component="barbican",type="api"} == 0
+    for: 5m
+    labels:
+      context: availability
+      dashboard: barbican
+      meta: "a barbican instance went down on {{ $labels.instance }}"
+      service: barbican
+      severity: info
+      tier: os
+    annotations:
+      description: "A barbican-api pod on {{ $labels.instance }} is DOWN. The remaining ones should keep the service up."
+      summary: "A barbican server is DOWN"
+
+  - alert: OpenstackBarbicanDatabaseUp
+    expr: count(up{component="barbican-mariadb"} == 0) == count(up{component="barbican-mariadb"})
+    for: 5m
+    labels:
+      context: availability
+      service: barbican
+      severity: info
+      tier: os
+      dashboard: mariadb-overview?var-host=barbican-mariadb
+    annotations:
+      description: "barbican database on {{ $labels.instance }} is DOWN."
+      summary: "barbican Database is DOWN"
+
+  - alert: OpenstackBarbicanApiAllDown
+    expr: count(up{component="barbican",type="api"} == 0) == count(up{component="barbican",type="api"})
+    for: 5m
+    labels:
+      context: availability
+      meta: all barbican instances are down
+      service: barbican
+      severity: info
+      tier: os
+      dashboard: barbican
+    annotations:
+      description: All barbican-api server pods are down.
+      summary: barbican is unavailable.
