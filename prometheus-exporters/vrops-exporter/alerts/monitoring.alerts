@@ -111,3 +111,18 @@ groups:
     annotations:
       description: "Elektra dashboard: vROPs data is missing to serve customers with VM tools upgrade recommendations"
       summary: "Elektra dashboard: vROPs data is missing to serve customers with VM tools upgrade recommendations"
+  - alert: VROpsInventoryDataMissing
+    expr: |
+      sum by (target) ({__name__ =~"vrops_inventory_vcenters|vrops_inventory_datacenters|vrops_inventory_clusters|
+      vrops_inventory_datastores|vrops_inventory_hosts|vrops_inventory_vms"}) == 0
+    for: 10m
+    labels:
+      severity: warning
+      tier: vmware
+      service: vrops-exporter
+      meta: "vROps inventory is not having any data for {{ $labels.target }} anymore."
+      playbook: docs/devops/alert/vcenter/vrops/#restart-vrops-cluster
+      no_alert_on_absence: "true"
+    annotations:
+      description: "vROps inventory is not having any data for {{ $labels.target }} anymore."
+      summary: "vROps inventory is not having any data for {{ $labels.target }} anymore."
