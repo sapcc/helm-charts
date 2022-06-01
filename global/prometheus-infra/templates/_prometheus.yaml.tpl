@@ -196,6 +196,7 @@
       - '{__name__=~"^vrops_cluster_memory_usage_percentage"}'
       - '{__name__=~"^vrops_cluster_services_totalimbalance"}'
       - '{__name__=~"^vrops_cluster_summary_drs_unhappy_vms"}'
+      - '{__name__=~"^vrops_cluster_summary_total_number_vms"}'
       - '{__name__=~"^vrops_cluster_badge_efficiency_percentage"}'
       - '{__name__=~"^vrops_cluster_badge_health_percentage"}'
       - '{__name__=~"^vrops_hostsystem_cpu_usage_average_percentage"}'
