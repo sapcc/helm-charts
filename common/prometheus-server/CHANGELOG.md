@@ -1,3 +1,7 @@
+## 6.2.2
+
+* Add dedicated alert for multiple scrapes from pod services discovery (PrometheusMultiplePodScrapes).
+
 ## 6.2.0
 
 * Only set resource requests via VPA.
