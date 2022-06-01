@@ -72,3 +72,70 @@ groups:
     annotations:
       summary: Glance Container was oomkilled
       description: Glance Container {{ $labels.container_name }} in Pod {{ $labels.pod_name }} was oomkilled recently
+
+  - alert: OpenstackGlanceScrapeMissing
+    expr: absent(up{component="glance",type="api"})
+    for: 1h
+    labels:
+      context: availability
+      dashboard: glance
+      service: glance
+      severity: info
+      tier: os
+    annotations:
+      description: glance failed to be scraped. Monitoring might miss metrics it needs to alert on.
+      summary: glance cannot be scraped
+
+  - alert: OpenstackGlanceDatabaseScrapeMissing
+    expr: absent(up{app="glance-mariadb"})
+    for: 1h
+    labels:
+      context: availability
+      dashboard: glance
+      service: glance
+      severity: info
+      tier: os
+    annotations:
+      description: glances database running status failed to be scraped. Monitoring might miss metrics it needs to alert on
+      summary: glance database cannot be scraped
+
+  - alert: OpenstackGlanceApiUp
+    expr: up{component="glance",type="api"} == 0
+    for: 5m
+    labels:
+      context: availability
+      dashboard: glance
+      meta: "a glance instance went down on {{ $labels.instance }}"
+      service: glance
+      severity: info
+      tier: os
+    annotations:
+      description: "A glance-api pod on {{ $labels.instance }} is DOWN. The remaining ones should keep the service up."
+      summary: "A glance server is DOWN"
+
+  - alert: OpenstackGlanceDatabaseUp
+    expr: count(up{component="glance-mariadb"} == 0) == count(up{component="glance-mariadb"})
+    for: 5m
+    labels:
+      context: availability
+      service: glance
+      severity: info
+      tier: os
+      dashboard: mariadb-overview?var-host=glance-mariadb
+    annotations:
+      description: "glance database on {{ $labels.instance }} is DOWN."
+      summary: "glance Database is DOWN"
+
+  - alert: OpenstackGlanceApiAllDown
+    expr: count(up{component="glance",type="api"} == 0) == count(up{component="glance",type="api"})
+    for: 5m
+    labels:
+      context: availability
+      meta: all glance instances are down
+      service: glance
+      severity: info
+      tier: os
+      dashboard: glance
+    annotations:
+      description: All glance-api server pods are down.
+      summary: glance is unavailable.
