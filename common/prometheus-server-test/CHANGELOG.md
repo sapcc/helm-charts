@@ -1,3 +1,7 @@
+## 7.0.3
+
+* minor fixes to get it running, versions in between are garbage
+
 ## 7.0.0
 
 * *Breaking change*: Global instances will not work, Thanos deployment files are removed.
