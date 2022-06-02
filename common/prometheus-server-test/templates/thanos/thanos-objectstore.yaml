@@ -1,0 +1,17 @@
+{{- if .Values.thanos.enabled }}
+apiVersion: monitoring.banzaicloud.io/v1alpha1
+kind: ObjectStore
+metadata:
+  name: {{ include "prometheus.fullName" . }}-thanos-compactor
+spec:
+  config:
+    mountFrom:
+      secretKeyRef:
+        name: {{ include "thanos.objectStorageConfig.name" . }}
+        key: thanos.yaml
+  compactor: 
+    retentionResolutionRaw: {{ required "thanos.compactor.retentionResolutionRaw" .Values.thanos.compactor.retentionResolutionRaw }}
+    retentionResolution5m: {{ required "thanos.compactor.retentionResolution5m" .Values.thanos.compactor.retentionResolution5m }}
+    retentionResolution1h: {{ required "thanos.compactor.retentionResolution1h" .Values.thanos.compactor.retentionResolution1h }}
+    consistencyDelay: {{ required "thanos.compactor.consistencyDelay" .Values.thanos.compactor.consistencyDelay }}
+{{ end }}
