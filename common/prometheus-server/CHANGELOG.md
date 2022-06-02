@@ -1,3 +1,7 @@
+## 6.2.3
+
+* Collect Prometheus metrics from pod/service ports named like `metrics-.*` in addition to from ports named `metrics`. This is intended to make the `prometheus.io/port` and `prometheus.io/port_1` annotations fully obsolete.
+
 ## 6.2.2
 
 * Add dedicated alert for multiple scrapes from pod services discovery (PrometheusMultiplePodScrapes).
