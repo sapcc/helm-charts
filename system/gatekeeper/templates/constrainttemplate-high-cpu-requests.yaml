@@ -1,6 +1,3 @@
-{{/* we only need this policy in baremetal. Services in other clusters can scale freely */}}
-{{- if eq .Values.cluster_type "baremetal" -}}
-
 {{- if .Capabilities.APIVersions.Has "templates.gatekeeper.sh/v1" }}
 apiVersion: templates.gatekeeper.sh/v1
 {{- else }}
@@ -14,13 +11,18 @@ spec:
     spec:
       names:
         kind: GkHighCPURequests
+      validation:
+        # Schema for the `parameters` field
+        openAPIV3Schema:
+          type: object
+          properties:
+            maxCpu:
+              type: integer
 
   targets:
     - target: admission.k8s.gatekeeper.sh
       rego: |
         package highcpurequests
-
-        max_cpu := 6
 
         canonify_cpu(orig) = new {
           is_number(orig)
@@ -43,8 +45,6 @@ spec:
         violation[{"msg": msg}] {
           input.review.object.kind == "Pod"
           total_cpu := sum(cpu_requests)
-          total_cpu > max_cpu
+          total_cpu > input.parameters.maxCpu
           msg := sprintf("requests %v CPU in total", [total_cpu])
         }
-
-{{- end -}}

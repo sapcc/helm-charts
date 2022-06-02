@@ -18,7 +18,7 @@ spec:
   rabbitmq:
     additionalConfig: |
       cluster_partition_handling = pause_minority
-      vm_memory_high_watermark_paging_ratio = 0.99
+      vm_memory_high_watermark_paging_ratio = 0.95
       disk_free_limit.relative = 1.0
       collect_statistics_interval = 10000
       default_user = {{ .Values.users.default.user }}
@@ -26,6 +26,9 @@ spec:
 {{- if .Values.persistence.enabled }}
   persistence:
     storage: {{ .Values.persistence.size }}
+{{- else }}
+  persistence:
+    storage: "0"
 {{- end }}
   affinity:
     podAntiAffinity:
