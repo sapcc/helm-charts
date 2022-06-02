@@ -53,7 +53,7 @@ postgresql:
   max_connections: 128
 
   image: keppel.eu-de-1.cloud.sap/ccloud/postgres
-  imageTag: "12.10"
+  imageTag: "12.11"
   persistence:
     enabled: true
     accessMode: ReadWriteMany
@@ -61,17 +61,25 @@ postgresql:
   resources:
     # observed on qa-de-1: 10m-15m CPU usage, 75-90 Mi RAM usage
     limits:
-      memory: 128Mi
-      cpu: 30m
+      memory: "1.5Gi"
+      cpu: "400m"
     requests:
-      memory: 128Mi
-      cpu: 30m
+      memory: "1.5Gi"
+      cpu: "400m"
 
   backup:
     enabled: true
     image: keppel.eu-de-1.cloud.sap/ccloud/backup-tools
     imageTag: v0.6.5
     custom_repository: true
+    resources:
+      enabled: true
+      limits:
+        memory: "1.5Gi"
+        cpu: "300m"
+      requests:
+        memory: "1.5Gi"
+        cpu: "300m"
   probe_timeout_secs: 10 # instead of 3
 
 pgmetrics:
