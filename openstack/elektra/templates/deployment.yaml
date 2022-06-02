@@ -81,8 +81,28 @@ spec:
               exec:
                 #Give the ingress some time to reload its config
                 command: ["/bin/sh","-c","sleep 30"]
+          # NOTE: observed resource usage in eu-de-2 (as of 2022-06)
+          # - CPU: 49m with 8 replicas was running into throttling, so give plenty headroom
+          # - RAM: levels off around 735 Mi
+          resources:
+            requests:
+              cpu: "500m"
+              memory: "800Mi"
+            limits:
+              cpu: "500m"
+              memory: "800Mi"                
         - name: puma-metrics
           image: {{.Values.global.dockerHubMirror}}/sapcc/puma-exporter:0.1.0
           ports:
             - name: metrics
               containerPort: 9235
+          # NOTE: observed resource usage in eu-de-2 (as of 2022-06)
+          # - CPU: 12m with 8 replicas was running into throttling, so give plenty headroom
+          # - RAM: levels off around 128Mi
+          resources:
+            requests:
+              cpu: "120m"
+              memory: "200Mi"
+            limits:
+              cpu: "120m"
+              memory: "200Mi"                
