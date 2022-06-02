@@ -1,0 +1,51 @@
+{{- if .Capabilities.APIVersions.Has "templates.gatekeeper.sh/v1" }}
+apiVersion: templates.gatekeeper.sh/v1
+{{- else }}
+apiVersion: templates.gatekeeper.sh/v1beta1
+{{- end }}
+kind: ConstraintTemplate
+metadata:
+  name: gkdeprecatedapiversion
+spec:
+  crd:
+    spec:
+      names:
+        kind: GkDeprecatedApiVersion
+      validation:
+        # Schema for the `parameters` field
+        openAPIV3Schema:
+          type: object
+          properties:
+            kubernetesVersion:
+              type: string
+            apiVersions:
+              type: array
+              items:
+                type: string
+
+  targets:
+    - target: admission.k8s.gatekeeper.sh
+      rego: |
+        package deprecatedapiversion
+
+        violation[{"msg": msg, "details": {"name": obj.metadata.name, "kind": obj.kind}}] {
+          # `input.review.object` must be a Helm 3 release
+          input.review.object.kind == "Secret"
+          input.review.object.type == "helm.sh/release.v1"
+          input.review.object.metadata.labels.status == "deployed"
+
+          # parse release manifest
+          helm_version := 3
+          parser_url := sprintf("http://helm-manifest-parser.kube-system.svc/v%d", [helm_version])
+          parser_resp := http.send({"url": parser_url, "method": "POST", "raw_body": input.review.object.data.release, "timeout": "15s"})
+          parser_resp.status_code == 200
+
+          # find objects in the manifest that use deprecated API versions
+          obj := parser_resp.body.items[_]
+          input.parameters.apiVersions[obj.apiVersion]
+
+          msg := sprintf(
+            "%s %s declared with deprecated API version: %s (will break in k8s v%s) ",
+            [obj.kind, obj.metadata.name, obj.apiVersion, input.parameters.kubernetesVersion]
+          )
+        }

@@ -11,6 +11,8 @@ identity-3.{{.Values.global.region}}.{{.Values.global.tld}}
 {{- define "rabbitmq_host" -}}
 {{- if .Values.global_setup -}}
 {{.Release.Name}}-rabbitmq.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.db_region}}.{{.Values.global.tld}}
+{{- else if .Values.rabbitmq_cluster.enabled -}}
+{{.Release.Name}}-rabbitmq-cluster.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}
 {{- else -}}
 {{.Release.Name}}-rabbitmq.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}
 {{- end -}}
