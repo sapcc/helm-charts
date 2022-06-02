@@ -141,3 +141,8 @@ prometheus-{{- (include "prometheus.name" .) -}}
   regex: ^({{ . | join "|" }})$
   action: drop
 {{- end -}}
+
+{{/* Generated Swift User Name. */}}
+{{- define "swift.userName" -}}
+prometheus-{{- (include "prometheus.name" .) -}}-thanos
+{{- end -}}
