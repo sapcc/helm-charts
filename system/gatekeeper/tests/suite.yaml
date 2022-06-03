@@ -1,0 +1,26 @@
+kind: Suite
+apiVersion: test.gatekeeper.sh/v1alpha1
+metadata:
+  name: gatekeeper-tests
+tests:
+- name: high-cpu-requests
+  template: rendered-chart/gatekeeper/templates/constrainttemplate-high-cpu-requests.yaml
+  constraint: rendered-chart/gatekeeper-config/templates/constraint-high-cpu-requests.yaml
+  cases:
+  - name: pod-cpu-high-requests-violation
+    object: fixtures/pod-cpu-high-requests-violation.yaml
+    assertions:
+    - violations: 1
+      message: "requests 6.064 CPU in total"
+  - name: pod-cpu-high-requests-close-violation
+    object: fixtures/pod-cpu-high-requests-close-violation.yaml
+    assertions:
+    - violations: no
+  - name: pod-cpu-high-requests-only-one-limit
+    object: fixtures/pod-cpu-high-requests-only-one-limit.yaml
+    assertions:
+    - violations: no
+  - name: pod-cpu-high-requests-no-limits
+    object: fixtures/pod-cpu-high-requests-no-limits.yaml
+    assertions:
+    - violations: no
