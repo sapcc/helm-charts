@@ -1,0 +1,16 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: dummy-backup-alerts
+spec:
+  groups:
+  - name: backup.alerts
+    rules:
+    - alert: DummyBackupWentMissing
+      annotations:
+        description: very dummy description
+        summary: dummy is summarized
+      expr: absent(backup_last_success{app=~"dummy"})
+      for: 1h
+      labels:
+        wrong: label
