@@ -18,7 +18,7 @@
       - '{__name__=~"^broker_.+"}'
       - '{__name__=~"^certmanager_.+"}'
       - '{__name__=~"^concourse_.+"}'
-      - '{__name__=~"^container_cpu_cfs_.+"}'
+      - '{__name__=~"^container_cpu.+"}'
       - '{__name__=~"^container_fs.+"}'
       - '{__name__=~"^container_memory_.+"}'
       - '{__name__=~"^container_network_.+"}'
