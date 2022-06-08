@@ -1,4 +1,5 @@
 {{- if .Values.ingress.enabled }}
+{{- $thanos := .Values.thanos }}
 {{- $root := . }}
 {{- if $root.Capabilities.APIVersions.Has "networking.k8s.io/v1/Ingress" }}
 apiVersion: networking.k8s.io/v1
@@ -33,6 +34,7 @@ spec:
     - host: {{ include "fqdnHelper" (list $host $root) }}
       http:
         paths:
+        {{- if $thanos.enabled }}
         - path: /
           {{- if $root.Capabilities.APIVersions.Has "networking.k8s.io/v1/Ingress" }}
           pathType: ImplementationSpecific
@@ -46,6 +48,34 @@ spec:
             serviceName: {{ include "prometheus.fullName" $root }}
             servicePort: http
           {{- end }}
+        - path: /thanos
+          {{- if $root.Capabilities.APIVersions.Has "networking.k8s.io/v1/Ingress" }}
+          pathType: ImplementationSpecific
+          backend:
+            service:
+              name: {{ include "prometheus.fullName" $root }}-thanos-query
+              port:
+                name: http
+          {{- else }}
+          backend:
+            serviceName: {{ include "prometheus.fullName" $root }}
+            servicePort: http
+          {{- end }}
+        {{- else }}
+        - path: /
+          {{- if $root.Capabilities.APIVersions.Has "networking.k8s.io/v1/Ingress" }}
+          pathType: ImplementationSpecific
+          backend:
+            service:
+              name: {{ include "prometheus.fullName" $root }}
+              port:
+                name: http
+          {{- else }}
+          backend:
+            serviceName: {{ include "prometheus.fullName" $root }}
+            servicePort: http
+          {{- end }}
+        {{- end }}
     {{- end }}
     {{- range $host := .Values.ingress.hostsFQDN }}
     - host: {{ $host }}
