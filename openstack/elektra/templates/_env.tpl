@@ -31,14 +31,6 @@
   value: {{ .Values.two_factor_radius_secret | quote }}
 - name: TWO_FACTOR_AUTH_DOMAINS
   value: {{ .Values.two_factor_auth_domains | quote }}
-- name: SWIFT_RESELLERADMIN_PROJECT
-  value: {{ .Values.swift_reselleradmin_project | quote }}
-- name: SWIFT_RESELLERADMIN_ROLE
-  value: {{ .Values.swift_reselleradmin_role | quote }}
-- name: SWIFT_RESELLERADMIN_PROJECT_DOMAIN
-  value: {{ .Values.swift_reselleradmin_project_domain | quote }}
-- name: SWIFT_RESELLERADMIN_REGION
-  value: {{ .Values.swift_reselleradmin_region | quote }}
 - name: MONSOON_DB_PASSWORD
   valueFrom: { secretKeyRef:    { name: {{ template "postgresql.fullname" . }}, key: postgres-password } }
 - name: MONSOON_OPENSTACK_AUTH_API_PASSWORD
