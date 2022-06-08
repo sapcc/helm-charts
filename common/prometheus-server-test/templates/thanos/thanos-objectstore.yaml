@@ -2,7 +2,7 @@
 apiVersion: monitoring.banzaicloud.io/v1alpha1
 kind: ObjectStore
 metadata:
-  name: {{ include "prometheus.fullName" . }}-thanos-compactor
+  name: {{ include "prometheus.fullName" . }}-thanos
 spec:
   config:
     mountFrom:
@@ -10,8 +10,15 @@ spec:
         name: {{ include "thanos.objectStorageConfig.name" . }}
         key: thanos.yaml
   compactor: 
-    retentionResolutionRaw: {{ required "thanos.compactor.retentionResolutionRaw" .Values.thanos.compactor.retentionResolutionRaw }}
-    retentionResolution5m: {{ required "thanos.compactor.retentionResolution5m" .Values.thanos.compactor.retentionResolution5m }}
-    retentionResolution1h: {{ required "thanos.compactor.retentionResolution1h" .Values.thanos.compactor.retentionResolution1h }}
     consistencyDelay: {{ required "thanos.compactor.consistencyDelay" .Values.thanos.compactor.consistencyDelay }}
+    retentionResolutionRaw: {{ mul 24 (required "thanos.compactor.retentionResolutionRaw" .Values.thanos.compactor.retentionResolutionRaw) }}h
+    retentionResolution5m: {{ mul 24 (required "thanos.compactor.retentionResolution5m" .Values.thanos.compactor.retentionResolution5m) }}h
+    retentionResolution1h: {{ mul 365 24 (required "thanos.compactor.retentionResolution1h" .Values.thanos.compactor.retentionResolution1h) }}h
+    deploymentOverrides:
+      spec:
+        template:
+          spec:
+            containers:
+            - image: keppel.eu-de-1.cloud.sap/ccloud-quay-mirror/thanos/thanos:v0.26.0
+              name: compactor
 {{ end }}
