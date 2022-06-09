@@ -25,7 +25,6 @@ spec:
       annotations:
         checksum/secrets: {{ include (print $.Template.BasePath  "/secrets.yaml") . | sha256sum }}
         prometheus.io/scrape: "true"
-        prometheus.io/port: "9235"
         prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
     spec:
       containers:
@@ -51,7 +50,7 @@ spec:
               port: {{.Values.service.internalPort}}
             timeoutSeconds: 5
             initialDelaySeconds: 5
-        - name: puma-metrics
+        - name: metrics
           image: {{.Values.global.dockerHubMirror}}/sapcc/puma-exporter:0.1.0
           ports:
             - name: metrics
