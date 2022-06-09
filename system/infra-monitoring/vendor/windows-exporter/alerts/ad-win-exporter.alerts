@@ -3,7 +3,7 @@ groups:
   rules:      
   - alert: ADMetricsDownInfo
     expr: count(up{job="win-exporter-ad"} == 0) by (server_name, model, manufacturer, serial) 
-    for: 20m
+    for: 30m
     labels:
       severity: warning
       tier: ad
@@ -16,7 +16,7 @@ groups:
 
   - alert: ADServiceDownInfo
     expr: count(windows_service_state{state!="running", job="win-exporter-ad"} > 0) by (server_name, name, state) 
-    for: 20m
+    for: 30m
     labels:
       severity: info
       tier: ad
@@ -29,7 +29,7 @@ groups:
 
   - alert: ADDiskFullInfo
     expr: count(100 - (windows_logical_disk_free_bytes{volume!~"HarddiskVolume.*",job="win-exporter-ad"}*100/windows_logical_disk_size_bytes{volume!~"HarddiskVolume.*",job="win-exporter-ad"}) > 80) by (server_name, volume) 
-    for: 20m
+    for: 30m
     labels:
       severity: info
       tier: ad
@@ -42,7 +42,7 @@ groups:
 
   - alert: ADTooManyProcesses
     expr: count(windows_os_processes{job="win-exporter-ad"} > 200) by (server_name) 
-    for: 20m
+    for: 30m
     labels:
       severity: warning
       tier: ad
@@ -55,7 +55,7 @@ groups:
 
   - alert: ADHighCpuLoad
     expr: count(avg by (server_name) (100 - (irate(windows_cpu_time_total{mode="idle", job="win-exporter-ad"}[10m]) * 100)) > 80) 
-    for: 20m
+    for: 30m
     labels:
       severity: info
       tier: ad
@@ -68,7 +68,7 @@ groups:
 
   - alert: ADHighMemUsage
     expr: count((100 - (100 * windows_os_physical_memory_free_bytes{job="win-exporter-ad"} / windows_cs_physical_memory_bytes{job="win-exporter-ad"})) > 80) by (server_name)
-    for: 20m
+    for: 30m
     labels:
       severity: info
       tier: ad
