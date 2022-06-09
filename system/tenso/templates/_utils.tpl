@@ -55,6 +55,8 @@
 {{- if .Values.tenso.servicenow.create_change_url }}
 - name:  TENSO_SERVICENOW_CREATE_CHANGE_URL
   value: {{ quote $.Values.tenso.servicenow.create_change_url }}
+- name:  TENSO_SERVICENOW_MAPPING_CONFIG_PATH
+  value: /etc/tenso/servicenow-mapping.yaml
 - name:  TENSO_SERVICENOW_TOKEN_URL
   value: {{ quote $.Values.tenso.servicenow.auth_url }}
 - name:  TENSO_SERVICENOW_USERNAME
