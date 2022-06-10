@@ -212,7 +212,7 @@
         "#d44a3a"
       ],
       "datasource": null,
-      "description": "Actual aggregated CPU usage : requested CPU usage\n\nThis graph shows how much of the total requested CPU cores would be used if there was no limit.\n\nThis number should be below 100% for responsiveness but not too far away from it for economic reasons.\n\nFormula: (container_cpu_cfs_throttled_seconds_total + container_cpu_usage_seconds_total)  / \n kube_pod_container_resource_requests_cpu_cores",
+      "description": "Actual aggregated CPU usage : requested CPU usage\n\nThis graph shows how much of the total requested CPU cores would be used if there was no limit.\n\nThis number should be below 100% for responsiveness but not too far away from it for economic reasons.\n\nFormula: (container_cpu_cfs_throttled_seconds_total + container_cpu_usage_seconds_total)  / \n kube_pod_container_resource_requests{resource=\"cpu\"}",
       "format": "percentunit",
       "gauge": {
         "maxValue": 1.5,
@@ -517,7 +517,7 @@
       "tableColumn": "",
       "targets": [
         {
-          "expr": "sum(kube_pod_container_resource_requests_memory_bytes{namespace=\"$namespace\",container=~\"$container\", pod=~\"$pod\"})",
+          "expr": "sum(kube_pod_container_resource_requests{resource=\"memory\",namespace=\"$namespace\",container=~\"$container\", pod=~\"$pod\"})",
           "format": "time_series",
           "intervalFactor": 2,
           "refId": "A"
@@ -685,7 +685,7 @@
       "tableColumn": "",
       "targets": [
         {
-          "expr": "sum(kube_pod_container_resource_requests_cpu_cores{namespace=\"$namespace\",container=~\"$container\", pod=~\"$pod\"})",
+          "expr": "sum(kube_pod_container_resource_requests{resource=\"cpu\",namespace=\"$namespace\",container=~\"$container\", pod=~\"$pod\"})",
           "format": "time_series",
           "intervalFactor": 2,
           "refId": "A"
@@ -926,7 +926,7 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": "Prometheus",
-      "description": "ratio currently used memory : requested memory\n\nThis graph shows how the actual memory allocation of a container matches the declared resource requirements. A value above 100% indicates overbooking, i.e.the container may be scheduled to a node with insufficient available memory.\n\nformula: container_memory_working_set_bytes / kube_pod_container_resource_requests_memory_bytes",
+      "description": "ratio currently used memory : requested memory\n\nThis graph shows how the actual memory allocation of a container matches the declared resource requirements. A value above 100% indicates overbooking, i.e.the container may be scheduled to a node with insufficient available memory.\n\nformula: container_memory_working_set_bytes / kube_pod_container_resource_requests{resource=\"memory\"}",
       "fill": 0,
       "fillGradient": 0,
       "gridPos": {
@@ -1262,7 +1262,7 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": null,
-      "description": "ratio actual CPU usage : requested CPU usage\n\nThis graph shows how the CPU requirements of the process match the declared resource requirement. A value above 100% shows that the process would consume much more CPU time than requested if no limit was set. \n \nformula: (container_cpu_cfs_seconds_total + container_cpu_cfs_throttled_seconds_total) / kube_pod_container_resource_requests_cpu_cores",
+      "description": "ratio actual CPU usage : requested CPU usage\n\nThis graph shows how the CPU requirements of the process match the declared resource requirement. A value above 100% shows that the process would consume much more CPU time than requested if no limit was set. \n \nformula: (container_cpu_cfs_seconds_total + container_cpu_cfs_throttled_seconds_total) / kube_pod_container_resource_requests{resource=\"cpu\"}",
       "fill": 1,
       "fillGradient": 0,
       "gridPos": {
@@ -1690,7 +1690,7 @@
     ]
   },
   "time": {
-    "from": "now-3h",
+    "from": "now-15m",
     "to": "now"
   },
   "timepicker": {
