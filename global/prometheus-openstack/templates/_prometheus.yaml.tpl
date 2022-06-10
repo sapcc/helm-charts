@@ -9,7 +9,6 @@
   params:
     'match[]':
       - '{__name__=~"^global:.+"}'
-      - '{__name__=~"up"}'
       - '{__name__=~"prometheus_build_info"}'
       - '{__name__=~"blackbox_regression_status_gauge"}'
       - '{__name__=~"^openstack_ironic_nodes_.+"}'
