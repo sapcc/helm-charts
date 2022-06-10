@@ -89,8 +89,7 @@ coreasr9k:
   - name: snmp_coreasr9k_ifInUcastPkts
     oid: 1.3.6.1.2.1.2.2.1.11
     type: counter
-    help: The number of packets, delivered by this sub-layer to a higher (sub-)layer,
-      which were not addressed to a multicast or broadcast address at this sub-layer
+    help: The number of subnetwork-unicast packets delivered to a higher-layer protocol.
       - 1.3.6.1.2.1.2.2.1.11
     indexes:
     - labelname: ifIndex
@@ -199,8 +198,8 @@ coreasr9k:
   - name: snmp_coreasr9k_ifInErrors
     oid: 1.3.6.1.2.1.2.2.1.14
     type: counter
-    help: For packet-oriented interfaces, the number of inbound packets that contained
-      errors preventing them from being deliverable to a higher-layer protocol - 1.3.6.1.2.1.2.2.1.14
+    help: The number of inbound packets that contained errors preventing them from
+      being deliverable to a higher-layer protocol. - 1.3.6.1.2.1.2.2.1.14
     indexes:
     - labelname: ifIndex
       type: gauge
@@ -253,8 +252,8 @@ coreasr9k:
   - name: snmp_coreasr9k_ifInUnknownProtos
     oid: 1.3.6.1.2.1.2.2.1.15
     type: counter
-    help: For packet-oriented interfaces, the number of packets received via the interface
-      which were discarded because of an unknown or unsupported protocol - 1.3.6.1.2.1.2.2.1.15
+    help: The number of packets received via the interface which were discarded because
+      of an unknown or unsupported protocol. - 1.3.6.1.2.1.2.2.1.15
     indexes:
     - labelname: ifIndex
       type: gauge
@@ -307,9 +306,9 @@ coreasr9k:
   - name: snmp_coreasr9k_ifOutUcastPkts
     oid: 1.3.6.1.2.1.2.2.1.17
     type: counter
-    help: The total number of packets that higher-level protocols requested be transmitted,
-      and which were not addressed to a multicast or broadcast address at this sub-layer,
-      including those that were discarded or not sent - 1.3.6.1.2.1.2.2.1.17
+    help: The total number of packets that higher-level protocols requested be transmitted
+      to a subnetwork-unicast address, including those that were discarded or not
+      sent. - 1.3.6.1.2.1.2.2.1.17
     indexes:
     - labelname: ifIndex
       type: gauge
@@ -416,8 +415,8 @@ coreasr9k:
   - name: snmp_coreasr9k_ifOutErrors
     oid: 1.3.6.1.2.1.2.2.1.20
     type: counter
-    help: For packet-oriented interfaces, the number of outbound packets that could
-      not be transmitted because of errors - 1.3.6.1.2.1.2.2.1.20
+    help: The number of outbound packets that could not be transmitted because of
+      errors. - 1.3.6.1.2.1.2.2.1.20
     indexes:
     - labelname: ifIndex
       type: gauge
@@ -805,15 +804,23 @@ coreasr9k:
       to the nearest power of two - 1.3.6.1.4.1.9.9.168.1.1.3
   - name: snmp_coreasr9k_cntpSysRootDelay
     oid: 1.3.6.1.4.1.9.9.168.1.1.4
-    type: DisplayString
+    type: OctetString
     help: A signed fixed-point number indicating the total round-trip delay in seconds,
       to the primary reference source at the root of the synchronization subnet. -
       1.3.6.1.4.1.9.9.168.1.1.4
+    regex_extracts:
+      "":
+      - value: $1
+        regex: ^(?:(.*))$
   - name: snmp_coreasr9k_cntpSysRootDispersion
     oid: 1.3.6.1.4.1.9.9.168.1.1.5
-    type: DisplayString
+    type: OctetString
     help: The maximum error in seconds, relative to the primary reference source at
       the root of the synchronization subnet - 1.3.6.1.4.1.9.9.168.1.1.5
+    regex_extracts:
+      "":
+      - value: $1
+        regex: ^(?:(.*))$
   - name: snmp_coreasr9k_cntpSysRefId
     oid: 1.3.6.1.4.1.9.9.168.1.1.6
     type: OctetString
