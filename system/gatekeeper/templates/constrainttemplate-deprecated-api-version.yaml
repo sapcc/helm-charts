@@ -16,6 +16,8 @@ spec:
         openAPIV3Schema:
           type: object
           properties:
+            helmManifestParserURL:
+              type: string
             kubernetesVersion:
               type: string
             apiVersions:
@@ -36,7 +38,7 @@ spec:
 
           # parse release manifest
           helm_version := 3
-          parser_url := sprintf("http://helm-manifest-parser.kube-system.svc/v%d", [helm_version])
+          parser_url := sprintf("%s/v%d", [input.parameters.helmManifestParserURL, helm_version])
           parser_resp := http.send({"url": parser_url, "method": "POST", "raw_body": input.review.object.data.release, "timeout": "15s"})
           parser_resp.status_code == 200
 

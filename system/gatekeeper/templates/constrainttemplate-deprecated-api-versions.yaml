@@ -13,6 +13,13 @@ spec:
     spec:
       names:
         kind: GkDeprecatedApiVersions
+      validation:
+        # Schema for the `parameters` field
+        openAPIV3Schema:
+          type: object
+          properties:
+            helmManifestParserURL:
+              type: string
 
   targets:
     - target: admission.k8s.gatekeeper.sh
@@ -55,7 +62,7 @@ spec:
         violation[{"msg": msg, "details": {"name": obj_name, "kind": obj_kind}}] {
           helm_version := helm_versions[_]
 
-          parser_url := sprintf("http://helm-manifest-parser.kube-system.svc/v%d", [helm_version])
+          parser_url := sprintf("%s/v%d", [input.parameters.helmManifestParserURL, helm_version])
           parser_resp := http.send({"url": parser_url, "method": "POST", "raw_body": input.review.object.data.release, "timeout": "15s"})
           parser_resp.status_code == 200
 
