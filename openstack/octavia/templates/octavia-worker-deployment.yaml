@@ -10,7 +10,6 @@ metadata:
     helm.sh/chart: {{ include "octavia.chart" . }}
     app.kubernetes.io/instance: {{ .Release.Name }}
     app.kubernetes.io/managed-by: {{ .Release.Service }}
-    f5-device-model: {{ $v.model }}
 spec:
   replicas: 1
   selector:
@@ -22,6 +21,7 @@ spec:
       labels:
         app.kubernetes.io/name: octavia-worker-{{ $name }}
         app.kubernetes.io/instance: {{ .Release.Name }}
+        f5-device-model: {{ $v.model }} # used by Limes for capacity discovery (via Prometheus metric "kube_pod_labels")
       annotations:
         configmap-etc-hash: {{ include (print $.Template.BasePath "/octavia-etc-configmap.yaml") . | sha256sum }}
         configmap-worker-hash: {{ include (print $.Template.BasePath "/octavia-worker-configmap.yaml") . | sha256sum }}
