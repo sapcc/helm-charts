@@ -11,6 +11,8 @@ executor_thread_pool_size = 128
 rpc_response_timeout = 60
 statsd_port = {{ .Values.inspector.rpc_statsd_port }}
 statsd_enabled = {{ .Values.inspector.rpc_statsd_enabled }}
+listen_address = 0.0.0.0
+host = https://{{ include "ironic_inspector_endpoint_host_public" .}}
 
 [ironic]
 region_name = {{.Values.global.region}}
@@ -21,10 +23,6 @@ password = {{ required ".Values.global.ironicServicePassword is missing" .Values
 user_domain_name = {{.Values.global.keystone_service_domain | default "Default"}}
 project_name = {{.Values.global.keystone_service_project | default "service"}}
 project_domain_name = {{.Values.global.keystone_service_domain | default "Default"}}
-
-[api]
-listen_address = 0.0.0.0
-host = https://{{ include "ironic_inspector_endpoint_host_public" .}}
 
 [firewall]
 manage_firewall = False
