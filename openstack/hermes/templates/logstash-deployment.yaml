@@ -52,11 +52,13 @@ spec:
                   fieldPath: metadata.namespace
             - name: LS_JAVA_OPTS
               value: {{.Values.logstash.javaopts}}
+            {{ if .Values.logstash.audit -}}
             - name: METIS_PASSWORD
               valueFrom:
                 secretKeyRef:
                   name: logstash-secret
                   key: METIS_PASSWORD
+            {{- end}}
           volumeMounts:
             - name: hermes-etc
               mountPath: /hermes-etc
