@@ -52,6 +52,13 @@ spec:
 {{- end }}
         - name: grafana-content
           emptyDir: {}
+      initContainers:
+      - name: fix-permissions
+        image: {{ .Values.global.dockerHubMirror | required ".Values.global.dockerHubMirror is missing" }}/library/busybox:1.34
+        command: ["/bin/chmod","-R","777", "/tmp/git"]
+        volumeMounts:
+        - name: grafana-git
+          mountPath: /tmp/git
       containers:
         - name: "grafana"
           image: {{ .Values.global.dockerHubMirror | required ".Values.global.dockerHubMirror is missing" }}/{{.Values.grafana.image}}:{{.Values.grafana.image_version}}
