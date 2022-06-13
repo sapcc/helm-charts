@@ -26,6 +26,8 @@ spec:
         checksum/grafana-initial-setup: {{ include "grafanasix/templates/_grafana-initial-setup.tpl" . | sha256sum }}
         checksum/helpers: {{ include "grafanasix/templates/_helpers.tpl" . | sha256sum }}
         pod.alpha.kubernetes.io/initialized: "true"
+        prometheus.io/scrape: "true"
+        prometheus.io/targets: "openstack"
     spec:
       nodeSelector:
         zone: farm
@@ -42,7 +44,12 @@ spec:
             secretName: grafana-ds-certs
 {{- end }}
         - name: grafana-git
+{{- if .Values.grafana.content.persistence.enabled }}
+          persistentVolumeClaim:
+            claimName: grafana-content-gitsync-pvc
+{{- else }}
           emptyDir: {}
+{{- end }}
         - name: grafana-content
           emptyDir: {}
       containers:
@@ -93,6 +100,7 @@ spec:
             - "--branch={{.Values.grafana.gitsync.branch}}"
             - "--wait=30"
             - "--max-sync-failures=-1"
+            - "--http-bind=localhost:9090"
           env:
             - name: GIT_SSL_NO_VERIFY
               value: "true"
@@ -110,6 +118,9 @@ spec:
             limits:
               memory: "250Mi"
               cpu: "150m"
+          ports:
+            - name: metrics
+              port: 9090
         - name: "minitrue"
           image: {{.Values.global.registry}}/grafana-minitrue:{{.Values.grafana.minitrue_version}}
           imagePullPolicy: {{.Values.image.pullPolicy}}

@@ -1,0 +1,17 @@
+{{- if .Values.grafana.content.persistence.enabled }}
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: {{ .Release.Name }}-content-gitsync-pvc
+  labels:
+    app: {{ template "name" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+spec:
+  accessModes:
+    - {{ .Values.store.file.persistence.accessMode | default "ReadWriteOncePod" | quote }}
+  resources:
+    requests:
+      storage: {{ .Values.store.file.persistence.size | default "10Gi" | quote }}
+{{- end }}
