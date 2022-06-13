@@ -1,3 +1,7 @@
+## 7.0.8
+
+* Thanos Query and Store are back
+
 ## 7.0.3
 
 * minor fixes to get it running, versions in between are garbage

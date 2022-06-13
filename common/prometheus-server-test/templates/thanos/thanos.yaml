@@ -1,0 +1,26 @@
+{{- if .Values.thanos.enabled }}
+apiVersion: monitoring.banzaicloud.io/v1alpha1
+kind: Thanos
+metadata:
+  name: {{ include "prometheus.fullName" . }}-thanos
+spec:
+  query:
+    httpAddress: 0.0.0.0:{{ required ".Values.thanos.querier.service.httpPort missing" .Values.thanos.querier.service.httpPort }}
+    grpcAddress: 0.0.0.0:{{ required ".Values.thanos.querier.service.grpcPort missing" .Values.thanos.querier.service.grpcPort }}
+    logLevel: {{ .Values.logLevel }}
+    queryAutoDownsampling: true
+    queryReplicaLabel:
+      - prometheus_replica
+    webRoutePrefix: {{ required ".Values.thanos.querier.webRouteprefix missing" .Values.thanos.querier.webRouteprefix }}
+    webExternalPrefix: {{ required ".Values.thanos.querier.webRouteprefix missing" .Values.thanos.querier.webRouteprefix }}
+    stores:
+      - {{ include "prometheus.fullName" . }}-thanos-store-{{ include "prometheus.fullName" . }}-thanos-store:10901
+      - {{ include "prometheus.fullName" . }}:10901
+    deploymentOverrides:
+      spec:
+        template:
+          spec:
+            containers:
+            - image: keppel.eu-de-1.cloud.sap/ccloud-quay-mirror/thanos/thanos:v0.26.0
+              name: query
+{{ end }}
