@@ -29,6 +29,18 @@ groups:
       description: Sum of Openstack Manila Share Snapshots Stuck is more than 1
       summary: Manila share snapshots in stuck state
 
+  - alert: OpenstackManilaShareSnapshotsMissing
+    expr: sum(manila_nanny_missing_snapshot_instance) > 0
+    for: 30m
+    labels:
+      dashboard: manila
+      service: manila
+      severity: warning
+      tier: os
+    annotations:
+      description: Share Snapshot not exist on backend filer
+      summary: Manila Share Snapshots missing
+
   - alert: OpenstackManilaSharesStuckCreate
     expr: max(manila_shares_stuck_max_duration_gauge{status="creating"})
       BY (manila_host) > 120
