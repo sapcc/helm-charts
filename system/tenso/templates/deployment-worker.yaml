@@ -30,12 +30,19 @@ spec:
         prometheus.io/port: "80"
         prometheus.io/targets: {{ .Values.prometheus.targets.openstack }}
     spec:
+      volumes:
+        - name: config
+          configMap:
+            name: tenso
       containers:
         - name: worker
           image: {{ include "tenso_image" $ }}
           imagePullPolicy: IfNotPresent
           args: [ worker ]
           env: {{ include "tenso_environment" $ | indent 12 }}
+          volumeMounts:
+            - mountPath: /etc/tenso
+              name: config
           livenessProbe:
             httpGet:
               path: /healthcheck
