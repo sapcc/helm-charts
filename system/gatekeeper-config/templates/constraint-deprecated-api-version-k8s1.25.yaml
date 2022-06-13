@@ -1,0 +1,26 @@
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: GkDeprecatedApiVersion
+metadata:
+  name: deprecatedapiversion-k8s1.25
+  labels:
+    on-prod-ui: 'false'
+spec:
+  enforcementAction: dryrun # set to 'deny' to enforce
+  match:
+    kinds:
+      - apiGroups: [""]
+        kinds: ["Secret"]
+    labelSelector:
+      matchLabels:
+        owner: helm
+        status: deployed
+  parameters:
+    helmManifestParserURL: {{ quote .Values.helm_manifest_parser_url }}
+    kubernetesVersion: '1.25'
+    apiVersions:
+      - autoscaling/v2beta1
+      - batch/v1beta1
+      - discovery.k8s.io/v1beta1
+      - events.k8s.io/v1beta1
+      - node.k8s.io/v1beta1
+      - policy/v1beta1
