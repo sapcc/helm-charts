@@ -37,8 +37,6 @@ template: |
         annotations:
           configmap-etc-hash: {{ include (print $.Template.BasePath "/configmap-etc.yaml") . | sha256sum }}
           prometheus.io/scrape: "true"
-          prometheus.io/port: "9191"
-          prometheus.io/port_1: "8000"
           prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
       spec:
         containers:
@@ -59,6 +57,9 @@ template: |
             value: neutron-nsxv3-agent-{= name =}
           - name: REQUESTS_CA_BUNDLE
             value: ""
+          ports:
+            - name: metrics-agent
+              containerPort: 8000
           livenessProbe:
             exec:
               command: ["neutron-agent-liveness", "--config-file", "/etc/neutron/neutron.conf", "--config-file", "/etc/neutron/plugins/ml2/ml2-nsxv3.ini", "--agent-type", "NSXv3 Agent"]
@@ -73,6 +74,9 @@ template: |
             readOnly: true
         - name: exporter
           image: {{.Values.global.registry}}/nsx-t-exporter:{{.Values.imageVersionNSXTExporter | required "Please set neutron.imageVersionNSXTExporter"}}
+          ports:
+            - name: metrics-export
+              containerPort: 9191
           env:
             {%- set bb = name | replace( "bb", "") | int %}
             {%- set hostname = "nsx-ctl-" + "bb" + ( '%03d' % bb ) + "." + domain %}

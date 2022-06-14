@@ -31,8 +31,6 @@ spec:
       annotations:
         pod.beta.kubernetes.io/hostname:  asr1k-{{ $config_agent.name }}
         prometheus.io/scrape: "true"
-        prometheus.io/port: "{{$context.Values.l3_port_metrics |  default 9103}}"
-        prometheus.io/port_1: "{{$context.Values.l2_port_metrics |  default 9102}}"
         prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" $context.Values.alerts.prometheus | quote }}
         configmap-asr1k-{{ $config_agent.name }}: {{ tuple $context $config_agent |include "asr1k_configmap" | sha256sum  }}
     spec:
@@ -76,7 +74,7 @@ spec:
               name: container-init
           ports:
             - containerPort: {{$context.Values.port_l3_metrics |  default 9103}}
-              name: metrics
+              name: metrics-l3
               protocol: TCP
           resources:
 {{ toYaml $context.Values.pod.resources.asr1k | indent 12 }}
@@ -119,7 +117,7 @@ spec:
               name: container-init
           ports:
             - containerPort: {{$context.Values.port_l2_metrics |  default 9102}}
-              name: metrics
+              name: metrics-l2
               protocol: TCP
           resources:
 {{ toYaml $context.Values.pod.resources.asr1k_ml2 | indent 12 }}
