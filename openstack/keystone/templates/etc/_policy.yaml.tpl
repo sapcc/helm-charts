@@ -48,6 +48,7 @@
   'cloud_sharedfilesystem_viewer':%(target.role.name)s or
   'swiftreseller':%(target.role.name)s or
   'cloud_objectstore_admin':%(target.role.name)s or
+  'cloud_objectstore_viewer':%(target.role.name)s or
   'service':%(target.role.name)s or
   'cloud_identity_viewer':%(target.role.name)s or
   'cloud_support_tools_viewer':%(target.role.name)s or
