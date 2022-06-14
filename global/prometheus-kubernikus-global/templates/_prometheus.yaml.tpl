@@ -14,6 +14,12 @@
       - '{__name__=~"^kubernikus_servicing_nodes.+"}'
       - '{__name__=~"up"}'
       - '{__name__=~"^prometheus_build_info"}'
+      - '{__name__=~"^logstash_node_pipeline_events_out_total"}'
+      - '{__name__=~"^fluentd_output_status_slow_flush_count"}'
+      - '{__name__=~"^fluentd_output_status_emit_count"}'
+      - '{__name__=~"^fluentd_output_status_emit_records"}'
+      - '{__name__=~"^fluentd_output_status_retry_count"}'
+      - '{__name__=~"^fluentd_output_status_buffer_total_bytes"}'
 
   relabel_configs:
     - action: replace
