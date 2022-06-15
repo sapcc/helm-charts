@@ -31,6 +31,17 @@ function bootstrap {
    upsert_user {{ .Values.metrics.user | include "rabbitmq.shell_quote" }} {{ required ".Values.metrics.password missing" .Values.metrics.password | include "rabbitmq.shell_quote" }} monitoring
 {{- end }}
 
+{{- if .Values.openstack.users }}
+   upsert_user {{ .Values.users.octavia | include "rabbitmq.shell_quote" }} {{ required ".Values.users.octavia missing" .Values.users.octavia.password | include "rabbitmq.shell_quote" }}
+   upsert_user {{ .Values.users.barbican | include "rabbitmq.shell_quote" }} {{ required ".Values.users.barbican missing" .Values.users.barbican.password | include "rabbitmq.shell_quote" }}
+   upsert_user {{ .Values.users.cinder | include "rabbitmq.shell_quote" }} {{ required ".Values.users.cinder missing" .Values.users.cinder.password | include "rabbitmq.shell_quote" }}
+   upsert_user {{ .Values.users.designate | include "rabbitmq.shell_quote" }} {{ required ".Values.users.designate missing" .Values.users.designate.password | include "rabbitmq.shell_quote" }}
+   upsert_user {{ .Values.users.glance | include "rabbitmq.shell_quote" }} {{ required ".Values.users.glance missing" .Values.users.glance.password | include "rabbitmq.shell_quote" }}
+   upsert_user {{ .Values.users.manila | include "rabbitmq.shell_quote" }} {{ required ".Values.users.manila missing" .Values.users.manila.password | include "rabbitmq.shell_quote" }}
+   upsert_user {{ .Values.users.neutron | include "rabbitmq.shell_quote" }} {{ required ".Values.users.neutron missing" .Values.users.neutron.password | include "rabbitmq.shell_quote" }}
+   upsert_user {{ .Values.users.nova | include "rabbitmq.shell_quote" }} {{ required ".Values.users.nova missing" .Values.users.nova.password | include "rabbitmq.shell_quote" }}
+{{- end }}
+
    rabbitmqctl change_password guest {{ required ".Values.users.default.password missing" .Values.users.default.password | include "rabbitmq.shell_quote" }} || true
    rabbitmqctl set_user_tags guest monitoring || true
    /etc/init.d/rabbitmq-server stop
