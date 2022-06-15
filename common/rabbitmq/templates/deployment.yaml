@@ -49,10 +49,10 @@ spec:
       - name: rabbitmq
         image: "{{include "dockerHubMirror" .}}/{{ .Values.image }}:{{.Values.imageTag }}"
         imagePullPolicy: {{ default "IfNotPresent" .Values.imagePullPolicy | quote }}
-        command:
-          - bash
-        args:
-          - /container.init/rabbitmq-start
+        lifecycle:
+          postStart:
+            exec:
+              command: ["bash", "/container.init/rabbitmq-config"]
         {{- if .Values.livenessProbe.enabled }}
         livenessProbe:
           exec:
