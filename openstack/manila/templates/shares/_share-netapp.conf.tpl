@@ -64,7 +64,7 @@ netapp_enable_logical_space_reporting = False
 {{- if eq 100 (int $share.reserved_share_percentage)}}
 reserved_share_percentage = 100
 {{- else }}
-reserved_share_percentage = {{ $share.reserved_share_percentage | default 50 | min 20 }}
+reserved_share_percentage = {{ $share.reserved_share_percentage | default 50 }}
 {{- end }}
 # Time to kepp deleted volumes in recovery queue until space is reclaimed
 netapp_delete_retention_hours = {{ $context.Values.delete_retention_hours | default 12 }}
