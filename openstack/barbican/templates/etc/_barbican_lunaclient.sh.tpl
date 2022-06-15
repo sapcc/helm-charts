@@ -46,9 +46,9 @@ lunaclient () {
     
     {{- if eq .Values.hsm.ha.enabled true }}
     #REGISTER HSM2
-    /usr/safenet/lunaclient/bin/pscp -pw {{ .Values.lunaclient.conn.pwd }} /thales/safenet/lunaclient/config/certs/$HOSTNAME-$NOW.pem {{ .Values.lunaclient.conn.user }}@{{ .Values.lunaclient.conn.ip02 }}:.
-    /usr/safenet/lunaclient/bin/pscp -pw {{ .Values.lunaclient.conn.pwd }} {{ .Values.lunaclient.conn.user }}@{{ .Values.lunaclient.conn.ip02 }}:server.pem /thales/safenet/lunaclient/config/certs/
-    /usr/safenet/lunaclient/bin/vtl addserver -n {{ .Values.lunaclient.conn.ip02 }} -c  /thales/safenet/lunaclient/config/certs/server.pem
+    /thales/safenet/lunaclient/bin/64/pscp -pw {{ .Values.lunaclient.conn.pwd }} /thales/safenet/lunaclient/config/certs/$HOSTNAME-$NOW.pem {{ .Values.lunaclient.conn.user }}@{{ .Values.lunaclient.conn.ip02 }}:.
+    /thales/safenet/lunaclient/bin/64/pscp -pw {{ .Values.lunaclient.conn.pwd }} {{ .Values.lunaclient.conn.user }}@{{ .Values.lunaclient.conn.ip02 }}:server.pem /thales/safenet/lunaclient/config/certs/
+    /thales/safenet/lunaclient/bin/64/vtl addserver -n {{ .Values.lunaclient.conn.ip02 }} -c  /thales/safenet/lunaclient/config/certs/server.pem
     echo "client register -c $HOSTNAME-$NOW" -h $HOSTNAME-$NOW > /thales/safenet/lunaclient/config/$HOSTNAME-$NOW-02.txt
     echo "client assignPartition -c $HOSTNAME-$NOW -p {{ .Values.lunaclient.conn.par02 }}" >> /thales/safenet/lunaclient/config/$HOSTNAME-$NOW-02.txt
     echo "exit" >> /thales/safenet/lunaclient/config/$HOSTNAME-$NOW-02.txt
