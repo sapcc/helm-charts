@@ -146,15 +146,6 @@ cronus:
 {{- end }}
 {{- end }}
 {{- end }}
-{{- if .Values.config.blockedDomains }}
-  # blocked sender domains
-  # TODO: delete after upgrade
-  blockedDomains:
-{{- range $k, $v := .Values.config.blockedDomains }}
-    - {{ $v }}
-{{- end }}
-    - {{ .Values.config.verifyEmailDomain }}
-{{- end }}
 {{- $requestValidate := .Values.global.requestValidate }}
 {{- if not $requestValidate }}
 {{- $requestValidate = .Values.config.requestValidate }}
@@ -175,6 +166,12 @@ cronus:
     originatorHeaders:
 {{- range $k, $v := $requestValidate.originatorHeaders }}
       {{ $k }}: {{ $v }}
+{{- end }}
+{{- end }}
+{{- if $requestValidate.allowedGetParams }}
+    allowedGetParams:
+{{- range $k, $v := $requestValidate.allowedGetParams }}
+      - {{ $v }}
 {{- end }}
 {{- end }}
 {{- if $requestValidate.sesV1CheckKeys }}
