@@ -28,6 +28,10 @@ spec:
         app.kubernetes.io/instance: {{ .Release.Name }}
       annotations:
         configmap-etc-hash: {{ include (print $.Template.BasePath "/octavia-etc-configmap.yaml") . | sha256sum }}
+        {{- if .Values.watcher.enabled }}
+        prometheus.io/scrape: "true"
+        prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
+        {{- end }}
     spec:
       containers:
         - name: {{ .Chart.Name }}-api

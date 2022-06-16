@@ -26,8 +26,6 @@ spec:
         configmap-etc-hash: {{ include (print $.Template.BasePath "/octavia-etc-configmap.yaml") . | sha256sum }}
         configmap-worker-hash: {{ include (print $.Template.BasePath "/octavia-worker-configmap.yaml") . | sha256sum }}
         prometheus.io/scrape: "true"
-        prometheus.io/port: "8000" # worker pod
-        prometheus.io/port_1: "8001" # status-manager pod
         prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
     spec:
       containers:
@@ -35,6 +33,9 @@ spec:
           image: {{required ".Values.global.registry is missing" .Values.global.registry}}/loci-octavia:{{required "Values.imageVersion is missing" .Values.imageVersion}}
           imagePullPolicy: IfNotPresent
           command: ['dumb-init', 'kubernetes-entrypoint']
+          ports:
+            - name: metrics-worker
+              containerPort: 8000
           resources:
 {{ toYaml .Values.pod.resources.worker | indent 12 }}
           volumeMounts:
@@ -109,6 +110,9 @@ spec:
           image: {{required ".Values.global.registry is missing" .Values.global.registry}}/loci-octavia:{{required "Values.imageVersion is missing" .Values.imageVersion}}
           imagePullPolicy: IfNotPresent
           command: ['dumb-init', 'kubernetes-entrypoint']
+          ports:
+            - name: metrics-status
+              containerPort: 8001
           resources:
 {{ toYaml .Values.pod.resources.status_manager | indent 12 }}
           volumeMounts:
