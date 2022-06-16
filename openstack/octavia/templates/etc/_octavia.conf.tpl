@@ -41,7 +41,7 @@ compute_driver = {{ .Values.compute_driver  | default "compute_noop_driver" }}
 network_driver = {{ .Values.network_driver  | default "network_noop_driver" }}
 
 [status_manager]
-health_check_interval = 160
+health_check_interval = 120
 
 {{ if .Values.house_keeping }}
 [house_keeping]
