@@ -28,17 +28,17 @@ groups:
       description: 'NSX-T Management Node offline: {{ $labels.nsxv3_manager_hostname }}'
       summary: 'NSX-T Management Node offline'
 
-  - alert: NSXTExporterScrapeOlderOneHour
-    expr: nsxv3_cluster_management_last_successful_data_fetch{name=~"neutron-nsxv3-agent-bb.*"} < (time()-3600)
+  - alert: NSXTExporterScrapeOlderTwoHours
+    expr: nsxv3_cluster_management_last_successful_data_fetch{name=~"neutron-nsxv3-agent-bb.*"} < (time()-7200)
     labels:
       severity: critical
       tier: vmware
-      meta: 'NSX-T Exporter last success fetch older one hour: {{ $labels.nsxv3_manager_hostname }}'
+      meta: 'NSX-T Exporter last success fetch older two hours: {{ $labels.nsxv3_manager_hostname }}'
       dashboard: nsx-t?var-cluster={{ $labels.name }}
       playbook: docs/devops/alert/nsxt/#NSXT_ExporterScrapeOlder_OneHour
     annotations:
-      description:  'NSX-T Exporter last success fetch older one hour: {{ $labels.nsxv3_manager_hostname }}'
-      summary:  'NSX-T Exporter last success fetch older one hour'
+      description:  'NSX-T Exporter last success fetch older two hours: {{ $labels.nsxv3_manager_hostname }}'
+      summary:  'NSX-T Exporter last success fetch older two hours'
 
   - alert: NSXTExporterNoData
     expr: absent(nsxv3_cluster_management_last_successful_data_fetch)
