@@ -1,0 +1,16 @@
+groups:
+  - name: octobus
+    rules:
+      - alert: OctobusDataInUnreachable
+        expr: probe_success{job="ocb-datain"} == 0
+        for: 15m
+        labels:
+          severity: info
+          tier: moni
+          service: audit
+          context: logging
+          meta: "Octobus in-https data-in '{{ $labels.instance }}' is down"
+          dashboard: audit-log-shipping
+        annotations:
+          description: "Audit logs shipping to Octobus is broken"
+          summary: "Octobus in-https data-in is down"
