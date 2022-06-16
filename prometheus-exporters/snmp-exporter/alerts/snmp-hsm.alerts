@@ -3,7 +3,7 @@ groups:
   rules:
   - alert: hsmPartitionStorageAvailibilityLessThan5Percentage
     expr: snmp_hsm_hsmPartitionStorageAvailableBytes{hsmModel!="Luna G7"} < 5000
-    for: 15m
+    for: 2m
     labels:
       severity: info
       service: barbican
@@ -17,7 +17,7 @@ groups:
 
   - alert: hsmAribaClientsMoreThan10
     expr: sum(snmp_hsm_hsmClientName{hsmClientName=~"ariba.+"}) by (devicename) >= 10
-    for: 15m
+    for: 2m
     labels:
       severity: info
       service: barbican
@@ -31,7 +31,7 @@ groups:
 
   - alert: hsmOperationalErrors
     expr: sum(rate(snmp_hsm_hsmOperationErrors[5m])) by (devicename) > 0
-    for: 15m
+    for: 2m
     labels:
       severity: info
       service: barbican
@@ -45,7 +45,7 @@ groups:
 
   - alert: hsmSensorTemperatureIsCritical
     expr: sum by(devicename, lmTempSensorsDevice) (snmp_hsm_lmTempSensorsValue{lmTempSensorsDevice!~"loc1"}) > 34000
-    for: 15m
+    for: 2m
     labels:
       severity: info
       service: barbican

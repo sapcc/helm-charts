@@ -42,33 +42,6 @@ groups:
       description: '{{ $labels.service }} {{ $labels.check }} has over 4000 unacknowledged messages in {{ $labels.kubernetes_name }}. Logstash has disconnected from the RabbitMQ.'
       summary: 'RabbitMQ unacknowledged messages count'
 
-  - alert: OpenstackElkPredictOutOfDiskSpace
-    expr: elasticsearch_filesystem_data_free_bytes{name=~"hermes"} * 100 / elasticsearch_filesystem_data_size_bytes{name=~"hermes"} < 20
-    for: 60m
-    labels:
-      context: diskspace
-      service: hermes
-      severity: critical
-      tier: os
-      playbook: docs/support/playbook/elastic_kibana_issues.html#elasticpredictoutofdiskspace-alert
-    annotations:
-      description: '{{ $labels.region }} The disk usage for Hermes {{ $labels.name }} is above 80% now.
-                   Please consider cleaning up hermes elasticsearch or lower the retention period for hermes.'
-      summary: 'Hermes in {{ $labels.region }} might run out of disk space'
-
-  - alert: OpenstackClusterRed
-    expr: elasticsearch_cluster_health_status{cluster="hermes",color="red"} == 1
-    for: 30m
-    labels:
-      context: elasticclusterred
-      service: hermes
-      severity: warning
-      tier: os
-      playbook: docs/support/playbook/elastic_kibana_issues.html
-    annotations:
-      description: Cluster {{ $labels.cluster }} is RED. Please check all nodes.
-      summary: Elastic Search {{ $labels.cluster }} cluster is RED
-
   - alert: OpenstackHermesCanaryDown
     expr: blackbox_canary_status_gauge{service=~"hermes"} == 1
     for: 1h
