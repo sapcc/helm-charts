@@ -8,6 +8,7 @@
 
   params:
     'match[]':
+      - '{__name__=~"^global:.+"}'
       - '{__name__=~"^ALERTS$"}'
       - '{__name__=~"^kubernikus_kluster_status_phase"}'
       - '{__name__=~"^kubernikus_kluster_info"}'
