@@ -53,9 +53,34 @@ postgresql:
   enabled: true
   alerts:
     prometheus: openstack
+  persistence:
+    enabled: true
+    accessMode: ReadWriteMany
+    size: 10Gi
+  resources:
+    requests:
+      memory: 256Mi
+      cpu: 100m
+  backup:
+    enabled: true
+    image: keppel.eu-de-1.cloud.sap/ccloud/backup-tools
+    imageTag: v0.6.5
 
 # Deploy Lyra Prometheus alerts.
 alerts:
   enabled: true
   # Name of the Prometheus to which the alerts should be assigned to.
   prometheus: openstack
+
+pgmetrics:
+  db_name: monsoon-automation_production
+  customMetrics:
+    pg_database:
+      query: "SELECT d.datname AS datname, CASE WHEN pg_catalog.has_database_privilege(d.datname, 'CONNECT') THEN pg_catalog.pg_database_size(d.datname) ELSE 0 END AS size_bytes FROM pg_catalog.pg_database d where datname not in ('template0', 'template1', 'postgres')"
+      metrics:
+        - datname:
+            usage: "LABEL"
+            description: "Name of the database"
+        - size_bytes:
+            usage: "GAUGE"
+            description: "Size of the database in bytes"
