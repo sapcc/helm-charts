@@ -56,6 +56,7 @@ function cleanup_tempest_leftovers() {
   # eventually completed by the time script gets to deleting ports in project 1
   delete_tempest_os_items "server"
   delete_tempest_os_items "port"
+  delete_tempest_os_items "server group"
   cleanup_nova
 }
 
