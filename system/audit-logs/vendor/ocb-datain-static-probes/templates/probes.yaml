@@ -1,0 +1,37 @@
+{{- $values := .Values -}}
+
+{{- range $i, $probes := .Values.probes -}}
+{{ if ne $i 0 }}---{{ end }}
+
+apiVersion: monitoring.coreos.com/v1
+kind: Probe
+
+metadata:
+  name: {{$probes.name}}
+  labels:
+    prometheus: {{ required "$.Values.global.prometheus missing" $.Values.global.prometheus }}
+
+spec:
+  jobName: {{$probes.name}}
+  prober:
+    url: {{ .Values.prober }}
+    scheme: {{ .Values.scheme }}
+  module: {{ .Values.module }}
+  interval: {{ .Values.scrapeInterval }}
+  scrapeTimeout: {{ .Values.scrapeTimeout }}
+  targets:
+    staticConfig:
+      static:
+        {{- range $probes.static_targets }}
+        - {{ . }}
+        {{- end }}
+      labels:
+        {{ if $.Values.global.region -}}
+        region: {{ $.Values.global.region }}
+        {{- end }}
+        {{ if $.Values.global.clusterType -}}
+        clusterType: {{ $.Values.global.clusterType }}
+        {{- end }}
+
+---
+{{ end -}}
