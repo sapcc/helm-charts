@@ -3,7 +3,8 @@ groups:
   rules:
   - alert: VROpsAPIDown
     expr: |
-      (sum by (target) (vrops_api_response) / count by (target) (vrops_api_response) > 500) or (vrops_inventory_target unless on (target) vrops_api_response)
+      (sum by (target) (vrops_api_response{collector=~"vrops.*"}) / count by (target) (vrops_api_response{collector=~"vrops.*"}) > 500) or 
+      (vrops_inventory_target unless on (target) vrops_api_response)
     for: 10m
     labels:
       severity: warning
@@ -16,10 +17,10 @@ groups:
       summary: "`https://{{ $labels.target }}` API is down. Monitoring of the vCenter and NSX-T is no longer available."
 
   - alert: VROpsExporterDegraded
-    expr: 200 < sum by (target) (vrops_api_response) / count by (target) (vrops_api_response) <= 499
+    expr: 200 < sum by (target) (vrops_api_response{collector=~"vrops.*"}) / count by (target) (vrops_api_response) <= 499
     for: 10m
     labels:
-      severity: info
+      severity: warning
       tier: vmware
       service: vrops-exporter
       meta: "One or more collectors of the vrops-exporter for {{ $labels.target }} are degraded. Monitoring of vCenter and NSX-T is no longer available."
@@ -31,13 +32,27 @@ groups:
   - alert: VROpsExporterInventoryDown
     expr: absent(vrops_inventory_iteration_total)
     labels:
-      severity: info
+      severity: warning
       tier: vmware
       service: vrops-exporter inventory
       meta: "vrops-exporter inventory for this region is not available. Collectors do not getting resources for monitoring."
     annotations:
       description: "vrops-exporter inventory for this region is not available. Collectors do not getting resources for monitoring."
       summary: "vrops-exporter inventory for this region is not available. Collectors do not getting resources for monitoring."
+
+  - alert: VROpsInventoryDataMissing
+    expr: sum by (target) (vrops_inventory_vcenters) == 0
+    for: 10m
+    labels:
+      severity: warning
+      tier: vmware
+      service: vrops-exporter
+      meta: "vROps inventory is not having any data for {{ $labels.target }} anymore."
+      playbook: docs/devops/alert/vcenter/vrops/#restart-vrops-cluster
+      no_alert_on_absence: "true"
+    annotations:
+      description: "vROps inventory is not having any data for {{ $labels.target }} anymore."
+      summary: "vROps inventory is not having any data for {{ $labels.target }} anymore."
 
   - alert: VROpsDiskpaceUsageCritical
     expr: vrops_virtualmachine_guestfilesystem_storage_db_percentage{virtualmachine=~"vrops.*-vc-.+"} > 90
@@ -59,12 +74,12 @@ groups:
       severity: warning
       tier: vmware
       service: vcenter adapter
-      meta: "The vCenter adapter for https://vrops-{{ $labels.vcenter }} is not receiving data. {{ $labels.recommendation_2 }}"
+      meta: "The vCenter adapter for https://vrops-{{ $labels.vcenter }} is not receiving data."
       playbook: docs/devops/alert/vcenter/vrops.html#revalidatecertificate
       no_alert_on_absence: "true"
     annotations:
-      description: "The vCenter adapter for https://vrops-{{ $labels.vcenter }} is not receiving data. {{ $labels.recommendation_2 }}"
-      summary: "The vCenter adapter for https://vrops-{{ $labels.vcenter }} is not receiving data. {{ $labels.recommendation_2 }}"
+      description: "The vCenter adapter for https://vrops-{{ $labels.vcenter }} is not receiving data."
+      summary: "The vCenter adapter for https://vrops-{{ $labels.vcenter }} is not receiving data."
 
   - alert: VROpsVCenterObjectsNotReceivingData
     expr: vrops_vcenter_alert_info{alert_name="Objects are not receiving data from adapter instance"}
@@ -72,12 +87,12 @@ groups:
       severity: info
       tier: vmware
       service: vcenter adapter
-      meta: "vROPs vCenter adapter is not receiving data for some objects. ({{ $labels.vcenter }}). {{ $labels.recommendation_2 }}"
+      meta: "vROPs vCenter adapter for https://vrops-{{ $labels.vcenter }} is not receiving data for some objects."
       playbook: docs/devops/alert/vcenter/vrops.html#revalidatecertificate
       no_alert_on_absence: "true"
     annotations:
-      description: "vROPs vCenter adapter is not receiving data for some objects. ({{ $labels.vcenter }}). {{ $labels.recommendation_2 }}"
-      summary: "vROPs vCenter adapter is not receiving data for some objects. ({{ $labels.vcenter }}). {{ $labels.recommendation_2 }}"
+      description: "vROPs vCenter adapter for https://vrops-{{ $labels.vcenter }} is not receiving data for some objects."
+      summary: "vROPs vCenter adapter for https://vrops-{{ $labels.vcenter }} is not receiving data for some objects."
 
   - alert: VMRightsizingDataMissing
     expr: |
@@ -111,16 +126,3 @@ groups:
     annotations:
       description: "Elektra dashboard: vROPs data is missing to serve customers with VM tools upgrade recommendations"
       summary: "Elektra dashboard: vROPs data is missing to serve customers with VM tools upgrade recommendations"
-  - alert: VROpsInventoryDataMissing
-    expr: sum by (target) (vrops_inventory_vcenters) == 0
-    for: 10m
-    labels:
-      severity: warning
-      tier: vmware
-      service: vrops-exporter
-      meta: "vROps inventory is not having any data for {{ $labels.target }} anymore."
-      playbook: docs/devops/alert/vcenter/vrops/#restart-vrops-cluster
-      no_alert_on_absence: "true"
-    annotations:
-      description: "vROps inventory is not having any data for {{ $labels.target }} anymore."
-      summary: "vROps inventory is not having any data for {{ $labels.target }} anymore."
