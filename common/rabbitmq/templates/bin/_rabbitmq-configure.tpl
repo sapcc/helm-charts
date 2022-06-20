@@ -30,15 +30,11 @@ function upsert_user {
     fi
 }
 
-rabbitmq-server &
-PID=$!
-function cleanup() {
-    kill -SIGTERM $PID
-    wait $(jobs -rp) || true
-}
-trap cleanup EXIT
-
-timeout 60 rabbitmqctl wait /var/lib/rabbitmq/mnesia/rabbit@$HOSTNAME.pid
+# wait for process to start booting (rabbitmqctl command fails on local Node if the preocess is not running)
+until [[ $(ls -l /var/lib/rabbitmq/mnesia/rabbit\@$HOSTNAME.pid 2>/dev/null) ]] ; do sleep 1; done
+rabbitmqctl wait /var/lib/rabbitmq/mnesia/rabbit\@$HOSTNAME.pid -q
+# wait for rabbitmq to finish booting
+until [[ $(rabbitmq-diagnostics is_running) ]]; do sleep 1; done
 
 {{- if .Values.debug }}
 rabbitmq-plugins enable rabbitmq_tracing
@@ -55,6 +51,3 @@ eval $(timeout 5.0 rabbitmqctl list_users -q | awk '{printf "users[\"%s\"]=\"%s\
 {{ list ".Values.metrics" .Values.metrics | include "rabbitmq.upsert_user" }} monitoring
 {{- end }}
 upsert_user guest {{ .Values.users.default.password | include "rabbitmq.shell_quote" }} monitoring
-
-wait $(jobs -rp) || true
-sleep inf

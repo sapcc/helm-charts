@@ -1,0 +1,39 @@
+{{- if .Release.IsUpgrade -}}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: "{{ template "fullname" . }}-configure-{{ include (print .Template.BasePath "/bin/_rabbitmq-configure.tpl") . | trim | sha1sum | trunc 8 }}"
+  labels:
+    app.kubernetes.io/name: {{ template "fullname" . }}
+    app.kubernetes.io/instance: {{ .Release.Name | quote }}
+    app.kubernetes.io/version: {{ default "unknown" .Chart.AppVersion }}
+    app.kubernetes.io/managed-by: {{ .Release.Service | quote }}
+    helm.sh/chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+spec:
+  template:
+    metadata:
+      name: "{{ template "fullname" . }}-configure"
+      labels:
+        app.kubernetes.io/name: {{ template "fullname" . }}
+        app.kubernetes.io/instance: {{ .Release.Name | quote }}
+        app.kubernetes.io/version: {{ default "unknown" .Chart.AppVersion }}
+        app.kubernetes.io/managed-by: {{ .Release.Service | quote }}
+        helm.sh/chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    spec:
+      restartPolicy: Never
+      serviceAccountName: {{ template "fullname" . }}-pod-exec
+      containers:
+      - name: configure
+        image: "{{ required ".Values.global.dockerHubMirror is missing" .Values.global.dockerHubMirror}}/{{ .Values.configure.image }}:{{ .Values.configure.image_version }}"
+        command:
+        - kubectl-v{{ .Values.configure.kubectl_version }}
+        - exec
+        - -c
+        - rabbitmq
+        - svc/{{ template "fullname" . }}
+        - --
+        - bash
+        - -c
+        - |
+{{ include (print .Template.BasePath "/bin/_rabbitmq-configure.tpl") . | indent 10 }}
+{{- end }}
