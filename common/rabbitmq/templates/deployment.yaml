@@ -43,7 +43,6 @@ spec:
 {{- include "rabbitmq_node_reinstall_affinity" . }}
 {{- end }}
       hostname: {{ template "fullname" . }}
-      shareProcessNamespace: true
       securityContext:
         runAsUser: 999
         runAsGroup: 999
@@ -53,7 +52,8 @@ spec:
         image: "{{include "dockerHubMirror" .}}/{{ .Values.image }}:{{.Values.imageTag }}"
         imagePullPolicy: {{ default "IfNotPresent" .Values.imagePullPolicy | quote }}
         command:
-          - rabbitmq-server
+        - rabbitmq-server
+        {{- if .Values.livenessProbe.enabled }}
         livenessProbe:
           exec:
             command:
@@ -80,22 +80,6 @@ spec:
         volumeMounts:
           - mountPath: /var/lib/rabbitmq
             name: rabbitmq-persistent-storage
-      - name: configure
-        image: "{{include "dockerHubMirror" .}}/{{ .Values.image }}:{{.Values.imageTag }}"
-        imagePullPolicy: {{ default "IfNotPresent" .Values.imagePullPolicy | quote }}
-        workingDir: "/tmp"
-        command:
-          - python3
-        args:
-          - /container.init/_poll_configmap
-          - metadata.name={{ template "fullname" . }}-bin
-        resources:
-{{ toYaml .Values.configure.resources | indent 10 }}
-        volumeMounts:
-          - mountPath: /var/lib/rabbitmq
-            name: rabbitmq-persistent-storage
-          - mountPath: /container.init
-            name: container-init
 {{- if .Values.metrics.enabled }}
       - name: metrics
         image: {{include "dockerHubMirror" .}}/{{ .Values.metrics.image }}:{{ .Values.metrics.imageTag }}
@@ -127,7 +111,4 @@ spec:
         {{- else }}
           emptyDir: {}
         {{- end }}
-        - name: container-init
-          configMap:
-            name: {{ template "fullname" . }}-bin
 {{- end }}
