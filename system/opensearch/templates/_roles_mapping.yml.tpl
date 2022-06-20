@@ -14,6 +14,12 @@ adminrole:
   reserved: false
   users:
   -  "admin"
+  - "CCADMIN_DOMAIN_USERS"
+
+data:
+  reserved: false
+  users:
+  - "data"
 
 logstash:
   reserved: false

@@ -20,14 +20,13 @@ config:
           challenge: true
         authentication_backend:
           type: intern
-      clientcert_auth_domain:
-        description: "Authenticate via SSL client certificates"
-        http_enabled: true
-        transport_enabled: false
+      ldap_auth:
         order: 2
+        description: "Authenticate using LDAP"
+        http_enabled: true
+        transport_enabled: true
         http_authenticator:
-          type: clientcert
-          config:
+          type: basic
           challenge: false
         authentication_backend:
           type: ldap
