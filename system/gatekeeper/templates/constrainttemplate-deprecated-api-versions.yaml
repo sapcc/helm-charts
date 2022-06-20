@@ -59,11 +59,11 @@ spec:
           input.review.object.metadata.labels.status == "deployed"
         }
 
-        violation[{"msg": msg, "details": {"name": obj_name, "kind": obj_kind}}] {
-          helm_version := helm_versions[_]
+        helm_version := helm_versions[_]
+        parser_url := sprintf("%s/v%d", [input.parameters.helmManifestParserURL, helm_version])
+        parser_resp := http.send({"url": parser_url, "method": "POST", "raise_error": false, "raw_body": input.review.object.data.release, "timeout": "15s"})
 
-          parser_url := sprintf("%s/v%d", [input.parameters.helmManifestParserURL, helm_version])
-          parser_resp := http.send({"url": parser_url, "method": "POST", "raw_body": input.review.object.data.release, "timeout": "15s"})
+        violation[{"msg": msg, "details": {"name": obj_name, "kind": obj_kind}}] {
           parser_resp.status_code == 200
 
           obj := parser_resp.body.items[_]
@@ -73,4 +73,10 @@ spec:
           obj_name := obj.metadata.name
           obj_kind := obj.kind
           msg := sprintf("%s %s declared with deprecated API version: %s (will break in k8s v%s) ", [obj_kind, obj_name, obj.apiVersion, k8s_version])
+        }
+
+        violation[{"msg": msg}] {
+          parser_resp.status_code != 200
+
+          msg := "helm-manifest-parser did not return HTTP status 200. Please retry in ~5 minutes."
         }

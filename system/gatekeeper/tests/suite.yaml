@@ -3,24 +3,318 @@ apiVersion: test.gatekeeper.sh/v1alpha1
 metadata:
   name: gatekeeper-tests
 tests:
+
+- name: deprecated-api-version-k8s1.16
+  template: rendered-chart/gatekeeper/templates/constrainttemplate-deprecated-api-version.yaml
+  constraint: rendered-chart/gatekeeper-config/templates/constraint-deprecated-api-version-k8s1.16.yaml
+  cases:
+  - name: helm-release-deprecated-api-version
+    object: fixtures/deprecated-api-version/helm-release-deprecated-1.16.out.yaml
+    assertions:
+    # TODO: fix no violation
+    - violations: 0
+      message: ""
+  - name: helm-release-clean
+    object: fixtures/deprecated-api-version/helm-release-clean.out.yaml
+    assertions:
+    - violations: no
+
+- name: deprecated-api-version-k8s1.22
+  template: rendered-chart/gatekeeper/templates/constrainttemplate-deprecated-api-version.yaml
+  constraint: rendered-chart/gatekeeper-config/templates/constraint-deprecated-api-version-k8s1.22.yaml
+  cases:
+  - name: helm-release-deprecated-api-version-1.22
+    object: fixtures/deprecated-api-version/helm-release-deprecated-1.22.out.yaml
+    assertions:
+    # TODO: fix violation
+    - violations: 0
+      message: ""
+  - name: helm-release-clean
+    object: fixtures/deprecated-api-version/helm-release-clean.out.yaml
+    assertions:
+    - violations: no
+
+- name: deprecated-api-version-k8s1.25
+  template: rendered-chart/gatekeeper/templates/constrainttemplate-deprecated-api-version.yaml
+  constraint: rendered-chart/gatekeeper-config/templates/constraint-deprecated-api-version-k8s1.25.yaml
+  cases:
+  - name: helm-release-deprecated-api-version-1.25
+    object: fixtures/deprecated-api-version/helm-release-deprecated-1.25.out.yaml
+    assertions:
+    # TODO: fix no violation
+    - violations: 0
+      message: ""
+  - name: helm-release-clean
+    object: fixtures/deprecated-api-version/helm-release-clean.out.yaml
+    assertions:
+    - violations: no
+
+- name: deprecated-api-version-k8s1.26
+  template: rendered-chart/gatekeeper/templates/constrainttemplate-deprecated-api-version.yaml
+  constraint: rendered-chart/gatekeeper-config/templates/constraint-deprecated-api-version-k8s1.26.yaml
+  cases:
+  - name: helm-release-deprecated-api-version-1.26
+    object: fixtures/deprecated-api-version/helm-release-deprecated-1.26.out.yaml
+    assertions:
+    # TODO: fix no violation
+    - violations: 0
+      message: ""
+  - name: helm-release-clean
+    object: fixtures/deprecated-api-version/helm-release-clean.out.yaml
+    assertions:
+    - violations: no
+
+- name: deprecated-api-versions
+  template: rendered-chart/gatekeeper/templates/constrainttemplate-deprecated-api-versions.yaml
+  constraint: rendered-chart/gatekeeper-config/templates/constraint-deprecated-api-versions.yaml
+  cases:
+  - name: helm-release-deprecated-api-versions
+    object: fixtures/deprecated-api-version/helm-release-deprecated-1.16.out.yaml
+    assertions:
+    - violations: 1
+      message: 'Deployment dummy declared with deprecated API version: extensions/v1beta1 \(will break in k8s v1.16\)'
+  - name: helm-release-deprecated-api-versions
+    object: fixtures/deprecated-api-version/helm-release-deprecated-1.22.out.yaml
+    assertions:
+    - violations: 1
+      message: 'CustomResourceDefinition dummy declared with deprecated API version: apiextensions.k8s.io/v1beta1 \(will break in k8s v1.22\)'
+  # NOTE: 1.25 and 1.26 deprecations are not tested here because the policy currently does not cover them
+  - name: helm-release-clean
+    object: fixtures/deprecated-api-version/helm-release-clean.out.yaml
+    assertions:
+    - violations: no
+
+- name: forbidden-clusterwide-objects
+  template: rendered-chart/gatekeeper/templates/constrainttemplate-forbidden-clusterwide-objects.yaml
+  constraint: rendered-chart/gatekeeper-config/templates/constraint-forbidden-clusterwide-objects.yaml
+  cases:
+  - name: gatekeeper-tugger
+    object: fixtures/forbidden-clusterwide-objects/gatekeeper-tugger.yaml
+    assertions:
+    - violations: no
+  - name: gatekeeper-validating-webhook-configuration
+    object: fixtures/forbidden-clusterwide-objects/gatekeeper-validating-webhook-configuration.yaml
+    assertions:
+    - violations: no
+  - name: cert-manager-mutating-webhook
+    object: fixtures/forbidden-clusterwide-objects/cert-manager-mutating-webhook.yaml
+    assertions:
+    # TODO: repair this
+    - violations: 1
+      message: 'webhook "webhook.cert-manager.io" does not match our allowlist'
+  - name: cert-manager-validating-webhook
+    object: fixtures/forbidden-clusterwide-objects/cert-manager-validating-webhook.yaml
+    assertions:
+    # TODO: repair this
+    - violations: 1
+      message: 'webhook "webhook.cert-manager.io" does not match our allowlist'
+  - name: seeder.cloud.sap
+    object: fixtures/forbidden-clusterwide-objects/seeder.cloud.sap.yaml
+    assertions:
+    # TODO: repair this
+    - violations: 1
+      message: 'webhook "validate-networks.spec.openstack.networks.seeder.cloud.sap" does not match our allowlist'
+    - violations: 1
+      message: 'webhook "validate-domains.spec.openstack.domains.seeder.cloud.sap" does not match our allowlist'
+
 - name: high-cpu-requests
   template: rendered-chart/gatekeeper/templates/constrainttemplate-high-cpu-requests.yaml
   constraint: rendered-chart/gatekeeper-config/templates/constraint-high-cpu-requests.yaml
   cases:
-  - name: pod-cpu-high-requests-violation
-    object: fixtures/pod-cpu-high-requests-violation.yaml
+  - name: pod-failure
+    object: fixtures/high-cpu-requests/pod-failure.yaml
     assertions:
     - violations: 1
       message: "requests 6.064 CPU in total"
-  - name: pod-cpu-high-requests-close-violation
-    object: fixtures/pod-cpu-high-requests-close-violation.yaml
+  - name: pod-close-violation
+    object: fixtures/high-cpu-requests/pod-close-violation.yaml
     assertions:
     - violations: no
-  - name: pod-cpu-high-requests-only-one-limit
-    object: fixtures/pod-cpu-high-requests-only-one-limit.yaml
+  - name: pod-only-one-limit
+    object: fixtures/high-cpu-requests/pod-only-one-limit.yaml
     assertions:
     - violations: no
-  - name: pod-cpu-high-requests-no-limits
-    object: fixtures/pod-cpu-high-requests-no-limits.yaml
+  - name: pod-no-limits
+    object: fixtures/high-cpu-requests/pod-no-limits.yaml
     assertions:
     - violations: no
+
+- name: images-from-correct-registry
+  template: rendered-chart/gatekeeper/templates/constrainttemplate-images-from-correct-registry.yaml
+  constraint: rendered-chart/gatekeeper-config/templates/constraint-images-from-correct-registry.yaml
+  cases:
+  - name: pod-one-image-wrong
+    object: fixtures/images-from-correct-registry/pod-one-image-wrong.yaml
+    assertions:
+    - violations: 1
+      message: 'container "dummy-small" uses incorrect regional registry for image: alpine:3'
+  - name: pod-pass
+    object: fixtures/images-from-correct-registry/pod-pass.yaml
+    assertions:
+    - violations: no
+
+- name: images-from-non-keppel
+  template: rendered-chart/gatekeeper/templates/constrainttemplate-images-from-non-keppel.yaml
+  constraint: rendered-chart/gatekeeper-config/templates/constraint-images-from-non-keppel.yaml
+  cases:
+  - name: pod-failure
+    object: fixtures/images-from-non-keppel/pod-failure.yaml
+    assertions:
+    - violations: 1
+      message: 'container "dummy" uses an image that is not from a Keppel registry: alpine:3'
+    - violations: 1
+      message: 'container "dummy" uses an image that is not from a Keppel registry: alpine:3'
+  - name: pod-one-of-two
+    object: fixtures/images-from-non-keppel/pod-one-of-two.yaml
+    assertions:
+    - violations: 1
+      message: 'container "dummy" uses an image that is not from a Keppel registry: alpine:3'
+  - name: pod-pass
+    object: fixtures/images-from-non-keppel/pod-pass.yaml
+    assertions:
+    - violations: no
+
+- name: ingress-annotations
+  template: rendered-chart/gatekeeper/templates/constrainttemplate-ingress-annotations.yaml
+  constraint: rendered-chart/gatekeeper-config/templates/constraint-ingress-annotations.yaml
+  cases:
+  - name: networking-disabled-snippet
+    object: fixtures/ingress-annotations/networking-disabled-snippet.yaml
+    assertions:
+    - violations: 1
+      message: 'has disabled annotations: \["configuration-snippet"\]'
+  - name: networking-pass
+    object: fixtures/ingress-annotations/networking-pass.yaml
+    assertions:
+    - violations: no
+
+# TODO: needs local doop-image-checker server
+# - name: outdated-image-bases
+#   template: rendered-chart/gatekeeper/templates/constrainttemplate-outdated-image-bases.yaml
+#   constraint: rendered-chart/gatekeeper-config/templates/constraint-outdated-image-bases.yaml
+
+- name: owner-info-on-helm-releases
+  template: rendered-chart/gatekeeper/templates/constrainttemplate-owner-info-on-helm-releases.yaml
+  constraint: rendered-chart/gatekeeper-config/templates/constraint-owner-info-on-helm-releases.yaml
+  cases:
+  - name: pod-no-owner-info
+    object: fixtures/owner-info-on-helm-releases/configmap-no-owner.out.yaml
+    assertions:
+    - violations: 1
+      message: 'could not find ConfigMap: owner-of-almost-empty-chart'
+  - name: pod-owner-info
+    object: fixtures/owner-info-on-helm-releases/configmap-pass.out.yaml
+    assertions:
+    - violations: no
+
+- name: pci-forbidden-images
+  template: rendered-chart/gatekeeper/templates/constrainttemplate-pci-forbidden-images.yaml
+  constraint: rendered-chart/gatekeeper-config/templates/constraint-pci-forbidden-images.yaml
+  cases:
+  - name: pod-forbidden-image
+    object: fixtures/pci-forbidden-images/pod-with-forbidden-image.yaml
+    assertions:
+    - violations: 1
+      message: 'container "dummy" uses forbidden image: bogus-pattern-for-testing'
+  - name: pod-pass
+    object: fixtures/pci-forbidden-images/pod-pass.yaml
+    assertions:
+    - violations: no
+
+- name: pod-labels
+  template: rendered-chart/gatekeeper/templates/constrainttemplate-pod-labels.yaml
+  constraint: rendered-chart/gatekeeper-config/templates/constraint-pod-labels.yaml
+  cases:
+  - name: pod-no-labels
+    object: fixtures/pod-labels/pod-no-labels.yaml
+    assertions:
+    - violations: 1
+      message: 'pod does not have either one of the required labels: \["alert-service", "alert-tier"\]'
+  - name: pod-labels
+    object: fixtures/pod-labels/pod-labels.yaml
+    assertions:
+    - violations: no
+
+- name: prometheus-scrape-annotations
+  template: rendered-chart/gatekeeper/templates/constrainttemplate-prometheus-scrape-annotations.yaml
+  constraint: rendered-chart/gatekeeper-config/templates/constraint-prometheus-scrape-annotations.yaml
+  cases:
+  - name: pod-missing-target
+    object: fixtures/prometheus-scrape-annotations/pod-missing-target.yaml
+    inventory:
+    - fixtures/prometheus-scrape-annotations/inventory.yaml
+    assertions:
+    - violations: 1
+      message: 'has prometheus.io/scrape annotation, but prometheus.io/targets annotation is missing or does not have a valid value \(got: \[""\], valid: \["openstack"\]\)'
+  - name: pod-pass
+    object: fixtures/prometheus-scrape-annotations/pod-pass.yaml
+    inventory:
+    - fixtures/prometheus-scrape-annotations/inventory.yaml
+    assertions:
+    - violations: no
+
+- name: prometheusrule-alert-labels
+  template: rendered-chart/gatekeeper/templates/constrainttemplate-prometheusrule-alert-labels.yaml
+  constraint: rendered-chart/gatekeeper-config/templates/constraint-prometheusrule-alert-labels.yaml
+  cases:
+  - name: prometheus-rule-no-label
+    object: fixtures/prometheusrule-alert-labels/prometheus-rule-no-label.yaml
+    assertions:
+    - violations: 1
+      message: 'rule DummyBackupWentMissing in group backup.alerts does not have a valid value for labels.severity \("critical", "warning" or "info"\)'
+    - violations: 1
+      message: 'rule DummyBackupWentMissing in group backup.alerts does not have labels.tier'
+  - name: prometheus-rule-only-severity
+    object: fixtures/prometheusrule-alert-labels/prometheus-rule-only-severity.yaml
+    assertions:
+    - violations: 1
+      message: 'rule DummyBackupWentMissing in group backup.alerts does not have a valid value for labels.playbook \(required for critical alerts\)'
+    - violations: 1
+      message: 'rule DummyBackupWentMissing in group backup.alerts does not have labels.tier'
+  - name: prometheus-rule-only-severity-tier
+    object: fixtures/prometheusrule-alert-labels/prometheus-rule-only-severity-tier.yaml
+    assertions:
+    - violations: 1
+      message: 'rule DummyBackupWentMissing in group backup.alerts does not have a valid value for labels.playbook \(required for critical alerts\)'
+  - name: prometheus-rule-pass
+    object: fixtures/prometheusrule-alert-labels/prometheus-rule-pass.yaml
+    assertions:
+    - violations: no
+
+- name: region-value-missing
+  template: rendered-chart/gatekeeper/templates/constrainttemplate-region-value-missing.yaml
+  constraint: rendered-chart/gatekeeper-config/templates/constraint-region-value-missing.yaml
+  cases:
+  - name: helm-release-no-region
+    object: fixtures/region-value-missing/helm-release-no-region.out.yaml
+    assertions:
+    - violations: 1
+      message: 'missing .Values.global.region value'
+  - name: helm-release-pass
+    object: fixtures/region-value-missing/helm-release-pass.out.yaml
+    assertions:
+    - violations: no
+
+- name: resource-limits
+  template: rendered-chart/gatekeeper/templates/constrainttemplate-resource-limits.yaml
+  constraint: rendered-chart/gatekeeper-config/templates/constraint-resource-limits.yaml
+  cases:
+  - name: pod-complete-failure
+    object: fixtures/resource-limits/pod-complete-failure.yaml
+    assertions:
+    - violations: 1
+      message: "cpu and memory limits not set on some or all containers"
+  - name: pod-some-failure
+    object: fixtures/resource-limits/pod-some-failure.yaml
+    assertions:
+    - violations: 1
+      message: "cpu and memory limits not set on some or all containers"
+  - name: pod-pass
+    object: fixtures/resource-limits/pod-pass.yaml
+    assertions:
+    - violations: no
+
+# TODO: needs local doop-image-checker server
+# - name: vulnerable-images
+#   template: rendered-chart/gatekeeper/templates/constrainttemplate-vulnerable-images.yaml
+#   constraint: rendered-chart/gatekeeper-config/templates/constraint-vulnerable-images.yaml

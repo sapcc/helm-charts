@@ -1,0 +1,58 @@
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingWebhookConfiguration
+metadata:
+  annotations:
+    meta.helm.sh/release-name: ccloud-seeder
+    meta.helm.sh/release-namespace: monsoon3
+  generation: 1
+  labels:
+    app: ccloud-seeder
+    app.kubernetes.io/managed-by: Helm
+    chart: ccloud-seeder-0.0.1
+    release: ccloud-seeder
+  name: seeder.cloud.sap
+webhooks:
+- admissionReviewVersions:
+  - v1
+  - v1beta1
+  clientConfig:
+    url: https://ccloud-seeder.qa-de-1.cloud.sap/validate_domains/spec.openstack.domains
+  failurePolicy: Fail
+  matchPolicy: Equivalent
+  name: validate-domains.spec.openstack.domains.seeder.cloud.sap
+  namespaceSelector: {}
+  objectSelector: {}
+  rules:
+  - apiGroups:
+    - seeder.cloud.sap
+    apiVersions:
+    - v1
+    operations:
+    - '*'
+    resources:
+    - ccloudseeds
+    scope: '*'
+  sideEffects: None
+  timeoutSeconds: 30
+- admissionReviewVersions:
+  - v1
+  - v1beta1
+  clientConfig:
+    url: https://ccloud-seeder.qa-de-1.cloud.sap/validate_networks/spec.openstack.networks
+  failurePolicy: Fail
+  matchPolicy: Equivalent
+  name: validate-networks.spec.openstack.networks.seeder.cloud.sap
+  namespaceSelector: {}
+  objectSelector: {}
+  rules:
+  - apiGroups:
+    - seeder.cloud.sap
+    apiVersions:
+    - v1
+    operations:
+    - '*'
+    resources:
+    - ccloudseeds
+    scope: '*'
+  sideEffects: None
+  timeoutSeconds: 30
