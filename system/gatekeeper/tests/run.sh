@@ -23,8 +23,7 @@ trap "kill $pid" INT TERM EXIT
 )
 
 for file in fixtures/*/*.in.yaml; do
-  basename="$(basename "$file")"
-  out_file="$(dirname "$file")/${basename//.in.yaml/}.out.yaml"
+  out_file="$(dirname "$file")/$(basename "$file" '.in.yaml').out.yaml"
   ./inject-fixture-into-helm-release.sh "$file" >"$out_file"
 done
 
