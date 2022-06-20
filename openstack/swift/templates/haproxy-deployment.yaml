@@ -1,20 +1,33 @@
 {{- $az_apods := dict }}
 {{- /*
-If aPod design is available take availability zones from there, with a list of aPods
-Else construct the same structure from the AZ list
-This and the affinities for 'cp' can go if aPod rollout is completed globally
+Here a dictionary of necessary haproxy deployments is constructed. Key is availability zone.
+* if no Controlplane global.cp is defined --> use the apods definfition per AZ directly
+* else collect all AZs from global.availability_zones
+  * put a non apod haproxy 'cp' in every AZ
+  * put for every apod defined in global.apods.az an apod based haproxy
+
+This and the affinities for 'cp' can be removed if aPod rollout is completed globally
 */ -}}
-{{- if .Values.global.apods }}
+{{- if not $.Values.global.cp }}
 {{- $az_apods = .Values.global.apods }}
 {{- else }}
+{{- /* Collect all availability zones and construct the base dict */ -}}
 {{- range $az := .Values.global.availability_zones }}
-{{- $az_apods = set $az_apods $az list }}
+{{- $apods := list }}
+{{- /* Every availability zones gets an non apod haproxy scheduled if CP is still active */ -}}
+{{- $apods = append $apods "cp" }}
+{{- /* If an apod is configured for the availability zone, schedule an haproxy to that apod */ -}}
+{{- if $.Values.global.apods }}
+{{- if index $.Values.global.apods $az }}
+{{- range $apod := (index $.Values.global.apods $az) }}
+{{- $apods = append $apods $apod }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- $az_apods = set $az_apods $az $apods }}
 {{- end }}
 {{- end }}
 {{- range $az, $apods := $az_apods }}
-{{- if $.Values.global.cp }}
-{{- $apods = append $apods "cp" }}
-{{- end }}
 {{- range $apod := $apods }}
 kind: Deployment
 apiVersion: apps/v1
