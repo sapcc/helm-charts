@@ -25,6 +25,10 @@ spec:
       labels:
         app: {{ template "fullname" . }}
         component: memcached
+        {{- if .Values.alerts.enabled }}
+        alert-tier: {{ required ".Values.alerts.tier missing" .Values.alerts.tier }}
+        alert-service: {{ include "alerts.service" . }}
+        {{- end }}
     spec:
       affinity:
         nodeAffinity:
