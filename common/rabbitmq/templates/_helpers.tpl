@@ -65,3 +65,17 @@ rabbit://{{ default "" $envAll.Values.global.user_suffix | print $rabbitmq.users
                 values:
                 - reinstalling
 {{- end }}
+
+{{- define "rabbitmq_plugins"}}{{- join "," .Values.plugins -}}{{- end }}
+
+{{- define "rabbitmq_pass" }}
+    {{- $envAll := index . 0 }}
+    {{- $user := index . 1 }}
+    {{- $pass := index . 2 }}
+{{- $pass -}}
+{{- end }}
+
+{{- define "rabbitmq_tags" }}
+    {{- $user := index . 0 }}
+    {{- if eq $user "admin" }}administrator{{- end }}
+{{- end }}

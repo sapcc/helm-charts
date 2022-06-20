@@ -1,9 +1,10 @@
+{{- if gt .Values.replicas 1.0 }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ template "rabbitmq.fullname" . }}-config
+  name: {{ template "fullname" . }}-config
   labels:
-    app: {{ template "rabbitmq.fullname" . }}
+    app: {{ template "fullname" . }}
     chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
     release: "{{ .Release.Name }}"
     heritage: "{{ .Release.Service }}"
@@ -15,4 +16,4 @@ data:
 {{ include (print .Template.BasePath "/etc/_enabled_plugins.tpl") . | indent 4 }}
   definitions.json: |
 {{ include (print .Template.BasePath "/etc/_definitions.json.tpl") . | indent 4 }}
-
+{{- end }}

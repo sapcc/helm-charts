@@ -9,6 +9,7 @@ global:
 
 image: library/rabbitmq
 imageTag: 3.6-management
+clusterImageTag: 3.9-management
 ## Specify a imagePullPolicy
 ## 'Always' if imageTag is 'latest', else set to 'IfNotPresent'
 ## ref: http://kubernetes.io/docs/user-guide/images/#pre-pulling-images
@@ -21,6 +22,9 @@ imageTag: 3.6-management
 ports:
   public: 5672
   management: 15672
+  clustering: 25672
+  epmd: 4369
+  metrics: 15692
 
 # when not empty, exposes the RabbitMQ service to the outside of the cluster on these IPs
 externalIPs: []
@@ -97,11 +101,39 @@ alerts:
   # Configurable service label of the alerts. Defaults to `.Release.Name`.
   # service:
 
-kind: deployment  # needs to be statefulset with persistence.enabled and ...
-replicas: 1       # replicas more than one. Clustering is currently not implemented
+# replicas. Uses statefulset for multiple replicas.
+# Cluster formation is enabled with cluster.enabled = true.
+replicas: 1
+cluster:
+  enabled: false
+  ha: false # Enables HA
+
 pdr:
   enabled: true
   minAvailable: "51%" # 50% should technically be enough, but just to be safe
+
+plugins:
+  - rabbitmq_management
+  - rabbitmq_tracing
+  - rabbitmq_peer_discovery_k8s
+  - rabbitmq_prometheus
+
+# Enables management web ingress accessible via
+# https://<service>-rabbitmq.<region>.cloud.sap
+management_ingress: false
+
+# RabbitMQ Policies
+policies: []
+
+# HA Policy
+ha_policy:
+  vhost: "/"
+  name: ha
+  pattern: ""
+  apply-to: all
+  definition:
+    ha-mode: all
+  priority: 0
 
 upgrades:
   revisionHistory: 3

@@ -17,11 +17,23 @@ metadata:
     prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
 {{- end }}
 spec:
+{{- if gt .Values.replicas 1.0 }}
+  publishNotReadyAddresses: true  # See https://www.rabbitmq.com/cluster-formation.html#peer-discovery-k8s
+  clusterIP: None
+{{- end }}
   ports:
+{{- if eq .Values.replicas 1.0 }}
     - name: public
       port: {{ default 5672 .Values.ports.public }}
     - name: management
       port: {{ default 15672 .Values.ports.management }}
+{{- else }}
+  {{- range $_name, $_port := merge .Values.ports }}
+    - name: {{ $_name }}
+      port: {{ $_port }}
+      protocol: TCP
+  {{- end }}
+{{- end }}
   selector:
     app: {{ template "fullname" . }}
   {{- if .Values.externalIPs }}
