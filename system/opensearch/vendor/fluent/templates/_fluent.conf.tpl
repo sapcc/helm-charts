@@ -464,7 +464,7 @@
   @type copy
   <store>
     @type opensearch
-    hosts {{.Values.opensearch.http.endpoint}}.{{.Values.global.region}}.{{.Values.global.tld}}
+    hosts {{.Values.opensearch.http.endpoint}}.{{.Values.global.region}}.{{.Values.global.tld}}:443
     scheme https
     user {{.Values.user}}
     password {{.Values.password}}
