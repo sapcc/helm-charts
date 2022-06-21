@@ -465,7 +465,7 @@
   <store>
  <store>
     @type opensearch
-    hosts {{.Values.opensearch.http.endpoint}.{{.Values.global.region}}.{{.Values.global.tld}}
+    hosts {{.Values.opensearch.http.endpoint}}.{{.Values.global.region}}.{{.Values.global.tld}}
     scheme https
     user {{.Values.user}}
     password {{.Values.password}}
