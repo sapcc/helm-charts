@@ -140,14 +140,16 @@ mysql_metrics:
       help: Seconds since last non-pending state of LB
       query: |
         (SELECT
-          UNIX_TIMESTAMP(now()) - UNIX_TIMESTAMP(coalesce(updated_at, created_at)) AS elapsed_time,
-          name AS loadbalancer_name,
-          provisioning_status AS current_status,
-          id AS loadbalancer_id,
-          server_group_id AS octavia_host
-        FROM load_balancer
-        WHERE provisioning_status LIKE "PENDING_%")
-        UNION (select '0', '', '', '', '');
+          UNIX_TIMESTAMP(now()) - UNIX_TIMESTAMP(coalesce(lb.updated_at, lb.created_at)) AS elapsed_time,
+          lb.name AS loadbalancer_name,
+          lb.provisioning_status AS loadbalancer_status,
+          lb.id AS loadbalancer_id,
+          lb.server_group_id AS loadbalancer_host,
+          v.network_id AS loadbalancer_network
+        FROM load_balancer AS lb
+        JOIN vip AS v ON v.load_balancer_id=lb.id
+        WHERE lb.provisioning_status LIKE "PENDING_%")
+        UNION (select '0', '', '', '', '', '');
       values:
         - "elapsed_time"
     - name: octavia_monitor_agents_heartbeat_seconds
