@@ -465,8 +465,8 @@
   <store>
  <store>
     @type opensearch
-    host {{.Values.endpoint_host_internal}}
-    port {{.Values.http_port}}
+    hosts {{.Values.opensearch.http.endpoint}.{{.Values.global.region}}.{{.Values.global.tld}}
+    scheme https
     user {{.Values.user}}
     password {{.Values.password}}
     ssl_verify false
