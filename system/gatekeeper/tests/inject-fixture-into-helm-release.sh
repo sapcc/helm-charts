@@ -16,6 +16,6 @@ template_base64='| .chart.templates[].data = "'"$(echo "$template" | base64 -w0)
 while read -r line; do
   # set both .chart.values and .config to emulate subcharts
   values+="| .chart.values.$line | .config.$line"
-done < <(yq '.values[] | to_entries[] | .key + " = \"" + .value + "\""' "$fixture")
+done < <(yq '.values[] | to_entries | .[] | .key + " = \"" + .value + "\""' "$fixture")
 
 yq '. | .data.release = "'"$(yq .data.release "$helm_release" | base64 -d | base64 -d | gunzip | jq ". ${values:-} $template_base64" | gzip | base64 -w0 | base64 -w0)"'"' "$helm_release"
