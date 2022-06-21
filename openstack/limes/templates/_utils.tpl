@@ -18,10 +18,6 @@
   value: "limes-postgresql.{{ .Release.Namespace }}.svc"
 - name: LIMES_DB_CONNECTION_OPTIONS
   value: "sslmode=disable"
-- name: LIMES_API_REQUEST_LOG_EXCEPT_STATUS_CODES
-  value: "300"
-- name: LIMES_API_CORS_ALLOWED_ORIGINS
-  value: "*"
 - name: LIMES_COLLECTOR_DATA_METRICS_EXPOSE
   value: "true"
 - name: LIMES_COLLECTOR_DATA_METRICS_SKIP_ZERO
