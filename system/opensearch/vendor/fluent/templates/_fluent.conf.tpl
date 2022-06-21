@@ -463,7 +463,6 @@
 <match kubernetes.**>
   @type copy
   <store>
- <store>
     @type opensearch
     hosts {{.Values.opensearch.http.endpoint}}.{{.Values.global.region}}.{{.Values.global.tld}}
     scheme https
