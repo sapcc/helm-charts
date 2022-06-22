@@ -6,7 +6,6 @@
   extra_specs:
     "vmware:hv_enabled": "True"
     "hw_video:ram_max_mb": "16"
-    "resources:CUSTOM_MEMORY_RESERVABLE_MB": "373352"
     "trait:CUSTOM_HANA_EXCLUSIVE_HOST": "required"
     "trait:CUSTOM_NUMASIZE_C48_M729": "required"
 - name: "hana_c48_m729"
@@ -17,7 +16,6 @@
   extra_specs:
     "vmware:hv_enabled": "True"
     "hw_video:ram_max_mb": "16"
-    "resources:CUSTOM_MEMORY_RESERVABLE_MB": "746720"
     "trait:CUSTOM_HANA_EXCLUSIVE_HOST": "required"
     "trait:CUSTOM_NUMASIZE_C48_M729": "required"
 - name: "hana_c96_m1458"
@@ -28,7 +26,6 @@
   extra_specs:
     "vmware:hv_enabled": "True"
     "hw_video:ram_max_mb": "16"
-    "resources:CUSTOM_MEMORY_RESERVABLE_MB": "1493460"
     "trait:CUSTOM_HANA_EXCLUSIVE_HOST": "required"
     "trait:CUSTOM_NUMASIZE_C48_M729": "required"
 - name: "hana_c144_m2188"
@@ -39,7 +36,6 @@
   extra_specs:
     "vmware:hv_enabled": "True"
     "hw_video:ram_max_mb": "16"
-    "resources:CUSTOM_MEMORY_RESERVABLE_MB": "2240196"
     "trait:CUSTOM_HANA_EXCLUSIVE_HOST": "required"
     "trait:CUSTOM_NUMASIZE_C48_M729": "required"
     "hw:cpu_cores": "2"
@@ -52,7 +48,6 @@
   extra_specs:
     "vmware:hv_enabled": "True"
     "hw_video:ram_max_mb": "16"
-    "resources:CUSTOM_MEMORY_RESERVABLE_MB": "2986936"
     "trait:CUSTOM_HANA_EXCLUSIVE_HOST": "required"
     "trait:CUSTOM_NUMASIZE_C48_M729": "required"
     "hw:cpu_cores": "2"
@@ -65,7 +60,6 @@
   extra_specs:
     "vmware:hv_enabled": "True"
     "hw_video:ram_max_mb": "16"
-    "resources:CUSTOM_MEMORY_RESERVABLE_MB": "5975024"
     "trait:CUSTOM_HANA_EXCLUSIVE_HOST": "required"
     "trait:CUSTOM_NUMASIZE_C48_M729": "required"
     "hw:cpu_cores": "3"
@@ -78,7 +72,6 @@
   extra_specs:
     "vmware:hv_enabled": "True"
     "hw_video:ram_max_mb": "16"
-    "resources:CUSTOM_MEMORY_RESERVABLE_MB": "746908"
     "trait:CUSTOM_HANA_EXCLUSIVE_HOST": "required"
     "trait:CUSTOM_NUMASIZE_C48_M1459": "required"
 - name: "hana_c48_m1459"
@@ -89,7 +82,6 @@
   extra_specs:
     "vmware:hv_enabled": "True"
     "hw_video:ram_max_mb": "16"
-    "resources:CUSTOM_MEMORY_RESERVABLE_MB": "1493832"
     "trait:CUSTOM_HANA_EXCLUSIVE_HOST": "required"
     "trait:CUSTOM_NUMASIZE_C48_M1459": "required"
 - name: "hana_c96_m2918"
@@ -100,7 +92,6 @@
   extra_specs:
     "vmware:hv_enabled": "True"
     "hw_video:ram_max_mb": "16"
-    "resources:CUSTOM_MEMORY_RESERVABLE_MB": "2987680"
     "trait:CUSTOM_HANA_EXCLUSIVE_HOST": "required"
     "trait:CUSTOM_NUMASIZE_C48_M1459": "required"
 - name: "hana_c144_m4377"
@@ -111,7 +102,6 @@
   extra_specs:
     "vmware:hv_enabled": "True"
     "hw_video:ram_max_mb": "16"
-    "resources:CUSTOM_MEMORY_RESERVABLE_MB": "4481528"
     "trait:CUSTOM_HANA_EXCLUSIVE_HOST": "required"
     "trait:CUSTOM_NUMASIZE_C48_M1459": "required"
     "hw:cpu_cores": "2"
@@ -124,7 +114,6 @@
   extra_specs:
     "vmware:hv_enabled": "True"
     "hw_video:ram_max_mb": "16"
-    "resources:CUSTOM_MEMORY_RESERVABLE_MB": "5975376"
     "trait:CUSTOM_HANA_EXCLUSIVE_HOST": "required"
     "trait:CUSTOM_NUMASIZE_C48_M1459": "required"
     "hw:cpu_cores": "2"
@@ -137,7 +126,6 @@
   extra_specs:
     "vmware:hv_enabled": "True"
     "hw_video:ram_max_mb": "16"
-    "resources:CUSTOM_MEMORY_RESERVABLE_MB": "4481528"
     "trait:CUSTOM_HANA_EXCLUSIVE_HOST": "required"
     "trait:CUSTOM_NUMASIZE_C48_M729": "required"
     "hw:cpu_cores": "3"
@@ -150,7 +138,6 @@
   extra_specs:
     "vmware:hv_enabled": "True"
     "hw_video:ram_max_mb": "16"
-    "resources:CUSTOM_MEMORY_RESERVABLE_MB": "11950772"
     "trait:CUSTOM_HANA_EXCLUSIVE_HOST": "required"
     "trait:CUSTOM_NUMASIZE_C56_M1459": "required"
     "hw:cpu_cores": "4"
