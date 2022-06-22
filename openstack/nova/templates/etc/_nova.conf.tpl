@@ -172,6 +172,11 @@ project_domain_name = "{{.Values.global.keystone_service_domain | default "Defau
 valid_interfaces = internal
 region_name = {{.Values.global.region}}
 
+# Needs to stay for the nova database migration
+[placement_db]
+connection = mysql+pymysql://{{ .Values.placementdbUser }}:{{ .Values.placementdbPassword | urlquery }}@nova-api-mariadb/{{ .Values.placementdbName }}?charset=utf8
+{{- include "ini_sections.database_options_mysql" . }}
+
 {{- include "ini_sections.audit_middleware_notifications" . }}
 
 {{- include "ini_sections.cache" . }}
