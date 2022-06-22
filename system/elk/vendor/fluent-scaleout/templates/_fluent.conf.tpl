@@ -37,6 +37,10 @@
   @type null
 </match>
 
+<match kubernetes.var.log.containers.opensearch**>
+  @type null
+</match>
+
 # prometheus monitoring config
 
 @include /fluent-bin/prometheus.conf
