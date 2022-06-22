@@ -8,9 +8,6 @@ global:
   novaApiPortPublic: '443'
   novaApiMetadataPortInternal: '8775'
   novaConsolePortPublic: '443'
-  placementApiPortAdmin: '8778'
-  placementApiPortInternal: '8778'
-  placementApiPortPublic: '443'
   master_password: null
 
   dbUser: nova
@@ -78,7 +75,6 @@ pod:
     consoleauth: 0
     conductor: 2
     scheduler: 1
-    placement: 2
     vspc: 4
   lifecycle:
     upgrades:
@@ -107,10 +103,6 @@ pod:
       requests:
         cpu: "1500m"
         memory: "7Gi"
-    placement:
-      requests:
-        cpu: "400m"
-        memory: "150Mi"
     scheduler:
       requests:
         cpu: "500m"
@@ -153,10 +145,6 @@ apidbName: nova_api
 apidbUser: nova_api
 apidbPassword: null
 
-placementdbName: placement
-placementdbUser: placement
-placementdbPassword: null
-
 loci:
   nova: false
   openvswitch: false
@@ -182,7 +170,6 @@ imageVersionNovaNovncproxy: null
 imageVersionNovaShellinaboxproxy: null
 imageVersionNovaSpicehtml5proxy: null
 imageVersionNovaScheduler: null
-imageVersionNovaPlacementApi: null
 
 vspc:
   enabled: false
@@ -330,25 +317,6 @@ quota:
   server_group_members: 40  # this is set by limes now
   # we don't want to set unlimited because that has too much potential to break things
   key_pairs: 10000
-
-
-placement:
-  enabled: false
-  wsgi_processes: 10
-  unsplit: false  # True: Revert split triggered by setting placementdbPassword
-  finalize_split: false # True: Remove placement table views from nova (after a migration)
-  tables:   # Do not modify, this is the list of all tables
-  - allocations
-  - consumers
-  - inventories
-  - placement_aggregates
-  - projects
-  - resource_classes
-  - resource_provider_aggregates
-  - resource_provider_traits
-  - resource_providers
-  - traits
-  - users
 
 mysql_metrics:
   db_name: nova
