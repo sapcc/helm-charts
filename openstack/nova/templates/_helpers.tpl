@@ -72,27 +72,3 @@ annotations:
 {{- .Release.Name }}-{{ $name }}-{{ substr 0 4 $hash }}-{{ .Values.imageVersion | required "Please set nova.imageVersion or similar"}}
   {{- end }}
 {{- end }}
-
-{{- define "helpers.table_alias" }}
-{{- $envAll := first . }}
-{{- $tableName := last . }}
-DELIMITER $$
-IF EXISTS (SELECT *
-                     FROM information_schema.tables
-                     WHERE table_schema = '{{ $envAll.Values.apidbName }}'
-                     AND table_type <> 'VIEW'
-                     AND table_name = '{{ $tableName }}')
-THEN
-    RENAME TABLE {{ $envAll.Values.apidbName }}.{{ $tableName }} TO {{ $envAll.Values.placementdbName }}.{{ $tableName }};
-    CREATE OR REPLACE VIEW {{ $envAll.Values.apidbName }}.{{ $tableName }} AS SELECT * FROM {{ $envAll.Values.placementdbName }}.{{ $tableName }};
-END IF;
-$$
-DELIMITER ;
-{{- end }}
-
-{{- define "helpers.table_dealias" }}
-{{- $envAll := first . }}
-{{- $tableName := last . }}
-DROP VIEW IF EXISTS {{ $envAll.Values.apidbName }}.{{ $tableName }};
-RENAME TABLE IF EXISTS {{ $envAll.Values.placementdbName }}.{{ $tableName }} TO {{ $envAll.Values.apidbName }}.{{ $tableName }};
-{{- end }}
