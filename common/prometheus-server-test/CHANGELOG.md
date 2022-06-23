@@ -1,3 +1,7 @@
+## 7.0.10*
+
+* incorporate changes from prometheus-server-6.2.3
+
 ## 7.0.8
 
 * Thanos Query and Store are back
