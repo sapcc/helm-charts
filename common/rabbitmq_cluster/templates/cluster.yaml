@@ -53,6 +53,16 @@ spec:
 {{- include "rabbitmq_node_reinstall_affinity" . }}
 {{- end }}
   override:
+    service:
+      metadata:
+        annotations:
+          prometheus.io/scrape: "true"
+          prometheus.io/targets: openstack
+      spec:
+        ports:
+          - name: metrics
+            protocol: TCP
+            port: 15692
     statefulSet:
       spec:
         template:
