@@ -50,6 +50,9 @@ per_volume_size_limit = {{ .Values.volume_size_limit_gb | default 2048 }}
 use_default_quota_class=false
 
 scheduler_default_filters = {{ .Values.scheduler_default_filters }}
+scheduler_default_weighers = {{ .Values.scheduler_default_weighers }}
+capacity_weight_multiplier = {{ .Values.capacity_weight_multiplier }}
+allocated_capacity_weight_multiplier = {{ .Values.allocated_capacity_weight_multiplier }}
 
 allow_migration_on_attach = {{ .Values.cinder_api_allow_migration_on_attach }}
 
