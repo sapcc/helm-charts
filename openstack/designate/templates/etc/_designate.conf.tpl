@@ -64,6 +64,9 @@ transport_url = rabbit://{{ .Values.rabbitmq.users.default.user | default "rabbi
 [oslo_policy]
 policy_file = policy.yaml
 
+[oslo_messaging_rabbit]
+heartbeat_in_pthread = false
+
 [oslo_messaging_notifications]
 driver = noop
 
