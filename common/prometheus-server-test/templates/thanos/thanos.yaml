@@ -2,11 +2,10 @@
 apiVersion: monitoring.banzaicloud.io/v1alpha1
 kind: Thanos
 metadata:
-  name: {{ include "prometheus.fullName" . }}-thanos
+  name: {{ include "prometheus.name" . }}-thanos
 spec:
+  clusterDomain: kubernetes.{{ required ".Values.global.region missing" .Values.global.region }}.{{ required ".Values.global.domain missing" .Values.global.domain }}
   query:
-    httpAddress: 0.0.0.0:{{ required ".Values.thanos.querier.service.httpPort missing" .Values.thanos.querier.service.httpPort }}
-    grpcAddress: 0.0.0.0:{{ required ".Values.thanos.querier.service.grpcPort missing" .Values.thanos.querier.service.grpcPort }}
     logLevel: {{ .Values.logLevel }}
     queryAutoDownsampling: true
     queryReplicaLabel:
@@ -14,7 +13,7 @@ spec:
     webRoutePrefix: {{ required ".Values.thanos.querier.webRouteprefix missing" .Values.thanos.querier.webRouteprefix }}
     webExternalPrefix: {{ required ".Values.thanos.querier.webRouteprefix missing" .Values.thanos.querier.webRouteprefix }}
     stores:
-      - {{ include "prometheus.fullName" . }}-thanos-store-{{ include "prometheus.fullName" . }}-thanos-store:10901
+      # sidecar running in prometheus
       - {{ include "prometheus.fullName" . }}:10901
     deploymentOverrides:
       spec:
@@ -23,4 +22,16 @@ spec:
             containers:
             - image: keppel.eu-de-1.cloud.sap/ccloud-quay-mirror/thanos/thanos:v0.26.0
               name: query
+  storeGateway:
+    logLevel: {{ .Values.logLevel }}
+    indexCacheSize: {{ required ".Values.thanos.store.indexCacheSize missing" .Values.thanos.store.indexCacheSize }}
+    chunkPoolSize: {{ required ".Values.thanos.store.chunkPoolSize missing" .Values.thanos.store.chunkPoolSize }}
+    storeGRPCSeriesMaxConcurrency: {{ required ".Values.thanos.store.seriesMaxConcurrency missing" .Values.thanos.store.seriesMaxConcurrency }}
+    deploymentOverrides:
+      spec:
+        template:
+          spec:
+            containers:
+            - image: keppel.eu-de-1.cloud.sap/ccloud-quay-mirror/thanos/thanos:v0.26.0
+              name: store
 {{ end }}
