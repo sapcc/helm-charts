@@ -82,7 +82,7 @@ function start_tempest_tests {
           "type": "section",
           "text": {
             "type": "mrkdwn",
-            "text": "Tempest tests finished for '"$SERVICE_NAME"' with status '"$STATUS"':\n Failed  tests: '"$FAILED"'\n Success: '"$SUCCESS"'\n"
+            "text": "Tempest run completed for '"$SERVICE_NAME"' with status '"$STATUS"':\n Failed  tests: '"$FAILED"'\n Success: '"$SUCCESS"'\n"
           }
         }
       ]
@@ -99,7 +99,7 @@ function start_tempest_tests {
           "type": "section",
           "text": {
             "type": "mrkdwn",
-            "text": "Tempest tests finished for '"$SERVICE_NAME"' with status '"$STATUS"':\n Failed  tests: '"$FAILED"'\n Success: '"$SUCCESS"'\n"
+            "text": "Tempest run completed for '"$SERVICE_NAME"' with status '"$STATUS"':\n Failed  tests: '"$FAILED"'\n Success: '"$SUCCESS"'\n"
           }
         }
       ]
