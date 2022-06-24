@@ -182,7 +182,7 @@
       - '{__name__=~"^vrops_vcenter_memory_used_percent"}'
       - '{__name__=~"^vrops_vcenter_diskspace_total_gigabytes"}'
       - '{__name__=~"^vrops_vcenter_diskspace_usage_gigabytes"}'
-      - '{__name__=~"^vrops_vcenter_vcsa_certificate_remaining_days"}'
+      - '{__name__=~"^vrops_vcenter_summary_certificate_expiry_date"}'
       - '{__name__=~"^vrops_vcenter_summary_version_info"}'
       - '{__name__=~"^vrops_vcenter_memory_reserved_capacity_average"}'
       - '{__name__=~"^vrops_cluster_cluster_running_hosts"}'
