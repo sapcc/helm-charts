@@ -29,3 +29,17 @@ groups:
     annotations:
       description: 'Not all networks have been synced by agent for 5 min: {{ $labels.pod }}'
       summary: Openstack Neutron DHCP Agent lost private networks
+
+  - alert: OpenstackNeutronNetworkSegmentsExhaustion
+    expr: sum(openstack_neutron_network_segments_free) by (hostgroup) / sum(openstack_neutron_network_segments_total) by (hostgroup) < 0.2
+    for: 5m
+    labels:
+      severity: info
+      tier: os
+      service: neutron
+      context: '{{ $labels.context }}'
+      dashboard: neutron
+      meta: 'Network segment `{{ $labels.hostgroup }}` has less than 20% free allocations left.'
+    annotations:
+      description: 'Network segment `{{ $labels.hostgroup }}` has less than 10% free allocation left.'
+      summary: Openstack Neutron free network allocations exhaustion
