@@ -1,0 +1,24 @@
+- name: ias-poller.alerts
+  rules:
+  - alert: IASPollerAuditLogsNotFetched
+    expr: (time() - client_last_logs_fetched{client="iasapi})/60 > 5
+    for: 15m
+    labels:
+      context: iasapi
+      service: audit
+      severity: info
+      tier: monitor
+    annotations:
+      description: '*{{ $labels.pod }}*  has trouble collecting IAS audit logs. Please check'
+      summary:  IAS Audit logs are not being collected
+  - alert: IASPollerChangelogNotFetched
+    expr: (time() - client_last_logs_fetched{client="iaschangelog"})/60 > 5
+    for: 60m
+    labels:
+      context: iasapi
+      service: audit
+      severity: info
+      tier: monitor
+    annotations:
+      description: '*{{ $labels.pod }}*  has trouble collecting IAS changelogs. Please check'
+      summary:  IAS changelogs are not being collected
