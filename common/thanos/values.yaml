@@ -1,0 +1,100 @@
+global:
+  # The OpenStack region.
+  region:
+
+  # The TLD as used in the URL.
+  domain:
+
+  # Type of the cluster to which the Thanos is deployed. Analog to Prometheus.
+  # Choose between: controlplane, kubernikus-controlplane, kubernikus-scaleout.
+  clusterType: controlplane
+
+  # TODO: check if needed
+  # Optional name of the cluster to which the Prometheus is deployed.
+  # Defaults to region if not set.
+  # cluster:
+
+  # Optional tier for Prometheus alerts.
+  # tier: k8s
+
+thanos:
+  # Mandatory name for this Thanos.
+  name:
+
+  # false means only Thanos Query is deployed. Used for regional and global Thaneis.
+  # If set to true everything in templates (StoreEndpoint, StoreGateway, Query) is deployed.
+  # Default: true
+  deployWholeThanos: true
+  
+  logLevel: info
+  
+  # Configuration for OpenStack Swift Thanos storage backend.
+  swiftStorageConfig:
+    authURL:
+    userName:
+    userDomainName:
+    password:
+    domainName:
+    projectName:
+    projectDomainName:
+    regionName:
+    containerName:
+  
+  # TODO remove, only in prometheus-server
+  # objectStorageConfig:
+  #   # Note:
+  #   # The name of the secret specified below will be prefixed with `thanos-<name>`
+  #   # to avoid multiple configurations with the same name.
+  #   name: thanos-storage-config
+  #   key: thanos.yaml
+  #   optional: true
+  
+  # Specification for Thanos sidecar to Prometheus server.
+  # See https://github.com/coreos/prometheus-operator/blob/master/Documentation/api.md#thanosspec .
+  spec:
+    baseImage: keppel.eu-de-1.cloud.sap/ccloud-quay-mirror/thanos/thanos
+  
+  # Specification for Thanos components.
+  compactor:
+    # How long to retain raw samples in bucket. 0d - disables this retention.
+    # ONLY SPECIFY DAYS as an int
+    retentionResolutionRaw: 90
+  
+    # How long to retain samples of resolution 1 (5 minutes) in bucket. 0d - disables this retention.
+    # ONLY SPECIFY DAYS as an int
+    retentionResolution5m: 90
+  
+    # How long to retain samples of resolution 2 (1 hour) in bucket. 0d - disables this retention.
+    # ONLY SPECIFY YEARS as an int
+    retentionResolution1h: 5
+  
+    # Minimum age of fresh (non-compacted) blocks before they are being processed. Malformed blocks older than the maximum of consistency-delay and 30m0s will be removed.
+    consistencyDelay: 30m
+  
+  store:
+    # Maximum size of items held in the index cache.
+    indexCacheSize: 1GB
+  
+    # Maximum size of concurrently allocatable bytes for chunks.
+    chunkPoolSize: 4GB
+  
+    # Limit the amount of samples that might be retrieved on a single Series() call.
+    # 0 = unlimited.
+    seriesSampleLimit: 0
+  
+    # Limit number of concurrent Series() calls in Thanos store.
+    seriesMaxConcurrency: 20
+  
+    # Persistent volume for Thanos store.
+    persistence:
+      enabled: true
+      size: 2Gi
+    
+
+  # not relevant when query_only set to true 
+  query:
+    webRouteprefix: /thanos
+    # statically specify stores, if deployWholeThanos is set and this is not present, it will default to query the single Prometheus sidecar container prometheus-<thanos-name>:10901
+    # stores:
+      # - store1:10901
+      # - storeN:10901

@@ -1,13 +1,13 @@
-{{- if .Values.thanos.enabled }}
+{{- if .Values.thanos.deployWholeThanos }}
 apiVersion: monitoring.banzaicloud.io/v1alpha1
 kind: ObjectStore
 metadata:
-  name: {{ include "prometheus.name" . }}-thanos
+  name: {{ include "thanos.fullName" . }}
 spec:
   config:
     mountFrom:
       secretKeyRef:
-        name: {{ include "thanos.objectStorageConfig.name" . }}
+        name: {{ include "thanos.objectStorageConfigName" . }}
         key: thanos.yaml
   compactor: 
     consistencyDelay: {{ required "thanos.compactor.consistencyDelay" .Values.thanos.compactor.consistencyDelay }}
@@ -19,6 +19,6 @@ spec:
         template:
           spec:
             containers:
-            - image: {{ required ".Values.thanos.spec.baseImage missing" .Values.thanos.spec.baseImage }}:{{ required ".Values.thanos.spec.version missin" .Values.thanos.spec.version }}
+            - image: {{ include "thanosimage" . }}
               name: compactor
 {{ end }}
