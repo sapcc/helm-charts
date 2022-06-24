@@ -1,3 +1,11 @@
+## 7.0.12
+
+* using image variable instead of hard coding
+
+## 7.0.11
+
+* latest version of using one Thanos CRD with cluster domain
+
 ## 7.0.10*
 
 * incorporate changes from prometheus-server-6.2.3
