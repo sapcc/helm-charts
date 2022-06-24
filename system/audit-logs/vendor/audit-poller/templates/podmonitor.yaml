@@ -1,0 +1,23 @@
+{{- if .Values.metrics.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: audit-poller
+  namespace: {{ .Values.namespace }}
+  labels:
+    prometheus: {{ .Values.global.prometheus }}
+spec:
+  jobLabel: audit-poller
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: audit-poller
+  namespaceSelector:
+    matchNames:
+      - {{ .Values.namespace }}
+  podMetricsEndpoints:
+    - interval: 60s
+      scrapeTimeout: 55s
+      port: metrics
+      path: "/metrics"
+
+{{- end }}
