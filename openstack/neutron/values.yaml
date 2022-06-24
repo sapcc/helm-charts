@@ -496,6 +496,32 @@ mysql_metrics:
         FROM networks;
       values:
       - "value"
+    - help: Neutron maximum possible segment allocations per hostgroup
+      labels:
+      - "hostgroup"
+      name: openstack_neutron_network_segments_total
+      query: |
+        SELECT
+          host AS hostgroup,
+          COUNT(*) AS value
+        FROM aci_port_binding_allocations
+        GROUP BY host;
+      values:
+      - "value"
+    - help: Neutron free available segment allocations per hostgroup
+      labels:
+      - "hostgroup"
+      name: openstack_neutron_network_segments_free
+      query: |
+        SELECT
+          host AS hostgroup,
+          COUNT(*) AS value
+        FROM aci_port_binding_allocations
+        WHERE
+          segment_id IS NULL
+        GROUP BY host;
+      values:
+      - "value"
 
 max_pool_size: 20
 max_overflow: 5
