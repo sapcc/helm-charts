@@ -1,3 +1,7 @@
+## 7.0.13
+
+* moving thanos to dedicated chart leaving only sidecar and seed here
+
 ## 7.0.12
 
 * using image variable instead of hard coding
