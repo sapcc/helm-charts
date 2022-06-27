@@ -1,0 +1,45 @@
+{{- if .Values.ingress.enabled }}
+{{- $root := . }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "thanos.fullName" . }}
+  annotations:
+    disco: "true"
+    kubernetes.io/tls-acme: "true"
+    {{- if .Values.ingress.authentication.oauth.enabled }}
+    ingress.kubernetes.io/auth-url: {{ required ".Values.ingress.authentication.oauth.authURL missing" .Values.ingress.authentication.oauth.authURL }}
+    {{ if .Values.ingress.authentication.oauth.authSignInURL }}ingress.kubernetes.io/auth-signin: {{ .Values.ingress.authentication.oauth.authSignInURL }} {{ end }}
+    {{ end }}
+    {{- if .Values.ingress.authentication.sso.enabled}}
+    ingress.kubernetes.io/auth-tls-secret: {{ required ".Values.ingress.authentication.sso.authTLSSecret missing" .Values.ingress.authentication.sso.authTLSSecret | quote }}
+    ingress.kubernetes.io/auth-tls-verify-depth: {{ required ".Values.ingress.authentication.sso.authTLSVerifyDepth missing" .Values.ingress.authentication.sso.authTLSVerifyDepth | quote }}
+    ingress.kubernetes.io/auth-tls-verify-client: {{ required ".Values.ingress.authentication.sso.authTLSVerifyClient missing" .Values.ingress.authentication.sso.authTLSVerifyClient | quote }}
+    {{ end }}
+    {{- if .Values.ingress.annotations }}
+{{ toYaml .Values.ingress.annotations | indent 4 }}
+    {{ end }}
+spec:
+  rules:
+    {{- range $host := $root.Values.ingress.hosts }}
+    - host: {{ $host }}.{{ $root.Values.global.region }}.{{ $root.Values.global.tld }}
+      http:
+        paths:
+        - path: /
+          backend:
+            service:
+              name:  {{ include "thanos.fullName" $root }}-query
+              port:
+                name: http
+          pathType: ImplementationSpecific
+    {{- end }}
+  tls:
+    - secretName: tls-{{ include "thanos.externalURL" $root | replace "." "-" }}
+      hosts:
+        {{- range $host := $root.Values.ingress.hosts }}
+        - {{ $host }}.{{ $root.Values.global.region }}.{{ $root.Values.global.tld }}
+        {{- end }}
+        {{- range $host := $root.Values.ingress.hostsFQDN }}
+        - {{ $host }}
+        {{- end }}
+{{- end }}
