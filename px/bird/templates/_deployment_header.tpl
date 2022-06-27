@@ -10,6 +10,7 @@
 {{- $domain := index . 8}}
 {{- $instance_number := index . 9}}
 {{- $instance := index . 10}}
+{{- $az_redundancy  := index . 11}}
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -72,8 +73,8 @@ spec:
                 operator: In
                 values:
                 - {{ $service_number | quote }}
-{{- if ge (len $azs) 2 }}
-{{- if lt (len (keys $apods))  2  }}
+{{- if and (ge (len $azs) 2) $az_redundancy }}
+{{- if lt (len (keys $apods))  2 }}
 {{- fail "If the region consists of multiple AZs, PX must be scheduled in at least 2" -}}
 {{- end }}
           - topologyKey: failure-domain.beta.kubernetes.io/zone
