@@ -16,7 +16,7 @@ function initdb {
   # check if the data folder already contains database structures
   echoStdOut "init databases if required"
   if [ -d "${BASE}/data/mysql" ]; then
-		echoStdOut "Database structures already exist."
+    echoStdOut "Database structures already exist."
     return
   else
     /usr/bin/mariadb-install-db --defaults-file=${BASE}/etc/my.cnf --basedir=/usr --skip-test-db
