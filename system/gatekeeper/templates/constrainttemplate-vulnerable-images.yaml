@@ -35,7 +35,7 @@ spec:
           input.review.object.kind == "Pod"
           container := input.review.object.status.containerStatuses[_]
 
-          # only consider images stored in Keppel since we want to inspect the X-Keppel-Min-Layer-Created-At header
+          # only consider images stored in Keppel since we want to inspect the X-Keppel-Vulnerability-Status header
           regex.match("^keppel", container.image)
 
           # query vulnerability status through helper API
@@ -53,10 +53,6 @@ spec:
 
         violation[{"msg": msg}] {
           check := checks[_]
-
-          # only consider images stored in Keppel since we want to inspect the X-Keppel-Vulnerability-Status header
-          regex.match("^keppel", check.container.image)
-
           check.response.status_code == 200
           status := trim_space(object.get(check.response.body, "X-Keppel-Vulnerability-Status", "Unclear"))
 
