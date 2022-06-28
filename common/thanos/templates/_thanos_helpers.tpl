@@ -1,6 +1,6 @@
 {{/* Generated objectStorageConfigName */}}
 {{- define "thanos.objectStorageConfigName" -}}
-prometheus-{{ include "thanos.fullName" . }}-storage-config
+prometheus-{{- required ".Values.name" .Values.name -}}-thanos-storage-config
 {{- end -}}
 
 {{/* Thanos image. */}}
