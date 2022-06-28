@@ -35,14 +35,15 @@ RUN oldIFS="${IFS}" \
   && apt-get -y autoclean \
   && apt-get -y autoremove \
   && rm -rf /var/lib/apt/lists/* \
-  && mkdir /opt/${SOFTWARE_NAME} \
+  && mkdir -p /opt/${SOFTWARE_NAME}/data \
   && groupadd ${SOFTWARE_NAME} --gid "${USERID}" \
   && adduser ${SOFTWARE_NAME} --home "/opt/${SOFTWARE_NAME}" --uid "${USERID}" --gid "${USERID}" --gecos "" --shell /sbin/nologin --no-create-home --disabled-login
 
 COPY bin/entrypoint.sh /opt/${SOFTWARE_NAME}/bin/
 RUN chown -R ${SOFTWARE_NAME}:${SOFTWARE_NAME} /opt/${SOFTWARE_NAME} \
   && chmod 755 /opt/${SOFTWARE_NAME}/bin/entrypoint.sh \
-  && /usr/bin/mariadb --version | grep ${SOFTWARE_VERSION}
+  && /usr/bin/${SOFTWARE_NAME} --version | grep ${SOFTWARE_VERSION}
 
+VOLUME ["/opt/${SOFTWARE_NAME}/data"]
 USER ${SOFTWARE_NAME}
 ENTRYPOINT ["/bin/bash", "-c", "/opt/${SOFTWARE_NAME}/bin/entrypoint.sh"]
