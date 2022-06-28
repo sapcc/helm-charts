@@ -1,0 +1,774 @@
+{{ template "chart.header" . }}
+{{ template "chart.description" . }}
+
+## Table of Contents
+* [Metadata](#Metadata)
+  * [Changelog](#Changelog)
+* [Requirements](#Requirements)
+* [Container images](#container-images)
+  * [MariaDB Galera image](#mariadb-galera-image)
+  * [MySQL Exporter image](#mysql-exporter-image)
+  * [ProxySQL image](#proxysql-image)
+  * [HAProxy image](#haproxy-image)
+  * [Kopia image](#kopia-image)
+  * [Ubuntu image](#ubuntu-image)
+* [Helm chart](#helm-chart)
+  * [template](#template)
+  * [install](#install)
+  * [uninstall](#uninstall)
+  * [registry](#registry)
+  * [values description](#values-description)
+  * [network config](#network-config)
+  * [database backup](#database-backup)
+    * [S3 backend](#s3-backend)
+    * [NFS backend](#nfs-backend)
+  * [full database recovery](#full-database-recovery)
+  * [point in time database recovery](#point-in-time-database-recovery)
+  * [multi region support](#multi-region-support)
+    * [multi region configuration](#multi-region-configuration)
+    * [multi region WAN tweaks](#multi-region-wan-tweaks)
+  * [asynchronous replication config](#asynchronous-replication-config)
+  * [MariaDB Galera flow charts](#mariadb-galera-flow-charts)
+    * [node startup](#node-startup)
+      * [container start](#container-start)
+      * [init database](#init-database)
+      * [init Galera](#init-galera)
+      * [recover Galera](#recover-galera)
+      * [bootstrap Galera](#bootstrap-galera)
+* [additional documentation](#additional-documentation)
+  * [Database](#database)
+  * [Galera cluster](#galera-cluster)
+  * [Primary/Replica replication](#primaryreplica-replication)
+  * [Monitoring](#monitoring)
+  * [Backup](#backup)
+
+## Metadata
+| chart version | app version | type | url |
+|:--------------|:-------------|:-------------|:-------------|
+| {{ template "chart.version" . }} | {{ template "chart.appVersion" . }} | {{ template "chart.type" . }} | [Git repo]({{ template "chart.homepage" . }}) |
+
+{{ template "chart.maintainersTable" . }}
+
+### Changelog
+The [changelog](CHANGELOG.md) contains information about changes in certain versions
+
+{{ template "chart.requirementsSection" . }}
+
+## Container images
+### MariaDB Galera image
+  | build argument | description |
+  |:--------------|:-------------|
+  | BASE_REGISTRY | hostname of the image registry |
+  | BASE_ACCOUNT  | account/project used in the registry |
+  | BASE_SOFT_NAME  | name of the software that will be used as base image |
+  | BASE_SOFT_VERSION  | version of the software for the base image |
+  | BASE_IMG_VERSION  | version of the base image |
+  | SOFT_NAME  | name of the software that will be packaged into the image |
+  | SOFT_VERSION  | version of the software that will be packaged into the image |
+  | IMG_VERSION  | version of the image that will be build |
+  | GALERA_VERSION  | Galera software version that should be packaged into the image |
+  | GALERA_DEBUG  | install Galera debug packages |
+  | YQ_VERSION | install this [yq version](https://github.com/mikefarah/yq/releases) |
+
+* productive version
+  ```bash
+  docker build --build-arg BASE_REGISTRY=keppel.eu-de-1.cloud.sap --build-arg BASE_ACCOUNT=ccloud --build-arg BASE_SOFT_NAME=mariadb-galera-ubuntu --build-arg BASE_SOFT_VERSION=20.04 --build-arg BASE_IMG_VERSION=20240429103636 --build-arg SOFT_NAME=mariadb --build-arg SOFT_VERSION=10.5.20+maria~ubu2004 --build-arg IMG_VERSION=20240429103636 --build-arg GALERA_VERSION=26.4.14-ubu2004 --build-arg YQ_VERSION=4.33.3 -t keppel.eu-de-1.cloud.sap/ccloud/mariadb-galera:10.5.20-20240429103636 ./docker/mariadb-galera/
+  ```
+* debug version
+  ```bash
+  docker build --build-arg BASE_REGISTRY=keppel.eu-de-1.cloud.sap --build-arg BASE_ACCOUNT=ccloud --build-arg BASE_SOFT_NAME=mariadb-galera-ubuntu --build-arg BASE_SOFT_VERSION=20.04 --build-arg BASE_IMG_VERSION=20240429103636 --build-arg SOFT_NAME=mariadb --build-arg SOFT_VERSION=10.5.20+maria~ubu2004 --build-arg IMG_VERSION=20240429103636 --build-arg GALERA_VERSION=26.4.14-ubu2004 --build-arg YQ_VERSION=4.33.3 --build-arg GALERA_DEBUG=true -t keppel.eu-de-1.cloud.sap/ccloud/mariadb-galera-debug:10.5.20-20240429103636 ./docker/mariadb-galera/
+  ```
+
+### MySQL Exporter image
+| build argument | description |
+|:--------------|:-------------|
+| USERID | id of the user that should run the binary |
+
+```bash
+docker build --build-arg BASE_REGISTRY=keppel.eu-de-1.cloud.sap --build-arg BASE_ACCOUNT=ccloud --build-arg BASE_SOFT_NAME=mariadb-galera-ubuntu --build-arg BASE_SOFT_VERSION=22.04 --build-arg BASE_IMG_VERSION=20240429103636 --build-arg SOFT_NAME=mysqld_exporter --build-arg SOFT_VERSION=0.14.0 --build-arg IMG_VERSION=20240429103636 --build-arg USERID=3000 -t keppel.eu-de-1.cloud.sap/ccloud/mariadb-galera-mysqld_exporter:0.14.0-20240429103636 ./docker/mysqld_exporter/
+```
+
+### ProxySQL image
+| build argument | description |
+|:--------------|:-------------|
+| USERID | id of the user that should run the binary |
+
+```bash
+docker build --build-arg BASE_REGISTRY=keppel.eu-de-1.cloud.sap --build-arg BASE_ACCOUNT=ccloud --build-arg BASE_SOFT_NAME=mariadb-galera-ubuntu --build-arg BASE_SOFT_VERSION=22.04 --build-arg BASE_IMG_VERSION=20240429103636 --build-arg SOFT_NAME=proxysql --build-arg SOFT_VERSION=2.5.2 --build-arg IMG_VERSION=20240429103636 --build-arg USERID=3100 -t keppel.eu-de-1.cloud.sap/ccloud/mariadb-galera-proxysql:2.5.2-20240429103636 ./docker/proxysql/
+```
+
+### HAProxy image
+| build argument | description |
+|:--------------|:-------------|
+| MARIADB_VERSION | MariaDB client version that will be packaged into the image |
+| USERID | id of the user that should run the binary |
+
+```bash
+docker build --build-arg BASE_REGISTRY=keppel.eu-de-1.cloud.sap --build-arg BASE_ACCOUNT=ccloud --build-arg BASE_SOFT_NAME=mariadb-galera --build-arg BASE_SOFT_VERSION=10.5.23 --build-arg BASE_IMG_VERSION=20240429103636 --build-arg SOFT_NAME=haproxy --build-arg SOFT_VERSION=2.8.9 --build-arg IMG_VERSION=20240429103636 --build-arg USERID=3100 --build-arg MARIADB_VERSION=10.5.23+maria~ubu2004 -t keppel.eu-de-1.cloud.sap/ccloud/mariadb-galera-haproxy:2.8.9-20240429103636 ./docker/haproxy/
+```
+
+### Kopia image
+| build argument | description |
+|:--------------|:-------------|
+| MARIADB_VERSION | MariaDB client version that will be packaged into the image |
+| USERID | id of the user that should run the binary |
+
+```bash
+docker build --build-arg BASE_REGISTRY=keppel.eu-de-1.cloud.sap --build-arg BASE_ACCOUNT=ccloud --build-arg BASE_SOFT_NAME=mariadb-galera --build-arg BASE_SOFT_VERSION=10.5.20 --build-arg BASE_IMG_VERSION=20240429103636 --build-arg SOFT_NAME=kopia --build-arg SOFT_VERSION=0.12.1 --build-arg IMG_VERSION=20240429103636 --build-arg USERID=3200 --build-arg MARIADB_VERSION=10.5.20+maria~ubu2004 -t keppel.eu-de-1.cloud.sap/ccloud/mariadb-galera-kopiabackup:0.12.1-20240429103636 ./docker/kopia/
+```
+
+### Ubuntu image
+
+```bash
+docker build --build-arg BASE_SOFT_NAME=ubuntu --build-arg BASE_SOFT_VERSION=20.04 --build-arg IMG_VERSION=20240429103636 -t keppel.eu-de-1.cloud.sap/ccloud/mariadb-galera-ubuntu:20.04-20240429103636 ./docker/ubuntu/
+docker build --build-arg BASE_SOFT_NAME=ubuntu --build-arg BASE_SOFT_VERSION=22.04 --build-arg IMG_VERSION=20240429103636 -t keppel.eu-de-1.cloud.sap/ccloud/mariadb-galera-ubuntu:22.04-20240429103636 ./docker/ubuntu/
+```
+
+## Helm chart
+### template
+* render the chart templates
+  ```shell
+  helm template {{ template "chart.name" . }} helm --namespace database
+  helm template {{ template "chart.name" . }} helm --namespace database --values helm/custom/eu-de-2.yaml --show-only templates/statefulset-mariadb.yaml
+  ```
+
+### install
+* deploy the chart using only the default values.yaml:
+  ```shell
+  helm upgrade --install --create-namespace --namespace database {{ template "chart.name" . }} helm
+  ```
+
+* with [additional custom values](https://helm.sh/docs/chart_template_guide/values_files/#helm) for a certain instance:
+  ```shell
+  helm upgrade --install --create-namespace --namespace database {{ template "chart.name" . }} helm --values helm/custom/eu-de-2.yaml
+  ```
+
+### uninstall
+* remove the deployed release
+  ```shell
+  helm uninstall --namespace database mariadb-galera
+  ```
+
+### registry
+* login to the [OCI registry](https://helm.sh/docs/topics/registries/#login)
+  ```shell
+  helm registry login keppel.eu-de-1.cloud.sap --username YOUR_USERNAME
+  ```
+* [package](https://helm.sh/docs/helm/helm_package/#helm-package) the chart
+  ```shell
+  helm package helm
+  ```
+* [push](https://helm.sh/docs/topics/registries/#the-push-subcommand) the chart to the registry
+  ```shell
+  helm push mariadb-galera-{{ template "chart.version" . }}.tgz oci://keppel.eu-de-1.cloud.sap/ccloud-helm/
+  ```
+
+### values description
+{{ template "chart.valuesTable" . }}
+
+### network config
+
+If you want/have to specify a certain network (currently only supported for the Openstack infrastructure provider) for load balancer network services like the [MariaDB frontend](businessbean/helm-charts/blob/master/common/mariadb-galera/helm/values.yaml#L142) these properties have to be provided during the installation of a release.
+
+* `--set OpenstackFloatingNetworkId=$(openstack network show <external network name> -f value -c id)`
+* `--set OpenstackFloatingSubnetId=$(openstack subnet list --name <external subnet name> --network <external network name> -f value -c ID)`
+* `--set OpenstackSubnetId=$(openstack subnet list --name <private subnet name> --network <private network name> -f value -c ID)`
+
+The [Openstack cloud provider documentation](https://github.com/kubernetes/cloud-provider-openstack/blob/master/docs/openstack-cloud-controller-manager/expose-databases-using-loadbalancer-type-service.md) has the details about these and more network settings.
+
+### database backup
+* The scheduled [backup](#backup) can be enabled and configured in the `mariadb.galera.backup` section
+* a Kubernetes cronjob will be configured
+* [mariadb-dump](https://mariadb.com/kb/en/mariadb-dumpmysqldump/) will be used to create a logical backup of all databases
+* mariadb-binlog will be used to include the existing binary logs in the backup. That allows to do a point in time recovery in addition to the full restore of the database
+* Kopia will be used to encrypt, compress and deduplicate the backup data. Currently the S3(also usable for Openstack Swift) and the NFS backend are supported
+
+#### S3 backend
+* `mariadb.galera.backup.kopia.backend` set to `s3` to use the S3 backend
+* `mariadb.galera.backup.kopia.s3.endpoint` set to the hostname of the S3 endpoint
+* `mariadb.galera.backup.kopia.s3.region` to configure the region of the S3 endpoint
+* `mariadb.galera.backup.kopia.s3.bucket` to configure the name of the S3 bucket
+* the `KOPIA_S3_USERNAME` environment variable must contain the S3 access key
+* the `KOPIA_S3_PASSWORD` environment variable must contain the S3 secret access key
+
+#### NFS backend
+* Access to an NFS export is required
+* The [nfs-subdir-external-provisioner](https://github.com/kubernetes-sigs/nfs-subdir-external-provisioner) has to installed in the cluster
+  * installation of the [Helm chart](https://github.com/kubernetes-sigs/nfs-subdir-external-provisioner#with-helm)
+* The NFS storageclass requests a persistent volume from the `nfs-subdir-external-provisioner`
+
+### full database recovery
+```shell
+helm upgrade --install --namespace database mariadb-galera helm --set mariadb.wipeDataAndLog=true --values helm/custom/eu-de-2.yaml
+```
+* prepare the database nodes with the `mariadb.wipeDataAndLog` option
+  * the mariadb pods will be restarted
+  * the content of the `data` and the `log` folders will be wiped
+  * the first pod will start MariaDB with Galera
+  * the other pods will only start a sleep process
+  * the backup cronjob and the ProxySQL pods will disabled
+  * check the logs of the first MariaDB pod for the wipe and Galera startup messages
+    ```json
+    {"log.origin.function":"wipedata","log.level":"info","message":"starting wipe of data and log folder content"}
+    {"log.origin.function":"wipedata","log.level":"info","message":"wipe of data and log folder content done"}
+    {"..."}
+    {"log.origin.function":"bootstrapgalera","log.level":"info","message":"init Galera cluster"}
+    {"..."}
+    ```
+    ```text
+    [Note] mariadbd: ready for connections.
+    Version: '10.5.18-MariaDB-1:10.5.18+maria~ubu2004-log'  socket: '/opt/mariadb/run/mariadbd.sock'  port: 3306  mariadb.org binary distribution
+    [Note] WSREP: Starting applier thread 21
+    ```
+  * check the logs of the other MariaDB pod for the wipe and sleep startup messages
+    ```json
+    {"log.origin.function":"wipedata","log.level":"info","message":"starting wipe of data and log folder content"}
+    {"log.origin.function":"wipedata","log.level":"info","message":"wipe of data and log folder content done"}
+    {"..."}
+    {"log.origin.function":"initgalera","log.level":"info","message":"start sleep mode because wipedata flag has been set"}
+    ```
+* start the restore and recovery process using the `mariadb.galera.restore.beforeTimestamp` option
+```sh
+helm upgrade --install --namespace database mariadb-galera helm --set mariadb.galera.restore.kopia.enabled=true --set mariadb.galera.restore.beforeTimestamp="2023-02-19 15:45:00" --values helm/custom/eu-de-2.yaml
+```
+  * a new job pod will be started
+  * Kopia will query the nearest snapshot id related to the provided timestamp
+  * the MariaDB dump included in the snapshot will be restored
+  * the mysql client will import the dump into the first MariaDB node
+  * check the recovery logs of the `mariadb-g-restore-*` pod
+    ```json
+    {"log.origin.function":"recoverkopiafullbackup","log.level":"info","message":"fetch kopia snapshotid for 2022-12-13 12:00:00 timestamp"}
+    {"log.origin.function":"recoverkopiafullbackup","log.level":"info","message":"kopia database recovery using snapshot dfca4aaa to mariadb-g-0.database.svc.cluster.local started"}
+    {"log.origin.function":"recoverkopiafullbackup","log.level":"info","message":"kopia database recovery done"}
+    ```
+* run `helm upgrade` again to remove the `mariadb.wipeDataAndLog` and `mariadb.galera.restore.kopia.enabled` options
+  ```sh
+  helm upgrade --install --namespace database mariadb-galera helm --values helm/custom/eu-de-2.yaml
+  ```
+  * ProxySQL, the config job and the Backup cronjob will be enabled again (if they have been enabled before)
+  * the MariaDB pods will be restarted and Galera will replicate the restored data
+
+### point in time database recovery
+```shell
+helm upgrade --install --namespace database mariadb-galera helm --set mariadb.wipeDataAndLog=true --values helm/custom/eu-de-2.yaml
+```
+* prepare the database nodes with the `mariadb.wipeDataAndLog` option
+  * the mariadb pods will be restarted
+  * the content of the `data` and the `log` folders will be wiped
+  * the first pod will start MariaDB with Galera
+  * the other pods will only start a sleep process
+  * the backup cronjob and the ProxySQL pods will disabled
+  * check the logs of the first MariaDB pod for the wipe and Galera startup messages
+    ```json
+    {"log.origin.function":"wipedata","log.level":"info","message":"starting wipe of data and log folder content"}
+    {"log.origin.function":"wipedata","log.level":"info","message":"wipe of data and log folder content done"}
+    {"..."}
+    {"log.origin.function":"bootstrapgalera","log.level":"info","message":"init Galera cluster"}
+    {"..."}
+    ```
+    ```text
+    [Note] mariadbd: ready for connections.
+    Version: '10.5.18-MariaDB-1:10.5.18+maria~ubu2004-log'  socket: '/opt/mariadb/run/mariadbd.sock'  port: 3306  mariadb.org binary distribution
+    [Note] WSREP: Starting applier thread 21
+    ```
+  * check the logs of the other MariaDB pod for the wipe and sleep startup messages
+    ```json
+    {"log.origin.function":"wipedata","log.level":"info","message":"starting wipe of data and log folder content"}
+    {"log.origin.function":"wipedata","log.level":"info","message":"wipe of data and log folder content done"}
+    {"..."}
+    {"log.origin.function":"initgalera","log.level":"info","message":"start sleep mode because wipedata flag has been set"}
+    ```
+* start the restore and recovery process using the `mariadb.galera.restore.beforeTimestamp` and the `mariadb.galera.restore.pointInTimeRecovery` option
+  ```sh
+  helm upgrade --install --namespace database mariadb-galera helm --set mariadb.galera.restore.kopia.enabled=true --set mariadb.galera.restore.beforeTimestamp="2023-07-17 13:50:00+CEST" --set mariadb.galera.restore.pointInTimeRecovery=true --values helm/custom/eu-de-2.yaml
+  ```
+  * a new job pod will be started
+  * Kopia will query the nearest snapshot id related to the provided timestamp
+  * the MariaDB dump included in the snapshot will be restored
+  * the mysql client will import the dump into the first MariaDB node
+  * check the recovery logs of the `restore-kopia-*` pod
+    ```json
+    {"log.origin.function":"initkopiarepo","log.level":"info","message":"init kopia repository if required"}
+    Connected to repository.
+    {"log.origin.function":"initkopiarepo","log.level":"info","message":"kopia repository already exist"}
+    {"log.origin.function":"recoverkopiapointintime","log.level":"info","message":"fetch kopia snapshotid for the '2023-07-20 13:59:00+CEST' timestamp"}
+    {"log.origin.function":"recoverkopiapointintime","log.level":"info","message":"fetch kopia backup starttime for the snapshotid 'k0f18417e1f8c6052241f5f4dcea29b0e'"}
+    {"log.origin.function":"recoverkopiapointintime","log.level":"info","message":"fetch kopia backup startposition for the snapshotid 'k0f18417e1f8c6052241f5f4dcea29b0e'"}
+    {"log.origin.function":"recoverkopiapointintime","log.level":"info","message":"fetch kopia binlog snapshot for the requested timeframe"}
+    {"log.origin.function":"recoverkopiapointintime","log.level":"info","message":"kopia database recovery from '2023-07-20T11:01:05' to nova-mariadb-g-0.database.svc.cluster.local started"}
+    {"log.origin.function":"recoverkopiapointintime","log.level":"info","message":"kopia database recovery done"}
+    {"log.origin.function":"recoverkopiapointintime","log.level":"info","message":"starting kopia binlog recovery from '2023-07-20T11:55:12+UTC' to nova-mariadb-g-0.database.svc.cluster.local"}
+    {"log.origin.function":"recoverkopiapointintime","log.level":"info","message":"kopia binlog recovery using 'nova_binlog.000143'[1/6] started"}
+    {"log.origin.function":"recoverkopiapointintime","log.level":"info","message":"kopia binlog recovery done"}
+    {"log.origin.function":"recoverkopiapointintime","log.level":"info","message":"kopia binlog recovery using 'nova_binlog.000144'[2/6] started"}
+    {"log.origin.function":"recoverkopiapointintime","log.level":"info","message":"kopia binlog recovery done"}
+    {"log.origin.function":"recoverkopiapointintime","log.level":"info","message":"kopia binlog recovery using 'nova_binlog.000145'[3/6] started"}
+    {"log.origin.function":"recoverkopiapointintime","log.level":"info","message":"kopia binlog recovery done"}
+    {"log.origin.function":"recoverkopiapointintime","log.level":"info","message":"kopia binlog recovery using 'nova_binlog.000146'[4/6] started"}
+    {"log.origin.function":"recoverkopiapointintime","log.level":"info","message":"kopia binlog recovery done"}
+    {"log.origin.function":"recoverkopiapointintime","log.level":"info","message":"kopia binlog recovery using 'nova_binlog.000147'[5/6] started"}
+    {"log.origin.function":"recoverkopiapointintime","log.level":"info","message":"kopia binlog recovery done"}
+    {"log.origin.function":"recoverkopiapointintime","log.level":"info","message":"kopia binlog recovery using 'nova_binlog.000148'[6/6] started"}
+    {"log.origin.function":"recoverkopiapointintime","log.level":"info","message":"kopia binlog recovery done"}
+    ```
+* run `helm upgrade` again to remove the `mariadb.wipeDataAndLog` and `mariadb.galera.restore.kopia.enabled` options
+  ```sh
+  helm upgrade --install --namespace database mariadb-galera helm --set replicas.database=1 --values helm/custom/eu-de-2.yaml
+  ```
+* restart the other pods after `mariadb-g-0` is ready again
+  ```sh
+  helm upgrade --install --namespace database mariadb-galera helm --values helm/custom/eu-de-2.yaml
+  ```
+  * ProxySQL, the config job and the Backup cronjob will be enabled again (if they have been enabled before)
+  * the MariaDB pods will be restarted and Galera will replicate the restored data
+
+### multi region support
+The cluster can be distributed across 3 different Kubernetes cluster instances. They can run in different regions or even in different cloud providers.
+
+#### multi region configuration
+
+* enable the multi region support for the regions `r1`, `r2` and `r3`
+* define the `externalIP` and the `segmentId`([gmcast.segment](https://mariadb.com/kb/en/wsrep_provider_options/#gmcastsegment)) for each region
+* with the service type `LoadBalancer` the `externalIP` will assigned to the requested load balancer. Your cloud provider has to support a reserved IP for the load balancer
+* the service can also be of type `ClusterIP`, but then your (for instance) service mesh has to route the traffic to the correct region
+* the initial rollout can be started from any region, the cluster with the segmentId 1 will bootstrap the Galera cluster
+
+**r1:**
+```yaml
+mariadb:
+  galera:
+    multiRegion:
+      enabled: true
+      current: r1
+      regions:
+        r1:
+          externalIP: "10.0.0.1"
+          segmentId: 1
+        r2:
+          externalIP: "10.0.0.2"
+          segmentId: 2
+        r3:
+          externalIP: "10.0.0.3"
+          segmentId: 3
+
+services:
+  database:
+    backend:
+      type: LoadBalancer
+```
+
+**r2:**
+```yaml
+mariadb:
+  galera:
+    multiRegion:
+      enabled: true
+      current: r2
+      regions:
+        r1:
+          externalIP: "10.0.0.1"
+          segmentId: 1
+        r2:
+          externalIP: "10.0.0.2"
+          segmentId: 2
+        r3:
+          externalIP: "10.0.0.3"
+          segmentId: 3
+
+services:
+  database:
+    backend:
+      type: LoadBalancer
+```
+
+**r3:**
+```yaml
+mariadb:
+  galera:
+    multiRegion:
+      enabled: true
+      current: r3
+      regions:
+        r1:
+          externalIP: "10.0.0.1"
+          segmentId: 1
+        r2:
+          externalIP: "10.0.0.2"
+          segmentId: 2
+        r3:
+          externalIP: "10.0.0.3"
+          segmentId: 3
+
+services:
+  database:
+    backend:
+      type: LoadBalancer
+```
+
+#### multi region WAN tweaks
+
+The following wsrep_provider_options can be configured to optimize the WAN communication between the Galera nodes
+* `mariadb.galera.multiRegion.suspect_timeout`: A node will be suspected to be dead after these seconds of inactivity [evs.suspect_timeout](https://mariadb.com/kb/en/wsrep_provider_options/#evssuspect_timeout)
+* `mariadb.galera.multiRegion.inactive_timeout`: Time limit in seconds that a node can be inactive before being pronounced as dead [evs.inactive_timeout](https://mariadb.com/kb/en/wsrep_provider_options/#evsinactive_timeout)
+* `mariadb.galera.multiRegion.inactive_check_period`: Frequency of checks in seconds for peer inactivity (looking for nodes with delayed responses), after which nodes may be added to the delayed list, and later evicted [evs.inactive_check_period](https://mariadb.com/kb/en/wsrep_provider_options/#evsinactive_check_period)
+* `mariadb.galera.multiRegion.keepalive_period`: How often keepalive signals should be transmitted when there's no other traffic [evs.keepalive_period](https://mariadb.com/kb/en/wsrep_provider_options/#evskeepalive_period)
+* `mariadb.galera.multiRegion.install_timeout`: Wait time in seconds for install message acknowledgments [evs.install_timeout](https://mariadb.com/kb/en/wsrep_provider_options/#evsinactive_timeout)
+* `mariadb.galera.multiRegion.send_window`: Maximum number of packets that can be replicated at a time [evs.send_window](https://mariadb.com/kb/en/wsrep_provider_options/#evssend_window)
+* `mariadb.galera.multiRegion.user_send_window`: Maximum number of data packets that can be replicated at a time [evs.user_send_window](https://mariadb.com/kb/en/wsrep_provider_options/#evsuser_send_window)
+
+#### multi region limitations
+
+* currently the Galera connections are not encrypted or secured
+* currently the cluster startup after losing the quorum (no primary partition available) is not automated
+* you have to manually check the galerastatus configmap in every region
+
+```shell
+kubectl get cm mariadb-galera-galerastatus -o yaml | yq .data
+
+mariadb-galera-mariadb-g-0.primary: |
+  mariadb-galera-mariadb-g-0:
+  timestamp:
+mariadb-galera-mariadb-g-0.running: |
+  mariadb-galera-mariadb-g-0:
+  timestamp:
+mariadb-galera-mariadb-g-0.seqno: |
+  mariadb-galera-mariadb-g-0:120
+  timestamp:1713780824
+```
+
+* than trigger the bootstrap process in the region with the highest seqno and wait for the other regions to catch up
+
+```shell
+helm upgrade --install --create-namespace --namespace database mariadb-galera helm --values ${region}.yaml --set mariadb.galera.multiRegion.bootstrap=true
+```
+
+* after the cluster is up and running again you have to remove the bootstrap option from the cluster where you have started the bootstrap process
+
+```shell
+helm upgrade --install --create-namespace --namespace database mariadb-galera helm --values ${region}.yaml
+```
+
+### asynchronous replication config
+
+[THIS FEATURE WILL BE REMOVED IN THE FUTURE] The Helm chart supports circular asynchronous replication between two Galera clusters. Other topologies are technical possible, but not tested.
+
+* configure the `gtidDomainId` and `gtidDomainIdCount` in the custom configuration files `helm/custom/eu-de-2.yaml` and `helm/custom/eu-nl-1.yaml` of your Galera instances and make sure `asyncReplication.enabled=false` is defined
+* eu-de-2
+```yaml
+mariadb:
+  galera:
+    gtidDomainId: 1
+    gtidDomainIdCount: 2
+  asyncReplication:
+    enabled: false
+```
+* eu-nl-1
+```yaml
+mariadb:
+  galera:
+    gtidDomainId: 2
+    gtidDomainIdCount: 2
+  asyncReplication:
+    enabled: false
+```
+* if the two Galera cluster are not running in the same Kubernetes cluster or you are not running a service mesh between the Kubernetes clusters you have to expose the MySQL service via a load balancer
+* add the service definition to the custom configuration files of both instances
+```yaml
+services:
+  database:
+    frontend:
+      type: LoadBalancer
+```
+* install both Galera cluster instances using their custom configuration files
+```bash
+helm upgrade --install --create-namespace --namespace database mariadb-galera helm --values helm/custom/eu-de-2.yaml
+helm upgrade --install --create-namespace --namespace database mariadb-galera helm --values helm/custom/eu-nl-1.yaml
+```
+* query the load balancer ip of the eu-de-2 instance and add it to the custom configuration of eu-nl-1
+* eu-de-2
+```bash
+kubectl get svc/"Helm release name"-mariadb-g-frontend-direct --namespace database -o jsonpath={.status.loadBalancer.ingress[0].ip}
+```
+* eu-nl-1
+```yaml
+mariadb:
+  asyncReplication:
+    primaryHost: 10.237.116.19
+```
+* create a `mariadb-dump` backup from eu-de-2 and restore it in eu-nl-1
+* eu-nl-1
+```bash
+kubectl exec -i pod/mariadb-g-0 -c db -- bash -c 'mariadb-dump --protocol=tcp --host=10.237.116.19 --port=3306 --user=root --password=pass --all-databases --add-drop-database --flush-logs --hex-blob --events --routines --comments --triggers --skip-log-queries --gtid --master-data=1 --single-transaction | mysql --protocol=socket --user=${MARIADB_ROOT_USERNAME}'
+```
+* enable the replication in the custom configuration of eu-nl-1 and rollout that change
+```yaml
+mariadb:
+  asyncReplication:
+    enabled: true
+```
+* eu-nl-1
+```bash
+helm upgrade --install --create-namespace --namespace database mariadb-galera helm --values helm/custom/eu-nl-1.yaml
+```
+* you can check the configuration pod logs for the status of the replication config
+```json
+{"@timestamp":"2022-11-19T20:15:18+UTC","ecs.version":"1.6.0","log.logger":"/opt/mariadb/bin/entrypoint-job-config.sh","log.origin.function":"stopasyncreplication","log.level":"info","message":"stop async replication"}
+{"@timestamp":"2022-11-19T20:15:18+UTC","ecs.version":"1.6.0","log.logger":"/opt/mariadb/bin/entrypoint-job-config.sh","log.origin.function":"stopasyncreplication","log.level":"info","message":"replica stop successful"}
+{"@timestamp":"2022-11-19T20:15:18+UTC","ecs.version":"1.6.0","log.logger":"/opt/mariadb/bin/entrypoint-job-config.sh","log.origin.function":"setupasyncreplication","log.level":"info","message":"setup async replication from '10.237.116.19'"}
+{"@timestamp":"2022-11-19T20:15:18+UTC","ecs.version":"1.6.0","log.logger":"/opt/mariadb/bin/entrypoint-job-config.sh","log.origin.function":"setupasyncreplication","log.level":"debug","message":"master config successfully updated"}
+{"@timestamp":"2022-11-19T20:15:18+UTC","ecs.version":"1.6.0","log.logger":"/opt/mariadb/bin/entrypoint-job-config.sh","log.origin.function":"startasyncreplication","log.level":"info","message":"start async replication"}
+{"@timestamp":"2022-11-19T20:15:18+UTC","ecs.version":"1.6.0","log.logger":"/opt/mariadb/bin/entrypoint-job-config.sh","log.origin.function":"startasyncreplication","log.level":"info","message":"replica start successful"}
+{"@timestamp":"2022-11-19T20:15:18+UTC","ecs.version":"1.6.0","log.logger":"/opt/mariadb/bin/entrypoint-job-config.sh","log.origin.function":"checkasyncreplication","log.level":"info","message":"check async replication status"}
+{"@timestamp":"2022-11-19T20:15:18+UTC","ecs.version":"1.6.0","log.logger":"/opt/mariadb/bin/entrypoint-job-config.sh","log.origin.function":"checkasyncreplication","log.level":"error","message":"replica still trying to connect to the primary(20 retries left)"}
+{"@timestamp":"2022-11-19T20:15:24+UTC","ecs.version":"1.6.0","log.logger":"/opt/mariadb/bin/entrypoint-job-config.sh","log.origin.function":"checkasyncreplication","log.level":"info","message":"async replication active"}
+{"@timestamp":"2022-11-19T20:15:24+UTC","ecs.version":"1.6.0","log.logger":"/opt/mariadb/bin/entrypoint-job-config.sh","log.origin.function":"null","log.level":"info","message":"configuration job finished"}
+```
+* query the load balancer ip of the eu-de-2 instance and add it to the custom configuration of eu-nl-1
+* eu-nl-1
+```bash
+kubectl get svc/mariadb-g-frontend-direct --namespace database -o jsonpath={.status.loadBalancer.ingress[0].ip}
+```
+* eu-de-2
+```yaml
+mariadb:
+  asyncReplication:
+    primaryHost: 10.47.40.223
+```
+* enable the replication in the custom configuration of eu-de-2 and rollout that change with the additional `mariadb.asyncReplication.resetConfig=true` (gtid_slave_pos on eu-de-2 will be updated with the gtid_binlog_pos from eu-nl-1)
+* the next `helm upgrade` without `resetConfig=true` will make sure that future configuration jobs will not reset the id again to avoid data loss or duplicates
+```yaml
+mariadb:
+  asyncReplication:
+    enabled: true
+```
+* eu-de-2
+```bash
+helm upgrade --install --create-namespace --namespace database mariadb-galera helm --values helm/custom/eu-de-2.yaml --set mariadb.asyncReplication.resetConfig=true
+```
+* also here you can check the configuration pod logs for the status of the replication config
+
+### MariaDB Galera flow charts
+During their lifecycle several decisions have to be made for the database nodes (running in containers) before actually starting the MariaDB process. Some decicions even have to be made during the runtime of the process.
+#### node startup
+##### container start
+```mermaid
+flowchart TB;
+  id1[start container]-->id2(run entrypoint.sh)-->id3(include common-functions.sh)-->id4(common-functions-extended.sh exist?);
+  id4--Yes-->id5(include common-functions-extended.sh)-->id6;
+  id4--No-->id6;
+  subgraph idsub1 [wipedata]
+    id6(/opt/mariadb/etc/wipedata.flag exist?);
+    id6--Yes-->id7(wipe data & log dir content ok?);
+  end
+  id6--No-->id8;
+  id7--Yes-->id8;
+  subgraph idsub2 [checkenv]
+    id8(required env vars set?);
+  end
+  id8--Yes-->id9;
+  subgraph idsub3 [templateconfig]
+    id9(template MariaDB configs ok?);
+  end
+  id9--Yes-->id10([init database])
+  id7--No-->id666[exit 1];
+  id8--No-->id666[exit 1];
+  id9--No-->id666[exit 1];
+
+click id2 href "businessbean/helm-charts/blob/master/common/mariadb-galera/mariadb-galera/bin/entrypoint.sh" "Open this in a new tab" _blank;
+click id3 href "businessbean/helm-charts/blob/master/common/mariadb-galera/docker/mariadb-galera/bin/common-functions.sh" "Open this in a new tab" _blank;
+click id4 href "businessbean/helm-charts/blob/master/common/mariadb-galera/helm/scripts/common-functions-extended.sh" "Open this in a new tab" _blank;
+```
+
+##### init database
+```mermaid
+flowchart TB;
+  id1([container start])-->id2;
+  subgraph idsub1 [initdb]
+    id2(database already exist?)--No-->id3(mariadb-install-db ok?);
+    subgraph idsub2 [startmaintenancedb]
+      id3--Yes-->id4(start mariadbd in background ok?);
+    end
+    subgraph idsub3 [setuptimezoneinfo]
+      id4--Yes-->id5(setup timezone infos ok?)
+    end
+    subgraph idsub4 [setuprole]
+      id5--Yes-->id6(setup role fullaccess ok?)
+      id6--Yes-->id7(setup role mysql_exporter ok?)
+    end
+    subgraph idsub5 [setupuser]
+      id7--Yes-->id8(setup MARIADB_ROOT_USERNAME ok?)
+      id8--Yes-->id9(setup MARIADB_MONITORING_USERNAME ok?)
+    end
+    subgraph idsub6 [listdbandusers]
+      id9--Yes-->id10(list users from database ok?)
+    end
+    subgraph idsub7 [stopdb]
+      id10--Yes-->id11(shutdown database ok?)
+    end
+  end
+  subgraph idsub8 [checkupgradedb]
+    id2--Yes-->id12(mysql_upgrade_info exist?);
+    id11--Yes-->id12;
+    id12--Yes-->id16(mariadb binary newer than db?);
+    subgraph idsub9 [startmaintenancedb]
+      id12--No-->id13(start mariadbd in background ok?);
+      id16--Yes-->id13;
+      subgraph idsub10 [upgradedb]
+        id13--Yes-->id14(mysql_upgrade ok?);
+      end
+      subgraph idsub11 [stopdb]
+        id14--Yes-->id15(shutdown database ok?)
+      end
+    end
+  end
+  subgraph idsub15 [startdb]
+    id15--Yes-->id20(entrypoint-galera.sh exist?);
+    id16--No-->id20;
+    id20--No-->id99(exec mariadbd ok?)--Yes-->id98(MariaDB running);
+  end
+  id20--Yes-->id21([init Galera]);
+
+  subgraph failure
+    id3 & id4 & id5 & id6 & id7 & id8 & id9--No-->id666[exit 1];
+    id10 & id11 & id13 & id14 & id15 & id99--No-->id666;
+  end
+
+click id20 href "businessbean/helm-charts/blob/master/common/mariadb-galera/helm/scripts/mariadb-galera/entrypoint-galera.sh" "Open this in a new tab" _blank;
+click id6 href "businessbean/helm-charts/blob/master/common/mariadb-galera/docker/mariadb-galera/config/fullaccess.role.yaml" "Open this in a new tab" _blank;
+click id7 href "businessbean/helm-charts/blob/master/common/mariadb-galera/docker/mariadb-galera/config/mysql_exporter.role.yaml" "Open this in a new tab" _blank;
+```
+
+##### init Galera
+
+```mermaid
+flowchart TB;
+  id1([init database])-->id2;
+
+  subgraph idsub1 [initgalera]
+    id2(grastate.dat exist?);
+    id2--No-->id3(hostname eq pod 0 name?)--Yes-->id4;
+    id3--No-->id6(join cluster);
+    subgraph idsub2 [bootstrapgalera]
+      id4(bootstrap cluster)-->id5(exec mariadbd --wsrep-new-cluster ok?);
+    end
+    subgraph idsub3 [startgalera]
+      id6-->id7(exec mariadbd ok?);
+    end
+  end
+  id2--Yes-->id9([recover Galera]);
+  subgraph idsub4 [Done]
+    id5 & id7--Yes-->id98(MariaDB running);
+  end
+  subgraph failure
+    id5 & id7--No-->id666[exit 1];
+  end
+```
+
+##### recover Galera
+
+```mermaid
+flowchart TB;
+  id1([init Galera])-->id2;
+  subgraph idsub1 [initgalera]
+    id2(safe_to_bootstrap=1 and sequence number not -1 ?)--Yes-->id3;
+    subgraph idsub2 [setconfigmap]
+      id3(update sequence number in configmap ok?);
+    end
+    subgraph idsub3 [selectbootstrapnode]
+      id3--Yes-->id4(seqno file count -ge pod replicas?);
+      id4--Yes-->id5(fetch seqno timestamps ok?);
+      id5--Yes-->id6(useTimeDifferenceForSeqnoCheck=true?);
+      id6--Yes-->id7(timestamps are recent?);
+      id6--No-->id8;
+      id7--Yes-->id8(nodename with highest sequence number found?);
+      id8--Yes-->id9(nodename selected?);
+    end
+    id2--No-->id10(mariadbd --wsrep-recover to find uuid and seqno ok?);
+    id10--Yes-->id11(update seqno and historic UUID in grastate.dat ok?)--Yes-->id3;
+  end
+  id9--No-->id13([bootstrap Galera]);
+  subgraph failure
+    id4 & id5 & id7 & id8 & id9 & id10 & id11--No-->id666[exit 1];
+  end
+```
+
+##### bootstrap Galera
+
+```mermaid
+flowchart TB;
+  id1([recover Galera])-->id2;
+  subgraph idsub1 [recovergalera]
+    id2(nodename eq hostname of container?);
+    id2--Yes-->id3(mariadbd --wsrep-recover was required?)--Yes-->id4(set 'safe_to_bootstrap: 1' in grastate.dat ok?);
+    id2--No-->id5(join cluster);
+    id3--No-->id7;
+    id4--Yes-->id7;
+    subgraph idsub2 [bootstrapgalera]
+      id7(bootstrap cluster)-->id8(exec mariadbd --wsrep-new-cluster ok?);
+    end
+    subgraph idsub3 [startgalera]
+      id5-->id6(exec mariadbd ok?);
+    end
+  end
+  subgraph idsub6 [Done]
+    id6 & id8--Yes-->id98(MariaDB running);
+  end
+  subgraph failure
+    id4 & id6 & id8--No-->id666[exit 1];
+  end
+```
+
+## additional documentation
+### Database
+* [MariaDB server system variables](https://mariadb.com/kb/en/server-system-variables/)
+* [mysql_install_db parameters](https://mariadb.com/kb/en/mysql_install_db/)
+* [MariaDB install packages](https://mariadb.org/download/?t=repo-config&d=20.04+%22focal%22&v=10.5&r_m=hs-esslingen)
+* [MariaDB automation](https://mariadb.com/kb/en/automated-mariadb-deployment-and-administration/)
+* [MariaDB Environment Variables](https://mariadb.com/kb/en/mariadb-environment-variables/)
+* [Overview of MariaDB Logs](https://mariadb.com/kb/en/overview-of-mariadb-logs/)
+
+### Galera cluster
+* [Galera cluster description](https://mariadb.com/kb/en/what-is-mariadb-galera-cluster/)
+* [Galera getting started](https://mariadb.com/kb/en/getting-started-with-mariadb-galera-cluster/)
+* [Configuring MariaDB Galera Cluster](https://mariadb.com/kb/en/configuring-mariadb-galera-cluster/)
+* [Using MariaDB GTIDs with MariaDB Galera Cluster](https://mariadb.com/kb/en/using-mariadb-gtids-with-mariadb-galera-cluster/)
+* [Galera monitoring](https://galeracluster.com/library/documentation/monitoring-cluster.html)
+* [Galera Crash recovery](https://galeracluster.com/library/documentation/crash-recovery.html)
+* [Primary recovery after clean shutdown of the cluster](https://galeracluster.com/library/documentation/pc-recovery.html)
+* [calculate the Galera Cache Size for IST(Incremental State Transfer)](https://galeracluster.com/library/kb/customizing-gcache-size.html)
+* [custom pc.weight for predictable quorum decisions](https://galeracluster.com/library/documentation/weighted-quorum.html#wq-three-nodes)
+* [check Galera replication health](https://galeracluster.com/library/documentation/monitoring-cluster.html#check-replication-health)
+  * `wsrep_local_recv_que_avg` should be 0 (indicates if the local cluster node is not fast enough to apply the changes)
+  * `wsrep_flow_control_paused` should be 0 (0.25 means 25% of the time replication was paused)
+  * `wsrep_cert_deps_distance` difference between lowest and highest sequence number in the cluster
+* [Setting Parallel Slave Threads for replication](https://galeracluster.com/library/kb/parallel-applier-threads.html)
+
+### Primary/Replica replication
+* [Global Transaction ID](https://mariadb.com/kb/en/gtid/)
+* [Configuring MariaDB Replication between Two MariaDB Galera Clusters](https://mariadb.com/kb/en/configuring-mariadb-replication-between-two-mariadb-galera-clusters/)
+* [Configuring MariaDB Replication between MariaDB Galera Cluster and MariaDB Server](https://mariadb.com/kb/en/using-mariadb-replication-with-mariadb-galera-cluster-configuring-mariadb-r/)
+* [Replication Overview](https://mariadb.com/kb/en/replication-overview/)
+* [Replication Filters](https://mariadb.com/kb/en/replication-filters/)
+* [Reset Replica config](https://mariadb.com/kb/en/reset-replica/)
+* [CHANGE MASTER TO](https://mariadb.com/kb/en/change-master-to/) command options
+* [Multi-Source Replication with MariaDB Galera Cluster](https://severalnines.com/blog/multi-source-replication-mariadb-galera-cluster)
+* [Parallel Replication](https://mariadb.com/kb/en/parallel-replication/)
+* [MariaDB Galera Cluster and M/S replication](https://archive.fosdem.org/2022/schedule/event/mariadb_galera/)
+* [MariaDB Master/Master GTID based replication](https://www.fromdual.com/mariadb-master-master-gtid-based-replication-with-keepalived-vip)
+
+### Monitoring
+* [Unit Testing for Prometheus exporters](https://www.prometheus.io/docs/prometheus/latest/configuration/unit_testing_rules/)
+
+### Backup
+* [Galera Backup options](https://galeracluster.com/library/training/tutorials/galera-backup.html)
+  * [Backing Up Cluster Data](https://galeracluster.com/library/documentation/backup-cluster.html)
+  * [Scriptable State Snapshot Transfers](https://galeracluster.com/library/documentation/scriptable-sst.html)
+  * [mariabackup SST Method](https://mariadb.com/kb/en/mariabackup-sst-method/)
+  * [manual Cluster backup with mariabackup](https://mariadb.com/kb/en/manual-sst-of-galera-cluster-node-with-mariabackup/)
+  * [mariabackup commandline options](https://mariadb.com/kb/en/mariabackup-options/)
+  * [mariadb-dump manual](https://mariadb.com/kb/en/mariadb-dumpmysqldump/)
+  * [Mariabackup + Restic: a simple and efficient online backup solution for your DBs](https://archive.fosdem.org/2022/schedule/event/mariadb_backup_restic/)
+  * [MariaDB Point-in-Time-Recovery](https://archive.fosdem.org/2022/schedule/event/mariadb_pit_recovery/)
+  * [Kopia environment variables](https://github.com/kopia/kopia/search?p=1&q=envName)
+
+{{ template "helm-docs.versionFooter" . }}
