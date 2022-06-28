@@ -10,7 +10,7 @@ prometheus-{{ include "thanos.fullName" . }}-storage-config
 
 {{/* Thanos combined name */}}
 {{- define "thanos.fullName" -}}
-{{- required ".Values.name" .Values.name -}}-thanos
+thanos-{{- required ".Values.name" .Values.name -}}
 {{- end -}}
 
 
