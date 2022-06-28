@@ -1,3 +1,4 @@
+{{- $root := . }}
 apiVersion: monitoring.banzaicloud.io/v1alpha1
 kind: Thanos
 metadata:
@@ -16,7 +17,7 @@ spec:
     webRoutePrefix: {{ required ".Values.query.webRouteprefix missing" .Values.query.webRouteprefix }}
     webExternalPrefix: {{ required ".Values.query.webRouteprefix missing" .Values.query.webRouteprefix }}
     {{- end }}
-    {{- if or .Values.deployWholeThanos ((.Values.query).stores) }}
+    {{- if or .Values.deployWholeThanos ((.Values.query).stores) (.Values.useQueryRegions) }}
     stores:
     {{- end }}
     {{- if ((.Values.query).stores) }}
@@ -25,6 +26,10 @@ spec:
       {{- end }}
     {{- else if .Values.deployWholeThanos }}
       - prometheus-{{ required ".Values.name missing" .Values.name }}:10901
+    {{- else if (.Values.useQueryRegions) }}
+      {{- range $store := .Values.queryRegions }}
+      - https://thanos.{{ $store }}.{{ $root.Values.global.tld }}
+      {{- end }}
     {{- end }}
     deploymentOverrides:
       spec:
