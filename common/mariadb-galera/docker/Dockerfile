@@ -12,7 +12,6 @@ ENV SOFTWARE_VERSION=${SOFT_VERSION}
 ENV SOFTWARE_NAME=${SOFT_NAME}
 ENV IMAGE_VERSION=${IMG_VERSION}
 ENV GALERA_VERSION=${GALERA_VERSION}
-ENV USERID=1234
 LABEL name=${SOFTWARE_NAME}
 LABEL software.${SOFTWARE_NAME}=${SOFTWARE_NAME}
 LABEL version.${SOFTWARE_NAME}.software=${SOFTWARE_VERSION}
@@ -35,15 +34,15 @@ RUN oldIFS="${IFS}" \
   && apt-get -y autoclean \
   && apt-get -y autoremove \
   && rm -rf /var/lib/apt/lists/* \
-  && mkdir -p /opt/${SOFTWARE_NAME}/data \
-  && groupadd ${SOFTWARE_NAME} --gid "${USERID}" \
-  && adduser ${SOFTWARE_NAME} --home "/opt/${SOFTWARE_NAME}" --uid "${USERID}" --gid "${USERID}" --gecos "" --shell /sbin/nologin --no-create-home --disabled-login
+  && mkdir -p /opt/${SOFTWARE_NAME}/{bin,data,etc/conf.d,run,tmp}
 
 COPY bin/entrypoint.sh /opt/${SOFTWARE_NAME}/bin/
-RUN chown -R ${SOFTWARE_NAME}:${SOFTWARE_NAME} /opt/${SOFTWARE_NAME} \
+COPY config/my.cnf /opt/${SOFTWARE_NAME}/etc/
+RUN chown -R mysql:mysql /opt/${SOFTWARE_NAME} \
   && chmod 755 /opt/${SOFTWARE_NAME}/bin/entrypoint.sh \
+  && chmod 644 /opt/${SOFTWARE_NAME}/etc/my.cnf \
   && /usr/bin/${SOFTWARE_NAME} --version | grep ${SOFTWARE_VERSION}
 
 VOLUME ["/opt/${SOFTWARE_NAME}/data"]
-USER ${SOFTWARE_NAME}
+USER mysql
 ENTRYPOINT ["/bin/bash", "-c", "/opt/${SOFTWARE_NAME}/bin/entrypoint.sh"]
