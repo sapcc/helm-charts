@@ -31,9 +31,8 @@ template: |
     template:
       metadata:
         labels:
-          application: cinder
-          component: volume-vmware
           name: cinder-volume-vmware-{= name =}
+{{ tuple . "cinder" "volume-vmware" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 10 }}
         annotations:
           configmap-etc-hash: {{ include (print .Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
           configmap-cinder-volume-hash: {= "vcenter_datacenter/{{ .Release.Namespace }}/vcenter-datacenter-cinder-configmap.yaml.j2" | render | sha256sum =}
