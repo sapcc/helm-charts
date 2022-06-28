@@ -2,7 +2,7 @@
 #!/usr/bin/env bash
 BASE=/opt/${SOFTWARE_NAME}
 
-declare -f initdb echoStdOut echoStdErr
+declare -f initdb startdb echoStdOut echoStdErr
 
 function echoStdOut {
   printf "{\"@timestamp\":\"%s\",\"ecs.version\":\"1.6.0\",\"log.level\":\"info\",\"message\":\"%s\"}\n" "$(date +%Y.%m.%d-%H:%M:%S-%Z)" "$*" >>/dev/stdout
@@ -14,7 +14,7 @@ function echoStdErr {
 
 function initdb {
   # check if the data folder already contains database structures
-  echoStdOut "Init databases if required"
+  echoStdOut "init databases if required"
   if [ -d "${BASE}/data/mysql" ]; then
 		echoStdOut "Database structures already exist."
     return
@@ -25,9 +25,18 @@ function initdb {
       exit 1
     fi
   fi
-  echoStdOut "Init databases done"
+  echoStdOut "init databases done"
+}
+
+function startdb {
+  # check if the data folder already contains database structures
+  echoStdOut "starting mariadbd process"
+  /usr/sbin/mariadbd --defaults-file=${BASE}/etc/my.cnf --basedir=/usr --skip-log-error
+  if [ $? -ne 0 ]; then
+    echoStdErr "mariadbd startup failed"
+    exit 1
+  fi
 }
 
 initdb
-
-exec /usr/sbin/mariadbd --defaults-file=${BASE}/etc/my.cnf --basedir=/usr --skip-log-error
+startdb
