@@ -65,6 +65,7 @@ groups:
 
   - alert: OpenstackBarbicanCanaryFlapping
     expr: changes(blackbox_canary_status_gauge{service=~"barbican"}[2h]) > 8
+    for: 2m
     labels:
       severity: warning
       tier: os
@@ -80,6 +81,7 @@ groups:
 
   - alert: OpenstackBarbicanRateLimitActionIsAbove50
     expr: sum by(initiator_project_id, action, initiator_user_name) (rate(openstack_ratelimit_requests_ratelimit_total{service="key-manager", container="barbican-api"}[2m]) * 60) > 50
+    for: 1m
     labels:
       severity: info
       tier: os
