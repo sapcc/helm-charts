@@ -124,7 +124,7 @@ function setuptimezoneinfo {
 }
 
 function upgradedbifrequired {
-	if [ ! -f ${DATADIR}/mysql_upgrade_info ]; then
+  if [ ! -f ${DATADIR}/mysql_upgrade_info ]; then
     loginfo "MariaDB upgrade information missing, assuming required"
     startmaintenancedb
     upgradedb
@@ -143,7 +143,7 @@ function upgradedbifrequired {
     else
       loginfo "MariaDB version same as last upgrade info, no upgrade required"
     fi
-	fi
+  fi
 }
 
 function upgradedb {
