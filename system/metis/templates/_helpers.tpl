@@ -21,9 +21,9 @@ Create chart name and version as used by the chart label.
       name: metis-secrets
       key: metisServicePW
 - name:  OS_PROJECT_DOMAIN_NAME
-  value: 'ccadmin'
+  value: 'Default'
 - name:  OS_PROJECT_NAME
-  value: 'master'
+  value: 'service'
 - name:  OS_REGION_NAME
   value: {{ quote $.Values.global.region }}
 - name:  OS_USER_DOMAIN_NAME
