@@ -34,13 +34,16 @@ RUN oldIFS="${IFS}" \
   && apt-get -y autoclean \
   && apt-get -y autoremove \
   && rm -rf /var/lib/apt/lists/* \
-  && mkdir -p /opt/${SOFTWARE_NAME}/{bin,data,etc/conf.d,run,tmp}
+  && mkdir -p /opt/${SOFTWARE_NAME}/{bin,data,etc/conf.d,etc/sql,run,tmp}
 
 COPY bin/entrypoint.sh /opt/${SOFTWARE_NAME}/bin/
 COPY config/my.cnf /opt/${SOFTWARE_NAME}/etc/
+COPY config/*.tpl /opt/${SOFTWARE_NAME}/etc/sql/
 RUN chown -R mysql:mysql /opt/${SOFTWARE_NAME} \
   && chmod 755 /opt/${SOFTWARE_NAME}/bin/entrypoint.sh \
   && chmod 644 /opt/${SOFTWARE_NAME}/etc/my.cnf \
+  && chmod -R 755 /opt/${SOFTWARE_NAME}/etc/sql/ \
+  && chmod -R 644 /opt/${SOFTWARE_NAME}/etc/sql/* \
   && /usr/bin/${SOFTWARE_NAME} --version | grep ${SOFTWARE_VERSION}
 
 VOLUME ["/opt/${SOFTWARE_NAME}/data"]
