@@ -4,7 +4,7 @@ kind: "OpenstackSeed"
 metadata:
   name: metis-seed
   labels:
-    app.kubernetes.io/name: {{ tuple .Release .Chart .Values | include "fullname" }}
+    app.kubernetes.io/name: metis
     helm.sh/chart: {{ include "metis.chart" $ }}
     app.kubernetes.io/instance: metis-{{ .Release.Name }}
     app.kubernetes.io/managed-by: {{ .Release.Service }}
@@ -34,14 +34,13 @@ spec:
       users:
         - name: metis
           description: Metis Service
-          password: '{{ .Values.metis-api.service_password | required ".Values.metis-api.service_password is missing"}}'
+          password: '{{ .Values.metisAPI.service_password | required ".Values.metisApi.service_password is missing" }}'
           role_assignments:
           - project: service
             role: service # for validating Keystone user tokens
         - name: sism-viewer
           description: Technical User for SISM to retrieve CCLoud Inventory Data
-          password: '{{ .Values.metis-api.sism_viewer_password | required ".Values.metis-api.sism_viewer_password is missing"}}'
-          role
+          password: '{{ .Values.metisAPI.sism_viewer_password | required ".Values.metisApi.sism_viewer_password is missing" }}'
 
     - name: ccadmin
       project:
