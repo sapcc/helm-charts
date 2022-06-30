@@ -12,6 +12,9 @@ metadata:
     app.kubernetes.io/component: "api"
     app.kubernetes.io/managed-by: {{ .Release.Service }}
 data:
+  policy.yaml: |
+    'inventory:get_all' : 'role:cloud_inventory_viewer'
+
   config.yaml: |
     api:
       port: {{ .Values.metisAPI.port }}
@@ -19,14 +22,5 @@ data:
       user: "root"
       host: metisdb-mariadb.metis
       port: 3306
-    basicAuth:
-      enabled: true
-    ldap:
-      enabled: false
-      host: {{ .Values.metisAPI.ldap.host }}
-      bindDN: {{ .Values.metisAPI.ldap.bindDN }}
-      baseDN: {{ .Values.metisAPI.ldap.baseDN }}
-      groupDN: {{ .Values.metisAPI.ldap.groupDN }}
-      suffix:  {{ .Values.metisAPI.ldap.suffix }}
 
 {{ end }}
