@@ -6,9 +6,11 @@ cd "$(dirname "$0")"
 : "${HELM:=helm}"
 
 LOG_ALL_REQUESTS=1 helm-manifest-parser 127.0.0.1:8080 &
-pid=$!
+pid_helm_manifest_parser=$!
+LOG_ALL_REQUESTS=1 doop-image-checker 127.0.0.1:8081 response-config.yaml &
+pid_doop_image_checker=$!
 # shellcheck disable=SC2064
-trap "kill $pid" INT TERM EXIT
+trap "kill $pid_helm_manifest_parser $pid_doop_image_checker" INT TERM ERR EXIT
 
 (
   cd ..

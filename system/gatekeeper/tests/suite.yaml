@@ -188,10 +188,19 @@ tests:
     assertions:
     - violations: no
 
-# TODO: needs local doop-image-checker server
-# - name: outdated-image-bases
-#   template: rendered-chart/gatekeeper/templates/constrainttemplate-outdated-image-bases.yaml
-#   constraint: rendered-chart/gatekeeper-config/templates/constraint-outdated-image-bases.yaml
+- name: outdated-image-bases
+  template: rendered-chart/gatekeeper/templates/constrainttemplate-outdated-image-bases.yaml
+  constraint: rendered-chart/gatekeeper-config/templates/constraint-outdated-image-bases.yaml
+  cases:
+  - name: pod-old
+    object: fixtures/outdated-image-bases/pod-old.yaml
+    assertions:
+    - violations: 1
+      message: 'image keppel.example.com/vulnerability:old for container "dummy" uses a very old base image \(oldest layer is 417 days old\)'
+  - name: pod-new
+    object: fixtures/outdated-image-bases/pod-new.yaml
+    assertions:
+    - violations: no
 
 - name: owner-info-on-helm-releases
   template: rendered-chart/gatekeeper/templates/constrainttemplate-owner-info-on-helm-releases.yaml
@@ -314,7 +323,25 @@ tests:
     assertions:
     - violations: no
 
-# TODO: needs local doop-image-checker server
-# - name: vulnerable-images
-#   template: rendered-chart/gatekeeper/templates/constrainttemplate-vulnerable-images.yaml
-#   constraint: rendered-chart/gatekeeper-config/templates/constraint-vulnerable-images.yaml
+- name: vulnerable-images
+  template: rendered-chart/gatekeeper/templates/constrainttemplate-vulnerable-images.yaml
+  constraint: rendered-chart/gatekeeper-config/templates/constraint-vulnerable-images.yaml
+  cases:
+  - name: pod-vulnerable
+    object: fixtures/vulnerable-images/pod-vulnerable.yaml
+    assertions:
+    - violations: 1
+      message: 'image keppel.example.com/vulnerability:low for container "dummy" has vulnerability status "Low"'
+    - violations: 1
+      message: 'image keppel.example.com/vulnerability:medium for container "dummy" has vulnerability status "Medium"'
+    - violations: 1
+      message: 'image keppel.example.com/vulnerability:high for container "dummy" has vulnerability status "High"'
+  - name: pod-unclear
+    object: fixtures/vulnerable-images/pod-unclear.yaml
+    assertions:
+    - violations: 1
+      message: 'image keppel.example.com/vulnerability:unclear for container "dummy" has vulnerability status "Unclear"'
+  - name: pod-clean
+    object: fixtures/vulnerable-images/pod-clean.yaml
+    assertions:
+    - violations: no
