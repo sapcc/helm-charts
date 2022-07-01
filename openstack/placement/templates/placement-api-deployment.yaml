@@ -29,8 +29,13 @@ spec:
         alert-service: nova
       annotations:
         configmap-etc-hash: {{ include (print $.Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
+        {{- if .Values.proxysql.mode }}
+        prometheus.io/scrape: "true"
+        prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
+        {{- end }}
     spec:
 {{ tuple . "placement" "api" | include "kubernetes_pod_anti_affinity" | indent 6 }}
+      {{- include "utils.proxysql.pod_settings" . | indent 6 }}
       containers:
       - name: placement-api
         image: {{ required ".Values.global.registry is missing" .Values.global.registry}}/ubuntu-source-nova-placement-api:{{.Values.imageVersion | required "Please set .imageVersion or similar" }}
@@ -84,7 +89,10 @@ spec:
         volumeMounts:
         - mountPath: /etc/{{ include "placement_project" . }}
           name: placement-etc
+        {{- include "utils.proxysql.volume_mount" . | indent 8 }}
+      {{- include "utils.proxysql.container" . | indent 6 }}
       volumes:
       - name: placement-etc
         configMap:
           name: placement-etc
+      {{- include "utils.proxysql.volumes" . | indent 6 }}
