@@ -1,0 +1,38 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  namespace: {{ $.Release.Namespace }}
+  name:  entrypoint-sh
+  labels:
+    app: {{ $.Release.Name }}
+data:
+  entrypoint-galera.sh: |-
+    #!/usr/bin/env bash
+    set +e
+    set -u
+    set -o pipefail
+    set +x
+
+    function logjson {
+      printf "{\"@timestamp\":\"%s\",\"ecs.version\":\"1.6.0\",\"log.level\":\"%s\",\"message\":\"%s\"}\n" "$(date +%Y.%m.%d-%H:%M:%S-%Z)" "$2" "$3" >>/dev/"$1"
+    }
+
+    function loginfo {
+      logjson  "stdout" "info" "$1"
+    }
+
+    function logerror {
+      logjson  "stderr" "error" "$1"
+    }
+
+    function startdb {
+      loginfo "starting mariadbd process"
+      mariadbd --defaults-file=${BASE}/etc/my.cnf --basedir=/usr --skip-log-error
+      if [ $? -ne 0 ]; then
+        logerror "mariadbd startup failed"
+        exit 1
+      fi
+    }
+
+    startdb

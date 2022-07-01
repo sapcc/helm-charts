@@ -1,0 +1,129 @@
+# Default values for elasticsearch.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+userId: 101
+groupId: 101
+#command:
+#- "/bin/bash"
+#- "-x"
+#- "/opt/mariadb/bin/entrypoint.sh"
+
+# Docker image
+image:
+  os:
+    registry: keppel.eu-nl-1.cloud.sap
+    project: octobus
+    applicationname: ubuntu
+    applicationversion: 20.04
+    imageversion: 0.3.59
+    pullPolicy: IfNotPresent
+    pullSecret: null
+  application:
+    registry: keppel.eu-nl-1.cloud.sap
+    project: octobus
+    applicationname: mariadb-galera
+    applicationversion: 10.5.13
+    imageversion: 0.0.2
+    pullPolicy: IfNotPresent
+    pullSecret: null
+
+initContainers:
+  increaseMapCount:
+    securityContext:
+      privileged: true
+      runAsUser: 0
+  tcpKeepAlive:
+    securityContext:
+      privileged: true
+      runAsUser: 0
+
+# network services
+services:
+  - name: be
+    type: ClusterIP
+    clusterIP: None
+    ports:
+      - name: galera
+        port: 4567
+        targetPort: 4567
+        protocol: TCP
+    sessionAffinity: None
+  - name: fe
+    type: LoadBalancer
+    ports:
+      - name: mysql
+        port: 3306
+        targetPort: 3306
+        protocol: TCP
+    sessionAffinity: None
+
+# Storage
+volumeMounts:
+  - name: data
+    nodeType:
+      - data
+    claimName: data
+    mountPath: /opt/mariadb/data
+    type: persistentVolume
+  - name: cert-wildcard
+    mountPath: /opt/mariadb/etc/certs
+    type: secret
+    readOnly: true
+
+volumeClaimTemplates:
+  - name: data
+    accessModes: [ReadWriteOnce]
+    capacity: 1Gi
+
+# Resource limits per container
+resourceLimits:
+  cpu: 2
+  memory: 256Mi
+
+# Deployment rules
+replicas: 3
+maxUnavailable: 1
+maxSurge: 1
+hpa:
+  enabled: false
+  minReplicas: 3
+  maxReplicas: 3
+  maxCpuPercent: 50
+UpdateStrategy: RollingUpdate
+podManagementPolicy: Parallel
+revisionHistoryLimit: 3
+terminationGracePeriodSeconds: 86400
+
+# Container Lifecycle hooks
+lifecycleHooks:
+  maxtime: 60
+  maxtime_flush: 600
+  maxtries: 15
+
+#Container Health Checks
+livenessProbe:
+  port: mysql
+  initialDelaySeconds: 30
+  periodSeconds: 30
+  failureThreshold: 4
+  timeoutSeconds: 20
+readinessProbe:
+  initialDelaySeconds: 45
+  periodSeconds: 20
+  successThreshold: 1
+  failureThreshold: 3
+  timeoutSeconds: 10
+
+# Environment vars
+env:
+  var1:
+    name: MARIADB_CLUSTER_NAME
+    value: eu-de-1.nova
+  var2:
+    name: MARIADB_ROOT_USER
+    secretName: db-full-auth
+    secretKey: username
+  var3:
+    name: MARIADB_ROOT_PASSWORD
+    secretName: db-full-auth
+    secretKey: password

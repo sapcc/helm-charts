@@ -1,0 +1,36 @@
+{{- range $serviceKey, $serviceValue := $.Values.services }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: {{ $.Release.Namespace }}
+  name: {{ $.Release.Name }}-{{ $serviceValue.name }}
+  annotations:
+    loadbalancer.openstack.org/keep-floatingip: "false"
+    {{- if (hasKey $.Values "OpenstackSubnetId") }}
+    loadbalancer.openstack.org/subnet-id: {{ $.Values.OpenstackSubnetId }}
+    {{- end }}
+    {{- if (hasKey $.Values "OpenstackFloatingNetworkId") }}
+    loadbalancer.openstack.org/floating-network-id: {{ $.Values.OpenstackFloatingNetworkId }}
+    {{- end }}
+    {{- if (hasKey $.Values "OpenstackFloatingSubnetId") }}
+    loadbalancer.openstack.org/floating-subnet-id: {{ $.Values.OpenstackFloatingSubnetId }}
+    {{- end }}
+  labels:
+    app: {{ $.Release.Name }}
+spec:
+  type: {{ required "the network service type has to be defined" $serviceValue.type }}
+  {{- if $serviceValue.clusterIP }}
+  clusterIP: {{ $serviceValue.clusterIP }}
+  {{- end }}
+  selector:
+    app: {{ $.Release.Name }}
+  ports:
+  {{- range $portKey, $portValue := $serviceValue.ports }}
+    - name: {{ $portValue.name }}
+      port: {{ $portValue.port }}
+      targetPort: {{ $portValue.targetPort }}
+      protocol: {{ $portValue.protocol | default "TCP" }}
+  {{- end }}
+  sessionAffinity: {{ $serviceValue.sessionAffinity | default None | quote }}
+{{- end }}

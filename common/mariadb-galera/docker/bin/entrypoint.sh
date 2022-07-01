@@ -157,11 +157,15 @@ function upgradedb {
 }
 
 function startdb {
-  loginfo "starting mariadbd process"
-  mariadbd --defaults-file=${BASE}/etc/my.cnf --basedir=/usr --skip-log-error
-  if [ $? -ne 0 ]; then
-    logerror "mariadbd startup failed"
-    exit 1
+  if [ -f "${BASE}/bin/entrypoint-galera.sh" ]; then
+    source ${BASE}/bin/entrypoint-galera.sh
+  else
+    loginfo "starting mariadbd process"
+    mariadbd --defaults-file=${BASE}/etc/my.cnf --basedir=/usr --skip-log-error
+    if [ $? -ne 0 ]; then
+      logerror "mariadbd startup failed"
+      exit 1
+    fi
   fi
 }
 
@@ -193,7 +197,7 @@ function startmaintenancedb {
   for (( int=${MAX_RETRIES}; int >=1; int-=1));
     do
     loginfo "check if mariadbd is usable for maintenance(${int} retries left)"
-    mysql --defaults-file=/opt/mariadb/etc/my.cnf -u root -h localhost --database=mysql --execute='STATUS;' | grep 'Server version:' | grep --silent "${SOFTWARE_VERSION}"
+    mysql --defaults-file=${BASE}/etc/my.cnf -u root -h localhost --database=mysql --execute='STATUS;' | grep 'Server version:' | grep --silent "${SOFTWARE_VERSION}"
     if [ $? -ne 0 ]; then
       logerror "mariadbd check failed"
       sleep ${WAIT_SECONDS}
