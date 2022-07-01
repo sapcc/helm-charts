@@ -47,10 +47,20 @@ db_name: barbican
 postgresql:
   enabled: false
 
+proxysql:
+  mode: "" # Cannot use unix_socket, as migration-job is a helm-hook which runs prior to the configmap creation/update
+
 mariadb:
   enabled: true
   name: barbican
   initdb_configmap: barbican-initdb
+  databases:
+  - barbican
+  users:
+    barbican:
+      name: barbican
+      grants:
+      - "ALL PRIVILEGES on barbican.*"
   persistence_claim:
     name: db-barbican-pvclaim
   backup_v2:
