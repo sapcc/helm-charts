@@ -8,7 +8,9 @@ Docker image and Helm chart to deploy a [MariaDB](https://mariadb.com/kb/en/gett
 * [MariaDB automation](https://mariadb.com/kb/en/automated-mariadb-deployment-and-administration/)
 * [Galera cluster description](https://mariadb.com/kb/en/what-is-mariadb-galera-cluster/)
 
-## Build the Docker image
+## Docker image
+
+### build the image
 
 | build argument | description |
 |:--------------|:-------------|
@@ -25,3 +27,17 @@ Docker image and Helm chart to deploy a [MariaDB](https://mariadb.com/kb/en/gett
 ```bash
 docker build --build-arg BASE_REGISTRY=keppel.eu-nl-1.cloud.sap --build-arg BASE_ACCOUNT=octobus --build-arg BASE_SOFT_NAME=ubuntu --build-arg BASE_SOFT_VERSION=20.04 --build-arg BASE_IMG_VERSION=0.3.59 --build-arg SOFT_NAME=mariadb --build-arg SOFT_VERSION=10.5.13 --build-arg IMG_VERSION=0.0.2 --build-arg GALERA_VERSION=26.4.8 -t keppel.eu-nl-1.cloud.sap/octobus/mariadb-galera:10.5.13-0.0.2 -f docker/Dockerfile ./docker/
 ```
+
+## Helm chart
+
+### render the chart templates
+
+* `helm template mariadb-galera helm --namespace database`
+
+### deploy the chart
+
+* `helm upgrade --install --create-namespace --namespace database mariadb-galera helm`
+
+### remove the deployed release
+
+* `helm uninstall --namespace database mariadb-galera`

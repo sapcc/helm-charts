@@ -68,7 +68,7 @@ spec:
       initContainers:
       - name: sysctl-tcp-keepalive
         image: "{{ $.Values.image.os.registry }}/{{ $.Values.image.os.project }}/{{ $.Values.image.os.applicationname }}:{{ $.Values.image.os.applicationversion }}-{{ $.Values.image.os.imageversion }}"
-        imagePullPolicy: {{ $.Values.image.os.pullPolicy | default IfNotPresent | quote }}
+        imagePullPolicy: {{ $.Values.image.os.pullPolicy | default "IfNotPresent" | quote }}
         command:
         - sh
         - -c
@@ -78,7 +78,7 @@ spec:
           runAsUser: {{ $.Values.initContainers.tcpKeepAlive.securityContext.runAsUser }}
       - name: increase-map-count
         image: "{{ $.Values.image.os.registry }}/{{ $.Values.image.os.project }}/{{ $.Values.image.os.applicationname }}:{{ $.Values.image.os.applicationversion }}-{{ $.Values.image.os.imageversion }}"
-        imagePullPolicy: {{ $.Values.image.os.pullPolicy | default IfNotPresent | quote }}
+        imagePullPolicy: {{ $.Values.image.os.pullPolicy | default "IfNotPresent" | quote }}
         command:
         - sh
         - -c
@@ -89,7 +89,7 @@ spec:
       containers:
       - name: {{ $.Release.Name }}
         image: "{{ $.Values.image.application.registry }}/{{ $.Values.image.application.project }}/{{ $.Values.image.application.applicationname }}:{{ $.Values.image.application.applicationversion }}-{{ $.Values.image.application.imageversion }}"
-        imagePullPolicy: {{ $.Values.image.application.pullPolicy | default IfNotPresent | quote }}
+        imagePullPolicy: {{ $.Values.image.application.pullPolicy | default "IfNotPresent" | quote }}
         securityContext:
            capabilities:
                add:
@@ -155,7 +155,7 @@ spec:
           requests:
             cpu: {{ $.Values.resourceLimits.cpu | default 0.5 }}
           limits:
-            memory: {{ $.Values.resourceLimits.memory | default 64Mi }}
+            memory: {{ $.Values.resourceLimits.memory | default "64Mi" | quote }}
         ports:
           {{- range $servicesKey, $servicesValue := $.Values.services }}
             {{- if eq $servicesValue.name "be"}}
@@ -190,11 +190,11 @@ spec:
               - -c
               - '/opt/mariadb/bin/readiness.sh'
           {{- if $.Values.readinessProbe }}
-          {{ if $.Values.readinessProbe.initialDelaySeconds }} {{- (printf "initialDelaySeconds: %d" (int64 $.Values.readinessProbe.initialDelaySeconds)) }} {{ else }}initialDelaySeconds: 90 {{end}}
-          {{ if $.Values.readinessProbe.periodSeconds }} {{- (printf "periodSeconds: %d" (int64 $.Values.readinessProbe.periodSeconds)) }} {{ else }}periodSeconds: 20 {{end}}
-          {{ if $.Values.readinessProbe.successThreshold }} {{- (printf "successThreshold: %d" (int64 $.Values.readinessProbe.successThreshold)) }} {{ else }}successThreshold: 1 {{end}}
-          {{ if $.Values.readinessProbe.failureThreshold }} {{- (printf "failureThreshold: %d" (int64 $.Values.readinessProbe.failureThreshold)) }} {{ else }}failureThreshold: 3 {{end}}
-          {{ if $.Values.readinessProbe.timeoutSeconds }} {{- (printf "timeoutSeconds: %d" (int64 $.Values.readinessProbe.timeoutSeconds)) }} {{ else }}timeoutSeconds: 10 {{end}}
+          {{ if $.Values.readinessProbe.initialDelaySeconds }} {{- (printf "initialDelaySeconds: %d" (int64 $.Values.readinessProbe.initialDelaySeconds)) }} {{ else }}initialDelaySeconds: 90 {{ end }}
+          {{ if $.Values.readinessProbe.periodSeconds }} {{- (printf "periodSeconds: %d" (int64 $.Values.readinessProbe.periodSeconds)) }} {{ else }}periodSeconds: 20 {{ end }}
+          {{ if $.Values.readinessProbe.successThreshold }} {{- (printf "successThreshold: %d" (int64 $.Values.readinessProbe.successThreshold)) }} {{ else }}successThreshold: 1 {{ end }}
+          {{ if $.Values.readinessProbe.failureThreshold }} {{- (printf "failureThreshold: %d" (int64 $.Values.readinessProbe.failureThreshold)) }} {{ else }}failureThreshold: 3 {{ end }}
+          {{ if $.Values.readinessProbe.timeoutSeconds }} {{- (printf "timeoutSeconds: %d" (int64 $.Values.readinessProbe.timeoutSeconds)) }} {{ else }}timeoutSeconds: 10 {{ end }}
           {{- else }}
           initialDelaySeconds: 90
           periodSeconds: 20
@@ -216,78 +216,80 @@ spec:
                 - -c
                 - '/opt/mariadb/bin/post-start-hook.sh'
         volumeMounts:
+          {{- range $volumeMountsKey, $volumeMountsValue := $.Values.volumeMounts }}
+            {{- if (hasKey $volumeMountsValue "claimName") }}
+              {{- range $volumeClaimTemplatesKey, $volumeClaimTemplatesValue := $.Values.volumeClaimTemplates }}
+          - name: {{ $volumeMountsValue.name }}-{{ $volumeMountsValue.claimName | lower }}
+            mountPath: {{ $volumeMountsValue.mountPath }}
+                {{- if $volumeMountsValue.readOnly }}
+            readOnly: {{ $volumeMountsValue.readOnly }}
+                {{- end }}
+              {{- end }}
+            {{- else }}
+          - name: {{ $volumeMountsValue.name | lower }}
+            mountPath: {{ $volumeMountsValue.mountPath }}
+              {{- if $volumeMountsValue.readOnly }}
+            readOnly: {{ $volumeMountsValue.readOnly }}
+              {{- end }}
+            {{- end }}
+          {{- end }}
+          - name: my-cnf
+            mountPath: /opt/mariadb/etc/conf.d/my.cnf
+            subPath: my.cnf
+            readOnly: true
+          - name: entrypoint-sh
+            mountPath: /opt/mariadb/bin/entrypoint-galera.sh
+            subPath: entrypoint-galera.sh
+            readOnly: true
+          - name: checks-sh
+            mountPath: /opt/mariadb/bin/liveness.sh
+            subPath: liveness.sh
+            readOnly: true
+          - name: checks-sh
+            mountPath: /opt/mariadb/bin/readiness.sh
+            subPath: readiness.sh
+            readOnly: true
+          - name: hooks-sh
+            mountPath: /opt/mariadb/bin/pre-stop-hook.sh
+            subPath: pre-stop-hook.sh
+            readOnly: true
+          - name: hooks-sh
+            mountPath: /opt/mariadb/bin/post-start-hook.sh
+            subPath: post-start-hook.sh
+            readOnly: true
+      terminationGracePeriodSeconds: {{ $.Values.terminationGracePeriodSeconds | default 86400 }}
+      volumes:
         {{- range $volumeMountsKey, $volumeMountsValue := $.Values.volumeMounts }}
-          {{- if (hasKey $volumeMountsValue "claimName") }}
-            {{- range $volumeClaimTemplatesKey, $volumeClaimTemplatesValue := $.Values.volumeClaimTemplates }}
-        - name: {{ $volumeMountsValue.name }}-{{ $volumeMountsValue.claimName | lower }}
-          mountPath: {{ $volumeMountsValue.mountPath }}
-                      {{- if $volumeMountsValue.readOnly }}
-          readOnly: {{ $volumeMountsValue.readOnly }}
-                      {{- end }}
-                    {{- end }}
-                  {{- end }}
-                {{- else }}
-        - name: {{ $volumeMountsValue.name | lower }}
-          mountPath: {{ $volumeMountsValue.mountPath }}
-                  {{- if $volumeMountsValue.readOnly }}
-          readOnly: {{ $volumeMountsValue.readOnly }}
-                  {{- end }}
+          {{- if $volumeMountsValue.type }}
+            {{- if ne $volumeMountsValue.type "persistentVolume" }}
+        - name: {{ $volumeMountsValue.name }}
+              {{- if eq $volumeMountsValue.type "secret"}}
+          {{ $volumeMountsValue.type }}:
+            secretName: {{ $.Release.Name }}-{{ $volumeMountsValue.name }}
+              {{- else if eq $volumeMountsValue.type "hostPath" }}
+          {{ $volumeMountsValue.type }}:
+            path: {{ $volumeMountsValue.hostPath }}
+              {{- else }}
+            name: {{ $volumeMountsValue.name }}
+              {{- end }}
             {{- end }}
           {{- end }}
         {{- end }}
         - name: my-cnf
-          mountPath: /opt/mariadb/etc/conf.d/my.cnf
-          subPath: my.cnf
-          readOnly: true
+          configMap:
+            name: my-cnf
         - name: entrypoint-sh
-          mountPath: /opt/mariadb/bin/entrypoint-galera.sh
-          subPath: entrypoint-galera.sh
-          readOnly: true
+          configMap:
+            name: entrypoint-sh
+            defaultMode: 0755
         - name: checks-sh
-          mountPath: /opt/mariadb/bin/liveness.sh
-          subPath: liveness.sh
-          readOnly: true
+          configMap:
+            name: checks-sh
+            defaultMode: 0755
         - name: hooks-sh
-          mountPath: /opt/mariadb/bin/pre-stop-hook.sh
-          subPath: pre-stop-hook.sh
-          readOnly: true
-        - name: hooks-sh
-          mountPath: /opt/mariadb/bin/post-start-hook.sh
-          subPath: post-start-hook.sh
-          readOnly: true
-      terminationGracePeriodSeconds: {{ $.Values.terminationGracePeriodSeconds | default 86400 }}
-      volumes:
-      {{- range $volumeMountsKey, $volumeMountsValue := $.Values.volumeMounts }}
-        {{- if $volumeMountsValue.type }}
-          {{- if ne $volumeMountsValue.type "persistentVolume" }}
-      - name: {{ $volumeMountsValue.name }}
-            {{- if eq $volumeMountsValue.type "secret"}}
-        {{ $volumeMountsValue.type }}:
-          secretName: {{ $.Release.Name }}-{{ $volumeMountsValue.name }}
-            {{- else if eq $volumeMountsValue.type "hostPath" }}
-        {{ $volumeMountsValue.type }}:
-          path: {{ $volumeMountsValue.hostPath }}
-            {{- end }}
-          {{- else }}
-          name: {{ $volumeMountsValue.name }}
-          {{- end }}
-        {{- end }}
-      {{- end }}
-      - name: my-cnf
-        configMap:
-          name: my-cnf
-      - name: entrypoint-sh
-        configMap:
-          name: entrypoint-sh
-          defaultMode: 0755
-      - name: checks-sh
-        configMap:
-          name: checks-sh
-          defaultMode: 0755
-      - name: hooks-sh
-        configMap:
-          name: hooks-sh
-          defaultMode: 0755
+          configMap:
+            name: hooks-sh
+            defaultMode: 0755
   volumeClaimTemplates:
   {{- range $volumeClaimTemplatesKey, $volumeClaimTemplatesValue := $.Values.volumeClaimTemplates }}
     {{- range $volumeMountsKey, $volumeMountsValue := $.Values.volumeMounts }}

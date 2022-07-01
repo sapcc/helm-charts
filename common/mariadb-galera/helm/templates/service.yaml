@@ -6,12 +6,12 @@ metadata:
   namespace: {{ $.Release.Namespace }}
   name: {{ $.Release.Name }}-{{ $serviceValue.name }}
   annotations:
+    {{- if (hasKey $.Values "OpenstackFloatingNetworkId") }}
     loadbalancer.openstack.org/keep-floatingip: "false"
+    loadbalancer.openstack.org/floating-network-id: {{ $.Values.OpenstackFloatingNetworkId }}
+    {{- end }}
     {{- if (hasKey $.Values "OpenstackSubnetId") }}
     loadbalancer.openstack.org/subnet-id: {{ $.Values.OpenstackSubnetId }}
-    {{- end }}
-    {{- if (hasKey $.Values "OpenstackFloatingNetworkId") }}
-    loadbalancer.openstack.org/floating-network-id: {{ $.Values.OpenstackFloatingNetworkId }}
     {{- end }}
     {{- if (hasKey $.Values "OpenstackFloatingSubnetId") }}
     loadbalancer.openstack.org/floating-subnet-id: {{ $.Values.OpenstackFloatingSubnetId }}
@@ -32,5 +32,5 @@ spec:
       targetPort: {{ $portValue.targetPort }}
       protocol: {{ $portValue.protocol | default "TCP" }}
   {{- end }}
-  sessionAffinity: {{ $serviceValue.sessionAffinity | default None | quote }}
+  sessionAffinity: {{ $serviceValue.sessionAffinity | default "None" | quote }}
 {{- end }}
