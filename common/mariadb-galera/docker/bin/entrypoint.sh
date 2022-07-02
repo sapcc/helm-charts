@@ -130,7 +130,7 @@ function upgradedbifrequired {
     upgradedb
     stopdb
   else
-    IFS=".-" MARIADB_OLDVERSION=($(echo$(cat ${DATADIR}/mysql_upgrade_info)))
+    IFS="- " read -ra MARIADB_OLDVERSION < /opt/mariadb/data/mysql_upgrade_info
     IFS="${oldIFS}"
 
     # if SOFTWARE_VERSION (left side) is bigger than MARIADB_OLDVERSION (right side) sort will return 1
@@ -161,7 +161,7 @@ function startdb {
     source ${BASE}/bin/entrypoint-galera.sh
   else
     loginfo "starting mariadbd process"
-    mariadbd --defaults-file=${BASE}/etc/my.cnf --basedir=/usr --skip-log-error
+    exec mariadbd --defaults-file=${BASE}/etc/my.cnf --basedir=/usr --skip-log-error
     if [ $? -ne 0 ]; then
       logerror "mariadbd startup failed"
       exit 1
@@ -218,12 +218,12 @@ function stopdb {
   for (( int=${MAX_RETRIES}; int >=1; int-=1));
     do
     loginfo "stop mariadbd process with pid ${MARIADBD_PID}(${int} retries left)"
-    kill -s TERM ${MARIADBD_PID}
+    kill ${MARIADBD_PID}
     if [ $? -ne 0 ]; then
       logerror "mariadbd stop has been failed"
       sleep ${WAIT_SECONDS}
     fi
-    ps --no-headers --pid ${MARIADBD_PID} | grep --silent mariadbd
+    wait ${MARIADBD_PID}
     if [ $? -eq 0 ]; then
       break
     fi

@@ -23,8 +23,8 @@ image:
     project: octobus
     applicationname: mariadb-galera
     applicationversion: 10.5.13
-    imageversion: 0.0.2
-    pullPolicy: IfNotPresent
+    imageversion: 0.0.3
+    pullPolicy: Always
     pullSecret: null
 
 initContainers:
@@ -41,7 +41,7 @@ initContainers:
 services:
   - name: be
     type: ClusterIP
-    clusterIP: None
+    #ClusterIP: none # headless service
     ports:
       - name: galera
         port: 4567
@@ -93,12 +93,7 @@ UpdateStrategy: RollingUpdate
 podManagementPolicy: Parallel
 revisionHistoryLimit: 3
 terminationGracePeriodSeconds: 86400
-
-# Container Lifecycle hooks
-lifecycleHooks:
-  maxtime: 60
-  maxtime_flush: 600
-  maxtries: 15
+regional: false
 
 #Container Health Checks
 livenessProbe:
