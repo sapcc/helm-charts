@@ -305,11 +305,12 @@
   </parse>
 </filter>
 
-<filter kubernetes.var.log.containers.elk-k8s-event-exporter.**>
+<filter kubernetes.var.log.containers.elk-k8s-event-exporter**>
   @type parser
   @id json_parser
   key_name log
   reserve_data true
+  inject_key_prefix k8s.
   remove_key_name_field true
   <parse>
     @type json
