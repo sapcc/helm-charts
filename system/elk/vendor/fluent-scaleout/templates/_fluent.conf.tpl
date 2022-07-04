@@ -31,6 +31,7 @@
   tag kubernetes.*
   format json
   keep_time_key true
+  open_on_every_update true
 </source>
 
 <match fluent.**>
