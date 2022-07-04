@@ -201,14 +201,15 @@ checksum/object.ring: {{ include "swift/templates/object-ring.yaml" . | sha256su
 - name: statsd
   image: {{ $context.Values.global.dockerHubMirrorAlternateRegion }}/prom/statsd-exporter:{{ $context.Values.image_version_auxiliary_statsd_exporter }}
   args: [ --statsd.mapping-config=/swift-etc/statsd-exporter.yaml ]
+  {{- $resources_cpu := index $context.Values "proxy_statsd_exporter_resources_cpu" }}
+  {{- $resources_memory := index $context.Values "proxy_statsd_exporter_resources_memory" }}
   resources:
-    # observed usage: CPU = 10m-100m, RAM = 550-950 MiB
     requests:
-      cpu: "200m"
-      memory: "1024Mi"
+      cpu: {{ required "proxy_statsd_exporter_resources_cpu is required" $resources_cpu | quote }}
+      memory: {{ required "proxy_statsd_exporter_resources_memory is required" $resources_memory | quote }}
     limits:
-      cpu: "200m"
-      memory: "1024Mi"
+      cpu: {{ required "proxy_statsd_exporter_resources_cpu is required" $resources_cpu | quote }}
+      memory: {{ required "proxy_statsd_exporter_resources_memory is required" $resources_memory | quote }}
   ports:
     - name: statsd
       containerPort: 9125
