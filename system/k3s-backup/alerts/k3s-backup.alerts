@@ -1,11 +1,8 @@
 groups:
 - name: k3s-backup.alerts
   rules:
-
-    ### k3s-backup ###
-
     - alert: K3sAwsBackupTooOld
-      expr: (time() - s3_last_modified_object_date) / 3600 > 24
+      expr: (time() - s3_last_modified_object_date{job="k3s-backup-s3-exporter"}) / 3600 > 24
       for: 5m
       labels:
         tier: k8s
@@ -16,3 +13,17 @@ groups:
       annotations:
         description: The modification date of the most recently modified object on S3 bucket `{{ $labels.bucket }}` is more than 24 hours. No recent k3s backup available!
         summary: k3s backup is too old.
+
+  rules:
+    - alert: K3sStateDbAwsBackupTooOld
+      expr: (time() - s3_last_modified_object_date{job="k3s-statedb-s3-exporter"}) / 3600 > 1
+      for: 5m
+      labels:
+        tier: k8s
+        service: k3s-backup
+        severity: info
+        context: k3s-backup
+        playbook: "docs/support/playbook/kubernetes/k3s_alerts.html"
+      annotations:
+        description: The modification date of the most recently modified object on S3 bucket `{{ $labels.bucket }}` is more than 1 hour. No recent k3s statedb backup available!
+        summary: k3s statebd backup (Litestream) is too old.
