@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -exuo pipefail
+set -euo pipefail
 
 LOCKFILE=/var/lib/rabbitmq/rabbitmq-server.lock
 echo "Starting RabbitMQ with lock ${LOCKFILE}"
