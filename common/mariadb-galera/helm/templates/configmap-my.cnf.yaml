@@ -5,4 +5,32 @@ metadata:
   name: my-cnf
   namespace: {{ $.Release.Namespace }}
 data:
-  my.cnf: |-
+  my.cnf.tpl: |-
+    [mariadb]
+    # https://mariadb.com/kb/en/galera-cluster-system-variables/
+    wsrep-provider=/usr/lib/libgalera_smm.so
+    binlog_format=ROW
+    log-bin=/opt/mariadb/data/mysql-bin.log
+    expire_logs_days=1
+    default_storage_engine=InnoDB
+    innodb_autoinc_lock_mode=2
+    {{- range $envKey, $envValue := $.Values.env }}
+      {{- if eq $envValue.name "MARIADB_CLUSTER_NAME"}}
+    wsrep-cluster-name={{ $envValue.value }}
+      {{- end }}
+    {{- end }}
+    {{- range $servicesKey, $servicesValue := $.Values.services }}
+      {{- if eq $servicesValue.name "be"}}
+        {{- range $portsKey, $portsValue := $servicesValue.ports }}
+          {{- if eq $portsValue.name "galera"}}
+    wsrep_cluster_address={{ (printf "gcomm://%s-be.%s.svc.cluster.local:%d" $.Release.Name $.Release.Namespace ($portsValue.port | int)) }}
+          {{- else if eq $portsValue.name "ist" }}
+    wsrep_provider_options={{ (printf "ist.recv_addr=${CONTAINER_IP}:%d" ($portsValue.port | int)) }}
+          {{- else if eq $portsValue.name "sst" }}
+    wsrep-sst-receive-address={{ (printf "${CONTAINER_IP}:%d" ($portsValue.port | int)) }}
+          {{- end }}
+        {{- end }}
+      {{- end }}
+    {{- end }}
+    wsrep-on=1
+    wsrep-restart-slave=1

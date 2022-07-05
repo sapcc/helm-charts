@@ -7,6 +7,8 @@ Docker image and Helm chart to deploy a [MariaDB](https://mariadb.com/kb/en/gett
 * [MariaDB install packages](https://mariadb.org/download/?t=repo-config&d=20.04+%22focal%22&v=10.5&r_m=hs-esslingen)
 * [MariaDB automation](https://mariadb.com/kb/en/automated-mariadb-deployment-and-administration/)
 * [Galera cluster description](https://mariadb.com/kb/en/what-is-mariadb-galera-cluster/)
+* [Galera getting started](https://mariadb.com/kb/en/getting-started-with-mariadb-galera-cluster/)
+* [Galera monitoring](https://galeracluster.com/library/documentation/monitoring-cluster.html)
 
 ## Docker image
 
@@ -25,7 +27,7 @@ Docker image and Helm chart to deploy a [MariaDB](https://mariadb.com/kb/en/gett
 | GALERA_VERSION  | Galera software version that should be packaged into the image |
 
 ```bash
-docker build --build-arg BASE_REGISTRY=keppel.eu-nl-1.cloud.sap --build-arg BASE_ACCOUNT=octobus --build-arg BASE_SOFT_NAME=ubuntu --build-arg BASE_SOFT_VERSION=20.04 --build-arg BASE_IMG_VERSION=0.3.59 --build-arg SOFT_NAME=mariadb --build-arg SOFT_VERSION=10.5.13 --build-arg IMG_VERSION=0.0.2 --build-arg GALERA_VERSION=26.4.8 -t keppel.eu-nl-1.cloud.sap/octobus/mariadb-galera:10.5.13-0.0.2 -f docker/Dockerfile ./docker/
+docker build --build-arg BASE_REGISTRY=keppel.eu-nl-1.cloud.sap --build-arg BASE_ACCOUNT=octobus --build-arg BASE_SOFT_NAME=ubuntu --build-arg BASE_SOFT_VERSION=20.04 --build-arg BASE_IMG_VERSION=0.3.59 --build-arg SOFT_NAME=mariadb --build-arg SOFT_VERSION=10.5.13 --build-arg IMG_VERSION=0.0.4 --build-arg GALERA_VERSION=26.4.8 -t keppel.eu-nl-1.cloud.sap/octobus/mariadb-galera:10.5.13-0.0.4 -f docker/Dockerfile ./docker/
 ```
 
 ## Helm chart

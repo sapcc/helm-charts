@@ -14,6 +14,11 @@ data:
     set -o pipefail
     set +x
 
+    BASE=/opt/${SOFTWARE_NAME}
+    DATADIR=${BASE}/data
+    MAX_RETRIES=10
+    WAIT_SECONDS=6
+
     function logjson {
       printf "{\"@timestamp\":\"%s\",\"ecs.version\":\"1.6.0\",\"log.level\":\"%s\",\"message\":\"%s\"}\n" "$(date +%Y.%m.%d-%H:%M:%S-%Z)" "$2" "$3" >>/dev/"$1"
     }
@@ -26,13 +31,64 @@ data:
       logjson  "stderr" "error" "$1"
     }
 
-    function startdb {
-      loginfo "starting mariadbd process"
+    function templateconfig {
+      local int
+      for (( int=${MAX_RETRIES}; int >=1; int-=1));
+        do
+        loginfo "template MariaDB configurations (${int} retries left)"
+        cat ${BASE}/etc/conf.d/my.cnf.tpl | envsubst > ${BASE}/etc/conf.d/my.cnf
+        if [ $? -ne 0 ]; then
+          logerror "${BASE}/etc/conf.d/my.cnf.tpl rendering has been failed"
+          sleep ${WAIT_SECONDS}
+        else
+          break
+        fi
+      done
+      if [ ${int} = 0 ]; then
+        logerror "template MariaDB configurations has been finally failed"
+        exit 1
+      fi
+      loginfo "template MariaDB configurations done"
+    }
+
+    function initgalera {
+      if [ ${HOSTNAME} == "{{ $.Release.Name }}-0" ]; then
+        if [ -f ${DATADIR}/grastate.dat && -s ${DATADIR}/grastate.dat ]; then
+          loginfo "init Galera cluster configuration already done"
+          startgaleradb
+        else
+          local int
+          for (( int=${MAX_RETRIES}; int >=1; int-=1));
+            do
+            loginfo "init Galera cluster (${int} retries left)"
+            exec mariadbd --defaults-file=${BASE}/etc/my.cnf --basedir=/usr --wsrep-new-cluster
+            if [ $? -ne 0 ]; then
+              logerror "init Galera cluster has been failed"
+              sleep ${WAIT_SECONDS}
+            else
+              break
+            fi
+          done
+          if [ ${int} = 0 ]; then
+            logerror "init Galera cluster has been finally failed"
+            exit 1
+          fi
+          loginfo "init Galera cluster configurations done"
+        fi
+      else
+        loginfo "Galera cluster init will only be done on the first node"
+        startgaleradb
+      fi
+    }
+
+    function startgaleradb {
+      loginfo "starting mariadbd galera process"
       exec mariadbd --defaults-file=${BASE}/etc/my.cnf --basedir=/usr --skip-log-error
       if [ $? -ne 0 ]; then
-        logerror "mariadbd startup failed"
+        logerror "mariadbd galera startup failed"
         exit 1
       fi
     }
 
-    startdb
+    templateconfig
+    initgalera

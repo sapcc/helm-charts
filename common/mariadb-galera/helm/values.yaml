@@ -23,7 +23,7 @@ image:
     project: octobus
     applicationname: mariadb-galera
     applicationversion: 10.5.13
-    imageversion: 0.0.3
+    imageversion: 0.0.4
     pullPolicy: Always
     pullSecret: null
 
@@ -41,15 +41,25 @@ initContainers:
 services:
   - name: be
     type: ClusterIP
-    #ClusterIP: none # headless service
+    headless: true
+    #https://mariadb.com/kb/en/configuring-mariadb-galera-cluster/#network-ports
     ports:
       - name: galera
         port: 4567
         targetPort: 4567
         protocol: TCP
+      - name: ist #http://galeracluster.com/library/documentation/galera-parameters.html#ist-recv-addr
+        port: 4568
+        targetPort: 4568
+        protocol: TCP
+      - name: sst #https://mariadb.com/kb/en/introduction-to-state-snapshot-transfers-ssts/
+        port: 4444
+        targetPort: 4444
+        protocol: TCP
     sessionAffinity: None
   - name: fe
     type: ClusterIP
+    headless: false
     ports:
       - name: mysql
         port: 3306
@@ -97,13 +107,12 @@ regional: false
 
 #Container Health Checks
 livenessProbe:
-  port: mysql
-  initialDelaySeconds: 30
+  initialDelaySeconds: 45
   periodSeconds: 30
   failureThreshold: 4
   timeoutSeconds: 20
 readinessProbe:
-  initialDelaySeconds: 45
+  initialDelaySeconds: 60
   periodSeconds: 20
   successThreshold: 1
   failureThreshold: 3

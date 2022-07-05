@@ -39,7 +39,6 @@ function initdb {
   # check if the data folder already contains database structures
   if [ -d "${BASE}/data/mysql" ]; then
     loginfo "Database structures already exist"
-    return
   else
     /usr/bin/mariadb-install-db --defaults-file=${BASE}/etc/my.cnf --basedir=/usr \
     --auth-root-authentication-method=normal \
@@ -123,7 +122,7 @@ function setuptimezoneinfo {
   loginfo "timezone info setup done"
 }
 
-function upgradedbifrequired {
+function checkupgradedb {
   if [ ! -f ${DATADIR}/mysql_upgrade_info ]; then
     loginfo "MariaDB upgrade information missing, assuming required"
     startmaintenancedb
@@ -237,5 +236,5 @@ function stopdb {
 
 checkenv
 initdb
-upgradedbifrequired
+checkupgradedb
 startdb
