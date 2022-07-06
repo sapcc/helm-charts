@@ -1,6 +1,6 @@
-{{- if .Values.cronus.deployment.enabled }}
+{{- if .Values.cronus.statefulSet.enabled }}
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
   name: cronus
   {{- if .Values.cronus.annotations }}
@@ -12,13 +12,10 @@ metadata:
     {{ toYaml .Values.cronus.labels | indent 4 }}
   {{- end }}
 spec:
-  replicas: {{ .Values.cronus.replicas | default .Values.cronus.deployment.replicas }}
-  strategy:
-{{- if eq "RollingUpdate" .Values.cronus.updateStrategy }}
-    rollingUpdate:
-      maxSurge: {{ .Values.cronus.maxSurge }}
-      maxUnavailable: {{ .Values.cronus.maxUnavailable }}
-{{- end }}
+  replicas: {{ .Values.cronus.statefulSet.replicas }}
+  podManagementPolicy: {{ .Values.cronus.statefulSet.podManagementPolicy }}
+  serviceName: cronus
+  updateStrategy:
     type: {{ .Values.cronus.updateStrategy }}
   selector:
     matchLabels:
@@ -77,11 +74,14 @@ spec:
           secret:
             secretName: cronus
 {{- if or .Values.cronus.fileBufferPath .Values.global.fileBufferPath }}
-        - name: cronus-file-buffer
-          persistentVolumeClaim:
-            claimName: cronus-file-buffer
-          {{- if and (gt (int .Values.cronus.replicas | default .Values.cronus.deployment.replicas) 1) }}
-            {{- fail "Persistence doesn't work with kind Deployment, and more than one replica" }}
-          {{- end }}
+  volumeClaimTemplates:
+  - metadata:
+      name: cronus-file-buffer
+    spec:
+      accessModes:
+        - ReadWriteOnce
+      resources:
+        requests:
+          storage: 1024Gi
 {{- end }}
 {{- end -}}
