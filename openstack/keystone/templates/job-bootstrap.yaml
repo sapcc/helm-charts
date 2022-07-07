@@ -30,6 +30,7 @@ spec:
       serviceAccountName: {{ .Release.Name }}
 {{- end }}
       restartPolicy: OnFailure
+      {{- include "utils.proxysql.job_pod_settings" . | indent 6 }}
       containers:
         - name: keystone-bootstrap
           image: {{ required ".Values.global.registryAlternateRegion is missing" .Values.global.registryAlternateRegion }}/{{ .Values.api.image }}:{{ .Values.api.imageTag }}
@@ -91,6 +92,8 @@ spec:
             - name: keystone-bin
               mountPath: /scripts
               readOnly: true
+            {{- include "utils.proxysql.volume_mount" . | indent 12 }}
+        {{- include "utils.proxysql.container" . | indent 8 }}
       volumes:
         - name: etc-keystone
           emptyDir: {}
@@ -110,5 +113,5 @@ spec:
           secret:
             secretName: keystone-credential-keys
             defaultMode: 0555
-
+        {{- include "utils.proxysql.volumes" . | indent 8 }}
 {{ end -}}
