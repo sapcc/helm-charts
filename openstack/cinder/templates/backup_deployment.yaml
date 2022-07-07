@@ -5,11 +5,14 @@ metadata:
   name: 'vcenter-datacenter-cinder-backup-deployment'
 options:
   scope: 'datacenter'
-template: |{{`
+  jinja2_options:
+    variable_start_string: '{='
+    variable_end_string: '=}'
+template: |
   kind: Deployment
   apiVersion: apps/v1
   metadata:
-    name: cinder-volume-backup-vmware-{{ name }}
+    name: cinder-volume-backup-vmware-{= name =}
     labels:
       system: openstack
       type: backend
@@ -24,18 +27,18 @@ template: |{{`
         maxSurge: 1
     selector:
       matchLabels:
-          name: cinder-volume-backup-vmware-{{ name }}
+          name: cinder-volume-backup-vmware-{= name =}
     template:
       metadata:
         labels:
-          name: cinder-volume-backup-vmware-{{ name }}
+          name: cinder-volume-backup-vmware-{= name =}
 {{ tuple . "cinder" "volume-backup-vmware" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 10 }}
       spec:
-        hostname: cinder-volume-backup-vmware-{{ name }}
+        hostname: cinder-volume-backup-vmware-{= name =}
         containers:
-        - name: cinder-volume-backup-vmware-{{ name }}
-          image: `}}{{required ".Values.global.registry is missing" .Values.global.registry}}/loci-cinder:{{.Values.imageVersionCinderVolumeBackup | default .Values.imageVersion | required "Please set cinder.imageVersion or similar" }}{{`
-          imagePullPolicy: `}}{{ required ".Values.global.imagePullPolicy is missing" .Values.global.imagePullPolicy }}{{`
+        - name: cinder-volume-backup-vmware-{= name =}
+          image: {{required ".Values.global.registry is missing" .Values.global.registry}}/loci-cinder:{{.Values.imageVersionCinderVolumeBackup | default .Values.imageVersion | required "Please set cinder.imageVersion or similar" }}
+          imagePullPolicy: {{ required ".Values.global.imagePullPolicy is missing" .Values.global.imagePullPolicy }}
           securityContext:
             capabilities:
               add: ["SYS_ADMIN"]
@@ -46,13 +49,13 @@ template: |{{`
           - name: COMMAND
             value: 'cinder-backup'
           - name: NAMESPACE
-            value: {{ namespace }}
+            value: {= namespace =}
           - name: SENTRY_DSN
-            value: `}}{{ .Values.sentry_dsn | quote }}{{`
+            value: {{ .Values.sentry_dsn | quote }}
           - name: PYTHONWARNINGS
             value: 'ignore:Unverified HTTPS request'
           - name: PGAPPNAME
-            value: cinder-volume-backup-vmware-{{ name }}
+            value: cinder-volume-backup-vmware-{= name =}
           livenessProbe:
             exec:
               command: ["openstack-agent-liveness", "--component", "cinder", "--config-file", "/etc/cinder/cinder.conf", "--config-file", "/etc/cinder/cinder-backup.conf"]
@@ -98,6 +101,5 @@ template: |{{`
             name: cinder-etc
         - name: backup-config
           configMap:
-            name:  backup-vmware-{{ name }}
-`}}
+            name:  backup-vmware-{= name =}
 {{- end }}
