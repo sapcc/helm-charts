@@ -38,6 +38,10 @@ spec:
         chart-version: {{.Chart.Version}}
         configmap-etc-hash: {{ include (print $.Template.BasePath "/configmap-etc.yaml") . | sha256sum }}
         configmap-bin-hash: {{ include (print $.Template.BasePath "/configmap-bin.yaml") . | sha256sum }}
+        {{- if .Values.proxysql.mode }}
+        prometheus.io/scrape: "true"
+        prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
+        {{- end }}
     spec:
 {{- if .Values.rbac.enabled }}
       serviceAccountName: {{ .Release.Name }}
@@ -71,6 +75,7 @@ spec:
 {{ toYaml . | indent 10 }}
       {{- end }}
       terminationGracePeriodSeconds: {{ .Values.api.terminationGracePeriodSeconds | default "30" }}
+{{ include "utils.proxysql.pod_settings" . | indent 6 }}
       initContainers:
       - name: kubernetes-entrypoint
         #image: quay.io/stackanetes/kubernetes-entrypoint:v0.3.1
@@ -211,11 +216,11 @@ spec:
               subPath: ratelimit.yaml
               readOnly: true
             {{- end }}
+            {{- include "utils.proxysql.volume_mount" . | indent 12 }}
           {{- if .Values.api.resources }}
           resources:
 {{ toYaml .Values.api.resources | indent 12 }}
           {{- end }}
-
         {{- if .Values.api.metrics.enabled }}
         - name: keystone-statsd
           image: "{{.Values.global.dockerHubMirror}}/{{ .Values.api.metrics.image }}:{{ .Values.api.metrics.imageTag }}"
@@ -240,6 +245,7 @@ spec:
           {{- end }}
         {{- end }}
 {{- include "jaeger_agent_sidecar" . | indent 8 }}
+{{- include "utils.proxysql.container" . | indent 8 }}
       volumes:
         - name: etc-keystone
           emptyDir: {}
@@ -261,3 +267,4 @@ spec:
           secret:
             secretName: keystone-credential-keys
             defaultMode: 0555
+        {{- include "utils.proxysql.volumes" . | indent 8 }}
