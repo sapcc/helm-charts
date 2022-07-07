@@ -5,6 +5,9 @@ cronus:
   billingCacheTTL: {{ .Values.config.billingCacheTTL }}
   barbicanCacheTTL: {{ .Values.config.barbicanCacheTTL }}
   awsSignV2TTL: {{ .Values.config.awsSignV2TTL }}
+{{- if or .Values.cronus.fileBufferPath .Values.global.fileBufferPath }}
+  fileBufferPath: {{ .Values.cronus.fileBufferPath | default .Values.global.fileBufferPath }}
+{{- end }}
 {{- if .Values.config.retry }}
   retry:
 {{- if .Values.config.retry.maxConnectionRetries }}
@@ -37,6 +40,9 @@ cronus:
     readTimeout: {{ .Values.cronus.readTimeout | default 30 }}s
     writeTimeout: {{ .Values.cronus.writeTimeout | default 30 }}s
     keepAliveTimeout: {{ .Values.cronus.keepAliveTimeout | default 60 }}s
+{{- if or .Values.cronus.maxBodySize .Values.global.maxBodySize }}
+    maxBodySize: {{ mul (.Values.cronus.maxBodySize | default .Values.global.maxBodySize) 1 }}
+{{- end }}
 {{- if .Values.cronus.tls }}
 {{- if .Values.cronus.smtps }}
     startTls: :{{ .Values.cronus.smtps }} # default :587
