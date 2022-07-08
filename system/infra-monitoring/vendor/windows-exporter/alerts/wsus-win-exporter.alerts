@@ -1,0 +1,80 @@
+groups:
+- name: wsus-win-exporter.alerts
+  rules:      
+  - alert: WSUSMetricsDownWarn
+    expr: count(up{job="win-exporter-wsus"} == 0) by (server_name) 
+    for: 30m
+    labels:
+      severity: warning
+      tier: ad
+      service: windows-exporter
+      context: "{{ $labels.server_name }}"
+      meta: "WSUS metrics cannot be fetched from node {{ $labels.server_name }}"
+    annotations:
+      description: "WSUS metrics cannot be fetched from node {{ $labels.server_name }}. Check if the windows exporter service is running!"
+      summary: "WSUS metrics cannot be fetched from node {{ $labels.server_name }}"
+
+  - alert: WSUSDownWarn
+    expr: count(windows_update_service_health{job="win-exporter-wsus"} != 10000) by (server_name, message) 
+    for: 30m
+    labels:
+      severity: warning
+      tier: ad
+      service: windows-exporter
+      context: "{{ $labels.server_name }}"
+      meta: "WSUS {{ $labels.server_name }} os down. {{ $labels.message }}"
+    annotations:
+      description: "WSUS {{ $labels.server_name }} os down. {{ $labels.message }}"
+      summary: "WSUS {{ $labels.server_name }} os down. {{ $labels.message }}"
+
+  - alert: WSUSServiceDownWarn
+    expr: count(windows_service_state{state!="running", job="win-exporter-wsus"} > 0) by (server_name, name, state) 
+    for: 30m
+    labels:
+      severity: warning
+      tier: ad
+      service: windows-exporter
+      context: "{{ $labels.server_name }}"
+      meta: "Service {{ $labels.name }} in State {{ $labels.state }} on node {{ $labels.server_name }}"
+    annotations:
+      description: "Service {{ $labels.name }} in State {{ $labels.state }} on node {{ $labels.server_name }}. Check the service!"
+      summary: "Service {{ $labels.name }} in State {{ $labels.state }} on node {{ $labels.server_name }}"
+
+  - alert: WSUSDiskFullInfo
+    expr: count(100 - (windows_logical_disk_free_bytes{volume!~"HarddiskVolume.*",job="win-exporter-wsus"}*100/windows_logical_disk_size_bytes{volume!~"HarddiskVolume.*",job="win-exporter-wsus"}) > 80) by (server_name, volume) 
+    for: 30m
+    labels:
+      severity: info
+      tier: ad
+      service: windows-exporter
+      context: "{{ $labels.server_name }}"
+      meta: "Drive {{ $labels.volume }} is getting full on node {{ $labels.server_name }}"
+    annotations:
+      description: "Drive {{ $labels.volume }} is getting full on node {{ $labels.server_name }}. Free up some space!"
+      summary: "Drive {{ $labels.volume }} is getting full on node {{ $labels.server_name }}"
+
+  - alert: WSUSHighCpuLoad
+    expr: count(avg by (server_name) (100 - (irate(windows_cpu_time_total{mode="idle", job="win-exporter-wsus"}[10m]) * 100)) > 80) 
+    for: 30m
+    labels:
+      severity: info
+      tier: ad
+      service: windows-exporter
+      context: "{{ $labels.server_name }}"
+      meta: "High CPU Load on node {{ $labels.server_name }}"
+    annotations:
+      description: "High CPU Load on node {{ $labels.server_name }}"
+      summary: "High CPU Load on node {{ $labels.server_name }}"
+
+  - alert: WSUSHighMemUsage
+    expr: count((100 - (100 * windows_os_physical_memory_free_bytes{job="win-exporter-wsus"} / windows_cs_physical_memory_bytes{job="win-exporter-wsus"})) > 80) by (server_name)
+    for: 30m
+    labels:
+      severity: info
+      tier: ad
+      service: windows-exporter
+      context: "{{ $labels.server_name }}"
+      meta: "High Memory usage on node {{ $labels.server_name }}"
+    annotations:
+      description: "High Memory usage on node {{ $labels.server_name }}"
+      summary: "High Memory usage on node {{ $labels.server_name }}"
