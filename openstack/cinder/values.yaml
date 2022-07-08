@@ -90,12 +90,23 @@ allocated_capacity_weight_multiplier: -1.0
 
 cinder_api_allow_migration_on_attach: True
 
+proxysql:
+  mode: null # Disabled by default
+
 mariadb:
   enabled: true
   max_connections: 2048
   buffer_pool_size: "2048M"
   log_file_size: "512M"
   name: cinder
+  databases:
+  - cinder
+  users:
+    cinder:
+      name: cinder
+      password: null
+      grants:
+      - "ALL PRIVILEGES on cinder.*"
   initdb_configmap: cinder-initdb
   persistence_claim:
     name: db-cinder-pvclaim

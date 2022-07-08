@@ -36,9 +36,14 @@ template: |
         annotations:
           configmap-etc-hash: {{ include (print .Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
           configmap-cinder-volume-hash: {= "vcenter_datacenter/{{ .Release.Namespace }}/vcenter-datacenter-cinder-configmap.yaml.j2" | render | sha256sum =}
+          {{- if .Values.proxysql.mode }}
+          prometheus.io/scrape: "true"
+          prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
+          {{- end }}
       spec:
         hostname: cinder-volume-vmware-{= name =}
 {{ tuple "{= availability_zone =}" | include "kubernetes_pod_az_affinity" | indent 8 }}
+{{ include "utils.proxysql.pod_settings" . | indent 8 }}
         containers:
         - name: cinder-volume-vmware-{= name =}
           image: {{required ".Values.global.registry is missing" .Values.global.registry}}/loci-cinder:{{.Values.imageVersionCinderScheduler | default .Values.imageVersion | required "Please set cinder.imageVersion or similar" }}
@@ -106,6 +111,8 @@ template: |
             mountPath: /etc/sudoers
             subPath: sudoers
             readOnly: true
+          {{- include "utils.proxysql.volume_mount" . | indent 10 }}
+        {{- include "utils.proxysql.container" . | indent 8 }}
         volumes:
         - name: etccinder
           emptyDir: {}
@@ -115,4 +122,5 @@ template: |
         - name: volume-config
           configMap:
             name:  volume-vmware-{= name =}
+        {{- include "utils.proxysql.volumes" . | indent 8 }}
 {{- end }}

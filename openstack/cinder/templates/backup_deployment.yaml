@@ -33,8 +33,14 @@ template: |
         labels:
           name: cinder-volume-backup-vmware-{= name =}
 {{ tuple . "cinder" "volume-backup-vmware" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 10 }}
+        annotations:
+          {{- if .Values.proxysql.mode }}
+          prometheus.io/scrape: "true"
+          prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
+          {{- end }}
       spec:
         hostname: cinder-volume-backup-vmware-{= name =}
+{{ include "utils.proxysql.pod_settings" . | indent 8 }}
         containers:
         - name: cinder-volume-backup-vmware-{= name =}
           image: {{required ".Values.global.registry is missing" .Values.global.registry}}/loci-cinder:{{.Values.imageVersionCinderVolumeBackup | default .Values.imageVersion | required "Please set cinder.imageVersion or similar" }}
@@ -93,6 +99,8 @@ template: |
             mountPath: /etc/cinder/cinder-backup.conf
             subPath: cinder-backup.conf
             readOnly: true
+            {{- include "utils.proxysql.volume_mount" . | indent 12 }}
+        {{- include "utils.proxysql.container" . | indent 8 }}
         volumes:
         - name: etccinder
           emptyDir: {}
@@ -102,4 +110,5 @@ template: |
         - name: backup-config
           configMap:
             name:  backup-vmware-{= name =}
+        {{- include "utils.proxysql.volumes" . | indent 8 }}
 {{- end }}
