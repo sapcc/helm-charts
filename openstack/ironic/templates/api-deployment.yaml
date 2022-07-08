@@ -27,12 +27,13 @@ spec:
 {{ tuple . "ironic" "api" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
       annotations:
         configmap-etc-hash: {{ include (print $.Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
-        {{- if .Values.watcher.enabled }}
+        {{- if or .Values.watcher.enabled .Values.proxysql.mode }}
         prometheus.io/scrape: "true"
         prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
         {{- end }}
     spec:
 {{ tuple . "ironic" "api" | include "kubernetes_pod_anti_affinity" | indent 6 }}
+      {{- include "utils.proxysql.pod_settings" . | indent 6 }}
       containers:
       - name: ironic-api
         image: {{ .Values.global.registry }}/loci-ironic:{{ .Values.imageVersion }}
@@ -107,6 +108,8 @@ spec:
           subPath: watcher.yaml
           readOnly: true
         {{- end }}
+        {{- include "utils.proxysql.volume_mount" . | indent 8 }}
+      {{- tuple . .Values.api.api_workers | include "utils.proxysql.container" | indent 6 }}
       - name: statsd
         image:  "{{.Values.global.dockerHubMirror}}/{{.Values.statsd.image.repository}}:{{.Values.statsd.image.tag}}"
         imagePullPolicy: IfNotPresent
@@ -133,4 +136,5 @@ spec:
         configMap:
           name: ironic-etc
           defaultMode: 0444
-{{- tuple . .Values.api.override "ironic-api" .Values.global.ironicApiPortInternal | include "utils.snippets.debug.debug_port_volumes_and_configmap" }}
+      {{- include "utils.proxysql.volumes" . | indent 6 }}
+      {{- tuple . .Values.api.override "ironic-api" .Values.global.ironicApiPortInternal | include "utils.snippets.debug.debug_port_volumes_and_configmap" }}
