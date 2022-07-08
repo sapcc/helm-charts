@@ -37,6 +37,7 @@ spec:
         kubectl.kubernetes.io/default-container: manila-api
     spec:
 {{ tuple . "manila" "api" | include "kubernetes_pod_anti_affinity" | indent 6 }}
+      {{- include "utils.proxysql.pod_settings" . | indent 6 }}
       initContainers:
       - name: kubernetes-entrypoint
         image: {{.Values.global.registry}}/loci-manila:{{.Values.loci.imageVersion}}
@@ -168,6 +169,7 @@ spec:
               mountPath: /scripts
               readOnly: true
             {{- include "utils.coordination.volume_mount" . | indent 12 }}
+            {{- include "utils.proxysql.volume_mount" . | indent 12 }}
           {{- if .Values.pod.resources.api }}
           resources:
             {{ toYaml .Values.pod.resources.api | nindent 13 }}
@@ -191,6 +193,7 @@ spec:
           resources:
             {{- toYaml .Values.pod.resources.api_statsd | trim | nindent 12 }}
           {{- end }}
+        {{- tuple . .Values.wsgi_processes | include "utils.proxysql.container" | indent 8 }}
  {{- if .Values.osprofiler.enabled }}
  {{- include "jaeger_agent_sidecar" . | indent 8 }}
  {{- end }}
@@ -209,3 +212,4 @@ spec:
             name: manila-bin
             defaultMode: 0555
         {{- include "utils.coordination.volumes" . | indent 8 }}
+        {{- include "utils.proxysql.volumes" . | indent 8 }}

@@ -11,7 +11,7 @@ CustomLog /dev/stdout combined env=!forwarded
 CustomLog /dev/stdout proxy env=forwarded
 
 <VirtualHost *:{{.Values.api_port_internal}}>
-    WSGIDaemonProcess manila-api user=manila group=manila processes=8 threads=1 display-name=%{GROUP}
+    WSGIDaemonProcess manila-api user=manila group=manila processes={{ .Values.wsgi_processes }} threads=1 display-name=%{GROUP}
     WSGIScriptAlias / /var/www/cgi-bin/manila/manila-wsgi
     WSGIProcessGroup manila-api
     WSGIApplicationGroup %{GLOBAL}
