@@ -28,7 +28,7 @@ spec:
         alert-tier: os
         alert-service: manila
       annotations:
-        {{- if .Values.rpc_statsd_enabled }}
+        {{- if or .Values.rpc_statsd_enabled .Values.proxysql.mode }}
         prometheus.io/scrape: "true"
         prometheus.io/targets: {{ required ".Values.alerts.prometheus.openstack missing" .Values.alerts.prometheus.openstack | quote }}
         {{- end }}
@@ -37,6 +37,7 @@ spec:
         configmap-netapp-hash: {{ list . $share | include "share_netapp_configmap" | sha256sum }}
     spec:
 {{ tuple $availability_zone | include "kubernetes_pod_az_affinity" | indent 6 }}
+{{ include "utils.proxysql.pod_settings" . | indent 6 }}
       initContainers:
         - name: fetch-rabbitmqadmin
           image: {{.Values.global.dockerHubMirror}}/library/busybox
@@ -93,6 +94,7 @@ spec:
               mountPath: /etc/manila/backend.conf
               subPath: backend.conf
               readOnly: true
+            {{- include "utils.proxysql.volume_mount" . | indent 12 }}
           {{- if .Values.pod.resources.share }}
           resources:
 {{ toYaml .Values.pod.resources.share | indent 13 }}
@@ -131,7 +133,8 @@ spec:
               subPath: statsd-rpc-exporter.yaml
               readOnly: true
         {{- end }}
- {{- include "jaeger_agent_sidecar" . | indent 8 }}
+        {{- include "jaeger_agent_sidecar" . | indent 8 }}
+        {{- include "utils.proxysql.container" . | indent 8 }}
       hostname: manila-share-netapp-{{$share.name}}
       volumes:
         - name: etcmanila
@@ -146,5 +149,6 @@ spec:
         - name: backend-config
           configMap:
             name: share-netapp-{{$share.name}}
+        {{- include "utils.proxysql.volumes" . | indent 8 }}
 {{ end }}
 {{- end -}}

@@ -86,6 +86,7 @@ spec:
               mountPath: /etc/manila/backend.conf
               subPath: backend.conf
               readOnly: true
+            {{- include "utils.proxysql.volume_mount" . | indent 12 }}
           {{- if .Values.pod.resources.share_ensure }}
           resources:
             {{ toYaml .Values.pod.resources.share_ensure | nindent 13 }}
@@ -106,7 +107,8 @@ spec:
             timeoutSeconds: 3
             periodSeconds: 5
             initialDelaySeconds: 5
- {{- include "jaeger_agent_sidecar" . | indent 8 }}
+        {{- include "jaeger_agent_sidecar" . | indent 8 }}
+        {{- include "utils.proxysql.container" . | indent 8 }}
       volumes:
         - name: etcmanila
           emptyDir: {}
@@ -116,5 +118,6 @@ spec:
         - name: backend-config
           configMap:
             name: share-netapp-{{$share.name}}
+        {{- include "utils.proxysql.volumes" . | indent 8 }}
 {{ end }}
 {{- end -}}

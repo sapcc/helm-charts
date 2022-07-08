@@ -1,3 +1,10 @@
+{{/* As this runs as a pre-upgrade hook, we can only use the proxysql side-car if a previous
+     deployment has already deployed the corresponding configmap.
+     So if we want to switch to or from a proxysql.mode=unix_socket setting, we need
+     first to deploy with proxysql.mode=host_alias as an intermediate step,
+     so this script can still work with the previous setting
+*/}}
+{{- $proxysql := lookup "v1" "ConfigMap" .Release.Namespace (print .Release.Name "-proxysql-etc") -}}
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -16,6 +23,9 @@ spec:
   template:
     spec:
       restartPolicy: OnFailure
+{{- if $proxysql }}
+      {{- include "utils.proxysql.job_pod_settings" . | indent 6 }}
+{{- end }}
       containers:
         - name: manila-migration
           image: {{.Values.global.registry}}/loci-manila:{{.Values.loci.imageVersion}}
@@ -55,6 +65,10 @@ spec:
               readOnly: true
             - mountPath: /container.init
               name: container-init
+{{- if $proxysql }}
+            {{- include "utils.proxysql.volume_mount" . | indent 12 }}
+        {{- include "utils.proxysql.container" . | indent 8 }}
+{{- end }}
       volumes:
         - name: etcmanila
           emptyDir: {}
@@ -65,3 +79,6 @@ spec:
           configMap:
             name: manila-bin
             defaultMode: 0755
+{{- if $proxysql }}
+        {{- include "utils.proxysql.volumes" . | indent 8 }}
+{{- end }}
