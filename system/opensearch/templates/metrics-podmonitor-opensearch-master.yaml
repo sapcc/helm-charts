@@ -1,0 +1,53 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+
+metadata:
+  name: opensearch-master-exporter
+  labels:
+    prometheus: infra-frontend
+
+spec:
+  jobLabel: opensearch-master-exporter
+
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: opensearch-logs-master
+
+  # Find pods in any namespace.
+  namespaceSelector:
+    matchNames: [opensearch]
+
+  podMetricsEndpoints:
+    - interval: 60s
+      scrapeTimeout: 50s
+      path: /_prometheus/metrics
+      scheme: http
+      port: http
+      basicAuth:
+        password:
+          name: security-config
+          key: password
+        username:
+          name: security-config
+          key: user
+      relabelings:
+        - action: labelmap
+          regex: '__meta_kubernetes_pod_label_(.+)'
+        - targetLabel: job
+          replacement: opensearch-master-exporter
+      metricRelabelings:
+        - sourceLabels: [__name__, cluster]
+          regex: '^(opensearch)_.+;(.*)'
+          replacement: $2
+          targetLabel: elastic_cluster
+        - regex: "controller_revision_hash|pod_template_hash|statefulset_kubernetes_io_pod_name|nodeid|cluster"
+          action: labeldrop
+        - action: replace
+          targetLabel: region
+          replacement: {{ required ".Values.global.region missing" .Values.global.region }}
+        - action: replace
+          targetLabel: cluster_type
+          replacement: {{ required ".Values.global.clusterType missing" .Values.global.clusterType }}
+        - action: replace
+          targetLabel: cluster
+          replacement: {{ if .Values.global.cluster }}{{ .Values.global.cluster }}{{ else }}{{ .Values.global.region }}{{ end }}
