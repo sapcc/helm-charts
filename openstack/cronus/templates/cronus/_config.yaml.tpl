@@ -16,6 +16,9 @@ cronus:
 {{- if .Values.config.retry.retryInterval }}
     retryInterval: {{ .Values.config.retry.retryInterval }}
 {{- end }}
+{{- if .Values.config.retry.connectionTimeout }}
+    connectionTimeout: {{ .Values.config.retry.connectionTimeout }}
+{{- end }}
 {{- end }}
   aws:
     forwardUserAgent: {{ .Values.config.forwardUserAgent }}
