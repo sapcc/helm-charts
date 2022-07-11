@@ -31,6 +31,9 @@ enabled_provider_drivers = {{ .Values.providers }}
 # Default provider driver
 default_provider_driver = {{ .Values.default_provider | default "noop_driver" }}
 
+# Enable/disable specific features
+allow_prometheus_listeners = False
+
 [healthcheck]
 backends = octavia_db_check
 
