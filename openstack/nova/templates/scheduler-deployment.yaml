@@ -78,24 +78,8 @@ spec:
 {{ toYaml .Values.pod.resources.scheduler | indent 12 }}
           {{- end }}
           volumeMounts:
-            - name: etcnova
+            - name: nova-etc
               mountPath: /etc/nova
-            - name: nova-etc
-              mountPath: /etc/nova/nova.conf
-              subPath: nova.conf
-              readOnly: true
-            - name: nova-scheduler-etc
-              mountPath: /etc/nova/nova-scheduler.conf
-              subPath: nova-scheduler.conf
-              readOnly: true
-            - name: nova-etc
-              mountPath: /etc/nova/policy.json
-              subPath: policy.json
-              readOnly: true
-            - name: nova-etc
-              mountPath: /etc/nova/logging.ini
-              subPath: logging.ini
-              readOnly: true
         {{- if .Values.scheduler.rpc_statsd_enabled }}
         - name: statsd
           image: {{ required ".Values.global.dockerHubMirror is missing" .Values.global.dockerHubMirror}}/prom/statsd-exporter:v0.8.1
@@ -108,18 +92,34 @@ spec:
           - name: metrics
             containerPort: 9102
           volumeMounts:
-            - name: nova-etc
-              mountPath: /etc/statsd/statsd-exporter.yaml
-              subPath: statsd-exporter.yaml
-              readOnly: true
+            - mountPath: /etc/statsd
+              name: statsd
         {{- end }}
       volumes:
-        - name: etcnova
-          emptyDir: {}
         - name: nova-etc
-          configMap:
-            name: nova-etc
-        - name: nova-scheduler-etc
-          configMap:
-            name: nova-scheduler-etc
-
+          projected:
+            defaultMode: 420
+            sources:
+              - configMap:
+                  items:
+                    - key: nova.conf
+                      path: nova.conf
+                    - key: policy.json
+                      path: policy.json
+                    - key: logging.ini
+                      path: logging.ini
+                  name: nova-etc
+              - configMap:
+                  items:
+                    - key: nova-scheduler.conf
+                      path: nova-scheduler.conf
+                  name: nova-scheduler-etc
+        - name: statsd
+          projected:
+            defaultMode: 420
+            sources:
+              - configMap:
+                  items:
+                    - key: statsd-exporter.yaml
+                      path: statsd-exporter.yaml
+                  name: nova-etc

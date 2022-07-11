@@ -90,27 +90,21 @@ spec:
               containerPort: {{.Values.global.placementApiPortInternal}}
           volumeMounts:
             - mountPath: /etc/nova
-              name: etcnova
-            - mountPath: /etc/nova/nova.conf
-              name: nova-placement
-              subPath: nova.conf
-              readOnly: true
-            - mountPath: /etc/nova/policy.json
-              name: nova-placement
-              subPath: policy.json
-              readOnly: true
-            - mountPath: /etc/nova/logging.ini
-              name: nova-placement
-              subPath: logging.ini
-              readOnly: true
-            - mountPath: /etc/nova/placement_uwsgi.ini
-              name: nova-placement
-              subPath: placement_uwsgi.ini
-              readOnly: true
+              name: nova-etc
       volumes:
-        - name: etcnova
-          emptyDir: {}
-        - name: nova-placement
-          configMap:
-            name: nova-placement
+        - name: nova-etc
+          projected:
+            defaultMode: 420
+            sources:
+              - configMap:
+                  items:
+                    - key: nova.conf
+                      path: nova.conf
+                    - key: policy.json
+                      path: policy.json
+                    - key: logging.ini
+                      path: logging.ini
+                    - key: placement_uwsgi.ini
+                      path: placement_uwsgi.ini
+                  name: nova-placement
 {{- end }}

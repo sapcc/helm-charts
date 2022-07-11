@@ -78,19 +78,7 @@ spec:
           {{- end }}
           volumeMounts:
             - mountPath: /etc/nova
-              name: etcnova
-            - mountPath: /etc/nova/nova.conf
               name: nova-etc
-              subPath: nova.conf
-              readOnly: true
-            - mountPath: /etc/nova/nova-conductor.conf
-              name: nova-etc
-              subPath: nova-conductor.conf
-              readOnly: true
-            - mountPath: /etc/nova/logging.ini
-              name: nova-etc
-              subPath: logging.ini
-              readOnly: true
         {{- if .Values.conductor.config_file.DEFAULT.statsd_enabled }}
         - name: statsd
           image: {{ required ".Values.global.dockerHubMirror is missing" .Values.global.dockerHubMirror}}/prom/statsd-exporter:v0.8.1
@@ -103,14 +91,29 @@ spec:
           - name: metrics
             containerPort: 9102
           volumeMounts:
-            - name: nova-etc
-              mountPath: /etc/statsd/statsd-exporter.yaml
-              subPath: statsd-exporter.yaml
-              readOnly: true
+            - mountPath: /etc/statsd
+              name: statsd
         {{- end }}
       volumes:
-        - name: etcnova
-          emptyDir: {}
         - name: nova-etc
-          configMap:
-            name: nova-etc
+          projected:
+            defaultMode: 420
+            sources:
+              - configMap:
+                  items:
+                    - key: nova.conf
+                      path: nova.conf
+                    - key: nova-conductor.conf
+                      path: nova-conductor.conf
+                    - key: logging.ini
+                      path: logging.ini
+                  name: nova-etc
+        - name: statsd
+          projected:
+            defaultMode: 420
+            sources:
+              - configMap:
+                  items:
+                    - key: statsd-exporter.yaml
+                      path: statsd-exporter.yaml
+                  name: nova-etc

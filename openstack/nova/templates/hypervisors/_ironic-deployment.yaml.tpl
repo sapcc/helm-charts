@@ -70,23 +70,7 @@ spec:
           {{- end }}
           volumeMounts:
             - mountPath: /etc/nova
-              name: etcnova
-            - mountPath: /etc/nova/nova.conf
               name: nova-etc
-              subPath: nova.conf
-              readOnly: true
-            - mountPath: /etc/nova/policy.json
-              name: nova-etc
-              subPath: policy.json
-              readOnly: true
-            - mountPath: /etc/nova/logging.ini
-              name: nova-etc
-              subPath: logging.ini
-              readOnly: true
-            - mountPath: /etc/nova/nova-compute.conf
-              name: hypervisor-config
-              subPath: nova-compute.conf
-              readOnly: true
             - mountPath: /nova-patches
               name: nova-patches
         {{- if $hypervisor.default.statsd_enabled }}
@@ -101,22 +85,39 @@ spec:
           - name: metrics
             containerPort: 9102
           volumeMounts:
-            - name: nova-etc
-              mountPath: /etc/statsd/statsd-exporter.yaml
-              subPath: statsd-exporter.yaml
-              readOnly: true
+            - mountPath: /etc/statsd
+              name: statsd
         {{- end }}
       volumes:
-        - name: etcnova
-          emptyDir: {}
         - name: nova-etc
-          configMap:
-            name: nova-etc
+          projected:
+            defaultMode: 420
+            sources:
+            - configMap:
+                items:
+                - key: nova.conf
+                  path: nova.conf
+                - key: policy.json
+                  path: policy.json
+                - key: logging.ini
+                  path: logging.ini
+                name: nova-etc
+            - configMap:
+                items:
+                - key: nova-compute.conf
+                  path: nova-compute.conf
+                name: nova-compute-{{$hypervisor.name}}
+        - name: statsd
+          projected:
+            defaultMode: 420
+            sources:
+              - configMap:
+                  items:
+                    - key: statsd-exporter.yaml
+                      path: statsd-exporter.yaml
+                  name: nova-etc
         - name: nova-patches
           configMap:
             name: nova-patches
-        - name: hypervisor-config
-          configMap:
-            name: nova-compute-{{$hypervisor.name}}
 {{- end -}}
 {{- end -}}
