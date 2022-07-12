@@ -1,3 +1,7 @@
+## 6.3.1
+
+* switch swift user for OpenstackSeed
+
 ## 6.3.0
 
 * Bump Prometheus server to `v2.36.1`.
