@@ -165,6 +165,32 @@ prometheus-server:
       - alertmanager-internal.scaleout.eu-de-1.cloud.sap
       - alertmanager-internal.scaleout.eu-nl-1.cloud.sap
 
+prometheus-collector:
+  name: kubernikus-collector
+
+  # Short-lived; Only for aggregation.
+  retentionTime: 30m
+
+  serviceDiscoveries:
+    endpoints:
+      enabled: false
+    pods:
+      enabled: false
+    cAdvisor:
+      enabled: true
+    kubelet:
+      enabled: true
+    nodeExporter:
+      enabled: false
+    kubeDNS:
+      enabled: false
+    kubeAPIServer:
+      enabled: true
+      # Full list of APIserver metrics: https://github.com/kubernetes/apiserver/blob/master/pkg/endpoints/metrics/metrics.go .
+      allowedMetrics: # Add metrics to scrape here @databus23
+        - etcd_object_counts
+        - apiserver_request_total
+
 prometheus-kubernetes-rules:
   prometheusName: kubernikus
   tier: kks
