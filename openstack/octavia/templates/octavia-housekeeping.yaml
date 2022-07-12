@@ -24,6 +24,7 @@ spec:
         prometheus.io/scrape: "true"
         prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
     spec:
+{{ include "utils.proxysql.pod_settings" . | indent 6 }}
       containers:
         - name: octavia-f5-housekeeping
           image: {{required ".Values.global.registry is missing" .Values.global.registry}}/loci-octavia:{{required "Values.imageVersion is missing" .Values.imageVersion}}
@@ -43,11 +44,12 @@ spec:
               mountPath: /etc/octavia/logging.ini
               subPath: logging.ini
               readOnly: true
+            {{- include "utils.proxysql.volume_mount" . | indent 12 }}
           env:
             - name: COMMAND
               value: "octavia-f5-housekeeping --config-file /etc/octavia/octavia.conf"
             - name: DEPENDENCY_JOBS
-              value: "{{ .Release.Name }}-migration-{{ .Values.imageVersion }}"
+              value: "{{ include "octavia.migration_job_name" . }}"
             - name: NAMESPACE
               value: {{ .Release.Namespace }}
             - name: PYTHONWARNINGS
@@ -61,7 +63,9 @@ spec:
                   name: sentry
                   key: octavia.DSN.python
             {{- end }}
+        {{- include "utils.proxysql.container" . | indent 8 }}
       volumes:
         - name: octavia-etc
           configMap:
             name: octavia-etc
+        {{- include "utils.proxysql.volumes" . | indent 8 }}

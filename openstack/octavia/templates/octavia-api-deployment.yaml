@@ -28,11 +28,12 @@ spec:
         app.kubernetes.io/instance: {{ .Release.Name }}
       annotations:
         configmap-etc-hash: {{ include (print $.Template.BasePath "/octavia-etc-configmap.yaml") . | sha256sum }}
-        {{- if .Values.watcher.enabled }}
+        {{- if or .Values.watcher.enabled .Values.proxysql.mode }}
         prometheus.io/scrape: "true"
         prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
         {{- end }}
     spec:
+{{ include "utils.proxysql.pod_settings" . | indent 6 }}
       containers:
         - name: {{ .Chart.Name }}-api
           image: {{required ".Values.global.registry is missing" .Values.global.registry}}/loci-octavia:{{required "Values.imageVersion is missing" .Values.imageVersion}}
@@ -46,7 +47,7 @@ spec:
             - name: COMMAND
               value: "/usr/sbin/apachectl -D FOREGROUND"
             - name: DEPENDENCY_JOBS
-              value: "{{ .Release.Name }}-migration-{{ .Values.imageVersion }}"
+              value: "{{ include "octavia.migration_job_name" . }}"
             - name: NAMESPACE
               value: {{ .Release.Namespace }}
             - name: PYTHONWARNINGS
@@ -108,7 +109,9 @@ spec:
               subPath: octavia-api.conf
               readOnly: true
             {{- end }}
-{{- include "jaeger_agent_sidecar" . | indent 8 }}
+            {{- include "utils.proxysql.volume_mount" . | indent 12 }}
+        {{- include "utils.proxysql.container" . | indent 8 }}
+        {{- include "jaeger_agent_sidecar" . | indent 8 }}
 {{- if .Values.watcher.enabled }}
         - name: statsd
           image: {{ required ".Values.global.dockerHubMirror is missing" .Values.global.dockerHubMirror}}/{{.Values.statsd.image.repository}}:{{.Values.statsd.image.tag}}
@@ -126,3 +129,4 @@ spec:
         - name: octavia-etc
           configMap:
             name: octavia-etc
+        {{- include "utils.proxysql.volumes" . | indent 8 }}
