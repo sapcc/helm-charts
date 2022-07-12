@@ -177,8 +177,8 @@
       - '{__name__=~"^vrops_virtualmachine_virtual_disk_.+"}'
       - '{__name__=~"^vrops_virtualmachine_oversized.+"}'
       - '{__name__=~"^vrops_virtualmachine_undersized.+"}'
-      - '{__name__=~"^vrops_virtualmachine_number_vcpus_total.+"}'
-      - '{__name__=~"^vrops_virtualmachine_config_hardware_memory_kilobytes.+"}'
+      - '{__name__=~"^vrops_virtualmachine_number_vcpus_total"}'
+      - '{__name__=~"^vrops_virtualmachine_config_hardware_memory_kilobytes"}'
 
 {{- if .Values.neo.enabled }}
       - '{__name__=~"^vrops_hostsystem_cpu_model"}'
