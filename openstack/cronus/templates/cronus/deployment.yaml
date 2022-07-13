@@ -12,7 +12,7 @@ metadata:
     {{ toYaml .Values.cronus.labels | indent 4 }}
   {{- end }}
 spec:
-  replicas: {{ .Values.cronus.replicas | default .Values.cronus.deployment.replicas }}
+  replicas: {{ default .Values.cronus.deployment.replicas }}
   strategy:
 {{- if eq "RollingUpdate" .Values.cronus.updateStrategy }}
     rollingUpdate:
@@ -80,7 +80,7 @@ spec:
         - name: cronus-file-buffer
           persistentVolumeClaim:
             claimName: cronus-file-buffer
-          {{- if and (gt (int .Values.cronus.replicas | default .Values.cronus.deployment.replicas) 1) }}
+          {{- if and (gt (int .Values.cronus.deployment.replicas) 1) }}
             {{- fail "Persistence doesn't work with kind Deployment, and more than one replica" }}
           {{- end }}
 {{- end }}
