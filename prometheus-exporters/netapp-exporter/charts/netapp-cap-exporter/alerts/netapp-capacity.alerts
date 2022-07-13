@@ -84,8 +84,8 @@ groups:
           description: 'Storage Capacity Usage on node {{$labels.node}} is {{ $value }}%'
           summary: 'Nearly Full Capacity Usage on {{$labels.filer}}'
 
-      - alert: ManilaStorageAggregateMissing
-        expr: count(netapp_aggregate_available_bytes{app="netapp-capacity-exporter-manila"} offset 1h) by (app, filer, aggregate) unless count(netapp_aggregate_available_bytes) by (app, filer, aggregate) unless on (app) absent(up{app="netapp-capacity-exporter-manila"})
+      - alert: NetAppFilerAggregateIsOffline
+        expr: netapp_aggregate_state_is_online == 0
         for: 5m
         labels:
           severity: warning
@@ -94,8 +94,8 @@ groups:
           context: storage
           support_component: manila_netapp
         annotations:
-          description: 'Manila Filer Aggregate {{ $labels.aggregate }} was seen by NetApp Exporter 1h ago, but it is missing now'
-          summary: 'Manila Filer Aggregate {{ $labels.aggregate }} missing'
+          description: 'NetApp Filer Aggregate {{ $labels.aggregate }} on {{ $labels.filer }} is offline'
+          summary: 'NetApp Filer Aggregate {{ $labels.aggregate }} offline'
 
       - alert: ManilaAvailabilityZoneUsageHigh
         expr: (min by(availability_zone) (avg_over_time(netapp_aggregate_used_percentage{app=~".*manila"}[1h]))) > 45
