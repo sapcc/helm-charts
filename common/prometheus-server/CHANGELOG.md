@@ -1,3 +1,7 @@
+## 6.3.2
+
+* Respect alert-service and alert-tier pod labels in PrometheusMultiplePodScrapes alert
+
 ## 6.3.1
 
 * switch swift user for OpenstackSeed
