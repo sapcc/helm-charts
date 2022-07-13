@@ -141,3 +141,18 @@ groups:
     annotations:
       description: "Virtual machine `{{ $labels.virtualmachine }}` experiencing high swap wait. The host is overcommitted on memory. ({{ $labels.vcenter }}, {{ $labels.hostsystem }})"
       summary: "Virtual machine `{{ $labels.virtualmachine }}` experiencing high swap wait. The host is overcommitted on memory. ({{ $labels.vcenter }}, {{ $labels.hostsystem }})"
+
+  - alert: NSXTMgmtVMsNotWellDistributed
+    expr: >
+      count(label_replace(vrops_virtualmachine_cpu_usage_average_mhz{virtualmachine=~"nsx-.*"}, "nsx_clt", "$1", "virtualmachine", "nsx-.*(bb.*)")) by(nsx_clt, hostsystem, vcenter, vccluster) > 1
+    labels:
+      severity: info
+      tier: vmware
+      service: compute
+      context: "NSXTMgmtVMDistribution"
+      dashboard: management-cluster-resources/management-cluster-resources?orgId=1&var-pod=All&var-clusters={{ $labels.vccluster }}&var-hosts={{ $labels.hostsystem }}
+      meta: "Too many NSX-T VMs on {{ $labels.hostsystem }}. ({{ $labels.vcenter }})"
+      no_alert_on_absence: "true"
+    annotations:
+      description: "Too many NSX-T VMs for the same cluster on {{ $labels.hostsystem }}. Please distribute the VMs across different nodes. ({{ $labels.vcenter }})"
+      summary: "Too many NSX-T VMs on {{ $labels.hostsystem }}. ({{ $labels.vcenter }})"
