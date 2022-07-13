@@ -286,7 +286,8 @@ groups:
 
   - alert: OpenstackLimesIncompleteProjectResourceData
     expr: max by (service, resource) (limes_project_resources_by_type_count) != on () group_left max(limes_project_count)
-    for: 15m
+    # Do not trigger too fast! When a new resource is added, it takes one full scrape cycle to create all resource records.
+    for: 60m
     labels:
       severity: info
       tier: os
