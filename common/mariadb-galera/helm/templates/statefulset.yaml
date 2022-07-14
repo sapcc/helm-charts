@@ -24,8 +24,9 @@ spec:
         release: {{ $.Release.Name }}
       annotations:
         checksum/my.cnf.yml: {{ include (print $.Template.BasePath "/configmap-my.cnf.yaml") $ | sha256sum }}
-        checksum/checks.sh: {{ include (print $.Template.BasePath "/configmap-checks.sh.yaml") $ | sha256sum }}
+        checksum/probes.sh: {{ include (print $.Template.BasePath "/configmap-probes.sh.yaml") $ | sha256sum }}
         checksum/hooks.sh: {{ include (print $.Template.BasePath "/configmap-hooks.sh.yaml") $ | sha256sum }}
+        checksum/galerastatus.sh: {{ include (print $.Template.BasePath "/configmap-galerastatus.yaml") $ | sha256sum }}
         checksum/entrypoint.sh: {{ include (print $.Template.BasePath "/configmap-entrypoint.sh.yaml") $ | sha256sum }}
     spec:
       affinity:
@@ -141,6 +142,11 @@ spec:
               {{- end }}
             {{- end }}
           {{- end }}
+          {{/* https://galeracluster.com/library/documentation/weighted-quorum.html#wq-three-nodes */}}
+          {{- range $int, $err := until ($.Values.replicas|int) }}
+        - name: PC_WEIGHT_{{ $int }}
+          value: "{{ sub ($.Values.replicas|int) (add $int 1) }}"
+          {{- end }}
         {{- range $envKey, $envValue := $.Values.env }}
         - name: {{ $envValue.name }}
               {{- if $envValue.value }}
@@ -167,6 +173,23 @@ spec:
             protocol: {{ $portsValue.protocol | default "TCP" }}
               {{- end }}
             {{- end }}
+          {{- end }}
+        startupProbe:
+          exec:
+            command:
+              - sh
+              - -c
+              - '/opt/mariadb/bin/startup.sh'
+          {{- if $.Values.startupProbe }}
+          {{ if $.Values.startupProbe.initialDelaySeconds }} {{- (printf "initialDelaySeconds: %d" (int64 $.Values.startupProbe.initialDelaySeconds)) }} {{ else }}initialDelaySeconds: 60 {{end}}
+          {{ if $.Values.startupProbe.periodSeconds }} {{- (printf "periodSeconds: %d" (int64 $.Values.startupProbe.periodSeconds)) }} {{ else }}periodSeconds: 30 {{end}}
+          {{ if $.Values.startupProbe.failureThreshold }} {{- (printf "failureThreshold: %d" (int64 $.Values.startupProbe.failureThreshold)) }} {{ else }}failureThreshold: 4 {{end}}
+          {{ if $.Values.startupProbe.timeoutSeconds }} {{- (printf "timeoutSeconds: %d" (int64 $.Values.startupProbe.timeoutSeconds)) }} {{ else }}timeoutSeconds: 20 {{end}}
+          {{- else }}
+          initialDelaySeconds: 60
+          periodSeconds: 30
+          failureThreshold: 4
+          timeoutSeconds: 20
           {{- end }}
         livenessProbe:
           exec:
@@ -236,18 +259,24 @@ spec:
             {{- end }}
           {{- end }}
           - name: my-cnf
-            mountPath: /opt/mariadb/etc/conf.d/my.cnf.tpl
-            subPath: my.cnf.tpl
+            mountPath: /opt/mariadb/etc/conf.d/tpl
             readOnly: true
+          - name: galerastatus
+            mountPath: /opt/mariadb/etc/galerastatus
+            readOnly: false
           - name: entrypoint-sh
             mountPath: /opt/mariadb/bin/entrypoint-galera.sh
             subPath: entrypoint-galera.sh
             readOnly: true
-          - name: checks-sh
+          - name: probes-sh
+            mountPath: /opt/mariadb/bin/startup.sh
+            subPath: startup.sh
+            readOnly: true
+          - name: probes-sh
             mountPath: /opt/mariadb/bin/liveness.sh
             subPath: liveness.sh
             readOnly: true
-          - name: checks-sh
+          - name: probes-sh
             mountPath: /opt/mariadb/bin/readiness.sh
             subPath: readiness.sh
             readOnly: true
@@ -281,13 +310,17 @@ spec:
           configMap:
             name: my-cnf
             defaultMode: 0444
+        - name: galerastatus
+          configMap:
+            name: galerastatus
+            defaultMode: 0750
         - name: entrypoint-sh
           configMap:
             name: entrypoint-sh
             defaultMode: 0755
-        - name: checks-sh
+        - name: probes-sh
           configMap:
-            name: checks-sh
+            name: probes-sh
             defaultMode: 0755
         - name: hooks-sh
           configMap:

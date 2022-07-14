@@ -7,56 +7,6 @@ metadata:
   labels:
     app: {{ $.Release.Name }}
 data:
-  pre-stop-hook.sh: |-
-    #!/usr/bin/env bash
-    set +e
-    set -u
-    set -o pipefail
-    set +x
+{{ tpl (.Files.Glob "config/pre-stop-hook.sh").AsConfig . | indent 2 }}
 
-    BASE=/opt/${SOFTWARE_NAME}
-    DATADIR=${BASE}/data
-    MAX_RETRIES=10
-    WAIT_SECONDS=6
-
-    function logjson {
-      printf "{\"@timestamp\":\"%s\",\"ecs.version\":\"1.6.0\",\"log.level\":\"%s\",\"message\":\"%s\"}\n" "$(date +%Y.%m.%d-%H:%M:%S-%Z)" "$2" "$3" >>/dev/"$1"
-    }
-
-    function loginfo {
-      logjson  "stdout" "info" "$1"
-    }
-
-    function logerror {
-      logjson  "stderr" "error" "$1"
-    }
-
-    loginfo "preStop hook started"
-    loginfo "preStop hook done"
-
-  post-start-hook.sh: |-
-    #!/usr/bin/env bash
-    set +e
-    set -u
-    set -o pipefail
-    set +x
-
-    BASE=/opt/${SOFTWARE_NAME}
-    DATADIR=${BASE}/data
-    MAX_RETRIES=10
-    WAIT_SECONDS=6
-
-    function logjson {
-      printf "{\"@timestamp\":\"%s\",\"ecs.version\":\"1.6.0\",\"log.level\":\"%s\",\"message\":\"%s\"}\n" "$(date +%Y.%m.%d-%H:%M:%S-%Z)" "$2" "$3" >>/dev/"$1"
-    }
-
-    function loginfo {
-      logjson  "stdout" "info" "$1"
-    }
-
-    function logerror {
-      logjson  "stderr" "error" "$1"
-    }
-
-    loginfo "postStart hook started"
-    loginfo "postStart hook done"
+{{ tpl (.Files.Glob "config/post-start-hook.sh").AsConfig . | indent 2 }}

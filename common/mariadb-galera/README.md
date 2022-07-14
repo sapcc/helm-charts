@@ -9,7 +9,10 @@ Docker image and Helm chart to deploy a [MariaDB](https://mariadb.com/kb/en/gett
 * [Galera cluster description](https://mariadb.com/kb/en/what-is-mariadb-galera-cluster/)
 * [Galera getting started](https://mariadb.com/kb/en/getting-started-with-mariadb-galera-cluster/)
 * [Galera monitoring](https://galeracluster.com/library/documentation/monitoring-cluster.html)
-
+* [Galera Crash recovery](https://galeracluster.com/library/documentation/crash-recovery.html)
+* [Primary recovery after clean shutdown of the cluster](https://galeracluster.com/library/documentation/pc-recovery.html)
+* [calculate the Galera Cache Size for IST(Incremental State Transfer)](https://galeracluster.com/library/kb/customizing-gcache-size.html)
+* [custom pc.weight for predictable quorum decisions](https://galeracluster.com/library/documentation/weighted-quorum.html#wq-three-nodes)
 ## Docker image
 
 ### build the image

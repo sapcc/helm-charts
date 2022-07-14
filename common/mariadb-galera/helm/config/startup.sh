@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+set +e
+set -u
+set -o pipefail
+
+mysql --defaults-file=/opt/mariadb/etc/my.cnf --protocol=tcp -u root -h localhost --port=${MYSQL_PORT} --batch --connect-timeout={{ $.Values.startupProbe.timeoutSeconds }} --execute="SHOW DATABASES;" | grep --silent 'mysql'
+if [ $? -eq 0 ]; then
+  echo 'MariaDB MySQL API reachable'
+else
+  echo 'MariaDB MySQL API not reachable'
+  exit 1
+fi
+
+timeout {{ $.Values.startupProbe.timeoutSeconds }} bash -c "</dev/tcp/${CONTAINER_IP}/${GALERA_PORT}"
+if [ $? -eq 0 ]; then
+  echo 'MariaDB Galera API reachable'
+else
+  echo 'MariaDB Galera API not reachable'
+  exit 1
+fi
+

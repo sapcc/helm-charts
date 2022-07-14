@@ -3,7 +3,6 @@
 set +e
 set -u
 set -o pipefail
-set +x
 
 oldIFS="${IFS}"
 BASE=/opt/${SOFTWARE_NAME}
@@ -14,31 +13,31 @@ MAX_RETRIES=10
 WAIT_SECONDS=6
 
 function logjson {
-  printf "{\"@timestamp\":\"%s\",\"ecs.version\":\"1.6.0\",\"log.level\":\"%s\",\"message\":\"%s\"}\n" "$(date +%Y.%m.%d-%H:%M:%S-%Z)" "$2" "$3" >>/dev/"$1"
+  printf "{\"@timestamp\":\"%s\",\"ecs.version\":\"1.6.0\",\"log.logger\":\"%s\",\"log.origin.function\":\"%s\",\"log.level\":\"%s\",\"message\":\"%s\"}\n" "$(date +%Y.%m.%d-%H:%M:%S-%Z)" "$3" "$4" "$2" "$5" >>/dev/"$1"
 }
 
 function loginfo {
-  logjson  "stdout" "info" "$1"
+  logjson "stdout" "info" "$0" "$1" "$2"
 }
 
 function logerror {
-  logjson  "stderr" "error" "$1"
+  logjson "stderr" "error" "$0" "$1" "$2"
 }
 
 function checkenv {
   for name in ${REQUIRED_ENV_VARS[@]}; do
     if [ -z ${!name+x} ]; then
-      logerror "${name} environment variable not set"
+      logerror "${FUNCNAME[0]}" "${name} environment variable not set"
       exit 1
     fi
   done
 }
 
 function initdb {
-  loginfo "init databases if required"
+  loginfo "${FUNCNAME[0]}" "init databases if required"
   # check if the data folder already contains database structures
   if [ -d "${BASE}/data/mysql" ]; then
-    loginfo "Database structures already exist"
+    loginfo "${FUNCNAME[0]}" "Database structures already exist"
   else
     /usr/bin/mariadb-install-db --defaults-file=${BASE}/etc/my.cnf --basedir=/usr \
     --auth-root-authentication-method=normal \
@@ -50,7 +49,7 @@ function initdb {
     --loose-innodb_buffer_pool_load_at_startup=0 \
     --loose-innodb_buffer_pool_dump_at_shutdown=0
     if [ $? -ne 0 ]; then
-      logerror "Database initialization has been failed"
+      logerror "${FUNCNAME[0]}" "Database initialization has been failed"
       exit 1
     fi
     startmaintenancedb
@@ -59,72 +58,72 @@ function initdb {
     listdbandusers
     stopdb
   fi
-  loginfo "init databases done"
+  loginfo "${FUNCNAME[0]}" "init databases done"
 }
 
 function setupusers {
   local int
   for (( int=${MAX_RETRIES}; int >=1; int-=1));
     do
-    loginfo "setup root user permissions(${int} retries left)"
+    loginfo "${FUNCNAME[0]}" "setup root user permissions(${int} retries left)"
     cat ${BASE}/etc/sql/root_permissions.sql.tpl | envsubst | mysql --defaults-file=${BASE}/etc/my.cnf -u root -h localhost --batch
     if [ $? -ne 0 ]; then
-      logerror "root user setup has been failed"
+      logerror "${FUNCNAME[0]}" "root user setup has been failed"
       sleep ${WAIT_SECONDS}
     else
       break
     fi
   done
-  if [ ${int} = 0 ]; then
-    logerror "root user setup has been finally failed"
+  if [ ${int} -eq 0 ]; then
+    logerror "${FUNCNAME[0]}" "root user setup has been finally failed"
     exit 1
   fi
-  loginfo "root user setup done"
+  loginfo "${FUNCNAME[0]}" "root user setup done"
 }
 
 function listdbandusers {
   local int
   for (( int=${MAX_RETRIES}; int >=1; int-=1));
     do
-    loginfo "list databases and users(${int} retries left)"
+    loginfo "${FUNCNAME[0]}" "list databases and users(${int} retries left)"
     mysql --defaults-file=${BASE}/etc/my.cnf -u root -h localhost --batch --execute="SHOW DATABASES; SELECT user,host FROM mysql.user;" --table
     if [ $? -ne 0 ]; then
-      logerror "list databases and users has been failed"
+      logerror "${FUNCNAME[0]}" "list databases and users has been failed"
       sleep ${WAIT_SECONDS}
     else
       break
     fi
   done
-  if [ ${int} = 0 ]; then
-    logerror "list databases and users has been finally failed"
+  if [ ${int} -eq 0 ]; then
+    logerror "${FUNCNAME[0]}" "list databases and users has been finally failed"
     exit 1
   fi
-  loginfo "list databases and users done"
+  loginfo "${FUNCNAME[0]}" "list databases and users done"
 }
 
 function setuptimezoneinfo {
   local int
   for (( int=${MAX_RETRIES}; int >=1; int-=1));
     do
-    loginfo "setup timezone infos(${int} retries left)"
+    loginfo "${FUNCNAME[0]}" "setup timezone infos(${int} retries left)"
     mariadb-tzinfo-to-sql --defaults-file=${BASE}/etc/my.cnf --skip-write-binlog /usr/share/zoneinfo | mysql --defaults-file=${BASE}/etc/my.cnf -u root -h localhost --database=mysql --batch
     if [ $? -ne 0 ]; then
-      logerror "timezone info setup has been failed"
+      logerror "${FUNCNAME[0]}" "timezone info setup has been failed"
       sleep ${WAIT_SECONDS}
     else
       break
     fi
   done
-  if [ ${int} = 0 ]; then
-    logerror "timezone info setup has been finally failed"
+  if [ ${int} -eq 0 ]; then
+    logerror "${FUNCNAME[0]}" "timezone info setup has been finally failed"
     exit 1
   fi
-  loginfo "timezone info setup done"
+  loginfo "${FUNCNAME[0]}" "timezone info setup done"
 }
 
 function checkupgradedb {
   if [ ! -f ${DATADIR}/mysql_upgrade_info ]; then
-    loginfo "MariaDB upgrade information missing, assuming required"
+    loginfo "${FUNCNAME[0]}" "MariaDB upgrade information missing, assuming required"
     startmaintenancedb
     upgradedb
     stopdb
@@ -135,34 +134,34 @@ function checkupgradedb {
     # if SOFTWARE_VERSION (left side) is bigger than MARIADB_OLDVERSION (right side) sort will return 1
     printf '%s\n%s' "${SOFTWARE_VERSION}" "${MARIADB_OLDVERSION}" | sort --version-sort --check=silent
     if [ $? -ne 0 ]; then
-      loginfo "MariaDB version higher than last upgrade info"
+      loginfo "${FUNCNAME[0]}" "MariaDB version higher than last upgrade info"
       startmaintenancedb
       upgradedb
       stopdb
     else
-      loginfo "MariaDB version same as last upgrade info, no upgrade required"
+      loginfo "${FUNCNAME[0]}" "MariaDB version same as last upgrade info, no upgrade required"
     fi
   fi
 }
 
 function upgradedb {
-  loginfo "start database upgrade"
+  loginfo "${FUNCNAME[0]}" "start database upgrade"
   mysql_upgrade --defaults-file=${BASE}/etc/my.cnf -u root -h localhost --version-check
   if [ $? -ne 0 ]; then
-    logerror "database upgrade has been failed"
+    logerror "${FUNCNAME[0]}" "database upgrade has been failed"
     exit 1
   fi
-  loginfo "database upgrade done"
+  loginfo "${FUNCNAME[0]}" "database upgrade done"
 }
 
 function startdb {
   if [ -f "${BASE}/bin/entrypoint-galera.sh" ]; then
     source ${BASE}/bin/entrypoint-galera.sh
   else
-    loginfo "starting mariadbd process"
+    loginfo "${FUNCNAME[0]}" "starting mariadbd process"
     exec mariadbd --defaults-file=${BASE}/etc/my.cnf --basedir=/usr --skip-log-error
     if [ $? -ne 0 ]; then
-      logerror "mariadbd startup failed"
+      logerror "${FUNCNAME[0]}" "mariadbd startup failed"
       exit 1
     fi
   fi
@@ -172,14 +171,14 @@ function startmaintenancedb {
   local int
   for (( int=${MAX_RETRIES}; int >=1; int-=1));
     do
-    loginfo "starting mariadbd process for maintenance(${int} retries left)"
+    loginfo "${FUNCNAME[0]}" "starting mariadbd process for maintenance(${int} retries left)"
     mariadbd --defaults-file=${BASE}/etc/my.cnf --basedir=/usr --skip-log-error \
     --skip-networking=1 \
     --wsrep_on=OFF \
     --expire-logs-days=0 \
     --loose-innodb_buffer_pool_load_at_startup=0 &
     if [ $? -ne 0 ]; then
-      logerror "mariadbd maintenance startup failed"
+      logerror "${FUNCNAME[0]}" "mariadbd maintenance startup failed"
       sleep ${WAIT_SECONDS}
     fi
     MARIADBD_PID=$!
@@ -188,38 +187,38 @@ function startmaintenancedb {
       break
     fi
   done
-  if [ ${int} = 0 ]; then
-    logerror "mariadbd maintenance startup finally failed"
+  if [ ${int} -eq 0 ]; then
+    logerror "${FUNCNAME[0]}" "mariadbd maintenance startup finally failed"
     exit 1
   fi
 
   for (( int=${MAX_RETRIES}; int >=1; int-=1));
     do
-    loginfo "check if mariadbd is usable for maintenance(${int} retries left)"
+    loginfo "${FUNCNAME[0]}" "check if mariadbd is usable for maintenance(${int} retries left)"
     mysql --defaults-file=${BASE}/etc/my.cnf -u root -h localhost --database=mysql --execute='STATUS;' | grep 'Server version:' | grep --silent "${SOFTWARE_VERSION}"
     if [ $? -ne 0 ]; then
-      logerror "mariadbd check failed"
+      logerror "${FUNCNAME[0]}" "mariadbd check failed"
       sleep ${WAIT_SECONDS}
     else
       break
     fi
   done
-  if [ ${int} = 0 ]; then
-    logerror "mariadbd maintenance startup finally failed"
+  if [ ${int} -eq 0 ]; then
+    logerror "${FUNCNAME[0]}" "mariadbd maintenance startup finally failed"
     exit 1
   fi
 
-  loginfo "mariadbd maintenance startup done"
+  loginfo "${FUNCNAME[0]}" "mariadbd maintenance startup done"
 }
 
 function stopdb {
   local int
   for (( int=${MAX_RETRIES}; int >=1; int-=1));
     do
-    loginfo "stop mariadbd process with pid ${MARIADBD_PID}(${int} retries left)"
+    loginfo "${FUNCNAME[0]}" "stop mariadbd process with pid ${MARIADBD_PID}(${int} retries left)"
     kill ${MARIADBD_PID}
     if [ $? -ne 0 ]; then
-      logerror "mariadbd stop has been failed"
+      logerror "${FUNCNAME[0]}" "mariadbd stop has been failed"
       sleep ${WAIT_SECONDS}
     fi
     wait ${MARIADBD_PID}
@@ -227,11 +226,11 @@ function stopdb {
       break
     fi
   done
-  if [ ${int} = 0 ]; then
-    logerror "mariadbd stop has been finally failed"
+  if [ ${int} -eq 0 ]; then
+    logerror "${FUNCNAME[0]}" "mariadbd stop has been finally failed"
     exit 1
   fi
-  loginfo "mariadbd stop done"
+  loginfo "${FUNCNAME[0]}" "mariadbd stop done"
 }
 
 checkenv

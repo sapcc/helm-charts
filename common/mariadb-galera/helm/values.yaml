@@ -3,29 +3,33 @@
 # Declare variables to be passed into your templates.
 userId: 101
 groupId: 101
-#command:
-#- "/bin/bash"
-#- "-x"
-#- "/opt/mariadb/bin/entrypoint.sh"
+# command:
+#   - "sh"
+#   - "-c"
+#   - "/bin/sleep 3600"
 
 # Docker image
 image:
   os:
-    registry: keppel.eu-nl-1.cloud.sap
-    project: octobus
+    #registry: keppel.eu-nl-1.cloud.sap
+    #project: octobus
+    registry: eu.gcr.io
+    project: cloud-capacity-mgmt-tes
     applicationname: ubuntu
     applicationversion: 20.04
     imageversion: 0.3.59
     pullPolicy: IfNotPresent
-    pullSecret: null
+    pullSecret: pull-secret-gcp
   application:
-    registry: keppel.eu-nl-1.cloud.sap
-    project: octobus
+    #registry: keppel.eu-nl-1.cloud.sap
+    #project: octobus
+    registry: eu.gcr.io
+    project: cloud-capacity-mgmt-tes
     applicationname: mariadb-galera
     applicationversion: 10.5.13
     imageversion: 0.0.4
     pullPolicy: Always
-    pullSecret: null
+    pullSecret: pull-secret-gcp
 
 initContainers:
   increaseMapCount:
@@ -106,13 +110,18 @@ terminationGracePeriodSeconds: 86400
 regional: false
 
 #Container Health Checks
+startupProbe:
+  initialDelaySeconds: 15
+  periodSeconds: 30
+  failureThreshold: 21
+  timeoutSeconds: 20
 livenessProbe:
-  initialDelaySeconds: 45
+  initialDelaySeconds: 15
   periodSeconds: 30
   failureThreshold: 4
   timeoutSeconds: 20
 readinessProbe:
-  initialDelaySeconds: 60
+  initialDelaySeconds: 30
   periodSeconds: 20
   successThreshold: 1
   failureThreshold: 3
@@ -131,3 +140,15 @@ env:
     name: MARIADB_ROOT_PASSWORD
     secretName: db-full-auth
     secretKey: password
+  4:
+    name: GALERA_SST_USER
+    secretName: ga-sync-auth
+    secretKey: username
+  5:
+    name: GALERA_SST_PASSWORD
+    secretName: ga-sync-auth
+    secretKey: password
+
+mariadb:
+  galera:
+    waitForPrimaryTimeoutInSeconds: 60 #https://galeracluster.com/library/documentation/galera-parameters.html#pc.wait_prim_timeout

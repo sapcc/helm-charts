@@ -30,7 +30,7 @@ RUN oldIFS="${IFS}" \
   && curl -s -L 'https://mariadb.org/mariadb_release_signing_key.asc' -o /etc/apt/trusted.gpg.d/mariadb_release_signing_key.asc \
   && echo "deb https://mirror1.hs-esslingen.de/pub/Mirrors/mariadb/repo/${softMinorVer}/ubuntu focal main" >>/etc/apt/sources.list \
   && apt-get update \
-  && apt-get install --no-install-recommends -y ${SOFTWARE_NAME}-server-${softMinorVer}=${softMajorVer} ${SOFTWARE_NAME}-server-core-${softMinorVer}=${softMajorVer} galera-4=${GALERA_VERSION}-focal ${SOFTWARE_NAME}-client-${softMinorVer}=${softMajorVer} ${SOFTWARE_NAME}-client-core-${softMinorVer}=${softMajorVer} libmariadb3=${softMajorVer} mysql-common=${softMajorVer} ${SOFTWARE_NAME}-common=${softMajorVer} \
+  && apt-get install --no-install-recommends -y socat ${SOFTWARE_NAME}-server-${softMinorVer}=${softMajorVer} ${SOFTWARE_NAME}-server-core-${softMinorVer}=${softMajorVer} galera-4=${GALERA_VERSION}-focal ${SOFTWARE_NAME}-client-${softMinorVer}=${softMajorVer} ${SOFTWARE_NAME}-client-core-${softMinorVer}=${softMajorVer} mariadb-backup=${softMajorVer} libmariadb3=${softMajorVer} mysql-common=${softMajorVer} ${SOFTWARE_NAME}-common=${softMajorVer} \
   && apt-get -y autoclean \
   && apt-get -y autoremove \
   && rm -rf /var/lib/apt/lists/* \

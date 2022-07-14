@@ -5,9 +5,11 @@ metadata:
   name: my-cnf
   namespace: {{ $.Release.Namespace }}
 data:
-  my.cnf.tpl: |-
+{{- range $int, $err := until ($.Values.replicas|int) }}
+  my.cnf.{{ $.Release.Name }}-{{ $int }}.tpl: |-
     [mariadb]
-    # https://mariadb.com/kb/en/galera-cluster-system-variables/
+    #https://mariadb.com/kb/en/galera-cluster-system-variables/
+    #https://galeracluster.com/library/documentation/weighted-quorum.html#wq-three-nodes
     wsrep-provider=/usr/lib/libgalera_smm.so
     binlog_format=ROW
     log-bin=/opt/mariadb/data/mysql-bin.log
@@ -23,14 +25,23 @@ data:
       {{- if eq $servicesValue.name "be"}}
         {{- range $portsKey, $portsValue := $servicesValue.ports }}
           {{- if eq $portsValue.name "galera"}}
-    wsrep_cluster_address={{ (printf "gcomm://%s-be.%s.svc.cluster.local:%d" $.Release.Name $.Release.Namespace ($portsValue.port | int)) }}
+            {{- $nodeNames := list -}}
+            {{- range $int, $err := until ($.Values.replicas|int) }}
+              {{- $nodeNames = (printf "g%d.%s.svc.cluster.local:%d" $int $.Release.Namespace ($portsValue.port | int)) | append $nodeNames -}}
+            {{- end }}
+    wsrep_cluster_address={{ (printf "gcomm://%s,%s-be.%s.svc.cluster.local:%d" (join "," $nodeNames) $.Release.Name $.Release.Namespace ($portsValue.port | int)) }}
           {{- else if eq $portsValue.name "ist" }}
-    wsrep_provider_options={{ (printf "ist.recv_addr=${CONTAINER_IP}:%d" ($portsValue.port | int)) }}
+    wsrep_provider_options={{ (printf "ist.recv_addr=${CONTAINER_IP}:%d;pc.wait_prim_timeout=PT%dS;gcache.recover=yes;pc.weight=${PC_WEIGHT_%d}" ($portsValue.port | int) ($.Values.mariadb.galera.waitForPrimaryTimeoutInSeconds | default 30 | int) $int) }}
           {{- else if eq $portsValue.name "sst" }}
     wsrep-sst-receive-address={{ (printf "${CONTAINER_IP}:%d" ($portsValue.port | int)) }}
+    wsrep_node_address=${CONTAINER_IP}
+    wsrep_node_name={{ $.Release.Name }}-{{ $int }}
           {{- end }}
         {{- end }}
       {{- end }}
     {{- end }}
     wsrep-on=1
-    wsrep-restart-slave=1
+    #wsrep_sst_method=mariabackup
+    #wsrep_sst_auth=${GALERA_SST_USER}:${GALERA_SST_USER}
+
+{{- end }}
