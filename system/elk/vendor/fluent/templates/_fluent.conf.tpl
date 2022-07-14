@@ -496,10 +496,10 @@
     slow_flush_log_threshold 50.0
     request_timeout 60s
     include_tag_key true
-    reload_connections false
-    reload_on_failure true
-    resurrect_after 120
     reconnect_on_error true
+    reload_connections false
+    reload_on_failure false
+    resurrect_after 120
     <buffer>
       total_limit_size 256MB
       flush_at_shutdown true
