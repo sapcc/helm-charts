@@ -38,17 +38,6 @@ spec:
 {{ tuple . "nova" "conductor" | include "kubernetes_pod_anti_affinity" | indent 6 }}
       terminationGracePeriodSeconds: {{ .Values.defaults.default.graceful_shutdown_timeout | add 5 }}
       hostname: nova-conductor
-      initContainers:
-        - name: nova-db-sync
-          image: {{ required ".Values.global.registry is missing" .Values.global.registry}}/ubuntu-source-nova-api:{{.Values.imageVersionNovaApi | default .Values.imageVersionNova | default .Values.imageVersion | required "Please set nova.imageVersion or similar"}}
-          command: ['sh', '-c', 'nova-manage db sync --local_cell']
-          volumeMounts:
-            - mountPath: /etc/nova
-              name: etcnova
-            - mountPath: /etc/nova/nova.conf
-              name: nova-etc
-              subPath: nova-cell2.conf
-              readOnly: true
       containers:
         - name: nova-conductor
           image: {{ required ".Values.global.registry is missing" .Values.global.registry}}/ubuntu-source-nova-conductor:{{.Values.imageVersionNovaConductor | default .Values.imageVersionNova | default .Values.imageVersion | required "Please set nova.imageVersion or similar"}}
