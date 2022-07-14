@@ -1,7 +1,5 @@
-#!/bin/sh
-
-set -x
-set -e
+#!/usr/bin/env bash
+set -euxo pipefail
 
 nova_manage="nova-manage --config-file /etc/nova/nova.conf"
 available_commands_text=$(nova-manage --help | awk '/Command categories/ {getline; print $0}')
