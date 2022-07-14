@@ -60,7 +60,7 @@ function recovergalera {
       loginfo "${FUNCNAME[0]}" 'positive sequence number found'
       updateseqnoconfigmap ${SEQNO[1]}
       selectbootstrapnode
-      if [ "${NODENAME[0]}" -eq "${CONTAINER_NAME}" ]; then
+      if [ "${NODENAME[0]}" == "${CONTAINER_NAME}" ]; then
         bootstrapgalera
       else
         startgalera
