@@ -45,12 +45,13 @@ rabbitmqctl trace_on
 eval $(timeout 5.0 rabbitmqctl list_users -q | awk '{printf "users[\"%s\"]=\"%s\"\n", $1, substr($2, 2, length($2)-2)}')
 
 {{- range $k, $v := .Values.users }}
-upsert_user {{ $v.user | include "rabbitmq.shell_quote" }} {{ required (printf ".Values.users.%v.password missing" $k) $v.password | include "rabbitmq.shell_quote" }}{{ if $v.tag }} {{ $v.tag | include "rabbitmq.shell_quote" }}{{ end }}
+{{ list (printf ".Values.users.%v" $k) $v | include "rabbitmq.upsert_user" }}
 {{- end }}
-{{- if .Values.metrics.enabled }}
-upsert_user {{ .Values.metrics.user | include "rabbitmq.shell_quote" }} {{ required ".Values.metrics.password missing" .Values.metrics.password | include "rabbitmq.shell_quote" }} monitoring
+
+{{- if and .Values.metrics.enabled (not .Values.users.metrics) }}
+{{ list ".Values.metrics" .Values.metrics | include "rabbitmq.upsert_user" }} monitoring
 {{- end }}
-upsert_user guest {{ required ".Values.users.default.password missing" .Values.users.default.password | include "rabbitmq.shell_quote" }} monitoring
+upsert_user guest {{ .Values.users.default.password | include "rabbitmq.shell_quote" }} monitoring
 
 wait $(jobs -rp) || true
 sleep inf
