@@ -142,12 +142,12 @@ groups:
     expr: sum by(pod, namespace, label_alert_service, label_alert_tier, label_cc_service, label_cc_support_group) (label_replace((up * on(instance) group_left() (sum by(instance) (up{job=~".*pod-sd"}) > 1)* on(pod) group_left(label_alert_tier, label_alert_service) (max without(uid) (kube_pod_labels))) , "pod", "$1", "kubernetes_pod_name", "(.*)-[0-9a-f]{8,10}-[a-z0-9]{5}"))
     for: 30m
     labels:
-      tier: {{ include "alertTierLabelOrDefault" (include "alerts.tier" .) }}
+      tier: {{ include "alertTierLabelOrDefault" .Values.tier }}
       service: {{ include "serviceLabelOrDefault" "prometheus" }}
-      support_group: {{ include "supportGroupOrDefault" "containers" }}
+      support_group: {{ include "supportGroupLabelOrDefault" "containers" }}
       severity: warning
       playbook: docs/support/playbook/kubernetes/target_scraped_multiple_times.html
       meta: 'Prometheus is scraping {{`{{ $labels.pod }}`}} pods more than once.'
     annotations:
-      description: Prometheus is scraping `{{`{{ $labels.pod }}`}}` pods in namespace `{{`{{ $labels.namespace }}`}}` multiple times. This is likely caused due to incorrectly placed scrape annotations.  <https://{{ include "prometheus.externalURL" . }}/graph?g0.expr={{ urlquery `up * on(instance) group_left() (sum by(instance) (up{kubernetes_pod_name=~"PLACEHOLDER.*"}) > 1)` | replace "PLACEHOLDER" "{{ $labels.pod }}"}}|Affected targets>
+      description: Prometheus is scraping `{{`{{ $labels.pod }}`}}` pods in namespace `{{`{{ $labels.namespace }}`}}` multiple times. This is likely caused due to incorrectly placed scrape annotations.
       summary: Prometheus scrapes pods multiple times
