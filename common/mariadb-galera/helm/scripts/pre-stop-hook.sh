@@ -3,6 +3,7 @@ set +e
 set -u
 set -o pipefail
 
+oldIFS="${IFS}"
 BASE=/opt/${SOFTWARE_NAME}
 DATADIR=${BASE}/data
 MAX_RETRIES=10
@@ -60,31 +61,97 @@ function shutdowngaleranode {
   fi
 }
 
-function lastmanstanding {
-  local nodecount
-  nodecount=$(mysql --defaults-file=/opt/${SOFTWARE_NAME}/etc/my.cnf --protocol=tcp -u root -h localhost --port=${MYSQL_PORT} --database=mysql --connect-timeout={{ $.Values.livenessProbe.timeoutSeconds }} --silent --skip-column-names --execute="SELECT node_name FROM mysql.wsrep_cluster_members ORDER BY node_name" | grep -c '{{ $.Release.Name }}-')
-  if [ $? -eq 0 ]; then
-    loginfo "${FUNCNAME[0]}" 'MariaDB Galera node count check successful'
-    if [ ${nodecount} -eq 1 ]; then
-      touch ${DATADIR}/lastmanstanding
-      if [ $? -eq 0 ]; then
-        loginfo "${FUNCNAME[0]}" 'lastmanstanding file successfully created'
-      else
-        logerror "${FUNCNAME[0]}" 'lastmanstanding file creation failed'
-        exit 1
-      fi
+function resetseqnoconfigmap {
+  local int
+  local CONFIGMAP_NAME=galerastatus
+  local KUBE_TOKEN=$(</var/run/secrets/kubernetes.io/serviceaccount/token)
+  IFS=$'\t' SEQNO=($(mysql --defaults-file=/opt/${SOFTWARE_NAME}/etc/my.cnf --protocol=tcp -u root -h localhost --port=${MYSQL_PORT} --database=mysql --connect-timeout={{ $.Values.readinessProbe.timeoutSeconds }} --execute="SHOW GLOBAL STATUS LIKE 'wsrep_last_committed';" --batch --skip-column-names | grep 'wsrep_last_committed'))
+  IFS="${oldIFS}"
+
+  for (( int=${MAX_RETRIES}; int >=1; int-=1));
+    do
+    loginfo "${FUNCNAME[0]}"  "Reset configmap '${CONFIGMAP_NAME}' (${int} retries left)"
+    curl --max-time ${WAIT_SECONDS} --retry ${MAX_RETRIES} --silent \
+         --write-out '\n\n{"http_code":"%{http_code}","response_code":"%{response_code}","url":"%{url_effective}"}\n' \
+         --cacert /var/run/secrets/kubernetes.io/serviceaccount/ca.crt \
+         --header "Authorization: Bearer ${KUBE_TOKEN}" --header "Accept: application/json" --header "Content-Type: application/strategic-merge-patch+json" \
+         --data "{\"kind\":\"ConfigMap\",\"apiVersion\":\"v1\",\"data\":{\"${CONTAINER_NAME}.seqno\":\"\"}}" \
+         --request PATCH https://${KUBERNETES_SERVICE_HOST}:${KUBERNETES_PORT_443_TCP_PORT}/api/v1/namespaces/${NAMESPACE}/configmaps/${CONFIGMAP_NAME}
+    if [ $? -ne 0 ]; then
+      logerror "${FUNCNAME[0]}" "configmap '${CONFIGMAP_NAME}' reset has been failed"
+      sleep ${WAIT_SECONDS}
     else
-      loginfo "${FUNCNAME[0]}" 'more than one Galera node in the cluster. I am not the last man standing'
+      break
     fi
-  else
-    logerror "${FUNCNAME[0]}" 'MariaDB Galera node count check failed'
+  done
+  if [ ${int} -eq 0 ]; then
+    logerror "${FUNCNAME[0]}" "configmap '${CONFIGMAP_NAME}' reset has been finally failed"
     exit 1
   fi
+  loginfo "${FUNCNAME[0]}" "configmap '${CONFIGMAP_NAME}' reset done"
+}
+
+function resetprimarystatusconfigmap {
+  local int
+  local CONFIGMAP_NAME=galerastatus
+  local KUBE_TOKEN=$(</var/run/secrets/kubernetes.io/serviceaccount/token)
+
+  for (( int=${MAX_RETRIES}; int >=1; int-=1));
+    do
+    loginfo "${FUNCNAME[0]}" "Reset configmap '${CONFIGMAP_NAME}' (${int} retries left)"
+    curl --max-time ${WAIT_SECONDS} --retry ${MAX_RETRIES} --silent \
+         --write-out '\n\n{"http_code":"%{http_code}","response_code":"%{response_code}","url":"%{url_effective}"}\n' \
+         --cacert /var/run/secrets/kubernetes.io/serviceaccount/ca.crt \
+         --header "Authorization: Bearer ${KUBE_TOKEN}" --header "Accept: application/json" --header "Content-Type: application/strategic-merge-patch+json" \
+         --data "{\"kind\":\"ConfigMap\",\"apiVersion\":\"v1\",\"data\":{\"${CONTAINER_NAME}.primary\":\"\"}}" \
+         --request PATCH https://${KUBERNETES_SERVICE_HOST}:${KUBERNETES_PORT_443_TCP_PORT}/api/v1/namespaces/${NAMESPACE}/configmaps/${CONFIGMAP_NAME}
+    if [ $? -ne 0 ]; then
+      logerror "${FUNCNAME[0]}" "configmap '${CONFIGMAP_NAME}' reset has been failed"
+      sleep ${WAIT_SECONDS}
+    else
+      break
+    fi
+  done
+  if [ ${int} -eq 0 ]; then
+    logerror "${FUNCNAME[0]}" "configmap '${CONFIGMAP_NAME}' reset has been finally failed"
+    exit 1
+  fi
+  loginfo "${FUNCNAME[0]}" "configmap '${CONFIGMAP_NAME}' reset done"
+}
+
+function resetrunningconfigmap {
+  local int
+  local CONFIGMAP_NAME=galerastatus
+  local KUBE_TOKEN=$(</var/run/secrets/kubernetes.io/serviceaccount/token)
+
+  for (( int=${MAX_RETRIES}; int >=1; int-=1));
+    do
+    loginfo "${FUNCNAME[0]}" "Reset configmap '${CONFIGMAP_NAME}' (${int} retries left)"
+    curl --max-time ${WAIT_SECONDS} --retry ${MAX_RETRIES} --silent \
+         --write-out '\n\n{"http_code":"%{http_code}","response_code":"%{response_code}","url":"%{url_effective}"}\n' \
+         --cacert /var/run/secrets/kubernetes.io/serviceaccount/ca.crt \
+         --header "Authorization: Bearer ${KUBE_TOKEN}" --header "Accept: application/json" --header "Content-Type: application/strategic-merge-patch+json" \
+         --data "{\"kind\":\"ConfigMap\",\"apiVersion\":\"v1\",\"data\":{\"${CONTAINER_NAME}.running\":\"\"}}" \
+         --request PATCH https://${KUBERNETES_SERVICE_HOST}:${KUBERNETES_PORT_443_TCP_PORT}/api/v1/namespaces/${NAMESPACE}/configmaps/${CONFIGMAP_NAME}
+    if [ $? -ne 0 ]; then
+      logerror "${FUNCNAME[0]}" "configmap '${CONFIGMAP_NAME}' reset has been failed"
+      sleep ${WAIT_SECONDS}
+    else
+      break
+    fi
+  done
+  if [ ${int} -eq 0 ]; then
+    logerror "${FUNCNAME[0]}" "configmap '${CONFIGMAP_NAME}' reset has been finally failed"
+    exit 1
+  fi
+  loginfo "${FUNCNAME[0]}" "configmap '${CONFIGMAP_NAME}' reset done"
 }
 
 loginfo "null" "preStop hook started"
 checkgaleraclusterstate
 checkgaleranodeconnected
 checkgaleralocalstate
-#lastmanstanding
+resetseqnoconfigmap
+resetprimarystatusconfigmap
+resetrunningconfigmap
 loginfo "null" "preStop hook done"
