@@ -60,26 +60,6 @@ tests:
     assertions:
     - violations: no
 
-- name: deprecated-api-versions
-  template: rendered-chart/gatekeeper/templates/constrainttemplate-deprecated-api-versions.yaml
-  constraint: rendered-chart/gatekeeper-config/templates/constraint-deprecated-api-versions.yaml
-  cases:
-  - name: helm-release-deprecated-api-versions
-    object: fixtures/deprecated-api-version/helm-release-deprecated-1.16.out.yaml
-    assertions:
-    - violations: 1
-      message: 'Deployment dummy declared with deprecated API version: extensions/v1beta1 \(will break in k8s v1.16\)'
-  - name: helm-release-deprecated-api-versions
-    object: fixtures/deprecated-api-version/helm-release-deprecated-1.22.out.yaml
-    assertions:
-    - violations: 1
-      message: 'CustomResourceDefinition dummy declared with deprecated API version: apiextensions.k8s.io/v1beta1 \(will break in k8s v1.22\)'
-  # NOTE: 1.25 and 1.26 deprecations are not tested here because the policy currently does not cover them
-  - name: helm-release-clean
-    object: fixtures/deprecated-api-version/helm-release-clean.out.yaml
-    assertions:
-    - violations: no
-
 - name: forbidden-clusterwide-objects
   template: rendered-chart/gatekeeper/templates/constrainttemplate-forbidden-clusterwide-objects.yaml
   constraint: rendered-chart/gatekeeper-config/templates/constraint-forbidden-clusterwide-objects.yaml

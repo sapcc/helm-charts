@@ -5,7 +5,7 @@ metadata:
   labels:
     on-prod-ui: 'false'
 spec:
-  enforcementAction: dryrun # set to 'deny' to enforce
+  enforcementAction: {{ if and (.Values.global.region | hasPrefix "qa-") (eq .Values.cluster_type "baremetal" "scaleout") -}} deny {{- else -}} dryrun {{- end }}
   match:
     kinds:
       - apiGroups: [""]
