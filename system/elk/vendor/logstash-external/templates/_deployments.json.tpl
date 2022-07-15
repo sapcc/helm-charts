@@ -13,6 +13,10 @@
       "number_of_replicas": "1"
     }
   },
-  "mappings": {},
+  "mapping": { 
+     "total_fields": {  
+       "limit": "2000"
+     }
+   },
   "aliases": {}
 }
