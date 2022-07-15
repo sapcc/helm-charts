@@ -139,7 +139,7 @@ spec:
             - name: socket-dir
               mountPath: /csi
         - name: vsphere-syncer
-          image: gcr.io/cloud-provider-vsphere/csi/ci/syncer:latest
+          image: {{ .Values.image.gcr.repository }}/cloud-provider-vsphere/csi/ci/syncer:latest
           args:
             - "--leader-election"
             - "--fss-name=internal-feature-states.csi.vsphere.vmware.com"
@@ -169,7 +169,7 @@ spec:
               name: vsphere-config-volume
               readOnly: true
         - name: csi-provisioner
-          image: {{ .Values.image.repository }}/sig-storage/csi-provisioner:v3.2.1
+          image: {{ .Values.image.k8s.repository }}/sig-storage/csi-provisioner:v3.2.1
           args:
             - "--v=4"
             - "--timeout=300s"
@@ -188,7 +188,7 @@ spec:
             - mountPath: /csi
               name: socket-dir
         - name: csi-snapshotter
-          image: {{ .Values.image.gcr.repository }}/sig-storage/csi-snapshotter:v6.0.1
+          image: {{ .Values.image.k8s.repository }}/sig-storage/csi-snapshotter:v6.0.1
           args:
             - "--v=4"
             - "--kube-api-qps=100"
