@@ -22,7 +22,7 @@ Create chart name and version as used by the chart label.
 - name: OS_PASSWORD
   valueFrom:
     secretKeyRef:
-      name: metis-secrets
+      name: metis-api-secrets
       key: metisServicePW
 - name:  OS_PROJECT_DOMAIN_NAME
   value: 'Default'
