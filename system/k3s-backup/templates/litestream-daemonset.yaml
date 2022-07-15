@@ -14,6 +14,9 @@ spec:
     metadata:
       labels:
         k8s-app: k3s-litestream
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/targets: kubernetes
     spec:
       containers:
       - name: litestream
@@ -29,6 +32,10 @@ spec:
             readOnly: true
           - name: k3s-statedb
             mountPath: /var/lib/rancher/k3s/server/db/
+        ports:
+        - name: metrics
+          containerPort: 9090
+          protocol: TCP
       terminationGracePeriodSeconds: 5
       volumes:
         - name: litestream-config
