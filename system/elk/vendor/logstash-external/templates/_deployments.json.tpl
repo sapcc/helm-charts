@@ -1,6 +1,8 @@
 {
   "order": 0,
-  "template": "deployments-*",
+  "index_patterns": [
+    "deployments-*"
+  ],
   "settings": {
     "index": {
       "refresh_interval": "10s",
@@ -10,13 +12,14 @@
         }
       },
       "number_of_shards": "3",
-      "number_of_replicas": "1"
+      "number_of_replicas": "1",
+      "mapping": {
+        "total_fields": {
+          "limit": "2500"
+        }
+      }
     }
   },
-  "mapping": { 
-     "total_fields": {  
-       "limit": "2000"
-     }
-   },
+  "mappings": {},
   "aliases": {}
 }
