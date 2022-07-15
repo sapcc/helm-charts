@@ -6,29 +6,35 @@ metadata:
   name: metis-api
   namespace: {{ .Values.namespace }}
   labels:
-    app.kubernetes.io/name: metis
-    helm.sh/chart: {{ include "metis.chart" $ }}
-    app.kubernetes.io/instance: metis-{{ .Release.Name }}
-    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/name: {{ template "name" . }}
+    helm.sh/chart: {{ include "metisAPI.chart" $ }}
+    app.kubernetes.io/instance: {{ template "name" . }}
+    app.kubernetes.io/version: "{{ $.Values.metisAPI.imageTag }}"
     app.kubernetes.io/component: "api"
+    app.kubernetes.io/part-of: "metis"
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
     alert-service: "metis"
-    alert-tier: {{ required "$.Values.backup_v2.alerts.tier missing" $.Values.backup_v2.alerts.tier }}
+    alert-tier: {{ required "$.Values.metisAPI.alerts.tier missing" $.Values.metisAPI.alerts.tier }}
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app.kubernetes.io/name: metis-api
-      app.kubernetes.io/instance: metis-api-{{ .Release.Name }}
+      app.kubernetes.io/name: {{ template "name" . }}
+      app.kubernetes.io/instance: {{ template "name" . }}
       app.kubernetes.io/component: "api"
   template:
     metadata:
       labels:
-        app.kubernetes.io/name: metis-api
-        app.kubernetes.io/instance: metis-api-{{ .Release.Name }}
+        app.kubernetes.io/name: {{ template "name" . }}
+        helm.sh/chart: {{ include "metisAPI.chart" $ }}
+        app.kubernetes.io/instance: {{ template "name" . }}
+        app.kubernetes.io/version: "{{ $.Values.metisAPI.imageTag }}"
         app.kubernetes.io/component: "api"
+        app.kubernetes.io/part-of: "metis"
+        app.kubernetes.io/managed-by: {{ .Release.Service }}
       annotations:
-        checksum/config: {{ include ( print $.Template.BasePath "/metis-api-configmap.yaml" ) . | sha256sum }}
-        checksum/secret: {{ include ( print $.Template.BasePath "/metis-secrets.yaml" ) . | sha256sum }}
+        checksum/config: {{ include ( print $.Template.BasePath "/configmap.yaml" ) . | sha256sum }}
+        checksum/secret: {{ include ( print $.Template.BasePath "/secrets.yaml" ) . | sha256sum }}
     spec:
       affinity:
         podAffinity:
@@ -58,8 +64,8 @@ spec:
           - name: DB_PASSWD
             valueFrom:
               secretKeyRef:
-                name: metis-secrets
-                key: metisAdminPW
+                name: metis-api-secrets
+                key: metisRonlyPW
           {{ include "os_environment" $ | indent 10 }}
 
         volumeMounts:
