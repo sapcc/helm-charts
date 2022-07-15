@@ -1,10 +1,13 @@
 {
   "order": 0,
-  "index_patterns": [
-    "deployments-*"
-  ],
+  "template": "deployments-*",
   "settings": {
     "index": {
+      "mapping": {
+        "total_fields": {
+          "limit": "2000"
+        }
+      },
       "refresh_interval": "10s",
       "unassigned": {
         "node_left": {
@@ -12,12 +15,7 @@
         }
       },
       "number_of_shards": "3",
-      "number_of_replicas": "1",
-      "mapping": {
-        "total_fields": {
-          "limit": "2500"
-        }
-      }
+      "number_of_replicas": "1"
     }
   },
   "mappings": {},
