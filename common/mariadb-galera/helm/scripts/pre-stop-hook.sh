@@ -22,7 +22,7 @@ function logerror {
 }
 
 function checkgaleralocalstate {
-  mysql --defaults-file=/opt/${SOFTWARE_NAME}/etc/my.cnf --protocol=tcp -u root -h localhost --port=${MYSQL_PORT} --database=mysql --connect-timeout={{ $.Values.livenessProbe.timeoutSeconds }} --execute="SHOW GLOBAL STATUS LIKE 'wsrep_local_state_comment';" | grep 'wsrep_local_state_comment' | grep --silent 'Synced'
+  mysql --defaults-file=/opt/${SOFTWARE_NAME}/etc/my.cnf --protocol=tcp -u root -h localhost --port=${MYSQL_PORT} --database=mysql --connect-timeout={{ $.Values.livenessProbe.timeoutSeconds }} --execute="SHOW GLOBAL STATUS LIKE 'wsrep_local_state_comment';" --batch --skip-column-names | grep --silent 'Synced'
   if [ $? -eq 0 ]; then
     loginfo "${FUNCNAME[0]}" 'MariaDB Galera node in sync with the cluster'
   else
@@ -32,7 +32,7 @@ function checkgaleralocalstate {
 }
 
 function checkgaleraclusterstate {
-  mysql --defaults-file=/opt/${SOFTWARE_NAME}/etc/my.cnf --protocol=tcp -u root -h localhost --port=${MYSQL_PORT} --database=mysql --connect-timeout={{ $.Values.livenessProbe.timeoutSeconds }} --execute="SHOW GLOBAL STATUS LIKE 'wsrep_cluster_status';" | grep 'wsrep_cluster_status' | grep --silent 'Primary'
+  mysql --defaults-file=/opt/${SOFTWARE_NAME}/etc/my.cnf --protocol=tcp -u root -h localhost --port=${MYSQL_PORT} --database=mysql --connect-timeout={{ $.Values.livenessProbe.timeoutSeconds }} --execute="SHOW GLOBAL STATUS LIKE 'wsrep_cluster_status';" --batch --skip-column-names | grep --silent 'Primary'
   if [ $? -eq 0 ]; then
     loginfo "${FUNCNAME[0]}" 'MariaDB Galera node reports a working cluster status'
   else
@@ -42,7 +42,7 @@ function checkgaleraclusterstate {
 }
 
 function checkgaleranodeconnected {
-  mysql --defaults-file=/opt/${SOFTWARE_NAME}/etc/my.cnf --protocol=tcp -u root -h localhost --port=${MYSQL_PORT} --database=mysql --connect-timeout={{ $.Values.livenessProbe.timeoutSeconds }} --execute="SHOW GLOBAL STATUS LIKE 'wsrep_connected';" | grep 'wsrep_connected' | grep --silent 'ON'
+  mysql --defaults-file=/opt/${SOFTWARE_NAME}/etc/my.cnf --protocol=tcp -u root -h localhost --port=${MYSQL_PORT} --database=mysql --connect-timeout={{ $.Values.livenessProbe.timeoutSeconds }} --execute="SHOW GLOBAL STATUS LIKE 'wsrep_connected';" --batch --skip-column-names | grep --silent 'ON'
   if [ $? -eq 0 ]; then
     loginfo "${FUNCNAME[0]}" 'MariaDB Galera node connected to other cluster nodes'
   else

@@ -13,6 +13,11 @@ Docker image and Helm chart to deploy a [MariaDB](https://mariadb.com/kb/en/gett
 * [Primary recovery after clean shutdown of the cluster](https://galeracluster.com/library/documentation/pc-recovery.html)
 * [calculate the Galera Cache Size for IST(Incremental State Transfer)](https://galeracluster.com/library/kb/customizing-gcache-size.html)
 * [custom pc.weight for predictable quorum decisions](https://galeracluster.com/library/documentation/weighted-quorum.html#wq-three-nodes)
+* [check Galera replication health](https://galeracluster.com/library/documentation/monitoring-cluster.html#check-replication-health)
+  * `wsrep_local_recv_que_avg` should be 0 (indicates if the local cluster node is not fast enough to apply the changes)
+  * `wsrep_flow_control_paused` should be 0 (0.25 means 25% of the time replication was paused)
+  * `wsrep_cert_deps_distance` difference between lowest and highest sequence number in the cluster
+* [Setting Parallel Slave Threads for replication](https://galeracluster.com/library/kb/parallel-applier-threads.html)
 ## Docker image
 
 ### build the image
