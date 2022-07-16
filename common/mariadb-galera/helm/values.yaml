@@ -75,10 +75,12 @@ services:
 # Storage
 volumeMounts:
   - name: data
-    nodeType:
-      - data
     claimName: data
     mountPath: /opt/mariadb/data
+    type: persistentVolume
+  - name: log
+    claimName: log
+    mountPath: /opt/mariadb/log
     type: persistentVolume
   - name: cert-wildcard
     mountPath: /opt/mariadb/etc/certs
@@ -89,6 +91,9 @@ volumeClaimTemplates:
   - name: data
     accessModes: [ReadWriteOnce]
     capacity: 1Gi
+  - name: log
+    accessModes: [ReadWriteOnce]
+    capacity: 10Gi
 
 # Resource limits per container
 resourceLimits:
@@ -128,28 +133,6 @@ readinessProbe:
   failureThreshold: 3
   timeoutSeconds: 10
 
-# Environment vars
-# env:
-#   1:
-#     name: MARIADB_CLUSTER_NAME
-#     value: eu-de-1.nova
-#   2:
-#     name: MARIADB_ROOT_USER
-#     secretName: db-full-auth
-#     secretKey: username
-#   3:
-#     name: MARIADB_ROOT_PASSWORD
-#     secretName: db-full-auth
-#     secretKey: password
-#   4:
-#     name: GALERA_SST_USER
-#     secretName: ga-sync-auth
-#     secretKey: username
-#   5:
-#     name: GALERA_SST_PASSWORD
-#     secretName: ga-sync-auth
-#     secretKey: password
-
 env:
   MARIADB_CLUSTER_NAME:
     value: eu-de-1.nova
@@ -167,6 +150,7 @@ env:
     secretKey: password
 
 mariadb:
+  binLogDir: log #if not defined the data dir will be used. Needs a log volume mount to be configured too
   galera:
     waitForPrimaryTimeoutInSeconds: 60 #https://galeracluster.com/library/documentation/galera-parameters.html#pc.wait_prim_timeout
     logLevel: info #info(default) or debug https://mariadb.com/kb/en/galera-cluster-system-variables/#wsrep_debug

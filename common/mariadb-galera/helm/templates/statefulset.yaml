@@ -246,10 +246,12 @@ spec:
           {{- range $volumeMountsKey, $volumeMountsValue := $.Values.volumeMounts }}
             {{- if (hasKey $volumeMountsValue "claimName") }}
               {{- range $volumeClaimTemplatesKey, $volumeClaimTemplatesValue := $.Values.volumeClaimTemplates }}
+                {{- if eq $volumeClaimTemplatesValue.name $volumeMountsValue.claimName }}
           - name: {{ $volumeMountsValue.name }}-{{ $volumeMountsValue.claimName | lower }}
             mountPath: {{ $volumeMountsValue.mountPath }}
-                {{- if $volumeMountsValue.readOnly }}
+                  {{- if $volumeMountsValue.readOnly }}
             readOnly: {{ $volumeMountsValue.readOnly }}
+                  {{- end }}
                 {{- end }}
               {{- end }}
             {{- else }}
