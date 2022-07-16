@@ -1,3 +1,50 @@
+{{- $wsrepProviderOptions := dict }}
+{{- $nodeNames := list -}}
+{{- $galeraPort := "" }}
+{{- $sstPort := "" }}
+{{- $mariadbClusterName := "" }}
+{{- $galeraSstUser := "" }}
+{{- $galeraSstPassword := "" }}
+{{ if $.Values.mariadb.galera.pcrecovery }}
+  {{- $_ := set $wsrepProviderOptions "pc.recovery" "pc.recovery=TRUE"}}
+{{- else  }}
+  {{- $_ := set $wsrepProviderOptions "pc.recovery" "pc.recovery=FALSE"}}
+{{ end }}
+{{- $_ := set $wsrepProviderOptions "gcache.recover" "gcache.recover=yes" }}
+{{- $_ := set $wsrepProviderOptions "cert.log_conflicts" "cert.log_conflicts=ON"}}
+{{- range $servicesKey, $servicesValue := $.Values.services }}
+  {{- if eq $servicesValue.name "be"}}
+    {{- range $portsKey, $portsValue := $servicesValue.ports }}
+      {{- if eq $portsValue.name "galera"}}
+      {{- $galeraPort = ($portsValue.port | int) }}
+        {{- range $int, $err := until ($.Values.replicas|int) }}
+          {{- $nodeNames = (printf "g%d.%s.svc.cluster.local:%d" $int $.Release.Namespace ($portsValue.port | int)) | append $nodeNames -}}
+        {{- end }}
+      {{- else if eq $portsValue.name "ist" }}
+        {{- $_ := set $wsrepProviderOptions "ist.recv_addr" (printf "ist.recv_addr=${CONTAINER_IP}:%d" ($portsValue.port | int)) }}
+        {{- $_ := set $wsrepProviderOptions "pc.wait_prim_timeout" (printf "pc.wait_prim_timeout=PT%dS" ($.Values.mariadb.galera.waitForPrimaryTimeoutInSeconds | default 30 | int)) }}
+      {{- else if eq $portsValue.name "sst" }}
+        {{- $sstPort = ($portsValue.port | int) }}
+      {{- end }}
+    {{- end }}
+  {{- end }}
+{{- end }}
+
+{{- range $envKey, $envValue := $.Values.env }}
+  {{- if eq $envKey "MARIADB_CLUSTER_NAME" }}
+    {{- $mariadbClusterName = $envValue.value }}
+  {{- else if eq $envKey "GALERA_SST_USER" }}
+    {{- $galeraSstUser = true }}
+  {{- else if eq $envKey "GALERA_SST_PASSWORD" }}
+    {{- $galeraSstPassword = true }}
+  {{- end }}
+{{- end }}
+
+{{/*
+  #https://mariadb.com/kb/en/galera-cluster-system-variables/
+  #https://galeracluster.com/library/documentation/weighted-quorum.html#wq-three-nodes
+*/}}
+
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -8,40 +55,26 @@ data:
 {{- range $int, $err := until ($.Values.replicas|int) }}
   my.cnf.{{ $.Release.Name }}-{{ $int }}.tpl: |-
     [mariadb]
-    #https://mariadb.com/kb/en/galera-cluster-system-variables/
-    #https://galeracluster.com/library/documentation/weighted-quorum.html#wq-three-nodes
     wsrep-provider=/usr/lib/libgalera_smm.so
     binlog_format=ROW
-    log-bin=/opt/mariadb/data/mysql-bin.log
+    log-bin=/opt/${SOFTWARE_NAME}/data/mysql-bin.log
     expire_logs_days=1
     default_storage_engine=InnoDB
     innodb_autoinc_lock_mode=2
-    {{- range $envKey, $envValue := $.Values.env }}
-      {{- if eq $envValue.name "MARIADB_CLUSTER_NAME"}}
-    wsrep-cluster-name={{ $envValue.value }}
-      {{- end }}
-    {{- end }}
-    {{- range $servicesKey, $servicesValue := $.Values.services }}
-      {{- if eq $servicesValue.name "be"}}
-        {{- range $portsKey, $portsValue := $servicesValue.ports }}
-          {{- if eq $portsValue.name "galera"}}
-            {{- $nodeNames := list -}}
-            {{- range $int, $err := until ($.Values.replicas|int) }}
-              {{- $nodeNames = (printf "g%d.%s.svc.cluster.local:%d" $int $.Release.Namespace ($portsValue.port | int)) | append $nodeNames -}}
-            {{- end }}
-    wsrep_cluster_address={{ (printf "gcomm://%s,%s-be.%s.svc.cluster.local:%d" (join "," $nodeNames) $.Release.Name $.Release.Namespace ($portsValue.port | int)) }}
-          {{- else if eq $portsValue.name "ist" }}
-    wsrep_provider_options={{ (printf "ist.recv_addr=${CONTAINER_IP}:%d;pc.wait_prim_timeout=PT%dS;gcache.recover=yes;pc.weight=${PC_WEIGHT_%d}" ($portsValue.port | int) ($.Values.mariadb.galera.waitForPrimaryTimeoutInSeconds | default 30 | int) $int) }}
-          {{- else if eq $portsValue.name "sst" }}
-    wsrep-sst-receive-address={{ (printf "${CONTAINER_IP}:%d" ($portsValue.port | int)) }}
+    wsrep-cluster-name={{ $mariadbClusterName }}
+    wsrep_cluster_address={{ (printf "gcomm://%s,%s-be.%s.svc.cluster.local:%d" (join "," $nodeNames) $.Release.Name $.Release.Namespace $galeraPort) }}
+    {{- $_ := set $wsrepProviderOptions "pc.weight" (printf "pc.weight=${PC_WEIGHT_%d}" $int)}}
+    wsrep_provider_options={{ (join ";" (values $wsrepProviderOptions)) }}
     wsrep_node_address=${CONTAINER_IP}
     wsrep_node_name={{ $.Release.Name }}-{{ $int }}
-          {{- end }}
-        {{- end }}
-      {{- end }}
-    {{- end }}
     wsrep-on=1
-    #wsrep_sst_method=mariabackup
-    #wsrep_sst_auth=${GALERA_SST_USER}:${GALERA_SST_USER}
+    wsrep_log_conflicts=ON
+    {{- if eq $.Values.mariadb.galera.logLevel "debug" }}wsrep_debug=1{{- end }}
+    {{- if eq $.Values.mariadb.galera.sst_method "mariabackup" }}
+      {{- $validateVar := (required "GALERA_SST_USER env var required if mariabackup is enabled" $galeraSstUser) }}
+      {{- $validateVar := (required "GALERA_SST_PASSWORD env var required if mariabackup is enabled" $galeraSstPassword) }}
+    wsrep_sst_method=mariabackup
+    wsrep_sst_auth=${GALERA_SST_USER}:${GALERA_SST_PASSWORD}
+    {{- end }}
 
 {{- end }}

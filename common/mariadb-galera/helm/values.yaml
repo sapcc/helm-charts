@@ -3,6 +3,7 @@
 # Declare variables to be passed into your templates.
 userId: 101
 groupId: 101
+logLevel: info # info(default) or debug
 # command:
 #   - "sh"
 #   - "-c"
@@ -128,27 +129,46 @@ readinessProbe:
   timeoutSeconds: 10
 
 # Environment vars
+# env:
+#   1:
+#     name: MARIADB_CLUSTER_NAME
+#     value: eu-de-1.nova
+#   2:
+#     name: MARIADB_ROOT_USER
+#     secretName: db-full-auth
+#     secretKey: username
+#   3:
+#     name: MARIADB_ROOT_PASSWORD
+#     secretName: db-full-auth
+#     secretKey: password
+#   4:
+#     name: GALERA_SST_USER
+#     secretName: ga-sync-auth
+#     secretKey: username
+#   5:
+#     name: GALERA_SST_PASSWORD
+#     secretName: ga-sync-auth
+#     secretKey: password
+
 env:
-  1:
-    name: MARIADB_CLUSTER_NAME
+  MARIADB_CLUSTER_NAME:
     value: eu-de-1.nova
-  2:
-    name: MARIADB_ROOT_USER
+  MARIADB_ROOT_USER:
     secretName: db-full-auth
     secretKey: username
-  3:
-    name: MARIADB_ROOT_PASSWORD
+  MARIADB_ROOT_PASSWORD:
     secretName: db-full-auth
     secretKey: password
-  4:
-    name: GALERA_SST_USER
+  GALERA_SST_USER:
     secretName: ga-sync-auth
     secretKey: username
-  5:
-    name: GALERA_SST_PASSWORD
+  GALERA_SST_PASSWORD:
     secretName: ga-sync-auth
     secretKey: password
 
 mariadb:
   galera:
     waitForPrimaryTimeoutInSeconds: 60 #https://galeracluster.com/library/documentation/galera-parameters.html#pc.wait_prim_timeout
+    logLevel: info #info(default) or debug https://mariadb.com/kb/en/galera-cluster-system-variables/#wsrep_debug
+    pcrecovery: false #https://galeracluster.com/library/documentation/pc-recovery.html
+    sst_method: rsync #rsync or mariabackup(also requires GALERA_SST_USER and GALERA_SST_PASSWORD)

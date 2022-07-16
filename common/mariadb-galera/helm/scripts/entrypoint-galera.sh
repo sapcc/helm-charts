@@ -17,6 +17,10 @@ function loginfo {
   logjson "stdout" "info" "$0" "$1" "$2"
 }
 
+function logdebug {
+  logjson "stdout" "debug" "$0" "$1" "$2"
+}
+
 function logerror {
   logjson "stderr" "error" "$0" "$1" "$2"
 }
@@ -48,8 +52,8 @@ function bootstrapgalera {
 
 function recovergalera {
   loginfo "${FUNCNAME[0]}" "recover mariadbd galera if required"
-  if [ -f ${DATADIR}/gvwstate.dat ] && [ -s ${DATADIR}/gvwstate.dat ]; then
-    cat ${DATADIR}/gvwstate.dat
+  if [ ${PC_RECOVERY} == "true" ] && [ -f ${DATADIR}/gvwstate.dat ] && [ -s ${DATADIR}/gvwstate.dat ]; then
+    {{ if eq $.Values.logLevel "debug" }} logdebug "${FUNCNAME[0]}" "gvwstate.dat content: '$(cat ${DATADIR}/gvwstate.dat)'" {{ end }}
     loginfo "${FUNCNAME[0]}" "primary component recovery possible"
     startgalera
   else
@@ -67,17 +71,22 @@ function recovergalera {
       fi
     else
       loginfo "${FUNCNAME[0]}" "start 'mariadbd --wsrep-recover' to find last sequence number"
-      IFS=': ' SEQNO=($(mariadbd --defaults-file=${BASE}/etc/my.cnf --basedir=/usr --skip-log-error --wsrep-recover 2>&1 | grep 'WSREP: Recovered position:'))
+      MARIADBD_RESPONSE=$(mariadbd --defaults-file=${BASE}/etc/my.cnf --basedir=/usr --skip-log-error --wsrep-recover 2>&1)
+      if [ $? -ne 0 ]; then
+        logerror "${FUNCNAME[0]}" "mariadbd --wsrep-recover failed with '${MARIADBD_RESPONSE}'"
+        exit 1
+      fi
+      IFS=': ' SEQNO=($(echo ${MARIADBD_RESPONSE}))
       IFS="${oldIFS}"
-      if [ "${SEQNO[-1]}" -ge 0 ]; then
+      {{ if eq $.Values.logLevel "debug" }} logdebug "${FUNCNAME[0]}" "wsrep-recover response: '${MARIADBD_RESPONSE}'" {{ end }}
+      if [ ${SEQNO[-1]} -ge 0 ]; then
         loginfo "${FUNCNAME[0]}" "sequence number ${SEQNO[-1]} found"
         sed -i "s,^seqno:\s*-1,seqno:   ${SEQNO[-1]}," ${DATADIR}/grastate.dat
         if [ $? -ne 0 ]; then
           logerror "${FUNCNAME[0]}" "sequence number update failed"
           exit 1
         fi
-        loginfo "${FUNCNAME[0]}" "grastate.dat file updated"
-        cat ${DATADIR}/grastate.dat
+        {{ if eq $.Values.logLevel "debug" }} logdebug "${FUNCNAME[0]}" "grastate.dat file updated to '$(cat ${DATADIR}/grastate.dat)'" {{ else }} loginfo "${FUNCNAME[0]}" "grastate.dat file updated" {{ end }}
 
         updateseqnoconfigmap ${SEQNO[-1]}
         selectbootstrapnode
@@ -108,14 +117,18 @@ function updateseqnoconfigmap {
   for (( int=${MAX_RETRIES}; int >=1; int-=1));
     do
     loginfo "${FUNCNAME[0]}" "Update configmap '${CONFIGMAP_NAME}' (${int} retries left)"
-    curl --max-time ${WAIT_SECONDS} --retry ${MAX_RETRIES} --silent \
-         --write-out '\n\n{"http_code":"%{http_code}","response_code":"%{response_code}","url":"%{url_effective}"}\n' \
-         --cacert /var/run/secrets/kubernetes.io/serviceaccount/ca.crt \
-         --header "Authorization: Bearer ${KUBE_TOKEN}" --header "Accept: application/json" --header "Content-Type: application/strategic-merge-patch+json" \
-         --data "{\"kind\":\"ConfigMap\",\"apiVersion\":\"v1\",\"data\":{\"${CONTAINER_NAME}.seqno\":\"${CONTAINER_NAME}:${SEQNO}\ntimestamp:$(date +%s)\n\"}}" \
-         --request PATCH https://${KUBERNETES_SERVICE_HOST}:${KUBERNETES_PORT_443_TCP_PORT}/api/v1/namespaces/${NAMESPACE}/configmaps/${CONFIGMAP_NAME}
-    if [ $? -ne 0 ]; then
-      logerror "${FUNCNAME[0]}" "configmap '${CONFIGMAP_NAME}' update has been failed"
+    CURL_RESPONSE=$(curl --max-time ${WAIT_SECONDS} --retry ${MAX_RETRIES} --silent \
+                    --write-out '\n{"curl":{"http_code":"%{http_code}","response_code":"%{response_code}","url":"%{url_effective}"}}\n' \
+                    --cacert /var/run/secrets/kubernetes.io/serviceaccount/ca.crt \
+                    --header "Authorization: Bearer ${KUBE_TOKEN}" --header "Accept: application/json" --header "Content-Type: application/strategic-merge-patch+json" \
+                    --data "{\"kind\":\"ConfigMap\",\"apiVersion\":\"v1\",\"data\":{\"${CONTAINER_NAME}.seqno\":\"${CONTAINER_NAME}:${SEQNO}\ntimestamp:$(date +%s)\n\"}}" \
+                    --request PATCH https://${KUBERNETES_SERVICE_HOST}:${KUBERNETES_PORT_443_TCP_PORT}/api/v1/namespaces/${NAMESPACE}/configmaps/${CONFIGMAP_NAME})
+    CURL_STATUS=$?
+    HTTP_STATUS=$(echo ${CURL_RESPONSE} | jq -r '. | select( .curl ) | .curl.http_code')
+    CURL_OUTPUT=$(echo ${CURL_RESPONSE} | jq -c '. | select( .curl ) | .curl')
+    HTTP_OUTPUT=$(echo ${CURL_RESPONSE} | jq '. | select( .kind )')
+    if [ ${CURL_STATUS} -ne 0 ]; then
+      {{ if eq $.Values.logLevel "debug" }} logerror "${FUNCNAME[0]}" "configmap '${CONFIGMAP_NAME}' update has been failed because of ${HTTP_OUTPUT}" {{ else }} logerror "${FUNCNAME[0]}" "configmap '${CONFIGMAP_NAME}' update has been failed because of ${CURL_OUTPUT}" {{ end }}
       sleep ${WAIT_SECONDS}
     else
       break
@@ -125,7 +138,7 @@ function updateseqnoconfigmap {
     logerror "${FUNCNAME[0]}" "configmap '${CONFIGMAP_NAME}' update has been finally failed"
     exit 1
   fi
-  loginfo "${FUNCNAME[0]}" "configmap '${CONFIGMAP_NAME}' update done"
+  {{ if eq $.Values.logLevel "debug" }} logdebug "${FUNCNAME[0]}" "configmap '${CONFIGMAP_NAME}' update done with '${HTTP_OUTPUT}'" {{ else }} loginfo "${FUNCNAME[0]}" "configmap '${CONFIGMAP_NAME}' update done with http status code '${HTTP_STATUS}'" {{ end }}
 }
 
 function selectbootstrapnode {

@@ -71,14 +71,18 @@ function resetseqnoconfigmap {
   for (( int=${MAX_RETRIES}; int >=1; int-=1));
     do
     loginfo "${FUNCNAME[0]}"  "Reset configmap '${CONFIGMAP_NAME}' (${int} retries left)"
-    curl --max-time ${WAIT_SECONDS} --retry ${MAX_RETRIES} --silent \
-         --write-out '\n\n{"http_code":"%{http_code}","response_code":"%{response_code}","url":"%{url_effective}"}\n' \
-         --cacert /var/run/secrets/kubernetes.io/serviceaccount/ca.crt \
-         --header "Authorization: Bearer ${KUBE_TOKEN}" --header "Accept: application/json" --header "Content-Type: application/strategic-merge-patch+json" \
-         --data "{\"kind\":\"ConfigMap\",\"apiVersion\":\"v1\",\"data\":{\"${CONTAINER_NAME}.seqno\":\"\"}}" \
-         --request PATCH https://${KUBERNETES_SERVICE_HOST}:${KUBERNETES_PORT_443_TCP_PORT}/api/v1/namespaces/${NAMESPACE}/configmaps/${CONFIGMAP_NAME}
-    if [ $? -ne 0 ]; then
-      logerror "${FUNCNAME[0]}" "configmap '${CONFIGMAP_NAME}' reset has been failed"
+    CURL_RESPONSE=$(curl --max-time {{ $.Values.readinessProbe.timeoutSeconds }} --retry ${MAX_RETRIES} --silent \
+                    --write-out '\n{"curl":{"http_code":"%{http_code}","response_code":"%{response_code}","url":"%{url_effective}"}}\n' \
+                    --cacert /var/run/secrets/kubernetes.io/serviceaccount/ca.crt \
+                    --header "Authorization: Bearer ${KUBE_TOKEN}" --header "Accept: application/json" --header "Content-Type: application/strategic-merge-patch+json" \
+                    --data "{\"kind\":\"ConfigMap\",\"apiVersion\":\"v1\",\"data\":{\"${CONTAINER_NAME}.seqno\":\"\"}}" \
+                    --request PATCH https://${KUBERNETES_SERVICE_HOST}:${KUBERNETES_PORT_443_TCP_PORT}/api/v1/namespaces/${NAMESPACE}/configmaps/${CONFIGMAP_NAME})
+    CURL_STATUS=$?
+    HTTP_STATUS=$(echo ${CURL_RESPONSE} | jq -r '. | select( .curl ) | .curl.http_code')
+    CURL_OUTPUT=$(echo ${CURL_RESPONSE} | jq -c '. | select( .curl ) | .curl')
+    HTTP_OUTPUT=$(echo ${CURL_RESPONSE} | jq '. | select( .kind )')
+    if [ ${CURL_STATUS} -ne 0 ]; then
+      {{ if eq $.Values.logLevel "debug" }} echo "configmap '${CONFIGMAP_NAME}' reset has been failed because of ${HTTP_OUTPUT}" {{ else }} echo "configmap '${CONFIGMAP_NAME}' reset has been failed because of ${CURL_OUTPUT}" {{ end }}
       sleep ${WAIT_SECONDS}
     else
       break
@@ -88,7 +92,7 @@ function resetseqnoconfigmap {
     logerror "${FUNCNAME[0]}" "configmap '${CONFIGMAP_NAME}' reset has been finally failed"
     exit 1
   fi
-  loginfo "${FUNCNAME[0]}" "configmap '${CONFIGMAP_NAME}' reset done"
+  {{ if eq $.Values.logLevel "debug" }} logdebug "${FUNCNAME[0]}" "configmap '${CONFIGMAP_NAME}' reset done with '${HTTP_OUTPUT}'" {{ else }} loginfo "${FUNCNAME[0]}" "configmap '${CONFIGMAP_NAME}' reset done with http status code '${HTTP_STATUS}'" {{ end }}
 }
 
 function resetprimarystatusconfigmap {
@@ -99,14 +103,18 @@ function resetprimarystatusconfigmap {
   for (( int=${MAX_RETRIES}; int >=1; int-=1));
     do
     loginfo "${FUNCNAME[0]}" "Reset configmap '${CONFIGMAP_NAME}' (${int} retries left)"
-    curl --max-time ${WAIT_SECONDS} --retry ${MAX_RETRIES} --silent \
-         --write-out '\n\n{"http_code":"%{http_code}","response_code":"%{response_code}","url":"%{url_effective}"}\n' \
-         --cacert /var/run/secrets/kubernetes.io/serviceaccount/ca.crt \
-         --header "Authorization: Bearer ${KUBE_TOKEN}" --header "Accept: application/json" --header "Content-Type: application/strategic-merge-patch+json" \
-         --data "{\"kind\":\"ConfigMap\",\"apiVersion\":\"v1\",\"data\":{\"${CONTAINER_NAME}.primary\":\"\"}}" \
-         --request PATCH https://${KUBERNETES_SERVICE_HOST}:${KUBERNETES_PORT_443_TCP_PORT}/api/v1/namespaces/${NAMESPACE}/configmaps/${CONFIGMAP_NAME}
-    if [ $? -ne 0 ]; then
-      logerror "${FUNCNAME[0]}" "configmap '${CONFIGMAP_NAME}' reset has been failed"
+    CURL_RESPONSE=$(curl --max-time {{ $.Values.readinessProbe.timeoutSeconds }} --retry ${MAX_RETRIES} --silent \
+                    --write-out '\n{"curl":{"http_code":"%{http_code}","response_code":"%{response_code}","url":"%{url_effective}"}}\n' \
+                    --cacert /var/run/secrets/kubernetes.io/serviceaccount/ca.crt \
+                    --header "Authorization: Bearer ${KUBE_TOKEN}" --header "Accept: application/json" --header "Content-Type: application/strategic-merge-patch+json" \
+                    --data "{\"kind\":\"ConfigMap\",\"apiVersion\":\"v1\",\"data\":{\"${CONTAINER_NAME}.primary\":\"\"}}" \
+                    --request PATCH https://${KUBERNETES_SERVICE_HOST}:${KUBERNETES_PORT_443_TCP_PORT}/api/v1/namespaces/${NAMESPACE}/configmaps/${CONFIGMAP_NAME})
+    CURL_STATUS=$?
+    HTTP_STATUS=$(echo ${CURL_RESPONSE} | jq -r '. | select( .curl ) | .curl.http_code')
+    CURL_OUTPUT=$(echo ${CURL_RESPONSE} | jq -c '. | select( .curl ) | .curl')
+    HTTP_OUTPUT=$(echo ${CURL_RESPONSE} | jq '. | select( .kind )')
+    if [ ${CURL_STATUS} -ne 0 ]; then
+      {{ if eq $.Values.logLevel "debug" }} echo "configmap '${CONFIGMAP_NAME}' reset has been failed because of ${HTTP_OUTPUT}" {{ else }} echo "configmap '${CONFIGMAP_NAME}' reset has been failed because of ${CURL_OUTPUT}" {{ end }}
       sleep ${WAIT_SECONDS}
     else
       break
@@ -116,7 +124,7 @@ function resetprimarystatusconfigmap {
     logerror "${FUNCNAME[0]}" "configmap '${CONFIGMAP_NAME}' reset has been finally failed"
     exit 1
   fi
-  loginfo "${FUNCNAME[0]}" "configmap '${CONFIGMAP_NAME}' reset done"
+  {{ if eq $.Values.logLevel "debug" }} logdebug "${FUNCNAME[0]}" "configmap '${CONFIGMAP_NAME}' reset done with '${HTTP_OUTPUT}'" {{ else }} loginfo "${FUNCNAME[0]}" "configmap '${CONFIGMAP_NAME}' reset done with http status code '${HTTP_STATUS}'" {{ end }}
 }
 
 function resetrunningconfigmap {
@@ -127,14 +135,18 @@ function resetrunningconfigmap {
   for (( int=${MAX_RETRIES}; int >=1; int-=1));
     do
     loginfo "${FUNCNAME[0]}" "Reset configmap '${CONFIGMAP_NAME}' (${int} retries left)"
-    curl --max-time ${WAIT_SECONDS} --retry ${MAX_RETRIES} --silent \
-         --write-out '\n\n{"http_code":"%{http_code}","response_code":"%{response_code}","url":"%{url_effective}"}\n' \
-         --cacert /var/run/secrets/kubernetes.io/serviceaccount/ca.crt \
-         --header "Authorization: Bearer ${KUBE_TOKEN}" --header "Accept: application/json" --header "Content-Type: application/strategic-merge-patch+json" \
-         --data "{\"kind\":\"ConfigMap\",\"apiVersion\":\"v1\",\"data\":{\"${CONTAINER_NAME}.running\":\"\"}}" \
-         --request PATCH https://${KUBERNETES_SERVICE_HOST}:${KUBERNETES_PORT_443_TCP_PORT}/api/v1/namespaces/${NAMESPACE}/configmaps/${CONFIGMAP_NAME}
-    if [ $? -ne 0 ]; then
-      logerror "${FUNCNAME[0]}" "configmap '${CONFIGMAP_NAME}' reset has been failed"
+    CURL_RESPONSE=$(curl --max-time {{ $.Values.readinessProbe.timeoutSeconds }} --retry ${MAX_RETRIES} --silent \
+                    --write-out '\n{"curl":{"http_code":"%{http_code}","response_code":"%{response_code}","url":"%{url_effective}"}}\n' \
+                    --cacert /var/run/secrets/kubernetes.io/serviceaccount/ca.crt \
+                    --header "Authorization: Bearer ${KUBE_TOKEN}" --header "Accept: application/json" --header "Content-Type: application/strategic-merge-patch+json" \
+                    --data "{\"kind\":\"ConfigMap\",\"apiVersion\":\"v1\",\"data\":{\"${CONTAINER_NAME}.running\":\"\"}}" \
+                    --request PATCH https://${KUBERNETES_SERVICE_HOST}:${KUBERNETES_PORT_443_TCP_PORT}/api/v1/namespaces/${NAMESPACE}/configmaps/${CONFIGMAP_NAME})
+    CURL_STATUS=$?
+    HTTP_STATUS=$(echo ${CURL_RESPONSE} | jq -r '. | select( .curl ) | .curl.http_code')
+    CURL_OUTPUT=$(echo ${CURL_RESPONSE} | jq -c '. | select( .curl ) | .curl')
+    HTTP_OUTPUT=$(echo ${CURL_RESPONSE} | jq '. | select( .kind )')
+    if [ ${CURL_STATUS} -ne 0 ]; then
+      {{ if eq $.Values.logLevel "debug" }} echo "configmap '${CONFIGMAP_NAME}' reset has been failed because of ${HTTP_OUTPUT}" {{ else }} echo "configmap '${CONFIGMAP_NAME}' reset has been failed because of ${CURL_OUTPUT}" {{ end }}
       sleep ${WAIT_SECONDS}
     else
       break
@@ -144,7 +156,7 @@ function resetrunningconfigmap {
     logerror "${FUNCNAME[0]}" "configmap '${CONFIGMAP_NAME}' reset has been finally failed"
     exit 1
   fi
-  loginfo "${FUNCNAME[0]}" "configmap '${CONFIGMAP_NAME}' reset done"
+  {{ if eq $.Values.logLevel "debug" }} logdebug "${FUNCNAME[0]}" "configmap '${CONFIGMAP_NAME}' reset done with '${HTTP_OUTPUT}'" {{ else }} loginfo "${FUNCNAME[0]}" "configmap '${CONFIGMAP_NAME}' reset done with http status code '${HTTP_STATUS}'" {{ end }}
 }
 
 loginfo "null" "preStop hook started"

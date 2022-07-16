@@ -142,23 +142,25 @@ spec:
               {{- end }}
             {{- end }}
           {{- end }}
-          {{/* https://galeracluster.com/library/documentation/weighted-quorum.html#wq-three-nodes */}}
+          {{- /* https://galeracluster.com/library/documentation/weighted-quorum.html#wq-three-nodes */}}
           {{- range $int, $err := until ($.Values.replicas|int) }}
         - name: PC_WEIGHT_{{ $int }}
           value: "{{ sub ($.Values.replicas|int) (add $int 1) }}"
           {{- end }}
-        {{- range $envKey, $envValue := $.Values.env }}
-        - name: {{ $envValue.name }}
-              {{- if $envValue.value }}
+        - name: PC_RECOVERY
+          value: "{{ $.Values.mariadb.galera.pcrecovery | default "false" }}"
+          {{- range $envKey, $envValue := $.Values.env }}
+        - name: {{ $envKey }}
+            {{- if $envValue.value }}
           value: "{{ $envValue.value }}"
-              {{- end }}
-              {{- if $envValue.secretName }}
+            {{- end }}
+            {{- if $envValue.secretName }}
           valueFrom:
             secretKeyRef:
               name: {{ $.Release.Name }}-{{ $envValue.secretName }}
               key: {{ $envValue.secretKey }}
-              {{- end }}
-        {{- end }}
+            {{- end }}
+          {{- end }}
         resources:
           requests:
             cpu: {{ $.Values.resourceLimits.cpu | default 0.5 }}
