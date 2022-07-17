@@ -28,6 +28,7 @@ spec:
         checksum/hooks.sh: {{ include (print $.Template.BasePath "/configmap-hooks.sh.yaml") $ | sha256sum }}
         checksum/galerastatus.sh: {{ include (print $.Template.BasePath "/configmap-galerastatus.yaml") $ | sha256sum }}
         checksum/entrypoint.sh: {{ include (print $.Template.BasePath "/configmap-entrypoint.sh.yaml") $ | sha256sum }}
+        checksum/common-functions.sh: {{ include (print $.Template.BasePath "/configmap-common-functions.sh.yaml") $ | sha256sum }}
     spec:
       affinity:
         podAntiAffinity:
@@ -292,6 +293,10 @@ spec:
             mountPath: /opt/mariadb/bin/post-start-hook.sh
             subPath: post-start-hook.sh
             readOnly: true
+          - name: common-functions-sh
+            mountPath: /opt/mariadb/bin/common-functions.sh
+            subPath: common-functions.sh
+            readOnly: true
       terminationGracePeriodSeconds: {{ $.Values.terminationGracePeriodSeconds | default 86400 }}
       volumes:
         {{- range $volumeMountsKey, $volumeMountsValue := $.Values.volumeMounts }}
@@ -329,6 +334,10 @@ spec:
         - name: hooks-sh
           configMap:
             name: hooks-sh
+            defaultMode: 0755
+        - name: common-functions-sh
+          configMap:
+            name: common-functions-sh
             defaultMode: 0755
   volumeClaimTemplates:
   {{- range $volumeClaimTemplatesKey, $volumeClaimTemplatesValue := $.Values.volumeClaimTemplates }}

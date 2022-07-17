@@ -9,21 +9,7 @@ MAX_RETRIES=10
 WAIT_SECONDS=6
 declare -a NODENAME=()
 
-function logjson {
-  printf "{\"@timestamp\":\"%s\",\"ecs.version\":\"1.6.0\",\"log.logger\":\"%s\",\"log.origin.function\":\"%s\",\"log.level\":\"%s\",\"message\":\"%s\"}\n" "$(date +%Y.%m.%d-%H:%M:%S-%Z)" "$3" "$4" "$2" "$5" >>/dev/"$1"
-}
-
-function loginfo {
-  logjson "stdout" "info" "$0" "$1" "$2"
-}
-
-function logdebug {
-  logjson "stdout" "debug" "$0" "$1" "$2"
-}
-
-function logerror {
-  logjson "stderr" "error" "$0" "$1" "$2"
-}
+source ${BASE}/bin/common-functions.sh
 
 function templateconfig {
   local int
@@ -62,7 +48,7 @@ function recovergalera {
     IFS="${oldIFS}"
     if [ ${SAFE_TO_BOOTSTRAP[1]} -eq 1 ] && [ ${SEQNO[1]} -ne -1 ]; then
       loginfo "${FUNCNAME[0]}" 'positive sequence number found'
-      updateseqnoconfigmap ${SEQNO[1]}
+      setconfigmap "seqno" "${SEQNO[1]}" "Update"
       selectbootstrapnode
       if [ "${NODENAME[0]}" == "${CONTAINER_NAME}" ]; then
         bootstrapgalera
@@ -88,7 +74,7 @@ function recovergalera {
         fi
         {{ if eq $.Values.logLevel "debug" }} logdebug "${FUNCNAME[0]}" "grastate.dat file updated to '$(cat ${DATADIR}/grastate.dat)'" {{ else }} loginfo "${FUNCNAME[0]}" "grastate.dat file updated" {{ end }}
 
-        updateseqnoconfigmap ${SEQNO[-1]}
+        setconfigmap "seqno" "${SEQNO[-1]}" "Update"
         selectbootstrapnode
         if [ "${NODENAME[0]}" == "${CONTAINER_NAME}" ]; then
           sed -i "s,^safe_to_bootstrap:\s*0,safe_to_bootstrap: 1," ${DATADIR}/grastate.dat
@@ -106,39 +92,6 @@ function recovergalera {
       fi
     fi
   fi
-}
-
-function updateseqnoconfigmap {
-  local int
-  local SEQNO=$1
-  local CONFIGMAP_NAME=galerastatus
-  local KUBE_TOKEN=$(</var/run/secrets/kubernetes.io/serviceaccount/token)
-
-  for (( int=${MAX_RETRIES}; int >=1; int-=1));
-    do
-    loginfo "${FUNCNAME[0]}" "Update configmap '${CONFIGMAP_NAME}' (${int} retries left)"
-    CURL_RESPONSE=$(curl --max-time ${WAIT_SECONDS} --retry ${MAX_RETRIES} --silent \
-                    --write-out '\n{"curl":{"http_code":"%{http_code}","response_code":"%{response_code}","url":"%{url_effective}"}}\n' \
-                    --cacert /var/run/secrets/kubernetes.io/serviceaccount/ca.crt \
-                    --header "Authorization: Bearer ${KUBE_TOKEN}" --header "Accept: application/json" --header "Content-Type: application/strategic-merge-patch+json" \
-                    --data "{\"kind\":\"ConfigMap\",\"apiVersion\":\"v1\",\"data\":{\"${CONTAINER_NAME}.seqno\":\"${CONTAINER_NAME}:${SEQNO}\ntimestamp:$(date +%s)\n\"}}" \
-                    --request PATCH https://${KUBERNETES_SERVICE_HOST}:${KUBERNETES_PORT_443_TCP_PORT}/api/v1/namespaces/${NAMESPACE}/configmaps/${CONFIGMAP_NAME})
-    CURL_STATUS=$?
-    HTTP_STATUS=$(echo ${CURL_RESPONSE} | jq -r '. | select( .curl ) | .curl.http_code')
-    CURL_OUTPUT=$(echo ${CURL_RESPONSE} | jq -c '. | select( .curl ) | .curl')
-    HTTP_OUTPUT=$(echo ${CURL_RESPONSE} | jq '. | select( .kind )')
-    if [ ${CURL_STATUS} -ne 0 ]; then
-      {{ if eq $.Values.logLevel "debug" }} logerror "${FUNCNAME[0]}" "configmap '${CONFIGMAP_NAME}' update has been failed because of ${HTTP_OUTPUT}" {{ else }} logerror "${FUNCNAME[0]}" "configmap '${CONFIGMAP_NAME}' update has been failed because of ${CURL_OUTPUT}" {{ end }}
-      sleep ${WAIT_SECONDS}
-    else
-      break
-    fi
-  done
-  if [ ${int} -eq 0 ]; then
-    logerror "${FUNCNAME[0]}" "configmap '${CONFIGMAP_NAME}' update has been finally failed"
-    exit 1
-  fi
-  {{ if eq $.Values.logLevel "debug" }} logdebug "${FUNCNAME[0]}" "configmap '${CONFIGMAP_NAME}' update done with '${HTTP_OUTPUT}'" {{ else }} loginfo "${FUNCNAME[0]}" "configmap '${CONFIGMAP_NAME}' update done with http status code '${HTTP_STATUS}'" {{ end }}
 }
 
 function selectbootstrapnode {
