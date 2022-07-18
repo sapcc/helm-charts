@@ -61,10 +61,21 @@ function checkgaleraready {
   fi
 }
 
+function checknoderejectsconnections {
+  mysql --defaults-file=/opt/${SOFTWARE_NAME}/etc/my.cnf --protocol=tcp -u root -h localhost --port=${MYSQL_PORT} --database=mysql --connect-timeout={{ $.Values.readinessProbe.timeoutSeconds }} --execute="SHOW VARIABLES LIKE 'wsrep_reject_queries';" --batch --skip-column-names | grep --silent 'NONE'
+  if [ $? -eq 0 ]; then
+    echo 'MariaDB Galera node does accept new client connections'
+  else
+    echo 'MariaDB Galera node does not accept new client connections'
+    exit 1
+  fi
+}
+
 checkdblogon
 checkgaleraclusterstatus
 checkgaleranodejoinstatus
 checkgaleranodeconnectstatus
 checkgaleraready
+checknoderejectsconnections
 setconfigmap "seqno" $(fetchcurrentseqno) "Update"
 setconfigmap "primary" "true" "Update"
