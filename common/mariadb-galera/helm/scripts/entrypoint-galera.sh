@@ -43,8 +43,8 @@ function recovergalera {
     loginfo "${FUNCNAME[0]}" "primary component recovery possible"
     startgalera
   else
-    IFS=": " SAFE_TO_BOOTSTRAP=($(cat ${DATADIR}/grastate.dat | grep 'safe_to_bootstrap:'))
-    IFS=": " SEQNO=($(cat ${DATADIR}/grastate.dat | grep 'seqno:'))
+    IFS=": " SAFE_TO_BOOTSTRAP=($(grep 'safe_to_bootstrap:' ${DATADIR}/grastate.dat))
+    IFS=": " SEQNO=($(grep 'seqno:' ${DATADIR}/grastate.dat))
     IFS="${oldIFS}"
     if [ ${SAFE_TO_BOOTSTRAP[1]} -eq 1 ] && [ ${SEQNO[1]} -ne -1 ]; then
       loginfo "${FUNCNAME[0]}" 'positive sequence number found'
