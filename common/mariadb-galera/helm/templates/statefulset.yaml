@@ -1,3 +1,8 @@
+{{- $unevenNodeCount := "" }}
+{{- if eq (mod ($.Values.replicas|int) 2) 1 }}
+    {{- $unevenNodeCount = "true" }}
+{{- end }}
+{{- $_ := (required ".replicas value not an uneven integer. This is required to avoid a split brain cluster state." $unevenNodeCount) }}
 ---
 apiVersion: apps/v1
 kind: StatefulSet
@@ -146,7 +151,18 @@ spec:
           {{- /* https://galeracluster.com/library/documentation/weighted-quorum.html#wq-three-nodes */}}
           {{- range $int, $err := until ($.Values.replicas|int) }}
         - name: PC_WEIGHT_{{ $int }}
-          value: "{{ sub ($.Values.replicas|int) (add $int 1) }}"
+          {{- $weight := (sub (sub ($.Values.replicas|int) $int) 1) }}
+          {{- $weightValue := 2 }}
+            {{- if ge $weight 2 }}
+              {{- range $_, $err := until ($weight|int) }}
+                {{- $weightValue = (mul 2 $weightValue) }}
+              {{- end }}
+            {{- else if eq $weight 1 }}
+              {{- $weightValue = (mul 2 ($weight|int)) }}
+            {{- else }}
+              {{- $weightValue = 1 }}
+            {{- end }}
+          value: {{ $weightValue | quote }}
           {{- end }}
         - name: PC_RECOVERY
           value: "{{ $.Values.mariadb.galera.pcrecovery | default "false" }}"
