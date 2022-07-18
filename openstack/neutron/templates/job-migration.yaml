@@ -8,7 +8,7 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: neutron-migration-{{.Values.imageVersion | required "Please set neutron.imageVersion or similar"}}
+  name: {{ include "neutron.migration_job_name" . }}
   labels:
     system: openstack
     type: configuration
@@ -17,19 +17,33 @@ spec:
   template:
     spec:
       restartPolicy: OnFailure
-      containers:
-        - name: neutron-migration
+{{ include "utils.proxysql.job_pod_settings" . | indent 6 }}
+      initContainers:
+        - name: dependencies
           image: {{.Values.global.registry}}/loci-neutron:{{default .Values.imageVersion | required "Please set neutron.imageVersion or similar"}}
           imagePullPolicy: IfNotPresent
           command:
             - kubernetes-entrypoint
           env:
             - name: COMMAND
-              value: "neutron-db-manage upgrade head"
+              value: "true"
             - name: NAMESPACE
               value: {{ .Release.Namespace }}
             - name: DEPENDENCY_SERVICE
               value: "{{ .Release.Name }}-mariadb"
+      containers:
+        - name: neutron-migration
+          image: {{.Values.global.registry}}/loci-neutron:{{default .Values.imageVersion | required "Please set neutron.imageVersion or similar"}}
+          imagePullPolicy: IfNotPresent
+          command:
+            - /usr/bin/env
+            - bash
+            - -c
+            - |
+              set -euo pipefail
+              neutron-db-manage upgrade head
+{{ include "utils.proxysql.proxysql_signal_stop_script" . | trim | indent 14 }}
+          env:
             - name: PGAPPNAME
               valueFrom:
                 fieldRef:
@@ -38,6 +52,8 @@ spec:
             - mountPath: /etc/neutron
               name: etc-neutron
               readOnly: true
+            {{- include "utils.proxysql.volume_mount" . | indent 12 }}
+        {{- include "utils.proxysql.container" . | indent 8 }}
       volumes:
         - name: etc-neutron
           projected:
@@ -50,3 +66,4 @@ spec:
                 - key: ml2-conf.ini
                   path: plugins/ml2/ml2-conf.ini
                 name: neutron-etc
+        {{- include "utils.proxysql.volumes" . | indent 8 }}
