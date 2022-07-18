@@ -39,7 +39,7 @@ function setconfigmap {
     CURL_OUTPUT=$(echo ${CURL_RESPONSE} | jq -c '. | select( .curl ) | .curl')
     HTTP_OUTPUT=$(echo ${CURL_RESPONSE} | jq '. | select( .kind )')
     if [ ${CURL_STATUS} -ne 0 ]; then
-      {{ if eq $.Values.logLevel "debug" }} logerror "${FUNCNAME[0]}" "configmap '${CONFIGMAP_NAME}' ${OUTPUT_LOWERCASE} has been failed because of ${HTTP_OUTPUT}" {{ else }} logerror "${FUNCNAME[0]}" "configmap '${CONFIGMAP_NAME}' ${OUTPUT_LOWERCASE} has been failed because of ${CURL_OUTPUT}" {{ end }}
+      {{ if eq $.Values.scripts.logLevel "debug" }} logerror "${FUNCNAME[0]}" "configmap '${CONFIGMAP_NAME}' ${OUTPUT_LOWERCASE} has been failed because of ${HTTP_OUTPUT}" {{ else }} logerror "${FUNCNAME[0]}" "configmap '${CONFIGMAP_NAME}' ${OUTPUT_LOWERCASE} has been failed because of ${CURL_OUTPUT}" {{ end }}
       sleep ${WAIT_SECONDS}
     else
       break
@@ -49,7 +49,7 @@ function setconfigmap {
     logerror "${FUNCNAME[0]}" "configmap '${CONFIGMAP_NAME}' ${OUTPUT_LOWERCASE} has been finally failed"
     exit 1
   fi
-  {{ if eq $.Values.logLevel "debug" }} logdebug "${FUNCNAME[0]}" "configmap '${CONFIGMAP_NAME}' ${OUTPUT_LOWERCASE} done with '${HTTP_OUTPUT}'" {{ else }} loginfo "${FUNCNAME[0]}" "configmap '${CONFIGMAP_NAME}' ${OUTPUT_LOWERCASE} done with http status code '${HTTP_STATUS}'" {{ end }}
+  {{ if eq $.Values.scripts.logLevel "debug" }} logdebug "${FUNCNAME[0]}" "configmap '${CONFIGMAP_NAME}' ${OUTPUT_LOWERCASE} done with '${HTTP_OUTPUT}'" {{ else }} loginfo "${FUNCNAME[0]}" "configmap '${CONFIGMAP_NAME}' ${OUTPUT_LOWERCASE} done with http status code '${HTTP_STATUS}'" {{ end }}
 }
 
 function fetchcurrentseqno {

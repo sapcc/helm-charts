@@ -5,8 +5,8 @@ set -o pipefail
 
 BASE=/opt/${SOFTWARE_NAME}
 DATADIR=${BASE}/data
-MAX_RETRIES=10
-WAIT_SECONDS=6
+MAX_RETRIES={{ $.Values.scripts.maxRetries | default 10 }}
+MAX_RETRIES={{ $.Values.scripts.waitTimeBetweenRetriesInSeconds | default 6 }}
 declare -a NODENAME=()
 
 source ${BASE}/bin/common-functions.sh
@@ -39,7 +39,7 @@ function bootstrapgalera {
 function recovergalera {
   loginfo "${FUNCNAME[0]}" "recover mariadbd galera if required"
   if [ ${PC_RECOVERY} == "true" ] && [ -f ${DATADIR}/gvwstate.dat ] && [ -s ${DATADIR}/gvwstate.dat ]; then
-    {{ if eq $.Values.logLevel "debug" }} logdebug "${FUNCNAME[0]}" "gvwstate.dat content: '$(cat ${DATADIR}/gvwstate.dat)'" {{ end }}
+    {{ if eq $.Values.scripts.logLevel "debug" }} logdebug "${FUNCNAME[0]}" "gvwstate.dat content: '$(cat ${DATADIR}/gvwstate.dat)'" {{ end }}
     loginfo "${FUNCNAME[0]}" "primary component recovery possible"
     startgalera
   else
@@ -64,7 +64,7 @@ function recovergalera {
       fi
       IFS=': ' SEQNO=($(echo ${MARIADBD_RESPONSE}))
       IFS="${oldIFS}"
-      {{ if eq $.Values.logLevel "debug" }} logdebug "${FUNCNAME[0]}" "wsrep-recover response: '${MARIADBD_RESPONSE}'" {{ end }}
+      {{ if eq $.Values.scripts.logLevel "debug" }} logdebug "${FUNCNAME[0]}" "wsrep-recover response: '${MARIADBD_RESPONSE}'" {{ end }}
       if [ ${SEQNO[-1]} -ge 0 ]; then
         loginfo "${FUNCNAME[0]}" "sequence number ${SEQNO[-1]} found"
         sed -i "s,^seqno:\s*-1,seqno:   ${SEQNO[-1]}," ${DATADIR}/grastate.dat
@@ -72,7 +72,7 @@ function recovergalera {
           logerror "${FUNCNAME[0]}" "sequence number update failed"
           exit 1
         fi
-        {{ if eq $.Values.logLevel "debug" }} logdebug "${FUNCNAME[0]}" "grastate.dat file updated to '$(cat ${DATADIR}/grastate.dat)'" {{ else }} loginfo "${FUNCNAME[0]}" "grastate.dat file updated" {{ end }}
+        {{ if eq $.Values.scripts.logLevel "debug" }} logdebug "${FUNCNAME[0]}" "grastate.dat file updated to '$(cat ${DATADIR}/grastate.dat)'" {{ else }} loginfo "${FUNCNAME[0]}" "grastate.dat file updated" {{ end }}
 
         setconfigmap "seqno" "${SEQNO[-1]}" "Update"
         selectbootstrapnode
@@ -97,19 +97,32 @@ function recovergalera {
 function selectbootstrapnode {
   local int
   local SEQNO_FILES="${BASE}/etc/galerastatus/{{ $.Release.Name }}-*.seqno"
+  local SEQNO_OLDEST_TIMESTAMP
+  local SEQNO_OLDEST_TIMESTAMP_WITH_BUFFER
+  local CURRENT_EPOCH
 
   for (( int=${MAX_RETRIES}; int >=1; int-=1));
     do
     loginfo "${FUNCNAME[0]}" "Find Galera node with highest sequence number (${int} retries left)"
     SEQNO_FILE_COUNT=$(grep -c '{{ $.Release.Name }}-*' ${SEQNO_FILES} | grep -c -e "${BASE}/etc/galerastatus/{{ $.Release.Name }}-.*.seqno:1")
+    IFS=":" SEQNO_OLDEST_TIMESTAMP=($(grep --no-filename 'timestamp:' ${SEQNO_FILES} | sort --key=2 --numeric-sort --field-separator=: | head -1))
+    IFS="${oldIFS}"
+    SEQNO_OLDEST_TIMESTAMP_WITH_BUFFER=$(( ${SEQNO_OLDEST_TIMESTAMP[1]} + ({{ $.Values.readinessProbe.timeoutSeconds | int }} * {{ $.Values.scripts.maxAllowedTimeDifferenceFactor | default 3 | int }}) ))
+    CURRENT_EPOCH=$(date +%s)
+
     if [ ${SEQNO_FILE_COUNT} -eq {{ ($.Values.replicas|int) }} ]; then
-      IFS=": " NODENAME=($(grep --no-filename '{{ $.Release.Name }}-*' ${SEQNO_FILES} | sort --key=2 --reverse --numeric-sort --field-separator=: | head -1))
-      IFS="${oldIFS}"
-      if [[ "${NODENAME[0]}" =~ ^{{ $.Release.Name }}-.* ]]; then
-        loginfo "${FUNCNAME[0]}" "Galera nodename '${NODENAME[0]}' with the sequence number '${NODENAME[1]}' selected"
-        break
+      if [ ${CURRENT_EPOCH} -le ${SEQNO_OLDEST_TIMESTAMP_WITH_BUFFER} ]; then
+        IFS=": " NODENAME=($(grep --no-filename '{{ $.Release.Name }}-*' ${SEQNO_FILES} | sort --key=2 --reverse --numeric-sort --field-separator=: | head -1))
+        IFS="${oldIFS}"
+        if [[ "${NODENAME[0]}" =~ ^{{ $.Release.Name }}-.* ]]; then
+          loginfo "${FUNCNAME[0]}" "Galera nodename '${NODENAME[0]}' with the sequence number '${NODENAME[1]}' selected"
+          break
+        else
+          logerror "${FUNCNAME[0]}" "nodename '${NODENAME[0]}' not valid"
+          exit 1
+        fi
       else
-        logerror "${FUNCNAME[0]}" "nodename '${NODENAME[0]}' not valid"
+        logerror "${FUNCNAME[0]}" "The seqno timestamp '$(date --date=@${SEQNO_OLDEST_TIMESTAMP_WITH_BUFFER} +%Y.%m.%d-%H:%M:%S-%Z)' of at least one node is too old compared to the current timestamp '$(date --date=@${CURRENT_EPOCH} +%Y.%m.%d-%H:%M:%S-%Z)'"
         exit 1
       fi
     else
