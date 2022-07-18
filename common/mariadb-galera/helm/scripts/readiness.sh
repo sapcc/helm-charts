@@ -7,7 +7,7 @@ oldIFS="${IFS}"
 BASE=/opt/${SOFTWARE_NAME}
 DATADIR=${BASE}/data
 MAX_RETRIES={{ $.Values.scripts.maxRetries | default 10 }}
-MAX_RETRIES={{ $.Values.scripts.waitTimeBetweenRetriesInSeconds | default 6 }}
+WAIT_SECONDS={{ $.Values.scripts.waitTimeBetweenRetriesInSeconds | default 6 }}
 
 source ${BASE}/bin/common-functions.sh
 
