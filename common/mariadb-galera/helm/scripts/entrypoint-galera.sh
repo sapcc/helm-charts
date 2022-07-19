@@ -36,6 +36,12 @@ function bootstrapgalera {
   exec mariadbd --defaults-file=${BASE}/etc/my.cnf --basedir=/usr --wsrep-new-cluster
 }
 
+function fetchseqnofromgrastate {
+  IFS=": " SEQNO=($(grep 'seqno:' ${DATADIR}/grastate.dat))
+  IFS="${oldIFS}"
+  echo ${SEQNO[1]}
+}
+
 function recovergalera {
   loginfo "${FUNCNAME[0]}" "recover mariadbd galera if required"
   if [ ${PC_RECOVERY} == "true" ] && [ -f ${DATADIR}/gvwstate.dat ] && [ -s ${DATADIR}/gvwstate.dat ]; then
@@ -44,11 +50,12 @@ function recovergalera {
     startgalera
   else
     IFS=": " SAFE_TO_BOOTSTRAP=($(grep 'safe_to_bootstrap:' ${DATADIR}/grastate.dat))
-    IFS=": " SEQNO=($(grep 'seqno:' ${DATADIR}/grastate.dat))
     IFS="${oldIFS}"
-    if [ ${SAFE_TO_BOOTSTRAP[1]} -eq 1 ] && [ ${SEQNO[1]} -ne -1 ]; then
+    SEQNO=$(fetchseqnofromgrastate)
+
+    if [ ${SAFE_TO_BOOTSTRAP[1]} -eq 1 ] && [ ${SEQNO} -ne -1 ]; then
       loginfo "${FUNCNAME[0]}" 'positive sequence number found'
-      setconfigmap "seqno" "${SEQNO[1]}" "Update"
+      setconfigmap "seqno" "${SEQNO}" "Update"
       selectbootstrapnode
       if [ "${NODENAME[0]}" == "${CONTAINER_NAME}" ]; then
         bootstrapgalera
@@ -96,6 +103,7 @@ function recovergalera {
 
 function selectbootstrapnode {
   local int
+  local SEQNO=$(fetchseqnofromgrastate)
   local SEQNO_FILES="${BASE}/etc/galerastatus/{{ $.Release.Name }}-*.seqno"
   local SEQNO_OLDEST_TIMESTAMP
   local SEQNO_OLDEST_TIMESTAMP_WITH_BUFFER
@@ -110,7 +118,7 @@ function selectbootstrapnode {
     SEQNO_OLDEST_TIMESTAMP_WITH_BUFFER=$(( ${SEQNO_OLDEST_TIMESTAMP[1]} + ({{ $.Values.readinessProbe.timeoutSeconds | int }} * {{ $.Values.scripts.maxAllowedTimeDifferenceFactor | default 3 | int }}) ))
     CURRENT_EPOCH=$(date +%s)
 
-    if [ ${SEQNO_FILE_COUNT} -eq {{ ($.Values.replicas|int) }} ]; then
+    if [ ${SEQNO_FILE_COUNT} -ge {{ ($.Values.replicas|int) }} ]; then
       if [ ${CURRENT_EPOCH} -le ${SEQNO_OLDEST_TIMESTAMP_WITH_BUFFER} ]; then
         IFS=": " NODENAME=($(grep --no-filename '{{ $.Release.Name }}-*' ${SEQNO_FILES} | sort --key=2 --reverse --numeric-sort --field-separator=: | head -1))
         IFS="${oldIFS}"
@@ -122,13 +130,14 @@ function selectbootstrapnode {
           exit 1
         fi
       else
-        logerror "${FUNCNAME[0]}" "The seqno timestamp '$(date --date=@${SEQNO_OLDEST_TIMESTAMP_WITH_BUFFER} +%Y.%m.%d-%H:%M:%S-%Z)' of at least one node is too old compared to the current timestamp '$(date --date=@${CURRENT_EPOCH} +%Y.%m.%d-%H:%M:%S-%Z)'"
-        exit 1
+        logerror "${FUNCNAME[0]}" "seqno timestamp of at least one node is too old: '$(date --date=@${SEQNO_OLDEST_TIMESTAMP_WITH_BUFFER} +%Y.%m.%d-%H:%M:%S-%Z)'/'$(date --date=@${CURRENT_EPOCH} +%Y.%m.%d-%H:%M:%S-%Z)' will wait $(( ${WAIT_SECONDS} * (${MAX_RETRIES} - ${int} + 1) ))s"
+        sleep  $(( ${WAIT_SECONDS} * (${MAX_RETRIES} - ${int} + 1) ))
       fi
     else
-      loginfo "${FUNCNAME[0]}" "only ${SEQNO_FILE_COUNT} of {{ ($.Values.replicas|int) }} sequence numbers found. Will wait $(( ${WAIT_SECONDS} * (${MAX_RETRIES} - ${int} + 1) )) seconds"
+      loginfo "${FUNCNAME[0]}" "${SEQNO_FILE_COUNT} of {{ ($.Values.replicas|int) }} sequence numbers found. Will wait $(( ${WAIT_SECONDS} * (${MAX_RETRIES} - ${int} + 1) ))s"
       sleep  $(( ${WAIT_SECONDS} * (${MAX_RETRIES} - ${int} + 1) ))
     fi
+    setconfigmap "seqno" "${SEQNO}" "Update"
   done
 
   if [ ${int} -eq 0 ]; then

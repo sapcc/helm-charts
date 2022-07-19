@@ -95,6 +95,18 @@ spec:
         securityContext:
           privileged: {{ $.Values.initContainers.increaseMapCount.securityContext.privileged }}
           runAsUser: {{ $.Values.initContainers.increaseMapCount.securityContext.runAsUser }}
+      {{- if $.Values.cleanOsCacheAtStartup }}
+      - name: clean-os-cache
+        image: "{{ $.Values.image.os.registry }}/{{ $.Values.image.os.project }}/{{ $.Values.image.os.applicationname }}:{{ $.Values.image.os.applicationversion }}-{{ $.Values.image.os.imageversion }}"
+        imagePullPolicy: {{ $.Values.image.os.pullPolicy | default "IfNotPresent" | quote }}
+        command:
+        - sh
+        - -c
+        - 'echo 3 > /proc/sys/vm/drop_caches'
+        securityContext:
+          privileged: {{ $.Values.initContainers.increaseMapCount.securityContext.privileged }}
+          runAsUser: {{ $.Values.initContainers.increaseMapCount.securityContext.runAsUser }}
+      {{- end }}
       containers:
       - name: {{ $.Release.Name }}
         image: "{{ $.Values.image.application.registry }}/{{ $.Values.image.application.project }}/{{ $.Values.image.application.applicationname }}:{{ $.Values.image.application.applicationversion }}-{{ $.Values.image.application.imageversion }}"
@@ -151,18 +163,13 @@ spec:
           {{- /* https://galeracluster.com/library/documentation/weighted-quorum.html#wq-three-nodes */}}
           {{- range $int, $err := until ($.Values.replicas|int) }}
         - name: PC_WEIGHT_{{ $int }}
-          {{- $weight := (sub (sub ($.Values.replicas|int) $int) 1) }}
-          {{- $weightValue := 2 }}
-            {{- if ge $weight 2 }}
+            {{- $weight := (sub (sub ($.Values.replicas|int) $int) 1) }}
+            {{- $calculatedWeight := 1 }}
               {{- range $_, $err := until ($weight|int) }}
-                {{- $weightValue = (mul 2 $weightValue) }}
+                {{- /* 2^n there n is the $calculatedWeight */}}
+                {{- $calculatedWeight = (mul 2 $calculatedWeight) }}
               {{- end }}
-            {{- else if eq $weight 1 }}
-              {{- $weightValue = (mul 2 ($weight|int)) }}
-            {{- else }}
-              {{- $weightValue = 1 }}
-            {{- end }}
-          value: {{ $weightValue | quote }}
+          value: {{ $calculatedWeight | quote }}
           {{- end }}
         - name: PC_RECOVERY
           value: "{{ $.Values.mariadb.galera.pcrecovery | default "false" }}"

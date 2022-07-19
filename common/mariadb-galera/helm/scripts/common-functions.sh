@@ -22,6 +22,11 @@ function setconfigmap {
   local VALUE=$2
   local OUTPUT=$3
   declare -l OUTPUT_LOWERCASE=${OUTPUT}
+  if [ ${OUTPUT} == "Reset" ]; then
+    local CONTENT="${VALUE}\ntimestamp:\n"
+  else
+    local CONTENT="${VALUE}\ntimestamp:$(date +%s)\n"
+  fi
   local CONFIGMAP_NAME=galerastatus
   local KUBE_TOKEN=$(</var/run/secrets/kubernetes.io/serviceaccount/token)
 
@@ -32,7 +37,7 @@ function setconfigmap {
                     --write-out '\n{"curl":{"http_code":"%{http_code}","response_code":"%{response_code}","url":"%{url_effective}"}}\n' \
                     --cacert /var/run/secrets/kubernetes.io/serviceaccount/ca.crt \
                     --header "Authorization: Bearer ${KUBE_TOKEN}" --header "Accept: application/json" --header "Content-Type: application/strategic-merge-patch+json" \
-                    --data "{\"kind\":\"ConfigMap\",\"apiVersion\":\"v1\",\"data\":{\"${CONTAINER_NAME}.${SCOPE}\":\"${CONTAINER_NAME}:${VALUE}\ntimestamp:$(date +%s)\n\"}}" \
+                    --data "{\"kind\":\"ConfigMap\",\"apiVersion\":\"v1\",\"data\":{\"${CONTAINER_NAME}.${SCOPE}\":\"${CONTAINER_NAME}:${CONTENT}\"}}" \
                     --request PATCH https://${KUBERNETES_SERVICE_HOST}:${KUBERNETES_PORT_443_TCP_PORT}/api/v1/namespaces/${NAMESPACE}/configmaps/${CONFIGMAP_NAME})
     CURL_STATUS=$?
     HTTP_STATUS=$(echo ${CURL_RESPONSE} | jq -r '. | select( .curl ) | .curl.http_code')
