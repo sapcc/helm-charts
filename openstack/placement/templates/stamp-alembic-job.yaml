@@ -1,0 +1,33 @@
+{{- if and (not .Values.mariadb.enabled) .Values.api_db.initial_stamp -}}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: "placement-stamp-alembic"
+  labels:
+{{ tuple . "placement" "stamp-alembic" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 4 }}
+  annotations:
+    "helm.sh/hook": pre-upgrade
+    "helm.sh/hook-delete-policy": before-hook-creation
+spec:
+  template:
+    metadata:
+      name: "placement-stamp-alembic"
+      labels:
+{{ tuple . "placement" "stamp-alembic" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: stamp
+        image: {{ required ".Values.global.dockerHubMirror is missing" .Values.global.dockerHubMirror }}/{{ .Values.mariadb.image | default "library/mariadb:10.5.12" }}
+        command:
+        - /usr/bin/env
+        - bash
+        - -c
+        - |
+          mariadb -v -hnova-api-mariadb -u{{ .Values.api_db.user }} --password='{{ .Values.api_db.password }}' '{{ .Values.api_db.name }}' -e '
+          CREATE TABLE IF NOT EXISTS alembic_version (version_num varchar(32) NOT NULL, PRIMARY KEY (version_num));
+          INSERT INTO alembic_version (version_num)
+              SELECT "b4ed3a175331" AS version_num
+              WHERE NOT EXISTS (SELECT * FROM alembic_version);
+          '
+{{- end }}
