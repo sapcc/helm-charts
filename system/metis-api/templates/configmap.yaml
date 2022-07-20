@@ -1,0 +1,27 @@
+{{- if .Values.metisAPI.enabled }}
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name:  metis-api-etc
+  namespace: {{ .Values.namespace }}
+  labels:
+    app.kubernetes.io/name: {{ template "name" . }}
+    helm.sh/chart: {{ include "metisAPI.chart" $ }}
+    app.kubernetes.io/instance: {{ template "name" . }}
+    app.kubernetes.io/component: "api"
+    app.kubernetes.io/part-of: "metis"
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+data:
+  policy.yaml: |
+    'inventory:get_all' : 'role:cloud_inventory_viewer'
+
+  config.yaml: |
+    api:
+      port: {{ .Values.metisAPI.port }}
+    db:
+      user: "ronly"
+      host: metisdb-mariadb.metis
+      port: 3306
+
+{{ end }}

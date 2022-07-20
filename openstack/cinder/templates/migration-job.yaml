@@ -1,7 +1,7 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: cinder-migration-{{.Values.imageVersion | required "Please set cinder.imageVersion or similar"}}
+  name: cinder-migration-{{.Values.imageVersion | required "Please set cinder.imageVersion or similar"}}{{- if .Values.proxysql.mode}}-{{ .Values.proxysql.mode | replace "_" "-" }}{{ end }}
   labels:
     system: openstack
     type: configuration
@@ -10,15 +10,16 @@ spec:
   template:
     spec:
       restartPolicy: OnFailure
-      containers:
-        - name: cinder-migration
+{{ include "utils.proxysql.job_pod_settings" . | indent 6 }}
+      initContainers:
+        - name: dependencies
           image: {{required ".Values.global.registry is missing" .Values.global.registry}}/loci-cinder:{{.Values.imageVersionCinderApi | default .Values.imageVersion | required "Please set cinder.imageVersion or similar" }}
           imagePullPolicy: IfNotPresent
           command:
             - kubernetes-entrypoint
           env:
             - name: COMMAND
-              value: "cinder-manage db sync"
+              value: "true"
             - name: NAMESPACE
               value: {{ .Release.Namespace }}
             - name: DEPENDENCY_SERVICE
@@ -27,10 +28,16 @@ spec:
 {{- else }}
               value: "{{ .Release.Name }}-postgresql"
 {{- end }}
-            - name: PGAPPNAME
-              valueFrom:
-                fieldRef:
-                  fieldPath: metadata.name
+      containers:
+        - name: cinder-migration
+          image: {{required ".Values.global.registry is missing" .Values.global.registry}}/loci-cinder:{{.Values.imageVersionCinderApi | default .Values.imageVersion | required "Please set cinder.imageVersion or similar" }}
+          imagePullPolicy: IfNotPresent
+          command:
+            - bash
+            - -c
+            - |
+              trap "{{ include "utils.proxysql.proxysql_signal_stop_script" . | trim }}" EXIT
+              cinder-manage db sync
           volumeMounts:
             - name: etccinder
               mountPath: /etc/cinder
@@ -50,9 +57,12 @@ spec:
               mountPath: /etc/cinder/logging.ini
               subPath: logging.ini
               readOnly: true
+            {{- include "utils.proxysql.volume_mount" . | indent 12 }}
+        {{- include "utils.proxysql.container" . | indent 8 }}
       volumes:
         - name: etccinder
           emptyDir: {}
         - name: cinder-etc
           configMap:
             name: cinder-etc
+      {{- include "utils.proxysql.volumes" . | indent 8 }}

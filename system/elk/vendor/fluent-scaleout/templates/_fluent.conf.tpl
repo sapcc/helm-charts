@@ -31,6 +31,7 @@
   tag kubernetes.*
   format json
   keep_time_key true
+  open_on_every_update true
 </source>
 
 <match fluent.**>
@@ -62,6 +63,20 @@
     @type grok
     grok_pattern \[%{TIMESTAMP_ISO8601:timestamp}\]\[%{WORD:loglevel}
     grok_pattern %{TIMESTAMP_ISO8601:timestamp} \| %{NOTSPACE:loglevel}
+  </parse>
+</filter>
+
+<filter kubernetes.var.log.containers.elk-k8s-event-exporter**>
+  @type parser
+  @id json_parser
+  key_name log
+  reserve_data true
+  inject_key_prefix k8s.
+  remove_key_name_field true
+  <parse>
+    @type json
+    time_format %Y-%m-%dT%T.%L%Z
+    keep_time_key true
   </parse>
 </filter>
 

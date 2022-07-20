@@ -26,7 +26,7 @@ spec:
   - name: cloud_network_admin
   - name: cloud_volume_admin
   - name: cloud_baremetal_admin
-  - name: swiftoperator
+  - name: objectstore_admin
   - name: cloud_dns_admin
 
   services:
@@ -57,21 +57,6 @@ spec:
     - interface: public
       region: '{{ .Values.global.region }}'
       url: 'https://{{include "nova_api_endpoint_host_public" .}}:{{.Values.global.novaApiPortPublic}}/v2/%(tenant_id)s'
-{{- if .Values.placement.enabled }}
-  - name: placement
-    type: placement
-    description: Openstack Placement API
-    endpoints:
-    - interface: admin
-      region: '{{ .Values.global.region }}'
-      url: 'http://{{include "placement_api_endpoint_host_admin" .}}:{{.Values.global.placementApiPortAdmin}}'
-    - interface: internal
-      region: '{{ .Values.global.region }}'
-      url: 'http://{{include "placement_api_endpoint_host_internal" .}}:{{.Values.global.placementApiPortInternal}}'
-    - interface: public
-      region: '{{ .Values.global.region }}'
-      url: 'https://{{include "placement_api_endpoint_host_public" .}}:{{.Values.global.placementApiPortPublic}}'
-{{ end }}
   domains:
   - name: Default
     users:
@@ -99,16 +84,6 @@ spec:
         role: cloud_volume_admin
       - project: service
         role: cloud_dns_admin
-{{- if .Values.placement.enabled }}
-    - name: placement
-      description: Placement API Service User
-      password: {{ required ".Values.global.placement_service_password is missing" .Values.global.placement_service_password }}
-      role_assignments:
-      - project: service
-        role: service
-      - project: service
-        role: admin
-{{- end }}
     groups:
     - name: administrators
       role_assignments:
@@ -126,7 +101,7 @@ spec:
     - name: master
       role_assignments:
       - user: {{ .Values.global.nova_service_user | default "nova" }}{{ .Values.global.user_suffix | default "" }}@Default
-        role: swiftoperator
+        role: objectstore_admin
     groups:
     - name: CCADMIN_CLOUD_ADMINS
       role_assignments:

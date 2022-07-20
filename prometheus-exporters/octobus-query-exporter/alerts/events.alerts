@@ -13,6 +13,7 @@ groups:
         annotations:
           summary: "A VM unexpectedly powered down during a failed host migration (vMotion or Storage vMotion)."
           description: "VM {{ $labels.hit_cloud_instance_name }} unexpectedly powered down during a failed host migration on {{ $labels.hit_hostsystem }}"
+
       - alert: EsxiNicError
         expr: >
                 vrops_hostsystem_runtime_connectionstate{state="connected"} and
@@ -28,6 +29,7 @@ groups:
         annotations:
           summary: "An Error String related to possible NIC Failure was captured."
           description: "This alert is created to prevent the Outage from NIC failure on {{ $labels.hostsystem }}"
+
       - alert: VcenterRestarted
         expr: elasticsearch_octobus_vpxd_restart_hit
         labels:
@@ -38,7 +40,8 @@ groups:
           meta: "Alert for restarted vCenter"
         annotations:
           summary: "A vCenter vpxd service was (re)started"
-          description: "A restarted vCenter will be handled by TARS with playbook <https://awx.global.cloud.sap/#/templates/job_template/2435|vmware_host_service_actions.yml> (service vpxa, state restart)"
+          description: "A restarted vCenter will be handled by TARS with playbook <https://awx-prod.infraautomation.cc.eu-de-1.cloud.sap/#/templates/job_template/3496|vmware_host_service_actions.yml> (service vpxa, state restart)"
+
       - alert: VcenterVolumeAttachmentError
         expr: sum_over_time(sum by (region) (elasticsearch_octobus_volume_attachment_error_hostsystem_doc_count)[1h:5m]) >= 7
         labels:

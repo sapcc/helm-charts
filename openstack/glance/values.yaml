@@ -120,12 +120,22 @@ unittest:
 
 db_name: glance
 
+proxysql:
+  mode: unix_socket
+
 mariadb:
   enabled: true
   name: glance
   initdb_configmap: glance-initdb
   persistence_claim:
     name: db-glance-pvclaim
+  databases:
+  - glance
+  users:
+    glance:
+      name: glance
+      grants:
+      - "ALL PRIVILEGES ON glance.*"
   metrics:
     resources:
       enabled: true
@@ -288,6 +298,7 @@ watcher:
 # openstack-audit-middleware
 audit:
   enabled: true
+  mem_queue_size: 1000
 
 # Deploy Glance Prometheus alerts.
 alerts:

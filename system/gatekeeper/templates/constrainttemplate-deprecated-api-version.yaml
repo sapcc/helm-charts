@@ -1,8 +1,4 @@
-{{- if .Capabilities.APIVersions.Has "templates.gatekeeper.sh/v1" }}
 apiVersion: templates.gatekeeper.sh/v1
-{{- else }}
-apiVersion: templates.gatekeeper.sh/v1beta1
-{{- end }}
 kind: ConstraintTemplate
 metadata:
   name: gkdeprecatedapiversion
@@ -44,7 +40,7 @@ spec:
 
           # find objects in the manifest that use deprecated API versions
           obj := parser_resp.body.items[_]
-          input.parameters.apiVersions[obj.apiVersion]
+          input.parameters.apiVersions[_] == obj.apiVersion
 
           msg := sprintf(
             "%s %s declared with deprecated API version: %s (will break in k8s v%s) ",

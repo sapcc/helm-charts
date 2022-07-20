@@ -58,8 +58,12 @@ cronus:
     annotations:
       disco: "true"
       disco/record: my-ingress.region.cloud.com.
+  deployment:
+    enabled: true
+    replicas: 1
   statefulSet:
     enabled: false
+    replicas: 3
     podManagementPolicy: OrderedReady
     annotations: {}
     labels: {}
@@ -85,12 +89,9 @@ cronus:
             operator: In
             values:
               - cronus
-  replicas: 3
   # all below can be used only with a deployment style
   maxSurge: 1
   maxUnavailable: 0
-  # maximum email body size in bytes
-  maxEmailBodySize: 10485760 # 10MiB
   ingressAnnotations:
     # don't handle this resource by ingress controllers
     kubernetes.io/ingress.class: cronus
@@ -486,7 +487,9 @@ poller: # service that handles received emails
   debug: false # debug HTTP requests
   retry: # retry settings for failed connections
     maxConnectionRetries: 5 # 5 retries per connection
-    retryInterval: 0.5s # 500ms to wait after each try, e.g. in total 2.5 seconds
+    retryInterval: 0.5s # 500ms to wait after each try, e.g. in total 2.5 seconds, used in HTTP retry
+    connectionTimeout: 0.5s # 500ms to wait after each try, e.g. in total 2.5 seconds, used in SMTP net retry
+    commandTimeout: 3s
   endpoint:
     enabled: false
     name: http://localhost:5000 # override cronus endpoint URL - REMOVE IF NOT NEEDED

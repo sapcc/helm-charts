@@ -9,6 +9,10 @@ spec:
   {{- end }}
   clusterDomain: kubernetes.{{ required ".Values.global.region missing" .Values.global.region }}.{{ required ".Values.global.tld missing" .Values.global.tld }}
   query:
+    {{- if (.Values.useQueryRegions) }}
+    GRPCClientCA: thanos-grpcclient-ca
+    GRPCClientCertificate: thanos-grpcclient-crt
+    {{- end }}
     logLevel: {{ .Values.logLevel }}
     queryAutoDownsampling: true
     queryReplicaLabel:
@@ -27,8 +31,8 @@ spec:
     {{- else if .Values.deployWholeThanos }}
       - prometheus-{{ required ".Values.name missing" .Values.name }}:10901
     {{- else if (.Values.useQueryRegions) }}
-      {{- range $store := .Values.queryRegions }}
-      - https://thanos.{{ $store }}.{{ $root.Values.global.tld }}
+      {{- range $region := .Values.queryRegions }}
+      - thanos-grpc.{{ $region }}.{{ $root.Values.global.tld }}:443
       {{- end }}
     {{- end }}
     deploymentOverrides:

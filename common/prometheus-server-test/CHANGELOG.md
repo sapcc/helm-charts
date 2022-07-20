@@ -1,3 +1,11 @@
+## 7.0.15
+
+* use objectstore_admin 
+
+## 7.0.14
+
+* updated ingress to match the thanos-query service on /thanos
+
 ## 7.0.13
 
 * moving thanos to dedicated chart leaving only sidecar and seed here

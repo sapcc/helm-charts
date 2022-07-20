@@ -1,0 +1,41 @@
+{{- if .Values.grpcIngress.enabled }}
+{{- $root := . }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress 
+metadata:
+  name: {{ include "thanos.fullName" . }}-grpc
+  annotations:
+    disco: "true"
+    kubernetes.io/tls-acme: "true"
+    {{- if .Values.grpcIngress.authentication.sso.enabled}}
+    ingress.kubernetes.io/auth-tls-secret: {{ required ".Values.grpcIngress.authentication.sso.authTLSSecret missing" .Values.grpcIngress.authentication.sso.authTLSSecret | quote }}
+    ingress.kubernetes.io/auth-tls-verify-depth: {{ required ".Values.grpcIngress.authentication.sso.authTLSVerifyDepth missing" .Values.grpcIngress.authentication.sso.authTLSVerifyDepth | quote }}
+    ingress.kubernetes.io/auth-tls-verify-client: {{ required ".Values.grpcIngress.authentication.sso.authTLSVerifyClient missing" .Values.grpcIngress.authentication.sso.authTLSVerifyClient | quote }}
+    {{ end }}
+    {{- if .Values.grpcIngress.annotations }}
+{{ toYaml .Values.grpcIngress.annotations | indent 4 }}
+    {{ end }}
+spec:
+  rules:
+    {{- range $host := $root.Values.grpcIngress.hosts }}
+    - host: {{ $host }}-grpc.{{ $root.Values.global.region }}.{{ $root.Values.global.tld }}
+      http:
+        paths:
+        - path: /
+          backend:
+            service:
+              name:  {{ include "thanos.fullName" $root }}-query
+              port:
+                name: grpc
+          pathType: ImplementationSpecific
+    {{- end }}
+  tls:
+    - secretName: tls-{{ include "thanos.grpcURL" $root | replace "." "-" }}
+      hosts:
+        {{- range $host := $root.Values.grpcIngress.hosts }}
+        - {{ $host }}-grpc.{{ $root.Values.global.region }}.{{ $root.Values.global.tld }}
+        {{- end }}
+        {{- range $host := $root.Values.grpcIngress.hostsFQDN }}
+        - {{ $host }}
+        {{- end }}
+{{- end }}

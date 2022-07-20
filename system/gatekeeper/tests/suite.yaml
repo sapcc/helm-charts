@@ -11,9 +11,8 @@ tests:
   - name: helm-release-deprecated-api-version
     object: fixtures/deprecated-api-version/helm-release-deprecated-1.16.out.yaml
     assertions:
-    # TODO: fix no violation
-    - violations: 0
-      message: ""
+    - violations: 1
+      message: 'Deployment dummy declared with deprecated API version: extensions/v1beta1 \(will break in k8s v1.16\)'
   - name: helm-release-clean
     object: fixtures/deprecated-api-version/helm-release-clean.out.yaml
     assertions:
@@ -26,9 +25,8 @@ tests:
   - name: helm-release-deprecated-api-version-1.22
     object: fixtures/deprecated-api-version/helm-release-deprecated-1.22.out.yaml
     assertions:
-    # TODO: fix violation
-    - violations: 0
-      message: ""
+    - violations: 1
+      message: 'CustomResourceDefinition dummy declared with deprecated API version: apiextensions.k8s.io/v1beta1 \(will break in k8s v1.22\)'
   - name: helm-release-clean
     object: fixtures/deprecated-api-version/helm-release-clean.out.yaml
     assertions:
@@ -41,9 +39,8 @@ tests:
   - name: helm-release-deprecated-api-version-1.25
     object: fixtures/deprecated-api-version/helm-release-deprecated-1.25.out.yaml
     assertions:
-    # TODO: fix no violation
-    - violations: 0
-      message: ""
+    - violations: 1
+      message: 'CronJob dummy declared with deprecated API version: batch/v1beta1 \(will break in k8s v1.25\)'
   - name: helm-release-clean
     object: fixtures/deprecated-api-version/helm-release-clean.out.yaml
     assertions:
@@ -56,29 +53,8 @@ tests:
   - name: helm-release-deprecated-api-version-1.26
     object: fixtures/deprecated-api-version/helm-release-deprecated-1.26.out.yaml
     assertions:
-    # TODO: fix no violation
-    - violations: 0
-      message: ""
-  - name: helm-release-clean
-    object: fixtures/deprecated-api-version/helm-release-clean.out.yaml
-    assertions:
-    - violations: no
-
-- name: deprecated-api-versions
-  template: rendered-chart/gatekeeper/templates/constrainttemplate-deprecated-api-versions.yaml
-  constraint: rendered-chart/gatekeeper-config/templates/constraint-deprecated-api-versions.yaml
-  cases:
-  - name: helm-release-deprecated-api-versions
-    object: fixtures/deprecated-api-version/helm-release-deprecated-1.16.out.yaml
-    assertions:
     - violations: 1
-      message: 'Deployment dummy declared with deprecated API version: extensions/v1beta1 \(will break in k8s v1.16\)'
-  - name: helm-release-deprecated-api-versions
-    object: fixtures/deprecated-api-version/helm-release-deprecated-1.22.out.yaml
-    assertions:
-    - violations: 1
-      message: 'CustomResourceDefinition dummy declared with deprecated API version: apiextensions.k8s.io/v1beta1 \(will break in k8s v1.22\)'
-  # NOTE: 1.25 and 1.26 deprecations are not tested here because the policy currently does not cover them
+      message: 'FlowSchema dummy declared with deprecated API version: flowcontrol.apiserver.k8s.io/v1beta1 \(will break in k8s v1.26\)'
   - name: helm-release-clean
     object: fixtures/deprecated-api-version/helm-release-clean.out.yaml
     assertions:
@@ -188,10 +164,19 @@ tests:
     assertions:
     - violations: no
 
-# TODO: needs local doop-image-checker server
-# - name: outdated-image-bases
-#   template: rendered-chart/gatekeeper/templates/constrainttemplate-outdated-image-bases.yaml
-#   constraint: rendered-chart/gatekeeper-config/templates/constraint-outdated-image-bases.yaml
+- name: outdated-image-bases
+  template: rendered-chart/gatekeeper/templates/constrainttemplate-outdated-image-bases.yaml
+  constraint: rendered-chart/gatekeeper-config/templates/constraint-outdated-image-bases.yaml
+  cases:
+  - name: pod-old
+    object: fixtures/outdated-image-bases/pod-old.yaml
+    assertions:
+    - violations: 1
+      message: 'image keppel.example.com/vulnerability:old for container "dummy" uses a very old base image \(oldest layer is 417 days old\)'
+  - name: pod-new
+    object: fixtures/outdated-image-bases/pod-new.yaml
+    assertions:
+    - violations: no
 
 - name: owner-info-on-helm-releases
   template: rendered-chart/gatekeeper/templates/constrainttemplate-owner-info-on-helm-releases.yaml
@@ -314,7 +299,25 @@ tests:
     assertions:
     - violations: no
 
-# TODO: needs local doop-image-checker server
-# - name: vulnerable-images
-#   template: rendered-chart/gatekeeper/templates/constrainttemplate-vulnerable-images.yaml
-#   constraint: rendered-chart/gatekeeper-config/templates/constraint-vulnerable-images.yaml
+- name: vulnerable-images
+  template: rendered-chart/gatekeeper/templates/constrainttemplate-vulnerable-images.yaml
+  constraint: rendered-chart/gatekeeper-config/templates/constraint-vulnerable-images.yaml
+  cases:
+  - name: pod-vulnerable
+    object: fixtures/vulnerable-images/pod-vulnerable.yaml
+    assertions:
+    - violations: 1
+      message: 'image keppel.example.com/vulnerability:low for container "dummy" has vulnerability status "Low"'
+    - violations: 1
+      message: 'image keppel.example.com/vulnerability:medium for container "dummy" has vulnerability status "Medium"'
+    - violations: 1
+      message: 'image keppel.example.com/vulnerability:high for container "dummy" has vulnerability status "High"'
+  - name: pod-unclear
+    object: fixtures/vulnerable-images/pod-unclear.yaml
+    assertions:
+    - violations: 1
+      message: 'image keppel.example.com/vulnerability:unclear for container "dummy" has vulnerability status "Unclear"'
+  - name: pod-clean
+    object: fixtures/vulnerable-images/pod-clean.yaml
+    assertions:
+    - violations: no

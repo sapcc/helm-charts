@@ -27,27 +27,15 @@ deployWholeThanos: true
 
 # If set this will query all regions and expects a Thanos Query to be present at the end of the tunnel
 useQueryRegions: false
-queryRegions:
-  - ap-ae-1
-  - ap-au-1
-  - ap-cn-1
-  - ap-jp-1
-  - ap-jp-2
-  - ap-sa-1
-  - ap-sa-2
-  - eu-de-1
-  - eu-de-2
-  - eu-nl-1
-  - eu-ru-1
-  - la-br-1
-  - na-ca-1
-  - na-us-1
-  - na-us-2
-  - na-us-3
-  - qa-de-1
-  - qa-de-2
-  - qa-de-3
-  - qa-de-5
+queryRegions: []
+
+# used for cross cluster TLS 
+# only used, when useQueryRegions is set
+GRPCClientCA:
+GRPCClientCertificate:
+  certificate:
+  privateKey:
+
 
 logLevel: info
 
@@ -150,8 +138,7 @@ ingress:
   # Additional annotations for the ingress.
   annotations: {}
 
-# Optional additional ingress for this Thanos.
-internalIngress:
+grpcIngress:
   enabled: false
 
   # List of hostnames for this Thanos Query. FQDN will be generated using the pattern  <host>.<region>.<domain> .
@@ -166,15 +153,6 @@ internalIngress:
 
   # Client certificate authentication on ingress level.
   authentication:
-    oauth:
-      enabled: false
-
-      # The URL to the authentication service.
-      authURL:
-
-      # Optional URL to specify the location of the error page.
-      authSignInURL:
-
     sso:
       enabled: true
       # The key (<namespace>/<name>) of the secret containing the CA certificate (`ca.crt`) that is enabled to authenticate against this Ingress.
@@ -187,4 +165,6 @@ internalIngress:
       authTLSVerifyClient: on
 
   # Additional annotations for the ingress.
-  annotations: {}
+  annotations:
+    ingress.kubernetes.io/backend-protocol: GRPC
+    ingress.kubernetes.io/ssl-redirect: "true" 

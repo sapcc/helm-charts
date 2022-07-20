@@ -1,0 +1,79 @@
+{{- if $.Values.metisAPI.enabled }}
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: metis-api
+  namespace: {{ .Values.namespace }}
+  labels:
+    app.kubernetes.io/name: {{ template "name" . }}
+    helm.sh/chart: {{ include "metisAPI.chart" $ }}
+    app.kubernetes.io/instance: {{ template "name" . }}
+    app.kubernetes.io/version: "{{ $.Values.metisAPI.imageTag }}"
+    app.kubernetes.io/component: "api"
+    app.kubernetes.io/part-of: "metis"
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    alert-service: "metis"
+    alert-tier: {{ required "$.Values.metisAPI.alerts.tier missing" $.Values.metisAPI.alerts.tier }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ template "name" . }}
+      app.kubernetes.io/instance: {{ template "name" . }}
+      app.kubernetes.io/component: "api"
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ template "name" . }}
+        helm.sh/chart: {{ include "metisAPI.chart" $ }}
+        app.kubernetes.io/instance: {{ template "name" . }}
+        app.kubernetes.io/version: "{{ $.Values.metisAPI.imageTag }}"
+        app.kubernetes.io/component: "api"
+        app.kubernetes.io/part-of: "metis"
+        app.kubernetes.io/managed-by: {{ .Release.Service }}
+      annotations:
+        checksum/config: {{ include ( print $.Template.BasePath "/configmap.yaml" ) . | sha256sum }}
+        checksum/secret: {{ include ( print $.Template.BasePath "/secrets.yaml" ) . | sha256sum }}
+    spec:
+      affinity:
+        podAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - "metisdb-mariadb"
+            topologyKey: kubernetes.io/hostname
+      containers:
+      - name: metis
+        image: "{{ required ".Values.global.registry variable missing" .Values.global.registry }}/{{ .Values.metisAPI.image }}:{{ .Values.metisAPI.imageTag }}"
+        ports:
+        - name: http
+          containerPort: {{ .Values.metisAPI.port}}
+          protocol: TCP
+        resources:
+          requests:
+            memory: 25Mi
+            cpu: 10m
+          limits:
+            memory: 100Mi
+            cpu: 50m
+        env:
+          - name: DB_PASSWD
+            valueFrom:
+              secretKeyRef:
+                name: metis-api-secrets
+                key: metisRonlyPW
+          {{ include "os_environment" $ | indent 10 }}
+
+        volumeMounts:
+          - name: metis-api-etc
+            mountPath: /etc/metis
+            readOnly: true
+      volumes:
+        - name: metis-api-etc
+          configMap:
+            name: metis-api-etc
+{{- end }}

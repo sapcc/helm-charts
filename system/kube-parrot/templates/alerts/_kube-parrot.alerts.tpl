@@ -6,7 +6,7 @@ groups:
 
     - alert: KubeParrotBgpNeighborSessionDown
       expr: sum by (node) (kube_parrot_bgp_neighbor_session_status{status="established"}) < {{ .Values.bgpNeighborCount }}
-      for: 10m
+      for: 30m
       labels:
         tier: k8s
         service: kube-parrot
@@ -17,9 +17,22 @@ groups:
         description: Node {{`{{ $labels.node }}`}} has less than {{ .Values.bgpNeighborCount }} BGP neighbors. Network datapath threatened!
         summary: Node {{`{{ $labels.node }}`}} has less than {{ .Values.bgpNeighborCount }} BGP neighbors.
 
+    - alert: KubeParrotBgpNeighborSessionAllDown
+      expr: sum by (node) (kube_parrot_bgp_neighbor_session_status{status="established"}) == 0
+      for: 10m
+      labels:
+        tier: k8s
+        service: kube-parrot
+        severity: critical
+        context: availability
+        playbook: "docs/support/playbook/kubernetes/k8s_node_bgp_neighbor.html"
+      annotations:
+        description: Node {{`{{ $labels.node }}`}} has no BGP neighbors. Network datapath is down!
+        summary: Node {{`{{ $labels.node }}`}} has no BGP neighbors.
+
     - alert: KubeParrotBgpNeighborMissingRouteAdvertisement
       expr: sum by (node,neighbor) (kube_parrot_bgp_neighbor_advertised_route_count_total) < 1
-      for: 10m
+      for: 30m
       labels:
         tier: k8s
         service: kube-parrot

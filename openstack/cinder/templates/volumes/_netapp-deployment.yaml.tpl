@@ -31,8 +31,13 @@ spec:
         pod.beta.kubernetes.io/hostname: cinder-volume-netapp-{{$volume.name}}
         configmap-etc-hash: {{ include (print .Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
         configmap-volume-hash: {{ tuple . $volume | include "volume_netapp_configmap" | sha256sum }}
+        {{- if .Values.proxysql.mode }}
+        prometheus.io/scrape: "true"
+        prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
+        {{- end }}
     spec:
       hostname: cinder-volume-netapp-{{$volume.name}}
+{{ include "utils.proxysql.pod_settings" . | indent 6 }}
       containers:
       - name: cinder-volume-netapp-{{$volume.name}}
         image: {{required ".Values.global.registry is missing" .Values.global.registry}}/loci-cinder:{{.Values.imageVersionCinderVolume | default .Values.imageVersion | required "Please set cinder.imageVersion or similar" }}
@@ -74,6 +79,8 @@ spec:
           mountPath: /etc/cinder/cinder-volume.conf
           subPath: cinder-volume.conf
           readOnly: true
+        {{- include "utils.proxysql.volume_mount" . | indent 10 }}
+      {{- include "utils.proxysql.container" . | indent 8 }}
       volumes:
       - name: etccinder
         emptyDir: {}
@@ -83,5 +90,6 @@ spec:
       - name: volume-config
         configMap:
           name:  volume-netapp-{{$volume.name}}
+      {{- include "utils.proxysql.volumes" . | indent 8 }}
 {{- end -}}
 {{- end -}}

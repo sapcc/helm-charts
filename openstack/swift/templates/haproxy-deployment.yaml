@@ -1,31 +1,19 @@
-{{- $az_apods := dict }}
 {{- /*
-Here a dictionary of necessary haproxy deployments is constructed. Key is availability zone.
-* if no Controlplane global.cp is defined --> use the apods definfition per AZ directly
-* else collect all AZs from global.availability_zones
-  * put a non apod haproxy 'cp' in every AZ
-  * put for every apod defined in global.apods.az an apod based haproxy
-
-This and the affinities for 'cp' can be removed if aPod rollout is completed globally
+Default behaviour, haproxy deployments for every apod defined in Values.global.apods
+If not defined, one haproxy per Values.global.availability_zones to non-apod based AZ
+This and the affinities for 'cp' can be removed if labs are running on apods
 */ -}}
-{{- if not $.Values.global.cp }}
-{{- $az_apods = .Values.global.apods }}
+{{- $az_apods := dict }}
+{{- if .Values.global.apods }}
+  {{- $az_apods = .Values.global.apods }}
 {{- else }}
-{{- /* Collect all availability zones and construct the base dict */ -}}
-{{- range $az := .Values.global.availability_zones }}
-{{- $apods := list }}
-{{- /* Every availability zones gets an non apod haproxy scheduled if CP is still active */ -}}
-{{- $apods = append $apods "cp" }}
-{{- /* If an apod is configured for the availability zone, schedule an haproxy to that apod */ -}}
-{{- if $.Values.global.apods }}
-{{- if index $.Values.global.apods $az }}
-{{- range $apod := (index $.Values.global.apods $az) }}
-{{- $apods = append $apods $apod }}
-{{- end }}
-{{- end }}
-{{- end }}
-{{- $az_apods = set $az_apods $az $apods }}
-{{- end }}
+  {{- /* Collect all availability zones and construct the base dict */ -}}
+  {{- range $az := .Values.global.availability_zones }}
+    {{- $non_apods := list }}
+    {{- /* Every availability zones gets an non apod haproxy scheduled if CP is still active */ -}}
+    {{- $non_apods = append $non_apods "cp" }}
+    {{- $az_apods = set $az_apods $az $non_apods }}
+  {{- end }}
 {{- end }}
 {{- range $az, $apods := $az_apods }}
 {{- range $apod := $apods }}
@@ -161,11 +149,11 @@ spec:
                   fieldPath: spec.nodeName
           resources:
             requests:
-              cpu: "1500m"
-              memory: "600Mi"
+              cpu: {{ $.Values.haproxy_deployment_resources_cpu | required "haproxy_deployment_resources_cpu is required" | quote }}
+              memory: {{ $.Values.haproxy_deployment_resources_memory | required "haproxy_deployment_resources_memory is required" | quote }}
             limits:
-              cpu: "1500m"
-              memory: "600Mi"
+              cpu: {{ $.Values.haproxy_deployment_resources_cpu | required "haproxy_deployment_resources_cpu is required" | quote }}
+              memory: {{ $.Values.haproxy_deployment_resources_memory | required "haproxy_deployment_resources_memory is required" | quote }}
           volumeMounts:
             - mountPath: /tls-secret
               name: tls-secret

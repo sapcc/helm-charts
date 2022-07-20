@@ -1,0 +1,33 @@
+{{- if .Values.exporter.statedb.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: Probe
+
+metadata:
+  name: k3s-statedb-s3-exporter
+  labels:
+    prometheus: {{ .Values.exporter.prometheus }}
+
+spec:
+  jobName: k3s-statedb-s3-exporter
+  prober:
+    url: k3s-backup-s3-exporter-metrics.{{.Release.Namespace}}.svc.cluster.local
+    path: /probe
+  interval: {{ .Values.exporter.scrapeInterval }}
+  scrapeTimeout: {{ .Values.exporter.scrapeTimeout }}
+  targets:
+    staticConfig: 
+      static:
+        - "bucket={{ .Values.aws.statedbBucketName }}-{{ .Values.global.region }};"
+      labels: 
+        __param_bucket: {{ .Values.aws.statedbBucketName }}-{{ .Values.global.region }}
+        {{ if .Values.global.region -}}
+        region: {{ .Values.global.region }}
+        {{- end }}
+        {{ if .Values.global.clusterType -}}
+        cluster_type: {{ .Values.global.clusterType }}
+        {{- end }}
+        {{ if or .Values.global.region .Values.global.cluster -}}
+        cluster: {{ if .Values.global.cluster }}{{ .Values.global.cluster }}{{ else }}{{ .Values.global.region }}{{ end }}
+        {{- end }}
+
+{{- end }}

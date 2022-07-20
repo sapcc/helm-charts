@@ -33,7 +33,12 @@ spec:
       annotations:
         chart-version: {{.Chart.Version}}
         checksum/etc-configmap.conf: {{ include (print $.Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
+        {{- if .Values.proxysql.mode }}
+        prometheus.io/scrape: "true"
+        prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
+        {{- end }}
     spec:
+      {{ include "utils.proxysql.pod_settings" . | indent 6 }}
       {{- if .Values.file.persistence.enabled }}
       initContainers:
       - name: permissions
@@ -84,7 +89,7 @@ spec:
         - name: NAMESPACE
           value: {{ .Release.Namespace }}
         - name: DEPENDENCY_JOBS
-          value: "glance-migration-job-{{ required "Please set glance.imageVersion or similar" .Values.imageVersion }}"
+          value: "glance-migration-job-{{ required "Please set glance.imageVersion or similar" .Values.imageVersion }}{{ if .Values.proxysql.mode }}-proxysql{{ end }}"
         - name: DEPENDENCY_SERVICE
           value: {{ .Release.Name }}-mariadb,{{ .Release.Name }}-memcached
         - name: DEBUG_CONTAINER
@@ -167,7 +172,8 @@ spec:
           subPath: ratelimit.yaml
           readOnly: true
         {{- end }}
-
+        {{- include "utils.proxysql.volume_mount" . | indent 8 }}
+      {{- include "utils.proxysql.container" . | indent 6 }}
       {{- if .Values.imageVersionGlanceRegistry }}
       - name: registry
         image: {{ required ".Values.global.registry is missing" .Values.global.registry }}/ubuntu-source-glance-registry:{{ required "Please set glance.imageVersion or similar" .Values.imageVersion }}
@@ -292,3 +298,4 @@ spec:
       - name: glance-etc
         configMap:
           name: glance-etc
+      {{- include "utils.proxysql.volumes" . | indent 6 }}

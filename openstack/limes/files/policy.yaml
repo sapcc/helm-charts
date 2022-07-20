@@ -1,8 +1,8 @@
 project_scope: project_domain_id:%(domain_id)s and project_id:%(project_id)s
 domain_scope: domain_id:%(domain_id)s
 
-cluster_editor: cluster_id:ccloud and (role:cloud_resource_admin or (role:cloud_dns_resource_admin and 'dns':%(service_type)s))
-cluster_viewer: cluster_id:ccloud and (role:cloud_resource_admin or role:cloud_dns_resource_admin or role:cloud_resource_viewer)
+cluster_editor: role:cloud_resource_admin or (role:cloud_dns_resource_admin and 'dns':%(service_type)s)
+cluster_viewer: role:cloud_resource_admin or role:cloud_dns_resource_admin or role:cloud_resource_viewer
 domain_editor: rule:cluster_editor or (rule:domain_scope and role:resource_admin)
 domain_viewer: rule:cluster_viewer or (rule:domain_scope and role:resource_viewer) or rule:domain_editor
 project_editor: rule:domain_editor or (rule:project_scope and role:resource_admin)
@@ -31,6 +31,3 @@ cluster:show_basic: rule:cluster_viewer or role:admin or role:resource_admin or 
 cluster:show_subcapacity: '''compute'':%(service)s and (''cores'':%(resource)s or ''instances'':%(resource)s or ''ram'':%(resource)s)'
 cluster:show_errors: rule:cluster_viewer or role:cloud_support_tools_viewer
 cluster:edit: rule:cluster_editor
-
-foreign:read: rule:cluster_viewer
-foreign:write: rule:cluster_editor

@@ -2,10 +2,10 @@
 log_config_append = /etc/ironic/logging.ini
 logging_context_format_string =%(asctime)s.%(msecs)03d %(process)d %(levelname)s %(name)s [%(request_id)s g%(global_request_id)s %(user_identity)s] %(instance)s%(message)s
 
-{{- if contains "train" .Values.imageVersion }}
-pybasedir = /var/lib/openstack/lib/python3.6/site-packages/ironic
+{{- if contains "xena" .Values.imageVersion }}
+pybasedir = /var/lib/openstack/lib/python3.8/site-packages/ironic
 {{- else }}
-pybasedir = /var/lib/openstack/lib/python2.7/site-packages/ironic
+pybasedir = /var/lib/openstack/lib/python3.6/site-packages/ironic
 {{- end }}
 
 network_provider = neutron_plugin

@@ -1,0 +1,87 @@
+{{- if .Values.cronus.statefulSet.enabled }}
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: cronus
+  {{- if .Values.cronus.annotations }}
+  annotations:
+    {{ toYaml .Values.cronus.annotations | indent 4 }}
+  {{- end  }}
+  {{- if .Values.cronus.labels }}
+  labels:
+    {{ toYaml .Values.cronus.labels | indent 4 }}
+  {{- end }}
+spec:
+  replicas: {{ .Values.cronus.statefulSet.replicas }}
+  podManagementPolicy: {{ .Values.cronus.statefulSet.podManagementPolicy }}
+  serviceName: cronus
+  updateStrategy:
+    type: {{ .Values.cronus.updateStrategy }}
+  selector:
+    matchLabels:
+      name: cronus
+      instance: cronus
+  template:
+    metadata:
+      annotations:
+        checksum/config: {{ include "cronus/templates/cronus/_config.yaml.tpl" . | sha256sum }}
+      labels:
+        name: cronus
+        instance: cronus
+    spec:
+      serviceAccountName: cronus
+{{- if .Values.cronus.affinity }}
+      affinity: {{ toYaml .Values.cronus.affinity | nindent 8 }}
+{{- end }}
+      containers:
+        - name: cronus
+          image: "{{ .Values.cronus.image.name }}:{{ .Values.cronus.image.tag }}"
+          imagePullPolicy: {{ .Values.cronus.image.pullPolicy }}
+          args:
+            - "-config=/cronus/config.yaml"
+          volumeMounts:
+            - name: cronus
+              mountPath: "/cronus/config.yaml"
+              subPath: config.yaml
+{{- if or .Values.cronus.fileBufferPath .Values.global.fileBufferPath }}
+            - name: cronus-file-buffer
+              mountPath: {{ .Values.cronus.fileBufferPath | default .Values.global.fileBufferPath }}
+{{- end }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.cronus.http }}
+              protocol: TCP
+            - name: smtp
+              containerPort: {{ .Values.cronus.smtp }}
+              protocol: TCP
+{{- if and .Values.cronus.smtps .Values.cronus.tls }}
+            - name: smtps
+              containerPort: {{ .Values.cronus.smtps }}
+              protocol: TCP
+{{- end }}
+          readinessProbe:
+            httpGet:
+{{- if .Values.cronus.tls }}
+              scheme: HTTPS
+{{- end }}
+              path: /healthz
+              port: http
+            initialDelaySeconds: 3
+            periodSeconds: 2
+      terminationGracePeriodSeconds: {{ .Values.cronus.terminationGracePeriod | default 60 }}
+      volumes:
+        - name: cronus
+          secret:
+            secretName: cronus
+{{- if or .Values.cronus.fileBufferPath .Values.global.fileBufferPath }}
+  volumeClaimTemplates:
+  - metadata:
+      name: cronus-file-buffer
+    spec:
+      accessModes:
+        - ReadWriteOnce
+      resources:
+        requests:
+          storage: 1024Gi
+{{- end }}
+{{- end -}}

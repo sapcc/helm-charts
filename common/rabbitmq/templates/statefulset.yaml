@@ -64,8 +64,8 @@ spec:
         {{- end }}
         {{- if .Values.readinessProbe.enabled }}
         readinessProbe:
-          exec:
-            command: ["rabbitmqctl", "node_health_check"]
+          tcpSocket:
+            port: public 
           failureThreshold: {{ .Values.readinessProbe.failureThreshold }}
           initialDelaySeconds: {{ .Values.readinessProbe.initialDelaySeconds }}
           periodSeconds: {{ .Values.readinessProbe.periodSeconds }}
@@ -118,7 +118,9 @@ spec:
       name: rabbitmq-persistent-storage
       labels:
         app: {{ template "fullname" . }}
-        chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+        {{- if .Values.volumeClaimTemplatesChartVersion }}
+        chart: "{{ .Chart.Name }}-{{ .Values.volumeClaimTemplatesChartVersion }}"
+        {{- end }}
         release: "{{ .Release.Name }}"
         heritage: "{{ .Release.Service }}"
         component: rabbitmq

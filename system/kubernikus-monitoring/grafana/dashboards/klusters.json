@@ -15,7 +15,7 @@
   "editable": true,
   "gnetId": null,
   "graphTooltip": 0,
-  "iteration": 1656061609702,
+  "iteration": 1656601154546,
   "links": [],
   "panels": [
     {
@@ -488,7 +488,7 @@
       "steppedLine": true,
       "targets": [
         {
-          "expr": "max(label_replace(kube_pod_container_status_restarts_total{pod=~\"$kluster.*\"}, \"app\", \"$2\", \"pod\", \"(.*)-(apiserver|etcd|scheduler|cmanager|backup)-[^-]+\")) by (app)",
+          "expr": "max(label_replace(kube_pod_container_status_restarts_total{pod=~\"$kluster.*\"}, \"app\", \"$1\", \"pod\", \"$kluster-(apiserver|etcd|scheduler|cmanager|backup)-.*\")) by (app)",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 1,
@@ -624,6 +624,128 @@
         {
           "decimals": null,
           "format": "none",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "cacheTimeout": null,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": null,
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": null,
+            "filterable": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "fill": 1,
+      "fillGradient": 0,
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 24
+      },
+      "hiddenSeries": false,
+      "id": 10,
+      "interval": null,
+      "legend": {
+        "avg": false,
+        "current": false,
+        "max": false,
+        "min": false,
+        "rightSide": true,
+        "show": true,
+        "total": false,
+        "values": false
+      },
+      "lines": true,
+      "linewidth": 1,
+      "links": [],
+      "nullPointMode": "null",
+      "options": {
+        "alertThreshold": true
+      },
+      "percentage": false,
+      "pluginVersion": "7.3.3",
+      "pointradius": 2,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "expr": "sum by (node_pool) (kubernikus_node_pool_status{kluster_id=\"ci-e7aaa792d74547b2a583177c010b946c\", status=\"schedulable\"})",
+          "interval": "",
+          "legendFormat": "{{node_pool}} OK",
+          "refId": "A"
+        },
+        {
+          "expr": "sum by (node_pool) (kubernikus_node_pool_status{kluster_id=\"ci-e7aaa792d74547b2a583177c010b946c\", status=\"running\"}) -  sum by (node_pool) (kubernikus_node_pool_status{kluster_id=\"ci-e7aaa792d74547b2a583177c010b946c\", status=\"schedulable\"})",
+          "interval": "",
+          "legendFormat": "{{node_pool}} NotOK",
+          "refId": "B"
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeRegions": [],
+      "timeShift": null,
+      "title": "Nodepools",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "format": "short",
           "label": null,
           "logBase": 1,
           "max": null,

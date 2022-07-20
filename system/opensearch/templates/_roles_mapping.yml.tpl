@@ -53,3 +53,8 @@ kibana_server:
   reserved: true
   users:
   - "kibanaserver"
+
+promrole:
+  reserved: false
+  users:
+  - "promuser"

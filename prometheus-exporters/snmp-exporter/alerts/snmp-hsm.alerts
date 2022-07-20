@@ -15,19 +15,19 @@ groups:
       description: "Partition {{ $labels.hsmPartitionSerialNumber }} in {{ $labels.devicename }} has {{ $value }}kb storage availability"
       summary: "Partition {{ $labels.hsmPartitionSerialNumber }} has less than 5% storage availability"
 
-  - alert: hsmAribaClientsMoreThan10
-    expr: sum(snmp_hsm_hsmClientName{hsmClientName=~"ariba.+"}) by (devicename) >= 10
+  - alert: hsmAribaClientsMoreThan14
+    expr: sum((snmp_hsm_hsmClientName{hsmClientName!~"barb.*"})) by (devicename) > 14
     for: 2m
     labels:
       severity: info
       service: barbican
       context: hsm
-      meta: "HSM Client License in {{ $labels.devicename }} is more than 10"
+      meta: "HSM Client License in {{ $labels.devicename }} is more than 14"
       dashboard: hsm
       no_alert_on_absence: "true"
     annotations:
-      description: "HSM Client License in {{ $labels.devicename }} is more than 10"
-      summary: "HSM Client License in {{ $labels.devicename }} is more than 10"
+      description: "HSM Client License in {{ $labels.devicename }} is more than {{ $value }}"
+      summary: "HSM Client License in {{ $labels.devicename }} is more than {{ $value }}"
 
   - alert: hsmOperationalErrors
     expr: sum(rate(snmp_hsm_hsmOperationErrors[5m])) by (devicename) > 0
@@ -44,7 +44,7 @@ groups:
       summary: "HSM Operational Errors in {{ $labels.devicename }}"
 
   - alert: hsmSensorTemperatureIsCritical
-    expr: sum by(devicename, lmTempSensorsDevice) (snmp_hsm_lmTempSensorsValue{lmTempSensorsDevice!~"loc1"}) > 34000
+    expr: sum by(devicename, lmTempSensorsDevice) (snmp_hsm_lmTempSensorsValue{lmTempSensorsDevice!~"loc1"}) > 60000
     for: 2m
     labels:
       severity: info
@@ -56,3 +56,31 @@ groups:
     annotations:
       description: "HSM Sensor {{ $labels.lmTempSensorsDevice }} in {{ $labels.devicename }} Temperature is {{ $value }}"
       summary: "HSM Sensor {{ $labels.lmTempSensorsDevice }} in {{ $labels.devicename }} Temperature is {{ $value }}"
+
+  - alert: hsmClientsMoreThan20
+    expr: sum(snmp_hsm_hsmClientName) by (devicename) >= 20
+    for: 2m
+    labels:
+      severity: info
+      service: barbican
+      context: hsm
+      meta: "HSM Client License in {{ $labels.devicename }} is more than 20"
+      dashboard: hsm
+      no_alert_on_absence: "true"
+    annotations:
+      description: "HSM Client License in {{ $labels.devicename }} is more than {{ $value }}"
+      summary: "HSM Client License in {{ $labels.devicename }} is more than {{ $value }}"
+
+  - alert: hsmBarbicanClientsMoreThan3
+    expr: sum((snmp_hsm_hsmClientName{hsmClientName=~"barb.*"})) by (devicename)
+    for: 2m
+    labels:
+      severity: info
+      service: barbican
+      context: hsm
+      meta: "HSM Client License in {{ $labels.devicename }} is more than {{ $value }}"
+      dashboard: hsm
+      no_alert_on_absence: "true"
+    annotations:
+      description: "HSM Client License in {{ $labels.devicename }} is more than {{ $value }}"
+      summary: "HSM Client License in {{ $labels.devicename }} is more than {{ $value }}"

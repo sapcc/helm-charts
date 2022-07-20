@@ -26,9 +26,6 @@ spec:
         checksum/fluent-start: {{ include  (print $.Template.BasePath "/_fluent-start.tpl") . | sha256sum }}
         checksum/pattern: {{ include  (print $.Template.BasePath "/_pattern.tpl") . | sha256sum }}
         scheduler.alpha.kubernetes.io/tolerations: '[{"key":"species","value":"hypervisor"}]'
-        prometheus.io/targets: infra-collector
-        prometheus.io/scrape: "true"
-        prometheus.io/port: "24231"
     spec:
       serviceAccount: fluentd
       serviceAccountName: fluentd
@@ -79,3 +76,5 @@ spec:
               containerPort: {{.Values.port}}
               hostPort: {{.Values.port}}
               hostIP: 127.0.0.1
+            - name: metrics
+              containerPort: 24231

@@ -61,7 +61,7 @@ groups:
       summary: Kube state metrics scrape failed
 
   - alert: KubernetesPodRestartingTooMuch
-    expr: (sum by(pod, namespace, container, ) (rate(kube_pod_container_status_restarts_total[15m]))) * on (pod, container) group_left(label_alert_tier, label_alert_service) (max without (uid) (kube_pod_labels)) > 0
+    expr: (sum by(pod, namespace, container, ) (rate(kube_pod_container_status_restarts_total[15m]))) * on (pod) group_left(label_alert_tier, label_alert_service) (max without (uid) (kube_pod_labels)) > 0
     for: 1h
     labels:
       tier: {{ include "alertTierLabelOrDefault" .Values.tier }}
@@ -126,11 +126,11 @@ groups:
 
   - alert: PodNotReady
     # alert on pods that are not ready but in the Running phase on a Ready node
-    expr: kube_pod_status_phase_normalized{phase="Running"} * on (pod,node, namespace)kube_pod_status_ready_normalized{condition="false"} * on (node) group_left() sum by(node) (kube_node_status_condition{condition="Ready",status="true"}) == 1
+    expr: (kube_pod_status_phase_normalized{phase="Running"} * on(pod, node, namespace) kube_pod_status_ready_normalized{condition="false"} * on(node) group_left() sum by(node) (kube_node_status_condition{condition="Ready",status="true"}) == 1) * on(pod) group_left(label_alert_tier, label_alert_service) (max without(uid) (kube_pod_labels))
     for: 2h
     labels:
-      tier: {{ required ".Values.tier missing" .Values.tier }}
-      service: k8s
+      tier: {{ include "alertTierLabelOrDefault" .Values.tier }}
+      service: {{ include "alertServiceLabelOrDefault" "k8s" }}
       severity: info
     annotations:
       description: "The pod {{`{{ $labels.namespace }}`}}/{{`{{ $labels.pod }}`}} is not ready for more then 2h."

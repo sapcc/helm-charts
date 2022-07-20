@@ -1,0 +1,17 @@
+{{- if and .Values.cronus.deployment.enabled (or .Values.cronus.fileBufferPath .Values.global.fileBufferPath) (gt (int .Values.cronus.deployment.replicas) 0) }}
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: cronus-file-buffer
+  labels:
+    app: cronus
+    component: rabbitmq
+  annotations:
+    volume.beta.kubernetes.io/storage-class: cinder-default
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1024Gi
+{{- end -}}

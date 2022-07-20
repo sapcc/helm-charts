@@ -84,6 +84,19 @@ groups:
           description: 'Storage Capacity Usage on node {{$labels.node}} is {{ $value }}%'
           summary: 'Nearly Full Capacity Usage on {{$labels.filer}}'
 
+      - alert: NetAppFilerAggregateIsOffline
+        expr: netapp_aggregate_state_is_online == 0
+        for: 5m
+        labels:
+          severity: warning
+          tier: os
+          service: manila
+          context: storage
+          support_component: manila_netapp
+        annotations:
+          description: 'NetApp Filer Aggregate {{ $labels.aggregate }} on {{ $labels.filer }} is offline'
+          summary: 'NetApp Filer Aggregate {{ $labels.aggregate }} offline'
+
       - alert: ManilaAvailabilityZoneUsageHigh
         expr: (min by(availability_zone) (avg_over_time(netapp_aggregate_used_percentage{app=~".*manila"}[1h]))) > 45
         for: 1h

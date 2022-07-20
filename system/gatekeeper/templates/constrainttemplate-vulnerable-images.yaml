@@ -5,11 +5,7 @@
 # timestamps of images in active use to never get too old for GC to kick in. #
 ##############################################################################
 
-{{- if .Capabilities.APIVersions.Has "templates.gatekeeper.sh/v1" }}
 apiVersion: templates.gatekeeper.sh/v1
-{{- else }}
-apiVersion: templates.gatekeeper.sh/v1beta1
-{{- end }}
 kind: ConstraintTemplate
 metadata:
   name: gkvulnerableimages
@@ -18,30 +14,46 @@ spec:
     spec:
       names:
         kind: GkVulnerableImages
+      validation:
+        # Schema for the `parameters` field
+        openAPIV3Schema:
+          type: object
+          properties:
+            doopImageCheckerURL:
+              type: string
 
   targets:
     - target: admission.k8s.gatekeeper.sh
       rego: |
         package vulnerableimages
 
-        violation[{"msg": msg}] {
-          # check each pod container
-          obj := input.review.object
-          obj.kind == "Pod"
-          container := obj.status.containerStatuses[_]
+        checks[{ "container": container, "response": resp }] {
+          input.review.object.kind == "Pod"
+          container := input.review.object.status.containerStatuses[_]
 
           # only consider images stored in Keppel since we want to inspect the X-Keppel-Vulnerability-Status header
           regex.match("^keppel", container.image)
 
           # query vulnerability status through helper API
           imgID := trim_prefix(container.imageID, "docker-pullable://")
-          url := sprintf("http://doop-image-checker.kube-system.svc/v1/headers?image=%s", [imgID])
-          resp := http.send({"url": url, "method": "GET", "timeout": "10s"})
-          resp.status_code == 200
-          status := trim_space(object.get(resp.body, "X-Keppel-Vulnerability-Status", "Unclear"))
+          url := sprintf("%s/v1/headers?image=%s", [input.parameters.doopImageCheckerURL, imgID])
+          resp := http.send({"url": url, "method": "GET", "raise_error": false, "timeout": "10s"})
+        }
+
+        violation[{"msg": msg}] {
+          check := checks[_]
+          check.response.status_code != 200
+
+          msg := "doop-image-parser did not return HTTP status 200. Please retry in ~5 minutes."
+        }
+
+        violation[{"msg": msg}] {
+          check := checks[_]
+          check.response.status_code == 200
+          status := trim_space(object.get(check.response.body, "X-Keppel-Vulnerability-Status", "Unclear"))
 
           # report everything with a definite vulnerability
           status != "Clean"
           status != "Unknown"
-          msg := sprintf("image %s for container %q has vulnerability status %q", [container.image, container.name, status])
+          msg := sprintf("image %s for container %q has vulnerability status %q", [check.container.image, check.container.name, status])
         }

@@ -80,6 +80,8 @@ fluent:
     host: metisdb-mariadb.metis
     port: 3306
     db: metis
+  exporter:
+    prometheus: infra-collector
 
 fluent_systemd:
   enabled: false
@@ -88,6 +90,8 @@ fluent_systemd:
     enabled: false
     prometheus: infra-collector
   port: 8886
+  exporter:
+    prometheus: infra-collector
 
 fluent_scaleout:
   enabled: false
@@ -103,6 +107,8 @@ fluent_scaleout:
     host: metisdb
     db: metis
     port: 443
+  exporter:
+    prometheus: infra-frontend
 
 logstash_external:
   enabled: false
@@ -125,3 +131,9 @@ logstash_external:
   elk_elasticsearch_ssl_port: "443"
   elk_elasticsearch_endpoint_host_internal: "es-client"
   elk_elasticsearch_http_port_internal: 9200
+
+k8s_event_logger:
+  enabled: false
+  fullnameOverride: elk-k8s-event-exporter
+  env:
+    KUBERNETES_API_URL: https://${KUBERNETES_SERVICE_HOST}:${KUBERNETES_SERVICE_PORT_HTTPS}

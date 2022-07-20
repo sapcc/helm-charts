@@ -1,10 +1,6 @@
-{{- if .Values.cronus.enabled }}
+{{- if .Values.cronus.deployment.enabled }}
 apiVersion: apps/v1
-{{- if .Values.cronus.statefulSet.enabled }}
-kind: StatefulSet
-{{- else }}
 kind: Deployment
-{{- end }}
 metadata:
   name: cronus
   {{- if .Values.cronus.annotations }}
@@ -16,19 +12,13 @@ metadata:
     {{ toYaml .Values.cronus.labels | indent 4 }}
   {{- end }}
 spec:
-  replicas: {{ .Values.cronus.replicas }}
-  {{- if .Values.cronus.statefulSet.enabled }}
-  podManagementPolicy: {{ .Values.cronus.statefulSet.podManagementPolicy }}
-  serviceName: cronus
-  updateStrategy:
-  {{- else }}
+  replicas: {{ default .Values.cronus.deployment.replicas }}
   strategy:
 {{- if eq "RollingUpdate" .Values.cronus.updateStrategy }}
     rollingUpdate:
       maxSurge: {{ .Values.cronus.maxSurge }}
       maxUnavailable: {{ .Values.cronus.maxUnavailable }}
 {{- end }}
-  {{- end }}
     type: {{ .Values.cronus.updateStrategy }}
   selector:
     matchLabels:
@@ -56,6 +46,10 @@ spec:
             - name: cronus
               mountPath: "/cronus/config.yaml"
               subPath: config.yaml
+{{- if or .Values.cronus.fileBufferPath .Values.global.fileBufferPath }}
+            - name: cronus-file-buffer
+              mountPath: {{ .Values.cronus.fileBufferPath | default .Values.global.fileBufferPath }}
+{{- end }}
           ports:
             - name: http
               containerPort: {{ .Values.cronus.http }}
@@ -82,4 +76,12 @@ spec:
         - name: cronus
           secret:
             secretName: cronus
+{{- if or .Values.cronus.fileBufferPath .Values.global.fileBufferPath }}
+        - name: cronus-file-buffer
+          persistentVolumeClaim:
+            claimName: cronus-file-buffer
+          {{- if gt (int .Values.cronus.deployment.replicas) 1 }}
+            {{- fail "Persistence doesn't work with kind Deployment, and more than one replica" }}
+          {{- end }}
+{{- end }}
 {{- end -}}

@@ -160,6 +160,8 @@
   value: '1'
 - name: KEPPEL_REDIS_HOSTNAME
   value: "{{ .Release.Name }}-redis"
+- name: KEPPEL_REDIS_PORT
+  value: '6379' # this is the default, but we need to set it to ensure that Kubernetes does not autofill this variable with its service-discovery stuff
 - name: KEPPEL_REDIS_DB_NUM
   value: '1'
 - name: KEPPEL_REDIS_PASSWORD

@@ -5,11 +5,14 @@ metadata:
   name: 'vcenter-datacenter-cinder-backup-configmap'
 options:
   scope: 'datacenter'
-template: |{{`
+  jinja2_options:
+    variable_start_string: '{='
+    variable_end_string: '=}'
+template: |
   apiVersion: v1
   kind: ConfigMap
   metadata:
-    name: backup-vmware-{{ name }}
+    name: backup-vmware-{= name =}
     labels:
       system: openstack
       type: configuration
@@ -17,6 +20,6 @@ template: |{{`
   data:
     cinder-backup.conf: |
       [DEFAULT]
-      host = cinder-backup-{{ name }}
-      storage_availability_zone = {{ availability_zone | quote }}`}}
+      host = cinder-backup-{= name =}
+      storage_availability_zone = {= availability_zone | quote =}
 {{- end }}
