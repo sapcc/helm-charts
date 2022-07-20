@@ -29,11 +29,11 @@ spec:
                 name: grpc
           pathType: ImplementationSpecific
     {{- end }}
-  tls
-    - secretName: tls-{{ include "thanos.externalURL" $root | replace "." "-" }}
+  tls:
+    - secretName: tls-{{ include "thanos.grpcURL" $root | replace "." "-" }}
       hosts:
         {{- range $host := $root.Values.grpcIngress.hosts }}
-        - {{ $host }}.{{ $root.Values.global.region }}.{{ $root.Values.global.tld }}
+        - {{ $host }}-grpc.{{ $root.Values.global.region }}.{{ $root.Values.global.tld }}
         {{- end }}
         {{- range $host := $root.Values.grpcIngress.hostsFQDN }}
         - {{ $host }}

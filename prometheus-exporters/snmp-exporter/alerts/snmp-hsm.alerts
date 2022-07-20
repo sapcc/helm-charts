@@ -26,8 +26,8 @@ groups:
       dashboard: hsm
       no_alert_on_absence: "true"
     annotations:
-      description: "HSM Client License in {{ $labels.devicename }} is more than 14"
-      summary: "HSM Client License in {{ $labels.devicename }} is more than 14"
+      description: "HSM Client License in {{ $labels.devicename }} is more than {{ $value }}"
+      summary: "HSM Client License in {{ $labels.devicename }} is more than {{ $value }}"
 
   - alert: hsmOperationalErrors
     expr: sum(rate(snmp_hsm_hsmOperationErrors[5m])) by (devicename) > 0
@@ -44,7 +44,7 @@ groups:
       summary: "HSM Operational Errors in {{ $labels.devicename }}"
 
   - alert: hsmSensorTemperatureIsCritical
-    expr: sum by(devicename, lmTempSensorsDevice) (snmp_hsm_lmTempSensorsValue{lmTempSensorsDevice!~"loc1"}) > 70000
+    expr: sum by(devicename, lmTempSensorsDevice) (snmp_hsm_lmTempSensorsValue{lmTempSensorsDevice!~"loc1"}) > 60000
     for: 2m
     labels:
       severity: info
@@ -68,19 +68,19 @@ groups:
       dashboard: hsm
       no_alert_on_absence: "true"
     annotations:
-      description: "HSM Client License in {{ $labels.devicename }} is more than 20"
-      summary: "HSM Client License in {{ $labels.devicename }} is more than 20"
+      description: "HSM Client License in {{ $labels.devicename }} is more than {{ $value }}"
+      summary: "HSM Client License in {{ $labels.devicename }} is more than {{ $value }}"
 
-  - alert: hsmBarbicanClientsMoreThan2
+  - alert: hsmBarbicanClientsMoreThan3
     expr: sum((snmp_hsm_hsmClientName{hsmClientName=~"barb.*"})) by (devicename)
     for: 2m
     labels:
       severity: info
       service: barbican
       context: hsm
-      meta: "HSM Client License in {{ $labels.devicename }} is more than 2"
+      meta: "HSM Client License in {{ $labels.devicename }} is more than {{ $value }}"
       dashboard: hsm
       no_alert_on_absence: "true"
     annotations:
-      description: "HSM Client License in {{ $labels.devicename }} is more than 2"
-      summary: "HSM Client License in {{ $labels.devicename }} is more than 2"
+      description: "HSM Client License in {{ $labels.devicename }} is more than {{ $value }}"
+      summary: "HSM Client License in {{ $labels.devicename }} is more than {{ $value }}"
