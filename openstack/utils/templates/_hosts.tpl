@@ -54,9 +54,14 @@ mysql+pymysql://{{ include "db_credentials" . }}@
         {{- with $envAll := index . 0 }}
             {{- if not .Values.proxysql }}
                 {{- include "db_host_mysql" $allArgs }}
-            {{- else if ne $envAll.Values.proxysql.mode "unix_socket" }}
-                {{- $_ := mustHas $envAll.Values.proxysql.mode (list "unix_socket" "host_alias") }}
+            {{- else if not .Values.proxysql.mode }}
                 {{- include "db_host_mysql" $allArgs }}
+            {{- else if ne $envAll.Values.proxysql.mode "unix_socket" }}
+                {{- if mustHas $envAll.Values.proxysql.mode (list "unix_socket" "host_alias") }}
+                {{- include "db_host_mysql" $allArgs }}
+                {{- else }}
+                    {{ fail (printf "Unknown value for .Values.proxysql.mode: got \"%v\"" $envAll.Values.proxysql.mode) }}
+                {{- end }}
             {{- end -}}
             /{{ $schemaName }}?
             {{- if .Values.proxysql }}
