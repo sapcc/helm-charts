@@ -12,7 +12,7 @@
   {{- if .Values.proxysql }}
     {{- if .Values.proxysql.mode }}
 - name: proxysql
-  image: {{ required ".Values.global.dockerHubMirror is missing" .Values.global.dockerHubMirror}}/{{ default "proxysql/proxysql" .Values.proxysql.image }}:{{ .Values.proxysql.imageTag | default "2.4.1-debian" }}
+  image: {{ required ".Values.global.dockerHubMirror is missing" .Values.global.dockerHubMirror}}/{{ default "proxysql/proxysql" .Values.proxysql.image }}:{{ .Values.proxysql.imageTag | default "2.4.2-debian" }}
   imagePullPolicy: IfNotPresent
   command: ["proxysql"]
   args: ["--config", "/etc/proxysql/proxysql.cnf", "--exit-on-error", "--foreground", "--idle-threads", "--admin-socket", "/run/proxysql/admin.sock", "--no-version-check", "-D", "/run/proxysql"]
@@ -50,13 +50,22 @@
   {{- if .Values.proxysql }}
     {{- if .Values.proxysql.mode }}
     {{- $envAll := . }}
+    {{- $dbs := dict }}
+    {{- range $d := $envAll.Chart.Dependencies }}
+        {{- if hasPrefix "mariadb" $d.Name }}
+            {{- $_ := set $dbs $d.Name (get $envAll.Values $d.Name) }}
+        {{- end }}
+    {{- end }}
+    {{- range $d := $envAll.Values.proxysql.force_enable }}
+        {{- $_ := set $dbs $d (get $envAll.Values $d) }}
+    {{- end }}
+    {{- $dbKeys := keys $dbs | sortAlpha }}
 hostAliases:
 - ip: "127.0.0.1"
   hostnames:
-      {{- range $d := .Chart.Dependencies }}
-        {{- if and $d.Enabled (hasPrefix "mariadb" $d.Name)}}
-  - {{ print (get $envAll.Values $d.Name).name "-mariadb" | quote }}
-        {{- end }}
+    {{- range $index, $dbKey := $dbKeys }}
+        {{- $db := get $dbs $dbKey }}
+  - {{ print $db.name "-mariadb" | quote }}
       {{- end }}
     {{- end }}
   {{- end }}
@@ -80,7 +89,7 @@ securityContext:
 # as this causes the side-car pod finish normally, but we need it for the re-runs
 {{- define "utils.proxysql.proxysql_signal_stop_script" }}
   {{- if .Values.proxysql }}
-    {{- if .Values.proxysql.mode }}
+    {{- if .Values.proxysql.mode -}}
 pkill proxysql || true
     {{- end }}
   {{- end }}
