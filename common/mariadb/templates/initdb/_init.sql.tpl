@@ -11,7 +11,7 @@ CREATE DATABASE IF NOT EXISTS {{ . }};
 
 {{- if and .Values.global.dbUser .Values.global.dbPassword }}
 CREATE USER IF NOT EXISTS {{ .Values.global.dbUser }};
-GRANT ALL PRIVILEGES ON {{ .Values.name }}.* TO {{ .Values.global.dbUser }} IDENTIFIED BY {{ include "db_password" . }};
+GRANT ALL PRIVILEGES ON {{ .Values.name }}.* TO {{ .Values.global.dbUser }} IDENTIFIED BY '{{ include "db_password" . }}';
 {{- end }}
 
 {{- range $username, $values := .Values.users }}
