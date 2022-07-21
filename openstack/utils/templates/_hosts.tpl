@@ -69,7 +69,8 @@ mysql+pymysql://{{ include "db_credentials" . }}@
     {{- end }}
 {{- end}}
 
-{{define "db_host_pxc"}}{{.Release.Name}}-percona-pxc.{{ include "svc_fqdn" . }}{{end}}
+# Please keep as it is, special case when it has to reference the db_region value.
+{{define "db_host_pxc"}}{{.Release.Name}}-percona-pxc.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.db_region}}.{{.Values.global.tld}}{{end}}
 
 {{define "db_url_pxc" }}mysql+pymysql://{{.Values.percona_cluster.db_user }}:{{.Values.percona_cluster.dbPassword }}@{{include "db_host_pxc" .}}/{{.Values.percona_cluster.db_name}}?charset=utf8{{end}}
 
