@@ -1,3 +1,11 @@
+## 7.0.0
+
+* *Breaking change*: Global instances will not work, Thanos deployment files are removed.
+* Enabled Thanos sidecar by default. Look at templates/thanos/README.md for instructions, swiftStorageConfig needs to be set
+* Removed deployment charts for Query, Compactor, Store.
+* Removed Thanos all thanos related alerts, leaving sidecar in place
+* incorporated tier and service template of prometheus-kubernetes-rules to alerts, since it is used by ALL Prometheis
+
 ## 6.3.2
 
 * Respect alert-service and alert-tier pod labels in PrometheusMultiplePodScrapes alert
