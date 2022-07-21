@@ -1,4 +1,5 @@
 {{- if .Values.ingress.enabled }}
+{{- $thanos := .Values.thanos }}
 {{- $root := . }}
 {{- if $root.Capabilities.APIVersions.Has "networking.k8s.io/v1/Ingress" }}
 apiVersion: networking.k8s.io/v1
@@ -33,6 +34,7 @@ spec:
     - host: {{ include "fqdnHelper" (list $host $root) }}
       http:
         paths:
+        {{- if $thanos.enabled }}
         - path: /
           {{- if $root.Capabilities.APIVersions.Has "networking.k8s.io/v1/Ingress" }}
           pathType: ImplementationSpecific
@@ -46,18 +48,32 @@ spec:
             serviceName: {{ include "prometheus.fullName" $root }}
             servicePort: http
           {{- end }}
-        {{- if $root.Values.thanos.enabled }}
-        - path: {{ required ".Values.thanos.querier.webRouteprefix missing" $root.Values.thanos.querier.webRouteprefix }}
+        - path: /thanos
           {{- if $root.Capabilities.APIVersions.Has "networking.k8s.io/v1/Ingress" }}
           pathType: ImplementationSpecific
           backend:
             service:
-              name: {{ include "prometheus.fullName" $root }}-thanos-query
+              # matches thanos query service which is deployed via commmon/thanos
+              name: thanos-{{ include "prometheus.name" $root }}-query
               port:
                 name: http
           {{- else }}
           backend:
-            serviceName: {{ include "prometheus.fullName" $root }}-thanos-query
+            serviceName: {{ include "prometheus.fullName" $root }}
+            servicePort: http
+          {{- end }}
+        {{- else }}
+        - path: /
+          {{- if $root.Capabilities.APIVersions.Has "networking.k8s.io/v1/Ingress" }}
+          pathType: ImplementationSpecific
+          backend:
+            service:
+              name: {{ include "prometheus.fullName" $root }}
+              port:
+                name: http
+          {{- else }}
+          backend:
+            serviceName: {{ include "prometheus.fullName" $root }}
             servicePort: http
           {{- end }}
         {{- end }}
@@ -79,21 +95,6 @@ spec:
             serviceName: {{ include "prometheus.fullName" $root }}
             servicePort: http
           {{- end }}
-        {{- if $root.Values.thanos.enabled }}
-        - path: {{ required ".Values.thanos.querier.webRouteprefix missing" $root.Values.thanos.querier.webRouteprefix }}
-          {{- if $root.Capabilities.APIVersions.Has "networking.k8s.io/v1/Ingress" }}
-          pathType: ImplementationSpecific
-          backend:
-            service:
-              name: {{ include "prometheus.fullName" $root }}-thanos-query
-              port:
-                name: http
-          {{- else }}
-          backend:
-            serviceName: {{ include "prometheus.fullName" $root }}-thanos-query
-            servicePort: http
-          {{- end }}
-        {{- end }}
     {{- end }}
   tls:
     - secretName: tls-{{ include "prometheus.externalURL" $root | replace "." "-" }}
