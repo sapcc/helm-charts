@@ -1,0 +1,14 @@
+groups:
+- name: ocb-data.alerts
+  rules:
+  - alert: OctobusDataInNotReachable
+    expr: probe_success{instance=~".+/c0001/log/audit$"} == 0
+    for: 15m
+    labels:
+      context: octobus
+      service: audit
+      severity: info
+      tier: monitor
+    annotations:
+      description: '*{{ $labels.region }}/{{ $labels.clusterType }} * cannot reach Octobus https data in'
+      summary:  Cannot reach Octobus https data input
