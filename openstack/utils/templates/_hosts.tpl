@@ -23,7 +23,13 @@ postgresql+psycopg2://{{$user}}:{{$password | urlquery}}@{{.Chart.Name}}-postgre
 
 {{- define "db_credentials" }}
     {{- if kindIs "map" . }}
-        {{- coalesce .Values.dbUser .Values.global.dbUser "root" }}:{{ coalesce .Values.dbPassword .Values.global.dbPassword .Values.mariadb.root_password | required ".Values.mariadb.root_password is required!" | urlquery }}
+        {{- if and .Values.mariadb.users .Values.mariadb.databases }}
+            {{- $db := first .Values.mariadb.databases }}
+            {{- $user := get .Values.mariadb.users $db | required (printf ".Values.mariadb.%v.name & .password are required (key comes from first database in .Values.mariadb.databases)" $db) }}
+            {{- $user.name | required (printf ".Values.mariadb.%v.name is required!" $db ) }}:{{ $user.password | required (printf ".Values.mariadb.%v.password is required!" $db ) }}
+        {{- else }}
+            {{- coalesce .Values.dbUser .Values.global.dbUser "root" }}:{{ coalesce .Values.dbPassword .Values.global.dbPassword .Values.mariadb.root_password | required ".Values.mariadb.root_password is required!" | urlquery }}
+        {{- end }}
     {{- else }}
         {{- $user := index . 2 }}
         {{- $password := index . 3 }}
@@ -46,7 +52,13 @@ postgresql+psycopg2://{{$user}}:{{$password | urlquery}}@{{.Chart.Name}}-postgre
 
 {{- define "db_url_mysql" }}
     {{- if kindIs "map" . }}
-        {{- tuple . (coalesce .Values.dbName .Values.db_name) (coalesce .Values.dbUser .Values.global.dbUser "root") (coalesce .Values.dbPassword .Values.global.dbPassword .Values.mariadb.root_password | required ".Values.mariadb.root_password is required!") .Values.mariadb.name | include "db_url_mysql" }}
+        {{- if and .Values.mariadb.users .Values.mariadb.databases }}
+            {{- $db := first .Values.mariadb.databases }}
+            {{- $user := get .Values.mariadb.users $db | required (printf ".Values.mariadb.%v.name & .password are required (key comes from first database in .Values.mariadb.databases)" $db) }}
+            {{- tuple . $db $user.name (required (printf "User with key %v requires password" $db) $user.password) | include "db_url_mysql" }}
+        {{- else }}
+            {{- tuple . (coalesce .Values.dbName .Values.db_name) (coalesce .Values.dbUser .Values.global.dbUser "root") (coalesce .Values.dbPassword .Values.global.dbPassword .Values.mariadb.root_password | required ".Values.mariadb.root_password is required!") .Values.mariadb.name | include "db_url_mysql" }}
+        {{- end }}
     {{- else -}}
 mysql+pymysql://{{ include "db_credentials" . }}@
         {{- $allArgs := . }}
