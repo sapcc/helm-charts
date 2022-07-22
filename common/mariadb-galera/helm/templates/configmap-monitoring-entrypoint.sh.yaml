@@ -1,0 +1,12 @@
+{{- if $.Values.monitoring.mysqld_exporter.enabled }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  namespace: {{ $.Release.Namespace }}
+  name:  monitoring-entrypoint-sh
+  labels:
+    app: {{ $.Release.Name }}
+data:
+{{ tpl (.Files.Glob "scripts/entrypoint-mysqld_exporter.sh").AsConfig . | indent 2 }}
+{{- end }}

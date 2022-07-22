@@ -28,10 +28,11 @@ spec:
         app: {{ $.Release.Name }}
         release: {{ $.Release.Name }}
       annotations:
+        {{- if $.Values.monitoring.mysqld_exporter.enabled }}
+        prometheus.io/scrape: "true"
+        prometheus.io/targets: {{ required ".monitoring.prometheus.instance missing" $.Values.monitoring.prometheus.instance | quote }}
+        {{- end }}
         checksum/my.cnf.yml: {{ include (print $.Template.BasePath "/configmap-my.cnf.yaml") $ | sha256sum }}
-        checksum/probes.sh: {{ include (print $.Template.BasePath "/configmap-probes.sh.yaml") $ | sha256sum }}
-        checksum/hooks.sh: {{ include (print $.Template.BasePath "/configmap-hooks.sh.yaml") $ | sha256sum }}
-        checksum/galerastatus.sh: {{ include (print $.Template.BasePath "/configmap-galerastatus.yaml") $ | sha256sum }}
         checksum/entrypoint.sh: {{ include (print $.Template.BasePath "/configmap-entrypoint.sh.yaml") $ | sha256sum }}
         checksum/common-functions.sh: {{ include (print $.Template.BasePath "/configmap-common-functions.sh.yaml") $ | sha256sum }}
     spec:
@@ -60,16 +61,7 @@ spec:
             topologyKey: "kubernetes.io/hostname"
       serviceAccount: {{ $.Release.Name }}
       securityContext:
-        runAsUser:  {{ $.Values.userId }}
-        fsGroup:  {{ $.Values.groupId }}
-        # disabled because not whitelisted
-        # sysctls:
-        # - name: net.ipv4.tcp_keepalive_time
-        #   value: "60"
-        # - name: net.ipv4.tcp_keepalive_intvl
-        #   value: "60"
-        # - name: net.ipv4.tcp_keepalive_probes
-        #   value: "5"
+        fsGroup:  {{ $.Values.groupId.application }}
       {{- if and (hasKey $.Values.image.application "pullSecret") $.Values.image.application.pullSecret }}
       imagePullSecrets:
       - name: {{ $.Release.Name }}-{{$.Values.image.application.pullSecret}}
@@ -104,20 +96,30 @@ spec:
         - -c
         - 'echo 3 > /proc/sys/vm/drop_caches'
         securityContext:
-          privileged: {{ $.Values.initContainers.increaseMapCount.securityContext.privileged }}
-          runAsUser: {{ $.Values.initContainers.increaseMapCount.securityContext.runAsUser }}
+          privileged: {{ $.Values.initContainers.increaseMapCount.cleanoscache.privileged }}
+          runAsUser: {{ $.Values.initContainers.increaseMapCount.cleanoscache.runAsUser }}
       {{- end }}
       containers:
       - name: {{ $.Release.Name }}
         image: "{{ $.Values.image.application.registry }}/{{ $.Values.image.application.project }}/{{ $.Values.image.application.applicationname }}:{{ $.Values.image.application.applicationversion }}-{{ $.Values.image.application.imageversion }}"
         imagePullPolicy: {{ $.Values.image.application.pullPolicy | default "IfNotPresent" | quote }}
         securityContext:
-           capabilities:
-               add:
-                 - IPC_LOCK
-        {{- if $.Values.command }}
+          runAsUser:  {{ $.Values.userId.application }}
+          runAsGroup: {{ $.Values.groupId.application }}
+          capabilities:
+            add:
+              - IPC_LOCK
+        # disabled because not whitelisted
+        # sysctls:
+        # - name: net.ipv4.tcp_keepalive_time
+        #   value: "60"
+        # - name: net.ipv4.tcp_keepalive_intvl
+        #   value: "60"
+        # - name: net.ipv4.tcp_keepalive_probes
+        #   value: "5"
+        {{- if and ($.Values.command) (hasKey $.Values.command "application") }}
         command:
-{{ $.Values.command | toYaml | indent 8 }}
+{{ $.Values.command.application | toYaml | indent 8 }}
         {{- end }}
         env:
         - name: NAMESPACE
@@ -173,23 +175,29 @@ spec:
           {{- end }}
         - name: PC_RECOVERY
           value: "{{ $.Values.mariadb.galera.pcrecovery | default "false" }}"
+          {{- if not (hasKey $.Values.env "MARIADB_MONITORING_CONNECTION_LIMIT") }}
+        - name: MARIADB_MONITORING_CONNECTION_LIMIT
+          value: 3
+          {{- end }}
           {{- range $envKey, $envValue := $.Values.env }}
+            {{- if (has "application" $envValue.containerType) }}
         - name: {{ $envKey }}
-            {{- if $envValue.value }}
-          value: "{{ $envValue.value }}"
-            {{- end }}
-            {{- if $envValue.secretName }}
+              {{- if $envValue.value }}
+          value: {{ $envValue.value | quote }}
+              {{- end }}
+              {{- if $envValue.secretName }}
           valueFrom:
             secretKeyRef:
               name: {{ $.Release.Name }}-{{ $envValue.secretName }}
               key: {{ $envValue.secretKey }}
+              {{- end }}
             {{- end }}
           {{- end }}
         resources:
           requests:
-            cpu: {{ $.Values.resourceLimits.cpu | default 0.5 }}
+            cpu: {{ $.Values.resourceLimits.cpu.application | default 0.5 }}
           limits:
-            memory: {{ $.Values.resourceLimits.memory | default "64Mi" | quote }}
+            memory: {{ $.Values.resourceLimits.memory.application | default "64Mi" | quote }}
         ports:
           {{- range $servicesKey, $servicesValue := $.Values.services }}
             {{- if eq $servicesValue.name "be"}}
@@ -207,10 +215,10 @@ spec:
               - -c
               - '/opt/mariadb/bin/startup.sh'
           {{- if $.Values.startupProbe }}
-          {{ if $.Values.startupProbe.initialDelaySeconds }} {{- (printf "initialDelaySeconds: %d" (int64 $.Values.startupProbe.initialDelaySeconds)) }} {{ else }}initialDelaySeconds: 60 {{end}}
-          {{ if $.Values.startupProbe.periodSeconds }} {{- (printf "periodSeconds: %d" (int64 $.Values.startupProbe.periodSeconds)) }} {{ else }}periodSeconds: 30 {{end}}
-          {{ if $.Values.startupProbe.failureThreshold }} {{- (printf "failureThreshold: %d" (int64 $.Values.startupProbe.failureThreshold)) }} {{ else }}failureThreshold: 4 {{end}}
-          {{ if $.Values.startupProbe.timeoutSeconds }} {{- (printf "timeoutSeconds: %d" (int64 $.Values.startupProbe.timeoutSeconds)) }} {{ else }}timeoutSeconds: 20 {{end}}
+          {{ if $.Values.startupProbe.initialDelaySeconds.application }} {{- (printf "initialDelaySeconds: %d" (int64 $.Values.startupProbe.initialDelaySeconds.application)) }} {{ else }}initialDelaySeconds: 60 {{end}}
+          {{ if $.Values.startupProbe.periodSeconds.application }} {{- (printf "periodSeconds: %d" (int64 $.Values.startupProbe.periodSeconds.application)) }} {{ else }}periodSeconds: 30 {{end}}
+          {{ if $.Values.startupProbe.failureThreshold.application }} {{- (printf "failureThreshold: %d" (int64 $.Values.startupProbe.failureThreshold.application)) }} {{ else }}failureThreshold: 4 {{end}}
+          {{ if $.Values.startupProbe.timeoutSeconds.application }} {{- (printf "timeoutSeconds: %d" (int64 $.Values.startupProbe.timeoutSeconds.application)) }} {{ else }}timeoutSeconds: 20 {{end}}
           {{- else }}
           initialDelaySeconds: 60
           periodSeconds: 30
@@ -224,10 +232,10 @@ spec:
               - -c
               - '/opt/mariadb/bin/liveness.sh'
           {{- if $.Values.livenessProbe }}
-          {{ if $.Values.livenessProbe.initialDelaySeconds }} {{- (printf "initialDelaySeconds: %d" (int64 $.Values.livenessProbe.initialDelaySeconds)) }} {{ else }}initialDelaySeconds: 60 {{end}}
-          {{ if $.Values.livenessProbe.periodSeconds }} {{- (printf "periodSeconds: %d" (int64 $.Values.livenessProbe.periodSeconds)) }} {{ else }}periodSeconds: 30 {{end}}
-          {{ if $.Values.livenessProbe.failureThreshold }} {{- (printf "failureThreshold: %d" (int64 $.Values.livenessProbe.failureThreshold)) }} {{ else }}failureThreshold: 4 {{end}}
-          {{ if $.Values.livenessProbe.timeoutSeconds }} {{- (printf "timeoutSeconds: %d" (int64 $.Values.livenessProbe.timeoutSeconds)) }} {{ else }}timeoutSeconds: 20 {{end}}
+          {{ if $.Values.livenessProbe.initialDelaySeconds.application }} {{- (printf "initialDelaySeconds: %d" (int64 $.Values.livenessProbe.initialDelaySeconds.application)) }} {{ else }}initialDelaySeconds: 60 {{end}}
+          {{ if $.Values.livenessProbe.periodSeconds.application }} {{- (printf "periodSeconds: %d" (int64 $.Values.livenessProbe.periodSeconds.application)) }} {{ else }}periodSeconds: 30 {{end}}
+          {{ if $.Values.livenessProbe.failureThreshold.application }} {{- (printf "failureThreshold: %d" (int64 $.Values.livenessProbe.failureThreshold.application)) }} {{ else }}failureThreshold: 4 {{end}}
+          {{ if $.Values.livenessProbe.timeoutSeconds.application }} {{- (printf "timeoutSeconds: %d" (int64 $.Values.livenessProbe.timeoutSeconds.application)) }} {{ else }}timeoutSeconds: 20 {{end}}
           {{- else }}
           initialDelaySeconds: 60
           periodSeconds: 30
@@ -241,11 +249,11 @@ spec:
               - -c
               - '/opt/mariadb/bin/readiness.sh'
           {{- if $.Values.readinessProbe }}
-          {{ if $.Values.readinessProbe.initialDelaySeconds }} {{- (printf "initialDelaySeconds: %d" (int64 $.Values.readinessProbe.initialDelaySeconds)) }} {{ else }}initialDelaySeconds: 90 {{ end }}
-          {{ if $.Values.readinessProbe.periodSeconds }} {{- (printf "periodSeconds: %d" (int64 $.Values.readinessProbe.periodSeconds)) }} {{ else }}periodSeconds: 20 {{ end }}
-          {{ if $.Values.readinessProbe.successThreshold }} {{- (printf "successThreshold: %d" (int64 $.Values.readinessProbe.successThreshold)) }} {{ else }}successThreshold: 1 {{ end }}
-          {{ if $.Values.readinessProbe.failureThreshold }} {{- (printf "failureThreshold: %d" (int64 $.Values.readinessProbe.failureThreshold)) }} {{ else }}failureThreshold: 3 {{ end }}
-          {{ if $.Values.readinessProbe.timeoutSeconds }} {{- (printf "timeoutSeconds: %d" (int64 $.Values.readinessProbe.timeoutSeconds)) }} {{ else }}timeoutSeconds: 10 {{ end }}
+          {{ if $.Values.readinessProbe.initialDelaySeconds.application }} {{- (printf "initialDelaySeconds: %d" (int64 $.Values.readinessProbe.initialDelaySeconds.application)) }} {{ else }}initialDelaySeconds: 90 {{ end }}
+          {{ if $.Values.readinessProbe.periodSeconds.application }} {{- (printf "periodSeconds: %d" (int64 $.Values.readinessProbe.periodSeconds.application)) }} {{ else }}periodSeconds: 20 {{ end }}
+          {{ if $.Values.readinessProbe.successThreshold.application }} {{- (printf "successThreshold: %d" (int64 $.Values.readinessProbe.successThreshold.application)) }} {{ else }}successThreshold: 1 {{ end }}
+          {{ if $.Values.readinessProbe.failureThreshold.application }} {{- (printf "failureThreshold: %d" (int64 $.Values.readinessProbe.failureThreshold.application)) }} {{ else }}failureThreshold: 3 {{ end }}
+          {{ if $.Values.readinessProbe.timeoutSeconds.application }} {{- (printf "timeoutSeconds: %d" (int64 $.Values.readinessProbe.timeoutSeconds.application)) }} {{ else }}timeoutSeconds: 10 {{ end }}
           {{- else }}
           initialDelaySeconds: 90
           periodSeconds: 20
@@ -320,6 +328,128 @@ spec:
             mountPath: /opt/mariadb/bin/common-functions.sh
             subPath: common-functions.sh
             readOnly: true
+        {{- /* monitoring sidecar start */}}
+        {{- if $.Values.monitoring.mysqld_exporter.enabled }}
+      - name: {{ $.Release.Name }}-mon
+        image: "{{ $.Values.image.monitoring.registry }}/{{ $.Values.image.monitoring.project }}/{{ $.Values.image.monitoring.applicationname }}:{{ $.Values.image.monitoring.applicationversion }}-{{ $.Values.image.monitoring.imageversion }}"
+        imagePullPolicy: {{ $.Values.image.monitoring.pullPolicy | default "IfNotPresent" | quote }}
+        securityContext:
+          runAsUser:  {{ $.Values.userId.monitoring }}
+          runAsGroup:  {{ $.Values.groupId.monitoring }}
+          {{- if and ($.Values.command) (hasKey $.Values.command "monitoring") }}
+        command:
+{{ $.Values.command.monitoring | toYaml | indent 8 }}
+          {{- end }}
+        env:
+        - name: NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: CONTAINER_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: CONTAINER_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
+        - name: PROCESSORS
+          valueFrom:
+            resourceFieldRef:
+              resource: limits.cpu
+        - name: MEMORY
+          valueFrom:
+            resourceFieldRef:
+              resource: limits.memory
+        - name: MYSQL_PORT
+          {{- range $servicesKey, $servicesValue := $.Values.services }}
+            {{- if eq $servicesValue.name "fe"}}
+              {{- range $portsKey, $portsValue := $servicesValue.ports }}
+                {{- if eq $portsValue.name "mysql"}}
+          value: {{ $portsValue.targetPort | quote }}
+                {{- end }}
+              {{- end }}
+            {{- end }}
+          {{- end }}
+        - name: WEB_LISTEN_PORT
+          value: {{ $.Values.monitoring.mysqld_exporter.metricsPort | default 9104 | quote }}
+          {{- range $envKey, $envValue := $.Values.env }}
+            {{- if (has "monitoring" $envValue.containerType) }}
+        - name: {{ $envKey }}
+              {{- if $envValue.value }}
+          value: {{ $envValue.value | quote }}
+              {{- end }}
+              {{- if $envValue.secretName }}
+          valueFrom:
+            secretKeyRef:
+              name: {{ $.Release.Name }}-{{ $envValue.secretName }}
+              key: {{ $envValue.secretKey }}
+              {{- end }}
+            {{- end }}
+          {{- end }}
+        resources:
+          requests:
+            cpu: {{ $.Values.resourceLimits.cpu.monitoring | default 0.25 }}
+          limits:
+            memory: {{ $.Values.resourceLimits.memory.monitoring | default "32Mi" | quote }}
+        ports:
+          - name: metrics
+            containerPort: {{ $.Values.monitoring.mysqld_exporter.metricsPort | default 9104 }}
+        livenessProbe:
+          exec:
+            command:
+              - sh
+              - -c
+              - '/opt/mysqld_exporter/bin/liveness.sh'
+          {{- if $.Values.livenessProbe }}
+          {{ if $.Values.livenessProbe.initialDelaySeconds.monitoring }} {{- (printf "initialDelaySeconds: %d" (int64 $.Values.livenessProbe.initialDelaySeconds.monitoring)) }} {{ else }}initialDelaySeconds: 5 {{end}}
+          {{ if $.Values.livenessProbe.periodSeconds.monitoring }} {{- (printf "periodSeconds: %d" (int64 $.Values.livenessProbe.periodSeconds.monitoring)) }} {{ else }}periodSeconds: 30 {{end}}
+          {{ if $.Values.livenessProbe.failureThreshold.monitoring }} {{- (printf "failureThreshold: %d" (int64 $.Values.livenessProbe.failureThreshold.monitoring)) }} {{ else }}failureThreshold: 4 {{end}}
+          {{ if $.Values.livenessProbe.timeoutSeconds.monitoring }} {{- (printf "timeoutSeconds: %d" (int64 $.Values.livenessProbe.timeoutSeconds.monitoring)) }} {{ else }}timeoutSeconds: 20 {{end}}
+          {{- else }}
+          initialDelaySeconds: 5
+          periodSeconds: 30
+          failureThreshold: 4
+          timeoutSeconds: 20
+          {{- end }}
+        readinessProbe:
+          exec:
+            command:
+              - sh
+              - -c
+              - '/opt/mysqld_exporter/bin/readiness.sh'
+          {{- if $.Values.readinessProbe }}
+          {{ if $.Values.readinessProbe.initialDelaySeconds.monitoring }} {{- (printf "initialDelaySeconds: %d" (int64 $.Values.readinessProbe.initialDelaySeconds.monitoring)) }} {{ else }}initialDelaySeconds: 10 {{ end }}
+          {{ if $.Values.readinessProbe.periodSeconds.monitoring }} {{- (printf "periodSeconds: %d" (int64 $.Values.readinessProbe.periodSeconds.monitoring)) }} {{ else }}periodSeconds: 20 {{ end }}
+          {{ if $.Values.readinessProbe.successThreshold.monitoring }} {{- (printf "successThreshold: %d" (int64 $.Values.readinessProbe.successThreshold.monitoring)) }} {{ else }}successThreshold: 1 {{ end }}
+          {{ if $.Values.readinessProbe.failureThreshold.monitoring }} {{- (printf "failureThreshold: %d" (int64 $.Values.readinessProbe.failureThreshold.monitoring)) }} {{ else }}failureThreshold: 3 {{ end }}
+          {{ if $.Values.readinessProbe.timeoutSeconds.monitoring }} {{- (printf "timeoutSeconds: %d" (int64 $.Values.readinessProbe.timeoutSeconds.monitoring)) }} {{ else }}timeoutSeconds: 10 {{ end }}
+          {{- else }}
+          initialDelaySeconds: 10
+          periodSeconds: 20
+          successThreshold: 1
+          failureThreshold: 2
+          timeoutSeconds: 10
+          {{- end }}
+        volumeMounts:
+          - name: monitoring-entrypoint-sh
+            mountPath: /opt/mysqld_exporter/bin/entrypoint-mysqld_exporter.sh
+            subPath: entrypoint-mysqld_exporter.sh
+            readOnly: true
+          - name: monitoring-probes-sh
+            mountPath: /opt/mysqld_exporter/bin/liveness.sh
+            subPath: liveness-monitoring.sh
+            readOnly: true
+          - name: monitoring-probes-sh
+            mountPath: /opt/mysqld_exporter/bin/readiness.sh
+            subPath: readiness-monitoring.sh
+            readOnly: true
+          - name: common-functions-sh
+            mountPath: /opt/mysqld_exporter/bin/common-functions.sh
+            subPath: common-functions.sh
+            readOnly: true
+        {{- end }}
+        {{- /* monitoring sidecar end */}}
       terminationGracePeriodSeconds: {{ $.Values.terminationGracePeriodSeconds | default 86400 }}
       volumes:
         {{- range $volumeMountsKey, $volumeMountsValue := $.Values.volumeMounts }}
@@ -361,6 +491,14 @@ spec:
         - name: common-functions-sh
           configMap:
             name: common-functions-sh
+            defaultMode: 0755
+        - name: monitoring-entrypoint-sh
+          configMap:
+            name: monitoring-entrypoint-sh
+            defaultMode: 0755
+        - name: monitoring-probes-sh
+          configMap:
+            name: monitoring-probes-sh
             defaultMode: 0755
   volumeClaimTemplates:
   {{- range $volumeClaimTemplatesKey, $volumeClaimTemplatesValue := $.Values.volumeClaimTemplates }}

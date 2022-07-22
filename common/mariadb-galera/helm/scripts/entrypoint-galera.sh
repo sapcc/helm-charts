@@ -115,7 +115,7 @@ function selectbootstrapnode {
     SEQNO_FILE_COUNT=$(grep -c '{{ $.Release.Name }}-*' ${SEQNO_FILES} | grep -c -e "${BASE}/etc/galerastatus/{{ $.Release.Name }}-.*.seqno:1")
     IFS=":" SEQNO_OLDEST_TIMESTAMP=($(grep --no-filename 'timestamp:' ${SEQNO_FILES} | sort --key=2 --numeric-sort --field-separator=: | head -1))
     IFS="${oldIFS}"
-    SEQNO_OLDEST_TIMESTAMP_WITH_BUFFER=$(( ${SEQNO_OLDEST_TIMESTAMP[1]} + ({{ $.Values.readinessProbe.timeoutSeconds | int }} * {{ $.Values.scripts.maxAllowedTimeDifferenceFactor | default 3 | int }}) ))
+    SEQNO_OLDEST_TIMESTAMP_WITH_BUFFER=$(( ${SEQNO_OLDEST_TIMESTAMP[1]} + ({{ $.Values.readinessProbe.timeoutSeconds.application | int }} * {{ $.Values.scripts.maxAllowedTimeDifferenceFactor | default 3 | int }}) ))
     CURRENT_EPOCH=$(date +%s)
 
     if [ ${SEQNO_FILE_COUNT} -ge {{ ($.Values.replicas|int) }} ]; then

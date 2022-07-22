@@ -12,7 +12,7 @@ WAIT_SECONDS={{ $.Values.scripts.waitTimeBetweenRetriesInSeconds | default 6 }}
 source ${BASE}/bin/common-functions.sh
 
 function checkdblogon {
-  mysql --defaults-file=/opt/mariadb/etc/my.cnf --protocol=tcp -u root -h localhost --port=${MYSQL_PORT} --batch --connect-timeout={{ $.Values.livenessProbe.timeoutSeconds }} --execute="SHOW DATABASES;" | grep --silent 'mysql'
+  mysql --defaults-file=/opt/mariadb/etc/my.cnf --protocol=tcp --user=root --host=localhost --port=${MYSQL_PORT} --batch --connect-timeout={{ $.Values.livenessProbe.timeoutSeconds.application }} --execute="SHOW DATABASES;" | grep --silent 'mysql'
   if [ $? -eq 0 ]; then
     echo 'MariaDB MySQL API reachable'
   else
@@ -22,7 +22,7 @@ function checkdblogon {
 }
 
 function checkgaleraport {
-  timeout {{ $.Values.livenessProbe.timeoutSeconds }} bash -c "</dev/tcp/${CONTAINER_IP}/${GALERA_PORT}"
+  timeout {{ $.Values.livenessProbe.timeoutSeconds.application }} bash -c "</dev/tcp/${CONTAINER_IP}/${GALERA_PORT}"
   if [ $? -eq 0 ]; then
     echo 'MariaDB Galera API reachable'
   else

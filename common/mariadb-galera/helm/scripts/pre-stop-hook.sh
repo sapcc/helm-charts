@@ -12,7 +12,7 @@ WAIT_SECONDS={{ $.Values.scripts.waitTimeBetweenRetriesInSeconds | default 6 }}
 source ${BASE}/bin/common-functions.sh
 
 function checkgaleralocalstate {
-  mysql --defaults-file=/opt/${SOFTWARE_NAME}/etc/my.cnf --protocol=tcp -u root -h localhost --port=${MYSQL_PORT} --database=mysql --connect-timeout={{ $.Values.livenessProbe.timeoutSeconds }} --execute="SHOW GLOBAL STATUS LIKE 'wsrep_local_state_comment';" --batch --skip-column-names | grep --silent 'Synced'
+  mysql --defaults-file=/opt/${SOFTWARE_NAME}/etc/my.cnf --protocol=tcp --user=root --host=localhost --port=${MYSQL_PORT} --database=mysql --connect-timeout={{ $.Values.livenessProbe.timeoutSeconds.application }} --execute="SHOW GLOBAL STATUS LIKE 'wsrep_local_state_comment';" --batch --skip-column-names | grep --silent 'Synced'
   if [ $? -eq 0 ]; then
     loginfo "${FUNCNAME[0]}" 'MariaDB Galera node in sync with the cluster'
   else
@@ -22,7 +22,7 @@ function checkgaleralocalstate {
 }
 
 function checkgaleraclusterstate {
-  mysql --defaults-file=/opt/${SOFTWARE_NAME}/etc/my.cnf --protocol=tcp -u root -h localhost --port=${MYSQL_PORT} --database=mysql --connect-timeout={{ $.Values.livenessProbe.timeoutSeconds }} --execute="SHOW GLOBAL STATUS LIKE 'wsrep_cluster_status';" --batch --skip-column-names | grep --silent 'Primary'
+  mysql --defaults-file=/opt/${SOFTWARE_NAME}/etc/my.cnf --protocol=tcp --user=root --host=localhost --port=${MYSQL_PORT} --database=mysql --connect-timeout={{ $.Values.livenessProbe.timeoutSeconds.application }} --execute="SHOW GLOBAL STATUS LIKE 'wsrep_cluster_status';" --batch --skip-column-names | grep --silent 'Primary'
   if [ $? -eq 0 ]; then
     loginfo "${FUNCNAME[0]}" 'MariaDB Galera node reports a working cluster status'
   else
@@ -32,7 +32,7 @@ function checkgaleraclusterstate {
 }
 
 function checkgaleranodeconnected {
-  mysql --defaults-file=/opt/${SOFTWARE_NAME}/etc/my.cnf --protocol=tcp -u root -h localhost --port=${MYSQL_PORT} --database=mysql --connect-timeout={{ $.Values.livenessProbe.timeoutSeconds }} --execute="SHOW GLOBAL STATUS LIKE 'wsrep_connected';" --batch --skip-column-names | grep --silent 'ON'
+  mysql --defaults-file=/opt/${SOFTWARE_NAME}/etc/my.cnf --protocol=tcp --user=root --host=localhost --port=${MYSQL_PORT} --database=mysql --connect-timeout={{ $.Values.livenessProbe.timeoutSeconds.application }} --execute="SHOW GLOBAL STATUS LIKE 'wsrep_connected';" --batch --skip-column-names | grep --silent 'ON'
   if [ $? -eq 0 ]; then
     loginfo "${FUNCNAME[0]}" 'MariaDB Galera node connected to other cluster nodes'
   else
@@ -42,7 +42,7 @@ function checkgaleranodeconnected {
 }
 
 function shutdowngaleranode {
-  mysql --defaults-file=/opt/${SOFTWARE_NAME}/etc/my.cnf --protocol=tcp -u root -h localhost --port=${MYSQL_PORT} --database=mysql --connect-timeout={{ $.Values.livenessProbe.timeoutSeconds }} --execute="SHUTDOWN WAIT FOR ALL SLAVES;"
+  mysql --defaults-file=/opt/${SOFTWARE_NAME}/etc/my.cnf --protocol=tcp --user=root --host=localhost --port=${MYSQL_PORT} --database=mysql --connect-timeout={{ $.Values.livenessProbe.timeoutSeconds.application }} --execute="SHUTDOWN WAIT FOR ALL SLAVES;"
   if [ $? -eq 0 ]; then
     loginfo "${FUNCNAME[0]}" 'MariaDB Galera node shutdown successful'
   else
@@ -52,7 +52,7 @@ function shutdowngaleranode {
 }
 
 function rejectnewconnectionstogaleranode {
-  mysql --defaults-file=/opt/${SOFTWARE_NAME}/etc/my.cnf --protocol=tcp -u root -h localhost --port=${MYSQL_PORT} --database=mysql --connect-timeout={{ $.Values.livenessProbe.timeoutSeconds }} --execute="SET GLOBAL wsrep_reject_queries=ALL;"
+  mysql --defaults-file=/opt/${SOFTWARE_NAME}/etc/my.cnf --protocol=tcp --user=root --host=localhost --port=${MYSQL_PORT} --database=mysql --connect-timeout={{ $.Values.livenessProbe.timeoutSeconds.application }} --execute="SET GLOBAL wsrep_reject_queries=ALL;"
   if [ $? -eq 0 ]; then
     loginfo "${FUNCNAME[0]}" 'MariaDB Galera node successfully configured to reject new connections'
   else

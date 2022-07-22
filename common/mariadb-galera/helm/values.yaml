@@ -1,20 +1,38 @@
 # Default values for elasticsearch.
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
-userId: 101
-groupId: 101
+userId:
+  application: 101
+  monitoring: 3000
+groupId:
+  application: 101
+  monitoring: 3000
 
-cleanOsCacheAtStartup: true #https://www.kernel.org/doc/html/latest/admin-guide/sysctl/vm.html?highlight=drop_caches#drop-caches (default false)
+cleanOsCacheAtStartup: false #https://www.kernel.org/doc/html/latest/admin-guide/sysctl/vm.html?highlight=drop_caches#drop-caches (default false, only useful for benchmarking)
 scripts:
   maxRetries: 20 #how many times should script functions retry before failing(default 10)
   waitTimeBetweenRetriesInSeconds: 6 #how long should script functions wait between retries (default 6)
   logLevel: info # info(default) or debug
-  maxAllowedTimeDifferenceFactor: 3 # to multiply with readinessProbe.timeoutSeconds as the maximum allowed time difference for the last configmap update (default 3)
+  maxAllowedTimeDifferenceFactor: 12 #to multiply with readinessProbe.timeoutSeconds.application as the maximum allowed time difference for the last configmap update (default 3)
+monitoring:
+  prometheus:
+    instance: prometheus #name of the Prometheus instance that should pull metrics
+  mysqld_exporter:
+    enabled: true #enable the Prometheus MySQL exporter as sidecar container https://github.com/prometheus/mysqld_exporter
+    metricsPort: 9104
+  elasticBeatsAutoDiscoveryAnnotations:
+    enabled: false #add annotations to allow automatic configuration of Elastic Beats agents https://www.elastic.co/guide/en/beats/metricbeat/current/configuration-autodiscover-hints.html
 
 # command:
-#   - "sh"
-#   - "-c"
-#   - "/bin/sleep 3600"
+#   application:
+#     - "sh"
+#     - "-c"
+#     - "/bin/sleep 3600"
+# command:
+#   monitoring:
+#     - "sh"
+#     - "-c"
+#     - "/bin/sleep 3600"
 
 # Docker image
 image:
@@ -35,7 +53,17 @@ image:
     project: cloud-capacity-mgmt-tes
     applicationname: mariadb-galera
     applicationversion: 10.5.13
-    imageversion: 0.0.4
+    imageversion: 0.0.5
+    pullPolicy: Always
+    pullSecret: pull-secret-gcp
+  monitoring:
+    #registry: keppel.eu-nl-1.cloud.sap
+    #project: octobus
+    registry: eu.gcr.io
+    project: cloud-capacity-mgmt-tes
+    applicationname: mysqld_exporter
+    applicationversion: 0.14.0
+    imageversion: 0.0.1
     pullPolicy: Always
     pullSecret: pull-secret-gcp
 
@@ -45,6 +73,10 @@ initContainers:
       privileged: true
       runAsUser: 0
   tcpKeepAlive:
+    securityContext:
+      privileged: true
+      runAsUser: 0
+  cleanoscache:
     securityContext:
       privileged: true
       runAsUser: 0
@@ -104,8 +136,14 @@ volumeClaimTemplates:
 
 # Resource limits per container
 resourceLimits:
-  cpu: 2
-  memory: 256Mi
+  cpu:
+    application: 2
+    monitoring: 0.5
+    job: 0.5
+  memory:
+    application: 256Mi
+    monitoring: 48Mi
+    job: 48Mi
 
 # Deployment rules
 replicas: 3 #only uneven values are allowed to avoid a split brain cluster state
@@ -121,40 +159,101 @@ podManagementPolicy: Parallel
 revisionHistoryLimit: 3
 terminationGracePeriodSeconds: 86400
 regional: false
+backoffLimit: 6 #https://kubernetes.io/docs/concepts/workloads/controllers/job/#pod-backoff-failure-policy
+activeDeadlineSeconds: 300 #https://kubernetes.io/docs/concepts/workloads/controllers/job/#job-termination-and-cleanup
+ttlSecondsAfterFinished: 7200 #https://kubernetes.io/docs/concepts/workloads/controllers/job/#clean-up-finished-jobs-automatically
+restartPolicy: OnFailure #https://kubernetes.io/docs/concepts/workloads/controllers/job/#handling-pod-and-container-failures
 
 #Container Health Checks
 startupProbe:
-  initialDelaySeconds: 15
-  periodSeconds: 30
-  failureThreshold: 21
-  timeoutSeconds: 20
+  initialDelaySeconds:
+    application: 15
+  periodSeconds:
+    application: 30
+  failureThreshold:
+    application: 21
+  timeoutSeconds:
+    application: 20
 livenessProbe:
-  initialDelaySeconds: 15
-  periodSeconds: 30
-  failureThreshold: 4
-  timeoutSeconds: 20
+  initialDelaySeconds:
+    application: 15
+    monitoring: 5
+  periodSeconds:
+    application: 30
+    monitoring: 30
+  failureThreshold:
+    application: 4
+    monitoring: 4
+  timeoutSeconds:
+    application: 20
+    monitoring: 20
 readinessProbe:
-  initialDelaySeconds: 30
-  periodSeconds: 20
-  successThreshold: 1
-  failureThreshold: 3
-  timeoutSeconds: 10
+  initialDelaySeconds:
+    application: 30
+    monitoring: 10
+  periodSeconds:
+    application: 20
+    monitoring: 20
+  successThreshold:
+    application: 1
+    monitoring: 1
+  failureThreshold:
+    application: 3
+    monitoring: 3
+  timeoutSeconds:
+    application: 10
+    monitoring: 10
 
 env:
   MARIADB_CLUSTER_NAME:
     value: eu-de-1.nova
+    containerType:
+      - application
   MARIADB_ROOT_USER:
     secretName: db-full-auth
     secretKey: username
+    containerType:
+      - application
+      - job
   MARIADB_ROOT_PASSWORD:
     secretName: db-full-auth
     secretKey: password
+    containerType:
+      - application
+      - job
   GALERA_SST_USER:
     secretName: ga-sync-auth
     secretKey: username
+    containerType:
+      - application
   GALERA_SST_PASSWORD:
     secretName: ga-sync-auth
     secretKey: password
+    containerType:
+      - application
+  MARIADB_MONITORING_USER:
+    secretName: db-mon-auth
+    secretKey: username
+    containerType:
+      - application
+      - monitoring
+      - job
+  MARIADB_MONITORING_PASSWORD:
+    secretName: db-mon-auth
+    secretKey: password
+    containerType:
+      - application
+      - monitoring
+      - job
+  MARIADB_MONITORING_CONNECTION_LIMIT:
+    value: 6
+    containerType:
+      - application
+      - job
+  WEB_TELEMETRY_PATH:
+    value: /metrics
+    containerType:
+      - monitoring
 
 mariadb:
   binLogDir: log #if not defined the data dir will be used. Needs a log volume mount to be configured too

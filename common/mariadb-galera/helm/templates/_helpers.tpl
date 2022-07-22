@@ -1,9 +1,9 @@
 {{/*
   Generate Kubernetes service template
-  service without per pod information:  include "galeraService" (dict "global" $ "service" $service "replica" "notused")
-  service with per pod information:     include "galeraService" (dict "global" $ "service" $service "replica" ($replicaNumber|toString))
+  service without per pod information:  include "networkService" (dict "global" $ "service" $service "replica" "notused")
+  service with per pod information:     include "networkService" (dict "global" $ "service" $service "replica" ($replicaNumber|toString))
 */}}
-{{- define "galeraService" }}
+{{- define "networkService" }}
 ---
 apiVersion: v1
 kind: Service

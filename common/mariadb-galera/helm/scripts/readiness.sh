@@ -11,18 +11,8 @@ WAIT_SECONDS={{ $.Values.scripts.waitTimeBetweenRetriesInSeconds | default 6 }}
 
 source ${BASE}/bin/common-functions.sh
 
-function checkdblogon {
-  mysql --defaults-file=/opt/${SOFTWARE_NAME}/etc/my.cnf --protocol=tcp -u root -h localhost --port=${MYSQL_PORT} --database=mysql --connect-timeout={{ $.Values.readinessProbe.timeoutSeconds }} --execute="STATUS;" | grep 'Server version:' | grep --silent "${SOFTWARE_VERSION}"
-  if [ $? -eq 0 ]; then
-    echo 'MariaDB MySQL API usable'
-  else
-    echo 'MariaDB MySQL API not usable'
-    exit 1
-  fi
-}
-
 function checkgaleraclusterstatus {
-  mysql --defaults-file=/opt/${SOFTWARE_NAME}/etc/my.cnf --protocol=tcp -u root -h localhost --port=${MYSQL_PORT} --database=mysql --connect-timeout={{ $.Values.readinessProbe.timeoutSeconds }} --execute="SHOW GLOBAL STATUS LIKE 'wsrep_cluster_status';" --batch --skip-column-names | grep --silent 'Primary'
+  mysql --defaults-file=/opt/${SOFTWARE_NAME}/etc/my.cnf --protocol=tcp --user=root --host=localhost --port=${MYSQL_PORT} --database=mysql --connect-timeout={{ $.Values.readinessProbe.timeoutSeconds.application }} --execute="SHOW GLOBAL STATUS LIKE 'wsrep_cluster_status';" --batch --skip-column-names | grep --silent 'Primary'
   if [ $? -eq 0 ]; then
     echo 'MariaDB Galera node reports a working cluster status'
   else
@@ -32,7 +22,7 @@ function checkgaleraclusterstatus {
 }
 
 function checkgaleranodejoinstatus {
-  mysql --defaults-file=/opt/${SOFTWARE_NAME}/etc/my.cnf --protocol=tcp -u root -h localhost --port=${MYSQL_PORT} --database=mysql --connect-timeout={{ $.Values.readinessProbe.timeoutSeconds }} --execute="SHOW GLOBAL STATUS LIKE 'wsrep_local_state_comment';" --batch --skip-column-names | grep --silent 'Synced'
+  mysql --defaults-file=/opt/${SOFTWARE_NAME}/etc/my.cnf --protocol=tcp --user=root --host=localhost --port=${MYSQL_PORT} --database=mysql --connect-timeout={{ $.Values.readinessProbe.timeoutSeconds.application }} --execute="SHOW GLOBAL STATUS LIKE 'wsrep_local_state_comment';" --batch --skip-column-names | grep --silent 'Synced'
   if [ $? -eq 0 ]; then
     echo 'MariaDB Galera node is in sync with the cluster'
   else
@@ -42,7 +32,7 @@ function checkgaleranodejoinstatus {
 }
 
 function checkgaleranodeconnectstatus {
-  mysql --defaults-file=/opt/${SOFTWARE_NAME}/etc/my.cnf --protocol=tcp -u root -h localhost --port=${MYSQL_PORT} --database=mysql --connect-timeout={{ $.Values.readinessProbe.timeoutSeconds }} --execute="SHOW GLOBAL STATUS LIKE 'wsrep_connected';" --batch --skip-column-names | grep --silent 'ON'
+  mysql --defaults-file=/opt/${SOFTWARE_NAME}/etc/my.cnf --protocol=tcp --user=root --host=localhost --port=${MYSQL_PORT} --database=mysql --connect-timeout={{ $.Values.readinessProbe.timeoutSeconds.application }} --execute="SHOW GLOBAL STATUS LIKE 'wsrep_connected';" --batch --skip-column-names | grep --silent 'ON'
   if [ $? -eq 0 ]; then
     echo 'MariaDB Galera node connected to other cluster nodes'
   else
@@ -52,7 +42,7 @@ function checkgaleranodeconnectstatus {
 }
 
 function checkgaleraready {
-  mysql --defaults-file=/opt/${SOFTWARE_NAME}/etc/my.cnf --protocol=tcp -u root -h localhost --port=${MYSQL_PORT} --database=mysql --connect-timeout={{ $.Values.readinessProbe.timeoutSeconds }} --execute="SHOW GLOBAL STATUS LIKE 'wsrep_ready';" --batch --skip-column-names | grep --silent 'ON'
+  mysql --defaults-file=/opt/${SOFTWARE_NAME}/etc/my.cnf --protocol=tcp --user=root --host=localhost --port=${MYSQL_PORT} --database=mysql --connect-timeout={{ $.Values.readinessProbe.timeoutSeconds.application }} --execute="SHOW GLOBAL STATUS LIKE 'wsrep_ready';" --batch --skip-column-names | grep --silent 'ON'
   if [ $? -eq 0 ]; then
     echo 'MariaDB Galera ready for queries'
   else
@@ -62,7 +52,7 @@ function checkgaleraready {
 }
 
 function checknoderejectsconnections {
-  mysql --defaults-file=/opt/${SOFTWARE_NAME}/etc/my.cnf --protocol=tcp -u root -h localhost --port=${MYSQL_PORT} --database=mysql --connect-timeout={{ $.Values.readinessProbe.timeoutSeconds }} --execute="SHOW VARIABLES LIKE 'wsrep_reject_queries';" --batch --skip-column-names | grep --silent 'NONE'
+  mysql --defaults-file=/opt/${SOFTWARE_NAME}/etc/my.cnf --protocol=tcp --user=root --host=localhost --port=${MYSQL_PORT} --database=mysql --connect-timeout={{ $.Values.readinessProbe.timeoutSeconds.application }} --execute="SHOW VARIABLES LIKE 'wsrep_reject_queries';" --batch --skip-column-names | grep --silent 'NONE'
   if [ $? -eq 0 ]; then
     echo 'MariaDB Galera node does accept new client connections'
   else

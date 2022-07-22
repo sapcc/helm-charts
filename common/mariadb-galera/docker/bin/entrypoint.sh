@@ -54,19 +54,20 @@ function initdb {
     fi
     startmaintenancedb
     setuptimezoneinfo
-    setupusers
+    setuprootuser
+    setupmonitoringuser
     listdbandusers
     stopdb
   fi
   loginfo "${FUNCNAME[0]}" "init databases done"
 }
 
-function setupusers {
+function setuprootuser {
   local int
   for (( int=${MAX_RETRIES}; int >=1; int-=1));
     do
     loginfo "${FUNCNAME[0]}" "setup root user permissions(${int} retries left)"
-    cat ${BASE}/etc/sql/root_permissions.sql.tpl | envsubst | mysql --defaults-file=${BASE}/etc/my.cnf -u root -h localhost --batch
+    cat ${BASE}/etc/sql/root_permissions.sql.tpl | envsubst | mysql --defaults-file=${BASE}/etc/my.cnf --user=root --host=localhost --batch
     if [ $? -ne 0 ]; then
       logerror "${FUNCNAME[0]}" "root user setup has been failed"
       sleep ${WAIT_SECONDS}
@@ -81,12 +82,36 @@ function setupusers {
   loginfo "${FUNCNAME[0]}" "root user setup done"
 }
 
+function setupmonitoringuser {
+  local int
+  if [ -f "${BASE}/etc/sql/monitoring_permissions.sql.tpl" ] && [ -z "${MARIADB_MONITORING_USER}" ] && [ -z "${MARIADB_MONITORING_PASSWORD}" ]; then
+    for (( int=${MAX_RETRIES}; int >=1; int-=1));
+      do
+      loginfo "${FUNCNAME[0]}" "setup monitoring user permissions(${int} retries left)"
+      cat ${BASE}/etc/sql/monitoring_permissions.sql.tpl | envsubst | mysql --defaults-file=${BASE}/etc/my.cnf --user=root --host=localhost --batch
+      if [ $? -ne 0 ]; then
+        logerror "${FUNCNAME[0]}" "monitoring user setup has been failed"
+        sleep ${WAIT_SECONDS}
+      else
+        break
+      fi
+    done
+    if [ ${int} -eq 0 ]; then
+      logerror "${FUNCNAME[0]}" "monitoring user setup has been finally failed"
+      exit 1
+    fi
+    loginfo "${FUNCNAME[0]}" "monitoring user setup done"
+  else
+    loginfo "${FUNCNAME[0]}" "monitoring user setup skipped because of missing MARIADB_MONITORING_USER and/or MARIADB_MONITORING_PASSWORD env var"
+  fi
+}
+
 function listdbandusers {
   local int
   for (( int=${MAX_RETRIES}; int >=1; int-=1));
     do
     loginfo "${FUNCNAME[0]}" "list databases and users(${int} retries left)"
-    mysql --defaults-file=${BASE}/etc/my.cnf -u root -h localhost --batch --execute="SHOW DATABASES; SELECT user,host FROM mysql.user;" --table
+    mysql --defaults-file=${BASE}/etc/my.cnf --user=root --host=localhost --batch --execute="SHOW DATABASES; SELECT user,host FROM mysql.user;" --table
     if [ $? -ne 0 ]; then
       logerror "${FUNCNAME[0]}" "list databases and users has been failed"
       sleep ${WAIT_SECONDS}
@@ -106,7 +131,7 @@ function setuptimezoneinfo {
   for (( int=${MAX_RETRIES}; int >=1; int-=1));
     do
     loginfo "${FUNCNAME[0]}" "setup timezone infos(${int} retries left)"
-    mariadb-tzinfo-to-sql --defaults-file=${BASE}/etc/my.cnf --skip-write-binlog /usr/share/zoneinfo | mysql --defaults-file=${BASE}/etc/my.cnf -u root -h localhost --database=mysql --batch
+    mariadb-tzinfo-to-sql --defaults-file=${BASE}/etc/my.cnf --skip-write-binlog /usr/share/zoneinfo | mysql --defaults-file=${BASE}/etc/my.cnf --user=root --host=localhost --database=mysql --batch
     if [ $? -ne 0 ]; then
       logerror "${FUNCNAME[0]}" "timezone info setup has been failed"
       sleep ${WAIT_SECONDS}
@@ -146,7 +171,7 @@ function checkupgradedb {
 
 function upgradedb {
   loginfo "${FUNCNAME[0]}" "start database upgrade"
-  mysql_upgrade --defaults-file=${BASE}/etc/my.cnf -u root -h localhost --version-check
+  mysql_upgrade --defaults-file=${BASE}/etc/my.cnf --user=root --host=localhost --version-check
   if [ $? -ne 0 ]; then
     logerror "${FUNCNAME[0]}" "database upgrade has been failed"
     exit 1
@@ -195,7 +220,7 @@ function startmaintenancedb {
   for (( int=${MAX_RETRIES}; int >=1; int-=1));
     do
     loginfo "${FUNCNAME[0]}" "check if mariadbd is usable for maintenance(${int} retries left)"
-    mysql --defaults-file=${BASE}/etc/my.cnf -u root -h localhost --database=mysql --execute='STATUS;' | grep 'Server version:' | grep --silent "${SOFTWARE_VERSION}"
+    mysql --defaults-file=${BASE}/etc/my.cnf --user=root --host=localhost --database=mysql --execute='STATUS;' | grep 'Server version:' | grep --silent "${SOFTWARE_VERSION}"
     if [ $? -ne 0 ]; then
       logerror "${FUNCNAME[0]}" "mariadbd check failed"
       sleep ${WAIT_SECONDS}

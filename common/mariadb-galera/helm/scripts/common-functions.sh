@@ -1,5 +1,5 @@
 function logjson {
-  printf "{\"@timestamp\":\"%s\",\"ecs.version\":\"1.6.0\",\"log.logger\":\"%s\",\"log.origin.function\":\"%s\",\"log.level\":\"%s\",\"message\":\"%s\"}\n" "$(date +%Y.%m.%d-%H:%M:%S-%Z)" "$3" "$4" "$2" "$5" >>/dev/"$1"
+  printf "{\"@timestamp\":\"%s\",\"ecs.version\":\"1.6.0\",\"log.logger\":\"%s\",\"log.origin.function\":\"%s\",\"log.level\":\"%s\",\"message\":\"%s\"}\n" "$(date +%Y-%m-%dT%H:%M:%S+%Z)" "$3" "$4" "$2" "$5" >>/dev/"$1"
 }
 
 function loginfo {
@@ -63,7 +63,7 @@ function fetchcurrentseqno {
 
   for (( int=${MAX_RETRIES}; int >=1; int-=1));
     do
-    IFS=$'\t' SEQNOARRAY=($(mysql --defaults-file=/opt/${SOFTWARE_NAME}/etc/my.cnf --protocol=tcp -u root -h localhost --port=${MYSQL_PORT} --database=mysql --connect-timeout={{ $.Values.readinessProbe.timeoutSeconds }} --execute="SHOW GLOBAL STATUS LIKE 'wsrep_last_committed';" --batch --skip-column-names | grep 'wsrep_last_committed'))
+    IFS=$'\t' SEQNOARRAY=($(mysql --defaults-file=/opt/${SOFTWARE_NAME}/etc/my.cnf --protocol=tcp --user=root --host=localhost --port=${MYSQL_PORT} --database=mysql --connect-timeout={{ $.Values.readinessProbe.timeoutSeconds.application }} --execute="SHOW GLOBAL STATUS LIKE 'wsrep_last_committed';" --batch --skip-column-names | grep 'wsrep_last_committed'))
     if [ $? -ne 0 ]; then
       sleep ${WAIT_SECONDS}
     else
@@ -75,4 +75,34 @@ function fetchcurrentseqno {
   fi
   IFS="${oldIFS}"
   echo ${SEQNOARRAY[1]}
+}
+
+function checkdblogon {
+  mysql --defaults-file=/opt/${SOFTWARE_NAME}/etc/my.cnf --protocol=tcp --user=root --host=localhost --port=${MYSQL_PORT} --database=mysql --connect-timeout={{ $.Values.readinessProbe.timeoutSeconds.application }} --execute="STATUS;" | grep 'Server version:' | grep --silent "${SOFTWARE_VERSION}"
+  if [ $? -eq 0 ]; then
+    echo 'MariaDB MySQL API usable'
+  else
+    echo 'MariaDB MySQL API not usable'
+    exit 1
+  fi
+}
+
+function checkdbk8sservicelogon {
+  local ONLY_RETURN_STATUS=${1-false}
+
+  mysql --defaults-file=/opt/${SOFTWARE_NAME}/etc/my.cnf --protocol=tcp --user=${MARIADB_ROOT_USER} --password=${MARIADB_ROOT_PASSWORD} --host=mariadb-galera-fe.database.svc.cluster.local --port=${MYSQL_PORT} --database=mysql --connect-timeout={{ $.Values.readinessProbe.timeoutSeconds.application }} --execute="STATUS;" | grep 'Server version:' | grep --silent "${SOFTWARE_VERSION}"
+  if [ $? -eq 0 ]; then
+    if [ "${ONLY_RETURN_STATUS}" == "true" ]; then
+      return 0
+    else
+      echo 'MariaDB MySQL API Kubernetes service usable'
+    fi
+  else
+    if [ "${ONLY_RETURN_STATUS}" == "true" ]; then
+      return 1
+    else
+      echo 'MariaDB MySQL API Kubernetes service not usable'
+      exit 1
+    fi
+  fi
 }

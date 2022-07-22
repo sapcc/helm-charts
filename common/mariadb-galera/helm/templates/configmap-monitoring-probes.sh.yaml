@@ -1,0 +1,11 @@
+{{- if $.Values.monitoring.mysqld_exporter.enabled }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name:  monitoring-probes-sh
+  namespace: {{ $.Release.Namespace }}
+data:
+{{ tpl (.Files.Glob "scripts/liveness-monitoring.sh").AsConfig . | indent 2 }}
+{{ tpl (.Files.Glob "scripts/readiness-monitoring.sh").AsConfig . | indent 2 }}
+{{- end }}
