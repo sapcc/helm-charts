@@ -9,7 +9,7 @@ CREATE DATABASE IF NOT EXISTS {{ . }};
     {{- end }}
 {{- end }}
 
-{{- if and .Values.global.dbUser .Values.global.dbPassword (not (hasKey .Values.users .Values.global.dbUser)) }}
+{{- if and .Values.global.dbUser .Values.global.dbPassword (not (hasKey .Values.users .Values.global.dbUser)) (not .Values.custom_initdb_configmap) }}
 CREATE USER IF NOT EXISTS {{ .Values.global.dbUser }};
 GRANT ALL PRIVILEGES ON {{ .Values.name }}.* TO {{ .Values.global.dbUser }} IDENTIFIED BY '{{ include "db_password" . }}';
 {{- end }}
