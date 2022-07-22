@@ -21,8 +21,9 @@ spec:
       vm_memory_high_watermark_paging_ratio = 0.95
       disk_free_limit.relative = 1.0
       collect_statistics_interval = 10000
-      default_user = {{ .Values.users.default.user }}
-      default_pass = {{ .Values.users.default.password }}
+      # changing the default user and default password will prevent the topology operator from creating the users as the operator doesn't update the default user secret which is used by the sidecar configurator
+      #      default_user={{ .Values.users.default.user }}
+      #      default_pass={{ .Values.users.default.password }}
 {{- if .Values.persistence.enabled }}
   persistence:
     storage: {{ .Values.persistence.size }}
@@ -53,21 +54,10 @@ spec:
 {{- include "rabbitmq_node_reinstall_affinity" . }}
 {{- end }}
   override:
-    service:
-      metadata:
-        annotations:
-          prometheus.io/scrape: "true"
-          prometheus.io/targets: openstack
-      spec:
-        ports:
-          - name: metrics
-            protocol: TCP
-            port: 15692
     statefulSet:
       spec:
         template:
           spec:
-            containers: []
             priorityClassName: {{ default "openstack-service-critical" .Values.priority_class | quote }}
             topologySpreadConstraints:
             - maxSkew: 1
@@ -76,3 +66,34 @@ spec:
               labelSelector:
                 matchLabels:
                   app.kubernetes.io/name: {{ template "fullname" . }}
+            containers:
+            - name : rabbitmq
+{{- if .Values.metrics.enabled }}
+            - name: metrics
+              image: {{include "dockerHubMirror" .}}/{{ .Values.metrics.image }}:{{ .Values.metrics.imageTag }}
+              imagePullPolicy: {{ default "IfNotPresent" .Values.metrics.imagePullPolicy | quote }}
+              env:
+                - name: PUBLISH_PORT
+                  value: {{ default "9150" .Values.metrics.port | quote }}
+                - name: RABBIT_USER
+                  value: {{ .Values.metrics.user | quote }}
+                - name: RABBIT_PASSWORD
+                  value: {{ required ".Values.metrics.password missing" .Values.metrics.password | quote }}
+                - name: RABBIT_URL
+                  value: "http://127.0.0.1:{{ default "15672" .Values.ports.management}}"
+              ports:
+              - name: metrics
+                containerPort: {{ default "9150" .Values.metrics.port }}
+                protocol: TCP
+    service:
+      metadata:
+        annotations:
+          prometheus.io/scrape: "true"
+          prometheus.io/port: {{ required ".Values.metrics.port missing" .Values.metrics.port | quote }}
+          prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
+      spec:
+        ports:
+          - name: metrics
+            protocol: TCP
+            port: {{ default "9150" .Values.metrics.port }}
+{{- end }}
