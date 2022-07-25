@@ -166,6 +166,39 @@ groups:
         description: "BGP peering on `{{ $labels.server_name }}` to `{{ $labels.peer_ip }}` ) (core) went down. L3VPN impacted."
         summary: "BGP peering on `{{ $labels.server_name }}` to `{{ $labels.peer_ip }}` ) (core) went down. L3VPN impacted."
 
+    - alert: NetworkAsrNatTcpPortPreAllocationLow
+      expr: >-
+        sum by (server_name)
+        (ssh_nat_portblock_tcp_end - ssh_nat_portblock_tcp_start)
+        < 45000
+      for: 5m
+      labels:
+        severity: info
+        tier: net
+        service: asr
+        context: asr
+        dashboard: neutron-router
+      annotations:
+        summary: "NAT has to few preallocated TCP ports"
+        description: "Preallocated ports for {{ $labels.server_name }} are below 45k. During sudden high NAT load, this may lead to control plane overload and packet drops"
+
+    - alert: NetworkAsrNatUdpPortPreAllocationLow
+      expr: >-
+        sum by (server_name)
+        (ssh_nat_portblock_udp_end - ssh_nat_portblock_udp_start)
+        < 45000
+      for: 5m
+      labels:
+        severity: info
+        tier: net
+        service: asr
+        context: asr
+        dashboard: neutron-router
+      annotations:
+        summary: "NAT has to few preallocated UDP ports"
+        description: "Preallocated ports for {{ $labels.server_name }} are below 45k. During sudden high NAT load, this may lead to control plane overload and packet drops"
+
+
     - alert: NetworkAsr9kHighNtpRootDispersion
       expr: avg_over_time(ssh_xr_ntp_root_dispersion[10m]) > 2000
       for: 10m
