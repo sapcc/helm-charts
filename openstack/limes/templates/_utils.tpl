@@ -7,6 +7,23 @@
 {{- end -}}
 
 {{- define "limes_common_envvars" }}
+- name: LIMES_AUDIT_ENABLE
+  value: "true"
+- name: LIMES_AUDIT_QUEUE_NAME
+  value: "notifications.info"
+- name: LIMES_AUDIT_RABBITMQ_HOSTNAME
+  value: "hermes-rabbitmq-notifications.hermes.svc"
+- name: LIMES_AUDIT_RABBITMQ_PASSWORD
+  valueFrom:
+    secretKeyRef:
+      name: limes-secret
+      key: rabbitmq_password
+- name: LIMES_AUDIT_RABBITMQ_USERNAME
+  value: "rabbitmq"
+- name: LIMES_AUTHORITATIVE
+  value: "true"
+- name: LIMES_CONSTRAINTS_PATH
+  value: "/etc/limes/constraints-ccloud.yaml"
 - name: LIMES_DEBUG
   value: '0'
 - name: LIMES_DB_PASSWORD
@@ -22,14 +39,25 @@
   value: "true"
 - name: LIMES_COLLECTOR_DATA_METRICS_SKIP_ZERO
   value: "true"
-- name: CCLOUD_AUTH_PASSWORD
+- name: LIMES_OPA_DOMAIN_QUOTA_POLICY_PATH
+  value: "/etc/limes/domain.rego"
+- name: LIMES_OPA_PROJECT_QUOTA_POLICY_PATH
+  value: "/etc/limes/project.rego"
+- name: OS_AUTH_URL
+  value: "http://keystone.{{ $.Values.global.keystoneNamespace }}.svc.kubernetes.{{ $.Values.global.region }}.{{ $.Values.global.tld }}:5000/v3"
+- name: OS_USER_DOMAIN_NAME
+  value: "Default"
+- name: OS_USERNAME
+  value: "limes"
+- name: OS_PASSWORD
   valueFrom:
     secretKeyRef:
       name: limes-secret
-      key: ccloud_auth_password
-- name: CCLOUD_RABBITMQ_PASSWORD
-  valueFrom:
-    secretKeyRef:
-      name: limes-secret
-      key: ccloud_rabbitmq_password
+      key: os_password
+- name: OS_PROJECT_DOMAIN_NAME
+  value: "ccadmin"
+- name: OS_PROJECT_NAME
+  value: "cloud_admin"
+- name: OS_REGION_NAME
+  value: {{ quote $.Values.global.region }}
 {{- end -}}
