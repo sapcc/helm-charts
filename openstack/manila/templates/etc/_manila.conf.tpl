@@ -89,8 +89,7 @@ rabbit_interval_max = {{ .Values.rabbitmq.max_reconnect_interval | default 3 }}
 [oslo_concurrency]
 lock_path = /var/lib/manila/tmp
 
-[coordination]
-backend_url = memcached://{{ .Chart.Name }}-memcached.{{ include "svc_fqdn" . }}:{{ .Values.memcached.memcached.port | default 11211 }}
+{{ include "ini_sections.coordination" . }}
 
 {{- include "ini_sections.database" . }}
 
