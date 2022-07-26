@@ -80,6 +80,7 @@ spec:
           subPath: cinder-volume.conf
           readOnly: true
         {{- include "utils.proxysql.volume_mount" . | indent 10 }}
+        {{- include "utils.coordination.volume_mount" . | indent 10 }}
       {{- include "utils.proxysql.container" . | indent 8 }}
       {{- include "jaeger_agent_sidecar" . | indent 8 }}
       volumes:
@@ -92,5 +93,6 @@ spec:
         configMap:
           name:  volume-netapp-{{$volume.name}}
       {{- include "utils.proxysql.volumes" . | indent 8 }}
+      {{- include "utils.coordination.volumes" . | indent 8 }}
 {{- end -}}
 {{- end -}}

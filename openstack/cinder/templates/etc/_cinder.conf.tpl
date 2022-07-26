@@ -112,8 +112,7 @@ project_name = "{{.Values.global.keystone_service_project | default "service" }}
 project_domain_name = "{{.Values.global.keystone_service_domain | default "Default" }}"
 region_name = {{.Values.global.region}}
 
-[coordination]
-backend_url = memcached://{{ .Chart.Name }}-memcached.{{ include "svc_fqdn" . }}:{{ .Values.memcached.memcached.port | default 11211 }}
+{{ include "ini_sections.coordination" . }}
 
 [nova]
 auth_type = v3password
