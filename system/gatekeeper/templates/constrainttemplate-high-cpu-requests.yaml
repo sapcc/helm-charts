@@ -39,8 +39,12 @@ spec:
         cpu_requests = [canonify_cpu(c) | c = input.review.object.spec.containers[_].resources.requests.cpu]
 
         violation[{"msg": msg}] {
-          input.review.object.kind == "Pod"
+          obj := input.review.object
+          obj.kind == "Pod"
           total_cpu := sum(cpu_requests)
           total_cpu > input.parameters.maxCpu
-          msg := sprintf("requests %v CPU in total", [total_cpu])
+          msg := sprintf(
+            "support-group=%s,service=%s: requests %v CPU in total",
+            [obj.metadata.labels["support-group"], obj.metadata.labels["service"], total_cpu]
+          )
         }

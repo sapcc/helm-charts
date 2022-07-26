@@ -20,10 +20,12 @@ spec:
       rego: |
         package outdatedimagebases
 
+        obj := input.review.object
+
         # check each pod container
         checks[{ "container": container, "response": resp }] {
-          input.review.object.kind == "Pod"
-          container := input.review.object.status.containerStatuses[_]
+          obj.kind == "Pod"
+          container := obj.status.containerStatuses[_]
 
           # only consider images stored in Keppel since we want to inspect the X-Keppel-Min-Layer-Created-At header
           regex.match("^keppel", container.image)
@@ -52,5 +54,8 @@ spec:
           ageInSeconds := nowAsUnixTime - createdAtAsUnixTime
           ageInDays := ageInSeconds / 86400
           ageInDays > 365
-          msg := sprintf("image %s for container %q uses a very old base image (oldest layer is %.0f days old)", [check.container.image, check.container.name, ageInDays])
+          msg := sprintf(
+            "support-group=%s,service=%s: image %s for container %q uses a very old base image (oldest layer is %.0f days old)",
+            [obj.metadata.labels["support-group"], obj.metadata.labels["service"], check.container.image, check.container.name, ageInDays]
+          )
         }

@@ -48,8 +48,9 @@ spec:
         }
 
         violation[{"msg": msg}] {
-          input.review.object.kind == "Pod"
-          container := input.review.object.spec.containers[_]
+          obj := input.review.object
+          obj.kind == "Pod"
+          container := obj.spec.containers[_]
           image := container.image
 
           current_region = extract_keppel_region(image) # this will also check if image is using Keppel or not
@@ -58,5 +59,8 @@ spec:
           count(found) == 0
 
           image_name := extract_image_name_with_tag(image)
-          msg := sprintf("container %q uses incorrect regional registry for image: %s", [container.name, image_name])
+          msg := sprintf(
+            "support-group=%s,service=%s: container %q uses incorrect regional registry for image: %s",
+            [obj.metadata.labels["support-group"], obj.metadata.labels["service"], container.name, image_name]
+          )
         }

@@ -27,7 +27,8 @@ spec:
         }
 
         violation[{"msg": msg}] {
-          input.review.object.kind == "Ingress"
+          obj := input.review.object
+          obj.kind == "Ingress"
           count(ingress_annotations) > 0
           found := {a |
             ingress_annotations[k]
@@ -38,7 +39,10 @@ spec:
           }
 
           count(found) > 0
-          msg := sprintf("has disabled annotations: %s", [sort(found)])
+          msg := sprintf(
+            "support-group=%s,service=%s: has disabled annotations: %s",
+            [obj.metadata.labels["support-group"], obj.metadata.labels["service"], sort(found)]
+          )
         }
 
         # Starting in Ingress Controller >= v0.22.0, ingress definitions using the rewrite-target
@@ -84,7 +88,7 @@ spec:
 
           count(found) == 0
           msg := sprintf(
-            "%q annotation expects at least one spec.rules[].http.paths[].path with regex value that has at least %d capture group(s)",
-            [rewrite_target, placeholder_no],
+            "support-group=%s,service=%s: %q annotation expects at least one spec.rules[].http.paths[].path with regex value that has at least %d capture group(s)",
+            [obj.metadata.labels["support-group"], obj.metadata.labels["service"], rewrite_target, placeholder_no],
           )
         }

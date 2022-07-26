@@ -27,8 +27,9 @@ spec:
       rego: |
         package vulnerableimages
 
-        checks[{ "container": container, "response": resp }] {
+        checks[{ "container": container, "labels": labels, "response": resp }] {
           input.review.object.kind == "Pod"
+          labels := input.review.object.metadata.labels
           container := input.review.object.status.containerStatuses[_]
 
           # only consider images stored in Keppel since we want to inspect the X-Keppel-Vulnerability-Status header
@@ -55,5 +56,8 @@ spec:
           # report everything with a definite vulnerability
           status != "Clean"
           status != "Unknown"
-          msg := sprintf("image %s for container %q has vulnerability status %q", [check.container.image, check.container.name, status])
+          msg := sprintf(
+            "support-group=%s,service=%s: image %s for container %q has vulnerability status %q",
+            [check.labels["support-group"], check.labels["service"], check.container.image, check.container.name, status]
+          )
         }

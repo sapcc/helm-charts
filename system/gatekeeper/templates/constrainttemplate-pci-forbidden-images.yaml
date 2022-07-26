@@ -25,11 +25,15 @@ spec:
         package pciforbiddenimages
 
         violation[{"msg": msg}] {
-          input.review.object.kind == "Pod"
-          container := input.review.object.spec.containers[_]
+          obj := input.review.object
+          obj.kind == "Pod"
+          container := obj.spec.containers[_]
 
           pattern := input.parameters.patterns[_]
           regex.match(pattern, container.image)
 
-          msg := sprintf("container %q uses forbidden image: %s", [container.name, container.image])
+          msg := sprintf(
+            "support-group=%s,service=%s: container %q uses forbidden image: %s",
+            [obj.metadata.labels["support-group"], obj.metadata.labels["service"], container.name, container.image]
+          )
         }

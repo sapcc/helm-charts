@@ -30,7 +30,7 @@ spec:
         }
 
         configmaps = {obj |
-          input.review.object.kind == "Secret"
+          secret.kind == "Secret"
           secret.type == "helm.sh/release.v1"
           secret.metadata.labels.status == "deployed"
 
@@ -45,7 +45,10 @@ spec:
           # Check if an 'owner-of-<release-name>' ConfigMap exists for this release.
           count(configmaps) == 0
           release_name := input.review.object.metadata.labels.name
-          msg := sprintf("could not find ConfigMap: owner-of-%s", [release_name])
+          msg := sprintf(
+            "support-group=%s,service=%s: could not find ConfigMap: owner-of-%s",
+            [parser_resp.body.values["owner-info"]["support-group"], parser_resp.body.values["owner-info"].service, release_name]
+          )
         }
 
         violation[{"msg": msg}] {
@@ -57,7 +60,7 @@ spec:
           pm := object.get(obj.metadata.labels, "primary-maintainer", "")
           pm == ""
           msg := sprintf(
-            "ConfigMap %q does not have %q label: parent chart needs to define %q in its Values.yaml file with at least one maintainer",
-            [obj.metadata.name, "primary-maintainer", "owner-info.maintainers"],
+            "support-group=%s,service=%s: ConfigMap %q does not have %q label: parent chart needs to define %q in its Values.yaml file with at least one maintainer",
+            [parser_resp.body.values["owner-info"]["support-group"], parser_resp.body.values["owner-info"].service, obj.metadata.name, "primary-maintainer", "owner-info.maintainers"],
           )
         }
