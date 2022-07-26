@@ -39,6 +39,7 @@ RUN oldIFS="${IFS}" \
 COPY bin/entrypoint.sh /opt/${SOFTWARE_NAME}/bin/
 COPY config/my.cnf /opt/${SOFTWARE_NAME}/etc/
 COPY config/*.tpl /opt/${SOFTWARE_NAME}/etc/sql/
+COPY config/*.role /opt/${SOFTWARE_NAME}/etc/sql/
 RUN chown -R mysql:mysql /opt/${SOFTWARE_NAME} \
   && chmod 755 /opt/${SOFTWARE_NAME}/bin/entrypoint.sh \
   && chmod 644 /opt/${SOFTWARE_NAME}/etc/my.cnf \

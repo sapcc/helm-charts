@@ -113,25 +113,28 @@ function selectbootstrapnode {
     do
     loginfo "${FUNCNAME[0]}" "Find Galera node with highest sequence number (${int} retries left)"
     SEQNO_FILE_COUNT=$(grep -c '{{ $.Release.Name }}-*' ${SEQNO_FILES} | grep -c -e "${BASE}/etc/galerastatus/{{ $.Release.Name }}-.*.seqno:1")
-    IFS=":" SEQNO_OLDEST_TIMESTAMP=($(grep --no-filename 'timestamp:' ${SEQNO_FILES} | sort --key=2 --numeric-sort --field-separator=: | head -1))
-    IFS="${oldIFS}"
-    SEQNO_OLDEST_TIMESTAMP_WITH_BUFFER=$(( ${SEQNO_OLDEST_TIMESTAMP[1]} + ({{ $.Values.readinessProbe.timeoutSeconds.application | int }} * {{ $.Values.scripts.maxAllowedTimeDifferenceFactor | default 3 | int }}) ))
-    CURRENT_EPOCH=$(date +%s)
-
     if [ ${SEQNO_FILE_COUNT} -ge {{ ($.Values.replicas|int) }} ]; then
-      if [ ${CURRENT_EPOCH} -le ${SEQNO_OLDEST_TIMESTAMP_WITH_BUFFER} ]; then
-        IFS=": " NODENAME=($(grep --no-filename '{{ $.Release.Name }}-*' ${SEQNO_FILES} | sort --key=2 --reverse --numeric-sort --field-separator=: | head -1))
-        IFS="${oldIFS}"
-        if [[ "${NODENAME[0]}" =~ ^{{ $.Release.Name }}-.* ]]; then
-          loginfo "${FUNCNAME[0]}" "Galera nodename '${NODENAME[0]}' with the sequence number '${NODENAME[1]}' selected"
-          break
+      IFS=":" SEQNO_OLDEST_TIMESTAMP=($(grep --no-filename 'timestamp:' ${SEQNO_FILES} | sort --key=2 --numeric-sort --field-separator=: | head -1))
+      IFS="${oldIFS}"
+      if ! [ -z ${SEQNO_OLDEST_TIMESTAMP[1]+x} ]; then
+        SEQNO_OLDEST_TIMESTAMP_WITH_BUFFER=$(( ${SEQNO_OLDEST_TIMESTAMP[1]} + ({{ $.Values.readinessProbe.timeoutSeconds.application | int }} * {{ $.Values.scripts.maxAllowedTimeDifferenceFactor | default 3 | int }}) ))
+        CURRENT_EPOCH=$(date +%s)
+        if [ ${CURRENT_EPOCH} -le ${SEQNO_OLDEST_TIMESTAMP_WITH_BUFFER} ]; then
+          IFS=": " NODENAME=($(grep --no-filename '{{ $.Release.Name }}-*' ${SEQNO_FILES} | sort --key=2 --reverse --numeric-sort --field-separator=: | head -1))
+          IFS="${oldIFS}"
+          if [[ "${NODENAME[0]}" =~ ^{{ $.Release.Name }}-.* ]]; then
+            loginfo "${FUNCNAME[0]}" "Galera nodename '${NODENAME[0]}' with the sequence number '${NODENAME[1]}' selected"
+            break
+          else
+            logerror "${FUNCNAME[0]}" "nodename '${NODENAME[0]}' not valid"
+            exit 1
+          fi
         else
-          logerror "${FUNCNAME[0]}" "nodename '${NODENAME[0]}' not valid"
-          exit 1
+          logerror "${FUNCNAME[0]}" "seqno timestamp of at least one node is too old: '$(date --date=@${SEQNO_OLDEST_TIMESTAMP_WITH_BUFFER} +%Y.%m.%d-%H:%M:%S-%Z)'/'$(date --date=@${CURRENT_EPOCH} +%Y.%m.%d-%H:%M:%S-%Z)' will wait $(( ${WAIT_SECONDS} * (${MAX_RETRIES} - ${int} + 1) ))s"
+          sleep  $(( ${WAIT_SECONDS} * (${MAX_RETRIES} - ${int} + 1) ))
         fi
       else
-        logerror "${FUNCNAME[0]}" "seqno timestamp of at least one node is too old: '$(date --date=@${SEQNO_OLDEST_TIMESTAMP_WITH_BUFFER} +%Y.%m.%d-%H:%M:%S-%Z)'/'$(date --date=@${CURRENT_EPOCH} +%Y.%m.%d-%H:%M:%S-%Z)' will wait $(( ${WAIT_SECONDS} * (${MAX_RETRIES} - ${int} + 1) ))s"
-        sleep  $(( ${WAIT_SECONDS} * (${MAX_RETRIES} - ${int} + 1) ))
+        loginfo "${FUNCNAME[0]}" "Sequence numbers not yet found in configmap"
       fi
     else
       loginfo "${FUNCNAME[0]}" "${SEQNO_FILE_COUNT} of {{ ($.Values.replicas|int) }} sequence numbers found. Will wait $(( ${WAIT_SECONDS} * (${MAX_RETRIES} - ${int} + 1) ))s"

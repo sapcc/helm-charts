@@ -11,8 +11,9 @@ WAIT_SECONDS={{ $.Values.scripts.waitTimeBetweenRetriesInSeconds | default 6 }}
 
 source ${BASE}/bin/common-functions.sh
 
-function setuprootuser {
-  local int
+# setup username password rolename rolename connectionlimit
+# setupuser "${MARIADB_MONITORING_USER}" "${MARIADB_MONITORING_PASSWORD}" 'mysql_exporter' "${MARIADB_MONITORING_CONNECTION_LIMIT}"
+function setupuser {
   for (( int=${MAX_RETRIES}; int >=1; int-=1));
     do
     checkdbk8sservicelogon "true"
@@ -24,57 +25,72 @@ function setuprootuser {
     fi
   done
 
-  for (( int=${MAX_RETRIES}; int >=1; int-=1));
-    do
-    loginfo "${FUNCNAME[0]}" "setup root user permissions(${int} retries left)"
-    cat ${BASE}/etc/sql/root_permissions.sql.tpl | envsubst | mysql --defaults-file=${BASE}/etc/my.cnf --protocol=tcp --user=${MARIADB_ROOT_USER} --password=${MARIADB_ROOT_PASSWORD} --host=mariadb-galera-fe.database.svc.cluster.local --port=${MYSQL_PORT} --batch
-    if [ $? -ne 0 ]; then
-      logerror "${FUNCNAME[0]}" "root user setup has been failed"
-      sleep ${WAIT_SECONDS}
-    else
-      break
-    fi
-  done
-  if [ ${int} -eq 0 ]; then
-    logerror "${FUNCNAME[0]}" "root user setup has been finally failed"
-    exit 1
-  fi
-  loginfo "${FUNCNAME[0]}" "root user setup done"
-}
+  if [ -f "${BASE}/etc/sql/user.sql.tpl" ] && [ -n "${1}" ] && [ -n "${2}" ]; then
+    local int
+    export DB_USER=${1}
+    export DB_PASS=${2}
+    export DB_ROLE=${3}
+    export CONN_LIMIT=${4}
+    declare -a DB_HOST_LIST=('%' '127.0.0.1' '::1')
 
-function setupmonitoringuser {
-  local int
-  for (( int=${MAX_RETRIES}; int >=1; int-=1));
-    do
-    checkdbk8sservicelogon "true"
-    if [ $? -eq 0 ]; then
-      break
-    else
-      loginfo "${FUNCNAME[0]}" "database not yet usable. Will wait ${WAIT_SECONDS}s before retry"
-      sleep ${WAIT_SECONDS}
-    fi
-  done
-
-  if [ -f "${BASE}/etc/sql/monitoring_permissions.sql.tpl" ] && [ -n ${MARIADB_MONITORING_USER+x} ] && [ -n ${MARIADB_MONITORING_PASSWORD+x} ]; then
-    for (( int=${MAX_RETRIES}; int >=1; int-=1));
+    loginfo "${FUNCNAME[0]}" "setup user privileges"
+    while read -r line
       do
-      loginfo "${FUNCNAME[0]}" "setup monitoring user permissions(${int} retries left)"
-      cat ${BASE}/etc/sql/monitoring_permissions.sql.tpl | envsubst | mysql --defaults-file=${BASE}/etc/my.cnf --protocol=tcp --user=${MARIADB_ROOT_USER} --password=${MARIADB_ROOT_PASSWORD} --host=mariadb-galera-fe.database.svc.cluster.local --port=${MYSQL_PORT} --batch
-      if [ $? -ne 0 ]; then
-        logerror "${FUNCNAME[0]}" "monitoring user setup has been failed"
-        sleep ${WAIT_SECONDS}
+      IFS=";" read -a sqlarray <<< ${line}
+      IFS="${oldIFS}"
+      export SQL_CODE=${sqlarray[0]}
+      if ! [ -z ${sqlarray[1]+x} ]; then
+        export WITH_OPTION=${sqlarray[1]}
       else
-        break
+        export WITH_OPTION=''
       fi
-    done
+      for (( int=${MAX_RETRIES}; int >=1; int-=1));
+        do
+        cat ${BASE}/etc/sql/role.sql.tpl | envsubst | mysql --defaults-file=${BASE}/etc/my.cnf --protocol=tcp --user=${MARIADB_ROOT_USER} --password=${MARIADB_ROOT_PASSWORD} --host=mariadb-galera-fe.database.svc.cluster.local --port=${MYSQL_PORT} --wait --connect-timeout=${WAIT_SECONDS} --reconnect --batch
+        if [ $? -ne 0 ]; then
+          logerror "${FUNCNAME[0]}" "'${DB_ROLE}' role setup '${SQL_CODE}' has been failed(${int} retries left)"
+          sleep ${WAIT_SECONDS}
+        else
+          loginfo "${FUNCNAME[0]}" "'${DB_ROLE}' role setup '${SQL_CODE}' done"
+          break
+        fi
+      done
+    done < <(grep -v "^#" ${BASE}/etc/sql/${DB_ROLE}.role)
+
     if [ ${int} -eq 0 ]; then
-      logerror "${FUNCNAME[0]}" "monitoring user setup has been finally failed"
+      logerror "${FUNCNAME[0]}" "user setup has been finally failed"
       exit 1
     fi
-    loginfo "${FUNCNAME[0]}" "monitoring user setup done"
+
+    for host in ${DB_HOST_LIST[@]}
+      do
+      export DB_HOST=${host}
+      for (( int=${MAX_RETRIES}; int >=1; int-=1));
+        do
+        cat ${BASE}/etc/sql/user.sql.tpl | envsubst | mysql --defaults-file=${BASE}/etc/my.cnf --protocol=tcp --user=${MARIADB_ROOT_USER} --password=${MARIADB_ROOT_PASSWORD} --host=mariadb-galera-fe.database.svc.cluster.local --port=${MYSQL_PORT} --wait --connect-timeout=${WAIT_SECONDS} --reconnect --batch
+        if [ $? -ne 0 ]; then
+          logerror "${FUNCNAME[0]}" "'${DB_USER}@${DB_HOST}' user setup has been failed(${int} retries left)"
+          sleep ${WAIT_SECONDS}
+        else
+          loginfo "${FUNCNAME[0]}" "'${DB_USER}@${DB_HOST}' user setup done"
+          break
+        fi
+      done
+    done
+
+    if [ ${int} -eq 0 ]; then
+      logerror "${FUNCNAME[0]}" "user setup has been finally failed"
+      exit 1
+    fi
+    loginfo "${FUNCNAME[0]}" "user setup done"
   else
-    loginfo "${FUNCNAME[0]}" "monitoring user setup skipped because of missing MARIADB_MONITORING_USER and/or MARIADB_MONITORING_PASSWORD env var"
+    loginfo "${FUNCNAME[0]}" "user setup skipped because of missing MARIADB_XYZ_USER and/or MARIADB_XYZ_PASSWORD env var"
   fi
+  export -n DB_USER
+  export -n DB_PASS
+  export -n DB_HOST
+  export -n CONN_LIMIT
+  export -n SQL_CODE
 }
 
 function listdbandusers {
@@ -93,7 +109,7 @@ function listdbandusers {
   for (( int=${MAX_RETRIES}; int >=1; int-=1));
     do
     loginfo "${FUNCNAME[0]}" "list databases and users(${int} retries left)"
-    mysql --defaults-file=${BASE}/etc/my.cnf --protocol=tcp --user=${MARIADB_ROOT_USER} --password=${MARIADB_ROOT_PASSWORD} --host=mariadb-galera-fe.database.svc.cluster.local --port=${MYSQL_PORT} --batch --execute="SHOW DATABASES; SELECT user,host FROM mysql.user;" --table
+    mysql --defaults-file=${BASE}/etc/my.cnf --protocol=tcp --user=${MARIADB_ROOT_USER} --password=${MARIADB_ROOT_PASSWORD} --host=mariadb-galera-fe.database.svc.cluster.local --port=${MYSQL_PORT} --batch --execute="SHOW DATABASES; SELECT user,host FROM mysql.user; SELECT * FROM information_schema.APPLICABLE_ROLES;" --table
     if [ $? -ne 0 ]; then
       logerror "${FUNCNAME[0]}" "list databases and users has been failed"
       sleep ${WAIT_SECONDS}
@@ -109,7 +125,6 @@ function listdbandusers {
 }
 
 loginfo "null" "configuration job started"
-setuprootuser
-setupmonitoringuser
+setupuser "${MARIADB_MONITORING_USER}" "${MARIADB_MONITORING_PASSWORD}" 'mysql_exporter' "${MARIADB_MONITORING_CONNECTION_LIMIT}"
 listdbandusers
 loginfo "null" "configuration job finished"

@@ -35,7 +35,7 @@ Docker image and Helm chart to deploy a [MariaDB](https://mariadb.com/kb/en/gett
 | GALERA_VERSION  | Galera software version that should be packaged into the image |
 
 ```bash
-docker build --build-arg BASE_REGISTRY=keppel.eu-nl-1.cloud.sap --build-arg BASE_ACCOUNT=octobus --build-arg BASE_SOFT_NAME=ubuntu --build-arg BASE_SOFT_VERSION=20.04 --build-arg BASE_IMG_VERSION=0.3.59 --build-arg SOFT_NAME=mariadb --build-arg SOFT_VERSION=10.5.13 --build-arg IMG_VERSION=0.0.5 --build-arg GALERA_VERSION=26.4.8 -t keppel.eu-nl-1.cloud.sap/octobus/mariadb-galera:10.5.13-0.0.5 -f docker/Dockerfile ./docker/
+docker build --build-arg BASE_REGISTRY=keppel.eu-nl-1.cloud.sap --build-arg BASE_ACCOUNT=octobus --build-arg BASE_SOFT_NAME=ubuntu --build-arg BASE_SOFT_VERSION=20.04 --build-arg BASE_IMG_VERSION=0.3.59 --build-arg SOFT_NAME=mariadb --build-arg SOFT_VERSION=10.5.13 --build-arg IMG_VERSION=0.0.6 --build-arg GALERA_VERSION=26.4.8 -t keppel.eu-nl-1.cloud.sap/octobus/mariadb-galera:10.5.13-0.0.6 -f docker/Dockerfile ./docker/
 ```
 #### MySQL Exporter image
 | build argument | description |
@@ -43,7 +43,7 @@ docker build --build-arg BASE_REGISTRY=keppel.eu-nl-1.cloud.sap --build-arg BASE
 | USERID | id of the user that should run the binary |
 
 ```bash
-docker build --build-arg BASE_REGISTRY=keppel.eu-nl-1.cloud.sap --build-arg BASE_ACCOUNT=octobus --build-arg BASE_SOFT_NAME=ubuntu --build-arg BASE_SOFT_VERSION=20.04 --build-arg BASE_IMG_VERSION=0.3.59 --build-arg SOFT_NAME=mysqld_exporter --build-arg SOFT_VERSION=0.14.0 --build-arg IMG_VERSION=0.0.1 --build-arg USERID=3000 -t keppel.eu-nl-1.cloud.sap/octobus/mysqld_exporter:0.14.0-0.0.1 -f docker/mysqld_exporter/Dockerfile ./docker/mysqld_exporter/
+docker build --build-arg BASE_REGISTRY=keppel.eu-nl-1.cloud.sap --build-arg BASE_ACCOUNT=octobus --build-arg BASE_SOFT_NAME=ubuntu --build-arg BASE_SOFT_VERSION=20.04 --build-arg BASE_IMG_VERSION=0.3.59 --build-arg SOFT_NAME=mysqld_exporter --build-arg SOFT_VERSION=0.14.0 --build-arg IMG_VERSION=0.1.0 --build-arg USERID=3000 -t keppel.eu-nl-1.cloud.sap/octobus/mysqld_exporter:0.14.0-0.1.0 -f docker/mysqld_exporter/Dockerfile ./docker/mysqld_exporter/
 ```
 ## Helm chart
 
