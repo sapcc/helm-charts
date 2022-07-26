@@ -49,6 +49,8 @@ wsgi_default_pool_size = {{ .Values.wsgi_default_pool_size | default .Values.glo
 max_pool_size = {{ .Values.max_pool_size | default .Values.global.max_pool_size | default 10 }}
 max_overflow = {{ .Values.max_overflow | default .Values.global.max_overflow | default 50 }}
 
+max_limit_paging = 3000
+
 [keystone_authtoken]
 auth_type = v3password
 auth_version = v3
