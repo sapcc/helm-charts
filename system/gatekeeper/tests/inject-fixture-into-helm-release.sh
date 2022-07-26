@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -eoux pipefail
+set -eou pipefail
 
 # Note:
 # python yq and go yq don't have a combined flag for raw strings.

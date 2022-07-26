@@ -12,6 +12,7 @@ tests:
     object: fixtures/deprecated-api-version/helm-release-deprecated-1.16.out.yaml
     assertions:
     - violations: 1
+      # TODO: why does ^...$ not work here?
       message: 'Deployment dummy declared with deprecated API version: extensions/v1beta1 \(will break in k8s v1.16\)'
   - name: helm-release-clean
     object: fixtures/deprecated-api-version/helm-release-clean.out.yaml
@@ -26,6 +27,7 @@ tests:
     object: fixtures/deprecated-api-version/helm-release-deprecated-1.22.out.yaml
     assertions:
     - violations: 1
+      # TODO: why does ^...$ not work here?
       message: 'CustomResourceDefinition dummy declared with deprecated API version: apiextensions.k8s.io/v1beta1 \(will break in k8s v1.22\)'
   - name: helm-release-clean
     object: fixtures/deprecated-api-version/helm-release-clean.out.yaml
@@ -40,6 +42,7 @@ tests:
     object: fixtures/deprecated-api-version/helm-release-deprecated-1.25.out.yaml
     assertions:
     - violations: 1
+      # TODO: why does ^...$ not work here?
       message: 'CronJob dummy declared with deprecated API version: batch/v1beta1 \(will break in k8s v1.25\)'
   - name: helm-release-clean
     object: fixtures/deprecated-api-version/helm-release-clean.out.yaml
@@ -54,6 +57,7 @@ tests:
     object: fixtures/deprecated-api-version/helm-release-deprecated-1.26.out.yaml
     assertions:
     - violations: 1
+      # TODO: why does ^...$ not work here?
       message: 'FlowSchema dummy declared with deprecated API version: flowcontrol.apiserver.k8s.io/v1beta1 \(will break in k8s v1.26\)'
   - name: helm-release-clean
     object: fixtures/deprecated-api-version/helm-release-clean.out.yaml
@@ -77,21 +81,21 @@ tests:
     assertions:
     # TODO: repair this
     - violations: 1
-      message: 'webhook "webhook.cert-manager.io" does not match our allowlist'
+      message: '^webhook "webhook.cert-manager.io" does not match our allowlist$'
   - name: cert-manager-validating-webhook
     object: fixtures/forbidden-clusterwide-objects/cert-manager-validating-webhook.yaml
     assertions:
     # TODO: repair this
     - violations: 1
-      message: 'webhook "webhook.cert-manager.io" does not match our allowlist'
+      message: '^webhook "webhook.cert-manager.io" does not match our allowlist$'
   - name: seeder.cloud.sap
     object: fixtures/forbidden-clusterwide-objects/seeder.cloud.sap.yaml
     assertions:
     # TODO: repair this
     - violations: 1
-      message: 'webhook "validate-networks.spec.openstack.networks.seeder.cloud.sap" does not match our allowlist'
+      message: '^webhook "validate-networks.spec.openstack.networks.seeder.cloud.sap" does not match our allowlist$'
     - violations: 1
-      message: 'webhook "validate-domains.spec.openstack.domains.seeder.cloud.sap" does not match our allowlist'
+      message: '^webhook "validate-domains.spec.openstack.domains.seeder.cloud.sap" does not match our allowlist$'
 
 - name: high-cpu-requests
   template: rendered-chart/gatekeeper/templates/constrainttemplate-high-cpu-requests.yaml
@@ -101,7 +105,7 @@ tests:
     object: fixtures/high-cpu-requests/pod-failure.yaml
     assertions:
     - violations: 1
-      message: "requests 6.064 CPU in total"
+      message: "^requests 6.064 CPU in total$"
   - name: pod-close-violation
     object: fixtures/high-cpu-requests/pod-close-violation.yaml
     assertions:
@@ -123,7 +127,7 @@ tests:
     object: fixtures/images-from-correct-registry/pod-one-image-wrong.yaml
     assertions:
     - violations: 1
-      message: 'container "dummy-small" uses incorrect regional registry for image: alpine:3'
+      message: '^container "dummy-small" uses incorrect regional registry for image: alpine:3$'
   - name: pod-pass
     object: fixtures/images-from-correct-registry/pod-pass.yaml
     assertions:
@@ -137,14 +141,14 @@ tests:
     object: fixtures/images-from-non-keppel/pod-failure.yaml
     assertions:
     - violations: 1
-      message: 'container "dummy" uses an image that is not from a Keppel registry: alpine:3'
+      message: '^container "dummy" uses an image that is not from a Keppel registry: alpine:3$'
     - violations: 1
-      message: 'container "dummy" uses an image that is not from a Keppel registry: alpine:3'
+      message: '^container "dummy" uses an image that is not from a Keppel registry: alpine:3$'
   - name: pod-one-of-two
     object: fixtures/images-from-non-keppel/pod-one-of-two.yaml
     assertions:
     - violations: 1
-      message: 'container "dummy" uses an image that is not from a Keppel registry: alpine:3'
+      message: '^container "dummy" uses an image that is not from a Keppel registry: alpine:3$'
   - name: pod-pass
     object: fixtures/images-from-non-keppel/pod-pass.yaml
     assertions:
@@ -158,7 +162,7 @@ tests:
     object: fixtures/ingress-annotations/networking-disabled-snippet.yaml
     assertions:
     - violations: 1
-      message: 'has disabled annotations: \["configuration-snippet"\]'
+      message: '^has disabled annotations: \["configuration-snippet"\]$'
   - name: networking-pass
     object: fixtures/ingress-annotations/networking-pass.yaml
     assertions:
@@ -172,7 +176,7 @@ tests:
     object: fixtures/outdated-image-bases/pod-old.yaml
     assertions:
     - violations: 1
-      message: 'image keppel.example.com/vulnerability:old for container "dummy" uses a very old base image \(oldest layer is 417 days old\)'
+      message: '^image keppel.example.com/vulnerability:old for container "dummy" uses a very old base image \(oldest layer is 417 days old\)$'
   - name: pod-new
     object: fixtures/outdated-image-bases/pod-new.yaml
     assertions:
@@ -186,7 +190,7 @@ tests:
     object: fixtures/owner-info-on-helm-releases/configmap-no-owner.out.yaml
     assertions:
     - violations: 1
-      message: 'could not find ConfigMap: owner-of-almost-empty-chart'
+      message: '^could not find ConfigMap: owner-of-almost-empty-chart$'
   - name: pod-owner-info
     object: fixtures/owner-info-on-helm-releases/configmap-pass.out.yaml
     assertions:
@@ -200,6 +204,7 @@ tests:
     object: fixtures/pci-forbidden-images/pod-with-forbidden-image.yaml
     assertions:
     - violations: 1
+      # TODO: why does ^...$ not work here?
       message: 'container "dummy" uses forbidden image: bogus-pattern-for-testing'
   - name: pod-pass
     object: fixtures/pci-forbidden-images/pod-pass.yaml
@@ -214,7 +219,7 @@ tests:
     object: fixtures/pod-labels/pod-no-labels.yaml
     assertions:
     - violations: 1
-      message: 'pod does not have either one of the required labels: \["alert-service", "alert-tier"\]'
+      message: '^pod does not have either one of the required labels: \["alert-service", "alert-tier"\]$'
   - name: pod-labels
     object: fixtures/pod-labels/pod-labels.yaml
     assertions:
@@ -230,7 +235,7 @@ tests:
     - fixtures/prometheus-scrape-annotations/inventory.yaml
     assertions:
     - violations: 1
-      message: 'has prometheus.io/scrape annotation, but prometheus.io/targets annotation is missing or does not have a valid value \(got: \[""\], valid: \["openstack"\]\)'
+      message: '^has prometheus.io/scrape annotation, but prometheus.io/targets annotation is missing or does not have a valid value \(got: \[""\], valid: \["openstack"\]\)$'
   - name: pod-pass
     object: fixtures/prometheus-scrape-annotations/pod-pass.yaml
     inventory:
@@ -246,21 +251,21 @@ tests:
     object: fixtures/prometheusrule-alert-labels/prometheus-rule-no-label.yaml
     assertions:
     - violations: 1
-      message: 'rule DummyBackupWentMissing in group backup.alerts does not have a valid value for labels.severity \("critical", "warning" or "info"\)'
+      message: '^rule DummyBackupWentMissing in group backup.alerts does not have a valid value for labels.severity \("critical", "warning" or "info"\)$'
     - violations: 1
-      message: 'rule DummyBackupWentMissing in group backup.alerts does not have labels.tier'
+      message: '^rule DummyBackupWentMissing in group backup.alerts does not have labels.tier$'
   - name: prometheus-rule-only-severity
     object: fixtures/prometheusrule-alert-labels/prometheus-rule-only-severity.yaml
     assertions:
     - violations: 1
-      message: 'rule DummyBackupWentMissing in group backup.alerts does not have a valid value for labels.playbook \(required for critical alerts\)'
+      message: '^rule DummyBackupWentMissing in group backup.alerts does not have a valid value for labels.playbook \(required for critical alerts\)$'
     - violations: 1
-      message: 'rule DummyBackupWentMissing in group backup.alerts does not have labels.tier'
+      message: '^rule DummyBackupWentMissing in group backup.alerts does not have labels.tier$'
   - name: prometheus-rule-only-severity-tier
     object: fixtures/prometheusrule-alert-labels/prometheus-rule-only-severity-tier.yaml
     assertions:
     - violations: 1
-      message: 'rule DummyBackupWentMissing in group backup.alerts does not have a valid value for labels.playbook \(required for critical alerts\)'
+      message: '^rule DummyBackupWentMissing in group backup.alerts does not have a valid value for labels.playbook \(required for critical alerts\)$'
   - name: prometheus-rule-pass
     object: fixtures/prometheusrule-alert-labels/prometheus-rule-pass.yaml
     assertions:
@@ -274,7 +279,7 @@ tests:
     object: fixtures/region-value-missing/helm-release-no-region.out.yaml
     assertions:
     - violations: 1
-      message: 'missing .Values.global.region value'
+      message: '^missing .Values.global.region value$'
   - name: helm-release-pass
     object: fixtures/region-value-missing/helm-release-pass.out.yaml
     assertions:
@@ -288,12 +293,12 @@ tests:
     object: fixtures/resource-limits/pod-complete-failure.yaml
     assertions:
     - violations: 1
-      message: "cpu and memory limits not set on some or all containers"
+      message: "^cpu and memory limits not set on some or all containers$"
   - name: pod-some-failure
     object: fixtures/resource-limits/pod-some-failure.yaml
     assertions:
     - violations: 1
-      message: "cpu and memory limits not set on some or all containers"
+      message: "^cpu and memory limits not set on some or all containers$"
   - name: pod-pass
     object: fixtures/resource-limits/pod-pass.yaml
     assertions:
@@ -307,16 +312,16 @@ tests:
     object: fixtures/vulnerable-images/pod-vulnerable.yaml
     assertions:
     - violations: 1
-      message: 'image keppel.example.com/vulnerability:low for container "dummy" has vulnerability status "Low"'
+      message: '^image keppel.example.com/vulnerability:low for container "dummy" has vulnerability status "Low"$'
     - violations: 1
-      message: 'image keppel.example.com/vulnerability:medium for container "dummy" has vulnerability status "Medium"'
+      message: '^image keppel.example.com/vulnerability:medium for container "dummy" has vulnerability status "Medium"$'
     - violations: 1
-      message: 'image keppel.example.com/vulnerability:high for container "dummy" has vulnerability status "High"'
+      message: '^image keppel.example.com/vulnerability:high for container "dummy" has vulnerability status "High"$'
   - name: pod-unclear
     object: fixtures/vulnerable-images/pod-unclear.yaml
     assertions:
     - violations: 1
-      message: 'image keppel.example.com/vulnerability:unclear for container "dummy" has vulnerability status "Unclear"'
+      message: '^image keppel.example.com/vulnerability:unclear for container "dummy" has vulnerability status "Unclear"$'
   - name: pod-clean
     object: fixtures/vulnerable-images/pod-clean.yaml
     assertions:
