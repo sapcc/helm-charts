@@ -120,3 +120,5 @@ service_type = sharev2
 {{- if .Values.memcached.enabled }}
 {{- include "ini_sections.cache" . }}
 {{- end }}
+
+{{- include "osprofiler" . }}
