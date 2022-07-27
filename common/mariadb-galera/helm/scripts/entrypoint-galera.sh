@@ -104,7 +104,7 @@ function recovergalera {
 function selectbootstrapnode {
   local int
   local SEQNO=$(fetchseqnofromgrastate)
-  local SEQNO_FILES="${BASE}/etc/galerastatus/{{ $.Release.Name }}-*.seqno"
+  local SEQNO_FILES="${BASE}/etc/galerastatus/{{ $.Values.namePrefix | default "mariadb-g" }}-*.seqno"
   local SEQNO_OLDEST_TIMESTAMP
   local SEQNO_OLDEST_TIMESTAMP_WITH_BUFFER
   local CURRENT_EPOCH
@@ -112,7 +112,7 @@ function selectbootstrapnode {
   for (( int=${MAX_RETRIES}; int >=1; int-=1));
     do
     loginfo "${FUNCNAME[0]}" "Find Galera node with highest sequence number (${int} retries left)"
-    SEQNO_FILE_COUNT=$(grep -c '{{ $.Release.Name }}-*' ${SEQNO_FILES} | grep -c -e "${BASE}/etc/galerastatus/{{ $.Release.Name }}-.*.seqno:1")
+    SEQNO_FILE_COUNT=$(grep -c '{{ $.Values.namePrefix | default "mariadb-g" }}-*' ${SEQNO_FILES} | grep -c -e "${BASE}/etc/galerastatus/{{ $.Values.namePrefix | default "mariadb-g" }}-.*.seqno:1")
     if [ ${SEQNO_FILE_COUNT} -ge {{ ($.Values.replicas|int) }} ]; then
       IFS=":" SEQNO_OLDEST_TIMESTAMP=($(grep --no-filename 'timestamp:' ${SEQNO_FILES} | sort --key=2 --numeric-sort --field-separator=: | head -1))
       IFS="${oldIFS}"
@@ -120,9 +120,9 @@ function selectbootstrapnode {
         SEQNO_OLDEST_TIMESTAMP_WITH_BUFFER=$(( ${SEQNO_OLDEST_TIMESTAMP[1]} + ({{ $.Values.readinessProbe.timeoutSeconds.application | int }} * {{ $.Values.scripts.maxAllowedTimeDifferenceFactor | default 3 | int }}) ))
         CURRENT_EPOCH=$(date +%s)
         if [ ${CURRENT_EPOCH} -le ${SEQNO_OLDEST_TIMESTAMP_WITH_BUFFER} ]; then
-          IFS=": " NODENAME=($(grep --no-filename '{{ $.Release.Name }}-*' ${SEQNO_FILES} | sort --key=2 --reverse --numeric-sort --field-separator=: | head -1))
+          IFS=": " NODENAME=($(grep --no-filename '{{ $.Values.namePrefix | default "mariadb-g" }}-*' ${SEQNO_FILES} | sort --key=2 --reverse --numeric-sort --field-separator=: | head -1))
           IFS="${oldIFS}"
-          if [[ "${NODENAME[0]}" =~ ^{{ $.Release.Name }}-.* ]]; then
+          if [[ "${NODENAME[0]}" =~ ^{{ $.Values.namePrefix | default "mariadb-g" }}-.* ]]; then
             loginfo "${FUNCNAME[0]}" "Galera nodename '${NODENAME[0]}' with the sequence number '${NODENAME[1]}' selected"
             break
           else
@@ -160,7 +160,7 @@ function initgalera {
       loginfo "${FUNCNAME[0]}" "init Galera cluster configuration already done"
       recovergalera
     else
-      if [ ${HOSTNAME} == "{{ $.Release.Name }}-0" ]; then
+      if [ ${HOSTNAME} == "{{ $.Values.namePrefix | default "mariadb-g" }}-0" ]; then
         bootstrapgalera
       else
         loginfo "${FUNCNAME[0]}" "will join the Galera cluster during the initial bootstrap triggered on the first node"

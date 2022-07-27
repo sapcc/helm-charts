@@ -10,9 +10,9 @@ kind: Service
 metadata:
   namespace: {{ .global.Release.Namespace }}
   {{- if eq .replica "notused" }}
-  name: {{ .global.Release.Name }}-{{ .service.value.name }}
+  name: {{ .global.namePrefix | default "mariadb-g" }}-{{ .service.value.name }}
   {{- else }}
-  name: g{{ .replica }}
+  name: {{ .global.namePrefix | default "mariadb-g" }}-{{ .replica }}
   {{- end }}
   annotations:
   {{- if (hasKey .global.Values "OpenstackFloatingNetworkId") }}
@@ -37,7 +37,7 @@ spec:
   {{- if eq .replica "notused" }}
     app: {{ .global.Release.Name }}
   {{- else }}
-    statefulset.kubernetes.io/pod-name: {{ .global.Release.Name }}-{{ .replica }}
+    statefulset.kubernetes.io/pod-name: {{ .global.namePrefix | default "mariadb-g" }}-{{ .replica }}
   {{- end }}
   ports:
   {{- range $portKey, $portValue := .service.value.ports }}

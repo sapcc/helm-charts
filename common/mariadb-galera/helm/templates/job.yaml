@@ -2,7 +2,7 @@ apiVersion: batch/v1
 kind: Job
 metadata:
   namespace: {{ $.Release.Namespace }}
-  name: {{ $.Release.Name }}-{{ uuidv4 | lower }}
+  name: {{ $.Values.namePrefix | default "mariadb-g" }}-cfg-{{ uuidv4 | lower }}
   labels:
     app: {{ $.Release.Name }}
     release: {{ $.Release.Name }}
@@ -26,7 +26,7 @@ spec:
       imagePullSecrets:
       - name: {{ $.Release.Name }}-{{$.Values.image.application.pullSecret}}
       containers:
-      - name: {{ $.Release.Name }}-job
+      - name: cfg
         image: "{{ $.Values.image.application.registry }}/{{ $.Values.image.application.project }}/{{ $.Values.image.application.applicationname }}:{{ $.Values.image.application.applicationversion }}-{{ $.Values.image.application.imageversion }}"
         imagePullPolicy: {{ $.Values.image.application.pullPolicy | default "IfNotPresent" | quote }}
         securityContext:
@@ -64,7 +64,7 @@ spec:
               resource: limits.memory
         - name: MYSQL_PORT
         {{- range $servicesKey, $servicesValue := $.Values.services }}
-          {{- if eq $servicesValue.name "fe"}}
+          {{- if eq $servicesValue.name "frontend"}}
             {{- range $portsKey, $portsValue := $servicesValue.ports }}
               {{- if eq $portsValue.name "mysql"}}
           value: "{{ $portsValue.targetPort }}"

@@ -1,13 +1,13 @@
 {{- range $serviceKey, $serviceValue := $.Values.services }}
   {{- $service := dict "key"  $serviceKey "value" $serviceValue }}
-  {{- if eq $serviceValue.name "be"}}
+  {{- if eq $serviceValue.name "backend"}}
     {{- range $replicaNumber, $err := until ($.Values.replicas|int) }}
       {{/* per pod service to generate per pod hostnames */}}
       {{ include "networkService" (dict "global" $ "service" $service "replica" ($replicaNumber|toString)) }}
     {{- end }}
     {{/* backend service for all pods */}}
     {{ include "networkService" (dict "global" $ "service" $service "replica" "notused") }}
-  {{- else if eq $serviceValue.name "fe" }}
+  {{- else if eq $serviceValue.name "frontend" }}
     {{/* other frontend services for all pods */}}
     {{ include "networkService" (dict "global" $ "service" $service "replica" "notused") }}
   {{- end }}

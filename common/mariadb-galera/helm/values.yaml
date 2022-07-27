@@ -8,6 +8,7 @@ groupId:
   application: 101
   monitoring: 3000
 
+#namePrefix: "mariadb-g" #used for pods, services etc. (default mariadb-g)
 cleanOsCacheAtStartup: false #https://www.kernel.org/doc/html/latest/admin-guide/sysctl/vm.html?highlight=drop_caches#drop-caches (default false, only useful for benchmarking)
 scripts:
   maxRetries: 20 #how many times should script functions retry before failing(default 10)
@@ -86,7 +87,7 @@ initContainers:
 
 # network services
 services:
-  - name: be
+  - name: backend
     type: ClusterIP
     headless: true
     #https://mariadb.com/kb/en/configuring-mariadb-galera-cluster/#network-ports
@@ -104,7 +105,7 @@ services:
         targetPort: 4444
         protocol: TCP
     sessionAffinity: None
-  - name: fe
+  - name: frontend
     type: ClusterIP
     headless: false
     ports:

@@ -8,7 +8,7 @@ apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   namespace: {{ $.Release.Namespace }}
-  name: {{ $.Release.Name }}
+  name: {{ $.Values.namePrefix | default "mariadb-g" }}
   labels:
     app: {{ $.Release.Name }}
     release: {{ $.Release.Name }}
@@ -100,7 +100,7 @@ spec:
           runAsUser: {{ $.Values.initContainers.increaseMapCount.cleanoscache.runAsUser }}
       {{- end }}
       containers:
-      - name: {{ $.Release.Name }}
+      - name: db
         image: "{{ $.Values.image.application.registry }}/{{ $.Values.image.application.project }}/{{ $.Values.image.application.applicationname }}:{{ $.Values.image.application.applicationversion }}-{{ $.Values.image.application.imageversion }}"
         imagePullPolicy: {{ $.Values.image.application.pullPolicy | default "IfNotPresent" | quote }}
         securityContext:
@@ -144,7 +144,7 @@ spec:
               resource: limits.memory
         - name: MYSQL_PORT
           {{- range $servicesKey, $servicesValue := $.Values.services }}
-            {{- if eq $servicesValue.name "fe"}}
+            {{- if eq $servicesValue.name "frontend"}}
               {{- range $portsKey, $portsValue := $servicesValue.ports }}
                 {{- if eq $portsValue.name "mysql"}}
           value: "{{ $portsValue.targetPort }}"
@@ -154,7 +154,7 @@ spec:
           {{- end }}
         - name: GALERA_PORT
           {{- range $servicesKey, $servicesValue := $.Values.services }}
-            {{- if eq $servicesValue.name "be"}}
+            {{- if eq $servicesValue.name "backend"}}
               {{- range $portsKey, $portsValue := $servicesValue.ports }}
                 {{- if eq $portsValue.name "galera"}}
           value: "{{ $portsValue.targetPort }}"
@@ -200,7 +200,7 @@ spec:
             memory: {{ $.Values.resourceLimits.memory.application | default "64Mi" | quote }}
         ports:
           {{- range $servicesKey, $servicesValue := $.Values.services }}
-            {{- if eq $servicesValue.name "be"}}
+            {{- if eq $servicesValue.name "backend"}}
               {{- range $portsKey, $portsValue := $servicesValue.ports }}
           - containerPort: {{ $portsValue.targetPort }}
             name: {{ $portsValue.name }}
@@ -330,7 +330,7 @@ spec:
             readOnly: true
         {{- /* monitoring sidecar start */}}
         {{- if $.Values.monitoring.mysqld_exporter.enabled }}
-      - name: {{ $.Release.Name }}-mon
+      - name: mon
         image: "{{ $.Values.image.monitoring.registry }}/{{ $.Values.image.monitoring.project }}/{{ $.Values.image.monitoring.applicationname }}:{{ $.Values.image.monitoring.applicationversion }}-{{ $.Values.image.monitoring.imageversion }}"
         imagePullPolicy: {{ $.Values.image.monitoring.pullPolicy | default "IfNotPresent" | quote }}
         securityContext:
@@ -363,7 +363,7 @@ spec:
               resource: limits.memory
         - name: MYSQL_PORT
           {{- range $servicesKey, $servicesValue := $.Values.services }}
-            {{- if eq $servicesValue.name "fe"}}
+            {{- if eq $servicesValue.name "frontend"}}
               {{- range $portsKey, $portsValue := $servicesValue.ports }}
                 {{- if eq $portsValue.name "mysql"}}
           value: {{ $portsValue.targetPort | quote }}

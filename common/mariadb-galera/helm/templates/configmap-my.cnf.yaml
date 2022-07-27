@@ -13,12 +13,12 @@
 {{- $_ := set $wsrepProviderOptions "gcache.recover" "gcache.recover=yes" }}
 {{- $_ := set $wsrepProviderOptions "cert.log_conflicts" "cert.log_conflicts=ON"}}
 {{- range $servicesKey, $servicesValue := $.Values.services }}
-  {{- if eq $servicesValue.name "be"}}
+  {{- if eq $servicesValue.name "backend"}}
     {{- range $portsKey, $portsValue := $servicesValue.ports }}
       {{- if eq $portsValue.name "galera"}}
       {{- $galeraPort = ($portsValue.port | int) }}
         {{- range $int, $err := until ($.Values.replicas|int) }}
-          {{- $nodeNames = (printf "g%d.%s.svc.cluster.local:%d" $int $.Release.Namespace ($portsValue.port | int)) | append $nodeNames -}}
+          {{- $nodeNames = (printf "%s-%d.%s.svc.cluster.local:%d" ($.Values.namePrefix | default "mariadb-g") $int $.Release.Namespace ($portsValue.port | int)) | append $nodeNames -}}
         {{- end }}
       {{- else if eq $portsValue.name "ist" }}
         {{- $_ := set $wsrepProviderOptions "ist.recv_addr" (printf "ist.recv_addr=${CONTAINER_IP}:%d" ($portsValue.port | int)) }}
@@ -50,7 +50,7 @@ metadata:
   namespace: {{ $.Release.Namespace }}
 data:
 {{- range $int, $err := until ($.Values.replicas|int) }}
-  my.cnf.{{ $.Release.Name }}-{{ $int }}.tpl: |-
+  my.cnf.mariadb-g-{{ $int }}.tpl: |-
     [mariadb]
     wsrep-provider=/usr/lib/libgalera_smm.so
     binlog_format=ROW
@@ -59,11 +59,11 @@ data:
     default_storage_engine=InnoDB
     innodb_autoinc_lock_mode=2
     wsrep-cluster-name={{ $mariadbClusterName }}
-    wsrep_cluster_address={{ (printf "gcomm://%s,%s-be.%s.svc.cluster.local:%d" (join "," $nodeNames) $.Release.Name $.Release.Namespace $galeraPort) }}
+    wsrep_cluster_address={{ (printf "gcomm://%s,%s-backend.%s.svc.cluster.local:%d" (join "," $nodeNames) ($.Values.namePrefix | default "mariadb-g") $.Release.Namespace $galeraPort) }}
     {{- $_ := set $wsrepProviderOptions "pc.weight" (printf "pc.weight=${PC_WEIGHT_%d}" $int)}}
     wsrep_provider_options={{ (join ";" (values $wsrepProviderOptions)) }}
     wsrep_node_address=${CONTAINER_IP}
-    wsrep_node_name={{ $.Release.Name }}-{{ $int }}
+    wsrep_node_name={{ $.Values.namePrefix | default "mariadb-g" }}-{{ $int }}
     wsrep-on=1
     wsrep_log_conflicts=ON
     {{- if eq $.Values.mariadb.galera.logLevel "debug" }}wsrep_debug=1{{- end }}

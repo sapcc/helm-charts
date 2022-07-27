@@ -46,7 +46,7 @@ function setupuser {
       fi
       for (( int=${MAX_RETRIES}; int >=1; int-=1));
         do
-        cat ${BASE}/etc/sql/role.sql.tpl | envsubst | mysql --defaults-file=${BASE}/etc/my.cnf --protocol=tcp --user=${MARIADB_ROOT_USER} --password=${MARIADB_ROOT_PASSWORD} --host=mariadb-galera-fe.database.svc.cluster.local --port=${MYSQL_PORT} --wait --connect-timeout=${WAIT_SECONDS} --reconnect --batch
+        cat ${BASE}/etc/sql/role.sql.tpl | envsubst | mysql --defaults-file=${BASE}/etc/my.cnf --protocol=tcp --user=${MARIADB_ROOT_USER} --password=${MARIADB_ROOT_PASSWORD} --host={{ $.Values.namePrefix | default "mariadb-g" }}-frontend.database.svc.cluster.local --port=${MYSQL_PORT} --wait --connect-timeout=${WAIT_SECONDS} --reconnect --batch
         if [ $? -ne 0 ]; then
           logerror "${FUNCNAME[0]}" "'${DB_ROLE}' role setup '${SQL_CODE}' has been failed(${int} retries left)"
           sleep ${WAIT_SECONDS}
@@ -67,7 +67,7 @@ function setupuser {
       export DB_HOST=${host}
       for (( int=${MAX_RETRIES}; int >=1; int-=1));
         do
-        cat ${BASE}/etc/sql/user.sql.tpl | envsubst | mysql --defaults-file=${BASE}/etc/my.cnf --protocol=tcp --user=${MARIADB_ROOT_USER} --password=${MARIADB_ROOT_PASSWORD} --host=mariadb-galera-fe.database.svc.cluster.local --port=${MYSQL_PORT} --wait --connect-timeout=${WAIT_SECONDS} --reconnect --batch
+        cat ${BASE}/etc/sql/user.sql.tpl | envsubst | mysql --defaults-file=${BASE}/etc/my.cnf --protocol=tcp --user=${MARIADB_ROOT_USER} --password=${MARIADB_ROOT_PASSWORD} --host={{ $.Values.namePrefix | default "mariadb-g" }}-frontend.database.svc.cluster.local --port=${MYSQL_PORT} --wait --connect-timeout=${WAIT_SECONDS} --reconnect --batch
         if [ $? -ne 0 ]; then
           logerror "${FUNCNAME[0]}" "'${DB_USER}@${DB_HOST}' user setup has been failed(${int} retries left)"
           sleep ${WAIT_SECONDS}
@@ -109,7 +109,7 @@ function listdbandusers {
   for (( int=${MAX_RETRIES}; int >=1; int-=1));
     do
     loginfo "${FUNCNAME[0]}" "list databases and users(${int} retries left)"
-    mysql --defaults-file=${BASE}/etc/my.cnf --protocol=tcp --user=${MARIADB_ROOT_USER} --password=${MARIADB_ROOT_PASSWORD} --host=mariadb-galera-fe.database.svc.cluster.local --port=${MYSQL_PORT} --batch --execute="SHOW DATABASES; SELECT user,host FROM mysql.user; SELECT * FROM information_schema.APPLICABLE_ROLES;" --table
+    mysql --defaults-file=${BASE}/etc/my.cnf --protocol=tcp --user=${MARIADB_ROOT_USER} --password=${MARIADB_ROOT_PASSWORD} --host={{ $.Values.namePrefix | default "mariadb-g" }}-frontend.database.svc.cluster.local --port=${MYSQL_PORT} --batch --execute="SHOW DATABASES; SELECT user,host FROM mysql.user; SELECT * FROM information_schema.APPLICABLE_ROLES;" --table
     if [ $? -ne 0 ]; then
       logerror "${FUNCNAME[0]}" "list databases and users has been failed"
       sleep ${WAIT_SECONDS}

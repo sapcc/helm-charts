@@ -90,7 +90,7 @@ function checkdblogon {
 function checkdbk8sservicelogon {
   local ONLY_RETURN_STATUS=${1-false}
 
-  mysql --defaults-file=/opt/${SOFTWARE_NAME}/etc/my.cnf --protocol=tcp --user=${MARIADB_ROOT_USER} --password=${MARIADB_ROOT_PASSWORD} --host=mariadb-galera-fe.database.svc.cluster.local --port=${MYSQL_PORT} --database=mysql --wait --connect-timeout=${WAIT_SECONDS} --reconnect --execute="STATUS;" | grep 'Server version:' | grep --silent "${SOFTWARE_VERSION}"
+  mysql --defaults-file=/opt/${SOFTWARE_NAME}/etc/my.cnf --protocol=tcp --user=${MARIADB_ROOT_USER} --password=${MARIADB_ROOT_PASSWORD} --host={{ $.Values.namePrefix | default "mariadb-g" }}-frontend.database.svc.cluster.local --port=${MYSQL_PORT} --database=mysql --wait --connect-timeout=${WAIT_SECONDS} --reconnect --execute="STATUS;" | grep 'Server version:' | grep --silent "${SOFTWARE_VERSION}"
   if [ $? -eq 0 ]; then
     if [ "${ONLY_RETURN_STATUS}" == "true" ]; then
       return 0
