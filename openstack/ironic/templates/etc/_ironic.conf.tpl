@@ -26,6 +26,7 @@ driver = messagingv2
 {{- end }}
 
 [agent]
+image_download_source = swift
 deploy_logs_collect = {{ .Values.agent.deploy_logs.collect }}
 deploy_logs_storage_backend = {{ .Values.agent.deploy_logs.storage_backend }}
 deploy_logs_swift_days_to_expire = {{ .Values.agent.deploy_logs.swift_days_to_expire }}
