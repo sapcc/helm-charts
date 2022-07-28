@@ -324,3 +324,35 @@ groups:
     annotations:
       description: "All active storage paths for `{{ $labels.hostsystem }}` down. ({{ $labels.vcenter }})"
       summary: "All active storage paths for `{{ $labels.hostsystem }}` down. ({{ $labels.vcenter }})"
+
+- alert: HAHostAgentError
+    expr: |
+      vrops_hostsystem_alert_info{alert_name="vSphere High Availability (HA) host agent has encountered an error"}
+      and on (hostsystem) vrops_hostsystem_runtime_maintenancestate{state!~"inMaintenance"}
+    labels:
+      severity: info
+      tier: vmware
+      service: compute
+      context: "{{ $labels.hostsystem }} HA agent error"
+      meta: "HA agent on Host `{{ $labels.hostsystem }}` has encountered an error. ({{ $labels.vcenter }})."
+      playbook: docs/devops/alert/vcenter/#troubleshooting-vsphere-ha-host-states
+      no_alert_on_absence: "true"
+    annotations:
+      description: "HA agent on Host `{{ $labels.hostsystem }}` has encountered an error. ({{ $labels.vcenter }})."
+      summary: "HA agent on Host `{{ $labels.hostsystem }}` has encountered an error. ({{ $labels.vcenter }})."
+      
+- alert: HAHostNetworkPartitioned
+    expr: |
+      vrops_hostsystem_alert_info{alert_name="vSphere High Availability (HA) has detected a network-partitioned host"}
+      and on (hostsystem) vrops_hostsystem_runtime_maintenancestate{state!~"inMaintenance"}
+    labels:
+      severity: info
+      tier: vmware
+      service: compute
+      context: "{{ $labels.hostsystem }} HA network-partitioned host"
+      meta: "HA on Host `{{ $labels.hostsystem }}` has detected a network-partitioned host. ({{ $labels.vcenter }})."
+      playbook: docs/devops/alert/vcenter/#troubleshooting-vsphere-ha-host-states
+      no_alert_on_absence: "true"
+    annotations:
+      description: "HA on Host `{{ $labels.hostsystem }}` has detected a network-partitioned host. ({{ $labels.vcenter }})."
+      summary: "HA on Host `{{ $labels.hostsystem }}` has detected a network-partitioned host. ({{ $labels.vcenter }})."
