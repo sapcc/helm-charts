@@ -121,4 +121,6 @@ service_type = sharev2
 {{- include "ini_sections.cache" . }}
 {{- end }}
 
+{{ if .Values.global.region | hasPrefix "qa-de-1" -}}
 {{- include "osprofiler" . }}
+{{- end }}
