@@ -1,3 +1,7 @@
+## 7.0.1
+
+* Fix selector in service
+
 ## 7.0.0
 
 * *Breaking change*: Global instances will not work, Thanos deployment files are removed.
