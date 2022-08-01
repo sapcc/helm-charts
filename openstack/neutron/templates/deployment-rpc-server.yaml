@@ -31,11 +31,16 @@ spec:
         configmap-etc-region-hash: {{ include (print $.Template.BasePath "/configmap-etc-region.yaml") . | sha256sum }}
         configmap-etc-vendor-hash: {{ include (print $.Template.BasePath "/configmap-etc-vendor.yaml") . | sha256sum }}
         configmap-bin-hash: {{ include (print $.Template.BasePath "/configmap-bin.yaml") . | sha256sum }}
-{{- if .Values.cc_fabric.enabled }}
+        {{- if .Values.cc_fabric.enabled }}
         configmap-etc-cc-fabric: {{ include (print $.Template.BasePath "/configmap-etc-cc-fabric.yaml") . | sha256sum }}
-{{- end }}
+        {{- end }}
+        {{- if .Values.proxysql.mode }}
+        prometheus.io/scrape: "true"
+        prometheus.io/targets: "{{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus }}"
+        {{- end }}
     spec:
 {{ tuple . "neutron" "rpc" | include "kubernetes_pod_anti_affinity" | indent 6 }}
+{{ include "utils.proxysql.pod_settings" . | indent 6 }}
       containers:
         - name: neutron-rpc-server
           image: {{.Values.global.registry}}/loci-neutron:{{.Values.imageVersionServerRPC | default .Values.imageVersionServer | default .Values.imageVersion | required "Please set neutron.imageVersion or similar"}}
@@ -47,7 +52,7 @@ spec:
             - name: NAMESPACE
               value: {{ .Release.Namespace }}
             - name: DEPENDENCY_JOBS
-              value: "neutron-migration-{{ .Values.imageVersion }}"
+              value: "{{ include "neutron.migration_job_name" . }}"
             - name: DEPENDENCY_SERVICE
               value: "{{ .Release.Name }}-mariadb,{{ .Release.Name }}-rabbitmq"
             - name: STATSD_HOST
@@ -128,6 +133,8 @@ spec:
               subPath: neutron-fwaas.ini
               readOnly: true
             {{- end}}
+            {{- include "utils.proxysql.volume_mount" . | indent 12 }}
+        {{- include "utils.proxysql.container" . | indent 8 }}
       volumes:
         - name: empty-dir
           emptyDir: {}
@@ -149,4 +156,5 @@ spec:
           configMap:
             name: neutron-bin
             defaultMode: 0755
+        {{- include "utils.proxysql.volumes" . | indent 8 }}
 {{- end}}

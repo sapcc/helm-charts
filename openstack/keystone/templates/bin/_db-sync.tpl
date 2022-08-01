@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+trap "{{ include "utils.proxysql.proxysql_signal_stop_script" . | trim }}" EXIT
 
 {{- if ne .Values.release "rocky" }}
 echo "Status before migration:"

@@ -17,8 +17,12 @@ versioned_notifications_topics = {{ .Values.versioned_notifications_topics  | de
 {{- end }}
 
 {{- include "ini_sections.default_transport_url" . }}
-rpc_response_timeout = {{ .Values.rpc_response_timeout | default .Values.global.rpc_response_timeout | default 90 }}
-rpc_thread_pool_size = {{ .Values.rpc_workers | default .Values.global.rpc_workers | default 100 }}
+rpc_response_timeout = {{ .Values.rpc_response_timeout | default .Values.global.rpc_response_timeout | default 300 }}
+executor_thread_pool_size = {{ .Values.rpc_workers | default .Values.global.rpc_workers | default 100 }}
+
+# time to live in sec of idle connections in the pool:
+conn_pool_ttl = {{ .Values.rpc_conn_pool_ttl | default 600 }}
+rpc_conn_pool_size = {{ .Values.rpc_conn_pool_size | default .Values.global.rpc_conn_pool_size | default 100 }}
 
 {{- if .Values.notification_level }}
 [oslo_messaging_notifications]
@@ -26,6 +30,7 @@ driver = messagingv2
 {{- end }}
 
 [agent]
+image_download_source = swift
 deploy_logs_collect = {{ .Values.agent.deploy_logs.collect }}
 deploy_logs_storage_backend = {{ .Values.agent.deploy_logs.storage_backend }}
 deploy_logs_swift_days_to_expire = {{ .Values.agent.deploy_logs.swift_days_to_expire }}

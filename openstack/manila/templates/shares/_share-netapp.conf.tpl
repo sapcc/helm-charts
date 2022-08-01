@@ -37,7 +37,7 @@ netapp_transport_type={{ $share.protocol | default "https" }}
 netapp_login={{$share.username}}
 netapp_password={{$share.password}}
 netapp_mtu={{$share.mtu | default 9000 }}
-netapp_enabled_share_protocols={{$share.enabled_protocols | default "nfs3, nfs4.0, nfs4.1" }}
+netapp_enabled_share_protocols={{$share.enabled_protocols | default "nfs3, nfs4.1" }}
 
 netapp_root_volume_aggregate={{$share.root_volume_aggregate}}
 netapp_aggregate_name_search_pattern={{$share.aggregate_search_pattern}}
@@ -66,6 +66,13 @@ reserved_share_percentage = 100
 {{- else }}
 reserved_share_percentage = {{ $share.reserved_share_percentage | default 50 }}
 {{- end }}
+
+{{- if eq 100 (int $share.reserved_share_extend_percentage)}}
+reserved_share_extend_percentage = 100
+{{- else }}
+reserved_share_extend_percentage = {{ $share.reserved_share_extend_percentage | default 25 }}
+{{- end }}
+
 # Time to kepp deleted volumes in recovery queue until space is reclaimed
 netapp_delete_retention_hours = {{ $context.Values.delete_retention_hours | default 12 }}
 

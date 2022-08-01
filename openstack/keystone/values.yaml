@@ -284,10 +284,15 @@ memcached:
 
   nodeAffinity: {}
 
+proxysql:
+  mode: null  # Disabled
+
 percona_cluster:
   enabled: false
   db_name: keystone
   db_user: keystone
+
+dbName: keystone
 
 mariadb:
   enabled: true
@@ -297,7 +302,14 @@ mariadb:
 
   persistence_claim:
     name: db-keystone-pvclaim
-
+  databases:
+  - keystone
+  users:
+    keystone:
+      name: keystone
+      password: null
+      grants:
+      - "ALL PRIVILEGES on keystone.*"
   resources:
     requests:
       cpu: 1000m

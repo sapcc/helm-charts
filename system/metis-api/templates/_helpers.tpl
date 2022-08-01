@@ -34,6 +34,6 @@ Create chart name and version as used by the chart label.
   value: 'Default'
 - name:  OS_USERNAME
   value: 'metis'
-- name: OSLO_POLICY_PATH
+- name: OSLO_POLICIES
   value: '/etc/metis/policy.yaml'
 {{- end }}

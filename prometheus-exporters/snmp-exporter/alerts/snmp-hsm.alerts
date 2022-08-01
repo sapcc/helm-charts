@@ -22,12 +22,12 @@ groups:
       severity: info
       service: barbican
       context: hsm
-      meta: "HSM Client License in {{ $labels.devicename }} is more than 14"
+      meta: "HSM Client License in {{ $labels.devicename }} is {{ $value }}"
       dashboard: hsm
       no_alert_on_absence: "true"
     annotations:
-      description: "HSM Client License in {{ $labels.devicename }} is more than {{ $value }}"
-      summary: "HSM Client License in {{ $labels.devicename }} is more than {{ $value }}"
+      description: "HSM Client License in {{ $labels.devicename }} is {{ $value }}"
+      summary: "HSM Client License in {{ $labels.devicename }} is {{ $value }}"
 
   - alert: hsmOperationalErrors
     expr: sum(rate(snmp_hsm_hsmOperationErrors[5m])) by (devicename) > 0
@@ -58,29 +58,29 @@ groups:
       summary: "HSM Sensor {{ $labels.lmTempSensorsDevice }} in {{ $labels.devicename }} Temperature is {{ $value }}"
 
   - alert: hsmClientsMoreThan20
-    expr: sum(snmp_hsm_hsmClientName) by (devicename) >= 20
+    expr: sum(snmp_hsm_hsmClientName) by (devicename) > 20
     for: 2m
     labels:
       severity: info
       service: barbican
       context: hsm
-      meta: "HSM Client License in {{ $labels.devicename }} is more than 20"
+      meta: "HSM Client License in {{ $labels.devicename }} is {{ $value }}"
       dashboard: hsm
       no_alert_on_absence: "true"
     annotations:
-      description: "HSM Client License in {{ $labels.devicename }} is more than {{ $value }}"
-      summary: "HSM Client License in {{ $labels.devicename }} is more than {{ $value }}"
+      description: "HSM Client License in {{ $labels.devicename }} is {{ $value }}"
+      summary: "HSM Client License in {{ $labels.devicename }} is {{ $value }}"
 
-  - alert: hsmBarbicanClientsMoreThan3
-    expr: sum((snmp_hsm_hsmClientName{hsmClientName=~"barb.*"})) by (devicename)
+  - alert: hsmBarbicanClientsMoreThan2
+    expr: sum((snmp_hsm_hsmClientName{hsmClientName=~"barb.*"})) by (devicename) > 2
     for: 2m
     labels:
       severity: info
       service: barbican
       context: hsm
-      meta: "HSM Client License in {{ $labels.devicename }} is more than {{ $value }}"
+      meta: "HSM Client License in {{ $labels.devicename }} is {{ $value }}"
       dashboard: hsm
       no_alert_on_absence: "true"
     annotations:
-      description: "HSM Client License in {{ $labels.devicename }} is more than {{ $value }}"
-      summary: "HSM Client License in {{ $labels.devicename }} is more than {{ $value }}"
+      description: "HSM Client License in {{ $labels.devicename }} is {{ $value }}"
+      summary: "HSM Client License in {{ $labels.devicename }} is {{ $value }}"

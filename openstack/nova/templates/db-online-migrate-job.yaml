@@ -1,10 +1,10 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  # since this name changes with every release, removal and creation of this
-  # Job happens on every deployment. Check the helm-chart changes to see if
-  # this needs more review.
-  name: nova-update-cells-{{ .Release.Revision }}
+  # since this name changes with every image change, removal and creation of
+  # this Job happens on nearly every deployment. Check the helm-chart changes
+  # to see if this needs more review.
+  name: {{ tuple . "db-online-migrate" | include "job_name" }}
   labels:
     system: openstack
     type: configuration
@@ -12,30 +12,29 @@ metadata:
 spec:
   template:
     metadata:
-      {{- tuple . "db-update-cells" | include "job_metadata" | indent 6 }}
+      {{- tuple . "db-online-migrate" | include "job_metadata" | indent 6 }}
     spec:
       restartPolicy: OnFailure
+      {{- include "utils.proxysql.job_pod_settings" . | indent 6 }}
       containers:
-      - name: nova-update-cells
+      - name: nova-migrate
         image: {{ required ".Values.global.registry is missing" .Values.global.registry}}/ubuntu-source-nova-api:{{.Values.imageVersionNovaApi | default .Values.imageVersionNova | default .Values.imageVersion | required "Please set nova.imageVersion or similar"}}
         imagePullPolicy: IfNotPresent
         command:
         - kubernetes-entrypoint
         env:
         - name: COMMAND
-          value: "/container.init/db-update-cells"
+          value: "/container.init/db-online-migrate"
         - name: NAMESPACE
           value: {{ .Release.Namespace }}
         - name: DEPENDENCY_JOBS
           value: {{ tuple . "db-migrate" | include "job_name" }}
         - name: DEPENDENCY_SERVICE
-          value: "{{ .Release.Name }}-mariadb,{{ .Release.Name }}-api-mariadb,{{ .Release.Name }}-rabbitmq"
+          value: "{{ .Release.Name }}-mariadb,{{ .Release.Name }}-api-mariadb{{ if eq .Values.cell2.enabled true }},{{ .Values.mariadb_cell2.name }}-mariadb{{ end }}"
         - name: PGAPPNAME
           valueFrom:
             fieldRef:
               fieldPath: metadata.name
-        - name: PYTHONWARNINGS
-          value: {{ .Values.python_warnings | quote }}
         volumeMounts:
         - mountPath: /etc/nova
           name: etcnova
@@ -49,6 +48,8 @@ spec:
           readOnly: true
         - mountPath: /container.init
           name: container-init
+        {{- include "utils.proxysql.volume_mount" . | indent 8 }}
+      {{- include "utils.proxysql.container" . | indent 6 }}
       volumes:
       - name: etcnova
         emptyDir: {}
@@ -59,3 +60,4 @@ spec:
         configMap:
           name: nova-bin
           defaultMode: 0755
+      {{- include "utils.proxysql.volumes" . | indent 6 }}

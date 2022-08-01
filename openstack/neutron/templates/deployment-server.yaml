@@ -41,6 +41,7 @@ spec:
         prometheus.io/targets: "{{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus }}"
     spec:
 {{ tuple . "neutron" "api" | include "kubernetes_pod_anti_affinity" | indent 6 }}
+{{ include "utils.proxysql.pod_settings" . | indent 6 }}
       containers:
         - name: neutron-server
           image: {{.Values.global.registry}}/loci-neutron:{{.Values.imageVersionServerAPI | default .Values.imageVersionServer | default .Values.imageVersion | required "Please set neutron.imageVersion or similar"}}
@@ -86,7 +87,7 @@ spec:
             - name: NAMESPACE
               value: {{ .Release.Namespace }}
             - name: DEPENDENCY_JOBS
-              value: "neutron-migration-{{ .Values.imageVersion }}"
+              value: "{{ include "neutron.migration_job_name" . }}"
             - name: DEPENDENCY_SERVICE
               value: "{{ .Release.Name }}-mariadb,{{ .Release.Name }}-rabbitmq"
             - name: STATSD_HOST
@@ -228,6 +229,8 @@ spec:
             {{- end }}
 
 {{- end }}
+            {{- include "utils.proxysql.volume_mount" . | indent 12 }}
+        {{- include "utils.proxysql.container" . | indent 8 }}
         - name: statsd
           image: {{.Values.global.dockerHubMirror}}/prom/statsd-exporter:v0.8.1
           imagePullPolicy: IfNotPresent
@@ -276,3 +279,4 @@ spec:
           configMap:
             name: neutron-bin
             defaultMode: 0755
+        {{- include "utils.proxysql.volumes" . | indent 8 }}

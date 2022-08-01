@@ -184,8 +184,9 @@ serviceAccount:
 
 # Thanos configuration.
 thanos:
-  # Enable Thanos components and Prometheus sidecar.
-  enabled: false
+  # Enables Prometheus sidecar. This is now the default setting for global monitoring integration.
+  # Only disable this, if you don't want to have your Prometheus being queried by global Thanos.
+  enabled: true
 
   # Deploy an OpenstackSeed custom resource triggering creation of an Openstack user and Swift container used to persist Prometheus metrics.
   # See: https://github.com/sapcc/kubernetes-operators/tree/master/openstack-seeder
@@ -201,16 +202,17 @@ thanos:
       - monsoon3/domain-default-seed
 
   # Configuration for OpenStack Swift Thanos storage backend.
-  swiftStorageConfig: {}
-    # authURL:
-    # userName:
-    # userDomainName:
-    # password:
-    # domainName:
-    # projectName:
-    # projectDomainName:
-    # regionName:
-    # containerName:
+  swiftStorageConfig:
+    authURL:
+    userDomainName:
+    password:
+    domainName:
+    projectName:
+    projectDomainName:
+    # all settings below are not mandatory and auto-generated
+    userName:
+    regionName:
+    containerName:
 
     # Currently not supported are:
     # tenantID:
@@ -228,60 +230,8 @@ thanos:
   # Specification for Thanos sidecar to Prometheus server.
   # See https://github.com/coreos/prometheus-operator/blob/master/Documentation/api.md#thanosspec .
   spec:
-    baseImage: keppel.eu-de-1.cloud.sap/ccloud-dockerhub-mirror/thanosio/thanos
-    version: v0.23.1
-
-  # Image for Thanos components.
-  components:
-    baseImage: keppel.eu-de-1.cloud.sap/ccloud-dockerhub-mirror/thanosio/thanos
-    version: v0.23.1
-
-  # Specification for Thanos components.
-  compactor:
-    # How long to retain raw samples in bucket. 0d - disables this retention.
-    retentionResolutionRaw: 30d
-
-    # How long to retain samples of resolution 1 (5 minutes) in bucket. 0d - disables this retention.
-    retentionResolution5m: 30d
-
-    # How long to retain samples of resolution 2 (1 hour) in bucket. 0d - disables this retention.
-    retentionResolution1h: 1y
-
-    # Minimum age of fresh (non-compacted) blocks before they are being processed. Malformed blocks older than the maximum of consistency-delay and 30m0s will be removed.
-    consistencyDelay: 30m
-
-    service:
-      httpPort: 9090
-
-  store:
-    # Maximum size of items held in the index cache.
-    indexCacheSize: 1GB
-
-    # Maximum size of concurrently allocatable bytes for chunks.
-    chunkPoolSize: 4GB
-
-    # Limit the amount of samples that might be retrieved on a single Series() call.
-    # 0 = unlimited.
-    seriesSampleLimit: 0
-
-    # Limit number of concurrent Series() calls in Thanos store.
-    seriesMaxConcurrency: 20
-
-    # Persistent volume for Thanos store.
-    persistence:
-      enabled: true
-      size: 2Gi
-
-    service:
-      httpPort: 9090
-      grpcPort: 10901
-
-  querier:
-    # Prefix is used to expose the Thanos querier component via ingress using the following sub path.
-    webRouteprefix: /thanos
-    service:
-      httpPort: 9090
-      grpcPort: 10901
+    baseImage: keppel.eu-de-1.cloud.sap/ccloud-quay-mirror/thanos/thanos
+    version: v0.26.0
 
 # The labels to add to any time series or alerts when communicating with
 # external systems (federation, remote storage, Alertmanager).

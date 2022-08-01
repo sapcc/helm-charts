@@ -1,14 +1,18 @@
 [DEFAULT]
 log_config_append = /etc/ironic-inspector/logging.ini
 {{- include "ini_sections.default_transport_url" . }}
-clean_up_period = 60
+clean_up_period = 120
 # Timeout after which introspection is considered failed, set to 0 to
 # disable. (integer value)
 timeout = 3600
 debug = true
 standalone = {{ .Values.inspector.standalone }}
-executor_thread_pool_size = 128
-rpc_response_timeout = 60
+rpc_response_timeout = {{ .Values.rpc_response_timeout | default .Values.global.rpc_response_timeout | default 300 }}
+executor_thread_pool_size = {{ .Values.rpc_workers | default .Values.global.rpc_workers | default 100 }}
+
+# time to live in sec of idle connections in the pool:
+conn_pool_ttl = {{ .Values.rpc_conn_pool_ttl | default 600 }}
+rpc_conn_pool_size = {{ .Values.rpc_conn_pool_size | default .Values.global.rpc_conn_pool_size | default 100 }}
 statsd_port = {{ .Values.inspector.rpc_statsd_port }}
 statsd_enabled = {{ .Values.inspector.rpc_statsd_enabled }}
 listen_address = 0.0.0.0

@@ -137,7 +137,7 @@ route:
       tier: os
       severity: info|warning|critical
       # NOTE: Please keep this list in sync with the identical list in `system/gatekeeper-config/values.yaml`.
-      service: arc|backup|barbican|castellum|cinder|cfm|cronus|designate|documentation|elektra|elk|glance|hermes|ironic|keppel|keystone|limes|lyra|maia|manila|metis|neutron|nova|octavia|sentry|swift|snmp|tenso
+      service: arc|backup|barbican|castellum|cinder|cfm|cronus|designate|documentation|elektra|elk|glance|hermes|ironic|keppel|keystone|limes|lyra|maia|manila|metis|neutron|nova|octavia|placement|sentry|swift|snmp|tenso
       region: qa-de-1|ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|ap-sa-2|eu-de-1|eu-de-2|eu-nl-1|eu-ru-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3
 
   - receiver: slack_sre

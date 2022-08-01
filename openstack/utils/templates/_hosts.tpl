@@ -23,7 +23,13 @@ postgresql+psycopg2://{{$user}}:{{$password | urlquery}}@{{.Chart.Name}}-postgre
 
 {{- define "db_credentials" }}
     {{- if kindIs "map" . }}
-        {{- coalesce .Values.dbUser .Values.global.dbUser "root" }}:{{ coalesce .Values.dbPassword .Values.global.dbPassword .Values.mariadb.root_password | required ".Values.mariadb.root_password is required!" | urlquery }}
+        {{- if and .Values.mariadb.users .Values.mariadb.databases }}
+            {{- $db := first .Values.mariadb.databases }}
+            {{- $user := get .Values.mariadb.users $db | required (printf ".Values.mariadb.%v.name & .password are required (key comes from first database in .Values.mariadb.databases)" $db) }}
+            {{- $user.name | required (printf ".Values.mariadb.%v.name is required!" $db ) }}:{{ $user.password | required (printf ".Values.mariadb.%v.password is required!" $db ) }}
+        {{- else }}
+            {{- coalesce .Values.dbUser .Values.global.dbUser "root" }}:{{ coalesce .Values.dbPassword .Values.global.dbPassword .Values.mariadb.root_password | required ".Values.mariadb.root_password is required!" | urlquery }}
+        {{- end }}
     {{- else }}
         {{- $user := index . 2 }}
         {{- $password := index . 3 }}
@@ -46,7 +52,13 @@ postgresql+psycopg2://{{$user}}:{{$password | urlquery}}@{{.Chart.Name}}-postgre
 
 {{- define "db_url_mysql" }}
     {{- if kindIs "map" . }}
-        {{- tuple . (coalesce .Values.dbName .Values.db_name) (coalesce .Values.dbUser .Values.global.dbUser "root") (coalesce .Values.dbPassword .Values.global.dbPassword .Values.mariadb.root_password | required ".Values.mariadb.root_password is required!") .Values.mariadb.name | include "db_url_mysql" }}
+        {{- if and .Values.mariadb.users .Values.mariadb.databases }}
+            {{- $db := first .Values.mariadb.databases }}
+            {{- $user := get .Values.mariadb.users $db | required (printf ".Values.mariadb.%v.name & .password are required (key comes from first database in .Values.mariadb.databases)" $db) }}
+            {{- tuple . $db $user.name (required (printf "User with key %v requires password" $db) $user.password) | include "db_url_mysql" }}
+        {{- else }}
+            {{- tuple . (coalesce .Values.dbName .Values.db_name) (coalesce .Values.dbUser .Values.global.dbUser "root") (coalesce .Values.dbPassword .Values.global.dbPassword .Values.mariadb.root_password | required ".Values.mariadb.root_password is required!") .Values.mariadb.name | include "db_url_mysql" }}
+        {{- end }}
     {{- else -}}
 mysql+pymysql://{{ include "db_credentials" . }}@
         {{- $allArgs := . }}
@@ -54,9 +66,14 @@ mysql+pymysql://{{ include "db_credentials" . }}@
         {{- with $envAll := index . 0 }}
             {{- if not .Values.proxysql }}
                 {{- include "db_host_mysql" $allArgs }}
-            {{- else if ne $envAll.Values.proxysql.mode "unix_socket" }}
-                {{- $_ := mustHas $envAll.Values.proxysql.mode (list "unix_socket" "host_alias") }}
+            {{- else if not .Values.proxysql.mode }}
                 {{- include "db_host_mysql" $allArgs }}
+            {{- else if ne $envAll.Values.proxysql.mode "unix_socket" }}
+                {{- if mustHas $envAll.Values.proxysql.mode (list "unix_socket" "host_alias") }}
+                {{- include "db_host_mysql" $allArgs }}
+                {{- else }}
+                    {{ fail (printf "Unknown value for .Values.proxysql.mode: got \"%v\"" $envAll.Values.proxysql.mode) }}
+                {{- end }}
             {{- end -}}
             /{{ $schemaName }}?
             {{- if .Values.proxysql }}
@@ -69,7 +86,8 @@ mysql+pymysql://{{ include "db_credentials" . }}@
     {{- end }}
 {{- end}}
 
-{{define "db_host_pxc"}}{{.Release.Name}}-percona-pxc.{{ include "svc_fqdn" . }}{{end}}
+# Please keep as it is, special case when it has to reference the db_region value.
+{{define "db_host_pxc"}}{{.Release.Name}}-percona-pxc.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.db_region}}.{{.Values.global.tld}}{{end}}
 
 {{define "db_url_pxc" }}mysql+pymysql://{{.Values.percona_cluster.db_user }}:{{.Values.percona_cluster.dbPassword }}@{{include "db_host_pxc" .}}/{{.Values.percona_cluster.db_name}}?charset=utf8{{end}}
 

@@ -1,3 +1,21 @@
+{{- /*
+Taken from prometheus-rules/prometheus-kubernetes-rules, since it is used in the common chart and every prometheus needs to have it or the chart will fail
+*/}}
+{{- /*
+Use the 'label_alert_tier', if it exists on the time series, otherwise use the given default.
+Note: The pods define the 'alert-tier' label but Prometheus replaces the hyphen with an underscore.
+*/}}
+{{- define "alertTierLabelOrDefault" -}}
+"{{`{{ if $labels.label_alert_tier }}`}}{{`{{ $labels.label_alert_tier}}`}}{{`{{ else }}`}}{{ required "default value is missing" . }}{{`{{ end }}`}}"
+{{- end -}}
+{{- /*
+Use the 'label_alert_service', if it exists on the time series, otherwise use the given default.
+Note: The pods define the 'alert-service' label but Prometheus replaces the hyphen with an underscore.
+*/}}
+{{- define "alertServiceLabelOrDefault" -}}
+"{{`{{ if $labels.label_alert_service }}`}}{{`{{ $labels.label_alert_service}}`}}{{`{{ else }}`}}{{ required "default value is missing" . }}{{`{{ end }}`}}"
+{{- end -}}
+
 groups:
 - name: prometheus.alerts
   rules:
@@ -144,8 +162,8 @@ groups:
     expr: sum by(pod, namespace, label_alert_service, label_alert_tier) (label_replace((up * on(instance) group_left() (sum by(instance) (up{job=~".*pod-sd"}) > 1)* on(pod) group_left(label_alert_tier, label_alert_service) (max without(uid) (kube_pod_labels))) , "pod", "$1", "kubernetes_pod_name", "(.*)-[0-9a-f]{8,10}-[a-z0-9]{5}"))
     for: 30m
     labels:
-      tier: {{ include "alertTierLabelOrDefault" (include "alerts.tier" .) }}
-      service: {{ include "alertServiceLabelOrDefault" "prometheus" }}
+      tier: {{ template "alertTierLabelOrDefault" (include "alerts.tier" .) }}
+      service: {{ template "alertServiceLabelOrDefault" "prometheus" }}
       severity: warning
       playbook: docs/support/playbook/kubernetes/target_scraped_multiple_times.html
       meta: 'Prometheus is scraping {{`{{ $labels.pod }}`}} pods more than once.'

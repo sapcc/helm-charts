@@ -8,9 +8,12 @@
 
 {{- $dbs := dict }}
 {{- range $d := $envAll.Chart.Dependencies }}
-    {{- if and $d.Enabled (hasPrefix "mariadb" $d.Name)}}
+    {{- if hasPrefix "mariadb" $d.Name }}
         {{- $_ := set $dbs $d.Name (get $envAll.Values $d.Name) }}
     {{- end }}
+{{- end }}
+{{- range $d := $envAll.Values.proxysql.force_enable }}
+    {{- $_ := set $dbs $d (get $envAll.Values $d) }}
 {{- end }}
 {{- $dbKeys := keys $dbs | sortAlpha }}
 apiVersion: v1
