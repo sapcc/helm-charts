@@ -94,7 +94,6 @@ curator:
 # master node configs
 elasticsearch:
   enabled: false
-  image: "docker.elastic.co/elasticsearch/elasticsearch"
   annotations:
     kubernetes.io/tls-acme: true
     disco: true
@@ -130,8 +129,7 @@ elasticsearch:
       securityContext:
         runAsUser: 0
         privileged: true
-      image: "{{ .Values.image }}:{{ .Values.imageTag }}"
-      imagePullPolicy: "{{ .Values.imagePullPolicy }}"
+      image: "{{ required ".Values.global.registry variable missing" .Values.global.registry }}/{{ .Values.global.elastic.image}}:{{ .Values.global.elastic.tag}}"
       command: ["sh", "-c", "mkdir -p /usr/share/elasticsearch/data && chown -R 1000:1000 /usr/share/elasticsearch/data"]
       volumeMounts:
         - name: "{{ template "elasticsearch.uname" . }}"
@@ -176,7 +174,7 @@ elasticsearch-data:
       securityContext:
         runAsUser: 0
         privileged: true
-      image: "{{ .Values.image }}:{{ .Values.imageTag }}"
+      image: "{{ required ".Values.global.registry variable missing" .Values.global.registry }}/{{ .Values.global.elastic.image}}:{{ .Values.global.elastic.tag}}"
       imagePullPolicy: "{{ .Values.imagePullPolicy }}"
       command: ["sh", "-c", "mkdir -p /usr/share/elasticsearch/data && chown -R 1000:1000 /usr/share/elasticsearch/data"]
       volumeMounts:
@@ -315,6 +313,9 @@ global:
     host: "elastiflow-redis"
     logstash_imageTag: "202110081140"
     filebeat_imageTag: "202110071400"
+  elastic:
+    image: elastiflow-elastic
+    tag: <defined-in-pipeline>
 
 redis:
   enabled: false
