@@ -4,8 +4,9 @@ groups:
 - name: openstack-backup-replication.alerts
   rules:
   - alert: OpenstackDatabaseBackupReplicationFailure
-    expr: backup_replication_last_run{kind="success"} == 0
-    for: 24h
+    expr: absent(backup_replication_last_run) or (backup_replication_last_run{kind="success"} == 0)
+		# default replication cycle is 1h, see values.yaml swift_http_import/sleep_for
+    for: 3h
     labels:
       context: replicationage
       dashboard: db-backup-replication
@@ -13,6 +14,7 @@ groups:
       service: backup
       severity: warning
       tier: os
+      no_alert_on_absence: "true"
       playbook: docs/support/playbook/database/db_backup_replication.html
     annotations:
       description: Database backup failed to replicate from {{ $labels.source_region }} to {{ $labels.region }}.
