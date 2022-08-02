@@ -54,11 +54,13 @@ spec:
         violation[{"msg": msg}] {
           obj := input.review.object
           obj.kind == "Pod"
+          labels := object.get(obj.metadata, "labels", {})
           count(pod_belongs_to) == 0 # otherwise the violation will be reported on the DaemonSet or Deployment instead
           count(missing_labels_on_pod) == 2
+
           msg := sprintf(
             "support-group=%s,service=%s: pod does not have either one of the required labels: %s",
-            [obj.metadata.labels["support-group"], obj.metadata.labels["service"], sort(missing_labels_on_pod)]
+            [object.get(labels, "support-group", "none"), object.get(labels, "service", "none"), sort(missing_labels_on_pod)]
           )
         }
 
@@ -67,13 +69,15 @@ spec:
           obj.kind == "Pod"
           count(pod_belongs_to) == 0 # otherwise the violation will be reported on the DaemonSet or Deployment instead
 
-          object.get(obj.metadata.labels, alert_tier, "")  == "os"
-          srv := object.get(obj.metadata.labels, alert_service, "")
+          labels := object.get(obj.metadata, "labels", {})
+          object.get(labels, alert_tier, "")  == "os"
+          srv := object.get(labels, alert_service, "")
           found := {f | srv == os_services[_]; f = true}
           count(found) == 0
+
           msg := sprintf(
             "support-group=%s,service=%s: pod has %q label with value: os, but %q label is missing or does not have a valid value (got: %s, valid: %s)",
-            [obj.metadata.labels["support-group"], obj.metadata.labels["service"], alert_tier, alert_service, json.marshal(srv), os_services],
+            [object.get(labels, "support-group", "none"), object.get(labels, "service", "none"), alert_tier, alert_service, json.marshal(srv), os_services],
           )
         }
 
@@ -82,24 +86,27 @@ spec:
         violation[{"msg": msg}] {
           obj := input.review.object
           obj.kind == violation_owners[_]
+          labels := object.get(obj.metadata, "labels", {})
           count(missing_labels_on_pod_template) == 2
+
           msg := sprintf(
             "support-group=%s,service=%s: pod does not have either one of the required labels: %s",
-            [obj.metadata.labels["support-group"], obj.metadata.labels["service"], sort(missing_labels_on_pod_template)]
+            [object.get(labels, "support-group", "none"), object.get(labels, "service", "none"), sort(missing_labels_on_pod_template)]
           )
         }
 
         violation[{"msg": msg}] {
           obj := input.review.object
           obj.kind == violation_owners[_]
+          labels := object.get(obj.spec.template.metadata, "labels", {})
 
-          t := object.get(obj.spec.template.metadata.labels, alert_tier, "")
+          t := object.get(labels, alert_tier, "")
           t == "os"
-          srv := object.get(obj.spec.template.metadata.labels, alert_service, "")
+          srv := object.get(labels, alert_service, "")
           found := {f | srv == os_services[_]; f = true}
           count(found) == 0
           msg := sprintf(
             "support-group=%s,service=%s: pod has %q label with value: os, but %q label is missing or does not have a valid value (got: %s, valid: %s)",
-            [obj.metadata.labels["support-group"], obj.metadata.labels["service"], alert_tier, alert_service, json.marshal(srv), os_services],
+            [object.get(labels, "support-group", "none"), object.get(labels, "service", "none"), alert_tier, alert_service, json.marshal(srv), os_services],
           )
         }

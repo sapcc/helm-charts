@@ -27,6 +27,7 @@ spec:
         violation[{"msg": msg}] {
           obj := input.review.object
           obj.kind == "Pod"
+          labels := object.get(obj.metadata, "labels", {})
           container := obj.spec.containers[_]
 
           pattern := input.parameters.patterns[_]
@@ -34,6 +35,6 @@ spec:
 
           msg := sprintf(
             "support-group=%s,service=%s: container %q uses forbidden image: %s",
-            [obj.metadata.labels["support-group"], obj.metadata.labels["service"], container.name, container.image]
+            [object.get(labels, "support-group", "none"), object.get(labels, "service", "none"), container.name, container.image]
           )
         }

@@ -37,7 +37,10 @@ spec:
           values_region := get_default(values_global, "region", "")
           values_region == ""
 
-          msg := sprintf("support-group=%s,service=%s: missing .Values.global.region value", [values["owner-info"]["support-group"], values["owner-info"].service])
+          msg := sprintf(
+            "support-group=%s,service=%s: missing .Values.global.region value",
+            [get_default(values["owner-info"], "support-group", "none"), get_default(values["owner-info"], "service", "none")]
+          )
         }
 
         violation[{"msg": msg}] {
@@ -48,6 +51,7 @@ spec:
 
         # need to import some parts from Gatekeeper's pkg/target/regolib/src.rego
         # to make get_default() work
+        # TODO: convert to object.get() ?
 
         has_field(object, field) {
           object[field]

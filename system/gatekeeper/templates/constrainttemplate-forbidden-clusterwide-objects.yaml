@@ -26,11 +26,12 @@ spec:
         # Violations act like a blocklist, but we want to have an allowlist, so
         # we go through `allowed_webhook` as an intermediate level.
         violation[{"msg": msg}] {
+          labels := object.get(obj.metadata, "labels", {})
           webhook := obj.webhooks[_]
           count({ x | x := allowed_webhook[_]; x.name == webhook.name }) == 0
           msg := sprintf(
             "support-group=%s,service=%s: webhook %q does not match our allowlist",
-            [obj.metadata.labels["support-group"], obj.metadata.labels["service"], webhook.name]
+            [object.get(labels, "support-group", "none"), object.get(labels, "service", "none"), webhook.name]
           )
         }
 

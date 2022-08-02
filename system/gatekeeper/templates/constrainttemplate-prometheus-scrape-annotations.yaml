@@ -30,8 +30,10 @@ spec:
           # ^ NOTE: If the annotation is missing, we will have `targets == [""]` and that empty string value will count as invalid.
 
           all_valid_targets := {t | is_valid_target[t]}
+
+          labels := object.get(obj.metadata, "labels", {})
           msg := sprintf(
             "support-group=%s,service=%s: has prometheus.io/scrape annotation, but prometheus.io/targets annotation is missing or does not have a valid value (got: %s, valid: %s)",
-            [obj.metadata.labels["support-group"], obj.metadata.labels["service"], json.marshal(sort(targets)), json.marshal(sort(all_valid_targets))],
+            [object.get(labels, "support-group", "none"), object.get(labels, "service", "none"), json.marshal(sort(targets)), json.marshal(sort(all_valid_targets))],
           )
         }

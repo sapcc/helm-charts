@@ -46,17 +46,23 @@ spec:
 
         violation[{"msg": msg}] {
           input.review.object.kind == "Pod"
-          labels := input.review.object.metadata.labels
+          labels := object.get(input.review.object.metadata, "labels", {})
           count(pod_belongs_to) == 0 # otherwise the violation will be reported on the DaemonSet or Deployment
           count(missing_limits_on_pod) > 0
-          msg := sprintf("support-group=%s,service=%s: cpu and memory limits not set on some or all containers", [labels["support-group"], labels["service"]])
+          msg := sprintf(
+            "support-group=%s,service=%s: cpu and memory limits not set on some or all containers",
+            [object.get(labels, "support-group", "none"), object.get(labels, "service", "none")]
+          )
         }
 
         violation_owners = {"Deployment", "DaemonSet", "StatefulSet"}
 
         violation[{"msg": msg}] {
           input.review.object.kind == violation_owners[_]
-          labels := input.review.object.metadata.labels
+          labels := object.get(input.review.object.metadata, "labels", {})
           count(missing_limits_on_pod_template) > 0
-          msg := sprintf("support-group=%s,service=%s: cpu and memory limits not set on some or all containers", [labels["support-group"], labels["service"]])
+          msg := sprintf(
+            "support-group=%s,service=%s: cpu and memory limits not set on some or all containers",
+            [object.get(labels, "support-group", "none"), object.get(labels, "service", "none")]
+          )
         }

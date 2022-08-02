@@ -16,7 +16,7 @@ spec:
         alert_rule[{"rule": rule, "group_name": group.name, "labels": labels}] {
           # match on all rules that are alerts
           input.review.object.kind == "PrometheusRule"
-          labels := input.review.object.metadata.labels
+          labels := object.get(input.review.object.metadata, "labels", {})
 
           group := input.review.object.spec.groups[_]
           regex.match(".*\\.alerts$", group.name)
@@ -29,7 +29,7 @@ spec:
           not regex.match("^(?:critical|warning|info)$", object.get(alert.rule.labels, "severity", ""))
           msg := sprintf(
             "support-group=%s,service=%s: rule %s in group %s does not have a valid value for labels.severity (\"critical\", \"warning\" or \"info\")",
-            [alert.labels["support-group"], alert.labels["service"], alert.rule.alert, alert.group_name]
+            [object.get(alert.labels, "support-group", "none"), object.get(alert.labels, "service", "none"), alert.rule.alert, alert.group_name]
           )
         }
 
@@ -40,7 +40,7 @@ spec:
           object.get(alert.rule.labels, "playbook", "") == ""
           msg := sprintf(
             "support-group=%s,service=%s: rule %s in group %s does not have a valid value for labels.playbook (required for critical alerts)",
-            [alert.labels["support-group"], alert.labels["service"], alert.rule.alert, alert.group_name]
+            [object.get(alert.labels, "support-group", "none"), object.get(alert.labels, "service", "none"), alert.rule.alert, alert.group_name]
           )
         }
 
@@ -50,7 +50,7 @@ spec:
           not regex.match("\\S", object.get(alert.rule.labels, "tier", ""))
           msg := sprintf(
             "support-group=%s,service=%s: rule %s in group %s does not have labels.tier",
-            [alert.labels["support-group"], alert.labels["service"], alert.rule.alert, alert.group_name]
+            [object.get(alert.labels, "support-group", "none"), object.get(alert.labels, "service", "none"), alert.rule.alert, alert.group_name]
           )
         }
 
@@ -60,7 +60,7 @@ spec:
           not regex.match("\\S", object.get(alert.rule.annotations, "description", ""))
           msg := sprintf(
             "support-group=%s,service=%s: rule %s in group %s does not have annotations.description",
-            [alert.labels["support-group"], alert.labels["service"], alert.rule.alert, alert.group_name]
+            [object.get(alert.labels, "support-group", "none"), object.get(alert.labels, "service", "none"), alert.rule.alert, alert.group_name]
           )
         }
 
@@ -70,6 +70,6 @@ spec:
           not regex.match("\\S", object.get(alert.rule.annotations, "summary", ""))
           msg := sprintf(
             "support-group=%s,service=%s: rule %s in group %s does not have annotations.summary",
-            [alert.labels["support-group"], alert.labels["service"], alert.rule.alert, alert.group_name]
+            [object.get(alert.labels, "support-group", "none"), object.get(alert.labels, "service", "none"), alert.rule.alert, alert.group_name]
           )
         }

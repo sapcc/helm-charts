@@ -44,10 +44,11 @@ spec:
         violation[{"msg": msg}] {
           # Check if an 'owner-of-<release-name>' ConfigMap exists for this release.
           count(configmaps) == 0
+          owner_info := object.get(parser_resp.body, "values,owner-info", {})
           release_name := input.review.object.metadata.labels.name
           msg := sprintf(
             "support-group=%s,service=%s: could not find ConfigMap: owner-of-%s",
-            [parser_resp.body.values["owner-info"]["support-group"], parser_resp.body.values["owner-info"].service, release_name]
+            [object.get(owner_info, "support-group", "none"), object.get(owner_info, "service", "none"), release_name]
           )
         }
 
@@ -61,6 +62,6 @@ spec:
           pm == ""
           msg := sprintf(
             "support-group=%s,service=%s: ConfigMap %q does not have %q label: parent chart needs to define %q in its Values.yaml file with at least one maintainer",
-            [parser_resp.body.values["owner-info"]["support-group"], parser_resp.body.values["owner-info"].service, obj.metadata.name, "primary-maintainer", "owner-info.maintainers"],
+            [object.get(parser_resp.body.values["owner-info"], "support-group", "none"), object.get(parser_resp.body.values["owner-info"], "service", "none"), obj.metadata.name, "primary-maintainer", "owner-info.maintainers"],
           )
         }

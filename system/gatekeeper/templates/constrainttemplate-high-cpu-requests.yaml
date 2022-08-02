@@ -41,10 +41,12 @@ spec:
         violation[{"msg": msg}] {
           obj := input.review.object
           obj.kind == "Pod"
+          labels := object.get(obj.metadata, "labels", {})
+
           total_cpu := sum(cpu_requests)
           total_cpu > input.parameters.maxCpu
           msg := sprintf(
             "support-group=%s,service=%s: requests %v CPU in total",
-            [obj.metadata.labels["support-group"], obj.metadata.labels["service"], total_cpu]
+            [object.get(labels, "support-group", "none"), object.get(labels, "service", "none"), total_cpu]
           )
         }
