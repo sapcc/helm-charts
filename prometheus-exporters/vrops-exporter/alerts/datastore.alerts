@@ -128,22 +128,6 @@ groups:
       description: "Average utilization for `{{ $labels.type }}` Datastores per vCenter is above 70%. ({{ $labels.vcenter }})"
       summary: "Average utilization for `{{ $labels.type }}` Datastores per vCenter is above 70%. ({{ $labels.vcenter }})"
 
-  - alert: AverageVmfsDataStoreCapacityCritical
-    expr: >
-      avg by (type, vcenter) (vrops_datastore_diskspace_total_usage_gigabytes{type=~"vmfs_p_ssd|vmfs_s_hdd"} / vrops_datastore_diskspace_capacity_gigabytes) > 0.8
-    for: 20m
-    labels:
-      severity: critical
-      tier: os
-      service: storage
-      context: "vrops-exporter {{ $labels.type }}"
-      meta: "Average utilization for `{{ $labels.type }}` Datastores per vCenter is above 80%. ({{ $labels.vcenter }})"
-      dashboard: vcenter-datastore-utilization
-      playbook: docs/support/playbook/storage/new_storage_lun_request.html
-    annotations:
-      description: "Average utilization for `{{ $labels.type }}` Datastores per vCenter is above 80%. ({{ $labels.vcenter }})"
-      summary: "Average utilization for `{{ $labels.type }}` Datastores per vCenter is above 80%. ({{ $labels.vcenter }})"
-
   - alert: DataStoreCapacityWarning
     expr: >
       vrops_datastore_diskspace_total_usage_gigabytes{type!~"ephemeral|vVOL|vmfs.+", datastore!~".+swap"} / vrops_datastore_diskspace_capacity_gigabytes >=  0.8
