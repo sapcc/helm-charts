@@ -57,3 +57,15 @@ groups:
     annotations:
       description: ApiServerLatency for {{`{{ $labels.resource }}`}} is higher then usual for the past 15 minutes. Inspect apiserver logs for the root cause.
       summary: ApiServerLatency is unusally high
+
+  - alert: KubeAggregatedAPIDown
+    expr: (1 - max by(name, namespace)(avg_over_time(aggregator_unavailable_apiservice[10m]))) * 100 < 85
+    for: 5m
+    labels:
+      tier: {{ required ".Values.tier missing" .Values.tier }}
+      service: k8s
+      severity: warning
+      context: apiserver
+    annotations:
+      description: "Kubernetes aggregated API {{`{{ $labels.namespace }}`}}/{{`{{ $labels.name }}`}} has been only {{`{{ $value | humanize }}`}}% available over the last 10m."
+      summary: Kubernetes aggregated API is down.
