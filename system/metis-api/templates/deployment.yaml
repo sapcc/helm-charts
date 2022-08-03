@@ -14,7 +14,7 @@ metadata:
     app.kubernetes.io/part-of: "metis"
     app.kubernetes.io/managed-by: {{ .Release.Service }}
     alert-service: "metis"
-    alert-tier: {{ required "$.Values.metisAPI.alerts.tier missing" $.Values.metisAPI.alerts.tier }}
+    alert-tier: {{ required "$.Values.alerts.tier missing" $.Values.alerts.tier | quote }}
 spec:
   replicas: 1
   selector:
@@ -32,6 +32,8 @@ spec:
         app.kubernetes.io/component: "api"
         app.kubernetes.io/part-of: "metis"
         app.kubernetes.io/managed-by: {{ .Release.Service }}
+        alert-service: "metis"
+        alert-tier: {{ required "$.Values.alerts.tier missing" $.Values.alerts.tier | quote }}
       annotations:
         checksum/config: {{ include ( print $.Template.BasePath "/configmap.yaml" ) . | sha256sum }}
         checksum/secret: {{ include ( print $.Template.BasePath "/secrets.yaml" ) . | sha256sum }}

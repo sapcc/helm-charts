@@ -11,7 +11,7 @@ metadata:
     app.kubernetes.io/instance: metis-{{ .Release.Name }}
     app.kubernetes.io/managed-by: {{ .Release.Service }}
     alert-service: "metis"
-    alert-tier: {{ required "$.Values.backup_v2.alerts.tier missing" $.Values.backup_v2.alerts.tier }}
+    alert-tier: {{ required "$.Values.alerts.tier missing" $.Values.alerts.tier | quote }}
 spec:
   replicas: 1
   selector:
@@ -23,6 +23,10 @@ spec:
       labels:
         app.kubernetes.io/name: metis
         app.kubernetes.io/instance: metis-{{ .Release.Name }}
+        app.kubernetes.io/version: "{{ .Values.metis.imageTag }}"
+        helm.sh/chart: {{ include "metis.chart" $ }}
+        alert-service: "metis"
+        alert-tier: {{ required "$.Values.alerts.tier missing" $.Values.alerts.tier | quote}}
       annotations:
         checksum/config: {{ include ( print $.Template.BasePath "/metis-etc-configmap.yaml" ) . | sha256sum }}
         checksum/secret: {{ include ( print $.Template.BasePath "/metis-secrets.yaml" ) . | sha256sum }}

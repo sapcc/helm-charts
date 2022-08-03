@@ -14,8 +14,9 @@ metadata:
     helm.sh/chart: {{ include "metis.chart" $ }}
     app.kubernetes.io/instance: mariadb-replication-{{ $backup.name }}-{{ $.Release.Name }}
     app.kubernetes.io/managed-by: {{ $.Release.Service }}
+    app.kubernetes.io/version: "{{ $.Values.backup_v2.image_version }}"
     alert-service: "metis"
-    alert-tier: {{ required "$.Values.backup_v2.alerts.tier missing" $common.alerts.tier }}
+    alert-tier: {{ required "$.Values.alerts.tier missing" $.Values.alerts.tier }}
 spec:
   replicas: 1
   selector:
@@ -25,6 +26,10 @@ spec:
   template:
     metadata:
       labels:
+        alert-service: "metis"
+        alert-tier: {{ required "$.Values.alerts.tier missing" $.Values.alerts.tier }}
+        helm.sh/chart: {{ include "metis.chart" $ }}
+        app.kubernetes.io/version: "{{ $.Values.backup_v2.image_version }}"
         app.kubernetes.io/name: mariadb-replication
         app.kubernetes.io/instance: mariadb-replication-{{ $backup.name }}-{{ $.Release.Name }}
       annotations:
@@ -33,7 +38,7 @@ spec:
 {{- if $common.metrics.enabled }}
         prometheus.io/scrape: "true"
         prometheus.io/port: "8082"
-        prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" $common.alerts.prometheus | quote }}
+        prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" $.Values.alerts.prometheus | quote }}
 {{- end }}
     spec:
       affinity:
