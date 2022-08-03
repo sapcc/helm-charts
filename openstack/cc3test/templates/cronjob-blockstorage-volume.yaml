@@ -1,10 +1,10 @@
 apiVersion: batch/v1
 kind: CronJob
 metadata:
-  name: cc3test-blockstorage
+  name: cc3test-blockstorage-volume
   namespace: {{ .Values.cc3test.namespace }}
 spec:
-  schedule: "*/25 * * * *"
+  schedule: "*/45 * * * *"
   concurrencyPolicy: Allow
   successfulJobsHistoryLimit: 1
   failedJobsHistoryLimit: 1
@@ -22,10 +22,10 @@ spec:
               secret:
                 secretName: cc3test-secrets
           containers:
-          - name: base
+          - name: regular
             image: {{ required ".Values.global.registry variable missing" .Values.global.registry }}/{{ required ".Values.cc3test.image.name variable missing" .Values.cc3test.image.name }}:{{ required ".Values.cc3test.image.tag variable missing" .Values.cc3test.image.tag }}
             command: ["/bin/sh"]
-            args: ["-c", "pytest --disable-pytest-warnings --no-header --color=yes --variables config/config.yaml --variables secrets/secrets.yaml -m 'block_storage and canary and base' -r ap tests"]
+            args: ["-c", "pytest --disable-pytest-warnings --no-header --color=yes --variables config/config.yaml --variables secrets/secrets.yaml -m 'block_storage and canary and regular' -r ap tests"]
             volumeMounts:
               - name: cc3test-config
                 mountPath: /cc3test/config
@@ -33,10 +33,10 @@ spec:
               - name: cc3test-secrets
                 mountPath: /cc3test/secrets
                 readOnly: true
-          - name: purge
+          - name: hana
             image: {{ required ".Values.global.registry variable missing" .Values.global.registry }}/{{ required ".Values.cc3test.image.name variable missing" .Values.cc3test.image.name }}:{{ required ".Values.cc3test.image.tag variable missing" .Values.cc3test.image.tag }}
             command: ["/bin/sh"]
-            args: ["-c", "pytest --disable-pytest-warnings --no-header --color=yes --variables config/config.yaml --variables secrets/secrets.yaml -m 'block_storage and purge' -r ap tests"]
+            args: ["-c", "pytest --disable-pytest-warnings --no-header --color=yes --variables config/config.yaml --variables secrets/secrets.yaml -m 'block_storage and canary and hana' -r ap tests"]
             volumeMounts:
               - name: cc3test-config
                 mountPath: /cc3test/config
