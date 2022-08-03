@@ -10,7 +10,7 @@ goto deploy
 
 :deploy
 imgfree
-kernel {% if pxe_options.ipxe_timeout > 0 %}--timeout {{ "{{" }} pxe_options.ipxe_timeout {{ "}}" }} {% endif %}{{ "{{" }} pxe_options.deployment_aki_path {{ "}}" }} selinux=0 troubleshoot=0 text {{ "{{" }} pxe_options.pxe_append_params|default("", true) {{ "}}" }} BOOTIF=${mac} ipa-api-url={{ "{{" }} pxe_options['ipa-api-url'] {{ "}}" }} initrd={{ "{{" }} pxe_options.initrd_filename|default("deploy_ramdisk", true) {{ "}}" }} coreos.configdrive=0 || chain {{ printf "http://%v:%v/%v" .Values.global.ironic_tftp_ip .Values.conductor.deploy.port $conductor.pxe.pxe_bootfile_name }} || goto retry
+kernel {% if pxe_options.ipxe_timeout > 0 %}--timeout {{ "{{" }} pxe_options.ipxe_timeout {{ "}}" }} {% endif %}{{ "{{" }} pxe_options.deployment_aki_path {{ "}}" }} selinux=0 troubleshoot=0 text BOOTIF=${mac} initrd={{ "{{" }} pxe_options.initrd_filename|default("deploy_ramdisk", true) {{ "}}" }} || chain {{ printf "http://%v:%v/%v" .Values.global.ironic_tftp_ip .Values.conductor.deploy.port $conductor.pxe.pxe_bootfile_name }} || goto retry
 
 initrd {% if pxe_options.ipxe_timeout > 0 %}--timeout {{ "{{" }} pxe_options.ipxe_timeout {{ "}}" }} {% endif %}{{ "{{" }} pxe_options.deployment_ari_path {{ "}}" }} || goto retry
 boot
@@ -30,13 +30,13 @@ poweroff
 
 :boot_partition
 imgfree
-kernel {% if pxe_options.ipxe_timeout > 0 %}--timeout {{ "{{" }} pxe_options.ipxe_timeout {{ "}}" }} {% endif %}{{ "{{" }} pxe_options.aki_path {{ "}}" }} root={{ "{{" }} ROOT {{ "}}" }} ro text {{ "{{" }} pxe_options.pxe_append_params|default("", true) {{ "}}" }} initrd=ramdisk || goto boot_partition
+kernel {% if pxe_options.ipxe_timeout > 0 %}--timeout {{ "{{" }} pxe_options.ipxe_timeout {{ "}}" }} {% endif %}{{ "{{" }} pxe_options.aki_path {{ "}}" }} root={{ "{{" }} ROOT {{ "}}" }} ro text initrd=ramdisk || goto boot_partition
 initrd {% if pxe_options.ipxe_timeout > 0 %}--timeout {{ "{{" }} pxe_options.ipxe_timeout {{ "}}" }} {% endif %}{{ "{{" }} pxe_options.ari_path {{ "}}" }} || goto boot_partition
 boot
 
 :boot_ramdisk
 imgfree
-kernel {% if pxe_options.ipxe_timeout > 0 %}--timeout {{ "{{" }} pxe_options.ipxe_timeout {{ "}}" }} {% endif %}{{ "{{" }} pxe_options.aki_path {{ "}}" }} root=/dev/ram0 text {{ "{{" }} pxe_options.pxe_append_params|default("", true) {{ "}}" }} {{ "{{" }} pxe_options.ramdisk_opts|default('', true) {{ "}}" }} initrd=ramdisk || goto boot_ramdisk
+kernel {% if pxe_options.ipxe_timeout > 0 %}--timeout {{ "{{" }} pxe_options.ipxe_timeout {{ "}}" }} {% endif %}{{ "{{" }} pxe_options.aki_path {{ "}}" }} root=/dev/ram0 text {{ "{{" }} pxe_options.ramdisk_opts|default('', true) {{ "}}" }} initrd=ramdisk || goto boot_ramdisk
 initrd {% if pxe_options.ipxe_timeout > 0 %}--timeout {{ "{{" }} pxe_options.ipxe_timeout {{ "}}" }} {% endif %}{{ "{{" }} pxe_options.ari_path {{ "}}" }} || goto boot_ramdisk
 boot
 {%- if pxe_options.boot_from_volume %}

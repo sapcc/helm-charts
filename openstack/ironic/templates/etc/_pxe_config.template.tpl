@@ -6,13 +6,13 @@ default deploy
 
 label deploy
 kernel {{$prefix}}{{"{{"}} pxe_options.deployment_aki_path {{"}}"}}
-append initrd={{$prefix}}{{"{{"}} pxe_options.deployment_ari_path {{"}}"}} selinux=0 troubleshoot=0 text {{"{{"}} pxe_options.pxe_append_params|default("", true) {{"}}"}} ipa-api-url={{"{{"}} pxe_options['ipa-api-url'] {{"}}"}} coreos.configdrive=0
+append initrd={{$prefix}}{{"{{"}} pxe_options.deployment_ari_path {{"}}"}} selinux=0 troubleshoot=0 text
 ipappend 3
 
 
 label boot_partition
 kernel {{$prefix}}{{"{{"}} pxe_options.aki_path {{"}}"}}
-append initrd={{$prefix}}{{"{{"}} pxe_options.ari_path {{"}}"}} root={{"{{"}} ROOT {{"}}"}} ro text {{"{{"}} pxe_options.pxe_append_params|default("", true) {{"}}"}}
+append initrd={{$prefix}}{{"{{"}} pxe_options.ari_path {{"}}"}} root={{"{{"}} ROOT {{"}}"}} ro text
 
 
 label boot_whole_disk
@@ -22,6 +22,6 @@ append mbr:{{"{{"}} DISK_IDENTIFIER {{"}}"}}
 
 label trusted_boot
 kernel mboot
-append tboot.gz --- {{$prefix}}{{"{{"}}pxe_options.aki_path{{"}}"}} root={{"{{"}} ROOT {{"}}"}} ro text {{"{{"}} pxe_options.pxe_append_params|default("", true) {{"}}"}} intel_iommu=on --- {{$prefix}}{{"{{"}}pxe_options.ari_path{{"}}"}}
+append tboot.gz --- {{$prefix}}{{"{{"}}pxe_options.aki_path{{"}}"}} root={{"{{"}} ROOT {{"}}"}} ro text intel_iommu=on --- {{$prefix}}{{"{{"}}pxe_options.ari_path{{"}}"}}
 {{- end }}
 {{- end }}

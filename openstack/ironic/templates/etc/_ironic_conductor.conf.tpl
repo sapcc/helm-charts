@@ -51,12 +51,8 @@ tftp_root = /tftpboot
 {{ $k }} = {{ $v }}
 {{- end }}
 
-{{- if $conductor.pxe.ipxe_enabled }}
-pxe_config_template = /etc/ironic/ipxe_config.template
-{{- else }}
+ipxe_config_template = /etc/ironic/ipxe_config.template
 pxe_config_template = /etc/ironic/pxe_config.template
-{{- end }}
-uefi_pxe_bootfile_name = ipxe.efi
 uefi_pxe_config_template = /etc/ironic/uefi_pxe_config.template
 
 {{- if $conductor.jinja2 }}
