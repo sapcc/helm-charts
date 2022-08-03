@@ -1,3 +1,7 @@
+## 6.3.3
+
+* Fix service label for new operator version 0.58
+
 ## 6.3.2
 
 * Respect alert-service and alert-tier pod labels in PrometheusMultiplePodScrapes alert
