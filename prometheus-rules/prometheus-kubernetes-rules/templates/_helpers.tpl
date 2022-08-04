@@ -16,7 +16,7 @@ Use the 'label_alert_service', if it exists on the time series, otherwise use th
 Note: The pods define the 'alert-service' label but Prometheus replaces the hyphen with an underscore.
 */}}
 {{- define "serviceLabelOrDefault" -}}
-"{{`{{ if $labels.label_cc_service }}{{ $labels.label_cc_service }}{{ else }}{{ if $labels.label_alert_service }}{{ $labels.label_alert_service }}{{ else }}`}}{{ required "default value is missing" . }}{{`{{ end }}`}}"
+"{{`{{ if $labels.label_cc_service }}{{ $labels.label_cc_service }}{{ else }}{{ if $labels.label_alert_service }}{{ $labels.label_alert_service }}{{ else }}`}}{{ required "default value is missing" . }}{{`{{ end }}{{ end }}`}}"
 {{- end -}}
 
 {{- define "supportGroupLabelOrDefault" -}}
