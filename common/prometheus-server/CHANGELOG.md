@@ -1,3 +1,7 @@
+## 7.0.2
+
+* Move PrometheusMultiplePodScrapes to prometheus-kubernetes-rules chart
+
 ## 7.0.1
 
 * Fix selector in service
