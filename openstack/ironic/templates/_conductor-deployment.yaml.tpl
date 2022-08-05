@@ -4,7 +4,11 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
+{{- if $conductor.name }}
   name: ironic-conductor-{{$conductor.name}}
+{{- else }}
+  name: ironic-conductor
+{{- end }}
   labels:
     system: openstack
     type: conductor
@@ -16,11 +20,19 @@ spec:
     type: Recreate
   selector:
     matchLabels:
+    {{- if $conductor.name }}
       name: ironic-conductor-{{$conductor.name}}
+    {{- else }}
+      name: ironic-conductor
+    {{- end }}
   template:
     metadata:
       labels:
+    {{- if $conductor.name }}
         name: ironic-conductor-{{$conductor.name}}
+    {{- else }}
+        name: ironic-conductor
+    {{- end }}
 {{ tuple . "ironic" "conductor" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
       annotations:
         configmap-etc-hash: {{ include (print .Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
@@ -72,6 +84,7 @@ spec:
         {{- if not $conductor.debug }}
         resources:
 {{ toYaml .Values.pod.resources.conductor | indent 10 }}
+        {{- if $conductor.name }}
         startupProbe:
           exec:
             command:
@@ -89,6 +102,7 @@ spec:
           periodSeconds: 30
           failureThreshold: 3
           timeoutSeconds: 10
+        {{- end }}
         {{- end }}
         volumeMounts:
         - mountPath: /etc/ironic
@@ -195,7 +209,11 @@ spec:
           name: ironic-etc
       - name: ironic-conductor-etc
         configMap:
+        {{- if $conductor.name }}
           name: ironic-conductor-{{$conductor.name}}-etc
+        {{- else }}
+          name: ironic-conductor-etc
+        {{- end }}
       - name: ironic-console
         configMap:
           name: ironic-console

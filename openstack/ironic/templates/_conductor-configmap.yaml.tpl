@@ -4,7 +4,11 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
+{{- if $conductor.name }}
   name: ironic-conductor-{{$conductor.name}}-etc
+{{- else }}
+  name: ironic-conductor-etc
+{{- end }}
   labels:
     system: openstack
     type: configuration
