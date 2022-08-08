@@ -43,7 +43,7 @@ function start_application {
   echo "setting default index pattern for a couple of indexes"
   curl -u {{.Values.global.elk_elasticsearch_admin_user}}:{{.Values.global.elk_elasticsearch_admin_password}} -XPUT 'http://{{.Values.endpoint_host_internal}}:{{.Values.http_port}}/_template/logging' -H 'Content-Type: application/json' -d'
   {
-    "index_patterns": ["kubernikus-*", "scaleout-*", "virtual-*", "syslog-*", "jump-*"],
+    "index_patterns": ["kubernikus-*", "scaleout-*", "virtual-*", "syslog-*", "jump-*", "jaeger-*"],
     "settings": {
       "number_of_shards": 3,
       "number_of_replicas": "1"
