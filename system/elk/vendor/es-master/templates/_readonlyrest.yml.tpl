@@ -2,6 +2,8 @@
 readonlyrest:
     enable: true
     response_if_req_forbidden: <h1>Forbidden</h1>
+    audit:
+      collector: {{.Values.audit}}
 
     access_control_rules:
 
@@ -10,28 +12,33 @@ readonlyrest:
         actions: ["indices:admin/types/exists","indices:data/read/*","indices:data/write/*","indices:admin/template/*","indices:admin/create","cluster:monitor/*"]
         indices: ["logstash-*", "netflow-*", "systemd-*", "syslog-*", ".kibana*", "kubernikus-*", "scaleout-*", "virtual-*", "bigiplogs-*", "alerts-*", "deployments-*","nsxt-*"]
         auth_key: {{.Values.global.elk_elasticsearch_data_user}}:{{.Values.global.elk_elasticsearch_data_password}}
+        verbosity: error
 
       # access for logstash to write to the audit indexes
       - name: audit
         actions: ["indices:admin/types/exists","indices:data/read/*","indices:data/write/*","indices:admin/template/*","indices:admin/create","cluster:monitor/*"]
         indices: ["audit-*"]
         auth_key: {{.Values.global.elk_elasticsearch_audit_user}}:{{.Values.global.elk_elasticsearch_audit_password}}
+        verbosity: error
 
 {{- if .Values.qalogs.enabled }}
       - name: qade2
         actions: ["indices:admin/types/exists","indices:data/read/*","indices:data/write/*","indices:admin/template/*","indices:admin/create","cluster:monitor/*"]
         indices: ["qade2-logstash-*"]
         auth_key: {{.Values.global.elk_elasticsearch_qade2_user}}:{{.Values.global.elk_elasticsearch_qade2_password}}
+        verbosity: error
 
       - name: qade3
         actions: ["indices:admin/types/exists","indices:data/read/*","indices:data/write/*","indices:admin/template/*","indices:admin/create","cluster:monitor/*"]
         indices: ["qade3-logstash-*"]
         auth_key: {{.Values.global.elk_elasticsearch_qade3_user}}:{{.Values.global.elk_elasticsearch_qade3_password}}
+        verbosity: error
 
       - name: qade5
         actions: ["indices:admin/types/exists","indices:data/read/*","indices:data/write/*","indices:admin/template/*","indices:admin/create","cluster:monitor/*"]
         indices: ["qade5-logstash-*"]
         auth_key: {{.Values.global.elk_elasticsearch_qade5_user}}:{{.Values.global.elk_elasticsearch_qade5_password}}
+        verbosity: error
 
 {{- end }}
       # access to write to the jump server log indexes
@@ -39,27 +46,32 @@ readonlyrest:
         actions: ["*"]
         indices: ["jump-*"]
         auth_key: {{.Values.global.elk_elasticsearch_jump_user}}:{{.Values.global.elk_elasticsearch_jump_password}}
+        verbosity: error
 
       # access for jaeger to write traces indexes
       - name: jaeger
         actions: ["indices:admin/types/exists","indices:data/read/*","indices:data/write/*","indices:admin/template/*","indices:admin/create","cluster:monitor/*"]
         indices: ["jaeger-*"]
         auth_key: {{.Values.global.elk_elasticsearch_jaeger_user}}:{{.Values.global.elk_elasticsearch_jaeger_password}}
+        verbosity: info
 
       # access for winbeat
       - name: winbeat
         actions: ["indices:admin/types/exists","indices:data/read/*","indices:data/write/*","indices:admin/template/*","indices:admin/create","cluster:monitor/*"]
         indices: ["winbeat-*", "winlogbeat-*"]
         auth_key: {{.Values.global.elk_elasticsearch_winbeat_user}}:{{.Values.global.elk_elasticsearch_winbeat_password}}
+        verbosity: error
 
       - name: Monsoon (read only, but can create dashboards)
         kibana_access: ro
         auth_key: {{.Values.global.elk_elasticsearch_monsoon_user}}:{{.Values.global.elk_elasticsearch_monsoon_password}}
         indices: [".kibana*", ".kibana-devnull", {{.Values.global.indexes}}]
+        verbosity: error
 
       # admin user
       - name: Admin
         auth_key: {{.Values.global.elk_elasticsearch_admin_user}}:{{.Values.global.elk_elasticsearch_admin_password}}
+        verbosity: error
 
       # deny access without a proper sso cert validated from the ingress - proxy definition see below
       - name: no-sso
