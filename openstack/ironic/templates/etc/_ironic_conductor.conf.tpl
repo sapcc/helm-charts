@@ -5,7 +5,9 @@
 {{- $tftp_ip :=  $conductor.tftp_ip | default .Values.tftp_ip | default .Values.global.ironic_tftp_ip }}
 {{- $deploy_port :=  $conductor.tftp_ip | default .Values.tftp_ip | default .Values.global.ironic_tftp_ip }}
 [DEFAULT]
+{{- if $conductor.name }}
 host = ironic-conductor-{{$conductor.name}}
+{{- end -}}
 {{- if $conductor.enabled_drivers }}
 enabled_drivers = {{ $conductor.enabled_drivers}}
 {{- end }}
@@ -25,7 +27,12 @@ enabled_drivers = {{ $conductor.enabled_drivers}}
 
 [console]
 terminal_pid_dir = /shellinabox
+{{- if $conductor.name }}
 terminal_url_scheme = https://{{ include "ironic_console_endpoint_host_public" . }}/{{$conductor.name}}/%(uuid)s/%(expiry)s/%(digest)s
+{{- else }}
+terminal_url_scheme = https://{{ include "ironic_console_endpoint_host_public" . }}/%(uuid)s/%(expiry)s/%(digest)s
+{{- end }}
+
 socket_permission = 0666
 ssh_command_pattern = sshpass -f %(pw_file)s ssh -oLogLevel={{ .Values.console.ssh_loglevel | default "error" }} -oUserKnownHostsFile=/dev/null -oStrictHostKeyChecking=no -oKexAlgorithms=+diffie-hellman-group1-sha1 -c 'aes128-cbc','aes256-cbc','3des-cbc' -l %(username)s %(address)s
 url_auth_digest_secret = {{required "A valid .Values.console.secret required!" .Values.console.secret}}
