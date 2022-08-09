@@ -1,7 +1,7 @@
 ## 6.3.3
 
 * ***ATTENTION***: maintain older version for Prometheis, which can't upgrade (global, maia). Fixes from here one should only be needed bugfixes.
-* introducing `fix selector` from d00c85556c0b7c34206f1ac8441c9569e71b098e needed for prometheus-operator `v0.58.0`
+* introducing `fix selector` from [d00c855](https://github.com/sapcc/helm-charts/commit/d00c85556c0b7c34206f1ac8441c9569e71b098e) needed for prometheus-operator `v0.58.0`
 
 ## 6.3.2
 
