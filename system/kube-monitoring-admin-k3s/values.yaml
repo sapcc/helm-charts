@@ -19,12 +19,11 @@ kube-prometheus-stack:
 
   prometheusOperator:
     image:
-      repository: keppel.global.cloud.sap/ccloud-dockerhub-mirror/sapcc/prometheus-operator
-      tag: v0.47.0
+      repository: keppel.global.cloud.sap/ccloud-quay-mirror/prometheus-operator/prometheus-operator
 
-    prometheusConfigReloaderImage:
-      repository: keppel.global.cloud.sap/ccloud-dockerhub-mirror/sapcc/prometheus-config-reloader
-      tag: v0.44.0
+    prometheusConfigReloader:
+      image:
+        repository: keppel.global.cloud.sap/ccloud-quay-mirror/prometheus-operator/prometheus-config-reloader
 
     # Both admissionWebhooks and tls requires admissionregistration.k8s.io/v1 .
     admissionWebhooks:
@@ -204,27 +203,26 @@ ping-exporter:
 
 prometheus-node-exporter:
   image:
-    repository: prom/node-exporter
+    repository: keppel.global.cloud.sap/ccloud-dockerhub-mirror/prom/node-exporter
+
+  service:
+    annotations:
+      # Avoid duplicate scrapes via service.
+      prometheus.io/scrape: "false"
 
   extraArgs:
-    - --collector.filesystem.ignored-mount-points=^/(sys|proc|dev|host|etc)($$|/)
-    - --collector.filesystem.ignored-fs-types=^(autofs|binfmt_misc|bpf|cgroup|configfs|debugfs|devpts|devtmpfs|fusectl|hugetlbfs|mqueue|nsfs|overlay|proc|procfs|pstore|rpc_pipefs|securityfs|selinuxfs|squashfs|sysfs|tmpfs|tracefs)$$
-    - --collector.processes
-    - --path.rootfs=/rootfs
+    - --collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)
+    - --collector.filesystem.fs-types-exclude=^(autofs|binfmt_misc|bpf|cgroup|configfs|debugfs|devpts|devtmpfs|fusectl|hugetlbfs|mqueue|nsfs|overlay|proc|procfs|pstore|rpc_pipefs|securityfs|selinuxfs|squashfs|sysfs|tmpfs|tracefs)$$
     - --collector.systemd.enable-task-metrics
     - --collector.systemd.enable-restarts-metrics
     - --collector.systemd.enable-start-time-metrics
+    - --collector.processes
 
   extraHostVolumeMounts:
     - name: dbus
       hostPath: /var/run/dbus/system_bus_socket
       mountPath: /var/run/dbus/system_bus_socket
       readOnly: true
-    - name: rootfs
-      hostPath: /
-      mountPath: /rootfs
-      readOnly: true
-      mountPropagation: HostToContainer
 
   resources:
     requests:
