@@ -157,7 +157,7 @@
       regex: '^vrops_virtualmachine_.+;(.+)'
       replacement: '$1'
       target_label: project_id
-    - regex: 'project'
+    - regex: 'project|collector'
       action: labeldrop
 {{- if .Values.neo.enabled }}
     - source_labels: [__name__]
