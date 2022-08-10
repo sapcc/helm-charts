@@ -5,7 +5,7 @@
 {{- $tftp_ip :=  $conductor.tftp_ip | default .Values.tftp_ip | default .Values.global.ironic_tftp_ip }}
 {{- $deploy_port :=  $conductor.tftp_ip | default .Values.tftp_ip | default .Values.global.ironic_tftp_ip }}
 [DEFAULT]
-{{- if $conductor.name }}
+{{- if (default $conductor.host true }}
 host = ironic-conductor-{{$conductor.name}}
 {{- end -}}
 {{- if $conductor.enabled_drivers }}
