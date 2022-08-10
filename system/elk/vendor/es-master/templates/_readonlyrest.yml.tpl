@@ -55,6 +55,12 @@ readonlyrest:
         auth_key: {{.Values.global.elk_elasticsearch_jaeger_user}}:{{.Values.global.elk_elasticsearch_jaeger_password}}
         verbosity: info
 
+      - name: promuser
+        actions: ["indices:data/read/*", "cluster:monitor/state", "indices:admin/get", "indices:admin/mappings/fields/get", "indices:admin/mappings/get", "indices:admin/aliases/get", "indices:admin/template/get", "cluster:monitor/prometheus/metrics", "cluster:monitor/health", "cluster:monitor/nodes/stats", "cluster:monitor/state", "indices:monitor/stats"]
+        indices: ["logstash-*", "netflow", "systemd-*", "syslog-*", "jump-*", "kubernikus-*", "scaleout-*", "virtual-*"]
+        auth_key: {{.Values.global.prom_user}}:{{.Values.global.prom_password}}
+        verbosity: error
+
       # access for winbeat
       - name: winbeat
         actions: ["indices:admin/types/exists","indices:data/read/*","indices:data/write/*","indices:admin/template/*","indices:admin/create","cluster:monitor/*"]
