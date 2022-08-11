@@ -1,0 +1,73 @@
+# vim: set ft=yaml:
+
+groups:
+- name: tenso-worker.alerts
+  rules:
+
+  - alert: TensoCrowdedQueue
+    # The threshold is based on the current event volume. If the event
+    # frequency increases in the future, we may need to adjust the threshold to
+    # avoid flapping.
+    expr: 'max by (payload_type) (tenso_events_count) > 25'
+    # fully delivered events are removed from the queue every 5m, so the alert
+    # should trigger slower than that in order to not mistrigger on a
+    # legitimately large influx of promptly processed events
+    for: 15m
+    labels:
+      context: worker
+      meta: "{{ $labels.payload_type }}"
+      service: tenso
+      severity: info
+      tier: os
+    annotations:
+      summary: 'Events are piling up in the delivery queue'
+      description: |
+        There are much more {{ $labels.payload_type }} events in the delivery queue than we expect to be in there at once.
+        Please check the tenso-worker logs for error messages; it is possible that event delivery has gotten stuck.
+
+  - alert: TensoConversionFailures
+    expr: 'max by (payload_type) (tenso_pending_deliveries_conversion_failures) > 0'
+    for: 5m
+    labels:
+      context: worker
+      meta: "{{ $labels.payload_type }}"
+      service: tenso
+      severity: info
+      tier: os
+    annotations:
+      summary: 'Event conversion is failing'
+      description: |
+        Tenso is observing errors while trying to convert events into payload type {{ $labels.payload_type }}.
+        Please check the tenso-worker logs for the specific error messages.
+        In the DB, you can adjust the "next_conversion_at" timestamp on the "pending_deliveries" entries to force another conversion attempt.
+
+  - alert: TensoDeliveryFailures
+    expr: 'max by (payload_type) (tenso_pending_deliveries_delivery_failures) > 0'
+    for: 5m
+    labels:
+      context: worker
+      meta: "{{ $labels.payload_type }}"
+      service: tenso
+      severity: info
+      tier: os
+    annotations:
+      summary: 'Event delivery is failing'
+      description: |
+        Tenso is observing errors while trying to deliver events of payload type {{ $labels.payload_type }}.
+        Please check the tenso-worker logs for the specific error messages.
+        In the DB, you can adjust the "next_delivery_at" timestamp on the "pending_deliveries" entries to force another delivery attempt.
+
+  - alert: TensoNotDeliveringEvents
+    expr: 'time() - max by (payload_type) (tenso_pending_deliveries_min_created_at) > 600' # 600 seconds = 10 minutes
+    for: 5m
+    labels:
+      context: worker
+      meta: "{{ $labels.payload_type }}"
+      service: tenso
+      severity: info
+      tier: os
+    annotations:
+      summary: 'Events are not being delivered'
+      description: |
+        The Tenso DB contains events of payload type {{ $labels.payload_type }} that are not being delivered.
+        Please check the tenso-worker logs for error messages; it is possible that event delivery has gotten stuck.
