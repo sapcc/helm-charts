@@ -222,6 +222,8 @@
       - '{__name__=~"^vrops_hostsystem_cpu_model"}'
       - '{__name__=~"^vrops_hostsystem_hardware_number_of_cpu_cores_info"}'
       - '{__name__=~"^vrops_hostsystem_summary_running_vms_number"}'
+      - '{__name__=~"^vrops_hostsystem_diskspace_usage_gigabytes"}'
+      - '{__name__=~"^vrops_hostsystem_diskspace_capacity_gigabytes"}'
       - '{__name__=~"^vrops_virtualmachine_cpu_workload_percentage"}'
       - '{__name__=~"^vrops_virtualmachine_memory_usage_average"}'
       - '{__name__=~"^vrops_virtualmachine_memory_kilobytes"}'
