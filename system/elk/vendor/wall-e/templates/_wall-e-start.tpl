@@ -41,14 +41,11 @@ function start_application {
   /usr/local/bin/curator --config /wall-e-etc/curator.yml  /wall-e-etc/delete_indices.yml
 
   echo "setting default index pattern for a couple of indexes"
-  curl -u {{.Values.global.elk_elasticsearch_admin_user}}:{{.Values.global.elk_elasticsearch_admin_password}} -XPUT 'http://{{.Values.endpoint_host_internal}}:{{.Values.http_port}}/_template/logging' -H 'Content-Type: application/json' -d'
-  {
-    "index_patterns": ["kubernikus-*", "scaleout-*", "virtual-*", "syslog-*", "jump-*", "jaeger-*"],
-    "settings": {
-      "number_of_shards": 3,
-      "number_of_replicas": "1"
-  }
-  }'
+  for i in "kubernikus" "scaleout" "virtual" "syslog" "jump" "jaeger-span" "jaeger-service"
+
+  do
+    curl -u {{.Values.global.elk_elasticsearch_admin_user}}:{{.Values.global.elk_elasticsearch_admin_password}} -XPUT 'http://{{.Values.endpoint_host_internal}}:{{.Values.http_port}}/_template/${i} -H 'Content-Type: application/json' -d @/wall-e-etc/$i.json
+  done
 
   echo "INFO: setting up cron jobs for index creation and purging"
   cat <(crontab -l) <(echo "0 1,3,5,7,9,11,13,15,17,19,21,23 * * * export LC_ALL=C.UTF-8; export LANG=C.UTF-8; /usr/local/bin/curator --config /wall-e-etc/curator.yml  /wall-e-etc/delete_indices.yml > ${STDOUT_LOC} 2> ${STDERR_LOC}") | crontab -
