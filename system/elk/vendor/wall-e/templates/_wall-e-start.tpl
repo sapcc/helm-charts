@@ -44,7 +44,7 @@ function start_application {
   for i in "kubernikus" "scaleout" "virtual" "syslog" "jump" "jaeger-span" "jaeger-service"
 
   do
-    curl -u {{.Values.global.elk_elasticsearch_admin_user}}:{{.Values.global.elk_elasticsearch_admin_password}} -XPUT 'http://{{.Values.endpoint_host_internal}}:{{.Values.http_port}}/_template/${i} -H 'Content-Type: application/json' -d @/wall-e-etc/$i.json
+    curl -u {{.Values.global.elk_elasticsearch_admin_user}}:{{.Values.global.elk_elasticsearch_admin_password}} -XPUT http://{{.Values.endpoint_host_internal}}:{{.Values.http_port}}/_template/${i} -H 'Content-Type: application/json' -d @/wall-e-etc/$i.json
   done
 
   echo "INFO: setting up cron jobs for index creation and purging"
