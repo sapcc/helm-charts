@@ -55,6 +55,7 @@ capacity_weight_multiplier = {{ .Values.capacity_weight_multiplier }}
 allocated_capacity_weight_multiplier = {{ .Values.allocated_capacity_weight_multiplier }}
 
 allow_migration_on_attach = {{ .Values.cinder_api_allow_migration_on_attach }}
+sap_disable_incremental_backup = {{ .Values.sap_disable_incremental_backup }}
 
 {{- include "ini_sections.database" . }}
 
