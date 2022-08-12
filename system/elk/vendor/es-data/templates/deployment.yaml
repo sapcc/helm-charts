@@ -25,6 +25,16 @@ spec:
         checksum/elasticsearch.yml: {{ include  (print $.Template.BasePath "/_elasticsearch.yml.tpl") . | sha256sum }}
         checksum/readonlyrest.yml: {{ include  (print $.Template.BasePath "/_readonlyrest.yml.tpl") . | sha256sum }}
         pod.alpha.kubernetes.io/initialized: "true"
+  affinity:
+    podAntiAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+      - labelSelector:
+          matchExpressions:
+          - key: component
+            operator: In
+            values:
+            - "opensearch-logs-data"
+        topologyKey: "kubernetes.io/hostname"
     spec:
       nodeSelector:
         ccloud.sap.com/nodepool: payload
