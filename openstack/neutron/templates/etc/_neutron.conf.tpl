@@ -143,7 +143,9 @@ quota_security_group_rule = 4
 # Minimum value: 1
 thread_pool_size = 3
 
+{{- if .Values.osprofiler.enabled }}
 {{- include "osprofiler" . }}
+{{- end }}
 
 {{- include "ini_sections.audit_middleware_notifications" . }}
 

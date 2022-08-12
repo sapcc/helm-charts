@@ -66,6 +66,7 @@ trace_sqlalchemy = {{ .Values.global.osprofiler.trace_sqlalchemy }}
       protocol: TCP
   args:
     - --reporter.grpc.host-port=openstack-jaeger-collector.{{ .Release.Namespace }}.svc:14250
+    - --reporter.type=grpc
     - --log-level=debug
 {{- end }}
 {{- end }}
