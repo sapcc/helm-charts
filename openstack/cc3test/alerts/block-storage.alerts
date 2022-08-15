@@ -3,37 +3,73 @@ groups:
   rules:
   - alert: OpenstackCinderApiDown
     expr: |
-        cc3test_status{type="api",
-            name=~"TestBlockStorageApi_.+"
+        cc3test_status{service="cinder",
+            type="api"
         } == 0
     for: 10m
     labels:
       severity: critical
       tier: os
       service: '{{ $labels.service }}'
-      context: '{{ $labels.service }}'
+      context: '{{ $labels.type }}'
       meta: 'Openstack Cinder API is down'
       dashboard: 'cc3test-overview?var-service={{ $labels.service }}'
-      playbook: 'docs/devops/alert/cinder/#test_api'
+      playbook: 'docs/devops/alert/cinder'
       report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
     annotations:
-      description: 'Openstack Cinder API is down'
-      summary: 'Openstack Cinder API is down'
+      description: 'Cinder API is down'
+      summary: 'Cinder API is down'
 
   - alert: OpenstackCinderApiFlapping
     expr: |
-        changes(cc3test_status{type="api",
-            name=~"TestBlockStorageApi_.+"
+        changes(cc3test_status{service="cinder",
+            type="api"
         }[30m]) > 8
     labels:
       severity: warning
       tier: os
       service: '{{ $labels.service }}'
-      context: '{{ $labels.service }}'
+      context: '{{ $labels.type }}'
       meta: 'Openstack Cinder API is flapping'
       dashboard: 'cc3test-overview?var-service={{ $labels.service }}'
-      playbook: 'docs/devops/alert/cinder/#test_api'
+      playbook: 'docs/devops/alert/cinder'
       report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
     annotations:
-      description: 'Openstack Cinder API is flapping'
-      summary: 'Openstack Cinder API is flapping'
+      description: 'Flapping Cinder API'
+      summary: 'Flapping Cinder API'
+
+  - alert: OpenstackCinderCreateVolumeAvzDown
+    expr: |
+        cc3test_status{service="cinder",
+            name=~"^TestVolume_create.+"
+        } == 0
+    for: 30m
+    severity: warning
+    tier: os
+    service: '{{ $labels.service }}'
+    context: '{{ $labels.type }}'
+    meta: 'Cinder create volume test fails'
+    dashboard: 'cc3test-overview?var-service={{ $labels.service }}'
+    playbook: 'docs/devops/alert/cinder'
+    report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
+    annotations:
+      description: 'Cinder create volume test fails: {{ $labels.name }}'
+      summary: 'Cinder create volume test fails: {{ $labels.name }}'
+
+  - alert: OpenstackCinderCreateVolumeShardDown
+    expr: |
+        cc3test_status{service="cinder",
+            name=~"TestVolume_attach_to_regular_server.+"
+        } == 0
+    for: 120m
+    severity: warning
+    tier: os
+    service: '{{ $labels.service }}'
+    context: '{{ $labels.type }}'
+    meta: 'Cinder create volume test fails'
+    dashboard: 'cc3test-overview?var-service={{ $labels.service }}'
+    playbook: 'docs/devops/alert/cinder'
+    report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
+    annotations:
+      description: 'Cinder create volume test fails: {{ $labels.name }}'
+      summary: 'Cinder create volume test fails: {{ $labels.name }}'
