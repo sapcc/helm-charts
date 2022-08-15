@@ -61,7 +61,7 @@ data:
     wsrep-cluster-name={{ $mariadbClusterName }}
     wsrep_cluster_address={{ (printf "gcomm://%s,%s-backend.%s.svc.cluster.local:%d" (join "," $nodeNames) ($.Values.namePrefix | default "mariadb-g") $.Release.Namespace $galeraPort) }}
     {{- $_ := set $wsrepProviderOptions "pc.weight" (printf "pc.weight=${PC_WEIGHT_%d}" $int)}}
-    wsrep_provider_options={{ (join ";" (values $wsrepProviderOptions)) }}
+    wsrep_provider_options={{ (join ";" (values $wsrepProviderOptions | sortAlpha)) }}
     wsrep_node_address=${CONTAINER_IP}
     wsrep_node_name={{ $.Values.namePrefix | default "mariadb-g" }}-{{ $int }}
     wsrep-on=1
