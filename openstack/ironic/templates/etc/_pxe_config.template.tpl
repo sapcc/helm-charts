@@ -6,7 +6,7 @@ default deploy
 
 label deploy
 kernel {{$prefix}}{{"{{"}} pxe_options.deployment_aki_path {{"}}"}} 
-append initrd={{$prefix}}{{"{{"}} pxe_options.deployment_ari_path {{"}}"}} selinux=0 troubleshoot=0 text {{ pxe_options.pxe_append_params|default("", true) }}
+append initrd={{$prefix}}{{"{{"}} pxe_options.deployment_ari_path {{"}}"}} selinux=0 troubleshoot=0 text {{ "{{" }} pxe_options.pxe_append_params|default("", true)  {{ "}}" }}
 ipappend 3
 
 
