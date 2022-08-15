@@ -3,12 +3,7 @@ set +e
 set -u
 set -o pipefail
 
-oldIFS="${IFS}"
-BASE=/opt/${SOFTWARE_NAME}
-MAX_RETRIES={{ $.Values.scripts.maxRetries | default 10 }}
-WAIT_SECONDS={{ $.Values.scripts.waitTimeBetweenRetriesInSeconds | default 6 }}
-
-source ${BASE}/bin/common-functions.sh
+source /opt/${SOFTWARE_NAME}/bin/common-functions.sh
 
 function checkmysqlexportermetrics {
   CURL_RESPONSE=$(curl --max-time ${WAIT_SECONDS} --retry ${MAX_RETRIES} --silent \

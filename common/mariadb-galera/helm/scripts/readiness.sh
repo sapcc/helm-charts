@@ -3,16 +3,10 @@ set +e
 set -u
 set -o pipefail
 
-oldIFS="${IFS}"
-BASE=/opt/${SOFTWARE_NAME}
-DATADIR=${BASE}/data
-MAX_RETRIES={{ $.Values.scripts.maxRetries | default 10 }}
-WAIT_SECONDS={{ $.Values.scripts.waitTimeBetweenRetriesInSeconds | default 6 }}
-
-source ${BASE}/bin/common-functions.sh
+source /opt/${SOFTWARE_NAME}/bin/common-functions.sh
 
 function checkgaleraclusterstatus {
-  mysql --defaults-file=/opt/${SOFTWARE_NAME}/etc/my.cnf --protocol=tcp --user=root --host=localhost --port=${MYSQL_PORT} --database=mysql --connect-timeout={{ $.Values.readinessProbe.timeoutSeconds.application }} --execute="SHOW GLOBAL STATUS LIKE 'wsrep_cluster_status';" --batch --skip-column-names | grep --silent 'Primary'
+  mysql --defaults-file=${BASE}/etc/my.cnf --protocol=tcp --user=root --host=localhost --port=${MYSQL_PORT} --database=mysql --connect-timeout={{ $.Values.readinessProbe.timeoutSeconds.application }} --execute="SHOW GLOBAL STATUS LIKE 'wsrep_cluster_status';" --batch --skip-column-names | grep --silent 'Primary'
   if [ $? -eq 0 ]; then
     echo 'MariaDB Galera node reports a working cluster status'
   else

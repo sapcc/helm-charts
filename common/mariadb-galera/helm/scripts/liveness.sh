@@ -3,16 +3,10 @@ set +e
 set -u
 set -o pipefail
 
-oldIFS="${IFS}"
-BASE=/opt/${SOFTWARE_NAME}
-DATADIR=${BASE}/data
-MAX_RETRIES={{ $.Values.scripts.maxRetries | default 10 }}
-WAIT_SECONDS={{ $.Values.scripts.waitTimeBetweenRetriesInSeconds | default 6 }}
-
-source ${BASE}/bin/common-functions.sh
+source /opt/${SOFTWARE_NAME}/bin/common-functions.sh
 
 function checkdblogon {
-  mysql --defaults-file=/opt/mariadb/etc/my.cnf --protocol=tcp --user=root --host=localhost --port=${MYSQL_PORT} --batch --connect-timeout={{ $.Values.livenessProbe.timeoutSeconds.application }} --execute="SHOW DATABASES;" | grep --silent 'mysql'
+  mysql --defaults-file=${BASE}/etc/my.cnf --protocol=tcp --user=root --host=localhost --port=${MYSQL_PORT} --batch --connect-timeout={{ $.Values.livenessProbe.timeoutSeconds.application }} --execute="SHOW DATABASES;" | grep --silent 'mysql'
   if [ $? -eq 0 ]; then
     echo 'MariaDB MySQL API reachable'
   else

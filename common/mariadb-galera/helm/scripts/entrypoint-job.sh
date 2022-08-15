@@ -3,13 +3,7 @@ set +e
 set -u
 set -o pipefail
 
-oldIFS="${IFS}"
-BASE=/opt/${SOFTWARE_NAME}
-DATADIR=${BASE}/data
-MAX_RETRIES={{ $.Values.scripts.maxRetries | default 10 }}
-WAIT_SECONDS={{ $.Values.scripts.waitTimeBetweenRetriesInSeconds | default 6 }}
-
-source ${BASE}/bin/common-functions.sh
+source /opt/${SOFTWARE_NAME}/bin/common-functions.sh
 
 # setup username password rolename rolename connectionlimit
 # setupuser "${MARIADB_MONITORING_USER}" "${MARIADB_MONITORING_PASSWORD}" 'mysql_exporter' "${MARIADB_MONITORING_CONNECTION_LIMIT}"

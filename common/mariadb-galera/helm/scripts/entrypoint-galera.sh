@@ -3,13 +3,9 @@ set +e
 set -u
 set -o pipefail
 
-BASE=/opt/${SOFTWARE_NAME}
-DATADIR=${BASE}/data
-MAX_RETRIES={{ $.Values.scripts.maxRetries | default 10 }}
-WAIT_SECONDS={{ $.Values.scripts.waitTimeBetweenRetriesInSeconds | default 6 }}
 declare -a NODENAME=()
 
-source ${BASE}/bin/common-functions.sh
+source /opt/${SOFTWARE_NAME}/bin/common-functions.sh
 
 function templateconfig {
   local int
@@ -73,10 +69,15 @@ function recovergalera {
       IFS="${oldIFS}"
       {{ if eq $.Values.scripts.logLevel "debug" }} logdebug "${FUNCNAME[0]}" "wsrep-recover response: '${MARIADBD_RESPONSE}'" {{ end }}
       if [ ${SEQNO[-1]} -ge 0 ]; then
-        loginfo "${FUNCNAME[0]}" "sequence number ${SEQNO[-1]} found"
-        sed -i "s,^seqno:\s*-1,seqno:   ${SEQNO[-1]}," ${DATADIR}/grastate.dat
+        loginfo "${FUNCNAME[0]}" "sequence number ${SEQNO[-1]} and historic UUID ${SEQNO[-2]} found"
+        sed --in-place "s,^seqno:\s*-1,seqno:   ${SEQNO[-1]}," ${DATADIR}/grastate.dat
         if [ $? -ne 0 ]; then
           logerror "${FUNCNAME[0]}" "sequence number update failed"
+          exit 1
+        fi
+        sed --in-place "s,^uuid:\s*00000000-0000-0000-0000-000000000000,uuid:   ${SEQNO[-2]}," ${DATADIR}/grastate.dat
+        if [ $? -ne 0 ]; then
+          logerror "${FUNCNAME[0]}" "uuid update failed"
           exit 1
         fi
         {{ if eq $.Values.scripts.logLevel "debug" }} logdebug "${FUNCNAME[0]}" "grastate.dat file updated to '$(cat ${DATADIR}/grastate.dat)'" {{ else }} loginfo "${FUNCNAME[0]}" "grastate.dat file updated" {{ end }}
@@ -84,7 +85,7 @@ function recovergalera {
         setconfigmap "seqno" "${SEQNO[-1]}" "Update"
         selectbootstrapnode
         if [ "${NODENAME[0]}" == "${POD_NAME}" ]; then
-          sed -i "s,^safe_to_bootstrap:\s*0,safe_to_bootstrap: 1," ${DATADIR}/grastate.dat
+          sed --in-place "s,^safe_to_bootstrap:\s*0,safe_to_bootstrap: 1," ${DATADIR}/grastate.dat
           if [ $? -ne 0 ]; then
             logerror "${FUNCNAME[0]}" "safe_to_bootstrap update failed"
             exit 1
