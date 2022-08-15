@@ -16,9 +16,9 @@ function templateconfig {
   for (( int=${MAX_RETRIES}; int >=1; int-=1));
     do
     loginfo "${FUNCNAME[0]}" "template MariaDB configurations (${int} retries left)"
-    cat ${BASE}/etc/conf.d/tpl/my.cnf.${CONTAINER_NAME}.tpl | envsubst > ${BASE}/etc/conf.d/my.cnf
+    cat ${BASE}/etc/conf.d/tpl/my.cnf.${POD_NAME}.tpl | envsubst > ${BASE}/etc/conf.d/my.cnf
     if [ $? -ne 0 ]; then
-      logerror "${FUNCNAME[0]}" "${BASE}/etc/conf.d/tpl/my.cnf.${CONTAINER_NAME}.tpl rendering has been failed"
+      logerror "${FUNCNAME[0]}" "${BASE}/etc/conf.d/tpl/my.cnf.${POD_NAME}.tpl rendering has been failed"
       sleep ${WAIT_SECONDS}
     else
       break
@@ -57,7 +57,7 @@ function recovergalera {
       loginfo "${FUNCNAME[0]}" 'positive sequence number found'
       setconfigmap "seqno" "${SEQNO}" "Update"
       selectbootstrapnode
-      if [ "${NODENAME[0]}" == "${CONTAINER_NAME}" ]; then
+      if [ "${NODENAME[0]}" == "${POD_NAME}" ]; then
         bootstrapgalera
       else
         startgalera
@@ -83,7 +83,7 @@ function recovergalera {
 
         setconfigmap "seqno" "${SEQNO[-1]}" "Update"
         selectbootstrapnode
-        if [ "${NODENAME[0]}" == "${CONTAINER_NAME}" ]; then
+        if [ "${NODENAME[0]}" == "${POD_NAME}" ]; then
           sed -i "s,^safe_to_bootstrap:\s*0,safe_to_bootstrap: 1," ${DATADIR}/grastate.dat
           if [ $? -ne 0 ]; then
             logerror "${FUNCNAME[0]}" "safe_to_bootstrap update failed"

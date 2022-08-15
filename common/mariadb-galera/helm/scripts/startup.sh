@@ -3,6 +3,8 @@ set +e
 set -u
 set -o pipefail
 
+source ${BASE}/bin/common-functions.sh
+
 mysql --defaults-file=/opt/mariadb/etc/my.cnf --protocol=tcp --user=root --host=localhost --port=${MYSQL_PORT} --batch --connect-timeout={{ $.Values.startupProbe.timeoutSeconds.application }} --execute="SHOW DATABASES;" | grep --silent 'mysql'
 if [ $? -eq 0 ]; then
   echo 'MariaDB MySQL API reachable'

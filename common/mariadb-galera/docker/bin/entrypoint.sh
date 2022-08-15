@@ -11,6 +11,8 @@ REQUIRED_ENV_VARS=("MARIADB_ROOT_PASSWORD")
 declare -i MARIADBD_PID
 MAX_RETRIES=10
 WAIT_SECONDS=6
+export CONTAINER_IP=$(hostname --ip-address)
+export POD_NAME=$(hostname --short)
 
 function logjson {
   printf "{\"@timestamp\":\"%s\",\"ecs.version\":\"1.6.0\",\"log.logger\":\"%s\",\"log.origin.function\":\"%s\",\"log.level\":\"%s\",\"message\":\"%s\"}\n" "$(date +%Y.%m.%d-%H:%M:%S-%Z)" "$3" "$4" "$2" "$5" >>/dev/"$1"
