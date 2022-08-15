@@ -10,7 +10,7 @@ goto deploy
 
 :deploy
 imgfree
-kernel {% if pxe_options.ipxe_timeout > 0 %}--timeout {{ "{{" }} pxe_options.ipxe_timeout {{ "}}" }} {% endif %}{{ "{{" }} pxe_options.deployment_aki_path {{ "}}" }} selinux=0 troubleshoot=0 text BOOTIF=${mac} initrd={{ "{{" }} pxe_options.initrd_filename|default("deploy_ramdisk", true) {{ "}}" }} || chain {{ printf "http://%v:%v/%v" .Values.global.ironic_tftp_ip .Values.conductor.deploy.port $conductor.pxe.uefi_pxe_bootfile_name }} || goto retry
+kernel {% if pxe_options.ipxe_timeout > 0 %}--timeout {{ "{{" }} pxe_options.ipxe_timeout {{ "}}" }} {% endif %}{{ "{{" }} pxe_options.deployment_aki_path {{ "}}" }} selinux=0 troubleshoot=0 text {{ pxe_options.pxe_append_params|default("", true) }} BOOTIF=${mac} initrd={{ "{{" }} pxe_options.initrd_filename|default("deploy_ramdisk", true) {{ "}}" }} || chain {{ printf "http://%v:%v/%v" .Values.global.ironic_tftp_ip .Values.conductor.deploy.port $conductor.pxe.uefi_pxe_bootfile_name }} || goto retry
 
 initrd --name {{ "{{" }} pxe_options.initrd_filename|default("deploy_ramdisk", true) {{ "}}" }} {% if pxe_options.ipxe_timeout > 0 %}--timeout {{ "{{" }} pxe_options.ipxe_timeout {{ "}}" }} {% endif %}{{ "{{" }} pxe_options.deployment_ari_path {{ "}}" }} || goto retry
 boot
