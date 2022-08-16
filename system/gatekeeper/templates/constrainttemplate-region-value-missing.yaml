@@ -24,22 +24,26 @@ spec:
         parser_url := sprintf("%s/v3", [input.parameters.helmManifestParserURL])
         parser_resp := http.send({"url": parser_url, "method": "POST", "raise_error": false, "raw_body": iro.data.release, "timeout": "15s"})
 
+        is_region_name(region) = false {
+          not is_string(region)
+        }
+        is_region_name(region) = result {
+          is_string(region)
+          result := regex.match("^[a-z][a-z]-[a-z][a-z]-[0-9]$", region)
+        }
+
         violation[{"msg": msg}] {
           iro.kind == "Secret"
           iro.type == "helm.sh/release.v1"
           iro.metadata.labels.status == "deployed"
 
           parser_resp.status_code == 200
+          not is_region_name(object.get(parser_resp.body, ["values", "global", "region"], ""))
 
-          # NOTE: object.get() would not consider `null` as "missing value", so we need to use get_default() instead
-          values := parser_resp.body.values
-          values_global := get_default(values, "global", {})
-          values_region := get_default(values_global, "region", "")
-          values_region == ""
-
+          owner_info := object.get(parser_resp.body, ["values", "owner-info"], {})
           msg := sprintf(
-            "support-group=%s,service=%s: missing .Values.global.region value",
-            [get_default(values["owner-info"], "support-group", "none"), get_default(values["owner-info"], "service", "none")]
+            "support-group=%s,service=%s: missing or invalid .Values.global.region value",
+            [object.get(owner_info, "support-group", "none"), object.get(owner_info, "service", "none")]
           )
         }
 
@@ -47,34 +51,4 @@ spec:
           parser_resp.status_code != 200
 
           msg := "helm-manifest-parser did not return HTTP status 200. Please retry in ~5 minutes."
-        }
-
-        # need to import some parts from Gatekeeper's pkg/target/regolib/src.rego
-        # to make get_default() work
-        # TODO: convert to object.get() ?
-
-        has_field(object, field) {
-          object[field]
-        }
-        has_field(object, field) {
-          object[field] == false
-        }
-        has_field(object, field) = false {
-          not object[field]
-          not object[field] == false
-        }
-
-        get_default(object, field, _default) = output {
-          has_field(object, field)
-          output = object[field]
-          output != null
-        }
-        get_default(object, field, _default) = output {
-          has_field(object, field)
-          object[field] == null
-          output = _default
-        }
-        get_default(object, field, _default) = output {
-          has_field(object, field) == false
-          output = _default
         }
