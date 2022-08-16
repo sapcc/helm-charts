@@ -27,10 +27,12 @@ spec:
       rego: |
         package vulnerableimages
 
+        iro := input.review.object
+
         checks[{ "container": container, "labels": labels, "response": resp }] {
-          input.review.object.kind == "Pod"
-          labels := object.get(input.review.object.metadata, "labels", {})
-          container := input.review.object.status.containerStatuses[_]
+          iro.kind == "Pod"
+          labels := object.get(iro.metadata, "labels", {})
+          container := iro.status.containerStatuses[_]
 
           # only consider images stored in Keppel since we want to inspect the X-Keppel-Vulnerability-Status header
           regex.match("^keppel", container.image)

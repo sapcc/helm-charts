@@ -21,13 +21,13 @@ spec:
           "ValidatingWebhookConfiguration",
         }
 
-        obj := input.review.object
+        iro := input.review.object
 
         # Violations act like a blocklist, but we want to have an allowlist, so
         # we go through `allowed_webhook` as an intermediate level.
         violation[{"msg": msg}] {
-          labels := object.get(obj.metadata, "labels", {})
-          webhook := obj.webhooks[_]
+          labels := object.get(iro.metadata, "labels", {})
+          webhook := iro.webhooks[_]
           count({ x | x := allowed_webhook[_]; x.name == webhook.name }) == 0
           msg := sprintf(
             "support-group=%s,service=%s: webhook %q does not match our allowlist",
@@ -37,20 +37,20 @@ spec:
 
         # validating webhook: kube-system/gatekeeper (we don't have mutation enabled for Gatekeeper)
         allowed_webhook[{ "name": webhook.name, "reason": "allow-gatekeeper" }] {
-          obj.kind == "ValidatingWebhookConfiguration"
-          obj.metadata.name == "gatekeeper-validating-webhook-configuration"
+          iro.kind == "ValidatingWebhookConfiguration"
+          iro.metadata.name == "gatekeeper-validating-webhook-configuration"
 
-          webhook := obj.webhooks[_]
+          webhook := iro.webhooks[_]
           webhook.clientConfig.service.namespace == "kube-system"
           webhook.clientConfig.service.name == "gatekeeper-webhook-service"
         }
 
         # mutating webhook: kube-system/gatekeeper-tugger
         allowed_webhook[{ "name": webhook.name, "reason": "allow-tugger" }] {
-          obj.kind == "MutatingWebhookConfiguration"
-          obj.metadata.name == "gatekeeper-tugger"
+          iro.kind == "MutatingWebhookConfiguration"
+          iro.metadata.name == "gatekeeper-tugger"
 
-          webhook := obj.webhooks[_]
+          webhook := iro.webhooks[_]
           webhook.clientConfig.service.namespace == "kube-system"
           webhook.clientConfig.service.name == "gatekeeper-tugger"
         }
@@ -64,9 +64,9 @@ spec:
 
         allowed_webhook[{ "name": webhook.name, "reason": "allow-gatekeeper" }] {
           # NOTE: both kinds are allowed
-          obj.metadata.name == sprintf("%s-cert-manager-webhook", [kubeSystemReleaseName])
+          iro.metadata.name == sprintf("%s-cert-manager-webhook", [kubeSystemReleaseName])
 
-          webhook := obj.webhooks[_]
+          webhook := iro.webhooks[_]
           webhook.clientConfig.service.namespace == "kube-system"
           webhook.clientConfig.service.name == sprintf("%s-cert-manager-webhook", [kubeSystemReleaseName])
           [ a | a := webhook.rules[_].apiGroups ] == [ [ "cert-manager.io", "acme.cert-manager.io" ] ]
@@ -75,10 +75,10 @@ spec:
         # validating webhooks: monsoon3/ccloud-seeder, allowed if the webhook
         # only works on objects from ccloud-seeder's own CRDs
         allowed_webhook[{ "name": webhook.name, "reason": "allow-ccloud-seeder" }] {
-          obj.kind == "ValidatingWebhookConfiguration"
-          obj.metadata.name == "gatekeeper-validating-webhook-configuration"
+          iro.kind == "ValidatingWebhookConfiguration"
+          iro.metadata.name == "gatekeeper-validating-webhook-configuration"
 
-          webhook := obj.webhooks[_]
+          webhook := iro.webhooks[_]
           webhook.clientConfig.service.namespace == "monsoon3"
           [ a | a := webhook.rules[_].apiGroups ] == [ [ "seeder.cloud.sap" ] ]
         }

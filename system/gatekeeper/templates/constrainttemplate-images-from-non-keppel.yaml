@@ -20,18 +20,18 @@ spec:
         violation_owners = {"Deployment", "DaemonSet", "StatefulSet", "Job"}
         pod_owners       = {"ReplicaSet", "DaemonSet", "StatefulSet", "Job"}
 
-        obj := input.review.object
+        iro := input.review.object
 
         pod_belongs_to[kind] {
-          ref := obj.metadata.ownerReferences[_]
+          ref := iro.metadata.ownerReferences[_]
           kind := ref.kind
           kind == pod_owners[_]
         }
 
         containers[container] {
-          obj.kind == "Pod"
+          iro.kind == "Pod"
           count(pod_belongs_to) == 0 # otherwise the violation will be reported on the owning object (see `violation_owners`)
-          pod_spec := obj.spec
+          pod_spec := iro.spec
 
           # We have to use object.get() to get a zero value in case the key doesn't exist
           # because array.concat() only works if both of its arguments are non-nil (i.e.
@@ -41,8 +41,8 @@ spec:
         }
 
         containers[container] {
-          obj.kind == violation_owners[_]
-          pod_spec := obj.spec.template.spec
+          iro.kind == violation_owners[_]
+          pod_spec := iro.spec.template.spec
 
           # Same as above.
           initCntrs := object.get(pod_spec, "initContainers", [])
@@ -50,7 +50,7 @@ spec:
         }
 
         violation[{"msg": msg, "details": {"container": container_name, "image": image}}] {
-          labels := object.get(obj.metadata, "labels", {})
+          labels := object.get(iro.metadata, "labels", {})
           container := containers[_]
           container_name := container.name
           image := container.image

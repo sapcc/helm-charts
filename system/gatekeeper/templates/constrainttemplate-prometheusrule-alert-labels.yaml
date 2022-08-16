@@ -13,12 +13,14 @@ spec:
       rego: |
         package prometheusrulealertlabels
 
+        iro := input.review.object
+
         alert_rule[{"rule": rule, "group_name": group.name, "labels": labels}] {
           # match on all rules that are alerts
-          input.review.object.kind == "PrometheusRule"
-          labels := object.get(input.review.object.metadata, "labels", {})
+          iro.kind == "PrometheusRule"
+          labels := object.get(iro.metadata, "labels", {})
 
-          group := input.review.object.spec.groups[_]
+          group := iro.spec.groups[_]
           regex.match(".*\\.alerts$", group.name)
           rule := group.rules[_]
         }

@@ -36,12 +36,13 @@ spec:
           new := to_number(replace(orig, "m", "")) / 1000
         }
 
-        cpu_requests = [canonify_cpu(c) | c = input.review.object.spec.containers[_].resources.requests.cpu]
+        iro := input.review.object
+
+        cpu_requests = [canonify_cpu(c) | c = iro.spec.containers[_].resources.requests.cpu]
 
         violation[{"msg": msg}] {
-          obj := input.review.object
-          obj.kind == "Pod"
-          labels := object.get(obj.metadata, "labels", {})
+          iro.kind == "Pod"
+          labels := object.get(iro.metadata, "labels", {})
 
           total_cpu := sum(cpu_requests)
           total_cpu > input.parameters.maxCpu

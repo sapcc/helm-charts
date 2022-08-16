@@ -13,8 +13,10 @@ spec:
       rego: |
         package ingressannotations
 
+        iro := input.review.object
+
         ingress_annotations = {k |
-          input.review.object.metadata.annotations[k]
+          iro.metadata.annotations[k]
           contains(k, "ingress.kubernetes.io")
         }
 
@@ -27,9 +29,8 @@ spec:
         }
 
         violation[{"msg": msg}] {
-          obj := input.review.object
-          obj.kind == "Ingress"
-          labels := object.get(obj.metadata, "labels", {})
+          iro.kind == "Ingress"
+          labels := object.get(iro.metadata, "labels", {})
 
           count(ingress_annotations) > 0
           found := {a |
@@ -59,15 +60,14 @@ spec:
         rewrite_target = "rewrite-target"
 
         violation[{"msg": msg}] {
-          obj := input.review.object
-          obj.kind == "Ingress"
-          labels := object.get(obj.metadata, "labels", {})
+          iro.kind == "Ingress"
+          labels := object.get(iro.metadata, "labels", {})
           count(ingress_annotations) > 0
 
           # Check that rewrite annotation exists and get its value.
           ingress_annotations[k]
           endswith(k, rewrite_target)
-          v := object.get(obj.metadata.annotations, k, "")
+          v := object.get(iro.metadata.annotations, k, "")
           v != ""
 
           # Find number for capture group placeholder.
@@ -79,7 +79,7 @@ spec:
           # Loop through all rules and paths to check if there is some path value that has the
           # specific number of regex capture group.
           found := {f |
-            path := obj.spec.rules[_].http.paths[_].path
+            path := iro.spec.rules[_].http.paths[_].path
             # Note: the following will also match literal "(" and non-capture groups. For our
             # use case, it should be enough to check if there are any capture groups at all in
             # the paths.

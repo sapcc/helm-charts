@@ -20,19 +20,19 @@ spec:
       rego: |
         package ownerinfoonhelmreleases
 
-        secret := input.review.object
+        iro := input.review.object
         parser_url := sprintf("%s/v3", [input.parameters.helmManifestParserURL])
-        parser_resp := http.send({"url": parser_url, "method": "POST", "raise_error": false, "raw_body": secret.data.release, "timeout": "15s"})
+        parser_resp := http.send({"url": parser_url, "method": "POST", "raise_error": false, "raw_body": iro.data.release, "timeout": "15s"})
 
         violation[{"msg": msg}] {
           parser_resp.status_code != 200
           msg := "helm-manifest-parser did not return HTTP status 200. Please retry in ~5 minutes."
         }
 
-        configmaps = {obj |
-          secret.kind == "Secret"
-          secret.type == "helm.sh/release.v1"
-          secret.metadata.labels.status == "deployed"
+        configmaps[obj] {
+          iro.kind == "Secret"
+          iro.type == "helm.sh/release.v1"
+          iro.metadata.labels.status == "deployed"
 
           parser_resp.status_code == 200
 

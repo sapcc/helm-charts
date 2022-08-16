@@ -20,14 +20,14 @@ spec:
       rego: |
         package gkregionvaluemissing
 
-        helm_release := input.review.object
+        iro := input.review.object
         parser_url := sprintf("%s/v3", [input.parameters.helmManifestParserURL])
-        parser_resp := http.send({"url": parser_url, "method": "POST", "raise_error": false, "raw_body": helm_release.data.release, "timeout": "15s"})
+        parser_resp := http.send({"url": parser_url, "method": "POST", "raise_error": false, "raw_body": iro.data.release, "timeout": "15s"})
 
         violation[{"msg": msg}] {
-          helm_release.kind == "Secret"
-          helm_release.type == "helm.sh/release.v1"
-          helm_release.metadata.labels.status == "deployed"
+          iro.kind == "Secret"
+          iro.type == "helm.sh/release.v1"
+          iro.metadata.labels.status == "deployed"
 
           parser_resp.status_code == 200
 

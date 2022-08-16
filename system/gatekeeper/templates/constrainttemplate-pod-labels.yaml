@@ -20,6 +20,8 @@ spec:
       rego: |
         package podlabels
 
+        iro := input.review.object
+
         # Since we are going to have a lot of violations initially therefore we report on the
         # Deployment/DaemonSet level, where possible, to avoid useless duplication of violations.
 
@@ -35,26 +37,25 @@ spec:
 
         missing_labels_on_pod = [l |
           required_labels[l]
-          not input.review.object.metadata.labels[l]
+          not iro.metadata.labels[l]
         ]
 
         missing_labels_on_pod_template = [l |
           required_labels[l]
-          not input.review.object.spec.template.metadata.labels[l]
+          not iro.spec.template.metadata.labels[l]
         ]
 
         pod_owners = {"ReplicaSet", "DaemonSet", "StatefulSet"}
 
         pod_belongs_to[kind] {
-          ref := input.review.object.metadata.ownerReferences[_]
+          ref := iro.metadata.ownerReferences[_]
           kind := ref.kind
           kind == pod_owners[_]
         }
 
         violation[{"msg": msg}] {
-          obj := input.review.object
-          obj.kind == "Pod"
-          labels := object.get(obj.metadata, "labels", {})
+          iro.kind == "Pod"
+          labels := object.get(iro.metadata, "labels", {})
           count(pod_belongs_to) == 0 # otherwise the violation will be reported on the DaemonSet or Deployment instead
           count(missing_labels_on_pod) == 2
 
@@ -65,11 +66,10 @@ spec:
         }
 
         violation[{"msg": msg}] {
-          obj := input.review.object
-          obj.kind == "Pod"
+          iro.kind == "Pod"
           count(pod_belongs_to) == 0 # otherwise the violation will be reported on the DaemonSet or Deployment instead
 
-          labels := object.get(obj.metadata, "labels", {})
+          labels := object.get(iro.metadata, "labels", {})
           object.get(labels, alert_tier, "")  == "os"
           srv := object.get(labels, alert_service, "")
           found := {f | srv == os_services[_]; f = true}
@@ -84,9 +84,8 @@ spec:
         violation_owners = {"Deployment", "DaemonSet", "StatefulSet"}
 
         violation[{"msg": msg}] {
-          obj := input.review.object
-          obj.kind == violation_owners[_]
-          labels := object.get(obj.metadata, "labels", {})
+          iro.kind == violation_owners[_]
+          labels := object.get(iro.metadata, "labels", {})
           count(missing_labels_on_pod_template) == 2
 
           msg := sprintf(
@@ -96,9 +95,8 @@ spec:
         }
 
         violation[{"msg": msg}] {
-          obj := input.review.object
-          obj.kind == violation_owners[_]
-          labels := object.get(obj.spec.template.metadata, "labels", {})
+          iro.kind == violation_owners[_]
+          labels := object.get(iro.spec.template.metadata, "labels", {})
 
           t := object.get(labels, alert_tier, "")
           t == "os"

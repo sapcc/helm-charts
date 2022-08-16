@@ -26,14 +26,16 @@ spec:
       rego: |
         package deprecatedapiversion
 
+        iro := input.review.object
+
         parser_url := sprintf("%s/v3", [input.parameters.helmManifestParserURL])
-        parser_resp := http.send({"url": parser_url, "method": "POST", "raise_error": false, "raw_body": input.review.object.data.release, "timeout": "15s"})
+        parser_resp := http.send({"url": parser_url, "method": "POST", "raise_error": false, "raw_body": iro.data.release, "timeout": "15s"})
 
         violation[{"msg": msg, "details": {"name": obj.metadata.name, "kind": obj.kind}}] {
-          # `input.review.object` must be a Helm 3 release
-          input.review.object.kind == "Secret"
-          input.review.object.type == "helm.sh/release.v1"
-          input.review.object.metadata.labels.status == "deployed"
+          # must be a Helm 3 release
+          iro.kind == "Secret"
+          iro.type == "helm.sh/release.v1"
+          iro.metadata.labels.status == "deployed"
 
           # release manifest must have been parsed successfully
           parser_resp.status_code == 200

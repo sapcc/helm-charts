@@ -39,6 +39,8 @@ spec:
           image_tag = sL[minus(count(sL), 1)]
         }
 
+        iro := input.review.object
+
         correct_regions[region] {
           region = extract_keppel_region(input.parameters.registry)
         }
@@ -48,10 +50,9 @@ spec:
         }
 
         violation[{"msg": msg}] {
-          obj := input.review.object
-          obj.kind == "Pod"
-          labels := object.get(obj.metadata, "labels", {})
-          container := obj.spec.containers[_]
+          iro.kind == "Pod"
+          labels := object.get(iro.metadata, "labels", {})
+          container := iro.spec.containers[_]
           image := container.image
 
           current_region = extract_keppel_region(image) # this will also check if image is using Keppel or not

@@ -20,12 +20,12 @@ spec:
       rego: |
         package outdatedimagebases
 
-        obj := input.review.object
+        iro := input.review.object
 
         # check each pod container
         checks[{ "container": container, "response": resp }] {
-          obj.kind == "Pod"
-          container := obj.status.containerStatuses[_]
+          iro.kind == "Pod"
+          container := iro.status.containerStatuses[_]
 
           # only consider images stored in Keppel since we want to inspect the X-Keppel-Min-Layer-Created-At header
           regex.match("^keppel", container.image)
@@ -44,7 +44,7 @@ spec:
         }
 
         violation[{"msg": msg}] {
-          labels := object.get(obj.metadata, "labels", {})
+          labels := object.get(iro.metadata, "labels", {})
 
           check := checks[_]
           check.response.status_code == 200

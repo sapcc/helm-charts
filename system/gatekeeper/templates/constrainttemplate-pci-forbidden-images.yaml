@@ -24,11 +24,12 @@ spec:
       rego: |
         package pciforbiddenimages
 
+        iro := input.review.object
+
         violation[{"msg": msg}] {
-          obj := input.review.object
-          obj.kind == "Pod"
-          labels := object.get(obj.metadata, "labels", {})
-          container := obj.spec.containers[_]
+          iro.kind == "Pod"
+          labels := object.get(iro.metadata, "labels", {})
+          container := iro.spec.containers[_]
 
           pattern := input.parameters.patterns[_]
           regex.match(pattern, container.image)
