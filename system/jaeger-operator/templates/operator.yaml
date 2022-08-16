@@ -3,6 +3,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: jaeger-operator
+  namespace: "monsoon3"
 spec:
   replicas: 1
   selector:
@@ -16,11 +17,11 @@ spec:
       serviceAccountName: jaeger-operator
       containers:
       - name: jaeger-operator
-        image: {{ .Values.global.dockerHubMirrorAlternateRegion }}/jaegertracing/jaeger-operator:{{ $options.jaeger.version }}
+        image: {{ .Values.global.dockerHubMirrorAlternateRegion }}/jaegertracing/jaeger-operator:1.30.0
         ports:
         - containerPort: 8383
           name: metrics
-        args: ["start"]
+        args: ["start", "--jaeger-all-in-one-image=keppel.eu-de-1.cloud.sap/ccloud-dockerhub-mirror/jaegertracing/all-in-one"]
         imagePullPolicy: IfNotPresent
         env:
         - name: WATCH_NAMESPACE
