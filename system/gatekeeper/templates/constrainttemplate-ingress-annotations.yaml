@@ -14,6 +14,8 @@ spec:
         package ingressannotations
 
         iro := input.review.object
+        iro_support_group := object.get(iro, ["metadata", "labels", "cc/support-group"], "none")
+        iro_service := object.get(iro, ["metadata", "labels", "cc/service"], "none")
 
         ingress_annotations = {k |
           iro.metadata.annotations[k]
@@ -30,7 +32,6 @@ spec:
 
         violation[{"msg": msg}] {
           iro.kind == "Ingress"
-          labels := object.get(iro.metadata, "labels", {})
 
           count(ingress_annotations) > 0
           found := {a |
@@ -44,7 +45,7 @@ spec:
           count(found) > 0
           msg := sprintf(
             "support-group=%s,service=%s: has disabled annotations: %s",
-            [object.get(labels, "cc/support-group", "none"), object.get(labels, "cc/service", "none"), sort(found)]
+            [iro_support_group, iro_service, sort(found)]
           )
         }
 
@@ -61,7 +62,6 @@ spec:
 
         violation[{"msg": msg}] {
           iro.kind == "Ingress"
-          labels := object.get(iro.metadata, "labels", {})
           count(ingress_annotations) > 0
 
           # Check that rewrite annotation exists and get its value.
@@ -92,6 +92,6 @@ spec:
           count(found) == 0
           msg := sprintf(
             "support-group=%s,service=%s: %q annotation expects at least one spec.rules[].http.paths[].path with regex value that has at least %d capture group(s)",
-            [object.get(labels, "cc/support-group", "none"), object.get(labels, "cc/service", "none"), rewrite_target, placeholder_no],
+            [iro_support_group, iro_service, rewrite_target, placeholder_no],
           )
         }

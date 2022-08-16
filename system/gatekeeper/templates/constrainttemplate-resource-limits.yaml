@@ -14,6 +14,8 @@ spec:
         package resourcelimits
 
         iro := input.review.object
+        iro_support_group := object.get(iro, ["metadata", "labels", "cc/support-group"], "none")
+        iro_service := object.get(iro, ["metadata", "labels", "cc/service"], "none")
 
         # We have such a bafflingly large amount of violations that
         # Gatekeeper cannot report them all at once. I'd rather have
@@ -48,12 +50,11 @@ spec:
 
         violation[{"msg": msg}] {
           iro.kind == "Pod"
-          labels := object.get(iro.metadata, "labels", {})
           count(pod_belongs_to) == 0 # otherwise the violation will be reported on the DaemonSet or Deployment
           count(missing_limits_on_pod) > 0
           msg := sprintf(
             "support-group=%s,service=%s: cpu and memory limits not set on some or all containers",
-            [object.get(labels, "cc/support-group", "none"), object.get(labels, "cc/service", "none")]
+            [iro_support_group, iro_service]
           )
         }
 
@@ -61,10 +62,9 @@ spec:
 
         violation[{"msg": msg}] {
           iro.kind == violation_owners[_]
-          labels := object.get(iro.metadata, "labels", {})
           count(missing_limits_on_pod_template) > 0
           msg := sprintf(
             "support-group=%s,service=%s: cpu and memory limits not set on some or all containers",
-            [object.get(labels, "cc/support-group", "none"), object.get(labels, "cc/service", "none")]
+            [iro_support_group, iro_service]
           )
         }

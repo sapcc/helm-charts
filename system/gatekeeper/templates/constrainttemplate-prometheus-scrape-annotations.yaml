@@ -14,6 +14,8 @@ spec:
         package prometheusscrapeannotations
 
         iro := input.review.object
+        iro_support_group := object.get(iro, ["metadata", "labels", "cc/support-group"], "none")
+        iro_service := object.get(iro, ["metadata", "labels", "cc/service"], "none")
 
         is_valid_target[target] {
           target := data.inventory.namespace[_]["monitoring.coreos.com/v1"].Prometheus[_].metadata.name
@@ -32,9 +34,8 @@ spec:
 
           all_valid_targets := {t | is_valid_target[t]}
 
-          labels := object.get(iro.metadata, "labels", {})
           msg := sprintf(
             "support-group=%s,service=%s: has prometheus.io/scrape annotation, but prometheus.io/targets annotation is missing or does not have a valid value (got: %s, valid: %s)",
-            [object.get(labels, "cc/support-group", "none"), object.get(labels, "cc/service", "none"), json.marshal(sort(targets)), json.marshal(sort(all_valid_targets))],
+            [iro_support_group, iro_service, json.marshal(sort(targets)), json.marshal(sort(all_valid_targets))],
           )
         }

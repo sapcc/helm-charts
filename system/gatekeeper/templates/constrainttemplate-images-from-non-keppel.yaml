@@ -21,6 +21,8 @@ spec:
         pod_owners       = {"ReplicaSet", "DaemonSet", "StatefulSet", "Job"}
 
         iro := input.review.object
+        iro_support_group := object.get(iro, ["metadata", "labels", "cc/support-group"], "none")
+        iro_service := object.get(iro, ["metadata", "labels", "cc/service"], "none")
 
         pod_belongs_to[kind] {
           ref := iro.metadata.ownerReferences[_]
@@ -50,7 +52,6 @@ spec:
         }
 
         violation[{"msg": msg, "details": {"container": container_name, "image": image}}] {
-          labels := object.get(iro.metadata, "labels", {})
           container := containers[_]
           container_name := container.name
           image := container.image
@@ -58,6 +59,6 @@ spec:
           not regex.match("^keppel\\.[^/.]*\\.cloud.sap/", image)
           msg := sprintf(
             "support-group=%s,service=%s: container %q uses an image that is not from a Keppel registry: %s",
-            [object.get(labels, "cc/support-group", "none"), object.get(labels, "cc/service", "none"), container_name, image]
+            [iro_support_group, iro_service, container_name, image]
           )
         }
