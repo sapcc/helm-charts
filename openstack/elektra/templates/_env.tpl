@@ -8,6 +8,18 @@
   value: {{ .Values.monsoon_dashboard_landscape | quote }}
 - name: MONSOON_DASHBOARD_MAIL_SERVER
   value: {{ .Values.monsoon_dashboard_mail_server | quote }}
+- name: MONSOON_DASHBOARD_MAIL_SERVER_PORT
+  value: {{ .Values.monsoon_dashboard_mail_server_port | quote }}
+- name: MONSOON_DASHBOARD_MAIL_DOMAIN
+  value: {{ .Values.monsoon_dashboard_mail_domain | quote }}
+- name: MONSOON_DASHBOARD_MAIL_SENDER
+  value: {{ .Values.monsoon_dashboard_mail_sender | quote }}
+- name: MONSOON_DASHBOARD_MAIL_AUTHENTICATION
+  value: {{ .Values.monsoon_dashboard_mail_authentication | quote }}
+- name: MONSOON_DASHBOARD_MAIL_USER
+  value: {{ .Values.monsoon_dashboard_mail_user | quote }}
+- name: MONSOON_DASHBOARD_MAIL_PASSWORD
+  value: {{ .Values.monsoon_dashboard_mail_password | quote }}
 - name: MONSOON_DASHBOARD_AVATAR_URL
   value: {{ .Values.monsoon_dashboard_avatar_url | quote }}
 - name: MONSOON_DASHBOARD_CAM_URL
