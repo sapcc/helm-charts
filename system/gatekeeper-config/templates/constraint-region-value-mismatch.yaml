@@ -1,0 +1,19 @@
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: GkRegionValueMismatch
+metadata:
+  name: regionvaluemismatch
+  labels:
+    on-prod-ui: 'true'
+spec:
+  enforcementAction: dryrun # set to "deny" to enforce
+  match:
+    kinds:
+      - apiGroups: [""]
+        kinds: ["Secret"]
+    labelSelector:
+      matchLabels:
+        owner: helm
+        status: deployed
+  parameters:
+    helmManifestParserURL: {{ quote .Values.helm_manifest_parser_url }}
+    region: {{.Values.global.region | required ".Values.global.region not found"}}

@@ -1,18 +1,20 @@
 apiVersion: templates.gatekeeper.sh/v1
 kind: ConstraintTemplate
 metadata:
-  name: gkregionvaluemissing
+  name: gkregionvaluemismatch
 spec:
   crd:
     spec:
       names:
-        kind: GkRegionValueMissing
+        kind: GkRegionValueMismatch
       validation:
         # Schema for the `parameters` field
         openAPIV3Schema:
           type: object
           properties:
             helmManifestParserURL:
+              type: string
+            region:
               type: string
 
   targets:
@@ -42,7 +44,9 @@ spec:
           # do not complain about the contents of historical Helm releases
           iro.metadata.labels.status == "deployed"
 
-          not validation.is_region_name(object.get(release, ["values", "global", "region"], ""))
+          region := object.get(release, ["values", "global", "region"], "")
+          validation.is_region_name(region)
+          input.parameters.region != region
 
-          msg := "missing or invalid .Values.global.region value"
+          msg := sprintf(".Values.global.region does not match the deployed region: expected %s, but found \"%s\"", [input.parameters.region, region])
         }
