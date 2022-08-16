@@ -17,9 +17,9 @@
 - name: MONSOON_DASHBOARD_MAIL_AUTHENTICATION
   value: {{ .Values.monsoon_dashboard_mail_authentication | quote }}
 - name: MONSOON_DASHBOARD_MAIL_USER
-  value: {{ .Values.monsoon_dashboard_mail_user | quote }}
+  valueFrom: { secretKeyRef: { name: elektra, key: monsoon.dashboard.mail.user } }
 - name: MONSOON_DASHBOARD_MAIL_PASSWORD
-  value: {{ .Values.monsoon_dashboard_mail_password | quote }}
+  valueFrom: { secretKeyRef: { name: elektra, key: monsoon.dashboard.mail.password } }
 - name: MONSOON_DASHBOARD_AVATAR_URL
   value: {{ .Values.monsoon_dashboard_avatar_url | quote }}
 - name: MONSOON_DASHBOARD_CAM_URL
