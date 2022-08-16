@@ -98,3 +98,7 @@ policy_file = /etc/glance/policy.yaml
 auth_endpoint = {{.Values.global.keystone_api_endpoint_protocol_internal | default "http"}}://{{include "keystone_api_endpoint_host_internal" .}}:{{ .Values.global.keystone_api_port_internal | default 5000}}/v3
 
 {{- include "ini_sections.audit_middleware_notifications" . }}
+
+{{- if .Values.osprofiler.enabled }}
+{{- include "osprofiler" . }}
+{{- end }}
