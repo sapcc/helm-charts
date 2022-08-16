@@ -57,6 +57,12 @@
       target_label: uniqueident
       action: replace
 
+    - source_labels: [__name__, device]
+      regex: '^(snmp_asr|ssh)_[A-za-z0-9]+;((rt|asr)[0-9]+)[a|b]$'
+      replacement: '$2'
+      target_label: asr_pair
+      action: replace
+
   {{ if .Values.authentication.enabled }}
   tls_config:
     cert_file: /etc/prometheus/secrets/prometheus-infra-frontend-sso-cert/sso.crt
