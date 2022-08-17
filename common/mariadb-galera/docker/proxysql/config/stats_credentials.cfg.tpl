@@ -1,0 +1,1 @@
+stats_credentials="${PROXYSQL_STATS_USER}:${PROXYSQL_STATS_PASSWORD}"
