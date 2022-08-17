@@ -455,6 +455,8 @@ output {
         url => "https://{{ .Values.global.forwarding.audit.host }}"
         format => "json"
         http_method => "post"
+        automatic_retries => 60 
+        retry_non_idempotent => true
       }
     }
   }
