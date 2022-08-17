@@ -43,5 +43,8 @@ driver = noop
 
 {{- include "ini_sections.cache" . }}
 
+{{- if .Values.osprofiler.enabled }}
+{{- include "osprofiler" . }}
+{{- end }}
 
 {{- end }}
