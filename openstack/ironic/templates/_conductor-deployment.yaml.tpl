@@ -92,7 +92,7 @@ spec:
             command:
             - bash
             - -c
-            - curl -u {{ .Values.rabbitmq.metrics.user }}:{{ .Values.rabbitmq.metrics.password }} ironic-rabbitmq:{{ .Values.rabbitmq.ports.management }}/api/consumers | sed 's/,/\n/g' | grep $POD_NAME >/dev/null
+            - curl -u {{ .Values.rabbitmq.metrics.user }}:{{ .Values.rabbitmq.metrics.password }} ironic-rabbitmq:{{ .Values.rabbitmq.ports.management }}/api/consumers | sed 's/,/\n/g' | grep ironic-conductor-{{$conductor.name}} >/dev/null
           periodSeconds: 10
           failureThreshold: 30
         livenessProbe:
@@ -100,7 +100,7 @@ spec:
             command:
             - bash
             - -c
-            - openstack-agent-liveness -c ironic --config-file /etc/ironic/ironic.conf --ironic_conductor_host $POD_NAME
+            - openstack-agent-liveness -c ironic --config-file /etc/ironic/ironic.conf --ironic_conductor_host ironic-conductor-{{$conductor.name}}
           periodSeconds: 30
           failureThreshold: 3
           timeoutSeconds: 10
