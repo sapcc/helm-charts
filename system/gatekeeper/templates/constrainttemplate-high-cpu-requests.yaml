@@ -36,11 +36,19 @@ spec:
           new := to_number(replace(orig, "m", "")) / 1000
         }
 
-        cpu_requests = [canonify_cpu(c) | c = input.review.object.spec.containers[_].resources.requests.cpu]
+        iro := input.review.object
+        iro_support_group := object.get(iro, ["metadata", "labels", "cc/support-group"], "none")
+        iro_service := object.get(iro, ["metadata", "labels", "cc/service"], "none")
+
+        cpu_requests = [canonify_cpu(c) | c = iro.spec.containers[_].resources.requests.cpu]
 
         violation[{"msg": msg}] {
-          input.review.object.kind == "Pod"
+          iro.kind == "Pod"
+
           total_cpu := sum(cpu_requests)
           total_cpu > input.parameters.maxCpu
-          msg := sprintf("requests %v CPU in total", [total_cpu])
+          msg := sprintf(
+            "support-group=%s,service=%s: requests %v CPU in total",
+            [iro_support_group, iro_service, total_cpu]
+          )
         }

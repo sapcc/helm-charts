@@ -13,15 +13,18 @@ spec:
       rego: |
         package prometheusscrapeannotations
 
+        iro := input.review.object
+        iro_support_group := object.get(iro, ["metadata", "labels", "cc/support-group"], "none")
+        iro_service := object.get(iro, ["metadata", "labels", "cc/service"], "none")
+
         is_valid_target[target] {
           target := data.inventory.namespace[_]["monitoring.coreos.com/v1"].Prometheus[_].metadata.name
         }
 
         violation[{"msg": msg}] {
           # does this object have Prometheus scraping enabled at all?
-          obj := input.review.object
-          regex.match("^(?:Service|Pod)$", obj.kind)
-          anno := obj.metadata.annotations
+          regex.match("^(?:Service|Pod)$", iro.kind)
+          anno := object.get(iro, ["metadata", "annotations"], {})
           object.get(anno, "prometheus.io/scrape", "false") == "true"
 
           # check that prometheus.io/targets contains only valid values
@@ -30,8 +33,9 @@ spec:
           # ^ NOTE: If the annotation is missing, we will have `targets == [""]` and that empty string value will count as invalid.
 
           all_valid_targets := {t | is_valid_target[t]}
+
           msg := sprintf(
-            "has prometheus.io/scrape annotation, but prometheus.io/targets annotation is missing or does not have a valid value (got: %s, valid: %s)",
-            [json.marshal(sort(targets)), json.marshal(sort(all_valid_targets))],
+            "support-group=%s,service=%s: has prometheus.io/scrape annotation, but prometheus.io/targets annotation is missing or does not have a valid value (got: %s, valid: %s)",
+            [iro_support_group, iro_service, json.marshal(sort(targets)), json.marshal(sort(all_valid_targets))],
           )
         }

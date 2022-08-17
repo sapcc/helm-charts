@@ -24,12 +24,19 @@ spec:
       rego: |
         package pciforbiddenimages
 
+        iro := input.review.object
+        iro_support_group := object.get(iro, ["metadata", "labels", "cc/support-group"], "none")
+        iro_service := object.get(iro, ["metadata", "labels", "cc/service"], "none")
+
         violation[{"msg": msg}] {
-          input.review.object.kind == "Pod"
-          container := input.review.object.spec.containers[_]
+          iro.kind == "Pod"
+          container := iro.spec.containers[_]
 
           pattern := input.parameters.patterns[_]
           regex.match(pattern, container.image)
 
-          msg := sprintf("container %q uses forbidden image: %s", [container.name, container.image])
+          msg := sprintf(
+            "support-group=%s,service=%s: container %q uses forbidden image: %s",
+            [iro_support_group, iro_service, container.name, container.image]
+          )
         }

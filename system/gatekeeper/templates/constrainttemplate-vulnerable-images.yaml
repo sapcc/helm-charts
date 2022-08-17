@@ -27,9 +27,13 @@ spec:
       rego: |
         package vulnerableimages
 
+        iro := input.review.object
+        iro_support_group := object.get(iro, ["metadata", "labels", "cc/support-group"], "none")
+        iro_service := object.get(iro, ["metadata", "labels", "cc/service"], "none")
+
         checks[{ "container": container, "response": resp }] {
-          input.review.object.kind == "Pod"
-          container := input.review.object.status.containerStatuses[_]
+          iro.kind == "Pod"
+          container := iro.status.containerStatuses[_]
 
           # only consider images stored in Keppel since we want to inspect the X-Keppel-Vulnerability-Status header
           regex.match("^keppel", container.image)
@@ -55,5 +59,8 @@ spec:
           # report everything with a definite vulnerability
           status != "Clean"
           status != "Unknown"
-          msg := sprintf("image %s for container %q has vulnerability status %q", [check.container.image, check.container.name, status])
+          msg := sprintf(
+            "support-group=%s,service=%s: image %s for container %q has vulnerability status %q",
+            [iro_support_group, iro_service, check.container.image, check.container.name, status]
+          )
         }

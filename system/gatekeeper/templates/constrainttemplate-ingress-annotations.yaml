@@ -13,8 +13,12 @@ spec:
       rego: |
         package ingressannotations
 
+        iro := input.review.object
+        iro_support_group := object.get(iro, ["metadata", "labels", "cc/support-group"], "none")
+        iro_service := object.get(iro, ["metadata", "labels", "cc/service"], "none")
+
         ingress_annotations = {k |
-          input.review.object.metadata.annotations[k]
+          iro.metadata.annotations[k]
           contains(k, "ingress.kubernetes.io")
         }
 
@@ -27,7 +31,8 @@ spec:
         }
 
         violation[{"msg": msg}] {
-          input.review.object.kind == "Ingress"
+          iro.kind == "Ingress"
+
           count(ingress_annotations) > 0
           found := {a |
             ingress_annotations[k]
@@ -38,7 +43,10 @@ spec:
           }
 
           count(found) > 0
-          msg := sprintf("has disabled annotations: %s", [sort(found)])
+          msg := sprintf(
+            "support-group=%s,service=%s: has disabled annotations: %s",
+            [iro_support_group, iro_service, sort(found)]
+          )
         }
 
         # Starting in Ingress Controller >= v0.22.0, ingress definitions using the rewrite-target
@@ -53,14 +61,13 @@ spec:
         rewrite_target = "rewrite-target"
 
         violation[{"msg": msg}] {
-          obj := input.review.object
-          obj.kind == "Ingress"
+          iro.kind == "Ingress"
           count(ingress_annotations) > 0
 
           # Check that rewrite annotation exists and get its value.
           ingress_annotations[k]
           endswith(k, rewrite_target)
-          v := object.get(obj.metadata.annotations, k, "")
+          v := object.get(iro.metadata, ["annotations", k], "")
           v != ""
 
           # Find number for capture group placeholder.
@@ -72,7 +79,7 @@ spec:
           # Loop through all rules and paths to check if there is some path value that has the
           # specific number of regex capture group.
           found := {f |
-            path := obj.spec.rules[_].http.paths[_].path
+            path := iro.spec.rules[_].http.paths[_].path
             # Note: the following will also match literal "(" and non-capture groups. For our
             # use case, it should be enough to check if there are any capture groups at all in
             # the paths.
@@ -84,7 +91,7 @@ spec:
 
           count(found) == 0
           msg := sprintf(
-            "%q annotation expects at least one spec.rules[].http.paths[].path with regex value that has at least %d capture group(s)",
-            [rewrite_target, placeholder_no],
+            "support-group=%s,service=%s: %q annotation expects at least one spec.rules[].http.paths[].path with regex value that has at least %d capture group(s)",
+            [iro_support_group, iro_service, rewrite_target, placeholder_no],
           )
         }

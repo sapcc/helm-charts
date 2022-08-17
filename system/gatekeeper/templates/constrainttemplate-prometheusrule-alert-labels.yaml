@@ -13,10 +13,15 @@ spec:
       rego: |
         package prometheusrulealertlabels
 
+        iro := input.review.object
+        iro_support_group := object.get(iro, ["metadata", "labels", "cc/support-group"], "none")
+        iro_service := object.get(iro, ["metadata", "labels", "cc/service"], "none")
+
         alert_rule[{"rule": rule, "group_name": group.name}] {
           # match on all rules that are alerts
-          input.review.object.kind == "PrometheusRule"
-          group := input.review.object.spec.groups[_]
+          iro.kind == "PrometheusRule"
+
+          group := iro.spec.groups[_]
           regex.match(".*\\.alerts$", group.name)
           rule := group.rules[_]
         }
@@ -24,35 +29,50 @@ spec:
         violation[{"msg": msg}] {
           alert := alert_rule[_]
           # warn if we don't have a valid labels.severity
-          not regex.match("^(?:critical|warning|info)$", object.get(alert.rule.labels, "severity", ""))
-          msg := sprintf("rule %s in group %s does not have a valid value for labels.severity (\"critical\", \"warning\" or \"info\")", [alert.rule.alert, alert.group_name])
+          not regex.match("^(?:critical|warning|info)$", object.get(alert.rule, ["labels", "severity"], ""))
+          msg := sprintf(
+            "support-group=%s,service=%s: rule %s in group %s does not have a valid value for labels.severity (\"critical\", \"warning\" or \"info\")",
+            [iro_support_group, iro_service, alert.rule.alert, alert.group_name]
+          )
         }
 
         violation[{"msg": msg}] {
           alert := alert_rule[_]
           # warn if we don't have a labels.playbook when labels.severity == "critical"
-          object.get(alert.rule.labels, "severity", "") == "critical"
-          object.get(alert.rule.labels, "playbook", "") == ""
-          msg := sprintf("rule %s in group %s does not have a valid value for labels.playbook (required for critical alerts)", [alert.rule.alert, alert.group_name])
+          object.get(alert.rule, ["labels", "severity"], "") == "critical"
+          object.get(alert.rule, ["labels", "playbook"], "") == ""
+          msg := sprintf(
+            "support-group=%s,service=%s: rule %s in group %s does not have a valid value for labels.playbook (required for critical alerts)",
+            [iro_support_group, iro_service, alert.rule.alert, alert.group_name]
+          )
         }
 
         violation[{"msg": msg}] {
           alert := alert_rule[_]
           # warn if we don't have something in labels.tier
-          not regex.match("\\S", object.get(alert.rule.labels, "tier", ""))
-          msg := sprintf("rule %s in group %s does not have labels.tier", [alert.rule.alert, alert.group_name])
+          not regex.match("\\S", object.get(alert.rule, ["labels", "tier"], ""))
+          msg := sprintf(
+            "support-group=%s,service=%s: rule %s in group %s does not have labels.tier",
+            [iro_support_group, iro_service, alert.rule.alert, alert.group_name]
+          )
         }
 
         violation[{"msg": msg}] {
           alert := alert_rule[_]
           # warn if we don't have something in annotations.description
-          not regex.match("\\S", object.get(alert.rule.annotations, "description", ""))
-          msg := sprintf("rule %s in group %s does not have annotations.description", [alert.rule.alert, alert.group_name])
+          not regex.match("\\S", object.get(alert.rule, ["annotations", "description"], ""))
+          msg := sprintf(
+            "support-group=%s,service=%s: rule %s in group %s does not have annotations.description",
+            [iro_support_group, iro_service, alert.rule.alert, alert.group_name]
+          )
         }
 
         violation[{"msg": msg}] {
           alert := alert_rule[_]
           # warn if we don't have something in annotations.summary
-          not regex.match("\\S", object.get(alert.rule.annotations, "summary", ""))
-          msg := sprintf("rule %s in group %s does not have annotations.summary", [alert.rule.alert, alert.group_name])
+          not regex.match("\\S", object.get(alert.rule, ["annotations", "summary"], ""))
+          msg := sprintf(
+            "support-group=%s,service=%s: rule %s in group %s does not have annotations.summary",
+            [iro_support_group, iro_service, alert.rule.alert, alert.group_name]
+          )
         }

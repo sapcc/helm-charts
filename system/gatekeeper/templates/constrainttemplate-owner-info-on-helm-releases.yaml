@@ -20,19 +20,19 @@ spec:
       rego: |
         package ownerinfoonhelmreleases
 
-        secret := input.review.object
+        iro := input.review.object
         parser_url := sprintf("%s/v3", [input.parameters.helmManifestParserURL])
-        parser_resp := http.send({"url": parser_url, "method": "POST", "raise_error": false, "raw_body": secret.data.release, "timeout": "15s"})
+        parser_resp := http.send({"url": parser_url, "method": "POST", "raise_error": false, "raw_body": iro.data.release, "timeout": "15s"})
 
         violation[{"msg": msg}] {
           parser_resp.status_code != 200
           msg := "helm-manifest-parser did not return HTTP status 200. Please retry in ~5 minutes."
         }
 
-        configmaps = {obj |
-          input.review.object.kind == "Secret"
-          secret.type == "helm.sh/release.v1"
-          secret.metadata.labels.status == "deployed"
+        configmaps[obj] {
+          iro.kind == "Secret"
+          iro.type == "helm.sh/release.v1"
+          iro.metadata.labels.status == "deployed"
 
           parser_resp.status_code == 200
 
@@ -44,8 +44,12 @@ spec:
         violation[{"msg": msg}] {
           # Check if an 'owner-of-<release-name>' ConfigMap exists for this release.
           count(configmaps) == 0
-          release_name := input.review.object.metadata.labels.name
-          msg := sprintf("could not find ConfigMap: owner-of-%s", [release_name])
+          owner_info := object.get(parser_resp.body, ["values", "owner-info"], {})
+          release_name := iro.metadata.labels.name
+          msg := sprintf(
+            "support-group=%s,service=%s: could not find ConfigMap: owner-of-%s",
+            [object.get(owner_info, "support-group", "none"), object.get(owner_info, "service", "none"), release_name]
+          )
         }
 
         violation[{"msg": msg}] {
@@ -54,10 +58,12 @@ spec:
           # Check if 'primary-maintainer' label is defined. Existence of this label denotes that
           # the 'data.maintainers' field is defined and it contains at least one maintainer.
           obj := configmaps[_]
-          pm := object.get(obj.metadata.labels, "primary-maintainer", "")
+          pm := object.get(obj.metadata, ["labels", "primary-maintainer"], "")
           pm == ""
+
+          owner_info := object.get(parser_resp.body, ["values", "owner-info"], {})
           msg := sprintf(
-            "ConfigMap %q does not have %q label: parent chart needs to define %q in its Values.yaml file with at least one maintainer",
-            [obj.metadata.name, "primary-maintainer", "owner-info.maintainers"],
+            "support-group=%s,service=%s: ConfigMap %q does not have %q label: parent chart needs to define %q in its Values.yaml file with at least one maintainer",
+            [object.get(owner_info, "support-group", "none"), object.get(owner_info, "service", "none"), obj.metadata.name, "primary-maintainer", "owner-info.maintainers"],
           )
         }

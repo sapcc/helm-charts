@@ -20,16 +20,20 @@ spec:
         violation_owners = {"Deployment", "DaemonSet", "StatefulSet", "Job"}
         pod_owners       = {"ReplicaSet", "DaemonSet", "StatefulSet", "Job"}
 
+        iro := input.review.object
+        iro_support_group := object.get(iro, ["metadata", "labels", "cc/support-group"], "none")
+        iro_service := object.get(iro, ["metadata", "labels", "cc/service"], "none")
+
         pod_belongs_to[kind] {
-          ref := input.review.object.metadata.ownerReferences[_]
+          ref := iro.metadata.ownerReferences[_]
           kind := ref.kind
           kind == pod_owners[_]
         }
 
         containers[container] {
-          input.review.object.kind == "Pod"
+          iro.kind == "Pod"
           count(pod_belongs_to) == 0 # otherwise the violation will be reported on the owning object (see `violation_owners`)
-          pod_spec := input.review.object.spec
+          pod_spec := iro.spec
 
           # We have to use object.get() to get a zero value in case the key doesn't exist
           # because array.concat() only works if both of its arguments are non-nil (i.e.
@@ -39,8 +43,8 @@ spec:
         }
 
         containers[container] {
-          input.review.object.kind == violation_owners[_]
-          pod_spec := input.review.object.spec.template.spec
+          iro.kind == violation_owners[_]
+          pod_spec := iro.spec.template.spec
 
           # Same as above.
           initCntrs := object.get(pod_spec, "initContainers", [])
@@ -53,5 +57,8 @@ spec:
           image := container.image
 
           not regex.match("^keppel\\.[^/.]*\\.cloud.sap/", image)
-          msg := sprintf("container %q uses an image that is not from a Keppel registry: %s", [container_name, image])
+          msg := sprintf(
+            "support-group=%s,service=%s: container %q uses an image that is not from a Keppel registry: %s",
+            [iro_support_group, iro_service, container_name, image]
+          )
         }

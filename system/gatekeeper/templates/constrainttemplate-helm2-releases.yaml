@@ -13,8 +13,10 @@ spec:
       rego: |
         package helm2releases
 
+        iro := input.review.object
+
         violation[{"msg": msg}] {
-          input.review.object.kind == "ConfigMap"
-          input.review.object.metadata.labels.OWNER == "TILLER"
+          iro.kind == "ConfigMap"
+          iro.metadata.labels.OWNER == "TILLER"
           msg := "deployed with an old Helm version"
         }

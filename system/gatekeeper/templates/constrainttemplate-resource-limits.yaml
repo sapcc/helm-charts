@@ -13,6 +13,10 @@ spec:
       rego: |
         package resourcelimits
 
+        iro := input.review.object
+        iro_support_group := object.get(iro, ["metadata", "labels", "cc/support-group"], "none")
+        iro_service := object.get(iro, ["metadata", "labels", "cc/service"], "none")
+
         # We have such a bafflingly large amount of violations that
         # Gatekeeper cannot report them all at once. I'd rather have
         # *something* reported for as many things as possible, even if it
@@ -23,15 +27,15 @@ spec:
         resource_types = {"cpu", "memory"}
 
         missing_limits_on_pod[{"container": container.name, "type": resource_type}] {
-          container := input.review.object.spec.containers[_]
-          limits := object.get(container.resources, "limits", {})
+          container := iro.spec.containers[_]
+          limits := object.get(container, ["resources", "limits"], {})
           resource_type := resource_types[_]
           object.get(limits, resource_type, "") == ""
         }
 
         missing_limits_on_pod_template[{"container": container.name, "type": resource_type}] {
-          container := input.review.object.spec.template.spec.containers[_]
-          limits := object.get(container.resources, "limits", {})
+          container := iro.spec.template.spec.containers[_]
+          limits := object.get(container, ["resources", "limits"], {})
           resource_type := resource_types[_]
           object.get(limits, resource_type, "") == ""
         }
@@ -39,22 +43,28 @@ spec:
         pod_owners = {"ReplicaSet", "DaemonSet", "StatefulSet"}
 
         pod_belongs_to[kind] {
-          ref := input.review.object.metadata.ownerReferences[_]
+          ref := iro.metadata.ownerReferences[_]
           kind := ref.kind
           kind == pod_owners[_]
         }
 
         violation[{"msg": msg}] {
-          input.review.object.kind == "Pod"
+          iro.kind == "Pod"
           count(pod_belongs_to) == 0 # otherwise the violation will be reported on the DaemonSet or Deployment
           count(missing_limits_on_pod) > 0
-          msg := "cpu and memory limits not set on some or all containers"
+          msg := sprintf(
+            "support-group=%s,service=%s: cpu and memory limits not set on some or all containers",
+            [iro_support_group, iro_service]
+          )
         }
 
         violation_owners = {"Deployment", "DaemonSet", "StatefulSet"}
 
         violation[{"msg": msg}] {
-          input.review.object.kind == violation_owners[_]
+          iro.kind == violation_owners[_]
           count(missing_limits_on_pod_template) > 0
-          msg := "cpu and memory limits not set on some or all containers"
+          msg := sprintf(
+            "support-group=%s,service=%s: cpu and memory limits not set on some or all containers",
+            [iro_support_group, iro_service]
+          )
         }
