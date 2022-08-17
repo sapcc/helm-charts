@@ -10,12 +10,14 @@ spec:
 
   targets:
     - target: admission.k8s.gatekeeper.sh
+      libs:
+        - |
+          {{ .Files.Get "lib/add-support-labels.rego" | nindent 10 }}
       rego: |
         package resourcelimits
+        import data.lib.add_support_labels
 
         iro := input.review.object
-        iro_support_group := object.get(iro, ["metadata", "labels", "cc/support-group"], "none")
-        iro_service := object.get(iro, ["metadata", "labels", "cc/service"], "none")
 
         # We have such a bafflingly large amount of violations that
         # Gatekeeper cannot report them all at once. I'd rather have
@@ -52,10 +54,7 @@ spec:
           iro.kind == "Pod"
           count(pod_belongs_to) == 0 # otherwise the violation will be reported on the DaemonSet or Deployment
           count(missing_limits_on_pod) > 0
-          msg := sprintf(
-            "support-group=%s,service=%s: cpu and memory limits not set on some or all containers",
-            [iro_support_group, iro_service]
-          )
+          msg := add_support_labels.from_k8s_object(iro, "cpu and memory limits not set on some or all containers")
         }
 
         violation_owners = {"Deployment", "DaemonSet", "StatefulSet"}
@@ -63,8 +62,5 @@ spec:
         violation[{"msg": msg}] {
           iro.kind == violation_owners[_]
           count(missing_limits_on_pod_template) > 0
-          msg := sprintf(
-            "support-group=%s,service=%s: cpu and memory limits not set on some or all containers",
-            [iro_support_group, iro_service]
-          )
+          msg := add_support_labels.from_k8s_object(iro, "cpu and memory limits not set on some or all containers")
         }

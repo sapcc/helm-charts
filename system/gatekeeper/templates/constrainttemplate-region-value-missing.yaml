@@ -17,8 +17,12 @@ spec:
 
   targets:
     - target: admission.k8s.gatekeeper.sh
+      libs:
+        - |
+          {{ .Files.Get "lib/add-support-labels.rego" | nindent 10 }}
       rego: |
         package gkregionvaluemissing
+        import data.lib.add_support_labels
 
         iro := input.review.object
         parser_url := sprintf("%s/v3", [input.parameters.helmManifestParserURL])
@@ -40,11 +44,8 @@ spec:
           parser_resp.status_code == 200
           not is_region_name(object.get(parser_resp.body, ["values", "global", "region"], ""))
 
-          owner_info := object.get(parser_resp.body, ["values", "owner-info"], {})
-          msg := sprintf(
-            "support-group=%s,service=%s: missing or invalid .Values.global.region value",
-            [object.get(owner_info, "support-group", "none"), object.get(owner_info, "service", "none")]
-          )
+          msgBase := "missing or invalid .Values.global.region value"
+          msg := add_support_labels.from_helm_release(parser_resp.body, msgBase)
         }
 
         violation[{"msg": msg}] {

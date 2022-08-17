@@ -23,8 +23,12 @@ spec:
 
   targets:
     - target: admission.k8s.gatekeeper.sh
+      libs:
+        - |
+          {{ .Files.Get "lib/add-support-labels.rego" | nindent 10 }}
       rego: |
         package deprecatedapiversion
+        import data.lib.add_support_labels
 
         iro := input.review.object
 
@@ -43,12 +47,12 @@ spec:
           # find objects in the manifest that use deprecated API versions
           obj := parser_resp.body.items[_]
           input.parameters.apiVersions[_] == obj.apiVersion
-          owner_info := object.get(parser_resp.body, ["values", "owner-info"], {})
 
-          msg := sprintf(
-            "support-group=%s,service=%s: %s %s declared with deprecated API version: %s (will break in k8s v%s)",
-            [object.get(owner_info, "support-group", "none"), object.get(owner_info, "service", "none"), obj.kind, obj.metadata.name, obj.apiVersion, input.parameters.kubernetesVersion]
+          msgBase := sprintf(
+            "%s %s declared with deprecated API version: %s (will break in k8s v%s)",
+            [obj.kind, obj.metadata.name, obj.apiVersion, input.parameters.kubernetesVersion]
           )
+          msg := add_support_labels.from_helm_release(parser_resp.body, msgBase)
         }
 
         violation[{"msg": msg}] {

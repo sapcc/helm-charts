@@ -17,8 +17,12 @@ spec:
 
   targets:
     - target: admission.k8s.gatekeeper.sh
+      libs:
+        - |
+          {{ .Files.Get "lib/add-support-labels.rego" | nindent 10 }}
       rego: |
         package ownerinfoonhelmreleases
+        import data.lib.add_support_labels
 
         iro := input.review.object
         parser_url := sprintf("%s/v3", [input.parameters.helmManifestParserURL])
@@ -44,12 +48,9 @@ spec:
         violation[{"msg": msg}] {
           # Check if an 'owner-of-<release-name>' ConfigMap exists for this release.
           count(configmaps) == 0
-          owner_info := object.get(parser_resp.body, ["values", "owner-info"], {})
           release_name := iro.metadata.labels.name
-          msg := sprintf(
-            "support-group=%s,service=%s: could not find ConfigMap: owner-of-%s",
-            [object.get(owner_info, "support-group", "none"), object.get(owner_info, "service", "none"), release_name]
-          )
+          msgBase := sprintf("could not find ConfigMap: owner-of-%s", [release_name])
+          msg := add_support_labels.from_helm_release(parser_resp.body, msgBase)
         }
 
         violation[{"msg": msg}] {
@@ -61,9 +62,9 @@ spec:
           pm := object.get(obj.metadata, ["labels", "primary-maintainer"], "")
           pm == ""
 
-          owner_info := object.get(parser_resp.body, ["values", "owner-info"], {})
-          msg := sprintf(
-            "support-group=%s,service=%s: ConfigMap %q does not have %q label: parent chart needs to define %q in its Values.yaml file with at least one maintainer",
-            [object.get(owner_info, "support-group", "none"), object.get(owner_info, "service", "none"), obj.metadata.name, "primary-maintainer", "owner-info.maintainers"],
+          msgBase := sprintf(
+            "ConfigMap %q does not have %q label: parent chart needs to define %q in its Values.yaml file with at least one maintainer",
+            [obj.metadata.name, "primary-maintainer", "owner-info.maintainers"],
           )
+          msg := add_support_labels.from_helm_release(parser_resp.body, msgBase)
         }
