@@ -17,34 +17,22 @@ spec:
         iro_support_group := object.get(iro, ["metadata", "labels", "cc/support-group"], "none")
         iro_service := object.get(iro, ["metadata", "labels", "cc/service"], "none")
 
-        ingress_annotations = {k |
-          iro.metadata.annotations[k]
-          contains(k, "ingress.kubernetes.io")
-        }
-
         # These annotations have been disabled due to CVE-2021-25742
         disabled_annotations = {
-          "auth-snippet",
-          "configuration-snippet",
-          "server-snippet",
-          "modsecurity-snippet",
+          "ingress.kubernetes.io/auth-snippet",
+          "ingress.kubernetes.io/configuration-snippet",
+          "ingress.kubernetes.io/server-snippet",
+          "ingress.kubernetes.io/modsecurity-snippet",
         }
 
         violation[{"msg": msg}] {
           iro.kind == "Ingress"
 
-          count(ingress_annotations) > 0
-          found := {a |
-            ingress_annotations[k]
-            sL := split(k, "/")
-            count(sL) == 2
-            sL[1] == disabled_annotations[_]
-            a = sL[1]
-          }
+          annotation := disabled_annotations[_]
+          is_string(object.get(iro, ["metadata", "annotations", annotation], null))
 
-          count(found) > 0
           msg := sprintf(
-            "support-group=%s,service=%s: has disabled annotations: %s",
-            [iro_support_group, iro_service, sort(found)]
+            "support-group=%s,service=%s: has disabled annotation: %q",
+            [iro_support_group, iro_service, annotation]
           )
         }
