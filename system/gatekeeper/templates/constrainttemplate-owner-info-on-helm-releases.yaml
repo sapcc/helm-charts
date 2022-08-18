@@ -20,40 +20,39 @@ spec:
       libs:
         - |
           {{ .Files.Get "lib/add-support-labels.rego" | nindent 10 }}
+        - |
+          {{ .Files.Get "lib/helm-release.rego" | nindent 10 }}
       rego: |
         package ownerinfoonhelmreleases
         import data.lib.add_support_labels
+        import data.lib.helm_release
 
         iro := input.review.object
-        parser_url := sprintf("%s/v3", [input.parameters.helmManifestParserURL])
-        parser_resp := http.send({"url": parser_url, "method": "POST", "raise_error": false, "raw_body": iro.data.release, "timeout": "15s"})
-
-        violation[{"msg": msg}] {
-          parser_resp.status_code != 200
-          msg := "helm-manifest-parser did not return HTTP status 200. Please retry in ~5 minutes."
+        release := helm_release.parse_k8s_object(iro, input.parameters.helmManifestParserURL)
+        violation[{"msg": release.error}] {
+          release.error != ""
         }
 
         configmaps[obj] {
-          iro.kind == "Secret"
-          iro.type == "helm.sh/release.v1"
-          iro.metadata.labels.status == "deployed"
+          release.error == ""
 
-          parser_resp.status_code == 200
-
-          obj := parser_resp.body.items[_]
+          obj := release.items[_]
           obj.kind == "ConfigMap"
           startswith(obj.metadata.name, "owner-of-")
         }
 
         violation[{"msg": msg}] {
+          release.error == ""
+
           # Check if an 'owner-of-<release-name>' ConfigMap exists for this release.
           count(configmaps) == 0
           release_name := iro.metadata.labels.name
           msgBase := sprintf("could not find ConfigMap: owner-of-%s", [release_name])
-          msg := add_support_labels.from_helm_release(parser_resp.body, msgBase)
+          msg := add_support_labels.from_helm_release(release, msgBase)
         }
 
         violation[{"msg": msg}] {
+          release.error == ""
           count(configmaps) > 0
 
           # Check if 'primary-maintainer' label is defined. Existence of this label denotes that
@@ -66,5 +65,5 @@ spec:
             "ConfigMap %q does not have %q label: parent chart needs to define %q in its Values.yaml file with at least one maintainer",
             [obj.metadata.name, "primary-maintainer", "owner-info.maintainers"],
           )
-          msg := add_support_labels.from_helm_release(parser_resp.body, msgBase)
+          msg := add_support_labels.from_helm_release(release, msgBase)
         }

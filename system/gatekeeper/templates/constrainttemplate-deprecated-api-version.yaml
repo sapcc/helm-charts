@@ -26,37 +26,29 @@ spec:
       libs:
         - |
           {{ .Files.Get "lib/add-support-labels.rego" | nindent 10 }}
+        - |
+          {{ .Files.Get "lib/helm-release.rego" | nindent 10 }}
       rego: |
         package deprecatedapiversion
         import data.lib.add_support_labels
+        import data.lib.helm_release
 
         iro := input.review.object
-
-        parser_url := sprintf("%s/v3", [input.parameters.helmManifestParserURL])
-        parser_resp := http.send({"url": parser_url, "method": "POST", "raise_error": false, "raw_body": iro.data.release, "timeout": "15s"})
+        release := helm_release.parse_k8s_object(iro, input.parameters.helmManifestParserURL)
+        violation[{"msg": release.error}] {
+          release.error != ""
+        }
 
         violation[{"msg": msg, "details": {"name": obj.metadata.name, "kind": obj.kind}}] {
-          # must be a Helm 3 release
-          iro.kind == "Secret"
-          iro.type == "helm.sh/release.v1"
-          iro.metadata.labels.status == "deployed"
-
-          # release manifest must have been parsed successfully
-          parser_resp.status_code == 200
+          release.error == ""
 
           # find objects in the manifest that use deprecated API versions
-          obj := parser_resp.body.items[_]
+          obj := release.items[_]
           input.parameters.apiVersions[_] == obj.apiVersion
 
           msgBase := sprintf(
             "%s %s declared with deprecated API version: %s (will break in k8s v%s)",
             [obj.kind, obj.metadata.name, obj.apiVersion, input.parameters.kubernetesVersion]
           )
-          msg := add_support_labels.from_helm_release(parser_resp.body, msgBase)
-        }
-
-        violation[{"msg": msg}] {
-          parser_resp.status_code != 200
-
-          msg := "helm-manifest-parser did not return HTTP status 200. Please retry in ~5 minutes."
+          msg := add_support_labels.from_helm_release(release, msgBase)
         }
