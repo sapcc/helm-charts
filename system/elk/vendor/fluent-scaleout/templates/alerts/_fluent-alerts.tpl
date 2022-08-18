@@ -1,7 +1,7 @@
 groups:
 - name: fluent.alerts
   rules:
-  - alert: ElkControlplaneLogstashLogsMissing
+  - alert: ElkScaleoutLogstashLogsMissing
     expr: sum(rate(fluentd_output_status_num_records_total{component="fluent"}[30m])) by (nodename,kubernetes_pod_name) == 0
     for: 60m
     labels:
@@ -23,4 +23,4 @@ groups:
       tier: os
     annotations:
       description: 'ELK in {{`{{ $labels.region }}`}} is receiving more logs in the last 1h compared to 24h ago.'
-      summary:  fluentd controlplane, check log volume.
+      summary:  fluentd scaleout, check log volume.
