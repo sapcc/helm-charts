@@ -10,8 +10,6 @@ global:
   ironic_pxe_port_public: '69'
   osprofiler: {}
   dbUser: ironic
-  pgbouncer:
-    enabled: true
   fernetRouter:
     image: "monsoon/fernet-router:latest"
   domain_seeds:
@@ -19,6 +17,8 @@ global:
 
 imageVersion: rocky-20200214123740
 imageVersionStaticdhcpd: rocky-20201012110713
+
+debug: "True"
 
 tempest:
   enabled: false
@@ -47,10 +47,10 @@ pod:
     api:
       limits:
         memory: 4Gi
-        cpu: "2"
+        cpu: "3000m"
       requests:
         memory: 3Gi
-        cpu: 1500m
+        cpu: 2500m
     inspector:
       limits:
         memory: 512Mi
@@ -61,10 +61,10 @@ pod:
     conductor:
       limits:
         memory: 1.5Gi
-        cpu: 1500m
+        cpu: 2000m
       requests:
         memory: 1Gi
-        cpu: 1000m
+        cpu: 1500m
     pxe:
       limits:
         memory: 256Mi
@@ -94,7 +94,6 @@ pod:
         memory: 24Mi
         cpu: 10m
 
-
   lifecycle:
     upgrades:
       deployments:
@@ -104,22 +103,7 @@ pod:
           maxUnavailable: 0
           maxSurge: 1
 
-#imageVersion: null
-#imageVersionIronicApi: null
-#imageVersionIronicConductor: null
-#imageVersionIronicInspector: null
-#imageVersionIronicPxe: null
 swift_multi_tenant: true
-
-debug: "True"
-dbName: ironic
-#dbPassword: null
-
-max_pool_size: 1
-max_overflow: 50
-
-inspectordbName: ironic_inspector
-inspectordbUser: ironic_inspector
 
 api:
   override: {}
@@ -140,27 +124,34 @@ inspector:
       router: null
 
 conductor:
-  set_host: false
   hosts: []
   deploy:
     protocol: 'http'
     port: 8088
   defaults:
-    deploy:
-      default_boot_option: 'local'
-    conductor:
-      statsd_port: 9125
+    default:
+      enabled_hardware_types: ipmi
+      enabled_boot_interfaces: pxe, ipxe
+      enabled_deploy_interfaces: direct
+      enabled_inspect_interfaces: inspector,no-inspect
+      enabled_management_interfaces: ipmitool
+      enabled_power_interfaces: ipmitool
+      enabled_console_interfaces: ipmitool-shellinabox,no-console
+      enabled_raid_interfaces: agent,no-raid
+      enabled_network_interfaces: neutron
+      enabled_storage_interfaces: cinder,noop
+      enabled_vendor_interfaces: ipmitool
+
       # enables collecting metrics for rpc calls
       statsd_enabled: false
+      statsd_port: 9125
     dhcp: {}
     pxe:
-      ipxe_use_swift: true
-
       kernel_append_params: "ipa-hardware-initialization-delay=120 console=tty0 console=ttyS0,115200 nofb nomodeset vga=normal"
       
+      ipxe_use_swift: true
       pxe_bootfile_name: "undionly.kpxe"
       ipxe_bootfile_name: "undionly.kpxe"
-      
       uefi_pxe_bootfile_name: "ipxe.efi"
       uefi_ipxe_bootfile_name: "ipxe.efi"
 
@@ -172,7 +163,6 @@ agent:
 
 console:
   ssh_loglevel: error
-  #secret: null
 
 tftp_ip: null
 tftp_files:
@@ -185,6 +175,7 @@ portmetrics: '9102'
 #network_cleaning_uuid: DEFINE_IN_REGION_CHART
 neutron_url_timeout: 210
 neutron_port_setup_delay: 0
+neutron_connect_retries: 3
 
 #swift_account: null
 #swift_tempurl: null
@@ -292,11 +283,11 @@ mysql_metrics:
       - "groups"
 
 mariadb:
-  enabled: false
+  enabled: true
   alerts:
     service: ironic
   backup_v2:
-    enabled: false
+    enabled: true
     backup_dir: ./backup
     databases:
       - ironic
@@ -304,18 +295,19 @@ mariadb:
     verify_tables:
       - ironic.nodes
       - ironic_inspector.nodes
-  backup:
-    enabled: false
-    metrics: false
-    image_version: v0.5.15
-    os_password: "AHardPa55w0rd!"
+
   root_password: "AHardPa55w0rd!"
-  buffer_pool_size: "8192M"
-  log_file_size: "2048M"
   name: ironic
   initdb_configmap: ironic-mariadb-init
   persistence_claim:
     name: db-ironic-pvclaim
+
+dbName: ironic
+#dbPassword: null
+max_pool_size: 1
+max_overflow: 50
+inspectordbName: ironic_inspector
+inspectordbUser: ironic_inspector
 
 sentry:
   enabled: true

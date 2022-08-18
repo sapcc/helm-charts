@@ -54,13 +54,8 @@ api_workers = {{ .Values.api.api_workers }}
 {{- end }}
 
 [database]
-{{- if eq .Values.mariadb.enabled true }}
 connection = mysql+pymysql://ironic:{{.Values.global.dbPassword}}@ironic-mariadb.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}/ironic?charset=utf8
 {{- include "ini_sections.database_options_mysql" . }}
-{{- else }}
-connection = {{ tuple . "ironic" "ironic" .Values.global.dbPassword | include "db_url" }}
-{{- include "ini_sections.database_options" . }}
-{{- end }}
 
 [keystone]
 auth_section = keystone_authtoken

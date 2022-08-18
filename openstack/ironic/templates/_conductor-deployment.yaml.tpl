@@ -39,7 +39,7 @@ spec:
         configmap-etc-conductor-hash: {{ tuple . $conductor | include "ironic_conductor_configmap" | sha256sum }}{{- if $conductor.jinja2 }}{{`
         configmap-etc-jinja2-hash: {{ block | safe | sha256sum }}
 `}}{{- end }}
-        {{- if $conductor.conductor.statsd_enabled }}
+        {{- if .Values.conductor.deploy.statsd_enabled }}
         prometheus.io/scrape: "true"
         prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
         {{- end }}
@@ -183,7 +183,7 @@ spec:
             port: ironic-console
           initialDelaySeconds: 5
           periodSeconds: 3
-      {{- if $conductor.conductor.statsd_enabled }}
+      {{- if .Values.conductor.deploy.statsd_enabled }}
       - name: oslo-exporter
         image: {{ .Values.global.dockerHubMirror }}/prom/statsd-exporter
         args:
@@ -193,7 +193,7 @@ spec:
           containerPort: 9102
           protocol: TCP
         - name: statsd-udp
-          containerPort: {{ $conductor.conductor.statsd_port }}
+          containerPort: {{ .Values.conductor.deploy.statsd_port }}
           protocol: UDP
         volumeMounts:
         - name: ironic-etc

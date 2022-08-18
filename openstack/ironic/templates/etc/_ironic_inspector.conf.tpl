@@ -56,13 +56,8 @@ enroll_node_fields = conductor_group:testing
 driver = noop
 
 [database]
-{{- if eq .Values.mariadb.enabled true }}
 connection = mysql+pymysql://ironic_inspector:{{.Values.inspectordbPassword}}@ironic-mariadb.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}/ironic_inspector?charset=utf8
 {{- include "ini_sections.database_options_mysql" . }}
-{{- else }}
-connection = {{ tuple . "ironic_inspector" "ironic_inspector" .Values.inspectordbPassword | include "db_url" }}
-{{- include "ini_sections.database_options" . }}
-{{- end }}
 
 {{- include "ini_sections.audit_middleware_notifications" . }}
 
