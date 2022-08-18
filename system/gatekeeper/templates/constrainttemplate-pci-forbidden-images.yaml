@@ -30,13 +30,12 @@ spec:
 
         iro := input.review.object
 
-        violation[{"msg": msg}] {
+        violation[{"msg": add_support_labels.from_k8s_object(iro, msg)}] {
           iro.kind == "Pod"
           container := iro.spec.containers[_]
 
           pattern := input.parameters.patterns[_]
           regex.match(pattern, container.image)
 
-          msgBase := sprintf("container %q uses forbidden image: %s", [container.name, container.image])
-          msg := add_support_labels.from_k8s_object(iro, msgBase)
+          msg := sprintf("container %q uses forbidden image: %s", [container.name, container.image])
         }

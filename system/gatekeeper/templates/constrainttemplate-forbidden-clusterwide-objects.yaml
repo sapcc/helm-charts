@@ -29,11 +29,10 @@ spec:
 
         # Violations act like a blocklist, but we want to have an allowlist, so
         # we go through `allowed_webhook` as an intermediate level.
-        violation[{"msg": msg}] {
+        violation[{"msg": add_support_labels.from_k8s_object(iro, msg)}] {
           webhook := iro.webhooks[_]
           count({ x | x := allowed_webhook[_]; x.name == webhook.name }) == 0
-          msgBase := sprintf("webhook %q does not match our allowlist", [webhook.name])
-          msg := add_support_labels.from_k8s_object(iro, msgBase)
+          msg := sprintf("webhook %q does not match our allowlist", [webhook.name])
         }
 
         # validating webhook: kube-system/gatekeeper (we don't have mutation enabled for Gatekeeper)

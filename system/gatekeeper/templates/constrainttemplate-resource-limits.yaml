@@ -50,17 +50,17 @@ spec:
           kind == pod_owners[_]
         }
 
-        violation[{"msg": msg}] {
+        violation[{"msg": add_support_labels.from_k8s_object(iro, msg)}] {
           iro.kind == "Pod"
           count(pod_belongs_to) == 0 # otherwise the violation will be reported on the DaemonSet or Deployment
           count(missing_limits_on_pod) > 0
-          msg := add_support_labels.from_k8s_object(iro, "cpu and memory limits not set on some or all containers")
+          msg := "cpu and memory limits not set on some or all containers"
         }
 
         violation_owners = {"Deployment", "DaemonSet", "StatefulSet"}
 
-        violation[{"msg": msg}] {
+        violation[{"msg": add_support_labels.from_k8s_object(iro, msg)}] {
           iro.kind == violation_owners[_]
           count(missing_limits_on_pod_template) > 0
-          msg := add_support_labels.from_k8s_object(iro, "cpu and memory limits not set on some or all containers")
+          msg := "cpu and memory limits not set on some or all containers"
         }

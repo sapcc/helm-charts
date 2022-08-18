@@ -53,7 +53,7 @@ spec:
           msg := "doop-image-parser did not return HTTP status 200. Please retry in ~5 minutes."
         }
 
-        violation[{"msg": msg}] {
+        violation[{"msg": add_support_labels.from_k8s_object(iro, msg)}] {
           check := checks[_]
           check.response.status_code == 200
           status := trim_space(object.get(check.response.body, "X-Keppel-Vulnerability-Status", "Unclear"))
@@ -62,9 +62,8 @@ spec:
           status != "Clean"
           status != "Unknown"
 
-          msgBase := sprintf(
+          msg := sprintf(
             "image %s for container %q has vulnerability status %q",
             [check.container.image, check.container.name, status]
           )
-          msg := add_support_labels.from_k8s_object(iro, msgBase)
         }

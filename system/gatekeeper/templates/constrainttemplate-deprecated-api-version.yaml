@@ -39,16 +39,15 @@ spec:
           release.error != ""
         }
 
-        violation[{"msg": msg, "details": {"name": obj.metadata.name, "kind": obj.kind}}] {
+        violation[{"msg": add_support_labels.from_helm_release(release, msg)}] {
           release.error == ""
 
           # find objects in the manifest that use deprecated API versions
           obj := release.items[_]
           input.parameters.apiVersions[_] == obj.apiVersion
 
-          msgBase := sprintf(
+          msg := sprintf(
             "%s %s declared with deprecated API version: %s (will break in k8s v%s)",
             [obj.kind, obj.metadata.name, obj.apiVersion, input.parameters.kubernetesVersion]
           )
-          msg := add_support_labels.from_helm_release(release, msgBase)
         }

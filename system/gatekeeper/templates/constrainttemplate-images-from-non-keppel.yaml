@@ -53,12 +53,11 @@ spec:
           container := array.concat(pod_spec.containers, initCntrs)[_]
         }
 
-        violation[{"msg": msg, "details": {"container": container_name, "image": image}}] {
+        violation[{"msg": add_support_labels.from_k8s_object(iro, msg)}] {
           container := containers[_]
           container_name := container.name
           image := container.image
 
           not regex.match("^keppel\\.[^/.]*\\.cloud.sap/", image)
-          msgBase := sprintf("container %q uses an image that is not from a Keppel registry: %s", [container_name, image])
-          msg := add_support_labels.from_k8s_object(iro, msgBase)
+          msg := sprintf("container %q uses an image that is not from a Keppel registry: %s", [container_name, image])
         }

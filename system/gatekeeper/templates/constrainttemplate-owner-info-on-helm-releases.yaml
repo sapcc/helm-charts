@@ -41,17 +41,16 @@ spec:
           startswith(obj.metadata.name, "owner-of-")
         }
 
-        violation[{"msg": msg}] {
+        violation[{"msg": add_support_labels.from_helm_release(release, msg)}] {
           release.error == ""
 
           # Check if an 'owner-of-<release-name>' ConfigMap exists for this release.
           count(configmaps) == 0
           release_name := iro.metadata.labels.name
-          msgBase := sprintf("could not find ConfigMap: owner-of-%s", [release_name])
-          msg := add_support_labels.from_helm_release(release, msgBase)
+          msg := sprintf("could not find ConfigMap: owner-of-%s", [release_name])
         }
 
-        violation[{"msg": msg}] {
+        violation[{"msg": add_support_labels.from_helm_release(release, msg)}] {
           release.error == ""
           count(configmaps) > 0
 
@@ -61,9 +60,8 @@ spec:
           pm := object.get(obj.metadata, ["labels", "primary-maintainer"], "")
           pm == ""
 
-          msgBase := sprintf(
+          msg := sprintf(
             "ConfigMap %q does not have %q label: parent chart needs to define %q in its Values.yaml file with at least one maintainer",
             [obj.metadata.name, "primary-maintainer", "owner-info.maintainers"],
           )
-          msg := add_support_labels.from_helm_release(release, msgBase)
         }

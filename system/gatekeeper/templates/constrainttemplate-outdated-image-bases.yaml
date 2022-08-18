@@ -47,7 +47,7 @@ spec:
           msg := "doop-image-parser did not return HTTP status 200. Please retry in ~5 minutes."
         }
 
-        violation[{"msg": msg}] {
+        violation[{"msg": add_support_labels.from_k8s_object(iro, msg)}] {
           check := checks[_]
           check.response.status_code == 200
           createdAtAsUnixTime := to_number(trim_space(object.get(check.response.body, "X-Keppel-Min-Layer-Created-At", "Unclear")))
@@ -58,9 +58,8 @@ spec:
           ageInDays := ageInSeconds / 86400
           ageInDays > 365
 
-          msgBase := sprintf(
+          msg := sprintf(
             "image %s for container %q uses a very old base image (oldest layer is %.0f days old)",
             [check.container.image, check.container.name, ageInDays]
           )
-          msg := add_support_labels.from_k8s_object(iro, msgBase)
         }

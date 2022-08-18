@@ -53,7 +53,7 @@ spec:
           alternate_region = extract_keppel_region(input.parameters.registryAlternateRegion)
         }
 
-        violation[{"msg": msg}] {
+        violation[{"msg": add_support_labels.from_k8s_object(iro, msg)}] {
           iro.kind == "Pod"
           container := iro.spec.containers[_]
           image := container.image
@@ -64,6 +64,5 @@ spec:
           count(found) == 0
 
           image_name := extract_image_name_with_tag(image)
-          msgBase := sprintf("container %q uses incorrect regional registry for image: %s", [container.name, image_name])
-          msg := add_support_labels.from_k8s_object(iro, msgBase)
+          msg := sprintf("container %q uses incorrect regional registry for image: %s", [container.name, image_name])
         }

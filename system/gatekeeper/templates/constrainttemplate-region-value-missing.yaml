@@ -41,10 +41,9 @@ spec:
           result := regex.match("^[a-z][a-z]-[a-z][a-z]-[0-9]$", region)
         }
 
-        violation[{"msg": msg}] {
+        violation[{"msg": add_support_labels.from_helm_release(release, msg)}] {
           release.error == ""
           not is_region_name(object.get(release, ["values", "global", "region"], ""))
 
-          msgBase := "missing or invalid .Values.global.region value"
-          msg := add_support_labels.from_helm_release(release, msgBase)
+          msg := "missing or invalid .Values.global.region value"
         }

@@ -27,12 +27,11 @@ spec:
           "ingress.kubernetes.io/modsecurity-snippet",
         }
 
-        violation[{"msg": msg}] {
+        violation[{"msg": add_support_labels.from_k8s_object(iro, msg)}] {
           iro.kind == "Ingress"
 
           annotation := disabled_annotations[_]
           is_string(object.get(iro, ["metadata", "annotations", annotation], null))
 
-          msgBase := sprintf("has disabled annotation: %q", [annotation])
-          msg := add_support_labels.from_k8s_object(iro, msgBase)
+          msg := sprintf("has disabled annotation: %q", [annotation])
         }

@@ -61,16 +61,15 @@ spec:
         # policy appears to be inconsistent about whether to check the support
         # labels on the outer object or on the PodSpec within.
 
-        violation[{"msg": msg}] {
+        violation[{"msg": add_support_labels.from_k8s_object(iro, msg)}] {
           iro.kind == "Pod"
           count(pod_belongs_to) == 0 # otherwise the violation will be reported on the DaemonSet or Deployment instead
           count(missing_labels_on_pod) == 2
 
-          msgBase := sprintf("pod does not have either one of the required labels: %s", [sort(missing_labels_on_pod)])
-          msg := add_support_labels.from_k8s_object(iro, msgBase)
+          msg := sprintf("pod does not have either one of the required labels: %s", [sort(missing_labels_on_pod)])
         }
 
-        violation[{"msg": msg}] {
+        violation[{"msg": add_support_labels.from_k8s_object(iro, msg)}] {
           iro.kind == "Pod"
           count(pod_belongs_to) == 0 # otherwise the violation will be reported on the DaemonSet or Deployment instead
 
@@ -80,24 +79,22 @@ spec:
           found := {f | srv == os_services[_]; f = true}
           count(found) == 0
 
-          msgBase := sprintf(
+          msg := sprintf(
             "pod has %q label with value: os, but %q label is missing or does not have a valid value (got: %s, valid: %s)",
             [alert_tier, alert_service, json.marshal(srv), os_services],
           )
-          msg := add_support_labels.from_k8s_object(iro, msgBase)
         }
 
         violation_owners = {"Deployment", "DaemonSet", "StatefulSet"}
 
-        violation[{"msg": msg}] {
+        violation[{"msg": add_support_labels.from_k8s_object(iro, msg)}] {
           iro.kind == violation_owners[_]
           count(missing_labels_on_pod_template) == 2
 
-          msgBase := sprintf("pod does not have either one of the required labels: %s", [sort(missing_labels_on_pod_template)])
-          msg := add_support_labels.from_k8s_object(iro, msgBase)
+          msg := sprintf("pod does not have either one of the required labels: %s", [sort(missing_labels_on_pod_template)])
         }
 
-        violation[{"msg": msg}] {
+        violation[{"msg": add_support_labels.from_k8s_object(iro.spec.template, msg)}] {
           iro.kind == violation_owners[_]
           labels := object.get(iro.spec.template.metadata, "labels", {})
 
@@ -107,9 +104,8 @@ spec:
           found := {f | srv == os_services[_]; f = true}
           count(found) == 0
 
-          msgBase := sprintf(
+          msg := sprintf(
             "pod has %q label with value: os, but %q label is missing or does not have a valid value (got: %s, valid: %s)",
             [alert_tier, alert_service, json.marshal(srv), os_services],
           )
-          msg := add_support_labels.from_k8s_object(iro.spec.template, msgBase)
         }
