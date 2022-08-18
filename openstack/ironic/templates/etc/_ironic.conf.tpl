@@ -54,7 +54,8 @@ api_workers = {{ .Values.api.api_workers }}
 {{- end }}
 
 [database]
-connection = mysql+pymysql://ironic:{{.Values.global.dbPassword}}@ironic-mariadb.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}/ironic?charset=utf8
+#connection = mysql+pymysql://ironic:{{.Values.global.dbPassword}}@ironic-mariadb.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}/ironic?charset=utf8
+connection = {{ include "db_url_mysql" . }}
 {{- include "ini_sections.database_options_mysql" . }}
 
 [keystone]
