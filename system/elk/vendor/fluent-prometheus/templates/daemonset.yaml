@@ -2,14 +2,14 @@ kind: DaemonSet
 apiVersion: apps/v1
 
 metadata:
-  name: fluent
+  name: fluent-prometheus
   namespace: elk
   labels:
-    component: fluent
+    component: fluent-prometheus
 spec:
   selector:
     matchLabels:
-      component: fluent
+      component: fluent-prometheus
   minReadySeconds: 15
   updateStrategy:
     type: RollingUpdate
@@ -18,11 +18,10 @@ spec:
   template:
     metadata:
       labels:
-        component: fluent
+        component: fluent-prometheus
       annotations:
         checksum/fluent-bin-configmap.yaml: {{ include  (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
         checksum/fluent.conf: {{ include  (print $.Template.BasePath "/_fluent.conf.tpl") . | sha256sum }}
-        checksum/prometheus.conf: {{ include  (print $.Template.BasePath "/_prometheus.conf.tpl") . | sha256sum }}
         checksum/fluent-start: {{ include  (print $.Template.BasePath "/_fluent-start.tpl") . | sha256sum }}
         checksum/pattern: {{ include  (print $.Template.BasePath "/_pattern.tpl") . | sha256sum }}
         scheduler.alpha.kubernetes.io/tolerations: '[{"key":"species","value":"hypervisor"}]'
@@ -34,7 +33,7 @@ spec:
       volumes:
         - name: fluent-bin
           configMap:
-            name: fluent-bin
+            name: fluent-bin-prometheus
         - name: varlog
           hostPath:
             path: /var/log
@@ -42,7 +41,7 @@ spec:
           hostPath:
             path: /var/lib/docker/containers
       containers:
-        - name: fluent
+        - name: fluent-prometheus
           image: {{.Values.global.registry}}/elk-fluent:{{.Values.image_version}}
           imagePullPolicy: IfNotPresent
           command: ["/usr/local/bin/dumb-init", "/bin/bash", "/fluent-bin/fluent-start"]
