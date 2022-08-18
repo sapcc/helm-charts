@@ -36,9 +36,14 @@
   @type null
 </match>
 
-# prometheus monitoring config
+# expose metrics in prometheus format
 
-@include /fluent-bin/prometheus.conf
+<source>
+  @type prometheus
+  bind 0.0.0.0
+  port 24231
+  metrics_path /metrics
+</source>
 
 <filter kubernetes.**>
   @type kubernetes_metadata
@@ -49,15 +54,41 @@
   container_name_to_kubernetes_regexp '^(?<name_prefix>[^_]+)_(?<container_name>[^\._]+)(\.(?<container_hash>[^_]+))?_(?<pod_name>[^_]+)_(?<namespace>[^_]+)_[^_]+_[^_]+$'
 </filter>
 
-<store>
+# metrics
+# # count number of incoming records per tag
+<filter kubernetes.**>
   @type prometheus
   <metric>
-    name fluentd_output_status_num_records_total
+    name fluentd_input_status_num_records_total
     type counter
-    desc The total number of outgoing records
+    desc The total number of incoming records
     <labels>
+      hostname ${hostname}
       nodename "#{ENV['K8S_NODE_NAME']}"
-      container $.kubernetes.container_name
     </labels>
   </metric>
-</store>
+</filter>
+
+<match kubernetes.**>
+  @type rewrite_tag_filter
+  <rule>
+    key message
+    pattern /ResolvError/
+    tag "FLUENTERROR.${tag}"
+  </rule>
+</match>
+
+<match FLUENTERROR.**>
+  <store>
+    @type prometheus
+    <metric>
+      name fluentd_output_resolv_error
+      type counter
+      desc The total number of rosolv errata to ES
+      <labels>
+        nodename "#{ENV['K8S_NODE_NAME']}"
+        container $.kubernetes.container_name
+      </labels>
+    </metric>
+  </store>
+</match>
