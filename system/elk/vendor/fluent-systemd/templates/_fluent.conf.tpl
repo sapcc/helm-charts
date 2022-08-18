@@ -6,12 +6,6 @@
   log_level warn
 </system>
 
-<label @FLUENT_LOG>
-  <match fluent.*>
-    @type stdout
-  </match>
-</label>
-
 # All the auto-generated files should use the tag "file.<filename>".
 <source>
   @type systemd
