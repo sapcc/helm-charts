@@ -21,22 +21,21 @@ spec:
 
   targets:
     - target: admission.k8s.gatekeeper.sh
+      libs:
+        - |
+          {{ .Files.Get "lib/add-support-labels.rego" | nindent 10 }}
       rego: |
         package pciforbiddenimages
+        import data.lib.add_support_labels
 
         iro := input.review.object
-        iro_support_group := object.get(iro, ["metadata", "labels", "cc/support-group"], "none")
-        iro_service := object.get(iro, ["metadata", "labels", "cc/service"], "none")
 
-        violation[{"msg": msg}] {
+        violation[{"msg": add_support_labels.from_k8s_object(iro, msg)}] {
           iro.kind == "Pod"
           container := iro.spec.containers[_]
 
           pattern := input.parameters.patterns[_]
           regex.match(pattern, container.image)
 
-          msg := sprintf(
-            "support-group=%s,service=%s: container %q uses forbidden image: %s",
-            [iro_support_group, iro_service, container.name, container.image]
-          )
+          msg := sprintf("container %q uses forbidden image: %s", [container.name, container.image])
         }

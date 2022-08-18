@@ -17,12 +17,21 @@ spec:
 
   targets:
     - target: admission.k8s.gatekeeper.sh
+      libs:
+        - |
+          {{ .Files.Get "lib/add-support-labels.rego" | nindent 10 }}
+        - |
+          {{ .Files.Get "lib/helm-release.rego" | nindent 10 }}
       rego: |
         package gkregionvaluemissing
+        import data.lib.add_support_labels
+        import data.lib.helm_release
 
         iro := input.review.object
-        parser_url := sprintf("%s/v3", [input.parameters.helmManifestParserURL])
-        parser_resp := http.send({"url": parser_url, "method": "POST", "raise_error": false, "raw_body": iro.data.release, "timeout": "15s"})
+        release := helm_release.parse_k8s_object(iro, input.parameters.helmManifestParserURL)
+        violation[{"msg": release.error}] {
+          release.error != ""
+        }
 
         is_region_name(region) = false {
           not is_string(region)
@@ -32,23 +41,9 @@ spec:
           result := regex.match("^[a-z][a-z]-[a-z][a-z]-[0-9]$", region)
         }
 
-        violation[{"msg": msg}] {
-          iro.kind == "Secret"
-          iro.type == "helm.sh/release.v1"
-          iro.metadata.labels.status == "deployed"
+        violation[{"msg": add_support_labels.from_helm_release(release, msg)}] {
+          release.error == ""
+          not is_region_name(object.get(release, ["values", "global", "region"], ""))
 
-          parser_resp.status_code == 200
-          not is_region_name(object.get(parser_resp.body, ["values", "global", "region"], ""))
-
-          owner_info := object.get(parser_resp.body, ["values", "owner-info"], {})
-          msg := sprintf(
-            "support-group=%s,service=%s: missing or invalid .Values.global.region value",
-            [object.get(owner_info, "support-group", "none"), object.get(owner_info, "service", "none")]
-          )
-        }
-
-        violation[{"msg": msg}] {
-          parser_resp.status_code != 200
-
-          msg := "helm-manifest-parser did not return HTTP status 200. Please retry in ~5 minutes."
+          msg := "missing or invalid .Values.global.region value"
         }

@@ -17,12 +17,14 @@ spec:
 
   targets:
     - target: admission.k8s.gatekeeper.sh
+      libs:
+        - |
+          {{ .Files.Get "lib/add-support-labels.rego" | nindent 10 }}
       rego: |
         package outdatedimagebases
+        import data.lib.add_support_labels
 
         iro := input.review.object
-        iro_support_group := object.get(iro, ["metadata", "labels", "cc/support-group"], "none")
-        iro_service := object.get(iro, ["metadata", "labels", "cc/service"], "none")
 
         # check each pod container
         checks[{ "container": container, "response": resp }] {
@@ -45,7 +47,7 @@ spec:
           msg := "doop-image-parser did not return HTTP status 200. Please retry in ~5 minutes."
         }
 
-        violation[{"msg": msg}] {
+        violation[{"msg": add_support_labels.from_k8s_object(iro, msg)}] {
           check := checks[_]
           check.response.status_code == 200
           createdAtAsUnixTime := to_number(trim_space(object.get(check.response.body, "X-Keppel-Min-Layer-Created-At", "Unclear")))
@@ -55,8 +57,9 @@ spec:
           ageInSeconds := nowAsUnixTime - createdAtAsUnixTime
           ageInDays := ageInSeconds / 86400
           ageInDays > 365
+
           msg := sprintf(
-            "support-group=%s,service=%s: image %s for container %q uses a very old base image (oldest layer is %.0f days old)",
-            [iro_support_group, iro_service, check.container.image, check.container.name, ageInDays]
+            "image %s for container %q uses a very old base image (oldest layer is %.0f days old)",
+            [check.container.image, check.container.name, ageInDays]
           )
         }

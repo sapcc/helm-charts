@@ -10,8 +10,12 @@ spec:
 
   targets:
     - target: admission.k8s.gatekeeper.sh
+      libs:
+        - |
+          {{ .Files.Get "lib/add-support-labels.rego" | nindent 10 }}
       rego: |
         package imagesfromnonkeppel
+        import data.lib.add_support_labels
 
         # This violation is usually only detectable on the
         # deployment/daemonset/statefulset level since Tugger will fix the
@@ -21,8 +25,6 @@ spec:
         pod_owners       = {"ReplicaSet", "DaemonSet", "StatefulSet", "Job"}
 
         iro := input.review.object
-        iro_support_group := object.get(iro, ["metadata", "labels", "cc/support-group"], "none")
-        iro_service := object.get(iro, ["metadata", "labels", "cc/service"], "none")
 
         pod_belongs_to[kind] {
           ref := iro.metadata.ownerReferences[_]
@@ -51,14 +53,11 @@ spec:
           container := array.concat(pod_spec.containers, initCntrs)[_]
         }
 
-        violation[{"msg": msg, "details": {"container": container_name, "image": image}}] {
+        violation[{"msg": add_support_labels.from_k8s_object(iro, msg)}] {
           container := containers[_]
           container_name := container.name
           image := container.image
 
           not regex.match("^keppel\\.[^/.]*\\.cloud.sap/", image)
-          msg := sprintf(
-            "support-group=%s,service=%s: container %q uses an image that is not from a Keppel registry: %s",
-            [iro_support_group, iro_service, container_name, image]
-          )
+          msg := sprintf("container %q uses an image that is not from a Keppel registry: %s", [container_name, image])
         }
