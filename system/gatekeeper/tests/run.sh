@@ -14,13 +14,13 @@ trap "kill $pid_helm_manifest_parser $pid_doop_image_checker" INT TERM ERR EXIT
 
 (
   cd ..
-  ${HELM} dep up >/dev/null
+  [[ ! -d charts ]] && ${HELM} dep up >/dev/null
   ${HELM} template gatekeeper . --values ci/test-values.yaml --output-dir tests/rendered-chart >/dev/null
 )
 
 (
   cd ../../gatekeeper-config
-  ${HELM} dep up >/dev/null
+  [[ ! -d charts ]] && ${HELM} dep up >/dev/null
   ${HELM} template gatekeeper-config . --values ci/test-values.yaml --output-dir ../gatekeeper/tests/rendered-chart >/dev/null
 )
 
