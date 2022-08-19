@@ -24,7 +24,8 @@
 # All the auto-generated files should use the tag "file.<filename>".
 <source>
   @type tail
-  path /var/log/containers/fluentd*
+  path /var/log/containers/fluent*
+  exclude_path /var/log/containers/fluent-prometheus*
   pos_file /var/log/fluent-prometheus.pos
   time_format %Y-%m-%dT%H:%M:%S.%N
   tag kubernetes.*
@@ -72,23 +73,27 @@
 <match kubernetes.**>
   @type rewrite_tag_filter
   <rule>
-    key message
+    key log
     pattern /ResolvError/
     tag "FLUENTERROR.${tag}"
   </rule>
 </match>
 
 <match FLUENTERROR.**>
-  @type prometheus
+  @type copy
   <store>
+    @type prometheus
     <metric>
       name fluentd_output_resolv_error
       type counter
-      desc The total number of rosolv errata to ES
+      desc The total number of resolve errata to ES
       <labels>
         nodename "#{ENV['K8S_NODE_NAME']}"
-        container $.kubernetes.container_name
+        fluent_container $.kubernetes.pod_name
       </labels>
     </metric>
+  </store>
+  <store>
+    @type stdout
   </store>
 </match>
