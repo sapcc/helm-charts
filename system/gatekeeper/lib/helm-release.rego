@@ -35,16 +35,12 @@ parse_k8s_object(obj, baseURL) = result {
 __is_helm_release(obj) = true {
   obj.kind == "Secret"
   obj.type == "helm.sh/release.v1"
-  obj.metadata.labels.status == "deployed"
 }
 __is_helm_release(obj) = false {
   obj.kind != "Secret"
 }
 __is_helm_release(obj) = false {
   obj.type != "helm.sh/release.v1"
-}
-__is_helm_release(obj) = false {
-  obj.metadata.labels.status != "deployed"
 }
 
 __parse_response(resp) = result {
