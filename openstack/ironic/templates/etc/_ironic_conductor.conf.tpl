@@ -58,8 +58,6 @@ tftp_root = /tftpboot
 {{- end }}
 
 ipxe_config_template = /etc/ironic/ipxe_config.template
-pxe_config_template = /etc/ironic/pxe_config.template
-uefi_pxe_config_template = /etc/ironic/uefi_pxe_config.template
 
 {{- if $conductor.jinja2 }}
 {{`
