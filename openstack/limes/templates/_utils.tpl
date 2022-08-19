@@ -45,6 +45,8 @@
   value: "/etc/limes/project.rego"
 - name: OS_AUTH_URL
   value: "http://keystone.{{ $.Values.global.keystoneNamespace }}.svc.kubernetes.{{ $.Values.global.region }}.{{ $.Values.global.tld }}:5000/v3"
+- name: OS_INTERFACE
+  value: "internal"
 - name: OS_USER_DOMAIN_NAME
   value: "Default"
 - name: OS_USERNAME
