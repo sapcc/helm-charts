@@ -81,6 +81,8 @@ resources:
         payloads:
             exclude:
               - adminPass
+              - user_data
+              - metadata
         custom_actions:
             # server actions
             addFloatingIp: update/add/floatingip
