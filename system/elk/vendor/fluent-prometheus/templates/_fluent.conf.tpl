@@ -79,8 +79,8 @@
 </match>
 
 <match FLUENTERROR.**>
+  @type prometheus
   <store>
-    @type prometheus
     <metric>
       name fluentd_output_resolv_error
       type counter
