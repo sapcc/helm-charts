@@ -94,6 +94,6 @@
     </metric>
   </store>
   <store>
-    @type stdout
+    @type null
   </store>
 </match>
