@@ -253,6 +253,7 @@ spec:
               name: modules
             - mountPath: /container.init
               name: neutron-container-init
+        {{- include "jaeger_agent_sidecar" . | indent 8 }}
       volumes:
         - name: instances
           persistentVolumeClaim:
