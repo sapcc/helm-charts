@@ -15,8 +15,6 @@
     "network_admin": "role:network_admin and rule:owner",
     "context_is_network_admin": "role:cloud_network_admin or rule:network_admin",
 
-    "cells_scheduler_filter:TargetCellFilter": "rule:context_is_admin",
-
     "compute:create": "rule:context_is_editor",
     "compute:create:attach_network": "rule:context_is_editor",
     "compute:create:attach_volume": "rule:context_is_editor",
