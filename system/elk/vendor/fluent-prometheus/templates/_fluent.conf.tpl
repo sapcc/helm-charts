@@ -97,3 +97,31 @@
     @type null
   </store>
 </match>
+
+<match kubernetes.**>
+  @type rewrite_tag_filter
+  <rule>
+    key log
+    pattern /retry succeeded/
+    tag "FLUENTSUCCEED.${tag}"
+  </rule>
+</match>
+
+<match FLUENTSUCCEED.**>
+  @type copy
+  <store>
+    @type prometheus
+    <metric>
+      name fluentd_output_retry_succeed
+      type counter
+      desc The total number of sucessfull retries in resolving to ES
+      <labels>
+        nodename "#{ENV['K8S_NODE_NAME']}"
+        fluent_container $.kubernetes.pod_name
+      </labels>
+    </metric>
+  </store>
+  <store>
+    @type null
+  </store>
+</match>
