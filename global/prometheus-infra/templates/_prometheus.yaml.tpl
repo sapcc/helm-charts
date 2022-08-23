@@ -25,6 +25,7 @@
       - '{__name__=~"^elastiflow_.+"}'
       - '{__name__=~"^snmp_asa_.+"}'
       - '{__name__=~"^snmp_asr_nat.+"}'
+      - '{__name__=~"^neutron_router:.+"}'
       - '{__name__=~"^snmp_asr_sysDescr"}'
       - '{__name__=~"^snmp_asr03_sysDescr"}'
       - '{__name__=~"^snmp_asr03_rttMonLatestRttOperCompletionTime"}'
