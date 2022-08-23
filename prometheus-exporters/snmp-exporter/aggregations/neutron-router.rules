@@ -1,0 +1,27 @@
+groups:
+- name: snmp_neutron_router
+  rules:
+  - record: neutron_router:per_pair_5min_avg_ifHCOutOctets
+    expr: |
+      sum by (site, asr_pair)(
+        label_replace(
+          rate(snmp_asr_ifHCOutOctets{ifDescr=~"Port-channel1", device=~"^(asr|rt)([0-9]{2}|0[0-9]{2})[ab]$"}[5m]),
+          "site", "stretched", "statically_setting_a_label", "")
+        or
+        rate(snmp_asr_ifHCOutOctets{ifDescr=~"Port-channel1", device=~"^(asr|rt)[1-9][0-9]{2}[ab]$"}[5m]))
+  - record: neutron_router:per_pair_5min_avg_ifHCInOctets
+    expr: |
+      sum by (site, asr_pair)(
+        label_replace(
+          rate(snmp_asr_ifHCInOctets{ifDescr=~"Port-channel1", device=~"^(asr|rt)([0-9]{2}|0[0-9]{2})[ab]$"}[5m]),
+          "site", "stretched", "statically_setting_a_label", "")
+        or
+        rate(snmp_asr_ifHCInOctets{ifDescr=~"Port-channel1", device=~"^(asr|rt)[1-9][0-9]{2}[ab]$"}[5m]))
+  - record: neutron_router:per_pair_uplink_capacity_gbits
+    expr: |
+      max by (site, asr_pair)(
+        label_replace(
+          snmp_asr_ifHighSpeed{ifDescr=~"Port-channel1", ifOperStatus="1", device=~"^(asr|rt)([0-9]{2}|0[0-9]{2})[ab]$"},
+          "site", "stretched", "statically_setting_a_label", "")
+        or
+        snmp_asr_ifHighSpeed{ifDescr=~"Port-channel1", ifOperStatus="1", device=~"^(asr|rt)[1-9][0-9]{2}[ab]$"})
