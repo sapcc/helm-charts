@@ -738,7 +738,7 @@
     - action: labeldrop
       regex: "metrics_label"
     - source_labels: [__name__, server_name]
-      regex: '^snmp_asr_[A-za-z0-9]+;.*((rt|asr)[0-9]+)[a|b]$'
+      regex: '^ssh_[A-za-z0-9]+;.*((rt|asr)[0-9]+)[a|b]$'
       replacement: '$1'
       target_label: asr_pair
       action: replace
