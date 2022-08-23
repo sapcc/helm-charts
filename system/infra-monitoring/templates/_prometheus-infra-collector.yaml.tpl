@@ -737,7 +737,7 @@
   metric_relabel_configs:
     - action: labeldrop
       regex: "metrics_label"
-    - source_labels: [__name__, device]
+    - source_labels: [__name__, server_name]
       regex: 'ssh_[A-za-z0-9]+;((rt|asr)[0-9]+)[a|b]$'
       replacement: '$1'
       target_label: asr_pair
