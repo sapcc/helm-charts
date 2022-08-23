@@ -70,23 +70,19 @@
   </metric>
 </filter>
 
-<filter kubernetes.**>
+<match kubernetes.**>
   @type rewrite_tag_filter
   <rule>
     key log
     pattern /ResolvError/
     tag "FLUENTERROR.${tag}"
   </rule>
-</filter>
-
-<filter kubernetes.**>
-  @type rewrite_tag_filter
   <rule>
     key log
     pattern /retry succeeded/
     tag "FLUENTSUCCEED.${tag}"
   </rule>
-</filter>
+</match>
 
 <match FLUENTERROR.**>
   @type copy
