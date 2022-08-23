@@ -1,6 +1,6 @@
 [DEFAULT]
 log_config_append = /etc/ironic/logging.ini
-logging_context_format_string =%(asctime)s.%(msecs)03d %(process)d %(levelname)s %(name)s [%(request_id)s g%(global_request_id)s %(user_identity)s] %(instance)s%(message)s
+{{- include "ini_sections.logging_format" . }}
 
 {{- if contains "xena" .Values.imageVersion }}
 pybasedir = /var/lib/openstack/lib/python3.8/site-packages/ironic

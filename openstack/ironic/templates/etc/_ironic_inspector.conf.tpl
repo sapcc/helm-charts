@@ -1,5 +1,7 @@
 [DEFAULT]
 log_config_append = /etc/ironic-inspector/logging.ini
+{{- include "ini_sections.logging_format" . }}
+
 {{- include "ini_sections.default_transport_url" . }}
 clean_up_period = 120
 # Timeout after which introspection is considered failed, set to 0 to
