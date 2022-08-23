@@ -1,7 +1,7 @@
 apiVersion: batch/v1
 kind: CronJob
 metadata:
-  name: cc3test-compute-server
+  name: cc3test-compute-server-regular
   namespace: {{ .Values.cc3test.namespace }}
 spec:
   schedule: "*/45 * * * *"
@@ -26,17 +26,6 @@ spec:
             image: {{ required ".Values.global.registry variable missing" .Values.global.registry }}/{{ required ".Values.cc3test.image.name variable missing" .Values.cc3test.image.name }}:{{ required ".Values.cc3test.image.tag variable missing" .Values.cc3test.image.tag }}
             command: ["/bin/sh"]
             args: ["-c", "pytest --disable-pytest-warnings --no-header --color=yes --variables config/config.yaml --variables secrets/secrets.yaml -m 'compute and regular' -r ap tests"]
-            volumeMounts:
-              - name: cc3test-config
-                mountPath: /cc3test/config
-                readOnly: true
-              - name: cc3test-secrets
-                mountPath: /cc3test/secrets
-                readOnly: true
-          - name: hana
-            image: {{ required ".Values.global.registry variable missing" .Values.global.registry }}/{{ required ".Values.cc3test.image.name variable missing" .Values.cc3test.image.name }}:{{ required ".Values.cc3test.image.tag variable missing" .Values.cc3test.image.tag }}
-            command: ["/bin/sh" ]
-            args: ["-c", "pytest --disable-pytest-warnings --no-header --color=yes --variables config/config.yaml --variables secrets/secrets.yaml -m 'compute and hana' -r ap tests"]
             volumeMounts:
               - name: cc3test-config
                 mountPath: /cc3test/config
