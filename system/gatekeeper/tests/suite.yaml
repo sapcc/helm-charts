@@ -345,6 +345,28 @@ tests:
     assertions:
     - violations: no
 
+- name: region-value-mismatch
+  template: rendered-chart/gatekeeper/templates/constrainttemplate-region-value-mismatch.yaml
+  constraint: rendered-chart/gatekeeper-config/templates/constraint-region-value-mismatch.yaml
+  cases:
+  - name: helm-release-region-mismatch
+    object: fixtures/region-value-mismatch/helm-release-region-mismatch.out.yaml
+    assertions:
+    - violations: 1
+      message: '^support-group=none,service=none: .Values.global.region does not match the deployed region: expected qa-de-1, but found "qa-de-9"$'
+  - name: helm-release-no-region
+    object: fixtures/region-value-mismatch/helm-release-no-region.out.yaml
+    assertions:
+    - violations: no
+  - name: helm-release-invalid-region
+    object: fixtures/region-value-mismatch/helm-release-invalid-region.out.yaml
+    assertions:
+    - violations: no
+  - name: helm-release-pass
+    object: fixtures/region-value-mismatch/helm-release-pass.out.yaml
+    assertions:
+    - violations: no
+
 - name: region-value-missing
   template: rendered-chart/gatekeeper/templates/constrainttemplate-region-value-missing.yaml
   constraint: rendered-chart/gatekeeper-config/templates/constraint-region-value-missing.yaml
