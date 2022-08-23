@@ -5,7 +5,7 @@ metadata:
   labels:
     on-prod-ui: 'true'
 spec:
-  enforcementAction: dryrun # set to "deny" to enforce
+  enforcementAction: {{ if and (.Values.global.region | hasPrefix "qa-") (eq .Values.cluster_type "baremetal" "scaleout") -}} deny {{- else -}} dryrun {{- end }} # TODO: enable everywhere (only qa for now for testing)
   match:
     kinds:
       - apiGroups: [""]
