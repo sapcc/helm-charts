@@ -285,29 +285,11 @@
       regex: '^snmp_asr_.+;([a-z:]+);(project|)*:?([a-z0-9)]*);?router:([a-z0-9-]*);network:([a-z0-9-]*);subnet:([a-z0-9-]*)'
       replacement: '$6'
       target_label: subnet_id
-
-- job_name: 'snmp-apod'
-  scrape_interval: {{.Values.snmp_exporter_apod.scrapeInterval}}
-  scrape_timeout: {{.Values.snmp_exporter_apod.scrapeTimeout}}
-  http_sd_configs:
-    - url: "http://infra-monitoring-atlas-sd:8080/service_discovery/netbox"
-  metrics_path: /snmp
-  relabel_configs:
-    - source_labels: [job]
-      regex: snmp
-      action: keep
-    - source_labels: [__address__]
-      target_label: __param_target
-    - source_labels: [__param_target]
-      target_label: instance
-    - target_label: __address__
-      replacement: snmp-exporter-apod:{{.Values.snmp_exporter.listen_port}}
-    - source_labels: [module]
-      target_label: __param_module
-  metric_relabel_configs:
-    - source_labels: [job]
-      replacement: snmp-apod
-      target_label: job
+    - source_labels: [__name__, device]
+      regex: '^snmp_asr_[A-za-z0-9]+;((rt|asr)[0-9]+)[a|b]$'
+      replacement: '$1'
+      target_label: asr_pair
+      action: replace
 
 - job_name: 'snmp-ntp'
   scrape_interval: {{.Values.snmp_exporter.scrapeInterval}}
@@ -755,6 +737,11 @@
   metric_relabel_configs:
     - action: labeldrop
       regex: "metrics_label"
+    - source_labels: [__name__, device]
+      regex: 'ssh_[A-za-z0-9]+;((rt|asr)[0-9]+)[a|b]$'
+      replacement: '$1'
+      target_label: asr_pair
+      action: replace
 {{ end }}
 
 - job_name: 'prometheus-vmware'
