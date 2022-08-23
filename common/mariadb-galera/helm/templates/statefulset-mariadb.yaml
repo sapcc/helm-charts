@@ -1,23 +1,24 @@
 {{- $unevenNodeCount := "" }}
-{{- if eq (mod ($.Values.replicas|int) 2) 1 }}
+{{- if eq (mod ($.Values.replicas.application|int) 2) 1 }}
     {{- $unevenNodeCount = "true" }}
 {{- end }}
-{{- $_ := (required ".replicas value not an uneven integer. This is required to avoid a split brain cluster state." $unevenNodeCount) }}
+{{- $_ := (required ".replicas.application value not an uneven integer. This is required to avoid a split brain cluster state." $unevenNodeCount) }}
 ---
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   namespace: {{ $.Release.Namespace }}
-  name: {{ $.Values.namePrefix | default "mariadb-g" }}
+  name: {{ if and ($.Values.namePrefix) (hasKey $.Values.namePrefix "application") }} {{ $.Values.namePrefix.application | default "mariadb-g" }} {{ else }} mariadb-g {{ end }}
   labels:
     app: {{ $.Release.Name }}
+    component: "application"
     release: {{ $.Release.Name }}
 spec:
-  replicas: {{ $.Values.replicas | default 3 }}
+  replicas: {{ $.Values.replicas.application | default 3 }}
   serviceName: {{ $.Release.Name }}
   selector:
     matchLabels:
-      app: {{ $.Release.Name }}
+      component: "application"
   revisionHistoryLimit: {{ $.Values.revisionHistoryLimit }}
   podManagementPolicy: {{ $.Values.podManagementPolicy }}
   updateStrategy:
@@ -26,6 +27,7 @@ spec:
     metadata:
       labels:
         app: {{ $.Release.Name }}
+        component: "application"
         release: {{ $.Release.Name }}
       annotations:
         {{- if $.Values.monitoring.mysqld_exporter.enabled }}
@@ -123,7 +125,7 @@ spec:
         {{- end }}
         env:
         - name: MYSQL_PORT
-          {{- range $servicesKey, $servicesValue := $.Values.services }}
+          {{- range $servicesKey, $servicesValue := $.Values.services.application }}
             {{- if eq $servicesValue.name "frontend"}}
               {{- range $portsKey, $portsValue := $servicesValue.ports }}
                 {{- if eq $portsValue.name "mysql"}}
@@ -133,7 +135,7 @@ spec:
             {{- end }}
           {{- end }}
         - name: GALERA_PORT
-          {{- range $servicesKey, $servicesValue := $.Values.services }}
+          {{- range $servicesKey, $servicesValue := $.Values.services.application }}
             {{- if eq $servicesValue.name "backend"}}
               {{- range $portsKey, $portsValue := $servicesValue.ports }}
                 {{- if eq $portsValue.name "galera"}}
@@ -143,9 +145,9 @@ spec:
             {{- end }}
           {{- end }}
           {{- /* https://galeracluster.com/library/documentation/weighted-quorum.html#wq-three-nodes */}}
-          {{- range $int, $err := until ($.Values.replicas|int) }}
+          {{- range $int, $err := until ($.Values.replicas.application|int) }}
         - name: PC_WEIGHT_{{ $int }}
-            {{- $weight := (sub (sub ($.Values.replicas|int) $int) 1) }}
+            {{- $weight := (sub (sub ($.Values.replicas.application|int) $int) 1) }}
             {{- $calculatedWeight := 1 }}
               {{- range $_, $err := until ($weight|int) }}
                 {{- /* 2^n where n is the $calculatedWeight */}}
@@ -179,12 +181,14 @@ spec:
           limits:
             memory: {{ $.Values.resourceLimits.memory.application | default "64Mi" | quote }}
         ports:
-          {{- range $servicesKey, $servicesValue := $.Values.services }}
+          {{- range $servicesKey, $servicesValue := $.Values.services.application }}
             {{- if eq $servicesValue.name "backend"}}
               {{- range $portsKey, $portsValue := $servicesValue.ports }}
+                {{- if ne $portsValue.name "proxy"}}
           - containerPort: {{ $portsValue.targetPort }}
             name: {{ $portsValue.name }}
             protocol: {{ $portsValue.protocol | default "TCP" }}
+                {{- end }}
               {{- end }}
             {{- end }}
           {{- end }}
@@ -255,7 +259,7 @@ spec:
                 - -c
                 - '/opt/mariadb/bin/post-start-hook.sh'
         volumeMounts:
-          {{- range $volumeMountsKey, $volumeMountsValue := $.Values.volumeMounts }}
+          {{- range $volumeMountsKey, $volumeMountsValue := $.Values.volumeMounts.application }}
             {{- if (hasKey $volumeMountsValue "claimName") }}
               {{- range $volumeClaimTemplatesKey, $volumeClaimTemplatesValue := $.Values.volumeClaimTemplates }}
                 {{- if eq $volumeClaimTemplatesValue.name $volumeMountsValue.claimName }}
@@ -280,27 +284,27 @@ spec:
           - name: galerastatus
             mountPath: /opt/mariadb/etc/galerastatus
             readOnly: false
-          - name: entrypoint-sh
+          - name: mariadb-entrypoint-sh
             mountPath: /opt/mariadb/bin/entrypoint-galera.sh
             subPath: entrypoint-galera.sh
             readOnly: true
-          - name: probes-sh
+          - name: mariadb-probes-sh
             mountPath: /opt/mariadb/bin/startup.sh
             subPath: startup.sh
             readOnly: true
-          - name: probes-sh
+          - name: mariadb-probes-sh
             mountPath: /opt/mariadb/bin/liveness.sh
             subPath: liveness.sh
             readOnly: true
-          - name: probes-sh
+          - name: mariadb-probes-sh
             mountPath: /opt/mariadb/bin/readiness.sh
             subPath: readiness.sh
             readOnly: true
-          - name: hooks-sh
+          - name: mariadb-hooks-sh
             mountPath: /opt/mariadb/bin/pre-stop-hook.sh
             subPath: pre-stop-hook.sh
             readOnly: true
-          - name: hooks-sh
+          - name: mariadb-hooks-sh
             mountPath: /opt/mariadb/bin/post-start-hook.sh
             subPath: post-start-hook.sh
             readOnly: true
@@ -322,7 +326,7 @@ spec:
           {{- end }}
         env:
         - name: MYSQL_PORT
-          {{- range $servicesKey, $servicesValue := $.Values.services }}
+          {{- range $servicesKey, $servicesValue := $.Values.services.application }}
             {{- if eq $servicesValue.name "frontend"}}
               {{- range $portsKey, $portsValue := $servicesValue.ports }}
                 {{- if eq $portsValue.name "mysql"}}
@@ -398,11 +402,11 @@ spec:
             readOnly: true
           - name: monitoring-probes-sh
             mountPath: /opt/mysqld_exporter/bin/liveness.sh
-            subPath: liveness-monitoring.sh
+            subPath: liveness.sh
             readOnly: true
           - name: monitoring-probes-sh
             mountPath: /opt/mysqld_exporter/bin/readiness.sh
-            subPath: readiness-monitoring.sh
+            subPath: readiness.sh
             readOnly: true
           - name: common-functions-sh
             mountPath: /opt/mysqld_exporter/bin/common-functions.sh
@@ -412,7 +416,7 @@ spec:
         {{- /* monitoring sidecar end */}}
       terminationGracePeriodSeconds: {{ $.Values.terminationGracePeriodSeconds | default 86400 }}
       volumes:
-        {{- range $volumeMountsKey, $volumeMountsValue := $.Values.volumeMounts }}
+        {{- range $volumeMountsKey, $volumeMountsValue := $.Values.volumeMounts.application }}
           {{- if $volumeMountsValue.type }}
             {{- if ne $volumeMountsValue.type "persistentVolume" }}
         - name: {{ $volumeMountsValue.name }}
@@ -436,17 +440,17 @@ spec:
           configMap:
             name: galerastatus
             defaultMode: 0750
-        - name: entrypoint-sh
+        - name: mariadb-entrypoint-sh
           configMap:
-            name: entrypoint-sh
+            name: mariadb-entrypoint-sh
             defaultMode: 0755
-        - name: probes-sh
+        - name: mariadb-probes-sh
           configMap:
-            name: probes-sh
+            name: mariadb-probes-sh
             defaultMode: 0755
-        - name: hooks-sh
+        - name: mariadb-hooks-sh
           configMap:
-            name: hooks-sh
+            name: mariadb-hooks-sh
             defaultMode: 0755
         - name: common-functions-sh
           configMap:
@@ -462,7 +466,7 @@ spec:
             defaultMode: 0755
   volumeClaimTemplates:
   {{- range $volumeClaimTemplatesKey, $volumeClaimTemplatesValue := $.Values.volumeClaimTemplates }}
-    {{- range $volumeMountsKey, $volumeMountsValue := $.Values.volumeMounts }}
+    {{- range $volumeMountsKey, $volumeMountsValue := $.Values.volumeMounts.application }}
       {{- if (hasKey $volumeMountsValue "claimName") }}
         {{- if eq $volumeClaimTemplatesValue.name $volumeMountsValue.claimName }}
   - metadata:

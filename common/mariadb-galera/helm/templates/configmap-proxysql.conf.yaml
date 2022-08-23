@@ -1,0 +1,118 @@
+{{- $mysqlPort := "" }}
+{{- $galeraPort := "" }}
+{{- $proxysqlAdminPort := "" }}
+{{- $nodeNames := list -}}
+{{- $nodeNamePrefixProxy := "" -}}
+{{- $nodeNamePrefixApplication := "" -}}
+{{ if and ($.Values.namePrefix) (hasKey $.Values.namePrefix "application") }}
+  {{- $nodeNamePrefixApplication = ($.Values.namePrefix.application | default "mariadb-g") }}
+{{ else }}
+  {{- $nodeNamePrefixApplication = "mariadb-g" }}
+{{ end }}
+{{ if and ($.Values.namePrefix) (hasKey $.Values.namePrefix "proxy") }}
+  {{- $nodeNamePrefixProxy = ($.Values.namePrefix.proxy | default "proxysql") }}
+{{ else }}
+  {{- $nodeNamePrefixProxy = "proxysql" }}
+{{ end }}
+{{- range $servicesKey, $servicesValue := $.Values.services.application }}
+  {{- if eq $servicesValue.name "frontend" }}
+    {{- range $portsKey, $portsValue := $servicesValue.ports }}
+      {{- if eq $portsValue.name "mysql"}}
+        {{- $mysqlPort = ($portsValue.port | int) }}
+      {{- end }}
+    {{- end }}
+  {{- else if eq $servicesValue.name "backend" }}
+    {{- range $portsKey, $portsValue := $servicesValue.ports }}
+      {{- if eq $portsValue.name "galera"}}
+        {{- $galeraPort = ($portsValue.port | int) }}
+      {{- end }}
+    {{- end }}
+  {{- end }}
+{{- end }}
+{{- range $servicesKey, $servicesValue := $.Values.services.proxy }}
+  {{- if eq $servicesValue.name "backend" }}
+    {{- range $portsKey, $portsValue := $servicesValue.ports }}
+      {{- if eq $portsValue.name "proxy" }}
+        {{- $proxysqlAdminPort = ($portsValue.port | int) }}
+      {{- end }}
+    {{- end }}
+  {{- end }}
+{{- end }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: proxysql-conf
+  namespace: {{ $.Release.Namespace }}
+data:
+  proxysql_servers.cfg.tpl: |-
+    {{- range $int, $err := until ($.Values.replicas.proxy|int) }}
+      {{- $weight := (sub (sub ($.Values.replicas.application|int) $int) 1) }}
+      {{- $calculatedWeight := 1 }}
+      {{- range $_, $err := until ($weight|int) }}
+        {{- /* 2^n where n is the $calculatedWeight */}}
+        {{- $calculatedWeight = (mul 2 $calculatedWeight) }}
+      {{- end }}
+    {
+      hostname="{{ (printf "%s-%d.%s.svc.cluster.local" $nodeNamePrefixProxy $int $.Release.Namespace) }}"
+      port={{ $proxysqlAdminPort }}
+      weight={{ $calculatedWeight }}
+    },
+    {{- end }}
+  galera_hostgroups.cfg.tpl: |-
+    {
+      writer_hostgroup=10
+      backup_writer_hostgroup=20
+      reader_hostgroup=30
+      offline_hostgroup=9999
+      max_writers=1
+      writer_is_also_reader=1
+      max_transactions_behind=30
+      active=1
+    }
+  mysql_servers.cfg.tpl: |-
+    {{- range $int, $err := until ($.Values.replicas.application|int) }}
+    {{- $weight := (sub (sub ($.Values.replicas.application|int) $int) 1) }}
+      {{- $calculatedWeight := 1 }}
+      {{- range $_, $err := until ($weight|int) }}
+        {{- /* 2^n where n is the $calculatedWeight */}}
+        {{- $calculatedWeight = (mul 2 $calculatedWeight) }}
+      {{- end }}
+    {
+      address="{{ (printf "%s-%d.%s.svc.cluster.local" $nodeNamePrefixApplication $int $.Release.Namespace) }}"
+      port={{ $mysqlPort }}
+      use_ssl=0
+      weight={{ $calculatedWeight }}
+      hostgroup=10
+      max_connections=100
+      max_replication_lag=0
+      max_latency_ms=0
+    },
+    {{- end }}
+  mysql_query_rules.cfg.tpl: |-
+    {
+        rule_id=100
+        active=1
+        match_pattern="^SELECT .* FOR UPDATE"
+        destination_hostgroup=10
+        apply=1
+        comment="write statements will be routed to hostgroup 10(writer_hostgroup)"
+    },
+    {
+        rule_id=200
+        active=1
+        match_pattern="^SELECT .*"
+        destination_hostgroup=30
+        apply=1
+        comment="read statements will be routed to hostgroup 20(backup_writer_hostgroup)"
+    },
+    {
+        rule_id=300
+        active=1
+        match_pattern=".*"
+        destination_hostgroup=10
+        apply=1
+        comment="all other statements will also be routed to hostgroup 10(writer_hostgroup)"
+    }
+  mysql_users.cfg.tpl: |-
+    { username = "${MARIADB_ROOT_USER}", password = "${MARIADB_ROOT_PASSWORD}", default_hostgroup = 10, transaction_persistent = 0, active = 1 }

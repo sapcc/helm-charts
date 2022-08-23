@@ -2,7 +2,7 @@ apiVersion: batch/v1
 kind: Job
 metadata:
   namespace: {{ $.Release.Namespace }}
-  name: {{ $.Values.namePrefix | default "mariadb-g" }}-cfg-{{ uuidv4 | lower }}
+  name: {{ if and ($.Values.namePrefix) (hasKey $.Values.namePrefix "application") }} {{ $.Values.namePrefix.application | default "mariadb-g" }}-cfg-{{ uuidv4 | lower }} {{ else }} mariadb-g-cfg-{{ uuidv4 | lower }} {{ end }}
   labels:
     app: {{ $.Release.Name }}
     release: {{ $.Release.Name }}
@@ -16,7 +16,7 @@ spec:
         app: {{ $.Release.Name }}
         release: {{ $.Release.Name }}
       annotations:
-        checksum/entrypoint.sh: {{ include (print $.Template.BasePath "/configmap-job-entrypoint.sh.yaml") $ | sha256sum }}
+        checksum/entrypoint.sh: {{ include (print $.Template.BasePath "/configmap-entrypoint.sh.yaml") $ | sha256sum }}
         checksum/common-functions.sh: {{ include (print $.Template.BasePath "/configmap-common-functions.sh.yaml") $ | sha256sum }}
     spec:
       restartPolicy: {{ $.Values.restartPolicy | default "OnFailure" | quote }}
@@ -43,7 +43,7 @@ spec:
         {{- end }}
         env:
         - name: MYSQL_PORT
-        {{- range $servicesKey, $servicesValue := $.Values.services }}
+        {{- range $servicesKey, $servicesValue := $.Values.services.application }}
           {{- if eq $servicesValue.name "frontend"}}
             {{- range $portsKey, $portsValue := $servicesValue.ports }}
               {{- if eq $portsValue.name "mysql"}}
@@ -85,7 +85,7 @@ spec:
           subPath: common-functions.sh
           readOnly: true
       volumes:
-      {{- range $volumeMountsKey, $volumeMountsValue := $.Values.volumeMounts }}
+      {{- range $volumeMountsKey, $volumeMountsValue := $.Values.volumeMounts.application }}
         {{- if $volumeMountsValue.type }}
           {{- if ne $volumeMountsValue.type "persistentVolume" }}
       - name: {{ $volumeMountsValue.name }}

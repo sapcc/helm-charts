@@ -4,11 +4,15 @@
 userId:
   application: 101
   monitoring: 3000
+  proxy: 3100
 groupId:
   application: 101
   monitoring: 3000
+  proxy: 3100
 
-#namePrefix: "mariadb-g" #used for pods, services etc. (default mariadb-g)
+# namePrefix:
+#   application: "mariadb-g" #used for pods, services etc. (default mariadb-g)
+#   proxy: "proxysql" #used for pods, services etc. (default proxysql)
 cleanOsCacheAtStartup: false #https://www.kernel.org/doc/html/latest/admin-guide/sysctl/vm.html?highlight=drop_caches#drop-caches (default false, only useful for benchmarking)
 scripts:
   maxRetries: 20 #how many times should script functions retry before failing(default 10)
@@ -23,6 +27,8 @@ monitoring:
     metricsPort: 9104
   elasticBeatsAutoDiscoveryAnnotations:
     enabled: false #add annotations to allow automatic configuration of Elastic Beats agents https://www.elastic.co/guide/en/beats/metricbeat/current/configuration-autodiscover-hints.html
+proxy:
+  enabled: true #use ProxySQL in front of the MariaDB Galera pods to reduce the service downtimes for the clients
 
 # command:
 #   application:
@@ -34,6 +40,10 @@ monitoring:
 #     - "-c"
 #     - "/bin/sleep 3600"
 #   job:
+#     - "sh"
+#     - "-c"
+#     - "/bin/sleep 3600"
+#   proxy:
 #     - "sh"
 #     - "-c"
 #     - "/bin/sleep 3600"
@@ -70,6 +80,16 @@ image:
     imageversion: 0.1.0
     pullPolicy: Always
     pullSecret: pull-secret-gcp
+  proxy:
+    #registry: keppel.eu-nl-1.cloud.sap
+    #project: octobus
+    registry: eu.gcr.io
+    project: cloud-capacity-mgmt-tes
+    applicationname: proxysql
+    applicationversion: 2.4.3
+    imageversion: 0.1.0
+    pullPolicy: Always
+    pullSecret: pull-secret-gcp
 
 initContainers:
   increaseMapCount:
@@ -87,56 +107,89 @@ initContainers:
 
 # network services
 services:
-  - name: backend
-    type: ClusterIP
-    headless: true
-    #https://mariadb.com/kb/en/configuring-mariadb-galera-cluster/#network-ports
-    ports:
-      - name: galera
-        port: 4567
-        targetPort: 4567
-        protocol: TCP
-      - name: ist #http://galeracluster.com/library/documentation/galera-parameters.html#ist-recv-addr
-        port: 4568
-        targetPort: 4568
-        protocol: TCP
-      - name: sst #https://mariadb.com/kb/en/introduction-to-state-snapshot-transfers-ssts/
-        port: 4444
-        targetPort: 4444
-        protocol: TCP
-    sessionAffinity: None
-  - name: frontend
-    type: ClusterIP
-    headless: false
-    ports:
-      - name: mysql
-        port: 3306
-        targetPort: 3306
-        protocol: TCP
-    sessionAffinity: None
+  application:
+    - name: backend
+      type: ClusterIP
+      headless: true
+      #https://mariadb.com/kb/en/configuring-mariadb-galera-cluster/#network-ports
+      ports:
+        - name: galera
+          port: 4567
+          targetPort: 4567
+          protocol: TCP
+        - name: ist #http://galeracluster.com/library/documentation/galera-parameters.html#ist-recv-addr
+          port: 4568
+          targetPort: 4568
+          protocol: TCP
+        - name: sst #https://mariadb.com/kb/en/introduction-to-state-snapshot-transfers-ssts/
+          port: 4444
+          targetPort: 4444
+          protocol: TCP
+      sessionAffinity: None
+    - name: frontend
+      type: ClusterIP
+      headless: false
+      ports:
+        - name: mysql
+          port: 3306
+          targetPort: 3306
+          protocol: TCP
+      sessionAffinity: None
+  proxy:
+    - name: backend
+      type: ClusterIP
+      headless: true
+      ports:
+        - name: proxy #https://proxysql.com/Documentation/global-variables/admin-variables/#admin-mysql_ifaces
+          port: 6032
+          targetPort: 6032
+          protocol: TCP
+        - name: rest #https://proxysql.com/Documentation/global-variables/admin-variables/#admin-mysql_ifaces
+          port: 6070
+          targetPort: 6070
+          protocol: TCP
+      sessionAffinity: None
+    - name: frontend
+      type: ClusterIP
+      headless: false
+      ports:
+        - name: proxy #https://proxysql.com/Documentation/global-variables/mysql-variables/#mysql-interfaces
+          port: 3306
+          targetPort: 6033
+          protocol: TCP
+      sessionAffinity: None
 
 # Storage
 volumeMounts:
-  - name: data
-    claimName: data
-    mountPath: /opt/mariadb/data
-    type: persistentVolume
-  - name: log
-    claimName: log
-    mountPath: /opt/mariadb/log
-    type: persistentVolume
-  - name: cert-wildcard
-    mountPath: /opt/mariadb/etc/certs
-    type: secret
-    readOnly: true
+  application:
+    - name: data
+      claimName: mariadb
+      mountPath: /opt/mariadb/data
+      type: persistentVolume
+    - name: log
+      claimName: marialog
+      mountPath: /opt/mariadb/log
+      type: persistentVolume
+    - name: cert-wildcard
+      mountPath: /opt/mariadb/etc/certs
+      type: secret
+      readOnly: true
+  proxy:
+    - name: data
+      claimName: proxysql
+      mountPath: /opt/proxysql/data
+      type: persistentVolume
 
 volumeClaimTemplates:
-  - name: data
+  - name: mariadb
     accessModes: [ReadWriteOnce]
     capacity: 1Gi
-  - name: log
+  - name: marialog
     accessModes: [ReadWriteOnce]
     capacity: 10Gi
+  - name: proxysql
+    accessModes: [ReadWriteOnce]
+    capacity: 128Mi
 
 # Resource limits per container
 resourceLimits:
@@ -144,13 +197,17 @@ resourceLimits:
     application: 2
     monitoring: 0.5
     job: 0.5
+    proxy: 0.5
   memory:
     application: 256Mi
     monitoring: 48Mi
     job: 48Mi
+    proxy: 256Mi
 
 # Deployment rules
-replicas: 3 #only uneven values are allowed to avoid a split brain cluster state
+replicas:
+  application: 3 #only uneven values are allowed to avoid a split brain cluster state
+  proxy: 3 #only uneven values are allowed to avoid a split brain cluster state
 maxUnavailable: 1
 maxSurge: 1
 hpa:
@@ -172,41 +229,54 @@ restartPolicy: OnFailure #https://kubernetes.io/docs/concepts/workloads/controll
 startupProbe:
   initialDelaySeconds:
     application: 15
+    proxy: 15
   periodSeconds:
     application: 10
+    proxy: 10
   failureThreshold:
     application: 12
+    proxy: 12
   timeoutSeconds:
     application: 20
+    proxy: 20
 livenessProbe:
   initialDelaySeconds:
     application: 15
     monitoring: 5
+    proxy: 15
   periodSeconds:
     application: 30
     monitoring: 30
+    proxy: 30
   failureThreshold:
     application: 4
     monitoring: 4
+    proxy: 4
   timeoutSeconds:
     application: 20
     monitoring: 20
+    proxy: 20
 readinessProbe:
   initialDelaySeconds:
     application: 30
     monitoring: 10
+    proxy: 30
   periodSeconds:
     application: 20
     monitoring: 20
+    proxy: 20
   successThreshold:
     application: 1
     monitoring: 1
+    proxy: 1
   failureThreshold:
     application: 3
     monitoring: 3
+    proxy: 3
   timeoutSeconds:
     application: 10
     monitoring: 10
+    proxy: 10
 
 env:
   MARIADB_CLUSTER_NAME:
@@ -219,12 +289,14 @@ env:
     containerType:
       - application
       - job
+      - proxy
   MARIADB_ROOT_PASSWORD:
     secretName: db-full-auth
     secretKey: password
     containerType:
       - application
       - job
+      - proxy
   GALERA_SST_USER:
     secretName: ga-sync-auth
     secretKey: username
@@ -258,6 +330,40 @@ env:
     value: /metrics
     containerType:
       - monitoring
+  PROXYSQL_ADMIN_USER:
+    secretName: proxy-full-auth
+    secretKey: username
+    containerType:
+      - proxy
+  PROXYSQL_ADMIN_PASSWORD:
+    secretName: proxy-full-auth
+    secretKey: password
+    containerType:
+      - proxy
+  PROXYSQL_MONITOR_USER:
+    secretName: db-mon-auth
+    secretKey: username
+    containerType:
+      - proxy
+  PROXYSQL_MONITOR_PASSWORD:
+    secretName: db-mon-auth
+    secretKey: password
+    containerType:
+      - proxy
+  PROXYSQL_STATS_USER:
+    secretName: proxy-stats-auth
+    secretKey: username
+    containerType:
+      - proxy
+  PROXYSQL_STATS_PASSWORD:
+    secretName: proxy-stats-auth
+    secretKey: password
+    containerType:
+      - proxy
+  PROXYSQL_RESTAPI_ENABLED:
+    value: true
+    containerType:
+      - proxy
 
 mariadb:
   binLogDir: log #if not defined the data dir will be used. Needs a log volume mount to be configured too

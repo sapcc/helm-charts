@@ -3,10 +3,22 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   namespace: {{ $.Release.Namespace }}
-  name: hooks-sh
+  name: mariadb-hooks-sh
   labels:
     app: {{ $.Release.Name }}
 data:
-{{ tpl (.Files.Glob "scripts/pre-stop-hook.sh").AsConfig . | indent 2 }}
-
-{{ tpl (.Files.Glob "scripts/post-start-hook.sh").AsConfig . | indent 2 }}
+{{ tpl (.Files.Glob "scripts/mariadb-galera/pre-stop-hook.sh").AsConfig . | indent 2 }}
+{{ tpl (.Files.Glob "scripts/mariadb-galera/post-start-hook.sh").AsConfig . | indent 2 }}
+{{- if $.Values.proxy.enabled }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  namespace: {{ $.Release.Namespace }}
+  name: proxysql-hooks-sh
+  labels:
+    app: {{ $.Release.Name }}
+data:
+{{ tpl (.Files.Glob "scripts/proxysql/pre-stop-hook.sh").AsConfig . | indent 2 }}
+{{ tpl (.Files.Glob "scripts/proxysql/post-start-hook.sh").AsConfig . | indent 2 }}
+{{- end }}

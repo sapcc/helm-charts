@@ -11,9 +11,13 @@ MAX_RETRIES=10
 WAIT_SECONDS=6
 export CONTAINER_IP=$(hostname --ip-address)
 export POD_NAME=$(hostname --short)
+export PROXYSQL_ADMIN_PORT="${PROXYSQL_ADMIN_PORT:-6032}"
+export PROXYSQL_MYSQL_PORT="${PROXYSQL_MYSQL_PORT:-6033}"
 export PROXYSQL_WEB_ENABLED="${PROXYSQL_WEB_ENABLED:-false}"
 export PROXYSQL_WEB_PORT="${PROXYSQL_WEB_PORT:-6080}"
 export PROXYSQL_WEB_VERBOSITY="${PROXYSQL_WEB_VERBOSITY:-0}"
+export PROXYSQL_RESTAPI_ENABLED="${PROXYSQL_RESTAPI_ENABLED:-false}"
+export PROXYSQL_RESTAPI_PORT="${PROXYSQL_RESTAPI_PORT:-6070}"
 
 function logjson {
   printf "{\"@timestamp\":\"%s\",\"ecs.version\":\"1.6.0\",\"log.logger\":\"%s\",\"log.origin.function\":\"%s\",\"log.level\":\"%s\",\"message\":\"%s\"}\n" "$(date +%Y.%m.%d-%H:%M:%S-%Z)" "$3" "$4" "$2" "$5" >>/dev/"$1"

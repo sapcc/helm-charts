@@ -1,5 +1,11 @@
 {{- $wsrepProviderOptions := dict }}
 {{- $nodeNames := list -}}
+{{- $nodeNamePrefix := "" -}}
+{{ if and ($.Values.namePrefix) (hasKey $.Values.namePrefix "application") }}
+  {{- $nodeNamePrefix = ($.Values.namePrefix.application | default "mariadb-g") }}
+{{ else }}
+  {{- $nodeNamePrefix = "mariadb-g" }}
+{{ end }}
 {{- $galeraPort := "" }}
 {{- $sstPort := "" }}
 {{- $mariadbClusterName := "" }}
@@ -12,13 +18,13 @@
 {{ end }}
 {{- $_ := set $wsrepProviderOptions "gcache.recover" "gcache.recover=yes" }}
 {{- $_ := set $wsrepProviderOptions "cert.log_conflicts" "cert.log_conflicts=ON"}}
-{{- range $servicesKey, $servicesValue := $.Values.services }}
+{{- range $servicesKey, $servicesValue := $.Values.services.application }}
   {{- if eq $servicesValue.name "backend"}}
     {{- range $portsKey, $portsValue := $servicesValue.ports }}
       {{- if eq $portsValue.name "galera"}}
       {{- $galeraPort = ($portsValue.port | int) }}
-        {{- range $int, $err := until ($.Values.replicas|int) }}
-          {{- $nodeNames = (printf "%s-%d.%s.svc.cluster.local:%d" ($.Values.namePrefix | default "mariadb-g") $int $.Release.Namespace ($portsValue.port | int)) | append $nodeNames -}}
+        {{- range $int, $err := until ($.Values.replicas.application|int) }}
+          {{- $nodeNames = (printf "%s-%d.%s.svc.cluster.local:%d" $nodeNamePrefix $int $.Release.Namespace ($portsValue.port | int)) | append $nodeNames -}}
         {{- end }}
       {{- else if eq $portsValue.name "ist" }}
         {{- $_ := set $wsrepProviderOptions "ist.recv_addr" (printf "ist.recv_addr=${CONTAINER_IP}:%d" ($portsValue.port | int)) }}
@@ -49,8 +55,8 @@ metadata:
   name: my-cnf
   namespace: {{ $.Release.Namespace }}
 data:
-{{- range $int, $err := until ($.Values.replicas|int) }}
-  my.cnf.{{ $.Values.namePrefix | default "mariadb-g" }}-{{ $int }}.tpl: |-
+{{- range $int, $err := until ($.Values.replicas.application|int) }}
+  my.cnf.{{ $nodeNamePrefix }}-{{ $int }}.tpl: |-
     [mariadb]
     wsrep-provider=/usr/lib/libgalera_smm.so
     binlog_format=ROW
@@ -59,7 +65,7 @@ data:
     default_storage_engine=InnoDB
     innodb_autoinc_lock_mode=2
     wsrep-cluster-name={{ $mariadbClusterName }}
-    wsrep_cluster_address={{ (printf "gcomm://%s,%s-backend.%s.svc.cluster.local:%d" (join "," $nodeNames) ($.Values.namePrefix | default "mariadb-g") $.Release.Namespace $galeraPort) }}
+    wsrep_cluster_address={{ (printf "gcomm://%s,%s-backend.%s.svc.cluster.local:%d" (join "," $nodeNames) $nodeNamePrefix $.Release.Namespace $galeraPort) }}
     {{- $_ := set $wsrepProviderOptions "pc.weight" (printf "pc.weight=${PC_WEIGHT_%d}" $int)}}
     wsrep_provider_options={{ (join ";" (values $wsrepProviderOptions | sortAlpha)) }}
     wsrep_node_address=${CONTAINER_IP}

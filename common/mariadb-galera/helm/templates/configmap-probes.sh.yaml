@@ -2,9 +2,32 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name:  probes-sh
+  name: mariadb-probes-sh
   namespace: {{ $.Release.Namespace }}
 data:
-{{ tpl (.Files.Glob "scripts/startup.sh").AsConfig . | indent 2 }}
-{{ tpl (.Files.Glob "scripts/liveness.sh").AsConfig . | indent 2 }}
-{{ tpl (.Files.Glob "scripts/readiness.sh").AsConfig . | indent 2 }}
+{{ tpl (.Files.Glob "scripts/mariadb-galera/startup.sh").AsConfig . | indent 2 }}
+{{ tpl (.Files.Glob "scripts/mariadb-galera/liveness.sh").AsConfig . | indent 2 }}
+{{ tpl (.Files.Glob "scripts/mariadb-galera/readiness.sh").AsConfig . | indent 2 }}
+{{- if $.Values.monitoring.mysqld_exporter.enabled }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name:  monitoring-probes-sh
+  namespace: {{ $.Release.Namespace }}
+data:
+{{ tpl (.Files.Glob "scripts/mysqld_exporter/liveness.sh").AsConfig . | indent 2 }}
+{{ tpl (.Files.Glob "scripts/mysqld_exporter/readiness.sh").AsConfig . | indent 2 }}
+{{- end }}
+{{- if $.Values.proxy.enabled }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: proxysql-probes-sh
+  namespace: {{ $.Release.Namespace }}
+data:
+{{ tpl (.Files.Glob "scripts/proxysql/startup.sh").AsConfig . | indent 2 }}
+{{ tpl (.Files.Glob "scripts/proxysql/liveness.sh").AsConfig . | indent 2 }}
+{{ tpl (.Files.Glob "scripts/proxysql/readiness.sh").AsConfig . | indent 2 }}
+{{- end }}

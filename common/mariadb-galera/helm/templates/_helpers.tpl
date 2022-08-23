@@ -1,18 +1,41 @@
 {{/*
   Generate Kubernetes service template
-  service without per pod information:  include "networkService" (dict "global" $ "service" $service "replica" "notused")
-  service with per pod information:     include "networkService" (dict "global" $ "service" $service "replica" ($replicaNumber|toString))
+  service without per pod information:  include "networkService" (dict "global" $ "service" $service "component" $component "replica" "notused")
+  service with per pod information:     include "networkService" (dict "global" $ "service" $service "component" $component "replica" ($replicaNumber|toString))
 */}}
 {{- define "networkService" }}
+{{- $nodeNamePrefix := "" -}}
+{{- $nodeNamePrefixApplication := "" -}}
+{{- $nodeNamePrefixProxy := "" -}}
+{{ if and (.global.Values.namePrefix) (hasKey .global.Values.namePrefix "application") }}
+  {{- $nodeNamePrefixApplication = (.global.Values.namePrefix.application | default "mariadb-g") }}
+{{ else }}
+  {{- $nodeNamePrefixApplication = "mariadb-g" }}
+{{ end }}
+{{ if and (.global.Values.namePrefix) (hasKey .global.Values.namePrefix "proxy") }}
+  {{- $nodeNamePrefixProxy = (.global.Values.namePrefix.application | default "proxysql") }}
+{{ else }}
+  {{- $nodeNamePrefixProxy = "proxysql" }}
+{{ end }}
+
+{{- if eq .component "application" }}
+  {{- $nodeNamePrefix = $nodeNamePrefixApplication }}
+{{- else if eq .component "proxy" }}
+  {{- $nodeNamePrefix = $nodeNamePrefixProxy }}
+{{ end }}
 ---
 apiVersion: v1
 kind: Service
 metadata:
   namespace: {{ .global.Release.Namespace }}
   {{- if eq .replica "notused" }}
-  name: {{ .global.namePrefix | default "mariadb-g" }}-{{ .service.value.name }}
+    {{- if and (eq .service.value.name "frontend") (.global.Values.proxy.enabled)}}
+  name: {{ (printf "%s-%s" $nodeNamePrefixApplication .service.value.name) }}
+    {{- else }}
+  name: {{ (printf "%s-%s" $nodeNamePrefix .service.value.name) }}
+    {{- end }}
   {{- else }}
-  name: {{ .global.namePrefix | default "mariadb-g" }}-{{ .replica }}
+  name: {{ (printf "%s-%s" $nodeNamePrefix .replica) }}
   {{- end }}
   annotations:
   {{- if (hasKey .global.Values "OpenstackFloatingNetworkId") }}
@@ -31,13 +54,13 @@ spec:
   type: {{ required "the network service type has to be defined" .service.value.type }}
   {{- if .service.value.headless }}
   clusterIP: None
-  publishNotReadyAddresses: true #create A records for not ready pods and announce the IPs on the headless service before they are ready https://kubernetes.io/docs/concepts/services-networking/dns-pod-service/#pod-s-hostname-and-subdomain-fields
+  publishNotReadyAddresses: true {{/* create A records for not ready pods and announce the IPs on the headless service before they are ready https://kubernetes.io/docs/concepts/services-networking/dns-pod-service/#pod-s-hostname-and-subdomain-fields */}}
   {{- end }}
   selector:
   {{- if eq .replica "notused" }}
-    app: {{ .global.Release.Name }}
+    component: {{ .component | quote }}
   {{- else }}
-    statefulset.kubernetes.io/pod-name: {{ .global.namePrefix | default "mariadb-g" }}-{{ .replica }}
+    statefulset.kubernetes.io/pod-name: {{ (printf "%s-%s" $nodeNamePrefix .replica) }}
   {{- end }}
   ports:
   {{- range $portKey, $portValue := .service.value.ports }}

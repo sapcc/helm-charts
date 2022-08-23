@@ -18,6 +18,7 @@ Docker image and Helm chart to deploy a [MariaDB](https://mariadb.com/kb/en/gett
   * `wsrep_flow_control_paused` should be 0 (0.25 means 25% of the time replication was paused)
   * `wsrep_cert_deps_distance` difference between lowest and highest sequence number in the cluster
 * [Setting Parallel Slave Threads for replication](https://galeracluster.com/library/kb/parallel-applier-threads.html)
+* [Unit Testing for Prometheus exporters](https://www.prometheus.io/docs/prometheus/latest/configuration/unit_testing_rules/)
 ## Docker image
 
 ### build the image
@@ -51,7 +52,7 @@ docker build --build-arg BASE_REGISTRY=keppel.eu-nl-1.cloud.sap --build-arg BASE
 | USERID | id of the user that should run the binary |
 
 ```bash
-docker build --build-arg BASE_REGISTRY=keppel.eu-nl-1.cloud.sap --build-arg BASE_ACCOUNT=octobus --build-arg BASE_SOFT_NAME=ubuntu --build-arg BASE_SOFT_VERSION=20.04 --build-arg BASE_IMG_VERSION=0.3.59 --build-arg SOFT_NAME=proxysql --build-arg SOFT_VERSION=2.4.3 --build-arg IMG_VERSION=0.0.1 --build-arg USERID=3100 -t keppel.eu-nl-1.cloud.sap/octobus/proxysql:2.4.3-0.0.1 -f docker/proxysql/Dockerfile ./docker/proxysql/
+docker build --build-arg BASE_REGISTRY=keppel.eu-nl-1.cloud.sap --build-arg BASE_ACCOUNT=octobus --build-arg BASE_SOFT_NAME=ubuntu --build-arg BASE_SOFT_VERSION=20.04 --build-arg BASE_IMG_VERSION=0.3.59 --build-arg SOFT_NAME=proxysql --build-arg SOFT_VERSION=2.4.3 --build-arg IMG_VERSION=0.1.0 --build-arg USERID=3100 -t keppel.eu-nl-1.cloud.sap/octobus/proxysql:2.4.3-0.1.0 -f docker/proxysql/Dockerfile ./docker/proxysql/
 ```
 ## Helm chart
 
