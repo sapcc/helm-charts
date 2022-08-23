@@ -24,7 +24,7 @@
 # All the auto-generated files should use the tag "file.<filename>".
 <source>
   @type tail
-  path /var/log/containers/fluent*
+  path /var/log/containers/fluent* /var/log/containers/es*
   exclude_path /var/log/containers/fluent-prometheus*
   pos_file /var/log/fluent-prometheus.pos
   time_format %Y-%m-%dT%H:%M:%S.%N
@@ -82,6 +82,11 @@
     pattern /retry succeeded/
     tag "FLUENTSUCCEED.${tag}"
   </rule>
+  <rule>
+    key log
+    pattern /because ReadonlyREST/
+    tag "READONLYREST.${tag}"
+  </rule>
 </match>
 
 <match FLUENTERROR.**>
@@ -89,7 +94,7 @@
   <store>
     @type prometheus
     <metric>
-      name fluentd_output_resolv_error
+      name prom_fluentd_output_resolv_error
       type counter
       desc The total number of resolve errata to ES
       <labels>
@@ -109,7 +114,7 @@
   <store>
     @type prometheus
     <metric>
-      name fluentd_output_retry_succeed
+      name prom_fluentd_output_retry_succeed
       type counter
       desc The total number of sucessfull retries in resolving to ES
       <labels>
@@ -123,3 +128,24 @@
     @type null
   </store>
 </match>
+
+<match READONLYREST.**>
+  @type copy
+  <store>
+    @type prometheus
+    <metric>
+      name prom_elastic_readonlyrest_error
+      type counter
+      desc The total number of readonlyrest plugin errata
+      <labels>
+        nodename "#{ENV['K8S_NODE_NAME']}"
+        fluent_container $.kubernetes.pod_name
+        fluent_namespace $.kubernetes.namespace
+      </labels>
+    </metric>
+  </store>
+  <store>
+    @type null
+  </store>
+</match>
+
