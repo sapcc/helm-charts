@@ -15,4 +15,4 @@ host    all             all             ::1/128                 trust
 #host    replication     postgres        127.0.0.1/32            trust
 #host    replication     postgres        ::1/128                 trust
 
-host all all 0.0.0.0/0 {{if not .Values.global.pgbouncer.enabled }}password{{ else }}md5{{ end }}
+host all all 0.0.0.0/0 password

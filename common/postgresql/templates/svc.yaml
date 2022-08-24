@@ -11,15 +11,11 @@ metadata:
     type: database
 spec:
   selector:
-{{- if or .Values.pgbouncer.enabled .Values.global.pgbouncer.enabled }}
-    name: {{.Values.postgresDatabase}}-pgbouncer
-{{- else }}
     app: {{ template "fullname" . }}
-{{- end }}
   ports:
   - name: postgresql
     port: 5432
-    targetPort: {{ if or .Values.pgbouncer.enabled .Values.global.pgbouncer.enabled }}pgbouncer{{ else }}postgresql{{ end }}
+    targetPort: postgresql
 
 {{- if .Values.backup.enabled }}
 ---
