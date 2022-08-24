@@ -24,9 +24,20 @@
 # All the auto-generated files should use the tag "file.<filename>".
 <source>
   @type tail
-  path /var/log/containers/fluent* /var/log/containers/es*
+  path /var/log/containers/fluent*
   exclude_path /var/log/containers/fluent-prometheus*
   pos_file /var/log/fluent-prometheus.pos
+  time_format %Y-%m-%dT%H:%M:%S.%N
+  tag kubernetes.*
+  format json
+  keep_time_key true
+</source>
+
+<source>
+  @type tail
+  path /var/log/containers/es*
+  exclude_path /var/log/containers/fluent-prometheus*
+  pos_file /var/log/fluent-es.pos
   time_format %Y-%m-%dT%H:%M:%S.%N
   tag kubernetes.*
   format json
