@@ -24,6 +24,11 @@ spec:
         alert-tier: os
         alert-service: swift
     spec:
+      {{- if $.Values.companions_run_on_storages }}
+      {{- include "swift_daemonset_tolerations" $ | indent 6 }}
+      nodeSelector:
+        species: {{ $.Values.species }}
+      {{- end }}
       containers:
         - name: memcached
           image: {{ $.Values.global.dockerHubMirrorAlternateRegion }}/library/memcached:{{ $.Values.image_version_auxiliary_memcached }}

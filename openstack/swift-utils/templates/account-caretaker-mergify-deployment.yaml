@@ -28,6 +28,15 @@ spec:
         prometheus.io/scrape: "true"
         prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus }}
     spec:
+      {{- if ge .Capabilities.KubeVersion.Minor "7" }}
+      tolerations:
+      - key: "species"
+        operator: "Equal"
+        value: {{ quote .Values.species }}
+        effect: "NoSchedule"
+      {{- end }}
+      nodeSelector:
+        species: {{ .Values.species }}
       volumes:
         - name: caretaker-etc
           configMap:

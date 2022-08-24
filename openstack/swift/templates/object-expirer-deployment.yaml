@@ -27,6 +27,11 @@ spec:
         prometheus.io/scrape: "true"
         prometheus.io/targets: {{ required ".Values.alerts.prometheus.openstack missing" $.Values.alerts.prometheus.openstack }}
     spec:
+      {{- if .Values.companions_run_on_storages }}
+      {{- include "swift_daemonset_tolerations" . | indent 6 }}
+      nodeSelector:
+        species: {{ .Values.species }}
+      {{- end }}
       volumes:
         - name: swift-etc
           configMap:
