@@ -84,7 +84,7 @@ cronus:
     endpointType: {{ .Values.config.endpointType }}
 {{- end }}
 {{- if .Values.config.workQueue }}
-{{- $r_host := .Values.rabbitmq.users.default.host }}
+{{- $r_host := .Values.rabbitmq.host }}
 {{- $r_user := .Values.rabbitmq.users.default.user }}
 {{- $r_creds := .Values.rabbitmq.users.default.password }}
   workQueue:
