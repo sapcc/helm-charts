@@ -5,7 +5,7 @@ metadata:
   labels:
     on-prod-ui: 'true'
 spec:
-  enforcementAction: deny
+  enforcementAction: {{ if and (.Values.global.region | hasPrefix "qa-") (eq .Values.cluster_type "baremetal" "scaleout") -}} deny {{- else -}} dryrun {{- end }} # TODO: enable everywhere (only qa for now for testing)
   match: {{ include "match_active_helm_releases" . | indent 4 }}
   parameters:
     helmManifestParserURL: {{ quote .Values.helm_manifest_parser_url }}
