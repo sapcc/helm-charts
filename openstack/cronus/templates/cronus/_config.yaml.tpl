@@ -84,11 +84,12 @@ cronus:
     endpointType: {{ .Values.config.endpointType }}
 {{- end }}
 {{- if .Values.config.workQueue }}
+{{- $r_host := .Values.rabbitmq.users.default.host }}
 {{- $r_user := .Values.rabbitmq.users.default.user }}
 {{- $r_creds := .Values.rabbitmq.users.default.password }}
   workQueue:
     enabled: {{ .Values.config.workQueue.enabled }}
-    rabbitmqUri: amqp://{{ $r_user }}:{{ $r_creds }}@cronus-rabbitmq:5672/
+    rabbitmqUri: amqp://{{ $r_user }}:{{ $r_creds }}@{{ $r_host }}/
 {{- if .Values.config.workQueue.queueName }}
     queueName: {{ .Values.config.workQueue.queueName }}
 {{- end }}
