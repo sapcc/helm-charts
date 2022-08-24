@@ -49,5 +49,12 @@ __parse_response(resp) = result {
 }
 __parse_response(resp) = result {
   resp.status_code != 200
-  result := {"error": "helm-manifest-parser did not return HTTP status 200. Please retry in ~5 minutes."}
+  object.get(resp, ["error", "message"], "") == ""
+  result := { "error": sprintf("helm-manifest-parser returned HTTP status %d, but we expected 200. Please retry in ~5 minutes.", [resp.status_code]) }
+}
+__parse_response(resp) = result {
+  resp.status_code != 200
+  msg := object.get(resp, ["error", "message"], "")
+  msg != ""
+  result := { "error": sprintf("Could not reach helm-manifest-parser (%q). Please retry in ~5 minutes.", [msg]) }
 }
