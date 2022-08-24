@@ -1,11 +1,6 @@
 {{- $wsrepProviderOptions := dict }}
 {{- $nodeNames := list -}}
-{{- $nodeNamePrefix := "" -}}
-{{ if and ($.Values.namePrefix) (hasKey $.Values.namePrefix "application") }}
-  {{- $nodeNamePrefix = ($.Values.namePrefix.application | default "mariadb-g") }}
-{{ else }}
-  {{- $nodeNamePrefix = "mariadb-g" }}
-{{ end }}
+{{- $nodeNamePrefix := (include "nodeNamePrefix" (dict "global" $ "component" "application")) -}}
 {{- $galeraPort := "" }}
 {{- $sstPort := "" }}
 {{- $mariadbClusterName := "" }}
@@ -69,7 +64,7 @@ data:
     {{- $_ := set $wsrepProviderOptions "pc.weight" (printf "pc.weight=${PC_WEIGHT_%d}" $int)}}
     wsrep_provider_options={{ (join ";" (values $wsrepProviderOptions | sortAlpha)) }}
     wsrep_node_address=${CONTAINER_IP}
-    wsrep_node_name={{ $.Values.namePrefix | default "mariadb-g" }}-{{ $int }}
+    wsrep_node_name={{ $nodeNamePrefix }}-{{ $int }}
     wsrep-on=1
     wsrep_log_conflicts=ON
     {{- if eq $.Values.mariadb.galera.logLevel "debug" }}wsrep_debug=1{{- end }}

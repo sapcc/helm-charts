@@ -2,7 +2,7 @@ apiVersion: batch/v1
 kind: Job
 metadata:
   namespace: {{ $.Release.Namespace }}
-  name: {{ if and ($.Values.namePrefix) (hasKey $.Values.namePrefix "application") }} {{ $.Values.namePrefix.application | default "mariadb-g" }}-cfg-{{ uuidv4 | lower }} {{ else }} mariadb-g-cfg-{{ uuidv4 | lower }} {{ end }}
+  name: {{ (include "nodeNamePrefix" (dict "global" $ "component" "application")) }}-cfg-{{ uuidv4 | lower }}
   labels:
     app: {{ $.Release.Name }}
     release: {{ $.Release.Name }}

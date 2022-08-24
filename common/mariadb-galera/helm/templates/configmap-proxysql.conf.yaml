@@ -2,18 +2,6 @@
 {{- $galeraPort := "" }}
 {{- $proxysqlAdminPort := "" }}
 {{- $nodeNames := list -}}
-{{- $nodeNamePrefixProxy := "" -}}
-{{- $nodeNamePrefixApplication := "" -}}
-{{ if and ($.Values.namePrefix) (hasKey $.Values.namePrefix "application") }}
-  {{- $nodeNamePrefixApplication = ($.Values.namePrefix.application | default "mariadb-g") }}
-{{ else }}
-  {{- $nodeNamePrefixApplication = "mariadb-g" }}
-{{ end }}
-{{ if and ($.Values.namePrefix) (hasKey $.Values.namePrefix "proxy") }}
-  {{- $nodeNamePrefixProxy = ($.Values.namePrefix.proxy | default "proxysql") }}
-{{ else }}
-  {{- $nodeNamePrefixProxy = "proxysql" }}
-{{ end }}
 {{- range $servicesKey, $servicesValue := $.Values.services.application }}
   {{- if eq $servicesValue.name "frontend" }}
     {{- range $portsKey, $portsValue := $servicesValue.ports }}
@@ -54,7 +42,7 @@ data:
         {{- $calculatedWeight = (mul 2 $calculatedWeight) }}
       {{- end }}
     {
-      hostname="{{ (printf "%s-%d.%s.svc.cluster.local" $nodeNamePrefixProxy $int $.Release.Namespace) }}"
+      hostname="{{ (printf "%s-%d.%s.svc.cluster.local" (include "nodeNamePrefix" (dict "global" $ "component" "proxy")) $int $.Release.Namespace) }}"
       port={{ $proxysqlAdminPort }}
       weight={{ $calculatedWeight }}
     },
@@ -79,7 +67,7 @@ data:
         {{- $calculatedWeight = (mul 2 $calculatedWeight) }}
       {{- end }}
     {
-      address="{{ (printf "%s-%d.%s.svc.cluster.local" $nodeNamePrefixApplication $int $.Release.Namespace) }}"
+      address="{{ (printf "%s-%d.%s.svc.cluster.local" (include "nodeNamePrefix" (dict "global" $ "component" "application")) $int $.Release.Namespace) }}"
       port={{ $mysqlPort }}
       use_ssl=0
       weight={{ $calculatedWeight }}

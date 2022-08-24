@@ -9,7 +9,7 @@ apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   namespace: {{ $.Release.Namespace }}
-  name: {{ if and ($.Values.namePrefix) (hasKey $.Values.namePrefix "proxy") }} {{ $.Values.namePrefix.proxy | default "proxysql" }} {{ else }} proxysql {{ end }}
+  name: {{ (include "nodeNamePrefix" (dict "global" $ "component" "proxy")) }}
   labels:
     app: {{ $.Release.Name }}
     component: "proxy"
@@ -86,7 +86,7 @@ spec:
           privileged: {{ $.Values.initContainers.increaseMapCount.securityContext.privileged }}
           runAsUser: {{ $.Values.initContainers.increaseMapCount.securityContext.runAsUser }}
       containers:
-      - name: {{ if and ($.Values.namePrefix) (hasKey $.Values.namePrefix "proxy") }} {{ $.Values.namePrefix.proxy | default "proxysql" }} {{ else }} proxysql {{ end }}
+      - name: {{ (include "nodeNamePrefix" (dict "global" $ "component" "proxy")) }}
         image: "{{ $.Values.image.proxy.registry }}/{{ $.Values.image.proxy.project }}/{{ $.Values.image.proxy.applicationname }}:{{ $.Values.image.proxy.applicationversion }}-{{ $.Values.image.proxy.imageversion }}"
         imagePullPolicy: {{ $.Values.image.proxy.pullPolicy | default "IfNotPresent" | quote }}
         securityContext:

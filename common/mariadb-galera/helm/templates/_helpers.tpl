@@ -4,24 +4,11 @@
   service with per pod information:     include "networkService" (dict "global" $ "service" $service "component" $component "replica" ($replicaNumber|toString))
 */}}
 {{- define "networkService" }}
-{{- $nodeNamePrefix := "" -}}
-{{- $nodeNamePrefixApplication := "" -}}
-{{- $nodeNamePrefixProxy := "" -}}
-{{ if and (.global.Values.namePrefix) (hasKey .global.Values.namePrefix "application") }}
-  {{- $nodeNamePrefixApplication = (.global.Values.namePrefix.application | default "mariadb-g") }}
-{{ else }}
-  {{- $nodeNamePrefixApplication = "mariadb-g" }}
-{{ end }}
-{{ if and (.global.Values.namePrefix) (hasKey .global.Values.namePrefix "proxy") }}
-  {{- $nodeNamePrefixProxy = (.global.Values.namePrefix.application | default "proxysql") }}
-{{ else }}
-  {{- $nodeNamePrefixProxy = "proxysql" }}
-{{ end }}
-
-{{- if eq .component "application" }}
-  {{- $nodeNamePrefix = $nodeNamePrefixApplication }}
-{{- else if eq .component "proxy" }}
-  {{- $nodeNamePrefix = $nodeNamePrefixProxy }}
+{{ $nodeNamePrefix := "" }}
+{{ if eq .component "application" }}
+  {{ $nodeNamePrefix = (include "nodeNamePrefix" (dict "global" .global "component" "application")) }}
+{{ else if eq .component "proxy" }}
+  {{ $nodeNamePrefix = (include "nodeNamePrefix" (dict "global" .global "component" "proxy")) }}
 {{ end }}
 ---
 apiVersion: v1
@@ -30,7 +17,7 @@ metadata:
   namespace: {{ .global.Release.Namespace }}
   {{- if eq .replica "notused" }}
     {{- if and (eq .service.value.name "frontend") (.global.Values.proxy.enabled)}}
-  name: {{ (printf "%s-%s" $nodeNamePrefixApplication .service.value.name) }}
+  name: {{ (printf "%s-%s" (include "nodeNamePrefix" (dict "global" .global "component" "application")) .service.value.name) }}
     {{- else }}
   name: {{ (printf "%s-%s" $nodeNamePrefix .service.value.name) }}
     {{- end }}
@@ -70,4 +57,27 @@ spec:
       protocol: {{ $portValue.protocol | default "TCP" }}
   {{- end }}
   sessionAffinity: {{ .service.value.sessionAffinity | default "None" | quote }}
+{{- end }}
+
+{{/*
+  Fetch current node name prefix for a component (currently application and proxy are supported)
+  application node name prefix:   include "nodeNamePrefix" (dict "global" $ "component" "application")
+  proxy node name prefix:         include "nodeNamePrefix" (dict "global" $ "component" "proxy")
+*/}}
+{{- define "nodeNamePrefix" }}
+  {{- if eq .component "application" }}
+    {{- if and (.global.Values.namePrefix) (hasKey .global.Values.namePrefix .component) }}
+      {{- (.global.Values.namePrefix.application | default "mariadb-g") }}
+    {{- else }}
+      {{- "mariadb-g" }}
+    {{- end }}
+  {{- else if eq .component "proxy" }}
+    {{- if and (.global.Values.namePrefix) (hasKey .global.Values.namePrefix .component) }}
+      {{- (.global.Values.namePrefix.proxy | default "proxysql") }}
+    {{- else }}
+      {{- "proxysql" }}
+    {{- end }}
+  {{- else }}
+    {{- fail "No supported component provided for the nodeNamePrefix function" }}
+  {{- end }}
 {{- end }}
