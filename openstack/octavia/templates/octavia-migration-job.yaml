@@ -8,7 +8,7 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: octavia-migration-{{ .Values.imageVersion }}
+  name: {{ include "octavia.migration_job_name" . }}
   labels:
     system: openstack
     type: configuration
@@ -17,18 +17,31 @@ spec:
   template:
     spec:
       restartPolicy: OnFailure
-      containers:
-        - name: octavia-migration
+{{ include "utils.proxysql.job_pod_settings" . | indent 6 }}
+      initContainers:
+        - name: wait-for-dependencies
           image: {{required ".Values.global.registry is missing" .Values.global.registry}}/loci-octavia:{{required "Values.imageVersion is missing" .Values.imageVersion}}
           imagePullPolicy: IfNotPresent
           command: ['dumb-init', 'kubernetes-entrypoint']
           env:
             - name: COMMAND
-              value: "octavia-db-manage upgrade head"
+              value: "true"
             - name: DEPENDENCY_SERVICE
               value: "{{ .Release.Name }}-mariadb"
             - name: NAMESPACE
-              value: {{ .Release.Namespace }}
+              value: {{ .Release.Namespace }}        
+      containers:
+        - name: octavia-migration
+          image: {{required ".Values.global.registry is missing" .Values.global.registry}}/loci-octavia:{{required "Values.imageVersion is missing" .Values.imageVersion}}
+          imagePullPolicy: IfNotPresent
+          command:
+            - dumb-init
+            - bash
+            - -c
+            - |
+              trap "{{ include "utils.proxysql.proxysql_signal_stop_script" . | trim }}" EXIT
+              octavia-db-manage upgrade head
+          env:
             {{- if .Values.sentry.enabled }}
             - name: SENTRY_DSN
               valueFrom:
@@ -45,7 +58,10 @@ spec:
               mountPath: /etc/octavia/logging.ini
               subPath: logging.ini
               readOnly: true
+            {{- include "utils.proxysql.volume_mount" . | indent 12 }}
+        {{- include "utils.proxysql.container" . | indent 8 }}
       volumes:
         - name: octavia-etc
           configMap:
             name: octavia-etc
+        {{- include "utils.proxysql.volumes" . | indent 8 }}
