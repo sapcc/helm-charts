@@ -19,5 +19,7 @@ iscsi_use_multipath=True
 #live_migration_downtime_delay = 75
 #live_migration_flag = VIR_MIGRATE_UNDEFINE_SOURCE, VIR_MIGRATE_PEER2PEER, VIR_MIGRATE_LIVE, VIR_MIGRATE_TUNNELLED
 
+{{- include "osprofiler" . }}
+
 {{- end }}
 {{- end }}

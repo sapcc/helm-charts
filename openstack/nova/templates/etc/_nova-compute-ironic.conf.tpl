@@ -10,6 +10,8 @@ scheduler_instance_sync_interval = {{ .Values.scheduler.scheduler_instance_sync_
 {{ $k }} = {{ $v }}
 {{- end }}
 
+{{- include "osprofiler" . }}
+
 [ironic]
 # keystoneV3 values
 auth_type = v3password

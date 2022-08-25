@@ -27,3 +27,5 @@ io_ops_weight_multiplier = {{ .Values.scheduler.io_ops_weight_multiplier }}
 soft_affinity_weight_multiplier = {{ .Values.scheduler.soft_affinity_weight_multiplier }}
 prefer_same_host_resize_weight_multiplier = {{ .Values.scheduler.prefer_same_host_resize_weight_multiplier }}
 hv_ram_class_weight_multiplier = {{ .Values.scheduler.hv_ram_class_weight_multiplier }}
+
+{{- include "osprofiler" . }}

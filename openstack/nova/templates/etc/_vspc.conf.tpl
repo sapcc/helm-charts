@@ -8,3 +8,4 @@ web_port = {{ .Values.vspc.web.portInternal }}
 uri = {{ .Values.vspc.url }}
 serial_log_dir = /var/run/serial_log_dir
 
+{{- include "osprofiler" . }}
