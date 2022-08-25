@@ -8,19 +8,21 @@ disco:
     serviceAccountName: disco
 
 cert-manager:
+  installCRDs: true
   image:
     repository: keppel.eu-de-1.cloud.sap/ccloud/cert-manager-controller
-    tag: v0.15.2
+    tag: v1.5.5-p1
   webhook:
     image:
-      repository: keppel.eu-de-1.cloud.sap/ccloud/cert-manager-webhook
-      tag: v0.15.2
+      repository: keppel.eu-de-1.cloud.sap/ccloud-quay-mirror/jetstack/cert-manager-webhook
   cainjector:
     image:
-      repository: keppel.eu-de-1.cloud.sap/ccloud/cert-manager-cainjector
-      tag: v0.15.2
+      repository: keppel.eu-de-1.cloud.sap/ccloud-quay-mirror/jetstack/cert-manager-cainjector
     extraArgs:
     - --leader-elect=false
+  startupapicheck:
+    image:
+      repository: keppel.eu-de-1.cloud.sap/ccloud-quay-mirror/jetstack/cert-manager-ctl
   ingressShim:
     defaultIssuerName: digicert-issuer
     defaultIssuerKind: DigicertIssuer
@@ -32,3 +34,24 @@ cert-manager:
 
 digicert-issuer:
   enableLeaderElection: "false"
+
+metrics-server:
+  image:
+    repository: keppel.global.cloud.sap/ccloud-k8sgcr-mirror/metrics-server/metrics-server
+
+  # Workaround for qa landscapes.
+  args:
+    - --kubelet-insecure-tls
+
+  replicas: 3
+  podLabels:
+    k8s-app: metrics-server
+  affinity:
+    podAntiAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        - labelSelector:
+            matchLabels:
+              k8s-app: metrics-server
+          namespaces:
+            - kube-system
+          topologyKey: kubernetes.io/hostname
