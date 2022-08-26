@@ -27,6 +27,12 @@ spec:
           imagePullPolicy: {{ default "IfNotPresent" .Values.recommender.image.pullPolicy }}
           args:
             - --recommender-interval={{ required ".Values.recommender.interval missing" .Values.recommender.interval }}
+            {{- if .Values.recommender.prometheusAddress }}
+            - --prometheus-address={{.Values.recommender.prometheusAddress }}
+            {{- end }}
+            {{- if .Values.recommender.prometheusCadvisorJobName }}
+            - --prometheus-cadvisor-job-name={{.Values.recommender.prometheusCadvisorJobName}}
+            {{- end }}
           resources:
             limits:
               cpu: 200m

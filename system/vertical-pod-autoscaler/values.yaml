@@ -7,7 +7,7 @@ image:
   # Configure the registry for all VPA images.
   # Default: k8s.gcr.io
   # In Converged Cloud we use our in-house image registry.
-  registry: keppel.eu-de-1.cloud.sap/ccloud-k8sgcr-mirror
+  registry: keppel.global.cloud.sap/ccloud-k8sgcr-mirror
 
 # Additional annotations applied to each pod (recommender, admission, updater).
 additionalPodAnnotations:
@@ -20,7 +20,14 @@ recommender:
     repository: autoscaling/vpa-recommender
     pullPolicy: IfNotPresent
 
+  # How often metrics should be fetched.
   interval: 5m
+
+  # Where to reach for Prometheus metrics.
+  prometheusAddress: https://prometheus-kubernetes.kube-monitoring.svc
+
+  # Name of the prometheus job name which scrapes the cAdvisor metrics.
+  prometheusCadvisorJobName: kubernetes-cadvisors
 
 admission:
   enabled: false
