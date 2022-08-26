@@ -62,7 +62,7 @@
       - '{__name__=~"^scheduler_.+"}'
       - '{__name__=~"^scrape_duration_seconds"}'
       - '{__name__=~"^secrets_exporter_certificate_not_after"}'
-      - '{__name__=~"^skydns_.+"}'
+      - '{__name__=~"^coredns.+"}'
       - '{__name__=~"^unbound_.+"}'
       - '{__name__=~"^up"}'
       - '{__name__=~"^uwsgi_.+"}'
