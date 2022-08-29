@@ -118,6 +118,7 @@
       - '{__name__=~"^nsxt_trim_exception"}'
       - '{__name__=~"^filebeat_.+"}'
       - '{__name__=~"^logstash_node_.+"}'
+      - '{__name__=~"^prom_fluentd_.+"}'
       - '{__name__=~"^metis_.+"}'
       - '{__name__=~"^maria_backup.+"}'
       - '{__name__=~"netapp_aggregate_.+"}'
