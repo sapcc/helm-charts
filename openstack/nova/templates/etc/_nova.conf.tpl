@@ -31,7 +31,9 @@ sync_power_state_unexpected_call_stop = false
 
 prepare_empty_host_for_spawning_interval = 600
 
+{{- if (.Values.imageVersion | hasPrefix "rocky") }}
 dhcp_domain = openstack.{{ required ".Values.global.region is missing" .Values.global.region }}.{{ required ".Values.global.tld is missing" .Values.global.tld }}
+{{- end }}
 
 {{ include "ini_sections.default_transport_url" . }}
 
@@ -39,6 +41,10 @@ dhcp_domain = openstack.{{ required ".Values.global.region is missing" .Values.g
 
 [api]
 compute_link_prefix = https://{{include "nova_api_endpoint_host_public" .}}:{{.Values.global.novaApiPortPublic}}
+{{- if (.Values.imageVersion | hasPrefix "rocky" | not) }}
+dhcp_domain = openstack.{{ required ".Values.global.region is missing" .Values.global.region }}.{{ required ".Values.global.tld is missing" .Values.global.tld }}
+{{- end }}
+
 
 [api_database]
 connection = {{ tuple . .Values.apidbName .Values.apidbUser .Values.apidbPassword .Values.mariadb_api.name | include "db_url_mysql" }}
