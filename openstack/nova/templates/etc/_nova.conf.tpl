@@ -102,7 +102,6 @@ mksproxy_base_url = https://{{include "nova_console_endpoint_host_public" .}}:{{
 lock_path = /var/lib/nova/tmp
 
 [glance]
-api_servers = http://{{include "glance_api_endpoint_host_internal" .}}:{{.Values.global.glance_api_port_internal | default "9292" }}
 num_retries = 10
 
 [cinder]
