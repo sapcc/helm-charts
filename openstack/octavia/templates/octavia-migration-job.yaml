@@ -39,8 +39,9 @@ spec:
             - bash
             - -c
             - |
-              trap "{{ include "utils.proxysql.proxysql_signal_stop_script" . | trim }}" EXIT
+              set -euo pipefail
               octavia-db-manage upgrade head
+              {{ include "utils.proxysql.proxysql_signal_stop_script" . | trim }}
           env:
             {{- if .Values.sentry.enabled }}
             - name: SENTRY_DSN
