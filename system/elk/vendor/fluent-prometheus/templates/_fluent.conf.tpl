@@ -111,6 +111,7 @@
       <labels>
         nodename "#{ENV['K8S_NODE_NAME']}"
         fluent_container $.kubernetes.pod_name
+        daemontype $.kubernetes.container_name
         fluent_namespace $.kubernetes.namespace
       </labels>
     </metric>
@@ -131,6 +132,7 @@
       <labels>
         nodename "#{ENV['K8S_NODE_NAME']}"
         fluent_container $.kubernetes.pod_name
+        daemontype $.kubernetes.container_name
         fluent_namespace $.kubernetes.namespace
       </labels>
     </metric>
