@@ -71,7 +71,7 @@
 <filter kubernetes.**>
   @type prometheus
   <metric>
-    name fluentd_input_status_num_records_total
+    name prom_fluentd_input_status_num_records_total
     type counter
     desc The total number of incoming records
     <labels>
