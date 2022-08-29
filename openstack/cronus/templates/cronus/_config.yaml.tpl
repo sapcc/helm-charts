@@ -83,6 +83,12 @@ cronus:
     region: {{ .Values.config.region }}
     endpointType: {{ .Values.config.endpointType }}
 {{- end }}
+{{- if .Values.config.smtpConnPool }}
+  smtpConnPool:
+    maxConnections: {{ .Values.config.smtpConnPool.maxConnections }}
+    connectionTimeLimit: {{ .Values.config.smtpConnPool.connectionTimeLimit }}
+    connectionReuseLimit: {{ .Values.config.smtpConnPool.connectionReuseLimit }}
+{{- end }}
 {{- if .Values.config.workQueue }}
 {{- $r_host := .Values.rabbitmq.host }}
 {{- $r_user := .Values.rabbitmq.users.default.user }}
