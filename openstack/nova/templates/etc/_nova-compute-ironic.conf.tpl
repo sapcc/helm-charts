@@ -4,11 +4,14 @@
 [DEFAULT]
 host = nova-compute-{{ $hypervisor.name }}
 # Needs to be same on hypervisor and scheduler
-scheduler_tracks_instance_changes = {{ .Values.scheduler.scheduler_tracks_instance_changes }}
 scheduler_instance_sync_interval = {{ .Values.scheduler.scheduler_instance_sync_interval }}
 {{- range $k, $v := $hypervisor.default }}
 {{ $k }} = {{ $v }}
 {{- end }}
+
+[filter_scheduler]
+# Needs to be same on hypervisor and scheduler
+track_instance_changes = {{ .Values.scheduler.track_instance_changes }}
 
 [ironic]
 # keystoneV3 values
