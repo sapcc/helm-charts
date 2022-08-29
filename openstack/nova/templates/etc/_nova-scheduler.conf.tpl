@@ -14,7 +14,7 @@ query_placement_for_availability_zone = {{ not (contains "AvailabilityZoneFilter
 [filter_scheduler]
 available_filters = {{ .Values.scheduler.available_filters | default "nova.scheduler.filters.all_filters" }}
 enabled_filters = {{ .Values.scheduler.default_filters }}
-track_instance_changes = {{ .Values.scheduler.scheduler_tracks_instance_changes }}
+track_instance_changes = {{ .Values.scheduler.track_instance_changes }}
 bigvm_host_size_filter_uses_flavor_extra_specs = true
 bigvm_host_size_filter_host_fractions = full:1,half:0.5,two_thirds:0.71
 vm_size_threshold_vm_size_mb = {{ .Values.scheduler.vm_size_threshold_vm_size_mb }}
