@@ -201,8 +201,4 @@ region_name = {{.Values.global.region}}
 default_pool_size = {{ .Values.wsgi_default_pool_size | default .Values.global.wsgi_default_pool_size | default 100 }}
 
 [workarounds]
-{{- if .Values.pod.replicas.consoleauth }}
-# This has to be removed when we also remove the deployment of nova-consoleauth
-enable_consoleauth = True
-{{- end }}
 enable_live_migration_to_old_hypervisor = True
