@@ -1,0 +1,32 @@
+groups:
+- name: cc3test-datastore.alerts
+  rules:
+  - alert: DatastoreNotAccessibleFromHost
+    expr: |
+        cc3test_vcenter_datastore_accessible_from_host == 0
+    for: 30m
+    labels:
+      severity: info
+      tier: vmware
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.type }}'
+      meta: 'Datastore not accessible from host'
+      playbook: 'docs/support/playbook/cinder/alerts'
+    annotations:
+      description: 'Datastore {{ $labels.vc_ds }} not accessible from host {{ $labels.vc_hs }} of cluster {{ $labels.vc_cs }}'
+      summary: 'Datastore not accessible from host'
+
+  - alert: DatastoreMissingHost
+    expr: |
+        rate(cc3test_vcenter_host_missing_in_datastore[30m]) > 0
+    for: 30m
+    labels:
+      severity: info
+      tier: vmware
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.type }}'
+      meta: 'Host missing in datastore'
+      playbook: 'docs/support/playbook/cinder/alerts'
+    annotations:
+      description: 'Host {{ $labels.vc_hs }} of cluster {{ $labels.vc_cs }} missing in datastore {{ $labels.vc_ds }}'
+      summary: 'Host missing in datastore'
