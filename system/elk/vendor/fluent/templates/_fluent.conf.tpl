@@ -40,7 +40,6 @@
   kubernetes_url https://KUBERNETES_SERVICE_HOST
   bearer_token_file /var/run/secrets/kubernetes.io/serviceaccount/token
   ca_file /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
-  use_journal 'false'
   container_name_to_kubernetes_regexp '^(?<name_prefix>[^_]+)_(?<container_name>[^\._]+)(\.(?<container_hash>[^_]+))?_(?<pod_name>[^_]+)_(?<namespace>[^_]+)_[^_]+_[^_]+$'
 </filter>
 
@@ -112,7 +111,7 @@
 </filter>
 
 
-<filter kubernetes.var.log.containers.kube-system-nginx-ingress-controller**>
+<filter kubernetes.var.log.containers.kube-system-ingress-nginx-controller**>
   @type parser
   key_name log
   reserve_data true
@@ -456,6 +455,10 @@
 </match>
 
 <match kubernetes.var.log.containers.cfm**>
+  @type null
+</match>
+
+<match kubernetes.var.log.containers.audit-logs-auditbeat-zp4p6_audit-logs_exporter.**>
   @type null
 </match>
 
