@@ -25,3 +25,11 @@ groups:
           "site", "stretched", "statically_setting_a_label", "")
         or
         snmp_asr_ifHighSpeed{ifDescr=~"Port-channel1", ifOperStatus="1", device=~"^(asr|rt)[1-9][0-9]{2}[ab]$"})
+  - record: neutron_router:per_pair_max_bdvifs_in_network
+    expr: |
+        max by(asr_pair, site) (count by(network_id, asr_pair, site) (
+        label_replace(
+          snmp_asr_ifHCInOctets{ifAlias=~"^type:gw.*"},
+          "site", "stretched", "statically_setting_a_label", "")
+        or
+        snmp_asr_ifHCInOctets{ifAlias=~"^type:gw.*"}))
