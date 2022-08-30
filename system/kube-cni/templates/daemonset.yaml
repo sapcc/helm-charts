@@ -1,0 +1,59 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  annotations:
+  labels:
+    k8s-app: kube-cni
+  name: kube-cni
+spec:
+  selector:
+    matchLabels:
+      name: kube-cni
+  updateStrategy:
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        name: kube-cni
+        k8s-app: kube-cni
+      annotations:
+    spec:
+      priorityClassName: system-node-critical
+      initContainers:
+      - name: install-cni-plugins
+        image: "{{ required ".Values.global.registryAlternateRegion is missing" .Values.global.registryAlternateRegion }}/{{ .Values.images.cni.image }}:{{ .Values.images.cni.tag }}"
+        command:
+        - cp
+        args:
+        - -rf
+        - /cni-plugins/.
+        - /opt/cni/bin/
+        volumeMounts:
+        - name: cni-plugin
+          mountPath: /opt/cni/bin
+{{- if .Values.plugins.multus }}
+      - name: install-multus-cni-plugin
+        image: "{{ required ".Values.global.registryAlternateRegion is missing" .Values.global.registryAlternateRegion }}/{{ .Values.images.multus.image }}:{{ .Values.images.multus.tag }}"
+        command:
+        - cp
+        args:
+        - -f
+        - /multus-cni/multus-cni
+        - /opt/cni/bin/multus-cni
+        volumeMounts:
+        - name: cni-plugin
+          mountPath: /opt/cni/bin
+{{- end }}
+      containers:
+      - name: pause
+        image: "{{ required ".Values.global.registryAlternateRegion is missing" .Values.global.registryAlternateRegion }}/{{ .Values.images.pause.image }}:{{ .Values.images.pause.tag }}"
+        imagePullPolicy: IfNotPresent
+      hostNetwork: true
+      terminationGracePeriodSeconds: 5
+      tolerations:
+        - operator: Exists
+          effect: "NoSchedule"
+      volumes:
+      - name: cni-plugin
+        hostPath:
+          path: /opt/cni/bin
