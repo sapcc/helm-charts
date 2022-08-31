@@ -49,9 +49,7 @@ dhcp_provider = neutron
 [api]
 host_ip = 0.0.0.0
 public_endpoint = https://{{ include "ironic_api_endpoint_host_public" .}}
-{{- if .Values.api.api_workers }}
-api_workers = {{ .Values.api.api_workers }}
-{{- end }}
+api_workers = {{ .Values.api.api_workers }} {{ .Values.api.api_workers | default 8}}
 
 [database]
 #connection = mysql+pymysql://ironic:{{.Values.global.dbPassword}}@ironic-mariadb.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}/ironic?charset=utf8
