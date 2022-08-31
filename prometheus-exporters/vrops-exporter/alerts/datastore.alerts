@@ -241,3 +241,17 @@ groups:
     annotations:
       description: "Datastore `{{ $labels.datastore }}` has hosts that have lost all of the redundant paths to a storage device. ({{ $labels.vcenter }})"
       summary: "Datastore `{{ $labels.datastore }}` has hosts that have lost all of the redundant paths to a storage device. ({{ $labels.vcenter }})"
+      
+  - alert: SDRSClusterCapacity
+    expr:  vrops_storagepod_capacity_remaining_percentage <=  0.10
+    for: 20m
+    labels:
+      severity: info
+      tier: vmware
+      service: storage
+      context: "vrops-exporter {{ $labels.storagepod }}"
+      meta: "DataStore Cluster {{ $labels.storagepod }} utilization > 90%. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
+      dashboard: vcenter-datastore-utilization
+    annotations:
+      description: "DataStore Cluster {{ $labels.storagepod }} utilization > 90%. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
+      summary: "DataStore Cluster {{ $labels.storagepod }} utilization > 90%. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
