@@ -1,12 +1,21 @@
+{{- define "audit_pipe" -}}
+{{- if .Values.audit.enabled }} audit{{- end -}}
+{{- end }}
+
+{{- define "watcher_pipe" -}}
+{{- if .Values.watcher.enabled }} watcher{{- end -}}
+{{- end -}}
 ############
 # Metadata #
 ############
 [composite:metadata]
 use = egg:Paste#urlmap
 /: meta
+# provides an endpoint for healthcheck enabling us to disable the service
+/healthcheck: healthcheck
 
 [pipeline:meta]
-pipeline = healthcheck cors {{- include "osprofiler_pipe" . }} {{- include "watcher_pipe" . }} sentry metaapp
+pipeline = cors {{- include "osprofiler_pipe" . }} {{- include "watcher_pipe" . }} sentry metaapp
 
 [app:metaapp]
 paste.app_factory = nova.api.metadata.handler:MetadataRequestHandler.factory
@@ -18,15 +27,7 @@ paste.app_factory = nova.api.metadata.handler:MetadataRequestHandler.factory
 [composite:osapi_compute]
 use = call:nova.api.openstack.urlmap:urlmap_factory
 /: oscomputeversions
-# starting in Liberty the v21 implementation replaces the v2
-# implementation and is suggested that you use it as the default. If
-# this causes issues with your clients you can rollback to the
-# *frozen* v2 api by commenting out the above stanza and using the
-# following instead::
-# /v2: openstack_compute_api_legacy_v2
-# if rolling back to v2 fixes your issue please file a critical bug
-# at - https://bugs.launchpad.net/nova/+bugs
-#
+{{- if (.Values.imageVersion | hasPrefix "rocky") }}
 # v21 is an exactly feature match for v2, except it has more stringent
 # input validation on the wsgi surface (prevents fuzzing early on the
 # API). It also provides new features via API microversions which are
@@ -34,34 +35,30 @@ use = call:nova.api.openstack.urlmap:urlmap_factory
 # v2 API feature set, but with some relaxed validation
 /v2: openstack_compute_api_v21_legacy_v2_compatible
 /v2.1: openstack_compute_api_v21
-
-{{- define "audit_pipe" -}}
-{{- if .Values.audit.enabled }} audit{{- end -}}
+{{- else }}
+/v2: oscomputeversion_legacy_v2
+/v2.1: oscomputeversion_v2
+# v21 is an exactly feature match for v2, except it has more stringent
+# input validation on the wsgi surface (prevents fuzzing early on the
+# API). It also provides new features via API microversions which are
+# opt into for clients. Unaware clients will receive the same frozen
+# v2 API feature set, but with some relaxed validation
+/v2/+: openstack_compute_api_v21_legacy_v2_compatible
+/v2.1/+: openstack_compute_api_v21
 {{- end }}
-
-{{- define "watcher_pipe" -}}
-{{- if .Values.watcher.enabled }} watcher{{- end -}}
-{{- end }}
-
-# NOTE: this is deprecated in favor of openstack_compute_api_v21_legacy_v2_compatible
-[composite:openstack_compute_api_legacy_v2]
-use = call:nova.api.auth:pipeline_factory
-noauth2 = cors compute_req_id {{- include "osprofiler_pipe" . }} faultwrap sizelimit noauth2 {{- include "watcher_pipe" . }} legacy_ratelimit sentry osapi_compute_app_legacy_v2
-keystone = cors compute_req_id {{- include "osprofiler_pipe" . }} faultwrap sizelimit authtoken keystonecontext {{- include "watcher_pipe" . }} legacy_ratelimit sentry {{- include "audit_pipe" . }} osapi_compute_app_legacy_v2
-keystone_nolimit = cors compute_req_id {{- include "osprofiler_pipe" . }} faultwrap sizelimit authtoken keystonecontext {{- include "watcher_pipe" . }} sentry {{- include "audit_pipe" . }} osapi_compute_app_legacy_v2
+# provides an endpoint for healthcheck enabling us to disable the service
+/healthcheck: healthcheck
 
 [composite:openstack_compute_api_v21]
 use = call:nova.api.auth:pipeline_factory_v21
-noauth2 = cors healthcheck http_proxy_to_wsgi compute_req_id {{- include "osprofiler_pipe" . }} faultwrap sizelimit noauth2 {{- include "watcher_pipe" . }} sentry {{- include "audit_pipe" . }} osapi_compute_app_v21
-keystone = cors compute_req_id {{- include "osprofiler_pipe" . }} faultwrap sizelimit authtoken keystonecontext {{- include "watcher_pipe" . }} sentry {{- include "audit_pipe" . }} osapi_compute_app_v21
+keystone = cors http_proxy_to_wsgi compute_req_id faultwrap request_log sizelimit {{- include "osprofiler_pipe" . }} authtoken keystonecontext {{- include "watcher_pipe" . }} sentry {{- include "audit_pipe" . }} osapi_compute_app_v21
 
 [composite:openstack_compute_api_v21_legacy_v2_compatible]
 use = call:nova.api.auth:pipeline_factory_v21
-noauth2 = cors healthcheck http_proxy_to_wsgi compute_req_id {{- include "osprofiler_pipe" . }} faultwrap sizelimit noauth2 legacy_v2_compatible {{- include "watcher_pipe" . }} sentry {{- include "audit_pipe" . }} osapi_compute_app_v21
-keystone = cors healthcheck http_proxy_to_wsgi compute_req_id {{- include "osprofiler_pipe" . }} faultwrap sizelimit authtoken keystonecontext legacy_v2_compatible {{- include "watcher_pipe" . }} sentry {{- include "audit_pipe" . }} osapi_compute_app_v21
+keystone = cors http_proxy_to_wsgi compute_req_id faultwrap request_log sizelimit {{- include "osprofiler_pipe" . }} authtoken keystonecontext legacy_v2_compatible {{- include "watcher_pipe" . }} sentry {{- include "audit_pipe" . }} osapi_compute_app_v21
 
-[filter:request_id]
-paste.filter_factory = oslo_middleware:RequestId.factory
+[filter:request_log]
+paste.filter_factory = nova.api.openstack.requestlog:RequestLog.factory
 
 [filter:compute_req_id]
 paste.filter_factory = nova.api.compute_req_id:ComputeReqIdMiddleware.factory
@@ -69,44 +66,46 @@ paste.filter_factory = nova.api.compute_req_id:ComputeReqIdMiddleware.factory
 [filter:faultwrap]
 paste.filter_factory = nova.api.openstack:FaultWrapper.factory
 
-[filter:healthcheck]
-paste.filter_factory = oslo_middleware:Healthcheck.factory
-backends = disable_by_file
-disable_by_file_path = /etc/nova/healthcheck_disable
-
 [filter:osprofiler]
-paste.filter_factory = osprofiler.web:WsgiMiddleware.factory
-
-[filter:http_proxy_to_wsgi]
-paste.filter_factory = oslo_middleware:HTTPProxyToWSGI.factory
-
-[filter:noauth2]
-paste.filter_factory = nova.api.openstack.auth:NoAuthMiddleware.factory
-
-[filter:legacy_ratelimit]
-paste.filter_factory = nova.api.openstack.compute.limits:RateLimitingMiddleware.factory
+paste.filter_factory = nova.profiler:WsgiMiddleware.factory
 
 [filter:sizelimit]
 paste.filter_factory = oslo_middleware:RequestBodySizeLimiter.factory
 
+[filter:http_proxy_to_wsgi]
+paste.filter_factory = oslo_middleware.http_proxy_to_wsgi:HTTPProxyToWSGI.factory
+
 [filter:legacy_v2_compatible]
 paste.filter_factory = nova.api.openstack:LegacyV2CompatibleWrapper.factory
-
-[app:osapi_compute_app_legacy_v2]
-paste.app_factory = nova.api.openstack.compute:APIRouter.factory
 
 [app:osapi_compute_app_v21]
 paste.app_factory = nova.api.openstack.compute:APIRouterV21.factory
 
 [pipeline:oscomputeversions]
-pipeline = faultwrap healthcheck http_proxy_to_wsgi oscomputeversionapp
+pipeline = cors faultwrap request_log http_proxy_to_wsgi oscomputeversionapp
 
 [app:oscomputeversionapp]
 paste.app_factory = nova.api.openstack.compute.versions:Versions.factory
+{{- if (.Values.imageVersion | hasPrefix "rocky" | not) }}
+
+[pipeline:oscomputeversion_v2]
+pipeline = cors compute_req_id faultwrap request_log http_proxy_to_wsgi oscomputeversionapp_v2
+
+[pipeline:oscomputeversion_legacy_v2]
+pipeline = cors compute_req_id faultwrap request_log http_proxy_to_wsgi legacy_v2_compatible oscomputeversionapp_v2
+
+[app:oscomputeversionapp_v2]
+paste.app_factory = nova.api.openstack.compute.versions:VersionsV2.factory
+{{- end }}
 
 ##########
 # Shared #
 ##########
+
+[app:healthcheck]
+paste.app_factory = oslo_middleware:Healthcheck.app_factory
+backends = disable_by_file
+disable_by_file_path = /etc/nova/healthcheck_disable
 
 [filter:cors]
 paste.filter_factory = oslo_middleware.cors:filter_factory
