@@ -19,7 +19,7 @@
 <source>
   @type tail
   path /var/log/containers/*.log
-  exclude_path /var/log/containers/fluentd*
+  exclude_path /var/log/containers/fluent*
   pos_file /var/log/es-containers.log.pos
   time_format %Y-%m-%dT%H:%M:%S.%N
   tag kubernetes.*
