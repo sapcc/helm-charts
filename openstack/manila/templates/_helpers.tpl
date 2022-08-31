@@ -17,6 +17,6 @@ netapp:thin_provisioned: "True"     # netapp_flexvol_encryption: "True"
 create_share_from_snapshot_support: "True"
 revert_to_snapshot_support: "True"
 replication_type: "dr"
-provisioning:max_share_size: "17592186044416"
-provisioning:max_share_extend_size: "21990232555520"
+provisioning:max_share_size: "16777216"
+provisioning:max_share_extend_size: "20971520"
 {{- end }}
