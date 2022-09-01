@@ -193,7 +193,7 @@ spec:
           subPath: statsd-rpc-exporter.yaml
           readOnly: true
       {{- end }}
- {{- include "jaeger_agent_sidecar" . | indent 8 }}
+ {{- include "jaeger_agent_sidecar" . | indent 6 }}
       volumes:
       - name: etcironic
         emptyDir: {}
