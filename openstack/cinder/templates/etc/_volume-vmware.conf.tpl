@@ -6,7 +6,6 @@
 enabled_backends = vmware
 storage_availability_zone={{$volume.availability_zone}}
 
-{{- include "osprofiler" . }}
 
 [vmware]
 volume_backend_name = vmware
