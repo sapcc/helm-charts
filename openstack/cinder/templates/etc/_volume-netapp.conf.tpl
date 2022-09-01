@@ -6,7 +6,6 @@
 enabled_backends=netapp
 storage_availability_zone={{$volume.availability_zone}}
 
-
 [netapp]
 volume_backend_name=netapp
 volume_driver=cinder.volume.drivers.netapp.common.NetAppDriver
