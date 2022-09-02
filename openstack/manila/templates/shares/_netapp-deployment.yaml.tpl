@@ -131,8 +131,8 @@ spec:
               subPath: statsd-rpc-exporter.yaml
               readOnly: true
         {{- end }}
-      hostname: manila-share-netapp-{{$share.name}}
  {{- include "jaeger_agent_sidecar" . | indent 8 }}
+      hostname: manila-share-netapp-{{$share.name}}
       volumes:
         - name: etcmanila
           emptyDir: {}
