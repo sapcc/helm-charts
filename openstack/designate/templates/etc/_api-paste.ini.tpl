@@ -6,24 +6,24 @@ use = egg:Paste#urlmap
 
 [composite:osapi_dns_versions]
 use = call:designate.api.middleware:auth_pipeline_factory
-noauth = http_proxy_to_wsgi cors maintenance faultwrapper sentry osapi_dns_app_versions
-keystone = http_proxy_to_wsgi cors maintenance faultwrapper sentry osapi_dns_app_versions
+noauth = http_proxy_to_wsgi cors maintenance faultwrapper sentry {{- include "osprofiler_pipe" . }} osapi_dns_app_versions
+keystone = http_proxy_to_wsgi cors maintenance faultwrapper sentry {{- include "osprofiler_pipe" . }} osapi_dns_app_versions
 
 [app:osapi_dns_app_versions]
 paste.app_factory = designate.api.versions:factory
 
 [composite:osapi_dns_v2]
 use = call:designate.api.middleware:auth_pipeline_factory
-noauth = http_proxy_to_wsgi cors request_id faultwrapper sentry validation_API_v2 noauthcontext {{ if .Values.watcher.enabled }}watcher {{ end }}maintenance normalizeuri {{ if .Values.audit.enabled }}audit {{ end }}osapi_dns_app_v2
-keystone = http_proxy_to_wsgi cors request_id faultwrapper sentry validation_API_v2 authtoken keystonecontext {{ if .Values.watcher.enabled }}watcher {{ end }}maintenance normalizeuri {{ if .Values.audit.enabled }}audit {{ end }}osapi_dns_app_v2
+noauth = http_proxy_to_wsgi cors request_id faultwrapper sentry validation_API_v2 {{- include "osprofiler_pipe" . }} noauthcontext {{ if .Values.watcher.enabled }}watcher {{ end }}maintenance normalizeuri {{ if .Values.audit.enabled }}audit {{ end }}osapi_dns_app_v2
+keystone = http_proxy_to_wsgi cors request_id faultwrapper sentry validation_API_v2 {{- include "osprofiler_pipe" . }} authtoken keystonecontext {{ if .Values.watcher.enabled }}watcher {{ end }}maintenance normalizeuri {{ if .Values.audit.enabled }}audit {{ end }}osapi_dns_app_v2
 
 [app:osapi_dns_app_v2]
 paste.app_factory = designate.api.v2:factory
 
 [composite:osapi_dns_admin]
 use = call:designate.api.middleware:auth_pipeline_factory
-noauth = http_proxy_to_wsgi cors request_id faultwrapper sentry noauthcontext {{ if .Values.watcher.enabled }}watcher {{ end }}maintenance normalizeuri {{ if .Values.audit.enabled }}audit {{ end }}osapi_dns_app_admin
-keystone = http_proxy_to_wsgi cors request_id faultwrapper sentry authtoken keystonecontext {{ if .Values.watcher.enabled }}watcher {{ end }}maintenance normalizeuri {{ if .Values.audit.enabled }}audit {{ end }} osapi_dns_app_admin
+noauth = http_proxy_to_wsgi cors request_id faultwrapper sentry {{- include "osprofiler_pipe" . }} noauthcontext {{ if .Values.watcher.enabled }}watcher {{ end }}maintenance normalizeuri {{ if .Values.audit.enabled }}audit {{ end }}osapi_dns_app_admin
+keystone = http_proxy_to_wsgi cors request_id faultwrapper sentry {{- include "osprofiler_pipe" . }} authtoken keystonecontext {{ if .Values.watcher.enabled }}watcher {{ end }}maintenance normalizeuri {{ if .Values.audit.enabled }}audit {{ end }} osapi_dns_app_admin
 
 [app:osapi_dns_app_admin]
 paste.app_factory = designate.api.admin:factory
@@ -79,3 +79,6 @@ use = egg:watcher-middleware#watcher
 service_type = dns
 config_file = /etc/designate/watcher.yaml
 {{- end }}
+
+[filter:osprofiler]
+paste.filter_factory = osprofiler.web:WsgiMiddleware.factory
