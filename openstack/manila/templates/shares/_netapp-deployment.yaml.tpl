@@ -132,6 +132,7 @@ spec:
               readOnly: true
         {{- end }}
       hostname: manila-share-netapp-{{$share.name}}
+ {{- include "jaeger_agent_sidecar" . | indent 8 }}
       volumes:
         - name: etcmanila
           emptyDir: {}
