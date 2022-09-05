@@ -31,11 +31,7 @@ spec:
 {{ tuple . "ironic" "api" | include "kubernetes_pod_anti_affinity" | indent 6 }}
       containers:
       - name: ironic-api
-        {{- if .Values.oslo_metrics.enabled }}
-        image: {{ .Values.global.registry }}/test-ironic:oslo-metrics01
-        {{- else}}
         image: {{ .Values.global.registry }}/loci-ironic:{{ .Values.imageVersion }}
-        {{- end }}
         imagePullPolicy: IfNotPresent
         resources:
 {{ toYaml .Values.pod.resources.api | indent 10 }}
@@ -120,26 +116,6 @@ spec:
             subPath: statsd-exporter.yaml
             readOnly: true
 {{- tuple . .Values.api.override "ironic-api" | include "utils.snippets.debug.debug_port_container" | indent 6 }}
-      {{- if .Values.oslo_metrics.enabled }}
-      - name: oslo-exporter
-        image: {{.Values.global.dockerHubMirror}}/prom/statsd-exporter
-        args:
-        - --web.listen-address=:9102
-        - --web.telemetry-path=/metrics
-        - --statsd.listen-udp=:8125
-        - --statsd.listen-tcp=
-        - --statsd.cache-size=1000
-        - --statsd.event-queue-size=10000
-        - --statsd.event-flush-threshold=1000
-        - --statsd.event-flush-interval=200ms
-        ports:
-        - name: web
-          containerPort: 9102
-          protocol: TCP
-        - name: statsd-udp
-          containerPort: 8125
-          protocol: UDP
-      {{- end }}
 {{- include "jaeger_agent_sidecar" . | indent 6 }}
       volumes:
       - name: etcironic
