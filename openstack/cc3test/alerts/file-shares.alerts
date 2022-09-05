@@ -3,9 +3,7 @@ groups:
   rules:
   - alert: OpenstackManilaApiDown
     expr: |
-        cc3test_status{type="api",
-            name=~"TestFileShareApi_.+"
-        } == 0
+        cc3test_status{service="manila", type="api"} == 0
     for: 10m
     labels:
       severity: critical
@@ -14,7 +12,7 @@ groups:
       context: '{{ $labels.service }}'
       meta: 'Openstack Manila API is down'
       dashboard: 'cc3test-overview?var-service={{ $labels.service }}'
-      playbook: 'docs/devops/alert/manila/#test_api'
+      playbook: 'docs/support/playbook/manila/alerts/'
       report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
     annotations:
       description: 'Openstack Manila API is down'
@@ -22,9 +20,7 @@ groups:
 
   - alert: OpenstackManilaApiFlapping
     expr: |
-        changes(cc3test_status{type="api",
-            name=~"TestFileShareApi_.+"
-        }[30m]) > 8
+        changes(cc3test_status{service="manila", type="api"}[30m]) > 8
     labels:
       severity: warning
       tier: os
@@ -32,7 +28,7 @@ groups:
       context: '{{ $labels.service }}'
       meta: 'Openstack Manila API is flapping'
       dashboard: 'cc3test-overview?var-service={{ $labels.service }}'
-      playbook: 'docs/devops/alert/manila/#test_api'
+      playbook: 'docs/support/playbook/manila/alerts/'
       report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
     annotations:
       description: 'Openstack Manila API is flapping'
