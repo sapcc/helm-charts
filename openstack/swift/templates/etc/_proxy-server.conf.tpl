@@ -60,6 +60,7 @@ use = egg:swift#proxy_logging
 # Note: Put after auth and staticweb in the pipeline.
 [filter:slo]
 use = egg:swift#slo
+max_manifest_segments = {{ .Values.max_manifest_segments }}
 
 # Note: Put after auth and staticweb in the pipeline.
 [filter:dlo]
@@ -182,6 +183,7 @@ use = egg:swift#s3api
 location = {{ .Values.global.region }}
 # The standard swift proxy logging is needed
 force_swift_request_proxy_log = true
+max_upload_part_num = {{ .Values.max_manifest_segments }}
 
 [filter:s3token]
 use = egg:swift#s3token

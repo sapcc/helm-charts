@@ -48,7 +48,7 @@ groups:
       summary: swift-service-haproxy-redispatch
 
   - alert: OpenstackSwiftHAProxyRedispatchPod
-    expr: sum by(os_cluster, kubernetes_pod_name) (increase(haproxy_server_redispatch_warnings_total[10m])) > 50
+    expr: sum by(os_cluster, kubernetes_pod_name) (increase(haproxy_server_redispatch_warnings_total{proxy!="swift_proxy_s3"}[10m])) > 50
     for: 10m
     labels:
       context: haproxyredispatch
@@ -59,6 +59,20 @@ groups:
     annotations:
       description: HAProxy pod {{ $labels.kubernetes_pod_name }} is redispatching requests. Check the logs for
         `Proxy <abc> reached process FD limit (maxsock=<1234>)`. In that case delete this pod.
+      summary: swift-service-haproxy-redispatch
+
+  - alert: OpenstackSwiftHAProxyRedispatchPodS3
+    expr: sum by(os_cluster, kubernetes_pod_name) (increase(haproxy_server_redispatch_warnings_total{proxy="swift_proxy_s3"}[10m])) > 100
+    for: 10m
+    labels:
+      context: haproxyredispatch
+      service: swift
+      severity: warning
+      tier: os
+      meta: HAProxy pod {{ $labels.kubernetes_pod_name }} redispatches S3 API requests
+    annotations:
+      description: HAProxy pod {{ $labels.kubernetes_pod_name }} is redispatching S3 API requests. Check the logs for
+        `NOT retries:0`. Currently it is known for `DELETE` requests.
       summary: swift-service-haproxy-redispatch
 
   - alert: OpenstackSwiftHealthCheck
