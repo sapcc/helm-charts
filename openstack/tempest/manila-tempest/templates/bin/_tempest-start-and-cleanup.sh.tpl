@@ -14,9 +14,9 @@ function cleanup_tempest_leftovers() {
   pre_created_share_networks=("$share_network_id" "$alt_share_network_id" "$admin_share_network_id")
 
   for i in $(seq 1 2); do
-      export OS_USERNAME='manila-tempestuser${i}'
-      export OS_TENANT_NAME='tempest${i}'
-      export OS_PROJECT_NAME='tempest${i}'
+      export OS_USERNAME=manila-tempestuser${i}
+      export OS_TENANT_NAME=tempest${i}
+      export OS_PROJECT_NAME=tempest${i}
       for snap in $(manila snapshot-list | grep -E 'tempest' | awk '{ print $2 }'); do manila snapshot-delete ${snap}; done
       for share in $(manila list | grep -E 'tempest|share' | awk '{ print $2 }'); do manila reset-state ${share} && manila delete ${share}; done
       for share in $(manila list | grep -E 'tempest|share' | awk '{ print $2 }'); do manila reset-task-state ${share} && manila delete ${share}; done
