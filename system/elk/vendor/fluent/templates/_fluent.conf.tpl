@@ -28,7 +28,7 @@
        format regexp
        expression /^(?<time>.+) (?<stream>stdout|stderr)( (?<logtag>.))? (?<log>.*)$/
        time_key time
-       time_format '%Y-%m-%dT%H:%M:%S.%N%:z'
+       time_format '%Y-%m-%dT%H:%M:%S.%NZ'
        keep_time_key true
      </pattern>
      <pattern>
@@ -56,7 +56,6 @@
   kubernetes_url https://KUBERNETES_SERVICE_HOST
   bearer_token_file /var/run/secrets/kubernetes.io/serviceaccount/token
   ca_file /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
-  container_name_to_kubernetes_regexp '^(?<name_prefix>[^_]+)_(?<container_name>[^\._]+)(\.(?<container_hash>[^_]+))?_(?<pod_name>[^_]+)_(?<namespace>[^_]+)_[^_]+_[^_]+$'
 </filter>
 
 <filter kubernetes.var.log.containers.es**>
@@ -74,13 +73,24 @@
   </parse>
 </filter>
 
-<filter kubernetes.var.log.containers.ironic** kubernetes.var.log.containers.cinder**  kubernetes.var.log.containers.nova** kubernetes.var.log.containers.designate** kubernetes.var.log.containers.neutron-server** kubernetes.var.log.containers.neutron** kubernetes.var.log.containers.barbican**>
+<filter kubernetes.var.log.containers.cinder**  kubernetes.var.log.containers.nova** kubernetes.var.log.containers.designate** kubernetes.var.log.containers.neutron-server** kubernetes.var.log.containers.neutron** kubernetes.var.log.containers.barbican**>
   @type parser
   key_name log
   reserve_data true
   <parse>
     @type grok
     grok_pattern (%{TIMESTAMP_ISO8601:logtime}|)( )?%{TIMESTAMP_ISO8601:timestamp}.%{NOTSPACE}? %{NUMBER:pid} %{WORD:loglevel} %{NOTSPACE:logger} (\[)?(req-)?%{NOTSPACE:requestid} (greq-%{UUID:global_requestid})?
+    custom_pattern_path /fluent-bin/pattern
+  </parse>
+</filter>
+
+<filter kubernetes.var.log.containers.ironic-api**>
+  @type parser
+  key_name log
+  reserve_data true
+  <parse>
+    @type grok
+    grok_pattern %{TIMESTAMP_ISO8601:timestamp} %{NOTSPACE} %{NOTSPACE:loglevel} %{NOTSPACE:process} \[%{GREEDYDATA}\] ?([0-9.,].*) "%{WORD:request_method} %{NOTSPACE:request_path} HTTP/%{NOTSPACE}" status: %{NUMBER:response}?( ).*len: %{NUMBER:content_length} time: %{NUMBER:request_time}
     custom_pattern_path /fluent-bin/pattern
   </parse>
 </filter>
@@ -127,7 +137,7 @@
 </filter>
 
 
-<filter kubernetes.var.log.containers.kube-system-ingress-nginx-controller**>
+<filter kubernetes.var.log.containers.kube-system-metal-ingress-nginx-controller**>
   @type parser
   key_name log
   reserve_data true
@@ -139,7 +149,7 @@
 </filter>
 
 {{- if .Values.metis.enabled }}
-<filter kubernetes.var.log.containers.kube-system-nginx-ingress-controller**>
+<filter kubernetes.var.log.containers.kube-system-metal-ingress-nginx-controller**>
   @type mysql_enrich
   @log_level info
   host {{.Values.metis.host}}
@@ -238,17 +248,6 @@
     grok_pattern level=%{NOTSPACE:loglevel} ts=%{TIMESTAMP_ISO8601:timestamp} caller=%{NOTSPACE} module=%{NOTSPACE:snmp_module} target=%{IP:ip} msg=\"%{GREEDYDATA:snmp_error}\" err=\"%{GREEDYDATA:snmp_msg}\"
   </parse>
 </filter>
-
-#<filter kubernetes.var.log.containers.ingress-controller**>
-#  @type parser
-#  key_name log
-#  reserve_data true
-#  <parse>
-#    @type grok
-#    grok_pattern %{IP:remote_addr} - \[%{GREEDYDATA:proxy_add_x_forwarded_for}\] - %{NOTSPACE:auth} \[%{HAPROXYDATE:timestamp}\] "%{WORD:request_method} %{NOTSPACE:request_path} %{NOTSPACE:httpversion}" %{NUMBER:response} %{NUMBER:content_length} "(?<referer>[^\"]{,255}).*?" "%{DATA:user_agent}" %{NUMBER:request_length} %{NUMBER:request_time}( \[%{NOTSPACE:service}\])? %{IP:upstream_addr}\:%{NUMBER:upstream_port} %{NUMBER:upstream_response_length} %{NOTSPACE:upstream_response_time} %{NOTSPACE:upstream_status}
-#    custom_pattern_path /fluent-bin/pattern
-#  </parse>
-#</filter>
 
 <filter kubernetes.var.log.containers.elk-fluent**>
   @type parser
@@ -360,13 +359,6 @@
   @type record_transformer
   <record>
     process "nginx"
-  </record>
-</filter>
-
-<filter kubernetes.var.log.containers.ingress-controller**>
-  @type record_transformer
-  <record>
-    process "ingress-controller"
   </record>
 </filter>
 
