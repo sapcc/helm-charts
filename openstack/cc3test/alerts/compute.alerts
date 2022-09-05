@@ -3,9 +3,7 @@ groups:
   rules:
   - alert: OpenstackNovaApiDown
     expr: |
-        cc3test_status{type="api",
-            name=~"TestComputeApi_.+"
-        } == 0
+        cc3test_status{service="nova", type="api"} == 0
     for: 10m
     labels:
       severity: critical
@@ -14,7 +12,7 @@ groups:
       context: '{{ $labels.service }}'
       meta: 'Openstack Nova API is down'
       dashboard: 'cc3test-overview?var-service={{ $labels.service }}'
-      playbook: 'docs/devops/alert/nova/#test_api'
+      playbook: 'docs/support/playbook/nova/alerts'
       report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
     annotations:
       description: 'Openstack Nova API is down: {{ $labels.name }}'
@@ -22,9 +20,7 @@ groups:
 
   - alert: OpenstackNovaApiFlapping
     expr: |
-        changes(cc3test_status{type="api",
-            name=~"TestComputeApi_.+"
-        }[30m]) > 8
+        changes(cc3test_status{service="nova", type="api"}[30m]) > 8
     labels:
       severity: warning
       tier: os
@@ -32,7 +28,7 @@ groups:
       context: '{{ $labels.service }}'
       meta: 'Openstack Nova API is flapping'
       dashboard: 'cc3test-overview?var-service={{ $labels.service }}'
-      playbook: 'docs/devops/alert/nova/#test_api'
+      playbook: 'docs/support/playbook/nova/alerts'
       report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
     annotations:
       description: 'Openstack Nova API is flapping: {{ $labels.name }}'
