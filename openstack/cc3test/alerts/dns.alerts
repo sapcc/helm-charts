@@ -3,9 +3,7 @@ groups:
   rules:
   - alert: OpenstackDesignateApiDown
     expr: |
-        cc3test_status{type="api",
-            name=~"TestDnsApi_.+"
-        } == 0
+        cc3test_status{service="designate", type="api"} == 0
     for: 10m
     labels:
       severity: critical
@@ -14,7 +12,7 @@ groups:
       context: '{{ $labels.service }}'
       meta: 'Openstack Designate API is down'
       dashboard: 'cc3test-overview?var-service={{ $labels.service }}'
-      playbook: 'docs/devops/alert/designate/#test_api'
+      playbook: 'docs/support/playbook/designate/alerts/'
       report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
     annotations:
       description: 'Openstack Designate API is down'
@@ -22,9 +20,7 @@ groups:
 
   - alert: OpenstackDesignateApiFlapping
     expr: |
-        changes(cc3test_status{type="api",
-            name=~"TestDnsApi_.+"
-        }[30m]) > 8
+        changes(cc3test_status{service="designate", type="api"}[30m]) > 8
     labels:
       severity: warning
       tier: os
@@ -32,7 +28,7 @@ groups:
       context: '{{ $labels.service }}'
       meta: 'Openstack Designate API is flapping'
       dashboard: 'cc3test-overview?var-service={{ $labels.service }}'
-      playbook: 'docs/devops/alert/designate/#test_api'
+      playbook: 'docs/support/playbook/designate/alerts/'
       report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
     annotations:
       description: 'Openstack Designate API is flapping'
