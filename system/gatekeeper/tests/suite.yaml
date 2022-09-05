@@ -237,11 +237,20 @@ tests:
   template: rendered-chart/gatekeeper/templates/constrainttemplate-owner-info-on-helm-releases.yaml
   constraint: rendered-chart/gatekeeper-config/templates/constraint-owner-info-on-helm-releases.yaml
   cases:
-  - name: pod-no-owner-info
+  - name: configmap-no-owner
     object: fixtures/owner-info-on-helm-releases/configmap-no-owner.out.yaml
     assertions:
     - violations: 1
       message: '^support-group=none,service=none: could not find ConfigMap: owner-of-almost-empty-chart$'
+  - name: configmap-no-owner-pending-upgrade
+    object: fixtures/owner-info-on-helm-releases/configmap-no-owner-pending-upgrade.out.yaml
+    assertions:
+    - violations: 1
+      message: '^support-group=none,service=none: could not find ConfigMap: owner-of-almost-empty-chart$'
+  - name: configmap-no-owner-superseded
+    object: fixtures/owner-info-on-helm-releases/configmap-no-owner-superseded.out.yaml
+    assertions:
+    - violations: no
   - name: pod-owner-info
     object: fixtures/owner-info-on-helm-releases/configmap-pass.out.yaml
     assertions:

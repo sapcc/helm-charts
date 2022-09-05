@@ -16,6 +16,7 @@ fixture="$1"
 helm_release=almost-empty-chart/helm-release.yaml
 template="$(yq -r '.template' "$fixture")"
 template_base64='| .chart.templates[].data = "'"$(echo "$template" | base64 -w0)"'" |  .manifest = "'"$template"'"'
+status="$(yq -r '.status' "$fixture")"
 
 while read -r line; do
   # split string like: .key.key = "value"
@@ -36,4 +37,4 @@ while read -r line; do
   values+="| .chart.values$key = $val | .config$key = $val "
 done < <(yq -r '.values | if type=="array" then .[] else [] end | to_entries[] | if (.value | type=="object") then .key + " = " + (.value|tostring) else .key + " = \"" + .value + "\"" end' "$fixture")
 
-yq -r '. | .data.release = "'"$(yq -r .data.release "$helm_release" | base64 -d | base64 -d | gunzip | jq ". ${values:-} $template_base64" | gzip | base64 -w0 | base64 -w0)"'"' "$helm_release"
+yq -r '. | .data.release = "'"$(yq -r .data.release "$helm_release" | base64 -d | base64 -d | gunzip | jq ". ${values:-} $template_base64" | gzip | base64 -w0 | base64 -w0)"'" | .metadata.labels.status = "'"$status"'"' "$helm_release"
