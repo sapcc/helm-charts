@@ -18,5 +18,5 @@ create_share_from_snapshot_support: "True"
 revert_to_snapshot_support: "True"
 replication_type: "dr"
 provisioning:max_share_size: "16384"
-provisioning:max_share_extend_size: "20480"
+provisioning:max_share_extend_size: "20480" # keep this in sync with "CASTELLUM_MAX_ASSET_SIZES" in openstack/castellum/templates/_utils.tpl
 {{- end }}
