@@ -12,7 +12,7 @@
 @include files/*
 
 <system>
-  log_level warn
+  @log_level warn
 </system>
 
 # All the auto-generated files should use the tag "file.<filename>".
@@ -39,7 +39,7 @@
      </pattern>
   </parse>
   read_from_head
-  log_level warn
+  @log_level warn
   tag kubernetes.*
 </source>
 
