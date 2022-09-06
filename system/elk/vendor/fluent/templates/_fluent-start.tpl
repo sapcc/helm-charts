@@ -11,7 +11,7 @@ function process_config {
 function start_application {
 
   #/usr/local/bin/fluentd --use-v1-config --suppress-repeated-stacktrace 
-  exec /usr/local/bin/fluentd --use-v1-config
+  exec /usr/local/bin/fluentd
 
 }
 
