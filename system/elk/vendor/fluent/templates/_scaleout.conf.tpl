@@ -124,7 +124,18 @@
 </filter>
 {{- end }}
 
+<filter kubernetes.**>
+  @type flatten_hash
+  @id flatten_hash
+  separator _
+  flatten_array false
+</filter>
 
+<filter kubernetes.**>
+  @type rename_key
+  @id rename_key
+  rename_rule1 kubernetes_labels_app kubernetes_labels_app_name
+</filter>
 
 # count number of outgoing records per tag
 <match kubernetes.**>
