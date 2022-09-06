@@ -52,8 +52,8 @@ delete_tsigkey: rule:admin
 find_tenants: rule:admin or rule:context_is_dns_ops
 get_tenant: rule:admin or rule:context_is_dns_ops
 count_tenants: rule:admin or rule:context_is_dns_ops
-share_zone: rule:context_is_zonemaster
-unshare_zone: rule:context_is_zonemaster
+share_zone: rule:context_is_master
+unshare_zone: rule:context_is_master
 create_zone: rule:context_is_dns_ops
 move_zone: rule:context_is_dns_ops
 create_sub_zone: rule:context_is_zonemaster
