@@ -25,3 +25,10 @@ data:
 {{ include (print .Template.BasePath "/_qade3-logstash.json.tpl") . | indent 4 }}
   qade5-logstash.json: |
 {{ include (print .Template.BasePath "/_qade5-logstash.json.tpl") . | indent 4 }}
+{{ if eq .Values.global.clusterType  "scaleout" -}}
+  scaleout.conf: |
+{{ include (print .Template.BasePath "/_scaleout.conf.tpl") . | indent 4 }}
+{{ else }}
+  controlplane.conf: |
+{{ include (print .Template.BasePath "/_controlplane.conf.tpl") . | indent 4 }}
+{{ end }}
