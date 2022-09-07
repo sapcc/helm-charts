@@ -11,3 +11,10 @@ labelSelector:
          superseded by a newer release. */}}
     - { key: "status", operator: "In", values: [ "pending-upgrade", "deployed" ]}
 {{- end -}}
+
+{{/* This match expression is only for checks that need to see the "status" section of the Pod. */}}
+{{- define "match_pods_only" }}
+kinds:
+  - apiGroups: [""]
+    kinds: ["Pod"]
+{{- end -}}

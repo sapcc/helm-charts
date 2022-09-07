@@ -27,36 +27,25 @@ spec:
       libs:
         - |
           {{ .Files.Get "lib/add-support-labels.rego" | nindent 10 }}
+        - |
+          {{ .Files.Get "lib/image-check.rego" | nindent 10 }}
       rego: |
         package vulnerableimages
         import data.lib.add_support_labels
+        import data.lib.image_check
 
         iro := input.review.object
+        checks := image_check.for_pod(iro, input.parameters.doopImageCheckerURL)
 
-        checks[{ "container": container, "response": resp }] {
-          iro.kind == "Pod"
-          container := iro.status.containerStatuses[_]
-
-          # only consider images stored in Keppel since we want to inspect the X-Keppel-Vulnerability-Status header
-          regex.match("^keppel", container.image)
-
-          # query vulnerability status through helper API
-          imgID := trim_prefix(container.imageID, "docker-pullable://")
-          url := sprintf("%s/v1/headers?image=%s", [input.parameters.doopImageCheckerURL, imgID])
-          resp := http.send({"url": url, "method": "GET", "raise_error": false, "timeout": "10s"})
-        }
-
-        violation[{"msg": msg}] {
+        violation[{"msg": check.result.error}] {
           check := checks[_]
-          check.response.status_code != 200
-
-          msg := "doop-image-parser did not return HTTP status 200. Please retry in ~5 minutes."
+          check.error != ""
         }
 
         violation[{"msg": add_support_labels.from_k8s_object(iro, msg)}] {
           check := checks[_]
-          check.response.status_code == 200
-          status := trim_space(object.get(check.response.body, "X-Keppel-Vulnerability-Status", "Unclear"))
+          check.error == ""
+          status := trim_space(object.get(check.headers, "X-Keppel-Vulnerability-Status", "Unclear"))
 
           # report everything with a definite vulnerability
           status != "Clean"
@@ -64,6 +53,6 @@ spec:
 
           msg := sprintf(
             "image %s for container %q has vulnerability status %q",
-            [check.container.image, check.container.name, status]
+            [check.containerImage, check.containerName, status]
           )
         }
