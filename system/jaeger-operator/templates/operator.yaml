@@ -3,6 +3,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: jaeger-operator
+  namespace: "monsoon3"
 spec:
   replicas: 1
   selector:
@@ -20,7 +21,7 @@ spec:
         ports:
         - containerPort: 8383
           name: metrics
-        args: ["start"]
+        args: ["start", "--jaeger-all-in-one-image={{ .Values.global.dockerHubMirrorAlternateRegion }}/jaegertracing/all-in-one"]
         imagePullPolicy: IfNotPresent
         env:
         - name: WATCH_NAMESPACE

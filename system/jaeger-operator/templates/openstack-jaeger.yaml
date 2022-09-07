@@ -3,7 +3,6 @@ kind: Jaeger
 metadata:
   name: openstack-jaeger
 spec:
-
   ingress:
     enabled: true
     annotations:
@@ -16,14 +15,15 @@ spec:
         - tracing.{{ .Values.global.region }}.cloud.sap
         secretName: tls-tracing-{{ .Values.global.region }}-cloud-sap
 
+  allInOne:
+    options:
+      log-level: debug
+  serviceAccount: jaeger-operator
   storage:
     type: elasticsearch
     options:
       es:
         server-urls: https://elk-elasticsearch.scaleout.{{ .Values.global.region }}.cloud.sap:443
-        index-prefix: os-jaeger
+        create-index-templates: false
+        version: 7
     secretName: openstack-jaeger
-    esIndexCleaner:
-      enabled: true
-      numberOfDays: 14
-      schedule: "59 23 * * *"
