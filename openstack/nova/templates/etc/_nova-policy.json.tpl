@@ -398,7 +398,6 @@
     "os_compute_api:os-tenant-networks": "!",
     "os_compute_api:os-shelve:unshelve": "rule:context_is_editor",
     "os_compute_api:os-virtual-interfaces": "rule:context_is_editor",
-    "os_compute_api:os-volumes": "rule:context_is_viewer",
     "os_compute_api:os-volumes-attachments:index": "rule:context_is_viewer",
     "os_compute_api:os-volumes-attachments:show": "rule:context_is_viewer",
     "os_compute_api:os-volumes-attachments:create": "rule:context_is_editor",
