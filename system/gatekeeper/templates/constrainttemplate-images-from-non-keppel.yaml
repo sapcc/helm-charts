@@ -13,51 +13,20 @@ spec:
       libs:
         - |
           {{ .Files.Get "lib/add-support-labels.rego" | nindent 10 }}
+        - |
+          {{ .Files.Get "lib/traversal.rego" | nindent 10 }}
       rego: |
         package imagesfromnonkeppel
         import data.lib.add_support_labels
-
-        # This violation is usually only detectable on the
-        # deployment/daemonset/statefulset level since Tugger will fix the
-        # image reference on the pod level.
-
-        violation_owners = {"Deployment", "DaemonSet", "StatefulSet", "Job"}
-        pod_owners       = {"ReplicaSet", "DaemonSet", "StatefulSet", "Job"}
+        import data.lib.traversal
 
         iro := input.review.object
-
-        pod_belongs_to[kind] {
-          ref := iro.metadata.ownerReferences[_]
-          kind := ref.kind
-          kind == pod_owners[_]
-        }
-
-        containers[container] {
-          iro.kind == "Pod"
-          count(pod_belongs_to) == 0 # otherwise the violation will be reported on the owning object (see `violation_owners`)
-          pod_spec := iro.spec
-
-          # We have to use object.get() to get a zero value in case the key doesn't exist
-          # because array.concat() only works if both of its arguments are non-nil (i.e.
-          # an array, even if it's empty).
-          initCntrs := object.get(pod_spec, "initContainers", [])
-          container := array.concat(pod_spec.containers, initCntrs)[_]
-        }
-
-        containers[container] {
-          iro.kind == violation_owners[_]
-          pod_spec := iro.spec.template.spec
-
-          # Same as above.
-          initCntrs := object.get(pod_spec, "initContainers", [])
-          container := array.concat(pod_spec.containers, initCntrs)[_]
-        }
+        containers := traversal.find_container_specs(iro)
 
         violation[{"msg": add_support_labels.from_k8s_object(iro, msg)}] {
           container := containers[_]
-          container_name := container.name
           image := container.image
 
           not regex.match("^keppel\\.[^/.]*\\.cloud.sap/", image)
-          msg := sprintf("container %q uses an image that is not from a Keppel registry: %s", [container_name, image])
+          msg := sprintf("container %q uses an image that is not from a Keppel registry: %s", [container.name, image])
         }

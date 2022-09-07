@@ -20,9 +20,12 @@ spec:
       libs:
         - |
           {{ .Files.Get "lib/add-support-labels.rego" | nindent 10 }}
+        - |
+          {{ .Files.Get "lib/traversal.rego" | nindent 10 }}
       rego: |
         package highcpurequests
         import data.lib.add_support_labels
+        import data.lib.traversal
 
         canonify_cpu(orig) = new {
           is_number(orig)
@@ -41,13 +44,12 @@ spec:
         }
 
         iro := input.review.object
-
-        cpu_requests = [canonify_cpu(c) | c = iro.spec.containers[_].resources.requests.cpu]
+        pod := traversal.find_pod(iro)
 
         violation[{"msg": add_support_labels.from_k8s_object(iro, msg)}] {
-          iro.kind == "Pod"
+          pod.found
 
-          total_cpu := sum(cpu_requests)
+          total_cpu := sum([canonify_cpu(c) | c = pod.spec.containers[_].resources.requests.cpu])
           total_cpu > input.parameters.maxCpu
 
           msg := sprintf("requests %v CPU in total", [total_cpu])

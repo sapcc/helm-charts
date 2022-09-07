@@ -6,11 +6,4 @@ metadata:
     on-prod-ui: 'true'
 spec:
   enforcementAction: {{ if (eq .Values.cluster_type "baremetal" "scaleout") -}} deny {{- else -}} dryrun {{- end }}
-  match:
-    kinds:
-      - apiGroups: [""]
-        kinds: ["Pod"]
-      - apiGroups: ["apps"]
-        kinds: ["DaemonSet", "Deployment", "StatefulSet"]
-      - apiGroups: ["batch"]
-        kinds: ["Job"]
+  match: {{ include "match_pods_and_pod_owners" . | indent 4 }}

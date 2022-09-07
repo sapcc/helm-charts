@@ -13,54 +13,34 @@ spec:
       libs:
         - |
           {{ .Files.Get "lib/add-support-labels.rego" | nindent 10 }}
+        - |
+          {{ .Files.Get "lib/traversal.rego" | nindent 10 }}
       rego: |
         package resourcelimits
         import data.lib.add_support_labels
+        import data.lib.traversal
 
         iro := input.review.object
+        pod := traversal.find_pod(iro)
 
         # We have such a bafflingly large amount of violations that
         # Gatekeeper cannot report them all at once. I'd rather have
         # *something* reported for as many things as possible, even if it
         # means sacrificing accuracy, so we report only one violation for
-        # each offending pod, and we report on the deployment/daemonset level
-        # if possible to avoid useless duplication of violations.
+        # each offending pod or pod owner.
 
         resource_types = {"cpu", "memory"}
 
-        missing_limits_on_pod[{"container": container.name, "type": resource_type}] {
-          container := iro.spec.containers[_]
+        missing_limits[{"container": container.name, "type": resource_type}] {
+          pod.found
+          container := pod.spec.containers[_]
           limits := object.get(container, ["resources", "limits"], {})
           resource_type := resource_types[_]
           object.get(limits, resource_type, "") == ""
         }
 
-        missing_limits_on_pod_template[{"container": container.name, "type": resource_type}] {
-          container := iro.spec.template.spec.containers[_]
-          limits := object.get(container, ["resources", "limits"], {})
-          resource_type := resource_types[_]
-          object.get(limits, resource_type, "") == ""
-        }
-
-        pod_owners = {"ReplicaSet", "DaemonSet", "StatefulSet"}
-
-        pod_belongs_to[kind] {
-          ref := iro.metadata.ownerReferences[_]
-          kind := ref.kind
-          kind == pod_owners[_]
-        }
-
         violation[{"msg": add_support_labels.from_k8s_object(iro, msg)}] {
-          iro.kind == "Pod"
-          count(pod_belongs_to) == 0 # otherwise the violation will be reported on the DaemonSet or Deployment
-          count(missing_limits_on_pod) > 0
-          msg := "cpu and memory limits not set on some or all containers"
-        }
-
-        violation_owners = {"Deployment", "DaemonSet", "StatefulSet"}
-
-        violation[{"msg": add_support_labels.from_k8s_object(iro, msg)}] {
-          iro.kind == violation_owners[_]
-          count(missing_limits_on_pod_template) > 0
+          pod.found
+          count(missing_limits) > 0
           msg := "cpu and memory limits not set on some or all containers"
         }

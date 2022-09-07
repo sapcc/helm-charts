@@ -24,14 +24,17 @@ spec:
       libs:
         - |
           {{ .Files.Get "lib/add-support-labels.rego" | nindent 10 }}
+        - |
+          {{ .Files.Get "lib/traversal.rego" | nindent 10 }}
       rego: |
         package pciforbiddenimages
         import data.lib.add_support_labels
+        import data.lib.traversal
 
         iro := input.review.object
+        containers := traversal.find_container_specs(iro)
 
         violation[{"msg": add_support_labels.from_k8s_object(iro, msg)}] {
-          iro.kind == "Pod"
           container := iro.spec.containers[_]
 
           pattern := input.parameters.patterns[_]
