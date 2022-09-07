@@ -95,6 +95,11 @@
   </rule>
   <rule>
     key log
+    pattern /Connection reset/
+    tag "FLUENTRESET.${tag}"
+  </rule>
+  <rule>
+    key log
     pattern /because ReadonlyREST/
     tag "READONLYREST.${tag}"
   </rule>
@@ -129,6 +134,27 @@
       name prom_fluentd_output_retry_succeed
       type counter
       desc The total number of sucessfull retries in resolving to ES
+      <labels>
+        nodename "#{ENV['K8S_NODE_NAME']}"
+        fluent_container $.kubernetes.pod_name
+        daemontype $.kubernetes.container_name
+        fluent_namespace $.kubernetes.namespace
+      </labels>
+    </metric>
+  </store>
+  <store>
+    @type null
+  </store>
+</match>
+
+<match FLUENTRESET.**>
+  @type copy
+  <store>
+    @type prometheus
+    <metric>
+      name prom_fluentd_output_connreset_error
+      type counter
+      desc The total number of connection reset errors
       <labels>
         nodename "#{ENV['K8S_NODE_NAME']}"
         fluent_container $.kubernetes.pod_name
