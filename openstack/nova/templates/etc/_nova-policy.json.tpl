@@ -283,7 +283,6 @@
     "os_compute_api:servers:migrations:delete": "rule:context_is_admin",
     "os_compute_api:servers:migrations:index": "rule:context_is_admin",
     "os_compute_api:servers:migrations:show": "rule:context_is_admin",
-    "os_compute_api:os-access-ips": "rule:context_is_editor",
     "os_compute_api:os-admin-actions": "rule:context_is_admin",
     "os_compute_api:os-admin-actions:reset_network": "rule:context_is_admin",
     "os_compute_api:os-admin-actions:inject_network_info": "rule:context_is_admin",
