@@ -323,7 +323,6 @@
     "os_compute_api:os-flavor-access": "rule:context_is_editor",
     "os_compute_api:os-flavor-access:remove_tenant_access": "rule:context_is_admin",
     "os_compute_api:os-flavor-access:add_tenant_access": "rule:context_is_admin",
-    "os_compute_api:flavors": "rule:context_is_editor",
     "os_compute_api:os-flavor-extra-specs:index": "rule:context_is_viewer",
     "os_compute_api:os-flavor-extra-specs:show": "rule:context_is_viewer",
     "os_compute_api:os-flavor-extra-specs:create": "rule:context_is_admin",
