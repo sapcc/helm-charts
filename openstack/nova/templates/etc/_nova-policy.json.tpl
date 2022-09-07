@@ -316,7 +316,6 @@
     "os_compute_api:os-remote-consoles": "rule:context_is_editor",
     "os_compute_api:os-create-backup": "rule:context_is_editor",
     "os_compute_api:os-deferred-delete": "rule:context_is_editor",
-    "os_compute_api:os-disk-config": "rule:context_is_editor",
     "os_compute_api:os-evacuate": "rule:context_is_admin",
     "os_compute_api:os-extended-server-attributes": "rule:context_is_viewer",
     "os_compute_api:extensions": "rule:context_is_viewer",
