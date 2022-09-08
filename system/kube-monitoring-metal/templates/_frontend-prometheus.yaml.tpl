@@ -1,6 +1,6 @@
 - job_name: 'prometheus-collector-federation'
-  scrape_interval: 60s
-  scrape_timeout: 55s
+  scrape_interval: 80s
+  scrape_timeout: 75s
 
   honor_labels: true
   metrics_path: '/federate'
