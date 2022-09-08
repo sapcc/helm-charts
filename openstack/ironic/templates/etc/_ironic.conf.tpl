@@ -124,6 +124,13 @@ provisioning_network = {{required "A valid .Values.network_management_uuid requi
 timeout = {{ .Values.neutron_url_timeout }}
 port_setup_delay = {{ .Values.neutron_port_setup_delay }}
 
+# only works with nova api version >= 2.76
+# enable once nova is upgraded to xena
+#[nova]
+#auth_section = service_catalog
+#service_type = compute
+#service_name = nova
+
 [oslo_middleware]
 enable_proxy_headers_parsing = True
 
