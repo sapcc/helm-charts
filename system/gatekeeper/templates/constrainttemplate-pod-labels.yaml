@@ -41,7 +41,7 @@ spec:
         required_labels = {alert_tier, alert_service}
 
         violation[{"msg": add_support_labels.from_k8s_object(iro, msg)}] {
-          pod.found
+          pod.isFound
           missing_labels := [l | required_labels[l]; not pod.metadata.labels[l]]
           count(missing_labels) == 2
 
@@ -49,7 +49,7 @@ spec:
         }
 
         violation[{"msg": add_support_labels.from_k8s_object(iro, msg)}] {
-          pod.found
+          pod.isFound
 
           labels := object.get(iro.metadata, "labels", {})
           object.get(labels, alert_tier, "") == "os"

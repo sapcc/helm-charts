@@ -32,7 +32,7 @@ spec:
         resource_types = {"cpu", "memory"}
 
         missing_limits[{"container": container.name, "type": resource_type}] {
-          pod.found
+          pod.isFound
           container := pod.spec.containers[_]
           limits := object.get(container, ["resources", "limits"], {})
           resource_type := resource_types[_]
@@ -40,7 +40,7 @@ spec:
         }
 
         violation[{"msg": add_support_labels.from_k8s_object(iro, msg)}] {
-          pod.found
+          pod.isFound
           count(missing_limits) > 0
           msg := "cpu and memory limits not set on some or all containers"
         }
