@@ -194,6 +194,18 @@ tests:
     object: fixtures/images-from-non-keppel/pod-pass.yaml
     assertions:
     - violations: no
+  # The test suite for this policy is a bit more expansive to check the logic in traversal.find_pod().
+  - name: pod-owned
+    object: fixtures/images-from-non-keppel/pod-owned.yaml
+    assertions:
+    - violations: no
+  - name: deployment-mixed
+    object: fixtures/images-from-non-keppel/deployment-mixed.yaml
+    assertions:
+    - violations: 1
+      message: '^support-group=foo-group,service=dummy: container "container-bad" uses an image that is not from a Keppel registry: alpine:3$'
+    - violations: 1
+      message: '^support-group=foo-group,service=dummy: container "starter-bad" uses an image that is not from a Keppel registry: alpine:3$'
 
 - name: ingress-annotations
   template: rendered-chart/gatekeeper/templates/constrainttemplate-ingress-annotations.yaml

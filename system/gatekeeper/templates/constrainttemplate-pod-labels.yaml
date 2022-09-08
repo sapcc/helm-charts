@@ -20,14 +20,15 @@ spec:
       libs:
         - |
           {{ .Files.Get "lib/add-support-labels.rego" | nindent 10 }}
+        - |
+          {{ .Files.Get "lib/traversal.rego" | nindent 10 }}
       rego: |
         package podlabels
         import data.lib.add_support_labels
+        import data.lib.traversal
 
         iro := input.review.object
-
-        # Since we are going to have a lot of violations initially therefore we report on the
-        # Deployment/DaemonSet level, where possible, to avoid useless duplication of violations.
+        pod := traversal.find_pod(iro)
 
         default os_services = []
         os_services = sort(split(input.parameters.osServices, "|"))
@@ -39,67 +40,19 @@ spec:
         # Either alert-tier or alert-service label is required. However, when alert-tier == os then alert-service is also required.
         required_labels = {alert_tier, alert_service}
 
-        missing_labels_on_pod = [l |
-          required_labels[l]
-          not iro.metadata.labels[l]
-        ]
-
-        missing_labels_on_pod_template = [l |
-          required_labels[l]
-          not iro.spec.template.metadata.labels[l]
-        ]
-
-        pod_owners = {"ReplicaSet", "DaemonSet", "StatefulSet"}
-
-        pod_belongs_to[kind] {
-          ref := iro.metadata.ownerReferences[_]
-          kind := ref.kind
-          kind == pod_owners[_]
-        }
-
-        # TODO FIXME: When reporting on an object containing a PodSpec, this
-        # policy appears to be inconsistent about whether to check the support
-        # labels on the outer object or on the PodSpec within.
-
         violation[{"msg": add_support_labels.from_k8s_object(iro, msg)}] {
-          iro.kind == "Pod"
-          count(pod_belongs_to) == 0 # otherwise the violation will be reported on the DaemonSet or Deployment instead
-          count(missing_labels_on_pod) == 2
+          pod.isFound
+          missing_labels := [l | required_labels[l]; not pod.metadata.labels[l]]
+          count(missing_labels) == 2
 
-          msg := sprintf("pod does not have either one of the required labels: %s", [sort(missing_labels_on_pod)])
+          msg := sprintf("pod does not have either one of the required labels: %s", [sort(missing_labels)])
         }
 
         violation[{"msg": add_support_labels.from_k8s_object(iro, msg)}] {
-          iro.kind == "Pod"
-          count(pod_belongs_to) == 0 # otherwise the violation will be reported on the DaemonSet or Deployment instead
+          pod.isFound
 
           labels := object.get(iro.metadata, "labels", {})
           object.get(labels, alert_tier, "") == "os"
-          srv := object.get(labels, alert_service, "")
-          found := {f | srv == os_services[_]; f = true}
-          count(found) == 0
-
-          msg := sprintf(
-            "pod has %q label with value: os, but %q label is missing or does not have a valid value (got: %s, valid: %s)",
-            [alert_tier, alert_service, json.marshal(srv), os_services],
-          )
-        }
-
-        violation_owners = {"Deployment", "DaemonSet", "StatefulSet"}
-
-        violation[{"msg": add_support_labels.from_k8s_object(iro, msg)}] {
-          iro.kind == violation_owners[_]
-          count(missing_labels_on_pod_template) == 2
-
-          msg := sprintf("pod does not have either one of the required labels: %s", [sort(missing_labels_on_pod_template)])
-        }
-
-        violation[{"msg": add_support_labels.from_k8s_object(iro.spec.template, msg)}] {
-          iro.kind == violation_owners[_]
-          labels := object.get(iro.spec.template.metadata, "labels", {})
-
-          t := object.get(labels, alert_tier, "")
-          t == "os"
           srv := object.get(labels, alert_service, "")
           found := {f | srv == os_services[_]; f = true}
           count(found) == 0

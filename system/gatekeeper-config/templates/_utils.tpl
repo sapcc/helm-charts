@@ -18,3 +18,14 @@ kinds:
   - apiGroups: [""]
     kinds: ["Pod"]
 {{- end -}}
+
+{{/* Use this for policies that call the traversal.find_pod() or traversal.find_container_specs() helper function. */}}
+{{- define "match_pods_and_pod_owners" }}
+kinds:
+  - apiGroups: [""]
+    kinds: ["Pod"]
+  - apiGroups: ["apps"]
+    kinds: ["DaemonSet", "Deployment", "StatefulSet"]
+  - apiGroups: ["batch"]
+    kinds: ["Job"]
+{{- end }}

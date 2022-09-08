@@ -22,9 +22,12 @@ spec:
       libs:
         - |
           {{ .Files.Get "lib/add-support-labels.rego" | nindent 10 }}
+        - |
+          {{ .Files.Get "lib/traversal.rego" | nindent 10 }}
       rego: |
         package imagesfromcorrectregistry
         import data.lib.add_support_labels
+        import data.lib.traversal
 
         extract_keppel_region(image) = region {
           matchList := regex.find_all_string_submatch_n(`^keppel\.([-\w]+)\.[a-zA-Z]+\.[a-zA-Z]+/`, image, 1)
@@ -44,6 +47,7 @@ spec:
         }
 
         iro := input.review.object
+        containers := traversal.find_container_specs(iro)
 
         correct_regions[region] {
           region = extract_keppel_region(input.parameters.registry)
@@ -54,8 +58,7 @@ spec:
         }
 
         violation[{"msg": add_support_labels.from_k8s_object(iro, msg)}] {
-          iro.kind == "Pod"
-          container := iro.spec.containers[_]
+          container := containers[_]
           image := container.image
 
           current_region = extract_keppel_region(image) # this will also check if image is using Keppel or not
