@@ -158,15 +158,15 @@ cronus:
 {{- end }}
 {{- end }}
 {{- if $v.smtpConnPool }}
-  smtpConnPool:
+      smtpConnPool:
 {{- if $v.smtpConnPool.maxConnGlobal }}
-    maxConnGlobal: {{ $v.smtpConnPool.maxConnGlobal }}
+        maxConnGlobal: {{ $v.smtpConnPool.maxConnGlobal }}
 {{- end }}
-    maxConnPerProject: {{ $v.smtpConnPool.maxConnPerProject }}
-    connTimeLimit: {{ $v.smtpConnPool.connTimeLimit }}
-    connReuseLimit: {{ $v.smtpConnPool.connReuseLimit }}
+        maxConnPerProject: {{ $v.smtpConnPool.maxConnPerProject }}
+        connTimeLimit: {{ $v.smtpConnPool.connTimeLimit }}
+        connReuseLimit: {{ $v.smtpConnPool.connReuseLimit }}
 {{- if $v.smtpConnPool.maxConnWaitTimeout }}
-    maxConnWaitTimeout: {{ $v.smtpConnPool.maxConnWaitTimeout }}
+        maxConnWaitTimeout: {{ $v.smtpConnPool.maxConnWaitTimeout }}
 {{- end }}
 {{- end }}
 {{- end }}
