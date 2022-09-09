@@ -34,7 +34,7 @@ groups:
       summary: swift-service-unavailable
 
   - alert: OpenstackSwiftHAProxyServer
-    expr: sum by (os_cluster, server) (increase(haproxy_server_redispatch_warnings_total[10m])) > 20
+    expr: sum by (os_cluster, server) (increase(haproxy_server_redispatch_warnings_total{proxy!="swift_proxy_s3"}[10m])) > 20
     for: 15m
     labels:
       context: haproxyredispatch
@@ -45,6 +45,20 @@ groups:
     annotations:
       description: HAProxy is redispatching requests for the swift-proxy running on node {{ $labels.server }}. Try to delete the
         swift-proxy-{{ $labels.os_cluster }}-xxxxx on node {{ $labels.server }} to resolve the alert.
+      summary: swift-service-haproxy-redispatch
+
+  - alert: OpenstackSwiftHAProxyServerS3
+    expr: sum by (os_cluster, server) (increase(haproxy_server_redispatch_warnings_total{proxy="swift_proxy_s3"}[10m])) > 100
+    for: 15m
+    labels:
+      context: haproxyredispatch
+      service: swift
+      severity: info
+      tier: os
+      meta: HAProxy redispatches for server {{ $labels.server }} in {{ $labels.os_cluster }}
+    annotations:
+      description: HAProxy is redispatching requests for the swift-proxy running on node {{ $labels.server }}. Check the logs for
+        `NOT retries:0`. Currently it is known for `DELETE` requests.
       summary: swift-service-haproxy-redispatch
 
   - alert: OpenstackSwiftHAProxyRedispatchPod
