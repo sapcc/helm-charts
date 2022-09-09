@@ -165,8 +165,8 @@ cronus:
     maxConnPerProject: {{ $v.smtpConnPool.maxConnPerProject }}
     connTimeLimit: {{ $v.smtpConnPool.connTimeLimit }}
     connReuseLimit: {{ $v.smtpConnPool.connReuseLimit }}
-{{- if $v.smtpConn.Pool.maxConnWaitTimeout }}
-    maxConnWaitTimeout: {{ $v.smtpConn.Pool.maxConnWaitTimeout }}
+{{- if $v.smtpConnPool.maxConnWaitTimeout }}
+    maxConnWaitTimeout: {{ $v.smtpConnPool.maxConnWaitTimeout }}
 {{- end }}
 {{- end }}
 {{- end }}
