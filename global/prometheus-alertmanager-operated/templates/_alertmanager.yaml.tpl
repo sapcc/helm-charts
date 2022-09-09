@@ -70,6 +70,14 @@ route:
       severity: info
       region: ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|ap-sa-2|eu-de-1|eu-de-2|eu-nl-1|eu-ru-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3|qa-de-1
 
+  - receiver: email_barbican_certificate
+    continue: false
+    match_re:
+      service: barbican
+      context: certificate
+      severity: info
+      region: qa-de-1
+
   - receiver: slack_nannies
     continue: false
     match_re:
@@ -828,6 +836,27 @@ receivers:
         icon_emoji: {{"'{{template \"slack.sapcc.iconemoji\" . }}'"}}
         color: {{`'{{template "slack.sapcc.color" . }}'`}}
         send_resolved: true
+
+  {{- if `{{template \"email.sapcc.email\" . }}` }}
+  - name: email_barbican_certificate
+    email_configs:
+    - to: {{"'{{template \"email.sapcc.email\" . }}'"}}
+      from: 'CCloud <noreply+ccloud@email.global.cloud.sap>'
+      require_tls: false
+      headers:
+        subject: "Your Barbican Certificate Is About To Expired"
+        cc: ""
+      text: {{"'{{template \"email.sapcc.description\" . }}'"}}
+    {{- range $key, $value := .Values.certificate.recipients }}
+    - to: {{ $value }}
+      from: 'CCloud <noreply+ccloud@email.global.cloud.sap>'
+      require_tls: false
+      headers:
+        subject: "Your Barbican Certificate Is About To Expired"
+        cc: ""
+      text:  {{"'{{template \"email.sapcc.description\" . }}'"}}
+    {{- end }}
+    {{- end }}
 
   - name: slack_hsm
     slack_configs:
