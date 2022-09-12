@@ -57,8 +57,7 @@ floating_network_name = FloatingIP-external-monsoon3-01
 ipv6 = False
 
 [baremetal]
-min_microversion = 1.46
-max_microversion = 1.46
+max_microversion = 1.78
 # Driver to use for API tests for Queens and newer:
 driver = fake-hardware
 
