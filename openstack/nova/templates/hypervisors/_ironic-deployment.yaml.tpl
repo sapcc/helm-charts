@@ -75,9 +75,9 @@ spec:
               name: nova-etc
               subPath: nova.conf
               readOnly: true
-            - mountPath: /etc/nova/policy.json
+            - mountPath: /etc/nova/policy.yaml
               name: nova-etc
-              subPath: policy.json
+              subPath: policy.yaml
               readOnly: true
             - mountPath: /etc/nova/logging.ini
               name: nova-etc
