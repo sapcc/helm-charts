@@ -105,6 +105,10 @@ cronus:
     trailLimit: {{ .Values.config.workQueue.trailLimit }}
     trailTimeBaseFactor: {{ .Values.config.workQueue.trailTimeBaseFactor }}
     trailTimeRandMaxNumber: {{ .Values.config.workQueue.trailTimeRandMaxNumber }}
+    initialDelayTime: {{ .Values.config.workQueue.initialDelayTime }}
+    delayGrowthFactor: {{ .Values.config.workQueue.delayGrowthFactor }}
+    maxDelayTime: {{ .Values.config.workQueue.maxDelayTime }}
+    maxTotalQueueTime: {{ .Values.config.workQueue.maxTotalQueueTime }}
     maxContainerNum: {{ .Values.config.workQueue.maxContainerNum }}
     reconnectWatcherLimit: {{ .Values.config.workQueue.reconnectWatcherLimit }}
     jobQueue:
