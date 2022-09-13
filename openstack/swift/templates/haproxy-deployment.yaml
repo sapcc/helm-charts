@@ -28,6 +28,10 @@ metadata:
 spec:
   revisionHistoryLimit: 5
   {{- $replicas_az := default 2.0 (index $.Values (printf "haproxy_deployment_replicas_%s" $az)) }}
+  {{- if lt $replicas_az 0.0 }}
+  {{- /* To explicit disable in an AZ, replicas must be set negative, otherwise 0 will trigger the default */ -}}
+  {{- $replicas_az = 0.0 }}
+  {{- end }}
   replicas: {{ $replicas_az }}
   strategy:
     type: RollingUpdate
