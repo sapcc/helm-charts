@@ -4,7 +4,7 @@
         {{- if .Values.proxysql.mode -}}
 {{- $max_pool_size := coalesce .Values.max_pool_size .Values.global.max_pool_size 50 }}
 {{- $max_overflow := coalesce .Values.max_overflow .Values.global.max_overflow 5 }}
-{{- $max_connections := .Values.proxysql.max_connnections | default (add $max_pool_size $max_overflow) }}
+{{- $max_connections := .Values.proxysql.max_connections_per_proc | default (add $max_pool_size $max_overflow) }}
 
 {{- $dbs := dict }}
 {{- range $d := $envAll.Chart.Dependencies }}

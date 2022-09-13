@@ -1,4 +1,3 @@
-
 {{- define "utils.proxysql.volume_mount" }}
   {{- if .Values.proxysql }}
     {{- if .Values.proxysql.mode }}{{/* Always mount it, it doesn't cost much and eases migrations */}}
@@ -9,13 +8,43 @@
 {{- end }}
 
 {{- define "utils.proxysql.container" }}
-  {{- if .Values.proxysql }}
-    {{- if .Values.proxysql.mode }}
+  {{- if kindIs "map" . }}
+    {{- list . 1 | include "utils.proxysql._container" }}
+  {{- else }}
+    {{- include "utils.proxysql._container" . }}
+  {{- end }}
+{{- end }}
+
+{{- define "utils.proxysql._container" }}
+  {{- $envAll := index . 0 }}
+  {{- $scale := index . 1 | int }}
+  {{- with $envAll }}
+    {{- if .Values.proxysql }}
+      {{- if .Values.proxysql.mode }}
 - name: proxysql
   image: {{ required ".Values.global.dockerHubMirror is missing" .Values.global.dockerHubMirror }}/{{ default "proxysql/proxysql" .Values.proxysql.image }}:{{ .Values.proxysql.imageTag | default "2.4.3-debian" }}
   imagePullPolicy: IfNotPresent
   command: ["proxysql"]
   args: ["--config", "/etc/proxysql/proxysql.cnf", "--exit-on-error", "--foreground", "--idle-threads", "--admin-socket", "/run/proxysql/admin.sock", "--no-version-check", "-D", "/run/proxysql"]
+        {{- if gt $scale 1 }}
+          {{- $max_pool_size := coalesce .Values.max_pool_size .Values.global.max_pool_size 50 }}
+          {{- $max_overflow := coalesce .Values.max_overflow .Values.global.max_overflow 5 }}
+          {{- $max_connections := .Values.proxysql.max_connections_per_proc | default (add $max_pool_size $max_overflow) | mul $scale }}
+  lifecycle:
+    postStart:
+      exec:
+        command:
+        - /bin/bash
+        - -c
+        - |
+          for ((i=0;i<10;++i)); do
+            test -S /run/proxysql/admin.sock && break || sleep 1
+          done
+          mysql --wait -S /run/proxysql/admin.sock -uadmin -padmin -e '
+            UPDATE mysql_servers SET max_connections={{ $max_connections }};
+            LOAD MYSQL SERVERS TO RUNTIME;
+          '
+        {{- end }}
   ports:
   - name: metrics-psql
     containerPort: {{ default 6070 .Values.proxysql.restapi_port }}
@@ -29,6 +58,7 @@
   - mountPath: /etc/proxysql
     name: etcproxysql
     {{- include "utils.proxysql.volume_mount" . | indent 2 }}
+      {{- end }}
     {{- end }}
   {{- end }}
 {{- end }}

@@ -46,8 +46,9 @@ proxysql:
   imageTag: "2.4.1-debian"    # Most current at the time of writing this
   restapi_port: 6070          # On which port to expose the rest-api (and prometheus metrics)
   prometheus_memory_metrics_interval: 61 # See: https://proxysql.com/documentation/global-variables/admin-variables/#admin-prometheus_memory_metrics_interval
-  max_connnections: (max_pool_size + max_overflow)  # The maximum number of connections proxysql will open to a mariadb host
-
+  max_connections_per_proc: (max_pool_size + max_overflow)  # The maximum number of connections proxysql will open to a mariadb host
+                              # per process. With the default assumption being one process per pod.
+                              # The settings are modelled after the sqlalchemy pool, which is a per process pool
 ```
 
 ### Pod-Changes
@@ -58,7 +59,9 @@ First lets have a look at the standard case:
 
 To add the ProxySQL side-car to a pod you need to add at least three parts:
 1. The container itself is rendered by the macro `utils.proxysql.container`,
-and can be placed under the containers.
+and can be placed under the containers. It takes an optional integer specifying the number of processes (default 1)
+as a multiplier for `proxysql.max_connections_per_proc` resulting in the same number of maximum connections per pod as the
+per process setting `max_connections` of the sqlalchemy pool.
 2. The volume with the unix socket is defined in `utils.proxysql.volumes`, and goes into the "volumes" section of the spec
 3. To tie everything together, the volume needs to be mounted in each container accessing ProxySQL. This is done with the macro `utils.proxysql.volume_mount`. This is only necessary for the mode `unix_socket`.
 4. For the host-alias to work, we need to annotate the pod-spec with `utils.proxysql.job_pod_settings`, so it sets the hostAlias field
@@ -73,7 +76,7 @@ the snippets `utils.proxysql.container` and `utils.proxysql.container` can be pl
            volumeMounts:
              ...
 +          {{- include "utils.proxysql.volume_mount" . | indent 12 }}
-+        {{- include "utils.proxysql.container" . | indent 8 }}
++        {{- tuple . .Values.rpc_workers | include "utils.proxysql.container" | indent 8 }}
       ...
       volumes:
         ...
