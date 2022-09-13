@@ -100,7 +100,7 @@ spec:
               subPath: logging.ini
               readOnly: true
             {{- include "utils.proxysql.volume_mount" . | indent 12 }}
-        {{- include "utils.proxysql.container" . | indent 8 }}
+        {{- tuple . .Values.conductor.config_file.conductor.workers | include "utils.proxysql.container" | indent 8 }}
         {{- if .Values.conductor.config_file.DEFAULT.statsd_enabled }}
         - name: statsd
           image: {{ required ".Values.global.dockerHubMirror is missing" .Values.global.dockerHubMirror}}/prom/statsd-exporter:v0.8.1
