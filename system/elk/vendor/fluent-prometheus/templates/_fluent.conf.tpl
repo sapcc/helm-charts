@@ -25,7 +25,7 @@
 <source>
   @type tail
   path /var/log/containers/fluent*
-  exclude_path ["/var/log/containers/fluent-prometheus*","/var/log/containers/fluent-audit-container*","/var/log/containers/fluent-audit-systemd*"]
+  exclude_path ["/var/log/containers/fluent-prometheus*","/var/log/containers/fluent-audit*"]
   pos_file /var/log/fluent-prometheus.pos
   tag kubernetes.*
   <parse>
