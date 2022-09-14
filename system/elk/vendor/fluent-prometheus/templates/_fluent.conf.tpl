@@ -27,7 +27,6 @@
   path /var/log/containers/fluent*
   exclude_path ["/var/log/containers/fluent-prometheus*","/var/log/containers/fluent-audit-container*","/var/log/containers/fluent-audit-systemd*"]
   pos_file /var/log/fluent-prometheus.pos
-  time_format %Y-%m-%dT%H:%M:%S.%N
   tag kubernetes.*
   <parse>
     @type multi_format
@@ -54,7 +53,6 @@
   path /var/log/containers/es*
   exclude_path /var/log/containers/fluent-prometheus*
   pos_file /var/log/fluent-es.pos
-  time_format %Y-%m-%dT%H:%M:%S.%N
   tag kubernetes.*
   <parse>
     @type multi_format
@@ -81,7 +79,6 @@
   path /var/log/containers/fluent-audit*
   exclude_path /var/log/containers/fluent-prometheus*
   pos_file /var/log/fluent-prometheus-audit.pos
-  time_format %Y-%m-%dT%H:%M:%S.%N
   tag audit.*
   <parse>
     @type multi_format
