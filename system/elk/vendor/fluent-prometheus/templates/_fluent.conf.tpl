@@ -103,6 +103,17 @@
     pattern /because ReadonlyREST/
     tag "READONLYREST.${tag}"
   </rule>
+  <rule>
+    key log
+    pattern /failed to parse field/
+    tag "FLUENTPARSER.${tag}"
+  </rule>
+</match>
+  <rule>
+    key log
+    pattern /400 - Rejected by Elasticsearch/
+    tag "FLUENTREJECTED.${tag}"
+  </rule>
 </match>
 
 <match FLUENTERROR.**>
@@ -155,6 +166,48 @@
       name prom_fluentd_output_connreset_error
       type counter
       desc The total number of connection reset errors
+      <labels>
+        nodename "#{ENV['K8S_NODE_NAME']}"
+        fluent_container $.kubernetes.pod_name
+        daemontype $.kubernetes.container_name
+        fluent_namespace $.kubernetes.namespace
+      </labels>
+    </metric>
+  </store>
+  <store>
+    @type null
+  </store>
+</match>
+
+<match FLUENTPARSER.**>
+  @type copy
+  <store>
+    @type prometheus
+    <metric>
+      name prom_fluentd_parser_exception
+      type counter
+      desc The total number of fluent parser exceptions
+      <labels>
+        nodename "#{ENV['K8S_NODE_NAME']}"
+        fluent_container $.kubernetes.pod_name
+        daemontype $.kubernetes.container_name
+        fluent_namespace $.kubernetes.namespace
+      </labels>
+    </metric>
+  </store>
+  <store>
+    @type null
+  </store>
+</match>
+
+<match FLUENTREJECTED.**>
+  @type copy
+  <store>
+    @type prometheus
+    <metric>
+      name prom_fluentd_elastic_400
+      type counter
+      desc The total number of elastic rejected 400 error
       <labels>
         nodename "#{ENV['K8S_NODE_NAME']}"
         fluent_container $.kubernetes.pod_name
