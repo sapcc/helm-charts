@@ -25,7 +25,7 @@
 <source>
   @type tail
   path /var/log/containers/fluent*
-  exclude_path /var/log/containers/fluent-prometheus*
+  exclude_path ["/var/log/containers/fluent-prometheus*","/var/log/containers/fluent-audit-container*","/var/log/containers/fluent-audit-systemd*"]
   pos_file /var/log/fluent-prometheus.pos
   time_format %Y-%m-%dT%H:%M:%S.%N
   tag kubernetes.*
@@ -40,6 +40,16 @@
   pos_file /var/log/fluent-es.pos
   time_format %Y-%m-%dT%H:%M:%S.%N
   tag kubernetes.*
+  format json
+  keep_time_key true
+</source>
+
+<source>
+  @type tail
+  path /var/log/containers/fluent-audit*
+  pos_file /var/log/fluent-prometheus-audit.pos
+  time_format %Y-%m-%dT%H:%M:%S.%N
+  tag audit.*
   format json
   keep_time_key true
 </source>
@@ -62,8 +72,13 @@
   kubernetes_url https://KUBERNETES_SERVICE_HOST
   bearer_token_file /var/run/secrets/kubernetes.io/serviceaccount/token
   ca_file /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
-  use_journal 'false'
-  container_name_to_kubernetes_regexp '^(?<name_prefix>[^_]+)_(?<container_name>[^\._]+)(\.(?<container_hash>[^_]+))?_(?<pod_name>[^_]+)_(?<namespace>[^_]+)_[^_]+_[^_]+$'
+</filter>
+
+<filter audit.**>
+  @type kubernetes_metadata
+  kubernetes_url https://KUBERNETES_SERVICE_HOST
+  bearer_token_file /var/run/secrets/kubernetes.io/serviceaccount/token
+  ca_file /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
 </filter>
 
 # metrics
@@ -74,6 +89,19 @@
     name prom_fluentd_input_status_num_records_total
     type counter
     desc The total number of incoming records
+    <labels>
+      hostname ${hostname}
+      nodename "#{ENV['K8S_NODE_NAME']}"
+    </labels>
+  </metric>
+</filter>
+
+<filter audit.**>
+  @type prometheus
+  <metric>
+    name prom_fluentd_audit_input_status_num_records_total
+    type counter
+    desc The total number of incoming records from audit fluentds
     <labels>
       hostname ${hostname}
       nodename "#{ENV['K8S_NODE_NAME']}"
@@ -241,3 +269,84 @@
   </store>
 </match>
 
+<match audit.**>
+  @type rewrite_tag_filter
+  <rule>
+    key log
+    pattern /ResolvError/
+    tag "FLUENTAUDITERROR.${tag}"
+  </rule>
+  <rule>
+    key log
+    pattern /failed to parse field/
+    tag "FLUENTAUDITPARSER.${tag}"
+  </rule>
+  <rule>
+    key log
+    pattern /Connection reset/
+    tag "FLUENTAUDITRESET.${tag}"
+  </rule>
+</match>
+
+<match FLUENTAUDITERROR.**>
+  @type copy
+  <store>
+    @type prometheus
+    <metric>
+      name prom_fluentd_audit_output_resolv_error
+      type counter
+      desc The total number of resolve errata to ES for fluent audit
+      <labels>
+        nodename "#{ENV['K8S_NODE_NAME']}"
+        fluent_container $.kubernetes.pod_name
+        daemontype $.kubernetes.container_name
+        fluent_namespace $.kubernetes.namespace
+      </labels>
+    </metric>
+  </store>
+  <store>
+    @type null
+  </store>
+</match>
+
+<match FLUENTAUDITRESET.**>
+  @type copy
+  <store>
+    @type prometheus
+    <metric>
+      name prom_fluentd_audit_output_connreset_error
+      type counter
+      desc The total number of connection reset errors for fluentd audit
+      <labels>
+        nodename "#{ENV['K8S_NODE_NAME']}"
+        fluent_container $.kubernetes.pod_name
+        daemontype $.kubernetes.container_name
+        fluent_namespace $.kubernetes.namespace
+      </labels>
+    </metric>
+  </store>
+  <store>
+    @type null
+  </store>
+</match>
+
+<match FLUENTAUDITPARSER.**>
+  @type copy
+  <store>
+    @type prometheus
+    <metric>
+      name prom_fluentd_audit_parser_exception
+      type counter
+      desc The total number of fluent audit logs parser exceptions
+      <labels>
+        nodename "#{ENV['K8S_NODE_NAME']}"
+        fluent_container $.kubernetes.pod_name
+        daemontype $.kubernetes.container_name
+        fluent_namespace $.kubernetes.namespace
+      </labels>
+    </metric>
+  </store>
+  <store>
+    @type null
+  </store>
+</match>
