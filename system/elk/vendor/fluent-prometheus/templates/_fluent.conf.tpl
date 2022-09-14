@@ -29,8 +29,24 @@
   pos_file /var/log/fluent-prometheus.pos
   time_format %Y-%m-%dT%H:%M:%S.%N
   tag kubernetes.*
-  format json
-  keep_time_key true
+  <parse>
+    @type multi_format
+     <pattern>
+       format regexp
+       expression /^(?<time>.+)\s(?<stream>stdout|stderr)\s(?<logtag>F|P)\s(?<log>.*)$/
+       time_key time
+       time_format '%Y-%m-%dT%H:%M:%S.%NZ'
+       keep_time_key true
+     </pattern>
+     <pattern>
+       format json
+       time_format '%Y-%m-%dT%H:%M:%S.%N%:z'
+       time_key time
+       keep_time_key true
+     </pattern>
+  </parse>
+  read_from_head
+  @log_level warn
 </source>
 
 <source>
@@ -40,18 +56,51 @@
   pos_file /var/log/fluent-es.pos
   time_format %Y-%m-%dT%H:%M:%S.%N
   tag kubernetes.*
-  format json
-  keep_time_key true
+  <parse>
+    @type multi_format
+     <pattern>
+       format regexp
+       expression /^(?<time>.+)\s(?<stream>stdout|stderr)\s(?<logtag>F|P)\s(?<log>.*)$/
+       time_key time
+       time_format '%Y-%m-%dT%H:%M:%S.%NZ'
+       keep_time_key true
+     </pattern>
+     <pattern>
+       format json
+       time_format '%Y-%m-%dT%H:%M:%S.%N%:z'
+       time_key time
+       keep_time_key true
+     </pattern>
+  </parse>
+  read_from_head
+  @log_level warn
 </source>
 
 <source>
   @type tail
   path /var/log/containers/fluent-audit*
+  exclude_path /var/log/containers/fluent-prometheus*
   pos_file /var/log/fluent-prometheus-audit.pos
   time_format %Y-%m-%dT%H:%M:%S.%N
   tag audit.*
-  format json
-  keep_time_key true
+  <parse>
+    @type multi_format
+     <pattern>
+       format regexp
+       expression /^(?<time>.+)\s(?<stream>stdout|stderr)\s(?<logtag>F|P)\s(?<log>.*)$/
+       time_key time
+       time_format '%Y-%m-%dT%H:%M:%S.%NZ'
+       keep_time_key true
+     </pattern>
+     <pattern>
+       format json
+       time_format '%Y-%m-%dT%H:%M:%S.%N%:z'
+       time_key time
+       keep_time_key true
+     </pattern>
+  </parse>
+  read_from_head
+  @log_level warn
 </source>
 
 <match fluent.**>
