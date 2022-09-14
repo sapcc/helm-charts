@@ -68,7 +68,9 @@ annotations:
 {{- define "job_name" }}
   {{- $name := index . 1 }}
   {{- with index . 0 }}
-    {{- $hash := include (print .Template.BasePath "/bin/_" $name ".tpl") . | sha256sum }}
+    {{- $bin := include (print .Template.BasePath "/bin/_" $name ".tpl") . }}
+    {{- $all := list $bin (include "utils.proxysql.job_pod_settings" . ) (include "utils.proxysql.volume_mount" . ) (include "utils.proxysql.container" . ) (include "utils.proxysql.volumes" .) | join "\n" }}
+    {{- $hash := empty .Values.proxysql.mode | ternary $bin $all | sha256sum }}
 {{- .Release.Name }}-{{ $name }}-{{ substr 0 4 $hash }}-{{ .Values.imageVersion | required "Please set nova.imageVersion or similar"}}
   {{- end }}
 {{- end }}
