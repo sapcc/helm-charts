@@ -26,7 +26,7 @@
     @type multi_format
      <pattern>
        format regexp
-       expression /^(?<time>.+) (?<stream>stdout|stderr)( (?<logtag>.))? (?<log>.*)$/
+       expression /^(?<time>.+)\s(?<stream>stdout|stderr)\s(?<logtag>F|P)\s(?<log>.*)$/
        time_key time
        time_format '%Y-%m-%dT%H:%M:%S.%NZ'
        keep_time_key true
