@@ -136,7 +136,6 @@
     pattern /failed to parse field/
     tag "FLUENTPARSER.${tag}"
   </rule>
-</match>
   <rule>
     key log
     pattern /400 - Rejected by Elasticsearch/
