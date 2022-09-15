@@ -324,7 +324,7 @@
   <store>
     @type prometheus
     <metric>
-      name prom_fluent_timeout_error
+      name prom_fluentd_timeout_error
       type counter
       desc The total number of fluent timeout reached errors
       <labels>
