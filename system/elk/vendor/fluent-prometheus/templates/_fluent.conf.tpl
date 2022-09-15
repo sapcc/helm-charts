@@ -197,6 +197,11 @@
     pattern /400 - Rejected by Elasticsearch/
     tag "FLUENTREJECTED.${tag}"
   </rule>
+  <rule>
+    key log
+    pattern /slow_flush_log_threshold/
+    tag "FLUENTSLOWFLUSH.${tag}"
+  </rule>
 </match>
 
 <match FLUENTERROR.**>
@@ -352,6 +357,26 @@
       name prom_fluentd_readonlyrest_error
       type counter
       desc The total number of fluent elastic client readonlyrest errors
+      <labels>
+        nodename "#{ENV['K8S_NODE_NAME']}"
+        fluent_container $.kubernetes.pod_name
+        fluent_namespace $.kubernetes.namespace
+      </labels>
+    </metric>
+  </store>
+  <store>
+    @type null
+  </store>
+</match>
+
+<match FLUENTSLOWFLUSH.**>
+  @type copy
+  <store>
+    @type prometheus
+    <metric>
+      name prom_fluentd_slowflush_warn
+      type counter
+      desc The total number of fluent slow flush warnings
       <labels>
         nodename "#{ENV['K8S_NODE_NAME']}"
         fluent_container $.kubernetes.pod_name
