@@ -18,7 +18,7 @@ viewer: role:compute_viewer and rule:owner
 admin: (role:compute_admin or role:compute_admin_wsg) and rule:owner
 
 # ??
-context_is_compute_admin: rule:context_is_admin or rule:admin
+context_is_compute_admin: is_admin:True or rule:admin
 
 # ??
 context_is_editor: rule:context_is_compute_admin or rule:member
@@ -30,7 +30,7 @@ context_is_viewer: rule:context_is_editor or rule:viewer
 compute_admin_all: role:compute_admin or role:cloud_compute_admin
 
 # ??
-default: rule:context_is_admin
+default: is_admin:True
 
 # ??
 network_admin: role:network_admin and rule:owner
@@ -86,7 +86,7 @@ compute:get: rule:context_is_viewer
 compute:get_all: rule:context_is_viewer
 
 # ??
-compute:get_all_tenants: rule:context_is_admin
+compute:get_all_tenants: is_admin:True
 
 # ??
 compute:update: rule:context_is_editor
@@ -107,10 +107,10 @@ compute:update_instance_metadata: rule:context_is_editor
 compute:delete_instance_metadata: rule:context_is_editor
 
 # ??
-compute:get_diagnostics: rule:context_is_admin
+compute:get_diagnostics: is_admin:True
 
 # ??
-compute:get_instance_diagnostics: rule:context_is_admin
+compute:get_instance_diagnostics: is_admin:True
 
 # ??
 compute:start: rule:context_is_editor
@@ -125,7 +125,7 @@ compute:lock: rule:context_is_compute_admin
 compute:unlock: rule:context_is_compute_admin
 
 # ??
-compute:unlock_override: rule:context_is_admin
+compute:unlock_override: is_admin:True
 
 # ??
 compute:get_vnc_console: rule:context_is_editor
@@ -251,10 +251,10 @@ compute:volume_snapshot_create: rule:context_is_editor
 compute:volume_snapshot_delete: rule:context_is_editor
 
 # ??
-compute_extension:accounts: rule:context_is_admin
+compute_extension:accounts: is_admin:True
 
 # ??
-compute_extension:admin_actions: rule:context_is_admin
+compute_extension:admin_actions: is_admin:True
 
 # ??
 compute_extension:admin_actions:pause: rule:context_is_editor
@@ -275,58 +275,58 @@ compute_extension:admin_actions:lock: rule:context_is_compute_admin
 compute_extension:admin_actions:unlock: rule:context_is_compute_admin
 
 # ??
-compute_extension:admin_actions:resetNetwork: rule:context_is_admin
+compute_extension:admin_actions:resetNetwork: is_admin:True
 
 # ??
-compute_extension:admin_actions:injectNetworkInfo: rule:context_is_admin
+compute_extension:admin_actions:injectNetworkInfo: is_admin:True
 
 # ??
 compute_extension:admin_actions:createBackup: rule:context_is_editor
 
 # ??
-compute_extension:admin_actions:migrateLive: rule:context_is_admin
+compute_extension:admin_actions:migrateLive: is_admin:True
 
 # ??
 compute_extension:admin_actions:resetState: rule:context_is_compute_admin
 
 # ??
-compute_extension:admin_actions:migrate: rule:context_is_admin
+compute_extension:admin_actions:migrate: is_admin:True
 
 # ??
-compute_extension:aggregates: rule:context_is_admin
+compute_extension:aggregates: is_admin:True
 
 # ??
-compute_extension:agents: rule:context_is_admin
+compute_extension:agents: is_admin:True
 
 # ??
 compute_extension:attach_interfaces: rule:context_is_editor
 
 # ??
-compute_extension:baremetal_nodes: rule:context_is_admin
+compute_extension:baremetal_nodes: is_admin:True
 
 # ??
-compute_extension:cells: rule:context_is_admin
+compute_extension:cells: is_admin:True
 
 # ??
-compute_extension:cells:create: rule:context_is_admin
+compute_extension:cells:create: is_admin:True
 
 # ??
-compute_extension:cells:delete: rule:context_is_admin
+compute_extension:cells:delete: is_admin:True
 
 # ??
-compute_extension:cells:update: rule:context_is_admin
+compute_extension:cells:update: is_admin:True
 
 # ??
-compute_extension:cells:sync_instances: rule:context_is_admin
+compute_extension:cells:sync_instances: is_admin:True
 
 # ??
 compute_extension:certificates: rule:context_is_editor
 
 # ??
-compute_extension:cloudpipe: rule:context_is_admin
+compute_extension:cloudpipe: is_admin:True
 
 # ??
-compute_extension:cloudpipe_update: rule:context_is_admin
+compute_extension:cloudpipe_update: is_admin:True
 
 # ??
 compute_extension:config_drive: rule:context_is_editor
@@ -347,7 +347,7 @@ compute_extension:deferred_delete: rule:context_is_editor
 compute_extension:disk_config: rule:context_is_editor
 
 # ??
-compute_extension:evacuate: rule:context_is_admin
+compute_extension:evacuate: is_admin:True
 
 # ??
 compute_extension:extended_server_attributes: rule:context_is_editor
@@ -371,16 +371,16 @@ compute_extension:extended_vif_net: rule:context_is_viewer
 compute_extension:extended_volumes: rule:context_is_viewer
 
 # ??
-compute_extension:fixed_ips: rule:context_is_admin
+compute_extension:fixed_ips: is_admin:True
 
 # ??
 compute_extension:flavor_access: rule:context_is_editor
 
 # ??
-compute_extension:flavor_access:addTenantAccess: rule:context_is_admin
+compute_extension:flavor_access:addTenantAccess: is_admin:True
 
 # ??
-compute_extension:flavor_access:removeTenantAccess: rule:context_is_admin
+compute_extension:flavor_access:removeTenantAccess: is_admin:True
 
 # ??
 compute_extension:flavor_disabled: rule:context_is_editor
@@ -401,16 +401,16 @@ compute_extension:flavorextraspecs:index: rule:context_is_editor
 compute_extension:flavorextraspecs:show: rule:context_is_editor
 
 # ??
-compute_extension:flavorextraspecs:create: rule:context_is_admin
+compute_extension:flavorextraspecs:create: is_admin:True
 
 # ??
-compute_extension:flavorextraspecs:update: rule:context_is_admin
+compute_extension:flavorextraspecs:update: is_admin:True
 
 # ??
-compute_extension:flavorextraspecs:delete: rule:context_is_admin
+compute_extension:flavorextraspecs:delete: is_admin:True
 
 # ??
-compute_extension:flavormanage: rule:context_is_admin
+compute_extension:flavormanage: is_admin:True
 
 # ??
 compute_extension:floating_ip_dns: rule:context_is_editor
@@ -422,22 +422,22 @@ compute_extension:floating_ip_pools: rule:context_is_editor
 compute_extension:floating_ips: rule:context_is_editor
 
 # ??
-compute_extension:floating_ips_bulk: rule:context_is_admin
+compute_extension:floating_ips_bulk: is_admin:True
 
 # ??
 compute_extension:fping: rule:context_is_editor
 
 # ??
-compute_extension:fping:all_tenants: rule:context_is_admin
+compute_extension:fping:all_tenants: is_admin:True
 
 # ??
-compute_extension:hide_server_addresses: not rule:context_is_admin
+compute_extension:hide_server_addresses: not is_admin:True
 
 # ??
-compute_extension:hosts: rule:context_is_admin
+compute_extension:hosts: is_admin:True
 
 # ??
-compute_extension:hypervisors: rule:context_is_admin
+compute_extension:hypervisors: is_admin:True
 
 # ??
 compute_extension:image_size: rule:context_is_editor
@@ -446,10 +446,10 @@ compute_extension:image_size: rule:context_is_editor
 compute_extension:instance_actions: rule:context_is_editor
 
 # ??
-compute_extension:instance_actions:events: rule:context_is_admin
+compute_extension:instance_actions:events: is_admin:True
 
 # ??
-compute_extension:instance_usage_audit_log: rule:context_is_admin
+compute_extension:instance_usage_audit_log: is_admin:True
 
 # ??
 compute_extension:keypairs: rule:context_is_editor
@@ -491,19 +491,19 @@ compute_extension:quotas:update: rule:context_is_quota_admin
 compute_extension:quotas:delete: rule:context_is_quota_admin
 
 # ??
-compute_extension:quota_classes: rule:context_is_admin or rule:context_is_quota_admin
+compute_extension:quota_classes: is_admin:True or rule:context_is_quota_admin
 
 # ??
 compute_extension:rescue: rule:context_is_editor
 
 # ??
-compute_extension:security_group_default_rules: rule:context_is_admin
+compute_extension:security_group_default_rules: is_admin:True
 
 # ??
 compute_extension:security_groups: rule:context_is_viewer
 
 # ??
-compute_extension:server_diagnostics: rule:context_is_admin
+compute_extension:server_diagnostics: is_admin:True
 
 # ??
 compute_extension:server_groups: rule:context_is_editor
@@ -515,25 +515,25 @@ compute_extension:server_password: rule:context_is_editor
 compute_extension:server_usage: rule:context_is_editor
 
 # ??
-compute_extension:services: rule:context_is_admin
+compute_extension:services: is_admin:True
 
 # ??
 compute_extension:shelve: rule:context_is_editor
 
 # ??
-compute_extension:shelveOffload: rule:context_is_admin
+compute_extension:shelveOffload: is_admin:True
 
 # ??
 compute_extension:simple_tenant_usage:show: rule:context_is_editor
 
 # ??
-compute_extension:simple_tenant_usage:list: rule:context_is_admin
+compute_extension:simple_tenant_usage:list: is_admin:True
 
 # ??
 compute_extension:unshelve: rule:context_is_editor
 
 # ??
-compute_extension:users: rule:context_is_admin
+compute_extension:users: is_admin:True
 
 # ??
 compute_extension:virtual_interfaces: rule:context_is_editor
@@ -566,41 +566,41 @@ compute_extension:volumetypes: rule:context_is_editor
 compute_extension:availability_zone:list: rule:context_is_viewer
 
 # ??
-compute_extension:availability_zone:detail: rule:context_is_admin
+compute_extension:availability_zone:detail: is_admin:True
 
 # ??
-compute_extension:used_limits_for_admin: rule:context_is_admin
+compute_extension:used_limits_for_admin: is_admin:True
 
 # ??
-compute_extension:migrations:index: rule:context_is_admin
+compute_extension:migrations:index: is_admin:True
 
 # ??
-compute_extension:os-assisted-volume-snapshots:create: rule:context_is_admin
+compute_extension:os-assisted-volume-snapshots:create: is_admin:True
 
 # ??
-compute_extension:os-assisted-volume-snapshots:delete: rule:context_is_admin
+compute_extension:os-assisted-volume-snapshots:delete: is_admin:True
 
 # ??
-compute_extension:console_auth_tokens: rule:context_is_admin
+compute_extension:console_auth_tokens: is_admin:True
 
 # ??
-compute_extension:os-server-external-events:create: rule:context_is_admin
+compute_extension:os-server-external-events:create: is_admin:True
 
 # Attach an unshared external network to a server
 #   POST /servers
 #   POST /servers/{server_id}/os-interface
 #network:attach_external_network: rule:project_admin_api
-network:attach_external_network: rule:context_is_admin
+network:attach_external_network: is_admin:True
 
 # List all servers with detailed information for  all projects
 #   GET /servers/detail
 #os_compute_api:servers:detail:get_all_tenants: rule:system_reader_api
-os_compute_api:servers:detail:get_all_tenants: rule:context_is_admin
+os_compute_api:servers:detail:get_all_tenants: is_admin:True
 
 # List all servers for all projects
 #   GET /servers
 #os_compute_api:servers:index:get_all_tenants: rule:system_reader_api
-os_compute_api:servers:index:get_all_tenants: rule:context_is_admin
+os_compute_api:servers:index:get_all_tenants: is_admin:True
 
 # Confirm a server resize
 #   POST /servers/{server_id}/action (confirmResize)
@@ -688,7 +688,7 @@ os_compute_api:servers:show: rule:context_is_viewer
 #   PUT /servers/{server_id}
 #   POST /servers/{server_id}/action (rebuild)
 #os_compute_api:servers:show:host_status: rule:system_admin_api
-os_compute_api:servers:show:host_status: rule:context_is_admin
+os_compute_api:servers:show:host_status: is_admin:True
 
 # Create an image from a server
 #   POST /servers/{server_id}/action (createImage)
@@ -718,33 +718,33 @@ os_compute_api:servers:trigger_crash_dump: rule:context_is_editor
 # Force an in-progress live migration for a given server to complete
 #   POST /servers/{server_id}/migrations/{migration_id}/action (force_complete)
 #os_compute_api:servers:migrations:force_complete: rule:system_admin_api
-os_compute_api:servers:migrations:force_complete: rule:context_is_admin
+os_compute_api:servers:migrations:force_complete: is_admin:True
 
 # Delete(Abort) an in-progress live migration
 #   DELETE /servers/{server_id}/migrations/{migration_id}
 #os_compute_api:servers:migrations:delete: rule:system_admin_api
-os_compute_api:servers:migrations:delete: rule:context_is_admin
+os_compute_api:servers:migrations:delete: is_admin:True
 
 # Lists in-progress live migrations for a given server
 #   GET /servers/{server_id}/migrations
 #os_compute_api:servers:migrations:index: rule:system_reader_api
-os_compute_api:servers:migrations:index: rule:context_is_admin
+os_compute_api:servers:migrations:index: is_admin:True
 
 # Show details for an in-progress live migration for a given server
 #   GET /servers/{server_id}/migrations/{migration_id}
 #os_compute_api:servers:migrations:show: rule:system_reader_api
-os_compute_api:servers:migrations:show: rule:context_is_admin
+os_compute_api:servers:migrations:show: is_admin:True
 
 # ??
-os_compute_api:os-admin-actions: rule:context_is_admin
+os_compute_api:os-admin-actions: is_admin:True
 
 # ??
-os_compute_api:os-admin-actions:reset_network: rule:context_is_admin
+os_compute_api:os-admin-actions:reset_network: is_admin:True
 
 # Inject network information into the server
 #   POST /servers/{server_id}/action (injectNetworkInfo)
 #os_compute_api:os-admin-actions:inject_network_info: rule:system_admin_api
-os_compute_api:os-admin-actions:inject_network_info: rule:context_is_admin
+os_compute_api:os-admin-actions:inject_network_info: is_admin:True
 
 # Reset the state of a given server
 #   POST /servers/{server_id}/action (os-resetState)
@@ -759,66 +759,66 @@ os_compute_api:os-admin-password: rule:context_is_editor
 # List all aggregates
 #   GET /os-aggregates
 #os_compute_api:os-aggregates:index: rule:system_reader_api
-os_compute_api:os-aggregates:index: rule:context_is_admin
+os_compute_api:os-aggregates:index: is_admin:True
 
 # Create an aggregate
 #   POST /os-aggregates
 #os_compute_api:os-aggregates:create: rule:system_admin_api
-os_compute_api:os-aggregates:create: rule:context_is_admin
+os_compute_api:os-aggregates:create: is_admin:True
 
 # Show details for an aggregate
 #   GET /os-aggregates/{aggregate_id}
 #os_compute_api:os-aggregates:show: rule:system_reader_api
-os_compute_api:os-aggregates:show: rule:context_is_admin
+os_compute_api:os-aggregates:show: is_admin:True
 
 # Update name and/or availability zone for an aggregate
 #   PUT /os-aggregates/{aggregate_id}
 #os_compute_api:os-aggregates:update: rule:system_admin_api
-os_compute_api:os-aggregates:update: rule:context_is_admin
+os_compute_api:os-aggregates:update: is_admin:True
 
 # Delete an aggregate
 #   DELETE /os-aggregates/{aggregate_id}
 #os_compute_api:os-aggregates:delete: rule:system_admin_api
-os_compute_api:os-aggregates:delete: rule:context_is_admin
+os_compute_api:os-aggregates:delete: is_admin:True
 
 # Add a host to an aggregate
 #   POST /os-aggregates/{aggregate_id}/action (add_host)
 #os_compute_api:os-aggregates:add_host: rule:system_admin_api
-os_compute_api:os-aggregates:add_host: rule:context_is_admin
+os_compute_api:os-aggregates:add_host: is_admin:True
 
 # Remove a host from an aggregate
 #   POST /os-aggregates/{aggregate_id}/action (remove_host)
 #os_compute_api:os-aggregates:remove_host: rule:system_admin_api
-os_compute_api:os-aggregates:remove_host: rule:context_is_admin
+os_compute_api:os-aggregates:remove_host: is_admin:True
 
 # Create or replace metadata for an aggregate
 #   POST /os-aggregates/{aggregate_id}/action (set_metadata)
 #os_compute_api:os-aggregates:set_metadata: rule:system_admin_api
-os_compute_api:os-aggregates:set_metadata: rule:context_is_admin
+os_compute_api:os-aggregates:set_metadata: is_admin:True
 
 # ??
-os_compute_api:os-agents: rule:context_is_admin
+os_compute_api:os-agents: is_admin:True
 
 # ??
 os_compute_api:os-attach-interfaces: rule:context_is_editor
 
 # ??
-os_compute_api:os-baremetal-nodes: rule:context_is_admin
+os_compute_api:os-baremetal-nodes: is_admin:True
 
 # ??
-os_compute_api:os-cells: rule:context_is_admin
+os_compute_api:os-cells: is_admin:True
 
 # ??
-os_compute_api:os-cells:create: rule:context_is_admin
+os_compute_api:os-cells:create: is_admin:True
 
 # ??
-os_compute_api:os-cells:delete: rule:context_is_admin
+os_compute_api:os-cells:delete: is_admin:True
 
 # ??
-os_compute_api:os-cells:update: rule:context_is_admin
+os_compute_api:os-cells:update: is_admin:True
 
 # ??
-os_compute_api:os-cells:sync_instances: rule:context_is_admin
+os_compute_api:os-cells:sync_instances: is_admin:True
 
 # ??
 os_compute_api:os-certificates:create: rule:context_is_editor
@@ -827,7 +827,7 @@ os_compute_api:os-certificates:create: rule:context_is_editor
 os_compute_api:os-certificates:show: rule:context_is_viewer
 
 # ??
-os_compute_api:os-cloudpipe: rule:context_is_admin
+os_compute_api:os-cloudpipe: is_admin:True
 
 # Show console output for a server
 #   POST /servers/{server_id}/action (os-getConsoleOutput)
@@ -861,7 +861,7 @@ os_compute_api:os-deferred-delete: rule:context_is_editor
 # Evacuate a server from a failed host to a new host
 #   POST /servers/{server_id}/action (evacuate)
 #os_compute_api:os-evacuate: rule:system_admin_api
-os_compute_api:os-evacuate: rule:context_is_admin
+os_compute_api:os-evacuate: is_admin:True
 
 # Return extended attributes for server.
 # This rule will control the visibility for a set of servers attributes:
@@ -897,7 +897,7 @@ os_compute_api:os-extended-server-attributes: rule:context_is_viewer
 os_compute_api:extensions: rule:context_is_viewer
 
 # ??
-os_compute_api:os-fixed-ips: rule:context_is_admin
+os_compute_api:os-fixed-ips: is_admin:True
 
 # List flavor access information
 # Allows access to the full list of tenants that have access
@@ -909,12 +909,12 @@ os_compute_api:os-flavor-access: rule:context_is_editor
 # Remove flavor access from a tenant
 #   POST /flavors/{flavor_id}/action (removeTenantAccess)
 #os_compute_api:os-flavor-access:remove_tenant_access: rule:system_admin_api
-os_compute_api:os-flavor-access:remove_tenant_access: rule:context_is_admin
+os_compute_api:os-flavor-access:remove_tenant_access: is_admin:True
 
 # Add flavor access to a tenant
 #   POST /flavors/{flavor_id}/action (addTenantAccess)
 #os_compute_api:os-flavor-access:add_tenant_access: rule:system_admin_api
-os_compute_api:os-flavor-access:add_tenant_access: rule:context_is_admin
+os_compute_api:os-flavor-access:add_tenant_access: is_admin:True
 
 # List extra specs for a flavor. Starting with microversion 2.47, the flavor
 # used for a server is also returned in the response when showing server details,
@@ -940,41 +940,41 @@ os_compute_api:os-flavor-extra-specs:show: rule:context_is_viewer
 # Create extra specs for a flavor
 #   POST /flavors/{flavor_id}/os-extra_specs/
 #os_compute_api:os-flavor-extra-specs:create: rule:system_admin_api
-os_compute_api:os-flavor-extra-specs:create: rule:context_is_admin
+os_compute_api:os-flavor-extra-specs:create: is_admin:True
 
 # Update an extra spec for a flavor
 #   PUT /flavors/{flavor_id}/os-extra_specs/{flavor_extra_spec_key}
 #os_compute_api:os-flavor-extra-specs:update: rule:system_admin_api
-os_compute_api:os-flavor-extra-specs:update: rule:context_is_admin
+os_compute_api:os-flavor-extra-specs:update: is_admin:True
 
 # Delete an extra spec for a flavor
 #   DELETE /flavors/{flavor_id}/os-extra_specs/{flavor_extra_spec_key}
 #os_compute_api:os-flavor-extra-specs:delete: rule:system_admin_api
-os_compute_api:os-flavor-extra-specs:delete: rule:context_is_admin
+os_compute_api:os-flavor-extra-specs:delete: is_admin:True
 
 # Create a flavor
 #   POST /flavors
 #os_compute_api:os-flavor-manage:create: rule:system_admin_api
-os_compute_api:os-flavor-manage:create: rule:context_is_admin
+os_compute_api:os-flavor-manage:create: is_admin:True
 
 # Update a flavor
 #   PUT /flavors/{flavor_id}
 #os_compute_api:os-flavor-manage:update: rule:system_admin_api
-os_compute_api:os-flavor-manage:update: rule:context_is_admin
+os_compute_api:os-flavor-manage:update: is_admin:True
 
 # Delete a flavor
 #   DELETE /flavors/{flavor_id}
 #os_compute_api:os-flavor-manage:delete: rule:system_admin_api
-os_compute_api:os-flavor-manage:delete: rule:context_is_admin
+os_compute_api:os-flavor-manage:delete: is_admin:True
 
 # ??
 os_compute_api:os-floating-ip-dns: rule:context_is_editor
 
 # ??
-os_compute_api:os-floating-ip-dns:domain:update: rule:context_is_admin
+os_compute_api:os-floating-ip-dns:domain:update: is_admin:True
 
 # ??
-os_compute_api:os-floating-ip-dns:domain:delete: rule:context_is_admin
+os_compute_api:os-floating-ip-dns:domain:delete: is_admin:True
 
 # List floating IP pools. This API is deprecated.
 #   GET /os-floating-ip-pools
@@ -985,22 +985,22 @@ os_compute_api:os-floating-ip-pools: rule:context_is_editor
 os_compute_api:os-floating-ips: rule:context_is_editor
 
 # ??
-os_compute_api:os-floating-ips-bulk: rule:context_is_admin
+os_compute_api:os-floating-ips-bulk: is_admin:True
 
 # ??
 os_compute_api:os-fping: rule:context_is_editor
 
 # ??
-os_compute_api:os-fping:all_tenants: rule:context_is_admin
+os_compute_api:os-fping:all_tenants: is_admin:True
 
 # ??
-os_compute_api:os-hide-server-addresses: not rule:context_is_admin
+os_compute_api:os-hide-server-addresses: not is_admin:True
 
 # ??
-os_compute_api:os-hosts: rule:context_is_admin
+os_compute_api:os-hosts: is_admin:True
 
 # ??
-os_compute_api:os-hypervisors: rule:context_is_admin
+os_compute_api:os-hypervisors: is_admin:True
 
 # ??
 os_compute_api:image-size: rule:context_is_editor
@@ -1017,10 +1017,10 @@ os_compute_api:os-instance-actions: rule:context_is_editor
 # passes, the name of the host.
 #   GET /servers/{server_id}/os-instance-actions/{request_id}
 #os_compute_api:os-instance-actions:events: rule:system_reader_api
-os_compute_api:os-instance-actions:events: rule:context_is_admin
+os_compute_api:os-instance-actions:events: is_admin:True
 
 # ??
-os_compute_api:os-instance-usage-audit-log: rule:context_is_admin
+os_compute_api:os-instance-usage-audit-log: is_admin:True
 
 # List IP addresses that are assigned to a server
 #   GET /servers/{server_id}/ips
@@ -1035,22 +1035,22 @@ os_compute_api:ips:show: rule:context_is_viewer
 # List all keypairs
 #   GET /os-keypairs
 #os_compute_api:os-keypairs:index: (rule:system_reader_api) or user_id:%(user_id)s
-os_compute_api:os-keypairs:index: rule:context_is_admin or user_id:%(user_id)s
+os_compute_api:os-keypairs:index: is_admin:True or user_id:%(user_id)s
 
 # Show details of a keypair
 #   GET /os-keypairs/{keypair_name}
 #os_compute_api:os-keypairs:show: (rule:system_reader_api) or user_id:%(user_id)s
-os_compute_api:os-keypairs:show: rule:context_is_admin or user_id:%(user_id)s
+os_compute_api:os-keypairs:show: is_admin:True or user_id:%(user_id)s
 
 # Create a keypair
 #   POST /os-keypairs
 #os_compute_api:os-keypairs:create: (rule:system_admin_api) or user_id:%(user_id)s
-os_compute_api:os-keypairs:create: rule:context_is_admin or user_id:%(user_id)s
+os_compute_api:os-keypairs:create: is_admin:True or user_id:%(user_id)s
 
 # Delete a keypair
 #   DELETE /os-keypairs/{keypair_name}
 #os_compute_api:os-keypairs:delete: (rule:system_admin_api) or user_id:%(user_id)s
-os_compute_api:os-keypairs:delete: rule:context_is_admin or user_id:%(user_id)s
+os_compute_api:os-keypairs:delete: is_admin:True or user_id:%(user_id)s
 
 # Show rate and absolute limits for the current user project
 #   GET /limits
@@ -1072,17 +1072,17 @@ os_compute_api:os-lock-server:unlock: rule:context_is_compute_admin
 # os_compute_api:os-lock-server:unlock passes
 #   POST /servers/{server_id}/action (unlock)
 #os_compute_api:os-lock-server:unlock:unlock_override: rule:system_admin_api
-os_compute_api:os-lock-server:unlock:unlock_override: rule:context_is_admin
+os_compute_api:os-lock-server:unlock:unlock_override: is_admin:True
 
 # Cold migrate a server to a host
 #   POST /servers/{server_id}/action (migrate)
 #os_compute_api:os-migrate-server:migrate: rule:system_admin_api
-os_compute_api:os-migrate-server:migrate: rule:context_is_admin
+os_compute_api:os-migrate-server:migrate: is_admin:True
 
 # Live migrate a server to a new host without a reboot
 #   POST /servers/{server_id}/action (os-migrateLive)
 #os_compute_api:os-migrate-server:migrate_live: rule:system_admin_api
-os_compute_api:os-migrate-server:migrate_live: rule:context_is_admin
+os_compute_api:os-migrate-server:migrate_live: is_admin:True
 
 # ??
 os_compute_api:os-multinic: rule:context_is_editor
@@ -1104,13 +1104,13 @@ os_compute_api:os-pause-server:unpause: rule:context_is_editor
 os_compute_api:os-pci:pci_servers: rule:context_is_editor
 
 # ??
-os_compute_api:os-pci:index: rule:context_is_admin
+os_compute_api:os-pci:index: is_admin:True
 
 # ??
-os_compute_api:os-pci:detail: rule:context_is_admin
+os_compute_api:os-pci:detail: is_admin:True
 
 # ??
-os_compute_api:os-pci:show: rule:context_is_admin
+os_compute_api:os-pci:show: is_admin:True
 
 # Show a quota
 #   GET /os-quota-sets/{tenant_id}
@@ -1125,12 +1125,12 @@ os_compute_api:os-quota-sets:defaults: rule:context_is_viewer
 # Update the quotas
 #   PUT /os-quota-sets/{tenant_id}
 #os_compute_api:os-quota-sets:update: rule:system_admin_api
-os_compute_api:os-quota-sets:update: rule:context_is_admin
+os_compute_api:os-quota-sets:update: is_admin:True
 
 # Revert quotas to defaults
 #   DELETE /os-quota-sets/{tenant_id}
 #os_compute_api:os-quota-sets:delete: rule:system_admin_api
-os_compute_api:os-quota-sets:delete: rule:context_is_admin
+os_compute_api:os-quota-sets:delete: is_admin:True
 
 # Show the detail of quota
 #   GET /os-quota-sets/{tenant_id}/detail
@@ -1140,12 +1140,12 @@ os_compute_api:os-quota-sets:detail: rule:context_is_viewer
 # Update quotas for specific quota class
 #   PUT /os-quota-class-sets/{quota_class}
 #os_compute_api:os-quota-class-sets:update: rule:system_admin_api
-os_compute_api:os-quota-class-sets:update: rule:context_is_admin
+os_compute_api:os-quota-class-sets:update: is_admin:True
 
 # List quotas for specific quota classs
 #   GET /os-quota-class-sets/{quota_class}
 #os_compute_api:os-quota-class-sets:show: rule:system_reader_api
-os_compute_api:os-quota-class-sets:show: rule:context_is_admin or quota_class:%(quota_class)s
+os_compute_api:os-quota-class-sets:show: is_admin:True or quota_class:%(quota_class)s
 
 # Rescue a server
 #   POST /servers/{server_id}/action (rescue)
@@ -1155,7 +1155,7 @@ os_compute_api:os-rescue: rule:context_is_editor
 # Show the usage data for a server
 #   GET /servers/{server_id}/diagnostics
 #os_compute_api:os-server-diagnostics: rule:system_admin_api
-os_compute_api:os-server-diagnostics: rule:context_is_admin
+os_compute_api:os-server-diagnostics: is_admin:True
 
 # ??
 os_compute_api:os-server-password: rule:context_is_editor
@@ -1178,7 +1178,7 @@ os_compute_api:os-server-groups:index: rule:context_is_editor
 # List all server groups for all projects
 #   GET /os-server-groups
 #os_compute_api:os-server-groups:index:all_projects: rule:system_reader_api
-os_compute_api:os-server-groups:index:all_projects: rule:context_is_admin
+os_compute_api:os-server-groups:index:all_projects: is_admin:True
 
 # Show details of a server group
 #   GET /os-server-groups/{server_group_id}
@@ -1186,16 +1186,16 @@ os_compute_api:os-server-groups:index:all_projects: rule:context_is_admin
 os_compute_api:os-server-groups:show: rule:context_is_editor
 
 # ??
-os_compute_api:os-services: rule:context_is_admin
+os_compute_api:os-services: is_admin:True
 
 # ??
 os_compute_api:os-services:disable: '!'
 
 # ??
-os_compute_api:os-services:enable: rule:context_is_admin
+os_compute_api:os-services:enable: is_admin:True
 
 # ??
-os_compute_api:os-services:disable-log-reason: rule:context_is_admin
+os_compute_api:os-services:disable-log-reason: is_admin:True
 
 # List all metadata of a server
 #   GET /servers/{server_id}/metadata
@@ -1235,7 +1235,7 @@ os_compute_api:os-shelve:shelve: rule:context_is_editor
 # Shelf-offload (remove) server
 #   POST /servers/{server_id}/action (shelveOffload)
 #os_compute_api:os-shelve:shelve_offload: rule:system_admin_api
-os_compute_api:os-shelve:shelve_offload: rule:context_is_admin
+os_compute_api:os-shelve:shelve_offload: is_admin:True
 
 # Show usage statistics for a specific tenant
 #   GET /os-simple-tenant-usage/{tenant_id}
@@ -1245,7 +1245,7 @@ os_compute_api:os-simple-tenant-usage:show: rule:context_is_viewer
 # List per tenant usage statistics for all tenants
 #   GET /os-simple-tenant-usage
 #os_compute_api:os-simple-tenant-usage:list: rule:system_reader_api
-os_compute_api:os-simple-tenant-usage:list: rule:context_is_admin
+os_compute_api:os-simple-tenant-usage:list: is_admin:True
 
 # Suspend server
 #   POST /servers/{server_id}/action (suspend)
@@ -1304,35 +1304,35 @@ os_compute_api:os-availability-zone:list: rule:context_is_viewer
 # List detailed availability zone information with host information
 #   GET /os-availability-zone/detail
 #os_compute_api:os-availability-zone:detail: rule:system_reader_api
-os_compute_api:os-availability-zone:detail: rule:context_is_admin
+os_compute_api:os-availability-zone:detail: is_admin:True
 
 # ??
-os_compute_api:os-used-limits: rule:context_is_admin
+os_compute_api:os-used-limits: is_admin:True
 
 # List migrations
 #   GET /os-migrations
 #os_compute_api:os-migrations:index: rule:system_reader_api
-os_compute_api:os-migrations:index: rule:context_is_admin
+os_compute_api:os-migrations:index: is_admin:True
 
 # Create an assisted volume snapshot
 #   POST /os-assisted-volume-snapshots
 #os_compute_api:os-assisted-volume-snapshots:create: rule:system_admin_api
-os_compute_api:os-assisted-volume-snapshots:create: rule:context_is_admin
+os_compute_api:os-assisted-volume-snapshots:create: is_admin:True
 
 # Delete an assisted volume snapshot
 #   DELETE /os-assisted-volume-snapshots/{snapshot_id}
 #os_compute_api:os-assisted-volume-snapshots:delete: rule:system_admin_api
-os_compute_api:os-assisted-volume-snapshots:delete: rule:context_is_admin
+os_compute_api:os-assisted-volume-snapshots:delete: is_admin:True
 
 # Show console connection information for a given console authentication token
 #   GET /os-console-auth-tokens/{console_token}
 #os_compute_api:os-console-auth-tokens: rule:system_reader_api
-os_compute_api:os-console-auth-tokens: rule:context_is_admin
+os_compute_api:os-console-auth-tokens: is_admin:True
 
 # Create one or more external events
 #   POST /os-server-external-events
 #os_compute_api:os-server-external-events:create: rule:system_admin_api
-os_compute_api:os-server-external-events:create: rule:context_is_admin
+os_compute_api:os-server-external-events:create: is_admin:True
 
 # Request image caching for an aggregate
 #   POST /os-aggregates/{aggregate_id}/images
