@@ -1,12 +1,9 @@
 # ??
-context_is_cloud_admin: role:cloud_compute_admin
-
-# ??
 context_is_quota_admin: role:resource_service
 
 # Decides what is required for the 'is_admin:True' check to succeed.
 #context_is_admin: role:admin
-context_is_admin: rule:context_is_cloud_admin
+context_is_admin: role:cloud_compute_admin
 
 # ??
 owner: project_id:%(project_id)s
