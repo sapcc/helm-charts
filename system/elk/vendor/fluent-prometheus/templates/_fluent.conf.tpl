@@ -184,6 +184,11 @@
   </rule>
   <rule>
     key log
+    pattern /connect_write timeout reached/
+    tag "FLUENTTIMEOUT.${tag}"
+  </rule>
+  <rule>
+    key log
     pattern /400 - Rejected by Elasticsearch/
     tag "FLUENTREJECTED.${tag}"
   </rule>
@@ -314,6 +319,26 @@
   </store>
 </match>
 
+<match FLUENTTIMEOUT.**>
+  @type copy
+  <store>
+    @type prometheus
+    <metric>
+      name prom_fluent_timeout_error
+      type counter
+      desc The total number of fluent timeout reached errors
+      <labels>
+        nodename "#{ENV['K8S_NODE_NAME']}"
+        fluent_container $.kubernetes.pod_name
+        fluent_namespace $.kubernetes.namespace
+      </labels>
+    </metric>
+  </store>
+  <store>
+    @type null
+  </store>
+</match>
+
 <match audit.**>
   @type rewrite_tag_filter
   <rule>
@@ -330,6 +355,11 @@
     key log
     pattern /Connection reset/
     tag "FLUENTAUDITRESET.${tag}"
+  </rule>
+  <rule>
+    key log
+    pattern /connect_write timeout reached/
+    tag "FLUENTAUDITTIMEOUT.${tag}"
   </rule>
 </match>
 
@@ -383,6 +413,27 @@
       name prom_fluentd_audit_parser_exception
       type counter
       desc The total number of fluent audit logs parser exceptions
+      <labels>
+        nodename "#{ENV['K8S_NODE_NAME']}"
+        fluent_container $.kubernetes.pod_name
+        daemontype $.kubernetes.container_name
+        fluent_namespace $.kubernetes.namespace
+      </labels>
+    </metric>
+  </store>
+  <store>
+    @type null
+  </store>
+</match>
+
+<match FLUENTAUDITTIMEOUT.**>
+  @type copy
+  <store>
+    @type prometheus
+    <metric>
+      name prom_fluentd_audit_timeout_error
+      type counter
+      desc The total number of fluent audit timeout reached errors
       <labels>
         nodename "#{ENV['K8S_NODE_NAME']}"
         fluent_container $.kubernetes.pod_name
