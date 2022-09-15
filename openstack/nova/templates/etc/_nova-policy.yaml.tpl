@@ -589,134 +589,11 @@ compute_extension:console_auth_tokens: rule:context_is_admin
 # ??
 compute_extension:os-server-external-events:create: rule:context_is_admin
 
-# ??
-network:get_all: rule:context_is_admin
-
-# ??
-network:get: rule:context_is_admin
-
-# ??
-network:create: rule:context_is_admin
-
-# ??
-network:delete: rule:context_is_admin
-
-# ??
-network:associate: rule:context_is_admin
-
-# ??
-network:disassociate: rule:context_is_admin
-
-# ??
-network:get_vifs_by_instance: rule:context_is_admin
-
-# ??
-network:allocate_for_instance: rule:context_is_admin
-
-# ??
-network:deallocate_for_instance: rule:context_is_admin
-
-# ??
-network:validate_networks: rule:context_is_admin
-
-# ??
-network:get_instance_uuids_by_ip_filter: rule:context_is_admin
-
-# ??
-network:get_instance_id_by_floating_address: rule:context_is_admin
-
-# ??
-network:setup_networks_on_host: rule:context_is_admin
-
-# ??
-network:get_backdoor_port: rule:context_is_admin
-
-# ??
-network:get_floating_ip: rule:context_is_viewer
-
-# ??
-network:get_floating_ip_pools: rule:context_is_viewer
-
-# ??
-network:get_floating_ip_by_address: rule:context_is_viewer
-
-# ??
-network:get_floating_ips_by_project: rule:context_is_viewer
-
-# ??
-network:get_floating_ips_by_fixed_address: rule:context_is_viewer
-
-# ??
-network:allocate_floating_ip: rule:context_is_admin
-
-# ??
-network:associate_floating_ip: rule:context_is_admin
-
-# ??
-network:disassociate_floating_ip: rule:context_is_admin
-
-# ??
-network:release_floating_ip: rule:context_is_admin
-
-# ??
-network:migrate_instance_start: rule:context_is_admin
-
-# ??
-network:migrate_instance_finish: rule:context_is_admin
-
-# ??
-network:get_fixed_ip: rule:context_is_admin
-
-# ??
-network:get_fixed_ip_by_address: rule:context_is_admin
-
-# ??
-network:add_fixed_ip_to_instance: rule:context_is_admin
-
-# ??
-network:remove_fixed_ip_from_instance: rule:context_is_admin
-
-# ??
-network:add_network_to_project: '!'
-
-# ??
-network:get_instance_nw_info: '!'
-
-# ??
-network:get_dns_domains: '!'
-
-# ??
-network:add_dns_entry: '!'
-
-# ??
-network:modify_dns_entry: '!'
-
-# ??
-network:delete_dns_entry: '!'
-
-# ??
-network:get_dns_entries_by_address: '!'
-
-# ??
-network:get_dns_entries_by_name: '!'
-
-# ??
-network:create_private_dns_domain: '!'
-
-# ??
-network:create_public_dns_domain: '!'
-
-# ??
-network:delete_dns_domain: '!'
-
 # Attach an unshared external network to a server
 #   POST /servers
 #   POST /servers/{server_id}/os-interface
 #network:attach_external_network: rule:project_admin_api
 network:attach_external_network: rule:context_is_admin
-
-# ??
-network:get_vif_by_mac_address: rule:context_is_admin
 
 # List all servers with detailed information for  all projects
 #   GET /servers/detail
@@ -1214,13 +1091,7 @@ os_compute_api:os-migrate-server:migrate_live: rule:context_is_admin
 os_compute_api:os-multinic: rule:context_is_editor
 
 # ??
-os_compute_api:os-networks: '!'
-
-# ??
 os_compute_api:os-networks:view: '!'
-
-# ??
-os_compute_api:os-networks-associate: '!'
 
 # Pause a server
 #   POST /servers/{server_id}/action (pause)
@@ -1283,9 +1154,6 @@ os_compute_api:os-quota-class-sets:show: rule:context_is_admin or quota_class:%(
 #   POST /servers/{server_id}/action (rescue)
 #os_compute_api:os-rescue: rule:system_admin_or_owner
 os_compute_api:os-rescue: rule:context_is_editor
-
-# ??
-os_compute_api:os-security-group-default-rules: rule:context_is_admin
 
 # Show the usage data for a server
 #   GET /servers/{server_id}/diagnostics
