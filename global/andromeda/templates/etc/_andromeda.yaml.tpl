@@ -27,3 +27,6 @@ service_auth:
   project_domain_id: default
   user_domain_id: default
   allow_reauth: true
+
+quota:
+  enabled: true
