@@ -189,6 +189,11 @@
   </rule>
   <rule>
     key log
+    pattern /READONLYREST_NOT_READY_YET/
+    tag "FLUENTESREADONLY.${tag}"
+  </rule>
+  <rule>
+    key log
     pattern /400 - Rejected by Elasticsearch/
     tag "FLUENTREJECTED.${tag}"
   </rule>
@@ -327,6 +332,26 @@
       name prom_fluentd_timeout_error
       type counter
       desc The total number of fluent timeout reached errors
+      <labels>
+        nodename "#{ENV['K8S_NODE_NAME']}"
+        fluent_container $.kubernetes.pod_name
+        fluent_namespace $.kubernetes.namespace
+      </labels>
+    </metric>
+  </store>
+  <store>
+    @type null
+  </store>
+</match>
+
+<match FLUENTESREADONLY.**>
+  @type copy
+  <store>
+    @type prometheus
+    <metric>
+      name prom_fluentd_readonlyrest_error
+      type counter
+      desc The total number of fluent elastic client readonlyrest errors
       <labels>
         nodename "#{ENV['K8S_NODE_NAME']}"
         fluent_container $.kubernetes.pod_name
