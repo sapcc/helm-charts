@@ -161,6 +161,12 @@ cronus:
         - {{ $vd }}
 {{- end }}
 {{- end }}
+{{- if $v.domainsTo }}
+      domainsTo:
+{{- range $kd, $vd := $v.domainsTo }}
+        - {{ $vd }}
+{{- end }}
+{{- end }}
 {{- if $v.smtpConnPool }}
       smtpConnPool:
 {{- if $v.smtpConnPool.maxConnGlobal }}
