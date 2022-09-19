@@ -22,6 +22,7 @@ updaterConfig:
     leasedUntilLteMonths: {{ .Values.secAttNotifier.leasedUntilLteMonths }}
     hour: {{ .Values.secAttNotifier.secAttNotificationHour }}
     day: {{ .Values.secAttNotifier.secAttNotificationDay }}
+    secondDay: {{ .Values.secAttNotifier.secondDay }}
     sender: {{ .Values.secAttNotifier.sourceEmail }}
     {{- range $key, $value := .Values.secAttNotifier.contact }}
     contact:
