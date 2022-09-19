@@ -9,10 +9,15 @@ updaterConfig:
   awsSecret: {{ .Values.config.awsSecret }}
   region: {{ .Values.config.keystone.region }}
   sleepDuration: {{ .Values.updater.sleepDuration }}
+  useCaseDescription: |
+{{ .Values.config.useCaseDescription | indent 6 }}
+  websiteURL: {{ .Values.config.websiteURL }}
   notification:
     enabled: {{ .Values.secAttNotifier.enabled }}
     awsAccess: {{ .Values.secAttNotifier.awsAccess }}
     awsSecret: {{ .Values.secAttNotifier.awsSecret }}
+    ec2Access: {{ .Values.secAttNotifier.awsAccess }}
+    ec2Secret: {{ .Values.secAttNotifier.awsSecret }}
     endpoint: {{ .Values.secAttNotifier.cronusEndpoint }}
     leasedUntilLteMonths: {{ .Values.secAttNotifier.leasedUntilLteMonths }}
     hour: {{ .Values.secAttNotifier.secAttNotificationHour }}
