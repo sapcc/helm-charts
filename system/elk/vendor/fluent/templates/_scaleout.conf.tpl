@@ -179,6 +179,7 @@
       type counter
       desc The total number of outgoing records
       <labels>
+        tag ${tag}
         nodename "#{ENV['K8S_NODE_NAME']}"
         container $.kubernetes.container_name
       </labels>
