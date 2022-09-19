@@ -209,6 +209,8 @@
       - '{__name__="aws_ses_cronus_provider_reputation_bouncerate"}'
       - '{__name__="aws_ses_cronus_provider_reputation_complaintrate"}'
       - '{__name__="aws_ses_cronus_provider_send"}'
+      - '{__name__="aws_ses_cronus_security_attributes_remaining_months_until_lease_ends"}'
+      - '{__name__="aws_ses_cronus_suppressed_email_since_last_update_minutes"}'
   metric_relabel_configs:
     - action: labeldrop
       regex: "exported_instance|exported_job|instance|job|tags|cluster|cluster_type|multicloud_id|alert_tier|alert_service"
