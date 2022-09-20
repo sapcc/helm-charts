@@ -2,12 +2,12 @@ apiVersion: monitoring.coreos.com/v1
 kind: PodMonitor
 
 metadata:
-  name: elk-fluent-exporter
+  name: logs-fluent-exporter
   labels:
     prometheus: {{ .Values.exporter.prometheus }}
 
 spec:
-  jobLabel: elk-fluent-exporter
+  jobLabel: logs-fluent-exporter
 
   selector:
     matchLabels:
@@ -15,7 +15,7 @@ spec:
 
   # Find pods in any namespace.
   namespaceSelector:
-    matchNames: [elk]
+    matchNames: [logs]
 
   podMetricsEndpoints:
     - interval: 60s
@@ -27,7 +27,7 @@ spec:
         - action: labelmap
           regex: '__meta_kubernetes_pod_label_(.+)'
         - targetLabel: job
-          replacement: elk-fluent-exporter
+          replacement: logs-fluent-exporter
       metricRelabelings:
         #- sourceLabels: [__name__,tag]
         #  regex: fluentd_input_status_num_records_total;kubernetes.var.log.containers.([a-zA-Z0-9 \d\.-]+)_([a-zA-Z0-9 \d\.-]+)_([a-zA-Z0-9 \d\.-]+)-[a-zA-Z0-9]+.log

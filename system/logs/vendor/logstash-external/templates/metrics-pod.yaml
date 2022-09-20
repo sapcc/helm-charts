@@ -2,29 +2,28 @@ apiVersion: monitoring.coreos.com/v1
 kind: PodMonitor
 
 metadata:
-  name: elk-fluent-prometheus-exporter
+  name: logstash-external
   labels:
-    prometheus: {{ .Values.exporter.prometheus }}
+    prometheus: {{ required ".Values.global.prometheus missing" .Values.global.prometheus }}
 
 spec:
-  jobLabel: elk-fluent-prometheus-exporter
+  jobLabel: logstash-external
 
   selector:
     matchLabels:
-      component: fluent-prometheus
+      component: logstash-external
 
   # Find pods in any namespace.
   namespaceSelector:
-    matchNames: [elk]
+    matchNames: [logs]
 
   podMetricsEndpoints:
     - interval: 60s
       scrapeTimeout: 50s
-      path: /metrics
-      scheme: http
       port: metrics
+      scheme: http
       relabelings:
         - action: labelmap
           regex: '__meta_kubernetes_pod_label_(.+)'
         - targetLabel: job
-          replacement: elk-fluent-prometheus-exporter
+          replacement: logstash-external
