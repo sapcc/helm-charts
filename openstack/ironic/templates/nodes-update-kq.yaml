@@ -1,0 +1,36 @@
+{{- if and (.Capabilities.APIVersions.Has "kos-operator.stable.sap.cc/v1") }}
+apiVersion: kos-operator.stable.sap.cc/v1
+kind: KosQuery
+metadata:
+  name: ironic-node-update
+  namespace: monsoon3
+  annotations:
+    execute: "True"
+    context: "ironic@Default/service"
+requirements:
+- name: ironic-seed
+  kind: OpenstackSeed
+python: |
+    from ironicclient import client as bmclient
+    bm = bmclient.get_client(1, session=os.session, os_ironic_api_version='1.78')
+
+    patch = [{'op': 'replace',
+             'value': 'ipxe',
+             'path': '/boot_interface'}]
+
+    for node in bm.node.list(
+            limit=0,
+            fields=['uuid', 'name','driver','properties','conductor_group',
+                    'provision_state','maintenance','boot_interface']):
+        unset_maintenance = False
+        if node.boot_interface == 'ipxe':
+            continue
+        if not node.maintenance:
+          bm.node.set_maintenance(node.uuid, 'true', maint_reason='set boot_interface to ipxe')
+          unset_maintenance = True
+
+        bm.node.update(node_id=node.uuid, patch=patch)
+
+        if unset_maintenance:
+          bm.node.set_maintenance(node.uuid, 'false', maint_reason='set boot_interface to ipxe')
+{{- end  }}
