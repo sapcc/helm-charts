@@ -113,14 +113,18 @@ function selectbootstrapnode {
   for (( int=${MAX_RETRIES}; int >=1; int-=1));
     do
     loginfo "${FUNCNAME[0]}" "Find Galera node with highest sequence number (${int} retries left)"
-    SEQNO_FILE_COUNT=$(grep -c '{{ (include "nodeNamePrefix" (dict "global" $ "component" "application")) }}-*' ${SEQNO_FILES} | grep -c -e "${BASE}/etc/galerastatus/{{ (include "nodeNamePrefix" (dict "global" $ "component" "application")) }}-.*.seqno:1")
+    SEQNO_FILE_COUNT=$(grep -c '{{ (include "nodeNamePrefix" (dict "global" $ "component" "application")) }}-*' ${SEQNO_FILES} | grep -c -e ${BASE}/etc/galerastatus/{{ (include "nodeNamePrefix" (dict "global" $ "component" "application")) }}-.*.seqno:1)
     if [ ${SEQNO_FILE_COUNT} -ge {{ ($.Values.replicas|int) }} ]; then
       IFS=":" SEQNO_OLDEST_TIMESTAMP=($(grep --no-filename 'timestamp:' ${SEQNO_FILES} | sort --key=2 --numeric-sort --field-separator=: | head -1))
       IFS="${oldIFS}"
       if ! [ -z ${SEQNO_OLDEST_TIMESTAMP[1]+x} ]; then
         SEQNO_OLDEST_TIMESTAMP_WITH_BUFFER=$(( ${SEQNO_OLDEST_TIMESTAMP[1]} + ({{ $.Values.readinessProbe.timeoutSeconds.application | int }} * {{ $.Values.scripts.maxAllowedTimeDifferenceFactor | default 3 | int }}) ))
         CURRENT_EPOCH=$(date +%s)
+        {{- if $.Values.scripts.useTimeDifferenceForSeqnoCheck }}
         if [ ${CURRENT_EPOCH} -le ${SEQNO_OLDEST_TIMESTAMP_WITH_BUFFER} ]; then
+        {{- else }}
+        # time difference check disabled
+        {{- end }}
           IFS=": " NODENAME=($(grep --no-filename '{{ (include "nodeNamePrefix" (dict "global" $ "component" "application")) }}-*' ${SEQNO_FILES} | sort --key=2 --reverse --numeric-sort --field-separator=: | head -1))
           IFS="${oldIFS}"
           if [[ "${NODENAME[0]}" =~ ^{{ (include "nodeNamePrefix" (dict "global" $ "component" "application")) }}-.* ]]; then
@@ -130,10 +134,12 @@ function selectbootstrapnode {
             logerror "${FUNCNAME[0]}" "nodename '${NODENAME[0]}' not valid"
             exit 1
           fi
+        {{- if $.Values.scripts.useTimeDifferenceForSeqnoCheck }}
         else
           logerror "${FUNCNAME[0]}" "seqno timestamp of at least one node is too old: '$(date --date=@${SEQNO_OLDEST_TIMESTAMP_WITH_BUFFER} +%Y.%m.%d-%H:%M:%S-%Z)'/'$(date --date=@${CURRENT_EPOCH} +%Y.%m.%d-%H:%M:%S-%Z)' will wait $(( ${WAIT_SECONDS} * (${MAX_RETRIES} - ${int} + 1) ))s"
           sleep  $(( ${WAIT_SECONDS} * (${MAX_RETRIES} - ${int} + 1) ))
         fi
+        {{- end }}
       else
         loginfo "${FUNCNAME[0]}" "Sequence numbers not yet found in configmap"
       fi

@@ -2,10 +2,23 @@
 apiVersion: storage.k8s.io/v1
 kind: StorageClass
 metadata:
-  name: {{ $.Release.Name }}
+  name: {{ $.Release.Name }}-cinder
 parameters:
   type: vmware
 provisioner: cinder.csi.openstack.org
+reclaimPolicy: Delete
+volumeBindingMode: WaitForFirstConsumer
+allowVolumeExpansion: true
+---
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: {{ $.Release.Name }}-nfs
+parameters:
+  pathPattern: "${.PVC.namespace}-${.PVC.name}"
+  onDelete: delete
+  archiveOnDelete: "true"
+provisioner: cluster.local/nfs-subdir-external-provisioner
 reclaimPolicy: Delete
 volumeBindingMode: WaitForFirstConsumer
 allowVolumeExpansion: true

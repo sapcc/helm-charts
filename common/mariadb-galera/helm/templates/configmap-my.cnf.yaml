@@ -6,13 +6,18 @@
 {{- $mariadbClusterName := "" }}
 {{- $galeraSstUser := "" }}
 {{- $galeraSstPassword := "" }}
-{{ if $.Values.mariadb.galera.pcrecovery }}
+{{- if $.Values.mariadb.galera.pcrecovery }}
   {{- $_ := set $wsrepProviderOptions "pc.recovery" "pc.recovery=TRUE"}}
 {{- else  }}
   {{- $_ := set $wsrepProviderOptions "pc.recovery" "pc.recovery=FALSE"}}
-{{ end }}
+{{- end }}
 {{- $_ := set $wsrepProviderOptions "gcache.recover" "gcache.recover=yes" }}
 {{- $_ := set $wsrepProviderOptions "cert.log_conflicts" "cert.log_conflicts=ON"}}
+{{- if $.Values.mariadb.galera.debug }}
+  {{- $_ := set $wsrepProviderOptions "debug" "debug=YES"}}
+{{- else  }}
+  {{- $_ := set $wsrepProviderOptions "debug" "debug=NO"}}
+{{- end }}
 {{- range $servicesKey, $servicesValue := $.Values.services.application }}
   {{- if eq $servicesValue.name "backend"}}
     {{- range $portsKey, $portsValue := $servicesValue.ports }}

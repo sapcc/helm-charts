@@ -18,17 +18,18 @@ scripts:
   maxRetries: 20 #how many times should script functions retry before failing(default 10)
   waitTimeBetweenRetriesInSeconds: 6 #how long should script functions wait between retries (default 6)
   logLevel: debug # info(default) or debug
-  maxAllowedTimeDifferenceFactor: 12 #to multiply with readinessProbe.timeoutSeconds.application as the maximum allowed time difference for the last configmap update (default 3)
+  maxAllowedTimeDifferenceFactor: 12 #to multiply with readinessProbe.timeoutSeconds.application as the maximum allowed time difference between nodes for the last sequence number configmap update (default 3)
+  useTimeDifferenceForSeqnoCheck: false #fail if time difference between nodes for the last sequence number configmap update is too big
 monitoring:
   prometheus:
     instance: prometheus #name of the Prometheus instance that should pull metrics
   mysqld_exporter:
-    enabled: true #enable the Prometheus MySQL exporter as sidecar container https://github.com/prometheus/mysqld_exporter
+    enabled: false #enable the Prometheus MySQL exporter as sidecar container https://github.com/prometheus/mysqld_exporter
     metricsPort: 9104
   elasticBeatsAutoDiscoveryAnnotations:
     enabled: false #add annotations to allow automatic configuration of Elastic Beats agents https://www.elastic.co/guide/en/beats/metricbeat/current/configuration-autodiscover-hints.html
 proxy:
-  enabled: true #use ProxySQL in front of the MariaDB Galera pods to reduce the service downtimes for the clients
+  enabled: false #use ProxySQL in front of the MariaDB Galera pods to reduce the service downtimes for the clients
 
 # command:
 #   application:
@@ -51,45 +52,37 @@ proxy:
 # Docker image
 image:
   os:
-    #registry: keppel.eu-nl-1.cloud.sap
-    #project: octobus
-    registry: eu.gcr.io
-    project: cloud-capacity-mgmt-tes
+    registry: keppel.eu-nl-1.cloud.sap
+    project: octobus
     applicationname: ubuntu
     applicationversion: 20.04
-    imageversion: 0.3.59
+    imageversion: 0.3.67
     pullPolicy: IfNotPresent
-    pullSecret: pull-secret-gcp
+    pullSecret: false
   application:
-    #registry: keppel.eu-nl-1.cloud.sap
-    #project: octobus
-    registry: eu.gcr.io
-    project: cloud-capacity-mgmt-tes
-    applicationname: mariadb-galera
-    applicationversion: 10.5.13
-    imageversion: 0.0.6
+    registry: keppel.eu-de-1.cloud.sap
+    project: ccloud
+    applicationname: mariadb-galera-debug
+    applicationversion: 10.5.17
+    imageversion: 0.1.0
     pullPolicy: Always
-    pullSecret: pull-secret-gcp
+    pullSecret: false
   monitoring:
-    #registry: keppel.eu-nl-1.cloud.sap
-    #project: octobus
-    registry: eu.gcr.io
-    project: cloud-capacity-mgmt-tes
+    registry: keppel.eu-de-1.cloud.sap
+    project: ccloud
     applicationname: mysqld_exporter
     applicationversion: 0.14.0
     imageversion: 0.1.0
     pullPolicy: Always
-    pullSecret: pull-secret-gcp
+    pullSecret: false
   proxy:
-    #registry: keppel.eu-nl-1.cloud.sap
-    #project: octobus
-    registry: eu.gcr.io
-    project: cloud-capacity-mgmt-tes
+    registry: keppel.eu-de-1.cloud.sap
+    project: ccloud
     applicationname: proxysql
     applicationversion: 2.4.3
     imageversion: 0.1.0
     pullPolicy: Always
-    pullSecret: pull-secret-gcp
+    pullSecret: false
 
 initContainers:
   increaseMapCount:
@@ -184,6 +177,7 @@ volumeClaimTemplates:
   - name: mariadb
     accessModes: [ReadWriteOnce]
     capacity: 1Gi
+    storageClassName: false #optional: currently cinder and nfs are supported
   - name: marialog
     accessModes: [ReadWriteOnce]
     capacity: 10Gi
@@ -199,7 +193,7 @@ resourceLimits:
     job: 0.5
     proxy: 0.5
   memory:
-    application: 256Mi
+    application: 1024Mi
     monitoring: 48Mi
     job: 48Mi
     proxy: 256Mi
@@ -223,7 +217,7 @@ regional: false
 backoffLimit: 12 #https://kubernetes.io/docs/concepts/workloads/controllers/job/#pod-backoff-failure-policy
 activeDeadlineSeconds: 600 #https://kubernetes.io/docs/concepts/workloads/controllers/job/#job-termination-and-cleanup
 ttlSecondsAfterFinished: 7200 #https://kubernetes.io/docs/concepts/workloads/controllers/job/#clean-up-finished-jobs-automatically
-restartPolicy: OnFailure #https://kubernetes.io/docs/concepts/workloads/controllers/job/#handling-pod-and-container-failures
+jobRestartPolicy: OnFailure #https://kubernetes.io/docs/concepts/workloads/controllers/job/#handling-pod-and-container-failures
 
 #Container Health Checks
 startupProbe:
@@ -368,8 +362,10 @@ env:
 mariadb:
   binLogDir: log #if not defined the data dir will be used. Needs a log volume mount to be configured too
   galera:
+    debug: false #https://galeracluster.com/library/documentation/galera-parameters.html#debug
     waitForPrimaryTimeoutInSeconds: 60 #https://galeracluster.com/library/documentation/galera-parameters.html#pc.wait_prim_timeout
     logLevel: info #info(default) or debug https://mariadb.com/kb/en/galera-cluster-system-variables/#wsrep_debug
     pcrecovery: false #https://galeracluster.com/library/documentation/pc-recovery.html
+    gcache.recover: false #
     sst_method: rsync #rsync or mariabackup(also requires GALERA_SST_USER and GALERA_SST_PASSWORD)
     slaveThreads: 16 #https://galeracluster.com/library/documentation/mysql-wsrep-options.html#wsrep-slave-threads
