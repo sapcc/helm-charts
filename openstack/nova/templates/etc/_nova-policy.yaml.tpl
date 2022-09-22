@@ -1015,9 +1015,6 @@ os_compute_api:os-fping:all_tenants: is_admin:True
 # ??
 os_compute_api:os-hide-server-addresses: not is_admin:True
 
-# ??
-os_compute_api:os-hosts: is_admin:True
-
 # List all hypervisors.
 #   GET /os-hypervisors
 #os_compute_api:os-hypervisors:list: rule:system_reader_api
@@ -1491,36 +1488,6 @@ os_compute_api:os-server-external-events:create: is_admin:True
 # Show floating IPs. This API is deprecated.
 #   GET /os-floating-ips/{floating_ip_id}
 #os_compute_api:os-floating-ips:show: rule:system_or_project_reader
-
-# List physical hosts.
-# This API is deprecated in favor of os-hypervisors and os-services.
-#   GET /os-hosts
-#os_compute_api:os-hosts:list: rule:system_reader_api
-
-# Reboot physical host.
-# This API is deprecated in favor of os-hypervisors and os-services.
-#   GET /os-hosts/{host_name}/reboot
-#os_compute_api:os-hosts:reboot: rule:system_admin_api
-
-# Show physical host.
-# This API is deprecated in favor of os-hypervisors and os-services.
-#   GET /os-hosts/{host_name}
-#os_compute_api:os-hosts:show: rule:system_reader_api
-
-# Shutdown physical host.
-# This API is deprecated in favor of os-hypervisors and os-services.
-#   GET /os-hosts/{host_name}/shutdown
-#os_compute_api:os-hosts:shutdown: rule:system_admin_api
-
-# Start physical host.
-# This API is deprecated in favor of os-hypervisors and os-services.
-#   GET /os-hosts/{host_name}/startup
-#os_compute_api:os-hosts:start: rule:system_admin_api
-
-# Update physical host.
-# This API is deprecated in favor of os-hypervisors and os-services.
-#   PUT /os-hosts/{host_name}
-#os_compute_api:os-hosts:update: rule:system_admin_api
 
 # Add a fixed IP address to a server.
 # This API is proxy calls to the Network service. This is
