@@ -30,9 +30,6 @@ context_is_viewer: rule:context_is_editor or rule:viewer
 compute_admin_all: role:compute_admin or role:cloud_compute_admin
 
 # ??
-default: is_admin:True
-
-# ??
 network_admin: role:network_admin and rule:owner
 
 # ??
@@ -64,8 +61,6 @@ context_is_network_admin: role:cloud_network_admin or rule:network_admin
 
 # Default rule for System level read only APIs.
 #system_reader_api: role:reader and system_scope:all
-
-
 
 # ??
 compute:create: rule:context_is_editor
