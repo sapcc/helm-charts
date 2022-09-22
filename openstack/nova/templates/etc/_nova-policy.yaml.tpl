@@ -814,8 +814,10 @@ os_compute_api:os-attach-interfaces:list: rule:context_is_editor
 #os_compute_api:os-attach-interfaces:show: rule:system_or_project_reader
 os_compute_api:os-attach-interfaces:show: rule:context_is_editor
 
-# ??
-os_compute_api:os-baremetal-nodes: is_admin:True
+# Show action details for a server.
+#   GET /os-baremetal-nodes/{node_id}
+#os_compute_api:os-baremetal-nodes:show: rule:system_reader_api
+os_compute_api:os-baremetal-nodes:show: is_admin:True
 
 # ??
 os_compute_api:os-cells: is_admin:True
@@ -987,32 +989,6 @@ os_compute_api:os-flavor-manage:update: is_admin:True
 os_compute_api:os-flavor-manage:delete: is_admin:True
 
 # ??
-os_compute_api:os-floating-ip-dns: rule:context_is_editor
-
-# ??
-os_compute_api:os-floating-ip-dns:domain:update: is_admin:True
-
-# ??
-os_compute_api:os-floating-ip-dns:domain:delete: is_admin:True
-
-# List floating IP pools. This API is deprecated.
-#   GET /os-floating-ip-pools
-#os_compute_api:os-floating-ip-pools: @
-os_compute_api:os-floating-ip-pools: rule:context_is_editor
-
-# ??
-os_compute_api:os-floating-ips: rule:context_is_editor
-
-# ??
-os_compute_api:os-floating-ips-bulk: is_admin:True
-
-# ??
-os_compute_api:os-fping: rule:context_is_editor
-
-# ??
-os_compute_api:os-fping:all_tenants: is_admin:True
-
-# ??
 os_compute_api:os-hide-server-addresses: not is_admin:True
 
 # List all hypervisors.
@@ -1158,12 +1134,6 @@ os_compute_api:os-migrate-server:migrate: is_admin:True
 #   POST /servers/{server_id}/action (os-migrateLive)
 #os_compute_api:os-migrate-server:migrate_live: rule:system_admin_api
 os_compute_api:os-migrate-server:migrate_live: is_admin:True
-
-# ??
-os_compute_api:os-multinic: rule:context_is_editor
-
-# ??
-os_compute_api:os-networks:view: '!'
 
 # Pause a server
 #   POST /servers/{server_id}/action (pause)
@@ -1347,9 +1317,6 @@ os_compute_api:os-suspend-server:suspend: rule:context_is_editor
 #os_compute_api:os-suspend-server:resume: rule:system_admin_or_owner
 os_compute_api:os-suspend-server:resume: rule:context_is_editor
 
-# ??
-os_compute_api:os-tenant-networks: '!'
-
 # Unshelve (restore) shelved server
 #   POST /servers/{server_id}/action (unshelve)
 #os_compute_api:os-shelve:unshelve: rule:system_admin_or_owner
@@ -1456,15 +1423,6 @@ os_compute_api:os-server-external-events:create: is_admin:True
 #   POST /servers/{server_id}/action (resize)
 #compute:servers:resize:cross_cell: '!'
 
-# List and show details of bare metal nodes.
-# These APIs are proxy calls to the Ironic service and are deprecated.
-#   GET /os-baremetal-nodes
-#os_compute_api:os-baremetal-nodes:list: rule:system_reader_api
-
-# Show action details for a server.
-#   GET /os-baremetal-nodes/{node_id}
-#os_compute_api:os-baremetal-nodes:show: rule:system_reader_api
-
 # Associate floating IPs to server.  This API is deprecated.
 #   POST /servers/{server_id}/action (addFloatingIp)
 #os_compute_api:os-floating-ips:add: rule:system_admin_or_owner
@@ -1488,28 +1446,6 @@ os_compute_api:os-server-external-events:create: is_admin:True
 # Show floating IPs. This API is deprecated.
 #   GET /os-floating-ips/{floating_ip_id}
 #os_compute_api:os-floating-ips:show: rule:system_or_project_reader
-
-# Add a fixed IP address to a server.
-# This API is proxy calls to the Network service. This is
-# deprecated.
-#   POST /servers/{server_id}/action (addFixedIp)
-#os_compute_api:os-multinic:add: rule:system_admin_or_owner
-
-# Remove a fixed IP address from a server.
-# This API is proxy calls to the Network service. This is
-# deprecated.
-#   POST /servers/{server_id}/action (removeFixedIp)
-#os_compute_api:os-multinic:remove: rule:system_admin_or_owner
-
-# List networks for the project.
-# This API is proxy calls to the Network service. This is deprecated.
-#   GET /os-networks
-#os_compute_api:os-networks:list: rule:system_or_project_reader
-
-# Show network details.
-# This API is proxy calls to the Network service. This is deprecated.
-#   GET /os-networks/{network_id}
-#os_compute_api:os-networks:show: rule:system_or_project_reader
 
 # Add security groups to server.
 #   POST /servers/{server_id}/action (addSecurityGroup)
@@ -1575,69 +1511,9 @@ os_compute_api:os-server-external-events:create: is_admin:True
 #   PUT /servers/{server_id}/tags
 #os_compute_api:os-server-tags:update_all: rule:system_admin_or_owner
 
-# List project networks.
-# This API is proxy calls to the Network service. This is deprecated.
-#   GET /os-tenant-networks
-#os_compute_api:os-tenant-networks:list: rule:system_or_project_reader
-
-# Show project network details.
-# This API is proxy calls to the Network service. This is deprecated.
-#   GET /os-tenant-networks/{network_id}
-#os_compute_api:os-tenant-networks:show: rule:system_or_project_reader
-
 # Update a volume attachment with a different volumeId
 #   PUT /servers/{server_id}/os-volume_attachments/{volume_id}
 #os_compute_api:os-volumes-attachments:swap: rule:system_admin_api
-
-# Create volume.
-# This API is a proxy call to the Volume service. It is deprecated.
-#   POST /os-volumes
-#os_compute_api:os-volumes:create: rule:system_admin_or_owner
-
-# Delete volume.
-# This API is a proxy call to the Volume service. It is deprecated.
-#   DELETE /os-volumes/{volume_id}
-#os_compute_api:os-volumes:delete: rule:system_admin_or_owner
-
-# List volumes detail.
-# This API is a proxy call to the Volume service. It is deprecated.
-#   GET /os-volumes/detail
-#os_compute_api:os-volumes:detail: rule:system_or_project_reader
-
-# List volumes.
-# This API is a proxy call to the Volume service. It is deprecated.
-#   GET /os-volumes
-#os_compute_api:os-volumes:list: rule:system_or_project_reader
-
-# Show volume.
-# This API is a proxy call to the Volume service. It is deprecated.
-#   GET /os-volumes/{volume_id}
-#os_compute_api:os-volumes:show: rule:system_or_project_reader
-
-# Create snapshots.
-# This API is a proxy call to the Volume service. It is deprecated.
-#   POST /os-snapshots
-#os_compute_api:os-volumes:snapshots:create: rule:system_admin_or_owner
-
-# Delete snapshot.
-# This API is a proxy call to the Volume service. It is deprecated.
-#   DELETE /os-snapshots/{snapshot_id}
-#os_compute_api:os-volumes:snapshots:delete: rule:system_admin_or_owner
-
-# List snapshots details.
-# This API is a proxy call to the Volume service. It is deprecated.
-#   GET /os-snapshots/detail
-#os_compute_api:os-volumes:snapshots:detail: rule:system_or_project_reader
-
-# List snapshots.
-# This API is a proxy call to the Volume service. It is deprecated.
-#   GET /os-snapshots
-#os_compute_api:os-volumes:snapshots:list: rule:system_or_project_reader
-
-# Show snapshot.
-# This API is a proxy call to the Volume service. It is deprecated.
-#   GET /os-snapshots/{snapshot_id}
-#os_compute_api:os-volumes:snapshots:show: rule:system_or_project_reader
 
 # Allow all filters when listing servers
 #   GET /servers
