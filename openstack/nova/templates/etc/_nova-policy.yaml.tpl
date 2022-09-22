@@ -799,8 +799,25 @@ os_compute_api:os-aggregates:set_metadata: is_admin:True
 # ??
 os_compute_api:os-agents: is_admin:True
 
-# ??
-os_compute_api:os-attach-interfaces: rule:context_is_editor
+# Attach an interface to a server
+#   POST /servers/{server_id}/os-interface
+#os_compute_api:os-attach-interfaces:create: rule:system_admin_or_owner
+os_compute_api:os-attach-interfaces:create: rule:context_is_editor
+
+# Detach an interface from a server
+#   DELETE /servers/{server_id}/os-interface/{port_id}
+#os_compute_api:os-attach-interfaces:delete: rule:system_admin_or_owner
+os_compute_api:os-attach-interfaces:delete: rule:context_is_editor
+
+# List port interfaces attached to a server
+#   GET /servers/{server_id}/os-interface
+#os_compute_api:os-attach-interfaces:list: rule:system_or_project_reader
+os_compute_api:os-attach-interfaces:list: rule:context_is_editor
+
+# Show details of a port interface attached to a server
+#   GET /servers/{server_id}/os-interface/{port_id}
+#os_compute_api:os-attach-interfaces:show: rule:system_or_project_reader
+os_compute_api:os-attach-interfaces:show: rule:context_is_editor
 
 # ??
 os_compute_api:os-baremetal-nodes: is_admin:True
@@ -855,8 +872,15 @@ os_compute_api:os-remote-consoles: rule:context_is_editor
 #os_compute_api:os-create-backup: rule:system_admin_or_owner
 os_compute_api:os-create-backup: rule:context_is_editor
 
-# ??
-os_compute_api:os-deferred-delete: rule:context_is_editor
+# Restore a soft deleted server
+#   POST /servers/{server_id}/action (restore)
+#os_compute_api:os-deferred-delete:restore: rule:system_admin_or_owner
+os_compute_api:os-deferred-delete:restore: rule:context_is_editor
+
+# Force delete a server before deferred cleanup
+#   POST /servers/{server_id}/action (forceDelete)
+#os_compute_api:os-deferred-delete:force: rule:system_admin_or_owner
+os_compute_api:os-deferred-delete:force: rule:context_is_editor
 
 # Evacuate a server from a failed host to a new host
 #   POST /servers/{server_id}/action (evacuate)
@@ -999,14 +1023,53 @@ os_compute_api:os-hide-server-addresses: not is_admin:True
 # ??
 os_compute_api:os-hosts: is_admin:True
 
-# ??
-os_compute_api:os-hypervisors: is_admin:True
+# List all hypervisors.
+#   GET /os-hypervisors
+#os_compute_api:os-hypervisors:list: rule:system_reader_api
+os_compute_api:os-hypervisors:list: is_admin:True
+
+# List all hypervisors with details
+#   GET /os-hypervisors/details
+#os_compute_api:os-hypervisors:list-detail: rule:system_reader_api
+os_compute_api:os-hypervisors:list: is_admin:True
+
+# Search hypervisor by hypervisor_hostname pattern.
+#   GET /os-hypervisors/{hypervisor_hostname_pattern}/search
+#os_compute_api:os-hypervisors:search: rule:system_reader_api
+os_compute_api:os-hypervisors:search: is_admin:True
+
+# List all servers on hypervisors that can match the provided hypervisor_hostname pattern.
+#   GET /os-hypervisors/{hypervisor_hostname_pattern}/servers
+#os_compute_api:os-hypervisors:servers: rule:system_reader_api
+os_compute_api:os-hypervisors:servers: is_admin:True
+
+# Show details for a hypervisor.
+#   GET /os-hypervisors/{hypervisor_id}
+#os_compute_api:os-hypervisors:show: rule:system_reader_api
+os_compute_api:os-hypervisors:show: is_admin:True
+
+# Show summary statistics for all hypervisors over all compute nodes.
+#   GET /os-hypervisors/statistics
+#os_compute_api:os-hypervisors:statistics: rule:system_reader_api
+os_compute_api:os-hypervisors:statistics: is_admin:True
+
+# Show the uptime of a hypervisor.
+#   GET /os-hypervisors/{hypervisor_id}/uptime
+#os_compute_api:os-hypervisors:uptime: rule:system_reader_api
+os_compute_api:os-hypervisors:uptime: is_admin:True
 
 # ??
 os_compute_api:image-size: rule:context_is_editor
 
-# ??
-os_compute_api:os-instance-actions: rule:context_is_editor
+# List actions for a server.
+#   GET /servers/{server_id}/os-instance-actions
+#os_compute_api:os-instance-actions:list: rule:system_or_project_reader
+os_compute_api:os-instance-actions:list: rule:context_is_editor
+
+# Show action details for a server.
+#   GET /servers/{server_id}/os-instance-actions/{request_id}
+#os_compute_api:os-instance-actions:show: rule:system_or_project_reader
+os_compute_api:os-instance-actions:show: rule:context_is_editor
 
 # Add events details in action details for a server.
 # This check is performed only after the check
@@ -1019,8 +1082,28 @@ os_compute_api:os-instance-actions: rule:context_is_editor
 #os_compute_api:os-instance-actions:events: rule:system_reader_api
 os_compute_api:os-instance-actions:events: is_admin:True
 
-# ??
-os_compute_api:os-instance-usage-audit-log: is_admin:True
+# Add “details” key in action events for a server.
+# This check is performed only after the check
+# os_compute_api:os-instance-actions:show passes. Beginning with Microversion
+# 2.84, new field 'details' is exposed via API which can have more details about
+# event failure. That field is controlled by this policy which is system reader
+# by default. Making the 'details' field visible to the non-admin user helps to
+# understand the nature of the problem (i.e. if the action can be retried),
+# but in the other hand it might leak information about the deployment
+# (e.g. the type of the hypervisor).
+#   GET /servers/{server_id}/os-instance-actions/{request_id}
+#os_compute_api:os-instance-actions:events:details: rule:system_reader_api
+
+# List all usage audits.
+#   GET /os-instance_usage_audit_log
+#os_compute_api:os-instance-usage-audit-log:list: rule:system_reader_api
+os_compute_api:os-instance-usage-audit-log:list: is_admin:True
+
+# List all usage audits occurred before a specified time for all servers on all
+# compute hosts where usage auditing is configured
+#   GET /os-instance_usage_audit_log/{before_timestamp}
+#os_compute_api:os-instance-usage-audit-log:show: rule:system_reader_api
+os_compute_api:os-instance-usage-audit-log:show: is_admin:True
 
 # List IP addresses that are assigned to a server
 #   GET /servers/{server_id}/ips
@@ -1152,13 +1235,25 @@ os_compute_api:os-quota-class-sets:show: is_admin:True or quota_class:%(quota_cl
 #os_compute_api:os-rescue: rule:system_admin_or_owner
 os_compute_api:os-rescue: rule:context_is_editor
 
+# Unrescue a server
+#   POST /servers/{server_id}/action (unrescue)
+#os_compute_api:os-unrescue: rule:system_admin_or_owner
+os_compute_api:os-unrescue: rule:context_is_editor
+
 # Show the usage data for a server
 #   GET /servers/{server_id}/diagnostics
 #os_compute_api:os-server-diagnostics: rule:system_admin_api
 os_compute_api:os-server-diagnostics: is_admin:True
 
-# ??
-os_compute_api:os-server-password: rule:context_is_editor
+# Clear the encrypted administrative password of a server
+#   DELETE /servers/{server_id}/os-server-password
+#os_compute_api:os-server-password:clear: rule:system_admin_or_owner
+os_compute_api:os-server-password:clear: rule:context_is_editor
+
+# Show the encrypted administrative password of a server
+#   GET /servers/{server_id}/os-server-password
+#os_compute_api:os-server-password:show: rule:system_or_project_reader
+os_compute_api:os-server-password:show: rule:context_is_editor
 
 # Create a new server group
 #   POST /os-server-groups
@@ -1185,17 +1280,20 @@ os_compute_api:os-server-groups:index:all_projects: is_admin:True
 #os_compute_api:os-server-groups:show: rule:system_or_project_reader
 os_compute_api:os-server-groups:show: rule:context_is_editor
 
-# ??
-os_compute_api:os-services: is_admin:True
+# Delete a Compute service.
+#   DELETE /os-services/{service_id}
+#os_compute_api:os-services:delete: rule:system_admin_api
+os_compute_api:os-services:delete: is_admin:True
 
-# ??
-os_compute_api:os-services:disable: '!'
+# List all running Compute services in a region.
+#   GET /os-services
+#os_compute_api:os-services:list: rule:system_reader_api
+os_compute_api:os-services:list: is_admin:True
 
-# ??
-os_compute_api:os-services:enable: is_admin:True
-
-# ??
-os_compute_api:os-services:disable-log-reason: is_admin:True
+# Update a Compute service.
+#   PUT /os-services/{service_id}
+#os_compute_api:os-services:update: rule:system_admin_api
+os_compute_api:os-services:update: is_admin:True
 
 # List all metadata of a server
 #   GET /servers/{server_id}/metadata
@@ -1306,8 +1404,13 @@ os_compute_api:os-availability-zone:list: rule:context_is_viewer
 #os_compute_api:os-availability-zone:detail: rule:system_reader_api
 os_compute_api:os-availability-zone:detail: is_admin:True
 
-# ??
-os_compute_api:os-used-limits: is_admin:True
+# Show rate and absolute limits of other project.
+# This policy only checks if the user has access to the requested
+# project limits. And this check is performed only after the check
+# os_compute_api:limits passes
+#   GET /limits
+#os_compute_api:limits:other_project: rule:system_reader_api
+os_compute_api:limits:other_project: is_admin:True
 
 # List migrations
 #   GET /os-migrations
@@ -1361,29 +1464,6 @@ os_compute_api:os-server-external-events:create: is_admin:True
 #   POST /servers/{server_id}/action (resize)
 #compute:servers:resize:cross_cell: '!'
 
-# Show rate and absolute limits of other project.
-# This policy only checks if the user has access to the requested
-# project limits. And this check is performed only after the check
-# os_compute_api:limits passes
-#   GET /limits
-#os_compute_api:limits:other_project: rule:system_reader_api
-
-# Attach an interface to a server
-#   POST /servers/{server_id}/os-interface
-#os_compute_api:os-attach-interfaces:create: rule:system_admin_or_owner
-
-# Detach an interface from a server
-#   DELETE /servers/{server_id}/os-interface/{port_id}
-#os_compute_api:os-attach-interfaces:delete: rule:system_admin_or_owner
-
-# List port interfaces attached to a server
-#   GET /servers/{server_id}/os-interface
-#os_compute_api:os-attach-interfaces:list: rule:system_or_project_reader
-
-# Show details of a port interface attached to a server
-#   GET /servers/{server_id}/os-interface/{port_id}
-#os_compute_api:os-attach-interfaces:show: rule:system_or_project_reader
-
 # List and show details of bare metal nodes.
 # These APIs are proxy calls to the Ironic service and are deprecated.
 #   GET /os-baremetal-nodes
@@ -1392,14 +1472,6 @@ os_compute_api:os-server-external-events:create: is_admin:True
 # Show action details for a server.
 #   GET /os-baremetal-nodes/{node_id}
 #os_compute_api:os-baremetal-nodes:show: rule:system_reader_api
-
-# Force delete a server before deferred cleanup
-#   POST /servers/{server_id}/action (forceDelete)
-#os_compute_api:os-deferred-delete:force: rule:system_admin_or_owner
-
-# Restore a soft deleted server
-#   POST /servers/{server_id}/action (restore)
-#os_compute_api:os-deferred-delete:restore: rule:system_admin_or_owner
 
 # Associate floating IPs to server.  This API is deprecated.
 #   POST /servers/{server_id}/action (addFloatingIp)
@@ -1454,63 +1526,6 @@ os_compute_api:os-server-external-events:create: is_admin:True
 # This API is deprecated in favor of os-hypervisors and os-services.
 #   PUT /os-hosts/{host_name}
 #os_compute_api:os-hosts:update: rule:system_admin_api
-
-# List all hypervisors.
-#   GET /os-hypervisors
-#os_compute_api:os-hypervisors:list: rule:system_reader_api
-
-# List all hypervisors with details
-#   GET /os-hypervisors/details
-#os_compute_api:os-hypervisors:list-detail: rule:system_reader_api
-
-# Search hypervisor by hypervisor_hostname pattern.
-#   GET /os-hypervisors/{hypervisor_hostname_pattern}/search
-#os_compute_api:os-hypervisors:search: rule:system_reader_api
-
-# List all servers on hypervisors that can match the provided hypervisor_hostname pattern.
-#   GET /os-hypervisors/{hypervisor_hostname_pattern}/servers
-#os_compute_api:os-hypervisors:servers: rule:system_reader_api
-
-# Show details for a hypervisor.
-#   GET /os-hypervisors/{hypervisor_id}
-#os_compute_api:os-hypervisors:show: rule:system_reader_api
-
-# Show summary statistics for all hypervisors over all compute nodes.
-#   GET /os-hypervisors/statistics
-#os_compute_api:os-hypervisors:statistics: rule:system_reader_api
-
-# Show the uptime of a hypervisor.
-#   GET /os-hypervisors/{hypervisor_id}/uptime
-#os_compute_api:os-hypervisors:uptime: rule:system_reader_api
-
-# Add “details” key in action events for a server.
-# This check is performed only after the check
-# os_compute_api:os-instance-actions:show passes. Beginning with Microversion
-# 2.84, new field 'details' is exposed via API which can have more details about
-# event failure. That field is controlled by this policy which is system reader
-# by default. Making the 'details' field visible to the non-admin user helps to
-# understand the nature of the problem (i.e. if the action can be retried),
-# but in the other hand it might leak information about the deployment
-# (e.g. the type of the hypervisor).
-#   GET /servers/{server_id}/os-instance-actions/{request_id}
-#os_compute_api:os-instance-actions:events:details: rule:system_reader_api
-
-# List actions for a server.
-#   GET /servers/{server_id}/os-instance-actions
-#os_compute_api:os-instance-actions:list: rule:system_or_project_reader
-
-# Show action details for a server.
-#   GET /servers/{server_id}/os-instance-actions/{request_id}
-#os_compute_api:os-instance-actions:show: rule:system_or_project_reader
-
-# List all usage audits.
-#   GET /os-instance_usage_audit_log
-#os_compute_api:os-instance-usage-audit-log:list: rule:system_reader_api
-
-# List all usage audits occurred before a specified time for all servers on all
-# compute hosts where usage auditing is configured
-#   GET /os-instance_usage_audit_log/{before_timestamp}
-#os_compute_api:os-instance-usage-audit-log:show: rule:system_reader_api
 
 # Add a fixed IP address to a server.
 # This API is proxy calls to the Network service. This is
@@ -1574,14 +1589,6 @@ os_compute_api:os-server-external-events:create: is_admin:True
 #   PUT /os-security-groups/{security_group_id}
 #os_compute_api:os-security-groups:update: rule:system_admin_or_owner
 
-# Clear the encrypted administrative password of a server
-#   DELETE /servers/{server_id}/os-server-password
-#os_compute_api:os-server-password:clear: rule:system_admin_or_owner
-
-# Show the encrypted administrative password of a server
-#   GET /servers/{server_id}/os-server-password
-#os_compute_api:os-server-password:show: rule:system_or_project_reader
-
 # Delete a single tag from the specified server
 #   DELETE /servers/{server_id}/tags/{tag}
 #os_compute_api:os-server-tags:delete: rule:system_admin_or_owner
@@ -1606,18 +1613,6 @@ os_compute_api:os-server-external-events:create: is_admin:True
 #   PUT /servers/{server_id}/tags
 #os_compute_api:os-server-tags:update_all: rule:system_admin_or_owner
 
-# Delete a Compute service.
-#   DELETE /os-services/{service_id}
-#os_compute_api:os-services:delete: rule:system_admin_api
-
-# List all running Compute services in a region.
-#   GET /os-services
-#os_compute_api:os-services:list: rule:system_reader_api
-
-# Update a Compute service.
-#   PUT /os-services/{service_id}
-#os_compute_api:os-services:update: rule:system_admin_api
-
 # List project networks.
 # This API is proxy calls to the Network service. This is deprecated.
 #   GET /os-tenant-networks
@@ -1627,10 +1622,6 @@ os_compute_api:os-server-external-events:create: is_admin:True
 # This API is proxy calls to the Network service. This is deprecated.
 #   GET /os-tenant-networks/{network_id}
 #os_compute_api:os-tenant-networks:show: rule:system_or_project_reader
-
-# Unrescue a server
-#   POST /servers/{server_id}/action (unrescue)
-#os_compute_api:os-unrescue: rule:system_admin_or_owner
 
 # Update a volume attachment with a different volumeId
 #   PUT /servers/{server_id}/os-volume_attachments/{volume_id}
