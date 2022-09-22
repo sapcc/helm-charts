@@ -3,7 +3,7 @@ groups:
   rules:      
   - alert: WSUSMetricsDownWarn
     expr: count(up{job="win-exporter-wsus"} == 0) by (server_name) 
-    for: 30m
+    for: 1h
     labels:
       severity: warning
       tier: ad
@@ -16,7 +16,7 @@ groups:
 
   - alert: WSUSDownWarn
     expr: count(windows_update_service_health{job="win-exporter-wsus"} != 10000) by (server_name, message) 
-    for: 30m
+    for: 1h
     labels:
       severity: warning
       tier: ad
@@ -29,7 +29,7 @@ groups:
 
   - alert: WSUSServiceDownWarn
     expr: count(windows_service_state{state!="running", job="win-exporter-wsus"} > 0) by (server_name, name, state) 
-    for: 30m
+    for: 1h
     labels:
       severity: warning
       tier: ad
@@ -42,7 +42,7 @@ groups:
 
   - alert: WSUSDiskFullInfo
     expr: count(100 - (windows_logical_disk_free_bytes{volume!~"HarddiskVolume.*",job="win-exporter-wsus"}*100/windows_logical_disk_size_bytes{volume!~"HarddiskVolume.*",job="win-exporter-wsus"}) > 80) by (server_name, volume) 
-    for: 30m
+    for: 1h
     labels:
       severity: info
       tier: ad
@@ -55,7 +55,7 @@ groups:
 
   - alert: WSUSHighCpuLoad
     expr: count(avg by (server_name) (100 - (irate(windows_cpu_time_total{mode="idle", job="win-exporter-wsus"}[10m]) * 100)) > 80) 
-    for: 30m
+    for: 1h
     labels:
       severity: info
       tier: ad
@@ -68,7 +68,7 @@ groups:
 
   - alert: WSUSHighMemUsage
     expr: count((100 - (100 * windows_os_physical_memory_free_bytes{job="win-exporter-wsus"} / windows_cs_physical_memory_bytes{job="win-exporter-wsus"})) > 90) by (server_name)
-    for: 30m
+    for: 1h
     labels:
       severity: info
       tier: ad
