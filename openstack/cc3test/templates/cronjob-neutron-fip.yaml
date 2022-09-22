@@ -22,10 +22,21 @@ spec:
               secret:
                 secretName: cc3test-secrets
           containers:
-          - name: base
+          - name: other
             image: {{ required ".Values.global.registry variable missing" .Values.global.registry }}/{{ required ".Values.cc3test.image.name variable missing" .Values.cc3test.image.name }}:{{ required ".Values.cc3test.image.tag variable missing" .Values.cc3test.image.tag }}
             command: ["/bin/sh"]
             args: ["-c", "pytest --disable-pytest-warnings --no-header --color=yes --variables config/config.yaml --variables secrets/secrets.yaml -k 'TestFloatingIp and create' -r ap tests --count=2"]
+            volumeMounts:
+              - name: cc3test-config
+                mountPath: /cc3test/config
+                readOnly: true
+              - name: cc3test-secrets
+                mountPath: /cc3test/secrets
+                readOnly: true
+          - name: base
+            image: { { required ".Values.global.registry variable missing" .Values.global.registry } }/{{ required ".Values.cc3test.image.name variable missing" .Values.cc3test.image.name }}:{{ required ".Values.cc3test.image.tag variable missing" .Values.cc3test.image.tag }}
+            command: [ "/bin/sh" ]
+            args: [ "-c", "pytest --disable-pytest-warnings --no-header --color=yes --variables config/config.yaml --variables secrets/secrets.yaml -m 'neutron and base' -r ap tests" ]
             volumeMounts:
               - name: cc3test-config
                 mountPath: /cc3test/config
