@@ -587,18 +587,6 @@ os_compute_api:os-pause-server:pause: rule:context_is_editor
 #os_compute_api:os-pause-server:unpause: rule:system_admin_or_owner
 os_compute_api:os-pause-server:unpause: rule:context_is_editor
 
-# ??
-os_compute_api:os-pci:pci_servers: rule:context_is_editor
-
-# ??
-os_compute_api:os-pci:index: is_admin:True
-
-# ??
-os_compute_api:os-pci:detail: is_admin:True
-
-# ??
-os_compute_api:os-pci:show: is_admin:True
-
 # Show a quota
 #   GET /os-quota-sets/{tenant_id}
 #os_compute_api:os-quota-sets:show: rule:system_or_project_reader
