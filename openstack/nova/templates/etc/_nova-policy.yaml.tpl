@@ -365,9 +365,6 @@ os_compute_api:os-extended-server-attributes: rule:context_is_viewer
 #os_compute_api:extensions: @
 os_compute_api:extensions: rule:context_is_viewer
 
-# ??
-os_compute_api:os-fixed-ips: is_admin:True
-
 # List flavor access information
 # Allows access to the full list of tenants that have access
 # to a flavor via an os-flavor-access API.
@@ -766,9 +763,6 @@ os_compute_api:os-suspend-server:resume: rule:context_is_editor
 #   POST /servers/{server_id}/action (unshelve)
 #os_compute_api:os-shelve:unshelve: rule:system_admin_or_owner
 os_compute_api:os-shelve:unshelve: rule:context_is_editor
-
-# ??
-os_compute_api:os-virtual-interfaces: rule:context_is_editor
 
 # List volume attachments for an instance
 #   GET /servers/{server_id}/os-volume_attachments
