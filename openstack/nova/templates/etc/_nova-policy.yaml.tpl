@@ -211,12 +211,6 @@ os_compute_api:servers:migrations:index: is_admin:True
 #os_compute_api:servers:migrations:show: rule:system_reader_api
 os_compute_api:servers:migrations:show: is_admin:True
 
-# ??
-os_compute_api:os-admin-actions: is_admin:True
-
-# ??
-os_compute_api:os-admin-actions:reset_network: is_admin:True
-
 # Inject network information into the server
 #   POST /servers/{server_id}/action (injectNetworkInfo)
 #os_compute_api:os-admin-actions:inject_network_info: rule:system_admin_api
