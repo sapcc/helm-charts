@@ -266,9 +266,6 @@ os_compute_api:os-aggregates:remove_host: is_admin:True
 #os_compute_api:os-aggregates:set_metadata: rule:system_admin_api
 os_compute_api:os-aggregates:set_metadata: is_admin:True
 
-# ??
-os_compute_api:os-agents: is_admin:True
-
 # Attach an interface to a server
 #   POST /servers/{server_id}/os-interface
 #os_compute_api:os-attach-interfaces:create: rule:system_admin_or_owner
