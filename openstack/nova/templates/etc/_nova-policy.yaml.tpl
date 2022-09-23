@@ -507,9 +507,6 @@ os_compute_api:os-hypervisors:statistics: is_admin:True
 #os_compute_api:os-hypervisors:uptime: rule:system_reader_api
 os_compute_api:os-hypervisors:uptime: is_admin:True
 
-# ??
-os_compute_api:image-size: rule:context_is_editor
-
 # List actions for a server.
 #   GET /servers/{server_id}/os-instance-actions
 #os_compute_api:os-instance-actions:list: rule:system_or_project_reader
