@@ -1,0 +1,65 @@
+{{- $root := . -}}
+# update guest user tag and password 
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ template "fullname" $root }}-guest
+type: Opaque
+stringData:
+  username: guest
+  password: {{ $root.Values.users.default.password }}
+  uri: http://127.0.0.1:{{ default 15672 $root.Values.ports.management }}
+---    
+apiVersion: rabbitmq.com/v1beta1
+kind: User
+metadata:
+  name: {{ template "fullname" $root }}-guest
+spec:
+  tags:
+  - monitoring 
+  rabbitmqClusterReference:
+    name: {{ template "fullname" $root }}
+  importCredentialsSecret:
+    name: {{ template "fullname" $root }}-guest
+# Loop over the list of users to create them using the topology operator 
+---
+{{- range $k, $v := $root.Values.users }}
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ template "fullname" $root }}-{{ $v.user }}
+type: Opaque
+stringData:
+  username: {{ $v.user }}
+  password: {{ $v.password }}
+  uri: http://127.0.0.1:{{ default 15672 $root.Values.ports.management }}
+---    
+apiVersion: rabbitmq.com/v1beta1
+kind: User
+metadata:
+  name: {{ template "fullname" $root }}-{{ $v.user }}
+spec:
+{{- if $v.tag }}
+  tags:
+  - {{ $v.tag }}
+ {{- end }}
+  rabbitmqClusterReference:
+    name: {{ template "fullname" $root }}
+  importCredentialsSecret:
+    name: {{ template "fullname" $root }}-{{ $v.user }}
+---
+apiVersion: rabbitmq.com/v1beta1
+kind: Permission
+metadata:
+  name: {{ template "fullname" $root }}-{{ $v.user }}
+spec:
+  vhost: {{ $v.vhost }} 
+  user: {{ $v.user }}
+  permissions:
+    write: ".*"
+    configure: ".*"
+    read: ".*"
+  rabbitmqClusterReference:
+    name: {{ template "fullname" $root }}
+---
+{{- end }}
