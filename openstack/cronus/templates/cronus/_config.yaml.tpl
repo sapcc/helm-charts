@@ -178,6 +178,9 @@ cronus:
 {{- if $v.smtpConnPool.maxConnWaitTimeout }}
         maxConnWaitTimeout: {{ $v.smtpConnPool.maxConnWaitTimeout }}
 {{- end }}
+{{- if $v.smtpConnPool.maxConnReleaseTimeout }}
+        maxConnReleaseTimeout: {{ $v.smtpConnPool.maxConnReleaseTimeout }}
+{{- end }}
 {{- end }}
 {{- end }}
 {{- end }}
