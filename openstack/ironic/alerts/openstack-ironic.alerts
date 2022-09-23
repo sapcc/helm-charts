@@ -8,6 +8,7 @@ groups:
       severity: info
       meta: "{{ $value }} Ironic nodes do not match any Nova baremetal flavor"
       service: ironic
+      context: test
       tier: os
       support: group-compute-storage-api
       kibana: "app/kibana#/discover?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:now-20m,mode:quick,to:now))&_a=(columns:!(_source),filters:!(('$state':(store:appState),meta:(alias:!n,disabled:!f,index:'logstash-*',key:kubernetes.labels.name,negate:!f,type:phrase,value:limes-collect-ccloud),query:(match:(kubernetes.labels.name:(query:limes-collect-ccloud,type:phrase))))),index:'logstash-*',interval:auto,query:(query_string:(query:ironic)),sort:!(time,desc))"
@@ -24,6 +25,7 @@ groups:
       severity: warning
       support: group-compute-storage-api
       service: ironic
+      context: test
       tier: os
       dashboard: ccloud-health-canary-details
       meta: 'Canary {{ $labels.service }} {{ $labels.check }} is down. See Sentry for details'
@@ -41,6 +43,7 @@ groups:
       severity: warning
       support: group-compute-storage-api
       service: ironic
+      context: test
       tier: os
       dashboard: ccloud-health-canary-details
       meta: 'Canary {{ $labels.service }} {{ $labels.check }} is timing out. See Sentry for details'
@@ -59,7 +62,7 @@ groups:
       support: group-compute-storage-api
       service: ironic
       tier: os
-      context: '{{ $labels.name }}'
+      context: nodes
       dashboard: ironic-node-overview
       meta: 'Node {{ $labels.name }} is in error due to {{ $labels.last_error }}'
       playbook: 'docs/support/playbook/baremetal/bm_node_error_state.html'
@@ -75,7 +78,7 @@ groups:
       support: group-compute-storage-api
       service: ironic
       tier: os
-      context: '{{ $labels.name }}'
+      context: nodes
       dashboard: ironic-node-overview
       meta: 'Node {{ $labels.name }} is in deploy failed state due to {{ $labels.last_error }}'
       playbook: 'docs/support/playbook/baremetal/bm_node_deploy_fail_state.html'
@@ -91,7 +94,7 @@ groups:
       support: group-compute-storage-api
       tier: os
       service: ironic
-      context: '{{ $labels.name }}'
+      context: nodes
       dashboard: ironic-node-overview
       meta: 'Node {{ $labels.name }} is in clean failed state due to {{ $labels.last_error }}'
     annotations:
