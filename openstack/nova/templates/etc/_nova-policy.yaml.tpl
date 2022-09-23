@@ -291,9 +291,6 @@ os_compute_api:os-attach-interfaces:show: rule:context_is_editor
 #os_compute_api:os-baremetal-nodes:show: rule:system_reader_api
 os_compute_api:os-baremetal-nodes:show: is_admin:True
 
-# ??
-os_compute_api:os-cloudpipe: is_admin:True
-
 # Show console output for a server
 #   POST /servers/{server_id}/action (os-getConsoleOutput)
 #os_compute_api:os-console-output: rule:system_admin_or_owner
