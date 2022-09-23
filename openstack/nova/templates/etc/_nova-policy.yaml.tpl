@@ -433,9 +433,6 @@ os_compute_api:os-flavor-manage:update: is_admin:True
 #os_compute_api:os-flavor-manage:delete: rule:system_admin_api
 os_compute_api:os-flavor-manage:delete: is_admin:True
 
-# ??
-os_compute_api:os-hide-server-addresses: not is_admin:True
-
 # List all hypervisors.
 #   GET /os-hypervisors
 #os_compute_api:os-hypervisors:list: rule:system_reader_api
