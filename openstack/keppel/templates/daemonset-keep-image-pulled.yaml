@@ -1,9 +1,13 @@
-{{- if not .Values.keppel.slim }}
+{{- if not (or .Values.keppel.slim (.Values.global.region | hasPrefix "qa-")) }}
 
 # Because Keppel is instrumental for the continued availability of many other
 # Docker images, we want to be able to start it reliably and fast. To ensure this,
 # this daemonset (through its existence) keeps the Keppel image permanently
 # pulled on all nodes.
+#
+# The condition above skips this daemonset on QA and lab regions, because high
+# availability is not a concern there. By omitting the daemonset there, the
+# Helm deployment will finish faster since it does not have to wait on it.
 
 kind: DaemonSet
 apiVersion: apps/v1
