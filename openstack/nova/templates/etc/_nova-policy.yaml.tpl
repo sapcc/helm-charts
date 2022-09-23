@@ -295,21 +295,6 @@ os_compute_api:os-attach-interfaces:show: rule:context_is_editor
 os_compute_api:os-baremetal-nodes:show: is_admin:True
 
 # ??
-os_compute_api:os-cells: is_admin:True
-
-# ??
-os_compute_api:os-cells:create: is_admin:True
-
-# ??
-os_compute_api:os-cells:delete: is_admin:True
-
-# ??
-os_compute_api:os-cells:update: is_admin:True
-
-# ??
-os_compute_api:os-cells:sync_instances: is_admin:True
-
-# ??
 os_compute_api:os-certificates:create: rule:context_is_editor
 
 # ??
