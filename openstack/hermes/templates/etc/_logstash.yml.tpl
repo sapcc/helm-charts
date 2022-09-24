@@ -5,5 +5,6 @@ pipeline.batch.size: 250
 pipeline.ordered: false
 config.reload.automatic: true
 config.reload.interval: 60s
+http.host: 0.0.0.0
 log.level: warn
 log.format: json
