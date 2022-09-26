@@ -1,0 +1,33 @@
+{{- if .Values.traefik.enabled }}
+{{- $root := . }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress 
+metadata:
+  name: {{ include "thanos.fullName" . }}-grpc
+  annotations:
+    disco: "true"
+    kubernetes.io/tls-acme: "true"
+spec:
+  rules:
+    {{- range $host := $root.Values.grpcIngress.hosts }}
+    - host: {{ $host }}-grpc.{{ $root.Values.global.region }}.{{ $root.Values.global.tld }}
+      http:
+        paths:
+        - path: /dummypath
+          backend:
+            service:
+              name:  {{ include "thanos.fullName" $root }}-query
+              port:
+                number: 80
+          pathType: Exact
+    {{- end }}
+  tls:
+    - secretName: tls-{{ include "thanos.grpcURL" $root | replace "." "-" }}
+      hosts:
+        {{- range $host := $root.Values.grpcIngress.hosts }}
+        - {{ $host }}-grpc.{{ $root.Values.global.region }}.{{ $root.Values.global.tld }}
+        {{- end }}
+        {{- range $host := $root.Values.grpcIngress.hostsFQDN }}
+        - {{ $host }}
+        {{- end }}
+{{- end }}
