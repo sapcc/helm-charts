@@ -591,12 +591,12 @@ os_compute_api:os-quota-sets:defaults: rule:context_is_viewer
 # Update the quotas
 #   PUT /os-quota-sets/{tenant_id}
 #os_compute_api:os-quota-sets:update: rule:system_admin_api
-os_compute_api:os-quota-sets:update: is_admin:True
+os_compute_api:os-quota-sets:update: rule:context_is_quota_admin
 
 # Revert quotas to defaults
 #   DELETE /os-quota-sets/{tenant_id}
 #os_compute_api:os-quota-sets:delete: rule:system_admin_api
-os_compute_api:os-quota-sets:delete: is_admin:True
+os_compute_api:os-quota-sets:delete: rule:context_is_quota_admin
 
 # Show the detail of quota
 #   GET /os-quota-sets/{tenant_id}/detail
