@@ -1,11 +1,11 @@
 groups:
 - name: logstash.alerts
   rules:
-  - alert: ElkLogstashLogsMissing
+  - alert: ElkLogstashLogsIncreasing
 {{ if eq .Values.global.clusterType  "scaleout" }}
-    expr: sum(rate(fluentd_output_status_num_records_total{cluster_type!="controlplane",component="fluent"}[30m])) by (nodename,kubernetes_pod_name) == 0
+    expr: increase(logstash_node_plugin_events_in_total{cluster_type!="controlplane",namespace="logs",plugin_id="elk-syslog"}[1h])/ increase(logstash_node_plugin_events_in_total{namespace="logs",cluster_type!="controlplane",plugin_id="elk-syslog"}[1h]offset 2h) > 1.4
 {{ else }}
-    expr: sum(rate(fluentd_output_status_num_records_total{cluster_type="controlplane",component="fluent"}[30m])) by (nodename,kubernetes_pod_name) == 0
+    expr: increase(logstash_node_plugin_events_in_total{namespace="logs",plugin_id="elk-syslog"}[1h])/ increase(logstash_node_plugin_events_in_total{namespace="logs",plugin_id="elk-syslog"}[1h]offset 2h) > 1.4
 {{ end }}
     for: 60m
     labels:
@@ -13,7 +13,7 @@ groups:
       service: elk
       severity: info
       tier: os
-      playbook: docs/operation/elastic_kibana_issues/elk_logs/fluent-logs-are-missing.html
+      playbook: docs/operation/elastic_kibana_issues/elk_logs/logstash_logs_increasing.html
     annotations:
-      description: 'ELK in {{`{{ $labels.region }}`}} {{`{{ $labels.kubernetes_pod_name }}`}} pod on {{`{{ $labels.nodename }}`}} is not shipping any log line. Please check'
-      summary:  logstash log shipper missing check
+      description: 'ELK logstash in {{`{{ $labels.region }}`}} {{`{{ $labels.kubernetes_pod_name }}`}} pod on {{`{{ $labels.nodename }}`}} gets more than 40% events'
+      summary:  logstash receiver events increasing
