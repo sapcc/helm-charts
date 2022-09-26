@@ -96,6 +96,7 @@ filter {
 output {
   if [type] == "syslog" {
     elasticsearch {
+      id => "elk-syslog"
       index => "syslog-%{+YYYY.MM.dd}"
       template => "/logstash-etc/syslog.json"
       template_name => "syslog"
@@ -109,6 +110,7 @@ output {
   }
   elseif [type] == "alert" and [alerts][labels][severity] == "critical"{
     elasticsearch {
+      id => "elk-critical-alerts"
       index => "alerts-critical-%{+YYYY}"
       template => "/logstash-etc/alerts.json"
       template_name => "alerts"
@@ -122,6 +124,7 @@ output {
   }
   elseif [type] == "alert" and [alerts][labels][severity] == "warning"{
       elasticsearch {
+      id => "elk-alerts-warnings"
         index => "alerts-warning-%{+YYYY}"
         template => "/logstash-etc/alerts.json"
         template_name => "alerts"
@@ -135,6 +138,7 @@ output {
   }
   elseif [type] == "alert"{
     elasticsearch {
+      id => "elk-alerts"
       index => "alerts-other-%{+YYYY}"
       template => "/logstash-etc/alerts.json"
       template_name => "alerts"
@@ -148,6 +152,7 @@ output {
   }
   elseif [type] == "deployment" {
     elasticsearch {
+      id => "elk-deployments"
       index => "deployments-%{+YYYY}"
       template => "/logstash-etc/deployments.json"
       template_name => "deployments"
@@ -161,6 +166,7 @@ output {
   }
   elseif  [type] == "netflow" {
     elasticsearch {
+      id => "elk-netflow"
       index => "netflow-%{+YYYY.MM.dd}"
       template => "/logstash-etc/netflow.json"
       template_name => "netflow"
