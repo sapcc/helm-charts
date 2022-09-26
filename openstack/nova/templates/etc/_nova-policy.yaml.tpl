@@ -29,12 +29,6 @@ context_is_viewer: rule:context_is_editor or rule:viewer
 # ??
 compute_admin_all: role:compute_admin or role:cloud_compute_admin
 
-# ??
-network_admin: role:network_admin and rule:owner
-
-# ??
-context_is_network_admin: role:cloud_network_admin or rule:network_admin
-
 # Default rule for most Admin APIs.
 #admin_api: is_admin:True
 
