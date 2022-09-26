@@ -8,27 +8,24 @@ package lib.traversal
 # On success, the returned object will have {"isFound": true} added to it.
 # If no Pod is found, an object with just {"isFound": false} is returned.
 #
-# Pods that are owned by a ReplicaSet etc. are ignored to avoid
+# Pods that are owned by a ReplicaSet etc. are suppressed to avoid
 # double-reporting. (We report on the highest level possible to reduce the
 # number of total violations that are generated; there is no use in generating
 # 30 violations for 30 replicas of the same Deployment.)
 #
+default find_pod(obj) = { "isFound": false }
 find_pod(obj) = result {
   # case 1: `obj` is a Pod itself
   obj.kind == "Pod"
-  owners := [ref.kind | ref := obj.metadata.ownerReferences[_]; ref.kind == __pod_owners[_]]
-  result := __return_pod_unless_ignored(obj, owners)
+  result := __return_pod_unless_suppressed(obj, __list_suppressing_owners(obj))
 }
 find_pod(obj) = result {
-  # case 2: `obj` contains a PodSpec
-  obj.kind == __violation_owners[_]
-  result := object.union(obj.spec.template, { "isFound": true })
-}
-find_pod(obj) = result {
-  # case 3: neither Pod nor PodSpec
+  # case 2: `obj` is not a Pod -> look for a Pod template
   obj.kind != "Pod"
-  count([kind | kind := __violation_owners[_]; obj.kind == kind ]) == 0
-  result := { "isFound": false }
+  location := object.get(__pod_template_locations, [obj.kind], [])
+  location != []
+  pod := object.get(obj, location, {})
+  result := __return_pod_unless_suppressed(pod, __list_suppressing_owners(obj))
 }
 
 ### find_container_specs(obj)
@@ -41,18 +38,38 @@ find_container_specs(obj) = result {
 }
 
 ################################################################################
-# private helper functions for find_pod_spec()
+# private helper functions for find_pod()
 
-__violation_owners = {"Deployment", "DaemonSet", "StatefulSet", "Job"}
-__pod_owners       = {"ReplicaSet", "DaemonSet", "StatefulSet", "Job"}
+__pod_template_locations = {
+  "CronJob":     [ "spec", "jobTemplate", "spec", "template" ],
+  "DaemonSet":   [ "spec", "template" ],
+  "Deployment":  [ "spec", "template" ],
+  "Job":         [ "spec", "template" ],
+  "ReplicaSet":  [ "spec", "template" ],
+  "StatefulSet": [ "spec", "template" ],
+}
 
-__return_pod_unless_ignored(obj, owners) = result {
-  # If a pod has ownerReferences to a pod owner that we recognize, we ignore
+__suppressing_owner_kinds = {
+  "Job":        [ "CronJob" ],
+  "Pod":        [ "DaemonSet", "Job", "ReplicaSet", "StatefulSet" ],
+  "ReplicaSet": [ "Deployment" ],
+}
+
+__list_suppressing_owners(obj) = result {
+  possible_owners := object.get(__suppressing_owner_kinds, [obj.kind], [])
+  result := [ref.kind |
+    ref := obj.metadata.ownerReferences[_]
+    ref.kind == possible_owners[_]
+  ]
+}
+
+__return_pod_unless_suppressed(obj, owners) = result {
+  # If a pod has ownerReferences to a pod owner that we recognize, we suppress
   # the pod and report violations only on the topmost owner.
   count(owners) > 0
   result := { "isFound": false }
 }
-__return_pod_unless_ignored(obj, owners) = result {
+__return_pod_unless_suppressed(obj, owners) = result {
   count(owners) == 0
   result := object.union(obj, { "isFound": true })
 }
