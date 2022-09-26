@@ -3,10 +3,10 @@ DEFAULT:
   transport_url: nats://andromeda-nats:4222
 
 database:
-{{- if not .Values.postgresql.enabled }}
-  connection: cockroachdb://root@{{ include "andromeda.name" . }}-cockroachdb:26257/andromeda?sslmode=disable
-{{- else }}
-  connection: postgresql://postgres:{{ default "" .Values.postgresql.postgresPassword | urlquery }}@andromeda-postgresql:5432/andromeda?sslmode=disable
+{{- if .Values.mariadb.enabled }}
+  connection: mysql://andromeda:{{ required ".Values.mariadb.users.andromeda.password variable missing" .Values.mariadb.users.andromeda.password | urlquery }}@{{ include "mariadb.db_host" . }}/andromeda?sql_mode=%27ANSI_QUOTES%27
+{{- else if .Values.postgresql.enabled }}
+  connection: postgresql://postgres:{{ required ".Values.postgresql.postgresPassword variable missing" .Values.postgresql.postgresPassword | urlquery }}@andromeda-postgresql:5432/andromeda?sslmode=disable
 {{- end }}
 
 api_settings:
