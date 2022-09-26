@@ -1,5 +1,5 @@
 groups:
-- name: fluent.alerts
+- name: logstash.alerts
   rules:
   - alert: ElkLogstashLogsMissing
 {{ if eq .Values.global.clusterType  "scaleout" }}
