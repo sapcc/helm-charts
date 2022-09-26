@@ -3,9 +3,9 @@ groups:
   rules:
   - alert: ElkLogstashLogsIncreasing
 {{ if eq .Values.global.clusterType  "scaleout" }}
-    expr: increase(logstash_node_plugin_events_in_total{cluster_type!="controlplane",namespace="logs",plugin_id="elk-syslog"}[1h])/ increase(logstash_node_plugin_events_in_total{namespace="logs",cluster_type!="controlplane",plugin_id="elk-syslog"}[1h]offset 2h) > 1.4
+    expr: increase(logstash_node_plugin_events_in_total{cluster_type!="controlplane",namespace="logs",plugin_id="elk-syslog"}[1h]) / increase(logstash_node_plugin_events_in_total{namespace="logs",cluster_type!="controlplane",plugin_id="elk-syslog"}[1h]offset 2h) > 1.4
 {{ else }}
-    expr: increase(logstash_node_plugin_events_in_total{namespace="logs",plugin_id="elk-syslog"}[1h])/ increase(logstash_node_plugin_events_in_total{namespace="logs",plugin_id="elk-syslog"}[1h]offset 2h) > 1.4
+    expr: increase(logstash_node_plugin_events_in_total{namespace="logs",plugin_id="elk-syslog"}[1h]) / increase(logstash_node_plugin_events_in_total{namespace="logs",plugin_id="elk-syslog"}[1h]offset 2h) > 1.4
 {{ end }}
     for: 60m
     labels:
