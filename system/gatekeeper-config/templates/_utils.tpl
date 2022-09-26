@@ -25,7 +25,7 @@ kinds:
   - apiGroups: [""]
     kinds: ["Pod"]
   - apiGroups: ["apps"]
-    kinds: ["DaemonSet", "Deployment", "StatefulSet"]
+    kinds: ["DaemonSet", "Deployment", "ReplicaSet", "StatefulSet"]
   - apiGroups: ["batch"]
-    kinds: ["Job"]
+    kinds: ["CronJob", "Job"]
 {{- end }}

@@ -32,6 +32,87 @@ tests:
     - violations: 1
       message: '^support-group=none,service=none: test for from_helm_release\(\)$'
 
+- name: libtest-traversal
+  template: rendered-chart/gatekeeper/templates/constrainttemplate-libtest-traversal.yaml
+  constraint: rendered-chart/gatekeeper-config/templates/constraint-libtest-traversal.yaml
+  cases:
+  - name: traversal-for-cronjob
+    object: fixtures/libtest-traversal/cronjob.yaml
+    assertions:
+    - violations: 1
+      message: '^found a relevant pod with marker "pod in cronjob" and containers "alpine", "init-busybox", "ubuntu"$'
+  - name: traversal-for-daemonset
+    object: fixtures/libtest-traversal/daemonset.yaml
+    assertions:
+    - violations: 1
+      message: '^found a relevant pod with marker "pod in daemonset" and containers "alpine", "init-busybox", "ubuntu"$'
+  - name: traversal-for-deployment
+    object: fixtures/libtest-traversal/deployment.yaml
+    assertions:
+    - violations: 1
+      message: '^found a relevant pod with marker "pod in deployment" and containers "alpine", "init-busybox", "ubuntu"$'
+  - name: traversal-for-job
+    object: fixtures/libtest-traversal/job.yaml
+    assertions:
+    - violations: 1
+      message: '^found a relevant pod with marker "pod in job" and containers "alpine", "init-busybox", "ubuntu"$'
+  - name: traversal-for-job-in-cronjob
+    object: fixtures/libtest-traversal/job-in-cronjob.yaml
+    assertions:
+    - violations: 1
+      message: '^no relevant pod found$' # suppressed because of owner reference
+  - name: traversal-for-pod
+    object: fixtures/libtest-traversal/pod.yaml
+    assertions:
+    - violations: 1
+      message: '^found a relevant pod with marker "individual pod" and containers "alpine", "init-busybox", "ubuntu"$'
+  - name: traversal-for-pod-minimal
+    object: fixtures/libtest-traversal/pod-minimal.yaml # special case: tests empty `initContainers`
+    assertions:
+    - violations: 1
+      message: '^found a relevant pod with marker "minimal pod" and containers "alpine"$'
+  - name: traversal-for-pod-in-daemonset
+    object: fixtures/libtest-traversal/pod-in-daemonset.yaml
+    assertions:
+    - violations: 1
+      message: '^no relevant pod found$' # suppressed because of owner reference
+  - name: traversal-for-pod-in-job
+    object: fixtures/libtest-traversal/pod-in-job.yaml
+    assertions:
+    - violations: 1
+      message: '^no relevant pod found$' # suppressed because of owner reference
+  - name: traversal-for-pod-in-replicaset
+    object: fixtures/libtest-traversal/pod-in-replicaset.yaml
+    assertions:
+    - violations: 1
+      message: '^no relevant pod found$' # suppressed because of owner reference
+  - name: traversal-for-pod-in-statefulset
+    object: fixtures/libtest-traversal/pod-in-statefulset.yaml
+    assertions:
+    - violations: 1
+      message: '^no relevant pod found$' # suppressed because of owner reference
+  - name: traversal-for-pod-in-unknown-owner
+    object: fixtures/libtest-traversal/pod-in-unknown-owner.yaml # special case: tests `ownerReferences` pointing to unexpected owner
+    assertions:
+    - violations: 1
+      # because we do not know this owner, we have to report violations on this level
+      message: '^found a relevant pod with marker "pod in unknown owner" and containers "alpine", "init-busybox", "ubuntu"$'
+  - name: traversal-for-replicaset
+    object: fixtures/libtest-traversal/replicaset.yaml
+    assertions:
+    - violations: 1
+      message: '^found a relevant pod with marker "pod in replicaset" and containers "alpine", "init-busybox", "ubuntu"$'
+  - name: traversal-for-replicaset-in-deployment
+    object: fixtures/libtest-traversal/replicaset-in-deployment.yaml
+    assertions:
+    - violations: 1
+      message: '^no relevant pod found$' # suppressed because of owner reference
+  - name: traversal-for-statefulset
+    object: fixtures/libtest-traversal/statefulset.yaml
+    assertions:
+    - violations: 1
+      message: '^found a relevant pod with marker "pod in statefulset" and containers "alpine", "init-busybox", "ubuntu"$'
+
 ################################################################################
 # policy tests
 
@@ -218,11 +299,6 @@ tests:
       message: '^support-group=foo-group,service=dummy: image keppel.example.com/vulnerability:old for container "dummy" uses a very old base image \(oldest layer is 417 days old\)$'
     - violations: 1
       message: '^support-group=foo-group,service=dummy: image keppel.example.com/vulnerability:old for container "starter" uses a very old base image \(oldest layer is 417 days old\)$'
-  - name: pod-old-2
-    object: fixtures/outdated-image-bases/pod-old-2.yaml
-    assertions:
-    - violations: 1
-      message: '^support-group=none,service=none: image keppel.example.com/vulnerability:old for container "dummy" uses a very old base image \(oldest layer is 417 days old\)$'
   - name: pod-new
     object: fixtures/outdated-image-bases/pod-new.yaml
     assertions:
@@ -393,15 +469,6 @@ tests:
       message: '^support-group=foo-group,service=dummy: image keppel.example.com/vulnerability:medium for container "dummymedium" has vulnerability status "Medium"$'
     - violations: 1
       message: '^support-group=foo-group,service=dummy: image keppel.example.com/vulnerability:high for container "starter" has vulnerability status "High"$'
-  - name: pod-vulnerable-2
-    object: fixtures/vulnerable-images/pod-vulnerable-2.yaml
-    assertions:
-    - violations: 1
-      message: '^support-group=none,service=none: image keppel.example.com/vulnerability:low for container "dummylow" has vulnerability status "Low"$'
-    - violations: 1
-      message: '^support-group=none,service=none: image keppel.example.com/vulnerability:medium for container "dummymedium" has vulnerability status "Medium"$'
-    - violations: 1
-      message: '^support-group=none,service=none: image keppel.example.com/vulnerability:high for container "dummyhigh" has vulnerability status "High"$'
   - name: pod-unclear
     object: fixtures/vulnerable-images/pod-unclear.yaml
     assertions:
