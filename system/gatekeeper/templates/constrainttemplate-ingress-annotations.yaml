@@ -7,6 +7,17 @@ spec:
     spec:
       names:
         kind: GkIngressAnnotations
+      validation:
+        # Schema for the `parameters` field
+        openAPIV3Schema:
+          type: object
+          properties:
+            hint:
+              type: string
+            regexes:
+              type: array
+              items:
+                type: string
 
   targets:
     - target: admission.k8s.gatekeeper.sh
@@ -18,20 +29,12 @@ spec:
         import data.lib.add_support_labels
 
         iro := input.review.object
-
-        # These annotations have been disabled due to CVE-2021-25742
-        disabled_annotations = {
-          "ingress.kubernetes.io/auth-snippet",
-          "ingress.kubernetes.io/configuration-snippet",
-          "ingress.kubernetes.io/server-snippet",
-          "ingress.kubernetes.io/modsecurity-snippet",
-        }
+        annotations := object.get(iro, ["metadata", "annotations"], {})
 
         violation[{"msg": add_support_labels.from_k8s_object(iro, msg)}] {
           iro.kind == "Ingress"
-
-          annotation := disabled_annotations[_]
-          is_string(object.get(iro, ["metadata", "annotations", annotation], null))
-
-          msg := sprintf("has disabled annotation: %q", [annotation])
+          annotations[key]
+          pattern := input.parameters.regexes[_]
+          regex.match(pattern, key)
+          msg := sprintf("has disabled annotation: %q (%s)", [key, input.parameters.hint])
         }

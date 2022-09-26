@@ -1,0 +1,15 @@
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: GkIngressAnnotations
+metadata:
+  name: ingressannotations-wrong-prefix
+  labels:
+    on-prod-ui: 'true'
+spec:
+  enforcementAction: dryrun # TODO deny
+  match:
+    kinds:
+      - apiGroups: ["networking.k8s.io"]
+        kinds: ["Ingress"]
+  parameters:
+    hint: 'use the prefix "ingress.kubernetes.io/" instead'
+    regexes: [ "^nginx.ingress.kubernetes.io/" ] # this is the default annotations-prefix; we use a different one for backwards-compatiblity

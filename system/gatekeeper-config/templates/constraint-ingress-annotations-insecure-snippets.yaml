@@ -1,7 +1,7 @@
 apiVersion: constraints.gatekeeper.sh/v1beta1
 kind: GkIngressAnnotations
 metadata:
-  name: ingressannotations
+  name: ingressannotations-insecure-snippets
   labels:
     on-prod-ui: 'true'
 spec:
@@ -10,3 +10,6 @@ spec:
     kinds:
       - apiGroups: ["networking.k8s.io"]
         kinds: ["Ingress"]
+  parameters:
+    hint: 'disabled due to CVE-2021-25742'
+    regexes: [ "^ingress.kubernetes.io/(?:auth|configuration|server|modsecurity)-snippet$" ]

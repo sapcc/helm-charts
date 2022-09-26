@@ -274,15 +274,29 @@ tests:
     - violations: 1
       message: '^support-group=foo-group,service=dummy: container "starter-bad" uses an image that is not from a Keppel registry: alpine:3$'
 
-- name: ingress-annotations
+- name: ingress-annotations-insecure-snippets
   template: rendered-chart/gatekeeper/templates/constrainttemplate-ingress-annotations.yaml
-  constraint: rendered-chart/gatekeeper-config/templates/constraint-ingress-annotations.yaml
+  constraint: rendered-chart/gatekeeper-config/templates/constraint-ingress-annotations-insecure-snippets.yaml
   cases:
   - name: networking-disabled-snippet
     object: fixtures/ingress-annotations/networking-disabled-snippet.yaml
     assertions:
     - violations: 1
-      message: '^support-group=foo-group,service=dummy: has disabled annotation: "ingress.kubernetes.io/configuration-snippet"$'
+      message: '^support-group=foo-group,service=dummy: has disabled annotation: "ingress.kubernetes.io/configuration-snippet" \(disabled due to CVE-2021-25742\)$'
+  - name: networking-pass
+    object: fixtures/ingress-annotations/networking-pass.yaml
+    assertions:
+    - violations: no
+
+- name: ingress-annotations-wrong-prefix
+  template: rendered-chart/gatekeeper/templates/constrainttemplate-ingress-annotations.yaml
+  constraint: rendered-chart/gatekeeper-config/templates/constraint-ingress-annotations-wrong-prefix.yaml
+  cases:
+  - name: networking-disabled-snippet
+    object: fixtures/ingress-annotations/networking-wrong-prefix.yaml
+    assertions:
+    - violations: 1
+      message: '^support-group=foo-group,service=dummy: has disabled annotation: "nginx.ingress.kubernetes.io/proxy-request-buffering" \(use the prefix "ingress.kubernetes.io/" instead\)$'
   - name: networking-pass
     object: fixtures/ingress-annotations/networking-pass.yaml
     assertions:
