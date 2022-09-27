@@ -145,7 +145,7 @@ cronus:
   # extra SMTP backends and a list of recipient domains
   smtpBackends:
 {{- range $v := .Values.config.smtpBackends }}
-    - name: {{ $v.name }}
+    - name: {{ $v.name | quote }}
 {{- if $v.host }}
       host: {{$v.host }}
 {{- end }}
