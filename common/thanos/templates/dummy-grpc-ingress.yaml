@@ -7,19 +7,23 @@ metadata:
   annotations:
     disco: "true"
     kubernetes.io/tls-acme: "true"
+    kubernetes.io/ingress.class: traefik
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    traefik.ingress.kubernetes.io/router.priority: "10"
+    traefik.ingress.kubernetes.io/router.tls: "true"
 spec:
   rules:
     {{- range $host := $root.Values.grpcIngress.hosts }}
     - host: {{ $host }}-grpc.{{ $root.Values.global.region }}.{{ $root.Values.global.tld }}
       http:
         paths:
-        - path: /dummypath
+        - path: /
           backend:
             service:
               name:  {{ include "thanos.fullName" $root }}-query
               port:
-                number: 80
-          pathType: Exact
+                number: 10901
+          pathType: ImplementationSpecific
     {{- end }}
   tls:
     - secretName: tls-{{ include "thanos.grpcURL" $root | replace "." "-" }}
