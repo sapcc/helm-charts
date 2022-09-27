@@ -26,14 +26,18 @@ python: |
         unset_maintenance = False
         if node.boot_interface == 'ipxe':
             continue
+        if node.driver == 'cisco-ucs-managed':
+            continue
         if node.provision_state not in states:
             continue
-        if not node.maintenance:
-          bm.node.set_maintenance(node.uuid, 'true', maint_reason='set boot_interface to ipxe')
-          unset_maintenance = True
-
-        bm.node.update(node_id=node.uuid, patch=patch)
-
-        if unset_maintenance:
-          bm.node.set_maintenance(node.uuid, 'false')
+        try:
+            if not node.maintenance:
+                bm.node.set_maintenance(node.uuid, 'true', maint_reason='set boot_interface to ipxe')
+                unset_maintenance = True
+            bm.node.update(node_id=node.uuid, patch=patch)
+        except Exception as e:
+            print(e)
+        finally:
+            if unset_maintenance:
+                bm.node.set_maintenance(node.uuid, 'false')
 {{- end  }}
