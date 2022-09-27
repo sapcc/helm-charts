@@ -161,11 +161,6 @@ route:
       tier: metal|net|vmware|os|k8s|kks
       region: ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|ap-sa-2|eu-de-1|eu-de-2|eu-nl-1|eu-ru-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3
 
-  - receiver: awx
-    continue: true
-    match_re:
-      tier: vmware
-
   - receiver: slack_storage
     continue: false
     match_re:
@@ -379,15 +374,6 @@ receivers:
       url: {{ required ".Values.octobus.gymInstance undefined" .Values.octobus.gymInstance | quote }}
     - send_resolved: true
       url: {{ required ".Values.octobus.gcpInstance undefined" .Values.octobus.gcpInstance | quote }}
-
-  - name: awx
-    webhook_configs:
-    - send_resolved: true
-      http_config:
-        basic_auth:
-          username: {{ required ".Values.awx.basicAuthUser undefined" .Values.awx.basicAuthUser | quote }}
-          password: {{ required ".Values.awx.basicAuthPwd undefined" .Values.awx.basicAuthPwd | quote }}
-      url: {{ required ".Values.awx.listenerURL undefined" .Values.awx.listenerURL | quote }}
 
   - name: slack_metal_info
     slack_configs:
