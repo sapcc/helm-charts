@@ -119,6 +119,12 @@ spec:
             {{- end }}
             {{- include "utils.proxysql.volume_mount" . | indent 12 }}
             {{- include "utils.trust_bundle.volume_mount" . | indent 12 }}
+            {{- if .Values.sapcc_rate_limit.enabled }}
+            - name: octavia-etc
+              mountPath: /etc/octavia/ratelimit.yaml
+              subPath: ratelimit.yaml
+              readOnly: true
+            {{- end }}
         {{- include "utils.proxysql.container" . | indent 8 }}
         {{- include "jaeger_agent_sidecar" . | indent 8 }}
 {{- if .Values.watcher.enabled }}
