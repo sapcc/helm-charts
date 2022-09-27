@@ -9,12 +9,14 @@ ARG GALERA_VERSION
 ARG GALERA_DEBUG
 ARG IMG_VERSION
 ARG SOFT_NAME
+ARG YQ_VERSION
 ENV SOFTWARE_VERSION=${SOFT_VERSION}
 ENV SOFTWARE_NAME=${SOFT_NAME}
 ENV IMAGE_VERSION=${IMG_VERSION}
 ENV GALERA_VERSION=${GALERA_VERSION}
 ENV GALERA_DEBUG=${GALERA_DEBUG}
 ENV USERNAME=mysql
+ENV YQ_VERSION=${YQ_VERSION}
 LABEL name=${SOFTWARE_NAME}
 LABEL software.${SOFTWARE_NAME}=${SOFTWARE_NAME}
 LABEL version.${SOFTWARE_NAME}.software=${SOFTWARE_VERSION}
@@ -23,10 +25,10 @@ LABEL maintainer.${SOFTWARE_NAME}.name="Birk Bohne"
 LABEL maintainer.${SOFTWARE_NAME}.mail="birk.bohne@sap.com"
 LABEL source_repository="https://github.com/sapcc/helm-charts/common/${SOFTWARE_NAME}-galera"
 
-COPY bin/entrypoint.sh /tmp/
+COPY bin/*.sh /tmp/
 COPY config/my.cnf /tmp/
 COPY config/*.tpl /tmp/
-COPY config/*.role /tmp/
+COPY config/*.role.yaml /tmp/
 
 WORKDIR /opt
 SHELL ["/bin/bash", "-euo", "pipefail", "-c"]
@@ -46,17 +48,21 @@ RUN oldIFS="${IFS}" \
   && apt-get -y autoclean \
   && apt-get -y autoremove \
   && rm -rf /var/lib/apt/lists/* \
+  && curl -L https://github.com/mikefarah/yq/releases/download/v${YQ_VERSION}/yq_linux_amd64 -o /tmp/yq \
+  && mv /tmp/yq /usr/local/bin/yq \
+  && chmod 755 /usr/local/bin/yq \
   && mkdir -p /opt/${SOFTWARE_NAME}/{bin,data,etc/conf.d,etc/sql,run,tmp} \
-  && mv /tmp/entrypoint.sh /opt/${SOFTWARE_NAME}/bin/ \
+  && mv /tmp/*.sh /opt/${SOFTWARE_NAME}/bin/ \
   && mv /tmp/my.cnf /opt/${SOFTWARE_NAME}/etc/ \
   && mv /tmp/*.tpl /opt/${SOFTWARE_NAME}/etc/sql/ \
-  && mv /tmp/*.role /opt/${SOFTWARE_NAME}/etc/sql/ \
+  && mv /tmp/*.role.yaml /opt/${SOFTWARE_NAME}/etc/sql/ \
   && chown -R ${USERNAME}:${USERNAME} /opt/${SOFTWARE_NAME} \
-  && chmod 755 /opt/${SOFTWARE_NAME}/bin/entrypoint.sh \
+  && chmod 755 /opt/${SOFTWARE_NAME}/bin/*.sh \
   && chmod 644 /opt/${SOFTWARE_NAME}/etc/my.cnf \
   && chmod -R 755 /opt/${SOFTWARE_NAME}/etc/sql/ \
   && chmod -R 644 /opt/${SOFTWARE_NAME}/etc/sql/* \
-  && /usr/bin/${SOFTWARE_NAME} --version | grep ${softPatchVer}
+  && /usr/bin/${SOFTWARE_NAME} --version | grep ${softPatchVer} \
+  && yq --version | grep ${YQ_VERSION}
 
 VOLUME ["/opt/${SOFTWARE_NAME}/data"]
 USER ${USERNAME}

@@ -16,8 +16,8 @@ spec:
         app: {{ $.Release.Name }}
         release: {{ $.Release.Name }}
       annotations:
-        checksum/entrypoint.sh: {{ include (print $.Template.BasePath "/configmap-entrypoint.sh.yaml") $ | sha256sum }}
-        checksum/common-functions.sh: {{ include (print $.Template.BasePath "/configmap-common-functions.sh.yaml") $ | sha256sum }}
+        checksum/entrypoint.sh: {{ include (print $.Template.BasePath "/configmap-mariadb-job-entrypoint.sh.yaml") $ | sha256sum }}
+        checksum/common-functions-extended.sh: {{ include (print $.Template.BasePath "/configmap-common-functions-extended.sh.yaml") $ | sha256sum }}
     spec:
       restartPolicy: {{ $.Values.jobRestartPolicy | default "OnFailure" | quote }}
       serviceAccount: {{ $.Release.Name }}
@@ -76,13 +76,13 @@ spec:
           limits:
             memory: {{ $.Values.resourceLimits.memory.job | default "32Mi" | quote }}
         volumeMounts:
-        - name: job-entrypoint-sh
+        - name: mariadb-job-entrypoint-sh
           mountPath: /opt/mariadb/bin/entrypoint-job.sh
           subPath: entrypoint-job.sh
           readOnly: true
-        - name: common-functions-sh
-          mountPath: /opt/mariadb/bin/common-functions.sh
-          subPath: common-functions.sh
+        - name: common-functions-extended-sh
+          mountPath: /opt/mariadb/bin/common-functions-extended.sh
+          subPath: common-functions-extended.sh
           readOnly: true
       volumes:
       {{- range $volumeMountsKey, $volumeMountsValue := $.Values.volumeMounts.application }}
@@ -101,11 +101,11 @@ spec:
           {{- end }}
         {{- end }}
       {{- end }}
-      - name: job-entrypoint-sh
+      - name: mariadb-job-entrypoint-sh
         configMap:
-          name: job-entrypoint-sh
+          name: mariadb-job-entrypoint-sh
           defaultMode: 0750
-      - name: common-functions-sh
+      - name: common-functions-extended-sh
         configMap:
-          name: common-functions-sh
+          name: common-functions-extended-sh
           defaultMode: 0755

@@ -5,9 +5,7 @@ set -o pipefail
 
 source /opt/${SOFTWARE_NAME}/bin/common-functions.sh
 
-# setup username password rolename rolename connectionlimit
-# setupuser "${MARIADB_MONITORING_USER}" "${MARIADB_MONITORING_PASSWORD}" 'mysql_exporter' "${MARIADB_MONITORING_CONNECTION_LIMIT}"
-function setupuser {
+function waitfordatabase {
   for (( int=${MAX_RETRIES}; int >=1; int-=1));
     do
     checkdbk8sservicelogon "true"
@@ -18,107 +16,41 @@ function setupuser {
       sleep ${WAIT_SECONDS}
     fi
   done
-
-  if [ -f "${BASE}/etc/sql/user.sql.tpl" ] && [ -n "${1}" ] && [ -n "${2}" ]; then
-    local int
-    export DB_USER=${1}
-    export DB_PASS=${2}
-    export DB_ROLE=${3}
-    export CONN_LIMIT=${4}
-    declare -a DB_HOST_LIST=('%' '127.0.0.1' '::1')
-
-    loginfo "${FUNCNAME[0]}" "setup user privileges"
-    while read -r line
-      do
-      IFS=";" read -a sqlarray <<< ${line}
-      IFS="${oldIFS}"
-      export SQL_CODE=${sqlarray[0]}
-      if ! [ -z ${sqlarray[1]+x} ]; then
-        export WITH_OPTION=${sqlarray[1]}
-      else
-        export WITH_OPTION=''
-      fi
-      for (( int=${MAX_RETRIES}; int >=1; int-=1));
-        do
-        cat ${BASE}/etc/sql/role.sql.tpl | envsubst | mysql --defaults-file=${BASE}/etc/my.cnf --protocol=tcp --user=${MARIADB_ROOT_USER} --password=${MARIADB_ROOT_PASSWORD} --host={{ (include "nodeNamePrefix" (dict "global" $ "component" "application")) }}-frontend.database.svc.cluster.local --port=${MYSQL_PORT} --wait --connect-timeout=${WAIT_SECONDS} --reconnect --batch
-        if [ $? -ne 0 ]; then
-          logerror "${FUNCNAME[0]}" "'${DB_ROLE}' role setup '${SQL_CODE}' has been failed(${int} retries left)"
-          sleep ${WAIT_SECONDS}
-        else
-          loginfo "${FUNCNAME[0]}" "'${DB_ROLE}' role setup '${SQL_CODE}' done"
-          break
-        fi
-      done
-    done < <(grep -v "^#" ${BASE}/etc/sql/${DB_ROLE}.role)
-
-    if [ ${int} -eq 0 ]; then
-      logerror "${FUNCNAME[0]}" "user setup has been finally failed"
-      exit 1
-    fi
-
-    for host in ${DB_HOST_LIST[@]}
-      do
-      export DB_HOST=${host}
-      for (( int=${MAX_RETRIES}; int >=1; int-=1));
-        do
-        cat ${BASE}/etc/sql/user.sql.tpl | envsubst | mysql --defaults-file=${BASE}/etc/my.cnf --protocol=tcp --user=${MARIADB_ROOT_USER} --password=${MARIADB_ROOT_PASSWORD} --host={{ (include "nodeNamePrefix" (dict "global" $ "component" "application")) }}-frontend.database.svc.cluster.local --port=${MYSQL_PORT} --wait --connect-timeout=${WAIT_SECONDS} --reconnect --batch
-        if [ $? -ne 0 ]; then
-          logerror "${FUNCNAME[0]}" "'${DB_USER}@${DB_HOST}' user setup has been failed(${int} retries left)"
-          sleep ${WAIT_SECONDS}
-        else
-          loginfo "${FUNCNAME[0]}" "'${DB_USER}@${DB_HOST}' user setup done"
-          break
-        fi
-      done
-    done
-
-    if [ ${int} -eq 0 ]; then
-      logerror "${FUNCNAME[0]}" "user setup has been finally failed"
-      exit 1
-    fi
-    loginfo "${FUNCNAME[0]}" "user setup done"
-  else
-    loginfo "${FUNCNAME[0]}" "user setup skipped because of missing MARIADB_XYZ_USER and/or MARIADB_XYZ_PASSWORD env var"
-  fi
-  export -n DB_USER
-  export -n DB_PASS
-  export -n DB_HOST
-  export -n CONN_LIMIT
-  export -n SQL_CODE
 }
 
-function listdbandusers {
-  local int
-  for (( int=${MAX_RETRIES}; int >=1; int-=1));
-    do
-    checkdbk8sservicelogon "true"
-    if [ $? -eq 0 ]; then
-      break
-    else
-      loginfo "${FUNCNAME[0]}" "database not yet usable. Will wait ${WAIT_SECONDS}s before retry"
-      sleep ${WAIT_SECONDS}
-    fi
-  done
-
-  for (( int=${MAX_RETRIES}; int >=1; int-=1));
-    do
-    loginfo "${FUNCNAME[0]}" "list databases and users(${int} retries left)"
-    mysql --defaults-file=${BASE}/etc/my.cnf --protocol=tcp --user=${MARIADB_ROOT_USER} --password=${MARIADB_ROOT_PASSWORD} --host={{ (include "nodeNamePrefix" (dict "global" $ "component" "application")) }}-frontend.database.svc.cluster.local --port=${MYSQL_PORT} --batch --execute="SHOW DATABASES; SELECT user,host FROM mysql.user; SELECT * FROM information_schema.APPLICABLE_ROLES;" --table
-    if [ $? -ne 0 ]; then
-      logerror "${FUNCNAME[0]}" "list databases and users has been failed"
-      sleep ${WAIT_SECONDS}
-    else
-      break
-    fi
-  done
-  if [ ${int} -eq 0 ]; then
-    logerror "${FUNCNAME[0]}" "list databases and users has been finally failed"
-    exit 1
-  fi
-  loginfo "${FUNCNAME[0]}" "list databases and users done"
-}
-
+waitfordatabase
 loginfo "null" "configuration job started"
-setupuser "${MARIADB_MONITORING_USER}" "${MARIADB_MONITORING_PASSWORD}" 'mysql_exporter' "${MARIADB_MONITORING_CONNECTION_LIMIT}"
+{{- if $.Values.monitoring.mysqld_exporter.enabled }}
+setupuser "${MARIADB_MONITORING_USER}" "${MARIADB_MONITORING_PASSWORD}" 'mysql_exporter' "${MARIADB_MONITORING_CONNECTION_LIMIT}" '%'
+setupuser "${MARIADB_MONITORING_USER}" "${MARIADB_MONITORING_PASSWORD}" 'mysql_exporter' "${MARIADB_MONITORING_CONNECTION_LIMIT}" '127.0.0.1'
+setupuser "${MARIADB_MONITORING_USER}" "${MARIADB_MONITORING_PASSWORD}" 'mysql_exporter' "${MARIADB_MONITORING_CONNECTION_LIMIT}" '127.0.0.1' '::1'
+{{- end }}
+
+{{- /* Load additional configuration files for MariaDB to be processed by the job container */}}
+{{- $mariadbconfigs := $.Files.Get "config/mariadb-galera/values.yaml" | fromYaml }}
+{{- range $mariadbconfigKey, $mariadbconfigValue := required "A valid 'configs.' structure is required from config/mariadb-galera/values.yaml" $mariadbconfigs.configs }}
+  {{- if $mariadbconfigValue.enabled}}
+    {{- if eq $mariadbconfigValue.type "role" }}
+      {{- $configfile := $.Files.Get (printf "config/mariadb-galera/%s/%s" $mariadbconfigValue.type $mariadbconfigValue.file) | fromYaml }}
+      {{- if $configfile.grant }}
+setuprole {{ $mariadbconfigValue.name | quote }} {{ $configfile.privileges | join ", " | quote }} {{ $configfile.object | quote }} "WITH GRANT OPTION"
+      {{- else }}
+setuprole {{ $mariadbconfigValue.name | quote }} {{ $configfile.privileges | join ", " | quote }} {{ $configfile.object | quote }} ""
+      {{- end }}
+    {{- else if eq $mariadbconfigValue.type "user" }}
+      {{- $configfile := $.Files.Get (printf "config/mariadb-galera/%s/%s" $mariadbconfigValue.type $mariadbconfigValue.file) | fromYaml }}
+      {{- range $hostnameKey, $hostnameValue := required (printf "A valid 'hostnames.' structure is required in config/mariadb-galera/%s/%s" $mariadbconfigValue.type $mariadbconfigValue.file) $configfile.hostnames }}
+        {{- range $envKey, $envValue := $.Values.env }}
+          {{- if and (eq $envKey ($configfile.password | trimAll "${}")) ($envValue) }}
+setupuser {{ $configfile.username | quote }} {{ $configfile.password | quote }} {{ $configfile.role | quote }} {{ $configfile.maxconnections | quote }} {{ $hostnameValue | quote }}
+          {{- else }}
+            {{- /* fail (printf "%s environment variable not defined, but required for config/mariadb-galera/%s/%s" ($configfile.password | trimAll "${}" | quote) $mariadbconfigValue.type $mariadbconfigValue.file) */}}
+          {{- end }}
+        {{- end }}
+      {{- end }}
+    {{- end }}
+  {{- end }}
+{{- end }}
+
 listdbandusers
 loginfo "null" "configuration job finished"

@@ -1,30 +1,14 @@
-
 #!/usr/bin/env bash
 set +e
 set -u
 set -o pipefail
 
-oldIFS="${IFS}"
-BASE=/opt/${SOFTWARE_NAME}
-DATADIR=${BASE}/data
+source /opt/${SOFTWARE_NAME}/bin/common-functions.sh
+
 REQUIRED_ENV_VARS=("MARIADB_ROOT_PASSWORD")
 declare -i MARIADBD_PID
 MAX_RETRIES=10
 WAIT_SECONDS=6
-export CONTAINER_IP=$(hostname --ip-address)
-export POD_NAME=$(hostname --short)
-
-function logjson {
-  printf "{\"@timestamp\":\"%s\",\"ecs.version\":\"1.6.0\",\"log.logger\":\"%s\",\"log.origin.function\":\"%s\",\"log.level\":\"%s\",\"message\":\"%s\"}\n" "$(date +%Y.%m.%d-%H:%M:%S-%Z)" "$3" "$4" "$2" "$5" >>/dev/"$1"
-}
-
-function loginfo {
-  logjson "stdout" "info" "$0" "$1" "$2"
-}
-
-function logerror {
-  logjson "stderr" "error" "$0" "$1" "$2"
-}
 
 function checkenv {
   for name in ${REQUIRED_ENV_VARS[@]}; do
@@ -56,103 +40,24 @@ function initdb {
     fi
     startmaintenancedb
     setuptimezoneinfo
-    setupuser "${MARIADB_ROOT_USER}" "${MARIADB_ROOT_PASSWORD}" 'fullaccess' 0
-    setupuser "${MARIADB_MONITORING_USER}" "${MARIADB_MONITORING_PASSWORD}" 'mysql_exporter' "${MARIADB_MONITORING_CONNECTION_LIMIT}"
+    readroleprivileges 'fullaccess' '/opt/mariadb/etc/sql/'
+    readroleobject 'fullaccess' '/opt/mariadb/etc/sql/'
+    readrolegrant 'fullaccess' '/opt/mariadb/etc/sql/'
+    setuprole 'fullaccess' "${DB_ROLE_PRIVS}" "${DB_ROLE_OBJ}" "${DB_ROLE_GRANT}"
+    readroleprivileges 'mysql_exporter' '/opt/mariadb/etc/sql/'
+    readroleobject 'mysql_exporter' '/opt/mariadb/etc/sql/'
+    readrolegrant 'mysql_exporter' '/opt/mariadb/etc/sql/'
+    setuprole 'mysql_exporter' "${DB_ROLE_PRIVS}" "${DB_ROLE_OBJ}" "${DB_ROLE_GRANT}"
+    setupuser "${MARIADB_ROOT_USER}" "${MARIADB_ROOT_PASSWORD}" 'fullaccess' 0 '%'
+    setupuser "${MARIADB_ROOT_USER}" "${MARIADB_ROOT_PASSWORD}" 'fullaccess' 0 '127.0.0.1'
+    setupuser "${MARIADB_ROOT_USER}" "${MARIADB_ROOT_PASSWORD}" 'fullaccess' 0 '::1'
+    setupuser "${MARIADB_MONITORING_USER}" "${MARIADB_MONITORING_PASSWORD}" 'mysql_exporter' "${MARIADB_MONITORING_CONNECTION_LIMIT}" '%'
+    setupuser "${MARIADB_MONITORING_USER}" "${MARIADB_MONITORING_PASSWORD}" 'mysql_exporter' "${MARIADB_MONITORING_CONNECTION_LIMIT}" '127.0.0.1'
+    setupuser "${MARIADB_MONITORING_USER}" "${MARIADB_MONITORING_PASSWORD}" 'mysql_exporter' "${MARIADB_MONITORING_CONNECTION_LIMIT}" '::1'
     listdbandusers
     stopdb
   fi
   loginfo "${FUNCNAME[0]}" "init databases done"
-}
-
-# setup username password rolename rolename connectionlimit
-# setupuser "${MARIADB_MONITORING_USER}" "${MARIADB_MONITORING_PASSWORD}" 'mysql_exporter' "${MARIADB_MONITORING_CONNECTION_LIMIT}"
-function setupuser {
-  if [ -f "${BASE}/etc/sql/user.sql.tpl" ] && [ -n "${1}" ] && [ -n "${2}" ]; then
-    local int
-    export DB_USER=${1}
-    export DB_PASS=${2}
-    export DB_ROLE=${3}
-    export CONN_LIMIT=${4}
-    declare -a DB_HOST_LIST=('%' '127.0.0.1' '::1')
-
-    loginfo "${FUNCNAME[0]}" "setup user privileges"
-    while read -r line
-      do
-      IFS=";" read -a sqlarray <<< ${line}
-      IFS="${oldIFS}"
-      export SQL_CODE=${sqlarray[0]}
-      if ! [ -z ${sqlarray[1]+x} ]; then
-        export WITH_OPTION=${sqlarray[1]}
-      else
-        export WITH_OPTION=''
-      fi
-      for (( int=${MAX_RETRIES}; int >=1; int-=1));
-        do
-        cat ${BASE}/etc/sql/role.sql.tpl | envsubst | mysql --defaults-file=${BASE}/etc/my.cnf --user=root --host=localhost --batch
-        if [ $? -ne 0 ]; then
-          logerror "${FUNCNAME[0]}" "'${DB_ROLE}' role setup '${SQL_CODE}' has been failed(${int} retries left)"
-          sleep ${WAIT_SECONDS}
-        else
-          loginfo "${FUNCNAME[0]}" "'${DB_ROLE}' role setup '${SQL_CODE}' done"
-          break
-        fi
-      done
-    done < <(grep -v "^#" ${BASE}/etc/sql/${DB_ROLE}.role)
-
-    if [ ${int} -eq 0 ]; then
-      logerror "${FUNCNAME[0]}" "user setup has been finally failed"
-      exit 1
-    fi
-
-    for host in ${DB_HOST_LIST[@]}
-      do
-      export DB_HOST=${host}
-      for (( int=${MAX_RETRIES}; int >=1; int-=1));
-        do
-        cat ${BASE}/etc/sql/user.sql.tpl | envsubst | mysql --defaults-file=${BASE}/etc/my.cnf --user=root --host=localhost --batch
-        if [ $? -ne 0 ]; then
-          logerror "${FUNCNAME[0]}" "'${DB_USER}@${DB_HOST}' user setup has been failed(${int} retries left)"
-          sleep ${WAIT_SECONDS}
-        else
-          loginfo "${FUNCNAME[0]}" "'${DB_USER}@${DB_HOST}' user setup done"
-          break
-        fi
-      done
-    done
-
-    if [ ${int} -eq 0 ]; then
-      logerror "${FUNCNAME[0]}" "user setup has been finally failed"
-      exit 1
-    fi
-    loginfo "${FUNCNAME[0]}" "user setup done"
-  else
-    loginfo "${FUNCNAME[0]}" "user setup skipped because of missing MARIADB_XYZ_USER and/or MARIADB_XYZ_PASSWORD env var"
-  fi
-  export -n DB_USER
-  export -n DB_PASS
-  export -n DB_HOST
-  export -n CONN_LIMIT
-  export -n SQL_CODE
-}
-
-function listdbandusers {
-  local int
-  for (( int=${MAX_RETRIES}; int >=1; int-=1));
-    do
-    loginfo "${FUNCNAME[0]}" "list databases and users(${int} retries left)"
-    mysql --defaults-file=${BASE}/etc/my.cnf --user=root --host=localhost --batch --execute="SHOW DATABASES; SELECT user,host FROM mysql.user; SELECT * FROM information_schema.APPLICABLE_ROLES;" --table
-    if [ $? -ne 0 ]; then
-      logerror "${FUNCNAME[0]}" "list databases and users has been failed"
-      sleep ${WAIT_SECONDS}
-    else
-      break
-    fi
-  done
-  if [ ${int} -eq 0 ]; then
-    logerror "${FUNCNAME[0]}" "list databases and users has been finally failed"
-    exit 1
-  fi
-  loginfo "${FUNCNAME[0]}" "list databases and users done"
 }
 
 function setuptimezoneinfo {

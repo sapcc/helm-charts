@@ -31,8 +31,8 @@ spec:
         component: "proxy"
         release: {{ $.Release.Name }}
       annotations:
-        checksum/entrypoint.sh: {{ include (print $.Template.BasePath "/configmap-entrypoint.sh.yaml") $ | sha256sum }}
-        checksum/common-functions.sh: {{ include (print $.Template.BasePath "/configmap-common-functions.sh.yaml") $ | sha256sum }}
+        checksum/entrypoint.sh: {{ include (print $.Template.BasePath "/configmap-proxysql-entrypoint.sh.yaml") $ | sha256sum }}
+        checksum/common-functions-extended.sh: {{ include (print $.Template.BasePath "/configmap-common-functions-extended.sh.yaml") $ | sha256sum }}
     spec:
       affinity:
         podAntiAffinity:
@@ -289,9 +289,9 @@ spec:
             mountPath: /opt/proxysql/bin/post-start-hook.sh
             subPath: post-start-hook.sh
             readOnly: true
-          - name: common-functions-sh
-            mountPath: /opt/proxysql/bin/common-functions.sh
-            subPath: common-functions.sh
+          - name: common-functions-extended-sh
+            mountPath: /opt/proxysql/bin/common-functions-extended.sh
+            subPath: common-functions-extended.sh
             readOnly: true
       terminationGracePeriodSeconds: {{ $.Values.terminationGracePeriodSeconds | default 86400 }}
       volumes:
@@ -327,9 +327,9 @@ spec:
           configMap:
             name: proxysql-hooks-sh
             defaultMode: 0755
-        - name: common-functions-sh
+        - name: common-functions-extended-sh
           configMap:
-            name: common-functions-sh
+            name: common-functions-extended-sh
             defaultMode: 0755
   volumeClaimTemplates:
   {{- range $volumeClaimTemplatesKey, $volumeClaimTemplatesValue := $.Values.volumeClaimTemplates }}

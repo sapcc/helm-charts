@@ -1,8 +1,14 @@
 USE mysql;
 set @rolename := '${DB_ROLE}';
-SET @code := CONCAT("${SQL_CODE} ", @rolename, " ${WITH_OPTION}");
-PREPARE stmt_runcode FROM @code;
+set @roleprivs := '${DB_ROLE_PRIVS}';
+set @roleobj := '${DB_ROLE_OBJ}';
+set @rolegrant := '${DB_ROLE_GRANT}';
+SET @createrole := CONCAT("CREATE OR REPLACE ROLE ", QUOTE(@rolename));
+SET @setrole := CONCAT("GRANT ", @roleprivs, " ON ", @roleobj, " TO ", QUOTE(@rolename), " ", @rolegrant);
+PREPARE stmt_runcode FROM @createrole;
+EXECUTE stmt_runcode;
+DROP PREPARE stmt_runcode;
+PREPARE stmt_runcode FROM @setrole;
 EXECUTE stmt_runcode;
 DROP PREPARE stmt_runcode;
 FLUSH USER_VARIABLES;
-SET @grantperms := CONCAT("GRANT ALL ON *.* TO ", QUOTE(@user), "@", QUOTE(@host), " WITH GRANT OPTION");

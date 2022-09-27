@@ -40,10 +40,10 @@ proxy:
 #     - "sh"
 #     - "-c"
 #     - "/bin/sleep 3600"
-#   job:
-#     - "sh"
-#     - "-c"
-#     - "/bin/sleep 3600"
+# job:
+#   - "sh"
+#   - "-c"
+#   - "/bin/sleep 3600"
 #   proxy:
 #     - "sh"
 #     - "-c"
@@ -62,9 +62,9 @@ image:
   application:
     registry: keppel.eu-de-1.cloud.sap
     project: ccloud
-    applicationname: mariadb-galera-debug
+    applicationname: mariadb-galera
     applicationversion: 10.5.17
-    imageversion: 0.1.0
+    imageversion: 0.1.1
     pullPolicy: Always
     pullSecret: false
   monitoring:
@@ -72,7 +72,7 @@ image:
     project: ccloud
     applicationname: mysqld_exporter
     applicationversion: 0.14.0
-    imageversion: 0.1.0
+    imageversion: 0.1.1
     pullPolicy: Always
     pullSecret: false
   proxy:
@@ -80,7 +80,7 @@ image:
     project: ccloud
     applicationname: proxysql
     applicationversion: 2.4.3
-    imageversion: 0.1.0
+    imageversion: 0.1.1
     pullPolicy: Always
     pullSecret: false
 
@@ -358,6 +358,11 @@ env:
     value: true
     containerType:
       - proxy
+  OPENSTACK_CITEST_PASSWORD:
+    secretName: db-oslodb-auth
+    secretKey: password
+    containerType:
+      - job
 
 mariadb:
   binLogDir: log #if not defined the data dir will be used. Needs a log volume mount to be configured too

@@ -21,7 +21,7 @@ LABEL maintainer.${SOFTWARE_NAME}.mail="birk.bohne@sap.com"
 LABEL source_repository="https://github.com/sapcc/helm-charts/common/${SOFTWARE_NAME}-galera"
 
 ADD https://github.com/sysown/${SOFTWARE_NAME}/releases/download/v${SOFTWARE_VERSION}/${SOFTWARE_NAME}_${SOFTWARE_VERSION}-ubuntu20_amd64.deb /tmp/
-COPY bin/entrypoint.sh /tmp/
+COPY bin/*.sh /tmp/
 COPY config/proxysql.cfg /tmp/
 COPY config/*.tpl /tmp/
 
@@ -37,11 +37,11 @@ RUN mkdir -p /opt/${SOFTWARE_NAME}/{bin,etc/tpl,data,log,run,tmp} \
   && apt-get -y autoremove \
   && rm -rf /var/lib/apt/lists/* \
   && rm -vf /tmp/${SOFTWARE_NAME}_${SOFTWARE_VERSION}-ubuntu20_amd64.deb \
-  && mv -vf /tmp/entrypoint.sh /opt/${SOFTWARE_NAME}/bin \
+  && mv -vf /tmp/*.sh /opt/${SOFTWARE_NAME}/bin \
   && mv -vf /tmp/proxysql.cfg /opt/${SOFTWARE_NAME}/etc/ \
   && mv -vf /tmp/*.tpl /opt/${SOFTWARE_NAME}/etc/tpl/ \
   && chown -Rv ${SOFTWARE_NAME}:${SOFTWARE_NAME} /opt/${SOFTWARE_NAME} \
-  && chmod -v 755 /opt/${SOFTWARE_NAME}/bin/entrypoint.sh \
+  && chmod -v 755 /opt/${SOFTWARE_NAME}/bin/*.sh \
   && /usr/bin/${SOFTWARE_NAME} --version | grep -i "${SOFTWARE_NAME} version ${SOFTWARE_VERSION}"
 
 USER ${SOFTWARE_NAME}

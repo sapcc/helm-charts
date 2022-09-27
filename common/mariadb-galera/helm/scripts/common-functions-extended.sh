@@ -1,26 +1,6 @@
-oldIFS="${IFS}"
-BASE=/opt/${SOFTWARE_NAME}
-DATADIR=${BASE}/data
 MAX_RETRIES={{ $.Values.scripts.maxRetries | default 10 }}
 WAIT_SECONDS={{ $.Values.scripts.waitTimeBetweenRetriesInSeconds | default 6 }}
-export CONTAINER_IP=$(hostname --ip-address)
-export POD_NAME=$(hostname --short)
-
-function logjson {
-  printf "{\"@timestamp\":\"%s\",\"ecs.version\":\"1.6.0\",\"log.logger\":\"%s\",\"log.origin.function\":\"%s\",\"log.level\":\"%s\",\"message\":\"%s\"}\n" "$(date +%Y-%m-%dT%H:%M:%S+%Z)" "$3" "$4" "$2" "$5" >>/dev/"$1"
-}
-
-function loginfo {
-  logjson "stdout" "info" "$0" "$1" "$2"
-}
-
-function logdebug {
-  logjson "stdout" "debug" "$0" "$1" "$2"
-}
-
-function logerror {
-  logjson "stderr" "error" "$0" "$1" "$2"
-}
+MYSQL_SVC_CONNECT="mysql --defaults-file=${BASE}/etc/my.cnf --protocol=tcp --user=${MARIADB_ROOT_USER} --password=${MARIADB_ROOT_PASSWORD} --host={{ (include "nodeNamePrefix" (dict "global" $ "component" "application")) }}-frontend.database.svc.cluster.local --port=${MYSQL_PORT} --wait --connect-timeout=${WAIT_SECONDS} --reconnect --batch"
 
 #entrypoint-galera
 # updateconfigmap "scope[seqno|running|primary]" "value[sequence number|true|false]" "output[Update|Reset]"

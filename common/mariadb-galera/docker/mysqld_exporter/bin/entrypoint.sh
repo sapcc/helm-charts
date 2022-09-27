@@ -1,18 +1,16 @@
-
 #!/usr/bin/env bash
-oldIFS="${IFS}"
+set +e
+set -u
+set -o pipefail
+
+source /opt/${SOFTWARE_NAME}/bin/common-functions.sh
+
 DB_USER=${MARIADB_MONITORING_USER-user}
 DB_PASS=${MARIADB_MONITORING_PASSWORD-pass}
 MYSQL_HOST=${DB_HOST-localhost}
 MYSQL_PORT=${DB_PORT-3306}
 WEB_LISTEN_ADDRESS="${WEB_LISTEN_HOST-}:${WEB_LISTEN_PORT-9104}"
 export DATA_SOURCE_NAME=${COLLECT_DB_CONNECT_STRING-${DB_USER}:${DB_PASS}@(${MYSQL_HOST}:${MYSQL_PORT})/}
-
-set +e
-set -u
-set -o pipefail
-
-BASE=/opt/${SOFTWARE_NAME}
 MAX_RETRIES=10
 WAIT_SECONDS=6
 declare -A exporterparams
@@ -74,18 +72,6 @@ if ! [ -z ${COLLECT_PERF_SCHEMA_FILE_EVENTS+x} ] && [ "${COLLECT_PERF_SCHEMA_FIL
 if ! [ -z ${COLLECT_PERF_SCHEMA_EVENTSSTATEMENTS_SUM+x} ] && [ "${COLLECT_PERF_SCHEMA_EVENTSSTATEMENTS_SUM}" == "disable" ]; then exporterparams[no-collect.perf_schema.eventsstatementssum]+=; else exporterparams[collect.perf_schema.eventsstatementssum]+=; fi
 if ! [ -z ${COLLECT_PERF_SCHEMA_EVENTSSTATEMENTS+x} ] && [ "${COLLECT_PERF_SCHEMA_EVENTSSTATEMENTS}" == "disable" ]; then exporterparams[no-collect.perf_schema.eventsstatements]+=; else exporterparams[collect.perf_schema.eventsstatements]+=; fi
 if ! [ -z ${COLLECT_PERF_SCHEMA_MEMORY_EVENTS+x} ] && [ "${COLLECT_PERF_SCHEMA_MEMORY_EVENTS}" == "disable" ]; then exporterparams[no-collect.perf_schema.memory_events]+=; else exporterparams[collect.perf_schema.memory_events]+=; fi
-
-function logjson {
-  printf "{\"@timestamp\":\"%s\",\"ecs.version\":\"1.6.0\",\"log.logger\":\"%s\",\"log.origin.function\":\"%s\",\"log.level\":\"%s\",\"message\":\"%s\"}\n" "$(date +%Y-%m-%dT%H:%M:%S+%Z)" "$3" "$4" "$2" "$5" >>/dev/"$1"
-}
-
-function loginfo {
-  logjson "stdout" "info" "$0" "$1" "$2"
-}
-
-function logerror {
-  logjson "stderr" "error" "$0" "$1" "$2"
-}
 
 function geteffectiveparametervalue {
   local -a paramlist=()
