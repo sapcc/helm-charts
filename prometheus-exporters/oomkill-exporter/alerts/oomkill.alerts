@@ -2,7 +2,8 @@ groups:
 - name: oomkill.alerts
   rules:
   - alert: PodOOMKilled
-    expr: sum(changes(klog_pod_oomkill[24h]) > 0 or ((klog_pod_oomkill == 1) unless (klog_pod_oomkill offset 24h == 1))) by (namespace, pod_name)
+    # NOTE: limes-collect-ccloud has a known small-scale memory leak and tends to crash a few times per day. I don't care about this, as long as it's still doing its job. -- @majewsky
+    expr: sum(changes(klog_pod_oomkill{pod_name!~"limes-collect-.*"}[24h]) > 0 or ((klog_pod_oomkill == 1) unless (klog_pod_oomkill offset 24h == 1))) by (namespace, pod_name)
     for: 5m
     labels:
       tier: k8s
