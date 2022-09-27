@@ -170,6 +170,9 @@ cronus:
         - {{ $vd }}
 {{- end }}
 {{- end }}
+{{- if $v.skipCredentials }}
+      skipCredentials: {{ $v.skipCredentials }}
+{{- end }}
 {{- if $v.smtpConnPool }}
       smtpConnPool:
 {{- if $v.smtpConnPool.maxConnGlobal }}
