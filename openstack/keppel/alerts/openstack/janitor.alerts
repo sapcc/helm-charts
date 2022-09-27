@@ -274,7 +274,7 @@ groups:
     # Most failed indexing runs fail due to transient network errors, and Keppel can auto-retry these failed runs.
     # To avoid flapping during these retries, this alert triggers very slowly. We use min_over_time() for the slow
     # reaction, instead of a longer `for` period, to allow the alert to clear quickly after it is fixed manually.
-    expr: 'min_over_time(keppel_vuln_scan_error_counts{message!="",status!="Unsupported"}[2h]) > 0'
+    expr: 'keppel_vuln_scan_error_counts{message!="",status!="Unsupported"} > 0 and min_over_time(keppel_vuln_scan_error_counts{message!="",status!="Unsupported"}[2h]) > 0'
     for: 5m
     labels:
       context: clair-indexing
