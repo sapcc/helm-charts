@@ -171,6 +171,11 @@ route:
     match_re:
       cluster: k-master
 
+  - receiver: slack_wsus
+    continue: true
+    match_re:
+      service: wsus
+
   - receiver: support-group-alerts
     continue: true
     match_re:
@@ -800,6 +805,19 @@ receivers:
   - name: slack_storage
     slack_configs:
       - channel: '#cc-storage'
+        api_url: {{ required ".Values.slack.webhookURL undefined" .Values.slack.webhookURL | quote }}
+        username: "Pulsar"
+        title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
+        title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
+        text: {{"'{{template \"slack.sapcc.text\" . }}'"}}
+        pretext: {{"'{{template \"slack.sapcc.pretext\" . }}'"}}
+        icon_emoji: {{"'{{template \"slack.sapcc.iconemoji\" . }}'"}}
+        color: {{`'{{template "slack.sapcc.color" . }}'`}}
+        send_resolved: true
+
+  - name: slack_wsus
+    slack_configs:
+      - channel: '#cc-wsus'
         api_url: {{ required ".Values.slack.webhookURL undefined" .Values.slack.webhookURL | quote }}
         username: "Pulsar"
         title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
