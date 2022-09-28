@@ -64,7 +64,7 @@ cronus:
       clientCA: |
 {{ .Values.cronus.tls.clientCA | default .Values.global.clientCA | indent 8 }}
 {{- end }}
-      errInterval: {{ .Values.cronus.tls.errInterval | default 60 }}
+      errInterval: {{ .Values.cronus.tls.errInterval | default "60s" }}
 {{- end }}
   keystone:
 {{- if .Values.config.keystone }}
