@@ -64,7 +64,7 @@ image:
     project: ccloud
     applicationname: mariadb-galera
     applicationversion: 10.5.17
-    imageversion: 0.1.1
+    imageversion: 0.1.2
     pullPolicy: Always
     pullSecret: false
   monitoring:
@@ -176,11 +176,11 @@ volumeMounts:
 volumeClaimTemplates:
   - name: mariadb
     accessModes: [ReadWriteOnce]
-    capacity: 1Gi
+    capacity: 10Gi
     storageClassName: false #optional: currently cinder and nfs are supported
   - name: marialog
     accessModes: [ReadWriteOnce]
-    capacity: 10Gi
+    capacity: 30Gi
   - name: proxysql
     accessModes: [ReadWriteOnce]
     capacity: 128Mi
@@ -371,6 +371,7 @@ env:
 
 mariadb:
   binLogDir: log #if not defined the data dir will be used. Needs a log volume mount to be configured too
+  performance_schema: false #https://mariadb.com/kb/en/performance-schema-overview/
   galera:
     debug: false #https://galeracluster.com/library/documentation/galera-parameters.html#debug
     waitForPrimaryTimeoutInSeconds: 60 #https://galeracluster.com/library/documentation/galera-parameters.html#pc.wait_prim_timeout
