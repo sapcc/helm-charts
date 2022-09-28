@@ -52,6 +52,11 @@ nebula:
     access: {{ .Values.config.awsAccess }}
     secret: {{ .Values.config.awsSecret }}
     technicalUsername: {{ .Values.config.technicalUsername }}
+    alternateContact:
+      emailAddress: {{ .Values.global.alternateContact.emailAddress }}
+      name: {{ .Values.global.alternateContact.name }}
+      title: {{ .Values.global.alternateContact.title }}
+      phoneNumber: {{ .Values.global.alternateContact.phoneNumber }}
     policyName: {{ .Values.config.policyName }}
     roleName: {{ .Values.config.roleName }}
     iamRolePolicyName: {{ .Values.config.iamRolePolicyName }}
