@@ -60,7 +60,7 @@ route:
       service: barbican
       context: hsm
       severity: info
-      region: ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|ap-sa-2|eu-de-1|eu-de-2|eu-nl-1|eu-ru-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3|qa-de-1
+      region: ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|ap-sa-2|eu-de-1|eu-de-2|eu-nl-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3|qa-de-1
 
   - receiver: slack_barbican_certificate
     continue: false
@@ -68,20 +68,20 @@ route:
       service: barbican
       context: certificate
       severity: info
-      region: ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|ap-sa-2|eu-de-1|eu-de-2|eu-nl-1|eu-ru-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3|qa-de-1
+      region: ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|ap-sa-2|eu-de-1|eu-de-2|eu-nl-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3|qa-de-1
 
   - receiver: slack_nannies
     continue: false
     match_re:
       context: nanny
       severity: critical|warning|info
-      region: ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|ap-sa-2|eu-de-1|eu-de-2|eu-nl-1|eu-ru-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3
+      region: ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|ap-sa-2|eu-de-1|eu-de-2|eu-nl-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3
 
   - receiver: slack_nannies_automation
     continue: false
     match_re:
       context: nanny-automation
-      region: ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|ap-sa-2|eu-de-1|eu-de-2|eu-nl-1|eu-ru-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3
+      region: ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|ap-sa-2|eu-de-1|eu-de-2|eu-nl-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3
 
   - receiver: slack_k8s
     continue: true
@@ -89,21 +89,21 @@ route:
       tier: k8s
       severity: critical|warning|info
       cluster_type: abapcloud|admin|controlplane|customer|internet|kubernikus|metal|scaleout|virtual
-      region: qa-de-1|ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|ap-sa-2|eu-de-1|eu-de-2|eu-nl-1|eu-ru-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3
+      region: qa-de-1|ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|ap-sa-2|eu-de-1|eu-de-2|eu-nl-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3
 
   - receiver: slack_kks_default
     continue: true
     match_re:
       tier: kks
       severity: warning|info
-      region: ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|ap-sa-2|eu-de-1|eu-de-2|eu-nl-1|eu-ru-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3
+      region: ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|ap-sa-2|eu-de-1|eu-de-2|eu-nl-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3
 
   - receiver: slack_kks_critical
     continue: true
     match_re:
       tier: kks
       severity: critical
-      region: ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|ap-sa-2|eu-de-1|eu-de-2|eu-nl-1|eu-ru-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3
+      region: ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|ap-sa-2|eu-de-1|eu-de-2|eu-nl-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3
 
   - receiver: slack_concourse
     continue: true
@@ -129,7 +129,7 @@ route:
       tier: k8s
       severity: info|warning|critical
       service: gatekeeper|vault
-      region: qa-de-1|ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|ap-sa-2|eu-de-1|eu-de-2|eu-nl-1|eu-ru-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3
+      region: qa-de-1|ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|ap-sa-2|eu-de-1|eu-de-2|eu-nl-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3
 
   - receiver: slack_by_os_service
     continue: true
@@ -138,7 +138,7 @@ route:
       severity: info|warning|critical
       # NOTE: Please keep this list in sync with the identical list in `system/gatekeeper-config/values.yaml`.
       service: arc|backup|barbican|castellum|cinder|cfm|cronus|designate|documentation|elektra|elk|glance|hermes|ironic|keppel|keystone|limes|lyra|maia|manila|metis|neutron|nova|octavia|placement|sentry|swift|snmp|tenso
-      region: qa-de-1|ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|ap-sa-2|eu-de-1|eu-de-2|eu-nl-1|eu-ru-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3
+      region: qa-de-1|ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|ap-sa-2|eu-de-1|eu-de-2|eu-nl-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3
 
   - receiver: slack_sre
     continue: false
@@ -159,12 +159,7 @@ route:
     match_re:
       severity: info|warning|critical
       tier: metal|net|vmware|os|k8s|kks
-      region: ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|ap-sa-2|eu-de-1|eu-de-2|eu-nl-1|eu-ru-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3
-
-  - receiver: awx
-    continue: true
-    match_re:
-      tier: vmware
+      region: ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|ap-sa-2|eu-de-1|eu-de-2|eu-nl-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3
 
   - receiver: slack_storage
     continue: false
@@ -176,13 +171,26 @@ route:
     match_re:
       cluster: k-master
 
+  - receiver: slack_wsus
+    continue: true
+    match_re:
+      service: wsus
+
+  - receiver: support-group-alerts
+    continue: true
+    match_re:
+      severity: warning|critical
+      cluster_type: abapcloud|admin|controlplane|customer|internet|kubernikus|metal|scaleout|virtual
+      region: global|ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|ap-sa-2|eu-de-1|eu-de-2|eu-nl-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3
+      support: group-compute|group-compute-storage-api|group-container|group-email|group-identity|group-network-api|group-observability
+
   - receiver: pagerduty_api
     continue: true
     match_re:
       tier: os|k8s|kks
       severity: critical
       cluster_type: abapcloud|admin|controlplane|customer|internet|kubernikus|metal|scaleout|virtual
-      region: global|ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|ap-sa-2|eu-de-1|eu-de-2|eu-nl-1|eu-ru-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3
+      region: global|ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|ap-sa-2|eu-de-1|eu-de-2|eu-nl-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3
 
   - receiver: slack_api_critical
     continue: false
@@ -190,7 +198,7 @@ route:
       tier: os|k8s|kks
       severity: critical
       cluster_type: abapcloud|admin|controlplane|customer|internet|kubernikus|metal|scaleout|virtual
-      region: global|ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|ap-sa-2|eu-de-1|eu-de-2|eu-nl-1|eu-ru-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3
+      region: global|ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|ap-sa-2|eu-de-1|eu-de-2|eu-nl-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3
 
   - receiver: slack_api_warning
     continue: false
@@ -198,7 +206,7 @@ route:
       tier: os|k8s|kks
       severity: warning
       cluster_type: abapcloud|admin|controlplane|customer|internet|kubernikus|metal|scaleout|virtual
-      region: global|ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|ap-sa-2|eu-de-1|eu-de-2|eu-nl-1|eu-ru-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3
+      region: global|ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|ap-sa-2|eu-de-1|eu-de-2|eu-nl-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3
 
   - receiver: slack_api_info
     continue: false
@@ -206,84 +214,84 @@ route:
       tier: os|k8s|kks
       severity: info
       cluster_type: abapcloud|admin|controlplane|customer|internet|kubernikus|metal|scaleout|virtual
-      region: global|ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|ap-sa-2|eu-de-1|eu-de-2|eu-nl-1|eu-ru-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3
+      region: global|ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|ap-sa-2|eu-de-1|eu-de-2|eu-nl-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3
 
   - receiver: pagerduty_metal
     continue: true
     match_re:
       tier: metal
       severity: critical
-      region: ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|ap-sa-2|eu-de-1|eu-de-2|eu-nl-1|eu-ru-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3|qa-de-1|qa-de-2|qa-de-3|qa-de-5
+      region: ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|ap-sa-2|eu-de-1|eu-de-2|eu-nl-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3|qa-de-1|qa-de-2|qa-de-3|qa-de-5
 
   - receiver: slack_metal_critical
     continue: false
     match_re:
       tier: metal
       severity: critical
-      region: ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|ap-sa-2|eu-de-1|eu-de-2|eu-nl-1|eu-ru-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3|qa-de-1|qa-de-2|qa-de-3|qa-de-5
+      region: ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|ap-sa-2|eu-de-1|eu-de-2|eu-nl-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3|qa-de-1|qa-de-2|qa-de-3|qa-de-5
 
   - receiver: slack_metal_warning
     continue: false
     match_re:
       tier: metal
       severity: warning
-      region: ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|ap-sa-2|eu-de-1|eu-de-2|eu-nl-1|eu-ru-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3|qa-de-1|qa-de-2|qa-de-3|qa-de-5
+      region: ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|ap-sa-2|eu-de-1|eu-de-2|eu-nl-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3|qa-de-1|qa-de-2|qa-de-3|qa-de-5
 
   - receiver: slack_metal_info
     continue: false
     match_re:
       tier: metal
       severity: info
-      region: ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|ap-sa-2|eu-de-1|eu-de-2|eu-nl-1|eu-ru-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3|qa-de-1|qa-de-2|qa-de-3|qa-de-5
+      region: ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|ap-sa-2|eu-de-1|eu-de-2|eu-nl-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3|qa-de-1|qa-de-2|qa-de-3|qa-de-5
 
   - receiver: slack_ad_warning
     continue: false
     match_re:
       tier: ad
       severity: warning
-      region: ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|ap-sa-2|eu-de-1|eu-de-2|eu-nl-1|eu-ru-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3|qa-de-1
+      region: ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|ap-sa-2|eu-de-1|eu-de-2|eu-nl-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3|qa-de-1
 
   - receiver: slack_ad_info
     continue: false
     match_re:
       tier: ad
       severity: info
-      region: ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|ap-sa-2|eu-de-1|eu-de-2|eu-nl-1|eu-ru-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3|qa-de-1
+      region: ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|ap-sa-2|eu-de-1|eu-de-2|eu-nl-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3|qa-de-1
 
   - receiver: pagerduty_vmware
     continue: true
     match_re:
       tier: vmware
       severity: critical
-      region: ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|ap-sa-2|eu-de-1|eu-de-2|eu-nl-1|eu-ru-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3
+      region: ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|ap-sa-2|eu-de-1|eu-de-2|eu-nl-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3
 
   - receiver: slack_vmware_critical
     continue: false
     match_re:
       tier: vmware
       severity: critical
-      region: ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|ap-sa-2|eu-de-1|eu-de-2|eu-nl-1|eu-ru-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3
+      region: ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|ap-sa-2|eu-de-1|eu-de-2|eu-nl-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3
 
   - receiver: slack_vmware_warning
     continue: false
     match_re:
       tier: vmware
       severity: warning
-      region: ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|ap-sa-2|eu-de-1|eu-de-2|eu-nl-1|eu-ru-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3
+      region: ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|ap-sa-2|eu-de-1|eu-de-2|eu-nl-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3
 
   - receiver: slack_vmware_info
     continue: false
     match_re:
       tier: vmware
       severity: info
-      region: ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|ap-sa-2|eu-de-1|eu-de-2|eu-nl-1|eu-ru-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3
+      region: ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|ap-sa-2|eu-de-1|eu-de-2|eu-nl-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3
 
   - receiver: slack_net_critical
     continue: true
     match_re:
       tier: net
       severity: critical
-      region: ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|ap-sa-2|eu-de-1|eu-de-2|eu-nl-1|eu-ru-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3
+      region: ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|ap-sa-2|eu-de-1|eu-de-2|eu-nl-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3
 
   - receiver: pagerduty_network_cisco
     continue: false
@@ -291,7 +299,7 @@ route:
       tier: net
       severity: critical
       module: acispine|acileaf|acistretch
-      region: ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|ap-sa-2|eu-de-1|eu-de-2|eu-nl-1|eu-ru-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3
+      region: ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|ap-sa-2|eu-de-1|eu-de-2|eu-nl-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3
 
   - receiver: pagerduty_network_apic_exporter
     continue: false
@@ -299,28 +307,28 @@ route:
       tier: net
       severity: critical
       app: apic-exporter
-      region: ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|ap-sa-2|eu-de-1|eu-de-2|eu-nl-1|eu-ru-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3
+      region: ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|ap-sa-2|eu-de-1|eu-de-2|eu-nl-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3
 
   - receiver: pagerduty_network
     continue: false
     match_re:
       tier: net
       severity: critical
-      region: ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|ap-sa-2|eu-de-1|eu-de-2|eu-nl-1|eu-ru-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3
+      region: ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|ap-sa-2|eu-de-1|eu-de-2|eu-nl-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3
 
   - receiver: slack_net_warning
     continue: false
     match_re:
       tier: net
       severity: warning
-      region: ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|ap-sa-2|eu-de-1|eu-de-2|eu-nl-1|eu-ru-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3
+      region: ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|ap-sa-2|eu-de-1|eu-de-2|eu-nl-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3
 
   - receiver: slack_net_info
     continue: false
     match_re:
       tier: net
       severity: info
-      region: ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|ap-sa-2|eu-de-1|eu-de-2|eu-nl-1|eu-ru-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3
+      region: ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|ap-sa-2|eu-de-1|eu-de-2|eu-nl-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3
 
   - receiver: slack_qa
     continue: false
@@ -379,15 +387,6 @@ receivers:
       url: {{ required ".Values.octobus.gymInstance undefined" .Values.octobus.gymInstance | quote }}
     - send_resolved: true
       url: {{ required ".Values.octobus.gcpInstance undefined" .Values.octobus.gcpInstance | quote }}
-
-  - name: awx
-    webhook_configs:
-    - send_resolved: true
-      http_config:
-        basic_auth:
-          username: {{ required ".Values.awx.basicAuthUser undefined" .Values.awx.basicAuthUser | quote }}
-          password: {{ required ".Values.awx.basicAuthPwd undefined" .Values.awx.basicAuthPwd | quote }}
-      url: {{ required ".Values.awx.listenerURL undefined" .Values.awx.listenerURL | quote }}
 
   - name: slack_metal_info
     slack_configs:
@@ -816,6 +815,19 @@ receivers:
         color: {{`'{{template "slack.sapcc.color" . }}'`}}
         send_resolved: true
 
+  - name: slack_wsus
+    slack_configs:
+      - channel: '#cc-wsus'
+        api_url: {{ required ".Values.slack.webhookURL undefined" .Values.slack.webhookURL | quote }}
+        username: "Pulsar"
+        title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
+        title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
+        text: {{"'{{template \"slack.sapcc.text\" . }}'"}}
+        pretext: {{"'{{template \"slack.sapcc.pretext\" . }}'"}}
+        icon_emoji: {{"'{{template \"slack.sapcc.iconemoji\" . }}'"}}
+        color: {{`'{{template "slack.sapcc.color" . }}'`}}
+        send_resolved: true
+
   - name: slack_barbican_certificate
     slack_configs:
       - channel: '#cc-os-barbican-cert-expiry'
@@ -839,6 +851,20 @@ receivers:
         text: {{"'{{template \"slack.sapcc.text\" . }}'"}}
         pretext: {{"'{{template \"slack.sapcc.pretext\" . }}'"}}
         icon_emoji: {{"'{{template \"slack.sapcc.iconemoji\" . }}'"}}
+        color: {{`'{{template "slack.sapcc.color" . }}'`}}
+        send_resolved: true
+
+  - name: support-group-alerts
+    slack_configs:
+      - channel: '#alert-{{"{{ .CommonLabels.support }}"}}-{{"{{ .CommonLabels.severity }}"}}'
+        api_url: {{ required ".Values.slack.webhookURL undefined" .Values.slack.webhookURL | quote }}
+        username: "Pulsar"
+        title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
+        title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
+        text: {{"'{{template \"slack.sapcc.text\" . }}'"}}
+        pretext: {{"'{{template \"slack.sapcc.pretext\" . }}'"}}
+        icon_emoji: {{"'{{template \"slack.sapcc.iconemoji\" . }}'"}}
+        callback_id: "alertmanager"
         color: {{`'{{template "slack.sapcc.color" . }}'`}}
         send_resolved: true
 
