@@ -77,6 +77,14 @@ nebula:
     - {{ $value }}
 {{- end }}
 {{- end }}
+{{- $ac := .Values.config.alternateContact | default .Values.global.alternateContact }}
+{{- if $ac }}
+    alternateContact:
+      emailAddress: {{ $ac.emailAddress }}
+      name: {{ $ac.name }}
+      title: {{ $ac.title }}
+      phoneNumber: {{ $ac.phoneNumber }}
+{{- end }}
   accountStatusPollDelay: {{ .Values.config.accountStatusPollDelay }}
   accountStatusTimeout: {{ .Values.config.accountStatusTimeout }}s
   debug: {{ .Values.nebula.debug }}
