@@ -24,7 +24,7 @@ Docker image and Helm chart to deploy a [MariaDB](https://mariadb.com/kb/en/gett
 During their lifecycle several decisions have to be made for the database nodes (running in containers) before actually starting the MariaDB process. Some decicions even have to be made during the runtime of the process.
 ### node startup
 ```mermaid
-flowchart TD;
+flowchart TB;
     id1[start container]-->id2(run entrypoint.sh)-->id3(include common-functions.sh)-->id128(common-functions-extended.sh exist?);
     id128--Yes-->id129(include common-functions-extended.sh)-->id4;
     id128--No-->id4;
@@ -182,12 +182,12 @@ flowchart TD;
       id99--No-->id666;
     end
 
-click id2 href "docker/mariadb-galera/bin/entrypoint.sh" "Open this in a new tab" _blank;
-click id3 href "docker/mariadb-galera/bin/common-functions.sh" "Open this in a new tab" _blank;
-click id9 href "docker/mariadb-galera/config/fullaccess.role.yaml" "Open this in a new tab" _blank;
-click id10 href "docker/mariadb-galera/config/mysql_exporter.role.yaml" "Open this in a new tab" _blank;
-click id23 href "helm/scripts/mariadb-galera/entrypoint-galera.sh" "Open this in a new tab" _blank;
-click id128 href "helm/scripts/common-functions-extended.sh" "Open this in a new tab" _blank;
+click id2 href "businessbean/helm-charts/blob/master/common/mariadb-galera/mariadb-galera/bin/entrypoint.sh" "Open this in a new tab" _blank;
+click id3 href "businessbean/helm-charts/blob/master/common/mariadb-galera/docker/mariadb-galera/bin/common-functions.sh" "Open this in a new tab" _blank;
+click id9 href "businessbean/helm-charts/blob/master/common/mariadb-galera/docker/mariadb-galera/config/fullaccess.role.yaml" "Open this in a new tab" _blank;
+click id10 href "businessbean/helm-charts/blob/master/common/mariadb-galera/docker/mariadb-galera/config/mysql_exporter.role.yaml" "Open this in a new tab" _blank;
+click id23 href "businessbean/helm-charts/blob/master/common/mariadb-galera/helm/scripts/mariadb-galera/entrypoint-galera.sh" "Open this in a new tab" _blank;
+click id128 href "businessbean/helm-charts/blob/master/common/mariadb-galera/helm/scripts/common-functions-extended.sh" "Open this in a new tab" _blank;
 ```
 ## Docker image
 
