@@ -65,9 +65,5 @@ auth = {
       user-attr-template = "%s"
       group = "memberOf={{.Values.global.ldap.user_group}},{{.Values.global.ldap.suffix}}"
     }
-
-    # Basic auth
-    username = {{.Values.global.elk_elasticsearch_admin_user}}
-    password = {{.Values.global.elk_elasticsearch_admin_password}}
   }
 }
