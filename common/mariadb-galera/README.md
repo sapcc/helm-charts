@@ -109,16 +109,21 @@ flowchart TB;
   end
   subgraph idsub2 [initgalera]
     id2--Yes-->id3(grastate.dat exist?);
-    subgraph idsub3 [recovergalera]
-      id3--Yes-->id4(PC_RECOVERY=true and gvwstate.dat exist?);
-      subgraph idsub4 [startgalera]
-        id4--Yes-->id5(exec mariadbd ok?)--Yes-->id98(MariaDB running);
-      end
+    id3--No-->id4(hostname eq pod 0 name?)--Yes-->id5;
+    id4--No-->id7(join cluster);
+    subgraph idsub3 [bootstrapgalera]
+      id5(bootstrap cluster)-->id6(exec mariadbd --wsrep-new-cluster ok?);
+    end
+    subgraph idsub4 [startgalera]
+      id7-->id8(exec mariadbd ok?);
     end
   end
-  id3--No-->id6([recover Galera]);
+  id3--Yes-->id9([recover Galera]);
+  subgraph idsub5 [Done]
+    id6 & id8--Yes-->id98(MariaDB running);
+  end
   subgraph failure
-    id2 & id5--No-->id666[exit 1];
+    id2 & id6 & id8--No-->id666[exit 1];
   end
 ```
 #### recover Galera
