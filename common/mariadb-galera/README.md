@@ -23,171 +23,173 @@ Docker image and Helm chart to deploy a [MariaDB](https://mariadb.com/kb/en/gett
 ## MariaDB Galera flow charts
 During their lifecycle several decisions have to be made for the database nodes (running in containers) before actually starting the MariaDB process. Some decicions even have to be made during the runtime of the process.
 ### node startup
+#### container start
 ```mermaid
 flowchart TB;
-    id1[start container]-->id2(run entrypoint.sh)-->id3(include common-functions.sh)-->id128(common-functions-extended.sh exist?);
-    id128--Yes-->id129(include common-functions-extended.sh)-->id4;
-    id128--No-->id4;
-    subgraph idsub1 [checkenv]
-      id4(required env vars set?);
-    end
-    subgraph idsub2 [initdb]
-      id4--Yes-->id5(database already exist?)--No-->id6(mariadb-install-db ok?);
-      subgraph idsub3 [startmaintenancedb]
-        id6--Yes-->id7(start mariadbd in background ok?);
-      end
-      subgraph idsub4 [setuptimezoneinfo]
-        id7--Yes-->id8(setup timezone infos ok?)
-      end
-      subgraph idsub5 [setuprole]
-        id8--Yes-->id9(setup role fullaccess ok?)
-        id9--Yes-->id10(setup role mysql_exporter ok?)
-      end
-      subgraph idsub6 [setupuser]
-        id10--Yes-->id11(setup MARIADB_ROOT_USER ok?)
-        id11--Yes-->id12(setup MARIADB_MONITORING_USER ok?)
-      end
-      subgraph idsub7 [listdbandusers]
-        id12--Yes-->id13(list users from database ok?)
-      end
-      subgraph idsub8 [stopdb]
-        id13--Yes-->id14(shutdown database ok?)
-      end
-    end
-    subgraph idsub9 [checkupgradedb]
-      id5--Yes-->id15(mysql_upgrade_info exist?);
-      id14--Yes-->id15;
-      subgraph idsub10 [startmaintenancedb]
-        id15--No-->id16(start mariadbd in background ok?);
-        subgraph idsub11 [upgradedb]
-          id16--Yes-->id17(mysql_upgrade ok?);
-        end
-        subgraph idsub12 [stopdb]
-          id17--Yes-->id18(shutdown database ok?)
-        end
-      end
-      id15--Yes-->id19(mariadb binary newer than db?);
-      subgraph idsub13 [startmaintenancedb]
-        id19--Yes-->id20(start mariadbd in background ok?);
-        subgraph idsub14 [upgradedb]
-          id20--Yes-->id21(mysql_upgrade ok?);
-        end
-        subgraph idsub15 [stopdb]
-          id21--Yes-->id22(shutdown database ok?)
-        end
-      end
-    end
-    subgraph idsub16 [startdb]
-      id18--Yes-->id23(entrypoint-galera.sh exist?);
-      id22--Yes-->id23;
-      subgraph idsub17 [templateconfig]
-        id23--Yes-->id24(template MariaDB configs ok?);
-      end
-      subgraph idsub18 [initgalera]
-        id24--Yes-->id25(grastate.dat exist?);
-        subgraph idsub19 [recovergalera]
-          id25--Yes-->id26(PC_RECOVERY=true and gvwstate.dat exist?);
-          subgraph idsub20 [startgalera]
-            id26--Yes-->id27(exec mariadbd ok?);
-          end
-          id26--No-->id28(safe_to_bootstrap=1 and sequence number not -1 ?);
-          id28--Yes-->id42(update sequence number in configmap);
-          subgraph idsub21 [setconfigmap]
-            id42-->id29(update configmap ok?);
-          end
-          subgraph idsub22 [selectbootstrapnode]
-            id29--Yes-->id30(seqno file count -ge pod replicas?);
-            id30--Yes-->id31(fetch seqno timestamps ok?);
-            id31--Yes-->id32(useTimeDifferenceForSeqnoCheck=true and timestamps are recent?);
-            id32--Yes-->id33(nodename with highest sequence number found?);
-            id33--Yes-->id34(nodename selected);
-          end
-          id34-->id35(nodename eq hostname of container?);
-          id35--Yes-->id36(set safe_to_bootstrap: 1 in grastate.dat ok?);
-          id35--No-->id39(join cluster);
-          subgraph idsub23 [bootstrapgalera]
-            id36--Yes-->id37(bootstrap cluster)-->id38(exec mariadbd --wsrep-new-cluster ok?);
-          end
-          subgraph idsub24 [startgalera]
-            id39-->id40(exec mariadbd ok?);
-          end
-          id28--No-->id41(mariadbd --wsrep-recover to find uuid and seqno ok?);
-          id41--Yes-->id43(update seqno and uuid in grastate.dat ok?);
-          subgraph idsub25 [setconfigmap]
-            id43-->id44(update configmap ok?);
-          end
-          subgraph idsub26 [selectbootstrapnode]
-            id44--Yes-->id45(seqno file count -ge pod replicas?);
-            id45--Yes-->id46(fetch seqno timestamps ok?);
-            id46--Yes-->id47(useTimeDifferenceForSeqnoCheck=true and timestamps are recent?);
-            id47--Yes-->id48(nodename with highest sequence number found?);
-            id48--Yes-->id49(nodename selected);
-          end
-          id49-->id50(nodename eq hostname of container?);
-          id50--Yes-->id51(set safe_to_bootstrap: 1 in grastate.dat ok?);
-          id50--No-->id52(join cluster);
-          subgraph idsub27 [bootstrapgalera]
-            id51-->id53(bootstrap cluster)-->id54(exec mariadbd --wsrep-new-cluster ok?);
-          end
-          subgraph idsub28 [startgalera]
-            id52--No-->id55(exec mariadbd ok?);
-          end
-        end
-      end
-    end
-    subgraph idsub29 [Done]
-      id23--No-->id99(exec mariadbd ok?)--Yes-->id98(MariaDB running);
-      id27--Yes-->id98(MariaDB running);
-      id38--Yes-->id98(MariaDB running);
-      id40--Yes-->id98(MariaDB running);
-      id54--Yes-->id98(MariaDB running);
-      id55--Yes-->id98(MariaDB running);
-    end
-    subgraph exit
-      id4--No-->id666[exit 1];
-      id6--No-->id666;
-      id7--No-->id666;
-      id8--No-->id666;
-      id9--No-->id666;
-      id10--No-->id666;
-      id11--No-->id666;
-      id12--No-->id666;
-      id13--No-->id666;
-      id14--No-->id666;
-      id16--No-->id666;
-      id17--No-->id666;
-      id18--No-->id666;
-      id20--No-->id666;
-      id21--No-->id666;
-      id22--No-->id666;
-      id24--No-->id666;
-      id27--No-->id666;
-      id29--No-->id666;
-      id30--No-->id666;
-      id31--No-->id666;
-      id32--No-->id666;
-      id33--No-->id666;
-      id36--No-->id666;
-      id38--No-->id666;
-      id40--No-->id666;
-      id41--No-->id666;
-      id43--No-->id666;
-      id44--No-->id666;
-      id45--No-->id666;
-      id46--No-->id666;
-      id47--No-->id666;
-      id48--No-->id666;
-      id54--No-->id666;
-      id55--No-->id666;
-      id99--No-->id666;
-    end
+  id1[start container]-->id2(run entrypoint.sh)-->id3(include common-functions.sh)-->id4(common-functions-extended.sh exist?);
+  id4--Yes-->id5(include common-functions-extended.sh)-->id6;
+  id4--No-->id6;
+  subgraph idsub1 [checkenv]
+    id6(required env vars set?);
+  end
+  id6--Yes-->id7([init database])
+  id6--No-->id666[exit 1];
 
 click id2 href "businessbean/helm-charts/blob/master/common/mariadb-galera/mariadb-galera/bin/entrypoint.sh" "Open this in a new tab" _blank;
 click id3 href "businessbean/helm-charts/blob/master/common/mariadb-galera/docker/mariadb-galera/bin/common-functions.sh" "Open this in a new tab" _blank;
-click id9 href "businessbean/helm-charts/blob/master/common/mariadb-galera/docker/mariadb-galera/config/fullaccess.role.yaml" "Open this in a new tab" _blank;
-click id10 href "businessbean/helm-charts/blob/master/common/mariadb-galera/docker/mariadb-galera/config/mysql_exporter.role.yaml" "Open this in a new tab" _blank;
-click id23 href "businessbean/helm-charts/blob/master/common/mariadb-galera/helm/scripts/mariadb-galera/entrypoint-galera.sh" "Open this in a new tab" _blank;
-click id128 href "businessbean/helm-charts/blob/master/common/mariadb-galera/helm/scripts/common-functions-extended.sh" "Open this in a new tab" _blank;
+click id4 href "businessbean/helm-charts/blob/master/common/mariadb-galera/helm/scripts/common-functions-extended.sh" "Open this in a new tab" _blank;
+```
+
+#### init database
+```mermaid
+flowchart TB;
+  id1([container start])-->id2;
+  subgraph idsub1 [initdb]
+    id2(database already exist?)--No-->id3(mariadb-install-db ok?);
+    subgraph idsub2 [startmaintenancedb]
+      id3--Yes-->id4(start mariadbd in background ok?);
+    end
+    subgraph idsub3 [setuptimezoneinfo]
+      id4--Yes-->id5(setup timezone infos ok?)
+    end
+    subgraph idsub4 [setuprole]
+      id5--Yes-->id6(setup role fullaccess ok?)
+      id6--Yes-->id7(setup role mysql_exporter ok?)
+    end
+    subgraph idsub5 [setupuser]
+      id7--Yes-->id8(setup MARIADB_ROOT_USER ok?)
+      id8--Yes-->id9(setup MARIADB_MONITORING_USER ok?)
+    end
+    subgraph idsub6 [listdbandusers]
+      id9--Yes-->id10(list users from database ok?)
+    end
+    subgraph idsub7 [stopdb]
+      id10--Yes-->id11(shutdown database ok?)
+    end
+  end
+  subgraph idsub8 [checkupgradedb]
+    id2--Yes-->id12(mysql_upgrade_info exist?);
+    id11--Yes-->id12;
+    subgraph idsub9 [startmaintenancedb]
+      id12--No-->id13(start mariadbd in background ok?);
+      subgraph idsub10 [upgradedb]
+        id13--Yes-->id14(mysql_upgrade ok?);
+      end
+      subgraph idsub11 [stopdb]
+        id14--Yes-->id15(shutdown database ok?)
+      end
+    end
+    id12--Yes-->id16(mariadb binary newer than db?);
+    subgraph idsub12 [startmaintenancedb]
+      id16--Yes-->id17(start mariadbd in background ok?);
+      subgraph idsub13 [upgradedb]
+        id17--Yes-->id18(mysql_upgrade ok?);
+      end
+      subgraph idsub14 [stopdb]
+        id18--Yes-->id19(shutdown database ok?)
+      end
+    end
+  end
+  subgraph idsub15 [startdb]
+    id15--Yes-->id20(entrypoint-galera.sh exist?);
+    id16--No-->id20;
+    id19--Yes-->id20;
+    id20--No-->id99(exec mariadbd ok?)--Yes-->id98(MariaDB running);
+  end
+  id20--Yes-->id21([init Galera]);
+
+  subgraph failure
+    id3 & id4 & id5 & id6 & id7 & id8 & id9--No-->id666[exit 1];
+    id10 & id11 & id13 & id14 & id15 & id17 & id18 & id19 & id99--No-->id666;
+  end
+
+click id20 href "businessbean/helm-charts/blob/master/common/mariadb-galera/helm/scripts/mariadb-galera/entrypoint-galera.sh" "Open this in a new tab" _blank;
+click id6 href "businessbean/helm-charts/blob/master/common/mariadb-galera/docker/mariadb-galera/config/fullaccess.role.yaml" "Open this in a new tab" _blank;
+click id7 href "businessbean/helm-charts/blob/master/common/mariadb-galera/docker/mariadb-galera/config/mysql_exporter.role.yaml" "Open this in a new tab" _blank;
+```
+
+#### init Galera
+
+```mermaid
+flowchart TB;
+  id1([init database])-->id2;
+  subgraph idsub1 [templateconfig]
+    id2(template MariaDB configs ok?);
+  end
+  subgraph idsub2 [initgalera]
+    id2--Yes-->id3(grastate.dat exist?);
+    subgraph idsub3 [recovergalera]
+      id3--Yes-->id4(PC_RECOVERY=true and gvwstate.dat exist?);
+      subgraph idsub4 [startgalera]
+        id4--Yes-->id5(exec mariadbd ok?)--Yes-->id98(MariaDB running);
+      end
+    end
+  end
+  id3--No-->id6([recover Galera]);
+  subgraph failure
+    id2 & id5--No-->id666[exit 1];
+  end
+```
+#### recover Galera
+
+```mermaid
+flowchart TB;
+  id1([init Galera])-->id2;
+  subgraph idsub1 [initgalera]
+    id2(grastate.dat exist?);
+    subgraph idsub2 [recovergalera]
+      id2--Yes-->id3(PC_RECOVERY=true and gvwstate.dat exist?);
+      subgraph idsub3 [startgalera]
+        id3--Yes-->id4(exec mariadbd ok?)--Yes-->id98(MariaDB running);
+      end
+        id3--No-->id5(safe_to_bootstrap=1 and sequence number not -1 ?)--Yes-->id6;
+        subgraph idsub4 [setconfigmap]
+          id6(update sequence number in configmap);
+          id6-->id7(update configmap ok?);
+        end
+        subgraph idsub5 [selectbootstrapnode]
+          id7--Yes-->id8(seqno file count -ge pod replicas?);
+          id8--Yes-->id9(fetch seqno timestamps ok?);
+          id9--Yes-->id10(useTimeDifferenceForSeqnoCheck=true?);
+          id10--Yes-->id11(timestamps are recent?);
+          id10--No-->id12;
+          id11--Yes-->id12(nodename with highest sequence number found?);
+          id12--Yes-->id13(nodename selected?);
+        end
+        id5--No-->id14(mariadbd --wsrep-recover to find uuid and seqno ok?);
+        id14--Yes-->id15(update seqno and historic UUID in grastate.dat ok?)--Yes-->id6;
+      end
+    end
+    id13--No-->id16([bootstrap Galera]);
+    subgraph failure
+      id4 & id7 & id9 & id11 & id12 & id13 & id15--No-->id666[exit 1];
+    end
+```
+
+#### bootstrap Galera
+
+```mermaid
+flowchart TB;
+  id1([recover Galera])-->id2;
+  subgraph idsub1 [recovergalera]
+    id2(nodename eq hostname of container?);
+    id2--Yes-->id3(mariadbd --wsrep-recover was required?)--Yes-->id4(set 'safe_to_bootstrap: 1' in grastate.dat ok?);
+    id2--No-->id5(join cluster);
+    id3--No-->id7;
+    id4--Yes-->id7;
+    subgraph idsub2 [bootstrapgalera]
+      id7(bootstrap cluster)-->id8(exec mariadbd --wsrep-new-cluster ok?);
+    end
+    subgraph idsub3 [startgalera]
+      id5-->id6(exec mariadbd ok?);
+    end
+  end
+  subgraph idsub6 [Done]
+    id6 & id8--Yes-->id98(MariaDB running);
+  end
+  subgraph failure
+    id4 & id6 & id8--No-->id666[exit 1];
+  end
 ```
 ## Docker image
 
