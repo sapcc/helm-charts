@@ -127,34 +127,26 @@ flowchart TB;
 flowchart TB;
   id1([init Galera])-->id2;
   subgraph idsub1 [initgalera]
-    id2(grastate.dat exist?);
-    subgraph idsub2 [recovergalera]
-      id2--Yes-->id3(PC_RECOVERY=true and gvwstate.dat exist?);
-      subgraph idsub3 [startgalera]
-        id3--Yes-->id4(exec mariadbd ok?)--Yes-->id98(MariaDB running);
-      end
-        id3--No-->id5(safe_to_bootstrap=1 and sequence number not -1 ?)--Yes-->id6;
-        subgraph idsub4 [setconfigmap]
-          id6(update sequence number in configmap);
-          id6-->id7(update configmap ok?);
-        end
-        subgraph idsub5 [selectbootstrapnode]
-          id7--Yes-->id8(seqno file count -ge pod replicas?);
-          id8--Yes-->id9(fetch seqno timestamps ok?);
-          id9--Yes-->id10(useTimeDifferenceForSeqnoCheck=true?);
-          id10--Yes-->id11(timestamps are recent?);
-          id10--No-->id12;
-          id11--Yes-->id12(nodename with highest sequence number found?);
-          id12--Yes-->id13(nodename selected?);
-        end
-        id5--No-->id14(mariadbd --wsrep-recover to find uuid and seqno ok?);
-        id14--Yes-->id15(update seqno and historic UUID in grastate.dat ok?)--Yes-->id6;
-      end
+    id2(safe_to_bootstrap=1 and sequence number not -1 ?)--Yes-->id3;
+    subgraph idsub2 [setconfigmap]
+      id3(update sequence number in configmap ok?);
     end
-    id13--No-->id16([bootstrap Galera]);
-    subgraph failure
-      id4 & id7 & id9 & id11 & id12 & id13 & id15--No-->id666[exit 1];
+    subgraph idsub3 [selectbootstrapnode]
+      id3--Yes-->id4(seqno file count -ge pod replicas?);
+      id4--Yes-->id5(fetch seqno timestamps ok?);
+      id5--Yes-->id6(useTimeDifferenceForSeqnoCheck=true?);
+      id6--Yes-->id7(timestamps are recent?);
+      id6--No-->id8;
+      id7--Yes-->id8(nodename with highest sequence number found?);
+      id8--Yes-->id9(nodename selected?);
     end
+    id2--No-->id10(mariadbd --wsrep-recover to find uuid and seqno ok?);
+    id10--Yes-->id11(update seqno and historic UUID in grastate.dat ok?)--Yes-->id3;
+  end
+  id9--No-->id13([bootstrap Galera]);
+  subgraph failure
+    id5 & id6 & id8 & id9 & id10 & id11--No-->id666[exit 1];
+  end
 ```
 
 #### bootstrap Galera
