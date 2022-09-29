@@ -30,8 +30,6 @@ spec:
                       - vsphere-csi-controller
               topologyKey: "kubernetes.io/hostname"
       serviceAccountName: vsphere-csi-controller
-      nodeSelector:
-        node-role.kubernetes.io/control-plane: ""
       tolerations:
         - key: node-role.kubernetes.io/master
           operator: Exists
@@ -178,9 +176,8 @@ spec:
             - "--kube-api-burst=100"
             - "--leader-election"
             - "--default-fstype=ext4"
-            # needed only for topology aware setup
-            #- "--feature-gates=Topology=true"
-            #- "--strict-topology"
+            - "--feature-gates=Topology=true"
+            - "--strict-topology"
           env:
             - name: ADDRESS
               value: /csi/csi.sock
