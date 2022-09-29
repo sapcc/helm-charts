@@ -17,13 +17,13 @@ spec:
     - host: {{ $host }}-grpc.{{ $root.Values.global.region }}.{{ $root.Values.global.tld }}
       http:
         paths:
-        - path: /dummypath
+        - path: /
           backend:
             service:
               name:  {{ include "thanos.fullName" $root }}-query
               port:
-                number: 80
-          pathType: Exact
+                number: 10901
+          pathType: Prefix
     {{- end }}
   tls:
     - secretName: tls-{{ include "thanos.grpcURL" $root | replace "." "-" }}
