@@ -70,8 +70,10 @@ flowchart TB;
   subgraph idsub8 [checkupgradedb]
     id2--Yes-->id12(mysql_upgrade_info exist?);
     id11--Yes-->id12;
+    id12--Yes-->id16(mariadb binary newer than db?);
     subgraph idsub9 [startmaintenancedb]
       id12--No-->id13(start mariadbd in background ok?);
+      id16--Yes-->id13;
       subgraph idsub10 [upgradedb]
         id13--Yes-->id14(mysql_upgrade ok?);
       end
@@ -79,28 +81,17 @@ flowchart TB;
         id14--Yes-->id15(shutdown database ok?)
       end
     end
-    id12--Yes-->id16(mariadb binary newer than db?);
-    subgraph idsub12 [startmaintenancedb]
-      id16--Yes-->id17(start mariadbd in background ok?);
-      subgraph idsub13 [upgradedb]
-        id17--Yes-->id18(mysql_upgrade ok?);
-      end
-      subgraph idsub14 [stopdb]
-        id18--Yes-->id19(shutdown database ok?)
-      end
-    end
   end
   subgraph idsub15 [startdb]
     id15--Yes-->id20(entrypoint-galera.sh exist?);
     id16--No-->id20;
-    id19--Yes-->id20;
     id20--No-->id99(exec mariadbd ok?)--Yes-->id98(MariaDB running);
   end
   id20--Yes-->id21([init Galera]);
 
   subgraph failure
     id3 & id4 & id5 & id6 & id7 & id8 & id9--No-->id666[exit 1];
-    id10 & id11 & id13 & id14 & id15 & id17 & id18 & id19 & id99--No-->id666;
+    id10 & id11 & id13 & id14 & id15 & id99--No-->id666;
   end
 
 click id20 href "businessbean/helm-charts/blob/master/common/mariadb-galera/helm/scripts/mariadb-galera/entrypoint-galera.sh" "Open this in a new tab" _blank;
