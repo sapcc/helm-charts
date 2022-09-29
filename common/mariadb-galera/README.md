@@ -150,7 +150,7 @@ flowchart TB;
   end
   id9--No-->id13([bootstrap Galera]);
   subgraph failure
-    id5 & id6 & id8 & id9 & id10 & id11--No-->id666[exit 1];
+    id4 & id5 & id6 & id7 & id8 & id9 & id10 & id11--No-->id666[exit 1];
   end
 ```
 
