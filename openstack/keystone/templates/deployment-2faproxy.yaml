@@ -1,0 +1,80 @@
+{{- if (index .Values "2fa" "enabled") }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-2faproxy
+  labels:
+    {{- include "2faproxy.labels" . | nindent 4 }}
+spec:
+  replicas: {{ index .Values "2fa" "replicaCount" }}
+  selector:
+    matchLabels:
+      {{- include "2faproxy.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      annotations:
+        config/secret: {{  include (print $.Template.BasePath "/secret-2faproxy.yaml") . | sha256sum  }}
+        {{- with (index .Values "2fa" "podAnnotations") }}
+        {{- toYaml . | nindent 8 }}
+        {{- end}}
+      labels:
+        {{- include "2faproxy.selectorLabels" . | nindent 8 }}
+    spec:
+      serviceAccountName: {{ .Release.Name }}-2faproxy
+      containers:
+        - name: 2fa
+          image: {{ required ".Values.global.registryAlternateRegion is missing" .Values.global.registryAlternateRegion }}/{{ index .Values "2fa" "image" }}:{{ required ".Values.2fa.imageTag is missing" (index .Values "2fa" "imageTag") }}
+          imagePullPolicy: {{ index .Values "2fa" "imagePullPolicy" | default "IfNotPresent" | quote }}
+          command:
+            - 2faproxy
+            - -http-addr=0.0.0.0:8080
+            - -metrics-addr=0.0.0.0:8081
+            - -poll-interval={{ index .Values "2fa" "pollInterval" }}
+            - -issuer-dn={{ required "2fa.issuerDN missing" (index .Values "2fa" "issuerDN") }}
+          env:
+          {{- range $key, $value :=  index .Values "2fa" "openstack" }}
+            - name: {{ $key }}
+              valueFrom: { secretKeyRef: { name: {{ $.Release.Name }}-2faproxy, key: {{ $key }} } }
+          {{- end }}
+          lifecycle:
+            preStop:
+              exec:
+                command:
+                  # wait 10 seconds before closing the http listener
+                  # o prevent final new connections from the nginx are not lost
+                  - sleep 10
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+            - name: metrics
+              containerPort: 8081
+              protocol: TCP
+          readinessProbe:
+            httpGet:
+              path: /health/readiness
+              port: http
+          resources:
+            {{- index .Values "2fa" "resources" | toYaml | nindent 12 }}
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 10
+            podAffinityTerm:
+              topologyKey: kubernetes.io/hostname
+              labelSelector:
+                matchExpressions:
+                # has to match include "2faproxy.selectorLabels"
+                - key: app.kubernetes.io/name
+                  operator: In
+                  values:
+                  - 2faproxy
+                - key: app.kubernetes.io/instance
+                  operator: In
+                  values:
+                  - {{ .Release.Name }}
+      {{- with ( index .Values "2fa" "tolerations") }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}

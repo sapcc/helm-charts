@@ -1,0 +1,17 @@
+{{- if (index .Values "2fa" "enabled") }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-2faproxy
+  labels:
+    {{- include "2faproxy.labels" . | nindent 4 }}
+spec:
+  type: ClusterIP
+  ports:
+    - port: 8080
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    {{- include "2faproxy.selectorLabels" . | nindent 4 }}
+{{- end }}

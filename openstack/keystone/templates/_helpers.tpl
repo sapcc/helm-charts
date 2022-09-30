@@ -48,3 +48,18 @@ To satisfy common/mysql_metrics :(
 */}}
 
 {{define "keystone_db_host"}}{{- if .Values.global.clusterDomain }}{{.Release.Name}}-mariadb.{{.Release.Namespace}}.svc.{{.Values.global.clusterDomain}}{{ else }}{{.Release.Name}}-mariadb.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}{{- end -}}{{end}}
+
+
+{{- define "2faproxy.selectorLabels" -}}
+app.kubernetes.io/name: 2faproxy
+app.kubernetes.io/instance: {{ .Release.Name }}
+{{- end }}
+
+{{- define "2faproxy.labels" -}}
+helm.sh/chart: {{ include "name" . }}
+{{ include "2faproxy.selectorLabels" . }}
+{{- if .Chart.AppVersion }}
+app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
+{{- end }}
+app.kubernetes.io/managed-by: {{ .Release.Service }}
+{{- end }}
