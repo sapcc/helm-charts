@@ -32,7 +32,7 @@ setupuser "${MARIADB_MONITORING_USER}" "${MARIADB_MONITORING_PASSWORD}" 'mysql_e
   {{- if $mariadbconfigValue.enabled}}
     {{- $configfile := $.Files.Get (printf "config/mariadb-galera/%s/%s" $mariadbconfigValue.type $mariadbconfigValue.file) | fromYaml }}
     {{- if eq $mariadbconfigValue.type "database" }}
-setupdatabase {{ $mariadbconfigValue.name | quote }} {{ $configfile.comment | quote }} {{ $configfile.collationName | quote }} {{ $configfile.CharacterSetName | quote }} {{ $configfile.enabled }} {{ $configfile.createOrReplace }} {{ $configfile.deleteIfDisabled }}
+setupdatabase {{ $mariadbconfigValue.name | quote }} {{ $configfile.comment | quote }} {{ $configfile.collationName | quote }} {{ $configfile.CharacterSetName | quote }} {{ $configfile.enabled }} {{ $configfile.overwrite }} {{ $configfile.deleteIfDisabled }}
     {{- else if eq $mariadbconfigValue.type "role" }}
       {{- if $configfile.grant }}
 setuprole {{ $mariadbconfigValue.name | quote }} {{ $configfile.privileges | join ", " | quote }} {{ $configfile.object | quote }} "WITH GRANT OPTION"
