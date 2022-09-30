@@ -6,6 +6,7 @@ groups:
     for: 10m
     labels:
       context: Agent Heartbeat
+      support: group-network-api
       dashboard: neutron
       service: Neutron
       severity: warning
@@ -21,6 +22,7 @@ groups:
     for: 5m
     labels:
       severity: warning
+      support: group-network-api
       tier: os
       service: neutron
       context: '{{ $labels.context }}'
@@ -34,12 +36,14 @@ groups:
     expr: sum(openstack_neutron_network_segments_free) by (hostgroup) / sum(openstack_neutron_network_segments_total) by (hostgroup) < 0.2
     for: 5m
     labels:
-      severity: info
+      severity: warning
+      support: group-network-api
       tier: os
       service: neutron
       context: '{{ $labels.context }}'
       dashboard: neutron
       meta: 'Network segment `{{ $labels.hostgroup }}` has less than 20% free allocations left.'
+      playbook: docs/devops/alert/neutron/#openstackneutronnetworksegmentsexhaustion
     annotations:
       description: 'Network segment `{{ $labels.hostgroup }}` has less than 20% free allocations left.'
       summary: Openstack Neutron free network allocations exhaustion
