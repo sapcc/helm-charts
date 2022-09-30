@@ -46,6 +46,9 @@ api_v3 = True
 trust = True
 security_compliance = True
 
+[image]
+build_timeout=600
+
 [network]
 project_network_cidr = 10.199.0.0/16
 public_network_id = {{ .Values.tempest_common.public_network_id }}
@@ -61,6 +64,7 @@ max_microversion = 1.78
 # Driver to use for API tests for Queens and newer:
 driver = fake-hardware
 
+
 [compute]
 # image_ref and image_ref_alt will be changed to the image-id during init-script as the image-id can change over time.
 image_ref = CHANGE_ME_IMAGE_REF
@@ -73,6 +77,7 @@ flavor_ref_alt = 30
 min_microversio = 2.1
 max_microversion = latest
 fixed_network_name = {{ (index .Values (print .Chart.Name | replace "-" "_")).tempest.fixed_network_name }}
+build_timeout=600
 
 [compute-feature-enabled]
 resize = True
@@ -119,6 +124,7 @@ vendor_name = VMware
 storage_protocol = vmdk
 disk_format = vmdk
 volume_size = 10
+build_timeout=600
 
 [volume-feature-enabled]
 backup = true

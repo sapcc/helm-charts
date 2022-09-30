@@ -72,6 +72,7 @@ flavor_ref_alt = 30
 min_microversio = 2.1
 max_microversion = latest
 fixed_network_name = {{ (index .Values (print .Chart.Name | replace "-" "_")).tempest.fixed_network_name }}
+build_timeout=600
 
 [compute-feature-enabled]
 resize = true
@@ -83,6 +84,9 @@ vnc_server_header = WebSockify
 serial_console = true
 spice_console = true
 attach_encrypted_volume = false
+
+[image]
+build_timeout=600
 
 [share]
 share_network_id = {{ (index .Values (print .Chart.Name | replace "-" "_")).tempest.share_network_id }}
@@ -116,6 +120,7 @@ vendor_name = VMware
 storage_protocol = vmdk
 disk_format = vmdk
 volume_size = 1
+build_timeout=600
 
 [volume-feature-enabled]
 backup = true
