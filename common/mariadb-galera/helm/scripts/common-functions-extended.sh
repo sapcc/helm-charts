@@ -94,3 +94,76 @@ function checkdbk8sservicelogon {
     fi
   fi
 }
+
+# setupdatabase dbname comment collation charset enabled createOrReplace deleteIfDisabled
+# setupdatabase "sb_oltp_ro" "for the sysbench oltp readonly benchmark" "utf8_general_ci" "utf8" true true true
+function setupdatabase {
+  if [ -n "${7}" ]; then
+    local int
+    export DB_NAME=${1}
+    export DB_COMMENT=${2}
+    export DB_COLLATION=${3}
+    export DB_CHARSET=${4}
+    export DB_ENABLED=${5}
+    export DB_REPLACE=${6}
+    export DB_DELETE=${7}
+
+    if [ "${DB_REPLACE}" == "true" ]; then
+      export DB_CREATE="CREATE OR REPLACE DATABASE"
+    else
+      export DB_CREATE="CREATE DATABASE IF NOT EXISTS"
+    fi
+
+    loginfo "${FUNCNAME[0]}" "setup '${DB_NAME}' database"
+    for (( int=${MAX_RETRIES}; int >=1; int-=1));
+      do
+      if [ "${DB_ENABLED}" == "true" ]; then
+        if [ "$0" == "/opt/mariadb/bin/entrypoint-job.sh" ]; then
+          ${MYSQL_SVC_CONNECT} --execute="${DB_CREATE} ${DB_NAME} CHARACTER SET = ${DB_CHARSET} COLLATE = ${DB_COLLATION} COMMENT '${DB_COMMENT}';"
+        else
+          mysql --defaults-file=${BASE}/etc/my.cnf --user=root --host=localhost --batch --execute="${DB_CREATE} ${DB_NAME} CHARACTER SET = ${DB_CHARSET} COLLATE = ${DB_COLLATION} COMMENT '${DB_COMMENT}';"
+        fi
+        if [ $? -ne 0 ]; then
+          logerror "${FUNCNAME[0]}" "'${DB_NAME}' database creation has been failed(${int} retries left)"
+          sleep ${WAIT_SECONDS}
+        else
+          loginfo "${FUNCNAME[0]}" "'${DB_NAME}' database creation done"
+          break
+        fi
+      else
+        if [ "${DB_DELETE}" == "true" ]; then
+          if [ "$0" == "/opt/mariadb/bin/entrypoint-job.sh" ]; then
+            ${MYSQL_SVC_CONNECT} --execute="DROP DATABASE IF EXISTS ${DB_NAME};"
+          else
+            mysql --defaults-file=${BASE}/etc/my.cnf --user=root --host=localhost --batch --execute="DROP DATABASE IF EXISTS ${DB_NAME};"
+          fi
+          if [ $? -ne 0 ]; then
+            logerror "${FUNCNAME[0]}" "'${DB_NAME}' database delete has been failed(${int} retries left)"
+            sleep ${WAIT_SECONDS}
+          else
+            loginfo "${FUNCNAME[0]}" "'${DB_NAME}' database deletion done"
+            break
+          fi
+        else
+          loginfo "${FUNCNAME[0]}" "'${DB_NAME}' database deletion not allowed because deleteIfDisabled option is not enabled"
+          break
+        fi
+      fi
+    done
+
+    if [ ${int} -eq 0 ]; then
+      logerror "${FUNCNAME[0]}" "database setup has been finally failed"
+      exit 1
+    fi
+    export -n DB_NAME
+    export -n DB_COMMENT
+    export -n DB_COLLATION
+    export -n DB_CHARSET
+    export -n DB_ENABLED
+    export -n DB_REPLACE
+    export -n DB_DELETE
+    export -n DB_CREATE
+  else
+    loginfo "${FUNCNAME[0]}" "database setup skipped because of missing parameters"
+  fi
+}

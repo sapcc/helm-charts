@@ -30,15 +30,16 @@ setupuser "${MARIADB_MONITORING_USER}" "${MARIADB_MONITORING_PASSWORD}" 'mysql_e
 {{- $mariadbconfigs := $.Files.Get "config/mariadb-galera/values.yaml" | fromYaml }}
 {{- range $mariadbconfigKey, $mariadbconfigValue := required "A valid 'configs.' structure is required from config/mariadb-galera/values.yaml" $mariadbconfigs.configs }}
   {{- if $mariadbconfigValue.enabled}}
-    {{- if eq $mariadbconfigValue.type "role" }}
-      {{- $configfile := $.Files.Get (printf "config/mariadb-galera/%s/%s" $mariadbconfigValue.type $mariadbconfigValue.file) | fromYaml }}
+    {{- $configfile := $.Files.Get (printf "config/mariadb-galera/%s/%s" $mariadbconfigValue.type $mariadbconfigValue.file) | fromYaml }}
+    {{- if eq $mariadbconfigValue.type "database" }}
+setupdatabase {{ $mariadbconfigValue.name | quote }} {{ $configfile.comment | quote }} {{ $configfile.collationName | quote }} {{ $configfile.CharacterSetName | quote }} {{ $configfile.enabled }} {{ $configfile.createOrReplace }} {{ $configfile.deleteIfDisabled }}
+    {{- else if eq $mariadbconfigValue.type "role" }}
       {{- if $configfile.grant }}
 setuprole {{ $mariadbconfigValue.name | quote }} {{ $configfile.privileges | join ", " | quote }} {{ $configfile.object | quote }} "WITH GRANT OPTION"
       {{- else }}
 setuprole {{ $mariadbconfigValue.name | quote }} {{ $configfile.privileges | join ", " | quote }} {{ $configfile.object | quote }} ""
       {{- end }}
     {{- else if eq $mariadbconfigValue.type "user" }}
-      {{- $configfile := $.Files.Get (printf "config/mariadb-galera/%s/%s" $mariadbconfigValue.type $mariadbconfigValue.file) | fromYaml }}
       {{- range $hostnameKey, $hostnameValue := required (printf "A valid 'hostnames.' structure is required in config/mariadb-galera/%s/%s" $mariadbconfigValue.type $mariadbconfigValue.file) $configfile.hostnames }}
         {{- range $envKey, $envValue := $.Values.env }}
           {{- if and (eq $envKey ($configfile.password | trimAll "${}")) ($envValue) }}

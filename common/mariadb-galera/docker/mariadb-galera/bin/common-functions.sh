@@ -61,8 +61,7 @@ function readrolegrant {
 # setup database role definition
 # role name as variable for the function
 # readroleprivileges, readroleobject, readrolegrant have to be triggered before to populate the related variables
-# readroleprivileges, readroleobject and readrolegrant can also be provided as variables (used in the helm chart)
-# setuprole 'mysql_exporter'
+# setuprole 'mysql_exporter' "${DB_ROLE_PRIVS}" "${DB_ROLE_OBJ}" "${DB_ROLE_GRANT}"
 function setuprole {
   if [ -f "${BASE}/etc/sql/role.sql.tpl" ]; then
     local int
