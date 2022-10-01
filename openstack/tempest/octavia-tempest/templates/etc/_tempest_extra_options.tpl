@@ -111,7 +111,7 @@ test_server_path = /rally/xrally_openstack/octavia-tempest-plugin/test_server.bi
 create_security_group = True
 scp_connection_timeout = 60
 build_timeout=600
-enabled_provider_drivers={"noop_driver": "The No-Op driver.", "f5": "F5 BigIP driver.", "F5Networks": "F5 BigIP driver"}
+enabled_provider_drivers=noop_driver: 'The No-Op driver.',f5: 'F5 BigIP driver.',F5Networks: 'F5 BigIP driver'
 
 [service_available]
 manila = True
