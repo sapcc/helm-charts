@@ -95,11 +95,13 @@ groups:
       service: glance
       severity: info
       tier: os
+      support: group-compute-storage-api
+      playbook: 'docs/devops/alert/{{ $labels.service }}'
     annotations:
       description: glances database running status failed to be scraped. Monitoring might miss metrics it needs to alert on
       summary: glance database cannot be scraped
 
-  - alert: OpenstackGlanceApiUp
+  - alert: OpenstackGlanceApiPodIsDown
     expr: up{component="glance",type="api"} == 0
     for: 5m
     labels:
@@ -108,20 +110,24 @@ groups:
       meta: "a glance instance went down on {{ $labels.instance }}"
       service: glance
       severity: info
-      tier: os
+      tier: warning
+      support: group-compute-storage-api
+      playbook: 'docs/devops/alert/{{ $labels.service }}'
     annotations:
       description: "A glance-api pod on {{ $labels.instance }} is DOWN. The remaining ones should keep the service up."
       summary: "A glance server is DOWN"
 
-  - alert: OpenstackGlanceDatabaseUp
+  - alert: OpenstackGlanceDatabaseDown
     expr: count(up{component="glance-mariadb"} == 0) == count(up{component="glance-mariadb"})
     for: 5m
     labels:
       context: availability
       service: glance
-      severity: info
+      severity: warning
       tier: os
       dashboard: mariadb-overview?var-host=glance-mariadb
+      support: group-compute-storage-api
+      playbook: 'docs/devops/alert/{{ $labels.service }}'
     annotations:
       description: "glance database on {{ $labels.instance }} is DOWN."
       summary: "glance Database is DOWN"
@@ -133,9 +139,11 @@ groups:
       context: availability
       meta: all glance instances are down
       service: glance
-      severity: info
+      severity: warning
       tier: os
       dashboard: glance
+      support: group-compute-storage-api
+      playbook: 'docs/devops/alert/{{ $labels.service }}'
     annotations:
       description: All glance-api server pods are down.
       summary: glance is unavailable.
