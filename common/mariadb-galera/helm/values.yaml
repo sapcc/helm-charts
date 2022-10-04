@@ -29,7 +29,7 @@ monitoring:
   elasticBeatsAutoDiscoveryAnnotations:
     enabled: false #add annotations to allow automatic configuration of Elastic Beats agents https://www.elastic.co/guide/en/beats/metricbeat/current/configuration-autodiscover-hints.html
 proxy:
-  enabled: false #use ProxySQL in front of the MariaDB Galera pods to reduce the service downtimes for the clients
+  enabled: true #use ProxySQL in front of the MariaDB Galera pods to reduce the service downtimes for the clients
 
 # command:
 #   application:
@@ -358,16 +358,30 @@ env:
     value: true
     containerType:
       - proxy
+  OPENSTACK_CITEST_USERNAME:
+    secretName: db-oslodb-auth
+    secretKey: username
+    containerType:
+      - job
+      - proxy
   OPENSTACK_CITEST_PASSWORD:
     secretName: db-oslodb-auth
     secretKey: password
     containerType:
       - job
+      - proxy
+  SYSBENCH_USERNAME:
+    secretName: db-sysbench-auth
+    secretKey: username
+    containerType:
+      - job
+      - proxy
   SYSBENCH_PASSWORD:
     secretName: db-sysbench-auth
     secretKey: password
     containerType:
       - job
+      - proxy
 
 mariadb:
   binLogDir: log #if not defined the data dir will be used. Needs a log volume mount to be configured too

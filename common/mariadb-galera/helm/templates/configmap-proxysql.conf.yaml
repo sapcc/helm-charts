@@ -26,6 +26,42 @@
     {{- end }}
   {{- end }}
 {{- end }}
+
+{{- /* Load additional configuration files for MariaDB to to use them for ProxySQL */}}
+{{- $mariadbconfigs := $.Files.Get "config/mariadb-galera/values.yaml" | fromYaml }}
+{{- $usernameEnvVarFound := false }}
+{{- $passwordEnvVarFound := false }}
+{{- $mySQLUsers := dict }}
+{{- $_ := set $mySQLUsers "MARIADB_ROOT_USER" "{ username = \"${MARIADB_ROOT_USER}\", password = \"${MARIADB_ROOT_PASSWORD}\", default_hostgroup = 10, transaction_persistent = 0, active = 1 }"}}
+{{- range $mariadbconfigKey, $mariadbconfigValue := required "A valid 'configs.' structure is required from config/mariadb-galera/values.yaml" $mariadbconfigs.configs }}
+  {{- if $mariadbconfigValue.enabled}}
+    {{- $configfile := $.Files.Get (printf "config/mariadb-galera/%s/%s" $mariadbconfigValue.type $mariadbconfigValue.file) | fromYaml }}
+    {{- if eq $mariadbconfigValue.type "user" }}
+      {{- $usernameEnvVarFound = false }}
+      {{- $passwordEnvVarFound = false }}
+      {{- range $envKey, $envValue := $.Values.env }}
+        {{- if (has "proxy" $envValue.containerType) }}
+          {{- if and (eq $envKey ($configfile.username | trimAll "${}")) ($envValue) }}
+            {{- $usernameEnvVarFound = true }}
+          {{- end }}
+          {{- if and (eq $envKey ($configfile.password | trimAll "${}")) ($envValue) }}
+            {{- $passwordEnvVarFound = true }}
+          {{- end }}
+        {{- end }}
+      {{- end }}
+      {{- if and $usernameEnvVarFound $passwordEnvVarFound }}
+        {{- $_ := set $mySQLUsers ($configfile.username | trimAll "${}" | quote) (printf "{ username = %s, password = %s, default_hostgroup = 10, transaction_persistent = 0, active = 1 }" ($configfile.username | quote) ($configfile.password | quote)) }}
+      {{- end }}
+      {{- if (not $usernameEnvVarFound) }}
+      {{- fail (printf "%s environment variable not defined, but required for config/mariadb-galera/%s/%s" ($configfile.username | trimAll "${}" | quote) $mariadbconfigValue.type $mariadbconfigValue.file) }}
+      {{- end }}
+      {{- if (not $passwordEnvVarFound) }}
+        {{- fail (printf "%s environment variable not defined, but required for config/mariadb-galera/%s/%s" ($configfile.password | trimAll "${}" | quote) $mariadbconfigValue.type $mariadbconfigValue.file) }}
+      {{- end }}
+    {{- end }}
+  {{- end }}
+{{- end }}
+
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -41,11 +77,15 @@ data:
         {{- /* 2^n where n is the $calculatedWeight */}}
         {{- $calculatedWeight = (mul 2 $calculatedWeight) }}
       {{- end }}
-    {
-      hostname="{{ (printf "%s-%d.%s.svc.cluster.local" (include "nodeNamePrefix" (dict "global" $ "component" "proxy")) $int $.Release.Namespace) }}"
-      port={{ $proxysqlAdminPort }}
-      weight={{ $calculatedWeight }}
-    },
+      {
+        hostname="{{ (printf "%s-%d.%s.svc.cluster.local" (include "nodeNamePrefix" (dict "global" $ "component" "proxy")) $int $.Release.Namespace) }}"
+        port={{ $proxysqlAdminPort }}
+        weight={{ $calculatedWeight }}
+      {{- if eq (add1 $int) ($.Values.replicas.application|int) }}
+      }
+      {{- else }}
+      },
+      {{- end }}
     {{- end }}
   galera_hostgroups.cfg.tpl: |-
     {
@@ -66,41 +106,55 @@ data:
         {{- /* 2^n where n is the $calculatedWeight */}}
         {{- $calculatedWeight = (mul 2 $calculatedWeight) }}
       {{- end }}
-    {
-      address="{{ (printf "%s-%d.%s.svc.cluster.local" (include "nodeNamePrefix" (dict "global" $ "component" "application")) $int $.Release.Namespace) }}"
-      port={{ $mysqlPort }}
-      use_ssl=0
-      weight={{ $calculatedWeight }}
-      hostgroup=10
-      max_connections=100
-      max_replication_lag=0
-      max_latency_ms=0
-    },
+      {
+        address="{{ (printf "%s-%d.%s.svc.cluster.local" (include "nodeNamePrefix" (dict "global" $ "component" "application")) $int $.Release.Namespace) }}"
+        port={{ $mysqlPort }}
+        use_ssl=0
+        weight={{ $calculatedWeight }}
+        hostgroup=10
+        max_connections=100
+        max_replication_lag=0
+        max_latency_ms=0
+      {{- if eq (add1 $int) ($.Values.replicas.application|int) }}
+      }
+      {{- else }}
+      },
+      {{- end }}
     {{- end }}
   mysql_query_rules.cfg.tpl: |-
-    {
-        rule_id=100
-        active=1
-        match_pattern="^SELECT .* FOR UPDATE"
-        destination_hostgroup=10
-        apply=1
-        comment="write statements will be routed to hostgroup 10(writer_hostgroup)"
-    },
-    {
-        rule_id=200
-        active=1
-        match_pattern="^SELECT .*"
-        destination_hostgroup=30
-        apply=1
-        comment="read statements will be routed to hostgroup 20(backup_writer_hostgroup)"
-    },
-    {
-        rule_id=300
-        active=1
-        match_pattern=".*"
-        destination_hostgroup=10
-        apply=1
-        comment="all other statements will also be routed to hostgroup 10(writer_hostgroup)"
-    }
+      {
+          rule_id=100
+          active=1
+          match_pattern="^SELECT .* FOR UPDATE"
+          destination_hostgroup=10
+          apply=1
+          comment="write statements will be routed to hostgroup 10(writer_hostgroup)"
+      },
+      {
+          rule_id=200
+          active=1
+          match_pattern="^SELECT .*"
+          destination_hostgroup=30
+          apply=1
+          comment="read statements will be routed to hostgroup 20(backup_writer_hostgroup)"
+      },
+      {
+          rule_id=300
+          active=1
+          match_pattern=".*"
+          destination_hostgroup=10
+          apply=1
+          comment="all other statements will also be routed to hostgroup 10(writer_hostgroup)"
+      }
   mysql_users.cfg.tpl: |-
-    { username = "${MARIADB_ROOT_USER}", password = "${MARIADB_ROOT_PASSWORD}", default_hostgroup = 10, transaction_persistent = 0, active = 1 }
+    {{- $int := 0 }}
+    {{- $mySQLUserCount := (len $mySQLUsers) }}
+    {{- range $mySQLUserKey, $mySQLUserValue := (values $mySQLUsers | sortAlpha) }}
+      {{- $int = add1 $int }}
+      {{- if eq $int $mySQLUserCount }}
+        {{ indent 2 $mySQLUserValue }}
+      {{- else }}
+        {{ indent 2 $mySQLUserValue }},
+      {{- end }}
+    {{- end }}
+
