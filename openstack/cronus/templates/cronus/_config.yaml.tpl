@@ -111,6 +111,9 @@ cronus:
 {{- if .Values.config.workQueue.maxRandomDelayAddOnTime }}
     maxRandomDelayAddOnTime: {{ .Values.config.workQueue.maxRandomDelayAddOnTime }}
 {{- end }}
+{{- if .Values.config.workQueue.maxWorkers }}
+    maxWorkers: {{ .Values.config.workQueue.maxWorkers }}
+{{- end }}
     maxTotalQueueTime: {{ .Values.config.workQueue.maxTotalQueueTime }}
     maxContainerNum: {{ .Values.config.workQueue.maxContainerNum }}
     reconnectWatcherLimit: {{ .Values.config.workQueue.reconnectWatcherLimit }}
