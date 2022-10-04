@@ -50,8 +50,28 @@ spec:
               port: {{.Values.service.internalPort}}
             timeoutSeconds: 5
             initialDelaySeconds: 5
+          # NOTE: observed resource usage (vpa upperBound) in eu-de-1 (as of 2022-10)
+          # - CPU: 12m with 2 replicas
+          # - RAM: levels off around 176Mi (185211091) 
+          resources:
+            requests:
+              cpu: "120m"
+              memory: "250Mi"
+            limits:
+              cpu: "120m"
+              memory: "250Mi" 
         - name: puma-metrics
           image: {{.Values.global.registry}}/puma-exporter:1.0.0
           ports:
             - name: metrics
               containerPort: 9235
+          # NOTE: observed resource usage (vpa upperBound) in eu-de-1 (as of 2022-10)
+          # - CPU: 12m with 2 replicas
+          # - RAM: levels off around 128Mi (131072k)
+          resources:
+            requests:
+              cpu: "120m"
+              memory: "200Mi"
+            limits:
+              cpu: "120m"
+              memory: "200Mi"
