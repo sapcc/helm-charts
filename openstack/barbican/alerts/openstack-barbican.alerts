@@ -31,22 +31,6 @@ groups:
       summary: barbican has reported issues to Sentry
 
 # Canary Alerts
-  - alert: OpenstackBarbicanCanaryDown
-    expr: blackbox_canary_status_gauge{service=~"barbican"} == 1
-    for: 1h
-    labels:
-      severity: warning
-      support: group-identity
-      tier: os
-      service: '{{ $labels.service }}'
-      context: '{{ $labels.service }}'
-      dashboard: ccloud-health-canary-details
-      meta: 'Canary {{ $labels.service }} {{ $labels.check }} is down for 1 hour. See Sentry for details'
-      sentry: 'blackbox/?query=test_{{ $labels.check }}'
-      playbook: 'docs/devops/alert/{{ $labels.service }}'
-    annotations:
-      description: 'Canary {{ $labels.service }} {{ $labels.check }} is down for 1 hour. See Sentry for details'
-      summary: 'Canary {{ $labels.service }} {{ $labels.check }} is down'
 
   - alert: OpenstackBarbicanCanaryTimeout
     expr: blackbox_canary_status_gauge{service=~"barbican"} == 0.5
