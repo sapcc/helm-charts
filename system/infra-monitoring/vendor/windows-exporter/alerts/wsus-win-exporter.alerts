@@ -14,8 +14,10 @@ groups:
       description: "WSUS metrics cannot be fetched from node {{ $labels.server_name }}. Check if the windows exporter service is running!"
       summary: "WSUS metrics cannot be fetched from node {{ $labels.server_name }}"
 
+  # the display_name label of a service is only available in the windows_service_info metrics. Hence we have to join the two.
+  # if a service is getting restarted, the process_id changes. So, we have to use count to get a single metric
   - alert: WSUSDownWarn
-    expr: count(windows_update_service_health{job="win-exporter-wsus"} != 10000) by (server_name, message) 
+    expr: count(windows_service_state{state!="running", job="win-exporter-wsus"} > 0) by (server_name, name, state) * on(server_name, name) group_left(display_name) count(windows_service_info) by(server_name, name, display_name) 
     for: 1h
     labels:
       severity: warning
