@@ -36,6 +36,7 @@ groups:
     for: 1h
     labels:
       severity: warning
+      support: group-compute-storage-api
       tier: os
       service: '{{ $labels.service }}'
       context: '{{ $labels.service }}'
@@ -52,6 +53,7 @@ groups:
     for: 1h
     labels:
       severity: info
+      support: group-compute-storage-api
       tier: os
       service: '{{ $labels.service }}'
       context: '{{ $labels.service }}'
@@ -68,6 +70,7 @@ groups:
     for: 2m
     labels:
       severity: warning
+      support: group-compute-storage-api
       tier: os
       service: '{{ $labels.service }}'
       context: '{{ $labels.service }}'
@@ -120,7 +123,7 @@ groups:
       description: barbicans database running status failed to be scraped. Monitoring might miss metrics it needs to alert on
       summary: barbican database cannot be scraped
 
-  - alert: OpenstackBarbicanApiUp
+  - alert: OpenstackBarbicanApiIsDown
     expr: up{component="barbican",type="api"} == 0
     for: 5m
     labels:
@@ -128,21 +131,25 @@ groups:
       dashboard: barbican
       meta: "a barbican instance went down on {{ $labels.instance }}"
       service: barbican
+      support: group-compute-storage-api
       severity: info
       tier: os
+      playbook: 'docs/devops/alert/{{ $labels.service }}'
     annotations:
       description: "A barbican-api pod on {{ $labels.instance }} is DOWN. The remaining ones should keep the service up."
       summary: "A barbican server is DOWN"
 
-  - alert: OpenstackBarbicanDatabaseUp
+  - alert: OpenstackBarbicanDatabaseIsDown
     expr: count(up{component="barbican-mariadb"} == 0) == count(up{component="barbican-mariadb"})
     for: 5m
     labels:
       context: availability
       service: barbican
       severity: info
+      support: group-compute-storage-api
       tier: os
       dashboard: mariadb-overview?var-host=barbican-mariadb
+      playbook: 'docs/devops/alert/{{ $labels.service }}'
     annotations:
       description: "barbican database on {{ $labels.instance }} is DOWN."
       summary: "barbican Database is DOWN"
@@ -154,9 +161,11 @@ groups:
       context: availability
       meta: all barbican instances are down
       service: barbican
-      severity: info
+      severity: warning
+      support: group-compute-storage-api
       tier: os
       dashboard: barbican
+      playbook: 'docs/devops/alert/{{ $labels.service }}'
     annotations:
       description: All barbican-api server pods are down.
       summary: barbican is unavailable.
