@@ -98,6 +98,18 @@ groups:
       description: Manila Shares taking more than 2 minutes to resize in {{ $labels.manila_host }}
       summary: Manila Shares taking more than 2 minutes to resize
 
+  - alert: OpenstackManilaSharesResizeError
+    expr: sum(manila_shares_stuck_count_gauge{status=~"shrinking_error|extending_error"}) > 0
+    for: 5m
+    labels:
+      dashboard: manila
+      service: manila
+      severity: info
+      tier: os
+    annotations:
+      description: Manila Shares resize error ({{ $value }})
+      summary: Multiple Manila Shares resize error
+
   - alert: OpenstackManilaShareServersStuck
     expr: delta(sum(manila_share_servers_stuck_count_gauge) by (manila_host)[1d:]) > 1
     for: 15m

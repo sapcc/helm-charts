@@ -278,7 +278,7 @@ mysql_metrics:
           host AS manila_host,
         COUNT(*) AS count_gauge
         FROM share_instances
-        WHERE deleted='False' AND status in ('deleting','error_deleting','creating','shrinking','extending') AND (COALESCE(updated_at, created_at) < DATE_SUB(now(), INTERVAL 15 MINUTE))
+        WHERE deleted='False' AND status in ('deleting','error_deleting','creating','shrinking','extending', 'shrinking_error', 'extending_error') AND (COALESCE(updated_at, created_at) < DATE_SUB(now(), INTERVAL 15 MINUTE))
         GROUP BY
           share_id,
           status,
@@ -299,7 +299,7 @@ mysql_metrics:
           host AS manila_host,
           MAX(NOW() - COALESCE(updated_at, created_at)) AS max_duration_gauge
         FROM share_instances
-        WHERE deleted='False' AND status in ('deleting','error_deleting','creating','shrinking','extending') AND (COALESCE(updated_at, created_at) < DATE_SUB(now(), INTERVAL 15 MINUTE))
+        WHERE deleted='False' AND status in ('deleting','error_deleting','creating','shrinking','extending', 'shrinking_error', 'extending_error') AND (COALESCE(updated_at, created_at) < DATE_SUB(now(), INTERVAL 15 MINUTE))
         GROUP BY
           share_id,
           status,
