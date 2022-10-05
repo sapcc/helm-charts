@@ -55,14 +55,14 @@ spec:
 
           count(configmaps) > 0
 
-          # Check if 'primary-maintainer' label is defined. Existence of this label denotes that
-          # the 'data.maintainers' field is defined and it contains at least one maintainer.
+          # Check if the owner-info chart is not outdated
+          upToDateVersion := "0.2.0"
           obj := configmaps[_]
-          pm := object.get(obj.metadata, ["labels", "primary-maintainer"], "")
-          pm == ""
+          version := object.get(obj.metadata, ["labels", "owner-info-version"], "")
+          semver.compare(version, upToDateVersion) < 0
 
           msg := sprintf(
-            "ConfigMap %q does not have %q label: parent chart needs to define %q in its Values.yaml file with at least one maintainer",
-            [obj.metadata.name, "primary-maintainer", "owner-info.maintainers"],
+            "ConfigMap %q uses owner-info Chart version %q which is outdated. The current version is %q",
+            [obj.metadata.name, version, upToDateVersion],
           )
         }
