@@ -49,17 +49,16 @@
 
 # prometheus monitoring config
 
-@include /fluent-bin/prometheus.conf
+@include /fluentd/etc/prometheus.conf
 
 <filter kubernetes.**>
   @type kubernetes_metadata
-  kubernetes_url https://KUBERNETES_SERVICE_HOST
   bearer_token_file /var/run/secrets/kubernetes.io/serviceaccount/token
   ca_file /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
 </filter>
 
 {{ if eq .Values.global.clusterType  "scaleout" -}}
-  @include /fluent-bin/scaleout.conf
+  @include /fluentd/etc/scaleout.conf
 {{ else }}
-  @include /fluent-bin/controlplane.conf
+  @include /fluentd/etc/controlplane.conf
 {{ end }}
