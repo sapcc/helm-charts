@@ -33,12 +33,14 @@ spec:
           release.error != ""
         }
 
+        configmap_name := sprintf("owner-of-%s", [iro.metadata.labels.name])
+
         configmaps[obj] {
           release.error == ""
 
           obj := release.items[_]
           obj.kind == "ConfigMap"
-          startswith(obj.metadata.name, "owner-of-")
+          obj.metadata.name == configmap_name
         }
 
         violation[{"msg": add_support_labels.from_helm_release(release, msg)}] {
@@ -47,7 +49,7 @@ spec:
           # Check if an 'owner-of-<release-name>' ConfigMap exists for this release.
           count(configmaps) == 0
           release_name := iro.metadata.labels.name
-          msg := sprintf("could not find ConfigMap: owner-of-%s", [release_name])
+          msg := sprintf("could not find ConfigMap: %s", [configmap_name])
         }
 
         violation[{"msg": add_support_labels.from_helm_release(release, msg)}] {
@@ -55,14 +57,14 @@ spec:
 
           count(configmaps) > 0
 
-          # Check if 'primary-maintainer' label is defined. Existence of this label denotes that
-          # the 'data.maintainers' field is defined and it contains at least one maintainer.
+          # Check if the owner-info chart is not outdated
+          upToDateVersion := "0.2.0"
           obj := configmaps[_]
-          pm := object.get(obj.metadata, ["labels", "primary-maintainer"], "")
-          pm == ""
+          version := object.get(obj.metadata, ["labels", "owner-info-version"], "")
+          semver.compare(version, upToDateVersion) < 0
 
           msg := sprintf(
-            "ConfigMap %q does not have %q label: parent chart needs to define %q in its Values.yaml file with at least one maintainer",
-            [obj.metadata.name, "primary-maintainer", "owner-info.maintainers"],
+            "Chart uses outdated owner-info version %q. Please update to at least %q.",
+            [version, upToDateVersion],
           )
         }
