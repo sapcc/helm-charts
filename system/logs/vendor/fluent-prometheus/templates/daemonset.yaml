@@ -22,7 +22,6 @@ spec:
       annotations:
         checksum/fluent-bin-configmap.yaml: {{ include  (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
         checksum/fluent.conf: {{ include  (print $.Template.BasePath "/_fluent.conf.tpl") . | sha256sum }}
-        checksum/fluent-start: {{ include  (print $.Template.BasePath "/_fluent-start.tpl") . | sha256sum }}
         checksum/pattern: {{ include  (print $.Template.BasePath "/_pattern.tpl") . | sha256sum }}
         scheduler.alpha.kubernetes.io/tolerations: '[{"key":"species","value":"hypervisor"}]'
     spec:
@@ -45,7 +44,6 @@ spec:
         - name: fluent-prometheus
           image: {{.Values.global.registry}}/elk-fluent:{{.Values.image_version}}
           imagePullPolicy: IfNotPresent
-          command: ["/usr/local/bin/dumb-init", "/bin/bash", "/fluent-bin/fluent-start"]
           env:
             - name: NAMESPACE
               valueFrom:
