@@ -1,0 +1,75 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  # since this name changes with every image change, removal and creation of
+  # this Job happens on nearly every deployment. Check the helm-chart changes
+  # to see if this needs more review.
+  name: {{ tuple . "db-migrate" | include "job_name" }}
+  labels:
+    system: openstack
+    type: configuration
+    component: placement
+spec:
+  template:
+    metadata:
+      labels:
+        alert-tier: os
+        alert-service: placement
+{{ tuple . "placement" "db-migrate" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
+    spec:
+      restartPolicy: OnFailure
+      {{- include "utils.proxysql.job_pod_settings" . | indent 6 }}
+      initContainers:
+        - name: dependencies
+          image: {{ required ".Values.global.registry is missing" .Values.global.registry}}/ubuntu-source-nova-placement-api:{{.Values.imageVersion | required "Please set .imageVersion or similar" }}
+          imagePullPolicy: IfNotPresent
+          command:
+            - kubernetes-entrypoint
+          env:
+            - name: COMMAND
+              value: "true"
+            - name: NAMESPACE
+              value: {{ .Release.Namespace }}
+            - name: DEPENDENCY_SERVICE
+              value: {{ if .Values.mariadb.enabled -}}
+                "{{ .Values.mariadb.name }}-mariadb"
+                {{- else -}}
+                  "nova-api-mariadb"
+                {{- end }}
+      containers:
+      - name: db-migrate
+        image: {{ required ".Values.global.registry is missing" .Values.global.registry}}/ubuntu-source-nova-placement-api:{{.Values.imageVersion | required "Please set .imageVersion or similar" }}
+        imagePullPolicy: IfNotPresent
+        command:
+        - dumb-init
+        - bash
+        - -c
+        - |
+          set -euo pipefail
+          if which placement-manage; then
+              placement-manage db sync
+          else
+              # wait for proxysql to start so we can properly kill it
+              sleep 5
+          fi
+          {{ include "utils.proxysql.proxysql_signal_stop_script" . | trim }}
+        env:
+          {{- if .Values.sentry.enabled }}
+        - name: SENTRY_DSN
+          valueFrom:
+            secretKeyRef:
+              name: sentry
+              key: {{ .Chart.Name }}.DSN.python
+          {{- end }}
+        - name: PYTHONWARNINGS
+          value: {{ .Values.python_warnings | quote }}
+        volumeMounts:
+        - mountPath: /etc/{{ include "placement_project" . }}
+          name: placement-etc
+        {{- include "utils.proxysql.volume_mount" . | indent 8 }}
+      {{- include "utils.proxysql.container" . | indent 6 }}
+      volumes:
+      - name: placement-etc
+        configMap:
+          name: placement-etc
+      {{- include "utils.proxysql.volumes" . | indent 6 }}
