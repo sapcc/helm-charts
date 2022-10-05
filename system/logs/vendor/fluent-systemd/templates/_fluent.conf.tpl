@@ -21,7 +21,7 @@
 
 # prometheus monitoring config
 
-@include /fluent-etc/prometheus.conf
+@include /fluentd/etc/prometheus.conf
 
 <filter **>
   @type systemd_entry
@@ -47,7 +47,7 @@
     logstash_prefix systemd
     logstash_format true
     template_name systemd
-    template_file /fluent-etc/systemd.json
+    template_file /fluentd/etc/systemd.json
     template_overwrite true
     time_as_integer false
     @log_level info
