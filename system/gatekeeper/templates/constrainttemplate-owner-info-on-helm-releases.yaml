@@ -33,12 +33,14 @@ spec:
           release.error != ""
         }
 
+        configmap_name := sprintf("owner-of-%s", [iro.metadata.labels.name])
+
         configmaps[obj] {
           release.error == ""
 
           obj := release.items[_]
           obj.kind == "ConfigMap"
-          startswith(obj.metadata.name, "owner-of-")
+          obj.metadata.name == configmap_name
         }
 
         violation[{"msg": add_support_labels.from_helm_release(release, msg)}] {
@@ -47,7 +49,7 @@ spec:
           # Check if an 'owner-of-<release-name>' ConfigMap exists for this release.
           count(configmaps) == 0
           release_name := iro.metadata.labels.name
-          msg := sprintf("could not find ConfigMap: owner-of-%s", [release_name])
+          msg := sprintf("could not find ConfigMap: %s", [configmap_name])
         }
 
         violation[{"msg": add_support_labels.from_helm_release(release, msg)}] {
@@ -62,7 +64,7 @@ spec:
           semver.compare(version, upToDateVersion) < 0
 
           msg := sprintf(
-            "ConfigMap %q uses owner-info Chart version %q which is outdated. The current version is %q",
-            [obj.metadata.name, version, upToDateVersion],
+            "Chart uses outdated owner-info version %q. Please update to at least %q.",
+            [version, upToDateVersion],
           )
         }
