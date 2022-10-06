@@ -46,7 +46,6 @@
       - '{__name__=~"^node_.+"}'
       - '{__name__=~"^ntp_drift_seconds$"}'
       - '{__name__=~"^pg_.+"}'
-      - '{__name__=~"^pgbouncer_.+"}'
       - '{__name__=~"^probe_success$"}'
       - '{__name__=~"^probe_dns_lookup_time_seconds$"}'
       - '{__name__=~"^probe_duration_seconds$"}'
