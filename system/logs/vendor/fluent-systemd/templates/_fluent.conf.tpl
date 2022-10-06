@@ -35,7 +35,7 @@
   @type copy
   <store>
     @type elasticsearch
-{{ if eq .Values.global.clusterType  "scaleout" -}}
+{{ if eq .Values.global.clusterType  "scaleout" }}
     host {{.Values.endpoint_host_internal}}
     port {{.Values.http_port}}
 {{ else }}
