@@ -6,6 +6,10 @@ global:
   rbac:
     create: true
 
+# Disable the prometheus-operator kube-state-metrics sub-chart. We deploy independently. See below.
+kubeStateMetrics:
+  enabled: false
+
 kube-prometheus-stack:
   nameOverride: prometheus
   fullnameOverride: prometheus
@@ -14,12 +18,12 @@ kube-prometheus-stack:
 
   prometheusOperator:
     image:
-      repository: keppel.eu-de-1.cloud.sap/ccloud-dockerhub-mirror/sapcc/prometheus-operator
-      tag: v0.44.0
+      repository: keppel.eu-de-1.cloud.sap/ccloud-quay-mirror/prometheus-operator/prometheus-operator
+      tag: v0.58.0
 
     prometheusConfigReloaderImage:
-      repository: keppel.eu-de-1.cloud.sap/ccloud-dockerhub-mirror/sapcc/prometheus-config-reloader
-      tag: v0.44.0
+      repository: keppel.eu-de-1.cloud.sap/ccloud-quay-mirror/prometheus-operator/prometheus-operator
+      tag: v0.58.0
 
     # Both admissionWebhooks and tls requires admissionregistration.k8s.io/v1 .
     admissionWebhooks:
@@ -68,42 +72,67 @@ kube-prometheus-stack:
     enabled: false
   grafana:
     enabled: false
-
-  kube-state-metrics:
-    image:
-      repository: keppel.eu-de-1.cloud.sap/ccloud-quay-mirror/coreos/kube-state-metrics
-    podSecurityPolicy:
-      enabled: false
-
-    customLabels:
-      app: kube-state-metrics
-
-    prometheusScrape: false
-
-    collectors:
-      # Not useful.
-      configmaps: false
-      secrets: false
-      mutatingwebhookconfigurations: false
-      validatingwebhookconfigurations: false
-      certificatesigningrequests: false
-      ingresses: false
-      verticalpodautoscalers: true
-
-    prometheus:
-      monitor:
-        enabled: false
-        honorLabels: true
-        additionalLabels:
-          prometheus: collector-kubernetes
-
-    resources:
-      requests:
-        memory: 150Mi
-        cpu: 100m
+  kubeStateMetrics:
+    enabled: false
 
 absent-metrics-operator:
   enabled: true
+
+kube-state-metrics:
+  image:
+    repository: keppel.global.cloud.sap/ccloud-k8sgcr-mirror/kube-state-metrics/kube-state-metrics
+    tag: 2.5.0
+
+  podSecurityPolicy:
+    enabled: false
+
+  prometheusScrape: false
+
+  collectors:
+    # Not useful.
+    # - certificatesigningrequests
+    # - configmaps
+    - cronjobs
+    - daemonsets
+    - deployments
+    - endpoints
+    - horizontalpodautoscalers
+    # - ingresses
+    - jobs
+    - limitranges
+    # - mutatingwebhookconfigurations
+    - namespaces
+    - networkpolicies
+    - nodes
+    - persistentvolumeclaims
+    - persistentvolumes
+    - poddisruptionbudgets
+    - pods
+    - replicasets
+    - replicationcontrollers
+    - resourcequotas
+    # - secrets
+    - services
+    - statefulsets
+    - storageclasses
+    # - validatingwebhookconfigurations
+    - volumeattachments
+    - verticalpodautoscalers
+
+  customLabels:
+    app: kube-state-metrics
+
+  prometheus:
+    monitor:
+      enabled: false
+      honorLabels: true
+      additionalLabels:
+        prometheus: collector-kubernetes
+
+  resources:
+    requests:
+      memory: 150Mi
+      cpu: 100m
 
 # Values for operated Prometheus collector.
 prometheus-collector:

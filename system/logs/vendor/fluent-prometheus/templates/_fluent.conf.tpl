@@ -115,14 +115,12 @@
 
 <filter kubernetes.**>
   @type kubernetes_metadata
-  kubernetes_url https://KUBERNETES_SERVICE_HOST
   bearer_token_file /var/run/secrets/kubernetes.io/serviceaccount/token
   ca_file /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
 </filter>
 
 <filter audit.**>
   @type kubernetes_metadata
-  kubernetes_url https://KUBERNETES_SERVICE_HOST
   bearer_token_file /var/run/secrets/kubernetes.io/serviceaccount/token
   ca_file /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
 </filter>

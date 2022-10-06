@@ -1,59 +1,3 @@
-# This Fluentd configuration file enables the collection of log files
-# that can be specified at the time of its creation in an environment
-# variable, assuming that the config_generator.sh script runs to generate
-# a configuration file for each log file to collect.
-# Logs collected will be sent to the cluster's Elasticsearch service.
-#
-# Currently the collector uses a text format rather than allowing the user
-# to specify how to parse each file.
-
-# Pick up all the auto-generated input config files, one for each file
-# specified in the FILES_TO_COLLECT environment variable.
-@include files/*
-
-<system>
-  log_level info
-</system>
-
-<label @FLUENT_LOG>
-  <match fluent.*>
-    @type stdout
-  </match>
-</label>
-
-# All the auto-generated files should use the tag "file.<filename>".
-<source>
-  @type tail
-  path /var/log/containers/*.log
-  exclude_path /var/log/containers/fluentd*
-  pos_file /var/log/es-containers-os.log.pos
-  time_format %Y-%m-%dT%H:%M:%S.%N
-  tag kubernetes.*
-  format json
-  keep_time_key true
-</source>
-
-<match fluent.**>
-  @type null
-</match>
-
-<match kubernetes.var.log.containers.opensearch**>
-  @type null
-</match>
-
-# prometheus monitoring config
-
-@include /fluent-bin/prometheus.conf
-
-<filter kubernetes.**>
-  @type kubernetes_metadata
-  kubernetes_url https://KUBERNETES_SERVICE_HOST
-  bearer_token_file /var/run/secrets/kubernetes.io/serviceaccount/token
-  ca_file /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
-  use_journal 'false'
-  container_name_to_kubernetes_regexp '^(?<name_prefix>[^_]+)_(?<container_name>[^\._]+)(\.(?<container_hash>[^_]+))?_(?<pod_name>[^_]+)_(?<namespace>[^_]+)_[^_]+_[^_]+$'
-</filter>
-
 <filter kubernetes.var.log.containers.es**>
   @type parser
   key_name log
@@ -62,6 +6,20 @@
     @type grok
     grok_pattern \[%{TIMESTAMP_ISO8601:timestamp}\]\[%{WORD:loglevel}
     grok_pattern %{TIMESTAMP_ISO8601:timestamp} \| %{NOTSPACE:loglevel}
+  </parse>
+</filter>
+
+<filter kubernetes.var.log.containers.elk-k8s-event-exporter**>
+  @type parser
+  @id json_parser
+  key_name log
+  reserve_data true
+  inject_key_prefix k8s.
+  remove_key_name_field true
+  <parse>
+    @type json
+    time_format %Y-%m-%dT%T.%L%Z
+    keep_time_key true
   </parse>
 </filter>
 
@@ -134,7 +92,6 @@
 #  <parse>
 #    @type grok
 #    grok_pattern %{IP:remote_addr} - \[%{GREEDYDATA:proxy_add_x_forwarded_for}\] - %{NOTSPACE:auth} \[%{HAPROXYDATE:timestamp}\] "%{WORD:request_method} %{NOTSPACE:request_path} %{NOTSPACE:httpversion}" %{NUMBER:response} %{NUMBER:content_length} "(?<referer>[^\"]{,255}).*?" "%{DATA:user_agent}" %{NUMBER:request_length} %{NUMBER:request_time}( \[%{NOTSPACE:service}\])? %{IP:upstream_addr}\:%{NUMBER:upstream_port} %{NUMBER:upstream_response_length} %{NOTSPACE:upstream_response_time} %{NOTSPACE:upstream_status}
-#    custom_pattern_path /fluent-bin/pattern
 #  </parse>
 #</filter>
 
@@ -145,7 +102,7 @@
   <parse>
     @type grok
     grok_pattern %{IPV4:remote_addr} %{GREEDYDATA}
-    custom_pattern_path /fluent-bin/pattern
+    custom_pattern_path /fluentd/etc/pattern
   </parse>
 </filter>
 
@@ -166,7 +123,18 @@
 </filter>
 {{- end }}
 
+<filter kubernetes.**>
+  @type flatten_hash
+  @id flatten_hash
+  separator _
+  flatten_array false
+</filter>
 
+<filter kubernetes.**>
+  @type rename_key
+  @id rename_key
+  rename_rule1 kubernetes_labels_app kubernetes_labels_app_name
+</filter>
 
 # count number of outgoing records per tag
 <match kubernetes.**>
@@ -185,7 +153,6 @@
     template_file /fluent-bin/{{.Values.indexname}}.json
     template_overwrite false
     time_as_integer false
-    type_name _doc
     @log_level info
     slow_flush_log_threshold 50.0
     request_timeout 60s

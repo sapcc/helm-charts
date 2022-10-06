@@ -268,22 +268,6 @@ groups:
       summary: Scheduling failed due to insufficient cpu
       description: The pod {{ $labels.pod_name }} failed to be scheduled. Insuffient CPU!
 
-  - alert: OpenstackLimesSeesHypervisorWithoutAZ
-    # The max_over_time() is used to avoid alert flapping when the collector restarts e.g. after an OOM kill.
-    expr: max by (hypervisor, hostname) (max_over_time(limes_nova_hypervisor_has_az{region!~"qa-de-.*"}[10m])) == 0 # only active in prod regions
-    for: 15m
-    labels:
-      severity: info
-      tier: os
-      service: limes
-      context: nova-hypervisor
-      meta: "Nova hypervisor {{$labels.hypervisor}} is not assigned to any AZ."
-    annotations:
-      summary: Unmatched Nova hypervisors
-      description: Limes cannot determine the AZ of the hypervisor
-        {{$labels.hypervisor}}. Its capacity will be reported in the AZ
-        "unknown" in the resource management UI until this issue is fixed.
-
   - alert: OpenstackLimesIncompleteProjectResourceData
     expr: max by (service, resource) (limes_project_resources_by_type_count) != on () group_left max(limes_project_count)
     # Do not trigger too fast! When a new resource is added, it takes one full scrape cycle to create all resource records.
