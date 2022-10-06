@@ -34,14 +34,19 @@
 <match **>
   @type copy
   <store>
-    @type elasticsearch_dynamic
+    @type elasticsearch
+{{ if eq .Values.global.clusterType  "scaleout" -}}
+    host {{.Values.endpoint_host_internal}}
+    port {{.Values.http_port}}
+{{ else }}
     host {{.Values.global.elk_elasticsearch_endpoint_host_scaleout}}.{{.Values.global.elk_cluster_region}}.{{.Values.global.tld}}
     port {{.Values.global.elk_elasticsearch_ssl_port}}
-    user {{.Values.global.elk_elasticsearch_data_user}}
-    password {{.Values.global.elk_elasticsearch_data_password}}
     scheme https
     ssl_verify false
     ssl_version TLSv1_2
+{{ end }}
+    user {{.Values.global.elk_elasticsearch_data_user}}
+    password {{.Values.global.elk_elasticsearch_data_password}}
     index_name systemd
     type_name _doc
     logstash_prefix systemd
