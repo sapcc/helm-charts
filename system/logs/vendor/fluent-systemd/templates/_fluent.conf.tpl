@@ -19,6 +19,12 @@
   read_from_head true
 </source>
 
+<label @FLUENT_LOG>
+  <match fluent.*>
+    @type null
+  </match>
+</label>
+
 # prometheus monitoring config
 
 @include /fluentd/etc/prometheus.conf
