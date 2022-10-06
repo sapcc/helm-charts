@@ -14,6 +14,20 @@
   username: neutron-tempestadmin2
 - domain_name: tempest
   password: {{ .Values.tempestAdminPassword | quote }}
+  project_name: neutron-tempest-admin3
+  project_id: f71088a0dfd74e15ac547556cb1874ec
+  types:
+  - admin
+  username: neutron-tempestadmin3
+- domain_name: tempest
+  password: {{ .Values.tempestAdminPassword | quote }}
+  project_name: neutron-tempest-admin4
+  project_id: fdcf78492695421ab9767832a75d568a
+  types:
+  - admin
+  username: neutron-tempestadmin4
+- domain_name: tempest
+  password: {{ .Values.tempestAdminPassword | quote }}
   project_name: neutron-tempest1
   username: neutron-tempestuser1
   project_id: 7243f3f80a99434292d6766069d3961a
