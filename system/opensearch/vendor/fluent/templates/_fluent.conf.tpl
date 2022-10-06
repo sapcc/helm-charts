@@ -49,7 +49,7 @@
 
 # prometheus monitoring config
 
-@include /fluent/etc/prometheus.conf
+@include /fluentd/etc/prometheus.conf
 
 <filter kubernetes.**>
   @type kubernetes_metadata
@@ -79,7 +79,7 @@
   <parse>
     @type grok
     grok_pattern (%{TIMESTAMP_ISO8601:logtime}|)( )?%{TIMESTAMP_ISO8601:timestamp}.%{NOTSPACE}? %{NUMBER:pid} %{WORD:loglevel} %{NOTSPACE:logger} (\[)?(req-)?%{NOTSPACE:requestid} (greq-%{UUID:global_requestid})?
-    custom_pattern_path /fluent/etc/pattern
+    custom_pattern_path /fluentd/etc/pattern
   </parse>
 </filter>
 
@@ -90,7 +90,7 @@
   <parse>
     @type grok
     grok_pattern %{DATE_EU:timestamp}%{SPACE}%{GREEDYDATA}"%{WORD:method}%{SPACE}%{IMAGE_METHOD:path}%{NOTSPACE}%{SPACE}%{NOTSPACE:httpversion}"%{SPACE}%{NUMBER:response}
-    custom_pattern_path /fluent/etc/pattern
+    custom_pattern_path /fluentd/etc/pattern
   </parse>
 </filter>
 
@@ -101,7 +101,7 @@
   <parse>
     @type grok
     grok_pattern (%{TIMESTAMP_ISO8601:logtime}|)( )?%{TIMESTAMP_ISO8601:timestamp}.%{NOTSPACE} %{NUMBER:pid} %{NOTSPACE:log_level} %{NOTSPACE:program} (\[?)%{NOTSPACE:request_id} %{NOTSPACE:user_id} %{NOTSPACE:project_id} %{NOTSPACE:domain_id} %{NOTSPACE:id1} %{REQUESTID:id2}(\]?) %{GREEDYDATA:log_request}
-    custom_pattern_path /fluent/etc/pattern
+    custom_pattern_path /fluentd/etc/pattern
   </parse>
 </filter>
 
@@ -120,7 +120,7 @@
   <parse>
     @type grok
     grok_pattern %{IP:remote_addr} %{NOTSPACE:ident} %{NOTSPACE:auth} \[%{HAPROXYDATE:timestamp}\] "%{WORD:request_method} %{NOTSPACE:request_path} %{NOTSPACE:httpversion}" %{NUMBER:response} %{NUMBER:content_length} \"(?<referer>[^\"]{,255}).*?" "%{GREEDYDATA:user_agent}\"?( )?(%{NOTSPACE:request_time})
-    custom_pattern_path /fluent/etc/pattern
+    custom_pattern_path /fluentd/etc/pattern
   </parse>
 </filter>
 
@@ -132,7 +132,7 @@
   <parse>
     @type grok
     grok_pattern %{IP:remote_addr} %{NOTSPACE:ident} %{NOTSPACE:auth} \[%{HAPROXYDATE:timestamp}\] "%{WORD:request_method} %{NOTSPACE:request_path} %{NOTSPACE:httpversion}" %{NUMBER:response} %{NUMBER:content_length} \"(?<referer>[^\"]{,255}).*?" "%{GREEDYDATA:user_agent}" %{GREEDYDATA} \[%{NOTSPACE:service}\] %{NOTSPACE:target} %{NUMBER} %{NUMBER:response_time} %{NOTSPACE} %{NOTSPACE:requestid}
-    custom_pattern_path /fluent/etc/pattern
+    custom_pattern_path /fluentd/etc/pattern
   </parse>
 </filter>
 
@@ -244,7 +244,7 @@
 #  <parse>
 #    @type grok
 #    grok_pattern %{IP:remote_addr} - \[%{GREEDYDATA:proxy_add_x_forwarded_for}\] - %{NOTSPACE:auth} \[%{HAPROXYDATE:timestamp}\] "%{WORD:request_method} %{NOTSPACE:request_path} %{NOTSPACE:httpversion}" %{NUMBER:response} %{NUMBER:content_length} "(?<referer>[^\"]{,255}).*?" "%{DATA:user_agent}" %{NUMBER:request_length} %{NUMBER:request_time}( \[%{NOTSPACE:service}\])? %{IP:upstream_addr}\:%{NUMBER:upstream_port} %{NUMBER:upstream_response_length} %{NOTSPACE:upstream_response_time} %{NOTSPACE:upstream_status}
-#    custom_pattern_path /fluent/etc/pattern
+#    custom_pattern_path /fluentd/etc/pattern
 #  </parse>
 #</filter>
 
@@ -279,7 +279,7 @@
   <parse>
     @type grok
     grok_pattern %{SYSLOGTIMESTAMP:date} %{HOSTNAME:host} %{WORD}.%{LOGLEVEL} %{SYSLOGPROG}: %{HOSTNAME:client_ip} %{HOSTNAME:remote_addr} %{NOTSPACE:datetime} %{WORD:request_method} %{SWIFTREQPATH:request_path}(?:%{SWIFTREQPARAM:request_param})? %{NOTSPACE:protocol} %{NUMBER:response} (?<referer>\S{,255})\S*? %{NOTSPACE:user_agent} %{NOTSPACE:auth_token} %{NOTSPACE:bytes_recvd} %{NOTSPACE:bytes_sent} %{NOTSPACE:client_etag} %{NOTSPACE:transaction_id} %{NOTSPACE:headers} %{NOTSPACE:request_time} %{NOTSPACE:source} %{NOTSPACE:log_info} %{NUMBER:request_start_time} %{NUMBER:request_end_time} %{NOTSPACE:policy_index}
-    custom_pattern_path /fluent/etc/pattern
+    custom_pattern_path /fluentd/etc/pattern
   </parse>
 </filter>
 
@@ -307,7 +307,7 @@
   <parse>
     @type grok
     grok_pattern %{DATE_EU:timestamp} %{TIME:timestamp} %{NUMBER} %{NOTSPACE:loglevel} %{JAVACLASS:component} \[%{NOTSPACE:requestid} %{NOTSPACE:global_request_id} usr %{DATA:usr} prj %{DATA:prj} dom %{DATA:dom} usr-dom %{DATA:usr_domain} prj-dom %{DATA}\] %{DATA:action} %{METHOD:method} %{URIPATH:pri_path}, %{LOWER:action} (?:b\')?%{NOTSPACE:user}(?:\') (?:b\')?%{WORD:domain}(?:\') %{GREEDYDATA:action}
-    custom_pattern_path /fluent/etc/pattern
+    custom_pattern_path /fluentd/etc/pattern
     grok_failure_key grok_failure
   </parse>
 </filter>
@@ -480,7 +480,7 @@
     logstash_prefix {{.Values.indexname}}
     logstash_format true
     template_name {{.Values.indexname}}
-    template_file /fluent/etc/{{.Values.indexname}}.json
+    template_file /fluentd/etc/{{.Values.indexname}}.json
     template_overwrite false
     time_as_integer false
     @log_level info
