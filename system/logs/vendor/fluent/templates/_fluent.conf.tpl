@@ -43,9 +43,11 @@
   tag kubernetes.*
 </source>
 
-<match fluent.**>
-  @type null
-</match>
+<label @FLUENT_LOG>
+  <match fluent.*>
+    @type null
+  </match>
+</label>
 
 # prometheus monitoring config
 
