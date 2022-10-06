@@ -15,13 +15,24 @@ data:
         do-daemonize: no
         access-control: 0.0.0.0/0 allow_snoop
 
-        num-threads: 10
+        # not more then the number of cpus
+        num-threads: 8
+
+        # power of 2 close to num-threads
+        msg-cache-slabs: 8
+        rrset-cache-slabs: 8
+        infra-cache-slabs: 8
+        key-cache-slabs: 8
+
         cache-max-negative-ttl: 100
         cache-max-ttl: 28800
         
         # more cache memory (default is 4m), rrset=msg*2
         rrset-cache-size: 100m
         msg-cache-size: 50m
+
+        # Faster UDP with multithreading (only on Linux)
+        so-reuseport: yes
         
         root-hints: "/etc/unbound/root.hints"
 
