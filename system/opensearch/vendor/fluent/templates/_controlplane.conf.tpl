@@ -432,7 +432,7 @@
 </filter>
 
 # count number of outgoing records per tag
-i<match kubernetes.**>
+<match kubernetes.**>
   @type copy
   <store>
     @type opensearch
