@@ -3,9 +3,9 @@ groups:
   rules:
   - alert: ElkFluentLogsMissing
 {{ if eq .Values.global.clusterType  "scaleout" }}
-    expr: sum(rate(fluentd_output_status_num_records_total{job="logs-fluent-exporter",cluster_type!="controlplane",component="fluent"}[30m])) by (nodename,pod) == 0
+    expr: sum(rate(fluentd_output_status_num_records_total{job="logs-fluent-exporter",cluster_type!="controlplane",component="fluent"}[60m])) by (nodename,pod) == 0
 {{ else }}
-    expr: sum(rate(fluentd_output_status_num_records_total{job="logs-fluent-exporter",component="fluent"}[30m])) by (nodename,pod) == 0
+    expr: sum(rate(fluentd_output_status_num_records_total{job="logs-fluent-exporter",component="fluent"}[60m])) by (nodename,pod) == 0
 {{ end }}
     for: 60m
     labels:
@@ -25,7 +25,7 @@ groups:
 {{ if eq .Values.global.clusterType  "scaleout" }}
     expr: (sum(increase(fluentd_output_status_emit_records{cluster_type!="controlplane",component="fluent",type="elasticsearch"}[1h])) / sum(increase(fluentd_output_status_emit_records{cluster_type!="controlplane",component="fluent",type="elasticsearch"}[1h]offset 2h))) > 2
 {{ else }}
-    expr: (sum(increase(fluentd_output_status_emit_records{component="fluent",type="elasticsearch"}[1h])) / sum(increase(fluentd_output_status_emit_records{component="fluent",type="elasticsearch"}[1h]offset 2h))) > 2
+    expr: (sum(increase(fluentd_output_status_emit_records{component="fluent",type="elasticsearch"}[1h])) / sum(increase(fluentd_output_status_emit_records{component="fluent",type="elasticsearch"}[1h]offset 2h))) > 4
 {{ end }}
     for: 1h
     labels:
