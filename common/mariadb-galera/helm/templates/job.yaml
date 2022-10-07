@@ -17,7 +17,7 @@ spec:
         release: {{ $.Release.Name }}
       annotations:
         checksum/entrypoint.sh: {{ include (print $.Template.BasePath "/configmap-mariadb-job-entrypoint.sh.yaml") $ | sha256sum }}
-        checksum/common-functions-extended.sh: {{ include (print $.Template.BasePath "/configmap-common-functions-extended.sh.yaml") $ | sha256sum }}
+        checksum/common-functions-extended.sh: {{ include (print $.Template.BasePath "/configmap-mariadb-common-functions-extended.sh.yaml") $ | sha256sum }}
     spec:
       restartPolicy: {{ $.Values.jobRestartPolicy | default "OnFailure" | quote }}
       serviceAccount: {{ $.Release.Name }}
@@ -80,7 +80,7 @@ spec:
           mountPath: /opt/mariadb/bin/entrypoint-job.sh
           subPath: entrypoint-job.sh
           readOnly: true
-        - name: common-functions-extended-sh
+        - name: mariadb-common-functions-extended-sh
           mountPath: /opt/mariadb/bin/common-functions-extended.sh
           subPath: common-functions-extended.sh
           readOnly: true
@@ -105,7 +105,7 @@ spec:
         configMap:
           name: mariadb-job-entrypoint-sh
           defaultMode: 0750
-      - name: common-functions-extended-sh
+      - name: mariadb-common-functions-extended-sh
         configMap:
-          name: common-functions-extended-sh
+          name: mariadb-common-functions-extended-sh
           defaultMode: 0755

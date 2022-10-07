@@ -5,7 +5,7 @@
 */}}
 {{- define "networkService" }}
 {{ $nodeNamePrefix := "" }}
-{{ if eq .component "application" }}
+{{ if or (eq .component "application") (eq .component "application-direct") }}
   {{ $nodeNamePrefix = (include "nodeNamePrefix" (dict "global" .global "component" "application")) }}
 {{ else if eq .component "proxy" }}
   {{ $nodeNamePrefix = (include "nodeNamePrefix" (dict "global" .global "component" "proxy")) }}
@@ -16,8 +16,10 @@ kind: Service
 metadata:
   namespace: {{ .global.Release.Namespace }}
   {{- if eq .replica "notused" }}
-    {{- if and (eq .service.value.name "frontend") (.global.Values.proxy.enabled)}}
+    {{- if and (eq .service.value.name "frontend") (.global.Values.proxy.enabled) (eq .component "proxy")}}
   name: {{ (printf "%s-%s" (include "nodeNamePrefix" (dict "global" .global "component" "application")) .service.value.name) }}
+    {{- else if and (eq .service.value.name "frontend") (eq .component "application-direct")}}
+  name: {{ (printf "%s-%s-direct" $nodeNamePrefix .service.value.name) }}
     {{- else }}
   name: {{ (printf "%s-%s" $nodeNamePrefix .service.value.name) }}
     {{- end }}
@@ -44,8 +46,13 @@ spec:
   publishNotReadyAddresses: true {{/* create A records for not ready pods and announce the IPs on the headless service before they are ready https://kubernetes.io/docs/concepts/services-networking/dns-pod-service/#pod-s-hostname-and-subdomain-fields */}}
   {{- end }}
   selector:
+
   {{- if eq .replica "notused" }}
+    {{- if eq .component "application-direct" }}
+    component: "application"
+    {{- else }}
     component: {{ .component | quote }}
+    {{- end }}
   {{- else }}
     statefulset.kubernetes.io/pod-name: {{ (printf "%s-%s" $nodeNamePrefix .replica) }}
   {{- end }}

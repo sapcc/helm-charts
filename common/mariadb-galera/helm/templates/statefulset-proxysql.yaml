@@ -32,6 +32,7 @@ spec:
         release: {{ $.Release.Name }}
       annotations:
         checksum/entrypoint.sh: {{ include (print $.Template.BasePath "/configmap-proxysql-entrypoint.sh.yaml") $ | sha256sum }}
+        checksum/common-functions-extended.sh: {{ include (print $.Template.BasePath "/configmap-proxysql-common-functions-extended.sh.yaml") $ | sha256sum }}
         checksum/proxysql.conf: {{ include (print $.Template.BasePath "/configmap-proxysql.conf.yaml") $ | sha256sum }}
     spec:
       affinity:
@@ -250,6 +251,10 @@ spec:
             subPath: proxysql_servers.cfg.tpl
             readOnly: true
           - name: proxysql-conf
+            mountPath: /opt/proxysql/etc/tpl/mysql_variables.cfg.tpl
+            subPath: mysql_variables.cfg.tpl
+            readOnly: true
+          - name: proxysql-conf
             mountPath: /opt/proxysql/etc/tpl/galera_hostgroups.cfg.tpl
             subPath: galera_hostgroups.cfg.tpl
             readOnly: true
@@ -268,6 +273,10 @@ spec:
           - name: proxysql-entrypoint-sh
             mountPath: /opt/proxysql/bin/entrypoint-cluster.sh
             subPath: entrypoint-cluster.sh
+            readOnly: true
+          - name: proxysql-common-functions-extended-sh
+            mountPath: /opt/proxysql/bin/common-functions-extended.sh
+            subPath: common-functions-extended.sh
             readOnly: true
           - name: proxysql-probes-sh
             mountPath: /opt/proxysql/bin/startup.sh
@@ -314,6 +323,10 @@ spec:
         - name: proxysql-entrypoint-sh
           configMap:
             name: proxysql-entrypoint-sh
+            defaultMode: 0755
+        - name: proxysql-common-functions-extended-sh
+          configMap:
+            name: proxysql-common-functions-extended-sh
             defaultMode: 0755
         - name: proxysql-probes-sh
           configMap:

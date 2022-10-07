@@ -20,6 +20,17 @@ scripts:
   logLevel: debug # info(default) or debug
   maxAllowedTimeDifferenceFactor: 12 #to multiply with readinessProbe.timeoutSeconds.application as the maximum allowed time difference between nodes for the last sequence number configmap update (default 3)
   useTimeDifferenceForSeqnoCheck: false #fail if time difference between nodes for the last sequence number configmap update is too big
+mariadb:
+  binLogDir: log #if not defined the data dir will be used. Needs a log volume mount to be configured too
+  performance_schema: false #https://mariadb.com/kb/en/performance-schema-overview/
+  galera:
+    debug: false #https://galeracluster.com/library/documentation/galera-parameters.html#debug
+    waitForPrimaryTimeoutInSeconds: 60 #https://galeracluster.com/library/documentation/galera-parameters.html#pc.wait_prim_timeout
+    logLevel: info #info(default) or debug https://mariadb.com/kb/en/galera-cluster-system-variables/#wsrep_debug
+    pcrecovery: false #https://galeracluster.com/library/documentation/pc-recovery.html
+    gcache.recover: false #
+    sst_method: rsync #rsync or mariabackup(also requires GALERA_SST_USER and GALERA_SST_PASSWORD)
+    slaveThreads: 16 #https://galeracluster.com/library/documentation/mysql-wsrep-options.html#wsrep-slave-threads
 monitoring:
   prometheus:
     instance: prometheus #name of the Prometheus instance that should pull metrics
@@ -30,6 +41,14 @@ monitoring:
     enabled: false #add annotations to allow automatic configuration of Elastic Beats agents https://www.elastic.co/guide/en/beats/metricbeat/current/configuration-autodiscover-hints.html
 proxy:
   enabled: true #use ProxySQL in front of the MariaDB Galera pods to reduce the service downtimes for the clients
+  restapi:
+    enabled: true #https://proxysql.com/documentation/REST-API/
+  adminui:
+    enabled: true #https://proxysql.com/documentation/http-web-server/
+    verbosity: 0 #https://proxysql.com/documentation/global-variables/admin-variables/#admin-web_verbosity
+  queryRules:
+    genericReadWriteSplit:
+      enabled: false #The "Generic Read/Write split using regex" section in https://proxysql.com/documentation/proxysql-read-write-split-howto/
 
 # command:
 #   application:
@@ -79,8 +98,8 @@ image:
     registry: keppel.eu-de-1.cloud.sap
     project: ccloud
     applicationname: proxysql
-    applicationversion: 2.4.3
-    imageversion: 0.1.1
+    applicationversion: 2.4.4
+    imageversion: 0.1.2
     pullPolicy: Always
     pullSecret: false
 
@@ -132,14 +151,19 @@ services:
     - name: backend
       type: ClusterIP
       headless: true
+      #https://proxysql.com/Documentation/global-variables/admin-variables/#admin-mysql_ifaces
       ports:
-        - name: proxy #https://proxysql.com/Documentation/global-variables/admin-variables/#admin-mysql_ifaces
+        - name: proxy
           port: 6032
           targetPort: 6032
           protocol: TCP
-        - name: rest #https://proxysql.com/Documentation/global-variables/admin-variables/#admin-mysql_ifaces
+        - name: restapi #https://proxysql.com/documentation/REST-API/
           port: 6070
           targetPort: 6070
+          protocol: TCP
+        - name: adminui #https://proxysql.com/documentation/http-web-server/
+          port: 6080
+          targetPort: 6080
           protocol: TCP
       sessionAffinity: None
     - name: frontend
@@ -191,7 +215,7 @@ resourceLimits:
     application: 2
     monitoring: 0.5
     job: 0.5
-    proxy: 0.5
+    proxy: 2
   memory:
     application: 1024Mi
     monitoring: 48Mi
@@ -354,10 +378,6 @@ env:
     secretKey: password
     containerType:
       - proxy
-  PROXYSQL_RESTAPI_ENABLED:
-    value: true
-    containerType:
-      - proxy
   OPENSTACK_CITEST_USERNAME:
     secretName: db-oslodb-auth
     secretKey: username
@@ -382,15 +402,3 @@ env:
     containerType:
       - job
       - proxy
-
-mariadb:
-  binLogDir: log #if not defined the data dir will be used. Needs a log volume mount to be configured too
-  performance_schema: false #https://mariadb.com/kb/en/performance-schema-overview/
-  galera:
-    debug: false #https://galeracluster.com/library/documentation/galera-parameters.html#debug
-    waitForPrimaryTimeoutInSeconds: 60 #https://galeracluster.com/library/documentation/galera-parameters.html#pc.wait_prim_timeout
-    logLevel: info #info(default) or debug https://mariadb.com/kb/en/galera-cluster-system-variables/#wsrep_debug
-    pcrecovery: false #https://galeracluster.com/library/documentation/pc-recovery.html
-    gcache.recover: false #
-    sst_method: rsync #rsync or mariabackup(also requires GALERA_SST_USER and GALERA_SST_PASSWORD)
-    slaveThreads: 16 #https://galeracluster.com/library/documentation/mysql-wsrep-options.html#wsrep-slave-threads

@@ -36,7 +36,7 @@ spec:
         {{- end }}
         checksum/my.cnf.yml: {{ include (print $.Template.BasePath "/configmap-my.cnf.yaml") $ | sha256sum }}
         checksum/entrypoint.sh: {{ include (print $.Template.BasePath "/configmap-mariadb-entrypoint.sh.yaml") $ | sha256sum }}
-        checksum/common-functions-extended.sh: {{ include (print $.Template.BasePath "/configmap-common-functions-extended.sh.yaml") $ | sha256sum }}
+        checksum/common-functions-extended.sh: {{ include (print $.Template.BasePath "/configmap-mariadb-common-functions-extended.sh.yaml") $ | sha256sum }}
     spec:
       affinity:
         podAntiAffinity:
@@ -308,7 +308,7 @@ spec:
             mountPath: /opt/mariadb/bin/post-start-hook.sh
             subPath: post-start-hook.sh
             readOnly: true
-          - name: common-functions-extended-sh
+          - name: mariadb-common-functions-extended-sh
             mountPath: /opt/mariadb/bin/common-functions-extended.sh
             subPath: common-functions-extended.sh
             readOnly: true
@@ -448,9 +448,9 @@ spec:
           configMap:
             name: mariadb-hooks-sh
             defaultMode: 0755
-        - name: common-functions-extended-sh
+        - name: mariadb-common-functions-extended-sh
           configMap:
-            name: common-functions-extended-sh
+            name: mariadb-common-functions-extended-sh
             defaultMode: 0755
         - name: monitoring-entrypoint-sh
           configMap:

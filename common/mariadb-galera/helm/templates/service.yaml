@@ -11,6 +11,9 @@
   {{- else if and (eq $serviceValue.name "frontend") (not $.Values.proxy.enabled) }}
     {{/* other frontend services for all pods */}}
     {{ include "networkService" (dict "global" $ "service" $service "component" "application" "replica" "notused") }}
+    {{ include "networkService" (dict "global" $ "service" $service "component" "application-direct" "replica" "notused") }}
+  {{- else if and (eq $serviceValue.name "frontend") ($.Values.proxy.enabled) }}
+    {{ include "networkService" (dict "global" $ "service" $service "component" "application-direct" "replica" "notused") }}
   {{- end }}
 {{- end }}
 {{/* proxy services */}}

@@ -32,7 +32,8 @@
 {{- $usernameEnvVarFound := false }}
 {{- $passwordEnvVarFound := false }}
 {{- $mySQLUsers := dict }}
-{{- $_ := set $mySQLUsers "MARIADB_ROOT_USER" "{ username = \"${MARIADB_ROOT_USER}\", password = \"${MARIADB_ROOT_PASSWORD}\", default_hostgroup = 10, transaction_persistent = 0, active = 1 }"}}
+{{- $fastforward := 0 }}
+{{- $_ := set $mySQLUsers "MARIADB_ROOT_USER" "{ username = \"${MARIADB_ROOT_USER}\", password = \"${MARIADB_ROOT_PASSWORD}\", default_hostgroup = 10, transaction_persistent = 0, fast_forward = 1, active = 1 }"}}
 {{- range $mariadbconfigKey, $mariadbconfigValue := required "A valid 'configs.' structure is required from config/mariadb-galera/values.yaml" $mariadbconfigs.configs }}
   {{- if $mariadbconfigValue.enabled}}
     {{- $configfile := $.Files.Get (printf "config/mariadb-galera/%s/%s" $mariadbconfigValue.type $mariadbconfigValue.file) | fromYaml }}
@@ -49,8 +50,11 @@
           {{- end }}
         {{- end }}
       {{- end }}
+      {{- if and (hasKey $configfile "proxysql") $configfile.proxysql.fastforward }}
+        {{- $fastforward := 1 }}
+      {{- end }}
       {{- if and $usernameEnvVarFound $passwordEnvVarFound }}
-        {{- $_ := set $mySQLUsers ($configfile.username | trimAll "${}" | quote) (printf "{ username = %s, password = %s, default_hostgroup = 10, transaction_persistent = 0, active = 1 }" ($configfile.username | quote) ($configfile.password | quote)) }}
+        {{- $_ := set $mySQLUsers ($configfile.username | trimAll "${}" | quote) (printf "{ username = %s, password = %s, default_hostgroup = 10, transaction_persistent = 0, fast_forward = %d, active = 1 }" ($configfile.username | quote) ($configfile.password | quote) $fastforward) }}
       {{- end }}
       {{- if (not $usernameEnvVarFound) }}
       {{- fail (printf "%s environment variable not defined, but required for config/mariadb-galera/%s/%s" ($configfile.username | trimAll "${}" | quote) $mariadbconfigValue.type $mariadbconfigValue.file) }}
@@ -87,6 +91,7 @@ data:
       },
       {{- end }}
     {{- end }}
+  mysql_variables.cfg.tpl: |-
   galera_hostgroups.cfg.tpl: |-
     {
       writer_hostgroup=10
@@ -124,7 +129,11 @@ data:
   mysql_query_rules.cfg.tpl: |-
       {
           rule_id=100
+          {{- if $.Values.proxy.queryRules.genericReadWriteSplit.enabled }}
           active=1
+          {{- else }}
+          active=0
+          {{- end }}
           match_pattern="^SELECT .* FOR UPDATE"
           destination_hostgroup=10
           apply=1
@@ -132,7 +141,11 @@ data:
       },
       {
           rule_id=200
+          {{- if $.Values.proxy.queryRules.genericReadWriteSplit.enabled }}
           active=1
+          {{- else }}
+          active=0
+          {{- end }}
           match_pattern="^SELECT .*"
           destination_hostgroup=30
           apply=1
@@ -140,21 +153,25 @@ data:
       },
       {
           rule_id=300
+          {{- if $.Values.proxy.queryRules.genericReadWriteSplit.enabled }}
           active=1
+          {{- else }}
+          active=0
+          {{- end }}
           match_pattern=".*"
           destination_hostgroup=10
           apply=1
           comment="all other statements will also be routed to hostgroup 10(writer_hostgroup)"
       }
   mysql_users.cfg.tpl: |-
-    {{- $int := 0 }}
-    {{- $mySQLUserCount := (len $mySQLUsers) }}
-    {{- range $mySQLUserKey, $mySQLUserValue := (values $mySQLUsers | sortAlpha) }}
-      {{- $int = add1 $int }}
-      {{- if eq $int $mySQLUserCount }}
-        {{ indent 2 $mySQLUserValue }}
-      {{- else }}
-        {{ indent 2 $mySQLUserValue }},
-      {{- end }}
-    {{- end }}
+{{- $int := 0 }}
+{{- $mySQLUserCount := (len $mySQLUsers) }}
+{{- range $mySQLUserKey, $mySQLUserValue := (values $mySQLUsers | sortAlpha) }}
+  {{- $int = add1 $int }}
+  {{- if eq $int $mySQLUserCount }}
+    {{ $mySQLUserValue }}
+  {{- else }}
+    {{ $mySQLUserValue }},
+  {{- end }}
+{{- end }}
 
