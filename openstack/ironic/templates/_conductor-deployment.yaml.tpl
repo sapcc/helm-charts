@@ -97,9 +97,9 @@ spec:
             - bash
             - -c
             - openstack-agent-liveness -c ironic --config-file /etc/ironic/ironic.conf --ironic_conductor_host ironic-conductor-{{$conductor.name}}
-          periodSeconds: 30
+          periodSeconds: 120
           failureThreshold: 3
-          timeoutSeconds: 10
+          timeoutSeconds: 12
         {{- end }}
         {{- end }}
         volumeMounts:
