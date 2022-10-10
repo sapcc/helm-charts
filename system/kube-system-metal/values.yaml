@@ -78,7 +78,21 @@ ingress:
     monitor:
       enabled: false
       prometheus: kubernetes
-
+ingress-nginx:
+  controller:
+    config:
+      custom-http-errors: "495"
+  defaultBackend:
+    image:
+      image: ingress-nginx/nginx-errors
+      tag: 1.3.0
+    extraVolumes:
+    - name: custom-error-pages
+      configMap:
+        name: ingress-custom-errors
+    extraVolumeMounts:
+    - name: custom-error-pages
+      mountPath: /www
 ingress-nginx-external:
   enabled: false
   fullnameOverride: kube-system-ingress-nginx-external
@@ -133,7 +147,6 @@ ingress-nginx-external:
           prometheus: "collector-kubernetes"
 
     config:
-      custom-http-errors: "495"
       http-snippet: |
         map $ssl_client_s_dn $ssl_client_s_dn_cn {
             default "anonymous";
@@ -191,16 +204,6 @@ ingress-nginx-external:
 
     image:
       registry: keppel.eu-de-1.cloud.sap/ccloud-k8sgcr-mirror
-      image: ingress-nginx/nginx-errors
-      tag: 1.3.0
-    extraVolumes:
-    - name: custom-error-pages
-      configMap:
-        name: ingress-custom-errors
-    extraVolumeMounts:
-    - name: custom-error-pages
-      mountPath: /www
-
 
     service:
       omitClusterIP: true
