@@ -287,3 +287,20 @@ groups:
       summary: 'Clair failed to index some images'
       description: |
         Clair reported the indexing error "{{ $labels.message }}" for {{ $value }} images.
+
+  - alert: OpenstackKeppelClairExcessiveRetries
+    expr: 'increase(keppel_retried_vulnerability_checks[1h]) > 100'
+    for: 5m
+    labels:
+      context: clair-indexing
+      service: keppel
+      severity: info
+      tier: os
+    annotations:
+      summary: 'Clair indexing is failing too frequently'
+      description: |
+        Keppel is submitting images to Clair for indexing, but a lot of these
+        indexing operations are coming back failed, causing Keppel to retry
+        them. The large amount of retries indicates that there may be a
+        large-scale problem with Clair. Please have a look at the logs for
+        Clair and/or keppel-janitor.
