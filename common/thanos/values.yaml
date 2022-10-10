@@ -63,6 +63,8 @@ spec:
 
 # Specification for Thanos components.
 compactor:
+  # Always check if customArgs are set. If so, everything thing else is neglected.
+
   # How long to retain raw samples in bucket. 0d - disables this retention.
   # ONLY SPECIFY DAYS as an int
   retentionResolutionRaw: 90
@@ -77,6 +79,23 @@ compactor:
 
   # Minimum age of fresh (non-compacted) blocks before they are being processed. Malformed blocks older than the maximum of consistency-delay and 30m0s will be removed.
   consistencyDelay: 30m
+
+  # Specifying custom arguments means that all compactor related settings will be overwritten. It is NOT adding the options, these are all options at glance. This is usually used, when the operator is not supporting a certain option
+  customArgs: #[]
+    - compact
+    - --log.level=info
+    - --http-address=0.0.0.0:10902
+    - --http-grace-period=120s
+    - --data-dir=/data
+    - --objstore.config-file=/etc/config/thanos.yaml
+    - --consistency-delay=1800s
+    - --retention.resolution-raw=7776000s
+    - --retention.resolution-5m=7776000s
+    - --retention.resolution-1h=157680000s
+    - --compact.concurrency=1
+    - --compact.cleanup-interval=1800s
+    - --wait
+    - --wait-interval=900s
 
 store:
   # Maximum size of items held in the index cache.

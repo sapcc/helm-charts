@@ -21,4 +21,10 @@ spec:
             containers:
             - image: {{ include "thanosimage" . }}
               name: compactor
+              {{ if len .Values.compactor.customArgs -}}
+              args:
+                {{- range $arg := .Values.compactor.customArgs }}
+                - {{ $arg }}
+                {{- end }}
+              {{- end }}
 {{ end }}
