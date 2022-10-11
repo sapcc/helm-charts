@@ -46,6 +46,9 @@ driver = noop
 [oslo_middleware]
 enable_proxy_headers_parsing = true
 
+[oslo_policy]
+policy_file = /etc/placement/policy.yaml
+
 {{- include "ini_sections.cache" . }}
 
 {{- include "util.helpers.valuesToIni" .Values.placement_conf }}
