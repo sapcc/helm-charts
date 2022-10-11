@@ -3,7 +3,7 @@ groups:
   rules:
   - alert: OpenstackNovaApiDown
     expr: |
-        cc3test_status{service="nova", type="api"} == 0
+        cc3test_status{service="nova", type="api",name!~"TestVcenterApi_.+"} == 0
     for: 10m
     labels:
       severity: critical
@@ -20,7 +20,7 @@ groups:
 
   - alert: OpenstackNovaApiFlapping
     expr: |
-        changes(cc3test_status{service="nova", type="api"}[30m]) > 8
+        changes(cc3test_status{service="nova", type="api",name!~"TestVcenterApi_.+"}[30m]) > 8
     labels:
       severity: warning
       tier: os
