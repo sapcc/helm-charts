@@ -37,6 +37,8 @@
       key: postgres_password
 - name: TENSO_DB_HOSTNAME
   value: "{{ .Release.Name }}-postgresql"
+- name: TENSO_DB_NAME
+  value: "{{ .Release.Name }}"
 - name: TENSO_DB_CONNECTION_OPTIONS
   value: 'sslmode=disable'
 - name: TENSO_HELM_DEPLOYMENT_LOGSTASH_HOST
