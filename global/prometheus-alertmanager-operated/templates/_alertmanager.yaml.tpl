@@ -137,7 +137,7 @@ route:
       tier: os
       severity: info|warning|critical
       # NOTE: Please keep this list in sync with the identical list in `system/gatekeeper-config/values.yaml`.
-      service: arc|backup|barbican|castellum|cinder|cfm|cronus|designate|documentation|elektra|elk|glance|hermes|ironic|keppel|keystone|limes|lyra|maia|manila|metis|neutron|nova|octavia|placement|sentry|swift|snmp|tenso
+      service: arc|backup|barbican|castellum|cinder|cfm|cronus|designate|documentation|elektra|elk|glance|hermes|ironic|keppel|limes|lyra|maia|manila|metis|neutron|nova|octavia|placement|sentry|swift|snmp|tenso
       region: qa-de-1|ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|ap-sa-2|eu-de-1|eu-de-2|eu-nl-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3
 
   - receiver: slack_sre
@@ -182,13 +182,13 @@ route:
       severity: warning|critical
       cluster_type: abapcloud|admin|controlplane|customer|internet|kubernikus|metal|scaleout|virtual
       region: global|ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|ap-sa-2|eu-de-1|eu-de-2|eu-nl-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3
-      support: group-compute|group-compute-storage-api|group-container|group-email|group-identity|group-network-api|group-observability
+      support_group: compute|compute-storage-api|containers|email|identity|network-api|observability
 
   - receiver: support_group_alerts_qa
     continue: true
     match_re:
       region: qa-de-1|qa-de-2|qa-de-3|qa-de-5
-      support: group-compute|group-compute-storage-api|group-container|group-email|group-identity|group-network-api|group-observability
+      support_group: compute|compute-storage-api|containers|email|identity|network-api|observability
 
   - receiver: pagerduty_api
     continue: true
@@ -862,7 +862,7 @@ receivers:
 
   - name: support_group_alerts
     slack_configs:
-      - channel: '#alert-{{"{{ .CommonLabels.support }}"}}-{{"{{ .CommonLabels.severity }}"}}'
+      - channel: '#alert-{{"{{ .CommonLabels.support_group }}"}}-{{"{{ .CommonLabels.severity }}"}}'
         api_url: {{ required ".Values.slack.webhookURL undefined" .Values.slack.webhookURL | quote }}
         username: "Pulsar"
         title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
@@ -876,7 +876,7 @@ receivers:
 
   - name: support_group_alerts_qa
     slack_configs:
-      - channel: '#alert-{{"{{ .CommonLabels.support }}"}}-qa'
+      - channel: '#alert-{{"{{ .CommonLabels.support_group }}"}}-qa'
         api_url: {{ required ".Values.slack.webhookURL undefined" .Values.slack.webhookURL | quote }}
         username: "Pulsar"
         title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
