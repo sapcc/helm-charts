@@ -2,8 +2,8 @@ package lib.add_support_labels
 
 # `obj` must be a full Kubernetes object.
 from_k8s_object(obj, msg) = result {
-  support_group := object.get(obj, ["metadata", "labels", "cc/support-group"], "none")
-  service := object.get(obj, ["metadata", "labels", "cc/service"], "none")
+  support_group := object.get(obj, ["metadata", "labels", "ccloud/support-group"], "none")
+  service := object.get(obj, ["metadata", "labels", "ccloud/service"], "none")
   result := sprintf("support-group=%s,service=%s: %s", [support_group, service, msg])
 }
 
