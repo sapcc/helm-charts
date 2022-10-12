@@ -20,7 +20,7 @@ template: |
   data:
     cinder-volume.conf: |
       [DEFAULT]
-      enabled_backends = {{ .Values.backends.enabled }}
+      enabled_backends = {{ .Values.backends.enabled }}{{ if .Values.backends.vmware_fcd.enabled | default false }},vmware_fcd {{- end }}
 
       [backend_defaults]
       vmware_host_ip = {= host =}
@@ -55,7 +55,11 @@ template: |
       {{- end }}
       {{ end }}
 
-      [vstorageobject]
+      {{ if .Values.backends.vmware_fcd.enabled | default false }}
+      [vmware_fcd]
       volume_driver = cinder.volume.drivers.vmware.fcd.VMwareVStorageObjectDriver
-      volume_backend_name = vstorageobject
+      volume_backend_name = vmware_fcd
+      vmware_storage_profile = {{ .Values.backends.vmware_fcd.vmware_storage_profile }}
+      extra_capabilities = '{"vcenter-shard": "{= host.split(".")[0] =}"}'
+      {{- end }}
 {{- end }}
