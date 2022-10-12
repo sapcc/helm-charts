@@ -61,6 +61,14 @@ spec:
 
         violation[{"msg": add_support_labels.from_k8s_object(iro, msg)}] {
           alert := alert_rule[_]
+          # warn if we don't have something in labels.support-group
+          not regex.match("\\S", object.get(alert.rule, ["labels", "support-group"], ""))
+
+          msg := sprintf("rule %s in group %s does not have labels.support-group", [alert.rule.alert, alert.group_name])
+        }
+
+        violation[{"msg": add_support_labels.from_k8s_object(iro, msg)}] {
+          alert := alert_rule[_]
           # warn if we don't have something in annotations.description
           not regex.match("\\S", object.get(alert.rule, ["annotations", "description"], ""))
 
