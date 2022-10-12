@@ -182,13 +182,13 @@ route:
       severity: warning|critical
       cluster_type: abapcloud|admin|controlplane|customer|internet|kubernikus|metal|scaleout|virtual
       region: global|ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|ap-sa-2|eu-de-1|eu-de-2|eu-nl-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3
-      support: group-compute|group-compute-storage-api|group-container|group-email|group-identity|group-network-api|group-observability
+      support: group-compute|group-compute-storage-api|group-containers|group-email|group-identity|group-network-api|group-observability
 
   - receiver: support_group_alerts_qa
     continue: true
     match_re:
       region: qa-de-1|qa-de-2|qa-de-3|qa-de-5
-      support: group-compute|group-compute-storage-api|group-container|group-email|group-identity|group-network-api|group-observability
+      support: group-compute|group-compute-storage-api|group-containers|group-email|group-identity|group-network-api|group-observability
 
   - receiver: pagerduty_api
     continue: true
