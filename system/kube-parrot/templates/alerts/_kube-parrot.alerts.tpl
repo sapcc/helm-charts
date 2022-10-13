@@ -12,9 +12,10 @@ groups:
         service: kube-parrot
         severity: critical
         context: availability
-        playbook: "docs/support/playbook/kubernetes/k8s_node_bgp_neighbor.html"
+        support_group: network-api
+        playbook: "docs/support/playbook/kubernetes/k8s_node_bgp_neighbor"
       annotations:
-        description: Node {{`{{ $labels.node }}`}} has less than {{ .Values.bgpNeighborCount }} BGP neighbors. Network datapath threatened!
+        description: Node {{`{{ $labels.node }}`}} has less than {{ .Values.bgpNeighborCount }} BGP neighbors. BGP peer {{`{{ $labels.neighbor }}`}} is not established. Network datapath threatened! Switch upgrades or misconfiguration?
         summary: Node {{`{{ $labels.node }}`}} has less than {{ .Values.bgpNeighborCount }} BGP neighbors.
 
     - alert: KubeParrotBgpNeighborSessionAllDown
@@ -25,9 +26,10 @@ groups:
         service: kube-parrot
         severity: critical
         context: availability
-        playbook: "docs/support/playbook/kubernetes/k8s_node_bgp_neighbor.html"
+        support_group: network-api
+        playbook: "docs/support/playbook/kubernetes/k8s_node_bgp_neighbor"
       annotations:
-        description: Node {{`{{ $labels.node }}`}} has no BGP neighbors. Network datapath is down!
+        description: Node {{`{{ $labels.node }}`}} has no BGP neighbors. Network datapath is down! Switch upgrades or misconfiguration?
         summary: Node {{`{{ $labels.node }}`}} has no BGP neighbors.
 
     - alert: KubeParrotBgpNeighborMissingRouteAdvertisement
@@ -38,9 +40,10 @@ groups:
         service: kube-parrot
         severity: critical
         context: availability
-        playbook: "docs/support/playbook/kubernetes/k8s_node_bgp_neighbor.html"
+        support_group: network-api
+        playbook: "docs/support/playbook/kubernetes/k8s_node_bgp_neighbor"
       annotations:
-        description: Node {{`{{ $labels.node }}`}} is not advertising any prefixes to its BGP neighbor {{`{{ $labels.neighbor }}`}}. Network datapath threatened!
+        description: Node {{`{{ $labels.node }}`}} is not advertising any prefixes to its BGP neighbor {{`{{ $labels.neighbor }}`}}. Network datapath threatened! Switch upgrades or misconfiguration?
         summary: Node {{`{{ $labels.node }}`}} is not advertising any prefixes to its BGP neighbor {{`{{ $labels.neighbor }}`}}.
 
     - alert: KubeParrotBgpScrapeMissing
@@ -51,8 +54,9 @@ groups:
         service: kube-parrot
         severity: warning
         context: availability
-        playbook: "docs/support/playbook/kubernetes/k8s_node_bgp_neighbor.html"
+        support_group: containers
+        playbook: "docs/support/playbook/kubernetes/k8s_node_bgp_neighbor"
       annotations:
-        description: kube-parrot is not running on all nodes that are Ready. Possibly per-rack kube-parrot DaemonSet selector does not match the node rack label.
+        description: kube-parrot is not running on all nodes that are Ready.
         summary: kube-parrot is not running on all bare metal nodes that are Ready. Network datapath threatened!
 
