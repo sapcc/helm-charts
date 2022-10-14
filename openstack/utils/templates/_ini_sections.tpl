@@ -66,3 +66,14 @@ logging_default_format_string = %(asctime)s %(process)d %(levelname)s %(name)s [
 logging_user_identity_format = %(user)s %(tenant)s %(domain)s %(user_domain)s %(project_domain)s
 logging_exception_prefix = %(asctime)s %(process)d ERROR %(name)s %(resource)s%(instance)s
 {{- end }}
+
+{{- define "ini_sections.coordination" -}}
+[coordination]
+backend_url = {{ if eq .Values.coordinationBackend "memcached" -}}
+    memcached://{{ .Chart.Name }}-memcached.{{ include "svc_fqdn" . }}:{{ .Values.memcached.memcached.port | default 11211 }}
+{{- else if eq .Values.coordinationBackend "file" -}}
+    file://$state_path/coordination
+{{- else }}
+    {{ fail ".Values.coordinationBackend needs to be either \"memcached\" or \"file\"" }}
+{{- end }}
+{{- end }}
