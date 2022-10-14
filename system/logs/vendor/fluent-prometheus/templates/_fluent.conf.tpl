@@ -200,6 +200,11 @@
     pattern /slow_flush_log_threshold/
     tag "FLUENTSLOWFLUSH.${tag}"
   </rule>
+  <rule>
+    key log
+    pattern /rejected execution of coordinating operation/
+    tag "FLUENTRATELIMIT.${tag}"
+  </rule>
 </match>
 
 <match FLUENTERROR.**>
@@ -375,6 +380,26 @@
       name prom_fluentd_slowflush_warn
       type counter
       desc The total number of fluent slow flush warnings
+      <labels>
+        nodename "#{ENV['K8S_NODE_NAME']}"
+        fluent_container $.kubernetes.pod_name
+        fluent_namespace $.kubernetes.namespace
+      </labels>
+    </metric>
+  </store>
+  <store>
+    @type null
+  </store>
+</match>
+
+<match FLUENTRATELIMIT.**>
+  @type copy
+  <store>
+    @type prometheus
+    <metric>
+      name prom_fluentd_elk_rate_limit
+      type counter
+      desc The total number of fluent elk 429 rate limit
       <labels>
         nodename "#{ENV['K8S_NODE_NAME']}"
         fluent_container $.kubernetes.pod_name
