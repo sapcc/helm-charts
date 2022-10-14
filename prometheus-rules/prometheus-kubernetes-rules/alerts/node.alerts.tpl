@@ -10,6 +10,7 @@ groups:
     labels:
       tier: {{ required ".Values.tier missing" .Values.tier }}
       service: node
+      support_group: containers
       severity: warning
       context: node
       meta: "High CPU usage on {{`{{ $labels.node }}`}}"
@@ -25,6 +26,7 @@ groups:
     labels:
       tier: {{ required ".Values.tier missing" .Values.tier }}
       service: node
+      support_group: containers
       severity: info
       context: availability
       meta: "Kernel deadlock on {{`{{ $labels.node }}`}}"
@@ -39,6 +41,7 @@ groups:
     labels:
       tier: {{ required ".Values.tier missing" .Values.tier }}
       service: node
+      support_group: containers
       severity: warning
       context: node
       meta: "Disk pressure on {{`{{ $labels.node }}`}}"
@@ -52,6 +55,7 @@ groups:
     labels:
       tier: {{ required ".Values.tier missing" .Values.tier }}
       service: node
+      support_group: containers
       severity: warning
       context: node
       meta: "Memory pressure on {{`{{ $labels.node }}`}}"
@@ -65,6 +69,7 @@ groups:
     labels:
       tier: {{ required ".Values.tier missing" .Values.tier }}
       service: node
+      support_group: containers
       severity: info
       context: node
       meta: "Node disk usage above 85% on {{`{{ $labels.node }}`}} device {{`{{ $labels.device }}`}}"
@@ -80,6 +85,7 @@ groups:
     labels:
       tier: {{ required ".Values.tier missing" .Values.tier }}
       service: node
+      support_group: containers
       severity: warning
       context: availability
       meta: "{{`{{ $labels.node }}`}}"
@@ -94,6 +100,7 @@ groups:
     labels:
       tier: {{ required ".Values.tier missing" .Values.tier }}
       service: node
+      support_group: containers
       severity: warning
       context: availability
       meta: "{{`{{ $labels.node }}"
@@ -108,6 +115,7 @@ groups:
     labels:
       tier: {{ required ".Values.tier missing" .Values.tier }}
       service: node
+      support_group: containers
       severity: info
       context: memory
     annotations:
@@ -120,6 +128,7 @@ groups:
     labels:
       tier: {{ required ".Values.tier missing" .Values.tier }}
       service: node
+      support_group: containers
       severity: critical
       context: threads
       meta: "Very high number of threads on {{`{{ $labels.node }}`}}. Forking problems are imminent."
@@ -134,6 +143,7 @@ groups:
     labels:
       tier: {{ required ".Values.tier missing" .Values.tier }}
       service: node
+      support_group: containers
       severity: info
       context: availability
       meta: "Node {{`{{ $labels.node }}`}} has a read-only filesystem."
@@ -147,6 +157,7 @@ groups:
     labels:
       tier: {{ required ".Values.tier missing" .Values.tier }}
       service: node
+      support_group: containers
       severity: warning
       context: availability
       meta: "The node {{`{{ $labels.node }}`}} rebooted at least 3 times in the last hour"
@@ -160,6 +171,7 @@ groups:
     labels:
       tier: {{ required ".Values.tier missing" .Values.tier }}
       service: node
+      support_group: containers
       severity: warning
       context: node
       meta: "The root filesystem of node {{`{{ $labels.node }}`}} is filling up quickly"

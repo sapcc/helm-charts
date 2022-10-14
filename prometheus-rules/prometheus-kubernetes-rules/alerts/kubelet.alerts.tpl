@@ -8,6 +8,7 @@ groups:
     labels:
       tier: {{ required ".Values.tier missing" .Values.tier }}
       service: kubelet
+      support_group: containers
       severity: critical
       context: kubelet
       dashboard: kubernetes-health
@@ -22,6 +23,7 @@ groups:
     labels:
       tier: {{ required ".Values.tier missing" .Values.tier }}
       service: kubelet
+      support_group: containers
       severity: warning
       context: kubelet
       meta: "{{`{{ $labels.node }}`}}"
@@ -38,6 +40,7 @@ groups:
     labels:
       tier: {{ required ".Values.tier missing" .Values.tier }}
       service: kubelet
+      support_group: containers
       severity: warning
       context: kubelet
       dashboard: kubernetes-health
@@ -52,6 +55,7 @@ groups:
     labels:
       tier: {{ required ".Values.tier missing" .Values.tier }}
       service: kubelet
+      support_group: containers
       severity: warning
       context: kubelet
       meta: "{{`{{ $labels.node }}`}}"
@@ -66,6 +70,7 @@ groups:
     labels:
       tier: {{ required ".Values.tier missing" .Values.tier }}
       service: kubelet
+      support_group: containers
       severity: warning
       context: kubelet
       meta: "{{`{{ $labels.node }}`}}"
@@ -80,6 +85,7 @@ groups:
     labels:
       tier: {{ required ".Values.tier missing" .Values.tier }}
       service: k8s
+      support_group: containers
       severity: warning
       context: kubelet
       meta: "{{`{{ $labels.node }}`}}"
@@ -93,6 +99,7 @@ groups:
     labels:
       tier: {{ required ".Values.tier missing" .Values.tier }}
       service: k8s
+      support_group: containers
       severity: warning
       context: kubelet
       meta: "{{`{{ $labels.node }}`}}"
@@ -110,6 +117,7 @@ groups:
     labels:
       tier: {{ required ".Values.tier missing" .Values.tier }}
       service: k8s
+      support_group: containers
       severity: warning
       context: kubelet
       meta: "Many 5xx responses for Kubelet on {{`{{ $labels.node }}`}} "

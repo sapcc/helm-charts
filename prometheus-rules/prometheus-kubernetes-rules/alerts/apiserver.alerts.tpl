@@ -8,6 +8,7 @@ groups:
     labels:
       tier: {{ required ".Values.tier missing" .Values.tier }}
       service: k8s
+      support_group: containers
       severity: warning
       context: apiserver
       meta: "{{`{{ $labels.instance }}`}}"
@@ -23,6 +24,7 @@ groups:
     labels:
       tier: {{ required ".Values.tier missing" .Values.tier }}
       service: k8s
+      support_group: containers
       severity: warning
       context: apiserver
       meta: "{{`{{ $labels.instance }}`}}"
@@ -38,6 +40,7 @@ groups:
     labels:
       tier: {{ required ".Values.tier missing" .Values.tier }}
       service: k8s
+      support_group: containers
       severity: info
       context: apiserver
       dashboard: kubernetes-health
@@ -51,6 +54,7 @@ groups:
     labels:
       tier: {{ required ".Values.tier missing" .Values.tier }}
       service: k8s
+      support_group: containers
       severity: info
       context: apiserver
       dashboard: kubernetes-apiserver
@@ -64,6 +68,7 @@ groups:
     labels:
       tier: {{ required ".Values.tier missing" .Values.tier }}
       service: k8s
+      support_group: containers
       severity: warning
       context: apiserver
     annotations:
