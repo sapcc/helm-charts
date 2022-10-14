@@ -34,6 +34,16 @@ default_provider_driver = {{ .Values.default_provider | default "noop_driver" }}
 # Enable/disable specific features
 allow_prometheus_listeners = False
 
+# TLS ciphers
+tls_cipher_allow_list = {{ .Values.tls.ciphers.allow_list | join ":" }}
+default_listener_ciphers = {{ .Values.tls.ciphers.default.listeners | join ":" }}
+default_pool_ciphers = {{ .Values.tls.ciphers.default.pools | join ":" }}
+
+# TLS versions
+minimum_tls_version = {{ .Values.tls.versions.minimum }}
+default_listener_tls_versions = {{ .Values.tls.versions.default.listeners | join ", " }}
+default_pool_tls_versions = {{ .Values.tls.versions.default.pools | join ", " }}
+
 [healthcheck]
 backends = octavia_db_check
 
