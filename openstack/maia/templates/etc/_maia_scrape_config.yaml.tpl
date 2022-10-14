@@ -148,8 +148,8 @@
 
 - job_name: 'prometheus-vmware'
   scheme: http
-  scrape_interval: 1m
-  scrape_timeout: 55s
+  scrape_interval: {{ .Values.prometheus-vmware.scrape_interval}}
+  scrape_timeout: {{ .Values.prometheus-vmware.scrape_timeout}}
   static_configs:
     - targets: ['prometheus-vmware.vmware-monitoring.svc:9090']
   metric_relabel_configs:
