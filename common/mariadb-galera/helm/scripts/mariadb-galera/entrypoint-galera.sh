@@ -3,8 +3,6 @@ set +e
 set -u
 set -o pipefail
 
-declare -a NODENAME=()
-
 source /opt/${SOFTWARE_NAME}/bin/common-functions.sh
 
 function templateconfig {
@@ -100,61 +98,6 @@ function recovergalera {
       fi
     fi
   fi
-}
-
-function selectbootstrapnode {
-  local int
-  local SEQNO=$(fetchseqnofromgrastate)
-  local SEQNO_FILES="${BASE}/etc/galerastatus/{{ (include "nodeNamePrefix" (dict "global" $ "component" "application")) }}-*.seqno"
-  local SEQNO_OLDEST_TIMESTAMP
-  local SEQNO_OLDEST_TIMESTAMP_WITH_BUFFER
-  local CURRENT_EPOCH
-
-  for (( int=${MAX_RETRIES}; int >=1; int-=1));
-    do
-    loginfo "${FUNCNAME[0]}" "Find Galera node with highest sequence number (${int} retries left)"
-    SEQNO_FILE_COUNT=$(grep -c '{{ (include "nodeNamePrefix" (dict "global" $ "component" "application")) }}-*' ${SEQNO_FILES} | grep -c -e ${BASE}/etc/galerastatus/{{ (include "nodeNamePrefix" (dict "global" $ "component" "application")) }}-.*.seqno:1)
-    if [ ${SEQNO_FILE_COUNT} -ge {{ ($.Values.replicas|int) }} ]; then
-      IFS=":" SEQNO_OLDEST_TIMESTAMP=($(grep --no-filename 'timestamp:' ${SEQNO_FILES} | sort --key=2 --numeric-sort --field-separator=: | head -1))
-      IFS="${oldIFS}"
-      if ! [ -z ${SEQNO_OLDEST_TIMESTAMP[1]+x} ]; then
-        SEQNO_OLDEST_TIMESTAMP_WITH_BUFFER=$(( ${SEQNO_OLDEST_TIMESTAMP[1]} + ({{ $.Values.readinessProbe.timeoutSeconds.application | int }} * {{ $.Values.scripts.maxAllowedTimeDifferenceFactor | default 3 | int }}) ))
-        CURRENT_EPOCH=$(date +%s)
-        {{- if $.Values.scripts.useTimeDifferenceForSeqnoCheck }}
-        if [ ${CURRENT_EPOCH} -le ${SEQNO_OLDEST_TIMESTAMP_WITH_BUFFER} ]; then
-        {{- else }}
-        # time difference check disabled
-        {{- end }}
-          IFS=": " NODENAME=($(grep --no-filename '{{ (include "nodeNamePrefix" (dict "global" $ "component" "application")) }}-*' ${SEQNO_FILES} | sort --key=2 --reverse --numeric-sort --field-separator=: | head -1))
-          IFS="${oldIFS}"
-          if [[ "${NODENAME[0]}" =~ ^{{ (include "nodeNamePrefix" (dict "global" $ "component" "application")) }}-.* ]]; then
-            loginfo "${FUNCNAME[0]}" "Galera nodename '${NODENAME[0]}' with the sequence number '${NODENAME[1]}' selected"
-            break
-          else
-            logerror "${FUNCNAME[0]}" "nodename '${NODENAME[0]}' not valid"
-            exit 1
-          fi
-        {{- if $.Values.scripts.useTimeDifferenceForSeqnoCheck }}
-        else
-          logerror "${FUNCNAME[0]}" "seqno timestamp of at least one node is too old: '$(date --date=@${SEQNO_OLDEST_TIMESTAMP_WITH_BUFFER} +%Y.%m.%d-%H:%M:%S-%Z)'/'$(date --date=@${CURRENT_EPOCH} +%Y.%m.%d-%H:%M:%S-%Z)' will wait $(( ${WAIT_SECONDS} * (${MAX_RETRIES} - ${int} + 1) ))s"
-          sleep  $(( ${WAIT_SECONDS} * (${MAX_RETRIES} - ${int} + 1) ))
-        fi
-        {{- end }}
-      else
-        loginfo "${FUNCNAME[0]}" "Sequence numbers not yet found in configmap"
-      fi
-    else
-      loginfo "${FUNCNAME[0]}" "${SEQNO_FILE_COUNT} of {{ ($.Values.replicas|int) }} sequence numbers found. Will wait $(( ${WAIT_SECONDS} * (${MAX_RETRIES} - ${int} + 1) ))s"
-      sleep  $(( ${WAIT_SECONDS} * (${MAX_RETRIES} - ${int} + 1) ))
-    fi
-    setconfigmap "seqno" "${SEQNO}" "Update"
-  done
-
-  if [ ${int} -eq 0 ]; then
-    logerror "${FUNCNAME[0]}" "Sequence number search finally incomplete(${SEQNO_FILE_COUNT}/{{ ($.Values.replicas|int)}})"
-    exit 1
-  fi
-  loginfo "${FUNCNAME[0]}" "Sequence number search done"
 }
 
 function startgalera {

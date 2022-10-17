@@ -7,19 +7,19 @@ metadata:
     app: {{ $.Release.Name }}
     release: {{ $.Release.Name }}
 spec:
-  backoffLimit: {{ $.Values.backoffLimit | default 6 }}
-  activeDeadlineSeconds: {{ $.Values.activeDeadlineSeconds | default 300 }}
-  ttlSecondsAfterFinished: {{ $.Values.ttlSecondsAfterFinished | default 120 }}
+  backoffLimit: {{ $.Values.job.mariadbconfig.backoffLimit | default 6 }}
+  activeDeadlineSeconds: {{ $.Values.job.mariadbconfig.activeDeadlineSeconds | default 300 }}
+  ttlSecondsAfterFinished: {{ $.Values.job.mariadbconfig.ttlSecondsAfterFinished | default 120 }}
   template:
     metadata:
       labels:
         app: {{ $.Release.Name }}
         release: {{ $.Release.Name }}
       annotations:
-        checksum/entrypoint.sh: {{ include (print $.Template.BasePath "/configmap-mariadb-job-entrypoint.sh.yaml") $ | sha256sum }}
+        checksum/entrypoint.sh: {{ include (print $.Template.BasePath "/configmap-mariadbconfig-job-entrypoint.sh.yaml") $ | sha256sum }}
         checksum/common-functions-extended.sh: {{ include (print $.Template.BasePath "/configmap-mariadb-common-functions-extended.sh.yaml") $ | sha256sum }}
     spec:
-      restartPolicy: {{ $.Values.jobRestartPolicy | default "OnFailure" | quote }}
+      restartPolicy: {{ $.Values.job.mariadbconfig.jobRestartPolicy | default "OnFailure" | quote }}
       serviceAccount: {{ $.Release.Name }}
       securityContext:
         fsGroup:  {{ $.Values.groupId.application }}
@@ -76,7 +76,7 @@ spec:
           limits:
             memory: {{ $.Values.resourceLimits.memory.job | default "32Mi" | quote }}
         volumeMounts:
-        - name: mariadb-job-entrypoint-sh
+        - name: mariadbconfig-job-entrypoint-sh
           mountPath: /opt/mariadb/bin/entrypoint-job.sh
           subPath: entrypoint-job.sh
           readOnly: true
@@ -101,9 +101,9 @@ spec:
           {{- end }}
         {{- end }}
       {{- end }}
-      - name: mariadb-job-entrypoint-sh
+      - name: mariadbconfig-job-entrypoint-sh
         configMap:
-          name: mariadb-job-entrypoint-sh
+          name: mariadbconfig-job-entrypoint-sh
           defaultMode: 0750
       - name: mariadb-common-functions-extended-sh
         configMap:

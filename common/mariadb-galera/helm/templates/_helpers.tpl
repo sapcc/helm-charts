@@ -66,6 +66,7 @@ spec:
   sessionAffinity: {{ .service.value.sessionAffinity | default "None" | quote }}
 {{- end }}
 
+
 {{/*
   Fetch current node name prefix for a component (currently application and proxy are supported)
   application node name prefix:   include "nodeNamePrefix" (dict "global" $ "component" "application")
@@ -86,5 +87,61 @@ spec:
     {{- end }}
   {{- else }}
     {{- fail "No supported component provided for the nodeNamePrefix function" }}
+  {{- end }}
+{{- end }}
+
+
+{{/*
+  Generate 'wsrep_cluster_address' value
+  include "wsrepClusterAddress" (dict "global" $)
+*/}}
+{{- define "wsrepClusterAddress" }}
+  {{- $galeraPort := "" }}
+  {{- $nodeNames := list -}}
+  {{- $nodeNamePrefix := (include "nodeNamePrefix" (dict "global" .global "component" "application")) -}}
+  {{- range $servicesKey, $servicesValue := .global.Values.services.application }}
+    {{- if eq $servicesValue.name "backend"}}
+      {{- range $portsKey, $portsValue := $servicesValue.ports }}
+        {{- if eq $portsValue.name "galera"}}
+          {{- $galeraPort = ($portsValue.port | int) }}
+          {{- range $int, $err := until ($.global.Values.replicas.application|int) }}
+            {{- $nodeNames = (printf "%s-%d.%s.svc.cluster.local:%d" $nodeNamePrefix $int $.global.Release.Namespace ($portsValue.port | int)) | append $nodeNames -}}
+          {{- end }}
+        {{- end }}
+      {{- end }}
+    {{- end }}
+  {{- end }}
+  {{- (printf "gcomm://%s,%s-backend.%s.svc.cluster.local:%d" (join "," $nodeNames) $nodeNamePrefix $.global.Release.Namespace $galeraPort) }}
+{{- end }}
+
+{{/*
+  fetch a certain environment variable value
+  include "getEnvVar" (dict "global" $ "name" "MARIADB_CLUSTER_NAME")
+*/}}
+{{- define "getEnvVar" }}
+  {{- range $envKey, $envValue := $.global.Values.env }}
+    {{- if eq $envKey $.name }}
+      {{- if $envValue.secretName }}
+        {{- $envValue.secretKey }}
+      {{- else }}
+        {{- $envValue.value }}
+      {{- end }}
+    {{- end }}
+  {{- end }}
+{{- end }}
+
+{{/*
+  fetch a certain network port value
+  include "getNetworkPort" (dict "global" $ "type" "backend" "name" "ist")
+*/}}
+{{- define "getNetworkPort" }}
+  {{- range $servicesKey, $servicesValue := $.global.Values.services.application }}
+    {{- if eq $servicesValue.name $.type }}
+      {{- range $portsKey, $portsValue := $servicesValue.ports }}
+        {{- if eq $portsValue.name $.name }}
+          {{- ($portsValue.port | int) }}
+        {{- end }}
+      {{- end }}
+    {{- end }}
   {{- end }}
 {{- end }}

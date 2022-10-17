@@ -31,6 +31,8 @@ mariadb:
     gcache.recover: false #
     sst_method: rsync #rsync or mariabackup(also requires GALERA_SST_USER and GALERA_SST_PASSWORD)
     slaveThreads: 16 #https://galeracluster.com/library/documentation/mysql-wsrep-options.html#wsrep-slave-threads
+    backup:
+      enabled: true
 monitoring:
   prometheus:
     instance: prometheus #name of the Prometheus instance that should pull metrics
@@ -50,24 +52,6 @@ proxy:
     genericReadWriteSplit:
       enabled: false #The "Generic Read/Write split using regex" section in https://proxysql.com/documentation/proxysql-read-write-split-howto/
 
-# command:
-#   application:
-#     - "sh"
-#     - "-c"
-#     - "/bin/sleep 3600"
-#   monitoring:
-#     - "sh"
-#     - "-c"
-#     - "/bin/sleep 3600"
-# job:
-#   - "sh"
-#   - "-c"
-#   - "/bin/sleep 3600"
-#   proxy:
-#     - "sh"
-#     - "-c"
-#     - "/bin/sleep 3600"
-
 # Docker image
 image:
   os:
@@ -83,7 +67,7 @@ image:
     project: ccloud
     applicationname: mariadb-galera
     applicationversion: 10.5.17
-    imageversion: 0.1.2
+    imageversion: 0.1.3
     pullPolicy: Always
     pullSecret: false
   monitoring:
@@ -187,6 +171,10 @@ volumeMounts:
       claimName: marialog
       mountPath: /opt/mariadb/log
       type: persistentVolume
+    - name: backup
+      claimName: mariabackup
+      mountPath: /opt/mariadb/backup
+      type: persistentVolume
     - name: cert-wildcard
       mountPath: /opt/mariadb/etc/certs
       type: secret
@@ -205,6 +193,9 @@ volumeClaimTemplates:
   - name: marialog
     accessModes: [ReadWriteOnce]
     capacity: 30Gi
+  - name: mariabackup
+    accessModes: [ReadWriteOnce]
+    capacity: 20Gi
   - name: proxysql
     accessModes: [ReadWriteOnce]
     capacity: 128Mi
@@ -238,10 +229,18 @@ podManagementPolicy: Parallel
 revisionHistoryLimit: 3
 terminationGracePeriodSeconds: 600
 regional: false
-backoffLimit: 12 #https://kubernetes.io/docs/concepts/workloads/controllers/job/#pod-backoff-failure-policy
-activeDeadlineSeconds: 600 #https://kubernetes.io/docs/concepts/workloads/controllers/job/#job-termination-and-cleanup
-ttlSecondsAfterFinished: 7200 #https://kubernetes.io/docs/concepts/workloads/controllers/job/#clean-up-finished-jobs-automatically
-jobRestartPolicy: OnFailure #https://kubernetes.io/docs/concepts/workloads/controllers/job/#handling-pod-and-container-failures
+job:
+  mariadbconfig:
+    backoffLimit: 12 #https://kubernetes.io/docs/concepts/workloads/controllers/job/#pod-backoff-failure-policy
+    activeDeadlineSeconds: 600 #https://kubernetes.io/docs/concepts/workloads/controllers/job/#job-termination-and-cleanup
+    ttlSecondsAfterFinished: 7200 #https://kubernetes.io/docs/concepts/workloads/controllers/job/#clean-up-finished-jobs-automatically
+    jobRestartPolicy: OnFailure #https://kubernetes.io/docs/concepts/workloads/controllers/job/#handling-pod-and-container-failures
+  mariadbbackup:
+    schedule: "05 */2 * * *" #https://kubernetes.io/docs/tasks/job/automated-tasks-with-cron-jobs/#schedule & https://kubernetes.io/docs/concepts/workloads/controllers/cron-jobs/#cron-schedule-syntax
+    jobRestartPolicy: OnFailure #https://kubernetes.io/docs/concepts/workloads/controllers/job/#handling-pod-and-container-failures
+    concurrencyPolicy: Forbid #https://kubernetes.io/docs/tasks/job/automated-tasks-with-cron-jobs/#concurrency-policy
+    successfulJobsHistoryLimit: 1 #https://kubernetes.io/docs/tasks/job/automated-tasks-with-cron-jobs/#jobs-history-limits
+    failedJobsHistoryLimit: 1 #https://kubernetes.io/docs/tasks/job/automated-tasks-with-cron-jobs/#jobs-history-limits
 
 #Container Health Checks
 startupProbe:
@@ -320,11 +319,17 @@ env:
     secretKey: username
     containerType:
       - application
+      - job
+      - cronjob
+      - proxy
   GALERA_SST_PASSWORD:
     secretName: ga-sync-auth
     secretKey: password
     containerType:
       - application
+      - job
+      - cronjob
+      - proxy
   MARIADB_MONITORING_USER:
     secretName: db-mon-auth
     secretKey: username
@@ -402,3 +407,24 @@ env:
     containerType:
       - job
       - proxy
+# command:
+#   application:
+#     - "sh"
+#     - "-c"
+#     - "/bin/sleep 3600"
+#   monitoring:
+#     - "sh"
+#     - "-c"
+#     - "/bin/sleep 3600"
+#   job:
+#     - "sh"
+#     - "-c"
+#     - "/bin/sleep 3600"
+#   cronjob:
+#     - "sh"
+#     - "-c"
+#     - "/bin/sleep 3600"
+#   proxy:
+#     - "sh"
+#     - "-c"
+#     - "/bin/sleep 3600"

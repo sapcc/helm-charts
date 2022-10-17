@@ -5,19 +5,6 @@ set -o pipefail
 
 source /opt/${SOFTWARE_NAME}/bin/common-functions.sh
 
-function waitfordatabase {
-  for (( int=${MAX_RETRIES}; int >=1; int-=1));
-    do
-    checkdbk8sservicelogon "true"
-    if [ $? -eq 0 ]; then
-      break
-    else
-      loginfo "${FUNCNAME[0]}" "database not yet usable. Will wait ${WAIT_SECONDS}s before retry"
-      sleep ${WAIT_SECONDS}
-    fi
-  done
-}
-
 waitfordatabase
 loginfo "null" "configuration job started"
 {{- if $.Values.monitoring.mysqld_exporter.enabled }}
