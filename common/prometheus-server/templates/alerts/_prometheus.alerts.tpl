@@ -25,6 +25,7 @@ groups:
     labels:
       context: availability
       service: prometheus
+      support_group: observability
       severity: critical
       tier: {{ include "alerts.tier" . }}
       playbook: 'docs/support/playbook/prometheus/failed_config_reload.html'
@@ -40,6 +41,7 @@ groups:
       context: availability
       service: prometheus
       severity: warning
+      support_group: observability
       tier: {{ include "alerts.tier" . }}
       playbook: 'docs/support/playbook/prometheus/rule_evaluation.html'
       meta: 'Prometheus {{`{{ $labels.prometheus }}`}} failed to evaluate rules.'
@@ -54,6 +56,7 @@ groups:
       context: availability
       service: prometheus
       severity: info
+      support_group: observability
       tier: {{ include "alerts.tier" . }}
       playbook: 'docs/support/playbook/prometheus/rule_evaluation.html'
       meta: 'Prometheus {{`{{ $labels.prometheus }}`}} rule evaluation is slow.'
@@ -67,6 +70,7 @@ groups:
       context: availability
       service: prometheus
       severity: info
+      support_group: observability
       tier: {{ include "alerts.tier" . }}
       playbook: 'docs/support/playbook/prometheus/wal.html'
       meta: 'Prometheus {{`{{ $labels.prometheus }}`}} has {{`{{ $value }}`}} WAL corruptions.'
@@ -80,6 +84,7 @@ groups:
     labels:
       context: availability
       service: prometheus
+      support_group: observability
       severity: info
       tier: {{ include "alerts.tier" . }}
       playbook: 'docs/support/playbook/prometheus/failed_tsdb_reload.html'
@@ -95,6 +100,7 @@ groups:
       context: availability
       service: prometheus
       severity: info
+      support_group: observability
       tier: {{ include "alerts.tier" . }}
       playbook: 'docs/support/playbook/prometheus/failed_scrapes.html'
       meta: 'Prometheus {{`{{ $labels.prometheus }}`}} not ingesting samples.'
@@ -108,6 +114,7 @@ groups:
     labels:
       context: availability
       service: prometheus
+      support_group: observability
       severity: info
       tier: {{ include "alerts.tier" . }}
       playbook: 'docs/support/playbook/prometheus/failed_scrapes.html'
@@ -121,6 +128,7 @@ groups:
     labels:
       context: availability
       service: prometheus
+      support_group: observability
       severity: info
       tier: {{ include "alerts.tier" . }}
       playbook: 'docs/support/playbook/prometheus/failed_scrapes.html'
@@ -134,6 +142,7 @@ groups:
     labels:
       context: availability
       service: prometheus
+      support_group: observability
       severity: info
       tier: {{ include "alerts.tier" . }}
       playbook: 'docs/support/playbook/prometheus/failed_scrapes.html'
@@ -151,6 +160,7 @@ groups:
     labels:
       tier: {{ include "alerts.tier" . }}
       service: prometheus
+      support_group: observability
       severity: warning
       playbook: docs/support/playbook/kubernetes/target_scraped_multiple_times.html
       meta: 'Prometheus is scraping targets of job {{`{{ $labels.job }}`}} more than once.'
@@ -165,6 +175,7 @@ groups:
     labels:
       context: availability
       service: prometheus
+      support_group: observability
       severity: warning
       tier: {{ include "alerts.tier" . }}
       meta: 'Prometheus {{`{{ $labels.prometheus }}`}} lost connection to all Alertmanagers'
@@ -178,6 +189,7 @@ groups:
     labels:
       context: availability
       service: prometheus
+      support_group: observability
       severity: info
       tier: {{ include "alerts.tier" . }}
       meta: 'Prometheus {{`{{ $labels.prometheus }}`}} fails to send alerts'
@@ -191,6 +203,7 @@ groups:
     labels:
       context: availability
       service: prometheus
+      support_group: observability
       severity: info
       tier: {{ include "alerts.tier" . }}
       meta: 'Prometheus {{`{{ $labels.prometheus }}`}} queueing notifications'
