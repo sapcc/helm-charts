@@ -169,7 +169,7 @@ groups:
       summary: Prometheus target scraped multiple times
 
   - alert: AlertWithMissingSupportGroupLabel
-    expr: max without (alertstate) (ALERTS{support_group=""})
+    expr: max by(alertname) (ALERTS{support_group=""})
     for: 5m
     labels:
       tier: {{ include "alerts.tier" . }}
@@ -179,7 +179,7 @@ groups:
       playbook: docs/support/operation_model/tags.html
       meta: 'Alert {{`{{ $labels.alertname }}`}} is missing the `support_group` label'
     annotations:
-      description: Alert {{`{{ $labels.alertname }}`}} is missing the required `support_group` label
+      description: Alert `{{`{{ $labels.alertname }}`}}` is missing the required `support_group` label
       summary: Alert is missing support_group label
 
   {{- if and .Values.alertmanagers (gt (len .Values.alertmanagers) 0) }}
