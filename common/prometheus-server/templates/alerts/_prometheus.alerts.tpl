@@ -179,7 +179,7 @@ groups:
       playbook: docs/support/operation_model/tags.html
       meta: 'Alert {{`{{ $labels.alertname }}`}} is missing the `support_group` label'
     annotations:
-      description: Alerts are required to have a support_group label so that they can be routed to responsible support teams.
+      description: Alert {{`{{ $labels.alertname }}`}} is missing the required `support_group` label
       summary: Alert is missing support_group label
 
   {{- if and .Values.alertmanagers (gt (len .Values.alertmanagers) 0) }}
