@@ -258,16 +258,32 @@ groups:
       description: "Datastore `{{ $labels.datastore }}` has hosts that have lost all of the redundant paths to a storage device. ({{ $labels.vcenter }})"
       summary: "Datastore `{{ $labels.datastore }}` has hosts that have lost all of the redundant paths to a storage device. ({{ $labels.vcenter }})"
       
-  - alert: SDRSClusterCapacity
+ - alert: SDRSClusterCapacityWarning
+    expr:  vrops_storagepod_capacity_remaining_percentage <= 15
+    for: 20m
+    labels:
+      severity: warning
+      tier: vmware
+      service: storage
+      context: "vrops-exporter {{ $labels.storagepod }}"
+      meta: "DataStore Cluster {{ $labels.storagepod }} utilization > 85%. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
+      dashboard: vcenter-datastore-utilization
+      playbook: docs/support/playbook/datastore/datastorediskusagealarm.html
+    annotations:
+      description: "DataStore Cluster {{ $labels.storagepod }} utilization > 85%. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
+      summary: "DataStore Cluster {{ $labels.storagepod }} utilization > 85%. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
+
+- alert: SDRSClusterCapacityCritical
     expr:  vrops_storagepod_capacity_remaining_percentage <= 10
     for: 20m
     labels:
-      severity: info
+      severity: critical
       tier: vmware
       service: storage
       context: "vrops-exporter {{ $labels.storagepod }}"
       meta: "DataStore Cluster {{ $labels.storagepod }} utilization > 90%. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
       dashboard: vcenter-datastore-utilization
+      playbook: docs/support/playbook/datastore/datastorediskusagealarm.html
     annotations:
       description: "DataStore Cluster {{ $labels.storagepod }} utilization > 90%. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
       summary: "DataStore Cluster {{ $labels.storagepod }} utilization > 90%. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
