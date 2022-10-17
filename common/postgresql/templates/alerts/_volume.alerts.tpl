@@ -9,6 +9,7 @@ groups:
       context: volumefull
       service: {{ include "alerts.service" . }}
       severity: info
+      support_group: {{ required ".Values.alerts.support_group missing" .Values.alerts.support_group }}
       tier: {{ required ".Values.alerts.tier missing" .Values.alerts.tier }}
     annotations:
       description: |

@@ -17,10 +17,11 @@ spec:
   - name: pg-database.alerts
     rules:
     - alert: {{ title $service }}PredictHighNumberOfDatabaseConnections
-      expr: predict_linear(pg_stat_activity_count{datname="{{ default .Release.Name .Values.db_name }}"}[1h], 3*3600) >= 2000
+      expr: predict_linear(pg_stat_activity_count{datname="{{default .Release.Name .Values.db_name}}"}[1h], 3*3600) >= 2000
       for: 5m
       labels:
         context: database
+        support_group: {{ required ".Values.alerts.support_group missing" .Values.alerts.support_group }}
         tier: {{ required ".Values.alerts.tier missing" .Values.alerts.tier }}
         service: {{ $service }}
         severity: warning
@@ -30,10 +31,11 @@ spec:
         description: Predicting more than 2000 database connections for {{ $service }} within the next 3 hours and might be unavailable soon.
 
     - alert: {{ title $service }}StuckTransactions
-      expr: max(pg_stat_activity_max_tx_duration{datname="{{ default .Release.Name .Values.db_name }}"}) > 300
+      expr: max(pg_stat_activity_max_tx_duration{datname="{{default .Release.Name .Values.db_name}}"}) > 300
       for: 5m
       labels:
         context: database
+        support_group: {{ required ".Values.alerts.support_group missing" .Values.alerts.support_group }}
         tier: {{ required ".Values.alerts.tier missing" .Values.alerts.tier }}
         service: {{ $service }}
         severity: info

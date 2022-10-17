@@ -8,6 +8,7 @@ groups:
       context: backupage
       service: {{ include "alerts.service" . }}
       severity: warning
+      support_group: {{ required ".Values.alerts.support_group missing" .Values.alerts.support_group }}
       tier: {{ required ".Values.alerts.tier missing" .Values.alerts.tier }}
     annotations:
       description: {{ template "fullname" . }} Backup missing. Please check backup container.
@@ -21,6 +22,7 @@ groups:
       meta: "{{`{{ $labels.app }}`}}"
       service: {{ include "alerts.service" . }}
       severity: info
+      support_group: {{ required ".Values.alerts.support_group missing" .Values.alerts.support_group }}
       tier: {{ required ".Values.alerts.tier missing" .Values.alerts.tier }}
       playbook: docs/support/playbook/db_backup_issues.html
     annotations:
@@ -35,6 +37,7 @@ groups:
       meta: "{{`{{ $labels.app }}`}}"
       service: {{ include "alerts.service" . }}
       severity: warning
+      support_group: {{ required ".Values.alerts.support_group missing" .Values.alerts.support_group }}
       tier: {{ required ".Values.alerts.tier missing" .Values.alerts.tier }}
       playbook: docs/support/playbook/db_backup_issues.html
     annotations:
