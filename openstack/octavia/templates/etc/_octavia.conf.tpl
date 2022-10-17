@@ -35,9 +35,9 @@ default_provider_driver = {{ .Values.default_provider | default "noop_driver" }}
 allow_prometheus_listeners = False
 
 # TLS ciphers
-tls_cipher_allow_list = {{ .Values.tls.ciphers.allow_list | join ":" }}
-default_listener_ciphers = {{ .Values.tls.ciphers.default.listeners | join ":" }}
-default_pool_ciphers = {{ .Values.tls.ciphers.default.pools | join ":" }}
+tls_cipher_allow_list = {{ .Values.tls.cipher_suites.allow_list | join ":" }}
+default_listener_ciphers = {{ .Values.tls.cipher_suites.default.listeners | join ":" }}
+default_pool_ciphers = {{ .Values.tls.cipher_suites.default.pools | join ":" }}
 
 # TLS versions
 minimum_tls_version = {{ .Values.tls.versions.minimum }}
