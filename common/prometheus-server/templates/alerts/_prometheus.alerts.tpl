@@ -168,6 +168,20 @@ groups:
       description: Prometheus is scraping individual targets of the job `{{`{{ $labels.job }}`}}` more than once. This is likely caused due to incorrectly placed scrape annotations.  <https://{{ include "prometheus.externalURL" . }}/graph?g0.expr={{ urlquery `up * on(instance) group_left() (sum by(instance) (up{job="PLACEHOLDER"}) > 1)` | replace "PLACEHOLDER" "{{ $labels.job }}"}}|Affected targets>
       summary: Prometheus target scraped multiple times
 
+  - alert: AlertWithMissingSupportGroupLabel
+    expr: max without (alertstate) (ALERTS{support_group=""})
+    for: 5m
+    labels:
+      tier: {{ include "alerts.tier" . }}
+      service: prometheus
+      support_group: observability
+      severity: info
+      playbook: docs/support/operation_model/tags.html
+      meta: 'Alert {{`{{ $labels.alertname }}`}} is missing the `support_group` label'
+    annotations:
+      description: Alerts are required to have a support_group label so that they can be routed to responsible support teams.
+      summary: Alert is missing support_group label
+
   {{- if and .Values.alertmanagers (gt (len .Values.alertmanagers) 0) }}
   - alert: PrometheusNotConnectedToAlertmanagers
     expr: prometheus_notifications_alertmanagers_discovered{prometheus="{{ include "prometheus.name" . }}"} == 0
