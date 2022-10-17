@@ -27,12 +27,12 @@ groups:
 {{ else }}
     expr: (sum(increase(fluentd_output_status_emit_records{component="fluent",type="elasticsearch"}[1h])) / sum(increase(fluentd_output_status_emit_records{component="fluent",type="elasticsearch"}[1h]offset 2h))) > 4
 {{ end }}
-    for: 1h
+    for: 2h
     labels:
       context: logshipping
       service: elk
       severity: info
       tier: os
     annotations:
-      description: 'ELK in {{`{{ $labels.region }}`}} is receiving more logs in the last 1h compared to 2h ago.'
+      description: 'ELK in {{`{{ $labels.region }}`}} is receiving 4 times more logs in the last 2h.'
       summary:  fluentd container logs increasing, check log volume.
