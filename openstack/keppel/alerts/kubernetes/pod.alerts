@@ -8,6 +8,7 @@ groups:
         for: 15m
         labels:
           no_alert_on_absence: "true" # small regions may have no throttled containers at all, so this may legitimately occur
+          support_group: containers
           tier: os
           service: keppel
           severity: info
@@ -25,6 +26,7 @@ groups:
         for: 15m
         labels:
           severity: warning
+          support_group: containers
           tier: os
           service: keppel
           context: memory
@@ -39,6 +41,7 @@ groups:
         expr: sum(rate(klog_pod_oomkill{namespace="keppel",pod_name!~"keppel-janitor-.+"}[30m])) by (pod_name) > 0
         for: 5m
         labels:
+          support_group: containers
           tier: os
           service: keppel
           severity: info
@@ -56,6 +59,7 @@ groups:
         expr: container_memory_saturation_ratio{namespace="keppel",pod_name!~"(?:keep-image-pulled|keppel-janitor)-.*"} > 0.7 AND predict_linear(container_memory_saturation_ratio{namespace="keppel",pod_name!~"(?:keep-image-pulled|keppel-janitor)-.*"}[1h], 7*3600) > 1.0
         for: 30m
         labels:
+          support_group: containers
           tier: os
           service: keppel
           severity: info
