@@ -188,7 +188,7 @@
       - '{__name__=~"^vrops_hostsystem_memory_contention_percentage"}'
 {{- end }}
 
-# For cronus reputation dashboard https://documentation.global.cloud.sap/services/email-howto-reputation
+# For cronus reputation dashboard https://documentation.global.cloud.sap/docs/customer/services/email-service/email-serv-howto/email-howto-reputation/
 {{- if .Values.cronus.enabled }}
 - job_name: 'cronus-reputation-statistics'
   scheme: https
