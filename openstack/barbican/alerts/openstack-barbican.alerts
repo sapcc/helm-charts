@@ -30,42 +30,6 @@ groups:
         at <https://sentry.{{ $labels.region }}.cloud.sap/monsoon/barbican/>.
       summary: barbican has reported issues to Sentry
 
-# Canary Alerts
-
-  - alert: OpenstackBarbicanCanaryTimeout
-    expr: blackbox_canary_status_gauge{service=~"barbican"} == 0.5
-    for: 1h
-    labels:
-      severity: info
-      support_group: identity
-      tier: os
-      service: '{{ $labels.service }}'
-      context: '{{ $labels.service }}'
-      dashboard: ccloud-health-canary-details
-      meta: 'Canary {{ $labels.service }} {{ $labels.check }} is timing out for 1 hour. See Sentry for details'
-      sentry: 'blackbox/?query=test_{{ $labels.check }}'
-      playbook: 'docs/devops/alert/{{ $labels.service }}'
-    annotations:
-      description: 'Canary {{ $labels.service }} {{ $labels.check }} is timing out for 1 hour. See Sentry for details'
-      summary: 'Canary {{ $labels.service }} {{ $labels.check }} is timing out'
-
-  - alert: OpenstackBarbicanCanaryFlapping
-    expr: changes(blackbox_canary_status_gauge{service=~"barbican"}[2h]) > 8
-    for: 2m
-    labels:
-      severity: warning
-      support_group: identity
-      tier: os
-      service: '{{ $labels.service }}'
-      context: '{{ $labels.service }}'
-      dashboard: ccloud-health-canary-details
-      meta: 'Canary {{ $labels.service }} {{ $labels.check }} is flapping for 2 hours. See Sentry for details'
-      sentry: 'blackbox/?query=test_{{ $labels.check }}'
-      playbook: 'docs/devops/alert/{{ $labels.service }}'
-    annotations:
-      description: 'Canary {{ $labels.service }} {{ $labels.check }} is flapping for 2 hours. See Sentry for details'
-      summary: 'Canary {{ $labels.service }} {{ $labels.check }} is flapping'
-
   - alert: OpenstackBarbicanRateLimitActionIsAbove50
     expr: sum by(initiator_project_id, action, initiator_user_name) (rate(openstack_ratelimit_requests_ratelimit_total{service="key-manager", container="barbican-api"}[2m]) * 60) > 50
     for: 1m
