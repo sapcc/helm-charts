@@ -114,6 +114,9 @@ cronus:
     maxTotalQueueTime: {{ .Values.config.workQueue.maxTotalQueueTime }}
     maxContainerNum: {{ .Values.config.workQueue.maxContainerNum }}
     reconnectWatcherLimit: {{ .Values.config.workQueue.reconnectWatcherLimit }}
+{{- if .Values.config.workQueue.allowTrigger }}
+    allowTrigger: {{ .Values.config.workQueue.allowTrigger }}
+{{- end }}
     jobQueue:
       deadLetterEnabled: {{ .Values.config.workQueue.jobQueue.deadLetterEnabled }}
       queueName: {{ .Values.config.workQueue.jobQueue.queueName }}
