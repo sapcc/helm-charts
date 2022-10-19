@@ -191,6 +191,10 @@
       regex: 'snmp_n3k_sysDescr;(?s)(.*)(Version )([0-9().a-zIU]*)(,.*)'
       replacement: '$3'
       target_label: image_version
+    - source_labels: [__name__, snmp_aristaevpn_sysDescr]
+      regex: 'snmp_aristaevpn_sysDescr;(?s)(.*)(version )([0-9.a-zA-Z]*)(.*)'
+      replacement: '$3'
+      target_label: image_version
     - source_labels: [__name__, snmp_coreasr9k_sysDescr]
       regex: 'snmp_coreasr9k_sysDescr;(?s)(.*)(Version )([0-9.]*)(.*)'
       replacement: '$3'
