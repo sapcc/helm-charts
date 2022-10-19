@@ -7,7 +7,7 @@ groups:
 {{ else }}
     expr: sum(rate(fluentd_output_status_num_records_total{job="logs-fluent-exporter",component="fluent"}[60m])) by (nodename,pod) == 0
 {{ end }}
-    for: 60m
+    for: 180m
     labels:
       context: logshipping
       service: elk
@@ -27,7 +27,7 @@ groups:
 {{ else }}
     expr: (sum(increase(fluentd_output_status_emit_records{component="fluent",type="elasticsearch"}[1h])) / sum(increase(fluentd_output_status_emit_records{component="fluent",type="elasticsearch"}[1h]offset 2h))) > 4
 {{ end }}
-    for: 2h
+    for: 4h
     labels:
       context: logshipping
       service: elk
