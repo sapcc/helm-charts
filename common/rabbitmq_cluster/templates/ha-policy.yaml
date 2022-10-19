@@ -1,4 +1,48 @@
-{{- if not .Values.quorumQueues }}
+{{- if .Values.quorumQueues }}
+apiVersion: rabbitmq.com/v1beta1
+kind: Policy
+metadata:
+  name: {{ template "fullname" . }}-ha-policy-reply
+  labels:
+    app: {{ template "fullname" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+    type: rabbitmq
+    component: {{ .Release.Name }}
+    system: openstack
+spec:
+  name: "ha-reply"
+  vhost: "/"
+  pattern: "reply*"
+  applyTo: "all"
+  definition:
+    ha-mode: "all"
+  rabbitmqClusterReference:
+    name: {{ template "fullname" . }}
+---
+apiVersion: rabbitmq.com/v1beta1
+kind: Policy
+metadata:
+  name: {{ template "fullname" . }}-ha-policy-fanout
+  labels:
+    app: {{ template "fullname" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+    type: rabbitmq
+    component: {{ .Release.Name }}
+    system: openstack
+spec:
+  name: "ha-fanout"
+  vhost: "/"
+  pattern: "fanout*"
+  applyTo: "all"
+  definition:
+    ha-mode: "all"
+  rabbitmqClusterReference:
+    name: {{ template "fullname" . }}
+{{ else }}
 apiVersion: rabbitmq.com/v1beta1
 kind: Policy
 metadata:
