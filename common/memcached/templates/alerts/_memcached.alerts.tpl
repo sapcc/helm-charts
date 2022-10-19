@@ -9,6 +9,7 @@ groups:
       service: {{ include "alerts.service" . }}
       severity: warning
       tier: {{ required ".Values.alerts.tier missing" .Values.alerts.tier }}
+      support_group: {{ required ".Values.alerts.support_group missing" .Values.alerts.support_group }}
     annotations:
       description: 'Many client connections throttled in memcache of {{`{{ $labels.app }}`}}.'
       summary: Many throttled client connections
