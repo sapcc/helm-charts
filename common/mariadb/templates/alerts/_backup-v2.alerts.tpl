@@ -8,6 +8,7 @@
       service: {{ include "alerts.service" . }}
       severity: warning
       tier: {{ required ".Values.alerts.tier missing" .Values.alerts.tier }}
+      support_group: {{ required ".Values.alerts.support_group missing" .Values.alerts.support_group }}
     annotations:
       description: {{ include "fullName" . }} full backup missing. Please check the backup container.
       summary: {{ include "fullName" . }} full backup missing
@@ -20,6 +21,7 @@
       service: {{ include "alerts.service" . }}
       severity: warning
       tier: {{ required ".Values.alerts.tier missing" .Values.alerts.tier }}
+      support_group: {{ required ".Values.alerts.support_group missing" .Values.alerts.support_group }}
     annotations:
       description: {{ include "fullName" . }} incremental backup missing. Please check the backup container.
       summary: {{ include "fullName" . }} incremental backup missing
@@ -33,6 +35,7 @@
       service: {{ include "alerts.service" . }}
       severity: info
       tier: {{ required ".Values.alerts.tier missing" .Values.alerts.tier }}
+      support_group: {{ required ".Values.alerts.support_group missing" .Values.alerts.support_group }}
     annotations:
       description: All {{ include "fullName" . }} backup verifications failed for both storage backends. Check the backup container.
       summary: {{ include "fullName" . }} backup failed all verifications

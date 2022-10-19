@@ -8,6 +8,7 @@
       service: {{ include "alerts.service" . }}
       severity: info
       tier: {{ required ".Values.alerts.tier missing" .Values.alerts.tier }}
+      support_group: {{ required ".Values.alerts.support_group missing" .Values.alerts.support_group }}
     annotations:
       description: {{ include "fullName" . }} has too many connections open. Please check the service containers.
       summary: {{ include "fullName" . }} has too many connections open.
@@ -20,6 +21,7 @@
       service: {{ include "alerts.service" . }}
       severity: warning
       tier: {{ required ".Values.alerts.tier missing" .Values.alerts.tier }}
+      support_group: {{ required ".Values.alerts.support_group missing" .Values.alerts.support_group }}
       playbook: 'docs/support/playbook/database/MariaDBSlowQueries.html'
     annotations:
       description: {{ include "fullName" . }} has reported slow queries. Please check the DB.
@@ -33,6 +35,7 @@
       service: {{ include "alerts.service" . }}
       severity: warning
       tier: {{ required ".Values.alerts.tier missing" .Values.alerts.tier }}
+      support_group: {{ required ".Values.alerts.support_group missing" .Values.alerts.support_group }}
     annotations:
       description: {{ include "fullName" . }} has queries waiting for lock more than 15 sec. Deadlock possible.
       summary: {{ include "fullName" . }} has queries waiting for lock.
@@ -45,6 +48,7 @@
       service: {{ include "alerts.service" . }}
       severity: info
       tier: {{ required ".Values.alerts.tier missing" .Values.alerts.tier }}
+      support_group: {{ required ".Values.alerts.support_group missing" .Values.alerts.support_group }}
       playbook: 'docs/support/playbook/manila/mariadb_high_running_threads.html'
     annotations:
       description: {{ include "fullName" . }} has more than 20 running threads.
