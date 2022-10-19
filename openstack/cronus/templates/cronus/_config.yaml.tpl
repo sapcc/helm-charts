@@ -89,6 +89,12 @@ cronus:
 {{- $r_creds := .Values.rabbitmq.users.default.password }}
   workQueue:
     enabled: {{ .Values.config.workQueue.enabled }}
++{{- if .Values.config.workQueue.active }}
++    active: {{ .Values.config.workQueue.active }}
++{{- end }}
++{{- if .Values.config.workQueue.allowTrigger }}
++    allowTrigger: {{ .Values.config.workQueue.allowTrigger }}
++{{- end }}
     rabbitmqUri: amqp://{{ $r_user }}:{{ $r_creds }}@{{ $r_host }}/
 {{- if .Values.config.workQueue.queueName }}
     queueName: {{ .Values.config.workQueue.queueName }}
@@ -114,9 +120,6 @@ cronus:
     maxTotalQueueTime: {{ .Values.config.workQueue.maxTotalQueueTime }}
     maxContainerNum: {{ .Values.config.workQueue.maxContainerNum }}
     reconnectWatcherLimit: {{ .Values.config.workQueue.reconnectWatcherLimit }}
-{{- if .Values.config.workQueue.allowTrigger }}
-    allowTrigger: {{ .Values.config.workQueue.allowTrigger }}
-{{- end }}
     jobQueue:
       deadLetterEnabled: {{ .Values.config.workQueue.jobQueue.deadLetterEnabled }}
       queueName: {{ .Values.config.workQueue.jobQueue.queueName }}
