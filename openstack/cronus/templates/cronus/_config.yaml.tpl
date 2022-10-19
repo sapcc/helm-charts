@@ -89,12 +89,12 @@ cronus:
 {{- $r_creds := .Values.rabbitmq.users.default.password }}
   workQueue:
     enabled: {{ .Values.config.workQueue.enabled }}
-+{{- if .Values.config.workQueue.active }}
-+    active: {{ .Values.config.workQueue.active }}
-+{{- end }}
-+{{- if .Values.config.workQueue.allowTrigger }}
-+    allowTrigger: {{ .Values.config.workQueue.allowTrigger }}
-+{{- end }}
+{{- if .Values.config.workQueue.active }}
+    active: {{ .Values.config.workQueue.active }}
+{{- end }}
+{{- if .Values.config.workQueue.allowTrigger }}
+    allowTrigger: {{ .Values.config.workQueue.allowTrigger }}
+{{- end }}
     rabbitmqUri: amqp://{{ $r_user }}:{{ $r_creds }}@{{ $r_host }}/
 {{- if .Values.config.workQueue.queueName }}
     queueName: {{ .Values.config.workQueue.queueName }}
