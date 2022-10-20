@@ -35,3 +35,36 @@ groups:
     annotations:
       description: 'CCloud Hermes API is flapping'
       summary: 'CCloud Hermes API is flapping'
+
+  - alert: CCloudHermesCanaryDown
+    expr: cc3test_status{service="hermes",name=~"TestHermes_hermes.+"} == 0
+    for: 1h
+    labels:
+      severity: warning
+      support_group: observability
+      tier: os
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.resource }}'
+      meta: 'CC Hermes Canary: {{ $labels.name }} is down, see report for more details'
+      dashboard: cc3test-overview?var-service={{ $labels.service }}
+      playbook: 'docs/support/playbook/hermes/alerts/'
+      report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
+    annotations:
+      description: 'CC Hermes Canary: {{ $labels.name }} is down, see report for more details'
+      summary: 'CC Hermes Canary: {{ $labels.name }} is down, see report for more details'
+
+  - alert: CCloudHermesCanaryFlapping
+    expr: changes(cc3test_status{service="hermes",name=~"TestHermes_hermes.+"}[2h]) > 8
+    labels:
+      severity: info
+      support_group: observability
+      tier: os
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.resource }}'
+      meta: 'CC Hermes Canary: {{ $labels.name }} is flapping for 2 hours, see report for more details'
+      dashboard: cc3test-overview?var-service={{ $labels.service }}
+      playbook: 'docs/support/playbook/hermes/alerts/'
+      report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
+    annotations:
+      description: 'CC Hermes Canary: {{ $labels.name }} is flapping for 2 hours, see report for more details'
+      summary: 'CC Hermes Canary: {{ $labels.name }} is flapping for 2 hours, see report for more details'
