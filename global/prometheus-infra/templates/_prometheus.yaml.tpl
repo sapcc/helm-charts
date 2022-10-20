@@ -39,6 +39,7 @@
       - '{__name__=~"^snmp_asr04_ntpEntStatusActiveOffset"}'
       - '{__name__=~"^snmp_asr04_ntpEntStatusDispersion"}'
       - '{__name__=~"^snmp_coreasr9k_sysDescr"}'
+      - '{__name__=~"^snmp_aristaevpn_sysDescr"}'
       - '{__name__=~"^elasticsearch_openstack_glance.+"}'
       - '{__name__=~"^snmp_n3k_sysDescr"}'
       - '{__name__=~"^snmp_n7k_sysDescr"}'
