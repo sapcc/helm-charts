@@ -170,6 +170,8 @@
   params:
     'match[]':
       # import any tenant-specific metric, except for those which already have been imported
+      - '{vccluster!~".*management.*"}'
+      - '{project!~"internal"}'
       - '{__name__=~"^vrops_virtualmachine_cpu_.+"}'
       - '{__name__=~"^vrops_virtualmachine_disk_.+"}'
       - '{__name__=~"^vrops_virtualmachine_memory_.+"}'
