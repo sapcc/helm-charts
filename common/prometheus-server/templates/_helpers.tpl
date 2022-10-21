@@ -111,13 +111,6 @@ prometheus-{{- (include "prometheus.name" .) -}}
 {{- end -}}
 {{- end -}}
 
-{{/* If Thanos is enabled the prefix `thanos_` is added to external labels to avoid overriding existing ones (region, cluster) which were added by previous Prometheis in the federation hierarchy. */}}
-{{- define "thanosPrefix" -}}
-{{- if .Values.thanos.enabled -}}
-{{- "thanos_" -}}
-{{- end -}}
-{{- end -}}
-
 {{- define "prometheus.defaultRelabelConfig" -}}
 - action: replace
   targetLabel: region
