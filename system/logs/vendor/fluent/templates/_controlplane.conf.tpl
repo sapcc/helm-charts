@@ -477,6 +477,7 @@
       desc The total number of outgoing records
       <labels>
         tag ${tag}
+        fluent_container $.kubernetes.pod_name
         nodename "#{ENV['K8S_NODE_NAME']}"
         container $.kubernetes.container_name
       </labels>
