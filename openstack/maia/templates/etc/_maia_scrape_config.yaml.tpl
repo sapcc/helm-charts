@@ -46,7 +46,7 @@
   metric_relabel_configs:
     - action: drop
       source_labels: [vmware_name]
-      regex: c_blackbox.*|c_regression.*
+      regex: cc3test.*
     - action: labeldrop
       regex: "instance|job|alert_tier|alert_service"
     - source_labels: [ltmVirtualServStatName]
@@ -106,7 +106,7 @@
       action: labeldrop
     - action: drop
       source_labels: [vmware_name]
-      regex: c_blackbox.*|c_regression.*
+      regex: cc3test.*
     - action: drop
       source_labels: [__name__]
       regex: netapp_volume_saved_.*
