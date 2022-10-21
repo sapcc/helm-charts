@@ -1,0 +1,71 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: arista-ceos
+  namespace: monsoon3
+  labels:
+    system: openstack
+    type: eos-api
+    component: neutron
+    app: arista-ceos
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: arista-ceos
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+  template:
+    metadata:
+      name: arista-ceos
+      labels:
+        system: openstack
+        type: eos-api
+        component: neutron
+        app: arista-ceos
+    spec:
+      containers:
+      - name: arista-ceos
+        image:  keppel.eu-de-1.cloud.sap/ccloud/arista-ceos:4.28.1F
+        imagePullPolicy: Always
+        env:
+          - name: INTFTYPE
+            value: eth
+          - name: ETBA
+            value: '1'
+          - name: SKIP_ZEROTOUCH_BARRIER_IN_SYSDBINIT
+            value: '1'
+          - name: CEOS
+            value: '1'
+          - name: EOS_PLATFORM
+            value: ceoslab
+          - name: container
+            value: docker
+        command: ["/usr/bin/Aaa.sh"]
+        args:
+          - start
+        volumeMounts:
+        - mountPath: /var/lock/subsys/
+          name: var-lock-subsys
+        - mountPath: /tmp
+          name: tmp
+          subPath: tmp
+        - mountPath: /run
+          name: tmp
+          subPath: run
+        - mountPath: /run/lock
+          name: tmp
+          subPath: run-lock
+      volumes:
+      - name: tmp
+        emptyDir:
+          medium: Memory
+          sizeLimit: 64Mi
+      - name: var-lock-subsys
+        emptyDir:
+          medium: Memory
+          sizeLimit: 64Mi
