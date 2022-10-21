@@ -157,9 +157,7 @@
       regex: '^vrops_virtualmachine_.+;(.+)'
       replacement: '$1'
       target_label: project_id
-    - source_labels: [ thanos_region ]
-      target_label: region
-    - regex: 'project|collector|exported_job|instance|internal_name|prometheus|resource_uuid|thanos_cluster|thanos_cluster_type|thanos_region|vccluster|vcenter'
+    - regex: 'project|collector|exported_job|instance|internal_name|prometheus|resource_uuid|thanos_cluster|thanos_cluster_type|vccluster|vcenter'
       action: labeldrop
 {{- if .Values.neo.enabled }}
     - source_labels: [__name__]
