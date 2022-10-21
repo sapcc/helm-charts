@@ -2,22 +2,21 @@
 {{ $common := $.Values.backup_v2 }}
 {{ $mariadb := $.Values.mariadb }}
 {{- range $backup := $.Values.backup_v2.backups }}
-{{- if not $backup.sync_enabled }}
+{{- if $backup.sync_enabled }}
 ---
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: mariadb-replication-{{ $backup.name }}-etc
+  name: mariadb-sync-{{ $backup.name }}-etc
   namespace: {{ $.Values.namespace }}
   labels:
-    app.kubernetes.io/name: mariadb-replication
-    helm.sh/chart: {{ include "metis.chart" $ }}
-    app.kubernetes.io/instance: mariadb-replication-{{ $backup.name }}-{{ $.Release.Name }}
+    app.kubernetes.io/name: mariadb-sync
+    app.kubernetes.io/instance: mariadb-sync-{{ $backup.name }}-{{ $.Release.Name }}
     app.kubernetes.io/managed-by: {{ $.Release.Service }}
 data:
     {{- $data := dict "common" $common "backup" $backup "mariadb" $mariadb "root" $ }}
   config.yaml: |
-{{ include "replication.configmap" $data | indent 4 }}
+{{ include "sync.configmap" $data | indent 4 }}
 
 {{- end }}
 {{- end }}
