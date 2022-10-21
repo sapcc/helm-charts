@@ -46,12 +46,10 @@ spec:
   {{- end }}
 
   # The labels to add to any time series or alerts when communicating with external systems (federation, remote storage, Alertmanager).
-  # If Thanos is enabled the prefix `thanos_` is added to external labels to avoid overriding existing ones (region, cluster)
-  # which might have been added by previous Prometheis in the federation hierarchy.
   externalLabels:
-    {{ include "thanosPrefix" . -}}region: {{ required ".Values.global.region missing" .Values.global.region }}
-    {{ include "thanosPrefix" . -}}cluster: {{ if .Values.global.cluster }}{{ .Values.global.cluster }}{{ else }}{{ .Values.global.region }}{{ end }}
-    {{ include "thanosPrefix" . -}}cluster_type: {{ required ".Values.global.clusterType missing" .Values.global.clusterType }}
+    region: {{ required ".Values.global.region missing" .Values.global.region }}
+    cluster: {{ if .Values.global.cluster }}{{ .Values.global.cluster }}{{ else }}{{ .Values.global.region }}{{ end }}
+    cluster_type: {{ required ".Values.global.clusterType missing" .Values.global.clusterType }}
     {{- if .Values.externalLabels }}
 {{ toYaml .Values.externalLabels | indent 4 }}
     {{- end }}

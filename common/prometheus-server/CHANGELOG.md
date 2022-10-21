@@ -1,4 +1,20 @@
-## 7.0.2
+## 7.0.9
+
+* removing Thanos prefix as it is only used in global Thanos Prometheis -> restoring region, cluster, cluster_type labels
+
+## 7.0.6 - 7.0.8
+
+* AlertWithMissingSupportGroupLabel alert added
+
+## 7.0.5
+
+* fix PrometheusMultipleTargetScrapes in global proms
+
+## 7.0.4
+
+* label fix for prometheus operator bump
+
+## 7.0.2 - 7.0.3
 
 * Move PrometheusMultiplePodScrapes to prometheus-kubernetes-rules chart
 
@@ -19,7 +35,7 @@
 * Respect alert-service and alert-tier pod labels in PrometheusMultiplePodScrapes alert
 
 ## 6.3.1
-
+
 * switch swift user for OpenstackSeed
 
 ## 6.3.0
