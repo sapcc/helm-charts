@@ -95,6 +95,41 @@ pgmetrics:
             usage: "GAUGE"
             description: "Total number of projects that are failing rate data scrape"
 
+    limes_mismatch_project_quota:
+      query: >
+        SELECT COUNT(*) as count FROM project_resources
+        WHERE backend_quota != desired_backend_quota
+      metrics:
+        - count:
+            usage: "GAUGE"
+            description: "Total number of project resources that have mismatched quota"
+
+    limes_overcommited_domain_quota:
+      query: >
+        WITH tmp as (
+          SELECT 1 FROM domains d
+            JOIN projects p ON p.domain_id = d.id
+            JOIN project_services ps ON ps.project_id = p.id
+            JOIN project_resources pr ON pr.service_id = ps.id
+            LEFT OUTER JOIN domain_services ds ON ds.domain_id = d.id AND ds.type = ps.type
+            LEFT OUTER JOIN domain_resources dr ON dr.service_id = ds.id AND dr.name = pr.name
+          GROUP BY d.uuid, d.name, ps.type, pr.name
+          HAVING MAX(COALESCE(dr.quota, 0)) < SUM(pr.quota)
+        ) SELECT COUNT(*) as count FROM tmp
+      metrics:
+        - count:
+            usage: "GAUGE"
+            description: "Total number of domain resources that have overcommited quota"
+
+    limes_overspent_project_quota:
+      query: >
+        SELECT COUNT(*) as count FROM project_resources
+        WHERE usage > desired_backend_quota
+      metrics:
+        - count:
+            usage: "GAUGE"
+            description: "Total number of project resources that have overspent quota"
+
     limes_project:
       query: >
         SELECT COUNT(*) AS count FROM projects
