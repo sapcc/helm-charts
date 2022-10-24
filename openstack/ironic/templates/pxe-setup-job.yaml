@@ -4,10 +4,15 @@ kind: Job
 metadata:
   name: ironic-pxe-setup
   labels:
+    app.kubernetes.io/managed-by: {{ .Release.Service | quote }}
+    app.kubernetes.io/instance: {{ .Release.Name | quote }}
+    helm.sh/chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
     system: openstack
     type: job
     component: ironic
-spec:
+  annotations:
+    "helm.sh/hook": pre-install,pre-upgrade,pre-rollback
+    "helm.sh/hook-delete-policy": hook-succeeded,before-hook-creation
   template:
     spec:
       restartPolicy: OnFailure
@@ -22,25 +27,7 @@ spec:
         args:
         - -c
         - |
-          cd /tftpboot
-
-          if [ ! -f lpxelinux.0 ]; then
-            [ -z "$a" ] && apt-get update && a=1
-            apt-get install pxelinux
-            cp /usr/lib/PXELINUX/* .
-          fi
-
-          if [ ! -f ldlinux.c32 ]; then
-            [ -z "$a" ] && apt-get update && a=1
-            apt-get install syslinux-common
-            cp /usr/lib/syslinux/modules/*/ldlinux.* .
-          fi
-
-          {{- range $v, $url := .Values.tftp_files }}
-          curl -sRz {{ $v }} -o {{ $v }} {{ $url }}
-          {{- end }}
-
-          chown -R ironic:ironic .
+          {{- include "ironic.pxe_setup_script" . | indent 10 }}
         volumeMounts:
         - mountPath: /tftpboot
           name: ironic-tftp

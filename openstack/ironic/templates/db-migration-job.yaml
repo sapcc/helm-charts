@@ -2,8 +2,11 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: ironic-db-migration
+  name: {{ tuple . "db-migration" | include "ironic.job_name" }}
   labels:
+    app.kubernetes.io/managed-by: {{ .Release.Service | quote }}
+    app.kubernetes.io/instance: {{ .Release.Name | quote }}
+    helm.sh/chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
     system: openstack
     type: job
     component: ironic
@@ -33,9 +36,7 @@ spec:
         args:
         - -c
         - |
-          set -e
-          ironic-dbsync upgrade
-          ironic-dbsync online_data_migrations
+          {{- include "ironic.db_migration" . | indent 10 }}
         env:
         - name: PGAPPNAME
           valueFrom:
