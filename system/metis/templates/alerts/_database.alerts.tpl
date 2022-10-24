@@ -7,6 +7,7 @@
         context: storage
         service: metis
         severity: info
+        support_group: {{ required "$.Values.backup_v2.alerts.supportGroup missing" $.Values.alerts.supportGroup}}
         tier: {{ required "$.Values.backup_v2.alerts.tier missing" $.Values.alerts.tier }}
       annotations:
         description: High PVC usage of 'metis-pvclaim'

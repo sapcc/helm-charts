@@ -8,6 +8,7 @@
       context: replicationerrors
       service: "metis"
       severity: info
+      support_group: {{ required "$.Values.backup_v2.alerts.supportGroup missing" $.Values.alerts.supportGroup}}
       tier: {{ required "$.Values.backup_v2.alerts.tier missing" $.Values.alerts.tier }}
     annotations:
       description: The replication for mariadb-replication-{{$backup.name}}-metis restarts frequently
@@ -19,6 +20,7 @@
       context: replicationerrors
       service: "metis"
       severity: info
+      support_group: {{ required "$.Values.backup_v2.alerts.supportGroup missing" $.Values.alerts.supportGroup}}
       tier: {{ required "$.Values.backup_v2.alerts.tier missing" $.Values.alerts.tier }}
     annotations:
       description: The replication for mariadb-replication-{{$backup.name}}-metis has not completed for >30 minutes
@@ -33,6 +35,7 @@
       context: db
       service: metis
       severity: info
+      support_group: {{ required "$.Values.backup_v2.alerts.supportGroup missing" $.Values.alerts.supportGroup}}
       tier: {{ required "$.Values.backup_v2.alerts.tier missing" $.Values.alerts.tier }}
     annotations:
       description: MetisDB has 1 or more metadata locks for >15m
