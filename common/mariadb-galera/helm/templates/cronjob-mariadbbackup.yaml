@@ -46,6 +46,18 @@ spec:
               - "/opt/mariadb/bin/entrypoint-backup.sh"
             {{- end }}
             env:
+            - name: OS_AUTH_URL
+              value: {{ required "Values.mariadb.galera.backup.openstack.authurl is missing, but required for the Openstack Swift authentication." $.Values.mariadb.galera.backup.openstack.authurl }}
+            - name: OS_IDENTITY_API_VERSION
+              value: "3"
+            - name: OS_REGION_NAME
+              value: {{ required "Values.mariadb.galera.backup.openstack.region is missing, but required for the Openstack Swift authentication." $.Values.mariadb.galera.backup.openstack.region }}
+            - name: OS_PROJECT_NAME
+              value: {{ required "Values.mariadb.galera.backup.openstack.projectname is missing, but required for the Openstack Swift authentication." $.Values.mariadb.galera.backup.openstack.projectname }}
+            - name: OS_PROJECT_DOMAIN_NAME
+              value: {{ required "Values.mariadb.galera.backup.openstack.tenantname is missing, but required for the Openstack Swift authentication." $.Values.mariadb.galera.backup.openstack.tenantname }}
+            - name: OS_USER_DOMAIN_NAME
+              value: {{ required "Values.mariadb.galera.backup.openstack.tenantname is missing, but required for the Openstack Swift authentication." $.Values.mariadb.galera.backup.openstack.tenantname }}
             - name: MYSQL_PORT
             {{- range $servicesKey, $servicesValue := $.Values.services.application }}
               {{- if eq $servicesValue.name "frontend"}}

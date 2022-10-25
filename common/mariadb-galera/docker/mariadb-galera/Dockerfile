@@ -10,6 +10,7 @@ ARG GALERA_DEBUG
 ARG IMG_VERSION
 ARG SOFT_NAME
 ARG YQ_VERSION
+ARG RESTIC_VERSION
 ENV SOFTWARE_VERSION=${SOFT_VERSION}
 ENV SOFTWARE_NAME=${SOFT_NAME}
 ENV IMAGE_VERSION=${IMG_VERSION}
@@ -17,6 +18,7 @@ ENV GALERA_VERSION=${GALERA_VERSION}
 ENV GALERA_DEBUG=${GALERA_DEBUG}
 ENV USERNAME=mysql
 ENV YQ_VERSION=${YQ_VERSION}
+ENV RESTIC_VERSION=${RESTIC_VERSION}
 LABEL name=${SOFTWARE_NAME}
 LABEL software.${SOFTWARE_NAME}=${SOFTWARE_NAME}
 LABEL version.${SOFTWARE_NAME}.software=${SOFTWARE_VERSION}
@@ -51,6 +53,11 @@ RUN oldIFS="${IFS}" \
   && curl -L https://github.com/mikefarah/yq/releases/download/v${YQ_VERSION}/yq_linux_amd64 -o /tmp/yq \
   && mv /tmp/yq /usr/local/bin/yq \
   && chmod 755 /usr/local/bin/yq \
+  && curl -L https://github.com/restic/restic/releases/download/v${RESTIC_VERSION}/restic_${RESTIC_VERSION}_linux_amd64.bz2 -o /tmp/restic_linux_amd64.bz2 \
+  && bzip2 --decompress /tmp/restic_linux_amd64.bz2 \
+  && mv /tmp/restic_linux_amd64 /usr/local/bin/restic \
+  && chmod 755 /usr/local/bin/restic \
+  && rm -f /tmp/restic_linux_amd64.bz2 \
   && mkdir -p /opt/${SOFTWARE_NAME}/{bin,data,etc/conf.d,etc/sql,run,tmp} \
   && mv /tmp/*.sh /opt/${SOFTWARE_NAME}/bin/ \
   && mv /tmp/my.cnf /opt/${SOFTWARE_NAME}/etc/ \
@@ -62,7 +69,8 @@ RUN oldIFS="${IFS}" \
   && chmod -R 755 /opt/${SOFTWARE_NAME}/etc/sql/ \
   && chmod -R 644 /opt/${SOFTWARE_NAME}/etc/sql/* \
   && /usr/bin/${SOFTWARE_NAME} --version | grep ${softPatchVer} \
-  && yq --version | grep ${YQ_VERSION}
+  && yq --version | grep ${YQ_VERSION} \
+  && restic version | grep ${RESTIC_VERSION}
 
 VOLUME ["/opt/${SOFTWARE_NAME}/data"]
 USER ${USERNAME}

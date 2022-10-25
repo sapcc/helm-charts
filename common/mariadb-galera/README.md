@@ -18,15 +18,16 @@ Docker image and Helm chart to deploy a [MariaDB](https://mariadb.com/kb/en/gett
 | GALERA_VERSION  | Galera software version that should be packaged into the image |
 | GALERA_DEBUG  | install Galera debug packages |
 | YQ_VERSION | install this [yq version](https://github.com/mikefarah/yq/releases) |
+| RESTIC_VERSION | install this [restic version](https://github.com/restic/restic/releases) |
 
 ```bash
-docker build --build-arg BASE_REGISTRY=keppel.eu-nl-1.cloud.sap --build-arg BASE_ACCOUNT=octobus --build-arg BASE_SOFT_NAME=ubuntu --build-arg BASE_SOFT_VERSION=20.04 --build-arg BASE_IMG_VERSION=0.3.67 --build-arg SOFT_NAME=mariadb --build-arg SOFT_VERSION=10.5.17+maria~ubu2004 --build-arg IMG_VERSION=0.1.3 --build-arg GALERA_VERSION=26.4.12-focal --build-arg YQ_VERSION=4.27.5 -t keppel.eu-de-1.cloud.sap/ccloud/mariadb-galera:10.5.17-0.1.3 -f docker/mariadb-galera/Dockerfile ./docker/mariadb-galera/
+docker build --build-arg BASE_REGISTRY=keppel.eu-nl-1.cloud.sap --build-arg BASE_ACCOUNT=octobus --build-arg BASE_SOFT_NAME=ubuntu --build-arg BASE_SOFT_VERSION=20.04 --build-arg BASE_IMG_VERSION=0.3.67 --build-arg SOFT_NAME=mariadb --build-arg SOFT_VERSION=10.5.17+maria~ubu2004 --build-arg IMG_VERSION=0.2.0 --build-arg GALERA_VERSION=26.4.12-focal --build-arg YQ_VERSION=4.27.5 --build-arg RESTIC_VERSION=0.14.0 -t keppel.eu-de-1.cloud.sap/ccloud/mariadb-galera:10.5.17-0.2.0 -f docker/mariadb-galera/Dockerfile ./docker/mariadb-galera/
 ```
 
 #### debug build
 
 ```bash
-docker build --build-arg BASE_REGISTRY=keppel.eu-nl-1.cloud.sap --build-arg BASE_ACCOUNT=octobus --build-arg BASE_SOFT_NAME=ubuntu --build-arg BASE_SOFT_VERSION=20.04 --build-arg BASE_IMG_VERSION=0.3.67 --build-arg SOFT_NAME=mariadb --build-arg SOFT_VERSION=10.5.17+maria~ubu2004 --build-arg IMG_VERSION=0.1.3 --build-arg GALERA_VERSION=26.4.12-focal --build-arg YQ_VERSION=4.27.5 --build-arg GALERA_DEBUG=true -t keppel.eu-de-1.cloud.sap/ccloud/mariadb-galera-debug:10.5.17-0.1.3 -f docker/mariadb-galera/Dockerfile ./docker/mariadb-galera/
+docker build --build-arg BASE_REGISTRY=keppel.eu-nl-1.cloud.sap --build-arg BASE_ACCOUNT=octobus --build-arg BASE_SOFT_NAME=ubuntu --build-arg BASE_SOFT_VERSION=20.04 --build-arg BASE_IMG_VERSION=0.3.67 --build-arg SOFT_NAME=mariadb --build-arg SOFT_VERSION=10.5.17+maria~ubu2004 --build-arg IMG_VERSION=0.2.0 --build-arg GALERA_VERSION=26.4.12-focal --build-arg YQ_VERSION=4.27.5 --build-arg RESTIC_VERSION=0.14.0 --build-arg GALERA_DEBUG=true -t keppel.eu-de-1.cloud.sap/ccloud/mariadb-galera-debug:10.5.17-0.2.0 -f docker/mariadb-galera/Dockerfile ./docker/mariadb-galera/
 ```
 #### MySQL Exporter image
 | build argument | description |
@@ -241,3 +242,5 @@ flowchart TB;
   * [mariabackup SST Method](https://mariadb.com/kb/en/mariabackup-sst-method/)
   * [manual Cluster backup with mariabackup](https://mariadb.com/kb/en/manual-sst-of-galera-cluster-node-with-mariabackup/)
   * [mariabackup commandline options](https://mariadb.com/kb/en/mariabackup-options/)
+  * [mariadb-dump manual](https://mariadb.com/kb/en/mariadb-dumpmysqldump/)
+  * [Mariabackup + Restic: a simple and efficient online backup solution for your DBs](https://archive.fosdem.org/2022/schedule/event/mariadb_backup_restic/)
