@@ -72,7 +72,7 @@ use = egg:swift#gatekeeper
 # swift3 requires keystoneauth with exact name
 [filter:keystoneauth]
 use = egg:swift#keystoneauth
-operator_roles = admin, objectstore_admin, swiftoperator
+operator_roles = admin, objectstore_admin
 is_admin = false
 # TODO: Replace by cloud_objectstore_admin when rolled out
 reseller_admin_role = swiftreseller
