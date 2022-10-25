@@ -1,3 +1,7 @@
+## 6.4.0
+
+* Bump prometheus to v2.39.1
+
 ## 6.3.3
 
 * ***ATTENTION***: maintain older version for Prometheis, which can't upgrade (global, maia). Fixes from here one should only be needed bugfixes.
