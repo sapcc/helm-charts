@@ -136,6 +136,7 @@
     <labels>
       hostname ${hostname}
       nodename "#{ENV['K8S_NODE_NAME']}"
+      fluent_namespace $.kubernetes.namespace
     </labels>
   </metric>
 </filter>
@@ -149,6 +150,7 @@
     <labels>
       hostname ${hostname}
       nodename "#{ENV['K8S_NODE_NAME']}"
+      fluent_namespace $.kubernetes.namespace
     </labels>
   </metric>
 </filter>
