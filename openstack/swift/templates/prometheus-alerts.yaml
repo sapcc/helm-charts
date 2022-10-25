@@ -79,33 +79,6 @@ spec:
           summary: 'Unexpected role assignments'
           description: 'The Keystone role "cloud_objectstore_viewer" is assigned to more users/groups than expected.'
 
-  - name: openstack-swift-roleassignments-old.alerts
-    rules:
-      # allowed role assignments for the `swiftreseller` role: # TODO Remove
-      # - group CCADMIN_CLOUD_ADMINS@ccadmin           in project cloud_admin@ccadmin
-      # - user admin@Default                           in project admin@Default (for openstackseeder to create Swift accounts)
-      # - user ironic@Default                          in project service@Default (to read private OS images)
-      # - user keppel@Default                          in project cloud_admin@ccadmin (to access customers' Keppel containers)
-      # - user limes@Default                           in project cloud_admin@ccadmin (for Limes to get/set quotas)
-      # - user kubernikus@Default                      in project cloud_admin@ccadmin
-      # ONLY EU-NL-1:
-      # - user kubernikus-master@Default               in project cloud_admin@ccadmin
-
-      - alert: OpenstackSwiftUnexpectedCloudAdminRoleAssignments
-        {{- $r := $.Values.global.region }}
-        expr: absent(openstack_assignments_per_role{role_name="swiftreseller"}) or max(openstack_assignments_per_role{role_name="swiftreseller"}) > {{if eq $r "eu-nl-1"}} 7 {{ else }} 6 {{ end }}
-        for: 10m
-        labels:
-          support_group: containers
-          tier: os
-          service: swift
-          severity: info
-          playbook: 'docs/support/playbook/unexpected-role-assignments.html'
-          meta: 'Unexpected role assignments found for Keystone role "swiftreseller"'
-        annotations:
-          summary: 'Unexpected role assignments'
-          description: 'The Keystone role "swiftreseller" is assigned to more users/groups than expected.'
-
 {{- end }}
 
 {{- if .Values.s3_cred_cache_prewarm_credentials }}
