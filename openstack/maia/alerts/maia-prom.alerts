@@ -1,0 +1,36 @@
+groups:
+- name: maia-prom.alerts
+  rules:
+  - alert: MaiaPromFederationDown
+    expr: |
+        up{job=~"prometheus-openstack|
+            prometheus-infra-collector|
+            prometheus-vmware|
+            cronus-reputation-statistics"} < 1
+    for: 15m
+    labels:
+      severity: warning
+      support_group: observability
+      service: '{{ $labels.job }}'
+      context: federation
+      meta: "Maia-Prom '{{ $labels.job }} federation is down"
+    annotations:
+      description: "Maia-Prom '{{ $labels.job }} federation is down"
+      summary: Maia-Prom federation is down
+
+  - alert: MaiaPromServicesDown
+    expr: |
+        up{job=~"prometheus-maia-oprom|
+            prometheus-maia-oprom-thanos-query|
+            prometheus-maia-oprom-thanos-store|
+            prometheus-maia-oprom-thanos-compactor"} < 1
+    for: 15m
+    labels:
+      severity: warning
+      support_group: observability
+      service: '{{ $labels.job }}'
+      context: service
+      meta: "Maia-Prom '{{ $labels.job }} service is down"
+    annotations:
+      description: "Maia-Prom '{{ $labels.job }} service is down"
+      summary: Maia-Prom service is down
