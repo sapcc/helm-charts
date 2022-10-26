@@ -166,7 +166,6 @@
       regex: ^vrops_hostsystem_.+
       replacement: "{{ .Values.neo.domain_id  }}"
 {{- end }}
-{{- end }}
 
   metrics_path: '/federate'
   params:
@@ -183,6 +182,7 @@
       - '{__name__=~"^vrops_virtualmachine_undersized.+"}'
       - '{__name__=~"^vrops_virtualmachine_number_vcpus_total"}'
       - '{__name__=~"^vrops_virtualmachine_config_hardware_memory_kilobytes"}'
+{{- end }}
 
 {{- if .Values.neo.enabled }}
       - '{__name__=~"^vrops_hostsystem_cpu_model"}'
