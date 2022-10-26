@@ -65,8 +65,8 @@ groups:
                    Please consider cleaning up elasticsearch or lower the retention period for the logs.'
       summary: '*Elastiflow cluster* is out of disk space'
 
-  - alert: ElasticClusterRed
-    expr: es_cluster_status{pod=~".*-master-0"} == 2
+  - alert: ELKClusterRed
+    expr: es_cluster_status{elastic_cluster="elkelasticsearch",pod=~".*-master-0"} == 2
     for: 30m
     labels:
       context: nodes
@@ -75,13 +75,13 @@ groups:
       support_group: observability
       tier: os
       playbook: docs/support/playbook/elastic_kibana_issues.html
-      dashboard: health-elasticsearch?var-cluster={{ $labels.elastic_cluster }}
+      dashboard: health-elasticsearch?var-cluster=elkelasticsearch
     annotations:
-      description: 'Elastic cluster *{{ $labels.elastic_cluster }}* in `{{ $labels.region }}` is RED. Please check all nodes.'
-      summary: 'Elastic *{{ $labels.elastic_cluster }}* cluster in `{{ $labels.region }}` is RED'
+      description: 'Elastic cluster *elkelasticsearch* in `{{ $labels.region }}` is RED. Please check all nodes.'
+      summary: '*elkelasticsearch* cluster in `{{ $labels.region }}` is RED'
 
-  - alert: ElasticClusterYellow
-    expr: es_cluster_status{pod=~".*-master-0"} == 1
+  - alert: ELKClusterYellow
+    expr: es_cluster_status{elastic_cluster="elkelasticsearch",pod=~".*-master-0"} == 1
     for: 30m
     labels:
       context: nodes
@@ -90,11 +90,42 @@ groups:
       support_group: observability
       tier: os
       playbook: docs/support/playbook/elastic_kibana_issues.html
-      dashboard: health-elasticsearch?var-cluster={{ $labels.elastic_cluster }}
+      dashboard: health-elasticsearch?var-cluster=elkelasticsearch
     annotations:
-      description: 'Elastic cluster *{{ $labels.elastic_cluster }}* in `{{ $labels.region }}` is YELLOW. Please check all nodes.
+      description: 'Elastic cluster *elkelasticsearch* in `{{ $labels.region }}` is YELLOW. Please check all nodes.
         nodes one or more are missing.'
-      summary: 'Elastic *{{ $labels.elastic_cluster }}* cluster in `{{ $labels.region }}` is YELLOW'
+      summary: 'Elastic cluster *elkelasticsearch* in `{{ $labels.region }}` is YELLOW'
+
+  - alert: ElastiflowClusterRed
+    expr: es_cluster_status{elastic_cluster="elastiflow",pod=~".*-master-0"} == 2
+    for: 30m
+    labels:
+      context: nodes
+      service: elk
+      severity: warning
+      support_group: observability
+      tier: os
+      playbook: docs/support/playbook/elastic_kibana_issues.html
+      dashboard: health-elasticsearch?var-cluster=elastiflow
+    annotations:
+      description: 'Elastic cluster *elastiflow* in `{{ $labels.region }}` is RED. Please check all nodes.'
+      summary: '*elastiflow* cluster in `{{ $labels.region }}` is RED'
+
+  - alert: ElastiflowClusterYellow
+    expr: es_cluster_status{elastic_cluster="elastiflow",pod=~".*-master-0"} == 1
+    for: 30m
+    labels:
+      context: nodes
+      service: elk
+      severity: warning
+      support_group: observability
+      tier: os
+      playbook: docs/support/playbook/elastic_kibana_issues.html
+      dashboard: health-elasticsearch?var-cluster=elastiflow
+    annotations:
+      description: 'Elastic cluster *elastiflow* in `{{ $labels.region }}` is YELLOW. Please check all nodes.
+        nodes one or more are missing.'
+      summary: 'Elastic cluster *elastiflow* in `{{ $labels.region }}` is YELLOW'
 
   - alert: ElasticExporterMissing
     expr: up{job=~"es-exporter.*"} == 0
