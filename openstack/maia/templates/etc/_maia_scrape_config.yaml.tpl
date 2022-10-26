@@ -151,6 +151,9 @@
   scheme: http
   scrape_interval: "{{ .Values.prometheus_vmware.scrape_interval }}"
   scrape_timeout: "{{ .Values.prometheus_vmware.scrape_timeout }}"
+  tls_config:
+    cert_file: /etc/prometheus/secrets/prometheus-infra-sso-cert/sso.crt
+    key_file: /etc/prometheus/secrets/prometheus-infra-sso-cert/sso.key
   static_configs:
     - targets:
       - "prometheus-vmware.{{ .Values.global.region }}.cloud.sap"
