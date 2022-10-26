@@ -151,12 +151,8 @@
   scheme: http
   scrape_interval: "{{ .Values.prometheus_vmware.scrape_interval }}"
   scrape_timeout: "{{ .Values.prometheus_vmware.scrape_timeout }}"
-  tls_config:
-    cert_file: /etc/prometheus/secrets/prometheus-infra-sso-cert/sso.crt
-    key_file: /etc/prometheus/secrets/prometheus-infra-sso-cert/sso.key
   static_configs:
-    - targets:
-      - "prometheus-vmware.{{ .Values.global.region }}.cloud.sap"
+    - targets: ['prometheus-vmware.vmware-monitoring:9090']
   metric_relabel_configs:
     - source_labels: [__name__, project ]
       regex: '^vrops_virtualmachine_.+;(.+)'
@@ -175,17 +171,15 @@
   params:
     'match[]':
       # import any tenant-specific metric, except for those which already have been imported
-      - '{vccluster!~".*management.*"}'
-      - '{project!~"internal"}'
-      - '{__name__=~"^vrops_virtualmachine_cpu_.+"}'
-      - '{__name__=~"^vrops_virtualmachine_disk_.+"}'
-      - '{__name__=~"^vrops_virtualmachine_memory_.+"}'
-      - '{__name__=~"^vrops_virtualmachine_network_.+"}'
-      - '{__name__=~"^vrops_virtualmachine_virtual_disk_.+"}'
-      - '{__name__=~"^vrops_virtualmachine_oversized.+"}'
-      - '{__name__=~"^vrops_virtualmachine_undersized.+"}'
-      - '{__name__=~"^vrops_virtualmachine_number_vcpus_total"}'
-      - '{__name__=~"^vrops_virtualmachine_config_hardware_memory_kilobytes"}'
+      - '{__name__=~"^vrops_virtualmachine_cpu_.+", project!~"internal", vccluster!~".*management.*"}'
+      - '{__name__=~"^vrops_virtualmachine_disk_.+", project!~"internal", vccluster!~".*management.*"}'
+      - '{__name__=~"^vrops_virtualmachine_memory_.+", project!~"internal", vccluster!~".*management.*"}'
+      - '{__name__=~"^vrops_virtualmachine_network_.+", project!~"internal", vccluster!~".*management.*"}'
+      - '{__name__=~"^vrops_virtualmachine_virtual_disk_.+", project!~"internal", vccluster!~".*management.*"}'
+      - '{__name__=~"^vrops_virtualmachine_oversized.+", project!~"internal", vccluster!~".*management.*"}'
+      - '{__name__=~"^vrops_virtualmachine_undersized.+", project!~"internal", vccluster!~".*management.*"}'
+      - '{__name__=~"^vrops_virtualmachine_number_vcpus_total", project!~"internal", vccluster!~".*management.*"}'
+      - '{__name__=~"^vrops_virtualmachine_config_hardware_memory_kilobytes", project!~"internal", vccluster!~".*management.*"}'
 {{- end }}
 
 {{- if .Values.neo.enabled }}
