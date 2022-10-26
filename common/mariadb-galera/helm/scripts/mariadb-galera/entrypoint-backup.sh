@@ -95,17 +95,17 @@ function createdbbackup {
   local DB_HOST=${1}
   local SEQNO=${2}
 
-  loginfo "${FUNCNAME[0]}" "mariadb-dump started"
+  loginfo "${FUNCNAME[0]}" "mariadb-dump using ${DB_HOST} started"
   mariadb-dump --defaults-file=${BASE}/etc/my.cnf --protocol=tcp --host=${DB_HOST}.database.svc.cluster.local --port=${MYSQL_PORT} \
                --user=${MARIADB_ROOT_USER} --password=${MARIADB_ROOT_PASSWORD} \
                --all-databases --flush-logs --hex-blob --events --routines --comments --triggers --skip-log-queries \
-               --gtid --master-data=1 | \
+               --gtid --master-data=1 --single-transaction | \
   restic backup --stdin --stdin-filename=mariadb.dump \
                 --tag "${SOFTWARE_VERSION}" --tag "${MARIADB_CLUSTER_NAME}" --tag "${SEQNO}" --tag "dump" \
                 --repo swift:{{ required "Values.mariadb.galera.backup.openstack.container is missing, but required for restic to access the repository." $.Values.mariadb.galera.backup.openstack.container }}:/ \
                 --compression {{ $.Values.mariadb.galera.backup.restic.compression | default "auto" | quote }} \
                 --pack-size {{ $.Values.mariadb.galera.backup.restic.packsizeInMB | default 16 | int }} \
-                --no-cache --json
+                --no-cache --json --quiet
   if [ $? -ne 0 ]; then
     logerror "${FUNCNAME[0]}" "mariadb-dump failed"
     exit 1
@@ -139,7 +139,7 @@ function createbinlogbackup {
                 --repo swift:{{ required "Values.mariadb.galera.backup.openstack.container is missing, but required for restic to access the repository." $.Values.mariadb.galera.backup.openstack.container }}:/ \
                 --compression {{ $.Values.mariadb.galera.backup.restic.compression | default "auto" | quote }} \
                 --pack-size {{ $.Values.mariadb.galera.backup.restic.packsizeInMB | default 16 | int }} \
-                --no-cache --json
+                --no-cache --json --quiet
   if [ $? -ne 0 ]; then
     logerror "${FUNCNAME[0]}" "mariadb-binlog failed"
     exit 1
@@ -157,7 +157,7 @@ function prunebackups {
                 --keep-monthly {{ $.Values.mariadb.galera.backup.restic.keep.monthly | default 0 | int }} \
                 --keep-yearly {{ $.Values.mariadb.galera.backup.restic.keep.yearly | default 0 | int }} \
                 --repo swift:{{ required "Values.mariadb.galera.backup.openstack.container is missing, but required for restic to access the repository." $.Values.mariadb.galera.backup.openstack.container }}:/ \
-                --no-cache --json --compact
+                --no-cache --json --compact --quiet
   if [ $? -ne 0 ]; then
     logerror "${FUNCNAME[0]}" "restic backup pruning failed"
     exit 1
@@ -187,4 +187,4 @@ createdbbackup ${NODENAME[0]} ${NODENAME[1]}
 createbinlogbackup ${NODENAME[0]} ${NODENAME[1]}
 setclusterdesyncmode ${NODENAME[0]} OFF
 prunebackups
-listbackups
+#listbackups

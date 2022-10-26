@@ -244,3 +244,4 @@ flowchart TB;
   * [mariabackup commandline options](https://mariadb.com/kb/en/mariabackup-options/)
   * [mariadb-dump manual](https://mariadb.com/kb/en/mariadb-dumpmysqldump/)
   * [Mariabackup + Restic: a simple and efficient online backup solution for your DBs](https://archive.fosdem.org/2022/schedule/event/mariadb_backup_restic/)
+  * [MariaDB Point-in-Time-Recovery](https://archive.fosdem.org/2022/schedule/event/mariadb_pit_recovery/)
