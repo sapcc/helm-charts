@@ -12,7 +12,8 @@ groups:
     labels:
       context: logshipping
       service: elk
-      severity: info
+      severity: warning
+      support_group: observability
       tier: os
       playbook: docs/operation/elastic_kibana_issues/elk_logs/fluent-logs-are-missing.html
     annotations:
@@ -32,7 +33,8 @@ groups:
     labels:
       context: logshipping
       service: elk
-      severity: info
+      severity: warning
+      support_group: observability
       tier: os
     annotations:
       description: 'ELK in {{`{{ $labels.region }}`}} is receiving 4 times more logs in the last 6h.'
