@@ -158,7 +158,7 @@
       regex: '^vrops_virtualmachine_.+;(.+)'
       replacement: '$1'
       target_label: project_id
-    - regex: 'project|collector|exported_job|instance|internal_name|prometheus|resource_uuid|thanos_cluster|thanos_cluster_type|vccluster|vcenter'
+    - regex: 'project|collector|exported_job|instance|internal_name|prometheus|resource_uuid|thanos_cluster|thanos_cluster_type|vccluster|prometheus_replica'
       action: labeldrop
 {{- if .Values.neo.enabled }}
     - source_labels: [__name__]
@@ -171,23 +171,54 @@
   params:
     'match[]':
       # import any tenant-specific metric, except for those which already have been imported
-      - '{__name__=~"^vrops_virtualmachine_cpu_.+", project!~"internal", vccluster!~".*management.*"}'
-      - '{__name__=~"^vrops_virtualmachine_disk_.+", project!~"internal", vccluster!~".*management.*"}'
-      - '{__name__=~"^vrops_virtualmachine_memory_.+", project!~"internal", vccluster!~".*management.*"}'
-      - '{__name__=~"^vrops_virtualmachine_network_.+", project!~"internal", vccluster!~".*management.*"}'
-      - '{__name__=~"^vrops_virtualmachine_virtual_disk_.+", project!~"internal", vccluster!~".*management.*"}'
-      - '{__name__=~"^vrops_virtualmachine_oversized.+", project!~"internal", vccluster!~".*management.*"}'
-      - '{__name__=~"^vrops_virtualmachine_undersized.+", project!~"internal", vccluster!~".*management.*"}'
+      - '{__name__=~"^vrops_virtualmachine_config_hardware_memory_kilobytes", project!~"internal", vccluster!~".*management.*"}'
+      - '{__name__=~"^vrops_virtualmachine_cpu_contention_ratio", project!~"internal", vccluster!~".*management.*"}'
+      - '{__name__=~"^vrops_virtualmachine_cpu_demand_ratio", project!~"internal", vccluster!~".*management.*"}'
+      - '{__name__=~"^vrops_virtualmachine_cpu_usage_ratio", project!~"internal", vccluster!~".*management.*"}'
+      - '{__name__=~"^vrops_virtualmachine_cpu_usage_average_mhz", project!~"internal", vccluster!~".*management.*"}'
+      - '{__name__=~"^vrops_virtualmachine_cpu_wait_summation_miliseconds", project!~"internal", vccluster!~".*management.*"}'
+      - '{__name__=~"^vrops_virtualmachine_datastore_outstanding_io_requests", project!~"internal", vccluster!~".*management.*"}'
+      - '{__name__=~"^vrops_virtualmachine_disk_usage_average_kilobytes_per_second", project!~"internal", vccluster!~".*management.*"}'
+      - '{__name__=~"^vrops_virtualmachine_diskspace_gigabytes", project!~"internal", vccluster!~".*management.*"}'
+      - '{__name__=~"^vrops_virtualmachine_diskspace_virtual_machine_used_gigabytes", project!~"internal", vccluster!~".*management.*"}'
+      - '{__name__=~"^vrops_virtualmachine_guest_os_full_name_info", project!~"internal", vccluster!~".*management.*"}'
+      - '{__name__=~"^vrops_virtualmachine_guest_tools_version_info", project!~"internal", vccluster!~".*management.*"}'
+      - '{__name__=~"^vrops_virtualmachine_memory_active_ratio", project!~"internal", vccluster!~".*management.*"}'
+      - '{__name__=~"^vrops_virtualmachine_memory_activewrite_kilobytes", project!~"internal", vccluster!~".*management.*"}'
+      - '{__name__=~"^vrops_virtualmachine_memory_balloning_ratio", project!~"internal", vccluster!~".*management.*"}'
+      - '{__name__=~"^vrops_virtualmachine_memory_consumed_kilobytes", project!~"internal", vccluster!~".*management.*"}'
+      - '{__name__=~"^vrops_virtualmachine_memory_contention_ratio", project!~"internal", vccluster!~".*management.*"}'
+      - '{__name__=~"^vrops_virtualmachine_memory_usage_average", project!~"internal", vccluster!~".*management.*"}'
+      - '{__name__=~"^vrops_virtualmachine_network_data_received_kilobytes_per_second", project!~"internal", vccluster!~".*management.*"}'
+      - '{__name__=~"^vrops_virtualmachine_network_data_transmitted_kilobytes_per_second", project!~"internal", vccluster!~".*management.*"}'
+      - '{__name__=~"^vrops_virtualmachine_network_packets_dropped.+", project!~"internal", vccluster!~".*management.*"}'
+      - '{__name__=~"^vrops_virtualmachine_network_packets.+", project!~"internal", vccluster!~".*management.*"}'
+      - '{__name__=~"^vrops_virtualmachine_network_usage_average_kilobytes_per_second", project!~"internal", vccluster!~".*management.*"}'
       - '{__name__=~"^vrops_virtualmachine_number_vcpus_total", project!~"internal", vccluster!~".*management.*"}'
+      - '{__name__=~"^vrops_virtualmachine_oversized", project!~"internal", vccluster!~".*management.*"}'
+      - '{__name__=~"^vrops_virtualmachine_oversized_vcpus", project!~"internal", vccluster!~".*management.*"}'
+      - '{__name__=~"^vrops_virtualmachine_oversized_memory", project!~"internal", vccluster!~".*management.*"}'
+      - '{__name__=~"^vrops_virtualmachine_runtime_connectionstate", project!~"internal", vccluster!~".*management.*"}'
+      - '{__name__=~"^vrops_virtualmachine_runtime_powerstate", project!~"internal", vccluster!~".*management.*"}'
+      - '{__name__=~"^vrops_virtualmachine_summary_ethernetcards", project!~"internal", vccluster!~".*management.*"}'
+      - '{__name__=~"^vrops_virtualmachine_swapin_memory_kilobytes", project!~"internal", vccluster!~".*management.*"}'
+      - '{__name__=~"^vrops_virtualmachine_swapped_memory_kilobytes", project!~"internal", vccluster!~".*management.*"}'
+      - '{__name__=~"^vrops_virtualmachine_undersized", project!~"internal", vccluster!~".*management.*"}'
+      - '{__name__=~"^vrops_virtualmachine_undersized_vcpus", project!~"internal", vccluster!~".*management.*"}'
+      - '{__name__=~"^vrops_virtualmachine_undersized_memory", project!~"internal", vccluster!~".*management.*"}'
+      - '{__name__=~"^vrops_virtualmachine_virtual_disk_average.+", project!~"internal", vccluster!~".*management.*"}'
+      - '{__name__=~"^vrops_virtualmachine_virtual_disk_outstanding.+", project!~"internal", vccluster!~".*management.*"}'
+      - '{__name__=~"^vrops_virtualmachine_virtual_disk_read_kilobytes_per_second", project!~"internal", vccluster!~".*management.*"}'
+      - '{__name__=~"^vrops_virtualmachine_virtual_disk_write_kilobytes_per_second", project!~"internal", vccluster!~".*management.*"}'
       - '{__name__=~"^vrops_virtualmachine_config_hardware_memory_kilobytes", project!~"internal", vccluster!~".*management.*"}'
 {{- end }}
 
 {{- if .Values.neo.enabled }}
-      - '{__name__=~"^vrops_hostsystem_cpu_model"}'
-      - '{__name__=~"^vrops_hostsystem_cpu_sockets_number"}'
-      - '{__name__=~"^vrops_hostsystem_cpu_usage_average_percentage"}'
-      - '{__name__=~"^vrops_hostsystem_memory_ballooning_kilobytes"}'
-      - '{__name__=~"^vrops_hostsystem_memory_contention_percentage"}'
+      - '{__name__=~"^vrops_hostsystem_cpu_model, vccluster!~".*management.*"}'
+      - '{__name__=~"^vrops_hostsystem_cpu_sockets_number, vccluster!~".*management.*"}'
+      - '{__name__=~"^vrops_hostsystem_cpu_usage_average_percentage, vccluster!~".*management.*"}'
+      - '{__name__=~"^vrops_hostsystem_memory_ballooning_kilobytes, vccluster!~".*management.*"}'
+      - '{__name__=~"^vrops_hostsystem_memory_contention_percentage, vccluster!~".*management.*"}'
 {{- end }}
 
 # For cronus reputation dashboard https://documentation.global.cloud.sap/docs/customer/services/email-service/email-serv-howto/email-howto-reputation/
