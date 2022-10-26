@@ -152,7 +152,8 @@
   scrape_interval: "{{ .Values.prometheus_vmware.scrape_interval }}"
   scrape_timeout: "{{ .Values.prometheus_vmware.scrape_timeout }}"
   static_configs:
-    - targets: ['prometheus-vmware.vmware-monitoring.svc:9090']
+    - targets:
+      - "prometheus-vmware.{{ .Values.global.region }}.cloud.sap"
   metric_relabel_configs:
     - source_labels: [__name__, project ]
       regex: '^vrops_virtualmachine_.+;(.+)'
