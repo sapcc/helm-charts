@@ -138,12 +138,12 @@
   params:
     'match[]':
       # import any tenant-specific metric, except for those which already have been imported
-      - '{__name__=~"^snmp_f5_.+"}'
-      - '{__name__=~"^ssh_nat_limits_miss"}'
-      - '{__name__=~"^ssh_nat_limits_use"}'
-      - '{__name__=~"^snmp_asr_ifHC.+"}'
-      - '{__name__=~"^netapp_capacity_.+"}'
-      - '{__name__=~"^netapp_volume_.+", app="netapp-capacity-exporter-manila"}'
+      - '{__name__=~"^snmp_f5_.+", project_id!=""}'
+      - '{__name__=~"^ssh_nat_limits_miss", project_id!=""}'
+      - '{__name__=~"^ssh_nat_limits_use", project_id!=""}'
+      - '{__name__=~"^snmp_asr_ifHC.+", project_id!=""}'
+      - '{__name__=~"^netapp_capacity_.+", project_id!=""}'
+      - '{__name__=~"^netapp_volume_.+", app="netapp-capacity-exporter-manila", project_id!=""}'
       - '{__name__=~"^openstack_manila_share_.+", project_id!=""}'
 
 {{- if .Values.prometheus_vmware.enabled }}
