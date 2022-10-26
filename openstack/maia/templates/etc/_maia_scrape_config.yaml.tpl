@@ -146,6 +146,7 @@
       - '{__name__=~"^netapp_volume_.+", app="netapp-capacity-exporter-manila"}'
       - '{__name__=~"^openstack_manila_share_.+", project_id!=""}'
 
+{{- if .Values.prometheus_vmware.enabled }}
 - job_name: 'prometheus-vmware'
   scheme: http
   scrape_interval: "{{ .Values.prometheus_vmware.scrape_interval }}"
@@ -164,6 +165,7 @@
       target_label: domain_id
       regex: ^vrops_hostsystem_.+
       replacement: "{{ .Values.neo.domain_id  }}"
+{{- end }}
 {{- end }}
 
   metrics_path: '/federate'
