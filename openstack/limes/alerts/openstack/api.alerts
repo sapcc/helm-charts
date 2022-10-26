@@ -305,7 +305,7 @@ groups:
 
   - alert: OpenstackLimesMismatchProjectQuota
     expr: limes_mismatch_project_quota_count > 0
-    for: 5m
+    for: 60m # every 30m, limes-collect scrapes quota/usage on each project service and at the same time tries to rectify this error; give it 1-2 chances before alerting
     labels:
       severity: info
       support_group: containers
@@ -320,7 +320,7 @@ groups:
 
   - alert: OpenstackLimesOvercommittedDomainQuota
     expr: limes_overcommitted_domain_quota_count > 0
-    for: 5m
+    for: 5m # this can trigger quickly since Limes cannot do anything by itself to fix this
     labels:
       severity: info
       support_group: containers
@@ -336,7 +336,7 @@ groups:
 
   - alert: OpenstackLimesOverspentProjectQuota
     expr: limes_overspent_project_quota_count > 0
-    for: 5m
+    for: 60m # every 30m, limes-collect scrapes quota/usage on each project service; give it 1-2 chances to observe a consistent usage value before alerting
     labels:
       severity: info
       support_group: containers
