@@ -164,9 +164,12 @@ disable_user_account_days_inactive = {{ .Values.disable_user_account_days_inacti
 {{- end }}
 
 [oslo_messaging_notifications]
-driver = messaging
 {{- if and .Values.audit.central_service.user .Values.audit.central_service.password }}
+driver = messaging
 transport_url = rabbit://{{ .Values.audit.central_service.user }}:{{ .Values.audit.central_service.password | urlquery }}@{{ .Values.audit.central_service.host }}:{{ .Values.audit.central_service.port }}/
+{{- else }}
+driver = noop
+{{- end }}
 
 [oslo_messaging_rabbit]
 rabbit_retry_interval = {{ .Values.audit.central_service.rabbit_retry_interval | default 1 }}
