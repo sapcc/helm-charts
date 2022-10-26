@@ -1,3 +1,7 @@
+## 7.0.10
+
+* Bump prometheus to v2.39.1
+
 ## 7.0.9
 
 * removing Thanos prefix as it is only used in global Thanos Prometheis -> restoring region, cluster, cluster_type labels
