@@ -104,7 +104,7 @@ pgmetrics:
             usage: "GAUGE"
             description: "Total number of project resources that have mismatched quota"
 
-    limes_overcommited_domain_quota:
+    limes_overcommitted_domain_quota:
       query: >
         WITH tmp as (
           SELECT 1 FROM domains d
@@ -119,12 +119,19 @@ pgmetrics:
       metrics:
         - count:
             usage: "GAUGE"
-            description: "Total number of domain resources that have overcommited quota"
+            description: "Total number of domain resources that have overcommitted quota"
 
     limes_overspent_project_quota:
+      # Swift does quota checks decentralized, in the individual proxy instances. When multiple parallel uploads each
+      # fit into the remaining quota, they will therefore all be permitted, even if the total sum exceeds the available
+      # quota. This causes overspent quotas on a fairly regular basis, and we don't really want (or need) to do anything
+      # about it. Just like eventual consistency in general, this is just how Swift behaves. Therefore this metric only
+      # considers quota inconsistencies in Swift if they are large (in specific, larger than 5 GiB = 5368709120 byte).
       query: >
-        SELECT COUNT(*) as count FROM project_resources
-        WHERE usage > desired_backend_quota
+        SELECT COUNT(*) as count FROM project_resources pr
+          JOIN project_services ps ON pr.service_id = ps.id
+         WHERE pr.usage > pr.desired_backend_quota
+           AND NOT (ps.type = 'object-store' AND pr.name = 'capacity' AND pr.usage < pr.desired_backend_quota + 5368709120)
       metrics:
         - count:
             usage: "GAUGE"

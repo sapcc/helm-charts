@@ -46,7 +46,7 @@
   metric_relabel_configs:
     - action: drop
       source_labels: [vmware_name]
-      regex: c_blackbox.*|c_regression.*
+      regex: cc3test.*
     - action: labeldrop
       regex: "instance|job|alert_tier|alert_service"
     - source_labels: [ltmVirtualServStatName]
@@ -106,7 +106,7 @@
       action: labeldrop
     - action: drop
       source_labels: [vmware_name]
-      regex: c_blackbox.*|c_regression.*
+      regex: cc3test.*
     - action: drop
       source_labels: [__name__]
       regex: netapp_volume_saved_.*
@@ -138,20 +138,21 @@
   params:
     'match[]':
       # import any tenant-specific metric, except for those which already have been imported
-      - '{__name__=~"^snmp_f5_.+"}'
-      - '{__name__=~"^ssh_nat_limits_miss"}'
-      - '{__name__=~"^ssh_nat_limits_use"}'
-      - '{__name__=~"^snmp_asr_ifHC.+"}'
-      - '{__name__=~"^netapp_capacity_.+"}'
-      - '{__name__=~"^netapp_volume_.+", app="netapp-capacity-exporter-manila"}'
+      - '{__name__=~"^snmp_f5_.+", project_id!=""}'
+      - '{__name__=~"^ssh_nat_limits_miss", project_id!=""}'
+      - '{__name__=~"^ssh_nat_limits_use", project_id!=""}'
+      - '{__name__=~"^snmp_asr_ifHC.+", project_id!=""}'
+      - '{__name__=~"^netapp_capacity_.+", project_id!=""}'
+      - '{__name__=~"^netapp_volume_.+", app="netapp-capacity-exporter-manila", project_id!=""}'
       - '{__name__=~"^openstack_manila_share_.+", project_id!=""}'
 
+{{- if .Values.prometheus_vmware.enabled }}
 - job_name: 'prometheus-vmware'
   scheme: http
   scrape_interval: "{{ .Values.prometheus_vmware.scrape_interval }}"
   scrape_timeout: "{{ .Values.prometheus_vmware.scrape_timeout }}"
   static_configs:
-    - targets: ['prometheus-vmware.vmware-monitoring.svc:9090']
+    - targets: ['prometheus-vmware.vmware-monitoring:9090']
   metric_relabel_configs:
     - source_labels: [__name__, project ]
       regex: '^vrops_virtualmachine_.+;(.+)'
@@ -170,17 +171,16 @@
   params:
     'match[]':
       # import any tenant-specific metric, except for those which already have been imported
-      - '{vccluster!~".*management.*"}'
-      - '{project!~"internal"}'
-      - '{__name__=~"^vrops_virtualmachine_cpu_.+"}'
-      - '{__name__=~"^vrops_virtualmachine_disk_.+"}'
-      - '{__name__=~"^vrops_virtualmachine_memory_.+"}'
-      - '{__name__=~"^vrops_virtualmachine_network_.+"}'
-      - '{__name__=~"^vrops_virtualmachine_virtual_disk_.+"}'
-      - '{__name__=~"^vrops_virtualmachine_oversized.+"}'
-      - '{__name__=~"^vrops_virtualmachine_undersized.+"}'
-      - '{__name__=~"^vrops_virtualmachine_number_vcpus_total"}'
-      - '{__name__=~"^vrops_virtualmachine_config_hardware_memory_kilobytes"}'
+      - '{__name__=~"^vrops_virtualmachine_cpu_.+", project!~"internal", vccluster!~".*management.*"}'
+      - '{__name__=~"^vrops_virtualmachine_disk_.+", project!~"internal", vccluster!~".*management.*"}'
+      - '{__name__=~"^vrops_virtualmachine_memory_.+", project!~"internal", vccluster!~".*management.*"}'
+      - '{__name__=~"^vrops_virtualmachine_network_.+", project!~"internal", vccluster!~".*management.*"}'
+      - '{__name__=~"^vrops_virtualmachine_virtual_disk_.+", project!~"internal", vccluster!~".*management.*"}'
+      - '{__name__=~"^vrops_virtualmachine_oversized.+", project!~"internal", vccluster!~".*management.*"}'
+      - '{__name__=~"^vrops_virtualmachine_undersized.+", project!~"internal", vccluster!~".*management.*"}'
+      - '{__name__=~"^vrops_virtualmachine_number_vcpus_total", project!~"internal", vccluster!~".*management.*"}'
+      - '{__name__=~"^vrops_virtualmachine_config_hardware_memory_kilobytes", project!~"internal", vccluster!~".*management.*"}'
+{{- end }}
 
 {{- if .Values.neo.enabled }}
       - '{__name__=~"^vrops_hostsystem_cpu_model"}'

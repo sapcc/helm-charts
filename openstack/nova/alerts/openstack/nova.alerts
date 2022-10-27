@@ -139,3 +139,16 @@ groups:
     annotations:
       description: Nova contains services with differing versions for 1h.
       summary: Nova service versions do not match.
+
+  - alert: OpenstackNovaConsistentlyFailingVolumeDetach
+    expr: (sum(delta(oslo_messaging_events{alert_service='nova', method="detach_volume", type="exception"}[20m])) by (name)) > 0
+    for: 90m
+    labels:
+      severity: info
+      support_group: compute-storage-api
+      tier: os
+      service: nova
+      context: '{{ $labels.context }}'
+    annotations:
+      description: Nova {{ $labels.name }} is consistently failing to detach a volume/volumes for 90m.
+      summary: Nova fails to detach a volume.

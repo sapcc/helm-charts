@@ -454,6 +454,8 @@
     include_tag_key true
     resurrect_after 120
     reconnect_on_error true
+    reload_connections false
+    reload_on_failure false
     <buffer>
       total_limit_size 256MB
       flush_at_shutdown true
@@ -474,7 +476,7 @@
       <labels>
         tag ${tag}
         nodename "#{ENV['K8S_NODE_NAME']}"
-        container $.kubernetes.container_name
+        hostname ${hostname}
       </labels>
     </metric>
   </store>

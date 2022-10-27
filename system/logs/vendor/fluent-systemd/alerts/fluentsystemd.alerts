@@ -3,12 +3,13 @@ groups:
   rules:
   - alert: ElkControlplaneSystemdLogsMissing
     expr: sum(rate(fluentd_output_status_num_records_total{component="fluent-systemd"}[30m])) by (nodename,kubernetes_pod_name) == 0
-    for: 30m
+    for: 120m
     labels:
       context: logshipping
       service: elk
-      severity: info
+      severity: warning
       tier: os
+      support_group: observability
       playbook: docs/operation/elastic_kibana_issues/elk_logs/fluent-systemd-logs-are-missing/
     annotations:
       description: 'ELK in {{ $labels.region }} `{{ $labels.kubernetes_pod_name }}` pod on `{{ $labels.nodename }}` is not shipping any log line. Please check'
