@@ -59,6 +59,9 @@ netapp_volume_snapshot_reserve_percent = {{ $share.netapp_volume_snapshot_reserv
 # Enable logical space reporting
 netapp_enable_logical_space_reporting = False
 
+# Set last transfer size limit to 10 MB (10240 KB)
+netapp_snapmirror_last_transfer_size_limit = 10240
+
 # The percentage of backend capacity reserved. Default 0 (integer value)
 
 {{- if eq 100 (int $share.reserved_share_percentage)}}
