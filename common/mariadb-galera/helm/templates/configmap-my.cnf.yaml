@@ -47,6 +47,11 @@ data:
     expire_logs_days=1
     default_storage_engine=InnoDB
     innodb_autoinc_lock_mode=2
+    innodb_flush_log_at_trx_commit=0
+    wsrep_gtid_mode=on
+    wsrep_gtid_domain_id={{ $.Values.mariadb.galera.gtidDomainId | default 0 | int }}
+    gtid_domain_id={{ $int | int }}
+    log_slave_updates=1
     wsrep-cluster-name={{ include "getEnvVar" (dict "global" $ "name" "MARIADB_CLUSTER_NAME") }}
     wsrep_cluster_address={{ include "wsrepClusterAddress" (dict "global" $) }}
     {{- $_ := set $wsrepProviderOptions "pc.weight" (printf "pc.weight=${PC_WEIGHT_%d}" $int)}}

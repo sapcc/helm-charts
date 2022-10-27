@@ -225,6 +225,8 @@ flowchart TB;
 * [MariaDB automation](https://mariadb.com/kb/en/automated-mariadb-deployment-and-administration/)
 * [Galera cluster description](https://mariadb.com/kb/en/what-is-mariadb-galera-cluster/)
 * [Galera getting started](https://mariadb.com/kb/en/getting-started-with-mariadb-galera-cluster/)
+* [MariaDB Galera Cluster and M/S replication](https://archive.fosdem.org/2022/schedule/event/mariadb_galera/)
+* [Using MariaDB GTIDs with MariaDB Galera Cluster](https://mariadb.com/kb/en/using-mariadb-gtids-with-mariadb-galera-cluster/)
 * [Galera monitoring](https://galeracluster.com/library/documentation/monitoring-cluster.html)
 * [Galera Crash recovery](https://galeracluster.com/library/documentation/crash-recovery.html)
 * [Primary recovery after clean shutdown of the cluster](https://galeracluster.com/library/documentation/pc-recovery.html)

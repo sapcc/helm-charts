@@ -63,24 +63,24 @@ function recovergalera {
         logerror "${FUNCNAME[0]}" "mariadbd --wsrep-recover failed with '${MARIADBD_RESPONSE}'"
         exit 1
       fi
-      IFS=': ' SEQNO=($(echo ${MARIADBD_RESPONSE}))
+      IFS=':, ' SEQNO=($(echo ${MARIADBD_RESPONSE}))
       IFS="${oldIFS}"
       {{ if eq $.Values.scripts.logLevel "debug" }} logdebug "${FUNCNAME[0]}" "wsrep-recover response: '${MARIADBD_RESPONSE}'" {{ end }}
-      if [ ${SEQNO[-1]} -ge 0 ]; then
-        loginfo "${FUNCNAME[0]}" "sequence number ${SEQNO[-1]} and historic UUID ${SEQNO[-2]} found"
-        sed --in-place "s,^seqno:\s*-1,seqno:   ${SEQNO[-1]}," ${DATADIR}/grastate.dat
+      if [ ${SEQNO[-2]} -ge 0 ]; then
+        loginfo "${FUNCNAME[0]}" "sequence number ${SEQNO[-2]} and historic UUID ${SEQNO[-3]} found"
+        sed --in-place "s,^seqno:\s*-1,seqno:   ${SEQNO[-2]}," ${DATADIR}/grastate.dat
         if [ $? -ne 0 ]; then
           logerror "${FUNCNAME[0]}" "sequence number update failed"
           exit 1
         fi
-        sed --in-place "s,^uuid:\s*00000000-0000-0000-0000-000000000000,uuid:   ${SEQNO[-2]}," ${DATADIR}/grastate.dat
+        sed --in-place "s,^uuid:\s*00000000-0000-0000-0000-000000000000,uuid:   ${SEQNO[-3]}," ${DATADIR}/grastate.dat
         if [ $? -ne 0 ]; then
           logerror "${FUNCNAME[0]}" "uuid update failed"
           exit 1
         fi
         {{ if eq $.Values.scripts.logLevel "debug" }} logdebug "${FUNCNAME[0]}" "grastate.dat file updated to '$(cat ${DATADIR}/grastate.dat)'" {{ else }} loginfo "${FUNCNAME[0]}" "grastate.dat file updated" {{ end }}
 
-        setconfigmap "seqno" "${SEQNO[-1]}" "Update"
+        setconfigmap "seqno" "${SEQNO[-2]}" "Update"
         selectbootstrapnode
         if [ "${NODENAME[0]}" == "${POD_NAME}" ]; then
           sed --in-place "s,^safe_to_bootstrap:\s*0,safe_to_bootstrap: 1," ${DATADIR}/grastate.dat
@@ -93,7 +93,7 @@ function recovergalera {
           startgalera
         fi
       else
-        logerror "${FUNCNAME[0]}" "The value '${SEQNO[-1]}' is not a valid sequence number"
+        logerror "${FUNCNAME[0]}" "The value '${SEQNO[-2]}' is not a valid sequence number"
         exit 1
       fi
     fi
