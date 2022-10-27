@@ -1,5 +1,5 @@
 {{/*
-Create the config map content
+Create the config map content for replication pod
 */}}
 {{- define "replication.configmap" -}}
 namespace: {{ .root.Release.Namespace }}
@@ -41,7 +41,7 @@ storages:
 {{- end -}}
 
 {{/*
-Create the config map content
+Create the config map content for sync pod
 */}}
 {{- define "sync.configmap" -}}
 region: {{ .root.Values.global.region }}
@@ -55,10 +55,15 @@ swiftBackup:
     userDomain: "Default"
     project: "master"
     projectDomain: "ccadmin"
-mariaDB:
-  host: "{{ .mariadb.name }}-mariadb"
-  port: {{ .mariadb.port_public }}
-  user: "root"
+replication:
+  sourceDB:
+    host: "{{ .backup.name }}-mariadb.monsoon3"
+    port: {{ .mariadb.port_public }}
+    user: "root"
+  targetDB:
+    host: "{{ .mariadb.name }}-mariadb.metis"
+    port: {{ .mariadb.port_public }}
+    user: "root"
   schemas:
   {{- range $db := .backup.databases }}
     - "{{$db}}"

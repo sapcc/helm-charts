@@ -13,7 +13,7 @@ metadata:
   labels:
     app.kubernetes.io/name: mariadb-sync
     helm.sh/chart: {{ include "metis.chart" $ }}
-    app.kubernetes.io/instance: mariadb-sync-{{ $backup.name }}-{{ $.Release.Name }}
+    app.kubernetes.io/instance: {{ $.Release.Name }}-sync-{{ $backup.name }}-mariadb
     app.kubernetes.io/managed-by: {{ $.Release.Service }}
     app.kubernetes.io/version: "{{ $.Values.backup_v2.image_version }}"
     alert-service: "metis"
@@ -75,15 +75,20 @@ spec:
         env:
         - name: CONFIG
           value: "/etc/config/config.yaml"
-        - name: DB_PASSWORD
+        - name: SOURCEDB_PASSWORD
           valueFrom:
             secretKeyRef:
-              name: metis-secrets
+              name: mariadb-sync-{{$backup.name}}-secrets
+              key: sourceDBPW
+        - name: TARGETDB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: mariadb-sync-{{$backup.name}}-secrets
               key: metisAdminPW
         - name: "OPENSTACK_PASSWORD"
           valueFrom:
             secretKeyRef:
-              name: metis-secrets
+              name: mariadb-sync-{{$backup.name}}-secrets
               key: openstackPW
         volumeMounts:
         - name: mariadb-sync-etc
