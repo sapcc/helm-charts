@@ -476,7 +476,7 @@
       <labels>
         tag ${tag}
         nodename "#{ENV['K8S_NODE_NAME']}"
-        container $.kubernetes.container_name
+        hostname ${hostname}
       </labels>
     </metric>
   </store>
