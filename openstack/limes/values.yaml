@@ -126,12 +126,12 @@ pgmetrics:
       # fit into the remaining quota, they will therefore all be permitted, even if the total sum exceeds the available
       # quota. This causes overspent quotas on a fairly regular basis, and we don't really want (or need) to do anything
       # about it. Just like eventual consistency in general, this is just how Swift behaves. Therefore this metric only
-      # considers quota inconsistencies in Swift if they are large (in specific, larger than 5 GiB = 5368709120 byte).
+      # considers quota inconsistencies in Swift if they are large (in specific, larger than 1 TiB = 1099511627776 byte).
       query: >
         SELECT COUNT(*) as count FROM project_resources pr
           JOIN project_services ps ON pr.service_id = ps.id
          WHERE pr.usage > pr.desired_backend_quota
-           AND NOT (ps.type = 'object-store' AND pr.name = 'capacity' AND pr.usage < pr.desired_backend_quota + 5368709120)
+           AND NOT (ps.type = 'object-store' AND pr.name = 'capacity' AND pr.usage < pr.desired_backend_quota + 1099511627776)
       metrics:
         - count:
             usage: "GAUGE"
