@@ -58,4 +58,17 @@ spec:
           ports:
             - name: api
               containerPort: {{ .Values.maia.listen_port }}
+          livenessProbe:
+            httpGet:
+              path: /
+              port: {{ .Values.maia.listen_port }}
+            timeoutSeconds: 10
+            periodSeconds: 60
+            initialDelaySeconds: 60
+          readinessProbe:
+            httpGet:
+              path: /
+              port: {{ .Values.maia.listen_port }}
+            timeoutSeconds: 5
+            periodSeconds: 5
 {{- end }}
