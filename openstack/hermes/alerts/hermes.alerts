@@ -73,3 +73,34 @@ groups:
     annotations:
       description: 'Hermes logstash plugin {{ $labels.plugin }} has stopped transmitting data'
       summary: 'Hermes logstash plugin {{ $labels.plugin }} has stopped transmitting data'
+
+  - alert: OpenstackHermesLogstashPluginsJDBCStaticFailure
+    expr: sum(rate(logstash_node_plugin_failures_total{namespace=~"hermes",plugin="jdbc_static"}[10m])) > 0
+    labels:
+      context: logstash
+      severity: warning
+      tier: os
+      support_group: observability
+      service: hermes
+      dashboard: hermes-logstash-metrics
+      meta: 'Hermes logstash plugin {{ $labels.plugin }} has failed enriching data with Metis'
+      playbook: 'docs/devops/alert/hermes'
+    annotations:
+      description: 'Hermes logstash plugin {{ $labels.plugin }} has failed enriching data with Metis'
+      summary: 'Hermes logstash plugin {{ $labels.plugin }} has failed enriching data with Metis'
+      
+  - alert: OpenstackHermesPodSchedulingFailedInsufficientCPU
+    expr: sum(rate(kube_pod_failed_scheduling_cpu_total{pod_name=~"hermes-.+"}[30m])) by (pod_name) > 0
+    for: 15m
+    labels:
+      context: cpu
+      severity: warning
+      support_group: observability
+      tier: os
+      service: hermes
+      dashboard: hermes-details
+      meta: "{{ $labels.pod_name }}"
+      no_alert_on_absence: "true" # the underlying metric is only generated when scheduling fails
+    annotations:
+      summary: Scheduling failed due to insufficient cpu
+      description: The pod {{ $labels.pod_name }} failed to be scheduled. Insuffient CPU!
