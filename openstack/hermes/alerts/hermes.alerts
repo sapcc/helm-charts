@@ -15,6 +15,20 @@ groups:
       description: Hermes API is affected by errors when accessing Keystone
       summary: Hermes availability affected by Keystone issues
 
+  - alert: OpenstackHermesElasticAvail
+    expr: hermes_storage_errors_count > 0
+    for: 15m
+    labels:
+      context: availability
+      dashboard: hermes-details
+      service: hermes
+      severity: warning
+      tier: os
+      support_group: observability
+    annotations:
+      description: Hermes API is affected by storage errors while accessing Elasticsearch
+      summary: Hermes availability affected by storage errors while accessing Elasticsearch
+
   - alert: OpenstackHermesRabbitMQUnack
     expr: sum(rabbitmq_queue_messages_unacknowledged{kubernetes_name=~".*rabbitmq-notifications"}) by (kubernetes_name) > 6000
     labels:
