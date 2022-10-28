@@ -16,7 +16,7 @@ groups:
       summary: Hermes availability affected by Keystone issues
 
   - alert: OpenstackHermesRabbitMQUnack
-    expr: sum(rabbitmq_queue_messages_unacknowledged{kubernetes_name=~".*rabbitmq-notifications"}) by (kubernetes_name) > 4000
+    expr: sum(rabbitmq_queue_messages_unacknowledged{kubernetes_name=~".*rabbitmq-notifications"}) by (kubernetes_name) > 6000
     labels:
       context: rabbitmq
       severity: warning
@@ -24,10 +24,10 @@ groups:
       support_group: observability
       service: hermes
       dashboard: rabbitmq
-      meta: '{{ $labels.service }} {{ $labels.check }} has over 4000 unacknowledged messages in {{ $labels.kubernetes_name }}. Logstash has disconnected from the RabbitMQ.'
+      meta: '{{ $labels.service }} {{ $labels.check }} has over 6000 unacknowledged messages in {{ $labels.kubernetes_name }}. Logstash has disconnected from the RabbitMQ.'
       playbook: 'docs/devops/alert/hermes/#{{ $labels.check }}'
     annotations:
-      description: '{{ $labels.service }} {{ $labels.check }} has over 4000 unacknowledged messages in {{ $labels.kubernetes_name }}. Logstash has disconnected from the RabbitMQ.'
+      description: '{{ $labels.service }} {{ $labels.check }} has over 6000 unacknowledged messages in {{ $labels.kubernetes_name }}. Logstash has disconnected from the RabbitMQ.'
       summary: 'RabbitMQ unacknowledged messages count'
 
   - alert: OpenstackHermesRabbitMQReady
