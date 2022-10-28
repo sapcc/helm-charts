@@ -55,6 +55,17 @@ docker build --build-arg BASE_REGISTRY=keppel.eu-nl-1.cloud.sap --build-arg BASE
 
 * `helm upgrade --install --create-namespace --namespace database mariadb-galera helm`
 
+#### network config
+
+If you want/have to specify a certain network (currently only supported for the Openstack infrastructure provider) for load balancer network services like the [MariaDB frontend](businessbean/helm-charts/blob/master/common/mariadb-galera/helm/values.yaml#L142) these properties have to be provided during the installation of a release.
+
+* `--set OpenstackFloatingNetworkId=$(openstack network show <external network name> -f value -c id)`
+* `--set OpenstackFloatingSubnetId=$(openstack subnet list --name <external subnet name> --network <external network name> -f value -c ID)`
+* `--set OpenstackSubnetId=$(openstack subnet list --name <private subnet name> --network <private network name> -f value -c ID)`
+
+The [Openstack cloud provider documentation](https://github.com/kubernetes/cloud-provider-openstack/blob/master/docs/openstack-cloud-controller-manager/expose-applications-using-loadbalancer-type-service.md) has the details about these and more network settings.
+
+
 ### remove the deployed release
 
 * `helm uninstall --namespace database mariadb-galera`
@@ -219,14 +230,17 @@ flowchart TB;
   end
 ```
 ## additional documentation
+### Database
 * [MariaDB server system variables](https://mariadb.com/kb/en/server-system-variables/)
 * [mysql_install_db parameters](https://mariadb.com/kb/en/mysql_install_db/)
 * [MariaDB install packages](https://mariadb.org/download/?t=repo-config&d=20.04+%22focal%22&v=10.5&r_m=hs-esslingen)
 * [MariaDB automation](https://mariadb.com/kb/en/automated-mariadb-deployment-and-administration/)
+### Galera cluster
 * [Galera cluster description](https://mariadb.com/kb/en/what-is-mariadb-galera-cluster/)
 * [Galera getting started](https://mariadb.com/kb/en/getting-started-with-mariadb-galera-cluster/)
 * [MariaDB Galera Cluster and M/S replication](https://archive.fosdem.org/2022/schedule/event/mariadb_galera/)
 * [Using MariaDB GTIDs with MariaDB Galera Cluster](https://mariadb.com/kb/en/using-mariadb-gtids-with-mariadb-galera-cluster/)
+* [Configuring MariaDB Replication between Two MariaDB Galera Clusters](https://mariadb.com/kb/en/configuring-mariadb-replication-between-two-mariadb-galera-clusters/)
 * [Galera monitoring](https://galeracluster.com/library/documentation/monitoring-cluster.html)
 * [Galera Crash recovery](https://galeracluster.com/library/documentation/crash-recovery.html)
 * [Primary recovery after clean shutdown of the cluster](https://galeracluster.com/library/documentation/pc-recovery.html)
@@ -237,7 +251,9 @@ flowchart TB;
   * `wsrep_flow_control_paused` should be 0 (0.25 means 25% of the time replication was paused)
   * `wsrep_cert_deps_distance` difference between lowest and highest sequence number in the cluster
 * [Setting Parallel Slave Threads for replication](https://galeracluster.com/library/kb/parallel-applier-threads.html)
+### Monitoring
 * [Unit Testing for Prometheus exporters](https://www.prometheus.io/docs/prometheus/latest/configuration/unit_testing_rules/)
+### Backup
 * [Galera Backup options](https://galeracluster.com/library/training/tutorials/galera-backup.html)
   * [Backing Up Cluster Data](https://galeracluster.com/library/documentation/backup-cluster.html)
   * [Scriptable State Snapshot Transfers](https://galeracluster.com/library/documentation/scriptable-sst.html)
