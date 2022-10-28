@@ -53,18 +53,6 @@ spec:
           targetLabel: cluster
           replacement: {{ if .Values.global.cluster }}{{ .Values.global.cluster }}{{ else }}{{ .Values.global.region }}{{ end }}
         - action: drop
-          regex: '(es_index_shards_number|es_threadpool_.+|es_cluster_.+);elk-client-exporter'
+          regex: '(es_index_.+);elk-client-exporter'
           sourceLabels: [__name__, job]
-        - action: drop
-          regex: '(es_index_completion_size_bytes|es_index_doc_deleted_number|es_index_doc_number|es_index_flush.+|es_index_search_.+|es_index_fieldclient_.+|es_index_get_.+|es_index_indexing_.+|es_index_merges_.+|es_index_querycache_.+|es_index_recovery_.+|es_index_refresh_.+|es_index_replicas_number|es_index_requestcache_.+|es_index_search_scroll_.+|es_index_segments_.+|es_index_status|es_index_store_size_bytes|es_index_suggest_.+|es_index_translog_.+|es_index_warmer_.+)'
-          sourceLabels: [__name__]
-        - action: drop
-          regex: '(es_indices_get_.+|es_indices_merges_.+|es_indices_percolate_.+|es_indices_recovery_.+|es_indices_refresh.+|es_indices_search_.+|es_indices_suggest_.+|es_indices_segments_.+|es_indices_suggest_.+|es_ingest_pipeline_.+|es_indices_search_.+|es_indices_f.+)'
-          sourceLabels: [__name__]
-        - action: drop
-          regex: '(es_circuitbreaker_.+|es_cluster_routing_.+|es_fs_io_total_read_.+|es_fs_io_total_operations|es_fs_io_total_write_operations|es_http_.+|es_ingest_.+|es_jvm_bufferpool_.+|es_jvm_classes_.+|es_jvm_mem_pool_.+|es_jvm_uptime_seconds|es_node_role_bool)'
-          sourceLabels: [__name__]
-        - action: drop
-          regex: '(es_index_.+);(.kibana.+|.async-search.+|.apm.+)'
-          sourceLabels: [__name__, index]
 {{- end }}
