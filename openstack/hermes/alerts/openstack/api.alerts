@@ -103,18 +103,18 @@ groups:
       description: 'Hermes logstash plugin {{ $labels.plugin }} has failed enriching data with Metis'
       summary: 'Hermes logstash plugin {{ $labels.plugin }} has failed enriching data with Metis'
       
-  - alert: OpenstackHermesPodSchedulingFailedInsufficientCPU
-    expr: sum(rate(kube_pod_failed_scheduling_cpu_total{pod_name=~"hermes-.+"}[30m])) by (pod_name) > 0
+  - alert: OpenstackHermesUp
+    expr: up{component="hermes",namespace="hermes"} < 1
     for: 15m
     labels:
-      context: cpu
-      severity: warning
-      support_group: observability
-      tier: os
-      service: hermes
+      component: '{{ $labels.component }}'
+      context: availability
       dashboard: hermes-details
-      meta: "{{ $labels.pod_name }}"
-      no_alert_on_absence: "true" # the underlying metric is only generated when scheduling fails
+      service: '{{ $labels.service }}'
+      severity: critical
+      tier: os
+      support_group: observability
+      meta: "Maia Is not available"
     annotations:
-      summary: Scheduling failed due to insufficient cpu
-      description: The pod {{ $labels.pod_name }} failed to be scheduled. Insuffient CPU!
+      description: Hermes monitoring endpoint is down => Hermes is down
+      summary: Hermes is not available
