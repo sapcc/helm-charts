@@ -1,6 +1,20 @@
 groups:
 - name: openstack-hermes.alerts
   rules:
+  - alert: OpenstackHermesHttpErrors
+    expr: sum(increase(promhttp_metric_handler_requests_total{kubernetes_namespace="hermes",code=~"5.*"}[1h])) by (kubernetes_name) > 0
+    for: 5m
+    labels:
+      context: api
+      dashboard: hermes-details
+      service: hermes
+      severity: info
+      support_group: observability
+      tier: os
+    annotations:
+      description: "{{ $labels.kubernetes_name }} is producing HTTP responses with 5xx status codes."
+      summary: Server errors on {{ $labels.kubernetes_name }}
+
   - alert: OpenstackHermesKeystoneAvail
     expr: sum(rate(hermes_logon_errors_count[10m])) > 0
     for: 15m
