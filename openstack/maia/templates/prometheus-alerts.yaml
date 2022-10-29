@@ -1,16 +1,17 @@
 {{- $values := .Values }}
 {{- if $values.alerts.enabled }}
-{{- range $path, $bytes := .Files.Glob "alerts/*.alerts" }}
+{{- range $path, $bytes := .Files.Glob (printf "alerts/%s/*.alerts" $target) }}
 ---
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
 
 metadata:
-  name: {{ printf "maia-%s" $path | replace "/" "-" }}
+  name: {{ printf "%s" $path | replace "/" "-" }}
   labels:
-    app: maia
+    app: maia-api
     tier: os
     service: maia
+    support_group: observability
     type: alerting-rules
     prometheus: {{ required ".Values.alerts.prometheus missing" $values.alerts.prometheus }}
 
