@@ -10,7 +10,6 @@ groups:
       support_group: observability
       tier: os
       service: '{{ $labels.service }}'
-      context: '{{ $labels.service }}'
       meta: 'CCloud Hermes API is down'
       dashboard: 'cc3test-overview?var-service={{ $labels.service }}'
       playbook: 'docs/support/playbook/hermes/alerts/'
@@ -27,7 +26,6 @@ groups:
       support_group: observability
       tier: os
       service: '{{ $labels.service }}'
-      context: '{{ $labels.service }}'
       meta: 'CCloud Hermes API is flapping'
       dashboard: 'cc3test-overview?var-service={{ $labels.service }}'
       playbook: 'docs/support/playbook/hermes/alerts/'
@@ -36,7 +34,7 @@ groups:
       description: 'CCloud Hermes API is flapping'
       summary: 'CCloud Hermes API is flapping'
 
-  - alert: CCloudHermesCanaryDown
+  - alert: CCloudHermesAuditEventMissing
     expr: cc3test_status{service="hermes",name=~"TestHermes_hermes.+"} == 0
     for: 1h
     labels:
@@ -44,27 +42,25 @@ groups:
       support_group: observability
       tier: os
       service: '{{ $labels.service }}'
-      context: '{{ $labels.resource }}'
-      meta: 'CC Hermes Canary: {{ $labels.name }} is down, see report for more details'
+      meta: 'Hermes: {{ $labels.name }} missing audit events, see report for more details'
       dashboard: cc3test-overview?var-service={{ $labels.service }}
       playbook: 'docs/support/playbook/hermes/alerts/'
       report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
     annotations:
-      description: 'CC Hermes Canary: {{ $labels.name }} is down, see report for more details'
-      summary: 'CC Hermes Canary: {{ $labels.name }} is down, see report for more details'
+      description: 'Hermes: {{ $labels.name }} missing audit events, see report for more details'
+      summary: 'Hermes: {{ $labels.name }} missing audit events, see report for more details'
 
-  - alert: CCloudHermesCanaryFlapping
+  - alert: CCloudHermesAuditEventFlapping
     expr: changes(cc3test_status{service="hermes",name=~"TestHermes_hermes.+"}[2h]) > 8
     labels:
       severity: info
       support_group: observability
       tier: os
       service: '{{ $labels.service }}'
-      context: '{{ $labels.resource }}'
-      meta: 'CC Hermes Canary: {{ $labels.name }} is flapping for 2 hours, see report for more details'
+      meta: 'Hermes: {{ $labels.name }} flapping audit events for 2 hours, see report for more details'
       dashboard: cc3test-overview?var-service={{ $labels.service }}
       playbook: 'docs/support/playbook/hermes/alerts/'
       report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
     annotations:
-      description: 'CC Hermes Canary: {{ $labels.name }} is flapping for 2 hours, see report for more details'
-      summary: 'CC Hermes Canary: {{ $labels.name }} is flapping for 2 hours, see report for more details'
+      description: 'Hermes: {{ $labels.name }} flapping audit events for 2 hours, see report for more details'
+      summary: 'Hermes: {{ $labels.name }} flapping audit events for 2 hours, see report for more details'
