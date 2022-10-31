@@ -11,6 +11,7 @@
 {{- $instance_number := index . 9}}
 {{- $instance := index . 10}}
 {{- $az_redundancy  := index . 11}}
+{{- $tolerate_arista_fabric  := index . 12}}
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -90,5 +91,12 @@ spec:
                 operator: In
                 values:
                 - {{ $domain_number | quote }}
+{{- end }}
+{{- if $tolerate_arista_fabric }}
+      tolerations:
+      - key: "fabric"
+        operator: "Equal"
+        value: "arista"
+        effect: "NoSchedule"
 {{- end }}
 {{- end }}
