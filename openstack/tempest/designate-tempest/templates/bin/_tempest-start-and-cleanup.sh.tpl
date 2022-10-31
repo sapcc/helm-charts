@@ -19,7 +19,7 @@ function cleanup_tempest_leftovers() {
           openstack zone delete $zone --sudo-project-id $PROJECT_ID;
       done
 
-      for tld in $(os tld list --sudo-project-id  $PROJECT_ID; do
+      for tld in $(os tld list --sudo-project-id  $PROJECT_ID); do
           openstack tld delete $tld --sudo-project-id  $PROJECT_ID;
       done
   done
