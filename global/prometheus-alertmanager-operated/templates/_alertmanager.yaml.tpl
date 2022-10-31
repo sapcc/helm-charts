@@ -194,6 +194,7 @@ route:
   - receiver: support_group_alerts_qa
     continue: true
     match_re:
+      severity: warning|critical
       region: qa-de-1|qa-de-2|qa-de-3|qa-de-5
       support_group: compute|compute-storage-api|containers|email|identity|network-api|observability
 
