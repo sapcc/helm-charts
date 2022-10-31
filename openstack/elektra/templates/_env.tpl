@@ -1,5 +1,7 @@
 - name: RAILS_ENV
   value: {{ .Values.rails_env | quote }}
+- name: PASSWORD_LOGIN_ENABLED
+  value: {{ .Values.password_login_enabled | quote }}
 - name: HAS_KEYSTONE_ROUTER
   value: {{ .Values.has_keystone_router | quote }}
 - name: MONSOON_DASHBOARD_REGION
