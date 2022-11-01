@@ -138,7 +138,8 @@
   params:
     'match[]':
       # import any tenant-specific metric, except for those which already have been imported
-      - '{__name__=~"^snmp_f5_.+", project_id!=""}'
+      # filter for ltmVirtualServStatName to be present as it relabels into project_id. It gets enriched by "openstack/maia/aggregations/snmp-f5.rules with the openstack metric openstack_neutron_networks_projects"
+      - '{__name__=~"^snmp_f5_.+", ltmVirtualServStatName!=""}'
       - '{__name__=~"^ssh_nat_limits_miss", project_id!=""}'
       - '{__name__=~"^ssh_nat_limits_use", project_id!=""}'
       - '{__name__=~"^snmp_asr_ifHC.+", project_id!=""}'
