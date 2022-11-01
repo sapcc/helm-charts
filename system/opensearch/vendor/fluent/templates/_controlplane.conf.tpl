@@ -456,6 +456,7 @@
     reconnect_on_error true
     reload_connections false
     reload_on_failure false
+    suppress_type_name true
     <buffer>
       total_limit_size 256MB
       flush_at_shutdown true
