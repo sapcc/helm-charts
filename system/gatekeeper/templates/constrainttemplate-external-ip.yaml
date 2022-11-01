@@ -1,0 +1,28 @@
+apiVersion: templates.gatekeeper.sh/v1
+kind: ConstraintTemplate
+metadata:
+  name: gkexternalip
+spec:
+  crd:
+    spec:
+      names:
+        kind: GkExternalIP
+
+  targets:
+    - target: admission.k8s.gatekeeper.sh
+      libs:
+        - |
+          {{ .Files.Get "lib/add-support-labels.rego" | nindent 10 }}
+      rego: |
+        package gkexternalip
+        import data.lib.add_support_labels
+
+        obj := input.review.object
+
+        violation[{"msg": add_support_labels.from_k8s_object(obj, msg)}] {
+          obj.kind == "Service"
+          externalIPs := {ip | ip := obj.spec.externalIPs[_]}
+          count(externalIPs) > 1
+
+          msg := "more than one external ip assigned"
+        }

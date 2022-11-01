@@ -172,6 +172,16 @@ tests:
     assertions:
     - violations: no
 
+- name: external-ip
+  template: rendered-chart/gatekeeper/templates/constrainttemplate-external-ip.yaml
+  constraint: rendered-chart/gatekeeper-config/templates/constraint-external-ip.yaml
+  cases:
+  - name: networking-pass
+    object: fixtures/external-ip/two-ips.yaml
+    assertions:
+    - violations: 1
+      message: "support-group=foo-group,service=dummy: more than one external ip assigned"
+
 - name: forbidden-clusterwide-objects
   template: rendered-chart/gatekeeper/templates/constrainttemplate-forbidden-clusterwide-objects.yaml
   constraint: rendered-chart/gatekeeper-config/templates/constraint-forbidden-clusterwide-objects.yaml
