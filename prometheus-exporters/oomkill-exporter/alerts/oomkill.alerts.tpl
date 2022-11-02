@@ -11,12 +11,12 @@ groups:
       support_group: {{ include "supportGroupFromLabelsOrDefault" "containers" }}
       severity: info
       context: memory
-      meta: "Pod {{ $labels.namespace }}/{{ $labels.pod_name }} OOMKilled"
+      meta: "Pod {{`{{ $labels.namespace }}`}}/{{`{{ $labels.pod_name }}`}} OOMKilled"
       playbook: 'docs/support/playbook/kubernetes/k8s_pod_oomkilled.html'
       no_alert_on_absence: "true" # the underlying metric is only generated after the first oomkill
     annotations:
       summary: Pod was oomkilled recently
-      description: The pod {{ $labels.namespace }}/{{ $labels.pod_name }} was hit at least once by the oom killer within 24h
+      description: The pod {{`{{ $labels.namespace }}`}}/{{`{{ $labels.pod_name }}`}} was hit at least once by the oom killer within 24h
 
   - alert: PodConstantlyOOMKilled
     expr: (sum(changes(klog_pod_oomkill[30m])) by (namespace, pod_name, label_ccloud_support_group, label_ccloud_service) > 2) * on(pod_name, namespace) group_left(label_ccloud_support_group, label_ccloud_service) (max by(pod_name, namespace, label_ccloud_support_group, label_ccloud_service) (label_replace(kube_pod_labels, "pod_name", "$1", "pod", "(.*)")))
@@ -27,9 +27,9 @@ groups:
       support_group: {{ include "supportGroupFromLabelsOrDefault" "containers" }}
       severity: warning
       context: memory
-      meta: "Pod {{ $labels.namespace }}/{{ $labels.pod_name }} constantly OOMKilled"
+      meta: "Pod {{`{{ $labels.namespace }}`}}/{{`{{ $labels.pod_name }}`}} constantly OOMKilled"
       playbook: 'docs/support/playbook/kubernetes/k8s_pod_oomkilled.html'
       no_alert_on_absence: "true" # the underlying metric is only generated after the first oomkill
     annotations:
       summary: Pod was oomkilled more than 2 times in 30 minutes
-      description: The pod {{ $labels.namespace }}/{{ $labels.pod_name }} killed several times in short succession. This could be due to wrong resource limits.
+      description: The pod {{`{{ $labels.namespace }}`}}/{{`{{ $labels.pod_name }}`}} killed several times in short succession. This could be due to wrong resource limits.
