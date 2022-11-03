@@ -16,12 +16,12 @@ notification_level = {{ .Values.notification_level }}
 versioned_notifications_topics = {{ .Values.versioned_notifications_topics  | default "ironic_versioned_notifications" | quote }}
 {{- end }}
 
-{{- include "ini_sections.oslo_messaging_rabbit" .}}
-
 {{- include "ini_sections.default_transport_url" . }}
 
 rpc_response_timeout = {{ .Values.rpc_response_timeout | default .Values.global.rpc_response_timeout | default 100 }}
-executor_thread_pool_size = {{ .Values.rpc_workers | default .Values.global.rpc_workers | default 100 }}
+executor_thread_pool_size = {{ .Values.rpc_workers | default .Values.global.rpc_workers | default 10 }}
+
+{{- include "ini_sections.oslo_messaging_rabbit" .}}
 
 # time to live in sec of idle connections in the pool:
 conn_pool_ttl = {{ .Values.rpc_conn_pool_ttl | default 600 }}
