@@ -58,6 +58,7 @@ groups:
       expr: up{app="thanos-compactor", prometheus="{{ include "prometheus.name" . }}"} == 0 or absent({app="thanos-compactor", prometheus="{{ include "prometheus.name" . }}"})
       for: 5m
       labels:
+        no_alert_on_absence: "true" # because the expression already checks for absence
         context: thanos
         service: prometheus
         severity: info

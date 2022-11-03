@@ -1,3 +1,8 @@
+## 6.4.1
+
+* Add missing `no_alert_on_absence` label for `ThanosCompactCompactionIsNotRunning` as its
+  expression already has the `absence()` check.
+
 ## 6.4.0
 
 * Bump prometheus to v2.39.1
