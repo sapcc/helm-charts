@@ -2,18 +2,18 @@
 {{- $common := $.Values.backup_v2 }}
 {{- $global := $.Values.global }}
 {{- range $backup := $.Values.backup_v2.backups }}
-{{- if not $backup.sync_enabled }}
+{{- if $backup.sync_enabled }}
 ---
 
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: mariadb-replication-{{ $backup.name }}
+  name: mariadb-sync-{{ $backup.name }}
   namespace: {{ $.Values.namespace }}
   labels:
-    app.kubernetes.io/name: mariadb-replication
+    app.kubernetes.io/name: mariadb-sync
     helm.sh/chart: {{ include "metis.chart" $ }}
-    app.kubernetes.io/instance: mariadb-replication-{{ $backup.name }}-{{ $.Release.Name }}
+    app.kubernetes.io/instance: {{ $.Release.Name }}-sync-{{ $backup.name }}-mariadb
     app.kubernetes.io/managed-by: {{ $.Release.Service }}
     app.kubernetes.io/version: "{{ $.Values.backup_v2.image_version }}"
     alert-service: "metis"
@@ -22,24 +22,19 @@ spec:
   replicas: 1
   selector:
     matchLabels:
-      app.kubernetes.io/name: mariadb-replication
-      app.kubernetes.io/instance: mariadb-replication-{{ $backup.name }}-{{ $.Release.Name }}
+      app.kubernetes.io/name: mariadb-sync
+      app.kubernetes.io/instance: mariadb-sync-{{ $backup.name }}-{{ $.Release.Name }}
   template:
     metadata:
       labels:
         alert-service: "metis"
         alert-tier: {{ required "$.Values.alerts.tier missing" $.Values.alerts.tier }}
-        app.kubernetes.io/version: "{{ $.Values.backup_v2.image_version }}"
-        app.kubernetes.io/name: mariadb-replication
-        app.kubernetes.io/instance: mariadb-replication-{{ $backup.name }}-{{ $.Release.Name }}
+        app.kubernetes.io/version: "{{ $.Values.metisSync.imageVersion }}"
+        app.kubernetes.io/name: mariadb-sync
+        app.kubernetes.io/instance: mariadb-sync-{{ $backup.name }}-{{ $.Release.Name }}
       annotations:
         {{- $data := dict "common" $common "backup" $backup "mariadb" $.Values.mariadb "root" $ }}
-        checksum/config: {{ include "replication.configmap" $data | sha256sum }}
-{{- if $common.metrics.enabled }}
-        prometheus.io/scrape: "true"
-        prometheus.io/port: "8082"
-        prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" $.Values.alerts.prometheus | quote }}
-{{- end }}
+        checksum/config: {{ include "sync.configmap" $data | sha256sum }}
     spec:
       affinity:
         nodeAffinity:
@@ -51,13 +46,6 @@ spec:
                   operator: In
                   values:
                   - operational
-            - weight: 1
-              preference:
-                matchExpressions:
-                - key: cloud.sap/deployment-state
-                  operator: NotIn
-                  values:
-                  - reinstalling
         podAntiAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
           - weight: 1
@@ -71,10 +59,10 @@ spec:
                   - mariadb-replication
                   - mariadb-sync
       containers:
-      - name: backup
-        image: "{{ required ".Values.global.registry variable missing" $global.registry }}/{{ $common.image }}:{{ $common.image_version }}"
+      - name: sync
+        image: "{{ required ".Values.global.registry variable missing" $global.registry }}/{{ $.Values.metisSync.image }}:{{ $.Values.metisSync.imageVersion }}"
         command:
-          - backup
+          - sync
         ports:
           - containerPort: 8081
             name: http
@@ -85,16 +73,31 @@ spec:
         resources:
 {{ toYaml (required "missing .resources" $common.resources) | indent 10 }}
         env:
-        - name: CONFIG_FILE
+        - name: CONFIG
           value: "/etc/config/config.yaml"
+        - name: SOURCEDB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: mariadb-sync-{{$backup.name}}-secrets
+              key: sourceDBPW
+        - name: TARGETDB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: mariadb-sync-{{$backup.name}}-secrets
+              key: metisAdminPW
+        - name: "OPENSTACK_PASSWORD"
+          valueFrom:
+            secretKeyRef:
+              name: mariadb-sync-{{$backup.name}}-secrets
+              key: openstackPW
         volumeMounts:
-        - name: mariadb-replication-etc
+        - name: mariadb-sync-etc
           mountPath: /etc/config
           readOnly: true
       volumes:
-        - name: mariadb-replication-etc
+        - name: mariadb-sync-etc
           configMap:
-            name: mariadb-replication-{{ $backup.name }}-etc
+            name: mariadb-sync-{{ $backup.name }}-etc
 {{- end }}
 {{- end }}
 {{- end }}

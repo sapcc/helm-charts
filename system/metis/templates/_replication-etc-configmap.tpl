@@ -1,5 +1,5 @@
 {{/*
-Create the config map content
+Create the config map content for replication pod
 */}}
 {{- define "replication.configmap" -}}
 namespace: {{ .root.Release.Namespace }}
@@ -38,4 +38,36 @@ storages:
           - "{{$db}}"
         {{- end }}
         dump_filter_buffer_size_mb: {{ .common.dump_filter_buffer_size_mb }}
+{{- end -}}
+
+{{/*
+Create the config map content for sync pod
+*/}}
+{{- define "sync.configmap" -}}
+region: {{ .root.Values.global.region }}
+loglevel: "debug"
+swiftBackup:
+  service: "{{ .backup.name }}"
+  container: "mariadb-backup-qa-de-1"
+  creds:
+    identityEndpoint:  "https://identity-3.{{ .root.Values.global.region }}.cloud.sap/v3"
+    user: "db_backup"
+    userDomain: "Default"
+    project: "master"
+    projectDomain: "ccadmin"
+replication:
+  sourceDB:
+    host: "{{ .backup.name }}-mariadb.monsoon3"
+    port: {{ .mariadb.port_public }}
+    user: "root"
+  targetDB:
+    host: "{{ .mariadb.name }}-mariadb.metis"
+    port: {{ .mariadb.port_public }}
+    user: "root"
+  schemas:
+  {{- range $db := .backup.databases }}
+    - "{{$db}}"
+  {{- end }}
+  serverID: 998
+  binlogMaxReconnectAttempts: {{ .common.binlog_max_reconnect_attempts }}
 {{- end -}}
