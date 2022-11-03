@@ -96,7 +96,8 @@ spec:
             command:
             - bash
             - -c
-            - openstack-agent-liveness -c ironic --config-file /etc/ironic/ironic.conf --ironic_conductor_host ironic-conductor-{{$conductor.name}}
+            - curl -u {{ .Values.rabbitmq.metrics.user }}:{{ .Values.rabbitmq.metrics.password }} ironic-rabbitmq:{{ .Values.rabbitmq.ports.management }}/api/queues | sed 's/,/\n/g' | grep ironic-conductor-{{$conductor.name}} >/dev/null
+              && openstack-agent-liveness -c ironic --config-file /etc/ironic/ironic.conf --ironic_conductor_host ironic-conductor-{{$conductor.name}}
           periodSeconds: 120
           failureThreshold: 3
           timeoutSeconds: 12
