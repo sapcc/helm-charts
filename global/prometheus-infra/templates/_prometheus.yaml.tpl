@@ -132,6 +132,7 @@
       - '{__name__=~"^network_apic_(free|used|down)_port_count"}'
       - '{__name__=~"^node_logind_sessions", class="user", job="jumpserver", type="tty"}'
       - '{__name__=~"^prom_fluentd_.+"}'
+      - '{job="netbox", __name__!~"^(up|ALERTS.*|scrape.+)"}'
 
   relabel_configs:
     - action: replace
