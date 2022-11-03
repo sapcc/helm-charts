@@ -40,9 +40,9 @@
 - name: LIMES_COLLECTOR_DATA_METRICS_SKIP_ZERO
   value: "true"
 - name: LIMES_OPA_DOMAIN_QUOTA_POLICY_PATH
-  value: "/etc/limes/domain.rego"
+  value: "/etc/limes/empty.rego"
 - name: LIMES_OPA_PROJECT_QUOTA_POLICY_PATH
-  value: "/etc/limes/project.rego"
+  value: "/etc/limes/{{ if eq $.Values.global.region "qa-de-1" }}empty{{ else }}project{{ end }}.rego"
 - name: OS_AUTH_URL
   value: "http://keystone.{{ $.Values.global.keystoneNamespace }}.svc.kubernetes.{{ $.Values.global.region }}.{{ $.Values.global.tld }}:5000/v3"
 - name: OS_INTERFACE
