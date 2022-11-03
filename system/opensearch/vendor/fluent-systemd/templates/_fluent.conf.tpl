@@ -69,6 +69,7 @@
     reconnect_on_error true
     reload_connections false
     reload_on_failure true
+    suppress_type_name true
     <buffer>
       flush_at_shutdown true
       flush_thread_interval 5
