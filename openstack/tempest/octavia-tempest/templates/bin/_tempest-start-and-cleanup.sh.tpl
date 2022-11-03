@@ -7,10 +7,6 @@ set -x
 
 function cleanup_tempest_leftovers() {
 
-  echo " ============ Fetching Tempest logs ============ "
-  TEMPEST_LOG_FILE=$(find /home/rally/.rally/verification -iname tempest.log)
-  cat $TEMPEST_LOG_FILE
-
   echo " ============ Running cleanup ============ "
   # Delete loadbalancers, lb flavors, pools, members for Admin
   export OS_USERNAME='neutron-tempestadmin1'
