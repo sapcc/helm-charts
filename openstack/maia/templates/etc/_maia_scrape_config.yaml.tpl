@@ -1,3 +1,4 @@
+{{- $root := . }}
 - job_name: 'maia-exporters'
   scrape_interval: 1m
   scrape_timeout: 55s
@@ -148,7 +149,34 @@
       - '{__name__=~"^openstack_manila_share_.+", project_id!=""}'
 
 {{- if .Values.prometheus_vmware.enabled }}
-- job_name: 'prometheus-vmware'
+{{- range $match := .Values.prometheus_vmware.matches }}
+{{- $single_matchlist := splitList "_" $match }}
+{{- $end_needs_to_be_removed := (slice $single_matchlist 5) | join "-" }}
+{{- $final_name_with_dashes := first (splitList "." $end_needs_to_be_removed) }}
+- job_name: 'prometheus-vmware-vrops-{{ $final_name_with_dashes }}'
+  scheme: http
+  scrape_interval: "{{ $root.Values.prometheus_vmware.scrape_interval }}"
+  scrape_timeout: "{{ $root.Values.prometheus_vmware.scrape_timeout }}"
+  static_configs:
+    - targets: ['prometheus-vmware.vmware-monitoring:9090']
+  metric_relabel_configs:
+    - source_labels: [__name__, project ]
+      regex: '^vrops_virtualmachine_.+;(.+)'
+      replacement: '$1'
+      target_label: project_id
+    - regex: 'project|collector|exported_job|instance|internal_name|prometheus|resource_uuid|thanos_cluster|thanos_cluster_type|vccluster|vcenter'
+      action: labeldrop
+
+  metrics_path: '/federate'
+  params:
+    'match[]':
+      # import any tenant-specific metric, except for those which already have been imported
+      - {{ $match }}
+{{- end }}
+{{- end }}
+
+{{- if .Values.neo.enabled }}
+- job_name: 'prometheus-vmware-neo'
   scheme: http
   scrape_interval: "{{ .Values.prometheus_vmware.scrape_interval }}"
   scrape_timeout: "{{ .Values.prometheus_vmware.scrape_timeout }}"
@@ -161,29 +189,14 @@
       target_label: project_id
     - regex: 'project|collector|exported_job|instance|internal_name|prometheus|resource_uuid|thanos_cluster|thanos_cluster_type|vccluster|vcenter'
       action: labeldrop
-{{- if .Values.neo.enabled }}
     - source_labels: [__name__]
       target_label: domain_id
       regex: ^vrops_hostsystem_.+
       replacement: "{{ .Values.neo.domain_id  }}"
-{{- end }}
 
   metrics_path: '/federate'
   params:
     'match[]':
-      # import any tenant-specific metric, except for those which already have been imported
-      - '{__name__=~"^vrops_virtualmachine_cpu_.+", project!~"internal", vccluster!~".*management.*"}'
-      - '{__name__=~"^vrops_virtualmachine_disk_.+", project!~"internal", vccluster!~".*management.*"}'
-      - '{__name__=~"^vrops_virtualmachine_memory_.+", project!~"internal", vccluster!~".*management.*"}'
-      - '{__name__=~"^vrops_virtualmachine_network_.+", project!~"internal", vccluster!~".*management.*"}'
-      - '{__name__=~"^vrops_virtualmachine_virtual_disk_.+", project!~"internal", vccluster!~".*management.*"}'
-      - '{__name__=~"^vrops_virtualmachine_oversized.+", project!~"internal", vccluster!~".*management.*"}'
-      - '{__name__=~"^vrops_virtualmachine_undersized.+", project!~"internal", vccluster!~".*management.*"}'
-      - '{__name__=~"^vrops_virtualmachine_number_vcpus_total", project!~"internal", vccluster!~".*management.*"}'
-      - '{__name__=~"^vrops_virtualmachine_config_hardware_memory_kilobytes", project!~"internal", vccluster!~".*management.*"}'
-{{- end }}
-
-{{- if .Values.neo.enabled }}
       - '{__name__=~"^vrops_hostsystem_cpu_model"}'
       - '{__name__=~"^vrops_hostsystem_cpu_sockets_number"}'
       - '{__name__=~"^vrops_hostsystem_cpu_usage_average_percentage"}'
