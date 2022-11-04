@@ -163,7 +163,7 @@
       regex: '^vrops_virtualmachine_.+;(.+)'
       replacement: '$1'
       target_label: project_id
-    - regex: 'project|collector|exported_job|instance|internal_name|prometheus|resource_uuid|thanos_cluster|thanos_cluster_type|vccluster|vcenter'
+    - regex: 'project|collector|exported_job|instance|internal_name|prometheus|prometheus_replica|resource_uuid|cluster|cluster_type|vccluster|vcenter'
       action: labeldrop
 
   metrics_path: '/federate'
