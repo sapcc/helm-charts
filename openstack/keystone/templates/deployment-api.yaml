@@ -142,10 +142,18 @@ spec:
                   - /scripts/keystone-api.sh
                   - stop
           readinessProbe:
-            tcpSocket:
-              port: 5000
-            initialDelaySeconds: 15
+            exec:
+              command:
+              - bash
+              - -c
+{{- if .Values.global_setup }}
+              - "set -e; curl --fail 127.0.0.1:5000/healthcheck; nc -zvw3 keystone-global-percona-pxc 3306"
+{{- else }}
+              - "set -e; curl --fail 127.0.0.1:5000/healthcheck; nc -zvw3 keystone-mariadb 3306"
+{{- end }}
+            initialDelaySeconds: 5
             periodSeconds: 10
+            timeoutSeconds: 5
           livenessProbe:
             httpGet:
               path: /healthcheck
