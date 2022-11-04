@@ -12,7 +12,7 @@ groups:
         service: kube-parrot
         severity: critical
         context: availability
-        support_group: network-api
+        support_group: containers
         playbook: "docs/support/playbook/kubernetes/k8s_node_bgp_neighbor"
       annotations:
         description: Node {{`{{ $labels.node }}`}} has less than {{ .Values.bgpNeighborCount }} BGP neighbors. BGP peer {{`{{ $labels.neighbor }}`}} is not established. Network datapath threatened! Switch upgrades or misconfiguration?
@@ -26,7 +26,7 @@ groups:
         service: kube-parrot
         severity: critical
         context: availability
-        support_group: network-api
+        support_group: containers
         playbook: "docs/support/playbook/kubernetes/k8s_node_bgp_neighbor"
       annotations:
         description: Node {{`{{ $labels.node }}`}} has no BGP neighbors. Network datapath is down! Switch upgrades or misconfiguration?
@@ -40,7 +40,7 @@ groups:
         service: kube-parrot
         severity: critical
         context: availability
-        support_group: network-api
+        support_group: containers
         playbook: "docs/support/playbook/kubernetes/k8s_node_bgp_neighbor"
       annotations:
         description: Node {{`{{ $labels.node }}`}} is not advertising any prefixes to its BGP neighbor {{`{{ $labels.neighbor }}`}}. Network datapath threatened! Switch upgrades or misconfiguration?
