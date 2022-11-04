@@ -150,11 +150,9 @@
 
 {{- if .Values.prometheus_vmware.enabled }}
 {{- range $match := .Values.prometheus_vmware.matches }}
-{{- $all_before_comma := first (splitList "," $match) }}
-{{- $single_matchlist := splitList "_" $all_before_comma }}
-{{- $end_needs_to_be_removed := (slice $single_matchlist 5) | join "-" }}
-{{- $final_name_with_dashes := trimAll "\"" $end_needs_to_be_removed }}
-- job_name: 'prometheus-vmware-vrops-{{ $final_name_with_dashes }}'
+{{- $single_matchlist := splitList "_" $match }}
+{{- $all_but_first := (slice $single_matchlist 1) | join "-" }}
+- job_name: 'prometheus-vmware-vrops-{{ $all_but_first }}'
   scheme: http
   scrape_interval: "{{ $root.Values.prometheus_vmware.scrape_interval }}"
   scrape_timeout: "{{ $root.Values.prometheus_vmware.scrape_timeout }}"
@@ -171,8 +169,7 @@
   metrics_path: '/federate'
   params:
     'match[]':
-      # import any tenant-specific metric, except for those which already have been imported
-      - '{{ "{" }}{{ $match }}{{ "}" }}'
+      - '{{ "{" }}__name__=~"{{ $match }}", project!~"internal", vccluster!~".*management.*"{{ "}" }}'
 {{- end }}
 {{- end }}
 
