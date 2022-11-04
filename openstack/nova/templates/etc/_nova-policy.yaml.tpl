@@ -1,60 +1,39 @@
-# ??
-context_is_quota_admin: role:resource_service
-
 # Decides what is required for the 'is_admin:True' check to succeed.
 #context_is_admin: role:admin
 context_is_admin: role:cloud_compute_admin
 
-# ??
 owner: project_id:%(project_id)s
-
-# ??
 member: role:member and rule:owner
-
-# ??
 viewer: role:compute_viewer and rule:owner
-
-# ??
 admin: (role:compute_admin or role:compute_admin_wsg) and rule:owner
-
-# ??
 context_is_compute_admin: is_admin:True or rule:admin
-
-# ??
 context_is_editor: rule:context_is_compute_admin or rule:member
-
-# ??
 context_is_viewer: rule:context_is_editor or rule:viewer
-
-# ??
 compute_admin_all: role:compute_admin or role:cloud_compute_admin
 
+context_is_quota_admin: role:resource_service
+
+
+### Upstream base rules
 # Default rule for most Admin APIs.
 #admin_api: is_admin:True
-
 # Default rule for most non-Admin APIs.
 #admin_or_owner: is_admin:True or project_id:%(project_id)s
-
 # Default rule for Project level admin APIs.
 #project_admin_api: role:admin and project_id:%(project_id)s
-
 # Default rule for Project level non admin APIs.
 #project_member_api: role:member and project_id:%(project_id)s
-
 # Default rule for Project level read only APIs.
 #project_reader_api: role:reader and project_id:%(project_id)s
-
 # Default rule for System Admin APIs.
 #system_admin_api: role:admin and system_scope:all
-
 # Default rule for System admin+owner APIs.
 #system_admin_or_owner: rule:system_admin_api or rule:project_member_api
-
 # Default rule for System+Project read only APIs.
 #system_or_project_reader: rule:system_reader_api or rule:project_reader_api
-
 # Default rule for System level read only APIs.
 #system_reader_api: role:reader and system_scope:all
+
 
 # Attach an unshared external network to a server
 #   POST /servers
