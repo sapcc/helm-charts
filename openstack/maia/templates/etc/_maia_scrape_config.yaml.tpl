@@ -171,7 +171,7 @@
   params:
     'match[]':
       # import any tenant-specific metric, except for those which already have been imported
-      - {{ $match }}
+      - '{{ "{" }}{{ $match }}{{ "}" }}'
 {{- end }}
 {{- end }}
 
