@@ -54,7 +54,6 @@
     user {{.Values.user}}
     password {{.Values.password}}
     index_name systemd
-    type_name _doc
     logstash_prefix systemd
     logstash_format true
     template_name systemd
