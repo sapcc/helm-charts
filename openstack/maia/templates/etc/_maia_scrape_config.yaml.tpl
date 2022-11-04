@@ -150,10 +150,10 @@
 
 {{- if .Values.prometheus_vmware.enabled }}
 {{- range $match := .Values.prometheus_vmware.matches }}
-{{- $single_matchlist := splitList "_" $match }}
+{{- $all_before_comma := first (splitList "," $match) }}
+{{- $single_matchlist := splitList "_" $all_before_comma }}
 {{- $end_needs_to_be_removed := (slice $single_matchlist 5) | join "-" }}
-{{- $pre_final_name_with_dashes := first (splitList "." $end_needs_to_be_removed) }}
-{{- $final_name_with_dashes := first (splitList "\"" $pre_final_name_with_dashes) }}
+{{- $final_name_with_dashes := $end_needs_to_be_removed[:last] }}:with
 - job_name: 'prometheus-vmware-vrops-{{ $final_name_with_dashes }}'
   scheme: http
   scrape_interval: "{{ $root.Values.prometheus_vmware.scrape_interval }}"
