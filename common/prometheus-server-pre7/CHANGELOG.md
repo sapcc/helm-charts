@@ -1,3 +1,7 @@
+## 6.4.2
+
+ * Exclude `job=prometheus-vmware` from PrometheusMultipleTargetScrapes alert because this target is scraped with multiple jobs to the same target intentionally. Every scrape just replies a single metric.
+
 ## 6.4.1
 
 * Add missing `no_alert_on_absence` label for `ThanosCompactCompactionIsNotRunning` as its
