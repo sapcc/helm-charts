@@ -141,6 +141,7 @@
   @type copy
   <store>
     @type opensearch
+    scheme https
     host {{.Values.endpoint_host_internal}}
     port {{.Values.http_port}}
     user {{.Values.user}}
