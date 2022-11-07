@@ -43,14 +43,13 @@
     @type opensearch
 {{- if eq .Values.global.clusterType  "scaleout" }}
     host {{.Values.endpoint_host_internal}}
-    port {{.Values.http_port}}
-    user {{.Values.user}}
 {{- else }}
-    hosts {{.Values.opensearch.http.endpoint}}.{{.Values.global.region}}.{{.Values.global.tld}}:443
+    hosts {{.Values.opensearch.http.endpoint}}.{{.Values.global.region}}.{{.Values.global.tld}}
+{{- end }}
+    port {{.Values.http_port}}
     scheme https
     ssl_verify false
     ssl_version TLSv1_2
-{{- end }}
     user {{.Values.user}}
     password {{.Values.password}}
     index_name systemd
