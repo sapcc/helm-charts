@@ -436,8 +436,9 @@
   @type copy
   <store>
     @type opensearch
-    hosts {{.Values.opensearch.http.endpoint}}.{{.Values.global.region}}.{{.Values.global.tld}}:9200
+    hosts {{.Values.opensearch.http.endpoint}}.{{.Values.global.region}}.{{.Values.global.tld}}
     scheme https
+    port {{.Values.http_port}}
     user {{.Values.user}}
     password {{.Values.password}}
     ssl_verify false
