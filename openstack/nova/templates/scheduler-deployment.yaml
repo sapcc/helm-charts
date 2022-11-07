@@ -89,9 +89,10 @@ spec:
               mountPath: /etc/nova/nova-scheduler.conf
               subPath: nova-scheduler.conf
               readOnly: true
+            {{- /* Note I533984: Replace with plain policy.yaml after Xena upgrade */}}
             - name: nova-etc
-              mountPath: /etc/nova/policy.yaml
-              subPath: policy.yaml
+              mountPath: /etc/nova/{{if (.Values.imageVersion | hasPrefix "rocky") }}policy.json{{else}}policy.yaml{{end}}
+              subPath: {{if (.Values.imageVersion | hasPrefix "rocky") }}policy.json{{else}}policy.yaml{{end}}
               readOnly: true
             - name: nova-etc
               mountPath: /etc/nova/logging.ini
