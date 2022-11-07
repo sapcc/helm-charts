@@ -1,6 +1,6 @@
 ## 7.0.11
 
-* Exclude `job=prometheus-vmware` from PrometheusMultipleTargetScrapes alert
+* Exclude `job=prometheus-vmware` from PrometheusMultipleTargetScrapes alert because this target is scraped with multiple jobs to the same target intentionally. Every scrape just replies a single metric.
 
 ## 7.0.10
 
