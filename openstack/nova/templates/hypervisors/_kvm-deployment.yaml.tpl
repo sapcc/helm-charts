@@ -87,9 +87,10 @@ spec:
               name: nova-etc
               subPath: nova.conf
               readOnly: true
-            - mountPath: /etc/nova/policy.yaml
+            {{- /* Note I533984: Replace with plain policy.yaml after Xena upgrade */}}
+            - mountPath: /etc/nova/{{if (.Values.imageVersion | hasPrefix "rocky") }}policy.json{{else}}policy.yaml{{end}}
               name: nova-etc
-              subPath: policy.yaml
+              subPath: {{if (.Values.imageVersion | hasPrefix "rocky") }}policy.json{{else}}policy.yaml{{end}}
               readOnly: true
             - mountPath: /etc/nova/logging.ini
               name: nova-etc
@@ -140,9 +141,10 @@ spec:
               name: nova-etc
               subPath: nova.conf
               readOnly: true
-            - mountPath: /etc/nova/policy.yaml
+            {{- /* Note I533984: Replace with plain policy.yaml after Xena upgrade */}}
+            - mountPath: /etc/nova/{{if (.Values.imageVersion | hasPrefix "rocky") }}policy.json{{else}}policy.yaml{{end}}
               name: nova-etc
-              subPath: policy.yaml
+              subPath: {{if (.Values.imageVersion | hasPrefix "rocky") }}policy.json{{else}}policy.yaml{{end}}
               readOnly: true
             - mountPath: /etc/nova/logging.ini
               name: nova-etc
@@ -191,9 +193,10 @@ spec:
               name: nova-etc
               subPath: nova.conf
               readOnly: true
-            - mountPath: /etc/nova/policy.yaml
+            {{- /* Note I533984: Replace with plain policy.yaml after Xena upgrade */}}
+            - mountPath: /etc/nova/{{if (.Values.imageVersion | hasPrefix "rocky") }}policy.json{{else}}policy.yaml{{end}}
               name: nova-etc
-              subPath: policy.yaml
+              subPath: {{if (.Values.imageVersion | hasPrefix "rocky") }}policy.json{{else}}policy.yaml{{end}}
               readOnly: true
             - mountPath: /etc/nova/logging.ini
               name: nova-etc

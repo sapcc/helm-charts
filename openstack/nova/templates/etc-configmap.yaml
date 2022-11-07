@@ -20,8 +20,14 @@ data:
 {{ include "util.helpers.valuesToIni" .Values.api_metadata.config_file | indent 4 }}
   nova-conductor.conf: |
 {{ include "util.helpers.valuesToIni" .Values.conductor.config_file | indent 4 }}
+{{- /* Note I533984: Replace with plain policy.yaml after Xena upgrade */}}
+{{if (.Values.imageVersion | hasPrefix "rocky") }}
+  policy.json: |
+{{ include (print .Template.BasePath "/etc/_nova-policy.json.tpl") . | indent 4 }}
+{{else}}
   policy.yaml: |
 {{ include (print .Template.BasePath "/etc/_nova-policy.yaml.tpl") . | indent 4 }}
+{{end}}
   logging.ini: |
 {{ include "loggerIni" .Values.logging | indent 4 }}
   api-paste.ini: |
