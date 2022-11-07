@@ -1,3 +1,7 @@
+## 7.0.11
+
+* Exclude `job=prometheus-vmware` from PrometheusMultipleTargetScrapes alert
+
 ## 7.0.10
 
 * Bump prometheus to v2.39.1
