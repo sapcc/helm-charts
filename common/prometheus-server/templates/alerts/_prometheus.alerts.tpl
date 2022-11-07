@@ -152,10 +152,12 @@ groups:
       summary: Prometheus fails to scrape targets.
 
   - alert: PrometheusMultipleTargetScrapes
-    # we exclude cadvisor metrics because it has the same instance as the kubelet but a different path
+    # we exclude the following:
+    # * cadvisor metrics because it has the same instance as the kubelet but a different path
     # e.g. 10.246.204.80:10250/metrics vs. 10.246.204.80:10250/metrics/cadvisor
-    # We also exclude the pod service discovery job, we have a dedicated alert for that
-    expr: sum by (job) (up * on(instance, cluster) group_left() (sum by(instance, cluster) (up{job !~ "kubernetes-cadvisors|kubernetes-kubelet|.*-pod-sd"}) > 1))
+    # * pod service discovery job, we have a dedicated alert for that
+    # * prometheus maia federation from prometheus vmware as the target is scraped multiple times for different metrics
+    expr: sum by (job) (up * on(instance, cluster) group_left() (sum by(instance, cluster) (up{job !~ "kubernetes-cadvisors|kubernetes-kubelet|.*-pod-sd|prometheus-vmware.*"}) > 1))
     for: 30m
     labels:
       tier: {{ include "alerts.tier" . }}
