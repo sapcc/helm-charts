@@ -35,3 +35,37 @@ groups:
     annotations:
       description: 'CCloud Maia API is flapping'
       summary: 'CCloud Maia API is flapping'
+
+  - alert: CCloudMaiaMissingMetrics
+    expr: |
+        cc3test_status{service="maia", type="datapath"} == 0
+    for: 20m
+    labels:
+      severity: warning
+      support_group: observability
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.service }}'
+      meta: 'Maia is missing metric {{ $labels.name }}'
+      dashboard: 'cc3test-overview?var-service={{ $labels.service }}'
+      playbook: 'docs/support/playbook/maia/alerts/'
+      report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
+    annotations:
+      description: 'Maia is missing metric {{ $labels.name }}'
+      summary: Maia is missing metric
+
+  - alert: CCloudMaiaFlappingMetrics
+    expr: |
+        changes(cc3test_status{service="maia", type="datapath"}[30m]) > 8
+    for: 20m
+    labels:
+      severity: warning
+      support_group: observability
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.service }}'
+      meta: 'Maia has flapping metric {{ $labels.name }}'
+      dashboard: 'cc3test-overview?var-service={{ $labels.service }}'
+      playbook: 'docs/support/playbook/maia/alerts/'
+      report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
+    annotations:
+      description: 'Maia has flapping metric {{ $labels.name }}'
+      summary: Maia has flapping metric
