@@ -35,11 +35,7 @@ data:
   - index_patterns:
     - "systemd-*"
     allowed_actions:
-    - "indices:admin/types/exists"
-    - "indices:data/read/*"
-    - "indices:data/write/*"
-    - "indices:admin/template/*"
-    - "indices:admin/create"
+    - "*"
   - index_patterns:
     - "syslog-*"
     allowed_actions:
