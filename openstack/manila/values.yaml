@@ -313,6 +313,23 @@ mysql_metrics:
         UNION SELECT 'none' AS share_id, 'none' AS status, 'none' AS manila_host, 0 AS max_duration_gauge;
       values:
         - "max_duration_gauge"
+    - name: manila_share_replica_stuck_gauge
+      help: Manila Share Replica Stucked for One Hour Longer
+      labels: [ "project_id", "share_id", "replica_id", "status" ]
+      query: |
+        SELECT 
+          project_id,
+          shares.id AS share_id,
+          si.id AS replica_id,
+          status,
+          (NOW() - COALESCE(si.updated_at, si.created_at)) AS elapsed
+        FROM share_instances si
+        INNER JOIN shares ON si.share_id = shares.id
+        WHERE 
+          status IN ('creating', 'deleting', 'error', 'error_deleting')
+          AND COALESCE(si.updated_at, si.created_at) < (NOW() - INTERVAL 1 hour)
+        UNION SELECT 'none', 'none', 'none', 'none', 0
+      values: [ "elapsed" ]
     - help: Manila Snapshot Stuck Count
       labels:
         - "project_id"
