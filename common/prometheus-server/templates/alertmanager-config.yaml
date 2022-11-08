@@ -1,13 +1,17 @@
+{{- $root := . }}
 {{- if .Values.alertmanagers.hosts }}
+{{- range $name := coalesce .Values.names .Values.global.targets (list .Values.name) }}
+---
 apiVersion: v1
 kind: Secret
 
 metadata:
-  name: {{ include "prometheus.fullName" . }}-alertmanager-config
+  name: {{ include "prometheus.fullName" (list $name $root) }}-alertmanager-config
   labels:
-    prometheus: {{ include "prometheus.name" . }}
+    prometheus: {{ include "prometheus.name" (list $name $root) }}
 
 data:
-  config.yaml: {{ include (print .Template.BasePath "/_alertmanager.yaml.tpl") . | b64enc }}
-  relabelConfig.yaml: {{ include (print .Template.BasePath "/_alertmanager_relabel.yaml.tpl") . | b64enc }}
+  config.yaml: {{ include (print $.Template.BasePath "/_alertmanager.yaml.tpl") $root | b64enc }}
+  relabelConfig.yaml: {{ include (print $.Template.BasePath "/_alertmanager_relabel.yaml.tpl") $root | b64enc }}
+{{- end }}
 {{- end }}

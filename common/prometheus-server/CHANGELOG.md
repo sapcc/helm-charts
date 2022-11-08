@@ -1,3 +1,7 @@
+## 7.1.0
+
+* Enabling the common chart to deploy multiple Prometheus. This can be done either via the list `names: []` or via a list of targets to create Prometheis `global.targets: []`. Existing configurations will not break as this chart is still able to create single Prometheus. 
+
 ## 7.0.11
 
 * Exclude `job=prometheus-vmware` from PrometheusMultipleTargetScrapes alert because this target is scraped with multiple jobs to the same target intentionally. Every scrape just replies a single metric.

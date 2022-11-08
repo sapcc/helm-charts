@@ -1,13 +1,17 @@
+{{- $root := . }}
 {{- if .Values.alertmanagers.hosts }}
+{{- range $name := coalesce .Values.names .Values.global.targets (list .Values.name) }}
+---
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
 
 metadata:
-  name: {{ include "prometheus.fullName" . }}-prometheus.alerts
+  name: {{ include "prometheus.fullName" (list $name $root) }}-prometheus.alerts
   labels:
-    prometheus: {{ include "prometheus.name" . }}
+    prometheus: {{ include "prometheus.name" (list $name $root) }}
 
 spec:
-{{ include (print .Template.BasePath "/alerts/_prometheus.alerts.tpl") . | indent 2 }}
+{{ include (print $.Template.BasePath "/alerts/_prometheus.alerts.tpl") (list $name $root) | indent 2 }}
 
+{{- end }}
 {{- end }}

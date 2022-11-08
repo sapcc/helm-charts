@@ -1,11 +1,14 @@
+{{- $root := . }}
 {{- if .Values.serviceDiscoveries.pods.enabled }}
+{{- range $name := coalesce .Values.names .Values.global.targets (list .Values.name) }}
+---
 apiVersion: monitoring.coreos.com/v1
 kind: PodMonitor
 
 metadata:
-  name: {{ include "prometheus.fullName" . }}-pod-sd
+  name: {{ include "prometheus.fullName" (list $name $root) }}-pod-sd
   labels:
-    prometheus: {{ include "prometheus.name" . }}
+    prometheus: {{ include "prometheus.name" (list $name $root) }}
 
 spec:
   jobLabel: pod-sd
@@ -21,8 +24,8 @@ spec:
     any: true
 
   podMetricsEndpoints:
-    - interval: {{ required ".Values.serviceDiscoveries.scrapeInterval  missing" .Values.serviceDiscoveries.scrapeInterval }}
-      scrapeTimeout: {{ required ".Values.serviceDiscoveries.scrapeTimeout  missing" .Values.serviceDiscoveries.scrapeTimeout }}
+    - interval: {{ required "$.Values.serviceDiscoveries.scrapeInterval  missing" $.Values.serviceDiscoveries.scrapeInterval }}
+      scrapeTimeout: {{ required "$.Values.serviceDiscoveries.scrapeTimeout  missing" $.Values.serviceDiscoveries.scrapeTimeout }}
       scheme: http
       honorLabels: true
       relabelings:
@@ -30,11 +33,11 @@ spec:
           sourceLabels:
             - __meta_kubernetes_pod_annotation_prometheus_io_scrape
           regex: 'true'
-        {{- if .Values.serviceDiscoveries.pods.limitToPrometheusTargets }}
+        {{- if $.Values.serviceDiscoveries.pods.limitToPrometheusTargets }}
         - action: keep
           sourceLabels:
             - __meta_kubernetes_pod_annotation_prometheus_io_targets
-          regex: {{ include "prometheusTargetsValue" . | quote }}
+          regex: {{ include "prometheusTargetsValue" (list $name $root) | quote }}
         {{- end }}
         - action: keep
           sourceLabels:
@@ -67,15 +70,15 @@ spec:
         - sourceLabels:
             - __meta_kubernetes_pod_name
           targetLabel: kubernetes_pod_name
-{{ include "prometheus.defaultRelabelConfig" . | indent 8 }}
+{{ include "prometheus.defaultRelabelConfig" $root | indent 8 }}
 
-{{ if .Values.serviceDiscoveries.pods.forbiddenMetrics }}
+{{ if $.Values.serviceDiscoveries.pods.forbiddenMetrics }}
       metricRelabelings:
-{{ include "prometheus.drop-metrics.metric-relabel-config" .Values.serviceDiscoveries.pods.forbiddenMetrics | indent 8 }}
+{{ include "prometheus.drop-metrics.metric-relabel-config" $.Values.serviceDiscoveries.pods.forbiddenMetrics | indent 8 }}
 {{ end }}
 
-    - interval: {{ required ".Values.serviceDiscoveries.scrapeInterval  missing" .Values.serviceDiscoveries.scrapeInterval }}
-      scrapeTimeout: {{ required ".Values.serviceDiscoveries.scrapeTimeout  missing" .Values.serviceDiscoveries.scrapeTimeout }}
+    - interval: {{ required "$.Values.serviceDiscoveries.scrapeInterval  missing" $.Values.serviceDiscoveries.scrapeInterval }}
+      scrapeTimeout: {{ required "$.Values.serviceDiscoveries.scrapeTimeout  missing" $.Values.serviceDiscoveries.scrapeTimeout }}
       scheme: http
       honorLabels: true
       relabelings:
@@ -86,7 +89,7 @@ spec:
         - action: keep
           sourceLabels:
             - __meta_kubernetes_pod_annotation_prometheus_io_targets
-          regex: {{ include "prometheusTargetsValue" . | quote }}
+          regex: {{ include "prometheusTargetsValue" (list $name $root) | quote }}
         - action: keep
           sourceLabels:
             - __meta_kubernetes_pod_annotation_prometheus_io_port_1
@@ -119,10 +122,11 @@ spec:
         - sourceLabels:
             - __meta_kubernetes_pod_name
           targetLabel: kubernetes_pod_name
-{{ include "prometheus.defaultRelabelConfig" . | indent 8 }}
+{{ include "prometheus.defaultRelabelConfig" $root | indent 8 }}
 
-{{ if .Values.serviceDiscoveries.pods.forbiddenMetrics }}
+{{ if $.Values.serviceDiscoveries.pods.forbiddenMetrics }}
       metricRelabelings:
-{{ include "prometheus.drop-metrics.metric-relabel-config" .Values.serviceDiscoveries.pods.forbiddenMetrics | indent 8 }}
+{{ include "prometheus.drop-metrics.metric-relabel-config" $.Values.serviceDiscoveries.pods.forbiddenMetrics | indent 8 }}
 {{ end }}
-{{ end }}
+{{- end }}
+{{- end }}

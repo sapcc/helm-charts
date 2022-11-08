@@ -1,6 +1,8 @@
 {{- if .Values.ingress.enabled }}
 {{- $thanos := .Values.thanos }}
 {{- $root := . }}
+{{- range $name := coalesce .Values.names .Values.global.targets (list .Values.name) }}
+---
 {{- if $root.Capabilities.APIVersions.Has "networking.k8s.io/v1/Ingress" }}
 apiVersion: networking.k8s.io/v1
 {{- else -}}
@@ -9,28 +11,28 @@ apiVersion: networking.k8s.io/v1beta1
 kind: Ingress
 
 metadata:
-  name: {{ include "prometheus.fullName" . }}
+  name: {{ include "prometheus.fullName" (list $name $root) }}
   labels:
-    prometheus: {{ include "prometheus.name" . }}
+    prometheus: {{ include "prometheus.name" (list $name $root) }}
   annotations:
     kubernetes.io/tls-acme: "true"
     disco: "true"
-    {{- if .Values.ingress.authentication.oauth.enabled }}
-    ingress.kubernetes.io/auth-url: {{ required ".Values.ingress.authentication.oauth.authURL missing" .Values.ingress.authentication.oauth.authURL }}
-    {{ if .Values.ingress.authentication.oauth.authSignInURL }}ingress.kubernetes.io/auth-signin: {{ .Values.ingress.authentication.oauth.authSignInURL }} {{ end }}
+    {{- if $.Values.ingress.authentication.oauth.enabled }}
+    ingress.kubernetes.io/auth-url: {{ required "$.Values.ingress.authentication.oauth.authURL missing" $.Values.ingress.authentication.oauth.authURL }}
+    {{ if $.Values.ingress.authentication.oauth.authSignInURL }}ingress.kubernetes.io/auth-signin: {{ $.Values.ingress.authentication.oauth.authSignInURL }} {{ end }}
     {{ end }}
-    {{- if .Values.ingress.authentication.sso.enabled}}
-    ingress.kubernetes.io/auth-tls-secret: {{ required ".Values.ingress.authentication.sso.authTLSSecret missing" .Values.ingress.authentication.sso.authTLSSecret | quote }}
-    ingress.kubernetes.io/auth-tls-verify-depth: {{ required ".Values.ingress.authentication.sso.authTLSVerifyDepth missing" .Values.ingress.authentication.sso.authTLSVerifyDepth | quote }}
-    ingress.kubernetes.io/auth-tls-verify-client: {{ required ".Values.ingress.authentication.sso.authTLSVerifyClient missing" .Values.ingress.authentication.sso.authTLSVerifyClient | quote }}
+    {{- if $.Values.ingress.authentication.sso.enabled}}
+    ingress.kubernetes.io/auth-tls-secret: {{ required "$.Values.ingress.authentication.sso.authTLSSecret missing" $.Values.ingress.authentication.sso.authTLSSecret | quote }}
+    ingress.kubernetes.io/auth-tls-verify-depth: {{ required "$.Values.ingress.authentication.sso.authTLSVerifyDepth missing" $.Values.ingress.authentication.sso.authTLSVerifyDepth | quote }}
+    ingress.kubernetes.io/auth-tls-verify-client: {{ required "$.Values.ingress.authentication.sso.authTLSVerifyClient missing" $.Values.ingress.authentication.sso.authTLSVerifyClient | quote }}
     {{ end }}
-    {{- if .Values.ingress.annotations }}
-{{ toYaml .Values.ingress.annotations | indent 4 }}
+    {{- if $.Values.ingress.annotations }}
+{{ toYaml $.Values.ingress.annotations | indent 4 }}
     {{ end }}
 
 spec:
   rules:
-    {{- range $host := .Values.ingress.hosts }}
+    {{- range $host := coalesce $.Values.ingress.hosts (list $name) }}
     - host: {{ include "fqdnHelper" (list $host $root) }}
       http:
         paths:
@@ -40,12 +42,12 @@ spec:
           pathType: ImplementationSpecific
           backend:
             service:
-              name: {{ include "prometheus.fullName" $root }}
+              name: {{ include "prometheus.fullName" (list $name $root) }}
               port:
                 name: http
           {{- else }}
           backend:
-            serviceName: {{ include "prometheus.fullName" $root }}
+            serviceName: {{ include "prometheus.fullName" (list $name $root) }}
             servicePort: http
           {{- end }}
         - path: /thanos
@@ -54,12 +56,12 @@ spec:
           backend:
             service:
               # matches thanos query service which is deployed via commmon/thanos
-              name: thanos-{{ include "prometheus.name" $root }}-query
+              name: thanos-{{ include "prometheus.name" (list $name $root) }}-query
               port:
                 name: http
           {{- else }}
           backend:
-            serviceName: {{ include "prometheus.fullName" $root }}
+            serviceName: {{ include "prometheus.fullName" (list $name $root) }}
             servicePort: http
           {{- end }}
         {{- else }}
@@ -68,17 +70,17 @@ spec:
           pathType: ImplementationSpecific
           backend:
             service:
-              name: {{ include "prometheus.fullName" $root }}
+              name: {{ include "prometheus.fullName" (list $name $root) }}
               port:
                 name: http
           {{- else }}
           backend:
-            serviceName: {{ include "prometheus.fullName" $root }}
+            serviceName: {{ include "prometheus.fullName" (list $name $root) }}
             servicePort: http
           {{- end }}
         {{- end }}
     {{- end }}
-    {{- range $host := .Values.ingress.hostsFQDN }}
+    {{- range $host := $.Values.ingress.hostsFQDN }}
     - host: {{ $host }}
       http:
         paths:
@@ -87,22 +89,23 @@ spec:
           pathType: ImplementationSpecific
           backend:
             service:
-              name: {{ include "prometheus.fullName" $root }}
+              name: {{ include "prometheus.fullName" (list $name $root) }}
               port:
                 name: http
           {{- else }}
           backend:
-            serviceName: {{ include "prometheus.fullName" $root }}
+            serviceName: {{ include "prometheus.fullName" (list $name $root) }}
             servicePort: http
           {{- end }}
     {{- end }}
   tls:
-    - secretName: tls-{{ include "prometheus.externalURL" $root | replace "." "-" }}
+    - secretName: tls-{{ include "prometheus.externalURL" (list $name $root) | replace "." "-" }}
       hosts:
-        {{- range $host := .Values.ingress.hosts }}
+        {{- range $host := coalesce $.Values.ingress.hosts (list $name) }}
         - {{ include "fqdnHelper" (list $host $root) }}
         {{- end }}
-        {{- range $host := .Values.ingress.hostsFQDN }}
+        {{- range $host := $.Values.ingress.hostsFQDN }}
         - {{ $host }}
         {{- end }}
+{{- end }}
 {{- end }}
