@@ -3,6 +3,12 @@ BASE=/opt/${SOFTWARE_NAME}
 DATADIR=${BASE}/data
 export CONTAINER_IP=$(hostname --ip-address)
 export POD_NAME=$(hostname --short)
+IFS=". " softVerProps=($(echo ${SOFTWARE_VERSION}))
+IFS="${oldIFS}"
+softMinorVer="${softVerProps[0]}.${softVerProps[1]}"
+IFS="+ " softVerProps=($(echo ${softVerProps[2]}))
+IFS="${oldIFS}"
+export SOFTWARE_VERSION_CLEAN="${softMinorVer}.${softVerProps[0]}"
 
 if [ -f "${BASE}/bin/common-functions-extended.sh" ]; then
   source ${BASE}/bin/common-functions-extended.sh
@@ -22,6 +28,31 @@ function logdebug {
 
 function logerror {
   logjson "stderr" "error" "$0" "$1" "$2"
+}
+
+function templateconfig {
+  local int
+
+  loginfo "${FUNCNAME[0]}" "template MariaDB configurations if required"
+  if [ -f ${BASE}/etc/conf.d/tpl/my.cnf.${POD_NAME}.tpl ]; then
+    for (( int=${MAX_RETRIES}; int >=1; int-=1));
+      do
+      cat ${BASE}/etc/conf.d/tpl/my.cnf.${POD_NAME}.tpl | envsubst > ${BASE}/etc/conf.d/my.cnf
+      if [ $? -ne 0 ]; then
+        logerror "${FUNCNAME[0]}" "${BASE}/etc/conf.d/tpl/my.cnf.${POD_NAME}.tpl rendering has been failed (${int} retries left)"
+        sleep ${WAIT_SECONDS}
+      else
+        break
+      fi
+    done
+    if [ ${int} -eq 0 ]; then
+      logerror "${FUNCNAME[0]}" "template MariaDB configurations has been finally failed"
+      exit 1
+    fi
+    loginfo "${FUNCNAME[0]}" "template MariaDB configurations done"
+  else
+    loginfo "${FUNCNAME[0]}" "templating skipped because of missing ${BASE}/etc/conf.d/tpl/my.cnf.${POD_NAME}.tpl file"
+  fi
 }
 
 # readroleprivileges 'mysql_exporter' '/opt/mariadb/etc/sql/'

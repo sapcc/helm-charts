@@ -197,7 +197,7 @@ function selectbootstrapnode {
     loginfo "${FUNCNAME[0]}" "Find Galera node with highest sequence number (${int} retries left)"
     SEQNO_FILE_COUNT=$(grep -c '{{ (include "nodeNamePrefix" (dict "global" $ "component" "application")) }}-*' ${SEQNO_FILES} | grep -c -e ${BASE}/etc/galerastatus/{{ (include "nodeNamePrefix" (dict "global" $ "component" "application")) }}-.*.seqno:1)
     if [ ${SEQNO_FILE_COUNT} -ge {{ ($.Values.replicas|int) }} ]; then
-      IFS=":" SEQNO_OLDEST_TIMESTAMP=($(grep --no-filename 'timestamp:' ${SEQNO_FILES} | sort --key=2 --numeric-sort --field-separator=: | head -1))
+      IFS=":" SEQNO_OLDEST_TIMESTAMP=($(grep --no-filename --perl-regex --regexp='^timestamp:\d+$' ${SEQNO_FILES} | sort --key=2 --numeric-sort --field-separator=: | head --lines=1))
       IFS="${oldIFS}"
       if ! [ -z ${SEQNO_OLDEST_TIMESTAMP[1]+x} ]; then
         SEQNO_OLDEST_TIMESTAMP_WITH_BUFFER=$(( ${SEQNO_OLDEST_TIMESTAMP[1]} + ({{ $.Values.readinessProbe.timeoutSeconds.application | int }} * {{ $.Values.scripts.maxAllowedTimeDifferenceFactor | default 3 | int }}) ))
@@ -223,7 +223,8 @@ function selectbootstrapnode {
         fi
         {{- end }}
       else
-        loginfo "${FUNCNAME[0]}" "Sequence numbers not yet found in configmap"
+        loginfo "${FUNCNAME[0]}" "Sequence numbers not yet found in configmap. Retry after $(( ${WAIT_SECONDS} * (${MAX_RETRIES} - ${int} + 1) ))s"
+        sleep  $(( ${WAIT_SECONDS} * (${MAX_RETRIES} - ${int} + 1) ))
       fi
     else
       loginfo "${FUNCNAME[0]}" "${SEQNO_FILE_COUNT} of {{ ($.Values.replicas|int) }} sequence numbers found. Will wait $(( ${WAIT_SECONDS} * (${MAX_RETRIES} - ${int} + 1) ))s"

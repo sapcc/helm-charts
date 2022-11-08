@@ -38,6 +38,7 @@ data:
     {{- else }}
     performance_schema=OFF
     {{- end }}
+    max_connect_errors=4294967295 #to avoid failed connections because of loadbalancer health checks https://mariadb.com/kb/en/server-system-variables/#max_connect_errors
 
     [mariadb]
     wsrep-provider=/usr/lib/libgalera_smm.so
@@ -49,10 +50,14 @@ data:
     innodb_autoinc_lock_mode=2
     innodb_flush_log_at_trx_commit=0
     wsrep_gtid_mode=on
-    wsrep_gtid_domain_id={{ $.Values.mariadb.galera.gtidDomainId | default 0 | int }}
+    {{- if $.Values.mariadb.galera.gtidStrictMode }}
+    gtid-strict-mode=1
+    {{- else }}
+    gtid-strict-mode=0
+    {{- end }}
+    wsrep_gtid_domain_id={{ (printf "%d%d%d%d%d" ($.Values.mariadb.galera.gtidDomainId | default 1 | int) 0 8 1 5) | int }}
     gtid_domain_id={{ $int | int }}
-    log_slave_updates=1
-    wsrep_restart_slave=on
+    expire_logs_days=1
     wsrep-cluster-name={{ include "getEnvVar" (dict "global" $ "name" "MARIADB_CLUSTER_NAME") }}
     wsrep_cluster_address={{ include "wsrepClusterAddress" (dict "global" $) }}
     {{- $_ := set $wsrepProviderOptions "pc.weight" (printf "pc.weight=${PC_WEIGHT_%d}" $int)}}
@@ -69,5 +74,14 @@ data:
     wsrep_sst_auth=${GALERA_SST_USER}:${GALERA_SST_PASSWORD}
     {{- end }}
     wsrep_slave_threads={{ $.Values.mariadb.galera.slaveThreads | default 4 }}
+
+    # async replication with MariaDB instances outside of the Galera cluster
+    relay_log=/opt/${SOFTWARE_NAME}/{{ $.Values.mariadb.binLogDir | default "data" }}/mysql-relay-bin.log
+    server_id={{ (printf "%d%d" ($.Values.mariadb.galera.gtidDomainId | default 1 | int) $int) | int }}
+    log_slave_updates=on
+    wsrep_restart_slave=off
+    replicate-ignore-db=mysql
+    replicate-ignore-db=performance_schema
+    replicate-ignore-db=information_schema
 
 {{- end }}

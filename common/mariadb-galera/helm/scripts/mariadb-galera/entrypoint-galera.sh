@@ -5,26 +5,6 @@ set -o pipefail
 
 source /opt/${SOFTWARE_NAME}/bin/common-functions.sh
 
-function templateconfig {
-  local int
-  for (( int=${MAX_RETRIES}; int >=1; int-=1));
-    do
-    loginfo "${FUNCNAME[0]}" "template MariaDB configurations (${int} retries left)"
-    cat ${BASE}/etc/conf.d/tpl/my.cnf.${POD_NAME}.tpl | envsubst > ${BASE}/etc/conf.d/my.cnf
-    if [ $? -ne 0 ]; then
-      logerror "${FUNCNAME[0]}" "${BASE}/etc/conf.d/tpl/my.cnf.${POD_NAME}.tpl rendering has been failed"
-      sleep ${WAIT_SECONDS}
-    else
-      break
-    fi
-  done
-  if [ ${int} -eq 0 ]; then
-    logerror "${FUNCNAME[0]}" "template MariaDB configurations has been finally failed"
-    exit 1
-  fi
-  loginfo "${FUNCNAME[0]}" "template MariaDB configurations done"
-}
-
 function bootstrapgalera {
   loginfo "${FUNCNAME[0]}" "init Galera cluster"
   exec mariadbd --defaults-file=${BASE}/etc/my.cnf --basedir=/usr --wsrep-new-cluster
@@ -119,5 +99,4 @@ function initgalera {
   fi
 }
 
-templateconfig
 initgalera

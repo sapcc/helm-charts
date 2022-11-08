@@ -21,13 +21,13 @@ Docker image and Helm chart to deploy a [MariaDB](https://mariadb.com/kb/en/gett
 | RESTIC_VERSION | install this [restic version](https://github.com/restic/restic/releases) |
 
 ```bash
-docker build --build-arg BASE_REGISTRY=keppel.eu-nl-1.cloud.sap --build-arg BASE_ACCOUNT=octobus --build-arg BASE_SOFT_NAME=ubuntu --build-arg BASE_SOFT_VERSION=20.04 --build-arg BASE_IMG_VERSION=0.3.67 --build-arg SOFT_NAME=mariadb --build-arg SOFT_VERSION=10.5.17+maria~ubu2004 --build-arg IMG_VERSION=0.2.0 --build-arg GALERA_VERSION=26.4.12-focal --build-arg YQ_VERSION=4.27.5 --build-arg RESTIC_VERSION=0.14.0 -t keppel.eu-de-1.cloud.sap/ccloud/mariadb-galera:10.5.17-0.2.0 -f docker/mariadb-galera/Dockerfile ./docker/mariadb-galera/
+docker build --build-arg BASE_REGISTRY=keppel.eu-nl-1.cloud.sap --build-arg BASE_ACCOUNT=octobus --build-arg BASE_SOFT_NAME=ubuntu --build-arg BASE_SOFT_VERSION=20.04 --build-arg BASE_IMG_VERSION=0.3.67 --build-arg SOFT_NAME=mariadb --build-arg SOFT_VERSION=10.5.17+maria~ubu2004 --build-arg IMG_VERSION=0.2.1 --build-arg GALERA_VERSION=26.4.12-focal --build-arg YQ_VERSION=4.27.5 --build-arg RESTIC_VERSION=0.14.0 -t keppel.eu-de-1.cloud.sap/ccloud/mariadb-galera:10.5.17-0.2.1 -f docker/mariadb-galera/Dockerfile ./docker/mariadb-galera/
 ```
 
 #### debug build
 
 ```bash
-docker build --build-arg BASE_REGISTRY=keppel.eu-nl-1.cloud.sap --build-arg BASE_ACCOUNT=octobus --build-arg BASE_SOFT_NAME=ubuntu --build-arg BASE_SOFT_VERSION=20.04 --build-arg BASE_IMG_VERSION=0.3.67 --build-arg SOFT_NAME=mariadb --build-arg SOFT_VERSION=10.5.17+maria~ubu2004 --build-arg IMG_VERSION=0.2.0 --build-arg GALERA_VERSION=26.4.12-focal --build-arg YQ_VERSION=4.27.5 --build-arg RESTIC_VERSION=0.14.0 --build-arg GALERA_DEBUG=true -t keppel.eu-de-1.cloud.sap/ccloud/mariadb-galera-debug:10.5.17-0.2.0 -f docker/mariadb-galera/Dockerfile ./docker/mariadb-galera/
+docker build --build-arg BASE_REGISTRY=keppel.eu-nl-1.cloud.sap --build-arg BASE_ACCOUNT=octobus --build-arg BASE_SOFT_NAME=ubuntu --build-arg BASE_SOFT_VERSION=20.04 --build-arg BASE_IMG_VERSION=0.3.67 --build-arg SOFT_NAME=mariadb --build-arg SOFT_VERSION=10.5.17+maria~ubu2004 --build-arg IMG_VERSION=0.2.1 --build-arg GALERA_VERSION=26.4.12-focal --build-arg YQ_VERSION=4.27.5 --build-arg RESTIC_VERSION=0.14.0 --build-arg GALERA_DEBUG=true -t keppel.eu-de-1.cloud.sap/ccloud/mariadb-galera-debug:10.5.17-0.2.1 -f docker/mariadb-galera/Dockerfile ./docker/mariadb-galera/
 ```
 #### MySQL Exporter image
 | build argument | description |
@@ -82,8 +82,13 @@ flowchart TB;
   subgraph idsub1 [checkenv]
     id6(required env vars set?);
   end
-  id6--Yes-->id7([init database])
+  id6--Yes-->id7
+  subgraph idsub2 [templateconfig]
+    id7(template MariaDB configs ok?);
+  end
+  id7--Yes-->id8([init database])
   id6--No-->id666[exit 1];
+  id7--No-->id666[exit 1];
 
 click id2 href "businessbean/helm-charts/blob/master/common/mariadb-galera/mariadb-galera/bin/entrypoint.sh" "Open this in a new tab" _blank;
 click id3 href "businessbean/helm-charts/blob/master/common/mariadb-galera/docker/mariadb-galera/bin/common-functions.sh" "Open this in a new tab" _blank;
@@ -154,26 +159,24 @@ click id7 href "businessbean/helm-charts/blob/master/common/mariadb-galera/docke
 ```mermaid
 flowchart TB;
   id1([init database])-->id2;
-  subgraph idsub1 [templateconfig]
-    id2(template MariaDB configs ok?);
-  end
-  subgraph idsub2 [initgalera]
-    id2--Yes-->id3(grastate.dat exist?);
-    id3--No-->id4(hostname eq pod 0 name?)--Yes-->id5;
-    id4--No-->id7(join cluster);
-    subgraph idsub3 [bootstrapgalera]
-      id5(bootstrap cluster)-->id6(exec mariadbd --wsrep-new-cluster ok?);
+
+  subgraph idsub1 [initgalera]
+    id2(grastate.dat exist?);
+    id2--No-->id3(hostname eq pod 0 name?)--Yes-->id4;
+    id3--No-->id6(join cluster);
+    subgraph idsub2 [bootstrapgalera]
+      id4(bootstrap cluster)-->id5(exec mariadbd --wsrep-new-cluster ok?);
     end
-    subgraph idsub4 [startgalera]
-      id7-->id8(exec mariadbd ok?);
+    subgraph idsub3 [startgalera]
+      id6-->id7(exec mariadbd ok?);
     end
   end
-  id3--Yes-->id9([recover Galera]);
-  subgraph idsub5 [Done]
-    id6 & id8--Yes-->id98(MariaDB running);
+  id2--Yes-->id9([recover Galera]);
+  subgraph idsub4 [Done]
+    id5 & id7--Yes-->id98(MariaDB running);
   end
   subgraph failure
-    id2 & id6 & id8--No-->id666[exit 1];
+    id5 & id7--No-->id666[exit 1];
   end
 ```
 #### recover Galera
@@ -251,6 +254,17 @@ flowchart TB;
   * `wsrep_flow_control_paused` should be 0 (0.25 means 25% of the time replication was paused)
   * `wsrep_cert_deps_distance` difference between lowest and highest sequence number in the cluster
 * [Setting Parallel Slave Threads for replication](https://galeracluster.com/library/kb/parallel-applier-threads.html)
+### Primary/Replica replication
+* [Global Transaction ID](https://mariadb.com/kb/en/gtid/)
+* [Configuring MariaDB Replication between Two MariaDB Galera Clusters](https://mariadb.com/kb/en/configuring-mariadb-replication-between-two-mariadb-galera-clusters/)
+* [Configuring MariaDB Replication between MariaDB Galera Cluster and MariaDB Server](https://mariadb.com/kb/en/using-mariadb-replication-with-mariadb-galera-cluster-configuring-mariadb-r/)
+* [Replication Overview](https://mariadb.com/kb/en/replication-overview/)
+* [Replication Filters](https://mariadb.com/kb/en/replication-filters/)
+* [Reset Replica config](https://mariadb.com/kb/en/reset-replica/)
+* [CHANGE MASTER TO](https://mariadb.com/kb/en/change-master-to/) command options
+* [Multi-Source Replication with MariaDB Galera Cluster](https://severalnines.com/blog/multi-source-replication-mariadb-galera-cluster)
+* [MariaDB Galera Cluster and M/S replication](https://archive.fosdem.org/2022/schedule/event/mariadb_galera/)
+
 ### Monitoring
 * [Unit Testing for Prometheus exporters](https://www.prometheus.io/docs/prometheus/latest/configuration/unit_testing_rules/)
 ### Backup

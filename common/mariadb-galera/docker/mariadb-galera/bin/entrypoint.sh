@@ -90,8 +90,8 @@ function checkupgradedb {
     IFS="- " read -ra MARIADB_OLDVERSION < /opt/mariadb/data/mysql_upgrade_info
     IFS="${oldIFS}"
 
-    # if SOFTWARE_VERSION (left side) is bigger than MARIADB_OLDVERSION (right side) sort will return 1
-    printf '%s\n%s' "${SOFTWARE_VERSION}" "${MARIADB_OLDVERSION}" | sort --version-sort --check=silent
+    # if SOFTWARE_VERSION_CLEAN (left side) is bigger than MARIADB_OLDVERSION (right side) sort will return 1
+    printf '%s\n%s' "${SOFTWARE_VERSION_CLEAN}" "${MARIADB_OLDVERSION[0]}" | sort --version-sort --check=silent
     if [ $? -ne 0 ]; then
       loginfo "${FUNCNAME[0]}" "MariaDB version higher than last upgrade info"
       startmaintenancedb
@@ -193,6 +193,7 @@ function stopdb {
 }
 
 checkenv
+templateconfig
 initdb
 checkupgradedb
 startdb

@@ -21,6 +21,7 @@ scripts:
   maxAllowedTimeDifferenceFactor: 12 #to multiply with readinessProbe.timeoutSeconds.application as the maximum allowed time difference between nodes for the last sequence number configmap update (default 3)
   useTimeDifferenceForSeqnoCheck: false #fail if time difference between nodes for the last sequence number configmap update is too big
 mariadb:
+  autostart: true
   binLogDir: log #if not defined the data dir will be used. Needs a log volume mount to be configured too
   performance_schema: false #https://mariadb.com/kb/en/performance-schema-overview/
   galera:
@@ -31,7 +32,8 @@ mariadb:
     gcache.recover: false #
     sst_method: rsync #rsync or mariabackup(also requires GALERA_SST_USER and GALERA_SST_PASSWORD)
     slaveThreads: 16 #https://galeracluster.com/library/documentation/mysql-wsrep-options.html#wsrep-slave-threads
-    gtidDomainId: 0 #https://mariadb.com/kb/en/galera-cluster-system-variables/#wsrep_gtid_domain_id
+    gtidDomainId: 1 #default = 1, must be a positive integer https://mariadb.com/kb/en/galera-cluster-system-variables/#wsrep_gtid_domain_id
+    gtidStrictMode: false #https://mariadb.com/kb/en/gtid/#gtid_strict_mode
     backup:
       enabled: true
       openstack: #https://docs.openstack.org/python-openstackclient/zed/cli/authentication.html
@@ -43,6 +45,8 @@ mariadb:
       restic:
         compression: auto #https://restic.readthedocs.io/en/stable/047_tuning_backup_parameters.html#compression
         packsizeInMB: 128 #https://restic.readthedocs.io/en/stable/047_tuning_backup_parameters.html#pack-size keep in mind the 5GB Swift object size limit and the potential object count quota limit
+        unlockRepo: false #default=false https://restic.readthedocs.io/en/stable/manual_rest.html?highlight=unlock
+        pruneBackups: false #default=false https://restic.readthedocs.io/en/stable/060_forget.html?highlight=prune#removing-backup-snapshots
         keep: #https://restic.readthedocs.io/en/stable/060_forget.html#removing-snapshots-according-to-a-policy
           last: 2
           hourly: 24
@@ -54,6 +58,7 @@ monitoring:
   prometheus:
     instance: prometheus #name of the Prometheus instance that should pull metrics
   mysqld_exporter:
+    autostart: true
     enabled: false #enable the Prometheus MySQL exporter as sidecar container https://github.com/prometheus/mysqld_exporter
     metricsPort: 9104
   elasticBeatsAutoDiscoveryAnnotations:
@@ -84,7 +89,7 @@ image:
     project: ccloud
     applicationname: mariadb-galera
     applicationversion: 10.5.17
-    imageversion: 0.2.0
+    imageversion: 0.2.2
     pullPolicy: Always
     pullSecret: false
   monitoring:
@@ -147,7 +152,8 @@ services:
           port: 3306
           targetPort: 3306
           protocol: TCP
-      sessionAffinity: None
+      sessionAffinity: ClientIP
+      sessionAffinityClientIpTimeoutSeconds: 28800
   proxy:
     - name: backend
       type: ClusterIP
@@ -435,6 +441,20 @@ env:
     secretKey: password
     containerType:
       - cronjob
+  REPLICA_USERNAME:
+    secretName: replica-primary-auth
+    secretKey: username
+    containerType:
+      - application
+      - job
+      - proxy
+  REPLICA_PASSWORD:
+    secretName: replica-primary-auth
+    secretKey: password
+    containerType:
+      - application
+      - job
+      - proxy
 # command:
 #   application:
 #     - "sh"

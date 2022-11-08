@@ -1,3 +1,6 @@
+{{- if and (hasKey $.Values.mariadb "autostart") (not $.Values.mariadb.autostart) }}
+{{- else if and ($.Values.command) (hasKey $.Values.command "application") }}
+{{- else }}
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -109,3 +112,4 @@ spec:
         configMap:
           name: mariadb-common-functions-extended-sh
           defaultMode: 0755
+{{- end }}

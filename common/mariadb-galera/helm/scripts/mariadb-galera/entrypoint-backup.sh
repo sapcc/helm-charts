@@ -91,6 +91,18 @@ function initresticrepo {
   fi
 }
 
+function unlockresticrepo {
+  loginfo "${FUNCNAME[0]}" "unlock restic repository if required"
+  restic unlock --repo swift:{{ required "Values.mariadb.galera.backup.openstack.container is missing, but required for restic to access the repository." $.Values.mariadb.galera.backup.openstack.container }}:/ \
+                --remove-all --quiet --json --no-cache
+  if [ $? -ne 0 ]; then
+    logerror "${FUNCNAME[0]}" "restic repository unlock failed"
+    exit 1
+  else
+    loginfo "${FUNCNAME[0]}" "restic repository unlock done"
+  fi
+}
+
 function createdbbackup {
   local DB_HOST=${1}
   local SEQNO=${2}
@@ -117,12 +129,12 @@ function queryoldestbinlogname {
   local DB_HOST=${1}
   local BINLOGNAME
 
-  IFS=$'\t' BINLOGNAME=($(mysql --defaults-file=${BASE}/etc/my.cnf --protocol=tcp --host=${DB_HOST}.database.svc.cluster.local --port=${MYSQL_PORT} --user=${MARIADB_ROOT_USER} --password=${MARIADB_ROOT_PASSWORD} --execute='show binary logs;' --batch --skip-column-names | sort --key=1 --numeric-sort | head -1))
+  IFS=$'\t' BINLOGNAME=($(mysql --defaults-file=${BASE}/etc/my.cnf --protocol=tcp --host=${DB_HOST}.database.svc.cluster.local --port=${MYSQL_PORT} --user=${MARIADB_ROOT_USER} --password=${MARIADB_ROOT_PASSWORD} --execute="SHOW GLOBAL STATUS LIKE 'Binlog_snapshot_file';" --batch --skip-column-names))
   IFS="${oldIFS}"
   if [ $? -ne 0 ]; then
     exit 1
   fi
-  echo ${BINLOGNAME[0]}
+  echo ${BINLOGNAME[1]}
 }
 
 function createbinlogbackup {
@@ -182,9 +194,14 @@ fetchseqnofromremotenode {{ (printf "%s-%d" (include "nodeNamePrefix" (dict "glo
 {{- end }}
 selectbackupnode
 initresticrepo
+{{- if $.Values.mariadb.galera.backup.restic.unlockRepo }}
+unlockresticrepo
+{{- end }}
 setclusterdesyncmode ${NODENAME[0]} ON
 createdbbackup ${NODENAME[0]} ${NODENAME[1]}
 createbinlogbackup ${NODENAME[0]} ${NODENAME[1]}
 setclusterdesyncmode ${NODENAME[0]} OFF
+{{- if $.Values.mariadb.galera.backup.restic.pruneBackups }}
 prunebackups
+{{- end }}
 #listbackups

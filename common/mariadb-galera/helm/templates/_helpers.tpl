@@ -64,6 +64,9 @@ spec:
       protocol: {{ $portValue.protocol | default "TCP" }}
   {{- end }}
   sessionAffinity: {{ .service.value.sessionAffinity | default "None" | quote }}
+  sessionAffinityConfig:
+    clientIP:
+      timeoutSeconds: {{ .service.value.sessionAffinityClientIpTimeoutSeconds | default "10800" | int }}
 {{- end }}
 
 

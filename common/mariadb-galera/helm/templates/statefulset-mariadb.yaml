@@ -119,7 +119,12 @@ spec:
         #   value: "60"
         # - name: net.ipv4.tcp_keepalive_probes
         #   value: "5"
-        {{- if and ($.Values.command) (hasKey $.Values.command "application") }}
+        {{- if and (hasKey $.Values.mariadb "autostart") (not $.Values.mariadb.autostart) }}
+        command:
+          - "sh"
+          - "-c"
+          - "/bin/sleep 86400"
+        {{- else if and ($.Values.command) (hasKey $.Values.command "application") }}
         command:
 {{ $.Values.command.application | toYaml | indent 8 }}
         {{- end }}
@@ -192,6 +197,9 @@ spec:
               {{- end }}
             {{- end }}
           {{- end }}
+        {{- if and (hasKey $.Values.mariadb "autostart") (not $.Values.mariadb.autostart) }}
+        {{- else if and ($.Values.command) (hasKey $.Values.command "application") }}
+        {{- else }}
         startupProbe:
           exec:
             command:
@@ -258,6 +266,7 @@ spec:
                 - sh
                 - -c
                 - '/opt/mariadb/bin/post-start-hook.sh'
+        {{- end }}
         volumeMounts:
           {{- range $volumeMountsKey, $volumeMountsValue := $.Values.volumeMounts.application }}
             {{- if (hasKey $volumeMountsValue "claimName") }}
@@ -320,7 +329,12 @@ spec:
         securityContext:
           runAsUser:  {{ $.Values.userId.monitoring }}
           runAsGroup:  {{ $.Values.groupId.monitoring }}
-          {{- if and ($.Values.command) (hasKey $.Values.command "monitoring") }}
+          {{- if and (hasKey $.Values.monitoring.mysqld_exporter "autostart") (not $.Values.monitoring.mysqld_exporter.autostart) }}
+        command:
+          - "sh"
+          - "-c"
+          - "/bin/sleep 86400"
+          {{- else if and ($.Values.command) (hasKey $.Values.command "monitoring") }}
         command:
 {{ $.Values.command.monitoring | toYaml | indent 8 }}
           {{- end }}
@@ -359,6 +373,9 @@ spec:
         ports:
           - name: metrics
             containerPort: {{ $.Values.monitoring.mysqld_exporter.metricsPort | default 9104 }}
+        {{- if and (hasKey $.Values.monitoring.mysqld_exporter "autostart") (not $.Values.monitoring.mysqld_exporter.autostart) }}
+        {{- else if and ($.Values.command) (hasKey $.Values.command "monitoring") }}
+        {{- else }}
         livenessProbe:
           exec:
             command:
@@ -395,6 +412,7 @@ spec:
           failureThreshold: 2
           timeoutSeconds: 10
           {{- end }}
+        {{- end }}
         volumeMounts:
           - name: monitoring-entrypoint-sh
             mountPath: /opt/mysqld_exporter/bin/entrypoint-mysqld_exporter.sh
@@ -410,7 +428,11 @@ spec:
             readOnly: true
         {{- end }}
         {{- /* monitoring sidecar end */}}
+      {{- if and (hasKey $.Values.mariadb "autostart") (not $.Values.mariadb.autostart) }}
+      {{- else if and ($.Values.command) (hasKey $.Values.command "application") }}
+      {{- else }}
       terminationGracePeriodSeconds: {{ $.Values.terminationGracePeriodSeconds | default 86400 }}
+      {{- end }}
       volumes:
         {{- range $volumeMountsKey, $volumeMountsValue := $.Values.volumeMounts.application }}
           {{- if $volumeMountsValue.type }}
