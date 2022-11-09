@@ -1,10 +1,9 @@
-{{- if and .Values.backup_v2.alerts.enabled }}
-- name: replication.alerts
+- name: replicationV2.alerts
   rules:
 {{- range $backup := .Values.backup_v2.backups }}
-{{- if not $backup.sync_enabled }}
-  - alert: {{ $backup.name | camelcase }}ReplicationErrorsHigh
-    expr: increase(maria_backup_errors{app_kubernetes_io_instance=~"mariadb-replication-{{$backup.name}}-metis"}[15m]) > 2
+{{- if $backup.sync_enabled }}
+  - alert: {{ $backup.name | camelcase }}SyncErrorsHigh
+    expr: increase(metis_replication_restart_counter{pod=~"mariadb-sync-{{$backup.name}}.*"}[15m]) > 2
     for: 15m
     labels:
       context: replicationerrors
@@ -13,10 +12,10 @@
       support_group: {{ required "$.Values.backup_v2.alerts.supportGroup missing" $.Values.backup_v2.alerts.supportGroup}}
       tier: {{ required "$.Values.alerts.tier missing" $.Values.alerts.tier }}
     annotations:
-      description: The replication for mariadb-replication-{{$backup.name}}-metis restarts frequently
+      description: The sync of mariadb-{{$backup.name}} restarts frequently
       summary: Database replication restarting frequently
-  - alert: {{ $backup.name | camelcase }}ReplicationMissing
-    expr: maria_backup_status{kind="full_backup",kubernetes_pod_name=~"mariadb-replication-{{$backup.name}}.*"} == 0
+  - alert: {{ $backup.name | camelcase }}SyncIncomplete
+    expr: sum(metis_sync_status{pod=~"mariadb-sync-{{$backup.name}}.*"}) != 3
     for: 30m
     labels:
       context: replicationerrors
@@ -24,10 +23,8 @@
       severity: info
       support_group: {{ required "$.Values.backup_v2.alerts.supportGroup missing" $.Values.backup_v2.alerts.supportGroup}}
       tier: {{ required "$.Values.backup_v2.alerts.tier missing" $.Values.alerts.tier }}
-      playbook: "docs/operation/metis/metis/#database-replication-is-incomplete"
     annotations:
-      description: The replication for mariadb-replication-{{$backup.name}}-metis has not completed for >30 minutes
+      description: The sync for mariadb-{{$backup.name}} has not completed for >30 minutes
       summary: Database replication is incomplete
-{{- end }}
 {{- end }}
 {{- end }}

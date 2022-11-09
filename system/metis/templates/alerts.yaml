@@ -15,6 +15,7 @@ metadata:
 spec:
   groups:
 {{ include (print .Template.BasePath "/alerts/_replication.alerts.tpl") . | indent 2 }}
+{{- end }}
 
 ---
 apiVersion: monitoring.coreos.com/v1
@@ -33,4 +34,23 @@ metadata:
 spec:
   groups:
 {{ include (print .Template.BasePath "/alerts/_database.alerts.tpl") . | indent 2 }}
+
+---
+{{- if .Values.metisSync.alerts.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+
+metadata:
+  name: metis-sync-alerts
+  namespace: {{ .Values.namespace }}
+  labels:
+    app.kubernetes.io/name: metisdb
+    helm.sh/chart: {{ include "metis.chart" $ }}
+    app.kubernetes.io/instance: metisdb-{{ $.Release.Name }}
+    app.kubernetes.io/managed-by: {{ $.Release.Service }}
+    prometheus: {{ required ".Values.alerts.prometheus missing"  .Values.alerts.prometheus }}
+
+spec:
+  groups:
+{{ include (print .Template.BasePath "/alerts/_sync.alerts.tpl") . | indent 2 }}
 {{- end }}
