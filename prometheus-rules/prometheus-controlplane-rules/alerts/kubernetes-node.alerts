@@ -105,7 +105,7 @@ groups:
     ### PVC usage ###
 
     - alert: KubernetesHighPVCUsagePredicted
-      expr: sum((kubelet_volume_stats_available_percent* 100 > 70) and (predict_linear(kubelet_volume_stats_available_percent[1d], 7 * 24 * 3600) * 100 > 90)) by (namespace, persistentvolumeclaim)
+      expr: sum((kubelet_volume_stats_available_percent < 30) and (predict_linear(kubelet_volume_stats_available_percent[1d], 7 * 24 * 3600) < 10)) by (namespace, persistentvolumeclaim)
       for: 1h
       labels:
         tier: k8s
