@@ -2,7 +2,7 @@
   rules:
 {{- range $backup := .Values.backup_v2.backups }}
 {{- if $backup.sync_enabled }}
-  - alert: {{ $backup.name | camelcase }}SyncErrorsHigh
+  - alert: Metis{{ $backup.name | camelcase }}SyncErrorsHigh
     expr: increase(metis_replication_restart_counter{pod=~"mariadb-sync-{{$backup.name}}-[a-z0-9]{10}-[a-z0-9]{5}"}[15m]) > 2
     for: 15m
     labels:
@@ -14,7 +14,7 @@
     annotations:
       description: The sync of mariadb-{{$backup.name}} restarts frequently
       summary: Database replication restarting frequently
-  - alert: {{ $backup.name | camelcase }}SyncIncomplete
+  - alert: Metis{{ $backup.name | camelcase }}SyncIncomplete
     expr: sum(metis_sync_status{pod=~"mariadb-sync-{{$backup.name}}-[a-z0-9]{10}-[a-z0-9]{5}"}) != 3
     for: 30m
     labels:
