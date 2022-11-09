@@ -1,20 +1,22 @@
 {{- if .Values.vrops.enabled }}
+{{- range $target := $.Values.vrops.targets }}
+{{- $vropshostname := split "." $target.hostname }}
 kind: Deployment
 apiVersion: apps/v1
 metadata:
-  name: vrops-inventory-exporter
+  name: vrops-inventory-exporter-{{ $vropshostname._0 | trimPrefix "vrops-" }}
   namespace: {{ required ".Values.vrops.namespace variable missing" $.Values.vrops.namespace }}
 spec:
   selector:
     matchLabels:
-      app: vrops-inventory-exporter
+      app: vrops-inventory-exporter-{{ $vropshostname._0 | trimPrefix "vrops-" }}
       type: exporter
   template:
     metadata:
       labels:
-        app: vrops-inventory-exporter
+        app: vrops-inventory-exporter-{{ $vropshostname._0 | trimPrefix "vrops-" }}
         type: exporter
-        target: vrops-inventory-exporter
+        target: vrops-inventory-exporter-{{ $vropshostname._0 | trimPrefix "vrops-" }}
         alert-tier: vmware
         alert-service: vrops
     spec:
@@ -29,6 +31,8 @@ spec:
            args:
              - -m
              - /config/collector_config.yaml
+             - -t
+             - {{ required "$target.hostname missing" $target.hostname }}
              - -c
              - InventoryCollector
            env:
@@ -53,4 +57,5 @@ spec:
         - configMap:
             name: vrops-exporter-collector-config
           name: vrops-config
+{{- end }}
 {{- end }}

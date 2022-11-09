@@ -1,17 +1,19 @@
+{{- range $target := $.Values.vrops.targets }}
+{{- $vropshostname := split "." $target.hostname }}
 apiVersion: monitoring.coreos.com/v1
 kind: PodMonitor
 
 metadata:
-  name: prometheus-{{ .Values.vrops.prometheusName }}-vrops-inventory-exporter
+  name: vrops-inventory-exporter-{{ $vropshostname._0 | trimPrefix "vrops-" }}
   labels:
     prometheus: {{ .Values.vrops.prometheusName }}
 
 spec:
-  jobLabel: vrops-inventory-exporter
+  jobLabel: vrops-inventory-exporter-{{ $vropshostname._0 | trimPrefix "vrops-" }}
 
   selector:
     matchLabels:
-      target: vrops-inventory-exporter
+      target: vrops-inventory-exporter-{{ $vropshostname._0 | trimPrefix "vrops-" }}
 
   namespaceSelector:
     matchNames: [{{ required ".Values.vrops.namespace variable missing" $.Values.vrops.namespace }}]
@@ -28,3 +30,4 @@ spec:
       metricRelabelings:
         - action: labeldrop
           regex: "container|instance|endpoint|pod|namespace|service"
+{{- end }}
