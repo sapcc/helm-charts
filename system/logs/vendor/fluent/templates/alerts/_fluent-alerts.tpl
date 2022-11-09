@@ -11,7 +11,7 @@ groups:
 {{ end }}
     labels:
       context: logshipping
-      service: elk
+      service: logs
       severity: warning
       support_group: observability
       tier: os
@@ -32,7 +32,7 @@ groups:
     for: 6h
     labels:
       context: logshipping
-      service: elk
+      service: logs
       severity: warning
       support_group: observability
       tier: os
