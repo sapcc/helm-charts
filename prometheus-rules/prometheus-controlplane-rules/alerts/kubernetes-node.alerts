@@ -1,3 +1,5 @@
+# vim: set ft=yaml:
+
 groups:
 - name: controlplane.alerts
   rules:
@@ -99,3 +101,20 @@ groups:
       annotations:
         description: Bond {{ $labels.master }} on {{ $labels.node }} is degraded. Imminent network outage for this node.
         summary: Bond {{ $labels.master }} is degraded. Node network connectivity is not HA. Switch failover or ACI upgrade will cause an outage!
+
+    ### PVC usage ###
+
+    - alert: KubernetesHighPVCUsagePredicted
+      expr: sum((kubelet_volume_stats_available_percent* 100 > 70) and (predict_linear(kubelet_volume_stats_available_percent[1d], 7 * 24 * 3600) * 100 > 90)) by (namespace, persistentvolumeclaim)
+      for: 1h
+      labels:
+        tier: k8s
+        service: resources
+        severity: warning
+        context: storage
+        meta: "PVC {{ $labels.namespace }}/{{ $labels.persistentvolumeclaim }} is set to exceed 90% usage soon"
+        support_group: containers
+        playbook: '/docs/support/playbook/kubernetes/pvc_usage'
+      annotations:
+        description: "The PVC {{ $labels.namespace }}/{{ $labels.persistentvolumeclaim }} is predicted to exceed 90% storage consumption in the next 7 days."
+        summary: "PVC {{ $labels.namespace }}/{{ $labels.persistentvolumeclaim }} is set to exceed 90% usage soon"
