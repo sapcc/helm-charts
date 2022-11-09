@@ -49,7 +49,7 @@ spec:
               name: instances
       containers:
         - name: nova-compute
-          image: {{ required ".Values.global.registry is missing" .Values.global.registry}}/ubuntu-source-nova-compute:{{ .Values.imageVersionNovaCompute | default .Values.imageVersion | required "Please set .imageVersion or similar" }}
+          image: {{ tuple . "compute" | include "container_image_nova" }}
           imagePullPolicy: IfNotPresent
           securityContext:
             privileged: true
@@ -106,7 +106,7 @@ spec:
               subPath: rootwrap.conf
               readOnly: true
         - name: nova-libvirt
-          image: {{ required ".Values.global.registry is missing" .Values.global.registry}}/ubuntu-source-nova-libvirt:{{.Values.imageVersionNovaLibvirt | default .Values.imageVersionNova | default .Values.imageVersion | required "Please set nova.imageVersion or similar" }}
+          image: {{ tuple . "libvirt" | include "container_image_nova" }}
           imagePullPolicy: IfNotPresent
           securityContext:
             privileged: true
@@ -157,7 +157,7 @@ spec:
             - mountPath: /container.init
               name: nova-container-init
         - name: nova-virtlog
-          image: {{ required ".Values.global.registry is missing" .Values.global.registry}}/ubuntu-source-nova-libvirt:{{.Values.imageVersionNovaLibvirt | default .Values.imageVersion | required "Please set nova.imageVersion or similar"}}
+          image: {{ tuple . "libvirt" | include "container_image_nova" }}
           imagePullPolicy: IfNotPresent
           securityContext:
             privileged: true
