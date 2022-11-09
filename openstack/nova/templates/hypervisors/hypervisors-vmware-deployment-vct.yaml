@@ -46,7 +46,7 @@ template: |
 {{- include "kubernetes_maintenance_affinity" . | indent 4 }}
         containers:
         - name: nova-compute
-          image: {{ required ".Values.global.registry is missing" .Values.global.registry}}/ubuntu-source-nova-compute:{{ .Values.imageVersionNovaCompute | default .Values.imageVersionNova | default .Values.imageVersion | required "Please set .imageVersion or similar" }}
+          image: {{ tuple . "compute" | include "container_image_nova" }}
           imagePullPolicy: IfNotPresent
           terminationGracePeriodSeconds: 900
           command:
