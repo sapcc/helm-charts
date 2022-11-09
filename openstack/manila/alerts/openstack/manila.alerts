@@ -119,7 +119,7 @@ groups:
       summary: Multiple Manila Shares resize error
 
   - alert: OpenstackManilaShareServersStuck
-    expr: delta(sum(manila_share_servers_stuck_count_gauge) by (manila_host)[1d:]) > 1
+    expr: sum by (id, manila_host, status) (manila_share_servers_stuck_max_duration_gauge) > 24*3600 <= 7*24*3600
     for: 15m
     labels:
       dashboard: manila
@@ -128,7 +128,7 @@ groups:
       tier: os
       support_group: compute-storage-api
     annotations:
-      description: More than one Share server got stuck on {{ $labels.manila_host }} since yesterday
+      description: Share server {{ $lables.id }} got stuck on {{ $labels.manila_host }} since yesterday
       summary: Manila share servers in stuck state
 
   - alert: OpenstackManilaShareServersStuckHigh
