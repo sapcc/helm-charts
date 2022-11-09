@@ -63,7 +63,12 @@ spec:
             - kubernetes-entrypoint
           env:
             - name: COMMAND
-              value: "manila-scheduler --config-file /etc/manila/manila.conf"
+              value: "/container.init/manila-scheduler-start"
+            - name: NODE_NAME
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: spec.nodeName
             - name: NAMESPACE
               value: {{ .Release.Namespace }}
             - name: DEPENDENCY_SERVICE
@@ -100,6 +105,9 @@ spec:
             - name: manila-etc
               mountPath: /etc/manila/manila.conf
               subPath: manila.conf
+              readOnly: true
+            - name: manila-bin
+              mountPath: /container.init
               readOnly: true
             - name: manila-etc
               mountPath: /etc/manila/policy.yaml
