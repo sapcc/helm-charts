@@ -30,4 +30,16 @@
       summary: Database replication is incomplete
 {{- end }}
 {{- end }}
+  - alert: MetisMetadataLocksIncreased
+    expr: metis_metadata_locks > 0
+    for: 15m
+    labels:
+      context: db
+      service: metis
+      severity: info
+      support_group: {{ required "$.Values.mariadb.alerts.support_group missing" $.Values.mariadb.alerts.support_group}}
+      tier: {{ required "$.Values.mariadb.alerts.tier missing" $.Values.mariadb.alerts.tier }}
+    annotations:
+      description: MetisDB has 1 or more metadata locks for >15m
+      summary: MetisDB has metadata locks
 {{- end }}
