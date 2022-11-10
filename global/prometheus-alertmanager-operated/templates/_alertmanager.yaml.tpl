@@ -47,7 +47,7 @@ inhibit_rules:
     equal: ['node']
 
 route:
-  group_by: ['region', 'service', 'alertname', 'cluster']
+  group_by: ['region', 'service', 'alertname', 'cluster', 'support_group']
   group_wait: 1m
   group_interval: 7m
   repeat_interval: 12h
