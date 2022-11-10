@@ -15,7 +15,9 @@ filter {
         "match.%{WORD:action}.%{INT:rule_id}.%{WORD:direction}.%{INT:length}.(?<protocol>PROTO [0-9]+).%{IP:src_ip}->%{IP:dst_ip}.%{NOTSPACE:sg_id}",
         "match.%{WORD:action}.%{INT:rule_id}.%{WORD:direction}.%{INT:length}.%{WORD:protocol}.%{IP:src_ip}/%{INT:src_port}->%{IP:dst_ip}/%{INT:dst_port}.%{WORD:tcp_flags}.%{NOTSPACE:sg_id}",
         "match.%{WORD:action}.%{INT:rule_id}.%{WORD:direction}.%{INT:length}.%{WORD:protocol}.%{INT:icmp_type}.%{INT:icmp_code}.%{IP:src_ip}->%{IP:dst_ip}.%{NOTSPACE:sg_id}",
+        "match.%{WORD:action}.%{INT:rule_id}.%{WORD:direction}.%{INT:length}.%{WORD:protocol}.%{IP:src_ip}->%{IP:dst_ip}.%{NOTSPACE:sg_id}",
         "TERM.%{INT:rule_id}.%{WORD:direction}.%{WORD:protocol}.%{IP:src_ip}/%{INT:src_port}->%{IP:dst_ip}/%{INT:dst_port}.%{INT:in_count}/%{INT:out_count}.%{INT:in_size}/%{INT:out_size}.?%{NOTSPACE:sg_id}",
+        "TERM.%{INT:rule_id}.%{WORD:direction}.%{WORD:protocol}.%{INT:icmp_type}.%{INT:icmp_code}.%{IP:src_ip}->%{IP:dst_ip}.%{INT:in_count}/%{INT:out_count}.%{INT:in_size}/%{INT:out_size}.?%{NOTSPACE:sg_id}",
         "TERM.%{WORD:action}.%{INT:rule_id}.%{WORD:direction}.%{WORD:protocol}.%{IP:src_ip}/%{INT:src_port}->%{IP:dst_ip}/%{INT:dst_port}.%{INT:in_count}/%{INT:out_count}.%{INT:in_size}/%{INT:out_size}.?%{NOTSPACE:sg_id}",
         "%{WORD:action}.%{INT:rule_id}.%{WORD:direction}.%{WORD:protocol}.%{WORD:tcp_flags}.%{IP:src_ip}/%{INT:src_port}->%{IP:dst_ip}/%{INT:dst_port}.%{INT:in_count}/%{INT:out_count}.%{INT:in_size}/%{INT:out_size}.?%{NOTSPACE:sg_id}"
       ] }
