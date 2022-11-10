@@ -154,6 +154,7 @@ token_cache_time = 600
 include_service_catalog = true
 service_type = compute
 service_token_roles_required = True
+memcache_use_advanced_pool = True
 
 #[upgrade_levels]
 #compute = auto
