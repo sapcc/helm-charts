@@ -84,6 +84,7 @@ function cleanup_tempest_leftovers() {
     cleanup_security_groups
   done
 
+
   # Delete all networks, routers, subnets and subnet pools for Admin
   export OS_USERNAME='neutron-tempestadmin1'
   export OS_TENANT_NAME='neutron-tempest-admin1'
@@ -91,6 +92,9 @@ function cleanup_tempest_leftovers() {
   cleanup_ports_and_networks
   for subnet in $(openstack subnet list | grep -E "tempest-lb_member" | awk '{ print $4 }'); do echo Subnet ${subnet} will be deleted; openstack subnet delete ${subnet}; done
   for pool in $(openstack subnet pool list | grep -E "tempest" | awk '{ print $2 }'); do openstack subnet pool delete ${pool}; done
+  for addscope in $(openstack address scope list | grep "tempest-\w*" |  awk '{ print $2 }'); do
+    openstack address scope delete ${addscope}
+  done
   cleanup_security_groups
 }
 
