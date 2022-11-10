@@ -85,7 +85,8 @@ groups:
           summary: 'Nearly Full Capacity Usage on {{$labels.filer}}'
 
       - alert: NetAppFilerAggregateIsOffline
-        expr: netapp_aggregate_state_is_online == 0
+        expr: netapp_aggregate_state_is_online == 0 
+          OR (count (netapp_aggregate_state_is_online offset 24h) by (filer, aggregate) unless count(netapp_aggregate_state_is_online) by (filer, aggregate))
         for: 5m
         labels:
           severity: warning
