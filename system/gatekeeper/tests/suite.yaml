@@ -364,11 +364,16 @@ tests:
   template: rendered-chart/gatekeeper/templates/constrainttemplate-pod-labels.yaml
   constraint: rendered-chart/gatekeeper-config/templates/constraint-pod-labels.yaml
   cases:
+  - name: pod-invalid-labels
+    object: fixtures/pod-labels/pod-invalid-labels.yaml
+    assertions:
+    - violations: 1
+      message: '^support-group=gatekeeper,service=containers: pod has an unacceptable label value: ccloud/support-group="gatekeeper"$'
   - name: pod-no-labels
     object: fixtures/pod-labels/pod-no-labels.yaml
     assertions:
     - violations: 1
-      message: '^support-group=foo-group,service=dummy: pod does not have either one of the required labels: \["alert-service", "alert-tier"\]$'
+      message: '^support-group=none,service=none: pod does not have the required label: ccloud/support-group$'
   - name: pod-labels
     object: fixtures/pod-labels/pod-labels.yaml
     assertions:
