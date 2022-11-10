@@ -16,9 +16,22 @@ groups:
 
   # the display_name label of a service is only available in the windows_service_info metrics. Hence we have to join the two.
   # if a service is getting restarted, the process_id changes. So, we have to use count to get a single metric
-  - alert: ADServiceDownInfo
+  - alert: ADServiceDownWarn
+    expr: count(windows_service_state{state!="running", job="win-exporter-ad",  name=~"adws|dns|ntds"} > 0) by (server_name, name, state) * on(server_name, name) group_left(display_name) count(windows_service_info) by(server_name, name, display_name)
+    for: 1h
+    labels:
+      severity: warning
+      tier: ad
+      service: windows-exporter
+      context: "{{ $labels.server_name }}"
+      meta: "Service {{ $labels.name }} in State {{ $labels.state }} on node {{ $labels.server_name }}"
+    annotations:
+      description: "Service {{ $labels.display_name }} in State {{ $labels.state }} on node {{ $labels.server_name }}. Check the service!"
+      summary: "Service {{ $labels.name }} in State {{ $labels.state }} on node {{ $labels.server_name }}"
+
+  - alert: ADWinServiceDownInfo
     expr: count(windows_service_state{state!="running", job="win-exporter-ad"} > 0) by (server_name, name, state) * on(server_name, name) group_left(display_name) count(windows_service_info) by(server_name, name, display_name)
-    for: 30m
+    for: 1h
     labels:
       severity: info
       tier: ad
@@ -31,7 +44,7 @@ groups:
 
   - alert: ADDiskFullInfo
     expr: count(100 - (windows_logical_disk_free_bytes{volume!~"HarddiskVolume.*",job="win-exporter-ad"}*100/windows_logical_disk_size_bytes{volume!~"HarddiskVolume.*",job="win-exporter-ad"}) > 80) by (server_name, volume) 
-    for: 30m
+    for: 1h
     labels:
       severity: info
       tier: ad
@@ -65,7 +78,7 @@ groups:
       context: "{{ $labels.server_name }}"
       meta: "High CPU Load on node {{ $labels.server_name }}"
     annotations:
-      description: "High CPU Load on node {{ $labels.server_name }}"
+      description: "High CPU Load on node {{ $labels.server_name }}. Check the task manager for processes with high CPU usage!"
       summary: "High CPU Load on node {{ $labels.server_name }}"
 
   - alert: ADHighMemUsage
@@ -78,5 +91,5 @@ groups:
       context: "{{ $labels.server_name }}"
       meta: "High Memory usage on node {{ $labels.server_name }}"
     annotations:
-      description: "High Memory usage on node {{ $labels.server_name }}"
+      description: "High Memory usage on node {{ $labels.server_name }}. Check the task manager for processes with high Memory usage!"
       summary: "High Memory usage on node {{ $labels.server_name }}"
