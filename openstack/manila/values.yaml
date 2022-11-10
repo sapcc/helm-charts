@@ -427,30 +427,25 @@ mysql_metrics:
         UNION SELECT 'none' AS manila_host, 'none' AS id, 'none' AS share_network_subnet_id, 'none' AS status, 0 AS count_gauge;
       values:
         - "count_gauge"
-    - help: Manila Share servers Stuck Max Duration
+    - help: Manila Share servers Stuck Duration in Seconds
       labels:
         - "manila_host"
         - "id"
         - "share_network_subnet_id"
         - "status"
-      name: manila_share_servers_stuck_max_duration_gauge
+      name: manila_share_servers_stuck_duration_seconds
       query: |
         SELECT
           host AS manila_host,
           id,
           share_network_subnet_id,
           status,
-          MAX(NOW() - COALESCE(updated_at, created_at)) AS max_duration_gauge
+          TIME_TO_SEC(TIMEDIFF(NOW(), COALESCE(updated_at, created_at))) AS duration
         FROM share_servers
         WHERE deleted='False' AND status in ('deleting','creating','error','error_unmanage','error_manage') AND (COALESCE(updated_at, created_at) < DATE_SUB(now(), INTERVAL 15 MINUTE))
-        GROUP BY
-          manila_host,
-          id,
-          share_network_subnet_id,
-          status
-        UNION SELECT 'none' AS manila_host, 'none' AS id, 'none' AS share_network_subnet_id, 'none' AS status, 0 AS max_duration_gauge;
+        UNION SELECT 'none' AS manila_host, 'none' AS id, 'none' AS share_network_subnet_id, 'none' AS status, 0 AS duration;
       values:
-        - "max_duration_gauge"
+        - "duration"
     - help: Manila Share Access Stuck Max Duration
       labels:
         - "access_id"
