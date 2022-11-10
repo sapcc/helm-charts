@@ -5,4 +5,4 @@ groups:
   rules:
 
     - record: kubelet_volume_stats_available_percent
-      expr: '100 * kubelet_volume_stats_available_bytes / kubelet_volume_stats_capacity_bytes'
+      expr: '(min by (persistentvolumeclaim, namespace) (100 * kubelet_volume_stats_available_bytes / kubelet_volume_stats_capacity_bytes)) * on(persistentvolumeclaim, namespace) group_left(label_ccloud_support_group, label_ccloud_service) (max by (persistentvolumeclaim, namespace, label_ccloud_support_group, label_ccloud_service) (kube_persistentvolumeclaim_labels))'

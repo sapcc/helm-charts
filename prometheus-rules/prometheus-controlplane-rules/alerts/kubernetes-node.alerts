@@ -109,11 +109,11 @@ groups:
       for: 1h
       labels:
         tier: k8s
-        service: resources
+        support_group: '{{ $labels.label_ccloud_support_group | default "containers" }}'
+        service: '{{ $labels.label_ccloud_service | default "resources" }}'
         severity: warning
         context: storage
         meta: "PVC {{ $labels.namespace }}/{{ $labels.persistentvolumeclaim }} is set to exceed 90% usage soon"
-        support_group: containers
         playbook: '/docs/support/playbook/kubernetes/pvc_usage'
       annotations:
         description: "The PVC {{ $labels.namespace }}/{{ $labels.persistentvolumeclaim }} is predicted to exceed 90% storage consumption in the next 7 days."
