@@ -35,7 +35,7 @@
     <labels>
 {{- if eq .Values.global.clusterType  "scaleout" }}
       cluster_type scaleout
-{{ else }}
+{{- else }}
       cluster_type controlplane
 {{- end }}
       tag ${tag}
