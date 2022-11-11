@@ -111,7 +111,7 @@
       - '{__name__=~"^ssh_(nx|xe)_ntp_configured"}'
       - '{__name__=~"^ssh_redundancy_state"}'
       - '{__name__=~"^ssh_xr_ntp_.+"}'
-      - '{__name__=~"^fluentd_.+"}'
+      - '{job="logs-fluent-exporter", __name__!~"^(fluentd_input_status_num_records_total|fluentd_output_status_num_records_total)"}'
       - '{__name__=~"^es_cluster_status"}'
       - '{__name__=~"^es_fs_path_.+"}'
       - '{__name__=~"^es_index_size_mb"}'

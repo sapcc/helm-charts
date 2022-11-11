@@ -109,7 +109,7 @@
       - '{__name__=~"^ipmi_memory_state$"}'
       - '{__name__=~"^ipmi_memory_errors$"}'
       - '{__name__=~"^ipmi_up"}'
-      - '{__name__=~"^fluentd_.+"}'
+      - '{job="logs-fluent-exporter", __name__!~"^(fluentd_input_status_num_records_total|fluentd_output_status_num_records_total)"}'
       - '{__name__=~"^bird_.+"}'
       - '{__name__=~"^pxcloudprober_.+"}'
       - '{__name__=~"^vasa_.+"}'

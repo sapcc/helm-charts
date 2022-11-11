@@ -9,11 +9,13 @@ groups:
     expr: group by (server_name,module) (snmp_apod_arista_entPhysicalName)
   - record: snmp_apod_asr_devices
     expr: group by (server_name) (snmp_apod_asr_entPhysicalName)
-- name: elk
-  rules:
-  - record: fluentd_input_by_nodename
-    expr: sum(fluentd_input_status_num_records_total) by (nodename)
 - name: elk_index_size
   rules:
   - record:  es_index_size_mb
     expr: sum by (index_docs) (es_index_store_size_bytes{elastic_cluster="elkelasticsearch",context="total"} / 1024 / 1024)
+- name: logs
+  rules:
+  - record: fluentd_input_namespace_records_total
+    expr: sum by (input_namespace,hostname,nodename) (fluentd_input_status_num_records_total)
+  - record: fluentd_output_namespace_records_total
+    expr: sum by (input_namespace,hostname,nodename) (fluentd_output_status_num_records_total)
