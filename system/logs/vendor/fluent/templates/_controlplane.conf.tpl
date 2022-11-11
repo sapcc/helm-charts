@@ -406,10 +406,6 @@
   @type null
 </match>
 
-<match kubernetes.var.log.containers.audit-logs-auditbeat-zp4p6_audit-logs_exporter.**>
-  @type null
-</match>
-
 <match kubernetes.var.log.containers.fluent**>
   @type null
 </match>
