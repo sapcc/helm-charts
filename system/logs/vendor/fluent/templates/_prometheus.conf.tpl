@@ -33,11 +33,11 @@
     type counter
     desc The total number of incoming records
     <labels>
-{{ if eq .Values.global.clusterType  "scaleout" -}}
+{{- if eq .Values.global.clusterType  "scaleout" }}
       cluster_type scaleout
 {{ else }}
       cluster_type controlplane
-{{ end }}
+{{- end }}
       tag ${tag}
       hostname ${hostname}
       nodename "#{ENV['K8S_NODE_NAME']}"
