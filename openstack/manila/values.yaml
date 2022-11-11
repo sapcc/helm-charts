@@ -303,7 +303,7 @@ mysql_metrics:
           share_id,
           status,
           host AS manila_host,
-          MAX(NOW() - COALESCE(updated_at, created_at)) AS max_duration_gauge
+          MAX(UNIX_TIMESTAMP(NOW()) - UNIX_TIMESTAMP(COALESCE(updated_at, created_at))) AS max_duration_gauge
         FROM share_instances
         WHERE deleted='False' AND status in ('deleting','error_deleting','creating','shrinking','extending', 'shrinking_error', 'extending_error') AND (COALESCE(updated_at, created_at) < DATE_SUB(now(), INTERVAL 15 MINUTE))
         GROUP BY
@@ -322,7 +322,7 @@ mysql_metrics:
           shares.id AS share_id,
           si.id AS replica_id,
           status,
-          (NOW() - COALESCE(si.updated_at, si.created_at)) AS elapsed
+          (UNIX_TIMESTAMP(NOW()) - UNIX_TIMESTAMP(COALESCE(si.updated_at, si.created_at))) AS elapsed
         FROM share_instances si
         INNER JOIN shares ON si.share_id = shares.id
         WHERE 
@@ -369,7 +369,7 @@ mysql_metrics:
           share_snapshots.share_id,
           share_snapshots.id,
           share_snapshot_instances.status,
-          MAX(NOW() - COALESCE(share_snapshot_instances.updated_at, share_snapshot_instances.created_at)) AS max_duration_gauge
+          MAX(UNIX_TIMESTAMP(NOW()) - UNIX_TIMESTAMP(COALESCE(share_snapshot_instances.updated_at, share_snapshot_instances.created_at))) AS max_duration_gauge
         FROM share_snapshots
         INNER JOIN share_snapshot_instances ON share_snapshots.id=share_snapshot_instances.snapshot_id
         WHERE share_snapshot_instances.status in ('deleting','creating') AND (COALESCE(share_snapshot_instances.updated_at, share_snapshot_instances.created_at) < DATE_SUB(now(), INTERVAL 15 MINUTE))
@@ -440,7 +440,7 @@ mysql_metrics:
           id,
           share_network_subnet_id,
           status,
-          TIME_TO_SEC(TIMEDIFF(NOW(), COALESCE(updated_at, created_at))) AS duration
+          UNIX_TIMESTAMP(NOW()) - UNIX_TIMESTAMP(COALESCE(updated_at, created_at)) AS duration
         FROM share_servers
         WHERE deleted='False' AND status in ('deleting','creating','error','error_unmanage','error_manage') AND (COALESCE(updated_at, created_at) < DATE_SUB(now(), INTERVAL 15 MINUTE))
         UNION SELECT 'none' AS manila_host, 'none' AS id, 'none' AS share_network_subnet_id, 'none' AS status, 0 AS duration;
@@ -459,7 +459,7 @@ mysql_metrics:
           share_instances.share_id as share_id,
           share_instance_id,
           state,
-          MAX(NOW() - COALESCE(access.updated_at, access.created_at)) AS max_duration_gauge
+          MAX(UNIX_TIMESTAMP(NOW()) - UNIX_TIMESTAMP(COALESCE(access.updated_at, access.created_at))) AS max_duration_gauge
         FROM share_instance_access_map as access
         JOIN share_instances on share_instances.id = access.share_instance_id
         WHERE access.deleted='False' AND access.state != 'active' AND (COALESCE(access.updated_at, access.created_at) < DATE_SUB(now(), INTERVAL 15 MINUTE))
