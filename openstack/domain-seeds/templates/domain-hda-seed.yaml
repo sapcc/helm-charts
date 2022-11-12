@@ -2,7 +2,7 @@
 apiVersion: "openstack.stable.sap.cc/v1"
 kind: "OpenstackSeed"
 metadata:
-  name: domain-hc-seed
+  name: domain-hda-seed
   labels:
     app: {{ template "fullname" . }}
     chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
@@ -13,16 +13,16 @@ spec:
   - {{.Values.global.keystoneNamespace}}/keystone-seed
 
   domains:
-  - name: hc
-    description: HANA Cloud
+  - name: hda
+    description: Hana Databases and Analytics
 
     projects:
     - name: admin
-      description: 'HC Administrators Project'
-    - name: hc-net-infra
-      description: 'Home of address-scopes, subnetpools, external networks, subnets for the hc domain'
-    - name: hc-shared-infra
-      description: 'Home of private networks, backup networks and routers for the hc domain'
+      description: 'HDA Administrators Project'
+    - name: hda-net-infra
+      description: 'Home of address-scopes, subnetpools, external networks, subnets for the hda domain'
+    - name: hda-shared-infra
+      description: 'Home of private networks, backup networks and routers for the hda domain'
     - name: support
       description: 'Support teams'
     - name: api_support
@@ -42,11 +42,11 @@ spec:
       parent: support
 
     groups:
-    - name: HC_API_SUPPORT
+    - name: HDA_API_SUPPORT
       role_assignments:
-      - domain: hc
+      - domain: hda
         role: admin
-      - domain: hc
+      - domain: hda
         role: cloud_identity_viewer
         inherited: true
       - project: api_support
@@ -54,9 +54,9 @@ spec:
       - project: api_support
         role: member
 
-    - name: HC_COMPUTE_SUPPORT
+    - name: HDA_COMPUTE_SUPPORT
       role_assignments:
-      - domain: hc
+      - domain: hda
         role: cloud_identity_viewer
         inherited: true
       - project: compute_support
@@ -64,9 +64,9 @@ spec:
       - project: compute_support
         role: member
 
-    - name: HC_STORAGE_SUPPORT
+    - name: HDA_STORAGE_SUPPORT
       role_assignments:
-      - domain: hc
+      - domain: hda
         role: cloud_identity_viewer
         inherited: true
       - project: storage_support
@@ -74,9 +74,9 @@ spec:
       - project: storage_support
         role: member
 
-    - name: HC_NETWORK_SUPPORT
+    - name: HDA_NETWORK_SUPPORT
       role_assignments:
-      - domain: hc
+      - domain: hda
         role: cloud_identity_viewer
         inherited: true
       - project: network_support
@@ -84,9 +84,9 @@ spec:
       - project: network_support
         role: member
 
-    - name: HC_SERVICE_DESK
+    - name: HDA_SERVICE_DESK
       role_assignments:
-      - domain: hc
+      - domain: hda
         role: cloud_identity_viewer
         inherited: true
       - project: service_desk
@@ -94,16 +94,16 @@ spec:
       - project: service_desk
         role: member
 
-    - name: HC_DOMAIN_MEMBERS
+    - name: HDA_DOMAIN_MEMBERS
       role_assignments:
-      - domain: hc
+      - domain: hda
         role: member
 
-    - name: HC_DOMAIN_ADMINS
+    - name: HDA_DOMAIN_ADMINS
       role_assignments:
-      - domain: hc
+      - domain: hda
         role: admin
-      - domain: hc
+      - domain: hda
         role: member
       - project: admin
         role: admin
@@ -114,16 +114,16 @@ spec:
       - project: support
         role: member
 
-    - name: HC_DOMAIN_NETWORK_ADMINS
+    - name: HDA_DOMAIN_NETWORK_ADMINS
       role_assignments:
-      - project: hc-net-infra
+      - project: hda-net-infra
         role: admin
-      - project: hc-shared-infra
+      - project: hda-shared-infra
         role: admin
 
-    - name: HC_DOMAIN_RESOURCE_ADMINS
+    - name: HDA_DOMAIN_RESOURCE_ADMINS
       role_assignments:
-      - domain: hc
+      - domain: hda
         role: admin
 
     config:
@@ -149,13 +149,13 @@ spec:
         user_enabled_mask: 2
         user_enabled_default: "512"
         user_attribute_ignore: default_project_id
-        user_filter: (memberOf=CN=HC_DOMAIN_USERS,OU=HC,OU=OSDomains,OU=CCloud,{{ .Values.ldapSuffix }})
+        user_filter: (memberOf=CN=HDA_DOMAIN_USERS,OU=HDA,OU=OSDomains,OU=CCloud,{{ .Values.ldapSuffix }})
         group_objectclass: group
         group_id_attribute: cn
         group_name_attribute: name
         group_desc_attribute: description
         group_member_attribute: member
-        group_tree_dn: OU=HC,OU=OSDomains,OU=CCloud,{{ .Values.ldapSuffix }}
+        group_tree_dn: OU=HDA,OU=OSDomains,OU=CCloud,{{ .Values.ldapSuffix }}
         use_pool: {{ .Values.ldapUsePool }}
         pool_size: 100
         use_auth_pool: {{ .Values.ldapUseAuthPool }}
