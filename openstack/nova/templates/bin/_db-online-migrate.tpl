@@ -7,6 +7,10 @@ available_commands_text=$(nova-manage --help | awk '/Command categories/ {getlin
 {{- if (.Values.imageVersion | hasPrefix "rocky" | not) }}
 
 $nova_manage db online_data_migrations
+
+{{- if .Values.cell2.enabled }}
+$nova_manage --config-file /etc/nova/nova-cell2.conf db online_data_migrations
+{{- end }}
 {{- end }}
 
 if echo "${available_commands_text}" | grep -q -E '[{,]placement[},]'; then
