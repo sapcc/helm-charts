@@ -1,0 +1,39 @@
+{{- if contains "xena" .Values.imageVersion }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: "nova-bump-service-version"
+  labels:
+    system: openstack
+    type: configuration
+{{ tuple . "nova" "bump-service-version" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 4 }}
+  annotations:
+    "helm.sh/hook": pre-upgrade
+    "helm.sh/hook-delete-policy": before-hook-creation
+spec:
+  template:
+    metadata:
+      name: "nova-bump-service-version"
+      labels:
+        system: openstack
+        type: configuration
+{{ tuple . "nova" "bump-service-version" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: bump
+        image: {{ required ".Values.global.dockerHubMirror is missing" .Values.global.dockerHubMirror }}/{{ .Values.mariadb.image | default "library/mariadb:10.5.12" }}
+        command:
+        - /usr/bin/env
+        - bash
+        - -c
+        - |
+          mariadb -v -hnova-mariadb -u{{ .Values.dbUser }} --password='{{ default .Values.dbPassword .Values.global.dbPassword }}' '{{ .Values.dbName }}' -e '
+          UPDATE services SET version = 54 WHERE deleted = 0 AND `binary` = 'nova-compute' AND version < 54;
+          ';
+          {{- if .Values.cell2.enabled }}
+          mariadb -v -hnova-{{ .Values.cell2.name }}-mariadb -u{{ .Values.cell2dbUser }} --password='{{ default .Values.cell2dbPassword .Values.global.dbPassword }}' '{{ .Values.cell2dbName }}' -e '
+          UPDATE services SET version = 54 WHERE deleted = 0 AND `binary` = 'nova-compute' AND version < 54;
+          '
+          {{- end }}
+{{- end }}
