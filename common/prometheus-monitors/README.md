@@ -48,7 +48,6 @@ The following table lists the configurable parameters of the `prometheus-monitor
 | `customRelabelings` | `[]` | RelabelConfigs to apply to samples before scraping. Prometheus Operator automatically adds relabelings for a few standard Kubernetes fields. The original scrape job’s name is available via the __tmp_prometheus_job_name label. More info: <https://prometheus.io/docs/prometheus/latest/configuration/configuration/#relabel_config> also see [[]RelabelConfig](https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api.md#monitoring.coreos.com/v1.RelabelConfig) |
 | `customMetricRelabelings` | `[]` | MetricRelabelConfigs to apply to samples before ingestion. see [[]RelabelConfig](https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api.md#monitoring.coreos.com/v1.RelabelConfig) |
 
-
 ## Additional Documentation
 
 - API Spec for [PodMonitor](https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api.md#monitoring.coreos.com/v1.PodMonitor)
