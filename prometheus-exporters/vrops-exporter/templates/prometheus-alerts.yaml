@@ -1,18 +1,33 @@
 {{- $values := .Values.vrops }}
 {{- if $values.alerts.enabled }}
-{{- range $path, $bytes := .Files.Glob "alerts/*.alerts" }}
----
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
 
 metadata:
-  name: {{ printf "vrops-exporter-%s" $path | replace "/" "-" }}
+  name: vrops-exporter-alerts
   labels:
     app: vrops-exporter
     prometheus: {{ required " $values.prometheusName missing" $values.prometheusName }}
 
 spec:
-{{ printf "%s" $bytes | indent 2 }}
-
-{{- end }}
+  groups:
+  - name: vrops-exporter.alerts
+    rules:
+    - alert: VropsExporterInventoryDataMissing
+      expr: vrops_inventory_empty
+      for: 10m
+      labels:
+        context: vrops-exporter
+        severity: critical
+        tier: vmware
+        service: exporter
+        support_group: observability
+        meta: "vrops-exporter inventory is not having any data for {{ $labels.target }} anymore."
+      annotations:
+        summary: "vrops-exporterinventory is not having any data for {{ $labels.target }} anymore."
+        description: |
+          vrops-exporter collectors no longer getting resources
+          from which to retrieve new metrics. The inventory should
+          provide at least one iteration of the current resources
+          available in vrops.
 {{- end }}
