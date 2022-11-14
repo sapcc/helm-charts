@@ -62,6 +62,9 @@ netapp_enable_logical_space_reporting = False
 # Set last transfer size limit to 10 MB (10240 KB)
 netapp_snapmirror_last_transfer_size_limit = 10240
 
+# Set asynchronous SnapMirror schedule to 10 minutes
+netapp_snapmirror_schedule = "10min"
+
 # The percentage of backend capacity reserved. Default 0 (integer value)
 
 {{- if eq 100 (int $share.reserved_share_percentage)}}
