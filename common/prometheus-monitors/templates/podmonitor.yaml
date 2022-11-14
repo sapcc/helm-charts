@@ -1,4 +1,7 @@
-{{- if and .Values.podMonitor.enabled ( not .Values.serviceMonitor.enabled ) }}
+{{- if .Values.podMonitor.enabled }}
+{{- if .Values.serviceMonitor.enabled }}
+{{ fail "failed to render PodMonitor. ServiceMonitor is also enabed. Only one is allowed."}}
+{{- end }}
 apiVersion: monitoring.coreos.com/v1
 kind: PodMonitor
 metadata:
@@ -7,13 +10,22 @@ metadata:
     prometheus: {{ required "required '.Values.prometheus' is not specified" .Values.prometheus }}
 
 spec:
+  jobLabel: {{ .Release.Namespace }}
   selector:
+{{- if and ( empty .Values.matchLabels ) ( empty .Values.matchExpressions ) }}
+{{ fail "required either '.Values.matchLabels' or '.Values.matchExpressions' but neither is defined" }}
+{{- end }}
+
+{{- if .Values.matchLabels }}
     matchLabels:
-    
-    {{- range ( required "required '.Values.labelSelector' is not specified" .Values.labelSelector ) }}
-      {{ .key }}: {{ .value | quote }}
-    {{- end }}
-  
+{{ .Values.matchLabels | toYaml | indent 6 }}
+{{- end }}
+
+{{- if .Values.matchExpressions }}
+    matchExpressions:
+{{ .Values.matchExpressions | toYaml | indent 6 }}
+{{- end }}
+
   namespaceSelector:
     matchNames:
 {{  default (list .Release.Namespace ) .Values.namespaces | toYaml | indent 6 }}
@@ -34,7 +46,9 @@ spec:
             - __meta_kubernetes_pod_name
           targetLabel: kubernetes_pod_name
 {{ include "prometheus.defaultRelabelConfig" .  | indent 8 }}
+{{- if .Values.customRelabelings }}
 {{ .Values.customRelabelings | toYaml | indent 8 }}
+{{- end }}
 {{- if .Values.customMetricRelabelings }}
       metricRelabelings:
 {{ .Values.customMetricRelabelings | toYaml | indent 8 }}
