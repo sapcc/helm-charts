@@ -250,7 +250,7 @@ groups:
       meta: "Critical NSX-T management service `{{ $labels.nsxt_mgmt_service }}` has failed. ({{ $labels.nsxt_mgmt_node }}, {{ $labels.nsxt_adapter }}) https://{{ $labels.target }}"
       no_alert_on_absence: "true"
     annotations:
-      description: "CRITICAL: NSX-T management service `{{ $labels.nsxt_mgmt_service }}` has failed. ({{ $labels.nsxt_mgmt_node }}, {{ $labels.nsxt_adapter }}) https://{{ $labels.target }}"
+      description: {{ $labels.description }}
       summary: "CRITICAL: NSX-T management service `{{ $labels.nsxt_mgmt_service }}` has failed. ({{ $labels.nsxt_mgmt_node }}, {{ $labels.nsxt_adapter }}) https://{{ $labels.target }}"
 
   - alert: NSXTManagementServiceHasFailed
@@ -265,7 +265,7 @@ groups:
       meta: "NSX-T management service `{{ $labels.nsxt_mgmt_service }}` has failed. ({{ $labels.nsxt_mgmt_node }}, {{ $labels.nsxt_adapter }}). https://{{ $labels.target }}"
       no_alert_on_absence: "true"
     annotations:
-      description: "WARNING: NSX-T management service `{{ $labels.nsxt_mgmt_service }}` has failed. ({{ $labels.nsxt_mgmt_node }}, {{ $labels.nsxt_adapter }}). https://{{ $labels.target }}"
+      description: {{ $labels.description }}
       summary: "WARNING: NSX-T management service `{{ $labels.nsxt_mgmt_service }}` has failed. ({{ $labels.nsxt_mgmt_node }}, {{ $labels.nsxt_adapter }}). https://{{ $labels.target }}"
 
   - alert: NSXTTransportNodeConnectivityNotUP
@@ -283,22 +283,8 @@ groups:
       playbook: docs/devops/alert/nsxt/#Transport_node_status_not_UP_in_NSXT
       no_alert_on_absence: "true"
     annotations:
-      description: "Transport node {{ $labels.nsxt_transport_node }} Controller/Manager Connectivity status is not UP. https://{{ $labels.target }}."
+      description: {{ $labels.description }}
       summary: "Transport node {{ $labels.nsxt_transport_node }} Controller/Manager Connectivity status is not UP. https://{{ $labels.target }}. "
-
-  - alert: VROpsNSXTAdapterNotReceivingData
-    expr: vrops_nsxt_adapter_alert_info{alert_name="Adapter instance is not receiving data"}
-    labels:
-      severity: warning
-      tier: vmware
-      service: compute
-      support_group: compute
-      playbook: docs/devops/alert/nsxt/#vrops-nsx-t-adapter-is-not-receiving-data-vropsnsxtadapternotreceivingdata
-      meta: "vROPs NSX-T adapter is not receiving data for `{{ $labels.nsxt_adapter }}`. https://{{ $labels.target }}"
-      no_alert_on_absence: "true"
-    annotations:
-      description: "vROPs NSX-T adapter is not receiving data for `{{ $labels.nsxt_adapter }}`. https://{{ $labels.target }}"
-      summary: "vROPs NSX-T adapter is not receiving data for `{{ $labels.nsxt_adapter }}`. https://{{ $labels.target }}"
 
   - alert: NSXTLogicalSwitchStateFailed
     expr: vrops_nsxt_logical_switch_state{state="FAILED"}
