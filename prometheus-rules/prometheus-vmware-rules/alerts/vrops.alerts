@@ -1,13 +1,13 @@
 groups:
 - name: monitoring.alerts
   rules:
-  - alert: VROpsAPIDown
+  - alert: VropsAPIDown
     expr: |
       (sum by (target) (vrops_api_response{collector=~"vc.*"}) / 
       count by (target) (vrops_api_response{collector=~"vc.*"}) > 500) 
     for: 10m
     labels:
-      severity: warning
+      severity: critical
       tier: vmware
       service: compute
       support_group: compute
@@ -20,7 +20,26 @@ groups:
       description: |
         All collectors of the vrops-exporter report HTTP status codes above 500, 
         which indicates that vrops is reporting internal server errors or is unreachable. 
-        Check if vrops is running and healthy.      
+        Check if vrops is running and healthy.
+
+  - alert: VropsTokenAcquisitionFailed
+    expr: vrops_api_response{get_request="token"} >= 500
+    for: 15m
+    labels:
+      severity: warning
+      tier: vmware
+      service: compute
+      support_group: compute
+      context: vrops
+      playbook: docs/devops/alert/vcenter/vrops.html#vrops_api_down
+      dashboard: vrops-exporter-status
+      meta: "Token acquisition failed for `https://{{ $labels.target }}`"
+    annotations:
+      summary: "Token acquisition failed for `https://{{ $labels.target }}`"
+      description: |
+        A failed token acquisition for this vrops. This indicates
+        that the vrops system is not responding and current
+        monitoring data cannot be generated.
 
   - alert: VROpsDiskpaceUsageCritical
     expr: vrops_virtualmachine_guestfilesystem_storage_db_percentage{virtualmachine=~"vrops.*-vc-.+"} > 90
