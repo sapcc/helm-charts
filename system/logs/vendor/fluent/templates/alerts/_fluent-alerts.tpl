@@ -3,10 +3,10 @@ groups:
   rules:
   - alert: ElkFluentLogsMissing
 {{ if eq .Values.global.clusterType  "scaleout" }}
-    expr: sum(rate(fluentd_output_status_num_records_total{job="logs-fluent-exporter",cluster_type!="controlplane",component="fluent"}[60m])) by (nodename,pod) == 0
+    expr: sum(rate(fluentd_output_namespace_records_total{job="logs-fluent-exporter",cluster_type!="controlplane",job="logs-fluent-exporter"}[60m])) by (nodename,pod) == 0
     for: 360m
 {{ else }}
-    expr: sum(rate(fluentd_output_status_num_records_total{job="logs-fluent-exporter",component="fluent"}[60m])) by (nodename,pod) == 0
+    expr: sum(rate(fluentd_output_namespace_records_total{job="logs-fluent-exporter"}[60m])) by (nodename,pod) == 0
     for: 180m
 {{ end }}
     labels:
