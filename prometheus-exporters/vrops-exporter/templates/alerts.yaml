@@ -1,0 +1,18 @@
+{{- $values := .Values.vrops }}
+{{- if $values.alerts.enabled }}
+{{- range $path, $bytes := .Files.Glob "alerts/*.alerts" }}
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+
+metadata:
+  name: vrops-exporter-alerts
+  labels:
+    app: vrops-exporter
+    prometheus: {{ required " $values.prometheusName missing" $values.prometheusName }}
+
+spec:
+{{ printf "%s" $bytes | indent 2 }}
+
+{{- end }}
+{{- end }}
