@@ -1,0 +1,27 @@
+global:
+  region: test-region
+  clusterType: test
+
+podMonitor:
+  enabled: false
+serviceMonitor:
+  enabled: true
+
+prometheus: dummy-prometheus
+
+namespaces:
+  - "my-namespace"
+
+labelSelector:
+  - key: "app.kubernetes.io/name"
+    value: "my-app"
+
+customRelabelings:
+  - action: labelmap
+    sourceLabels:
+      - __test__
+
+customMetricRelabelings:
+  - action: drop
+    regex: ".*"
+    sourceLabels: [__name__]

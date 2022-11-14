@@ -1,0 +1,42 @@
+{{- if .Values.podMonitor.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: {{ default .Release.Namespace .Values.nameOverride }}-pod-monitor
+  labels:
+    prometheus: {{ required "required '.Values.prometheus' is not specified" .Values.prometheus }}
+
+spec:
+  selector:
+    matchLabels:
+    
+    {{- range ( required "required '.Values.labelSelector' is not specified" .Values.labelSelector ) }}
+      {{ .key }}: {{ .value | quote }}
+    {{- end }}
+  
+  namespaceSelector:
+    matchNames:
+{{  default (list .Release.Namespace ) .Values.namespaces | toYaml | indent 6 }}
+  
+  podMetricsEndpoints:
+    - interval: {{ default "60s" .Values.scrapeInterval }}
+      scrapeTimeout: {{ default "55s" .Values.scrapeTimeout }}
+      port: {{ default "metrics" .Values.metricsPort }}
+      path: {{ default "/metrics" .Values.metricsPath }}
+      honorLabels: true
+      relabelings: 
+        - action: labelmap
+          regex: '__meta_kubernetes_pod_label_(.+)'
+        - sourceLabels:
+            - __meta_kubernetes_namespace
+          targetLabel: kubernetes_namespace
+        - sourceLabels:
+            - __meta_kubernetes_pod_name
+          targetLabel: kubernetes_pod_name
+{{ include "prometheus.defaultRelabelConfig" .  | indent 8 }}
+{{ .Values.customRelabelings | toYaml | indent 8 }}
+{{- if .Values.customMetricRelabelings }}
+      metricRelabelings:
+{{ .Values.customMetricRelabelings | toYaml | indent 8 }}
+{{- end }}
+{{- end }}
