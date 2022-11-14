@@ -1,0 +1,71 @@
+groups:
+- name: monitoring.alerts
+  rules:
+  - alert: VROpsAPIDown
+    expr: |
+      (sum by (target) (vrops_api_response{collector=~"vc.*"}) / 
+      count by (target) (vrops_api_response{collector=~"vc.*"}) > 500) 
+    for: 10m
+    labels:
+      severity: warning
+      tier: vmware
+      service: compute
+      support_group: compute
+      context: vrops
+      playbook: docs/devops/alert/vcenter/vrops.html#vrops_api_down
+      dashboard: vrops-exporter-status
+      meta: "`https://{{ $labels.target }}` API is down."
+    annotations:
+      summary: "`https://{{ $labels.target }}` API is down."
+      description: |
+        All collectors of the vrops-exporter report HTTP status codes above 500, 
+        which indicates that vrops is reporting internal server errors or is unreachable. 
+        Check if vrops is running and healthy.      
+
+  - alert: VROpsDiskpaceUsageCritical
+    expr: vrops_virtualmachine_guestfilesystem_storage_db_percentage{virtualmachine=~"vrops.*-vc-.+"} > 90
+    for: 20m
+    labels:
+      severity: info
+      tier: vmware
+      service: compute
+      support_group: compute
+      context: vrops
+      dashboard: vrops-instances-overview
+      meta: "{{ $labels.virtualmachine }} disk almost full with over 90% usage."
+    annotations:
+      summary: "{{ $labels.virtualmachine }} disk almost full with over 90% usage."
+      description: |
+        {{ $labels.virtualmachine }} disk almost full with over 90% usage.
+        Please increase disk size.
+
+  - alert: VROpsVCenterAdapterNotReceivingData
+    expr: vrops_vcenter_alert_info{alert_name="Adapter instance is not receiving data"}
+    labels:
+      severity: warning
+      tier: vmware
+      service: compute
+      support_group: compute
+      no_alert_on_absence: "true"
+      context: vrops
+      playbook: docs/devops/alert/vcenter/vrops.html#revalidatecertificate
+      meta: "The vCenter adapter for https://vrops-{{ $labels.vcenter }} is not receiving data."      
+    annotations:
+      summary: "The vCenter adapter for https://vrops-{{ $labels.vcenter }} is not receiving data."
+      description: |
+        {{ $labels.description }}
+
+  - alert: VROpsVCenterObjectsNotReceivingData
+    expr: vrops_vcenter_alert_info{alert_name="Objects are not receiving data from adapter instance"}
+    labels:
+      severity: info
+      tier: vmware
+      service: compute
+      support_group: compute
+      no_alert_on_absence: "true"
+      meta: "vROPs vCenter adapter for https://vrops-{{ $labels.vcenter }} is not receiving data for some objects."
+      playbook: docs/devops/alert/vcenter/vrops.html#revalidatecertificate
+    annotations:
+      summary: "vROPs vCenter adapter for https://vrops-{{ $labels.vcenter }} is not receiving data for some objects."
+      description: |
+        {{ $labels.description }}
