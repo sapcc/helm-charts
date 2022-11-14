@@ -76,20 +76,6 @@ groups:
       description: "Failover Host {{ $labels.hostsystem }} has Virtual Machines on it. Free up the host. ({{ $labels.vcenter }}, {{ $labels.vccluster }})"
       summary: "Failover Host {{ $labels.hostsystem }} has Virtual Machines on it. ({{ $labels.vcenter }}, {{ $labels.vccluster }})"
 
-  - alert: HostDiskSpaceUsageWarning
-    expr: vrops_hostsystem_diskspace_usage_gigabytes / vrops_hostsystem_diskspace_capacity_gigabytes > 0.7
-    for: 30m
-    labels:
-      severity: info
-      tier: vmware
-      service: compute
-      support_group: compute
-      context: "{{ $labels.hostsystem }} disk space"
-      meta: "Disk space usage of host {{ $labels.hostsystem }} is above 70%. ({{ $labels.vcenter }}, {{ $labels.vccluster }})"
-    annotations:
-      description: "Disk space usage of host {{ $labels.hostsystem }} is above 70%. ({{ $labels.vcenter }}, {{ $labels.vccluster }})"
-      summary: "Disk space usage of host {{ $labels.hostsystem }} is above 70%. ({{ $labels.vcenter }}, {{ $labels.vccluster }})"
-
   - alert: HostDiskSpaceUsageCritical
     expr: vrops_hostsystem_diskspace_usage_gigabytes / vrops_hostsystem_diskspace_capacity_gigabytes > 0.9
     for: 15m
@@ -299,22 +285,6 @@ groups:
     annotations:
       description: "IPMI System Event Log for `{{ $labels.hostsystem }}` is becoming full. ({{ $labels.vcenter }}) {{ $labels.recommendation_1 }}"
       summary: "IPMI System Event Log for `{{ $labels.hostsystem }}` is becoming full. ({{ $labels.vcenter }}) {{ $labels.recommendation_1 }}"
-
-  - alert: HostRootFilesystemUnhealthy
-    expr: |
-      vrops_hostsystem_alert_info{alert_name="Root filesystem not present through CMMDS or is not responsive."}
-      and on (hostsystem) vrops_hostsystem_runtime_maintenancestate{state!~"inMaintenance"}
-    labels:
-      severity: info
-      tier: vmware
-      service: compute
-      support_group: compute
-      context: "{{ $labels.hostsystem }} root fs"
-      meta: "`{{ $labels.hostsystem }}` root filesystem not present through CMMDS or is not responsive. ({{ $labels.vcenter }})"
-      no_alert_on_absence: "true"
-    annotations:
-      description: "`{{ $labels.hostsystem }}` root filesystem not present through CMMDS or is not responsive. ({{ $labels.vcenter }})"
-      summary: "`{{ $labels.hostsystem }}` root filesystem not present through CMMDS or is not responsive. ({{ $labels.vcenter }})"
 
   - alert: HostStoragePathsDown
     expr: vrops_hostsystem_storage_number_of_path - vrops_hostsystem_storage_number_of_active_path > 4
