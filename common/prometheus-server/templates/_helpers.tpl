@@ -34,9 +34,9 @@ prometheus-{{- (include "prometheus.name" .) -}}
 {{- if and $root.Values.ingress.hosts $root.Values.ingress.hostsFQDN -}}
 {{- fail ".Values.ingress.hosts and .Values.ingress.hostsFQDN are mutually exclusive." -}}
 {{- end -}}
-{{- if .Values.ingress.hosts -}}
+{{- if $root.Values.ingress.hosts -}}
 {{- $firstHost := first $root.Values.ingress.hosts -}}
-{{- required ".Values.ingress.hosts must have at least one hostname set" $firstHost -}}.{{- required ".Values.global.region missing" .Values.global.region -}}.{{- required ".Values.global.domain missing" .Values.global.domain -}}
+{{- required ".Values.ingress.hosts must have at least one hostname set" $firstHost -}}.{{- required ".Values.global.region missing" $root.Values.global.region -}}.{{- required ".Values.global.domain missing" $root.Values.global.domain -}}
 {{- else if $root.Values.ingress.hostsFQDN -}}
 {{- $firstHost := first $root.Values.ingress.hostsFQDN -}}
 {{- required ".Values.ingress.hostsFQDN must have at least one hostname set" $firstHost -}}
