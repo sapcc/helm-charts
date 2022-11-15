@@ -40,7 +40,6 @@ hosts = [
       password = "{{.Values.global.elastiflow_admin_password}}"
     }
   },
-{{- if .Values.opensearch.enabled }}
   {
     host = "https://opensearch-logs-client.opensearch:9200"
     name = "Opensearch Logs Cluster"
@@ -49,7 +48,6 @@ hosts = [
       password = "{{.Values.global.elk_elasticsearch_admin_password}}"
     }
   },
-{{- end }}
 ]
 
 # Authentication
@@ -69,12 +67,13 @@ auth = {
     }
   }
 }
-
+{{- if .Values.opensearch.enabled }}
 play.ws.ssl {
   trustManager = {
     stores = [
-      { type = "PKCS12", path = "/secrets/truststore", password: "{{.Values.cacerts.truststore_password}}" }
+      { type = "PKCS12", path = "/secrets/truststore", password: "{{.Values.opensearch.cacerts.truststore_password}}" }
     ]
   }
 }     
 play.ws.ssl.loose.acceptAnyCertificate=true
+{{- end }}
