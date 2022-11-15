@@ -1,9 +1,9 @@
-{/* Name of the Prometheus. */}}
+{{/* Name of the Prometheus. */}}
 {{- define "prometheus.name" -}}
 {{- $name := index . 0 -}}
 {{- $root := index . 1 -}}
 {{- if and (not $root.Values.names) (not $root.Values.global.targets) (not $root.Values.name) -}}
-{{- fail "Connot create any Prometheus resource. Please define a name or at least one list element to names or global.targets" -}}
+{{- fail "Cannot create any Prometheus resource. Please define a name or at least one list element to names or global.targets" -}}
 {{- end -}}
 {{/* vmware prometheis need additional renaming */}}
 {{- if $root.Values.vmware -}}
@@ -34,6 +34,10 @@ prometheus-{{- (include "prometheus.name" .) -}}
 {{- if and $root.Values.ingress.hosts $root.Values.ingress.hostsFQDN -}}
 {{- fail ".Values.ingress.hosts and .Values.ingress.hostsFQDN are mutually exclusive." -}}
 {{- end -}}
+{{- if .Values.ingress.hosts -}}
+{{- $firstHost := first .Values.ingress.hosts -}}
+{{- required ".Values.ingress.hosts must have at least one hostname set" $firstHost -}}.{{- required ".Values.global.region missing" .Values.global.region -}}.{{- required ".Values.global.domain missing" .Values.global.domain -}}
+{{- else -}}
 prometheus-{{- $name -}}.{{- required "$root.Values.global.region missing" $root.Values.global.region -}}.{{- required "$root.Values.global.domain missing" $root.Values.global.domain -}}
 {{- end -}}
 
