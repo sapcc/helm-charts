@@ -105,12 +105,13 @@ groups:
     ### PVC usage ###
 
     - alert: KubernetesHighPVCUsagePredicted
+      # NOTE: The labels for support-group and service are already present in `kubelet_volume_stats_available_percent`, cf. the aggregation rule that defines it.
       expr: sum((kubelet_volume_stats_available_percent < 30) and (predict_linear(kubelet_volume_stats_available_percent[1d], 7 * 24 * 3600) < 10)) by (namespace, persistentvolumeclaim)
       for: 1h
       labels:
         tier: k8s
-        support_group: '{{ $labels.label_ccloud_support_group | default "containers" }}'
-        service: '{{ $labels.label_ccloud_service | default "resources" }}'
+        support_group: '{{ if $labels.label_ccloud_support_group }}{{ $labels.label_ccloud_support_group }}{{ else }}containers{{ end }}'
+        service: '{{ if $labels.label_ccloud_service }}{{ $labels.label_ccloud_service }}{{ else }}resources{{ end }}'
         severity: warning
         context: storage
         meta: "PVC {{ $labels.namespace }}/{{ $labels.persistentvolumeclaim }} is set to exceed 90% usage soon"
