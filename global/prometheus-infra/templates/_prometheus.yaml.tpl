@@ -133,6 +133,7 @@
       - '{__name__=~"^node_logind_sessions", class="user", job="jumpserver", type="tty"}'
       - '{__name__=~"^prom_fluentd_.+"}'
       - '{job="netbox", __name__!~"^(up|ALERTS.*|scrape.+)"}'
+      - '{__name__=~"^cc3test_status", service="ironic", type="baremetal_and_regression"}'
 
   relabel_configs:
     - action: replace
