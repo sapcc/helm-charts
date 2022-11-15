@@ -48,7 +48,7 @@ region: {{ .root.Values.global.region }}
 loglevel: "debug"
 swiftBackup:
   service: "{{ .backup.name }}"
-  container: "mariadb-backup-qa-de-1"
+  container: "mariadb-backup-{{ .root.Values.global.region }}"
   creds:
     identityEndpoint:  "https://identity-3.{{ .root.Values.global.region }}.cloud.sap/v3"
     user: "db_backup"
