@@ -294,3 +294,18 @@ groups:
     annotations:
       description: "DataStore Cluster {{ $labels.storagepod }} utilization > 90%. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
       summary: "DataStore Cluster {{ $labels.storagepod }} utilization > 90%. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
+
+  - alert: NVMeDatastoreNotAccessible
+    expr: |
+      vrops_datastore_summary_datastore_accessible{type='NVMe'} == 0
+    for: 5m
+    labels:
+      severity: info
+      tier: vmware
+      service: storage
+      support_group: compute
+      context: "{{ $labels.datastore }}"
+      meta: 'Datastore {{ $labels.datastore }} is not accessible. ({{ $labels.vcenter }}, {{ $labels.datacenter }})'
+    annotations:
+      description: 'Datastore {{ $labels.datastore }} is not accessible. ({{ $labels.vcenter }}, {{ $labels.datacenter }})'
+      summary: 'Datastore {{ $labels.datastore }} is not accessible. ({{ $labels.vcenter }}, {{ $labels.datacenter }})'
