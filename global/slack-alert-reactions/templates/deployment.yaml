@@ -1,0 +1,63 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "slack-alert-reactions.fullname" . }}
+  labels:
+    {{- include "slack-alert-reactions.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "slack-alert-reactions.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "slack-alert-reactions.selectorLabels" . | nindent 8 }}
+    spec:
+      containers:
+        - name: {{ .Chart.Name }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          env:
+          - name: SLACK_USER_TOKEN
+            valueFrom:
+              secretKeyRef:
+                name: slack-alert-reactions-secret
+                key: slack-user-token
+                optional: false
+          - name: APP_ENVIRONMENT
+            valueFrom:
+              secretKeyRef:
+                name: slack-alert-reactions-secret
+                key: app-environment
+                optional: false
+          - name: SLACK_WORKSPACE
+            valueFrom:
+              secretKeyRef:
+                name: slack-alert-reactions-secret
+                key: slack-workspace
+                optional: false
+          - name: GITHUB_TOKEN
+            valueFrom:
+              secretKeyRef:
+                name: slack-alert-reactions-secret
+                key: github-token
+                optional: false 
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
