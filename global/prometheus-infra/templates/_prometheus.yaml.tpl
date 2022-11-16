@@ -23,6 +23,7 @@
       - '{__name__=~"^elasticsearch_dboperational_hits"}'
       - '{__name__=~"^elasticsearch_dboperational_error_doc_count"}'
       - '{__name__=~"^elasticsearch_logstash_.+"}'
+      - '{__name__=~"^elasticsearch_hermes_.+"}'
       - '{__name__=~"^elastiflow_.+"}'
       - '{__name__=~"^snmp_asa_.+"}'
       - '{__name__=~"^snmp_asr_nat.+"}'
