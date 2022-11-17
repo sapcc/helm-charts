@@ -11,7 +11,8 @@ This includes:
 - Cluster
 - Cluster Type [e.g. metal, scaleout, ...]
 
-This chart is meant to be used as a dependency in other charts, whenever a Pod|ServiceMonitor is used to ensure all labels required for alert routing are attached to the scraped metrics.
+This chart is meant to serve a set of common rules for Pod|ServiceMonitors to ensure that all labels required for alert routing are appended to the scraped series.
+
 
 ## Usage
 
