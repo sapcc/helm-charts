@@ -11,6 +11,17 @@ owner-info:
     - "Ivo Gosemann"
   helm-chart-url: "https://github.com/sapcc/helm-charts/tree/master/system/metis"
 
+prometheus-monitors:
+  podMonitor:
+    enabled: true
+  prometheus: "infra-collector"
+  matchExpressions:
+    - key: "app.kubernetes.io/name"
+      operator: "In"
+      values:
+        - "mariadb-sync"
+        - "metis"
+
 mariadb:
   name: metisdb
   enabled: true
@@ -98,8 +109,6 @@ backup_v2:
 metisSync:
   image: go-maria-sync
   imageVersion: "20221115151501"
-  metrics:
-    enabled: true
   alerts:
     enabled: false
     prometheus: "infra-collector"
@@ -108,7 +117,6 @@ metisSync:
 metis:
   enabled: false
   metrics:
-    enabled: false
     path: "/metrics"
     port: "9100"
   image: "metis"
