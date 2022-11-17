@@ -107,7 +107,7 @@ function setuprole {
       if [ "$0" == "/opt/mariadb/bin/entrypoint-job.sh" ]; then
         cat ${BASE}/etc/sql/role.sql.tpl | envsubst | $(${MYSQL_SVC_CONNECT})
       else
-        cat ${BASE}/etc/sql/role.sql.tpl | envsubst | mysql --defaults-file=${BASE}/etc/my.cnf --user=root --host=localhost --batch
+        cat ${BASE}/etc/sql/role.sql.tpl | envsubst | mysql --protocol=socket --user=root --batch
       fi
       if [ $? -ne 0 ]; then
         logerror "${FUNCNAME[0]}" "'${DB_ROLE}' role setup has been failed(${int} retries left)"
@@ -148,14 +148,24 @@ function setupuser {
       if [ "$0" == "/opt/mariadb/bin/entrypoint-job.sh" ]; then
         cat ${BASE}/etc/sql/user.sql.tpl | envsubst | $(${MYSQL_SVC_CONNECT})
       else
-        cat ${BASE}/etc/sql/user.sql.tpl | envsubst | mysql --defaults-file=${BASE}/etc/my.cnf --user=root --host=localhost --batch
+        cat ${BASE}/etc/sql/user.sql.tpl | envsubst | mysql --protocol=socket --user=root --batch
       fi
       if [ $? -ne 0 ]; then
         logerror "${FUNCNAME[0]}" "'${DB_USER}@${DB_HOST}' user setup has been failed(${int} retries left)"
         sleep ${WAIT_SECONDS}
       else
-        loginfo "${FUNCNAME[0]}" "'${DB_USER}@${DB_HOST}' user setup done"
-        break
+        if [ "$0" == "/opt/mariadb/bin/entrypoint-job.sh" ]; then
+          ${MYSQL_SVC_CONNECT} --execute="FLUSH PRIVILEGES;" --batch --skip-column-names
+        else
+          mysql --protocol=socket --user=root --execute="FLUSH PRIVILEGES;" --batch --skip-column-names
+        fi
+        if [ $? -ne 0 ]; then
+          logerror "${FUNCNAME[0]}" "flush privileges failed(${int} retries left)"
+          sleep ${WAIT_SECONDS}
+        else
+          loginfo "${FUNCNAME[0]}" "'${DB_USER}@${DB_HOST}' user setup done"
+          break
+        fi
       fi
     done
 
@@ -182,7 +192,7 @@ function listdbandusers {
     if [ "$0" == "/opt/mariadb/bin/entrypoint-job.sh" ]; then
       ${MYSQL_SVC_CONNECT} --execute="SHOW DATABASES; SELECT user,host FROM mysql.user; SELECT * FROM information_schema.APPLICABLE_ROLES;" --table
     else
-      mysql --defaults-file=${BASE}/etc/my.cnf --user=root --host=localhost --batch --execute="SHOW DATABASES; SELECT user,host FROM mysql.user; SELECT * FROM information_schema.APPLICABLE_ROLES;" --table
+      mysql --protocol=socket --user=root --batch --execute="SHOW DATABASES; SELECT user,host FROM mysql.user; SELECT * FROM information_schema.APPLICABLE_ROLES;" --table
     fi
     if [ $? -ne 0 ]; then
       logerror "${FUNCNAME[0]}" "list databases and users has been failed"

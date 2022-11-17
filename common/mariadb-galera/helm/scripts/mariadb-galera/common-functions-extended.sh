@@ -1,7 +1,7 @@
 MAX_RETRIES={{ $.Values.scripts.maxRetries | default 10 }}
 WAIT_SECONDS={{ $.Values.scripts.waitTimeBetweenRetriesInSeconds | default 6 }}
 if [ "$0" != "/opt/mariadb/bin/entrypoint-backup.sh" ]; then
-  MYSQL_SVC_CONNECT="mysql --defaults-file=${BASE}/etc/my.cnf --protocol=tcp --user=${MARIADB_ROOT_USER} --password=${MARIADB_ROOT_PASSWORD} --host={{ (include "nodeNamePrefix" (dict "global" $ "component" "application")) }}-frontend-direct.database.svc.cluster.local --port=${MYSQL_PORT} --wait --connect-timeout=${WAIT_SECONDS} --reconnect --batch"
+  MYSQL_SVC_CONNECT="mysql --protocol=tcp --user=${MARIADB_ROOT_USER} --password=${MARIADB_ROOT_PASSWORD} --host={{ (include "nodeNamePrefix" (dict "global" $ "component" "application")) }}-frontend-direct.database.svc.cluster.local --port=${MYSQL_PORT} --wait --connect-timeout=${WAIT_SECONDS} --reconnect --batch"
 fi
 declare -a NODENAME=()
 
@@ -54,7 +54,7 @@ function fetchcurrentseqno {
 
   for (( int=${MAX_RETRIES}; int >=1; int-=1));
     do
-    IFS=$'\t' SEQNOARRAY=($(mysql --defaults-file=/opt/${SOFTWARE_NAME}/etc/my.cnf --protocol=tcp --user=root --host=localhost --port=${MYSQL_PORT} --database=mysql --connect-timeout={{ $.Values.readinessProbe.timeoutSeconds.application }} --execute="SHOW GLOBAL STATUS LIKE 'wsrep_last_committed';" --batch --skip-column-names | grep 'wsrep_last_committed'))
+    IFS=$'\t' SEQNOARRAY=($(mysql --protocol=socket --user=root --database=mysql --connect-timeout={{ $.Values.readinessProbe.timeoutSeconds.application }} --execute="SHOW GLOBAL STATUS LIKE 'wsrep_last_committed';" --batch --skip-column-names | grep 'wsrep_last_committed'))
     if [ $? -ne 0 ]; then
       sleep ${WAIT_SECONDS}
     else
@@ -69,7 +69,7 @@ function fetchcurrentseqno {
 }
 
 function checkdblogon {
-  mysql --defaults-file=/opt/${SOFTWARE_NAME}/etc/my.cnf --protocol=tcp --user=root --host=localhost --port=${MYSQL_PORT} --database=mysql --wait --connect-timeout=${WAIT_SECONDS} --reconnect --execute="STATUS;" | grep 'Server version:' | grep --silent "${SOFTWARE_VERSION}"
+  mysql --protocol=socket --user=root --database=mysql --wait --connect-timeout=${WAIT_SECONDS} --reconnect --execute="STATUS;" | grep 'Server version:' | grep --silent "${SOFTWARE_VERSION}"
   if [ $? -eq 0 ]; then
     echo 'MariaDB MySQL API usable'
   else
@@ -137,7 +137,7 @@ function setupdatabase {
         if [ "$0" == "/opt/mariadb/bin/entrypoint-job.sh" ]; then
           ${MYSQL_SVC_CONNECT} --execute="${DB_CREATE} ${DB_NAME} CHARACTER SET = ${DB_CHARSET} COLLATE = ${DB_COLLATION} COMMENT '${DB_COMMENT}';"
         else
-          mysql --defaults-file=${BASE}/etc/my.cnf --user=root --host=localhost --batch --execute="${DB_CREATE} ${DB_NAME} CHARACTER SET = ${DB_CHARSET} COLLATE = ${DB_COLLATION} COMMENT '${DB_COMMENT}';"
+          mysql --protocol=socket --user=root --batch --execute="${DB_CREATE} ${DB_NAME} CHARACTER SET = ${DB_CHARSET} COLLATE = ${DB_COLLATION} COMMENT '${DB_COMMENT}';"
         fi
         if [ $? -ne 0 ]; then
           logerror "${FUNCNAME[0]}" "'${DB_NAME}' database creation has been failed(${int} retries left)"
@@ -151,7 +151,7 @@ function setupdatabase {
           if [ "$0" == "/opt/mariadb/bin/entrypoint-job.sh" ]; then
             ${MYSQL_SVC_CONNECT} --execute="DROP DATABASE IF EXISTS ${DB_NAME};"
           else
-            mysql --defaults-file=${BASE}/etc/my.cnf --user=root --host=localhost --batch --execute="DROP DATABASE IF EXISTS ${DB_NAME};"
+            mysql --protocol=socket --user=root --batch --execute="DROP DATABASE IF EXISTS ${DB_NAME};"
           fi
           if [ $? -ne 0 ]; then
             logerror "${FUNCNAME[0]}" "'${DB_NAME}' database delete has been failed(${int} retries left)"

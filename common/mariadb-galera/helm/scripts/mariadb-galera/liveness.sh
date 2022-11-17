@@ -6,7 +6,7 @@ set -o pipefail
 source /opt/${SOFTWARE_NAME}/bin/common-functions.sh
 
 function checkdblogon {
-  mysql --defaults-file=${BASE}/etc/my.cnf --protocol=tcp --user=root --host=localhost --port=${MYSQL_PORT} --batch --connect-timeout={{ $.Values.livenessProbe.timeoutSeconds.application }} --execute="SHOW DATABASES;" | grep --silent 'mysql'
+  mysql --protocol=socket --user=root --batch --connect-timeout={{ $.Values.livenessProbe.timeoutSeconds.application }} --execute="SHOW DATABASES;" | grep --silent 'mysql'
   if [ $? -eq 0 ]; then
     echo 'MariaDB MySQL API reachable'
   else

@@ -13,7 +13,7 @@ function fetchseqnofromremotenode {
 
   for (( int=${MAX_RETRIES}; int >=1; int-=1));
     do
-    IFS=$'\t' SEQNOARRAY=($(mysql --defaults-file=/opt/${SOFTWARE_NAME}/etc/my.cnf --protocol=tcp --user=${MARIADB_ROOT_USER} --password=${MARIADB_ROOT_PASSWORD} --host=${DB_HOST}.database.svc.cluster.local --port=${MYSQL_PORT} --database=mysql --connect-timeout={{ $.Values.readinessProbe.timeoutSeconds.application }} --execute="SHOW GLOBAL STATUS LIKE 'wsrep_last_committed';" --batch --skip-column-names | grep 'wsrep_last_committed'))
+    IFS=$'\t' SEQNOARRAY=($(mysql --protocol=tcp --user=${MARIADB_ROOT_USER} --password=${MARIADB_ROOT_PASSWORD} --host=${DB_HOST}.database.svc.cluster.local --port=${MYSQL_PORT} --database=mysql --connect-timeout={{ $.Values.readinessProbe.timeoutSeconds.application }} --execute="SHOW GLOBAL STATUS LIKE 'wsrep_last_committed';" --batch --skip-column-names | grep 'wsrep_last_committed'))
     if [ $? -ne 0 ]; then
       sleep ${WAIT_SECONDS}
     else
@@ -59,7 +59,7 @@ function setclusterdesyncmode {
   for (( int=${MAX_RETRIES}; int >=1; int-=1));
     do
     loginfo "${FUNCNAME[0]}" "set cluster desync ${DISABLESYNC} for node ${DB_HOST} (${int} retries left)"
-    mysql --defaults-file=/opt/${SOFTWARE_NAME}/etc/my.cnf --protocol=tcp --user=${MARIADB_ROOT_USER} --password=${MARIADB_ROOT_PASSWORD} --host=${DB_HOST}.database.svc.cluster.local --port=${MYSQL_PORT} --connect-timeout={{ $.Values.readinessProbe.timeoutSeconds.application }} --execute="SET GLOBAL wsrep_desync = ${DISABLESYNC};" --batch --skip-column-names
+    mysql --protocol=tcp --user=${MARIADB_ROOT_USER} --password=${MARIADB_ROOT_PASSWORD} --host=${DB_HOST}.database.svc.cluster.local --port=${MYSQL_PORT} --connect-timeout={{ $.Values.readinessProbe.timeoutSeconds.application }} --execute="SET GLOBAL wsrep_desync = ${DISABLESYNC};" --batch --skip-column-names
     if [ $? -ne 0 ]; then
       sleep ${WAIT_SECONDS}
     else

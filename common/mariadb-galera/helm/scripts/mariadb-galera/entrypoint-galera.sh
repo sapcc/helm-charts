@@ -39,11 +39,12 @@ function recovergalera {
     else
       loginfo "${FUNCNAME[0]}" "start 'mariadbd --wsrep-recover' to find last sequence number"
       MARIADBD_RESPONSE=$(mariadbd --defaults-file=${BASE}/etc/my.cnf --basedir=/usr --skip-log-error --wsrep-recover 2>&1)
+      MARIADBD_RESPONSE_LINE=$(echo ${MARIADBD_RESPONSE} | grep --only-matching --perl-regexp --regexp='\[Note\] WSREP: Recovered position: .+,\d{5}-\d{2}-\d+')
       if [ $? -ne 0 ]; then
         logerror "${FUNCNAME[0]}" "mariadbd --wsrep-recover failed with '${MARIADBD_RESPONSE}'"
         exit 1
       fi
-      IFS=':, ' SEQNO=($(echo ${MARIADBD_RESPONSE}))
+      IFS=':, ' SEQNO=($(echo ${MARIADBD_RESPONSE_LINE}))
       IFS="${oldIFS}"
       {{ if eq $.Values.scripts.logLevel "debug" }} logdebug "${FUNCNAME[0]}" "wsrep-recover response: '${MARIADBD_RESPONSE}'" {{ end }}
       if [ ${SEQNO[-2]} -ge 0 ]; then

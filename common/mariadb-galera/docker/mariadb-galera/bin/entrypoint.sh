@@ -49,10 +49,10 @@ function initdb {
     readrolegrant 'mysql_exporter' '/opt/mariadb/etc/sql/'
     setuprole 'mysql_exporter' "${DB_ROLE_PRIVS}" "${DB_ROLE_OBJ}" "${DB_ROLE_GRANT}"
     setupuser "${MARIADB_ROOT_USER}" "${MARIADB_ROOT_PASSWORD}" 'fullaccess' 0 '%'
-    setupuser "${MARIADB_ROOT_USER}" "${MARIADB_ROOT_PASSWORD}" 'fullaccess' 0 '127.0.0.1'
     setupuser "${MARIADB_ROOT_USER}" "${MARIADB_ROOT_PASSWORD}" 'fullaccess' 0 '::1'
     setupuser "${MARIADB_MONITORING_USER}" "${MARIADB_MONITORING_PASSWORD}" 'mysql_exporter' "${MARIADB_MONITORING_CONNECTION_LIMIT}" '%'
     setupuser "${MARIADB_MONITORING_USER}" "${MARIADB_MONITORING_PASSWORD}" 'mysql_exporter' "${MARIADB_MONITORING_CONNECTION_LIMIT}" '127.0.0.1'
+    setupuser "${MARIADB_MONITORING_USER}" "${MARIADB_MONITORING_PASSWORD}" 'mysql_exporter' "${MARIADB_MONITORING_CONNECTION_LIMIT}" 'localhost'
     setupuser "${MARIADB_MONITORING_USER}" "${MARIADB_MONITORING_PASSWORD}" 'mysql_exporter' "${MARIADB_MONITORING_CONNECTION_LIMIT}" '::1'
     listdbandusers
     stopdb
@@ -65,7 +65,7 @@ function setuptimezoneinfo {
   for (( int=${MAX_RETRIES}; int >=1; int-=1));
     do
     loginfo "${FUNCNAME[0]}" "setup timezone infos(${int} retries left)"
-    mariadb-tzinfo-to-sql --defaults-file=${BASE}/etc/my.cnf --skip-write-binlog /usr/share/zoneinfo | mysql --defaults-file=${BASE}/etc/my.cnf --user=root --host=localhost --database=mysql --batch
+    mariadb-tzinfo-to-sql --defaults-file=${BASE}/etc/my.cnf --skip-write-binlog /usr/share/zoneinfo | mysql --protocol=socket --user=root --database=mysql --batch
     if [ $? -ne 0 ]; then
       logerror "${FUNCNAME[0]}" "timezone info setup has been failed"
       sleep ${WAIT_SECONDS}
@@ -105,7 +105,7 @@ function checkupgradedb {
 
 function upgradedb {
   loginfo "${FUNCNAME[0]}" "start database upgrade"
-  mysql_upgrade --defaults-file=${BASE}/etc/my.cnf --user=root --host=localhost --version-check
+  mysql_upgrade --defaults-file=${BASE}/etc/my.cnf --protocol=socket --user=root --version-check
   if [ $? -ne 0 ]; then
     logerror "${FUNCNAME[0]}" "database upgrade has been failed"
     exit 1
@@ -154,7 +154,7 @@ function startmaintenancedb {
   for (( int=${MAX_RETRIES}; int >=1; int-=1));
     do
     loginfo "${FUNCNAME[0]}" "check if mariadbd is usable for maintenance(${int} retries left)"
-    mysql --defaults-file=${BASE}/etc/my.cnf --user=root --host=localhost --database=mysql --execute='STATUS;' | grep 'Server version:' | grep --silent "${SOFTWARE_VERSION}"
+    mysql --protocol=socket --user=root --database=mysql --execute='STATUS;' | grep 'Server version:' | grep --silent "${SOFTWARE_VERSION}"
     if [ $? -ne 0 ]; then
       logerror "${FUNCNAME[0]}" "mariadbd check failed"
       sleep ${WAIT_SECONDS}

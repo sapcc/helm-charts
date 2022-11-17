@@ -1,4 +1,5 @@
-{{- if and (hasKey $.Values.mariadb.galera "backup") ($.Values.mariadb.galera.backup.enabled) }}
+{{- if and (hasKey $.Values.mariadb "autostart") (not $.Values.mariadb.autostart) }}
+  {{- if and (hasKey $.Values.mariadb.galera "backup") ($.Values.mariadb.galera.backup.enabled) }}
 apiVersion: batch/v1
 kind: CronJob
 metadata:
@@ -121,4 +122,5 @@ spec:
             configMap:
               name: mariadb-common-functions-extended-sh
               defaultMode: 0755
+  {{- end }}
 {{- end }}
