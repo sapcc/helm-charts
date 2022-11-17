@@ -133,17 +133,18 @@ mysql_metrics:
         - "count_gauge"
     - name: octavia_seconds_since_last_nonpending_status
       labels:
-        - "current_status"
-        - "octavia_host"
         - "loadbalancer_id"
+        - "loadbalancer_status"
         - "loadbalancer_name"
+        - "loadbalancer_host"
+        - "loadbalancer_network"
       help: Seconds since last non-pending state of LB
       query: |
         (SELECT
           UNIX_TIMESTAMP(now()) - UNIX_TIMESTAMP(coalesce(lb.updated_at, lb.created_at)) AS elapsed_time,
-          lb.name AS loadbalancer_name,
-          lb.provisioning_status AS loadbalancer_status,
           lb.id AS loadbalancer_id,
+          lb.provisioning_status AS loadbalancer_status,
+          lb.name AS loadbalancer_name,
           lb.server_group_id AS loadbalancer_host,
           v.network_id AS loadbalancer_network
         FROM load_balancer AS lb
