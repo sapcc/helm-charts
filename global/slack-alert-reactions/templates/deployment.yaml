@@ -1,27 +1,21 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "slack-alert-reactions.fullname" . }}
-  labels:
-    {{- include "slack-alert-reactions.labels" . | nindent 4 }}
+  name: slack-alert-reactions
 spec:
   replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
-      {{- include "slack-alert-reactions.selectorLabels" . | nindent 6 }}
+      name: slack-alert-reactions
   template:
     metadata:
-      {{- with .Values.podAnnotations }}
-      annotations:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
       labels:
-        {{- include "slack-alert-reactions.selectorLabels" . | nindent 8 }}
+        name: slack-alert-reactions
     spec:
       containers:
-        - name: {{ .Chart.Name }}
+        - name: slack-alert-reactions-container
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
-          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          imagePullPolicy: IfNotPresent
           env:
           - name: SLACK_USER_TOKEN
             valueFrom:
@@ -49,15 +43,3 @@ spec:
                 optional: false 
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
-      {{- with .Values.nodeSelector }}
-      nodeSelector:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
-      {{- with .Values.affinity }}
-      affinity:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
-      {{- with .Values.tolerations }}
-      tolerations:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
