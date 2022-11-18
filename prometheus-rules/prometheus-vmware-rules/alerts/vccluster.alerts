@@ -78,3 +78,17 @@ groups:
     annotations:
       description: "Cluster {{ $labels.vccluster }} DRS configuration is not set to fully automated."
       summary: "Cluster {{ $labels.vccluster }} DRS configuration is not set to fully automated."
+
+  - alert: VCClusterCannotDistributeNSXTControllers
+    expr: count(max_over_time(vrops_hostsystem_memory_useable_kilobytes{vccluster=~".*management"}[1h]) / 1024 / 1024 >= 48) by(vccluster, vcenter) < 3
+    for: 30m
+    labels:
+      severity: info
+      tier: vmware
+      service: compute
+      support_group: compute
+      context: "Cluster NSXT Resources"
+      meta: "Cluster {{ $labels.vccluster }} cannot evenly distribute new NSX-T controllers."
+    annotations:
+      description: "Cluster {{ $labels.vccluster }} cannot evenly distribute new NSX-T controllers. {{ $labels.vcenter}}"
+      summary: "Cluster {{ $labels.vccluster }} cannot evenly distribute new NSX-T controllers. {{ $labels.vcenter }}"
