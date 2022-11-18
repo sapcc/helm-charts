@@ -51,7 +51,7 @@ route:
   group_wait: 1m
   group_interval: 7m
   repeat_interval: 12h
-  receiver: dev-null
+  receiver: elastic
 
   routes:
   # review for slack_by_cc_service
