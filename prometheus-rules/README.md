@@ -21,8 +21,8 @@ The structure looks like this:
     │   ├── alerts
     │   └── aggregations
     │
-    ├── vmware                  # VMware specific alerts managed by VMware Ops
+    ├── vmware                  # VMware specific alerts and aggregations managed by VMware Ops
     │   ├── alerts
-    │  
+    │   └── aggregations
    ...
 ```
