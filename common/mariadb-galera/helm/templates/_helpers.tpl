@@ -1,7 +1,7 @@
 {{/*
   Generate Kubernetes service template
-  service without per pod information:  include "networkService" (dict "global" $ "service" $service "component" $component "replica" "notused")
-  service with per pod information:     include "networkService" (dict "global" $ "service" $service "component" $component "replica" ($replicaNumber|toString))
+  service without per pod information:  include "networkService" (dict "global" $ "type" "backend" "service" $service "component" $component "replica" "notused")
+  service with per pod information:     include "networkService" (dict "global" $ "type" "backend" "service" $service "component" $component "replica" ($replicaNumber|toString))
 */}}
 {{- define "networkService" }}
 {{ $nodeNamePrefix := "" }}
@@ -16,12 +16,12 @@ kind: Service
 metadata:
   namespace: {{ .global.Release.Namespace }}
   {{- if eq .replica "notused" }}
-    {{- if and (eq .service.value.name "frontend") (.global.Values.proxy.enabled) (eq .component "proxy")}}
-  name: {{ (printf "%s-%s" (include "nodeNamePrefix" (dict "global" .global "component" "application")) .service.value.name) }}
-    {{- else if and (eq .service.value.name "frontend") (eq .component "application-direct")}}
-  name: {{ (printf "%s-%s-direct" $nodeNamePrefix .service.value.name) }}
+    {{- if and (eq .type "frontend") (.global.Values.proxy.enabled) (eq .component "proxy")}}
+  name: {{ (printf "%s-%s" (include "nodeNamePrefix" (dict "global" .global "component" "application")) "frontend") }}
+    {{- else if and (eq .type "frontend") (eq .component "application-direct")}}
+  name: {{ (printf "%s-%s-direct" $nodeNamePrefix "frontend") }}
     {{- else }}
-  name: {{ (printf "%s-%s" $nodeNamePrefix .service.value.name) }}
+  name: {{ (printf "%s-%s" $nodeNamePrefix .type) }}
     {{- end }}
   {{- else }}
   name: {{ (printf "%s-%s" $nodeNamePrefix .replica) }}
@@ -40,13 +40,12 @@ metadata:
   labels:
     app: {{ .global.Release.Name }}
 spec:
-  type: {{ required "the network service type has to be defined" .service.value.type }}
-  {{- if .service.value.headless }}
+  type: {{ required "the network service type has to be defined" .service.type }}
+  {{- if .service.headless }}
   clusterIP: None
   publishNotReadyAddresses: true {{/* create A records for not ready pods and announce the IPs on the headless service before they are ready https://kubernetes.io/docs/concepts/services-networking/dns-pod-service/#pod-s-hostname-and-subdomain-fields */}}
   {{- end }}
   selector:
-
   {{- if eq .replica "notused" }}
     {{- if eq .component "application-direct" }}
     component: "application"
@@ -57,16 +56,16 @@ spec:
     statefulset.kubernetes.io/pod-name: {{ (printf "%s-%s" $nodeNamePrefix .replica) }}
   {{- end }}
   ports:
-  {{- range $portKey, $portValue := .service.value.ports }}
-    - name: {{ $portValue.name }}
+  {{- range $portKey, $portValue := .service.ports }}
+    - name: {{ $portKey }}
       port: {{ $portValue.port }}
       targetPort: {{ $portValue.targetPort }}
       protocol: {{ $portValue.protocol | default "TCP" }}
   {{- end }}
-  sessionAffinity: {{ .service.value.sessionAffinity | default "None" | quote }}
+  sessionAffinity: {{ .service.sessionAffinity | default "None" | quote }}
   sessionAffinityConfig:
     clientIP:
-      timeoutSeconds: {{ .service.value.sessionAffinityClientIpTimeoutSeconds | default "10800" | int }}
+      timeoutSeconds: {{ .service.sessionAffinityClientIpTimeoutSeconds | default "10800" | int }}
 {{- end }}
 
 
@@ -102,19 +101,10 @@ spec:
   {{- $galeraPort := "" }}
   {{- $nodeNames := list -}}
   {{- $nodeNamePrefix := (include "nodeNamePrefix" (dict "global" .global "component" "application")) -}}
-  {{- range $servicesKey, $servicesValue := .global.Values.services.application }}
-    {{- if eq $servicesValue.name "backend"}}
-      {{- range $portsKey, $portsValue := $servicesValue.ports }}
-        {{- if eq $portsValue.name "galera"}}
-          {{- $galeraPort = ($portsValue.port | int) }}
-          {{- range $int, $err := until ($.global.Values.replicas.application|int) }}
-            {{- $nodeNames = (printf "%s-%d.%s.svc.cluster.local:%d" $nodeNamePrefix $int $.global.Release.Namespace ($portsValue.port | int)) | append $nodeNames -}}
-          {{- end }}
-        {{- end }}
-      {{- end }}
-    {{- end }}
+  {{- range $int, $err := until ($.global.Values.replicas.application|int) }}
+    {{- $nodeNames = (printf "%s-%d.%s.svc.cluster.local:%d" $nodeNamePrefix $int $.global.Release.Namespace ((required ".services.application.backend.ports.galera.targetPort missing" $.global.Values.services.application.backend.ports.galera.port) | int)) | append $nodeNames -}}
   {{- end }}
-  {{- (printf "gcomm://%s,%s-backend.%s.svc.cluster.local:%d" (join "," $nodeNames) $nodeNamePrefix $.global.Release.Namespace $galeraPort) }}
+  {{- (printf "gcomm://%s,%s-backend.%s.svc.cluster.local:%d" (join "," $nodeNames) $nodeNamePrefix $.global.Release.Namespace ((required ".services.application.backend.ports.galera.targetPort missing" $.global.Values.services.application.backend.ports.galera.port) | int)) }}
 {{- end }}
 
 {{/*
@@ -147,4 +137,28 @@ spec:
       {{- end }}
     {{- end }}
   {{- end }}
+{{- end }}
+
+{{/*
+  Generate server-id list value
+  include "serverIdList" (dict "global" $)
+*/}}
+{{- define "serverIdList" }}
+  {{- $serverIds := list -}}
+  {{- range $int, $err := until ($.global.Values.replicas.application|int) }}
+    {{- $serverIds = ((printf "%d%d" ($.global.Values.mariadb.galera.gtidDomainId | default 1 | int) $int) | int) | append $serverIds -}}
+  {{- end }}
+  {{- (join "," $serverIds) }}
+{{- end }}
+
+{{/*
+  Generate domain id list value
+  include "domainIdList" (dict "global" $)
+*/}}
+{{- define "domainIdList" }}
+  {{- $domainIds := list -}}
+  {{- range $int, $err := until 2 }}
+    {{- $domainIds = ((printf "%d%d%d%d%d" ((add1 $int) | int) 0 8 1 5) | int) | append $domainIds -}}
+  {{- end }}
+  {{- (join "," $domainIds) }}
 {{- end }}

@@ -14,10 +14,16 @@
 {{- end }}
 {{- $_ := set $wsrepProviderOptions "ist.recv_addr" (printf "ist.recv_addr=${CONTAINER_IP}:%d" ((include "getNetworkPort" (dict "global" $ "type" "backend" "name" "ist")) | int)) }}
 {{- $_ := set $wsrepProviderOptions "pc.wait_prim_timeout" (printf "pc.wait_prim_timeout=PT%dS" ($.Values.mariadb.galera.waitForPrimaryTimeoutInSeconds | default 30 | int)) }}
-{{- /*
-  #https://mariadb.com/kb/en/galera-cluster-system-variables/
-  #https://galeracluster.com/library/documentation/weighted-quorum.html#wq-three-nodes
-*/}}
+{{- if hasKey $.Values.mariadb.galera "gtidDomainIdCount" }}
+  {{- if or (lt ($.Values.mariadb.galera.gtidDomainIdCount | int) 1) (gt ($.Values.mariadb.galera.gtidDomainIdCount | int) 2) }}
+  fail "mariadb.galera.gtidDomainIdCount has to be 1 or 2"
+  {{- end }}
+{{- end }}
+{{- if hasKey $.Values.mariadb.galera "gtidDomainId" }}
+  {{- if or (lt ($.Values.mariadb.galera.gtidDomainId | int) 1) (gt ($.Values.mariadb.galera.gtidDomainId | int) 2) }}
+  fail "mariadb.galera.gtidDomainId has to be 1 or 2"
+  {{- end }}
+{{- end }}
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -51,7 +57,7 @@ data:
     sync_binlog={{ $.Values.mariadb.binLogSync | default 0 | int }}
     default_storage_engine=InnoDB
     innodb_autoinc_lock_mode=2
-    innodb_flush_log_at_trx_commit=0
+    innodb_flush_log_at_trx_commit={{ $.Values.mariadb.innodbFlushLogAtTrxCommit | default 0 | int }}
     wsrep_gtid_mode=on
     {{- if $.Values.mariadb.galera.gtidStrictMode }}
     gtid-strict-mode=1
@@ -80,57 +86,31 @@ data:
     wsrep_auto_increment_control=0
     {{- /*
       calculate the auto increment value based on amount of pod replicas * Galera domain count to ensure unique values across all database nodes in all connected clusters
-      replicas(3) * DomainCount(3) = 9
       replicas(3) * DomainCount(2) = 6
       replicas(3) * DomainCount(1) = 3
-      replicas(5) * DomainCount(3) = 15
       replicas(5) * DomainCount(2) = 10
       replicas(5) * DomainCount(1) = 5
     */}}
     auto_increment_increment={{ mul ($.Values.replicas.application|int) ($.Values.mariadb.galera.gtidDomainIdCount| default 1 | int) }}
     {{- /*
       calculate the auto increment offset based on ((Galera domain count - Galera domain id) * amount of pod replicas + (current replica number + 1)) to ensure unique values across all database nodes in all connected clusters
-      (DomainCount(3) - domainId(3) * replicas(3) + (replica(0) + 1) = 1
-      (DomainCount(3) - domainId(3) * replicas(3) + (replica(1) + 1) = 2
-      (DomainCount(3) - domainId(3) * replicas(3) + (replica(2) + 1) = 3
-      (DomainCount(3) - domainId(2) * replicas(3) + (replica(0) + 1) = 4
-      (DomainCount(3) - domainId(2) * replicas(3) + (replica(1) + 1) = 5
-      (DomainCount(3) - domainId(2) * replicas(3) + (replica(2) + 1) = 6
-      (DomainCount(3) - domainId(1) * replicas(3) + (replica(0) + 1) = 7
-      (DomainCount(3) - domainId(1) * replicas(3) + (replica(1) + 1) = 8
-      (DomainCount(3) - domainId(1) * replicas(3) + (replica(2) + 1) = 9
+      (DomainCount(2) - domainId(2) * replicas(3) + (replica(0) + 1) = 1
+      (DomainCount(2) - domainId(2) * replicas(3) + (replica(1) + 1) = 2
+      (DomainCount(2) - domainId(2) * replicas(3) + (replica(2) + 1) = 3
+      (DomainCount(2) - domainId(1) * replicas(3) + (replica(0) + 1) = 4
+      (DomainCount(2) - domainId(1) * replicas(3) + (replica(1) + 1) = 5
+      (DomainCount(2) - domainId(1) * replicas(3) + (replica(2) + 1) = 6
 
-      (DomainCount(3) - domainId(3) * replicas(5) + (replica(0) + 1) = 1
-      (DomainCount(3) - domainId(3) * replicas(5) + (replica(1) + 1) = 2
-      (DomainCount(3) - domainId(3) * replicas(5) + (replica(2) + 1) = 3
-      (DomainCount(3) - domainId(3) * replicas(5) + (replica(3) + 1) = 4
-      (DomainCount(3) - domainId(3) * replicas(5) + (replica(4) + 1) = 5
-      (DomainCount(3) - domainId(2) * replicas(5) + (replica(0) + 1) = 6
-      (DomainCount(3) - domainId(2) * replicas(5) + (replica(1) + 1) = 7
-      (DomainCount(3) - domainId(2) * replicas(5) + (replica(2) + 1) = 8
-      (DomainCount(3) - domainId(2) * replicas(5) + (replica(3) + 1) = 9
-      (DomainCount(3) - domainId(2) * replicas(5) + (replica(4) + 1) = 10
-      (DomainCount(3) - domainId(1) * replicas(5) + (replica(0) + 1) = 11
-      (DomainCount(3) - domainId(1) * replicas(5) + (replica(1) + 1) = 12
-      (DomainCount(3) - domainId(1) * replicas(5) + (replica(2) + 1) = 13
-      (DomainCount(3) - domainId(1) * replicas(5) + (replica(3) + 1) = 14
-      (DomainCount(3) - domainId(1) * replicas(5) + (replica(4) + 1) = 15
-
-      (DomainCount(5) - domainId(5) * replicas(3) + (replica(0) + 1) = 1
-      (DomainCount(5) - domainId(5) * replicas(3) + (replica(1) + 1) = 2
-      (DomainCount(5) - domainId(5) * replicas(3) + (replica(2) + 1) = 3
-      (DomainCount(5) - domainId(4) * replicas(3) + (replica(0) + 1) = 4
-      (DomainCount(5) - domainId(4) * replicas(3) + (replica(1) + 1) = 5
-      (DomainCount(5) - domainId(4) * replicas(3) + (replica(2) + 1) = 6
-      (DomainCount(5) - domainId(3) * replicas(3) + (replica(0) + 1) = 7
-      (DomainCount(5) - domainId(3) * replicas(3) + (replica(1) + 1) = 8
-      (DomainCount(5) - domainId(3) * replicas(3) + (replica(2) + 1) = 9
-      (DomainCount(5) - domainId(2) * replicas(3) + (replica(0) + 1) = 10
-      (DomainCount(5) - domainId(2) * replicas(3) + (replica(1) + 1) = 11
-      (DomainCount(5) - domainId(2) * replicas(3) + (replica(2) + 1) = 12
-      (DomainCount(5) - domainId(1) * replicas(3) + (replica(0) + 1) = 13
-      (DomainCount(5) - domainId(1) * replicas(3) + (replica(1) + 1) = 14
-      (DomainCount(5) - domainId(1) * replicas(3) + (replica(2) + 1) = 15
+      (DomainCount(2) - domainId(2) * replicas(5) + (replica(0) + 1) = 1
+      (DomainCount(2) - domainId(2) * replicas(5) + (replica(1) + 1) = 2
+      (DomainCount(2) - domainId(2) * replicas(5) + (replica(2) + 1) = 3
+      (DomainCount(2) - domainId(2) * replicas(5) + (replica(3) + 1) = 4
+      (DomainCount(2) - domainId(2) * replicas(5) + (replica(4) + 1) = 5
+      (DomainCount(2) - domainId(1) * replicas(5) + (replica(0) + 1) = 6
+      (DomainCount(2) - domainId(1) * replicas(5) + (replica(1) + 1) = 7
+      (DomainCount(2) - domainId(1) * replicas(5) + (replica(2) + 1) = 8
+      (DomainCount(2) - domainId(1) * replicas(5) + (replica(3) + 1) = 9
+      (DomainCount(2) - domainId(1) * replicas(5) + (replica(4) + 1) = 10
     */}}
     auto_increment_offset={{ (add (mul (sub ($.Values.mariadb.galera.gtidDomainIdCount| default 1 | int) ($.Values.mariadb.galera.gtidDomainId | default 1 | int)) ($.Values.replicas.application|int)) (add1 ($int | int))) | int }}
 
@@ -138,9 +118,13 @@ data:
     relay_log=/opt/${SOFTWARE_NAME}/{{ $.Values.mariadb.binLogDir | default "data" }}/mysql-relay-bin.log
     server_id={{ (printf "%d%d" ($.Values.mariadb.galera.gtidDomainId | default 1 | int) $int) | int }}
     log_slave_updates=on
+    {{- if and ($.Values.mariadb.asyncReplication.autostart) ($.Values.mariadb.asyncReplication.enabled) }}
+    wsrep_restart_slave=on
+    {{- else }}
     wsrep_restart_slave=off
+    {{- end }}
     report-host={{ $nodeNamePrefix }}-{{ $int }}.{{ include "getEnvVar" (dict "global" $ "name" "MARIADB_CLUSTER_NAME") }}
-    slave-parallel-threads={{ $.Values.mariadb.slaveReplicaThreads | default 1 | int }}
-    binlog-commit-wait-count={{ $.Values.mariadb.slaveReplicaThreads | default 0 | int }}
+    slave-parallel-threads={{ $.Values.mariadb.asyncReplication.slaveReplicaThreads | default 1 | int }}
+    binlog-commit-wait-count={{ $.Values.mariadb.asyncReplication.slaveReplicaThreads | default 0 | int }}
 
 {{- end }}

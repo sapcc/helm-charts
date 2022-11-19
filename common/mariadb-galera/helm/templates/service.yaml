@@ -1,33 +1,29 @@
 {{/* application services */}}
-{{- range $serviceKey, $serviceValue := $.Values.services.application }}
-  {{- $service := dict "key" $serviceKey "value" $serviceValue }}
-  {{- if eq $serviceValue.name "backend"}}
+  {{/* backend */}}
+    {{/* per pod service to generate per pod hostnames */}}
     {{- range $replicaNumber, $err := until ($.Values.replicas.application|int) }}
-      {{/* per pod service to generate per pod hostnames */}}
-      {{ include "networkService" (dict "global" $ "service" $service "component" "application" "replica" ($replicaNumber|toString)) }}
+      {{ include "networkService" (dict "global" $ "type" "backend" "service" (required ".services.application.backend missing" $.Values.services.application.backend) "component" "application" "replica" ($replicaNumber | toString)) }}
     {{- end }}
-    {{/* backend service for all pods */}}
-    {{ include "networkService" (dict "global" $ "service" $service "component" "application" "replica" "notused") }}
-  {{- else if and (eq $serviceValue.name "frontend") (not $.Values.proxy.enabled) }}
-    {{/* other frontend services for all pods */}}
-    {{ include "networkService" (dict "global" $ "service" $service "component" "application" "replica" "notused") }}
-    {{ include "networkService" (dict "global" $ "service" $service "component" "application-direct" "replica" "notused") }}
-  {{- else if and (eq $serviceValue.name "frontend") ($.Values.proxy.enabled) }}
-    {{ include "networkService" (dict "global" $ "service" $service "component" "application-direct" "replica" "notused") }}
-  {{- end }}
-{{- end }}
-{{/* proxy services */}}
-{{- if $.Values.proxy.enabled }}
-  {{- range $serviceKey, $serviceValue := $.Values.services.proxy }}
-    {{- $service := dict "key" $serviceKey "value" $serviceValue }}
-    {{- if eq $serviceValue.name "backend"}}
-      {{- range $replicaNumber, $err := until ($.Values.replicas.application|int) }}
-        {{/* per pod service to generate per pod hostnames */}}
-        {{ include "networkService" (dict "global" $ "service" $service "component" "proxy" "replica" ($replicaNumber|toString)) }}
-      {{- end }}
-      {{ include "networkService" (dict "global" $ "service" $service "component" "proxy" "replica" "notused") }}
-    {{- else if and (eq $serviceValue.name "frontend") $.Values.proxy.enabled }}
-      {{ include "networkService" (dict "global" $ "service" $service "component" "proxy" "replica" "notused") }}
+    {{/* shared service for all pods */}}
+    {{ include "networkService" (dict "global" $ "type" "backend" "service" (required ".services.application.backend missing" $.Values.services.application.backend) "component" "application" "replica" "notused") }}
+  {{/* frontend */}}
+  {{/* other frontend services for all pods */}}
+    {{- if not $.Values.proxy.enabled }}
+      {{ include "networkService" (dict "global" $ "type" "frontend" "service" (required ".services.application.frontend missing" $.Values.services.application.frontend) "component" "application" "replica" "notused") }}
+      {{ include "networkService" (dict "global" $ "type" "frontend" "service" (required ".services.application.frontend missing" $.Values.services.application.frontend) "component" "application-direct" "replica" "notused") }}
+    {{- else if $.Values.proxy.enabled }}
+      {{ include "networkService" (dict "global" $ "type" "frontend" "service" (required ".services.application.frontend missing" $.Values.services.application.frontend) "component" "application-direct" "replica" "notused") }}
     {{- end }}
-  {{- end }}
-{{- end }}
+
+{{/* backend */}}
+  {{/* per pod service to generate per pod hostnames */}}
+    {{- range $replicaNumber, $err := until ($.Values.replicas.proxy|int) }}
+      {{ include "networkService" (dict "global" $ "type" "backend" "service" (required ".services.proxy.backend missing" $.Values.services.proxy.backend) "component" "proxy" "replica" ($replicaNumber | toString)) }}
+    {{- end }}
+    {{/* shared service for all pods */}}
+    {{ include "networkService" (dict "global" $ "type" "backend" "service" (required ".services.proxy.backend missing" $.Values.services.proxy.backend) "component" "proxy" "replica" "notused") }}
+  {{/* frontend */}}
+  {{/* other frontend services for all pods */}}
+    {{- if $.Values.proxy.enabled }}
+      {{ include "networkService" (dict "global" $ "type" "frontend" "service" (required ".services.proxy.frontend missing" $.Values.services.proxy.frontend) "component" "proxy" "replica" "notused") }}
+    {{- end }}

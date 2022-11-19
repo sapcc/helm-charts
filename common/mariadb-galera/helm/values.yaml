@@ -10,9 +10,9 @@ groupId:
   monitoring: 3000
   proxy: 3100
 
-# namePrefix:
-#   application: "mariadb-g" #used for pods, services etc. (default mariadb-g)
-#   proxy: "proxysql" #used for pods, services etc. (default proxysql)
+namePrefix:
+  application: false #used for pods, services etc. (default mariadb-g)
+  proxy: false #used for pods, services etc. (default proxysql)
 cleanOsCacheAtStartup: false #https://www.kernel.org/doc/html/latest/admin-guide/sysctl/vm.html?highlight=drop_caches#drop-caches (default false, only useful for benchmarking)
 scripts:
   maxRetries: 20 #how many times should script functions retry before failing(default 10)
@@ -23,16 +23,22 @@ scripts:
 mariadb:
   autostart: true #default=true, run the default entrypoint.sh script or just sleep to be able to troubleshoot and debug
   binLogDir: log #if not defined the data dir will be used. Needs a log volume mount to be configured too
-  binLogSync: 1 #default=0 https://mariadb.com/kb/en/replication-and-binary-log-system-variables/#sync_binlog
+  binLogSync: 1 #default=0 (1 for ACID compliance) https://mariadb.com/kb/en/replication-and-binary-log-system-variables/#sync_binlog
+  innodbFlushLogAtTrxCommit: 1 #default=0 (1 for ACID compliance) https://mariadb.com/kb/en/innodb-system-variables/#innodb_flush_log_at_trx_commit
   performance_schema: false #https://mariadb.com/kb/en/performance-schema-overview/
   errorLogWarningVerbosity: 1 #default=2, https://mariadb.com/kb/en/error-log/#configuring-the-error-log-verbosity
-  #slaveReplicaThreads: 16 #default=1, https://mariadb.com/kb/en/replication-and-binary-log-system-variables/#slave_parallel_threads
+  asyncReplication:
+    enabled: false
+    resetConfig: false #reset the replica configuration. Use with care, because the currently used GTID binlog position value will be deleted. That can cause missing or duplicate data on the replica later
+    autostart: false #default=false, start configured slave during database node startup https://mariadb.com/kb/en/galera-cluster-system-variables/#wsrep_restart_slave
+    primaryHost: false #Hostname or IP of the replication source https://mariadb.com/kb/en/change-master-to/#master_host
+    slaveReplicaThreads: false #default=1, https://mariadb.com/kb/en/replication-and-binary-log-system-variables/#slave_parallel_threads
   galera:
     debug: false #https://galeracluster.com/library/documentation/galera-parameters.html#debug
     waitForPrimaryTimeoutInSeconds: 60 #https://galeracluster.com/library/documentation/galera-parameters.html#pc.wait_prim_timeout
     logLevel: info #info(default) or debug https://mariadb.com/kb/en/galera-cluster-system-variables/#wsrep_debug
     pcrecovery: false #https://galeracluster.com/library/documentation/pc-recovery.html
-    gcache.recover: false
+    gcache.recover: false #until https://github.com/codership/galera/issues/624 is fixed
     sst_method: rsync #rsync or mariabackup(also requires GALERA_SST_USER and GALERA_SST_PASSWORD)
     slaveThreads: 16 #https://galeracluster.com/library/documentation/mysql-wsrep-options.html#wsrep-slave-threads
     gtidDomainId: 1 #default = 1, must be a positive integer https://mariadb.com/kb/en/galera-cluster-system-variables/#wsrep_gtid_domain_id
@@ -66,9 +72,9 @@ monitoring:
     enabled: false #enable the Prometheus MySQL exporter as sidecar container https://github.com/prometheus/mysqld_exporter
     metricsPort: 9104
   elasticBeatsAutoDiscoveryAnnotations:
-    enabled: false #add annotations to allow automatic configuration of Elastic Beats agents https://www.elastic.co/guide/en/beats/metricbeat/current/configuration-autodiscover-hints.html
+    enabled: false #(not yet implemented) add annotations to allow automatic configuration of Elastic Beats agents https://www.elastic.co/guide/en/beats/metricbeat/current/configuration-autodiscover-hints.html
 proxy:
-  enabled: true #use ProxySQL in front of the MariaDB Galera pods to reduce the service downtimes for the clients
+  enabled: false #use ProxySQL in front of the MariaDB Galera pods to reduce the service downtimes for the clients
   restapi:
     enabled: true #https://proxysql.com/documentation/REST-API/
   adminui:
@@ -92,8 +98,8 @@ image:
     registry: keppel.eu-de-1.cloud.sap
     project: ccloud
     applicationname: mariadb-galera
-    applicationversion: 10.6.11
-    imageversion: 0.2.5
+    applicationversion: 10.5.17
+    imageversion: 0.2.4
     pullPolicy: Always
     pullSecret: false
   monitoring:
@@ -130,62 +136,63 @@ initContainers:
 # network services
 services:
   application:
-    - name: backend
+    backend:
       type: ClusterIP
       headless: true
       #https://mariadb.com/kb/en/configuring-mariadb-galera-cluster/#network-ports
       ports:
-        - name: galera
+        galera:
           port: 4567
           targetPort: 4567
           protocol: TCP
-        - name: ist #http://galeracluster.com/library/documentation/galera-parameters.html#ist-recv-addr
+        ist: #http://galeracluster.com/library/documentation/galera-parameters.html#ist-recv-addr
           port: 4568
           targetPort: 4568
           protocol: TCP
-        - name: sst #https://mariadb.com/kb/en/introduction-to-state-snapshot-transfers-ssts/
+        sst: #https://mariadb.com/kb/en/introduction-to-state-snapshot-transfers-ssts/
           port: 4444
           targetPort: 4444
           protocol: TCP
       sessionAffinity: None
-    - name: frontend
-      type: LoadBalancer #ClusterIP/LoadBalancer
+    frontend:
+      type: ClusterIP #ClusterIP/LoadBalancer
       headless: false
       ports:
-        - name: mysql
+        mysql:
           port: 3306
           targetPort: 3306
           protocol: TCP
       sessionAffinity: ClientIP
       sessionAffinityClientIpTimeoutSeconds: 28800
   proxy:
-    - name: backend
+    backend:
       type: ClusterIP
       headless: true
       #https://proxysql.com/Documentation/global-variables/admin-variables/#admin-mysql_ifaces
       ports:
-        - name: proxy
+        proxy:
           port: 6032
           targetPort: 6032
           protocol: TCP
-        - name: restapi #https://proxysql.com/documentation/REST-API/
+        restapi: #https://proxysql.com/documentation/REST-API/
           port: 6070
           targetPort: 6070
           protocol: TCP
-        - name: adminui #https://proxysql.com/documentation/http-web-server/
+        adminui: #https://proxysql.com/documentation/http-web-server/
           port: 6080
           targetPort: 6080
           protocol: TCP
       sessionAffinity: None
-    - name: frontend
-      type: LoadBalancer #ClusterIP/LoadBalancer
+    frontend:
+      type: ClusterIP #ClusterIP/LoadBalancer
       headless: false
       ports:
-        - name: proxy #https://proxysql.com/Documentation/global-variables/mysql-variables/#mysql-interfaces
+        proxy: #https://proxysql.com/Documentation/global-variables/mysql-variables/#mysql-interfaces
           port: 3306
           targetPort: 6033
           protocol: TCP
       sessionAffinity: None
+
 
 # Storage
 volumeMounts:
@@ -459,7 +466,7 @@ env:
       - application
       - job
       - proxy
-# command:
+#command:
 #   application:
 #     - "sh"
 #     - "-c"
@@ -468,7 +475,7 @@ env:
 #     - "sh"
 #     - "-c"
 #     - "/bin/sleep 3600"
-#   job:
+#    job:
 #     - "sh"
 #     - "-c"
 #     - "/bin/sleep 3600"

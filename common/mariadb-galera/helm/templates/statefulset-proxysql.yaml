@@ -110,25 +110,9 @@ spec:
         {{- end }}
         env:
         - name: PROXYSQL_MYSQL_PORT
-          {{- range $servicesKey, $servicesValue := $.Values.services.proxy }}
-            {{- if eq $servicesValue.name "frontend"}}
-              {{- range $portsKey, $portsValue := $servicesValue.ports }}
-                {{- if eq $portsValue.name "proxy"}}
-          value: "{{ $portsValue.targetPort }}"
-                {{- end }}
-              {{- end }}
-            {{- end }}
-          {{- end }}
+          value: "{{ (required ".services.proxy.frontend.ports.proxy.targetPort missing" $.Values.services.proxy.frontend.ports.proxy.targetPort) }}"
         - name: PROXYSQL_ADMIN_PORT
-          {{- range $servicesKey, $servicesValue := $.Values.services.proxy }}
-            {{- if eq $servicesValue.name "backend"}}
-              {{- range $portsKey, $portsValue := $servicesValue.ports }}
-                {{- if eq $portsValue.name "proxy"}}
-          value: "{{ $portsValue.targetPort }}"
-                {{- end }}
-              {{- end }}
-            {{- end }}
-          {{- end }}
+          value: "{{ (required ".services.proxy.backend.ports.proxy.targetPort missing" $.Values.services.proxy.backend.ports.proxy.targetPort) }}"
           {{- range $envKey, $envValue := $.Values.env }}
             {{- if (has "proxy" $envValue.containerType) }}
         - name: {{ $envKey }}
@@ -149,16 +133,10 @@ spec:
           limits:
             memory: {{ $.Values.resourceLimits.memory.proxy | default "64Mi" | quote }}
         ports:
-          {{- range $servicesKey, $servicesValue := $.Values.services.application }}
-            {{- if eq $servicesValue.name "backend"}}
-              {{- range $portsKey, $portsValue := $servicesValue.ports }}
-                {{- if eq $portsValue.name "proxy"}}
+          {{- range $portsKey, $portsValue := $.Values.services.proxy.backend.ports }}
           - containerPort: {{ $portsValue.targetPort }}
-            name: {{ $portsValue.name }}
+            name: {{ $portsKey }}
             protocol: {{ $portsValue.protocol | default "TCP" }}
-                {{- end }}
-              {{- end }}
-            {{- end }}
           {{- end }}
         startupProbe:
           exec:

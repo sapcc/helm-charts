@@ -1,31 +1,6 @@
-{{- $mysqlPort := "" }}
-{{- $galeraPort := "" }}
-{{- $proxysqlAdminPort := "" }}
-{{- $nodeNames := list -}}
-{{- range $servicesKey, $servicesValue := $.Values.services.application }}
-  {{- if eq $servicesValue.name "frontend" }}
-    {{- range $portsKey, $portsValue := $servicesValue.ports }}
-      {{- if eq $portsValue.name "mysql"}}
-        {{- $mysqlPort = ($portsValue.port | int) }}
-      {{- end }}
-    {{- end }}
-  {{- else if eq $servicesValue.name "backend" }}
-    {{- range $portsKey, $portsValue := $servicesValue.ports }}
-      {{- if eq $portsValue.name "galera"}}
-        {{- $galeraPort = ($portsValue.port | int) }}
-      {{- end }}
-    {{- end }}
-  {{- end }}
-{{- end }}
-{{- range $servicesKey, $servicesValue := $.Values.services.proxy }}
-  {{- if eq $servicesValue.name "backend" }}
-    {{- range $portsKey, $portsValue := $servicesValue.ports }}
-      {{- if eq $portsValue.name "proxy" }}
-        {{- $proxysqlAdminPort = ($portsValue.port | int) }}
-      {{- end }}
-    {{- end }}
-  {{- end }}
-{{- end }}
+{{- $mysqlPort := (required ".services.application.frontend.ports.mysql.targetPort missing" $.Values.services.application.frontend.ports.mysql.targetPort) }}
+{{- $galeraPort := (required ".services.application.backend.ports.galera.targetPort missing" $.Values.services.application.backend.ports.galera.targetPort) }}
+{{- $proxysqlAdminPort := (required ".services.proxy.backend.ports.proxy.targetPort missing" $.Values.services.proxy.backend.ports.proxy.targetPort) }}
 
 {{- /* Load additional configuration files for MariaDB to to use them for ProxySQL */}}
 {{- $mariadbconfigs := $.Files.Get "config/mariadb-galera/values.yaml" | fromYaml }}

@@ -10,7 +10,7 @@ loginfo "null" "configuration job started"
 {{- if $.Values.monitoring.mysqld_exporter.enabled }}
 setupuser "${MARIADB_MONITORING_USER}" "${MARIADB_MONITORING_PASSWORD}" 'mysql_exporter' "${MARIADB_MONITORING_CONNECTION_LIMIT}" '%'
 setupuser "${MARIADB_MONITORING_USER}" "${MARIADB_MONITORING_PASSWORD}" 'mysql_exporter' "${MARIADB_MONITORING_CONNECTION_LIMIT}" '127.0.0.1'
-setupuser "${MARIADB_MONITORING_USER}" "${MARIADB_MONITORING_PASSWORD}" 'mysql_exporter' "${MARIADB_MONITORING_CONNECTION_LIMIT}" '127.0.0.1' '::1'
+setupuser "${MARIADB_MONITORING_USER}" "${MARIADB_MONITORING_PASSWORD}" 'mysql_exporter' "${MARIADB_MONITORING_CONNECTION_LIMIT}" '::1'
 {{- end }}
 
 {{- /* Load additional configuration files for MariaDB to be processed by the job container */}}
@@ -57,4 +57,14 @@ setupuser {{ $configfile.username | quote }} {{ $configfile.password | quote }} 
 {{- end }}
 
 listdbandusers
+
+{{- if $.Values.mariadb.asyncReplication.enabled }}
+stopasyncreplication
+setupasyncreplication
+startasyncreplication
+checkasyncreplication
+{{- else }}
+stopasyncreplication
+{{- end }}
+
 loginfo "null" "configuration job finished"

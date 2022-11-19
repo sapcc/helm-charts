@@ -130,25 +130,9 @@ spec:
         {{- end }}
         env:
         - name: MYSQL_PORT
-          {{- range $servicesKey, $servicesValue := $.Values.services.application }}
-            {{- if eq $servicesValue.name "frontend"}}
-              {{- range $portsKey, $portsValue := $servicesValue.ports }}
-                {{- if eq $portsValue.name "mysql"}}
-          value: "{{ $portsValue.targetPort }}"
-                {{- end }}
-              {{- end }}
-            {{- end }}
-          {{- end }}
+          value: "{{ (required ".services.application.frontend.ports.mysql.targetPort missing" $.Values.services.application.frontend.ports.mysql.targetPort) }}"
         - name: GALERA_PORT
-          {{- range $servicesKey, $servicesValue := $.Values.services.application }}
-            {{- if eq $servicesValue.name "backend"}}
-              {{- range $portsKey, $portsValue := $servicesValue.ports }}
-                {{- if eq $portsValue.name "galera"}}
-          value: "{{ $portsValue.targetPort }}"
-                {{- end }}
-              {{- end }}
-            {{- end }}
-          {{- end }}
+          value: "{{ (required ".services.application.backend.ports.galera.targetPort missing" $.Values.services.application.backend.ports.galera.targetPort) }}"
           {{- /* https://galeracluster.com/library/documentation/weighted-quorum.html#wq-three-nodes */}}
           {{- range $int, $err := until ($.Values.replicas.application|int) }}
         - name: PC_WEIGHT_{{ $int }}
@@ -186,16 +170,10 @@ spec:
           limits:
             memory: {{ $.Values.resourceLimits.memory.application | default "64Mi" | quote }}
         ports:
-          {{- range $servicesKey, $servicesValue := $.Values.services.application }}
-            {{- if eq $servicesValue.name "backend"}}
-              {{- range $portsKey, $portsValue := $servicesValue.ports }}
-                {{- if ne $portsValue.name "proxy"}}
+          {{- range $portsKey, $portsValue := $.Values.services.application.backend.ports }}
           - containerPort: {{ $portsValue.targetPort }}
-            name: {{ $portsValue.name }}
+            name: {{ $portsKey }}
             protocol: {{ $portsValue.protocol | default "TCP" }}
-                {{- end }}
-              {{- end }}
-            {{- end }}
           {{- end }}
         {{- if and (hasKey $.Values.mariadb "autostart") (not $.Values.mariadb.autostart) }}
         {{- else if and ($.Values.command) (hasKey $.Values.command "application") }}
@@ -340,15 +318,7 @@ spec:
           {{- end }}
         env:
         - name: MYSQL_PORT
-          {{- range $servicesKey, $servicesValue := $.Values.services.application }}
-            {{- if eq $servicesValue.name "frontend"}}
-              {{- range $portsKey, $portsValue := $servicesValue.ports }}
-                {{- if eq $portsValue.name "mysql"}}
-          value: {{ $portsValue.targetPort | quote }}
-                {{- end }}
-              {{- end }}
-            {{- end }}
-          {{- end }}
+          value: {{ (required ".services.application.frontend.ports.mysql.targetPort missing" $.Values.services.application.frontend.ports.mysql.targetPort) | quote }}
         - name: WEB_LISTEN_PORT
           value: {{ $.Values.monitoring.mysqld_exporter.metricsPort | default 9104 | quote }}
           {{- range $envKey, $envValue := $.Values.env }}

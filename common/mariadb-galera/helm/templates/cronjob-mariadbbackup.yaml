@@ -60,15 +60,7 @@ spec:
             - name: OS_USER_DOMAIN_NAME
               value: {{ required "Values.mariadb.galera.backup.openstack.tenantname is missing, but required for the Openstack Swift authentication." $.Values.mariadb.galera.backup.openstack.tenantname }}
             - name: MYSQL_PORT
-            {{- range $servicesKey, $servicesValue := $.Values.services.application }}
-              {{- if eq $servicesValue.name "frontend"}}
-                {{- range $portsKey, $portsValue := $servicesValue.ports }}
-                  {{- if eq $portsValue.name "mysql"}}
-              value: "{{ $portsValue.targetPort }}"
-                  {{- end }}
-                {{- end }}
-              {{- end }}
-            {{- end }}
+              value: {{ (required ".services.application.frontend.ports.mysql.targetPort missing" $.Values.services.application.frontend.ports.mysql.targetPort) | quote }}
             {{- range $envKey, $envValue := $.Values.env }}
               {{- if (has "cronjob" $envValue.containerType) }}
             - name: {{ $envKey }}

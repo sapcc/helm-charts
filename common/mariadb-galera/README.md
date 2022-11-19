@@ -53,7 +53,8 @@ docker build --build-arg BASE_REGISTRY=keppel.eu-nl-1.cloud.sap --build-arg BASE
 
 ### deploy the chart
 
-* `helm upgrade --install --create-namespace --namespace database mariadb-galera helm`
+* using only the default values.yaml: `helm upgrade --install --create-namespace --namespace database mariadb-galera helm`
+* with [additional custom values](https://helm.sh/docs/chart_template_guide/values_files/#helm) for a certain instance: `helm upgrade --install --create-namespace --namespace database mariadb-galera helm --values helm/custom/eu-de-2.yaml`
 
 #### network config
 
@@ -65,6 +66,104 @@ If you want/have to specify a certain network (currently only supported for the 
 
 The [Openstack cloud provider documentation](https://github.com/kubernetes/cloud-provider-openstack/blob/master/docs/openstack-cloud-controller-manager/expose-applications-using-loadbalancer-type-service.md) has the details about these and more network settings.
 
+#### asynchronous replication config
+
+The Helm chart supports circular asynchronous replication between two Galera clusters. Other topologies are technical possible, but not tested.
+
+* configure the `gtidDomainId` and `gtidDomainIdCount` in the custom configuration files `helm/custom/eu-de-2.yaml` and `helm/custom/eu-nl-1.yaml` of your Galera instances and make sure `asyncReplication.enabled=false` is defined
+* eu-de-2
+```yaml
+mariadb:
+  galera:
+    gtidDomainId: 1
+    gtidDomainIdCount: 2
+  asyncReplication:
+    enabled: false
+```
+* eu-nl-1
+```yaml
+mariadb:
+  galera:
+    gtidDomainId: 2
+    gtidDomainIdCount: 2
+  asyncReplication:
+    enabled: false
+```
+* if the two Galera cluster are not running in the same Kubernetes cluster or you are not running a service mesh between the Kubernetes clusters you have to expose the MySQL service via a load balancer
+* add the service definition to the custom configuration files of both instances
+```yaml
+services:
+  application:
+    frontend:
+      type: LoadBalancer
+```
+* install both Galera cluster instances using their custom configuration files
+```bash
+helm upgrade --install --create-namespace --namespace database mariadb-galera helm --values helm/custom/eu-de-2.yaml
+helm upgrade --install --create-namespace --namespace database mariadb-galera helm --values helm/custom/eu-nl-1.yaml
+```
+* query the load balancer ip of the eu-de-2 instance and add it to the custom configuration of eu-nl-1
+* eu-de-2
+```bash
+kubectl get svc/mariadb-g-frontend-direct --namespace database -o jsonpath={.status.loadBalancer.ingress[0].ip}
+```
+* eu-nl-1
+```yaml
+mariadb:
+  asyncReplication:
+    primaryHost: 10.237.116.19
+```
+* create a `mariadb-dump` backup from eu-de-2 and restore it in eu-nl-1
+* eu-nl-1
+```bash
+kubectl exec -i pod/mariadb-g-0 -c db -- bash -c 'mariadb-dump --protocol=tcp --host=10.237.116.19 --port=3306 --user=root --password=pass --all-databases --add-drop-database --flush-logs --hex-blob --events --routines --comments --triggers --skip-log-queries --gtid --master-data=1 --single-transaction | mysql --protocol=socket --user=${MARIADB_ROOT_USER}'
+```
+* enable the replication in the custom configuration of eu-nl-1 and rollout that change
+```yaml
+mariadb:
+  asyncReplication:
+    enabled: true
+```
+* eu-nl-1
+```bash
+helm upgrade --install --create-namespace --namespace database mariadb-galera helm --values helm/custom/eu-nl-1.yaml
+```
+* you can check the configuration pod logs for the status of the replication config
+```json
+{"@timestamp":"2022-11-19T20:15:18+UTC","ecs.version":"1.6.0","log.logger":"/opt/mariadb/bin/entrypoint-job.sh","log.origin.function":"stopasyncreplication","log.level":"info","message":"stop async replication"}
+{"@timestamp":"2022-11-19T20:15:18+UTC","ecs.version":"1.6.0","log.logger":"/opt/mariadb/bin/entrypoint-job.sh","log.origin.function":"stopasyncreplication","log.level":"info","message":"replica stop successful"}
+{"@timestamp":"2022-11-19T20:15:18+UTC","ecs.version":"1.6.0","log.logger":"/opt/mariadb/bin/entrypoint-job.sh","log.origin.function":"setupasyncreplication","log.level":"info","message":"setup async replication from '10.237.116.19'"}
+{"@timestamp":"2022-11-19T20:15:18+UTC","ecs.version":"1.6.0","log.logger":"/opt/mariadb/bin/entrypoint-job.sh","log.origin.function":"setupasyncreplication","log.level":"debug","message":"master config successfully updated"}
+{"@timestamp":"2022-11-19T20:15:18+UTC","ecs.version":"1.6.0","log.logger":"/opt/mariadb/bin/entrypoint-job.sh","log.origin.function":"startasyncreplication","log.level":"info","message":"start async replication"}
+{"@timestamp":"2022-11-19T20:15:18+UTC","ecs.version":"1.6.0","log.logger":"/opt/mariadb/bin/entrypoint-job.sh","log.origin.function":"startasyncreplication","log.level":"info","message":"replica start successful"}
+{"@timestamp":"2022-11-19T20:15:18+UTC","ecs.version":"1.6.0","log.logger":"/opt/mariadb/bin/entrypoint-job.sh","log.origin.function":"checkasyncreplication","log.level":"info","message":"check async replication status"}
+{"@timestamp":"2022-11-19T20:15:18+UTC","ecs.version":"1.6.0","log.logger":"/opt/mariadb/bin/entrypoint-job.sh","log.origin.function":"checkasyncreplication","log.level":"error","message":"replica still trying to connect to the primary(20 retries left)"}
+{"@timestamp":"2022-11-19T20:15:24+UTC","ecs.version":"1.6.0","log.logger":"/opt/mariadb/bin/entrypoint-job.sh","log.origin.function":"checkasyncreplication","log.level":"info","message":"async replication active"}
+{"@timestamp":"2022-11-19T20:15:24+UTC","ecs.version":"1.6.0","log.logger":"/opt/mariadb/bin/entrypoint-job.sh","log.origin.function":"null","log.level":"info","message":"configuration job finished"}
+```
+* query the load balancer ip of the eu-de-2 instance and add it to the custom configuration of eu-nl-1
+* eu-nl-1
+```bash
+kubectl get svc/mariadb-g-frontend-direct --namespace database -o jsonpath={.status.loadBalancer.ingress[0].ip}
+```
+* eu-de-2
+```yaml
+mariadb:
+  asyncReplication:
+    primaryHost: 10.47.40.223
+```
+* enable the replication in the custom configuration of eu-de-2 and rollout that change with the additional `mariadb.asyncReplication.resetConfig=true` (gtid_slave_pos on eu-de-2 will be updated with the gtid_binlog_pos from eu-nl-1)
+* the next `helm upgrade` without `resetConfig=true` will make sure that future configuration jobs will not reset the id again to avoid data loss or duplicates
+```yaml
+mariadb:
+  asyncReplication:
+    enabled: true
+```
+* eu-de-2
+```bash
+helm upgrade --install --create-namespace --namespace database mariadb-galera helm --values helm/custom/eu-de-2.yaml --set mariadb.asyncReplication.resetConfig=true
+```
+* also here you can check the configuration pod logs for the status of the replication config
 
 ### remove the deployed release
 
