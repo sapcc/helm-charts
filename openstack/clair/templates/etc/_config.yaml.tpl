@@ -19,7 +19,7 @@ indexer:
 matcher:
   connstring: "host=clair-postgresql port=5432 dbname=clair user=postgres password=%POSTGRES_PASSWORD% sslmode=disable application_name=c-matcher"
   max_conn_pool: 32
-  indexer_addr: "" # ignored since we're running in combo mode
+  indexer_addr: "http://clair-indexer:8080"
   migrations: true
   period: {{ quote .Values.clair.update_interval }}
 
@@ -27,7 +27,6 @@ matcher:
   # does not get applied correctly, causing garbage collection to not run
   # <https://github.com/quay/clair/issues/1337#issuecomment-898485216>
   update_retention: 5
-
 
 matchers:
   # do NOT enable the crda matcher; it tries to make API calls that fail with 403 errors left and right
@@ -37,17 +36,17 @@ updaters:
   sets: [ alpine, debian, rhel, suse, ubuntu ]
   config: {} # no special config options for updaters yet
 
-notifier:
-  connstring: "host=clair-postgresql port=5432 dbname=clair user=postgres password=%POSTGRES_PASSWORD% sslmode=disable application_name=c-notifier"
-  migrations: true
-  indexer_addr: "" # ignored since we're running in combo mode
-  matcher_addr: "" # ignored since we're running in combo mode
-  poll_interval: 1000h # basically never, we don't use the notifier
-  delivery_interval: 1000h # basically never, we don't use the notifier
-  disable_summary: false
-  webhook: null
-  amqp: null
-  stomp: null
+# notifier:
+#   connstring: "host=clair-postgresql port=5432 dbname=clair user=postgres password=%POSTGRES_PASSWORD% sslmode=disable application_name=c-notifier"
+#   migrations: true
+#   indexer_addr: "" # ignored since we're running in combo mode
+#   matcher_addr: "" # ignored since we're running in combo mode
+#   poll_interval: 1000h # basically never, we don't use the notifier
+#   delivery_interval: 1000h # basically never, we don't use the notifier
+#   disable_summary: false
+#   webhook: null
+#   amqp: null
+#   stomp: null
 
 auth:
   psk:

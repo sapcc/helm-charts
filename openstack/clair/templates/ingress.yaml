@@ -15,10 +15,24 @@ spec:
     - host: keppel-clair.{{.Values.global.region}}.{{.Values.global.tld}}
       http:
         paths:
-        - path: /
+        # - path: /notifier
+        #   pathType: Prefix
+        #   backend:
+        #     service:
+        #       name: clair-notifier
+        #       port:
+        #         number: 8080
+        - path: /indexer
           pathType: Prefix
           backend:
             service:
-              name: clair
+              name: clair-indexer
+              port:
+                number: 8080
+        - path: /matcher
+          pathType: Prefix
+          backend:
+            service:
+              name: clair-matcher
               port:
                 number: 8080

@@ -2,11 +2,11 @@ kind: Deployment
 apiVersion: apps/v1
 
 metadata:
-  name: clair
+  name: clair-indexer
 
 spec:
   revisionHistoryLimit: 5
-  replicas: 3
+  replicas: 2
   strategy:
     type: RollingUpdate
     rollingUpdate:
@@ -14,11 +14,11 @@ spec:
       maxSurge: 1
   selector:
     matchLabels:
-      name: clair
+      name: clair-indexer
   template:
     metadata:
       labels:
-        name: clair
+        name: clair-indexer
         alert-tier: os
         alert-service: keppel
       annotations:
@@ -30,10 +30,10 @@ spec:
           configMap:
             name: clair-etc
       containers:
-        - name: clair
+        - name: clair-indexer
           image: {{.Values.global.registry}}/clair:{{.Values.clair.image_version | required ".Values.clair.image_version is not set!"}}
           imagePullPolicy: IfNotPresent
-          command: [ /bin/sh, /etc/clair/start.sh ]
+          command: [ /bin/sh, /etc/clair/start.sh, indexer ]
           env:
             - name: AUTH_PRESHARED_KEY
               valueFrom:
