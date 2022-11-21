@@ -15,6 +15,9 @@ spec:
       labels:
         app.kubernetes.io/name: {{ include "andromeda.fullname" . }}-agent-akamai
         app.kubernetes.io/instance: {{ .Release.Name }}
+      annotations:
+        checksum/etc: {{ include (print $.Template.BasePath  "/configmap.yaml") . | sha256sum }}
+        checksum/etc-akamai: {{ include (print $.Template.BasePath  "/configmap-akamai.yaml") . | sha256sum }}
     spec:
       containers:
       - name: {{ .Chart.Name }}-akamai-agent

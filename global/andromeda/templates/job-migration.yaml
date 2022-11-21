@@ -14,6 +14,7 @@ spec:
     spec:
       restartPolicy: OnFailure
       serviceAccountName: {{ template "andromeda.serviceAccountName" . }}
+      {{- if not .Values.database_override.enabled }}
       initContainers:
         - name: wait-for-db
           image: "{{ .Values.global.registry }}/kubernetes-entrypoint:{{ .Values.image.kubernetes_entrypoint_version }}"
@@ -25,6 +26,7 @@ spec:
               value: "{{ include "andromeda.database_service" . }}"
             - name: COMMAND
               value: "true"
+      {{- end }}
       containers:
         - name: {{ include "andromeda.fullname" . }}-migration
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | required ".Values.image.tag is required" }}"
