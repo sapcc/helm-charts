@@ -8,10 +8,12 @@ metadata:
     heritage: "{{ .Release.Service }}"
 spec:
   schedule: {{ .Values.backup.schedule | quote }}
+  concurrencyPolicy: "Forbid"
   jobTemplate:
     spec:
       template:
         spec:
+          parallelism: 1
           containers:
           - name: backup
             image: {{ required ".Values.global.dockerHubMirrorAlternateRegion is missing" .Values.global.dockerHubMirrorAlternateRegion }}/{{ .Values.backup.image }}:{{ .Values.backup.image_tag }}
