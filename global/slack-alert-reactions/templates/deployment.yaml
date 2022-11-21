@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: slack-alert-reactions
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      name: slack-alert-reactions
+  template:
+    metadata:
+      labels:
+        name: slack-alert-reactions
+    spec:
+      containers:
+        - name: slack-alert-reactions-container
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: IfNotPresent
+          env:
+          - name: SLACK_USER_TOKEN
+            valueFrom:
+              secretKeyRef:
+                name: slack-alert-reactions-secret
+                key: slack-user-token
+                optional: false
+          - name: APP_ENVIRONMENT
+            valueFrom:
+              secretKeyRef:
+                name: slack-alert-reactions-secret
+                key: app-environment
+                optional: false
+          - name: SLACK_WORKSPACE
+            valueFrom:
+              secretKeyRef:
+                name: slack-alert-reactions-secret
+                key: slack-workspace
+                optional: false
+          - name: GITHUB_TOKEN
+            valueFrom:
+              secretKeyRef:
+                name: slack-alert-reactions-secret
+                key: github-token
+                optional: false 
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
