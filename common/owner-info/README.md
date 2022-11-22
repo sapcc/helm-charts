@@ -31,6 +31,10 @@ $ helm dep update
 The following table lists the configurable parameters of the `owner-info` chart and their default values.
 
 | Parameter | Default | Description |
-| ---       | ---         | ---     |
-| `maintainers` | `[]` | List of people that maintain your chart. The list should be ordered by priority, i.e. primary maintainer should be at the top. |
-| `helm-chart-url` | `WHERE-TO-FIND-THE-CHART-IN-GITHUB` | URL to your chart in github, e.g. `https://github.com/sapcc/helm-charts/tree/master/common/owner-info` |
+| --------- | ------- | ----------- |
+| `helm-chart-url` | *(required)* | An HTTP(S) URL describing where to find the Helm chart in GitHub etc., e.g. `https://github.com/sapcc/helm-charts/tree/master/common/owner-info`. |
+| `maintainers` | `[]` | List of people that maintain the Helm chart. If multiple people can help with issues regarding the chart, feel free to include as many names as you like. The list should be ordered by priority, i.e. the primary maintainer should be at the top. |
+| `support-group` | *(required)* | For routing alerts/tickets regarding this deployment to the right support group. |
+| `service` | *(optional)* | Allows sorting alerts/tickets within the realm of a single support group. |
+
+The values for `support-group` and `service` will be carried over into all Kubernetes objects belonging to the Helm release, and appear in `.metadata.labels["ccloud/support-group"]` and `.metadata.labels["ccloud/service"]`, respectively. This mapping is automatically performed by the owner-label-injector component.
