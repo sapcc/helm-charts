@@ -114,11 +114,11 @@ groups:
       description: "IPMI metrics cannot be fetched from node {{ $labels.server_name }}, maintenance {{ $labels.maintenance }} / Provision_State {{ $labels.provision_state}} / Project_ID: {{ $labels.project_id }} / Server_ID: {{ $labels.server_id }} / Manufacturer: {{ $labels.manufacturer }} / Model: {{ $labels.model }} / Serial {{ $labels.serial }}"
       summary: "IPMI metrics cannot be fetched from node {{ $labels.server_name }}"
 
-  - alert: MetalIronicIPMIDownCritical
+  - alert: MetalIronicIPMIDownWarning
     expr: count(ipmi_up{job="ipmi/ironic", provision_state="active", maintenance="false"} == 0) by (server_name, maintenance, manufacturer, model, serial, provision_state, server_id, project_id)
     for: 30m
     labels:
-      severity: critical
+      severity: warning
       tier: metal
       service: baremetal
       context: "{{ $labels.server_name }}"
@@ -128,20 +128,6 @@ groups:
       description: "IPMI metrics cannot be fetched from node {{ $labels.server_name }}, maintenance {{ $labels.maintenance }} / Provision_State {{ $labels.provision_state}} / Project_ID: {{ $labels.project_id }} / Server_ID: {{ $labels.server_id }} / Manufacturer: {{ $labels.manufacturer }} / Model: {{ $labels.model }} / Serial {{ $labels.serial }}"
       summary: "ipmi metrics cannot be fetched from node {{ $labels.server_name }}"
       
-  - alert: MetalIronicIPMIDownWarning
-    expr: count(ipmi_up{job="ipmi/ironic", provision_state!="active"} == 0 or ipmi_up{job="ipmi/ironic", provision_state="active", maintenance="true"} == 0) by (server_name, maintenance, manufacturer, model, serial, provision_state, serial, server_id, project_id)
-    for: 10m
-    labels:
-      severity: warning
-      tier: metal
-      service: baremetal
-      context: "{{ $labels.server_name }}"
-      meta: "IPMI metrics cannot be fetched from node {{ $labels.server_name }}, maintenance {{ $labels.maintenance }}, state {{ $labels.provision_state}}, serial {{ $labels.serial }}, Project_ID: {{ $labels.project_id }}, Server_ID: {{ $labels.server_id }}"
-      playbook: docs/devops/alert/baremetal
-    annotations:
-      description: "ipmi metrics cannot be fetched from node {{ $labels.server_name }}, maintenance {{ $labels.maintenance }} / Provision_State {{ $labels.provision_state}} / Project_ID: {{ $labels.project_id }} / Server_ID: {{ $labels.server_id }} / Manufacturer: {{ $labels.manufacturer }} / Model: {{ $labels.model }} / Serial {{ $labels.serial }}"
-      summary: "ipmi metrics cannot be fetched from node {{ $labels.server_name }}"
-
   - alert: MetalIPMIExpCritical
     expr: sum(ipmi_up) by (region) == 0
     for: 30m
