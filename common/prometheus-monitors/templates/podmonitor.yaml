@@ -5,12 +5,15 @@
 apiVersion: monitoring.coreos.com/v1
 kind: PodMonitor
 metadata:
-  name: {{ default .Release.Namespace .Values.nameOverride }}-pod-monitor
+  name: {{ default .Release.Namespace .Values.nameOverride }}
   labels:
+    prometheus-monitor-version: {{ quote .Chart.Version }}
     prometheus: {{ required "required '.Values.prometheus' is not specified" .Values.prometheus }}
 
 spec:
-  jobLabel: {{ .Release.Namespace }}
+{{- if .Values.jobLabel }}
+  jobLabel: {{ .Values.jobLabel }}
+{{- end }}
   selector:
 {{- if and ( empty .Values.matchLabels ) ( empty .Values.matchExpressions ) }}
 {{ fail "required either '.Values.matchLabels' or '.Values.matchExpressions' but neither is defined" }}
@@ -35,6 +38,11 @@ spec:
       scrapeTimeout: {{ default "55s" .Values.scrapeTimeout }}
       port: {{ default "metrics" .Values.metricsPort }}
       path: {{ default "/metrics" .Values.metricsPath }}
+      scheme: {{ default "http" .Values.httpScheme }}
+    {{- if .Values.basicAuth }}
+      basicAuth:
+{{ .Values.basicAuth | toYaml | indent 8 }}
+    {{- end }}
       honorLabels: true
       relabelings: 
         - action: labelmap
