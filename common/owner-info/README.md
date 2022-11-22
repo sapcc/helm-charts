@@ -20,15 +20,19 @@ dependencies:
     version: # use owner-info's current version from Chart.yaml
 ```
 
-then run:
+Run `helm dep up` to regenerate your chart's `Chart.lock` file. Then, add the owner-info metadata to your chart's `values.yaml` file:
 
-```sh
-$ helm dep update
+```yaml
+owner-info:
+  helm-chart-url: 'https://github.com/sapcc/helm-charts/tree/master/system/example'
+  maintainers:
+    - Jane Doe
+    - Max Mustermann
+  support-group: example-group
+  service: example-service
 ```
 
-## Configuration
-
-The following table lists the configurable parameters of the `owner-info` chart and their default values.
+The following fields can appear within the `owner-info` section of your chart's `values.yaml` file:
 
 | Parameter | Required? | Description |
 | --------- | --------- | ----------- |
