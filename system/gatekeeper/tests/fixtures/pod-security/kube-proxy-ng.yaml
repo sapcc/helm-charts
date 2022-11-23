@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  annotations:
+    meta.helm.sh/release-name: kube-system-metal
+    meta.helm.sh/release-namespace: kube-system
+  labels:
+    app.kubernetes.io/managed-by: Helm
+    ccloud/support-group: containers
+  name: kube-proxy-ng
+  namespace: kube-system
+spec:
+  template:
+    spec:
+      containers:
+      - name: proxy
+        image: keppel.example.com/ccloud/kube-proxy:v1.23.6
+        securityContext:
+          privileged: true
+      hostNetwork: true
+      securityContext: {}
