@@ -1,0 +1,64 @@
+kind: Deployment
+apiVersion: apps/v1
+
+metadata:
+  name: clair-matcher
+
+spec:
+  revisionHistoryLimit: 5
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
+  selector:
+    matchLabels:
+      name: clair-matcher
+  template:
+    metadata:
+      labels:
+        name: clair-matcher
+        alert-tier: os
+        alert-service: keppel
+      annotations:
+        checksum/configmap: {{ include "clair/templates/configmap.yaml" . | sha256sum }}
+        checksum/secret: {{ include "clair/templates/secret.yaml" . | sha256sum }}
+    spec:
+      volumes:
+        - name: config
+          configMap:
+            name: clair-etc
+      containers:
+        - name: clair-matcher
+          image: {{.Values.global.registry}}/clair:{{.Values.clair.image_version | required ".Values.clair.image_version is not set!"}}
+          imagePullPolicy: IfNotPresent
+          command: [ /bin/sh, /etc/clair/start.sh, matcher ]
+          env:
+            - name: AUTH_PRESHARED_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: clair
+                  key: auth_preshared_key
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: clair
+                  key: postgres_password
+          volumeMounts:
+            - mountPath: /etc/clair
+              name: config
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8081
+            timeoutSeconds: 10
+            periodSeconds: 60
+            initialDelaySeconds: 60
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 8081
+            timeoutSeconds: 5
+            periodSeconds: 5
+          resources: {} # TODO: configure once we have some data
