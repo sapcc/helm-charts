@@ -20,8 +20,27 @@ config:
           challenge: true
         authentication_backend:
           type: intern
-      ldap_auth:
+      saml_auth:
         order: 2
+        description: "SAML provider"
+        http_enabled: true
+        transport_enabled: false
+        http_authenticator:
+          type: saml
+          challenge: false
+          config:
+            idp:
+              entity_id: "https://{{.Values.auth.provider }}"
+              metadata_file: certs/metadata.xml
+            sp:
+              entity_id: "https://{{.Values.clusterName }}.{{.Values.global.clusterType }}.{{.Values.global.region }}.{{.Values.global.domain }}"
+            kibana_url: "{{.Values.clusterName }}.{{.Values.global.clusterType }}.{{.Values.global.region }}.{{.Values.global.domain }}"
+            subject_key: name
+            roles_key: Roles
+        authentication_backend:
+          type: noop
+      ldap_auth:
+        order: 3
         description: "Authenticate using LDAP"
         http_enabled: true
         transport_enabled: true
