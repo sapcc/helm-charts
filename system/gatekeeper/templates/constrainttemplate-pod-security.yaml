@@ -1,12 +1,7 @@
-{{- $kubeSystemReleaseName := "kube-system" }}
 {{- $kubeMonitoringReleaseName := "kube-monitoring" }}
 {{- if eq .Values.cluster_type "baremetal" "test" }}
-  {{- $kubeSystemReleaseName = "kube-system-metal" }}
   {{- $kubeMonitoringReleaseName = "kube-monitoring-metal" }}
 {{- end }}
-{{- if eq .Values.cluster_type "kubernikus" "virtual" }}
-  {{- $kubeSystemReleaseName = printf "kube-system-%s" .Values.cluster_type }}
-{{- end -}}
 {{- if eq .Values.cluster_type "kubernikus" "scaleout" "virtual" }}
   {{- $kubeMonitoringReleaseName = printf "kube-monitoring-%s" .Values.cluster_type }}
 {{- end -}}
@@ -46,7 +41,14 @@ spec:
         isKubeSystemPod = true {
           iro.kind == "DaemonSet"
           iro.metadata.namespace == "kube-system"
-          helmReleaseName == "{{ $kubeSystemReleaseName }}"
+          # NOTE: In scaleout, this includes daemonsets and deployments that are
+          # injected by Kubernikus (CNI, Wormhole, kube-proxy, etc.).
+        }
+        isKubeSystemPod = true {
+          iro.kind == "Deployment"
+          iro.metadata.namespace == "kube-system"
+          # NOTE: In scaleout, this includes daemonsets and deployments that are
+          # injected by Kubernikus (CNI, Wormhole, kube-proxy, etc.).
         }
 
         default isNodeExporterPod = false
@@ -88,6 +90,8 @@ spec:
           pod.isFound
           object.get(pod.spec, ["hostPID"], false)
 
+          # kube-system-ldap-named-user and nvidia-driver-installer need this
+          not isKubeSystemPod
           # node-exporter needs to look into the node level
           not isNodeExporterPod
 
@@ -98,6 +102,10 @@ spec:
           container := containers[_]
           object.get(container, ["securityContext", "allowPrivilegeEscalation"], false)
 
+          # needed by kube-system-ingress-nginx-external-controller, in scaleout
+          # also by csi-cinder-node-plugin
+          not isKubeSystemPod
+
           msg := sprintf("pod is not allowed to set spec.containers[%q].securityContext.allowPrivilegeEscalation = true", [container.name])
         }
 
@@ -105,8 +113,8 @@ spec:
           container := containers[_]
           object.get(container, ["securityContext", "privileged"], false)
 
-          # many kube-system components need broad node-level access (e.g.
-          # kube-proxy, MTU discovery, wormhole to k8s central)
+          # many kube-system components need broad node-level access
+          # (e.g. kube-proxy, MTU discovery, wormhole to k8s central)
           not isKubeSystemPod
           # Swift components running on the storage servers need to be able to
           # mount/unmount disks at runtime (TODO: use mount propagation instead)
@@ -120,8 +128,8 @@ spec:
           capabilities := object.get(container, ["securityContext", "capabilities", "add"], [])
           capability := capabilities[_]
 
-          # many kube-system components need broad node-level access (e.g.
-          # kube-proxy, MTU discovery, wormhole to k8s central)
+          # many kube-system components need broad network access (e.g. coredns,
+          # CNI, ingress-nginx)
           not isKubeSystemPod
           # NOTE: This check is written to also enable allowlisting of specific
           # capabilities on specific pods only.
