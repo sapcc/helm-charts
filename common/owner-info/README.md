@@ -20,17 +20,25 @@ dependencies:
     version: # use owner-info's current version from Chart.yaml
 ```
 
-then run:
+Run `helm dep up` to regenerate your chart's `Chart.lock` file. Then, add the owner-info metadata to your chart's `values.yaml` file:
 
-```sh
-$ helm dep update
+```yaml
+owner-info:
+  helm-chart-url: 'https://github.com/sapcc/helm-charts/tree/master/system/example'
+  maintainers:
+    - Jane Doe
+    - Max Mustermann
+  support-group: example-group
+  service: example-service
 ```
 
-## Configuration
+The following fields can appear within the `owner-info` section of your chart's `values.yaml` file:
 
-The following table lists the configurable parameters of the `owner-info` chart and their default values.
+| Parameter | Required? | Description |
+| --------- | --------- | ----------- |
+| `helm-chart-url` | **yes** | An HTTP(S) URL describing where to find the Helm chart in GitHub etc., e.g. `https://github.com/sapcc/helm-charts/tree/master/common/owner-info`. |
+| `maintainers` | no | List of people that maintain the Helm chart. If multiple people can help with issues regarding the chart, feel free to include as many names as you like. The list should be ordered by priority, i.e. the primary maintainer should be at the top. |
+| `support-group` | **yes** | For routing alerts/tickets regarding this deployment to the right support group. |
+| `service` | no | Allows sorting alerts/tickets within the realm of a single support group. |
 
-| Parameter | Default | Description |
-| ---       | ---         | ---     |
-| `maintainers` | `[]` | List of people that maintain your chart. The list should be ordered by priority, i.e. primary maintainer should be at the top. |
-| `helm-chart-url` | `WHERE-TO-FIND-THE-CHART-IN-GITHUB` | URL to your chart in github, e.g. `https://github.com/sapcc/helm-charts/tree/master/common/owner-info` |
+The values for `support-group` and `service` will be carried over into all Kubernetes objects belonging to the Helm release (both directly and indirectly), and appear in `.metadata.labels["ccloud/support-group"]` and `.metadata.labels["ccloud/service"]`, respectively. This mapping is automatically performed by the owner-label-injector component.
