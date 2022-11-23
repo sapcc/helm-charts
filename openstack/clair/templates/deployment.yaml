@@ -1,8 +1,10 @@
+{{- range $component := list "indexer" "matcher" }}
+---
 kind: Deployment
 apiVersion: apps/v1
 
 metadata:
-  name: clair-indexer
+  name: clair-{{ $component }}
 
 spec:
   revisionHistoryLimit: 5
@@ -14,26 +16,26 @@ spec:
       maxSurge: 1
   selector:
     matchLabels:
-      name: clair-indexer
+      name: clair-{{ $component }}
   template:
     metadata:
       labels:
-        name: clair-indexer
+        name: clair-{{ $component }}
         alert-tier: os
         alert-service: keppel
       annotations:
-        checksum/configmap: {{ include "clair/templates/configmap.yaml" . | sha256sum }}
-        checksum/secret: {{ include "clair/templates/secret.yaml" . | sha256sum }}
+        checksum/configmap: {{ include "clair/templates/configmap.yaml" $ | sha256sum }}
+        checksum/secret: {{ include "clair/templates/secret.yaml" $ | sha256sum }}
     spec:
       volumes:
         - name: config
           configMap:
             name: clair-etc
       containers:
-        - name: clair-indexer
-          image: {{.Values.global.registry}}/clair:{{.Values.clair.image_version | required ".Values.clair.image_version is not set!"}}
+        - name: clair-{{ $component }}
+          image: {{ $.Values.global.registry }}/clair:{{ $.Values.clair.image_version | required ".Values.clair.image_version is not set!" }}
           imagePullPolicy: IfNotPresent
-          command: [ /bin/sh, /etc/clair/start.sh, indexer ]
+          command: [ /bin/sh, /etc/clair/start.sh, {{ $component }} ]
           env:
             - name: AUTH_PRESHARED_KEY
               valueFrom:
@@ -62,3 +64,4 @@ spec:
             timeoutSeconds: 5
             periodSeconds: 5
           resources: {} # TODO: configure once we have some data
+{{- end }}
