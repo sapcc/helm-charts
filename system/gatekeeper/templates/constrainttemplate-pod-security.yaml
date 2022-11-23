@@ -1,0 +1,130 @@
+{{- $kubeSystemReleaseName := "kube-system" }}
+{{- $kubeMonitoringReleaseName := "kube-monitoring" }}
+{{- if eq .Values.cluster_type "baremetal" "test" }}
+  {{- $kubeSystemReleaseName = "kube-system-metal" }}
+  {{- $kubeMonitoringReleaseName = "kube-monitoring-metal" }}
+{{- end }}
+{{- if eq .Values.cluster_type "kubernikus" "virtual" }}
+  {{- $kubeSystemReleaseName = printf "kube-system-%s" .Values.cluster_type }}
+{{- end -}}
+{{- if eq .Values.cluster_type "kubernikus" "scaleout" "virtual" }}
+  {{- $kubeMonitoringReleaseName = printf "kube-monitoring-%s" .Values.cluster_type }}
+{{- end -}}
+
+apiVersion: templates.gatekeeper.sh/v1
+kind: ConstraintTemplate
+metadata:
+  name: gkpodsecurity
+spec:
+  crd:
+    spec:
+      names:
+        kind: GkPodSecurity
+
+  targets:
+    - target: admission.k8s.gatekeeper.sh
+      libs:
+        - |
+          {{ .Files.Get "lib/add-support-labels.rego" | nindent 10 }}
+        - |
+          {{ .Files.Get "lib/traversal.rego" | nindent 10 }}
+      rego: |
+        package podsecurity
+        import data.lib.add_support_labels
+        import data.lib.traversal
+
+        iro := input.review.object
+        pod := traversal.find_pod(iro)
+        containers := traversal.find_container_specs(iro)
+
+        helmReleaseName := object.get(iro.metadata, ["annotations", "meta.helm.sh/release-name"], "none")
+
+        ########################################################################
+        # allowlists: match pods that may use certain privileged features
+
+        default isKubeSystemPod = false
+        isKubeSystemPod = true {
+          iro.kind == "DaemonSet"
+          iro.metadata.namespace == "kube-system"
+          helmReleaseName == "{{ $kubeSystemReleaseName }}"
+        }
+
+        default isNodeExporterPod = false
+        isNodeExporterPod = true {
+          iro.kind == "DaemonSet"
+          iro.metadata.namespace == "kube-monitoring"
+          iro.metadata.name == "{{ $kubeMonitoringReleaseName }}-prometheus-node-exporter"
+          helmReleaseName == "{{ $kubeMonitoringReleaseName }}"
+        }
+
+        default isSwiftServerPod = false
+        isSwiftServerPod = true {
+          iro.kind == "DaemonSet"
+          iro.metadata.namespace == "swift"
+          object.get(pod.spec, ["nodeSelector", "species"], "none") == "swift-storage"
+        }
+
+        ########################################################################
+        # generate violations for all pods using privileged security features
+        # without being allowlisted
+
+        violation[{"msg": add_support_labels.from_k8s_object(iro, msg)}] {
+          pod.isFound
+          object.get(pod.spec, ["hostNetwork"], false)
+
+          # many kube-system components need broad node-level access (e.g.
+          # kube-proxy, MTU discovery, wormhole to k8s central)
+          not isKubeSystemPod
+          # node-exporter needs node-level access to collect node metrics
+          not isNodeExporterPod
+          # Swift components running on the storage servers inspect the network
+          # interfaces to establish their identity within the Swift ring
+          not isSwiftServerPod
+
+          msg := "pod is not allowed to set spec.hostNetwork = true"
+        }
+
+        violation[{"msg": add_support_labels.from_k8s_object(iro, msg)}] {
+          pod.isFound
+          object.get(pod.spec, ["hostPID"], false)
+
+          # node-exporter needs to look into the node level
+          not isNodeExporterPod
+
+          msg := "pod is not allowed to set spec.hostPID = true"
+        }
+
+        violation[{"msg": add_support_labels.from_k8s_object(iro, msg)}] {
+          container := containers[_]
+          object.get(container, ["securityContext", "allowPrivilegeEscalation"], false)
+
+          msg := sprintf("pod is not allowed to set spec.containers[%q].securityContext.allowPrivilegeEscalation = true", [container.name])
+        }
+
+        violation[{"msg": add_support_labels.from_k8s_object(iro, msg)}] {
+          container := containers[_]
+          object.get(container, ["securityContext", "privileged"], false)
+
+          # many kube-system components need broad node-level access (e.g.
+          # kube-proxy, MTU discovery, wormhole to k8s central)
+          not isKubeSystemPod
+          # Swift components running on the storage servers need to be able to
+          # mount/unmount disks at runtime (TODO: use mount propagation instead)
+          not isSwiftServerPod
+
+          msg := sprintf("pod is not allowed to set spec.containers[%q].securityContext.privileged = true", [container.name])
+        }
+
+        violation[{"msg": add_support_labels.from_k8s_object(iro, msg)}] {
+          container := containers[_]
+          capabilities := object.get(container, ["securityContext", "capabilities", "add"], [])
+          capability := capabilities[_]
+
+          # many kube-system components need broad node-level access (e.g.
+          # kube-proxy, MTU discovery, wormhole to k8s central)
+          not isKubeSystemPod
+          # NOTE: This check is written to also enable allowlisting of specific
+          # capabilities on specific pods only.
+
+          msg := sprintf("pod is not allowed to set spec.containers[%q].securityContext.capabilities.add = [%q]", [container.name, capability])
+        }

@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  annotations:
+    meta.helm.sh/release-name: swift
+    meta.helm.sh/release-namespace: swift
+  labels:
+    app.kubernetes.io/managed-by: Helm
+    ccloud/service: swift
+    ccloud/support-group: containers
+  name: swift-servers
+  namespace: swift
+spec:
+  template:
+    spec:
+      containers:
+      - name: object-server
+        image: keppel.example.com/ccloud/swift:zed
+        securityContext:
+          privileged: true
+      - name: container-server
+        image: keppel.example.com/ccloud/swift:zed
+        securityContext:
+          privileged: true
+      - name: account-server
+        image: keppel.example.com/ccloud/swift:zed
+        securityContext:
+          privileged: true
+      hostNetwork: true
+      nodeSelector:
+        species: swift-storage
+      tolerations:
+      - effect: NoSchedule
+        key: species
+        operator: Equal
+        value: swift-storage

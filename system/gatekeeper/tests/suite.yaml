@@ -379,6 +379,36 @@ tests:
     assertions:
     - violations: no
 
+- name: pod-security
+  template: rendered-chart/gatekeeper/templates/constrainttemplate-pod-security.yaml
+  constraint: rendered-chart/gatekeeper-config/templates/constraint-pod-security.yaml
+  cases:
+  - name: pod-security-accept-kube-proxy-ng
+    object: fixtures/pod-security/kube-proxy-ng.yaml
+    assertions:
+    - violations: no
+  - name: pod-security-accept-node-exporter
+    object: fixtures/pod-security/node-exporter.yaml
+    assertions:
+    - violations: no
+  - name: pod-security-accept-swift-servers
+    object: fixtures/pod-security/swift-servers.yaml
+    assertions:
+    - violations: no
+  - name: pod-security-reject-security-nightmare
+    object: fixtures/pod-security/invalid.yaml
+    assertions:
+    - violations: 1
+      message: '^support-group=none,service=none: pod is not allowed to set spec.hostNetwork = true$'
+    - violations: 1
+      message: '^support-group=none,service=none: pod is not allowed to set spec.hostPID = true$'
+    - violations: 1
+      message: '^support-group=none,service=none: pod is not allowed to set spec.containers\["mallory"].securityContext.allowPrivilegeEscalation = true$'
+    - violations: 1
+      message: '^support-group=none,service=none: pod is not allowed to set spec.containers\["mallory"].securityContext.privileged = true$'
+    - violations: 1
+      message: '^support-group=none,service=none: pod is not allowed to set spec.containers\["mallory"].securityContext.capabilities.add = \["CAP_SYS_ADMIN"]$'
+
 - name: prometheus-scrape-annotations
   template: rendered-chart/gatekeeper/templates/constrainttemplate-prometheus-scrape-annotations.yaml
   constraint: rendered-chart/gatekeeper-config/templates/constraint-prometheus-scrape-annotations.yaml
