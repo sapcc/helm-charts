@@ -70,23 +70,38 @@ spec:
         resources:
 {{ toYaml (required "missing .resources" $common.resources) | indent 10 }}
         env:
-        - name: CONFIG
+        - name: "CONFIG"
           value: "/etc/config/config.yaml"
-        - name: SOURCEDB_PASSWORD
+        - name: "SOURCEDB_PASSWORD"
           valueFrom:
             secretKeyRef:
               name: mariadb-sync-{{$backup.name}}-secrets
               key: sourceDBPW
-        - name: TARGETDB_PASSWORD
+        - name: "TARGETDB_PASSWORD"
           valueFrom:
             secretKeyRef:
-              name: mariadb-sync-{{$backup.name}}-secrets
+              name: mariadb-sync-secrets
               key: metisAdminPW
         - name: "OPENSTACK_PASSWORD"
           valueFrom:
             secretKeyRef:
-              name: mariadb-sync-{{$backup.name}}-secrets
+              name: mariadb-sync-secrets
               key: openstackPW
+        - name: "AWS_ACCESS_KEY_ID"
+          valueFrom:
+            secretKeyRef:
+              name: mariadb-sync-secrets
+              key: awsAccessKeyID
+        - name: "AWS_SECRET_ACCESS_KEY"
+          valueFrom:
+            secretKeyRef:
+              name: mariadb-sync-secrets
+              key: awsSecretAccessKey
+        - name: "SSE_CUSTOMER_KEY"
+          valueFrom:
+            secretKeyRef:
+              name: mariadb-sync-secrets
+              key: awsS3SSECustomerKey
         volumeMounts:
         - name: mariadb-sync-etc
           mountPath: /etc/config
