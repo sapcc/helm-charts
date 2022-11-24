@@ -6,7 +6,8 @@ groups:
       for: 5m
       labels:
         context: thanos
-        service: prometheus
+        service: metrics
+        support_group: observability
         severity: info
         tier: {{ include "alerts.tier" . }}
         playbook: 'docs/support/playbook/prometheus/thanos_store.html'
@@ -20,7 +21,8 @@ groups:
       for: 5m
       labels:
         context: thanos
-        service: prometheus
+        service: metrics
+        support_group: observability
         severity: info
         tier: {{ include "alerts.tier" . }}
         playbook: 'docs/support/playbook/prometheus/thanos_store.html'
