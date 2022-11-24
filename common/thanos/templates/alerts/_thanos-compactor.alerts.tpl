@@ -2,7 +2,7 @@ groups:
 - name: thanos-compactor.alerts
   rules:
     - alert: ThanosCompactHalted
-      expr: thanos_compact_halted{app="thanos-compactor", prometheus="{{ include "prometheus.name" . }}"} == 1
+      expr: thanos_compact_halted{app="thanos-compactor", prometheus="{{ default (include "thanos.name" .) .Values.alerts.prometheus }}"} == 1
       for: 5m
       labels:
         context: thanos
@@ -16,7 +16,7 @@ groups:
         summary: Thanos compaction halted
 
     - alert: ThanosCompactCompactionsFailed
-      expr: rate(prometheus_tsdb_compactions_failed_total{app="thanos-compactor", prometheus="{{ include "prometheus.name" . }}"}[5m]) > 0
+      expr: rate(prometheus_tsdb_compactions_failed_total{app="thanos-compactor", prometheus="{{ default (include "thanos.name" .) .Values.alerts.prometheus }}"}[5m]) > 0
       labels:
         context: thanos
         service: metrics
@@ -29,7 +29,7 @@ groups:
         summary: Thanos Compact is failing
 
     - alert: ThanosCompactBucketOperationsFailed
-      expr: rate(thanos_objstore_bucket_operation_failures_total{app="thanos-compactor", prometheus="{{ include "prometheus.name" . }}"}[5m]) > 0
+      expr: rate(thanos_objstore_bucket_operation_failures_total{app="thanos-compactor", prometheus="{{ default (include "thanos.name" .) .Values.alerts.prometheus }}"}[5m]) > 0
       labels:
         context: thanos
         service: metrics
@@ -42,7 +42,7 @@ groups:
         summary: Prometheus compact bucket operations failing
 
     - alert: ThanosCompactNotRunIn24Hours
-      expr: (time() - max(thanos_objstore_bucket_last_successful_upload_time{app="thanos-compactor", prometheus="{{ include "prometheus.name" . }}"}) ) /60/60 > 24
+      expr: (time() - max(thanos_objstore_bucket_last_successful_upload_time{app="thanos-compactor", prometheus="{{ default (include "thanos.name" .) .Values.alerts.prometheus }}"}) ) /60/60 > 24
       labels:
         context: thanos
         service: metrics
@@ -55,7 +55,7 @@ groups:
         summary: Thanos compaction not run in 24 hours
 
     - alert: ThanosCompactCompactionIsNotRunning
-      expr: up{app="thanos-compactor", prometheus="{{ include "prometheus.name" . }}"} == 0 or absent({app="thanos-compactor", prometheus="{{ include "prometheus.name" . }}"})
+      expr: up{app="thanos-compactor", prometheus="{{ default (include "thanos.name" .) .Values.alerts.prometheus }}"} == 0 or absent({app="thanos-compactor", prometheus="{{ default (include "thanos.name" .) .Values.alerts.prometheus }}"})
       for: 5m
       labels:
         no_alert_on_absence: "true" # because the expression already checks for absence
@@ -70,7 +70,7 @@ groups:
         summary: Thanos compaction not running
 
     - alert: ThanosCompactMultipleCompactionsAreRunning
-      expr: sum(up{app="thanos-compactor", prometheus="{{ include "prometheus.name" . }}"}) > 1
+      expr: sum(up{app="thanos-compactor", prometheus="{{ default (include "thanos.name" .) .Values.alerts.prometheus }}"}) > 1
       for: 5m
       labels:
         context: thanos
