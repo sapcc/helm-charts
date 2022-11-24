@@ -179,7 +179,7 @@ pgmetrics:
             usage: "GAUGE"
             description: "UNIX timestamp of next scheduled manifest sync, or 0 if no replica repos have ever been synced"
     keppel_manifests:
-      query: "SELECT COUNT(*) AS count, EXTRACT(epoch FROM MIN(validated_at)) AS min_validated_at, SUM(CASE WHEN validation_error_message = '' THEN 0 ELSE 1 END) AS validation_errors, COALESCE(EXTRACT(epoch FROM MIN(next_vuln_check_at)), 0), SUM(CASE WHEN next_vuln_check_at > NOW() THEN 0 ELSE 1 END) AS pending_vuln_checks AS min_next_vuln_check_at FROM manifests"
+      query: "SELECT COUNT(*) AS count, EXTRACT(epoch FROM MIN(validated_at)) AS min_validated_at, SUM(CASE WHEN validation_error_message = '' THEN 0 ELSE 1 END) AS validation_errors, COALESCE(EXTRACT(epoch FROM MIN(next_vuln_check_at)), 0) AS min_next_vuln_check_at, SUM(CASE WHEN next_vuln_check_at > NOW() THEN 0 ELSE 1 END) AS pending_vuln_checks FROM manifests"
       metrics:
         - count:
             usage: "GAUGE"
