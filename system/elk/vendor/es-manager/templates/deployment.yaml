@@ -31,6 +31,10 @@ spec:
         - name: es-etc
           configMap:
             name: es-manager-etc
+        - name: opensearch-certs
+          secret:
+            defaultMode: 420
+            secretName: opensearch-certs
       containers:
       - name: es-manager
         image: {{.Values.global.dockerHubMirror}}/{{.Values.image_elasticsearch_manager}}
@@ -52,6 +56,8 @@ spec:
         volumeMounts:
           - mountPath: /es-etc
             name: es-etc
+          - mountPath: /secrets
+            name: opensearch-certs
         ports:
           - name: manager
             containerPort: {{.Values.port_internal}}

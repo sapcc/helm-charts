@@ -4,9 +4,10 @@ groups:
   - alert: OpenstackDesignateApiDown
     expr: |
         cc3test_status{service="designate", type="api"} == 0
-    for: 10m
+    for: 16m
     labels:
       severity: critical
+      support_group: network-api
       tier: os
       service: '{{ $labels.service }}'
       context: '{{ $labels.service }}'
@@ -23,6 +24,7 @@ groups:
         changes(cc3test_status{service="designate", type="api"}[30m]) > 8
     labels:
       severity: warning
+      support_group: network-api
       tier: os
       service: '{{ $labels.service }}'
       context: '{{ $labels.service }}'
@@ -42,6 +44,7 @@ groups:
     for: 10m
     labels:
       severity: critical
+      support_group: network-api
       tier: os
       service: '{{ $labels.service }}'
       context: '{{ $labels.service }}'
@@ -61,6 +64,7 @@ groups:
     for: 10m
     labels:
       severity: warning
+      support_group: network-api
       tier: os
       service: '{{ $labels.service }}'
       context: '{{ $labels.service }}'
@@ -80,6 +84,7 @@ groups:
     for: 10m
     labels:
       severity: critical
+      support_group: network-api
       tier: os
       service: '{{ $labels.service }}'
       context: '{{ $labels.service }}'
@@ -99,6 +104,7 @@ groups:
     for: 10m
     labels:
       severity: warning
+      support_group: network-api
       tier: os
       service: '{{ $labels.service }}'
       context: '{{ $labels.service }}'
@@ -118,6 +124,7 @@ groups:
     for: 10m
     labels:
       severity: critical
+      support_group: network-api
       tier: os
       service: '{{ $labels.service }}'
       context: dns_public
@@ -137,6 +144,7 @@ groups:
     for: 10m
     labels:
       severity: warning
+      support_group: network-api
       tier: os
       service: '{{ $labels.service }}'
       context: dns_public
@@ -157,6 +165,7 @@ groups:
     for: 10m
     labels:
       severity: critical
+      support_group: network
       tier: net
       service: '{{ $labels.service }}'
       context: dns_sap
@@ -176,6 +185,7 @@ groups:
     for: 10m
     labels:
       severity: warning
+      support_group: network-api
       tier: os
       service: '{{ $labels.service }}'
       context: '{{ $labels.service }}'
@@ -186,3 +196,71 @@ groups:
     annotations:
       description: 'AXFR zone transfer {{ $labels.name }} fails'
       summary: 'AXFR zone transfer {{ $labels.name }} fails'
+
+  - alert: OpenstackDesignateCanaryRecordsetDown
+    expr: cc3test_status{service="designate",name=~"TestDnsRecordSet.+"} == 0
+    for: 3h
+    labels:
+      severity: warning
+      support_group: network-api
+      tier: os
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.service }}'
+      meta: 'Openstack Designate Canary is down, see report for more details'
+      dashboard: 'cc3test-overview?var-service={{ $labels.service }}'
+      playbook: 'docs/devops/alert/{{ $labels.service }}'
+      report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
+    annotations:
+      description: 'Openstack Designate Canary is down, see report for more details'
+      summary: 'Openstack Designate Canary is down, see report for more details'
+
+  - alert: OpenstackDesignateCanaryRecordsetFlapping
+    expr: changes(cc3test_status{service="designate",name=~"TestDnsRecordSet.+"}[2h]) > 8
+    for: 3h
+    labels:
+      severity: info
+      support_group: network-api
+      tier: os
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.service }}'
+      meta: 'Openstack Designate Canary is flapping for 2 hours, see last three reports for more details'
+      dashboard: 'cc3test-overview?var-service={{ $labels.service }}'
+      playbook: 'docs/devops/alert/{{ $labels.service }}'
+      report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
+    annotations:
+      description: 'Openstack Designate Canary is flapping for 2 hours, see last three reports for more details'
+      summary: 'Openstack Designate Canary is flapping for 2 hours, see last three reports for more details'
+
+  - alert: OpenstackDesignateCanaryDnsZoneCreateDown
+    expr: cc3test_status{service="designate",name=~"TestDnsZone_create.+"} == 0
+    for: 3h
+    labels:
+      severity: warning
+      support_group: network-api
+      tier: os
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.service }}'
+      meta: 'Openstack Designate Canary create Subzone is down, see report for more details'
+      dashboard: 'cc3test-overview?var-service={{ $labels.service }}'
+      playbook: 'docs/devops/alert/{{ $labels.service }}'
+      report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
+    annotations:
+      description: 'Openstack Designate Canary create Subzone is down, see report for more details'
+      summary: 'Openstack Designate Canary create Subzone is down, see report for more details'
+
+  - alert: OpenstackDesignateCanaryDnsZoneCreateFlapping
+    expr: changes(cc3test_status{service="designate",name=~"TestDnsZone_create.+"}[2h]) > 8
+    for: 3h
+    labels:
+      severity: info
+      support_group: network-api
+      tier: os
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.service }}'
+      meta: 'Openstack Designate Canary create Subzone is flapping for 2 hours, see last three reports for more details'
+      dashboard: 'cc3test-overview?var-service={{ $labels.service }}'
+      playbook: 'docs/devops/alert/{{ $labels.service }}'
+      report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
+    annotations:
+      description: 'Openstack Designate Canary create Subzone is flapping for 2 hours, see last three reports for more details'
+      summary: 'Openstack Designate Canary create Subzone is flapping for 2 hours, see last three reports for more details'

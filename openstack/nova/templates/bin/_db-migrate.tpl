@@ -99,13 +99,11 @@ fi
 
 echo "Migrating cell0 and cell1"
 nova-manage db sync
-nova-manage db null_instance_uuid_scan --delete
 
 {{- if .Values.cell2.enabled }}
 
 echo "Migrating cell2"
 nova-manage --config-file /etc/nova/nova-cell2.conf db sync --local_cell 
-nova-manage --config-file /etc/nova/nova-cell2.conf db null_instance_uuid_scan --delete
 {{- end }}
 
 # online data migration run by online-migration-job

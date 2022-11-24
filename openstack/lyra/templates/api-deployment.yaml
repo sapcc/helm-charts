@@ -50,9 +50,10 @@ spec:
               port: {{.Values.service.internalPort}}
             timeoutSeconds: 5
             initialDelaySeconds: 5
+{{- if and (ne $.Values.global.region "qa-de-2") (ne $.Values.global.region "qa-de-3") }}
           # NOTE: observed resource usage (vpa upperBound) in eu-de-1 (as of 2022-10)
           # - CPU: 12m with 2 replicas
-          # - RAM: levels off around 176Mi (185211091) 
+          # - RAM: levels off around 176Mi (185211091)
           resources:
             requests:
               cpu: "120m"
@@ -60,11 +61,13 @@ spec:
             limits:
               cpu: "120m"
               memory: "250Mi" 
+{{- end }}
         - name: puma-metrics
           image: {{.Values.global.registry}}/puma-exporter:1.0.0
           ports:
             - name: metrics
               containerPort: 9235
+{{- if and (ne $.Values.global.region "qa-de-2") (ne $.Values.global.region "qa-de-3") }}
           # NOTE: observed resource usage (vpa upperBound) in eu-de-1 (as of 2022-10)
           # - CPU: 12m with 2 replicas
           # - RAM: levels off around 128Mi (131072k)
@@ -75,3 +78,4 @@ spec:
             limits:
               cpu: "120m"
               memory: "200Mi"
+{{- end }}

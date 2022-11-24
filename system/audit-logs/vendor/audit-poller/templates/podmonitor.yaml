@@ -2,7 +2,6 @@ apiVersion: monitoring.coreos.com/v1
 kind: PodMonitor
 metadata:
   name: audit-poller
-  namespace: {{ .Values.namespace }}
   labels:
     app.kubernetes.io/name: audit-poller
     helm.sh/chart: {{ include "audit-poller.chart" $ }}
@@ -16,7 +15,7 @@ spec:
       app.kubernetes.io/name: audit-poller
   namespaceSelector:
     matchNames:
-      - {{ .Values.namespace }}
+      - {{ .Release.Namespace }}
   podMetricsEndpoints:
     - interval: 60s
       scrapeTimeout: 55s

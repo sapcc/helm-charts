@@ -141,6 +141,7 @@
   @type copy
   <store>
     @type opensearch
+    scheme https
     host {{.Values.endpoint_host_internal}}
     port {{.Values.http_port}}
     user {{.Values.user}}
@@ -159,6 +160,7 @@
     include_tag_key true
     resurrect_after 120
     reconnect_on_error true
+    suppress_type_name true
     <buffer>
       total_limit_size 256MB
       flush_at_shutdown true

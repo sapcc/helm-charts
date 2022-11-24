@@ -6,7 +6,7 @@ metadata:
   namespace: maia
   labels:
     system: openstack
-    service: metrics
+    service: maia
 
 spec:
   revisionHistoryLimit: 5
@@ -58,4 +58,19 @@ spec:
           ports:
             - name: api
               containerPort: {{ .Values.maia.listen_port }}
+          # http get returns 401 because it requires authentication
+          # Need to add a non-authenticated health endpoint
+          # livenessProbe:
+          #   httpGet:
+          #     path: /
+          #     port: {{ .Values.maia.listen_port }}
+          #   timeoutSeconds: 10
+          #   periodSeconds: 60
+          #   initialDelaySeconds: 60
+          # readinessProbe:
+          #   httpGet:
+          #     path: /
+          #     port: {{ .Values.maia.listen_port }}
+          #   timeoutSeconds: 5
+          #   periodSeconds: 5
 {{- end }}

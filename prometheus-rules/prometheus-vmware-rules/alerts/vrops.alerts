@@ -1,0 +1,105 @@
+groups:
+- name: vrops.alerts
+  rules:
+  - alert: VropsAPIDown
+    expr: |
+      (sum by (target) (vrops_api_response{collector=~"vc.*"}) / 
+      count by (target) (vrops_api_response{collector=~"vc.*"}) > 500) 
+    for: 10m
+    labels:
+      severity: critical
+      tier: vmware
+      service: compute
+      support_group: compute
+      context: vrops
+      playbook: docs/devops/alert/vcenter/vrops.html#vrops_api_down
+      dashboard: vrops-exporter-status
+      meta: "`https://{{ $labels.target }}` API is down."
+    annotations:
+      summary: "`https://{{ $labels.target }}` API is down."
+      description: |
+        All collectors of the vrops-exporter report HTTP status codes above 500, 
+        which indicates that vrops is reporting internal server errors or is unreachable. 
+        Check if vrops is running and healthy.
+
+  - alert: VropsTokenAcquisitionFailed
+    expr: vrops_api_response{get_request="token"} >= 500
+    for: 15m
+    labels:
+      severity: warning
+      tier: vmware
+      service: compute
+      support_group: compute
+      context: vrops
+      playbook: docs/devops/alert/vcenter/vrops.html#vrops_api_down
+      dashboard: vrops-exporter-status
+      meta: "Token acquisition failed for `https://{{ $labels.target }}`"
+    annotations:
+      summary: "Token acquisition failed for `https://{{ $labels.target }}`"
+      description: |
+        A failed token acquisition for this vrops. This indicates
+        that the vrops system is not responding and current
+        monitoring data cannot be generated.
+
+  - alert: VROpsDiskpaceUsageCritical
+    expr: vrops_virtualmachine_guestfilesystem_storage_db_percentage{virtualmachine=~"vrops.*-vc-.+"} > 90
+    for: 20m
+    labels:
+      severity: info
+      tier: vmware
+      service: compute
+      support_group: compute
+      context: vrops
+      dashboard: vrops-instances-overview
+      meta: "{{ $labels.virtualmachine }} disk almost full with over 90% usage."
+    annotations:
+      summary: "{{ $labels.virtualmachine }} disk almost full with over 90% usage."
+      description: |
+        {{ $labels.virtualmachine }} disk almost full with over 90% usage.
+        Please increase disk size.
+
+  - alert: VROpsVCenterAdapterNotReceivingData
+    expr: vrops_vcenter_alert_info{alert_name="Adapter instance is not receiving data"}
+    for: 15m
+    labels:
+      severity: warning
+      tier: vmware
+      service: compute
+      support_group: compute
+      no_alert_on_absence: "true"
+      context: vrops
+      playbook: docs/devops/alert/vcenter/vrops.html#revalidatecertificate
+      meta: "The vCenter adapter for https://vrops-{{ $labels.vcenter }} is not receiving data."      
+    annotations:
+      summary: "The vCenter adapter for https://vrops-{{ $labels.vcenter }} is not receiving data."
+      description: "The vCenter adapter for https://vrops-{{ $labels.vcenter }} is not receiving data."
+
+  - alert: VROpsNSXTAdapterNotReceivingData
+    expr: vrops_nsxt_adapter_alert_info{alert_name="Adapter instance is not receiving data"}
+    for: 15m
+    labels:
+      severity: warning
+      tier: vmware
+      service: compute
+      support_group: compute
+      no_alert_on_absence: "true"
+      context: vrops
+      playbook: docs/devops/alert/nsxt/#vrops-nsx-t-adapter-is-not-receiving-data-vropsnsxtadapternotreceivingdata
+      meta: "vROPs NSX-T adapter is not receiving data for `{{ $labels.nsxt_adapter }}`. https://{{ $labels.target }}" 
+    annotations:
+      summary: "vROPs NSX-T adapter is not receiving data for `{{ $labels.nsxt_adapter }}`. https://{{ $labels.target }}"
+      description: "vROPs NSX-T adapter is not receiving data for `{{ $labels.nsxt_adapter }}`. https://{{ $labels.target }}"
+
+  - alert: VROpsVCenterObjectsNotReceivingData
+    expr: vrops_vcenter_alert_info{alert_name="Objects are not receiving data from adapter instance"}
+    labels:
+      severity: info
+      tier: vmware
+      service: compute
+      support_group: compute
+      no_alert_on_absence: "true"
+      meta: "vROPs vCenter adapter for https://vrops-{{ $labels.vcenter }} is not receiving data for some objects."
+      playbook: docs/devops/alert/vcenter/vrops.html#revalidatecertificate
+    annotations:
+      summary: "vROPs vCenter adapter for https://vrops-{{ $labels.vcenter }} is not receiving data for some objects."
+      description: "vROPs vCenter adapter for https://vrops-{{ $labels.vcenter }} is not receiving data for some objects."

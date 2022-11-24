@@ -436,8 +436,9 @@
   @type copy
   <store>
     @type opensearch
-    hosts {{.Values.opensearch.http.endpoint}}.{{.Values.global.region}}.{{.Values.global.tld}}:443
+    hosts {{.Values.opensearch.http.endpoint}}.{{.Values.global.region}}.{{.Values.global.tld}}
     scheme https
+    port {{.Values.http_port}}
     user {{.Values.user}}
     password {{.Values.password}}
     ssl_verify false
@@ -454,6 +455,9 @@
     include_tag_key true
     resurrect_after 120
     reconnect_on_error true
+    reload_connections false
+    reload_on_failure false
+    suppress_type_name true
     <buffer>
       total_limit_size 256MB
       flush_at_shutdown true
@@ -474,7 +478,7 @@
       <labels>
         tag ${tag}
         nodename "#{ENV['K8S_NODE_NAME']}"
-        container $.kubernetes.container_name
+        hostname ${hostname}
       </labels>
     </metric>
   </store>

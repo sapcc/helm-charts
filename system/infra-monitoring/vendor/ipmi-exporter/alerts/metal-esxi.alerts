@@ -26,6 +26,7 @@ groups:
       severity: critical
       tier: metal
       service: baremetal
+      support_group: compute
       context: "{{ $labels.server_name }}"
       meta: "ESXi Host {{ $labels.server_name }} hardware error. Type: {{ $labels.type }} Name: {{ $labels.exported_name }} /  Serial: {{ $labels.serial }}, Host not in maintenance"
       playbook: docs/devops/alert/baremetal/vpod.html
@@ -40,6 +41,7 @@ groups:
       severity: warning
       tier: metal
       service: baremetal
+      support_group: compute
       context: "{{ $labels.server_name }}"
       meta: "ESXi Host {{ $labels.server_name }} hardware error. Type: {{ $labels.type }} Name: {{ $labels.exported_name }} /  Serial: {{ $labels.serial }}"
       playbook: docs/devops/alert/baremetal/vpod.html
@@ -54,6 +56,7 @@ groups:
       severity: critical
       tier: metal
       service: baremetal
+      support_group: compute
       context: "{{ $labels.server_name }}"
       meta: "ESXi Host {{ $labels.server_name }} Dimm error. Modul Name: {{ $labels.exported_name }} /  Serial: {{ $labels.serial }}, Host not in maintenance"
       playbook: docs/devops/alert/baremetal/vpod.html
@@ -68,6 +71,7 @@ groups:
       severity: warning
       tier: metal
       service: baremetal
+      support_group: compute
       context: "{{ $labels.server_name }}"
       meta: "ESXi Host {{ $labels.server_name }} Dimm error. Modul Name: {{ $labels.exported_name }} /  Serial: {{ $labels.serial }}, Host in maintenance"
       playbook: docs/devops/alert/baremetal/vpod.html
@@ -82,6 +86,7 @@ groups:
       severity: critical
       tier: metal
       service: baremetal
+      support_group: compute
       context: "{{ $labels.server_name }}"
       meta: "ESXi Host {{ $labels.server_name }} hardware error. Module {{ $labels.exported_name }} more than 60000 correctable ECC errors. Serial: {{ $labels.serial }}"
       playbook: docs/devops/alert/baremetal/vpod.html#MetalESXiMemoryWarn
@@ -96,6 +101,7 @@ groups:
       severity: warning
       tier: metal
       service: baremetal
+      support_group: compute
       context: "{{ $labels.server_name }}"
       meta: "ESXi Host {{ $labels.server_name }} hardware error. Module {{ $labels.exported_name }} more than 16000 correctable ECC errors. Serial: {{ $labels.serial }}, Host in maintenance"
       playbook: docs/devops/alert/baremetal/vpod.html#MetalESXiMemoryWarn
@@ -103,27 +109,14 @@ groups:
       description: "ESXi Host {{ $labels.server_name }} hardware error. Module {{ $labels.exported_name }} more than 16000 correctable ECC errors. Manufacturer: {{ $labels.manufacturer }} / Model: {{ $labels.model }} / Serial: {{ $labels.serial }}, Host in maintenance"
       summary: "Hardware error for server: {{ $labels.server_name }}"
       
-  - alert: MetalESXiMetricsDownCritical
-    expr: (count(ipmi_up{job="vmware-esxi"} == 0 or up{job="vmware-esxi"} == 0) by (server_name, maintenance, manufacturer, model, serial) * on(server_name) group_left count(label_replace(max_over_time(vrops_hostsystem_runtime_maintenancestate{state="notInMaintenance"}[15m]), "server_name", "$1", "hostsystem", "(.*).cc.*")) by (server_name))
-    for: 10m
-    labels:
-      severity: critical
-      tier: metal
-      service: baremetal
-      context: "{{ $labels.server_name }}"
-      meta: "IPMI metrics cannot be fetched from node {{ $labels.server_name }}, maintenance {{ $labels.maintenance }}, serial {{ $labels.serial }}"
-      playbook: docs/devops/alert/baremetal/vpod.html
-    annotations:
-      description: "IPMI metrics cannot be fetched from node {{ $labels.server_name }}, Manufacturer: {{ $labels.manufacturer }} / Model: {{ $labels.model }} / Serial {{ $labels.serial }}"
-      summary: "IPMI metrics cannot be fetched from node {{ $labels.server_name }}, serial {{ $labels.serial }}"
-
   - alert: MetalESXiMetricsDownWarn
-    expr: (count(ipmi_up{job="vmware-esxi"} == 0 or up{job="vmware-esxi"} == 0) by (server_name, maintenance, manufacturer, model, serial) * on(server_name) group_left count(label_replace(max_over_time(vrops_hostsystem_runtime_maintenancestate{state="InMaintenance"}[15m]), "server_name", "$1", "hostsystem", "(.*).cc.*")) by (server_name))
+    expr: (count(ipmi_up{job="vmware-esxi"} == 0 or up{job="vmware-esxi"} == 0) by (server_name, maintenance, manufacturer, model, serial) * on(server_name) group_left count(label_replace(max_over_time(vrops_hostsystem_runtime_maintenancestate{state="notInMaintenance"}[15m]), "server_name", "$1", "hostsystem", "(.*).cc.*")) by (server_name))
     for: 10m
     labels:
       severity: warning
       tier: metal
       service: baremetal
+      support_group: compute
       context: "{{ $labels.server_name }}"
       meta: "IPMI metrics cannot be fetched from node {{ $labels.server_name }}, maintenance {{ $labels.maintenance }}, serial {{ $labels.serial }}"
       playbook: docs/devops/alert/baremetal/vpod.html

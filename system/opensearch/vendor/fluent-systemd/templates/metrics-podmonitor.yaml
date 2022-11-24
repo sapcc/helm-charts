@@ -1,0 +1,30 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+
+metadata:
+  name: opensearch-fluent-systemd-exporter
+  labels:
+    prometheus: {{ .Values.exporter.prometheus }}
+
+spec:
+  jobLabel: opensearch-fluent-systemd-exporter
+
+  selector:
+    matchLabels:
+      component: fluent-systemd
+
+  # Find pods in any namespace.
+  namespaceSelector:
+    matchNames: [opensearch]
+
+  podMetricsEndpoints:
+    - interval: 60s
+      scrapeTimeout: 50s
+      path: /metrics
+      scheme: http
+      port: metrics
+      relabelings:
+        - action: labelmap
+          regex: '__meta_kubernetes_pod_label_(.+)'
+        - targetLabel: job
+          replacement: opensearch-fluent-systemd-exporter

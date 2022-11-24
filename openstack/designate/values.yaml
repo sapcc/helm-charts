@@ -103,6 +103,8 @@ percona_cluster:
   enabled: false
   db_name: designate
   db_user: designate
+  alerts:
+    support_group: network-api
 
 mariadb:
   enabled: true
@@ -110,8 +112,15 @@ mariadb:
   initdb_configmap: designate-initdb
   persistence_claim:
     name: db-designate-pvclaim
+  alerts:
+    support_group: network-api
   backup:
     enabled: false
+  users:
+    designate:
+      name: designate
+      grants:
+      - "ALL PRIVILEGES on designate.*"
   backup_v2:
     verification:
       enabled: false
@@ -269,6 +278,10 @@ audit:
     user: rabbitmq
     password: null
 
+memcached:
+  alerts:
+    support_group: network-api
+
 rabbitmq:
   enabled: true
   use_alternate_registry: true
@@ -280,6 +293,8 @@ rabbitmq:
     admin:
       user: admin
       password: secret
+  alerts:
+    support_group: network-api
 
 rabbitmq_cluster:
   enabled: false
@@ -342,6 +357,15 @@ alerts:
   enabled: true
   # Name of the Prometheus to which the alerts should be assigned to.
   prometheus: openstack
+  support_group: network-api
 
 osprofiler:
   enabled: false
+
+owner-info:
+  support-group: network-api
+  service: designate
+  maintainers:
+    - David Hoeller
+    - Benjamin Tinney
+  helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/openstack/designate

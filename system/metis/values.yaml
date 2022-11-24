@@ -3,11 +3,24 @@ namespace: metis
 alerts:
   tier: "os"
   prometheus: "infra-collector"
+  supportGroup: "observability"
 
 owner-info:
+  support-group: observability
   maintainers:
     - "Ivo Gosemann"
   helm-chart-url: "https://github.com/sapcc/helm-charts/tree/master/system/metis"
+
+prometheus-monitors:
+  podMonitor:
+    enabled: true
+  prometheus: "infra-collector"
+  matchExpressions:
+    - key: "app.kubernetes.io/name"
+      operator: "In"
+      values:
+        - "mariadb-sync"
+        - "metis"
 
 mariadb:
   name: metisdb
@@ -57,6 +70,7 @@ mariadb:
     service: "metis"
     prometheus: "infra-collector"
     alert_db_not_ready: false
+    support_group: "observability"
 
 ingress:
   disco: true
@@ -75,6 +89,7 @@ backup_v2:
     enabled: true
   alerts:
     enabled: false
+    supportGroup: "observability"
   resources:
     requests:
       memory: 30Mi
@@ -82,20 +97,38 @@ backup_v2:
     limits:
       memory: 2Gi
       cpu: 500m
+  backups:
+    []
+    # - name: // service name
+    #   root_password:
+    #   namespace: //k8s namespace
+    #   parse_schema: // bool flag
+    #   databases: // list of schemas to replicate
+    #     - "<schemaName>"
+
+metisSync:
+  image: go-maria-sync
+  imageVersion: "20221123174019"
+  alerts:
+    enabled: false
+    prometheus: "infra-collector"
+    supportGroup: "observability"
 
 metis:
   enabled: false
   metrics:
-    enabled: false
     path: "/metrics"
     port: "9100"
   image: "metis"
   imageTag: DEFINED-IN-PIPELINE
+  vcenter:
+    enabled: false
   releaseLocks: false
   requiredDatabases:
     - "keystone"
     - "nova"
     - "nova_cell0"
+    - "nova_api"
     - "neutron"
     - "glance"
     - "designate"

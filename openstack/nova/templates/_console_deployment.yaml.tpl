@@ -48,7 +48,7 @@ spec:
       {{- include "utils.proxysql.volumes" . | indent 6 }}
       containers:
       - name: nova-console-{{ $name }}
-        image: {{ required ".Values.global.registry is missing" .Values.global.registry}}/ubuntu-source-nova-{{ $name }}proxy:{{index .Values (print "imageVersionNova" (title $name) "proxy") | default .Values.imageVersionNova | default .Values.imageVersion | required "Please set nova.imageVersion or similar" }}
+        image: {{ tuple . (print (title $name) "proxy") | include "container_image_nova" }}
         imagePullPolicy: IfNotPresent
         command:
         - dumb-init

@@ -2,12 +2,13 @@ groups:
 - name: openstack-cinder.alerts
   rules:
   - alert: OpenstackCinderVolumeInDeletingState
-    expr: sum(openstack_stuck_volumes_max_duration_gauge{status="deleting"}) BY (id,display_name) > 15
+    expr: count(sum(openstack_stuck_volumes_max_duration_gauge{status="deleting"}) BY (id,display_name) > 15) by (id, display_name)
     for: 5m
     labels:
       dashboard: cinder
       meta: 'Volume {{ $labels.display_name }} in Deleting state since {{ $value }}s'
       playbook: docs/support/playbook/volumes.html
+      support_group: compute-storage-api
       service: cinder
       severity: info
       tier: os
@@ -16,26 +17,28 @@ groups:
       summary: Cinder Volumes taking more than 15s to delete
 
   - alert: OpenstackCinderVolumeInAttachingState
-    expr: sum(openstack_stuck_volumes_max_duration_gauge{status="attaching"}) BY (id,display_name) > 15
+    expr: count(sum(openstack_stuck_volumes_max_duration_gauge{status="attaching"}) BY (id,display_name) > 3600) by (id, display_name)
     for: 5m
     labels:
       dashboard: cinder
       meta: 'Volume {{ $labels.display_name }} in Attaching state since {{ $value }}s'
       playbook: docs/support/playbook/volumes.html
+      support_group: compute-storage-api
       service: cinder
-      severity: info
+      severity: warning
       tier: os
     annotations:
       description: Volume {{ $labels.display_name }} with {{ $labels.id }} in Attaching State
-      summary: Cinder Volumes taking more than 15s to attach
+      summary: Cinder Volumes taking more than 1 hour to attach
 
   - alert: OpenstackCinderVolumeInDetachingState
-    expr: sum(openstack_stuck_volumes_max_duration_gauge{status="detaching"}) BY (id,display_name) > 15
+    expr: count(sum(openstack_stuck_volumes_max_duration_gauge{status="detaching"}) BY (id,display_name) > 15) by (id, display_name)
     for: 5m
     labels:
       dashboard: cinder
       meta: 'Volume {{ $labels.display_name }} in Detaching state since {{ $value }}s'
       playbook: docs/support/playbook/volumes.html
+      support_group: compute-storage-api
       service: cinder
       severity: info
       tier: os

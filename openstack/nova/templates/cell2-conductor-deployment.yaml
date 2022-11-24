@@ -41,7 +41,7 @@ spec:
       hostname: nova-conductor
       initContainers:
         - name: dependencies
-          image: {{ required ".Values.global.registry is missing" .Values.global.registry}}/ubuntu-source-nova-conductor:{{.Values.imageVersionNovaConductor | default .Values.imageVersionNova | default .Values.imageVersion | required "Please set nova.imageVersion or similar"}}
+          image: {{ tuple . "conductor" | include "container_image_nova" }}
           imagePullPolicy: IfNotPresent
           command:
             - kubernetes-entrypoint
@@ -54,7 +54,7 @@ spec:
               value: "{{ .Release.Name }}-{{ .Values.cell2.name }}-rabbitmq,{{ .Release.Name }}-{{ .Values.cell2.name }}-mariadb"      
       containers:
         - name: nova-conductor
-          image: {{ required ".Values.global.registry is missing" .Values.global.registry}}/ubuntu-source-nova-conductor:{{.Values.imageVersionNovaConductor | default .Values.imageVersionNova | default .Values.imageVersion | required "Please set nova.imageVersion or similar"}}
+          image: {{ tuple . "conductor" | include "container_image_nova" }}
           imagePullPolicy: IfNotPresent
           command:
             - dumb-init

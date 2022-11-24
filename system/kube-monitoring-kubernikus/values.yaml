@@ -3,6 +3,9 @@ global:
   domain:
   clusterType: kubernikus
 
+owner-info:
+  support-group: containers
+  helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/system/kube-monitoring-kubernikus
 # Disable the prometheus-operator kube-state-metrics sub-chart. We deploy independently.
 kubeStateMetrics:
   enabled: false
@@ -33,7 +36,10 @@ kube-prometheus-stack:
 
     # Both admissionWebhooks and tls requires admissionregistration.k8s.io/v1 .
     admissionWebhooks:
-      enabled: false
+      failurePolicy: Ignore
+      patch:
+        image:
+          repository: keppel.eu-de-1.cloud.sap/ccloud-k8sgcr-mirror/ingress-nginx/kube-webhook-certgen
     tls:
       enabled: false
 
@@ -200,6 +206,9 @@ prometheus-node-exporter:
     requests:
       memory: 100Mi
       cpu: 100m
+
+  rbac:
+    pspEnabled: false
 
 ntp-exporter:
   alerts:
@@ -394,3 +403,6 @@ loki:
   enabled: false
   # user:
   # password:
+  
+  rbac:
+    pspEnabled: false

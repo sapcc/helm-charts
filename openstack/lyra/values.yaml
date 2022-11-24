@@ -14,8 +14,13 @@ auth:
     projectDomainName: ccadmin
 #    tempURLKey:
 
-# postgresql:
-#   postgresPassword:
+owner-info:
+  support-group: containers
+  service: automation # optional
+  maintainers:
+    - Arturo Reuschenbach Puncernau
+    - Fabian Ruff
+  helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/openstack/lyra
 
 apiReplicaCount: 2
 workerReplicaCount: 2
@@ -53,6 +58,7 @@ postgresql:
   enabled: true
   alerts:
     prometheus: openstack
+    support_group: containers
   persistence:
     enabled: true
     accessMode: ReadWriteMany
@@ -75,6 +81,8 @@ alerts:
 
 pgmetrics:
   db_name: monsoon-automation_production
+  alerts:
+    support_group: containers
   customMetrics:
     pg_database:
       query: "SELECT d.datname AS datname, CASE WHEN pg_catalog.has_database_privilege(d.datname, 'CONNECT') THEN pg_catalog.pg_database_size(d.datname) ELSE 0 END AS size_bytes FROM pg_catalog.pg_database d where datname not in ('template0', 'template1', 'postgres')"

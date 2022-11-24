@@ -30,14 +30,14 @@ data:
     table_definition_cache    = 800
     sql_mode                  = "TRADITIONAL"
     slow_query_log            = 1
-    long_query_time           = 3
+    long_query_time           = {{ .Values.long_query_time }}
     log_warnings              = {{ .Values.log_warnings }}
     general_log_file          = /var/log/mysql/mariadb_general.log
 {{- if .Values.db_performance_schema.enabled}}
     performance_schema        = ON
 {{ else }}
     performance_schema        = OFF
-{{- end }}  
+{{- end }}
 {{- if .Values.db_performance_schema.enabled }}
 {{- if .Values.db_performance_schema_instrument.enabled}}
     performance-schema-instrument        = 'stage/%=ON'
@@ -50,7 +50,7 @@ data:
     performance_schema_consumer_thread_instrumentation        = OFF
     performance_schema_consumer_statements_digest        = OFF
 {{- end }}
-{{- end }} 
+{{- end }}
 {{- if .Values.backup_v2.enabled }}
     binlog_format             = {{ .Values.binlog_format }}
     expire_logs_days          = {{ .Values.expire_logs_days }}

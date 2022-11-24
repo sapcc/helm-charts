@@ -87,18 +87,24 @@ spec:
               {{- include "utils.snippets.pre_stop_graceful_shutdown" . | indent 14 }}
           livenessProbe:
             httpGet:
-              path: /
+              path: /healthcheck
               port: {{.Values.global.designate_api_port_internal}}
             initialDelaySeconds: 15
             periodSeconds: 15
             timeoutSeconds: 10
           readinessProbe:
-            httpGet:
-              path: /
-              port: {{.Values.global.designate_api_port_internal}}
+            exec:
+              command:
+              - bash
+              - -c
+{{- if .Values.global_setup }}
+              - "set -e; curl --fail 127.0.0.1:{{.Values.global.designate_api_port_internal}}/healthcheck; nc -zvw3 designate-global-percona-pxc 3306"
+{{- else }}
+              - "set -e; curl --fail 127.0.0.1:{{.Values.global.designate_api_port_internal}}/healthcheck; nc -zvw3 designate-mariadb 3306"
+{{- end }}
             initialDelaySeconds: 5
             periodSeconds: 10
-            timeoutSeconds: 3
+            timeoutSeconds: 5
           ports:
             - name: designate-api
               containerPort: {{.Values.global.designate_api_port_internal}}

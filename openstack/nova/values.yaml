@@ -165,6 +165,7 @@ imageVersionNovaNovncproxy: null
 imageVersionNovaShellinaboxproxy: null
 imageVersionNovaSpicehtml5proxy: null
 imageVersionNovaScheduler: null
+imageVersionBitnamiOpenResty: 1.21.4-1-debian-11-r57
 
 vspc:
   enabled: false
@@ -235,6 +236,7 @@ consoles:
   shellinabox:
     enabled: true
     portInternal: '6084'
+    custom_deployment: true
   spice:
     enabled: false
   mks:
@@ -680,6 +682,7 @@ mariadb:
   log_file_size: "1024M"
   name: nova
   initdb_configmap: true
+  long_query_time: 8
   databases:
   - nova
   - nova_cell0
@@ -708,6 +711,8 @@ mariadb:
       - nova_cell0.instance_metadata
     oauth:
       client_id: "nova"
+  alerts:
+    support_group: compute-storage-api
 
 mariadb_api:
   enabled: false
@@ -715,6 +720,7 @@ mariadb_api:
   log_file_size: "1024M"
   name: nova-api
   initdb_configmap: true
+  long_query_time: 8
   databases:
   - nova_api
   users:
@@ -737,12 +743,15 @@ mariadb_api:
       - nova_api.key_pairs
     oauth:
       client_id: "nova-api"
+  alerts:
+    support_group: compute-storage-api
 
 mariadb_cell2:
   enabled: false
   buffer_pool_size: "4096M"
   log_file_size: "1024M"
   initdb_configmap: true
+  long_query_time: 8
   persistence_claim:
     name: db-nova-cell2-pvc
     size: "50Gi"
@@ -752,6 +761,8 @@ mariadb_cell2:
     enabled: true
     oauth:
       client_id: "nova-cell2"
+  alerts:
+    support_group: compute-storage-api
 
 rabbitmq_cell2:
   name: nova-cell2
@@ -763,6 +774,7 @@ rabbitmq_cell2:
     rabbit_queue_length: 50
     unacknowledged_total_wait_for: 10m
     ready_total_wait_for: 10m
+    support_group: compute-storage-api
 
 audit:
   central_service:
@@ -796,6 +808,7 @@ rabbitmq:
     rabbit_queue_length: 50
     unacknowledged_total_wait_for: 10m
     ready_total_wait_for: 10m
+    support_group: compute-storage-api
 
 logging:
   formatters:
@@ -871,3 +884,17 @@ pre_change_hook:
 cors:
   enabled: true
   additional_allow_headers: 'X-OpenStack-Nova-API-Version'
+
+memcached:
+  alerts:
+    support_group: compute-storage-api
+
+owner-info:
+  support-group: compute-storage-api
+  service: nova
+  maintainers:
+    - Johannes Kulik
+    - Fabian Wiesel
+    - Marius Leustean
+    - Jakob Karge
+  helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/openstack/nova

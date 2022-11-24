@@ -1,0 +1,115 @@
+{{- if $.Values.backup_v2.enabled }}
+{{- $common := $.Values.backup_v2 }}
+{{- $global := $.Values.global }}
+{{- range $backup := $.Values.backup_v2.backups }}
+{{- if $backup.sync_enabled }}
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mariadb-sync-{{ $backup.name }}
+  namespace: {{ $.Values.namespace }}
+  labels:
+    app.kubernetes.io/name: mariadb-sync
+    helm.sh/chart: {{ include "metis.chart" $ }}
+    app.kubernetes.io/instance: {{ $.Release.Name }}-sync-{{ $backup.name }}-mariadb
+    app.kubernetes.io/managed-by: {{ $.Release.Service }}
+    app.kubernetes.io/version: "{{ $.Values.backup_v2.image_version }}"
+    alert-service: "metis"
+    alert-tier: {{ required "$.Values.alerts.tier missing" $.Values.alerts.tier }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: mariadb-sync
+      app.kubernetes.io/instance: mariadb-sync-{{ $backup.name }}-{{ $.Release.Name }}
+  template:
+    metadata:
+      labels:
+        alert-service: "metis"
+        alert-tier: {{ required "$.Values.alerts.tier missing" $.Values.alerts.tier }}
+        app.kubernetes.io/version: "{{ $.Values.metisSync.imageVersion }}"
+        app.kubernetes.io/name: mariadb-sync
+        app.kubernetes.io/instance: mariadb-sync-{{ $backup.name }}-{{ $.Release.Name }}
+      annotations:
+        {{- $data := dict "common" $common "backup" $backup "mariadb" $.Values.mariadb "root" $ }}
+        checksum/config: {{ include "sync.configmap" $data | sha256sum }}
+    spec:
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 1
+              preference:
+                matchExpressions:
+                - key: cloud.sap/maintenance-state
+                  operator: In
+                  values:
+                  - operational
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 1
+            podAffinityTerm:
+              topologyKey: "kubernetes.io/hostname"
+              labelSelector:
+                matchExpressions:
+                - key: app.kubernetes.io/name
+                  operator: In
+                  values:
+                  - mariadb-replication
+                  - mariadb-sync
+      containers:
+      - name: sync
+        image: "{{ required ".Values.global.registry variable missing" $global.registry }}/{{ $.Values.metisSync.image }}:{{ $.Values.metisSync.imageVersion }}"
+        command:
+          - sync
+        ports:
+          - containerPort: 8080
+            name: metrics
+            protocol: TCP
+        resources:
+{{ toYaml (required "missing .resources" $common.resources) | indent 10 }}
+        env:
+        - name: "CONFIG"
+          value: "/etc/config/config.yaml"
+        - name: "SOURCEDB_PASSWORD"
+          valueFrom:
+            secretKeyRef:
+              name: mariadb-sync-{{$backup.name}}-secrets
+              key: sourceDBPW
+        - name: "TARGETDB_PASSWORD"
+          valueFrom:
+            secretKeyRef:
+              name: mariadb-sync-secrets
+              key: metisAdminPW
+        - name: "OPENSTACK_PASSWORD"
+          valueFrom:
+            secretKeyRef:
+              name: mariadb-sync-secrets
+              key: openstackPW
+        - name: "AWS_ACCESS_KEY_ID"
+          valueFrom:
+            secretKeyRef:
+              name: mariadb-sync-secrets
+              key: awsAccessKeyID
+        - name: "AWS_SECRET_ACCESS_KEY"
+          valueFrom:
+            secretKeyRef:
+              name: mariadb-sync-secrets
+              key: awsSecretAccessKey
+        - name: "SSE_CUSTOMER_KEY"
+          valueFrom:
+            secretKeyRef:
+              name: mariadb-sync-secrets
+              key: awsS3SSECustomerKey
+        volumeMounts:
+        - name: mariadb-sync-etc
+          mountPath: /etc/config
+          readOnly: true
+      volumes:
+        - name: mariadb-sync-etc
+          configMap:
+            name: mariadb-sync-{{ $backup.name }}-etc
+{{- end }}
+{{- end }}
+{{- end }}

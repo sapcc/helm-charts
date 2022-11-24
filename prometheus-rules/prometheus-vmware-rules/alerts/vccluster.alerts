@@ -1,0 +1,96 @@
+groups:
+- name: vccluster.alerts
+  rules:
+  - alert: VCenterRedundancyLostHAPolicyFaulty
+    expr: |
+      sum by (vccluster, vcenter) (vrops_cluster_configuration_dasconfig_enabled{vccluster=~"production.*"}) unless
+      sum by (vccluster, vcenter) (vrops_hostsystem_configuration_dasconfig_admissioncontrolpolicy_failoverhost{vccluster=~"production.*"}) != 0
+    for: 30m
+    labels:
+      severity: critical
+      tier: vmware
+      service: compute
+      support_group: compute
+      context: "vc cluster config"
+      meta: "VC https://{{ $labels.vcenter }} has a faulty AdmissionControlPolicy for cluster {{ $labels.vccluster }}, failover will not work."
+      playbook: docs/devops/alert/vcenter/#Faulty-ha-policy-in-vcenter
+    annotations:
+      description: "VC https://{{ $labels.vcenter }} has a faulty AdmissionControlPolicy for cluster {{ $labels.vccluster }}, failover will not work."
+      summary: "VC https://{{ $labels.vcenter }} has a faulty AdmissionControlPolicy for cluster {{ $labels.vccluster }}, failover will not work."
+
+  - alert: VCenterRedundancyLostHAPolicyNotConfigured
+    expr: vrops_cluster_configuration_dasconfig_enabled{vccluster=~"production.*"} == 0
+    for: 30m
+    labels:
+      severity: critical
+      tier: vmware
+      service: compute
+      support_group: compute
+      context: "Cluster HA policy"
+      meta: "VC {{ $labels.vcenter }} {{ $labels.vccluster }} has a faulty AdmissionControlPolicy. Failover will not work."
+      playbook: docs/devops/alert/vcenter/#restore-ha-redundancy-in-vcenter
+    annotations:
+      description: "VC {{ $labels.vcenter }} {{ $labels.vccluster }} has a faulty AdmissionControlPolicy. Failover will not work."
+      summary: "VC {{ $labels.vcenter }} {{ $labels.vccluster }} has a faulty AdmissionControlPolicy. Failover will not work."
+
+  - alert: VCenterWrongHALevelConfiguration
+    expr: |
+      count by (vccluster, vcenter) (vrops_hostsystem_configuration_dasconfig_admissioncontrolpolicy_failoverhost{vccluster=~"production.*"} == 1) > 2
+    for: 30m
+    labels:
+      severity: warning
+      tier: vmware
+      service: compute
+      support_group: compute
+      context: "Cluster HA policy"
+      meta: "VC {{ $labels.vcenter }} {{ $labels.vccluster }} has more than two failover host configured, it should be no more than 2."
+      playbook: docs/devops/alert/vcenter/#restore-ha-redundancy-in-vcenter
+    annotations:
+      description: "VC {{ $labels.vcenter }} {{ $labels.vccluster }} has more than two failover host configured, it should be no more than 2."
+      summary: "VC {{ $labels.vcenter }} {{ $labels.vccluster }} has more than two failover host configured, it should be no more than 2."
+
+  - alert: VCenterRedundancyLostHALevelNotSet
+    expr: count by (vccluster, vcenter) (vrops_hostsystem_configuration_dasconfig_admissioncontrolpolicy_failoverhost{vccluster=~"production.*"} == 1) == 0
+    for: 30m
+    labels:
+      severity: critical
+      tier: vmware
+      service: compute
+      support_group: compute
+      context: "Cluster HA policy"
+      meta: "VC {{ $labels.vcenter }} {{ $labels.vccluster }} has NO failover host amount configured, this should be 1"
+      playbook: docs/devops/alert/vcenter/#restore-ha-redundancy-in-vcenter
+    annotations:
+      description: "VC {{ $labels.vcenter }} {{ $labels.vccluster }} has NO failover host amount configured, this should be 1"
+      summary: "VC {{ $labels.vcenter }} {{ $labels.vccluster }} has NO failover host amount configured, this should be 1"
+
+  - alert: VCClusterDRSNotFullyAutomated
+    expr: |
+      vrops_cluster_configuration_drsconfig_defaultvmbehavior{vccluster!~".*controlplane.*", state != "fullyAutomated"} == 0
+      unless on (vccluster) vrops_cluster_custom_attributes_hana_exclusive_info
+    for: 10m
+    labels:
+      severity: critical
+      tier: vmware
+      service: compute
+      support_group: compute
+      context: "Cluster DRS configuration"
+      meta: "Cluster {{ $labels.vccluster }} DRS configuration is not set to fully automated."
+      playbook: docs/devops/alert/vcenter/#cluster-drs-not-set-to-fully-automated
+    annotations:
+      description: "Cluster {{ $labels.vccluster }} DRS configuration is not set to fully automated."
+      summary: "Cluster {{ $labels.vccluster }} DRS configuration is not set to fully automated."
+
+  - alert: VCClusterCannotDistributeNSXTControllers
+    expr: count(max_over_time(vrops_hostsystem_memory_useable_kilobytes{vccluster=~".*management"}[1h]) / 1024 / 1024 >= 48) by(vccluster, vcenter) < 3
+    for: 30m
+    labels:
+      severity: info
+      tier: vmware
+      service: compute
+      support_group: compute
+      context: "Cluster NSXT Resources"
+      meta: "Cluster {{ $labels.vccluster }} cannot evenly distribute new NSX-T controllers."
+    annotations:
+      description: "Cluster {{ $labels.vccluster }} cannot evenly distribute new NSX-T controllers. {{ $labels.vcenter}}"
+      summary: "Cluster {{ $labels.vccluster }} cannot evenly distribute new NSX-T controllers. {{ $labels.vcenter }}"

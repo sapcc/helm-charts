@@ -4,7 +4,7 @@
 # name: value
 
 name: null
-image: library/mariadb:10.5.12
+image: library/mariadb:10.5.17
 imagePullPolicy: IfNotPresent
 port_public: 3306
 max_connections: 1024
@@ -14,21 +14,20 @@ log_warnings: "2"
 query_cache_size: "0"
 query_cache_type: "0"
 join_buffer_size: "4M"
+long_query_time: 5
 binlog_format: "MIXED"
 expire_logs_days: 10
-character_set_server: 'utf8'  # Should be utf8mb4, but we started with this
-collation_server: 'utf8_general_ci'
+character_set_server: "utf8" # Should be utf8mb4, but we started with this
+collation_server: "utf8_general_ci"
 
 db_performance_schema: # Enabling performance schema only (without enabling instruments for data collections).
-                       # Instrument can be enabled separately. Only Performance Schema Enablement does not cause any
-                       # overhead.
+  # Instrument can be enabled separately. Only Performance Schema Enablement does not cause any
+  # overhead.
   enabled: true
-  
-db_performance_schema_instrument: # Enabling performance schema instruments. 
-                                  # Please enable the db_performance_schema in order to enable the db_performance_schema_instrument.
-  enabled: false
-  # default : false
 
+db_performance_schema_instrument: # Enabling performance schema instruments.
+  # Please enable the db_performance_schema in order to enable the db_performance_schema_instrument.
+  enabled: false
 
 root_password: null
 initdb_configmap: null
@@ -42,6 +41,8 @@ users:
     password: null
     limits:
       max_user_connections: 4
+    grants:
+      - ALL PRIVILEGES ON *.*
 #  example:
 #    name: example1 # This looks repetitive, but the point is that they key is the name
 #                   # you refer to in your charts, while the field 'name' is the actual name
@@ -64,9 +65,9 @@ persistence_claim:
   #name:
   size: "10Gi"
   access_modes:
-  - ReadWriteOnce
-  - ReadWriteMany
-  - ReadOnlyMany
+    - ReadWriteOnce
+    - ReadWriteMany
+    - ReadOnlyMany
   autoprovision: false
   #storage_class: default
 
@@ -138,7 +139,7 @@ metrics:
   enabled: true
   image: prom/mysqld-exporter
   image_version: v0.12.1
-  port: '9104'
+  port: "9104"
   flags:
     - collect.binlog_size
     - collect.info_schema.processlist
@@ -163,6 +164,9 @@ alerts:
 
   # The tier of the alert.
   tier: os
+
+  # The support group label of the alerts. Must be given in values.yaml of parent chart.
+  #support_group:
 
   # Configurable service label of the alerts. Defaults to `.Release.Name`.
   # service:

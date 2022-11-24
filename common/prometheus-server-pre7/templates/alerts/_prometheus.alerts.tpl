@@ -24,7 +24,8 @@ groups:
     for: 5m
     labels:
       context: availability
-      service: prometheus
+      service: metrics
+      support_group: observability
       severity: critical
       tier: {{ include "alerts.tier" . }}
       playbook: 'docs/support/playbook/prometheus/failed_config_reload.html'
@@ -38,7 +39,8 @@ groups:
     for: 15m
     labels:
       context: availability
-      service: prometheus
+      service: metrics
+      support_group: observability
       severity: warning
       tier: {{ include "alerts.tier" . }}
       playbook: 'docs/support/playbook/prometheus/rule_evaluation.html'
@@ -52,7 +54,8 @@ groups:
     for: 10m
     labels:
       context: availability
-      service: prometheus
+      service: metrics
+      support_group: observability
       severity: info
       tier: {{ include "alerts.tier" . }}
       playbook: 'docs/support/playbook/prometheus/rule_evaluation.html'
@@ -65,7 +68,8 @@ groups:
     expr: increase(prometheus_tsdb_wal_corruptions_total{prometheus="{{ include "prometheus.name" . }}"}[5m]) > 0
     labels:
       context: availability
-      service: prometheus
+      service: metrics
+      support_group: observability
       severity: info
       tier: {{ include "alerts.tier" . }}
       playbook: 'docs/support/playbook/prometheus/wal.html'
@@ -79,7 +83,8 @@ groups:
     for: 12h
     labels:
       context: availability
-      service: prometheus
+      service: metrics
+      support_group: observability
       severity: info
       tier: {{ include "alerts.tier" . }}
       playbook: 'docs/support/playbook/prometheus/failed_tsdb_reload.html'
@@ -93,7 +98,8 @@ groups:
     for: 10m
     labels:
       context: availability
-      service: prometheus
+      service: metrics
+      support_group: observability
       severity: info
       tier: {{ include "alerts.tier" . }}
       playbook: 'docs/support/playbook/prometheus/failed_scrapes.html'
@@ -107,7 +113,8 @@ groups:
     for: 10m
     labels:
       context: availability
-      service: prometheus
+      service: metrics
+      support_group: observability
       severity: info
       tier: {{ include "alerts.tier" . }}
       playbook: 'docs/support/playbook/prometheus/failed_scrapes.html'
@@ -120,7 +127,8 @@ groups:
     expr: rate(prometheus_target_scrapes_sample_out_of_order_total{prometheus="{{ include "prometheus.name" . }}"}[5m]) > 0
     labels:
       context: availability
-      service: prometheus
+      service: metrics
+      support_group: observability
       severity: info
       tier: {{ include "alerts.tier" . }}
       playbook: 'docs/support/playbook/prometheus/failed_scrapes.html'
@@ -133,7 +141,8 @@ groups:
     expr: increase(prometheus_target_scrapes_exceeded_sample_limit_total{prometheus="{{ include "prometheus.name" . }}"}[30m]) > 60
     labels:
       context: availability
-      service: prometheus
+      service: metrics
+      support_group: observability
       severity: info
       tier: {{ include "alerts.tier" . }}
       playbook: 'docs/support/playbook/prometheus/failed_scrapes.html'
@@ -143,14 +152,17 @@ groups:
       summary: Prometheus fails to scrape targets.
 
   - alert: PrometheusMultipleTargetScrapes
-    # we exclude cadvisor metrics because it has the same instance as the kubelet but a different path
+    # we exclude the following:
+    # * cadvisor metrics because it has the same instance as the kubelet but a different path
     # e.g. 10.246.204.80:10250/metrics vs. 10.246.204.80:10250/metrics/cadvisor
-    # We also exclude the pod service discovery job, we have a dedicated alert for that
-    expr: sum by (job) (up * on(instance) group_left() (sum by(instance) (up{job !~ "kubernetes-cadvisors|kubernetes-kubelet|.*-pod-sd"}) > 1))
+    # * pod service discovery job, we have a dedicated alert for that
+    # * prometheus maia federation from prometheus vmware as the target is scraped multiple times for different metrics
+    expr: sum by (job) (up * on(instance, cluster) group_left() (sum by(instance, cluster) (up{job !~ "kubernetes-cadvisors|kubernetes-kubelet|.*-pod-sd|prometheus-vmware.*"}) > 1))
     for: 30m
     labels:
       tier: {{ include "alerts.tier" . }}
-      service: prometheus
+      service: metrics
+      support_group: observability
       severity: warning
       playbook: docs/support/playbook/kubernetes/target_scraped_multiple_times.html
       meta: 'Prometheus is scraping targets of job {{`{{ $labels.job }}`}} more than once.'
@@ -163,7 +175,8 @@ groups:
     for: 30m
     labels:
       tier: {{ include "alertTierLabelOrDefault" (include "alerts.tier" .) }}
-      service: {{ include "alertServiceLabelOrDefault" "prometheus" }}
+      service: {{ include "alertServiceLabelOrDefault" "metrics" }}
+      support_group: observability
       severity: warning
       playbook: docs/support/playbook/kubernetes/target_scraped_multiple_times.html
       meta: 'Prometheus is scraping {{`{{ $labels.pod }}`}} pods more than once.'
@@ -177,7 +190,8 @@ groups:
     for: 10m
     labels:
       context: availability
-      service: prometheus
+      service: metrics
+      support_group: observability
       severity: warning
       tier: {{ include "alerts.tier" . }}
       meta: 'Prometheus {{`{{ $labels.prometheus }}`}} lost connection to all Alertmanagers'
@@ -190,7 +204,8 @@ groups:
     for: 10m
     labels:
       context: availability
-      service: prometheus
+      service: metrics
+      support_group: observability
       severity: info
       tier: {{ include "alerts.tier" . }}
       meta: 'Prometheus {{`{{ $labels.prometheus }}`}} fails to send alerts'
@@ -203,7 +218,8 @@ groups:
     for: 10m
     labels:
       context: availability
-      service: prometheus
+      service: metrics
+      support_group: observability
       severity: info
       tier: {{ include "alerts.tier" . }}
       meta: 'Prometheus {{`{{ $labels.prometheus }}`}} queueing notifications'

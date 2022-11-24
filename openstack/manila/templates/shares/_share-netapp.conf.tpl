@@ -37,7 +37,7 @@ netapp_transport_type={{ $share.protocol | default "https" }}
 netapp_login={{$share.username}}
 netapp_password={{$share.password}}
 netapp_mtu={{$share.mtu | default 9000 }}
-netapp_enabled_share_protocols={{$share.enabled_protocols | default "nfs3, nfs4.0, nfs4.1" }}
+netapp_enabled_share_protocols={{$share.enabled_protocols | default "nfs3, nfs4.1" }}
 
 netapp_root_volume_aggregate={{$share.root_volume_aggregate}}
 netapp_aggregate_name_search_pattern={{$share.aggregate_search_pattern}}
@@ -58,6 +58,12 @@ netapp_volume_snapshot_reserve_percent = {{ $share.netapp_volume_snapshot_reserv
 
 # Enable logical space reporting
 netapp_enable_logical_space_reporting = False
+
+# Set last transfer size limit to 1 PB (1024 * 1024 * 1024 * 1024 KB), effectively disabling that setting
+netapp_snapmirror_last_transfer_size_limit = 1099511627776
+
+# Set asynchronous SnapMirror schedule to 10 minutes
+netapp_snapmirror_schedule = "10min"
 
 # The percentage of backend capacity reserved. Default 0 (integer value)
 

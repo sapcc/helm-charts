@@ -2,6 +2,7 @@
 {{- $common := $.Values.backup_v2 }}
 {{- $global := $.Values.global }}
 {{- range $backup := $.Values.backup_v2.backups }}
+{{- if not $backup.sync_enabled }}
 ---
 
 apiVersion: apps/v1
@@ -93,5 +94,6 @@ spec:
         - name: mariadb-replication-etc
           configMap:
             name: mariadb-replication-{{ $backup.name }}-etc
+{{- end }}
 {{- end }}
 {{- end }}

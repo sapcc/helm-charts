@@ -2,14 +2,15 @@ groups:
 - name: fluent.alerts
   rules:
   - alert: ElkControlplaneSystemdLogsMissing
-    expr: sum(rate(fluentd_output_status_num_records_total{component="fluent-systemd"}[30m])) by (nodename,kubernetes_pod_name) == 0
-    for: 30m
+    expr: sum by (job,host,nodename) (rate(fluentd_output_status_emit_count{job="logs-fluent-systemd-exporter"}[15m])) == 0
+    for: 120m
     labels:
       context: logshipping
-      service: elk
-      severity: info
+      service: logs
+      severity: warning
       tier: os
+      support_group: observability
       playbook: docs/operation/elastic_kibana_issues/elk_logs/fluent-systemd-logs-are-missing/
     annotations:
-      description: 'ELK in {{ $labels.region }} `{{ $labels.kubernetes_pod_name }}` pod on `{{ $labels.nodename }}` is not shipping any log line. Please check'
+      description: 'ELK in {{ $labels.region }} `{{ $labels.host }}` on `{{ $labels.nodename }}` is not shipping any log line. Please check'
       summary:  fluent-systemd logs are not shipped

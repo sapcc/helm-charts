@@ -12,17 +12,27 @@ function cleanup_security_groups() {
   done
 }
 
+function cleanup_images() {
+  for image in $(openstack image list -f value -c Name | grep tempest);
+  do
+    echo "Image $image will be deleted";
+    openstack image delete ${image};
+  done
+}
+
 function cleanup_nova() {
     for i in $(seq 1 18); do
       export OS_USERNAME=nova-tempestuser${i}
       export OS_PROJECT_NAME=nova-tempest${i}
       cleanup_security_groups
+      cleanup_images
     done
 
     for i in $(seq 1 8); do
       export OS_USERNAME=nova-tempestadmin${i}
       export OS_PROJECT_NAME=nova-tempest-admin${i}
       cleanup_security_groups
+      cleanup_images
     done
 }
 

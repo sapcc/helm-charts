@@ -4,7 +4,7 @@ metadata:
   name: cc3test-api
   namespace: {{ .Values.cc3test.namespace }}
 spec:
-  schedule: "*/2 * * * *"
+  schedule: "*/5 * * * *"
   concurrencyPolicy: Replace
   successfulJobsHistoryLimit: 1
   failedJobsHistoryLimit: 1
@@ -24,7 +24,8 @@ spec:
           containers:
           - name: cc3test-api
             image: {{ required ".Values.global.registry variable missing" .Values.global.registry }}/{{ required ".Values.cc3test.image.name variable missing" .Values.cc3test.image.name }}:{{ required ".Values.cc3test.image.tag variable missing" .Values.cc3test.image.tag }}
-            args: ['pytest', '--disable-pytest-warnings', '--no-header', '--color=yes', '--variables', 'config/config.yaml', '--variables', 'secrets/secrets.yaml', '-r', 'ap', '-m', 'api', 'tests']
+            command: ["/bin/sh"]
+            args: ["-c", "pytest --disable-pytest-warnings --no-header --color=yes --variables config/config.yaml --variables secrets/secrets.yaml -r ap -m api tests; exit 0"]
             volumeMounts:
               - name: cc3test-config
                 mountPath: /cc3test/config

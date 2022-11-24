@@ -1,6 +1,6 @@
 {{- if .Values.maia.enabled }}
 [maia]
-prometheus_url = "http://prometheus-maia-oprom-thanos-query:9090"
+prometheus_url = "http://prometheus-{{- .Values.prometheus_server.name }}-thanos-query:9090{{- .Values.prometheus_server.thanos.querier.webRouteprefix }}"
 federate_url = "http://prometheus-maia-oprom:9090"
 bind_address = "0.0.0.0:{{.Values.maia.listen_port}}"
 # do not list label values from series older than label_value_ttl

@@ -136,6 +136,7 @@
     <labels>
       hostname ${hostname}
       nodename "#{ENV['K8S_NODE_NAME']}"
+      fluent_namespace $.kubernetes.namespace
     </labels>
   </metric>
 </filter>
@@ -149,6 +150,7 @@
     <labels>
       hostname ${hostname}
       nodename "#{ENV['K8S_NODE_NAME']}"
+      fluent_namespace $.kubernetes.namespace
     </labels>
   </metric>
 </filter>
@@ -204,6 +206,11 @@
     key log
     pattern /rejected execution of coordinating operation/
     tag "FLUENTRATELIMIT.${tag}"
+  </rule>
+  <rule>
+    key log
+    pattern /encountered fetching pod metadata/
+    tag "METADATA.${tag}"
   </rule>
 </match>
 
@@ -400,6 +407,26 @@
       name prom_fluentd_elk_rate_limit
       type counter
       desc The total number of fluent elk 429 rate limit
+      <labels>
+        nodename "#{ENV['K8S_NODE_NAME']}"
+        fluent_container $.kubernetes.pod_name
+        fluent_namespace $.kubernetes.namespace
+      </labels>
+    </metric>
+  </store>
+  <store>
+    @type null
+  </store>
+</match>
+
+<match METADATA.**>
+  @type copy
+  <store>
+    @type prometheus
+    <metric>
+      name prom_fluentd_kubernetes_api_timeout
+      type counter
+      desc Metadata cannot be fetched from kubernetes api
       <labels>
         nodename "#{ENV['K8S_NODE_NAME']}"
         fluent_container $.kubernetes.pod_name

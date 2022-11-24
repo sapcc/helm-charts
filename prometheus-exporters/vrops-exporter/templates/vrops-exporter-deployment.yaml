@@ -7,19 +7,19 @@
 kind: Deployment
 apiVersion: apps/v1
 metadata:
-  name: vrops-exporter-{{ $vropshostname._0 }}-{{ required "$exporter_type.name is missing" $exporter_type.name }}
+  name: vrops-exporter-{{ $vropshostname._0 | trimPrefix "vrops-" }}-{{ required "$exporter_type.name is missing" $exporter_type.name }}
   namespace: {{ required ".Values.vrops.namespace variable missing" $.Values.vrops.namespace }}
   labels:
     target: vrops-exporter
 spec:
   selector:
     matchLabels:
-      app: vrops-exporter-{{ $vropshostname._0 }}-{{ required "$exporter_type.name is missing" $exporter_type.name }}
+      app: vrops-exporter-{{ $vropshostname._0 | trimPrefix "vrops-" }}-{{ required "$exporter_type.name is missing" $exporter_type.name }}
       type: exporter
   template:
     metadata:
       labels:
-        app: vrops-exporter-{{ $vropshostname._0 }}-{{ required "$exporter_type.name is missing" $exporter_type.name }}
+        app: vrops-exporter-{{ $vropshostname._0 | trimPrefix "vrops-" }}-{{ required "$exporter_type.name is missing" $exporter_type.name }}
         type: exporter
         vrops-collector-target: {{ $vropshostname._0 }}
         target: vrops-exporter

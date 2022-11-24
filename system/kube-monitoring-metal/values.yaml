@@ -6,6 +6,10 @@ global:
   rbac:
     create: true
 
+owner-info:
+  support-group: containers
+  helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/system/kube-monitoring-metal
+
 # Disable the prometheus-operator kube-state-metrics sub-chart. We deploy independently. See below.
 kubeStateMetrics:
   enabled: false
@@ -28,7 +32,10 @@ kube-prometheus-stack:
 
     # Both admissionWebhooks and tls requires admissionregistration.k8s.io/v1 .
     admissionWebhooks:
-      enabled: false
+      failurePolicy: Ignore
+      patch:
+        image:
+          repository: keppel.eu-de-1.cloud.sap/ccloud-k8sgcr-mirror/ingress-nginx/kube-webhook-certgen
     tls:
       enabled: false
 
@@ -251,7 +258,7 @@ prometheus-kubernetes-rules:
 
 prometheus-node-exporter:
   image:
-    repository: prom/node-exporter
+    repository: keppel.global.cloud.sap/ccloud-dockerhub-mirror/prom/node-exporter
 
   serviceAccount:
     create: true
@@ -259,27 +266,24 @@ prometheus-node-exporter:
   extraArgs:
     - --collector.filesystem.ignored-mount-points=^/(sys|proc|dev|host|etc)($$|/)
     - --collector.filesystem.ignored-fs-types=^(autofs|binfmt_misc|bpf|cgroup|configfs|debugfs|devpts|devtmpfs|fusectl|hugetlbfs|mqueue|nsfs|overlay|proc|procfs|pstore|rpc_pipefs|securityfs|selinuxfs|squashfs|sysfs|tmpfs|tracefs)$$
-    - --collector.processes
-    - --path.rootfs=/rootfs
     - --collector.systemd.enable-task-metrics
     - --collector.systemd.enable-restarts-metrics
     - --collector.systemd.enable-start-time-metrics
+    - --collector.processes
 
   extraHostVolumeMounts:
     - name: dbus
       hostPath: /var/run/dbus/system_bus_socket
       mountPath: /var/run/dbus/system_bus_socket
       readOnly: true
-    - name: rootfs
-      hostPath: /
-      mountPath: /rootfs
-      readOnly: true
-      mountPropagation: HostToContainer
 
   resources:
     requests:
       memory: 100Mi
       cpu: 100m
+
+  rbac:
+    pspEnabled: false
 
 kube-state-metrics-exporter:
   prometheusName: collector-kubernetes

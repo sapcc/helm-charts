@@ -49,7 +49,7 @@ spec:
               name: instances
       containers:
         - name: nova-compute
-          image: {{ required ".Values.global.registry is missing" .Values.global.registry}}/ubuntu-source-nova-compute:{{ .Values.imageVersionNovaCompute | default .Values.imageVersion | required "Please set .imageVersion or similar" }}
+          image: {{ tuple . "compute" | include "container_image_nova" }}
           imagePullPolicy: IfNotPresent
           securityContext:
             privileged: true
@@ -87,9 +87,10 @@ spec:
               name: nova-etc
               subPath: nova.conf
               readOnly: true
-            - mountPath: /etc/nova/policy.json
+            {{- /* Note I533984: Replace with plain policy.yaml after Xena upgrade */}}
+            - mountPath: /etc/nova/{{if (.Values.imageVersion | hasPrefix "rocky") }}policy.json{{else}}policy.yaml{{end}}
               name: nova-etc
-              subPath: policy.json
+              subPath: {{if (.Values.imageVersion | hasPrefix "rocky") }}policy.json{{else}}policy.yaml{{end}}
               readOnly: true
             - mountPath: /etc/nova/logging.ini
               name: nova-etc
@@ -106,7 +107,7 @@ spec:
               subPath: rootwrap.conf
               readOnly: true
         - name: nova-libvirt
-          image: {{ required ".Values.global.registry is missing" .Values.global.registry}}/ubuntu-source-nova-libvirt:{{.Values.imageVersionNovaLibvirt | default .Values.imageVersionNova | default .Values.imageVersion | required "Please set nova.imageVersion or similar" }}
+          image: {{ tuple . "libvirt" | include "container_image_nova" }}
           imagePullPolicy: IfNotPresent
           securityContext:
             privileged: true
@@ -140,9 +141,10 @@ spec:
               name: nova-etc
               subPath: nova.conf
               readOnly: true
-            - mountPath: /etc/nova/policy.json
+            {{- /* Note I533984: Replace with plain policy.yaml after Xena upgrade */}}
+            - mountPath: /etc/nova/{{if (.Values.imageVersion | hasPrefix "rocky") }}policy.json{{else}}policy.yaml{{end}}
               name: nova-etc
-              subPath: policy.json
+              subPath: {{if (.Values.imageVersion | hasPrefix "rocky") }}policy.json{{else}}policy.yaml{{end}}
               readOnly: true
             - mountPath: /etc/nova/logging.ini
               name: nova-etc
@@ -157,7 +159,7 @@ spec:
             - mountPath: /container.init
               name: nova-container-init
         - name: nova-virtlog
-          image: {{ required ".Values.global.registry is missing" .Values.global.registry}}/ubuntu-source-nova-libvirt:{{.Values.imageVersionNovaLibvirt | default .Values.imageVersion | required "Please set nova.imageVersion or similar"}}
+          image: {{ tuple . "libvirt" | include "container_image_nova" }}
           imagePullPolicy: IfNotPresent
           securityContext:
             privileged: true
@@ -191,9 +193,10 @@ spec:
               name: nova-etc
               subPath: nova.conf
               readOnly: true
-            - mountPath: /etc/nova/policy.json
+            {{- /* Note I533984: Replace with plain policy.yaml after Xena upgrade */}}
+            - mountPath: /etc/nova/{{if (.Values.imageVersion | hasPrefix "rocky") }}policy.json{{else}}policy.yaml{{end}}
               name: nova-etc
-              subPath: policy.json
+              subPath: {{if (.Values.imageVersion | hasPrefix "rocky") }}policy.json{{else}}policy.yaml{{end}}
               readOnly: true
             - mountPath: /etc/nova/logging.ini
               name: nova-etc

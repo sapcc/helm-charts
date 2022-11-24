@@ -10,7 +10,7 @@ opensearch_master:
   nodeGroup: "master"
   masterService: "opensearch-logs-master"
   image:
-    tag: 1.3.2
+    tag: 2.4.0
   roles:
     - master
   replicas: 3
@@ -27,6 +27,7 @@ opensearch_master:
       path: /usr/share/opensearch/config/certs/
       defaultMode: 0644
   securityConfig:
+    path: "/usr/share/opensearch/config/opensearch-security"
     enabled: true
     config:
       securityConfigSecret: "security-config"
@@ -36,20 +37,19 @@ opensearch_master:
   plugins:
     enabled: true
     installList:
-      - https://github.com/aiven/prometheus-exporter-plugin-for-opensearch/releases/download/1.3.2.0/prometheus-exporter-1.3.2.0.zip
+      - https://github.com/aiven/prometheus-exporter-plugin-for-opensearch/releases/download/2.4.0.0/prometheus-exporter-2.4.0.0.zip
 
 opensearch_client:
   enabled: false
   image:
-    tag: 1.3.2
-  nodeAffinity: "ccloud.sap.com/nodepool=payload"
+    tag: 2.4.0
+  replicas: 3
   nameOverride: "opensearch-logs-client"
   fullnameOverride: "opensearch-logs-client"
   nodeGroup: "client"
   masterService: "opensearch-logs-master"
   roles:
     - remote_cluster_client
-  replicas: 2
   opensearchJavaOpts: "-Dlog4j2.formatMsgNoLookups=true -XX:MaxRAM=5g -XX:MaxGCPauseMillis=5000 -Xms1g -Xmx1g"
   secretMounts:
     - name: opensearch-certificates
@@ -67,16 +67,22 @@ opensearch_client:
   clusterName: "opensearch-logs"
 
   securityConfig:
+    enabled: true
+    path: "/usr/share/opensearch/config/opensearch-security"
     config:
       securityConfigSecret: "security-config"
   extraEnvs:
     - name: DISABLE_INSTALL_DEMO_CONFIG
       value: "true"
+  plugins:
+    enabled: true
+    installList:
+      - https://github.com/aiven/prometheus-exporter-plugin-for-opensearch/releases/download/2.4.0.0/prometheus-exporter-2.4.0.0.zip
 
 opensearch_data:
   enabled: false
   image:
-    tag: 1.3.2
+    tag: 2.4.0
   nameOverride: "opensearch-logs-data"
   fullnameOverride: "opensearch-logs-data"
   nodeGroup: "data"
@@ -100,9 +106,11 @@ opensearch_data:
   plugins:
     enabled: true
     installList:
-      - https://github.com/aiven/prometheus-exporter-plugin-for-opensearch/releases/download/1.3.2.0/prometheus-exporter-1.3.2.0.zip
+      - https://github.com/aiven/prometheus-exporter-plugin-for-opensearch/releases/download/2.4.0.0/prometheus-exporter-2.4.0.0.zip
 
   securityConfig:
+    enabled: true
+    path: "/usr/share/opensearch/config/opensearch-security"
     config:
       securityConfigSecret: "security-config"
   extraEnvs:
@@ -112,6 +120,8 @@ opensearch_data:
 
 opensearch_dashboards:
   enabled: false
+  image:
+    tag: "2.4.0"
   fullnameOverride: opensearch-logs-dashboards
   nameOverride: opensearch-logs-dashboards
   serviceAccount:
@@ -140,5 +150,16 @@ fluent:
     host: metisdb-mariadb.metis
     port: 3306
     db: metis
+  exporter:
+    prometheus: infra-collector
+
+fluent_systemd:
+  enabled: false
+  image_version: '20221005124702'
+  alerts:
+    enabled: false
+    prometheus: infra-collector
+  port: 8891
+  http_port: 9200
   exporter:
     prometheus: infra-collector

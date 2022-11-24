@@ -1,3 +1,4 @@
+{{- $root := . }}
 - job_name: 'maia-exporters'
   scrape_interval: 1m
   scrape_timeout: 55s
@@ -46,7 +47,7 @@
   metric_relabel_configs:
     - action: drop
       source_labels: [vmware_name]
-      regex: c_blackbox.*|c_regression.*
+      regex: cc3test.*
     - action: labeldrop
       regex: "instance|job|alert_tier|alert_service"
     - source_labels: [ltmVirtualServStatName]
@@ -106,7 +107,7 @@
       action: labeldrop
     - action: drop
       source_labels: [vmware_name]
-      regex: c_blackbox.*|c_regression.*
+      regex: cc3test.*
     - action: drop
       source_labels: [__name__]
       regex: netapp_volume_saved_.*
@@ -138,49 +139,62 @@
   params:
     'match[]':
       # import any tenant-specific metric, except for those which already have been imported
-      - '{__name__=~"^snmp_f5_.+"}'
-      - '{__name__=~"^ssh_nat_limits_miss"}'
-      - '{__name__=~"^ssh_nat_limits_use"}'
-      - '{__name__=~"^snmp_asr_ifHC.+"}'
-      - '{__name__=~"^netapp_capacity_.+"}'
-      - '{__name__=~"^netapp_volume_.+", app="netapp-capacity-exporter-manila"}'
+      # filter for ltmVirtualServStatName to be present as it relabels into project_id. It gets enriched by "openstack/maia/aggregations/snmp-f5.rules with the openstack metric openstack_neutron_networks_projects"
+      - '{__name__=~"^snmp_f5_.+", ltmVirtualServStatName!=""}'
+      - '{__name__=~"^ssh_nat_limits_miss", project_id!=""}'
+      - '{__name__=~"^ssh_nat_limits_use", project_id!=""}'
+      - '{__name__=~"^snmp_asr_ifHC.+", project_id!=""}'
+      - '{__name__=~"^netapp_capacity_.+", project_id!=""}'
+      - '{__name__=~"^netapp_volume_.+", app="netapp-capacity-exporter-manila", project_id!=""}'
       - '{__name__=~"^openstack_manila_share_.+", project_id!=""}'
 
-- job_name: 'prometheus-vmware'
+{{- if .Values.prometheus_vmware.enabled }}
+{{- range $match := .Values.prometheus_vmware.matches }}
+{{- $single_matchlist := splitList "_" $match }}
+{{- $all_but_first := (slice $single_matchlist 1) | join "-" }}
+- job_name: 'prometheus-vmware-vrops-{{ $all_but_first }}'
   scheme: http
-  scrape_interval: "{{ .Values.prometheus_vmware.scrape_interval }}"
-  scrape_timeout: "{{ .Values.prometheus_vmware.scrape_timeout }}"
+  scrape_interval: "{{ $root.Values.prometheus_vmware.scrape_interval }}"
+  scrape_timeout: "{{ $root.Values.prometheus_vmware.scrape_timeout }}"
   static_configs:
-    - targets: ['prometheus-vmware.vmware-monitoring.svc:9090']
+    - targets: ['prometheus-vmware.vmware-monitoring:9090']
   metric_relabel_configs:
     - source_labels: [__name__, project ]
       regex: '^vrops_virtualmachine_.+;(.+)'
       replacement: '$1'
       target_label: project_id
-    - regex: 'project|collector'
+    - regex: 'project|collector|exported_job|instance|internal_name|prometheus|prometheus_replica|resource_uuid|cluster|cluster_type|vccluster|vcenter'
       action: labeldrop
-{{- if .Values.neo.enabled }}
-    - source_labels: [__name__]
-      target_label: domain_id
-      regex: ^vrops_hostsystem_.+
-      replacement: "{{ .Values.neo.domain_id  }}"
-{{- end }}
 
   metrics_path: '/federate'
   params:
     'match[]':
-      # import any tenant-specific metric, except for those which already have been imported
-      - '{__name__=~"^vrops_virtualmachine_cpu_.+"}'
-      - '{__name__=~"^vrops_virtualmachine_disk_.+"}'
-      - '{__name__=~"^vrops_virtualmachine_memory_.+"}'
-      - '{__name__=~"^vrops_virtualmachine_network_.+"}'
-      - '{__name__=~"^vrops_virtualmachine_virtual_disk_.+"}'
-      - '{__name__=~"^vrops_virtualmachine_oversized.+"}'
-      - '{__name__=~"^vrops_virtualmachine_undersized.+"}'
-      - '{__name__=~"^vrops_virtualmachine_number_vcpus_total"}'
-      - '{__name__=~"^vrops_virtualmachine_config_hardware_memory_kilobytes"}'
+      - '{{ "{" }}__name__=~"{{ $match }}", project!~"internal", vccluster!~".*management.*"{{ "}" }}'
+{{- end }}
+{{- end }}
 
 {{- if .Values.neo.enabled }}
+- job_name: 'prometheus-vmware-neo'
+  scheme: http
+  scrape_interval: "{{ .Values.prometheus_vmware.scrape_interval }}"
+  scrape_timeout: "{{ .Values.prometheus_vmware.scrape_timeout }}"
+  static_configs:
+    - targets: ['prometheus-vmware.vmware-monitoring:9090']
+  metric_relabel_configs:
+    - source_labels: [__name__, project ]
+      regex: '^vrops_virtualmachine_.+;(.+)'
+      replacement: '$1'
+      target_label: project_id
+    - regex: 'project|collector|exported_job|instance|internal_name|prometheus|resource_uuid|thanos_cluster|thanos_cluster_type|vccluster|vcenter'
+      action: labeldrop
+    - source_labels: [__name__]
+      target_label: domain_id
+      regex: ^vrops_hostsystem_.+
+      replacement: "{{ .Values.neo.domain_id  }}"
+
+  metrics_path: '/federate'
+  params:
+    'match[]':
       - '{__name__=~"^vrops_hostsystem_cpu_model"}'
       - '{__name__=~"^vrops_hostsystem_cpu_sockets_number"}'
       - '{__name__=~"^vrops_hostsystem_cpu_usage_average_percentage"}'
@@ -188,7 +202,7 @@
       - '{__name__=~"^vrops_hostsystem_memory_contention_percentage"}'
 {{- end }}
 
-# For cronus reputation dashboard https://documentation.global.cloud.sap/services/email-howto-reputation
+# For cronus reputation dashboard https://documentation.global.cloud.sap/docs/customer/services/email-service/email-serv-howto/email-howto-reputation/
 {{- if .Values.cronus.enabled }}
 - job_name: 'cronus-reputation-statistics'
   scheme: https
@@ -211,6 +225,7 @@
       - '{__name__="aws_ses_cronus_provider_send"}'
       - '{__name__="aws_ses_cronus_security_attributes_remaining_months_until_lease_ends"}'
       - '{__name__="aws_ses_cronus_suppressed_email_since_last_update_minutes"}'
+      - '{__name__="aws_ses_cronus_identity_is_verified"}'
   metric_relabel_configs:
     - action: labeldrop
       regex: "exported_instance|exported_job|instance|job|tags|cluster|cluster_type|multicloud_id|alert_tier|alert_service"

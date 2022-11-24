@@ -47,6 +47,17 @@ groups:
     annotations:
       description: Cronus Activation to Production Fails For More Than 24H
       summary: Cronus Activation to Production Fails For More Than 24H
+  - alert: CronusHighQueue
+    expr: sum (rabbitmq_queue_messages{queue=~"cronus_waiting_queue|cronus_work_queue"}) by (queue) > 1000
+    for: 15m
+    labels:
+      meta: cronus high queuing
+      service: cronus
+      severity: warning
+      tier: os
+    annotations:
+      description: cronus high queuing
+      summary: cronus high queuing
 - name: NebulaAlerts
   rules:
   - alert: NebulaReconcileAccount

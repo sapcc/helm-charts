@@ -3,15 +3,17 @@ groups:
   rules:
   - alert: ElkFluentLogsMissing
 {{ if eq .Values.global.clusterType  "scaleout" }}
-    expr: sum(rate(fluentd_output_status_num_records_total{job="logs-fluent-exporter",cluster_type!="controlplane",component="fluent"}[60m])) by (nodename,pod) == 0
+    expr: sum(rate(fluentd_output_namespace_records_total{job="logs-fluent-exporter",cluster_type!="controlplane",job="logs-fluent-exporter"}[60m])) by (nodename,pod) == 0
+    for: 360m
 {{ else }}
-    expr: sum(rate(fluentd_output_status_num_records_total{job="logs-fluent-exporter",component="fluent"}[60m])) by (nodename,pod) == 0
+    expr: sum(rate(fluentd_output_namespace_records_total{job="logs-fluent-exporter"}[60m])) by (nodename,pod) == 0
+    for: 180m
 {{ end }}
-    for: 60m
     labels:
       context: logshipping
-      service: elk
-      severity: info
+      service: logs
+      severity: warning
+      support_group: observability
       tier: os
       playbook: docs/operation/elastic_kibana_issues/elk_logs/fluent-logs-are-missing.html
     annotations:
@@ -27,12 +29,13 @@ groups:
 {{ else }}
     expr: (sum(increase(fluentd_output_status_emit_records{component="fluent",type="elasticsearch"}[1h])) / sum(increase(fluentd_output_status_emit_records{component="fluent",type="elasticsearch"}[1h]offset 2h))) > 4
 {{ end }}
-    for: 1h
+    for: 6h
     labels:
       context: logshipping
-      service: elk
-      severity: info
+      service: logs
+      severity: warning
+      support_group: observability
       tier: os
     annotations:
-      description: 'ELK in {{`{{ $labels.region }}`}} is receiving more logs in the last 1h compared to 2h ago.'
+      description: 'ELK in {{`{{ $labels.region }}`}} is receiving 4 times more logs in the last 6h.'
       summary:  fluentd container logs increasing, check log volume.

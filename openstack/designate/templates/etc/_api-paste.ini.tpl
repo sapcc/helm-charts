@@ -1,6 +1,7 @@
 [composite:osapi_dns]
 use = egg:Paste#urlmap
 /: osapi_dns_versions
+/healthcheck: healthcheck
 /v2: osapi_dns_v2
 /admin: osapi_dns_admin
 
@@ -16,6 +17,11 @@ paste.app_factory = designate.api.versions:factory
 use = call:designate.api.middleware:auth_pipeline_factory
 noauth = http_proxy_to_wsgi cors request_id faultwrapper sentry validation_API_v2 {{- include "osprofiler_pipe" . }} noauthcontext {{ if .Values.watcher.enabled }}watcher {{ end }}maintenance normalizeuri {{ if .Values.audit.enabled }}audit {{ end }}osapi_dns_app_v2
 keystone = http_proxy_to_wsgi cors request_id faultwrapper sentry validation_API_v2 {{- include "osprofiler_pipe" . }} authtoken keystonecontext {{ if .Values.watcher.enabled }}watcher {{ end }}maintenance normalizeuri {{ if .Values.audit.enabled }}audit {{ end }}osapi_dns_app_v2
+
+[app:healthcheck]
+paste.app_factory = oslo_middleware:Healthcheck.app_factory
+backends = disable_by_file
+disable_by_file_path = /etc/designate/healthcheck_disable
 
 [app:osapi_dns_app_v2]
 paste.app_factory = designate.api.v2:factory

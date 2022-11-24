@@ -2,15 +2,17 @@
 <dl>
   <dt>Why is this a problem?</dt>
   <dd>
-    Each Pod should define at least a <code>alert-tier</code> or <code>alert-service</code> label that
-    corresponds to an alert channel (similar to the <code>tier</code> and <code>service</code> labels on your alert definitions) to
-    enable delivery of generic Kubernetes-level alerts like
-    <code>KubernetesPodRestartingTooMuch</code> to the more specific channels that the
-    service owners observe.
+    Each Pod should have a <code>ccloud/support-group</code> label containing the name of the support group
+    that is responsible for it. Optionally, the <code>ccloud/service</code> label can be added to further route alerts
+    within the support group. These labels will be used for routing generic pod alerts.
     <br><br>
-    When value of <code>alert-tier</code> label is <code>os</code> then <code>alert-service</code>
-    label is also required and must have a value as per the Alertmanager config.
+    Please refer to <a href="https://operations.global.cloud.sap/docs/support/operation_model/tags/">the operations documentation</a>
+    for more details on the labels that drive our support process.
   </dd>
   <dt>How to fix?</dt>
-  <dd>Add the missing labels, as reported.</dd>
+  <dd>
+    Add the missing labels, as reported. Usually you do not have to maintain labels on individual pod specs. They will
+    be added automatically if you have <a href="https://github.com/sapcc/helm-charts/tree/master/common/owner-info">owner-info</a>
+    defined on the level of the Helm chart.
+  </dd>
 </dl>

@@ -1,0 +1,36 @@
+global:
+  region: test-region
+  clusterType: test
+
+podMonitor:
+  enabled: true
+serviceMonitor:
+  enabled: false
+
+prometheus: dummy-prometheus
+jobLabel: my-label-name
+
+basicAuth:
+  user:
+    name: my-secret
+    key: secret-user
+  password:
+    name: my-secret
+    key: secret-password
+
+namespaces:
+  - "my-namespace"
+
+matchLabels:
+  - key: "app.kubernetes.io/name"
+    value: "my-app"
+
+customRelabelings:
+  - action: labelmap
+    sourceLabels:
+      - __test__
+
+customMetricRelabelings:
+  - action: drop
+    regex: ".*"
+    sourceLabels: [__name__]

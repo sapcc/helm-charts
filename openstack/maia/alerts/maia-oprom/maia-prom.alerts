@@ -1,0 +1,75 @@
+groups:
+- name: maia-prom.alerts
+  rules:
+  - alert: MaiaPromFederationDown
+    expr: up{job=~"prometheus-openstack|prometheus-infra-collector|prometheus-vmware.+|cronus-reputation-statistics"} < 1
+    for: 15m
+    labels:
+      severity: warning
+      support_group: observability
+      service: '{{ $labels.job }}'
+      context: federation
+      meta: 'Maia-Prom {{ $labels.job }} federation is down'
+      playbook: 'docs/support/playbook/maia/alerts/maia-prom-alert-federation/'
+    annotations:
+      description: 'Maia-Prom {{ $labels.job }} federation is down'
+      summary: 'Some Maia-Prom federation is down'
+
+  - alert: MaiaPromDown
+    expr: up{job=~"prometheus-maia-oprom"} < 1
+    for: 15m
+    labels:
+      severity: warning
+      support_group: observability
+      service: '{{ $labels.job }}'
+      context: service
+      meta: 'Maia-Prom {{ $labels.job }} is down'
+      playbook: 'docs/support/playbook/maia/alerts/maia-prom-alert-service/'
+    annotations:
+      description: 'Maia Prometheus {{ $labels.job }} is down'
+      summary: 'Maia Promethus is down, results within 24h will be unavailable'
+
+
+  - alert: MaiaThanosQueryDown
+    expr: up{job=~"prometheus-maia-oprom-thanos-query"} < 1
+    for: 15m
+    labels:
+      severity: warning
+      support_group: observability
+      service: '{{ $labels.job }}'
+      context: service
+      meta: 'Maia Thanos Querier is down'
+      playbook: 'docs/support/playbook/maia/alerts/maia-prom-alert-service/'
+    annotations:
+      description: 'Maia Thanos Querier is down'
+      summary: 'Maia Thanos Querier is down, Maia is unable to return metrics'
+
+  - alert: MaiaThanosStoreDown
+    expr: up{job=~"prometheus-maia-oprom-thanos-store"} < 1
+    for: 15m
+    labels:
+      severity: warning
+      support_group: observability
+      service: '{{ $labels.job }}'
+      context: service
+      meta: 'Maia-Prom {{ $labels.job }} service is down'
+      playbook: 'docs/support/playbook/maia/alerts/maia-prom-alert-service/'
+    annotations:
+      description: 'Maia Thanos Store is down'
+      summary: 'Maia Thanos Store is down, long term storage results will be unavailable'
+
+  - alert: MaiaThanosCompactorDown
+    expr: up{job=~"prometheus-maia-oprom-thanos-compactor"} < 1
+    for: 15m
+    labels:
+      severity: info
+      support_group: observability
+      service: '{{ $labels.job }}'
+      context: service
+      meta: 'Maia Thanos Compactor is down'
+      playbook: 'docs/support/playbook/maia/alerts/maia-prom-alert-service/'
+    annotations:
+      description: 'Maia Thanos Compactor is down'
+      summary: 'Maia Thanos Compactor is down, speed degradation but no downtime'
+
+

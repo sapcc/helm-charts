@@ -9,6 +9,7 @@ groups:
       severity: critical
       tier: vmware
       service: cinder
+      support_group: compute
       context: "openstack-exporter"
       meta: "Cinder backend {{ $labels.shard }}/{{ $labels.backend }} has no storage capacity."
       playbook: docs/support/playbook/cinder/cinder-storage-profile-empty.html
@@ -22,6 +23,7 @@ groups:
       severity: warning
       tier: vmware
       service: cinder
+      support_group: compute
       playbook: docs/support/playbook/cinder/cinder-low-free-space.html
     annotations:
       description: 'Cinder backend {{ $labels.shard }}/{{ $labels.backend }} has 1 or less datastores with > 30% free space left'
@@ -33,38 +35,26 @@ groups:
       severity: warning
       tier: vmware
       service: cinder
+      support_group: compute
       playbook: docs/support/playbook/cinder/cinder-low-free-space.html
     annotations:
       description: 'Cinder backend {{ $labels.shard }}/{{ $labels.backend }} has less than 2 datastores with > 30% free space left'
       summary: 'Cinder backend {{ $labels.shard }}/{{ $labels.backend }} has less than 2 datastores with > 30% free space left'
-  - alert: CinderShardMaxVolumeSizeWarning
+  - alert: CinderShardMaxVolumeSizeInfo
     expr: >
       count by (shard, backend) (sum(cinder_available_capacity_gib) by (shard, backend, pool)) - count by (shard, backend) (sum by(shard, backend, pool) (cinder_virtual_free_capacity_gib) - sum by(shard, backend, pool) (cinder_per_volume_gigabytes) <=0) < 3
     for: 15m
     labels:
-      severity: warning
+      severity: info
       tier: vmware
       service: cinder
+      support_group: compute
       context: "openstack-exporter"
       meta: "Cinder backend {{ $labels.shard }}/{{ $labels.backend }} has 2 or less datastores that can accept max volume size"
       playbook: docs/support/playbook/cinder/cinder-low-free-space.html
     annotations:
       description: "Cinder backend {{ $labels.shard }}/{{ $labels.backend }} has 2 or less datastores that can accept max volume size"
       summary: "Cinder backend {{ $labels.shard }}/{{ $labels.backend }} has 2 or less datastores that can accept max volume size"
-  - alert: CinderShardMaxVolumeSizeCritical
-    expr: >
-      count by (shard, backend) (sum(cinder_available_capacity_gib) by (shard, backend, pool)) - count by (shard, backend) (sum by(shard, backend, pool) (cinder_virtual_free_capacity_gib) - sum by(shard, backend, pool) (cinder_per_volume_gigabytes) <=0) < 2
-    for: 15m
-    labels:
-      severity: warning
-      tier: vmware
-      service: cinder
-      context: "openstack-exporter"
-      meta: "Cinder backend {{ $labels.shard }}/{{ $labels.backend }} has less than 2 datastores that can accept max volume size"
-      playbook: docs/support/playbook/cinder/cinder-low-free-space.html
-    annotations:
-      description: "Cinder backend {{ $labels.shard }}/{{ $labels.backend }} has less than 2 datastores that can accept max volume size"
-      summary: "Cinder backend {{ $labels.shard }}/{{ $labels.backend }} has less than 2 datastores that can accept max volume size"
   - alert: CinderBackendDown
     expr: >
         cinder_backend_state_info{backend_state='down'}
@@ -73,26 +63,28 @@ groups:
       severity: info
       tier: vmware
       service: cinder
+      support_group: compute
       context: "openstack-exporter"
       meta: "Cinder backend {{ $labels.shard }}/{{ $labels.backend }} is marked as down"
       playbook: docs/support/playbook/cinder/cinder-backend-down.html
     annotations:
       description: "Cinder backend {{ $labels.shard }}/{{ $labels.backend }} is marked as down"
       summary: "Cinder backend {{ $labels.shard }}/{{ $labels.backend }} is marked as down"
-  - alert: CinderPoolDown
+  - alert: CinderPoolOvercommited
     expr: >
-        cinder_pool_state_info{pool_state='down'}
+        cinder_virtual_free_capacity_gib < 0
     for: 15m
     labels:
       severity: info
       tier: vmware
       service: cinder
+      support_group: compute
       context: "openstack-exporter"
-      meta: "Cinder pool {{ $labels.shard }}/{{ $labels.backend }}/{{ $labels.pool }} is marked as down"
+      meta: "Cinder pool {{ $labels.shard }}/{{ $labels.backend }}/{{ $labels.pool }} is overcommited"
       playbook: docs/support/playbook/cinder/cinder-pool-down.html
     annotations:
-      description: "Cinder pool {{ $labels.shard }}/{{ $labels.backend }}/{{ $labels.pool }} is marked as down"
-      summary: "Cinder pool {{ $labels.shard }}/{{ $labels.backend }}/{{ $labels.pool }} is marked as down"
+      description: "Cinder pool {{ $labels.shard }}/{{ $labels.backend }}/{{ $labels.pool }} is overcommited"
+      summary: "Cinder pool {{ $labels.shard }}/{{ $labels.backend }}/{{ $labels.pool }} is overcommited"
   - alert: CinderPoolNetappFQDNNotSet
     expr: >
         cinder_pool_netapp_fqdn_info{netapp_fqdn='None'}
@@ -101,6 +93,7 @@ groups:
       severity: info
       tier: vmware
       service: cinder
+      support_group: compute
       context: "openstack-exporter"
       meta: "Cinder pool {{ $labels.shard }}/{{ $labels.backend }}/{{ $labels.pool }} Netapp FQDN is not set"
       playbook: docs/support/playbook/cinder/cinder-pool-netapp-fqdn.html

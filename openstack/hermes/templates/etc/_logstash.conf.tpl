@@ -206,21 +206,21 @@ filter {
         query => "select project_name, domain_id, domain_name from project_domain_mapping where project_id = ?"
         prepared_parameters => ["[initiator][project_id]"]
         target => "project_mapping"
-        tag_on_failure => "Project_Mapping"
+        tag_on_failure => ["Project_Mapping"]
       },
       {
         id => "target_project_name_lookup"
         query => "select project_name, domain_id, domain_name from project_domain_mapping where project_id = ?"
         prepared_parameters => ["[target][project_id]"]
         target => "target_project_mapping"
-        tag_on_failure => "Target_Project_Mapping"
+        tag_on_failure => ["Target_Project_Mapping"]
       },
       {
         id => "domain_lookup"
         query => "select user_name, domain_id, domain_name from user_domain_mapping where user_id = ?"
         prepared_parameters => ["[initiator][id]"]
         target => "domain_mapping"
-        tag_on_failure => "Domain_Mapping"
+        tag_on_failure => ["Domain_Mapping"]
       }
     ]
     staging_directory => "/tmp/logstash/jdbc_static/import_data"

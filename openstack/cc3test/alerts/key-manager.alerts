@@ -4,9 +4,10 @@ groups:
   - alert: OpenstackBarbicanApiDown
     expr: |
         cc3test_status{service="barbican", type="api"} == 0
-    for: 10m
+    for: 16m
     labels:
       severity: critical
+      support_group: group-identity
       tier: os
       service: '{{ $labels.service }}'
       context: '{{ $labels.service }}'
@@ -23,6 +24,7 @@ groups:
         changes(cc3test_status{service="barbican", type="api"}[30m]) > 8
     labels:
       severity: warning
+      support_group: group-identity
       tier: os
       service: '{{ $labels.service }}'
       context: '{{ $labels.service }}'
@@ -33,3 +35,37 @@ groups:
     annotations:
       description: 'Openstack Barbican API is flapping'
       summary: 'Openstack Barbican API is flapping'
+
+  - alert: OpenstackBarbicanCanaryCreateSecretDown
+    expr: cc3test_status{service="barbican",name=~"TestKeyManager_create_secret.+"} == 0
+    for: 3h
+    labels:
+      severity: warning
+      support_group: identity
+      tier: os
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.service }}'
+      meta: 'Openstack Barbican Canary is down, see report for more details'
+      dashboard: 'cc3test-overview?var-service={{ $labels.service }}'
+      playbook: 'docs/devops/alert/{{ $labels.service }}'
+      report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
+    annotations:
+      description: 'Openstack Barbican Canary is down, see report for more details'
+      summary: 'Openstack Barbican Canary is down, see report for more details'
+
+  - alert: OpenstackBarbicanCanaryCreateSecretFlapping
+    expr: changes(cc3test_status{service="barbican",name=~"TestKeyManager_create_secret.+"}[2h]) > 8
+    for: 3h
+    labels:
+      severity: info
+      support_group: identity
+      tier: os
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.service }}'
+      meta: 'Openstack Barbican Canary is flapping for 2 hours, see last three reports for more details'
+      dashboard: 'cc3test-overview?var-service={{ $labels.service }}'
+      playbook: 'docs/devops/alert/{{ $labels.service }}'
+      report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
+    annotations:
+      description: 'Openstack Barbican Canary is flapping for 2 hours, see last three reports for more details'
+      summary: 'Openstack Barbican Canary is flapping for 2 hours, see last three reports for more details'

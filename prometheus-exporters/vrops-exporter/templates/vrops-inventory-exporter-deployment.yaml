@@ -1,18 +1,21 @@
 {{- if .Values.vrops.enabled }}
+{{- range $target := $.Values.vrops.targets }}
+{{- $vropshostname := split "." $target.hostname }}
+---
 kind: Deployment
 apiVersion: apps/v1
 metadata:
-  name: vrops-inventory-exporter
+  name: vrops-inventory-exporter-{{ $vropshostname._0 | trimPrefix "vrops-" }}
   namespace: {{ required ".Values.vrops.namespace variable missing" $.Values.vrops.namespace }}
 spec:
   selector:
     matchLabels:
-      app: vrops-inventory-exporter
+      app: vrops-inventory-exporter-{{ $vropshostname._0 | trimPrefix "vrops-" }}
       type: exporter
   template:
     metadata:
       labels:
-        app: vrops-inventory-exporter
+        app: vrops-inventory-exporter-{{ $vropshostname._0 | trimPrefix "vrops-" }}
         type: exporter
         target: vrops-inventory-exporter
         alert-tier: vmware
@@ -20,31 +23,33 @@ spec:
     spec:
       containers:
          - name: vrops-inventory-exporter
-           image: {{ required ".Values.global.registry variable missing" .Values.global.registry }}/{{ required ".Values.vrops.image.name variable missing" $.Values.vrops.image.name }}:{{ required ".Values.vrops.image.tag variable missing" .Values.vrops.image.tag }}
+           image: {{ required ".Values.global.registry variable missing" $.Values.global.registry }}/{{ required ".Values.vrops.image.name variable missing" $.Values.vrops.image.name }}:{{ required ".Values.vrops.image.tag variable missing" $.Values.vrops.image.tag }}
            ports:
              - name: metrics
-               containerPort: {{ required ".Values.vrops.inventory_exporter.port_number missing" .Values.vrops.inventory_exporter.port_number }}
+               containerPort: {{ required ".Values.vrops.inventory_exporter.port_number missing" $.Values.vrops.inventory_exporter.port_number }}
            command:
              - ./exporter.py
            args:
              - -m
              - /config/collector_config.yaml
+             - -t
+             - {{ required "$target.hostname missing" $target.hostname }}
              - -c
              - InventoryCollector
            env:
            - name: PORT
-             value: {{ required ".Values.vrops.inventory_exporter.port_number missing" .Values.vrops.inventory_exporter.port_number | quote }}
+             value: {{ required ".Values.vrops.inventory_exporter.port_number missing" $.Values.vrops.inventory_exporter.port_number | quote }}
            - name: DEBUG
              value: {{ $.Values.vrops.debug | quote }}
            - name: INVENTORY
              value: vrops-inventory
            resources:
              limits:
-               memory: {{ required ".Values.vrops.exporter_types.default.resources.limits.memory missing" .Values.vrops.exporter_types.default.resources.limits.memory }}
-               cpu: {{ required ".Values.vrops.exporter_types.default.resources.limits.cpu missing" .Values.vrops.exporter_types.default.resources.limits.cpu }}
+               memory: {{ required ".Values.vrops.exporter_types.default.resources.limits.memory missing" $.Values.vrops.exporter_types.default.resources.limits.memory }}
+               cpu: {{ required ".Values.vrops.exporter_types.default.resources.limits.cpu missing" $.Values.vrops.exporter_types.default.resources.limits.cpu }}
              requests:
-               memory: {{ required ".Values.vrops.exporter_types.default.resources.requests.memory missing" .Values.vrops.exporter_types.default.resources.requests.memory }}
-               cpu: {{ required ".Values.vrops.exporter_types.default.resources.requests.cpu missing" .Values.vrops.exporter_types.default.resources.requests.cpu }}
+               memory: {{ required ".Values.vrops.exporter_types.default.resources.requests.memory missing" $.Values.vrops.exporter_types.default.resources.requests.memory }}
+               cpu: {{ required ".Values.vrops.exporter_types.default.resources.requests.cpu missing" $.Values.vrops.exporter_types.default.resources.requests.cpu }}
            volumeMounts:
              - mountPath: /config
                name: vrops-config
@@ -53,4 +58,5 @@ spec:
         - configMap:
             name: vrops-exporter-collector-config
           name: vrops-config
+{{- end }}
 {{- end }}

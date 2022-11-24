@@ -1,0 +1,349 @@
+groups:
+- name: host.alerts
+  rules:
+  - alert: HostWithRunningVMsNotResponding
+    expr: |
+      avg_over_time(vrops_hostsystem_runtime_connectionstate{state="notResponding"}[5m])
+      and on (hostsystem) avg_over_time(vrops_hostsystem_runtime_powerstate{state="Unknown"}[5m])
+      and on (hostsystem) vrops_hostsystem_runtime_maintenancestate{state="notInMaintenance"}
+      and on (hostsystem) count(vrops_virtualmachine_runtime_powerstate{virtualmachine!~"vCLS.*", state="Powered On"}) by (hostsystem) > 0
+    for: 5m
+    labels:
+      severity: critical
+      tier: vmware
+      service: compute
+      support_group: compute
+      context: "ESXi not responding"
+      meta: "Host {{ $labels.hostsystem }} with running VMs not responding. ({{ $labels.vcenter }}, {{ $labels.vccluster }})"
+      dashboard: esxi-host-disconnected/esxi-host-disconnected?&var-host={{ $labels.hostsystem }}
+      playbook: docs/devops/alert/vcenter/#test_esxi_hs_1
+    annotations:
+      description: "Host {{ $labels.hostsystem }} with running VMs not responding. ({{ $labels.vcenter }}, {{ $labels.vccluster }})"
+      summary: "Host {{ $labels.hostsystem }} with running VMs not responding. ({{ $labels.vcenter }}, {{ $labels.vccluster }})"
+
+  - alert: HostNotResponding
+    expr: |
+      vrops_hostsystem_summary_running_vms_number == 0 and
+      on (hostsystem) vrops_hostsystem_runtime_connectionstate{state="notResponding"} and
+      on (hostsystem) vrops_hostsystem_runtime_maintenancestate{state="notInMaintenance"} and
+      on (hostsystem) vrops_hostsystem_runtime_powerstate{state="Powered On"}
+    labels:
+      severity: warning
+      tier: vmware
+      service: compute
+      support_group: compute
+      context: "ESXi not responding"
+      meta: "Host {{ $labels.hostsystem }} not responding. ({{ $labels.vcenter }}, {{ $labels.vccluster }})"
+      dashboard: esxi-host-disconnected/esxi-host-disconnected?&var-host={{ $labels.hostsystem }}
+      playbook: docs/devops/alert/vcenter/#test_esxi_hs_2
+    annotations:
+      description: "Host {{ $labels.hostsystem }} not responding. ({{ $labels.vcenter }}, {{ $labels.vccluster }})"
+      summary: "Host {{ $labels.hostsystem }} not responding. ({{ $labels.vcenter }}, {{ $labels.vccluster }})"
+
+  - alert: HostInMaintenanceWithoutCustomAttribute
+    expr: |
+      count(((avg_over_time(vrops_hostsystem_runtime_maintenancestate{state="inMaintenance"}[10m]))
+      AND ON(hostsystem) avg_over_time(vrops_hostsystem_custom_attributes_hw_info{custom_attributes_hw=' '}[10m]))
+      OR ON(hostsystem) ((avg_over_time(vrops_hostsystem_runtime_maintenancestate{state="inMaintenance"}[10m]))
+      unless ON(hostsystem) avg_over_time(vrops_hostsystem_custom_attributes_hw_info[10m])))
+    for: 20m
+    labels:
+      severity: info
+      tier: vmware
+      service: compute
+      support_group: compute
+      dashboard: hosts-in-maintenance-without-custom-att/hosts-in-maintenance-without-custom-attribute
+    annotations:
+      description: "There are hosts in maintenance without providing a custom attribute HW. See Grafana to view the hosts"
+      summary: "There are hosts in maintenance without providing a custom attribute HW. See Grafana to view the hosts"
+
+  - alert: VMsOnFailoverHost
+    #  Excluding vCLS agent VMs. vCLS ensures that if vCenter Server becomes unavailable, cluster services remain available
+    #  to maintain the resources and health of the workloads that run in the clusters.
+    expr: |
+      vrops_hostsystem_configuration_dasconfig_admissioncontrolpolicy_failoverhost == 1
+      and on (hostsystem) count(vrops_virtualmachine_runtime_powerstate{virtualmachine!~"vCLS.*", state="Powered On"}) by (hostsystem) > 0
+    for: 10m
+    labels:
+      severity: critical
+      tier: vmware
+      service: compute
+      support_group: compute
+      context: "Failover host"
+      meta: "Failover Host {{ $labels.hostsystem }} has Virtual Machines on it. ({{ $labels.vcenter }}, {{ $labels.vccluster }})"
+      playbook: docs/devops/alert/vcenter/index.html#VMs_on_failover_hosts
+    annotations:
+      description: "Failover Host {{ $labels.hostsystem }} has Virtual Machines on it. Free up the host. ({{ $labels.vcenter }}, {{ $labels.vccluster }})"
+      summary: "Failover Host {{ $labels.hostsystem }} has Virtual Machines on it. ({{ $labels.vcenter }}, {{ $labels.vccluster }})"
+
+  - alert: HostDiskSpaceUsageCritical
+    expr: vrops_hostsystem_diskspace_usage_gigabytes / vrops_hostsystem_diskspace_capacity_gigabytes > 0.9
+    for: 15m
+    labels:
+      severity: info
+      tier: vmware
+      service: compute
+      support_group: compute
+      context: "{{ $labels.hostsystem }} disk space"
+      meta: "Disk space usage of host {{ $labels.hostsystem }} is above 90%. ({{ $labels.vcenter }}, {{ $labels.vccluster }})"
+    annotations:
+      description: "Disk space usage of host {{ $labels.hostsystem }} is above 90%. ({{ $labels.vcenter }}, {{ $labels.vccluster }})"
+      summary: "Disk space usage of host {{ $labels.hostsystem }} is above 90%. ({{ $labels.vcenter }}, {{ $labels.vccluster }})"
+
+  - alert: HostHasLostConnectivityToDVPort
+    expr: |
+      vrops_hostsystem_alert_info{alert_name="The host has lost connectivity to a dvPort"}
+      and on (hostsystem) vrops_hostsystem_runtime_maintenancestate{state!~"inMaintenance"}
+    labels:
+      severity: warning
+      tier: vmware
+      service: compute
+      support_group: compute
+      context: "{{ $labels.hostsystem }} dvPort connection"
+      meta: "Host `{{ $labels.hostsystem }}` has lost connectivity to a dvPort. ({{ $labels.vcenter }})."
+      playbook: docs/devops/alert/vcenter/#host_has_lost_connectivity_to_a_dv_port
+      no_alert_on_absence: "true"
+    annotations:
+      description: "Host `{{ $labels.hostsystem }}` has lost connectivity to a dvPort. ({{ $labels.vcenter }})."
+      summary: "Host `{{ $labels.hostsystem }}` has lost connectivity to a dvPort. ({{ $labels.vcenter }})."
+
+  - alert: HostHasLostRedundantConnectivityToDVPort
+    expr: |
+      vrops_hostsystem_alert_info{alert_name="The host has lost redundant connectivity to a dvPort"}
+      and on (hostsystem) vrops_hostsystem_runtime_maintenancestate{state!~"inMaintenance"}
+    labels:
+      severity: warning
+      tier: vmware
+      service: compute
+      support_group: compute
+      context: "{{ $labels.hostsystem }} dvPort connection"
+      meta: "Host `{{ $labels.hostsystem }}` has lost redundant connectivity to a dvPort. ({{ $labels.vcenter }})."
+      playbook: docs/devops/alert/vcenter/#host_has_lost_connectivity_to_a_dv_port
+      no_alert_on_absence: "true"
+    annotations:
+      description: "Host `{{ $labels.hostsystem }}` has lost redundant connectivity to a dvPort. ({{ $labels.vcenter }})."
+      summary: "Host `{{ $labels.hostsystem }}` has lost redundant connectivity to a dvPort. ({{ $labels.vcenter }})."
+
+  - alert: HostHasLostConnectionToVCenterServer
+    expr: |
+      vrops_hostsystem_runtime_connectionstate{state="disconnected"} AND on (hostsystem)
+      vrops_hostsystem_runtime_maintenancestate{state="notInMaintenance"} AND on (hostsystem)
+      vrops_hostsystem_runtime_powerstate{state!="Standby"}
+    labels:
+      severity: warning
+      tier: vmware
+      service: compute
+      support_group: compute
+      context: "{{ $labels.hostsystem }} vCenter connection"
+      meta: "`{{ $labels.hostsystem }}` has been unexpectedly disconnected from vCenter Server {{ $labels.vcenter }}."
+      playbook: docs/devops/alert/vcenter/#host_has_lost_connection_to_vcenter_server
+      no_alert_on_absence: "true"
+    annotations:
+      description: "`{{ $labels.hostsystem }}` has been unexpectedly disconnected from vCenter Server {{ $labels.vcenter }}."
+      summary: "`{{ $labels.hostsystem }}` has been unexpectedly disconnected from vCenter Server {{ $labels.vcenter }}."
+
+  - alert: HostHasLostConnectivityToPhysicalNetwork
+    expr: |
+      vrops_hostsystem_alert_info{alert_name="The host has lost connectivity to physical network"}
+      and on (hostsystem) vrops_hostsystem_runtime_maintenancestate{state!~"inMaintenance"}
+    labels:
+      severity: warning
+      tier: vmware
+      service: compute
+      support_group: compute
+      context: "{{ $labels.hostsystem }} network connection"
+      meta: "Host `{{ $labels.hostsystem }}` has lost connectivity to physical network. ({{ $labels.vcenter }})."
+      playbook: docs/devops/alert/vcenter/#host_has_lost_connectivity_to_physical_network
+      no_alert_on_absence: "true"
+    annotations:
+      description: "Host `{{ $labels.hostsystem }}` has lost connectivity to physical network. ({{ $labels.vcenter }})."
+      summary: "Host `{{ $labels.hostsystem }}` has lost connectivity to physical network. ({{ $labels.vcenter }})."
+
+  - alert: HostInMaintenanceModeForAtLeast72h
+    expr: |
+      vrops_hostsystem_alert_info{alert_name="Host is in maintenance mode for at least 72 hours"}
+      and on (hostsystem) vrops_hostsystem_runtime_maintenancestate{state!~"inMaintenance"}
+    labels:
+      severity: info
+      tier: vmware
+      service: compute
+      support_group: compute
+      context: "{{ $labels.hostsystem }} maintenance"
+      meta: "Host `{{ $labels.hostsystem }}` his in maintenance mode for at least 72 hours. ({{ $labels.vcenter }})."
+      playbook: docs/devops/alert/vcenter/#host_in_maintenance_mode_for_at_least_72h
+      no_alert_on_absence: "true"
+    annotations:
+      description: "Host `{{ $labels.hostsystem }}` is in maintenance mode for at least 72 hours. ({{ $labels.vcenter }})."
+      summary: "Host `{{ $labels.hostsystem }}` is in maintenance mode for at least 72 hours. ({{ $labels.vcenter }})."
+
+  - alert: HADetectedAPossibleHostFailure
+    expr: |
+      vrops_hostsystem_alert_info{alert_name="vSphere High Availability (HA) has detected a possible host failure"} 
+      and on (hostsystem) vrops_hostsystem_runtime_maintenancestate{state!~"inMaintenance"}
+    labels:
+      severity: critical
+      tier: vmware
+      service: compute
+      support_group: compute
+      context: "{{ $labels.hostsystem }} failure"
+      meta: "vSphere High Availability (HA) has detected a possible host failure for `{{ $labels.hostsystem }}`. ({{ $labels.vcenter }})."
+      playbook: docs/devops/alert/vcenter/#ha_detected_a_possible_host_failure
+      no_alert_on_absence: "true"
+    annotations:
+      description: "vSphere High Availability (HA) has detected a possible host failure for `{{ $labels.hostsystem }}`. ({{ $labels.vcenter }})."
+      summary: "vSphere High Availability (HA) has detected a possible host failure for `{{ $labels.hostsystem }}`. ({{ $labels.vcenter }})."
+
+  - alert: APodMemoryUtilizationHigh
+    expr: vrops_hostsystem_memory_usage_percentage{vccluster=~".*-management.*"} > 90
+    for: 30m
+    labels:
+      severity: info
+      tier: vmware
+      service: compute
+      support_group: compute
+      context: "{{ $labels.hostsystem }} memory"
+      meta: "Memory utilization of host {{ $labels.hostsystem }} is above 90%. ({{ $labels.vcenter }})"
+    annotations:
+      description: "Memory utilization of host {{ $labels.hostsystem }} is above 90%. ({{ $labels.vcenter }})"
+      summary: "Memory utilization of host {{ $labels.hostsystem }} is above 90%. ({{ $labels.vcenter }})"
+
+  - alert: APodCPUUtilizationHigh
+    expr: vrops_hostsystem_cpu_usage_average_percentage{vccluster=~".*-management.*"} > 90
+    for: 30m
+    labels:
+      severity: info
+      tier: vmware
+      service: compute
+      support_group: compute
+      context: "{{ $labels.hostsystem }} cpu"
+      meta: "CPU utilization of host {{ $labels.hostsystem }} is above 90%. ({{ $labels.vcenter }})"
+    annotations:
+      description: "CPU utilization of host {{ $labels.hostsystem }} is above 90%. ({{ $labels.vcenter }})"
+      summary: "CPU utilization of host {{ $labels.hostsystem }} is above 90%. ({{ $labels.vcenter }})"
+
+  - alert: HostHighNumberOfPacketsDropped
+    expr: |
+      vrops_hostsystem_alert_info{alert_name="Host is experiencing high number of packets dropped"}
+      and on (hostsystem) vrops_hostsystem_runtime_maintenancestate{state!~"inMaintenance"}
+    labels:
+      severity: info
+      tier: vmware
+      service: compute
+      support_group: compute
+      context: "{{ $labels.hostsystem }} packets dropped"
+      meta: "`{{ $labels.hostsystem }}` is experiencing high number of packets dropped. ({{ $labels.vcenter }})."
+      no_alert_on_absence: "true"
+    annotations:
+      description: "`{{ $labels.hostsystem }}` is experiencing high number of packets dropped. ({{ $labels.vcenter }})."
+      summary: "`{{ $labels.hostsystem }}` is experiencing high number of packets dropped. ({{ $labels.vcenter }})."
+
+  - alert: HostNicLinkFlappingAlert
+    expr: |
+      vrops_hostsystem_alert_info{alert_name=~"ESXi host has detected a link status.*flapping.*on a physical NIC"}
+      and on (hostsystem) vrops_hostsystem_runtime_maintenancestate{state!~"inMaintenance"}
+    labels:
+      severity: info
+      tier: vmware
+      service: compute
+      support_group: compute
+      context: "{{ $labels.hostsystem }} link flapping"
+      meta: "`{{ $labels.hostsystem }}` has detected a link status flapping on a physical NIC. ({{ $labels.vcenter }})."
+      no_alert_on_absence: "true"
+    annotations:
+      description: "`{{ $labels.hostsystem }}` has detected a link status flapping on a physical NIC. ({{ $labels.vcenter }})."
+      summary: "`{{ $labels.hostsystem }}` has detected a link status flapping on a physical NIC. ({{ $labels.vcenter }})."
+
+  - alert: HostSystemEventLogSensorAlert
+    expr: |
+      vrops_hostsystem_alert_info{alert_name="IPMI System Event Log for the host is becoming full"}
+      and on (hostsystem) vrops_hostsystem_runtime_maintenancestate{state!~"inMaintenance"}
+    labels:
+      severity: info
+      tier: vmware
+      service: compute
+      support_group: compute
+      context: "{{ $labels.hostsystem }} IPMI log"
+      meta: "IPMI System Event Log for `{{ $labels.hostsystem }}` is becoming full. ({{ $labels.vcenter }}) {{ $labels.recommendation_1 }}"
+      no_alert_on_absence: "true"
+    annotations:
+      description: "IPMI System Event Log for `{{ $labels.hostsystem }}` is becoming full. ({{ $labels.vcenter }}) {{ $labels.recommendation_1 }}"
+      summary: "IPMI System Event Log for `{{ $labels.hostsystem }}` is becoming full. ({{ $labels.vcenter }}) {{ $labels.recommendation_1 }}"
+
+  - alert: HostStoragePathsDown
+    expr: vrops_hostsystem_storage_number_of_path - vrops_hostsystem_storage_number_of_active_path > 4
+    for: 30m
+    labels:
+      severity: info
+      tier: vmware
+      service: compute
+      support_group: compute
+      context: "{{ $labels.hostsystem }} storage paths"
+      meta: "More than 4 active storage paths for `{{ $labels.hostsystem }}` down. ({{ $labels.vcenter }})"
+      no_alert_on_absence: "true"
+    annotations:
+      description: "More than 4 active storage paths for `{{ $labels.hostsystem }}` down. ({{ $labels.vcenter }})"
+      summary: "More than 4 active storage paths for `{{ $labels.hostsystem }}` down. ({{ $labels.vcenter }})"
+      
+  - alert: HostAllRedundantStoragePathsDown
+    expr: vrops_hostsystem_storage_number_of_active_path == 0 
+    for: 10m
+    labels:
+      severity: info
+      tier: vmware
+      service: compute
+      support_group: compute
+      context: "{{ $labels.hostsystem }} storage paths"
+      meta: "All active storage paths for `{{ $labels.hostsystem }}` down. ({{ $labels.vcenter }})"
+      no_alert_on_absence: "true"
+    annotations:
+      description: "All active storage paths for `{{ $labels.hostsystem }}` down. ({{ $labels.vcenter }})"
+      summary: "All active storage paths for `{{ $labels.hostsystem }}` down. ({{ $labels.vcenter }})"
+
+  - alert: HAHostAgentError
+    expr: |
+      vrops_hostsystem_alert_info{alert_name="vSphere High Availability (HA) host agent has encountered an error"}
+      and on (hostsystem) vrops_hostsystem_runtime_maintenancestate{state!~"inMaintenance"}
+    labels:
+      severity: warning
+      tier: vmware
+      service: compute
+      support_group: compute
+      context: "{{ $labels.hostsystem }} HA agent error"
+      meta: "HA agent on Host `{{ $labels.hostsystem }}` has encountered an error. ({{ $labels.vcenter }})."
+      playbook: docs/devops/alert/vcenter/#troubleshooting-vsphere-ha-host-states
+      no_alert_on_absence: "true"
+    annotations:
+      description: "HA agent on Host `{{ $labels.hostsystem }}` has encountered an error. ({{ $labels.vcenter }})."
+      summary: "HA agent on Host `{{ $labels.hostsystem }}` has encountered an error. ({{ $labels.vcenter }})."
+      
+  - alert: HAHostNetworkPartitioned
+    expr: |
+      vrops_hostsystem_alert_info{alert_name="vSphere High Availability (HA) has detected a network-partitioned host"}
+      and on (hostsystem) vrops_hostsystem_runtime_maintenancestate{state!~"inMaintenance"}
+    labels:
+      severity: warning
+      tier: vmware
+      service: compute
+      support_group: compute
+      context: "{{ $labels.hostsystem }} HA network-partitioned host"
+      meta: "HA on Host `{{ $labels.hostsystem }}` has detected a network-partitioned host. ({{ $labels.vcenter }})."
+      playbook: docs/devops/alert/vcenter/#troubleshooting-vsphere-ha-host-states
+      no_alert_on_absence: "true"
+    annotations:
+      description: "HA on Host `{{ $labels.hostsystem }}` has detected a network-partitioned host. ({{ $labels.vcenter }})."
+      summary: "HA on Host `{{ $labels.hostsystem }}` has detected a network-partitioned host. ({{ $labels.vcenter }})."
+      
+  - alert: APodHostRunsMultipleVCenters
+    expr: count(vrops_virtualmachine_runtime_connectionstate{vccluster=~".*-management", virtualmachine=~"vc-.*"}) by(hostsystem, vcenter) > 1
+    for: 30m
+    labels:
+      severity: info
+      tier: vmware
+      service: compute
+      support_group: compute
+      context: "{{ $labels.hostsystem }} multiple vCenters"
+      meta: "aPod node `{{ $labels.hostsystem }}` runs multiple vCenter VMs. ({{ $labels.vcenter }})"
+      no_alert_on_absence: "true"
+    annotations:
+      description: "aPod node `{{ $labels.hostsystem }}` runs multiple vCenter VMs. ({{ $labels.vcenter }})"
+      summary: "aPod node `{{ $labels.hostsystem }}` runs multiple vCenter VMs. ({{ $labels.vcenter }})"

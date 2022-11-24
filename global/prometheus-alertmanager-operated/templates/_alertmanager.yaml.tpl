@@ -47,13 +47,14 @@ inhibit_rules:
     equal: ['node']
 
 route:
-  group_by: ['region', 'service', 'alertname', 'cluster']
+  group_by: ['region', 'service', 'alertname', 'cluster', 'support_group']
   group_wait: 1m
   group_interval: 7m
   repeat_interval: 12h
-  receiver: dev-null
+  receiver: elastic
 
   routes:
+  # review for slack_by_cc_service
   - receiver: slack_hsm
     continue: false
     match_re:
@@ -62,6 +63,7 @@ route:
       severity: info
       region: ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|ap-sa-2|eu-de-1|eu-de-2|eu-nl-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3|qa-de-1
 
+  # review for slack_by_cc_service
   - receiver: slack_barbican_certificate
     continue: false
     match_re:
@@ -70,6 +72,7 @@ route:
       severity: info
       region: ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|ap-sa-2|eu-de-1|eu-de-2|eu-nl-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3|qa-de-1
 
+  # review for slack_by_cc_service
   - receiver: slack_nannies
     continue: false
     match_re:
@@ -77,6 +80,7 @@ route:
       severity: critical|warning|info
       region: ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|ap-sa-2|eu-de-1|eu-de-2|eu-nl-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3
 
+  # review for slack_by_cc_service
   - receiver: slack_nannies_automation
     continue: false
     match_re:
@@ -111,12 +115,14 @@ route:
       severity: info|warning|critical
       service: concourse
 
+  # review for slack_by_cc_service
   - receiver: slack_cc-cp
     continue: true
     match_re:
       severity: info|warning|critical
       service: cc-cp
 
+  # deprecated
   - receiver: pagerduty_alertchain_test
     continue: false
     match_re:
@@ -137,7 +143,14 @@ route:
       tier: os
       severity: info|warning|critical
       # NOTE: Please keep this list in sync with the identical list in `system/gatekeeper-config/values.yaml`.
-      service: arc|backup|barbican|castellum|cinder|cfm|cronus|designate|documentation|elektra|elk|glance|hermes|ironic|keppel|limes|lyra|maia|manila|metis|neutron|nova|octavia|placement|sentry|swift|snmp|tenso
+      service: arc|backup|barbican|castellum|cinder|cfm|cronus|designate|documentation|elektra|elk|glance|ironic|keppel|limes|lyra|manila|neutron|nova|octavia|placement|sentry|swift|snmp|tenso
+      region: qa-de-1|ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|ap-sa-2|eu-de-1|eu-de-2|eu-nl-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3
+
+  - receiver: slack_by_cc_service
+    continue: true
+    match_re:
+      severity: info|warning|critical
+      service: alerting|cc3test|exporter|grafana|hermes|jumpserver|maia|metis|metrics|logs
       region: qa-de-1|ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|ap-sa-2|eu-de-1|eu-de-2|eu-nl-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3
 
   - receiver: slack_sre
@@ -145,6 +158,7 @@ route:
     match_re:
       context: sre
 
+  # deprecated
   - receiver: slack_monitoring
     continue: false
     match_re:
@@ -166,11 +180,7 @@ route:
     match_re:
       tier: storage
 
-  - receiver: dev-null
-    continue: false
-    match_re:
-      cluster: k-master
-
+  # review for slack_by_cc_service
   - receiver: slack_wsus
     continue: true
     match_re:
@@ -187,9 +197,10 @@ route:
   - receiver: support_group_alerts_qa
     continue: true
     match_re:
+      severity: warning|critical
       region: qa-de-1|qa-de-2|qa-de-3|qa-de-5
       support_group: compute|compute-storage-api|containers|email|identity|network-api|observability
-
+  # sunset latest q1-23
   - receiver: pagerduty_api
     continue: true
     match_re:
@@ -197,7 +208,7 @@ route:
       severity: critical
       cluster_type: abapcloud|admin|controlplane|customer|internet|kubernikus|metal|scaleout|virtual
       region: global|ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|ap-sa-2|eu-de-1|eu-de-2|eu-nl-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3
-
+  # sunset latest q1-23
   - receiver: slack_api_critical
     continue: false
     match_re:
@@ -213,7 +224,7 @@ route:
       severity: warning
       cluster_type: abapcloud|admin|controlplane|customer|internet|kubernikus|metal|scaleout|virtual
       region: global|ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|ap-sa-2|eu-de-1|eu-de-2|eu-nl-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3
-
+  # sunset latest q1-23
   - receiver: slack_api_info
     continue: false
     match_re:
@@ -221,14 +232,14 @@ route:
       severity: info
       cluster_type: abapcloud|admin|controlplane|customer|internet|kubernikus|metal|scaleout|virtual
       region: global|ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|ap-sa-2|eu-de-1|eu-de-2|eu-nl-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3
-
+  # sunset latest q1-23
   - receiver: pagerduty_metal
     continue: true
     match_re:
       tier: metal
       severity: critical
       region: ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|ap-sa-2|eu-de-1|eu-de-2|eu-nl-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3|qa-de-1|qa-de-2|qa-de-3|qa-de-5
-
+  # sunset latest q1-23
   - receiver: slack_metal_critical
     continue: false
     match_re:
@@ -236,13 +247,14 @@ route:
       severity: critical
       region: ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|ap-sa-2|eu-de-1|eu-de-2|eu-nl-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3|qa-de-1|qa-de-2|qa-de-3|qa-de-5
 
+  # sunset latest q1-23
   - receiver: slack_metal_warning
     continue: false
     match_re:
       tier: metal
       severity: warning
       region: ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|ap-sa-2|eu-de-1|eu-de-2|eu-nl-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3|qa-de-1|qa-de-2|qa-de-3|qa-de-5
-
+  # sunset latest q1-23
   - receiver: slack_metal_info
     continue: false
     match_re:
@@ -263,28 +275,28 @@ route:
       tier: ad
       severity: info
       region: ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|ap-sa-2|eu-de-1|eu-de-2|eu-nl-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3|qa-de-1
-
+  # sunset latest q1-23
   - receiver: pagerduty_vmware
     continue: true
     match_re:
       tier: vmware
       severity: critical
       region: ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|ap-sa-2|eu-de-1|eu-de-2|eu-nl-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3
-
+  # sunset latest q1-23
   - receiver: slack_vmware_critical
     continue: false
     match_re:
       tier: vmware
       severity: critical
       region: ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|ap-sa-2|eu-de-1|eu-de-2|eu-nl-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3
-
+  # sunset latest q1-23
   - receiver: slack_vmware_warning
     continue: false
     match_re:
       tier: vmware
       severity: warning
       region: ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|ap-sa-2|eu-de-1|eu-de-2|eu-nl-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3
-
+  # sunset latest q1-23
   - receiver: slack_vmware_info
     continue: false
     match_re:
@@ -336,6 +348,7 @@ route:
       severity: info
       region: ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|ap-sa-2|eu-de-1|eu-de-2|eu-nl-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3
 
+  # sunset latest q1-23
   - receiver: slack_qa
     continue: false
     match_re:
@@ -355,29 +368,7 @@ route:
       severity: critical|warning|info
       region: qa-de-1|ap-jp-1|eu-ru-1
 
-  - receiver: dev-null
-    continue: false
-
 receivers:
-  - name: dev-null
-    slack_configs:
-      - api_url: {{ required "slack.devnullWebhookURL undefined" .Values.slack.devnullWebhookURL | quote }}
-        username: "Pulsar"
-        channel: "#dev-null"
-        title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
-        title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
-        text: {{"'{{template \"slack.sapcc.text\" . }}'"}}
-        pretext: {{"'{{template \"slack.sapcc.pretext\" . }}'"}}
-        icon_emoji: {{"'{{template \"slack.sapcc.iconemoji\" . }}'"}}
-        callback_id: "alertmanager"
-        color: {{`'{{template "slack.sapcc.color" . }}'`}}
-        send_resolved: true
-        actions:
-          - name: {{"'{{template \"slack.sapcc.actionName\" . }}'"}}
-            type: {{"'{{template \"slack.sapcc.actionType\" . }}'"}}
-            text: {{"'{{template \"slack.sapcc.acknowledge.actionText\" . }}'"}}
-            value: {{"'{{template \"slack.sapcc.acknowledge.actionValue\" . }}'"}}
-
   - name: wham_metal
     webhook_configs:
       - url: "https://wham.scaleout.eu-de-1.cloud.sap/alerts/metal"
@@ -687,6 +678,18 @@ receivers:
   - name: slack_by_os_service
     slack_configs:
       - channel: '#cc-os-{{"{{ .CommonLabels.service }}"}}'
+        api_url: {{ required ".Values.slack.webhookURL undefined" .Values.slack.webhookURL | quote }}
+        username: "Pulsar"
+        title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
+        title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
+        text: {{"'{{template \"slack.sapcc.text\" . }}'"}}
+        pretext: {{"'{{template \"slack.sapcc.pretext\" . }}'"}}
+        icon_emoji: {{"'{{template \"slack.sapcc.iconemoji\" . }}'"}}
+        color: {{`'{{template "slack.sapcc.color" . }}'`}}
+        send_resolved: true
+  - name: slack_by_cc_service
+    slack_configs:
+      - channel: '#cc-{{"{{ .CommonLabels.service }}"}}'
         api_url: {{ required ".Values.slack.webhookURL undefined" .Values.slack.webhookURL | quote }}
         username: "Pulsar"
         title: {{"'{{template \"slack.sapcc.title\" . }}'"}}

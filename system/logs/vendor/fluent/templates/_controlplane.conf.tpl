@@ -406,10 +406,6 @@
   @type null
 </match>
 
-<match kubernetes.var.log.containers.audit-logs-auditbeat-zp4p6_audit-logs_exporter.**>
-  @type null
-</match>
-
 <match kubernetes.var.log.containers.fluent**>
   @type null
 </match>
@@ -476,9 +472,10 @@
       type counter
       desc The total number of outgoing records
       <labels>
+        cluster_type controlplane
         tag ${tag}
         nodename "#{ENV['K8S_NODE_NAME']}"
-        container $.kubernetes.container_name
+        hostname ${hostname}
       </labels>
     </metric>
   </store>

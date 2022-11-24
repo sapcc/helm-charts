@@ -11,6 +11,7 @@
 {{- $instance_number := index . 9}}
 {{- $instance := index . 10}}
 {{- $az_redundancy  := index . 11}}
+{{- $tolerate_arista_fabric  := index . 12}}
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -50,7 +51,9 @@ spec:
         prometheus.io/port: "9324"
         prometheus.io/targets: "infra-collector"
     spec:
-{{- if len $apods | ne 0 }}
+{{- if len $apods | eq 0 }}
+{{- fail "You must supply at least one apod for scheduling" -}}
+{{ end }}
       affinity:
         nodeAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
@@ -89,18 +92,11 @@ spec:
                 values:
                 - {{ $domain_number | quote }}
 {{- end }}
-{{- else }}
-{{ $domain_scheduling_labels := get $scheduling_labels $domain }}
-{{- if $domain_scheduling_labels | len | eq 0 -}}
-{{- fail "scheduling_labels must be set if not running on apod" -}}
-{{- end }}
+{{- if $tolerate_arista_fabric }}
       tolerations:
-        - key: species
-          operator: Equal
-          value: px
-          effect: NoSchedule
-      nodeSelector:
-          # This calculation only works if we have no more than 2 instances and no more than 2 scheduling labels per domain
-          pxdomain: "{{ index $domain_scheduling_labels (mod (sub $instance_number 1) (len $domain_scheduling_labels)) }}"
+      - key: "fabric"
+        operator: "Equal"
+        value: "arista"
+        effect: "NoSchedule"
 {{- end }}
 {{- end }}

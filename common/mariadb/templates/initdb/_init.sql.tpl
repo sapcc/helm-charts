@@ -28,5 +28,3 @@ GRANT {{ . }} TO '{{ $username }}';
         {{- end }}
     {{- end }}
 {{- end }}
-
-GRANT ALL PRIVILEGES ON *.* TO '{{ $.Values.users.backup.name }}';
