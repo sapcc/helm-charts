@@ -27,7 +27,7 @@ matcher:
   migrations: true
   period: {{ quote $context.Values.clair.update_interval }}
 
-{{- if not (eq $type "updater") }}
+{{- if ne $type "updater" }}
   # run in its own pod to reduce database load
   disable_updaters: true
 {{- end }}
