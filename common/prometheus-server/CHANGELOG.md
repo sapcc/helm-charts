@@ -1,3 +1,7 @@
+## 7.0.15
+
+* changed service annotation on alerts
+
 ## 7.0.14
 
 * fix node-exporter selector

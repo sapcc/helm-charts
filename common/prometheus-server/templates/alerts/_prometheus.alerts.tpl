@@ -24,7 +24,7 @@ groups:
     for: 5m
     labels:
       context: availability
-      service: prometheus
+      service: metrics
       support_group: observability
       severity: critical
       tier: {{ include "alerts.tier" . }}
@@ -39,7 +39,7 @@ groups:
     for: 15m
     labels:
       context: availability
-      service: prometheus
+      service: metrics
       severity: warning
       support_group: observability
       tier: {{ include "alerts.tier" . }}
@@ -54,7 +54,7 @@ groups:
     for: 10m
     labels:
       context: availability
-      service: prometheus
+      service: metrics
       severity: info
       support_group: observability
       tier: {{ include "alerts.tier" . }}
@@ -68,7 +68,7 @@ groups:
     expr: increase(prometheus_tsdb_wal_corruptions_total{prometheus="{{ include "prometheus.name" . }}"}[5m]) > 0
     labels:
       context: availability
-      service: prometheus
+      service: metrics
       severity: info
       support_group: observability
       tier: {{ include "alerts.tier" . }}
@@ -83,7 +83,7 @@ groups:
     for: 12h
     labels:
       context: availability
-      service: prometheus
+      service: metrics
       support_group: observability
       severity: info
       tier: {{ include "alerts.tier" . }}
@@ -98,7 +98,7 @@ groups:
     for: 10m
     labels:
       context: availability
-      service: prometheus
+      service: metrics
       severity: info
       support_group: observability
       tier: {{ include "alerts.tier" . }}
@@ -113,7 +113,7 @@ groups:
     for: 10m
     labels:
       context: availability
-      service: prometheus
+      service: metrics
       support_group: observability
       severity: info
       tier: {{ include "alerts.tier" . }}
@@ -127,7 +127,7 @@ groups:
     expr: rate(prometheus_target_scrapes_sample_out_of_order_total{prometheus="{{ include "prometheus.name" . }}"}[5m]) > 0
     labels:
       context: availability
-      service: prometheus
+      service: metrics
       support_group: observability
       severity: info
       tier: {{ include "alerts.tier" . }}
@@ -141,7 +141,7 @@ groups:
     expr: increase(prometheus_target_scrapes_exceeded_sample_limit_total{prometheus="{{ include "prometheus.name" . }}"}[30m]) > 60
     labels:
       context: availability
-      service: prometheus
+      service: metrics
       support_group: observability
       severity: info
       tier: {{ include "alerts.tier" . }}
@@ -161,7 +161,7 @@ groups:
     for: 30m
     labels:
       tier: {{ include "alerts.tier" . }}
-      service: prometheus
+      service: metrics
       support_group: observability
       severity: warning
       playbook: docs/support/playbook/kubernetes/target_scraped_multiple_times.html
@@ -175,7 +175,7 @@ groups:
     for: 5m
     labels:
       tier: {{ include "alerts.tier" . }}
-      service: prometheus
+      service: metrics
       support_group: observability
       severity: info
       playbook: docs/support/operation_model/tags.html
@@ -190,7 +190,7 @@ groups:
     for: 10m
     labels:
       context: availability
-      service: prometheus
+      service: metrics
       support_group: observability
       severity: warning
       tier: {{ include "alerts.tier" . }}
@@ -204,7 +204,7 @@ groups:
     for: 10m
     labels:
       context: availability
-      service: prometheus
+      service: metrics
       support_group: observability
       severity: info
       tier: {{ include "alerts.tier" . }}
@@ -218,7 +218,7 @@ groups:
     for: 10m
     labels:
       context: availability
-      service: prometheus
+      service: metrics
       support_group: observability
       severity: info
       tier: {{ include "alerts.tier" . }}
