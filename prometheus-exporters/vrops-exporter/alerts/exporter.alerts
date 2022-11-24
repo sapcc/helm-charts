@@ -2,7 +2,8 @@ groups:
 - name: vrops-exporter.alerts
   rules:
   - alert: VropsExporterInventoryDataMissing
-    expr: vrops_inventory_vcenters == 0
+    expr: |
+      sum by (__name__, target) ({__name__=~"^vrops_inventory_(?:vcenters|nsxt_adapter)"}) == 0
     for: 20m
     labels:
       context: vrops-exporter
@@ -11,9 +12,9 @@ groups:
       service: exporter
       support_group: observability
       no_alert_on_absence: "true"
-      meta: "vrops-exporter inventory is not having any data for {{ $labels.target }} anymore."
+      meta: "vrops-exporter inventory is not getting any vCenter or NSX-T resources for `{{ $labels.target }}` anymore."
     annotations:
-      summary: "vrops-exporterinventory is not having any data for {{ $labels.target }} anymore."
+      summary: "vrops-exporter inventory is not getting any vCenter or NSX-T resources for `{{ $labels.target }}` anymore."
       description: |
         vrops-exporter collectors no longer getting resources from
         which to retrieve new metrics. The inventory should provide
