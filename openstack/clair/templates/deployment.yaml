@@ -1,4 +1,4 @@
-{{- range $component := list "indexer" "matcher" }}
+{{- range $component := list "indexer" "matcher" "updater" }}
 ---
 kind: Deployment
 apiVersion: apps/v1
@@ -8,7 +8,7 @@ metadata:
 
 spec:
   revisionHistoryLimit: 5
-  replicas: 2
+  replicas: {{ if eq $component "updater" }}1{{ else }}2{{ end }}
   strategy:
     type: RollingUpdate
     rollingUpdate:
