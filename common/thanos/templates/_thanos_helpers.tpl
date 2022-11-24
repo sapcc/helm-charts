@@ -8,11 +8,15 @@ prometheus-{{- required ".Values.name" .Values.name -}}-thanos-storage-config
 {{- required ".Values.spec.baseImage missing" .Values.spec.baseImage -}}:{{- required ".Chart.appVersion missing" .Chart.AppVersion -}}
 {{- end -}}
 
+{{/* Thanos name */}}
+{{- define "thanos.name" -}}
+{{- required ".Values.name" .Values.name -}}
+{{- end -}}
+
 {{/* Thanos combined name */}}
 {{- define "thanos.fullName" -}}
 thanos-{{- required ".Values.name" .Values.name -}}
 {{- end -}}
-
 
 {{/* External URL of this Thanos. Copied from prometheus-server */}}
 {{- define "thanos.externalURL" -}}
