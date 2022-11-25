@@ -14,7 +14,10 @@ adminrole:
   reserved: false
   users:
   -  "admin"
-  - "CCADMIN_DOMAIN_USERS"
+  backend_roles:
+  {{- range .Values.global.opensearch_dashboard_groups }}
+  - {{ . -}}
+  {{ end }}
 
 data:
   reserved: false
@@ -30,14 +33,16 @@ complex-role:
   reserved: false
   hidden: false
   backend_roles:
-  - "CCADMIN_DOMAIN_USERS"
+  {{- range .Values.global.opensearch_dashboard_groups }}
+  - {{ . -}}
+  {{ end }}
 
 kibana_user:
   reserved: false
   backend_roles:
-  - "CCADMIN_DOMAIN_USERS"
-  - "CCADMIN_MONITORING_USERS"
-  description: "Maps kibanauser to kibana_user"
+  {{- range .Values.global.opensearch_dashboard_groups }}
+  - {{ . -}}
+  {{ end }}
 
 readall:
   reserved: false

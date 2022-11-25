@@ -20,25 +20,21 @@ config:
           challenge: true
         authentication_backend:
           type: intern
-      saml_auth:
-        order: 2
-        description: "SAML provider"
+      openid_auth_domain:
+        order: 1
         http_enabled: true
         transport_enabled: false
         http_authenticator:
-          type: saml
+          type: openid
           challenge: false
           config:
-            idp:
-              entity_id: "https://{{.Values.auth.provider }}"
-              metadata_file: certs/metadata.xml
-            sp:
-              entity_id: "https://{{.Values.clusterName }}.{{.Values.global.clusterType }}.{{.Values.global.region }}.{{.Values.global.domain }}"
-            kibana_url: "{{.Values.clusterName }}.{{.Values.global.clusterType }}.{{.Values.global.region }}.{{.Values.global.domain }}"
             subject_key: name
-            roles_key: Roles
-        authentication_backend:
-          type: noop
+            roles_key: roles
+            openid_connect_url: "https://{{.Values.auth.provider }}"
+            enable_ssl: true
+            openid_connect_idp:
+              enable_ssl: true
+              pemtrustedcas_filepath: {{.Values.auth.ca_path }}
       ldap_auth:
         order: 3
         description: "Authenticate using LDAP"
