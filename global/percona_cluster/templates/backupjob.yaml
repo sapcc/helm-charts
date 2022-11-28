@@ -17,9 +17,9 @@ spec:
       template:
         spec:
           securityContext:
-            runAsUser: 1001
-            runAsGroup: 1001
-            fsGroup: 1001
+            runAsUser: 1000
+            runAsGroup: 1000
+            fsGroup: 1000
           containers:
           - name: backup
             image: {{ required ".Values.global.dockerHubMirrorAlternateRegion is missing" .Values.global.dockerHubMirrorAlternateRegion }}/{{ .Values.backup.image }}:{{ .Values.backup.image_tag }}
@@ -37,11 +37,17 @@ spec:
               value: "{{ .Release.Name }}-pxc"
             - name: NODE_NAME
               value: "{{ include "fullName" . }}-repl"
+            - name: PXC_DAYS_RETENTION
+              value: 7
             - name: PXC_PASS
               valueFrom:
                 secretKeyRef:
                   name: {{ include "fullName" . }}
                   key: xtrabackup-password
+            - name: OS_AUTH_URL
+              value: "{{.Values.global.keystone_api_endpoint_protocol_internal | default "http"}}://{{ .Values.global.keystone_internal_ip }}:{{ .Values.global.keystone_api_port_internal | default 5000}}/v3"
+            - name: OS_REGION_NAME
+              value: "{{ .Values.global.region }}"
           restartPolicy: OnFailure
           volumes:
           - name: mysql-startup-scripts
