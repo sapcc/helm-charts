@@ -31,7 +31,10 @@ kube-prometheus-stack:
 
     # Both admissionWebhooks and tls requires admissionregistration.k8s.io/v1 .
     admissionWebhooks:
-      enabled: false
+      failurePolicy: Ignore
+      patch:
+        image:
+          repository: keppel.eu-de-1.cloud.sap/ccloud-k8sgcr-mirror/ingress-nginx/kube-webhook-certgen
     tls:
       enabled: false
 
@@ -237,6 +240,9 @@ prometheus-node-exporter:
       memory: 100Mi
       cpu: 100m
 
+  rbac:
+    pspEnabled: false
+
 prometheus-server:
   name: kubernetes
 
@@ -313,9 +319,6 @@ extraScrapeConfig: ""
 
 kubernikus-monitoring:
   prometheusName: kubernetes
-
-grafana-dashboards-kubernetes:
-  enableDatasources: false
 
 event-exporter:
   rbac:

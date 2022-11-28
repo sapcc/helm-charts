@@ -37,14 +37,6 @@ data:
     allowed_actions:
     - "*"
   - index_patterns:
-    - "syslog-*"
-    allowed_actions:
-    - "indices:admin/types/exists"
-    - "indices:data/read/*"
-    - "indices:data/write/*"
-    - "indices:admin/template/*"
-    - "indices:admin/create"
-  - index_patterns:
     - "scaleout-*"
     allowed_actions:
     - "indices:admin/types/exists"

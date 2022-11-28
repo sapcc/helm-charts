@@ -100,6 +100,7 @@
       - '{job="win-exporter-wsus", __name__!~"^(up|ALERTS.*|scrape.+)"}'
       - '{job="jumpserver", __name__!~"^(up|ALERTS.*|scrape.+)"}'
       - '{__name__=~"^global:cloudprober.+"}'
+      - '{__name__=~"^elasticsearch_hermes_.+"}'
       - '{__name__=~"^probe_success",job=~"(infra|cc3test)-probe-.+"}'
       - '{__name__=~"^probe_success",job="docs-urls"}'
       - '{__name__=~"^probe_http_duration_seconds",job="docs-home-content"}'

@@ -1,7 +1,5 @@
 - name: RAILS_ENV
   value: {{ .Values.rails_env | quote }}
-- name: PASSWORD_LOGIN_ENABLED
-  value: {{ .Values.password_login_enabled | quote }}
 - name: ENFORCE_NATURAL_USER_LOGIN
   value: {{ .Values.enforce_natural_user_login | quote }}
 - name: HAS_KEYSTONE_ROUTER

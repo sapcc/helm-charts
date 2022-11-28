@@ -261,7 +261,7 @@ groups:
     expr: >
       vrops_storagepod_capacity_available_space /
       vrops_storagepod_capacity_total * 100
-      <= 15
+      <= 20
     for: 20m
     labels:
       severity: warning
@@ -269,12 +269,12 @@ groups:
       support_group: compute
       service: storage
       context: "{{ $labels.storagepod }}"
-      meta: "DataStore Cluster {{ $labels.storagepod }} utilization > 85%. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
+      meta: "DataStore Cluster {{ $labels.storagepod }} utilization > 80%. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
       dashboard: vcenter-datastore-utilization
       playbook: docs/support/playbook/datastore/datastorediskusagealarm.html
     annotations:
-      description: "DataStore Cluster {{ $labels.storagepod }} utilization > 85%. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
-      summary: "DataStore Cluster {{ $labels.storagepod }} utilization > 85%. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
+      description: "DataStore Cluster {{ $labels.storagepod }} utilization > 80%. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
+      summary: "DataStore Cluster {{ $labels.storagepod }} utilization > 80%. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
 
   - alert: SDRSClusterCapacityCritical
     expr: >
@@ -294,3 +294,18 @@ groups:
     annotations:
       description: "DataStore Cluster {{ $labels.storagepod }} utilization > 90%. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
       summary: "DataStore Cluster {{ $labels.storagepod }} utilization > 90%. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
+
+  - alert: NVMeDatastoreNotAccessible
+    expr: |
+      vrops_datastore_summary_datastore_accessible{type='NVMe'} == 0
+    for: 5m
+    labels:
+      severity: info
+      tier: vmware
+      service: storage
+      support_group: compute
+      context: "{{ $labels.datastore }}"
+      meta: 'Datastore {{ $labels.datastore }} is not accessible. ({{ $labels.vcenter }}, {{ $labels.datacenter }})'
+    annotations:
+      description: 'Datastore {{ $labels.datastore }} is not accessible. ({{ $labels.vcenter }}, {{ $labels.datacenter }})'
+      summary: 'Datastore {{ $labels.datastore }} is not accessible. ({{ $labels.vcenter }}, {{ $labels.datacenter }})'

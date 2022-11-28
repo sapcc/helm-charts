@@ -6,7 +6,8 @@ groups:
       for: 5m
       labels:
         context: thanos
-        service: prometheus
+        service: metrics
+        support_group: observability
         severity: info
         tier: {{ include "alerts.tier" . }}
         meta: 'Thanos query is returning errors for Prometheus {{`{{ $labels.prometheus }}`}}'

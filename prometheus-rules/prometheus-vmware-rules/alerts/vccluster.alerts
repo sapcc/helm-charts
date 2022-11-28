@@ -65,7 +65,9 @@ groups:
       summary: "VC {{ $labels.vcenter }} {{ $labels.vccluster }} has NO failover host amount configured, this should be 1"
 
   - alert: VCClusterDRSNotFullyAutomated
-    expr: vrops_cluster_configuration_drsconfig_defaultvmbehavior{vccluster!~".*controlplane.*", state != "fullyAutomated"} == 0
+    expr: |
+      vrops_cluster_configuration_drsconfig_defaultvmbehavior{vccluster!~".*controlplane.*", state != "fullyAutomated"} == 0
+      unless on (vccluster) vrops_cluster_custom_attributes_hana_exclusive_info
     for: 10m
     labels:
       severity: critical

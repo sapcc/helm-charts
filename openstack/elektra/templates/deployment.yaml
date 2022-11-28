@@ -19,11 +19,14 @@ spec:
     metadata:
       labels:
         name: elektra
-      #We scrape the request metrics via annotion on the elektra service
-      #This annotation is for the puma metrics exporter
       annotations:
+        #We scrape the request metrics via annotion on the elektra service
+        #This annotation is for the puma metrics exporter
         prometheus.io/scrape: "true"
         prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
+        # ensure deployment's annotation section is updated if support-configmap file changes
+        # this logic ensure pod recreation when the configmap changes and elektra is initialized with the new values
+        checksum/configmap: {{ include "elektra/templates/support-config-map.yaml" . | sha256sum }}
     spec:
       affinity:
         podAntiAffinity:

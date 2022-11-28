@@ -20,8 +20,23 @@ config:
           challenge: true
         authentication_backend:
           type: intern
+      openid_auth_domain:
+        order: 1
+        http_enabled: true
+        transport_enabled: false
+        http_authenticator:
+          type: openid
+          challenge: false
+          config:
+            subject_key: name
+            roles_key: roles
+            openid_connect_url: "https://{{.Values.auth.provider }}"
+            enable_ssl: true
+            openid_connect_idp:
+              enable_ssl: true
+              pemtrustedcas_filepath: {{.Values.auth.ca_path }}
       ldap_auth:
-        order: 2
+        order: 3
         description: "Authenticate using LDAP"
         http_enabled: true
         transport_enabled: true

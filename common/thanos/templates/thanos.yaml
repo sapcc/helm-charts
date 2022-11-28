@@ -1,4 +1,5 @@
 {{- $root := . }}
+{{- if .Values.enabled }}
 apiVersion: monitoring.banzaicloud.io/v1alpha1
 kind: Thanos
 metadata:
@@ -35,6 +36,10 @@ spec:
         {{- end }}
       {{- end }}
     {{- end }}
+    serviceOverrides:
+      metadata:
+        labels:
+          prometheus: {{ default (include "thanos.name" .) .Values.alerts.prometheus }}
     deploymentOverrides:
       spec:
         template:
@@ -48,6 +53,10 @@ spec:
     indexCacheSize: {{ required ".Values.store.indexCacheSize missing" .Values.store.indexCacheSize }}
     chunkPoolSize: {{ required ".Values.store.chunkPoolSize missing" .Values.store.chunkPoolSize }}
     storeGRPCSeriesMaxConcurrency: {{ required ".Values.store.seriesMaxConcurrency missing" .Values.store.seriesMaxConcurrency }}
+    serviceOverrides:
+      metadata:
+        labels:
+          prometheus: {{ default (include "thanos.name" .) .Values.alerts.prometheus }}
     deploymentOverrides:
       spec:
         template:
@@ -56,3 +65,4 @@ spec:
             - image: {{ include "thanosimage" . }}
               name: store
   {{- end }}
+{{- end }}

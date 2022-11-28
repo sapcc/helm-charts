@@ -51,7 +51,7 @@ route:
   group_wait: 1m
   group_interval: 7m
   repeat_interval: 12h
-  receiver: dev-null
+  receiver: elastic
 
   routes:
   # review for slack_by_cc_service
@@ -179,12 +179,6 @@ route:
     continue: false
     match_re:
       tier: storage
-
-  # deprecated
-  - receiver: dev-null
-    continue: false
-    match_re:
-      cluster: k-master
 
   # review for slack_by_cc_service
   - receiver: slack_wsus
@@ -374,29 +368,7 @@ route:
       severity: critical|warning|info
       region: qa-de-1|ap-jp-1|eu-ru-1
 
-  - receiver: dev-null
-    continue: false
-
 receivers:
-  - name: dev-null
-    slack_configs:
-      - api_url: {{ required "slack.devnullWebhookURL undefined" .Values.slack.devnullWebhookURL | quote }}
-        username: "Pulsar"
-        channel: "#dev-null"
-        title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
-        title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
-        text: {{"'{{template \"slack.sapcc.text\" . }}'"}}
-        pretext: {{"'{{template \"slack.sapcc.pretext\" . }}'"}}
-        icon_emoji: {{"'{{template \"slack.sapcc.iconemoji\" . }}'"}}
-        callback_id: "alertmanager"
-        color: {{`'{{template "slack.sapcc.color" . }}'`}}
-        send_resolved: true
-        actions:
-          - name: {{"'{{template \"slack.sapcc.actionName\" . }}'"}}
-            type: {{"'{{template \"slack.sapcc.actionType\" . }}'"}}
-            text: {{"'{{template \"slack.sapcc.acknowledge.actionText\" . }}'"}}
-            value: {{"'{{template \"slack.sapcc.acknowledge.actionValue\" . }}'"}}
-
   - name: wham_metal
     webhook_configs:
       - url: "https://wham.scaleout.eu-de-1.cloud.sap/alerts/metal"

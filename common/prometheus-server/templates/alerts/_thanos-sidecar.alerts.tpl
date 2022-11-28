@@ -6,7 +6,7 @@ groups:
       for: 5m
       labels:
         context: thanos
-        service: prometheus
+        service: metrics
         support_group: observability
         severity: info
         tier: {{ include "alerts.tier" . }}
@@ -21,7 +21,7 @@ groups:
       for: 5m
       labels:
         context: thanos
-        service: prometheus
+        service: metrics
         support_group: observability
         severity: info
         tier: {{ include "alerts.tier" . }}

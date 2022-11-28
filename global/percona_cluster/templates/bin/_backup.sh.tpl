@@ -158,8 +158,7 @@ function backup_s3() {
     fi
 }
 
-get_backup_source
-
+#get_backup_source
 # backup to PVC
 backup_volume
 

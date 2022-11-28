@@ -1,6 +1,22 @@
-## 7.0.11
+## 7.0.15
+
+* changed service annotation on alerts
+
+## 7.0.14
+
+* fix node-exporter selector
+
+## 7.0.14
+
+* Add `container_oom_events_total` cadvisor metric by default
+
+## 7.0.12
 
 * Exclude `job=prometheus-vmware` from PrometheusMultipleTargetScrapes alert because this target is scraped with multiple jobs to the same target intentionally. Every scrape just replies a single metric.
+
+## 7.0.11
+
+* Add `metrics_path` label to pod and service SD targets
 
 ## 7.0.10
 
