@@ -1,34 +1,23 @@
-apiVersion: apps/v1
-kind: Deployment
+{{- if .Values.resync.enabled }}
+apiVersion: batch/v1
+kind: Job
 metadata:
-  name: audit-poller
+  name: audit-poller-resync
   labels:
     app.kubernetes.io/name: audit-poller
     helm.sh/chart: {{ include "audit-poller.chart" $ }}
     app.kubernetes.io/instance: audit-poller-{{ .Release.Name }}
     app.kubernetes.io/managed-by: {{ .Release.Service }}
 spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      app.kubernetes.io/name: audit-poller
-      app.kubernetes.io/instance: audit-poller-{{ .Release.Name }}
   template:
     metadata:
-      labels:
-        app.kubernetes.io/name: audit-poller
-        app.kubernetes.io/instance: audit-poller-{{ .Release.Name }}
       annotations:
-        checksum/config: {{ include ( print $.Template.BasePath "/configmap.yaml" ) . | sha256sum }}
-        checksum/secret: {{ include ( print $.Template.BasePath "/secrets.yaml" ) . | sha256sum }}
+        checksum/config: {{ include ( print $.Template.BasePath "/resync-config.yaml" ) . | sha256sum }}
     spec:
       containers:
       - name: audit-poller
         image: "{{ required ".Values.global.registry variable missing" .Values.global.registry }}/{{ .Values.image }}:{{ .Values.imageTag }}"
-        ports:
-        - name: metrics
-          containerPort: {{ .Values.metricsPort }}
-          protocol: TCP
+        command: ["/usr/bin/audit-resyncer"]
         env:
           - name: TOKEN_PASSWORD
             valueFrom:
@@ -47,24 +36,18 @@ spec:
           - name: audit-dir
             mountPath: {{.Values.logDir}}
             readOnly: false
-
       - name: iasapi-stdout
         image: keppel.eu-de-1.cloud.sap/ccloud-dockerhub-mirror/library/busybox
         args: [/bin/sh, -c, 'touch {{ .Values.logDir }}/{{ .Values.iasApi.fileName }}; tail -n+1 -F {{ .Values.logDir }}/{{ .Values.iasApi.fileName }}']
         volumeMounts:
         - name: audit-dir
           mountPath: /audit
-
-      - name: iaschangelog-stdout
-        image: keppel.eu-de-1.cloud.sap/ccloud-dockerhub-mirror/library/busybox
-        args: [/bin/sh, -c, 'touch {{ .Values.logDir }}/{{ .Values.iasChangelog.fileName }}; tail -n+1 -f {{ .Values.logDir }}/{{ .Values.iasChangelog.fileName }}']
-        volumeMounts:
-        - name: audit-dir
-          mountPath: /audit
-
+      restartPolicy: Never
       volumes:
         - name: audit-poller-etc
           configMap:
-            name: audit-poller-etc
+            name: audit-poller-resync-etc
         - name: audit-dir
           emptyDir: {}
+  backoffLimit: 4
+{{- end }}
