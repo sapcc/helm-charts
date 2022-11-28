@@ -6,40 +6,75 @@ spec:
   replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
-      name: slack-alert-reactions
+      name: {{ .Chart.Name }}
   template:
     metadata:
       labels:
-        name: slack-alert-reactions
+        name: {{ .Chart.Name }}
     spec:
+      serviceAccountName: {{ .Chart.Name }}-sa
       containers:
-        - name: slack-alert-reactions-container
+        - name: {{ .Chart.Name }}-app
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: IfNotPresent
+          livenessProbe:
+            exec:
+              command:
+                - /bin/sh
+                - -c 
+                - slack login --auth ${SLACK_APP_CONFIG_TOKEN}
+            initialDelaySeconds: 5
+            periodSeconds: 5
           env:
-          - name: SLACK_USER_TOKEN
+          - name: SLACK_APP_CONFIG_TOKEN
             valueFrom:
               secretKeyRef:
-                name: slack-alert-reactions-secret
-                key: slack-user-token
+                name: {{ .Chart.Name }}-secret
+                key: slack-app-config-token
                 optional: false
           - name: APP_ENVIRONMENT
             valueFrom:
-              secretKeyRef:
-                name: slack-alert-reactions-secret
+              configMapKeyRef:
+                name: {{ .Chart.Name }}-config-map
                 key: app-environment
                 optional: false
           - name: SLACK_WORKSPACE
             valueFrom:
-              secretKeyRef:
-                name: slack-alert-reactions-secret
+              configMapKeyRef:
+                name: {{ .Chart.Name }}-config-map
                 key: slack-workspace
                 optional: false
           - name: GITHUB_TOKEN
             valueFrom:
               secretKeyRef:
-                name: slack-alert-reactions-secret
+                name: {{ .Chart.Name }}-secret
                 key: github-token
                 optional: false 
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
+        - name: {{ .Chart.Name }}-sidecar
+          image: "{{ .Values.sidecar.image.repository }}:{{ .Values.sidecar.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: IfNotPresent
+          command: 
+            - tail
+            - -f
+            - /dev/null
+          livenessProbe:
+            exec:
+              command:
+                - /bin/sh
+                - -c 
+                - deno run --allow-env --allow-net --allow-read --allow-run --cert /var/run/secrets/kubernetes.io/serviceaccount/ca.crt mod.ts
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          volumeMounts:
+          - name: {{ .Chart.Name }}-secret-volume
+            mountPath: "/secrets"
+            readOnly: true
+          resources:
+            {{- toYaml .Values.sidecar.resources | nindent 12 }}
+      volumes:
+      - name: {{ .Chart.Name }}-secret-volume
+        secret:
+          secretName: {{ .Chart.Name }}-secret
+          optional: false
