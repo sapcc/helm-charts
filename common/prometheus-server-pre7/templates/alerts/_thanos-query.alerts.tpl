@@ -6,11 +6,10 @@ groups:
       for: 5m
       labels:
         context: thanos
-        service: metrics
+        service: {{ default "metrics" .Values.alerts.service }}
         support_group: observability
         severity: info
-        tier: {{ include "alerts.tier" . }}
-        meta: 'Thanos query is returning errors for Prometheus {{`{{ $labels.prometheus }}`}}'
+        meta: 'Thanos query is returning errors for Prometheus `{{`{{ $labels.prometheus }}`}}`'
       annotations:
-        description: 'Thanos Query is returning Internal/Unavailable errors for Prometheus {{`{{ $labels.prometheus }}`}}. Grafana is not showing metrics.'
+        description: 'Thanos Query is returning Internal/Unavailable errors for Prometheus `{{`{{ $labels.prometheus }}`}}`. Grafana is not showing metrics.'
         summary: Thanos query errors

@@ -6,14 +6,13 @@ groups:
       for: 5m
       labels:
         context: thanos
-        service: metrics
+        service: {{ default "metrics" .Values.alerts.service }}
         support_group: observability
         severity: info
-        tier: {{ include "alerts.tier" . }}
         playbook: 'docs/support/playbook/prometheus/thanos_store.html'
-        meta: 'Thanos store is returning errors for Prometheus {{`{{ $labels.prometheus }}`}}'
+        meta: 'Thanos store is returning errors for Prometheus `{{`{{ $labels.prometheus }}`}}`'
       annotations:
-        description: 'Thanos Store is returning Internal/Unavailable errors for Prometheus {{`{{ $labels.prometheus }}`}}. Long Term Storage Prometheus queries are failing.'
+        description: 'Thanos Store is returning Internal/Unavailable errors for Prometheus `{{`{{ $labels.prometheus }}`}}`. Long Term Storage Prometheus queries are failing.'
         summary: Thanos store has errors
 
     - alert: ThanosStoreBucketOperationsFailed
@@ -21,12 +20,11 @@ groups:
       for: 5m
       labels:
         context: thanos
-        service: metrics
+        service: {{ default "metrics" .Values.alerts.service }}
         support_group: observability
         severity: info
-        tier: {{ include "alerts.tier" . }}
         playbook: 'docs/support/playbook/prometheus/thanos_store.html'
-        meta: 'Thanos store failing bucket operations for Prometheus {{`{{ $labels.prometheus }}`}}.'
+        meta: 'Thanos store failing bucket operations for Prometheus `{{`{{ $labels.prometheus }}`}}`.'
       annotations:
-        description: 'Thanos Store is failing to do bucket operations for Prometheus {{`{{ $labels.prometheus }}`}}. Long term storage queries are failing.'
+        description: 'Thanos Store is failing to do bucket operations for Prometheus `{{`{{ $labels.prometheus }}`}}`. Long term storage queries are failing.'
         summary: Thanos store failing bucket operations
