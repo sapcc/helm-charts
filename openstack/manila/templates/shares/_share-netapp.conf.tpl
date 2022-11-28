@@ -64,6 +64,8 @@ netapp_snapmirror_last_transfer_size_limit = 1099511627776
 
 # Set asynchronous SnapMirror schedule to 10 minutes
 netapp_snapmirror_schedule = "10min"
+# set waiting time for snapmirror to complete on replica promote to 20 min (double the value of netapp_snapmirror_schedule), this is in line with our RPO
+netapp_snapmirror_quiesce_timeout = 1200
 
 # The percentage of backend capacity reserved. Default 0 (integer value)
 
