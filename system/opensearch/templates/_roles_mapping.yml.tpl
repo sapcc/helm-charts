@@ -15,9 +15,9 @@ adminrole:
   users:
   -  "admin"
   backend_roles:
-  {{- range .Values.global.opensearch_dashboard_groups }}
-  - {{ . -}}
-  {{ end }}
+  {{- range .Values.global.ldap.opensearch_admin_groups }}
+  - {{ . | title }}
+  {{- end }}
 
 data:
   reserved: false
@@ -33,16 +33,16 @@ complex-role:
   reserved: false
   hidden: false
   backend_roles:
-  {{- range .Values.global.opensearch_dashboard_groups }}
-  - {{ . -}}
-  {{ end }}
+  {{- range .Values.global.ldap.opensearch_admin_groups }}
+  - {{ . | title }}
+  {{- end }}
 
 kibana_user:
   reserved: false
   backend_roles:
-  {{- range .Values.global.opensearch_dashboard_groups }}
-  - {{ . -}}
-  {{ end }}
+  {{- range .Values.global.ldap.opensearch_dashboard_groups }}
+  - {{ . | title }}
+  {{- end }}
 
 readall:
   reserved: false
