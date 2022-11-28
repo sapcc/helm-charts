@@ -62,14 +62,14 @@ spec:
             - tail
             - -f
             - /dev/null
-          # livenessProbe:
-          #   exec:
-          #     command:
-          #       - /bin/sh
-          #       - -c 
-          #       - deno run --allow-env --allow-net --allow-read --allow-run --cert /var/run/secrets/kubernetes.io/serviceaccount/ca.crt mod.ts
-          #   initialDelaySeconds: 5
-          #   periodSeconds: 5
+          livenessProbe:
+            exec:
+              command:
+                - /bin/sh
+                - -c 
+                - deno run --allow-env --allow-net --allow-read --allow-run --unsafely-ignore-certificate-errors mod.ts
+            initialDelaySeconds: 5
+            periodSeconds: 5
           volumeMounts:
           - name: {{ .Chart.Name }}-secret-volume
             mountPath: "/secrets"
