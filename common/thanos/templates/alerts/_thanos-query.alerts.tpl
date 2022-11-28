@@ -2,7 +2,7 @@ groups:
 - name: thanos-query.alerts
   rules:
     - alert: ThanosQueryGrpcErrorRate
-      expr: rate(grpc_server_handled_total{grpc_code=~"Unknown|ResourceExhausted|Internal|Unavailable",name="prometheus", prometheus="{{ include "prometheus.name" . }}"}[5m]) > 0
+      expr: rate(grpc_server_handled_total{grpc_code=~"Unknown|ResourceExhausted|Internal|Unavailable",name="prometheus", prometheus="{{ include "thanos.name" . }}"}[5m]) > 0
       for: 5m
       labels:
         context: thanos

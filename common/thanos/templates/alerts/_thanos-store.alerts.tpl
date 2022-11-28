@@ -2,7 +2,7 @@ groups:
 - name: thanos-store.alerts
   rules:
     - alert: ThanosStoreGrpcErrorRate
-      expr: rate(grpc_server_handled_total{grpc_code=~"Unknown|ResourceExhausted|Internal|Unavailable",app="thanos-store",prometheus="{{ include "prometheus.name" . }}"}[5m]) > 0
+      expr: rate(grpc_server_handled_total{grpc_code=~"Unknown|ResourceExhausted|Internal|Unavailable",app="thanos-store",prometheus="{{ include "thanos.name" . }}"}[5m]) > 0
       for: 5m
       labels:
         context: thanos
@@ -16,7 +16,7 @@ groups:
         summary: Thanos store has errors
 
     - alert: ThanosStoreBucketOperationsFailed
-      expr: rate(thanos_objstore_bucket_operation_failures_total{app="thanos-store",prometheus="{{ include "prometheus.name" . }}"}[5m]) > 0
+      expr: rate(thanos_objstore_bucket_operation_failures_total{app="thanos-store",prometheus="{{ include "thanos.name" . }}"}[5m]) > 0
       for: 5m
       labels:
         context: thanos
