@@ -30,7 +30,7 @@
   reserve_data true
   <parse>
   @type grok
-  grok_failure_key grokfailure_neutron
+  grok_failure_key grokstatus_neutron
   <grok>
     pattern Encoutered a requeable lock exception executing %{WORD:neutronTask:string} for model %{WORD:neutronModel:string} on device %{IP:neutronIp:string}
   </grok>
