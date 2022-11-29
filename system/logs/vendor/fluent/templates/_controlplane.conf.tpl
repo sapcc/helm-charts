@@ -24,6 +24,28 @@
   </parse>
 </filter>
 
+<filter kubernetes.var.log.containers.neutron**>
+  @type parser
+  key_name log
+  reserve_data true
+  <parse>
+    @type grok
+    grok_failure_key grokstatus_neutron
+    <grok>
+      pattern Encoutered a requeable lock exception executing %{WORD:neutronTask:string} for model %{WORD:neutronModel:string} on device %{IP:neutronIp:string}
+    </grok>
+    <grok>
+      pattern asr1k_exceptions.InconsistentModelException: %{WORD:neutronTask} for model %{WORD:neutronModel} cannot be executed on %{IP:neutronIp}
+    </grok>
+    <grok>
+      pattern %{WORD:neutronTask} for model %{WORD:neutronModel} cannot be executed on %{IP:neutronIp} due to a model/device inconsistency.
+    </grok>
+    <grok>
+      pattern Failed to bind port %{UUID:neutronPort:string} on host nova-compute-%{WORD:neutronHost:string} for vnic_type %{WORD:neutronVnicType:string} using segments
+    </grok>
+  </parse>
+</filter>
+
 <filter kubernetes.var.log.containers.ironic-api**>
   @type parser
   key_name log
