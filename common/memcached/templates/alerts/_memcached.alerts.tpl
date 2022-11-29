@@ -2,12 +2,12 @@ groups:
 - name: memcached.alerts
   rules:
   - alert: {{ include "alerts.service" . | title }}MemcachedManyConnectionsThrottled
-    expr: (rate(memcached_connections_yielded_total{app="{{ template "fullname" . }}"}[5m]) * 60) > 5
+    expr: (rate(memcached_connections_yielded_total{app="{{ template "fullname" . }}"}[5m]) * 60) > {{ .Values.alerts.yielded_connections_threshold }}
     for: 5m
     labels:
       context: database
       service: {{ include "alerts.service" . }}
-      severity: warning
+      severity: info
       tier: {{ required ".Values.alerts.tier missing" .Values.alerts.tier }}
       support_group: {{ required ".Values.alerts.support_group missing" .Values.alerts.support_group }}
     annotations:
