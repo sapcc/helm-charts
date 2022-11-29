@@ -1,38 +1,53 @@
 {{- if .Values.enabled }}
 {{- if .Values.grpcIngress.enabled }}
 {{- $root := . }}
+{{- range $name := coalesce .Values.names .Values.global.targets (list .Values.name) }}
+---
 apiVersion: networking.k8s.io/v1
 kind: Ingress 
 metadata:
-  name: {{ include "thanos.fullName" . }}-grpc
+  name: {{ include "thanos.fullName" (list $name $root) }}-grpc
   annotations:
     disco: "true"
     kubernetes.io/tls-acme: "true"
-    {{- if .Values.grpcIngress.annotations }}
-{{ toYaml .Values.grpcIngress.annotations | indent 4 }}
+    {{- if $.Values.grpcIngress.annotations }}
+{{ toYaml $.Values.grpcIngress.annotations | indent 4 }}
     {{ end }}
 spec:
   rules:
-    {{- range $host := $root.Values.grpcIngress.hosts }}
-    - host: {{ $host }}-grpc.{{ $root.Values.global.region }}.{{ $root.Values.global.tld }}
+    {{- range $host := coalesce $.Values.grpcIngress.hosts (list $name) }}
+    - host: {{ include "grpcFqdnHelper" (list $host $root) }}
       http:
         paths:
         - path: /
           backend:
             service:
-              name:  {{ include "thanos.fullName" $root }}-query
+              name:  {{ include "thanos.fullName" (list $name $root) }}-query
+              port:
+                name: grpc
+          pathType: ImplementationSpecific
+    {{- end }}
+    {{- range $host := $.Values.grpcIngress.hostsFQDN }}
+    - host: {{ $host }}
+      http:
+        paths:
+        - path: /
+          backend:
+            service:
+              name:  {{ include "thanos.fullName" (list $name $root) }}-query
               port:
                 name: grpc
           pathType: ImplementationSpecific
     {{- end }}
   tls:
-    - secretName: tls-{{ include "thanos.grpcURL" $root | replace "." "-" }}
+    - secretName: tls-{{ include "thanos.externalGrpcURL" (list $name $root) | replace "." "-" }}
       hosts:
-        {{- range $host := $root.Values.grpcIngress.hosts }}
-        - {{ $host }}-grpc.{{ $root.Values.global.region }}.{{ $root.Values.global.tld }}
+        {{- range $host := coalesce $.Values.grpcIngress.hosts (list $name) }}
+        - {{ include "grpcFqdnHelper" (list $host $root) }}
         {{- end }}
-        {{- range $host := $root.Values.grpcIngress.hostsFQDN }}
+        {{- range $host := $.Values.grpcIngress.hostsFQDN }}
         - {{ $host }}
         {{- end }}
+{{- end }}
 {{- end }}
 {{- end }}

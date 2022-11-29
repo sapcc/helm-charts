@@ -1,3 +1,5 @@
+{{- $name := index . 0 -}}
+{{- $root := index . 1 -}}
 groups:
 - name: thanos-store.alerts
   rules:
@@ -6,7 +8,7 @@ groups:
       for: 5m
       labels:
         context: thanos
-        service: {{ default "metrics" .Values.alerts.service }}
+        service: {{ default "metrics" $root.Values.alerts.service }}
         support_group: observability
         severity: info
         playbook: 'docs/support/playbook/prometheus/thanos_store.html'
@@ -20,7 +22,7 @@ groups:
       for: 5m
       labels:
         context: thanos
-        service: {{ default "metrics" .Values.alerts.service }}
+        service: {{ default "metrics" $root.Values.alerts.service }}
         support_group: observability
         severity: info
         playbook: 'docs/support/playbook/prometheus/thanos_store.html'

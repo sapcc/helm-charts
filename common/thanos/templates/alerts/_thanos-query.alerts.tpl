@@ -1,3 +1,5 @@
+{{- $name := index . 0 -}}
+{{- $root := index . 1 -}}
 groups:
 - name: thanos-query.alerts
   rules:
@@ -6,7 +8,7 @@ groups:
       for: 5m
       labels:
         context: thanos
-        service: {{ default "metrics" .Values.alerts.service }}
+        service: {{ default "metrics" $root.Values.alerts.service }}
         support_group: observability
         severity: info
         meta: 'Thanos query is returning errors for Prometheus `{{`{{ $labels.prometheus }}`}}`'

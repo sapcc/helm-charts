@@ -1,15 +1,19 @@
+{{- $root := . }}
 {{- if .Values.enabled }}
 {{- if .Values.deployWholeThanos }}
+{{- range $name := coalesce .Values.names .Values.global.targets (list .Values.name) }}
+---
 apiVersion: monitoring.banzaicloud.io/v1alpha1
 kind: StoreEndpoint
 metadata:
-  name: {{ include "thanos.fullName" . }}
+  name: {{ include "thanos.fullName" (list $name $root) }}
 spec:
-  thanos: {{ include "thanos.fullName" . }}
+  thanos: {{ include "thanos.fullName" (list $name $root) }}
   config:
     mountFrom:
       secretKeyRef:
-        name: {{ include "thanos.objectStorageConfigName" . }}
+        name: {{ include "thanos.objectStorageConfigName" (list $name $root) }}
         key: thanos.yaml
+{{ end }}
 {{ end }}
 {{ end }}
