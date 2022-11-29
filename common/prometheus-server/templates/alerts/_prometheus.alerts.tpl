@@ -143,8 +143,8 @@ groups:
     # * cadvisor metrics because it has the same instance as the kubelet but a different path
     # e.g. 10.246.204.80:10250/metrics vs. 10.246.204.80:10250/metrics/cadvisor
     # * pod service discovery job, we have a dedicated alert for that
-    # * prometheus maia federation from prometheus vmware as the target is scraped multiple times for different metrics
-    expr: sum by (job) (up * on(instance, cluster) group_left() (sum by(instance, cluster) (up{job !~ "kubernetes-cadvisors|kubernetes-kubelet|.*-pod-sd|prometheus-vmware.*"}) > 1))
+    # * prometheus federation jobs as the target could be scraped multiple times for different metrics
+    expr: sum by (job) (up * on(instance, cluster) group_left() (sum by(instance, cluster) (up{job !~ "kubernetes-cadvisors|kubernetes-kubelet|.*-pod-sd|prometheus-vmware.*|prometheus-infra.*"}) > 1))
     for: 30m
     labels:
       service: {{ default "metrics" .Values.alerts.service }}
