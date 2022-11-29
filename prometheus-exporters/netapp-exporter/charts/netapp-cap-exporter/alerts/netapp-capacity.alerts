@@ -7,6 +7,7 @@ groups:
         labels:
           severity: warning
           tier: storage
+          support_group: compute-storage-api
           service: netapp-exporter
           context: exporter-health
           no_alert_on_absence: "true"
@@ -21,6 +22,7 @@ groups:
         labels:
           severity: info
           tier: storage
+          support_group: compute-storage-api
           service: netapp-exporter
           context: exporter-health
           no_alert_on_absence: "true"
@@ -34,6 +36,7 @@ groups:
         labels:
           severity: info
           tier: storage
+          support_group: compute-storage-api
           service: netapp-exporter
           context: exporter-health
           no_alert_on_absence: "true"
@@ -47,6 +50,7 @@ groups:
         labels:
           severity: info
           tier: os
+          support_group: compute-storage-api
           service: manila
           context: netapp-usage
           dashboard: netapp-capacity-manila?&var-region={{$labels.region}}&var-node={{$labels.node}}
@@ -61,6 +65,7 @@ groups:
         labels:
           severity: info
           tier: os
+          support_group: compute-storage-api
           service: manila
           context: netapp-usage
           dashboard: netapp-capacity-manila?&var-region={{$labels.region}}&var-node={{$labels.node}}
@@ -75,6 +80,7 @@ groups:
         labels:
           severity: warning
           tier: os
+          support_group: compute-storage-api
           service: manila
           context: netapp-usage
           dashboard: netapp-capacity-manila?&var-region={{$labels.region}}&var-node={{$labels.node}}
@@ -86,10 +92,12 @@ groups:
 
       - alert: NetAppFilerAggregateIsOffline
         expr: netapp_aggregate_state_is_online == 0
+          OR (count (netapp_aggregate_state_is_online offset 24h) by (filer, aggregate) unless count(netapp_aggregate_state_is_online) by (filer, aggregate))
         for: 5m
         labels:
           severity: warning
           tier: os
+          support_group: compute-storage-api
           service: manila
           context: storage
           support_component: manila_netapp
@@ -103,6 +111,7 @@ groups:
         labels:
           severity: warning
           tier: os
+          support_group: compute-storage-api
           service: manila
           context: netapp-az-usage
           meta: '{{ $labels.availability_zone }} usage high'
@@ -118,6 +127,7 @@ groups:
         labels:
             severity: info
             tier: os
+            support_group: compute-storage-api
             service: manila
             context: netapp-volume-inode-usage
             support_component: manila_netapp
@@ -132,6 +142,7 @@ groups:
         labels:
             severity: warning
             tier: os
+            support_group: compute-storage-api
             service: manila
             context: netapp-volume-inode-usage
             support_component: manila_netapp
@@ -145,6 +156,7 @@ groups:
         labels:
           severity: warning
           tier: os
+          support_group: compute-storage-api
           service: cinder
           context: netapp-usage
           dashboard: netapp-capacity-vpods?&var-region={{$labels.region}}&var-node={{$labels.node}}
@@ -159,6 +171,7 @@ groups:
         labels:
           severity: critical
           tier: os
+          support_group: compute-storage-api
           service: cinder
           context: netapp-usage
           dashboard: netapp-capacity-vpods?&var-region={{$labels.region}}&var-node={{$labels.node}}
@@ -174,6 +187,7 @@ groups:
         labels:
           severity: warning
           tier: os
+          support_group: compute-storage-api
           service: nanny
           meta: 'VVol flex-volume usage over 90 percent of 5 TB or above 75 percent usage'
           playbook: 'docs/support/playbook/cinder/balancing/cinder_balance_alert.html'
@@ -187,6 +201,7 @@ groups:
         labels:
           severity: critical
           tier: os
+          support_group: compute-storage-api
           service: nanny
           meta: 'VVol flex-volume usage over 8TB and 90 percent usage'
           playbook: 'docs/support/playbook/cinder/balancing/cinder_balance_alert.html'

@@ -49,12 +49,14 @@ filter {
                   query => "select domain, domain_id, project, project_id, port_id, network, network_id, subnet, subnet_id, subnetpool, subnetpool_id, router, router_id, instance_id, cost_object, cost_object_type, primary_contact, primary_contact_email, business_criticality from ips where ip_address = ?"
                   prepared_parameters => ["[source][domain]"]
                   target => "source_data"
+                  tag_on_failure => ["JDBC_LOOKUP_FAILED"]
                   },
                   {
                   id => "lookup_destination"
                   query => "select domain, domain_id, project, project_id, port_id, network, network_id, subnet, subnet_id, subnetpool, subnetpool_id, router, router_id, instance_id, cost_object, cost_object_type, primary_contact, primary_contact_email, business_criticality from ips where ip_address = ?"
                   prepared_parameters => ["[destination][domain]"]
                   target => "destination_data"
+                  tag_on_failure => ["JDBC_LOOKUP_FAILED"]
                   }
               ]
             

@@ -50,6 +50,10 @@ function cleanup_tempest_leftovers() {
   for secgroup in $(openstack security group list | grep -oP "tempest-\w*[A-Z]+\S+"); do
     openstack security group delete ${secgroup}
   done
+
+  for addscope in $(openstack address scope list | grep "tempest-\w*" |  awk '{ print $2 }'); do
+    openstack address scope delete ${addscope}
+  done
 }
 
 {{- include "tempest-base.function_main" . }}

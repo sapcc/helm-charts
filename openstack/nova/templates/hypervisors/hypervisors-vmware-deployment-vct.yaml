@@ -46,7 +46,7 @@ template: |
 {{- include "kubernetes_maintenance_affinity" . | indent 4 }}
         containers:
         - name: nova-compute
-          image: {{ required ".Values.global.registry is missing" .Values.global.registry}}/ubuntu-source-nova-compute:{{ .Values.imageVersionNovaCompute | default .Values.imageVersionNova | default .Values.imageVersion | required "Please set .imageVersion or similar" }}
+          image: {{ tuple . "compute" | include "container_image_nova" }}
           imagePullPolicy: IfNotPresent
           terminationGracePeriodSeconds: 900
           command:
@@ -83,9 +83,10 @@ template: |
             name: nova-etc
             subPath: nova.conf
             readOnly: true
-          - mountPath: /etc/nova/policy.json
+          {{- /* Note I533984: Replace with plain policy.yaml after Xena upgrade */}}
+          - mountPath: /etc/nova/{{if (.Values.imageVersion | hasPrefix "rocky") }}policy.json{{else}}policy.yaml{{end}}
             name: nova-etc
-            subPath: policy.json
+            subPath: {{if (.Values.imageVersion | hasPrefix "rocky") }}policy.json{{else}}policy.yaml{{end}}
             readOnly: true
           - mountPath: /etc/nova/logging.ini
             name: nova-etc

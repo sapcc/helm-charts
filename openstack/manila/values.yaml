@@ -303,7 +303,7 @@ mysql_metrics:
           share_id,
           status,
           host AS manila_host,
-          MAX(NOW() - COALESCE(updated_at, created_at)) AS max_duration_gauge
+          MAX(UNIX_TIMESTAMP(NOW()) - UNIX_TIMESTAMP(COALESCE(updated_at, created_at))) AS max_duration_gauge
         FROM share_instances
         WHERE deleted='False' AND status in ('deleting','error_deleting','creating','shrinking','extending', 'shrinking_error', 'extending_error') AND (COALESCE(updated_at, created_at) < DATE_SUB(now(), INTERVAL 15 MINUTE))
         GROUP BY
@@ -313,6 +313,24 @@ mysql_metrics:
         UNION SELECT 'none' AS share_id, 'none' AS status, 'none' AS manila_host, 0 AS max_duration_gauge;
       values:
         - "max_duration_gauge"
+    - name: manila_share_replica_stuck_duration_seconds
+      help: Manila Share Replica Stucked for One Hour Longer
+      labels: ["project_id", "share_id", "replica_id", "status"]
+      query: |
+        SELECT 
+          project_id,
+          shares.id AS share_id,
+          si.id AS replica_id,
+          status,
+          (UNIX_TIMESTAMP(NOW()) - UNIX_TIMESTAMP(COALESCE(si.updated_at, si.created_at))) AS elapsed
+        FROM share_instances si
+        INNER JOIN shares ON si.share_id = shares.id
+        WHERE 
+          status IN ('creating', 'deleting', 'error', 'error_deleting')
+          AND COALESCE(si.updated_at, si.created_at) < (NOW() - INTERVAL 1 hour)
+          AND si.deleted = 'False'
+        UNION SELECT 'none', 'none', 'none', 'none', 0
+      values: ["elapsed"]
     - help: Manila Snapshot Stuck Count
       labels:
         - "project_id"
@@ -351,7 +369,7 @@ mysql_metrics:
           share_snapshots.share_id,
           share_snapshots.id,
           share_snapshot_instances.status,
-          MAX(NOW() - COALESCE(share_snapshot_instances.updated_at, share_snapshot_instances.created_at)) AS max_duration_gauge
+          MAX(UNIX_TIMESTAMP(NOW()) - UNIX_TIMESTAMP(COALESCE(share_snapshot_instances.updated_at, share_snapshot_instances.created_at))) AS max_duration_gauge
         FROM share_snapshots
         INNER JOIN share_snapshot_instances ON share_snapshots.id=share_snapshot_instances.snapshot_id
         WHERE share_snapshot_instances.status in ('deleting','creating') AND (COALESCE(share_snapshot_instances.updated_at, share_snapshot_instances.created_at) < DATE_SUB(now(), INTERVAL 15 MINUTE))
@@ -409,30 +427,25 @@ mysql_metrics:
         UNION SELECT 'none' AS manila_host, 'none' AS id, 'none' AS share_network_subnet_id, 'none' AS status, 0 AS count_gauge;
       values:
         - "count_gauge"
-    - help: Manila Share servers Stuck Max Duration
+    - help: Manila Share servers Stuck Duration in Seconds
       labels:
         - "manila_host"
         - "id"
         - "share_network_subnet_id"
         - "status"
-      name: manila_share_servers_stuck_max_duration_gauge
+      name: manila_share_servers_stuck_duration_seconds
       query: |
         SELECT
           host AS manila_host,
           id,
           share_network_subnet_id,
           status,
-          MAX(NOW() - COALESCE(updated_at, created_at)) AS max_duration_gauge
+          UNIX_TIMESTAMP(NOW()) - UNIX_TIMESTAMP(COALESCE(updated_at, created_at)) AS duration
         FROM share_servers
         WHERE deleted='False' AND status in ('deleting','creating','error','error_unmanage','error_manage') AND (COALESCE(updated_at, created_at) < DATE_SUB(now(), INTERVAL 15 MINUTE))
-        GROUP BY
-          manila_host,
-          id,
-          share_network_subnet_id,
-          status
-        UNION SELECT 'none' AS manila_host, 'none' AS id, 'none' AS share_network_subnet_id, 'none' AS status, 0 AS max_duration_gauge;
+        UNION SELECT 'none' AS manila_host, 'none' AS id, 'none' AS share_network_subnet_id, 'none' AS status, 0 AS duration;
       values:
-        - "max_duration_gauge"
+        - "duration"
     - help: Manila Share Access Stuck Max Duration
       labels:
         - "access_id"
@@ -446,7 +459,7 @@ mysql_metrics:
           share_instances.share_id as share_id,
           share_instance_id,
           state,
-          MAX(NOW() - COALESCE(access.updated_at, access.created_at)) AS max_duration_gauge
+          MAX(UNIX_TIMESTAMP(NOW()) - UNIX_TIMESTAMP(COALESCE(access.updated_at, access.created_at))) AS max_duration_gauge
         FROM share_instance_access_map as access
         JOIN share_instances on share_instances.id = access.share_instance_id
         WHERE access.deleted='False' AND access.state != 'active' AND (COALESCE(access.updated_at, access.created_at) < DATE_SUB(now(), INTERVAL 15 MINUTE))

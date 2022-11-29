@@ -1,18 +1,21 @@
+{{- range $component := list "indexer" "matcher" }}
+---
 apiVersion: v1
 kind: Service
 
 metadata:
-  name: clair
+  name: clair-{{ $component }}
   annotations:
     prometheus.io/scrape: "true"
     prometheus.io/port: "8081"
-    prometheus.io/targets: "openstack"
+    prometheus.io/targets: "infra-frontend"
 
 spec:
   selector:
-    name: clair
+    name: clair-{{ $component }}
   ports:
     - name: api
       port: 8080
     - name: introspection
       port: 8081
+{{- end }}

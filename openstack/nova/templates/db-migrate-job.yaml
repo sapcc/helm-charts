@@ -18,7 +18,7 @@ spec:
       {{- include "utils.proxysql.job_pod_settings" . | indent 6 }}
       containers:
       - name: nova-migration
-        image: {{ required ".Values.global.registry is missing" .Values.global.registry}}/ubuntu-source-nova-api:{{.Values.imageVersionNovaApi | default .Values.imageVersionNova | default .Values.imageVersion | required "Please set nova.imageVersion or similar"}}
+        image: {{ tuple . "api" | include "container_image_nova" }}
         imagePullPolicy: IfNotPresent
         command:
         - kubernetes-entrypoint
@@ -62,9 +62,10 @@ spec:
           subPath: nova_audit_map.yaml
           readOnly: true
 {{- end }}
-        - mountPath: /etc/nova/policy.json
+        {{- /* Note I533984: Replace with plain policy.yaml after Xena upgrade */}}
+        - mountPath: /etc/nova/{{if (.Values.imageVersion | hasPrefix "rocky") }}policy.json{{else}}policy.yaml{{end}}
           name: nova-etc
-          subPath: policy.json
+          subPath: {{if (.Values.imageVersion | hasPrefix "rocky") }}policy.json{{else}}policy.yaml{{end}}
           readOnly: true
         - mountPath: /etc/nova/logging.ini
           name: nova-etc

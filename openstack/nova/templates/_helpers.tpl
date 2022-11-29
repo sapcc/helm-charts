@@ -23,7 +23,7 @@ rabbit://{{ default "" .Values.global.user_suffix | print .Values.rabbitmq_cell2
   {{- $name := index . 1 -}}
   {{- with index . 0 -}}
     {{- $version_name := printf "imageVersionNova%s" ($name | lower | replace "-" " " | title | nospace) -}}
-    {{- $image_name := ( .Values.loci.nova | ternary .Values.imageNameNova (printf "ubuntu-source-nova-%s" ($name | lower)) ) -}}
+    {{- $image_name := ( not (.Values.imageVersion | hasPrefix "rocky") | ternary .Values.imageNameNova (printf "ubuntu-source-nova-%s" ($name | lower)) ) -}}
 
     {{ required ".Values.global.registry is missing" .Values.global.registry}}/{{$image_name}}:{{index .Values $version_name | default .Values.imageVersionNova | default .Values.imageVersion | required "Please set nova.imageVersionNova or similar" }}
 

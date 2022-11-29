@@ -30,6 +30,8 @@
   value: 'tenso'
 - name:  TENSO_API_LISTEN_ADDRESS
   value: ':80'
+- name: TENSO_AWX_WORKFLOW_SWIFT_CONTAINER
+  value: tenso-awx-workflow-events
 - name:  TENSO_DB_PASSWORD
   valueFrom:
     secretKeyRef:
@@ -49,8 +51,10 @@
   value: >
     helm-deployment-from-concourse.v1 -> helm-deployment-to-elk.v1,
     helm-deployment-from-concourse.v1 -> helm-deployment-to-swift.v1,
+    infra-workflow-from-awx.v1 -> infra-workflow-to-swift.v1,
     {{- if .Values.tenso.servicenow.create_change_url }}
     helm-deployment-from-concourse.v1 -> helm-deployment-to-servicenow.v1,
+    infra-workflow-from-awx.v1 -> infra-workflow-to-servicenow.v1,
     {{- end }}
 {{- if .Values.tenso.servicenow.create_change_url }}
 - name:  TENSO_SERVICENOW_CREATE_CHANGE_URL

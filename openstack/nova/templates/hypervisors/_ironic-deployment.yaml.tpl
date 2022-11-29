@@ -39,7 +39,7 @@ spec:
       terminationGracePeriodSeconds: {{ $hypervisor.default.graceful_shutdown_timeout | default .Values.defaults.default.graceful_shutdown_timeout | add 5 }}
       containers:
         - name: nova-compute
-          image: {{ required ".Values.global.registry is missing" .Values.global.registry}}/ubuntu-source-nova-compute:{{.Values.imageVersionNovaCompute | default .Values.imageVersionNova | default .Values.imageVersion | required "Please set nova.imageVersion or similar" }}
+          image: {{ tuple . "compute" | include "container_image_nova" }}
           imagePullPolicy: IfNotPresent
           command:
             - dumb-init
@@ -75,9 +75,10 @@ spec:
               name: nova-etc
               subPath: nova.conf
               readOnly: true
-            - mountPath: /etc/nova/policy.json
+            {{- /* Note I533984: Replace with plain policy.yaml after Xena upgrade */}}
+            - mountPath: /etc/nova/{{if (.Values.imageVersion | hasPrefix "rocky") }}policy.json{{else}}policy.yaml{{end}}
               name: nova-etc
-              subPath: policy.json
+              subPath: {{if (.Values.imageVersion | hasPrefix "rocky") }}policy.json{{else}}policy.yaml{{end}}
               readOnly: true
             - mountPath: /etc/nova/logging.ini
               name: nova-etc

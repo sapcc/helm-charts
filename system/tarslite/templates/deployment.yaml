@@ -1,0 +1,32 @@
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: tarslite
+  namespace: tars
+spec:
+  selector:
+    matchLabels:
+      app: tarslite
+  template:
+    metadata:
+      labels:
+        app: tarslite
+    spec:
+      containers:
+         - name: tarslite
+           image: {{ required ".Values.tarslite.image.registry missing" .Values.tarslite.image.registry }}/{{ required ".Values.tarslite.image.name missing" .Values.tarslite.image.name }}:{{ required ".Values.tarslite.image.tag missing" .Values.tarslite.image.tag }}
+           ports:
+             - name: webhook
+               containerPort: {{ required ".Values.tarslite.webhook.port" .Values.tarslite.webhook.port }}
+           command:
+             - python3
+           args:
+             - main.py
+           volumeMounts:
+             - mountPath: /TARSlite/appliance_config
+               name: tarslite-config
+               readOnly: true
+      volumes:
+        - configMap:
+            name: tarslite-config
+          name: tarslite-config

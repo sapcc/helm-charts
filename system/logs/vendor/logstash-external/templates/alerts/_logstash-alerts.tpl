@@ -7,11 +7,12 @@ groups:
 {{ else }}
     expr: increase(logstash_node_plugin_events_in_total{namespace="logs",plugin_id="elk-syslog"}[1h]) / increase(logstash_node_plugin_events_in_total{namespace="logs",plugin_id="elk-syslog"}[1h]offset 2h) > 2
 {{ end }}
-    for: 60m
+    for: 120m
     labels:
       context: logshipping
-      service: elk
+      service: logs
       severity: info
+      support_group: observability
       tier: os
       playbook: docs/operation/elastic_kibana_issues/elk_logs/logstash_logs_increasing.html
     annotations:

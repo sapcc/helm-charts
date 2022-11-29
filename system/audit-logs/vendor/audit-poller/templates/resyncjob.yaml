@@ -1,0 +1,53 @@
+{{- if .Values.resync.enabled }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: audit-poller-resync
+  labels:
+    app.kubernetes.io/name: audit-poller
+    helm.sh/chart: {{ include "audit-poller.chart" $ }}
+    app.kubernetes.io/instance: audit-poller-{{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+spec:
+  template:
+    metadata:
+      annotations:
+        checksum/config: {{ include ( print $.Template.BasePath "/resync-config.yaml" ) . | sha256sum }}
+    spec:
+      containers:
+      - name: audit-poller
+        image: "{{ required ".Values.global.registry variable missing" .Values.global.registry }}/{{ .Values.image }}:{{ .Values.imageTag }}"
+        command: ["/usr/bin/audit-resyncer"]
+        env:
+          - name: TOKEN_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: audit-poller-secrets
+                key: tokenPassword
+          - name: CHANGELOG_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: audit-poller-secrets
+                key: changelogPassword
+        volumeMounts:
+          - name: audit-poller-etc
+            mountPath: /config
+            readOnly: true
+          - name: audit-dir
+            mountPath: {{.Values.logDir}}
+            readOnly: false
+      - name: iasapi-stdout
+        image: keppel.eu-de-1.cloud.sap/ccloud-dockerhub-mirror/library/busybox
+        args: [/bin/sh, -c, 'touch {{ .Values.logDir }}/{{ .Values.iasApi.fileName }}; tail -n+1 -F {{ .Values.logDir }}/{{ .Values.iasApi.fileName }}']
+        volumeMounts:
+        - name: audit-dir
+          mountPath: /audit
+      restartPolicy: Never
+      volumes:
+        - name: audit-poller-etc
+          configMap:
+            name: audit-poller-resync-etc
+        - name: audit-dir
+          emptyDir: {}
+  backoffLimit: 4
+{{- end }}

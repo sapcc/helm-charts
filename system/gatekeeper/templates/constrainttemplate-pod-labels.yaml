@@ -12,8 +12,10 @@ spec:
         openAPIV3Schema:
           type: object
           properties:
-            osServices:
-              type: string
+            known_support_groups:
+              type: array
+              items:
+                type: string
 
   targets:
     - target: admission.k8s.gatekeeper.sh
@@ -29,36 +31,18 @@ spec:
 
         iro := input.review.object
         pod := traversal.find_pod(iro)
-
-        default os_services = []
-        os_services = sort(split(input.parameters.osServices, "|"))
-
-        # Defining variables because they are referenced in multiple places.
-        alert_tier = "alert-tier"
-        alert_service = "alert-service"
-
-        # Either alert-tier or alert-service label is required. However, when alert-tier == os then alert-service is also required.
-        required_labels = {alert_tier, alert_service}
+        support_group := object.get(pod, ["metadata", "labels", "ccloud/support-group"], "none")
 
         violation[{"msg": add_support_labels.from_k8s_object(iro, msg)}] {
           pod.isFound
-          missing_labels := [l | required_labels[l]; not pod.metadata.labels[l]]
-          count(missing_labels) == 2
-
-          msg := sprintf("pod does not have either one of the required labels: %s", [sort(missing_labels)])
+          support_group == "none"
+          msg := "pod does not have the required label: ccloud/support-group"
         }
 
         violation[{"msg": add_support_labels.from_k8s_object(iro, msg)}] {
           pod.isFound
-
-          labels := object.get(iro.metadata, "labels", {})
-          object.get(labels, alert_tier, "") == "os"
-          srv := object.get(labels, alert_service, "")
-          found := {f | srv == os_services[_]; f = true}
+          support_group != "none"
+          found := { true | support_group == input.parameters.known_support_groups[_] }
           count(found) == 0
-
-          msg := sprintf(
-            "pod has %q label with value: os, but %q label is missing or does not have a valid value (got: %s, valid: %s)",
-            [alert_tier, alert_service, json.marshal(srv), os_services],
-          )
+          msg := sprintf("pod has an unacceptable label value: ccloud/support-group=%q", [support_group])
         }

@@ -1,0 +1,40 @@
+replicaCount: 0
+
+image:
+  repository: keppel.eu-de-1.cloud.sap/ccloud/slack-alert-reactions
+  pullPolicy: IfNotPresent
+
+env:
+  APP_ENVIRONMENT: ccloud
+  GITHUB_TOKEN:   # github user token to create issues
+  SLACK_APP_CONFIG_TOKEN:   # Slack app config token to connect local app with workspace: https://api.slack.com/authentication/config-tokens#:~:text=Config%20tokens%20are%20solely%20used,with%20just%20one%20config%20token.
+  SLACK_REFRESH_TOKEN:   # Slack refresh token for app config token rotation
+  SLACK_WORKSPACE:   convergedcloud
+
+resources:
+  limits:
+    cpu: 500m
+    memory: 256Mi
+  requests:
+    cpu: 500m
+    memory: 256Mi
+
+owner-info:
+  support-group: containers
+  maintainers:
+    - "Uwe Mayer"
+  helm-chart-url: "https://github.com/sapcc/helm-charts/tree/master/global/slack-alert-reactions"
+
+sidecar:
+  image:
+    repository: keppel.eu-de-1.cloud.sap/ccloud/slack-alert-reactions-sidecar
+    tag: 0.1.1
+    pullPolicy: IfNotPresent
+
+  resources:
+    limits:
+      cpu: 100m
+      memory: 128Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi

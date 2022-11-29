@@ -8,7 +8,7 @@ kind: PrometheusRule
 metadata:
   name: {{ include "prometheus.fullName" (list $name $root) }}-thanos-sidecar.alerts
   labels:
-    prometheus: {{ include "prometheus.name" (list $name $root) }}
+    prometheus: {{ default (include "prometheus.name" (list $name $root)) $.Values.alerts.prometheus }}
 
 spec:
 {{ include (print $.Template.BasePath "/alerts/_thanos-sidecar.alerts.tpl") (list $name $root) | indent 2 }}

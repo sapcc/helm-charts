@@ -179,6 +179,7 @@
       desc The total number of outgoing records
       <labels>
         tag ${tag}
+        cluster_type scaleout
         fluent_container $.kubernetes.pod_name
         nodename "#{ENV['K8S_NODE_NAME']}"
         container $.kubernetes.container_name

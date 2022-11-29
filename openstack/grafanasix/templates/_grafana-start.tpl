@@ -29,6 +29,7 @@ function start_application {
   grafana-cli plugins install yesoreyeram-boomtable-panel 1.4.1
   grafana-cli plugins install jdbranham-diagram-panel 1.7.3
   grafana-cli plugins install agenty-flowcharting-panel 0.9.1
+  grafana-cli plugins install marcusolsson-json-datasource 1.3.2
   # install sapcc/grafana-prometheus-alertmanager-datasource
   grafana-cli --pluginUrl https://github.com/sapcc/grafana-prometheus-alertmanager-datasource/archive/master.zip plugins install prometheus-alertmanager
   # install sapcc/Grafana_Status_panel

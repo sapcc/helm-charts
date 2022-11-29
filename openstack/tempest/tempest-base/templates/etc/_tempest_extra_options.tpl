@@ -56,6 +56,7 @@ endpoint_type = internal
 shared_physical_network= {{ .Values.tempest_common.shared_physical_network | default true }}
 floating_network_name = FloatingIP-external-monsoon3-01
 build_timeout=600
+build_interval=20
 
 [network-feature-enabled]
 ipv6 = False
