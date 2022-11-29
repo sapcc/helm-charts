@@ -96,6 +96,7 @@
       - '{__name__=~"^openstack_.+",project_id!=""}'
       - '{__name__=~"^limes_(?:project|domain)_(?:quota|usage)$"}'
       - '{__name__=~"^limes_swift_.+",project_id!=""}'
+      - '{__name__=~"^keppel_.+",project_id!=""}'
 
 - job_name: 'prometheus-infra-collector'
   scrape_interval: 1m
