@@ -1,36 +1,40 @@
+{{- $root := . }}
 {{- if .Values.enabled }}
 {{- if .Values.deployWholeThanos }}
+{{- range $name := coalesce .Values.names .Values.global.targets (list .Values.name) }}
+---
 apiVersion: monitoring.banzaicloud.io/v1alpha1
 kind: ObjectStore
 metadata:
-  name: {{ include "thanos.fullName" . }}
+  name: {{ include "thanos.fullName" (list $name $root) }}
 spec:
   config:
     mountFrom:
       secretKeyRef:
-        name: {{ include "thanos.objectStorageConfigName" . }}
+        name: {{ include "thanos.objectStorageConfigName" (list $name $root) }}
         key: thanos.yaml
   compactor: 
-    consistencyDelay: {{ required "thanos.compactor.consistencyDelay" .Values.compactor.consistencyDelay }}
-    retentionResolutionRaw: {{ mul 24 (required "thanos.compactor.retentionResolutionRaw" .Values.compactor.retentionResolutionRaw) }}h
-    retentionResolution5m: {{ mul 24 (required "thanos.compactor.retentionResolution5m" .Values.compactor.retentionResolution5m) }}h
-    retentionResolution1h: {{ mul 365 24 (required "thanos.compactor.retentionResolution1h" .Values.compactor.retentionResolution1h) }}h
+    consistencyDelay: {{ required "thanos.compactor.consistencyDelay" $.Values.compactor.consistencyDelay }}
+    retentionResolutionRaw: {{ mul 24 (required "thanos.compactor.retentionResolutionRaw" $.Values.compactor.retentionResolutionRaw) }}h
+    retentionResolution5m: {{ mul 24 (required "thanos.compactor.retentionResolution5m" $.Values.compactor.retentionResolution5m) }}h
+    retentionResolution1h: {{ mul 365 24 (required "thanos.compactor.retentionResolution1h" $.Values.compactor.retentionResolution1h) }}h
     serviceOverrides:
       metadata:
         labels:
-          prometheus: {{ default (include "thanos.name" .) .Values.alerts.prometheus }}
+          prometheus: {{ default (include "thanos.name" (list $name $root)) $.Values.alerts.prometheus }}
     deploymentOverrides:
       spec:
         template:
           spec:
             containers:
-            - image: {{ include "thanosimage" . }}
+            - image: {{ include "thanosimage" $root }}
               name: compactor
-              {{ if len .Values.compactor.customArgs -}}
+              {{ if len $.Values.compactor.customArgs -}}
               args:
-                {{- range $arg := .Values.compactor.customArgs }}
+                {{- range $arg := $.Values.compactor.customArgs }}
                 - {{ $arg }}
                 {{- end }}
               {{- end }}
+{{ end }}
 {{ end }}
 {{ end }}

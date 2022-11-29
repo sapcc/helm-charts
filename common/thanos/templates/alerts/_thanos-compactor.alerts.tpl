@@ -1,3 +1,5 @@
+{{- $name := index . 0 -}}
+{{- $root := index . 1 -}}
 groups:
 - name: thanos-compactor.alerts
   rules:
@@ -6,7 +8,7 @@ groups:
       for: 5m
       labels:
         context: thanos
-        service: {{ default "metrics" .Values.alerts.service }}
+        service: {{ default "metrics" $root.Values.alerts.service }}
         support_group: observability
         severity: info
         playbook: 'docs/support/playbook/prometheus/thanos_compaction.html'
@@ -19,7 +21,7 @@ groups:
       expr: rate(prometheus_tsdb_compactions_failed_total{app="thanos-compactor", prometheus="{{ include "thanos.name" . }}"}[5m]) > 0
       labels:
         context: thanos
-        service: {{ default "metrics" .Values.alerts.service }}
+        service: {{ default "metrics" $root.Values.alerts.service }}
         support_group: observability
         severity: info
         playbook: 'docs/support/playbook/prometheus/thanos_compaction.html'
@@ -32,7 +34,7 @@ groups:
       expr: rate(thanos_objstore_bucket_operation_failures_total{app="thanos-compactor", prometheus="{{ include "thanos.name" . }}"}[5m]) > 0
       labels:
         context: thanos
-        service: {{ default "metrics" .Values.alerts.service }}
+        service: {{ default "metrics" $root.Values.alerts.service }}
         support_group: observability
         severity: info
         playbook: 'docs/support/playbook/prometheus/thanos_compaction.html'
@@ -45,7 +47,7 @@ groups:
       expr: (time() - max(thanos_objstore_bucket_last_successful_upload_time{app="thanos-compactor", prometheus="{{ include "thanos.name" . }}"}) ) /60/60 > 24
       labels:
         context: thanos
-        service: {{ default "metrics" .Values.alerts.service }}
+        service: {{ default "metrics" $root.Values.alerts.service }}
         support_group: observability
         severity: info
         playbook: 'docs/support/playbook/prometheus/thanos_compaction.html'
@@ -60,7 +62,7 @@ groups:
       labels:
         no_alert_on_absence: "true" # because the expression already checks for absence
         context: thanos
-        service: {{ default "metrics" .Values.alerts.service }}
+        service: {{ default "metrics" $root.Values.alerts.service }}
         support_group: observability
         severity: info
         playbook: 'docs/support/playbook/prometheus/thanos_compaction.html'
@@ -74,7 +76,7 @@ groups:
       for: 5m
       labels:
         context: thanos
-        service: {{ default "metrics" .Values.alerts.service }}
+        service: {{ default "metrics" $root.Values.alerts.service }}
         support_group: observability
         severity: warning
         meta: 'Multiple Thanos compactors running for Prometheus `{{`{{ $labels.prometheus }}`}}`.'
