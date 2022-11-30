@@ -31,6 +31,9 @@ spec:
             - -metrics-addr=0.0.0.0:8081
             - -poll-interval={{ index .Values "2fa" "pollInterval" }}
             - -issuer-dn={{ required "2fa.issuerDN missing" (index .Values "2fa" "issuerDN") }}
+            {{- range $domain := index .Values "2fa" "excludedDomains" }}
+            - -exclude-domain={{ $domain }}
+            {{- end}}
           env:
           {{- range $key, $value :=  index .Values "2fa" "openstack" }}
             - name: {{ $key }}
