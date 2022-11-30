@@ -14,7 +14,7 @@ config:
         description: "Authenticate via HTTP Basic against internal users database"
         http_enabled: true
         transport_enabled: true
-        order: 1
+        order: 0
         http_authenticator:
           type: basic
           challenge: true
@@ -30,11 +30,13 @@ config:
           config:
             subject_key: name
             roles_key: roles
-            openid_connect_url: "https://{{.Values.auth.provider }}"
+            openid_connect_url: {{.Values.auth.provider }}
             enable_ssl: true
             openid_connect_idp:
               enable_ssl: true
               pemtrustedcas_filepath: {{.Values.auth.ca_path }}
+        authentication_backend:
+          type: noop
       ldap_auth:
         order: 3
         description: "Authenticate using LDAP"
