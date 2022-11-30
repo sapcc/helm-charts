@@ -1,0 +1,84 @@
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: vrops-inventory
+  namespace: {{ required ".Values.vrops.namespace variable missing" $.Values.vrops.namespace }}
+spec:
+  selector:
+    matchLabels:
+      app: vrops-inventory
+      type: inventorycollector
+  template:
+    metadata:
+      labels:
+        app: vrops-inventory
+        type: inventorycollector
+        alert-tier: vmware
+        alert-service: vrops
+    spec:
+      volumes:
+        - name: vrops-exporter-inventory-config
+          configMap:
+            name: vrops-exporter-inventory-config
+      containers:
+         - name: vrops-inventory
+           image: {{ required ".Values.global.registry variable missing" .Values.global.registry }}/{{ required ".Values.vrops.image.name variable missing" .Values.vrops.image.name }}:{{ required ".Values.vrops.inventory.tag variable missing" .Values.vrops.inventory.tag }}
+           ports:
+             - name: metrics
+               containerPort: {{ required ".Values.vrops.inventory.port_number missing" .Values.vrops.inventory.port_number }}
+           command:
+             - ./inventory.py
+           args:
+             - -m
+             - /config/inventory_config.yaml
+           env:
+           - name: USER
+             value: {{ required ".Values.vrops.user variable is missing" .Values.vrops.user }}
+           - name: PASSWORD
+             value: {{ required ".Values.vrops.password variable is missing" .Values.vrops.password | quote }}
+           - name: PORT
+             value: {{ required ".Values.vrops.inventory.port_number missing" .Values.vrops.inventory.port_number | quote }}
+           - name: DEBUG
+             value: {{ .Values.vrops.debug | quote }}
+           - name: SLEEP
+             value: {{ .Values.vrops.inventory.sleep | quote }}
+           - name: TIMEOUT
+             value: {{ .Values.vrops.inventory.timeout | quote }}
+           - name: ATLAS
+             value: {{ .Values.vrops.atlas }}
+           resources:
+             limits:
+               memory: 240Mi
+               cpu: 300m
+             requests:
+               memory: 120Mi
+               cpu: 150m
+             limits:
+               memory: {{ required ".Values.vrops.inventory.resources.limits.memory missing" .Values.vrops.inventory.resources.limits.memory }}
+               cpu: {{ required ".Values.vrops.inventory.resources.limits.cpu missing" .Values.vrops.inventory.resources.limits.cpu }}
+             requests:
+               memory: {{ required ".Values.vrops.inventory.resources.requests.memory missing" .Values.vrops.inventory.resources.requests.memory }}
+               cpu: {{ required ".Values.vrops.inventory.resources.requests.cpu missing" .Values.vrops.inventory.resources.requests.cpu }}
+           volumeMounts:
+             - name: vrops-exporter-inventory-config
+               mountPath: "/config"
+               readOnly: true
+           livenessProbe:
+             httpGet:
+               path: /vrops_list
+               port: {{ required ".Values.vrops.inventory.port_number missing" .Values.vrops.inventory.port_number }}
+             initialDelaySeconds: 5
+             timeoutSeconds: 10
+             periodSeconds: 15
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: vrops-inventory
+  namespace: {{ required ".Values.vrops.namespace variable missing" $.Values.vrops.namespace }}
+spec:
+  selector:
+    app: vrops-inventory
+  ports:
+    - name: metrics
+      port: {{ .Values.vrops.inventory.port_number }}

@@ -1,0 +1,93 @@
+{{- $root := . }}
+{{- if .Values.vrops.enabled }}
+{{- range $target := .Values.global.targets }}
+---
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: {{ include "vropsInventoryExporter.fullName" (list $target $root) }}
+  namespace: {{ required "$.Values.vrops.namespace variable missing" $.Values.vrops.namespace }}
+spec:
+  selector:
+    matchLabels:
+      app: {{ include "vropsInventoryExporter.fullName" (list $target $root) }}
+      type: exporter
+  template:
+    metadata:
+      labels:
+        app: {{ include "vropsInventoryExporter.fullName" (list $target $root) }}
+        type: exporter
+        target: {{ include "vropsInventoryExporter.fullName" (list $target $root) }}
+        alert-tier: vmware
+        alert-service: vrops
+    spec:
+      containers:
+         - name: vrops-inventory-exporter
+           image: {{ required "$.Values.global.registry variable missing" $.Values.global.registry }}/{{ required "$.Values.vrops.image.name variable missing" $.Values.vrops.image.name }}:{{ required "$.Values.vrops.image.tag variable missing" $.Values.vrops.image.tag }}
+           ports:
+             - name: metrics
+               containerPort: {{ required "$.Values.vrops.inventory_exporter.port_number missing" $.Values.vrops.inventory_exporter.port_number }}
+           command:
+             - ./exporter.py
+           args:
+             - -m
+             - /config/collector_config.yaml
+             - -c
+             - InventoryCollector
+             - -t
+             - {{ required "$target missing" $target }}
+           env:
+           - name: PORT
+             value: {{ required "$.Values.vrops.inventory_exporter.port_number missing" $.Values.vrops.inventory_exporter.port_number | quote }}
+           - name: DEBUG
+             value: {{ $.Values.vrops.debug | quote }}
+           - name: INVENTORY
+             value: vrops-inventory
+           resources:
+             limits:
+               memory: {{ required "$.Values.vrops.exporter_types.default.resources.limits.memory missing" $.Values.vrops.exporter_types.default.resources.limits.memory }}
+               cpu: {{ required "$.Values.vrops.exporter_types.default.resources.limits.cpu missing" $.Values.vrops.exporter_types.default.resources.limits.cpu }}
+             requests:
+               memory: {{ required "$.Values.vrops.exporter_types.default.resources.requests.memory missing" $.Values.vrops.exporter_types.default.resources.requests.memory }}
+               cpu: {{ required "$.Values.vrops.exporter_types.default.resources.requests.cpu missing" $.Values.vrops.exporter_types.default.resources.requests.cpu }}
+           volumeMounts:
+             - mountPath: /config
+               name: vrops-config
+               readOnly: true
+      volumes:
+        - configMap:
+            name: vrops-exporter-collector-config
+          name: vrops-config
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+
+metadata:
+  name: {{ include "vropsInventoryExporter.fullName" (list $target $root) }}
+  labels:
+    prometheus: {{ include "prometheusVMware.fullName" (list $target $root) }}
+
+spec:
+  jobLabel: {{ include "vropsInventoryExporter.fullName" (list $target $root) }}
+
+  selector:
+    matchLabels:
+      target: {{ include "vropsInventoryExporter.fullName" (list $target $root) }}
+
+  namespaceSelector:
+    matchNames: [{{ required ".Values.vrops.namespace variable missing" $.Values.vrops.namespace }}]
+
+  podMetricsEndpoints:
+    - interval: 60s
+      scrapeTimeout: 50s
+      path: /metrics
+      scheme: http
+      port: metrics
+      relabelings:
+        - targetLabel: job
+          replacement: {{ include "vropsInventoryExporter.fullName" (list $target $root) }}
+      metricRelabelings:
+        - action: labeldrop
+          regex: "container|instance|endpoint|pod|namespace|service"
+{{ end }}
+{{ end }}
