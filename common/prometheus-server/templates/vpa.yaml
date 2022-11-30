@@ -1,13 +1,16 @@
+{{- $root := . }}
+{{- range $name := coalesce .Values.names .Values.global.targets (list .Values.name) }}
+---
 apiVersion: autoscaling.k8s.io/v1
 kind: VerticalPodAutoscaler
 metadata:
-  name: prometheus-{{ include "prometheus.name" . }}
-  namespace: {{ .Release.Namespace }}
+  name: prometheus-{{ include "prometheus.name" (list $name $root) }}
+  namespace: {{ $.Release.Namespace }}
 spec:
   targetRef:
     apiVersion: apps/v1
     kind: StatefulSet
-    name: prometheus-{{ include "prometheus.name" . }}
+    name: prometheus-{{ include "prometheus.name" (list $name $root) }}
   updatePolicy:
     updateMode: "Initial"
   resourcePolicy:
@@ -17,11 +20,12 @@ spec:
         controlledResources:
           - cpu
           - memory
-{{- if and .Values.resources .Values.resources.requests }}
+{{- if and $.Values.resources $.Values.resources.requests }}
         minAllowed:
-{{ toYaml .Values.resources.requests | indent 10 }}
+{{ toYaml $.Values.resources.requests | indent 10 }}
 {{- end }}
-{{- if and .Values.resources .Values.resources.limits }}
+{{- if and $.Values.resources $.Values.resources.limits }}
         maxAllowed:
-{{ toYaml .Values.resources.limits | indent 10 }}
+{{ toYaml $.Values.resources.limits | indent 10 }}
+{{- end }}
 {{- end }}

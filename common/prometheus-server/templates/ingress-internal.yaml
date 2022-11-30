@@ -1,5 +1,7 @@
 {{- if .Values.internalIngress.enabled }}
 {{- $root := . }}
+{{- range $name := coalesce .Values.names .Values.global.targets (list .Values.name) }}
+---
 {{- if $root.Capabilities.APIVersions.Has "networking.k8s.io/v1/Ingress" }}
 apiVersion: networking.k8s.io/v1
 {{- else -}}
@@ -8,29 +10,29 @@ apiVersion: networking.k8s.io/v1beta1
 kind: Ingress
 
 metadata:
-  name: {{ include "prometheus.fullName" . }}-internal
+  name: {{ include "prometheus.fullName" (list $name $root) }}-internal
   labels:
-    prometheus: {{ include "prometheus.name" . }}
+    prometheus: {{ include "prometheus.name" (list $name $root) }}
   annotations:
     kubernetes.io/tls-acme: "true"
     disco: "true"
-    {{- if .Values.internalIngress.authentication.oauth.enabled }}
-    ingress.kubernetes.io/auth-url: {{ required ".Values.internalIngress.authentication.oauth.authURL missing" .Values.internalIngress.authentication.oauth.authURL }}
-    {{ if .Values.internalIngress.authentication.oauth.authSignInURL }}ingress.kubernetes.io/auth-signin: {{ .Values.internalIngress.authentication.oauth.authSignInURL }} {{ end }}
+    {{- if $.Values.internalIngress.authentication.oauth.enabled }}
+    ingress.kubernetes.io/auth-url: {{ required "$.Values.internalIngress.authentication.oauth.authURL missing" $.Values.internalIngress.authentication.oauth.authURL }}
+    {{ if $.Values.internalIngress.authentication.oauth.authSignInURL }}ingress.kubernetes.io/auth-signin: {{ $.Values.internalIngress.authentication.oauth.authSignInURL }} {{ end }}
     {{ end }}
-    {{- if .Values.internalIngress.authentication.sso.enabled}}
-    ingress.kubernetes.io/auth-tls-secret: {{ required ".Values.internalIngress.authentication.sso.authTLSSecret missing" .Values.internalIngress.authentication.sso.authTLSSecret | quote }}
-    ingress.kubernetes.io/auth-tls-verify-depth: {{ required ".Values.internalIngress.authentication.sso.authTLSVerifyDepth missing" .Values.internalIngress.authentication.sso.authTLSVerifyDepth | quote }}
-    ingress.kubernetes.io/auth-tls-verify-client: {{ required ".Values.internalIngress.authentication.sso.authTLSVerifyClient missing" .Values.internalIngress.authentication.sso.authTLSVerifyClient | quote }}
+    {{- if $.Values.internalIngress.authentication.sso.enabled}}
+    ingress.kubernetes.io/auth-tls-secret: {{ required "$.Values.internalIngress.authentication.sso.authTLSSecret missing" $.Values.internalIngress.authentication.sso.authTLSSecret | quote }}
+    ingress.kubernetes.io/auth-tls-verify-depth: {{ required "$.Values.internalIngress.authentication.sso.authTLSVerifyDepth missing" $.Values.internalIngress.authentication.sso.authTLSVerifyDepth | quote }}
+    ingress.kubernetes.io/auth-tls-verify-client: {{ required "$.Values.internalIngress.authentication.sso.authTLSVerifyClient missing" $.Values.internalIngress.authentication.sso.authTLSVerifyClient | quote }}
     {{ end }}
-    {{- if .Values.internalIngress.annotations }}
-{{ toYaml .Values.internalIngress.annotations | indent 4 }}
+    {{- if $.Values.internalIngress.annotations }}
+{{ toYaml $.Values.internalIngress.annotations | indent 4 }}
     {{ end }}
 
 spec:
   rules:
-    {{- range $host := .Values.internalIngress.hosts }}
-    - host: {{ include "fqdnHelper" (list $host $root) }}
+    {{- range $host := coalesce $.Values.internalIngress.hosts (list $name) }}
+    - host: {{ include "internalFQDNHelper" (list $host $root) }}
       http:
         paths:
           - path: /-/healthy
@@ -38,12 +40,12 @@ spec:
             pathType: ImplementationSpecific
             backend:
               service:
-                name: {{ include "prometheus.fullName" $root }}
+                name: {{ include "prometheus.fullName" (list $name $root) }}
                 port:
                   name: http
             {{- else }}
             backend:
-              serviceName: {{ include "prometheus.fullName" $root }}
+              serviceName: {{ include "prometheus.fullName" (list $name $root) }}
               servicePort: http
             {{- end }}
           - path: /api
@@ -51,12 +53,12 @@ spec:
             pathType: ImplementationSpecific
             backend:
               service:
-                name: {{ include "prometheus.fullName" $root }}
+                name: {{ include "prometheus.fullName" (list $name $root) }}
                 port:
                   name: http
             {{- else }}
             backend:
-              serviceName: {{ include "prometheus.fullName" $root }}
+              serviceName: {{ include "prometheus.fullName" (list $name $root) }}
               servicePort: http
             {{- end }}
           - path: /federate
@@ -64,16 +66,16 @@ spec:
             pathType: ImplementationSpecific
             backend:
               service:
-                name: {{ include "prometheus.fullName" $root }}
+                name: {{ include "prometheus.fullName" (list $name $root) }}
                 port:
                   name: http
             {{- else }}
             backend:
-              serviceName: {{ include "prometheus.fullName" $root }}
+              serviceName: {{ include "prometheus.fullName" (list $name $root) }}
               servicePort: http
             {{- end }}
     {{- end }}
-    {{- range $host := .Values.internalIngress.hostsFQDN }}
+    {{- range $host := $.Values.internalIngress.hostsFQDN }}
     - host: {{ $host }}
       http:
         paths:
@@ -82,12 +84,12 @@ spec:
             pathType: ImplementationSpecific
             backend:
               service:
-                name: {{ include "prometheus.fullName" $root }}
+                name: {{ include "prometheus.fullName" (list $name $root) }}
                 port:
                   name: http
             {{- else }}
             backend:
-              serviceName: {{ include "prometheus.fullName" $root }}
+              serviceName: {{ include "prometheus.fullName" (list $name $root) }}
               servicePort: http
             {{- end }}
           - path: /api
@@ -95,12 +97,12 @@ spec:
             pathType: ImplementationSpecific
             backend:
               service:
-                name: {{ include "prometheus.fullName" $root }}
+                name: {{ include "prometheus.fullName" (list $name $root) }}
                 port:
                   name: http
             {{- else }}
             backend:
-              serviceName: {{ include "prometheus.fullName" $root }}
+              serviceName: {{ include "prometheus.fullName" (list $name $root) }}
               servicePort: http
             {{- end }}
           - path: /federate
@@ -108,22 +110,23 @@ spec:
             pathType: ImplementationSpecific
             backend:
               service:
-                name: {{ include "prometheus.fullName" $root }}
+                name: {{ include "prometheus.fullName" (list $name $root) }}
                 port:
                   name: http
             {{- else }}
             backend:
-              serviceName: {{ include "prometheus.fullName" $root }}
+              serviceName: {{ include "prometheus.fullName" (list $name $root) }}
               servicePort: http
             {{- end }}
     {{- end }}
   tls:
-    - secretName: tls-internal-{{ include "prometheus.externalURL" $root | replace "." "-" }}
+    - secretName: tls-internal-{{ include "prometheus.externalURL" (list $name $root) | replace "." "-" }}
       hosts:
-        {{- range $host := .Values.internalIngress.hosts }}
-        - {{ include "fqdnHelper" (list $host $root) }}
+        {{- range $host := coalesce $.Values.internalIngress.hosts (list $name) }}
+        - {{ include "internalFQDNHelper" (list $host $root) }}
         {{- end }}
-        {{- range $host := .Values.internalIngress.hostsFQDN }}
+        {{- range $host := $.Values.internalIngress.hostsFQDN }}
         - {{ $host }}
         {{- end }}
+{{- end }}
 {{- end }}

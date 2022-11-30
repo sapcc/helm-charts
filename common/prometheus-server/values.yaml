@@ -16,14 +16,21 @@ global:
   # Optional tier for Prometheus alerts.
   # tier: k8s
 
+  # Optional targets to create Prometheus names.
+  # targets:
+
+
 # The image for the Prometheus server. The tag equals the .Chart.appVersion.
 image:
   repository: keppel.eu-de-1.cloud.sap/ccloud-dockerhub-mirror/prom/prometheus
 
-# Mandatory name for this Prometheus.
+# Mandatory name for a single Prometheus. To setup multiple, define a list of .Values.names or .Values.global.targets.
 # The name is used to find relevant aggregation and alerting rules.
-# Examples: kubernetes, openstack, infrastructure, maia, etc.
-name:
+# Examples: kubernetes, openstack, infrastructure, maia, vmware etc.
+name: 
+
+# A list to deploy multiple Prometheis with the same configuration but different names.
+# names:
 
 # Defines how long data is stored. Format: `[0-9]+(ms|s|m|h|d|w|y)`
 retentionTime: 7d
@@ -77,7 +84,7 @@ service:
 ingress:
   enabled: false
 
-  # List of hostnames for this Prometheus server. FQDN will be generated using the pattern  <host>.<region>.<domain> .
+  # List of hostnames for this Prometheus server. If empty, the FQDN will be generated using the pattern  prometheus-<name>.<region>.<domain> otherwise <host>.<region>.<domain>.
   # The first host is used to generate the external URL for the Prometheus. Remaining hosts will be used as SANs.
   # If the ingress is enabled, it's also used for the ingress host.
   hosts: []
@@ -116,7 +123,7 @@ ingress:
 internalIngress:
   enabled: false
 
-  # List of hostnames for this Prometheus server. FQDN will be generated using the pattern  <host>.<region>.<domain> .
+  # List of hostnames for this Prometheus server. If empty, the FQDN will be generated using the pattern  prometheus-<name>-internal.<region>.<domain> otherwise <host>.<region>.<domain>.
   # The first host is used to generate the external URL for the Prometheus. Remaining hosts will be used as SANs.
   # If the ingress is enabled, it's also used for the ingress host.
   hosts: []
@@ -374,3 +381,6 @@ alerts:
   prometheus:
   # service name routing the alerts, defaults to `metrics`
   service:
+
+# If true, a custom Prometheus naming will take place. Only needed for vmware-monitoring.
+vmware: false

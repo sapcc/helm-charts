@@ -12,6 +12,8 @@ Note: The pods define the 'alert-service' label but Prometheus replaces the hyph
 "{{`{{ if $labels.label_alert_service }}`}}{{`{{ $labels.label_alert_service}}`}}{{`{{ else }}`}}{{ required "default value is missing" . }}{{`{{ end }}`}}"
 {{- end -}}
 
+{{- $name := index . 0 -}}
+{{- $root := index . 1 -}}
 groups:
 - name: prometheus.alerts
   rules:
@@ -20,7 +22,7 @@ groups:
     for: 5m
     labels:
       context: availability
-      service: {{ default "metrics" .Values.alerts.service }}
+      service: {{ default "metrics" $root.Values.alerts.service }}
       support_group: observability
       severity: critical
       playbook: 'docs/support/playbook/prometheus/failed_config_reload.html'
@@ -34,7 +36,7 @@ groups:
     for: 15m
     labels:
       context: availability
-      service: {{ default "metrics" .Values.alerts.service }}
+      service: {{ default "metrics" $root.Values.alerts.service }}
       support_group: observability
       severity: warning
       playbook: 'docs/support/playbook/prometheus/rule_evaluation.html'
@@ -48,7 +50,7 @@ groups:
     for: 10m
     labels:
       context: availability
-      service: {{ default "metrics" .Values.alerts.service }}
+      service: {{ default "metrics" $root.Values.alerts.service }}
       support_group: observability
       severity: info
       playbook: 'docs/support/playbook/prometheus/rule_evaluation.html'
@@ -61,7 +63,7 @@ groups:
     expr: increase(prometheus_tsdb_wal_corruptions_total{prometheus="{{ include "prometheus.name" . }}"}[5m]) > 0
     labels:
       context: availability
-      service: {{ default "metrics" .Values.alerts.service }}
+      service: {{ default "metrics" $root.Values.alerts.service }}
       support_group: observability
       severity: info
       playbook: 'docs/support/playbook/prometheus/wal.html'
@@ -75,7 +77,7 @@ groups:
     for: 12h
     labels:
       context: availability
-      service: {{ default "metrics" .Values.alerts.service }}
+      service: {{ default "metrics" $root.Values.alerts.service }}
       support_group: observability
       severity: info
       playbook: 'docs/support/playbook/prometheus/failed_tsdb_reload.html'
@@ -89,7 +91,7 @@ groups:
     for: 10m
     labels:
       context: availability
-      service: {{ default "metrics" .Values.alerts.service }}
+      service: {{ default "metrics" $root.Values.alerts.service }}
       support_group: observability
       severity: info
       playbook: 'docs/support/playbook/prometheus/failed_scrapes.html'
@@ -103,7 +105,7 @@ groups:
     for: 10m
     labels:
       context: availability
-      service: {{ default "metrics" .Values.alerts.service }}
+      service: {{ default "metrics" $root.Values.alerts.service }}
       support_group: observability
       severity: info
       playbook: 'docs/support/playbook/prometheus/failed_scrapes.html'
@@ -116,7 +118,7 @@ groups:
     expr: rate(prometheus_target_scrapes_sample_out_of_order_total{prometheus="{{ include "prometheus.name" . }}"}[5m]) > 0
     labels:
       context: availability
-      service: {{ default "metrics" .Values.alerts.service }}
+      service: {{ default "metrics" $root.Values.alerts.service }}
       support_group: observability
       severity: info
       playbook: 'docs/support/playbook/prometheus/failed_scrapes.html'
@@ -129,7 +131,7 @@ groups:
     expr: increase(prometheus_target_scrapes_exceeded_sample_limit_total{prometheus="{{ include "prometheus.name" . }}"}[30m]) > 60
     labels:
       context: availability
-      service: {{ default "metrics" .Values.alerts.service }}
+      service: {{ default "metrics" $root.Values.alerts.service }}
       support_group: observability
       severity: info
       playbook: 'docs/support/playbook/prometheus/failed_scrapes.html'
@@ -147,13 +149,13 @@ groups:
     expr: sum by (job) (up * on(instance, cluster) group_left() (sum by(instance, cluster) (up{job !~ "kubernetes-cadvisors|kubernetes-kubelet|.*-pod-sd|prometheus-vmware.*|prometheus-infra.*"}) > 1))
     for: 30m
     labels:
-      service: {{ default "metrics" .Values.alerts.service }}
+      service: {{ default "metrics" $root.Values.alerts.service }}
       support_group: observability
       severity: warning
       playbook: docs/support/playbook/kubernetes/target_scraped_multiple_times.html
       meta: 'Prometheus is scraping targets of job `{{`{{ $labels.job }}`}}` more than once.'
     annotations:
-      description: Prometheus is scraping individual targets of the job `{{`{{ $labels.job }}`}}` more than once. This is likely caused due to incorrectly placed scrape annotations.  <https://{{ include "prometheus.externalURL" . }}/graph?g0.expr={{ urlquery `up * on(instance) group_left() (sum by(instance) (up{job="PLACEHOLDER"}) > 1)` | replace "PLACEHOLDER" "{{ $labels.job }}"}}|Affected targets>
+      description: Prometheus is scraping individual targets of the job `{{`{{ $labels.job }}`}}` more than once. This is likely caused due to incorrectly placed scrape annotations.  <https://{{ include "prometheus.externalURL" (list $name $root) }}/graph?g0.expr={{ urlquery `up * on(instance) group_left() (sum by(instance) (up{job="PLACEHOLDER"}) > 1)` | replace "PLACEHOLDER" "{{ $labels.job }}"}}|Affected targets>
       summary: Prometheus target scraped multiple times
 
   - alert: PrometheusMultiplePodScrapes
@@ -169,13 +171,13 @@ groups:
       description: Prometheus is scraping `{{`{{ $labels.pod }}`}}` pods in namespace `{{`{{ $labels.namespace }}`}}` multiple times. This is likely caused due to incorrectly placed scrape annotations. <https://{{ include "prometheus.externalURL" . }}/graph?g0.expr={{ urlquery `up * on(instance) group_left() (sum by(instance) (up{kubernetes_pod_name=~"PLACEHOLDER.*"}) > 1)` | replace "PLACEHOLDER" "{{ $labels.pod }}"}}|Affected targets>
       summary: Prometheus scrapes pods multiple times
 
-  {{- if and .Values.alertmanagers (gt (len .Values.alertmanagers) 0) }}
+  {{- if and $root.Values.alertmanagers (gt (len $root.Values.alertmanagers) 0) }}
   - alert: PrometheusNotConnectedToAlertmanagers
     expr: prometheus_notifications_alertmanagers_discovered{prometheus="{{ include "prometheus.name" . }}"} == 0
     for: 10m
     labels:
       context: availability
-      service: {{ default "metrics" .Values.alerts.service }}
+      service: {{ default "metrics" $root.Values.alerts.service }}
       support_group: observability
       severity: warning
       meta: 'Prometheus `{{`{{ $labels.prometheus }}`}}` lost connection to all Alertmanagers'
@@ -188,7 +190,7 @@ groups:
     for: 10m
     labels:
       context: availability
-      service: {{ default "metrics" .Values.alerts.service }}
+      service: {{ default "metrics" $root.Values.alerts.service }}
       support_group: observability
       severity: info
       meta: 'Prometheus `{{`{{ $labels.prometheus }}`}}` fails to send alerts'
@@ -201,7 +203,7 @@ groups:
     for: 10m
     labels:
       context: availability
-      service: {{ default "metrics" .Values.alerts.service }}
+      service: {{ default "metrics" $root.Values.alerts.service }}
       support_group: observability
       severity: info
       meta: 'Prometheus `{{`{{ $labels.prometheus }}`}}` queueing notifications'
