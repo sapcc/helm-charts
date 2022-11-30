@@ -45,7 +45,7 @@ Create the config map content for sync pod
 */}}
 {{- define "sync.configmap" -}}
 region: {{ .root.Values.global.region }}
-loglevel: "debug"
+loglevel: "info"
 backup:
   service: "{{ .backup.name }}"
   swift:
