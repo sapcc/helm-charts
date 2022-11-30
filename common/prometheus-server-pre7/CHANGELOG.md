@@ -1,3 +1,7 @@
+## 6.4.6
+
+ * bump Thanos to v0.28.1
+
 ## 6.4.4
 
  * support group and service added to alerts
