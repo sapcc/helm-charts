@@ -36,7 +36,17 @@ postgresql:
 
   postgresDatabase: clair
 
-  resources: {} # TODO: enable once we have some data to go off of
+  resources:
+    # observed resource usage:
+    #   CPU spikes regularly to 200%, on high load to 300%, idles at 10-20%
+    #   MEM spikes regularly up to 6.5GB, and then falls off to minimal 2GB under memory pressure.
+    #       When not under memory pressure and caching a lot is possible the usage idles at ~11GB.
+    limits:
+      memory: 11Gi
+      cpu: "3"
+    requests:
+      memory: 11Gi
+      cpu: "2"
 
 pgmetrics:
   db_name: clair
