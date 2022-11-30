@@ -57,7 +57,7 @@ backup:
       project: "master"
       projectDomain: "ccadmin"
   s3:
-    sseCustomerAlgorith: "AES256"
+    sseCustomerAlgorithm: "AES256"
     region: {{ required "missing AWS region" .root.Values.global.mariadb.backup_v2.aws.region }}
     bucketName: "mariadb-backup-{{ .root.Values.global.region }}"
 replication:
