@@ -1,0 +1,28 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  annotations:
+    meta.helm.sh/release-name: audit-logs
+    meta.helm.sh/release-namespace: audit-logs
+  labels:
+    app.kubernetes.io/managed-by: Helm
+    ccloud/support-group: observability
+  name: audit-logs-auditbeat
+  namespace: audit-logs
+spec:
+  template:
+    spec:
+      containers:
+      - name: exporter
+      - name: auditbeat
+        securityContext:
+          capabilities:
+            add:
+            - AUDIT_READ
+            - AUDIT_WRITE
+            - AUDIT_CONTROL
+          runAsUser: 0
+      dnsPolicy: ClusterFirstWithHostNet
+      hostNetwork: true
+      hostPID: true
+      securityContext: {}

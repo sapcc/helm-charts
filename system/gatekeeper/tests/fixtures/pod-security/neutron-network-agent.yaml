@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  annotations:
+    meta.helm.sh/release-name: neutron
+    meta.helm.sh/release-namespace: monsoon3
+  labels:
+    app.kubernetes.io/managed-by: Helm
+    ccloud/support-group: network-api
+  name: neutron-network-agent-ap001
+  namespace: monsoon3
+spec:
+  serviceName: neutron-network-agent
+  template:
+    spec:
+      containers:
+      - name: neutron-dhcp-agent
+        securityContext:
+          privileged: true
+      - name: neutron-linuxbridge-agent
+        securityContext:
+          capabilities:
+            add:
+            - NET_ADMIN
+            - SYS_ADMIN
+            - DAC_OVERRIDE
+            - DAC_READ_SEARCH
+            - SYS_PTRACE
+      - name: neutron-metadata-agent
+      dnsPolicy: ClusterFirst
+      initContainers:
+      - name: init
+        securityContext:
+          privileged: true # does `modprobe ebtable_nat`
+      securityContext: {}

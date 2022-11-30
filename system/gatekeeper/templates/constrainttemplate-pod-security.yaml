@@ -27,6 +27,7 @@ spec:
         package podsecurity
         import data.lib.add_support_labels
         import data.lib.traversal
+        import future.keywords.in
 
         iro := input.review.object
         pod := traversal.find_pod(iro)
@@ -36,6 +37,13 @@ spec:
 
         ########################################################################
         # allowlists: match pods that may use certain privileged features
+
+        default isAuditbeatPod = false
+        isAuditbeatPod = true {
+          iro.kind == "DaemonSet"
+          iro.metadata.name == "audit-logs-auditbeat"
+          iro.metadata.namespace == "audit-logs"
+        }
 
         default isKubeSystemPod = false
         isKubeSystemPod = true {
@@ -49,6 +57,14 @@ spec:
           iro.metadata.namespace == "kube-system"
           # NOTE: In scaleout, this includes daemonsets and deployments that are
           # injected by Kubernikus (CNI, Wormhole, kube-proxy, etc.).
+        }
+
+        default isNeutronNetworkAgentPod = false
+        isNeutronNetworkAgentPod = true {
+          iro.kind == "StatefulSet"
+          iro.metadata.namespace == "monsoon3"
+          startswith(iro.metadata.name, "neutron-network-agent-")
+          helmReleaseName == "neutron"
         }
 
         default isNodeExporterPod = false
@@ -67,6 +83,35 @@ spec:
         }
 
         ########################################################################
+        # allowlists for container-level privileged features
+
+        default isContainerAllowedToBePrivileged(container) = false
+
+        isContainerAllowedToBePrivileged(container) = true {
+          isNeutronNetworkAgentPod
+          # the neutron-dhcp-agent needs to reach into most customer networks,
+          # and the init container needs to load required kernel modules
+          container.name in {"neutron-dhcp-agent", "init"}
+        }
+
+        default isContainerAllowedToUseCapability(container, capability) = false
+
+        isContainerAllowedToUseCapability(container, capability) = true {
+          isAuditbeatPod
+          container.name == "auditbeat"
+          # the audit-log-auditbeat pod needs to break out into the host to
+          # read and also configure the kernel audit log
+          capability in {"AUDIT_CONTROL", "AUDIT_READ", "AUDIT_WRITE"}
+        }
+        isContainerAllowedToUseCapability(container, capability) = true {
+          isNeutronNetworkAgentPod
+          container.name == "neutron-linuxbridge-agent"
+          # the neutron-linuxbridge-agent needs to reach into all customer
+          # networks
+          capability in {"DAC_OVERRIDE", "DAC_READ_SEARCH", "NET_ADMIN", "SYS_ADMIN", "SYS_PTRACE"}
+        }
+
+        ########################################################################
         # generate violations for all pods using privileged security features
         # without being allowlisted
 
@@ -74,6 +119,9 @@ spec:
           pod.isFound
           object.get(pod.spec, ["hostNetwork"], false)
 
+          # the audit-log-auditbeat pod needs to break out into the host to
+          # read and configure the kernel audit log
+          not isAuditbeatPod
           # many kube-system components need broad node-level access (e.g.
           # kube-proxy, MTU discovery, wormhole to k8s central)
           not isKubeSystemPod
@@ -90,6 +138,9 @@ spec:
           pod.isFound
           object.get(pod.spec, ["hostPID"], false)
 
+          # the audit-log-auditbeat pod needs to break out into the host to
+          # read and configure the kernel audit log
+          not isAuditbeatPod
           # kube-system-ldap-named-user and nvidia-driver-installer need this
           not isKubeSystemPod
           # node-exporter needs to look into the node level
@@ -119,6 +170,8 @@ spec:
           # Swift components running on the storage servers need to be able to
           # mount/unmount disks at runtime (TODO: use mount propagation instead)
           not isSwiftServerPod
+          # specific allowlist (see above)
+          not isContainerAllowedToBePrivileged(container)
 
           msg := sprintf("pod is not allowed to set spec.containers[%q].securityContext.privileged = true", [container.name])
         }
@@ -131,8 +184,8 @@ spec:
           # many kube-system components need broad network access (e.g. coredns,
           # CNI, ingress-nginx)
           not isKubeSystemPod
-          # NOTE: This check is written to also enable allowlisting of specific
-          # capabilities on specific pods only.
+          # specific allowlist (see above)
+          not isContainerAllowedToUseCapability(container, capability)
 
           msg := sprintf("pod is not allowed to set spec.containers[%q].securityContext.capabilities.add = [%q]", [container.name, capability])
         }
