@@ -17,7 +17,7 @@ config:
         order: 0
         http_authenticator:
           type: basic
-          challenge: true
+          challenge: false
         authentication_backend:
           type: intern
       openid_auth_domain:
@@ -26,7 +26,7 @@ config:
         transport_enabled: false
         http_authenticator:
           type: openid
-          challenge: false
+          challenge: true
           config:
             subject_key: name
             roles_key: roles
