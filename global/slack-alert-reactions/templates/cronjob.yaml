@@ -13,6 +13,7 @@ spec:
           annotations:
             checksum/secret: {{ include "slack-alert-reactions/templates/secret.yaml" . | sha256sum }}
         spec:
+          serviceAccountName: {{ .Chart.Name }}-sa
           containers:
           - name: {{ .Chart.Name }}-cronjob-container
             image: "{{ .Values.sidecar.image.repository }}:{{ .Values.sidecar.image.tag | default .Chart.AppVersion }}"
@@ -23,7 +24,7 @@ spec:
               readOnly: true
             resources:
               {{- toYaml .Values.sidecar.resources | nindent 14 }}
-          restartPolicy: Never
+          restartPolicy: "Never"
           volumes:
           - name: {{ .Chart.Name }}-secret-volume
             secret:
