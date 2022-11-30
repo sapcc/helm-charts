@@ -1,0 +1,260 @@
+global:
+  domain: cloud.sap
+  clusterType: controlplane
+  alerts:
+    enabled: true
+    prometheus: vmware
+
+  aggregations:
+    enabled: true
+    prometheus: vmware
+
+owner-info:
+  support-group: observability
+  maintainers: 
+    - Richard Tief
+    - Tommy Sauer
+  helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/system/vmware-monitoring
+
+thanos:
+  vmware: true
+  deployWholeThanos: true
+
+prometheus-server:
+  vmware: true
+
+  retentionTime: 7d
+
+  additionalScrapeConfigs: {}
+
+  scrapeInterval: "60s"
+
+  alertmanagers:
+    hosts:
+      - alertmanager-internal.scaleout.eu-de-1.cloud.sap
+      - alertmanager-internal.scaleout.eu-nl-1.cloud.sap
+
+  ingress:
+    enabled: true
+    authentication:
+      sso:
+        enabled: true
+        authTLSSecret: kube-system/ingress-cacrt
+        authTLSVerifyDepth: 3
+        authTLSVerifyClient: on
+
+  internalIngress:
+    enabled: false
+
+  persistence:
+    enabled: true
+    accessMode: ReadWriteOnce
+    size: 10Gi
+
+  rbac:
+    create: true
+
+  serviceDiscoveries:
+    scrapeInterval: 60s
+    scrapeTimeout: 45s
+
+  serviceAccount:
+    create: true
+
+  logLevel: info
+
+  resources:
+    requests:
+      cpu: 500m
+      memory: 4Gi
+
+  securityContext:
+    fsGroup: 0
+    runAsUser: 0
+
+  alerts:
+    tier: monitor
+
+  thanos:
+    enabled: true
+
+vrops:
+  enabled: false
+  prometheusName: DEFINED-IN-REGION-SECRETS
+  scrapeInterval: 180s
+  scrapeTimeout: 175s
+  namespace: DEFINED-IN-REGION-SECRETS
+  image:
+    name: vrops_exporter
+    tag: DEFINED-IN-REGION-SECRETS
+  inventory:
+    tag: DEFINED-IN-REGION-SECRETS
+    port_number: 80
+    sleep: 60
+    timeout: 120
+    resources:
+      limits:
+        memory: 400Mi
+        cpu: 400m
+      requests:
+        memory: 200Mi
+        cpu: 200m
+  inventory_exporter:
+    port_number: 9161
+  port_number: 9160
+  alerts:
+    enabled: false
+  user: DEFINED-IN-REGION-SECRETS
+  password: DEFINED-IN-REGION-SECRETS
+  debug: DEFINED-IN-REGION-SECRETS
+  atlas: http://infra-monitoring-atlas-sd.infra-monitoring.svc:8080/service_discovery/netbox
+  targets: DEFINED-IN-REGION-SECRETS
+  exporter_types:
+    default:
+      name: default
+      enabled: false
+      collectors: []
+      resources:
+        limits:
+          memory: 200Mi
+          cpu: 100m
+        requests:
+          memory: 100Mi
+          cpu: 50m
+    host:
+      name: host
+      enabled: false
+      collectors:
+        - HostSystemStatsCollector
+        - HostSystemPropertiesCollector
+        - HostSystemAlertCollector
+      resources:
+        limits:
+          memory: 200Mi
+          cpu: 100m
+        requests:
+          memory: 100Mi
+          cpu: 50m
+    vm-memory:
+      name: vm-memory
+      enabled: false
+      collectors:
+        - VMStatsMemoryCollector
+      resources:
+        limits:
+          memory: 300Mi
+          cpu: 200m
+        requests:
+          memory: 150Mi
+          cpu: 100m
+    vm-cpu:
+      name: vm-cpu
+      enabled: false
+      collectors:
+        - VMStatsCPUCollector
+      resources:
+        limits:
+          memory: 300Mi
+          cpu: 200m
+        requests:
+          memory: 150Mi
+          cpu: 100m
+    vm-network:
+      name: vm-network
+      enabled: false
+      collectors:
+        - VMStatsNetworkCollector
+      resources:
+        limits:
+          memory: 300Mi
+          cpu: 200m
+        requests:
+          memory: 150Mi
+          cpu: 100m
+    vm-virtualdisk:
+      name: vm-virtualdisk
+      enabled: false
+      collectors:
+        - VMStatsVirtualDiskCollector
+      resources:
+        limits:
+          memory: 300Mi
+          cpu: 200m
+        requests:
+          memory: 150Mi
+          cpu: 100m
+    vm-default:
+      name: vm-default
+      enabled: false
+      collectors:
+        - VMStatsDefaultCollector
+      resources:
+        limits:
+          memory: 300Mi
+          cpu: 200m
+        requests:
+          memory: 150Mi
+          cpu: 100m
+    vm-properties-alerts:
+      name: vm-properties-alerts
+      enabled: false
+      collectors:
+        - VMPropertiesCollector
+        - VMAlertCollector
+      resources:
+        limits:
+          memory: 300Mi
+          cpu: 200m
+        requests:
+          memory: 150Mi
+          cpu: 100m
+    nsxt:
+      name: nsxt
+      enabled: false
+      collectors:
+        - NSXTMgmtClusterStatsCollector
+        - NSXTMgmtClusterPropertiesCollector
+        - NSXTMgmtNodeStatsCollector
+        - NSXTMgmtNodePropertiesCollector
+        - NSXTTransportNodePropertiesCollector
+        - NSXTLogicalSwitchPropertiesCollector
+      resources:
+        limits:
+          memory: 200Mi
+          cpu: 100m
+        requests:
+          memory: 100Mi
+          cpu: 50m
+    nsxt-alerts:
+      name: nsxt-alerts
+      enabled: false
+      collectors:
+        - NSXTAdapterAlertCollector
+        - NSXTMgmtClusterAlertCollector
+        - NSXTMgmtServiceAlertCollector
+        - NSXTMgmtNodeAlertCollector
+        - NSXTTransportNodeAlertCollector
+        - NSXTLogicalSwitchAlertCollector
+      resources:
+        limits:
+          memory: 200Mi
+          cpu: 100m
+        requests:
+          memory: 100Mi
+          cpu: 50m
+    alerts:
+      name: alerts
+      enabled: false
+      collectors:
+        - ClusterAlertCollector
+        - DatastoreAlertCollector
+        - VCenterAlertCollector
+        - VcopsSelfMonitoringAlertCollector
+        - SDDCAlertCollector
+      resources:
+        limits:
+          memory: 200Mi
+          cpu: 100m
+        requests:
+          memory: 100Mi
+          cpu: 50m
