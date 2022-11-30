@@ -41,7 +41,7 @@
       pattern %{WORD:neutronTask} for model %{WORD:neutronModel} cannot be executed on %{IP:neutronIp} due to a model/device inconsistency.
     </grok>
     <grok>
-      pattern Failed to bind port %{UUID:neutronPort:string} on host nova-compute-%{WORD:neutronHost:string} for vnic_type %{WORD:neutronVnicType:string} using segments
+      pattern Failed to bind port %{UUID:neutronPort:string} on host %{NOTSPACE:neutronHost:string} for vnic_type %{WORD:neutronVnicType:string} using segments
     </grok>
   </parse>
 </filter>
