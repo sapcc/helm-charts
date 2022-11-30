@@ -24,9 +24,9 @@ groups:
       support_group: observability
       severity: critical
       playbook: 'docs/support/playbook/prometheus/failed_config_reload.html'
-      meta: 'Prometheus `{{`{{ $labels.prometheus }}`}}` failed to load it`s configuration.'
+      meta: 'Prometheus `{{`{{ $labels.prometheus }}`}}` failed to load its configuration.'
     annotations:
-      description: 'Prometheus `{{`{{ $labels.prometheus }}`}}` failed to load it`s configuration. Prometheus cannot start with a malformed configuration.'
+      description: 'Prometheus `{{`{{ $labels.prometheus }}`}}` failed to load its configuration. Prometheus cannot start with a malformed configuration.'
       summary: Prometheus configuration reload has failed
 
   - alert: PrometheusRuleEvaluationFailed
