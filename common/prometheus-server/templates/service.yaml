@@ -7,7 +7,7 @@ kind: Service
 metadata:
   name: {{ include "prometheus.fullName" (list $name $root) }}
   labels:
-    prometheus: {{ include "prometheus.name" (list $name $root) }}
+    prometheus: {{ default (include "prometheus.name" (list $name $root)) $.Values.alerts.prometheus }}
   {{ if $.Values.service.annotations }}
   annotations:
 {{ toYaml $.Values.service.annotations | indent 4 }}
@@ -15,7 +15,7 @@ metadata:
 
 spec:
   selector:
-    prometheus: {{ include "prometheus.name" (list $name $root) }}
+    prometheus: {{ default (include "prometheus.name" (list $name $root)) $.Values.alerts.prometheus }}
   ports:
     - name: http
       port: 9090
