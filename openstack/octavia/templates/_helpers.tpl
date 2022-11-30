@@ -32,8 +32,8 @@ Create chart name and version as used by the chart label.
 {{- end -}}
 
 {{/*
-Unique DB migration job name
+DB migration job name
 */}}
 {{- define "octavia.migration_job_name" -}}
-octavia-migration-{{ .Values.imageVersion }}-{{- if .Values.proxysql.mode }}{{ .Values.proxysql.mode | replace "_" "-" }}{{ else }}noproxysql{{ end }}
+octavia-migration-{{ .Values.imageVersion }}
 {{- end }}

@@ -1,9 +1,9 @@
 {{/*
    With Helm3, we don't force the replacements of job specs anymore, which
-   causes deployment issues since kuberentes job specs are immutable by default.
-   We solve this by generating an image specific name for every deployment,
-   therefor no job will be replaced. Instead, a new job will be spawned while
-   the old one will be deleted.
+   causes deployment issues since kuberentes job specs are immutable by
+   default.  We solve this by generating an image specific name for every
+   deployment, therefore no job will be replaced. Instead, a new job will be
+   spawned while the old one will be deleted.
 */}}
 apiVersion: batch/v1
 kind: Job
@@ -13,6 +13,12 @@ metadata:
     system: openstack
     type: configuration
     component: octavia
+  annotations:
+    # post-install is necessary so that we can be sure when deploying to a
+    # region for the first time that the DB pod is already running.
+    "helm.sh/hook": "post-install,pre-upgrade"
+    "helm.sh/hook-weight": "-1"
+    "helm.sh/hook-delete-policy": "before-hook-creation"
 spec:
   template:
     spec:

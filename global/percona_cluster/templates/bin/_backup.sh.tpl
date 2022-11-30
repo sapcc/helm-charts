@@ -113,6 +113,11 @@ function backup_volume() {
     md5sum xtrabackup.stream | tee md5sum.txt
 }
 
+function remove_old_backups() {
+    echo "Removing backups older than $PXC_DAYS_RETENTION days..."
+    find /backup/* -mtime +"$PXC_DAYS_RETENTION" -exec rm -rf {} \;
+}
+
 is_object_exist() {
     local bucket="$1"
     local object="$2"
@@ -158,9 +163,42 @@ function backup_s3() {
     fi
 }
 
+#function backup_swift() {
+#    SWIFT_BUCKET_PATH=${SWIFT_BUCKET_PATH:-$PXC_SERVICE-$(date +%F-%H-%M)-xtrabackup.stream}
+#
+#    echo "Backup to s3://$S3_BUCKET/$SWIFT_BUCKET_PATH started"
+#    { set +x; } 2> /dev/null
+#    socat -u "$SOCAT_OPTS" stdio | xbstream -x -C /tmp
+#    if [[ $? -ne 0 ]]; then
+#        echo "socat(1) failed"
+#        exit 1
+#    fi
+#
+#    xtrabackup --backup --stream=xbstream --extra-lsndir=/tmp --target-dir=/tmp \
+#        | xbcloud put --storage=swift \
+#        --swift-container={{ include "fullName" . }}-backup \
+#        --swift-user=test:tester \
+#        --swift-key=testing \
+#        --parallel=10 \
+#        full_backup
+#
+#    echo "Backup finished"
+#
+#    mc -C /tmp/mc stat "dest/$S3_BUCKET/$SWIFT_BUCKET_PATH.md5"
+#    md5_size=$(mc -C /tmp/mc stat --json "dest/$S3_BUCKET/$SWIFT_BUCKET_PATH.md5" | sed -e 's/.*"size":\([0-9]*\).*/\1/')
+#    if [[ $md5_size =~ "Object does not exist" ]] || (( $md5_size < 23000 )); then
+#        echo empty backup
+#        exit 1
+#    fi
+#}
+
 #get_backup_source
+
 # backup to PVC
 backup_volume
+
+# delete old backups
+remove_old_backups
 
 if [ -n "$S3_BUCKET" ]; then
     # backup to S3

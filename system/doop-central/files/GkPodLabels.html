@@ -15,4 +15,14 @@
     be added automatically if you have <a href="https://github.com/sapcc/helm-charts/tree/master/common/owner-info">owner-info</a>
     defined on the level of the Helm chart.
   </dd>
+  <dt>I have added owner-info, but my deployments are still reported here. What's going on?</dt>
+  <dd>
+    For pods that are managed by a deployment/daemonset/statefulset/job, this check expects labels on the PodSpec.
+    (We do not check every individual pod because the large number of violations would overwhelm the audit process.)
+    However, for existing deployments etc., we avoid unintentional pod restarts by not changing the PodSpec unless the
+    deployment is actively changed. To force an update of the labels in the PodSpec, run <code>kubectl label $KIND/$NAME
+    ccloud/support-group-</code> on the object containing the PodSpec. Note that this will do a rolling restart of all
+    pods. For example:
+  </dd>
+  <pre><code>kubectl label deployment/nginx ccloud/support-group-</code></pre>
 </dl>
