@@ -1,3 +1,6 @@
+{{/* This check is disabled entirely in the lab clusters to avoid needlessly obstructing the development of changes to the core components. */}}
+{{- if ne .Values.cluster_layer "labs" }}
+
 apiVersion: constraints.gatekeeper.sh/v1beta1
 kind: GkPodSecurity
 metadata:
@@ -7,3 +10,5 @@ metadata:
 spec:
   enforcementAction: dryrun
   match: {{ include "match_pods_and_pod_owners" . | indent 4 }}
+
+{{- end }}
