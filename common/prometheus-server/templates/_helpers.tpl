@@ -78,6 +78,11 @@ prometheus-{{- $name -}}.{{- required "$root.Values.global.region missing" $root
 {{- define "pvc.name" -}}
 {{- $name := index . 0 -}}
 {{- $root := index . 1 -}}
+{{/* vmware prometheis need additional renaming */}}
+{{- if $root.Values.vmware -}}
+{{- $vropshostname := split "." $name -}}
+vmware-{{ $vropshostname._0 | trimPrefix "vrops-" }}
+{{- else -}}
 {{- default $name $root.Values.persistence.name | quote -}}
 {{- end -}}
 
