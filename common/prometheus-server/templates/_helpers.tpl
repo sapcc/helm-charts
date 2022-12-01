@@ -40,6 +40,10 @@ prometheus-{{- (include "prometheus.name" .) -}}
 {{- else if $root.Values.ingress.hostsFQDN -}}
 {{- $firstHost := first $root.Values.ingress.hostsFQDN -}}
 {{- required ".Values.ingress.hostsFQDN must have at least one hostname set" $firstHost -}}
+{{/* vmware prometheis need additional renaming */}}
+{{- else if $root.Values.vmware -}}
+{{- $vropshostname := split "." $name -}}
+prometheus-vmware-{{ $vropshostname._0 | trimPrefix "vrops-" }}.{{- required "$root.Values.global.region missing" $root.Values.global.region -}}.{{- required "$root.Values.global.domain missing" $root.Values.global.domain -}}
 {{- else -}}
 prometheus-{{- $name -}}.{{- required "$root.Values.global.region missing" $root.Values.global.region -}}.{{- required "$root.Values.global.domain missing" $root.Values.global.domain -}}
 {{- end -}}
