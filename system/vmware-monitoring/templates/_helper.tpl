@@ -19,6 +19,13 @@ vrops-exporter-{{ $vropshostname._0 | trimPrefix "vrops-" }}
 vrops-inventory-exporter-{{ $vropshostname._0 | trimPrefix "vrops-" }}
 {{- end -}}
 
+{{- define "prometheusVMware.name" -}}
+{{- $name := index . 0 -}}
+{{- $root := index . 1 -}}
+{{- $vropshostname := split "." $name -}}
+vmware-{{ $vropshostname._0 | trimPrefix "vrops-" }}
+{{- end -}}
+
 {{- define "prometheusVMware.fullName" -}}
 {{- $name := index . 0 -}}
 {{- $root := index . 1 -}}
