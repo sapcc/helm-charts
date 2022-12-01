@@ -71,6 +71,7 @@ spec:
           volumeMounts:
             - name: host
               mountPath: "/host"
+      shareProcessNamespace: true
       containers:
         - name: neutron-dhcp-agent
           image: {{$.Values.global.registry}}/loci-neutron:{{$.Values.imageVersionNetworkAgentDHCP | default $.Values.imageVersionNetworkAgent | default $.Values.imageVersion | required "Please set neutron.imageVersionNetworkAgentDHCP or similar"}}
@@ -116,6 +117,10 @@ spec:
               readOnly: true
             - name: network-namespace
               mountPath: /var/run/netns
+{{- if $.Values.dnsmasq_log_export }}
+            - name: dhcp
+              mountPath: /var/lib/neutron/dhcp
+{{- end }}
         - name: neutron-linuxbridge-agent
           image: {{$.Values.global.registry}}/loci-neutron:{{$.Values.imageVersionNetworkAgentLinuxBridge | default $.Values.imageVersionNetworkAgent | default $.Values.imageVersion | required "Please set neutron.imageVersionNetworkAgentLinuxBridge or similar"}}
           imagePullPolicy: IfNotPresent
@@ -183,6 +188,15 @@ spec:
             - name: etc-neutron-metadata-agent
               mountPath: /etc/neutron
               readOnly: true
+{{- if $.Values.dnsmasq_log_export }}
+        - name: dnsmasq-log-exporter
+          image: {{$.Values.global.registry}}/dnsmasq-log-exporter:{{ $.Values.imageVersionDnsMasqLogExporter | required "Please set .Values.imageVersionDnsMasqLogExporter" }}
+          imagePullPolicy: Present
+          command: ["/app/dnsmasq-log-exporter"]
+          volumeMounts:
+            - name: dhcp
+              mountPath: /var/lib/neutron/dhcp
+{{- end }}
       volumes:
         - name: metadata-proxy
           emptyDir: {}
@@ -258,6 +272,10 @@ spec:
                   path: logging.conf
                 - key: metadata-agent.ini
                   path: metadata-agent.ini
+{{- if $.Values.dnsmasq_log_export }}
+        - name: dhcp
+          emptyDir: {}
+{{- end }}
 {{- end }}
 {{- end }}
 {{- end }}

@@ -15,3 +15,6 @@ num_sync_threads = {{.Values.agent.dhcp.num_sync_threads | default 4 }}
 rpc_response_timeout = {{ .Values.rpc_response_timeout | default .Values.global.rpc_response_timeout | default 50 }}
 rpc_workers = {{ .Values.rpc_workers | default .Values.global.rpc_workers | default 5 }}
 rpc_conn_pool_size = {{ .Values.rpc_conn_pool_size | default .Values.global.rpc_conn_pool_size | default 100 }}
+{{- if .Values.dnsmasq_log_export }}
+dnsmasq_base_log_dir = /var/lib/neutron/dhcp
+{{- end }}
