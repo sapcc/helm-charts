@@ -85,6 +85,7 @@ vmware-{{ $vropshostname._0 | trimPrefix "vrops-" }}
 {{- else -}}
 {{- default $name $root.Values.persistence.name | quote -}}
 {{- end -}}
+{{- end -}}
 
 {{/* The name of the serviceAccount. */}}
 {{- define "serviceAccount.name" -}}
