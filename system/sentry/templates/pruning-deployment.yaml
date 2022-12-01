@@ -16,6 +16,9 @@ spec:
         alert-tier: os
         alert-service: sentry
     spec:
+      {{- if .Values.serviceAccount.enabled }}
+      serviceAccountName: {{ .Values.serviceAccount.name }}
+      {{- end }}
       containers:
       - name: {{ .Chart.Name }}
         image: "{{required ".Values.global.registry is missing" .Values.global.registry }}/{{ .Values.image.repository }}:{{required ".Values.image.tag is missing" .Values.image.tag }}"
@@ -29,6 +32,6 @@ spec:
                 sentry cleanup --days 7
               fi
               sleep 55
-            done 
+            done
         env:
 {{ include "env-vars" . | indent  10 }}
