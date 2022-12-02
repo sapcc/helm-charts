@@ -15,69 +15,6 @@ kubeStateMetrics:
 nodeExporter:
   enabled: false
 
-kube-prometheus-stack:
-  nameOverride: prometheus
-  fullnameOverride: prometheus
-  # Never manage CRDs. They are deployed via prometheus-crds Helm chart.
-  manageCrds: false
-
-  prometheusOperator:
-    image:
-      repository: keppel.global.cloud.sap/ccloud-quay-mirror/prometheus-operator/prometheus-operator
-
-    prometheusConfigReloader:
-      image:
-        repository: keppel.global.cloud.sap/ccloud-quay-mirror/prometheus-operator/prometheus-config-reloader
-
-    # Both admissionWebhooks and tls requires admissionregistration.k8s.io/v1 .
-    admissionWebhooks:
-      failurePolicy: Ignore
-      patch:
-        image:
-          repository: keppel.eu-de-1.cloud.sap/ccloud-k8sgcr-mirror/ingress-nginx/kube-webhook-certgen
-
-    createCustomResource: false
-    service:
-      annotations:
-        prometheus.io/scrape: "true"
-        prometheus.io/targets: "kubernetes"
-        prometheus.io/port: "8080"
-    serviceAccount:
-      create: false
-
-  operator:
-    serviceAccountName: default
-  # Disable creation of default aggregation and alerting rules.
-  defaultRules:
-    create: false
-  # Disable the Prometheus instance. We deploy our own Prometheis.
-  prometheus:
-    enabled: false
-  # Disable the Alertmanager instance. We deploy our own Alertmanagers.
-  alertmanager:
-    enabled: false
-  # Disable all exporters.
-  kubeApiServer:
-    enabled: false
-  kubelet:
-    enabled: false
-  kubeControllerManager:
-    enabled: false
-  coreDns:
-    enabled: false
-  kubeDns:
-    enabled: false
-  kubeEtcd:
-    enabled: false
-  kubeScheduler:
-    enabled: false
-  kubeStateMetrics:
-    enabled: false
-  nodeExporter:
-    enabled: false
-  grafana:
-    enabled: false
-
 grafana:
   image:
     repository: keppel.global.cloud.sap/ccloud-dockerhub-mirror/grafana/grafana
