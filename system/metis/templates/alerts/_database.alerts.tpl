@@ -8,7 +8,6 @@
         service: metis
         severity: info
         support_group: {{ required "$.Values.mariadb.alerts.support_group missing" $.Values.mariadb.alerts.support_group}}
-        tier: {{ required "$.Values.mariadb.alerts.tier missing" $.Values.mariadb.alerts.tier }}
       annotations:
         description: High PVC usage of 'metis-pvclaim'
         summary: MetisDB pvc is almost full
