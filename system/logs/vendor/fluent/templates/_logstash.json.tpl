@@ -1,8 +1,6 @@
 {
   "order": 0,
-  "index_patterns": [
-    "logstash-*"
-  ],
+  "template": "logstash-*",
   "settings": {
     "index": {
       "refresh_interval": "10s",
