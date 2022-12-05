@@ -76,17 +76,3 @@ groups:
     annotations:
       description: Repo {{ $labels.repo }} entitlement check failed. Check the logs
       summary: Repo {{ $labels.repo }} entitlement check failed
-
-  - alert: OpenstackRepoObjectstoreQuota
-    expr: floor(limes_project_usage{service="object-store",resource="capacity",domain="ccadmin",project="master"}/limes_project_quota{service="object-store",domain="ccadmin",project="master"}*100) >= 95
-    for: 1h
-    labels:
-      support_group: containers
-      tier: os
-      service: swift
-      severity: warning
-      context: repo-swift-quota
-      meta: "Swift usage for project ccadmin/master reached 95%"
-    annotations:
-      description: Swift usage for project ccadmin/master reached 95%. Increase quota if possible, otherwise clean up immediately.
-      summary: Swift usage reached 95% in ccadmin/master
