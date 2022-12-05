@@ -354,3 +354,54 @@ groups:
         is older than 3 hours. Check the affected node. A restart of the replicator pod might
         be necessary."
       summary: Container replication on {{ $labels.storage_ip }} older than 3 hours
+
+  - alert: OpenstackSwiftQuarantinedObjectsCheck
+    expr: max by (storage_ip) (swift_cluster_objects_quarantined) > 0
+    for: 15m
+    labels:
+      context: quarantine
+      dashboard: swift-overview
+      service: swift
+      severity: info
+      support_group: containers
+      tier: os
+      meta: Object auditor quarantined {{ $value }} objects on node {{ $labels.storage_ip }}
+    annotations:
+      description: "The object auditor quarantined {{ $value }} objects on node
+        {{ $labels.storage_ip }}. Exec into the corresponding `swift-server` pod
+        and check `swift-object-info quarantined-object`."
+      summary: "{{ $value }} quarantined objects on node {{ $labels.storage_ip }}"
+
+  - alert: OpenstackSwiftQuarantinedContainersCheck
+    expr: max by (storage_ip) (swift_cluster_containers_quarantined) > 0
+    for: 15m
+    labels:
+      context: quarantine
+      dashboard: swift-overview
+      service: swift
+      severity: info
+      support_group: containers
+      tier: os
+      meta: Container auditor quarantined {{ $value }} containers on node {{ $labels.storage_ip }}
+    annotations:
+      description: "The container auditor quarantined {{ $value }} containers on node
+        {{ $labels.storage_ip }}. Exec into the corresponding `swift-server` pod
+        and check `swift-container-info quarantined-container`."
+      summary: "{{ $value }} quarantined containers on node {{ $labels.storage_ip }}"
+
+  - alert: OpenstackSwiftQuarantinedAccountsCheck
+    expr: max by (storage_ip) (swift_cluster_accounts_quarantined) > 0
+    for: 15m
+    labels:
+      context: quarantine
+      dashboard: swift-overview
+      service: swift
+      severity: info
+      support_group: containers
+      tier: os
+      meta: Account auditor quarantined {{ $value }} accounts on node {{ $labels.storage_ip }}
+    annotations:
+      description: "The account auditor quarantined {{ $value }} accounts on node
+        {{ $labels.storage_ip }}. Exec into the corresponding `swift-server` pod
+        and check `swift-account-info quarantined-account`."
+      summary: "{{ $value }} quarantined accounts on node {{ $labels.storage_ip }}"
