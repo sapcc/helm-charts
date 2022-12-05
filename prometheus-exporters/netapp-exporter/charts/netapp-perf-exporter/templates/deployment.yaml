@@ -58,8 +58,20 @@ spec:
           - containerPort: {{ $.Values.ports.graphiteExporterInPort }}
           {{- end }}
         volumeMounts:
+        {{- if eq $name "manila" }}
         - name: {{ $fullNameWithComponent }}
           mountPath: /opt/netapp-harvest/config
+        {{- else -}}
+        - name: {{ $fullNameWithComponent }}
+          mountPath: /opt/netapp-harvest/config
+          subPath: netapp-harvest.conf
+        - name: {{ $fullNameWithComponent }}
+          mountPath: /opt/netapp-harvest/config
+          subPath: graphite-mapping.conf
+        - name: netapp-data
+          mountPath: /opt/netapp-harvest/config
+          subPath: netapp-filers.yaml
+        {{- end -}}
       - name: exporter                      # container: exporter
         image: {{ $.Values.global.dockerHubMirror }}/{{ $.Values.exporter.image }}:{{ $.Values.exporter.imageTag }}
         args: [ "--graphite.mapping-config", "/graphite-mapping.conf" ]
@@ -100,10 +112,8 @@ spec:
       - name: sd
         image: {{ $.Values.global.registry }}/{{ $.Values.netappsd.image }}:{{ $.Values.netappsd.imageTag }}
         args:
-          - -configmap
-          - {{ $fullNameWithComponent }}
-          - -key
-          - netapp-filers.yaml
+          - -output-file-path
+          - /netapp/netapp-filers.yaml
           - -namespace
           - {{ $.Release.Namespace }}
           - -netbox-host
@@ -118,6 +128,9 @@ spec:
           requests:
             memory: {{ $.Values.netappsd.memory }}
             cpu: {{ $.Values.netappsd.cpu }}
+        volumeMounts:
+          - name: netapp-data
+            mountPath: /netapp
       {{- end }}
 
       volumes:
@@ -127,10 +140,12 @@ spec:
             items:
               - key: netapp-harvest.conf
                 path: netapp-harvest.conf
-              - key: netapp-filers.yaml
-                path: netapp-filers.yaml
               - key: graphite-mapping.conf
                 path: graphite-mapping.conf
+        {{- if eq $name "manila" }}
+        - name: netapp-data
+          emptyDir: {}
+        {{- end -}}
 {{- end }}
 {{- end }}
 {{- end }}
