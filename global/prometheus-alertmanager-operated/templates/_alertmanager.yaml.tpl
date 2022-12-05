@@ -198,7 +198,14 @@ route:
     continue: true
     match_re:
       severity: warning|critical
-      region: qa-de-1|qa-de-2|qa-de-3|qa-de-5
+      region: qa-de-1
+      support_group: compute|compute-storage-api|containers|email|identity|network-api|observability
+
+  - receiver: support_group_alerts_labs
+    continue: true
+    match_re:
+      severity: warning|critical
+      region: qa-de-2|qa-de-3|qa-de-4|qa-de-5|qa-de-6
       support_group: compute|compute-storage-api|containers|email|identity|network-api|observability
   # sunset latest q1-23
   - receiver: pagerduty_api
@@ -880,6 +887,20 @@ receivers:
   - name: support_group_alerts_qa
     slack_configs:
       - channel: '#alert-{{"{{ .CommonLabels.support_group }}"}}-qa'
+        api_url: {{ required ".Values.slack.webhookURL undefined" .Values.slack.webhookURL | quote }}
+        username: "Pulsar"
+        title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
+        title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
+        text: {{"'{{template \"slack.sapcc.text\" . }}'"}}
+        pretext: {{"'{{template \"slack.sapcc.pretext\" . }}'"}}
+        icon_emoji: {{"'{{template \"slack.sapcc.iconemoji\" . }}'"}}
+        callback_id: "alertmanager"
+        color: {{`'{{template "slack.sapcc.color" . }}'`}}
+        send_resolved: true
+
+  - name: support_group_alerts_labs
+    slack_configs:
+      - channel: '#alert-{{"{{ .CommonLabels.support_group }}"}}-labs'
         api_url: {{ required ".Values.slack.webhookURL undefined" .Values.slack.webhookURL | quote }}
         username: "Pulsar"
         title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
