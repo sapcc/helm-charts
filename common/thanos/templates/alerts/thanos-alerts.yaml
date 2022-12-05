@@ -8,7 +8,7 @@ kind: PrometheusRule
 metadata:
   name: {{ include "thanos.fullName" (list $name $root) }}-thanos-compactor.alerts
   labels:
-    prometheus: {{ include "thanos.name" (list $name $root) }}
+    prometheus: {{ default (include "thanos.name" (list $name $root)) $.Values.alerts.prometheus }}
 
 spec:
 {{ include (print $.Template.BasePath "/alerts/_thanos-compactor.alerts.tpl") (list $name $root) | indent 2 }}
@@ -20,7 +20,7 @@ kind: PrometheusRule
 metadata:
   name: {{ include "thanos.fullName" (list $name $root) }}-thanos-query.alerts
   labels:
-    prometheus: {{ include "thanos.name" (list $name $root) }}
+    prometheus: {{ default (include "thanos.name" (list $name $root)) $.Values.alerts.prometheus }}
 
 spec:
 {{ include (print $.Template.BasePath "/alerts/_thanos-query.alerts.tpl") (list $name $root) | indent 2 }}
@@ -32,7 +32,7 @@ kind: PrometheusRule
 metadata:
   name: {{ include "thanos.fullName" (list $name $root) }}-thanos-store.alerts
   labels:
-    prometheus: {{ include "thanos.name" (list $name $root) }}
+    prometheus: {{ default (include "thanos.name" (list $name $root)) $.Values.alerts.prometheus }}
 
 spec:
 {{ include (print $.Template.BasePath "/alerts/_thanos-store.alerts.tpl") (list $name $root) | indent 2 }}
