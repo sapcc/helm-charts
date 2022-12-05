@@ -58,20 +58,22 @@ spec:
           - containerPort: {{ $.Values.ports.graphiteExporterInPort }}
           {{- end }}
         volumeMounts:
-        {{- if eq $name "manila" }}
-        - name: {{ $fullNameWithComponent }}
-          mountPath: /opt/netapp-harvest/config
-        {{- else -}}
-        - name: {{ $fullNameWithComponent }}
-          mountPath: /opt/netapp-harvest/config
-          subPath: netapp-harvest.conf
-        - name: {{ $fullNameWithComponent }}
-          mountPath: /opt/netapp-harvest/config
-          subPath: graphite-mapping.conf
-        - name: netapp-data
-          mountPath: /opt/netapp-harvest/config
-          subPath: netapp-filers.yaml
-        {{- end -}}
+          - name: {{ $fullNameWithComponent }}
+            mountPath: /opt/netapp-harvest/config
+            subPath: netapp-harvest.conf
+          - name: {{ $fullNameWithComponent }}
+            mountPath: /opt/netapp-harvest/config
+            subPath: graphite-mapping.conf
+          {{- if eq $name "manila" }}
+          - name: {{ $fullNameWithComponent }}
+            mountPath: /opt/netapp-harvest/config
+            subPath: netapp-filers.yaml
+          {{- else }}
+          - name: netapp-data
+            mountPath: /opt/netapp-harvest/config
+            subPath: netapp-filers.yaml
+          {{- end }}
+
       - name: exporter                      # container: exporter
         image: {{ $.Values.global.dockerHubMirror }}/{{ $.Values.exporter.image }}:{{ $.Values.exporter.imageTag }}
         args: [ "--graphite.mapping-config", "/graphite-mapping.conf" ]
@@ -102,7 +104,6 @@ spec:
           - containerPort: {{ $.Values.ports.graphiteInPort }}
           - containerPort: {{ $.Values.ports.dupInPort }}
       {{- end }}
-
 
       {{- if eq $name "manila" }}
       {{- /*
@@ -140,9 +141,11 @@ spec:
             items:
               - key: netapp-harvest.conf
                 path: netapp-harvest.conf
+              - key: netapp-filers.yaml
+                path: netapp-filers.yaml
               - key: graphite-mapping.conf
                 path: graphite-mapping.conf
-        {{- if eq $name "manila" }}
+        {{- if ne $name "manila" }}
         - name: netapp-data
           emptyDir: {}
         {{- end -}}
