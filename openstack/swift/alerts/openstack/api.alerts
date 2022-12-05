@@ -356,7 +356,7 @@ groups:
       summary: Container replication on {{ $labels.storage_ip }} older than 3 hours
 
   - alert: OpenstackSwiftQuarantinedObjectsCheck
-    expr: max(swift_cluster_objects_quarantined) > 0
+    expr: max by (storage_ip) (swift_cluster_objects_quarantined) > 0
     for: 15m
     labels:
       context: quarantine
@@ -370,10 +370,10 @@ groups:
       description: "The object auditor quarantined {{ $value }} objects on node
         {{ $labels.storage_ip }}. Exec into the corresponding `swift-server` pod
         and check `swift-object-info quarantined-object`."
-      summary: {{ $value }} quarantined objects on node {{ $labels.storage_ip }}
+      summary: "{{ $value }} quarantined objects on node {{ $labels.storage_ip }}"
 
   - alert: OpenstackSwiftQuarantinedContainersCheck
-    expr: max(swift_cluster_containers_quarantined) > 0
+    expr: max by (storage_ip) (swift_cluster_containers_quarantined) > 0
     for: 15m
     labels:
       context: quarantine
@@ -387,10 +387,10 @@ groups:
       description: "The container auditor quarantined {{ $value }} containers on node
         {{ $labels.storage_ip }}. Exec into the corresponding `swift-server` pod
         and check `swift-container-info quarantined-container`."
-      summary: {{ $value }} quarantined containers on node {{ $labels.storage_ip }}
+      summary: "{{ $value }} quarantined containers on node {{ $labels.storage_ip }}"
 
   - alert: OpenstackSwiftQuarantinedAccountsCheck
-    expr: max(swift_cluster_accounts_quarantined) > 0
+    expr: max by (storage_ip) (swift_cluster_accounts_quarantined) > 0
     for: 15m
     labels:
       context: quarantine
@@ -404,4 +404,4 @@ groups:
       description: "The account auditor quarantined {{ $value }} accounts on node
         {{ $labels.storage_ip }}. Exec into the corresponding `swift-server` pod
         and check `swift-account-info quarantined-account`."
-      summary: {{ $value }} quarantined accounts on node {{ $labels.storage_ip }}
+      summary: "{{ $value }} quarantined accounts on node {{ $labels.storage_ip }}"
