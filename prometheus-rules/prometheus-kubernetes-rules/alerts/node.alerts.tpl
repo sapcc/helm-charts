@@ -1,4 +1,4 @@
-controlplane mit label `region: xy` und in der s# vi:syntax=yaml
+# vi:syntax=yaml
 ### General node health ###
 
 groups:
