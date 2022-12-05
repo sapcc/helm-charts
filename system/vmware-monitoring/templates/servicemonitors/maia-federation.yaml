@@ -1,0 +1,29 @@
+{{- $root := . }}
+{{- if .Values.maiaFederation.enabled }}
+{{- range $target := .Values.global.targets }}
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  labels:
+    ccloud/support-group: observability
+    prometheus: maia-oprom
+  name: {{ include "prometheusVMware.fullName" (list $target $root) }}-maia-federation
+  namespace: vmware-monitoring
+spec:
+  endpoints:
+  - bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+    interval: 60s
+    path: federate
+    port: http
+    scheme: http
+    scrapeTimeout: 55s
+    params:
+      match[]:
+        - '{__name__=~"{{ include "maiaFederationRegex" $root | trimSuffix "|" }}", project!~"internal", vccluster!~".*management.*"}'
+  jobLabel: {{ include "prometheusVMware.name" (list $target $root) }}
+  selector:
+    matchLabels:
+      prometheus: {{ include "prometheusVMware.name" (list $target $root) }}
+{{- end }}
+{{- end }}
