@@ -1,5 +1,7 @@
-Prometheus server Chart
+Prometheus server pre7 Chart
 -----------------------
+
+***ATTENTION***: this chart maintains older versions of Prometheis w\ Thanos that can't be updated (global, maia). Fixes from here one should be only needed bugfixes.
 
 This chart shall serve as a template to deploy your own Prometheus.  
 It will set up:

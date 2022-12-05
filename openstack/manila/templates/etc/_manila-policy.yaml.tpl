@@ -166,7 +166,7 @@
 "share_replica:resync": "rule:context_is_sharedfilesystem_admin"
 "share_replica:reset_status": "rule:context_is_sharedfilesystem_admin"
 "share_replica:force_delete": "rule:context_is_admin"
-"share_replica:reset_replica_state": "rule:context_is_admin"
+"share_replica:reset_replica_state": "rule:context_is_sharedfilesystem_admin"
 
 "share_replica_export_location:index": "rule:context_is_viewer"
 "share_replica_export_location:show": "rule:context_is_viewer"

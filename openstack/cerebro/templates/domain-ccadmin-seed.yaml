@@ -31,54 +31,65 @@ spec:
           - subnet: {{ .Values.routerExternalSubnet | default "FloatingIP-sap-ccadmin-01@ccadmin-net-infra@ccadmin" }}
         interfaces:
         - subnet: cerebro_private
-      dns_zones:
-        - name: "cca-pro.cerebro.c.{{ .Values.global.region }}.cloud.sap."
-          email: {{ .Values.dnsZoneEmail }}
-          type: PRIMARY
-          ttl: 7200
-          description: Cerebro productive domain.
-          # recordsets:
-          #   - name: cca-pro.cerebro.c.{{ .Values.global.region }}.cloud.sap.
-          #     type: SOA
-          #   - name: cca-pro.cerebro.c.{{ .Values.global.region }}.cloud.sap.
-          #     type: NS
-        - name: "cca-sta.cerebro.c.{{ .Values.global.region }}.cloud.sap."
-          email: {{ .Values.dnsZoneEmail }}
-          type: PRIMARY
-          ttl: 7200
-          description: Cerebro Staging domain.
-        {{- if eq .Values.global.region "eu-de-1" }}
-        - name: "cca-jen.cerebro.c.{{ .Values.global.region }}.cloud.sap."
-          email: {{ .Values.dnsZoneEmail }}
-          type: PRIMARY
-          ttl: 7200
-          description: Cerebro Jenkins domain.
-        {{- end }}
       role_assignments:
+      - user: {{ .Values.technicalUserPerRegion }}
+        role: admin
+      - user: {{ .Values.technicalUserPerRegion }}
+        role: audit_viewer
+      - user: {{ .Values.technicalUserPerRegion }}
+        role: automation_admin
+      - user: {{ .Values.technicalUserPerRegion }}
+        role: compute_admin
+      - user: {{ .Values.technicalUserPerRegion }}
+        role: compute_admin_wsg
       - user: {{ .Values.technicalUserPerRegion }}
         role: compute_viewer
       - user: {{ .Values.technicalUserPerRegion }}
+        role: dns_hostmaster
+      - user: {{ .Values.technicalUserPerRegion }}
         role: dns_webmaster
       - user: {{ .Values.technicalUserPerRegion }}
+        role: dns_zonemaster
+      - user: {{ .Values.technicalUserPerRegion }}
+        role: image_admin
+      - user: {{ .Values.technicalUserPerRegion }}
+        role: keymanager_admin
+      - user: {{ .Values.technicalUserPerRegion }}
         role: kubernetes_admin
+      - user: {{ .Values.technicalUserPerRegion }}
+        role: masterdata_admin
       - user: {{ .Values.technicalUserPerRegion }}
         role: member
       - user: {{ .Values.technicalUserPerRegion }}
         role: monitoring_viewer
       - user: {{ .Values.technicalUserPerRegion }}
+        role: network_admin
+      - user: {{ .Values.technicalUserPerRegion }}
         role: network_viewer
       - user: {{ .Values.technicalUserPerRegion }}
         role: registry_admin
       - user: {{ .Values.technicalUserPerRegion }}
+        role: registry_viewer
+      - user: {{ .Values.technicalUserPerRegion }}
+        role: resource_admin
+      - user: {{ .Values.technicalUserPerRegion }}
         role: resource_viewer
+      - user: {{ .Values.technicalUserPerRegion }}
+        role: role_admin
       - user: {{ .Values.technicalUserPerRegion }}
         role: securitygroup_admin
       - user: {{ .Values.technicalUserPerRegion }}
+        role: sharedfilesystem_admin
+      - user: {{ .Values.technicalUserPerRegion }}
         role: sharedfilesystem_viewer
+      - user: {{ .Values.technicalUserPerRegion }}
+        role: objectstore_admin
+      - user: {{ .Values.technicalUserPerRegion }}
+        role: volume_admin
       - user: {{ .Values.technicalUserPerRegion }}
         role: volume_viewer
     groups:
-    - name: CCADMIN_CEREBRO_ADMIN
+    - name: CCADMIN_CEREBRO_TECHNICAL_TEAM_USERS
       role_assignments:
       - project: cerebro
         role: admin
@@ -118,7 +129,7 @@ spec:
         role: objectstore_admin 
       - project: cerebro
         role: volume_admin
-    - name: CCADMIN_CEREBRO_VIEWER
+    - name: CCADMIN_CEREBRO_TEAM_USERS
       role_assignments:
       - project: cerebro
         role: audit_viewer

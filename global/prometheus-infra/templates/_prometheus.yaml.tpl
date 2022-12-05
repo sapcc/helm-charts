@@ -22,6 +22,8 @@
       - '{__name__=~"^elasticsearch_dbconnection_hits"}'
       - '{__name__=~"^elasticsearch_dboperational_hits"}'
       - '{__name__=~"^elasticsearch_dboperational_error_doc_count"}'
+      - '{__name__=~"^elasticsearch_logstash_.+"}'
+      - '{__name__=~"^elasticsearch_hermes_.+"}'
       - '{__name__=~"^elastiflow_.+"}'
       - '{__name__=~"^snmp_asa_.+"}'
       - '{__name__=~"^snmp_asr_nat.+"}'
@@ -111,7 +113,7 @@
       - '{__name__=~"^ssh_(nx|xe)_ntp_configured"}'
       - '{__name__=~"^ssh_redundancy_state"}'
       - '{__name__=~"^ssh_xr_ntp_.+"}'
-      - '{__name__=~"^fluentd_.+"}'
+      - '{job="logs-fluent-exporter", __name__!~"^(fluentd_input_status_num_records_total|fluentd_output_status_num_records_total)"}'
       - '{__name__=~"^es_cluster_status"}'
       - '{__name__=~"^es_fs_path_.+"}'
       - '{__name__=~"^es_index_size_mb"}'
@@ -133,6 +135,7 @@
       - '{__name__=~"^node_logind_sessions", class="user", job="jumpserver", type="tty"}'
       - '{__name__=~"^prom_fluentd_.+"}'
       - '{job="netbox", __name__!~"^(up|ALERTS.*|scrape.+)"}'
+      - '{__name__=~"^cc3test_status", service="ironic", type="baremetal_and_regression"}'
 
   relabel_configs:
     - action: replace

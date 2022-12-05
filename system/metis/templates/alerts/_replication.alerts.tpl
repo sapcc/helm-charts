@@ -1,7 +1,9 @@
+{{- if and .Values.backup_v2.alerts.enabled }}
 - name: replication.alerts
   rules:
 {{- range $backup := .Values.backup_v2.backups }}
-  - alert: {{$backup.name}}ReplicationErrorsHigh
+{{- if not $backup.sync_enabled }}
+  - alert: {{ $backup.name | camelcase }}ReplicationErrorsHigh
     expr: increase(maria_backup_errors{app_kubernetes_io_instance=~"mariadb-replication-{{$backup.name}}-metis"}[15m]) > 2
     for: 15m
     labels:
@@ -9,11 +11,10 @@
       service: "metis"
       severity: info
       support_group: {{ required "$.Values.backup_v2.alerts.supportGroup missing" $.Values.backup_v2.alerts.supportGroup}}
-      tier: {{ required "$.Values.alerts.tier missing" $.Values.alerts.tier }}
     annotations:
       description: The replication for mariadb-replication-{{$backup.name}}-metis restarts frequently
       summary: Database replication restarting frequently
-  - alert: {{$backup.name}}ReplicationMissing
+  - alert: {{ $backup.name | camelcase }}ReplicationMissing
     expr: maria_backup_status{kind="full_backup",kubernetes_pod_name=~"mariadb-replication-{{$backup.name}}.*"} == 0
     for: 30m
     labels:
@@ -21,13 +22,12 @@
       service: "metis"
       severity: info
       support_group: {{ required "$.Values.backup_v2.alerts.supportGroup missing" $.Values.backup_v2.alerts.supportGroup}}
-      tier: {{ required "$.Values.backup_v2.alerts.tier missing" $.Values.alerts.tier }}
+      playbook: "docs/operation/metis/metis/#database-replication-is-incomplete"
     annotations:
       description: The replication for mariadb-replication-{{$backup.name}}-metis has not completed for >30 minutes
       summary: Database replication is incomplete
 {{- end }}
-- name: metisstatus.alerts
-  rules:
+{{- end }}
   - alert: MetisMetadataLocksIncreased
     expr: metis_metadata_locks > 0
     for: 15m
@@ -36,7 +36,7 @@
       service: metis
       severity: info
       support_group: {{ required "$.Values.mariadb.alerts.support_group missing" $.Values.mariadb.alerts.support_group}}
-      tier: {{ required "$.Values.mariadb.alerts.tier missing" $.Values.mariadb.alerts.tier }}
     annotations:
       description: MetisDB has 1 or more metadata locks for >15m
       summary: MetisDB has metadata locks
+{{- end }}

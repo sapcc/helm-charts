@@ -20,70 +20,6 @@ extraScrapeConfig: ""
 kubernikus-monitoring:
   prometheusName: kubernikus
 
-kube-prometheus-stack:
-  nameOverride: prometheus
-  fullnameOverride: prometheus
-  # Never manage CRDs. They are deployed via prometheus-crds Helm chart.
-  manageCrds: false
-
-  prometheusOperator:
-    image:
-      repository: keppel.global.cloud.sap/ccloud-quay-mirror/prometheus-operator/prometheus-operator
-
-    prometheusConfigReloader:
-      image:
-        repository: keppel.global.cloud.sap/ccloud-quay-mirror/prometheus-operator/prometheus-config-reloader
-
-    # Both admissionWebhooks and tls requires admissionregistration.k8s.io/v1 .
-    admissionWebhooks:
-      enabled: false
-    tls:
-      enabled: false
-
-    createCustomResource: false
-    service:
-      annotations:
-        prometheus.io/scrape: "true"
-        prometheus.io/targets: "kubernetes"
-        prometheus.io/port: "8080"
-    serviceAccount:
-      create: false
-    tlsProxy:
-      enabled: false
-
-  operator:
-    serviceAccountName: default
-  # Disable creation of default aggregation and alerting rules.
-  defaultRules:
-    create: false
-  # Disable the Prometheus instance. We deploy our own Prometheis.
-  prometheus:
-    enabled: false
-  # Disable the Alertmanager instance. We deploy our own Alertmanagers.
-  alertmanager:
-    enabled: false
-  # Disable all exporters.
-  kubeApiServer:
-    enabled: false
-  kubelet:
-    enabled: false
-  kubeControllerManager:
-    enabled: false
-  coreDns:
-    enabled: false
-  kubeDns:
-    enabled: false
-  kubeEtcd:
-    enabled: false
-  kubeScheduler:
-    enabled: false
-  kubeStateMetrics:
-    enabled: false
-  nodeExporter:
-    enabled: false
-  grafana:
-    enabled: false
-
 absent-metrics-operator:
   enabled: true
 
@@ -203,6 +139,9 @@ prometheus-node-exporter:
     requests:
       memory: 100Mi
       cpu: 100m
+
+  rbac:
+    pspEnabled: false
 
 ntp-exporter:
   alerts:
@@ -397,3 +336,6 @@ loki:
   enabled: false
   # user:
   # password:
+  
+  rbac:
+    pspEnabled: false

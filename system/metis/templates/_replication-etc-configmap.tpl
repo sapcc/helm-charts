@@ -45,16 +45,21 @@ Create the config map content for sync pod
 */}}
 {{- define "sync.configmap" -}}
 region: {{ .root.Values.global.region }}
-loglevel: "debug"
-swiftBackup:
+loglevel: "info"
+backup:
   service: "{{ .backup.name }}"
-  container: "mariadb-backup-qa-de-1"
-  creds:
-    identityEndpoint:  "https://identity-3.{{ .root.Values.global.region }}.cloud.sap/v3"
-    user: "db_backup"
-    userDomain: "Default"
-    project: "master"
-    projectDomain: "ccadmin"
+  swift:
+    container: "mariadb-backup-{{ .root.Values.global.region }}"
+    creds:
+      identityEndpoint:  "https://identity-3.{{ .root.Values.global.region }}.cloud.sap/v3"
+      user: "db_backup"
+      userDomain: "Default"
+      project: "master"
+      projectDomain: "ccadmin"
+  s3:
+    sseCustomerAlgorithm: "AES256"
+    region: {{ required "missing AWS region" .root.Values.global.mariadb.backup_v2.aws.region }}
+    bucketName: "mariadb-backup-{{ .root.Values.global.region }}"
 replication:
   sourceDB:
     host: "{{ .backup.name }}-mariadb.monsoon3"

@@ -270,7 +270,9 @@ groups:
         Check the logs of keppel-janitor for details.
 
   - alert: OpenstackKeppelNotCheckingVulnerabilities
-    expr: keppel_manifests_count > 0 and time() - keppel_manifests_min_next_vuln_check_at > 7200
+    # 9000 seconds = 2.5 hours (we would like 2 hours, but this limit is now being hit in eu-de-1; I'm raising the limit
+    # for now to silence the flapping alert while we refactor the Clair integration in Keppel to scale better)
+    expr: keppel_manifests_count > 0 and time() - keppel_manifests_min_next_vuln_check_at > 9000
     for: 5m
     labels:
       context: janitor
@@ -295,7 +297,7 @@ groups:
     labels:
       context: clair-indexing
       service: keppel
-      severity: warning
+      severity: info # This should be "warning", but most people on support duty don't like editing unfamiliar databases, so it does not make sense to put this on them.
       support_group: containers
       tier: os
       meta: "{{ $labels.message }}"

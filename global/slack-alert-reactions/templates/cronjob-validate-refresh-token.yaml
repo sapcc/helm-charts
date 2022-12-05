@@ -1,0 +1,42 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ .Chart.Name }}-cj-validate-refresh-token
+spec:
+  schedule: "*/5 * * * *"
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      ttlSecondsAfterFinished: 3600
+      template:
+        metadata:
+          labels:
+            name: {{ .Chart.Name }}-cj-validate-refresh-token
+          annotations:
+            checksum/secret: {{ include "slack-alert-reactions/templates/secret.yaml" . | sha256sum }}
+        spec:
+          serviceAccountName: {{ .Chart.Name }}-sa
+          containers:
+          - name: {{ .Chart.Name }}-cj-validate-refresh-token-container
+            image: "{{ .Values.sidecar.image.repository }}:{{ .Values.sidecar.image.tag | default .Chart.AppVersion }}"
+            imagePullPolicy: IfNotPresent
+            command: 
+              - /bin/sh
+            args:
+              - -c
+              - /sidecar/validate.sh
+            volumeMounts:
+            - name: {{ .Chart.Name }}-secret-volume
+              mountPath: "/secrets"
+              readOnly: true
+            resources:
+              {{- toYaml .Values.sidecar.resources | nindent 14 }}
+          restartPolicy: "Never"
+          volumes:
+          - name: {{ .Chart.Name }}-secret-volume
+            secret:
+              secretName: {{ .Chart.Name }}-secret
+              optional: false  
+      

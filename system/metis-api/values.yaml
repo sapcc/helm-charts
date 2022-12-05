@@ -10,15 +10,31 @@ owner-info:
     - "Ivo Gosemann"
   helm-chart-url: "https://github.com/sapcc/helm-charts/tree/master/system/metis"
 
+prometheus-monitors:
+  podMonitor:
+    enabled: true
+  prometheus: "infra-collector"
+  matchExpressions:
+    - key: "app.kubernetes.io/name"
+      operator: "In"
+      values:
+        - "metis-api"
+  metricsPort: "http"
+  nameOverride: "metis-api"
+
 metisAPI:
   enabled: false
   port: 8080
   image: metis-api
-  imageTag: "202207141740"
-  metrics:
-    enabled: true
-    path: "/metrics"
+  imageTag: "<DEFINED-IN-PIPELINE>"
   alerts:
     enabled: false
     tier: "os"
     prometheus: "infra-collector"
+  resources:
+    limits:
+      memory: 100Mi
+      cpu: 250m
+    requests:
+      memory: 25Mi
+      cpu: 25m

@@ -1,18 +1,17 @@
 {{- $root := . }}
 {{- if and .Values.alertmanagers.hosts .Values.thanos.enabled }}
-{{- range tuple "sidecar" }}
-{{- $path := (printf "%s/alerts/_thanos-%s.alerts.tpl" $root.Template.BasePath . ) }}
+{{- range $name := coalesce .Values.names .Values.global.targets (list .Values.name) }}
 ---
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
 
 metadata:
-  name: {{ include "prometheus.fullName" $root }}-{{ printf "thanos-%s.alerts" . }}
+  name: {{ include "prometheus.fullName" (list $name $root) }}-thanos-sidecar.alerts
   labels:
-    prometheus: {{ include "prometheus.name" $root }}
+    prometheus: {{ default (include "prometheus.name" (list $name $root)) $.Values.alerts.prometheus }}
 
 spec:
-{{ include $path $root | indent 2 }}
+{{ include (print $.Template.BasePath "/alerts/_thanos-sidecar.alerts.tpl") (list $name $root) | indent 2 }}
 
 {{- end }}
 {{- end }}

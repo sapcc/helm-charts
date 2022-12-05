@@ -179,7 +179,7 @@ pgmetrics:
             usage: "GAUGE"
             description: "UNIX timestamp of next scheduled manifest sync, or 0 if no replica repos have ever been synced"
     keppel_manifests:
-      query: "SELECT COUNT(*) AS count, EXTRACT(epoch FROM MIN(validated_at)) AS min_validated_at, SUM(CASE WHEN validation_error_message = '' THEN 0 ELSE 1 END) AS validation_errors, COALESCE(EXTRACT(epoch FROM MIN(next_vuln_check_at)), 0) AS min_next_vuln_check_at FROM manifests"
+      query: "SELECT COUNT(*) AS count, EXTRACT(epoch FROM MIN(validated_at)) AS min_validated_at, SUM(CASE WHEN validation_error_message = '' THEN 0 ELSE 1 END) AS validation_errors, COALESCE(EXTRACT(epoch FROM MIN(next_vuln_check_at)), 0) AS min_next_vuln_check_at, SUM(CASE WHEN next_vuln_check_at > NOW() THEN 0 ELSE 1 END) AS pending_vuln_checks FROM manifests"
       metrics:
         - count:
             usage: "GAUGE"
@@ -193,6 +193,9 @@ pgmetrics:
         - min_next_vuln_check_at:
             usage: "GAUGE"
             description: "UNIX timestamp of next scheduled vulnerability check, or 0 if no manifests have ever been checked for vulnerabilities"
+        - pending_vuln_checks:
+            usage: "GAUGE"
+            description: "Number of manifests stored in Keppel that are currently overdue for their next scheduled vulnerability check"
     keppel_unknown_blobs:
       query: 'SELECT COALESCE(EXTRACT(epoch FROM MIN(can_be_deleted_at)), 0) AS min_can_be_deleted_at FROM unknown_blobs'
       metrics:
@@ -248,3 +251,28 @@ pgmetrics:
         - counts:
             usage: "GAUGE"
             description: "Total number of manifests where indexing in Clair failed with a specific error message"
+    keppel_manifests_with_unclean_vuln_status:
+      # NOTE: This metric is also exported to Maia and therefore visible to customers. Do not break compatibility unless strictly necessary!
+      query: >
+        SELECT a.name AS account, a.auth_tenant_id AS project_id, r.name AS repo, m.vuln_status AS vuln_status, COUNT(*) AS count
+          FROM manifests m
+          JOIN repos r ON m.repo_id = r.id
+          JOIN accounts a ON r.account_name = a.name
+         WHERE m.vuln_status != 'Clean'
+         GROUP BY a.name, a.auth_tenant_id, r.name, m.vuln_status
+      metrics:
+        - account:
+            usage: LABEL
+            description: 'Name of Keppel account'
+        - project_id:
+            usage: LABEL
+            description: 'Project that owns the Keppel account'
+        - repo:
+            usage: LABEL
+            description: 'Name of repository within Keppel account'
+        - vuln_status:
+            usage: LABEL
+            description: 'Vulnerability status (or "Pending" for newly pushed images, or "Unsupported" if vulnerability scanning is not possible for this image)'
+        - count:
+            usage: GAUGE
+            description: 'Number of Keppel images per repo and vulnerability status (excluding images with vulnerability status "Clean")'

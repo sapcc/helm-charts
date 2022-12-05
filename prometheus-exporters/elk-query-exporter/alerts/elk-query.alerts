@@ -6,7 +6,7 @@ groups:
     for: 30m
     labels:
       context: nodes
-      service: elk
+      service: logs
       severity: info
       tier: os
       support_group: observability
@@ -18,7 +18,6 @@ groups:
     expr: elasticsearch_octobus_exporter_error_hits > 0
     labels:
       severity: warning
-      tier: monitor
       support_group: observability
     annotations:
       description: 'octobus-query-exporter had an error in the pod log'
@@ -49,3 +48,18 @@ groups:
     annotations:
       description: "Esxi-exporter can't login with production root password, please check Kibana link."
       summary: "Login to ESX not possible with production root password"
+
+  - alert: ElasticExporterMissing
+    expr: up{job=~"es-exporter.*"} == 0
+    for: 30m
+    labels:
+      context: nodes
+      service: logs
+      severity: warning
+      support_group: observability
+      tier: os
+      playbook: docs/support/playbook/elastic_kibana_issues.html
+      dashboard: health-elasticsearch?var-cluster={{ $labels.elastic_cluster }}
+    annotations:
+      description: 'cluster *{{ $labels.elastic_cluster }}* es-exporter in `{{ $labels.region }}` is missing.'
+      summary: 'cluster: *{{ $labels.elastic_cluster }}* es-exporter in `{{ $labels.region }}` is missing.'

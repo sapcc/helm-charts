@@ -19,7 +19,7 @@ versioned_notifications_topics = {{ .Values.versioned_notifications_topics  | de
 {{- include "ini_sections.default_transport_url" . }}
 
 rpc_response_timeout = {{ .Values.rpc_response_timeout | default .Values.global.rpc_response_timeout | default 100 }}
-executor_thread_pool_size = {{ .Values.rpc_workers | default .Values.global.rpc_workers | default 10 }}
+executor_thread_pool_size = {{ .Values.rpc_workers | default .Values.global.rpc_workers | default 64 }}
 
 {{- include "ini_sections.oslo_messaging_rabbit" .}}
 

@@ -1,11 +1,14 @@
+{{- $root := . }}
 {{- if .Values.serviceDiscoveries.kubeAPIServer.enabled }}
+{{- range $name := coalesce .Values.names .Values.global.targets (list .Values.name) }}
+---
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 
 metadata:
-  name: {{ include "prometheus.fullName" . }}-kubernetes-apiserver
+  name: {{ include "prometheus.fullName" (list $name $root) }}-kubernetes-apiserver
   labels:
-    prometheus: {{ include "prometheus.name" . }}
+    prometheus: {{ include "prometheus.name" (list $name $root) }}
 
 spec:
   selector:
@@ -19,8 +22,8 @@ spec:
 
   endpoints:
     - bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
-      interval: {{ required ".Values.serviceDiscoveries.scrapeInterval  missing" .Values.serviceDiscoveries.scrapeInterval }}
-      scrapeTimeout: {{ required ".Values.serviceDiscoveries.scrapeTimeout  missing" .Values.serviceDiscoveries.scrapeTimeout }}
+      interval: {{ required "$.Values.serviceDiscoveries.scrapeInterval  missing" $.Values.serviceDiscoveries.scrapeInterval }}
+      scrapeTimeout: {{ required "$.Values.serviceDiscoveries.scrapeTimeout  missing" $.Values.serviceDiscoveries.scrapeTimeout }}
       port: https
       scheme: https
       tlsConfig:
@@ -41,8 +44,9 @@ spec:
           replacement: apiserver
         - targetLabel: job
           replacement: kubernetes-apiserver
-{{ include "prometheus.defaultRelabelConfig" . | indent 8 }}
+{{ include "prometheus.defaultRelabelConfig" $root | indent 8 }}
 
       metricRelabelings:
-{{ include "prometheus.keep-metrics.metric-relabel-config" .Values.serviceDiscoveries.kubeAPIServer.allowedMetrics | indent 8 }}
+{{ include "prometheus.keep-metrics.metric-relabel-config" $.Values.serviceDiscoveries.kubeAPIServer.allowedMetrics | indent 8 }}
+{{- end }}
 {{- end }}

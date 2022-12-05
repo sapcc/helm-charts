@@ -1,5 +1,6 @@
 {{- if .Values.cronus.enabled -}}
 cronus:
+  ttlReject: {{ .Values.global.ttlReject }}
   hostname: cronus.{{ .Values.global.region }}.{{ .Values.global.tld }}
   cacheSize: {{ .Values.cronus.cacheSize }}
   billingCacheTTL: {{ .Values.config.billingCacheTTL }}

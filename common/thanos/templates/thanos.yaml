@@ -1,58 +1,71 @@
 {{- $root := . }}
+{{- if .Values.enabled }}
+{{- range $name := coalesce .Values.names .Values.global.targets (list .Values.name) }}
+---
 apiVersion: monitoring.banzaicloud.io/v1alpha1
 kind: Thanos
 metadata:
-  name: {{ include "thanos.fullName" . }}
+  name: {{ include "thanos.fullName" (list $name $root) }}
 spec:
-  queryDiscovery: {{ .Values.queryDiscovery }}
-  clusterDomain: kubernetes.{{ required ".Values.global.region missing" .Values.global.region }}.{{ required ".Values.global.tld missing" .Values.global.tld }}
+  queryDiscovery: {{ $.Values.queryDiscovery }}
+  clusterDomain: kubernetes.{{ required "$.Values.global.region missing" $.Values.global.region }}.{{ required "$.Values.global.tld missing" $.Values.global.tld }}
   query:
-    {{- if (.Values.useQueryRegions) }}
+    {{- if ($.Values.useQueryRegions) }}
     GRPCClientCA: thanos-grpcclient-ca
     GRPCClientCertificate: thanos-grpcclient-crt
     {{- end }}
-    logLevel: {{ .Values.logLevel }}
+    logLevel: {{ $.Values.logLevel }}
     queryAutoDownsampling: true
     queryReplicaLabel:
       - prometheus_replica
-    {{- if .Values.deployWholeThanos }}
-    webRoutePrefix: {{ required ".Values.query.webRouteprefix missing" .Values.query.webRouteprefix }}
-    webExternalPrefix: {{ required ".Values.query.webRouteprefix missing" .Values.query.webRouteprefix }}
+    {{- if $.Values.deployWholeThanos }}
+    webRoutePrefix: {{ required "$.Values.query.webRouteprefix missing" $.Values.query.webRouteprefix }}
+    webExternalPrefix: {{ required "$.Values.query.webRouteprefix missing" $.Values.query.webRouteprefix }}
     {{- end }}
-    {{- if or .Values.deployWholeThanos ((.Values.query).stores) (.Values.useQueryRegions) }}
+    {{- if or $.Values.deployWholeThanos (($.Values.query).stores) ($.Values.useQueryRegions) }}
     stores:
     {{- end }}
-    {{- if ((.Values.query).stores) }}
-      {{- range $store := .Values.query.stores }}
+    {{- if (($.Values.query).stores) }}
+      {{- range $store := $.Values.query.stores }}
       - {{ $store }}
       {{- end }}
-    {{- else if .Values.deployWholeThanos }}
-      - prometheus-{{ required ".Values.name missing" .Values.name }}:10901
-    {{- else if (.Values.useQueryRegions) }}
-      {{- range $region := .Values.queryRegions }}
+    {{- else if $.Values.deployWholeThanos }}
+      - prometheus-{{ include "thanos.name" (list $name $root) }}:10901
+    {{- else if ($.Values.useQueryRegions) }}
+      {{- range $region := $.Values.queryRegions }}
         {{- range $cluster := $root.Values.clusterTypes }}
         - thanos-{{ $cluster }}-grpc.{{ $region }}.{{ $root.Values.global.tld }}:443
         {{- end }}
       {{- end }}
     {{- end }}
+    serviceOverrides:
+      metadata:
+        labels:
+          thanos: {{ default (include "thanos.name" (list $name $root)) $.Values.alerts.prometheus }}
     deploymentOverrides:
       spec:
         template:
           spec:
             containers:
-            - image: {{ include "thanosimage" . }}
+            - image: {{ include "thanosimage" $root }}
               name: query
-  {{- if .Values.deployWholeThanos }}
+  {{- if $.Values.deployWholeThanos }}
   storeGateway:
-    logLevel: {{ .Values.logLevel }}
-    indexCacheSize: {{ required ".Values.store.indexCacheSize missing" .Values.store.indexCacheSize }}
-    chunkPoolSize: {{ required ".Values.store.chunkPoolSize missing" .Values.store.chunkPoolSize }}
-    storeGRPCSeriesMaxConcurrency: {{ required ".Values.store.seriesMaxConcurrency missing" .Values.store.seriesMaxConcurrency }}
+    logLevel: {{ $.Values.logLevel }}
+    indexCacheSize: {{ required ".Values.store.indexCacheSize missing" $.Values.store.indexCacheSize }}
+    chunkPoolSize: {{ required ".Values.store.chunkPoolSize missing" $.Values.store.chunkPoolSize }}
+    storeGRPCSeriesMaxConcurrency: {{ required ".Values.store.seriesMaxConcurrency missing" $.Values.store.seriesMaxConcurrency }}
+    serviceOverride:
+      metadata:
+        labels:
+          thanos: {{ default (include "thanos.name" (list $name $root)) $.Values.alerts.prometheus }}
     deploymentOverrides:
       spec:
         template:
           spec:
             containers:
-            - image: {{ include "thanosimage" . }}
+            - image: {{ include "thanosimage" $root }}
               name: store
   {{- end }}
+{{- end }}
+{{- end }}

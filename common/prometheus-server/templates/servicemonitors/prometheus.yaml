@@ -1,29 +1,32 @@
-# This ServiceMonitor is used for monitoring the Prometheus itself and - if enabled - its Thanos components deployed alongside.
+{{- $root := . }}
+{{- range $name := coalesce .Values.names .Values.global.targets (list .Values.name) }}
+---
+# This ServiceMonitor is used for monitoring the Prometheus itself and - if enabled - its Thanos sidecar deployed alongside.
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 
 metadata:
-  name: {{ include "prometheus.fullName" . }}
+  name: {{ include "prometheus.fullName" (list $name $root) }}
   labels:
-    prometheus: {{ include "prometheus.name" . }}
+    prometheus: {{ include "prometheus.name" (list $name $root) }}
 
 spec:
-  jobLabel: {{ include "prometheus.name" . }}
+  jobLabel: {{ include "prometheus.name" (list $name $root) }}
 
   selector:
     matchLabels:
-      prometheus: {{ include "prometheus.name" . }}
+      prometheus: {{ include "prometheus.name" (list $name $root) }}
 
   endpoints:
     - bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
-      interval: {{ required ".Values.serviceDiscoveries.scrapeInterval  missing" .Values.serviceDiscoveries.scrapeInterval }}
-      scrapeTimeout: {{ required ".Values.serviceDiscoveries.scrapeTimeout  missing" .Values.serviceDiscoveries.scrapeTimeout }}
+      interval: {{ required "$.Values.serviceDiscoveries.scrapeInterval  missing" $.Values.serviceDiscoveries.scrapeInterval }}
+      scrapeTimeout: {{ required "$.Values.serviceDiscoveries.scrapeTimeout  missing" $.Values.serviceDiscoveries.scrapeTimeout }}
       port: http
       scheme: http
       relabelings:
         - action: replace
           targetLabel: prometheus
-          replacement: {{ include "prometheus.name" . }}
+          replacement: {{ include "prometheus.name" (list $name $root) }}
         - action: labelmap
           regex: '__meta_kubernetes_service_label_(.+)'
         - sourceLabels:
@@ -32,4 +35,5 @@ spec:
         - sourceLabels:
             - __meta_kubernetes_service_name
           targetLabel: kubernetes_name
-{{ include "prometheus.defaultRelabelConfig" . | indent 8 }}
+{{ include "prometheus.defaultRelabelConfig" $root | indent 8 }}
+{{- end }}

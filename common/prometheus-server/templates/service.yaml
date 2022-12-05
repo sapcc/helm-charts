@@ -1,22 +1,26 @@
+{{- $root := . }}
+{{- range $name := coalesce .Values.names .Values.global.targets (list .Values.name) }}
+---
 apiVersion: v1
 kind: Service
 
 metadata:
-  name: {{ include "prometheus.fullName" . }}
+  name: {{ include "prometheus.fullName" (list $name $root) }}
   labels:
-    prometheus: {{ include "prometheus.name" . }}
-  {{ if .Values.service.annotations }}
+    prometheus: {{ default (include "prometheus.name" (list $name $root)) $.Values.alerts.prometheus }}
+  {{ if $.Values.service.annotations }}
   annotations:
-{{ toYaml .Values.service.annotations | indent 4 }}
+{{ toYaml $.Values.service.annotations | indent 4 }}
   {{ end }}
 
 spec:
   selector:
-    prometheus: {{ include "prometheus.name" . }}
+    prometheus: {{ default (include "prometheus.name" (list $name $root)) $.Values.alerts.prometheus }}
   ports:
     - name: http
       port: 9090
-    {{ if .Values.thanos.enabled -}}
+    {{ if $.Values.thanos.enabled -}}
     - name: grpc
       port: 10901
     {{- end }}
+{{- end }}

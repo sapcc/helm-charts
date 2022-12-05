@@ -1,3 +1,5 @@
+# vim: set ft=yaml:
+
 groups:
 - name: concourse.alerts
   rules:
@@ -58,7 +60,8 @@ groups:
       summary: Git-proxy resource checks are failing
 
   - alert: ConcourseGitProxyWorkerStalled
-    expr: sum(rate(request_duration_seconds_count[5m])) by (pod) == 0
+    # NOTE: ci3 is getting so little traffic that this alert misfires all the time.
+    expr: sum(rate(request_duration_seconds_count{cluster!~"ci3-.*"}[5m])) by (pod) == 0
     for: 30m
     labels:
       tier: ci
@@ -68,7 +71,7 @@ groups:
       support_group: containers
       meta: "Git-proxy worker {{ $labels.pod }} is stalled"
     annotations:
-      description: "The git-proxy worker {{ $labels.pod }} seems stalled. Check its logs in the conourse namespace."
+      description: "The git-proxy worker {{ $labels.pod }} seems stalled. Check its logs in the concourse namespace."
       summary: Git-proxy worker stalled
 
   - alert: ConcourseWorkerNodeFullWorkdir

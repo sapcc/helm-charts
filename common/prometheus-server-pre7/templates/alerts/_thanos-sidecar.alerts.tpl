@@ -6,13 +6,13 @@ groups:
       for: 5m
       labels:
         context: thanos
-        service: prometheus
+        service: {{ default "metrics" .Values.alerts.service }}
+        support_group: observability
         severity: info
-        tier: {{ include "alerts.tier" . }}
-        meta: 'Thanos Sidecar bucket operations are failing for Prometheus {{`{{ $labels.prometheus }}`}}'
+        meta: 'Thanos Sidecar bucket operations are failing for Prometheus `{{`{{ $labels.prometheus }}`}}`'
         playbook: 'docs/support/playbook/prometheus/thanos_sidecar.html'
       annotations:
-        description: 'Thanos Sidecar bucket operations are failing for Prometheus {{`{{ $labels.prometheus }}`}}. Metrics data will be lost if not fixed in 24h.'
+        description: 'Thanos Sidecar bucket operations are failing for Prometheus `{{`{{ $labels.prometheus }}`}}`. Metrics data will be lost if not fixed in 24h.'
         summary: Thanos Sidecar bucket operations are failing
 
     - alert: ThanosSidecarGrpcErrorRate
@@ -20,11 +20,11 @@ groups:
       for: 5m
       labels:
         context: thanos
-        service: prometheus
+        service: {{ default "metrics" .Values.alerts.service }}
+        support_group: observability
         severity: info
-        tier: {{ include "alerts.tier" . }}
-        meta: 'Thanos Sidecar is returning Internal/Unavailable errors for Prometheus {{`{{ $labels.prometheus }}`}}'
+        meta: 'Thanos Sidecar is returning Internal/Unavailable errors for Prometheus `{{`{{ $labels.prometheus }}`}}`'
         playbook: 'docs/support/playbook/prometheus/thanos_sidecar.html'
       annotations:
-        description: 'Thanos Sidecar is returning Internal/Unavailable errors for Prometheus {{`{{ $labels.prometheus }}`}}. Prometheus queries are failing.'
+        description: 'Thanos Sidecar is returning Internal/Unavailable errors for Prometheus `{{`{{ $labels.prometheus }}`}}`. Prometheus queries are failing.'
         summary: Thanos Sidecar is returning Internal/Unavailable errors

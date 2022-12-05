@@ -4,6 +4,7 @@
 {{- $loadbalancer := index . 2 -}}
 [DEFAULT]
 host = {{ $lb_name }}
+backdoor_socket = /var/lib/octavia/backdoor.socket
 
 [networking]
 {{- if $loadbalancer.physical_interface_mapping }}
