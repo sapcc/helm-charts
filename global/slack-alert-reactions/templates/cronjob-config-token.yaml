@@ -1,7 +1,7 @@
 apiVersion: batch/v1
 kind: CronJob
 metadata:
-  name: {{ .Chart.Name }}-cronjob
+  name: {{ .Chart.Name }}-cj-config-token
 spec:
   schedule: "*/5 * * * *"
   jobTemplate:
@@ -9,13 +9,13 @@ spec:
       template:
         metadata:
           labels:
-            name: {{ .Chart.Name }}
+            name: {{ .Chart.Name }}-cj-config-token
           annotations:
             checksum/secret: {{ include "slack-alert-reactions/templates/secret.yaml" . | sha256sum }}
         spec:
           serviceAccountName: {{ .Chart.Name }}-sa
           containers:
-          - name: {{ .Chart.Name }}-cronjob-container
+          - name: {{ .Chart.Name }}-cj-config-token-container
             image: "{{ .Values.sidecar.image.repository }}:{{ .Values.sidecar.image.tag | default .Chart.AppVersion }}"
             imagePullPolicy: IfNotPresent
             volumeMounts:
