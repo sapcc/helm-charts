@@ -33,7 +33,7 @@ vmware-{{ $vropshostname._0 | trimPrefix "vrops-" }}
 prometheus-vmware-{{ $vropshostname._0 | trimPrefix "vrops-" }}
 {{- end -}}
 
-{{- define "maiaFederationRegex" -}}
+{{- define "maiaFederationMatches" -}}
 {{- range $.Values.maiaFederation.matches -}}.*{{- . | trimPrefix "vrops_virtualmach" -}}|
 {{- end -}}
 {{- end -}}
