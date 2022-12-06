@@ -93,6 +93,16 @@ spec:
           # and the init container needs to load required kernel modules
           container.name in {"neutron-dhcp-agent", "init"}
         }
+        {{- if eq .Values.cluster_type "kubernikus" "scaleout" "test" }}
+        isContainerAllowedToBePrivileged(container) = true {
+          isAuditbeatPod
+          # the audit-log-auditbeat pod's init container needs to break out
+          # into the host to setup audit logging for PAM-based authentication
+          # (this is only necessary in clusters where the worker nodes are
+          # provisioned by OpenStack instead of Terraform)
+          container.name == "enable-pamd-tty"
+        }
+        {{- end }}
 
         default isContainerAllowedToUseCapability(container, capability) = false
 
