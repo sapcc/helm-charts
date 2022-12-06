@@ -1,0 +1,36 @@
+groups:
+- name: metis-sync.alerts
+  rules:
+
+  - alert: MetisVCenterSyncStale
+    expr: (timestamp(metis_vcenter_last_successful_sync_timestamp) - metis_vcenter_last_successful_sync_timestamp )/ 60 > 1440
+    for: 15m
+    labels:
+      service: "metis"
+      severity: info
+      support_group: observability
+    annotations:
+      summary: "GuestOS Details have not been synced successfully in 24h"
+      description: "Please check deploy/metis logs for errors"
+  - alert: MetisVCenterNoGuestOSSynced
+    expr: metis_vcenter_guestos_details_count == 0
+    for: 15m
+    labels:
+      service: "metis"
+      severity: info
+      support_group: observability
+    annotations:
+      summary: "No GuestOS Details have not been synced"
+      description: "Please check deploy/metis logs for errors"
+
+
+  - alert: MetisBillingSyncStale
+    expr: (timestamp(metis_billing_last_successful_sync_timestamp) - metis_billing_last_successful_sync_timestamp )/ 60 > 1440
+    for: 15m
+    labels:
+      service: "metis"
+      severity: info
+      support_group: observability
+    annotations:
+      summary: "Billing masterdata have not been synced successfully in 24h"
+      description: "Please check deploy/metis logs for errors"
