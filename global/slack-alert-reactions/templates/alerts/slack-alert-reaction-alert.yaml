@@ -1,0 +1,16 @@
+groups:
+  - name: {{ .Chart.Name }}.alerts
+    rules:
+      - alert: SlackAlertReactionsRefreshTokenValidationFailed
+        expr: (sum(kube_job_failed{job_name=~"slack-alert-reactions-cj-validate-refresh-token.*"}) OR on() vector(0)) > 0
+        for: 20m
+        labels:
+          severity: info
+          tier: k8s
+          service: {{ .Chart.Name }}
+          context: {{ .Chart.Name }}
+          support_group: containers
+          meta: 'Slack Alert Reactions refresh token validation failed'
+        annotations:
+          description: Slack Alert Reactions refresh token validation failed. Token rotation may fail soon.
+          summary: Slack Alert Reactions refresh token validation failed.
