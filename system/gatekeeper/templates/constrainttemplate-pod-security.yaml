@@ -59,16 +59,6 @@ spec:
           # injected by Kubernikus (CNI, Wormhole, kube-proxy, etc.).
         }
 
-        default isKubernikusApiserverPod = false
-        {{- if eq .Values.cluster_type "admin" "kubernikus" "virtual" "test" }}
-        isKubernikusApiserverPod = true {
-          iro.kind == "Deployment"
-          iro.metadata.namespace == "kubernikus"
-          iro.metadata.name == sprintf("%s-apiserver", [helmReleaseName])
-          regex.match("-[0-9a-f]{32}$", helmReleaseName)
-        }
-        {{- end }}
-
         default isNeutronNetworkAgentPod = false
         isNeutronNetworkAgentPod = true {
           iro.kind == "StatefulSet"
@@ -113,13 +103,17 @@ spec:
           # read and also configure the kernel audit log
           capability in {"AUDIT_CONTROL", "AUDIT_READ", "AUDIT_WRITE"}
         }
+        {{- if eq .Values.cluster_type "admin" "kubernikus" "virtual" "test" }}
         isContainerAllowedToUseCapability(container, capability) = true {
-          isKubernikusApiserverPod
-          container.name == "wormhole"
+          iro.kind == "Deployment"
+          iro.metadata.namespace == "kubernikus"
+          regex.match("-apiserver$", iro.metadata.name)
+          regex.match("^keppel\\.[a-z0-9-]+\\.cloud\\.sap/ccloud/kubernikus:", container.image)
           # the wormhole container needs to establish a network tunnel between
           # the apiserver pod and the target Kubernikus cluster
           capability in {"NET_ADMIN"}
         }
+        {{- end }}
         isContainerAllowedToUseCapability(container, capability) = true {
           isNeutronNetworkAgentPod
           container.name == "neutron-linuxbridge-agent"
