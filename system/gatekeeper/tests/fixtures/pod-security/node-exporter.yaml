@@ -15,6 +15,20 @@ spec:
       containers:
       - name: node-exporter
         image: prom/node-exporter:v1.3.1
+        volumeMounts:
+        - mountPath: /host/proc
+          name: proc
+          readOnly: true
+        - mountPath: /host/sys
+          name: sys
+          readOnly: true
+        - mountPath: /host/root
+          mountPropagation: HostToContainer
+          name: root
+          readOnly: true
+        - mountPath: /var/run/dbus/system_bus_socket
+          name: dbus
+          readOnly: true
       hostNetwork: true
       hostPID: true
       securityContext:
@@ -22,3 +36,16 @@ spec:
         runAsGroup: 65534
         runAsNonRoot: true
         runAsUser: 65534
+      volumes:
+      - hostPath:
+          path: /proc
+        name: proc
+      - hostPath:
+          path: /sys
+        name: sys
+      - hostPath:
+          path: /
+        name: root
+      - hostPath:
+          path: /var/run/dbus/system_bus_socket
+        name: dbus
