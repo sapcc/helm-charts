@@ -22,11 +22,77 @@ spec:
             - AUDIT_WRITE
             - AUDIT_CONTROL
           runAsUser: 0
+        volumeMounts:
+        - mountPath: /etc/auditbeat.yml
+          name: config
+          readOnly: true
+          subPath: auditbeat.yml
+        - mountPath: /usr/share/auditbeat/modules.d
+          name: modules
+          readOnly: true
+        - mountPath: /usr/share/auditbeat/data
+          name: data
+        - mountPath: /hostfs/bin
+          name: bin
+          readOnly: true
+        - mountPath: /hostfs/sbin
+          name: sbin
+          readOnly: true
+        - mountPath: /hostfs/usr/bin
+          name: usrbin
+          readOnly: true
+        - mountPath: /hostfs/usr/sbin
+          name: usrsbin
+          readOnly: true
+        - mountPath: /hostfs/etc
+          name: etc
+          readOnly: true
+        - mountPath: /run/containerd
+          name: run-containerd
+          readOnly: true
       initContainers:
       - name: enable-pamd-tty
         securityContext:
           privileged: true
+        volumeMounts:
+        - mountPath: /hostfs
+          name: hostfs
       dnsPolicy: ClusterFirstWithHostNet
       hostNetwork: true
       hostPID: true
       securityContext: {}
+      volumes:
+      - hostPath:
+          path: /bin
+        name: bin
+      - hostPath:
+          path: /usr/bin
+        name: usrbin
+      - hostPath:
+          path: /sbin
+        name: sbin
+      - hostPath:
+          path: /usr/sbin
+        name: usrsbin
+      - hostPath:
+          path: /etc
+        name: etc
+      - hostPath:
+          path: /
+        name: hostfs
+      - configMap:
+          defaultMode: 416
+          name: audit-logs-auditbeat
+        name: config
+      - configMap:
+          defaultMode: 416
+          name: audit-logs-auditbeat-modules
+        name: modules
+      - hostPath:
+          path: /var/lib/auditbeat-data
+          type: DirectoryOrCreate
+        name: data
+      - hostPath:
+          path: /run/containerd
+          type: DirectoryOrCreate
+        name: run-containerd

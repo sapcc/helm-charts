@@ -132,6 +132,77 @@ spec:
           capability in {"DAC_OVERRIDE", "DAC_READ_SEARCH", "NET_ADMIN", "SYS_ADMIN", "SYS_PTRACE"}
         }
 
+        default isContainerAllowedToAccessHostPath(container, hostPath, readOnly) = false
+
+        isContainerAllowedToAccessHostPath(container, hostPath, readOnly) = true {
+          isAuditbeatPod
+          container.name == "auditbeat"
+          # the audit-log-auditbeat pod needs to be able to read various parts
+          # of the node filesystem
+          readOnly
+          regex.match("^(?:/s?bin|/usr/s?bin|/etc|/run/containerd)$", hostPath)
+        }
+        isContainerAllowedToAccessHostPath(container, hostPath, readOnly) = true {
+          isAuditbeatPod
+          container.name == "auditbeat"
+          # the audit-log-auditbeat pod needs to write persistent state data per node
+          readOnly == false
+          hostPath == "/var/lib/auditbeat-data"
+        }
+        {{- if eq .Values.cluster_type "kubernikus" "scaleout" "test" }}
+        isContainerAllowedToAccessHostPath(container, hostPath, readOnly) = true {
+          isAuditbeatPod
+          container.name == "enable-pamd-tty"
+          # the audit-log-auditbeat pod's init container needs to break out
+          # into the host to setup audit logging for PAM-based authentication
+          # (this is only necessary in clusters where the worker nodes are
+          # provisioned by OpenStack instead of Terraform)
+          readOnly == false
+        }
+        {{- end }}
+        isContainerAllowedToAccessHostPath(container, hostPath, readOnly) = true {
+          # many kube-system components need broad node-level access (e.g.
+          # kube-proxy, MTU discovery, wormhole to k8s central)
+          isKubeSystemPod
+        }
+        isContainerAllowedToAccessHostPath(container, hostPath, readOnly) = true {
+          isNeutronNetworkAgentPod
+          # the init container mounts the entire host FS to load kernel modules
+          container.name == "init"
+        }
+        isContainerAllowedToAccessHostPath(container, hostPath, readOnly) = true {
+          isNeutronNetworkAgentPod
+          # the persistent containers need to read /lib/modules
+          readOnly
+          regex.match("^/lib/modules($|/)", hostPath)
+        }
+        isContainerAllowedToAccessHostPath(container, hostPath, readOnly) = true {
+          isNeutronNetworkAgentPod
+          container.name == "neutron-dhcp-agent"
+          # the DHCP agent needs to write into /dev/log (TODO: why?)
+          hostPath == "/dev/log"
+        }
+        isContainerAllowedToAccessHostPath(container, hostPath, readOnly) = true {
+          isNodeExporterPod
+          container.name == "node-exporter"
+          # the node exporter needs to inspect the host filesystem to collect metrics
+          readOnly
+        }
+        isContainerAllowedToAccessHostPath(container, hostPath, readOnly) = true {
+          isSwiftServerPod
+          # Swift components running on the storage servers need to access the
+          # storage disks (as well as state shared with the drive autopilot)
+          regex.match("^/(?:srv/node|var/cache/swift|run/swift-storage/state)($|/)", hostPath)
+        }
+        isContainerAllowedToAccessHostPath(container, hostPath, readOnly) = true {
+          isSwiftServerPod
+          # swift-drive-autopilot needs far-reaching access to the host FS to
+          # find/format/encrypt/decrypt/mount/unmount disks and watch the
+          # kernel log for errors
+          regex.match("^keppel\\.[a-z0-9-]+\\.cloud\\.sap/ccloud/swift-drive-autopilot:", container.image)
+          # any `hostPath` allowed here
+        }
+
         ########################################################################
         # generate violations for all pods using privileged security features
         # without being allowlisted
@@ -209,4 +280,22 @@ spec:
           not isContainerAllowedToUseCapability(container, capability)
 
           msg := sprintf("pod is not allowed to set spec.containers[%q].securityContext.capabilities.add = [%q]", [container.name, capability])
+        }
+
+        violation[{"msg": add_support_labels.from_k8s_object(iro, msg)}] {
+          # if pod has a hostPath volume...
+          pod.isFound
+          volume := pod.spec.volumes[_]
+          hostPath := object.get(volume, ["hostPath", "path"], null)
+          hostPath != null
+
+          # ...and a container is mounting it...
+          container := containers[_]
+          volumeMount := container.volumeMounts[_]
+          volume.name == volumeMount.name
+          readOnly := object.get(volumeMount, ["readOnly"], false)
+
+          # ...it needs to be allowed
+          not isContainerAllowedToAccessHostPath(container, hostPath, readOnly)
+          msg := sprintf("container %q in this pod is not allowed to mount hostPath volumes with path %q (readonly = %s)", [container.name, hostPath, readOnly])
         }

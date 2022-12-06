@@ -17,6 +17,23 @@ spec:
       - name: neutron-dhcp-agent
         securityContext:
           privileged: true
+        volumeMounts:
+        - mountPath: /run/metadata_proxy
+          name: metadata-proxy
+        - mountPath: /lib/modules
+          name: modules
+          readOnly: true
+        - mountPath: /dev/log
+          name: logvol
+        - mountPath: /etc/neutron
+          name: neutron-etc
+          readOnly: true
+        - mountPath: /etc/sudoers
+          name: neutron-etc
+          readOnly: true
+          subPath: sudoers
+        - mountPath: /var/run/netns
+          name: network-namespace
       - name: neutron-linuxbridge-agent
         securityContext:
           capabilities:
@@ -26,10 +43,44 @@ spec:
             - DAC_OVERRIDE
             - DAC_READ_SEARCH
             - SYS_PTRACE
+        volumeMounts:
+        - mountPath: /lib/modules
+          name: modules
+          readOnly: true
+        - mountPath: /etc/neutron
+          name: neutron-etc
+          readOnly: true
+        - mountPath: /etc/sudoers
+          name: neutron-etc
+          readOnly: true
+          subPath: sudoers
+        - mountPath: /var/run/netns
+          name: network-namespace
       - name: neutron-metadata-agent
       dnsPolicy: ClusterFirst
       initContainers:
       - name: init
         securityContext:
           privileged: true # does `modprobe ebtable_nat`
+        volumeMounts:
+        - mountPath: /host
+          name: host
       securityContext: {}
+      volumes:
+      - emptyDir: {}
+        name: metadata-proxy
+      - emptyDir: {}
+        name: network-namespace
+      - hostPath:
+          path: /lib/modules
+        name: modules
+      - hostPath:
+          path: /dev/log
+        name: logvol
+      - configMap:
+          defaultMode: 420
+          name: neutron-etc
+        name: neutron-etc
+      - hostPath:
+          path: /
+        name: host
