@@ -44,11 +44,11 @@ template: |
       spec:
 {{ tuple "{= availability_zone =}" | include "kubernetes_pod_az_affinity" | indent 8 }}
 {{- include "kubernetes_maintenance_affinity" . | indent 4 }}
+        terminationGracePeriodSeconds: 900
         containers:
         - name: nova-compute
           image: {{ tuple . "compute" | include "container_image_nova" }}
           imagePullPolicy: IfNotPresent
-          terminationGracePeriodSeconds: 900
           command:
           - dumb-init
           - kubernetes-entrypoint
