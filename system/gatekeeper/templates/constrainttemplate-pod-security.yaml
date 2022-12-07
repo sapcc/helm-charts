@@ -327,6 +327,33 @@ spec:
         ########################################################################
         # allowlist for Swift components running on the storage servers
 
+        default isPXBirdPod = false
+        {{- if eq .Values.cluster_type "baremetal" "test" }}
+        isPXBirdPod = true {
+          iro.kind == "Deployment"
+          iro.metadata.namespace == "px"
+          regex.match("^{{ .Values.global.region }}-pxrs-[0-9]-s[0-9]-[0-9]$", iro.metadata.name)
+          regex.match("^bird-domain[0-9]$", helmReleaseName)
+        }
+        {{- end }}
+        # NOTE: The PX pods have a weird naming scheme wherein container names
+        # are prefixed with the pod name for no apparent reason.
+
+        # The init container needs to be able to set an external-facing VLAN
+        # interface into promiscuous mode.
+        isContainerAllowedToBePrivileged(container) = true {
+          isPXBirdPod
+          container.name == sprintf("%s-init", [iro.metadata.name])
+        }
+        # Bird needs to be able to send and receive BGP announcements.
+        isContainerAllowedToUseCapability(container, "NET_ADMIN") = true {
+          isPXBirdPod
+          container.name == iro.metadata.name
+        }
+
+        ########################################################################
+        # allowlist for Swift components running on the storage servers
+
         default isSwiftServerPod = false
         isSwiftServerPod = true {
           iro.kind == "DaemonSet"
