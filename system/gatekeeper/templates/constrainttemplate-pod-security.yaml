@@ -1,8 +1,8 @@
 {{- $kubeMonitoringReleaseName := "kube-monitoring" }}
-{{- if eq .Values.cluster_type "baremetal" "test" }}
+{{- if eq .Values.cluster_type "baremetal" }}
   {{- $kubeMonitoringReleaseName = "kube-monitoring-metal" }}
 {{- end }}
-{{- if eq .Values.cluster_type "kubernikus" "scaleout" "virtual" }}
+{{- if eq .Values.cluster_type "kubernikus" "scaleout" "virtual" "test" }}
   {{- $kubeMonitoringReleaseName = printf "kube-monitoring-%s" .Values.cluster_type }}
 {{- end -}}
 
@@ -47,6 +47,13 @@ spec:
         default isContainerAllowedToBePrivileged(container) = false
         default isContainerAllowedToUseCapability(container, capability) = false
         default isContainerAllowedToAccessHostPath(container, hostPath, readOnly) = false
+
+        # We add some blanket allowances for readonly access to certain paths
+        # that are known to not contain credentials.
+        isContainerAllowedToAccessHostPath(container, hostPath, readOnly) = true {
+          readOnly
+          hostPath in ["/etc/machine-id", "/lib/modules"]
+        }
 
         ########################################################################
         # generate violations for all pods using privileged security features
@@ -107,7 +114,7 @@ spec:
         }
 
         ########################################################################
-        # allowlist for audit-logs deployment
+        # allowlist for audit-logs-auditbeat pod (see below for fluent)
 
         default isAuditbeatPod = false
         isAuditbeatPod = true {
@@ -155,6 +162,53 @@ spec:
           container.name == "enable-pamd-tty"
         }
         {{- end }}
+
+        ########################################################################
+        # allowlist for fluent and fluent-bit
+
+        # TODO: Would it be advisable to merge all the different Fluent deployments?
+        default isFluentPod = false
+        {{- if or (eq .Values.cluster_type "baremetal" "test") (hasPrefix .Values.cluster_name "s-") }}
+        isFluentPod = true {
+          # In the "main" clusters (baremetal and the original scaleouts), Team
+          # Supervision deploys several fluent daemonsets in the "logs" namespace.
+          iro.kind == "DaemonSet"
+          iro.metadata.namespace == "logs"
+          iro.metadata.name in {"fluent", "fluent-prometheus", "fluent-systemd"}
+          helmReleaseName == "logs"
+        }
+        {{- end }}
+        {{- if and (ne .Values.cluster_type "baremetal") (not (hasPrefix .Values.cluster_name "s-")) }}
+        isFluentPod = true {
+          # In all other clusters, kube-monitoring deploys one fluent-bit daemonset.
+          iro.kind == "DaemonSet"
+          iro.metadata.namespace == "kube-monitoring"
+          iro.metadata.name == "{{ $kubeMonitoringReleaseName }}-fluent-bit"
+          helmReleaseName == "{{ $kubeMonitoringReleaseName }}"
+        }
+        {{- end }}
+        isFluentPod = true {
+          # The audit-logs deployment also contains another set of Fluent pods
+          # with different log targets.
+          iro.kind == "DaemonSet"
+          iro.metadata.namespace == "audit-logs"
+          iro.metadata.name in {"fluent-audit-container", "fluent-audit-systemd"}
+          helmReleaseName == "audit-logs"
+        }
+
+        isContainerAllowedToAccessHostPath(container, hostPath, readOnly) = true {
+          # All Fluent pods need to access log files on the host.
+          # TODO: Why not readOnly? Can this be restricted to specific subpaths?
+          isFluentPod
+          hostPath == "/var/log"
+        }
+        isContainerAllowedToAccessHostPath(container, hostPath, readOnly) = true {
+          # Most Fluent pods need to read container logs.
+          isFluentPod
+          not endswith(container, "-systemd")
+          hostPath == "/var/lib/docker/containers"
+          readOnly
+        }
 
         ########################################################################
         # allowlist for kube-monitoring
@@ -262,12 +316,6 @@ spec:
         isContainerAllowedToAccessHostPath(container, hostPath, readOnly) = true {
           isNeutronNetworkAgentPod
           container.name == "init"
-        }
-        # The agent containers need to read /lib/modules.
-        isContainerAllowedToAccessHostPath(container, hostPath, readOnly) = true {
-          isNeutronNetworkAgentPod
-          readOnly
-          regex.match("^/lib/modules($|/)", hostPath)
         }
         # The DHCP agent needs to write into /dev/log. (TODO: why?)
         isContainerAllowedToAccessHostPath(container, hostPath, readOnly) = true {

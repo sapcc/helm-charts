@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  annotations:
+    meta.helm.sh/release-name: kube-monitoring-test
+    meta.helm.sh/release-namespace: kube-monitoring
+  labels:
+    app.kubernetes.io/managed-by: Helm
+  name: kube-monitoring-test-fluent-bit
+  namespace: kube-monitoring
+spec:
+  template:
+    spec:
+      containers:
+      - name: fluent-bit
+        volumeMounts:
+        - mountPath: /fluent-bit/etc/fluent-bit.conf
+          name: config
+          subPath: fluent-bit.conf
+        - mountPath: /fluent-bit/etc/custom_parsers.conf
+          name: config
+          subPath: custom_parsers.conf
+        - mountPath: /var/log
+          name: varlog
+        - mountPath: /var/lib/docker/containers
+          name: varlibdockercontainers
+          readOnly: true
+        - mountPath: /etc/machine-id
+          name: etcmachineid
+          readOnly: true
+      securityContext: {}
+      volumes:
+      - configMap:
+          defaultMode: 420
+          name: fluent-bit-config
+        name: config
+      - hostPath:
+          path: /var/log
+        name: varlog
+      - hostPath:
+          path: /var/lib/docker/containers
+        name: varlibdockercontainers
+      - hostPath:
+          path: /etc/machine-id
+          type: File
+        name: etcmachineid
