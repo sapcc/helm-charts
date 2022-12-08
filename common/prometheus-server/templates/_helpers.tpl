@@ -7,8 +7,7 @@
 {{- end -}}
 {{/* vmware prometheis need additional renaming */}}
 {{- if $root.Values.vmware -}}
-{{- $vropshostname := split "." $name -}}
-vmware-{{ $vropshostname._0 | trimPrefix "vrops-" }}
+{{- include "vmwareRenaming" $name -}}
 {{- else -}}
 {{- $name -}}
 {{- end -}}
@@ -20,8 +19,7 @@ vmware-{{ $vropshostname._0 | trimPrefix "vrops-" }}
 {{- $root := index . 1 -}}
 {{/* vmware prometheis need additional renaming */}}
 {{- if $root.Values.vmware -}}
-{{- $vropshostname := split "." $name -}}
-prometheus-vmware-{{ $vropshostname._0 | trimPrefix "vrops-" }}
+prometheus-{{- include "vmwareRenaming" $name -}}
 {{- else -}}
 prometheus-{{- (include "prometheus.name" .) -}}
 {{- end -}}
@@ -42,8 +40,7 @@ prometheus-{{- (include "prometheus.name" .) -}}
 {{- required ".Values.ingress.hostsFQDN must have at least one hostname set" $firstHost -}}
 {{/* vmware prometheis need additional renaming */}}
 {{- else if $root.Values.vmware -}}
-{{- $vropshostname := split "." $name -}}
-prometheus-vmware-{{ $vropshostname._0 | trimPrefix "vrops-" }}.{{- required "$root.Values.global.region missing" $root.Values.global.region -}}.{{- required "$root.Values.global.domain missing" $root.Values.global.domain -}}
+prometheus-{{- include "vmwareRenaming" $name -}}.{{- required "$root.Values.global.region missing" $root.Values.global.region -}}.{{- required "$root.Values.global.domain missing" $root.Values.global.domain -}}
 {{- else -}}
 prometheus-{{- $name -}}.{{- required "$root.Values.global.region missing" $root.Values.global.region -}}.{{- required "$root.Values.global.domain missing" $root.Values.global.domain -}}
 {{- end -}}
@@ -80,8 +77,7 @@ prometheus-{{- $name -}}.{{- required "$root.Values.global.region missing" $root
 {{- $root := index . 1 -}}
 {{/* vmware prometheis need additional renaming */}}
 {{- if $root.Values.vmware -}}
-{{- $vropshostname := split "." $name -}}
-vmware-{{ $vropshostname._0 | trimPrefix "vrops-" }}
+{{- include "vmwareRenaming" $name -}}
 {{- else -}}
 {{- default $name $root.Values.persistence.name | quote -}}
 {{- end -}}
@@ -150,11 +146,15 @@ vmware-{{ $vropshostname._0 | trimPrefix "vrops-" }}
 {{- define "prometheusTargetsValue" -}}
 {{- $name := index . 0 -}}
 {{- $root := index . 1 -}}
+{{- if $root.Values.vmware -}}
+{{- include "vmwareRenaming" $name -}}
+{{- else -}}
 {{- $value := printf ".*%s.*" $name -}}
 {{- if $root.Values.serviceDiscoveries.additionalTargets -}}
 {{- $value -}}|.*{{- $root.Values.serviceDiscoveries.additionalTargets | join ".*|.*" -}}.*
 {{- else -}}
 {{- $value -}}
+{{- end -}}
 {{- end -}}
 {{- end -}}
 
@@ -197,3 +197,8 @@ vmware-{{ $vropshostname._0 | trimPrefix "vrops-" }}
 {{- (include "prometheus.fullName" .) -}}-thanos
 {{- end -}}
 
+{{/* Special renaming for vmware-monitoring */}}
+{{- define "vmwareRenaming" -}}
+{{- $vropshostname := split "." . -}}
+vmware-{{ $vropshostname._0 | trimPrefix "vrops-" }}
+{{- end -}}
