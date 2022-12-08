@@ -11,8 +11,7 @@
 {{- fail "Cannot create any Thanos resource. Please define a name or at least one list element to names or global.targets" -}}
 {{- end -}}
 {{- if $root.Values.vmware -}}
-{{- $vropshostname := split "." $name -}}
-vmware-{{ $vropshostname._0 | trimPrefix "vrops-" }}
+{{- include "vmwareRenaming" $name -}}
 {{- else -}}
 {{- $name -}}
 {{- end -}}
@@ -23,8 +22,7 @@ vmware-{{ $vropshostname._0 | trimPrefix "vrops-" }}
 {{- $name := index . 0 -}}
 {{- $root := index . 1 -}}
 {{- if $root.Values.vmware -}}
-{{- $vropshostname := split "." $name -}}
-thanos-vmware-{{ $vropshostname._0 | trimPrefix "vrops-" }}
+thanos-{{- include "vmwareRenaming" $name -}}
 {{- else -}}
 thanos-{{- $name -}}
 {{- end -}}
@@ -94,4 +92,10 @@ prometheus-{{- include "thanos.name" . -}}-thanos-storage-config
 - action: replace
   targetLabel: cluster
   replacement: {{ if .Values.global.cluster }}{{ .Values.global.cluster }}{{ else }}{{ .Values.global.region }}{{ end }}
+{{- end -}}
+
+{{/* Special renaming for vmware-monitoring */}}
+{{- define "vmwareRenaming" -}}
+{{- $vropshostname := split "." . -}}
+vmware-{{ $vropshostname._0 | trimPrefix "vrops-" }}
 {{- end -}}
