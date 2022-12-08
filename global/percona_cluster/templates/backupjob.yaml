@@ -17,9 +17,9 @@ spec:
       template:
         spec:
           securityContext:
-            runAsUser: 1000
-            runAsGroup: 1000
-            fsGroup: 1000
+            runAsUser: {{ .Values.security_context_ids }}
+            runAsGroup: {{ .Values.security_context_ids }}
+            fsGroup: {{ .Values.security_context_ids }}
           containers:
           - name: backup
             image: {{ required ".Values.global.dockerHubMirrorAlternateRegion is missing" .Values.global.dockerHubMirrorAlternateRegion }}/{{ .Values.backup.image }}:{{ .Values.backup.image_tag }}
@@ -47,7 +47,7 @@ spec:
             - name: OS_AUTH_URL
               value: "{{.Values.global.keystone_api_endpoint_protocol_internal | default "http"}}://{{ .Values.global.keystone_internal_ip }}:{{ .Values.global.keystone_api_port_internal | default 5000}}/v3"
             - name: OS_REGION_NAME
-              value: "{{ .Values.global.region }}"
+              value: "{{ .Values.global.db_region }}"
           restartPolicy: OnFailure
           volumes:
           - name: mysql-startup-scripts
