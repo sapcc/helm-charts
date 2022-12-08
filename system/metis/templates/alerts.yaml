@@ -53,4 +53,21 @@ metadata:
 spec:
   groups:
 {{ include (print .Template.BasePath "/alerts/_sync.alerts.tpl") . | indent 2 }}
+
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+
+metadata:
+  name: metis-data-sync-alerts
+  namespace: {{ .Values.namespace }}
+  labels:
+    app.kubernetes.io/name: metisdb
+    helm.sh/chart: {{ include "metis.chart" $ }}
+    app.kubernetes.io/instance: metisdb-{{ $.Release.Name }}
+    app.kubernetes.io/managed-by: {{ $.Release.Service }}
+    prometheus: {{ required ".Values.alerts.prometheus missing"  .Values.alerts.prometheus }}
+
+spec:
+{{ $.Files.Get "alerts/data-sync.alerts" | indent 2 }}
 {{- end }}

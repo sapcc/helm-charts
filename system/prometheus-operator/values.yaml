@@ -6,31 +6,41 @@ kube-prometheus-stack:
 
   prometheusOperator:
     image:
-      repository: keppel.eu-de-1.cloud.sap/ccloud-quay-mirror/prometheus-operator/prometheus-operator
+      registry: keppel.eu-de-1.cloud.sap
+      repository: ccloud-quay-mirror/prometheus-operator/prometheus-operator
       tag: v0.58.0
 
     prometheusConfigReloader:
       image:
-        repository: keppel.eu-de-1.cloud.sap/ccloud-quay-mirror/prometheus-operator/prometheus-config-reloader
+        registry: keppel.eu-de-1.cloud.sap
+        repository: ccloud-quay-mirror/prometheus-operator/prometheus-config-reloader
         tag: v0.58.0
+ 
+    thanosImage:
+      registry: keppel.eu-de-1.cloud.sap
+      repository: ccloud-quay-mirror/thanos/thanos
+      tag: v0.28.1
 
     # Both admissionWebhooks and tls requires admissionregistration.k8s.io/v1 .
     admissionWebhooks:
       failurePolicy: Ignore
       patch:
         image:
-          repository: keppel.eu-de-1.cloud.sap/ccloud-k8sgcr-mirror/ingress-nginx/kube-webhook-certgen
+          registry: keppel.eu-de-1.cloud.sap
+          repository: ccloud-k8sgcr-mirror/ingress-nginx/kube-webhook-certgen
+          tag: v1.2.0
 
     createCustomResource: false
-    service:
-      annotations:
-        prometheus.io/scrape: "true"
-        prometheus.io/targets: "kubernetes"
-        prometheus.io/port: "8080"
     serviceAccount:
       create: true
     tlsProxy:
       enabled: false
+
+    serviceMonitor:
+      additionalLabels:
+        prometheus: kubernetes
+      interval: 30s
+      scrapeTimeout: 25s
 
   operator:
     serviceAccountName: default

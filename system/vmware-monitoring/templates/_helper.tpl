@@ -32,3 +32,8 @@ vmware-{{ $vropshostname._0 | trimPrefix "vrops-" }}
 {{- $vropshostname := split "." $name -}}
 prometheus-vmware-{{ $vropshostname._0 | trimPrefix "vrops-" }}
 {{- end -}}
+
+{{- define "maiaFederationMatches" -}}
+{{- range $.Values.maiaFederation.matches -}}.*{{- . | trimPrefix "vrops_virtualmach" -}}|
+{{- end -}}
+{{- end -}}

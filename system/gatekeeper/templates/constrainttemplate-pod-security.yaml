@@ -1,8 +1,8 @@
 {{- $kubeMonitoringReleaseName := "kube-monitoring" }}
-{{- if eq .Values.cluster_type "baremetal" "test" }}
+{{- if eq .Values.cluster_type "baremetal" }}
   {{- $kubeMonitoringReleaseName = "kube-monitoring-metal" }}
 {{- end }}
-{{- if eq .Values.cluster_type "kubernikus" "scaleout" "virtual" }}
+{{- if eq .Values.cluster_type "kubernikus" "scaleout" "virtual" "test" }}
   {{- $kubeMonitoringReleaseName = printf "kube-monitoring-%s" .Values.cluster_type }}
 {{- end -}}
 
@@ -37,6 +37,84 @@ spec:
 
         ########################################################################
         # allowlists: match pods that may use certain privileged features
+        #
+        # By default, everything is forbidden; positive allowlist entries are
+        # at the bottom of this file, ordered by privileged service.
+
+        default isPodAllowedToUseHostNetwork = false
+        default isPodAllowedToUseHostPID = false
+        default isPodAllowedToUsePrivilegeEscalation = false
+        default isContainerAllowedToBePrivileged(container) = false
+        default isContainerAllowedToUseCapability(container, capability) = false
+        default isContainerAllowedToAccessHostPath(container, hostPath, readOnly) = false
+
+        # We add some blanket allowances for readonly access to certain paths
+        # that are known to not contain credentials.
+        isContainerAllowedToAccessHostPath(container, hostPath, readOnly) = true {
+          readOnly
+          hostPath in ["/etc/machine-id", "/lib/modules"]
+        }
+
+        ########################################################################
+        # generate violations for all pods using privileged security features
+        # without being allowlisted
+
+        violation[{"msg": add_support_labels.from_k8s_object(iro, msg)}] {
+          pod.isFound
+          object.get(pod.spec, ["hostNetwork"], false)
+          not isPodAllowedToUseHostNetwork
+          msg := "pod is not allowed to set spec.hostNetwork = true"
+        }
+
+        violation[{"msg": add_support_labels.from_k8s_object(iro, msg)}] {
+          pod.isFound
+          object.get(pod.spec, ["hostPID"], false)
+          not isPodAllowedToUseHostPID
+          msg := "pod is not allowed to set spec.hostPID = true"
+        }
+
+        violation[{"msg": add_support_labels.from_k8s_object(iro, msg)}] {
+          container := containers[_]
+          object.get(container, ["securityContext", "allowPrivilegeEscalation"], false)
+          not isPodAllowedToUsePrivilegeEscalation
+          msg := sprintf("pod is not allowed to set spec.containers[%q].securityContext.allowPrivilegeEscalation = true", [container.name])
+        }
+
+        violation[{"msg": add_support_labels.from_k8s_object(iro, msg)}] {
+          container := containers[_]
+          object.get(container, ["securityContext", "privileged"], false)
+          not isContainerAllowedToBePrivileged(container)
+          msg := sprintf("pod is not allowed to set spec.containers[%q].securityContext.privileged = true", [container.name])
+        }
+
+        violation[{"msg": add_support_labels.from_k8s_object(iro, msg)}] {
+          container := containers[_]
+          capabilities := object.get(container, ["securityContext", "capabilities", "add"], [])
+          capability := capabilities[_]
+          not isContainerAllowedToUseCapability(container, capability)
+          msg := sprintf("pod is not allowed to set spec.containers[%q].securityContext.capabilities.add = [%q]", [container.name, capability])
+        }
+
+        violation[{"msg": add_support_labels.from_k8s_object(iro, msg)}] {
+          # if pod has a hostPath volume...
+          pod.isFound
+          volume := pod.spec.volumes[_]
+          hostPath := object.get(volume, ["hostPath", "path"], null)
+          hostPath != null
+
+          # ...and a container is mounting it...
+          container := containers[_]
+          volumeMount := container.volumeMounts[_]
+          volume.name == volumeMount.name
+          readOnly := object.get(volumeMount, ["readOnly"], false)
+
+          # ...it needs to be allowed
+          not isContainerAllowedToAccessHostPath(container, hostPath, readOnly)
+          msg := sprintf("container %q in this pod is not allowed to mount hostPath volumes with path %q (readonly = %s)", [container.name, hostPath, readOnly])
+        }
+
+        ########################################################################
+        # allowlist for audit-logs-auditbeat pod (see below for fluent)
 
         default isAuditbeatPod = false
         isAuditbeatPod = true {
@@ -45,27 +123,95 @@ spec:
           iro.metadata.namespace == "audit-logs"
         }
 
-        default isKubeSystemPod = false
-        isKubeSystemPod = true {
-          iro.kind == "DaemonSet"
-          iro.metadata.namespace == "kube-system"
-          # NOTE: In scaleout, this includes daemonsets and deployments that are
-          # injected by Kubernikus (CNI, Wormhole, kube-proxy, etc.).
+        # The "auditbeat" container needs to break out into the host to read
+        # and also configure the kernel audit log.
+        isPodAllowedToUseHostNetwork = true {
+          isAuditbeatPod
         }
-        isKubeSystemPod = true {
-          iro.kind == "Deployment"
-          iro.metadata.namespace == "kube-system"
-          # NOTE: In scaleout, this includes daemonsets and deployments that are
-          # injected by Kubernikus (CNI, Wormhole, kube-proxy, etc.).
+        isPodAllowedToUseHostPID = true {
+          isAuditbeatPod
+        }
+        isContainerAllowedToUseCapability(container, capability) = true {
+          isAuditbeatPod
+          container.name == "auditbeat"
+          capability in {"AUDIT_CONTROL", "AUDIT_READ", "AUDIT_WRITE"}
+        }
+        isContainerAllowedToAccessHostPath(container, hostPath, readOnly) = true {
+          isAuditbeatPod
+          container.name == "auditbeat"
+          readOnly
+          regex.match("^(?:/s?bin|/usr/s?bin|/etc|/run/containerd)$", hostPath)
+        }
+        isContainerAllowedToAccessHostPath(container, hostPath, readOnly) = true {
+          isAuditbeatPod
+          container.name == "auditbeat"
+          hostPath == "/var/lib/auditbeat-data"
         }
 
-        default isNeutronNetworkAgentPod = false
-        isNeutronNetworkAgentPod = true {
-          iro.kind == "StatefulSet"
-          iro.metadata.namespace == "monsoon3"
-          startswith(iro.metadata.name, "neutron-network-agent-")
-          helmReleaseName == "neutron"
+        # The init container "enable-pamd-tty" needs to break out into the host
+        # to setup audit logging for PAM-based authentication (this is only
+        # necessary in clusters where the worker nodes are provisioned by
+        # OpenStack instead of Terraform).
+        {{- if eq .Values.cluster_type "kubernikus" "scaleout" "test" }}
+        isContainerAllowedToBePrivileged(container) = true {
+          isAuditbeatPod
+          container.name == "enable-pamd-tty"
         }
+        isContainerAllowedToAccessHostPath(container, hostPath, readOnly) = true {
+          isAuditbeatPod
+          container.name == "enable-pamd-tty"
+        }
+        {{- end }}
+
+        ########################################################################
+        # allowlist for fluent and fluent-bit
+
+        # TODO: Would it be advisable to merge all the different Fluent deployments?
+        default isFluentPod = false
+        {{- if or (eq .Values.cluster_type "baremetal" "test") (hasPrefix .Values.cluster_name "s-") }}
+        isFluentPod = true {
+          # In the "main" clusters (baremetal and the original scaleouts), Team
+          # Supervision deploys several fluent daemonsets in the "logs" namespace.
+          iro.kind == "DaemonSet"
+          iro.metadata.namespace == "logs"
+          iro.metadata.name in {"fluent", "fluent-prometheus", "fluent-systemd"}
+          helmReleaseName == "logs"
+        }
+        {{- end }}
+        {{- if and (ne .Values.cluster_type "baremetal") (not (hasPrefix .Values.cluster_name "s-")) }}
+        isFluentPod = true {
+          # In all other clusters, kube-monitoring deploys one fluent-bit daemonset.
+          iro.kind == "DaemonSet"
+          iro.metadata.namespace == "kube-monitoring"
+          iro.metadata.name == "{{ $kubeMonitoringReleaseName }}-fluent-bit"
+          helmReleaseName == "{{ $kubeMonitoringReleaseName }}"
+        }
+        {{- end }}
+        isFluentPod = true {
+          # The audit-logs deployment also contains another set of Fluent pods
+          # with different log targets.
+          iro.kind == "DaemonSet"
+          iro.metadata.namespace == "audit-logs"
+          iro.metadata.name in {"fluent-audit-container", "fluent-audit-systemd"}
+          helmReleaseName == "audit-logs"
+        }
+
+        isContainerAllowedToAccessHostPath(container, hostPath, readOnly) = true {
+          # All Fluent pods need to access log files on the host.
+          # TODO: Why not readOnly? Can this be restricted to specific subpaths?
+          isFluentPod
+          hostPath == "/var/log"
+        }
+        isContainerAllowedToAccessHostPath(container, hostPath, readOnly) = true {
+          # Most Fluent pods need to read container logs.
+          isFluentPod
+          not endswith(container, "-systemd")
+          hostPath == "/var/lib/docker/containers"
+          readOnly
+        }
+
+        ########################################################################
+        # allowlist for kube-monitoring
 
         default isNodeExporterPod = false
         isNodeExporterPod = true {
@@ -75,44 +221,62 @@ spec:
           helmReleaseName == "{{ $kubeMonitoringReleaseName }}"
         }
 
-        default isSwiftServerPod = false
-        isSwiftServerPod = true {
-          iro.kind == "DaemonSet"
-          iro.metadata.namespace == "swift"
-          object.get(pod.spec, ["nodeSelector", "species"], "none") == "swift-storage"
+        # node-exporter needs node-level access to collect node metrics
+        isPodAllowedToUseHostNetwork = true {
+          isNodeExporterPod
+        }
+        isPodAllowedToUseHostPID = true {
+          isNodeExporterPod
+        }
+        isContainerAllowedToAccessHostPath(container, hostPath, readOnly) = true {
+          isNodeExporterPod
+          container.name == "node-exporter"
+          # the node exporter needs to inspect the host filesystem to collect metrics
+          readOnly
         }
 
         ########################################################################
-        # allowlists for container-level privileged features
+        # allowlist for kube-system namespace (TODO: this is extremely coarse,
+        # break this down into individual services)
 
-        default isContainerAllowedToBePrivileged(container) = false
-
-        isContainerAllowedToBePrivileged(container) = true {
-          isNeutronNetworkAgentPod
-          # the neutron-dhcp-agent needs to reach into most customer networks,
-          # and the init container needs to load required kernel modules
-          container.name in {"neutron-dhcp-agent", "init"}
+        default isKubeSystemPod = false
+        isKubeSystemPod = true {
+          iro.kind in {"CronJob", "DaemonSet", "Deployment"}
+          iro.metadata.namespace == "kube-system"
+          # NOTE: In scaleout, this includes daemonsets and deployments that are
+          # injected by Kubernikus (CNI, Wormhole, kube-proxy, etc.).
+          # NOTE: "CronJob" refers to "k3s-backup" in the a-clusters.
         }
-        {{- if eq .Values.cluster_type "kubernikus" "scaleout" "test" }}
-        isContainerAllowedToBePrivileged(container) = true {
-          isAuditbeatPod
-          # the audit-log-auditbeat pod's init container needs to break out
-          # into the host to setup audit logging for PAM-based authentication
-          # (this is only necessary in clusters where the worker nodes are
-          # provisioned by OpenStack instead of Terraform)
-          container.name == "enable-pamd-tty"
+
+        # Many kube-system components need broad node-level access (e.g.
+        # kube-proxy, MTU discovery, wormhole to k8s central).
+        isPodAllowedToUseHostNetwork = true {
+          isKubeSystemPod
         }
-        {{- end }}
-
-        default isContainerAllowedToUseCapability(container, capability) = false
-
+        isPodAllowedToUseHostPID = true {
+          # kube-system-ldap-named-user and nvidia-driver-installer need this
+          isKubeSystemPod
+        }
+        isPodAllowedToUsePrivilegeEscalation = true {
+          # needed by kube-system-ingress-nginx-external-controller, in scaleout
+          # also by csi-cinder-node-plugin
+          isKubeSystemPod
+        }
+        isContainerAllowedToBePrivileged(container) = true {
+          isKubeSystemPod
+        }
         isContainerAllowedToUseCapability(container, capability) = true {
-          isAuditbeatPod
-          container.name == "auditbeat"
-          # the audit-log-auditbeat pod needs to break out into the host to
-          # read and also configure the kernel audit log
-          capability in {"AUDIT_CONTROL", "AUDIT_READ", "AUDIT_WRITE"}
+          # many kube-system components need broad network access (e.g. coredns,
+          # CNI, ingress-nginx)
+          isKubeSystemPod
         }
+        isContainerAllowedToAccessHostPath(container, hostPath, readOnly) = true {
+          isKubeSystemPod
+        }
+
+        ########################################################################
+        # allowlist for Kubernikus
+
         {{- if eq .Values.cluster_type "admin" "kubernikus" "virtual" "test" }}
         isContainerAllowedToUseCapability(container, capability) = true {
           iro.kind == "Deployment"
@@ -124,89 +288,101 @@ spec:
           capability in {"NET_ADMIN"}
         }
         {{- end }}
+
+        ########################################################################
+        # allowlist for neutron-network-agent
+
+        default isNeutronNetworkAgentPod = false
+        isNeutronNetworkAgentPod = true {
+          iro.kind == "StatefulSet"
+          iro.metadata.namespace == "monsoon3"
+          startswith(iro.metadata.name, "neutron-network-agent-")
+          helmReleaseName == "neutron"
+        }
+
+        # The agent containers need to reach into most customer networks.
+        # The init container needs to load required kernel modules.
+        isContainerAllowedToBePrivileged(container) = true {
+          isNeutronNetworkAgentPod
+          container.name in {"neutron-dhcp-agent", "init"}
+        }
         isContainerAllowedToUseCapability(container, capability) = true {
           isNeutronNetworkAgentPod
           container.name == "neutron-linuxbridge-agent"
-          # the neutron-linuxbridge-agent needs to reach into all customer
-          # networks
           capability in {"DAC_OVERRIDE", "DAC_READ_SEARCH", "NET_ADMIN", "SYS_ADMIN", "SYS_PTRACE"}
         }
 
+        # The init container mounts the entire host FS to load kernel modules.
+        isContainerAllowedToAccessHostPath(container, hostPath, readOnly) = true {
+          isNeutronNetworkAgentPod
+          container.name == "init"
+        }
+        # The DHCP agent needs to write into /dev/log. (TODO: why?)
+        isContainerAllowedToAccessHostPath(container, hostPath, readOnly) = true {
+          isNeutronNetworkAgentPod
+          container.name == "neutron-dhcp-agent"
+          hostPath == "/dev/log"
+        }
+
         ########################################################################
-        # generate violations for all pods using privileged security features
-        # without being allowlisted
+        # allowlist for Swift components running on the storage servers
 
-        violation[{"msg": add_support_labels.from_k8s_object(iro, msg)}] {
-          pod.isFound
-          object.get(pod.spec, ["hostNetwork"], false)
+        default isPXBirdPod = false
+        {{- if eq .Values.cluster_type "baremetal" "test" }}
+        isPXBirdPod = true {
+          iro.kind == "Deployment"
+          iro.metadata.namespace == "px"
+          regex.match("^{{ .Values.global.region }}-pxrs-[0-9]-s[0-9]-[0-9]$", iro.metadata.name)
+          regex.match("^bird-domain[0-9]$", helmReleaseName)
+        }
+        {{- end }}
+        # NOTE: The PX pods have a weird naming scheme wherein container names
+        # are prefixed with the pod name for no apparent reason.
 
-          # the audit-log-auditbeat pod needs to break out into the host to
-          # read and configure the kernel audit log
-          not isAuditbeatPod
-          # many kube-system components need broad node-level access (e.g.
-          # kube-proxy, MTU discovery, wormhole to k8s central)
-          not isKubeSystemPod
-          # node-exporter needs node-level access to collect node metrics
-          not isNodeExporterPod
-          # Swift components running on the storage servers inspect the network
-          # interfaces to establish their identity within the Swift ring
-          not isSwiftServerPod
-
-          msg := "pod is not allowed to set spec.hostNetwork = true"
+        # The init container needs to be able to set an external-facing VLAN
+        # interface into promiscuous mode.
+        isContainerAllowedToBePrivileged(container) = true {
+          isPXBirdPod
+          container.name == sprintf("%s-init", [iro.metadata.name])
+        }
+        # Bird needs to be able to send and receive BGP announcements.
+        isContainerAllowedToUseCapability(container, "NET_ADMIN") = true {
+          isPXBirdPod
+          container.name == iro.metadata.name
         }
 
-        violation[{"msg": add_support_labels.from_k8s_object(iro, msg)}] {
-          pod.isFound
-          object.get(pod.spec, ["hostPID"], false)
+        ########################################################################
+        # allowlist for Swift components running on the storage servers
 
-          # the audit-log-auditbeat pod needs to break out into the host to
-          # read and configure the kernel audit log
-          not isAuditbeatPod
-          # kube-system-ldap-named-user and nvidia-driver-installer need this
-          not isKubeSystemPod
-          # node-exporter needs to look into the node level
-          not isNodeExporterPod
-
-          msg := "pod is not allowed to set spec.hostPID = true"
+        default isSwiftServerPod = false
+        isSwiftServerPod = true {
+          iro.kind == "DaemonSet"
+          iro.metadata.namespace == "swift"
+          object.get(pod.spec, ["nodeSelector", "species"], "none") == "swift-storage"
         }
 
-        violation[{"msg": add_support_labels.from_k8s_object(iro, msg)}] {
-          container := containers[_]
-          object.get(container, ["securityContext", "allowPrivilegeEscalation"], false)
-
-          # needed by kube-system-ingress-nginx-external-controller, in scaleout
-          # also by csi-cinder-node-plugin
-          not isKubeSystemPod
-
-          msg := sprintf("pod is not allowed to set spec.containers[%q].securityContext.allowPrivilegeEscalation = true", [container.name])
+        # Swift storage components inspect the network interfaces to establish
+        # their identity within the Swift ring
+        isPodAllowedToUseHostNetwork = true {
+          isSwiftServerPod
         }
 
-        violation[{"msg": add_support_labels.from_k8s_object(iro, msg)}] {
-          container := containers[_]
-          object.get(container, ["securityContext", "privileged"], false)
-
-          # many kube-system components need broad node-level access
-          # (e.g. kube-proxy, MTU discovery, wormhole to k8s central)
-          not isKubeSystemPod
-          # Swift components running on the storage servers need to be able to
-          # mount/unmount disks at runtime (TODO: use mount propagation instead)
-          not isSwiftServerPod
-          # specific allowlist (see above)
-          not isContainerAllowedToBePrivileged(container)
-
-          msg := sprintf("pod is not allowed to set spec.containers[%q].securityContext.privileged = true", [container.name])
+        # Swift storage components need to be able to mount/unmount disks at
+        # runtime (TODO: use mount propagation instead)
+        isContainerAllowedToBePrivileged(container) = true {
+          isSwiftServerPod
         }
-
-        violation[{"msg": add_support_labels.from_k8s_object(iro, msg)}] {
-          container := containers[_]
-          capabilities := object.get(container, ["securityContext", "capabilities", "add"], [])
-          capability := capabilities[_]
-
-          # many kube-system components need broad network access (e.g. coredns,
-          # CNI, ingress-nginx)
-          not isKubeSystemPod
-          # specific allowlist (see above)
-          not isContainerAllowedToUseCapability(container, capability)
-
-          msg := sprintf("pod is not allowed to set spec.containers[%q].securityContext.capabilities.add = [%q]", [container.name, capability])
+        isContainerAllowedToAccessHostPath(container, hostPath, readOnly) = true {
+          isSwiftServerPod
+          # all components need to access the storage disks (as well as state
+          # shared with the drive autopilot)
+          regex.match("^/(?:srv/node|var/cache/swift|run/swift-storage/state)($|/)", hostPath)
+        }
+        isContainerAllowedToAccessHostPath(container, hostPath, readOnly) = true {
+          isSwiftServerPod
+          # swift-drive-autopilot needs far-reaching access to the host FS to
+          # find/format/encrypt/decrypt/mount/unmount disks and watch the
+          # kernel log for errors
+          regex.match("^keppel\\.[a-z0-9-]+\\.cloud\\.sap/ccloud/swift-drive-autopilot:", container.image)
+          # any `hostPath` allowed here
         }

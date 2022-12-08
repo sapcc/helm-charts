@@ -1,0 +1,32 @@
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  annotations:
+    meta.helm.sh/release-name: vrops-exporter
+    meta.helm.sh/release-namespace: vmware-monitoring
+  labels:
+    app.kubernetes.io/managed-by: Helm
+    ccloud/support-group: observability
+  name: vrops-inventory
+  namespace: vmware-monitoring
+spec:
+  resourcePolicy:
+    containerPolicies:
+    - containerName: '*'
+      controlledResources:
+      - cpu
+      - memory
+      controlledValues: RequestsOnly
+  targetRef:
+    apiVersion: v1
+    kind: Deployment
+    name: vrops-inventory
+  updatePolicy:
+    updateMode: "Auto"
+  resourcePolicy:
+    containerPolicies:
+      - containerName: '*'
+        controlledValues: RequestsOnly
+        controlledResources:
+          - cpu
+          - memory
