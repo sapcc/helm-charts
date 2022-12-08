@@ -6,7 +6,7 @@ groups:
   rules:
   - alert: NodeHostHighCPUUsage
     expr: 100 - (avg by (node) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 90
-    for: 30m
+    for: 1h
     labels:
       tier: {{ required ".Values.tier missing" .Values.tier }}
       service: node
@@ -18,7 +18,7 @@ groups:
       playbook: docs/support/playbook/kubernetes/k8s_node_host_high_cpu_usage.html
     annotations:
       summary: High CPU load on node
-      description: "Node {{`{{ $labels.node }}`}} has more than {{`{{ $value }}`}}% CPU load for 30m"
+      description: "Node {{`{{ $labels.node }}`}} has more than {{`{{ humanize $value }}`}}% CPU load for 1h"
 
   - alert: NodeKernelDeadlock
     expr: kube_node_status_condition_normalized{condition="KernelDeadlock", status="true"} == 1
