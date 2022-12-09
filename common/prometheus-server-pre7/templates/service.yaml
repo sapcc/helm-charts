@@ -4,7 +4,7 @@ kind: Service
 metadata:
   name: {{ include "prometheus.fullName" . }}
   labels:
-    prometheus: {{ include "prometheus.name" . }}
+    prometheus: {{ default (include "prometheus.name" .) .Values.alerts.prometheus }}
   {{ if .Values.service.annotations }}
   annotations:
 {{ toYaml .Values.service.annotations | indent 4 }}
@@ -13,7 +13,7 @@ metadata:
 spec:
   selector:
     app.kubernetes.io/name: prometheus
-    prometheus: {{ include "prometheus.name" . }}
+    prometheus: {{ default (include "prometheus.name" .) .Values.alerts.prometheus }}
   ports:
     - name: http
       port: 9090
