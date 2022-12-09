@@ -251,10 +251,6 @@
       regex: 'snmp_asr03_sysDescr;(?s)(.*)(Version )([0-9().a-z]*)(,.*)'
       replacement: '$3'
       target_label: image_version
-    - source_labels: [__name__, snmp_asr04_sysDescr]
-      regex: 'snmp_asr04_sysDescr;(?s)(.*)(Version )([0-9().a-z]*)(,.*)'
-      replacement: '$3'
-      target_label: image_version
     - source_labels: [__name__, snmp_f5_sysProductVersion]
       regex: 'snmp_f5_sysProductVersion;(.*)'
       replacement: '$1'
@@ -262,10 +258,6 @@
     - source_labels: [__name__, snmp_acistretch_sysDescr]
       regex: "snmp_acistretch_sysDescr;(?s)(.*)Version ([0-9.]*)(.*)"
       replacement: '$2'
-      target_label: image_version
-    - source_labels: [__name__, snmp_n7k_sysDescr]
-      regex: 'snmp_n7k_sysDescr;(?s)(.*)(Version )([0-9().a-z]*)(,.*)'
-      replacement: '$3'
       target_label: image_version
     - source_labels: [__name__, cucsEtherErrStatsDn]
       regex: 'snmp_ucs_cucsEtherErrStats.+;.+(lan).+'
@@ -294,36 +286,6 @@
       replacement: '$1'
       target_label: asr_pair
       action: replace
-
-- job_name: 'snmp-ntp'
-  scrape_interval: {{.Values.snmp_exporter.scrapeInterval}}
-  scrape_timeout: {{.Values.snmp_exporter.scrapeTimeout}}
-  http_sd_configs:
-    - url: "http://infra-monitoring-atlas-sd:8080/service_discovery/netbox"
-  metrics_path: /snmp
-  relabel_configs:
-    - source_labels: [job]
-      regex: snmp-ntp
-      action: keep
-    - source_labels: [__address__]
-      target_label: __param_target
-    - source_labels: [__param_target]
-      target_label: instance
-    - target_label: __address__
-      replacement: snmp-ntp-exporter:{{.Values.snmp_exporter.listen_port}}
-    - source_labels: [module]
-      target_label: __param_module
-  metric_relabel_configs:
-    - source_labels: [server_name]
-      target_label:  devicename
-    - source_labels: [devicename]
-      regex: '(\w*-\w*-\w*)-(\S*)'
-      replacement: '$1'
-      target_label: availability_zone
-    - source_labels: [devicename]
-      regex: '(\w*-\w*-\w*)-(\S*)'
-      replacement: '$2'
-      target_label: device
 
 {{- $values := .Values.ipmi_exporter -}}
 {{- if $values.enabled }}
