@@ -3,12 +3,12 @@ apiVersion: monitoring.coreos.com/v1
 kind: PodMonitor
 
 metadata:
-  name: opensearch-data-exporter
+  name: opensearch-logs-data-exporter
   labels:
     prometheus: infra-frontend
 
 spec:
-  jobLabel: opensearch-data-exporter
+  jobLabel: opensearch-logs-data-exporter
 
   selector:
     matchLabels:
@@ -16,7 +16,7 @@ spec:
 
   # Find pods in any namespace.
   namespaceSelector:
-    matchNames: [opensearch]
+    matchNames: [opensearch-logs]
 
   podMetricsEndpoints:
     - interval: 60s
@@ -35,7 +35,7 @@ spec:
         - action: labelmap
           regex: '__meta_kubernetes_pod_label_(.+)'
         - targetLabel: job
-          replacement: opensearch-data-exporter
+          replacement: opensearch-logs-data-exporter
       metricRelabelings:
         - sourceLabels: [__name__, cluster]
           regex: '^(opensearch)_.+;(.*)'
