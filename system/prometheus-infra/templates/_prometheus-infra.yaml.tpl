@@ -41,7 +41,6 @@
     'match[]':
       - '{job="snmp", __name__!~"^(up|ALERTS.*|scrape.+)"}'
       - '{job="snmp-apod", __name__!~"^(up|ALERTS.*|scrape.+)"}'
-      - '{job="snmp-ntp", __name__!~"^(up|ALERTS.*|scrape.+)"}'
 
   relabel_configs:
     - action: replace
