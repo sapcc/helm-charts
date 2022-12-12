@@ -26,7 +26,7 @@
       summary: Database replication is incomplete
   - alert: Metis{{ $backup.name | camelcase }}NoRotation
     expr: (timestamp(metis_binlog_rotation_timestamp_seconds{kubernetes_pod_name=~"mariadb-sync-{{ $backup.name }}-[a-z0-9]{8,10}-[a-z0-9]{3,6}"}) - metis_binlog_rotation_timestamp_seconds{kubernetes_pod_name=~"mariadb-sync-{{ $backup.name }}-[a-z0-9]{8,10}-[a-z0-9]{3,6}"}) / 60 > 1440
-    for: 15m
+    for: 30m
     labels:
       context: replicationerrors
       service: "metis"
