@@ -53,8 +53,16 @@ amphora_driver = {{ .Values.amphora_driver  | default "amphora_noop_driver" }}
 compute_driver = {{ .Values.compute_driver  | default "compute_noop_driver" }}
 network_driver = {{ .Values.network_driver  | default "network_noop_driver" }}
 
+{{ if .Values.status_manager }}
 [status_manager]
-health_check_interval = 120
+health_check_interval = {{ .Values.status_manager.health_check_interval }}
+{{- if .Values.status_manager.health_update_threads }}
+health_update_threads = {{ .Values.status_manager.health_update_threads }}
+{{- end }}
+{{- if .Values.status_manager.stats_update_threads }}
+stats_update_threads = {{ .Values.status_manager.stats_update_threads }}
+{{- end }}
+{{- end }}
 
 {{ if .Values.house_keeping }}
 [house_keeping]
