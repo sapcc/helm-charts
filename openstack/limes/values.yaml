@@ -161,6 +161,31 @@ pgmetrics:
             usage: "GAUGE"
             description: "Number of projects that have a project_resources entry for this service and resource"
 
+    # This metric is federated into prometheus-kubernetes for alerting in
+    # Kubernikus. (Low free Swift quota means Kubernikus might become unable to
+    # do etcd backups.)
+    limes_free_swift_quota:
+      query: >
+        SELECT p.uuid AS project_id, p.name AS project, d.name AS domain, GREATEST(pr.backend_quota - pr.usage, 0) AS gauge
+          FROM domains d
+          JOIN projects p ON p.domain_id = d.id
+          JOIN project_services ps ON ps.project_id = p.id
+          JOIN project_resources pr ON pr.service_id = ps.id
+         WHERE ps.type = 'object-store'
+      metrics:
+        - gauge:
+            usage: "GAUGE"
+            description: "Free backend quota for Swift capacity"
+        - project_id:
+            usage: "LABEL"
+            description: "Project ID"
+        - project:
+            usage: "LABEL"
+            description: "Project name"
+        - domain:
+            usage: "LABEL"
+            description: "Domain name"
+
 
 # Deploy limes Prometheus alerts.
 alerts:
