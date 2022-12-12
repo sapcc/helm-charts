@@ -9,6 +9,11 @@ updaterConfig:
   awsSecret: {{ .Values.config.awsSecret }}
   region: {{ .Values.config.keystone.region }}
   sleepDuration: {{ .Values.updater.sleepDuration }}
+  applicationCredentialsProject: {{ .Values.updater.applicationCredentialsProject }}
+  applicationCredentialsDomain: {{ .Values.updater.applicationCredentialsDomain }}
+  applicationCredentialsName: {{ .Values.updater.applicationCredentialsName }}
+  applicationCredentialsSecret: {{ .Values.updater.applicationCredentialsSecret }}
+  applicationCredentialsId: {{ .Values.updater.applicationCredentialsId }}
   useCaseDescription: |
 {{ .Values.config.useCaseDescription | indent 6 }}
   websiteURL: {{ .Values.config.websiteURL }}
