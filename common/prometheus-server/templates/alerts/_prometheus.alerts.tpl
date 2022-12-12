@@ -195,7 +195,7 @@ groups:
       severity: info
       meta: 'Prometheus `{{`{{ $labels.prometheus }}`}}` fails to send alerts'
     annotations:
-      description: 'Prometheus `{{`{{ $labels.prometheus }}`}}` is having errors sending alerts to Alertmanager `{{`{{ $labels.alertmanager }}`}}`'
+      description: 'Prometheus `{{`{{ $labels.prometheus }}`}}` is having errors sending alerts to Alertmanager {{`{{ $labels.alertmanager }}`}}'
       summary: Prometheus fails to send alerts
 
   - alert: PrometheusNotificationsBacklog

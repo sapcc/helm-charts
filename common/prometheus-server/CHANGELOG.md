@@ -1,3 +1,10 @@
+## 7.1.1 - 7.1.9
+
+* fix prometheus alerts; fix service label for ServiceMonitor
+
+## 7.1.1 - 7.1.9
+
+* Bug fixes in the new minor version
 
 ## 7.1.0
 
