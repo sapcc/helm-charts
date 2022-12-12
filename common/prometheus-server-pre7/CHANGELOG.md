@@ -1,3 +1,11 @@
+## 6.4.10
+
+ * fix prometheus label on alerts
+
+## 6.4.7 - 6.4.9
+
+ * fix service labels for ServiceMonitor
+
 ## 6.4.6
 
  * bump Thanos to v0.28.1
