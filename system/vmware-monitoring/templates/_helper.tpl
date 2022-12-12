@@ -34,6 +34,14 @@ prometheus-vmware-{{ $vropshostname._0 | trimPrefix "vrops-" }}
 {{- end -}}
 
 {{- define "maiaFederationMatches" -}}
-{{- range $.Values.maiaFederation.matches -}}.*{{- . | trimPrefix "vrops_virtualmach" -}}|
+vrops_virtualmachine_(?:
+{{- range .Values.maiaFederation.matches -}}
+{{- . | trimPrefix "vrops_virtualmachine_" -}}|
+{{- end -}}
+){{- if .Values.maiaFederation.neo.enabled }}|vrops_hostsystem_(?:
+{{- range .Values.maiaFederation.neo.matches -}}
+{{- . | trimPrefix "vrops_hostsystem_" -}}|
+{{- end -}}
+)
 {{- end -}}
 {{- end -}}
