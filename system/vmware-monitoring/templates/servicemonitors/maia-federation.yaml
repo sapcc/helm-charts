@@ -21,6 +21,20 @@ spec:
     params:
       match[]:
         - '{__name__=~"{{- include "maiaFederationMatches" $root }}", project!~"internal", vccluster!~".*management.*"}'
+    metricRelabelings:
+      - source_labels: [__name__, project ]
+        regex: '^vrops_virtualmachine_.+;(.+)'
+        replacement: '$1'
+        target_label: project_id
+      - regex: 'project|collector|exported_job|instance|internal_name|prometheus|resource_uuid|thanos_cluster|thanos_cluster_type|vccluster|vcenter'
+        action: labeldrop
+    {{- if $.Values.maiaFederation.neo.enabled }}
+      - source_labels: [__name__]
+        target_label: domain_id
+        regex: ^vrops_hostsystem_.+
+        replacement: "{{ $.Values.maiaFederation.neo.domain_id }}"
+    {{- end }}
+
   jobLabel: {{ include "prometheusVMware.name" (list $target $root) }}
   selector:
     matchLabels:
