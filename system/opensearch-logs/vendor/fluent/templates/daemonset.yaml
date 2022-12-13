@@ -22,6 +22,12 @@ spec:
       annotations:
         checksum/fluent-bin-configmap.yaml: {{ include  (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
         checksum/fluent.conf: {{ include  (print $.Template.BasePath "/_fluent.conf.tpl") . | sha256sum }}
+        {{ if eq .Values.global.clusterType  "scaleout" }}
+        checksum/scaleout.conf: {{ include  (print $.Template.BasePath "/_scaleout.conf.tpl") . | sha256sum }}
+        {{ else }}
+
+        checksum/controlplane.conf: {{ include  (print $.Template.BasePath "/_controlplane.conf.tpl") . | sha256sum }}
+        {{ end }}
         checksum/prometheus.conf: {{ include  (print $.Template.BasePath "/_prometheus.conf.tpl") . | sha256sum }}
         checksum/pattern: {{ include  (print $.Template.BasePath "/_pattern.tpl") . | sha256sum }}
         scheduler.alpha.kubernetes.io/tolerations: '[{"key":"species","value":"hypervisor"}]'
