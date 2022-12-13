@@ -151,7 +151,7 @@
     logstash_prefix {{.Values.indexname}}
     logstash_format true
     template_name {{.Values.indexname}}
-    template_file /fluent-bin/{{.Values.indexname}}.json
+    template_file /fluentd/{{.Values.indexname}}.json
     template_overwrite false
     time_as_integer false
     @log_level info
