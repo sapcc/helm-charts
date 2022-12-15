@@ -25,6 +25,8 @@ spec:
         app.kubernetes.io/name: {{ template "name" . }}
         app.kubernetes.io/version: "{{ $.Values.imageTag }}"
         app.kubernetes.io/component: "app"
+      annotations:
+        checksum/secret: {{ include ( print $.Template.BasePath "/secrets.yaml" ) . | sha256sum }}
     spec:
       containers:
         - name: pagerduty2slack
