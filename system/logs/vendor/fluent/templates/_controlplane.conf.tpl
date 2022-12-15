@@ -422,7 +422,6 @@
 
 {{- if not .Values.logs.unbound.enabled }}
 <match kubernetes.var.log.containers.unbound**>
-</match>
   @type null
 </match>
 {{- end }}
