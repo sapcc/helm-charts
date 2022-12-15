@@ -1,3 +1,7 @@
+## 2.0.1
+
+* Specify prometheus to pick up the alerts
+
 ## 2.0.0
 
 * [Breaking change] Ingress related values changed. Configurable authentication on ingress level. Added OAUTH support.

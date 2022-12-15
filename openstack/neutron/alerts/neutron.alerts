@@ -47,3 +47,21 @@ groups:
     annotations:
       description: 'Network segment `{{ $labels.hostgroup }}` has less than 20% free allocations left.'
       summary: Openstack Neutron free network allocations exhaustion
+
+  - alert: OpenstackNeutronAsr1KDriverNetconfUnreachable
+    expr: |
+      sum by (device, host) (rate(neutron_asr1k_l2_device_unreachable_total[5m])) +
+      sum by (device, host) (rate(neutron_asr1k_l3_device_unreachable_total[5m]))
+      > 0
+    for: 20m
+    labels:
+      severity: critical
+      tier: net
+      service: asr
+      context: '{{ $labels.host }}'
+      dashboard: asr1k-driver-dashboard
+      meta: Asr1k driver for agent {{ $labels.host }} cannot reach device `{{ $labels.device }}` via netconf-yang.
+      playbook: docs/devops/alert/network/router.html#OpenstackNeutronAsr1KDriverNetconfUnreachable
+    annotations:
+      description: Asr1k driver for agent {{ $labels.host }} cannot reach device `{{ $labels.device }}` via netconf-yang.
+      summary: Asr1k driver cannot reach device
