@@ -1,6 +1,6 @@
 ## 2.0.1
 
-* Monitored and alerted by prometheus infra-frontend
+* Specify prometheus to pick up the alerts
 
 ## 2.0.0
 
