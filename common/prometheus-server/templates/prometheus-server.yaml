@@ -48,6 +48,23 @@ spec:
   probeNamespaceSelector: {}
   {{- end }}
 
+  {{- if $.Values.remoteWriteTargets }}
+  remoteWrite:
+  {{- range $remoteWrite := $.Values.remoteWriteTargets }}
+    - name: {{ $remoteWrite.name }}
+      url: {{ $remoteWrite.url }}
+      tlsConfig:
+        cert:
+          secret:
+            name: {{ $remoteWrite.tlsConfig.cert.secret.name }}
+            key: {{ $remoteWrite.tlsConfig.cert.secret.key }}
+        keySecret:
+          name: {{ $remoteWrite.tlsConfig.keySecret.name }}
+          key: {{ $remoteWrite.tlsConfig.keySecret.key }}
+      remoteTimeout: 60s
+  {{- end }}
+  {{- end }}
+
   # The labels to add to any time series or alerts when communicating with external systems (federation, remote storage, Alertmanager).
   externalLabels:
     region: {{ required ".Values.global.region missing" $.Values.global.region }}
