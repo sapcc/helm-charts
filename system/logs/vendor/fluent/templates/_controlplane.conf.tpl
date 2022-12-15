@@ -420,9 +420,11 @@
     remove_keys message,stream
 </filter>
 
+{{- if .Values.logs.unbound.enabled }}
 <match kubernetes.var.log.containers.unbound**>
   @type null
 </match>
+{{- end }}
 
 <match kubernetes.var.log.containers.cfm**>
   @type null
