@@ -26,6 +26,7 @@
       - '{__name__=~"^container_scrape_error"}'
       - '{__name__=~"^container_start_time_seconds"}'
       - '{__name__=~"^container_task_state"}'
+      - '{__name__=~"^controller_runtime_.+"}'
       - '{__name__=~"^dnsmasq.+"}'
       - '{__name__=~"^doop_agent_.+"}'
       - '{__name__=~"^etcd_.+"}'
