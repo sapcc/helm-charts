@@ -419,9 +419,11 @@
   @type record_modifier
     remove_keys message,stream
 </filter>
-
 {{- if .Values.logs.unbound.enabled }}
+
+{{- else }}
 <match kubernetes.var.log.containers.unbound**>
+</match>
   @type null
 </match>
 {{- end }}
