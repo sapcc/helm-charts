@@ -1,3 +1,7 @@
+## 7.1.11
+
+* adding remoteWrite
+
 ## 7.1.1 - 7.1.9
 
 * fix prometheus alerts; fix service label for ServiceMonitor
