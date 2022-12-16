@@ -150,6 +150,14 @@ spec:
         - name: MARIADB_MONITORING_CONNECTION_LIMIT
           value: 3
           {{- end }}
+          {{- if (hasKey $.Values.volumeMounts.application.data "mountPath") }}
+        - name: MARIADB_DATADIR
+          value: {{ $.Values.volumeMounts.application.data.mountPath | quote }}
+          {{- end }}
+          {{- if (hasKey $.Values.volumeMounts.application.log "mountPath") }}
+        - name: MARIADB_LOGDIR
+          value: {{ $.Values.volumeMounts.application.log.mountPath | quote }}
+          {{- end }}
           {{- range $envKey, $envValue := $.Values.env }}
             {{- if (has "application" $envValue.containerType) }}
         - name: {{ $envKey }}
@@ -177,6 +185,8 @@ spec:
           {{- end }}
         {{- if and (hasKey $.Values.mariadb "autostart") (not $.Values.mariadb.autostart) }}
         {{- else if and ($.Values.command) (hasKey $.Values.command "application") }}
+        {{- else if and (hasKey $.Values.mariadb "wipeDataAndLog") ($.Values.mariadb.wipeDataAndLog) }}
+        {{- else if and (hasKey $.Values.mariadb.galera "restore") ($.Values.mariadb.galera.restore.enabled) }}
         {{- else }}
         startupProbe:
           exec:
@@ -249,8 +259,8 @@ spec:
           {{- range $volumeMountsKey, $volumeMountsValue := $.Values.volumeMounts.application }}
             {{- if (hasKey $volumeMountsValue "claimName") }}
               {{- range $volumeClaimTemplatesKey, $volumeClaimTemplatesValue := $.Values.volumeClaimTemplates }}
-                {{- if eq $volumeClaimTemplatesValue.name $volumeMountsValue.claimName }}
-          - name: {{ $volumeMountsValue.name }}-{{ $volumeMountsValue.claimName | lower }}
+                {{- if eq $volumeClaimTemplatesKey $volumeMountsValue.claimName }}
+          - name: {{ $volumeMountsKey }}-{{ $volumeMountsValue.claimName | lower }}
             mountPath: {{ $volumeMountsValue.mountPath }}
                   {{- if $volumeMountsValue.readOnly }}
             readOnly: {{ $volumeMountsValue.readOnly }}
@@ -258,7 +268,7 @@ spec:
                 {{- end }}
               {{- end }}
             {{- else }}
-          - name: {{ $volumeMountsValue.name | lower }}
+          - name: {{ $volumeMountsKey | lower }}
             mountPath: {{ $volumeMountsValue.mountPath }}
               {{- if $volumeMountsValue.readOnly }}
             readOnly: {{ $volumeMountsValue.readOnly }}
@@ -299,6 +309,12 @@ spec:
             mountPath: /opt/mariadb/bin/common-functions-extended.sh
             subPath: common-functions-extended.sh
             readOnly: true
+          {{- if or (and (hasKey $.Values.mariadb "wipeDataAndLog") ($.Values.mariadb.wipeDataAndLog)) (and (hasKey $.Values.mariadb.galera "restore") ($.Values.mariadb.galera.restore.enabled)) }}
+          - name: mariadb-wipedata
+            mountPath: /opt/mariadb/etc/wipedata.flag
+            subPath: wipedata.flag
+            readOnly: true
+          {{- end }}
         {{- /* monitoring sidecar start */}}
         {{- if $.Values.monitoring.mysqld_exporter.enabled }}
       - name: mon
@@ -401,21 +417,25 @@ spec:
       {{- if and (hasKey $.Values.mariadb "autostart") (not $.Values.mariadb.autostart) }}
       {{- else if and ($.Values.command) (hasKey $.Values.command "application") }}
       {{- else }}
+        {{- if or (and (hasKey $.Values.mariadb "wipeDataAndLog") ($.Values.mariadb.wipeDataAndLog)) (and (hasKey $.Values.mariadb.galera "restore") ($.Values.mariadb.galera.restore.enabled)) }}
+      terminationGracePeriodSeconds: 15
+        {{- else }}
       terminationGracePeriodSeconds: {{ $.Values.terminationGracePeriodSeconds | default 86400 }}
+        {{- end }}
       {{- end }}
       volumes:
         {{- range $volumeMountsKey, $volumeMountsValue := $.Values.volumeMounts.application }}
           {{- if $volumeMountsValue.type }}
             {{- if ne $volumeMountsValue.type "persistentVolume" }}
-        - name: {{ $volumeMountsValue.name }}
+        - name: {{ $volumeMountsKey }}
               {{- if eq $volumeMountsValue.type "secret"}}
           {{ $volumeMountsValue.type }}:
-            secretName: {{ $.Release.Name }}-{{ $volumeMountsValue.name }}
+            secretName: {{ $.Release.Name }}-{{ $volumeMountsKey }}
               {{- else if eq $volumeMountsValue.type "hostPath" }}
           {{ $volumeMountsValue.type }}:
             path: {{ $volumeMountsValue.hostPath }}
               {{- else }}
-            name: {{ $volumeMountsValue.name }}
+            name: {{ $volumeMountsKey }}
               {{- end }}
             {{- end }}
           {{- end }}
@@ -444,6 +464,12 @@ spec:
           configMap:
             name: mariadb-common-functions-extended-sh
             defaultMode: 0755
+        {{- if or (and (hasKey $.Values.mariadb "wipeDataAndLog") ($.Values.mariadb.wipeDataAndLog)) (and (hasKey $.Values.mariadb.galera "restore") ($.Values.mariadb.galera.restore.enabled)) }}
+        - name: mariadb-wipedata
+          configMap:
+            name: mariadb-wipedata
+            defaultMode: 0444
+        {{- end }}
         - name: monitoring-entrypoint-sh
           configMap:
             name: monitoring-entrypoint-sh
@@ -456,9 +482,9 @@ spec:
   {{- range $volumeClaimTemplatesKey, $volumeClaimTemplatesValue := $.Values.volumeClaimTemplates }}
     {{- range $volumeMountsKey, $volumeMountsValue := $.Values.volumeMounts.application }}
       {{- if (hasKey $volumeMountsValue "claimName") }}
-        {{- if eq $volumeClaimTemplatesValue.name $volumeMountsValue.claimName }}
+        {{- if eq $volumeClaimTemplatesKey $volumeMountsValue.claimName }}
   - metadata:
-      name: {{ $volumeMountsValue.name }}-{{ $volumeMountsValue.claimName | lower }}
+      name: {{ $volumeMountsKey }}-{{ $volumeMountsValue.claimName | lower }}
     spec:
           {{- if $volumeClaimTemplatesValue.storageClassName }}
       storageClassName: {{ $.Release.Name }}-{{ $volumeClaimTemplatesValue.storageClassName }}

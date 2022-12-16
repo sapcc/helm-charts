@@ -21,13 +21,13 @@ Docker image and Helm chart to deploy a [MariaDB](https://mariadb.com/kb/en/gett
 | RESTIC_VERSION | install this [restic version](https://github.com/restic/restic/releases) |
 
 ```bash
-docker build --build-arg BASE_REGISTRY=keppel.eu-nl-1.cloud.sap --build-arg BASE_ACCOUNT=octobus --build-arg BASE_SOFT_NAME=ubuntu --build-arg BASE_SOFT_VERSION=20.04 --build-arg BASE_IMG_VERSION=0.3.67 --build-arg SOFT_NAME=mariadb --build-arg SOFT_VERSION=10.5.17+maria~ubu2004 --build-arg IMG_VERSION=0.2.4 --build-arg GALERA_VERSION=26.4.12-focal --build-arg YQ_VERSION=4.27.5 --build-arg RESTIC_VERSION=0.14.0 -t keppel.eu-de-1.cloud.sap/ccloud/mariadb-galera:10.5.17-0.2.4 -f docker/mariadb-galera/Dockerfile ./docker/mariadb-galera/
+docker build --build-arg BASE_REGISTRY=keppel.eu-nl-1.cloud.sap --build-arg BASE_ACCOUNT=octobus --build-arg BASE_SOFT_NAME=ubuntu --build-arg BASE_SOFT_VERSION=20.04 --build-arg BASE_IMG_VERSION=0.3.74 --build-arg SOFT_NAME=mariadb --build-arg SOFT_VERSION=10.5.18+maria~ubu2004 --build-arg IMG_VERSION=0.3.1 --build-arg GALERA_VERSION=26.4.12-focal --build-arg YQ_VERSION=4.30.5 --build-arg RESTIC_VERSION=0.14.0 -t keppel.eu-de-1.cloud.sap/ccloud/mariadb-galera:10.5.18-0.3.1 -f docker/mariadb-galera/Dockerfile ./docker/mariadb-galera/
 ```
 
 #### debug build
 
 ```bash
-docker build --build-arg BASE_REGISTRY=keppel.eu-nl-1.cloud.sap --build-arg BASE_ACCOUNT=octobus --build-arg BASE_SOFT_NAME=ubuntu --build-arg BASE_SOFT_VERSION=20.04 --build-arg BASE_IMG_VERSION=0.3.67 --build-arg SOFT_NAME=mariadb --build-arg SOFT_VERSION=10.5.17+maria~ubu2004 --build-arg IMG_VERSION=0.2.4 --build-arg GALERA_VERSION=26.4.12-focal --build-arg YQ_VERSION=4.27.5 --build-arg RESTIC_VERSION=0.14.0 --build-arg GALERA_DEBUG=true -t keppel.eu-de-1.cloud.sap/ccloud/mariadb-galera-debug:10.5.17-0.2.4 -f docker/mariadb-galera/Dockerfile ./docker/mariadb-galera/
+docker build --build-arg BASE_REGISTRY=keppel.eu-nl-1.cloud.sap --build-arg BASE_ACCOUNT=octobus --build-arg BASE_SOFT_NAME=ubuntu --build-arg BASE_SOFT_VERSION=20.04 --build-arg BASE_IMG_VERSION=0.3.74 --build-arg SOFT_NAME=mariadb --build-arg SOFT_VERSION=10.5.18+maria~ubu2004 --build-arg IMG_VERSION=0.3.1 --build-arg GALERA_VERSION=26.4.12-focal --build-arg YQ_VERSION=4.30.5 --build-arg RESTIC_VERSION=0.14.0 --build-arg GALERA_DEBUG=true -t keppel.eu-de-1.cloud.sap/ccloud/mariadb-galera-debug:10.5.18-0.3.1 -f docker/mariadb-galera/Dockerfile ./docker/mariadb-galera/
 ```
 #### MySQL Exporter image
 | build argument | description |
@@ -65,6 +65,31 @@ If you want/have to specify a certain network (currently only supported for the 
 * `--set OpenstackSubnetId=$(openstack subnet list --name <private subnet name> --network <private network name> -f value -c ID)`
 
 The [Openstack cloud provider documentation](https://github.com/kubernetes/cloud-provider-openstack/blob/master/docs/openstack-cloud-controller-manager/expose-applications-using-loadbalancer-type-service.md) has the details about these and more network settings.
+
+#### full database restore
+* prepare the the database nodes the `mariadb.wipeDataAndLog` option
+  * the mariadb pods will be restarted
+  * the content of the `data` and the `log` folders will be wiped
+  * the first pod will start MariaDB with Galera
+  * the other pods will only start a sleep process
+  * the backup cronjob and the ProxySQL pods will disabled
+  ```shell
+  helm upgrade --install --create-namespace --namespace database mariadb-galera helm --set mariadb.wipeDataAndLog=true --values helm/custom/eu-de-2.yaml
+  ```
+* start the restore and recovery procress using the `mariadb.galera.restore.beforeTimestamp` option
+  * a new job pod will be started
+  * restic will query the nearest snapshot id related to the provided timestamp
+  * the MariaDB dump included in the snapshot will be restored
+  * the mysql client will import the dump into the first MariaDB node
+  ```shell
+  helm upgrade --install --create-namespace --namespace database mariadb-galera helm --set mariadb.galera.restore.enabled=true --set mariadb.galera.restore.beforeTimestamp="2022-12-13 12:00:00" --values helm/custom/eu-de-2.yaml
+  ```
+* run `helm upgrade` again to remove the `mariadb.wipeDataAndLog` and `mariadb.galera.restore.enabled` options
+  * ProxySQL, the config job and the Backup cronjob will be enabled again (if they have been enabled before)
+  * the MariaDB pods will be restarted and Galera will replicate the restored data
+  ```shell
+  helm upgrade --install --create-namespace --namespace database mariadb-galera helm --values helm/custom/eu-de-2.yaml
+  ```
 
 #### asynchronous replication config
 
@@ -130,16 +155,16 @@ helm upgrade --install --create-namespace --namespace database mariadb-galera he
 ```
 * you can check the configuration pod logs for the status of the replication config
 ```json
-{"@timestamp":"2022-11-19T20:15:18+UTC","ecs.version":"1.6.0","log.logger":"/opt/mariadb/bin/entrypoint-job.sh","log.origin.function":"stopasyncreplication","log.level":"info","message":"stop async replication"}
-{"@timestamp":"2022-11-19T20:15:18+UTC","ecs.version":"1.6.0","log.logger":"/opt/mariadb/bin/entrypoint-job.sh","log.origin.function":"stopasyncreplication","log.level":"info","message":"replica stop successful"}
-{"@timestamp":"2022-11-19T20:15:18+UTC","ecs.version":"1.6.0","log.logger":"/opt/mariadb/bin/entrypoint-job.sh","log.origin.function":"setupasyncreplication","log.level":"info","message":"setup async replication from '10.237.116.19'"}
-{"@timestamp":"2022-11-19T20:15:18+UTC","ecs.version":"1.6.0","log.logger":"/opt/mariadb/bin/entrypoint-job.sh","log.origin.function":"setupasyncreplication","log.level":"debug","message":"master config successfully updated"}
-{"@timestamp":"2022-11-19T20:15:18+UTC","ecs.version":"1.6.0","log.logger":"/opt/mariadb/bin/entrypoint-job.sh","log.origin.function":"startasyncreplication","log.level":"info","message":"start async replication"}
-{"@timestamp":"2022-11-19T20:15:18+UTC","ecs.version":"1.6.0","log.logger":"/opt/mariadb/bin/entrypoint-job.sh","log.origin.function":"startasyncreplication","log.level":"info","message":"replica start successful"}
-{"@timestamp":"2022-11-19T20:15:18+UTC","ecs.version":"1.6.0","log.logger":"/opt/mariadb/bin/entrypoint-job.sh","log.origin.function":"checkasyncreplication","log.level":"info","message":"check async replication status"}
-{"@timestamp":"2022-11-19T20:15:18+UTC","ecs.version":"1.6.0","log.logger":"/opt/mariadb/bin/entrypoint-job.sh","log.origin.function":"checkasyncreplication","log.level":"error","message":"replica still trying to connect to the primary(20 retries left)"}
-{"@timestamp":"2022-11-19T20:15:24+UTC","ecs.version":"1.6.0","log.logger":"/opt/mariadb/bin/entrypoint-job.sh","log.origin.function":"checkasyncreplication","log.level":"info","message":"async replication active"}
-{"@timestamp":"2022-11-19T20:15:24+UTC","ecs.version":"1.6.0","log.logger":"/opt/mariadb/bin/entrypoint-job.sh","log.origin.function":"null","log.level":"info","message":"configuration job finished"}
+{"@timestamp":"2022-11-19T20:15:18+UTC","ecs.version":"1.6.0","log.logger":"/opt/mariadb/bin/entrypoint-job-config.sh","log.origin.function":"stopasyncreplication","log.level":"info","message":"stop async replication"}
+{"@timestamp":"2022-11-19T20:15:18+UTC","ecs.version":"1.6.0","log.logger":"/opt/mariadb/bin/entrypoint-job-config.sh","log.origin.function":"stopasyncreplication","log.level":"info","message":"replica stop successful"}
+{"@timestamp":"2022-11-19T20:15:18+UTC","ecs.version":"1.6.0","log.logger":"/opt/mariadb/bin/entrypoint-job-config.sh","log.origin.function":"setupasyncreplication","log.level":"info","message":"setup async replication from '10.237.116.19'"}
+{"@timestamp":"2022-11-19T20:15:18+UTC","ecs.version":"1.6.0","log.logger":"/opt/mariadb/bin/entrypoint-job-config.sh","log.origin.function":"setupasyncreplication","log.level":"debug","message":"master config successfully updated"}
+{"@timestamp":"2022-11-19T20:15:18+UTC","ecs.version":"1.6.0","log.logger":"/opt/mariadb/bin/entrypoint-job-config.sh","log.origin.function":"startasyncreplication","log.level":"info","message":"start async replication"}
+{"@timestamp":"2022-11-19T20:15:18+UTC","ecs.version":"1.6.0","log.logger":"/opt/mariadb/bin/entrypoint-job-config.sh","log.origin.function":"startasyncreplication","log.level":"info","message":"replica start successful"}
+{"@timestamp":"2022-11-19T20:15:18+UTC","ecs.version":"1.6.0","log.logger":"/opt/mariadb/bin/entrypoint-job-config.sh","log.origin.function":"checkasyncreplication","log.level":"info","message":"check async replication status"}
+{"@timestamp":"2022-11-19T20:15:18+UTC","ecs.version":"1.6.0","log.logger":"/opt/mariadb/bin/entrypoint-job-config.sh","log.origin.function":"checkasyncreplication","log.level":"error","message":"replica still trying to connect to the primary(20 retries left)"}
+{"@timestamp":"2022-11-19T20:15:24+UTC","ecs.version":"1.6.0","log.logger":"/opt/mariadb/bin/entrypoint-job-config.sh","log.origin.function":"checkasyncreplication","log.level":"info","message":"async replication active"}
+{"@timestamp":"2022-11-19T20:15:24+UTC","ecs.version":"1.6.0","log.logger":"/opt/mariadb/bin/entrypoint-job-config.sh","log.origin.function":"null","log.level":"info","message":"configuration job finished"}
 ```
 * query the load balancer ip of the eu-de-2 instance and add it to the custom configuration of eu-nl-1
 * eu-nl-1

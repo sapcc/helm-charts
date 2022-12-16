@@ -19,9 +19,10 @@ scripts:
   waitTimeBetweenRetriesInSeconds: 6 #how long should script functions wait between retries (default 6)
   logLevel: debug # info(default) or debug
   maxAllowedTimeDifferenceFactor: 12 #to multiply with readinessProbe.timeoutSeconds.application as the maximum allowed time difference between nodes for the last sequence number configmap update (default 3)
-  useTimeDifferenceForSeqnoCheck: true #fail if time difference between nodes for the last sequence number configmap update is too big
+  useTimeDifferenceForSeqnoCheck: false #fail if time difference between nodes for the last sequence number configmap update is too big
 mariadb:
   autostart: true #default=true, run the default entrypoint.sh script or just sleep to be able to troubleshoot and debug
+  wipeDataAndLog: false #default=false, will trigger a pod restart and remove all content from the data and log dir. This option will cause data loss and should only be used before triggering a restore
   binLogDir: log #if not defined the data dir will be used. Needs a log volume mount to be configured too
   binLogSync: 1 #default=0 (1 for ACID compliance) https://mariadb.com/kb/en/replication-and-binary-log-system-variables/#sync_binlog
   innodbFlushLogAtTrxCommit: 1 #default=0 (1 for ACID compliance) https://mariadb.com/kb/en/innodb-system-variables/#innodb_flush_log_at_trx_commit
@@ -53,6 +54,7 @@ mariadb:
         tenantname: monsoon3
         container: mariadb-galera-backup
       restic:
+        progressFps: 0.5 # default=0.01666 means update the console output once per minute
         compression: auto #https://restic.readthedocs.io/en/stable/047_tuning_backup_parameters.html#compression
         packsizeInMB: 128 #https://restic.readthedocs.io/en/stable/047_tuning_backup_parameters.html#pack-size keep in mind the 5GB Swift object size limit and the potential object count quota limit
         unlockRepo: false #default=false https://restic.readthedocs.io/en/stable/manual_rest.html?highlight=unlock
@@ -64,6 +66,12 @@ mariadb:
           weekly: 4
           monthly: 12
           yearly: 2
+    restore:
+      enabled: false
+      beforeTimestamp: "2022-11-10 09:16:45" #Only this "%Y-%m-%d %H:%M:%S" format is currently supported
+      restic:
+        snapshotId: false #If set the beforeTimestamp option will be ignored and the configured id will be used
+        progressFps: 0.5 # default=0.01666 means update the console output once per minute
 monitoring:
   prometheus:
     instance: prometheus #name of the Prometheus instance that should pull metrics
@@ -91,15 +99,15 @@ image:
     project: octobus
     applicationname: ubuntu
     applicationversion: 20.04
-    imageversion: 0.3.67
+    imageversion: 0.3.74
     pullPolicy: IfNotPresent
     pullSecret: false
   application:
     registry: keppel.eu-de-1.cloud.sap
     project: ccloud
     applicationname: mariadb-galera
-    applicationversion: 10.5.17
-    imageversion: 0.2.4
+    applicationversion: 10.5.18
+    imageversion: 0.3.1
     pullPolicy: Always
     pullSecret: false
   monitoring:
@@ -197,33 +205,33 @@ services:
 # Storage
 volumeMounts:
   application:
-    - name: data
+    data:
       claimName: mariadb
       mountPath: /opt/mariadb/data
       type: persistentVolume
-    - name: log
+    log:
       claimName: marialog
       mountPath: /opt/mariadb/log
       type: persistentVolume
-    - name: cert-wildcard
+    cert-wildcard:
       mountPath: /opt/mariadb/etc/certs
       type: secret
       readOnly: true
   proxy:
-    - name: data
+    data:
       claimName: proxysql
       mountPath: /opt/proxysql/data
       type: persistentVolume
 
 volumeClaimTemplates:
-  - name: mariadb
+  mariadb:
     accessModes: [ReadWriteOnce]
     capacity: 10Gi
     storageClassName: false #optional: currently cinder and nfs are supported
-  - name: marialog
+  marialog:
     accessModes: [ReadWriteOnce]
     capacity: 30Gi
-  - name: proxysql
+  proxysql:
     accessModes: [ReadWriteOnce]
     capacity: 128Mi
 
@@ -232,13 +240,15 @@ resourceLimits:
   cpu:
     application: 2
     monitoring: 0.5
-    job: 0.5
+    jobconfig: 0.5
+    jobrestore: 0.5
     cronjob: 2
     proxy: 2
   memory:
     application: 1024Mi
     monitoring: 48Mi
-    job: 48Mi
+    jobconfig: 48Mi
+    jobrestore: 256Mi
     cronjob: 1024Mi
     proxy: 256Mi
 
@@ -270,6 +280,11 @@ job:
     concurrencyPolicy: Forbid #https://kubernetes.io/docs/tasks/job/automated-tasks-with-cron-jobs/#concurrency-policy
     successfulJobsHistoryLimit: 1 #https://kubernetes.io/docs/tasks/job/automated-tasks-with-cron-jobs/#jobs-history-limits
     failedJobsHistoryLimit: 1 #https://kubernetes.io/docs/tasks/job/automated-tasks-with-cron-jobs/#jobs-history-limits
+  mariadbrestore:
+    backoffLimit: 0 #default=0 https://kubernetes.io/docs/concepts/workloads/controllers/job/#pod-backoff-failure-policy
+    activeDeadlineSeconds: 7200 #default=3600 https://kubernetes.io/docs/concepts/workloads/controllers/job/#job-termination-and-cleanup
+    ttlSecondsAfterFinished: 86400 #default=43200 https://kubernetes.io/docs/concepts/workloads/controllers/job/#clean-up-finished-jobs-automatically
+    jobRestartPolicy: Never #default=Never https://kubernetes.io/docs/concepts/workloads/controllers/job/#handling-pod-and-container-failures
 
 #Container Health Checks
 startupProbe:
@@ -335,7 +350,8 @@ env:
     secretKey: username
     containerType:
       - application
-      - job
+      - jobconfig
+      - jobrestore
       - proxy
       - cronjob
   MARIADB_ROOT_PASSWORD:
@@ -343,7 +359,8 @@ env:
     secretKey: password
     containerType:
       - application
-      - job
+      - jobconfig
+      - jobrestore
       - proxy
       - cronjob
   GALERA_SST_USER:
@@ -351,14 +368,14 @@ env:
     secretKey: username
     containerType:
       - application
-      - job
+      - jobconfig
       - proxy
   GALERA_SST_PASSWORD:
     secretName: ga-sync-auth
     secretKey: password
     containerType:
       - application
-      - job
+      - jobconfig
       - proxy
   MARIADB_MONITORING_USER:
     secretName: db-mon-auth
@@ -366,19 +383,19 @@ env:
     containerType:
       - application
       - monitoring
-      - job
+      - jobconfig
   MARIADB_MONITORING_PASSWORD:
     secretName: db-mon-auth
     secretKey: password
     containerType:
       - application
       - monitoring
-      - job
+      - jobconfig
   MARIADB_MONITORING_CONNECTION_LIMIT:
     value: 6
     containerType:
       - application
-      - job
+      - jobconfig
   WEB_TELEMETRY_PATH:
     value: /metrics
     containerType:
@@ -417,54 +434,57 @@ env:
     secretName: db-oslodb-auth
     secretKey: username
     containerType:
-      - job
+      - jobconfig
       - proxy
   OPENSTACK_CITEST_PASSWORD:
     secretName: db-oslodb-auth
     secretKey: password
     containerType:
-      - job
+      - jobconfig
       - proxy
   SYSBENCH_USERNAME:
     secretName: db-sysbench-auth
     secretKey: username
     containerType:
-      - job
+      - jobconfig
       - proxy
   SYSBENCH_PASSWORD:
     secretName: db-sysbench-auth
     secretKey: password
     containerType:
-      - job
+      - jobconfig
       - proxy
   OS_USERNAME:
     secretName: restic-swift-auth
     secretKey: username
     containerType:
       - cronjob
+      - jobrestore
   OS_PASSWORD:
     secretName: restic-swift-auth
     secretKey: password
     containerType:
       - cronjob
+      - jobrestore
   RESTIC_PASSWORD:
     secretName: restic-repo-auth
     secretKey: password
     containerType:
       - cronjob
+      - jobrestore
   REPLICA_USERNAME:
     secretName: replica-primary-auth
     secretKey: username
     containerType:
       - application
-      - job
+      - jobconfig
       - proxy
   REPLICA_PASSWORD:
     secretName: replica-primary-auth
     secretKey: password
     containerType:
       - application
-      - job
+      - jobconfig
       - proxy
 #command:
 #   application:
@@ -475,14 +495,18 @@ env:
 #     - "sh"
 #     - "-c"
 #     - "/bin/sleep 3600"
-#    job:
+#    jobconfig:
 #     - "sh"
 #     - "-c"
 #     - "/bin/sleep 3600"
-#   cronjob:
+#    jobrestore:
 #     - "sh"
 #     - "-c"
 #     - "/bin/sleep 3600"
+#  cronjob:
+#    - "sh"
+#    - "-c"
+#    - "/bin/sleep 3600"
 #   proxy:
 #     - "sh"
 #     - "-c"

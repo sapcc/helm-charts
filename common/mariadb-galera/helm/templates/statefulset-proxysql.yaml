@@ -1,4 +1,8 @@
-{{- if $.Values.proxy.enabled }}
+{{- if and (hasKey $.Values.mariadb "autostart") (not $.Values.mariadb.autostart) }}
+{{- else if and ($.Values.command) (hasKey $.Values.command "application") }}
+{{- else if and (hasKey $.Values.mariadb.galera "restore") ($.Values.mariadb.galera.restore.enabled) }}
+{{- else if and (hasKey $.Values.mariadb "wipeDataAndLog") ($.Values.mariadb.wipeDataAndLog) }}
+{{- else if $.Values.proxy.enabled }}
   {{- $unevenNodeCount := "" }}
   {{- if eq (mod ($.Values.replicas.proxy|int) 2) 1 }}
     {{- $unevenNodeCount = "true" }}
@@ -208,8 +212,8 @@ spec:
           {{- range $volumeMountsKey, $volumeMountsValue := $.Values.volumeMounts.proxy }}
             {{- if (hasKey $volumeMountsValue "claimName") }}
               {{- range $volumeClaimTemplatesKey, $volumeClaimTemplatesValue := $.Values.volumeClaimTemplates }}
-                {{- if eq $volumeClaimTemplatesValue.name $volumeMountsValue.claimName }}
-          - name: {{ $volumeMountsValue.name }}-{{ $volumeMountsValue.claimName | lower }}
+                {{- if eq $volumeClaimTemplatesKey $volumeMountsValue.claimName }}
+          - name: {{ $volumeMountsKey }}-{{ $volumeMountsValue.claimName | lower }}
             mountPath: {{ $volumeMountsValue.mountPath }}
                   {{- if $volumeMountsValue.readOnly }}
             readOnly: {{ $volumeMountsValue.readOnly }}
@@ -217,7 +221,7 @@ spec:
                 {{- end }}
               {{- end }}
             {{- else }}
-          - name: {{ $volumeMountsValue.name | lower }}
+          - name: {{ $volumeMountsKey | lower }}
             mountPath: {{ $volumeMountsValue.mountPath }}
               {{- if $volumeMountsValue.readOnly }}
             readOnly: {{ $volumeMountsValue.readOnly }}
@@ -281,15 +285,15 @@ spec:
         {{- range $volumeMountsKey, $volumeMountsValue := $.Values.volumeMounts.proxy }}
           {{- if $volumeMountsValue.type }}
             {{- if ne $volumeMountsValue.type "persistentVolume" }}
-        - name: {{ $volumeMountsValue.name }}
+        - name: {{ $volumeMountsKey }}
               {{- if eq $volumeMountsValue.type "secret"}}
           {{ $volumeMountsValue.type }}:
-            secretName: {{ $.Release.Name }}-{{ $volumeMountsValue.name }}
+            secretName: {{ $.Release.Name }}-{{ $volumeMountsKey }}
               {{- else if eq $volumeMountsValue.type "hostPath" }}
           {{ $volumeMountsValue.type }}:
             path: {{ $volumeMountsValue.hostPath }}
               {{- else }}
-            name: {{ $volumeMountsValue.name }}
+            name: {{ $volumeMountsKey }}
               {{- end }}
             {{- end }}
           {{- end }}
@@ -318,9 +322,9 @@ spec:
   {{- range $volumeClaimTemplatesKey, $volumeClaimTemplatesValue := $.Values.volumeClaimTemplates }}
     {{- range $volumeMountsKey, $volumeMountsValue := $.Values.volumeMounts.proxy }}
       {{- if (hasKey $volumeMountsValue "claimName") }}
-        {{- if eq $volumeClaimTemplatesValue.name $volumeMountsValue.claimName }}
+        {{- if eq $volumeClaimTemplatesKey $volumeMountsValue.claimName }}
   - metadata:
-      name: {{ $volumeMountsValue.name }}-{{ $volumeMountsValue.claimName | lower }}
+      name: {{ $volumeMountsKey }}-{{ $volumeMountsValue.claimName | lower }}
     spec:
           {{- if $volumeClaimTemplatesValue.storageClassName }}
       storageClassName: {{ $.Release.Name }}-{{ $volumeClaimTemplatesValue.storageClassName }}

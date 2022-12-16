@@ -192,6 +192,24 @@ function stopdb {
   loginfo "${FUNCNAME[0]}" "mariadbd stop done"
 }
 
+function wipedata {
+  if [ -f "${BASE}/etc/wipedata.flag" ]; then
+    loginfo "${FUNCNAME[0]}" "starting wipe of data and log folder content"
+    rm -Rf ${DATADIR}/*
+    if [ $? -ne 0 ]; then
+      logerror "${FUNCNAME[0]}" "data folder wipe has been failed"
+      exit 1
+    fi
+    rm -Rf ${LOGDIR}/*
+    if [ $? -ne 0 ]; then
+      logerror "${FUNCNAME[0]}" "log folder wipe has been failed"
+      exit 1
+    fi
+    loginfo "${FUNCNAME[0]}" "wipe of data and log folder content done"
+  fi
+}
+
+wipedata
 checkenv
 templateconfig
 initdb

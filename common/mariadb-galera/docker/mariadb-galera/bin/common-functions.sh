@@ -1,6 +1,7 @@
 oldIFS="${IFS}"
 BASE=/opt/${SOFTWARE_NAME}
-DATADIR=${BASE}/data
+DATADIR=${MARIADB_DATADIR-/opt/mariadb/data}
+LOGDIR=${MARIADB_LOGDIR-/opt/mariadb/log}
 export CONTAINER_IP=$(hostname --ip-address)
 export POD_NAME=$(hostname --short)
 IFS=". " softVerProps=($(echo ${SOFTWARE_VERSION}))
@@ -104,7 +105,7 @@ function setuprole {
     loginfo "${FUNCNAME[0]}" "setup ${DB_ROLE} role"
     for (( int=${MAX_RETRIES}; int >=1; int-=1));
       do
-      if [ "$0" == "/opt/mariadb/bin/entrypoint-job.sh" ]; then
+      if [ "$0" == "/opt/mariadb/bin/entrypoint-job-config.sh" ]; then
         cat ${BASE}/etc/sql/role.sql.tpl | envsubst | $(${MYSQL_SVC_CONNECT})
       else
         cat ${BASE}/etc/sql/role.sql.tpl | envsubst | mysql --protocol=socket --user=root --batch
@@ -145,7 +146,7 @@ function setupuser {
     loginfo "${FUNCNAME[0]}" "setup '${DB_USER}@${DB_HOST}' privileges"
     for (( int=${MAX_RETRIES}; int >=1; int-=1));
       do
-      if [ "$0" == "/opt/mariadb/bin/entrypoint-job.sh" ]; then
+      if [ "$0" == "/opt/mariadb/bin/entrypoint-job-config.sh" ]; then
         cat ${BASE}/etc/sql/user.sql.tpl | envsubst | $(${MYSQL_SVC_CONNECT})
       else
         cat ${BASE}/etc/sql/user.sql.tpl | envsubst | mysql --protocol=socket --user=root --batch
@@ -154,7 +155,7 @@ function setupuser {
         logerror "${FUNCNAME[0]}" "'${DB_USER}@${DB_HOST}' user setup has been failed(${int} retries left)"
         sleep ${WAIT_SECONDS}
       else
-        if [ "$0" == "/opt/mariadb/bin/entrypoint-job.sh" ]; then
+        if [ "$0" == "/opt/mariadb/bin/entrypoint-job-config.sh" ]; then
           ${MYSQL_SVC_CONNECT} --execute="FLUSH PRIVILEGES;" --batch --skip-column-names
         else
           mysql --protocol=socket --user=root --execute="FLUSH PRIVILEGES;" --batch --skip-column-names
@@ -189,7 +190,7 @@ function listdbandusers {
   for (( int=${MAX_RETRIES}; int >=1; int-=1));
     do
     loginfo "${FUNCNAME[0]}" "list databases and users(${int} retries left)"
-    if [ "$0" == "/opt/mariadb/bin/entrypoint-job.sh" ]; then
+    if [ "$0" == "/opt/mariadb/bin/entrypoint-job-config.sh" ]; then
       ${MYSQL_SVC_CONNECT} --execute="SHOW DATABASES; SELECT user,host FROM mysql.user; SELECT * FROM information_schema.APPLICABLE_ROLES;" --table
     else
       mysql --protocol=socket --user=root --batch --execute="SHOW DATABASES; SELECT user,host FROM mysql.user; SELECT * FROM information_schema.APPLICABLE_ROLES;" --table

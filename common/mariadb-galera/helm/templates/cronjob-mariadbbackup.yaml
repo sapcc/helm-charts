@@ -1,10 +1,13 @@
 {{- if and (hasKey $.Values.mariadb "autostart") (not $.Values.mariadb.autostart) }}
-  {{- if and (hasKey $.Values.mariadb.galera "backup") ($.Values.mariadb.galera.backup.enabled) }}
+{{- else if and ($.Values.command) (hasKey $.Values.command "application") }}
+{{- else if and (hasKey $.Values.mariadb.galera "restore") ($.Values.mariadb.galera.restore.enabled) }}
+{{- else if and (hasKey $.Values.mariadb "wipeDataAndLog") ($.Values.mariadb.wipeDataAndLog) }}
+{{- else if and (hasKey $.Values.mariadb.galera "backup") ($.Values.mariadb.galera.backup.enabled) }}
 apiVersion: batch/v1
 kind: CronJob
 metadata:
   namespace: {{ $.Release.Namespace }}
-  name: {{ (include "nodeNamePrefix" (dict "global" $ "component" "application")) }}-backup
+  name: {{ (include "nodeNamePrefix" (dict "global" $ "component" "application")) }}-backup-{{ randAlphaNum 8 | lower }}
   labels:
     app: {{ $.Release.Name }}
     release: {{ $.Release.Name }}
@@ -61,6 +64,14 @@ spec:
               value: {{ required "Values.mariadb.galera.backup.openstack.tenantname is missing, but required for the Openstack Swift authentication." $.Values.mariadb.galera.backup.openstack.tenantname }}
             - name: MYSQL_PORT
               value: {{ (required ".services.application.frontend.ports.mysql.targetPort missing" $.Values.services.application.frontend.ports.mysql.targetPort) | quote }}
+            - name: RESTIC_REPOSITORY
+              value: {{ (printf "swift:%s:/" (required "Values.mariadb.galera.backup.openstack.container is missing, but required for restic to access the repository." $.Values.mariadb.galera.backup.openstack.container)) | quote }}
+            - name: RESTIC_PROGRESS_FPS
+              value: {{ $.Values.mariadb.galera.backup.restic.progressFps | default "0.01666" | quote }}
+            - name: RESTIC_CACHE_DIR
+              value: "/opt/mariadb/run/"
+            - name: TMPDIR
+              value: "/opt/mariadb/tmp/"
             {{- range $envKey, $envValue := $.Values.env }}
               {{- if (has "cronjob" $envValue.containerType) }}
             - name: {{ $envKey }}
@@ -93,7 +104,7 @@ spec:
           {{- range $volumeMountsKey, $volumeMountsValue := $.Values.volumeMounts.application }}
             {{- if $volumeMountsValue.type }}
               {{- if ne $volumeMountsValue.type "persistentVolume" }}
-          - name: {{ $volumeMountsValue.name }}
+          - name: {{ $volumeMountsKey }}
                 {{- if eq $volumeMountsValue.type "secret"}}
             {{ $volumeMountsValue.type }}:
               secretName: {{ $.Release.Name }}-{{ $volumeMountsValue.name }}
@@ -101,7 +112,7 @@ spec:
             {{ $volumeMountsValue.type }}:
               path: {{ $volumeMountsValue.hostPath }}
                 {{- else }}
-              name: {{ $volumeMountsValue.name }}
+              name: {{ $volumeMountsKey }}
                 {{- end }}
               {{- end }}
             {{- end }}
@@ -114,5 +125,4 @@ spec:
             configMap:
               name: mariadb-common-functions-extended-sh
               defaultMode: 0755
-  {{- end }}
 {{- end }}

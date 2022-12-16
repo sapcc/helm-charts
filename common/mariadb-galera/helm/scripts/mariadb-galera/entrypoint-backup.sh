@@ -75,11 +75,11 @@ function setclusterdesyncmode {
 
 function initresticrepo {
   loginfo "${FUNCNAME[0]}" "init restic repository if required"
-  restic stats --repo swift:{{ required "Values.mariadb.galera.backup.openstack.container is missing, but required for restic to access the repository." $.Values.mariadb.galera.backup.openstack.container }}:/ --quiet --json --no-cache
+  restic stats --quiet --json
   if [ $? -ne 0 ]; then
     loginfo "${FUNCNAME[0]}" "No restic repository found"
     env
-    restic init --repo swift:{{ required "Values.mariadb.galera.backup.openstack.container is missing, but required for restic to access the repository." $.Values.mariadb.galera.backup.openstack.container }}:/ --repository-version 2 --json --no-cache
+    restic init --repository-version 2 --json
     if [ $? -ne 0 ]; then
       logerror "${FUNCNAME[0]}" "restic repository initialization failed"
       exit 1
@@ -91,18 +91,6 @@ function initresticrepo {
   fi
 }
 
-function unlockresticrepo {
-  loginfo "${FUNCNAME[0]}" "unlock restic repository if required"
-  restic unlock --repo swift:{{ required "Values.mariadb.galera.backup.openstack.container is missing, but required for restic to access the repository." $.Values.mariadb.galera.backup.openstack.container }}:/ \
-                --remove-all --quiet --json --no-cache
-  if [ $? -ne 0 ]; then
-    logerror "${FUNCNAME[0]}" "restic repository unlock failed"
-    exit 1
-  else
-    loginfo "${FUNCNAME[0]}" "restic repository unlock done"
-  fi
-}
-
 function createdbbackup {
   local DB_HOST=${1}
   local SEQNO=${2}
@@ -110,14 +98,13 @@ function createdbbackup {
   loginfo "${FUNCNAME[0]}" "mariadb-dump using ${DB_HOST} started"
   mariadb-dump --defaults-file=${BASE}/etc/my.cnf --protocol=tcp --host=${DB_HOST}.database.svc.cluster.local --port=${MYSQL_PORT} \
                --user=${MARIADB_ROOT_USER} --password=${MARIADB_ROOT_PASSWORD} \
-               --all-databases --flush-logs --hex-blob --events --routines --comments --triggers --skip-log-queries \
+               --all-databases --add-drop-database --flush-privileges --flush-logs --hex-blob --events --routines --comments --triggers --skip-log-queries \
                --gtid --master-data=1 --single-transaction | \
   restic backup --stdin --stdin-filename=mariadb.dump \
                 --tag "${SOFTWARE_VERSION}" --tag "${MARIADB_CLUSTER_NAME}" --tag "${SEQNO}" --tag "dump" \
-                --repo swift:{{ required "Values.mariadb.galera.backup.openstack.container is missing, but required for restic to access the repository." $.Values.mariadb.galera.backup.openstack.container }}:/ \
                 --compression {{ $.Values.mariadb.galera.backup.restic.compression | default "auto" | quote }} \
                 --pack-size {{ $.Values.mariadb.galera.backup.restic.packsizeInMB | default 16 | int }} \
-                --no-cache --json --quiet
+                --json
   if [ $? -ne 0 ]; then
     logerror "${FUNCNAME[0]}" "mariadb-dump failed"
     exit 1
@@ -148,45 +135,14 @@ function createbinlogbackup {
                --read-from-remote-server --to-last-log --verify-binlog-checksum ${BINLOGNAME} | \
   restic backup --stdin --stdin-filename=mariadb.binlog \
                 --tag "${SOFTWARE_VERSION}" --tag "${MARIADB_CLUSTER_NAME}" --tag "${SEQNO}" --tag "binlog" \
-                --repo swift:{{ required "Values.mariadb.galera.backup.openstack.container is missing, but required for restic to access the repository." $.Values.mariadb.galera.backup.openstack.container }}:/ \
                 --compression {{ $.Values.mariadb.galera.backup.restic.compression | default "auto" | quote }} \
                 --pack-size {{ $.Values.mariadb.galera.backup.restic.packsizeInMB | default 16 | int }} \
-                --no-cache --json --quiet
+                --json
   if [ $? -ne 0 ]; then
     logerror "${FUNCNAME[0]}" "mariadb-binlog failed"
     exit 1
   fi
   loginfo "${FUNCNAME[0]}" "mariadb-binlog done"
-}
-
-function prunebackups {
-  loginfo "${FUNCNAME[0]}" "remove old restic backups if required"
-  restic forget --prune \
-                --keep-last {{ $.Values.mariadb.galera.backup.restic.keep.last | default 2 | int }} \
-                --keep-hourly {{ $.Values.mariadb.galera.backup.restic.keep.hourly | default 24 | int }} \
-                --keep-daily {{ $.Values.mariadb.galera.backup.restic.keep.daily | default 1 | int }} \
-                --keep-weekly {{ $.Values.mariadb.galera.backup.restic.keep.weekly | default 0 | int }} \
-                --keep-monthly {{ $.Values.mariadb.galera.backup.restic.keep.monthly | default 0 | int }} \
-                --keep-yearly {{ $.Values.mariadb.galera.backup.restic.keep.yearly | default 0 | int }} \
-                --repo swift:{{ required "Values.mariadb.galera.backup.openstack.container is missing, but required for restic to access the repository." $.Values.mariadb.galera.backup.openstack.container }}:/ \
-                --no-cache --json --compact --quiet
-  if [ $? -ne 0 ]; then
-    logerror "${FUNCNAME[0]}" "restic backup pruning failed"
-    exit 1
-  fi
-  loginfo "${FUNCNAME[0]}" "restic backup pruning done"
-}
-
-function listbackups {
-  loginfo "${FUNCNAME[0]}" "list available restic backups"
-  restic snapshots \
-                    --repo swift:{{ required "Values.mariadb.galera.backup.openstack.container is missing, but required for restic to access the repository." $.Values.mariadb.galera.backup.openstack.container }}:/ \
-                    --no-cache --json
-  if [ $? -ne 0 ]; then
-    logerror "${FUNCNAME[0]}" "restic backup listing failed"
-    exit 1
-  fi
-  loginfo "${FUNCNAME[0]}" "restic backup listing done"
 }
 
 {{- range $int, $err := until ($.Values.replicas.application|int) }}

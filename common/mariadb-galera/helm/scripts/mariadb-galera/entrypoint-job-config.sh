@@ -33,7 +33,7 @@ setuprole {{ $mariadbconfigValue.name | quote }} {{ $configfile.privileges | joi
         {{- $usernameEnvVarFound = false }}
         {{- $passwordEnvVarFound = false }}
         {{- range $envKey, $envValue := $.Values.env }}
-          {{- if (has "job" $envValue.containerType) }}
+          {{- if (has "jobconfig" $envValue.containerType) }}
             {{- if and (eq $envKey ($configfile.username | trimAll "${}")) ($envValue) }}
               {{- $usernameEnvVarFound = true }}
             {{- end }}
