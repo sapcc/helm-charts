@@ -1,3 +1,22 @@
+{{- $root := . }}
+{{- if has .Values.global.region .Values.shardedRegions }}
+{{- range $target := .Values.global.targets }}
+{{- range $path, $bytes := $.Files.Glob "aggregations/*.rules" }}
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+
+metadata:
+  name: {{ include "prometheusVMware.name" (list $target $root) }}{{ printf "-%s" $path | replace "/" "-" }}
+  labels:
+    prometheus: {{ include "prometheusVMware.name" (list $target $root) }}
+
+spec:
+{{ printf "%s" $bytes | indent 2 }}
+
+{{- end }}
+{{- end }}
+{{- else }}
 {{- range $path, $bytes := $.Files.Glob "aggregations/*.rules" }}
 ---
 apiVersion: monitoring.coreos.com/v1
@@ -11,4 +30,5 @@ metadata:
 spec:
 {{ printf "%s" $bytes | indent 2 }}
 
+{{- end }}
 {{- end }}
