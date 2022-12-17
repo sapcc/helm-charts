@@ -21,13 +21,13 @@ Docker image and Helm chart to deploy a [MariaDB](https://mariadb.com/kb/en/gett
 | RESTIC_VERSION | install this [restic version](https://github.com/restic/restic/releases) |
 
 ```bash
-docker build --build-arg BASE_REGISTRY=keppel.eu-nl-1.cloud.sap --build-arg BASE_ACCOUNT=octobus --build-arg BASE_SOFT_NAME=ubuntu --build-arg BASE_SOFT_VERSION=20.04 --build-arg BASE_IMG_VERSION=0.3.74 --build-arg SOFT_NAME=mariadb --build-arg SOFT_VERSION=10.5.18+maria~ubu2004 --build-arg IMG_VERSION=0.3.1 --build-arg GALERA_VERSION=26.4.12-focal --build-arg YQ_VERSION=4.30.5 --build-arg RESTIC_VERSION=0.14.0 -t keppel.eu-de-1.cloud.sap/ccloud/mariadb-galera:10.5.18-0.3.1 -f docker/mariadb-galera/Dockerfile ./docker/mariadb-galera/
+docker build --build-arg BASE_REGISTRY=keppel.eu-nl-1.cloud.sap --build-arg BASE_ACCOUNT=octobus --build-arg BASE_SOFT_NAME=ubuntu --build-arg BASE_SOFT_VERSION=20.04 --build-arg BASE_IMG_VERSION=0.3.74 --build-arg SOFT_NAME=mariadb --build-arg SOFT_VERSION=10.5.18+maria~ubu2004 --build-arg IMG_VERSION=0.3.2 --build-arg GALERA_VERSION=26.4.13-focal --build-arg YQ_VERSION=4.30.6 --build-arg RESTIC_VERSION=0.14.0 -t keppel.eu-de-1.cloud.sap/ccloud/mariadb-galera:10.5.18-0.3.2 -f docker/mariadb-galera/Dockerfile ./docker/mariadb-galera/
 ```
 
 #### debug build
 
 ```bash
-docker build --build-arg BASE_REGISTRY=keppel.eu-nl-1.cloud.sap --build-arg BASE_ACCOUNT=octobus --build-arg BASE_SOFT_NAME=ubuntu --build-arg BASE_SOFT_VERSION=20.04 --build-arg BASE_IMG_VERSION=0.3.74 --build-arg SOFT_NAME=mariadb --build-arg SOFT_VERSION=10.5.18+maria~ubu2004 --build-arg IMG_VERSION=0.3.1 --build-arg GALERA_VERSION=26.4.12-focal --build-arg YQ_VERSION=4.30.5 --build-arg RESTIC_VERSION=0.14.0 --build-arg GALERA_DEBUG=true -t keppel.eu-de-1.cloud.sap/ccloud/mariadb-galera-debug:10.5.18-0.3.1 -f docker/mariadb-galera/Dockerfile ./docker/mariadb-galera/
+docker build --build-arg BASE_REGISTRY=keppel.eu-nl-1.cloud.sap --build-arg BASE_ACCOUNT=octobus --build-arg BASE_SOFT_NAME=ubuntu --build-arg BASE_SOFT_VERSION=20.04 --build-arg BASE_IMG_VERSION=0.3.74 --build-arg SOFT_NAME=mariadb --build-arg SOFT_VERSION=10.5.18+maria~ubu2004 --build-arg IMG_VERSION=0.3.2 --build-arg GALERA_VERSION=26.4.13-focal --build-arg YQ_VERSION=4.30.6 --build-arg RESTIC_VERSION=0.14.0 --build-arg GALERA_DEBUG=true -t keppel.eu-de-1.cloud.sap/ccloud/mariadb-galera-debug:10.5.18-0.3.2 -f docker/mariadb-galera/Dockerfile ./docker/mariadb-galera/
 ```
 #### MySQL Exporter image
 | build argument | description |
@@ -43,7 +43,7 @@ docker build --build-arg BASE_REGISTRY=keppel.eu-nl-1.cloud.sap --build-arg BASE
 | USERID | id of the user that should run the binary |
 
 ```bash
-docker build --build-arg BASE_REGISTRY=keppel.eu-nl-1.cloud.sap --build-arg BASE_ACCOUNT=octobus --build-arg BASE_SOFT_NAME=ubuntu --build-arg BASE_SOFT_VERSION=20.04 --build-arg BASE_IMG_VERSION=0.3.67 --build-arg SOFT_NAME=proxysql --build-arg SOFT_VERSION=2.4.4 --build-arg IMG_VERSION=0.1.2 --build-arg USERID=3100 -t keppel.eu-de-1.cloud.sap/ccloud/proxysql:2.4.4-0.1.2 -f docker/proxysql/Dockerfile ./docker/proxysql/
+docker build --build-arg BASE_REGISTRY=keppel.eu-nl-1.cloud.sap --build-arg BASE_ACCOUNT=octobus --build-arg BASE_SOFT_NAME=ubuntu --build-arg BASE_SOFT_VERSION=20.04 --build-arg BASE_IMG_VERSION=0.3.74 --build-arg SOFT_NAME=proxysql --build-arg SOFT_VERSION=2.4.5 --build-arg IMG_VERSION=0.1.3 --build-arg USERID=3100 -t keppel.eu-de-1.cloud.sap/ccloud/proxysql:2.4.5-0.1.3 -f docker/proxysql/Dockerfile ./docker/proxysql/
 ```
 ## Helm chart
 

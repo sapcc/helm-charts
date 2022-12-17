@@ -159,5 +159,6 @@ createbinlogbackup ${NODENAME[0]} ${NODENAME[1]}
 setclusterdesyncmode ${NODENAME[0]} OFF
 {{- if $.Values.mariadb.galera.backup.restic.pruneBackups }}
 prunebackups
-{{- end }}
+{{- else }}
 #listbackups
+{{- end }}

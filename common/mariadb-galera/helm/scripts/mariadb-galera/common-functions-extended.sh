@@ -410,7 +410,7 @@ function checkasyncreplication {
 
 function unlockresticrepo {
   loginfo "${FUNCNAME[0]}" "unlock restic repository if required"
-  restic unlock --remove-all --quiet --json
+  restic unlock --remove-all --json
   if [ $? -ne 0 ]; then
     logerror "${FUNCNAME[0]}" "restic repository unlock failed"
     exit 1
@@ -428,7 +428,7 @@ function prunebackups {
                 --keep-weekly {{ $.Values.mariadb.galera.backup.restic.keep.weekly | default 0 | int }} \
                 --keep-monthly {{ $.Values.mariadb.galera.backup.restic.keep.monthly | default 0 | int }} \
                 --keep-yearly {{ $.Values.mariadb.galera.backup.restic.keep.yearly | default 0 | int }} \
-                --json --compact --quiet
+                --json --compact
   if [ $? -ne 0 ]; then
     logerror "${FUNCNAME[0]}" "restic backup pruning failed"
     exit 1

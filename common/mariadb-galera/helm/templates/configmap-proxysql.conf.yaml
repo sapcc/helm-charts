@@ -15,6 +15,7 @@
     {{- if eq $mariadbconfigValue.type "user" }}
       {{- $usernameEnvVarFound = false }}
       {{- $passwordEnvVarFound = false }}
+      {{- $fastforward = 0 }}
       {{- range $envKey, $envValue := $.Values.env }}
         {{- if (has "proxy" $envValue.containerType) }}
           {{- if and (eq $envKey ($configfile.username | trimAll "${}")) ($envValue) }}
@@ -26,7 +27,7 @@
         {{- end }}
       {{- end }}
       {{- if and (hasKey $configfile "proxysql") $configfile.proxysql.fastforward }}
-        {{- $fastforward := 1 }}
+        {{- $fastforward = 1 }}
       {{- end }}
       {{- if and $usernameEnvVarFound $passwordEnvVarFound }}
         {{- $_ := set $mySQLUsers ($configfile.username | trimAll "${}" | quote) (printf "{ username = %s, password = %s, default_hostgroup = 10, transaction_persistent = 0, fast_forward = %d, active = 1 }" ($configfile.username | quote) ($configfile.password | quote) $fastforward) }}
