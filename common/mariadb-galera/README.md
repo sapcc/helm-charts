@@ -73,23 +73,47 @@ The [Openstack cloud provider documentation](https://github.com/kubernetes/cloud
   * the first pod will start MariaDB with Galera
   * the other pods will only start a sleep process
   * the backup cronjob and the ProxySQL pods will disabled
-  ```shell
-  helm upgrade --install --create-namespace --namespace database mariadb-galera helm --set mariadb.wipeDataAndLog=true --values helm/custom/eu-de-2.yaml
-  ```
+    ```shell
+    helm upgrade --install --namespace database mariadb-galera helm --set mariadb.wipeDataAndLog=true
+    ```
+  * check the logs of the first MariaDB pod for the wipe and Galera startup messages
+    ```json
+    {"log.origin.function":"wipedata","log.level":"info","message":"starting wipe of data and log folder content"}
+    {"log.origin.function":"wipedata","log.level":"info","message":"wipe of data and log folder content done"}
+    ...
+    {"log.origin.function":"bootstrapgalera","log.level":"info","message":"init Galera cluster"}
+    ...
+    [Note] mariadbd: ready for connections.
+    Version: '10.5.18-MariaDB-1:10.5.18+maria~ubu2004-log'  socket: '/opt/mariadb/run/mariadbd.sock'  port: 3306  mariadb.org binary distribution
+    [Note] WSREP: Starting applier thread 21
+    ```
+  * check the logs of the other MariaDB pod for the wipe and sleep startup messages
+    ```json
+    {"log.origin.function":"wipedata","log.level":"info","message":"starting wipe of data and log folder content"}
+    {"log.origin.function":"wipedata","log.level":"info","message":"wipe of data and log folder content done"}
+    ...
+    {"log.origin.function":"initgalera","log.level":"info","message":"start sleep mode because wipedata flag has been set"}
+    ```
 * start the restore and recovery procress using the `mariadb.galera.restore.beforeTimestamp` option
   * a new job pod will be started
   * restic will query the nearest snapshot id related to the provided timestamp
   * the MariaDB dump included in the snapshot will be restored
   * the mysql client will import the dump into the first MariaDB node
-  ```shell
-  helm upgrade --install --create-namespace --namespace database mariadb-galera helm --set mariadb.galera.restore.enabled=true --set mariadb.galera.restore.beforeTimestamp="2022-12-13 12:00:00" --values helm/custom/eu-de-2.yaml
-  ```
+    ```sh
+    helm upgrade --install --namespace database mariadb-galera helm --set mariadb.galera.restore.enabled=true --set mariadb.galera.restore.beforeTimestamp="2022-12-13 12:00:00"
+    ```
+  * check the recovery logs of the `mariadb-g-restore-*` pod
+    ```json
+    {"log.origin.function":"recoverresticdbbackup","log.level":"info","message":"fetch restic snapshotid for 2022-12-13 12:00:00 timestamp"}
+    {"log.origin.function":"recoverresticdbbackup","log.level":"info","message":"restic database recovery using snapshot dfca4aaa to mariadb-g-0.database.svc.cluster.local started"}
+    {"log.origin.function":"recoverresticdbbackup","log.level":"info","message":"restic database recovery done"}
+    ```
 * run `helm upgrade` again to remove the `mariadb.wipeDataAndLog` and `mariadb.galera.restore.enabled` options
   * ProxySQL, the config job and the Backup cronjob will be enabled again (if they have been enabled before)
   * the MariaDB pods will be restarted and Galera will replicate the restored data
-  ```shell
-  helm upgrade --install --create-namespace --namespace database mariadb-galera helm --values helm/custom/eu-de-2.yaml
-  ```
+    ```sh
+    helm upgrade --install --namespace database mariadb-galera helm
+    ```
 
 #### asynchronous replication config
 
