@@ -80,9 +80,11 @@ The [Openstack cloud provider documentation](https://github.com/kubernetes/cloud
     ```json
     {"log.origin.function":"wipedata","log.level":"info","message":"starting wipe of data and log folder content"}
     {"log.origin.function":"wipedata","log.level":"info","message":"wipe of data and log folder content done"}
-    ...
+    {"..."}
     {"log.origin.function":"bootstrapgalera","log.level":"info","message":"init Galera cluster"}
-    ...
+    {"..."}
+    ```
+    ```text
     [Note] mariadbd: ready for connections.
     Version: '10.5.18-MariaDB-1:10.5.18+maria~ubu2004-log'  socket: '/opt/mariadb/run/mariadbd.sock'  port: 3306  mariadb.org binary distribution
     [Note] WSREP: Starting applier thread 21
@@ -91,7 +93,7 @@ The [Openstack cloud provider documentation](https://github.com/kubernetes/cloud
     ```json
     {"log.origin.function":"wipedata","log.level":"info","message":"starting wipe of data and log folder content"}
     {"log.origin.function":"wipedata","log.level":"info","message":"wipe of data and log folder content done"}
-    ...
+    {"..."}
     {"log.origin.function":"initgalera","log.level":"info","message":"start sleep mode because wipedata flag has been set"}
     ```
 * start the restore and recovery procress using the `mariadb.galera.restore.beforeTimestamp` option
