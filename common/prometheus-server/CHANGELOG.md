@@ -1,3 +1,7 @@
+## 7.1.14
+
+* remoteWrite CA added
+
 ## 7.1.12 - 7.1.13
 
  * configurable multipe scrapes alerts
