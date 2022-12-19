@@ -1,6 +1,6 @@
-## 6.4.10
+## 6.4.11
 
- *configurable multipe scrapes alerts
+ * configurable multipe scrapes alerts
 
 ## 6.4.10
 
