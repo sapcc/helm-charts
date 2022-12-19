@@ -140,7 +140,7 @@ groups:
       description: 'Prometheus `{{`{{ $labels.prometheus }}`}}` has many scrapes that exceed the sample limit'
       summary: Prometheus fails to scrape targets.
 
-  {{- if .Values.alerts.multipleTargetScrapes.enabled }}
+  {{- if $root.Values.alerts.multipleTargetScrapes.enabled }}
   - alert: PrometheusMultipleTargetScrapes
     # we exclude the following:
     # * cadvisor metrics because it has the same instance as the kubelet but a different path
@@ -159,7 +159,7 @@ groups:
       summary: Prometheus target scraped multiple times
   {{- end }}
 
-  {{- if .Values.alerts.multiplePodScrapes.enabled }}
+  {{- if $root.Values.alerts.multiplePodScrapes.enabled }}
   - alert: PrometheusMultiplePodScrapes
     expr: sum by(pod, namespace, label_alert_service, label_alert_tier) (label_replace((up * on(instance) group_left() (sum by(instance) (up{job=~".*pod-sd"}) > 1)* on(pod) group_left(label_alert_tier, label_alert_service) (max without(uid) (kube_pod_labels))) , "pod", "$1", "kubernetes_pod_name", "(.*)-[0-9a-f]{8,10}-[a-z0-9]{5}"))
     for: 30m
