@@ -1,4 +1,4 @@
-## 7.1.12
+## 7.1.12 - 7.1.13
 
  * configurable multipe scrapes alerts
 
