@@ -1,5 +1,9 @@
 ## 6.4.10
 
+ *configurable multipe scrapes alerts
+
+## 6.4.10
+
  * fix prometheus label on alerts
 
 ## 6.4.7 - 6.4.9

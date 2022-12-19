@@ -138,13 +138,13 @@ groups:
       description: 'Prometheus `{{`{{ $labels.prometheus }}`}}` has many scrapes that exceed the sample limit'
       summary: Prometheus fails to scrape targets.
 
+  {{- if .Values.alerts.multipleTargetScrapes.enabled }}
   - alert: PrometheusMultipleTargetScrapes
     # we exclude the following:
     # * cadvisor metrics because it has the same instance as the kubelet but a different path
     # e.g. 10.246.204.80:10250/metrics vs. 10.246.204.80:10250/metrics/cadvisor
     # * pod service discovery job, we have a dedicated alert for that
-    # * prometheus maia federation from prometheus vmware as the target is scraped multiple times for different metrics
-    expr: sum by (job) (up * on(instance, cluster) group_left() (sum by(instance, cluster) (up{job !~ "kubernetes-cadvisors|kubernetes-kubelet|.*-pod-sd|prometheus-vmware.*"}) > 1))
+    expr: sum by (job) (up * on(instance, cluster) group_left() (sum by(instance, cluster) (up{job !~ "kubernetes-cadvisors|kubernetes-kubelet|.*-pod-sd|{{ .Values.alerts.multipleTargetScrapes.exceptions | join "|" }}"}) > 1))
     for: 30m
     labels:
       service: {{ default "metrics" .Values.alerts.service }}
@@ -155,7 +155,9 @@ groups:
     annotations:
       description: Prometheus is scraping individual targets of the job `{{`{{ $labels.job }}`}}` more than once. This is likely caused due to incorrectly placed scrape annotations.  <https://{{ include "prometheus.externalURL" . }}/graph?g0.expr={{ urlquery `up * on(instance) group_left() (sum by(instance) (up{job="PLACEHOLDER"}) > 1)` | replace "PLACEHOLDER" "{{ $labels.job }}"}}|Affected targets>
       summary: Prometheus target scraped multiple times
+  {{- end }}
 
+  {{- if .Values.alerts.multiplePodScrapes.enabled }}
   - alert: PrometheusMultiplePodScrapes
     expr: sum by(pod, namespace, label_alert_service, label_alert_tier) (label_replace((up * on(instance) group_left() (sum by(instance) (up{job=~".*pod-sd"}) > 1)* on(pod) group_left(label_alert_tier, label_alert_service) (max without(uid) (kube_pod_labels))) , "pod", "$1", "kubernetes_pod_name", "(.*)-[0-9a-f]{8,10}-[a-z0-9]{5}"))
     for: 30m
@@ -168,6 +170,7 @@ groups:
     annotations:
       description: Prometheus is scraping `{{`{{ $labels.pod }}`}}` pods in namespace `{{`{{ $labels.namespace }}`}}` multiple times. This is likely caused due to incorrectly placed scrape annotations. <https://{{ include "prometheus.externalURL" . }}/graph?g0.expr={{ urlquery `up * on(instance) group_left() (sum by(instance) (up{kubernetes_pod_name=~"PLACEHOLDER.*"}) > 1)` | replace "PLACEHOLDER" "{{ $labels.pod }}"}}|Affected targets>
       summary: Prometheus scrapes pods multiple times
+  {{- end }}
 
   {{- if and .Values.alertmanagers (gt (len .Values.alertmanagers) 0) }}
   - alert: PrometheusNotConnectedToAlertmanagers

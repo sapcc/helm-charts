@@ -1,3 +1,7 @@
+## 7.1.12
+
+ * configurable multipe scrapes alerts
+
 ## 7.1.11
 
 * adding remoteWrite
