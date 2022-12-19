@@ -146,7 +146,7 @@ groups:
     # * cadvisor metrics because it has the same instance as the kubelet but a different path
     # e.g. 10.246.204.80:10250/metrics vs. 10.246.204.80:10250/metrics/cadvisor
     # * pod service discovery job, we have a dedicated alert for that
-    expr: sum by (job) (up * on(instance, cluster) group_left() (sum by(instance, cluster) (up{job !~ "kubernetes-cadvisors|kubernetes-kubelet|.*-pod-sd|{{ .Values.alerts.multipleTargetScrapes.exceptions | join "|" }}"}) > 1))
+    expr: sum by (job) (up * on(instance, cluster) group_left() (sum by(instance, cluster) (up{job !~ "kubernetes-cadvisors|kubernetes-kubelet|.*-pod-sd|{{ $root.Values.alerts.multipleTargetScrapes.exceptions | join "|" }}"}) > 1))
     for: 30m
     labels:
       service: {{ default "metrics" $root.Values.alerts.service }}
