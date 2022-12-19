@@ -74,6 +74,6 @@ play.ws.ssl {
       { type = "PKCS12", path = "/secrets/truststore", password: "{{.Values.opensearch.cacerts.truststore_password}}" }
     ]
   }
-}     
+}
 play.ws.ssl.loose.acceptAnyCertificate=true
 {{- end }}
