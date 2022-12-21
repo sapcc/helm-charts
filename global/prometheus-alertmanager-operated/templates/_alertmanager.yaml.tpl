@@ -287,14 +287,7 @@ route:
       severity: warning
       cluster_type: abapcloud|admin|controlplane|customer|internet|kubernikus|metal|scaleout|virtual
       region: global|ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|ap-sa-2|eu-de-1|eu-de-2|eu-nl-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3
-  # sunset latest q1-23
-  - receiver: slack_api_info
-    continue: false
-    match_re:
-      tier: os|k8s|kks
-      severity: info
-      cluster_type: abapcloud|admin|controlplane|customer|internet|kubernikus|metal|scaleout|virtual
-      region: global|ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|ap-sa-2|eu-de-1|eu-de-2|eu-nl-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3
+
   # sunset latest q1-23
   - receiver: pagerduty_metal
     continue: true
@@ -631,20 +624,6 @@ receivers:
             type: {{"'{{template \"slack.sapcc.actionType\" . }}'"}}
             text: {{"'{{template \"slack.sapcc.acknowledge.actionText\" . }}'"}}
             value: {{"'{{template \"slack.sapcc.acknowledge.actionValue\" . }}'"}}
-
-  - name: slack_api_info
-    slack_configs:
-      - channel: '#alert-api-info'
-        api_url: {{ required ".Values.slack.webhookURL undefined" .Values.slack.webhookURL | quote }}
-        username: "Pulsar"
-        title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
-        title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
-        text: {{"'{{template \"slack.sapcc.text\" . }}'"}}
-        pretext: {{"'{{template \"slack.sapcc.pretext\" . }}'"}}
-        icon_emoji: {{"'{{template \"slack.sapcc.iconemoji\" . }}'"}}
-        callback_id: "alertmanager"
-        color: {{`'{{template "slack.sapcc.color" . }}'`}}
-        send_resolved: true
 
   - name: slack_api_warning
     slack_configs:
