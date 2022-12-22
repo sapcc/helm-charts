@@ -5,7 +5,19 @@ metadata:
   namespace: {{ $.Release.Namespace }}
   name: {{ $.Release.Name }}
 spec:
-  maxUnavailable: {{ $.Values.maxUnavailable | default 1 }}
+  maxUnavailable: {{ $.Values.maxUnavailable.application | default 1 }}
   selector:
     matchLabels:
-      app: {{ $.Release.Name }}
+      component: "application"
+
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  namespace: {{ $.Release.Namespace }}
+  name: {{ $.Release.Name }}
+spec:
+  maxUnavailable: {{ $.Values.maxUnavailable.proxy | default 1 }}
+  selector:
+    matchLabels:
+      component: "proxy"

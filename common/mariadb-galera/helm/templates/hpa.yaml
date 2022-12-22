@@ -1,17 +1,33 @@
 
-{{- if $.Values.hpa.enabled }}
+{{- if $.Values.hpa.application.enabled }}
 ---
 apiVersion: autoscaling/v1
 kind: HorizontalPodAutoscaler
 metadata:
-  name: {{ $.Release.Name }}
+  name: {{ (include "nodeNamePrefix" (dict "global" $ "component" "application")) }}
   namespace: {{ $.Release.Namespace }}
 spec:
   scaleTargetRef:
     apiVersion: apps/v1
     kind: StatefulSet
-    name: {{ $.Release.Name }}
-  minReplicas: {{ $.Values.hpa.minReplicas }}
-  maxReplicas: {{ $.Values.hpa.maxReplicas }}
-  targetCPUUtilizationPercentage: {{ $.Values.hpa.maxCpuPercent }}
+    name: {{ (include "nodeNamePrefix" (dict "global" $ "component" "application")) }}
+  minReplicas: {{ $.Values.hpa.minReplicas | default 3 | int }}
+  maxReplicas: {{ $.Values.hpa.maxReplicas | default 5 | int }}
+  targetCPUUtilizationPercentage: {{ $.Values.hpa.maxCpuPercent | default 66 | int }}
+{{- end }}
+{{- if $.Values.hpa.proxy.enabled }}
+---
+apiVersion: autoscaling/v1
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {{ (include "nodeNamePrefix" (dict "global" $ "component" "proxy")) }}
+  namespace: {{ $.Release.Namespace }}
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: StatefulSet
+    name: {{ (include "nodeNamePrefix" (dict "global" $ "component" "proxy")) }}
+  minReplicas: {{ $.Values.hpa.minReplicas | default 3 | int }}
+  maxReplicas: {{ $.Values.hpa.maxReplicas | default 5 | int }}
+  targetCPUUtilizationPercentage: {{ $.Values.hpa.maxCpuPercent | default 66 | int }}
 {{- end }}

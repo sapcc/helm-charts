@@ -2,6 +2,27 @@ mariadb:
   galera:
     gtidDomainId: 1
     gtidDomainIdCount: 2
+    backup:
+      enabled: true
+      openstack: #https://docs.openstack.org/python-openstackclient/zed/cli/authentication.html
+        authurl: https://identity-3.eu-de-2.cloud.sap:443/v3
+        region: eu-de-2
+        projectname: cc-demo
+        tenantname: monsoon3
+        container: mariadb-galera-backup
+      restic:
+        progressFps: 0.5
+        compression: auto
+        packsizeInMB: 128
+        unlockRepo: false
+        pruneBackups: false
+        keep:
+          last: 2
+          hourly: 24
+          daily: 7
+          weekly: 4
+          monthly: 12
+          yearly: 2
     restore:
       enabled: false
       beforeTimestamp: "2022-12-13 12:00:00"

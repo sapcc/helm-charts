@@ -24,10 +24,10 @@ spec:
   selector:
     matchLabels:
       component: "proxy"
-  revisionHistoryLimit: {{ $.Values.revisionHistoryLimit }}
-  podManagementPolicy: {{ $.Values.podManagementPolicy }}
+  revisionHistoryLimit: {{ $.Values.revisionHistoryLimit | default 10 | int }}
+  podManagementPolicy: {{ $.Values.podManagementPolicy | default "OrderedReady" | quote }}
   updateStrategy:
-    type: {{ required "UpdateStrategy setting required" $.Values.UpdateStrategy }}
+    type: {{ required "updateStrategy setting required" $.Values.updateStrategy }}
   template:
     metadata:
       labels:
@@ -95,8 +95,8 @@ spec:
         image: "{{ $.Values.image.proxy.registry }}/{{ $.Values.image.proxy.project }}/{{ $.Values.image.proxy.applicationname }}:{{ $.Values.image.proxy.applicationversion }}-{{ $.Values.image.proxy.imageversion }}"
         imagePullPolicy: {{ $.Values.image.proxy.pullPolicy | default "IfNotPresent" | quote }}
         securityContext:
-          runAsUser:  {{ $.Values.userId.proxy }}
-          runAsGroup: {{ $.Values.groupId.proxy }}
+          runAsUser:  {{ $.Values.userId.proxy | default 3100 | int }}
+          runAsGroup: {{ $.Values.groupId.proxy | default 3100 | int }}
           capabilities:
             add:
               - IPC_LOCK
@@ -280,7 +280,7 @@ spec:
             mountPath: /opt/proxysql/bin/post-start-hook.sh
             subPath: post-start-hook.sh
             readOnly: true
-      terminationGracePeriodSeconds: {{ $.Values.terminationGracePeriodSeconds | default 86400 }}
+      terminationGracePeriodSeconds: {{ $.Values.terminationGracePeriodSeconds | default 86400 | int }}
       volumes:
         {{- range $volumeMountsKey, $volumeMountsValue := $.Values.volumeMounts.proxy }}
           {{- if $volumeMountsValue.type }}

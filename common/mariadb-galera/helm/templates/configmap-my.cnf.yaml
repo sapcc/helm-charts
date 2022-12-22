@@ -5,7 +5,11 @@
 {{- else  }}
   {{- $_ := set $wsrepProviderOptions "pc.recovery" "pc.recovery=FALSE"}}
 {{- end }}
-{{- $_ := set $wsrepProviderOptions "gcache.recover" "gcache.recover=yes" }}
+{{- if $.Values.mariadb.galera.gcache.recover }}
+  {{- $_ := set $wsrepProviderOptions "gcache.recover" "gcache.recover=yes" }}
+{{- else  }}
+  {{- $_ := set $wsrepProviderOptions "gcache.recover" "gcache.recover=no" }}
+{{- end }}
 {{- $_ := set $wsrepProviderOptions "cert.log_conflicts" "cert.log_conflicts=ON"}}
 {{- if $.Values.mariadb.galera.debug }}
   {{- $_ := set $wsrepProviderOptions "debug" "debug=YES"}}

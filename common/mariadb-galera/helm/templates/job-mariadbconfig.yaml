@@ -12,9 +12,9 @@ metadata:
     app: {{ $.Release.Name }}
     release: {{ $.Release.Name }}
 spec:
-  backoffLimit: {{ $.Values.job.mariadbconfig.backoffLimit | default 6 }}
-  activeDeadlineSeconds: {{ $.Values.job.mariadbconfig.activeDeadlineSeconds | default 300 }}
-  ttlSecondsAfterFinished: {{ $.Values.job.mariadbconfig.ttlSecondsAfterFinished | default 120 }}
+  backoffLimit: {{ $.Values.job.mariadbconfig.backoffLimit | default 6 | int }}
+  activeDeadlineSeconds: {{ $.Values.job.mariadbconfig.activeDeadlineSeconds | default 300 | int }}
+  ttlSecondsAfterFinished: {{ $.Values.job.mariadbconfig.ttlSecondsAfterFinished | default 120 | int }}
   template:
     metadata:
       labels:
@@ -35,7 +35,7 @@ spec:
         image: "{{ $.Values.image.application.registry }}/{{ $.Values.image.application.project }}/{{ $.Values.image.application.applicationname }}:{{ $.Values.image.application.applicationversion }}-{{ $.Values.image.application.imageversion }}"
         imagePullPolicy: {{ $.Values.image.application.pullPolicy | default "IfNotPresent" | quote }}
         securityContext:
-          runAsUser:  {{ $.Values.userId.application }}
+          runAsUser:  {{ $.Values.userId.application | default 101 | int }}
           runAsGroup: {{ $.Values.groupId.application }}
         {{- if and ($.Values.command) (hasKey $.Values.command "jobconfig") }}
         command:

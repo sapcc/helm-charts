@@ -11,9 +11,9 @@ metadata:
     app: {{ $.Release.Name }}
     release: {{ $.Release.Name }}
 spec:
-  backoffLimit: {{ $.Values.job.mariadbrestore.backoffLimit | default 0 }}
-  activeDeadlineSeconds: {{ $.Values.job.mariadbrestore.activeDeadlineSeconds | default 3600 }}
-  ttlSecondsAfterFinished: {{ $.Values.job.mariadbrestore.ttlSecondsAfterFinished | default 43200 }}
+  backoffLimit: {{ $.Values.job.mariadbrestore.backoffLimit | default 0 | int }}
+  activeDeadlineSeconds: {{ $.Values.job.mariadbrestore.activeDeadlineSeconds | default 3600 | int }}
+  ttlSecondsAfterFinished: {{ $.Values.job.mariadbrestore.ttlSecondsAfterFinished | default 43200 | int }}
   template:
     metadata:
       labels:
@@ -34,7 +34,7 @@ spec:
         image: "{{ $.Values.image.application.registry }}/{{ $.Values.image.application.project }}/{{ $.Values.image.application.applicationname }}:{{ $.Values.image.application.applicationversion }}-{{ $.Values.image.application.imageversion }}"
         imagePullPolicy: {{ $.Values.image.application.pullPolicy | default "IfNotPresent" | quote }}
         securityContext:
-          runAsUser:  {{ $.Values.userId.application }}
+          runAsUser:  {{ $.Values.userId.application | default 101 | int }}
           runAsGroup: {{ $.Values.groupId.application }}
         {{- if and ($.Values.command) (hasKey $.Values.command "jobrestore") }}
         command:
