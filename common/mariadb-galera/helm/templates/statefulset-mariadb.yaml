@@ -63,7 +63,7 @@ spec:
             topologyKey: "kubernetes.io/hostname"
       serviceAccount: {{ $.Release.Name }}
       securityContext:
-        fsGroup:  {{ $.Values.groupId.application }}
+        fsGroup:  {{ $.Values.groupId.application | default 101 | int }}
       {{- if and (hasKey $.Values.image.application "pullSecret") $.Values.image.application.pullSecret }}
       imagePullSecrets:
       - name: {{ $.Release.Name }}-{{$.Values.image.application.pullSecret}}

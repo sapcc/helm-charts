@@ -30,7 +30,7 @@ spec:
           restartPolicy: {{ $.Values.job.mariadbbackup.jobRestartPolicy | default "OnFailure" | quote }}
           serviceAccount: {{ $.Release.Name }}
           securityContext:
-            fsGroup:  {{ $.Values.groupId.application }}
+            fsGroup:  {{ $.Values.groupId.application | default 101 | int }}
           imagePullSecrets:
           - name: {{ $.Release.Name }}-{{$.Values.image.application.pullSecret}}
           containers:
@@ -39,7 +39,7 @@ spec:
             imagePullPolicy: {{ $.Values.image.application.pullPolicy | default "IfNotPresent" | quote }}
             securityContext:
               runAsUser:  {{ $.Values.userId.application | default 101 | int }}
-              runAsGroup: {{ $.Values.groupId.application }}
+              runAsGroup: {{ $.Values.groupId.application | default 101 | int }}
             {{- if and ($.Values.command) (hasKey $.Values.command "cronjob") }}
             command:
 {{ $.Values.command.cronjob | toYaml | indent 12 }}

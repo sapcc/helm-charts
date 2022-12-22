@@ -35,7 +35,7 @@ Docker images and Helm chart to deploy a [MariaDB](https://mariadb.com/kb/en/get
 ## Metadata
 | chart version | app version | type | url |
 |:--------------|:-------------|:-------------|:-------------|
-| 0.11.0 | 10.5.18 | application | [Git repo](https://github.com/businessbean/helm-charts/tree/master/common/mariadb-galera) |
+| 0.11.1 | 10.5.18 | application | [Git repo](https://github.com/businessbean/helm-charts/tree/master/common/mariadb-galera) |
 
 | Name | Email | Url |
 | ---- | ------ | --- |
@@ -440,7 +440,7 @@ The [Openstack cloud provider documentation](https://github.com/kubernetes/cloud
 * restic will be used to encrypt, compress and deduplicate the backup data. Currently the Openstack Swift backend is supported
 
 ### full database restore
-* prepare the the database nodes the `mariadb.wipeDataAndLog` option
+* prepare the database nodes with the `mariadb.wipeDataAndLog` option
   * the mariadb pods will be restarted
   * the content of the `data` and the `log` folders will be wiped
   * the first pod will start MariaDB with Galera
@@ -598,16 +598,23 @@ flowchart TB;
   id1[start container]-->id2(run entrypoint.sh)-->id3(include common-functions.sh)-->id4(common-functions-extended.sh exist?);
   id4--Yes-->id5(include common-functions-extended.sh)-->id6;
   id4--No-->id6;
-  subgraph idsub1 [checkenv]
-    id6(required env vars set?);
+  subgraph idsub1 [wipedata]
+    id6(/opt/mariadb/etc/wipedata.flag exist?);
+    id6--Yes-->id7(wipe data & log dir content ok?);
   end
-  id6--Yes-->id7
-  subgraph idsub2 [templateconfig]
-    id7(template MariaDB configs ok?);
+  id6--No-->id8;
+  id7--Yes-->id8;
+  subgraph idsub2 [checkenv]
+    id8(required env vars set?);
   end
-  id7--Yes-->id8([init database])
-  id6--No-->id666[exit 1];
+  id8--Yes-->id9;
+  subgraph idsub3 [templateconfig]
+    id9(template MariaDB configs ok?);
+  end
+  id9--Yes-->id10([init database])
   id7--No-->id666[exit 1];
+  id8--No-->id666[exit 1];
+  id9--No-->id666[exit 1];
 
 click id2 href "businessbean/helm-charts/blob/master/common/mariadb-galera/mariadb-galera/bin/entrypoint.sh" "Open this in a new tab" _blank;
 click id3 href "businessbean/helm-charts/blob/master/common/mariadb-galera/docker/mariadb-galera/bin/common-functions.sh" "Open this in a new tab" _blank;
