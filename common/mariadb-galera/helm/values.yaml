@@ -304,39 +304,49 @@ services:
       # -- `false` or `true` if the IP adresses of the pods that are [endpoints for that service](https://kubernetes.io/docs/concepts/services-networking/service/#headless-services) should be advertised. Required to let the client make it's own load balancing decisions
       headless: true
       ports:
-        # -- Galera [replication port](https://mariadb.com/kb/en/configuring-mariadb-galera-cluster/#network-ports)
         galera:
+          # -- exposed Galera [replication port](https://mariadb.com/kb/en/configuring-mariadb-galera-cluster/#network-ports)
           port: 4567
+          # -- Galera [replication port](https://mariadb.com/kb/en/configuring-mariadb-galera-cluster/#network-ports) configured in the container
           targetPort: 4567
+          # -- Galera [replication port](https://mariadb.com/kb/en/configuring-mariadb-galera-cluster/#network-ports) protocol
           protocol: TCP
-        # -- Galera [incremental state transfer port](http://galeracluster.com/library/documentation/galera-parameters.html#ist-recv-addr)
         ist:
+          # -- exposed Galera [incremental state transfer port](http://galeracluster.com/library/documentation/galera-parameters.html#ist-recv-addr)
           port: 4568
+          # -- Galera [incremental state transfer port](http://galeracluster.com/library/documentation/galera-parameters.html#ist-recv-addr) configured in the container
           targetPort: 4568
+          # -- Galera [incremental state transfer port](http://galeracluster.com/library/documentation/galera-parameters.html#ist-recv-addr) protocol
           protocol: TCP
-        # -- Galera [state snapshot transfer port](https://mariadb.com/kb/en/introduction-to-state-snapshot-transfers-ssts/)
         sst:
+          # -- exposed Galera [state snapshot transfer port](https://mariadb.com/kb/en/introduction-to-state-snapshot-transfers-ssts/)
           port: 4444
+          # -- Galera [state snapshot transfer port](https://mariadb.com/kb/en/introduction-to-state-snapshot-transfers-ssts/) configured in the container
           targetPort: 4444
+          # -- Galera [state snapshot transfer port](https://mariadb.com/kb/en/introduction-to-state-snapshot-transfers-ssts/) protocol
           protocol: TCP
-      # -- `None` or `ClientIP` if connections from a single client should be [routed to the same endpoint](https://kubernetes.io/docs/reference/networking/virtual-ips/#session-affinity) every time.
-      sessionAffinity: None
+      sessionAffinity:
+        # -- `None` or `ClientIP` if connections from a single client should be [routed to the same endpoint](https://kubernetes.io/docs/reference/networking/virtual-ips/#session-affinity) every time.
+        type: None
     frontend:
       # -- `ClusterIP` to configure a Kubernetes internal service or `LoadBalancer` to publish the service outside of the [Kubernetes cluster network](https://kubernetes.io/docs/concepts/services-networking/service/#publishing-services-service-types)
       type: ClusterIP
       # -- `false` or `true` if the IP adresses of the pods that are [endpoints for that service](https://kubernetes.io/docs/concepts/services-networking/service/#headless-services) should be advertised. Required to let the client make it's own load balancing decisions
       headless: false
       ports:
-        # -- MariaDB [SQL port](https://mariadb.com/kb/en/connecting-to-mariadb/#port)
         mysql:
+          # -- exposed MariaDB [SQL port](https://mariadb.com/kb/en/connecting-to-mariadb/#port)
           port: 3306
+          # -- MariaDB [SQL port](https://mariadb.com/kb/en/connecting-to-mariadb/#port) configured in the container
           targetPort: 3306
+          # -- MariaDB [SQL port](https://mariadb.com/kb/en/connecting-to-mariadb/#port) protocol
           protocol: TCP
-      # -- `None` or `ClientIP` if connections from a single client should be [routed to the same endpoint](https://kubernetes.io/docs/reference/networking/virtual-ips/#session-affinity) every time.
-      sessionAffinity: ClientIP
-      # -- [Session stickiness timeout](https://kubernetes.io/docs/reference/networking/virtual-ips/#session-affinity) for the `sessionAffinity` option
-      # @default -- 10800
-      sessionAffinityClientIpTimeoutSeconds: 28800
+      sessionAffinity:
+        # -- `None` or `ClientIP` if connections from a single client should be [routed to the same endpoint](https://kubernetes.io/docs/reference/networking/virtual-ips/#session-affinity) every time.
+        type: ClientIP
+        # -- [Session stickiness timeout](https://kubernetes.io/docs/reference/networking/virtual-ips/#session-affinity) for the `sessionAffinity` option
+        # @default -- 10800
+        ClientIpTimeoutSeconds: 28800
   proxy:
     backend:
       # -- `ClusterIP` to configure a Kubernetes internal service or `LoadBalancer` to publish the service outside of the [Kubernetes cluster network](https://kubernetes.io/docs/concepts/services-networking/service/#publishing-services-service-types)
@@ -344,37 +354,46 @@ services:
       # -- `false` or `true` if the IP adresses of the pods that are [endpoints for that service](https://kubernetes.io/docs/concepts/services-networking/service/#headless-services) should be advertised. Required to let the client make it's own load balancing decisions
       headless: true
       ports:
-        # -- ProxySQL [Admin SQL port](https://proxysql.com/Documentation/global-variables/admin-variables/#admin-mysql_ifaces)
         proxy:
+          # -- exposed ProxySQL [Admin SQL port](https://proxysql.com/Documentation/global-variables/admin-variables/#admin-mysql_ifaces)
           port: 6032
+          # -- ProxySQL [Admin SQL port](https://proxysql.com/Documentation/global-variables/admin-variables/#admin-mysql_ifaces) configured in the container
           targetPort: 6032
+          # -- ProxySQL [Admin SQL port](https://proxysql.com/Documentation/global-variables/admin-variables/#admin-mysql_ifaces) protocol
           protocol: TCP
-        # -- ProxySQL [Rest API port](https://proxysql.com/documentation/REST-API/)
         restapi:
+          # -- exposed ProxySQL [Rest API port](https://proxysql.com/documentation/REST-API/)
           port: 6070
+          # -- ProxySQL [Rest API port](https://proxysql.com/documentation/REST-API/) configured in the container
           targetPort: 6070
+          # -- ProxySQL [Rest API port](https://proxysql.com/documentation/REST-API/) protocol
           protocol: TCP
-        # -- ProxySQL [Admin UI port](https://proxysql.com/documentation/http-web-server/)
         adminui:
+          # -- exposed ProxySQL [Admin UI port](https://proxysql.com/documentation/http-web-server/)
           port: 6080
+          # -- ProxySQL [Admin UI port](https://proxysql.com/documentation/http-web-server/) configured in the container
           targetPort: 6080
+          # -- ProxySQL [Admin UI port](https://proxysql.com/documentation/http-web-server/) protocol
           protocol: TCP
-      # -- `None` or `ClientIP` if connections from a single client should be [routed to the same endpoint](https://kubernetes.io/docs/reference/networking/virtual-ips/#session-affinity) every time.
-      sessionAffinity: None
+      sessionAffinity:
+        # -- `None` or `ClientIP` if connections from a single client should be [routed to the same endpoint](https://kubernetes.io/docs/reference/networking/virtual-ips/#session-affinity) every time.
+        type: None
     frontend:
       # -- `ClusterIP` to configure a Kubernetes internal service or `LoadBalancer` to publish the service outside of the [Kubernetes cluster network](https://kubernetes.io/docs/concepts/services-networking/service/#publishing-services-service-types)
       type: ClusterIP
       # -- `false` or `true` if the IP adresses of the pods that are [endpoints for that service](https://kubernetes.io/docs/concepts/services-networking/service/#headless-services) should be advertised. Required to let the client make it's own load balancing decisions
       headless: false
       ports:
-        # -- ProxySQL [SQL port](https://proxysql.com/Documentation/global-variables/mysql-variables/#mysql-interfaces)
         proxy:
+          # -- exposed ProxySQL [SQL port](https://proxysql.com/Documentation/global-variables/mysql-variables/#mysql-interfaces)
           port: 3306
+          # -- ProxySQL [SQL port](https://proxysql.com/Documentation/global-variables/mysql-variables/#mysql-interfaces) configured in the container
           targetPort: 6033
+          # -- ProxySQL [SQL port](https://proxysql.com/Documentation/global-variables/mysql-variables/#mysql-interfaces) protocol
           protocol: TCP
-      # -- `None` or `ClientIP` if connections from a single client should be [routed to the same endpoint](https://kubernetes.io/docs/reference/networking/virtual-ips/#session-affinity) every time.
-      sessionAffinity: None
-
+      sessionAffinity:
+        # -- `None` or `ClientIP` if connections from a single client should be [routed to the same endpoint](https://kubernetes.io/docs/reference/networking/virtual-ips/#session-affinity) every time.
+        type: None
 
 # Storage
 volumeMounts:
