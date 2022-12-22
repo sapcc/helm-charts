@@ -59,6 +59,15 @@ spec:
               readOnly: true
           env:
 {{ include (print .Template.BasePath "/_env.tpl") . | indent 12 }}
+          startupProbe: # The application will have a maximum of 5 minutes (30 * 10 = 300s) to finish its startup.
+            httpGet:
+              path: /system/startprobe
+              port: 80
+              httpHeaders:
+                - name: host
+                  value: elektra.cloud.sap # from rails 6 only hosts defined in config.host are allowed. We are simulating a valid host here.                  
+            failureThreshold: 30
+            periodSeconds: 10
           livenessProbe:
             httpGet:
               path: /system/liveliness
