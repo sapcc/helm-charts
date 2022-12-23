@@ -11,8 +11,6 @@ MYSQL_HOST=${DB_HOST-localhost}
 MYSQL_PORT=${DB_PORT-3306}
 WEB_LISTEN_ADDRESS="${WEB_LISTEN_HOST-}:${WEB_LISTEN_PORT-9104}"
 export DATA_SOURCE_NAME=${COLLECT_DB_CONNECT_STRING-${DB_USER}:${DB_PASS}@(${MYSQL_HOST}:${MYSQL_PORT})/}
-MAX_RETRIES=10
-WAIT_SECONDS=6
 declare -A exporterparams
 
 #all parameters that should per default have values

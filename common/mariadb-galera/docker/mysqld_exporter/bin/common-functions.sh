@@ -1,6 +1,8 @@
 oldIFS="${IFS}"
 BASE=/opt/${SOFTWARE_NAME}
 DATADIR=${BASE}/data
+export MAX_RETRIES=10
+export WAIT_SECONDS=6
 export CONTAINER_IP=$(hostname --ip-address)
 export POD_NAME=$(hostname --short)
 
