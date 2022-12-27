@@ -17,24 +17,24 @@ use = egg:Paste#urlmap
 
 # Use this pipeline for Barbican API - versions no authentication
 [pipeline:barbican_version]
-pipeline = cors healthcheck versionapp
+pipeline = cors healthcheck microversion versionapp
 
 # Use this pipeline for Barbican API - DEFAULT no authentication
 [pipeline:barbican_api]
-pipeline = cors unauthenticated-context {{- include "watcher_pipe" . }} {{- include "audit_pipe" . }} {{- include "rate_limit_pipe" . }}  apiapp
+pipeline = cors unauthenticated-context {{- include "watcher_pipe" . }} {{- include "audit_pipe" . }} {{- include "rate_limit_pipe" . }}  microversion apiapp
 
 #Use this pipeline to activate a repoze.profile middleware and HTTP port,
 #  to provide profiling information for the REST API processing.
 [pipeline:barbican-profile]
-pipeline = cors unauthenticated-context egg:Paste#cgitb egg:Paste#httpexceptions profile {{- include "watcher_pipe" . }} {{- include "audit_pipe" . }} {{- include "rate_limit_pipe" . }}  apiapp
+pipeline = cors unauthenticated-context microversion egg:Paste#cgitb egg:Paste#httpexceptions profile {{- include "watcher_pipe" . }} {{- include "audit_pipe" . }} {{- include "rate_limit_pipe" . }}  apiapp
 
 #Use this pipeline for keystone auth
 [pipeline:barbican-api-keystone]
-pipeline = cors keystone_authtoken context {{- include "watcher_pipe" . }} {{- include "audit_pipe" . }} {{- include "rate_limit_pipe" . }}  apiapp
+pipeline = cors keystone_authtoken microversion context {{- include "watcher_pipe" . }} {{- include "audit_pipe" . }} {{- include "rate_limit_pipe" . }}  apiapp
 
 #Use this pipeline for keystone auth with audit feature
 [pipeline:barbican-api-keystone-audit]
-pipeline = keystone_authtoken context {{- include "watcher_pipe" . }} {{- include "audit_pipe" . }} {{- include "rate_limit_pipe" . }}  apiapp
+pipeline = keystone_authtoken context microversion {{- include "watcher_pipe" . }} {{- include "audit_pipe" . }} {{- include "rate_limit_pipe" . }}  apiapp
 
 [app:apiapp]
 paste.app_factory = barbican.api.app:create_main_app
