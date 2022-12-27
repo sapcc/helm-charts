@@ -34,9 +34,9 @@
 "order:delete": "rule:context_is_key_admin"
 
 "consumer:get": "rule:service_user or rule:context_is_viewer or rule:container_non_private_read or rule:container_project_admin or rule:container_acl_read"
-"consumers:get": "rule:context_is_viewer or rule:container_non_private_read or rule:container_project_admin or rule:container_acl_read"
-"consumers:post": "rule:context_is_key_admin or rule:container_non_private_read or rule:container_project_creator or rule:container_project_admin or rule:container_acl_read"
-"consumers:delete": "rule:service_user or rule:context_is_key_admin or rule:container_non_private_read or rule:container_project_creator or rule:container_project_admin or rule:container_acl_read"
+"container_consumers:get": "rule:context_is_viewer or rule:container_non_private_read or rule:container_project_admin or rule:container_acl_read"
+"container_consumers:post": "rule:context_is_key_admin or rule:container_non_private_read or rule:container_project_creator or rule:container_project_admin or rule:container_acl_read"
+"container_consumers:delete": "rule:service_user or rule:context_is_key_admin or rule:container_non_private_read or rule:container_project_creator or rule:container_project_admin or rule:container_acl_read"
 
 "containers:post": "rule:context_is_editor"
 "containers:get": "rule:context_is_viewer"
