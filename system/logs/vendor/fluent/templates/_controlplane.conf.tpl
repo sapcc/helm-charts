@@ -454,7 +454,7 @@
 # count number of outgoing records per tag
 <match kubernetes.**>
   @type copy
-{{- if .Values.logs.elasticsearch.enabled }}
+{{- if .Values.elasticsearch.enabled }}
   <store>
     @type elasticsearch
     host {{.Values.global.elk_elasticsearch_endpoint_host_scaleout}}.{{.Values.global.elk_cluster_region}}.{{.Values.global.tld}}
@@ -491,7 +491,7 @@
     </buffer>
   </store>
 {{- end }}
-{{- if .Values.logs.opensearch.enabled }}
+{{- if .Values.opensearch.enabled }}
   <store>
     @type opensearch
     hosts {{.Values.opensearch.http.endpoint}}.{{.Values.global.region}}.{{.Values.global.tld}}

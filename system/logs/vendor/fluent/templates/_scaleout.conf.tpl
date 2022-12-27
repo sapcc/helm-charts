@@ -173,7 +173,7 @@
     </buffer>
   </store>
 {{- end }}
-{{- if .Values.elasticsearch.enabled }}
+{{- if .Values.opensearch.enabled }}
   <store>
     @type opensearch
     hosts {{.Values.opensearch.http.endpoint}}.{{.Values.global.region}}.{{.Values.global.tld}}
