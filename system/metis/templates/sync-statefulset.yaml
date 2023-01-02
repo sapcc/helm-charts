@@ -4,9 +4,30 @@
 {{- range $backup := $.Values.backup_v2.backups }}
 {{- if $backup.sync_enabled }}
 ---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mariadb-sync-{{ $backup.name }}
+  namespace: {{ $.Values.namespace }}
+  labels:
+    app.kubernetes.io/name: mariadb-sync
+    helm.sh/chart: {{ include "metis.chart" $ }}
+    app.kubernetes.io/instance: {{ $.Release.Name }}-sync-{{ $backup.name }}-mariadb
+    app.kubernetes.io/managed-by: {{ $.Release.Service }}
+    app.kubernetes.io/version: "{{ $.Values.backup_v2.image_version }}"
+    alert-service: "metis"
+    alert-tier: {{ required "$.Values.alerts.tier missing" $.Values.alerts.tier }}
+spec:
+  ports:
+  - port: 8080
+    name: metrics
+  clusterIP: None
+  selector:
+    app.kubernetes.io/instance: mariadb-sync-{{ $backup.name }}-{{ $.Release.Name }}
 
+---
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
   name: mariadb-sync-{{ $backup.name }}
   namespace: {{ $.Values.namespace }}
@@ -37,15 +58,6 @@ spec:
         checksum/config: {{ include "sync.configmap" $data | sha256sum }}
     spec:
       affinity:
-        nodeAffinity:
-          preferredDuringSchedulingIgnoredDuringExecution:
-            - weight: 1
-              preference:
-                matchExpressions:
-                - key: cloud.sap/maintenance-state
-                  operator: In
-                  values:
-                  - operational
         podAntiAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
           - weight: 1
@@ -58,9 +70,11 @@ spec:
                   values:
                   - mariadb-replication
                   - mariadb-sync
+      terminationGracePeriodSeconds: 10
       containers:
       - name: sync
         image: "{{ required ".Values.global.registry variable missing" $global.registry }}/{{ $.Values.metisSync.image }}:{{ $.Values.metisSync.imageVersion }}"
+        imagePullPolicy: Always
         command:
           - sync
         ports:
