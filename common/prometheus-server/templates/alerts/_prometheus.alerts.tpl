@@ -214,3 +214,23 @@ groups:
       description: 'Prometheus `{{`{{ $labels.prometheus }}`}}` is backlogging on the notifications queue. The queue has not been empty for 10 minutes. Current queue length `{{`{{ $value }}`}}`.'
       summary: Prometheus is queueing notifications.
   {{- end }}
+
+  {{- if and $root.Values.remoteWriteTargets (gt (len $root.Values.remoteWriteTargets) 0) }}
+  - alert: PrometheusRemoteWriteDown
+    expr: sum by (prometheus, url) (rate(prometheus_remote_storage_samples_failed_total[5m])) > 0 or sum by (prometheus, url) (rate(prometheus_remote_storage_bytes_total[5m])) <= 0
+    for: 15m
+    labels:
+      context: availability
+      service: {{ default "metrics" $root.Values.alerts.service }}
+      support_group: observability
+      severity: warning
+      no_alert_on_absence: "true"
+      meta: 'Prometheus `{{`{{ $labels.target }}`}}` remote_write to `{{`{{ $label.url }}`}}` not working. Remote end is not receiving data.'
+      playbook: 'docs/support/playbook/prometheus/remote_write'
+    annotations:
+      summary: 'Prometheus `{{`{{ $labels.target }}`}}` remote_write to `{{`{{ $label.url }}`}}` not working. Remote end is not receiving data.'
+      description: |
+        Prometheus is configured to ship data to a given URL. This is
+        not working anymore. It could be a problem of the backend not
+        being available or expired certificates. Check pod logs.
+  {{- end }}

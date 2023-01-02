@@ -1,3 +1,7 @@
+## 7.1.15
+
+* remoteWrite alerting added
+
 ## 7.1.14
 
 * remoteWrite CA added
