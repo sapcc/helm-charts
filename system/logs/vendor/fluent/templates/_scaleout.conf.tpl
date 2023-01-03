@@ -176,7 +176,7 @@
 {{- if .Values.opensearch.enabled }}
   <store>
     @type opensearch
-    hosts {{.Values.opensearch.http.endpoint}}.{{.Values.global.region}}.{{.Values.global.tld}}
+    hosts {{.Values.opensearch.http.endpoint}}
     scheme https
     port {{.Values.opensearch.http_port}}
     user {{.Values.opensearch.user}}
