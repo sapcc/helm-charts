@@ -225,10 +225,10 @@ groups:
       support_group: observability
       severity: warning
       no_alert_on_absence: "true"
-      meta: 'Prometheus `{{`{{ $labels.target }}`}}` remote_write to `{{`{{ $label.url }}`}}` not working. Remote end is not receiving data.'
+      meta: 'Prometheus `{{`{{ $labels.target }}`}}` remote_write to `{{`{{ $labels.url }}`}}` not working. Remote end is not receiving data.'
       playbook: 'docs/support/playbook/prometheus/remote_write'
     annotations:
-      summary: 'Prometheus `{{`{{ $labels.target }}`}}` remote_write to `{{`{{ $label.url }}`}}` not working. Remote end is not receiving data.'
+      summary: 'Prometheus `{{`{{ $labels.target }}`}}` remote_write to `{{`{{ $labels.url }}`}}` not working. Remote end is not receiving data.'
       description: |
         Prometheus is configured to ship data to a given URL. This is
         not working anymore. It could be a problem of the backend not
