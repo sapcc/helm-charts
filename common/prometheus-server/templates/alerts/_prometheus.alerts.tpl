@@ -215,7 +215,7 @@ groups:
       summary: Prometheus is queueing notifications.
   {{- end }}
 
-  {{- if and $root.Values.remoteWriteTargets (gt (len $root.Values.remoteWriteTargets) 0) }}
+  {{- if $root.Values.remoteWriteTargets }}
   - alert: PrometheusRemoteWriteDown
     expr: sum by (prometheus, url) (rate(prometheus_remote_storage_samples_failed_total[5m])) > 0 or sum by (prometheus, url) (rate(prometheus_remote_storage_bytes_total[5m])) <= 0
     for: 15m
