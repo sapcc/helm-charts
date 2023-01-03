@@ -54,6 +54,9 @@ route:
   receiver: elastic
 
   routes:
+  - receiver: elastic
+    continue: true
+
   # review for slack_by_cc_service
   - receiver: slack_hsm
     continue: false
@@ -216,13 +219,10 @@ route:
 
   # deprecated
   - receiver: slack_monitoring
-    continue: false
+    continue: true
     match_re:
       tier: monitor
       severity: critical|warning|info
-
-  - receiver: elastic
-    continue: true
 
   - receiver: octobus
     continue: true
@@ -443,8 +443,8 @@ receivers:
 
   - name: octobus
     webhook_configs:
-    - send_resolved: true
-      url: {{ required ".Values.octobus.gymInstance undefined" .Values.octobus.gymInstance | quote }}
+    #- send_resolved: true
+    #  url: {{ required ".Values.octobus.gymInstance undefined" .Values.octobus.gymInstance | quote }}
     - send_resolved: true
       url: {{ required ".Values.octobus.gcpInstance undefined" .Values.octobus.gcpInstance | quote }}
 
