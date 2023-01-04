@@ -2,12 +2,12 @@ groups:
 - name: prometheus.alerts
   rules:
   - alert: InfrastructurePrometheusFederationFailed
-    expr: absent(up{job="prometheus-infra-collector"}) or up{job="prometheus-infra-collector"} == 0
+    expr: absent(up{job=~"prometheus-infra-collector|prometheus-vmware"}) or up{job=~"prometheus-infra-collector|prometheus-vmware"} == 0
     for: 15m
     labels:
-      meta: Infrastructure Prometheus (Scaleout) can't federate data from Infrastructure Prometheus Collector in {{ $labels.region }}
-      service: prometheus
-      severity: critical
+      meta: Infrastructure Prometheus (Scaleout) can't federate data from infra-collector or vmware prometheus in {{ $labels.region }}
+      service: metrics
+      severity: warning
       tier: monitor
       playbook: docs/devops/alert/prometheus/#infra_prom_federation_failed
     annotations:
