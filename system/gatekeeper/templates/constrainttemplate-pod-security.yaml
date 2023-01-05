@@ -152,7 +152,7 @@ spec:
         # to setup audit logging for PAM-based authentication (this is only
         # necessary in clusters where the worker nodes are provisioned by
         # OpenStack instead of Terraform).
-        {{- if eq .Values.cluster_type "kubernikus" "scaleout" "test" }}
+        {{- if eq .Values.cluster_type "cloudshell" "concourse" "internet" "kubernikus" "scaleout" "test" }}
         isContainerAllowedToBePrivileged(container) = true {
           isAuditbeatPod
           container.name == "enable-pamd-tty"
@@ -385,4 +385,25 @@ spec:
           # kernel log for errors
           regex.match("^keppel\\.[a-z0-9-]+\\.cloud\\.sap/ccloud/swift-drive-autopilot:", container.image)
           # any `hostPath` allowed here
+        }
+
+        ########################################################################
+        # allowlist for Workstation deployments (personal cloud IDEs)
+
+        default isWorkstationPod = false
+        {{- if eq .Values.cluster_type "scaleout" "test" }}
+        isWorkstationPod = true {
+          iro.kind == "Deployment"
+          iro.metadata.name == "workstation"
+          iro.metadata.namespace == helmReleaseName
+          regex.match("^ws2-", helmReleaseName)
+        }
+        {{- end }}
+
+        # A Workstation deployment contains a "docker-carrier" container where
+        # a Docker daemon is running. dockerd needs privileged access to the
+        # kernel to run, even when localized into a container.
+        isContainerAllowedToBePrivileged(container) = true {
+          isWorkstationPod
+          regex.match("^keppel\\.[a-z0-9-.]+/ccloud-dockerhub-mirror/library/docker:[0-9.]+-dind$", container.image)
         }
