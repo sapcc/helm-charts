@@ -1,4 +1,4 @@
-## 7.1.17
+## 7.1.17 - 7.1.18
 
 * Dedicated thanos seed deployment to support various clusters. Seeds are going to be deployed in metal only. 
 
