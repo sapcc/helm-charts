@@ -185,6 +185,27 @@ spec:
         }
 
         ########################################################################
+        # allowlist for Cloudprober
+
+        default isCloudproberPod = false
+        {{- if eq .Values.cluster_type "baremetal" "test" }}
+        isCloudproberPod = true {
+          iro.kind == "Deployment"
+          iro.metadata.namespace == "infra-monitoring"
+          flatRegion := {{ .Values.global.region | replace "-" "" | quote }} # e.g. "qade1" for qa-de-1
+          regex.match(sprintf("^cloudprober-%s[a-z]", [flatRegion]), iro.metadata.name)
+          helmReleaseName == "cloudprober"
+        }
+        {{- end }}
+
+        # The cloudprober pods need CAP_NET_RAW to send pings.
+        isContainerAllowedToUseCapability(container, capability) = true {
+          isCloudproberPod
+          container.name == "prober"
+          capability == "NET_RAW"
+        }
+
+        ########################################################################
         # allowlist for fluent and fluent-bit
 
         # TODO: Would it be advisable to merge all the different Fluent deployments?
