@@ -206,6 +206,49 @@ spec:
         }
 
         ########################################################################
+        # allowlist for Concourse
+
+        default isConcourseKubernetesIngressPod = false
+        {{- if or (eq .Values.cluster_type "test") (hasPrefix .Values.cluster_name "ci") }}
+        isConcourseKubernetesIngressPod = true {
+          iro.kind == "Deployment"
+          iro.metadata.name == sprintf("%s-kubernetes-ingress", [helmReleaseName])
+          iro.metadata.namespace == "concourse"
+          startswith(helmReleaseName, "concourse-")
+        }
+        {{- end }}
+
+        # TODO: Why does Concourse need its own ingress? And why does it need
+        # CAP_NET_BIND_SERVICE instead of being exposed via a k8s Service?
+        isContainerAllowedToUseCapability(container, capability) = true {
+          isConcourseKubernetesIngressPod
+          capability == "NET_BIND_SERVICE"
+        }
+
+        default isConcourseWorkerPod = false
+        {{- if or (eq .Values.cluster_type "test") (hasPrefix .Values.cluster_name "ci") }}
+        isConcourseWorkerPod = true {
+          iro.kind == "DaemonSet"
+          startswith(iro.metadata.name, "concourse-worker-")
+          iro.metadata.namespace == "concourse"
+          startswith(helmReleaseName, "concourse-")
+
+          # daemonset name (e.g. "concourse-worker-services") must match nodepool (e.g. "ci-services")
+          nodePool := object.get(pod.spec, ["nodeSelector", "ccloud.sap.com/nodepool"], "<none>")
+          nodePool == sprintf("ci-%s", [trim_prefix(iro.metadata.name, "concourse-worker-")])
+        }
+        {{- end }}
+
+        # Concourse worker pods need to access their work directory on the host FS.
+        isContainerAllowedToBePrivileged(container) = true {
+          isConcourseWorkerPod
+        }
+        isContainerAllowedToAccessHostPath(container, hostPath, readOnly) = true {
+          isConcourseWorkerPod
+          hostPath == "/concourse-work-dir"
+        }
+
+        ########################################################################
         # allowlist for fluent and fluent-bit
 
         # TODO: Would it be advisable to merge all the different Fluent deployments?
