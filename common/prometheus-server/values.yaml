@@ -193,12 +193,26 @@ serviceAccount:
 thanos:
   # Enables Prometheus sidecar. This is now the default setting for global monitoring integration.
   # Only disable this, if you don't want to have your Prometheus being queried by global Thanos.
+  # Important: needed thanos swift seed configuration is provided by system/thanos-seeds and specified with thanosSeeds below
   enabled: true
 
-  # Deploy an OpenstackSeed custom resource triggering creation of an Openstack user and Swift container used to persist Prometheus metrics.
-  # See: https://github.com/sapcc/kubernetes-operators/tree/master/openstack-seeder
+  objectStorageConfig:
+    # Note:
+    # The name of the secret specified below will be prefixed with `prometheus-<name>`
+    # to avoid multiple configurations with the same name.
+    name: thanos-storage-config
+    key: thanos.yaml
+    optional: true
+
+  # Specification for Thanos sidecar to Prometheus server.
+  # See https://github.com/coreos/prometheus-operator/blob/master/Documentation/api.md#thanosspec .
+  spec:
+    baseImage: keppel.eu-de-1.cloud.sap/ccloud-quay-mirror/thanos/thanos
+    version: v0.26.0
+
+thanosSeeds:
   seed:
-    # If disabled the user and container need to exist.
+    # If disabled the user and container need to exist, or you are in another cluster but metal. In this case leverage the dedicated system/thanos-seeds chart instead of this default, prometheus-bundled seed.
     enabled: true
 
     # List of required OpenstackSeeds that need to be resolved before.
@@ -209,6 +223,8 @@ thanos:
       - monsoon3/domain-default-seed
 
   # Configuration for OpenStack Swift Thanos storage backend.
+  # Deploy an OpenstackSeed custom resource triggering creation of an Openstack user and Swift container used to persist Prometheus metrics.
+  # See: https://github.com/sapcc/kubernetes-operators/tree/master/openstack-seeder
   swiftStorageConfig:
     authURL:
     userDomainName:
@@ -226,19 +242,8 @@ thanos:
     # domainID:
     # userID:
 
-  objectStorageConfig:
-    # Note:
-    # The name of the secret specified below will be prefixed with `prometheus-<name>`
-    # to avoid multiple configurations with the same name.
-    name: thanos-storage-config
-    key: thanos.yaml
-    optional: true
-
-  # Specification for Thanos sidecar to Prometheus server.
-  # See https://github.com/coreos/prometheus-operator/blob/master/Documentation/api.md#thanosspec .
-  spec:
-    baseImage: keppel.eu-de-1.cloud.sap/ccloud-quay-mirror/thanos/thanos
-    version: v0.26.0
+  # needs to be enabled for vmware-monitoring only
+  vmware: false
 
 # The labels to add to any time series or alerts when communicating with
 # external systems (federation, remote storage, Alertmanager).
