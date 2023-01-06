@@ -1,3 +1,7 @@
+## 7.1.17
+
+* Dedicated thanos seed deployment to support various clusters. Seeds are going to be deployed in metal only. 
+
 ## 7.1.15 - 7.1.16
 
 * remoteWrite alerting added

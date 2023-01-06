@@ -6,7 +6,7 @@
 {{- fail "Cannot create any Prometheus resource. Please define a name or at least one list element to names or global.targets" -}}
 {{- end -}}
 {{/* vmware prometheis need additional renaming */}}
-{{- if $root.Values.vmware -}}
+{{- if or $root.Values.vmware $root.Values.thanosSeeds.vmware -}}
 {{- include "vmwareRenaming" $name -}}
 {{- else -}}
 {{- $name -}}
@@ -127,18 +127,18 @@ prometheus-{{- $name -}}.{{- required "$root.Values.global.region missing" $root
 {{- end -}}
 
 {{- define "thanos.projectName" -}}
-{{- if .Values.thanos.swiftStorageConfig.tenantName }}
-{{- .Values.thanos.swiftStorageConfig.tenantName | quote -}}
+{{- if .Values.thanosSeeds.swiftStorageConfig.tenantName }}
+{{- .Values.thanosSeeds.swiftStorageConfig.tenantName | quote -}}
 {{- else -}}
-{{- required ".Values.thanos.swiftStorageConfig.projectName missing" .Values.thanos.swiftStorageConfig.projectName | quote -}}
+{{- required ".Values.thanosSeeds.swiftStorageConfig.projectName missing" .Values.thanosSeeds.swiftStorageConfig.projectName | quote -}}
 {{- end -}}
 {{- end -}}
 
 {{- define "thanos.projectDomainName" -}}
-{{- if .Values.thanos.swiftStorageConfig.projectDomainName -}}
-{{- .Values.thanos.swiftStorageConfig.projectDomainName | quote -}}
+{{- if .Values.thanosSeeds.swiftStorageConfig.projectDomainName -}}
+{{- .Values.thanosSeeds.swiftStorageConfig.projectDomainName | quote -}}
 {{- else -}}
-{{- required ".Values.thanos.swiftStorageConfig.domainName missing" .Values.thanos.swiftStorageConfig.domainName | quote -}}
+{{- required ".Values.thanosSeeds.swiftStorageConfig.domainName missing" .Values.thanosSeeds.swiftStorageConfig.domainName | quote -}}
 {{- end -}}
 {{- end -}}
 
