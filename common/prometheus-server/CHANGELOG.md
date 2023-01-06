@@ -1,3 +1,6 @@
+## 7.1.17
+ * Update k8s apiserver metric names
+
 ## 7.1.15 - 7.1.16
 
 * remoteWrite alerting added
