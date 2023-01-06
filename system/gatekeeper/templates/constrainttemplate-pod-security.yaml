@@ -33,7 +33,7 @@ spec:
         pod := traversal.find_pod(iro)
         containers := traversal.find_container_specs(iro)
 
-        helmReleaseName := object.get(iro.metadata, ["annotations", "meta.helm.sh/release-name"], "none")
+        helmReleaseName := object.get(iro.metadata, ["annotations", "meta.helm.sh/release-name"], "<none>")
 
         ########################################################################
         # allowlists: match pods that may use certain privileged features
@@ -162,6 +162,27 @@ spec:
           container.name == "enable-pamd-tty"
         }
         {{- end }}
+
+        ########################################################################
+        # allowlist for Cinder pods
+
+        default isCinderVolumePod = false
+        {{- if eq .Values.cluster_type "baremetal" "test" }}
+        isCinderVolumePod = true {
+          iro.kind == "Deployment"
+          iro.metadata.namespace == "monsoon3"
+          regex.match("^cinder-volume(?:-backup)?-vmware-vc-[a-z]-[0-9]+$", iro.metadata.name)
+          helmReleaseName == "<none>" # comes from VCenterTemplate
+        }
+        {{- end }}
+
+        # TODO: Why do cinder-volume-vmware pods need CAP_SYS_ADMIN?
+        isContainerAllowedToUseCapability(container, capability) = true {
+          isCinderVolumePod
+          regex.match("^keppel\\.[a-z0-9-.]+/ccloud/loci-cinder:", container.image)
+          container.name == iro.metadata.name
+          capability == "SYS_ADMIN"
+        }
 
         ########################################################################
         # allowlist for fluent and fluent-bit
@@ -317,7 +338,7 @@ spec:
           isNeutronNetworkAgentPod
           container.name == "init"
         }
-        # The DHCP agent needs to write into /dev/log. (TODO: why?)
+        # TODO: Why does the DHCP agent need to write into /dev/log?
         isContainerAllowedToAccessHostPath(container, hostPath, readOnly) = true {
           isNeutronNetworkAgentPod
           container.name == "neutron-dhcp-agent"
