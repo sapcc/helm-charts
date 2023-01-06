@@ -36,7 +36,6 @@ groups:
       context: availability
       service: alertmanager
       severity: warning
-      tier: {{ include "alerts.tier" . }}
       playbook: 'docs/support/playbook/prometheus/alertmanager_cluster_failures.html'
       meta: 'Alertmanager {{`{{ $labels.alertmanager }}`}} failing sending notifications.'
     annotations:
@@ -55,5 +54,3 @@ groups:
     annotations:
       description: 'Alertmanager {{`{{ $labels.alertmanager }}`}} receives invalid alerts and discards them. Check the Alertmanagers log for details.'
       summary: Alertmanager receives invalid alerts.
-
-
