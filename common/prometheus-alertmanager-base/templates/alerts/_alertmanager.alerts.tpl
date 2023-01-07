@@ -10,6 +10,7 @@ groups:
       severity: critical
       playbook: 'docs/support/playbook/prometheus/failed_config_reload.html'
       meta: 'Alertmanager {{`{{ $labels.alertmanager }}`}} failed to load it`s configuration.'
+      support_group: {{ required ".Values.alerts.support_group missing"
     annotations:
       description: 'Alertmanager {{`{{ $labels.alertmanager }}`}} failed to load it`s configuration. Alertmanager cannot start with a malformed configuration.'
       summary: Alertmanager configuration reload has failed
@@ -23,6 +24,7 @@ groups:
       severity: warning
       playbook: 'docs/support/playbook/prometheus/alertmanager_failed_notifications.html'
       meta: 'Alertmanager {{`{{ $labels.alertmanager }}`}} failing sending notifications.'
+      support_group: {{ required ".Values.alerts.support_group missing" .Values.alerts.support_group }}
     annotations:
       description: 'Alertmanager {{`{{ $labels.alertmanager }}`}} is failing to send notifications for integration {{`{{ $labels.integration }}`}}.'
       summary: Alertmanager failing to send notifications
@@ -36,6 +38,7 @@ groups:
       severity: warning
       playbook: 'docs/support/playbook/prometheus/alertmanager_cluster_failures.html'
       meta: 'Alertmanager {{`{{ $labels.alertmanager }}`}} failing sending notifications.'
+      support_group: {{ required ".Values.alerts.support_group missing" .Values.alerts.support_group }}
     annotations:
       description: 'Alertmanager {{`{{ $labels.alertmanager }}`}} fails to synchronize with other Alertmanagers of the HA cluster. This can cause duplicate notifications.'
       summary: Alertmanager in HA cluster fail to synchronize.
@@ -48,6 +51,7 @@ groups:
       service: alertmanager
       severity: info
       meta: 'Alertmanager {{`{{ $labels.alertmanager }}`}} receives invalid alerts.'
+      support_group: {{ required ".Values.alerts.support_group missing" .Values.alerts.support_group }}
     annotations:
       description: 'Alertmanager {{`{{ $labels.alertmanager }}`}} receives invalid alerts and discards them. Check the Alertmanagers log for details.'
       summary: Alertmanager receives invalid alerts.
