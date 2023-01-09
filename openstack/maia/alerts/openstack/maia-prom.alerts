@@ -2,17 +2,17 @@ groups:
 - name: maia-prom.alerts
   rules:
   - alert: MaiaPromFederationDown
-    expr: up{job=~"prometheus-openstack|prometheus-infra-collector|prometheus-vmware.+|cronus-reputation-statistics"} < 1
+    expr: up{exported_job=~"prometheus-openstack|prometheus-infra-collector|prometheus-vmware.+|cronus-reputation-statistics"} < 1
     for: 15m
     labels:
       severity: warning
       support_group: observability
-      service: '{{ $labels.job }}'
+      service: '{{ $labels.exported_job }}'
       context: federation
-      meta: 'Maia-Prom {{ $labels.job }} federation is down'
+      meta: 'Maia-Prom {{ $labels.exported_job }} federation is down'
       playbook: 'docs/support/playbook/maia/alerts/maia-prom-alert-federation/'
     annotations:
-      description: 'Maia-Prom {{ $labels.job }} federation is down'
+      description: 'Maia-Prom {{ $labels.exported_job }} federation is down'
       summary: 'Some Maia-Prom federation is down'
 
   - alert: MaiaPromDown
