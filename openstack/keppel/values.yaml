@@ -179,7 +179,8 @@ pgmetrics:
             usage: "GAUGE"
             description: "UNIX timestamp of next scheduled manifest sync, or 0 if no replica repos have ever been synced"
     keppel_manifests:
-      query: "SELECT COUNT(*) AS count, EXTRACT(epoch FROM MIN(validated_at)) AS min_validated_at, SUM(CASE WHEN validation_error_message = '' THEN 0 ELSE 1 END) AS validation_errors, COALESCE(EXTRACT(epoch FROM MIN(next_vuln_check_at)), 0) AS min_next_vuln_check_at, SUM(CASE WHEN next_vuln_check_at > NOW() THEN 0 ELSE 1 END) AS pending_vuln_checks FROM manifests"
+      query: >
+        SELECT COUNT(*) AS count, EXTRACT(epoch FROM MIN(validated_at)) AS min_validated_at, SUM(CASE WHEN validation_error_message = '' THEN 0 ELSE 1 END) AS validation_errors, COALESCE(EXTRACT(epoch FROM MIN(vuln_info.next_check_at)), 0) AS min_next_vuln_check_at, SUM(CASE WHEN vuln_info.next_check_at > NOW() THEN 0 ELSE 1 END) AS pending_vuln_checks from manifests INNER JOIN vuln_info on vuln_info.repo_id = manifests.repo_id and vuln_info.digest = manifests.digest
       metrics:
         - count:
             usage: "GAUGE"
@@ -240,7 +241,7 @@ pgmetrics:
             description: "UNIX timestamp when oldest still-active upload was started (or 0 when no upload is in progress)"
     keppel_vuln_scan_error:
       query: >
-        SELECT vuln_scan_error AS message, vuln_status AS status, COUNT(*) AS counts FROM manifests GROUP BY vuln_scan_error, vuln_status
+        SELECT message, status, COUNT(*) AS counts FROM vuln_info GROUP BY message, status
       metrics:
         - message:
             usage: "LABEL"
