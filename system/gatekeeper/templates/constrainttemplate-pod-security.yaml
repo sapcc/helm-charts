@@ -2,6 +2,9 @@
 {{- if eq .Values.cluster_type "baremetal" }}
   {{- $kubeMonitoringReleaseName = "kube-monitoring-metal" }}
 {{- end }}
+{{- if eq .Values.cluster_type "concourse" "internet" }}
+  {{- $kubeMonitoringReleaseName = "kube-monitoring-scaleout" }}
+{{- end }}
 {{- if eq .Values.cluster_type "kubernikus" "scaleout" "virtual" "test" }}
   {{- $kubeMonitoringReleaseName = printf "kube-monitoring-%s" .Values.cluster_type }}
 {{- end -}}
@@ -256,9 +259,15 @@ spec:
         default isElasticOrOpenSearchPod = false
         {{- if eq .Values.cluster_type "scaleout" "test" }}
         isElasticPod = true {
+          iro.kind == "Deployment"
+          iro.metadata.namespace == "elk"
+          iro.metadata.name == "es-client"
+          helmReleaseName == "elk"
+        }
+        isElasticPod = true {
           iro.kind == "StatefulSet"
           iro.metadata.namespace == "elk"
-          iro.metadata.name in {"es-client", "es-data", "es-master"}
+          iro.metadata.name in {"es-data", "es-master"}
           helmReleaseName == "elk"
         }
         isElasticOrOpenSearchPod = true {
@@ -301,7 +310,7 @@ spec:
           iro.kind == "DaemonSet"
           iro.metadata.namespace in {"logs", "opensearch-logs"}
           iro.metadata.name in {"fluent", "fluent-prometheus", "fluent-systemd"}
-          helmReleaseName == "logs"
+          helmReleaseName == iro.metadata.namespace
         }
         {{- end }}
         {{- if not (eq .Values.cluster_type "baremetal" "scaleout") }}
