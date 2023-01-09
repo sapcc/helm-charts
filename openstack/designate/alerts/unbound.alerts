@@ -18,7 +18,7 @@ groups:
       summary: DNS Bind server {{ $labels.kubernetes_name }} down.
 
   - alert: OpenstackDesignateDnsUnboundEndpointNotAvailable
-    expr: max(kube_endpoint_address_available{namespace=~"dns-recursor"})by(region,endpoint) < 1
+    expr: max(kube_endpoint_address_available{namespace=~"dns-recursor"}) BY (region,endpoint) < 1
     for: 15m
     labels:
       context: unbound
@@ -34,7 +34,7 @@ groups:
       summary: 'DNS Unbound endpoint {{ $labels.endpoint }} is not available. DNS resolution might be handled by another region.'
 
   - alert: OpenstackDesignateDnsUnboundManySERVFAIL
-    expr: rate(unbound_num_answer_rcode_servfail[1h])by(region, kubernetes_name) > 150
+    expr: sum(rate(unbound_num_answer_rcode_servfail[1h])) BY (region, kubernetes_name) > 150
     for: 60m
     labels:
       context: unbound
