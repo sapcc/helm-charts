@@ -5,7 +5,6 @@ apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
   labels:
-    ccloud/support-group: observability
     prometheus: infra-frontend 
   name: {{ include "prometheusVMware.name" (list $target $root) }}
   namespace: vmware-monitoring
@@ -18,23 +17,10 @@ spec:
     scheme: http
     scrapeTimeout: 55s
     params:
-  - bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
-    interval: 60s
-    path: federate
-    port: http
-    scheme: http
-    scrapeTimeout: 55s
-    params:
       match[]:
         - '{job="vrops-exporter",__name__!~"^vrops_virtualmachine_.*", __name__!~"^(up|ALERTS.*|scrape.+)"}'
         - '{job="vrops-exporter",__name__=~"^vrops_virtualmachine_.*", vccluster=~".*management.*", __name__!~"^(up|ALERTS.*|scrape.+)"}'
         - '{job="vrops-inventory-exporter", __name__!~"^(up|ALERTS.*|scrape.+)"}'
-    metricRelabelings:
-    - action: replace
-      sourceLabels: [__address__]
-      targetLabel: region
-      regex: prometheus-vmware.(.+).cloud.sap
-      replacement: $1
 
   jobLabel: {{ include "prometheusVMware.fullName" (list $target $root) }}
   selector:
