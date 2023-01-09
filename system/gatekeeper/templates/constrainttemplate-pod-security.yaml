@@ -209,7 +209,7 @@ spec:
         # allowlist for Concourse
 
         default isConcourseKubernetesIngressPod = false
-        {{- if or (eq .Values.cluster_type "test") (hasPrefix .Values.cluster_name "ci") }}
+        {{- if eq .Values.cluster_type "concourse" "test" }}
         isConcourseKubernetesIngressPod = true {
           iro.kind == "Deployment"
           iro.metadata.name == sprintf("%s-kubernetes-ingress", [helmReleaseName])
@@ -226,7 +226,7 @@ spec:
         }
 
         default isConcourseWorkerPod = false
-        {{- if or (eq .Values.cluster_type "test") (hasPrefix .Values.cluster_name "ci") }}
+        {{- if eq .Values.cluster_type "concourse" "test" }}
         isConcourseWorkerPod = true {
           iro.kind == "DaemonSet"
           startswith(iro.metadata.name, "concourse-worker-")
