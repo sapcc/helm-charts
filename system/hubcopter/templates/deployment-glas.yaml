@@ -1,0 +1,97 @@
+kind: Deployment
+apiVersion: apps/v1
+
+metadata:
+  name: glas-api
+
+spec:
+  revisionHistoryLimit: 5
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      name: glas-api
+  template:
+    metadata:
+      labels:
+        name: glas-api
+        alert-tier: os
+        alert-service: hubcopter
+      annotations:
+        checksum/configmap: {{ include "hubcopter/templates/configmap.yaml" . | sha256sum }}
+        checksum/secret: {{ include "hubcopter/templates/secret.yaml" . | sha256sum }}
+    spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: name
+                  operator: In
+                  values:
+                  - glas-api
+              topologyKey: "kubernetes.io/hostname"
+            weight: 10
+      volumes:
+        - name: config
+          secret:
+            secretName: glas-secret
+        - name: cache
+          persistentVolumeClaim:
+            claimName: glas-cache-10gib
+      initContainers:
+        - name: chown
+          securityContext:
+            runAsUser: 0
+          image: "{{ required ".Values.global.dockerHubMirror variable missing" .Values.global.dockerHubMirror }}/library/alpine:latest"
+          imagePullPolicy: IfNotPresent
+          command: ["sh", "-c", "chown -R nobody:nobody /tmp/glas/"]
+          volumeMounts:
+            - name: cache
+              mountPath: /tmp/glas
+      containers:
+        - name: api
+          image: {{ $.Values.global.registry }}/hubcopter:{{ $.Values.hubcopter.image_tag | required ".Values.hubcopter.image_tag is missing" }}
+
+          imagePullPolicy: IfNotPresent
+          command: [ "/usr/bin/glas" ]
+          args: [ ]
+          env:
+            - name:  GIT_SSH_COMMAND
+              value: 'ssh -i /etc/glas/github_enterprise_secret -o StrictHostKeyChecking=accept-new'
+            - name:  GLAS_DEBUG
+              value: 'false'
+            - name:  GLAS_STATE_DIR
+              value: '/tmp/glas'
+          volumeMounts:
+            - mountPath: /etc/glas/github_enterprise_secret
+              name: config
+              readOnly: true
+              subPath: github_enterprise_secret
+            - name: cache
+              mountPath: /tmp/glas
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 80
+            timeoutSeconds: 10
+            periodSeconds: 60
+            initialDelaySeconds: 60
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8081
+            timeoutSeconds: 5
+            periodSeconds: 5
+          resources:
+            # TODO: adjust once we have some operating experience
+            # getting killed du to memory limits while doing a git clone taints the cache.
+            # To fix that remove the effected repository from the pvc and restart the pod.
+            requests:
+              cpu: "150m"
+              memory: "1Gi"
+            limits:
+              cpu: "300m"
+              memory: "2Gi"
