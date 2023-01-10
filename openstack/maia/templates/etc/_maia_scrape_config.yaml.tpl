@@ -191,7 +191,7 @@
     key_file: /etc/prometheus/secrets/prometheus-maia-oprom-alertmanager-sso-cert/sso.key
   static_configs:
     - targets: 
-        - 'prometheus-vmware.{{ .Values.global.region }}.{{ $root.Values.global.tld }}'
+        - 'prometheus-vmware.{{ .Values.global.region }}.{{ .Values.global.tld }}'
   metric_relabel_configs:
     - source_labels: [__name__, project ]
       regex: '^vrops_virtualmachine_.+;(.+)'
