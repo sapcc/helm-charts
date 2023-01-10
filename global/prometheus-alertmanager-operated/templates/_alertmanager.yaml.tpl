@@ -939,6 +939,11 @@ receivers:
         callback_id: "alertmanager"
         color: {{`'{{template "slack.sapcc.color" . }}'`}}
         send_resolved: true
+        actions:
+          - name: {{"'{{template \"slack.sapcc.actionName\" . }}'"}}
+            type: {{"'{{template \"slack.sapcc.actionType\" . }}'"}}
+            text: {{"'{{template \"slack.sapcc.acknowledge.actionText\" . }}'"}}
+            value: {{"'{{template \"slack.sapcc.acknowledge.actionValue\" . }}'"}}
 
   - name: support_group_alerts_qa
     slack_configs:
