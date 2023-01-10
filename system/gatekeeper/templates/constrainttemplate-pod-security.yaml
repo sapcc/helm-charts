@@ -252,7 +252,7 @@ spec:
         }
 
         ########################################################################
-        # allowlist for ELK/OpenSearch
+        # allowlist for ELK/OpenSearch/Elastiflow
 
         # TODO: remove allowlist for ElasticSearch once migrated to OpenSearch
         default isElasticPod = false
@@ -270,6 +270,14 @@ spec:
           iro.metadata.name in {"es-data", "es-master"}
           helmReleaseName == "elk"
         }
+
+        isElasticOrOpenSearchPod = true {
+          iro.kind == "StatefulSet"
+          iro.metadata.namespace == "elastiflow"
+          iro.metadata.name in {"elastiflow-data", "elastiflow-master"}
+          helmReleaseName == "elastiflow"
+        }
+
         isElasticOrOpenSearchPod = true {
           isElasticPod
         }
@@ -291,7 +299,7 @@ spec:
         # <https://www.elastic.co/guide/en/elasticsearch/reference/current/vm-max-map-count.html>
         isContainerAllowedToBePrivileged(container) = true {
           isElasticOrOpenSearchPod
-          container.name == "sysctl"
+          container.name in {"sysctl", "configure-sysctl"}
           container.command[0] == "sysctl"
         }
 
@@ -343,6 +351,27 @@ spec:
           not endswith(container, "-systemd")
           hostPath == "/var/lib/docker/containers"
           readOnly
+        }
+
+        ########################################################################
+        # allowlist for Ironic pods
+
+        default isIronicInspectorPod = false
+        {{- if eq .Values.cluster_type "baremetal" "test" }}
+        isIronicInspectorPod = true {
+          iro.kind == "Deployment"
+          iro.metadata.namespace == "monsoon3"
+          iro.metadata.name == "ironic-inspector"
+          helmReleaseName == "ironic"
+        }
+        {{- end }}
+
+        # TODO: Why do ironic-inspector pods need CAP_NET_ADMIN?
+        isContainerAllowedToUseCapability(container, capability) = true {
+          isIronicInspectorPod
+          regex.match("^keppel\\.[a-z0-9-.]+/ccloud/loci-ironic:", container.image)
+          container.name == "ironic-inspector"
+          capability == "NET_ADMIN"
         }
 
         ########################################################################
