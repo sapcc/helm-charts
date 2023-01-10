@@ -9,7 +9,7 @@ groups:
       labels:
         context: thanos
         service: {{ default "metrics" $root.Values.alerts.service }}
-        support_group: observability
+        support_group: {{ default "observability" $root.Values.alerts.support_group }}
         severity: info
         meta: 'Thanos Sidecar bucket operations are failing for Prometheus `{{`{{ $labels.prometheus }}`}}`'
         playbook: 'docs/support/playbook/prometheus/thanos_sidecar.html'
@@ -23,7 +23,7 @@ groups:
       labels:
         context: thanos
         service: {{ default "metrics" $root.Values.alerts.service }}
-        support_group: observability
+        support_group: {{ default "observability" $root.Values.alerts.support_group }}
         severity: info
         meta: 'Thanos Sidecar is returning Internal/Unavailable errors for Prometheus `{{`{{ $labels.prometheus }}`}}`'
         playbook: 'docs/support/playbook/prometheus/thanos_sidecar.html'
