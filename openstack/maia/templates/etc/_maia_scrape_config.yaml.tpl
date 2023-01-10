@@ -178,6 +178,8 @@
       - '{__name__=~"{{- include "prometheusVMwareFederationMatches" $root }}",project!~"internal",vccluster!~".*management.*"}'
 {{- end }}
 {{- end }}
+# supporting not migrated regions
+# TODO: remove after global vmware-monitoring rollout
 {{- else }}
 - job_name: prometheus-vmware
   scheme: http
