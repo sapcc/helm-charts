@@ -1,3 +1,7 @@
+## 7.1.20
+
+ * option to set support_group for alerts
+
 ## 7.1.19
 
  * Update k8s apiserver metric names
