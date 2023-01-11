@@ -1075,10 +1075,10 @@ receivers:
             text: {{"'{{template \"slack.sapcc.acknowledge.actionText\" . }}'"}}
             value: {{"'{{template \"slack.sapcc.acknowledge.actionValue\" . }}'"}}
 
-  - name: support_group_alerts_critical_container
+  - name: support_group_alerts_critical_containers
     slack_configs:
       - channel: '#alert-{{"{{ .CommonLabels.support_group }}"}}-{{"{{ .CommonLabels.severity }}"}}'
-        api_url: {{ required ".Values.slack.container.criticalWebhookURL undefined" .Values.slack.container.criticalWebhookURL | quote }}
+        api_url: {{ required ".Values.slack.containers.criticalWebhookURL undefined" .Values.slack.containers.criticalWebhookURL | quote }}
         username: "Pulsar"
         title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
         title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
