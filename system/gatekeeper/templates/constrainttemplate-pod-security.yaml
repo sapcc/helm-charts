@@ -396,6 +396,33 @@ spec:
           readOnly
         }
 
+        {{- if eq .Values.cluster_type "baremetal" "cloudshell" "concourse" "internet" "scaleout" "test" }}
+        default isOOMKillExporterPod = false
+        isOOMKillExporterPod = true {
+          iro.kind == "DaemonSet"
+          iro.metadata.namespace == "kube-monitoring"
+          iro.metadata.name == "oomkill-exporter"
+          helmReleaseName == "{{ $kubeMonitoringReleaseName }}"
+        }
+
+        # The oomkill-exporter needs to talk to container runtimes and read the kernel log.
+        isContainerAllowedToBePrivileged(container) = true {
+          isOOMKillExporterPod
+          container.name == "oomkill-exporter"
+        }
+        isContainerAllowedToAccessHostPath(container, hostPath, readOnly) = true {
+          isOOMKillExporterPod
+          container.name == "oomkill-exporter"
+          hostPath in { "/run/containerd/containerd.sock", "/var/run/docker.sock" }
+        }
+        isContainerAllowedToAccessHostPath(container, hostPath, readOnly) = true {
+          isOOMKillExporterPod
+          container.name == "oomkill-exporter"
+          hostPath == "/dev/kmsg"
+          readOnly
+        }
+        {{- end }}
+
         ########################################################################
         # allowlist for kube-system namespace (TODO: this is extremely coarse,
         # break this down into individual services)
@@ -484,6 +511,25 @@ spec:
           isNeutronNetworkAgentPod
           container.name == "neutron-dhcp-agent"
           hostPath == "/dev/log"
+        }
+        {{- end }}
+
+        ########################################################################
+        # allowlist for ns-exporter
+
+        {{- if eq .Values.cluster_type "baremetal" "test" }}
+        default isNSExporterPod = false
+        isNSExporterPod = true {
+          iro.kind == "DaemonSet"
+          iro.metadata.namespace == "ns-exporter"
+          iro.metadata.name == "ns-exporter"
+          helmReleaseName == "ns-exporter"
+        }
+
+        # The ns-exporter needs to reach into all network namespaces.
+        isContainerAllowedToBePrivileged(container) = true {
+          isNSExporterPod
+          container.name == "ns-exporter"
         }
         {{- end }}
 
