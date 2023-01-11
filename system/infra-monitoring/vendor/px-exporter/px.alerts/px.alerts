@@ -42,9 +42,23 @@ groups:
       description:  A router {{ $labels.name }} of PX consumer {{ $labels.peer_id }} has lost the BGP session with the PX route server {{ $labels.app }}. Service availability for the platform is at risk.
       summary:  A router {{ $labels.name }} of PX consumer {{ $labels.peer_id }} has lost the BGP session with the PX route server {{ $labels.app }}. Service availability for the platform is at risk.
 
-  - alert: PXTransportRouterBgpDown
-    expr: bird_protocol_up{name!~"kernel.", peer_type="TP"} == 0
-    for: 60m
+  - alert: PXTransportAllRouterBgpDown
+    expr: sum(bird_protocol_up{name!~"kernel.", peer_type="TP"}) by (pxservice, pxdomain, pxinstance) == 0
+    for: 0s
+    labels:
+      severity: critical
+      tier: net
+      service: px
+      context: px
+      playbook: docs/devops/alert/network/px#PXTransportRouterBgpDown
+      dashboard: px-control-plane
+    annotations:
+      description:  All BGP sessions from {{ $labels.name }} to PX service {{$labels.pxservice}} in domain {{$labels.pxdomain}} are lost. All route server client peerings are down.
+      summary:  All BGP sessions from {{ $labels.name }} are lost. All route server client peerings in domain {{$labels.pxdomain}} on service {{$labels.pxservice}} are down.
+
+  - alert: PXTransportRedundancyLostRouterBgpDown
+    expr: sum(bird_protocol_up{name!~"kernel.", peer_type="TP"}) by (pxservice, pxdomain, pxinstance) == 1
+    for: 15m
     labels:
       severity: critical
       tier: net
@@ -55,20 +69,6 @@ groups:
     annotations:
       description:  The BGP session from {{ $labels.name }} to {{ $labels.app }} is lost. Redundancy is lost for route server clients peering that route server.
       summary:  The BGP session from {{ $labels.name }} to {{ $labels.app }} is lost. Redundancy is lost for route server clients peering that route server.
-
-  - alert: PXTransportAllRouterBgpDown
-    expr: count(bird_protocol_up{name!~"kernel.", peer_type="TP"}) by (app) - sum(bird_protocol_up{name!~"kernel.", peer_type="TP"} ==bool 0) by (app) == 0 
-    for: 1m
-    labels:
-      severity: critical
-      tier: net
-      service: px
-      context: px
-      playbook: docs/devops/alert/network/px#PXTransportAllRouterBgpDown
-      dashboard: px-control-plane
-    annotations:
-      description:  All BGP sessions from {{ $labels.name }} to PX service {{$labels.pxservice}} in domain {{$labels.pxdomain}} are lost. All route server client peerings are down.
-      summary:  All BGP sessions from {{ $labels.name }} are lost. All route server client peerings in domain {{$labels.pxdomain}} on service {{$labels.pxservice}} are down.
 
   - alert: PXTransportRouterPrefixImportCountZero
     expr: (sum(bird_protocol_up{peer_type="PL"}) by (app, ip_version, proto, pxdomain, pxinstance, pxservice) > 0 ) + on (app, ip_version, proto, pxdomain, pxinstance, pxservice) group_right() bird_protocol_prefix_import_count{name!~"kernel.", peer_type="TP"} <= 0 
