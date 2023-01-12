@@ -242,10 +242,66 @@ route:
     match_re:
       service: wsus
 
-  - receiver: support_group_alerts
+  - receiver: support_group_alerts_critical_compute
     continue: true
     match_re:
-      severity: warning|critical
+      severity: critical
+      cluster_type: abapcloud|admin|controlplane|customer|internet|kubernikus|metal|scaleout|virtual
+      region: global|ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|ap-sa-2|eu-de-1|eu-de-2|eu-nl-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3
+      support_group: compute
+
+  - receiver: support_group_alerts_critical_compute_storage_api
+    continue: true
+    match_re:
+      severity: critical
+      cluster_type: abapcloud|admin|controlplane|customer|internet|kubernikus|metal|scaleout|virtual
+      region: global|ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|ap-sa-2|eu-de-1|eu-de-2|eu-nl-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3
+      support_group: compute-storage-api
+
+  - receiver: support_group_alerts_critical_containers
+    continue: true
+    match_re:
+      severity: critical
+      cluster_type: abapcloud|admin|controlplane|customer|internet|kubernikus|metal|scaleout|virtual
+      region: global|ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|ap-sa-2|eu-de-1|eu-de-2|eu-nl-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3
+      support_group: containers
+
+  - receiver: support_group_alerts_critical_email
+    continue: true
+    match_re:
+      severity: critical
+      cluster_type: abapcloud|admin|controlplane|customer|internet|kubernikus|metal|scaleout|virtual
+      region: global|ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|ap-sa-2|eu-de-1|eu-de-2|eu-nl-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3
+      support_group: email
+
+  - receiver: support_group_alerts_critical_identity
+    continue: true
+    match_re:
+      severity: critical
+      cluster_type: abapcloud|admin|controlplane|customer|internet|kubernikus|metal|scaleout|virtual
+      region: global|ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|ap-sa-2|eu-de-1|eu-de-2|eu-nl-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3
+      support_group: identity
+
+  - receiver: support_group_alerts_critical_network_api
+    continue: true
+    match_re:
+      severity: critical
+      cluster_type: abapcloud|admin|controlplane|customer|internet|kubernikus|metal|scaleout|virtual
+      region: global|ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|ap-sa-2|eu-de-1|eu-de-2|eu-nl-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3
+      support_group: network-api
+
+  - receiver: support_group_alerts_critical_observability
+    continue: true
+    match_re:
+      severity: critical
+      cluster_type: abapcloud|admin|controlplane|customer|internet|kubernikus|metal|scaleout|virtual
+      region: global|ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|ap-sa-2|eu-de-1|eu-de-2|eu-nl-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3
+      support_group: observability
+
+  - receiver: support_group_alerts_warning
+    continue: true
+    match_re:
+      severity: warning
       cluster_type: abapcloud|admin|controlplane|customer|internet|kubernikus|metal|scaleout|virtual
       region: global|ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|ap-sa-2|eu-de-1|eu-de-2|eu-nl-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3
       support_group: compute|compute-storage-api|containers|email|identity|network-api|observability
@@ -287,14 +343,7 @@ route:
       severity: warning
       cluster_type: abapcloud|admin|controlplane|customer|internet|kubernikus|metal|scaleout|virtual
       region: global|ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|ap-sa-2|eu-de-1|eu-de-2|eu-nl-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3
-  # sunset latest q1-23
-  - receiver: slack_api_info
-    continue: false
-    match_re:
-      tier: os|k8s|kks
-      severity: info
-      cluster_type: abapcloud|admin|controlplane|customer|internet|kubernikus|metal|scaleout|virtual
-      region: global|ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|ap-sa-2|eu-de-1|eu-de-2|eu-nl-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3
+
   # sunset latest q1-23
   - receiver: pagerduty_metal
     continue: true
@@ -632,20 +681,6 @@ receivers:
             text: {{"'{{template \"slack.sapcc.acknowledge.actionText\" . }}'"}}
             value: {{"'{{template \"slack.sapcc.acknowledge.actionValue\" . }}'"}}
 
-  - name: slack_api_info
-    slack_configs:
-      - channel: '#alert-api-info'
-        api_url: {{ required ".Values.slack.webhookURL undefined" .Values.slack.webhookURL | quote }}
-        username: "Pulsar"
-        title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
-        title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
-        text: {{"'{{template \"slack.sapcc.text\" . }}'"}}
-        pretext: {{"'{{template \"slack.sapcc.pretext\" . }}'"}}
-        icon_emoji: {{"'{{template \"slack.sapcc.iconemoji\" . }}'"}}
-        callback_id: "alertmanager"
-        color: {{`'{{template "slack.sapcc.color" . }}'`}}
-        send_resolved: true
-
   - name: slack_api_warning
     slack_configs:
       - channel: '#alert-api-warning'
@@ -926,10 +961,10 @@ receivers:
         color: {{`'{{template "slack.sapcc.color" . }}'`}}
         send_resolved: true
 
-  - name: support_group_alerts
+  - name: support_group_alerts_critical_compute
     slack_configs:
       - channel: '#alert-{{"{{ .CommonLabels.support_group }}"}}-{{"{{ .CommonLabels.severity }}"}}'
-        api_url: {{ required ".Values.slack.webhookURL undefined" .Values.slack.webhookURL | quote }}
+        api_url: {{ required ".Values.slack.compute.criticalWebhookURL undefined" .Values.slack.compute.criticalWebhookURL | quote }}
         username: "Pulsar"
         title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
         title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
@@ -944,6 +979,134 @@ receivers:
             type: {{"'{{template \"slack.sapcc.actionType\" . }}'"}}
             text: {{"'{{template \"slack.sapcc.acknowledge.actionText\" . }}'"}}
             value: {{"'{{template \"slack.sapcc.acknowledge.actionValue\" . }}'"}}
+
+  - name: support_group_alerts_critical_compute_storage_api
+    slack_configs:
+      - channel: '#alert-{{"{{ .CommonLabels.support_group }}"}}-{{"{{ .CommonLabels.severity }}"}}'
+        api_url: {{ required ".Values.slack.compute_storage_api.criticalWebhookURL undefined" .Values.slack.compute_storage_api.criticalWebhookURL | quote }}
+        username: "Pulsar"
+        title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
+        title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
+        text: {{"'{{template \"slack.sapcc.text\" . }}'"}}
+        pretext: {{"'{{template \"slack.sapcc.pretext\" . }}'"}}
+        icon_emoji: {{"'{{template \"slack.sapcc.iconemoji\" . }}'"}}
+        callback_id: "alertmanager"
+        color: {{`'{{template "slack.sapcc.color" . }}'`}}
+        send_resolved: true
+        actions:
+          - name: {{"'{{template \"slack.sapcc.actionName\" . }}'"}}
+            type: {{"'{{template \"slack.sapcc.actionType\" . }}'"}}
+            text: {{"'{{template \"slack.sapcc.acknowledge.actionText\" . }}'"}}
+            value: {{"'{{template \"slack.sapcc.acknowledge.actionValue\" . }}'"}}
+
+  - name: support_group_alerts_critical_email
+    slack_configs:
+      - channel: '#alert-{{"{{ .CommonLabels.support_group }}"}}-{{"{{ .CommonLabels.severity }}"}}'
+        api_url: {{ required ".Values.slack.email.criticalWebhookURL undefined" .Values.slack.email.criticalWebhookURL | quote }}
+        username: "Pulsar"
+        title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
+        title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
+        text: {{"'{{template \"slack.sapcc.text\" . }}'"}}
+        pretext: {{"'{{template \"slack.sapcc.pretext\" . }}'"}}
+        icon_emoji: {{"'{{template \"slack.sapcc.iconemoji\" . }}'"}}
+        callback_id: "alertmanager"
+        color: {{`'{{template "slack.sapcc.color" . }}'`}}
+        send_resolved: true
+        actions:
+          - name: {{"'{{template \"slack.sapcc.actionName\" . }}'"}}
+            type: {{"'{{template \"slack.sapcc.actionType\" . }}'"}}
+            text: {{"'{{template \"slack.sapcc.acknowledge.actionText\" . }}'"}}
+            value: {{"'{{template \"slack.sapcc.acknowledge.actionValue\" . }}'"}}
+
+  - name: support_group_alerts_critical_identity
+    slack_configs:
+      - channel: '#alert-{{"{{ .CommonLabels.support_group }}"}}-{{"{{ .CommonLabels.severity }}"}}'
+        api_url: {{ required ".Values.slack.identity.criticalWebhookURL undefined" .Values.slack.identity.criticalWebhookURL | quote }}
+        username: "Pulsar"
+        title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
+        title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
+        text: {{"'{{template \"slack.sapcc.text\" . }}'"}}
+        pretext: {{"'{{template \"slack.sapcc.pretext\" . }}'"}}
+        icon_emoji: {{"'{{template \"slack.sapcc.iconemoji\" . }}'"}}
+        callback_id: "alertmanager"
+        color: {{`'{{template "slack.sapcc.color" . }}'`}}
+        send_resolved: true
+        actions:
+          - name: {{"'{{template \"slack.sapcc.actionName\" . }}'"}}
+            type: {{"'{{template \"slack.sapcc.actionType\" . }}'"}}
+            text: {{"'{{template \"slack.sapcc.acknowledge.actionText\" . }}'"}}
+            value: {{"'{{template \"slack.sapcc.acknowledge.actionValue\" . }}'"}}
+
+  - name: support_group_alerts_critical_network_api
+    slack_configs:
+      - channel: '#alert-{{"{{ .CommonLabels.support_group }}"}}-{{"{{ .CommonLabels.severity }}"}}'
+        api_url: {{ required ".Values.slack.network_api.criticalWebhookURL undefined" .Values.slack.network_api.criticalWebhookURL | quote }}
+        username: "Pulsar"
+        title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
+        title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
+        text: {{"'{{template \"slack.sapcc.text\" . }}'"}}
+        pretext: {{"'{{template \"slack.sapcc.pretext\" . }}'"}}
+        icon_emoji: {{"'{{template \"slack.sapcc.iconemoji\" . }}'"}}
+        callback_id: "alertmanager"
+        color: {{`'{{template "slack.sapcc.color" . }}'`}}
+        send_resolved: true
+        actions:
+          - name: {{"'{{template \"slack.sapcc.actionName\" . }}'"}}
+            type: {{"'{{template \"slack.sapcc.actionType\" . }}'"}}
+            text: {{"'{{template \"slack.sapcc.acknowledge.actionText\" . }}'"}}
+            value: {{"'{{template \"slack.sapcc.acknowledge.actionValue\" . }}'"}}
+
+  - name: support_group_alerts_critical_observability
+    slack_configs:
+      - channel: '#alert-{{"{{ .CommonLabels.support_group }}"}}-{{"{{ .CommonLabels.severity }}"}}'
+        api_url: {{ required ".Values.slack.observability.criticalWebhookURL undefined" .Values.slack.observability.criticalWebhookURL | quote }}
+        username: "Pulsar"
+        title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
+        title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
+        text: {{"'{{template \"slack.sapcc.text\" . }}'"}}
+        pretext: {{"'{{template \"slack.sapcc.pretext\" . }}'"}}
+        icon_emoji: {{"'{{template \"slack.sapcc.iconemoji\" . }}'"}}
+        callback_id: "alertmanager"
+        color: {{`'{{template "slack.sapcc.color" . }}'`}}
+        send_resolved: true
+        actions:
+          - name: {{"'{{template \"slack.sapcc.actionName\" . }}'"}}
+            type: {{"'{{template \"slack.sapcc.actionType\" . }}'"}}
+            text: {{"'{{template \"slack.sapcc.acknowledge.actionText\" . }}'"}}
+            value: {{"'{{template \"slack.sapcc.acknowledge.actionValue\" . }}'"}}
+
+  - name: support_group_alerts_critical_containers
+    slack_configs:
+      - channel: '#alert-{{"{{ .CommonLabels.support_group }}"}}-{{"{{ .CommonLabels.severity }}"}}'
+        api_url: {{ required ".Values.slack.containers.criticalWebhookURL undefined" .Values.slack.containers.criticalWebhookURL | quote }}
+        username: "Pulsar"
+        title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
+        title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
+        text: {{"'{{template \"slack.sapcc.text\" . }}'"}}
+        pretext: {{"'{{template \"slack.sapcc.pretext\" . }}'"}}
+        icon_emoji: {{"'{{template \"slack.sapcc.iconemoji\" . }}'"}}
+        callback_id: "alertmanager"
+        color: {{`'{{template "slack.sapcc.color" . }}'`}}
+        send_resolved: true
+        actions:
+          - name: {{"'{{template \"slack.sapcc.actionName\" . }}'"}}
+            type: {{"'{{template \"slack.sapcc.actionType\" . }}'"}}
+            text: {{"'{{template \"slack.sapcc.acknowledge.actionText\" . }}'"}}
+            value: {{"'{{template \"slack.sapcc.acknowledge.actionValue\" . }}'"}}
+
+  - name: support_group_alerts_warning
+    slack_configs:
+      - channel: '#alert-{{"{{ .CommonLabels.support_group }}"}}-{{"{{ .CommonLabels.severity }}"}}'
+        api_url: {{ required ".Values.slack.webhookURL undefined" .Values.slack.webhookURL | quote }}
+        username: "Pulsar"
+        title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
+        title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
+        text: {{"'{{template \"slack.sapcc.text\" . }}'"}}
+        pretext: {{"'{{template \"slack.sapcc.pretext\" . }}'"}}
+        icon_emoji: {{"'{{template \"slack.sapcc.iconemoji\" . }}'"}}
+        callback_id: "alertmanager"
+        color: {{`'{{template "slack.sapcc.color" . }}'`}}
+        send_resolved: true
 
   - name: support_group_alerts_qa
     slack_configs:
