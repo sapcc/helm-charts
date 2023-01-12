@@ -1,0 +1,71 @@
+{{- if .Values.rhea.statefulSet.enabled }}
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: rhea
+  {{- if .Values.rhea.annotations }}
+  annotations:
+    {{ toYaml .Values.rhea.annotations | indent 4 }}
+  {{- end  }}
+  {{- if .Values.rhea.labels }}
+  labels:
+    {{ toYaml .Values.rhea.labels | indent 4 }}
+  {{- end }}
+spec:
+  replicas: {{ .Values.rhea.statefulSet.replicas }}
+  podManagementPolicy: {{ .Values.rhea.statefulSet.podManagementPolicy }}
+  serviceName: rhea
+  updateStrategy:
+    type: {{ .Values.rhea.updateStrategy }}
+  selector:
+    matchLabels:
+      name: rhea
+      instance: rhea
+  template:
+    metadata:
+      annotations:
+        checksum/config: {{ include "cronus/templates/rhea/_config.yaml.tpl" . | sha256sum }}
+      labels:
+        name: rhea
+        instance: rhea
+    spec:
+      serviceAccountName: rhea
+{{- if .Values.rhea.affinity }}
+      affinity: {{ toYaml .Values.rhea.affinity | nindent 8 }}
+{{- end }}
+      containers:
+        - name: rhea
+          image: "{{ .Values.rhea.image.name }}:{{ .Values.rhea.image.tag }}"
+          imagePullPolicy: {{ .Values.rhea.image.pullPolicy }}
+          args:
+            - "-config=/rhea/config.yaml"
+          env:
+          - name: GODEBUG
+            value: {{ .Values.rhea.godebug | quote }}
+          volumeMounts:
+            - name: rhea
+              mountPath: "/rhea/config.yaml"
+              subPath: config.yaml
+          ports:
+            - name: http
+              containerPort: {{ .Values.rhea.http }}
+              protocol: TCP
+          readinessProbe:
+            httpGet:
+{{- if .Values.rhea.tls }}
+              scheme: HTTPS
+{{- end }}
+              path: /healthz
+              port: http
+            initialDelaySeconds: 3
+            periodSeconds: 2
+      terminationGracePeriodSeconds: {{ .Values.rhea.terminationGracePeriod | default 60 }}
+      dnsConfig:
+        options:
+        - name: ndots
+          value: "1"
+      volumes:
+        - name: rhea
+          secret:
+            secretName: rhea
+{{- end -}}
