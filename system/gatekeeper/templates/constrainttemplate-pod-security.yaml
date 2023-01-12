@@ -561,6 +561,33 @@ spec:
         {{- end }}
 
         ########################################################################
+        # allowlist for Sporebox
+
+        {{- if eq .Values.cluster_type "baremetal" "test" }}
+        default isSporeboxPod = false
+        isSporeboxPod = true {
+          iro.kind == "DaemonSet"
+          iro.metadata.name == "sporebox"
+          iro.metadata.namespace == "default"
+          helmReleaseName == "<none>" # deployed by Spore command
+        }
+
+        # Sporebox is used to jump into the namespaces of network agents.
+        # TODO: replace with ephemeral containers on network agent pods
+        isPodAllowedToUseHostNetwork = true {
+          isSporeboxPod
+        }
+        isPodAllowedToUseHostPID = true {
+          isSporeboxPod
+        }
+        isContainerAllowedToBePrivileged(container) = true {
+          isSporeboxPod
+          container.name == "sporebox"
+          regex.match("^keppel\\.[a-z0-9-]+\\.cloud\\.sap/ccloud/sporebox:", container.image)
+        }
+        {{- end }}
+
+        ########################################################################
         # allowlist for Swift components running on the storage servers
 
         {{- if eq .Values.cluster_type "baremetal" "test" }}
