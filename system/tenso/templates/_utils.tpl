@@ -6,7 +6,7 @@
 - name:  TENSO_DEBUG
   value: 'false'
 - name:  OS_AUTH_URL
-  value: "http://identity-3.{{ $.Values.global.region }}.{{ $.Values.global.tld }}/v3"
+  value: "https://identity-3.{{ $.Values.global.region }}.{{ $.Values.global.tld }}/v3"
 - name:  OS_AUTH_VERSION
   value: '3'
 - name:  OS_IDENTITY_API_VERSION

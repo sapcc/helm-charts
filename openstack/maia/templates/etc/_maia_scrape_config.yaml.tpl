@@ -171,6 +171,12 @@
       target_label: project_id
     - regex: 'project|collector|exported_job|instance|internal_name|prometheus|prometheus_replica|resource_uuid|cluster|cluster_type|vccluster|vcenter'
       action: labeldrop
+  {{- if $root.Values.prometheus_vmware.neo.enabled }}
+    - source_labels: [__name__]
+      target_label: domain_id
+      regex: ^vrops_hostsystem_.+
+      replacement: "{{ $root.Values.prometheus_vmware.neo.domain_id }}"
+  {{- end }}
 
   metrics_path: '/federate'
   params:
@@ -200,8 +206,8 @@
     - regex: 'project|collector|exported_job|instance|internal_name|prometheus|prometheus_replica|resource_uuid|cluster|cluster_type|vccluster|vcenter'
       action: labeldrop
   {{- if $root.Values.prometheus_vmware.neo.enabled }}
-    - sourceLabels: [__name__]
-      targetLabel: domain_id
+    - source_labels: [__name__]
+      target_label: domain_id
       regex: ^vrops_hostsystem_.+
       replacement: "{{ $root.Values.prometheus_vmware.neo.domain_id }}"
   {{- end }}
