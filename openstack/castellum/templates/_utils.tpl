@@ -48,7 +48,11 @@
 - name: CASTELLUM_SERVERGROUPS_LOCAL_ROLES
   value: "member,keymanager_viewer"
 - name: CASTELLUM_SERVERGROUPS_PROMETHEUS_URL
-  value: "http://prometheus-vmware.vmware-monitoring.svc:9090"
+  value: "https://metrics.scaleout.{{ .Values.global.region }}.cloud.sap"
+- name: CASTELLUM_SERVERGROUPS_PROMETHEUS_CERT
+  value: /etc/castellum-certs/prometheus-vmware.cert.pem
+- name: CASTELLUM_SERVERGROUPS_PROMETHEUS_KEY
+  value: /etc/castellum-certs/prometheus-vmware.key.pem
 - name: OS_AUTH_URL
   value: "http://keystone.{{ .Values.global.keystoneNamespace }}.svc.kubernetes.{{ .Values.global.region }}.{{ .Values.global.tld }}:5000/v3"
 - name: OS_AUTH_VERSION
