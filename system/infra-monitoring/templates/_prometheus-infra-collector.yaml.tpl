@@ -630,31 +630,22 @@
       action: replace
 {{ end }}
 
-- job_name: 'prometheus-vmware'
+{{ $root := . }}
+{{- range $target := .Values.global.targets }}
+- job_name: {{ include "prometheusVMware.fullName" (list $target $root) }}
   scheme: http
-  scrape_interval: {{ .Values.prometheus_vmware.scrapeInterval }}
-  scrape_timeout: {{ .Values.prometheus_vmware.scrapeTimeout }}
-
+  scrape_interval: {{ $root.Values.prometheus_vmware.scrapeInterval }}
+  scrape_timeout: {{ $root.Values.prometheus_vmware.scrapeTimeout }}
+  # use the alertmanger cert, as it is the shared Prometheus cert
+  tls_config:
+    cert_file: /etc/prometheus/secrets/prometheus-infra-collector-alertmanager-sso-cert/sso.crt
+    key_file: /etc/prometheus/secrets/prometheus-infra-collector-alertmanager-sso-cert/sso.key
+  static_configs:
+    - targets:
+        - '{{ include "prometheusVMware.fullName" (list $target $root) }}-internal.{{ $root.Values.global.region }}.cloud.sap'
   honor_labels: true
   metrics_path: '/federate'
-
   params:
     'match[]':
       - '{__name__=~"vrops_hostsystem_runtime_maintenancestate"}'
-      
-  relabel_configs:
-    - action: replace
-      source_labels: [__address__]
-      target_label: region
-      regex: prometheus-vmware.(.+).cloud.sap
-      replacement: $1
-
-  metric_relabel_configs:
-    - source_labels: [__name__, prometheus]
-      regex: '^up;(.+)'
-      replacement: '$1'
-      target_label: prometheus_source
-      action: replace
-
-  static_configs:
-    - targets: ['prometheus-vmware.vmware-monitoring.svc:9090']
+{{- end }}
