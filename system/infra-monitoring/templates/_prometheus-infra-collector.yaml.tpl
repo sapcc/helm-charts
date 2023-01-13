@@ -125,7 +125,7 @@
     job: [jumpserver]
   metrics_path: /metrics
   http_sd_configs:
-    - url: "http://infra-monitoring-atlas-sd:8080/service_discovery/netbox"
+    - url: {{ .Values.atlas_url }}
   relabel_configs:
     - source_labels: [job]
       regex: jumpserver
@@ -144,7 +144,7 @@
   scrape_interval: {{$values.scrapeInterval}}
   scrape_timeout: {{$values.scrapeTimeout}}
   http_sd_configs:
-    - url: "http://infra-monitoring-atlas-sd:8080/service_discovery/netbox"
+    - url: {{ .Values.atlas_url }}
   metrics_path: /arista
   relabel_configs:
     - source_labels: [job]
@@ -162,7 +162,7 @@
   scrape_interval: {{.Values.snmp_exporter.scrapeInterval}}
   scrape_timeout: {{.Values.snmp_exporter.scrapeTimeout}}
   http_sd_configs:
-    - url: "http://infra-monitoring-atlas-sd:8080/service_discovery/netbox"
+    - url: {{ .Values.atlas_url }}
   metrics_path: /snmp
   relabel_configs:
     - source_labels: [job]
@@ -295,7 +295,7 @@
   scrape_interval: {{$values.ironic_scrapeInterval}}
   scrape_timeout: {{$values.ironic_scrapeTimeout}}
   http_sd_configs:
-    - url: "http://infra-monitoring-atlas-sd:8080/service_discovery/ironic"
+    - url: {{ .Values.atlas_ironic_url }}
   metrics_path: /ipmi
   relabel_configs:
     - source_labels: [__address__]
@@ -311,7 +311,7 @@
   scrape_interval: {{$values.cp_scrapeInterval}}
   scrape_timeout: {{$values.cp_scrapeTimeout}}
   http_sd_configs:
-    - url: "http://infra-monitoring-atlas-sd:8080/service_discovery/netbox"
+    - url: {{ .Values.atlas_url }}
   metrics_path: /ipmi
   relabel_configs:
     - source_labels: [job]
@@ -332,7 +332,7 @@
   scrape_interval: {{$values.esxi_scrapeInterval}}
   scrape_timeout: {{$values.esxi_scrapeTimeout}}
   http_sd_configs:
-    - url: "http://infra-monitoring-atlas-sd:8080/service_discovery/netbox"
+    - url: {{ .Values.atlas_url }}
   metrics_path: /ipmi
   relabel_configs:
     - source_labels: [job]
@@ -354,7 +354,7 @@
   scrape_interval: {{$values.redfish_scrapeInterval}}
   scrape_timeout: {{$values.redfish_scrapeTimeout}}
   http_sd_configs:
-    - url: "http://infra-monitoring-atlas-sd:8080/service_discovery/netbox"
+    - url: {{ .Values.atlas_url }}
   metrics_path: /redfish
   relabel_configs:
     - source_labels: [job]
@@ -373,7 +373,7 @@
   scrape_interval: {{$values.redfish_scrapeInterval}}
   scrape_timeout: {{$values.redfish_scrapeTimeout}}
   http_sd_configs:
-    - url: "http://infra-monitoring-atlas-sd:8080/service_discovery/netbox"
+    - url: {{ .Values.atlas_url }}
   metrics_path: /redfish
   relabel_configs:
     - source_labels: [job]
@@ -394,7 +394,7 @@
   scrape_interval: {{$values.redfish_scrapeInterval}}
   scrape_timeout: {{$values.redfish_scrapeTimeout}}
   http_sd_configs:
-    - url: "http://infra-monitoring-atlas-sd:8080/service_discovery/netbox"
+    - url: {{ .Values.atlas_url }}
   metrics_path: /redfish
   relabel_configs:
     - source_labels: [job]
@@ -414,7 +414,7 @@
   scrape_interval: {{$values.scrapeInterval}}
   scrape_timeout: {{$values.scrapeTimeout}}
   http_sd_configs:
-    - url: "http://infra-monitoring-atlas-sd:8080/service_discovery/netbox"
+    - url: {{ .Values.atlas_url }}
   metrics_path: /metrics
   relabel_configs:
     - source_labels: [job]
@@ -442,7 +442,7 @@
   scrape_interval: {{$values.scrapeInterval}}
   scrape_timeout: {{$values.scrapeTimeout}}
   http_sd_configs:
-    - url: "http://infra-monitoring-atlas-sd:8080/service_discovery/netbox"
+    - url: {{ .Values.atlas_url }}
   metrics_path: /metrics
   relabel_configs:
     - source_labels: [job]
@@ -473,7 +473,7 @@
   scrape_interval: {{$values.scrapeInterval}}
   scrape_timeout: {{$values.scrapeTimeout}}
   http_sd_configs:
-    - url: "http://infra-monitoring-atlas-sd:8080/service_discovery/netbox"
+    - url: {{ .Values.atlas_url }}
   metrics_path: /
   relabel_configs:
     - source_labels: [job]
@@ -602,7 +602,7 @@
   scrape_interval: 120s
   scrape_timeout: 60s
   http_sd_configs:
-    - url: "http://infra-monitoring-atlas-sd:8080/service_discovery/netbox"
+    - url: {{ .Values.atlas_url }}
   metrics_path: /ssh
   relabel_configs:
     - source_labels: [job]

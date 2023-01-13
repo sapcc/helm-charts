@@ -527,6 +527,9 @@ spec:
         }
 
         # The ns-exporter needs to reach into all network namespaces.
+        isPodAllowedToUseHostPID = true {
+          isNSExporterPod
+        }
         isContainerAllowedToBePrivileged(container) = true {
           isNSExporterPod
           container.name == "exporter"
@@ -622,6 +625,51 @@ spec:
           # kernel log for errors
           regex.match("^keppel\\.[a-z0-9-]+\\.cloud\\.sap/ccloud/swift-drive-autopilot:", container.image)
           # any `hostPath` allowed here
+        }
+        {{- end }}
+
+        ########################################################################
+        # allowlist for Tailscale relay
+
+        {{- if eq .Values.cluster_type "internet" "test" }}
+        default isTailcontrolPod = false
+        isTailcontrolPod = true {
+          iro.kind == "Deployment"
+          iro.metadata.name == "tailcontrol"
+          iro.metadata.namespace == "tailscale"
+          helmReleaseName == "tailcontrol"
+        }
+
+        # Tailscale needs CAP_NET_ADMIN to establish its VPN network interface.
+        isContainerAllowedToUseCapability(container, capability) = true {
+          isTailcontrolPod
+          regex.match("^keppel\\.[a-z0-9-.]+/ccloud/tailcontrol:", container.image)
+          capability == "NET_ADMIN"
+        }
+
+        # TODO: Why does Tailscale need to be privileged? Is CAP_NET_ADMIN not enough?
+        isContainerAllowedToBePrivileged(container) = true {
+          isTailcontrolPod
+          regex.match("^keppel\\.[a-z0-9-.]+/ccloud/tailcontrol:", container.image)
+        }
+        {{- end }}
+
+        ########################################################################
+        # allowlist for Unbound (DNS recursor)
+
+        {{- if eq .Values.cluster_type "baremetal" "test" }}
+        default isUnboundPod = false
+        isUnboundPod = true {
+          iro.kind == "Deployment"
+          iro.metadata.name == helmReleaseName
+          iro.metadata.namespace == "dns-recursor"
+          regex.match("^unbound\\d$", helmReleaseName)
+        }
+
+        # TODO: Why does unbound need full privileges? Can this be replaced by a specific privilege?
+        isContainerAllowedToBePrivileged(container) = true {
+          isUnboundPod
+          regex.match("^keppel\\.[a-z0-9-.]+/ccloud/unbound:", container.image)
         }
         {{- end }}
 

@@ -24,7 +24,7 @@ spec:
         alert-service: castellum
       annotations:
         checksum/configmap: {{ include "castellum/templates/configmap.yaml" $ | sha256sum }}
-        checksum/secret: {{ include "castellum/templates/secret.yaml" $ | sha256sum }}
+        checksum/secrets: {{ include "castellum/templates/secret.yaml" $ | sha256sum }}
     spec:
       affinity:
         podAntiAffinity:
@@ -42,6 +42,9 @@ spec:
         - name: config
           configMap:
             name: castellum
+        - name: certs
+          secret:
+            secretName: castellum-certs
       containers:
         - name: api
           image: {{ include "castellum_image" . }}
@@ -52,6 +55,8 @@ spec:
           volumeMounts:
             - mountPath: /etc/castellum
               name: config
+            - mountPath: /etc/castellum-certs
+              name: certs
           ports:
             - name: http
               containerPort: 8080
