@@ -88,7 +88,7 @@
       - '{job="infra-monitoring/image-usage-exporter", __name__!~"^(up|ALERTS.*|scrape.+)"}'
       - '{job="ipmi/ironic", __name__!~"^(up|ALERTS.*|scrape.+)"}'
       - '{job="vmware-esxi", __name__!~"^(up|ALERTS.*|scrape.+)"}'
-      - '{job="infra-monitoring-atlas-sd", __name__!~"^(up|ALERTS.*|scrape.+)"}'
+      - '{job="atlas", __name__!~"^(up|ALERTS.*|scrape.+)"}'
       - '{job="esxi-config", __name__!~"^(up|ALERTS.*|scrape.+)"}'
       - '{job="redfish/bb", __name__!~"^(up|ALERTS.*|scrape.+)"}'
       - '{job="redfish/bm", __name__!~"^(up|ALERTS.*|scrape.+)"}'
