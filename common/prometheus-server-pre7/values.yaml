@@ -353,13 +353,14 @@ serviceDiscoveries:
     enabled: false
     # Full list of APIserver metrics: https://github.com/kubernetes/apiserver/blob/master/pkg/endpoints/metrics/metrics.go .
     allowedMetrics:
-      - apiserver_request_count
-      - apiserver_request_latencies_bucket
       - apiserver_request_total
-      - apiserver_request_latency_seconds
+      - apiserver_longrunning_requests
+      - apiserver_request_duration_seconds
       - apiserver_dropped_requests_total
+      - apiserver_requested_deprecated_apis
+      - apiserver_current_inflight_requests
       - etcd_request_latency_seconds
-      - etcd_object_counts
+      - apiserver_object_counts
       - process_max_fds
       - process_open_fds
 
@@ -420,4 +421,13 @@ alerts:
   # prometheus name picking up the prometheus self metrics, defaults to prometheus.name
   prometheus:
   # service name routing the alerts, defaults to `metrics`
-  service: 
+  service:
+
+  multipleTargetScrapes:
+    enabled: true
+    # List of exceptions for scrape jobs. This is joined together with a `|`.
+    exceptions: []
+
+  # This alert requires kube state metrics. Disable if not present
+  multiplePodScrapes:
+    enabled: true

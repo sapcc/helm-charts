@@ -36,6 +36,9 @@ spec:
 {{- if .Values.cronus.affinity }}
       affinity: {{ toYaml .Values.cronus.affinity | nindent 8 }}
 {{- end }}
+{{- if .Values.cronus.tolerations }}
+      tolerations: {{ toYaml .Values.cronus.tolerations | nindent 8 }}
+{{- end }}
       containers:
         - name: cronus
           image: "{{ .Values.cronus.image.name }}:{{ .Values.cronus.image.tag }}"
@@ -63,6 +66,9 @@ spec:
 {{- if and .Values.cronus.smtps .Values.cronus.tls }}
             - name: smtps
               containerPort: {{ .Values.cronus.smtps }}
+              protocol: TCP
+            - name: metrics
+              containerPort: {{ .Values.cronus.prometheus }}
               protocol: TCP
 {{- end }}
           readinessProbe:

@@ -1,0 +1,23 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    meta.helm.sh/release-name: ironic
+    meta.helm.sh/release-namespace: monsoon3
+  labels:
+    app.kubernetes.io/managed-by: Helm
+  name: ironic-inspector
+  namespace: monsoon3
+spec:
+  template:
+    spec:
+      containers:
+      - image: keppel.eu-de-1.cloud.sap/ccloud/loci-ironic:xena-20221118131734
+        name: ironic-inspector
+        securityContext:
+          capabilities:
+            add:
+            - NET_ADMIN
+      - name: dhcp
+      - name: oslo-exporter
+      securityContext: {}

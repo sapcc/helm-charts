@@ -1,0 +1,23 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  labels:
+    prometheus: openstack
+  name: prometheus-maia-oprom
+  namespace: maia
+spec:
+  podMetricsEndpoints:
+  - interval: 30s
+    path: federate
+    port: web
+    scheme: http
+    scrapeTimeout: 25s
+    params:
+      match[]:
+        - '{__name__="up"}'
+  selector:
+    matchExpressions:
+      - key: app.kubernetes.io/name
+        operator: In
+        values:
+        - prometheus

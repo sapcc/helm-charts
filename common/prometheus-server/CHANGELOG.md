@@ -1,3 +1,38 @@
+## 7.1.20
+
+ * option to set support_group for alerts
+
+## 7.1.19
+
+ * Update k8s apiserver metric names
+
+## 7.1.17 - 7.1.18
+
+* Dedicated thanos seed deployment to support various clusters. Seeds are going to be deployed in metal only
+
+## 7.1.15 - 7.1.16
+
+* remoteWrite alerting added
+
+## 7.1.14
+
+* remoteWrite CA added
+
+## 7.1.12 - 7.1.13
+
+ * configurable multipe scrapes alerts
+
+## 7.1.11
+
+* adding remoteWrite
+
+## 7.1.1 - 7.1.9
+
+* fix prometheus alerts; fix service label for ServiceMonitor
+
+## 7.1.1 - 7.1.9
+
+* Bug fixes in the new minor version
 
 ## 7.1.0
 

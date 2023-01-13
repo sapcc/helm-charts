@@ -20,6 +20,19 @@ spec:
             runAsUser: {{ .Values.backup.security_context_ids }}
             runAsGroup: {{ .Values.backup.security_context_ids }}
             fsGroup: {{ .Values.backup.security_context_ids }}
+          initContainers:
+          - command:
+            - sh
+            - -c
+            - "chown -R {{ .Values.backup.security_context_ids }}:{{ .Values.backup.security_context_ids }} /backup"
+            image: {{ required ".Values.global.dockerHubMirrorAlternateRegion is missing" .Values.global.dockerHubMirrorAlternateRegion }}/{{ .Values.backup.image }}:{{ .Values.backup.image_tag }}
+            imagePullPolicy: IfNotPresent
+            name: fix-permissions
+            securityContext:
+              runAsUser: 0
+            volumeMounts:
+            - mountPath: /backup/
+              name: backup-volume
           containers:
           - name: backup
             image: {{ required ".Values.global.dockerHubMirrorAlternateRegion is missing" .Values.global.dockerHubMirrorAlternateRegion }}/{{ .Values.backup.image }}:{{ .Values.backup.image_tag }}

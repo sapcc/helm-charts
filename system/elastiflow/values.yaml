@@ -5,8 +5,10 @@ owner-info:
     - "Ivo Gosemann"
   helm-chart-url: "https://github.com/sapcc/helm-charts/tree/master/system/elastiflow"
 
+# Deploy Prometheus alerts.
 alerts:
   enabled: false
+  # Name of the Prometheus to which the alerts should be assigned to.
   prometheus: infra-frontend
 
 curator:
@@ -139,7 +141,6 @@ elasticsearch:
     - name: configure-ownership
       securityContext:
         runAsUser: 0
-        privileged: true
       image: "{{ required ".Values.global.registry variable missing" .Values.global.registry }}/{{ .Values.global.elastic.image}}:{{ .Values.global.elastic.tag}}"
       imagePullPolicy: "{{ .Values.imagePullPolicy }}"
       command: ["sh", "-c", "mkdir -p /usr/share/elasticsearch/data && chown -R 1000:1000 /usr/share/elasticsearch/data"]
@@ -185,7 +186,6 @@ elasticsearch-data:
     - name: configure-ownership
       securityContext:
         runAsUser: 0
-        privileged: true
       image: "{{ required ".Values.global.registry variable missing" .Values.global.registry }}/{{ .Values.global.elastic.image}}:{{ .Values.global.elastic.tag}}"
       imagePullPolicy: "{{ .Values.imagePullPolicy }}"
       command: ["sh", "-c", "mkdir -p /usr/share/elasticsearch/data && chown -R 1000:1000 /usr/share/elasticsearch/data"]
@@ -351,9 +351,3 @@ kibana:
   #     memory: 4Gi
   #   limits:
   #     memory: 5Gi
-
-# Deploy Prometheus alerts.
-alerts:
-  enabled: false
-  # Name of the Prometheus to which the alerts should be assigned to.
-  prometheus: infra-frontend

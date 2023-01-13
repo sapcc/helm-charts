@@ -1,3 +1,4 @@
+{{- $values := .Values }}
 {{- if .Values.cronus.enabled -}}
 apiVersion: v1
 kind: Service
@@ -7,6 +8,9 @@ metadata:
     {{- range $key, $value := .Values.cronus.service.annotations }}
     {{ $key }}: {{ $value | quote }}
     {{- end }}
+    prometheus.io/scrape: "true"
+    prometheus.io/port: {{ .Values.cronus.prometheus | quote }}
+    prometheus.io/targets: {{ required ".Values.global.alerts.prometheus missing" $values.global.alerts.prometheus | quote }}
 spec:
   type: {{ .Values.cronus.service.type }}
 {{- if .Values.cronus.service.externalIPs }}
@@ -24,6 +28,10 @@ spec:
       protocol: TCP
     - name: smtp
       port: {{ .Values.cronus.smtp }}
+      protocol: TCP
+    - name: metrics
+      port: {{ .Values.cronus.prometheus }}
+      targetPort: {{ .Values.cronus.prometheus }}
       protocol: TCP
 {{- if .Values.cronus.smtps }}
     - name: smtps

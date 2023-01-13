@@ -24,4 +24,4 @@ trap "kill $pid_helm_manifest_parser $pid_doop_image_checker && sleep 0.5" INT T
   ${HELM} template gatekeeper-config . --values ci/test-values.yaml --output-dir ../gatekeeper/tests/rendered-chart >/dev/null
 )
 
-gator verify -v .
+gator verify -v . "$@"

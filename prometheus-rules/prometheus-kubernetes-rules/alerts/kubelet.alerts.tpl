@@ -104,7 +104,7 @@ groups:
       context: kubelet
       meta: "{{`{{ $labels.node }}`}}"
     annotations:
-      description: Kublet on {{`{{$labels.node}}`}} might become unresponsive due to a high number of go routines within 2 hours
+      description: Kublet on {{`{{$labels.node}}`}} might become unresponsive due to a high number of go routines within 2 hours, take a look at the node and wait if it stabilizes.
       summary: Predicting high number of Go routines
 
   - alert: KubeletManyRequestErrors

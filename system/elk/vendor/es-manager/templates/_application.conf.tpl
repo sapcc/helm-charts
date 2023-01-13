@@ -44,8 +44,8 @@ hosts = [
     host = "https://opensearch-logs-client.opensearch-logs:9200"
     name = "Opensearch Logs Cluster"
     auth = {
-      username = "{{.Values.global.elk_elasticsearch_admin_user}}"
-      password = "{{.Values.global.elk_elasticsearch_admin_password}}"
+      username = "{{.Values.global.elk_opensearch_admin_user}}"
+      password = "{{.Values.global.elk_opensearch_admin_password}}"
     }
   },
 ]
@@ -74,6 +74,6 @@ play.ws.ssl {
       { type = "PKCS12", path = "/secrets/truststore", password: "{{.Values.opensearch.cacerts.truststore_password}}" }
     ]
   }
-}     
+}
 play.ws.ssl.loose.acceptAnyCertificate=true
 {{- end }}

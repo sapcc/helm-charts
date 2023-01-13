@@ -42,7 +42,7 @@ groups:
         summary: Prometheus compact bucket operations failing
 
     - alert: ThanosCompactNotRunIn24Hours
-      expr: (time() - max(thanos_objstore_bucket_last_successful_upload_time{app="thanos-compactor", prometheus="{{ include "prometheus.name" . }}"}) ) /60/60 > 24
+      expr: (time() - max by (prometheus) (thanos_objstore_bucket_last_successful_upload_time{app="thanos-compactor", prometheus="{{ include "prometheus.name" . }}"}) ) /60/60 > 24
       labels:
         context: thanos
         service: {{ default "metrics" .Values.alerts.service }}
@@ -70,7 +70,7 @@ groups:
         summary: Thanos compaction not running
 
     - alert: ThanosCompactMultipleCompactionsAreRunning
-      expr: sum(up{app="thanos-compactor", prometheus="{{ include "prometheus.name" . }}"}) > 1
+      expr: sum by (prometheus) (up{app="thanos-compactor", prometheus="{{ include "prometheus.name" . }}"}) > 1
       for: 5m
       labels:
         context: thanos

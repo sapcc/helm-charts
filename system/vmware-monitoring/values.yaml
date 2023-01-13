@@ -44,7 +44,7 @@ prometheus-server:
         authTLSVerifyClient: on
 
   internalIngress:
-    enabled: false
+    enabled: true
 
   persistence:
     enabled: true
@@ -80,6 +80,27 @@ prometheus-server:
   thanos:
     enabled: true
 
+  remoteWriteTargets:
+    - url: https://dataplatform-vmagent.cerebro.c.eu-de-1.cloud.sap:8429/api/v1/write
+      name: cerebro-vmagent
+      tlsConfig:
+        ca:
+          secret:
+            key: ca
+            name: cerebro-cert
+        cert:
+          secret:
+            key: cert
+            name: cerebro-cert
+        keySecret:
+          key: key
+          name: cerebro-cert
+
+cerebro:
+  client_key:
+  client_cert:
+  ca_crt:
+
 vrops:
   enabled: false
   prometheusName: DEFINED-IN-REGION-SECRETS
@@ -109,7 +130,7 @@ vrops:
   user: DEFINED-IN-REGION-SECRETS
   password: DEFINED-IN-REGION-SECRETS
   debug: DEFINED-IN-REGION-SECRETS
-  atlas: http://infra-monitoring-atlas-sd.infra-monitoring.svc:8080/service_discovery/netbox
+  atlas: http://atlas.infra-monitoring.svc:8080/service_discovery/netbox
   targets: DEFINED-IN-REGION-SECRETS
   exporter_types:
     default:
@@ -260,43 +281,3 @@ vrops:
         requests:
           memory: 100Mi
           cpu: 50m
-
-maiaFederation:
-  enabled: true
-  # to avoid HTTP 400 Bad Request (request header too long) with GET /federate
-  # the metrics are trimmed with `vrops_virtualmach` and combined into one query
-  matches:
-    - vrops_virtualmachine_config_hardware_memory_kilobytes
-    - vrops_virtualmachine_cpu_contention_ratio
-    - vrops_virtualmachine_cpu_demand_ratio
-    - vrops_virtualmachine_cpu_usage_ratio
-    - vrops_virtualmachine_cpu_usage_average_mhz
-    - vrops_virtualmachine_cpu_wait_summation_miliseconds
-    - vrops_virtualmachine_datastore_outstanding_io_requests
-    - vrops_virtualmachine_disk_usage_average_kilobytes_per_second
-    - vrops_virtualmachine_diskspace_gigabytes
-    - vrops_virtualmachine_diskspace_virtual_machine_used_gigabytes
-    - vrops_virtualmachine_guest_os_full_name_info
-    - vrops_virtualmachine_guest_tools_version_info
-    - vrops_virtualmachine_memory_active_ratio
-    - vrops_virtualmachine_memory_activewrite_kilobytes
-    - vrops_virtualmachine_memory_balloning_ratio
-    - vrops_virtualmachine_memory_consumed_kilobytes
-    - vrops_virtualmachine_memory_contention_ratio
-    - vrops_virtualmachine_memory_usage_average
-    - vrops_virtualmachine_network_data_received_kilobytes_per_second
-    - vrops_virtualmachine_network_data_transmitted_kilobytes_per_second
-    - vrops_virtualmachine_network_packets_dropped.+
-    - vrops_virtualmachine_network_packets.+
-    - vrops_virtualmachine_network_usage_average_kilobytes_per_second
-    - vrops_virtualmachine_number_vcpus_total
-    - vrops_virtualmachine_oversized.+
-    - vrops_virtualmachine_runtime_connectionstate
-    - vrops_virtualmachine_runtime_powerstate
-    - vrops_virtualmachine_summary_ethernetcards
-    - vrops_virtualmachine_swapin_memory_kilobytes
-    - vrops_virtualmachine_swapped_memory_kilobytes
-    - vrops_virtualmachine_undersized.+
-    - vrops_virtualmachine_virtual_disk_average.+
-    - vrops_virtualmachine_virtual_disk_read_kilobytes_per_second
-    - vrops_virtualmachine_virtual_disk_write_kilobytes_per_second
