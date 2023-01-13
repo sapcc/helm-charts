@@ -1,6 +1,10 @@
+## 7.1.21
+
+ * Order of coalescence corrected
+
 ## 7.1.20
 
- * option to set support_group for alerts
+ * Option to set support_group for alerts
 
 ## 7.1.19
 
