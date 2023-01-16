@@ -107,6 +107,21 @@ output {
       password => "{{.Values.global.elk_elasticsearch_data_password}}"
       ssl => true
     }
+{{- if .Values.opensearch.enabled }}
+    opensearch {
+      id => "opensearch-syslog"
+      index => "syslog-%{+YYYY.MM.dd}"
+      template => "/logstash-etc/syslog.json"
+      template_name => "syslog"
+      hosts => ["{{.Values.opensearch.http.endpoint}}.{{.Values.global.region}}.{{.Values.global.tld}}:{{.Values.opensearch.http_port}}"]
+      auth_type => {
+        type => 'basic'
+        user => "{{.Values.opensearch.user}}"
+        password => "{{.Values.opensearch.passowrd}}"
+      }
+      ssl_certificate_verification => false
+    }
+{{- end }}
   }
   elseif [type] == "alert" and [alerts][labels][severity] == "critical"{
     elasticsearch {
@@ -121,6 +136,21 @@ output {
       password => "{{.Values.global.elk_elasticsearch_data_password}}"
       ssl => true
     }
+{{- if .Values.opensearch.enabled }}
+    opensearch {
+      id => "opensearch-critical-alerts"
+      index => "alerts-critical-%{+YYYY}"
+      template => "/logstash-etc/alerts.json"
+      template_name => "alerts"
+      hosts => ["{{.Values.opensearch.http.endpoint}}.{{.Values.global.region}}.{{.Values.global.tld}}:{{.Values.opensearch.http_port}}"]
+      auth_type => {
+        type => 'basic'
+        user => "{{.Values.opensearch.user}}"
+        password => "{{.Values.opensearch.passowrd}}"
+      }
+      ssl_certificate_verification => false
+    }
+{{- end }}
   }
   elseif [type] == "alert" and [alerts][labels][severity] == "warning"{
       elasticsearch {
@@ -135,6 +165,21 @@ output {
         password => "{{.Values.global.elk_elasticsearch_data_password}}"
         ssl => true
     }
+{{- if .Values.opensearch.enabled }}
+    opensearch {
+      id => "opensearch-warnings"
+      index => "alerts-warnings-%{+YYYY}"
+      template => "/logstash-etc/alerts.json"
+      template_name => "alerts"
+      hosts => ["{{.Values.opensearch.http.endpoint}}.{{.Values.global.region}}.{{.Values.global.tld}}:{{.Values.opensearch.http_port}}"]
+      auth_type => {
+        type => 'basic'
+        user => "{{.Values.opensearch.user}}"
+        password => "{{.Values.opensearch.passowrd}}"
+      }
+      ssl_certificate_verification => false
+    }
+{{- end }}
   }
   elseif [type] == "alert"{
     elasticsearch {
@@ -149,6 +194,21 @@ output {
       password => "{{.Values.global.elk_elasticsearch_data_password}}"
       ssl => true
     }
+{{- if .Values.opensearch.enabled }}
+    opensearch {
+      id => "opensearch-alerts"
+      index => "alerts-other--%{+YYYY}"
+      template => "/logstash-etc/alerts.json"
+      template_name => "alerts"
+      hosts => ["{{.Values.opensearch.http.endpoint}}.{{.Values.global.region}}.{{.Values.global.tld}}:{{.Values.opensearch.http_port}}"]
+      auth_type => {
+        type => 'basic'
+        user => "{{.Values.opensearch.user}}"
+        password => "{{.Values.opensearch.passowrd}}"
+      }
+      ssl_certificate_verification => false
+    }
+{{- end }}
   }
   elseif [type] == "deployment" {
     elasticsearch {
@@ -163,6 +223,21 @@ output {
       password => "{{.Values.global.elk_elasticsearch_data_password}}"
       ssl => true
     }
+{{- if .Values.opensearch.enabled }}
+    opensearch {
+      id => "opensearch-deployments"
+      index => "deployments-%{+YYYY}"
+      template => "/logstash-etc/deployments.json"
+      template_name => "deployments"
+      hosts => ["{{.Values.opensearch.http.endpoint}}.{{.Values.global.region}}.{{.Values.global.tld}}:{{.Values.opensearch.http_port}}"]
+      auth_type => {
+        type => 'basic'
+        user => "{{.Values.opensearch.user}}"
+        password => "{{.Values.opensearch.passowrd}}"
+      }
+      ssl_certificate_verification => false
+    }
+{{- end }}
   }
   elseif  [type] == "netflow" {
     elasticsearch {
@@ -177,5 +252,20 @@ output {
       password => "{{.Values.global.elk_elasticsearch_data_password}}"
       ssl => true
     }
+{{- if .Values.opensearch.enabled }}
+    opensearch {
+      id => "opensearch-netflow"
+      index => "netflow-%{+YYYY.MM.dd}"
+      template => "/logstash-etc/netflow.json"
+      template_name => "netflow"
+      hosts => ["{{.Values.opensearch.http.endpoint}}.{{.Values.global.region}}.{{.Values.global.tld}}:{{.Values.opensearch.http_port}}"]
+      auth_type => {
+        type => 'basic'
+        user => "{{.Values.opensearch.user}}"
+        password => "{{.Values.opensearch.passowrd}}"
+      }
+      ssl_certificate_verification => false
+    }
+{{- end }}
   }
 }
