@@ -4,6 +4,7 @@ Docker images and Helm chart to deploy a [MariaDB](https://mariadb.com/kb/en/get
 
 ## Table of Contents
 * [Metadata](#Metadata)
+  * [Changelog](#Changelog)
 * [Requirements](#Requirements)
 * [Container images](#container-images)
   * [MariaDB Galera image](#mariadb-galera-image)
@@ -36,11 +37,14 @@ Docker images and Helm chart to deploy a [MariaDB](https://mariadb.com/kb/en/get
 ## Metadata
 | chart version | app version | type | url |
 |:--------------|:-------------|:-------------|:-------------|
-| 0.11.2 | 10.5.18 | application | [Git repo](https://github.com/businessbean/helm-charts/tree/master/common/mariadb-galera) |
+| 0.11.3 | 10.5.18 | application | [Git repo](https://github.com/businessbean/helm-charts/tree/master/common/mariadb-galera) |
 
 | Name | Email | Url |
 | ---- | ------ | --- |
 | Birk Bohne |  | <https://github.com/businessbean> |
+
+### Changelog
+The [changelog](CHANGELOG.md) contains information about changes in certain versions
 
 ## Requirements
 

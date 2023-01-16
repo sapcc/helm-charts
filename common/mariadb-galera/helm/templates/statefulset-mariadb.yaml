@@ -337,6 +337,30 @@ spec:
           value: {{ (required ".services.application.frontend.ports.mysql.targetPort missing" $.Values.services.application.frontend.ports.mysql.targetPort) | quote }}
         - name: WEB_LISTEN_PORT
           value: {{ $.Values.monitoring.mysqld_exporter.metricsPort | default 9104 | quote }}
+        {{- if not $.Values.mariadb.performance_schema }}
+        - name: COLLECT_PERF_SCHEMA_REPLICATION_GROUP_MEMBERS
+          value: "disable"
+        - name: COLLECT_PERF_SCHEMA_REPLICATION_GROUP_MEMBER_STATS
+          value: "disable"
+        - name: COLLECT_PERF_SCHEMA_REPLICATION_APPLIER_STATUS_BY_WORKER
+          value: "disable"
+        - name: COLLECT_PERF_SCHEMA_TABLEIOWAITS
+          value: "disable"
+        - name: COLLECT_PERF_SCHEMA_TABLELOCKS
+          value: "disable"
+        - name: COLLECT_PERF_SCHEMA_INDEXIOWAITS
+          value: "disable"
+        - name: COLLECT_PERF_SCHEMA_EVENTSWAITS
+          value: "disable"
+        - name: COLLECT_PERF_SCHEMA_FILE_EVENTS
+          value: "disable"
+        - name: COLLECT_PERF_SCHEMA_EVENTSSTATEMENTS_SUM
+          value: "disable"
+        - name: COLLECT_PERF_SCHEMA_EVENTSSTATEMENTS
+          value: "disable"
+        - name: COLLECT_PERF_SCHEMA_MEMORY_EVENTS
+          value: "disable"
+        {{- end }}
           {{- range $envKey, $envValue := $.Values.env }}
             {{- if (has "monitoring" $envValue.containerType) }}
         - name: {{ $envKey }}
