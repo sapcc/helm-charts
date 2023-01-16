@@ -54,8 +54,8 @@
       description: {{ include "fullName" . }} has more than 20 running threads.
       summary: {{ include "fullName" . }} running threads high.
 
-  - alert: {{ include "alerts.service" . | title }}PerconaClusterSizeTooSmall
-    expr: (mysql_global_status_wsrep_cluster_size{app=~"{{ include "fullName" . }}"} < 3)
+  - alert: {{ include "alerts.service" . | title }}PerconaClusterIncomplete
+    expr: (mysql_global_status_wsrep_cluster_size{app=~"{{ include "fullName" . }}"} < {{ .Values.cluster_size }})
     for: 10m
     labels:
       context: database
