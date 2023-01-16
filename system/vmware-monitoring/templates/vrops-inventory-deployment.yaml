@@ -47,18 +47,14 @@ spec:
            - name: ATLAS
              value: {{ .Values.vrops.atlas }}
            resources:
-             limits:
-               memory: 240Mi
-               cpu: 300m
-             requests:
-               memory: 120Mi
-               cpu: 150m
+             {{- if (default false .Values.vrops.inventory.resources) }}
              limits:
                memory: {{ required ".Values.vrops.inventory.resources.limits.memory missing" .Values.vrops.inventory.resources.limits.memory }}
                cpu: {{ required ".Values.vrops.inventory.resources.limits.cpu missing" .Values.vrops.inventory.resources.limits.cpu }}
              requests:
                memory: {{ required ".Values.vrops.inventory.resources.requests.memory missing" .Values.vrops.inventory.resources.requests.memory }}
                cpu: {{ required ".Values.vrops.inventory.resources.requests.cpu missing" .Values.vrops.inventory.resources.requests.cpu }}
+             {{- end }}
            volumeMounts:
              - name: vrops-exporter-inventory-config
                mountPath: "/config"
