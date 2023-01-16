@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+{{- if and .Values.metrics.enabled (ne .Values.metrics.sidecar.enabled true) .Values.metrics.port }}
+echo "prometheus.tcp.port = {{ .Values.metrics.port }}" >> /etc/rabbitmq/conf.d/10-defaults.conf
+{{- end}}
 LOCKFILE=/var/lib/rabbitmq/rabbitmq-server.lock
 echo "Starting RabbitMQ with lock ${LOCKFILE}"
 exec 9>${LOCKFILE}

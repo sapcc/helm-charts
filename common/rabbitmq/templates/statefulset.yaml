@@ -79,12 +79,16 @@ spec:
             containerPort: {{ default "5672" .Values.ports.public }}
           - name: management
             containerPort: {{ default "15672" .Values.ports.management }}
+{{- if and (ne .Values.metrics.sidecar.enabled true) .Values.metrics.enabled }}
+          - name: metrics
+            containerPort: {{ default "15692" .Values.metrics.port }}
+{{- end }}
         volumeMounts:
           - mountPath: /var/lib/rabbitmq
             name: rabbitmq-persistent-storage
           - mountPath: /container.init
             name: container-init
-{{- if .Values.metrics.enabled }}
+{{- if and .Values.metrics.sidecar.enabled .Values.metrics.enabled }}
       - name: metrics
         image: {{include "dockerHubMirror" .}}/{{ .Values.metrics.image }}:{{ .Values.metrics.imageTag }}
         imagePullPolicy: {{ default "IfNotPresent" .Values.metrics.imagePullPolicy | quote }}
