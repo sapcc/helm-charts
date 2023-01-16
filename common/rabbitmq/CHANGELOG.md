@@ -3,6 +3,22 @@ Rabbitmq CHANGELOG
 
 This file is used to list changes made in each version of the common chart rabbitmq.
 
+0.5.0
+-----
+b.alkhateeb@sap.com
+- added a switch to activate rabbitmq-prometheus plugin instead of the side car exporter.
+  to activate collect metrics with plugin please set your values to:
+```
+    metrics:
+      port: 9150
+      enabled: false
+      sidecar:
+        enabled: false
+```
+- RabbitMQ-prometheus plugin provides different naming schema of the metrics as the side car RabbitMQ exporter.
+  metrics can be found: https://github.com/rabbitmq/rabbitmq-prometheus/blob/master/metrics.md
+- default values still using metrics sidecar exporter
+
 0.4.0
 -----
 b.alkhateeb@sap.com
