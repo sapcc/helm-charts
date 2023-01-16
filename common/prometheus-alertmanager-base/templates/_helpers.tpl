@@ -42,9 +42,9 @@ alertmanager-{{- (include "alertmanager.name" .) -}}
 {{- end -}}
 
 {{- define "alerts.support_group" -}}
-{{- if and .Values.global .Values.global.support_group }}
+{{- if .Values.global.support_group | default false }}
 {{- .Values.global.support_group -}}
 {{- else -}}
-{{- required ".Values.alerts.support_group missing" .Values.alerts.support_group -}}
+{{- required "Either .Values.alerts.support_group or .Values.global.support_group must be set" .Values.alerts.support_group -}}
 {{- end -}}
 {{- end -}}
