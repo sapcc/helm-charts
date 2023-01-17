@@ -150,6 +150,7 @@
       - '{__name__=~"^openstack_manila_share_.+", project_id!=""}'
 
 {{- if has .Values.global.region (.Values.prometheus_vmware.shardedRegions) }}
+# iteration over vmware-monitoring values
 {{- range $target := .Values.global.targets }}
 # skip non-production targets called "mgmt"
 {{- if not (contains "mgmt" $target) }}
@@ -184,38 +185,6 @@
       - '{__name__=~"{{- include "prometheusVMwareFederationMatches" $root }}",project!~"internal",vccluster!~".*management.*"}'
 {{- end }}
 {{- end }}
-# supporting not migrated regions
-# TODO: remove after global vmware-monitoring rollout
-{{- else }}
-- job_name: prometheus-vmware
-  scheme: http
-  scrape_interval: "{{ $root.Values.prometheus_vmware.scrape_interval }}"
-  scrape_timeout: "{{ $root.Values.prometheus_vmware.scrape_timeout }}"
-  # use the alertmanger cert, as it is the shared Prometheus cert
-  tls_config:
-    cert_file: /etc/prometheus/secrets/prometheus-maia-oprom-alertmanager-sso-cert/sso.crt
-    key_file: /etc/prometheus/secrets/prometheus-maia-oprom-alertmanager-sso-cert/sso.key
-  static_configs:
-    - targets: 
-        - 'prometheus-vmware.{{ .Values.global.region }}.cloud.sap'
-  metric_relabel_configs:
-    - source_labels: [__name__, project ]
-      regex: '^vrops_virtualmachine_.+;(.+)'
-      replacement: '$1'
-      target_label: project_id
-    - regex: 'project|collector|exported_job|instance|internal_name|prometheus|prometheus_replica|resource_uuid|cluster|cluster_type|vccluster|vcenter'
-      action: labeldrop
-  {{- if $root.Values.prometheus_vmware.neo.enabled }}
-    - source_labels: [__name__]
-      target_label: domain_id
-      regex: ^vrops_hostsystem_.+
-      replacement: "{{ $root.Values.prometheus_vmware.neo.domain_id }}"
-  {{- end }}
-
-  metrics_path: '/federate'
-  params:
-    'match[]':
-      - '{__name__=~"{{- include "prometheusVMwareFederationMatches" $root }}",project!~"internal",vccluster!~".*management.*"}'
 {{- end }}
 
 # For cronus reputation dashboard https://documentation.global.cloud.sap/docs/customer/services/email-service/email-serv-howto/email-howto-reputation/
