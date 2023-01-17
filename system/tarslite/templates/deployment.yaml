@@ -1,20 +1,20 @@
-kind: Deployment
 apiVersion: apps/v1
+kind: Deployment
 metadata:
-  name: tarslite
+  name: {{ .Release.Name }}
   namespace: tars
 spec:
   selector:
     matchLabels:
-      app: tarslite
+      app: {{ .Release.Name }}
   template:
     metadata:
       labels:
-        app: tarslite
+        app: {{ .Release.Name }}
     spec:
       containers:
-         - name: tarslite
-           image: {{ required ".Values.tarslite.image.registry missing" .Values.tarslite.image.registry }}/{{ required ".Values.tarslite.image.name missing" .Values.tarslite.image.name }}:{{ required ".Values.tarslite.image.tag missing" .Values.tarslite.image.tag }}
+         - name: {{ .Release.Name }}
+           image: {{ required ".Values.tarslite.image.registry missing" .Values.tarslite.image.registry }}/{{ .Release.Name }}:{{ required ".Values.tarslite.image.tag missing" .Values.tarslite.image.tag }}
            ports:
              - name: webhook
                containerPort: {{ required ".Values.tarslite.webhook.port" .Values.tarslite.webhook.port }}
@@ -28,5 +28,5 @@ spec:
                readOnly: true
       volumes:
         - configMap:
-            name: tarslite-config
-          name: tarslite-config
+            name: {{ .Release.Name }}-config
+          name: {{ .Release.Name }}-config
