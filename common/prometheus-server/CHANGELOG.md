@@ -1,3 +1,7 @@
+## 7.1.22
+
+ * Forward PrometheusMultiple**ScrapeAlerts to the ccloud_support_group label, if present
+
 ## 7.1.21
 
  * Order of coalescence corrected

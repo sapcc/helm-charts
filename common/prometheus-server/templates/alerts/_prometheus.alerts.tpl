@@ -11,6 +11,9 @@ Note: The pods define the 'alert-service' label but Prometheus replaces the hyph
 {{- define "alertServiceLabelOrDefault" -}}
 "{{`{{ if $labels.label_alert_service }}`}}{{`{{ $labels.label_alert_service}}`}}{{`{{ else }}`}}{{ required "default value is missing" . }}{{`{{ end }}`}}"
 {{- end -}}
+{{- define "alertSupportGroupOrDefault" -}}
+"{{`{{ if $.Values.alerts.support_group }}`}}{{`{{ $.Values.alerts.support_group }}`}}{{`{{ else if $labels.ccloud_support_group }}`}}{{`{{ $labels.ccloud_support_group }}`}}{{`{{ else }}`}}{{ required "default value is missing" . }}{{`{{ end }}`}}"
+{{- end -}}
 
 {{- $name := index . 0 -}}
 {{- $root := index . 1 -}}
@@ -146,11 +149,11 @@ groups:
     # * cadvisor metrics because it has the same instance as the kubelet but a different path
     # e.g. 10.246.204.80:10250/metrics vs. 10.246.204.80:10250/metrics/cadvisor
     # * pod service discovery job, we have a dedicated alert for that
-    expr: sum by (job) (up * on(instance, cluster) group_left() (sum by(instance, cluster) (up{job !~ "kubernetes-cadvisors|kubernetes-kubelet|.*-pod-sd|{{ $root.Values.alerts.multipleTargetScrapes.exceptions | join "|" }}"}) > 1))
+    expr: sum by (job, ccloud_support_group) (up * on(instance, cluster) group_left() (sum by(instance, cluster) (up{job !~ "kubernetes-cadvisors|kubernetes-kubelet|.*-pod-sd|{{ $root.Values.alerts.multipleTargetScrapes.exceptions | join "|" }}"}) > 1))
     for: 30m
     labels:
       service: {{ default "metrics" $root.Values.alerts.service }}
-      support_group: {{ default "observability" $root.Values.alerts.support_group }}
+      support_group: {{ include "alertSupportGroupOrDefault" "observability" }}
       severity: warning
       playbook: docs/support/playbook/kubernetes/target_scraped_multiple_times.html
       meta: 'Prometheus is scraping targets of job `{{`{{ $labels.job }}`}}` more than once.'
@@ -161,11 +164,11 @@ groups:
 
   {{- if $root.Values.alerts.multiplePodScrapes.enabled }}
   - alert: PrometheusMultiplePodScrapes
-    expr: sum by(pod, namespace, label_alert_service, label_alert_tier) (label_replace((up * on(instance) group_left() (sum by(instance) (up{job=~".*pod-sd"}) > 1)* on(pod) group_left(label_alert_tier, label_alert_service) (max without(uid) (kube_pod_labels))) , "pod", "$1", "kubernetes_pod_name", "(.*)-[0-9a-f]{8,10}-[a-z0-9]{5}"))
+    expr: sum by(pod, namespace, label_alert_service, label_alert_tier, ccloud_support_group) (label_replace((up * on(instance) group_left() (sum by(instance) (up{job=~".*pod-sd"}) > 1)* on(pod) group_left(label_alert_tier, label_alert_service) (max without(uid) (kube_pod_labels))) , "pod", "$1", "kubernetes_pod_name", "(.*)-[0-9a-f]{8,10}-[a-z0-9]{5}"))
     for: 30m
     labels:
       service: {{ include "alertServiceLabelOrDefault" "metrics" }}
-      support_group: {{ default "observability" $root.Values.alerts.support_group }}
+      support_group: {{ include "alertSupportGroupOrDefault" "observability" }}
       severity: warning
       playbook: docs/support/playbook/kubernetes/target_scraped_multiple_times.html
       meta: 'Prometheus is scraping `{{`{{ $labels.pod }}`}}` pods more than once.'
