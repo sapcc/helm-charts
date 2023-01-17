@@ -35,7 +35,7 @@ rhea:
     maxRequestSize: {{ mul (.Values.rhea.server.maxRequestSize | default .Values.global.maxBodySize) 1 }}
 {{- if .Values.rhea.tls }}
     tls:
-      namespace: {{ .Values.rhea.tls.namespace | default "rhea" }}
+      namespace: {{ .Values.rhea.tls.namespace | default "cronus" }}
       serverTlsName: {{ .Values.rhea.tls.serverTlsName }}
 {{- if or .Values.rhea.tls.clientCA .Values.global.clientCA .Values.rhea.tls.clientTlsAuth .Values.global.clientTlsAuth }}
       clientTlsAuth: {{ .Values.rhea.tls.clientTlsAuth | default .Values.global.clientTlsAuth }}
