@@ -11,3 +11,7 @@
   * ProxySQL [2.4.6](https://github.com/sysown/proxysql/releases/tag/v2.4.6)
   * yq [4.30.8](https://github.com/mikefarah/yq/releases/tag/v4.30.8)
   * restic [0.15.0](https://github.com/restic/restic/releases/tag/v0.15.0)
+
+## v0.11.5 - 2023/01/17
+* mount [Kubernetes service account token](https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/#opt-out-of-api-credential-automounting) only in the MariaDB pods
+* TLS certificate secret name fixed for the backup, restore and config jobs
