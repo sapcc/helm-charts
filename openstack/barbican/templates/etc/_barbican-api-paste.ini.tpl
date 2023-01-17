@@ -51,6 +51,9 @@ paste.filter_factory = barbican.api.middleware.context:UnauthenticatedContextMid
 [filter:context]
 paste.filter_factory = barbican.api.middleware.context:ContextMiddleware.factory
 
+[filter:microversion]
+paste.filter_factory = barbican.api.middleware.microversion:MicroversionMiddleware.factory
+
 [filter:healthcheck]
 paste.filter_factory = oslo_middleware:Healthcheck.factory
 backends = disable_by_file
