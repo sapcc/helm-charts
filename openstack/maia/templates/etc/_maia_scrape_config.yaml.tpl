@@ -149,7 +149,6 @@
       - '{__name__=~"^netapp_volume_.+", app="netapp-capacity-exporter-manila", project_id!=""}'
       - '{__name__=~"^openstack_manila_share_.+", project_id!=""}'
 
-{{- if has .Values.global.region (.Values.prometheus_vmware.shardedRegions) }}
 # iteration over vmware-monitoring values
 {{- range $target := .Values.global.targets }}
 # skip non-production targets called "mgmt"
@@ -183,7 +182,6 @@
   params:
     'match[]':
       - '{__name__=~"{{- include "prometheusVMwareFederationMatches" $root }}",project!~"internal",vccluster!~".*management.*"}'
-{{- end }}
 {{- end }}
 {{- end }}
 
