@@ -113,11 +113,11 @@ output {
       index => "syslog-%{+YYYY.MM.dd}"
       template => "/logstash-etc/syslog.json"
       template_name => "syslog"
-      hosts => ["{{.Values.opensearch.http.endpoint}}.{{.Values.global.region}}.{{.Values.global.tld}}:{{.Values.opensearch.http_port}}"]
+      hosts => ["https://{{.Values.opensearch.http.endpoint}}.{{.Values.global.region}}.{{.Values.global.tld}}:{{.Values.opensearch.http_port}}"]
       auth_type => {
         type => 'basic'
         user => "{{.Values.opensearch.user}}"
-        password => "{{.Values.opensearch.passowrd}}"
+        password => "{{.Values.opensearch.password}}"
       }
       ssl_certificate_verification => false
     }
@@ -142,11 +142,11 @@ output {
       index => "alerts-critical-%{+YYYY}"
       template => "/logstash-etc/alerts.json"
       template_name => "alerts"
-      hosts => ["{{.Values.opensearch.http.endpoint}}.{{.Values.global.region}}.{{.Values.global.tld}}:{{.Values.opensearch.http_port}}"]
+      hosts => ["https://{{.Values.opensearch.http.endpoint}}.{{.Values.global.region}}.{{.Values.global.tld}}:{{.Values.opensearch.http_port}}"]
       auth_type => {
         type => 'basic'
         user => "{{.Values.opensearch.user}}"
-        password => "{{.Values.opensearch.passowrd}}"
+        password => "{{.Values.opensearch.password}}"
       }
       ssl_certificate_verification => false
     }
@@ -171,11 +171,11 @@ output {
       index => "alerts-warnings-%{+YYYY}"
       template => "/logstash-etc/alerts.json"
       template_name => "alerts"
-      hosts => ["{{.Values.opensearch.http.endpoint}}.{{.Values.global.region}}.{{.Values.global.tld}}:{{.Values.opensearch.http_port}}"]
+      hosts => ["https://{{.Values.opensearch.http.endpoint}}.{{.Values.global.region}}.{{.Values.global.tld}}:{{.Values.opensearch.http_port}}"]
       auth_type => {
         type => 'basic'
         user => "{{.Values.opensearch.user}}"
-        password => "{{.Values.opensearch.passowrd}}"
+        password => "{{.Values.opensearch.password}}"
       }
       ssl_certificate_verification => false
     }
@@ -200,11 +200,11 @@ output {
       index => "alerts-other--%{+YYYY}"
       template => "/logstash-etc/alerts.json"
       template_name => "alerts"
-      hosts => ["{{.Values.opensearch.http.endpoint}}.{{.Values.global.region}}.{{.Values.global.tld}}:{{.Values.opensearch.http_port}}"]
+      hosts => ["https://{{.Values.opensearch.http.endpoint}}.{{.Values.global.region}}.{{.Values.global.tld}}:{{.Values.opensearch.http_port}}"]
       auth_type => {
         type => 'basic'
         user => "{{.Values.opensearch.user}}"
-        password => "{{.Values.opensearch.passowrd}}"
+        password => "{{.Values.opensearch.password}}"
       }
       ssl_certificate_verification => false
     }
@@ -229,11 +229,11 @@ output {
       index => "deployments-%{+YYYY}"
       template => "/logstash-etc/deployments.json"
       template_name => "deployments"
-      hosts => ["{{.Values.opensearch.http.endpoint}}.{{.Values.global.region}}.{{.Values.global.tld}}:{{.Values.opensearch.http_port}}"]
+      hosts => ["https://{{.Values.opensearch.http.endpoint}}.{{.Values.global.region}}.{{.Values.global.tld}}:{{.Values.opensearch.http_port}}"]
       auth_type => {
         type => 'basic'
         user => "{{.Values.opensearch.user}}"
-        password => "{{.Values.opensearch.passowrd}}"
+        password => "{{.Values.opensearch.password}}"
       }
       ssl_certificate_verification => false
     }
@@ -258,11 +258,11 @@ output {
       index => "netflow-%{+YYYY.MM.dd}"
       template => "/logstash-etc/netflow.json"
       template_name => "netflow"
-      hosts => ["{{.Values.opensearch.http.endpoint}}.{{.Values.global.region}}.{{.Values.global.tld}}:{{.Values.opensearch.http_port}}"]
+      hosts => ["https://{{.Values.opensearch.http.endpoint}}.{{.Values.global.region}}.{{.Values.global.tld}}:{{.Values.opensearch.http_port}}"]
       auth_type => {
         type => 'basic'
         user => "{{.Values.opensearch.user}}"
-        password => "{{.Values.opensearch.passowrd}}"
+        password => "{{.Values.opensearch.password}}"
       }
       ssl_certificate_verification => false
     }
