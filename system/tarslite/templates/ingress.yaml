@@ -2,20 +2,21 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: tarslite
-annotations:
-  kubernetes.io/tls-acme: "true"
-  disco: "true"
+  annotations:
+    kubernetes.io/tls-acme: "true"
+    disco: "true"
 spec:
   rules:
-    - http:
-      host: {{ .Values.tarslite.hostname }}
-      paths:
-        - path:
-          backend:
-            service:
-              name: tarslite
-              port:
-                name: webhook
+    - host: {{ .Values.tarslite.hostname }}
+      http:
+        paths:
+          - path:
+            pathType: Prefix
+            backend:
+              service:
+                name: tarslite
+                port:
+                  name: webhook
   tls:
     - hosts: 
       - {{ .Values.tarslite.hostname }}
