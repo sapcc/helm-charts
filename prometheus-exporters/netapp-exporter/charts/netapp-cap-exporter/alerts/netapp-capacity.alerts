@@ -57,7 +57,7 @@ groups:
           playbook: 'docs/support/playbook/manila/netapp_aggr_full_maint.html'
           support_component: manila_netapp
         annotations:
-          description: 'Storage Capacity Usage on node {{$labels.node}} is {{ $value }}%'
+          description: 'Storage Capacity Usage on node {{$labels.node}} is above 75%'
           summary: 'High Capacity Usage on {{$labels.filer}}'
 
       - alert: ManilaStorageAggregateHighUsage
@@ -72,7 +72,7 @@ groups:
           playbook: 'docs/support/playbook/manila/netapp_aggr_full_maint.html'
           support_component: manila_netapp
         annotations:
-          description: 'Storage Capacity Usage on node {{$labels.node}} is {{ $value }}%'
+          description: 'Storage Capacity Usage on node {{$labels.node}} is above 85%'
           summary: 'High Capacity Usage on {{$labels.filer}}'
 
       - alert: ManilaStorageAggregateFull
@@ -87,7 +87,7 @@ groups:
           playbook: 'docs/support/playbook/manila/netapp_aggr_full_maint.html'
           support_component: manila_netapp
         annotations:
-          description: 'Storage Capacity Usage on node {{$labels.node}} is {{ $value }}%'
+          description: 'Storage Capacity Usage on node {{$labels.node}} is above 90%'
           summary: 'Nearly Full Capacity Usage on {{$labels.filer}}'
 
       - alert: NetAppFilerAggregateIsOffline
@@ -134,7 +134,7 @@ groups:
             playbook: 'docs/support/playbook/manila/share_inode_usage'
         annotations:
             summary: 'inode usage above 85%'
-            description: 'inode usage of Manila share {{ $labels.share_id }} is {{ $value }}'
+            description: 'inode usage of Manila share {{ $labels.share_id }} is high'
 
       - alert: ManilaShareInodeUsageVeryHigh
         expr: max_over_time(netapp_volume_inode_files_used_percentage{app="netapp-capacity-exporter-manila"}[1h]) > 0.95
@@ -149,7 +149,7 @@ groups:
             playbook: 'docs/support/playbook/manila/share_inode_usage'
         annotations:
             summary: 'inode usage above 95%'
-            description: 'inode usage of Manila share {{ $labels.share_id }} is {{ $value }}'
+            description: 'inode usage of Manila share {{ $labels.share_id }} is very high'
 
       - alert: CinderStorageAggregateHighUsage
         expr: netapp_aggregate_used_percentage{app=~".*cinder",availability_zone!~"eu-nl-1a|eu-nl-1b|eu-de-1a|eu-de-1d|eu-de-2a|na-us-3a"} > 80 or netapp_aggregate_used_percentage{app=~".*cinder",availability_zone=~"eu-de-1a|eu-de-1d|eu-nl-1a|eu-nl-1b|na-us-3a"} > 88 or netapp_aggregate_used_percentage{app=~".*cinder",availability_zone=~"eu-de-2a"} > 84
@@ -163,7 +163,7 @@ groups:
           meta: 'Aggregate usage above the high usage level for this region'
           playbook: 'docs/support/playbook/cinder/balancing/cinder_balance_alert.html'
         annotations:
-          description: 'Storage Capacity Usage on node {{$labels.node}} in az {{$labels.availability_zone}} is above the high usage level for this region - currently at {{ $value }}%'
+          description: 'Storage Capacity Usage on node {{$labels.node}} in az {{$labels.availability_zone}} is above the high usage level for this region'
           summary: 'High Capacity Usage on {{$labels.filer}}'
 
       - alert: CinderStorageAggregateFull
@@ -178,7 +178,7 @@ groups:
           meta: 'Aggregate usage above 95%'
           playbook: 'docs/support/playbook/cinder/balancing/cinder_balance_alert.html'
         annotations:
-          description: 'Storage Capacity Usage on node {{$labels.node}} in az {{$labels.availability_zone}} is above 95% - currently at {{ $value }}%'
+          description: 'Storage Capacity Usage on node {{$labels.node}} in az {{$labels.availability_zone}} is above 95%'
           summary: 'Nearly Full Capacity Usage on {{$labels.filer}}'
 
       - alert: VVolDatastoreFlexvolHighUsage
@@ -192,7 +192,7 @@ groups:
           meta: 'VVol flex-volume usage over 90 percent of 5 TB or above 75 percent usage'
           playbook: 'docs/support/playbook/cinder/balancing/cinder_balance_alert.html'
         annotations:
-          description: 'Usage of VVol flex-volume {{$labels.volume}} on filer {{$labels.filer}} in az {{$labels.availability_zone}} is {{ $value }} GiB'
+          description: 'Usage of VVol flex-volume {{$labels.volume}} on filer {{$labels.filer}} in az {{$labels.availability_zone}} is high'
           summary: 'Flex-volume {{$labels.filer}}/{{$labels.volume}} usage larger than 90 percent of 5TB or above 75 percent usage'
 
       - alert: VVolDatastoreFlexvolCriticalUsage
@@ -206,5 +206,5 @@ groups:
           meta: 'VVol flex-volume usage over 8TB and 90 percent usage'
           playbook: 'docs/support/playbook/cinder/balancing/cinder_balance_alert.html'
         annotations:
-          description: 'Usage of VVol flex-volume {{$labels.volume}} on filer {{$labels.filer}} in az {{$labels.availability_zone}} is {{ $value }} GiB'
+          description: 'Usage of VVol flex-volume {{$labels.volume}} on filer {{$labels.filer}} in az {{$labels.availability_zone}} is very high'
           summary: 'Flex-volume {{$labels.filer}}/{{$labels.volume}} usage larger than 8TB and 90 percent usage'
