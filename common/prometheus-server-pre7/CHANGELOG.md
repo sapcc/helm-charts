@@ -1,3 +1,7 @@
+## 6.4.16
+
+ * Fix Prometheus alertmanager alerts
+
 ## 6.4.14 - 15
 
  * Deploy alerts w/o alertmanger configured 
