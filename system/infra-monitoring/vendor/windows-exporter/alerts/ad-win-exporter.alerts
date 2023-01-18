@@ -30,7 +30,7 @@ groups:
       summary: "Service {{ $labels.name }} in State {{ $labels.state }} on node {{ $labels.server_name }}"
 
   - alert: ADWinServiceDownInfo
-    expr: count(windows_service_state{state!="running", job="win-exporter-ad"} > 0) by (server_name, name, state) * on(server_name, name) group_left(display_name) count(windows_service_info) by(server_name, name, display_name)
+    expr: count(windows_service_state{state!="running", job="win-exporter-ad", name!="rscdsvc"} > 0) by (server_name, name, state) * on(server_name, name) group_left(display_name) count(windows_service_info) by(server_name, name, display_name)
     for: 1h
     labels:
       severity: info
