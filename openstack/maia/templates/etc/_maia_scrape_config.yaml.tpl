@@ -157,10 +157,9 @@
   scheme: http
   scrape_interval: "{{ $root.Values.prometheus_vmware.scrape_interval }}"
   scrape_timeout: "{{ $root.Values.prometheus_vmware.scrape_timeout }}"
-  # use the alertmanger cert, as it is the shared Prometheus cert
   tls_config:
-    cert_file: /etc/prometheus/secrets/prometheus-maia-oprom-alertmanager-sso-cert/sso.crt
-    key_file: /etc/prometheus/secrets/prometheus-maia-oprom-alertmanager-sso-cert/sso.key
+    cert_file: /etc/prometheus/secrets/prometheus-auth-sso-cert/sso.crt
+    key_file: /etc/prometheus/secrets/prometheus-auth-sso-cert/sso.key
   static_configs:
     - targets: 
         - '{{ include "prometheusVMware.fullName" (list $target $root) }}-internal.{{ $root.Values.global.region }}.cloud.sap'
@@ -192,8 +191,8 @@
   scrape_interval: 1m
   scrape_timeout: 55s
   tls_config:
-    cert_file: /etc/prometheus/secrets/prometheus-infra-sso-cert/sso.crt
-    key_file: /etc/prometheus/secrets/prometheus-infra-sso-cert/sso.key
+    cert_file: /etc/prometheus/secrets/prometheus-auth-sso-cert/sso.crt
+    key_file: /etc/prometheus/secrets/prometheus-auth-sso-cert/sso.key
   static_configs:
     - targets:
       - "prometheus-infra.scaleout.{{ .Values.global.region }}.cloud.sap"
