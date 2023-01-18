@@ -172,7 +172,7 @@ groups:
       summary: Prometheus scrapes pods multiple times
   {{- end }}
 
-  {{- if and .Values.alertmanagers (gt (len .Values.alertmanagers) 0) }}
+  {{- if and .Values.alertmanagers (gt (len .Values.alertmanagers.hosts) 0) }}
   - alert: PrometheusNotConnectedToAlertmanagers
     expr: prometheus_notifications_alertmanagers_discovered{prometheus="{{ include "prometheus.name" . }}"} == 0
     for: 10m
