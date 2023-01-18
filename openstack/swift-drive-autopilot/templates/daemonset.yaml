@@ -61,6 +61,17 @@ spec:
         - name: coreos
           hostPath:
             path: /
+      {{- if hasPrefix "qa" "$.Values.global.region" }}
+      initContainers:
+      - name: sysctl
+        image: {{$.Values.global.registryAlternateRegion}}/swift-drive-autopilot:{{include "image_version" $}}
+        # Do not panic and hence do not reboot on OOPS. OOPS can occur with defect swift disks, which are handled by
+        # Swift seperatly. Otherwise this can lead to reboot loops.
+        command: ['sysctl', '-w', 'kernel.panic_on_oops=0']
+        securityContext:
+          runAsUser: 0
+          privileged: true
+      {{- end }}
       containers:
         - name: boot
           image: {{$.Values.global.registryAlternateRegion}}/swift-drive-autopilot:{{include "image_version" $}}
