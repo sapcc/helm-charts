@@ -1,4 +1,9 @@
+## 6.4.14
+
+ * Deploy alerts w/o alertmanger configured 
+
 ## 6.4.13
+
  * Update k8s apiserver metrics to new names
 
 ## 6.4.11 - 6.4.12
