@@ -1,0 +1,29 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    meta.helm.sh/release-name: tailcontrol
+    meta.helm.sh/release-namespace: tailscale
+  labels:
+    app.kubernetes.io/managed-by: Helm
+  name: tailcontrol
+  namespace: tailscale
+spec:
+  template:
+    spec:
+      containers:
+      - image: keppel.global.cloud.sap/ccloud-dockerhub-mirror/litestream/litestream:0.3.8
+        name: litestream
+      - image: keppel.global.cloud.sap/ccloud/tailcontrol:v20221017171703-tailscale-v1.31.177
+        name: tailcontrol
+        securityContext:
+          capabilities:
+            add:
+            - NET_ADMIN
+          privileged: true
+      initContainers:
+      - image: keppel.global.cloud.sap/ccloud-dockerhub-mirror/litestream/litestream:0.3.8
+        name: litestream-restore-sqlite
+      - image: keppel.global.cloud.sap/ccloud-dockerhub-mirror/litestream/litestream:0.3.8
+        name: litestream-restore-noise
+      securityContext: {}

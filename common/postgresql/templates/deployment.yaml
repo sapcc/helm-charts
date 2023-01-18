@@ -8,15 +8,10 @@ metadata:
     release: "{{ .Release.Name }}"
     heritage: "{{ .Release.Service }}"
 spec:
-  replicas: {{ .Values.replicas }}
-  revisionHistoryLimit: {{ .Values.upgrades.revisionHistory }}
+  replicas: 1
+  revisionHistoryLimit: 3
   strategy:
-    type: {{ .Values.upgrades.podReplacementStrategy }}
-    {{ if eq .Values.upgrades.podReplacementStrategy "RollingUpdate" }}
-    rollingUpdate:
-      maxUnavailable: {{ .Values.upgrades.rollingUpdate.maxUnavailable }}
-      maxSurge: {{ .Values.upgrades.rollingUpdate.maxSurge }}
-    {{ end }}
+    type: Recreate
   selector:
     matchLabels:
       app: {{ template "fullname" . }}
@@ -105,7 +100,7 @@ spec:
           mountPath: /docker-entrypoint-maintaindb.d
 {{- end }}
 
-{{- if .Values.backup.enabled }}
+{{- if and .Values.backup.enabled (not .Values.backup.splitDeployment) }}
 {{- if .Values.backup.custom_repository }}
       - image: {{ .Values.backup.image }}:{{ .Values.backup.imageTag }}
 {{- else }}
@@ -122,7 +117,7 @@ spec:
 {{- if .Values.backup.os_auth_url }}
             value: {{ .Values.backup.os_auth_url }}
 {{- else }}
-            value: {{ include "keystone_url" . }}
+            value: {{ include "default_keystone_url" . }}
 {{- end }}
           - name: OS_AUTH_VERSION
             value: "3"

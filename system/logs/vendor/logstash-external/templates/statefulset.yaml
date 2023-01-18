@@ -40,7 +40,7 @@ spec:
             secretName: tls-logstash-external
       containers:
         - name: logstash
-          image: {{ .Values.global.registry }}/elk-logstash:{{ .Values.image_version }}
+          image: {{ .Values.global.dockerHubMirror }}/opensearchproject/logstash-oss-with-opensearch-output-plugin:{{ .Values.image_version }}
           imagePullPolicy: IfNotPresent
           ports:
             - name: netflow
@@ -64,7 +64,7 @@ spec:
             - name: https
               containerPort: {{ .Values.input_http_port }}
               protocol: TCP
-          command: ["dumb-init","/bin/bash","/logstash-etc/start.sh"]
+          command: ["/bin/bash","/logstash-etc/start.sh"]
           env:
             - name: NAMESPACE
               valueFrom:
