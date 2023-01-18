@@ -4,29 +4,83 @@ groups:
 - name: thanos-store.alerts
   rules:
     - alert: ThanosStoreGrpcErrorRate
-      expr: rate(grpc_server_handled_total{grpc_code=~"Unknown|ResourceExhausted|Internal|Unavailable",app="thanos-store",prometheus="{{ include "thanos.name" . }}"}[5m]) > 0
+      expr: |
+        (
+          sum by (job) (rate(grpc_server_handled_total{grpc_code=~"Unknown|ResourceExhausted|Internal|Unavailable|DataLoss|DeadlineExceeded", job=~".*thanos.*store.*", thanos="{{ include "thanos.name" . }}"}[5m]))
+        /
+          sum by (job) (rate(grpc_server_started_total{job=~".*thanos.*store.*", thanos="{{ include "thanos.name" . }}"}[5m]))
+        * 100 > 5
+        )
       for: 5m
       labels:
-        context: thanos
         service: {{ default "metrics" $root.Values.alerts.service }}
-        support_group: observability
+        support_group: {{ default "observability" $root.Values.alerts.support_group }}
         severity: info
-        playbook: 'docs/support/playbook/prometheus/thanos_store.html'
-        meta: 'Thanos store is returning errors for Prometheus `{{`{{ $labels.prometheus }}`}}`'
+        meta: Thanos Store `{{`{{ $labels.thanos }}`}}` is failing to handle requests.
       annotations:
-        description: 'Thanos Store is returning Internal/Unavailable errors for Prometheus `{{`{{ $labels.prometheus }}`}}`. Long Term Storage Prometheus queries are failing.'
-        summary: Thanos store has errors
+        description: |
+          Thanos Query `{{`{{ $labels.thanos }}`}}` is failing
+          to handle `{{`{{ $value | humanize }}`}}` of requests.
+        summary: Thanos Store is failing to handle qrpcd requests.
 
-    - alert: ThanosStoreBucketOperationsFailed
-      expr: rate(thanos_objstore_bucket_operation_failures_total{app="thanos-store",prometheus="{{ include "thanos.name" . }}"}[5m]) > 0
-      for: 5m
+    - alert: ThanosStoreSeriesGateLatencyHigh
+      expr: |
+        (
+          histogram_quantile(0.99, sum by (job, le) (rate(thanos_bucket_store_series_gate_duration_seconds_bucket{job=~".*thanos.*store.*", thanos="{{ include "thanos.name" . }}"}[5m]))) > 2
+        and
+          sum by (job) (rate(thanos_bucket_store_series_gate_duration_seconds_count{job=~".*thanos.*store.*", thanos="{{ include "thanos.name" . }}"}[5m])) > 0
+        )
+      for: 10m
       labels:
-        context: thanos
         service: {{ default "metrics" $root.Values.alerts.service }}
-        support_group: observability
+        support_group: {{ default "observability" $root.Values.alerts.support_group }}
         severity: info
-        playbook: 'docs/support/playbook/prometheus/thanos_store.html'
-        meta: 'Thanos store failing bucket operations for Prometheus `{{`{{ $labels.prometheus }}`}}`.'
+        meta: Thanos Store `{{`{{ $labels.thanos }}`}}` has a 99th percentile latency for store series gate requests.
       annotations:
-        description: 'Thanos Store is failing to do bucket operations for Prometheus `{{`{{ $labels.prometheus }}`}}`. Long term storage queries are failing.'
-        summary: Thanos store failing bucket operations
+        description: |
+          Thanos Query `{{`{{ $labels.thanos }}`}}` has a 99th 
+          percentile latency of `{{`{{ $value }}`}}`seconds 
+          for store series gate requests. 
+        summary: Thanos Store has high latency for store series gate requests.
+
+    - alert: ThanosStoreBucketHighOperationFailures
+      expr: |
+        (
+          sum by (job) (rate(thanos_objstore_bucket_operation_failures_total{job=~".*thanos.*store.*", thanos="{{ include "thanos.name" . }}"}[5m]))
+        /
+          sum by (job) (rate(thanos_objstore_bucket_operations_total{job=~".*thanos.*store.*", thanos="{{ include "thanos.name" . }}"}[5m]))
+        * 100 > 5
+        )
+      for: 15m
+      labels:
+        service: {{ default "metrics" $root.Values.alerts.service }}
+        support_group: {{ default "observability" $root.Values.alerts.support_group }}
+        severity: info
+        meta: Thanos Store `{{`{{ $labels.thanos }}`}}` Bucket is failing to execute operations.
+      annotations:
+        description: |
+          Thanos Store `{{`{{ $labels.thanos }}`}}` Bucket is failing
+          to execute `{{`{{ $value | humanize }}`}}`seconds for store
+          series gate requests.
+        summary: Thanos Store Bucket is failing to execute operations.
+
+    - alert: ThanosStoreObjstoreOperationLatencyHigh
+      expr: |
+        (
+          sum by (job) (rate(thanos_objstore_bucket_operation_failures_total{job=~".*thanos.*store.*", thanos="{{ include "thanos.name" . }}"}[5m]))
+        /
+          sum by (job) (rate(thanos_objstore_bucket_operations_total{job=~".*thanos.*store.*", thanos="{{ include "thanos.name" . }}"}[5m]))
+        * 100 > 5
+        )
+      for: 10m
+      labels:
+        service: {{ default "metrics" $root.Values.alerts.service }}
+        support_group: {{ default "observability" $root.Values.alerts.support_group }}
+        severity: info
+        meta: Thanos Store `{{`{{ $labels.thanos }}`}}` Bucket has a 99th percentile latency for the bucket operations.
+      annotations:
+        description: |
+          Thanos Store `{{`{{ $labels.thanos }}`}}` Bucket has a 99th
+          percentile latency of `{{`{{ $value }}`}}` seconds for the
+          bucket operations.
+        summary: Thanos Store is having high latency for bucket operations.

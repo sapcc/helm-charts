@@ -1,41 +1,24 @@
 {{- if .Values.enabled }}
 {{- $root := . }}
 {{- range $name := coalesce .Values.names .Values.global.targets (list .Values.name) }}
+{{- range $component := tuple "compactor" "query" "store" }}
+{{- $path := (printf "%s/alerts/_thanos-%s.alerts.tpl" $root.Template.BasePath $component ) }}
 ---
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
 
 metadata:
-  name: {{ include "thanos.fullName" (list $name $root) }}-thanos-compactor.alerts
+  name: {{ include "thanos.fullName" (list $name $root) }}-{{ printf "%s" $component }}.alerts
   labels:
+    {{- if $root.Values.deployWholeThanos }}
     prometheus: {{ default (include "thanos.name" (list $name $root)) $.Values.alerts.prometheus }}
+    {{- else }}
+    prometheus: {{ required "$.Values.alerts.prometheus" $.Values.alerts.prometheus }}
+    {{- end }}
 
 spec:
-{{ include (print $.Template.BasePath "/alerts/_thanos-compactor.alerts.tpl") (list $name $root) | indent 2 }}
+{{ include $path (list $name $root) | indent 2 }}
 
----
-apiVersion: monitoring.coreos.com/v1
-kind: PrometheusRule
-
-metadata:
-  name: {{ include "thanos.fullName" (list $name $root) }}-thanos-query.alerts
-  labels:
-    prometheus: {{ default (include "thanos.name" (list $name $root)) $.Values.alerts.prometheus }}
-
-spec:
-{{ include (print $.Template.BasePath "/alerts/_thanos-query.alerts.tpl") (list $name $root) | indent 2 }}
-
----
-apiVersion: monitoring.coreos.com/v1
-kind: PrometheusRule
-
-metadata:
-  name: {{ include "thanos.fullName" (list $name $root) }}-thanos-store.alerts
-  labels:
-    prometheus: {{ default (include "thanos.name" (list $name $root)) $.Values.alerts.prometheus }}
-
-spec:
-{{ include (print $.Template.BasePath "/alerts/_thanos-store.alerts.tpl") (list $name $root) | indent 2 }}
-
+{{- end }}
 {{- end }}
 {{- end }}
