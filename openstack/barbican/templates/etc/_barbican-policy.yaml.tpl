@@ -24,6 +24,10 @@
 "secret:put": "rule:context_is_editor and rule:secret_project_match"
 "secret:delete": "rule:secret_project_admin or rule:secret_project_creator"
 
+"secret_consumers:get": "rule:context_is_editor"
+"secret_consumers:post": "rule:context_is_editor"
+"secret_consumers:delete": "rule:context_is_editor"
+
 "secrets:post": "rule:context_is_editor"
 "secrets:get": "rule:context_is_viewer"
 
