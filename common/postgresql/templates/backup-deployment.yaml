@@ -23,7 +23,8 @@ spec:
       labels:
         name: "{{ .Release.Name }}-pgbackup"
       annotations:
-        checksum/secrets: {{ include (print $.Template.BasePath  "/secrets.yaml") . | sha256sum }}
+        checksum/secrets:        {{ include (print $.Template.BasePath "/secrets.yaml") . | sha256sum }}
+        checksum/backup-secrets: {{ include (print $.Template.BasePath "/backup-secrets.yaml") . | sha256sum }}
     spec:
       containers:
         - name: backup
@@ -53,7 +54,7 @@ spec:
             - name: OS_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: {{ template "fullname". }}
+                  name: "{{ .Release.Name }}-pgbackup"
                   key: backup-password
             - name: PGSQL_HOST
               value: '{{ template "fullname" . }}.{{ .Release.Namespace }}.svc'
