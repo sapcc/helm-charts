@@ -9,9 +9,10 @@ apiVersion: constraints.gatekeeper.sh/v1beta1
 kind: GkVulnerableImages
 metadata:
   name: vulnerableimages
+  annotations:
+    {{- include "sources" (tuple "vulnerable-images" "vulnerable-images") | indent 4 }}
   labels:
     on-prod-ui: 'true'
-    {{- include "sources" (tuple "vulnerable-images" "vulnerable-images") | indent 4 }}
 spec:
   enforcementAction: dryrun # change to "deny" to enforce
   match: {{ include "match_pods_only" . | indent 4 }}
