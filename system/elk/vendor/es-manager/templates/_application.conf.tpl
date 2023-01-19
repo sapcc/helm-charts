@@ -34,15 +34,15 @@ hosts = [
   },
   {
     host = "http://elastiflow-master.elastiflow:9200"
-    name = "{{ .Values.global.cluster }} elastiflow cluster"
+    name = "{{ .Values.global.cluster }} Elastiflow cluster"
     auth = {
       username = "{{.Values.global.elastiflow_admin_user}}"
       password = "{{.Values.global.elastiflow_admin_password}}"
     }
   },
   {
-    host = "https://opensearch-logs-client.opensearch-logs:9200"
-    name = "Opensearch Logs Cluster"
+    host = "https://opensearch-logs-client.{{ .Values.global.clusterType }}.{{ .Values.global.region }}.{{ .Values.global.domain }}:9200"
+    name = "{{ .Values.global.cluster }} OpenSearch Logs Cluster"
     auth = {
       username = "{{.Values.global.elk_opensearch_admin_user}}"
       password = "{{.Values.global.elk_opensearch_admin_password}}"
