@@ -34,6 +34,15 @@ We truncate at 24 chars because some Kubernetes name fields are limited to this 
 {{- .Release.Name | title -}}
 {{- end -}}
 
+{{/* Generate a label selector for finding our own backup metrics. */}}
+{{- define "alerts.backup_metrics_selector" -}}
+  {{- if .Values.backup.splitDeployment -}}
+    {name="{{ .Release.Name }}-pgbackup"}
+  {{- else -}}
+    {app=~"{{ template "fullname" . }}"}
+  {{- end -}}
+{{- end -}}
+
 {{- define "preferredRegistry" -}}
   {{- if .Values.useAlternateRegion -}}
     {{ .Values.global.registryAlternateRegion | required ".Values.global.registryAlternateRegion missing" -}}
