@@ -1,0 +1,165 @@
+{{- if .Values.global.enable_kvm }}
+  {{- $envAll := . }}
+  {{- range $_, $vpods := .Values.global.vpods }}
+    {{- range $vpod, $values := $vpods }}
+      {{- with $envAll }}
+---
+kind: DaemonSet
+apiVersion: apps/v1
+metadata:
+  name: neutron-ovs-agent-{{ $vpod }}
+  labels:
+    system: openstack
+    type: backend
+    component: neutron
+spec:
+  revisionHistoryLimit: {{ .Values.pod.lifecycle.upgrades.deployments.revision_history }}
+  selector:
+    matchLabels:
+      name: neutron-ovs-agent-{{ $vpod }}
+  template:
+    metadata:
+      labels:
+        {{- tuple . "neutron" "ovs-agent" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | nindent 8 }}
+        name: neutron-ovs-agent-{{ $vpod }}
+        alert-tier: os
+        alert-service: neutron
+        hypervisor: "kvm"
+      annotations:
+        configmap-etc-hash: {{ include (print $.Template.BasePath "/configmap-etc.yaml") . | sha256sum }}
+    spec:
+      hostNetwork: true
+      hostPID: true
+      hostIPC: true
+{{- if .Values.hypervisor_on_host }}
+      hostAliases:
+      - ip: {{ first .Values.rabbitmq.externalIPs }}
+        hostnames:
+        -{{" "}}{{ $sname := default "rabbitmq" .Values.rabbitmq.nameOverride }}
+          {{- $name := printf "%s-%s" .Release.Name $sname | trunc 63 | replace "_" "-" | trimSuffix "-" -}}
+          {{- $name }}
+        - {{ $name }}.{{ include "svc_fqdn" . }}
+{{- end }}
+      tolerations:
+      - key: "species"
+        operator: "Equal"
+        value: "hypervisor"
+        effect: "NoSchedule"
+      nodeSelector:
+        species: hypervisor
+{{- if not .Values.hypervisor_on_host }}
+      initContainers:
+      - name: load-kernel-mod
+        image: {{ required ".Values.global.dockerHubMirror is missing" .Values.global.dockerHubMirror }}/library/busybox
+        command:
+        - modprobe
+        - openvswitch
+        volumeMounts:
+        - mountPath: /lib/modules
+          name: modules
+          readOnly: true
+{{- end }}
+      containers:
+        - name: neutron-openvswitch-agent
+          image: {{ required ".Values.global.registry is missing" .Values.global.registry }}/loci-neutron:{{ .Values.imageVersion | required "Please set imageVersion or similar" }}
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            privileged: true
+          command:
+          - neutron-openvswitch-agent
+          env:
+          - name: SENTRY_DSN
+            valueFrom:
+            secretKeyRef:
+              name: sentry
+              key: neutron.DSN.python
+          volumeMounts:
+          - mountPath: /etc/neutron
+            name: etcneutron
+          - mountPath: /etc/neutron.conf.d
+            name: etcneutronconfd
+          - mountPath: /etc/neutron/neutron.conf
+            name: neutron-etc
+            subPath: neutron.conf
+          - mountPath: /etc/neutron/logging.conf
+            name: neutron-etc
+            subPath: logging.conf
+          - mountPath: /etc/neutron/rootwrap.conf
+            name: neutron-etc
+            subPath: rootwrap.conf
+          - mountPath: /etc/neutron.conf.d/ml2.conf
+            name: neutron-etc
+            subPath: ml2-conf.ini
+          - mountPath: /etc/neutron.conf.d/vpod.conf
+            name: neutron-etc-vpod
+            subPath: {{ $vpod }}.conf
+          - mountPath: /etc/sudoers
+            name: neutron-etc
+            subPath: sudoers
+          - mountPath: /run
+            name: run
+          - mountPath: /lib/modules
+            name: modules
+            readOnly: true
+{{- if not .Values.hypervisor_on_host }}
+        - name: ovs
+          image: {{ required ".Values.global.registry is missing" .Values.global.registry }}/loci-neutron:{{ .Values.imageVersion | required "Please set imageVersion or similar" }}
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            privileged: true
+          command:
+          - /container.init/neutron-ovs-start
+          volumeMounts:
+          - mountPath: /run
+            name: run
+          - mountPath: /lib/modules
+            name: modules
+            readOnly: true
+          - mountPath: /container.init
+            name: neutron-container-init
+        - name: ovs-db
+          image: {{ required ".Values.global.registry is missing" .Values.global.registry }}/loci-neutron-openvswitch:{{ .Values.imageVersion | required "Please set .mageVersion or similar" }}
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            privileged: true
+          command:
+          - /container.init/neutron-ovs-db-start
+          env:
+          volumeMounts:
+          - mountPath: /run
+            name: run
+          - mountPath: /container.init
+            name: neutron-container-init
+{{- end }}
+      volumes:
+      - name: run
+{{- if not .Values.hypervisor_on_host }}
+        emptyDir:
+          medium: Memory
+{{- else }}
+        hostPath:
+          path: /run
+{{- end }}
+      - name: etcneutron
+        emptyDir:
+          medium: Memory
+      - name: etcneutronconfd
+        emptyDir:
+          medium: Memory
+      - name: modules
+        hostPath:
+          path: /lib/modules
+      - name: neutron-etc
+        configMap:
+          name: neutron-etc
+      - name: neutron-etc-vpod
+        configMap:
+          name: neutron-etc-vpod
+      - name: neutron-container-init
+        configMap:
+          name: neutron-bin
+          defaultMode: 0755
+      {{- end }}
+    {{- end }}
+  {{- end }}
+{{- end }}

@@ -46,9 +46,9 @@ vni_ranges = 10000:20000
 supported_device_owners = network:f5listener,network:f5selfip,network:f5lbaasv2,network:f5snat,network:archer
 
 [securitygroup]
-firewall_driver = iptables_hybrid
-enable_security_group=True
-enable_ipset=True
+{{- range $key, $value := .Values.securitygroup }}
+{{ $key }} = {{ $value }}
+{{- end }}
 
 [agent]
 polling_interval=5

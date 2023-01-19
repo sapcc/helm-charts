@@ -11,5 +11,9 @@ data:
 {{ include (print .Template.BasePath "/bin/_neutron-server-start.tpl") . | indent 4 }}
   common.sh: |
 {{ include "common.sh" .| indent 4 }}
-
-
+{{- if .Values.global.enable_kvm }}
+  neutron-ovs-db-start: |
+{{ include (print .Template.BasePath "/bin/_neutron-ovs-db-start.tpl") . | indent 4 }}
+  neutron-ovs-start: |
+{{ include (print .Template.BasePath "/bin/_neutron-ovs-start.tpl") . | indent 4 }}
+{{- end }}

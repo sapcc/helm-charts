@@ -89,3 +89,5 @@ conntrack: CommandFilter, conntrack, root
 
 # nova/network/linux_net.py: 'fp-vdev'
 fp-vdev: CommandFilter, fp-vdev, root
+
+privsep-rootwrap-vif_plug: RegExpFilter, privsep-helper, root, privsep-helper, --config-file, /etc/(?!\.\.).*, --config-file, /etc/(?!\.\.).*, --privsep_context, vif_plug_ovs.privsep.vif_plug, --privsep_sock_path, /tmp/.*

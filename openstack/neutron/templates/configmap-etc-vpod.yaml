@@ -1,0 +1,20 @@
+{{- if .Values.global.enable_kvm }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: neutron-etc-vpod
+  labels:
+    system: openstack
+    type: configuration
+    component: neutron
+
+data:
+  {{- $defaults := default (dict) .Values.global.vpod_defaults }}
+  {{- range $az_long, $vpods := .Values.global.vpods }}
+      {{- range $vpod, $overrides := $vpods }}
+  {{ $vpod }}.conf: |
+    {{- $values :=  mergeOverwrite (deepCopy $defaults) (default (dict) $overrides)}}
+    {{- include "util.helpers.valuesToIni" $values | nindent 6 }}
+    {{- end }}
+  {{- end }}
+{{- end }}
