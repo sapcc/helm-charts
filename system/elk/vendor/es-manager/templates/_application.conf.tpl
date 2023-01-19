@@ -75,5 +75,5 @@ play.ws.ssl {
     ]
   }
 }
-play.ws.ssl.loose.acceptAnyCertificate=true
+play.ws.ssl.loose.acceptAnyCertificate=false
 {{- end }}
