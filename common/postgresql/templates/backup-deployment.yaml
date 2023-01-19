@@ -25,6 +25,8 @@ spec:
       annotations:
         checksum/secrets:        {{ include (print $.Template.BasePath "/secrets.yaml") . | sha256sum }}
         checksum/backup-secrets: {{ include (print $.Template.BasePath "/backup-secrets.yaml") . | sha256sum }}
+        prometheus.io/scrape:    "true"
+        prometheus.io/targets:   {{ quote .Values.alerts.prometheus }}
     spec:
       containers:
         - name: backup
@@ -63,6 +65,9 @@ spec:
                 secretKeyRef:
                   name: {{ template "fullname". }}
                   key: postgres-password
+          ports:
+          - name: metrics
+            containerPort: 9188
           {{- if .Values.backup.resources.enabled }}
           resources:
             limits:
