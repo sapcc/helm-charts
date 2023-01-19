@@ -81,3 +81,16 @@ groups:
 
         Kind regards,
         Converged Cloud support team
+
+  - alert: KubernikusSeedReconciliationFailed
+    expr: increase(kubernikus_seed_reconciliation_failures_total[35m])>6
+    for: 10m
+    labels:
+      tier: kks
+      service: ground
+      support_group: containers
+      severity: warning
+      meta: "Seed reconciliation is failing for kluster {{ $labels.kluster_name }}"
+    annotations:
+      description: Seed reconciliation is failing for kluster {{ $labels.kluster_name }}. Check Kubernikus operator logs in k-controlplane kluster for details.
+      summary: Seed reconciliation failed
