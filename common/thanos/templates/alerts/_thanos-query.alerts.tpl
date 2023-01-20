@@ -20,7 +20,7 @@ groups:
       annotations:
         description: |
           Thanos Query `{{`{{ $labels.thanos }}`}}` is failing to
-          handle `{{`{{ $value | humanize }}`}}` of "query" requests.
+          handle `{{`{{ $value | humanize }}`}}%` of "query" requests.
         summary: Thanos Query is failing to handle requests.
 
     - alert: ThanosQueryHttpRequestQueryRangeErrorRateHigh
@@ -40,7 +40,7 @@ groups:
       annotations:
         description: |
           Thanos Query `{{`{{ $labels.thanos }}`}}` is failing to
-          handle `{{`{{ $value | humanize }}`}}` of "query" requests.
+          handle `{{`{{ $value | humanize }}`}}%` of "query_range" requests.
         summary: Thanos Query is failing to handle requests.
 
     - alert: ThanosQueryGrpcServerErrorRate
@@ -60,7 +60,7 @@ groups:
       annotations:
         description: |
           Thanos Query `{{`{{ $labels.thanos }}`}}` is failing to
-          handle `{{`{{ $value | humanize }}`}}` of gRPC requests.
+          handle `{{`{{ $value | humanize }}`}}%` of gRPC requests.
         summary: Thanos Query is failing to handle gRPC requests.
 
     - alert: ThanosQueryGrpcClientErrorRate
@@ -79,7 +79,7 @@ groups:
       annotations:
         description: |
           Thanos Query `{{`{{ $labels.thanos }}`}}` is failing to
-          send `{{`{{ $value | humanize }}`}}` gRPC requests.
+          send `{{`{{ $value | humanize }}`}}%` gRPC requests.
         summary: Thanos Query is failing to send gRPC requests.
 
     - alert: ThanosQueryHighDNSFailures
@@ -97,7 +97,7 @@ groups:
         meta: Thanos Query `{{`{{ $labels.thanos }}`}}` is having high number of DNS failures.
       annotations:
         description: |
-          Thanos Query `{{`{{ $labels.thanos }}`}}` have `{{`{{ $value | humanize }}`}}`
+          Thanos Query `{{`{{ $labels.thanos }}`}}` have `{{`{{ $value | humanize }}`}}%`
           of failing DNS queries for store endpoints.
         summary: Thanos Query is having high number of DNS failures.
 
@@ -119,7 +119,7 @@ groups:
           Thanos Query `{{`{{ $labels.thanos }}`}}` has a 99th
           percentile latency of `{{`{{ $value }}`}}` seconds
           for instant queries.
-        summary: Thanos Query has high latency for queries.
+        summary: Thanos Query has high latency for instant queries.
 
     - alert: ThanosQueryRangeLatencyHigh
       expr: |
@@ -158,6 +158,6 @@ groups:
           for more than 15 minutes. This may be a symptom of excessive
           simultanous complex requests, low performance of the Prometheus
           API, or failures within these components. Assess the health
-          of the Thanos query instances, the connnected Prometheus
+          of the Thanos Query instances, the connnected Prometheus
           instances, and increase the number of Thanos Query replicas.
-        summary: Thanos query reaches its maximum capacity serving concurrent requests.
+        summary: Thanos Query reaches its maximum capacity serving concurrent requests.

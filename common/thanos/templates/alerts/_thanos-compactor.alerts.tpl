@@ -26,13 +26,13 @@ groups:
         support_group: {{ default "observability" $root.Values.alerts.support_group }}
         severity: info
         playbook: 'docs/support/playbook/prometheus/thanos_compaction.html'
-        meta: Thanos Compact `{{`{{ $labels.thanos }}`}}` has failed to run and now is halted.
+        meta: Thanos Compact `{{`{{ $labels.thanos }}`}}` has failed to run and is now halted.
       annotations:
         description: |
           Thanos Compact `{{`{{ $labels.thanos }}`}}` has
-          failed to run and now is halted.
+          failed to run and is now halted.
           Long term storage queries will be slower.
-        summary: Thanos Compact halted
+        summary: Thanos Compact has failed to run and is now halted.
 
     - alert: ThanosCompactHighCompactionFailures
       expr: |
@@ -52,7 +52,7 @@ groups:
       annotations:
         description: |
           Thanos Compact `{{`{{ $labels.thanos }}`}}` is failing to execute
-          `{{`{{ $value | humanize }}`}}`of compactions.
+          `{{`{{ $value | humanize }}`}}%`of compactions.
           Long term storage queries will be slower.
         summary: Thanos Compact is failing to execute compactions.
 
@@ -70,16 +70,16 @@ groups:
         support_group: {{ default "observability" $root.Values.alerts.support_group }}
         severity: info
         playbook: 'docs/support/playbook/prometheus/thanos_compaction.html'
-        meta: Thanos Compact `{{`{{ $labels.thanos }}`}}` bucket operations are failing.
+        meta: Thanos Compact `{{`{{ $labels.thanos }}`}}` bucket is having a high number of operation failures.
       annotations:
         description: |
           Thanos Compact `{{`{{ $labels.thanos }}`}}` Bucket is failing
-          to execute `{{`{{ $value | humanize }}`}}` operations.
+          to execute `{{`{{ $value | humanize }}`}}%` operations.
           Long term storage queries will be slower.
         summary: Thanos Compact Bucket is having a high number of operation failures.
 
     - alert: ThanosCompactHasNotRun
-      expr: (time() - max by (prometheus) (max_over_time(thanos_objstore_bucket_last_successful_upload_time{job=~".*thanos.*compact.*", thanos="{{ include "thanos.name" . }}"}[24h])))
+      expr: (time() - max by (thanos) (max_over_time(thanos_objstore_bucket_last_successful_upload_time{job=~".*thanos.*compact.*", thanos="{{ include "thanos.name" . }}"}[24h])))
         / 60 / 60 > 24
       labels:
         service: {{ default "metrics" $root.Values.alerts.service }}
@@ -103,10 +103,9 @@ groups:
         support_group: {{ default "observability" $root.Values.alerts.support_group }}
         severity: warning
         playbook: docs/support/playbook/prometheus/thanos_compaction.html
-        meta: Thanos Compact `{{`{{ $labels.thanos }}`}}`t has disappeared.
+        meta: Thanos Compact `{{`{{ $labels.thanos }}`}}` has disappeared.
       annotations:
         description: |
           Thanos Compact `{{`{{ $labels.thanos }}`}}` has disappeared.
           Prometheus target for the component cannot be discovered.
-          Long term storage queries will be slower.
         summary: Thanos component has disappeared.

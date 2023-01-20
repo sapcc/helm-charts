@@ -19,9 +19,9 @@ groups:
         meta: Thanos Store `{{`{{ $labels.thanos }}`}}` is failing to handle requests.
       annotations:
         description: |
-          Thanos Query `{{`{{ $labels.thanos }}`}}` is failing
-          to handle `{{`{{ $value | humanize }}`}}` of requests.
-        summary: Thanos Store is failing to handle qrpcd requests.
+          Thanos Store `{{`{{ $labels.thanos }}`}}` is failing
+          to handle `{{`{{ $value | humanize }}`}}%` of gRPC requests.
+        summary: Thanos Store is failing to handle gRPC requests.
 
     - alert: ThanosStoreSeriesGateLatencyHigh
       expr: |
@@ -38,7 +38,7 @@ groups:
         meta: Thanos Store `{{`{{ $labels.thanos }}`}}` has a 99th percentile latency for store series gate requests.
       annotations:
         description: |
-          Thanos Query `{{`{{ $labels.thanos }}`}}` has a 99th 
+          Thanos Store `{{`{{ $labels.thanos }}`}}` has a 99th 
           percentile latency of `{{`{{ $value }}`}}`seconds 
           for store series gate requests. 
         summary: Thanos Store has high latency for store series gate requests.
@@ -60,8 +60,7 @@ groups:
       annotations:
         description: |
           Thanos Store `{{`{{ $labels.thanos }}`}}` Bucket is failing
-          to execute `{{`{{ $value | humanize }}`}}`seconds for store
-          series gate requests.
+          to execute `{{`{{ $value | humanize }}`}}%` of operations.
         summary: Thanos Store Bucket is failing to execute operations.
 
     - alert: ThanosStoreObjstoreOperationLatencyHigh
