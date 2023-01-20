@@ -8,6 +8,7 @@
     "hw_video:ram_max_mb": "16"
     "resources:CUSTOM_MEMORY_RESERVABLE_MB": "373352"
     "trait:CUSTOM_NUMASIZE_C48_M729": "required"
+    "hw:cpu_cores": "48"  # used in nova-vmware as cores-per-socket (24vCPU => 48pCPU)
 - name: "hana_c48_m729"
   id: "301"
   vcpus: 48
@@ -18,6 +19,7 @@
     "hw_video:ram_max_mb": "16"
     "resources:CUSTOM_MEMORY_RESERVABLE_MB": "746720"
     "trait:CUSTOM_NUMASIZE_C48_M729": "required"
+    "hw:cpu_cores": "48"  # used in nova-vmware as cores-per-socket (24vCPU => 48pCPU)
 - name: "hana_c96_m1458"
   id: "302"
   vcpus: 96
@@ -29,6 +31,7 @@
     "resources:CUSTOM_MEMORY_RESERVABLE_MB": "1493460"
     "resources:CUSTOM_BIGVM": "2"
     "trait:CUSTOM_NUMASIZE_C48_M729": "required"
+    "hw:cpu_cores": "48"  # used in nova-vmware as cores-per-socket (24vCPU => 48pCPU)
 - name: "hana_c144_m2188"
   id: "303"
   vcpus: 144
@@ -40,7 +43,7 @@
     "resources:CUSTOM_MEMORY_RESERVABLE_MB": "2240196"
     "resources:CUSTOM_BIGVM": "2"
     "trait:CUSTOM_NUMASIZE_C48_M729": "required"
-    "hw:cpu_cores": "2"
+    "hw:cpu_cores": "48"  # used in nova-vmware as cores-per-socket (24vCPU => 48pCPU)
     "vmware:hw_version": "vmx-15"
 - name: "hana_c192_m2917"
   id: "304"
@@ -53,7 +56,7 @@
     "resources:CUSTOM_MEMORY_RESERVABLE_MB": "2986936"
     "resources:CUSTOM_BIGVM": "2"
     "trait:CUSTOM_NUMASIZE_C48_M729": "required"
-    "hw:cpu_cores": "2"
+    "hw:cpu_cores": "48"  # used in nova-vmware as cores-per-socket (24vCPU => 48pCPU)
     "vmware:hw_version": "vmx-15"
 - name: "hana_c384_m5835"
   id: "305"
@@ -66,7 +69,7 @@
     "resources:CUSTOM_MEMORY_RESERVABLE_MB": "5975024"
     "resources:CUSTOM_BIGVM": "2"
     "trait:CUSTOM_NUMASIZE_C48_M729": "required"
-    "hw:cpu_cores": "3"
+    "hw:cpu_cores": "48"  # used in nova-vmware as cores-per-socket (24vCPU => 48pCPU)
     "vmware:hw_version": "vmx-18"
 - name: "hana_c288_m4377"
   id: "311"
@@ -79,7 +82,7 @@
     "resources:CUSTOM_MEMORY_RESERVABLE_MB": "4481528"
     "resources:CUSTOM_BIGVM": "2"
     "trait:CUSTOM_NUMASIZE_C48_M729": "required"
-    "hw:cpu_cores": "3"
+    "hw:cpu_cores": "48"  # used in nova-vmware as cores-per-socket (24vCPU => 48pCPU)
     "vmware:hw_version": "vmx-18"
 
 ### Deprecated BigVM flavors
