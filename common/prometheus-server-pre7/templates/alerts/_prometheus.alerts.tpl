@@ -308,7 +308,7 @@ groups:
       summary: Prometheus scrapes pods multiple times
   {{- end }}
 
-  {{- if and .Values.alertmanagers (gt (len .Values.alertmanagers) 0) }}
+  {{- if and .Values.alertmanagers (gt (len .Values.alertmanagers.hosts) 0) }}
   - alert: PrometheusNotConnectedToAlertmanagers
     # Without max_over_time, failed scrapes could create false negatives, see
     # https://www.robustperception.io/alerting-on-gauges-in-prometheus-2-0 for details.
