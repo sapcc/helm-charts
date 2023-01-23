@@ -8,7 +8,7 @@
     "hw_video:ram_max_mb": "16"
     "resources:CUSTOM_MEMORY_RESERVABLE_MB": "373352"
     "trait:CUSTOM_NUMASIZE_C48_M729": "required"
-    "hw:cpu_cores": "48"  # used in nova-vmware as cores-per-socket (24pCPU = 48vCPU)
+    "hw:cpu_cores": "24"  # used in nova-vmware as cores-per-socket (12pCPU = 24vCPU)
 - name: "hana_c48_m729"
   id: "301"
   vcpus: 48
