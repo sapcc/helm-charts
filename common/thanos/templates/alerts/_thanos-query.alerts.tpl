@@ -6,9 +6,9 @@ groups:
     - alert: ThanosQueryHttpRequestQueryErrorRateHigh
       expr: |
         (
-          sum by (thanos) (rate(http_requests_total{code=~"5..", job=~".*thanos.*query.*", thanos="{{ include "thanos.name" . }}, handler="query"}[5m]))
+          sum by (thanos) (rate(http_requests_total{code=~"5..", job=~".*thanos.*query.*", thanos="{{ include "thanos.name" . }}", handler="query"}[5m]))
         /
-          sum by (thanos) (rate(http_requests_total{job=~".*thanos.*query.*", thanos="{{ include "thanos.name" . }}, handler="query"}[5m]))
+          sum by (thanos) (rate(http_requests_total{job=~".*thanos.*query.*", thanos="{{ include "thanos.name" . }}", handler="query"}[5m]))
         ) * 100 > 5
       for: 5m
       labels:
@@ -26,9 +26,9 @@ groups:
     - alert: ThanosQueryHttpRequestQueryRangeErrorRateHigh
       expr: |
         (
-          sum by (thanos) (rate(http_requests_total{code=~"5..", job=~".*thanos.*query.*", thanos="{{ include "thanos.name" . }}, handler="query_range"}[5m]))
+          sum by (thanos) (rate(http_requests_total{code=~"5..", job=~".*thanos.*query.*", thanos="{{ include "thanos.name" . }}", handler="query_range"}[5m]))
         /
-          sum by (thanos) (rate(http_requests_total{job=~".*thanos.*query.*", thanos="{{ include "thanos.name" . }}, handler="query_range"}[5m]))
+          sum by (thanos) (rate(http_requests_total{job=~".*thanos.*query.*", thanos="{{ include "thanos.name" . }}", handler="query_range"}[5m]))
         ) * 100 > 5
       for: 5m
       labels:
