@@ -6,7 +6,7 @@ groups:
         (
           sum by (prometheus) (rate(http_requests_total{code=~"5..", job=~".*thanos.*query.*", prometheus="{{ include "prometheus.name" . }}", handler="query"}[5m]))
         /
-          sum by (prometheus) (rate(http_requests_total{job=~".*thanos.*query.*", prometheus="{{ include "prometheus.name" . }}"", handler="query"}[5m]))
+          sum by (prometheus) (rate(http_requests_total{job=~".*thanos.*query.*", prometheus="{{ include "prometheus.name" . }}", handler="query"}[5m]))
         ) * 100 > 5
       for: 5m
       labels:
