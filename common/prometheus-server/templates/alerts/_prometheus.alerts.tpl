@@ -21,145 +21,278 @@ groups:
 - name: prometheus.alerts
   rules:
   - alert: PrometheusFailedConfigReload
-    expr: prometheus_config_last_reload_successful{prometheus="{{ include "prometheus.name" . }}"} == 0
-    for: 5m
+    # Without max_over_time, failed scrapes could create false negatives, see
+    # https://www.robustperception.io/alerting-on-gauges-in-prometheus-2-0 for details.
+    expr: max_over_time(prometheus_config_last_reload_successful{prometheus="{{ include "prometheus.name" . }}"}[5m]) == 0
+    for: 10m
     labels:
-      context: availability
       service: {{ default "metrics" $root.Values.alerts.service }}
       support_group: {{ default "observability" $root.Values.alerts.support_group }}
       severity: critical
-      playbook: 'docs/support/playbook/prometheus/failed_config_reload.html'
-      meta: 'Prometheus `{{`{{ $labels.prometheus }}`}}` failed to load it`s configuration.'
+      playbook: docs/support/playbook/prometheus/failed_config_reload.html
+      meta: Prometheus `{{`{{ $labels.prometheus }}`}}` failed to load it`s configuration.
     annotations:
-      description: 'Prometheus `{{`{{ $labels.prometheus }}`}}` failed to load it`s configuration. Prometheus cannot start with a malformed configuration.'
-      summary: Prometheus configuration reload has failed
+      description: |
+        Prometheus `{{`{{ $labels.prometheus }}`}}` failed to 
+        load it`s configuration. Prometheus cannot start with 
+        a malformed configuration.
+      summary: Prometheus configuration reload has failed.
 
-  - alert: PrometheusRuleEvaluationFailed
-    expr: increase(prometheus_rule_evaluation_failures_total{prometheus="{{ include "prometheus.name" . }}"}[5m]) > 0
+  - alert: PrometheusRuleFailures
+    expr: |
+      increase(prometheus_rule_evaluation_failures_total{prometheus="{{ include "prometheus.name" . }}"}[5m]) > 0
     for: 15m
     labels:
-      context: availability
       service: {{ default "metrics" $root.Values.alerts.service }}
       support_group: {{ default "observability" $root.Values.alerts.support_group }}
       severity: warning
-      playbook: 'docs/support/playbook/prometheus/rule_evaluation.html'
-      meta: 'Prometheus `{{`{{ $labels.prometheus }}`}}` failed to evaluate rules.'
-    annotations:
-      description: 'Prometheus `{{`{{ $labels.prometheus }}`}}` failed to evaluate rules. Aggregation or alerting rules may not be loaded or provide false results.'
-      summary: Prometheus rule evaluation failed
+      playbook: docs/support/playbook/prometheus/rule_evaluation.html
+      meta: Prometheus `{{`{{ $labels.prometheus }}`}}` has failed to evaluate rules in the last 5m.
+      description: |
+        Prometheus `{{`{{ $labels.prometheus }}`}}` has failed
+        to evaluate `{{`{{ printf "%.0f" $value }}`}}` rules in the last 5m.
+        Aggregation or alerting rules may not be loaded or
+        provide false results.
+      summary: Prometheus is failing rule evaluations.
 
-  - alert: PrometheusRuleEvaluationSlow
-    expr: prometheus_rule_evaluation_duration_seconds{quantile="0.9", prometheus="{{ include "prometheus.name" . }}"} > 60
-    for: 10m
+  - alert: PrometheusMissingRuleEvaluations
+    expr: |
+      increase(prometheus_rule_group_iterations_missed_total{prometheus="{{ include "prometheus.name" . }}"}[5m]) > 0
+    for: 15m
     labels:
-      context: availability
       service: {{ default "metrics" $root.Values.alerts.service }}
       support_group: {{ default "observability" $root.Values.alerts.support_group }}
-      severity: info
-      playbook: 'docs/support/playbook/prometheus/rule_evaluation.html'
-      meta: 'Prometheus `{{`{{ $labels.prometheus }}`}}` rule evaluation is slow.'
-    annotations:
-      description: 'Prometheus `{{`{{ $labels.prometheus }}`}}` rule evaluation is slow'
-      summary: Prometheus rule evaluation is slow
+      severity: warning
+      playbook: docs/support/playbook/prometheus/rule_evaluation.html
+      meta: Prometheus `{{`{{ $labels.prometheus }}`}}` is missing rule evaluations due to slow rule group evaluation.
+      description: |
+        Prometheus `{{`{{ $labels.prometheus }}`}}` has missed
+        `{{`{{ printf "%.0f" $value }}`}}` rule group evaluations in the last 5m.
+        Aggregation or alerting rules may provide false results.
+      summary: Prometheus is missing rule evaluations due to slow rule group evaluation.
+
+  - alert: PrometheusTargetLimitHit
+    expr: |
+      increase(prometheus_target_scrape_pool_exceeded_target_limit_total{prometheus="{{ include "prometheus.name" . }}"}[5m]) > 0
+    for: 15m
+    labels:
+      service: {{ default "metrics" $root.Values.alerts.service }}
+      support_group: {{ default "observability" $root.Values.alerts.support_group }}
+      severity: warning
+      playbook: docs/support/playbook/prometheus/rule_evaluation.html
+      meta: Prometheus `{{`{{ $labels.prometheus }}`}}` has dropped targets because some scrape configs have exceeded the targets limit.
+      description: |
+        Prometheus `{{`{{ $labels.prometheus }}`}}` has dropped
+        `{{`{{ printf "%.0f" $value }}`}}` targets because the number of targets
+        exceeded the configured target_limit.
+      summary: Prometheus has dropped targets because some scrape configs have exceeded the targets limit.
+
+  - alert: PrometheusLabelLimitHit
+    expr: |
+      increase(prometheus_target_scrape_pool_exceeded_label_limits_total{prometheus="{{ include "prometheus.name" . }}"}[5m]) > 0
+    for: 15m
+    labels:
+      service: {{ default "metrics" $root.Values.alerts.service }}
+      support_group: {{ default "observability" $root.Values.alerts.support_group }}
+      severity: warning
+      playbook: docs/support/playbook/prometheus/rule_evaluation.html
+      meta: Prometheus `{{`{{ $labels.prometheus }}`}}` has dropped targets because some scrape configs have exceeded the labels limit.
+      description: |
+        Prometheus `{{`{{ $labels.prometheus }}`}}` has dropped
+        `{{`{{ printf "%.0f" $value }}`}}` targets because the number of targets
+        exceeded the configured target_limit.
+      summary: Prometheus has dropped targets because some scrape configs have exceeded the labels limit.
+
+  - alert: PrometheusScrapeBodySizeLimitHit
+    expr: |
+      increase(prometheus_target_scrapes_exceeded_body_size_limit_total{prometheus="{{ include "prometheus.name" . }}"}[5m]) > 0
+    for: 15m
+    labels:
+      service: {{ default "metrics" $root.Values.alerts.service }}
+      support_group: {{ default "observability" $root.Values.alerts.support_group }}
+      severity: warning
+      playbook: docs/support/playbook/prometheus/rule_evaluation.html
+      meta: Prometheus `{{`{{ $labels.prometheus }}`}}` has dropped some targets that exceeded body size limit.
+      description: |
+        Prometheus `{{`{{ $labels.prometheus }}`}}` as failed
+        `{{`{{ printf "%.0f" $value }}`}}` scrapes in the last 5m because
+        some targets exceeded the configured body_size_limit.
+      summary: Prometheus has dropped some targets that exceeded body size limit.
+
+  - alert: PrometheusScrapeSampleLimitHit
+    expr: |
+      increase(prometheus_target_scrapes_exceeded_sample_limit_total{prometheus="{{ include "prometheus.name" . }}"}[5m]) > 0
+    for: 15m
+    labels:
+      service: {{ default "metrics" $root.Values.alerts.service }}
+      support_group: {{ default "observability" $root.Values.alerts.support_group }}
+      severity: warning
+      playbook: docs/support/playbook/prometheus/rule_evaluation.html
+      meta: Prometheus `{{`{{ $labels.prometheus }}`}}` has failed scrapes that have exceeded the configured sample limit.
+      description: |
+        Prometheus `{{`{{ $labels.prometheus }}`}}` as failed
+        `{{`{{ printf "%.0f" $value }}`}}` scrapes in the last 5m because
+        some targets exceeded the configured sample_limit.
+      summary: Prometheus has failed scrapes that have exceeded the configured sample limit.
 
   - alert: PrometheusWALCorruption
-    expr: increase(prometheus_tsdb_wal_corruptions_total{prometheus="{{ include "prometheus.name" . }}"}[5m]) > 0
+    expr: |
+      increase(prometheus_tsdb_wal_corruptions_total{prometheus="{{ include "prometheus.name" . }}"}[5m]) > 0
     labels:
-      context: availability
       service: {{ default "metrics" $root.Values.alerts.service }}
       support_group: {{ default "observability" $root.Values.alerts.support_group }}
       severity: info
-      playbook: 'docs/support/playbook/prometheus/wal.html'
-      meta: 'Prometheus `{{`{{ $labels.prometheus }}`}}` has `{{`{{ $value }}`}}` WAL corruptions.'
+      playbook: docs/support/playbook/prometheus/wal.html
+      meta: Prometheus `{{`{{ $labels.prometheus }}`}}` has WAL corruptions.
     annotations:
-      description: 'Prometheus `{{`{{ $labels.prometheus }}`}}` has `{{`{{ $value }}`}}` WAL corruptions.'
-      summary: Prometheus has WAL corruptions
+      description: |
+        Prometheus `{{`{{ $labels.prometheus }}`}}` has `{{`{{ $value }}`}}` WAL corruptions.
+      summary: Prometheus has WAL corruptions.
 
   - alert: PrometheusTSDBReloadsFailing
-    expr: increase(prometheus_tsdb_reloads_failures_total{prometheus="{{ include "prometheus.name" . }}"}[2h]) > 0
-    for: 12h
+    expr: |
+      increase(prometheus_tsdb_reloads_failures_total{prometheus="{{ include "prometheus.name" . }}"}[3h]) > 0
+    for: 4h
     labels:
-      context: availability
       service: {{ default "metrics" $root.Values.alerts.service }}
       support_group: {{ default "observability" $root.Values.alerts.support_group }}
       severity: info
-      playbook: 'docs/support/playbook/prometheus/failed_tsdb_reload.html'
-      meta: 'Prometheus `{{`{{ $labels.prometheus }}`}}` failed to reload TSDB.'
+      playbook: docs/support/playbook/prometheus/failed_tsdb_reload.html
+      meta: Prometheus `{{`{{ $labels.prometheus }}`}}` failed to reload TSDB.
     annotations:
-      description: 'Prometheus `{{`{{ $labels.prometheus }}`}}` had `{{`{{$value | humanize}}`}}` reload failures over the last four hours.'
-      summary: Prometheus has issues reloading data blocks from disk
+      description: |
+        Prometheus `{{`{{ $labels.prometheus }}`}}` had `{{`{{$value | humanize}}`}}`
+        reload failures over the last three hours.
+      summary: Prometheus has issues reloading data blocks from disk.
+
+  - alert: PrometheusTSDBCompactionsFailing
+    expr: |
+      increase(prometheus_tsdb_compactions_failed_total{prometheus="{{ include "prometheus.name" . }}"}[3h]) > 0
+    for: 4h
+    labels:
+      service: {{ default "metrics" $root.Values.alerts.service }}
+      support_group: {{ default "observability" $root.Values.alerts.support_group }}
+      severity: info
+      playbook: docs/support/playbook/prometheus/failed_tsdb_reload.html
+      meta: Prometheus `{{`{{ $labels.prometheus }}`}}` has issues compacting blocks.
+    annotations:
+      description: |
+        Prometheus `{{`{{ $labels.prometheus }}`}}` has detected `{{`{{$value | humanize}}`}}`
+        compaction failures over the last 3h.
+      summary: Prometheus has issues has issues compacting blocks.
 
   - alert: PrometheusNotIngestingSamples
-    expr: rate(prometheus_tsdb_head_samples_appended_total{prometheus="{{ include "prometheus.name" . }}"}[5m]) <= 0 or absent(prometheus_tsdb_head_samples_appended_total{prometheus="{{ include "prometheus.name" . }}"}) or absent(scrape_samples_scraped{prometheus="{{ include "prometheus.name" . }}"})
+    expr: |
+      (
+        rate(prometheus_tsdb_head_samples_appended_total{prometheus="{{ include "prometheus.name" . }}"}[5m]) <= 0
+      and
+        (
+          sum without(scrape_job) (prometheus_target_metadata_cache_entries{prometheus="{{ include "prometheus.name" . }}"}) > 0
+        or
+          sum without(rule_group) (prometheus_rule_group_rules{prometheus="{{ include "prometheus.name" . }}"}) > 0
+        )
+      )
     for: 10m
     labels:
-      context: availability
       service: {{ default "metrics" $root.Values.alerts.service }}
       support_group: {{ default "observability" $root.Values.alerts.support_group }}
       severity: info
-      playbook: 'docs/support/playbook/prometheus/failed_scrapes.html'
-      meta: 'Prometheus `{{`{{ $labels.prometheus }}`}}` not ingesting samples.'
+      playbook: docs/support/playbook/prometheus/failed_scrapes.html
+      meta: Prometheus `{{`{{ $labels.prometheus }}`}}` not ingesting samples.
     annotations:
-      description: 'Prometheus `{{`{{ $labels.prometheus }}`}}` not ingesting samples. Aggregation or alerting rules may not be loaded or provide false results.'
+      description: |
+        Prometheus `{{`{{ $labels.prometheus }}`}}` not
+        ingesting samples. Aggregation or alerting rules
+        may not be loaded or provide false results.
       summary: Prometheus not ingesting samples.
 
-  - alert: PrometheusTargetScrapesDuplicate
-    expr: increase(prometheus_target_scrapes_sample_duplicate_timestamp_total{prometheus="{{ include "prometheus.name" . }}"}[5m]) > 0
+  - alert: PrometheusDuplicateTimestamps
+    expr: |
+      rate(prometheus_target_scrapes_sample_duplicate_timestamp_total{prometheus="{{ include "prometheus.name" . }}"}[5m]) > 0
     for: 10m
     labels:
-      context: availability
       service: {{ default "metrics" $root.Values.alerts.service }}
       support_group: {{ default "observability" $root.Values.alerts.support_group }}
       severity: info
-      playbook: 'docs/support/playbook/prometheus/failed_scrapes.html'
-      meta: 'Prometheus `{{`{{ $labels.prometheus }}`}}` rejects many samples'
+      playbook: docs/support/playbook/prometheus/failed_scrapes.html
+      meta: Prometheus `{{`{{ $labels.prometheus }}`}}` is dropping samples with duplicate timestamps.
     annotations:
-      description: 'Prometheus `{{`{{ $labels.prometheus }}`}}` has many samples rejected due to duplicate timestamps but different values. This indicates metric duplication.'
-      summary: Prometheus rejects many samples
+      description: |
+        Prometheus `{{`{{ $labels.prometheus }}`}}` is dropping
+        `{{`{{ printf "%.4g" $value  }}`}}` samples/s with different values
+        but duplicated timestamp. This indicates metric duplication.
+      summary: Prometheus is dropping samples with duplicate timestamps.
 
   - alert: PrometheusOutOfOrderTimestamps
-    expr: rate(prometheus_target_scrapes_sample_out_of_order_total{prometheus="{{ include "prometheus.name" . }}"}[5m]) > 0
+    expr: |
+      rate(prometheus_target_scrapes_sample_out_of_order_total{prometheus="{{ include "prometheus.name" . }}"}[5m]) > 0
     labels:
-      context: availability
       service: {{ default "metrics" $root.Values.alerts.service }}
       support_group: {{ default "observability" $root.Values.alerts.support_group }}
       severity: info
-      playbook: 'docs/support/playbook/prometheus/failed_scrapes.html'
-      meta: 'Prometheus `{{`{{ $labels.prometheus }}`}}` drops samples with out-of-order timestamps.'
+      playbook: docs/support/playbook/prometheus/failed_scrapes.html
+      meta: Prometheus `{{`{{ $labels.prometheus }}`}}` drops samples with out-of-order timestamps.
     annotations:
-      description: 'Prometheus `{{`{{ $labels.prometheus }}`}}` has many samples rejected due to out-of-order timestamps.'
-      summary: Prometheus drops samples with out-of-order timestamps
+      description: |
+        Prometheus `{{`{{ $labels.prometheus }}`}}` is dropping
+        `{{`{{ printf "%.4g" $value  }}`}}` samples/s with timestamps arriving
+        out of order.
+      summary: Prometheus drops samples with out-of-order timestamps.
 
-  - alert: PrometheusLargeScrapes
-    expr: increase(prometheus_target_scrapes_exceeded_sample_limit_total{prometheus="{{ include "prometheus.name" . }}"}[30m]) > 60
+  - alert: PrometheusTargetSyncFailure
+    expr: |
+      increase(prometheus_target_sync_failed_total{prometheus="{{ include "prometheus.name" . }}"}[30m]) > 0
+    for: 5m
     labels:
-      context: availability
       service: {{ default "metrics" $root.Values.alerts.service }}
       support_group: {{ default "observability" $root.Values.alerts.support_group }}
-      severity: info
-      playbook: 'docs/support/playbook/prometheus/failed_scrapes.html'
-      meta: 'Prometheus `{{`{{ $labels.prometheus }}`}}` fails to scrape targets'
+      severity: critical
+      playbook: docs/support/playbook/prometheus/failed_scrapes.html
+      meta: Prometheus `{{`{{ $labels.prometheus }}`}}` has failed to sync targets.
     annotations:
-      description: 'Prometheus `{{`{{ $labels.prometheus }}`}}` has many scrapes that exceed the sample limit'
-      summary: Prometheus fails to scrape targets.
+      description: |
+        `{{`{{ printf "%.0f" $value }}`}} targets in Prometheus `{{`{{ $labels.prometheus }}`}}`
+        have failed to sync because invalid configuration was supplied.
+      summary: Prometheus has failed to sync targets.
+
+  - alert: PrometheusHighQueryLoad
+    expr: |
+      avg_over_time(prometheus_engine_queries{prometheus="{{ include "prometheus.name" . }}"}[5m])
+      /
+      max_over_time(prometheus_engine_queries_concurrent_max{prometheus="{{ include "prometheus.name" . }}"}[5m])
+      >
+      0.8
+    for: 15m
+    labels:
+      service: {{ default "metrics" $root.Values.alerts.service }}
+      support_group: {{ default "observability" $root.Values.alerts.support_group }}
+      severity: critical
+      playbook: docs/support/playbook/prometheus/failed_scrapes.html
+      meta: Prometheus `{{`{{ $labels.prometheus }}`}}` is reaching its maximum capacity serving concurrent requests.
+    annotations:
+      description: |
+        Prometheus `{{`{{ $labels.prometheus }}`}}` query API
+        has less than 20% available capacity in its query
+        engine for the last 15 minutes.
+      summary: Prometheus is reaching its maximum capacity serving concurrent requests.
 
   {{- if $root.Values.alerts.multipleTargetScrapes.enabled }}
   - alert: PrometheusMultipleTargetScrapes
-    # we exclude the following:
-    # * cadvisor metrics because it has the same instance as the kubelet but a different path
-    # e.g. 10.246.204.80:10250/metrics vs. 10.246.204.80:10250/metrics/cadvisor
-    # * pod service discovery job, we have a dedicated alert for that
-    expr: sum by (job, ccloud_support_group) (up * on(instance, cluster) group_left() (sum by(instance, cluster) (up{job !~ "kubernetes-cadvisors|kubernetes-kubelet|.*-pod-sd|{{ $root.Values.alerts.multipleTargetScrapes.exceptions | join "|" }}"}) > 1))
+    expr: sum by (job, ccloud_support_group) (up * on(instance, cluster) group_left() (sum by(instance, cluster) (up{job!~"{{ $root.Values.alerts.multipleTargetScrapes.exceptions | join "|" }}"}) > 1))
     for: 30m
     labels:
       service: {{ default "metrics" $root.Values.alerts.service }}
       support_group: {{ include "alertSupportGroupOrDefault" "observability" }}
       severity: warning
       playbook: docs/support/playbook/kubernetes/target_scraped_multiple_times.html
-      meta: 'Prometheus is scraping targets of job `{{`{{ $labels.job }}`}}` more than once.'
+      meta: Prometheus is scraping targets of job `{{`{{ $labels.job }}`}}` more than once.
     annotations:
-      description: Prometheus is scraping individual targets of the job `{{`{{ $labels.job }}`}}` more than once. This is likely caused due to incorrectly placed scrape annotations.  <https://{{ include "prometheus.externalURL" . }}/graph?g0.expr={{ urlquery `up * on(instance) group_left() (sum by(instance) (up{job="PLACEHOLDER"}) > 1)` | replace "PLACEHOLDER" "{{ $labels.job }}"}}|Affected targets>
-      summary: Prometheus target scraped multiple times
+      description: |
+        Prometheus is scraping individual targets of the
+        job `{{`{{ $labels.job }}`}}` more than once.
+        This is likely caused due to incorrectly placed
+        scrape annotations.  <https://{{ include "prometheus.externalURL" . }}/graph?g0.expr={{ urlquery `up * on(instance) group_left() (sum by(instance) (up{job="PLACEHOLDER"}) > 1)` | replace "PLACEHOLDER" "{{ $labels.job }}"}}|Affected targets>
+      summary: Prometheus target scraped multiple times.
   {{- end }}
 
   {{- if $root.Values.alerts.multiplePodScrapes.enabled }}
@@ -171,7 +304,7 @@ groups:
       support_group: {{ include "alertSupportGroupOrDefault" "observability" }}
       severity: warning
       playbook: docs/support/playbook/kubernetes/target_scraped_multiple_times.html
-      meta: 'Prometheus is scraping `{{`{{ $labels.pod }}`}}` pods more than once.'
+      meta: Prometheus is scraping `{{`{{ $labels.pod }}`}}` pods more than once.
     annotations:
       description: Prometheus is scraping `{{`{{ $labels.pod }}`}}` pods in namespace `{{`{{ $labels.namespace }}`}}` multiple times. This is likely caused due to incorrectly placed scrape annotations. <https://{{ include "prometheus.externalURL" . }}/graph?g0.expr={{ urlquery `up * on(instance) group_left() (sum by(instance) (up{kubernetes_pod_name=~"PLACEHOLDER.*"}) > 1)` | replace "PLACEHOLDER" "{{ $labels.pod }}"}}|Affected targets>
       summary: Prometheus scrapes pods multiple times
@@ -179,61 +312,116 @@ groups:
 
   {{- if and $root.Values.alertmanagers (gt (len $root.Values.alertmanagers) 0) }}
   - alert: PrometheusNotConnectedToAlertmanagers
-    expr: prometheus_notifications_alertmanagers_discovered{prometheus="{{ include "prometheus.name" . }}"} == 0
+    # Without max_over_time, failed scrapes could create false negatives, see
+    # https://www.robustperception.io/alerting-on-gauges-in-prometheus-2-0 for details.
+    expr: |
+      max_over_time(prometheus_notifications_alertmanagers_discovered{prometheus="{{ include "prometheus.name" . }}"}[5m]) < 1
     for: 10m
     labels:
-      context: availability
       service: {{ default "metrics" $root.Values.alerts.service }}
       support_group: {{ default "observability" $root.Values.alerts.support_group }}
       severity: warning
-      meta: 'Prometheus `{{`{{ $labels.prometheus }}`}}` lost connection to all Alertmanagers'
+      meta: Prometheus `{{`{{ $labels.prometheus }}`}}` lost connection to all Alertmanagers.
     annotations:
-      description: 'Prometheus `{{`{{ $labels.prometheus }}`}}` lost connection to all configured Alertmanagers. Alerting is unavailable.'
-      summary: Prometheus not connected to any Alertmanager
+      description: |
+        Prometheus `{{`{{ $labels.prometheus }}`}}` lost connection
+        to all configured Alertmanagers. Alerting is unavailable.
+      summary: Prometheus not connected to any Alertmanager.
 
   - alert: PrometheusErrorSendingAlerts
-    expr: rate(prometheus_notifications_errors_total{prometheus="{{ include "prometheus.name" . }}"}[5m]) / rate(prometheus_notifications_sent_total{prometheus="{{ include "prometheus.name" . }}"}[5m]) > 0.01
+    expr: |
+      (
+        rate(prometheus_notifications_errors_total{prometheus="{{ include "prometheus.name" . }}"}[5m])
+      /
+        rate(prometheus_notifications_sent_total{prometheus="{{ include "prometheus.name" . }}"}[5m])
+      )
+      * 100
+      > 1
     for: 10m
     labels:
-      context: availability
       service: {{ default "metrics" $root.Values.alerts.service }}
       support_group: {{ default "observability" $root.Values.alerts.support_group }}
-      severity: info
-      meta: 'Prometheus `{{`{{ $labels.prometheus }}`}}` fails to send alerts'
+      severity: warning
+      meta: Prometheus `{{`{{ $labels.prometheus }}`}}` fails to send alerts.
     annotations:
-      description: 'Prometheus `{{`{{ $labels.prometheus }}`}}` is having errors sending alerts to Alertmanager {{`{{ $labels.alertmanager }}`}}'
-      summary: Prometheus fails to send alerts
+      description: |
+        `{{`{{ printf "%.1f" $value }}`}}%` errors while sending 
+        alerts from Prometheus `{{`{{ $labels.prometheus }}`}}`
+        to Alertmanager {{`{{ $labels.alertmanager }}`}}.
+      summary: Prometheus has encountered more than 1% errors sending alerts to a specific Alertmanager.
 
-  - alert: PrometheusNotificationsBacklog
-    expr: prometheus_notifications_queue_length{prometheus="{{ include "prometheus.name" . }}"} > 0
-    for: 10m
+  - alert: PrometheusNotificationQueueRunningFull
+    # Without min_over_time, failed scrapes could create false negatives, see
+    # https://www.robustperception.io/alerting-on-gauges-in-prometheus-2-0 for details.
+    expr: |
+      (
+        predict_linear(prometheus_notifications_queue_length{prometheus="{{ include "prometheus.name" . }}"}[5m], 60 * 30)
+      >
+        min_over_time(prometheus_notifications_queue_capacity{prometheus="{{ include "prometheus.name" . }}"}[5m])
+      )
+    for: 15m
     labels:
-      context: availability
       service: {{ default "metrics" $root.Values.alerts.service }}
       support_group: {{ default "observability" $root.Values.alerts.support_group }}
-      severity: info
-      meta: 'Prometheus `{{`{{ $labels.prometheus }}`}}` queueing notifications'
+      severity: warning
+      meta: Prometheus `{{`{{ $labels.prometheus }}`}}` alert notification queue predicted to run full in less than 30m.
     annotations:
-      description: 'Prometheus `{{`{{ $labels.prometheus }}`}}` is backlogging on the notifications queue. The queue has not been empty for 10 minutes. Current queue length `{{`{{ $value }}`}}`.'
-      summary: Prometheus is queueing notifications.
+      description: |
+        Alert notification queue of Prometheus `{{`{{ $labels.prometheus }}`}}`
+        is running full.
+      summary: Prometheus alert notification queue predicted to run full in less than 30m.
   {{- end }}
 
   {{- if $root.Values.remoteWriteTargets }}
   - alert: PrometheusRemoteWriteDown
-    expr: sum by (prometheus, url) (rate(prometheus_remote_storage_samples_failed_total[5m])) > 0 or sum by (prometheus, url) (rate(prometheus_remote_storage_bytes_total[5m])) <= 0
+    expr: |
+      (
+        (rate(prometheus_remote_storage_failed_samples_total{prometheus="{{ include "prometheus.name" . }}"}[5m]) or rate(prometheus_remote_storage_samples_failed_total{prometheus="{{ include "prometheus.name" . }}"}[5m]))
+      /
+        (
+          (rate(prometheus_remote_storage_failed_samples_total{prometheus="{{ include "prometheus.name" . }}"}[5m]) or rate(prometheus_remote_storage_samples_failed_total{prometheus="{{ include "prometheus.name" . }}"}[5m]))
+        +
+          (rate(prometheus_remote_storage_succeeded_samples_total{prometheus="{{ include "prometheus.name" . }}"}[5m]) or rate(prometheus_remote_storage_samples_total{prometheus="{{ include "prometheus.name" . }}"}[5m]))
+        )
+      )
+      * 100
+      > 1
     for: 15m
     labels:
-      context: availability
       service: {{ default "metrics" $root.Values.alerts.service }}
       support_group: {{ default "observability" $root.Values.alerts.support_group }}
       severity: warning
       no_alert_on_absence: "true"
-      meta: 'Prometheus `{{`{{ $labels.target }}`}}` remote_write to `{{`{{ $labels.url }}`}}` not working. Remote end is not receiving data.'
-      playbook: 'docs/support/playbook/prometheus/remote_write'
+      meta: Prometheus `{{`{{ $labels.prometheus }}`}}` fails to send samples to `{{`{{ $labels.url }}`}}`.
+      playbook: docs/support/playbook/prometheus/remote_write
     annotations:
-      summary: 'Prometheus `{{`{{ $labels.target }}`}}` remote_write to `{{`{{ $labels.url }}`}}` not working. Remote end is not receiving data.'
       description: |
-        Prometheus is configured to ship data to a given URL. This is
-        not working anymore. It could be a problem of the backend not
-        being available or expired certificates. Check pod logs.
+        Prometheus `{{`{{ $labels.prometheus }}`}}` fails to send samples
+        to `{{`{{ $labels.remote_name }}`}}`. It could be a problem of the
+        backend not being available or expired certificates. Check pod logs.
+      summary: Prometheus fails to send samples to remote storage.
+
+  - alert: PrometheusRemoteWriteBehind
+    # Without max_over_time, failed scrapes could create false negatives, see
+    # https://www.robustperception.io/alerting-on-gauges-in-prometheus-2-0 for details.
+    expr: |
+      (
+        max_over_time(prometheus_remote_storage_highest_timestamp_in_seconds{prometheus="{{ include "prometheus.name" . }}"}[5m])
+      - ignoring(remote_name, url) group_right
+        max_over_time(prometheus_remote_storage_queue_highest_sent_timestamp_seconds{prometheus="{{ include "prometheus.name" . }}"}[5m])
+      )
+      > 120
+    for: 15m
+    labels:
+      service: {{ default "metrics" $root.Values.alerts.service }}
+      support_group: {{ default "observability" $root.Values.alerts.support_group }}
+      severity: warning
+      no_alert_on_absence: "true"
+      meta: Prometheus `{{`{{ $labels.prometheus }}`}}` remote write is behind.
+      playbook: docs/support/playbook/prometheus/remote_write
+    annotations:
+      description: |
+        Prometheus `{{`{{ $labels.prometheus }}`}}` remote write is `{{`{{ printf "%.1f" $value }}`}}s`
+        behind for `{{`{{ $labels.url }}`}}`.
+      summary: Prometheus remote write is behind.
   {{- end }}
