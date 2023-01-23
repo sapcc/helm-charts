@@ -12,7 +12,7 @@ Note: The pods define the 'alert-service' label but Prometheus replaces the hyph
 "{{`{{ if $labels.label_alert_service }}`}}{{`{{ $labels.label_alert_service}}`}}{{`{{ else }}`}}{{ required "default value is missing" . }}{{`{{ end }}`}}"
 {{- end -}}
 {{- define "alertSupportGroupOrDefault" -}}
-"{{`{{ if $.Values.alerts.support_group }}`}}{{`{{ $.Values.alerts.support_group }}`}}{{`{{ else if $labels.ccloud_support_group }}`}}{{`{{ $labels.ccloud_support_group }}`}}{{`{{ else }}`}}{{ required "default value is missing" . }}{{`{{ end }}`}}"
+"{{`{{ if $labels.ccloud_support_group }}`}}{{`{{ $labels.ccloud_support_group }}`}}{{`{{ else }}`}}{{ required "default value is missing" . }}{{`{{ end }}`}}"
 {{- end -}}
 
 groups:
@@ -46,6 +46,7 @@ groups:
       severity: warning
       playbook: docs/support/playbook/prometheus/rule_evaluation.html
       meta: Prometheus `{{`{{ $labels.prometheus }}`}}` has failed to evaluate rules in the last 5m.
+    annotations:
       description: |
         Prometheus `{{`{{ $labels.prometheus }}`}}` has failed
         to evaluate `{{`{{ printf "%.0f" $value }}`}}` rules in the last 5m.
@@ -63,6 +64,7 @@ groups:
       severity: warning
       playbook: docs/support/playbook/prometheus/rule_evaluation.html
       meta: Prometheus `{{`{{ $labels.prometheus }}`}}` is missing rule evaluations due to slow rule group evaluation.
+    annotations:
       description: |
         Prometheus `{{`{{ $labels.prometheus }}`}}` has missed
         `{{`{{ printf "%.0f" $value }}`}}` rule group evaluations in the last 5m.
@@ -79,6 +81,7 @@ groups:
       severity: warning
       playbook: docs/support/playbook/prometheus/rule_evaluation.html
       meta: Prometheus `{{`{{ $labels.prometheus }}`}}` has dropped targets because some scrape configs have exceeded the targets limit.
+    annotations:
       description: |
         Prometheus `{{`{{ $labels.prometheus }}`}}` has dropped
         `{{`{{ printf "%.0f" $value }}`}}` targets because the number of targets
@@ -95,6 +98,7 @@ groups:
       severity: warning
       playbook: docs/support/playbook/prometheus/rule_evaluation.html
       meta: Prometheus `{{`{{ $labels.prometheus }}`}}` has dropped targets because some scrape configs have exceeded the labels limit.
+    annotations:
       description: |
         Prometheus `{{`{{ $labels.prometheus }}`}}` has dropped
         `{{`{{ printf "%.0f" $value }}`}}` targets because the number of targets
@@ -111,6 +115,7 @@ groups:
       severity: warning
       playbook: docs/support/playbook/prometheus/rule_evaluation.html
       meta: Prometheus `{{`{{ $labels.prometheus }}`}}` has dropped some targets that exceeded body size limit.
+    annotations:
       description: |
         Prometheus `{{`{{ $labels.prometheus }}`}}` as failed
         `{{`{{ printf "%.0f" $value }}`}}` scrapes in the last 5m because
@@ -127,6 +132,7 @@ groups:
       severity: warning
       playbook: docs/support/playbook/prometheus/rule_evaluation.html
       meta: Prometheus `{{`{{ $labels.prometheus }}`}}` has failed scrapes that have exceeded the configured sample limit.
+    annotations:
       description: |
         Prometheus `{{`{{ $labels.prometheus }}`}}` as failed
         `{{`{{ printf "%.0f" $value }}`}}` scrapes in the last 5m because
