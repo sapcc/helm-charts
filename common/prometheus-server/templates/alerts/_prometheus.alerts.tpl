@@ -12,7 +12,7 @@ Note: The pods define the 'alert-service' label but Prometheus replaces the hyph
 "{{`{{ if $labels.label_alert_service }}`}}{{`{{ $labels.label_alert_service}}`}}{{`{{ else }}`}}{{ required "default value is missing" . }}{{`{{ end }}`}}"
 {{- end -}}
 {{- define "alertSupportGroupOrDefault" -}}
-"{{`{{ if $.Values.alerts.support_group }}`}}{{`{{ $.Values.alerts.support_group }}`}}{{`{{ else if $labels.ccloud_support_group }}`}}{{`{{ $labels.ccloud_support_group }}`}}{{`{{ else }}`}}{{ required "default value is missing" . }}{{`{{ end }}`}}"
+"{{`{{ if $labels.ccloud_support_group }}`}}{{`{{ $labels.ccloud_support_group }}`}}{{`{{ else }}`}}{{ required "default value is missing" . }}{{`{{ end }}`}}"
 {{- end -}}
 
 {{- $name := index . 0 -}}
