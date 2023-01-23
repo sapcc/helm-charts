@@ -6,9 +6,9 @@ groups:
     - alert: ThanosStoreGrpcErrorRate
       expr: |
         (
-          sum by (job) (rate(grpc_server_handled_total{grpc_code=~"Unknown|ResourceExhausted|Internal|Unavailable|DataLoss|DeadlineExceeded", job=~".*thanos.*store.*", thanos="{{ include "thanos.name" . }}"}[5m]))
+          sum by (thanos) (rate(grpc_server_handled_total{grpc_code=~"Unknown|ResourceExhausted|Internal|Unavailable|DataLoss|DeadlineExceeded", job=~".*thanos.*store.*", thanos="{{ include "thanos.name" . }}"}[5m]))
         /
-          sum by (job) (rate(grpc_server_started_total{job=~".*thanos.*store.*", thanos="{{ include "thanos.name" . }}"}[5m]))
+          sum by (thanos) (rate(grpc_server_started_total{job=~".*thanos.*store.*", thanos="{{ include "thanos.name" . }}"}[5m]))
         * 100 > 5
         )
       for: 5m
@@ -26,9 +26,9 @@ groups:
     - alert: ThanosStoreSeriesGateLatencyHigh
       expr: |
         (
-          histogram_quantile(0.99, sum by (job, le) (rate(thanos_bucket_store_series_gate_duration_seconds_bucket{job=~".*thanos.*store.*", thanos="{{ include "thanos.name" . }}"}[5m]))) > 2
+          histogram_quantile(0.99, sum by (thanos, le) (rate(thanos_bucket_store_series_gate_duration_seconds_bucket{job=~".*thanos.*store.*", thanos="{{ include "thanos.name" . }}"}[5m]))) > 2
         and
-          sum by (job) (rate(thanos_bucket_store_series_gate_duration_seconds_count{job=~".*thanos.*store.*", thanos="{{ include "thanos.name" . }}"}[5m])) > 0
+          sum by (thanos) (rate(thanos_bucket_store_series_gate_duration_seconds_count{job=~".*thanos.*store.*", thanos="{{ include "thanos.name" . }}"}[5m])) > 0
         )
       for: 10m
       labels:
@@ -46,9 +46,9 @@ groups:
     - alert: ThanosStoreBucketHighOperationFailures
       expr: |
         (
-          sum by (job) (rate(thanos_objstore_bucket_operation_failures_total{job=~".*thanos.*store.*", thanos="{{ include "thanos.name" . }}"}[5m]))
+          sum by (thanos) (rate(thanos_objstore_bucket_operation_failures_total{job=~".*thanos.*store.*", thanos="{{ include "thanos.name" . }}"}[5m]))
         /
-          sum by (job) (rate(thanos_objstore_bucket_operations_total{job=~".*thanos.*store.*", thanos="{{ include "thanos.name" . }}"}[5m]))
+          sum by (thanos) (rate(thanos_objstore_bucket_operations_total{job=~".*thanos.*store.*", thanos="{{ include "thanos.name" . }}"}[5m]))
         * 100 > 5
         )
       for: 15m
@@ -66,9 +66,9 @@ groups:
     - alert: ThanosStoreObjstoreOperationLatencyHigh
       expr: |
         (
-          sum by (job) (rate(thanos_objstore_bucket_operation_failures_total{job=~".*thanos.*store.*", thanos="{{ include "thanos.name" . }}"}[5m]))
+          sum by (thanos) (rate(thanos_objstore_bucket_operation_failures_total{job=~".*thanos.*store.*", thanos="{{ include "thanos.name" . }}"}[5m]))
         /
-          sum by (job) (rate(thanos_objstore_bucket_operations_total{job=~".*thanos.*store.*", thanos="{{ include "thanos.name" . }}"}[5m]))
+          sum by (thanos) (rate(thanos_objstore_bucket_operations_total{job=~".*thanos.*store.*", thanos="{{ include "thanos.name" . }}"}[5m]))
         * 100 > 5
         )
       for: 10m

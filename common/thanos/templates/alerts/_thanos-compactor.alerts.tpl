@@ -4,7 +4,7 @@ groups:
 - name: thanos-compactor.alerts
   rules:
     - alert: ThanosCompactMultipleRunning
-      expr: sum by (job) (up{job=~".*thanos.*compact.*", thanos="{{ include "thanos.name" . }}"}) > 1
+      expr: sum by (thanos) (up{job=~".*thanos.*compact.*", thanos="{{ include "thanos.name" . }}"}) > 1
       for: 5m
       labels:
         service: {{ default "metrics" $root.Values.alerts.service }}
@@ -37,9 +37,9 @@ groups:
     - alert: ThanosCompactHighCompactionFailures
       expr: |
         (
-          sum by (job) (rate(thanos_compact_group_compactions_failures_total{job=~".*thanos.*compact.*", thanos="{{ include "thanos.name" . }}"}[5m]))
+          sum by (thanos) (rate(thanos_compact_group_compactions_failures_total{job=~".*thanos.*compact.*", thanos="{{ include "thanos.name" . }}"}[5m]))
         /
-          sum by (job) (rate(thanos_compact_group_compactions_total{job=~".*thanos.*compact.*", thanos="{{ include "thanos.name" . }}"}[5m]))
+          sum by (thanos) (rate(thanos_compact_group_compactions_total{job=~".*thanos.*compact.*", thanos="{{ include "thanos.name" . }}"}[5m]))
         * 100 > 5
         )
       for: 15m
@@ -59,9 +59,9 @@ groups:
     - alert: ThanosCompactBucketHighOperationFailures
       expr: |
         (
-          sum by (job) (rate(thanos_objstore_bucket_operation_failures_total{job=~".*thanos.*compact.*", thanos="{{ include "thanos.name" . }}"}[5m]))
+          sum by (thanos) (rate(thanos_objstore_bucket_operation_failures_total{job=~".*thanos.*compact.*", thanos="{{ include "thanos.name" . }}"}[5m]))
         /
-          sum by (job) (rate(thanos_objstore_bucket_operations_total{job=~".*thanos.*compact.*", thanos="{{ include "thanos.name" . }}"}[5m]))
+          sum by (thanos) (rate(thanos_objstore_bucket_operations_total{job=~".*thanos.*compact.*", thanos="{{ include "thanos.name" . }}"}[5m]))
         * 100 > 5
         )
       for: 15m

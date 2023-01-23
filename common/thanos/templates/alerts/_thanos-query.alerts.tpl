@@ -6,9 +6,9 @@ groups:
     - alert: ThanosQueryHttpRequestQueryErrorRateHigh
       expr: |
         (
-          sum by (job) (rate(http_requests_total{code=~"5..", job=~".*thanos.*query.*", thanos="{{ include "thanos.name" . }}, handler="query"}[5m]))
+          sum by (thanos) (rate(http_requests_total{code=~"5..", job=~".*thanos.*query.*", thanos="{{ include "thanos.name" . }}, handler="query"}[5m]))
         /
-          sum by (job) (rate(http_requests_total{job=~".*thanos.*query.*", thanos="{{ include "thanos.name" . }}, handler="query"}[5m]))
+          sum by (thanos) (rate(http_requests_total{job=~".*thanos.*query.*", thanos="{{ include "thanos.name" . }}, handler="query"}[5m]))
         ) * 100 > 5
       for: 5m
       labels:
@@ -26,9 +26,9 @@ groups:
     - alert: ThanosQueryHttpRequestQueryRangeErrorRateHigh
       expr: |
         (
-          sum by (job) (rate(http_requests_total{code=~"5..", job=~".*thanos.*query.*", thanos="{{ include "thanos.name" . }}, handler="query_range"}[5m]))
+          sum by (thanos) (rate(http_requests_total{code=~"5..", job=~".*thanos.*query.*", thanos="{{ include "thanos.name" . }}, handler="query_range"}[5m]))
         /
-          sum by (job) (rate(http_requests_total{job=~".*thanos.*query.*", thanos="{{ include "thanos.name" . }}, handler="query_range"}[5m]))
+          sum by (thanos) (rate(http_requests_total{job=~".*thanos.*query.*", thanos="{{ include "thanos.name" . }}, handler="query_range"}[5m]))
         ) * 100 > 5
       for: 5m
       labels:
@@ -46,9 +46,9 @@ groups:
     - alert: ThanosQueryGrpcServerErrorRate
       expr: |
         (
-          sum by (job) (rate(grpc_server_handled_total{grpc_code=~"Unknown|ResourceExhausted|Internal|Unavailable|DataLoss|DeadlineExceeded", job=~".*thanos.*query.*", thanos="{{ include "thanos.name" . }}"}[5m]))
+          sum by (thanos) (rate(grpc_server_handled_total{grpc_code=~"Unknown|ResourceExhausted|Internal|Unavailable|DataLoss|DeadlineExceeded", job=~".*thanos.*query.*", thanos="{{ include "thanos.name" . }}"}[5m]))
         /
-          sum by (job) (rate(grpc_server_started_total{job=~".*thanos.*query.*", thanos="{{ include "thanos.name" . }}"}[5m]))
+          sum by (thanos) (rate(grpc_server_started_total{job=~".*thanos.*query.*", thanos="{{ include "thanos.name" . }}"}[5m]))
         * 100 > 5
         )
       for: 5m
@@ -66,9 +66,9 @@ groups:
     - alert: ThanosQueryGrpcClientErrorRate
       expr: |
         (
-          sum by (job) (rate(grpc_client_handled_total{grpc_code!="OK", job=~".*thanos.*query.*", thanos="{{ include "thanos.name" . }}"}[5m]))
+          sum by (thanos) (rate(grpc_client_handled_total{grpc_code!="OK", job=~".*thanos.*query.*", thanos="{{ include "thanos.name" . }}"}[5m]))
         /
-          sum by (job) (rate(grpc_client_started_total{job=~".*thanos.*query.*", thanos="{{ include "thanos.name" . }}"}[5m]))
+          sum by (thanos) (rate(grpc_client_started_total{job=~".*thanos.*query.*", thanos="{{ include "thanos.name" . }}"}[5m]))
         ) * 100 > 5
       for: 5m
       labels:
@@ -85,9 +85,9 @@ groups:
     - alert: ThanosQueryHighDNSFailures
       expr: |
         (
-          sum by (job) (rate(grpc_client_handled_total{grpc_code!="OK", job=~".*thanos.*query.*", thanos="{{ include "thanos.name" . }}"}[5m]))
+          sum by (thanos) (rate(grpc_client_handled_total{grpc_code!="OK", job=~".*thanos.*query.*", thanos="{{ include "thanos.name" . }}"}[5m]))
         /
-          sum by (job) (rate(grpc_client_started_total{job=~".*thanos.*query.*", thanos="{{ include "thanos.name" . }}"}[5m]))
+          sum by (thanos) (rate(grpc_client_started_total{job=~".*thanos.*query.*", thanos="{{ include "thanos.name" . }}"}[5m]))
         ) * 100 > 5
       for: 15m
       labels:
@@ -104,9 +104,9 @@ groups:
     - alert: ThanosQueryInstantLatencyHigh
       expr: |
         (
-          histogram_quantile(0.99, sum by (job, le) (rate(http_request_duration_seconds_bucket{job=~".*thanos.*query.*", thanos="{{ include "thanos.name" . }}", handler="query"}[5m]))) > 40
+          histogram_quantile(0.99, sum by (thanos, le) (rate(http_request_duration_seconds_bucket{job=~".*thanos.*query.*", thanos="{{ include "thanos.name" . }}", handler="query"}[5m]))) > 40
         and
-          sum by (job) (rate(http_request_duration_seconds_bucket{job=~".*thanos.*query.*", thanos="{{ include "thanos.name" . }}", handler="query"}[5m])) > 0
+          sum by (thanos) (rate(http_request_duration_seconds_bucket{job=~".*thanos.*query.*", thanos="{{ include "thanos.name" . }}", handler="query"}[5m])) > 0
         )
       for: 10m
       labels:
@@ -124,9 +124,9 @@ groups:
     - alert: ThanosQueryRangeLatencyHigh
       expr: |
         (
-          histogram_quantile(0.99, sum by (job, le) (rate(http_request_duration_seconds_bucket{job=~".*thanos.*query.*", thanos="{{ include "thanos.name" . }}", handler="query_range"}[5m]))) > 40
+          histogram_quantile(0.99, sum by (thanos, le) (rate(http_request_duration_seconds_bucket{job=~".*thanos.*query.*", thanos="{{ include "thanos.name" . }}", handler="query_range"}[5m]))) > 40
         and
-          sum by (job) (rate(http_request_duration_seconds_bucket{job=~".*thanos.*query.*", thanos="{{ include "thanos.name" . }}", handler="query_range"}[5m])) > 0
+          sum by (thanos) (rate(http_request_duration_seconds_bucket{job=~".*thanos.*query.*", thanos="{{ include "thanos.name" . }}", handler="query_range"}[5m])) > 0
         )
       for: 10m
       labels:
