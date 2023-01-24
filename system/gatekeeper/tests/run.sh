@@ -3,7 +3,11 @@ set -eou pipefail
 
 cd "$(dirname "$0")"
 
-: "${HELM:=helm}"
+if hash u8s &>/dev/null; then
+  : "${HELM:=u8s helm3 --}"
+else
+  : "${HELM:=helm}"
+fi
 
 FAST_SHUTDOWN=1 LOG_ALL_REQUESTS=1 helm-manifest-parser 127.0.0.1:8080 &
 pid_helm_manifest_parser=$!

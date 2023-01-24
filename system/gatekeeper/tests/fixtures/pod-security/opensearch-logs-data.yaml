@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  annotations:
+    meta.helm.sh/release-name: opensearch-logs
+    meta.helm.sh/release-namespace: opensearch-logs
+  labels:
+    app.kubernetes.io/managed-by: Helm
+  name: opensearch-logs-data
+  namespace: opensearch-logs
+spec:
+  template:
+    spec:
+      containers:
+      - name: opensearch-logs-data
+        securityContext:
+          capabilities:
+            drop:
+            - ALL
+          runAsNonRoot: true
+          runAsUser: 1000
+      initContainers:
+      - name: fsgroup-volume
+        securityContext:
+          runAsUser: 0
+      - command:
+        - sysctl
+        - -w
+        - vm.max_map_count=262144
+        name: sysctl
+        securityContext:
+          privileged: true
+          runAsUser: 0
+      securityContext:
+        fsGroup: 1000
+        runAsUser: 1000

@@ -29,3 +29,9 @@ kinds:
   - apiGroups: ["batch"]
     kinds: ["CronJob", "Job"]
 {{- end }}
+
+{{/* This generates labels that the DOOP dashboard reads to link back to the source code of constraint templates and constraints. */}}
+{{- define "sources" }}
+template-source:   'https://github.com/sapcc/helm-charts/tree/master/system/gatekeeper/templates/constrainttemplate-{{ index . 0 }}.yaml'
+constraint-source: 'https://github.com/sapcc/helm-charts/tree/master/system/gatekeeper-config/templates/constraint-{{ index . 1 }}.yaml'
+{{- end }}

@@ -1,0 +1,81 @@
+{{- if and .Values.backup.enabled .Values.backup.splitDeployment }}
+
+apiVersion: apps/v1
+kind: Deployment
+
+metadata:
+  name: "{{ .Release.Name }}-pgbackup"
+  labels:
+    app: {{ template "fullname" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      name: "{{ .Release.Name }}-pgbackup"
+  template:
+    metadata:
+      labels:
+        name: "{{ .Release.Name }}-pgbackup"
+      annotations:
+        checksum/secrets:        {{ include (print $.Template.BasePath "/secrets.yaml") . | sha256sum }}
+        checksum/backup-secrets: {{ include (print $.Template.BasePath "/backup-secrets.yaml") . | sha256sum }}
+        prometheus.io/scrape:    "true"
+        prometheus.io/targets:   {{ quote .Values.alerts.prometheus }}
+    spec:
+      containers:
+        - name: backup
+          image: {{ include "preferredRegistry" . }}/backup-tools:v0.7.0
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: BACKUP_PGSQL_FULL
+              value: {{ quote .Values.backup.interval_full }}
+            - name: MY_POD_NAME
+              value: {{ quote (include "fullname" .) }}
+            - name: MY_POD_NAMESPACE
+              value: {{ quote .Release.Namespace }}
+            - name: OS_AUTH_URL
+              value: {{ quote (.Values.backup.os_auth_url | default (include "default_keystone_url" .)) }}
+            - name: OS_AUTH_VERSION
+              value: "3"
+            - name: OS_USERNAME
+              value: db_backup
+            - name: OS_USER_DOMAIN_NAME
+              value: Default
+            - name: OS_PROJECT_NAME
+              value: master
+            - name: OS_PROJECT_DOMAIN_NAME
+              value: ccadmin
+            - name: OS_REGION_NAME
+              value: {{ quote (.Values.backup.os_region_name | default .Values.global.region) }}
+            - name: OS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-pgbackup"
+                  key: backup-password
+            - name: PGSQL_HOST
+              value: '{{ template "fullname" . }}.{{ .Release.Namespace }}.svc'
+            - name: PGPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ template "fullname". }}
+                  key: postgres-password
+          ports:
+          - name: metrics
+            containerPort: 9188
+          {{- if .Values.backup.resources.enabled }}
+          resources:
+            limits:
+              cpu: {{ quote .Values.backup.resources.limits.cpu }}
+              memory: {{ quote .Values.backup.resources.limits.memory }}
+            requests:
+              cpu: {{ quote .Values.backup.resources.requests.cpu }}
+              memory: {{ quote .Values.backup.resources.requests.memory }}
+          {{- end }}
+
+{{- end }}

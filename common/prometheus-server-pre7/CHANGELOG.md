@@ -1,3 +1,15 @@
+## 6.4.16
+
+ * Fix Prometheus alertmanager alerts
+
+## 6.4.14 - 15
+
+ * Deploy alerts w/o alertmanger configured 
+
+## 6.4.13
+
+ * Update k8s apiserver metrics to new names
+
 ## 6.4.11 - 6.4.12
 
  * configurable multipe scrapes alerts

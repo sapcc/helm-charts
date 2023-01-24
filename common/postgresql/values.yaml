@@ -9,6 +9,8 @@ global:
 custom_configmap: false
 ## if custom repository is enabled it takes global/imageRegistry and global/imageNamespace
 custom_repository: false
+## If enabled, image references use .Values.registryAlternateRegion instead of .Values.registry (this currently only affects the backup container).
+useAlternateRegion: false
 
 extensions:
   pg_stat_statements:
@@ -63,21 +65,6 @@ persistence:
 probe_timeout_secs: 3
 probe_failure_threshold: 6 # number of liveness probes that need to fail to trigger a pod restart
 
-replicas: 1
-
-pod:
-  lifecycle:
-    upgrades:
-      deployments:
-        revision_history: 5
-        pod_replacement_strategy: "RollingUpdate"
-        rolling_update:
-          max_unavailable: 1
-          max_surge: 0
-
-upgrades:
-  revisionHistory: 3
-  podReplacementStrategy: Recreate
 ## Configure resource requests and limits
 ## ref: http://kubernetes.io/docs/user-guide/compute-resources/
 ##
@@ -85,20 +72,12 @@ resources: {}
 
 backup:
   enabled: false
-  image: monsoon/backup-tools
-  imageTag: v0.5.15
-  interval_full: 1 hours
-#  os_auth_url: DEFINED-IN-REGION-SECRETS
-#  os_region_name: DEFINED-IN-REGION-SECRETS
-  os_password: DEFINED-IN-REGION-SECRETS
-  os_username: db_backup
-  os_user_domain: Default
-  os_project_name: master
-  os_project_domain: ccadmin
+  splitDeployment: false # "false" is the legacy value, set this to "true" in new deployments
 
-  # if custom repository is enabled, .Values.backup.image must be the full
-  # repository URL; .Values.global.imageRegistry is not prepended
-  custom_repository: false
+  interval_full: 1 hours
+  os_auth_url: null # defined in values.yaml; defaults to cluster-internal Keystone endpoint (default is only valid in the baremetal clusters)
+  os_region_name: null # defaults to .Values.global.region
+  os_password: null # defined in values.yaml; set this to the password for the service user `db_backup@Default`
 
   resources:
     enabled: true
@@ -108,6 +87,17 @@ backup:
     requests:
       memory: 192Mi
       cpu: 100m
+
+  ## The following obsolete fields are all ignored when splitDeployment is set to "true".
+  image: monsoon/backup-tools
+  imageTag: v0.5.15
+  os_username: db_backup
+  os_user_domain: Default
+  os_project_name: master
+  os_project_domain: ccadmin
+  # if custom repository is enabled, .Values.backup.image must be the full
+  # repository URL; .Values.global.imageRegistry is not prepended
+  custom_repository: false
 
 cdc:
   enabled: false

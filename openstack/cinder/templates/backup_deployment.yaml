@@ -17,6 +17,8 @@ template: |
       system: openstack
       type: backend
       component: cinder
+      vcenter: {= host =}
+      datacenter: {= availability_zone =}
   spec:
     replicas: 1
     revisionHistoryLimit: 5
@@ -34,6 +36,8 @@ template: |
           name: cinder-volume-backup-vmware-{= name =}
 {{ tuple . "cinder" "volume-backup-vmware" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 10 }}
         annotations:
+          vcenter: {= host =}
+          datacenter: {= availability_zone =}
           {{- if .Values.proxysql.mode }}
           prometheus.io/scrape: "true"
           prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}

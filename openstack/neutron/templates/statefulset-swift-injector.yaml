@@ -94,6 +94,10 @@ spec:
           ports:
             - name: metrics-inject
               containerPort: 8080
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: metrics-inject
         - name: neutron-linuxbridge-agent
           image: {{$.Values.global.registry}}/loci-neutron:{{$.Values.imageVersionNetworkAgentLinuxBridge | default $.Values.imageVersionNetworkAgent | default $.Values.imageVersion | required "Please set neutron.imageVersionNetworkAgentLinuxBridge or similar"}}
           imagePullPolicy: IfNotPresent
@@ -110,7 +114,7 @@ spec:
               value: "ignore:Unverified HTTPS request"
           readinessProbe:
             exec:
-              command: ["neutron-linuxbridge-readiness", "-config-file", "/etc/neutron/neutron.conf"]
+              command: ["neutron-agent-liveness", "-config-file", "/etc/neutron/neutron.conf", "-agent-type", "Linux bridge agent"]
             initialDelaySeconds: 30
             periodSeconds: 60
             timeoutSeconds: 10

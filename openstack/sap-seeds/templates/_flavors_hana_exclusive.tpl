@@ -8,6 +8,7 @@
     "hw_video:ram_max_mb": "16"
     "trait:CUSTOM_HANA_EXCLUSIVE_HOST": "required"
     "trait:CUSTOM_NUMASIZE_C48_M729": "required"
+    "hw:cpu_cores": "48"  # used in nova-vmware as cores-per-socket (24pCPU = 48vCPU)
 - name: "hana_c48_m729"
   id: "301"
   vcpus: 48
@@ -18,6 +19,7 @@
     "hw_video:ram_max_mb": "16"
     "trait:CUSTOM_HANA_EXCLUSIVE_HOST": "required"
     "trait:CUSTOM_NUMASIZE_C48_M729": "required"
+    "hw:cpu_cores": "48"  # used in nova-vmware as cores-per-socket (24pCPU = 48vCPU)
 - name: "hana_c96_m1458"
   id: "302"
   vcpus: 96
@@ -28,6 +30,7 @@
     "hw_video:ram_max_mb": "16"
     "trait:CUSTOM_HANA_EXCLUSIVE_HOST": "required"
     "trait:CUSTOM_NUMASIZE_C48_M729": "required"
+    "hw:cpu_cores": "48"  # used in nova-vmware as cores-per-socket (24pCPU = 48vCPU)
 - name: "hana_c144_m2188"
   id: "303"
   vcpus: 144
@@ -38,7 +41,7 @@
     "hw_video:ram_max_mb": "16"
     "trait:CUSTOM_HANA_EXCLUSIVE_HOST": "required"
     "trait:CUSTOM_NUMASIZE_C48_M729": "required"
-    "hw:cpu_cores": "2"
+    "hw:cpu_cores": "48"  # used in nova-vmware as cores-per-socket (24pCPU = 48vCPU)
     "vmware:hw_version": "vmx-18"
 - name: "hana_c192_m2917"
   id: "304"
@@ -50,7 +53,7 @@
     "hw_video:ram_max_mb": "16"
     "trait:CUSTOM_HANA_EXCLUSIVE_HOST": "required"
     "trait:CUSTOM_NUMASIZE_C48_M729": "required"
-    "hw:cpu_cores": "2"
+    "hw:cpu_cores": "48"  # used in nova-vmware as cores-per-socket (24pCPU = 48vCPU)
     "vmware:hw_version": "vmx-18"
 - name: "hana_c384_m5835"
   id: "305"
@@ -62,7 +65,7 @@
     "hw_video:ram_max_mb": "16"
     "trait:CUSTOM_HANA_EXCLUSIVE_HOST": "required"
     "trait:CUSTOM_NUMASIZE_C48_M729": "required"
-    "hw:cpu_cores": "3"
+    "hw:cpu_cores": "48"  # used in nova-vmware as cores-per-socket (24pCPU = 48vCPU)
     "vmware:hw_version": "vmx-18"
 - name: "hana_c288_m4377"
   id: "311"
@@ -74,7 +77,7 @@
     "hw_video:ram_max_mb": "16"
     "trait:CUSTOM_HANA_EXCLUSIVE_HOST": "required"
     "trait:CUSTOM_NUMASIZE_C48_M729": "required"
-    "hw:cpu_cores": "3"
+    "hw:cpu_cores": "48"  # used in nova-vmware as cores-per-socket (24pCPU = 48vCPU)
     "vmware:hw_version": "vmx-18"
 - name: "hana_c448_m11671"
   id: "313"
@@ -86,7 +89,7 @@
     "hw_video:ram_max_mb": "16"
     "trait:CUSTOM_HANA_EXCLUSIVE_HOST": "required"
     "trait:CUSTOM_NUMASIZE_C56_M1459": "required"
-    "hw:cpu_cores": "4"
+    "hw:cpu_cores": "56"  # used in nova-vmware as cores-per-socket (24pCPU = 48vCPU)
     "vmware:hw_version": "vmx-18"
 
 {{- if .Values.hana_exclusive_contains_legacy_bigvm_flavors }}

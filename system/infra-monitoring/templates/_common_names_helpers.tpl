@@ -29,3 +29,10 @@ Create chart name and version as used by the chart label.
 {{- define "infraMonitoring.chart" -}}
 {{- printf "%s-%s" .Chart.Name .Chart.Version | replace "+" "_" | replace "_" "-" | trunc 63 | trimSuffix "-" -}}
 {{- end -}}
+
+{{- define "prometheusVMware.fullName" -}}
+{{- $name := index . 0 -}}
+{{- $root := index . 1 -}}
+{{- $vropshostname := split "." $name -}}
+prometheus-vmware-{{ $vropshostname._0 | trimPrefix "vrops-" }}
+{{- end -}}

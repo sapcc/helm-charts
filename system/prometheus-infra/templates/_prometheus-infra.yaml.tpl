@@ -1,3 +1,4 @@
+{{ if not .Values.migration_done }}
 - job_name: 'prometheus-vmware'
   scheme: https
   scrape_interval: {{ .Values.collector.scrapeInterval }}
@@ -28,6 +29,7 @@
   static_configs:
     - targets:
       - "prometheus-vmware.{{ .Values.global.region }}.cloud.sap"
+{{- end }}
 
 - job_name: 'prometheus-infra-snmp'
   scheme: https
@@ -86,7 +88,7 @@
       - '{job="infra-monitoring/image-usage-exporter", __name__!~"^(up|ALERTS.*|scrape.+)"}'
       - '{job="ipmi/ironic", __name__!~"^(up|ALERTS.*|scrape.+)"}'
       - '{job="vmware-esxi", __name__!~"^(up|ALERTS.*|scrape.+)"}'
-      - '{job="infra-monitoring-atlas-sd", __name__!~"^(up|ALERTS.*|scrape.+)"}'
+      - '{job="atlas", __name__!~"^(up|ALERTS.*|scrape.+)"}'
       - '{job="esxi-config", __name__!~"^(up|ALERTS.*|scrape.+)"}'
       - '{job="redfish/bb", __name__!~"^(up|ALERTS.*|scrape.+)"}'
       - '{job="redfish/bm", __name__!~"^(up|ALERTS.*|scrape.+)"}'

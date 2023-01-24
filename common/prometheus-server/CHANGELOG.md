@@ -1,3 +1,23 @@
+## 7.1.22
+
+ * Forward PrometheusMultiple**ScrapeAlerts to the ccloud_support_group label, if present
+
+## 7.1.21
+
+ * Order of coalescence corrected
+
+## 7.1.20
+
+ * Option to set support_group for alerts
+
+## 7.1.19
+
+ * Update k8s apiserver metric names
+
+## 7.1.17 - 7.1.18
+
+* Dedicated thanos seed deployment to support various clusters. Seeds are going to be deployed in metal only
+
 ## 7.1.15 - 7.1.16
 
 * remoteWrite alerting added

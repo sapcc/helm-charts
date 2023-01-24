@@ -63,7 +63,9 @@ groups:
       summary: ApiServerLatency is unusally high
 
   - alert: KubeAggregatedAPIDown
-    expr: (1 - max by(name, namespace)(avg_over_time(aggregator_unavailable_apiservice[10m]))) * 100 < 85
+    # We have to filter by job here because somehow the kubelet is also exporting this metric ?! and in admin/virtual/kubernikus we also scape apiservers in the
+    # kubernikus namespace
+    expr: (1 - max by(name, namespace)(avg_over_time(aggregator_unavailable_apiservice{job="kubernetes-apiserver"}[10m]))) * 100 < 85
     for: 5m
     labels:
       tier: {{ required ".Values.tier missing" .Values.tier }}
@@ -72,5 +74,5 @@ groups:
       severity: warning
       context: apiserver
     annotations:
-      description: "Kubernetes aggregated API {{`{{ $labels.namespace }}`}}/{{`{{ $labels.name }}`}} has been only {{`{{ $value | humanize }}`}}% available over the last 10m."
+      description: "Kubernetes aggregated API {{`{{ $labels.namespace }}`}}/{{`{{ $labels.name }}`}} has been only {{`{{ $value | humanize }}`}}% available over the last 10m. Run `kubectl get apiservice | grep -v Local` and confirm the services of aggregated APIs have active endpoints."
       summary: Kubernetes aggregated API is down.

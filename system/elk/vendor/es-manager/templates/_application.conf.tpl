@@ -34,7 +34,7 @@ hosts = [
   },
   {
     host = "http://elastiflow-master.elastiflow:9200"
-    name = "{{ .Values.global.cluster }} elastiflow cluster"
+    name = "{{ .Values.global.cluster }} Elastiflow cluster"
     auth = {
       username = "{{.Values.global.elastiflow_admin_user}}"
       password = "{{.Values.global.elastiflow_admin_password}}"
@@ -42,7 +42,7 @@ hosts = [
   },
   {
     host = "https://opensearch-logs-client.opensearch-logs:9200"
-    name = "Opensearch Logs Cluster"
+    name = "{{ .Values.global.cluster }} OpenSearch Logs Cluster"
     auth = {
       username = "{{.Values.global.elk_opensearch_admin_user}}"
       password = "{{.Values.global.elk_opensearch_admin_password}}"

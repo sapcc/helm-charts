@@ -37,6 +37,7 @@ cronus:
   listenAddr:
     http: :{{ .Values.cronus.http }} # default :5000
     smtp: :{{ .Values.cronus.smtp }} # default :1025
+    prometheus: :{{ .Values.cronus.prometheus }} # default :2772
 {{- if .Values.cronus.listenProxyProtocol }}
     proxyProtocol: {{ .Values.cronus.listenProxyProtocol }}
 {{- end }}
