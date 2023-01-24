@@ -48,12 +48,18 @@ function initdb {
     readroleobject 'mysql_exporter' '/opt/mariadb/etc/sql/'
     readrolegrant 'mysql_exporter' '/opt/mariadb/etc/sql/'
     setuprole 'mysql_exporter' "${DB_ROLE_PRIVS}" "${DB_ROLE_OBJ}" "${DB_ROLE_GRANT}"
-    setupuser "${MARIADB_ROOT_USER}" "${MARIADB_ROOT_PASSWORD}" 'fullaccess' 0 '%'
-    setupuser "${MARIADB_ROOT_USER}" "${MARIADB_ROOT_PASSWORD}" 'fullaccess' 0 '::1'
-    setupuser "${MARIADB_MONITORING_USER}" "${MARIADB_MONITORING_PASSWORD}" 'mysql_exporter' "${MARIADB_MONITORING_CONNECTION_LIMIT}" '%'
-    setupuser "${MARIADB_MONITORING_USER}" "${MARIADB_MONITORING_PASSWORD}" 'mysql_exporter' "${MARIADB_MONITORING_CONNECTION_LIMIT}" '127.0.0.1'
-    setupuser "${MARIADB_MONITORING_USER}" "${MARIADB_MONITORING_PASSWORD}" 'mysql_exporter' "${MARIADB_MONITORING_CONNECTION_LIMIT}" 'localhost'
-    setupuser "${MARIADB_MONITORING_USER}" "${MARIADB_MONITORING_PASSWORD}" 'mysql_exporter' "${MARIADB_MONITORING_CONNECTION_LIMIT}" '::1'
+    setupuser "${MARIADB_ROOT_USER}" "${MARIADB_ROOT_PASSWORD}" 'fullaccess' 0 '%' 'ed25519' "WITH ADMIN OPTION"
+    setupuser "${MARIADB_ROOT_USER}" "${MARIADB_ROOT_PASSWORD}" 'fullaccess' 0 '::1' 'ed25519' "WITH ADMIN OPTION"
+    setupuser "${MARIADB_MONITORING_USER}" "${MARIADB_MONITORING_PASSWORD}" 'mysql_exporter' "${MARIADB_MONITORING_CONNECTION_LIMIT}" '%' 'mysql_native_password' " "
+    setupuser "${MARIADB_MONITORING_USER}" "${MARIADB_MONITORING_PASSWORD}" 'mysql_exporter' "${MARIADB_MONITORING_CONNECTION_LIMIT}" '::1' 'mysql_native_password' " "
+    setupuser "${MARIADB_MONITORING_USER}" "${MARIADB_MONITORING_PASSWORD}" 'mysql_exporter' "${MARIADB_MONITORING_CONNECTION_LIMIT}" 'localhost' 'mysql_native_password' " "
+    setdefaultrole 'fullaccess' "${MARIADB_ROOT_USER}" '%'
+    setdefaultrole 'fullaccess' "${MARIADB_ROOT_USER}" '::1'
+    setdefaultrole 'mysql_exporter' "${MARIADB_MONITORING_USER}" '%'
+    setdefaultrole 'mysql_exporter' "${MARIADB_MONITORING_USER}" '::1'
+    setdefaultrole 'mysql_exporter' "${MARIADB_MONITORING_USER}" 'localhost'
+    grantrole 'mysql_exporter' "${MARIADB_ROOT_USER}" '%' 'WITH ADMIN OPTION'
+    grantrole 'mysql_exporter' "${MARIADB_ROOT_USER}" '::1' 'WITH ADMIN OPTION'
     listdbandusers
     stopdb
   fi

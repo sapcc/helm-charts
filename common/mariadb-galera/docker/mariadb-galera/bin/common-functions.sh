@@ -95,7 +95,8 @@ function readrolegrant {
 # readroleprivileges, readroleobject, readrolegrant have to be triggered before to populate the related variables
 # setuprole 'mysql_exporter' "${DB_ROLE_PRIVS}" "${DB_ROLE_OBJ}" "${DB_ROLE_GRANT}"
 function setuprole {
-  if [ -f "${BASE}/etc/sql/role.sql.tpl" ]; then
+  local tplfile=setuprole.sql.tpl
+  if [ -f "${BASE}/etc/sql/${tplfile}" ]; then
     local int
     export DB_ROLE=${1}
     export DB_ROLE_PRIVS=${2}
@@ -106,9 +107,9 @@ function setuprole {
     for (( int=${MAX_RETRIES}; int >=1; int-=1));
       do
       if [ "$0" == "/opt/mariadb/bin/entrypoint-job-config.sh" ]; then
-        cat ${BASE}/etc/sql/role.sql.tpl | envsubst | $(${MYSQL_SVC_CONNECT})
+        cat ${BASE}/etc/sql/${tplfile} | envsubst | $(${MYSQL_SVC_CONNECT})
       else
-        cat ${BASE}/etc/sql/role.sql.tpl | envsubst | mysql --protocol=socket --user=root --batch
+        cat ${BASE}/etc/sql/${tplfile} | envsubst | mysql --protocol=socket --user=root --batch
       fi
       if [ $? -ne 0 ]; then
         logerror "${FUNCNAME[0]}" "'${DB_ROLE}' role setup has been failed(${int} retries left)"
@@ -128,28 +129,111 @@ function setuprole {
     export -n DB_ROLE_OBJ
     export -n DB_ROLE_GRANT
   else
-    loginfo "${FUNCNAME[0]}" "role setup skipped because of missing ${BASE}/etc/sql/role.sql.tpl file"
+    loginfo "${FUNCNAME[0]}" "role setup skipped because of missing ${BASE}/etc/sql/${tplfile} file"
   fi
 }
 
-# setup username password rolename rolename connectionlimit hostname
-# setupuser "${MARIADB_MONITORING_USER}" "${MARIADB_MONITORING_PASSWORD}" 'mysql_exporter' "${MARIADB_MONITORING_CONNECTION_LIMIT}" '%'
+# grantrole rolename username hostname admingrant(or empty)
+# grantrole 'mysql_exporter' "${MARIADB_MONITORING_USER}" '%' 'WITH ADMIN OPTION'
+function grantrole {
+  local tplfile=grantrole.sql.tpl
+  if [ -f "${BASE}/etc/sql/${tplfile}" ]; then
+    local int
+    export DB_ROLE=${1}
+    export DB_USER=${2}
+    export DB_HOST=${3}
+    export DB_ADMIN_GRANT=${4}
+
+    loginfo "${FUNCNAME[0]}" "grant ${DB_ROLE} role to '${DB_USER}@${DB_HOST}'"
+    for (( int=${MAX_RETRIES}; int >=1; int-=1));
+      do
+      if [ "$0" == "/opt/mariadb/bin/entrypoint-job-config.sh" ]; then
+        cat ${BASE}/etc/sql/${tplfile} | envsubst | $(${MYSQL_SVC_CONNECT})
+      else
+        cat ${BASE}/etc/sql/${tplfile} | envsubst | mysql --protocol=socket --user=root --batch
+      fi
+      if [ $? -ne 0 ]; then
+        logerror "${FUNCNAME[0]}" "'${DB_ROLE}' role grant has been failed(${int} retries left)"
+        sleep ${WAIT_SECONDS}
+      else
+        loginfo "${FUNCNAME[0]}" "'${DB_ROLE}' role grant done"
+        break
+      fi
+    done
+
+    if [ ${int} -eq 0 ]; then
+      logerror "${FUNCNAME[0]}" "role setup has been finally failed"
+      exit 1
+    fi
+    export -n DB_HOST
+    export -n DB_USER
+    export -n DB_ROLE
+    export -n DB_ADMIN_GRANT
+  else
+    loginfo "${FUNCNAME[0]}" "role grant skipped because of missing ${BASE}/etc/sql/${tplfile} file"
+  fi
+}
+
+# setdefaultrole rolename username hostname
+# setdefaultrole 'mysql_exporter' "${MARIADB_MONITORING_USER}" '%'
+function setdefaultrole {
+  local tplfile=setdefaultrole.sql.tpl
+  if [ -f "${BASE}/etc/sql/${tplfile}" ]; then
+    local int
+    export DB_ROLE=${1}
+    export DB_USER=${2}
+    export DB_HOST=${3}
+
+    loginfo "${FUNCNAME[0]}" "set ${DB_ROLE} as default role to '${DB_USER}@${DB_HOST}'"
+    for (( int=${MAX_RETRIES}; int >=1; int-=1));
+      do
+      if [ "$0" == "/opt/mariadb/bin/entrypoint-job-config.sh" ]; then
+        cat ${BASE}/etc/sql/${tplfile} | envsubst | $(${MYSQL_SVC_CONNECT})
+      else
+        cat ${BASE}/etc/sql/${tplfile} | envsubst | mysql --protocol=socket --user=root --batch
+      fi
+      if [ $? -ne 0 ]; then
+        logerror "${FUNCNAME[0]}" "'${DB_ROLE}' default role config has been failed(${int} retries left)"
+        sleep ${WAIT_SECONDS}
+      else
+        loginfo "${FUNCNAME[0]}" "'${DB_ROLE}' default role config done"
+        break
+      fi
+    done
+
+    if [ ${int} -eq 0 ]; then
+      logerror "${FUNCNAME[0]}" "default role config has been finally failed"
+      exit 1
+    fi
+    export -n DB_HOST
+    export -n DB_USER
+    export -n DB_ROLE
+  else
+    loginfo "${FUNCNAME[0]}" "default role config skipped because of missing ${BASE}/etc/sql/${tplfile} file"
+  fi
+}
+
+# setup username password rolename rolename connectionlimit hostname authplugin admingrant(or empty)
+# setupuser "${MARIADB_MONITORING_USER}" "${MARIADB_MONITORING_PASSWORD}" 'mysql_exporter' "${MARIADB_MONITORING_CONNECTION_LIMIT}" '%' 'mysql_native_password' 'WITH ADMIN OPTION'
 function setupuser {
-  if [ -f "${BASE}/etc/sql/user.sql.tpl" ] && [ -n "${1}" ] && [ -n "${2}" ]; then
+  local tplfile=setupuser.sql.tpl
+  if [ -f "${BASE}/etc/sql/${tplfile}" ] && [ -n "${1}" ] && [ -n "${2}" ]; then
     local int
     export DB_USER=${1}
     export DB_PASS=${2}
     export DB_ROLE=${3}
     export CONN_LIMIT=${4}
     export DB_HOST=${5}
+    export DB_AUTHPLUGIN=${6}
+    export DB_ADMIN_GRANT=${7}
 
     loginfo "${FUNCNAME[0]}" "setup '${DB_USER}@${DB_HOST}' privileges"
     for (( int=${MAX_RETRIES}; int >=1; int-=1));
       do
       if [ "$0" == "/opt/mariadb/bin/entrypoint-job-config.sh" ]; then
-        cat ${BASE}/etc/sql/user.sql.tpl | envsubst | $(${MYSQL_SVC_CONNECT})
+        cat ${BASE}/etc/sql/${tplfile} | envsubst | $(${MYSQL_SVC_CONNECT})
       else
-        cat ${BASE}/etc/sql/user.sql.tpl | envsubst | mysql --protocol=socket --user=root --batch
+        cat ${BASE}/etc/sql/${tplfile} | envsubst | mysql --protocol=socket --user=root --batch
       fi
       if [ $? -ne 0 ]; then
         logerror "${FUNCNAME[0]}" "'${DB_USER}@${DB_HOST}' user setup has been failed(${int} retries left)"
@@ -180,8 +264,10 @@ function setupuser {
     export -n DB_ROLE
     export -n DB_HOST
     export -n CONN_LIMIT
+    export -n DB_AUTHPLUGIN
+    export -n DB_ADMIN_GRANT
   else
-    loginfo "${FUNCNAME[0]}" "user setup skipped because of missing ${BASE}/etc/sql/user.sql.tpl file and/or missing MARIADB_XYZ_USER and/or MARIADB_XYZ_PASSWORD env vars"
+    loginfo "${FUNCNAME[0]}" "user setup skipped because of missing ${BASE}/etc/sql/${tplfile} file and/or missing MARIADB_XYZ_USER and/or MARIADB_XYZ_PASSWORD env vars"
   fi
 }
 
@@ -191,9 +277,9 @@ function listdbandusers {
     do
     loginfo "${FUNCNAME[0]}" "list databases and users(${int} retries left)"
     if [ "$0" == "/opt/mariadb/bin/entrypoint-job-config.sh" ]; then
-      ${MYSQL_SVC_CONNECT} --execute="SHOW DATABASES; SELECT user,host FROM mysql.user; SELECT * FROM information_schema.APPLICABLE_ROLES;" --table
+      ${MYSQL_SVC_CONNECT} --execute="SHOW DATABASES; SELECT user,is_role,host,Grant_priv,Super_priv,default_role,plugin FROM mysql.user ORDER BY user;" --table
     else
-      mysql --protocol=socket --user=root --batch --execute="SHOW DATABASES; SELECT user,host FROM mysql.user; SELECT * FROM information_schema.APPLICABLE_ROLES;" --table
+      mysql --protocol=socket --user=root --batch --execute="SHOW DATABASES; SELECT user,is_role,host,Grant_priv,Super_priv,default_role,plugin FROM mysql.user ORDER BY user;" --table
     fi
     if [ $? -ne 0 ]; then
       logerror "${FUNCNAME[0]}" "list databases and users has been failed"

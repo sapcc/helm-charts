@@ -8,9 +8,9 @@ source /opt/${SOFTWARE_NAME}/bin/common-functions.sh
 waitfordatabase
 loginfo "null" "configuration job started"
 {{- if $.Values.monitoring.mysqld_exporter.enabled }}
-setupuser "${MARIADB_MONITORING_USER}" "${MARIADB_MONITORING_PASSWORD}" 'mysql_exporter' "${MARIADB_MONITORING_CONNECTION_LIMIT}" '%'
-setupuser "${MARIADB_MONITORING_USER}" "${MARIADB_MONITORING_PASSWORD}" 'mysql_exporter' "${MARIADB_MONITORING_CONNECTION_LIMIT}" '127.0.0.1'
-setupuser "${MARIADB_MONITORING_USER}" "${MARIADB_MONITORING_PASSWORD}" 'mysql_exporter' "${MARIADB_MONITORING_CONNECTION_LIMIT}" '::1'
+setupuser "${MARIADB_MONITORING_USER}" "${MARIADB_MONITORING_PASSWORD}" 'mysql_exporter' "${MARIADB_MONITORING_CONNECTION_LIMIT}" '%' 'mysql_native_password' " "
+setupuser "${MARIADB_MONITORING_USER}" "${MARIADB_MONITORING_PASSWORD}" 'mysql_exporter' "${MARIADB_MONITORING_CONNECTION_LIMIT}" '127.0.0.1' 'mysql_native_password' " "
+setupuser "${MARIADB_MONITORING_USER}" "${MARIADB_MONITORING_PASSWORD}" 'mysql_exporter' "${MARIADB_MONITORING_CONNECTION_LIMIT}" '::1' 'mysql_native_password' " "
 {{- end }}
 
 {{- /* Load additional configuration files for MariaDB to be processed by the job container */}}
@@ -43,7 +43,21 @@ setuprole {{ $mariadbconfigValue.name | quote }} {{ $configfile.privileges | joi
           {{- end }}
         {{- end }}
         {{- if and $usernameEnvVarFound $passwordEnvVarFound }}
-setupuser {{ $configfile.username | quote }} {{ $configfile.password | quote }} {{ $configfile.role | quote }} {{ $configfile.maxconnections | quote }} {{ $hostnameValue | quote }}
+          {{- if $configfile.adminoption }}
+setupuser {{ $configfile.username | quote }} {{ $configfile.password | quote }} {{ $configfile.defaultrole | quote }} {{ $configfile.maxconnections | quote }} {{ $hostnameValue | quote }} {{ $configfile.authplugin | quote }} "WITH ADMIN OPTION"
+          {{- else }}
+setupuser {{ $configfile.username | quote }} {{ $configfile.password | quote }} {{ $configfile.defaultrole | quote }} {{ $configfile.maxconnections | quote }} {{ $hostnameValue | quote }} {{ $configfile.authplugin | quote }} " "
+          {{- end }}
+setdefaultrole {{ $configfile.defaultrole | quote }} {{ $configfile.username | quote }} {{ $hostnameValue | quote }}
+          {{- if and (hasKey $configfile "additionalroles") (kindIs "slice" $configfile.additionalroles) }}
+            {{- range $rolenameKey, $rolenameValue := $configfile.additionalroles }}
+              {{- if $configfile.adminoption }}
+grantrole {{ $rolenameValue | quote }} {{ $configfile.username | quote }} {{ $hostnameValue | quote }} "WITH ADMIN OPTION"
+              {{- else }}
+grantrole {{ $rolenameValue | quote }} {{ $configfile.username | quote }} {{ $hostnameValue | quote }} " "
+              {{- end }}
+            {{- end }}
+          {{- end }}
         {{- end }}
       {{- end }}
       {{- if (not $usernameEnvVarFound) }}
@@ -55,6 +69,9 @@ setupuser {{ $configfile.username | quote }} {{ $configfile.password | quote }} 
     {{- end }}
   {{- end }}
 {{- end }}
+
+
+
 
 listdbandusers
 

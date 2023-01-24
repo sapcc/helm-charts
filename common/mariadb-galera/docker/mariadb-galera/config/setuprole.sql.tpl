@@ -1,8 +1,8 @@
 USE mysql;
-set @rolename := '${DB_ROLE}';
-set @roleprivs := '${DB_ROLE_PRIVS}';
-set @roleobj := '${DB_ROLE_OBJ}';
-set @rolegrant := '${DB_ROLE_GRANT}';
+SET @rolename := '${DB_ROLE}';
+SET @roleprivs := '${DB_ROLE_PRIVS}';
+SET @roleobj := '${DB_ROLE_OBJ}';
+SET @rolegrant := '${DB_ROLE_GRANT}';
 SET @createrole := CONCAT("CREATE OR REPLACE ROLE ", QUOTE(@rolename));
 SET @setrole := CONCAT("GRANT ", @roleprivs, " ON ", @roleobj, " TO ", QUOTE(@rolename), " ", @rolegrant);
 PREPARE stmt_runcode FROM @createrole;
