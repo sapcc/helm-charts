@@ -30,6 +30,8 @@ spec:
         pod.beta.kubernetes.io/hostname:  cc-fabric-{{ $platform }}-agent
         configmap-etc-hash: {{ include (print $.Template.BasePath "/configmap-etc.yaml") $ | sha256sum }}
         configmap-etc-cc-fabric: {{ include (print $.Template.BasePath "/configmap-etc-cc-fabric.yaml") $ | sha256sum }}
+        prometheus.io/scrape: "true"
+        prometheus.io/targets: "{{ required "$.Values.alerts.prometheus missing" $.Values.alerts.prometheus }}"
     spec:
       hostname: cc-fabric-{{ $platform }}-agent
       containers:
@@ -59,6 +61,9 @@ spec:
                 secretKeyRef:
                   name: sentry
                   key: neutron.DSN.python
+          ports:
+            - containerPort: 9090
+              name: metrics
           volumeMounts:
             - mountPath: /etc/neutron/neutron.conf
               name: neutron-etc
