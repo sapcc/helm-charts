@@ -4,6 +4,27 @@ owner-info:
     - "Olaf Heydorn"
   helm-chart-url: "https://github.com/sapcc/helm-charts/tree/master/prometheus-exporters/elk-query-exporter"
 
+prometheus-monitors:
+  podMonitor:
+    enabled: true
+  nameOverride: elk-query-exporter
+  jobLabel: component
+  prometheus: "infra-frontend"
+  scrapeTimeout: 50s
+  matchLabels:
+    component: elk-query-exporter
+  customMetricRelabelings:
+    - regex: "pod|app_kubernetes_io_managed_by|container|cluster_type|cluster|pod_template_hash"
+      action: labeldrop
+    - sourceLabels: [__name__, failed]
+      regex: "^elasticsearch_rabbitmq_.+;([a-z]+)-(.*)"
+      replacement: "$1"
+      targetLabel: service
+    - sourceLabels: [__name__, failed]
+      regex: "^elasticsearch_dbconnection_.+;([a-z]+)-(.*)"
+      replacement: "$1"
+      targetLabel: service
+
 enabled: false
 version: "20220317091500"
 listen_port: 9206
