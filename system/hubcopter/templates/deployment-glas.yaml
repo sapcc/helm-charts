@@ -60,16 +60,20 @@ spec:
           args: [ ]
           env:
             - name:  GIT_SSH_COMMAND
-              value: 'ssh -i /etc/glas/github_enterprise_secret -o StrictHostKeyChecking=accept-new'
+              value: 'ssh -o StrictHostKeyChecking=accept-new'
             - name:  GLAS_DEBUG
               value: 'true'
+            - name: GLAS_DEPLOY_KEYS_PATH
+              value: '/etc/glas'
             - name:  GLAS_STATE_DIR
               value: '/tmp/glas'
           volumeMounts:
-            - mountPath: /etc/glas/github_enterprise_secret
+{{- range $k,$v := required ".Values.hubcopter.deploy_keys is missing" .Values.hubcopter.deploy_keys }}
+            - mountPath: /etc/glas/{{ $k }}
               name: config
               readOnly: true
-              subPath: github_enterprise_secret
+              subPath: {{ $k }}
+{{- end }}
             - name: cache
               mountPath: /tmp/glas
           livenessProbe:
