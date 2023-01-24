@@ -41,7 +41,7 @@ hosts = [
     }
   },
   {
-    host = "https://opensearch-logs-client.{{ .Values.global.clusterType }}.{{ .Values.global.region }}.{{ .Values.global.domain }}:9200"
+    host = "https://opensearch-logs-client.opensearch-logs:9200"
     name = "{{ .Values.global.cluster }} OpenSearch Logs Cluster"
     auth = {
       username = "{{.Values.global.elk_opensearch_admin_user}}"
