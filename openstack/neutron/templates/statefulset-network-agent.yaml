@@ -34,6 +34,9 @@ spec:
         {{- include "utils.linkerd.pod_and_service_annotation" $ | indent 8 }}
         config.linkerd.io/skip-inbound-ports: "22,53,80,443"
         config.linkerd.io/skip-outbound-ports: "22,53,80,443"
+        prometheus.io/scrape: "true"
+        prometheus.io/targets: {{ required "$.Values.alerts.prometheus missing" $.Values.alerts.prometheus | quote }}
+        prometheus.io/metrics-prefix: "openstack_network_agent_"
       labels:
         name: neutron-network-agent-{{ $az }}
 {{ tuple $ "neutron" "agent" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
@@ -147,7 +150,26 @@ spec:
               mountPath: /dev/log
               readOnly: false
             {{- include "utils.trust_bundle.volume_mount" $ | indent 12 }}
-{{- if $.Values.agent.neutron_l3 | default false }}
+        - name: agent-checks-exporter
+          image: {{$.Values.global.registry}}/openstack-agent-checks:{{ $.Values.imageVersionAgentChecksExporter | default "latest" }}
+          args: [ "neutron-linuxbridge-dhcp-exporter", "--update-interval=10", "--metric-prefix=neutron_agent_checks_" ]
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: metrics-export
+              containerPort: 9116
+          livenessProbe:
+            httpGet:
+              path: /metrics
+              port: 9116
+            initialDelaySeconds: 15
+            timeoutSeconds: 5
+            periodSeconds: 60
+          resources:
+  {{ toYaml $.Values.pod.resources.agent_checks_exporter | indent 12 }}
+          volumeMounts:
+            - name: network-namespace
+              mountPath: /var/run/netns
+  {{- if $.Values.agent.neutron_l3 | default false }}
         - name: neutron-l3-agent
           image: {{$.Values.global.registry}}/loci-neutron:{{$.Values.imageVersionNetworkAgentL3 | default $.Values.imageVersionNetworkAgent | default $.Values.imageVersion | required "Please set neutron.imageVersionNetworkAgentL3 or similar"}}
           imagePullPolicy: IfNotPresent

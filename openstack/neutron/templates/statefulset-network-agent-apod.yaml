@@ -111,6 +111,8 @@ spec:
           resources:
 {{ toYaml $.Values.pod.resources.dhcp_agent | indent 12 }}
           volumeMounts:
+            - name: network-namespace
+              mountPath: /var/run/netns
             - name: metadata-proxy
               mountPath: /run/metadata_proxy
             - name: modules
@@ -155,6 +157,8 @@ spec:
           resources:
 {{ toYaml $.Values.pod.resources.linuxbridge_agent | indent 12 }}
           volumeMounts:
+            - name: network-namespace
+              mountPath: /var/run/netns
             - mountPath: /lib/modules
               name: modules
               readOnly: true
@@ -166,6 +170,27 @@ spec:
               subPath: sudoers
               readOnly: true
             {{- include "utils.trust_bundle.volume_mount" $ | indent 12 }}
+        - name: agent-checks-exporter
+          image: keppel.eu-de-1.cloud.sap/cloud-infrastructure-dev/python-agent-exporter:i572056_1782120482
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: METRIC_PREFIX
+              value: openstack_neutron_agent_check
+          ports:
+            - name: metrics-export
+              containerPort: 9116
+          livenessProbe:
+            httpGet:
+              path: /metrics
+              port: 9116
+            initialDelaySeconds: 15
+            timeoutSeconds: 5
+            periodSeconds: 60
+          resources:
+{{ toYaml $.Values.pod.resources.agent_checks_exporter | indent 12 }}
+          volumeMounts:
+            - name: network-namespace
+              mountPath: /var/run/netns
         - name: neutron-metadata-agent
           image: {{$.Values.global.registry}}/loci-neutron:{{$.Values.imageVersionNetworkAgentMetadata | default $.Values.imageVersionNetworkAgent | default $.Values.imageVersion | required "Please set neutron.imageVersionNetworkAgentMetadata or similar"}}
           imagePullPolicy: IfNotPresent
@@ -187,6 +212,8 @@ spec:
               readOnly: true
             {{- include "utils.trust_bundle.volume_mount" $ | indent 12 }}
       volumes:
+        - name: network-namespace
+          emptyDir: {}
         - name: metadata-proxy
           emptyDir: {}
         - name: modules
