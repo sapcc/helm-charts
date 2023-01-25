@@ -29,6 +29,11 @@ data:
           Strip_Underscores On
           Lowercase On
 
+      [INPUT]
+          Name            node_exporter_metrics
+          Tag             node_metrics
+          Scrape_interval 2
+
       [FILTER]
           Name          record_modifier
           Match         systemd.*
@@ -42,7 +47,7 @@ data:
       [FILTER]
           Name   modify
           Match  systemd.*
-          Rename SYSTEMD_UNIT unit
+          Rename systemd_unit unit
           Rename message log
           Rename comm cmd
 
@@ -87,5 +92,11 @@ data:
           tls.verify {{ index .Values "fluent-bit" "backend" "opensearch" "tls" "verify"}}
           tls.debug {{ index .Values "fluent-bit" "backend" "opensearch" "tls" "debug"}}
 {{- end }}
+      [OUTPUT]
+          Name            prometheus_exporter
+          Match           node_metrics
+          Host            0.0.0.0
+          Port            2021
+          Add_label       app logs-fluent-bit-systemd
   parsers.conf: ""
 {{- end }}
