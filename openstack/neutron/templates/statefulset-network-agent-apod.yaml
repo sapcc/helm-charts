@@ -36,6 +36,9 @@ spec:
         k8s.v1.cni.cncf.io/networks: '[{ "name": "cbr1-bridge", "interface":"{{$.Values.cp_network_interface}}" }]'
         configmap-etc-hash: {{ include (print $.Template.BasePath "/configmap-etc.yaml") $ | sha256sum }}
         configmap-etc-apod-hash: {{ include (print $.Template.BasePath "/configmap-etc-apod.yaml") $ | sha256sum }}
+        prometheus.io/scrape: "true"
+        prometheus.io/targets: {{ required "$.Values.alerts.prometheus missing" $.Values.alerts.prometheus | quote }}
+        prometheus.io/metrics-prefix: "openstack_network_agent_"
       labels:
         name: neutron-network-agent-{{ $apod }}
 {{ tuple $ "neutron" "agent" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
@@ -168,6 +171,25 @@ spec:
               mountPath: /etc/sudoers
               subPath: sudoers
               readOnly: true
+            - name: network-namespace
+              mountPath: /var/run/netns
+        - name: agent-checks-exporter
+          image: {{$.Values.global.registry}}/openstack-agent-checks:{{ $.Values.imageVersionAgentChecksExporter | default "latest" }}
+          args: ["neutron-linuxbridge-dhcp-exporter", "--update-interval=10", "--metric-prefix=neutron_agent_checks_"]
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: metrics-export
+              containerPort: 9116
+          livenessProbe:
+            httpGet:
+              path: /metrics
+              port: 9116
+            initialDelaySeconds: 15
+            timeoutSeconds: 5
+            periodSeconds: 60
+          resources:
+{{ toYaml $.Values.pod.resources.agent_checks_exporter | indent 12 }}
+          volumeMounts:
             - name: network-namespace
               mountPath: /var/run/netns
         - name: neutron-metadata-agent
