@@ -74,6 +74,13 @@ poller:
   simulator:
     region: {{ .Values.config.keystone.region }}
     loader: {{ .Values.simulator.poller.loader }}
+    simulatorTests:
+    {{- range .Values.simulator.poller.simulatorTests }}
+    - test:
+    {{- range $k, $v := . }}
+      {{ $k }}: {{ $v }}
+    {{- end }}
+    {{- end }}
     executionTime: {{ .Values.simulator.poller.executionTime }}
     loaderThreads: {{ .Values.simulator.poller.loaderThreads }}
     sleepDuration: {{ .Values.simulator.poller.sleepDuration }}
@@ -81,6 +88,8 @@ poller:
     sesUsername: {{ .Values.simulator.sesUsername }}
     sesSecret: {{ .Values.simulator.sesSecret }}
     smtpPassword: {{ .Values.simulator.smtpPassword }}
+    ec2User: {{ .Values.simulator.sesUsername }}
+    ec2Secret: {{ .Values.simulator.sesSecret }}
     smtpHost: cronus.{{ .Values.config.keystone.region }}.cloud.sap
     sesApiEndpoint: https://cronus.{{ .Values.config.keystone.region }}.cloud.sap
     sesRegion: {{ .Values.config.allowedServices.email }}
@@ -93,6 +102,10 @@ poller:
     {{ .Values.simulator.poller.certPem | nindent 6 }}
     keyPem: |
     {{ .Values.simulator.poller.keyPem | nindent 6 }}
+    cert: |
+    {{ .Values.simulator.poller.cert | nindent 6 }}
+    key: |
+    {{ .Values.simulator.poller.key | nindent 6 }}
 
     recipients:
     {{- range $key, $value := .Values.simulator.poller.recipients }}
