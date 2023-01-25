@@ -26,26 +26,27 @@ data:
           Mem_Buf_Limit  5MB
           Read_From_Tail On
           DB             /var/log/fluent-bit-journal.pos.db
+          Strip_Underscores On
 
       [FILTER]
           Name          record_modifier
           Match         systemd.*
-          Whitelist_key _SYSTEMD_UNIT
+          Whitelist_key SYSTEMD_UNIT
           Whitelist_key MESSAGE
-          Whitelist_key _PID
-          Whitelist_key _PRIORITY
-          Whitelist_key _COMM
-          Whitelist_key _HOSTNAME
+          Whitelist_key PID
+          Whitelist_key PRIORITY
+          Whitelist_key COMM
+          Whitelist_key HOSTNAME
 
       [FILTER]
           Name   modify
           Match  systemd.*
-          Rename _SYSTEMD_UNIT unit
+          Rename SYSTEMD_UNIT unit
           Rename MESSAGE log
-          Rename _PID pid
-          Rename _PRIORITY priority
-          Rename _COMM cmd
-          Rename _HOSTNAME hostname
+          Rename PID pid
+          Rename PRIORITY priority
+          Rename COMM cmd
+          Rename HOSTNAME hostname
 
 
 {{ if index .Values "fluent-bit" "filter" "additionalValues" }}
