@@ -1,10 +1,11 @@
+{{- if index .Values "fluent-bit" "enabled" }}
 apiVersion: monitoring.coreos.com/v1
 kind: PodMonitor
 
 metadata:
   name: logs-fluent-bit-systemd-exporter
   labels:
-    prometheus: {{ .Values.fluent-bit.exporter.prometheus }}
+    prometheus: {{ index .Values "fluent-bit" "exporter" "prometheus" }}
 
 spec:
   jobLabel: logs-fluent-bit-systemd-exporter
@@ -13,7 +14,6 @@ spec:
     matchLabels:
       app.kubernetes.io/name: fluent-bit
 
-  # Find pods in any namespace.
   namespaceSelector:
     matchNames: [logs]
 
@@ -26,3 +26,4 @@ spec:
       relabelings:
         - targetLabel: job
           replacement: logs-fluent-bit-systemd-exporter
+{{- end }}
