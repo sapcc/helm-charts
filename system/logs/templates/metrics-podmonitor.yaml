@@ -2,12 +2,12 @@ apiVersion: monitoring.coreos.com/v1
 kind: PodMonitor
 
 metadata:
-  name: logs-fluent-bit-exporter
+  name: logs-fluent-bit-systemd-exporter
   labels:
-    prometheus: {{ .Values.exporter.prometheus }}
+    prometheus: {{ .Values.fluent-bit.exporter.prometheus }}
 
 spec:
-  jobLabel: logs-fluent-bit-exporter
+  jobLabel: logs-fluent-bit-systemd-exporter
 
   selector:
     matchLabels:
@@ -24,7 +24,5 @@ spec:
       scheme: http
       port: http
       relabelings:
-        - action: labelmap
-          regex: '__meta_kubernetes_pod_label_(.+)'
         - targetLabel: job
-          replacement: logs-fluent-bit-exporter
+          replacement: logs-fluent-bit-systemd-exporter
