@@ -48,6 +48,12 @@ spec:
           env:
           - name: GODEBUG
             value: {{ .Values.cronus.godebug | quote }}
+{{- if .Values.cronus.postfix.enabled }}
+          - name: POSTFIX_CERT_PATH
+            value: {{ .Values.cronus.postfix.certPath }}/postfix.crt
+          - name: POSTFIX_KEY_PATH
+            value: {{ .Values.cronus.postfix.certPath }}/postfix.key
+{{- end }}
           volumeMounts:
             - name: cronus
               mountPath: "/cronus/config.yaml"
@@ -55,6 +61,11 @@ spec:
 {{- if or .Values.cronus.fileBufferPath .Values.global.fileBufferPath }}
             - name: cronus-file-buffer
               mountPath: {{ .Values.cronus.fileBufferPath | default .Values.global.fileBufferPath }}
+{{- end }}
+{{- if .Values.cronus.postfix.enabled }}
+            - name: postfix-certs
+              mountPath: {{ .Values.cronus.postfix.certPath }}
+              readOnly: true
 {{- end }}
           ports:
             - name: http
@@ -97,4 +108,10 @@ spec:
             {{- fail "Persistence doesn't work with kind Deployment, and more than one replica" }}
           {{- end }}
 {{- end }}
+{{- if .Values.cronus.postfix.enabled }}
+        - name: postfix
+          secret:
+            secretName: postfix-certs
+            optional: false
+{{- end -}}
 {{- end -}}
