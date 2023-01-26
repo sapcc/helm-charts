@@ -47,7 +47,7 @@ groups:
       support_group: {{ default "observability" $root.Values.alerts.support_group }}
       severity: warning
       playbook: docs/support/playbook/prometheus/rule_evaluation.html
-      meta: Prometheus `{{`{{ $labels.prometheus }}`}}` has failed to evaluate rules in the last 5m.
+      meta: Prometheus `{{`{{ $labels.prometheus }}`}}` has failed to evaluate rules since at least 15m.
     annotations:
       description: |
         Prometheus `{{`{{ $labels.prometheus }}`}}` has failed
