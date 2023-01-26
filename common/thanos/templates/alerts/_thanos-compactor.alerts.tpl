@@ -25,7 +25,6 @@ groups:
         service: {{ default "metrics" $root.Values.alerts.service }}
         support_group: {{ default "observability" $root.Values.alerts.support_group }}
         severity: info
-        playbook: 'docs/support/playbook/prometheus/thanos_compaction.html'
         meta: Thanos Compact `{{`{{ $labels.thanos }}`}}` has failed to run and is now halted.
       annotations:
         description: |
