@@ -354,6 +354,22 @@ groups:
         to Alertmanager {{`{{ $labels.alertmanager }}`}}.
       summary: Prometheus has encountered more than 1% errors sending alerts to a specific Alertmanager.
 
+  - alert: PrometheusHighAlertRate
+    expr: |
+      rate(prometheus_notifications_sent_total{prometheus="{{ include "prometheus.name" . }}"}[5m]) > 10
+    for: 5m
+    labels:
+      service: {{ default "metrics" .Values.alerts.service }}
+      support_group: {{ default "observability" .Values.alerts.support_group }}
+      severity: warning
+      meta: Prometheus `{{`{{ $labels.prometheus }}`}}` sends a high number of alerts.
+    annotations:
+      description: |
+        Prometheus `{{`{{ $labels.prometheus }}`}}` sends
+        a high number of alerts to alert managers.
+        <https://{{ include "prometheus.externalURL" . }}/graph?g0.expr={{ urlquery `topk(5, count by (alertname) (ALERTS))` }}|Affected alerts >
+      summary: Prometheus has encountered a high number of alerts sent to alert managers.
+
   - alert: PrometheusNotificationQueueRunningFull
     # Without min_over_time, failed scrapes could create false negatives, see
     # https://www.robustperception.io/alerting-on-gauges-in-prometheus-2-0 for details.
