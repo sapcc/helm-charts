@@ -1,4 +1,4 @@
-## 7.1.23
+## 7.1.23 - 7.1.24
 
  * Revised Prometheus and Thanos sidecar alerts; added PodMonitor for Thanos sidecar. 
 
