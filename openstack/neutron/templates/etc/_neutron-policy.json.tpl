@@ -12,7 +12,7 @@
     "network_view_all": "role:network_viewer or role:member or role:network_admin or rule:context_is_admin",
 
     "network_owner": "tenant_id:%(network:tenant_id)s",
-    "network_owner_or_owner": "rule:network_owner or rule:owner",
+    "network_owner_or_owner": "rule:owner or rule:network_owner",
     "network_member": "role:member and rule:network_owner_or_owner",
     "network_viewer": "role:network_viewer and rule:network_owner_or_owner",
     "network_admin": "role:network_admin and rule:network_owner_or_owner",
