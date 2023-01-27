@@ -2,29 +2,37 @@ groups:
 - name: thanos-sidecar.alerts
   rules:
     - alert: ThanosSidecarBucketOperationsFailed
-      expr: rate(thanos_objstore_bucket_operation_failures_total{prometheus="{{ include "prometheus.name" . }}"}[5m]) > 0
+      expr: |
+        sum by (prometheus, instance) (rate(thanos_objstore_bucket_operation_failures_total{job=~".*thanos.*sidecar.*", prometheus="{{ include "prometheus.name" . }}"}[5m])) > 0
       for: 5m
       labels:
-        context: thanos
         service: {{ default "metrics" .Values.alerts.service }}
-        support_group: observability
-        severity: info
-        meta: 'Thanos Sidecar bucket operations are failing for Prometheus `{{`{{ $labels.prometheus }}`}}`'
-        playbook: 'docs/support/playbook/prometheus/thanos_sidecar.html'
+        support_group: {{ default "observability" .Values.alerts.support_group }}
+        severity: warning
+        meta: Thanos Sidecar bucket operations are failing for Prometheus `{{`{{ $labels.prometheus }}`}}`
+        playbook: docs/support/playbook/prometheus/thanos_sidecar.html
+        no_alert_on_absence: "true"
       annotations:
-        description: 'Thanos Sidecar bucket operations are failing for Prometheus `{{`{{ $labels.prometheus }}`}}`. Metrics data will be lost if not fixed in 24h.'
-        summary: Thanos Sidecar bucket operations are failing
+        description: |
+          Thanos Sidecar bucket operations are failing for
+          Prometheus `{{`{{ $labels.prometheus }}`}}`.
+          Metrics data will be lost if not fixed in 24h.
+        summary: Thanos Sidecar bucket operations are failing.
 
-    - alert: ThanosSidecarGrpcErrorRate
-      expr: rate(grpc_server_handled_total{grpc_code=~"Unknown|ResourceExhausted|Internal|Unavailable",name="prometheus"}[5m]) > 0
+    - alert: ThanosSidecarNoConnectionToStartedPrometheus
+      expr: |
+        thanos_sidecar_prometheus_up{job=~".*thanos.*sidecar.*", prometheus="{{ include "prometheus.name" . }}"} == 0
+        AND on (namespace, pod)
+        prometheus_tsdb_data_replay_duration_seconds != 0
       for: 5m
       labels:
-        context: thanos
         service: {{ default "metrics" .Values.alerts.service }}
-        support_group: observability
-        severity: info
-        meta: 'Thanos Sidecar is returning Internal/Unavailable errors for Prometheus `{{`{{ $labels.prometheus }}`}}`'
-        playbook: 'docs/support/playbook/prometheus/thanos_sidecar.html'
+        support_group: {{ default "observability" .Values.alerts.support_group }}
+        severity: warning
+        meta: Thanos Sidecar cannot access Prometheus `{{`{{ $labels.prometheus }}`}}`'.
+        playbook: docs/support/playbook/prometheus/thanos_sidecar.html
       annotations:
-        description: 'Thanos Sidecar is returning Internal/Unavailable errors for Prometheus `{{`{{ $labels.prometheus }}`}}`. Prometheus queries are failing.'
-        summary: Thanos Sidecar is returning Internal/Unavailable errors
+        description: |
+          Thanos Sidecar cannot access Prometheus `{{`{{ $labels.prometheus }}`}}`',
+          even though Prometheus seems healthy and has reloaded WAL.
+        summary: Thanos Sidecar cannot access Prometheus, even though Prometheus seems healthy and has reloaded WAL.

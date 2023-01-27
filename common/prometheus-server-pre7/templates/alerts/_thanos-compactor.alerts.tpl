@@ -1,83 +1,109 @@
 groups:
 - name: thanos-compactor.alerts
   rules:
-    - alert: ThanosCompactHalted
-      expr: thanos_compact_halted{app="thanos-compactor", prometheus="{{ include "prometheus.name" . }}"} == 1
+    - alert: ThanosCompactMultipleRunning
+      expr: sum by (prometheus) (up{job=~".*thanos.*compact.*", prometheus="{{ include "prometheus.name" . }}"}) > 1
       for: 5m
       labels:
-        context: thanos
         service: {{ default "metrics" .Values.alerts.service }}
-        support_group: observability
-        severity: info
-        playbook: 'docs/support/playbook/prometheus/thanos_compaction.html'
-        meta: 'Thanos compaction for Prometheus `{{`{{ $labels.prometheus }}`}}` halted.'
+        support_group: {{ default "observability" .Values.alerts.support_group }}
+        severity: warning
+        meta: Multiple Thanos compactors running for `{{`{{ $labels.prometheus }}`}}`.
       annotations:
-        description: 'Thanos compaction has failed to run and now is halted for Prometheus `{{`{{ $labels.prometheus }}`}}`. Long term storage queries will be slower.'
-        summary: Thanos compaction halted
+        description: |
+          No more than one Thanos Compact instance should be running
+          at once for `{{`{{ $labels.prometheus }}`}}`.
+          Metrics in long term storage may be corrupted.
+        summary: Thanos Compact has multiple instances running.
 
-    - alert: ThanosCompactCompactionsFailed
-      expr: rate(prometheus_tsdb_compactions_failed_total{app="thanos-compactor", prometheus="{{ include "prometheus.name" . }}"}[5m]) > 0
+    - alert: ThanosCompactHalted
+      expr: thanos_compact_halted{job=~".*thanos.*compact.*", prometheus="{{ include "prometheus.name" . }}"} == 1
+      for: 5m
       labels:
-        context: thanos
         service: {{ default "metrics" .Values.alerts.service }}
-        support_group: observability
+        support_group: {{ default "observability" .Values.alerts.support_group }}
         severity: info
         playbook: 'docs/support/playbook/prometheus/thanos_compaction.html'
-        meta: 'Thanos compact is failing compaction for Prometheus `{{`{{ $labels.prometheus }}`}}`'
+        meta: Thanos Compact `{{`{{ $labels.prometheus }}`}}` has failed to run and is now halted.
       annotations:
-        description: 'Thanos Compact is failing compaction for Prometheus `{{`{{ $labels.prometheus }}`}}`. Long term storage queries will be slower.'
-        summary: Thanos Compact is failing
+        description: |
+          Thanos Compact `{{`{{ $labels.prometheus }}`}}` has
+          failed to run and is now halted.
+          Long term storage queries will be slower.
+        summary: Thanos Compact has failed to run and is now halted.
 
-    - alert: ThanosCompactBucketOperationsFailed
-      expr: rate(thanos_objstore_bucket_operation_failures_total{app="thanos-compactor", prometheus="{{ include "prometheus.name" . }}"}[5m]) > 0
+    - alert: ThanosCompactHighCompactionFailures
+      expr: |
+        (
+          sum by (prometheus) (rate(thanos_compact_group_compactions_failures_total{job=~".*thanos.*compact.*", prometheus="{{ include "prometheus.name" . }}"}[5m]))
+        /
+          sum by (prometheus) (rate(thanos_compact_group_compactions_total{job=~".*thanos.*compact.*", prometheus="{{ include "prometheus.name" . }}"}[5m]))
+        * 100 > 5
+        )
+      for: 15m
       labels:
-        context: thanos
         service: {{ default "metrics" .Values.alerts.service }}
-        support_group: observability
+        support_group: {{ default "observability" .Values.alerts.support_group }}
         severity: info
         playbook: 'docs/support/playbook/prometheus/thanos_compaction.html'
-        meta: 'Thanos Compact bucket operations are failing for Prometheus `{{`{{ $labels.prometheus }}`}}`'
+        meta: Thanos Compact `{{`{{ $labels.prometheus }}`}}` is failing to execute compactions.
       annotations:
-        description: 'Thanos Compact bucket operations are failing for Prometheus `{{`{{ $labels.prometheus }}`}}`. Long term storage queries will be slower.'
-        summary: Prometheus compact bucket operations failing
+        description: |
+          Thanos Compact `{{`{{ $labels.prometheus }}`}}` is failing to execute
+          `{{`{{ $value | humanize }}`}}%`of compactions.
+          Long term storage queries will be slower.
+        summary: Thanos Compact is failing to execute compactions.
 
-    - alert: ThanosCompactNotRunIn24Hours
-      expr: (time() - max by (prometheus) (thanos_objstore_bucket_last_successful_upload_time{app="thanos-compactor", prometheus="{{ include "prometheus.name" . }}"}) ) /60/60 > 24
+    - alert: ThanosCompactBucketHighOperationFailures
+      expr: |
+        (
+          sum by (prometheus) (rate(thanos_objstore_bucket_operation_failures_total{job=~".*thanos.*compact.*", prometheus="{{ include "prometheus.name" . }}"}[5m]))
+        /
+          sum by (prometheus) (rate(thanos_objstore_bucket_operations_total{job=~".*thanos.*compact.*", prometheus="{{ include "prometheus.name" . }}"}[5m]))
+        * 100 > 5
+        )
+      for: 15m
       labels:
-        context: thanos
         service: {{ default "metrics" .Values.alerts.service }}
-        support_group: observability
+        support_group: {{ default "observability" .Values.alerts.support_group }}
         severity: info
         playbook: 'docs/support/playbook/prometheus/thanos_compaction.html'
-        meta: 'Thanos compaction not run in 24h for Prometheus `{{`{{ $labels.prometheus }}`}}`.'
+        meta: Thanos Compact `{{`{{ $labels.prometheus }}`}}` bucket is having a high number of operation failures.
       annotations:
-        description: 'Thanos Compaction has not been run in 24 hours for Prometheus `{{`{{ $labels.prometheus }}`}}`. Long term storage queries will be slower.'
-        summary: Thanos compaction not run in 24 hours
+        description: |
+          Thanos Compact `{{`{{ $labels.prometheus }}`}}` Bucket is failing
+          to execute `{{`{{ $value | humanize }}`}}%` operations.
+          Long term storage queries will be slower.
+        summary: Thanos Compact Bucket is having a high number of operation failures.
 
-    - alert: ThanosCompactCompactionIsNotRunning
-      expr: up{app="thanos-compactor", prometheus="{{ include "prometheus.name" . }}"} == 0 or absent({app="thanos-compactor", prometheus="{{ include "prometheus.name" . }}"})
+    - alert: ThanosCompactHasNotRun
+      expr: (time() - max by (prometheus) (max_over_time(thanos_objstore_bucket_last_successful_upload_time{job=~".*thanos.*compact.*", prometheus="{{ include "prometheus.name" . }}"}[24h])))
+        / 60 / 60 > 24
+      labels:
+        service: {{ default "metrics" .Values.alerts.service }}
+        support_group: {{ default "observability" .Values.alerts.support_group }}
+        severity: info
+        playbook: 'docs/support/playbook/prometheus/thanos_compaction.html'
+        meta: Thanos Compact `{{`{{ $labels.prometheus }}`}}` has not uploaded anything for last 24 hours.
+      annotations:
+        description: |
+          Thanos Compact `{{`{{ $labels.prometheus }}`}}` has not
+          uploaded anything for 24 hours.
+          Long term storage queries will be slower.
+        summary: Thanos Compact has not uploaded anything for last 24 hours.
+
+    - alert: ThanosCompactIsDown
+      expr: up{job=~".*thanos.*compact.*", prometheus="{{ include "prometheus.name" . }}"} == 0 or absent({job=~".*thanos.*compact.*", prometheus="{{ include "prometheus.name" . }}"})
       for: 5m
       labels:
         no_alert_on_absence: "true" # because the expression already checks for absence
-        context: thanos
         service: {{ default "metrics" .Values.alerts.service }}
-        support_group: observability
-        severity: info
-        playbook: 'docs/support/playbook/prometheus/thanos_compaction.html'
-        meta: 'Thanos compaction not running for Prometheus `{{`{{ $labels.prometheus }}`}}`.'
-      annotations:
-        description: 'Thanos Compaction is not running for Prometheus `{{`{{ $labels.prometheus }}`}}`. Long term storage queries will be slower.'
-        summary: Thanos compaction not running
-
-    - alert: ThanosCompactMultipleCompactionsAreRunning
-      expr: sum by (prometheus) (up{app="thanos-compactor", prometheus="{{ include "prometheus.name" . }}"}) > 1
-      for: 5m
-      labels:
-        context: thanos
-        service: {{ default "metrics" .Values.alerts.service }}
-        support_group: observability
+        support_group: {{ default "observability" .Values.alerts.support_group }}
         severity: warning
-        meta: 'Multiple Thanos compactors running for Prometheus `{{`{{ $labels.prometheus }}`}}`.'
+        playbook: docs/support/playbook/prometheus/thanos_compaction.html
+        meta: Thanos Compact `{{`{{ $labels.prometheus }}`}}` has disappeared.
       annotations:
-        description: 'Multiple replicas of Thanos compaction running for Prometheus `{{`{{ $labels.prometheus }}`}}`. Metrics in long term storage may be corrupted.'
-        summary: Multiple Thanos compactors running
+        description: |
+          Thanos Compact `{{`{{ $labels.prometheus }}`}}` has disappeared.
+          Prometheus target for the component cannot be discovered.
+        summary: Thanos component has disappeared.
