@@ -45,11 +45,11 @@ groups:
       support_group: {{ default "observability" .Values.alerts.support_group }}
       severity: warning
       playbook: docs/support/playbook/prometheus/rule_evaluation.html
-      meta: Prometheus `{{`{{ $labels.prometheus }}`}}` has failed to evaluate rules in the last 5m.
+      meta: Prometheus `{{`{{ $labels.prometheus }}`}}` has failed to evaluate rules in the last 15m.
     annotations:
       description: |
         Prometheus `{{`{{ $labels.prometheus }}`}}` has failed
-        to evaluate `{{`{{ printf "%.0f" $value }}`}}` rules in the last 5m.
+        to evaluate `{{`{{ printf "%.0f" $value }}`}}` rules in the last 15m.
         Aggregation or alerting rules may not be loaded or
         provide false results.
       summary: Prometheus is failing rule evaluations.
@@ -141,7 +141,7 @@ groups:
 
   - alert: PrometheusWALCorruption
     expr: |
-      increase(prometheus_tsdb_wal_corruptions_total{prometheus="{{ include "prometheus.name" . }}"}[5m]) > 0
+      round(increase(prometheus_tsdb_wal_corruptions_total{prometheus="{{ include "prometheus.name" . }}"}[2h1m]) > 0)
     labels:
       service: {{ default "metrics" .Values.alerts.service }}
       support_group: {{ default "observability" .Values.alerts.support_group }}
@@ -396,13 +396,9 @@ groups:
   - alert: PrometheusRemoteWriteDown
     expr: |
       (
-        (rate(prometheus_remote_storage_failed_samples_total{prometheus="{{ include "prometheus.name" . }}"}[5m]) or rate(prometheus_remote_storage_samples_failed_total{prometheus="{{ include "prometheus.name" . }}"}[5m]))
+        (rate(prometheus_remote_storage_samples_failed_total{prometheus="{{ include "prometheus.name" . }}"}[5m]))
       /
-        (
-          (rate(prometheus_remote_storage_failed_samples_total{prometheus="{{ include "prometheus.name" . }}"}[5m]) or rate(prometheus_remote_storage_samples_failed_total{prometheus="{{ include "prometheus.name" . }}"}[5m]))
-        +
-          (rate(prometheus_remote_storage_succeeded_samples_total{prometheus="{{ include "prometheus.name" . }}"}[5m]) or rate(prometheus_remote_storage_samples_total{prometheus="{{ include "prometheus.name" . }}"}[5m]))
-        )
+        (rate(prometheus_remote_storage_samples_total{prometheus="{{ include "prometheus.name" . }}"}[5m]))
       )
       * 100
       > 1
