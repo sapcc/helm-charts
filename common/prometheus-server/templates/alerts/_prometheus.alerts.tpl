@@ -143,7 +143,7 @@ groups:
 
   - alert: PrometheusWALCorruption
     expr: |
-      increase(prometheus_tsdb_wal_corruptions_total{prometheus="{{ include "prometheus.name" . }}"}[5m]) > 0
+      round(increase(prometheus_tsdb_wal_corruptions_total{prometheus="{{ include "prometheus.name" . }}"}[2h1m]) > 0)
     labels:
       service: {{ default "metrics" $root.Values.alerts.service }}
       support_group: {{ default "observability" $root.Values.alerts.support_group }}
