@@ -1,3 +1,7 @@
+## 7.1.23
+
+ * Revised Prometheus and Thanos sidecar alerts; added PodMonitor for Thanos sidecar. 
+
 ## 7.1.22
 
  * Forward PrometheusMultiple**ScrapeAlerts to the ccloud_support_group label, if present
