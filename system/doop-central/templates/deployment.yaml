@@ -24,7 +24,6 @@ spec:
       annotations:
         checksum/configmap: {{ include "doop-central/templates/configmap.yaml" $ | sha256sum }}
         prometheus.io/scrape: "true"
-        prometheus.io/port: "8080"
         prometheus.io/targets: infra-frontend
     spec:
       automountServiceAccountToken: false
@@ -70,7 +69,7 @@ spec:
               value: doop-agent
               {{- end }}
           ports:
-            - name: http
+            - name: metrics # also exposes the UI, but this specific name is required for Prometheus scraping
               containerPort: 8080
           livenessProbe:
             httpGet:

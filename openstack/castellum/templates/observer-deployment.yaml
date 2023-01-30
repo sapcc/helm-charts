@@ -26,7 +26,6 @@ spec:
         checksum/configmap: {{ include "castellum/templates/configmap.yaml" $ | sha256sum }}
         checksum/secrets: {{ include "castellum/templates/secret.yaml" $ | sha256sum }}
         prometheus.io/scrape: "true"
-        prometheus.io/port: "8080"
         prometheus.io/targets: {{ quote .Values.alerts.prometheus.openstack }}
     spec:
       volumes:
@@ -49,7 +48,7 @@ spec:
             - mountPath: /etc/castellum-certs
               name: certs
           ports:
-            - name: http
+            - name: metrics
               containerPort: 8080
           {{- include "castellum_liveness_readiness_probes" . | indent 10 }}
           # NOTE: observed usage in eu-de-2 (as of 2021-08)
