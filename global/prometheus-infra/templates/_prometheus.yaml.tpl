@@ -116,6 +116,7 @@
       - '{__name__=~"^es_fs_path_available_bytes"}'
       - '{__name__=~"^filebeat_filebeat_input_netflow"}'
       - '{__name__=~"elastiflow_thousandeyes_probes_hits"}'
+      - '{__name__=~"^fluentbit_.+}"}'
       - '{__name__=~"^metis_.+"}'
       - '{__name__=~"^maria_backup_.+"}'
       - '{__name__=~"^logstash_node_queue_.+"}'
