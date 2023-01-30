@@ -27,7 +27,7 @@ groups:
       sum(openstack_subnets_with_dhcp_ip_allocation) by (bridge, network_host)
         unless on(bridge, network_host)
       label_replace(neutron_agent_checks_linux_bridge_present, "network_host", "$1", "hostname", "(.*)")
-    for: 5m
+    for: 15m
     labels:
       severity: warning
       support_group: network-api
@@ -39,6 +39,32 @@ groups:
     annotations:
       description: 'Network {{ $labels.network_id }} ({{ $labels.network_name }}) has not been synced for 5 min: {{ $labels.network_host }}'
       summary: Openstack Neutron Linuxbridge/DHCP Agent lost private networks
+
+  - alert: OpenstackNeutronNetworkNotSyncedOnAnyNetworkAgent
+    # Find any network that is not active on at least 1 network agent
+    # for both linux bridges and netns
+    expr: |
+      sum(
+        (openstack_subnets_with_dhcp_ip_allocation
+          unless on (bridge)
+        sum(neutron_agent_checks_linux_bridge_present) by (bridge) > 0)
+        or on (network_id)
+        (openstack_subnets_with_dhcp_ip_allocation
+          unless on (network_id)
+        sum(label_replace(neutron_agent_checks_netns_present, "network_id", "$1", "netns", "(.*)")) by (network_id) > 0))
+      by (network_id, network_name)
+    for: 5m
+    labels:
+      severity: warning
+      support_group: network-api
+      tier: os
+      service: neutron
+      context: '{{ $labels.network_id }}'
+      meta: 'Network not present on any network agent {{ $labels.network_id }}'
+      playbook: docs/support/playbook/neutron/dhcp_down.html
+    annotations:
+      description: 'Network {{ $labels.network_id }} ({{ $labels.network_name }}) is not present on any network agent, DHCP and DNS is broken for this network'
+      summary: Openstack Neutron Network not synced to any Linuxbridge/DHCP Agent
 
   - alert: OpenstackNeutronNetworkSegmentsExhaustion
     expr: sum(openstack_neutron_network_segments_free) by (hostgroup) / sum(openstack_neutron_network_segments_total) by (hostgroup) < 0.2
