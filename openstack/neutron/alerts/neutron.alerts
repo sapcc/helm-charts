@@ -18,19 +18,27 @@ groups:
       summary: Openstack Neutron Metric to monitor Agents Heartbeat
 
   - alert: OpenstackNeutronNetworkCountAsync
-    expr: kube_pod_container_status_ready{container="neutron-dhcp-agent"} == 0
+    # Either unsynced bridges or unsynced netns
+    expr: |
+      sum(openstack_subnets_with_dhcp_ip_allocation) by (network_id, network_host)
+          unless on(network_id, network_host)
+      label_replace(label_replace(neutron_agent_checks_netns_present, "network_host", "$1", "hostname", "(.*)"), "network_id", "$1", "netns", "(.*)")
+      or
+      sum(openstack_subnets_with_dhcp_ip_allocation) by (bridge, network_host)
+        unless on(bridge, network_host)
+      label_replace(neutron_agent_checks_linux_bridge_present, "network_host", "$1", "hostname", "(.*)")
     for: 5m
     labels:
       severity: warning
       support_group: network-api
       tier: os
       service: neutron
-      context: '{{ $labels.context }}'
-      meta: 'Not all networks have been synced by agent: {{ $labels.pod }}'
+      context: '{{ $labels.network_host }}'
+      meta: 'Not all networks have been synced by agent: {{ $labels.network_host }}'
       playbook: docs/support/playbook/neutron/dhcp_down
     annotations:
-      description: 'Not all networks have been synced by agent for 5 min: {{ $labels.pod }}'
-      summary: Openstack Neutron DHCP Agent lost private networks
+      description: 'Network {{ $labels.network_id }} ({{ $labels.network_name }}) has not been synced for 5 min: {{ $labels.network_host }}'
+      summary: Openstack Neutron Linuxbridge/DHCP Agent lost private networks
 
   - alert: OpenstackNeutronNetworkSegmentsExhaustion
     expr: sum(openstack_neutron_network_segments_free) by (hostgroup) / sum(openstack_neutron_network_segments_total) by (hostgroup) < 0.2
