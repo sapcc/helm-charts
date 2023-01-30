@@ -549,6 +549,45 @@ mysql_metrics:
         GROUP BY host;
       values:
       - "value"
+    - help: Neutron DHCP agent ports
+      labels:
+      - network_host
+      - subnet_id
+      - subnet_name
+      - network_id
+      - bridge
+      - network_name
+      - ip_address
+      name: openstack_subnets_with_dhcp_ip_allocation
+      query: |
+        SELECT DISTINCT
+          a.host as network_host,
+          s.id as subnet_id,
+          s.name as subnet_name,
+          n.id as network_id,
+          LEFT(n.id, 11) as bridge,
+          n.name as network_name,
+          s.enable_dhcp as dhcp_enabled,
+          ipal.ip_address as ip_address
+        FROM
+          networks n
+        INNER JOIN
+          networkdhcpagentbindings nabs ON n.id = nabs.network_id
+        INNER JOIN
+          agents a ON nabs.dhcp_agent_id = a.id
+        INNER JOIN
+          subnets s ON nabs.network_id = s.network_id
+        INNER JOIN ipallocations ipal ON n.id = ipal.network_id and s.id = ipal.subnet_id
+        INNER JOIN ml2_port_bindings pb ON a.host = pb.host
+        INNER JOIN ports p ON p.id = ipal.port_id and pb.port_id = p.id
+        WHERE
+          a.agent_type="DHCP agent"
+          and a.admin_state_up = 1
+          and n.admin_state_up = 1
+          and n.status = "ACTIVE";
+      values:
+      - dhcp_enabled
+
 
 max_pool_size: 20
 max_overflow: 5
