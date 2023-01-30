@@ -166,3 +166,18 @@ groups:
     annotations:
       description: "Too many NSX-T VMs for the same cluster on {{ $labels.hostsystem }}. Please distribute the VMs across different nodes. ({{ $labels.vcenter }})"
       summary: "Too many NSX-T VMs on {{ $labels.hostsystem }}. ({{ $labels.vcenter }})"
+      
+  - alert: VASAVMHighCPUUtilization
+    expr: vrops_virtualmachine_cpu_usage_ratio{virtualmachine=~"vasa.*"} > 90
+    for: 1h
+    labels:
+      severity: info
+      tier: vmware
+      service: compute
+      support_group: compute
+      context: "VASAUtilization"
+      meta: "VASA VM has >90% CPU Utilization for at least one hour. {{ $labels.virtualmachine }}. {{ $labels.vccluster }}. {{ $labels.hostsystem }}. ({{ $labels.vcenter }})"
+      no_alert_on_absence: "true"
+    annotations:
+      description: "VASA VM has >90% CPU Utilization for at least one hour. {{ $labels.virtualmachine }}. {{ $labels.vccluster }}. {{ $labels.hostsystem }}. ({{ $labels.vcenter }})"
+      summary: "High VASA VM CPU Utilization. {{ $labels.virtualmachine }}. {{ $labels.vccluster }}. {{ $labels.hostsystem }}. ({{ $labels.vcenter }})"
