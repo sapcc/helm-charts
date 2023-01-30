@@ -69,6 +69,9 @@ spec:
       - name: metric
         image: {{ required ".Values.global.registryAlternateRegion is missing" .Values.global.registryAlternateRegion }}/{{.Values.unbound.image_unbound_exporter}}:{{ .Values.unbound.image_unbound_exporter_tag}}
         imagePullPolicy: {{ .Values.unbound.image_pullPolicy }}
+        env:
+        - name: GODEBUG
+          value: "x509ignoreCN=0"
         args:
           - -unbound.ca
           - /etc/unbound/unbound-server.pem
