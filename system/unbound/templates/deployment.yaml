@@ -69,6 +69,13 @@ spec:
       - name: metric
         image: {{ required ".Values.global.registryAlternateRegion is missing" .Values.global.registryAlternateRegion }}/{{.Values.unbound.image_unbound_exporter}}:{{ .Values.unbound.image_unbound_exporter_tag}}
         imagePullPolicy: {{ .Values.unbound.image_pullPolicy }}
+        args:
+          - -unbound.ca
+          - /etc/unbound/unbound-server.pem
+          - -unbound.cert
+          - /etc/unbound/unbound-control.pem
+          - -unbound.key
+          - /etc/unbound/unbound-control.key
         ports:
           - name: metrics
             containerPort: {{.Values.unbound.port_unbound_exporter}}
