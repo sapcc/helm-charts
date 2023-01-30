@@ -101,10 +101,15 @@ spec:
               value: "ignore:Unverified HTTPS request"
           readinessProbe:
             exec:
-              command: ["neutron-dhcp-readiness", "-config-file", "/etc/neutron/neutron.conf"]
-            initialDelaySeconds: 30
-            periodSeconds: 60
+              command:
+              - python
+              - -c
+              - |
+{{ include "neutron.network-agent.liveness.query"  "network" | indent 16 }}
+            initialDelaySeconds: 20
+            periodSeconds: 15
             timeoutSeconds: 10
+            successThreshold: 2
           securityContext:
             privileged: true
           resources:
@@ -249,10 +254,15 @@ spec:
               value: {{required "A valid .Values.global.cp required!" $.Values.global.cp}}:{{required "A valid .Values.cp_network_interface required!" $.Values.cp_network_interface}}
           readinessProbe:
             exec:
-              command: ["neutron-linuxbridge-readiness", "-config-file", "/etc/neutron/neutron.conf"]
-            initialDelaySeconds: 30
-            periodSeconds: 60
+              command:
+              - python
+              - -c
+              - |
+{{ include "neutron.network-agent.liveness.query"  "bridge" | indent 16 }}
+            initialDelaySeconds: 20
+            periodSeconds: 15
             timeoutSeconds: 10
+            successThreshold: 2
           securityContext:
             capabilities:
               add:

@@ -38,7 +38,6 @@ spec:
         configmap-etc-apod-hash: {{ include (print $.Template.BasePath "/configmap-etc-apod.yaml") $ | sha256sum }}
         prometheus.io/scrape: "true"
         prometheus.io/targets: {{ required "$.Values.alerts.prometheus missing" $.Values.alerts.prometheus | quote }}
-        prometheus.io/metrics-prefix: "openstack_network_agent_"
       labels:
         name: neutron-network-agent-{{ $apod }}
 {{ tuple $ "neutron" "agent" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
@@ -102,10 +101,15 @@ spec:
               value: "ignore:Unverified HTTPS request"
           readinessProbe:
             exec:
-              command: ["neutron-dhcp-readiness", "-config-file", "/etc/neutron/neutron.conf"]
-            initialDelaySeconds: 30
-            periodSeconds: 60
+              command:
+              - python
+              - -c
+              - |
+{{ .Files.Get "neutron-prometheus-liveness-probes.py" | indent 16 }}
+            initialDelaySeconds: 20
+            periodSeconds: 15
             timeoutSeconds: 10
+            successThreshold: 2
           securityContext:
             privileged: true
           resources:
@@ -144,10 +148,15 @@ spec:
               value: "ignore:Unverified HTTPS request"
           readinessProbe:
             exec:
-              command: ["neutron-linuxbridge-readiness", "-config-file", "/etc/neutron/neutron.conf"]
-            initialDelaySeconds: 30
-            periodSeconds: 60
+              command:
+              - python
+              - -c
+              - |
+{{ include "neutron.network-agent.liveness.query"  "network" | indent 16 -}}
+            initialDelaySeconds: 20
+            periodSeconds: 15
             timeoutSeconds: 10
+            successThreshold: 2
           securityContext:
             capabilities:
               add:
