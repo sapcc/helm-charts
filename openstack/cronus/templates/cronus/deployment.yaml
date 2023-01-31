@@ -56,11 +56,9 @@ spec:
             - name: cronus-file-buffer
               mountPath: {{ .Values.cronus.fileBufferPath | default .Values.global.fileBufferPath }}
 {{- end }}
-{{- if .Values.cronus.postfix.enabled }}
-            - name: postfix
-              mountPath: {{ .Values.cronus.postfix.certPath }}
+            - name: certs
+              mountPath: /etc/certs
               readOnly: true
-{{- end }}
           ports:
             - name: http
               containerPort: {{ .Values.cronus.http }}
@@ -102,10 +100,12 @@ spec:
             {{- fail "Persistence doesn't work with kind Deployment, and more than one replica" }}
           {{- end }}
 {{- end }}
-{{- if .Values.cronus.postfix.enabled }}
-        - name: postfix
+        - name: certs
           secret:
-            secretName: postfix-certs
+{{- range $be := .Values.config.smtpBackends }}
+{{- if $v.certPath }}
+            secretName: {{$be.name}}-certs
             optional: false
+{{- end -}}
 {{- end -}}
 {{- end -}}
