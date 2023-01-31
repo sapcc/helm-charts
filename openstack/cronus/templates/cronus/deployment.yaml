@@ -101,11 +101,13 @@ spec:
           {{- end }}
 {{- end }}
         - name: certs
-          secret:
+          projected:
+            sources:
 {{- range $be := .Values.config.smtpBackends }}
 {{- if $v.certPath }}
-            secretName: {{$be.name}}-certs
-            optional: false
+              - secret:
+                  secretName: {{$be.name}}-certs
+                  optional: false
 {{- end -}}
 {{- end -}}
 {{- end -}}
