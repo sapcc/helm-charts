@@ -53,6 +53,9 @@ spec:
             - name: cronus-file-buffer
               mountPath: {{ .Values.cronus.fileBufferPath | default .Values.global.fileBufferPath }}
 {{- end }}
+            - name: certs
+              mountPath: {{.Values.cronus.certPath}}
+              readOnly: true
           ports:
             - name: http
               containerPort: {{ .Values.cronus.http }}
@@ -83,6 +86,16 @@ spec:
         - name: cronus
           secret:
             secretName: cronus
+        - name: certs
+          projected:
+            sources:
+{{- range $be := .Values.config.smtpBackends }}
+{{- if $be.certPath }}
+              - secret:
+                  name: {{$be.name}}-certs
+                  optional: false
+{{- end -}}
+{{- end -}}
 {{- if or .Values.cronus.fileBufferPath .Values.global.fileBufferPath }}
   volumeClaimTemplates:
   - metadata:
