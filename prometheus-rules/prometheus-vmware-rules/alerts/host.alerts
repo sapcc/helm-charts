@@ -40,22 +40,22 @@ groups:
       description: "Host {{ $labels.hostsystem }} not responding. ({{ $labels.vcenter }}, {{ $labels.vccluster }})"
       summary: "Host {{ $labels.hostsystem }} not responding. ({{ $labels.vcenter }}, {{ $labels.vccluster }})"
 
-  - alert: HostInMaintenanceWithoutCustomAttribute
-    expr: |
-      count(((avg_over_time(vrops_hostsystem_runtime_maintenancestate{state="inMaintenance"}[10m]))
-      AND ON(hostsystem) avg_over_time(vrops_hostsystem_custom_attributes_hw_info{custom_attributes_hw=' '}[10m]))
-      OR ON(hostsystem) ((avg_over_time(vrops_hostsystem_runtime_maintenancestate{state="inMaintenance"}[10m]))
-      unless ON(hostsystem) avg_over_time(vrops_hostsystem_custom_attributes_hw_info[10m])))
-    for: 20m
-    labels:
-      severity: info
-      tier: vmware
-      service: compute
-      support_group: compute
-      dashboard: hosts-in-maintenance-without-custom-att/hosts-in-maintenance-without-custom-attribute
-    annotations:
-      description: "There are hosts in maintenance without providing a custom attribute HW. See Grafana to view the hosts"
-      summary: "There are hosts in maintenance without providing a custom attribute HW. See Grafana to view the hosts"
+  # - alert: HostInMaintenanceWithoutCustomAttribute
+  #   expr: |
+  #     count(((avg_over_time(vrops_hostsystem_runtime_maintenancestate{state="inMaintenance"}[10m]))
+  #     AND ON(hostsystem) avg_over_time(vrops_hostsystem_custom_attributes_hw_info{custom_attributes_hw=' '}[10m]))
+  #     OR ON(hostsystem) ((avg_over_time(vrops_hostsystem_runtime_maintenancestate{state="inMaintenance"}[10m]))
+  #     unless ON(hostsystem) avg_over_time(vrops_hostsystem_custom_attributes_hw_info[10m])))
+  #   for: 20m
+  #   labels:
+  #     severity: info
+  #     tier: vmware
+  #     service: compute
+  #     support_group: compute
+  #     dashboard: hosts-in-maintenance-without-custom-att/hosts-in-maintenance-without-custom-attribute
+  #   annotations:
+  #     description: "There are hosts in maintenance without providing a custom attribute HW. See Grafana to view the hosts"
+  #     summary: "There are hosts in maintenance without providing a custom attribute HW. See Grafana to view the hosts"
 
   - alert: VMsOnFailoverHost
     #  Excluding vCLS agent VMs. vCLS ensures that if vCenter Server becomes unavailable, cluster services remain available
@@ -76,36 +76,36 @@ groups:
       description: "Failover Host {{ $labels.hostsystem }} has Virtual Machines on it. Free up the host. ({{ $labels.vcenter }}, {{ $labels.vccluster }})"
       summary: "Failover Host {{ $labels.hostsystem }} has Virtual Machines on it. ({{ $labels.vcenter }}, {{ $labels.vccluster }})"
 
-  - alert: HostDiskSpaceUsage
-    expr: vrops_hostsystem_diskspace_usage_gigabytes / vrops_hostsystem_diskspace_capacity_gigabytes > 0.9
-    for: 15m
-    labels:
-      severity: info
-      tier: vmware
-      service: compute
-      support_group: compute
-      context: "{{ $labels.hostsystem }} disk space"
-      meta: "Disk space usage of host {{ $labels.hostsystem }} is above 90%. ({{ $labels.vcenter }}, {{ $labels.vccluster }})"
-    annotations:
-      description: "Disk space usage of host {{ $labels.hostsystem }} is above 90%. ({{ $labels.vcenter }}, {{ $labels.vccluster }})"
-      summary: "Disk space usage of host {{ $labels.hostsystem }} is above 90%. ({{ $labels.vcenter }}, {{ $labels.vccluster }})"
+  # - alert: HostDiskSpaceUsage
+  #   expr: vrops_hostsystem_diskspace_usage_gigabytes / vrops_hostsystem_diskspace_capacity_gigabytes > 0.9
+  #   for: 15m
+  #   labels:
+  #     severity: info
+  #     tier: vmware
+  #     service: compute
+  #     support_group: compute
+  #     context: "{{ $labels.hostsystem }} disk space"
+  #     meta: "Disk space usage of host {{ $labels.hostsystem }} is above 90%. ({{ $labels.vcenter }}, {{ $labels.vccluster }})"
+  #   annotations:
+  #     description: "Disk space usage of host {{ $labels.hostsystem }} is above 90%. ({{ $labels.vcenter }}, {{ $labels.vccluster }})"
+  #     summary: "Disk space usage of host {{ $labels.hostsystem }} is above 90%. ({{ $labels.vcenter }}, {{ $labels.vccluster }})"
 
-  - alert: HostHasLostConnectivityToDVPort
-    expr: |
-      vrops_hostsystem_alert_info{alert_name="The host has lost connectivity to a dvPort"}
-      and on (hostsystem) vrops_hostsystem_runtime_maintenancestate{state!~"inMaintenance"}
-    labels:
-      severity: warning
-      tier: vmware
-      service: compute
-      support_group: compute
-      context: "{{ $labels.hostsystem }} dvPort connection"
-      meta: "Host `{{ $labels.hostsystem }}` has lost connectivity to a dvPort. ({{ $labels.vcenter }})."
-      playbook: docs/devops/alert/vcenter/#host_has_lost_connectivity_to_a_dv_port
-      no_alert_on_absence: "true"
-    annotations:
-      description: "Host `{{ $labels.hostsystem }}` has lost connectivity to a dvPort. ({{ $labels.vcenter }})."
-      summary: "Host `{{ $labels.hostsystem }}` has lost connectivity to a dvPort. ({{ $labels.vcenter }})."
+  # - alert: HostHasLostConnectivityToDVPort
+  #   expr: |
+  #     vrops_hostsystem_alert_info{alert_name="The host has lost connectivity to a dvPort"}
+  #     and on (hostsystem) vrops_hostsystem_runtime_maintenancestate{state!~"inMaintenance"}
+  #   labels:
+  #     severity: warning
+  #     tier: vmware
+  #     service: compute
+  #     support_group: compute
+  #     context: "{{ $labels.hostsystem }} dvPort connection"
+  #     meta: "Host `{{ $labels.hostsystem }}` has lost connectivity to a dvPort. ({{ $labels.vcenter }})."
+  #     playbook: docs/devops/alert/vcenter/#host_has_lost_connectivity_to_a_dv_port
+  #     no_alert_on_absence: "true"
+  #   annotations:
+  #     description: "Host `{{ $labels.hostsystem }}` has lost connectivity to a dvPort. ({{ $labels.vcenter }})."
+  #     summary: "Host `{{ $labels.hostsystem }}` has lost connectivity to a dvPort. ({{ $labels.vcenter }})."
 
   - alert: HostHasLostRedundantConnectivityToDVPort
     expr: |
@@ -159,22 +159,22 @@ groups:
       description: "Host `{{ $labels.hostsystem }}` has lost connectivity to physical network. ({{ $labels.vcenter }})."
       summary: "Host `{{ $labels.hostsystem }}` has lost connectivity to physical network. ({{ $labels.vcenter }})."
 
-  - alert: HostInMaintenanceModeForAtLeast72h
-    expr: |
-      vrops_hostsystem_alert_info{alert_name="Host is in maintenance mode for at least 72 hours"}
-      and on (hostsystem) vrops_hostsystem_runtime_maintenancestate{state!~"inMaintenance"}
-    labels:
-      severity: info
-      tier: vmware
-      service: compute
-      support_group: compute
-      context: "{{ $labels.hostsystem }} maintenance"
-      meta: "Host `{{ $labels.hostsystem }}` his in maintenance mode for at least 72 hours. ({{ $labels.vcenter }})."
-      playbook: docs/devops/alert/vcenter/#host_in_maintenance_mode_for_at_least_72h
-      no_alert_on_absence: "true"
-    annotations:
-      description: "Host `{{ $labels.hostsystem }}` is in maintenance mode for at least 72 hours. ({{ $labels.vcenter }})."
-      summary: "Host `{{ $labels.hostsystem }}` is in maintenance mode for at least 72 hours. ({{ $labels.vcenter }})."
+  # - alert: HostInMaintenanceModeForAtLeast72h
+  #   expr: |
+  #     vrops_hostsystem_alert_info{alert_name="Host is in maintenance mode for at least 72 hours"}
+  #     and on (hostsystem) vrops_hostsystem_runtime_maintenancestate{state!~"inMaintenance"}
+  #   labels:
+  #     severity: info
+  #     tier: vmware
+  #     service: compute
+  #     support_group: compute
+  #     context: "{{ $labels.hostsystem }} maintenance"
+  #     meta: "Host `{{ $labels.hostsystem }}` his in maintenance mode for at least 72 hours. ({{ $labels.vcenter }})."
+  #     playbook: docs/devops/alert/vcenter/#host_in_maintenance_mode_for_at_least_72h
+  #     no_alert_on_absence: "true"
+  #   annotations:
+  #     description: "Host `{{ $labels.hostsystem }}` is in maintenance mode for at least 72 hours. ({{ $labels.vcenter }})."
+  #     summary: "Host `{{ $labels.hostsystem }}` is in maintenance mode for at least 72 hours. ({{ $labels.vcenter }})."
 
   - alert: HADetectedAPossibleHostFailure
     expr: |
