@@ -1,0 +1,79 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vault-tec
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: vault-tec
+spec:
+  selector:
+    matchLabels:
+      app: vault-tec
+  replicas: {{ .Values.replicaCount }}
+  template:
+    metadata:
+      labels:
+        app: vault-tec
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/targets: kubernetes
+    spec:
+      {{- if .Values.tolerations }}
+      tolerations:
+        {{- toYaml .Values.tolerations | nindent 8 }}
+      {{- end }}
+      containers:
+      - command:
+        - /vault-tec
+        image: "{{required ".Values.global.registry is missing" .Values.global.registry }}/{{ .Values.image.repository }}:{{required ".Values.image.tag is missing" .Values.image.tag }}"
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        name: vault-tec
+        env:
+        - name: CONCOURSE_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: vault-tec-secret
+              key: CONCOURSE_USERNAME
+        - name: CONCOURSE_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: vault-tec-secret
+              key: CONCOURSE_PASSWORD
+        - name: VAULT_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: vault-tec-secret
+              key: VAULT_USERNAME
+        - name: VAULT_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: vault-tec-secret
+              key: VAULT_PASSWORD
+        volumeMounts:
+        - name: config
+          mountPath: "/config"
+          readOnly: true
+        resources:
+          limits:
+            cpu: {{ .Values.limits.cpu }}
+            memory: {{ .Values.limits.memory }}
+          requests:
+            cpu: {{ .Values.limits.cpu }}
+            memory: {{ .Values.limits.memory }}
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8080
+          initialDelaySeconds: 3
+          periodSeconds: 3
+        ports:
+          - name: metrics
+            containerPort: 8080
+      volumes:
+      - name: config
+        configMap:
+          name: vault-tec-config
+      terminationGracePeriodSeconds: 30
+      {{- if .Values.rbac.create }}
+      serviceAccountName: {{ .Values.rbac.serviceAccountName }}
+      {{- end }}
