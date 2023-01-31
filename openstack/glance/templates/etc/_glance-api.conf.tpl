@@ -16,8 +16,8 @@ show_image_direct_url = True
 admin_role = ''
 
 rpc_response_timeout = {{ .Values.rpc_response_timeout | default 300 }}
-rpc_workers = {{ .Values.rpc_workers | default 1 }}
-workers = {{ .Values.workers | default 4 }}
+rpc_workers = {{ .Values.rpc_workers }}
+workers = {{ .Values.workers }}
 
 wsgi_default_pool_size = {{ .Values.wsgi_default_pool_size | default 100 }}
 
