@@ -38,6 +38,14 @@ function cleanup_tempest_leftovers() {
   for share in $(manila list | grep -E 'tempest|share' | awk '{ print $2 }'); do manila reset-task-state ${share} && manila delete ${share}; done
   for ss in $(manila security-service-list --detailed 1 --columns "id,name,user"| grep -E 'tempest|None' | awk '{ print $2 }'); do manila security-service-delete ${ss}; done
   for type in $(manila type-list | grep -E 'tempest' | awk '{ print $2 }'); do manila type-delete ${type}; done
+  for net in $(manila share-network-list | grep -E 'tempest|None' | awk '{ print $2 }')
+  do
+    # don't delete pre-created share networks
+    if [[ ! " ${pre_created_share_networks[@]} " =~ " ${net} " ]]; then
+      manila share-network-delete ${net}
+    fi
+  done
+
 }
 
 {{- include "tempest-base.function_main" . }}
