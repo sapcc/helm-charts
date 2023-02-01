@@ -15,8 +15,11 @@ spec:
   jobLabel: thanos-sidecar
 
   selector:
-    matchLabels:
-      prometheus: {{ include "prometheus.name" (list $name $root) }}
+    matchExpressions:
+    - key: app.kubernetes.io/instance
+      operator: In
+      values:
+      - {{ include "prometheus.name" (list $name $root) }}
 
   podMetricsEndpoints:
     - interval: {{ required ".Values.serviceDiscoveries.scrapeInterval  missing" $root.Values.serviceDiscoveries.scrapeInterval }}
