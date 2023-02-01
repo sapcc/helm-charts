@@ -36,3 +36,16 @@ groups:
     annotations:
       description: 'cc3test {{ $labels.type }}/{{ $labels.name }} is not running for more than 10 minutes'
       summary: 'cc3test {{ $labels.type }}/{{ $labels.name }} is down'
+      
+  - alert: CC3TestNoMetrics
+    expr: absent(cc3test_status) == 1
+    for: 60m
+    labels:
+      severity: info
+      service: cc3test
+      context: 'cc3test'
+      dashboard: cc3test-overview
+      meta: 'cc3test does not create any cc3test metrics - most probably the tests are not running for some reason'
+    annotations:
+      description: 'cc3test does not create any cc3test metrics - most probably the tests are not running for some reason'
+      summary: 'cc3test does not create any cc3test metrics'
