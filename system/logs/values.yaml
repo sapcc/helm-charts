@@ -60,24 +60,39 @@ fluent-bit:
   enabled: false
   podAnnotations:
     # manual versioning, raise if configmap changes
-    versioning: "2"
+    versioning: "3"
   nameOverride: "fluent-bit-systemd"
   existingConfigMap: "fluent-bit-config"
   image:
     repository: keppel.global.cloud.sap/ccloud-dockerhub-mirror/fluent/fluent-bit
     pullPolicy: IfNotPresent
+  backend:
+    es:
+      host: DEFINED-IN-SECRETS
+      port: DEFINED-IN-SECRETS
+      http_user: DEFINED-IN-SECRETS
+      http_passwd: DEFINED-IN-SECRETS
+      logstash_prefix: systemd
+      tls:
+        enabled: "On"
+        verify: "On"
+        debug: '1'
+    opensearch:
+      enabled: false
+      host: DEFINED-IN-SECRETS
+      http_user: DEFINED-IN-SECRETS
+      http_passwd: DEFINED-IN-SECRETS
+      port: DEFINED-IN-SECRETS
+      logstash_prefix: systemd
+      tls:
+        enabled: "On"
+        verify: "Off"
+        debug: '1'
   alerts:
     enabled: false
     prometheus: infra-collector
   exporter:
     prometheus: infra-collector
-  opensearch:
-    enabled: false
-    http_port: 9200
-    user: DEFINED-IN-SECRETS
-    password: DEFINED-IN-SECRETS
-    http:
-      endpoint: "opensearch-logs-client.scaleout"
   extraPorts:
     - port: 2021
       containerPort: 2021
