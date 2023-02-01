@@ -52,20 +52,38 @@ spec:
                   fieldPath: metadata.namespace
             - name: LS_JAVA_OPTS
               value: {{.Values.logstash.javaopts}}
+            {{ if .Values.logstash.audit -}}
             - name: METIS_PASSWORD
               valueFrom:
                 secretKeyRef:
                   name: logstash-secret
                   key: METIS_PASSWORD
+            {{- end}}
+            - name: CONFIG_HASH
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.annotations['logstash-etc-configmap.yaml']
           volumeMounts:
             - name: hermes-etc
               mountPath: /hermes-etc
-          # livenessProbe:
-          #   exec:
-          #     command:
-          #       - /bin/false
-          #   initialDelaySeconds: 900
-          #   periodSeconds: 3600 # Restart once per hour in case of rabbitmq shutdown
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 9600
+            initialDelaySeconds: 300
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+            successThreshold: 1
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 9600
+            initialDelaySeconds: 60
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+            successThreshold: 3
           resources:
             requests:
               memory: {{required ".Values.resources_requests_memory_ls is missing" .Values.resources_requests_memory_ls}}

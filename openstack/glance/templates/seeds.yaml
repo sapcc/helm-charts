@@ -15,6 +15,7 @@ spec:
   - monsoon3/domain-cis-seed
   - monsoon3/domain-bs-seed
   - monsoon3/domain-fsn-seed
+  - monsoon3/domain-hda-seed
   - monsoon3/domain-hcm-seed
   - monsoon3/domain-hcp03-seed
   - monsoon3/domain-hec-seed
@@ -31,7 +32,7 @@ spec:
   - name: image_admin
   - name: image_viewer
   - name: image_publicize_admin
-  
+
   services:
   - name: glance
     type: image
@@ -77,7 +78,7 @@ spec:
       - user: image-build@Default
         role: cloud_image_admin
       - user: glance@Default
-        role: swiftoperator
+        role: objectstore_admin
     - name: BaremetalMonitoring
       description: 'Appliances used for monitoring bare metal servers'
       role_assignments:
@@ -98,7 +99,7 @@ spec:
         role: image_admin
       - domain: ccadmin
         role: image_admin
-        inherited: true        
+        inherited: true
     - name: CCADMIN_COMPUTE_SUPPORT
       role_assignments:
       - project: compute_support
@@ -245,6 +246,45 @@ spec:
         role: image_viewer
         inherited: true
 
+  - name: hda
+    groups:
+    - name: HDA_API_SUPPORT
+      role_assignments:
+      - project: api_support
+        role: image_admin
+      - domain: hda
+        role: image_admin
+        inherited: true
+    - name: HDA_COMPUTE_SUPPORT
+      role_assignments:
+      - project: compute_support
+        role: image_admin
+      - domain: hda
+        role: image_admin
+        inherited: true
+    - name: HDA_NETWORK_SUPPORT
+      role_assignments:
+      - project: network_support
+        role: image_admin
+      - domain: hda
+        role: image_viewer
+        inherited: true
+    - name: HDA_STORAGE_SUPPORT
+      role_assignments:
+      - project: storage_support
+        role: image_admin
+      - domain: hda
+        role: image_viewer
+        inherited: true
+    - name: HDA_SERVICE_DESK
+      role_assignments:
+      - project: service_desk
+        role: image_admin
+      - domain: hda
+        role: image_viewer
+        inherited: true
+
+{{- if not .Values.global.domain_seeds.skip_hcm_domain }}
   - name: hcm
     groups:
     - name: HCM_API_SUPPORT
@@ -282,6 +322,7 @@ spec:
       - domain: hcm
         role: image_viewer
         inherited: true
+{{- end }}
 
   - name: hcp03
     groups:
@@ -417,7 +458,7 @@ spec:
         role: image_admin
       - domain: s4
         role: image_admin
-        inherited: true        
+        inherited: true
     - name: S4_NETWORK_SUPPORT
       role_assignments:
       - project: network_support

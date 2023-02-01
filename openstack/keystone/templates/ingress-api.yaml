@@ -67,7 +67,13 @@ metadata:
     {{- if .Values.global_setup }}
     kubernetes.io/ingress.class: "nginx-external"
     {{- end }}
+    {{- if .Values.services.ingress.disco }}
+    disco: "true"
+    {{- end }}
 spec:
+{{- if .Values.global_setup }}
+  ingressClassName: "nginx-external"
+{{- end }}
   tls:
     {{- if .Values.services.ingress.tlsacme }}
     - secretName: tls-{{.Values.services.public.host}}-{{.Values.global.region}}-{{.Values.global.tld | replace "." "-" }}
@@ -83,6 +89,15 @@ spec:
     - host: {{ .Values.services.public.host }}.{{ .Values.global.region }}.{{ .Values.global.tld }}
       http:
         paths:
+        {{- if (index .Values "2fa" "enabled")}}
+        - path: /v3/auth/tokens
+          pathType: Prefix
+          backend:
+            service:
+              name: {{ .Release.Name }}-2faproxy
+              port:
+                number: 8080
+        {{- end }}
         - path: /
           pathType: Prefix
           backend:

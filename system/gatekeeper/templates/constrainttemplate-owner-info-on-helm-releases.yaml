@@ -1,0 +1,70 @@
+apiVersion: templates.gatekeeper.sh/v1
+kind: ConstraintTemplate
+metadata:
+  name: gkownerinfoonhelmreleases
+spec:
+  crd:
+    spec:
+      names:
+        kind: GkOwnerInfoOnHelmReleases
+      validation:
+        # Schema for the `parameters` field
+        openAPIV3Schema:
+          type: object
+          properties:
+            helmManifestParserURL:
+              type: string
+
+  targets:
+    - target: admission.k8s.gatekeeper.sh
+      libs:
+        - |
+          {{ .Files.Get "lib/add-support-labels.rego" | nindent 10 }}
+        - |
+          {{ .Files.Get "lib/helm-release.rego" | nindent 10 }}
+      rego: |
+        package ownerinfoonhelmreleases
+        import data.lib.add_support_labels
+        import data.lib.helm_release
+
+        iro := input.review.object
+        release := helm_release.parse_k8s_object(iro, input.parameters.helmManifestParserURL)
+        violation[{"msg": release.error}] {
+          release.error != ""
+        }
+
+        configmap_name := sprintf("owner-of-%s", [iro.metadata.labels.name])
+
+        configmaps[obj] {
+          release.error == ""
+
+          obj := release.items[_]
+          obj.kind == "ConfigMap"
+          obj.metadata.name == configmap_name
+        }
+
+        violation[{"msg": add_support_labels.from_helm_release(release, msg)}] {
+          release.error == ""
+
+          # Check if an 'owner-of-<release-name>' ConfigMap exists for this release.
+          count(configmaps) == 0
+          release_name := iro.metadata.labels.name
+          msg := sprintf("could not find ConfigMap: %s", [configmap_name])
+        }
+
+        violation[{"msg": add_support_labels.from_helm_release(release, msg)}] {
+          release.error == ""
+
+          count(configmaps) > 0
+
+          # Check if the owner-info chart is not outdated
+          upToDateVersion := "0.2.0"
+          obj := configmaps[_]
+          version := object.get(obj.metadata, ["labels", "owner-info-version"], "")
+          semver.compare(version, upToDateVersion) < 0
+
+          msg := sprintf(
+            "Chart uses outdated owner-info version %q. Please update to at least %q.",
+            [version, upToDateVersion],
+          )
+        }

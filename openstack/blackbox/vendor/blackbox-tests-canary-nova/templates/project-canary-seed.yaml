@@ -1,0 +1,100 @@
+apiVersion: "openstack.stable.sap.cc/v1"
+kind: "OpenstackSeed"
+metadata:
+  name: project-canary-seed
+  labels:
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+
+spec:
+  requires:
+  - monsoon3/domain-cc3test-seed
+
+  domains:
+  - name: cc3test
+    description: 'Converged Cloud Testing'
+
+    groups:
+    - name: CC3TEST_DOMAIN_ADMINS
+      role_assignments:
+      - project: test
+        role: admin
+      - project: test
+        role: automation_admin
+      - project: test
+        role: compute_admin
+      - project: test
+        role: keymanager_admin
+      - project: test
+        role: kubernetes_admin
+      - project: test
+        role: network_admin
+      - project: test
+        role: resource_admin
+      - project: test
+        role: sharedfilesystem_admin
+      - project: test
+        role: objectstore_admin
+      - project: test
+        role: volume_admin
+      - project: test
+        role: member
+      - project: test
+        role: audit_viewer
+
+    projects:
+    - name: test
+      role_assignments:
+      - user: {{.Values.global.openstack.users.admin.username}}
+        role: admin
+      - user: {{.Values.global.openstack.users.admin.username}}
+        role: automation_admin
+      - user: {{.Values.global.openstack.users.admin.username}}
+        role: compute_admin
+      - user: {{.Values.global.openstack.users.admin.username}}
+        role: keymanager_admin
+      - user: {{.Values.global.openstack.users.admin.username}}
+        role: kubernetes_admin
+      - user: {{.Values.global.openstack.users.admin.username}}
+        role: network_admin
+      - user: {{.Values.global.openstack.users.admin.username}}
+        role: resource_admin
+      - user: {{.Values.global.openstack.users.admin.username}}
+        role: sharedfilesystem_admin
+      - user: {{.Values.global.openstack.users.admin.username}}
+        role: objectstore_admin
+      - user: {{.Values.global.openstack.users.admin.username}}
+        role: volume_admin
+      - user: {{.Values.global.openstack.users.admin.username}}
+        role: member
+      - user: {{.Values.global.openstack.users.admin.username}}
+        role: audit_viewer
+      - user: {{.Values.global.openstack.users.member.username}}
+        role: member
+      network_quota:
+        subnetpool: 5
+        subnet: 5
+        network: 5
+        rbac_policy: 10
+        router: 3
+      networks:
+      - name: private_canary_test_cc3test
+        subnets:
+        - name: private_canary_test_cc3test_sub
+          cidr: 10.180.0.0/16
+          ip_version: 4
+      routers:
+      - name: private_canary_test_cc3test_router
+        external_gateway_info:
+          network: {{.Values.global.network.monsoon3}}
+          external_fixed_ips:
+          - subnet: {{.Values.global.subnet.monsoon3}}
+        interfaces:
+        - subnet: private_canary_test_cc3test_sub
+
+  rbac_policies:
+    - object_type: network
+      object_name: {{.Values.global.network.monsoon3}}
+      action: access_as_shared
+      target_tenant_name: test@cc3test

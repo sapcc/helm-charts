@@ -1,4 +1,4 @@
-{{- $domains := list "bs" "cc3test" "cp" "cis" "fsn" "hcm" "hcp03" "hec" "monsoon3" "neo" "s4" "wbs" -}}
+{{- $domains := list "bs" "cc3test" "cp" "cis" "fsn" "hcm" "hcp03" "hda" "hec" "monsoon3" "neo" "s4" "wbs" -}}
 {{- /* WARNING: When adding a new domain, also increment the domain count in the OpenstackLimesUnexpectedCloudDnsAdminRoleAssignments alert. */ -}}
 
 apiVersion: "openstack.stable.sap.cc/v1"
@@ -54,12 +54,27 @@ spec:
           enabled:   true
           url:       'http://limes-api-ccloud.{{.Release.Namespace}}.svc'
 
+  services:
+    - name:        limes-rates
+      type:        sapcc-rates
+      description: 'Hierarchical rate limit/usage tracking'
+      enabled:     true
+      endpoints:
+        - region:    '{{.Values.global.region}}'
+          interface: public
+          enabled:   true
+          url:       '{{.Values.limes.clusters.ccloud.catalog_url}}/rates'
+        - region:    '{{.Values.global.region}}'
+          interface: internal
+          enabled:   true
+          url:       'http://limes-api-ccloud.{{.Release.Namespace}}.svc/rates'
+
   domains:
     - name: Default
       users:
         - name: limes
           description: Limes Service
-          password: '{{.Values.limes.passwords.ccloud.auth_password}}'
+          password: '{{.Values.limes.passwords.ccloud.os_password}}'
           role_assignments:
             - project: service
               role:    service
@@ -88,7 +103,7 @@ spec:
           - user: limes@Default
             role: cloud_dns_admin
           - user: limes@Default
-            role:  swiftreseller
+            role:  cloud_objectstore_admin
           # permission to inspect metadata for private images (to determine OS type)
           - user: limes@Default
             role: cloud_image_admin

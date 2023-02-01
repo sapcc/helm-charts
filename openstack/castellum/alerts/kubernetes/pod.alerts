@@ -7,6 +7,8 @@ groups:
         expr: rate(container_cpu_cfs_throttled_seconds_total{namespace="castellum"}[1h]) > 1
         for: 15m
         labels:
+          no_alert_on_absence: "true" # small regions may have no throttled containers at all, so this may legitimately occur
+          support_group: containers
           tier: os
           service: castellum
           severity: info
@@ -24,6 +26,7 @@ groups:
         for: 15m
         labels:
           severity: warning
+          support_group: containers
           tier: os
           service: castellum
           context: memory
@@ -38,6 +41,7 @@ groups:
         expr: sum(rate(klog_pod_oomkill{namespace="castellum"}[30m])) by (pod_name) > 0
         for: 5m
         labels:
+          support_group: containers
           tier: os
           service: castellum
           severity: info
@@ -54,6 +58,7 @@ groups:
         expr: container_memory_saturation_ratio{namespace="castellum"} > 0.7 AND predict_linear(container_memory_saturation_ratio{namespace="castellum"}[1h], 7*3600) > 1.0
         for: 30m
         labels:
+          support_group: containers
           tier: os
           service: castellum
           severity: info

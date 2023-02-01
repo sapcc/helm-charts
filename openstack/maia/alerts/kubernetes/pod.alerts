@@ -1,0 +1,70 @@
+# vim: set ft=yaml:
+
+groups:
+- name: openstack-maia-pod.alerts
+  rules:
+      - alert: OpenstackMaiaPodCPUThrottling
+        expr: rate(container_cpu_cfs_throttled_seconds_total{namespace="maia"}[1h]) > 1
+        for: 15m
+        labels:
+          no_alert_on_absence: "true" # small regions may have no throttled containers at all, so this may legitimately occur
+          support_group: observability
+          tier: os
+          service: maia
+          severity: info
+          context: cpu
+          dashboard: maia-details
+          meta: "{{ $labels.pod }}/{{ $labels.container }}"
+        annotations:
+          summary: Container is constantly CPU-throttled
+          description: The container {{ $labels.pod }}/{{ $labels.container }} is being CPU-throttled
+            constantly. This is probably impacting performance, so check if we can increase the number
+            of replicas or the resource requests/limits.
+
+      - alert: OpenstackMaiaPodSchedulingInsufficientMemory
+        expr: sum(rate(kube_pod_failed_scheduling_memory_total{pod_name=~"maia-.+"}[30m])) by (pod_name) > 0
+        for: 15m
+        labels:
+          severity: warning
+          support_group: observability
+          tier: os
+          service: maia
+          context: memory
+          dashboard: maia-details
+          meta: "{{ $labels.pod_name }}"
+          no_alert_on_absence: "true" # the underlying metric is only generated when scheduling fails
+        annotations:
+          summary: Scheduling failed due to insufficient memory
+          description: The pod {{ $labels.pod_name }} failed to be scheduled. Insufficient memory!
+
+      - alert: OpenstackMaiaPodOOMKilled
+        expr: sum(rate(klog_pod_oomkill{pod_name=~"maia-.+"}[30m])) by (pod_name) > 0
+        for: 5m
+        labels:
+          support_group: observability
+          tier: os
+          service: maia
+          severity: info
+          context: memory
+          dashboard: maia-details
+          meta: "{{ $labels.pod_name }}"
+          no_alert_on_absence: "true" # the underlying metric is only generated after the first oomkill
+        annotations:
+          summary: Pod was oomkilled
+          description: The pod {{ $labels.pod_name }} was oomkilled recently
+
+      - alert: OpenstackMaiaPodOOMExceedingLimits
+        # NOTE: `container_memory_saturation_ratio` ranges from 0 to 1, so 0.7 = 70% and 1.0 = 100%
+        expr: container_memory_saturation_ratio{namespace="maia"} > 0.7 AND predict_linear(container_memory_saturation_ratio{namespace="maia"}[1h], 7*3600) > 1.0
+        for: 30m
+        labels:
+          support_group: observability
+          tier: os
+          service: maia
+          severity: info
+          context: memory
+          dashboard: maia-details
+          meta: "{{ $labels.pod_name }}"
+        annotations:
+          summary: Exceeding memory limits in 8h
+          description: The pod {{ $labels.pod_name }} will exceed its memory limit in 8h.

@@ -15,14 +15,40 @@ data:
         do-daemonize: no
         access-control: 0.0.0.0/0 allow_snoop
 
-        num-threads: 10
+        # not more then the number of cpus
+        num-threads: 8
+
+        # power of 2 close to num-threads
+        msg-cache-slabs: 8
+        rrset-cache-slabs: 8
+        infra-cache-slabs: 8
+        key-cache-slabs: 8
+
+        cache-max-negative-ttl: 100
+        cache-max-ttl: 28800
+
+        # time to live for entries in the host cache incl roundtrip timing
+        infra-host-ttl: 600
+        # to keep probing hosts that were marked down
+        infra-keep-probing: yes
+
+        # more cache memory (default is 4m), rrset=msg*2
+        rrset-cache-size: 100m
+        msg-cache-size: 50m
+
+        # Faster UDP with multithreading (only on Linux)
+        so-reuseport: yes
         
         root-hints: "/etc/unbound/root.hints"
 
         directory: "/etc/unbound"
         logfile: ""
         log-time-ascii: yes
+        log-servfail: yes
         include: /etc/unbound/hosts.conf
+
+        # enable extended statistics (query types, answer codes, status)
+        extended-statistics: {{.Values.unbound.ext_stats}}
 
        # Remote control config section.
        remote-control:

@@ -167,6 +167,7 @@ spec:
             - name: manila-bin
               mountPath: /scripts
               readOnly: true
+            {{- include "utils.coordination.volume_mount" . | indent 12 }}
           {{- if .Values.pod.resources.api }}
           resources:
             {{ toYaml .Values.pod.resources.api | nindent 13 }}
@@ -190,6 +191,9 @@ spec:
           resources:
             {{- toYaml .Values.pod.resources.api_statsd | trim | nindent 12 }}
           {{- end }}
+ {{- if .Values.osprofiler.enabled }}
+ {{- include "jaeger_agent_sidecar" . | indent 8 }}
+ {{- end }}
       volumes:
         - name: etcmanila
           emptyDir: {}
@@ -204,3 +208,4 @@ spec:
           configMap:
             name: manila-bin
             defaultMode: 0555
+        {{- include "utils.coordination.volumes" . | indent 8 }}

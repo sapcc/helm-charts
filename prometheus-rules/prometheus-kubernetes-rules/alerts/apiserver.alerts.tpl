@@ -8,6 +8,7 @@ groups:
     labels:
       tier: {{ required ".Values.tier missing" .Values.tier }}
       service: k8s
+      support_group: containers
       severity: warning
       context: apiserver
       meta: "{{`{{ $labels.instance }}`}}"
@@ -23,6 +24,7 @@ groups:
     labels:
       tier: {{ required ".Values.tier missing" .Values.tier }}
       service: k8s
+      support_group: containers
       severity: warning
       context: apiserver
       meta: "{{`{{ $labels.instance }}`}}"
@@ -38,6 +40,7 @@ groups:
     labels:
       tier: {{ required ".Values.tier missing" .Values.tier }}
       service: k8s
+      support_group: containers
       severity: info
       context: apiserver
       dashboard: kubernetes-health
@@ -51,9 +54,25 @@ groups:
     labels:
       tier: {{ required ".Values.tier missing" .Values.tier }}
       service: k8s
+      support_group: containers
       severity: info
       context: apiserver
       dashboard: kubernetes-apiserver
     annotations:
       description: ApiServerLatency for {{`{{ $labels.resource }}`}} is higher then usual for the past 15 minutes. Inspect apiserver logs for the root cause.
       summary: ApiServerLatency is unusally high
+
+  - alert: KubeAggregatedAPIDown
+    # We have to filter by job here because somehow the kubelet is also exporting this metric ?! and in admin/virtual/kubernikus we also scape apiservers in the
+    # kubernikus namespace
+    expr: (1 - max by(name, namespace)(avg_over_time(aggregator_unavailable_apiservice{job="kubernetes-apiserver"}[10m]))) * 100 < 85
+    for: 5m
+    labels:
+      tier: {{ required ".Values.tier missing" .Values.tier }}
+      service: k8s
+      support_group: containers
+      severity: warning
+      context: apiserver
+    annotations:
+      description: "Kubernetes aggregated API {{`{{ $labels.namespace }}`}}/{{`{{ $labels.name }}`}} has been only {{`{{ $value | humanize }}`}}% available over the last 10m. Run `kubectl get apiservice | grep -v Local` and confirm the services of aggregated APIs have active endpoints."
+      summary: Kubernetes aggregated API is down.

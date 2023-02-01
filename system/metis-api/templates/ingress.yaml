@@ -1,0 +1,38 @@
+{{- if .Values.metisAPI.enabled }}
+
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+
+metadata:
+  name:  metis-api
+  namespace: {{ .Values.namespace }}
+  labels:
+    app.kubernetes.io/name: {{ template "name" . }}
+    helm.sh/chart: {{ include "metisAPI.chart" $ }}
+    app.kubernetes.io/instance: {{ template "name" . }}
+    app.kubernetes.io/component: "api"
+    app.kubernetes.io/part-of: "metis"
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+  annotations:
+    kubernetes.io/tls-acme: "true"
+    disco: "true"
+    ingress.kubernetes.io/auth-tls-secret: kube-system/ingress-cacrt
+    ingress.kubernetes.io/auth-tls-verify-client: optional
+    ingress.kubernetes.io/auth-tls-verify-depth: "3"
+
+spec:
+  tls:
+    - secretName: metis-api-tls
+      hosts: [metis.{{ .Values.global.region }}.{{ .Values.global.tld }}]
+  rules:
+    - host: metis.{{ .Values.global.region }}.{{ .Values.global.tld }}
+      http:
+        paths:
+        - path: /
+          pathType: Prefix
+          backend:
+            service:
+              name: metis-api
+              port:
+                name: http
+{{- end }}

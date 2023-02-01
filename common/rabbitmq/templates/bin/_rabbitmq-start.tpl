@@ -1,45 +1,60 @@
 #!/usr/bin/env bash
-set -e
+set -euo pipefail
 
+{{- if and .Values.metrics.enabled (not .Values.metrics.sidecar.enabled) .Values.metrics.port }}
+echo "prometheus.tcp.port = {{ .Values.metrics.port }}" >> /etc/rabbitmq/conf.d/10-defaults.conf
+{{- end}}
 LOCKFILE=/var/lib/rabbitmq/rabbitmq-server.lock
 echo "Starting RabbitMQ with lock ${LOCKFILE}"
 exec 9>${LOCKFILE}
 /usr/bin/flock -n 9
 
+declare -A users
+
 function upsert_user {
-    rabbitmqctl add_user "$1" "$2" || rabbitmqctl change_password "$1" "$2"
-    rabbitmqctl set_permissions "$1" ".*" ".*" ".*"
-    [ -z "$3" ] || rabbitmqctl set_user_tags "$1" "$3"
+    if [ "${users[$1]+set}" ]; then
+        rabbitmqctl -q change_password "$1" "$2"
+        if [ "${3+set}" ]; then
+            [ "${users[$1]}" == "${3}" ] || rabbitmqctl -q set_user_tags "$1" "$3"
+        elif [ "${users[$1]+set}" ]; then
+            rabbitmqctl -q set_user_tags "$1"
+        fi
+    else
+        rabbitmqctl -q add_user "$1" "$2"
+        rabbitmqctl -q set_permissions "$1" ".*" ".*" ".*"
+        if [ "${3+set}" ]; then
+            rabbitmqctl -q set_user_tags "$1" "$3"
+        else
+            rabbitmqctl -q set_user_tags "$1"
+        fi
+    fi
 }
 
-function bootstrap {
-   #Not especially proud of this, but it works (unlike the environment variable approach in the docs)
-   chown -R rabbitmq:rabbitmq /var/lib/rabbitmq
+rabbitmq-server &
+PID=$!
+function cleanup() {
+    kill -SIGTERM $PID
+    wait $(jobs -rp) || true
+}
+trap cleanup EXIT
 
-   /etc/init.d/rabbitmq-server start || ( cat /var/log/rabbitmq/startup_* && exit 1 )
+timeout 60 rabbitmqctl wait /var/lib/rabbitmq/mnesia/rabbit@$HOSTNAME.pid
 
 {{- if .Values.debug }}
-   rabbitmq-plugins enable rabbitmq_tracing
-   rabbitmqctl trace_on
+rabbitmq-plugins enable rabbitmq_tracing
+rabbitmqctl trace_on
 {{- end }}
 
-   upsert_user {{ .Values.users.default.user | include "rabbitmq.shell_quote" }} {{ required ".Values.users.default.password missing" .Values.users.default.password | include "rabbitmq.shell_quote" }}
+eval $(timeout 5.0 rabbitmqctl list_users -q | awk '{printf "users[\"%s\"]=\"%s\"\n", $1, substr($2, 2, length($2)-2)}')
 
-   upsert_user {{ .Values.users.admin.user | include "rabbitmq.shell_quote" }} {{ required ".Values.users.admin.password missing" .Values.users.admin.password | include "rabbitmq.shell_quote" }} administrator
-
-{{- if .Values.metrics.enabled }}
-   upsert_user {{ .Values.metrics.user | include "rabbitmq.shell_quote" }} {{ required ".Values.metrics.password missing" .Values.metrics.password | include "rabbitmq.shell_quote" }} monitoring
+{{- range $k, $v := .Values.users }}
+{{ list (printf ".Values.users.%v" $k) $v | include "rabbitmq.upsert_user" }}
 {{- end }}
 
-   rabbitmqctl change_password guest {{ required ".Values.users.default.password missing" .Values.users.default.password | include "rabbitmq.shell_quote" }} || true
-   rabbitmqctl set_user_tags guest monitoring || true
-   /etc/init.d/rabbitmq-server stop
-}
+{{- if and .Values.metrics.enabled (not .Values.users.metrics) }}
+{{ list ".Values.metrics" .Values.metrics | include "rabbitmq.upsert_user" }} monitoring
+{{- end }}
+upsert_user guest {{ .Values.users.default.password | include "rabbitmq.shell_quote" }} monitoring
 
-
-function start_application {
-  exec gosu rabbitmq rabbitmq-server
-}
-
-bootstrap
-start_application
+wait $(jobs -rp) || true
+sleep inf

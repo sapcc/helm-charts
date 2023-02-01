@@ -1,0 +1,11 @@
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: GkResourceLimits
+metadata:
+  name: resourcelimits
+  annotations:
+    {{- include "sources" (tuple "resource-limits" "resource-limits") | indent 4 }}
+  labels:
+    on-prod-ui: 'true'
+spec:
+  enforcementAction: dryrun
+  match: {{ include "match_pods_and_pod_owners" . | indent 4 }}

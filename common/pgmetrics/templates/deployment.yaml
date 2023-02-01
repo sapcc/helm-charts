@@ -1,9 +1,8 @@
-{{- $region  := .Values.global.region       | required "missing value for .Values.global.region" -}}
-{{- $tld     := .Values.global.tld          | required "missing value for .Values.global.tld" -}}
 {{- $mirror  := .Values.global.quayIoMirror | required "missing value for .Values.global.quayIoMirror" -}}
 {{- $db_name := .Values.db_name             | default .Release.Name -}}
 {{- $db_pass := .Values.db_password         | required "missing value for .Values.db_password" -}}
-{{- $db_host := printf "%s-postgresql.%s.svc.kubernetes.%s.%s" .Release.Name .Release.Namespace $region $tld -}}
+{{- $db_host := .Values.db_host             | default (printf "%s-postgresql" .Release.Name) -}}
+{{- $db_host = printf "%s.%s.svc" $db_host .Release.Namespace -}}
 
 kind: Deployment
 apiVersion: apps/v1
@@ -38,11 +37,11 @@ spec:
     spec:
       containers:
       - name: metrics
-        image: "{{ $mirror }}/prometheuscommunity/postgres-exporter:v0.10.1"
+        image: "{{ $mirror }}/prometheuscommunity/postgres-exporter:v0.11.1"
         imagePullPolicy: IfNotPresent
         env:
         - name: DATA_SOURCE_NAME
-          value: postgresql://postgres:{{ $db_pass }}@{{ $db_host }}:5432/{{ $db_name }}?sslmode=disable
+          value: postgresql://postgres:{{ $db_pass }}@{{ $db_host }}:5432/{{ $db_name }}?sslmode=disable&application_name={{ .Release.Name }}-pgmetrics
         ports:
           - name: metrics
             containerPort: 9187

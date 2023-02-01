@@ -25,7 +25,11 @@
 - name: CASTELLUM_LOG_SCRAPES
   value: "true"
 - name: CASTELLUM_MAX_ASSET_SIZES
-  value: "nfs-shares=16384" # 16384 GiB = 16 TiB
+  value: "nfs-shares.*=20480" # 20480 GiB = 20 TiB
+  # ^ The Manila limit comes from the "provisioning:max_share_extend_size" setting in
+  # `openstack/manila/templates/_helpers.tpl`. The limit in Manila only applies to
+  # the "default" share type. The "hypervisor_storage" share types are not limited,
+  # but those are usually not autoscaled anyway, so it's not a problem as of now.
 - name: CASTELLUM_NFS_PROMETHEUS_URL
   value: "http://prometheus-infra-collector.infra-monitoring.svc:9090"
 - name: CASTELLUM_OSLO_POLICY_PATH
@@ -44,7 +48,11 @@
 - name: CASTELLUM_SERVERGROUPS_LOCAL_ROLES
   value: "member,keymanager_viewer"
 - name: CASTELLUM_SERVERGROUPS_PROMETHEUS_URL
-  value: "http://prometheus-vmware.vmware-monitoring.svc:9090"
+  value: "https://metrics.scaleout.{{ .Values.global.region }}.cloud.sap"
+- name: CASTELLUM_SERVERGROUPS_PROMETHEUS_CERT
+  value: /etc/castellum-certs/prometheus-vmware.cert.pem
+- name: CASTELLUM_SERVERGROUPS_PROMETHEUS_KEY
+  value: /etc/castellum-certs/prometheus-vmware.key.pem
 - name: OS_AUTH_URL
   value: "http://keystone.{{ .Values.global.keystoneNamespace }}.svc.kubernetes.{{ .Values.global.region }}.{{ .Values.global.tld }}:5000/v3"
 - name: OS_AUTH_VERSION

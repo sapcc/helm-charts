@@ -1,4 +1,3 @@
-{{- $swift_release := include "swift_release" . -}}
 apiVersion: "openstack.stable.sap.cc/v1"
 kind: "OpenstackSeed"
 metadata:
@@ -18,14 +17,10 @@ spec:
   - monsoon3/domain-cc3test-seed
 
   roles:
-  - name: swiftoperator
-  - name: swiftreseller
-{{- if ge $swift_release "yoga" }}
   - name: cloud_objectstore_admin
   - name: cloud_objectstore_viewer
   - name: objectstore_admin
   - name: objectstore_viewer
-{{- end }}
   services:
   - name: swift
     type: object-store
@@ -47,7 +42,7 @@ spec:
     - name: admin
       role_assignments:
       - project: admin
-        role: swiftreseller # used by openstack-seeder to create Swift accounts
+        role: cloud_objectstore_admin # used by openstack-seeder to create Swift accounts
     - name: swift
       description: 'Swift Service'
       password: '{{ .Values.swift_service_password }}'
@@ -63,25 +58,25 @@ spec:
     - name: cloud_admin
       role_assignments:
       - group: CCADMIN_CLOUD_ADMINS
-        role: swiftreseller
+        role: cloud_objectstore_admin
     - name: master # Swift account is enabled in swift-utils-seed
       role_assignments:
       - group: CCADMIN_CLOUD_ADMINS
-        role: swiftoperator
+        role: objectstore_admin
       - group: CCADMIN_DOMAIN_ADMINS
-        role: swiftoperator
+        role: objectstore_admin
       - user: db_backup@Default
-        role: swiftoperator
+        role: objectstore_admin
       - user: docker_registry@Default
-        role: swiftoperator
+        role: objectstore_admin
       - user: image-build@Default
-        role: swiftoperator
+        role: objectstore_admin
       - user: quay@Default
-        role: swiftoperator
+        role: objectstore_admin
 
   - name: monsoon3
     projects:
     - name: cc-demo
       role_assignments:
       - group: MONSOON3_DOMAIN_ADMINS
-        role: swiftoperator
+        role: objectstore_admin

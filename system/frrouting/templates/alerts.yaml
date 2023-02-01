@@ -1,0 +1,18 @@
+{{- $values := .Values }}
+{{- if $values.alerts.enabled }}
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+
+metadata:
+  name: alerts-frrouting-core.alerts
+  labels:
+    app: frrouting-core
+    tier: k8s
+    type: alerting-rules
+    prometheus: {{ required ".Values.alerts.prometheus missing" $values.alerts.prometheus }}
+
+spec:
+{{ include (print .Template.BasePath "/alerts/_frrouting-core.alerts.tpl") . | indent 2 }}
+
+{{- end }}

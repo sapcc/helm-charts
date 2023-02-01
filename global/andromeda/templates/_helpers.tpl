@@ -54,3 +54,14 @@ Create the name of the service account to use
     {{ default "default" .Values.serviceAccount.name }}
 {{- end -}}
 {{- end -}}
+
+{{define "andromeda_keystone_api_endpoint_internal"}}keystone.{{ required ".Values.global.keystoneNamespace required" .Values.global.keystoneNamespace }}.svc.kubernetes.{{ include "host_fqdn" . }}{{end}}
+
+{{- define "andromeda.database_service" -}}
+{{- if .Values.mariadb.enabled -}}
+  {{ include "andromeda.fullname" . }}-mariadb
+{{- else if .Values.postgresql.enabled -}}
+  {{ include "andromeda.fullname" . }}-postgresql
+{{- end -}}
+{{- end -}}
+

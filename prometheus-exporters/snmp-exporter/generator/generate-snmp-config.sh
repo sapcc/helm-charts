@@ -63,7 +63,7 @@ for i in $modules;
             mv -f ./_snmp-exporter-${i}.yaml.tmp ../_snmp-exporter-${i}.yaml
         fi
  
-        if [[ "$i" =~ ^(f5mgmt|f5physical|f5customer)$ ]]; then
+        if [[ "$i" =~ ^(f5mgmt|f5physical|f5customer|f5gtm)$ ]]; then
             sed -i "s/- name: /- name: snmp_f5_/g" ../_snmp-exporter-${i}.yaml
         else
             sed -i "s/- name: /- name: snmp_${i}_/g" ../_snmp-exporter-${i}.yaml
@@ -78,14 +78,6 @@ done
 
 if grep -q "arista:" ../_snmp-exporter-arista.yaml; then
     sed -i '2d' ../_snmp-exporter-arista.yaml
-fi
-
-if grep -q "n7k:" ../_snmp-exporter-n7k.yaml; then
-    sed -i '2d' ../_snmp-exporter-n7k.yaml
-fi
-
-if grep -q "n7k:" ../_snmp-exporter-n7kcontext.yaml; then
-    sed -i '2d' ../_snmp-exporter-n7kcontext.yaml
 fi
 
 if grep -q "asw:" ../_snmp-exporter-arista.yaml; then

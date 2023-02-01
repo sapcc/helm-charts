@@ -17,7 +17,7 @@
 {{- define "mariadb.db_host"}}{{.Release.Name}}-mariadb.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}{{- end}}
 
 {{- define "mariadb.root_password" -}}
-{{- .Values.root_password }}
+{{- required ".Values.root_password missing" .Values.root_password }}
 {{- end -}}
 
 {{- define "db_password" -}}

@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  labels:
+    k8s-app: k3s-litestream
+  name: k3s-litestream
+spec:
+  selector:
+    matchLabels:
+      k8s-app: k3s-litestream
+  updateStrategy:
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        k8s-app: k3s-litestream
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/targets: kubernetes
+    spec:
+      containers:
+      - name: litestream
+        image: "{{ required ".Values.images.litestream.image is missing" .Values.images.litestream.image }}:{{ required ".Values.images.litestream.tag is missing" .Values.images.litestream.tag }}"
+        imagePullPolicy: IfNotPresent
+        args:
+          - replicate
+        securityContext:
+           privileged: true
+        volumeMounts:
+          - name: litestream-config
+            mountPath: /etc/litestream.yml
+            readOnly: true
+          - name: k3s-statedb
+            mountPath: /var/lib/rancher/k3s/server/db/
+        ports:
+        - name: metrics
+          containerPort: 9090
+          protocol: TCP
+      terminationGracePeriodSeconds: 5
+      volumes:
+        - name: litestream-config
+          hostPath:
+            path: "/etc/litestream.yml"
+        - name: k3s-statedb
+          hostPath:
+            path: "/var/lib/rancher/k3s/server/db/"

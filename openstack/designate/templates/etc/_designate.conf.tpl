@@ -64,6 +64,9 @@ transport_url = rabbit://{{ .Values.rabbitmq.users.default.user | default "rabbi
 [oslo_policy]
 policy_file = policy.yaml
 
+[oslo_messaging_rabbit]
+heartbeat_in_pthread = false
+
 [oslo_messaging_notifications]
 driver = noop
 
@@ -115,7 +118,7 @@ workers = 2
 #threads = 1000
 
 # Enable host request headers
-#enable_host_header = False
+enable_host_header = false
 
 # Make Zone description field mandatory
 #description_field_mandatory = False
@@ -407,6 +410,31 @@ mysql_sql_mode = TRADITIONAL
 #max_retries = 10
 retry_interval = 1
 
+[healthcheck]
+# DEPRECATED: The path to respond to healtcheck requests on. (string value)
+# This option is deprecated for removal.
+# Its value may be silently ignored in the future.
+path = /healthcheck
+
+# Show more detailed information as part of the response. Security note:
+# Enabling this option may expose sensitive details about the service being
+# monitored. Be sure to verify that it will not violate your security policies.
+# (boolean value)
+detailed = false
+
+# Additional backends that can perform health checks and report that information
+# back as part of a request. (list value)
+#backends =
+
+# Check the presence of a file to determine if an application is running on a
+# port. Used by DisableByFileHealthcheck plugin. (string value)
+disable_by_file_path = /etc/designate/healthcheck_disable
+
+# Check the presence of a file based on a port to determine if an application is
+# running on a port. Expects a "port:path" list of strings. Used by
+# DisableByFilesPortsHealthcheck plugin. (list value)
+#disable_by_file_paths =
+
 ########################
 ## Handler Configuration
 ########################
@@ -484,3 +512,6 @@ retry_interval = 1
 
 # [hook_point:designate.api.v2.controllers.zones.get_one]
 {{ include "ini_sections.audit_middleware_notifications" . }}
+
+# Tracing
+{{- include "osprofiler" . }}

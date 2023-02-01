@@ -24,7 +24,7 @@ osapi_share_base_URL = https://{{include "manila_api_endpoint_host_public" .}}
 
 # seconds between state report
 report_interval = {{ .Values.report_interval | default 30 }}
-service_down_time = {{ .Values.service_down_time | default 300 }}
+service_down_time = {{ .Values.service_down_time | default 600 }}
 periodic_interval = {{ .Values.periodic_interval | default 300 }}
 
 rpc_response_timeout = {{ .Values.rpc_response_timeout | default .Values.global.rpc_response_timeout | default 300 }}
@@ -42,13 +42,15 @@ delete_share_server_with_last_share = {{ .Values.delete_share_server_with_last_s
 use_scheduler_creating_share_from_snapshot = {{ .Values.use_scheduler_creating_share_from_snapshot | default false }}
 
 scheduler_default_filters = {{ .Values.scheduler_default_filters | default "AvailabilityZoneFilter,CapacityFilter,CapabilitiesFilter,ShareReplicationFilter,AffinityFilter,AntiAffinityFilter,OnlyHostFilter" }}
-# TODO: train does not have HostAffinityWeigher, add in victoria
-scheduler_default_weighers = CapacityWeigher
+scheduler_default_weighers = CapacityWeigher,GoodnessWeigher,HostAffinityWeigher
 scheduler_default_share_group_filters = AvailabilityZoneFilter,ConsistentSnapshotFilter,CapabilitiesFilter,DriverFilter
 
 migration_ignore_scheduler = True
 # default time to wait for access rules to become active in migration cutover was 180 seconds
 migration_wait_access_rules_timeout = 3600
+
+server_migration_driver_continue_update_interval = {{ .Values.server_migration_driver_continue_update_interval | default 900 }}
+server_migration_extend_neutron_network = {{ .Values.server_migration_extend_neutron_network | default false }}
 
 statsd_port = {{ .Values.rpc_statsd_port }}
 statsd_enabled = {{ .Values.rpc_statsd_enabled }}
@@ -90,8 +92,7 @@ rabbit_interval_max = {{ .Values.rabbitmq.max_reconnect_interval | default 3 }}
 [oslo_concurrency]
 lock_path = /var/lib/manila/tmp
 
-[coordination]
-backend_url = memcached://{{ .Chart.Name }}-memcached.{{ include "svc_fqdn" . }}:{{ .Values.memcached.memcached.port | default 11211 }}
+{{ include "ini_sections.coordination" . }}
 
 {{- include "ini_sections.database" . }}
 
@@ -120,4 +121,8 @@ service_type = sharev2
 {{- include "ini_sections.audit_middleware_notifications" . }}
 {{- if .Values.memcached.enabled }}
 {{- include "ini_sections.cache" . }}
+{{- end }}
+
+{{- if .Values.osprofiler.enabled }}
+{{- include "osprofiler" . }}
 {{- end }}

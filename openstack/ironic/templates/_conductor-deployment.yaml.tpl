@@ -4,7 +4,11 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
+{{- if $conductor.name }}
   name: ironic-conductor-{{$conductor.name}}
+{{- else }}
+  name: ironic-conductor
+{{- end }}
   labels:
     system: openstack
     type: conductor
@@ -16,29 +20,33 @@ spec:
     type: Recreate
   selector:
     matchLabels:
+    {{- if $conductor.name }}
       name: ironic-conductor-{{$conductor.name}}
+    {{- else }}
+      name: ironic-conductor
+    {{- end }}
   template:
     metadata:
       labels:
+    {{- if $conductor.name }}
         name: ironic-conductor-{{$conductor.name}}
+    {{- else }}
+        name: ironic-conductor
+    {{- end }}
 {{ tuple . "ironic" "conductor" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
       annotations:
         configmap-etc-hash: {{ include (print .Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
         configmap-etc-conductor-hash: {{ tuple . $conductor | include "ironic_conductor_configmap" | sha256sum }}{{- if $conductor.jinja2 }}{{`
         configmap-etc-jinja2-hash: {{ block | safe | sha256sum }}
 `}}{{- end }}
-        {{- if $conductor.conductor.statsd_enabled }}
+        {{- if $conductor.default.statsd_enabled }}
         prometheus.io/scrape: "true"
         prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
         {{- end }}
     spec:
       containers:
       - name: ironic-conductor
-        {{- if .Values.oslo_metrics.enabled }}
-        image: {{ .Values.global.registry }}/test-ironic:oslo-metrics01
-        {{- else}}
         image: {{ .Values.global.registry }}/loci-ironic:{{ .Values.imageVersion }}
-        {{- end }}
         imagePullPolicy: IfNotPresent
         {{- if $conductor.debug }}
         securityContext:
@@ -54,10 +62,14 @@ spec:
           {{- else }}
           value: "sleep inf"
           {{- end }}
+        - name: POD_NAME
+          valueFrom: {fieldRef: {fieldPath: metadata.name}}
         - name: NAMESPACE
           value: {{ .Release.Namespace }}
         - name: DEPENDENCY_SERVICE
           value: "ironic-api,ironic-rabbitmq"
+        - name: PYTHONWARNINGS
+          value: ignore:Unverified HTTPS request
         {{- if .Values.logging.handlers.sentry }}
         - name: SENTRY_DSN
           valueFrom:
@@ -72,16 +84,26 @@ spec:
         {{- if not $conductor.debug }}
         resources:
 {{ toYaml .Values.pod.resources.conductor | indent 10 }}
-        livenessProbe:
+        {{- if $conductor.name }}
+        startupProbe:
           exec:
             command:
             - bash
             - -c
             - curl -u {{ .Values.rabbitmq.metrics.user }}:{{ .Values.rabbitmq.metrics.password }} ironic-rabbitmq:{{ .Values.rabbitmq.ports.management }}/api/consumers | sed 's/,/\n/g' | grep ironic-conductor-{{$conductor.name}} >/dev/null
           periodSeconds: 10
+          failureThreshold: 30
+        livenessProbe:
+          exec:
+            command:
+            - bash
+            - -c
+            - curl -u {{ .Values.rabbitmq.metrics.user }}:{{ .Values.rabbitmq.metrics.password }} ironic-rabbitmq:{{ .Values.rabbitmq.ports.management }}/api/consumers | sed 's/,/\n/g' | grep ironic-conductor-{{$conductor.name}} >/dev/null
+              && openstack-agent-liveness -c ironic --config-file /etc/ironic/ironic.conf --ironic_conductor_host ironic-conductor-{{$conductor.name}}
+          periodSeconds: 120
           failureThreshold: 3
-          initialDelaySeconds: 30
-          timeoutSeconds: 2
+          timeoutSeconds: 12
+        {{- end }}
         {{- end }}
         volumeMounts:
         - mountPath: /etc/ironic
@@ -114,17 +136,9 @@ spec:
           name: ironic-conductor-etc
           subPath: ironic-conductor.conf
           readOnly: {{ not $conductor.debug }}
-        - mountPath: /etc/ironic/pxe_config.template
-          name: ironic-conductor-etc
-          subPath: pxe_config.template
-          readOnly: {{ not $conductor.debug }}
         - mountPath: /etc/ironic/ipxe_config.template
           name: ironic-conductor-etc
           subPath: ipxe_config.template
-          readOnly: {{ not $conductor.debug }}
-        - mountPath: /etc/ironic/uefi_pxe_config.template
-          name: ironic-conductor-etc
-          subPath: uefi_pxe_config.template
           readOnly: {{ not $conductor.debug }}
         - mountPath: /tftpboot
           name: ironic-tftp
@@ -160,7 +174,7 @@ spec:
             port: ironic-console
           initialDelaySeconds: 5
           periodSeconds: 3
-      {{- if $conductor.conductor.statsd_enabled }}
+      {{- if $conductor.default.statsd_enabled }}
       - name: oslo-exporter
         image: {{ .Values.global.dockerHubMirror }}/prom/statsd-exporter
         args:
@@ -170,7 +184,7 @@ spec:
           containerPort: 9102
           protocol: TCP
         - name: statsd-udp
-          containerPort: {{ $conductor.conductor.statsd_port }}
+          containerPort: {{ $conductor.default.statsd_port }}
           protocol: UDP
         volumeMounts:
         - name: ironic-etc
@@ -178,6 +192,7 @@ spec:
           subPath: statsd-rpc-exporter.yaml
           readOnly: true
       {{- end }}
+ {{- include "jaeger_agent_sidecar" . | indent 6 }}
       volumes:
       - name: etcironic
         emptyDir: {}
@@ -188,7 +203,11 @@ spec:
           name: ironic-etc
       - name: ironic-conductor-etc
         configMap:
+        {{- if $conductor.name }}
           name: ironic-conductor-{{$conductor.name}}-etc
+        {{- else }}
+          name: ironic-conductor-etc
+        {{- end }}
       - name: ironic-console
         configMap:
           name: ironic-console

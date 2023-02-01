@@ -17,6 +17,9 @@ template: |
       system: openstack
       type: backend
       component: nova
+      vcenter: {= host =}
+      datacenter: {= availability_zone =}
+      vccluster: {= cluster_name =}
   spec:
     replicas: 1
     revisionHistoryLimit: 5
@@ -36,6 +39,9 @@ template: |
           alert-tier: os
           alert-service: nova
           hypervisor: "vmware"
+          vcenter: {= host =}
+          datacenter: {= availability_zone =}
+          vccluster: {= cluster_name =}
         annotations:
           prometheus.io/scrape: "true"
           prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
@@ -44,11 +50,11 @@ template: |
       spec:
 {{ tuple "{= availability_zone =}" | include "kubernetes_pod_az_affinity" | indent 8 }}
 {{- include "kubernetes_maintenance_affinity" . | indent 4 }}
+        terminationGracePeriodSeconds: 900
         containers:
         - name: nova-compute
-          image: {{ required ".Values.global.registry is missing" .Values.global.registry}}/ubuntu-source-nova-compute:{{ .Values.imageVersionNovaCompute | default .Values.imageVersionNova | default .Values.imageVersion | required "Please set .imageVersion or similar" }}
+          image: {{ tuple . "compute" | include "container_image_nova" }}
           imagePullPolicy: IfNotPresent
-          terminationGracePeriodSeconds: 900
           command:
           - dumb-init
           - kubernetes-entrypoint
@@ -83,9 +89,10 @@ template: |
             name: nova-etc
             subPath: nova.conf
             readOnly: true
-          - mountPath: /etc/nova/policy.json
+          {{- /* Note I533984: Replace with plain policy.yaml after Xena upgrade */}}
+          - mountPath: /etc/nova/{{if (.Values.imageVersion | hasPrefix "rocky") }}policy.json{{else}}policy.yaml{{end}}
             name: nova-etc
-            subPath: policy.json
+            subPath: {{if (.Values.imageVersion | hasPrefix "rocky") }}policy.json{{else}}policy.yaml{{end}}
             readOnly: true
           - mountPath: /etc/nova/logging.ini
             name: nova-etc

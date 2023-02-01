@@ -131,7 +131,12 @@
 "share_network:detail": "rule:context_is_viewer"
 "share_network:show": "rule:context_is_viewer"
 "share_network:add_security_service": "rule:context_is_sharedfilesystem_admin"
+"share_network:add_security_service_check": "rule:context_is_viewer"
 "share_network:remove_security_service": "rule:context_is_sharedfilesystem_admin"
+"share_network:update_security_service": "rule:context_is_sharedfilesystem_admin"
+"share_network:update_security_service_check": "rule:context_is_viewer"
+"share_network:reset_status": "rule:context_is_sharedfilesystem_admin"
+"share_network:subnet_create_check": "rule:context_is_sharedfilesystem_admin"
 "share_network:get_all_share_networks": "rule:context_is_cloud_viewer"
 
 "share_network_subnet:create": "rule:context_is_sharedfilesystem_admin"
@@ -166,7 +171,7 @@
 "share_replica:resync": "rule:context_is_sharedfilesystem_admin"
 "share_replica:reset_status": "rule:context_is_sharedfilesystem_admin"
 "share_replica:force_delete": "rule:context_is_admin"
-"share_replica:reset_replica_state": "rule:context_is_admin"
+"share_replica:reset_replica_state": "rule:context_is_sharedfilesystem_admin"
 
 "share_replica_export_location:index": "rule:context_is_viewer"
 "share_replica_export_location:show": "rule:context_is_viewer"

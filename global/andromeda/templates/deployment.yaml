@@ -38,11 +38,19 @@ spec:
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
-          args: ["--config-file", "/etc/andromeda/andromeda.conf", "server", "--port", "8000"]
+          args: ["--config-file", "/etc/andromeda/andromeda.yaml", "--port", "8000"]
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           env:
             - name: HOST
               value: 0.0.0.0
+            - name: MICRO_BROKER
+              value: nats
+            - name: MICRO_REGISTRY
+              value: nats
+            - name: MICRO_TRANSPORT
+              value: nats
+            - name: MICRO_LOG_LEVEL
+              value: debug
           ports:
             - name: http
               containerPort: 8000
@@ -69,5 +77,7 @@ spec:
               - configMap:
                   name: andromeda-etc
                   items:
-                    - key: andromeda.conf
-                      path: andromeda.conf
+                    - key: andromeda.yaml
+                      path: andromeda.yaml
+                    - key: policy.json
+                      path: policy.json

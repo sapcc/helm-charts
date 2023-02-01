@@ -10,19 +10,16 @@ requirements:
 - name: ironic-seed
   kind: OpenstackSeed
 python: |
-    from ironicclient import client as bmclient
-    bm = bmclient.get_client(1, session=os.session, os_ironic_api_version='1.46')
-
-    resource_classes = set(node.resource_class
-                           for node in bm.node.list(fields=['resource_class'])
-                           if node.resource_class and not
-                           node.resource_class.startswith(('tempest-Resource_Class-', 'ResClass-')))
-
-    quotas = {'instances_{}'.format(r): 0 for r in resource_classes}
-
-    endpoint_filter={'service_type': 'compute', 'interface': 'public'}
-    resp = os.session.post('/os-quota-class-sets/flavors',
-                          endpoint_filter=endpoint_filter,
-                          json=dict({"quota_class_set": quotas}))
-    LOG.debug("Got response: %s", resp.status_code)
+  node_list = os.baremetal.nodes(fields=['resource_class'])
+  resource_classes = {node.resource_class
+                      for node in node_list 
+                      if node.resource_class and not 
+                      node.resource_class.startswith(('tempest-Resource_Class-', 'ResClass-'))}
+  LOG.debug(f"Resource Classes: {resource_classes}")
+  quotas = {f"instances_{r}": 0 for r in resource_classes}
+  endpoint_filter={'service_type': 'compute', 'interface': 'public'}
+  resp = os.session.post('/os-quota-class-sets/flavors',
+                      endpoint_filter=endpoint_filter,
+                      json=dict({"quota_class_set": quotas}))
+  LOG.debug(f"Got response: {resp.status_code}")
 {{- end  }}

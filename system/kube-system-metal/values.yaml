@@ -58,6 +58,8 @@ cert-manager:
     enabled: true
   podAnnotations:
     prometheus.io/targets: "collector-kubernetes"
+  extraArgs:
+    - --enable-certificate-owner-ref=true
 
 digicert-issuer:
   enableLeaderElection: "false"
@@ -78,7 +80,21 @@ ingress:
     monitor:
       enabled: false
       prometheus: kubernetes
-
+ingress-nginx:
+  controller:
+    config:
+      custom-http-errors: "495"
+  defaultBackend:
+    image:
+      image: ingress-nginx/nginx-errors
+      tag: 1.3.0
+    extraVolumes:
+    - name: custom-error-pages
+      configMap:
+        name: ingress-custom-errors
+    extraVolumeMounts:
+    - name: custom-error-pages
+      mountPath: /www
 ingress-nginx-external:
   enabled: false
   fullnameOverride: kube-system-ingress-nginx-external
@@ -229,3 +245,28 @@ maintenance-controller:
 # Kubernetes de-scheduler to auto-balance cluster is currently enabled on a regional basis.
 descheduler:
   enabled: false
+
+metrics-server:
+  image:
+    repository: keppel.global.cloud.sap/ccloud-k8sgcr-mirror/metrics-server/metrics-server
+
+  # Workaround for qa landscapes.
+  args:
+    - --kubelet-insecure-tls
+
+  replicas: 3
+  podLabels:
+    k8s-app: metrics-server
+  affinity:
+    podAntiAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        - labelSelector:
+            matchLabels:
+              k8s-app: metrics-server
+          namespaces:
+            - kube-system
+          topologyKey: kubernetes.io/hostname
+
+owner-info:
+  support-group: containers
+  helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/system/kube-system-metal

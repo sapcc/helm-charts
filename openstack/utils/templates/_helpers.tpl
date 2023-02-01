@@ -69,3 +69,4 @@ trace_sqlalchemy = {{ .Values.global.osprofiler.trace_sqlalchemy }}
     - --log-level=debug
 {{- end }}
 {{- end }}
+

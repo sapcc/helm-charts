@@ -26,6 +26,8 @@ spec:
         checksum/grafana-initial-setup: {{ include "grafanasix/templates/_grafana-initial-setup.tpl" . | sha256sum }}
         checksum/helpers: {{ include "grafanasix/templates/_helpers.tpl" . | sha256sum }}
         pod.alpha.kubernetes.io/initialized: "true"
+        prometheus.io/scrape: "true"
+        prometheus.io/targets: "openstack"
     spec:
       nodeSelector:
         zone: farm
@@ -42,9 +44,21 @@ spec:
             secretName: grafana-ds-certs
 {{- end }}
         - name: grafana-git
+{{- if .Values.grafana.content.persistence.enabled }}
+          persistentVolumeClaim:
+            claimName: grafana-content-gitsync-pvc
+{{- else }}
           emptyDir: {}
+{{- end }}
         - name: grafana-content
           emptyDir: {}
+      initContainers:
+      - name: fix-permissions
+        image: {{ .Values.global.dockerHubMirror | required ".Values.global.dockerHubMirror is missing" }}/library/busybox:1.34
+        command: ["/bin/chown","-R","65533:65533", "/tmp/git"]
+        volumeMounts:
+        - name: grafana-git
+          mountPath: /tmp/git
       containers:
         - name: "grafana"
           image: {{ .Values.global.dockerHubMirror | required ".Values.global.dockerHubMirror is missing" }}/{{.Values.grafana.image}}:{{.Values.grafana.image_version}}
@@ -92,6 +106,8 @@ spec:
             - "--repo={{.Values.grafana.gitsync.repository}}"
             - "--branch={{.Values.grafana.gitsync.branch}}"
             - "--wait=30"
+            - "--max-sync-failures=-1"
+            - "--http-bind=localhost:9090"
           env:
             - name: GIT_SSL_NO_VERIFY
               value: "true"
@@ -109,6 +125,9 @@ spec:
             limits:
               memory: "250Mi"
               cpu: "150m"
+          ports:
+            - name: metrics
+              containerPort: 9090
         - name: "minitrue"
           image: {{.Values.global.registry}}/grafana-minitrue:{{.Values.grafana.minitrue_version}}
           imagePullPolicy: {{.Values.image.pullPolicy}}

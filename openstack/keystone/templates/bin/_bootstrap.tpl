@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
-
 set -ex
-
+trap "{{ include "utils.proxysql.proxysql_signal_stop_script" . | trim }}" EXIT
 # seed just enough to have a functional v3 api
 keystone-manage --config-file=/etc/keystone/keystone.conf bootstrap \
     --bootstrap-username {{ .Values.api.adminUser }} \

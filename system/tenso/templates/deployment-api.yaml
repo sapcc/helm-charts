@@ -25,6 +25,18 @@ spec:
         checksum/configmap: {{ include "tenso/templates/configmap.yaml" . | sha256sum }}
         checksum/secret: {{ include "tenso/templates/secret.yaml" . | sha256sum }}
     spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: name
+                  operator: In
+                  values:
+                  - tenso-api
+              topologyKey: "kubernetes.io/hostname"
+            weight: 10
       volumes:
         - name: config
           configMap:

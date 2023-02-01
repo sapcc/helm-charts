@@ -16,8 +16,8 @@ apiVersion: networking.k8s.io/v1
 metadata:
   name: elektra
   annotations:
-    ingress.kubernetes.io/custom-http-errors: 404,500,503
-    ingress.kubernetes.io/default-backend: error-pages
+    #ingress.kubernetes.io/custom-http-errors: "500,503"
+    #ingress.kubernetes.io/default-backend: error-pages
 
     {{- if .Values.ingress.ca }}
     ingress.kubernetes.io/auth-tls-pass-certificate-to-upstream: {{ default true .Values.ingress.pass_certificate_to_upstream | quote }}
@@ -25,6 +25,7 @@ metadata:
     ingress.kubernetes.io/auth-tls-verify-client: "optional"
     ingress.kubernetes.io/auth-tls-verify-depth: "3"
     {{- end }}
+    disco: "true"
     kubernetes.io/tls-acme: {{ default false .Values.ingress.vice_president | quote }}
     prometheus.io/probe: {{ default false .Values.ingress.probe | quote }}
     {{- if .Values.ingress.oauth_proxy }}
@@ -63,6 +64,7 @@ metadata:
     ingress.kubernetes.io/auth-tls-verify-client: "optional"
     ingress.kubernetes.io/auth-tls-verify-depth: "3"
     {{- end }}
+    disco: "true"
     kubernetes.io/tls-acme: {{ default false .Values.ingress.vice_president | quote }}
     prometheus.io/probe: {{ default false .Values.ingress.probe | quote }}
     dns-manager: "true"

@@ -26,9 +26,19 @@ spec:
               while true; do
                 if [ $(date '+%H%M') = '{{ .Values.session_cleanup_time }}' ]; then
                   bin/rake sessions:cleanup object_cache:cleanup
-                  echo "bin/rake sessions:cleanup object_cache:cleanup exited"
+                  echo "bin/rake sessions:cleanup object_cache:cleanup"
                 fi
                 sleep 55
               done
+                    # NOTE: observed resource usage in eu-de-2 (as of 2022-06)
+          # - CPU: 12m with 8 replicas was running into throttling, so give plenty headroom
+          # - RAM: levels off around 128Mi
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "512Mi"
+            limits:
+              cpu: "120m"
+              memory: "512Mi"     
           env:
 {{ include (print .Template.BasePath "/_env.tpl") . | indent 12 }}

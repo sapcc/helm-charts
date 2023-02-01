@@ -1,0 +1,123 @@
+{{ if .Values.enabled -}}
+{{- if .Values.globalRegion.enabled }}
+{{ range $az, $azValues := .Values.globalRegion.azs }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: frrouting-core-{{ $region }}
+data:
+  frrouting-init.sh: |
+    #!/usr/bin/env bash
+
+    # load mpls kernel modules
+    chroot /host modprobe mpls_router
+    chroot /host modprobe mpls_iptunnel
+
+    # change kernel parameters to enable MPLS
+    chroot /host sysctl -w net.mpls.conf.core.input=1
+    chroot /host sysctl -w net.mpls.platform_labels=1000000
+
+    # find out IP address for core interface
+    export CORE_IP=$(/sbin/ip -4 addr show core | grep -oP '(?<=inet\s)\d+(\.\d+){3}')
+
+    echo "Core inteface IP is ${CORE_IP}"
+
+    # copy /etc/frr/daemons
+    envsubst < /opt/frr/daemons | tee /etc/frr/daemons
+
+    # copy zebra config
+    envsubst < /opt/frr/bgpd.conf | tee /etc/frr/bgpd.conf
+
+    # copy bgpd config
+    envsubst < /opt/frr/zebra.conf | tee /etc/frr/zebra.conf
+
+    # copy ospfd config
+    envsubst < /opt/frr/ospfd.conf | tee /etc/frr/ospfd.conf
+
+    #create empty vtysh.conf
+    touch /etc/frr/vtysh.conf
+
+    exit 0
+  etc-frr-daemons: |
+    # FRR daemon configuration
+    bgpd=yes
+    ospfd=yes
+    zebra=yes
+    vtysh_enable=yes
+    zebra_options="  -A $CORE_IP -s 90000000"
+    bgpd_options="   -A $CORE_IP"
+    ospfd_options="  -A $CORE_IP"
+  etc-frr-ospfd-conf: |
+    router ospf 1
+     ospf router-id $CORE_IP
+     passive-interface cbr0
+     passive-interface rid
+    
+    interface core
+     ip ospf hello-interval 1
+     ip ospf dead-interval 4
+     ip ospf 1 area 0
+    interface cbr0
+     ip ospf 1 area 0
+    interface rid
+     ip ospf 1 area 0
+
+  etc-frr-bgpd-conf: |   
+    ip prefix-list PL_CORE_IN seq 10 permit any
+    ip prefix-list PL_CORE_OUT seq 10 permit {{ $.Values.clusterCIDR }} ge 24 le 24
+    !
+    route-map RM_CORE_IN permit 10
+     match ip address prefix-list PL_CORE_IN
+    exit
+
+    route-map RM_CORE_OUT permit 10
+     match ip address prefix-list PL_CORE_OUT
+    exit
+
+    router bgp {{ $azValues.as }}
+     bgp router-id $CORE_IP
+     {{ range $i, $neighbor := $azValues.neighbors }}
+     neighbor {{ $neighbor }} remote-as {{ $azValues.remoteAS }}
+     neighbor {{ $neighbor }} update-source core
+     {{ end }}
+     !
+     address-family ipv4 unicast
+      redistribute connected route-map RM_CORE_OUT
+      label vpn export {{ $azValues.label }}
+      rd vpn export {{ $azValues.as }}:{{ $azValues.label }}
+      rt vpn export {{ $azValues.as }}:{{ $azValues.label }}
+      rt vpn import {{ $.Values.pmtud.ifaceNames | join " " }}
+      export vpn
+      import vpn
+     exit-address-family
+     !
+     address-family ipv4 vpn
+      neighbor {{ $neighbor }} activate
+      neighbor {{ $neighbor }} route-map RM_CORE_OUT out
+      neighbor {{ $neighbor }} route-map RM_CORE_IN in
+     exit-address-family
+    exit
+  etc-frr-zebra-conf: |
+    ! Create an access list that allows access from localhost and nowhere else
+    access-list access permit 127.0.0.1/32
+    access-list access deny any
+
+    ! Enable access control on the command-line interface
+    line vty
+     access-class access
+    !
+    ! Enable logging
+    log file /etc/frr/log.log
+
+    debug zebra events
+    debug zebra kernel
+    debug zebra rib
+    debug zebra nht
+    debug bgp updates in
+    debug bgp updates out
+    debug bgp vpn leak-from-vrf
+    debug bgp vpn leak-to-vrf
+{{- end }}
+{{- end }}
+{{- end }}

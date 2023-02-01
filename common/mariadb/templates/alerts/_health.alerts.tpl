@@ -8,6 +8,7 @@
       service: {{ include "alerts.service" . }}
       severity: critical
       tier: {{ required ".Values.alerts.tier missing" .Values.alerts.tier }}
+      support_group: {{ required ".Values.alerts.support_group missing" .Values.alerts.support_group }}
       playbook: 'docs/support/playbook/db_crashloop.html'
     annotations:
       description: {{ include "fullName" . }} database is not ready for 10 minutes.

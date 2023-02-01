@@ -6,7 +6,7 @@ metadata:
   labels:
     system: openstack
     type: backend
-    component: none
+    component: ironic
 spec:
   replicas: {{ .Values.pod.replicas.inspector }}
   revisionHistoryLimit: {{ .Values.pod.lifecycle.upgrades.deployments.revisionHistory }}
@@ -67,6 +67,9 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: metadata.name
+        lifecycle:
+          preStop:
+            {{- include "utils.snippets.pre_stop_graceful_shutdown" . | indent 12 }}
         resources:
 {{ toYaml .Values.pod.resources.inspector | indent 10 }}
         volumeMounts:

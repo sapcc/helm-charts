@@ -1,3 +1,11 @@
+owner-info:
+  support-group: observability
+  maintainers:
+    - Martin Vossen
+    - Tommy Sauer
+    - Richard Tief
+  helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/global/prometheus-infra
+
 global:
   region: global
   domain: cloud.sap
@@ -22,6 +30,13 @@ prometheus-infra-global:
   persistence:
     enabled: true
     size: 300Gi
+  
+  resources:
+    requests:
+      cpu: "1"
+      memory: 35Gi
+    limits:
+      memory: 38Gi
 
   serviceDiscoveries:
     endpoints:
@@ -46,6 +61,19 @@ prometheus-infra-global:
   alerts:
     tier: monitor
 
+    multipleTargetScrapes:
+      # List of exceptions for scrape jobs. This is joined together with a `|`.
+      exceptions:
+        - prometheus-infra-collector
+        - prometheus-infra-snmp
+        - prometheus-regions-bastion-federation
+        - prometheus-regions-federation
+        - prometheus-regions-vrops-federation
+
+    # This alert requires kube state metrics.
+    multiplePodScrapes:
+      enabled: false
+
 # Basic alerts for global Prometheus.
 alerts:
   prometheus: infra-global
@@ -60,7 +88,6 @@ regionList:
   - "eu-de-1"
   - "eu-de-2"
   - "eu-nl-1"
-  - "eu-ru-1"
   - "la-br-1"
   - "na-ca-1"
   - "na-us-1"

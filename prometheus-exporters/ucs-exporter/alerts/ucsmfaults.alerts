@@ -18,6 +18,7 @@ groups:
       severity: critical
       tier: metal
       service: baremetal
+      support_group: compute
       context: "{{ $labels.ucsm }}_{{ $labels.context }}"
       meta: "UCS Manager {{ $labels.ucsm }} has an error with severity {{ $labels.severity }}: {{ $labels.description }} ({{ $labels.code }})"
       no_alert_on_absence: "true"
@@ -33,6 +34,7 @@ groups:
       severity: warning
       tier: metal
       service: baremetal
+      support_group: compute
       context: "{{ $labels.ucsm }}_{{ $labels.context }}"
       meta: "UCS Manager {{ $labels.ucsm }} has an error with severity {{ $labels.severity }}: {{ $labels.description }} ({{ $labels.code }})"
       no_alert_on_absence: "true"
@@ -42,12 +44,13 @@ groups:
       summary: "UCS Manager {{ $labels.ucsm }} has an error with severity {{ $labels.severity }}"
 
   - alert: UcsmFaultInfo
-    expr: count(label_replace(label_replace(max_over_time(ucsm_faults{severity=~"critical", type=~"fsm"}[30m]), "context", "$2", "dn", "(sys|org-root)/(.+)/(.*)"), "ucsm", "$1", "server", "ucscluster-(.+).cc.+")) by (ucsm, severity, code, description, context) or on(ucsm, context) count(label_replace(label_replace(max_over_time(ucsm_faults{severity=~"major"}[30m]), "context", "$2", "dn", "(sys|org-root)/(.+)/(.*)"), "ucsm", "$1", "server", "ucscluster-(.+).cc.+")) by (ucsm, severity, code, description, context)
+    expr: count(label_replace(label_replace(max_over_time(ucsm_faults{severity=~"critical", type=~"fsm", code!~"F0436"}[30m]), "context", "$2", "dn", "(sys|org-root)/(.+)/(.*)"), "ucsm", "$1", "server", "ucscluster-(.+).cc.+")) by (ucsm, severity, code, description, context) or on(ucsm, context) count(label_replace(label_replace(max_over_time(ucsm_faults{severity=~"major", code!~"F0436"}[30m]), "context", "$2", "dn", "(sys|org-root)/(.+)/(.*)"), "ucsm", "$1", "server", "ucscluster-(.+).cc.+")) by (ucsm, severity, code, description, context)
     for: 10m
     labels:
       severity: info
       tier: metal
       service: baremetal
+      support_group: compute
       context: "{{ $labels.ucsm }}_{{ $labels.context }}"
       meta: "UCS Manager {{ $labels.ucsm }} has an error with severity {{ $labels.severity }}: {{ $labels.description }} ({{ $labels.code }})"
       no_alert_on_absence: "true"

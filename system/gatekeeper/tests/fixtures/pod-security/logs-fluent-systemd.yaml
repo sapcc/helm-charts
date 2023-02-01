@@ -1,0 +1,29 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  annotations:
+    meta.helm.sh/release-name: logs
+    meta.helm.sh/release-namespace: logs
+  labels:
+    app.kubernetes.io/managed-by: Helm
+  name: fluent-systemd
+  namespace: logs
+spec:
+  template:
+    spec:
+      containers:
+      - name: fluent-systemd
+        volumeMounts:
+        - mountPath: /fluentd/etc
+          name: fluent-etc
+        - mountPath: /var/log
+          name: varlog
+      securityContext: {}
+      volumes:
+      - configMap:
+          defaultMode: 420
+          name: fluent-systemd-etc
+        name: fluent-etc
+      - hostPath:
+          path: /var/log
+        name: varlog

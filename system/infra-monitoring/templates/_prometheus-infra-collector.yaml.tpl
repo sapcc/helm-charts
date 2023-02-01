@@ -125,7 +125,7 @@
     job: [jumpserver]
   metrics_path: /metrics
   http_sd_configs:
-    - url: "http://infra-monitoring-atlas-sd:8080/service_discovery/netbox"
+    - url: {{ .Values.atlas_url }}
   relabel_configs:
     - source_labels: [job]
       regex: jumpserver
@@ -144,7 +144,7 @@
   scrape_interval: {{$values.scrapeInterval}}
   scrape_timeout: {{$values.scrapeTimeout}}
   http_sd_configs:
-    - url: "http://infra-monitoring-atlas-sd:8080/service_discovery/netbox"
+    - url: {{ .Values.atlas_url }}
   metrics_path: /arista
   relabel_configs:
     - source_labels: [job]
@@ -162,7 +162,7 @@
   scrape_interval: {{.Values.snmp_exporter.scrapeInterval}}
   scrape_timeout: {{.Values.snmp_exporter.scrapeTimeout}}
   http_sd_configs:
-    - url: "http://infra-monitoring-atlas-sd:8080/service_discovery/netbox"
+    - url: {{ .Values.atlas_url }}
   metrics_path: /snmp
   relabel_configs:
     - source_labels: [job]
@@ -189,6 +189,10 @@
       target_label: device
     - source_labels: [__name__, snmp_n3k_sysDescr]
       regex: 'snmp_n3k_sysDescr;(?s)(.*)(Version )([0-9().a-zIU]*)(,.*)'
+      replacement: '$3'
+      target_label: image_version
+    - source_labels: [__name__, snmp_aristaevpn_sysDescr]
+      regex: 'snmp_aristaevpn_sysDescr;(?s)(.*)(version )([0-9.a-zA-Z]*)(.*)'
       replacement: '$3'
       target_label: image_version
     - source_labels: [__name__, snmp_coreasr9k_sysDescr]
@@ -247,10 +251,6 @@
       regex: 'snmp_asr03_sysDescr;(?s)(.*)(Version )([0-9().a-z]*)(,.*)'
       replacement: '$3'
       target_label: image_version
-    - source_labels: [__name__, snmp_asr04_sysDescr]
-      regex: 'snmp_asr04_sysDescr;(?s)(.*)(Version )([0-9().a-z]*)(,.*)'
-      replacement: '$3'
-      target_label: image_version
     - source_labels: [__name__, snmp_f5_sysProductVersion]
       regex: 'snmp_f5_sysProductVersion;(.*)'
       replacement: '$1'
@@ -258,10 +258,6 @@
     - source_labels: [__name__, snmp_acistretch_sysDescr]
       regex: "snmp_acistretch_sysDescr;(?s)(.*)Version ([0-9.]*)(.*)"
       replacement: '$2'
-      target_label: image_version
-    - source_labels: [__name__, snmp_n7k_sysDescr]
-      regex: 'snmp_n7k_sysDescr;(?s)(.*)(Version )([0-9().a-z]*)(,.*)'
-      replacement: '$3'
       target_label: image_version
     - source_labels: [__name__, cucsEtherErrStatsDn]
       regex: 'snmp_ucs_cucsEtherErrStats.+;.+(lan).+'
@@ -285,59 +281,11 @@
       regex: '^snmp_asr_.+;([a-z:]+);(project|)*:?([a-z0-9)]*);?router:([a-z0-9-]*);network:([a-z0-9-]*);subnet:([a-z0-9-]*)'
       replacement: '$6'
       target_label: subnet_id
-
-- job_name: 'snmp-apod'
-  scrape_interval: {{.Values.snmp_exporter_apod.scrapeInterval}}
-  scrape_timeout: {{.Values.snmp_exporter_apod.scrapeTimeout}}
-  http_sd_configs:
-    - url: "http://infra-monitoring-atlas-sd:8080/service_discovery/netbox"
-  metrics_path: /snmp
-  relabel_configs:
-    - source_labels: [job]
-      regex: snmp
-      action: keep
-    - source_labels: [__address__]
-      target_label: __param_target
-    - source_labels: [__param_target]
-      target_label: instance
-    - target_label: __address__
-      replacement: snmp-exporter-apod:{{.Values.snmp_exporter.listen_port}}
-    - source_labels: [module]
-      target_label: __param_module
-  metric_relabel_configs:
-    - source_labels: [job]
-      replacement: snmp-apod
-      target_label: job
-
-- job_name: 'snmp-ntp'
-  scrape_interval: {{.Values.snmp_exporter.scrapeInterval}}
-  scrape_timeout: {{.Values.snmp_exporter.scrapeTimeout}}
-  http_sd_configs:
-    - url: "http://infra-monitoring-atlas-sd:8080/service_discovery/netbox"
-  metrics_path: /snmp
-  relabel_configs:
-    - source_labels: [job]
-      regex: snmp-ntp
-      action: keep
-    - source_labels: [__address__]
-      target_label: __param_target
-    - source_labels: [__param_target]
-      target_label: instance
-    - target_label: __address__
-      replacement: snmp-ntp-exporter:{{.Values.snmp_exporter.listen_port}}
-    - source_labels: [module]
-      target_label: __param_module
-  metric_relabel_configs:
-    - source_labels: [server_name]
-      target_label:  devicename
-    - source_labels: [devicename]
-      regex: '(\w*-\w*-\w*)-(\S*)'
+    - source_labels: [__name__, device]
+      regex: '^snmp_asr_[A-za-z0-9]+;((rt|asr)[0-9]+)[a|b]$'
       replacement: '$1'
-      target_label: availability_zone
-    - source_labels: [devicename]
-      regex: '(\w*-\w*-\w*)-(\S*)'
-      replacement: '$2'
-      target_label: device
+      target_label: asr_pair
+      action: replace
 
 {{- $values := .Values.ipmi_exporter -}}
 {{- if $values.enabled }}
@@ -347,7 +295,7 @@
   scrape_interval: {{$values.ironic_scrapeInterval}}
   scrape_timeout: {{$values.ironic_scrapeTimeout}}
   http_sd_configs:
-    - url: "http://infra-monitoring-atlas-sd:8080/service_discovery/ironic"
+    - url: {{ .Values.atlas_ironic_url }}
   metrics_path: /ipmi
   relabel_configs:
     - source_labels: [__address__]
@@ -363,7 +311,7 @@
   scrape_interval: {{$values.cp_scrapeInterval}}
   scrape_timeout: {{$values.cp_scrapeTimeout}}
   http_sd_configs:
-    - url: "http://infra-monitoring-atlas-sd:8080/service_discovery/netbox"
+    - url: {{ .Values.atlas_url }}
   metrics_path: /ipmi
   relabel_configs:
     - source_labels: [job]
@@ -384,7 +332,7 @@
   scrape_interval: {{$values.esxi_scrapeInterval}}
   scrape_timeout: {{$values.esxi_scrapeTimeout}}
   http_sd_configs:
-    - url: "http://infra-monitoring-atlas-sd:8080/service_discovery/netbox"
+    - url: {{ .Values.atlas_url }}
   metrics_path: /ipmi
   relabel_configs:
     - source_labels: [job]
@@ -406,7 +354,7 @@
   scrape_interval: {{$values.redfish_scrapeInterval}}
   scrape_timeout: {{$values.redfish_scrapeTimeout}}
   http_sd_configs:
-    - url: "http://infra-monitoring-atlas-sd:8080/service_discovery/netbox"
+    - url: {{ .Values.atlas_url }}
   metrics_path: /redfish
   relabel_configs:
     - source_labels: [job]
@@ -425,7 +373,7 @@
   scrape_interval: {{$values.redfish_scrapeInterval}}
   scrape_timeout: {{$values.redfish_scrapeTimeout}}
   http_sd_configs:
-    - url: "http://infra-monitoring-atlas-sd:8080/service_discovery/netbox"
+    - url: {{ .Values.atlas_url }}
   metrics_path: /redfish
   relabel_configs:
     - source_labels: [job]
@@ -446,7 +394,7 @@
   scrape_interval: {{$values.redfish_scrapeInterval}}
   scrape_timeout: {{$values.redfish_scrapeTimeout}}
   http_sd_configs:
-    - url: "http://infra-monitoring-atlas-sd:8080/service_discovery/netbox"
+    - url: {{ .Values.atlas_url }}
   metrics_path: /redfish
   relabel_configs:
     - source_labels: [job]
@@ -466,7 +414,7 @@
   scrape_interval: {{$values.scrapeInterval}}
   scrape_timeout: {{$values.scrapeTimeout}}
   http_sd_configs:
-    - url: "http://infra-monitoring-atlas-sd:8080/service_discovery/netbox"
+    - url: {{ .Values.atlas_url }}
   metrics_path: /metrics
   relabel_configs:
     - source_labels: [job]
@@ -494,7 +442,7 @@
   scrape_interval: {{$values.scrapeInterval}}
   scrape_timeout: {{$values.scrapeTimeout}}
   http_sd_configs:
-    - url: "http://infra-monitoring-atlas-sd:8080/service_discovery/netbox"
+    - url: {{ .Values.atlas_url }}
   metrics_path: /metrics
   relabel_configs:
     - source_labels: [job]
@@ -525,7 +473,7 @@
   scrape_interval: {{$values.scrapeInterval}}
   scrape_timeout: {{$values.scrapeTimeout}}
   http_sd_configs:
-    - url: "http://infra-monitoring-atlas-sd:8080/service_discovery/netbox"
+    - url: {{ .Values.atlas_url }}
   metrics_path: /
   relabel_configs:
     - source_labels: [job]
@@ -610,86 +558,6 @@
       action: replace
 {{- end }}
 
-{{- if .Values.netbox_exporters.enabled }}
-- job_name: 'netbox_node'
-  scrape_interval: {{ .Values.netbox_exporters.scrapeInterval }}
-  scrape_timeout: {{ .Values.netbox_exporters.scrapeTimeout }}
-  static_configs:
-    - targets:
-      - 'netbox-redis.netbox.c.{{ .Values.global.region }}.{{ .Values.global.domain }}:80'
-      - 'postgres.netbox.c.{{ .Values.global.region }}.{{ .Values.global.domain }}:80'
-      - 'netbox-worker01.netbox.c.{{ .Values.global.region }}.{{ .Values.global.domain }}:80'
-      - 'netbox-blueprinter.netbox.c.{{ .Values.global.region }}.{{ .Values.global.domain }}:80'
-      - 'netbox-web01.netbox.c.{{ .Values.global.region }}.{{ .Values.global.domain }}:80'
-      - 'netbox-web02.netbox.c.{{ .Values.global.region }}.{{ .Values.global.domain }}:80'
-      - 'netbox-api01.netbox.c.{{ .Values.global.region }}.{{ .Values.global.domain }}:80'
-      - 'netbox-api02.netbox.c.{{ .Values.global.region }}.{{ .Values.global.domain }}:80'
-      - 'netbox-ro.global.cloud.sap:80'
-  metrics_path: /metrics
-  relabel_configs:
-    - source_labels: [job]
-      regex: netbox_node
-      action: keep
-    - source_labels: [job]
-      target_label: app
-      replacement: ${1}
-      action: replace
-- job_name: 'netbox_app'
-  scrape_interval: {{ .Values.netbox_exporters.scrapeInterval }}
-  scrape_timeout: {{ .Values.netbox_exporters.scrapeTimeout }}
-  static_configs:
-    - targets:
-      - 'netbox-web01.netbox.c.{{ .Values.global.region }}.{{ .Values.global.domain }}:80'
-      - 'netbox-web02.netbox.c.{{ .Values.global.region }}.{{ .Values.global.domain }}:80'
-      - 'netbox-api01.netbox.c.{{ .Values.global.region }}.{{ .Values.global.domain }}:80'
-      - 'netbox-api02.netbox.c.{{ .Values.global.region }}.{{ .Values.global.domain }}:80'
-      - 'netbox-ro.global.{{ .Values.global.domain }}:80'
-  metrics_path: /netboxmetrics
-  relabel_configs:
-    - source_labels: [job]
-      regex: netbox_app
-      action: keep
-    - source_labels: [job]
-      target_label: app
-      replacement: ${1}
-      action: replace
-- job_name: 'netbox_postgres'
-  scrape_interval: {{ .Values.netbox_exporters.scrapeInterval }}
-  scrape_timeout: {{ .Values.netbox_exporters.scrapeTimeout }}
-  static_configs:
-    - targets:
-      - 'postgres.netbox.c.{{ .Values.global.region }}.{{ .Values.global.domain }}:80'
-      - 'netbox-ro.global.{{ .Values.global.domain }}:80'
-  metrics_path: /postgres-metrics
-  relabel_configs:
-    - source_labels: [job]
-      regex: netbox_postgres
-      action: keep
-    - source_labels: [job]
-      target_label: app
-      replacement: ${1}
-      action: replace
-- job_name: 'netbox_nginx'
-  scrape_interval: {{ .Values.netbox_exporters.scrapeInterval }}
-  scrape_timeout: {{ .Values.netbox_exporters.scrapeTimeout }}
-  static_configs:
-    - targets:
-      - 'netbox-web01.netbox.c.{{ .Values.global.region }}.{{ .Values.global.domain }}:80'
-      - 'netbox-web02.netbox.c.{{ .Values.global.region }}.{{ .Values.global.domain }}:80'
-      - 'netbox-api01.netbox.c.{{ .Values.global.region }}.{{ .Values.global.domain }}:80'
-      - 'netbox-api02.netbox.c.{{ .Values.global.region }}.{{ .Values.global.domain }}:80'
-      - 'netbox-ro.global.{{ .Values.global.domain }}:80'
-  metrics_path: /nginxmetrics
-  relabel_configs:
-    - source_labels: [job]
-      regex: netbox_nginx
-      action: keep
-    - source_labels: [job]
-      target_label: app
-      replacement: ${1}
-      action: replace
-{{- end }}
-
 {{ if .Values.ask1k_tests.enabled }}
 - job_name: 'asr1k_tests'
   scrape_interval: 30s
@@ -734,7 +602,7 @@
   scrape_interval: 120s
   scrape_timeout: 60s
   http_sd_configs:
-    - url: "http://infra-monitoring-atlas-sd:8080/service_discovery/netbox"
+    - url: {{ .Values.atlas_url }}
   metrics_path: /ssh
   relabel_configs:
     - source_labels: [job]
@@ -755,33 +623,29 @@
   metric_relabel_configs:
     - action: labeldrop
       regex: "metrics_label"
+    - source_labels: [__name__, server_name]
+      regex: '^ssh_[A-za-z0-9]+;.*((rt|asr)[0-9]+)[a|b]$'
+      replacement: '$1'
+      target_label: asr_pair
+      action: replace
 {{ end }}
 
-- job_name: 'prometheus-vmware'
+{{ $root := . }}
+{{- range $target := .Values.global.targets }}
+- job_name: {{ include "prometheusVMware.fullName" (list $target $root) }}
   scheme: http
-  scrape_interval: {{ .Values.prometheus_vmware.scrapeInterval }}
-  scrape_timeout: {{ .Values.prometheus_vmware.scrapeTimeout }}
-
+  scrape_interval: {{ $root.Values.prometheus_vmware.scrapeInterval }}
+  scrape_timeout: {{ $root.Values.prometheus_vmware.scrapeTimeout }}
+  # use the alertmanger cert, as it is the shared Prometheus cert
+  tls_config:
+    cert_file: /etc/prometheus/secrets/prometheus-infra-collector-alertmanager-sso-cert/sso.crt
+    key_file: /etc/prometheus/secrets/prometheus-infra-collector-alertmanager-sso-cert/sso.key
+  static_configs:
+    - targets:
+        - '{{ include "prometheusVMware.fullName" (list $target $root) }}-internal.{{ $root.Values.global.region }}.cloud.sap'
   honor_labels: true
   metrics_path: '/federate'
-
   params:
     'match[]':
       - '{__name__=~"vrops_hostsystem_runtime_maintenancestate"}'
-      
-  relabel_configs:
-    - action: replace
-      source_labels: [__address__]
-      target_label: region
-      regex: prometheus-vmware.(.+).cloud.sap
-      replacement: $1
-
-  metric_relabel_configs:
-    - source_labels: [__name__, prometheus]
-      regex: '^up;(.+)'
-      replacement: '$1'
-      target_label: prometheus_source
-      action: replace
-
-  static_configs:
-    - targets: ['prometheus-vmware.vmware-monitoring.svc:9090']
+{{- end }}

@@ -24,4 +24,4 @@ host    replication     debezium        ::1/128                 trust
 host    replication     debezium        100.68.0.0/16          trust
 {{- end }}
 
-host all all {{ .Values.hba_cidr }} {{if not (or .Values.pgbouncer.enabled .Values.global.pgbouncer.enabled ) }}{{ .Values.auth_method }}{{ else }}md5{{ end }}
+host all all {{ .Values.hba_cidr }} {{ .Values.auth_method }}

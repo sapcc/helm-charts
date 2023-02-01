@@ -18,7 +18,6 @@ spec:
         app: {{ template "blackbox-exporter.name" . }}
       annotations:
         prometheus.io/scrape: 'true'
-        prometheus.io/port: {{ required ".Values.service.port missing" .Values.service.port | quote }}
         prometheus.io/targets: "kubernetes,openstack"
     spec:
       containers:
@@ -27,6 +26,7 @@ spec:
           imagePullPolicy: {{ required ".Values.image.pullPolicy missing" .Values.image.pullPolicy }}
           ports:
             - containerPort: {{ required ".Values.service.port missing" .Values.service.port }}
+              name: {{ required ".Values.service.name missing" .Values.service.name }}
           args:
             - --config.file=/etc/blackbox-exporter/blackbox.yaml
             - --web.external-url={{ include "hostname" . }}

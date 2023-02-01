@@ -44,6 +44,9 @@ data:
           {{- if $job.from.dist }}
           dist: {{ toJson $job.from.dist }}
           {{- end }}
+          {{- if $job.from.token }}
+          token: {{ $job.from.token }}
+          {{- end }}
           {{- if or (eq $type "yum") (eq $type "debian") }}
           verify_signature: {{ toJson $job.from.verify_signature }}
           {{- end }}
@@ -79,6 +82,12 @@ data:
         {{- if $config.cleanup_strategy }}
         cleanup:
           strategy: {{ $config.cleanup_strategy }}
+        {{- end }}
+        {{- if $job.match }}
+        match:
+          {{- if $job.match.not_older_than }}
+          not_older_than: {{ $job.match.not_older_than }}
+          {{- end }}
         {{- end }}
         except:    {{ coalesce $job.except $config.except "''" }}
         only:      {{ coalesce $job.only $config.only "''" }}

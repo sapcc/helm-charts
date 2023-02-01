@@ -4,6 +4,8 @@ global:
   registry: DEFINED_IN_VALUES_FILE
 
 owner-info:
+  support-group: containers
+  service: keppel
   maintainers:
     - Stefan Majewsky
     - Sandro Jäckel
@@ -12,7 +14,7 @@ owner-info:
   helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/openstack/clair
 
 clair:
-  image_version: 4.4.1 # see https://github.com/quay/clair/releases
+  image_version: null # comes from pipeline (NOTE: check CLAIR_VERSION in the pipeline.yaml.erb for which upstream version we use)
   log_level: info
   update_interval: 30m
   auth:
@@ -29,11 +31,26 @@ postgresql:
   backup:
     enabled: false
   alerts:
+    support_group: containers
     service: keppel
 
   postgresDatabase: clair
 
-  resources: {} # TODO: enable once we have some data to go off of
+  resources:
+    # observed resource usage:
+    #   CPU spikes regularly to 200%, on high load to 300%, idles at 10-20%
+    #   MEM spikes regularly up to 6.5GB, and then falls off to minimal 2GB under memory pressure.
+    #       When not under memory pressure and caching a lot is possible the usage idles at ~11GB.
+    limits:
+      memory: 11Gi
+      cpu: "3"
+    requests:
+      memory: 11Gi
+      cpu: "2"
 
 pgmetrics:
   db_name: clair
+  alerts:
+    prometheus: infra-frontend # there is no prometheus-openstack in scaleout, so we need to improvise :|
+    support_group: containers
+    service: keppel            # Clair alerts go into the Keppel channel

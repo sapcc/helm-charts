@@ -44,14 +44,20 @@ quota_backups = -1
 quota_backup_gigabytes = -1
 
 # limit the volume size because it's limited by flexvols. in GB
-per_volume_size_limit = {{ .Values.volume_size_limit_gb | default 2048 }}
+per_volume_size_limit = {{ .Values.volume_size_limit_gb | default 10240 }}
 
 # don't use quota class
 use_default_quota_class=false
 
 scheduler_default_filters = {{ .Values.scheduler_default_filters }}
+scheduler_default_weighers = {{ .Values.scheduler_default_weighers }}
+capacity_weight_multiplier = {{ .Values.capacity_weight_multiplier }}
+allocated_capacity_weight_multiplier = {{ .Values.allocated_capacity_weight_multiplier }}
 
 allow_migration_on_attach = {{ .Values.cinder_api_allow_migration_on_attach }}
+sap_disable_incremental_backup = {{ .Values.sap_disable_incremental_backup }}
+sap_allow_independent_snapshots = {{ .Values.sap_allow_independent_snapshots }}
+sap_allow_independent_clone = {{ .Values.sap_allow_independent_clone }}
 
 {{- include "ini_sections.database" . }}
 

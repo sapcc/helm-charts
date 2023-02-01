@@ -72,6 +72,14 @@ nebula:
     - {{ $value }}
 {{- end }}
 {{- end }}
+{{- $ac := .Values.config.alternateContact | default .Values.global.alternateContact }}
+{{- if $ac }}
+    alternateContact:
+      emailAddress: {{ $ac.emailAddress }}
+      name: {{ $ac.name }}
+      title: {{ $ac.title }}
+      phoneNumber: {{ $ac.phoneNumber }}
+{{- end }}
   accountStatusPollDelay: {{ .Values.config.accountStatusPollDelay }}
   accountStatusTimeout: {{ .Values.config.accountStatusTimeout }}s
   debug: {{ .Values.nebula.debug }}
@@ -150,4 +158,22 @@ nebula:
     subjectPattern: {{ .Values.pki.subjectPattern }}
     validityDays: {{ .Values.pki.validityDays }}
 {{- end }}
+{{- if .Values.postfix.postfixEnabled }}
+  postfixEnabled: {{ .Values.postfix.postfixEnabled }}
+  ldap:
+    url: {{ .Values.postfix.ldap.url }}
+    certPem: |
+{{ .Values.postfix.ldap.certPem | indent 6 }}
+    certKey: |
+{{ .Values.postfix.ldap.certKey | indent 6 }}
+    baseDN: {{ .Values.postfix.ldap.baseDN }}
+    projectAttributes:
+{{- range $key, $value := .Values.postfix.ldap.projectAttributes }}
+  {{- if $value }}
+      - {{ $value }}
+  {{- end }}
+{{- end }}
+{{- end }}
+  
 {{- end -}}
+

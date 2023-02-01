@@ -1,11 +1,11 @@
 [DEFAULT]
 log_config_append = /etc/ironic/logging.ini
-logging_context_format_string =%(asctime)s.%(msecs)03d %(process)d %(levelname)s %(name)s [%(request_id)s g%(global_request_id)s %(user_identity)s] %(instance)s%(message)s
+{{- include "ini_sections.logging_format" . }}
 
-{{- if contains "train" .Values.imageVersion }}
-pybasedir = /var/lib/openstack/lib/python3.6/site-packages/ironic
+{{- if contains "xena" .Values.imageVersion }}
+pybasedir = /var/lib/openstack/lib/python3.8/site-packages/ironic
 {{- else }}
-pybasedir = /var/lib/openstack/lib/python2.7/site-packages/ironic
+pybasedir = /var/lib/openstack/lib/python3.6/site-packages/ironic
 {{- end }}
 
 network_provider = neutron_plugin
@@ -17,8 +17,15 @@ versioned_notifications_topics = {{ .Values.versioned_notifications_topics  | de
 {{- end }}
 
 {{- include "ini_sections.default_transport_url" . }}
-rpc_response_timeout = {{ .Values.rpc_response_timeout | default .Values.global.rpc_response_timeout | default 90 }}
-rpc_thread_pool_size = {{ .Values.rpc_workers | default .Values.global.rpc_workers | default 100 }}
+
+rpc_response_timeout = {{ .Values.rpc_response_timeout | default .Values.global.rpc_response_timeout | default 100 }}
+executor_thread_pool_size = {{ .Values.rpc_workers | default .Values.global.rpc_workers | default 64 }}
+
+{{- include "ini_sections.oslo_messaging_rabbit" .}}
+
+# time to live in sec of idle connections in the pool:
+conn_pool_ttl = {{ .Values.rpc_conn_pool_ttl | default 600 }}
+rpc_conn_pool_size = {{ .Values.rpc_conn_pool_size | default .Values.global.rpc_conn_pool_size | default 100 }}
 
 {{- if .Values.notification_level }}
 [oslo_messaging_notifications]
@@ -26,6 +33,7 @@ driver = messagingv2
 {{- end }}
 
 [agent]
+image_download_source = swift
 deploy_logs_collect = {{ .Values.agent.deploy_logs.collect }}
 deploy_logs_storage_backend = {{ .Values.agent.deploy_logs.storage_backend }}
 deploy_logs_swift_days_to_expire = {{ .Values.agent.deploy_logs.swift_days_to_expire }}
@@ -44,18 +52,12 @@ dhcp_provider = neutron
 [api]
 host_ip = 0.0.0.0
 public_endpoint = https://{{ include "ironic_api_endpoint_host_public" .}}
-{{- if .Values.api.api_workers }}
-api_workers = {{ .Values.api.api_workers }}
-{{- end }}
+api_workers = {{ .Values.api.api_workers | default 8}}
 
 [database]
-{{- if eq .Values.mariadb.enabled true }}
-connection = mysql+pymysql://ironic:{{.Values.global.dbPassword}}@ironic-mariadb.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}/ironic?charset=utf8
+#connection = mysql+pymysql://ironic:{{.Values.global.dbPassword}}@ironic-mariadb.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}/ironic?charset=utf8
+connection = {{ include "db_url_mysql" . }}
 {{- include "ini_sections.database_options_mysql" . }}
-{{- else }}
-connection = {{ tuple . "ironic" "ironic" .Values.global.dbPassword | include "db_url" }}
-{{- include "ini_sections.database_options" . }}
-{{- end }}
 
 [keystone]
 auth_section = keystone_authtoken
@@ -124,6 +126,13 @@ cleaning_network = {{required "A valid .Values.network_cleaning_uuid required!" 
 provisioning_network = {{required "A valid .Values.network_management_uuid required!" .Values.network_management_uuid }}
 timeout = {{ .Values.neutron_url_timeout }}
 port_setup_delay = {{ .Values.neutron_port_setup_delay }}
+
+# only works with nova api version >= 2.76
+# enable once nova is upgraded to xena
+#[nova]
+#auth_section = service_catalog
+#service_type = compute
+#service_name = nova
 
 [oslo_middleware]
 enable_proxy_headers_parsing = True

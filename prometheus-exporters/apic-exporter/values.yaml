@@ -1,3 +1,19 @@
+owner-info:
+  support-group: observability
+  maintainers:
+    - "Martin Vossen"
+    - "Ivo Gosemann"
+  helm-chart-url: "https://github.com/sapcc/helm-charts/tree/master/prometheus-exporters/apic-exporter"
+
+prometheus-monitors:
+  serviceMonitor:
+    enabled: true
+  nameOverride: "apic-exporter"
+  prometheus: "infra-collector"
+  jobLabel: "app"
+  matchLabels:
+    app: apic-exporter
+
 exporter:
   image:
     name: apic-exporter
@@ -6,10 +22,6 @@ exporter:
   namespace: infra-monitoring
   prometheus:
     port: 9102
-    scrape: true
-    name: infra-collector
-    scrapeInterval: 60s
-    scrapeTimeout: 55s
   resources:
     limits:
       memory: 500Mi

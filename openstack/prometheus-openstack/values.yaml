@@ -5,6 +5,10 @@ global:
   # Defined via secrets.
   # region:
 
+thanos:
+  name: openstack
+  deployWholeThanos: true
+
 openstack-prometheus:
   name: openstack
 
@@ -18,6 +22,11 @@ openstack-prometheus:
     enabled: true
     hosts:
       - prometheus-openstack
+  
+  internalIngress:
+    enabled: true
+    hosts:
+      - prometheus-openstack-internal
 
   persistence:
     enabled: true
@@ -62,7 +71,15 @@ openstack-prometheus:
       - alertmanager.scaleout.eu-de-1.cloud.sap
       - alertmanager.scaleout.eu-nl-1.cloud.sap
 
+  alerts:
+    multipleTargetScrapes:
+      # List of exceptions for scrape jobs. This is joined together with a `|`.
+      exceptions:
+        # jobs `maia/prometheus-maia-oprom` and `prometheus-maia-oprom` scrape prometheus-maia multiple times for different metrics
+         - .*prometheus-maia-oprom
+
 owner-info:
+  support-group: observability
   maintainers:
     - Martin Vossen
     - Tommy Sauer

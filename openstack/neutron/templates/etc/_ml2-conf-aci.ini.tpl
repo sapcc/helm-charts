@@ -35,6 +35,9 @@ baremetal_reserved_vlan_ids = {{ .Values.aci.baremetal_reserved_vlan_ids }}
 {{- if .Values.aci.az_checks_enabled }}
 az_checks_enabled = {{ .Values.aci.az_checks_enabled }}
 {{- end }}
+{{- if .Values.aci.handle_all_l3_gateways }}
+handle_all_l3_gateways = {{ .Values.aci.handle_all_l3_gateways }}
+{{- end }}
 
 {{- if .Values.aci.pc_policy_groups }}
 {{ range $i, $pc_policy_group := .Values.aci.pc_policy_groups }}

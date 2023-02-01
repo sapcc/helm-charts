@@ -1,4 +1,4 @@
-{{- $domains := list "cc3test" "bs" "cis" "cp" "fsn" "hcm" "hcp03" "hec" "monsoon3" "neo" "s4" "wbs" }}
+{{- $domains := list "cc3test" "bs" "cis" "cp" "fsn" "hcm" "hcp03" "hda" "hec" "monsoon3" "neo" "s4" "wbs" }}
 
 apiVersion: "openstack.stable.sap.cc/v1"
 kind: OpenstackSeed
@@ -72,17 +72,25 @@ spec:
               role: registry_admin
             - domain: ccadmin
               role: registry_viewer # technically unnecessary, but allows creating application credentials with read-only permissions
+        {{- if not (.Values.global.region | hasPrefix "qa-") }}
+        - name: CCADMIN_KEPPEL_IMAGE_PUSHERS
+          role_assignments:
+            - project: master
+              role: registry_admin
+            - project: master
+              role: registry_viewer # technically unnecessary, but allows creating application credentials with read-only permissions
+        {{- end }}
       projects:
         - name: cloud_admin
           role_assignments:
             - user: keppel@Default
               role: service       # to validate users' Keystone tokens
             - user: keppel@Default
-              role: swiftreseller # to read/write blobs and manifests from/into customer's Swift accounts
+              role: cloud_objectstore_admin # to read/write blobs and manifests from/into customer's Swift accounts
         - name: master
           role_assignments:
             - user: keppel@Default
-              role: swiftoperator # to write into the "keppel_federation_db" container
+              role: objectstore_admin # to write into the "keppel_federation_db" container
             {{- if .Values.keppel.e2e_test_password }}
             - user: keppel_e2e@Default
               role: admin # to create Keppel accounts

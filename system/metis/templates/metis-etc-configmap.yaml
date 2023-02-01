@@ -11,10 +11,13 @@ metadata:
     app.kubernetes.io/managed-by: {{ .Release.Service }}
 data:
   config.yaml: |
+    region: {{ .Values.global.region }}
     billing:
       sync_cron_schedule: "0 */6 * * *"
       api_host: {{ required "Missing required global billing API endpoint" .Values.metis.billingApiHost}}
-      region: {{ .Values.global.region }}
+    vcenter:
+      enabled: {{ .Values.metis.vcenter.enabled }}
+      sync_cron_schedule: "0 */12 * * *"
     db:
       user: "root"
       host: metisdb-mariadb.metis

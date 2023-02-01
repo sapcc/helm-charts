@@ -1,0 +1,128 @@
+owner-info:
+  support-group: observability
+  maintainers:
+    - "Ivo Gosemann"
+    - "Olaf Heydorn"
+  helm-chart-url: "https://github.com/sapcc/helm-charts/tree/master/system/logs"
+
+global:
+  region: DEFINED-IN-SECRETS
+  tld: DEFINED-IN-SECRETS
+  elk_elasticsearch_audit_user: DEFINED-IN-SECRETS
+  elk_elasticsearch_audit_password: DEFINED-IN-SECRETS
+  elk_elasticsearch_http_user: DEFINED-IN-SECRETS
+  elk_elasticsearch_http_password: DEFINED-IN-SECRETS
+  prometheus: infra-frontend
+
+fluent:
+  enabled: false
+  port: 8885
+  logstash_shards: 5
+  indexname: logstash
+  image_version: '20221206095123'
+  alerts:
+    enabled: false
+    prometheus: infra-collector
+  metis:
+    enabled: false
+    host: metisdb-mariadb.metis
+    port: 3306
+    db: metis
+  exporter:
+    prometheus: infra-collector
+  aggregations:
+    prometheus: infra-collector
+  logs:
+    unbound:
+      enabled: false
+  elasticsearch:
+    enabled: true
+  opensearch:
+    enabled: false
+    http_port: 9200
+    indexname: logstash
+    http:
+      endpoint: "opensearch-logs-client.scaleout"
+    qalogs:
+      enabled: false
+
+fluent_prometheus:
+  enabled: false
+  port: 8884
+  image_version: '20221206095123'
+  exporter:
+    prometheus: DEFINED-IN-SECRETS
+  alerts:
+    enabled: false
+    prometheus: DEFINED-IN-SECRETS
+
+fluent-bit:
+  enabled: false
+  podAnnotations:
+    # manual versioning, raise if configmap changes
+    versioning: "2"
+  nameOverride: "fluent-bit-systemd"
+  existingConfigMap: "fluent-bit-config"
+  image:
+    repository: keppel.global.cloud.sap/ccloud-dockerhub-mirror/fluent/fluent-bit
+    pullPolicy: IfNotPresent
+  alerts:
+    enabled: false
+    prometheus: infra-collector
+  exporter:
+    prometheus: infra-collector
+  opensearch:
+    enabled: false
+    http_port: 9200
+    user: DEFINED-IN-SECRETS
+    password: DEFINED-IN-SECRETS
+    http:
+      endpoint: "opensearch-logs-client.scaleout"
+  extraPorts:
+    - port: 2021
+      containerPort: 2021
+      protocol: TCP
+      name: prometheus
+  env:
+    - name: NODE_NAME
+      valueFrom:
+        fieldRef:
+          fieldPath: spec.nodeName
+
+logstash_external:
+  enabled: false
+  image_version: '8.4.0'
+  replicas: 1
+  input_netflow_port: 2055
+  input_syslog_port: 514
+  input_bigiplogs_port: 1513
+  input_alertmanager_port: 1515
+  input_deployments_port: 1516
+  input_http_port: 443
+  syslog:
+    enabled: false
+  tls:
+    crt: DEFINED-IN-SECRETS
+    key: DEFINED-IN-SECRETS
+  ingress:
+    enabled: false
+  elk_elasticsearch_endpoint_host_scaleout: "elk-elasticsearch.scaleout"
+  elk_elasticsearch_ssl_port: "443"
+  elk_elasticsearch_endpoint_host_internal: "es-client"
+  elk_elasticsearch_http_port_internal: 9200
+  alerts:
+    enabled: false
+    prometheus: infra-collector
+  opensearch:
+    enabled: false
+    http_port: 9200
+    user: DEFINED-IN-SECRETS
+    password: DEFINED-IN-SECRETS
+    http:
+      endpoint: "opensearch-logs-client.scaleout"
+
+k8s_event_logger:
+  enabled: false
+  fullnameOverride: elk-k8s-event-exporter
+  env:
+    KUBERNETES_API_URL: https://${KUBERNETES_SERVICE_HOST}:${KUBERNETES_SERVICE_PORT_HTTPS}

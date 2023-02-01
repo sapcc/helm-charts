@@ -4,13 +4,10 @@ Thanos
 [Thanos](https://github.com/improbable-eng/thanos) ready for SAP Converged Cloud.
 
 Enabling Thanos will install the following components:
-- Thanos compactor
-- Thanos query
-- Thanos store
 - OpenstackSeed for Swift service user and container
 - Thanos sidecar for Prometheus server
 
-If the Ingress is enabled (`.Values.ingress.enabled`), Thanos can be accessed via `https://$host/thanos`.
+Thanos can be accessed via `https://$host/thanos`.
 
 **NOTE:** Prometheus still requires persistence for 2 hours of metrics.  
 Prometheus organizes ingested samples in blocks of 2 hours. To avoid loosing this data on restart persistent volume should be used.
@@ -20,28 +17,19 @@ Prometheus organizes ingested samples in blocks of 2 hours. To avoid loosing thi
 Minimal configuration for Thanos@SAP Converged Cloud:
 
 ```
-# How long metrics are retained. 
-# For Thanos you want something like 1y.
-retentionTime: <retention>
-
-# In memory. Persist to Swift.
-persistence:
-  enabled: false
-
 thanos:
-  enabled: true
-  
   # Create an OpenStack user in the given scope with required permissions and initialize container in Swift.
   swiftStorageConfig:
     authURL:            https://<keystone>/v3
-    userName:           <userName>
     userDomainName:     <userDomainName>
     password:           <password>
     domainName:         <domainName>
     projectName:        <projectName>
     projectDomainName:  <projectDomainName>
-    regionName:         <regionName>
-    containerName:      <swiftContainerName>
+    # all settings below are not mandatory and auto-generated
+    # userName:           <userName>
+    # regionName:         <regionName>
+    # containerName:      <swiftContainerName>
 ```
 
 An existing OpenStack user and Swift container can be used by disabled the OpenStack seed:

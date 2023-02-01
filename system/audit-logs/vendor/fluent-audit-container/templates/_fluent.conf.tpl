@@ -31,9 +31,20 @@
   pos_file /var/log/keystone-octobus.log.pos
   tag keystone.*
   <parse>
-    @type json
-    time_format %Y-%m-%dT%H:%M:%S.%N
-    keep_time_key true
+  @type multi_format
+    <pattern>
+      format regexp
+      expression /^(?<time>.+) (?<stream>stdout|stderr)( (?<logtag>.))? (?<log>.*)$/
+      time_key time
+      time_format '%Y-%m-%dT%H:%M:%S.%NZ'
+      keep_time_key true
+    </pattern>
+    <pattern>
+      format json
+      time_format '%Y-%m-%dT%H:%M:%S.%N%:z'
+      time_key time
+      keep_time_key true
+    </pattern>
   </parse>
 </source>
 
@@ -45,9 +56,20 @@
   pos_file /var/log/keystone-global-octobus.log.pos
   tag keystone-global.*
   <parse>
-    @type json
-    time_format %Y-%m-%dT%H:%M:%S.%N
-    keep_time_key true
+  @type multi_format
+    <pattern>
+      format regexp
+      expression /^(?<time>.+) (?<stream>stdout|stderr)( (?<logtag>.))? (?<log>.*)$/
+      time_key time
+      time_format '%Y-%m-%dT%H:%M:%S.%NZ'
+      keep_time_key true
+    </pattern>
+    <pattern>
+      format json
+      time_format '%Y-%m-%dT%H:%M:%S.%N%:z'
+      time_key time
+      keep_time_key true
+    </pattern>
   </parse>
 </source>
 {{- end }}
@@ -61,23 +83,25 @@
   exclude_path /var/log/containers/fluentd*
   pos_file /var/log/{{ . }}kube-api-octobus.log.pos
   tag kubeapi.{{ . }}{{ $.Values.global.region }}.*
-  {{- if eq $.Values.global.clusterType "admin" }}
   <parse>
-    @type cri
+  @type multi_format
+    <pattern>
+      format regexp
+      expression /^(?<time>.+) (?<stream>stdout|stderr)( (?<logtag>.))? (?<log>.*)$/
+      time_key time
+      time_format '%Y-%m-%dT%H:%M:%S.%NZ'
+      keep_time_key true
+    </pattern>
+    <pattern>
+      format json
+      time_format '%Y-%m-%dT%H:%M:%S.%N%:z'
+      time_key time
+      keep_time_key true
+    </pattern>
   </parse>
-  {{- else }}
-  <parse>
-    @type json
-    time_format %Y-%m-%dT%T.%L%Z
-    keep_time_key true
-  </parse>
-  {{- end }}
 </source>
 <filter kubeapi.{{ . }}{{ $.Values.global.region }}.**>
   @type record_transformer
-{{- if eq $.Values.global.clusterType "admin" }}
-  remove_keys logtag
-{{- end }}
   <record>
     sap.cc.audit.source "kube-api"
     sap.cc.cluster "{{ . }}{{ $.Values.global.region }}"
@@ -89,11 +113,7 @@
 <filter kubeapi.**>
   @type parser
   @id json_parser
-{{- if eq $.Values.global.clusterType "admin" }}
-  key_name message
-{{- else }}
   key_name log
-{{- end }}
   reserve_data true
   remove_key_name_field true
   <parse>
@@ -119,9 +139,20 @@
   pos_file /var/log/additional-containers-{{ .id }}-octobus.log.pos
   tag {{ .tag }}
   <parse>
-    @type json
-    time_format %Y-%m-%dT%H:%M:%S.%N
-    keep_time_key true
+  @type multi_format
+    <pattern>
+      format regexp
+      expression /^(?<time>.+) (?<stream>stdout|stderr)( (?<logtag>.))? (?<log>.*)$/
+      time_key time
+      time_format '%Y-%m-%dT%H:%M:%S.%NZ'
+      keep_time_key true
+    </pattern>
+    <pattern>
+      format json
+      time_format '%Y-%m-%dT%H:%M:%S.%N%:z'
+      time_key time
+      keep_time_key true
+    </pattern>
   </parse>
 </source>
 {{- if .parse }}
@@ -173,8 +204,6 @@
   kubernetes_url https://KUBERNETES_SERVICE_HOST
   bearer_token_file /var/run/secrets/kubernetes.io/serviceaccount/token
   ca_file /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
-  use_journal 'false'
-  container_name_to_kubernetes_regexp '^(?<name_prefix>[^_]+)_(?<container_name>[^\._]+)(\.(?<container_hash>[^_]+))?_(?<pod_name>[^_]+)_(?<namespace>[^_]+)_[^_]+_[^_]+$'
 </filter>
 
 <filter keystone.** keystone-global.**>

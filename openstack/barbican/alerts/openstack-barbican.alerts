@@ -10,6 +10,7 @@ groups:
       service: 'barbican'
       context: 'certificate'
       dashboard: barbican
+      support_group: identity
       meta: 'Certificate {{ $labels.certificate_name }} will expire in {{ $value }} Days'
     annotations:
       description: 'Certificate {{ $labels.certificate_name }} created by {{ $labels.full_name }} in Project_id {{ $labels.project_id }} will expire in {{ $value }} Days'
@@ -24,62 +25,16 @@ groups:
       severity: info
       tier: os
       sentry: 'barbican/'
+      support_group: identity
     annotations:
       description: barbican has encountered unexpected errors and reported
         them to Sentry. Please have a look at the list of unresolved issues
         at <https://sentry.{{ $labels.region }}.cloud.sap/monsoon/barbican/>.
       summary: barbican has reported issues to Sentry
 
-# Canary Alerts
-  - alert: OpenstackBarbicanCanaryDown
-    expr: blackbox_canary_status_gauge{service=~"barbican"} == 1
-    for: 1h
-    labels:
-      severity: warning
-      tier: os
-      service: '{{ $labels.service }}'
-      context: '{{ $labels.service }}'
-      dashboard: ccloud-health-canary-details
-      meta: 'Canary {{ $labels.service }} {{ $labels.check }} is down for 1 hour. See Sentry for details'
-      sentry: 'blackbox/?query=test_{{ $labels.check }}'
-      playbook: 'docs/devops/alert/{{ $labels.service }}'
-    annotations:
-      description: 'Canary {{ $labels.service }} {{ $labels.check }} is down for 1 hour. See Sentry for details'
-      summary: 'Canary {{ $labels.service }} {{ $labels.check }} is down'
-
-  - alert: OpenstackBarbicanCanaryTimeout
-    expr: blackbox_canary_status_gauge{service=~"barbican"} == 0.5
-    for: 1h
-    labels:
-      severity: info
-      tier: os
-      service: '{{ $labels.service }}'
-      context: '{{ $labels.service }}'
-      dashboard: ccloud-health-canary-details
-      meta: 'Canary {{ $labels.service }} {{ $labels.check }} is timing out for 1 hour. See Sentry for details'
-      sentry: 'blackbox/?query=test_{{ $labels.check }}'
-      playbook: 'docs/devops/alert/{{ $labels.service }}'
-    annotations:
-      description: 'Canary {{ $labels.service }} {{ $labels.check }} is timing out for 1 hour. See Sentry for details'
-      summary: 'Canary {{ $labels.service }} {{ $labels.check }} is timing out'
-
-  - alert: OpenstackBarbicanCanaryFlapping
-    expr: changes(blackbox_canary_status_gauge{service=~"barbican"}[2h]) > 8
-    labels:
-      severity: warning
-      tier: os
-      service: '{{ $labels.service }}'
-      context: '{{ $labels.service }}'
-      dashboard: ccloud-health-canary-details
-      meta: 'Canary {{ $labels.service }} {{ $labels.check }} is flapping for 2 hours. See Sentry for details'
-      sentry: 'blackbox/?query=test_{{ $labels.check }}'
-      playbook: 'docs/devops/alert/{{ $labels.service }}'
-    annotations:
-      description: 'Canary {{ $labels.service }} {{ $labels.check }} is flapping for 2 hours. See Sentry for details'
-      summary: 'Canary {{ $labels.service }} {{ $labels.check }} is flapping'
-
   - alert: OpenstackBarbicanRateLimitActionIsAbove50
     expr: sum by(initiator_project_id, action, initiator_user_name) (rate(openstack_ratelimit_requests_ratelimit_total{service="key-manager", container="barbican-api"}[2m]) * 60) > 50
+    for: 1m
     labels:
       severity: info
       tier: os
@@ -91,3 +46,76 @@ groups:
     annotations:
       description: 'User {{ $labels.initiator_user_name }} has initiated more than 50 {{ $labels.action }} operations' 
       summary: 'Project {{ $labels.initiator_project_id }} has more than 50 {{ $labels.action }} operations'
+
+  - alert: OpenstackBarbicanScrapeMissing
+    expr: absent(up{component="barbican",type="api"})
+    for: 1h
+    labels:
+      context: availability
+      dashboard: barbican
+      service: barbican
+      severity: info
+      tier: os
+    annotations:
+      description: barbican failed to be scraped. Monitoring might miss metrics it needs to alert on.
+      summary: barbican cannot be scraped
+
+  - alert: OpenstackBarbicanDatabaseScrapeMissing
+    expr: absent(up{app="barbican-mariadb"})
+    for: 1h
+    labels:
+      context: availability
+      dashboard: barbican
+      service: barbican
+      severity: info
+      tier: os
+    annotations:
+      description: barbicans database running status failed to be scraped. Monitoring might miss metrics it needs to alert on
+      summary: barbican database cannot be scraped
+
+  - alert: OpenstackBarbicanApiIsDown
+    expr: up{component="barbican",type="api"} == 0
+    for: 5m
+    labels:
+      context: availability
+      dashboard: barbican
+      meta: "a barbican instance went down on {{ $labels.instance }}"
+      service: barbican
+      support_group: identity
+      severity: info
+      tier: os
+      playbook: 'docs/devops/alert/{{ $labels.service }}'
+    annotations:
+      description: "A barbican-api pod on {{ $labels.instance }} is DOWN. The remaining ones should keep the service up."
+      summary: "A barbican server is DOWN"
+
+  - alert: OpenstackBarbicanDatabaseIsDown
+    expr: count(up{component="barbican-mariadb"} == 0) == count(up{component="barbican-mariadb"})
+    for: 5m
+    labels:
+      context: availability
+      service: barbican
+      severity: info
+      support_group: identity
+      tier: os
+      dashboard: mariadb-overview?var-host=barbican-mariadb
+      playbook: 'docs/devops/alert/{{ $labels.service }}'
+    annotations:
+      description: "barbican database on {{ $labels.instance }} is DOWN."
+      summary: "barbican Database is DOWN"
+
+  - alert: OpenstackBarbicanApiAllDown
+    expr: count(up{component="barbican",type="api"} == 0) == count(up{component="barbican",type="api"})
+    for: 5m
+    labels:
+      context: availability
+      meta: all barbican instances are down
+      service: barbican
+      severity: warning
+      support_group: identity
+      tier: os
+      dashboard: barbican
+      playbook: 'docs/devops/alert/{{ $labels.service }}'
+    annotations:
+      description: All barbican-api server pods are down.
+      summary: barbican is unavailable.

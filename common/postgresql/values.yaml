@@ -5,40 +5,12 @@ global:
   keystoneNamespace: monsoon3
   imageNamespace: monsoon
   user_suffix: ""
-  pgbouncer:
-    enabled: false
-    prometheus: false
-    config:
-      stats_users: "stats_user"
-      admin_users: "admin_user"
-      autodb_idle_timeout: 3600
-      max_client_conn: 16384
-      reserve_pool_size: 25
-      min_pool_size: 1
-      default_pool_size: 25 # per user and database
-      max_db_connections: 50 # max_connections / dbs / pgbouncers
-      server_idle_timeout: 10
-      idle_transaction_timeout: 60
-      server_check_delay: 30
-      unix_socket_dir: "/tmp"
-      listen_addr: "0.0.0.0"
-      listen_port: 6543
-      listen_backlog: 256
-      auth_type: "md5"
-      server_tls_sslmode: "prefer"
-      tcp_keepalive: 1
-      tcp_keepcnt: 10
-      tcp_keepidle: 5
-      tcp_keepintvl: 5
-      ignore_startup_parameters: "extra_float_digits"
-      log_connections: 0
-      log_disconnections: 0
-      pool_mode: "transaction"
-      application_name_add_host: 1
 
 custom_configmap: false
 ## if custom repository is enabled it takes global/imageRegistry and global/imageNamespace
 custom_repository: false
+## If enabled, image references use .Values.registryAlternateRegion instead of .Values.registry (this currently only affects the backup container).
+useAlternateRegion: false
 
 extensions:
   pg_stat_statements:
@@ -91,24 +63,8 @@ persistence:
   # existingClaim: claimName
 
 probe_timeout_secs: 3
+probe_failure_threshold: 6 # number of liveness probes that need to fail to trigger a pod restart
 
-replicas: 1
-
-pod:
-  replicas:
-    pgbouncer: 3
-  lifecycle:
-    upgrades:
-      deployments:
-        revision_history: 5
-        pod_replacement_strategy: "RollingUpdate"
-        rolling_update:
-          max_unavailable: 1
-          max_surge: 0
-
-upgrades:
-  revisionHistory: 3
-  podReplacementStrategy: Recreate
 ## Configure resource requests and limits
 ## ref: http://kubernetes.io/docs/user-guide/compute-resources/
 ##
@@ -116,20 +72,12 @@ resources: {}
 
 backup:
   enabled: false
-  image: monsoon/backup-tools
-  imageTag: v0.5.15
-  interval_full: 1 hours
-#  os_auth_url: DEFINED-IN-REGION-SECRETS
-#  os_region_name: DEFINED-IN-REGION-SECRETS
-  os_password: DEFINED-IN-REGION-SECRETS
-  os_username: db_backup
-  os_user_domain: Default
-  os_project_name: master
-  os_project_domain: ccadmin
+  splitDeployment: false # "false" is the legacy value, set this to "true" in new deployments
 
-  # if custom repository is enabled, .Values.backup.image must be the full
-  # repository URL; .Values.global.imageRegistry is not prepended
-  custom_repository: false
+  interval_full: 1 hours
+  os_auth_url: null # defined in values.yaml; defaults to cluster-internal Keystone endpoint (default is only valid in the baremetal clusters)
+  os_region_name: null # defaults to .Values.global.region
+  os_password: null # defined in values.yaml; set this to the password for the service user `db_backup@Default`
 
   resources:
     enabled: true
@@ -140,8 +88,16 @@ backup:
       memory: 192Mi
       cpu: 100m
 
-pgbouncer:
-  config: {}
+  ## The following obsolete fields are all ignored when splitDeployment is set to "true".
+  image: monsoon/backup-tools
+  imageTag: v0.5.15
+  os_username: db_backup
+  os_user_domain: Default
+  os_project_name: master
+  os_project_domain: ccadmin
+  # if custom repository is enabled, .Values.backup.image must be the full
+  # repository URL; .Values.global.imageRegistry is not prepended
+  custom_repository: false
 
 cdc:
   enabled: false
@@ -155,8 +111,10 @@ alerts:
   # Name of the Prometheus containing the disk usage metrics.
   prometheus_for_disk_usage: kubernetes
 
-  # The tier of the alert.
+  # The tier label of the alerts.
   tier: os
+  # The support group label of the alerts. Must be given in values.yaml of parent chart.
+  support_group:
 
   # Configurable service label of the alerts. Defaults to `.Release.Name`.
   # service:

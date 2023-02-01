@@ -1,35 +1,39 @@
-{{- if and .Values.thanos.enabled .Values.thanos.seed.enabled }}
+{{- $root := . }}
+{{- if and .Values.thanos.enabled .Values.thanosSeeds.seed.enabled }}
+{{- range $name := coalesce .Values.names (list .Values.name) .Values.global.targets }}
+---
 apiVersion: "openstack.stable.sap.cc/v1"
 kind: OpenstackSeed
 metadata:
-  name: {{ include "prometheus.fullName" . }}-thanos-seed
+  name: {{ include "prometheus.name" (list $name $root) }}-thanos
   labels:
-    prometheus: {{ include "prometheus.name" . }}
+    prometheus: {{ include "prometheus.name" (list $name $root) }}
 
 spec:
-  {{ if .Values.thanos.seed.requires }}
+  {{ if $.Values.thanosSeeds.seed.requires }}
   requires:
-{{ toYaml .Values.thanos.seed.requires | indent 4 }}
+{{ toYaml $.Values.thanosSeeds.seed.requires | indent 4 }}
   {{ end }}
 
   domains:
-    - name: {{ required ".Values.thanos.swiftStorageConfig.userDomainName missing" .Values.thanos.swiftStorageConfig.userDomainName }}
+    - name: {{ required "$.Values.thanosSeeds.swiftStorageConfig.userDomainName missing" $.Values.thanosSeeds.swiftStorageConfig.userDomainName }}
       users:
-        - name: {{ required ".Values.thanos.swiftStorageConfig.userName missing" .Values.thanos.swiftStorageConfig.userName }}
+        - name: {{ include "swift.userName" (list $name $root) }}
           description: Thanos Service User
-          password: {{ required ".Values.thanos.swiftStorageConfig.password missing" .Values.thanos.swiftStorageConfig.password | quote }}
+          password: {{ required "$.Values.thanosSeeds.swiftStorageConfig.password missing" $.Values.thanosSeeds.swiftStorageConfig.password | quote }}
           role_assignments:
             - project: service
               role:    service
 
-    - name: {{ required ".Values.thanos.swiftStorageConfig.domainName missing" .Values.thanos.swiftStorageConfig.domainName }}
+    - name: {{ required "$.Values.thanosSeeds.swiftStorageConfig.domainName missing" $.Values.thanosSeeds.swiftStorageConfig.domainName }}
       projects:
-        - name: {{ include "thanos.projectName" . }}
+        - name: {{ include "thanos.projectName" $root }}
           role_assignments:
             # Read/write permission to $domain/$project containers.
-            - user: {{ required ".Values.thanos.swiftStorageConfig.userName missing" .Values.thanos.swiftStorageConfig.userName }}@{{ required ".Values.thanos.swiftStorageConfig.userDomainName missing" .Values.thanos.swiftStorageConfig.userDomainName }}
-              role: swiftoperator
+            - user: {{ include "swift.userName" (list $name $root) }}@{{ required "$.Values.thanosSeeds.swiftStorageConfig.userDomainName missing" $.Values.thanosSeeds.swiftStorageConfig.userDomainName }}
+              role: objectstore_admin
           swift:
             containers:
-              - name: {{ required ".Values.thanos.swiftStorageConfig.containerName misssing" .Values.thanos.swiftStorageConfig.containerName }}
-{{ end }}
+              - name: {{ include "swift.userName" (list $name $root) }}
+{{- end }}
+{{- end }}

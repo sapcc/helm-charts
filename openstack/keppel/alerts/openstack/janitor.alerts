@@ -12,6 +12,7 @@ groups:
       dashboard: keppel-overview
       service: keppel
       severity: info
+      support_group: containers
       tier: os
     annotations:
       summary: 'Abandoned uploads are not getting cleaned up'
@@ -27,6 +28,7 @@ groups:
       dashboard: keppel-overview
       service: keppel
       severity: info
+      support_group: containers
       tier: os
     annotations:
       summary: 'Blobs are not being validated'
@@ -46,6 +48,7 @@ groups:
       dashboard: keppel-overview
       service: keppel
       severity: info
+      support_group: containers
       tier: os
     annotations:
       summary: 'Blobs are failing validation'
@@ -62,6 +65,7 @@ groups:
       dashboard: keppel-overview
       service: keppel
       severity: info
+      support_group: containers
       tier: os
     annotations:
       summary: 'Manifests are not being validated'
@@ -81,6 +85,7 @@ groups:
       dashboard: keppel-overview
       service: keppel
       severity: info
+      support_group: containers
       tier: os
     annotations:
       summary: 'Manifests are failing validation'
@@ -101,6 +106,7 @@ groups:
       dashboard: keppel-overview
       service: keppel
       severity: info
+      support_group: containers
       tier: os
     annotations:
       summary: 'Manifests in replicated repos are not being synced'
@@ -117,6 +123,7 @@ groups:
       dashboard: keppel-overview
       service: keppel
       severity: info
+      support_group: containers
       tier: os
     annotations:
       summary: 'Blob mounts are not being sweeped'
@@ -134,6 +141,7 @@ groups:
       dashboard: keppel-overview
       service: keppel
       severity: info
+      support_group: containers
       tier: os
     annotations:
       summary: 'GC policies are not being executed'
@@ -150,6 +158,7 @@ groups:
       dashboard: keppel-overview
       service: keppel
       severity: info
+      support_group: containers
       tier: os
     annotations:
       summary: 'Blob mounts are marked for deletion, but do not get deleted'
@@ -166,6 +175,7 @@ groups:
       dashboard: keppel-overview
       service: keppel
       severity: info
+      support_group: containers
       tier: os
     annotations:
       summary: 'Blobs are not being sweeped'
@@ -182,6 +192,7 @@ groups:
       dashboard: keppel-overview
       service: keppel
       severity: info
+      support_group: containers
       tier: os
     annotations:
       summary: 'Blobs are marked for deletion, but do not get deleted'
@@ -198,6 +209,7 @@ groups:
       dashboard: keppel-overview
       service: keppel
       severity: info
+      support_group: containers
       tier: os
     annotations:
       summary: 'Storages are not being sweeped'
@@ -214,6 +226,7 @@ groups:
       dashboard: keppel-overview
       service: keppel
       severity: info
+      support_group: containers
       tier: os
     annotations:
       summary: 'Unknown blobs exist, but do not get deleted'
@@ -230,6 +243,7 @@ groups:
       dashboard: keppel-overview
       service: keppel
       severity: info
+      support_group: containers
       tier: os
     annotations:
       summary: 'Unknown manifests exist, but do not get deleted'
@@ -246,6 +260,7 @@ groups:
       dashboard: keppel-overview
       service: keppel
       severity: info
+      support_group: containers
       tier: os
     annotations:
       summary: 'Accounts are not being announced to Dynomite'
@@ -255,13 +270,16 @@ groups:
         Check the logs of keppel-janitor for details.
 
   - alert: OpenstackKeppelNotCheckingVulnerabilities
-    expr: keppel_manifests_count > 0 and time() - keppel_manifests_min_next_vuln_check_at > 7200
+    # 9000 seconds = 2.5 hours (we would like 2 hours, but this limit is now being hit in eu-de-1; I'm raising the limit
+    # for now to silence the flapping alert while we refactor the Clair integration in Keppel to scale better)
+    expr: keppel_manifests_count > 0 and time() - keppel_manifests_min_next_vuln_check_at > 9000
     for: 5m
     labels:
       context: janitor
       dashboard: keppel-overview
       service: keppel
       severity: info
+      support_group: containers
       tier: os
     annotations:
       summary: 'Manifests are not being checked for vulnerabilities'
@@ -271,16 +289,38 @@ groups:
         Check the logs of keppel-janitor for details.
 
   - alert: OpenstackKeppelClairIndexingErrors
-    expr: 'keppel_vuln_scan_error_counts{message!="",status!="Unsupported"} > 0'
+    # Most failed indexing runs fail due to transient network errors, and Keppel can auto-retry these failed runs.
+    # To avoid flapping during these retries, this alert triggers very slowly. We use min_over_time() for the slow
+    # reaction, instead of a longer `for` period, to allow the alert to clear quickly after it is fixed manually.
+    expr: 'keppel_vuln_scan_error_counts{message!="",status!="Unsupported"} > 0 and min_over_time(keppel_vuln_scan_error_counts{message!="",status!="Unsupported"}[2h]) > 0'
     for: 5m
     labels:
       context: clair-indexing
       service: keppel
-      severity: warning
+      severity: info # This should be "warning", but most people on support duty don't like editing unfamiliar databases, so it does not make sense to put this on them.
+      support_group: containers
       tier: os
       meta: "{{ $labels.message }}"
-      playbook: 'docs/support/playbook/keppel/clairindexingerrors.html'
+      playbook: 'docs/support/playbook/keppel/clairindexingerrors'
     annotations:
       summary: 'Clair failed to index some images'
       description: |
         Clair reported the indexing error "{{ $labels.message }}" for {{ $value }} images.
+
+  - alert: OpenstackKeppelClairExcessiveRetries
+    expr: 'increase(keppel_retried_vulnerability_checks[1h]) > 100'
+    for: 5m
+    labels:
+      context: clair-indexing
+      service: keppel
+      severity: info
+      support_group: containers
+      tier: os
+    annotations:
+      summary: 'Clair indexing is failing too frequently'
+      description: |
+        Keppel is submitting images to Clair for indexing, but a lot of these
+        indexing operations are coming back failed, causing Keppel to retry
+        them. The large amount of retries indicates that there may be a
+        large-scale problem with Clair. Please have a look at the logs for
+        Clair and/or keppel-janitor.

@@ -10,16 +10,23 @@ rails_env: production
 has_keystone_router: 1
 #monsoon_dashboard_region: staging
 #monsoon_dashboard_landscape: staging
-monsoon_dashboard_mail_server: mail.sap.corp
+monsoon_dashboard_mail_server: defined_in_secrets
+monsoon_dashboard_mail_server_port: defined_in_secrets
+monsoon_dashboard_mail_domain: defined_in_secrets
+monsoon_dashboard_mail_sender: defined_in_secrets
+monsoon_dashboard_mail_authentication: defined_in_secrets
+monsoon_dashboard_mail_user: defined_in_secrets
+monsoon_dashboard_mail_password: defined_in_secrets
+
 monsoon_dashboard_avatar_url: https://avatars.wdf.sap.corp/avatar/#{current_user.name}?size=24x24
 monsoon_dashboard_cam_url: https://spc40-emea.byd.sap.corp/sap/bc/webdynpro/a1sspc/cam_wd_central
 #monsoon_openstack_auth_api_endpoint:
 monsoon_openstack_auth_api_userid: dashboard
 monsoon_openstack_auth_api_domain: Default
-two_factor_authentication: 'off'
-two_factor_auth_domains: 'hcp03,cp,s4,wbs,fsn'
+two_factor_authentication: "off"
+two_factor_auth_domains: "hcp03,cp,s4,wbs,fsn"
 # When to delete old sessions every day
-session_cleanup_time: '0415' #4:15 UTC
+session_cleanup_time: "0415" #4:15 UTC
 #arc_updates_url:
 #arc_pki_url:
 #arc_broker_url:
@@ -46,3 +53,63 @@ alerts:
   prometheus: openstack
 
 galvani: DEFINED_IN_VALUES_FILE
+
+postgresql:
+  log_min_duration_statement: 250
+  # less than the postgresql chart's default; I want to know early when connections start getting out of hand
+  max_connections: 128
+
+  image: keppel.eu-de-1.cloud.sap/ccloud/postgres
+  imageTag: "12.11"
+  persistence:
+    enabled: true
+    accessMode: ReadWriteMany
+    size: 10Gi
+  resources:
+    # observed on qa-de-1: 10m-15m CPU usage, 75-90 Mi RAM usage
+    limits:
+      memory: "1.5Gi"
+      cpu: "400m"
+    requests:
+      memory: "1.5Gi"
+      cpu: "400m"
+
+  backup:
+    enabled: false # uses new pgbackup chart instead
+
+  probe_timeout_secs: 10 # instead of 3
+
+  alerts:
+    support_group: containers
+
+pgbackup:
+  database:
+    name: monsoon-dashboard_production
+  alerts:
+    support_group: containers
+
+pgmetrics:
+  db_name: monsoon-dashboard_production
+  alerts:
+    support_group: containers
+  customMetrics:
+    pg_database:
+      query: "SELECT d.datname AS datname, CASE WHEN pg_catalog.has_database_privilege(d.datname, 'CONNECT') THEN pg_catalog.pg_database_size(d.datname) ELSE 0 END AS size_bytes FROM pg_catalog.pg_database d where datname not in ('template0', 'template1', 'postgres')"
+      metrics:
+        - datname:
+            usage: "LABEL"
+            description: "Name of the database"
+        - size_bytes:
+            usage: "GAUGE"
+            description: "Size of the database in bytes"
+
+owner-info:
+  support-group: containers
+  service: elektra
+  helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/openstack/elektra
+  maintainers:
+    - Esther Schmitz
+    - Hans-Georg Winkler
+    - Arturo Reuschenbach
+    - Andreas Pfau
+    - Hoda Noori

@@ -115,6 +115,9 @@ resources:
         singleton: true
         type_name: meta
   transfers:
+    payloads:
+      exclude:
+        - auth_key
     # the API path is funny
     api_name: os-volume-transfer
     # the JSON name is fine again

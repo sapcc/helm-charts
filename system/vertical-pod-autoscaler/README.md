@@ -20,11 +20,11 @@ The VPA consists of 3 components:
    
 
 2) **Updater**:  
-   **WARNING**: Pods may be restarted if the updater is enabled.  
+   **WARNING**: For VPA instances with `mode: Auto`, pods may be evicted and re-created if the updater is enabled.  
    Kubernetes controller updating resource requirements on pods for which a VPA exists. 
    See [documentation](https://github.com/kubernetes/autoscaler/blob/d872ec3db85de83acce44a8cde503dcb59014e54/vertical-pod-autoscaler/pkg/updater/README.md).
    
 
 3) **Admission webhook**:   
-   Mutating webhook updating resource requirements on pods for which a VPA exists only during their creation.  
+   For VPA instances with `mode: Initial|Auto` the mutating webhook updates resource requirements on pods during their creation.  
    See [documentation](https://github.com/kubernetes/autoscaler/blob/d872ec3db85de83acce44a8cde503dcb59014e54/vertical-pod-autoscaler/pkg/admission-controller/README.md).

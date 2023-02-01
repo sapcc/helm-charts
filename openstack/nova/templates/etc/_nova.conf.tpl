@@ -23,7 +23,6 @@ default_schedule_zone = {{.Values.global.default_availability_zone}}
 default_availability_zone = {{.Values.global.default_availability_zone}}
 
 rpc_response_timeout = {{ .Values.rpc_response_timeout | default .Values.global.rpc_response_timeout | default 60 }}
-rpc_workers = {{ .Values.rpc_workers | default .Values.global.rpc_workers | default 1 }}
 
 sync_power_state_pool_size = {{ .Values.sync_power_state_pool_size | default 500 }}
 sync_power_state_interval = {{ .Values.sync_power_state_interval | default 1200 }}
@@ -31,7 +30,9 @@ sync_power_state_unexpected_call_stop = false
 
 prepare_empty_host_for_spawning_interval = 600
 
+{{- if (.Values.imageVersion | hasPrefix "rocky") }}
 dhcp_domain = openstack.{{ required ".Values.global.region is missing" .Values.global.region }}.{{ required ".Values.global.tld is missing" .Values.global.tld }}
+{{- end }}
 
 {{ include "ini_sections.default_transport_url" . }}
 
@@ -39,9 +40,13 @@ dhcp_domain = openstack.{{ required ".Values.global.region is missing" .Values.g
 
 [api]
 compute_link_prefix = https://{{include "nova_api_endpoint_host_public" .}}:{{.Values.global.novaApiPortPublic}}
+{{- if (.Values.imageVersion | hasPrefix "rocky" | not) }}
+dhcp_domain = openstack.{{ required ".Values.global.region is missing" .Values.global.region }}.{{ required ".Values.global.tld is missing" .Values.global.tld }}
+{{- end }}
+
 
 [api_database]
-connection = mysql+pymysql://{{.Values.apidbUser}}:{{.Values.apidbPassword | urlquery}}@nova-api-mariadb.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}/nova_api?charset=utf8
+connection = {{ tuple . .Values.apidbName .Values.apidbUser .Values.apidbPassword .Values.mariadb_api.name | include "db_url_mysql" }}
 {{- include "ini_sections.database_options_mysql" . }}
 
 {{ include "ini_sections.database" . }}
@@ -102,7 +107,6 @@ mksproxy_base_url = https://{{include "nova_console_endpoint_host_public" .}}:{{
 lock_path = /var/lib/nova/tmp
 
 [glance]
-api_servers = http://{{include "glance_api_endpoint_host_internal" .}}:{{.Values.global.glance_api_port_internal | default "9292" }}
 num_retries = 10
 
 [cinder]
@@ -150,6 +154,7 @@ token_cache_time = 600
 include_service_catalog = true
 service_type = compute
 service_token_roles_required = True
+memcache_use_advanced_pool = True
 
 #[upgrade_levels]
 #compute = auto
@@ -164,10 +169,10 @@ enable_proxy_headers_parsing = true
 auth_type = v3password
 auth_version = v3
 auth_url = http://{{include "keystone_api_endpoint_host_internal" .}}:{{ .Values.global.keystone_api_port_internal | default "5000" }}/v3
-username = {{.Values.global.placement_service_user}}
-password = {{ required ".Values.global.placement_service_password is missing" .Values.global.placement_service_password }}
+username = {{ .Values.global.nova_service_user | default "nova" }}{{ .Values.global.user_suffix }}
+password = {{ required ".Values.global.nova_service_password is missing" .Values.global.nova_service_password }}
 user_domain_name = "{{.Values.global.keystone_service_domain | default "Default" }}"
-project_name = service
+project_name = "{{.Values.global.keystone_service_project | default "service" }}"
 project_domain_name = "{{.Values.global.keystone_service_domain | default "Default" }}"
 valid_interfaces = internal
 region_name = {{.Values.global.region}}
@@ -197,6 +202,9 @@ region_name = {{.Values.global.region}}
 default_pool_size = {{ .Values.wsgi_default_pool_size | default .Values.global.wsgi_default_pool_size | default 100 }}
 
 [workarounds]
-# This has to be removed when we also remove the deployment of nova-consoleauth
-enable_consoleauth = True
 enable_live_migration_to_old_hypervisor = True
+
+[compute]
+initial_cpu_allocation_ratio = 1.0
+initial_ram_allocation_ratio = 1.0
+initial_disk_allocation_ratio = 1.0

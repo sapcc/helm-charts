@@ -13,6 +13,7 @@ groups:
         context: dbconnpool
         service: castellum
         severity: info
+        support_group: containers
         tier: os
         meta: 'DB connection pool nearly full on {{ $labels.kubernetes_pod_name }}'
       annotations:
@@ -42,8 +43,9 @@ groups:
         context: database-metrics
         service: castellum
         severity: warning
+        support_group: containers
         tier: os
-        playbook: 'docs/support/playbook/castellum/missing_database_metrics.html'
+        playbook: 'docs/support/playbook/castellum/missing_database_metrics'
       annotations:
         description: The pgmetrics deployment is not sending all expected metrics.
           Other Castellum alerts may not fire because of missing timeseries.
@@ -61,6 +63,7 @@ groups:
         context: resource-scraping
         service: castellum
         severity: info
+        support_group: containers
         tier: os
         dashboard: castellum
         meta: "No resource scraping in the last 60 minutes - Is castellum-observer dead!?"
@@ -70,14 +73,15 @@ groups:
         summary: Castellum is not scraping any resources
 
     # Resources should be scraped every 30 minutes. We give some extra margin of
-    # 15 minutes for the scrape to take place, and alert after 45 minutes.
+    # 15 minutes for the scrape to take place after it has been scheduled.
     - alert: OpenstackCastellumResourceScrapingDelayed
-      expr: (max by (asset, region) (time() - castellum_resource_min_checked_at)) / 60 >= 45
+      expr: (max by (asset, region) (time() - castellum_resource_min_next_scrape_at)) / 60 >= 15
       for: 3m
       labels:
         context: resource-scraping
         service: castellum
         severity: info
+        support_group: containers
         tier: os
         dashboard: castellum
         meta: "Some {{ $labels.asset }} resource scrapes are taking too long - Check castellum-observer log!"
@@ -95,9 +99,10 @@ groups:
         context: resource-scraping
         service: castellum
         severity: warning
+        support_group: containers
         tier: os
         dashboard: castellum
-        playbook: 'docs/support/playbook/castellum/resource_scraping_failing.html'
+        playbook: 'docs/support/playbook/castellum/resource_scraping_failing'
         meta: "Some resource scrapes are failing!"
       annotations:
         description: |
@@ -116,6 +121,7 @@ groups:
         context: asset-scraping
         service: castellum
         severity: info
+        support_group: containers
         tier: os
         dashboard: castellum
         meta: "No asset scraping in the last 30 minutes - Is castellum-observer dead!?"
@@ -125,16 +131,17 @@ groups:
         summary: Castellum is not scraping any assets
 
     # Assets should be scraped every 5 minutes. We give some extra margin of
-    # 10 minutes for the scrape to take place, and alert after 15 minutes.
+    # 10 minutes for the scrape to take place once it has been scheduled.
     #
     # The first alert must have a higher severity than the second one in order to suppress it.
     - alert: OpenstackCastellumAssetScrapingDelayed
-      expr: (max by (asset, region) (time() - castellum_asset_min_checked_at)) / 60 >= 15
+      expr: (max by (asset, region) (time() - castellum_asset_min_next_scrape_at)) / 60 >= 10
       for: 3m
       labels:
         context: asset-scraping
         service: castellum
         severity: info
+        support_group: containers
         tier: os
         dashboard: castellum
         meta: "Some {{ $labels.asset }} asset scrapes are taking too long - Check castellum-observer log!"
@@ -156,9 +163,10 @@ groups:
         context: asset-scraping
         service: castellum
         severity: warning
+        support_group: containers
         tier: os
         dashboard: castellum
-        playbook: 'docs/support/playbook/castellum/asset_scraping_failing.html'
+        playbook: 'docs/support/playbook/castellum/asset_scraping_failing'
         meta: "Some asset scrapes of fresh assets are failing!"
       annotations:
         description: |
@@ -173,9 +181,10 @@ groups:
         context: asset-scraping
         service: castellum
         severity: warning
+        support_group: containers
         tier: os
         dashboard: castellum
-        playbook: 'docs/support/playbook/castellum/asset_scraping_failing.html'
+        playbook: 'docs/support/playbook/castellum/asset_scraping_failing'
         meta: "Some asset scrapes of existing assets are failing!"
       annotations:
         description: |
@@ -190,6 +199,7 @@ groups:
         context: asset-scraping
         service: castellum
         severity: info
+        support_group: containers
         tier: os
         dashboard: castellum
         meta: '{{ $labels.asset }} `{{ $labels.asset_id }}` is stuck in critical usage levels without getting resized'
@@ -208,6 +218,7 @@ groups:
         context: asset-resizing
         service: castellum
         severity: info
+        support_group: containers
         tier: os
         dashboard: castellum
         meta: '{{ $labels.asset }}'
@@ -225,6 +236,7 @@ groups:
         context: asset-resizing
         service: castellum
         severity: info
+        support_group: containers
         tier: os
         dashboard: castellum
       annotations:
@@ -240,8 +252,9 @@ groups:
         context: asset-resizing
         service: castellum
         severity: warning
+        support_group: containers
         tier: os
-        playbook: 'docs/support/playbook/castellum/asset_resizing_failing.html'
+        playbook: 'docs/support/playbook/castellum/asset_resizing_failing'
         dashboard: castellum
         meta: "Some asset resizes are failing!"
       annotations:
@@ -260,9 +273,10 @@ groups:
         context: auditeventpublish
         service: castellum
         severity: info
+        support_group: containers
         tier: os
         dashboard: castellum
         meta: '{{ $labels.pod }}'
       annotations:
         summary: "{{ $labels.pod }} cannot publish audit events"
-        description: "Audit events could not be published to the RabbitMQ server. Check the pod log for details. Once the underlying issue was addressed, delete the offending pod to clear this alert."
+        description: "Audit events from {{ $labels.pod }} could not be published to the RabbitMQ server. Check the pod log for details. Once the underlying issue was addressed, delete the offending pod to clear this alert."

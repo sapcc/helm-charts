@@ -1,25 +1,27 @@
 groups:
 - name: prometheus.alerts
   rules:
-  - alert: InfraPrometheusFederationRegions
-    expr: absent(up{job="prometheus-regions-federation"}) or up{job="prometheus-regions-federation"} == 0
+  - alert: InfraGlobalPrometheusFederationFailed
+    expr: absent(up{job=~"prometheus-regions.*"}) or sum by (instance) (up{job=~"prometheus-regions.*"}) == 0
     for: 15m
     labels:
-      context: availability-global
-      meta: Global Infrastructure Prometheus can't federate data from Prometheus in {{ $labels.region }}
-      service: prometheus
-      severity: info
+      meta: Global Infrastructure Prometheus can't federate data{{ if $labels.instance }} from `{{ $labels.instance }}`.{{ else if $labels.region }} from `{{ $labels.region }}`.{{ else }}.{{ end }}
+      support_group: observability
+      service: metrics
+      severity: warning
       tier: monitor
     annotations:
-      description: Global Infrastructure Prometheus can't federate data from {{ $labels.region }}. Alerting will be unavailable! This could mean the region is partly down!
-      summary: Global Infrastructure Prometheus federation is having trouble
-  - alert: InfraPrometheusGlobalThanosLogsNotShipping
+      description: Global Infrastructure Prometheus can't federate data{{ if $labels.instance }} from `{{ $labels.instance }}`.{{ else if $labels.region }} from `{{ $labels.region }}`.{{ else }}.{{ end }}
+        Alerting will be unavailable! This could mean the region is partly down!
+      summary: Global Infrastructure Prometheus federation is having trouble.
+
+  - alert: InfraGlobalPrometheusThanosLogsNotShipping
     expr: prometheus_tsdb_storage_blocks_bytes > 4000000000
     for: 15m
     labels:
-      context: availability-global
       meta: Global Infrastructure Prometheus Thanos logs are piling up in memory in {{ $labels.region }}.
-      service: prometheus
+      support_group: observability
+      service: metrics
       severity: info
       tier: monitor
     annotations:

@@ -11,7 +11,7 @@ metadata:
     app.kubernetes.io/instance: metis-{{ .Release.Name }}
     app.kubernetes.io/managed-by: {{ .Release.Service }}
     alert-service: "metis"
-    alert-tier: {{ required "$.Values.backup_v2.alerts.tier missing" $.Values.backup_v2.alerts.tier }}
+    alert-tier: {{ required "$.Values.alerts.tier missing" $.Values.alerts.tier | quote }}
 spec:
   replicas: 1
   selector:
@@ -23,6 +23,9 @@ spec:
       labels:
         app.kubernetes.io/name: metis
         app.kubernetes.io/instance: metis-{{ .Release.Name }}
+        app.kubernetes.io/version: "{{ .Values.metis.imageTag }}"
+        alert-service: "metis"
+        alert-tier: {{ required "$.Values.alerts.tier missing" $.Values.alerts.tier | quote}}
       annotations:
         checksum/config: {{ include ( print $.Template.BasePath "/metis-etc-configmap.yaml" ) . | sha256sum }}
         checksum/secret: {{ include ( print $.Template.BasePath "/metis-secrets.yaml" ) . | sha256sum }}
@@ -46,11 +49,11 @@ spec:
           protocol: TCP
         resources:
           requests:
-            memory: 25Mi
+            memory: 50Mi
             cpu: 10m
           limits:
-            memory: 100Mi
-            cpu: 50m
+            memory: 250Mi
+            cpu: 200m
 
         env:
           - name: API_TOKEN
@@ -68,6 +71,18 @@ spec:
               secretKeyRef:
                 name: metis-secrets
                 key: metisRonlyPW
+{{- if .Values.metis.vcenter.enabled }}
+          - name: VCENTER_USER
+            valueFrom:
+              secretKeyRef:
+                name: metis-secrets
+                key: vcenterUser
+          - name: VCENTER_PW
+            valueFrom:
+              secretKeyRef:
+                name: metis-secrets
+                key: vcenterMasterPW
+{{- end }}
         volumeMounts:
           - name: metis-etc
             mountPath: /config

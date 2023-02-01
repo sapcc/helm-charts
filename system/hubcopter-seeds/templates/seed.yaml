@@ -1,0 +1,25 @@
+apiVersion: "openstack.stable.sap.cc/v1"
+kind: OpenstackSeed
+metadata:
+  name: hubcopter-seed
+
+spec:
+  requires:
+    - {{ .Values.global.keystoneNamespace }}/keystone-seed
+    - monsoon3/domain-default-seed
+    - monsoon3/domain-ccadmin-seed
+    - swift/swift-seed
+
+  domains:
+    - name: Default
+      users:
+        - name: hubcopter
+          description: Hubcopter service
+          password: '{{ .Values.hubcopter.service_password | required ".Values.hubcopter.service_password is missing" }}'
+
+    - name: ccadmin
+      projects:
+        - name: master
+          role_assignments:
+            - user: hubcopter@Default
+              role: objectstore_viewer

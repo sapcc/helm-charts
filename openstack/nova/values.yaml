@@ -8,15 +8,11 @@ global:
   novaApiPortPublic: '443'
   novaApiMetadataPortInternal: '8775'
   novaConsolePortPublic: '443'
-  placementApiPortAdmin: '8778'
-  placementApiPortInternal: '8778'
-  placementApiPortPublic: '443'
   master_password: null
-
-  dbUser: nova
-
+  domain_seeds:
+    skip_hcm_domain: false
+    
   nova_service_user: nova
-  placement_service_user: placement
 
   hypervisors: []
   enable_kvm: false
@@ -24,8 +20,6 @@ global:
   hypervisors_kvm: []
   hypervisors_ironic: []
   osprofiler: {}
-  pgbouncer:
-    enabled: true
 
 osprofiler: {}
 
@@ -41,7 +35,7 @@ cell2:
       DEFAULT:
         statsd_port: 9125
         # enables collecting metrics for rpc calls
-        statsd_enabled: false
+        statsd_enabled: true
 
 defaults:
   default:
@@ -59,7 +53,7 @@ defaults:
         compute_driver: ironic.IronicDriver
         graceful_shutdown_timeout: 1800
         # enables collecting metrics for RPC calls
-        statsd_enabled: false
+        statsd_enabled: true
       ironic:
         serial_console_state_timeout: 10
     kvm:
@@ -68,17 +62,15 @@ defaults:
         firewall_driver: nova.virt.firewall.NoopFirewallDriver
         resume_guests_state_on_host_boot: true
         # enables collecting metrics for RPC calls
-        statsd_enabled: false
+        statsd_enabled: true
 
 pod:
   replicas:
     api: 6
     metadata: 2
     console: 2
-    consoleauth: 2
     conductor: 2
     scheduler: 1
-    placement: 2
     vspc: 4
   lifecycle:
     upgrades:
@@ -102,15 +94,11 @@ pod:
     bigvm:
       requests:
         cpu: "100m"
-        memory: "256m"
+        memory: "256Mi"
     conductor:
       requests:
         cpu: "1500m"
         memory: "7Gi"
-    placement:
-      requests:
-        cpu: "400m"
-        memory: "150Mi"
     scheduler:
       requests:
         cpu: "500m"
@@ -153,8 +141,6 @@ apidbName: nova_api
 apidbUser: nova_api
 apidbPassword: null
 
-portMetrics: '9102'
-
 loci:
   nova: false
   openvswitch: false
@@ -175,12 +161,11 @@ imageVersionNovaApi: null
 imageVersionNovaCompute: null
 imageVersionNovaLibvirt: null
 imageVersionNovaConductor: null
-imageVersionNovaConsoleauth: null
 imageVersionNovaNovncproxy: null
 imageVersionNovaShellinaboxproxy: null
 imageVersionNovaSpicehtml5proxy: null
 imageVersionNovaScheduler: null
-imageVersionNovaPlacementApi: null
+imageVersionBitnamiOpenResty: 1.21.4-1-debian-11-r57
 
 vspc:
   enabled: false
@@ -251,6 +236,7 @@ consoles:
   shellinabox:
     enabled: true
     portInternal: '6084'
+    custom_deployment: true
   spice:
     enabled: false
   mks:
@@ -261,13 +247,14 @@ consoles:
 
 scheduler:
   driver: "filter_scheduler"
-  scheduler_tracks_instance_changes: false
+  workers: 1
+  track_instance_changes: false
   scheduler_instance_sync_interval: 120
   rpc_statsd_port: 9125
   # enables collecting metrics for RPC calls
-  rpc_statsd_enabled: false
+  rpc_statsd_enabled: true
   default_filters: "CpuInfoMigrationFilter, ShardFilter, AggregateMultiTenancyIsolation, ComputeFilter, ComputeCapabilitiesFilter, BigVmFlavorHostSizeFilter, VmSizeThresholdFilter, ImagePropertiesFilter, ServerGroupAntiAffinityFilter, ServerGroupAffinityFilter"
-  vm_size_threshold_vm_size_mb: "8193"
+  vm_size_threshold_vm_size_mb: "16385"
   vm_size_threshold_hv_size_mb: "819200"
   ram_weight_multiplier: 1.0
   cpu_weight_multiplier: 1.0
@@ -294,7 +281,7 @@ compute:
       block_device_allocate_retries: 300
       rpc_statsd_port: 9125
       # enables collecting metrics for RPC calls
-      rpc_statsd_enabled: false
+      rpc_statsd_enabled: true
     vmware:
       insecure: true
       use_linked_clone: false
@@ -314,7 +301,7 @@ conductor:
     DEFAULT:
       statsd_port: 9125
       # enables collecting metrics for rpc calls
-      statsd_enabled: false
+      statsd_enabled: true
     conductor:
       workers: 8
 
@@ -328,11 +315,6 @@ quota:
   server_group_members: 40  # this is set by limes now
   # we don't want to set unlimited because that has too much potential to break things
   key_pairs: 10000
-
-
-placement:
-  enabled: false
-  wsgi_processes: 10
 
 mysql_metrics:
   db_name: nova
@@ -690,13 +672,29 @@ db_name: nova
 max_pool_size: 10
 max_overflow: 5
 
+proxysql:
+  mode: ""
+
 mariadb:
   enabled: false
   max_connections: 2048
   buffer_pool_size: "4096M"
   log_file_size: "1024M"
   name: nova
-  custom_initdb_configmap: nova-mysql-db-init
+  initdb_configmap: true
+  long_query_time: 8
+  databases:
+  - nova
+  - nova_cell0
+  users:
+    nova:
+      name: nova
+      grants:
+      - "ALL PRIVILEGES on nova.*"
+    nova_cell0:
+      name: nova_cell0
+      grants:
+      - "ALL PRIVILEGES on nova_cell0.*"
   persistence_claim:
     name: db-nova-pvc
     size: "50Gi"
@@ -713,13 +711,23 @@ mariadb:
       - nova_cell0.instance_metadata
     oauth:
       client_id: "nova"
+  alerts:
+    support_group: compute-storage-api
 
 mariadb_api:
   enabled: false
   buffer_pool_size: "4096M"
   log_file_size: "1024M"
   name: nova-api
-  custom_initdb_configmap: nova-api-db-init
+  initdb_configmap: true
+  long_query_time: 8
+  databases:
+  - nova_api
+  users:
+    nova_api:
+      name: nova_api
+      grants:
+      - "ALL PRIVILEGES on nova_api.*"
   persistence_claim:
     name: db-nova-api-pvc
     size: "50Gi"
@@ -729,17 +737,21 @@ mariadb_api:
     enabled: true
     databases:
       - nova_api
+      - placement
     verify_tables:
       - nova_api.flavors
       - nova_api.key_pairs
     oauth:
       client_id: "nova-api"
+  alerts:
+    support_group: compute-storage-api
 
 mariadb_cell2:
   enabled: false
   buffer_pool_size: "4096M"
   log_file_size: "1024M"
-  custom_initdb_configmap: nova-cell2-db-init
+  initdb_configmap: true
+  long_query_time: 8
   persistence_claim:
     name: db-nova-cell2-pvc
     size: "50Gi"
@@ -749,6 +761,8 @@ mariadb_cell2:
     enabled: true
     oauth:
       client_id: "nova-cell2"
+  alerts:
+    support_group: compute-storage-api
 
 rabbitmq_cell2:
   name: nova-cell2
@@ -760,8 +774,12 @@ rabbitmq_cell2:
     rabbit_queue_length: 50
     unacknowledged_total_wait_for: 10m
     ready_total_wait_for: 10m
+    support_group: compute-storage-api
 
 audit:
+  central_service:
+    user: rabbitmq
+    password: null
   enabled: false
   # how many messages to buffer before dumping to log (when rabbit is down or too slow)
   mem_queue_size: 1000
@@ -790,11 +808,7 @@ rabbitmq:
     rabbit_queue_length: 50
     unacknowledged_total_wait_for: 10m
     ready_total_wait_for: 10m
-
-rabbitmq_notifications:
-  name: nova
-  persistence:
-    enabled: false
+    support_group: compute-storage-api
 
 logging:
   formatters:
@@ -861,3 +875,30 @@ sentry:
   enabled: true
 
 nova_bigvm_enabled: true
+
+pre_change_hook:
+  image: "sapcc/unified-kubernetes-toolbox"
+  image_version: "20220525082919"
+  kubectl_version: 1.21.8
+
+cors:
+  enabled: true
+  additional_allow_headers: 'X-OpenStack-Nova-API-Version'
+
+memcached:
+  alerts:
+    support_group: compute-storage-api
+    yielded_connections_threshold: 100
+
+owner-info:
+  support-group: compute-storage-api
+  service: nova
+  maintainers:
+    - Johannes Kulik
+    - Fabian Wiesel
+    - Marius Leustean
+    - Jakob Karge
+  helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/openstack/nova
+
+default:
+  password_all_group_samples: 2

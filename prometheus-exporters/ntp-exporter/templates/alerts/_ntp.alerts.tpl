@@ -11,6 +11,7 @@ groups:
         context: availability
         meta: "Clock drift on {{`{{ $labels.instance }}`}}"
         dashboard: nodes?var-server={{`{{$labels.instance}}`}}
+        support_group: containers
       annotations:
         summary: High NTP drift
         description: The clock on node {{`{{ $labels.instance }}`}} is more than 300ms apart from its NTP server. This can cause service degradation.

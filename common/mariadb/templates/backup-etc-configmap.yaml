@@ -26,16 +26,16 @@ data:
         redirect_url: "https://{{ .Values.name }}.mariabackup.{{ .Values.global.region }}.cloud.sap"
     database:
       type: "mariadb"
-      user: root
+      user: {{ .Values.users.backup.name | required ".Values.users.backup.name is required" }}
       version: {{ .Values.backup_v2.maria_db.version }}
-      password: {{ include "mariadb.root_password" . }}
+      password: {{ .Values.users.backup.password | required ".Values.users.backup.password is required" }}
       host: {{ include "fullName" . }}
       port: 3306
       server_id: 999
       data_dir: /var/lib/mysql
       log_name_format: mysqld-bin
       databases:
-      {{- range $db := .Values.backup_v2.databases }}
+      {{- range $db := coalesce .Values.backup_v2.databases .Values.databases (list .Values.name) }}
         - "{{$db}}"
       {{- end }}
       verify_tables:

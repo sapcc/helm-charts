@@ -49,6 +49,8 @@ wsgi_default_pool_size = {{ .Values.wsgi_default_pool_size | default .Values.glo
 max_pool_size = {{ .Values.max_pool_size | default .Values.global.max_pool_size | default 10 }}
 max_overflow = {{ .Values.max_overflow | default .Values.global.max_overflow | default 50 }}
 
+max_limit_paging = 3000
+
 [keystone_authtoken]
 auth_type = v3password
 auth_version = v3
@@ -67,14 +69,7 @@ token_cache_time = 600
 include_service_catalog = true
 service_type = key-manager
 
-{{- if .Values.audit.enabled }}
-# Defines CADF Audit Middleware section
-[audit_middleware_notifications]
-topics = notifications
-driver = messagingv2
-transport_url = rabbit://rabbitmq:{{ .Values.rabbitmq_notifications.users.default.password }}@barbican-rabbitmq-notifications:5672/
-mem_queue_size = 1000
-{{- end }}
+{{- include "ini_sections.audit_middleware_notifications" . }}
 
 {{- include "ini_sections.cache" . }}
 

@@ -1,3 +1,135 @@
+## 7.1.23 - 7.1.25
+
+ * Revised Prometheus and Thanos sidecar alerts; added PodMonitor for Thanos sidecar. 
+
+## 7.1.22
+
+ * Forward PrometheusMultiple**ScrapeAlerts to the ccloud_support_group label, if present
+
+## 7.1.21
+
+ * Order of coalescence corrected
+
+## 7.1.20
+
+ * Option to set support_group for alerts
+
+## 7.1.19
+
+ * Update k8s apiserver metric names
+
+## 7.1.17 - 7.1.18
+
+* Dedicated thanos seed deployment to support various clusters. Seeds are going to be deployed in metal only
+
+## 7.1.15 - 7.1.16
+
+* remoteWrite alerting added
+
+## 7.1.14
+
+* remoteWrite CA added
+
+## 7.1.12 - 7.1.13
+
+ * configurable multipe scrapes alerts
+
+## 7.1.11
+
+* adding remoteWrite
+
+## 7.1.1 - 7.1.9
+
+* fix prometheus alerts; fix service label for ServiceMonitor
+
+## 7.1.1 - 7.1.9
+
+* Bug fixes in the new minor version
+
+## 7.1.0
+
+* Enabling the common chart to deploy multiple Prometheus. This can be done either via the list `names: []` or via a list of targets to create Prometheis `global.targets: []`. Existing configurations will not break as this chart is still able to create single Prometheus configured with `name:` only.
+
+## 7.0.15
+
+* changed service annotation on alerts
+
+## 7.0.14
+
+* fix node-exporter selector
+
+## 7.0.14
+
+* Add `container_oom_events_total` cadvisor metric by default
+
+## 7.0.12
+
+* Exclude `job=prometheus-vmware` from PrometheusMultipleTargetScrapes alert because this target is scraped with multiple jobs to the same target intentionally. Every scrape just replies a single metric.
+
+## 7.0.11
+
+* Add `metrics_path` label to pod and service SD targets
+
+## 7.0.10
+
+* Bump prometheus to v2.39.1
+
+## 7.0.9
+
+* removing Thanos prefix as it is only used in global Thanos Prometheis -> restoring region, cluster, cluster_type labels
+
+## 7.0.6 - 7.0.8
+
+* AlertWithMissingSupportGroupLabel alert added
+
+## 7.0.5
+
+* fix PrometheusMultipleTargetScrapes in global proms
+
+## 7.0.4
+
+* label fix for prometheus operator bump
+
+## 7.0.2 - 7.0.3
+
+* Move PrometheusMultiplePodScrapes to prometheus-kubernetes-rules chart
+
+## 7.0.1
+
+* Fix selector in service
+
+## 7.0.0
+
+* *Breaking change*: Global instances will not work, Thanos deployment files are removed.
+* Enabled Thanos sidecar by default. Look at templates/thanos/README.md for instructions, swiftStorageConfig needs to be set
+* Removed deployment charts for Query, Compactor, Store.
+* Removed all thanos related alerts, leaving sidecar in place
+* incorporated tier and service template of prometheus-kubernetes-rules to alerts, since it is used by ALL Prometheis
+
+## 6.3.2
+
+* Respect alert-service and alert-tier pod labels in PrometheusMultiplePodScrapes alert
+
+## 6.3.1
+
+* switch swift user for OpenstackSeed
+
+## 6.3.0
+
+* Bump Prometheus server to `v2.36.1`.
+
+## 6.2.3
+
+* Collect Prometheus metrics from pod/service ports named like `metrics-.*` in addition to from ports named `metrics`. This is intended to make the `prometheus.io/port` and `prometheus.io/port_1` annotations fully obsolete.
+
+## 6.2.2
+
+* Add dedicated alert for multiple scrapes from pod services discovery (PrometheusMultiplePodScrapes).
+
+## 6.2.1
+
+* Fix service discovery for endpoint/service by port name.
+
 ## 6.2.0
 
 * Only set resource requests via VPA.

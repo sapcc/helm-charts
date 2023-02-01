@@ -1,31 +1,69 @@
 {{/* Name of the Prometheus. */}}
 {{- define "prometheus.name" -}}
-{{- required ".Values.name missing" .Values.name -}}
+{{- $name := index . 0 -}}
+{{- $root := index . 1 -}}
+{{- if and (not $root.Values.names) (not $root.Values.global.targets) (not $root.Values.name) -}}
+{{- fail "Cannot create any Prometheus resource. Please define a name or at least one list element to names or global.targets" -}}
+{{- end -}}
+{{/* vmware prometheis need additional renaming */}}
+{{- if or $root.Values.vmware $root.Values.thanosSeeds.vmware -}}
+{{- include "vmwareRenaming" $name -}}
+{{- else -}}
+{{- $name -}}
+{{- end -}}
 {{- end -}}
 
 {{/* Fullname of the Prometheus. */}}
 {{- define "prometheus.fullName" -}}
+{{- $name := index . 0 -}}
+{{- $root := index . 1 -}}
+{{/* vmware prometheis need additional renaming */}}
+{{- if $root.Values.vmware -}}
+prometheus-{{- include "vmwareRenaming" $name -}}
+{{- else -}}
 prometheus-{{- (include "prometheus.name" .) -}}
+{{- end -}}
 {{- end -}}
 
 {{/* External URL of this Prometheus. */}}
 {{- define "prometheus.externalURL" -}}
-{{- if and .Values.ingress.hosts .Values.ingress.hostsFQDN -}}
+{{- $name := index . 0 -}}
+{{- $root := index . 1 -}}
+{{- if and $root.Values.ingress.hosts $root.Values.ingress.hostsFQDN -}}
 {{- fail ".Values.ingress.hosts and .Values.ingress.hostsFQDN are mutually exclusive." -}}
 {{- end -}}
-{{- if .Values.ingress.hosts -}}
-{{- $firstHost := first .Values.ingress.hosts -}}
-{{- required ".Values.ingress.hosts must have at least one hostname set" $firstHost -}}.{{- required ".Values.global.region missing" .Values.global.region -}}.{{- required ".Values.global.domain missing" .Values.global.domain -}}
-{{- else -}}
-{{- $firstHost := first .Values.ingress.hostsFQDN -}}
+{{- if $root.Values.ingress.hosts -}}
+{{- $firstHost := first $root.Values.ingress.hosts -}}
+{{- required ".Values.ingress.hosts must have at least one hostname set" $firstHost -}}.{{- required ".Values.global.region missing" $root.Values.global.region -}}.{{- required ".Values.global.domain missing" $root.Values.global.domain -}}
+{{- else if $root.Values.ingress.hostsFQDN -}}
+{{- $firstHost := first $root.Values.ingress.hostsFQDN -}}
 {{- required ".Values.ingress.hostsFQDN must have at least one hostname set" $firstHost -}}
+{{/* vmware prometheis need additional renaming */}}
+{{- else if $root.Values.vmware -}}
+prometheus-{{- include "vmwareRenaming" $name -}}.{{- required "$root.Values.global.region missing" $root.Values.global.region -}}.{{- required "$root.Values.global.domain missing" $root.Values.global.domain -}}
+{{- else -}}
+prometheus-{{- $name -}}.{{- required "$root.Values.global.region missing" $root.Values.global.region -}}.{{- required "$root.Values.global.domain missing" $root.Values.global.domain -}}
 {{- end -}}
 {{- end -}}
 
 {{- define "fqdnHelper" -}}
 {{- $host := index . 0 -}}
 {{- $root := index . 1 -}}
+{{- if not $root.Values.ingress.hosts -}}
+{{- (include "prometheus.fullName" .) -}}.{{- required ".Values.global.region missing" $root.Values.global.region -}}.{{- required ".Values.global.domain missing" $root.Values.global.domain -}}
+{{- else -}}
 {{- $host -}}.{{- required ".Values.global.region missing" $root.Values.global.region -}}.{{- required ".Values.global.domain missing" $root.Values.global.domain -}}
+{{- end -}}
+{{- end -}}
+
+{{- define "internalFQDNHelper" -}}
+{{- $host := index . 0 -}}
+{{- $root := index . 1 -}}
+{{- if not $root.Values.internalIngress.hosts -}}
+{{- (include "prometheus.fullName" .) -}}-internal.{{- required ".Values.global.region missing" $root.Values.global.region -}}.{{- required ".Values.global.domain missing" $root.Values.global.domain -}}
+{{- else -}}
+{{- $host -}}.{{- required ".Values.global.region missing" $root.Values.global.region -}}.{{- required ".Values.global.domain missing" $root.Values.global.domain -}}
+{{- end -}}
 {{- end -}}
 
 {{/* Prometheus image. */}}
@@ -35,20 +73,29 @@ prometheus-{{- (include "prometheus.name" .) -}}
 
 {{/* Name of the PVC. */}}
 {{- define "pvc.name" -}}
-{{- default .Values.name .Values.persistence.name | quote -}}
+{{- $name := index . 0 -}}
+{{- $root := index . 1 -}}
+{{/* vmware prometheis need additional renaming */}}
+{{- if $root.Values.vmware -}}
+{{- include "vmwareRenaming" $name -}}
+{{- else -}}
+{{- default $name $root.Values.persistence.name | quote -}}
+{{- end -}}
 {{- end -}}
 
 {{/* The name of the serviceAccount. */}}
 {{- define "serviceAccount.name" -}}
-{{- $name := .Values.serviceAccount.name -}}
-{{- if .Values.serviceAccount.create -}}
-{{- if and $name (ne $name "default") -}}
-{{- $name -}}
+{{- $name := index . 0 -}}
+{{- $root := index . 1 -}}
+{{- $svcName := $root.Values.serviceAccount.name -}}
+{{- if $root.Values.serviceAccount.create -}}
+{{- if and $svcName (ne $svcName "default") -}}
+{{- $svcName -}}
 {{- else -}}
 {{- (include "prometheus.fullName" . ) -}}
 {{- end -}}
 {{- else -}}
-{{- default "default" $name -}}
+{{- default "default" $svcName -}}
 {{- end -}}
 {{- end -}}
 
@@ -62,10 +109,12 @@ prometheus-{{- (include "prometheus.name" .) -}}
 {{- end -}}
 
 {{- define "thanos.objectStorageConfig.name" -}}
-{{- if and .Values.thanos.spec.objectStorageConfig -}}
-{{- required ".Values.thanos.spec.objectStorageConfig.name missing" .Values.thanos.spec.objectStorageConfig.name -}}
+{{- $name := index . 0 -}}
+{{- $root := index . 1 -}}
+{{- if and $root.Values.thanos.spec.objectStorageConfig -}}
+{{- required ".Values.thanos.spec.objectStorageConfig.name missing" $root.Values.thanos.spec.objectStorageConfig.name -}}
 {{- else -}}
-{{- include "prometheus.fullName" . -}}-{{- required ".Values.thanos.objectStorageConfig.name missing" .Values.thanos.objectStorageConfig.name -}}
+{{- include "prometheus.fullName" . -}}-{{- required ".Values.thanos.objectStorageConfig.name missing" $root.Values.thanos.objectStorageConfig.name -}}
 {{- end -}}
 {{- end -}}
 
@@ -78,28 +127,34 @@ prometheus-{{- (include "prometheus.name" .) -}}
 {{- end -}}
 
 {{- define "thanos.projectName" -}}
-{{- if .Values.thanos.swiftStorageConfig.tenantName }}
-{{- .Values.thanos.swiftStorageConfig.tenantName | quote -}}
+{{- if .Values.thanosSeeds.swiftStorageConfig.tenantName }}
+{{- .Values.thanosSeeds.swiftStorageConfig.tenantName | quote -}}
 {{- else -}}
-{{- required ".Values.thanos.swiftStorageConfig.projectName missing" .Values.thanos.swiftStorageConfig.projectName | quote -}}
+{{- required ".Values.thanosSeeds.swiftStorageConfig.projectName missing" .Values.thanosSeeds.swiftStorageConfig.projectName | quote -}}
 {{- end -}}
 {{- end -}}
 
 {{- define "thanos.projectDomainName" -}}
-{{- if .Values.thanos.swiftStorageConfig.projectDomainName -}}
-{{- .Values.thanos.swiftStorageConfig.projectDomainName | quote -}}
+{{- if .Values.thanosSeeds.swiftStorageConfig.projectDomainName -}}
+{{- .Values.thanosSeeds.swiftStorageConfig.projectDomainName | quote -}}
 {{- else -}}
-{{- required ".Values.thanos.swiftStorageConfig.domainName missing" .Values.thanos.swiftStorageConfig.domainName | quote -}}
+{{- required ".Values.thanosSeeds.swiftStorageConfig.domainName missing" .Values.thanosSeeds.swiftStorageConfig.domainName | quote -}}
 {{- end -}}
 {{- end -}}
 
 {{/* Value for prometheus.io/targets annotation. */}}
 {{- define "prometheusTargetsValue" -}}
-{{- $value := printf ".*%s.*" (include "prometheus.name" . ) -}}
-{{- if .Values.serviceDiscoveries.additionalTargets -}}
-{{- $value -}}|.*{{- .Values.serviceDiscoveries.additionalTargets | join ".*|.*" -}}.*
+{{- $name := index . 0 -}}
+{{- $root := index . 1 -}}
+{{- if $root.Values.vmware -}}
+{{- include "vmwareRenaming" $name -}}
+{{- else -}}
+{{- $value := printf ".*%s.*" $name -}}
+{{- if $root.Values.serviceDiscoveries.additionalTargets -}}
+{{- $value -}}|.*{{- $root.Values.serviceDiscoveries.additionalTargets | join ".*|.*" -}}.*
 {{- else -}}
 {{- $value -}}
+{{- end -}}
 {{- end -}}
 {{- end -}}
 
@@ -108,13 +163,6 @@ prometheus-{{- (include "prometheus.name" .) -}}
   {{- .Values.global.tier -}}
 {{- else -}}
   {{- required ".Values.alerts.tier missing" .Values.alerts.tier -}}
-{{- end -}}
-{{- end -}}
-
-{{/* If Thanos is enabled the prefix `thanos_` is added to external labels to avoid overriding existing ones (region, cluster) which were added by previous Prometheis in the federation hierarchy. */}}
-{{- define "thanosPrefix" -}}
-{{- if .Values.thanos.enabled -}}
-{{- "thanos_" -}}
 {{- end -}}
 {{- end -}}
 
@@ -140,4 +188,17 @@ prometheus-{{- (include "prometheus.name" .) -}}
 - sourceLabels: [ __name__ ]
   regex: ^({{ . | join "|" }})$
   action: drop
+{{- end -}}
+
+{{/* Generated Swift User Name. */}}
+{{- define "swift.userName" -}}
+{{- $name := index . 0 -}}
+{{- $root := index . 1 -}}
+{{- (include "prometheus.fullName" .) -}}-thanos
+{{- end -}}
+
+{{/* Special renaming for vmware-monitoring */}}
+{{- define "vmwareRenaming" -}}
+{{- $vropshostname := split "." . -}}
+vmware-{{ $vropshostname._0 | trimPrefix "vrops-" }}
 {{- end -}}

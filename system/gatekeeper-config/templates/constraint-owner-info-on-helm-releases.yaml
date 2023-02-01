@@ -1,0 +1,13 @@
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: GkOwnerInfoOnHelmReleases
+metadata:
+  name: ownerinfoonhelmreleases
+  annotations:
+    {{- include "sources" (tuple "owner-info-on-helm-releases" "owner-info-on-helm-releases") | indent 4 }}
+  labels:
+    on-prod-ui: 'true'
+spec:
+  enforcementAction: dryrun # set to 'deny' to enforce
+  match: {{ include "match_active_helm_releases" . | indent 4 }}
+  parameters:
+    helmManifestParserURL: {{ quote .Values.helm_manifest_parser_url }}

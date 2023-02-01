@@ -1,0 +1,223 @@
+global:
+  # The OpenStack region.
+  region:
+
+  # The TLD as used in the URL.
+  tld:
+
+  # Type of the cluster to which the Thanos is deployed. Analog to Prometheus.
+  # Choose between: controlplane, kubernikus-controlplane, kubernikus-scaleout.
+  clusterType: controlplane
+
+  # TODO: check if needed
+  # Optional name of the cluster to which the Prometheus is deployed.
+  # Defaults to region if not set.
+  # cluster:
+
+  # Optional tier for Prometheus alerts.
+  # tier: k8s
+
+# allows to disable Thanos for specific regions
+enabled: true
+
+# Mandatory name for this Thanos.
+name:
+
+# false means only Thanos Query is deployed. Used for regional and global Thaneis.
+# If set to true everything in templates (StoreEndpoint, StoreGateway, Query) is deployed.
+# Default: true
+deployWholeThanos: true
+
+# If set this will query all regions and expects a Thanos Query to be present at the end of the tunnel
+useQueryRegions: false
+queryRegions: []
+
+# clusters to be queried from global. thanos-$clusterType-grpc is the corresponding ingress to be queried
+clusterTypes: []
+
+# If true it will discovery all Thaneis Services deployed by Thanos operator
+queryDiscovery:
+
+# defaults to cluster.local
+clusterDomain:
+
+# used for cross cluster TLS 
+# only used, when useQueryRegions is set
+GRPCClientCA:
+GRPCClientCertificate:
+  certificate:
+  privateKey:
+
+
+logLevel: info
+
+# Configuration for OpenStack Swift Thanos storage backend.
+swiftStorageConfig:
+  authURL:
+  userName:
+  userDomainName:
+  password:
+  domainName:
+  projectName:
+  projectDomainName:
+  regionName:
+  containerName:
+
+# Specification for Thanos image
+spec:
+  baseImage: keppel.eu-de-1.cloud.sap/ccloud-quay-mirror/thanos/thanos
+
+# Specification for Thanos components.
+compactor:
+  # Always check if customArgs are set. If so, everything thing else is neglected.
+
+  # How long to retain raw samples in bucket. 0d - disables this retention.
+  # ONLY SPECIFY DAYS as an int
+  retentionResolutionRaw: 90
+
+  # How long to retain samples of resolution 1 (5 minutes) in bucket. 0d - disables this retention.
+  # ONLY SPECIFY DAYS as an int
+  retentionResolution5m: 90
+
+  # How long to retain samples of resolution 2 (1 hour) in bucket. 0d - disables this retention.
+  # ONLY SPECIFY YEARS as an int
+  retentionResolution1h: 5
+
+  # Minimum age of fresh (non-compacted) blocks before they are being processed. Malformed blocks older than the maximum of consistency-delay and 30m0s will be removed.
+  consistencyDelay: 30m
+
+  # Specifying custom arguments means that all compactor related settings will be overwritten. It is NOT adding the options, these are all options at glance. This is usually used, when the operator is not supporting a certain option
+  customArgs: #[]
+    - compact
+    - --log.level=info
+    - --http-address=0.0.0.0:10902
+    - --http-grace-period=120s
+    - --data-dir=/data
+    - --objstore.config-file=/etc/config/thanos.yaml
+    - --consistency-delay=1800s
+    - --retention.resolution-raw=7776000s
+    - --retention.resolution-5m=7776000s
+    - --retention.resolution-1h=157680000s
+    - --compact.concurrency=1
+    - --compact.cleanup-interval=1800s
+    - --wait
+    - --wait-interval=900s
+
+store:
+  # Maximum size of items held in the index cache.
+  indexCacheSize: 1GB
+
+  # Maximum size of concurrently allocatable bytes for chunks.
+  chunkPoolSize: 4GB
+
+  # Limit the amount of samples that might be retrieved on a single Series() call.
+  # 0 = unlimited.
+  seriesSampleLimit: 0
+
+  # Limit number of concurrent Series() calls in Thanos store.
+  seriesMaxConcurrency: 20
+
+  # Persistent volume for Thanos store.
+  persistence:
+    enabled: true
+    size: 2Gi
+
+# not relevant when deployWholeTHanos set to false
+query:
+  webRouteprefix: /thanos
+  # statically specify stores, if deployWholeThanos is set and this is not present, it will default to query the single Prometheus sidecar container prometheus-<thanos-name>:10901
+  # stores:
+    # - store1:10901
+    # - storeN:10901
+
+# Optional ingress for this Thanos. Only needed when net deployed alongside Prometheus. So to say, if deployWholeThanos is set, this shouldn't be needed
+ingress:
+  enabled: false
+
+  # List of hostnames for this Thanos Query. If empty, the FQDN will be generated using the pattern  thanos-<name>.<region>.<domain> otherwise <host>.<region>.<domain>.
+  # The first host is used to generate the external URL for the Thanos. Remaining hosts will be used as SANs.
+  # If the ingress is enabled, it's also used for the ingress host.
+  hosts: []
+
+  # List of fully qualified host names to be used for this Thanos server. Mutually exclusive with hosts.
+  # The first host is used to generate the external URL for the Thanos. Remaining hosts will be used as SANs.
+  # If the ingress is enabled, it's also used for the ingress host.
+  hostsFQDN: []
+
+  # Client certificate authentication on ingress level.
+  authentication:
+    oauth:
+      enabled: false
+
+      # The URL to the authentication service.
+      authURL:
+
+      # Optional URL to specify the location of the error page.
+      authSignInURL:
+
+    sso:
+      enabled: true
+      # The key (<namespace>/<name>) of the secret containing the CA certificate (`ca.crt`) that is enabled to authenticate against this Ingress.
+      authTLSSecret: kube-system/ingress-cacrt
+
+      # The validation depth between the provided client certificate and the certification authority chain.
+      authTLSVerifyDepth: 3
+
+      # Enables verification of client certificates.
+      authTLSVerifyClient: on
+
+  # Additional annotations for the ingress.
+  annotations: {}
+
+grpcIngress:
+  enabled: false
+
+  # List of hostnames for this Thanos Query. If empty, the FQDN will be generated using the pattern  thanos-<name>-grpc.<region>.<domain> otherwise <host>.<region>.<domain>.
+  # The first host is used to generate the external URL for the Thanos. Remaining hosts will be used as SANs.
+  # If the ingress is enabled, it's also used for the ingress host.
+  hosts: []
+
+  # List of fully qualified host names to be used for this Thanos server. Mutually exclusive with hosts.
+  # The first host is used to generate the external URL for the Thanos. Remaining hosts will be used as SANs.
+  # If the ingress is enabled, it's also used for the ingress host.
+  hostsFQDN: []
+
+  # Client certificate authentication on ingress level.
+  authentication:
+    sso:
+      enabled: true
+      # The key (<namespace>/<name>) of the secret containing the CA certificate (`ca.crt`) that is enabled to authenticate against this Ingress.
+      authTLSSecret: kube-system/ingress-cacrt
+
+      # The validation depth between the provided client certificate and the certification authority chain.
+      authTLSVerifyDepth: 3
+
+      # Enables verification of client certificates.
+      authTLSVerifyClient: on
+
+  # Additional annotations for the gRPC ingress.
+  annotations: {}
+
+alerts:
+  # prometheus name picking up the Thanos metrics
+  prometheus: 
+
+  # service name routing the alerts, defaults to `metrics`
+  service:
+
+  # support_group routing the alerts, defaults to `observability`
+  support_group:
+
+# If true, a custom Prometheus naming will take place. Only needed for vmware-monitoring.
+vmware: false
+
+traefik:
+  # defaults to false. Should only be enabled if traefik is used over default ingress-nginx. Please set grpcIngress.enabled to false in this case.
+  # it will spawn a dummy ingress resource to annotate the hostname for dns record creation. However, this dummy will not do anything because the grpc service is not exposing on 80.
+  enabled: false
+
+  # List of hostnames to match, typically the same which are configured in grpcIngress.hosts
+  hosts: []
+
+  route:
+    enabled: false

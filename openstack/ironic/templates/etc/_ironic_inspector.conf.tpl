@@ -1,16 +1,24 @@
 [DEFAULT]
 log_config_append = /etc/ironic-inspector/logging.ini
+{{- include "ini_sections.logging_format" . }}
+
 {{- include "ini_sections.default_transport_url" . }}
-clean_up_period = 60
+clean_up_period = 120
 # Timeout after which introspection is considered failed, set to 0 to
 # disable. (integer value)
 timeout = 3600
 debug = true
 standalone = {{ .Values.inspector.standalone }}
-executor_thread_pool_size = 128
-rpc_response_timeout = 60
+rpc_response_timeout = {{ .Values.rpc_response_timeout | default .Values.global.rpc_response_timeout | default 300 }}
+executor_thread_pool_size = {{ .Values.rpc_workers | default .Values.global.rpc_workers | default 100 }}
+
+# time to live in sec of idle connections in the pool:
+conn_pool_ttl = {{ .Values.rpc_conn_pool_ttl | default 600 }}
+rpc_conn_pool_size = {{ .Values.rpc_conn_pool_size | default .Values.global.rpc_conn_pool_size | default 100 }}
 statsd_port = {{ .Values.inspector.rpc_statsd_port }}
 statsd_enabled = {{ .Values.inspector.rpc_statsd_enabled }}
+listen_address = 0.0.0.0
+host = https://{{ include "ironic_inspector_endpoint_host_public" .}}
 
 [ironic]
 region_name = {{.Values.global.region}}
@@ -22,15 +30,8 @@ user_domain_name = {{.Values.global.keystone_service_domain | default "Default"}
 project_name = {{.Values.global.keystone_service_project | default "service"}}
 project_domain_name = {{.Values.global.keystone_service_domain | default "Default"}}
 
-[api]
-listen_address = 0.0.0.0
-host = https://{{ include "ironic_inspector_endpoint_host_public" .}}
-
 [firewall]
 manage_firewall = False
-
-[coordination]
-backend_url = {{ .Chart.Name }}-memcached.{{ include "svc_fqdn" . }}:{{ .Values.memcached.memcached.port | default 11211 }}
 
 [processing]
 store_data = none
@@ -54,13 +55,9 @@ enroll_node_fields = conductor_group:testing
 driver = noop
 
 [database]
-{{- if eq .Values.mariadb.enabled true }}
-connection = mysql+pymysql://ironic_inspector:{{.Values.inspectordbPassword}}@ironic-mariadb.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}/ironic_inspector?charset=utf8
+#connection = mysql+pymysql://ironic_inspector:{{.Values.inspectordbPassword}}@ironic-mariadb.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}/ironic_inspector?charset=utf8
+connection = {{ tuple . .Values.mariadb.users.ironic_inspector.name .Values.mariadb.users.ironic_inspector.name .Values.mariadb.users.ironic_inspector.password | include "db_url_mysql" }}
 {{- include "ini_sections.database_options_mysql" . }}
-{{- else }}
-connection = {{ tuple . "ironic_inspector" "ironic_inspector" .Values.inspectordbPassword | include "db_url" }}
-{{- include "ini_sections.database_options" . }}
-{{- end }}
 
 {{- include "ini_sections.audit_middleware_notifications" . }}
 

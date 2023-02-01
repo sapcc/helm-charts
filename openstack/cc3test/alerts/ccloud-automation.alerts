@@ -6,15 +6,16 @@ groups:
         cc3test_status{type="api",
             name=~"TestArc_api.+"
         } == 0
-    for: 10m
+    for: 16m
     labels:
       severity: critical
+      support_group: containers
       tier: os
       service: '{{ $labels.service }}'
       context: '{{ $labels.service }}'
       meta: 'CCloud Arc API is down'
       dashboard: 'cc3test-overview?var-service={{ $labels.service }}'
-      playbook: 'docs/devops/alert/arc/#test_api'
+      playbook: 'docs/support/playbook/automation/alerts/cc3test-alert-arc-api/'
       report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
     annotations:
       description: 'CCloud Arc API is down'
@@ -27,16 +28,47 @@ groups:
         }[30m]) > 8
     labels:
       severity: warning
+      support_group: containers
       tier: os
       service: '{{ $labels.service }}'
       context: '{{ $labels.service }}'
       meta: 'CCloud Arc API is flapping'
       dashboard: 'cc3test-overview?var-service={{ $labels.service }}'
-      playbook: 'docs/devops/alert/arc/#test_api'
+      playbook: 'docs/support/playbook/automation/alerts/cc3test-alert-arc-api/'
       report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
     annotations:
       description: 'CCloud Arc API is flapping'
       summary: 'CCloud Arc API is flapping'
+
+  - alert: ArcBrokerCertificateExpiresInLessThan1Week
+    expr: cc3test_cert_expires_in_days{type="arc-broker"} < 8
+    # we want a critical alert 7 days before (fixing during business hours is sufficient -> warning)
+    labels:
+      severity: warning
+      tier: os
+      support_group: containers
+      service: arc
+      context: arc-broker
+      meta: 'Certificate on {{ $labels.host }} expires in less than 8 days'
+      playbook: 'docs/support/playbook/automation/alerts/cc3test-alert-arc-broker-cert/'
+    annotations:
+      description: Certificate on {{ $labels.host }} expires in less than 8 days
+      summary: Certificate expires
+
+  - alert: ArcBrokerCertificateExpiresInLessThan2Weeks
+    expr: cc3test_cert_expires_in_days{type="arc-broker"} < 15
+    # we want a warning alert 14 days before
+    labels:
+      severity: warning
+      tier: os
+      support_group: containers
+      service: arc
+      context: arc-broker
+      meta: 'Certificate on {{ $labels.host }} expires in less than 15 days'
+      playbook: 'docs/support/playbook/automation/alerts/cc3test-alert-arc-broker-cert/'
+    annotations:
+      description: Certificate on {{ $labels.host }} expires in less than 15 days
+      summary: Certificate expires
 
 - name: cc3test-lyra.alerts
   rules:
@@ -49,11 +81,12 @@ groups:
     labels:
       severity: critical
       tier: os
+      support_group: containers
       service: '{{ $labels.service }}'
       context: '{{ $labels.service }}'
       meta: 'CCloud Lyra API is down'
       dashboard: 'cc3test-overview?var-service={{ $labels.service }}'
-      playbook: 'docs/devops/alert/lyra/#test_api'
+      playbook: 'docs/support/playbook/automation/alerts/cc3test-alert-lyra-api/'
       report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
     annotations:
       description: 'CCloud Lyra API is down'
@@ -67,40 +100,34 @@ groups:
     labels:
       severity: warning
       tier: os
+      support_group: containers
       service: '{{ $labels.service }}'
       context: '{{ $labels.service }}'
       meta: 'CCloud Lyra API is flapping'
       dashboard: 'cc3test-overview?var-service={{ $labels.service }}'
-      playbook: 'docs/devops/alert/lyra/#test_api'
+      playbook: 'docs/support/playbook/automation/alerts/cc3test-alert-lyra-api/'
       report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
     annotations:
       description: 'CCloud Lyra API is flapping'
       summary: 'CCloud Lyra API is flapping'
 
-  - alert: ArcBrokerCertificateExpiresInLessThan1Week
-    expr: cc3test_cert_expires_in_days{type="arc-broker"} < 8
-    # we want a critical alert 7 days before (fixing during business hours is sufficient -> warning)
+  - alert: CCloudAutomationFailed
+    expr: |
+        cc3test_status{service="lyra",
+            type="lyra_and_canary",
+            name=~"TestLyra_automation-.*"
+        } == 0
+    for: 1h
     labels:
       severity: warning
       tier: os
-      service: arc
-      context: arc-broker
-      meta: 'Certificate on {{ $labels.host }} expires in less than 8 days'
-      playbook: 'docs/devops/alert/arc/#OpenstackCertificateExpires'
+      support_group: containers
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.service }}'
+      meta: 'CCloud (Arc/Lyra) automation run failed'
+      dashboard: 'cc3test-overview?var-service={{ $labels.service }}'
+      playbook: 'docs/support/playbook/automation/alerts/cc3test-alert-automation/'
+      report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
     annotations:
-      description: Certificate on {{ $labels.host }} expires in less than 8 days
-      summary: Certificate expires
-
-  - alert: ArcBrokerCertificateExpiresInLessThan2Weeks
-    expr: cc3test_cert_expires_in_days{type="arc-broker"} < 15
-    # we want a warning alert 14 days before
-    labels:
-      severity: warning
-      tier: os
-      service: arc
-      context: arc-broker
-      meta: 'Certificate on {{ $labels.host }} expires in less than 15 days'
-      playbook: 'docs/devops/alert/arc/#OpenstackCertificateExpires'
-    annotations:
-      description: Certificate on {{ $labels.host }} expires in less than 15 days
-      summary: Certificate expires
+      description: 'CCloud (Arc/Lyra) automation run failed'
+      summary: 'CCloud (Arc/Lyra) automation run failed'

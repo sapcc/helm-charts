@@ -9,17 +9,13 @@ hermes:
     queue_name: "notifications.info"
     # hostnames are derived from this template using the key of the targets entry
     host_template: "%s-rabbitmq-notifications.monsoon3"
-    targets:
-      keystone:
-        # keystone's notification RabbitMQ omits the -notification suffix
-        host: "keystone-rabbitmq.monsoon3"
 logstash:
   debug: false
   swift: true
   audit: true
   jdbc:
     enabled: false
-    schedule: "0 0 * * *"
+    schedule: "12 0 * * *"
     namespace: metis
     service: metisdb-mariadb
     db: keystone
@@ -29,12 +25,12 @@ logstash:
 ## Configure resource requests and limits
 ## ref: http://kubernetes.io/docs/user-guide/compute-resources/
 ##
-resources_requests_memory_api: "256Mi"
+resources_requests_memory_api: "50Mi"
 resources_requests_cpu_api: "250m"
-resources_requests_memory_es: "256Mi"
-resources_requests_cpu_es: "250m"
-resources_requests_memory_ls: "6Gi"
-resources_requests_cpu_ls: "500m"
+resources_requests_memory_es: "18Gi"
+resources_requests_cpu_es: "1000m"
+resources_requests_memory_ls: "1536Mi"
+resources_requests_cpu_ls: "250m"
 resources_requests_memory_ki: "256Mi"
 resources_requests_cpu_ki: "250m"
 
@@ -46,11 +42,6 @@ elasticsearch_pv_size: 92
 # image_version_hermes_kibana: DEFINED-IN-REGION-SECRETS
 
 hermes_image_version_elasticsearch_manager: "0.9.4"
-
-elasticsearch_exporter:
-  enabled: false
-  listen_port: 9102
-  targets: prometheus-openstack
 
 hermes_kibana_port_public: '5601'
 deploy_kibana: false # true in staging values
@@ -73,10 +64,26 @@ rabbitmq_notifications:
     admin:
       user: admin
       # password: DEFINED-IN-SECRETS
+  alerts:
+    support_group: observability
+
+# Pod Monitor
+exporter:
+  enabled: false
+  prometheus: openstack
 
 # Deploy hermes Prometheus alerts.
 alerts:
   enabled: true
+  support-group: observability
   # Name of the Prometheus to which the alerts should be assigned to.
-  prometheus: openstack
-  
+  # Keys = directory names in alerts/ and aggregations/
+  prometheus:
+    openstack: openstack
+    kubernetes: kubernetes
+
+owner-info:
+  support-group: observability
+  maintainers:
+    - Nathan Oyler
+  helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/openstack/hermes

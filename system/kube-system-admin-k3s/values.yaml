@@ -7,12 +7,18 @@ disco:
     create: true
     serviceAccountName: disco
 
+ingress:
+  tls_client_auth:
+    ca_cert:
+
 traefik:
   ingressRoute:
     dashboard:
       enabled: false
   providers:
-    kubernetesCRD: {}
+    kubernetesCRD:
+      enabled: true
+      allowCrossNamespace: true
     kubernetesIngress: {}
   ports:
     web:
@@ -24,6 +30,17 @@ traefik:
   tlsOptions:
     default:
       minVersion: VersionTLS12
+      cipherSuites:
+        - TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA
+        - TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256
+        - TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA
+        - TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
+        - TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256
+        - TLS_RSA_WITH_AES_128_CBC_SHA
+        - TLS_RSA_WITH_AES_128_GCM_SHA256
+        - TLS_RSA_WITH_AES_256_CBC_SHA
+        - TLS_RSA_WITH_AES_256_GCM_SHA384
+      preferServerCipherSuites: true
 
 cert-manager:
   installCRDs: true
@@ -52,3 +69,8 @@ cert-manager:
 
 digicert-issuer:
   enableLeaderElection: "false"
+
+owner-info:
+  support-group: containers
+  helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/system/kube-system-admin-k3s
+  

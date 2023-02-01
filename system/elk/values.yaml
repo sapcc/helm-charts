@@ -1,3 +1,10 @@
+owner-info:
+  support-group: observability
+  maintainers:
+    - "Ivo Gosemann"
+    - "Olaf Heydorn"
+  helm-chart-url: "https://github.com/sapcc/helm-charts/tree/master/system/elk"
+
 global:
   region: DEFINED-IN-SECRETS
   tld: DEFINED-IN-SECRETS
@@ -5,6 +12,10 @@ global:
   elk_elasticsearch_audit_password: DEFINED-IN-SECRETS
   elk_elasticsearch_http_user: DEFINED-IN-SECRETS
   elk_elasticsearch_http_password: DEFINED-IN-SECRETS
+  prometheus: infra-frontend
+
+alerts:
+  enabled: true
   prometheus: infra-frontend
 
 
@@ -15,6 +26,7 @@ es_master:
   legacy_service_name: true
   master_dummy_port: '63062'
   client_replicas: '3'
+  audit: false
   qalogs:
     enabled: false
   exporter:
@@ -27,9 +39,11 @@ es_data:
     enabled: false
   http_port: 9200
   cluster_port: 9301
+  audit: false
   resources:
     requests:
       cpu: "2000m"
+      memory: "6Gi"
     limits:
       cpu: "4000m"
   exporter:
@@ -41,8 +55,16 @@ es_client:
   http_port: 9200
   cluster_port: 9301
   cluster_name: elk-elasticsearch.scaleout
+  audit: false
   qalogs:
     enabled: false
+  logger:
+    global: warn
+    root: warn
+    ror: warn
+  exporter:
+    enabled: false
+    prometheus: infra-frontend
 
 es_manager:
   enabled: false
@@ -50,6 +72,8 @@ es_manager:
   cluster_port: 9301
   endpoint_host_internal: es-client
   image_elasticsearch_manager: lmenezes/cerebro:0.9.4
+  opensearch:
+    enabled: false
 
 
 wall_e:
@@ -65,63 +89,3 @@ kibana:
   port_public: 5601
   http_port: 9200
   endpoint_host_internal: es-client
-
-fluent:
-  enabled: false
-  port: 8885
-  logstash_shards: 3
-  indexname: logstash
-  image_version: '20211110123325'
-  alerts:
-    enabled: false
-    prometheus: infra-collector
-  metis:
-    enabled: false
-    host: metisdb-mariadb.metis
-    port: 3306
-    db: metis
-
-fluent_systemd:
-  enabled: false
-  image_version: '20211110123325'
-  alerts:
-    enabled: false
-    prometheus: infra-collector
-  port: 8886
-
-fluent_scaleout:
-  enabled: false
-  image_version: '20211110123325'
-  prometheus: infra-frontend
-  port: 8885
-  http_port: 9200
-  endpoint_host_internal: es-client
-  logstash_shards: 3
-  indexname: logstash
-  metis:
-    enabled: false
-    host: metisdb
-    db: metis
-    port: 443
-
-logstash_external:
-  enabled: false
-  image_version: '20220412092455'
-  replicas: 1
-  input_netflow_port: 2055
-  input_syslog_port: 514
-  input_bigiplogs_port: 1513
-  input_alertmanager_port: 1515
-  input_deployments_port: 1516
-  input_http_port: 443
-  syslog:
-    enabled: false
-  tls:
-    crt: DEFINED-IN-SECRETS
-    key: DEFINED-IN-SECRETS
-  ingress:
-    enabled: false
-  elk_elasticsearch_endpoint_host_scaleout: "elk-elasticsearch.scaleout"
-  elk_elasticsearch_ssl_port: "443"
-  elk_elasticsearch_endpoint_host_internal: "es-client"
-  elk_elasticsearch_http_port_internal: 9200

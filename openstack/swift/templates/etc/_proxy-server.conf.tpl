@@ -60,6 +60,7 @@ use = egg:swift#proxy_logging
 # Note: Put after auth and staticweb in the pipeline.
 [filter:slo]
 use = egg:swift#slo
+max_manifest_segments = {{ .Values.max_manifest_segments }}
 
 # Note: Put after auth and staticweb in the pipeline.
 [filter:dlo]
@@ -71,10 +72,10 @@ use = egg:swift#gatekeeper
 # swift3 requires keystoneauth with exact name
 [filter:keystoneauth]
 use = egg:swift#keystoneauth
-operator_roles = admin, objectstore_admin, swiftoperator
+operator_roles = admin, objectstore_admin
 is_admin = false
 # TODO: Replace by cloud_objectstore_admin when rolled out
-reseller_admin_role = swiftreseller
+reseller_admin_role = cloud_objectstore_admin
 system_reader_roles = cloud_objectstore_viewer
 project_reader_roles = objectstore_viewer
 default_domain_id = default
@@ -182,6 +183,7 @@ use = egg:swift#s3api
 location = {{ .Values.global.region }}
 # The standard swift proxy logging is needed
 force_swift_request_proxy_log = true
+max_upload_part_num = {{ .Values.max_manifest_segments }}
 
 [filter:s3token]
 use = egg:swift#s3token

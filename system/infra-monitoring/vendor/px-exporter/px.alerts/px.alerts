@@ -44,7 +44,7 @@ groups:
 
   - alert: PXTransportRouterBgpDown
     expr: bird_protocol_up{name!~"kernel.", peer_type="TP"} == 0
-    for: 0s
+    for: 60m
     labels:
       severity: critical
       tier: net
@@ -56,12 +56,25 @@ groups:
       description:  The BGP session from {{ $labels.name }} to {{ $labels.app }} is lost. Redundancy is lost for route server clients peering that route server.
       summary:  The BGP session from {{ $labels.name }} to {{ $labels.app }} is lost. Redundancy is lost for route server clients peering that route server.
 
+  - alert: PXTransportAllRouterBgpDown
+    expr: count(bird_protocol_up{name!~"kernel.", peer_type="TP"}) by (app) - sum(bird_protocol_up{name!~"kernel.", peer_type="TP"} ==bool 0) by (app) == 0 
+    for: 1m
+    labels:
+      severity: critical
+      tier: net
+      service: px
+      context: px
+      playbook: docs/devops/alert/network/px.html#PXTransportAllRouterBgpDown
+      dashboard: px-control-plane
+    annotations:
+      description:  All BGP sessions from {{ $labels.name }} to PX service {{$labels.pxservice}} in domain {{$labels.pxdomain}} are lost. All route server client peerings are down.
+      summary:  All BGP sessions from {{ $labels.name }} are lost. All route server client peerings in domain {{$labels.pxdomain}} on service {{$labels.pxservice}} are down.
 
   - alert: PXTransportRouterPrefixImportCountZero
     expr: (sum(bird_protocol_up{peer_type="PL"}) by (app, ip_version, proto, pxdomain, pxinstance, pxservice) > 0 ) + on (app, ip_version, proto, pxdomain, pxinstance, pxservice) group_right() bird_protocol_prefix_import_count{name!~"kernel.", peer_type="TP"} <= 0 
     for: 3m
     labels:
-      severity: critical
+      severity: warning
       tier: net
       service: px
       context: px
@@ -72,7 +85,13 @@ groups:
       summary:  The BGP session from {{ $labels.name }} to {{ $labels.app }} is resulting in 0 imported routes. Transport routes via this peer are not received, hence redundancy is degraded.
 
   - alert: PXTransportRouterPrefixExportCountZero
-    expr: (sum by(app, ip_version, proto, pxdomain, pxinstance, pxservice) (bird_protocol_prefix_import_count{peer_type="PL"}) > 0) + on(app, ip_version, proto, pxdomain, pxinstance, pxservice) group_right() (bird_protocol_prefix_export_count{name!~"kernel.",peer_type="TP"} == 0)
+    expr: |
+      (sum by(app, ip_version, proto, pxdomain, pxinstance, pxservice) (bird_protocol_prefix_import_count{peer_type="PL"}) > 0)  # exclude all domains, instances, services without any routes advertised to
+        + on(app, ip_version, proto, pxdomain, pxinstance, pxservice)
+          group_right()
+      (bird_protocol_up == 1) # exclude all peers that are not up
+        +
+      (bird_protocol_prefix_export_count{name!~"kernel.",peer_type="TP"} == 0) # actual metric, 0 exported routes
     for: 3m
     labels:
       severity: critical

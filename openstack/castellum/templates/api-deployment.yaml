@@ -24,12 +24,27 @@ spec:
         alert-service: castellum
       annotations:
         checksum/configmap: {{ include "castellum/templates/configmap.yaml" $ | sha256sum }}
-        checksum/secret: {{ include "castellum/templates/secret.yaml" $ | sha256sum }}
+        checksum/secrets: {{ include "castellum/templates/secret.yaml" $ | sha256sum }}
     spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: name
+                  operator: In
+                  values:
+                  - castellum-api
+              topologyKey: "kubernetes.io/hostname"
+            weight: 10
       volumes:
         - name: config
           configMap:
             name: castellum
+        - name: certs
+          secret:
+            secretName: castellum-certs
       containers:
         - name: api
           image: {{ include "castellum_image" . }}
@@ -40,6 +55,8 @@ spec:
           volumeMounts:
             - mountPath: /etc/castellum
               name: config
+            - mountPath: /etc/castellum-certs
+              name: certs
           ports:
             - name: http
               containerPort: 8080

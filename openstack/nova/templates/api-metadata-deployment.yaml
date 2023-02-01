@@ -29,13 +29,18 @@ spec:
 {{ tuple . "nova" "api-metadata" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
       annotations:
         configmap-etc-hash: {{ include (print .Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
+        {{- if or .Values.conductor.config_file.DEFAULT.statsd_enabled .Values.proxysql.mode }}
+        prometheus.io/scrape: "true"
+        prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
+        {{- end }}
     spec:
-      terminationGracePeriodSeconds: {{ .Values.defaults.default.graceful_shutdown_timeout | add 5 }}
 {{ tuple . "nova" "api-metadata" | include "kubernetes_pod_anti_affinity" | indent 6 }}
+{{ include "utils.proxysql.pod_settings" . | indent 6 }}
+      terminationGracePeriodSeconds: {{ .Values.defaults.default.graceful_shutdown_timeout | add 5 }}
       hostname: nova-api-metadata
       containers:
         - name: nova-api-metadata
-          image: {{ required ".Values.global.registry is missing" .Values.global.registry}}/ubuntu-source-nova-api:{{.Values.imageVersionNovaApi | default .Values.imageVersionNova | default .Values.imageVersion | required "Please set nova.imageVersion or similar"}}
+          image: {{ tuple . "api" | include "container_image_nova" }}
           imagePullPolicy: IfNotPresent
           command:
             - dumb-init
@@ -111,9 +116,10 @@ spec:
               subPath: nova_audit_map.yaml
               readOnly: true
 {{- end }}
-            - mountPath: /etc/nova/policy.json
+            {{- /* Note I533984: Replace with plain policy.yaml after Xena upgrade */}}
+            - mountPath: /etc/nova/{{if (.Values.imageVersion | hasPrefix "rocky") }}policy.json{{else}}policy.yaml{{end}}
               name: nova-etc
-              subPath: policy.json
+              subPath: {{if (.Values.imageVersion | hasPrefix "rocky") }}policy.json{{else}}policy.yaml{{end}}
               readOnly: true
             - mountPath: /etc/nova/logging.ini
               name: nova-etc
@@ -137,6 +143,8 @@ spec:
               subPath: watcher.yaml
               readOnly: true
             {{- end }}
+            {{- include "utils.proxysql.volume_mount" . | indent 12 }}
+        {{- tuple . .Values.api_metadata.config_file.DEFAULT.metadata_workers | include "utils.proxysql.container" | indent 8 }}
         - name: statsd
           image: {{ required ".Values.global.dockerHubMirror is missing" .Values.global.dockerHubMirror}}/prom/statsd-exporter:v0.8.1
           imagePullPolicy: IfNotPresent
@@ -146,7 +154,7 @@ spec:
               containerPort: 9125
               protocol: UDP
             - name: metrics
-              containerPort: {{.Values.portMetrics}}
+              containerPort: 9102
           volumeMounts:
             - name: nova-etc
               mountPath: /etc/statsd/statsd-exporter.yaml
@@ -162,3 +170,4 @@ spec:
           configMap:
             name: nova-bin
             defaultMode: 0755
+        {{- include "utils.proxysql.volumes" . | indent 8 }}

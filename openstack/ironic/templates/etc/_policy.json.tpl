@@ -59,6 +59,11 @@
     "baremetal:driver:vendor_passthru": "rule:context_is_admin",
     "baremetal:driver:ipa_lookup": "rule:public_api",
 
+    "baremetal:allocation:get": "rule:context_is_admin",
+    "baremetal:allocation:create": "rule:context_is_admin",
+    "baremetal:allocation:update": "rule:context_is_admin",
+    "baremetal:allocation:delete": "rule:context_is_admin",
+
     "introspection": "rule:public_api",
     "introspection:version": "rule:public_api",
     "introspection:continue": "rule:public_api",

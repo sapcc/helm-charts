@@ -1,0 +1,56 @@
+{{- if .Values.metisAPI.enabled }}
+apiVersion: "openstack.stable.sap.cc/v1"
+kind: "OpenstackSeed"
+metadata:
+  name: metis-seed
+  labels:
+    app.kubernetes.io/name: {{ template "name" . }}
+    helm.sh/chart: {{ include "metisAPI.chart" $ }}
+    app.kubernetes.io/instance: {{ template "name" . }}
+    app.kubernetes.io/component: "api"
+    app.kubernetes.io/part-of: "metis"
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    type: seed
+spec:
+  requires:
+  - {{ .Values.global.keystoneNamespace }}/keystone-seed
+  - monsoon3/domain-default-seed
+  - monsoon3/domain-ccadmin-seed
+
+  roles:
+  - name: cloud_inventory_viewer
+
+  services:
+  - name:          metis
+    type:          metis
+    description:   'Data source for inventory data'
+    enabled:       true
+    endpoints:
+      - region:    '{{ $.Values.global.region }}'
+        interface: public
+        enabled:   true
+        url:       'https://metis.{{ $.Values.global.region }}.{{ $.Values.global.tld }}'
+
+  domains:
+    - name: Default
+      users:
+        - name: metis
+          description: Metis Service
+          password: '{{ .Values.metisAPI.service_password | required ".Values.metisApi.service_password is missing" }}'
+          role_assignments:
+          - project: service
+            role: service # for validating Keystone user tokens
+        - name: sism-viewer
+          description: Technical User for SISM to retrieve CCLoud Inventory Data
+          password: '{{ .Values.metisAPI.sism_viewer_password | required ".Values.metisApi.sism_viewer_password is missing" }}'
+          role_assignments:
+            - project: service
+              role: cloud_inventory_viewer
+    - name: ccadmin
+      projects:
+        - name: cloud_admin
+          role_assignments:
+            - group: CCADMIN_CLOUD_ADMINS
+              role: cloud_inventory_viewer
+
+{{- end }}

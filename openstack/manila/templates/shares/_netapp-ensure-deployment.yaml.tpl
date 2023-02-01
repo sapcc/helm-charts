@@ -106,6 +106,7 @@ spec:
             timeoutSeconds: 3
             periodSeconds: 5
             initialDelaySeconds: 5
+ {{- include "jaeger_agent_sidecar" . | indent 8 }}
       volumes:
         - name: etcmanila
           emptyDir: {}

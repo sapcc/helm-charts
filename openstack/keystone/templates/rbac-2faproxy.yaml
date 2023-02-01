@@ -1,0 +1,34 @@
+{{- if and .Values.services.ingress.x509.ca (index .Values "2fa" "enabled") }}
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ .Release.Name }}-2faproxy
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ .Release.Name }}-2faproxy-crls
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ .Release.Name }}-2faproxy-crls
+rules:
+- apiGroups: [""] # "" indicates the core API group
+  resources: ["secrets"]
+  resourceNames: ["{{ .Release.Name }}-x509-ca"]
+  verbs: ["patch", "get"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ .Release.Name }}-2faproxy-crls
+subjects:
+- kind: ServiceAccount
+  name: {{ .Release.Name }}-2faproxy-crls
+  namespace: {{ .Release.Namespace }}
+roleRef:
+  kind: Role
+  name: {{ .Release.Name }}-2faproxy-crls
+  apiGroup: rbac.authorization.k8s.io
+{{- end }}

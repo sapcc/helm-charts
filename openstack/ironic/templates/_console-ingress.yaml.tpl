@@ -5,7 +5,11 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 
 metadata:
+{{- if $conductor.name }}
   name: ironic-conductor-{{$conductor.name}}-console
+{{- else }}
+  name: ironic-conductor-console
+{{- end }}
   labels:
     system: openstack
     type: api
@@ -20,11 +24,19 @@ spec:
     - host: {{ include "ironic_console_endpoint_host_public" . }}
       http:
         paths:
+        {{- if $conductor.name }}
         - path: /{{$conductor.name}}
+        {{- else }}
+        - path: /
+        {{- end }}
           pathType: Prefix
           backend:
             service:
+            {{- if $conductor.name }}
               name: ironic-conductor-{{$conductor.name}}-console
+            {{- else }}
+              name: ironic-conductor-console
+            {{- end }}
               port: 
                 number: 80
     {{- end }}

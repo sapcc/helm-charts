@@ -1,0 +1,88 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  # since this name changes with every image change, removal and creation of
+  # this Job happens on nearly every deployment. Check the helm-chart changes
+  # to see if this needs more review.
+  name: {{ tuple . "db-migrate" | include "job_name" }}
+  labels:
+    system: openstack
+    type: configuration
+    component: nova
+spec:
+  template:
+    metadata:
+      {{- tuple . "db-migrate" | include "job_metadata" | indent 6 }}
+    spec:
+      restartPolicy: OnFailure
+      {{- include "utils.proxysql.job_pod_settings" . | indent 6 }}
+      containers:
+      - name: nova-migration
+        image: {{ tuple . "api" | include "container_image_nova" }}
+        imagePullPolicy: IfNotPresent
+        command:
+        - kubernetes-entrypoint
+        env:
+        - name: COMMAND
+          value: "/container.init/db-migrate"
+        - name: NAMESPACE
+          value: {{ .Release.Namespace }}
+        - name: DEPENDENCY_SERVICE
+          value: "{{ .Release.Name }}-mariadb,{{ .Release.Name }}-api-mariadb{{ if eq .Values.cell2.enabled true }},{{ .Values.mariadb_cell2.name }}-mariadb{{ end }}"
+        - name: PGAPPNAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: PYTHONWARNINGS
+          value: {{ .Values.python_warnings | quote }}
+        volumeMounts:
+        - mountPath: /etc/nova
+          name: etcnova
+        - mountPath: /etc/nova/nova.conf
+          name: nova-etc
+          subPath: nova.conf
+          readOnly: true
+        - mountPath: /etc/nova/nova-api.conf
+          name: nova-etc
+          subPath: nova-api.conf
+          readOnly: true
+        - mountPath: /etc/nova/api-paste.ini
+          name: nova-etc
+          subPath: api-paste.ini
+          readOnly: true
+{{- if .Values.cell2.enabled }}
+        - mountPath: /etc/nova/nova-cell2.conf
+          name: nova-etc
+          subPath: nova-cell2.conf
+          readOnly: true
+{{- end }}
+{{- if .Values.audit.enabled }}
+        - mountPath: /etc/nova/nova_audit_map.yaml
+          name: nova-etc
+          subPath: nova_audit_map.yaml
+          readOnly: true
+{{- end }}
+        {{- /* Note I533984: Replace with plain policy.yaml after Xena upgrade */}}
+        - mountPath: /etc/nova/{{if (.Values.imageVersion | hasPrefix "rocky") }}policy.json{{else}}policy.yaml{{end}}
+          name: nova-etc
+          subPath: {{if (.Values.imageVersion | hasPrefix "rocky") }}policy.json{{else}}policy.yaml{{end}}
+          readOnly: true
+        - mountPath: /etc/nova/logging.ini
+          name: nova-etc
+          subPath: logging.ini
+          readOnly: true
+        - mountPath: /container.init
+          name: container-init
+        {{- include "utils.proxysql.volume_mount" . | indent 8 }}
+      {{- include "utils.proxysql.container" . | indent 6 }}
+      volumes:
+      - name: etcnova
+        emptyDir: {}
+      - name: nova-etc
+        configMap:
+          name: nova-etc
+      - name: container-init
+        configMap:
+          name: nova-bin
+          defaultMode: 0755
+      {{- include "utils.proxysql.volumes" . | indent 6 }}

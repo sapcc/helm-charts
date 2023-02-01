@@ -26,7 +26,7 @@ spec:
   serviceName: neutron-network-agent
   podManagementPolicy: "Parallel"
 {{- if $.Values.pod.replicas.network_agent_apod }}
-  replicas: {{ $.Values.pod.replicas.network_agent_apod}} 
+  replicas: {{ $.Values.pod.replicas.network_agent_apod }} 
 {{- else }}
   replicas: 15
 {{- end }}
@@ -43,9 +43,18 @@ spec:
       affinity:
         podAntiAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
-          - weight: 100
+          - weight: 50
             podAffinityTerm:
               topologyKey: kubernetes.io/hostname
+              labelSelector:
+                matchExpressions:
+                - key: component
+                  operator: In
+                  values:
+                  - agent
+          - weight: 100
+            podAffinityTerm:
+              topologyKey: kubernetes.cloud.sap/host
               labelSelector:
                 matchExpressions:
                 - key: component
@@ -175,12 +184,6 @@ spec:
               value: "ignore:Unverified HTTPS request"
             - name: DEBUG_CONTAINER
               value: "false"
-          livenessProbe:
-            exec:
-              command: ["neutron-agent-liveness", "--config-file", "/etc/neutron/neutron.conf", "--agent-type", "Metadata agent"]
-            initialDelaySeconds: 30
-            periodSeconds: 30
-            timeoutSeconds: 10
           resources:
 {{  toYaml $.Values.pod.resources.metadata_agent | indent 12 }}
           volumeMounts:

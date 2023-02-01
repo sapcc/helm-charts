@@ -9,6 +9,7 @@ groups:
       dashboard: octavia
       service: octavia
       severity: info
+      support_group: network-api
       tier: os
       meta: 'The active Octavia Agent `{{ $labels.agent }}` is not scheduable'
       playbook: docs/support/playbook/octavia/agent_heartbeat
@@ -23,6 +24,7 @@ groups:
       dashboard: octavia
       service: octavia
       severity: warning
+      support_group: network-api
       tier: os
       meta: 'Agent Heartbeat is above 120secs in {{ $labels.octavia_host }}'
       playbook: docs/support/playbook/octavia/agent_heartbeat
@@ -37,6 +39,7 @@ groups:
       dashboard: octavia
       service: octavia
       severity: info
+      support_group: network-api
       tier: os
       meta: 'Forced failover for AS3 target {{ $labels.app_kubernetes_io_name }} due to connection error'
     annotations:
@@ -50,23 +53,25 @@ groups:
       dashboard: octavia
       service: octavia
       severity: info
+      support_group: network-api
       tier: os
       meta: 'Failover detected for agent {{ $labels.app_kubernetes_io_name }}.'
     annotations:
       description: 'Failover detected for agent {{ $labels.app_kubernetes_io_name }}, AS3 target will be changed to active device.'
       summary: Openstack Octavia Metric to monitor F5 Worker Agent failover events
   - alert: OpenstackOctaviaLoadbalancerErrored
-    expr: rate(octavia_loadbalancers_count_gauge{status="ERROR"}[5m]) > 0
+    expr: rate(octavia_loadbalancers_count_gauge{loadbalancer_status="ERROR"}[5m]) > 0
     for: 10m
     labels:
       context: Loadbalancer go to ERROR
       dashboard: octavia
       service: octavia
       severity: info
+      support_group: network-api
       tier: os
-      meta: 'Load Balancers in {{ $labels.octavia_host }} gone to ERROR state'
+      meta: 'Load Balancers in {{ $labels.loadbalancer_host }} gone to ERROR state'
     annotations:
-      description: Loadbalancers in {{ $labels.octavia_host }} gone to ERROR state
+      description: Loadbalancers in {{ $labels.loadbalancer_host }} gone to ERROR state
       summary: Openstack Octavia Metric to monitor erroneous loadbalancers
   - alert: OctaviaLoadBalancerStuckInPending
     expr: octavia_seconds_since_last_nonpending_status > 30 * 60
@@ -77,10 +82,11 @@ groups:
       dashboard: octavia
       service: octavia
       severity: critical
+      support_group: network-api
       tier: os
-      meta: 'Load Balancer for agent {{ $labels.octavia_host }} stuck in `{{ $labels.current_status }}` state'
+      meta: 'Load Balancer for agent {{ $labels.loadbalancer_host }} stuck in `{{ $labels.loadbalancer_status }}` state'
       playbook: docs/support/playbook/octavia/stuck_pending
       cloudops: "?searchTerm={{ $labels.loadbalancer_id }}&type=loadbalancer"
     annotations:
-      description: 'The Load Balancer `{{ $labels.loadbalancer_name }}` of agent `{{ $labels.octavia_host }}` stuck in {{ $labels.current_status }} state (<https://dashboard.{{ $externalLabels.region }}.cloud.sap/ccadmin/cloud_admin/cloudops#/universal-search/?searchTerm={{ $labels.loadbalancer_id }}&type=loadbalancer|{{ $labels.loadbalancer_id }}>)'
+      description: 'The Load Balancer `{{ $labels.loadbalancer_name }}` of agent `{{ $labels.loadbalancer_host }}` stuck in {{ $labels.loadbalancer_status }} state (<https://dashboard.{{ $externalLabels.region }}.cloud.sap/ccadmin/cloud_admin/cloudops#/universal-search/?searchTerm={{ $labels.loadbalancer_id }}&type=loadbalancer|{{ $labels.loadbalancer_id }}>)'
       summary: Octavia Load-Balancer stuck in PENDING_* state

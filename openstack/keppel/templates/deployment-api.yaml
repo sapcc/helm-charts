@@ -26,6 +26,18 @@ spec:
         checksum/secret: {{ include "keppel/templates/secret.yaml" . | sha256sum }}
         checksum/secret-keys: {{ include "keppel/templates/secret-keys.yaml" . | sha256sum }}
     spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: name
+                  operator: In
+                  values:
+                  - keppel-api
+              topologyKey: "kubernetes.io/hostname"
+            weight: 10
       volumes:
         - name: config
           configMap:

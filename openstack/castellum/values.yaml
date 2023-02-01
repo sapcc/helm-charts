@@ -2,6 +2,8 @@ global:
   registry: DEFINED_IN_VALUES_FILE
 
 owner-info:
+  support-group: containers
+  service: castellum
   maintainers:
     - Stefan Majewsky
     - Falk Reimann
@@ -32,6 +34,12 @@ postgresql:
   # less than the postgresql chart's default; I want to know early when connections start getting out of hand
   max_connections: 64
 
+  alerts:
+    support_group: containers
+
+  backup:
+    enabled: false # uses new pgbackup chart instead
+
 # Deploy Castellum Prometheus alerts.
 alerts:
   enabled: true
@@ -41,8 +49,17 @@ alerts:
     openstack: openstack
     kubernetes: kubernetes
 
+pgbackup:
+  database:
+    name: castellum
+  alerts:
+    support_group: containers
+
 pgmetrics:
   db_name: castellum
+
+  alerts:
+    support_group: containers
 
   customMetrics:
     castellum_asset_count:
@@ -96,19 +113,19 @@ pgmetrics:
             description: "Lowest greenlit_at timestamp of any pending operation in this project resource"
     castellum_resource:
       query: >
-        SELECT asset_type AS asset, MIN(checked_at) AS min_checked_at
+        SELECT asset_type AS asset, MIN(next_scrape_at) AS min_next_scrape_at
           FROM resources
          GROUP BY asset_type
       metrics:
         - asset:
             usage: "LABEL"
             description: "Asset type"
-        - min_checked_at:
+        - min_next_scrape_at:
             usage: "GAUGE"
-            description: "Lowest checked_at timestamp of any project resource with this asset type"
+            description: "Lowest next_scrape_at timestamp of any project resource with this asset type"
     castellum_asset:
       query: >
-        SELECT r.asset_type AS asset, MIN(a.checked_at) AS min_checked_at
+        SELECT r.asset_type AS asset, MIN(a.next_scrape_at) AS min_next_scrape_at
           FROM resources r
           JOIN assets a ON a.resource_id = r.id
           GROUP BY r.asset_type
@@ -116,9 +133,9 @@ pgmetrics:
         - asset:
             usage: "LABEL"
             description: "Asset type"
-        - min_checked_at:
+        - min_next_scrape_at:
             usage: "GAUGE"
-            description: "Lowest checked_at timestamp of any asset with this type"
+            description: "Lowest next_scrape_at timestamp of any asset with this type"
 
     castellum_resource_scrape_errors:
       query: >
@@ -134,7 +151,7 @@ pgmetrics:
       query: >
         SELECT COUNT(id) as gauge
           FROM assets
-         WHERE scrape_error_message != '' AND scraped_at IS NOT NULL
+         WHERE scrape_error_message != '' AND NOT never_scraped
       metrics:
         - gauge:
             usage: "GAUGE"
@@ -144,7 +161,7 @@ pgmetrics:
       query: >
         SELECT COUNT(id) as gauge
           FROM assets
-         WHERE scrape_error_message != '' AND scraped_at IS NULL
+         WHERE scrape_error_message != '' AND never_scraped
       metrics:
         - gauge:
             usage: "GAUGE"

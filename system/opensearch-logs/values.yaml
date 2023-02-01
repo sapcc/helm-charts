@@ -1,0 +1,142 @@
+owner-info:
+  support-group: observability
+  maintainers:
+    - "Vi Truchsess"
+    - "Olaf Heydorn"
+  helm-chart-url: "https://github.com/sapcc/helm-charts/tree/master/system/opensearch-logs"
+
+qalogs:
+  enabled: false
+scaleout:
+  enabled: false
+
+alerts:
+  enabled: false
+  prometheus: infra-frontend
+
+opensearch_master:
+  enabled: false
+  nameOverride: "opensearch-logs-master"
+  fullnameOverride: "opensearch-logs-master"
+  nodeGroup: "master"
+  masterService: "opensearch-logs-master"
+  image:
+    tag: 2.4.0
+  roles:
+    - master
+  replicas: 3
+  opensearchJavaOpts: "-Dlog4j2.formatMsgNoLookups=true -XX:MaxRAM=5g -XX:MaxGCPauseMillis=5000"
+  persistence:
+    enabled: true
+    enableInitChown: true
+    size: 1Gi
+    image: "library/busybox"
+  clusterName: "opensearch-logs"
+  secretMounts:
+    - name: opensearch-certificates
+      secretName: opensearch-certs
+      path: /usr/share/opensearch/config/certs/
+      defaultMode: 0644
+  securityConfig:
+    path: "/usr/share/opensearch/config/opensearch-security"
+    enabled: true
+    config:
+      securityConfigSecret: "security-config"
+  extraEnvs:
+    - name: DISABLE_INSTALL_DEMO_CONFIG
+      value: "true"
+  plugins:
+    enabled: true
+    installList:
+      - https://github.com/aiven/prometheus-exporter-plugin-for-opensearch/releases/download/2.4.0.0/prometheus-exporter-2.4.0.0.zip
+
+opensearch_client:
+  enabled: false
+  image:
+    tag: 2.4.0
+  replicas: 3
+  nameOverride: "opensearch-logs-client"
+  fullnameOverride: "opensearch-logs-client"
+  nodeGroup: "client"
+  masterService: "opensearch-logs-master"
+  roles:
+    - remote_cluster_client
+  opensearchJavaOpts: "-Dlog4j2.formatMsgNoLookups=true -XX:MaxRAM=5g -XX:MaxGCPauseMillis=5000 -Xms1g -Xmx1g"
+  secretMounts:
+    - name: opensearch-certificates
+      secretName: opensearch-certs
+      path: /usr/share/opensearch/config/certs/
+      defaultMode: 0644
+  persistence:
+    enabled: false
+    enableInitChown: false
+    image: "library/busybox"
+  service:
+    type: LoadBalancer
+  ingress:
+    enabled: false
+  clusterName: "opensearch-logs"
+  securityConfig:
+    path: "/usr/share/opensearch/config/opensearch-security"
+    enabled: true
+    actionGroupsSecret: "security-config"
+    configSecret: "security-config"
+    internalUsersSecret: "security-config"
+    rolesSecret: "security-config"
+    rolesMappingSecret: "security-config"
+    tenantsSecret: "security-config"
+  extraEnvs:
+    - name: DISABLE_INSTALL_DEMO_CONFIG
+      value: "true"
+  plugins:
+    enabled: true
+    installList:
+      - https://github.com/aiven/prometheus-exporter-plugin-for-opensearch/releases/download/2.4.0.0/prometheus-exporter-2.4.0.0.zip
+
+opensearch_data:
+  enabled: false
+  image:
+    tag: 2.4.0
+  nameOverride: "opensearch-logs-data"
+  fullnameOverride: "opensearch-logs-data"
+  nodeGroup: "data"
+  masterService: "opensearch-logs-master"
+  roles:
+    - ingest
+    - data
+  replicas: 3
+  opensearchJavaOpts: "-Dlog4j2.formatMsgNoLookups=true -XX:MaxRAM=7g -XX:MaxGCPauseMillis=500 -Xms5g -Xmx5g"
+  persistence:
+    enabled: true
+    enableInitChown: true
+    size: 1Ti
+    image: "library/busybox"
+  clusterName: "opensearch-logs"
+  secretMounts:
+    - name: opensearch-certificates
+      secretName: opensearch-certs
+      path: /usr/share/opensearch/config/certs/
+      defaultMode: 0644
+  plugins:
+    enabled: true
+    installList:
+      - https://github.com/aiven/prometheus-exporter-plugin-for-opensearch/releases/download/2.4.0.0/prometheus-exporter-2.4.0.0.zip
+  securityConfig:
+    path: "/usr/share/opensearch/config/opensearch-security"
+    enabled: true
+    config:
+      securityConfigSecret: "security-config"
+
+opensearch_dashboards:
+  enabled: false
+  image:
+    tag: "2.4.0"
+  fullnameOverride: opensearch-logs-dashboards
+  nameOverride: opensearch-logs-dashboards
+  serviceAccount:
+    create: true
+    name: "opensearch-logs-dashboards"
+  opensearchAccount:
+    secret: dashboard-secrets
+  ingress:
+    enabled: false

@@ -1,7 +1,13 @@
+{{- if not (.Values.global.region | hasPrefix "qa-") }}
+
 # Swift is the backing store for Keppel. Therefore Swift is instrumental for
 # the continued availability of many other Docker images, so we want to be able
 # to start it reliably and fast. To ensure this, this daemonset (through its
 # existence) keeps the relevant images permanently pulled on all nodes.
+#
+# The condition above skips this daemonset on QA and lab regions, because high
+# availability is not a concern there. By omitting the daemonset there, the
+# Helm deployment will finish faster since it does not have to wait on it.
 
 kind: DaemonSet
 apiVersion: apps/v1
@@ -62,3 +68,5 @@ spec:
             limits:
               cpu: "1m"
               memory: "32Mi"
+
+{{- end }}

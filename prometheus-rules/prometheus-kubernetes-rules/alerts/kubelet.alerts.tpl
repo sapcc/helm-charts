@@ -8,6 +8,7 @@ groups:
     labels:
       tier: {{ required ".Values.tier missing" .Values.tier }}
       service: kubelet
+      support_group: containers
       severity: critical
       context: kubelet
       dashboard: kubernetes-health
@@ -22,6 +23,7 @@ groups:
     labels:
       tier: {{ required ".Values.tier missing" .Values.tier }}
       service: kubelet
+      support_group: containers
       severity: warning
       context: kubelet
       meta: "{{`{{ $labels.node }}`}}"
@@ -38,6 +40,7 @@ groups:
     labels:
       tier: {{ required ".Values.tier missing" .Values.tier }}
       service: kubelet
+      support_group: containers
       severity: warning
       context: kubelet
       dashboard: kubernetes-health
@@ -52,6 +55,7 @@ groups:
     labels:
       tier: {{ required ".Values.tier missing" .Values.tier }}
       service: kubelet
+      support_group: containers
       severity: warning
       context: kubelet
       meta: "{{`{{ $labels.node }}`}}"
@@ -66,6 +70,7 @@ groups:
     labels:
       tier: {{ required ".Values.tier missing" .Values.tier }}
       service: kubelet
+      support_group: containers
       severity: warning
       context: kubelet
       meta: "{{`{{ $labels.node }}`}}"
@@ -80,6 +85,7 @@ groups:
     labels:
       tier: {{ required ".Values.tier missing" .Values.tier }}
       service: k8s
+      support_group: containers
       severity: warning
       context: kubelet
       meta: "{{`{{ $labels.node }}`}}"
@@ -93,11 +99,12 @@ groups:
     labels:
       tier: {{ required ".Values.tier missing" .Values.tier }}
       service: k8s
+      support_group: containers
       severity: warning
       context: kubelet
       meta: "{{`{{ $labels.node }}`}}"
     annotations:
-      description: Kublet on {{`{{$labels.node}}`}} might become unresponsive due to a high number of go routines within 2 hours
+      description: Kublet on {{`{{$labels.node}}`}} might become unresponsive due to a high number of go routines within 2 hours, take a look at the node and wait if it stabilizes.
       summary: Predicting high number of Go routines
 
   - alert: KubeletManyRequestErrors
@@ -110,6 +117,7 @@ groups:
     labels:
       tier: {{ required ".Values.tier missing" .Values.tier }}
       service: k8s
+      support_group: containers
       severity: warning
       context: kubelet
       meta: "Many 5xx responses for Kubelet on {{`{{ $labels.node }}`}} "

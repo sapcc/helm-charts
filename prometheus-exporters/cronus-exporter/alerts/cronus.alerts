@@ -2,14 +2,15 @@ groups:
 - name: CronusAlerts
   rules:
   - alert: CronusSendEmails
-    expr: (sum(sum_over_time(aws_ses_cronus_provider_send[15m])) < 30 or sum(sum_over_time(cronus_simulator_send_email_rate[15m])) < 30) and (absent(cronus_simulator_send_email_rate) OR on() vector(0) == 0)
+    expr: (sum(sum_over_time(aws_ses_cronus_provider_send[15m])) < 10) and (sum(sum_over_time(cronus_simulator_send_email_rate[15m])) == 0)
     for: 15m
     labels:
       service: cronus
       severity: critical
       tier: os
       playbook: docs/devops/alert/cronus/#send_email
-      kibana: "/app/discover#/?_g=(filters:!(),refreshInterval:(pause:!t,value:0),time:(from:now-1h,to:now))&_a=(columns:!(log),filters:!(('$state':(store:appState),meta:(alias:!n,disabled:!f,index:'logstash-*',key:kubernetes.container_name,negate:!f,params:(query:cronus),type:phrase),query:(match_phrase:(kubernetes.container_name:cronus)))),index:'logstash-*',interval:auto,query:(language:lucene,query:'(%22backend%20connection%20error%20to%20aws%22%20%20AND%20%22retries%20exhausted%22)%20OR%20(%22email%2Foutbound-emails%22%20NOT%20%22email%2Foutbound-emails%20200%22)%20NOT%20%22emails%20499%22'),sort:!(time,desc))"
+      kibana: "app/discover#/?_g=(filters:!(),refreshInterval:(pause:!t,value:0),time:(from:now-1h,to:now))&_a=(columns:!(log),filters:!(('$state':(store:appState),meta:(alias:!n,disabled:!f,index:'logstash-*',key:kubernetes.container_name,negate:!f,params:(query:cronus),type:phrase),query:(match_phrase:(kubernetes.container_name:cronus)))),index:'logstash-*',interval:auto,query:(language:lucene,query:'(%22backend%20connection%20error%20to%20aws%22%20%20AND%20%22retries%20exhausted%22)%20OR%20(%22email%2Foutbound-emails%22%20NOT%20%22email%2Foutbound-emails%20200%22)%20NOT%20%22emails%20499%22'),sort:!(time,desc))"
+      support_group: email
     annotations:
       description: Cronus - sending emails is below threshold for more than 15 minutes
       summary: Cronus - sending emails is below threshold for more than 15 minutes
@@ -21,6 +22,7 @@ groups:
       severity: critical
       tier: os
       playbook: docs/devops/alert/cronus/#cronus_pod_down
+      support_group: email
     annotations:
       description: All cronus pods are malfunction for more than 5 minutes
       summary: All cronus pods are malfunction for more than 5 minutes
@@ -32,7 +34,8 @@ groups:
       service: cronus
       severity: warning
       tier: os
-      playbook: docs/devops/alert/cronus/#sending_email_quick_test 
+      playbook: docs/devops/alert/cronus/#sending_email_quick_test
+      support_group: email
     annotations:
       description: grafana - https://grafana.{{ $labels.region }}.cloud.sap/d/cronushealth/cronushealth?orgId=1 , slack-cronus-dev - https://convergedcloud.slack.com/archives/G01SLHXERL5
       summary: Cronus simulator, that helps to monitor sending emails, malfunction for more than 15 minutes.
@@ -43,10 +46,23 @@ groups:
       meta: Cronus Activation to Production Fails For More Than 24H
       service: cronus
       severity: warning
-      tier: os 
+      tier: os
+      support_group: email
     annotations:
       description: Cronus Activation to Production Fails For More Than 24H
       summary: Cronus Activation to Production Fails For More Than 24H
+  - alert: CronusHighQueue
+    expr: sum (rabbitmq_queue_messages{queue=~"cronus_waiting_queue|cronus_work_queue"}) by (queue) > 1000
+    for: 15m
+    labels:
+      meta: cronus high queuing
+      service: cronus
+      severity: warning
+      tier: os
+      support_group: email
+    annotations:
+      description: cronus high queuing
+      summary: cronus high queuing
 - name: NebulaAlerts
   rules:
   - alert: NebulaReconcileAccount
@@ -58,6 +74,7 @@ groups:
       severity: warning
       tier: os
       playbook: docs/devops/alert/cronus/#nebula_reconcile
+      support_group: email
     annotations:
       description: grafana - https://grafana.global.cloud.sap/d/cronushealth/cronushealth?orgId=1 , slack-cronus-dev - https://convergedcloud.slack.com/archives/G01SLHXERL5
       summary: Simulator Nebula Reconcile - reconcile account fails for more than 20 minutes in the region {{ $labels.region }}
@@ -70,6 +87,7 @@ groups:
       severity: warning
       tier: os
       playbook: docs/devops/alert/cronus/#sending_email_quick_test
+      support_group: email
     annotations:
       description: grafana - https://grafana.{{ $labels.region }}.cloud.sap/d/cronushealth/cronushealth?orgId=1 , slack-cronus-dev - https://convergedcloud.slack.com/archives/G01SLHXERL5
       summary: All neula pods in cluster s-{{ $labels.region }} are malfunction for more than 20 minutes, can't create new accounts or manage accounts  
@@ -83,7 +101,8 @@ groups:
       service: cronus
       severity: warning
       tier: os
-      playbook: docs/devops/alert/cronus/#sending_email_quick_test 
+      playbook: docs/devops/alert/cronus/#sending_email_quick_test
+      support_group: email
     annotations:
       description: grafana - https://grafana.{{ $labels.region }}.cloud.sap/d/cronushealth/cronushealth?orgId=1 , slack-cronus-dev - https://convergedcloud.slack.com/archives/G01SLHXERL5
       summary: Cronus simulator, that helps to monitor sending emails, malfunction for more than 15 minutes.
@@ -97,7 +116,8 @@ groups:
       service: cronus
       severity: info
       tier: os
-      playbook: docs/devops/alert/cronus/#sending_email_quick_test 
+      playbook: docs/devops/alert/cronus/#sending_email_quick_test
+      support_group: email
     annotations:
       description: grafana - https://grafana.{{ $labels.region }}.cloud.sap/d/cronushealth/cronushealth?orgId=1 , slack-cronus-dev - https://convergedcloud.slack.com/archives/G01SLHXERL5
       summary: Cronus namesapce pods are down for the last 24h

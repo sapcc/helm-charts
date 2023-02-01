@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: andromeda-etc-akamai
+  labels:
+    app.kubernetes.io/name: {{ include "andromeda.name" . }}-akamai
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+data:
+  akamai.yaml: |
+{{ include (print .Template.BasePath "/etc/_akamai.yaml.tpl") . | indent 4 }}
+  edgerc.conf: |
+{{ include (print .Template.BasePath "/etc/_edgerc.tpl") . | indent 4 }}

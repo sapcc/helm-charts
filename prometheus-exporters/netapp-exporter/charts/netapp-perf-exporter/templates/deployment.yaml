@@ -36,38 +36,41 @@ spec:
       containers:
       - name: harvest
         image: {{ $.Values.global.registry }}/{{ $.Values.harvest.image }}:{{ $.Values.harvest.imageTag }}
-        resources:
-          requests:
-            memory: {{ $.Values.harvest.memory }}
-            cpu: {{ $.Values.harvest.cpu }}
         env:
         - name: NETAPP_USERNAME
           valueFrom:
             secretKeyRef:
               name: {{ $.Values.fullname }}
-              {{- if eq $name "manila" }}
-              key: manilaNetappUser
-              {{- else }}
-              key: netappUser
-              {{- end }}
+              key: netappUsername
         - name: NETAPP_PASSWORD
           valueFrom:
             secretKeyRef:
               name: {{ $.Values.fullname }}
-              {{- if eq $name "manila" }}
-              key: manilaNetappPassword
-              {{- else }}
               key: netappPassword
-              {{- end }}
         ports:
           {{- if $app.dupEnabled }}
           - containerPort: {{ $.Values.ports.dupInPort }}
           {{- else }}
           - containerPort: {{ $.Values.ports.graphiteExporterInPort }}
           {{- end }}
+        resources:
+          {{- toYaml $.Values.harvest.resources | nindent 12 }}
         volumeMounts:
-        - name: {{ $fullNameWithComponent }}
-          mountPath: /opt/netapp-harvest/config
+          - name: {{ $fullNameWithComponent }}
+            mountPath: /opt/netapp-harvest/config/netapp-harvest.conf
+            subPath: netapp-harvest.conf
+          - name: {{ $fullNameWithComponent }}
+            mountPath: /opt/netapp-harvest/config/graphite-mapping.conf
+            subPath: graphite-mapping.conf
+          {{- if eq $name "manila" }}
+          - name: {{ $fullNameWithComponent }}
+            mountPath: /opt/netapp-harvest/config/netapp-filers.yaml
+            subPath: netapp-filers.yaml
+          {{- else }}
+          - name: netapp-data
+            mountPath: /opt/netapp-harvest/config
+          {{- end }}
+
       - name: exporter                      # container: exporter
         image: {{ $.Values.global.dockerHubMirror }}/{{ $.Values.exporter.image }}:{{ $.Values.exporter.imageTag }}
         args: [ "--graphite.mapping-config", "/graphite-mapping.conf" ]
@@ -99,7 +102,6 @@ spec:
           - containerPort: {{ $.Values.ports.dupInPort }}
       {{- end }}
 
-
       {{- if eq $name "manila" }}
       {{- /*
         manila filers are predefined in secret files rather than fetched from netbox
@@ -108,16 +110,12 @@ spec:
       - name: sd
         image: {{ $.Values.global.registry }}/{{ $.Values.netappsd.image }}:{{ $.Values.netappsd.imageTag }}
         args:
-          - -configmap
-          - {{ $fullNameWithComponent }}
-          - -key
-          - netapp-filers.yaml
+          - -output-file-path
+          - /netapp/netapp-filers.yaml
           - -namespace
           - {{ $.Release.Namespace }}
           - -netbox-host
           - {{ required "netbox_host needs to be defined in global values" $.Values.global.netbox_host }}
-          - -netbox-api-token
-          - {{ required "netbox_api_token needs to be defined in global values" $.Values.global.netbox_api_token }}
           - -region
           - {{ $.Values.global.region }}
           - -query
@@ -126,6 +124,9 @@ spec:
           requests:
             memory: {{ $.Values.netappsd.memory }}
             cpu: {{ $.Values.netappsd.cpu }}
+        volumeMounts:
+          - name: netapp-data
+            mountPath: /netapp
       {{- end }}
 
       volumes:
@@ -139,6 +140,10 @@ spec:
                 path: netapp-filers.yaml
               - key: graphite-mapping.conf
                 path: graphite-mapping.conf
+        {{- if ne $name "manila" }}
+        - name: netapp-data
+          emptyDir: {}
+        {{- end -}}
 {{- end }}
 {{- end }}
 {{- end }}

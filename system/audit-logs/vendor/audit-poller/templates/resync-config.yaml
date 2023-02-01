@@ -1,0 +1,27 @@
+{{- if .Values.resync.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name:  audit-poller-resync-etc
+  namespace: {{ .Values.namespace }}
+  labels:
+    app.kubernetes.io/name: audit-poller
+    helm.sh/chart: {{ include "audit-poller.chart" $ }}
+    app.kubernetes.io/instance: audit-poller-{{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+data:
+  config.yaml: |
+    apiClients:
+      iasAPI:
+        user: {{ required "IAS API user" .Values.iasApi.user }}
+        tokenURL: {{ required "IAS API tokenURL" .Values.iasApi.tokenURL }}
+        apiURL: {{ required "IAS API apiURL" .Values.iasApi.apiURL }}
+        fileName: {{ required "IAS API fileName" .Values.iasApi.fileName }}
+        interval: {{ required "Resync interval" .Values.resync.intervalMinutes}}
+        resync:
+          fromTimestamp: {{ required "Resync from timestamp" .Values.resync.from }}
+          toTimestamp: {{ required "Resync to timestamp" .Values.resync.to }}
+    logLevel: "debug"
+    logDir: {{ .Values.logDir }}
+    metricsPort: {{ .Values.metricsPort }}
+{{- end }}

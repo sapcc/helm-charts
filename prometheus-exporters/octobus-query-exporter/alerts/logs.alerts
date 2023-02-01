@@ -6,66 +6,71 @@ groups:
         for: 15m
         labels:
           severity: warning
-          tier: monitor
           service: audit
+          support_group: "observability"
           meta: "No keystone logs shipping to Octobus"
-          playbook: 'docs/support/playbook/elastic_kibana_issues.html#keystone-logs-missing-in-octobus'
+          playbook: 'docs/support/playbook/elastic_kibana_issues#keystone-logs-missing-in-octobus'
           dashboard: octobus-logshipping
         annotations:
           description: "Keystone logs shipping to Octobus not working"
           summary: "KeystoneLogs2Octobus not working"
+
       - alert: OctobusKeystoneLogParsing
         expr: elasticsearch_octobus_keystone_credit_hits - elasticsearch_octobus_keystone_user_hits > 10
         for: 45m
         labels:
           severity: info
-          tier: monitor
           service: audit
+          support_group: "observability"
           meta: "Octobus no keystone logs grok parsing"
-          playbook: 'docs/support/playbook/elastic_kibana_issues.html#keystone-logs-grok-parsing-in-octobus'
+          playbook: 'docs/support/playbook/elastic_kibana_issues#keystone-logs-grok-parsing-in-octobus'
           dashboard: octobus-keystone-logs-shipping?orgId=1&var-region={{ $labels.region }}
         annotations:
           description: "Octobus: Keystone logs grok parsing not working"
           summary: "KeystoneLogsGrokParsing not working"
+
       - alert: OctobusKeystoneLogshipperEndpointDown
         expr: elasticsearch_octobus_keystone_logs_doc_count{logs="keystone-api"} == 0 and on  (region) {target=~"in-https.*"} == 0
         for: 15m
         labels:
           severity: critical
-          tier: monitor
           service: audit
+          support_group: "observability"
           meta: "Keystone to Octobus Endpoint in-https is down"
-          playbook: 'docs/support/playbook/elastic_kibana_issues.html#involve-octobus-team'
+          playbook: 'docs/support/playbook/elastic_kibana_issues#involve-octobus-team'
           dashboard: octobus-logshipping
         annotations:
           description: "Octobus Keystone endpoint: `in-https` is down in region `{{ $labels.region }}`"
           summary: "Octobus Keystone endpoint: `in-https` is down in region `{{ $labels.region }}`"
+
       - alert: OctobusJumpserverLogShipping
         expr: label_replace(node_uname_info, "logs", "$0", "nodename", ".*") unless on (logs) (elasticsearch_octobus_jumpserver_logs_doc_count > 0)
         for: 15m
         labels:
           severity: warning
-          tier: monitor
           service: audit
+          support_group: "observability"
           meta: "No Jumpserver logs shipping to Octobus"
-          playbook: 'docs/support/playbook/elastic_kibana_issues.html#jumpserver-logs-missing-in-octobus'
+          playbook: 'docs/support/playbook/elastic_kibana_issues#jumpserver-logs-missing-in-octobus'
           dashboard: octobus-logshipping
         annotations:
           description: "Jumpserver log shipping to Octobus not working for `{{ $labels.server_name }}`"
           summary: "JumpserverLogs2Octobus not working"
+
       - alert: OctobusJumpserverLogshipperEndpointDown
         expr: elasticsearch_octobus_jumpserver_logs_doc_count == 0 and on  (region) {target=~"in-beats.*"} == 0
         for: 15m
         labels:
           severity: critical
-          tier: monitor
           service: audit
+          support_group: "observability"
           meta: "Jumpserver to Octobus Endpoint in-beats is down"
-          playbook: 'docs/support/playbook/elastic_kibana_issues.html#involve-octobus-team'
+          playbook: 'docs/support/playbook/elastic_kibana_issues#involve-octobus-team'
           dashboard: octobus-logshipping
         annotations:
           description: "Octobus Jumpserver endpoint: `in-beats` is down in region `{{ $labels.region }}`"
           summary: "Octobus Jumpserver  endpoint: `in-beats` is down in region `{{ $labels.region }}`"
+
       - alert: OctobusESXiHostLogShippingNotWorking
         expr: |
                 vrops_hostsystem_runtime_connectionstate{state="connected"} and
@@ -81,6 +86,7 @@ groups:
         annotations:
           description: "ESXi logs missing in Octobus for host {{ $labels.hostsystem }}."
           summary: "ESXi logs missing in Octobus for host {{ $labels.hostsystem }}."
+
       - alert: OctobusVCSALogShippingNotWorking
         expr: |
                 label_replace(vrops_vcenter_vc_fullname_info, "vc_short", "$1", "vcenter", "(vc-.-.).*")
@@ -96,6 +102,7 @@ groups:
         annotations:
           description: "VCSA logs missing in Octobus for vCenter {{ $labels.vcenter }}."
           summary: "VCSA logs missing in Octobus for vCenter {{ $labels.vcenter }}."
+
       - alert: OctobusNSXLogShippingNotWorking
         expr: |
                 vrops_nsxt_mgmt_node_connectivity_status unless

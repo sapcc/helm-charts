@@ -30,13 +30,16 @@ spec:
         - name: api
           image: {{include "vcf_image" .}}
           imagePullPolicy: IfNotPresent
-          args: [ /pulumi/bin/automation, server ]
+          args: 
+            - server
+            - --port
+            - {{ .Values.vcf.servicePort | quote }}
           env: {{ include "vcf_environment" $ | indent 12 }}
           volumeMounts:
-            - mountPath: /pulumi/automation/etc
+            - mountPath: /pulumi/etc
               subPath: etc
               name: pvc
-            - mountPath: /pulumi/automation/etc/configs
+            - mountPath: /pulumi/etc/configs
               name: vcf-configs
           resources:
             requests:

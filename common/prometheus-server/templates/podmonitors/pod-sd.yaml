@@ -1,11 +1,14 @@
+{{- $root := . }}
 {{- if .Values.serviceDiscoveries.pods.enabled }}
+{{- range $name := coalesce .Values.names (list .Values.name) .Values.global.targets }}
+---
 apiVersion: monitoring.coreos.com/v1
 kind: PodMonitor
 
 metadata:
-  name: {{ include "prometheus.fullName" . }}-pod-sd
+  name: {{ include "prometheus.fullName" (list $name $root) }}-pod-sd
   labels:
-    prometheus: {{ include "prometheus.name" . }}
+    prometheus: {{ include "prometheus.name" (list $name $root) }}
 
 spec:
   jobLabel: pod-sd
@@ -21,8 +24,8 @@ spec:
     any: true
 
   podMetricsEndpoints:
-    - interval: {{ required ".Values.serviceDiscoveries.scrapeInterval  missing" .Values.serviceDiscoveries.scrapeInterval }}
-      scrapeTimeout: {{ required ".Values.serviceDiscoveries.scrapeTimeout  missing" .Values.serviceDiscoveries.scrapeTimeout }}
+    - interval: {{ required "$.Values.serviceDiscoveries.scrapeInterval  missing" $.Values.serviceDiscoveries.scrapeInterval }}
+      scrapeTimeout: {{ required "$.Values.serviceDiscoveries.scrapeTimeout  missing" $.Values.serviceDiscoveries.scrapeTimeout }}
       scheme: http
       honorLabels: true
       relabelings:
@@ -30,18 +33,18 @@ spec:
           sourceLabels:
             - __meta_kubernetes_pod_annotation_prometheus_io_scrape
           regex: 'true'
-        {{- if .Values.serviceDiscoveries.pods.limitToPrometheusTargets }}
+        {{- if $.Values.serviceDiscoveries.pods.limitToPrometheusTargets }}
         - action: keep
           sourceLabels:
             - __meta_kubernetes_pod_annotation_prometheus_io_targets
-          regex: {{ include "prometheusTargetsValue" . | quote }}
+          regex: {{ include "prometheusTargetsValue" (list $name $root) | quote }}
         {{- end }}
         - action: keep
           sourceLabels:
             - __meta_kubernetes_pod_container_port_number
             - __meta_kubernetes_pod_container_port_name
             - __meta_kubernetes_pod_annotation_prometheus_io_port
-          regex: '(9102;.*;.*)|(.*;metrics;.*)|(\d+;.*;\d+)|(.*;.*;\d+)'
+          regex: '(9102;.*;.*)|(.*;metrics(-.*)?;.*)|(\d+;.*;\d+)|(.*;.*;\d+)'
         - sourceLabels:
             - __meta_kubernetes_pod_annotation_prometheus_io_scheme
           targetLabel: __scheme__
@@ -50,6 +53,9 @@ spec:
             - __meta_kubernetes_pod_annotation_prometheus_io_path
           targetLabel: __metrics_path__
           regex: '(.+)'
+        - sourceLabels:
+            - __metrics_path__
+          targetLabel: metrics_path
         - sourceLabels:
             - __address__
             - __meta_kubernetes_pod_annotation_prometheus_io_port
@@ -64,15 +70,15 @@ spec:
         - sourceLabels:
             - __meta_kubernetes_pod_name
           targetLabel: kubernetes_pod_name
-{{ include "prometheus.defaultRelabelConfig" . | indent 8 }}
+{{ include "prometheus.defaultRelabelConfig" $root | indent 8 }}
 
-{{ if .Values.serviceDiscoveries.pods.forbiddenMetrics }}
+{{ if $.Values.serviceDiscoveries.pods.forbiddenMetrics }}
       metricRelabelings:
-{{ include "prometheus.drop-metrics.metric-relabel-config" .Values.serviceDiscoveries.pods.forbiddenMetrics | indent 8 }}
+{{ include "prometheus.drop-metrics.metric-relabel-config" $.Values.serviceDiscoveries.pods.forbiddenMetrics | indent 8 }}
 {{ end }}
 
-    - interval: {{ required ".Values.serviceDiscoveries.scrapeInterval  missing" .Values.serviceDiscoveries.scrapeInterval }}
-      scrapeTimeout: {{ required ".Values.serviceDiscoveries.scrapeTimeout  missing" .Values.serviceDiscoveries.scrapeTimeout }}
+    - interval: {{ required "$.Values.serviceDiscoveries.scrapeInterval  missing" $.Values.serviceDiscoveries.scrapeInterval }}
+      scrapeTimeout: {{ required "$.Values.serviceDiscoveries.scrapeTimeout  missing" $.Values.serviceDiscoveries.scrapeTimeout }}
       scheme: http
       honorLabels: true
       relabelings:
@@ -83,7 +89,7 @@ spec:
         - action: keep
           sourceLabels:
             - __meta_kubernetes_pod_annotation_prometheus_io_targets
-          regex: {{ include "prometheusTargetsValue" . | quote }}
+          regex: {{ include "prometheusTargetsValue" (list $name $root) | quote }}
         - action: keep
           sourceLabels:
             - __meta_kubernetes_pod_annotation_prometheus_io_port_1
@@ -93,7 +99,7 @@ spec:
             - __meta_kubernetes_pod_container_port_number
             - __meta_kubernetes_pod_container_port_name
             - __meta_kubernetes_pod_annotation_prometheus_io_port_1
-          regex: '(9102;.*;.*)|(.*;metrics;.*)|(\d+;.*;\d+)|(.*;.*;\d+)'
+          regex: '(9102;.*;.*)|(.*;metrics(-.*)?;.*)|(\d+;.*;\d+)|(.*;.*;\d+)'
         - sourceLabels:
             - __meta_kubernetes_pod_annotation_prometheus_io_scheme
           targetLabel: __scheme__
@@ -116,10 +122,11 @@ spec:
         - sourceLabels:
             - __meta_kubernetes_pod_name
           targetLabel: kubernetes_pod_name
-{{ include "prometheus.defaultRelabelConfig" . | indent 8 }}
+{{ include "prometheus.defaultRelabelConfig" $root | indent 8 }}
 
-{{ if .Values.serviceDiscoveries.pods.forbiddenMetrics }}
+{{ if $.Values.serviceDiscoveries.pods.forbiddenMetrics }}
       metricRelabelings:
-{{ include "prometheus.drop-metrics.metric-relabel-config" .Values.serviceDiscoveries.pods.forbiddenMetrics | indent 8 }}
+{{ include "prometheus.drop-metrics.metric-relabel-config" $.Values.serviceDiscoveries.pods.forbiddenMetrics | indent 8 }}
 {{ end }}
-{{ end }}
+{{- end }}
+{{- end }}

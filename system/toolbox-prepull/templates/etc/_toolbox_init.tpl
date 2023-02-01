@@ -11,7 +11,7 @@ mkdir -p "${TOOLBOX_PATH}"
 
 # Needed to trigger keppel replication
 : <<'END_COMMENT'
-image: "{{ required ".Values.global.registry is missing" .Values.global.registry }}/toolbox:{{ required ".Values.images.toolbox.tag is missing" .Values.images.toolbox.tag }}"
+image: "{{ required ".Values.images.toolbox.image is missing" .Values.images.toolbox.image }}:{{ required ".Values.images.toolbox.tag is missing" .Values.images.toolbox.tag }}"
 END_COMMENT
 
 docker pull ${TOOLBOX_DOCKER_IMAGE}:${TOOLBOX_DOCKER_TAG}

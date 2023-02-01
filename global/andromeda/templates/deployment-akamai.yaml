@@ -1,0 +1,58 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "andromeda.fullname" . }}-agent-akamai
+  labels:
+{{ include "andromeda.labels" . | indent 4 }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "andromeda.fullname" . }}-agent-akamai
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ include "andromeda.fullname" . }}-agent-akamai
+        app.kubernetes.io/instance: {{ .Release.Name }}
+    spec:
+      containers:
+      - name: {{ .Chart.Name }}-akamai-agent
+        securityContext:
+          {{- toYaml .Values.securityContext | nindent 12 }}
+        image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+        command: ["/usr/bin/andromeda-akamai-agent"]
+        args: ["--config-file", "/etc/andromeda/andromeda.yaml", "--config-file", "/etc/andromeda/akamai.yaml"]
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        env:
+          - name: HOST
+            value: 0.0.0.0
+          - name: AKAMAI_LOG
+            value: info
+        ports:
+          - name: http
+            containerPort: 8000
+            protocol: TCP
+        resources:
+          {{- toYaml .Values.resources | nindent 12 }}
+        volumeMounts:
+          - name: etc-andromeda
+            mountPath: /etc/andromeda
+            readOnly: true
+      volumes:
+      - name: etc-andromeda
+        projected:
+          defaultMode: 420
+          sources:
+            - configMap:
+                name: andromeda-etc
+                items:
+                  - key: andromeda.yaml
+                    path: andromeda.yaml
+            - configMap:
+                name: andromeda-etc-akamai
+                items:
+                  - key: akamai.yaml
+                    path: akamai.yaml
+                  - key: edgerc.conf
+                    path: edgerc.conf

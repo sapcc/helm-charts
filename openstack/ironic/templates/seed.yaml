@@ -11,6 +11,7 @@ spec:
   - monsoon3/domain-cis-seed
   - monsoon3/domain-cp-seed
   - monsoon3/domain-fsn-seed
+  - monsoon3/domain-hda-seed
   - monsoon3/domain-hcm-seed
   - monsoon3/domain-hcp03-seed
   - monsoon3/domain-hec-seed
@@ -65,7 +66,6 @@ spec:
       instances_zg1bcm1.medium: 0
       instances_zg1bcm1.1medium: 0
       instances_zh0hpe1.large: 0
-      instances_zh0hpe1.large: 0
       instances_zh1vic1.small: 0
       instances_zh2vic1.medium: 0
       instances_zh2mlx1.large: 0
@@ -81,6 +81,7 @@ spec:
       instances_hv_s2_c26_m384: 0
       instances_hv_s2_c26_m768: 0
       instances_hv_s4_c24_m3072: 0
+      instances_hv_s4_c24_m6144: 0
       instances_hv_s8_c24_m6144: 0
       instances_hv_s8_c28_m12288: 0
 
@@ -380,6 +381,22 @@ spec:
       "resources:DISK_GB": "0"
       "resources:VCPU": "0"
 
+  # vPOD servers Dell PowerEdge R840 with 6TB RAM
+  - name: "hv_s4_c24_m6144"
+    id: "2029"
+    vcpus: 96
+    ram: 6291456
+    disk: 240
+    extra_specs:
+      "catalog:description": Hypervisor Host 4 sockets, 24 cores, 6TB RAM
+      "capabilities:cpu_arch": "x86_64"
+      "quota:separate": "true"
+      "quota:instance_only": "true"
+      "resources:CUSTOM_HV_S4_C24_M6144": "1"
+      "resources:MEMORY_MB": "0"
+      "resources:DISK_GB": "0"
+      "resources:VCPU": "0"
+
   # vPOD servers Dell PowerEdge R840
   - name: "hv_s4_c24_m3072"
     id: "2023"
@@ -494,7 +511,7 @@ spec:
       - project: service
         role: cloud_image_admin
       - project: service
-        role: swiftreseller
+        role: cloud_objectstore_admin
     - name: ipmi_exporter
       description: IPMI Exporter for MB Monitoring
       password: {{ required "ipmi_exporter_user_passwd is missing" .Values.global.ipmi_exporter_user_passwd | quote }}
@@ -536,7 +553,7 @@ spec:
       - user: ipmi_exporter@Default
         role: cloud_compute_admin
       - user: ironic@Default
-        role: swiftoperator
+        role: objectstore_admin
     groups:
     - name: CCADMIN_CLOUD_ADMINS
       role_assignments:
@@ -744,6 +761,45 @@ spec:
         role: baremetal_viewer
         inherited: true
 
+  - name: hda
+    groups:
+    - name: HDA_API_SUPPORT
+      role_assignments:
+      - project: api_support
+        role: baremetal_admin
+      - domain: hda
+        role: baremetal_admin
+        inherited: true
+    - name: HDA_COMPUTE_SUPPORT
+      role_assignments:
+      - project: compute_support
+        role: baremetal_admin
+      - domain: hda
+        role: baremetal_admin
+        inherited: true
+    - name: HDA_NETWORK_SUPPORT
+      role_assignments:
+      - project: network_support
+        role: baremetal_admin
+      - domain: hda
+        role: baremetal_viewer
+        inherited: true
+    - name: HDA_STORAGE_SUPPORT
+      role_assignments:
+      - project: storage_support
+        role: baremetal_admin
+      - domain: hda
+        role: baremetal_viewer
+        inherited: true
+    - name: HDA_SERVICE_DESK
+      role_assignments:
+      - project: service_desk
+        role: baremetal_admin
+      - domain: hda
+        role: baremetal_viewer
+        inherited: true
+
+{{- if not .Values.global.domain_seeds.skip_hcm_domain }}
   - name: hcm
     groups:
     - name: HCM_API_SUPPORT
@@ -781,6 +837,7 @@ spec:
       - domain: hcm
         role: baremetal_viewer
         inherited: true
+{{- end }}
 
   - name: hcp03
     groups:

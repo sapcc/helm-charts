@@ -28,7 +28,7 @@ spec:
         alert-service: nova
 {{ tuple . "nova" "scheduler" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
       annotations:
-        {{- if .Values.scheduler.rpc_statsd_enabled }}
+        {{- if or .Values.scheduler.rpc_statsd_enabled .Values.proxysql.mode }}
         prometheus.io/scrape: "true"
         prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
         {{- end }}
@@ -36,11 +36,12 @@ spec:
         configmap-scheduler-etc-hash: {{ include (print $.Template.BasePath "/scheduler-etc-configmap.yaml") . | sha256sum }}
     spec:
 {{ tuple . "nova" "scheduler" | include "kubernetes_pod_anti_affinity" | indent 6 }}
+{{ include "utils.proxysql.pod_settings" . | indent 6 }}
       terminationGracePeriodSeconds: {{ .Values.defaults.default.graceful_shutdown_timeout | add 5 }}
       hostname: nova-scheduler
       containers:
         - name: nova-scheduler
-          image: {{ required ".Values.global.registry is missing" .Values.global.registry}}/ubuntu-source-nova-scheduler:{{.Values.imageVersionNovaScheduler | default .Values.imageVersionNova | default .Values.imageVersion | required "Please set nova.imageVersion or similar" }}
+          image: {{ tuple . "scheduler" | include "container_image_nova" }}
           imagePullPolicy: IfNotPresent
           command:
             - dumb-init
@@ -88,14 +89,17 @@ spec:
               mountPath: /etc/nova/nova-scheduler.conf
               subPath: nova-scheduler.conf
               readOnly: true
+            {{- /* Note I533984: Replace with plain policy.yaml after Xena upgrade */}}
             - name: nova-etc
-              mountPath: /etc/nova/policy.json
-              subPath: policy.json
+              mountPath: /etc/nova/{{if (.Values.imageVersion | hasPrefix "rocky") }}policy.json{{else}}policy.yaml{{end}}
+              subPath: {{if (.Values.imageVersion | hasPrefix "rocky") }}policy.json{{else}}policy.yaml{{end}}
               readOnly: true
             - name: nova-etc
               mountPath: /etc/nova/logging.ini
               subPath: logging.ini
               readOnly: true
+            {{- include "utils.proxysql.volume_mount" . | indent 12 }}
+        {{- tuple . .Values.scheduler.workers | include "utils.proxysql.container" | indent 8 }}
         {{- if .Values.scheduler.rpc_statsd_enabled }}
         - name: statsd
           image: {{ required ".Values.global.dockerHubMirror is missing" .Values.global.dockerHubMirror}}/prom/statsd-exporter:v0.8.1
@@ -122,4 +126,4 @@ spec:
         - name: nova-scheduler-etc
           configMap:
             name: nova-scheduler-etc
-
+        {{- include "utils.proxysql.volumes" . | indent 8 }}

@@ -1,20 +1,21 @@
-{{- $az_apods := dict }}
 {{- /*
-If aPod design is available take availability zones from there, with a list of aPods
-Else construct the same structure from the AZ list
-This and the affinities for 'cp' can go if aPod rollout is completed globally
+Default behaviour, haproxy deployments for every apod defined in Values.global.apods
+If not defined, one haproxy per Values.global.availability_zones to non-apod based AZ
+This and the affinities for 'cp' can be removed if labs are running on apods
 */ -}}
+{{- $az_apods := dict }}
 {{- if .Values.global.apods }}
-{{- $az_apods = .Values.global.apods }}
+  {{- $az_apods = .Values.global.apods }}
 {{- else }}
-{{- range $az := .Values.global.availability_zones }}
-{{- $az_apods = set $az_apods $az list }}
-{{- end }}
+  {{- /* Collect all availability zones and construct the base dict */ -}}
+  {{- range $az := .Values.global.availability_zones }}
+    {{- $non_apods := list }}
+    {{- /* Every availability zones gets an non apod haproxy scheduled if CP is still active */ -}}
+    {{- $non_apods = append $non_apods "cp" }}
+    {{- $az_apods = set $az_apods $az $non_apods }}
+  {{- end }}
 {{- end }}
 {{- range $az, $apods := $az_apods }}
-{{- if $.Values.global.cp }}
-{{- $apods = append $apods "cp" }}
-{{- end }}
 {{- range $apod := $apods }}
 kind: Deployment
 apiVersion: apps/v1
@@ -27,6 +28,10 @@ metadata:
 spec:
   revisionHistoryLimit: 5
   {{- $replicas_az := default 2.0 (index $.Values (printf "haproxy_deployment_replicas_%s" $az)) }}
+  {{- if lt $replicas_az 0.0 }}
+  {{- /* To explicit disable in an AZ, replicas must be set negative, otherwise 0 will trigger the default */ -}}
+  {{- $replicas_az = 0.0 }}
+  {{- end }}
   replicas: {{ $replicas_az }}
   strategy:
     type: RollingUpdate
@@ -148,11 +153,11 @@ spec:
                   fieldPath: spec.nodeName
           resources:
             requests:
-              cpu: "1500m"
-              memory: "600Mi"
+              cpu: {{ $.Values.haproxy_deployment_resources_cpu | required "haproxy_deployment_resources_cpu is required" | quote }}
+              memory: {{ $.Values.haproxy_deployment_resources_memory | required "haproxy_deployment_resources_memory is required" | quote }}
             limits:
-              cpu: "1500m"
-              memory: "600Mi"
+              cpu: {{ $.Values.haproxy_deployment_resources_cpu | required "haproxy_deployment_resources_cpu is required" | quote }}
+              memory: {{ $.Values.haproxy_deployment_resources_memory | required "haproxy_deployment_resources_memory is required" | quote }}
           volumeMounts:
             - mountPath: /tls-secret
               name: tls-secret

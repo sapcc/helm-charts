@@ -4,8 +4,8 @@
 global:
   dbUser: glance
   master_password: ""
-  pgbouncer:
-    enabled: true
+  domain_seeds:
+    skip_hcm_domain: false
 
 # The registry is deprecated, setting imageVersionGlanceRegistry will enable the deployment (but not the setting)
 # imageVersionGlance: null
@@ -16,7 +16,12 @@ global:
 stores: "swift"
 default_store: swift
 
+rpc_workers: 1
+workers: 4
+
 owner-info:
+  support-group: compute-storage-api
+  service: glance
   maintainers:
     - Rajiv Mucheli
     - Stefan Hipfel
@@ -120,12 +125,22 @@ unittest:
 
 db_name: glance
 
+proxysql:
+  mode: unix_socket
+
 mariadb:
   enabled: true
   name: glance
   initdb_configmap: glance-initdb
   persistence_claim:
     name: db-glance-pvclaim
+  databases:
+  - glance
+  users:
+    glance:
+      name: glance
+      grants:
+      - "ALL PRIVILEGES ON glance.*"
   metrics:
     resources:
       enabled: true
@@ -135,6 +150,15 @@ mariadb:
       requests:
         cpu: 100m
         memory: 64Mi
+  alerts:
+    support_group: compute-storage-api
+
+memcached:
+  alerts:
+    support_group: compute-storage-api
+  enabled: true
+  metrics:
+    enabled: true
 
 mysql_metrics:
   db_name: glance
@@ -143,7 +167,7 @@ mysql_metrics:
     - help: Glance Image count
       labels:
       - "id"
-      - "name"
+      - "image_name"
       - "status"
       - "size"
       - "project_id"
@@ -154,7 +178,7 @@ mysql_metrics:
       query: |
         SELECT
           id,
-          name,
+          IFNULL(name,"EMPTY") as image_name,
           status,
           COALESCE(size, "No Size") AS size,
           owner AS project_id,
@@ -173,7 +197,7 @@ mysql_metrics:
     - help: Glance Image created in last 24hrs
       labels:
       - "id"
-      - "name"
+      - "image_name"
       - "status"
       - "size"
       - "project_id"
@@ -184,7 +208,7 @@ mysql_metrics:
       query: |
         SELECT
           id,
-          name,
+          IFNULL(name,"EMPTY") as image_name,
           status,
           COALESCE(size, "No Size") AS size,
           owner AS project_id,
@@ -202,7 +226,7 @@ mysql_metrics:
     - help: Glance Image deleted in last 24hrs
       labels:
       - "id"
-      - "name"
+      - "image_name"
       - "status"
       - "size"
       - "project_id"
@@ -213,7 +237,7 @@ mysql_metrics:
       query: |
         SELECT
           id,
-          name,
+          IFNULL(name,"EMPTY") as image_name,
           status,
           COALESCE(size, "No Size") AS size,
           owner AS project_id,
@@ -288,6 +312,10 @@ watcher:
 # openstack-audit-middleware
 audit:
   enabled: true
+  mem_queue_size: 1000
+  central_service:
+    user: rabbitmq
+    password: null
 
 # Deploy Glance Prometheus alerts.
 alerts:
@@ -307,3 +335,7 @@ sapcc_rate_limit:
     requests:
       cpu: 100m
       memory: 128Mi
+
+# osprofiler
+osprofiler:
+  enabled: false

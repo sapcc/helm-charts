@@ -3,18 +3,17 @@ groups:
   rules:
   - alert: OpenstackNeutronApiDown
     expr: |
-        cc3test_status{type="api",
-            name="TestNetworkApi_api"
-        } == 0
-    for: 10m
+        cc3test_status{service="neutron", type="api"} == 0
+    for: 16m
     labels:
       severity: critical
+      support_group: network-api
       tier: os
       service: '{{ $labels.service }}'
       context: '{{ $labels.service }}'
       meta: 'Openstack Neutron API is down'
       dashboard: 'cc3test-overview?var-service={{ $labels.service }}'
-      playbook: 'docs/devops/alert/neutron/#test_api'
+      playbook: 'docs/support/playbook/neutron/alerts/'
       report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
     annotations:
       description: 'Openstack Neutron API is down'
@@ -22,17 +21,16 @@ groups:
 
   - alert: OpenstackNeutronApiFlapping
     expr: |
-        changes(cc3test_status{type="api",
-            name="TestNetworkApi_api"
-        }[30m]) > 8
+        changes(cc3test_status{service="neutron", type="api"}[30m]) > 8
     labels:
       severity: warning
+      support_group: network-api
       tier: os
       service: '{{ $labels.service }}'
       context: '{{ $labels.service }}'
       meta: 'Openstack Neutron API is flapping'
       dashboard: 'cc3test-overview?var-service={{ $labels.service }}'
-      playbook: 'docs/devops/alert/neutron/#test_api'
+      playbook: 'docs/support/playbook/neutron/alerts/'
       report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
     annotations:
       description: 'Openstack Neutron API is flapping'
@@ -46,6 +44,7 @@ groups:
     for: 10m
     labels:
       severity: critical
+      support_group: network-api
       tier: os
       service: '{{ $labels.service }}'
       context: '{{ $labels.service }}'
@@ -64,6 +63,7 @@ groups:
         }[30m]) > 8
     labels:
       severity: warning
+      support_group: network-api
       tier: os
       service: '{{ $labels.service }}'
       context: '{{ $labels.service }}'
@@ -85,6 +85,7 @@ groups:
     for: 20m
     labels:
       severity: critical
+      support_group: network-api
       tier: os
       service: '{{ $labels.service }}'
       context: '{{ $labels.service }}'
@@ -103,6 +104,7 @@ groups:
         }[30m]) > 8
     labels:
       severity: warning
+      support_group: network-api
       tier: os
       service: '{{ $labels.service }}'
       context: '{{ $labels.service }}'
@@ -122,6 +124,7 @@ groups:
     for: 20m
     labels:
       severity: critical
+      support_group: network-api
       tier: os
       service: '{{ $labels.service }}'
       context: '{{ $labels.service }}'
@@ -140,6 +143,7 @@ groups:
         }[30m]) > 8
     labels:
       severity: warning
+      support_group: network-api
       tier: os
       service: '{{ $labels.service }}'
       context: '{{ $labels.service }}'
@@ -161,6 +165,7 @@ groups:
     for: 20m
     labels:
       severity: critical
+      support_group: network-api
       tier: os
       service: '{{ $labels.service }}'
       context: '{{ $labels.service }}'
@@ -182,6 +187,7 @@ groups:
     for: 20m
     labels:
       severity: critical
+      support_group: network-api
       tier: os
       service: '{{ $labels.service }}'
       context: '{{ $labels.service }}'
@@ -192,3 +198,22 @@ groups:
     annotations:
       description: 'Metadata service is down'
       summary: 'Metadata service is down'
+
+- name: cc3test-network-integrity.alerts
+  rules:
+  - alert: OpenstackNeutronIntegrityOutOfFIPs
+    expr: cc3test_avail_fip_ratio{type="avail_fip_status"} > 0.9
+    for: 15m
+    labels:
+      severity: warning
+      support_group: network-api
+      tier: os
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.service }}'
+      meta: 'Network name {{ $labels.network_name }} and network id {{ $labels.network_id }}: get exhausted. see last three reports for more details'
+      dashboard: cc3test-overview?var-service={{ $labels.service }}
+      playbook: 'docs/devops/alert/{{ $labels.service }}/#OpenstackNeutronPredictOutOfFIP'
+      report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.check }}'
+    annotations:
+      description: 'Network name {{ $labels.network_name }} and network id {{ $labels.network_id }}: get exhausted. see last three reports for more details'
+      summary: 'Network name {{ $labels.network_name }} and network id {{ $labels.network_id }}: get exhausted'

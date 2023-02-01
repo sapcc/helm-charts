@@ -1,0 +1,25 @@
+{{- if .Values.enabled }}
+{{- if .Values.traefik.route.enabled }}
+{{- $root := . }}
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: {{ include "thanos.fullName" . }}-grpc
+spec:
+  entryPoints:
+  - websecure
+  routes:
+  {{- range $host := $root.Values.grpcIngress.hosts }}
+  - kind: Rule
+    match: Host(`{{ $host }}-grpc.{{ $root.Values.global.region }}.{{ $root.Values.global.tld }}`) && Headers(`Content-Type`,`application/grpc`)
+    priority: 11
+    services:
+    - kind: Service
+      name: thanos-admin-query
+      port: 10901
+      scheme: h2c
+  {{- end }}
+  tls:
+    secretName: tls-{{ include "thanos.grpcURL" $root | replace "." "-" }}
+{{- end }}
+{{- end }}
