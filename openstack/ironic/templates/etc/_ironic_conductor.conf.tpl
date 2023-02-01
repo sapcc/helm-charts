@@ -40,6 +40,7 @@ url_auth_digest_secret = {{required "A valid .Values.console.secret required!" .
 # We expose this directory over http and tftp
 http_root = /tftpboot
 http_url = {{ .Values.conductor.deploy.protocol }}://{{ $tftp_ip }}:{{ .Values.conductor.deploy.port }}/tftpboot
+erase_devices_priority = {{ .Values.conductor.deploy.erase_devices_priority}}
 {{- range $k, $v :=  $conductor.deploy }}
 {{ $k }} = {{ $v }}
 {{- end }}
