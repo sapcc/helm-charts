@@ -50,8 +50,8 @@ groups:
       summary: '{{ $labels.kubernetes_name }} returned many SERVFAIL responses in the last hour. Check the logs.'
 
   - alert: OpenstackDesignateDnsUnbound1Down
-    expr: absent(unbound_time_up{kubernetes_name=~"unbound1"}) == 1
-    for: 60m
+    expr: absent(unbound_up{kubernetes_name=~"unbound1"}) == 1 or unbound_up{kubernetes_name=~"unbound1"} != 1
+    for: 30m
     labels:
       context: unbound
       dashboard: designate-unbound
@@ -66,8 +66,8 @@ groups:
       summary: DNS Unbound1 recursor is down. DNS resolution might be handled by another region.
 
   - alert: OpenstackDesignateDnsUnbound2Down
-    expr: absent(unbound_time_up{kubernetes_name=~"unbound2"}) == 1
-    for: 60m
+    expr: absent(unbound_up{kubernetes_name=~"unbound2"}) == 1 or unbound_up{kubernetes_name=~"unbound2"} != 1
+    for: 30m
     labels:
       context: unbound
       dashboard: designate-unbound
@@ -80,4 +80,3 @@ groups:
     annotations:
       description: 'DNS Unbound2 recursor is down.'
       summary: DNS Unbound2 recursor is down. DNS resolution might be handled by another region.
-
