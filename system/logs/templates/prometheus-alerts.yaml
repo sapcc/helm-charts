@@ -1,4 +1,4 @@
-{{- if and .Values.alerts.enabled  }}
+{{- if index .Values "fluent-bit" "alerts" "enabled" }}
 ---
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
@@ -9,7 +9,7 @@ metadata:
     app: fluent-prometheus
     tier: infra
     type: alerting-rules
-    prometheus: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus }}
+    prometheus: {{ required index .Values "fluent-bit" "alerts" "prometheus" missing" index .Values "fluent-bit" "alerts" "prometheus" }}
 
 spec:
 {{ include (print .Template.BasePath "/alerts/_fluent-alerts.tpl") . | indent 2 }}
