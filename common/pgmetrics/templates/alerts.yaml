@@ -48,4 +48,19 @@ spec:
           with the OS and storage experts while it's happening. But don't delay for too long! The locks must be put back
           in order before the entire connection pool is exhausted, or else the DB may become completely unresponsive!
 
+    - alert: {{ title $service }}PostgresMetricsEvalErrors
+      expr: max(pg_exporter_last_scrape_error{kubernetes_namespace="{{ .Release.Namespace }}",app="{{ .Release.Name }}-pgmetrics"}) > 0
+      for: 5m
+      labels:
+        context: database
+        support_group: {{ required ".Values.alerts.support_group missing" .Values.alerts.support_group }}
+        tier: {{ required ".Values.alerts.tier missing" .Values.alerts.tier }}
+        service: {{ $service }}
+        severity: info
+        meta: Evaluation error in Postgres DB metrics
+      annotations:
+        summary: Evaluation error in Postgres DB metrics
+        description: >
+          Some of the custom metrics in the postgres-exporter configuration cannot be evaluated. Check the pgmetrics pod log for errors.
+
 {{- end }}
