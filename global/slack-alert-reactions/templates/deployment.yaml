@@ -36,12 +36,6 @@ spec:
                 name: {{ .Chart.Name }}-secret
                 key: slack-app-config-token
                 optional: false
-          - name: APP_ENVIRONMENT
-            valueFrom:
-              configMapKeyRef:
-                name: {{ .Chart.Name }}-config-map
-                key: app-environment
-                optional: false
           - name: SLACK_WORKSPACE
             valueFrom:
               configMapKeyRef:
@@ -53,6 +47,24 @@ spec:
               secretKeyRef:
                 name: {{ .Chart.Name }}-secret
                 key: github-token
+                optional: false 
+          - name: ACTIVE_CHANNELS
+            valueFrom:
+              secretKeyRef:
+                name: {{ .Chart.Name }}-secret
+                key: active-channels
+                optional: false 
+          - name: REPO_URL
+            valueFrom:
+              secretKeyRef:
+                name: {{ .Chart.Name }}-secret
+                key: repo-url
+                optional: false 
+          - name: LINK_TRIGGER_URL
+            valueFrom:
+              secretKeyRef:
+                name: {{ .Chart.Name }}-secret
+                key: link-trigger-url
                 optional: false 
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
