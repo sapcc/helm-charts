@@ -34,7 +34,7 @@ groups:
       summary: 'DNS Unbound endpoint {{ $labels.endpoint }} is not available. DNS resolution might be handled by another region.'
 
   - alert: OpenstackDesignateDnsUnboundManySERVFAIL
-    expr: sum(rate(unbound_num_answer_rcode_servfail[1h])) BY (region, kubernetes_name) > 150
+    expr: sum(delta(unbound_answer_rcodes_total{rcode="SERVFAIL"}[1h])) BY (region, kubernetes_name) > 500000
     for: 60m
     labels:
       context: unbound
@@ -47,7 +47,7 @@ groups:
       playbook: 'docs/devops/alert/designate'
     annotations:
       description: 'Recursor {{ $labels.kubernetes_name }} returns lots of SERVFAIL responses in {{ $labels.region }} region.'
-      summary: '{{ $labels.kubernetes_name }} returned many SERVFAIL responses in the last hour. Check the logs.'
+      summary: '{{ $labels.kubernetes_name }} returned a lot of SERVFAIL responses in the last hour. Check the logs.'
 
   - alert: OpenstackDesignateDnsUnbound1Down
     expr: absent(unbound_up{kubernetes_name=~"unbound1"}) == 1 or unbound_up{kubernetes_name=~"unbound1"} != 1
