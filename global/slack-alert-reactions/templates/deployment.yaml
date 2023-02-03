@@ -14,6 +14,7 @@ spec:
       annotations:
         checksum/configmap: {{ include "slack-alert-reactions/templates/config-map.yaml" . | sha256sum }}
         checksum/secret: {{ include "slack-alert-reactions/templates/secret.yaml" . | sha256sum }}
+        checksum/secret-apps-dev-json: {{ include "slack-alert-reactions/templates/secret-apps-dev-json.yaml" . | sha256sum }}
     spec:
       serviceAccountName: {{ .Chart.Name }}-sa
       containers:
@@ -25,7 +26,7 @@ spec:
               command:
                 - /bin/sh
                 - -c 
-                - /slack-alert-reactions/healthcheck.sh
+                - /slack-alert-reactions/scripts/healthcheck.sh
             initialDelaySeconds: 5
             periodSeconds: 5
             timeoutSeconds: 5
@@ -66,6 +67,10 @@ spec:
                 name: {{ .Chart.Name }}-secret
                 key: link-trigger-url
                 optional: false 
+          volumeMounts:
+          - name: {{ .Chart.Name }}-secret-apps-dev-json-volume
+            mountPath: "/slack-alert-reactions/.slack"
+            readOnly: true      
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
         - name: {{ .Chart.Name }}-sidecar
@@ -85,4 +90,8 @@ spec:
       - name: {{ .Chart.Name }}-secret-volume
         secret:
           secretName: {{ .Chart.Name }}-secret
+          optional: false
+      - name: {{ .Chart.Name }}-secret-apps-dev-json-volume
+        secret:
+          secretName: {{ .Chart.Name }}-secret-apps-dev-json
           optional: false
