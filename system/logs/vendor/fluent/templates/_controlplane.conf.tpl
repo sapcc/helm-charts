@@ -50,6 +50,17 @@
   </parse>
 </filter>
 
+<filter kubernetes.var.log.containers.neutron-server**>
+  @type parser
+  key_name log
+  reserve_data true
+  <parse>
+    @type grok
+    grok_pattern (%{DDTIMESTAMP_ISO8601:logtime}|)( )?%{TIMESTAMP_ISO8601:timestamp}.%{NOTSPACE}? %{NUMBER:pid} %{WORD:loglevel} %{NOTSPACE:logger} (\[)?(req-)%{NOTSPACE:requestid} ?(greq-%{UUID:global_requestid})? ?%{NOTSPACE:userid} ?%{NOTSPACE:projectid} ?%{NOTSPACE:domainid}  ?%{NOTSPACE:user_domainid}  ?%{NOTSPACE:project_domainid} %{IPV4:client_ip} "%{URIQUERY:uri_method} %{URIPATH:uri}
+    custom_pattern_path /fluentd/etc/pattern
+  </parse>
+</filter>
+
 <filter kubernetes.var.log.containers.ironic-api**>
   @type parser
   key_name log

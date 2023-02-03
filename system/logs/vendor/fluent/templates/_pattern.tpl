@@ -6,12 +6,5 @@ SNMP_ERROR [a-zA-Z0-9 ]+
 METHOD (GET|POST|PUT)
 LOWER [a-z0-9 ]*
 IMAGE_METHOD \/v2\/images
-URIPROTO [A-Za-z]([A-Za-z0-9+\-.]+)+
-URIHOST %{IPORHOST}(?::%{POSINT})?
-# uripath comes loosely from RFC1738, but mostly from what Firefox doesn't turn into %XX
 URIPATH (?:/[A-Za-z0-9$.+!*'(){},~:;=@#%&_\-]*)+
 URIQUERY [A-Za-z0-9$.+!*'|(){},~@#%&/=:;_?\-\[\]<>]*
-# deprecated (kept due compatibility):
-URIPARAM \?%{URIQUERY}
-URIPATHPARAM %{URIPATH}(?:\?%{URIQUERY})?
-URI %{URIPROTO}://(?:%{USER}(?::[^@]*)?@)?(?:%{URIHOST})?(?:%{URIPATH}(?:\?%{URIQUERY})?)?
