@@ -8,3 +8,4 @@ LOWER [a-z0-9 ]*
 IMAGE_METHOD \/v2\/images
 URIPATH (?:/[A-Za-z0-9$.+!*'(){},~:;=@#%&_\-]*)+
 URIQUERY [A-Za-z0-9$.+!*'|(){},~@#%&/=:;_?\-\[\]<>]*
+URIP (?:/[a-z.0-0]*/[a-z]*)
