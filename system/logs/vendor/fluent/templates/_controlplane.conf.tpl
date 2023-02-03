@@ -43,10 +43,6 @@
     <grok>
       pattern Failed to bind port %{UUID:neutronPort:string} on host %{NOTSPACE:neutronHost:string} for vnic_type %{WORD:neutronVnicType:string} using segments
     </grok>
-    <grok>
-      pattern (%{TIMESTAMP_ISO8601:logtime}|)( )?%{TIMESTAMP_ISO8601:timestamp}.%{NOTSPACE}? %{NUMBER:pid} %{WORD:loglevel} %{NOTSPACE:logger} (\[)?(req-)%{NOTSPACE:requestid} ?(greq-%{UUID:global_requestid})? ?%{NOTSPACE:userid} ?%{NOTSPACE:projectid} ?%{NOTSPACE:domainid}  ?%{NOTSPACE:user_domainid}  ?%{NOTSPACE:project_domainid} %{IPV4:client_ip} "%{URIQUERY:uri_method} %{URIPATH:uri}
-      custom_pattern_path /fluentd/etc/pattern
-    </grok>
   </parse>
 </filter>
 
@@ -56,7 +52,7 @@
   reserve_data true
   <parse>
     @type grok
-    grok_pattern (%{TIMESTAMP_ISO8601:logtime}|)( )?%{TIMESTAMP_ISO8601:timestamp}.%{NOTSPACE}? %{NUMBER:pid} %{WORD:loglevel} %{NOTSPACE:logger} (\[)?(req-)%{NOTSPACE:requestid} ?(greq-%{UUID:global_requestid})? ?%{NOTSPACE:userid} ?%{NOTSPACE:projectid} ?%{NOTSPACE:domainid}  ?%{NOTSPACE:user_domainid}  ?%{NOTSPACE:project_domainid} %{IPV4:client_ip} "%{URIQUERY:uri_method} %{URIPATH:uri}
+    grok_pattern (%{TIMESTAMP_ISO8601:logtime}|)( )?%{TIMESTAMP_ISO8601:timestamp}.%{NOTSPACE}? %{NUMBER:pid} %{WORD:loglevel} %{NOTSPACE:logger} (\[)?(req-)%{NOTSPACE:requestid} ?(greq-%{UUID:global_requestid})? ?%{NOTSPACE:userid} ?%{NOTSPACE:projectid} ?%{NOTSPACE:domainid}  ?%{NOTSPACE:user_domainid}  ?%{NOTSPACE:project_domainid} %{IPV4:client_ip} "%{URIQUERY:uri_method} %{URIPATH:uri_path}
     custom_pattern_path /fluentd/etc/pattern
   </parse>
 </filter>
