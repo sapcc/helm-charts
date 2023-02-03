@@ -8,7 +8,7 @@ groups:
     labels:
       severity: critical
       tier: vmware
-      service: compute
+      service: storage
       support_group: compute
       context: "{{ $labels.datastore }}"
       meta: 'Datastore {{ $labels.datastore }} is not accessible. ({{ $labels.vcenter }}, {{ $labels.datacenter }})'
@@ -24,7 +24,7 @@ groups:
     labels:
       severity: critical
       tier: vmware
-      service: compute
+      service: storage
       support_group: compute
       context: "{{ $labels.datastore }}"
       meta: 'Datastore {{ $labels.datastore }} has no free space. ({{ $labels.vcenter }}, {{ $labels.datacenter }})'
@@ -41,7 +41,7 @@ groups:
     labels:
       severity: critical
       tier: vmware
-      service: compute
+      service: storage
       support_group: compute
       context: "{{ $labels.datastore }}"
       meta: 'Datastore {{ $labels.datastore }} has zero capacity. ({{ $labels.vcenter }}, {{ $labels.datacenter }})'
@@ -51,7 +51,7 @@ groups:
       description: 'Datastore {{ $labels.datastore }} has zero capacity. ({{ $labels.vcenter }}, {{ $labels.datacenter }})'
       summary: 'Datastore {{ $labels.datastore }} has zero capacity. ({{ $labels.vcenter }}, {{ $labels.datacenter }})'
 
-  - alert: EphemeralDataStoreCapacityWarning
+  - alert: EphemeralDataStoreCapacity
     expr: >
       vrops_datastore_diskspace_total_usage_gigabytes{type=~"ephemeral"} / vrops_datastore_diskspace_capacity_gigabytes >= 0.85
     for: 20m
@@ -68,7 +68,7 @@ groups:
       description: "Eph Datastore {{ $labels.datastore }} utilization > 85%. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
       summary: "Eph Datastore {{ $labels.datastore }} utilization > 85%. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
 
-  - alert: EphemeralDataStoreCapacityCritical
+  - alert: EphemeralDataStoreCapacity
     expr: >
       vrops_datastore_diskspace_total_usage_gigabytes{type=~"ephemeral"} / vrops_datastore_diskspace_capacity_gigabytes >=  0.9
     for: 20m
@@ -85,7 +85,7 @@ groups:
       description: "Eph Datastore {{ $labels.datastore }} utilization > 90%. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
       summary: "Eph Datastore {{ $labels.datastore }} utilization > 90%. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
 
-  - alert: VVolDataStoreCapacityWarning
+  - alert: VVolDataStoreCapacity
     expr: >
       vrops_datastore_diskspace_total_usage_gigabytes{type="vVOL"} / vrops_datastore_diskspace_capacity_gigabytes >= 0.8
     for: 20m
@@ -102,7 +102,7 @@ groups:
       description: "vVOL Datastore {{ $labels.datastore }} utilization > 80%. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
       summary: "vVOL Datastore {{ $labels.datastore }} utilization > 80%. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
 
-  - alert: VVolDataStoreCapacityCritical
+  - alert: VVolDataStoreCapacity
     expr: >
       vrops_datastore_diskspace_total_usage_gigabytes{type="vVOL"} / vrops_datastore_diskspace_capacity_gigabytes >=  0.9
     for: 20m
@@ -119,7 +119,7 @@ groups:
       description: "vVOL Datastore {{ $labels.datastore }} utilization > 90%. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
       summary: "vVOL Datastore {{ $labels.datastore }} utilization > 90%. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
 
-  - alert: AverageVmfsDataStoreCapacityWarning
+  - alert: AverageVmfsDataStoreCapacity
     expr: >
       avg by (type, vcenter) (vrops_datastore_diskspace_total_usage_gigabytes{type=~"vmfs_p_ssd|vmfs_s_hdd"} / vrops_datastore_diskspace_capacity_gigabytes) > 0.7
     for: 20m
@@ -136,7 +136,7 @@ groups:
       description: "Average utilization for `{{ $labels.type }}` Datastores per vCenter is above 70%. ({{ $labels.vcenter }})"
       summary: "Average utilization for `{{ $labels.type }}` Datastores per vCenter is above 70%. ({{ $labels.vcenter }})"
 
-  - alert: DataStoreCapacityWarning
+  - alert: DataStoreCapacity
     expr: >
       vrops_datastore_diskspace_total_usage_gigabytes{type!~"ephemeral|vVOL|vmfs.+", datastore!~".+swap"} / vrops_datastore_diskspace_capacity_gigabytes >=  0.8
     for: 20m
@@ -153,7 +153,7 @@ groups:
       description: "{{ $labels.type }} datastore {{ $labels.datastore }} utilization > 80%. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
       summary: "{{ $labels.type }} datastore {{ $labels.datastore }} utilization > 80%. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
 
-  - alert: DataStoreCapacityCritical
+  - alert: DataStoreCapacity
     expr: >
       vrops_datastore_diskspace_total_usage_gigabytes{type!~"ephemeral|vVOL|vmfs.+", datastore!~".+swap"} / vrops_datastore_diskspace_capacity_gigabytes >=  0.9
     for: 20m
@@ -257,7 +257,7 @@ groups:
       description: "Datastore `{{ $labels.datastore }}` has hosts that have lost all of the redundant paths to a storage device. ({{ $labels.vcenter }})"
       summary: "Datastore `{{ $labels.datastore }}` has hosts that have lost all of the redundant paths to a storage device. ({{ $labels.vcenter }})"
       
-  - alert: SDRSClusterCapacityWarning
+  - alert: SDRSClusterCapacity
     expr: >
       vrops_storagepod_capacity_available_space /
       vrops_storagepod_capacity_total * 100
@@ -276,7 +276,7 @@ groups:
       description: "DataStore Cluster {{ $labels.storagepod }} utilization > 80%. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
       summary: "DataStore Cluster {{ $labels.storagepod }} utilization > 80%. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
 
-  - alert: SDRSClusterCapacityCritical
+  - alert: SDRSClusterCapacity
     expr: >
       vrops_storagepod_capacity_available_space /
       vrops_storagepod_capacity_total * 100

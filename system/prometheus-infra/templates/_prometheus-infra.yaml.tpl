@@ -119,6 +119,7 @@
       - '{__name__=~"^redfish_.+"}'
       - '{__name__=~"^nsxt_trim_exception"}'
       - '{__name__=~"^filebeat_.+"}'
+      - '{__name__=~"^fluentbit.+"}'
       - '{__name__=~"^logstash_node_.+"}'
       - '{__name__=~"^prom_fluentd_.+"}'
       - '{__name__=~"^metis_.+"}'

@@ -26,7 +26,6 @@ spec:
         checksum/secret: {{ include "keppel/templates/secret.yaml" . | sha256sum }}
         checksum/secret-keys: {{ include "keppel/templates/secret-keys.yaml" . | sha256sum }}
         prometheus.io/scrape: "true"
-        prometheus.io/port: "80"
         prometheus.io/targets: "openstack"
     spec:
       volumes:
@@ -47,6 +46,9 @@ spec:
               name: config
             - mountPath: /etc/keppel-keys
               name: keys
+          ports:
+            - name: metrics
+              containerPort: 80
           livenessProbe:
             httpGet:
               path: /healthcheck

@@ -36,10 +36,6 @@ spec:
       containers:
       - name: harvest
         image: {{ $.Values.global.registry }}/{{ $.Values.harvest.image }}:{{ $.Values.harvest.imageTag }}
-        resources:
-          requests:
-            memory: {{ $.Values.harvest.memory }}
-            cpu: {{ $.Values.harvest.cpu }}
         env:
         - name: NETAPP_USERNAME
           valueFrom:
@@ -57,6 +53,8 @@ spec:
           {{- else }}
           - containerPort: {{ $.Values.ports.graphiteExporterInPort }}
           {{- end }}
+        resources:
+          {{- toYaml $.Values.harvest.resources | nindent 12 }}
         volumeMounts:
           - name: {{ $fullNameWithComponent }}
             mountPath: /opt/netapp-harvest/config/netapp-harvest.conf

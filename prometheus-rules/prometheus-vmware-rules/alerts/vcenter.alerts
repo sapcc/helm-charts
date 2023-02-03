@@ -1,7 +1,7 @@
 groups:
 - name: vcenter.alerts
   rules:
-  - alert: VcsaSslCertificateExpiryWarning
+  - alert: VcsaSslCertificateExpiry
     expr: 15 < round(((avg_over_time(vrops_vcenter_summary_certificate_expiry_date[10m]) / 1000) - time()) / 86400) < 30
     for: 20m
     labels:
@@ -16,7 +16,7 @@ groups:
       description: "SSL Certificate of vCSA {{ $labels.vcenter}} expires in {{ $value }} days. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
       summary: "SSL Certificate of vCSA {{ $labels.vcenter}} expires in {{ $value }} days. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
 
-  - alert: VcsaSslCertificateExpiryCritical
+  - alert: VcsaSslCertificateExpiry
     expr: round(((avg_over_time(vrops_vcenter_summary_certificate_expiry_date[10m]) / 1000) - time()) / 86400) < 16
     for: 20m
     labels:
@@ -31,63 +31,63 @@ groups:
       description: "SSL Certificate of vCSA {{ $labels.vcenter}} expires in {{ $value }} days. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
       summary: "SSL Certificate of vCSA {{ $labels.vcenter}} expires in {{ $value }} days. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
 
-  - alert: VCenterCPUUsageWarning
-    expr: vrops_vcenter_cpu_used_percent > 75
-    for: 30m
-    labels:
-      severity: info
-      tier: vmware
-      service: compute
-      support_group: compute
-      context: "vcenter cpu usage"
-      meta: "CPU usage of vCSA {{ $labels.vcenter}} is above 75%"
-    annotations:
-      description: "CPU usage of vCSA {{ $labels.vcenter}} is above 75%"
-      summary: "CPU usage of vCSA {{ $labels.vcenter}} is above 75%"
+  # - alert: VCenterCPUUsage
+  #   expr: vrops_vcenter_cpu_used_percent > 75
+  #   for: 30m
+  #   labels:
+  #     severity: info
+  #     tier: vmware
+  #     service: compute
+  #     support_group: compute
+  #     context: "vcenter cpu usage"
+  #     meta: "CPU usage of vCSA {{ $labels.vcenter}} is above 75%"
+  #   annotations:
+  #     description: "CPU usage of vCSA {{ $labels.vcenter}} is above 75%"
+  #     summary: "CPU usage of vCSA {{ $labels.vcenter}} is above 75%"
 
-  - alert: VCenterCPUUsageCritical
-    expr: vrops_vcenter_cpu_used_percent > 90
-    for: 30m
-    labels:
-      severity: info
-      tier: vmware
-      service: compute
-      support_group: compute
-      context: "vcenter cpu usage"
-      meta: "CPU usage of vCSA {{ $labels.vcenter}} is above 90%"
-    annotations:
-      description: "CPU usage of vCSA {{ $labels.vcenter}} is above 90%"
-      summary: "CPU usage of vCSA {{ $labels.vcenter}} is above 90%"
+  # - alert: VCenterCPUUsage
+  #   expr: vrops_vcenter_cpu_used_percent > 90
+  #   for: 30m
+  #   labels:
+  #     severity: warning
+  #     tier: vmware
+  #     service: compute
+  #     support_group: compute
+  #     context: "vcenter cpu usage"
+  #     meta: "CPU usage of vCSA {{ $labels.vcenter}} is above 90%"
+  #   annotations:
+  #     description: "CPU usage of vCSA {{ $labels.vcenter}} is above 90%"
+  #     summary: "CPU usage of vCSA {{ $labels.vcenter}} is above 90%"
 
-  - alert: VCenterMemoryUsageWarning
-    expr: vrops_vcenter_memory_used_percent > 75
-    for: 30m
-    labels:
-      severity: info
-      tier: vmware
-      service: compute
-      support_group: compute
-      context: "vcenter memory usage"
-      meta: "Memory usage of vCSA {{ $labels.vcenter}} is above 75%"
-    annotations:
-      description: "Memory usage of vCSA {{ $labels.vcenter}} is above 75%"
-      summary: "Memory usage of vCSA {{ $labels.vcenter}} is above 75%"
+  # - alert: VCenterMemoryUsage
+  #   expr: vrops_vcenter_memory_used_percent > 75
+  #   for: 30m
+  #   labels:
+  #     severity: info
+  #     tier: vmware
+  #     service: compute
+  #     support_group: compute
+  #     context: "vcenter memory usage"
+  #     meta: "Memory usage of vCSA {{ $labels.vcenter}} is above 75%"
+  #   annotations:
+  #     description: "Memory usage of vCSA {{ $labels.vcenter}} is above 75%"
+  #     summary: "Memory usage of vCSA {{ $labels.vcenter}} is above 75%"
 
-  - alert: VCenterMemoryUsageCritical
-    expr: vrops_vcenter_memory_used_percent > 90
-    for: 30m
-    labels:
-      severity: info
-      tier: vmware
-      service: compute
-      support_group: compute
-      context: "vcenter memory usage"
-      meta: "Memory usage of vCSA {{ $labels.vcenter}} is above 90%"
-    annotations:
-      description: "Memory usage of vCSA {{ $labels.vcenter}} is above 90%"
-      summary: "Memory usage of vCSA {{ $labels.vcenter}} is above 90%"
+  # - alert: VCenterMemoryUsage
+  #   expr: vrops_vcenter_memory_used_percent > 90
+  #   for: 30m
+  #   labels:
+  #     severity: warning
+  #     tier: vmware
+  #     service: compute
+  #     support_group: compute
+  #     context: "vcenter memory usage"
+  #     meta: "Memory usage of vCSA {{ $labels.vcenter}} is above 90%"
+  #   annotations:
+  #     description: "Memory usage of vCSA {{ $labels.vcenter}} is above 90%"
+  #     summary: "Memory usage of vCSA {{ $labels.vcenter}} is above 90%"
 
-  - alert: VCenterDiskSpaceUsageCritical
+  - alert: VCenterDiskSpaceUsage
     expr: vrops_vcenter_diskspace_usage_gigabytes / vrops_vcenter_diskspace_total_gigabytes > 0.9
     for: 15m
     labels:

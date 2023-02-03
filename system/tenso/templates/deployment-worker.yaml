@@ -28,7 +28,6 @@ spec:
         checksum/configmap: {{ include "tenso/templates/configmap.yaml" . | sha256sum }}
         checksum/secret: {{ include "tenso/templates/secret.yaml" . | sha256sum }}
         prometheus.io/scrape: "true"
-        prometheus.io/port: "80"
         prometheus.io/targets: {{ .Values.prometheus.targets.openstack }}
     spec:
       volumes:
@@ -44,6 +43,9 @@ spec:
           volumeMounts:
             - mountPath: /etc/tenso
               name: config
+          ports:
+            - name: metrics
+              containerPort: 80
           livenessProbe:
             httpGet:
               path: /healthcheck

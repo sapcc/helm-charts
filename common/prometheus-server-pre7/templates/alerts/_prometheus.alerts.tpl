@@ -282,7 +282,8 @@ groups:
 
   {{- if .Values.alerts.multipleTargetScrapes.enabled }}
   - alert: PrometheusMultipleTargetScrapes
-    expr: sum by (job, ccloud_support_group) (up * on(instance, cluster) group_left() (sum by(instance, cluster) (up{job!~"{{ .Values.alerts.multipleTargetScrapes.exceptions | join "|" }}"}) > 1))
+    # We axclude * pod service discovery job, we have a dedicated alert for that
+    expr: sum by (job, ccloud_support_group) (up * on(instance, cluster) group_left() (sum by(instance, cluster) (up{job!~".*-pod-sd|{{ .Values.alerts.multipleTargetScrapes.exceptions | join "|" }}"}) > 1))
     for: 30m
     labels:
       service: {{ default "metrics" .Values.alerts.service }}

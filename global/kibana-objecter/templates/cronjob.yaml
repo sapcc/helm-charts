@@ -1,0 +1,36 @@
+{{- if .Capabilities.APIVersions.Has "batch/v1/CronJob" }}
+apiVersion: batch/v1
+{{- else }}
+apiVersion: batch/v1beta1
+{{- end }}
+kind: CronJob
+metadata:
+  name: kibana-objecter-cronjob
+spec:
+  schedule: '0 */3 * * *'
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: kibana-objecter-cronjob
+            image: keppel.eu-de-1.cloud.sap/ccloud/kibana-objecter:latest
+            imagePullPolicy: Always
+            env:
+            - name: ENV_KIBANA_API_ENDPOINT
+              value: "{{ .Values.kibanaObjecter.kibana_api_endpoint }}"
+            - name: ENV_GIT_REPO
+              value: "{{ .Values.kibanaObjecter.git_repo_remote }}"
+            - name: ENV_REPO_LOCAL
+              value: "{{ .Values.kibanaObjecter.git_repo_local }}"
+            - name: ENV_KIBANA_API_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: kibana-objecter-secret
+                  key: ENV_KIBANA_API_TOKEN
+            - name: ENV_GIT_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: kibana-objecter-secret
+                  key: ENV_GIT_TOKEN
+          restartPolicy: Never

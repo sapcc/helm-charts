@@ -311,11 +311,19 @@ spec:
           # Supervision deploys several fluent daemonsets in the "logs"
           # namespace (for ELK) or "opensearch-logs" namespace (for
           # OpenSearch).
-          # TODO: remove allowlist for "logs" namespace after having migrated to OpenSearch
           iro.kind == "DaemonSet"
           iro.metadata.namespace in {"logs", "opensearch-logs"}
           iro.metadata.name in {"fluent", "fluent-prometheus", "fluent-systemd"}
           helmReleaseName == iro.metadata.namespace
+        }
+        isFluentPod = true {
+          # In the "main" clusters (baremetal and the original scaleouts), Team
+          # Supervision deploys a fluent-bit daemonset in the "logs" namespace.
+          # This daemonset is intended to replace fluent-systemd.
+          iro.kind == "DaemonSet"
+          iro.metadata.namespace == "logs"
+          iro.metadata.name == "logs-fluent-bit-systemd"
+          helmReleaseName == "logs"
         }
         {{- end }}
         {{- if not (eq .Values.cluster_type "baremetal" "scaleout") }}

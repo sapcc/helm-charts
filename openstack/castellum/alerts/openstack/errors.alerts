@@ -73,9 +73,9 @@ groups:
         summary: Castellum is not scraping any resources
 
     # Resources should be scraped every 30 minutes. We give some extra margin of
-    # 15 minutes for the scrape to take place, and alert after 45 minutes.
+    # 15 minutes for the scrape to take place after it has been scheduled.
     - alert: OpenstackCastellumResourceScrapingDelayed
-      expr: (max by (asset, region) (time() - castellum_resource_min_checked_at)) / 60 >= 45
+      expr: (max by (asset, region) (time() - castellum_resource_min_next_scrape_at)) / 60 >= 15
       for: 3m
       labels:
         context: resource-scraping
@@ -131,11 +131,11 @@ groups:
         summary: Castellum is not scraping any assets
 
     # Assets should be scraped every 5 minutes. We give some extra margin of
-    # 10 minutes for the scrape to take place, and alert after 15 minutes.
+    # 10 minutes for the scrape to take place once it has been scheduled.
     #
     # The first alert must have a higher severity than the second one in order to suppress it.
     - alert: OpenstackCastellumAssetScrapingDelayed
-      expr: (max by (asset, region) (time() - castellum_asset_min_checked_at)) / 60 >= 15
+      expr: (max by (asset, region) (time() - castellum_asset_min_next_scrape_at)) / 60 >= 10
       for: 3m
       labels:
         context: asset-scraping

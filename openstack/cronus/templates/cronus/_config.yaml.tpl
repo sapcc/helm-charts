@@ -157,6 +157,9 @@ cronus:
 {{- if $v.host }}
       host: {{$v.host }}
 {{- end }}
+{{- if $v.certPath }}
+      certPath: {{$v.certPath }}
+{{- end }}
 {{- if $v.hosts }}
       hosts:
 {{- range $k, $v := $v.hosts }}

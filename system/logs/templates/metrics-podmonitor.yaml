@@ -20,10 +20,14 @@ spec:
   podMetricsEndpoints:
     - interval: 120s
       scrapeTimeout: 50s
-      path: /api/v1/metrics/prometheus
+      path: /metrics
       scheme: http
-      port: http
+      port: prometheus
       relabelings:
         - targetLabel: job
           replacement: logs-fluent-bit-systemd-exporter
+      metricRelabelings:
+        - action: drop
+          regex: '(fluentbit_.+);(fluentbit_metrics.+|prometheus_exporter.+)'
+          sourceLabels: [__name__, name]
 {{- end }}

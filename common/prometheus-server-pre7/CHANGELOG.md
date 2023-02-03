@@ -1,4 +1,8 @@
-## 6.4.16
+## 6.4.17 - 6.4.19
+
+ * Revised Prometheus and Thanos alerts; added PodMonitor for Thanos sidecar. 
+
+## 6.4.16 
 
  * Fix Prometheus alertmanager alerts
 

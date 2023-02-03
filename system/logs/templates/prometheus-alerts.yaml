@@ -1,0 +1,17 @@
+{{- if index .Values "fluent-bit" "alerts" "enabled" }}
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+
+metadata:
+  name: logs-fluent-bit-systemd-alerts
+  labels:
+    app: fluent-prometheus
+    tier: infra
+    type: alerting-rules
+    prometheus: {{ index .Values "fluent-bit" "alerts" "prometheus" }}
+
+spec:
+{{ include (print .Template.BasePath "/alerts/_fluent-bit-systemd-alerts.tpl") . | indent 2 }}
+{{- end }}
+
