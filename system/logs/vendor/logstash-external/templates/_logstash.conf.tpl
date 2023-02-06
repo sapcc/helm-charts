@@ -111,8 +111,6 @@ output {
     opensearch {
       id => "opensearch-syslog"
       index => "syslog-%{+YYYY.MM.dd}"
-      template => "/logstash-etc/syslog.json"
-      template_name => "syslog"
       hosts => ["https://{{.Values.opensearch.http.endpoint}}.{{.Values.global.region}}.{{.Values.global.tld}}:{{.Values.opensearch.http_port}}"]
       auth_type => {
         type => 'basic'
@@ -140,8 +138,6 @@ output {
     opensearch {
       id => "opensearch-critical-alerts"
       index => "alerts-critical-%{+YYYY}"
-      template => "/logstash-etc/alerts.json"
-      template_name => "alerts"
       hosts => ["https://{{.Values.opensearch.http.endpoint}}.{{.Values.global.region}}.{{.Values.global.tld}}:{{.Values.opensearch.http_port}}"]
       auth_type => {
         type => 'basic'
@@ -169,8 +165,6 @@ output {
     opensearch {
       id => "opensearch-warnings"
       index => "alerts-warnings-%{+YYYY}"
-      template => "/logstash-etc/alerts.json"
-      template_name => "alerts"
       hosts => ["https://{{.Values.opensearch.http.endpoint}}.{{.Values.global.region}}.{{.Values.global.tld}}:{{.Values.opensearch.http_port}}"]
       auth_type => {
         type => 'basic'
@@ -198,8 +192,6 @@ output {
     opensearch {
       id => "opensearch-alerts"
       index => "alerts-other--%{+YYYY}"
-      template => "/logstash-etc/alerts.json"
-      template_name => "alerts"
       hosts => ["https://{{.Values.opensearch.http.endpoint}}.{{.Values.global.region}}.{{.Values.global.tld}}:{{.Values.opensearch.http_port}}"]
       auth_type => {
         type => 'basic'
@@ -227,8 +219,6 @@ output {
     opensearch {
       id => "opensearch-deployments"
       index => "deployments-%{+YYYY}"
-      template => "/logstash-etc/deployments.json"
-      template_name => "deployments"
       hosts => ["https://{{.Values.opensearch.http.endpoint}}.{{.Values.global.region}}.{{.Values.global.tld}}:{{.Values.opensearch.http_port}}"]
       auth_type => {
         type => 'basic'
@@ -256,8 +246,6 @@ output {
     opensearch {
       id => "opensearch-netflow"
       index => "netflow-%{+YYYY.MM.dd}"
-      template => "/logstash-etc/netflow.json"
-      template_name => "netflow"
       hosts => ["https://{{.Values.opensearch.http.endpoint}}.{{.Values.global.region}}.{{.Values.global.tld}}:{{.Values.opensearch.http_port}}"]
       auth_type => {
         type => 'basic'
