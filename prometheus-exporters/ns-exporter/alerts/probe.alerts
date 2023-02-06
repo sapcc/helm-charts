@@ -45,3 +45,16 @@ Please run ```hammer -r {{ $externalLabels.region }} net check {{ $labels.networ
     annotations:
       description: 'The metrics from the namespace prober are missing. This suggests there is a problem with the exporter deployment. Check the ns-exporter namespace for running pods.'
       summary: Metrics for namespace prober are missing
+  - alert: NetworkNamespaceProbeHighErrorRate
+    expr: (sum by (host) (rate(ns_exporter_probe_failure_total[5m])))/(sum by (host) (rate(ns_exporter_probe_failure_total[5m])) + sum by (host) (rate(ns_exporter_probe_success_total[5m]))) > 0.15
+    for: 10m
+    labels:
+      context: availability
+      service: dns
+      severity: warning
+      support_group: network-api
+      tier: os
+      meta: 'High error rate for network namespace probes'
+    annotations:
+      description: 'The namespace-exporter is experiencing an unusual high error rate for host `{{ $labels.host }}`. There is a high chance that dns resolution is impacted in the region.'
+      summary: ns-exporter high error rate
