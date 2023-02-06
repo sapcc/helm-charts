@@ -1,3 +1,7 @@
+## 6.4.20
+
+ * Option to set support_group for alerts
+
 ## 6.4.17 - 6.4.19
 
  * Revised Prometheus and Thanos alerts; added PodMonitor for Thanos sidecar. 

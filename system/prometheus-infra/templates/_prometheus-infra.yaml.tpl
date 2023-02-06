@@ -127,6 +127,9 @@
       - '{__name__=~"netapp_aggregate_.+"}'
       - '{__name__=~"netapp_volume_.+"}'
       - '{__name__=~"netapp_filer_.+"}'
+      - '{__name__=~"netapp_aggr_.+"}'
+      - '{__name__=~"netapp_node_.+"}'
+      - '{__name__=~"netapp_lun_.+"}'
       - '{__name__=~"^neutron_router:.+"}'
 
   relabel_configs:

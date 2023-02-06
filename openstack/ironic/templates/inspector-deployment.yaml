@@ -28,12 +28,13 @@ spec:
       annotations:
         configmap-etc-hash: {{ include (print $.Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
         configmap-inspector-etc-hash: {{ include (print $.Template.BasePath "/inspector-etc-configmap.yaml") . | sha256sum }}
-        {{- if .Values.inspector.rpc_statsd_enabled }}
+        {{- if or .Values.inspector.rpc_statsd_enabled .Values.proxysql.mode }}
         prometheus.io/scrape: "true"
         prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
         {{- end }}
     spec:
 {{ tuple . "ironic" "inspector" | include "kubernetes_pod_anti_affinity" | indent 6 }}
+      {{- include "utils.proxysql.pod_settings" . | indent 6 }}
       containers:
       - name: ironic-inspector
         {{- if .Values.oslo_metrics.enabled }}
@@ -99,6 +100,8 @@ spec:
           name: ironic-etc
           subPath: ironic-inspector.filters
           readOnly: true
+        {{- include "utils.proxysql.volume_mount" . | indent 8 }}
+      {{- tuple . .Values.api.api_workers | include "utils.proxysql.container" | indent 6 }}
       {{- if and .Values.global.ironic_tftp_ip .Values.inspector.dhcp.range .Values.inspector.dhcp.options.router }}
       - name: dhcp
         image: {{ .Values.global.registry }}/ubuntu-source-staticdhcpd:{{.Values.imageVersionStaticdhcpd | default .Values.imageVersion | required "Please set ironic.imageVersion or similar"}}
@@ -163,3 +166,4 @@ spec:
           name: ironic-inspector-dhcp
           defaultMode: 0444
       {{- end }}
+      {{- include "utils.proxysql.volumes" . | indent 6 }}

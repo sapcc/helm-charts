@@ -67,10 +67,18 @@ spec:
                 name: {{ .Chart.Name }}-secret
                 key: link-trigger-url
                 optional: false 
+          - name: TEAM_NAME
+            value: {{.Values.env.TEAM_NAME }}
           volumeMounts:
           - name: {{ .Chart.Name }}-secret-apps-dev-json-volume
-            mountPath: "/slack-alert-reactions/.slack"
-            readOnly: true      
+            mountPath: "/secrets"
+          lifecycle:
+            postStart:
+              exec:
+                command:
+                  - /bin/sh
+                  - -c
+                  - cp /secrets/apps.dev.json /slack-alert-reactions/.slack
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
         - name: {{ .Chart.Name }}-sidecar

@@ -39,11 +39,12 @@ spec:
         configmap-etc-conductor-hash: {{ tuple . $conductor | include "ironic_conductor_configmap" | sha256sum }}{{- if $conductor.jinja2 }}{{`
         configmap-etc-jinja2-hash: {{ block | safe | sha256sum }}
 `}}{{- end }}
-        {{- if $conductor.default.statsd_enabled }}
+        {{- if or $conductor.default.statsd_enabled .Values.proxysql.mode }}
         prometheus.io/scrape: "true"
         prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
         {{- end }}
     spec:
+      {{- include "utils.proxysql.pod_settings" . | indent 6 }}
       containers:
       - name: ironic-conductor
         image: {{ .Values.global.registry }}/loci-ironic:{{ .Values.imageVersion }}
@@ -148,6 +149,8 @@ spec:
         - mountPath: /development
           name: development
         {{- end }}
+        {{- include "utils.proxysql.volume_mount" . | indent 8 }}
+      {{- include "utils.proxysql.container" . | indent 6 }}
       - name: console
         image: {{.Values.imageVersionNginx | default "nginx:stable-alpine"}}
         imagePullPolicy: IfNotPresent
@@ -219,5 +222,6 @@ spec:
         persistentVolumeClaim:
           claimName: development-pvclaim
       {{- end }}
+      {{- include "utils.proxysql.volumes" . | indent 6 }}
     {{- end }}
 {{- end }}
