@@ -89,19 +89,22 @@ nginx:
 postgresql:
   image: '@/cc/secrets'
   imageTag: '9.4'
-  metrics:
-    enabled: false
   postgresDatabase: grafana
   postgresUser: postgres
   postgresPassword: '@/cc/secrets'
   persistence:
     enabled: false
     existingClaim: storage-grafana-postgres-0
-  backup:
-    enabled: true
-    metrics: true
-    os_password: '@/cc/secrets'
   nameOverride: pgsql
+  alerts:
+    support_group: observability
+  backup:
+    enabled: false # uses new pgbackup chart instead
+
+pgbackup:
+  enabled: false # can be enabled in values.yaml
+  database:
+    name: grafana
   alerts:
     support_group: observability
 
