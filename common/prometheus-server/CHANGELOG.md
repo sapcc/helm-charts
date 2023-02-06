@@ -1,4 +1,4 @@
-## 7.1.26
+## 7.1.26 - 7.1.27
 
  * Order of coalescence reverted (prometheus.name source defaults to `.Values.name`)
 
