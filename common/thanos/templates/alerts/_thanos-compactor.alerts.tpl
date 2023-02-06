@@ -46,7 +46,7 @@ groups:
         service: {{ default "metrics" $root.Values.alerts.service }}
         support_group: {{ default "observability" $root.Values.alerts.support_group }}
         severity: info
-        playbook: 'docs/support/playbook/prometheus/thanos_compaction.html'
+        playbook: 'docs/support/playbook/prometheus/thanos_compaction'
         meta: Thanos Compact `{{`{{ $labels.thanos }}`}}` is failing to execute compactions.
       annotations:
         description: |
@@ -68,7 +68,7 @@ groups:
         service: {{ default "metrics" $root.Values.alerts.service }}
         support_group: {{ default "observability" $root.Values.alerts.support_group }}
         severity: info
-        playbook: 'docs/support/playbook/prometheus/thanos_compaction.html'
+        playbook: 'docs/support/playbook/prometheus/thanos_compaction'
         meta: Thanos Compact `{{`{{ $labels.thanos }}`}}` bucket is having a high number of operation failures.
       annotations:
         description: |
@@ -84,7 +84,7 @@ groups:
         service: {{ default "metrics" $root.Values.alerts.service }}
         support_group: {{ default "observability" $root.Values.alerts.support_group }}
         severity: info
-        playbook: 'docs/support/playbook/prometheus/thanos_compaction.html'
+        playbook: 'docs/support/playbook/prometheus/thanos_compaction'
         meta: Thanos Compact `{{`{{ $labels.thanos }}`}}` has not uploaded anything for last 24 hours.
       annotations:
         description: |
@@ -101,7 +101,7 @@ groups:
         service: {{ default "metrics" $root.Values.alerts.service }}
         support_group: {{ default "observability" $root.Values.alerts.support_group }}
         severity: warning
-        playbook: docs/support/playbook/prometheus/thanos_compaction.html
+        playbook: docs/support/playbook/prometheus/thanos_compaction
         meta: Thanos Compact `{{`{{ $labels.thanos }}`}}` has disappeared.
       annotations:
         description: |

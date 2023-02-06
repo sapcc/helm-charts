@@ -29,7 +29,7 @@ groups:
       service: {{ default "metrics" $root.Values.alerts.service }}
       support_group: {{ default "observability" $root.Values.alerts.support_group }}
       severity: critical
-      playbook: docs/support/playbook/prometheus/failed_config_reload.html
+      playbook: docs/support/playbook/prometheus/failed_config_reload
       meta: Prometheus `{{`{{ $labels.prometheus }}`}}` failed to load it`s configuration.
     annotations:
       description: |
@@ -46,7 +46,7 @@ groups:
       service: {{ default "metrics" $root.Values.alerts.service }}
       support_group: {{ default "observability" $root.Values.alerts.support_group }}
       severity: warning
-      playbook: docs/support/playbook/prometheus/rule_evaluation.html
+      playbook: docs/support/playbook/prometheus/rule_evaluation
       meta: Prometheus `{{`{{ $labels.prometheus }}`}}` has failed to evaluate rules since at least 15m.
     annotations:
       description: |
@@ -64,7 +64,7 @@ groups:
       service: {{ default "metrics" $root.Values.alerts.service }}
       support_group: {{ default "observability" $root.Values.alerts.support_group }}
       severity: warning
-      playbook: docs/support/playbook/prometheus/rule_evaluation.html
+      playbook: docs/support/playbook/prometheus/rule_evaluation
       meta: Prometheus `{{`{{ $labels.prometheus }}`}}` is missing rule evaluations due to slow rule group evaluation.
     annotations:
       description: |
@@ -81,7 +81,7 @@ groups:
       service: {{ default "metrics" $root.Values.alerts.service }}
       support_group: {{ default "observability" $root.Values.alerts.support_group }}
       severity: warning
-      playbook: docs/support/playbook/prometheus/rule_evaluation.html
+      playbook: docs/support/playbook/prometheus/rule_evaluation
       meta: Prometheus `{{`{{ $labels.prometheus }}`}}` has dropped targets because some scrape configs have exceeded the targets limit.
     annotations:
       description: |
@@ -98,7 +98,7 @@ groups:
       service: {{ default "metrics" $root.Values.alerts.service }}
       support_group: {{ default "observability" $root.Values.alerts.support_group }}
       severity: warning
-      playbook: docs/support/playbook/prometheus/rule_evaluation.html
+      playbook: docs/support/playbook/prometheus/rule_evaluation
       meta: Prometheus `{{`{{ $labels.prometheus }}`}}` has dropped targets because some scrape configs have exceeded the labels limit.
     annotations:
       description: |
@@ -115,7 +115,7 @@ groups:
       service: {{ default "metrics" $root.Values.alerts.service }}
       support_group: {{ default "observability" $root.Values.alerts.support_group }}
       severity: warning
-      playbook: docs/support/playbook/prometheus/rule_evaluation.html
+      playbook: docs/support/playbook/prometheus/rule_evaluation
       meta: Prometheus `{{`{{ $labels.prometheus }}`}}` has dropped some targets that exceeded body size limit.
     annotations:
       description: |
@@ -132,7 +132,7 @@ groups:
       service: {{ default "metrics" $root.Values.alerts.service }}
       support_group: {{ default "observability" $root.Values.alerts.support_group }}
       severity: warning
-      playbook: docs/support/playbook/prometheus/rule_evaluation.html
+      playbook: docs/support/playbook/prometheus/rule_evaluation
       meta: Prometheus `{{`{{ $labels.prometheus }}`}}` has failed scrapes that have exceeded the configured sample limit.
     annotations:
       description: |
@@ -148,7 +148,7 @@ groups:
       service: {{ default "metrics" $root.Values.alerts.service }}
       support_group: {{ default "observability" $root.Values.alerts.support_group }}
       severity: info
-      playbook: docs/support/playbook/prometheus/wal.html
+      playbook: docs/support/playbook/prometheus/wal
       meta: Prometheus `{{`{{ $labels.prometheus }}`}}` has WAL corruptions.
     annotations:
       description: |
@@ -163,7 +163,7 @@ groups:
       service: {{ default "metrics" $root.Values.alerts.service }}
       support_group: {{ default "observability" $root.Values.alerts.support_group }}
       severity: info
-      playbook: docs/support/playbook/prometheus/failed_tsdb_reload.html
+      playbook: docs/support/playbook/prometheus/failed_tsdb_reload
       meta: Prometheus `{{`{{ $labels.prometheus }}`}}` failed to reload TSDB.
     annotations:
       description: |
@@ -179,7 +179,7 @@ groups:
       service: {{ default "metrics" $root.Values.alerts.service }}
       support_group: {{ default "observability" $root.Values.alerts.support_group }}
       severity: info
-      playbook: docs/support/playbook/prometheus/failed_tsdb_reload.html
+      playbook: docs/support/playbook/prometheus/failed_tsdb_reload
       meta: Prometheus `{{`{{ $labels.prometheus }}`}}` has issues compacting blocks.
     annotations:
       description: |
@@ -203,7 +203,7 @@ groups:
       service: {{ default "metrics" $root.Values.alerts.service }}
       support_group: {{ default "observability" $root.Values.alerts.support_group }}
       severity: info
-      playbook: docs/support/playbook/prometheus/failed_scrapes.html
+      playbook: docs/support/playbook/prometheus/failed_scrapes
       meta: Prometheus `{{`{{ $labels.prometheus }}`}}` not ingesting samples.
     annotations:
       description: |
@@ -220,7 +220,7 @@ groups:
       service: {{ default "metrics" $root.Values.alerts.service }}
       support_group: {{ default "observability" $root.Values.alerts.support_group }}
       severity: info
-      playbook: docs/support/playbook/prometheus/failed_scrapes.html
+      playbook: docs/support/playbook/prometheus/failed_scrapes
       meta: Prometheus `{{`{{ $labels.prometheus }}`}}` is dropping samples with duplicate timestamps.
     annotations:
       description: |
@@ -236,7 +236,7 @@ groups:
       service: {{ default "metrics" $root.Values.alerts.service }}
       support_group: {{ default "observability" $root.Values.alerts.support_group }}
       severity: info
-      playbook: docs/support/playbook/prometheus/failed_scrapes.html
+      playbook: docs/support/playbook/prometheus/failed_scrapes
       meta: Prometheus `{{`{{ $labels.prometheus }}`}}` drops samples with out-of-order timestamps.
     annotations:
       description: |
@@ -253,7 +253,7 @@ groups:
       service: {{ default "metrics" $root.Values.alerts.service }}
       support_group: {{ default "observability" $root.Values.alerts.support_group }}
       severity: critical
-      playbook: docs/support/playbook/prometheus/failed_scrapes.html
+      playbook: docs/support/playbook/prometheus/failed_scrapes
       meta: Prometheus `{{`{{ $labels.prometheus }}`}}` has failed to sync targets.
     annotations:
       description: |
@@ -273,7 +273,7 @@ groups:
       service: {{ default "metrics" $root.Values.alerts.service }}
       support_group: {{ default "observability" $root.Values.alerts.support_group }}
       severity: critical
-      playbook: docs/support/playbook/prometheus/failed_scrapes.html
+      playbook: docs/support/playbook/prometheus/failed_scrapes
       meta: Prometheus `{{`{{ $labels.prometheus }}`}}` is reaching its maximum capacity serving concurrent requests.
     annotations:
       description: |
@@ -291,7 +291,7 @@ groups:
       service: {{ default "metrics" $root.Values.alerts.service }}
       support_group: {{ include "alertSupportGroupOrDefault" "observability" }}
       severity: warning
-      playbook: docs/support/playbook/kubernetes/target_scraped_multiple_times.html
+      playbook: docs/support/playbook/kubernetes/target_scraped_multiple_times
       meta: Prometheus is scraping targets of job `{{`{{ $labels.job }}`}}` more than once.
     annotations:
       description: |
@@ -310,7 +310,7 @@ groups:
       service: {{ include "alertServiceLabelOrDefault" "metrics" }}
       support_group: {{ include "alertSupportGroupOrDefault" "observability" }}
       severity: warning
-      playbook: docs/support/playbook/kubernetes/target_scraped_multiple_times.html
+      playbook: docs/support/playbook/kubernetes/target_scraped_multiple_times
       meta: Prometheus is scraping `{{`{{ $labels.pod }}`}}` pods more than once.
     annotations:
       description: Prometheus is scraping `{{`{{ $labels.pod }}`}}` pods in namespace `{{`{{ $labels.namespace }}`}}` multiple times. This is likely caused due to incorrectly placed scrape annotations. <https://{{ include "prometheus.externalURL" . }}/graph?g0.expr={{ urlquery `up * on(instance) group_left() (sum by(instance) (up{kubernetes_pod_name=~"PLACEHOLDER.*"}) > 1)` | replace "PLACEHOLDER" "{{ $labels.pod }}"}}|Affected targets>
