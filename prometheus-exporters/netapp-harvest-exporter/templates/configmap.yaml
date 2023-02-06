@@ -1,0 +1,96 @@
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: {{ include "netapp-harvest.fullname" . }}
+  labels:
+    {{- include "netapp-harvest.labels" . | nindent 4 }}
+data:
+  start-poller.sh: |
+    #!/bin/bash
+    arg1=$1
+    promPort=$2
+    ordinalIndex=${HOSTNAME##*-}
+    pollerNr=${arg1%/*}
+    pollerCount=${arg1#*/}
+
+    filers=$(grep 'stnpca.*:' /etc/harvest/harvest.yaml | cut -d: -f1)
+    [ -z "$filers" ] && exit 1
+
+    m=$(( ordinalIndex * pollerCount + pollerNr + 1 ))
+    filer=$(echo $filers | cut -d " " -f $m)
+    if [ -z "$filer" ]; then
+      echo "no filer to poll"
+      sleep infinity
+    fi
+
+    # ================
+    # start poller
+    # ================
+    echo "start harvest poller $filer on port $promPort"
+    exec bin/poller --config /etc/harvest/harvest.yaml --poller $filer --promPort $promPort --loglevel {{ .Values.harvest.loglevel }}
+  harvest.yaml.tpl: |
+    Defaults:
+      auth_style: basic_auth
+      username: {{ .Values.netapp.username }}
+      password: {{ .Values.netapp.password }}
+      use_insecure_tls: true
+      exporters:
+        - prom
+    Exporters:
+      prom:
+        exporter: Prometheus
+        port_range: 13000-13100
+        global_prefix: netapp_
+    Pollers:{{`
+      {{- range $index, $filer := . }}
+      {{ $filer.Name }}:
+        addr: {{ $filer.Host }}
+        datacenter: {{ $filer.AvailabilityZone }}
+        collectors:
+          - Zapi:
+            - limited.yaml
+          - ZapiPerf:
+            - limited.yaml
+      {{- end }}`}}
+  zapi.limited.yaml: |
+    collector: Zapi
+    schedule:
+      - data: 180s
+    objects:
+      Aggregate:            aggr.yaml
+      AggregateEfficiency:  aggr_efficiency.yaml
+      Lun:                  lun.yaml
+      SnapMirror:           snapmirror.yaml
+      SnapshotPolicy:       snapshotPolicy.yaml
+      Status:               status.yaml
+      SVM:                  svm.yaml
+      Volume:               volume.yaml
+  zapiperf.limited.yaml: |
+    collector: ZapiPerf
+    schedule:
+      - counter: 1200s
+      - instance: 600s
+      - data: 180s
+    objects:
+      SystemNode: system_node.yaml
+  rest.limited.yaml: |
+    collector: Rest
+    schedule:
+      - data: 180s
+    objects:
+      Aggregate:            aggr.yaml
+      AggregateEfficiency:  aggr_efficiency.yaml
+      Lun:                  lun.yaml
+      SnapMirror:           snapmirror.yaml
+      SnapshotPolicy:       snapshotPolicy.yaml
+      Status:               status.yaml
+      SVM:                  svm.yaml
+      Volume:               volume.yaml
+  restperf.limited.yaml: |
+    collector: RestPerf
+    schedule:
+      - counter: 1200s
+      - instance: 600s
+      - data: 180s
+    objects:
+      SystemNode: system_node.yaml

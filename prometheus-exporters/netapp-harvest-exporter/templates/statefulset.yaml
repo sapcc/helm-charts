@@ -1,0 +1,94 @@
+{{- range $app, $appValues := .Values.apps }}
+{{- $ := set $ "appValues" (set $appValues "name" $app) }}
+{{- with $ }}
+{{- if gt (.appValues.replicaCount | int) 0 }}
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "netapp-harvest.fullname" . }}-{{ .appValues.name }}
+  labels:
+    test0: {{ .appValues.pollerCount | quote }}
+    test1: {{ .appValues.name }}
+    {{- include "netapp-harvest.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .appValues.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "netapp-harvest.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      annotations:
+        configmap-hash: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        {{- with .Values.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      labels:
+        {{- include "netapp-harvest.selectorLabels" . | nindent 8 }}
+    spec:
+      containers:
+        {{- range $i, $e := until (.appValues.pollerCount | default 1 | int) }}
+        {{- with $ }}
+        - name: harvest-poller-{{ $i }}
+          image: "{{ .Values.global.dockerHubMirror }}/{{ .Values.harvest.image.repository }}:{{ .Values.harvest.image.tag }}"
+          imagePullPolicy: {{ .Values.harvest.image.pullPolicy | default "IfNotPresent" }}
+          command: ["sh"]
+          args:
+            - start-poller.sh
+            - {{ $i }}/{{ .appValues.pollerCount }}
+            - {{ add 13000 $i | quote }}
+          ports:
+            - name: metrics-{{ $i }}
+              containerPort: {{ add 13000 $i }}
+          resources:
+            {{- toYaml .Values.harvest.resources | nindent 12 }}
+          volumeMounts:
+            - name: shared
+              mountPath: /etc/harvest
+            - name: harvest-config
+              subPath: start-poller.sh
+              mountPath: /opt/harvest/start-poller.sh
+            - name: harvest-config
+              subPath: zapi.limited.yaml
+              mountPath: /opt/harvest/conf/zapi/limited.yaml
+            - name: harvest-config
+              subPath: zapiperf.limited.yaml
+              mountPath: /opt/harvest/conf/zapiperf/limited.yaml
+            - name: harvest-config
+              subPath: rest.limited.yaml
+              mountPath: /opt/harvest/conf/rest/limited.yaml
+            - name: harvest-config
+              subPath: restperf.limited.yaml
+              mountPath: /opt/harvest/conf/restperf/limited.yaml
+        {{- end }}
+        {{- end }}
+        - name: netappsd
+          image: {{ .Values.global.registry }}/{{ .Values.netappsd.image.repository }}:{{ .Values.netappsd.image.tag }}
+          imagePullPolicy: {{ .Values.netappsd.image.pullPolicy | default "IfNotPresent" }}
+          args:
+            - -config-dir
+            - /etc/harvest
+            - -netbox-host
+            - {{ .Values.global.netbox_host }}
+            - -region
+            - {{ .Values.global.region }}
+            - -query
+            - {{ .appValues.queryStr }}
+          resources:
+            {{- toYaml .Values.netappsd.resources | nindent 12 }}
+          volumeMounts:
+            - name: harvest-config
+              subPath: harvest.yaml.tpl
+              mountPath: /etc/harvest/harvest.yaml.tpl
+            - name: shared
+              mountPath: /etc/harvest
+      volumes:
+        - name: shared
+          emptyDir: {}
+        - name: harvest-config
+          configMap:
+            name: {{ include "netapp-harvest.fullname" . }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- $ := unset $ "appValues" }}
