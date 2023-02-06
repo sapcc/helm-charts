@@ -12,6 +12,13 @@
 vrops-exporter-{{ $vropshostname._0 | trimPrefix "vrops-" }}
 {{- end -}}
 
+{{- define "vropsInventory.fullName" -}}
+{{- $name := index . 0 -}}
+{{- $root := index . 1 -}}
+{{- $vropshostname := split "." $name -}}
+vrops-inventory-{{ $vropshostname._0 | trimPrefix "vrops-" }}
+{{- end -}}
+
 {{- define "vropsInventoryExporter.fullName" -}}
 {{- $name := index . 0 -}}
 {{- $root := index . 1 -}}

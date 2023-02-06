@@ -1,5 +1,4 @@
 {{- $root := . }}
-{{- if .Values.vrops.enabled }}
 {{- range $target := .Values.global.targets }}
 {{- range $exporter_type := $.Values.vrops.exporter_types }}
 {{- if $exporter_type.enabled }}
@@ -66,7 +65,7 @@ spec:
            - name: DEBUG
              value: {{ $.Values.vrops.debug | quote }}
            - name: INVENTORY
-             value: vrops-inventory
+             value: {{ include "vropsInventory.fullName" (list $target $root) }}
            resources:
              limits:
                memory: {{ required "$exporter_type.resources.limits.memory missing" $exporter_type.resources.limits.memory }}
@@ -118,5 +117,4 @@ spec:
       metricRelabelings:
         - action: labeldrop
           regex: "pod|container|instance|endpoint|namespace|service"
-{{- end }}
 {{- end }}

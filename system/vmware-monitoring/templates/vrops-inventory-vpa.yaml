@@ -1,10 +1,13 @@
+{{- $root := . }}
+{{- range $target := .Values.global.targets }}
+---
 apiVersion: autoscaling.k8s.io/v1
 kind: VerticalPodAutoscaler
 metadata:
   labels:
     app.kubernetes.io/managed-by: Helm
     ccloud/support-group: observability
-  name: vrops-inventory
+  name: {{ include "vropsInventory.fullName" (list $target $root) }}
   namespace: vmware-monitoring
 spec:
   resourcePolicy:
@@ -17,9 +20,9 @@ spec:
   targetRef:
     apiVersion: v1
     kind: Deployment
-    name: vrops-inventory
+    name: {{ include "vropsInventory.fullName" (list $target $root) }}
   updatePolicy:
-    updateMode: "Auto"
+    updateMode: "Off"
   resourcePolicy:
     containerPolicies:
       - containerName: '*'
@@ -27,3 +30,4 @@ spec:
         controlledResources:
           - cpu
           - memory
+{{- end }}
