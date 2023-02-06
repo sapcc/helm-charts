@@ -6,3 +6,6 @@ SNMP_ERROR [a-zA-Z0-9 ]+
 METHOD (GET|POST|PUT)
 LOWER [a-z0-9 ]*
 IMAGE_METHOD \/v2\/images
+URIPATH (?:/[A-Za-z0-9$.+!*'(){},~:;=@#%&_\-]*)+
+URIQUERY [A-Za-z0-9$.+!*'|(){},~@#%&/=:;_?\-\[\]<>]*
+URIP (?:/[a-z.0-9]+/[a-z-]+)

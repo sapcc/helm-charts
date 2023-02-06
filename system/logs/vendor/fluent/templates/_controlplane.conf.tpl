@@ -13,7 +13,7 @@
   </parse>
 </filter>
 
-<filter kubernetes.var.log.containers.cinder**  kubernetes.var.log.containers.nova** kubernetes.var.log.containers.designate** kubernetes.var.log.containers.neutron-server** kubernetes.var.log.containers.neutron** kubernetes.var.log.containers.barbican**>
+<filter kubernetes.var.log.containers.cinder**  kubernetes.var.log.containers.nova** kubernetes.var.log.containers.designate** kubernetes.var.log.containers.barbican**>
   @type parser
   key_name log
   reserve_data true
@@ -43,6 +43,17 @@
     <grok>
       pattern Failed to bind port %{UUID:neutronPort:string} on host %{NOTSPACE:neutronHost:string} for vnic_type %{WORD:neutronVnicType:string} using segments
     </grok>
+  </parse>
+</filter>
+
+<filter kubernetes.var.log.containers.neutron-server**>
+  @type parser
+  key_name log
+  reserve_data true
+  <parse>
+    @type grok
+    grok_pattern (%{TIMESTAMP_ISO8601:logtime}|)( )?%{TIMESTAMP_ISO8601:timestamp}.%{NOTSPACE}? %{NUMBER:pid} %{WORD:loglevel} %{NOTSPACE:logger} (\[)?(req-)%{NOTSPACE:requestid} ?(greq-%{UUID:global_requestid})? ?%{NOTSPACE:userid} ?%{NOTSPACE:projectid} ?%{NOTSPACE:domainid} ?%{NOTSPACE:user_domainid} ?%{NOTSPACE:project_domainid}] %{IPV4:client_ip} "%{URIQUERY:uri_method} %{URIP:uri_path}
+    custom_pattern_path /fluentd/etc/pattern
   </parse>
 </filter>
 

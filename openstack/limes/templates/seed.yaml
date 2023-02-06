@@ -9,13 +9,6 @@ metadata:
 spec:
   requires:
   - {{ default .Release.Namespace .Values.global.keystoneNamespace }}/keystone-seed
-  - monsoon3/neutron-seed
-#  - openstack/nova-seed  # uncomment once nova brings its own seed
-#  - openstack/cinder-seed  # uncomment once cinder brings its own seed
-  - monsoon3/manila-seed
-  - monsoon3/barbican-seed
-  - monsoon3/designate-seed
-  - swift/swift-seed
   - monsoon3/domain-bs-seed
   - monsoon3/domain-cis-seed
   - monsoon3/domain-cp-seed
@@ -32,12 +25,23 @@ spec:
   - monsoon3/domain-wbs-seed
 
   roles:
+    # our own roles
     - name: cloud_resource_admin
     - name: cloud_resource_viewer
     - name: cloud_dns_resource_admin
     - name: resource_admin
     - name: resource_viewer
     - name: resource_service
+    # roles defined by other services (instead of adding complicated seed
+    # dependencies between services, we just redefine these roles here)
+    - name: cloud_compute_admin
+    - name: cloud_dns_admin
+    - name: cloud_image_admin
+    - name: cloud_keymanager_admin
+    - name: cloud_network_admin
+    - name: cloud_objectstore_admin
+    - name: cloud_sharedfilesystem_admin
+    - name: cloud_volume_admin
 
   services:
     - name:        limes
@@ -103,7 +107,7 @@ spec:
           - user: limes@Default
             role: cloud_dns_admin
           - user: limes@Default
-            role:  cloud_objectstore_admin
+            role: cloud_objectstore_admin
           # permission to inspect metadata for private images (to determine OS type)
           - user: limes@Default
             role: cloud_image_admin

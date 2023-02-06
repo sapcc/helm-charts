@@ -7,6 +7,7 @@
 {{- end -}}
 
 {{- define "limes_common_envvars" }}
+{{- if $.Values.limes.has_audit_trail }}
 - name: LIMES_AUDIT_ENABLE
   value: "true"
 - name: LIMES_AUDIT_QUEUE_NAME
@@ -20,6 +21,7 @@
       key: rabbitmq_password
 - name: LIMES_AUDIT_RABBITMQ_USERNAME
   value: "rabbitmq"
+{{- end }}
 - name: LIMES_AUTHORITATIVE
   value: "true"
 - name: LIMES_CONSTRAINTS_PATH
