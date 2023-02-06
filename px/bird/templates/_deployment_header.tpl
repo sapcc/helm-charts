@@ -45,11 +45,9 @@ spec:
         pxservice: '{{ $service_number }}'
         pxdomain: '{{ $domain_number }}'
         pxinstance: '{{ $instance_number }}'
+        app.kubernetes.io/name: px
       annotations:
         k8s.v1.cni.cncf.io/networks: '[{ "name": "{{ $deployment_name }}", "interface": "vlan{{ $multus_vlan}}"}]'
-        prometheus.io/scrape: "true"
-        prometheus.io/port: "9324"
-        prometheus.io/targets: "infra-collector"
     spec:
 {{- if len $apods | eq 0 }}
 {{- fail "You must supply at least one apod for scheduling" -}}
