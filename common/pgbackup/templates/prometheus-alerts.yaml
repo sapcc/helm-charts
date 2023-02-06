@@ -1,4 +1,5 @@
-{{- $name_prefix   := .Release.Name | title -}}
+{{/* Special characters must be stripped from .Release.Name, e.g. .Release.Name = "concourse-main" becomes $name_prefix = "ConcourseMain". */}}
+{{- $name_prefix   := regexReplaceAll "\\W*" (.Release.Name | title) "" -}}
 {{- $service       := .Values.alerts.service       | default .Release.Name -}}
 {{- $support_group := .Values.alerts.support_group | required ".Values.alerts.support_group missing" -}}
 {{- $db_host       := .Values.database.host        | default (printf "%s-postgresql" .Release.Name) -}}
