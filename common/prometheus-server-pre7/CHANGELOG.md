@@ -1,3 +1,7 @@
+## 6.4.21
+
+* Limitation to own `pod-sd` scrape job for `PrometheusMultiplePodScrapes` alert
+
 ## 6.4.20
 
  * Option to set support_group for alerts
