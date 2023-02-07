@@ -40,10 +40,13 @@
           for ((i=0;i<10;++i)); do
             test -S /run/proxysql/admin.sock && break || sleep 1
           done
-          mysql --wait -S /run/proxysql/admin.sock -uadmin -padmin -e '
-            UPDATE mysql_servers SET max_connections={{ $max_connections }};
-            LOAD MYSQL SERVERS TO RUNTIME;
-          '
+          for ((i=0;i<10;++i)); do
+            mysql --wait -S /run/proxysql/admin.sock -uadmin -padmin -e '
+              UPDATE mysql_servers SET max_connections={{ $max_connections }};
+              LOAD MYSQL SERVERS TO RUNTIME;
+            ' && exit 0 || sleep 1
+          done
+          exit 1
         {{- end }}
   ports:
   - name: metrics-psql
