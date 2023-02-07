@@ -22,7 +22,7 @@ api_port_internal: '8786'
 api_backdoor: false
 debug: "True"
 
-coordinationBackend: 'memcached'
+coordinationBackend: 'file'
 
 logging:
   formatters:
@@ -317,7 +317,7 @@ mysql_metrics:
       help: Manila Share Replica Stucked for One Hour Longer
       labels: ["project_id", "share_id", "replica_id", "status"]
       query: |
-        SELECT 
+        SELECT
           project_id,
           shares.id AS share_id,
           si.id AS replica_id,
@@ -325,7 +325,7 @@ mysql_metrics:
           (UNIX_TIMESTAMP(NOW()) - UNIX_TIMESTAMP(COALESCE(si.updated_at, si.created_at))) AS elapsed
         FROM share_instances si
         INNER JOIN shares ON si.share_id = shares.id
-        WHERE 
+        WHERE
           status IN ('creating', 'deleting', 'error', 'error_deleting')
           AND COALESCE(si.updated_at, si.created_at) < (NOW() - INTERVAL 1 hour)
           AND si.deleted = 'False'
