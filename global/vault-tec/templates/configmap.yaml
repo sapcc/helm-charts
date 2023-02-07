@@ -14,15 +14,17 @@ data:
       jitter: {{ required "no intervals.jitter given" .Values.config.intervals.jitter | quote }}
     concourse:
       url: {{ required "no concourse.url given" .Values.config.concourse.url | quote }}
-      username: ${CONCOURSE_USERNAME}
-      password: ${CONCOURSE_PASSWORD}
+      userPass:
+        username: ${CONCOURSE_USERNAME}
+        password: ${CONCOURSE_PASSWORD}
     vault:
       url: {{ required "no vault.url given" .Values.config.vault.url | quote }}
       approleMount: {{ required "no vault.approleMount given" .Values.config.vault.approleMount | quote }}
       keyValueMount: {{ required "no vault.keyValueMount given" .Values.config.vault.keyValueMount | quote }}
+      userPass:
+        username: ${VAULT_USERNAME}
+        password: ${VAULT_PASSWORD}
       policies:
         {{- toYaml .Values.config.vault.policies | nindent 8 }}
-      username: ${VAULT_USERNAME}
-      password: ${VAULT_PASSWORD}
     metricsAddr: 127.0.0.1:8080
     mlock: false
