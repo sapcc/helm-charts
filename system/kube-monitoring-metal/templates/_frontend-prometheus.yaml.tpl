@@ -63,6 +63,7 @@
       - '{__name__=~"^scrape_duration_seconds"}'
       - '{__name__=~"^secrets_exporter_certificate_not_after"}'
       - '{__name__=~"^coredns.+"}'
+      - '{__name__=~"^tcp_probe.+"}'
       - '{__name__=~"^unbound_.+"}'
       - '{__name__=~"^up"}'
       - '{__name__=~"^uwsgi_.+"}'
