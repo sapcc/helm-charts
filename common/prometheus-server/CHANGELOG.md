@@ -1,3 +1,7 @@
+## 7.1.28
+
+* Limitation to own `pod-sd` scrape job for `PrometheusMultiplePodScrapes` alert
+
 ## 7.1.26 - 7.1.27
 
  * Order of coalescence reverted (prometheus.name source defaults to `.Values.name`)
