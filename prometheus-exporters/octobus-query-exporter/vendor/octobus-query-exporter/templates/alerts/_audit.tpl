@@ -8,7 +8,7 @@ metadata:
     app: octobus-query-exporter
     tier: infra
     type: alerting-rules
-    prometheus: {{ required ".Values.octobus_query_exporter.alerts.prometheus missing" .Values.octobus_query_exporter.alerts.prometheus | quote }}
+    prometheus: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
 
 spec:
   groups:
@@ -59,8 +59,8 @@ spec:
             summary: "Audit logs missing for {{ .name }}"
     {{- end }}
     {{- end }}
-    {{- if .Values.octobus_query_exporter.auditSourcesRegional }}
-    {{- range .Values.octobus_query_exporter.auditSourcesRegional }}
+    {{- if .Values.auditSourcesRegional }}
+    {{- range .Values.auditSourcesRegional }}
     {{- $name := .name }}
     {{- if contains "-" $name }}
     {{- $name = replace "-" "_" $name }}
