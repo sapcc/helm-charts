@@ -114,6 +114,7 @@ groups:
         support_group: {{ default "observability" $root.Values.alerts.support_group }}
         severity: info
         meta: Thanos Query `{{`{{ $labels.thanos }}`}}` has a 99th percentile latency for instant queries.
+        no_alert_on_absence: "true"
       annotations:
         description: |
           Thanos Query `{{`{{ $labels.thanos }}`}}` has a 99th
