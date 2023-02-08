@@ -4,7 +4,7 @@ metadata:
   # since this name changes with every image change, removal and creation of
   # this Job happens on nearly every deployment. Check the helm-chart changes
   # to see if this needs more review.
-  name: glance-migration-job-{{ required "Please set glance.imageVersion or similar" .Values.imageVersion }}{{ if .Values.proxysql.mode }}-proxysql{{ end }}
+  name: {{ tuple . "migration-job" | include "job_name" }}
   labels:
     app: {{ template "name" . }}
     chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
@@ -23,7 +23,7 @@ spec:
         checksum/etc-configmap.conf: {{ include (print $.Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
     spec:
       restartPolicy: OnFailure
-{{ include "utils.proxysql.job_pod_settings" . | indent 6 }}
+      {{- include "utils.proxysql.job_pod_settings" . | indent 6 }}
       initContainers:
       - name: glance-init
         image: {{ required ".Values.global.registry is missing" .Values.global.registry }}/loci-glance:{{ required "Please set glance.imageVersion or similar" .Values.imageVersion }}
@@ -46,8 +46,8 @@ spec:
         - bash
         - -c
         - |
-          trap "{{ include "utils.proxysql.proxysql_signal_stop_script" . | trim }}" EXIT
           glance-manage db_sync
+          {{ include "utils.proxysql.proxysql_signal_stop_script" . | trim }}
         volumeMounts:
           - mountPath: /etc/glance
             name: etcglance
