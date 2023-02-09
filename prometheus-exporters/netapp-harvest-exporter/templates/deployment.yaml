@@ -17,17 +17,17 @@ spec:
     metadata:
       annotations:
         configmap-hash: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
-        {{- with .Values.podScrapeAnnotations }}
+        {{- with .Values.promScrapeAnnotations }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
       labels:
         {{- include "netapp-harvest.selectorLabels" . | nindent 8 }}
     spec:
       containers:
-        {{- range $i, $e := until (.Values.workersPerPod | default 2 | int) }}
+        {{- range $i, $e := until (.Values.workersPerPod | default 1 | int) }}
         {{- with $ }}
         - name: harvest-poller-{{ $i }}
-          image: "{{ .Values.global.dockerHubMirror }}/{{ .Values.harvest.image.repository }}:{{ .Values.harvest.image.tag }}"
+          image: {{ .Values.global.dockerHubMirror }}/{{ .Values.harvest.image.repository }}:{{ .Values.harvest.image.tag }}
           imagePullPolicy: {{ .Values.harvest.image.pullPolicy | default "IfNotPresent" }}
           command: ["sh"]
           args: 
@@ -98,7 +98,7 @@ spec:
             - name: NETAPPSD_PROMETHEUS_URL
               value: http://prometheus-infra-collector.infra-monitoring.svc:9090
             - name: NETAPPSD_PROMETHEUS_QUERY
-              value: count by (cluster) (netapp_aggr_labels{app_kubernetes_io_instance=~'netapp.*-{{ .appValues.name }}'})
+              value: count by (cluster) (netapp_aggr_labels{app_kubernetes_io_instance=~'netapp.*{{ .appValues.name }}'})
           ports:
             - containerPort: 8000
           volumeMounts:
