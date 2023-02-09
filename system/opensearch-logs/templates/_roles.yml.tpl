@@ -77,6 +77,27 @@ data:
     - "indices:admin/template/*"
     - "indices:admin/create"
 
+syslog:
+  reserved: false
+  hidden: false
+  cluster_permissions:
+    - "cluster_monitor"
+    - "cluster_composite_ops"
+    - "cluster:admin/ingest/pipeline/put"
+    - "cluster:admin/ingest/pipeline/get"
+  index_permissions:
+  - index_patterns:
+    - "syslog-*"
+    allowed_actions:
+    - "indices:admin/template/get"
+    - "indices:admin/template/put"
+    - "indices:admin/mapping/put"
+    - "indices:admin/create"
+    - "indices:data/write/bulk*"
+    - "indices:data/write/delete"
+    - "indices:data/write/index"
+    - "indices:data/write/update"
+
 adminrole:
   reserved: false
   hidden: false

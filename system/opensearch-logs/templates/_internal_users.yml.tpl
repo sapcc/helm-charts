@@ -46,11 +46,11 @@ jaeger:
   backend_roles:
   - "jaeger"
 
-winbeat:
-  hash: "{{ .Values.users.winbeat.hash }}"
+syslog:
+  hash: "{{ .Values.users.syslog.hash }}"
   reserved: true
   backend_roles:
-  - "winbeat"
+  - "syslog"
 
 promuser:
   hash: "{{ .Values.users.promuser.hash }}"

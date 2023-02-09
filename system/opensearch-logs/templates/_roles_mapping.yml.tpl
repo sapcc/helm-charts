@@ -24,6 +24,11 @@ data:
   users:
   - "data"
 
+syslog:
+  reserved: false
+  users:
+  - "syslog"
+
 logstash:
   reserved: false
   backend_roles:
