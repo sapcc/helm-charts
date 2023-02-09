@@ -5,26 +5,28 @@ metadata:
   namespace: {{ .Release.Namespace }}
 data: 
   config.yaml: |
-    approle:
-      prefix: {{ required "no approle.prefix given" .Values.config.approle.prefix | quote }}
-      ttl: {{ required "no approle.ttl given" .Values.config.approle.ttl | quote }}
-      rotate: {{ required "no approle.rotate given" .Values.config.approle.rotate | quote }}
     intervals:
       period: {{ required "no intervals.period given" .Values.config.intervals.period | quote }}
       jitter: {{ required "no intervals.jitter given" .Values.config.intervals.jitter | quote }}
-    concourse:
-      url: {{ required "no concourse.url given" .Values.config.concourse.url | quote }}
-      userPass:
-        username: ${CONCOURSE_USERNAME}
-        password: ${CONCOURSE_PASSWORD}
-    vault:
-      url: {{ required "no vault.url given" .Values.config.vault.url | quote }}
-      approleMount: {{ required "no vault.approleMount given" .Values.config.vault.approleMount | quote }}
-      keyValueMount: {{ required "no vault.keyValueMount given" .Values.config.vault.keyValueMount | quote }}
-      userPass:
-        username: ${VAULT_USERNAME}
-        password: ${VAULT_PASSWORD}
-      policies:
-        {{- toYaml .Values.config.vault.policies | nindent 8 }}
+    approles:
+    {{ range $index, $approle := .Values.config.approles -}}
+    - concourse:
+        url: {{ required "no concourse.url given" $approle.concourse.url | quote }}
+        userPass:
+          username: ${CONCOURSE_USERNAME_{{- $index -}} }
+          password: ${CONCOURSE_PASSWORD_{{- $index -}} }
+      vault:
+        prefix: {{ required "no approle.prefix given" $approle.vault.prefix | quote }}
+        ttl: {{ required "no approle.ttl given" $approle.vault.ttl | quote }}
+        rotate: {{ required "no approle.rotate given" $approle.vault.rotate | quote }}
+        url: {{ required "no vault.url given" $approle.vault.url | quote }}
+        approleMount: {{ required "no vault.approleMount given" $approle.vault.approleMount | quote }}
+        keyValueMount: {{ required "no vault.keyValueMount given" $approle.vault.keyValueMount | quote }}
+        userPass:
+          username: ${VAULT_USERNAME_{{- $index -}} }
+          password: ${VAULT_PASSWORD_{{- $index -}} }
+        policies:
+          {{- toYaml $approle.vault.policies | nindent 8 }}
+    {{ end -}}
     metricsAddr: 0.0.0.0:8080
     mlock: false

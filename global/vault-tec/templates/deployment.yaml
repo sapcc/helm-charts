@@ -30,26 +30,28 @@ spec:
         imagePullPolicy: {{ .Values.image.pullPolicy }}
         name: vault-tec
         env:
-        - name: CONCOURSE_USERNAME
+        {{ range $index, $approle := .Values.config.approles -}}
+        - name: CONCOURSE_USERNAME_{{- $index }}
           valueFrom:
             secretKeyRef:
               name: vault-tec-secret
-              key: CONCOURSE_USERNAME
-        - name: CONCOURSE_PASSWORD
+              key: CONCOURSE_USERNAME_{{- $index }}
+        - name: CONCOURSE_PASSWORD_{{- $index }}
           valueFrom:
             secretKeyRef:
               name: vault-tec-secret
-              key: CONCOURSE_PASSWORD
-        - name: VAULT_USERNAME
+              key: CONCOURSE_PASSWORD_{{- $index }}
+        - name: VAULT_USERNAME_{{- $index }}
           valueFrom:
             secretKeyRef:
               name: vault-tec-secret
-              key: VAULT_USERNAME
-        - name: VAULT_PASSWORD
+              key: VAULT_USERNAME_{{- $index }}
+        - name: VAULT_PASSWORD_{{- $index }}
           valueFrom:
             secretKeyRef:
               name: vault-tec-secret
-              key: VAULT_PASSWORD
+              key: VAULT_PASSWORD_{{- $index }}
+        {{ end -}}
         volumeMounts:
         - name: config
           mountPath: "/config"
