@@ -426,6 +426,15 @@ metrics:
     command: show ip traffic | in Drop due to input queue
     timeout_secs: 5
 
+  memory_util_stats:
+    regex: >-
+      \s+RP0 Healthy (\d+)\s+(\d+)\s+\((\d+)\%\)\s+\d+\s+\((\d+)\%\)\s+\d+\s\((\d+)\%\)
+    value: $3
+    description: Used memory statistics of RP0 processor
+    metric_type_name: gauge
+    command: show platform software status control-processor brief | sec Memory
+    timeout_secs: 5
+    
   firewall_vrf_stats_total:
     regex: >-
       VRF: (\S+).*?Total Session Count\(estab \+ half-open\): (\d+), Exceed: (\d+)
@@ -645,6 +654,7 @@ batches:
     - firewall_vrf_stats_half_open_tcp
     - firewall_vrf_stats_half_open_icmp
     - arp_drop_input_queue_full
+    - memory_util_stats
 
 
   cisco-nx-os_core-router:
