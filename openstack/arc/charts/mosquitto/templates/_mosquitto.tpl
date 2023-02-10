@@ -14,8 +14,8 @@ listener {{ .Values.service.internalPort }} 0.0.0.0
 use_username_as_clientid true
 use_subject_as_username true
 require_certificate true
-cafile /mosquitto/ca.crt
-certfile /mosquitto/server.crt
-keyfile /mosquitto/server.key
+cafile /mosquitto_tls/ca.crt
+certfile /mosquitto_tls/tls.crt
+keyfile /mosquitto_tls/tls.key
 {{- end }}
 {{- end }}
