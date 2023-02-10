@@ -200,6 +200,21 @@ groups:
         summary: "NAT has too few preallocated UDP ports"
         description: "Preallocated ports for {{ $labels.server_name }} are below 45k. During sudden high NAT load, this may lead to control plane overload and packet drops"
 
+    - alert: NetworkAsrHighMemoryUtilization
+      expr: >-
+        ssh_memory_util_stats >= 88
+      for: 5m
+      labels:
+        severity: critical
+        tier: net
+        service: asr
+        context: asr
+        playbook: 'docs/devops/alert/network/router.html#NetworkAsrHighMemoryUtilization'
+        dashboard: neutron-router
+      annotations:
+        summary: "Control Processor Memory Utilization on `{{ $labels.server_name }}` is very High"
+        description: "Control Processor Memory Utilization on `{{ $labels.server_name }}` is very High"
+
 
     - alert: NetworkAsr9kHighNtpRootDispersion
       expr: avg_over_time(ssh_xr_ntp_root_dispersion[10m]) > 2000
