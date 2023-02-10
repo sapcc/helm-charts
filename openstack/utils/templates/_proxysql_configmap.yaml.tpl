@@ -47,9 +47,9 @@ data:
                     fail (print ".Values. " $dbKey ".users needs to be set")
                 {{- else if not $db.users.proxysql_monitor }}
                     fail (print ".Values. " $dbKey ".users.proxysql_monitor needs to be set")
-                {{- else if not eq .Values.mariadb.users.proxysql_monitor.name $db.users.proxysql_monitor.name }}
+                {{- else if not (eq $envAll.Values.mariadb.users.proxysql_monitor.name $db.users.proxysql_monitor.name) }}
                     fail (print ".Values. " $dbKey ".users.proxysql_monitor.name needs to be equal to .Values.mariadb.users.proxysql_monitor.name")
-                {{- else if not eq .Values.mariadb.users.proxysql_monitor.password $db.users.proxysql_monitor.password }}
+                {{- else if not (eq $envAll.Values.mariadb.users.proxysql_monitor.password $db.users.proxysql_monitor.password) }}
                     fail (print ".Values. " $dbKey ".users.proxysql_monitor.password needs to be equal to .Values.mariadb.users.proxysql_monitor.password")
                 {{- end }}
             {{- end }}
