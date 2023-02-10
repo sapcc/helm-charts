@@ -3,6 +3,11 @@ Rabbitmq CHANGELOG
 
 This file is used to list changes made in each version of the common chart rabbitmq.
 
+0.5.1
+_____
+fabian.wiesel@sap.common
+- Use just the hostname without domain for the transport-url
+
 0.5.0
 -----
 b.alkhateeb@sap.com
