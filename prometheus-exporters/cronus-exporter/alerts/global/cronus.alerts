@@ -3,7 +3,7 @@ groups:
   rules:
   - alert: SendingEmailsWithSESFails
     expr: sum(irate(cronus_event_mails_sent{provider="aws", status_code="250"}[5m])*60) == 0
-    for: 5m
+    for: 15m
     labels:
       service: email
       severity: critical
@@ -16,7 +16,7 @@ groups:
       summary: sending emails with aws ses relay fails
   - alert: SendingEmailsWithINTFails
     expr: sum(irate(cronus_event_mails_sent{provider="int", status_code="250"}[5m])*60) == 0
-    for: 5m
+    for: 15m
     labels:
       service: email
       severity: critical
@@ -40,7 +40,7 @@ groups:
       summary: cronus pod {{ $labels.pod  }} malfunction
   - alert: AllCronusPodMalfunction
     expr: count(kube_pod_container_status_running{namespace="cronus", container="cronus"} == 1) == 0
-    for: 5m
+    for: 15m
     labels:
       service: email
       severity: critical
@@ -66,7 +66,7 @@ groups:
       summary: nebula pod malfunction - fails the creation / management of email accounts
   - alert: NebulaMulticloudAPIFails
     expr: cronus_simulator_event_test_passed == 0
-    for: 20m
+    for: 30m
     labels:
       meta: nebula multicloud api
       service: email
