@@ -61,7 +61,7 @@ spec:
                 operator: In
                 values: 
 {{- range $az_apods := values $apods }}
-{{- range $az_apods }}
+{{- range $az_apods | sortAlpha }}
                 - {{ . }}
 {{- end }}
 {{- end }}
