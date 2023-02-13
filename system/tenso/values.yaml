@@ -29,6 +29,12 @@ prometheus:
     openstack: infra-frontend # there is no prometheus-openstack in scaleout, so we need to improvise :|
 
 postgresql:
+  imageTag: '12.14'
+  persistence:
+    enabled: true
+    accessMode: ReadWriteOnce
+    size: 10Gi
+
   log_min_duration_statement: 250
   # less than the postgresql chart's default; I want to know early when connections start getting out of hand
   max_connections: 128
@@ -36,11 +42,6 @@ postgresql:
   alerts:
     prometheus: infra-frontend # see above
     support_group: containers
-
-  persistence:
-    enabled: true
-    accessMode: ReadWriteOnce
-    size: 10Gi
 
   resources:
     # estimated based on resource usage of other Postgres instances; may be
