@@ -21,13 +21,15 @@ clair:
     preshared_key: DEFINED_IN_VALUES_FILE # the key that Keppel uses to sign API tokens for itself to access Clair with
 
 postgresql:
+  imageTag: '12.14'
+  persistence:
+    enabled: true
+    existingClaim: clair-postgresql-250gib # see templates/postgres-pvc.yaml
+
   log_min_duration_statement: 250
   # less than the postgresql chart's default; I want to know early when connections start getting out of hand
   max_connections: 128
 
-  persistence:
-    enabled: true
-    existingClaim: clair-postgresql-250gib # see templates/postgres-pvc.yaml
   backup:
     enabled: false
   alerts:
