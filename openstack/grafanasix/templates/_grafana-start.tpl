@@ -68,22 +68,24 @@ function start_application {
       cat $i | grep -v "json object of data that will be encrypted" | grep -v secureJsonData > /var/lib/grafana/provisioning/datasources/$i
       echo "  # <string> json object of data that will be encrypted." >> /var/lib/grafana/provisioning/datasources/$i
       echo "  secureJsonData:" >> /var/lib/grafana/provisioning/datasources/$i
-      if [ -f /grafana-ds-certs/cacert.crt ]; then
+      if [ -f /grafana-secrets/cacert.crt ]; then
         echo '    tlsCACert: |' >> /var/lib/grafana/provisioning/datasources/$i
-        cat /grafana-ds-certs/cacert.crt | sed 's/^/      /' >> /var/lib/grafana/provisioning/datasources/$i
+        cat /grafana-secrets/cacert.crt | sed 's/^/      /' >> /var/lib/grafana/provisioning/datasources/$i
       fi
-      if [ -f /grafana-ds-certs/sso.crt ]; then
+      if [ -f /grafana-secrets/sso.crt ]; then
         echo '    tlsClientCert: |' >> /var/lib/grafana/provisioning/datasources/$i
-        cat /grafana-ds-certs/sso.crt | sed 's/^/      /' >> /var/lib/grafana/provisioning/datasources/$i
+        cat /grafana-secrets/sso.crt | sed 's/^/      /' >> /var/lib/grafana/provisioning/datasources/$i
       fi
-      if [ -f /grafana-ds-certs/sso.key ]; then
+      if [ -f /grafana-secrets/sso.key ]; then
         echo '    tlsClientKey: |' >> /var/lib/grafana/provisioning/datasources/$i
-        cat /grafana-ds-certs/sso.key | sed 's/^/      /' >> /var/lib/grafana/provisioning/datasources/$i
+        cat /grafana-secrets/sso.key | sed 's/^/      /' >> /var/lib/grafana/provisioning/datasources/$i
       fi
     else
       cp -a $i /var/lib/grafana/provisioning/datasources
     fi
   done
+  sed -i 's,__ELK_PASSWORD__,{{.Values.authentication.elk_password}},g' /var/lib/grafana/provisioning/datasources/*
+  sed -i 's,__OPENSEARCH_PASSWORD__,{{.Values.authentication.opensearch_password}},g' /var/lib/grafana/provisioning/datasources/*
   sed -i 's,__ALERTMANAGER_PASSWORD__,{{.Values.alertmanager.password}},g' /var/lib/grafana/provisioning/datasources/*
   sed -i 's,__PROMETHEUS_REGION__,{{.Values.global.region}},g' /var/lib/grafana/provisioning/datasources/*
   #for i in /var/lib/grafana/provisioning/datasources/elasticsearch* ; do
