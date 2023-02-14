@@ -1,10 +1,11 @@
+{{- define "podmonitor" -}}
 apiVersion: monitoring.coreos.com/v1
 kind: PodMonitor
 metadata: 
   labels:
     prometheus: infra-collector
   name: px
-  namespace: infra-monitoring
+  namespace: px
 spec: 
   namespaceSelector: 
     matchNames: 
@@ -88,3 +89,4 @@ spec:
       operator: In
       values: 
       - px
+{{ end }}

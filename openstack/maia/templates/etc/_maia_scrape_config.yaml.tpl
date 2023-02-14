@@ -208,6 +208,9 @@
       - '{__name__="aws_ses_cronus_security_attributes_remaining_months_until_lease_ends"}'
       - '{__name__="aws_ses_cronus_suppressed_email_since_last_update_minutes"}'
       - '{__name__="aws_ses_cronus_identity_is_verified"}'
+      - '{__name__="cronus_event_mails_sent_provider_rate_perminute"}'
+      - '{__name__="cronus_event_mails_sent_success_provider_rate_perminute"}'
+      - '{__name__="cronus_event_mails_sent_error_provider_rate_perminute"}'
   metric_relabel_configs:
     - action: labeldrop
       regex: "exported_instance|exported_job|instance|job|tags|cluster|cluster_type|multicloud_id|alert_tier|alert_service"

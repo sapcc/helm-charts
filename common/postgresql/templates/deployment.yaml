@@ -29,6 +29,16 @@ spec:
         checksum/secrets: {{ include (print $.Template.BasePath  "/secrets.yaml") . | sha256sum }}
         checksum/etc: {{ include (print $.Template.BasePath  "/etc-configmap.yaml") . | sha256sum }}
     spec:
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 1
+            preference:
+              matchExpressions:
+              - key: cloud.sap/maintenance-state
+                operator: In
+                values:
+                - operational
       containers:
       - name: postgres
 {{- if .Values.custom_repository }}

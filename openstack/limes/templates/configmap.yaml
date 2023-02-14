@@ -42,12 +42,8 @@ data:
     domain:sync: rule:domain_editor
     domain:raise: rule:cluster_editor
     domain:raise_lowpriv: rule:domain_editor
-    {{- if eq .Values.global.region "qa-de-1" }}
     # For compute/ram, we forbid domain quota lowering without approval from the cloud admin level to enable tighter control over capacity distribution.
     domain:lower: rule:cluster_editor or (rule:domain_editor and (not rule:is_compute_ram))
-    {{- else }}
-    domain:lower: rule:domain_editor
-    {{- end }}
     domain:discover: rule:cluster_editor
 
     cluster:show: rule:cluster_viewer
