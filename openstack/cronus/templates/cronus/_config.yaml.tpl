@@ -6,6 +6,15 @@ cronus:
   billingCacheTTL: {{ .Values.config.billingCacheTTL }}
   barbicanCacheTTL: {{ .Values.config.barbicanCacheTTL }}
   awsSignV2TTL: {{ .Values.config.awsSignV2TTL }}
+{{- if .Values.cronus.allowedNdrs }}
+  allowedNdrs:
+  {{- range $v := .Values.cronus.allowedNdrs }}
+    - projectId: {{ $v.projectId }}
+    {{- if $v.backend }}
+      backend: {{$v.backend | quote }}
+    {{- end }}
+  {{- end }}
+{{- end }}
 {{- if or .Values.cronus.fileBufferPath .Values.global.fileBufferPath }}
   fileBufferPath: {{ .Values.cronus.fileBufferPath | default .Values.global.fileBufferPath }}
 {{- end }}
