@@ -25,6 +25,9 @@ spec:
         - name: mosquitto-secret
           secret:
             secretName: mosquitto
+        - name: mosquitto-secret-tls
+          secret:
+            secretName: arc-mosquitto-tls
       containers:
       - name: {{ .Chart.Name }}
         image: "{{required ".Values.global.registry is missing" .Values.global.registry }}/{{ .Values.image.repository }}:{{.Values.image.tag }}"
@@ -39,6 +42,9 @@ spec:
         volumeMounts:
           - name: mosquitto-secret
             mountPath: /mosquitto
+            readOnly: true
+          - name: mosquitto-secret-tls
+            mountPath: /mosquitto_tls
             readOnly: true
 {{- if .Values.metrics.enabled }}
       - name: metrics
