@@ -80,6 +80,9 @@ spec:
         configmap-hash: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
       labels:
         {{- include "netapp-sd.selectorLabels" . | nindent 8 }}
+        {{- with .Values.promScrapeAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
     spec:
       containers:
         - name:  netappsd
@@ -101,6 +104,7 @@ spec:
               value: count by (cluster) (netapp_aggr_labels{app_kubernetes_io_instance=~'netapp.*{{ .appValues.name }}'})
           ports:
             - containerPort: 8000
+              name: metrics
           volumeMounts:
             - mountPath: /etc/harvest/harvest.yml.tpl
               name: harvest-config
