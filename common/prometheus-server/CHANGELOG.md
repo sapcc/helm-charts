@@ -1,3 +1,7 @@
+## 7.1.29
+
+* `PrometheusHighAlertRate` notifications not for all configured alert managers
+
 ## 7.1.28
 
 * Limitation to own `pod-sd` scrape job for `PrometheusMultiplePodScrapes` alert

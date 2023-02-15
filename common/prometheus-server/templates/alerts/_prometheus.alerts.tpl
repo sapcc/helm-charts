@@ -359,7 +359,7 @@ groups:
 
   - alert: PrometheusHighAlertRate
     expr: |
-      rate(prometheus_notifications_sent_total{prometheus="{{ include "prometheus.name" . }}"}[5m]) > 10
+      avg by (prometheus) (rate(prometheus_notifications_sent_total{prometheus="{{ include "prometheus.name" . }}"}[5m]) > 10)
     for: 5m
     labels:
       service: {{ default "metrics" $root.Values.alerts.service }}
