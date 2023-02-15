@@ -25,6 +25,7 @@ resources:
     consoles:
         custom_id: 'console_id'
     flavors:
+        custom_id: 'flavor_id'
         custom_actions:
             detail: read/list/details
             addTenantAccess: allow/project-access
