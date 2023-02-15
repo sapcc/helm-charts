@@ -24,8 +24,8 @@
   pos_file /var/log/es-containers.log.pos
   <parse>
     @type multiline
-    format_firstline /\d{4}-\d{1,2}-\d{1,2}/
-    format1 /^(?<time>.+)\s(?<stream>stdout|stderr)\s(?<logtag>F|P)\s(?<log>.*)$/
+    format_firstline /\d{4}-\d{1,2}-\d{1,2}\s\d{2}:\d{2}:\d{2},\d{3}/
+    format1 /^(?<time>.+)\s(?<pid>\d+)\s(?<stream>DEBUG|INFO|ERROR|WARNING)\s(?<logtag>F|P)\s(?<log>.*)$/
   </parse>
   read_from_head
   @log_level warn
