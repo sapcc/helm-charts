@@ -1,5 +1,9 @@
 namespace: metis
 
+global:
+  dbUser: "metis"
+  #dbPassword: <defined-in-secrets>
+
 alerts:
   tier: "os"
   prometheus: "infra-collector"
@@ -40,12 +44,17 @@ mariadb:
     enabled: true
   priority_class: ""
   users:
-    metis:
+    ronly:
       name: ronly
-      grants:
-        - "ALL PRIVILEGES on metis.*"
+      limits:
+        max_user_connections: 30
+    grafana:
+      name: grafana
+      limits:
+        max_user_connections: 10
   databases:
     - "metis"
+    - "replication"
   persistence_claim:
     name: metis-pvclaim
     enabled: true
