@@ -23,20 +23,9 @@
   exclude_path /var/log/containers/fluent*
   pos_file /var/log/es-containers.log.pos
   <parse>
-    @type multi_format
-     <pattern>
-       format regexp
-       expression /^(?<time>.+)\s(?<stream>stdout|stderr)\s(?<logtag>F|P)\s(?<log>.*)$/
-       time_key time
-       time_format '%Y-%m-%dT%H:%M:%S.%NZ'
-       keep_time_key true
-     </pattern>
-     <pattern>
-       format json
-       time_format '%Y-%m-%dT%H:%M:%S.%N%:z'
-       time_key time
-       keep_time_key true
-     </pattern>
+    @type multiline
+    format_firstline /\d{4}-\d{1,2}-\d{1,2}/
+    format1 /^(?<time>.+)\s(?<stream>stdout|stderr)\s(?<logtag>F|P)\s(?<log>.*)$/
   </parse>
   read_from_head
   @log_level warn
