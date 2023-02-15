@@ -61,6 +61,8 @@ sap_allow_independent_clone = {{ .Values.sap_allow_independent_clone }}
 
 {{- include "ini_sections.database" . }}
 
+{{ include "ini_sections.oslo_messaging_rabbit" . }}
+
 {{- include "osprofiler" . }}
 
 [keystone_authtoken]
