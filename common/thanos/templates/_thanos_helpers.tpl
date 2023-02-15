@@ -37,7 +37,7 @@ thanos-{{- $name -}}
 {{- end -}}
 {{- if $root.Values.ingress.hosts -}}
 {{- $firstHost := first $root.Values.ingress.hosts -}}
-{{- required ".Values.ingress.hosts must have at least one hostname set" $firstHost -}}.{{- required ".Values.global.region missing" $root.Values.global.region -}}.{{- required ".Values.global.domain missing" $root.Values.global.domain -}}
+{{- required ".Values.ingress.hosts must have at least one hostname set" $firstHost -}}.{{- required ".Values.global.region missing" $root.Values.global.region -}}.{{- required ".Values.global.tld missing" $root.Values.global.tld -}}
 {{- else if $root.Values.ingress.hostsFQDN -}}
 {{- $firstHost := first $root.Values.ingress.hostsFQDN -}}
 {{- required ".Values.ingress.hostsFQDN must have at least one hostname set" $firstHost -}}
@@ -72,7 +72,7 @@ thanos-{{- $host -}}.{{- required ".Values.global.region missing" $root.Values.g
 {{- if not $root.Values.grpcIngress.hosts -}}
 thanos-{{- $host -}}-grpc.{{- required ".Values.global.region missing" $root.Values.global.region -}}.{{- required ".Values.global.tld missing" $root.Values.global.tld -}}
 {{- else -}}
-{{- $host -}}.{{- required ".Values.global.region missing" $root.Values.global.region -}}.{{- required ".Values.global.tld missing" $root.Values.global.tld -}}
+{{- $host -}}-grpc.{{- required ".Values.global.region missing" $root.Values.global.region -}}.{{- required ".Values.global.tld missing" $root.Values.global.tld -}}
 {{- end -}}
 {{- end -}}
 

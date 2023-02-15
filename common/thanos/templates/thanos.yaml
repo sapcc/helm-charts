@@ -8,9 +8,7 @@ metadata:
   name: {{ include "thanos.fullName" (list $name $root) }}
 spec:
   queryDiscovery: {{ $.Values.queryDiscovery }}
-  {{- if $.Values.clusterDomain }}
-  clusterDomain: {{ $.Values.clusterDomain }}
-  {{- end }}
+  clusterDomain: {{ default "cluster.local" $.Values.clusterDomain }}
   query:
     {{- if ($.Values.useQueryRegions) }}
     GRPCClientCA: thanos-grpcclient-ca
@@ -29,7 +27,7 @@ spec:
     {{- end }}
     {{- if (($.Values.query).stores) }}
       {{- range $store := $.Values.query.stores }}
-      - {{ $store }}
+      - {{ $store.name }}.{{ $store.namespace }}.svc.{{ default "cluster.local" $.Values.clusterDomain }}:{{ $store.port }}
       {{- end }}
     {{- else if $.Values.deployWholeThanos }}
       - prometheus-{{ include "thanos.name" (list $name $root) }}:10901
