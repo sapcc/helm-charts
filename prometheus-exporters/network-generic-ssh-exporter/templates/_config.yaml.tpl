@@ -664,6 +664,7 @@ batches:
     - firewall_vrf_stats_half_open_icmp
     - arp_drop_input_queue_full
     - memory_util_stats
+    - dynamic_mac_count
 
 
   cisco-nx-os_core-router:
