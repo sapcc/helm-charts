@@ -1,3 +1,7 @@
+## 7.1.30
+
+* VerticalPodAutoscaler for prometheus pod only
+
 ## 7.1.29
 
 * `PrometheusHighAlertRate` notifications not for all configured alert managers
