@@ -13,16 +13,18 @@ data:
     echo "fetch config from $netappsd_url/harvest.yml"
     filer=""
     while [ -z "$filer" ]; do
-      code=$(wget --server-response -O harvest.yml $netappsd_url/harvest.yml 2>&1 | grep "HTTP/" | awk '{print $2}')
+      code=$(wget --server-response -O harvest.yml $netappsd_url/next/harvest.yaml 2>&1 | grep "HTTP/" | awk '{print $2}')
       if [ "$code" -eq "200" ]; then
         filer=$(grep 'stnpca.*:' harvest.yml | cut -d: -f1 | awk '{print $1}')
         break
+      else
+        echo "failed to fetch harvest.yml: $code"
       fi
       sleep 60
     done
     echo "start harvest poller $filer on port $1"
     exec bin/poller --poller $filer --promPort $1 --loglevel {{ .Values.harvest.loglevel }}
-  harvest.yml.tpl: |
+  harvest.yaml.tpl: |
     Defaults:
       auth_style: basic_auth
       username: {{ .Values.global.netapp_exporter_user }}
@@ -35,16 +37,14 @@ data:
         exporter: Prometheus
         global_prefix: netapp_
     Pollers:{{`
-      {{- range $index, $filer := . }}
-      {{ $filer.Name }}:
-        addr: {{ $filer.Host }}
-        datacenter: {{ $filer.AvailabilityZone }}
+      {{ .Name }}:
+        addr: {{ .Host }}
+        datacenter: {{ .AvailabilityZone }}
         collectors:
           - Zapi:
             - limited.yaml
           - ZapiPerf:
-            - limited.yaml
-      {{- end }}`}}
+            - limited.yaml`}}
   zapi.limited.yaml: |
     collector: Zapi
     schedule:
