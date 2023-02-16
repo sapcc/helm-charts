@@ -9,7 +9,7 @@
           "delayed_timeout": "10m"
         }
       },
-      "number_of_shards": "3",
+      "number_of_shards": "1",
       "number_of_replicas": "1"
     }
   },
