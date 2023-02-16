@@ -31,7 +31,7 @@ metrics:
     metric_type_name: gauge
     command: show ip nat statistic | include active
     timeout_secs: 3
-  
+
   nat_limits_use: &nat_limits_use
     regex: >-
       ^(([a-z0-9]{8})([a-z0-9]{4})([a-z0-9]{4})([a-z0-9]{4})([a-z0-9]{12}))\n\s+(\d+)\s+(\d+)\s+(\d+)
@@ -50,11 +50,11 @@ metrics:
         lookup_mapping: router_project
         key: $2-$3-$4-$5-$6
 
-  nat_limits_miss: 
+  nat_limits_miss:
     <<: *nat_limits_use
     description: The number of tranlations that hit the limit
     value: $9
-  
+
   nat_misses: &nat_misses
     regex: >-
       Hits:\s+(\d+)\s+Misses:\s(\d+)
@@ -443,7 +443,7 @@ metrics:
     metric_type_name: gauge
     command: show bridge-domain | count dynamic
     timeout_secs: 10
-    
+
   firewall_vrf_stats_total:
     regex: >-
       VRF: (\S+).*?Total Session Count\(estab \+ half-open\): (\d+), Exceed: (\d+)
