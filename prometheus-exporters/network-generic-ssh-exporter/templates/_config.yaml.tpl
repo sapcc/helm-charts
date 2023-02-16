@@ -434,6 +434,15 @@ metrics:
     metric_type_name: gauge
     command: show platform software status control-processor brief | sec Memory
     timeout_secs: 5
+
+  dynamic_mac_count:
+    regex: >-
+      ^Number of lines which match regexp = (\d+)
+    value: $1
+    description: Counts the number of dynamically learned mac address from all bridge domain on the router
+    metric_type_name: gauge
+    command: show bridge-domain | count dynamic
+    timeout_secs: 10
     
   firewall_vrf_stats_total:
     regex: >-
