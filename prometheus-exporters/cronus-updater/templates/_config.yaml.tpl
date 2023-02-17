@@ -27,8 +27,8 @@ updaterConfig:
     smtpPassword: {{ .Values.secAttNotifier.smtpPassword }}
     port: {{ .Values.secAttNotifier.port }}
   {{- if .Values.secAttNotifier.days }}
-    {{- range $key, $value := .Values.secAttNotifier.days }}
     days:
+    {{- range $key, $value := .Values.secAttNotifier.days }}
       - {{ $value }}
     {{- end }}
   {{- end }}
