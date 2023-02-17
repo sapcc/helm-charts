@@ -23,16 +23,27 @@ updaterConfig:
     awsSecret: {{ .Values.secAttNotifier.awsSecret }}
     ec2Access: {{ .Values.secAttNotifier.awsAccess }}
     ec2Secret: {{ .Values.secAttNotifier.awsSecret }}
+    smtpHost: {{ .Values.secAttNotifier.smtpHost }}
+    smtpPassword: {{ .Values.secAttNotifier.smtpPassword }}
+    port: {{ .Values.secAttNotifier.port }}
+  {{- if .Values.secAttNotifier.days }}
+    {{- range $key, $value := .Values.secAttNotifier.days }}
+    days:
+      - {{ $value }}
+    {{- end }}
+  {{- end }}
     endpoint: {{ .Values.secAttNotifier.cronusEndpoint }}
     leasedUntilLteMonths: {{ .Values.secAttNotifier.leasedUntilLteMonths }}
     hour: {{ .Values.secAttNotifier.secAttNotificationHour }}
     day: {{ .Values.secAttNotifier.secAttNotificationDay }}
     secondDay: {{ .Values.secAttNotifier.secondDay }}
     sender: {{ .Values.secAttNotifier.sourceEmail }}
+  {{- if .Values.secAttNotifier.contact }}
     {{- range $key, $value := .Values.secAttNotifier.contact }}
     contact:
       - {{ $value }}
     {{- end }}
+  {{- end }}
     body: |
 {{ .Values.secAttNotifier.body | indent 8 }}
     subject: {{ .Values.secAttNotifier.subject | quote }}
