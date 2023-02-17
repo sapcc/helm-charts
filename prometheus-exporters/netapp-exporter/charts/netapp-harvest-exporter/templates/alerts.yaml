@@ -1,0 +1,17 @@
+{{- range $path, $bytes := .Files.Glob "alerts/*.yaml" }}
+{{- with $ }}
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+
+metadata:
+  name: {{ include "netapp-harvest.fullname" . }}
+  labels:
+    {{- include "netapp-harvest.labels" . | nindent 4 }}
+    type: alerting-rules
+    prometheus: {{ .Values.prometheus.target }}
+
+spec:
+{{ printf "%s" $bytes | indent 2 }}
+---
+{{- end }}
+{{- end }}

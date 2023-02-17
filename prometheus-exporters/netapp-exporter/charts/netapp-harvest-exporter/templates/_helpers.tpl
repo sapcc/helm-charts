@@ -73,3 +73,9 @@ app.kubernetes.io/name: {{ include "netapp-harvest.name" . }}
 app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}
 {{- end }}
+
+
+{{- define "prom-scrape-annotations" -}}
+prometheus.io/scrape: "true"
+prometheus.io/targets: {{ .Values.prometheus.target }}
+{{- end }}
