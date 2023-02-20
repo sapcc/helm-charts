@@ -2,7 +2,7 @@ groups:
   - name: netapp-harvest.alerts
     rules:
       - alert: NetappHarvestCinderNeedsMoreWorkers
-        expr:  netapp_harvest_cinder_worker_count < netapp_harvest_cinder_discovered_count
+        expr:  netapp_harvest_cinder_discovered_count - netapp_harvest_cinder_worker_count > 0
         for: 15m
         labels:
           severity: info
@@ -12,6 +12,5 @@ groups:
           context: exporter-health
           no_alert_on_absence: "true"
         annotations:
-          summary:  'Netapp Harvest does not have enough workers to poll Filers'
-          description: "Deployment netapp-harvest-exporter-cinder have not enough workers. Increase its replicas."
-
+          summary:  Netapp Harvest (Cinder) does not have enough workers
+          description: Deployment netapp-harvest-exporter-cinder needs [[ $value ]] more workers. Increase its replicas by [[ $value ]]/{{ .Values.workersPerPod }}.
