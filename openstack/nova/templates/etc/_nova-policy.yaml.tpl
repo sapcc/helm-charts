@@ -462,7 +462,7 @@ os_compute_api:os-instance-actions:show: rule:context_is_editor
 #os_compute_api:os-instance-actions:events: rule:system_reader_api
 os_compute_api:os-instance-actions:events: rule:context_is_admin
 
-# Add “details” key in action events for a server.
+# Add "details" key in action events for a server.
 # This check is performed only after the check
 # os_compute_api:os-instance-actions:show passes. Beginning with Microversion
 # 2.84, new field 'details' is exposed via API which can have more details about
