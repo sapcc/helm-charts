@@ -212,6 +212,11 @@
     pattern /encountered fetching pod metadata/
     tag "METADATA.${tag}"
   </rule>
+  <rule>
+    key log
+    pattern /(unreadable. It is excluded|Skip update_watcher because watcher has been already updated by other inotify event)/
+    tag "TAILSTALLED.${tag}"
+  </rule>
 </match>
 
 <match FLUENTERROR.**>
@@ -427,6 +432,26 @@
       name prom_fluentd_kubernetes_api_timeout
       type counter
       desc Metadata cannot be fetched from kubernetes api
+      <labels>
+        nodename "#{ENV['K8S_NODE_NAME']}"
+        fluent_container $.kubernetes.pod_name
+        fluent_namespace $.kubernetes.namespace
+      </labels>
+    </metric>
+  </store>
+  <store>
+    @type null
+  </store>
+</match>
+
+<match TAILSTALLED.**>
+  @type copy
+  <store>
+    @type prometheus
+    <metric>
+      name prom_fluentd_tail_stalled
+      type counter
+      desc Tail stalled for a log file
       <labels>
         nodename "#{ENV['K8S_NODE_NAME']}"
         fluent_container $.kubernetes.pod_name
