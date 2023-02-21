@@ -3,18 +3,33 @@ groups:
   rules:
   - alert: VropsExporterInventoryDataMissing
     expr: |
-      sum by (__name__, target) ({__name__=~"^vrops_inventory_(?:vcenters|nsxt_adapter)"}) == 0
+      sum by (__name__, job) ({__name__=~"^vrops_inventory_(?:vcenters|nsxt_adapter)"}) == 0
     for: 20m
     labels:
-      context: vrops-exporter
-      severity: info
+      severity: warning
       service: exporter
       support_group: observability
       no_alert_on_absence: "true"
-      meta: "vrops-exporter inventory is not getting any vCenter or NSX-T resources for `{{ $labels.target }}` anymore."
+      meta: "`{{ $labels.job }}` is not getting any vCenter or NSX-T adapters anymore."
     annotations:
-      summary: "vrops-exporter inventory is not getting any vCenter or NSX-T resources for `{{ $labels.target }}` anymore."
+      summary: "vrops-inventory is not getting any vCenter or NSX-T adapters anymore."
       description: |
-        vrops-exporter collectors no longer getting resources from
-        which to retrieve new metrics. The inventory should provide
-        at least one iteration of the current resources available in vrops.
+        vrops-exporter collectors no longer getting adapters to build
+        parent-kind relationships. The inventory should always provide
+        new iterations of the current resources available in vrops.
+
+  - alert: VropsExporterInventoryDataStale
+    expr: |
+      rate(vrops_inventory_iteration_total[5m]) == 0
+    for: 10m
+    labels:
+      severity: warning
+      service: exporter
+      support_group: observability
+      meta: "`{{ $labels.job }}` is not updating resources anymore."
+    annotations:
+      summary: "vrops-inventory is not updating resources"
+      description: |
+        vrops-exporter collectors no longer getting updated resources from
+        which to retrieve new metrics. The inventory should always provide
+        new iterations of the current resources available in vrops.
