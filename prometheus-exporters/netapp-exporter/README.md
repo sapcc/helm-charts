@@ -12,4 +12,5 @@
 ### v0.2.1
 
 #### netapp-harvest-exporter
-  - Prometheus alert on not enough workers
+  - Prometheus alert when there are not enough workers
+  - Prometheus alert when there are less than 3 free workers

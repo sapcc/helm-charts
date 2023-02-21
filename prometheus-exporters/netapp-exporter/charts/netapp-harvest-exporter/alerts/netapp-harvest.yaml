@@ -14,3 +14,16 @@ groups:
         annotations:
           summary:  Netapp Harvest (Cinder) does not have enough workers
           description: Deployment netapp-harvest-exporter-cinder needs [[ $value ]] more workers. Increase its replicas by [[ $value ]]/{{ .Values.workersPerPod }}.
+      - alert: NetappHarvestCinderFreeWorkersLow
+        expr:  {{ mul .Values.workersPerPod .Values.apps.cinder.replicaCount }} - netapp_harvest_cinder_discovered_count < 3
+        for: 15m
+        labels:
+          severity: info
+          tier: storage
+          support_group: compute-storage-api
+          service: netapp-exporter
+          context: exporter-health
+          no_alert_on_absence: "true"
+        annotations:
+          summary:  Netapp Harvest (Cinder) has less than 3 free workers
+          description: Deployment netapp-harvest-exporter-cinder has only [[ $value ]] free workers. Consider add one more replica.
