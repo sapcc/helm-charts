@@ -195,7 +195,7 @@
 
 # prometheus monitoring config
 
-@include /fluent-bin/prometheus.conf
+@include /fluentd/etc/prometheus.conf
 
 {{- if eq .Values.global.clusterType "metal" }}
 <filter keystone.** keystone-global.**>
@@ -214,7 +214,7 @@
   <parse>
     @type grok
     grok_pattern %{DATE_EU:timestamp} %{TIME:timestamp} %{NUMBER} %{NOTSPACE:loglevel} %{JAVACLASS:component} \[%{NOTSPACE:requestid} %{DATA:global_request_id} usr %{DATA:usr} prj %{DATA:prj} dom %{DATA:dom} usr-dom %{DATA:usr_domain} prj-dom %{DATA}\] %{DATA:action} %{METHOD:method} %{URIPATH:pri_path}, %{LOWER:action} (?:b')?%{NOTSPACE:user}(?:') (?:b')(?:(%{WORD:domain}|))(?:')%{GREEDYDATA:action}
-    custom_pattern_path /fluent-bin/pattern
+    custom_pattern_path /fluentd/etc/pattern
     grok_failure_key grok_failure
   </parse>
 </filter>
