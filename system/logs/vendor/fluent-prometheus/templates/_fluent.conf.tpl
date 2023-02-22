@@ -215,6 +215,7 @@
 </match>
 
 <match kubernetes.** audit.**>
+  @type rewrite_tag_filter
   <rule>
     key log
     pattern /(unreadable. It is excluded|Skip update_watcher because watcher has been already updated by other inotify event)/
