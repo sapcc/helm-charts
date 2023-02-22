@@ -102,8 +102,8 @@ vmware-{{ $vropshostname._0 | trimPrefix "vrops-" }}
 
 {{- define "clusterDomainOrDefault" }}
 {{- if $.Values.clusterDomain }}
-{{- $.Values.clusterDomain }}.{{- $.Values.global.region }}.{{- $.Values.global.tld }}
-{{- else }}
+{{- $.Values.clusterDomain }}.{{ $.Values.global.region }}.{{ $.Values.global.tld }}
+{{- else -}}
 cluster.local
-{{- end }}
-{{- end }}
+{{- end -}}
+{{- end -}}
