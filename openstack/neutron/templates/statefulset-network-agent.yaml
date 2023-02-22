@@ -1,4 +1,4 @@
-{{- $ussuri := hasPrefix "ussuri" (default .Values.imageVersion .Values.imageVersionServerAPI) -}}
+{{- $release:= or (hasPrefix "ussuri" (default .Values.imageVersion .Values.imageVersionServerAPI)) (hasPrefix "yoga" (default .Values.imageVersion .Values.imageVersionServerAPI)) -}}
 {{- if and (.Values.agent.multus | default false) .Values.agent.controlplane }}
 {{- $az_count := len .Values.global.availability_zones -}}
 {{ range $i, $az_long := .Values.global.availability_zones | default (list (printf "%sa" $.Values.global.region) (printf "%sb" $.Values.global.region)) }}
@@ -234,7 +234,7 @@ spec:
             capabilities:
               add:
                 - NET_ADMIN
-{{- if $ussuri }}
+{{- if $release }}
                 - SYS_ADMIN
                 - DAC_OVERRIDE
                 - DAC_READ_SEARCH
