@@ -38,9 +38,9 @@ updaterConfig:
     day: {{ .Values.secAttNotifier.secAttNotificationDay }}
     secondDay: {{ .Values.secAttNotifier.secondDay }}
     sender: {{ .Values.secAttNotifier.sourceEmail }}
-  {{- if .Values.secAttNotifier.contact }}
-    {{- range $key, $value := .Values.secAttNotifier.contact }}
-    contact:
+  {{- if .Values.secAttNotifier.contacts }}
+    {{- range $key, $value := .Values.secAttNotifier.contacts }}
+    contacts:
       - {{ $value }}
     {{- end }}
   {{- end }}
