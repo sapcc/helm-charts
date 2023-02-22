@@ -178,14 +178,8 @@ shared_preload_libraries = '{{ keys .Values.extensions | join ","}}'		# (change 
 #------------------------------------------------------------------------------
 
 # - Settings -
-
-{{- if $.Values.cdc.enabled }}
-# Adjust WAL-settings if change-data-capture is enabled
-wal_level = logical       # required by Debezium
-{{- else }}
 #wal_level = minimal			# minimal, archive, hot_standby, or logical
                     # (change requires restart)
-{{- end }}
 #fsync = on				# turns forced synchronization on or off
 #synchronous_commit = on		# synchronization level;
                     # off, local, remote_write, or on
@@ -234,22 +228,12 @@ wal_buffers = {{.Values.wal_buffers | default -1 }}		# min 32kB, -1 sets based o
 # - Sending Server(s) -
 
 # Set these on the master and on any standby that will send replication data.
-
-{{- if $.Values.cdc.enabled }}
-max_wal_senders = 5     # required by Debezium
-{{- else }}
 #max_wal_senders = 0		# max number of walsender processes
                 # (change requires restart)
-{{- end }}
 #wal_keep_segments = 0		# in logfile segments, 16MB each; 0 disables
 #wal_sender_timeout = 60s	# in milliseconds; 0 disables
-
-{{- if $.Values.cdc.enabled }}
-max_replication_slots = 1   # required by Debezium
-{{- else }}
 #max_replication_slots = 0	# max number of replication slots
                 # (change requires restart)
-{{- end }}
 #track_commit_timestamp = off	# collect timestamp of transaction commit
                 # (change requires restart)
 
