@@ -44,25 +44,6 @@ If you use AWS EKS, please setup global.storageClass as `gp2`
 | image.pullPolicy  | CodiMD docker image pull policy  | `IfNotPresent`    |
 | image.pullSecrets | CodiMD docker image pull secrets | `[]`              |
 
-### Deploy an internal database parameters
-
-This Helm chart contains `postgreSQL` and `mariaDB`, you just select one database to deploy. if you want to use external database (maybe cloud provider service or self-hosted database), just set `postgresql.enabled` and `mariadb.enabled` to be `false` and manuall assign database connection parameters in `codimd.database`.
-
-| Parameter                          | Description                            | Default    |
-| ---------------------------------- |:-------------------------------------- | ---------- |
-| postgresql.enabled                 | Deploy a PostgreSQL server as database | `true`     |
-| postgresql.volumePermissions       | Enable database persistence using PVC  | `true`     |
-| postgresql.postgresqlUsername      | Database user to create                | `codimd`   |
-| postgresql.postgresqlPassword      | Password for the database              | `changeme` |
-| postgresql.postgresqlDatabase      | Database name to create                | `codimd`   |
-| mariadb.enabled                    | Deploy a MariaDB server as database    | `false`    |
-| mariadb.volumePermissions.enabled  | Enable database persistence using PVC  | `true`     |
-| mariadb.db.user                    | Database user to create                | `codimd`   |
-| mariadb.db.password                | Password for the database              | `changeme` |
-| mariadb.db.name                    | Database name to create                | `codimd`   |
-| mariadb.master.persistence.enabled | Enable database persistence using PVC  | `true`     |
-| mariadb.replication.enabled        | MariaDB replication enabled            | `false`    |
-
 ### Networking conectivity parameters
 
 If you want use ingress, please set `service.type` to be `ClusterIP`
