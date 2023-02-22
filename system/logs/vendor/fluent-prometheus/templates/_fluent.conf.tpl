@@ -212,10 +212,13 @@
     pattern /encountered fetching pod metadata/
     tag "METADATA.${tag}"
   </rule>
+</match>
+
+<match kubernetes.** audit.**>
   <rule>
     key log
     pattern /(unreadable. It is excluded|Skip update_watcher because watcher has been already updated by other inotify event)/
-    tag "TAILSTALLED.${tag}"
+    tag "FLUENTDTAILSTALLED.${tag}"
   </rule>
 </match>
 
@@ -444,7 +447,7 @@
   </store>
 </match>
 
-<match TAILSTALLED.**>
+<match FLUENTDTAILSTALLED.**>
   @type copy
   <store>
     @type prometheus
