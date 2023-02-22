@@ -26,7 +26,7 @@ cronus:
       errorCase: {{$v.errorCase | quote }}
     {{- end }}
     {{- if $v.errorCode }}
-      errorCode: {{$v.errorCode | quote }}
+      errorCode: {{ $v.errorCode }}
     {{- end }}
   {{- end }}
 {{- end }}
