@@ -1,11 +1,3 @@
-global:
-  tld: cloud.sap
-  region: local
-# specify the k8s keystone namespace if it differs from the current chart
-  keystoneNamespace: monsoon3
-  imageNamespace: monsoon
-  user_suffix: ""
-
 custom_configmap: false
 ## If enabled, image references use `.Values.registryAlternateRegion` instead of `.Values.registry`.
 useAlternateRegion: false
@@ -57,35 +49,6 @@ probe_failure_threshold: 6 # number of liveness probes that need to fail to trig
 ## ref: http://kubernetes.io/docs/user-guide/compute-resources/
 ##
 resources: {}
-
-backup:
-  enabled: false
-  splitDeployment: false # "false" is the legacy value, set this to "true" in new deployments
-
-  interval_full: 1 hours
-  os_auth_url: null # defined in values.yaml; defaults to cluster-internal Keystone endpoint (default is only valid in the baremetal clusters)
-  os_region_name: null # defaults to .Values.global.region
-  os_password: null # defined in values.yaml; set this to the password for the service user `db_backup@Default`
-
-  resources:
-    enabled: true
-    limits:
-      memory: 192Mi
-      cpu: 100m
-    requests:
-      memory: 192Mi
-      cpu: 100m
-
-  ## The following obsolete fields are all ignored when splitDeployment is set to "true".
-  image: monsoon/backup-tools
-  imageTag: v0.5.15
-  os_username: db_backup
-  os_user_domain: Default
-  os_project_name: master
-  os_project_domain: ccadmin
-  # if custom repository is enabled, .Values.backup.image must be the full
-  # repository URL; .Values.global.imageRegistry is not prepended
-  custom_repository: false
 
 cdc:
   enabled: false
