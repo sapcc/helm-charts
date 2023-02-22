@@ -99,3 +99,11 @@ prometheus-{{- include "thanos.name" . -}}-thanos-storage-config
 {{- $vropshostname := split "." . -}}
 vmware-{{ $vropshostname._0 | trimPrefix "vrops-" }}
 {{- end -}}
+
+{{- define "clusterDomainOrDefault" }}
+{{- if $.Values.clusterDomain }}
+{{- $.Values.clusterDomain }}.{{- $.Values.global.region }}.{{- $.Values.global.tld }}
+{{- else }}
+cluster.local
+{{- end }}
+{{- end }}
