@@ -15,6 +15,7 @@ Pollers:{{`
     datacenter: {{ .AvailabilityZone }}
     labels:
       - availability_zone: {{ .AvailabilityZone }}
+      - cluster: {{ .Name }} 
     collectors:
       - Zapi:
         - limited.yaml
