@@ -30,7 +30,7 @@ spec:
           expr: elasticsearch_octobus_audit_deadletter_hits > 0
           for: 5m
           labels:
-            severity: warn
+            severity: warning
             service: "logs"
             support_group: "observability"
             meta: "Audit events send to deadletter index"
@@ -49,7 +49,7 @@ spec:
           expr: elasticsearch_octobus_audit_source_doc_count{source="{{ .name }}"} == 0
           for: {{ .interval }}
           labels:
-            severity: warn
+            severity: warning
             service: "logs"
             support_group: "observability"
             meta: "Audit events for {{ .name }} missing"
@@ -70,7 +70,7 @@ spec:
           expr: elasticsearch_octobus_audit_source_doc_count{source="{{ .name }}"} == 0
           for: {{ .interval }}
           labels:
-            severity: warn
+            severity: warning
             service: "logs"
             support_group: "observability"
             meta: "Audit events for {{ .name }} missing"
