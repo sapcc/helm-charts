@@ -1,3 +1,7 @@
+## 7.1.31
+
+* VerticalPodAutoscaler starts off initially
+
 ## 7.1.30
 
 * VerticalPodAutoscaler for prometheus pod only
