@@ -1,3 +1,5 @@
+{{- if .Values.alerts.enabled }}
+
 {{/* Special characters must be stripped from .Release.Name, e.g. .Release.Name = "concourse-main" becomes $name_prefix = "ConcourseMain". */}}
 {{- $name_prefix   := regexReplaceAll "\\W*" (.Release.Name | title) "" -}}
 {{- $service       := .Values.alerts.service       | default .Release.Name -}}
@@ -59,3 +61,5 @@ spec:
       annotations:
         description: The last successful database backup for {{ $db_host }} is {{`{{ $value }}`}} hours old.
         summary: Database Backup too old
+
+{{- end }}
