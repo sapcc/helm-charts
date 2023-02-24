@@ -1,3 +1,7 @@
+## 7.1.32
+
+* Option to disable the object store in order to enable only the gRPC store API for the Thanos sidecar. 
+
 ## 7.1.31
 
 * VerticalPodAutoscaler starts off initially
