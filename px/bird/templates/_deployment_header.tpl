@@ -32,10 +32,7 @@ spec:
       pxdomain: '{{ $domain_number }}'
       pxinstance: '{{ $instance_number }}'
   strategy:
-    type: RollingUpdate
-    rollingUpdate:
-      maxSurge: 1
-      maxUnavailable: 1
+    type: Recreate
   template:
     metadata:
       labels:
