@@ -1,8 +1,10 @@
+{{- range $key, $value := (required ".Values.hubcopter.instances is missing" .Values.hubcopter.instances) }}
+---
 kind: Deployment
 apiVersion: apps/v1
 
 metadata:
-  name: hubcopter-api
+  name: hubcopter-api-{{ $key }}
 
 spec:
   revisionHistoryLimit: 5
@@ -14,16 +16,15 @@ spec:
       maxSurge: 1
   selector:
     matchLabels:
-      name: hubcopter-api
+      name: hubcopter-api-{{ $key }}
   template:
     metadata:
       labels:
-        name: hubcopter-api
+        name: hubcopter-api-{{ $key }}
         alert-tier: os
         alert-service: hubcopter
       annotations:
-        checksum/configmap: {{ include "hubcopter/templates/configmap.yaml" . | sha256sum }}
-        checksum/secret: {{ include "hubcopter/templates/secret.yaml" . | sha256sum }}
+        checksum/secret: {{ include "hubcopter/templates/secret.yaml" $ | sha256sum }}
     spec:
       affinity:
         podAntiAffinity:
@@ -39,8 +40,17 @@ spec:
             weight: 10
       volumes:
         - name: config
-          configMap:
-            name: hubcopter
+          secret:
+            secretName: hubcopter-config-{{ $key }}
+      initContainers:
+        - name: wait-for-glas
+          env:
+            - &HUBCOPTER_GLAS_URL
+              name:  HUBCOPTER_GLAS_URL
+              value: "http://glas-api.hubcopter.svc:8081"
+          image: "{{ required ".Values.global.dockerHubMirror variable missing" $.Values.global.dockerHubMirror }}/library/alpine:latest"
+          imagePullPolicy: IfNotPresent
+          command: ["sh", "-c", "until wget -O- $HUBCOPTER_GLAS_URL/healthcheck; do echo waiting for glas; sleep 1; done"]
       containers:
         - name: api
           image: {{ $.Values.global.registry }}/hubcopter:{{ $.Values.hubcopter.image_tag | required ".Values.hubcopter.image_tag is missing" }}
@@ -61,8 +71,7 @@ spec:
                   key: concourse_password
             - name:  HUBCOPTER_DEBUG
               value: 'true' # turn off
-            - name:  HUBCOPTER_GLAS_URL
-              value: "http://glas-api.hubcopter.svc:8081"
+            - *HUBCOPTER_GLAS_URL
             - name:  OS_AUTH_URL
               value: "https://identity-3.{{ $.Values.global.region }}.{{ $.Values.global.tld }}/v3"
             - name:  OS_AUTH_VERSION
@@ -109,3 +118,4 @@ spec:
             limits:
               cpu: "400m"
               memory: "128Mi"
+{{- end }}
