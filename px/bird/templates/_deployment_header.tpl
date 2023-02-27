@@ -57,8 +57,8 @@ spec:
               - key: kubernetes.cloud.sap/apod
                 operator: In
                 values: 
-{{- range $az_apods := values $apods }}
-{{- range $az_apods | sortAlpha }}
+{{- range $site := keys $apods | sortAlpha }}
+{{- range get $apods $site | sortAlpha }}
                 - {{ . }}
 {{- end }}
 {{- end }}
