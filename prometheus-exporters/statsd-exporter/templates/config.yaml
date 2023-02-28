@@ -1,0 +1,19 @@
+{{- $values := .Values -}}
+{{- range $i, $statsd := .Values.statsd -}}
+{{ if ne $i 0 }}---{{ end }}
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  fullName: {{ printf "%s" $statsd.fullName }}
+  labels:
+{{- include "statsd-exporter.labels" . | nindent 4 }}
+    name: { printf "%s" $statsd.name }}
+
+data:
+{{- if $statsd.mappingConfig }}
+  statsd.mappingConf: |
+{{ $statsd.mappingConfig | nindent 4 }}
+{{- end }}
+---
+{{ end -}}

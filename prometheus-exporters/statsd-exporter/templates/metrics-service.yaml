@@ -1,0 +1,37 @@
+{{- $values := .Values -}}
+
+{{- range $i, $statsd := .Values.statsd -}}
+{{ if ne $i 0 }}---{{ end }}
+
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+
+metadata:
+  fullName: {{ printf "%s" $statsd.fullName }}
+  app: {{ printf "%s" $statsd.name }}
+  labels:
+    prometheus: {{ required ".Values.metrics.prometheus" $values.metrics.prometheus }}
+
+spec:
+  jobLabel: {{ printf "%s" $statsd.name }}
+
+  namespaceSelector:
+    matchNames:
+      - {{ $values.nameSpace }}
+  selector:
+    matchLabels:
+      app: {{ printf "%s" $statsd.name }}
+
+  endpoints:
+    - interval: {{ $values.metrics.scrapeInterval }}
+      scrapeTimeout: {{ $values.metrics.scrapeTimeout }}
+      port: metrics
+      scheme: http
+      relabelings:
+        - action: labelmap
+          regex: '__meta_kubernetes_service_label_(.+)'
+        - targetLabel: job
+          replacement: {{ printf "%s" $statsd.name }}
+
+---
+{{ end -}}

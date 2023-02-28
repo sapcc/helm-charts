@@ -36,7 +36,6 @@ Common labels
 */}}
 {{- define "statsd-exporter.labels" -}}
 helm.sh/chart: {{ include "statsd-exporter.chart" . }}
-{{ include "statsd-exporter.selectorLabels" . }}
 {{- if .Chart.AppVersion }}
 app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
 {{- end }}

@@ -1,98 +1,104 @@
-# Default values for prometheus-statsd-exporter.
-# This is a YAML-formatted file.
-# Declare variables to be passed into your templates.
-replicaCount: 1
 
-image:
-  repository: keppel.eu-de-1.cloud.sap/ccloud-dockerhub-mirror/prom/statsd-exporter
-  tag: v0.22.4
-  pullPolicy: IfNotPresent
+  # Default values for prometheus-statsd-exporter.
+  # This is a YAML-formatted file.
+  # Declare variables to be passed into your templates.
+  image:
+    repository: keppel.eu-de-1.cloud.sap/ccloud-dockerhub-mirror/prom/statsd-exporter
+    tag: v0.23.0
+    pullPolicy: IfNotPresent
 
-nameOverride: "statsd-exporter"
-fullnameOverride: "prometheus-statsd-exporter"
+  replicaCount: 1
+  nameSpace: cc3test
+  service_type: ClusterIP
 
-service:
-  type: ClusterIP
+  ingress:
+    enabled: true
+    tls: true
+    disco: true
+  #  no_keep_alive: true
 
-prometheus:
-  port: 9102
-  scrape: true
-  name: infra-frontend
+   metrics:
+    # The address on which to expose the web interface and generated Prometheus metrics.
+    port: 9102
+    # Path under which to expose metrics.
+    path: /metrics
+    prometheus: infra-frontend
+    scrapeInterval: 60s
+    scrapeTimeout: 55s
 
-ingress:
-  enabled: true
+  statsd:
+    - name: 'statsd-exporter'
+      fullName: 'prometheus-statsd-exporter'
+      enabled: true
+      # The UDP port on which to receive statsd metric lines.
+      udpPort: 9125
+      # The TCP port on which to receive statsd metric lines.
+      tcpPort: 9125
+      # Maximum size of your metric mapping cache.
+      # Relies on least recently used replacement policy if max size is reached.
+      cacheSize: 1000
+      # Size of internal queue for processing events.
+      eventQueueSize: 10000
+      # Number of events to hold in queue before flushing.
+      eventFlushThreshold: 1000
+      # Time interval before flushing events in queue.
+      eventFlushInterval: 200ms
 
-  # Automate certificate management via vice-president.
-  vicePresident: false
+      # Metric mapping configuration (see https://github.com/prometheus/statsd_exporter#metric-mapping-and-configuration for details
+      mappingConfig: |-
+        defaults:
+          ttl: 1h 
 
-  # Automate certificate management via cert-manager.
-  certManager: true
+      resources: { }
+        # We usually recommend not to specify default resources and to leave this as a conscious
+        # choice for the user. This also increases chances charts run on environments with little
+        # resources, such as Minikube. If you do want to specify resources, uncomment the following
+        # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+        # limits:
+        #   cpu: 100m
+        #   memory: 128Mi
+        # requests:
+      #   cpu: 100m
+      #   memory: 128Mi
 
-  # Automate DNS management via disco.
-  disco: true
+    - name: 'statsd-exporter-inf'
+      fullName: 'prometheus-statsd-exporter-inf'
+      enabled: false
+      # The UDP port on which to receive statsd metric lines.
+      udpPort: 9126
+      # The TCP port on which to receive statsd metric lines.
+      tcpPort: 9126
+      # Maximum size of your metric mapping cache.
+      # Relies on least recently used replacement policy if max size is reached.
+      cacheSize: 1000
+      # Size of internal queue for processing events.
+      eventQueueSize: 10000
+      # Number of events to hold in queue before flushing.
+      eventFlushThreshold: 1000
+      # Time interval before flushing events in queue.
+      eventFlushInterval: 200ms
 
-  # Client certificate authentication on ingress level.
-  authentication:
-    enabled: false
+      # Metric mapping configuration (see https://github.com/prometheus/statsd_exporter#metric-mapping-and-configuration for details
+      mappingConfig: |-
+        defaults:
+            ttl: 0 # metrics do not expire
 
-    # The key (<namespace>/<name>) of the secret containing the CA certificate (`ca.crt`) that is enabled to authenticate against this Ingress.
-    authTLSSecret: kube-system/ingress-cacrt
+      resources: { }
+        # We usually recommend not to specify default resources and to leave this as a conscious
+        # choice for the user. This also increases chances charts run on environments with little
+        # resources, such as Minikube. If you do want to specify resources, uncomment the following
+        # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+        # limits:
+        #   cpu: 100m
+        #   memory: 128Mi
+        # requests:
+      #   cpu: 100m
+      #   memory: 128Mi
 
-    # The validation depth between the provided client certificate and the certification authority chain.
-    authTLSVerifyDepth: 3
 
-    # Enables verification of client certificates.
-    authTLSVerifyClient: on
-
-resources: {}
-  # We usually recommend not to specify default resources and to leave this as a conscious
-  # choice for the user. This also increases chances charts run on environments with little
-  # resources, such as Minikube. If you do want to specify resources, uncomment the following
-  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
-  # limits:
-  #   cpu: 100m
-  #   memory: 128Mi
-  # requests:
-  #   cpu: 100m
-  #   memory: 128Mi
-
-web:
-  # The address on which to expose the web interface and generated Prometheus metrics.
-  port: 9102
-
-  # Path under which to expose metrics.
-  path: /metrics
-
-statsd:
-  # The UDP port on which to receive statsd metric lines.
-  udpPort: 9125
-
-  # The TCP port on which to receive statsd metric lines.
-  tcpPort: 9125
-
-  # Maximum size of your metric mapping cache.
-  # Relies on least recently used replacement policy if max size is reached.
-  cacheSize: 1000
-
-  # Size of internal queue for processing events.
-  eventQueueSize: 10000
-
-  # Number of events to hold in queue before flushing.
-  eventFlushThreshold: 1000
-
-  # Time interval before flushing events in queue.
-  eventFlushInterval: 200ms
-
-  # Metric mapping configuration
-  # Reference for this file's format:
-  # <https://github.com/prometheus/statsd_exporter#metric-mapping-and-configuration>
-  mappingConfig: |-
-    defaults:
-      ttl: 1h 
-
-owner-info:
-  support-group: observability
-  maintainers:
-    - Thomas Graichen
-    - Martin Vossen
-  helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/prometheus-exporters/statsd-exporter
+  owner-info:
+    support-group: observability
+    maintainers:
+      - Thomas Graichen
+      - Martin Vossen
+    helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/prometheus-exporters/statsd-exporter

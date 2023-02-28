@@ -1,82 +1,86 @@
+{{- $values := .Values -}}
+
+{{- range $i, $statsd := .Values.statsd -}}
+{{ if ne $i 0 }}---{{ end }}
+
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "statsd-exporter.fullname" . }}
+  fullName: {{ printf "%s" $statsd.fullName }}
   labels:
-    {{- include "statsd-exporter.labels" . | nindent 4 }}
+{{- include "statsd-exporter.labels" . | nindent 4 }}
+    name: {{ printf "%s" $statsd.name }}
 spec:
-  replicas: {{ .Values.replicaCount }}
+  replicas: {{ $values.replicaCount }}
   selector:
     matchLabels:
-      {{- include "statsd-exporter.selectorLabels" . | nindent 6 }}
+      name: {{ printf "%s" $statsd.name }}
   template:
     metadata:
       labels:
-        {{- include "statsd-exporter.selectorLabels" . | nindent 8 }}
+        name: {{ printf "%s" $statsd.name }}
       annotations:
-        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") $ | sha256sum }}
+        checksum/config: {{ include (print $.Template.BasePath "/config.yaml") $ | sha256sum }}
     spec:
+      volumes:
+        - name: statsd-mapping-config
+          configMap:
+            name: { { printf "%s" $statsd.fullName } }
+            items:
+              - key: statsd.mappingConf
+                path: statsd-mapping.conf
+{{- if $statsd.mappingConfig }}
+          volumeMounts:
+          - name: statsd-mapping-config
+            mountPath: /etc/prometheus-statsd-exporter
+{{- end }}
       containers:
-        - name: {{ .Chart.Name }}
-          image: "{{ .Values.image.repository }}:{{ default .Chart.AppVersion .Values.image.tag }}"
-          imagePullPolicy: {{ .Values.image.pullPolicy }}
+        - name: {{ printf "%s" $statsd.name }}
+          image: "{{ $values.image.repository }}:{{ default .Chart.AppVersion $values.image.tag }}"
+          imagePullPolicy: {{ $values.image.pullPolicy }}
           args:
-            - --web.listen-address=:{{ .Values.web.port }}
-            - --web.telemetry-path={{ .Values.web.path }}
-            {{- if .Values.statsd.udpPort }}
-            - --statsd.listen-udp=:{{ .Values.statsd.udpPort }}
-            {{- else }}
-            - --statsd.listen-udp=
-            {{- end }}
-            {{- if .Values.statsd.tcpPort }}
-            - --statsd.listen-tcp=:{{ .Values.statsd.tcpPort }}
-            {{- else }}
-            - --statsd.listen-tcp=
-            {{- end }}
-            - --statsd.cache-size={{ .Values.statsd.cacheSize }}
-            - --statsd.event-queue-size={{ .Values.statsd.eventQueueSize }}
-            - --statsd.event-flush-threshold={{ .Values.statsd.eventFlushThreshold }}
-            - --statsd.event-flush-interval={{ .Values.statsd.eventFlushInterval }}
-            {{- if .Values.statsd.mappingConfig }}
+            - --web.listen-address=:{{ $values.metrics.port }}
+            - --web.telemetry-path={{ $values.metrics.path }}
+            - --statsd.cache-size={{ $statsd.cacheSize }}
+            - --statsd.event-queue-size={{ $statsd.eventQueueSize }}
+            - --statsd.event-flush-threshold={{ $statsd.eventFlushThreshold }}
+            - --statsd.event-flush-interval={{ $statsd.eventFlushInterval }}
+{{- if $statsd.mappingConfig }}
             - --statsd.mapping-config=/etc/prometheus-statsd-exporter/statsd-mapping.conf
-            {{- end }}
+{{- end }}
+{{- if $statsd.tcpPort }}
+            - --statsd.listen-tcp=:{{ $statsd.tcpPort }}
+{{- end }}
+{{- if $statsd.udpPort }}
+            - --statsd.listen-udp=:{{ $statsd.udpPort }}
+{{- end }}
           ports:
-            - name: web
-              containerPort: {{ .Values.web.port }}
+            - name: metrics
+              containerPort: {{ $values.metrics.port }}
               protocol: TCP
-            {{- if .Values.statsd.tcpPort }}
+{{- if $statsd.tcpPort }}
             - name: statsd-tcp
-              containerPort: {{ .Values.statsd.tcpPort }}
+              containerPort: {{ $statsd.tcpPort }}
               protocol: TCP
-            {{- end }}
-            {{- if .Values.statsd.udpPort }}
+{{- end }}
+{{- if $statsd.udpPort }}
             - name: statsd-udp
-              containerPort: {{ .Values.statsd.udpPort }}
+              containerPort: {{ $statsd.udpPort }}
               protocol: UDP
-            {{- end }}
+{{- end }}
           livenessProbe:
             httpGet:
               path: /-/healthy
-              port: web
+              port: metrics
             initialDelaySeconds: 30
             periodSeconds: 30
           readinessProbe:
             httpGet:
               path: /-/ready
-              port: web
+              port: metrics
             initialDelaySeconds: 30
             periodSeconds: 30
           resources:
-            {{- toYaml .Values.resources | nindent 12 }}
-      {{- if .Values.statsd.mappingConfig }}
-          volumeMounts:
-          - name: statsd-mapping-config
-            mountPath: /etc/prometheus-statsd-exporter
-      volumes:
-      - name: statsd-mapping-config
-        configMap:
-          name: {{ template "statsd-exporter.fullname" . }}
-          items:
-          - key: statsd.mappingConf
-            path: statsd-mapping.conf
-      {{- end }}
+            {{- toYaml $statsd.resources | nindent 12 }}
+---
+{{ end -}}

@@ -1,31 +1,38 @@
+{{- $values := .Values -}}
+
+{{- range $i, $statsd := .Values.statsd -}}
+{{ if ne $i 0 }}---{{ end }}
+
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ include "statsd-exporter.fullname" . }}
+  name: {{ printf "%s" $statsd.fullName }}
   labels:
-    {{- include "statsd-exporter.labels" . | nindent 4 }}
-  annotations:
-    "prometheus.io/scrape": {{ .Values.prometheus.scrape | quote}}
-    "prometheus.io/port": {{ .Values.prometheus.port | quote}}
-    "prometheus.io/targets": {{ .Values.prometheus.name | quote}}
+    app: {{ printf "%s" $statsd.name }}
 spec:
-  type: {{ .Values.service.type }}
+  namespaceSelector:
+    matchNames:
+      - {{ $values.nameSpace }}
+  selector:
+    matchLabels:
+      app: {{ printf "%s" $statsd.name }}
+
   ports:
-    - port: {{ .Values.web.port }}
-      targetPort: web
+    - name: metrics
+      port: {{ $vaules.metrics.port }}
+      targetPort: metrics
       protocol: TCP
-      name: web
-    {{- if .Values.statsd.tcpPort }}
-    - port: {{ .Values.statsd.tcpPort }}
+{{- if $values.statsd.tcpPort }}
+    - name: statsd-tcp
+      port: {{ $values.statsd.tcpPort }}
       targetPort: statsd-tcp
       protocol: TCP
-      name: statsd-tcp
-    {{- end }}
-    {{- if .Values.statsd.udpPort }}
-    - port: {{ .Values.statsd.udpPort }}
+{{- end }}
+{{- if $values.statsd.udpPort }}
+    - name: statsd-udp
+      port: {{ $values.statsd.udpPort }}
       targetPort: statsd-udp
       protocol: UDP
-      name: statsd-udp
-    {{- end }}
-  selector:
-    {{- include "statsd-exporter.selectorLabels" . | nindent 4 }}
+{{- end }}
+---
+{{ end -}}
