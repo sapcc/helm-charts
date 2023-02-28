@@ -1,3 +1,7 @@
+## 7.1.34
+
+* SidecarDiscovey added
+
 ## 7.1.33
 
 * Fixing vpa quotes
