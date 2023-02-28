@@ -121,6 +121,7 @@ use = egg:sapcc-swift-addons#sysmeta_domain_override
 
 [filter:write-restriction]
 use = egg:sapcc-swift-addons#write_restriction
+allowed_roles = cloud_objectstore_admin
 {{- end }}
 
 {{- if not .Values.sapcc_ratelimit.enabled }}
