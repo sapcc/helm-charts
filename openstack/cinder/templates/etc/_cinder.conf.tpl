@@ -30,6 +30,7 @@ auth_strategy = keystone
 
 rpc_response_timeout = {{ .Values.rpc_response_timeout | default .Values.global.rpc_response_timeout | default 600 }}
 rpc_workers = {{ .Values.rpc_workers | default .Values.global.rpc_workers | default 1 }}
+rpc_ping_enabled = {{ .Values.rpc_ping_enabled }}
 
 {{- if not .Values.api.use_uwsgi }}
 osapi_volume_workers = {{ .Values.osapi_volume_workers | default .Values.api.workers }}
