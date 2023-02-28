@@ -139,7 +139,7 @@ output {
       index => "alerts-critical-%{+YYYY}"
       hosts => ["https://{{.Values.opensearch.http.endpoint}}.{{.Values.global.region}}.{{.Values.global.tld}}:{{.Values.opensearch.http_port}}"]
       auth_type => {
-        type => 'basic'
+        type => "basic"
         user => "{{.Values.opensearch.user}}"
         password => "{{.Values.opensearch.password}}"
       }
@@ -167,7 +167,7 @@ output {
       index => "alerts-warnings-%{+YYYY}"
       hosts => ["https://{{.Values.opensearch.http.endpoint}}.{{.Values.global.region}}.{{.Values.global.tld}}:{{.Values.opensearch.http_port}}"]
       auth_type => {
-        type => 'basic'
+        type => "basic"
         user => "{{.Values.opensearch.user}}"
         password => "{{.Values.opensearch.password}}"
       }
@@ -195,7 +195,7 @@ output {
       index => "alerts-other--%{+YYYY}"
       hosts => ["https://{{.Values.opensearch.http.endpoint}}.{{.Values.global.region}}.{{.Values.global.tld}}:{{.Values.opensearch.http_port}}"]
       auth_type => {
-        type => 'basic'
+        type => "basic"
         user => "{{.Values.opensearch.user}}"
         password => "{{.Values.opensearch.password}}"
       }
@@ -223,7 +223,7 @@ output {
       index => "deployments-%{+YYYY}"
       hosts => ["https://{{.Values.opensearch.http.endpoint}}.{{.Values.global.region}}.{{.Values.global.tld}}:{{.Values.opensearch.http_port}}"]
       auth_type => {
-        type => 'basic'
+        type => "basic"
         user => "{{.Values.opensearch.user}}"
         password => "{{.Values.opensearch.password}}"
       }
