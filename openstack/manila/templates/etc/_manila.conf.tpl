@@ -29,6 +29,7 @@ periodic_interval = {{ .Values.periodic_interval | default 300 }}
 
 rpc_response_timeout = {{ .Values.rpc_response_timeout | default .Values.global.rpc_response_timeout | default 300 }}
 rpc_workers = {{ .Values.rpc_workers | default .Values.global.rpc_workers | default 1 }}
+rpc_ping_enabled = {{ .Values.rpc_ping_enabled }}
 
 # time to live in sec of idle connections in the pool:
 conn_pool_ttl = {{ .Values.rpc_conn_pool_ttl | default 600 }}
