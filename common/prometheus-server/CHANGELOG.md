@@ -1,4 +1,4 @@
-## 7.1.34 - 7.1.35
+## 7.1.34 - 7.1.36
 
 * SidecarDiscovey added
 
