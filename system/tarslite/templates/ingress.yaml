@@ -2,10 +2,13 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: {{ .Release.Name }}
+
+  {{- if .Values.tarslite.ingress.annotations }}
   annotations:
-    kubernetes.io/tls-acme: "true"
-    disco: "true"
-{{- $hostname :=  print .Release.Name "." .Values.tarslite.domain }}
+    {{- tpl (.Values.tarslite.ingress.annotations | toYaml | nindent 4) . }}
+  {{- end }}
+
+{{- $hostname :=  print .Release.Name "." (tpl .Values.tarslite.domain .)}}
 spec:
   rules:
     - host: {{ $hostname }}
