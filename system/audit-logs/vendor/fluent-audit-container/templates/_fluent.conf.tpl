@@ -27,7 +27,7 @@
   @type tail
   @id keystone
   path /var/log/containers/keystone-api-*.log
-  exclude_path /var/log/containers/fluentd*
+  exclude_path /var/log/containers/fluent*
   pos_file /var/log/keystone-octobus.log.pos
   tag keystone.*
   <parse>
@@ -52,7 +52,7 @@
   @type tail
   @id keystone-global
   path /var/log/containers/keystone-global-api-*.log
-  exclude_path /var/log/containers/fluentd*
+  exclude_path /var/log/containers/fluent*
   pos_file /var/log/keystone-global-octobus.log.pos
   tag keystone-global.*
   <parse>
@@ -80,7 +80,7 @@
   @type tail
   @id {{.}}kube-api
   path /var/log/containers/{{ . }}{{ $.Values.global.region }}-*-apiserver-*_kubernikus_fluentd-*.log
-  exclude_path /var/log/containers/fluentd*
+  exclude_path /var/log/containers/fluent*
   pos_file /var/log/{{ . }}kube-api-octobus.log.pos
   tag kubeapi.{{ . }}{{ $.Values.global.region }}.*
   <parse>
@@ -135,7 +135,7 @@
   @type tail
   @id {{ .id }}
   path {{ .path }}
-  exclude_path /var/log/containers/fluentd*
+  exclude_path /var/log/containers/fluent*
   pos_file /var/log/additional-containers-{{ .id }}-octobus.log.pos
   tag {{ .tag }}
   <parse>
