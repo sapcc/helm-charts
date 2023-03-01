@@ -131,25 +131,6 @@ groups:
         Error messages can be found in <https://dashboard.{{ $labels.region }}.cloud.sap/ccadmin/cloud_admin/cc-tools/limes#/scrape-errors|the Limes Errors view in Elektra>.
       summary: Limes cannot scrape {{ title $labels.service_name }}
 
-  - alert: OpenstackLimesSuspendedScrapes
-    # this has [15m] instead of [5m] because suspensions last for 10 minutes,
-    # therefore the limes_suspended_scrapes counter only increments that often
-    expr: sum(increase(limes_suspended_scrapes[15m])) BY (service, service_name) > 0
-    for: 1h
-    labels:
-      context: failedscrapes
-      dashboard: limes-overview
-      service: '{{ $labels.service_name }}'
-      severity: warning
-      support_group: containers
-      tier: os
-    annotations:
-      description: Limes has suspended scraping from {{ title $labels.service_name }}
-        for more than an hour. Please check if the internal endpoint for
-        {{ title $labels.service_name }} is correctly entered in the Keystone catalog.
-        The `kubectl logs` for limes-collect-ccloud contain additional info.
-      summary: Limes cannot find {{ title $labels.service_name }} endpoint
-
   - alert: OpenstackLimesFailedRateScrapes
     expr: sum(increase(limes_failed_rate_scrapes[5m])) BY (service, service_name, region) > 0
     for: 1h
@@ -183,25 +164,6 @@ groups:
         for more than an hour. Please check if {{ title $labels.service_name }} is working.
         Error messages can be found in <https://dashboard.{{ $labels.region }}.cloud.sap/ccadmin/cloud_admin/cc-tools/limes#/scrape-errors|the Limes Errors view in Elektra>.
       summary: Limes cannot scrape {{ title $labels.service_name }}
-
-  - alert: OpenstackLimesSuspendedRateScrapes
-    # this has [15m] instead of [5m] because suspensions last for 10 minutes,
-    # therefore the limes_suspended_rate_scrapes counter only increments that often
-    expr: sum(increase(limes_suspended_rate_scrapes[15m])) BY (service, service_name) > 0
-    for: 1h
-    labels:
-      context: failedratescrapes
-      dashboard: limes-overview
-      service: '{{ $labels.service_name }}'
-      severity: warning
-      support_group: containers
-      tier: os
-    annotations:
-      description: Limes has suspended rate scraping from {{ title $labels.service_name }}
-        for more than an hour. Please check if the internal endpoint for
-        {{ title $labels.service_name }} is correctly entered in the Keystone catalog.
-        The `kubectl logs` for limes-collect-ccloud contain additional info.
-      summary: Limes cannot find {{ title $labels.service_name }} endpoint
 
   - alert: OpenstackLimesMissingSwiftMetrics
     expr: (limes_project_usage{service="object-store",resource="capacity"} > 0) unless on(project_id) (limes_plugin_metrics_ok{service="object-store"} == 1)
