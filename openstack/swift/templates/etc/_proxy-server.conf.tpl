@@ -18,7 +18,14 @@ log_level = INFO
 
 [pipeline:main]
 # Rocky or higher pipeline
-pipeline = catch_errors gatekeeper healthcheck proxy-logging cache listing_formats cname_lookup domain_remap bulk tempurl {{ if not .Values.sapcc_ratelimit.enabled }}ratelimit {{ end }}authtoken{{ if .Values.s3api_enabled }} s3api s3token {{ if not .Values.sapcc_ratelimit.enabled }}ratelimit{{ end }}{{ end }} {{if .Values.watcher_enabled }}watcher {{ end }}{{ if .Values.sapcc_ratelimit.enabled }}sapcc_ratelimit {{ end }}keystoneauth sysmeta-domain-override staticweb copy container-quotas account-quotas slo dlo versioned_writes symlink proxy-logging proxy-server
+pipeline = catch_errors gatekeeper healthcheck proxy-logging cache listing_formats cname_lookup domain_remap bulk tempurl {{ if not .Values.sapcc_ratelimit.enabled }}ratelimit {{ end }}authtoken{{ if .Values.s3api_enabled }} s3api s3token {{ if not .Values.sapcc_ratelimit.enabled }}ratelimit{{ end }}{{ end }} {{if .Values.watcher_enabled }}watcher {{ end }}{{ if .Values.sapcc_ratelimit.enabled }}sapcc_ratelimit {{ end }}keystoneauth sysmeta-domain-override {{ if eq .Values.global.region "qa-de-3" }}write-restriction {{ end }}staticweb copy container-quotas account-quotas slo dlo versioned_writes symlink proxy-logging proxy-server
+
+{{- if eq .Values.global.region "qa-de-3" }}
+
+[filter:write-restriction]
+use = egg:sapcc-swift-addons#write_restriction
+allowed_roles = cloud_objectstore_admin
+{{- end }}
 
 [app:proxy-server]
 use = egg:swift#proxy
