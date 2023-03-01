@@ -125,11 +125,7 @@
 # remove fields which cause parsing errors in elastic and are not audit relevant
 <filter kubeapi.**>
   @type record_transformer
-  enable_ruby
-  <record>
-  temp ${ t = record.dig("requestObject","metadata","labels","app"); record["requestObject"]["metadata"]["labels"]["app.kubernetes.io/name"] = t; nil;}
-  </record>
-  remove_keys temp,$.requestObject.metadata.labels.app,$.requestObject.metadata.managedFields
+  remove_keys $.requestObject.metadata.managedFields,$["requestObject"]["metadata"]["labels"]["app"]
 </filter>
 {{- end }}
 
