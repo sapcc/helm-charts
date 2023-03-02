@@ -24,6 +24,7 @@ spec:
         alert-tier: os
         alert-service: hubcopter
       annotations:
+        checksum/configmap: {{ include "hubcopter/templates/configmap.yaml" $ | sha256sum }}
         checksum/secret: {{ include "hubcopter/templates/secret.yaml" $ | sha256sum }}
     spec:
       affinity:
@@ -40,8 +41,8 @@ spec:
             weight: 10
       volumes:
         - name: config
-          secret:
-            secretName: hubcopter-config-{{ $key }}
+          configMap:
+            name: hubcopter-config-{{ $key }}
       initContainers:
         - name: wait-for-glas
           env:
