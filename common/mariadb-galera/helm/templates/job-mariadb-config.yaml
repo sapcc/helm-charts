@@ -1,6 +1,6 @@
 {{- if and (hasKey $.Values.mariadb "autostart") (not $.Values.mariadb.autostart) }}
 {{- else if and ($.Values.command) (hasKey $.Values.command "application") }}
-{{- else if and (hasKey $.Values.mariadb.galera "restore") ($.Values.mariadb.galera.restore.enabled) }}
+{{- else if or (and (hasKey $.Values.mariadb.galera.restore "restic") ($.Values.mariadb.galera.restore.restic.enabled)) (and (hasKey $.Values.mariadb.galera.restore "kopia") ($.Values.mariadb.galera.restore.kopia.enabled)) }}
 {{- else if and (hasKey $.Values.mariadb "wipeDataAndLog") ($.Values.mariadb.wipeDataAndLog) }}
 {{- else }}
 apiVersion: batch/v1
@@ -21,8 +21,7 @@ spec:
         app: {{ $.Release.Name }}
         release: {{ $.Release.Name }}
       annotations:
-        checksum/entrypoint.sh: {{ include (print $.Template.BasePath "/configmap-mariadb-entrypoint-job-config.sh.yaml") $ | sha256sum }}
-        checksum/common-functions-extended.sh: {{ include (print $.Template.BasePath "/configmap-mariadb-common-functions-extended.sh.yaml") $ | sha256sum }}
+        checksum/configmap: {{ include (print $.Template.BasePath "/configmap-mariadb-job.yaml") $ | sha256sum }}
     spec:
       restartPolicy: {{ $.Values.job.mariadbconfig.jobRestartPolicy | default "OnFailure" | quote }}
       serviceAccount: {{ $.Release.Name }}
@@ -73,7 +72,7 @@ spec:
           limits:
             memory: {{ $.Values.resourceLimits.memory.jobconfig | default "32Mi" | quote }}
         volumeMounts:
-        - name: mariadbconfig-job-entrypoint-sh
+        - name: mariadb-config-job-entrypoint-sh
           mountPath: /opt/mariadb/bin/entrypoint-job-config.sh
           subPath: entrypoint-job-config.sh
           readOnly: true
@@ -98,9 +97,9 @@ spec:
           {{- end }}
         {{- end }}
       {{- end }}
-      - name: mariadbconfig-job-entrypoint-sh
+      - name: mariadb-config-job-entrypoint-sh
         configMap:
-          name: mariadbconfig-job-entrypoint-sh
+          name: mariadb-config-job-entrypoint-sh
           defaultMode: 0750
       - name: mariadb-common-functions-extended-sh
         configMap:

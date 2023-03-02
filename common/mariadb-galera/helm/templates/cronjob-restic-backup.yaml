@@ -1,0 +1,137 @@
+{{- if and (hasKey $.Values.mariadb "autostart") (not $.Values.mariadb.autostart) }}
+{{- else if and ($.Values.command) (hasKey $.Values.command "application") }}
+{{- else if and (hasKey $.Values.mariadb.galera.restore "restic") ($.Values.mariadb.galera.restore.restic.enabled) }}
+{{- else if and (hasKey $.Values.mariadb "wipeDataAndLog") ($.Values.mariadb.wipeDataAndLog) }}
+{{- else if and (and (hasKey $.Values.mariadb.galera "backup") ($.Values.mariadb.galera.backup.enabled)) (and (hasKey $.Values.mariadb.galera.backup "restic") ($.Values.mariadb.galera.backup.restic.enabled)) (and (hasKey $.Values.mariadb.galera.backup "kopia") ($.Values.mariadb.galera.backup.kopia.enabled)) }}
+  {{- fail "Please enable either 'mariadb.galera.backup.restic.enabled' OR 'mariadb.galera.backup.kopia.enabled'" }}
+{{- else if and (and (hasKey $.Values.mariadb.galera "backup") ($.Values.mariadb.galera.backup.enabled)) (and (hasKey $.Values.mariadb.galera.backup "restic") ($.Values.mariadb.galera.backup.restic.enabled)) }}
+  {{- range $scheduleKey, $scheduleValue := required ".job.resticbackup.schedule map(full + binlog) required to define the cronjobs" $.Values.job.resticbackup.schedule }}
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  namespace: {{ $.Release.Namespace }}
+  name: backup-restic-{{ $scheduleKey }}-{{ randAlphaNum 8 | lower }}
+  labels:
+    app: {{ $.Release.Name }}
+    release: {{ $.Release.Name }}
+    backupsoftware: restic
+spec:
+    {{- if eq $scheduleKey "full" }}
+  schedule: {{ $scheduleValue | default "15 2 * * *" | quote }}
+    {{- else if eq $scheduleKey "binlog" }}
+  schedule: {{ $scheduleValue | default "*/30 * * * *" | quote }}
+    {{- end }}
+  startingDeadlineSeconds: {{ $.Values.job.resticbackup.startingDeadlineSeconds | default 15 | int }}
+  concurrencyPolicy: {{ $.Values.job.resticbackup.concurrencyPolicy | default "Forbid" | quote }}
+  successfulJobsHistoryLimit: {{ $.Values.job.resticbackup.successfulJobsHistoryLimit | default 1 | int }}
+  failedJobsHistoryLimit: {{ $.Values.job.resticbackup.failedJobsHistoryLimit | default 1 | int }}
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            app: {{ $.Release.Name }}
+            release: {{ $.Release.Name }}
+          annotations:
+            checksum/configmap: {{ include (print $.Template.BasePath "/configmap-restic.yaml") $ | sha256sum }}
+        spec:
+          restartPolicy: {{ $.Values.job.resticbackup.jobRestartPolicy | default "OnFailure" | quote }}
+          serviceAccount: {{ $.Release.Name }}
+          securityContext:
+            runAsUser: {{ $.Values.userId.backup | default 3200 | int }}
+            runAsGroup: {{ $.Values.groupId.backup | default 3200 | int }}
+            fsGroup: {{ $.Values.groupId.backup | default 3200 | int }}
+          imagePullSecrets:
+          - name: {{ $.Release.Name }}-{{$.Values.image.resticbackup.pullSecret}}
+          containers:
+          - name: backup
+            image: "{{ $.Values.image.resticbackup.registry }}/{{ $.Values.image.resticbackup.project }}/{{ $.Values.image.resticbackup.applicationname }}:{{ $.Values.image.resticbackup.applicationversion }}-{{ $.Values.image.resticbackup.imageversion }}"
+            imagePullPolicy: {{ $.Values.image.resticbackup.pullPolicy | default "IfNotPresent" | quote }}
+            securityContext:
+              runAsUser:  {{ $.Values.userId.backup | default 3200 | int }}
+              runAsGroup: {{ $.Values.groupId.backup | default 3200 | int }}
+            {{- if and ($.Values.command) (hasKey $.Values.command "cronjob") }}
+            command:
+{{ $.Values.command.cronjob | toYaml | indent 12 }}
+            {{- end }}
+            env:
+            {{- if and (hasKey $.Values.mariadb.galera.backup.restic "backend") (eq $.Values.mariadb.galera.backup.restic.backend "openstackswift") }}
+            - name: OS_AUTH_URL
+              value: {{ required "Values.mariadb.galera.backup.restic.openstack.authurl is missing, but required for the Openstack Swift authentication." $.Values.mariadb.galera.backup.restic.openstack.authurl }}
+            - name: OS_IDENTITY_API_VERSION
+              value: "3"
+            - name: OS_REGION_NAME
+              value: {{ required "Values.mariadb.galera.backup.restic.openstack.region is missing, but required for the Openstack Swift authentication." $.Values.mariadb.galera.backup.restic.openstack.region }}
+            - name: OS_PROJECT_NAME
+              value: {{ required "Values.mariadb.galera.backup.restic.openstack.projectname is missing, but required for the Openstack Swift authentication." $.Values.mariadb.galera.backup.restic.openstack.projectname }}
+            - name: OS_PROJECT_DOMAIN_NAME
+              value: {{ required "Values.mariadb.galera.backup.restic.openstack.tenantname is missing, but required for the Openstack Swift authentication." $.Values.mariadb.galera.backup.restic.openstack.tenantname }}
+            - name: OS_USER_DOMAIN_NAME
+              value: {{ required "Values.mariadb.galera.backup.restic.openstack.tenantname is missing, but required for the Openstack Swift authentication." $.Values.mariadb.galera.backup.restic.openstack.tenantname }}
+            {{- end }}
+            - name: RESTIC_REPOSITORY
+              value: {{ (printf "swift:%s:/" (required "Values.mariadb.galera.backup.restic.openstack.container is missing, but required for restic to access the repository." $.Values.mariadb.galera.backup.restic.openstack.container)) | quote }}
+            - name: RESTIC_PROGRESS_FPS
+              value: {{ $.Values.mariadb.galera.backup.restic.progressFps | default "0.01666" | quote }}
+            - name: MARIADB_VERSION
+              value: {{ (required ".image.application.applicationversion" $.Values.image.application.applicationversion) | quote }}
+            - name: MARIADB_BACKUP_TYPE
+              value: {{ $scheduleKey | quote }}
+            - name: MYSQL_PORT
+              value: {{ (required ".services.application.frontend.ports.mysql.targetPort missing" $.Values.services.application.frontend.ports.mysql.targetPort) | quote }}
+            {{- range $envKey, $envValue := $.Values.env }}
+              {{- if (has "cronjob-restic" $envValue.containerType) }}
+            - name: {{ $envKey }}
+                {{- if $envValue.value }}
+              value: {{ $envValue.value | quote }}
+                {{- end }}
+                {{- if $envValue.secretName }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $.Release.Name }}-{{ $envValue.secretName }}
+                  key: {{ $envValue.secretKey }}
+                {{- end }}
+              {{- end }}
+            {{- end }}
+            resources:
+              requests:
+                cpu: {{ $.Values.resourceLimits.cpu.cronjob | default 0.25 }}
+              limits:
+                memory: {{ $.Values.resourceLimits.memory.cronjob | default "32Mi" | quote }}
+            volumeMounts:
+            - name: restic-entrypoint-sh
+              mountPath: /opt/restic/bin/entrypoint.sh
+              subPath: entrypoint-backup.sh
+              readOnly: true
+            - name: restic-common-functions-extended-sh
+              mountPath: /opt/restic/bin/common-functions-extended.sh
+              subPath: common-functions-extended.sh
+              readOnly: true
+          volumes:
+          {{- range $volumeMountsKey, $volumeMountsValue := $.Values.volumeMounts.resticbackup }}
+            {{- if $volumeMountsValue.type }}
+              {{- if ne $volumeMountsValue.type "persistentVolume" }}
+          - name: {{ $volumeMountsKey }}
+                {{- if eq $volumeMountsValue.type "secret"}}
+            {{ $volumeMountsValue.type }}:
+              secretName: {{ $.Release.Name }}-{{ $volumeMountsKey }}
+                {{- else if eq $volumeMountsValue.type "hostPath" }}
+            {{ $volumeMountsValue.type }}:
+              path: {{ $volumeMountsValue.hostPath }}
+                {{- else }}
+              name: {{ $volumeMountsKey }}
+                {{- end }}
+              {{- end }}
+            {{- end }}
+          {{- end }}
+          - name: restic-entrypoint-sh
+            configMap:
+              name: restic-entrypoint-sh
+              defaultMode: 0750
+          - name: restic-common-functions-extended-sh
+            configMap:
+              name: restic-common-functions-extended-sh
+              defaultMode: 0755
+  {{- end }}
+{{- end }}

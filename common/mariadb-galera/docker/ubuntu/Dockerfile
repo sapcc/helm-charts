@@ -24,6 +24,7 @@ RUN  apt-get update \
   sysstat \
   jq \
   ca-certificates \
+  bzip2 \
   && apt-get -y autoclean \
   && apt-get -y autoremove \
   && rm -rf /var/lib/apt/lists/*

@@ -1,4 +1,4 @@
-{{/* application services */}}
+{{/* MariaDB services */}}
   {{/* backend */}}
     {{/* per pod service to generate per pod hostnames */}}
     {{- range $replicaNumber, $err := until ($.Values.replicas.application|int) }}
@@ -15,8 +15,9 @@
       {{ include "networkService" (dict "global" $ "type" "frontend" "service" (required ".services.application.frontend missing" $.Values.services.application.frontend) "component" "application-direct" "replica" "notused") }}
     {{- end }}
 
-{{/* backend */}}
-  {{/* per pod service to generate per pod hostnames */}}
+{{/* ProxySQL services */}}
+  {{/* backend */}}
+    {{/* per pod service to generate per pod hostnames */}}
     {{- range $replicaNumber, $err := until ($.Values.replicas.proxy|int) }}
       {{ include "networkService" (dict "global" $ "type" "backend" "service" (required ".services.proxy.backend missing" $.Values.services.proxy.backend) "component" "proxy" "replica" ($replicaNumber | toString)) }}
     {{- end }}
@@ -26,4 +27,10 @@
   {{/* other frontend services for all pods */}}
     {{- if $.Values.proxy.enabled }}
       {{ include "networkService" (dict "global" $ "type" "frontend" "service" (required ".services.proxy.frontend missing" $.Values.services.proxy.frontend) "component" "proxy" "replica" "notused") }}
+    {{- end }}
+
+{{/* Kopia services */}}
+  {{/* frontend */}}
+    {{- if and (and (hasKey $.Values.mariadb.galera "backup") ($.Values.mariadb.galera.backup.enabled)) (and (hasKey $.Values.mariadb.galera.backup "kopia") ($.Values.mariadb.galera.backup.kopia.enabled)) }}
+      {{ include "networkService" (dict "global" $ "type" "frontend" "service" (required ".services.kopiaserver.frontend missing" $.Values.services.kopiaserver.frontend) "component" "kopiaserver" "replica" "notused") }}
     {{- end }}

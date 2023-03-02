@@ -9,7 +9,6 @@ spec:
   selector:
     matchLabels:
       component: "application"
-
 ---
 apiVersion: policy/v1
 kind: PodDisruptionBudget
@@ -21,3 +20,14 @@ spec:
   selector:
     matchLabels:
       component: "proxy"
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  namespace: {{ $.Release.Namespace }}
+  name: backup-kopiaserver
+spec:
+  maxUnavailable: {{ $.Values.maxUnavailable.kopiaserver | default 1 }}
+  selector:
+    matchLabels:
+      component: "kopiaserver"

@@ -10,6 +10,8 @@ Docker images and Helm chart to deploy a [MariaDB](https://mariadb.com/kb/en/get
   * [MariaDB Galera image](#mariadb-galera-image)
   * [MySQL Exporter image](#mysql-exporter-image)
   * [ProxySQL image](#proxysql-image)
+  * [Restic image](#restic-image)
+  * [Kopia image](#kopia-image)
   * [Ubuntu image](#ubuntu-image)
 * [Helm chart](#helm-chart)
   * [template](#template)
@@ -37,7 +39,7 @@ Docker images and Helm chart to deploy a [MariaDB](https://mariadb.com/kb/en/get
 ## Metadata
 | chart version | app version | type | url |
 |:--------------|:-------------|:-------------|:-------------|
-| 0.12.2 | 10.5.18 | application | [Git repo](https://github.com/businessbean/helm-charts/tree/master/common/mariadb-galera) |
+| 0.13.0 | 10.5.18 | application | [Git repo](https://github.com/businessbean/helm-charts/tree/master/common/mariadb-galera) |
 
 | Name | Email | Url |
 | ---- | ------ | --- |
@@ -65,15 +67,14 @@ Kubernetes: `>=1.18`
   | GALERA_VERSION  | Galera software version that should be packaged into the image |
   | GALERA_DEBUG  | install Galera debug packages |
   | YQ_VERSION | install this [yq version](https://github.com/mikefarah/yq/releases) |
-  | RESTIC_VERSION | install this [restic version](https://github.com/restic/restic/releases) |
 
 * productive version
   ```bash
-  docker build --build-arg BASE_REGISTRY=keppel.eu-nl-1.cloud.sap --build-arg BASE_ACCOUNT=ccloud --build-arg BASE_SOFT_NAME=ubuntu --build-arg BASE_SOFT_VERSION=20.04 --build-arg BASE_IMG_VERSION=0.1.1 --build-arg SOFT_NAME=mariadb --build-arg SOFT_VERSION=10.5.18+maria~ubu2004 --build-arg IMG_VERSION=0.4.1 --build-arg GALERA_VERSION=26.4.13-focal --build-arg YQ_VERSION=4.30.8 --build-arg RESTIC_VERSION=0.15.0 -t keppel.eu-de-1.cloud.sap/ccloud/mariadb-galera:10.5.18-0.4.1 -f docker/mariadb-galera/Dockerfile ./docker/mariadb-galera/
+  docker build --build-arg BASE_REGISTRY=keppel.eu-nl-1.cloud.sap --build-arg BASE_ACCOUNT=ccloud --build-arg BASE_SOFT_NAME=ubuntu --build-arg BASE_SOFT_VERSION=20.04 --build-arg BASE_IMG_VERSION=0.1.1 --build-arg SOFT_NAME=mariadb --build-arg SOFT_VERSION=10.5.18+maria~ubu2004 --build-arg IMG_VERSION=0.4.2 --build-arg GALERA_VERSION=26.4.13-focal --build-arg YQ_VERSION=4.30.8 -t keppel.eu-de-1.cloud.sap/ccloud/mariadb-galera:10.5.18-0.4.2 ./docker/mariadb-galera/
   ```
 * debug version
   ```bash
-  docker build --build-arg BASE_REGISTRY=keppel.eu-nl-1.cloud.sap --build-arg BASE_ACCOUNT=ccloud --build-arg BASE_SOFT_NAME=ubuntu --build-arg BASE_SOFT_VERSION=20.04 --build-arg BASE_IMG_VERSION=0.1.1 --build-arg SOFT_NAME=mariadb --build-arg SOFT_VERSION=10.5.18+maria~ubu2004 --build-arg IMG_VERSION=0.4.1 --build-arg GALERA_VERSION=26.4.13-focal --build-arg YQ_VERSION=4.30.8 --build-arg RESTIC_VERSION=0.15.0 --build-arg GALERA_DEBUG=true -t keppel.eu-de-1.cloud.sap/ccloud/mariadb-galera-debug:10.5.18-0.4.1 -f docker/mariadb-galera/Dockerfile ./docker/mariadb-galera/
+  docker build --build-arg BASE_REGISTRY=keppel.eu-nl-1.cloud.sap --build-arg BASE_ACCOUNT=ccloud --build-arg BASE_SOFT_NAME=ubuntu --build-arg BASE_SOFT_VERSION=20.04 --build-arg BASE_IMG_VERSION=0.1.1 --build-arg SOFT_NAME=mariadb --build-arg SOFT_VERSION=10.5.18+maria~ubu2004 --build-arg IMG_VERSION=0.4.2 --build-arg GALERA_VERSION=26.4.13-focal --build-arg YQ_VERSION=4.30.8 --build-arg GALERA_DEBUG=true -t keppel.eu-de-1.cloud.sap/ccloud/mariadb-galera-debug:10.5.18-0.4.2 ./docker/mariadb-galera/
   ```
 
 ### MySQL Exporter image
@@ -82,7 +83,7 @@ Kubernetes: `>=1.18`
 | USERID | id of the user that should run the binary |
 
 ```bash
-docker build --build-arg BASE_REGISTRY=keppel.eu-nl-1.cloud.sap --build-arg BASE_ACCOUNT=ccloud --build-arg BASE_SOFT_NAME=ubuntu --build-arg BASE_SOFT_VERSION=22.04 --build-arg BASE_IMG_VERSION=0.1.1 --build-arg SOFT_NAME=mysqld_exporter --build-arg SOFT_VERSION=0.14.0 --build-arg IMG_VERSION=0.1.3 --build-arg USERID=3000 -t keppel.eu-de-1.cloud.sap/ccloud/mysqld_exporter:0.14.0-0.1.3 -f docker/mysqld_exporter/Dockerfile ./docker/mysqld_exporter/
+docker build --build-arg BASE_REGISTRY=keppel.eu-nl-1.cloud.sap --build-arg BASE_ACCOUNT=ccloud --build-arg BASE_SOFT_NAME=ubuntu --build-arg BASE_SOFT_VERSION=22.04 --build-arg BASE_IMG_VERSION=0.1.1 --build-arg SOFT_NAME=mysqld_exporter --build-arg SOFT_VERSION=0.14.0 --build-arg IMG_VERSION=0.1.3 --build-arg USERID=3000 -t keppel.eu-de-1.cloud.sap/ccloud/mysqld_exporter:0.14.0-0.1.3 ./docker/mysqld_exporter/
 ```
 
 ### ProxySQL image
@@ -91,13 +92,32 @@ docker build --build-arg BASE_REGISTRY=keppel.eu-nl-1.cloud.sap --build-arg BASE
 | USERID | id of the user that should run the binary |
 
 ```bash
-docker build --build-arg BASE_REGISTRY=keppel.eu-nl-1.cloud.sap --build-arg BASE_ACCOUNT=ccloud --build-arg BASE_SOFT_NAME=ubuntu --build-arg BASE_SOFT_VERSION=22.04 --build-arg BASE_IMG_VERSION=0.1.1 --build-arg SOFT_NAME=proxysql --build-arg SOFT_VERSION=2.4.6 --build-arg IMG_VERSION=0.1.5 --build-arg USERID=3100 -t keppel.eu-de-1.cloud.sap/ccloud/proxysql:2.4.6-0.1.5 -f docker/proxysql/Dockerfile ./docker/proxysql/
+docker build --build-arg BASE_REGISTRY=keppel.eu-nl-1.cloud.sap --build-arg BASE_ACCOUNT=ccloud --build-arg BASE_SOFT_NAME=ubuntu --build-arg BASE_SOFT_VERSION=22.04 --build-arg BASE_IMG_VERSION=0.1.1 --build-arg SOFT_NAME=proxysql --build-arg SOFT_VERSION=2.4.6 --build-arg IMG_VERSION=0.1.5 --build-arg USERID=3100 -t keppel.eu-de-1.cloud.sap/ccloud/proxysql:2.4.6-0.1.5 ./docker/proxysql/
+```
+
+### Restic image
+| build argument | description |
+|:--------------|:-------------|
+| USERID | id of the user that should run the binary |
+
+```bash
+docker build --build-arg BASE_REGISTRY=keppel.eu-nl-1.cloud.sap --build-arg BASE_ACCOUNT=ccloud --build-arg BASE_SOFT_NAME=mariadb-galera --build-arg BASE_SOFT_VERSION=10.5.18 --build-arg BASE_IMG_VERSION=0.4.2 --build-arg SOFT_NAME=restic --build-arg SOFT_VERSION=0.15.0 --build-arg IMG_VERSION=0.1.0 --build-arg USERID=3200 -t keppel.eu-de-1.cloud.sap/ccloud/mariadb-galera-resticbackup:0.15.0-0.1.0 ./docker/restic/
+```
+
+### Kopia image
+| build argument | description |
+|:--------------|:-------------|
+| MARIADB_VERSION | MariaDB client version that will be packaged into the image |
+| USERID | id of the user that should run the binary |
+
+```bash
+docker build --build-arg BASE_REGISTRY=keppel.eu-nl-1.cloud.sap --build-arg BASE_ACCOUNT=ccloud --build-arg BASE_SOFT_NAME=mariadb-galera --build-arg BASE_SOFT_VERSION=10.5.18 --build-arg BASE_IMG_VERSION=0.4.2 --build-arg SOFT_NAME=kopia --build-arg SOFT_VERSION=0.12.1 --build-arg IMG_VERSION=0.1.0 --build-arg USERID=3200 --build-arg MARIADB_VERSION=10.5.18+maria~ubu2004 -t keppel.eu-de-1.cloud.sap/ccloud/mariadb-galera-kopiabackup:0.12.1-0.1.0 ./docker/kopia/
 ```
 
 ### Ubuntu image
 
 ```bash
-docker build --build-arg BASE_SOFT_NAME=ubuntu --build-arg BASE_SOFT_VERSION=22.04 --build-arg IMG_VERSION=0.1.1 -t keppel.eu-de-1.cloud.sap/ccloud/ubuntu:22.04-0.1.1 -f docker/ubuntu/Dockerfile ./docker/ubuntu/
+docker build --build-arg BASE_SOFT_NAME=ubuntu --build-arg BASE_SOFT_VERSION=22.04 --build-arg IMG_VERSION=0.1.2 -t keppel.eu-de-1.cloud.sap/ccloud/ubuntu:22.04-0.1.2 ./docker/ubuntu/
 ```
 
 ## Helm chart
@@ -134,7 +154,28 @@ docker build --build-arg BASE_SOFT_NAME=ubuntu --build-arg BASE_SOFT_VERSION=22.
 | env.GALERA_SST_USER.containerType | list | `["application","jobconfig","proxy"]` | for which containers this environment variable will be used |
 | env.GALERA_SST_USER.secretKey | string | `"username"` | Name of the key of the predefined Kubernetes secret that contains the `username` for the `MariaDB Galera state snapshot transfer user` |
 | env.GALERA_SST_USER.secretName | string | `"ga-sync-auth"` | Name of the predefined [Kubernetes secret](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-environment-variables) that contains the key for the `username` of the `MariaDB Galera state snapshot transfer user` |
-| env.MARIADB_CLUSTER_NAME.containerType | list | `["application","cronjob"]` | for which containers this environment variable will be used |
+| env.KOPIA_PASSWORD.containerType | list | `["cronjob-kopia","jobrestore-kopia","kopiaserver"]` | for which containers this environment variable will be used |
+| env.KOPIA_PASSWORD.secretKey | string | `"password"` | Name of the key of the predefined Kubernetes secret that contains the `password` for the `Kopia repository encryption key` |
+| env.KOPIA_PASSWORD.secretName | string | `"kopia-repo-auth"` | Name of the predefined [Kubernetes secret](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-environment-variables) that contains the key for the `password` of the `Kopia repository encryption key` |
+| env.KOPIA_S3_PASSWORD.containerType | list | `["cronjob-kopia","jobrestore-kopia","kopiaserver"]` | for which containers this environment variable will be used |
+| env.KOPIA_S3_PASSWORD.secretKey | string | `"password"` | Name of the key of the predefined Kubernetes secret that contains the `password` of the `Kopia EC2 secret for the s3 bucket` |
+| env.KOPIA_S3_PASSWORD.secretName | string | `"kopia-s3-auth"` | Name of the predefined [Kubernetes secret](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-environment-variables) that contains the key for the `password` of the `Kopia EC2 secret for the s3 bucket` |
+| env.KOPIA_S3_USERNAME.containerType | list | `["cronjob-kopia","jobrestore-kopia","kopiaserver"]` | for which containers this environment variable will be used |
+| env.KOPIA_S3_USERNAME.secretKey | string | `"username"` | Name of the key of the predefined Kubernetes secret that contains the `username` of the `Kopia EC2 secret for the s3 bucket` |
+| env.KOPIA_S3_USERNAME.secretName | string | `"kopia-s3-auth"` | Name of the predefined [Kubernetes secret](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-environment-variables) that contains the key for the `username` of the `Kopia EC2 secret for the s3 bucket` |
+| env.KOPIA_SERVER_CONTROL_PASSWORD.containerType | list | `["kopiaserver"]` | for which containers this environment variable will be used |
+| env.KOPIA_SERVER_CONTROL_PASSWORD.secretKey | string | `"password"` | Name of the key of the predefined Kubernetes secret that contains the key for the `password` of the `Kopia server control user` |
+| env.KOPIA_SERVER_CONTROL_PASSWORD.secretName | string | `"kopia-serverctrl-auth"` | Name of the predefined [Kubernetes secret](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-environment-variables) that contains the key for the `password` of the `Kopia UI admin` |
+| env.KOPIA_SERVER_CONTROL_USER.containerType | list | `["kopiaserver"]` | for which containers this environment variable will be used |
+| env.KOPIA_SERVER_CONTROL_USER.secretKey | string | `"username"` | Name of the key of the predefined Kubernetes secret that contains the key for the `username` of the `Kopia server control user` |
+| env.KOPIA_SERVER_CONTROL_USER.secretName | string | `"kopia-serverctrl-auth"` | Name of the predefined [Kubernetes secret](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-environment-variables) that contains the key for the `username` of the `Kopia UI admin` |
+| env.KOPIA_SERVER_PASSWORD.containerType | list | `["kopiaserver"]` | for which containers this environment variable will be used |
+| env.KOPIA_SERVER_PASSWORD.secretKey | string | `"password"` | Name of the key of the predefined Kubernetes secret that contains the key for the `password` of the `Kopia UI admin` |
+| env.KOPIA_SERVER_PASSWORD.secretName | string | `"kopia-ui-auth"` | Name of the predefined [Kubernetes secret](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-environment-variables) that contains the key for the `password` of the `Kopia UI admin` |
+| env.KOPIA_SERVER_USERNAME.containerType | list | `["kopiaserver"]` | for which containers this environment variable will be used |
+| env.KOPIA_SERVER_USERNAME.secretKey | string | `"username"` | Name of the key of the predefined Kubernetes secret that contains the key for the `username` of the `Kopia UI admin` |
+| env.KOPIA_SERVER_USERNAME.secretName | string | `"kopia-ui-auth"` | Name of the predefined [Kubernetes secret](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-environment-variables) that contains the key for the `username` of the `Kopia UI admin` |
+| env.MARIADB_CLUSTER_NAME.containerType | list | `["application","cronjob-restic","cronjob-kopia","kopiaserver"]` | for which containers this environment variable will be used |
 | env.MARIADB_CLUSTER_NAME.value | string | `"eu-de-1.nova"` | Name of the MariaDB Galera cluster defined with the [wsrep_cluster_name](https://mariadb.com/kb/en/galera-cluster-system-variables/#wsrep_cluster_name) option |
 | env.MARIADB_MONITORING_CONNECTION_LIMIT.containerType | list | `["application","jobconfig"]` | for which containers this environment variable will be used |
 | env.MARIADB_MONITORING_CONNECTION_LIMIT.value | int | `6` | maximum number of allowed parallel connections for the `MariaDB monitoring user` defined within the [MAX_USER_CONNECTIONS](https://mariadb.com/kb/en/create-user/#resource-limit-options) option |
@@ -144,10 +185,10 @@ docker build --build-arg BASE_SOFT_NAME=ubuntu --build-arg BASE_SOFT_VERSION=22.
 | env.MARIADB_MONITORING_USER.containerType | list | `["application","monitoring","jobconfig"]` | for which containers this environment variable will be used |
 | env.MARIADB_MONITORING_USER.secretKey | string | `"username"` | Name of the key of the predefined Kubernetes secret that contains the `username` for the `MariaDB monitoring user` |
 | env.MARIADB_MONITORING_USER.secretName | string | `"db-mon-auth"` | Name of the predefined [Kubernetes secret](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-environment-variables) that contains the key for the `username` of the `MariaDB monitoring user` |
-| env.MARIADB_ROOT_PASSWORD.containerType | list | `["application","jobconfig","jobrestore","proxy","cronjob"]` | for which containers this environment variable will be used |
+| env.MARIADB_ROOT_PASSWORD.containerType | list | `["application","jobconfig","proxy","cronjob-restic","jobrestore-restic","cronjob-kopia","jobrestore-kopia"]` | for which containers this environment variable will be used |
 | env.MARIADB_ROOT_PASSWORD.secretKey | string | `"password"` | Name of the key of the predefined Kubernetes secret that contains the `password` for the `MariaDB root user` |
 | env.MARIADB_ROOT_PASSWORD.secretName | string | `"db-full-auth"` | Name of the predefined [Kubernetes secret](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-environment-variables) that contains the key for the `password` of the `MariaDB root user` |
-| env.MARIADB_ROOT_USER.containerType | list | `["application","jobconfig","jobrestore","proxy","cronjob"]` | for which containers this environment variable will be used |
+| env.MARIADB_ROOT_USER.containerType | list | `["application","jobconfig","proxy","cronjob-restic","jobrestore-restic","cronjob-kopia","jobrestore-kopia"]` | for which containers this environment variable will be used |
 | env.MARIADB_ROOT_USER.secretKey | string | `"username"` | Name of the key of the predefined Kubernetes secret that contains the `username` for the `MariaDB root user` |
 | env.MARIADB_ROOT_USER.secretName | string | `"db-full-auth"` | Name of the predefined [Kubernetes secret](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-environment-variables) that contains the key for the `username` of the `MariaDB root user` |
 | env.OPENSTACK_CITEST_PASSWORD.containerType | list | `["jobconfig","proxy"]` | for which containers this environment variable will be used |
@@ -156,10 +197,10 @@ docker build --build-arg BASE_SOFT_NAME=ubuntu --build-arg BASE_SOFT_VERSION=22.
 | env.OPENSTACK_CITEST_USERNAME.containerType | list | `["jobconfig","proxy"]` | for which containers this environment variable will be used |
 | env.OPENSTACK_CITEST_USERNAME.secretKey | string | `"username"` | Name of the key of the predefined Kubernetes secret that contains the `username` for the `Openstack oslo.db unit test user` |
 | env.OPENSTACK_CITEST_USERNAME.secretName | string | `"db-oslodb-auth"` | Name of the predefined [Kubernetes secret](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-environment-variables) that contains the key for the `username` of the `Openstack oslo.db unit test user` |
-| env.OS_PASSWORD.containerType | list | `["cronjob","jobrestore"]` | for which containers this environment variable will be used |
+| env.OS_PASSWORD.containerType | list | `["cronjob-restic","jobrestore-restic"]` | for which containers this environment variable will be used |
 | env.OS_PASSWORD.secretKey | string | `"password"` | Name of the key of the predefined Kubernetes secret that contains the `password` for the `Openstack swift user for restic` |
 | env.OS_PASSWORD.secretName | string | `"restic-swift-auth"` | Name of the predefined [Kubernetes secret](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-environment-variables) that contains the key for the `password` of the `Openstack swift user for restic` |
-| env.OS_USERNAME.containerType | list | `["cronjob","jobrestore"]` | for which containers this environment variable will be used |
+| env.OS_USERNAME.containerType | list | `["cronjob-restic","jobrestore-restic"]` | for which containers this environment variable will be used |
 | env.OS_USERNAME.secretKey | string | `"username"` | Name of the key of the predefined Kubernetes secret that contains the `username` for the `Openstack swift user for restic` |
 | env.OS_USERNAME.secretName | string | `"restic-swift-auth"` | Name of the predefined [Kubernetes secret](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-environment-variables) that contains the key for the `username` of the `Openstack swift user for restic` |
 | env.PROXYSQL_ADMIN_PASSWORD.containerType | list | `["proxy"]` | for which containers this environment variable will be used |
@@ -186,7 +227,7 @@ docker build --build-arg BASE_SOFT_NAME=ubuntu --build-arg BASE_SOFT_VERSION=22.
 | env.REPLICA_USERNAME.containerType | list | `["application","jobconfig","proxy"]` | for which containers this environment variable will be used |
 | env.REPLICA_USERNAME.secretKey | string | `"username"` | Name of the key of the predefined Kubernetes secret that contains the `username` for the `MariaDB async replication user` |
 | env.REPLICA_USERNAME.secretName | string | `"replica-primary-auth"` | Name of the predefined [Kubernetes secret](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-environment-variables) that contains the key for the `username` of the `MariaDB async replication user` |
-| env.RESTIC_PASSWORD.containerType | list | `["cronjob","jobrestore"]` | for which containers this environment variable will be used |
+| env.RESTIC_PASSWORD.containerType | list | `["cronjob-restic","jobrestore-restic"]` | for which containers this environment variable will be used |
 | env.RESTIC_PASSWORD.secretKey | string | `"password"` | Name of the key of the predefined Kubernetes secret that contains the `password` for the `Restic repository encryption key` |
 | env.RESTIC_PASSWORD.secretName | string | `"restic-repo-auth"` | Name of the predefined [Kubernetes secret](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-environment-variables) that contains the key for the `password` of the `Restic repository encryption key` |
 | env.SYSBENCH_PASSWORD.containerType | list | `["jobconfig","proxy"]` | for which containers this environment variable will be used |
@@ -198,6 +239,7 @@ docker build --build-arg BASE_SOFT_NAME=ubuntu --build-arg BASE_SOFT_VERSION=22.
 | env.WEB_TELEMETRY_PATH.containerType | list | `["monitoring"]` | for which containers this environment variable will be used |
 | env.WEB_TELEMETRY_PATH.value | string | `"/metrics"` | The MySQL exporter monitoring sidecar container will expose the [Prometheus metrics](https://github.com/prometheus/mysqld_exporter#general-flags) under that path |
 | groupId.application | string | 101 | run the MariaDB containers with that [group id](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-container) |
+| groupId.backup | string | 3200 | run the Kopia/Restic containers with that [group id](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-container) |
 | groupId.monitoring | string | 3000 | run the MariaDB monitoring containers with that [group id](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-container) |
 | groupId.proxy | string | 3100 | run the ProxySQL containers with that [group id](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-container) |
 | hpa.application.enabled | bool | false | enable [horizontal pod autoscaling](https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/) for the MariaDB Galera pods. Currently not suggested because even replica numbers cannot be avoided |
@@ -210,11 +252,18 @@ docker build --build-arg BASE_SOFT_NAME=ubuntu --build-arg BASE_SOFT_VERSION=22.
 | hpa.proxy.minReplicas | int | 3 | minimum number of replicas allowed for the ProxySQL cluster pods |
 | image.application.applicationname | string | `"mariadb-galera"` | folder/container used in the image registry and also part of the image name |
 | image.application.applicationversion | string | `"10.5.18"` | application part of the image version that should be pulled |
-| image.application.imageversion | string | `"0.4.1"` | image part of the image version that should be pulled |
+| image.application.imageversion | string | `"0.4.2"` | image part of the image version that should be pulled |
 | image.application.project | string | `"ccloud"` | project/tenant used in the image registry |
 | image.application.pullPolicy | string | IfNotPresent | `Always` to enforce that the image will be pulled even if it is already available on the worker node |
 | image.application.pullSecret | string | `nil` | name of the already defined Kubernetes secret that should be used for registry authentication |
 | image.application.registry | string | `"keppel.eu-de-1.cloud.sap"` | hostname of the image registry used to pull the application image that contains `MariaDB`, `Galera` and the two helpers `yq` and `restic` |
+| image.kopiabackup.applicationname | string | `"mariadb-galera-kopiabackup"` | folder/container used in the image registry and also part of the image name |
+| image.kopiabackup.applicationversion | string | `"0.12.1"` | application part of the image version that should be pulled |
+| image.kopiabackup.imageversion | string | `"0.1.0"` | image part of the image version that should be pulled |
+| image.kopiabackup.project | string | `"ccloud"` | project/tenant used in the image registry |
+| image.kopiabackup.pullPolicy | string | IfNotPresent | `Always` to enforce that the image will be pulled even if it is already available on the worker node |
+| image.kopiabackup.pullSecret | string | `nil` | name of the already defined Kubernetes secret that should be used for registry authentication |
+| image.kopiabackup.registry | string | `"keppel.eu-de-1.cloud.sap"` | hostname of the image registry used to pull the proxy image that contains the Kopia backup software |
 | image.monitoring.applicationname | string | `"mysqld_exporter"` | folder/container used in the image registry and also part of the image name |
 | image.monitoring.applicationversion | string | `"0.14.0"` | application part of the image version that should be pulled |
 | image.monitoring.imageversion | string | `"0.1.3"` | image part of the image version that should be pulled |
@@ -224,7 +273,7 @@ docker build --build-arg BASE_SOFT_NAME=ubuntu --build-arg BASE_SOFT_VERSION=22.
 | image.monitoring.registry | string | `"keppel.eu-de-1.cloud.sap"` | hostname of the image registry used to pull the monitoring image that currently contains the MySQL exporter for Prometheus |
 | image.os.applicationname | string | `"ubuntu"` | folder/container used in the image registry and also part of the image name |
 | image.os.applicationversion | float | `22.04` | application part of the image version that should be pulled |
-| image.os.imageversion | string | `"0.1.1"` | image part of the image version that should be pulled |
+| image.os.imageversion | string | `"0.1.2"` | image part of the image version that should be pulled |
 | image.os.project | string | `"ccloud"` | project/tenant used in the image registry |
 | image.os.pullPolicy | string | IfNotPresent | `Always` to enforce that the image will be pulled even if it is already available on the worker node |
 | image.os.pullSecret | string | `nil` | name of the already defined Kubernetes secret that should be used for registry authentication |
@@ -236,35 +285,59 @@ docker build --build-arg BASE_SOFT_NAME=ubuntu --build-arg BASE_SOFT_VERSION=22.
 | image.proxy.pullPolicy | string | IfNotPresent | `Always` to enforce that the image will be pulled even if it is already available on the worker node |
 | image.proxy.pullSecret | string | `nil` | name of the already defined Kubernetes secret that should be used for registry authentication |
 | image.proxy.registry | string | `"keppel.eu-de-1.cloud.sap"` | hostname of the image registry used to pull the proxy image that contains the ProxySQL software to load balance MariaDB connections |
+| image.resticbackup.applicationname | string | `"mariadb-galera-resticbackup"` | folder/container used in the image registry and also part of the image name |
+| image.resticbackup.applicationversion | string | `"0.15.0"` | application part of the image version that should be pulled |
+| image.resticbackup.imageversion | string | `"0.1.0"` | image part of the image version that should be pulled |
+| image.resticbackup.project | string | `"ccloud"` | project/tenant used in the image registry |
+| image.resticbackup.pullPolicy | string | IfNotPresent | `Always` to enforce that the image will be pulled even if it is already available on the worker node |
+| image.resticbackup.pullSecret | string | `nil` | name of the already defined Kubernetes secret that should be used for registry authentication |
+| image.resticbackup.registry | string | `"keppel.eu-de-1.cloud.sap"` | hostname of the image registry used to pull the proxy image that contains the Restic backup software |
 | initContainers.cleanoscache.securityContext.privileged | bool | true | required to configure `/proc/sys/vm/drop_caches` in the init phase |
 | initContainers.cleanoscache.securityContext.runAsUser | int | 0 | required to configure `/proc/sys/vm/drop_caches` in the init phase |
 | initContainers.increaseMapCount.securityContext.privileged | bool | true | required to configure `/proc/sys/vm/max_map_count` in the init phase |
 | initContainers.increaseMapCount.securityContext.runAsUser | int | 0 | required to configure `/proc/sys/vm/max_map_count` in the init phase |
 | initContainers.tcpKeepAlive.securityContext.privileged | bool | true | required to configure `net.ipv4.tcp_keepalive_time` in the init phase |
 | initContainers.tcpKeepAlive.securityContext.runAsUser | int | 0 | required to configure `net.ipv4.tcp_keepalive_time` in the init phase |
-| job.mariadbbackup.concurrencyPolicy | string | Forbid | Define if and how MariaDB backup jobs can run in [parallel](https://kubernetes.io/docs/tasks/job/automated-tasks-with-cron-jobs/#concurrency-policy) |
-| job.mariadbbackup.failedJobsHistoryLimit | int | 1 | Define how how many failed MariaDB backup jobs [should be kept](https://kubernetes.io/docs/tasks/job/automated-tasks-with-cron-jobs/#jobs-history-limits) |
-| job.mariadbbackup.jobRestartPolicy | string | OnFailure | Define how the MariaDB backup job pod [will be restarted](https://kubernetes.io/docs/concepts/workloads/controllers/job/#handling-pod-and-container-failures) in case of an error. It can be on the same worker node or another |
-| job.mariadbbackup.schedule | string | 05 23 * * * | [Schedule](https://kubernetes.io/docs/tasks/job/automated-tasks-with-cron-jobs/#schedule) for the MariaDB backup job based on that [syntax](https://kubernetes.io/docs/concepts/workloads/controllers/cron-jobs/#cron-schedule-syntax) |
-| job.mariadbbackup.successfulJobsHistoryLimit | int | 1 | Define how how many completed MariaDB backup jobs [should be kept](https://kubernetes.io/docs/tasks/job/automated-tasks-with-cron-jobs/#jobs-history-limits) |
+| job.kopiabackup.concurrencyPolicy | string | Forbid | Define if and how Kopia backup jobs can run in [parallel](https://kubernetes.io/docs/tasks/job/automated-tasks-with-cron-jobs/#concurrency-policy) |
+| job.kopiabackup.failedJobsHistoryLimit | int | 1 | Define how how many failed Kopia backup jobs [should be kept](https://kubernetes.io/docs/tasks/job/automated-tasks-with-cron-jobs/#jobs-history-limits) |
+| job.kopiabackup.jobRestartPolicy | string | OnFailure | Define how the Kopia backup job pod [will be restarted](https://kubernetes.io/docs/concepts/workloads/controllers/job/#handling-pod-and-container-failures) in case of an error. It can be on the same worker node or another |
+| job.kopiabackup.schedule.binlog | string | */30 * * * * | [Schedule](https://kubernetes.io/docs/tasks/job/automated-tasks-with-cron-jobs/#schedule) for the Kopia transaction log backup job based on that [syntax](https://kubernetes.io/docs/concepts/workloads/controllers/cron-jobs/#cron-schedule-syntax) |
+| job.kopiabackup.schedule.full | string | 15 2 * * * | [Schedule](https://kubernetes.io/docs/tasks/job/automated-tasks-with-cron-jobs/#schedule) for the Kopia full backup job based on that [syntax](https://kubernetes.io/docs/concepts/workloads/controllers/cron-jobs/#cron-schedule-syntax) |
+| job.kopiabackup.startingDeadlineSeconds | int | 15 | Define how many seconds [after a missed schedule](https://kubernetes.io/docs/concepts/workloads/controllers/cron-jobs/#job-creation) the job should still be scheduled or skipped |
+| job.kopiabackup.successfulJobsHistoryLimit | int | 1 | Define how how many completed Kopia backup jobs [should be kept](https://kubernetes.io/docs/tasks/job/automated-tasks-with-cron-jobs/#jobs-history-limits) |
+| job.kopiarestore.activeDeadlineSeconds | int | 3600 | Maximum [allowed runtime](https://kubernetes.io/docs/concepts/workloads/controllers/job/#job-termination-and-cleanup) before the Kopia restore job will be stopped |
+| job.kopiarestore.backoffLimit | int | 0 | How many [retries](https://kubernetes.io/docs/concepts/workloads/controllers/job/#pod-backoff-failure-policy) before the Kopia restore job will be marked as failed |
+| job.kopiarestore.jobRestartPolicy | string | Never | Define how the Kopia restore job pod [will be restarted](https://kubernetes.io/docs/concepts/workloads/controllers/job/#handling-pod-and-container-failures) in case of an error. It can be on the same worker node or another |
+| job.kopiarestore.ttlSecondsAfterFinished | int | 43200 | After how many seconds will a stopped Kopia restore job be [deleted from the Kubernetes cluster](https://kubernetes.io/docs/concepts/workloads/controllers/job/#clean-up-finished-jobs-automatically) |
 | job.mariadbconfig.activeDeadlineSeconds | int | 300 | Maximum [allowed runtime](https://kubernetes.io/docs/concepts/workloads/controllers/job/#job-termination-and-cleanup) before the MariaDB config job will be stopped |
 | job.mariadbconfig.backoffLimit | int | 6 | How many [retries](https://kubernetes.io/docs/concepts/workloads/controllers/job/#pod-backoff-failure-policy) before the MariaDB config job will be marked as failed |
 | job.mariadbconfig.jobRestartPolicy | string | OnFailure | Define how the MariaDB config job pod [will be restarted](https://kubernetes.io/docs/concepts/workloads/controllers/job/#handling-pod-and-container-failures) in case of an error. It can be on the same worker node or another |
 | job.mariadbconfig.ttlSecondsAfterFinished | int | 120 | After how many seconds will a stopped MariaDB config job be [deleted from the Kubernetes cluster](https://kubernetes.io/docs/concepts/workloads/controllers/job/#clean-up-finished-jobs-automatically) |
-| job.mariadbrestore.activeDeadlineSeconds | int | 3600 | Maximum [allowed runtime](https://kubernetes.io/docs/concepts/workloads/controllers/job/#job-termination-and-cleanup) before the MariaDB restore job will be stopped |
-| job.mariadbrestore.backoffLimit | int | 0 | How many [retries](https://kubernetes.io/docs/concepts/workloads/controllers/job/#pod-backoff-failure-policy) before the MariaDB restore job will be marked as failed |
-| job.mariadbrestore.jobRestartPolicy | string | Never | Define how the MariaDB restore job pod [will be restarted](https://kubernetes.io/docs/concepts/workloads/controllers/job/#handling-pod-and-container-failures) in case of an error. It can be on the same worker node or another |
-| job.mariadbrestore.ttlSecondsAfterFinished | int | 43200 | After how many seconds will a stopped MariaDB restore job be [deleted from the Kubernetes cluster](https://kubernetes.io/docs/concepts/workloads/controllers/job/#clean-up-finished-jobs-automatically) |
-| livenessProbe.failureThreshold.application | int | 4 | How many [retries](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) are allowed before the liveness probe for the MariaDB Galera pods is marked as failed |
+| job.resticbackup.concurrencyPolicy | string | Forbid | Define if and how Restic backup jobs can run in [parallel](https://kubernetes.io/docs/tasks/job/automated-tasks-with-cron-jobs/#concurrency-policy) |
+| job.resticbackup.failedJobsHistoryLimit | int | 1 | Define how how many failed Restic backup jobs [should be kept](https://kubernetes.io/docs/tasks/job/automated-tasks-with-cron-jobs/#jobs-history-limits) |
+| job.resticbackup.jobRestartPolicy | string | OnFailure | Define how the Restic backup job pod [will be restarted](https://kubernetes.io/docs/concepts/workloads/controllers/job/#handling-pod-and-container-failures) in case of an error. It can be on the same worker node or another |
+| job.resticbackup.schedule.binlog | string | */15 0-1,3-12 * * * | [Schedule](https://kubernetes.io/docs/tasks/job/automated-tasks-with-cron-jobs/#schedule) for the Restic transaction backup job based on that [syntax](https://kubernetes.io/docs/concepts/workloads/controllers/cron-jobs/#cron-schedule-syntax) |
+| job.resticbackup.schedule.full | string | 15 2 * * * | [Schedule](https://kubernetes.io/docs/tasks/job/automated-tasks-with-cron-jobs/#schedule) for the Restic full backup job based on that [syntax](https://kubernetes.io/docs/concepts/workloads/controllers/cron-jobs/#cron-schedule-syntax) |
+| job.resticbackup.startingDeadlineSeconds | int | 15 | Define how many seconds [after a missed schedule](https://kubernetes.io/docs/concepts/workloads/controllers/cron-jobs/#job-creation) the job should still be scheduled or skipped |
+| job.resticbackup.successfulJobsHistoryLimit | int | 1 | Define how how many completed Restic backup jobs [should be kept](https://kubernetes.io/docs/tasks/job/automated-tasks-with-cron-jobs/#jobs-history-limits) |
+| job.resticrestore.activeDeadlineSeconds | int | 3600 | Maximum [allowed runtime](https://kubernetes.io/docs/concepts/workloads/controllers/job/#job-termination-and-cleanup) before the Restic restore job will be stopped |
+| job.resticrestore.backoffLimit | int | 0 | How many [retries](https://kubernetes.io/docs/concepts/workloads/controllers/job/#pod-backoff-failure-policy) before the Restic restore job will be marked as failed |
+| job.resticrestore.jobRestartPolicy | string | Never | Define how the Restic restore job pod [will be restarted](https://kubernetes.io/docs/concepts/workloads/controllers/job/#handling-pod-and-container-failures) in case of an error. It can be on the same worker node or another |
+| job.resticrestore.ttlSecondsAfterFinished | int | 43200 | After how many seconds will a stopped Restic restore job be [deleted from the Kubernetes cluster](https://kubernetes.io/docs/concepts/workloads/controllers/job/#clean-up-finished-jobs-automatically) |
+| livenessProbe.failureThreshold.application | int | 4 | How many [retries](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) are allowed before the liveness probe for the MariaDB Galera pods are marked as failed |
+| livenessProbe.failureThreshold.kopiaserver | int | 4 | How many [retries](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) are allowed before the liveness probe for the Kopia UI pod is marked as failed |
 | livenessProbe.failureThreshold.monitoring | int | 4 | How many [retries](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) are allowed before the liveness probe for the MariaDB monitoring sidecar container is marked as failed |
-| livenessProbe.failureThreshold.proxy | int | 4 | How many [retries](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) are allowed before the liveness probe for the ProxySQL cluster pods is marked as failed |
+| livenessProbe.failureThreshold.proxy | int | 4 | How many [retries](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) are allowed before the liveness probe for the ProxySQL cluster pods are marked as failed |
 | livenessProbe.initialDelaySeconds.application | int | 60 | Define the [initial delay](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) of the liveness probe for MariaDB Galera pods |
+| livenessProbe.initialDelaySeconds.kopiaserver | int | 60 | Define the [initial delay](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) of the liveness probe for Kopia UI pod |
 | livenessProbe.initialDelaySeconds.monitoring | int | 5 | Define the [initial delay](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) of the liveness probe for MariaDB monitoring sidecar container |
 | livenessProbe.initialDelaySeconds.proxy | int | 60 | Define the [initial delay](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) of the liveness probe for ProxySQL cluster pods |
 | livenessProbe.periodSeconds.application | int | 30 | Define the [check interval](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) of the liveness probe for MariaDB Galera pods |
+| livenessProbe.periodSeconds.kopiaserver | int | 30 | Define the [check interval](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) of the liveness probe for Kopia UI pod |
 | livenessProbe.periodSeconds.monitoring | int | 30 | Define the [check interval](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) of the liveness probe for MariaDB monitoring sidecar container |
 | livenessProbe.periodSeconds.proxy | int | 30 | Define the [check interval](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) of the liveness probe for ProxySQL cluster pods |
 | livenessProbe.timeoutSeconds.application | int | 20 | How long should Kubernetes [wait](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) for the current check of the liveness probe for the MariaDB Galera pods |
+| livenessProbe.timeoutSeconds.kopiaserver | int | 20 | How long should Kubernetes [wait](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) for the current check of the liveness probe for the Kopia UI pod |
 | livenessProbe.timeoutSeconds.monitoring | int | 20 | How long should Kubernetes [wait](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) for the current check of the liveness probe for the MariaDB monitoring sidecar container |
 | livenessProbe.timeoutSeconds.proxy | int | 20 | How long should Kubernetes [wait](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) for the current check of the liveness probe for the ProxySQL cluster pods |
 | mariadb.asyncReplication.autostart | bool | false | start configured slave during database node startup [wsrep_restart_slave](https://mariadb.com/kb/en/galera-cluster-system-variables/#wsrep_restart_slave) |
@@ -277,18 +350,35 @@ docker build --build-arg BASE_SOFT_NAME=ubuntu --build-arg BASE_SOFT_VERSION=22.
 | mariadb.binLogSync | int | 0 | `1` to enable [sync_binlog for ACID compliance](https://mariadb.com/kb/en/replication-and-binary-log-system-variables/#sync_binlog) |
 | mariadb.errorLogWarningVerbosity | int | 2 | to define the [verbosity](https://mariadb.com/kb/en/error-log/#configuring-the-error-log-verbosity) of the MariaDB logs |
 | mariadb.galera.backup.enabled | bool | `false` | enable the [database backup](#database-backup). Should be done within custom instance configuration files |
-| mariadb.galera.backup.openstack.authurl | string | `"https://openstack.keystone.url:443/v3"` | Openstack Keystone [url](https://docs.openstack.org/python-openstackclient/zed/cli/authentication.html) |
-| mariadb.galera.backup.openstack.container | string | `nil` | Openstack [Swift](https://docs.openstack.org/swift/latest/) container |
-| mariadb.galera.backup.openstack.projectname | string | `nil` | Openstack Keystone [project](https://docs.openstack.org/python-openstackclient/zed/cli/authentication.html) |
-| mariadb.galera.backup.openstack.region | string | `nil` | Openstack Keystone [region](https://docs.openstack.org/python-openstackclient/zed/cli/authentication.html) |
-| mariadb.galera.backup.openstack.tenantname | string | `nil` | Openstack Keystone [tenant](https://docs.openstack.org/python-openstackclient/zed/cli/authentication.html) |
+| mariadb.galera.backup.kopia.backend | string | `"s3"` | Openstack Swift and others provide an S3 compatible interface |
+| mariadb.galera.backup.kopia.enabled | bool | `false` | enable [kopia](https://kopia.io/) for the Galera backup |
+| mariadb.galera.backup.kopia.expireBackups | bool | false | [expire backup snapshots](https://kopia.io/docs/reference/command-line/common/snapshot-expire/) |
+| mariadb.galera.backup.kopia.keep.daily | int | 1 | [keep-daily](https://kopia.io/docs/reference/command-line/common/policy-set/) |
+| mariadb.galera.backup.kopia.keep.hourly | int | 24 | [keep-hourly](https://kopia.io/docs/reference/command-line/common/policy-set/) |
+| mariadb.galera.backup.kopia.keep.last | int | 2 | [keep-latest](https://kopia.io/docs/reference/command-line/common/policy-set/) |
+| mariadb.galera.backup.kopia.keep.monthly | int | 0 | [keep-monthly](https://kopia.io/docs/reference/command-line/common/policy-set/) |
+| mariadb.galera.backup.kopia.keep.weekly | int | 0 | [keep-weekly](https://kopia.io/docs/reference/command-line/common/policy-set/) |
+| mariadb.galera.backup.kopia.keep.yearly | int | 0 | [keep-yearly](https://kopia.io/docs/reference/command-line/common/policy-set/) |
+| mariadb.galera.backup.kopia.listBackups | bool | false | [list backup snapshots](https://kopia.io/docs/reference/command-line/common/snapshot-list/) |
+| mariadb.galera.backup.kopia.progressUpdateInterval | string | 300ms | How often to update progress information [--progress-update-interval](https://kopia.io/docs/reference/command-line/flags/) |
+| mariadb.galera.backup.kopia.s3.bucket | string | `nil` | S3 bucket name |
+| mariadb.galera.backup.kopia.s3.endpoint | string | s3.amazonaws.com | S3 endpoint FQDN |
+| mariadb.galera.backup.kopia.s3.region | string | `nil` | S3 [region name|https://docs.aws.amazon.com/general/latest/gr/s3.html] |
+| mariadb.galera.backup.restic.backend | string | `"openstackswift"` | currently only Openstack Swift is supported, but Restic provides more [backends|https://restic.readthedocs.io/en/stable/030_preparing_a_new_repo.html] |
 | mariadb.galera.backup.restic.compression | string | auto | [compression](https://restic.readthedocs.io/en/stable/047_tuning_backup_parameters.html#compression) |
+| mariadb.galera.backup.restic.enabled | bool | `false` | enable [restic](https://restic.net/) for the Galera backup |
 | mariadb.galera.backup.restic.keep.daily | int | 1 | [keep-daily](https://restic.readthedocs.io/en/stable/060_forget.html#removing-snapshots-according-to-a-policy) |
 | mariadb.galera.backup.restic.keep.hourly | int | 24 | [keep-hourly](https://restic.readthedocs.io/en/stable/060_forget.html#removing-snapshots-according-to-a-policy) |
 | mariadb.galera.backup.restic.keep.last | int | 2 | [keep-last](https://restic.readthedocs.io/en/stable/060_forget.html#removing-snapshots-according-to-a-policy) |
 | mariadb.galera.backup.restic.keep.monthly | int | 0 | [keep-monthly](https://restic.readthedocs.io/en/stable/060_forget.html#removing-snapshots-according-to-a-policy) |
 | mariadb.galera.backup.restic.keep.weekly | int | 0 | [keep-weekly](https://restic.readthedocs.io/en/stable/060_forget.html#removing-snapshots-according-to-a-policy) |
 | mariadb.galera.backup.restic.keep.yearly | int | 0 | [keep-yearly](https://restic.readthedocs.io/en/stable/060_forget.html#removing-snapshots-according-to-a-policy) |
+| mariadb.galera.backup.restic.listBackups | bool | false | [list backup snapshots](https://restic.readthedocs.io/en/stable/045_working_with_repos.html#listing-all-snapshots) |
+| mariadb.galera.backup.restic.openstack.authurl | string | `"https://openstack.keystone.url:443/v3"` | Openstack Keystone [url](https://docs.openstack.org/python-openstackclient/zed/cli/authentication.html) |
+| mariadb.galera.backup.restic.openstack.container | string | `nil` | Openstack [Swift](https://docs.openstack.org/swift/latest/) container |
+| mariadb.galera.backup.restic.openstack.projectname | string | `nil` | Openstack Keystone [project](https://docs.openstack.org/python-openstackclient/zed/cli/authentication.html) |
+| mariadb.galera.backup.restic.openstack.region | string | `nil` | Openstack Keystone [region](https://docs.openstack.org/python-openstackclient/zed/cli/authentication.html) |
+| mariadb.galera.backup.restic.openstack.tenantname | string | `nil` | Openstack Keystone [tenant](https://docs.openstack.org/python-openstackclient/zed/cli/authentication.html) |
 | mariadb.galera.backup.restic.packsizeInMB | int | 16 | [pack-size](https://restic.readthedocs.io/en/stable/047_tuning_backup_parameters.html#pack-size) keep in mind the 5GB Swift object size limit and the potential object count quota limit |
 | mariadb.galera.backup.restic.progressFps | float | 0.01666 | update interval for the console output [RESTIC_PROGRESS_FPS](https://restic.readthedocs.io/en/stable/040_backup.html?highlight=RESTIC_PROGRESS_FPS#environment-variables) |
 | mariadb.galera.backup.restic.pruneBackups | bool | false | [removing backup snapshots](https://restic.readthedocs.io/en/stable/060_forget.html?highlight=prune#removing-backup-snapshots) |
@@ -301,7 +391,9 @@ docker build --build-arg BASE_SOFT_NAME=ubuntu --build-arg BASE_SOFT_VERSION=22.
 | mariadb.galera.logLevel | string | info | [wsrep_debug](https://mariadb.com/kb/en/galera-cluster-system-variables/#wsrep_debug) |
 | mariadb.galera.pcrecovery | bool | false | [primary component recovery](https://galeracluster.com/library/documentation/pc-recovery.html) |
 | mariadb.galera.restore.beforeTimestamp | string | `nil` | define the backup timestamp that should be used for the restore. Only the `%Y-%m-%d %H:%M:%S` format is currently supported and the restic snapshot nearest before will be used |
-| mariadb.galera.restore.enabled | bool | `false` | enable the [full database restore](#full-database-restore). Should be done as described in the documentation with `--set` parameters |
+| mariadb.galera.restore.kopia.enabled | bool | `false` | enable the [full database restore](#full-database-restore). Should be done as described in the documentation with `--set` parameters |
+| mariadb.galera.restore.kopia.snapshotId | bool | `false` | If set the beforeTimestamp option will be ignored and the configured id(".rootEntry.obj" or "Root" column in the snapshot list) will be used |
+| mariadb.galera.restore.restic.enabled | bool | `false` | enable the [full database restore](#full-database-restore). Should be done as described in the documentation with `--set` parameters |
 | mariadb.galera.restore.restic.progressFps | float | 0.01666 | update interval for the console output [RESTIC_PROGRESS_FPS](https://restic.readthedocs.io/en/stable/040_backup.html?highlight=RESTIC_PROGRESS_FPS#environment-variables) |
 | mariadb.galera.restore.restic.snapshotId | bool | `false` | If set the beforeTimestamp option will be ignored and the configured id will be used |
 | mariadb.galera.slaveThreads | int | 4 | [wsrep-slave-threads](https://galeracluster.com/library/documentation/mysql-wsrep-options.html#wsrep-slave-threads) |
@@ -311,33 +403,41 @@ docker build --build-arg BASE_SOFT_NAME=ubuntu --build-arg BASE_SOFT_VERSION=22.
 | mariadb.performance_schema | bool | false | to enable the [Performance Schema](https://mariadb.com/kb/en/performance-schema-overview/) |
 | mariadb.wipeDataAndLog | bool | false | will trigger a pod restart and remove all content from the data and log dir. This option will cause data loss and should only be used before triggering a [full database restore](#full-database-restore) |
 | maxUnavailable.application | int | 1 | number of MariaDB pods that can be [unavailable](https://kubernetes.io/docs/tasks/run-application/configure-pdb/#specifying-a-poddisruptionbudget) during a rolling upgrade |
+| maxUnavailable.kopiaserver | int | 1 | number of Kopia UI pods that can be [unavailable](https://kubernetes.io/docs/tasks/run-application/configure-pdb/#specifying-a-poddisruptionbudget) during a rolling upgrade |
 | maxUnavailable.proxy | int | 1 | number of ProxySQL pods that can be [unavailable](https://kubernetes.io/docs/tasks/run-application/configure-pdb/#specifying-a-poddisruptionbudget) during a rolling upgrade |
 | monitoring.elasticBeatsAutoDiscoveryAnnotations.enabled | not yet implemented | `false` | add annotations to allow [automatic configuration](https://www.elastic.co/guide/en/beats/metricbeat/current/configuration-autodiscover-hints.html) of Elastic Beats agents |
+| monitoring.kopia.enabled | bool | false | enable the Kopia [/metrics endpoint](https://kopia.io/docs/reference/command-line/flags/) to be scraped by Prometheus |
 | monitoring.mysqld_exporter.autostart | bool | `true` | run the default entrypoint.sh script or just sleep to be able to troubleshoot and debug |
 | monitoring.mysqld_exporter.enabled | bool | false | enable the [Prometheus MySQL exporter](https://github.com/prometheus/mysqld_exporter) as sidecar container |
-| monitoring.mysqld_exporter.metricsPort | int | 9104 | TCP port used by the exporter to listen for Prometheus connections |
 | monitoring.prometheus.instance | string | prometheus | name of the Prometheus instance that should pull metrics |
+| monitoring.proxy.enabled | bool | false | enable the ProxySQL [/metrics endpoint](https://proxysql.com/documentation/prometheus-exporter/) to be scraped by Prometheus |
 | namePrefix.application | bool | `false` | name prefix used for the MariaDB pods, services etc. @default mariadb-g |
+| namePrefix.kopiaserver | bool | `false` | name prefix used for the ProxySQL pods, services etc. @default backup-kopiaserver |
 | namePrefix.proxy | bool | `false` | name prefix used for the ProxySQL pods, services etc. @default proxysql |
 | podManagementPolicy | string | OrderedReady | [Pod Management Policy](https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/#pod-management-policies) for the MariaDB Galera and ProxySQL cluster pods. |
 | proxy.adminui.enabled | bool | `true` | the [ProxySQL Admin UI](https://proxysql.com/documentation/http-web-server/) |
 | proxy.adminui.verbosity | int | `0` | the variable defines the [verbosity level](https://proxysql.com/documentation/global-variables/admin-variables/#admin-web_verbosity) of the web server |
 | proxy.enabled | bool | `false` | use ProxySQL in front of the MariaDB Galera pods to reduce the service downtimes for the clients |
-| proxy.queryRules.genericReadWriteSplit.enabled | bool | `true` | check the "Generic Read/Write split using regex" section in the [howto](https://proxysql.com/documentation/proxysql-read-write-split-howto/) for details |
+| proxy.queryRules.genericReadWriteSplit.enabled | bool | `false` | check the "Generic Read/Write split using regex" section in the [howto](https://proxysql.com/documentation/proxysql-read-write-split-howto/) for details |
 | proxy.restapi.enabled | bool | `true` | the [ProxySQL RestAPI](https://proxysql.com/documentation/REST-API/) |
-| readinessProbe.failureThreshold.application | int | 2 | How many [retries](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) are allowed before the readiness probe for the MariaDB Galera pods is marked as failed |
+| readinessProbe.failureThreshold.application | int | 2 | How many [retries](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) are allowed before the readiness probe for the MariaDB Galera pods are marked as failed |
+| readinessProbe.failureThreshold.kopiaserver | int | 2 | How many [retries](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) are allowed before the readiness probe for the Kopia UI pod is marked as failed |
 | readinessProbe.failureThreshold.monitoring | int | 2 | How many [retries](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) are allowed before the readiness probe for the MariaDB monitoring sidecar container is marked as failed |
-| readinessProbe.failureThreshold.proxy | int | 2 | How many [retries](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) are allowed before the readiness probe for the ProxySQL cluster pods is marked as failed |
+| readinessProbe.failureThreshold.proxy | int | 2 | How many [retries](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) are allowed before the readiness probe for the ProxySQL cluster pods are marked as failed |
 | readinessProbe.initialDelaySeconds.application | int | 90 | Define the [initial delay](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) of the readiness probe for MariaDB Galera pods |
+| readinessProbe.initialDelaySeconds.kopiaserver | int | 90 | Define the [initial delay](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) of the readiness probe for Kopia UI pod |
 | readinessProbe.initialDelaySeconds.monitoring | int | 10 | Define the [initial delay](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) of the readiness probe for MariaDB monitoring sidecar container |
 | readinessProbe.initialDelaySeconds.proxy | int | 90 | Define the [initial delay](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) of the readiness probe for ProxySQL cluster pods |
 | readinessProbe.periodSeconds.application | int | 20 | Define the [check interval](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) of the readiness probe for MariaDB Galera pods |
+| readinessProbe.periodSeconds.kopiaserver | int | 20 | Define the [check interval](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) of the readiness probe for Kopia UI pod |
 | readinessProbe.periodSeconds.monitoring | int | 20 | Define the [check interval](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) of the readiness probe for MariaDB monitoring sidecar container |
 | readinessProbe.periodSeconds.proxy | int | 20 | Define the [check interval](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) of the readiness probe for ProxySQL cluster pods |
 | readinessProbe.successThreshold.application | int | 1 | After [how many](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) checks the readiness probe for the MariaDB Galera pods will be marked as successful |
+| readinessProbe.successThreshold.kopiaserver | int | 1 | After [how many](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) checks the readiness probe for the Kopia UI pod will be marked as successful |
 | readinessProbe.successThreshold.monitoring | int | 1 | After [how many](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) checks the readiness probe for the MariaDB monitoring sidecar container will be marked as successful |
 | readinessProbe.successThreshold.proxy | int | 1 | After [how many](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) checks the readiness probe for the ProxySQL cluster pods will be marked as successful |
 | readinessProbe.timeoutSeconds.application | int | 10 | How long should Kubernetes [wait](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) for the current check of the readiness probe for the MariaDB Galera pods |
+| readinessProbe.timeoutSeconds.kopiaserver | int | 10 | How long should Kubernetes [wait](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) for the current check of the readiness probe for the Kopia UI pod |
 | readinessProbe.timeoutSeconds.monitoring | int | 10 | How long should Kubernetes [wait](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) for the current check of the readiness probe for the MariaDB monitoring sidecar container |
 | readinessProbe.timeoutSeconds.proxy | int | 10 | How long should Kubernetes [wait](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) for the current check of the readiness probe for the ProxySQL cluster pods |
 | regional | bool | `false` | If enabled `topology.kubernetes.io/zone` infos will be added to the [podAntiAffinity rules](https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/) for the MariaDB Galera and ProxySQL cluster. This is useful if the Kubernetes provider supports regional node pools to ensure a good pod distribution within that region |
@@ -347,12 +447,14 @@ docker build --build-arg BASE_SOFT_NAME=ubuntu --build-arg BASE_SOFT_VERSION=22.
 | resourceLimits.cpu.cronjob | int | 0.25 | CPU [resource reservation(request)](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#requests-and-limits) for the MariaDB backup cronjob |
 | resourceLimits.cpu.jobconfig | float | 0.25 | CPU [resource reservation(request)](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#requests-and-limits) for the MariaDB configuration job |
 | resourceLimits.cpu.jobrestore | float | 0.25 | CPU [resource reservation(request)](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#requests-and-limits) for the MariaDB restore job |
+| resourceLimits.cpu.kopiaserver | float | 0.5 | CPU [resource reservation(request)](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#requests-and-limits) for the Kopia UI containers |
 | resourceLimits.cpu.monitoring | float | 0.25 | CPU [resource reservation(request)](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#requests-and-limits) for the Monitoring sidecar containers for MariaDB |
 | resourceLimits.cpu.proxy | int | 0.5 | CPU [resource reservation(request)](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#requests-and-limits) for the ProxySQL containers |
 | resourceLimits.memory.application | string | 64Mi | RAM [resource limit](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#requests-and-limits) for the MariaDB containers |
 | resourceLimits.memory.cronjob | string | 32Mi | RAM [resource limit](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#requests-and-limits) for the MariaDB backup cronjob |
 | resourceLimits.memory.jobconfig | string | 32Mi | RAM [resource limit](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#requests-and-limits) for the MariaDB configuration job |
 | resourceLimits.memory.jobrestore | string | 128Mi | RAM [resource limit](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#requests-and-limits) for the MariaDB restore job |
+| resourceLimits.memory.kopiaserver | string | 64Mi | RAM [resource limit](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#requests-and-limits) for the Kopia UI containers |
 | resourceLimits.memory.monitoring | string | 32Mi | RAM [resource limit](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#requests-and-limits) for the Monitoring sidecar containers for MariaDB |
 | resourceLimits.memory.proxy | string | 64Mi | RAM [resource limit](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#requests-and-limits) for the ProxySQL containers |
 | revisionHistoryLimit | int | 10 | how many [versions](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#clean-up-policy) of the rolled out statefulsets for the MariaDB Galera and ProxySQL cluster pods should be kept |
@@ -380,6 +482,12 @@ docker build --build-arg BASE_SOFT_NAME=ubuntu --build-arg BASE_SOFT_VERSION=22.
 | services.application.frontend.sessionAffinity.ClientIpTimeoutSeconds | int | 10800 | [Session stickiness timeout](https://kubernetes.io/docs/reference/networking/virtual-ips/#session-affinity) for the `sessionAffinity` option |
 | services.application.frontend.sessionAffinity.type | string | `"ClientIP"` | `None` or `ClientIP` if connections from a single client should be [routed to the same endpoint](https://kubernetes.io/docs/reference/networking/virtual-ips/#session-affinity) every time. |
 | services.application.frontend.type | string | `"ClusterIP"` | `ClusterIP` to configure a Kubernetes internal service or `LoadBalancer` to publish the service outside of the [Kubernetes cluster network](https://kubernetes.io/docs/concepts/services-networking/service/#publishing-services-service-types) |
+| services.kopiaserver.frontend.ports.kopia.port | int | `80` | exposed Kopia [UI port](https://kopia.io/docs/reference/command-line/common/server-start/) |
+| services.kopiaserver.frontend.ports.kopia.protocol | string | `"TCP"` | Kopia [UI port](https://kopia.io/docs/reference/command-line/common/server-start/) protocol |
+| services.kopiaserver.frontend.ports.kopia.targetPort | int | `51515` | Kopia [UI port](https://kopia.io/docs/reference/command-line/common/server-start/) configured in the container |
+| services.kopiaserver.frontend.sessionAffinity.ClientIpTimeoutSeconds | int | 10800 | [Session stickiness timeout](https://kubernetes.io/docs/reference/networking/virtual-ips/#session-affinity) for the `sessionAffinity` option |
+| services.kopiaserver.frontend.sessionAffinity.type | string | `"ClientIP"` | `None` or `ClientIP` if connections from a single client should be [routed to the same endpoint](https://kubernetes.io/docs/reference/networking/virtual-ips/#session-affinity) every time. |
+| services.kopiaserver.frontend.type | string | `"LoadBalancer"` | `ClusterIP` to configure a Kubernetes internal service or `LoadBalancer` to publish the service outside of the [Kubernetes cluster network](https://kubernetes.io/docs/concepts/services-networking/service/#publishing-services-service-types) |
 | services.proxy.backend.headless | bool | `true` | `false` or `true` if the IP adresses of the pods that are [endpoints for that service](https://kubernetes.io/docs/concepts/services-networking/service/#headless-services) should be advertised. Required to let the client make it's own load balancing decisions |
 | services.proxy.backend.ports.adminui.port | int | `6080` | exposed ProxySQL [Admin UI port](https://proxysql.com/documentation/http-web-server/) |
 | services.proxy.backend.ports.adminui.protocol | string | `"TCP"` | ProxySQL [Admin UI port](https://proxysql.com/documentation/http-web-server/) protocol |
@@ -398,17 +506,22 @@ docker build --build-arg BASE_SOFT_NAME=ubuntu --build-arg BASE_SOFT_VERSION=22.
 | services.proxy.frontend.ports.proxy.targetPort | int | `6033` | ProxySQL [SQL port](https://proxysql.com/Documentation/global-variables/mysql-variables/#mysql-interfaces) configured in the container |
 | services.proxy.frontend.sessionAffinity.type | string | `"None"` | `None` or `ClientIP` if connections from a single client should be [routed to the same endpoint](https://kubernetes.io/docs/reference/networking/virtual-ips/#session-affinity) every time. |
 | services.proxy.frontend.type | string | `"ClusterIP"` | `ClusterIP` to configure a Kubernetes internal service or `LoadBalancer` to publish the service outside of the [Kubernetes cluster network](https://kubernetes.io/docs/concepts/services-networking/service/#publishing-services-service-types) |
-| startupProbe.failureThreshold.application | int | 4 | How many [retries](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) are allowed before the startup probe for the MariaDB Galera pods is marked as failed |
-| startupProbe.failureThreshold.proxy | int | 4 | How many [retries](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) are allowed before the startup probe for the ProxySQL cluster pods is marked as failed |
+| startupProbe.failureThreshold.application | int | 4 | How many [retries](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) are allowed before the startup probe for the MariaDB Galera pods are marked as failed |
+| startupProbe.failureThreshold.kopiaserver | int | 4 | How many [retries](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) are allowed before the startup probe for the Kopia UI pod is marked as failed |
+| startupProbe.failureThreshold.proxy | int | 4 | How many [retries](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) are allowed before the startup probe for the ProxySQL cluster pods are marked as failed |
 | startupProbe.initialDelaySeconds.application | int | 60 | Define the [initial delay](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) of the startup probe for MariaDB Galera pods |
+| startupProbe.initialDelaySeconds.kopiaserver | int | 60 | Define the [initial delay](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) of the startup probe for the Kopia UI pod |
 | startupProbe.initialDelaySeconds.proxy | int | 60 | Define the [initial delay](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) of the startup probe for ProxySQL cluster pods |
 | startupProbe.periodSeconds.application | int | 30 | Define the [check interval](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) of the startup probe for MariaDB Galera pods |
+| startupProbe.periodSeconds.kopiaserver | int | 30 | Define the [check interval](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) of the startup probe for Kopia UI pod |
 | startupProbe.periodSeconds.proxy | int | 30 | Define the [check interval](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) of the startup probe for ProxySQL cluster pods |
 | startupProbe.timeoutSeconds.application | int | 20 | How long should Kubernetes [wait](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) for the current check of the startup probe for the MariaDB Galera pods |
+| startupProbe.timeoutSeconds.kopiaserver | int | 20 | How long should Kubernetes [wait](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) for the current check of the startup probe for the Kopia UI pod |
 | startupProbe.timeoutSeconds.proxy | int | 20 | How long should Kubernetes [wait](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) for the current check of the startup probe for the ProxySQL cluster pods |
 | terminationGracePeriodSeconds | int | 86400 | how many seconds should [Kubernetes wait](https://kubernetes.io/docs/concepts/containers/container-lifecycle-hooks/#hook-handler-execution) before forcefully stopping a MariaDB Galera and ProxySQL cluster pod. During the MariaDB [full database restore](#full-database-restore) process that value will be reduced to 15 seconds |
 | updateStrategy | string | RollingUpdate | [Update strategy](https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/#update-strategies) for the MariaDB Galera and ProxySQL cluster pods. |
 | userId.application | string | 101 | run the MariaDB containers with that [user id](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-container) |
+| userId.backup | string | 3200 | run the Kopia/Restic containers with that [user id](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-container) |
 | userId.monitoring | string | 3000 | run the MariaDB monitoring containers with that [user id](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-container) |
 | userId.proxy | string | 3100 | run the ProxySQL containers with that [user id](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-container) |
 | volumeClaimTemplates.mariadb.accessModes | list | `["ReadWriteOnce"]` | [access mode](https://kubernetes.io/docs/concepts/storage/persistent-volumes/#access-modes) for the MariaDB data volume |
@@ -429,9 +542,14 @@ docker build --build-arg BASE_SOFT_NAME=ubuntu --build-arg BASE_SOFT_VERSION=22.
 | volumeMounts.application.log.claimName | string | `"marialog"` |  |
 | volumeMounts.application.log.mountPath | string | `"/opt/mariadb/log"` | mount path of the persistent volume in the container used for the MariaDB log directory |
 | volumeMounts.application.log.type | string | `"persistentVolume"` | volume type [(persistent)](https://kubernetes.io/docs/concepts/storage/persistent-volumes/) |
+| volumeMounts.kopiabackup | string | `nil` |  |
+| volumeMounts.kopiarestore | string | `nil` |  |
+| volumeMounts.kopiaserver | string | `nil` |  |
 | volumeMounts.proxy.data.claimName | string | `"proxysql"` | name for the [persistent volume claim](https://kubernetes.io/docs/concepts/storage/persistent-volumes/#persistentvolumeclaims) requested for the ProxySQL [data directory](https://proxysql.com/documentation/configuration-file/#general-variables) |
 | volumeMounts.proxy.data.mountPath | string | `"/opt/proxysql/data"` | mount path of the persistent volume in the container used for the for the ProxySQL data directory |
 | volumeMounts.proxy.data.type | string | `"persistentVolume"` | volume type [(persistent)](https://kubernetes.io/docs/concepts/storage/persistent-volumes/) |
+| volumeMounts.resticbackup | string | `nil` |  |
+| volumeMounts.resticrestore | string | `nil` |  |
 
 ### network config
 
@@ -451,15 +569,17 @@ The [Openstack cloud provider documentation](https://github.com/kubernetes/cloud
 * restic will be used to encrypt, compress and deduplicate the backup data. Currently the Openstack Swift backend is supported
 
 ### full database restore
+```shell
+helm upgrade --install --namespace database mariadb-galera helm --set mariadb.wipeDataAndLog=true
+or
+helm upgrade --install --namespace database mariadb-galera helm --set mariadb.wipeDataAndLog=true --values helm/custom/eu-de-2.yaml
+```
 * prepare the database nodes with the `mariadb.wipeDataAndLog` option
   * the mariadb pods will be restarted
   * the content of the `data` and the `log` folders will be wiped
   * the first pod will start MariaDB with Galera
   * the other pods will only start a sleep process
   * the backup cronjob and the ProxySQL pods will disabled
-    ```shell
-    helm upgrade --install --namespace database mariadb-galera helm --set mariadb.wipeDataAndLog=true
-    ```
   * check the logs of the first MariaDB pod for the wipe and Galera startup messages
     ```json
     {"log.origin.function":"wipedata","log.level":"info","message":"starting wipe of data and log folder content"}
@@ -481,25 +601,29 @@ The [Openstack cloud provider documentation](https://github.com/kubernetes/cloud
     {"log.origin.function":"initgalera","log.level":"info","message":"start sleep mode because wipedata flag has been set"}
     ```
 * start the restore and recovery process using the `mariadb.galera.restore.beforeTimestamp` option
+```sh
+helm upgrade --install --namespace database mariadb-galera helm --set mariadb.galera.restore.restic.enabled=true --set mariadb.galera.restore.beforeTimestamp="2022-12-13 12:00:00"
+or
+helm upgrade --install --namespace database mariadb-galera helm --set mariadb.galera.restore.kopia.enabled=true --set mariadb.galera.restore.beforeTimestamp="2023-02-19 15:45:00" --values helm/custom/eu-de-2.yaml
+```
   * a new job pod will be started
   * restic will query the nearest snapshot id related to the provided timestamp
   * the MariaDB dump included in the snapshot will be restored
   * the mysql client will import the dump into the first MariaDB node
-    ```sh
-    helm upgrade --install --namespace database mariadb-galera helm --set mariadb.galera.restore.enabled=true --set mariadb.galera.restore.beforeTimestamp="2022-12-13 12:00:00"
-    ```
   * check the recovery logs of the `mariadb-g-restore-*` pod
     ```json
     {"log.origin.function":"recoverresticdbbackup","log.level":"info","message":"fetch restic snapshotid for 2022-12-13 12:00:00 timestamp"}
     {"log.origin.function":"recoverresticdbbackup","log.level":"info","message":"restic database recovery using snapshot dfca4aaa to mariadb-g-0.database.svc.cluster.local started"}
     {"log.origin.function":"recoverresticdbbackup","log.level":"info","message":"restic database recovery done"}
     ```
-* run `helm upgrade` again to remove the `mariadb.wipeDataAndLog` and `mariadb.galera.restore.enabled` options
+* run `helm upgrade` again to remove the `mariadb.wipeDataAndLog` and `mariadb.galera.restore.restic.enabled` options
+```sh
+helm upgrade --install --namespace database mariadb-galera helm
+or
+helm upgrade --install --namespace database mariadb-galera helm --values helm/custom/eu-de-2.yaml
+```
   * ProxySQL, the config job and the Backup cronjob will be enabled again (if they have been enabled before)
   * the MariaDB pods will be restarted and Galera will replicate the restored data
-    ```sh
-    helm upgrade --install --namespace database mariadb-galera helm
-    ```
 
 ### asynchronous replication config
 
@@ -821,6 +945,7 @@ flowchart TB;
   * [mariadb-dump manual](https://mariadb.com/kb/en/mariadb-dumpmysqldump/)
   * [Mariabackup + Restic: a simple and efficient online backup solution for your DBs](https://archive.fosdem.org/2022/schedule/event/mariadb_backup_restic/)
   * [MariaDB Point-in-Time-Recovery](https://archive.fosdem.org/2022/schedule/event/mariadb_pit_recovery/)
+  * [Kopia environment variables](https://github.com/kopia/kopia/search?p=1&q=envName)
 
 ----------------------------------------------
 Autogenerated from chart metadata using [helm-docs v1.11.0](https://github.com/norwoodj/helm-docs/releases/v1.11.0)

@@ -36,15 +36,24 @@ function fetchresticsnapshotid {
     RESTIC_SNAPSHOT_ID=${RESTORE_SNAPSHOT_ID}
   fi
 
-  if [ ${int} -eq 0 ]; then
-    exit 1
-  fi
   echo ${RESTIC_SNAPSHOT_ID}
 }
 
 function recoverresticdbbackup {
-  loginfo "${FUNCNAME[0]}" "fetch restic snapshotid for ${RESTORE_TIMESTAMP} timestamp"
+  if [ "${RESTORE_TIMESTAMP}" != "false" ]; then
+    loginfo "${FUNCNAME[0]}" "fetch restic snapshotid for the '${RESTORE_TIMESTAMP}' timestamp"
+  else
+    loginfo "${FUNCNAME[0]}" "fetch restic snapshotid"
+  fi
+
   local snapshotid=$(fetchresticsnapshotid)
+
+  if [ "${snapshotid}" == "null" ]; then
+    logerror "${FUNCNAME[0]}" "no (valid) snapshotId found"
+    loginfo "${FUNCNAME[0]}" "The following timestamps are available: $(restic snapshots --tag dump --json | jq --raw-output '.[].time | split(".")[0] | strptime("%Y-%m-%dT%H:%M:%S") | strftime("%Y-%m-%d %H:%M:%S")')"
+    exit 1
+  fi
+
   loginfo "${FUNCNAME[0]}" "restic database recovery using snapshot ${snapshotid} to ${DB_HOST} started"
   restic dump --tag dump ${snapshotid} mariadb.dump | mysql --protocol=tcp --host=${DB_HOST} --user=${MARIADB_ROOT_USER} --password=${MARIADB_ROOT_PASSWORD} --port=${MYSQL_PORT} --wait --connect-timeout=${WAIT_SECONDS} --reconnect --batch
   if [ $? -ne 0 ]; then

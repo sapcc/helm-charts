@@ -7,8 +7,8 @@
 {{ $nodeNamePrefix := "" }}
 {{ if or (eq .component "application") (eq .component "application-direct") }}
   {{ $nodeNamePrefix = (include "nodeNamePrefix" (dict "global" .global "component" "application")) }}
-{{ else if eq .component "proxy" }}
-  {{ $nodeNamePrefix = (include "nodeNamePrefix" (dict "global" .global "component" "proxy")) }}
+{{ else }}
+  {{ $nodeNamePrefix = (include "nodeNamePrefix" (dict "global" .global "component" .component)) }}
 {{ end }}
 ---
 apiVersion: v1
@@ -46,14 +46,20 @@ spec:
   publishNotReadyAddresses: true {{/* create A records for not ready pods and announce the IPs on the headless service before they are ready https://kubernetes.io/docs/concepts/services-networking/dns-pod-service/#pod-s-hostname-and-subdomain-fields */}}
   {{- end }}
   selector:
-  {{- if eq .replica "notused" }}
-    {{- if eq .component "application-direct" }}
-    component: "application"
-    {{- else }}
-    component: {{ .component | quote }}
-    {{- end }}
-  {{- else }}
+  {{- if ne .replica "notused" }}
     statefulset.kubernetes.io/pod-name: {{ (printf "%s-%s" $nodeNamePrefix .replica) }}
+  {{- else if and (hasKey .global.Values.mariadb "autostart") (not .global.Values.mariadb.autostart) }}
+    component: "disabledBecauseOf-mariadb.autostart-disabled"
+  {{- else if and (.global.Values.command) (hasKey .global.Values.command "application") }}
+    component: "disabledBecauseOf-command.application-defined"
+  {{- else if and (hasKey .global.Values.mariadb "wipeDataAndLog") (.global.Values.mariadb.wipeDataAndLog) }}
+    component: "disabledBecauseOf-mariadb.wipeDataAndLog-enabled"
+  {{- else if or (and (hasKey .global.Values.mariadb.galera.restore "restic") (.global.Values.mariadb.galera.restore.restic.enabled)) (and (hasKey .global.Values.mariadb.galera.restore "kopia") (.global.Values.mariadb.galera.restore.kopia.enabled)) }}
+    component: "disabledBecauseOf-mariadb.galera.restore-enabled"
+  {{- else if eq .component "application-direct" }}
+    component: "application"
+  {{- else }}
+    component: {{ .component | quote }}
   {{- end }}
   ports:
   {{- range $portKey, $portValue := .service.ports }}
@@ -84,6 +90,12 @@ spec:
   {{- else if eq .component "proxy" }}
     {{- if and (.global.Values.namePrefix) (hasKey .global.Values.namePrefix .component) }}
       {{- (.global.Values.namePrefix.proxy | default "proxysql") }}
+    {{- else }}
+      {{- "proxysql" }}
+    {{- end }}
+  {{- else if eq .component "kopiaserver" }}
+    {{- if and (.global.Values.namePrefix) (hasKey .global.Values.namePrefix .component) }}
+      {{- (.global.Values.namePrefix.kopiaserver | default "backup-kopiaserver") }}
     {{- else }}
       {{- "proxysql" }}
     {{- end }}

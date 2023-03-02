@@ -32,11 +32,11 @@ spec:
       annotations:
         {{- if $.Values.monitoring.mysqld_exporter.enabled }}
         prometheus.io/scrape: "true"
+        prometheus.io/port: "9104"
         prometheus.io/targets: {{ $.Values.monitoring.prometheus.instance | default "prometheus" | quote }}
         {{- end }}
-        checksum/my.cnf.yml: {{ include (print $.Template.BasePath "/configmap-my.cnf.yaml") $ | sha256sum }}
-        checksum/entrypoint.sh: {{ include (print $.Template.BasePath "/configmap-mariadb-entrypoint.sh.yaml") $ | sha256sum }}
-        checksum/common-functions-extended.sh: {{ include (print $.Template.BasePath "/configmap-mariadb-common-functions-extended.sh.yaml") $ | sha256sum }}
+        checksum/my.cnf: {{ include (print $.Template.BasePath "/configmap-mariadb-my.cnf.yaml") $ | sha256sum }}
+        checksum/configmap: {{ include (print $.Template.BasePath "/configmap-mariadb.yaml") $ | sha256sum }}
     spec:
       affinity:
         podAntiAffinity:
@@ -64,6 +64,8 @@ spec:
       serviceAccount: {{ $.Release.Name }}
       automountServiceAccountToken: true
       securityContext:
+        runAsUser:  {{ $.Values.userId.application | default 101 | int }}
+        runAsGroup: {{ $.Values.groupId.application | default 101 | int }}
         fsGroup:  {{ $.Values.groupId.application | default 101 | int }}
       {{- if and (hasKey $.Values.image.application "pullSecret") $.Values.image.application.pullSecret }}
       imagePullSecrets:
@@ -187,7 +189,7 @@ spec:
         {{- if and (hasKey $.Values.mariadb "autostart") (not $.Values.mariadb.autostart) }}
         {{- else if and ($.Values.command) (hasKey $.Values.command "application") }}
         {{- else if and (hasKey $.Values.mariadb "wipeDataAndLog") ($.Values.mariadb.wipeDataAndLog) }}
-        {{- else if and (hasKey $.Values.mariadb.galera "restore") ($.Values.mariadb.galera.restore.enabled) }}
+        {{- else if or (and (hasKey $.Values.mariadb.galera.restore "restic") ($.Values.mariadb.galera.restore.restic.enabled)) (and (hasKey $.Values.mariadb.galera.restore "kopia") ($.Values.mariadb.galera.restore.kopia.enabled)) }}
         {{- else }}
         startupProbe:
           exec:
@@ -310,14 +312,18 @@ spec:
             mountPath: /opt/mariadb/bin/common-functions-extended.sh
             subPath: common-functions-extended.sh
             readOnly: true
-          {{- if or (and (hasKey $.Values.mariadb "wipeDataAndLog") ($.Values.mariadb.wipeDataAndLog)) (and (hasKey $.Values.mariadb.galera "restore") ($.Values.mariadb.galera.restore.enabled)) }}
+          {{- if or (and (hasKey $.Values.mariadb "wipeDataAndLog") ($.Values.mariadb.wipeDataAndLog)) (or (and (hasKey $.Values.mariadb.galera.restore "restic") ($.Values.mariadb.galera.restore.restic.enabled)) (and (hasKey $.Values.mariadb.galera.restore "kopia") ($.Values.mariadb.galera.restore.kopia.enabled))) }}
           - name: mariadb-wipedata
             mountPath: /opt/mariadb/etc/wipedata.flag
             subPath: wipedata.flag
             readOnly: true
           {{- end }}
         {{- /* monitoring sidecar start */}}
-        {{- if $.Values.monitoring.mysqld_exporter.enabled }}
+        {{- if and (hasKey $.Values.mariadb "autostart") (not $.Values.mariadb.autostart) }}
+        {{- else if and ($.Values.command) (hasKey $.Values.command "application") }}
+        {{- else if and (hasKey $.Values.mariadb "wipeDataAndLog") ($.Values.mariadb.wipeDataAndLog) }}
+        {{- else if or (and (hasKey $.Values.mariadb.galera.restore "restic") ($.Values.mariadb.galera.restore.restic.enabled)) (and (hasKey $.Values.mariadb.galera.restore "kopia") ($.Values.mariadb.galera.restore.kopia.enabled)) }}
+        {{- else if $.Values.monitoring.mysqld_exporter.enabled }}
       - name: mon
         image: "{{ $.Values.image.monitoring.registry }}/{{ $.Values.image.monitoring.project }}/{{ $.Values.image.monitoring.applicationname }}:{{ $.Values.image.monitoring.applicationversion }}-{{ $.Values.image.monitoring.imageversion }}"
         imagePullPolicy: {{ $.Values.image.monitoring.pullPolicy | default "IfNotPresent" | quote }}
@@ -383,7 +389,7 @@ spec:
             memory: {{ $.Values.resourceLimits.memory.monitoring | default "32Mi" | quote }}
         ports:
           - name: metrics
-            containerPort: {{ $.Values.monitoring.mysqld_exporter.metricsPort | default 9104 }}
+            containerPort: 9104
         {{- if and (hasKey $.Values.monitoring.mysqld_exporter "autostart") (not $.Values.monitoring.mysqld_exporter.autostart) }}
         {{- else if and ($.Values.command) (hasKey $.Values.command "monitoring") }}
         {{- else }}
@@ -437,12 +443,16 @@ spec:
             mountPath: /opt/mysqld_exporter/bin/readiness.sh
             subPath: readiness.sh
             readOnly: true
+          - name: monitoring-common-functions-extended-sh
+            mountPath: /opt/mysqld_exporter/bin/common-functions-extended.sh
+            subPath: common-functions-extended.sh
+            readOnly: true
         {{- end }}
         {{- /* monitoring sidecar end */}}
       {{- if and (hasKey $.Values.mariadb "autostart") (not $.Values.mariadb.autostart) }}
       {{- else if and ($.Values.command) (hasKey $.Values.command "application") }}
       {{- else }}
-        {{- if or (and (hasKey $.Values.mariadb "wipeDataAndLog") ($.Values.mariadb.wipeDataAndLog)) (and (hasKey $.Values.mariadb.galera "restore") ($.Values.mariadb.galera.restore.enabled)) }}
+        {{- if or (and (hasKey $.Values.mariadb "wipeDataAndLog") ($.Values.mariadb.wipeDataAndLog)) (or (and (hasKey $.Values.mariadb.galera.restore "restic") ($.Values.mariadb.galera.restore.restic.enabled)) (and (hasKey $.Values.mariadb.galera.restore "kopia") ($.Values.mariadb.galera.restore.kopia.enabled))) }}
       terminationGracePeriodSeconds: 15
         {{- else }}
       terminationGracePeriodSeconds: {{ $.Values.terminationGracePeriodSeconds | default 86400 | int }}
@@ -489,7 +499,7 @@ spec:
           configMap:
             name: mariadb-common-functions-extended-sh
             defaultMode: 0755
-        {{- if or (and (hasKey $.Values.mariadb "wipeDataAndLog") ($.Values.mariadb.wipeDataAndLog)) (and (hasKey $.Values.mariadb.galera "restore") ($.Values.mariadb.galera.restore.enabled)) }}
+        {{- if or (and (hasKey $.Values.mariadb "wipeDataAndLog") ($.Values.mariadb.wipeDataAndLog)) (or (and (hasKey $.Values.mariadb.galera.restore "restic") ($.Values.mariadb.galera.restore.restic.enabled)) (and (hasKey $.Values.mariadb.galera.restore "kopia") ($.Values.mariadb.galera.restore.kopia.enabled))) }}
         - name: mariadb-wipedata
           configMap:
             name: mariadb-wipedata
@@ -502,6 +512,10 @@ spec:
         - name: monitoring-probes-sh
           configMap:
             name: monitoring-probes-sh
+            defaultMode: 0755
+        - name: monitoring-common-functions-extended-sh
+          configMap:
+            name: monitoring-common-functions-extended-sh
             defaultMode: 0755
   volumeClaimTemplates:
   {{- range $volumeClaimTemplatesKey, $volumeClaimTemplatesValue := $.Values.volumeClaimTemplates }}
