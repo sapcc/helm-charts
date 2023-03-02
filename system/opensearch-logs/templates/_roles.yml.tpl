@@ -56,12 +56,14 @@ data:
 
 syslog:
   reserved: false
-  hidden: false
   cluster_permissions:
     - "cluster_monitor"
     - "cluster_composite_ops"
     - "cluster:admin/ingest/pipeline/put"
     - "cluster:admin/ingest/pipeline/get"
+    - "indices:admin/template/get"
+    - "cluster_composite_ops"
+    - "cluster_manage_index_templates"
   index_permissions:
   - index_patterns:
     - "syslog-*"
