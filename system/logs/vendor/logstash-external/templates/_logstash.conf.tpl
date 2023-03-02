@@ -192,7 +192,7 @@ output {
 {{- if .Values.opensearch.enabled }}
     opensearch {
       id => "opensearch-alerts"
-      index => "alerts-other--%{+YYYY}"
+      index => "alerts-other-%{+YYYY}"
       hosts => ["https://{{.Values.opensearch.http.endpoint}}.{{.Values.global.region}}.{{.Values.global.tld}}:{{.Values.opensearch.http_port}}"]
       auth_type => {
         type => "basic"
