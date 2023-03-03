@@ -5,7 +5,7 @@ groups:
   rules:
 
   - alert: OpenstackKeppelDown
-    expr: keppel_healthmonitor_result != 1 or absent(keppel_healthmonitor_result)
+    expr: max(keppel_healthmonitor_result) != 1 or absent(keppel_healthmonitor_result)
     for: 3m
     labels:
       context: api
@@ -26,7 +26,7 @@ groups:
   # This alert is disabled for QA because the lab regions are literal testbeds
   # and therefore have connectivity issues all the time.
   - alert: OpenstackKeppelAnycastDown
-    expr: keppel_anycastmonitor_result{region!~"qa-.*"} != 1
+    expr: max by (account) (keppel_anycastmonitor_result{region!~"qa-.*"}) != 1
     for: 30m # triggers rather slowly because it does not make sense to ping the Keppel team for short-term network issues
     labels:
       context: anycast-api
@@ -44,7 +44,7 @@ groups:
 
   # This alert is disabled for QA because the QA anycast looks kind of broken.
   - alert: OpenstackKeppelAnycastMembership
-    expr: keppel_anycastmonitor_membership{region!~"qa-.*"} != 1
+    expr: max(keppel_anycastmonitor_membership{region!~"qa-.*"}) != 1
     for: 10m
     labels:
       context: anycast-membership
@@ -64,7 +64,7 @@ groups:
         of the "keppel-anycast-monitor" pod for details.
 
   - alert: OpenstackKeppelSlowPeering
-    expr: time() - keppel_peers_last_peered_at > 1800
+    expr: time() - max by (hostname) (keppel_peers_last_peered_at) > 1800
     for: 5m
     labels:
       context: api
@@ -83,7 +83,7 @@ groups:
         additional information or error messages.
 
   - alert: OpenstackKeppelSlowBlobReplication
-    expr: keppel_blob_replication_min_started_at > 0 and time() - keppel_blob_replication_min_started_at > 900
+    expr: max(keppel_blob_replication_min_started_at) > 0 and time() - max(keppel_blob_replication_min_started_at) > 900
     for: 5m
     labels:
       context: api
@@ -103,7 +103,7 @@ groups:
         to allow another replication to take place.
 
   - alert: OpenstackKeppelDBConnectionPoolNearlyFull
-    expr: avg_over_time(go_sql_stats_connections_in_use{db_name="keppel"}[1h]) > 8
+    expr: max by (pod) (avg_over_time(go_sql_stats_connections_in_use{db_name="keppel"}[1h]) > 8)
     for: 5m
     labels:
       context: dbconnpool
