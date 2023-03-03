@@ -136,7 +136,7 @@
     <labels>
       hostname ${hostname}
       nodename "#{ENV['K8S_NODE_NAME']}"
-      fluent_namespace $.kubernetes.namespace
+      fluent_namespace $.kubernetes.namespace_name
     </labels>
   </metric>
 </filter>
@@ -150,7 +150,7 @@
     <labels>
       hostname ${hostname}
       nodename "#{ENV['K8S_NODE_NAME']}"
-      fluent_namespace $.kubernetes.namespace
+      fluent_namespace $.kubernetes.namespace_name
     </labels>
   </metric>
 </filter>
@@ -231,7 +231,7 @@
         nodename "#{ENV['K8S_NODE_NAME']}"
         fluent_container $.kubernetes.pod_name
         daemontype $.kubernetes.container_name
-        fluent_namespace $.kubernetes.namespace
+        fluent_namespace $.kubernetes.namespace_name
       </labels>
     </metric>
   </store>
@@ -252,7 +252,7 @@
         nodename "#{ENV['K8S_NODE_NAME']}"
         fluent_container $.kubernetes.pod_name
         daemontype $.kubernetes.container_name
-        fluent_namespace $.kubernetes.namespace
+        fluent_namespace $.kubernetes.namespace_name
       </labels>
     </metric>
   </store>
@@ -273,7 +273,7 @@
         nodename "#{ENV['K8S_NODE_NAME']}"
         fluent_container $.kubernetes.pod_name
         daemontype $.kubernetes.container_name
-        fluent_namespace $.kubernetes.namespace
+        fluent_namespace $.kubernetes.namespace_name
       </labels>
     </metric>
   </store>
@@ -294,7 +294,7 @@
         nodename "#{ENV['K8S_NODE_NAME']}"
         fluent_container $.kubernetes.pod_name
         daemontype $.kubernetes.container_name
-        fluent_namespace $.kubernetes.namespace
+        fluent_namespace $.kubernetes.namespace_name
       </labels>
     </metric>
   </store>
@@ -315,7 +315,7 @@
         nodename "#{ENV['K8S_NODE_NAME']}"
         fluent_container $.kubernetes.pod_name
         daemontype $.kubernetes.container_name
-        fluent_namespace $.kubernetes.namespace
+        fluent_namespace $.kubernetes.namespace_name
       </labels>
     </metric>
   </store>
@@ -335,7 +335,7 @@
       <labels>
         nodename "#{ENV['K8S_NODE_NAME']}"
         fluent_container $.kubernetes.pod_name
-        fluent_namespace $.kubernetes.namespace
+        fluent_namespace $.kubernetes.namespace_name
       </labels>
     </metric>
   </store>
@@ -355,7 +355,7 @@
       <labels>
         nodename "#{ENV['K8S_NODE_NAME']}"
         fluent_container $.kubernetes.pod_name
-        fluent_namespace $.kubernetes.namespace
+        fluent_namespace $.kubernetes.namespace_name
       </labels>
     </metric>
   </store>
@@ -375,7 +375,7 @@
       <labels>
         nodename "#{ENV['K8S_NODE_NAME']}"
         fluent_container $.kubernetes.pod_name
-        fluent_namespace $.kubernetes.namespace
+        fluent_namespace $.kubernetes.namespace_name
       </labels>
     </metric>
   </store>
@@ -395,7 +395,7 @@
       <labels>
         nodename "#{ENV['K8S_NODE_NAME']}"
         fluent_container $.kubernetes.pod_name
-        fluent_namespace $.kubernetes.namespace
+        fluent_namespace $.kubernetes.namespace_name
       </labels>
     </metric>
   </store>
@@ -415,7 +415,7 @@
       <labels>
         nodename "#{ENV['K8S_NODE_NAME']}"
         fluent_container $.kubernetes.pod_name
-        fluent_namespace $.kubernetes.namespace
+        fluent_namespace $.kubernetes.namespace_name
       </labels>
     </metric>
   </store>
@@ -435,7 +435,7 @@
       <labels>
         nodename "#{ENV['K8S_NODE_NAME']}"
         fluent_container $.kubernetes.pod_name
-        fluent_namespace $.kubernetes.namespace
+        fluent_namespace $.kubernetes.namespace_name
       </labels>
     </metric>
   </store>
@@ -484,7 +484,7 @@
       <labels>
         nodename "#{ENV['K8S_NODE_NAME']}"
         fluent_container $.kubernetes.pod_name
-        fluent_namespace $.kubernetes.namespace
+        fluent_namespace $.kubernetes.namespace_name
       </labels>
     </metric>
   </store>
@@ -505,7 +505,7 @@
         nodename "#{ENV['K8S_NODE_NAME']}"
         fluent_container $.kubernetes.pod_name
         daemontype $.kubernetes.container_name
-        fluent_namespace $.kubernetes.namespace
+        fluent_namespace $.kubernetes.namespace_name
       </labels>
     </metric>
   </store>
@@ -526,7 +526,7 @@
         nodename "#{ENV['K8S_NODE_NAME']}"
         fluent_container $.kubernetes.pod_name
         daemontype $.kubernetes.container_name
-        fluent_namespace $.kubernetes.namespace
+        fluent_namespace $.kubernetes.namespace_name
       </labels>
     </metric>
   </store>
@@ -547,7 +547,7 @@
         nodename "#{ENV['K8S_NODE_NAME']}"
         fluent_container $.kubernetes.pod_name
         daemontype $.kubernetes.container_name
-        fluent_namespace $.kubernetes.namespace
+        fluent_namespace $.kubernetes.namespace_name
       </labels>
     </metric>
   </store>
@@ -568,7 +568,7 @@
         nodename "#{ENV['K8S_NODE_NAME']}"
         fluent_container $.kubernetes.pod_name
         daemontype $.kubernetes.container_name
-        fluent_namespace $.kubernetes.namespace
+        fluent_namespace $.kubernetes.namespace_name
       </labels>
     </metric>
   </store>
