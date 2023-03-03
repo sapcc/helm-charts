@@ -96,8 +96,10 @@ spec:
           env:
             - name: NETAPPSD_PROMETHEUS_URL
               value: http://prometheus-infra-collector.infra-monitoring.svc:9090
-            - name: NETAPPSD_PROMETHEUS_QUERY
-              value: count by (cluster) (netapp_aggr_labels{app_kubernetes_io_instance=~'netapp.*{{ .appValues.name }}'})
+            - name: NETAPPSD_PROMETHEUS_OBSERVE_QUERY
+              value: count by (poller) (netapp_metadata_exporter_count{app_kubernetes_io_instance=~'.*{{ .appValues.name }}'})
+            - name: NETAPPSD_PROMETHEUS_OBSERVE_LABEL
+              value: poller
             - name: NETAPPSD_METRICS_PREFIX
               value: netapp_harvest_{{ .appValues.name }}
           ports:
