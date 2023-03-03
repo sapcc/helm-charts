@@ -212,10 +212,6 @@
     pattern /encountered fetching pod metadata/
     tag "METADATA.${tag}"
   </rule>
-</match>
-
-<match kubernetes.** audit.**>
-  @type rewrite_tag_filter
   <rule>
     key log
     pattern /(unreadable. It is excluded|Skip update_watcher because watcher has been already updated by other inotify event)/
@@ -448,26 +444,6 @@
   </store>
 </match>
 
-<match FLUENTDTAILSTALLED.**>
-  @type copy
-  <store>
-    @type prometheus
-    <metric>
-      name prom_fluentd_tail_stalled
-      type counter
-      desc Tail stalled for a log file
-      <labels>
-        nodename "#{ENV['K8S_NODE_NAME']}"
-        fluent_container $.kubernetes.pod_name
-        fluent_namespace $.kubernetes.namespace
-      </labels>
-    </metric>
-  </store>
-  <store>
-    @type null
-  </store>
-</match>
-
 <match audit.**>
   @type rewrite_tag_filter
   <rule>
@@ -490,6 +466,31 @@
     pattern /connect_write timeout reached/
     tag "FLUENTAUDITTIMEOUT.${tag}"
   </rule>
+  <rule>
+    key log
+    pattern /(unreadable. It is excluded|Skip update_watcher because watcher has been already updated by other inotify event)/
+    tag "FLUENTDTAILSTALLED.${tag}"
+  </rule>
+</match>
+
+<match FLUENTDTAILSTALLED.**>
+  @type copy
+  <store>
+    @type prometheus
+    <metric>
+      name prom_fluentd_tail_stalled
+      type counter
+      desc Tail stalled for a log file
+      <labels>
+        nodename "#{ENV['K8S_NODE_NAME']}"
+        fluent_container $.kubernetes.pod_name
+        fluent_namespace $.kubernetes.namespace
+      </labels>
+    </metric>
+  </store>
+  <store>
+    @type null
+  </store>
 </match>
 
 <match FLUENTAUDITERROR.**>
