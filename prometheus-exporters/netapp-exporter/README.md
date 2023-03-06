@@ -1,16 +1,5 @@
-## Change Log
-
-### v0.2.0
-
-#### netapp-harvest-exporter
-  - Runs in master-worker mode
-  - Master provide scraping target for workers via API.
-  - Each worker runs a Harvest poller, which is responsible for a single Filer.
-  - The scraped metrics are monitored by Master.
-  - Manila exporters in are disabled atm
-
-### v0.2.1
-
-#### netapp-harvest-exporter
-  - Prometheus alert when there are not enough workers
-  - Prometheus alert when there are less than 3 free workers
+# Info
+This chart includes three local charts
+- netapp-cap-exporter: capacity metrics using https://github.com/sapcc/netapp-api-exporter
+- netapp-perf-exporter: performance metrics using NetApp Harvest 1.0
+- netapp-harvest-exporter: both capacity and performance metrics using NetApp Harvest 2
