@@ -75,7 +75,7 @@ groups:
       context: pod
       meta: "Pod {{`{{ $labels.namespace }}`}}/{{`{{ $labels.pod }}`}} is restarting constantly"
     annotations:
-      description: Container {{`{{ $labels.container }}`}} of pod {{`{{ $labels.namespace }}`}}/{{`{{ $labels.pod }}`}} is restarting constantly
+      description: Container {{`{{ $labels.container }}`}} of pod {{`{{ $labels.namespace }}`}}/{{`{{ $labels.pod }}`}} is restarting constantly. Is `owner-info` set --> Contact respective service owner! If not, try fynding him/her and make sure, `owner-info` is set!
       summary: Pod is in a restart loop
 
   - alert: KubernetesTooManyOpenFiles
