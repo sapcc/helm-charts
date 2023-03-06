@@ -45,16 +45,6 @@ spec:
           webhook.clientConfig.service.name == "gatekeeper-webhook-service"
         }
 
-        # mutating webhook: kube-system/gatekeeper-tugger
-        allowed_webhook[{ "name": webhook.name, "reason": "allow-tugger" }] {
-          iro.kind == "MutatingWebhookConfiguration"
-          iro.metadata.name == "gatekeeper-tugger"
-
-          webhook := iro.webhooks[_]
-          webhook.clientConfig.service.namespace == "kube-system"
-          webhook.clientConfig.service.name == "gatekeeper-tugger"
-        }
-
         # validating AND mutating webhook: kube-system/cert-manager-webhook
         {{- if eq .Values.cluster_type "kubernikus" "virtual" "metal" }}
         kubeSystemReleaseName = "kube-system-{{ .Values.cluster_type }}"

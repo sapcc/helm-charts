@@ -5,7 +5,7 @@ groups:
   rules:
 
   - alert: OpenstackKeppelNotCleaningAbandonedUploads
-    expr: keppel_upload_min_updated_at > 0 and time() - keppel_upload_min_updated_at > 90000
+    expr: max(keppel_upload_min_updated_at) > 0 and time() - max(keppel_upload_min_updated_at) > 90000
     for: 5m
     labels:
       context: janitor
@@ -21,7 +21,7 @@ groups:
         Check the logs of keppel-janitor for details.
 
   - alert: OpenstackKeppelNotValidatingBlobs
-    expr: time() - keppel_blobs_min_validated_at > 691200 # 8 days (in seconds)
+    expr: time() - max(keppel_blobs_min_validated_at) > 691200 # 8 days (in seconds)
     for: 5m
     labels:
       context: janitor
@@ -41,7 +41,7 @@ groups:
   # If we alerted on a single failed validation, we'd get spurious alerts every
   # time Swift has a hiccup.
   - alert: OpenstackKeppelBlobValidationFailed
-    expr: keppel_blobs_validation_errors > 0
+    expr: max(keppel_blobs_validation_errors) > 0
     for: 15m
     labels:
       context: janitor
@@ -58,7 +58,7 @@ groups:
         The detailed errors are in the Keppel DB under `SELECT DISTINCT validation_error_message FROM blobs`.
 
   - alert: OpenstackKeppelNotValidatingManifests
-    expr: time() - keppel_manifests_min_validated_at > 90000
+    expr: time() - max(keppel_manifests_min_validated_at) > 90000
     for: 5m
     labels:
       context: janitor
@@ -78,7 +78,7 @@ groups:
   # If we alerted on a single failed validation, we'd get spurious alerts every
   # time Swift has a hiccup.
   - alert: OpenstackKeppelManifestValidationFailed
-    expr: keppel_manifests_validation_errors > 0
+    expr: max(keppel_manifests_validation_errors) > 0
     for: 15m
     labels:
       context: janitor
@@ -99,7 +99,7 @@ groups:
   # restrictive rate limits, and those short-lived alerts just generate useless
   # noise.
   - alert: OpenstackKeppelNotSyncingReplicatedManifests
-    expr: keppel_replicated_repos_count > 0 and time() - keppel_replicated_repos_min_next_manifest_sync_at > 3600
+    expr: max(keppel_replicated_repos_count) > 0 and time() - max(keppel_replicated_repos_min_next_manifest_sync_at) > 3600
     for: 5m
     labels:
       context: janitor
@@ -116,7 +116,7 @@ groups:
         Check the logs of keppel-janitor for details.
 
   - alert: OpenstackKeppelNotSweepingBlobMounts
-    expr: keppel_repos_count > 0 and time() - keppel_repos_min_next_blob_mount_sweep_at > 600
+    expr: max(keppel_repos_count) > 0 and time() - max(keppel_repos_min_next_blob_mount_sweep_at) > 600
     for: 5m
     labels:
       context: janitor
@@ -134,7 +134,7 @@ groups:
         Check the logs of keppel-janitor for details.
 
   - alert: OpenstackKeppelNotGarbageCollectingImages
-    expr: keppel_repos_count > 0 and time() - keppel_repos_min_next_gc_at > 600
+    expr: max(keppel_repos_count) > 0 and time() - max(keppel_repos_min_next_gc_at) > 600
     for: 5m
     labels:
       context: janitor
@@ -151,7 +151,7 @@ groups:
         Check the logs of keppel-janitor for details.
 
   - alert: OpenstackKeppelNotDeletingBlobMounts
-    expr: keppel_blob_mounts_min_can_be_deleted_at > 0 and time() - keppel_blob_mounts_min_can_be_deleted_at > 7200
+    expr: max(keppel_blob_mounts_min_can_be_deleted_at) > 0 and time() - max(keppel_blob_mounts_min_can_be_deleted_at) > 7200
     for: 5m
     labels:
       context: janitor
@@ -168,7 +168,7 @@ groups:
         Check the logs of keppel-janitor for details.
 
   - alert: OpenstackKeppelNotSweepingBlobs
-    expr: keppel_accounts_count > 0 and time() - keppel_accounts_min_next_blob_sweep_at > 600
+    expr: max(keppel_accounts_count) > 0 and time() - max(keppel_accounts_min_next_blob_sweep_at) > 600
     for: 5m
     labels:
       context: janitor
@@ -185,7 +185,7 @@ groups:
         Check the logs of keppel-janitor for details.
 
   - alert: OpenstackKeppelNotDeletingBlobs
-    expr: keppel_blobs_min_can_be_deleted_at > 0 and time() - keppel_blobs_min_can_be_deleted_at > 7200
+    expr: max(keppel_blobs_min_can_be_deleted_at) > 0 and time() - max(keppel_blobs_min_can_be_deleted_at) > 7200
     for: 5m
     labels:
       context: janitor
@@ -202,7 +202,7 @@ groups:
         Check the logs of keppel-janitor for details.
 
   - alert: OpenstackKeppelNotSweepingStorage
-    expr: keppel_accounts_count > 0 and time() - keppel_accounts_min_next_storage_sweep_at > 600
+    expr: max(keppel_accounts_count) > 0 and time() - max(keppel_accounts_min_next_storage_sweep_at) > 600
     for: 5m
     labels:
       context: janitor
@@ -219,7 +219,7 @@ groups:
         Check the logs of keppel-janitor for details.
 
   - alert: OpenstackKeppelNotDeletingUnknownBlobs
-    expr: keppel_unknown_blobs_min_can_be_deleted_at > 0 and time() - keppel_unknown_blobs_min_can_be_deleted_at > 28800
+    expr: max(keppel_unknown_blobs_min_can_be_deleted_at) > 0 and time() - max(keppel_unknown_blobs_min_can_be_deleted_at) > 28800
     for: 5m
     labels:
       context: janitor
@@ -236,7 +236,7 @@ groups:
         Check the logs of keppel-janitor for details.
 
   - alert: OpenstackKeppelNotDeletingUnknownManifests
-    expr: keppel_unknown_manifests_min_can_be_deleted_at > 0 and time() - keppel_unknown_manifests_min_can_be_deleted_at > 28800
+    expr: max(keppel_unknown_manifests_min_can_be_deleted_at) > 0 and time() - max(keppel_unknown_manifests_min_can_be_deleted_at) > 28800
     for: 5m
     labels:
       context: janitor
@@ -253,7 +253,7 @@ groups:
         Check the logs of keppel-janitor for details.
 
   - alert: OpenstackKeppelNotAnnouncingAccountsToFederation
-    expr: keppel_accounts_count > 0 and time() - keppel_accounts_min_next_federation_announcement_at > 600
+    expr: max(keppel_accounts_count) > 0 and time() - max(keppel_accounts_min_next_federation_announcement_at) > 600
     for: 5m
     labels:
       context: janitor
@@ -272,7 +272,7 @@ groups:
   - alert: OpenstackKeppelNotCheckingVulnerabilities
     # 9000 seconds = 2.5 hours (we would like 2 hours, but this limit is now being hit in eu-de-1; I'm raising the limit
     # for now to silence the flapping alert while we refactor the Clair integration in Keppel to scale better)
-    expr: keppel_manifests_count > 0 and time() - keppel_manifests_min_next_vuln_check_at > 9000
+    expr: max(keppel_manifests_count) > 0 and time() - max(keppel_manifests_min_next_vuln_check_at) > 9000
     for: 5m
     labels:
       context: janitor
@@ -292,7 +292,7 @@ groups:
     # Most failed indexing runs fail due to transient network errors, and Keppel can auto-retry these failed runs.
     # To avoid flapping during these retries, this alert triggers very slowly. We use min_over_time() for the slow
     # reaction, instead of a longer `for` period, to allow the alert to clear quickly after it is fixed manually.
-    expr: 'keppel_vuln_scan_error_counts{message!="",status!="Unsupported"} > 0 and min_over_time(keppel_vuln_scan_error_counts{message!="",status!="Unsupported"}[2h]) > 0'
+    expr: 'max by (message) (keppel_vuln_scan_error_counts{message!="",status!="Unsupported"} > 0) and max by (message) (min_over_time(keppel_vuln_scan_error_counts{message!="",status!="Unsupported"}[2h]) > 0)'
     for: 5m
     labels:
       context: clair-indexing
@@ -308,7 +308,7 @@ groups:
         Clair reported the indexing error "{{ $labels.message }}" for {{ $value }} images.
 
   - alert: OpenstackKeppelClairExcessiveRetries
-    expr: 'increase(keppel_retried_vulnerability_checks[1h]) > 100'
+    expr: 'max(increase(keppel_retried_vulnerability_checks[1h]) > 100)'
     for: 5m
     labels:
       context: clair-indexing

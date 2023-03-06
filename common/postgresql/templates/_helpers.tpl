@@ -1,35 +1,36 @@
-{{/* vim: set filetype=mustache: */}}
+{{/* vim: set filetype=gotpl: */}}
 {{/*
 Expand the name of the chart.
 */}}
 {{- define "name" -}}
-{{- default .Chart.Name .Values.nameOverride | trunc 24 | replace "_" "-" -}}
+  {{- default .Chart.Name .Values.nameOverride -}}
 {{- end -}}
 
 {{/*
 Create a default fully qualified app name.
-We truncate at 24 chars because some Kubernetes name fields are limited to this (by the DNS naming spec).
+The limit is 63 chars as per RFC 1035, but we truncate to 48 chars to leave
+some space for the name suffixes on replicasets and pods.
 */}}
 {{- define "fullname" -}}
-{{- $name := default .Chart.Name .Values.nameOverride -}}
-{{- printf "%s-%s" .Release.Name $name | trunc 24 | replace "_" "-" -}}
+  {{- $name := default .Chart.Name .Values.nameOverride -}}
+  {{- printf "%s-%s" .Release.Name $name | trunc 48 | replace "_" "-" -}}
 {{- end -}}
 
 {{/* Generate the service label for the templated Prometheus alerts. */}}
 {{- define "alerts.service" -}}
-{{- if .Values.alerts.service -}}
-{{- .Values.alerts.service -}}
-{{- else -}}
-{{- .Release.Name -}}
-{{- end -}}
+  {{- if .Values.alerts.service -}}
+    {{- .Values.alerts.service -}}
+  {{- else -}}
+    {{- .Release.Name -}}
+  {{- end -}}
 {{- end -}}
 
 {{/* Generate the name prefix for the templated Prometheus alerts. */}}
 {{- define "alerts.name_prefix" -}}
-{{- if .Values.alerts.service -}}
-{{- .Values.alerts.service | title -}}
-{{- end -}}
-{{- .Release.Name | title -}}
+  {{- if .Values.alerts.service -}}
+    {{- .Values.alerts.service | title -}}
+  {{- end -}}
+  {{- .Release.Name | title -}}
 {{- end -}}
 
 {{- define "preferredRegistry" -}}

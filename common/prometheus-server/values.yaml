@@ -197,7 +197,7 @@ thanos:
   enabled: true
 
   objectStorageConfig:
-    # set false to only add thanos-sidecar gRPC store API
+    # set false to only add thanos-sidecar gRPC store API. Usually you now do want sidecarDiscovery to be set, see below.
     enabled: true
     # Note:
     # The name of the secret specified below will be prefixed with `prometheus-<name>`
@@ -205,6 +205,16 @@ thanos:
     name: thanos-storage-config
     key: thanos.yaml
     optional: true
+
+  # When there is no store activated (objectStorageConfig.enabled = false) you can have this sidecar detected by the operator
+  # using a StoreEndpoint. You need to specify which thanos should pick up the sidecar. This Thanos needs to run QueryDiscovery.
+  # domain defaults to cluster.local and only needs to be set if it differs
+  # thanosNamespace needs to be set, if the thanos specified with thanosName resides in a Sidecar disjunct namespace. 
+  sidecarDiscovery:
+    - thanosName:
+      # thanosNamespace:
+      namespace:
+      # domain:
 
   # Specification for Thanos sidecar to Prometheus server.
   # See https://github.com/coreos/prometheus-operator/blob/master/Documentation/api.md#thanosspec .

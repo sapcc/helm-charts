@@ -27,7 +27,7 @@
   @type tail
   @id keystone
   path /var/log/containers/keystone-api-*.log
-  exclude_path /var/log/containers/fluentd*
+  exclude_path /var/log/containers/fluent*
   pos_file /var/log/keystone-octobus.log.pos
   tag keystone.*
   <parse>
@@ -52,7 +52,7 @@
   @type tail
   @id keystone-global
   path /var/log/containers/keystone-global-api-*.log
-  exclude_path /var/log/containers/fluentd*
+  exclude_path /var/log/containers/fluent*
   pos_file /var/log/keystone-global-octobus.log.pos
   tag keystone-global.*
   <parse>
@@ -80,7 +80,7 @@
   @type tail
   @id {{.}}kube-api
   path /var/log/containers/{{ . }}{{ $.Values.global.region }}-*-apiserver-*_kubernikus_fluentd-*.log
-  exclude_path /var/log/containers/fluentd*
+  exclude_path /var/log/containers/fluent*
   pos_file /var/log/{{ . }}kube-api-octobus.log.pos
   tag kubeapi.{{ . }}{{ $.Values.global.region }}.*
   <parse>
@@ -125,7 +125,11 @@
 # remove fields which cause parsing errors in elastic and are not audit relevant
 <filter kubeapi.**>
   @type record_transformer
-  remove_keys $["requestObject"]["metadata"]["labels"]["app.kubernetes.io/managed-by"],$.requestObject.metadata.managedFields
+  enable_ruby
+  remove_keys temp,$.requestObject.metadata.labels.app,$.requestObject.metadata.managedFields
+  <record>
+     temp ${ unless record.dig("requestObject","metadata","labels","app").nil?; t = record.dig("requestObject","metadata","labels","app"); record["requestObject"]["metadata"]["labels"]["app_"] = t; end; nil;}
+  </record>
 </filter>
 {{- end }}
 
@@ -135,7 +139,7 @@
   @type tail
   @id {{ .id }}
   path {{ .path }}
-  exclude_path /var/log/containers/fluentd*
+  exclude_path /var/log/containers/fluent*
   pos_file /var/log/additional-containers-{{ .id }}-octobus.log.pos
   tag {{ .tag }}
   <parse>

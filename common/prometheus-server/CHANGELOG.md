@@ -1,3 +1,11 @@
+## 7.1.34 - 7.1.37
+
+* SidecarDiscovey added
+
+## 7.1.33
+
+* Fixing vpa quotes
+
 ## 7.1.32
 
 * Option to disable the object store in order to enable only the gRPC store API for the Thanos sidecar. 

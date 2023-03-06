@@ -21,3 +21,6 @@ Pollers:{{`
         - limited.yaml
       - ZapiPerf:
         - limited.yaml`}}
+      {{- if eq .Values.global.region "qa-de-1" }}
+      - ems
+      {{- end }}

@@ -5,7 +5,7 @@
     "index": {
       "mapping": {
         "total_fields": {
-          "limit": "2000"
+          "limit": "4000"
         }
       },
       "refresh_interval": "10s",
