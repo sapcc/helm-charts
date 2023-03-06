@@ -75,7 +75,7 @@ groups:
       context: pod
       meta: "Pod {{`{{ $labels.namespace }}`}}/{{`{{ $labels.pod }}`}} is restarting constantly"
     annotations:
-      description: Container {{`{{ $labels.container }}`}} of pod {{`{{ $labels.namespace }}`}}/{{`{{ $labels.pod }}`}} is restarting constantly
+      description: Container {{`{{ $labels.container }}`}} of pod {{`{{ $labels.namespace }}`}}/{{`{{ $labels.pod }}`}} is restarting constantly. Is `owner-info` set --> Contact respective service owner! If not, try fynding him/her and make sure, `owner-info` is set!
       summary: Pod is in a restart loop
 
   - alert: KubernetesTooManyOpenFiles
@@ -92,19 +92,6 @@ groups:
     annotations:
       description: "{{`{{ $labels.job }}`}} on {{`{{ $labels.node }}`}} is using {{`{{ $value }}`}}% of the available file/socket descriptors"
       summary: Too many open file descriptors
-
-  - alert: KubernetesPVCPendingOrLost
-    expr: sum by (namespace, persistentvolumeclaim) (kube_persistentvolumeclaim_status_phase{phase=~"Pending|Lost"}) * on (namespace, persistentvolumeclaim) group_left(label_ccloud_support_group, label_ccloud_service) (kube_persistentvolumeclaim_labels) > 0
-    for: 15m
-    labels:
-      tier: {{ required ".Values.tier missing" .Values.tier }}
-      service: {{ include "serviceFromLabelsOrDefault" "k8s" }}
-      support_group: {{ include "supportGroupFromLabelsOrDefault" "containers" }}
-      severity: warning
-      context: pvc
-    annotations:
-      description: "PVC {{`{{ $labels.namespace }}`}}/{{`{{ $labels.persistentvolumeclaim }}`}} stuck in phase {{`{{ $labels.phase }}`}} since 15 min"
-      summary: "PVC stuck in phase {{`{{ $labels.phase }}`}}"
 
   - alert: KubernetesDeploymentInsufficientReplicas
     expr: (sum(kube_deployment_status_replicas) by (namespace,deployment) < sum(kube_deployment_spec_replicas) by (namespace,deployment)) * on (namespace, deployment) group_left(label_ccloud_support_group, label_ccloud_service) (kube_deployment_labels)
