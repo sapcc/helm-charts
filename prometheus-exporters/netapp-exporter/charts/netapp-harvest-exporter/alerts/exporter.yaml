@@ -1,0 +1,16 @@
+groups:
+  - name: netapp-harvest-workers
+    rules:
+      - alert: NetappHarvestCinderNeedsMoreWorkers
+        expr: netapp_metadata_target_status == 1
+        for: 15m
+        labels:
+          severity: info
+          tier: storage
+          support_group: compute-storage-api
+          service: storage
+          context: netapp-exporter
+          no_alert_on_absence: "true"
+        annotations:
+          summary:  Netapp Harvest poller's target status is 1
+          description: Poller can not reach target. Reach out storage team for further info.
