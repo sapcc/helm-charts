@@ -27,12 +27,12 @@ spec:
                 name: hubcopter-html
                 port:
                   number: 80
-{{- range $key, $value := required ".Values.hubcopter.instances is missing" .Values.hubcopter.instances }}
-          - path: /{{ $key }}/(.*)
+{{- range .Values.hubcopter.instances }}
+          - path: /{{ .id }}/(.*)
             pathType: Prefix
             backend:
               service:
-                name: hubcopter-api-{{ $key }}
+                name: hubcopter-api-{{ .id }}
                 port:
                   number: 8080
 {{- end }}

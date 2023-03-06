@@ -1,10 +1,10 @@
-{{- range $key, $value := (required ".Values.hubcopter.instances is missing" .Values.hubcopter.instances) }}
+{{- range $instance := .Values.hubcopter.instances }}
 ---
 kind: Deployment
 apiVersion: apps/v1
 
 metadata:
-  name: hubcopter-api-{{ $key }}
+  name: hubcopter-api-{{ .id }}
 
 spec:
   revisionHistoryLimit: 5
@@ -16,11 +16,11 @@ spec:
       maxSurge: 1
   selector:
     matchLabels:
-      name: hubcopter-api-{{ $key }}
+      name: hubcopter-api-{{ .id }}
   template:
     metadata:
       labels:
-        name: hubcopter-api-{{ $key }}
+        name: hubcopter-api-{{ .id }}
         alert-tier: os
         alert-service: hubcopter
       annotations:
@@ -42,7 +42,7 @@ spec:
       volumes:
         - name: config
           configMap:
-            name: hubcopter-config-{{ $key }}
+            name: hubcopter-config-{{ .id }}
       initContainers:
         - name: wait-for-glas
           env:

@@ -1,14 +1,14 @@
-{{- range $key, $value := (required ".Values.hubcopter.instances is missing" .Values.hubcopter.instances) }}
+{{- range .Values.hubcopter.instances }}
 ---
 apiVersion: v1
 kind: ConfigMap
 
 metadata:
-  name: hubcopter-config-{{ $key }}
+  name: hubcopter-config-{{ .id }}
 
 data:
   hubcopter.yaml: |
-    {{ required (printf ".Values.hubcopter.config-%s is missing" $key) (get $.Values.hubcopter (printf "config-%s" $key)) | nindent 4 }}
+    {{ .api_config | required (printf "api_config is missing for instance %q" .id) | toYaml | nindent 4 }}
     regionQuality:
       {{ toYaml $.Values.hubcopter.regionQuality | nindent 6 }}
 {{- end }}
