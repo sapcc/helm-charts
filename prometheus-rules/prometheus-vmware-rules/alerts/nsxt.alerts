@@ -254,6 +254,19 @@ groups:
       description: "CRITICAL: NSX-T management service `{{ $labels.nsxt_mgmt_service }}` has failed. ({{ $labels.nsxt_mgmt_node }}, {{ $labels.nsxt_adapter }}) https://{{ $labels.target }}"
       summary: "CRITICAL: NSX-T management service `{{ $labels.nsxt_mgmt_service }}` has failed. ({{ $labels.nsxt_mgmt_node }}, {{ $labels.nsxt_adapter }}) https://{{ $labels.target }}"
 
+  - alert: NSXTSslCertificateExpiry
+    expr: vrops_nsxt_mgmt_cluster_alert_info{alert_name="AlertDefinition-NSXTCertificateExpiryAlert"}
+    labels:
+      severity: warning
+      tier: vmware
+      service: network
+      support_group: compute
+      context: "nsxt certificate"
+      meta: "SSL Certificate of NSX-T {{ $labels.nsxt_mgmt_cluster }} expires in less than 30 days. {{ $labels.nsxt_adapter}} https://{{ $labels.target }}"
+    annotations:
+      description: "SSL Certificate of NSX-T {{ $labels.nsxt_mgmt_cluster }} expires in 30 days. {{ $labels.nsxt_adapter}} https://{{ $labels.target }}"
+	    summary: "SSL Certificate of NSX-T {{ $labels.nsxt_mgmt_cluster}} expires in 30 days.  {{ $labels.nsxt_adapter}} https://{{ $labels.target }}"
+    
   - alert: NSXTManagementServiceHasFailed
     expr: |
         vrops_nsxt_mgmt_service_alert_info{alert_name="NSX-T Management service has failed|Management service monitor runtime state has failed",
@@ -300,3 +313,4 @@ groups:
     annotations:
       description: "NSX-T logical switch `{{ $labels.nsxt_logical_switch }}` state is {{ $labels.state }}. ({{ $labels.nsxt_adapter }}). https://{{ $labels.target }}"
       summary: "NSX-T logical switch `{{ $labels.nsxt_logical_switch }}` state is {{ $labels.state }}. ({{ $labels.nsxt_adapter }}). https://{{ $labels.target }}"
+      
