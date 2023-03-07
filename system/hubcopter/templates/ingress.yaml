@@ -15,9 +15,12 @@ metadata:
 spec:
   tls:
     - secretName: tls-hubcopter-api
-      hosts: [ 'hubcopter.global.{{ .Values.global.tld }}' ]
+      hosts:
+        - 'hubcopter.global.{{ .Values.global.tld }}'
+        - 'hubcopter.{{ .Values.global.region }}.{{ .Values.global.tld }}'
   rules:
-    - host: 'hubcopter.global.{{ .Values.global.tld }}'
+    - &rule
+      host: 'hubcopter.global.{{ .Values.global.tld }}'
       http:
         paths:
           - path: /(.*)
@@ -36,3 +39,5 @@ spec:
                 port:
                   number: 8080
 {{- end }}
+    - <<: *rule
+      host: 'hubcopter.{{ .Values.global.region }}.{{ .Values.global.tld }}'
