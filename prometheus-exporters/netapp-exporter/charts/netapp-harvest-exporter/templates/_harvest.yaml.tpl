@@ -4,9 +4,9 @@ Defaults:
   password: {{ .Values.global.netapp_exporter_password }}
   use_insecure_tls: true
   exporters:
-    - prom
+    - prom1
 Exporters:
-  prom:
+  prom1:
     exporter: Prometheus
     global_prefix: netapp_
 Pollers:{{`
