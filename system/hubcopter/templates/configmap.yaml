@@ -1,39 +1,14 @@
+{{- range .Values.hubcopter.instances }}
+---
 apiVersion: v1
 kind: ConfigMap
 
 metadata:
-  name: hubcopter
+  name: hubcopter-config-{{ .id }}
 
 data:
   hubcopter.yaml: |
-    concourseDomain: https://ci1.eu-de-2.cloud.sap
-    excludedRegions:
-      - eu-ru-1
-    swiftPrefixes:
-      - services/backup
-      - services/billing
-      - services/castellum
-      - services/content-replication
-      - services/gatekeeper
-      - services/hedgedoc
-      - services/keppel
-      - services/less-ops-more-dev # hubcopter
-      - services/limes
-      - services/swift
-      - services/tenso
-    excludedSwiftPrefixes:
-      # moved from metal to scaleout
-      - services\/backup\/backup-cleanup_[^s].*
-      - services\/content-replication\/backup-replication_[^s].*
-      - services\/content-replication\/content-repo_[^s].*
-      - services\/gatekeeper\/doop-central-kubernikus_[^s].*
-      - services\/gatekeeper\/doop-central_[^s].*
-    combineDeploymentGroups:
-      doop-central:
-        - doop-central-kubernikus
-      hubcopter:
-        - hubcopter-seeds
-      tenso:
-        - tenso-qa-de-2
+    {{ .api_config | required (printf "api_config is missing for instance %q" .id) | toYaml | nindent 4 }}
     regionQuality:
-{{ toYaml .Values.hubcopter.regionQuality | indent 6 }}
+      {{ toYaml $.Values.hubcopter.regionQuality | nindent 6 }}
+{{- end }}

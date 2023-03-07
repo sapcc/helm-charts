@@ -18,7 +18,7 @@
 # All the auto-generated files should use the tag "file.<filename>".
 <source>
   @type tail
-  @id in_tail_container_logs
+  @id in_tail_testing
   path /tmp/*.log
   pos_file /tmp/testing.log.pos
   <parse>

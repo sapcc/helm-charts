@@ -3,13 +3,13 @@
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
 metadata:
-  name: {{ include "netapp-harvest.fullname" . }}
+  name: {{ printf "%s/%s" (include "netapp-harvest.fullname" .) $path | trimSuffix ".yaml" | replace "/"  "-" }}
   labels:
     {{- include "netapp-harvest.labels" . | nindent 4 }}
     type: alerting-rules
     prometheus: {{ .Values.prometheus.target }}
 spec:
-{{ printf "%s" $bytes | indent 2 }}
+  {{- tpl (printf "%s" $bytes) . | replace "[" "{" | replace "]" "}" | nindent 2 }}
 ---
 {{- end }}
 {{- end }}

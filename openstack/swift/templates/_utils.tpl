@@ -310,7 +310,7 @@ option httpchk HEAD /healthcheck
 default-server check downinter 30s maxconn 500
 {{- range $index, $upstream := .Values.upstreams }}
 {{- $short_name := splitn "." 2  $upstream.name }}
-server {{ printf "%9s" $short_name._0 }} {{ $upstream.target }}:{{ default 8080 $.Values.svc_node_port }} # {{ $upstream.name }}
+server {{ printf "%9s" $short_name._0 }} {{ $upstream.target }}:{{ default 8080 $.Values.svc_node_port }} {{ if ne $short_name._0 $upstream.name }}# {{ $upstream.name }}{{ end }}
 {{- end }}
 {{- else }}
 server swift-svc swift-proxy-internal-{{ .Values.cluster_name }}:8080

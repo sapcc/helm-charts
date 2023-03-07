@@ -27,19 +27,6 @@ groups:
       description: Unusually high amount of failed launchctl operations
       summary: Unusually many launchctl failures
 
-  - alert: KubernikusLaunchHanging
-    expr: sum(kubernikus_launch_operation_total{cluster_type != "virtual"}) == 0
-    for: 15m
-    labels:
-      tier: kks
-      service: launchctl
-      support_group: containers
-      severity: warning
-      context: operator
-    annotations:
-      description: Launchctl operations dropped to 0. The operator might be hanging.
-      summary: Launchctl operations dropped to 0
-
   - alert: KubernikusRouteGcOperationErrorSpike
     expr: sum(irate(kubernikus_routegc_failed_operation_total[5m])) by (method) > sum(avg_over_time(kubernikus_routegc_failed_operation_total[12h] offset 12h)) by (method)
     for: 10m

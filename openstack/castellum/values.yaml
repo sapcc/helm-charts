@@ -36,14 +36,11 @@ postgresql:
     size: 10Gi
 
   log_min_duration_statement: 250
-  # less than the postgresql chart's default; I want to know early when connections start getting out of hand
-  max_connections: 64
+  # 2 api * 16 + 2 workers * 16 + 1 observer * 16 + headroom for metrics/backup and admin access
+  max_connections: 96
 
   alerts:
     support_group: containers
-
-  backup:
-    enabled: false # uses new pgbackup chart instead
 
 # Deploy Castellum Prometheus alerts.
 alerts:

@@ -6,6 +6,9 @@ metadata:
   labels:
     system: openstack
     type: configuration
+    # hooks are not annotated as belonging to the Helm release, so we cannot rely on owner-info injection
+    ccloud/support-group: compute-storage-api
+    ccloud/service: nova
 {{ tuple . "nova" "bump-service-version" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 4 }}
   annotations:
     "helm.sh/hook": pre-upgrade
@@ -29,11 +32,11 @@ spec:
         - -c
         - |
           mariadb -v -hnova-mariadb -u{{ .Values.dbUser }} --password='{{ default .Values.dbPassword .Values.global.dbPassword }}' '{{ .Values.dbName }}' -e '
-          UPDATE services SET version = 54 WHERE deleted = 0 AND `binary` = 'nova-compute' AND version < 54;
+          UPDATE services SET version = 54 WHERE deleted = 0 AND `binary` = "nova-compute" AND version < 54;
           ';
           {{- if .Values.cell2.enabled }}
           mariadb -v -hnova-{{ .Values.cell2.name }}-mariadb -u{{ .Values.cell2dbUser }} --password='{{ default .Values.cell2dbPassword .Values.global.dbPassword }}' '{{ .Values.cell2dbName }}' -e '
-          UPDATE services SET version = 54 WHERE deleted = 0 AND `binary` = 'nova-compute' AND version < 54;
+          UPDATE services SET version = 54 WHERE deleted = 0 AND `binary` = "nova-compute" AND version < 54;
           '
           {{- end }}
 {{- end }}

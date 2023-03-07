@@ -68,6 +68,10 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.name
+            {{- if .Values.api.use_uwsgi }}
+            - name: OS_OSLO_MESSAGING_RABBIT__HEARTBEAT_IN_PTHREAD
+              value: "true"
+            {{- end }}
           lifecycle:
             preStop:
               {{- include "utils.snippets.pre_stop_graceful_shutdown" . | indent 14 }}

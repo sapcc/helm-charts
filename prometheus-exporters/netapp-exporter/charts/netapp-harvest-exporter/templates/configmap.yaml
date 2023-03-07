@@ -6,85 +6,15 @@ metadata:
     {{- include "netapp-harvest.labels" . | nindent 4 }}
 data:
   start-poller.sh: |
-    #!/bin/bash
-    netappsd_url=$1
-    shift
-
-    echo "fetch config from $netappsd_url/harvest.yml"
-    filer=""
-    while [ -z "$filer" ]; do
-      code=$(wget --server-response -O harvest.yml $netappsd_url/next/harvest.yaml 2>&1 | grep "HTTP/" | awk '{print $2}')
-      if [ "$code" -eq "200" ]; then
-        filer=$(grep 'stnpca.*:' harvest.yml | cut -d: -f1 | awk '{print $1}')
-        break
-      else
-        echo "failed to fetch harvest.yml: $code"
-      fi
-      sleep 60
-    done
-    echo "start harvest poller $filer on port $1"
-    exec bin/poller --poller $filer --promPort $1 --loglevel {{ .Values.harvest.loglevel }}
+    {{- include (print .Template.BasePath  "/etc/_start-poller.sh.tpl") . | nindent 4}}
   harvest.yaml.tpl: |
-    Defaults:
-      auth_style: basic_auth
-      username: {{ .Values.global.netapp_exporter_user }}
-      password: {{ .Values.global.netapp_exporter_password }}
-      use_insecure_tls: true
-      exporters:
-        - prom
-    Exporters:
-      prom:
-        exporter: Prometheus
-        global_prefix: netapp_
-    Pollers:{{`
-      {{ .Name }}:
-        addr: {{ .Host }}
-        datacenter: {{ .AvailabilityZone }}
-        collectors:
-          - Zapi:
-            - limited.yaml
-          - ZapiPerf:
-            - limited.yaml`}}
+    {{- include (print .Template.BasePath  "/etc/_harvest.yaml.tpl") . | nindent 4}}
   zapi.limited.yaml: |
-    collector: Zapi
-    schedule:
-      - data: 180s
-    objects:
-      Aggregate:            aggr.yaml
-      AggregateEfficiency:  aggr_efficiency.yaml
-      Lun:                  lun.yaml
-      SnapMirror:           snapmirror.yaml
-      SnapshotPolicy:       snapshotPolicy.yaml
-      Status:               status.yaml
-      SVM:                  svm.yaml
-      Volume:               volume.yaml
+    {{- .Files.Get "etc/zapi.limited.yaml" | nindent 4}}
   zapiperf.limited.yaml: |
-    collector: ZapiPerf
-    schedule:
-      - counter: 1200s
-      - instance: 600s
-      - data: 180s
-    objects:
-      SystemNode: system_node.yaml
+    {{- .Files.Get "etc/zapiperf.limited.yaml" | nindent 4}}
   rest.limited.yaml: |
-    collector: Rest
-    schedule:
-      - data: 180s
-    objects:
-      Aggregate:            aggr.yaml
-      AggregateEfficiency:  aggr_efficiency.yaml
-      Lun:                  lun.yaml
-      SnapMirror:           snapmirror.yaml
-      SnapshotPolicy:       snapshotPolicy.yaml
-      Status:               status.yaml
-      SVM:                  svm.yaml
-      Volume:               volume.yaml
+    {{- .Files.Get "etc/rest.limited.yaml" | nindent 4}}
   restperf.limited.yaml: |
-    collector: RestPerf
-    schedule:
-      - counter: 1200s
-      - instance: 600s
-      - data: 180s
-    objects:
-      SystemNode: system_node.yaml
+    {{- .Files.Get "etc/restperf.limited.yaml" | nindent 4}}
 ---

@@ -1,6 +1,6 @@
 {{- if .Values.agent.apod | default false }}
 {{- if .Values.global.apods | default false }}
-{{- $ussuri := hasPrefix "ussuri" (default .Values.imageVersion .Values.imageVersionServerAPI) -}}
+{{- $release_requires_sec_cap:= or (hasPrefix "ussuri" (default .Values.imageVersion .Values.imageVersionServerAPI)) (hasPrefix "yoga" (default .Values.imageVersion .Values.imageVersionServerAPI)) -}}
 {{ range $az_long, $apods := .Values.global.apods }}
 {{ range $k, $apod := $apods }}
 {{- $az := trimPrefix $.Values.global.region $az_long }}
@@ -149,7 +149,7 @@ spec:
             capabilities:
               add:
                 - NET_ADMIN
-{{- if $ussuri }}
+{{- if $release_requires_sec_cap }}
                 - SYS_ADMIN
                 - DAC_OVERRIDE
                 - DAC_READ_SEARCH

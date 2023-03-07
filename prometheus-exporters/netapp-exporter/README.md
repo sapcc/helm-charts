@@ -1,9 +1,5 @@
-## Change Log
-
-### v0.2.0
-* New chart netapp-harvest-exporter
-  - Harvest poller horizontally scaled
-  - Discover service serves new filer to be scraped for the workers
-  - Produced Metrics are monitored by DS 
-* Manila exporters in netapp-harvest-exporter are disabled atm
-
+# Info
+This chart includes three local charts
+- netapp-cap-exporter: capacity metrics using https://github.com/sapcc/netapp-api-exporter
+- netapp-perf-exporter: performance metrics using NetApp Harvest 1.0
+- netapp-harvest-exporter: both capacity and performance metrics using NetApp Harvest 2

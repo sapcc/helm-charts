@@ -85,6 +85,7 @@ function start_application {
     fi
   done
   sed -i 's,__ELK_PASSWORD__,{{.Values.authentication.elk_password}},g' /var/lib/grafana/provisioning/datasources/*
+  sed -i 's,__METISDB_PASSWORD__,{{.Values.authentication.metisdb_password}},g' /var/lib/grafana/provisioning/datasources/*
   sed -i 's,__OPENSEARCH_PASSWORD__,{{.Values.authentication.opensearch_password}},g' /var/lib/grafana/provisioning/datasources/*
   sed -i 's,__ALERTMANAGER_PASSWORD__,{{.Values.alertmanager.password}},g' /var/lib/grafana/provisioning/datasources/*
   sed -i 's,__PROMETHEUS_REGION__,{{.Values.global.region}},g' /var/lib/grafana/provisioning/datasources/*

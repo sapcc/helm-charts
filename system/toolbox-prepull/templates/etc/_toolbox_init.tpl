@@ -4,7 +4,15 @@ TOOLBOX_DOCKER_IMAGE=( {{ required ".Values.global.registry is missing" .Values.
 TOOLBOX_DOCKER_TAG=( {{ required ".Values.images.toolbox.tag is missing" .Values.images.toolbox.tag }} )
 TOOLBOX_DIRECTORY=( {{ required ".Values.toolbox.toolboxDir is missing" .Values.toolbox.toolboxDir }} )
 TOOLBOX_IMAGE_NAME=( {{ required ".Values.toolbox.toolboxName is missing" .Values.toolbox.toolboxName }} )
+TOOLBOX_CONFIG=( {{ required ".Values.toolbox.toolboxConf is missing" .Values.toolbox.toolboxConf }} )
+TOOLBOX_DUMMY_IMAGE=( {{ required ".Values.toolbox.toolboxDummyImage is missing" .Values.toolbox.toolboxDummyImage }} )
 TOOLBOX_PATH="${TOOLBOX_DIRECTORY}/${TOOLBOX_IMAGE_NAME}"
+
+cat > $TOOLBOX_CONFIG << EOF
+TOOLBOX_DOCKER_IMAGE=$TOOLBOX_DUMMY_IMAGE
+TOOLBOX_DOCKER_TAG=latest
+TOOLBOX_USER=root
+EOF
 
 if [ -d "${TOOLBOX_PATH}" ]; then rm -Rf ${TOOLBOX_PATH}; fi
 mkdir -p "${TOOLBOX_PATH}"

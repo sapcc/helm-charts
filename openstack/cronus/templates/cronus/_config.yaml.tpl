@@ -15,6 +15,21 @@ cronus:
     {{- end }}
   {{- end }}
 {{- end }}
+{{- if .Values.cronus.inspections }}
+  inspections:
+  {{- range $v := .Values.cronus.inspections }}
+    - name: {{ $v.name }}
+    {{- if $v.projectId }}
+      projectId: {{$v.projectId | quote }}
+    {{- end }}
+    {{- if $v.errorCase }}
+      errorCase: {{$v.errorCase | quote }}
+    {{- end }}
+    {{- if $v.errorCode }}
+      errorCode: {{ $v.errorCode }}
+    {{- end }}
+  {{- end }}
+{{- end }}
 {{- if or .Values.cronus.fileBufferPath .Values.global.fileBufferPath }}
   fileBufferPath: {{ .Values.cronus.fileBufferPath | default .Values.global.fileBufferPath }}
 {{- end }}

@@ -1,15 +1,4 @@
-global:
-  tld: cloud.sap
-  region: local
-# specify the k8s keystone namespace if it differs from the current chart
-  keystoneNamespace: monsoon3
-  imageNamespace: monsoon
-  user_suffix: ""
-
-custom_configmap: false
-## if custom repository is enabled it takes global/imageRegistry and global/imageNamespace
-custom_repository: false
-## If enabled, image references use .Values.registryAlternateRegion instead of .Values.registry (this currently only affects the backup container).
+## If enabled, image references use `.Values.registryAlternateRegion` instead of `.Values.registry`.
 useAlternateRegion: false
 
 extensions:
@@ -17,18 +6,8 @@ extensions:
     max: 1000
     track: all
 
-## postgres image repository
-image: "postgres"
-## postgres image version
-## ref: https://hub.docker.com/r/library/postgres/tags/
-##
+## Refer to the "ccloud/postgres" repository in Keppel to see which image tags exist.
 imageTag: "9.5.4"
-
-## Specify a imagePullPolicy
-## 'Always' if imageTag is 'latest', else set to 'IfNotPresent'
-## ref: http://kubernetes.io/docs/user-guide/images/#pre-pulling-images
-##
-# imagePullPolicy:
 
 ## Create a database user
 ## Default: postgres
@@ -45,9 +24,6 @@ postgresUser: postgres
 
 # custom db-maintain.sh
 # dbMaintain: name of a configmap that provides the db-maintain.sh script
-
-hba_cidr: 0.0.0.0/0
-auth_method: password
 
 # Sets the option of the same name in the postgresql.conf. If set to a positive
 # integer value, logs statements that run for longer than this many
@@ -70,43 +46,11 @@ probe_failure_threshold: 6 # number of liveness probes that need to fail to trig
 ##
 resources: {}
 
-backup:
-  enabled: false
-  splitDeployment: false # "false" is the legacy value, set this to "true" in new deployments
-
-  interval_full: 1 hours
-  os_auth_url: null # defined in values.yaml; defaults to cluster-internal Keystone endpoint (default is only valid in the baremetal clusters)
-  os_region_name: null # defaults to .Values.global.region
-  os_password: null # defined in values.yaml; set this to the password for the service user `db_backup@Default`
-
-  resources:
-    enabled: true
-    limits:
-      memory: 192Mi
-      cpu: 100m
-    requests:
-      memory: 192Mi
-      cpu: 100m
-
-  ## The following obsolete fields are all ignored when splitDeployment is set to "true".
-  image: monsoon/backup-tools
-  imageTag: v0.5.15
-  os_username: db_backup
-  os_user_domain: Default
-  os_project_name: master
-  os_project_domain: ccadmin
-  # if custom repository is enabled, .Values.backup.image must be the full
-  # repository URL; .Values.global.imageRegistry is not prepended
-  custom_repository: false
-
-cdc:
-  enabled: false
-
 # Default Prometheus alerts and rules.
 alerts:
   enabled: true
 
-  # Name of the Prometheus supposed to scrape the metrics and to which alerts are assigned.
+  # TODO: unused, remove
   prometheus: openstack
   # Name of the Prometheus containing the disk usage metrics.
   prometheus_for_disk_usage: kubernetes

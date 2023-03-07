@@ -1,3 +1,19 @@
+## 7.1.34 - 7.1.37
+
+* SidecarDiscovey added
+
+## 7.1.33
+
+* Fixing vpa quotes
+
+## 7.1.32
+
+* Option to disable the object store in order to enable only the gRPC store API for the Thanos sidecar. 
+
+## 7.1.31
+
+* VerticalPodAutoscaler starts off initially
+
 ## 7.1.30
 
 * VerticalPodAutoscaler for prometheus pod only
