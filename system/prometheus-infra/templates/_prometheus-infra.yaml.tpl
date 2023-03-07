@@ -68,7 +68,7 @@
     - targets:
       - "prometheus-infra-collector.{{ .Values.global.region }}.cloud.sap"
 
-- job_name: 'prometheus-infra-collector-jobs'
+- job_name: 'prometheus-infra-collector'
   scheme: https
   scrape_interval: {{ .Values.collector.scrapeInterval }}
   scrape_timeout: {{ .Values.collector.scrapeTimeout }}
@@ -100,18 +100,6 @@
       - '{job="win-exporter-ad", __name__!~"^(up|ALERTS.*|scrape.+)"}'
       - '{job="win-exporter-wsus", __name__!~"^(up|ALERTS.*|scrape.+)"}'
       - '{job="jumpserver", __name__!~"^(up|ALERTS.*|scrape.+)"}'
-      - '{job="logs-fluent-exporter", __name__!~"^(fluentd_input_status_num_records_total|fluentd_output_status_num_records_total)"}'
-
-- job_name: 'prometheus-infra-collector-metrics'
-  scheme: https
-  scrape_interval: {{ .Values.collector.scrapeInterval }}
-  scrape_timeout: {{ .Values.collector.scrapeTimeout }}
-
-  honor_labels: true
-  metrics_path: '/federate'
-
-  params:
-    'match[]':
       - '{__name__=~"^global:cloudprober.+"}'
       - '{__name__=~"^elasticsearch_hermes_.+"}'
       - '{__name__=~"^probe_success",job=~"(infra|cc3test)-probe-.+"}'
@@ -123,6 +111,7 @@
       - '{__name__=~"^ipmi_memory_state$"}'
       - '{__name__=~"^ipmi_memory_errors$"}'
       - '{__name__=~"^ipmi_up"}'
+      - '{job="logs-fluent-exporter", __name__!~"^(fluentd_input_status_num_records_total|fluentd_output_status_num_records_total)"}'
       - '{__name__=~"^bird_.+"}'
       - '{__name__=~"^pxcloudprober_.+"}'
       - '{__name__=~"^vasa_.+"}'
