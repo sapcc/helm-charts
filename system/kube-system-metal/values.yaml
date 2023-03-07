@@ -80,10 +80,16 @@ ingress:
     monitor:
       enabled: false
       prometheus: kubernetes
+
 ingress-nginx:
   controller:
+    # Snippet annotations are disabled to prevent unauthorized access to secrets.
+    # See https://github.com/kubernetes/ingress-nginx/issues/7837 .
+    allowSnippetAnnotations: false
+
     config:
       custom-http-errors: "495"
+
   defaultBackend:
     image:
       image: ingress-nginx/nginx-errors
@@ -95,6 +101,7 @@ ingress-nginx:
     extraVolumeMounts:
     - name: custom-error-pages
       mountPath: /www
+
 ingress-nginx-external:
   enabled: false
   fullnameOverride: kube-system-ingress-nginx-external
@@ -110,8 +117,6 @@ ingress-nginx-external:
   controller:
     image:
       registry: keppel.eu-de-1.cloud.sap/ccloud-k8sgcr-mirror
-      tag: "v0.49.3"
-      digest: sha256:35fe394c82164efa8f47f3ed0be981b3f23da77175bbb8268a9ae438851c8324
 
     minReadySeconds: 60
     ingressClass: nginx-external
@@ -159,8 +164,10 @@ ingress-nginx-external:
         map '' $global_request_id {
             default '-';
         }
+
       location-snippet: |
         proxy_set_header X-REMOTE-USER $ssl_client_s_dn_cn;
+
       proxy-send-timeout: "300"
       proxy-read-timeout: "300"
       proxy-body-size: "0k"

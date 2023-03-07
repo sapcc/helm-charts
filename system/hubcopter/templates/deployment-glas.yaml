@@ -46,7 +46,7 @@ spec:
             runAsUser: 0
           image: "{{ required ".Values.global.dockerHubMirror variable missing" .Values.global.dockerHubMirror }}/library/alpine:latest"
           imagePullPolicy: IfNotPresent
-          command: ["sh", "-c", "chown -R nobody:nobody /tmp/glas/"]
+          command: ["sh", "-c", "chown -R 4200:4200 /tmp/glas/"]
           volumeMounts:
             - name: cache
               mountPath: /tmp/glas
@@ -59,7 +59,7 @@ spec:
           args: [ ]
           env:
             - name:  GIT_SSH_COMMAND
-              value: 'ssh -o StrictHostKeyChecking=accept-new'
+              value: 'ssh -o UserKnownHostsFile=/tmp/glas/known_hosts -o StrictHostKeyChecking=accept-new'
             - name:  GLAS_DEBUG
               value: 'true'
             - name: GLAS_DEPLOY_KEYS_PATH
@@ -93,7 +93,7 @@ spec:
             # To fix that remove the effected repository from the pvc and restart the pod.
             requests:
               cpu: "400m"
-              memory: "1.5Gi"
+              memory: "3Gi"
             limits:
               cpu: "3"
-              memory: "2.5Gi"
+              memory: "3Gi"

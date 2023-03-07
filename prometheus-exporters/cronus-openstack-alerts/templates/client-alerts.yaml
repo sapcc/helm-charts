@@ -1,12 +1,10 @@
-{{- $values := .Values }}
-{{- if $values.cronus.inspections }}
 {{- range $path, $bytes := .Files.Glob "alerts/client/*.alerts" }}
 ---
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
 
 metadata:
-  name: {{ printf "cronus-exporter-%s" $path | replace "/" "-" }}
+  name: {{ printf "cronus-openstack-%s" $path | replace "/" "-" }}
   labels:
     tier: os
     type: alerting-rules
@@ -15,5 +13,4 @@ metadata:
 spec:
 {{ printf "%s" $bytes | indent 2 }}
 
-{{- end }}
 {{- end }}

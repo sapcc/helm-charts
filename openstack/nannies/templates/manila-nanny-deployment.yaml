@@ -38,6 +38,9 @@ spec:
         - name: netapp-filers
           configMap:
             name: manila-netapp-filers
+        - name: secret-volume
+          secret:
+            secretName: manila-nanny-secret
       containers:
 {{- if .Values.manila_nanny.db_purge.enabled }}
         - name: db-consistency-and-purge
@@ -349,6 +352,8 @@ spec:
             - name: netapp-filers
               mountPath: /manila-etc/netapp-filers.yaml
               subPath: netapp-filers.yaml
+            - name: secret-volume
+              mountPath: /etc/secret-volume
           {{- if .Values.manila_nanny.snapshot.resources }}
           resources:
             {{- toYaml .Values.manila_nanny.snapshot.resources | nindent 13 }}

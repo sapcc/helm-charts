@@ -6,7 +6,7 @@ groups:
     - alert: ThanosSidecarBucketOperationsFailed
       expr: |
         sum by (prometheus, instance) (rate(thanos_objstore_bucket_operation_failures_total{job=~".*thanos.*sidecar.*", prometheus="{{ include "prometheus.name" . }}"}[5m])) > 0
-      for: 5m
+      for: 15m
       labels:
         service: {{ default "metrics" $root.Values.alerts.service }}
         support_group: {{ default "observability" $root.Values.alerts.support_group }}
@@ -26,7 +26,7 @@ groups:
         thanos_sidecar_prometheus_up{job=~".*thanos.*sidecar.*", prometheus="{{ include "prometheus.name" . }}"} == 0
         AND on (namespace, pod)
         prometheus_tsdb_data_replay_duration_seconds != 0
-      for: 5m
+      for: 15m
       labels:
         service: {{ default "metrics" $root.Values.alerts.service }}
         support_group: {{ default "observability" $root.Values.alerts.support_group }}

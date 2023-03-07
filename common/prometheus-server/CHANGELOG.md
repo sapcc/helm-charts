@@ -1,3 +1,7 @@
+## 7.1.38
+
+* Thanos alert duration trigger is less sensitive now
+
 ## 7.1.34 - 7.1.37
 
 * SidecarDiscovey added
