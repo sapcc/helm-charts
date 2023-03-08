@@ -51,7 +51,8 @@ spec:
           image: {{.Values.global.registry}}/elektra:{{.Values.image.tag}}
           command: ['script/init.sh']
           imagePullPolicy: {{.Values.image.pullPolicy}}
-          env: {{ include (print .Template.BasePath "/_env.tpl") . | indent 12 }}
+          env: 
+{{ include (print .Template.BasePath "/_env.tpl") . | indent 12 }}
       containers:
         - name: rails
           image: {{.Values.global.registry}}/elektra:{{.Values.image.tag}}
@@ -63,7 +64,8 @@ spec:
             - name: support-config
               mountPath: '/home/app/config/support'
               readOnly: true
-          env: {{ include (print .Template.BasePath "/_env.tpl") . | indent 12 }}
+          env:
+{{ include (print .Template.BasePath "/_env.tpl") . | indent 12 }}
           startupProbe: # The application will have a maximum of 5 minutes (30 * 10 = 300s) to finish its startup.
             httpGet:
               path: /system/startprobe
