@@ -30,12 +30,8 @@
   # `openstack/manila/templates/_helpers.tpl`. The limit in Manila only applies to
   # the "default" share type. The "hypervisor_storage" share types are not limited,
   # but those are usually not autoscaled anyway, so it's not a problem as of now.
-- name: CASTELLUM_NFS_PROMETHEUS_URL
-  value: "https://metrics.metal.{{ .Values.global.region }}.cloud.sap"
-- name: CASTELLUM_NFS_PROMETHEUS_CERT
-  value: /etc/castellum-certs/prometheus-infra.cert.pem
-- name: CASTELLUM_NFS_PROMETHEUS_KEY
-  value: /etc/castellum-certs/prometheus-infra.key.pem
+- name: CASTELLUM_NFS_NETAPP_SCOUT_URL
+  value: "http://castellum-netapp-scout.{{ .Release.Namespace }}.svc:8080"
 - name: CASTELLUM_OSLO_POLICY_PATH
   value: /etc/castellum/policy.yaml
 - name: CASTELLUM_RABBITMQ_QUEUE_NAME
