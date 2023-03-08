@@ -15,7 +15,7 @@ spec:
     - name: audit
       rules:
         - alert: OctobusAuditLogsSourceMissing
-          expr: elasticsearch_octobus_audit_no_source_hits > 0
+          expr: rate(elasticsearch_octobus_audit_no_source_hits[60m]) > 0
           for: 5m
           labels:
             severity: info
@@ -23,11 +23,12 @@ spec:
             support_group: "observability"
             meta: "Audit events have no source set"
             dashboard: audit-log-shipping
+            playbook: 'docs/operation/elastic_kibana_issues/octobus/audit-source-missing/#audit-source-for-event-missing'
           annotations:
             description: "Audit Logs should have field `sap.cc.audit.source`"
             summary: "Audit Logs indexed without source field"
         - alert: OctobusAuditLogsDeadletter
-          expr: elasticsearch_octobus_audit_deadletter_hits > 0
+          expr: rate(elasticsearch_octobus_audit_deadletter_hits[60m]) > 0
           for: 5m
           labels:
             severity: warning
@@ -35,6 +36,7 @@ spec:
             support_group: "observability"
             meta: "Audit events send to deadletter index"
             dashboard: audit-log-shipping
+            playbook: 'docs/operation/elastic_kibana_issues/octobus/audit-source-missing/#audit-events-in-deadletter-index'
           annotations:
             description: "Audit Logs are not indexed correctly"
             summary: "Check `*deadletter*` index for the reason"
@@ -46,14 +48,15 @@ spec:
     {{- end }}
     {{- $name = camelcase $name }}
         - alert: OctobusAuditLogs{{ $name }}Missing
-          expr: elasticsearch_octobus_audit_source_doc_count{source="{{ .name }}"} == 0
-          for: {{ .interval }}
+          expr: sum by (source) (rate(elasticsearch_octobus_audit_source_doc_count{source="{{ .name }}"}[{{ .interval }}])) == 0
+          for: 5m
           labels:
             severity: warning
             service: "logs"
             support_group: "observability"
             meta: "Audit events for {{ .name }} missing"
             dashboard: audit-log-shipping
+            playbook: 'docs/operation/elastic_kibana_issues/octobus/audit-source-missing/#audit-events-missing'
           annotations:
             description: "There have been no logs for {{ .name }} in the last {{ .interval }}"
             summary: "Audit logs missing for {{ .name }}"
@@ -75,6 +78,7 @@ spec:
             support_group: "observability"
             meta: "Audit events for {{ .name }} missing"
             dashboard: audit-log-shipping
+            playbook: 'docs/operation/elastic_kibana_issues/octobus/audit-source-missing/#audit-events-missing'
           annotations:
             description: "There have been no logs for {{ .name }} in the last {{ .interval }}"
             summary: "Audit logs missing for {{ .name }}"
