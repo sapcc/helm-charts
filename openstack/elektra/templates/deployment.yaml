@@ -46,10 +46,23 @@ spec:
             name: support-config
       # The preStop hook below sleeps 30 seconds, extend the gracePeriod accordingly
       terminationGracePeriodSeconds: 60
+      initContainers:
+        - name: init-database
+          image: {{.Values.global.registry}}/elektra:{{.Values.image.tag}}
+          command: ['script/init-db.sh']
+          imagePullPolicy: {{.Values.image.pullPolicy}}
+          env: 
+{{ include (print .Template.BasePath "/_env.tpl") . | indent 12 }}
       containers:
         - name: rails
           image: {{.Values.global.registry}}/elektra:{{.Values.image.tag}}
           imagePullPolicy: {{.Values.image.pullPolicy}}
+          # https://www.godaddy.com/engineering/2022/01/10/running-puma-in-aws/
+          command: ["bundle", "exec", "puma", "-C", "config/puma.rb"]
+          lifecycle:
+            preStop:
+              exec:
+                command: ["sh", "-c", "sleep 40"]
           ports:
             - name: metrics-rails
               containerPort: 80
