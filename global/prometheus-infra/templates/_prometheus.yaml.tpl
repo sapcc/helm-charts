@@ -25,60 +25,10 @@
       - '{__name__=~"^elasticsearch_logstash_.+"}'
       - '{__name__=~"^elasticsearch_hermes_.+"}'
       - '{__name__=~"^elastiflow_.+"}'
-      - '{__name__=~"^snmp_asa_.+"}'
-      - '{__name__=~"^snmp_asr_nat.+"}'
       - '{__name__=~"^neutron_router:.+"}'
-      - '{__name__=~"^snmp_asr_sysDescr"}'
-      - '{__name__=~"^snmp_asr03_sysDescr"}'
-      - '{__name__=~"^snmp_asr03_rttMonLatestRttOperCompletionTime"}'
-      - '{__name__=~"^snmp_asr03_rttMonLatestRttOperSense"}'
-      - '{__name__=~"^snmp_asr03_rttMonLatestRttOperTime"}'
-      - '{__name__=~"^snmp_asr03_rttMonJitterStatsCompletions"}'
-      - '{__name__=~"^snmp_asr03_rttMonJitterStatsPacketLossSD"}'
-      - '{__name__=~"^snmp_asr03_rttMonJitterStatsPacketLossDS"}'
-      - '{__name__=~"^snmp_asr03_rttMonJitterStatsPacketOutOfSequence"}'
-      - '{__name__=~"^snmp_coreasr9k_sysDescr"}'
-      - '{__name__=~"^snmp_aristaevpn_sysDescr"}'
       - '{__name__=~"^elasticsearch_openstack_glance.+"}'
-      - '{__name__=~"^snmp_n3k_sysDescr"}'
-      - '{__name__=~"^snmp_pxgeneric_sysDescr"}'
-      - '{__name__=~"^snmp_pxgeneric_rttMon.+"}'
-      - '{__name__=~"^snmp_pxgeneric_ifHC(In|Out)Octets.+", role="directlink-router"}'
-      - '{__name__=~"^snmp_n9kpx_ciscoImageString"}'
-      - '{__name__=~"^snmp_ipn_sysDescr"}'
-      - '{__name__=~"^snmp_acispine_sysDescr"}'
-      - '{__name__=~"^snmp_acistretch_sysDescr"}'
-      - '{__name__=~"^snmp_arista_entPhysicalSoftwareRev"}'
-      - '{__name__=~"^snmp_f5_sysProductVersion"}'
-      - '{__name__=~"^snmp_asa_sysDescr"}'
-      - '{__name__=~"^snmp_scrape.+"}'
-      - '{__name__=~"^snmp_apod_asa_sysDescr"}'
-      - '{__name__=~"^snmp_apod_arista_devices"}'
-      - '{__name__=~"^snmp_apod_asr_devices"}'
-      - '{__name__=~"^snmp_apod_coreasr9k_sysDescr"}'
-      - '{__name__=~"^snmp_apod_f5_sysName"}'
-      - '{__name__=~"^snmp_apod_ipn_sysDescr"}'
-      - '{__name__=~"^snmp_apod_n3k_sysDescr"}'
-      - '{__name__=~"^snmp_apod_ucs_sysDescr"}'
-      - '{__name__=~"^elasticsearch_snmp_reason_module_ip_doc_count"}'
-      - '{__name__=~"^elasticsearch_snmp_reason_module_ip_scraped_by_doc_count"}'
       - '{__name__=~"^atlas_targets"}'
       - '{__name__=~"^atlas_sd_up"}'
-      - '{__name__=~"snmp_f5_sysMultiHostCpuUsageRatio5s"}'
-      - '{__name__=~"snmp_f5_sysGlobalHostOtherMemUsedKb"}'
-      - '{__name__=~"snmp_f5_sysGlobalHostOtherMemTotalKb"}'
-      - '{__name__=~"snmp_f5_sysGlobalTmmStatMemoryUsedKb"}'
-      - '{__name__=~"snmp_f5_sysGlobalTmmStatMemoryTotalKb"}'
-      - '{__name__=~"snmp_f5_sysGlobalHostSwapUsedKb"}'
-      - '{__name__=~"snmp_f5_sysGlobalHostSwapTotalKb"}'
-      - '{__name__=~"snmp_f5_sysMultiHostCpuUsageRatio1m"}'
-      - '{__name__=~"snmp_f5_ltmVirtualAddrNumber"}'
-      - '{__name__=~"snmp_f5_ltmVirtualServNumber"}'
-      - '{__name__=~"snmp_f5_ltmPoolNumber"}'
-      - '{__name__=~"snmp_f5_ltmPoolMemberCnt"}'
-      - '{__name__=~"snmp_f5_ltmNodeAddrNumber"}'
-      - '{__name__=~"snmp_f5_ltmTransAddrNumber"}'
-      - '{__name__=~"snmp_f5_ltmVirtualAddrName"}'
       - '{__name__=~"^ssh_nat.+"}'
       - '{__name__=~"^vcenter_vcenter.*"}'
       - '{__name__=~"^vcenter_esx.*"}'
@@ -122,6 +72,9 @@
       - '{__name__=~"^logstash_node_queue_.+"}'
       - '{__name__=~"^logstash_node_pipeline_.+"}'
       - '{__name__=~"^logstash_node_mem_heap_used_bytes"}'
+      - '{__name__=~"^logstash_node_plugin_events_in_total", plugin=~"elasticsearch|opensearch"}'
+      - '{__name__=~"^logstash_node_plugin_events_out_total", plugin=~"elasticsearch|opensearch"}'
+      - '{__name__=~"^logstash_node_plugin_failures_total", plugin=~"elasticsearch|opensearch"}'
       - '{__name__=~"^vcsa_service_status"}'
       - '{__name__=~"^windows_updates_.+"}'
       - '{__name__=~"^aws_ses_cronus_.+"}'
@@ -132,6 +85,99 @@
       - '{__name__=~"^prom_fluentd_.+"}'
       - '{job="netbox", __name__!~"^(up|ALERTS.*|scrape.+)"}'
       - '{__name__=~"^cc3test_status", service="ironic", type="baremetal_and_regression"}'
+
+  relabel_configs:
+    - action: replace
+      source_labels: [__address__]
+      target_label: region
+      regex: prometheus-infra.scaleout.(.+).cloud.sap
+      replacement: $1
+    - action: replace
+      target_label: cluster_type
+      replacement: controlplane
+
+  metric_relabel_configs:
+    - action: replace
+      source_labels: [__name__]
+      target_label: __name__
+      regex: global:(.+)
+      replacement: $1
+    - source_labels: [__name__, prometheus_source, prometheus]
+      regex: '^up;^$;(.+)'
+      replacement: '$1'
+      target_label: prometheus_source
+      action: replace
+
+  {{ if .Values.authentication.enabled }}
+  tls_config:
+    cert_file: /etc/prometheus/secrets/prometheus-infra-sso-cert/sso.crt
+    key_file: /etc/prometheus/secrets/prometheus-infra-sso-cert/sso.key
+  {{ end }}
+
+  static_configs:
+    - targets:
+{{- range $region := .Values.regionList }}
+      - "prometheus-infra.scaleout.{{ $region }}.cloud.sap"
+{{- end }}
+
+- job_name: 'prometheus-regions-snmp-federation'
+  scheme: https
+  scrape_interval: 60s
+  scrape_timeout: 55s
+
+  honor_labels: true
+  metrics_path: '/federate'
+
+  params:
+    'match[]':
+      - '{__name__=~"^snmp_asa_.+"}'
+      - '{__name__=~"^snmp_asr_nat.+"}'
+      - '{__name__=~"^snmp_asr_sysDescr"}'
+      - '{__name__=~"^snmp_asr03_sysDescr"}'
+      - '{__name__=~"^snmp_asr03_rttMonLatestRttOperCompletionTime"}'
+      - '{__name__=~"^snmp_asr03_rttMonLatestRttOperSense"}'
+      - '{__name__=~"^snmp_asr03_rttMonLatestRttOperTime"}'
+      - '{__name__=~"^snmp_asr03_rttMonJitterStatsCompletions"}'
+      - '{__name__=~"^snmp_asr03_rttMonJitterStatsPacketLossSD"}'
+      - '{__name__=~"^snmp_asr03_rttMonJitterStatsPacketLossDS"}'
+      - '{__name__=~"^snmp_asr03_rttMonJitterStatsPacketOutOfSequence"}'
+      - '{__name__=~"^snmp_coreasr9k_sysDescr"}'
+      - '{__name__=~"^snmp_aristaevpn_sysDescr"}'
+      - '{__name__=~"^snmp_n3k_sysDescr"}'
+      - '{__name__=~"^snmp_pxgeneric_sysDescr"}'
+      - '{__name__=~"^snmp_pxgeneric_rttMon.+"}'
+      - '{__name__=~"^snmp_pxgeneric_ifHC(In|Out)Octets.+", role="directlink-router"}'
+      - '{__name__=~"^snmp_n9kpx_ciscoImageString"}'
+      - '{__name__=~"^snmp_ipn_sysDescr"}'
+      - '{__name__=~"^snmp_acispine_sysDescr"}'
+      - '{__name__=~"^snmp_acistretch_sysDescr"}'
+      - '{__name__=~"^snmp_arista_entPhysicalSoftwareRev"}'
+      - '{__name__=~"^snmp_f5_sysProductVersion"}'
+      - '{__name__=~"^snmp_asa_sysDescr"}'
+      - '{__name__=~"^snmp_scrape.+"}'
+      - '{__name__=~"^snmp_apod_asa_sysDescr"}'
+      - '{__name__=~"^snmp_apod_arista_devices"}'
+      - '{__name__=~"^snmp_apod_asr_devices"}'
+      - '{__name__=~"^snmp_apod_coreasr9k_sysDescr"}'
+      - '{__name__=~"^snmp_apod_f5_sysName"}'
+      - '{__name__=~"^snmp_apod_ipn_sysDescr"}'
+      - '{__name__=~"^snmp_apod_n3k_sysDescr"}'
+      - '{__name__=~"^snmp_apod_ucs_sysDescr"}'
+      - '{__name__=~"snmp_f5_sysMultiHostCpuUsageRatio5s"}'
+      - '{__name__=~"snmp_f5_sysGlobalHostOtherMemUsedKb"}'
+      - '{__name__=~"snmp_f5_sysGlobalHostOtherMemTotalKb"}'
+      - '{__name__=~"snmp_f5_sysGlobalTmmStatMemoryUsedKb"}'
+      - '{__name__=~"snmp_f5_sysGlobalTmmStatMemoryTotalKb"}'
+      - '{__name__=~"snmp_f5_sysGlobalHostSwapUsedKb"}'
+      - '{__name__=~"snmp_f5_sysGlobalHostSwapTotalKb"}'
+      - '{__name__=~"snmp_f5_sysMultiHostCpuUsageRatio1m"}'
+      - '{__name__=~"snmp_f5_ltmVirtualAddrNumber"}'
+      - '{__name__=~"snmp_f5_ltmVirtualServNumber"}'
+      - '{__name__=~"snmp_f5_ltmPoolNumber"}'
+      - '{__name__=~"snmp_f5_ltmPoolMemberCnt"}'
+      - '{__name__=~"snmp_f5_ltmNodeAddrNumber"}'
+      - '{__name__=~"snmp_f5_ltmTransAddrNumber"}'
+      - '{__name__=~"snmp_f5_ltmVirtualAddrName"}'
 
   relabel_configs:
     - action: replace
