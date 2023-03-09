@@ -41,6 +41,9 @@ complex-role:
   {{- range .Values.global.ldap.opensearch_admin_groups }}
   - {{ . | title }}
   {{- end }}
+  {{- range .Values.global.ldap.opensearch_dashboard_groups }}
+  - {{ . | title }}
+  {{- end }}
 
 kibana_user:
   reserved: false
