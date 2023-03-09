@@ -33,6 +33,17 @@ data:
     - "indices:data/write/index"
     - "indices:data/write/update"
   - index_patterns:
+    - "kubernikus-*"
+    allowed_actions:
+    - "indices:admin/template/get"
+    - "indices:admin/template/put"
+    - "indices:admin/mapping/put"
+    - "indices:admin/create"
+    - "indices:data/write/bulk*"
+    - "indices:data/write/delete"
+    - "indices:data/write/index"
+    - "indices:data/write/update"
+  - index_patterns:
     - "systemd-*"
     allowed_actions:
     - "indices:admin/template/get"
