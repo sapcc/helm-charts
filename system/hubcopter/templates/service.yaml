@@ -4,12 +4,16 @@ apiVersion: v1
 
 metadata:
   name: glas-api
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/targets: "infra-frontend"
 
 spec:
   selector:
     name: glas-api
   ports:
-    - port: 8081
+    - name: metrics # this specific name is required for Prometheus scraping
+      port: 8081
 
 ---
 kind: Service
@@ -31,10 +35,14 @@ apiVersion: v1
 
 metadata:
   name: hubcopter-api-{{ .id }}
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/targets: "infra-frontend"
 
 spec:
   selector:
     name: hubcopter-api-{{ .id }}
   ports:
-    - port: 8080
+    - name: metrics # this specific name is required for Prometheus scraping
+      port: 8080
 {{- end }}
