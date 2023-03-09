@@ -15,55 +15,78 @@ data:
   reserved: false
   cluster_permissions:
   - "cluster_monitor"
-  - "indices:admin/template/get"
   - "cluster_composite_ops"
+  - "cluster:admin/ingest/pipeline/put"
+  - "cluster:admin/ingest/pipeline/get"
+  - "indices:admin/template/get"
   - "cluster_manage_index_templates"
-  - "cluster:monitor/main"
   index_permissions:
   - index_patterns:
     - "logstash-*"
     allowed_actions:
-    - "*"
-  - index_patterns:
-    - "netflow-*"
-    allowed_actions:
-    - "indices:admin/types/exists"
-    - "indices:data/read/*"
-    - "indices:data/write/*"
-    - "indices:admin/template/*"
+    - "indices:admin/template/get"
+    - "indices:admin/template/put"
+    - "indices:admin/mapping/put"
     - "indices:admin/create"
+    - "indices:data/write/bulk*"
+    - "indices:data/write/delete"
+    - "indices:data/write/index"
+    - "indices:data/write/update"
   - index_patterns:
     - "systemd-*"
     allowed_actions:
-    - "*"
+    - "indices:admin/template/get"
+    - "indices:admin/template/put"
+    - "indices:admin/mapping/put"
+    - "indices:admin/create"
+    - "indices:data/write/bulk*"
+    - "indices:data/write/delete"
+    - "indices:data/write/index"
+    - "indices:data/write/update"
   - index_patterns:
     - "scaleout-*"
     allowed_actions:
-    - "indices:admin/types/exists"
-    - "indices:data/read/*"
-    - "indices:data/write/*"
-    - "indices:admin/template/*"
+    - "indices:admin/template/get"
+    - "indices:admin/template/put"
+    - "indices:admin/mapping/put"
     - "indices:admin/create"
+    - "indices:data/write/bulk*"
+    - "indices:data/write/delete"
+    - "indices:data/write/index"
+    - "indices:data/write/update"
   - index_patterns:
     - "virtual-*"
     allowed_actions:
-    - "indices:admin/types/exists"
-    - "indices:data/read/*"
-    - "indices:data/write/*"
-    - "indices:admin/template/*"
+    - "indices:admin/template/get"
+    - "indices:admin/template/put"
+    - "indices:admin/mapping/put"
     - "indices:admin/create"
+    - "indices:data/write/bulk*"
+    - "indices:data/write/delete"
+    - "indices:data/write/index"
+    - "indices:data/write/update"
+  - index_patterns:
+    - "admin-*"
+    allowed_actions:
+    - "indices:admin/template/get"
+    - "indices:admin/template/put"
+    - "indices:admin/mapping/put"
     - "indices:admin/create"
+    - "indices:data/write/bulk*"
+    - "indices:data/write/delete"
+    - "indices:data/write/index"
+    - "indices:data/write/update"
 
 syslog:
   reserved: false
   cluster_permissions:
-    - "cluster_monitor"
-    - "cluster_composite_ops"
-    - "cluster:admin/ingest/pipeline/put"
-    - "cluster:admin/ingest/pipeline/get"
-    - "indices:admin/template/get"
-    - "cluster_composite_ops"
-    - "cluster_manage_index_templates"
+  - "cluster_monitor"
+  - "cluster_composite_ops"
+  - "cluster:admin/ingest/pipeline/put"
+  - "cluster:admin/ingest/pipeline/get"
+  - "indices:admin/template/get"
+  - "cluster_composite_ops"
+  - "cluster_manage_index_templates"
   index_permissions:
   - index_patterns:
     - "syslog-*"
