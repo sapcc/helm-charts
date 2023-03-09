@@ -18,7 +18,7 @@ while [ -z "$filer" ]; do
       lastcode=$code
     fi
   fi
-  sleep 60
+  sleep 30
 done
 echo "start harvest poller $filer on port $1"
 exec bin/poller --poller $filer --promPort $1 --loglevel {{ .Values.harvest.loglevel }}
