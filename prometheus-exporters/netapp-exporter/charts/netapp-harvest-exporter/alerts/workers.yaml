@@ -2,7 +2,7 @@ groups:
   - name: netapp-harvest-workers
     rules:
       - alert: NetappHarvestCinderNeedsMoreWorkers
-        expr:  netapp_harvest_cinder_discovered_count - netapp_harvest_cinder_worker_count > 0
+        expr: netapp_harvest_cinder_discovered_count - on () group_left count (netapp_metadata_exporter_count{app_kubernetes_io_instance="netapp-harvest-exporter-cinder"})
         for: 15m
         labels:
           context: netapp-exporter
@@ -13,9 +13,9 @@ groups:
           tier: storage
         annotations:
           summary:  Netapp Harvest (Cinder) does not have enough workers
-          description: Deployment netapp-harvest-exporter-cinder needs [[ $value ]] more workers. Increase its replicas by [[ $value ]]/{{ .Values.workersPerPod }}.
+          description: Deployment netapp-harvest-exporter-cinder needs more workers. Increase at least [[ $value ]] wokers.
       - alert: NetappHarvestCinderFreeWorkersLow
-        expr:  {{ mul .Values.workersPerPod .Values.apps.cinder.replicaCount }} - netapp_harvest_cinder_discovered_count < 3
+        expr:  {{ .Values.apps.cinder.workerCount }} - netapp_harvest_cinder_discovered_count < 3
         for: 15m
         labels:
           context: netapp-exporter
@@ -26,4 +26,4 @@ groups:
           tier: storage
         annotations:
           summary:  Netapp Harvest (Cinder) has less than 3 free workers
-          description: Deployment netapp-harvest-exporter-cinder has only [[ $value ]] free workers. Consider add one more replica.
+          description: Deployment netapp-harvest-exporter-cinder has only [[ $value ]] free workers. Consider increase deployment replica to {{ (mul (add (div .Values.apps.cinder.workerCount 5) 1) 5) }}.

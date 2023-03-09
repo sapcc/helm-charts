@@ -22,19 +22,17 @@ spec:
         {{- include "netapp-harvest.selectorLabels" . | nindent 8 }}
     spec:
       containers:
-        {{- range $i, $e := until (.Values.workersPerPod | default 1 | int) }}
-        {{- with $ }}
-        - name: harvest-poller-{{ $i }}
+        - name: harvest-poller
           image: {{ .Values.global.dockerHubMirror }}/{{ .Values.harvest.image.repository }}:{{ .Values.harvest.image.tag }}
           imagePullPolicy: {{ .Values.harvest.image.pullPolicy | default "IfNotPresent" }}
           command: ["sh"]
           args: 
             - start-poller.sh
             - {{ include "netapp-harvest.fullname" . }}-{{ .appValues.name }}-sd.{{ .Release.Namespace }}.svc:8000
-            - {{ add 13000 $i | quote }}
+            - "13000"
           ports:
-            - name: metrics-{{ $i }}
-              containerPort: {{ add 13000 $i }} 
+            - name: metrics
+              containerPort: 13000
           resources:
             {{- toYaml .Values.harvest.resources | nindent 12 }}
           volumeMounts:
@@ -53,8 +51,6 @@ spec:
             - name: harvest-config
               subPath: restperf.limited.yaml
               mountPath: /opt/harvest/conf/restperf/limited.yaml
-        {{- end }}
-        {{- end }}
       volumes:
         - name: harvest-config
           configMap:
