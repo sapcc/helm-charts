@@ -73,10 +73,10 @@ function createresticbinlogbackup {
 fetchseqnofromremotenode {{ (printf "%s-%d" (include "nodeNamePrefix" (dict "global" $ "component" "application")) $int) }} >>/tmp/nodelist.seqno
 {{- end }}
 selectbackupnode
-initresticrepo
 {{- if $.Values.mariadb.galera.backup.restic.unlockRepo }}
 unlockresticrepo
 {{- end }}
+initresticrepo
 setclusterdesyncmode ${NODENAME[0]} ON
 createresticdbbackup ${NODENAME[0]} ${NODENAME[1]}
 createresticbinlogbackup ${NODENAME[0]} ${NODENAME[1]}

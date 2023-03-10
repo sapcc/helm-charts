@@ -6,7 +6,7 @@ apiVersion: batch/v1
 kind: Job
 metadata:
   namespace: {{ $.Release.Namespace }}
-  name: restore-restic-{{ randAlphaNum 8 | lower }}
+  name: {{ include "commonPrefix" $ }}restore-restic-{{ randAlphaNum 8 | lower }}
   labels:
     app: {{ $.Release.Name }}
     release: {{ $.Release.Name }}
@@ -24,13 +24,13 @@ spec:
         checksum/configmap: {{ include (print $.Template.BasePath "/configmap-restic.yaml") $ | sha256sum }}
     spec:
       restartPolicy: {{ $.Values.job.resticrestore.jobRestartPolicy | default "Never" | quote }}
-      serviceAccount: {{ $.Release.Name }}
+      serviceAccount: {{ include "commonPrefix" $ }}{{ $.Release.Name }}
       securityContext:
         runAsUser:  {{ $.Values.userId.backup | default 3200 | int }}
         runAsGroup: {{ $.Values.groupId.backup | default 3200 | int }}
         fsGroup:  {{ $.Values.groupId.backup | default 3200 | int }}
       imagePullSecrets:
-      - name: {{ $.Release.Name }}-{{$.Values.image.application.pullSecret}}
+      - name: {{ include "commonPrefix" $ }}{{ $.Release.Name }}-{{$.Values.image.application.pullSecret}}
       containers:
       - name: restore
         image: "{{ $.Values.image.resticbackup.registry }}/{{ $.Values.image.resticbackup.project }}/{{ $.Values.image.resticbackup.applicationname }}:{{ $.Values.image.resticbackup.applicationversion }}-{{ $.Values.image.resticbackup.imageversion }}"
@@ -82,7 +82,7 @@ spec:
             {{- if $envValue.secretName }}
           valueFrom:
             secretKeyRef:
-              name: {{ $.Release.Name }}-{{ $envValue.secretName }}
+              name: {{ include "commonPrefix" $ }}{{ $.Release.Name }}-{{ $envValue.secretName }}
               key: {{ $envValue.secretKey }}
             {{- end }}
           {{- end }}
@@ -93,11 +93,11 @@ spec:
           limits:
             memory: {{ $.Values.resourceLimits.memory.jobrestore | default "128Mi" | quote }}
         volumeMounts:
-        - name: restic-entrypoint-sh
+        - name: {{ include "commonPrefix" $ }}restic-entrypoint-sh
           mountPath: /opt/restic/bin/entrypoint.sh
           subPath: entrypoint-restore.sh
           readOnly: true
-        - name: restic-common-functions-extended-sh
+        - name: {{ include "commonPrefix" $ }}restic-common-functions-extended-sh
           mountPath: /opt/restic/bin/common-functions-extended.sh
           subPath: common-functions-extended.sh
           readOnly: true
@@ -105,25 +105,25 @@ spec:
       {{- range $volumeMountsKey, $volumeMountsValue := $.Values.volumeMounts.application }}
         {{- if $volumeMountsValue.type }}
           {{- if ne $volumeMountsValue.type "persistentVolume" }}
-      - name: {{ $volumeMountsKey }}
+      - name: {{ include "commonPrefix" $ }}{{ $volumeMountsKey }}
             {{- if eq $volumeMountsValue.type "secret"}}
         {{ $volumeMountsValue.type }}:
-          secretName: {{ $.Release.Name }}-{{ $volumeMountsKey }}
+          secretName: {{ include "commonPrefix" $ }}{{ $.Release.Name }}-{{ $volumeMountsKey }}
             {{- else if eq $volumeMountsValue.type "hostPath" }}
         {{ $volumeMountsValue.type }}:
           path: {{ $volumeMountsValue.hostPath }}
             {{- else }}
-          name: {{ $volumeMountsKey }}
+          name: {{ include "commonPrefix" $ }}{{ $volumeMountsKey }}
             {{- end }}
           {{- end }}
         {{- end }}
       {{- end }}
-      - name: restic-entrypoint-sh
+      - name: {{ include "commonPrefix" $ }}restic-entrypoint-sh
         configMap:
-          name: restic-entrypoint-sh
+          name: {{ include "commonPrefix" $ }}restic-entrypoint-sh
           defaultMode: 0750
-      - name: restic-common-functions-extended-sh
+      - name: {{ include "commonPrefix" $ }}restic-common-functions-extended-sh
         configMap:
-          name: restic-common-functions-extended-sh
+          name: {{ include "commonPrefix" $ }}restic-common-functions-extended-sh
           defaultMode: 0755
 {{- end }}

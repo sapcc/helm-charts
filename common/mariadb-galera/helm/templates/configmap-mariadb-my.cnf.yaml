@@ -32,7 +32,7 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: my-cnf
+  name: {{ include "commonPrefix" $ }}my-cnf
   namespace: {{ $.Release.Namespace }}
 data:
 {{- range $int, $err := until ($.Values.replicas.application|int) }}
@@ -71,7 +71,7 @@ data:
     wsrep_gtid_domain_id={{ (printf "%d%d%d%d%d" ($.Values.mariadb.galera.gtidDomainId | default 1 | int) 0 8 1 5) | int }}
     gtid_domain_id={{ $int | int }}
     expire_logs_days=1
-    wsrep-cluster-name={{ include "getEnvVar" (dict "global" $ "name" "MARIADB_CLUSTER_NAME") }}
+    wsrep-cluster-name={{ (required "mariadb.galera.clustername is required to configure the wsrep-cluster-name option for MariaDB" $.Values.mariadb.galera.clustername) | quote }}
     wsrep_cluster_address={{ include "wsrepClusterAddress" (dict "global" $) }}
     {{- $_ := set $wsrepProviderOptions "pc.weight" (printf "pc.weight=${PC_WEIGHT_%d}" $int)}}
     wsrep_provider_options={{ (join ";" (values $wsrepProviderOptions | sortAlpha)) }}
@@ -127,7 +127,7 @@ data:
     {{- else }}
     wsrep_restart_slave=off
     {{- end }}
-    report-host={{ $nodeNamePrefix }}-{{ $int }}.{{ include "getEnvVar" (dict "global" $ "name" "MARIADB_CLUSTER_NAME") }}
+    report-host={{ $nodeNamePrefix }}-{{ $int }}
     slave-parallel-threads={{ $.Values.mariadb.asyncReplication.slaveReplicaThreads | default 1 | int }}
     binlog-commit-wait-count={{ $.Values.mariadb.asyncReplication.slaveReplicaThreads | default 0 | int }}
 

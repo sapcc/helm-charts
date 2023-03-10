@@ -1,5 +1,15 @@
 # Changelog
 
+## v0.14.0 - 2023/03/10
+* prefix for generated Kubernetes objects
+  * `mariadb.galera.clustername` used for that
+* `MARIADB_CLUSTER_NAME` environment variable also derived from `mariadb.galera.clustername`
+
+## v0.13.0 - 2023/03/03
+* Kopia as additional backup option
+* configmaps restructured for better maintainability
+* dedicated Docker images for the backup tools
+
 ## v0.11.3 - 2023/01/16
 * `perf_schema` [collector options](https://github.com/prometheus/mysqld_exporter#collector-flags) for the MySQL exporter disabled if `$.Values.mariadb.performance_schema` chart option is disabled
 * changelog added

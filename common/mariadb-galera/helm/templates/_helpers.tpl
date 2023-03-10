@@ -74,6 +74,16 @@ spec:
       timeoutSeconds: {{ .service.sessionAffinity.ClientIpTimeoutSeconds | default "10800" | int }}
 {{- end }}
 
+{{/*
+  render an prefix based on the mariadb.galera.clustername value
+  include "commonPrefix" .
+*/}}
+{{- define "commonPrefix" }}
+  {{- if and (hasKey .Values.mariadb.galera "clustername") (.Values.mariadb.galera.clustername) }}
+    {{- printf "%s-" .Values.mariadb.galera.clustername }}
+  {{- end }}
+{{- end }}
+
 
 {{/*
   Fetch current node name prefix for a component (currently application and proxy are supported)
@@ -83,21 +93,21 @@ spec:
 {{- define "nodeNamePrefix" }}
   {{- if eq .component "application" }}
     {{- if and (.global.Values.namePrefix) (hasKey .global.Values.namePrefix .component) }}
-      {{- (.global.Values.namePrefix.application | default "mariadb-g") }}
+      {{- printf "%s%s" (include "commonPrefix" .global) (.global.Values.namePrefix.application | default "mariadb-g") }}
     {{- else }}
-      {{- "mariadb-g" }}
+      {{- printf "%s%s" (include "commonPrefix" .global) "mariadb-g" }}
     {{- end }}
   {{- else if eq .component "proxy" }}
     {{- if and (.global.Values.namePrefix) (hasKey .global.Values.namePrefix .component) }}
-      {{- (.global.Values.namePrefix.proxy | default "proxysql") }}
+      {{- printf "%s%s" (include "commonPrefix" .global) (.global.Values.namePrefix.proxy | default "proxysql") }}
     {{- else }}
-      {{- "proxysql" }}
+      {{- printf "%s%s" (include "commonPrefix" .global) "proxysql" }}
     {{- end }}
   {{- else if eq .component "kopiaserver" }}
     {{- if and (.global.Values.namePrefix) (hasKey .global.Values.namePrefix .component) }}
-      {{- (.global.Values.namePrefix.kopiaserver | default "backup-kopiaserver") }}
+      {{- printf "%s%s" (include "commonPrefix" .global) (.global.Values.namePrefix.kopiaserver | default "backup-kopiaserver") }}
     {{- else }}
-      {{- "proxysql" }}
+      {{- printf "%s%s" (include "commonPrefix" .global) "backup-kopiaserver" }}
     {{- end }}
   {{- else }}
     {{- fail "No supported component provided for the nodeNamePrefix function" }}

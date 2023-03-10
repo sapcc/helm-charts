@@ -6,7 +6,7 @@ apiVersion: batch/v1
 kind: Job
 metadata:
   namespace: {{ $.Release.Namespace }}
-  name: restore-kopia-{{ randAlphaNum 8 | lower }}
+  name: {{ include "commonPrefix" $ }}restore-kopia-{{ randAlphaNum 8 | lower }}
   labels:
     app: {{ $.Release.Name }}
     release: {{ $.Release.Name }}
@@ -24,13 +24,13 @@ spec:
         checksum/configmap: {{ include (print $.Template.BasePath "/configmap-kopia.yaml") $ | sha256sum }}
     spec:
       restartPolicy: {{ $.Values.job.kopiarestore.jobRestartPolicy | default "Never" | quote }}
-      serviceAccount: {{ $.Release.Name }}
+      serviceAccount: {{ include "commonPrefix" $ }}{{ $.Release.Name }}
       securityContext:
         runAsUser:  {{ $.Values.userId.backup | default 3200 | int }}
         runAsGroup: {{ $.Values.groupId.backup | default 3200 | int }}
         fsGroup:  {{ $.Values.groupId.backup | default 3200 | int }}
       imagePullSecrets:
-      - name: {{ $.Release.Name }}-{{$.Values.image.application.pullSecret}}
+      - name: {{ include "commonPrefix" $ }}{{ $.Release.Name }}-{{$.Values.image.application.pullSecret}}
       containers:
       - name: restore
         image: "{{ $.Values.image.kopiabackup.registry }}/{{ $.Values.image.kopiabackup.project }}/{{ $.Values.image.kopiabackup.applicationname }}:{{ $.Values.image.kopiabackup.applicationversion }}-{{ $.Values.image.kopiabackup.imageversion }}"
@@ -72,7 +72,7 @@ spec:
             {{- if $envValue.secretName }}
           valueFrom:
             secretKeyRef:
-              name: {{ $.Release.Name }}-{{ $envValue.secretName }}
+              name: {{ include "commonPrefix" $ }}{{ $.Release.Name }}-{{ $envValue.secretName }}
               key: {{ $envValue.secretKey }}
             {{- end }}
           {{- end }}
@@ -83,11 +83,11 @@ spec:
           limits:
             memory: {{ $.Values.resourceLimits.memory.jobrestore | default "128Mi" | quote }}
         volumeMounts:
-        - name: kopia-entrypoint-sh
+        - name: {{ include "commonPrefix" $ }}kopia-entrypoint-sh
           mountPath: /opt/kopia/bin/entrypoint.sh
           subPath: entrypoint-restore.sh
           readOnly: true
-        - name: kopia-common-functions-extended-sh
+        - name: {{ include "commonPrefix" $ }}kopia-common-functions-extended-sh
           mountPath: /opt/kopia/bin/common-functions-extended.sh
           subPath: common-functions-extended.sh
           readOnly: true
@@ -95,25 +95,25 @@ spec:
       {{- range $volumeMountsKey, $volumeMountsValue := $.Values.volumeMounts.application }}
         {{- if $volumeMountsValue.type }}
           {{- if ne $volumeMountsValue.type "persistentVolume" }}
-      - name: {{ $volumeMountsKey }}
+      - name: {{ include "commonPrefix" $ }}{{ $volumeMountsKey }}
             {{- if eq $volumeMountsValue.type "secret"}}
         {{ $volumeMountsValue.type }}:
-          secretName: {{ $.Release.Name }}-{{ $volumeMountsKey }}
+          secretName: {{ include "commonPrefix" $ }}{{ $.Release.Name }}-{{ $volumeMountsKey }}
             {{- else if eq $volumeMountsValue.type "hostPath" }}
         {{ $volumeMountsValue.type }}:
           path: {{ $volumeMountsValue.hostPath }}
             {{- else }}
-          name: {{ $volumeMountsKey }}
+          name: {{ include "commonPrefix" $ }}{{ $volumeMountsKey }}
             {{- end }}
           {{- end }}
         {{- end }}
       {{- end }}
-      - name: kopia-entrypoint-sh
+      - name: {{ include "commonPrefix" $ }}kopia-entrypoint-sh
         configMap:
-          name: kopia-entrypoint-sh
+          name: {{ include "commonPrefix" $ }}kopia-entrypoint-sh
           defaultMode: 0750
-      - name: kopia-common-functions-extended-sh
+      - name: {{ include "commonPrefix" $ }}kopia-common-functions-extended-sh
         configMap:
-          name: kopia-common-functions-extended-sh
+          name: {{ include "commonPrefix" $ }}kopia-common-functions-extended-sh
           defaultMode: 0755
 {{- end }}

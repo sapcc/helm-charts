@@ -61,7 +61,7 @@ spec:
             namespaces:
               - {{ $.Release.Namespace }}
             topologyKey: "kubernetes.io/hostname"
-      serviceAccount: {{ $.Release.Name }}
+      serviceAccount: {{ include "commonPrefix" $ }}{{ $.Release.Name }}
       automountServiceAccountToken: true
       securityContext:
         runAsUser:  {{ $.Values.userId.application | default 101 | int }}
@@ -69,7 +69,7 @@ spec:
         fsGroup:  {{ $.Values.groupId.application | default 101 | int }}
       {{- if and (hasKey $.Values.image.application "pullSecret") $.Values.image.application.pullSecret }}
       imagePullSecrets:
-      - name: {{ $.Release.Name }}-{{$.Values.image.application.pullSecret}}
+      - name: {{ include "commonPrefix" $ }}{{ $.Release.Name }}-{{$.Values.image.application.pullSecret}}
       {{- end }}
       initContainers:
       - name: sysctl-tcp-keepalive
@@ -148,7 +148,9 @@ spec:
           value: {{ $calculatedWeight | quote }}
           {{- end }}
         - name: PC_RECOVERY
-          value: "{{ $.Values.mariadb.galera.pcrecovery | default "false" }}"
+          value: {{ $.Values.mariadb.galera.pcrecovery | default "false" | quote }}
+        - name: MARIADB_CLUSTER_NAME
+          value: {{ (required "mariadb.galera.clustername is required to configure the wsrep-cluster-name option for MariaDB" $.Values.mariadb.galera.clustername) | quote }}
           {{- if not (hasKey $.Values.env "MARIADB_MONITORING_CONNECTION_LIMIT") }}
         - name: MARIADB_MONITORING_CONNECTION_LIMIT
           value: 3
@@ -170,7 +172,7 @@ spec:
               {{- if $envValue.secretName }}
           valueFrom:
             secretKeyRef:
-              name: {{ $.Release.Name }}-{{ $envValue.secretName }}
+              name: {{ include "commonPrefix" $ }}{{ $.Release.Name }}-{{ $envValue.secretName }}
               key: {{ $envValue.secretKey }}
               {{- end }}
             {{- end }}
@@ -263,7 +265,7 @@ spec:
             {{- if (hasKey $volumeMountsValue "claimName") }}
               {{- range $volumeClaimTemplatesKey, $volumeClaimTemplatesValue := $.Values.volumeClaimTemplates }}
                 {{- if eq $volumeClaimTemplatesKey $volumeMountsValue.claimName }}
-          - name: {{ $volumeMountsKey }}-{{ $volumeMountsValue.claimName | lower }}
+          - name: {{ include "commonPrefix" $ }}{{ $volumeMountsKey }}-{{ $volumeMountsValue.claimName | lower }}
             mountPath: {{ $volumeMountsValue.mountPath }}
                   {{- if $volumeMountsValue.readOnly }}
             readOnly: {{ $volumeMountsValue.readOnly }}
@@ -271,49 +273,49 @@ spec:
                 {{- end }}
               {{- end }}
             {{- else }}
-          - name: {{ $volumeMountsKey | lower }}
+          - name: {{ include "commonPrefix" $ }}{{ $volumeMountsKey | lower }}
             mountPath: {{ $volumeMountsValue.mountPath }}
               {{- if $volumeMountsValue.readOnly }}
             readOnly: {{ $volumeMountsValue.readOnly }}
               {{- end }}
             {{- end }}
           {{- end }}
-          - name: my-cnf
+          - name: {{ include "commonPrefix" $ }}my-cnf
             mountPath: /opt/mariadb/etc/conf.d/tpl
             readOnly: true
-          - name: galerastatus
+          - name: {{ include "commonPrefix" $ }}galerastatus
             mountPath: /opt/mariadb/etc/galerastatus
             readOnly: false
-          - name: mariadb-entrypoint-sh
+          - name: {{ include "commonPrefix" $ }}mariadb-entrypoint-sh
             mountPath: /opt/mariadb/bin/entrypoint-galera.sh
             subPath: entrypoint-galera.sh
             readOnly: true
-          - name: mariadb-probes-sh
+          - name: {{ include "commonPrefix" $ }}mariadb-probes-sh
             mountPath: /opt/mariadb/bin/startup.sh
             subPath: startup.sh
             readOnly: true
-          - name: mariadb-probes-sh
+          - name: {{ include "commonPrefix" $ }}mariadb-probes-sh
             mountPath: /opt/mariadb/bin/liveness.sh
             subPath: liveness.sh
             readOnly: true
-          - name: mariadb-probes-sh
+          - name: {{ include "commonPrefix" $ }}mariadb-probes-sh
             mountPath: /opt/mariadb/bin/readiness.sh
             subPath: readiness.sh
             readOnly: true
-          - name: mariadb-hooks-sh
+          - name: {{ include "commonPrefix" $ }}mariadb-hooks-sh
             mountPath: /opt/mariadb/bin/pre-stop-hook.sh
             subPath: pre-stop-hook.sh
             readOnly: true
-          - name: mariadb-hooks-sh
+          - name: {{ include "commonPrefix" $ }}mariadb-hooks-sh
             mountPath: /opt/mariadb/bin/post-start-hook.sh
             subPath: post-start-hook.sh
             readOnly: true
-          - name: mariadb-common-functions-extended-sh
+          - name: {{ include "commonPrefix" $ }}mariadb-common-functions-extended-sh
             mountPath: /opt/mariadb/bin/common-functions-extended.sh
             subPath: common-functions-extended.sh
             readOnly: true
           {{- if or (and (hasKey $.Values.mariadb "wipeDataAndLog") ($.Values.mariadb.wipeDataAndLog)) (or (and (hasKey $.Values.mariadb.galera.restore "restic") ($.Values.mariadb.galera.restore.restic.enabled)) (and (hasKey $.Values.mariadb.galera.restore "kopia") ($.Values.mariadb.galera.restore.kopia.enabled))) }}
-          - name: mariadb-wipedata
+          - name: {{ include "commonPrefix" $ }}mariadb-wipedata
             mountPath: /opt/mariadb/etc/wipedata.flag
             subPath: wipedata.flag
             readOnly: true
@@ -377,7 +379,7 @@ spec:
               {{- if $envValue.secretName }}
           valueFrom:
             secretKeyRef:
-              name: {{ $.Release.Name }}-{{ $envValue.secretName }}
+              name: {{ include "commonPrefix" $ }}{{ $.Release.Name }}-{{ $envValue.secretName }}
               key: {{ $envValue.secretKey }}
               {{- end }}
             {{- end }}
@@ -431,19 +433,19 @@ spec:
           {{- end }}
         {{- end }}
         volumeMounts:
-          - name: monitoring-entrypoint-sh
+          - name: {{ include "commonPrefix" $ }}monitoring-entrypoint-sh
             mountPath: /opt/mysqld_exporter/bin/entrypoint-mysqld_exporter.sh
             subPath: entrypoint-mysqld_exporter.sh
             readOnly: true
-          - name: monitoring-probes-sh
+          - name: {{ include "commonPrefix" $ }}monitoring-probes-sh
             mountPath: /opt/mysqld_exporter/bin/liveness.sh
             subPath: liveness.sh
             readOnly: true
-          - name: monitoring-probes-sh
+          - name: {{ include "commonPrefix" $ }}monitoring-probes-sh
             mountPath: /opt/mysqld_exporter/bin/readiness.sh
             subPath: readiness.sh
             readOnly: true
-          - name: monitoring-common-functions-extended-sh
+          - name: {{ include "commonPrefix" $ }}monitoring-common-functions-extended-sh
             mountPath: /opt/mysqld_exporter/bin/common-functions-extended.sh
             subPath: common-functions-extended.sh
             readOnly: true
@@ -462,60 +464,60 @@ spec:
         {{- range $volumeMountsKey, $volumeMountsValue := $.Values.volumeMounts.application }}
           {{- if $volumeMountsValue.type }}
             {{- if ne $volumeMountsValue.type "persistentVolume" }}
-        - name: {{ $volumeMountsKey }}
+        - name: {{ include "commonPrefix" $ }}{{ $volumeMountsKey }}
               {{- if eq $volumeMountsValue.type "secret"}}
           {{ $volumeMountsValue.type }}:
-            secretName: {{ $.Release.Name }}-{{ $volumeMountsKey }}
+            secretName: {{ include "commonPrefix" $ }}{{ $.Release.Name }}-{{ $volumeMountsKey }}
               {{- else if eq $volumeMountsValue.type "hostPath" }}
           {{ $volumeMountsValue.type }}:
             path: {{ $volumeMountsValue.hostPath }}
               {{- else }}
-            name: {{ $volumeMountsKey }}
+            name: {{ include "commonPrefix" $ }}{{ $volumeMountsKey }}
               {{- end }}
             {{- end }}
           {{- end }}
         {{- end }}
-        - name: my-cnf
+        - name: {{ include "commonPrefix" $ }}my-cnf
           configMap:
-            name: my-cnf
+            name: {{ include "commonPrefix" $ }}my-cnf
             defaultMode: 0444
-        - name: galerastatus
+        - name: {{ include "commonPrefix" $ }}galerastatus
           configMap:
-            name: galerastatus
+            name: {{ include "commonPrefix" $ }}galerastatus
             defaultMode: 0750
-        - name: mariadb-entrypoint-sh
+        - name: {{ include "commonPrefix" $ }}mariadb-entrypoint-sh
           configMap:
-            name: mariadb-entrypoint-sh
+            name: {{ include "commonPrefix" $ }}mariadb-entrypoint-sh
             defaultMode: 0755
-        - name: mariadb-probes-sh
+        - name: {{ include "commonPrefix" $ }}mariadb-probes-sh
           configMap:
-            name: mariadb-probes-sh
+            name: {{ include "commonPrefix" $ }}mariadb-probes-sh
             defaultMode: 0755
-        - name: mariadb-hooks-sh
+        - name: {{ include "commonPrefix" $ }}mariadb-hooks-sh
           configMap:
-            name: mariadb-hooks-sh
+            name: {{ include "commonPrefix" $ }}mariadb-hooks-sh
             defaultMode: 0755
-        - name: mariadb-common-functions-extended-sh
+        - name: {{ include "commonPrefix" $ }}mariadb-common-functions-extended-sh
           configMap:
-            name: mariadb-common-functions-extended-sh
+            name: {{ include "commonPrefix" $ }}mariadb-common-functions-extended-sh
             defaultMode: 0755
         {{- if or (and (hasKey $.Values.mariadb "wipeDataAndLog") ($.Values.mariadb.wipeDataAndLog)) (or (and (hasKey $.Values.mariadb.galera.restore "restic") ($.Values.mariadb.galera.restore.restic.enabled)) (and (hasKey $.Values.mariadb.galera.restore "kopia") ($.Values.mariadb.galera.restore.kopia.enabled))) }}
-        - name: mariadb-wipedata
+        - name: {{ include "commonPrefix" $ }}mariadb-wipedata
           configMap:
-            name: mariadb-wipedata
+            name: {{ include "commonPrefix" $ }}mariadb-wipedata
             defaultMode: 0444
         {{- end }}
-        - name: monitoring-entrypoint-sh
+        - name: {{ include "commonPrefix" $ }}monitoring-entrypoint-sh
           configMap:
-            name: monitoring-entrypoint-sh
+            name: {{ include "commonPrefix" $ }}monitoring-entrypoint-sh
             defaultMode: 0755
-        - name: monitoring-probes-sh
+        - name: {{ include "commonPrefix" $ }}monitoring-probes-sh
           configMap:
-            name: monitoring-probes-sh
+            name: {{ include "commonPrefix" $ }}monitoring-probes-sh
             defaultMode: 0755
-        - name: monitoring-common-functions-extended-sh
+        - name: {{ include "commonPrefix" $ }}monitoring-common-functions-extended-sh
           configMap:
-            name: monitoring-common-functions-extended-sh
+            name: {{ include "commonPrefix" $ }}monitoring-common-functions-extended-sh
             defaultMode: 0755
   volumeClaimTemplates:
   {{- range $volumeClaimTemplatesKey, $volumeClaimTemplatesValue := $.Values.volumeClaimTemplates }}
@@ -523,10 +525,10 @@ spec:
       {{- if (hasKey $volumeMountsValue "claimName") }}
         {{- if eq $volumeClaimTemplatesKey $volumeMountsValue.claimName }}
   - metadata:
-      name: {{ $volumeMountsKey }}-{{ $volumeMountsValue.claimName | lower }}
+      name: {{ include "commonPrefix" $ }}{{ $volumeMountsKey }}-{{ $volumeMountsValue.claimName | lower }}
     spec:
           {{- if $volumeClaimTemplatesValue.storageClassName }}
-      storageClassName: {{ $.Release.Name }}-{{ $volumeClaimTemplatesValue.storageClassName }}
+      storageClassName: {{ include "commonPrefix" $ }}{{ $.Release.Name }}-{{ $volumeClaimTemplatesValue.storageClassName }}
           {{- end }}
       accessModes: {{ $volumeClaimTemplatesValue.accessModes }}
       resources:

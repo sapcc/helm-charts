@@ -39,7 +39,7 @@ Docker images and Helm chart to deploy a [MariaDB](https://mariadb.com/kb/en/get
 ## Metadata
 | chart version | app version | type | url |
 |:--------------|:-------------|:-------------|:-------------|
-| 0.13.0 | 10.5.18 | application | [Git repo](https://github.com/businessbean/helm-charts/tree/master/common/mariadb-galera) |
+| 0.14.0 | 10.5.18 | application | [Git repo](https://github.com/businessbean/helm-charts/tree/master/common/mariadb-galera) |
 
 | Name | Email | Url |
 | ---- | ------ | --- |
@@ -175,7 +175,7 @@ docker build --build-arg BASE_SOFT_NAME=ubuntu --build-arg BASE_SOFT_VERSION=22.
 | env.KOPIA_SERVER_USERNAME.containerType | list | `["kopiaserver"]` | for which containers this environment variable will be used |
 | env.KOPIA_SERVER_USERNAME.secretKey | string | `"username"` | Name of the key of the predefined Kubernetes secret that contains the key for the `username` of the `Kopia UI admin` |
 | env.KOPIA_SERVER_USERNAME.secretName | string | `"kopia-ui-auth"` | Name of the predefined [Kubernetes secret](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-environment-variables) that contains the key for the `username` of the `Kopia UI admin` |
-| env.MARIADB_CLUSTER_NAME.containerType | list | `["application","cronjob-restic","cronjob-kopia","kopiaserver"]` | for which containers this environment variable will be used |
+| env.MARIADB_CLUSTER_NAME.containerType | string | `nil` | for which containers this environment variable will be used |
 | env.MARIADB_CLUSTER_NAME.value | string | `"eu-de-1.nova"` | Name of the MariaDB Galera cluster defined with the [wsrep_cluster_name](https://mariadb.com/kb/en/galera-cluster-system-variables/#wsrep_cluster_name) option |
 | env.MARIADB_MONITORING_CONNECTION_LIMIT.containerType | list | `["application","jobconfig"]` | for which containers this environment variable will be used |
 | env.MARIADB_MONITORING_CONNECTION_LIMIT.value | int | `6` | maximum number of allowed parallel connections for the `MariaDB monitoring user` defined within the [MAX_USER_CONNECTIONS](https://mariadb.com/kb/en/create-user/#resource-limit-options) option |
@@ -383,6 +383,7 @@ docker build --build-arg BASE_SOFT_NAME=ubuntu --build-arg BASE_SOFT_VERSION=22.
 | mariadb.galera.backup.restic.progressFps | float | 0.01666 | update interval for the console output [RESTIC_PROGRESS_FPS](https://restic.readthedocs.io/en/stable/040_backup.html?highlight=RESTIC_PROGRESS_FPS#environment-variables) |
 | mariadb.galera.backup.restic.pruneBackups | bool | false | [removing backup snapshots](https://restic.readthedocs.io/en/stable/060_forget.html?highlight=prune#removing-backup-snapshots) |
 | mariadb.galera.backup.restic.unlockRepo | bool | false | [unlock repo](https://restic.readthedocs.io/en/stable/manual_rest.html?highlight=unlock) |
+| mariadb.galera.clustername | string | `nil` | Name of the MariaDB Galera cluster defined with the [wsrep_cluster_name](https://mariadb.com/kb/en/galera-cluster-system-variables/#wsrep_cluster_name) option. It is also be used as the prefix for all generated objects to avoid name collisions. This is important for subchart configs where multiple parents use this chart in the same namespace |
 | mariadb.galera.debug | bool | false | [Galera debug](https://galeracluster.com/library/documentation/galera-parameters.html#debug) |
 | mariadb.galera.gcache.recover | bool | false | `false` until [PR#624](https://github.com/codership/galera/issues/624) is fixed |
 | mariadb.galera.gtidDomainId | int | 1 | must be a positive integer [wsrep_gtid_domain_id](https://mariadb.com/kb/en/galera-cluster-system-variables/#wsrep_gtid_domain_id) |
