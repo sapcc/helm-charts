@@ -1,0 +1,18 @@
+groups:
+- name: hubcopter.alerts
+  rules:
+
+  - alert: HubcopterDeploymentsOutdated
+    expr: time() - max by (team) (hubcopter_update_deployments_result) > 600
+    for: 5m
+    labels:
+      context: api
+      service: hubcopter
+      severity: warning
+      support_group: containers
+      tier: os
+    annotations:
+      summary: Hubcopter is not updating the deployments from Tenso events.
+      description: |
+        Hubcopter is not updating the deployments from Tenso events.
+        Check the hubcopter-* pods logs and in question contact the service owner.
