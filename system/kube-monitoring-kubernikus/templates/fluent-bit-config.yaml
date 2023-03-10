@@ -25,7 +25,7 @@ data:
           multiline.parser docker, cri
           Tag              kube.*
           Refresh_Interval 5
-          Mem_Buf_Limit    5MB
+          Mem_Buf_Limit    50MB
           Skip_Long_Lines  Off
           Ignore_Older     1m
           DB               /var/log/fluent-bit-tail.pos.db
@@ -103,5 +103,21 @@ data:
           tls on
           tls.verify on
           tls.debug 1
+{{ if index .Values "fluent-bit" "backend" "opensearch" "enabled" }}
+      [OUTPUT]
+          Name  opensearch
+          Match *
+          Host  {{ index .Values "fluent-bit" "backend" "opensearch" "host" }}
+          Port  {{ index .Values "fluent-bit" "backend" "opensearch" "port" }}
+          Logstash_Format On
+          Replace_Dots On
+          Logstash_Prefix {{ index .Values "fluent-bit" "backend" "opensearch" "logstash_prefix" }}
+          Suppress_Type_Name On
+          HTTP_User {{ index .Values "fluent-bit" "backend" "opensearch" "http_user" }}
+          HTTP_Passwd {{ index .Values "fluent-bit" "backend" "opensearch" "http_passwd" }}
+          tls {{ index .Values "fluent-bit" "backend" "opensearch" "tls" "enabled"}}
+          tls.verify {{ index .Values "fluent-bit" "backend" "opensearch" "tls" "verify"}}
+          tls.debug {{ index .Values "fluent-bit" "backend" "opensearch" "tls" "debug"}}
+{{- end }}
   parsers.conf: ""
   labelmap.json: ""
