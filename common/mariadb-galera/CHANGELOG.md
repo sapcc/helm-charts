@@ -1,5 +1,8 @@
 # Changelog
 
+## v0.14.1 - 2023/03/10
+* old `MARIADB_CLUSTER_NAME` environment variable removed from the values.yaml
+
 ## v0.14.0 - 2023/03/10
 * prefix for generated Kubernetes objects
   * `mariadb.galera.clustername` used for that

@@ -39,7 +39,7 @@ Docker images and Helm chart to deploy a [MariaDB](https://mariadb.com/kb/en/get
 ## Metadata
 | chart version | app version | type | url |
 |:--------------|:-------------|:-------------|:-------------|
-| 0.14.0 | 10.5.18 | application | [Git repo](https://github.com/businessbean/helm-charts/tree/master/common/mariadb-galera) |
+| 0.14.1 | 10.5.18 | application | [Git repo](https://github.com/businessbean/helm-charts/tree/master/common/mariadb-galera) |
 
 | Name | Email | Url |
 | ---- | ------ | --- |
@@ -175,8 +175,6 @@ docker build --build-arg BASE_SOFT_NAME=ubuntu --build-arg BASE_SOFT_VERSION=22.
 | env.KOPIA_SERVER_USERNAME.containerType | list | `["kopiaserver"]` | for which containers this environment variable will be used |
 | env.KOPIA_SERVER_USERNAME.secretKey | string | `"username"` | Name of the key of the predefined Kubernetes secret that contains the key for the `username` of the `Kopia UI admin` |
 | env.KOPIA_SERVER_USERNAME.secretName | string | `"kopia-ui-auth"` | Name of the predefined [Kubernetes secret](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-environment-variables) that contains the key for the `username` of the `Kopia UI admin` |
-| env.MARIADB_CLUSTER_NAME.containerType | string | `nil` | for which containers this environment variable will be used |
-| env.MARIADB_CLUSTER_NAME.value | string | `"eu-de-1.nova"` | Name of the MariaDB Galera cluster defined with the [wsrep_cluster_name](https://mariadb.com/kb/en/galera-cluster-system-variables/#wsrep_cluster_name) option |
 | env.MARIADB_MONITORING_CONNECTION_LIMIT.containerType | list | `["application","jobconfig"]` | for which containers this environment variable will be used |
 | env.MARIADB_MONITORING_CONNECTION_LIMIT.value | int | `6` | maximum number of allowed parallel connections for the `MariaDB monitoring user` defined within the [MAX_USER_CONNECTIONS](https://mariadb.com/kb/en/create-user/#resource-limit-options) option |
 | env.MARIADB_MONITORING_PASSWORD.containerType | list | `["application","monitoring","jobconfig"]` | for which containers this environment variable will be used |
