@@ -2,7 +2,7 @@ groups:
   - name: netapp-harvest-workers
     rules:
       - alert: NetappHarvestCinderNeedsMoreWorkers
-        expr: netapp_harvest_cinder_discovered_count - on () group_left count (netapp_metadata_exporter_count{app_kubernetes_io_instance="netapp-harvest-exporter-cinder"})
+        expr: netapp_harvest_cinder_discovered_count - on () group_left count (netapp_metadata_exporter_count{app_kubernetes_io_instance="netapp-harvest-exporter-cinder"}) > 0
         for: 15m
         labels:
           context: netapp-exporter
@@ -13,7 +13,7 @@ groups:
           tier: storage
         annotations:
           summary:  Netapp Harvest (Cinder) does not have enough workers
-          description: Deployment netapp-harvest-exporter-cinder needs more workers. Increase at least [[ $value ]] wokers.
+          description: Deployment netapp-harvest-exporter-cinder needs more workers. Add at least [[ $value ]] more wokers.
       - alert: NetappHarvestCinderFreeWorkersLow
         expr:  {{ .Values.apps.cinder.workerCount }} - netapp_harvest_cinder_discovered_count < 3
         for: 15m
