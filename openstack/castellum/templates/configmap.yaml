@@ -5,6 +5,7 @@ metadata:
   name: castellum
 
 data:
+  {{- if .Values.castellum.asset_managers | has "nfs-shares" }}
   netapp-scout.yaml: |
     http:
       listen_address: ':8080'
@@ -16,6 +17,7 @@ data:
       {{- else }}
       url:  http://prometheus-infra-collector.infra-monitoring.svc:9090
       {{- end }}
+  {{- end }}
 
   policy.yaml: |
 {{ .Files.Get "files/policy.yaml" | indent 4 }}
