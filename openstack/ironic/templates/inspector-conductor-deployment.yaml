@@ -34,6 +34,9 @@ spec:
         prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
         {{- end }}
     spec:
+      securityContext:
+        fsGroup: 42424
+        fsGroupChangePolicy: "OnRootMismatch"
 {{ tuple . "ironic" "inspector" | include "kubernetes_pod_anti_affinity" | indent 6 }}
 {{ include "utils.proxysql.pod_settings" . | indent 6 }}
       initContainers:
@@ -47,6 +50,9 @@ spec:
         command:
         - dumb-init
         - ironic-inspector-conductor
+        securityContext:
+          runAsUser: 42424
+          runAsGroup: 42424
         env:
         {{- if .Values.logging.handlers.sentry }}
         - name: SENTRY_DSN
@@ -55,6 +61,7 @@ spec:
               name: sentry
               key: {{ .Chart.Name }}.DSN.python
         {{- end }}
+        {{- tuple . "ironic-inspector-conductor" | include "utils.env.pyroscope" | indent 10 }}
         resources:
 {{ toYaml .Values.pod.resources.inspector | indent 10 }}
         volumeMounts:

@@ -53,9 +53,12 @@ spec:
       - name: ironic-conductor
         image: {{ .Values.global.registry }}/loci-ironic:{{ .Values.imageVersion }}
         imagePullPolicy: IfNotPresent
-        {{- if $conductor.debug }}
         securityContext:
+        {{- if $conductor.debug }}
           runAsUser: 0
+        {{- else }}
+          runAsUser: 42424
+          runAsGroup: 42424
         {{- end }}
         command:
         {{- if not $conductor.debug }}
@@ -79,6 +82,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: metadata.name
+        {{- tuple . "ironic-conductor" | include "utils.env.pyroscope" | indent 8 }}
         {{- if not $conductor.debug }}
         resources:
 {{ toYaml .Values.pod.resources.conductor | indent 10 }}

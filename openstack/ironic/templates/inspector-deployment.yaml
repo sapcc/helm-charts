@@ -51,6 +51,8 @@ spec:
         - dumb-init
         - ironic-inspector
         securityContext:
+          runAsUser: 42424
+          runAsGroup: 42424
           capabilities:
             add:
               - NET_ADMIN
@@ -62,6 +64,7 @@ spec:
               name: sentry
               key: {{ .Chart.Name }}.DSN.python
         {{- end }}
+        {{- tuple . "ironic-inspector" | include "utils.env.pyroscope" | indent 8 }}
         lifecycle:
           preStop:
             {{- include "utils.snippets.pre_stop_graceful_shutdown" . | indent 12 }}

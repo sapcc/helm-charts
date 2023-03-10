@@ -48,6 +48,9 @@ spec:
         command:
         - dumb-init
         - ironic-api
+        securityContext:
+          runAsUser: 42424
+          runAsGroup: 42424
         env:
         - name: PYTHONWARNINGS
           value: 'ignore:Unverified HTTPS request'
@@ -58,6 +61,7 @@ spec:
               name: sentry
               key: {{ .Chart.Name }}.DSN.python
         {{- end }}
+        {{- tuple . "ironic-api" | include "utils.env.pyroscope" | indent 8 }}
         lifecycle:
           preStop:
             {{- include "utils.snippets.pre_stop_graceful_shutdown" . | indent 12 }}
