@@ -23,8 +23,6 @@ spec:
         alert-service: keppel
       annotations:
         checksum/secret: {{ include "keppel/templates/secret.yaml" . | sha256sum }}
-        prometheus.io/scrape: "true"
-        prometheus.io/targets: "openstack"
     spec:
       containers:
         - name: monitor
@@ -58,7 +56,7 @@ spec:
             - name:  OS_USERNAME
               value: 'keppel'
           ports:
-            - name: metrics
+            - name: http
               containerPort: 8080
           # NOTE: This is only a readiness probe for a reason.
           # - We want the readiness probe to have `k rollout status` fail (and
