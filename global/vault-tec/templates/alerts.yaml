@@ -1,0 +1,34 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  labels:
+    prometheus: kubernetes
+    app: vault-tec
+  name: vault-tec-alerts
+  namespace: {{ .Release.Namespace }}
+spec:
+  groups:
+  - name: vault-tec.alerts
+    rules:
+    - alert: VaultTecReconcileErrors
+      annotations:
+        description: vault-tec cannot reconcile all pipeline-approles. Check the logs in the vault namespace and the health of concourse and vault.
+        summary: vault-tec failed to reconcile any approles.
+      expr: rate(vault_tec_reconcile_errors_total[30m]) > 0
+      for: 15m
+      labels:
+        context: vault-tec
+        service: vault-tec
+        severity: warning
+        support_group: containers
+    - alert: VaultTecRenewErrors
+      annotations:
+        description: vault-tec cannot reconcile some pipeline-approles. Check the logs in the vault namespace and the health of concourse and vault.
+        summary: vault-tec failed to renew some approles.
+      expr: rate(vault_tec_renew_errors_total[30m]) > 0
+      for: 15m
+      labels:
+        context: vault-tec
+        service: vault-tec
+        severity: warning
+        support_group: containers
