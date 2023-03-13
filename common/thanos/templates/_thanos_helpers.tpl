@@ -107,3 +107,19 @@ vmware-{{ $vropshostname._0 | trimPrefix "vrops-" }}
 cluster.local
 {{- end -}}
 {{- end -}}
+
+{{/* The name of the serviceAccount. */}}
+{{- define "serviceAccount.name" -}}
+{{- $name := index . 0 -}}
+{{- $root := index . 1 -}}
+{{- $svcName := $root.Values.serviceAccount.name -}}
+{{- if $root.Values.serviceAccount.create -}}
+{{- if and $svcName (ne $svcName "default") -}}
+{{- $svcName -}}
+{{- else -}}
+{{- (include "thanos.fullName" . ) -}}
+{{- end -}}
+{{- else -}}
+{{- default "default" $svcName -}}
+{{- end -}}
+{{- end -}}

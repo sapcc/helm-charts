@@ -42,6 +42,9 @@ queryDiscovery:
 # defaults to cluster.local
 clusterDomain:
 
+# optional
+# namespace:
+
 # used for cross cluster TLS 
 # only used, when useQueryRegions is set
 GRPCClientCA:
@@ -67,6 +70,20 @@ swiftStorageConfig:
 # Specification for Thanos image
 spec:
   baseImage: keppel.eu-de-1.cloud.sap/ccloud-quay-mirror/thanos/thanos
+
+# Create RBAC resources.
+rbac:
+  create: true
+
+# ServiceAccount to use for the Thanos.
+# Note that a ServiceAccount with name `default` cannot be created.
+# Instead the generated name will be used.
+serviceAccount:
+  create: true
+
+  # Optional name of the service account.
+  # If not provided one will be generated in the format: thanos-<name>.
+  name: ""
 
 # Specification for Thanos components.
 compactor:
@@ -135,6 +152,51 @@ query:
     # - name: storeN
     #   namespace: default
     #   port: 10901
+
+ruler:
+  enabled: false
+  # When a ThanosRuler deployment is paused, no actions except for deletion
+  # will be performed on the underlying objects.
+  paused: false
+
+  loglevel: info
+
+  # Time duration ThanosRuler shall retain data for. Default is '24h', and must
+  # match the regular expression `[0-9]+(ms|s|m|h|d|w|y)` (milliseconds seconds
+  # minutes hours days weeks years).
+  # retention: <string>
+
+  # Interval between consecutive evaluations. Defaults to 15s
+  # evaluationInterval: <string>
+
+  # The external URL the Thanos Ruler instances will be available under. This
+  # is necessary to generate correct URLs. This is necessary because Thanos Ruler is
+  # served from a subpath of the Thanos Query.
+  externalPrefix: /ruler
+
+  # Define URLs to send alerts to Alertmanager.
+  alertmanagers:
+    # Configuration if the Alertmanager has client certificate authentication enabled.
+    authentication:
+      enabled: false
+      # The certificate used for authentication with the Alertmanager..
+      ssoCert:
+      # The key used for authentication with the Alertmanager.
+      ssoKey:
+
+    hosts: []
+
+  # QueryEndpoints defines Thanos querier endpoints from which to query
+  # metrics. Maps to the --query flag of thanos ruler.
+  # Defaults to <name>-query.<namespace>.svc.<clusterDomain>
+  queryEndpoints: []
+
+  # Resources defines the resource requirements for single Pods. If not
+  # provided, no requests/limits will be set
+  # resources:
+
+  service:
+    annotations: {}
 
 # Optional ingress for this Thanos. Only needed when net deployed alongside Prometheus. So to say, if deployWholeThanos is set, this shouldn't be needed
 ingress:
