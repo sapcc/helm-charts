@@ -33,7 +33,7 @@ data:
     - "indices:data/write/index"
     - "indices:data/write/update"
   - index_patterns:
-    - "kubernikus-*"
+    - "systemd-*"
     allowed_actions:
     - "indices:admin/template/get"
     - "indices:admin/template/put"
@@ -44,7 +44,7 @@ data:
     - "indices:data/write/index"
     - "indices:data/write/update"
   - index_patterns:
-    - "systemd-*"
+    - "kubernikus-*"
     allowed_actions:
     - "indices:admin/template/get"
     - "indices:admin/template/put"
@@ -148,12 +148,17 @@ adminrole:
   reserved: false
   hidden: false
   cluster_permissions:
-  - "cluster:*"
+  - "*"
   index_permissions:
   - index_patterns:
     - "*"
     allowed_actions:
     - "*"
+  tenant_permissions:
+  - tenant_patterns:
+    - "global_tenant"
+    allowed_actions:
+    - "kibana_all_write"
 
 complex-role:
   reserved: false
@@ -187,3 +192,9 @@ promrole:
     - "*"
     allowed_actions:
     - "indices:monitor/stats"
+    - "read"
+  tenant_permissions:
+  - tenant_patterns:
+    - "*"
+    allowed_actions:
+    - "kibana_all_write"
