@@ -28,8 +28,15 @@ spec:
     - host: metis.{{ .Values.global.region }}.{{ .Values.global.tld }}
       http:
         paths:
-        - path: /
+        - path: /v1
           pathType: Prefix
+          backend:
+            service:
+              name: metis-api
+              port:
+                name: http
+        - path: /healthcheck
+          pathType: Exact
           backend:
             service:
               name: metis-api
