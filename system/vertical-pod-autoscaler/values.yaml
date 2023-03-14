@@ -21,13 +21,34 @@ recommender:
     pullPolicy: IfNotPresent
 
   # How often metrics should be fetched.
-  interval: 5m
+  interval: 2m
 
-  # Where to reach for Prometheus metrics.
-  prometheusAddress: https://prometheus-kubernetes.kube-monitoring.svc
-
-  # Name of the prometheus job name which scrapes the cAdvisor metrics.
-  prometheusCadvisorJobName: kubernetes-cadvisors
+  prometheus:
+    # Whether to enable Prometheus for storing metrics.
+    # If disabled, cAdvisor metrics are regularly persisted in-cluster using the VerticalPodAutoscalerCheckoint resource.
+    enabled: true
+    # Where to reach for Prometheus metrics.
+    address: https://prometheus-kubernetes.kube-monitoring.svc
+    # How much time back prometheus have to be queried to get historical metrics.
+    historyLength: 8d
+    # Resolution at which Prometheus is queried for historical metrics.
+    historyResolution: 1h
+    # Name of the prometheus job name which scrapes the cAdvisor metrics.
+    cadvisorJobName: kubernetes-cadvisors
+    # How long to wait before killing long queries.
+    queryTimeout: 5m
+    # Which metric to look for pod labels in metrics.
+    metricForPodLabels: up{job="pods"}
+    # Label name to look for pod namespaces.
+    podNamespaceLabel: namespace
+    # Label name to look for pod names.
+    podNameLabel: pod_name
+    # Label name to look for container namespaces.
+    containerNamespaceLabel: namespace
+    # Label name to look for container pod names.
+    containerPodNameLabel: pod_name
+    # Label name to look for container name.
+    containerNameLabel: container_name
 
 admission:
   enabled: true

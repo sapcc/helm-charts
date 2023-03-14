@@ -27,12 +27,19 @@ spec:
           imagePullPolicy: {{ default "IfNotPresent" .Values.recommender.image.pullPolicy }}
           args:
             - --recommender-interval={{ required ".Values.recommender.interval missing" .Values.recommender.interval }}
-            {{- if .Values.recommender.prometheusAddress }}
+            {{- if .Values.recommender.prometheus.enabled }}
             - --storage=prometheus
-            - --prometheus-address={{.Values.recommender.prometheusAddress }}
-            {{- end }}
-            {{- if .Values.recommender.prometheusCadvisorJobName }}
-            - --prometheus-cadvisor-job-name={{.Values.recommender.prometheusCadvisorJobName}}
+            - --prometheus-address={{ required ".Values.recommender.prometheus.address missing" .Values.recommender.prometheus.address }}
+            - --history-length={{ required ".Values.recommender.prometheus.historyLength missing" .Values.recommender.prometheus.historyLength }}
+            - --history-resolution={{ required ".Values.recommender.prometheus.historyResolution missing" .Values.recommender.prometheus.historyResolution }}
+            - --prometheus-cadvisor-job-name={{ required ".Values.recommender.prometheus.cadvisorJobName missing" .Values.recommender.prometheus.cadvisorJobName }}
+            - --prometheus-query-timeout={{ required ".Values.recommender.prometheus.queryTimeout missing" .Values.recommender.prometheus.queryTimeout }}
+            - --metric-for-pod-labels={{ required ".Values.recommender.prometheus.metricForPodLabels missing" .Values.recommender.prometheus.metricForPodLabels }}
+            - --pod-namespace-label={{ required ".Values.recommender.prometheus.podNamespaceLabel missing" .Values.recommender.prometheus.podNamespaceLabel }}
+            - --pod-name-label={{ required ".Values.recommender.prometheus.podNameLabel missing" .Values.recommender.prometheus.podNameLabel }}
+            - --container-namespace-label={{ required ".Values.recommender.prometheus.containerNamespaceLabel missing" .Values.recommender.prometheus.containerNamespaceLabel }}
+            - --container-pod-name-label={{ required ".Values.recommender.prometheus.containerPodNameLabel missing" .Values.recommender.prometheus.containerPodNameLabel }}
+            - --container-name-label={{ required ".Values.recommender.prometheus.containerNameLabel missing" .Values.recommender.prometheus.containerNameLabel }}
             {{- end }}
           resources:
             limits:
