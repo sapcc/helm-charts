@@ -35,6 +35,15 @@ spec:
               port:
                 name: http
           pathType: ImplementationSpecific
+        {{- if and $.Values.ruler.enabled (not $.Values.deployWholeThanos) }}
+        - path: {{ $.Values.ruler.externalPrefix }}
+          backend:
+            service:
+              name:  thanos-ruler-{{ include "thanos.name" (list $name $root) }}
+              port:
+                name: web
+          pathType: ImplementationSpecific
+        {{- end }}
     {{- end }}
     {{- range $host := $.Values.ingress.hostsFQDN }}
     - host: {{ $host }}
