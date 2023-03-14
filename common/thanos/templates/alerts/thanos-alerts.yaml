@@ -1,3 +1,6 @@
+{{- /*
+Alerts are deployed dependent upon the components chosen. It could either be Compactor|Query|Store, Query|Ruler or Query.
+*/}}
 {{- if .Values.enabled }}
 {{- $root := . }}
 {{- range $name := coalesce .Values.names .Values.global.targets (list .Values.name) }}
@@ -5,6 +8,7 @@
 {{- range $component := tuple "compactor" "query" "store" }}
 {{- $path := (printf "%s/alerts/_thanos-%s.alerts.tpl" $root.Template.BasePath $component ) }}
 ---
+# This PrometheusRules cover Compactor|Query|Store alerts
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
 
@@ -21,6 +25,7 @@ spec:
 {{- range $component := tuple "query" "ruler" }}
 {{- $path := (printf "%s/alerts/_thanos-%s.alerts.tpl" $root.Template.BasePath $component ) }}
 ---
+# This PrometheusRules cover Query|Ruler alerts
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
 
@@ -37,6 +42,7 @@ spec:
 {{- range $component := tuple "query" }}
 {{- $path := (printf "%s/alerts/_thanos-%s.alerts.tpl" $root.Template.BasePath $component ) }}
 ---
+# This PrometheusRules cover Query alerts
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
 
