@@ -1,3 +1,7 @@
+## 7.1.39
+
+* Thanos sidecar and Prometheus logLevel defaults to warn.
+
 ## 7.1.38
 
 * Thanos alert duration trigger is less sensitive now
