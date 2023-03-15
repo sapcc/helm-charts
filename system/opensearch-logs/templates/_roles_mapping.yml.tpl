@@ -29,6 +29,11 @@ syslog:
   users:
   - "syslog"
 
+jump:
+  reserved: false
+  users:
+  - "jump"
+
 logstash:
   reserved: false
   backend_roles:
