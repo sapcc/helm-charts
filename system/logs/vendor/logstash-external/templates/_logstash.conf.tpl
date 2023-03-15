@@ -260,4 +260,32 @@ output {
     }
 {{- end }}
   }
+  elseif  [servertype] == "jumpserver" {
+    elasticsearch {
+      id => "elk-jump"
+      index => "jump-%{+YYYY.MM.dd}"
+      template => "/logstash-etc/jump.json"
+      template_name => "jump"
+      template_overwrite => true
+      data_stream => false
+      hosts => ["{{.Values.global.elk_elasticsearch_endpoint_host_scaleout}}.{{.Values.global.region}}.{{.Values.global.tld}}:{{.Values.global.elk_elasticsearch_ssl_port}}"]
+      user => "{{.Values.global.elk_elasticsearch_jump_user}}"
+      password => "{{.Values.global.elk_elasticsearch_jump_password}}"
+      ssl => true
+    }
+{{- if .Values.opensearch.enabled }}
+    opensearch {
+      id => "opensearch-jump"
+      index => "jump-%{+YYYY.MM.dd}"
+      hosts => ["https://{{.Values.opensearch.http.endpoint}}.{{.Values.global.region}}.{{.Values.global.tld}}:{{.Values.opensearch.http_port}}"]
+      auth_type => {
+        type => 'basic'
+        user => "{{.Values.opensearch.jump_user}}"
+        password => "{{.Values.opensearch.jump_password}}"
+      }
+      ssl => true
+      ssl_certificate_verification => false
+    }
+{{- end }}
+  }
 }
