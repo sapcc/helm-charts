@@ -1,10 +1,12 @@
+---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: {{ .Release.Name }}
+  name: end-user-rule
   annotations:
-    kubernetes.io/tls-acme: "true"
     disco: "true"
+    kubernetes.io/tls-acme: "true"
+{{ toYaml .Values.tarslite.ingress.annotations | indent 4 }}
 {{- $hostname :=  print .Release.Name "." .Values.tarslite.domain }}
 spec:
   rules:
@@ -19,5 +21,31 @@ spec:
                 port:
                   name: webhook
   tls:
-    - hosts: [ {{ $hostname }} ]
+    - hosts: [{{ $hostname }}]
       secretName: tls-{{ .Release.Name }}
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: alertmanager-rule
+  annotations:
+    disco: "true"
+    kubernetes.io/tls-acme: "true"
+    ingress.kubernetes.io/auth-type: basic
+    ingress.kubernetes.io/auth-secret: {{ required ".Values.tarslite.secrets.name missing" .Values.tarslite.secrets.name }}
+{{- $hostname :=  print .Release.Name "-backoffice." .Values.tarslite.domain }}
+spec:
+  rules:
+    - host: {{ $hostname }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: tarslite
+                port:
+                  name: webhook
+  tls:
+    - hosts: [{{ $hostname }}]
+      secretName: tls-{{ .Release.Name }}-backoffice
