@@ -215,6 +215,8 @@ promrole:
     - "*"
     allowed_actions:
     - "indices:monitor/stats"
+    - "indices:admin/mappings/get"
+    - "indices:admin/aliases/get"
     - "read"
   tenant_permissions:
   - tenant_patterns:

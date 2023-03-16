@@ -12,19 +12,19 @@ groups:
       support_group: observability
       playbook: docs/operation/monitor/elk_query
     annotations:
-      description: 'es-query-exporter in {{ $labels.region }} is missing.'
-      summary: 'es-query-exporter in {{ $labels.region }} is missing.'
+      description: 'opensearch-logs-query-exporter in {{ $labels.region }} is missing.'
+      summary: 'opensearch-logs-query-exporter in {{ $labels.region }} is missing.'
   - alert: OctobusQueryExporterError
-    expr: opensearch_octobus_exporter_error_hits > 0
+    expr: opensearch_logs_octobus_exporter_error_hits > 0
     labels:
       severity: warning
       support_group: observability
     annotations:
-      description: 'octobus-query-exporter had an error in the pod log'
-      summary: 'octobus-query-exporter had an error in the pod log.'
+      description: 'octobus-logs-query-exporter had an error in the pod log'
+      summary: 'octobus-logs-query-exporter had an error in the pod log.'
 
   - alert: OpenstackGlanceReturn50xCode
-    expr: sum(rate(opensearch_openstack_glance_query_return_code_doc_count{glance="/v2/images", code=~"50.*"}[30m]))by(query, code) > 0
+    expr: sum(rate(opensearch_logs_openstack_glance_query_return_code_doc_count{glance="/v2/images", code=~"50.*"}[30m]))by(query, code) > 0
     for: 5m
     labels:
       context: nodes
@@ -37,7 +37,7 @@ groups:
       summary: 'Openstack Glance Returned HTTP {{ $labels.query }} {{ $labels.code }}'
 
   - alert: EsxRootPasswordWrong
-    expr: opensearch_esxi_exporter_login_error_container_name_doc_count > 0
+    expr: opensearch_logs_esxi_exporter_login_error_container_name_doc_count > 0
     for: 5m
     labels:
       severity: info
@@ -50,7 +50,7 @@ groups:
       summary: "Login to ESX not possible with production root password"
 
   - alert: OpensearchLogsExporterMissing
-    expr: up{job=~"opensearch-logs-exporter.*"} == 0
+    expr: up{job=~"opensearch-logs-query-exporter.*"} == 0
     for: 30m
     labels:
       context: nodes
@@ -61,5 +61,5 @@ groups:
       playbook: docs/support/playbook/elastic_kibana_issues
       dashboard: health-elasticsearch?var-cluster={{ $labels.elastic_cluster }}
     annotations:
-      description: 'cluster *{{ $labels.elastic_cluster }}* es-exporter in `{{ $labels.region }}` is missing.'
-      summary: 'cluster: *{{ $labels.elastic_cluster }}* es-exporter in `{{ $labels.region }}` is missing.'
+      description: 'cluster *{{ $labels.elastic_cluster }}* opensearch-logs-query-exporter in `{{ $labels.region }}` is missing.'
+      summary: 'cluster: *{{ $labels.elastic_cluster }}* opensearch-logs-query-exporter in `{{ $labels.region }}` is missing.'
