@@ -16,3 +16,4 @@ master = true
 memory-report = true
 processes = {{ .Values.api.wsgi_processes }}
 wsgi-file = /var/lib/openstack/bin/nova-api-wsgi
+pyargv = --config-file /etc/nova/nova.conf --config-file /etc/nova/nova-api-os-compute.conf

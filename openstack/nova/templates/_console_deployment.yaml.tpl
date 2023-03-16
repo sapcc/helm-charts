@@ -85,6 +85,10 @@ spec:
           subPath: nova.conf
           readOnly: true
         - name: nova-etc
+          mountPath: /etc/nova/nova-{{ $name }}proxy.conf
+          subPath: nova-console.conf
+          readOnly: true
+        - name: nova-etc
           mountPath: /etc/nova/logging.ini
           subPath: logging.ini
           readOnly: true
