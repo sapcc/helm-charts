@@ -29,6 +29,11 @@ input {
     ssl_certificate => '/tls-secret/tls.crt'
     ssl_key => '/usr/share/logstash/config/tls.key'
   }
+  beats {
+    port => {{.Values.input_beats_port}}
+    id => "beats"
+    type => "jumpserver"
+  }
 }
 
 filter {
@@ -260,7 +265,7 @@ output {
     }
 {{- end }}
   }
-  elseif  [servertype] == "jumpserver" {
+  elseif  [type] == "jumpserver" {
     elasticsearch {
       id => "elk-jump"
       index => "jump-%{+YYYY.MM.dd}"
