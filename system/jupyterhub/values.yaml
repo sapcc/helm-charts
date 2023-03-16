@@ -1,0 +1,50 @@
+owner-info:
+  support-group: observability
+  maintainers:
+    - "Timo Johner"
+  helm-chart-url: "https://github.com/sapcc/helm-charts/tree/master/system/jupyterhub"
+
+
+jupyterhub: 
+  # scheduling relates to the user-scheduler pods and user-placeholder pods.
+  scheduling:
+    userScheduler:
+      enabled: false
+    userPlaceholder:
+      enabled: false
+
+  ingress:
+    enabled: true
+  
+  hub:
+    labels: 
+      prometheus: infra-frontend
+    networkPolicy:
+      enabled: false
+
+  singleuser:
+    networkPolicy:
+      enabled: false
+
+  cull:
+    enabled: true
+    users: true # --cull-users
+    adminUsers: true # --cull-admin-users
+    removeNamedServers: false # --remove-named-servers
+    timeout: 3600 # --timeout 
+    every: 600 # --cull-every 
+    concurrency: 10 # --concurrency
+    maxAge: 0 # --max-age
+
+  prePuller:
+    hook:
+      enabled: false
+    continuous:
+      enabled: false
+  proxy:
+    traefik: 
+      networkPolicy:
+        enabled: false
+    chp:
+      networkPolicy:
+        enabled: false
