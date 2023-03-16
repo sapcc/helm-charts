@@ -44,13 +44,6 @@ compute_link_prefix = https://{{include "nova_api_endpoint_host_public" .}}:{{.V
 dhcp_domain = openstack.{{ required ".Values.global.region is missing" .Values.global.region }}.{{ required ".Values.global.tld is missing" .Values.global.tld }}
 {{- end }}
 
-
-[api_database]
-connection = {{ tuple . .Values.apidbName .Values.apidbUser .Values.apidbPassword .Values.mariadb_api.name | include "db_url_mysql" }}
-{{- include "ini_sections.database_options_mysql" . }}
-
-{{ include "ini_sections.database" . }}
-
 [quota]
 {{- range $k, $v := .Values.quota }}
 {{ $k }} = {{ $v }}

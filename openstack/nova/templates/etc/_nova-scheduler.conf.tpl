@@ -5,6 +5,10 @@ scheduler_driver = {{ .Values.scheduler.driver }}
 statsd_port = {{ .Values.scheduler.rpc_statsd_port }}
 statsd_enabled = {{ .Values.scheduler.rpc_statsd_enabled }}
 
+{{- include "nova.helpers.ini_sections.api_database" . }}
+
+{{- include "ini_sections.database" . }}
+
 [scheduler]
 discover_hosts_in_cells_interval = 60
 workers = {{ .Values.scheduler.workers }}

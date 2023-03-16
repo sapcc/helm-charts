@@ -1,3 +1,10 @@
+{{- define "nova.helpers.ini_sections.api_database" }}
+
+[api_database]
+connection = {{ tuple . .Values.apidbName .Values.apidbUser .Values.apidbPassword .Values.mariadb_api.name | include "db_url_mysql" }}
+{{- include "ini_sections.database_options_mysql" . }}
+{{- end }}
+
 {{- define "cell0_db_path" }}
     {{- tuple . .Values.cell0dbName .Values.cell0dbUser (default .Values.cell0dbPassword .Values.global.dbPassword) | include "db_url_mysql" }}
 {{- end }}
