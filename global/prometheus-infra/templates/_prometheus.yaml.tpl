@@ -24,6 +24,8 @@
       - '{__name__=~"^elasticsearch_dboperational_error_doc_count"}'
       - '{__name__=~"^elasticsearch_logstash_.+"}'
       - '{__name__=~"^elasticsearch_hermes_.+"}'
+      - '{__name__=~"^elasticsearch_scaleout_.+"}'
+      - '{__name__=~"^elasticsearch_kubernikus_.+"}'
       - '{__name__=~"^elastiflow_.+"}'
       - '{__name__=~"^neutron_router:.+"}'
       - '{__name__=~"^elasticsearch_openstack_glance.+"}'
