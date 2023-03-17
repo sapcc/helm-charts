@@ -29,13 +29,10 @@ spec:
         args:
           - main.py
           - -c
-          - /inventory-updater/config/config.yml
-
-        env:
-        - name: NETBOX_TOKEN
-          value: {{ required ".Values.updater.netbox_token missing" .Values.updater.netbox_token | quote }}
-        - name: DEBUG
-          value: {{ .Values.updater.debug | quote }}
+          - /config/config.yml
+          {{- if .Values.updater.debug -}}
+          - --debug
+          {{ end -}}
 
         volumeMounts:
           - mountPath: /inventory-updater/config
