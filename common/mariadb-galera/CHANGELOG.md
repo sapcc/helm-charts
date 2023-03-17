@@ -1,5 +1,8 @@
 # Changelog
 
+## v0.14.2 - 2023/03/17
+* galerastatus configmap missing name prefix fixed
+
 ## v0.14.1 - 2023/03/10
 * old `MARIADB_CLUSTER_NAME` environment variable removed from the values.yaml
 

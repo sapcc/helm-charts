@@ -18,7 +18,7 @@ function setconfigmap {
   else
     local CONTENT="${VALUE}\ntimestamp:$(date +%s)\n"
   fi
-  local CONFIGMAP_NAME=galerastatus
+  local CONFIGMAP_NAME={{ include "commonPrefix" $ }}galerastatus
   local KUBE_TOKEN=$(</var/run/secrets/kubernetes.io/serviceaccount/token)
 
   for (( int=${MAX_RETRIES}; int >=1; int-=1));
