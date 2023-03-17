@@ -1,32 +1,29 @@
-{{- if .Values.ingress.enabled -}}
-{{- $values := .Values -}}
-
-{{- range $i, $statsd := .Values.statsd -}}
-{{ if ne $i 0 }}---{{ end }}
+{{- range $i, $exporter := .Values.exporters -}}
+{{- if $exporter.enabled }}
 
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  fullName: {{ printf "%s" $statsd.fullName }}
+  name: {{ include "statsd-exporter.fullName" $exporter.name }}
+  namespace: {{ required ".Values.namespace variable missing" $.Values.nameSpace }}
   labels:
-{{- include "statsd-exporter.labels" . | nindent 4 }}
-    name: {{ printf "%s" $statsd.name }}
+    {{- include "statsd-exporter.labels" $exporter.name | nindent 4 }}
   annotations:
-    kubernetes.io/tls-acme: {{ required "$values.ingress.tls missing" $values.ingress.tls | quote }}
-    disco: {{ required "$values.ingress.disco missing" $values.ingress.disco | quote }}
+    kubernetes.io/tls-acme: {{ required ".Values.ingress.tls variable missing" $.Values.ingress.tls | quote }}
+    disco: {{ required ".Values.ingress.disco variable missing" $.Values.ingress.disco | quote }}
 spec:
   tls:
-     - secretName: {{ printf "%s" $statsd.fullName }}
-{{ if $values.global.clusterType }}
-       hosts: [{{ printf "%s" $statsd.name }}.{{ $values.global.clusterType }}.{{ $values.global.region }}.{{ $values.global.tld }}]
-{{ else }}
-       hosts: [{{ printf "%s" $statsd.name }}.{{ $values.global.region }}.{{ $values.global.tld }}]
+     - secretName: {{ include "statsd-exporter.fullName" $exporter.name }}
+{{- if $.Values.global.clusterType }}
+       hosts: [{{ include "statsd-exporter.fullName" $exporter.name }}.{{ $.Values.global.clusterType}}.{{ $.Values.global.region }}.{{ $.Values.global.tld }}]
+{{- else }}
+       hosts: []{{ include "statsd-exporter.fullName" $exporter.name }}.{{ $.Values.global.region }}.{{ $.Values.global.tld }}]
 {{ end }}
   rules:
-{{ if $values.global.clusterType }}
-    - host: {{ printf "%s" $statsd.name }}.{{ $values.global.clusterType }}.{{ $values.global.region }}.{{ $values.global.tld }}
-{{ else }}
-    - host: {{ printf "%s" $statsd.name }}.{{ $values.global.region }}.{{ $values.global.tld }}
+{{- if $.Values.global.clusterType }}
+    - host: {{ include "statsd-exporter.fullName" $exporter.name }}.{{ $.Values.global.clusterType}}.{{ $.Values.global.region }}.{{ $.Values.global.tld }}
+{{- else }}
+       host: {{ include "statsd-exporter.fullName" $exporter.name }}.{{ $.Values.global.region }}.{{ $.Values.global.tld }}
 {{ end }}
       http:
         paths:
@@ -34,10 +31,9 @@ spec:
           pathType: Prefix
           backend:
             service:
-              fullName: {{ printf "%s" $statsd.fullName }}
+              fullName: {{ include "statsd-exporter.fullName" $exporter.name }}
               port:
-                number: {{ $values.metrics.port }}
-
-{{- end }}
+                number: {{ required ".Values.exporters.metricsPort variable missing" $exporter.metricsPort }}
 ---
+{{ end -}}
 {{ end -}}

@@ -1,19 +1,18 @@
-{{- $values := .Values -}}
-{{- range $i, $statsd := .Values.statsd -}}
-{{ if ne $i 0 }}---{{ end }}
+{{ range $i, $exporter := .Values.exporters -}}
+{{- if $exporter.enabled }}
 
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  fullName: {{ printf "%s" $statsd.fullName }}
+  name: {{ include "statsd-exporter.fullName" $exporter.name }}
+  namespace: {{ required ".Values.namespace variable missing" $.Values.nameSpace }}
   labels:
-{{- include "statsd-exporter.labels" . | nindent 4 }}
-    name: { printf "%s" $statsd.name }}
-
+    {{- include "statsd-exporter.labels" $exporter.name | nindent 4 }}
 data:
-{{- if $statsd.mappingConfig }}
-  statsd.mappingConf: |
-{{ $statsd.mappingConfig | nindent 4 }}
+{{- if $exporter.mappings }}
+  statsd.mappings: |
+{{ $exporter.mappings | nindent 4 }}
 {{- end }}
 ---
+{{ end -}}
 {{ end -}}

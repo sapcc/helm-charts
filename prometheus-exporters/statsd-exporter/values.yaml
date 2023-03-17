@@ -17,18 +17,8 @@
     disco: true
   #  no_keep_alive: true
 
-  metrics:
-    # The address on which to expose the web interface and generated Prometheus metrics.
-    port: 9102
-    # Path under which to expose metrics.
-    path: /metrics
-    prometheus: infra-frontend
-    scrapeInterval: 60s
-    scrapeTimeout: 55s
-
-  statsd:
+  exporters:
     - name: 'statsd-exporter'
-      fullName: 'prometheus-statsd-exporter'
       enabled: true
       # The UDP port on which to receive statsd metric lines.
       udpPort: 9125
@@ -43,12 +33,11 @@
       eventFlushThreshold: 1000
       # Time interval before flushing events in queue.
       eventFlushInterval: 200ms
-
       # Metric mapping configuration (see https://github.com/prometheus/statsd_exporter#metric-mapping-and-configuration for details
-      mappingConfig: |-
+      mappings: |-
         defaults:
           ttl: 1h # metrics expire after ttl
-
+      # Resouurces
       resources: { }
         # We usually recommend not to specify default resources and to leave this as a conscious
         # choice for the user. This also increases chances charts run on environments with little
@@ -60,9 +49,14 @@
         # requests:
       #   cpu: 100m
       #   memory: 128Mi
+      # Prometheus
+      metricsPort: 9102 # The address on which to expose the web interface and generated Prometheus metrics.
+      metricsPath: /metrics # Path under which to expose metrics.
+      prometheus: infra-frontend
+      scrapeInterval: 60s
+      scrapeTimeout: 55s
 
     - name: 'statsd-exporter-inf'
-      fullName: 'prometheus-statsd-exporter-inf'
       enabled: false
       # The UDP port on which to receive statsd metric lines.
       udpPort: 9126
@@ -77,12 +71,11 @@
       eventFlushThreshold: 1000
       # Time interval before flushing events in queue.
       eventFlushInterval: 200ms
-
       # Metric mapping configuration (see https://github.com/prometheus/statsd_exporter#metric-mapping-and-configuration for details
-      mappingConfig: |-
+      mappings: |-
         defaults:
             ttl: 0 # metrics do not expire
-
+      # Resources
       resources: { }
         # We usually recommend not to specify default resources and to leave this as a conscious
         # choice for the user. This also increases chances charts run on environments with little
@@ -94,7 +87,12 @@
         # requests:
       #   cpu: 100m
       #   memory: 128Mi
-
+      # Prometheus
+      metricsPort: 9102 # The address on which to expose the web interface and generated Prometheus metrics.
+      metricsPath: /metrics # Path under which to expose metrics.
+      prometheus: infra-frontend
+      scrapeInterval: 60s
+      scrapeTimeout: 55s
 
   owner-info:
     support-group: observability
