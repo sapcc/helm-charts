@@ -93,81 +93,78 @@ spec:
 {{ toYaml .Values.pod.resources.metadata | indent 12 }}
           {{- end }}
           ports:
-            - name: nova-metdata
-              containerPort: {{.Values.global.novaApiMetadataPortInternal}}
+          - name: nova-metdata
+            containerPort: {{.Values.global.novaApiMetadataPortInternal}}
           volumeMounts:
-            - mountPath: /etc/nova
-              name: etcnova
-            - mountPath: /etc/nova/nova.conf
-              name: nova-etc
-              subPath: nova.conf
-              readOnly: true
-            - mountPath: /etc/nova/nova-api.conf
-              name: nova-etc
-              subPath: nova-api-metadata.conf
-              readOnly: true
-            - mountPath: /etc/nova/api-paste.ini
-              name: nova-etc
-              subPath: api-paste.ini
-              readOnly: true
-{{- if .Values.audit.enabled }}
-            - mountPath: /etc/nova/nova_audit_map.yaml
-              name: nova-etc
-              subPath: nova_audit_map.yaml
-              readOnly: true
-{{- end }}
-            {{- /* Note I533984: Replace with plain policy.yaml after Xena upgrade */}}
-            - mountPath: /etc/nova/{{if (.Values.imageVersion | hasPrefix "rocky") }}policy.json{{else}}policy.yaml{{end}}
-              name: nova-etc
-              subPath: {{if (.Values.imageVersion | hasPrefix "rocky") }}policy.json{{else}}policy.yaml{{end}}
-              readOnly: true
-            - mountPath: /etc/nova/logging.ini
-              name: nova-etc
-              subPath: logging.ini
-              readOnly: true
-            - mountPath: /etc/nova/rootwrap.conf
-              name: nova-etc
-              subPath: rootwrap.conf
-              readOnly: true
-            - mountPath: /etc/nova/rootwrap.d/api-metadata.filters
-              name: nova-etc
-              subPath: api-metadata.filters
-              readOnly: true
-            - mountPath: /var/lib/kolla/venv/bin/iptables-restore
-              name: nova-bin
-              subPath: iptables-restore.mock
-              readOnly: true
-            {{- if .Values.watcher.enabled }}
-            - name: nova-etc
-              mountPath: /etc/nova/watcher.yaml
-              subPath: watcher.yaml
-              readOnly: true
-            {{- end }}
-            {{- include "utils.proxysql.volume_mount" . | indent 12 }}
+          - mountPath: /etc/nova
+            name: nova-etc
+          {{- include "utils.proxysql.volume_mount" . | indent 10 }}
         {{- tuple . .Values.api_metadata.config_file.DEFAULT.metadata_workers | include "utils.proxysql.container" | indent 8 }}
         - name: statsd
           image: {{ required ".Values.global.dockerHubMirror is missing" .Values.global.dockerHubMirror}}/prom/statsd-exporter:v0.8.1
           imagePullPolicy: IfNotPresent
           args: [ --statsd.mapping-config=/etc/statsd/statsd-exporter.yaml ]
           ports:
-            - name: statsd
-              containerPort: 9125
-              protocol: UDP
-            - name: metrics
-              containerPort: 9102
+          - name: statsd
+            containerPort: 9125
+            protocol: UDP
+          - name: metrics
+            containerPort: 9102
           volumeMounts:
-            - name: nova-etc
-              mountPath: /etc/statsd/statsd-exporter.yaml
-              subPath: statsd-exporter.yaml
-              readOnly: true
+          - name: statsd-etc
+            mountPath: /etc/statsd/statsd-exporter.yaml
+            subPath: statsd-exporter.yaml
+            readOnly: true
       volumes:
-        - name: etcnova
-          emptyDir: {}
-        - name: nova-etc
-          configMap:
-            name: nova-etc
-        - name: nova-bin
-          configMap:
-            name: nova-bin
-            defaultMode: 0755
-        {{- include "utils.proxysql.volumes" . | indent 8 }}
+      - name: nova-etc
+        projected:
+          sources:
+          - configMap:
+              name: nova-etc
+              items:
+              - key:  nova.conf
+                path: nova.conf
+              - key:  nova-api.conf
+                path: nova-api-metadata.conf
+              - key:  api-paste.ini
+                path: api-paste.ini
+              - key:  policy.yaml
+                path: policy.yaml
+              - key:  logging.ini
+                path: logging.ini
+              - key:  rootwrap.conf
+                path: rootwrap.conf
+              - key:  api-metadata.filters
+                path: rootwrap.d/api-metadata.filters
+              - key:  release
+                path: release
+{{- if .Values.api.use_uwsgi }}
+              - key:  api_uwsgi.ini
+                path: api_uwsgi.ini
+{{- end }}
+{{- if .Values.audit.enabled }}
+              - key:  nova_audit_map.yaml
+                path: nova_audit_map.yaml
+{{- end }}
+{{- if .Values.watcher.enabled }}
+              - key:  watcher.yaml
+                path: watcher.yaml
+{{- end }}
+          - secret:
+              name: nova-etc
+              items:
+              - key: db.conf
+                path: nova.conf.d/db.conf
+      - name: statsd-etc
+        projected:
+          sources:
+          - configMap:
+              name: nova-etc
+              items:
+              - key:  statsd-exporter.yaml
+                path: statsd-exporter.yaml
+      - name: nova-bin
+        configMap:
+          name: nova-bin
+          defaultMode: 0755
+      {{- include "utils.proxysql.volumes" . | indent 6 }}

@@ -40,11 +40,21 @@ spec:
 {{ include "utils.proxysql.pod_settings" . | indent 6 }}
       hostname: nova-console-{{ $name }}
       volumes:
-      - name: etcnova
-        emptyDir: {}
       - name: nova-etc
-        configMap:
-          name: nova-etc
+        projected:
+          sources:
+          - configMap:
+              name: nova-etc
+              items:
+              - key:  nova.conf
+                path: nova.conf
+              - key:  logging.ini
+                path: logging.ini
+          - secret:
+              name: nova-etc
+              items:
+              - key: db.conf
+                path: nova.conf.d/db.conf
       {{- include "utils.proxysql.volumes" . | indent 6 }}
       containers:
       - name: nova-console-{{ $name }}
@@ -78,20 +88,8 @@ spec:
         - name: {{ $name }}
           containerPort: {{ index .Values.consoles $name "portInternal" }}
         volumeMounts:
-        - name: etcnova
+        - name: nova-etc
           mountPath: /etc/nova
-        - name: nova-etc
-          mountPath: /etc/nova/nova.conf
-          subPath: nova.conf
-          readOnly: true
-        - name: nova-etc
-          mountPath: /etc/nova/nova-{{ $name }}proxy.conf
-          subPath: nova-console.conf
-          readOnly: true
-        - name: nova-etc
-          mountPath: /etc/nova/logging.ini
-          subPath: logging.ini
-          readOnly: true
         {{- include "utils.proxysql.volume_mount" . | indent 8 }}
       {{- include "utils.proxysql.container" . | indent 6 }}
 {{- end }}
