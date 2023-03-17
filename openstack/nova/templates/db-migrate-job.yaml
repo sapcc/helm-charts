@@ -37,50 +37,41 @@ spec:
           value: {{ .Values.python_warnings | quote }}
         volumeMounts:
         - mountPath: /etc/nova
-          name: etcnova
-        - mountPath: /etc/nova/nova.conf
           name: nova-etc
-          subPath: nova.conf
-          readOnly: true
-        - mountPath: /etc/nova/nova-api.conf
-          name: nova-etc
-          subPath: nova-api.conf
-          readOnly: true
-        - mountPath: /etc/nova/api-paste.ini
-          name: nova-etc
-          subPath: api-paste.ini
-          readOnly: true
-{{- if .Values.cell2.enabled }}
-        - mountPath: /etc/nova/nova-cell2.conf
-          name: nova-etc
-          subPath: nova-cell2.conf
-          readOnly: true
-{{- end }}
-{{- if .Values.audit.enabled }}
-        - mountPath: /etc/nova/nova_audit_map.yaml
-          name: nova-etc
-          subPath: nova_audit_map.yaml
-          readOnly: true
-{{- end }}
-        {{- /* Note I533984: Replace with plain policy.yaml after Xena upgrade */}}
-        - mountPath: /etc/nova/{{if (.Values.imageVersion | hasPrefix "rocky") }}policy.json{{else}}policy.yaml{{end}}
-          name: nova-etc
-          subPath: {{if (.Values.imageVersion | hasPrefix "rocky") }}policy.json{{else}}policy.yaml{{end}}
-          readOnly: true
-        - mountPath: /etc/nova/logging.ini
-          name: nova-etc
-          subPath: logging.ini
-          readOnly: true
         - mountPath: /container.init
           name: container-init
         {{- include "utils.proxysql.volume_mount" . | indent 8 }}
       {{- include "utils.proxysql.container" . | indent 6 }}
       volumes:
-      - name: etcnova
-        emptyDir: {}
       - name: nova-etc
-        configMap:
-          name: nova-etc
+        projected:
+          sources:
+          - configMap:
+              name: nova-etc
+              items:
+              - key:  nova.conf
+                path: nova.conf
+              - key:  nova-api.conf
+                path: nova-api.conf
+              - key:  api-paste.ini
+                path: api-paste.ini
+              - key:  policy.yaml
+                path: policy.yaml
+              - key:  logging.ini
+                path: logging.ini
+{{- if .Values.cell2.enabled }}
+              - key:  nova-cell2.conf
+                path: nova-cell2.conf
+{{- end }}
+{{- if .Values.audit.enabled }}
+              - key:  nova_audit_map.yaml
+                path: nova_audit_map.yaml
+{{- end }}
+          - secret:
+              name: nova-etc
+              items:
+              - key: db.conf
+                path: nova.conf.d/db.conf
       - name: container-init
         configMap:
           name: nova-bin
