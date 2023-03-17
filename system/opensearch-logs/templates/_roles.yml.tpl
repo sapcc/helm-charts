@@ -210,6 +210,7 @@ promrole:
     - "cluster:monitor/state"
     - "cluster:monitor/nodes/info"
     - "cluster:monitor/nodes/stats"
+    - "indices:data/read/scroll*"
   index_permissions:
   - index_patterns:
     - "*"
@@ -217,6 +218,10 @@ promrole:
     - "indices:monitor/stats"
     - "indices:admin/mappings/get"
     - "indices:admin/aliases/get"
+    - "indices:data/read/scroll"
+    - "indices:data/read/scroll/clear"
+    - "indices:data/read/search"
+    - "indices:data/read/search*"
     - "read"
   tenant_permissions:
   - tenant_patterns:
