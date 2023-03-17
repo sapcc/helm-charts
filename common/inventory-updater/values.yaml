@@ -1,0 +1,31 @@
+owner-info:
+  support-group: compute
+  # service: foobar        # optional
+  maintainers:
+    - Bernd Kuespert
+  helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/common/inventory-updater
+updater:
+  enabled: false
+  image:
+    name: inventory-updater
+    tag: latest
+  namespace: infra-monitoring
+  replicas: 1
+
+  connection_timeout: 10 # timeout in seconds for requests connections
+  scrape_interval: 3600 # sleep time in seconds between update runs
+  netbox_url: DEFINED-IN-REGION-SECRETS
+  netbox_token: DEFINED-IN-REGION-SECRETS
+  netbox_role_id: 8 # Role: server
+  netbox_tenant_id: 1 # Tenant: converged cloud
+  netbox_device_status: active # only check device that are active in Netbox
+
+  limits:
+    memory: 200Mi
+    cpu: 400m
+  resources:
+    memory: 100Mi
+    cpu: 50m
+
+global:
+  registry: DEFINED-IN-GLOBAL-SECRETS

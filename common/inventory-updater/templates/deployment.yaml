@@ -1,0 +1,52 @@
+{{- if .Values.updater.enabled }}
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: {{ include "fullname" . }}
+  namespace: {{ required ".Values.updater.namespace missing" .Values.updater.namespace }}
+  labels:
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}"
+    release: {{ .Release.Name }}
+spec:
+  replicas: {{ required ".Values.updater.replicas missing" .Values.updater.replicas }}
+  selector:
+    matchLabels:
+      app: {{ include "fullname" . }}
+  template:
+    metadata:
+      labels:
+        app: {{ include "fullname" . }}
+        release: {{ .Release.Name }}
+    spec:
+      containers:
+      - name: {{ include "fullname" . }}
+
+        image: {{ required ".Values.global.registry missing" .Values.global.registry }}/{{ required ".Values.updater.image.name missing" .Values.updater.image.name }}:{{ required ".Values.updater.image.tag missing" .Values.updater.image.tag  }}
+
+        command:
+          - /usr/bin/python3
+
+        args:
+          - inventory-updater.py
+          - -c
+          - /inventory-updater/config/config.yml
+
+        env:
+        - name: NETBOX_TOKEN
+          value: {{ required ".Values.updater.NETBOX_TOKEN missing" .Values.updater.NETBOX_TOKEN | quote }}
+        - name: DEBUG
+          value: {{ .Values.updater.debug | quote }}
+
+        volumeMounts:
+          - mountPath: /inventory-updater/config
+            name: updater-config
+            readOnly: true
+
+        resources:
+  {{ toYaml .Values.resources | indent 10 }}
+
+      volumes:
+        - name: updater-config
+          configMap:
+            name: {{ include "fullname" . }}
+{{ end -}}
