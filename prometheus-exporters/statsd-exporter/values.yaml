@@ -4,12 +4,11 @@
   # Declare variables to be passed into your templates.
   image:
     repository: keppel.eu-de-1.cloud.sap/ccloud-dockerhub-mirror/prom/statsd-exporter
-    tag: v0.23.0
+    tag: v0.23.1
     pullPolicy: IfNotPresent
 
   replicaCount: 1
   nameSpace: cc3test
-  service_type: ClusterIP
 
   ingress:
     enabled: true
@@ -20,35 +19,24 @@
   exporters:
     - name: 'statsd-exporter'
       enabled: true
-      # The UDP port on which to receive statsd metric lines.
-      udpPort: 9125
-      # The TCP port on which to receive statsd metric lines.
-      tcpPort: 9125
-      # Maximum size of your metric mapping cache.
-      # Relies on least recently used replacement policy if max size is reached.
-      cacheSize: 1000
-      # Size of internal queue for processing events.
-      eventQueueSize: 10000
-      # Number of events to hold in queue before flushing.
-      eventFlushThreshold: 1000
-      # Time interval before flushing events in queue.
-      eventFlushInterval: 200ms
+      udpPort: 9125 # The UDP port on which to receive statsd metric lines.
+      tcpPort: 9125 # The TCP port on which to receive statsd metric lines.
+      cacheSize: 1000 # Maximum size of your metric mapping cache.
+      eventQueueSize: 10000 # Size of internal queue for processing events.
+      eventFlushThreshold: 1000 # Number of events to hold in queue before flushing.
+      eventFlushInterval: 200ms # Time interval before flushing events in queue.
       # Metric mapping configuration (see https://github.com/prometheus/statsd_exporter#metric-mapping-and-configuration for details
       mappings: |-
         defaults:
           ttl: 1h # metrics expire after ttl
-      # Resouurces
-      resources: { }
-        # We usually recommend not to specify default resources and to leave this as a conscious
-        # choice for the user. This also increases chances charts run on environments with little
-        # resources, such as Minikube. If you do want to specify resources, uncomment the following
-        # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+      # Resources
+      resources:
+        requests:
+          cpu: 200m
+          memory: 200Mi
         # limits:
         #   cpu: 100m
         #   memory: 128Mi
-        # requests:
-      #   cpu: 100m
-      #   memory: 128Mi
       # Prometheus
       metricsPort: 9102 # The address on which to expose the web interface and generated Prometheus metrics.
       metricsPath: /metrics # Path under which to expose metrics.
@@ -57,36 +45,25 @@
       scrapeTimeout: 55s
 
     - name: 'statsd-exporter-inf'
-      enabled: false
-      # The UDP port on which to receive statsd metric lines.
-      udpPort: 9126
-      # The TCP port on which to receive statsd metric lines.
-      tcpPort: 9126
-      # Maximum size of your metric mapping cache.
-      # Relies on least recently used replacement policy if max size is reached.
-      cacheSize: 1000
-      # Size of internal queue for processing events.
-      eventQueueSize: 10000
-      # Number of events to hold in queue before flushing.
-      eventFlushThreshold: 1000
-      # Time interval before flushing events in queue.
-      eventFlushInterval: 200ms
+      enabled: true
+      udpPort: 9125 # The UDP port on which to receive statsd metric lines.
+      tcpPort: 9125 # The TCP port on which to receive statsd metric lines.
+      cacheSize: 1000 # Maximum size of your metric mapping cache.
+      eventQueueSize: 10000 # Size of internal queue for processing events.
+      eventFlushThreshold: 1000 # Number of events to hold in queue before flushing.
+      eventFlushInterval: 200ms # Time interval before flushing events in queue.
       # Metric mapping configuration (see https://github.com/prometheus/statsd_exporter#metric-mapping-and-configuration for details
       mappings: |-
         defaults:
             ttl: 0 # metrics do not expire
       # Resources
-      resources: { }
-        # We usually recommend not to specify default resources and to leave this as a conscious
-        # choice for the user. This also increases chances charts run on environments with little
-        # resources, such as Minikube. If you do want to specify resources, uncomment the following
-        # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+      resources:
+        requests:
+          cpu: 200m
+          memory: 200Mi
         # limits:
         #   cpu: 100m
         #   memory: 128Mi
-        # requests:
-      #   cpu: 100m
-      #   memory: 128Mi
       # Prometheus
       metricsPort: 9102 # The address on which to expose the web interface and generated Prometheus metrics.
       metricsPath: /metrics # Path under which to expose metrics.
