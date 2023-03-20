@@ -126,7 +126,8 @@ vendor_name = VMware
 storage_protocol = vmdk
 disk_format = vmdk
 volume_size = 10
-build_timeout=600
+build_timeout = 600
+volume_type = iscsi
 
 [volume-feature-enabled]
 backup = true
