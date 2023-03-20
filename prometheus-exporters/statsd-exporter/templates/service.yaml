@@ -28,36 +28,6 @@ spec:
       port: {{ required ".Values.exporter.udpPort variable missing" $exporter.udpPort }}
       targetPort: statsd-udp
       protocol: UDP
-
----
-apiVersion: monitoring.coreos.com/v1
-kind: ServiceMonitor
-
-metadata:
-  name: {{ include "statsd-exporter.fullName" $exporter.name }}
-  namespace: {{ required ".Values.namespace variable missing" $.Values.nameSpace }}
-  labels:
-    prometheus: {{ required ".Values.exporters.prometheus variable missing" $exporter.prometheus }}
-spec:
-  jobLabel: {{ include "statsd-exporter.fullName" $exporter.name }}
-
-  namespaceSelector:
-    matchNames:
-      - {{ $.Values.nameSpace }}
-  selector:
-    matchLabels:
-      {{- include "statsd-exporter.labels" $exporter.name | nindent 6 }}
-
-  endpoints:
-    - interval: {{ required ".Values.exporters.scrapeInterval variable missing" $exporter.scrapeInterval }}
-      scrapeTimeout: {{ required ".Values.exporters.scrapeTimeout variable missing" $exporter.scrapeTimeout }}
-      port: metrics
-      scheme: http
-      relabelings:
-        - action: labelmap
-          regex: '__meta_kubernetes_service_label_(.+)'
-        - targetLabel: job
-          replacement: {{ include "statsd-exporter.fullName" $exporter.name }}
 ---
 {{ end -}}
 {{ end -}}
