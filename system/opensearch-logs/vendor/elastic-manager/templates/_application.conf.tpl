@@ -71,7 +71,7 @@ auth = {
 play.ws.ssl {
   trustManager = {
     stores = [
-      { type = "PKCS12", path = "/truststore", password = "{{.Values.opensearch_manager.cacerts.truststore_password}}" }
+      { type = "PKCS12", path = "/truststore/truststore", password = "{{.Values.opensearch_manager.cacerts.truststore_password}}" }
     ]
   }
 }
