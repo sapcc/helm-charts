@@ -1,8 +1,6 @@
-{{/*
-Full name
-*/}}
+{{/* Generate the full name. */}}
 {{- define "statsd-exporter.fullName" -}}
-{{- printf "prometheus-%s" . | trunc 63 -}}
+prometheus-{{ . }}
 {{- end -}}
 
 {{/*
