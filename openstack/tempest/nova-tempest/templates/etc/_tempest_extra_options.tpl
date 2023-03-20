@@ -69,8 +69,8 @@ driver = fake-hardware
 
 [compute]
 # image_ref and image_ref_alt will be changed to the image-id during init-script as the image-id can change over time.
-image_ref = sles-15sp4-amd64-kvm
-image_ref_alt = sles-15sp4-amd64-kvm
+image_ref = b4cf4a9e-9453-4560-bfa0-0491252b1e99
+image_ref_alt = da3851a9-bf3b-4953-a007-a7766dfbb477
 endpoint_type = internal
 v3_endpoint_type = internal
 region = {{ .Values.global.region }}
