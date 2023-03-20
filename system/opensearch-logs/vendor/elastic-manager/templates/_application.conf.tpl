@@ -67,11 +67,11 @@ auth = {
     }
   }
 }
-{{- if .Values.opensearch.enabled }}
+{{- if .Values.opensearch_manager.enabled }}
 play.ws.ssl {
   trustManager = {
     stores = [
-      { type = "PKCS12", path = "/secrets/truststore", password = "{{.Values.opensearch.cacerts.truststore_password}}" }
+      { type = "PKCS12", path = "/secrets/truststore", password = "{{.Values.opensearch_manager.cacerts.truststore_password}}" }
     ]
   }
 }
