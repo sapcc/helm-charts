@@ -1,0 +1,12 @@
+{{- if (index .Values (print .Chart.Name | replace "-" "_")).tempest.enabled}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Chart.Name }}-bin
+  labels:
+    system: openstack
+    type: configuration
+data:
+  tempest-start-and-cleanup.sh: |
+{{ include (print .Template.BasePath "/bin/_tempest-start-and-cleanup.sh.tpl") . | indent 4 }}
+{{ end }}
