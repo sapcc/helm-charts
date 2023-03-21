@@ -80,6 +80,7 @@ min_microversio = 2.1
 max_microversion = latest
 fixed_network_name = {{ (index .Values (print .Chart.Name | replace "-" "_")).tempest.fixed_network_name }}
 build_timeout=600
+compute_volume_common_az=qa-de-1b
 
 [compute-feature-enabled]
 resize = True
