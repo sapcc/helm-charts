@@ -40,6 +40,7 @@ hosts = [
       password = "{{.Values.global.elastiflow_admin_password}}"
     }
   },
+{{- if .Values.opensearch_manager.enabled }}
   {
     host = "https://opensearch-logs-client.opensearch-logs:9200"
     name = "{{ .Values.global.cluster }} OpenSearch Logs Cluster"
@@ -48,6 +49,7 @@ hosts = [
       password = "{{.Values.global.users.admin.password}}"
     }
   },
+{{- end }}
 ]
 
 # Authentication
