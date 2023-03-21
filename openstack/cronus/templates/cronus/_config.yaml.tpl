@@ -13,6 +13,9 @@ cronus:
     {{- if $v.backend }}
       backend: {{$v.backend | quote }}
     {{- end }}
+    {{- if $v.routing }}
+      routing: {{$v.routing | quote }}
+    {{- end }}
   {{- end }}
 {{- end }}
 {{- if .Values.cronus.inspections }}
