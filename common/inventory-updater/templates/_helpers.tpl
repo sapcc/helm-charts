@@ -10,7 +10,7 @@ Expand the name of the chart.
 {{- if .Values.updater.lenovo_console -}}
 {{- .Values.updater.lenovo_console -}}
 {{- else -}}
-{{- "lxca.%s.cloud.sap" .Values.global.region -}}
+{{- printf "lxca.%s.cloud.sap" .Values.global.region -}}
 {{- end -}}
 {{- end -}}
 
