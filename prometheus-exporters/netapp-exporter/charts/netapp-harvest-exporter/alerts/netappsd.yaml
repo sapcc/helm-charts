@@ -1,7 +1,7 @@
 groups:
   - name: netappsd
     rules:
-      - alert: NetappExporterAuthenticationError
+      - alert: NetappHarvestExporterAuthenticationError
         expr: netapp_harvest_probe_failure{reason="authentication error"} > 0
         for: 15m
         labels:
@@ -16,7 +16,7 @@ groups:
           summary: Authentication failure to [[ $labels.host ]]
           description: NetApp Harvest can't access the filer because of authentication error.
 
-      - alert: NetappHarvestMultipleExportersForSameTarget
+      - alert: NetappHarvestMultipleInstances
         expr: count (netapp_metadata_exporter_count) by (pod_template_hash, poller) > 1
         for: 15m
         labels:
