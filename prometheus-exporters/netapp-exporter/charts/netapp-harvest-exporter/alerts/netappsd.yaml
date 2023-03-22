@@ -16,6 +16,21 @@ groups:
           summary: Authentication failure to [[ $labels.host ]]
           description: NetApp Harvest can't access the filer because of authentication error.
 
+      - alert: NetappHarvestExporterProbeError
+        expr: netapp_harvest_probe_failure{reason!="authentication error"} > 0
+        for: 15m
+        labels:
+          context: netapp-exporter
+          no_alert_on_absence: "true"
+          playbook: 'docs/support/playbook/storage/filer_inaccessible'
+          service: exporter
+          severity: info
+          support_group: compute-storage-api
+          tier: storage
+        annotations:
+          summary: Probe failure with [[ $labels.reason ]] to [[ $labels.host ]] 
+          description: Probing has failed during NetApp Filers discovery.
+
       - alert: NetappHarvestMultipleInstances
         expr: count (netapp_metadata_exporter_count) by (pod_template_hash, poller) > 1
         for: 15m
