@@ -17,6 +17,7 @@ spec:
     metadata:
       labels:
         app: elastiflow-filebeat
+        component: "event-receiver"
         chart: "{{ .Chart.Name }}"
         heritage: {{ .Release.Service | quote }}
         release: {{ .Release.Name | quote }}
@@ -43,7 +44,8 @@ spec:
         image: {{ required ".Values.global.registry variable missing" .Values.global.registry }}/{{ required ".Values.filebeat.image variable missing" .Values.filebeat.image }}:{{ required ".Values.filebeat.imageTag variable missing" .Values.filebeat.imageTag }}
       {{- end }}
         ports:
-          - containerPort: 2055
+          - name: netflow-udp
+            containerPort: 2055
             protocol: UDP
         env:
           - name: LOGSTASH_HOSTS
