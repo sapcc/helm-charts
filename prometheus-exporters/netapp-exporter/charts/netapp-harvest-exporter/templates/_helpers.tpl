@@ -42,9 +42,9 @@ app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
 app.kubernetes.io/managed-by: {{ .Release.Service }}
 {{- end }}
 
-{{- define "netapp-sd.labels" -}}
+{{- define "netappsd.labels" -}}
 helm.sh/chart: {{ include "netapp-harvest.chart" . }}
-{{ include "netapp-sd.selectorLabels" . }}
+{{ include "netappsd.selectorLabels" . }}
 {{- if .Chart.AppVersion }}
 app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
 {{- end }}
@@ -64,7 +64,7 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}
 {{- end }}
 
-{{- define "netapp-sd.selectorLabels" -}}
+{{- define "netappsd.selectorLabels" -}}
 {{- if .appValues -}}
 app.kubernetes.io/name: {{ include "netapp-harvest.name" . }}
 app.kubernetes.io/instance: {{ include "netapp-harvest.fullname" . }}-{{ .appValues.name }}-sd

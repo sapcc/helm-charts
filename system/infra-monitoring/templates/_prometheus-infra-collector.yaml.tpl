@@ -28,6 +28,9 @@
     - source_labels: [job]
       regex: asw-eapi
       action: keep
+    - source_labels: [__name__]
+      regex: '!arista_port_stats'
+      action: keep
     - source_labels: [__address__]
       target_label: __param_target
     - source_labels: [__param_target]
@@ -213,6 +216,9 @@
     - url: {{ .Values.atlas_url }}
   metrics_path: /ipmi
   relabel_configs:
+    - source_labels: [__name__]
+      regex: '!ipmi_temperature_state'
+      action: keep
     - source_labels: [job]
       regex: vmware-esxi
       action: keep
@@ -275,6 +281,9 @@
     - url: {{ .Values.atlas_url }}
   metrics_path: /redfish
   relabel_configs:
+    - source_labels: [__name__]
+      regex: '!redfish_health'
+      action: keep
     - source_labels: [job]
       regex: redfish/bb
       action: keep
@@ -400,21 +409,6 @@
   relabel_configs:
     - source_labels: [job]
       regex: firmware-exporter
-      action: keep
-{{- end }}
-
-{{- $values := .Values.apic_exporter -}}
-{{- if $values.enabled }}
-- job_name: 'apic-exporter'
-  scrape_interval: {{$values.scrapeInterval}}
-  scrape_timeout: {{$values.scrapeTimeout}}
-  static_configs:
-    - targets:
-      - 'apic-exporter:9102'
-  metrics_path: /
-  relabel_configs:
-    - source_labels: [job]
-      regex: apic-exporter
       action: keep
 {{- end }}
 

@@ -15,7 +15,7 @@ spec:
   template:
     metadata:
       annotations:
-        configmap-hash: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        configmap-hash: {{ include (print $.Template.BasePath "/configmap.yaml") . | replace .Chart.Version "0.1.5" | sha256sum }}
         {{- include "prom-scrape-annotations" . | nindent 8 }}
       labels:
         {{- include "netapp-harvest.selectorLabels" . | nindent 8 }}
@@ -60,19 +60,19 @@ kind: Deployment
 metadata:
   name:  {{ include "netapp-harvest.fullname" . }}-{{ .appValues.name }}-sd
   labels:
-    {{- include "netapp-sd.labels" . | nindent 4 }}
+    {{- include "netappsd.labels" . | nindent 4 }}
 spec:
   selector:
     matchLabels:
-      {{- include "netapp-sd.selectorLabels" . | nindent 6 }}
+      {{- include "netappsd.selectorLabels" . | nindent 6 }}
   replicas: 1
   template:
     metadata:
       annotations:
-        configmap-hash: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        configmap-hash: {{ include (print $.Template.BasePath "/configmap.yaml") . | replace .Chart.Version "0.1.5" | sha256sum }}
         {{- include "prom-scrape-annotations" . | nindent 8 }}
       labels:
-        {{- include "netapp-sd.selectorLabels" . | nindent 8 }}
+        {{- include "netappsd.selectorLabels" . | nindent 8 }}
     spec:
       containers:
         - name:  netappsd
@@ -95,7 +95,7 @@ spec:
             - name: NETAPPSD_PROMETHEUS_OBSERVE_LABEL
               value: poller
             - name: NETAPPSD_METRICS_PREFIX
-              value: netapp_harvest_{{ .appValues.name }}
+              value: netapp_harvest
             - name: NETAPP_USERNAME
               valueFrom:
                 secretKeyRef:

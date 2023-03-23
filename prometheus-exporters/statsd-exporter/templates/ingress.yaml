@@ -1,39 +1,34 @@
-{{- range $i, $exporter := .Values.exporters -}}
-{{- if $exporter.enabled }}
-
+{{- if .Values.ingress.enabled -}}
+{{- $fullName := include "statsd-exporter.fullname" . -}}
+{{- $svcPort := .Values.web.port -}}
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: {{ include "statsd-exporter.fullName" $exporter.name }}
-  namespace: {{ required ".Values.namespace variable missing" $.Values.nameSpace }}
+  name: {{ $fullName }}
   labels:
-    {{- include "statsd-exporter.labels" $exporter.name | nindent 4 }}
+    {{- include "statsd-exporter.labels" . | nindent 4 }}
   annotations:
-    kubernetes.io/tls-acme: {{ required ".Values.ingress.tls variable missing" $.Values.ingress.tls | quote }}
-    disco: {{ required ".Values.ingress.disco variable missing" $.Values.ingress.disco | quote }}
+    vice-president: {{ required ".Values.ingress.vicePresident missing" .Values.ingress.vicePresident | quote }}
+    kubernetes.io/tls-acme: {{ required ".Values.ingress.certManager missing" .Values.ingress.certManager | quote }}
+    disco: {{ required ".Values.ingress.disco missing" .Values.ingress.disco | quote }}
+  {{- if .Values.ingress.authentication.enabled }}
+    ingress.kubernetes.io/auth-tls-secret: {{ required ".Values.ingress.authentication.authTLSSecret missing" .Values.ingress.authentication.authTLSSecret | quote }}
+    ingress.kubernetes.io/auth-tls-verify-depth: {{ required ".Values.ingress.authentication.authTLSVerifyDepth missing" .Values.ingress.authentication.authTLSVerifyDepth | quote }}
+    ingress.kubernetes.io/auth-tls-verify-client: {{ required ".Values.ingress.authentication.authTLSVerifyClient missing" .Values.ingress.authentication.authTLSVerifyClient | quote }}
+  {{ end }}
 spec:
   tls:
-     - secretName: {{ include "statsd-exporter.fullName" $exporter.name }}
-{{- if $.Values.global.clusterType }}
-       hosts: [{{ include "statsd-exporter.fullName" $exporter.name }}.{{ $.Values.global.clusterType}}.{{ $.Values.global.region }}.{{ $.Values.global.tld }}]
-{{- else }}
-       hosts: []{{ include "statsd-exporter.fullName" $exporter.name }}.{{ $.Values.global.region }}.{{ $.Values.global.tld }}]
-{{ end }}
+     - secretName: {{ $fullName }}
+       hosts: [{{.Values.endpoint_host_public}}.{{.Values.region}}.{{.Values.domain}}]
   rules:
-{{- if $.Values.global.clusterType }}
-    - host: {{ include "statsd-exporter.fullName" $exporter.name }}.{{ $.Values.global.clusterType}}.{{ $.Values.global.region }}.{{ $.Values.global.tld }}
-{{- else }}
-       host: {{ include "statsd-exporter.fullName" $exporter.name }}.{{ $.Values.global.region }}.{{ $.Values.global.tld }}
-{{ end }}
+    - host: {{.Values.endpoint_host_public}}.{{.Values.region}}.{{.Values.domain}}
       http:
         paths:
         - path: /
           pathType: Prefix
           backend:
             service:
-              name: {{ include "statsd-exporter.fullName" $exporter.name }}
+              name: {{ $fullName }}
               port:
-                number: {{ required ".Values.exporters.metricsPort variable missing" $exporter.metricsPort }}
----
-{{ end -}}
-{{ end -}}
+                number: {{ $svcPort }}
+{{- end }}

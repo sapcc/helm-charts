@@ -166,16 +166,17 @@
   key_name log
   <parse>
     @type json
-    time_format %Y-%m-%dT%T.%L%Z
+    time_format {{ .timeFormat | default "%Y-%m-%dT%T.%L%Z" | squote }}
     keep_time_key true
   </parse>
 </filter>
 {{- end }}
-{{- if .field }}
 <filter {{ .tag }}*>
   @type record_transformer
   <record>
+{{- if .field }}
     {{ .field.name }} {{ .field.value | quote }}
+{{- end }}
     sap.cc.cluster "{{ $.Values.global.cluster }}"
     sap.cc.region "{{ $.Values.global.region }}"
   </record>
@@ -188,7 +189,6 @@
     pattern {{ .filter.pattern }}
   </regexp>
 </filter>
-{{- end }}
 {{- end }}
 {{- end }}
 {{- end }}
