@@ -1,0 +1,53 @@
+global:
+  domain: cloud.sap
+  clusterType: metal
+
+owner-info:
+  support-group: observability
+  maintainers: 
+    - Tommy Sauer
+    - Richard Tief
+  helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/system/storage-monitoring
+
+prometheus-server:
+  name: storage
+
+  retentionTime: 30d
+
+  alertmanagers:
+    hosts:
+      - alertmanager-internal.scaleout.eu-de-1.cloud.sap
+      - alertmanager-internal.scaleout.eu-nl-1.cloud.sap
+  ingress:
+    enabled: true
+    authentication:
+      sso:
+        enabled: true
+        authTLSSecret: kube-system/ingress-cacrt
+        authTLSVerifyDepth: 3
+        authTLSVerifyClient: on
+
+  internalIngress:
+    enabled: true
+
+  persistence:
+    enabled: true
+    accessMode: ReadWriteOnce
+    size: 10Gi
+
+  alerts:
+    tier: monitor
+
+  resources:
+    requests:
+      cpu: 500m
+      memory: 3Gi
+  thanos:
+    enabled: true
+
+thanos:
+  name: storage
+  deployWholeThanos: true
+  clusterDomain: kubernetes
+  serviceAccount:
+    create: false
