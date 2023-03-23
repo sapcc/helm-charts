@@ -1,0 +1,28 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+
+metadata:
+  name: jupyterhub
+  namespace: jupyterhub
+  annotations:
+    kubernetes.io/tls-acme: "true"
+    disco: "true"
+    ingress.kubernetes.io/affinity: cookie
+    ingress.kubernetes.io/proxy-buffer-size: 32k
+    ingress.kubernetes.io/ssl-redirect: "true"
+
+spec:
+  tls:
+    - secretName: jupyterhub
+      hosts: jupyterhub.{{ .Values.global.clusterType }}.{{ .Values.global.region }}.{{ .Values.global.tld }}
+  rules:
+    - host: jupyterhub.{{ .Values.global.clusterType }}.{{.Values.global.region}}.{{.Values.global.tld}}
+      http:
+        paths:
+        - path: {{ .Values.global.hub.baseUrl | trimSuffix "/" }}/{{ .Values.global.ingress.pathSuffix }}
+          pathType: {{ .Values.global.ingress.pathType }}
+          backend:
+            service:
+              name: "proxy-public"
+              port:
+                name: http
