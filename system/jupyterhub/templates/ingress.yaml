@@ -14,15 +14,15 @@ metadata:
 spec:
   tls:
     - secretName: jupyterhub
-      hosts: jupyterhub.s-qa-de-1.cloud.sap # jupyterhub.{{ .Values.global.clusterType }}.{{ .Values.global.region }}.{{ .Values.global.tld }}
+      hosts: jupyterhub.{{ .Values.global.clusterType }}.{{ .Values.global.region }}.{{ .Values.global.tld }}
   rules:
-    - host: jupyterhub.s-qa-de-1.cloud.sap # jupyterhub.{{ .Values.global.clusterType }}.{{.Values.global.region}}.{{.Values.global.tld}}
+    - host: jupyterhub.{{ .Values.global.clusterType }}.{{.Values.global.region}}.{{.Values.global.tld}}
       http:
         paths:
-        - path: /
-          pathType: Prefix
+        - path: {{ .Values.global.hub.baseUrl | trimSuffix "/" }}/{{ .Values.global.ingress.pathSuffix }}
+          pathType: {{ .Values.global.ingress.pathType }}
           backend:
             service:
-              name: "jupyterhub"
+              name: "proxy-public"
               port:
-                number: 80 # {{  .Values.opensearch_dashboards.service.port }}
+                name: http
