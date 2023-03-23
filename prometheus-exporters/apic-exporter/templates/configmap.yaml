@@ -1,10 +1,15 @@
+{{- range $group := .Values.exporter.collector_groups }}
+---
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: apic-exporter
+  name: apic-exporter-{{ $group.name}}
 data:
   config.yaml: |
     exporter:
-      log_level: {{ .Values.exporter.log_level }}
+      log_level: {{ $.Values.exporter.log_level }}
     aci:
-{{ toYaml .Values.aci | indent 6 }}
+{{ toYaml $.Values.aci | indent 6 }}
+    collectors:
+{{ toYaml $group.collectors | indent 6 }}
+{{- end }}
