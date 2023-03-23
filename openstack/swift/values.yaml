@@ -90,7 +90,10 @@ fallocate_reserve: 2%                  # Availably since Rocky for all servers
 client_timeout: 60 # same as default, but also sets haproxy/envoy timeout to a similar value
 
 # Swift node timeout in seconds, default 10
-node_timeout: 60
+# With a value 60 there were issue when a single disk was overloaded --> response timeout and the remaining
+# handoffs might raise a 408 (proxy broken pipe). Assumption is currently that the 60s are too long for the
+# haproxy/swift-proxy machinery in front. Producing too many 503. Reducing to 30s seems to have fixed that.
+node_timeout: 30
 
 # Swift node timeout in seconds for GET and HEAD, default 10
 recoverable_node_timeout: 10
