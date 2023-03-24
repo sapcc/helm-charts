@@ -51,6 +51,11 @@
 - name:  KEPPEL_CLAIR_IGNORE_STALE_INDEX_REPORTS
   value: 'false' # The reindex loop is currently enabled.
 {{- if .Values.keppel.clair.hostname }}
+- name:  KEPPEL_CLAIR_NOTIFICATION_SECRET
+  valueFrom:
+    secretKeyRef:
+      name: keppel-secret
+      key: clair_notification_secret
 - name:  KEPPEL_CLAIR_PRESHARED_KEY
   valueFrom:
     secretKeyRef:

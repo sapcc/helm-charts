@@ -45,17 +45,18 @@ updaters:
   sets: [ alpine, debian, rhel, suse, ubuntu ]
   config: {} # no special config options for updaters yet
 
-# notifier:
-#   connstring: "host=clair-postgresql port=5432 dbname=clair user=postgres password=%POSTGRES_PASSWORD% sslmode=disable application_name=c-notifier"
-#   migrations: true
-#   indexer_addr: "" # ignored since we're running in combo mode
-#   matcher_addr: "" # ignored since we're running in combo mode
-#   poll_interval: 1000h # basically never, we don't use the notifier
-#   delivery_interval: 1000h # basically never, we don't use the notifier
-#   disable_summary: false
-#   webhook: null
-#   amqp: null
-#   stomp: null
+notifier:
+  connstring: "host=clair-postgresql port=5432 dbname=clair user=postgres password=%POSTGRES_PASSWORD% sslmode=disable application_name=c-notifier"
+  migrations: true
+  indexer_addr: "http://clair-indexer:8080"
+  matcher_addr: "http://clair-matcher:8080"
+  poll_interval: 5m
+  delivery_interval: 1m
+  webhook:
+    target: "https://keppel.{{ $context.Values.global.region }}.{{ $context.Values.global.tld }}/clair-notification"
+    callback: "https://keppel-clair.{{ $context.Values.global.region }}.{{ $context.Values.global.tld }}/notifier/api/v1/notification/"
+    headers:
+      X-KEPPEL-CLAIR-NOTIFICATION-SECRET: [ %KEPPEL_CLAIR_NOTIFICATION_SECRET% ]
 
 auth:
   psk:
