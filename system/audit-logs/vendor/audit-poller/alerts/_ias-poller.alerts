@@ -2,7 +2,7 @@ groups:
 - name: ias-poller.alerts
   rules:
   - alert: IASPollerAuditLogsNotFetched
-    expr: (time() - audit_poller_last_successful_fetch{client="iasapi"})/60 > 5
+    expr: (time() - audit_poller_last_successful_fetch_timestamp{client="iasapi"})/60 > 5
     for: 15m
     labels:
       context: iasapi
@@ -12,8 +12,19 @@ groups:
     annotations:
       description: '*{{ $labels.pod }}*  has trouble collecting IAS audit logs. Please check'
       summary:  IAS Audit logs are not being collected
+  - alert: IASPollerAuditLogsMissing
+    expr: sum by (client) (increase(audit_poller_processed_logs_total{client="iasapi"}[24h])) == 0
+    for: 15m
+    labels:
+      context: iasapi
+      service: logs
+      severity: warning
+      support_group: observability
+    annotations:
+      description: '*{{ $labels.pod }}*  has not collected IAS audit logs in the last 24h. Please check'
+      summary:  No IAS Audit logs in the last 24h
   - alert: IASPollerChangelogNotFetched
-    expr: (time() - audit_poller_last_successful_fetch{client="iaschangelog"})/60 > 5
+    expr: (time() - audit_poller_last_successful_fetch_timestamp{client="iaschangelog"})/60 > 5
     for: 60m
     labels:
       context: iasapi
