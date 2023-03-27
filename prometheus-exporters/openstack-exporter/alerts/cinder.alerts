@@ -1,7 +1,7 @@
 groups:
 - name: cinder
   rules:
-  - alert: CinderBackendStorageEmptyCritical
+  - alert: CinderBackendStorageEmpty
     expr: >
       sum(cinder_free_capacity_gib == 0) by (region, shard, backend) or sum(cinder_total_capacity_gib == 0) by (region, shard, backend)
     for: 15m
@@ -16,7 +16,7 @@ groups:
     annotations:
       description: "Cinder backend {{ $labels.shard }}/{{ $labels.backend }} has no storage capacity."
       summary: "Cinder backend {{ $labels.shard }}/{{ $labels.backend }} has no storage capacity."
-  - alert: CinderShardFreeSpaceWarning
+  - alert: CinderShardFreeSpace
     expr: count by (shard, backend) (sum(cinder_available_capacity_gib) by (shard, backend, pool)) - (count by (shard,backend) (sum(cinder_virtual_free_capacity_gib / cinder_available_capacity_gib) by (shard, backend, pool) < .3)) < 2
     for: 15m
     labels:
@@ -28,11 +28,11 @@ groups:
     annotations:
       description: 'Cinder backend {{ $labels.shard }}/{{ $labels.backend }} has 1 or less datastores with > 30% free space left'
       summary: 'Cinder backend {{ $labels.shard }}/{{ $labels.backend }} has 1 or less datastores with > 30% free space left'
-  - alert: CinderShardFreeSpaceCritical
+  - alert: CinderShardFreeSpace
     expr: count by (shard, backend) (sum(cinder_available_capacity_gib) by (shard, backend, pool)) - (count by (shard,backend) (sum(cinder_virtual_free_capacity_gib / cinder_available_capacity_gib) by (shard, backend, pool) < .3)) < 1
     for: 15m
     labels:
-      severity: warning
+      severity: critical
       tier: vmware
       service: cinder
       support_group: compute
