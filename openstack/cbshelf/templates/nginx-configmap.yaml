@@ -1,0 +1,72 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  namespace: cbshelf
+  name: nginx-conf
+data:
+  nginx.conf: |
+    user root root;
+    worker_processes  1;
+    
+
+    events {
+      worker_connections  10240;
+      multi_accept        on;
+    }
+    http {
+      server {
+          listen       8080;
+           server_name  localhost;
+           root /monsoon/cbshelf;
+
+           access_log logs/access.log;
+           error_log  logs/error.log;
+           
+           sendfile on;
+           tcp_nopush on;
+           tcp_nodelay on;
+           keepalive_timeout  65;
+
+          gzip  on;
+          gzip_http_version 1.0;
+          gzip_comp_level 2;
+          gzip_proxied any;
+          gzip_types text/plain text/css application/x-javascript text/xml application/xml application/xml+rss text/javascript;
+
+          include mime.types;
+
+
+
+
+
+           location /assets/ {
+           alias /app/public/assets/;
+        }
+           location / {
+           expires 365d;
+           add_header    Cache-Control  public;
+           try_files $uri $uri.git @ruby;
+       }
+
+           location ~ /(cookbooks|readymades)/repository/.+\.git/objects {
+           expires 365d;
+           add_header    Cache-Control  public;
+           try_files $uri =404;
+       }
+           location  @ruby {
+           proxy_pass http://localhost:3000;
+           #proxy_set_header X-Real-IP  $remote_addr;
+           proxy_set_header X-Forwarded-Proto https;
+           #proxy_set_header        X-SSL-Client-I-Dn $ssl_client_i_dn;
+           #proxy_set_header        X-SSL-Client-S-Dn $ssl_client_s_dn;
+           #proxy_set_header        X-SSL-Client-Verify  $ssl_client_verify;
+           #proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+           proxy_set_header        SSL-Client-I-DN $http_ssl_client_issuer_dn;
+           proxy_set_header        SSL-Client-S-DN $http_ssl_client_subject_dn;
+           proxy_set_header        SSL-Client-Verify  $http_ssl_client_verify;
+           proxy_set_header Host $http_host;
+           proxy_http_version 1.1;
+           proxy_buffering off;
+           }
+      }
+    }
