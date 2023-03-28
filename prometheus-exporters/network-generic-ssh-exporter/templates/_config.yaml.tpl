@@ -2,9 +2,9 @@ credentials:
   default:
     username: {{ .Values.network_generic_ssh_exporter.user }}
     password: {{ .Values.network_generic_ssh_exporter.password }}
-  apic:
-    username: {{ .Values.network_generic_ssh_exporter.apic_user }}
-    password: {{ .Values.network_generic_ssh_exporter.apic_password }}
+#  apic:
+#    username: {{ .Values.network_generic_ssh_exporter.apic_user }}
+#    password: {{ .Values.network_generic_ssh_exporter.apic_password }}
 
 lookup_sources:
   metis:
@@ -17,19 +17,19 @@ lookup_sources:
       router_project: SELECT DISTINCT id, project_id FROM neutron.routers
 
 metrics:
-  ep_learning_state:
-    regex: |
-      Xr.tcam.limit.learn.disabled.+\:.(\w+)|Peer.Xr.tcam.limit.learn.disabled.+\:.(\w+)|Hal.Learn.Disabled.+\:.(\w+)
-    multi_value: true
-    value: $3
-    labels:
-      hal_learn: $3
-      xr_learn: $1
-      xr_peer_learn: $2
-    description: EP learing status check
-    metric_type_name: string
-    command: vsh_lc -c 'show system internal epmc global-info'
-    timeout_secs: 5
+#  ep_learning_state:
+#    regex: |
+#      Xr.tcam.limit.learn.disabled.+\:.(\w+)|Peer.Xr.tcam.limit.learn.disabled.+\:.(\w+)|Hal.Learn.Disabled.+\:.(\w+)
+#    multi_value: true
+#    value: $3
+#    labels:
+#      hal_learn: $3
+#      xr_learn: $1
+#      xr_peer_learn: $2
+#    description: EP learing status check
+#    metric_type_name: string
+#    command: vsh_lc -c 'show system internal epmc global-info'
+#    timeout_secs: 5
 
   nat_static:
     regex: >-
@@ -640,8 +640,8 @@ metrics:
 batches:
   test:
     - redundancy_send_queue
-  acileaf:
-    - ep_learning_state
+#  acileaf:
+#    - ep_learning_state
   neutron-router:
     - nat_dynamic
     - nat_static
@@ -703,8 +703,8 @@ batches:
     - xr_ntp_configured
 
 devices:
-  cisco-aci:
-    prompt_regex: ^\S+\# $
+#  cisco-aci:
+#    prompt_regex: ^\S+\# $
   cisco-ios-xe:
     prompt_regex: ^\S+\#$
     init_command: terminal length 0
