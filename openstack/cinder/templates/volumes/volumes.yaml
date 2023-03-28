@@ -1,22 +1,7 @@
-{{- range $i, $volume := .Values.global.volumes_netapp }}
-{{- tuple $ $volume | include "volume_netapp" }}
+{{- $envAll := . }}
+{{- range $name, $volume := .Values.volumes -}}
 ---
-{{- tuple $ $volume | include "volume_netapp_configmap" }}
-{{- if lt $i (sub (len $.Values.global.volumes_netapp) 1) }}
+{{ tuple $envAll $name $volume | include "volume_configmap" }}
 ---
-{{- end }}
-{{- end }}
-
-{{- if .Values.global.volumes }}
-{{- if ge (len .Values.global.volumes) 1 }}
----
-{{- range $i, $volume := .Values.global.volumes }}
-{{- tuple $ $volume | include "volume_deployment" }}
----
-{{ tuple $ $volume | include "volume_configmap" }}
-{{ if lt $i (sub (len $.Values.global.volumes) 1) }}
----
-{{- end }}
-{{- end }}
-{{- end }}
+{{ tuple $envAll $name $volume | include "volume_deployment" }}
 {{- end }}
