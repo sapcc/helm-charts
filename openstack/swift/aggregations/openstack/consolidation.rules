@@ -19,10 +19,13 @@ groups:
     expr: topk(10, sum(rate(openstack_watcher_api_requests_total{service="object-store"}[5m]) * 60) by (target_project_id, action) > 15)
 
   - record: swift_avoid_node_reboot
-    # Replication ages in the last 10m not older than 5m
-    # No stroage node down
-    # Not more than 2 disks unmounted
-    # Swift healthy
+    # Automatic reboots of storage nodes are safe if:
+    # - Replication ages in the last 10m not older than 5m
+    # - No storage node down
+    # - Not more than 2 disks unmounted
+    # - Swift healthy
+    #
+    # The `vector(1) and (...) or vector(0)` forces the timeseries to be either 1 (if the inner query is present) or 0 (if it is absent).
     expr: vector(1) and (
         max(max_over_time(swift_cluster_objects_replication_age[10m]) / 60) > 5 or
         max(max_over_time(swift_cluster_containers_replication_age[10m]) / 60) > 5 or
