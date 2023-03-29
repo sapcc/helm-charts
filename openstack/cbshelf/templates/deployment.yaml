@@ -24,8 +24,11 @@ spec:
       #   ccloud.sap.com/nodepool: payload
       containers:
         - name: shelfback
-          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}" 
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: IfNotPresent
+          ports:
+            - name: cbshelf
+              containerPort: 3000
           envFrom:
             - configMapRef:
                 name: cbshelfdb-config
@@ -35,15 +38,26 @@ spec:
             - name: vol-cbshelfapp
               mountPath: "/monsoon/cbshelf"
               #readOnly: truefvol
+              {{- if eq .Values.env "production"}}
             - name: vol-cbshelfassets
               mountPath: "/app/public/assets"
               # readOnly: true
+               {{- end }}
             - name: gitconfig
               mountPath: "/root"
               readOnly: true
+          {{- if ne .Values.env "production"}}
+            - name: shared-data
+              mountPath: "/app/public/nginx"
+          lifecycle:
+            postStart:
+              exec:
+                command: ["/bin/sh", "-c", "cp -r /app/public/assets /app/public/nginx"]
+          {{- end }}
         - name: nginx
-          image:  keppel.eu-de-1.cloud.sap/ccloud-dockerhub-mirror/openresty/openresty
-          #image:  openresty/openresty
+          image: keppel.eu-de-1.cloud.sap/genady/openresty:bionic-ssl-1.0
+          # image:  keppel.eu-de-1.cloud.sap/ccloud-dockerhub-mirror/openresty/openresty:1.21.4.1-alpine-fat
+          #image:  openresty/openresty:1.21.4.1-alpine-fat
           imagePullPolicy: IfNotPresent
           ports:
             - name: web
@@ -52,9 +66,11 @@ spec:
             - name: vol-cbshelfapp
               mountPath: /monsoon/cbshelf
               #readOnly: true
+             {{- if eq .Values.env "production"}}
             - name: vol-cbshelfassets
               mountPath: /app/public/assets
               # readOnly: true
+              {{- end }}
             - name: nginx-conf
               mountPath: /usr/local/openresty/nginx/conf/nginx.conf
               subPath: nginx.conf
@@ -62,13 +78,24 @@ spec:
             - name: gitconfig
               mountPath: "/root"
               readOnly: true
+              {{- if ne .Values.env "production"}}
+            - name: shared-data
+              mountPath: "/app/public"
+              readOnly: true
+            {{- end }}
       volumes:
         - name: vol-cbshelfapp
           persistentVolumeClaim:
             claimName: pvc-vol-cbshelfapp
+        {{- if eq .Values.env "production"}}
         - name: vol-cbshelfassets
           persistentVolumeClaim:
             claimName: pvc-vol-cbshelfassets
+        {{- end }}
+      {{- if ne .Values.env "production"}}
+        - name: shared-data
+          emptyDir: {}
+      {{- end }}
         - name: nginx-conf
           configMap:
             name: nginx-conf

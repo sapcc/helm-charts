@@ -10,7 +10,7 @@ metadata:
   {{- end }}
 spec:
   accessModes:
-    - ReadWriteOnce 
+    - ReadWriteOnce
   resources:
     requests:
       storage: 500Gi
@@ -20,24 +20,20 @@ spec:
   volumeName: vol-cbshelfapp
   {{- end }}
 ---
+{{- if eq .Values.env "production"}}
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   namespace: cbshelf
   name: pvc-vol-cbshelfassets
-  {{- if ne .Values.env "production"}}
-  annotations:
-    volume.beta.kubernetes.io/storage-class: cinder-default
-  {{- end }} 
 spec:
   accessModes:
     - ReadWriteOnce
   resources:
     requests:
       storage: 1Gi
-  {{- if eq .Values.env "production"}}
   storageClassName: cinder-default
   volumeMode: Filesystem
   volumeName: vol-cbshelfassets
-  {{- end }}
+{{- end }}
 {{- end -}}
