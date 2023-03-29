@@ -4,7 +4,8 @@
 {{- end -}}
 {{- $db_name  := .Values.database.name                   | default .Release.Name -}}
 {{- $db_host  := .Values.database.host                   | default (printf "%s-postgresql" .Release.Name) -}}
-{{- $auth_url := .Values.swift.os_auth_url               | default (printf "http://keystone.%s.svc:5000/v3" (.Values.global.keystoneNamespace | default .Release.Namespace)) -}}
+{{- $swiftUrl := .Values.swift.os_auth_url               | default .Values.keystoneUrl -}}
+{{- $auth_url := $swiftUrl                               | default (printf "http://keystone.%s.svc:5000/v3" (.Values.global.keystoneNamespace | default .Release.Namespace)) -}}
 {{- $region   := .Values.swift.os_region_name            | default .Values.global.region -}}
 
 apiVersion: apps/v1
