@@ -39,6 +39,8 @@ spec:
           image: {{ include "keppel_image" . }}
           imagePullPolicy: IfNotPresent
           command: [ '/bin/sleep', 'inf' ]
+          securityContext:
+            runAsNonRoot: true
           resources:
             requests:
               cpu: "1m"
@@ -50,6 +52,10 @@ spec:
           image: "{{ .Values.global.registryAlternateRegion }}/postgres:{{.Values.postgresql.imageTag}}"
           imagePullPolicy: IfNotPresent
           command: [ '/bin/sleep', 'inf' ]
+          securityContext:
+            runAsNonRoot: true
+            runAsUser:    65534 # nobody
+            runAsGroup:   65534 # nobody
           resources:
             requests:
               cpu: "1m"
@@ -61,6 +67,10 @@ spec:
           image: "{{.Values.redis.image.repository}}:{{.Values.redis.image.tag}}"
           imagePullPolicy: IfNotPresent
           command: [ '/bin/sleep', 'inf' ]
+          securityContext:
+            runAsNonRoot: true
+            runAsUser:    65534 # nobody
+            runAsGroup:   65534 # nobody
           resources:
             requests:
               cpu: "1m"

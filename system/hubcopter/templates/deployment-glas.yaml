@@ -53,7 +53,6 @@ spec:
       containers:
         - name: api
           image: {{ $.Values.global.registry }}/hubcopter:{{ $.Values.hubcopter.image_tag | required ".Values.hubcopter.image_tag is missing" }}
-
           imagePullPolicy: IfNotPresent
           command: [ "/usr/bin/glas" ]
           args: [ ]
@@ -66,6 +65,8 @@ spec:
               value: '/etc/glas'
             - name:  GLAS_STATE_DIR
               value: '/tmp/glas'
+          securityContext:
+            runAsNonRoot: true
           volumeMounts:
 {{- range $k,$v := required ".Values.hubcopter.deploy_keys is missing" .Values.hubcopter.deploy_keys }}
             - mountPath: /etc/glas/{{ $k }}

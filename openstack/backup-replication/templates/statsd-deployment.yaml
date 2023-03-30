@@ -30,6 +30,8 @@ spec:
       - name: statsd
         image: {{ .Values.global.dockerHubMirror | required ".Values.global.dockerHubMirror is missing" }}/prom/statsd-exporter:{{ .Values.statsd.exporter_image_version }}
         args: [ --statsd.mapping-config=/etc/statsd/statsd-exporter.yaml ]
+        securityContext:
+          runAsNonRoot: true
         ports:
           - name: statsd
             containerPort: 9125
