@@ -1,29 +1,17 @@
 # fields without a value and env specific and need to be set
 replicaCount: 1
-
 image:
   repository: keppel.eu-de-1.cloud.sap/ccloud/cookbook-shelf
   tag: latest
-
 service:
   port: 81
   targetport: 8080
-
-persistence:
-  type: pvc
-  enabled: true
-  # annotations: {}
-  finalizers:
-    - kubernetes.io/pvc-protection
-  existingClaim: pvc-vol-shelfbackend pvc-vol-shelfassets
-
-env:
+dbHost: shelfapp-postgresql
 ingressSecret: tls-cbshelf-ingress
 dbHost:
 ingress:
   enabled: true
   host:
-
   ca: |
     -----BEGIN CERTIFICATE-----
     MIIB+jCCAWOgAwIBAgIEAQAAADANBgkqhkiG9w0BAQUFADAvMQswCQYDVQQGEwJE
@@ -62,7 +50,7 @@ postgresql:
 pgbackup:
   database:
     name: cbshelf
-    host: "shelfdb-postgresql" # database hostname (default is "{{.Release.Name}}-postgresql")
+    host: "shelfapp-postgresql"
     username: cbshelf    # name of database user (this user must have full admin access to the DB)
     password:
   swift:

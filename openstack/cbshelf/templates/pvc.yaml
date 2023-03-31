@@ -1,39 +1,13 @@
-{{- if .Values.persistence.enabled -}}
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   namespace: cbshelf
-  name: pvc-vol-cbshelfapp
-  {{- if ne .Values.env "production"}}
+  name: {{ .Release.Name }}
   annotations:
     volume.beta.kubernetes.io/storage-class: cinder-default
-  {{- end }}
 spec:
   accessModes:
-    - ReadWriteOnce
+    - ReadWriteMany
   resources:
     requests:
-      storage: 500Gi
-  {{- if eq .Values.env "production"}}
-  storageClassName: cinder-default
-  volumeMode: Filesystem
-  volumeName: vol-cbshelfapp
-  {{- end }}
----
-{{- if eq .Values.env "production"}}
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  namespace: cbshelf
-  name: pvc-vol-cbshelfassets
-spec:
-  accessModes:
-    - ReadWriteOnce
-  resources:
-    requests:
-      storage: 1Gi
-  storageClassName: cinder-default
-  volumeMode: Filesystem
-  volumeName: vol-cbshelfassets
-{{- end }}
-{{- end -}}
+      storage: {{ .Values.storage }}
