@@ -31,7 +31,7 @@ spec:
         description: Predicting more than 2000 database connections for {{ $service }} within the next 3 hours and might be unavailable soon.
 
     - alert: {{ title $service }}StuckTransactions
-      expr: max(pg_stat_activity_max_tx_duration{datname="{{default .Release.Name .Values.db_name}}"}) > 300
+      expr: max(pg_stat_activity_max_tx_duration{datname="{{default .Release.Name .Values.db_name}}"}) > 600
       for: 5m
       labels:
         context: database
@@ -43,10 +43,9 @@ spec:
       annotations:
         summary: DB transactions are stuck
         description: >
-          Some transactions are taking unusually long to complete or not making progress at all. Check the logs of the
-          Postgres container; this could be caused by file locks getting stuck. If you get the chance, investigate this
-          with the OS and storage experts while it's happening. But don't delay for too long! The locks must be put back
-          in order before the entire connection pool is exhausted, or else the DB may become completely unresponsive!
+          Some transactions are taking unusually long to complete or not making progress at all.
+          Check the logs of the Postgres container; this could be caused by file locks getting stuck.
+          To see which transactions are stuck, query for `SELECT * FROM pg_stat_activity WHERE state = 'idle'`.
 
     - alert: {{ title $service }}PostgresMetricsEvalErrors
       expr: max(pg_exporter_last_scrape_error{kubernetes_namespace="{{ .Release.Namespace }}",app="{{ .Release.Name }}-pgmetrics"}) > 0
