@@ -65,6 +65,7 @@ spec:
                 secretKeyRef:
                   name: swift-secret
                   key: hash_path_suffix
+          # TODO: securityContext: { runAsNonRoot: true }
           resources:
             # observed usage: CPU = 1m-300m, RAM = 50-180 MiB
             requests:
@@ -86,6 +87,8 @@ spec:
         - name: statsd
           image: {{ .Values.global.dockerHubMirrorAlternateRegion }}/prom/statsd-exporter:{{ .Values.image_version_auxiliary_statsd_exporter }}
           args: [ --statsd.mapping-config=/swift-etc/statsd-exporter.yaml ]
+          securityContext:
+            runAsNonRoot: true
           resources:
             # observed usage: CPU = 10m-100m, RAM = 550-950 MiB
             requests:
