@@ -16,8 +16,8 @@ prometheus-server:
 
   alertmanagers:
     hosts:
-      - alertmanager-internal.scaleout.eu-de-1.cloud.sap
-      - alertmanager-internal.scaleout.eu-nl-1.cloud.sap
+      - alertmanager.scaleout.eu-de-1.cloud.sap
+      - alertmanager.scaleout.eu-nl-1.cloud.sap
   ingress:
     enabled: true
     authentication:
@@ -45,9 +45,33 @@ prometheus-server:
   thanos:
     enabled: true
 
+  additionalScrapeConfigs:
+    name: storage-additional-scrape-config
+    key: scrape-config.yaml
+
 thanos:
   name: storage
   deployWholeThanos: true
   clusterDomain: kubernetes
   serviceAccount:
     create: false
+
+netapp_cap_exporter:
+  enabled: false
+  apps:
+    manila:
+      scrapeInterval: 2m
+      scrapeTimeout: 110s
+      fullname: "netapp-capacity-exporter-manila"
+    cinder:
+      scrapeInterval: 2m
+      scrapeTimeout: 110s
+      fullname: "netapp-capacity-exporter-cinder"
+    baremetal:
+      scrapeInterval: 2m
+      scrapeTimeout: 110s
+      fullname: "netapp-capacity-exporter-bare-metal"
+    controlplane:
+      scrapeInterval: 2m
+      scrapeTimeout: 110s
+      fullname: "netapp-capacity-exporter-control-plane"
