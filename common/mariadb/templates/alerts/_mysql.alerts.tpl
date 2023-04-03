@@ -14,7 +14,7 @@
       summary: {{ include "fullName" . }} has too many connections open.
 
   - alert: {{ include "alerts.service" . | title }}MariaDBSlowQueries
-    expr: (rate(mysql_global_status_slow_queries{app=~"{{ include "fullName" . }}"}[30m]) > 0)
+    expr: (delta(mysql_global_status_slow_queries{app=~"{{ include "fullName" . }}"}[8m]) > 3)
     for: 10m
     labels:
       context: database
