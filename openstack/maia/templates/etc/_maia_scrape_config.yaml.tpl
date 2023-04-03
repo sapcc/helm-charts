@@ -149,6 +149,31 @@
       - '{__name__=~"^netapp_volume_.+", app="netapp-capacity-exporter-manila", project_id!=""}'
       - '{__name__=~"^openstack_manila_share_.+", project_id!=""}'
 
+- job_name: 'prometheus-storage'
+  scrape_interval: 1m
+  scrape_timeout: 55s
+  static_configs:
+    - targets: ['prometheus-storage.infra-monitoring:9090']
+  metric_relabel_configs:
+    - regex: "cluster|cluster_type|instance|job|kubernetes_namespace|kubernetes_pod_name|kubernetes_name|pod_template_hash|exported_instance|exported_job|type|name|component|app|system|thanos_cluster|thanos_cluster_type|thanos_region|alert_tier|alert_service"
+      action: labeldrop
+    - action: drop
+      source_labels: [__name__]
+      regex: netapp_volume_saved_.*
+    - source_labels: [__name__]
+      target_label: __name__
+      regex: netapp_volume_(.*)
+      replacement: openstack_manila_share_${1}
+
+  metrics_path: '/federate'
+  params:
+    'match[]':
+      # import any tenant-specific metric, except for those which already have been imported
+      # filter for ltmVirtualServStatName to be present as it relabels into project_id. It gets enriched by "openstack/maia/aggregations/snmp-f5.rules with the openstack metric openstack_neutron_networks_projects"
+      - '{__name__=~"^netapp_capacity_.+", project_id!=""}'
+      - '{__name__=~"^netapp_volume_.+", app="netapp-capacity-exporter-manila", project_id!=""}'
+
+
 # iteration over vmware-monitoring values
 {{- range $target := .Values.global.targets }}
 # skip non-production targets called "mgmt"
