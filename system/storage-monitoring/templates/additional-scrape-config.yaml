@@ -1,12 +1,15 @@
-{{- $values := .Values.prometheus-server }}
+{{- $root := . }}
+{{- $values := .Values.netapp_cap_exporter }}
+{{- if $values.enabled }}
+---
 apiVersion: v1
 kind: Secret
 
 metadata:
-  name: {{ $values.name }}-additional-scrape-config
+  name: {{ $root.name }}-additional-scrape-config
   labels:
-    prometheus: {{ $values.name }}
+    prometheus: {{ $root.name }}
 
 data:
   scrape-config.yaml: {{ include (print $.Template.BasePath "/_prometheus.yaml.tpl") . | b64enc }}
-{{- end }}
+{{- end}}
