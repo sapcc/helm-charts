@@ -188,3 +188,38 @@
     - targets:
       - 'bastion.{{ .Values.global.region }}.cloud.sap'
 {{- end }}
+
+- job_name: 'prometheus-storage'
+  scheme: https
+  scrape_interval: {{ .Values.collector.scrapeInterval }}
+  scrape_timeout: {{ .Values.collector.scrapeTimeout }}
+
+  honor_labels: true
+  metrics_path: '/federate'
+
+  params:
+    'match[]':
+      - '{__name__=~"netapp_aggregate_.+"}'
+      - '{__name__=~"netapp_volume_.+"}'
+      - '{__name__=~"netapp_filer_.+"}'
+      - '{__name__=~"netapp_aggr_.+"}'
+      - '{__name__=~"netapp_node_.+"}'
+      - '{__name__=~"netapp_lun_.+"}'
+      - '{__name__=~"netapp_harvest_.+"}'
+
+  relabel_configs:
+    - action: replace
+      source_labels: [__address__]
+      target_label: region
+      regex: prometheus-storage.(.+).cloud.sap
+      replacement: $1
+
+  {{ if .Values.authentication.enabled }}
+  tls_config:
+    cert_file: /etc/prometheus/secrets/prometheus-infra-frontend-sso-cert/sso.crt
+    key_file: /etc/prometheus/secrets/prometheus-infra-frontend-sso-cert/sso.key
+  {{ end }}
+
+  static_configs:
+    - targets:
+      - "prometheus-storage.{{ .Values.global.region }}.cloud.sap"
