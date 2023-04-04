@@ -12,6 +12,10 @@ use = call:manila.api:root_app_factory
 {{- if .Values.audit.enabled }} audit{{- end -}}
 {{- end }}
 
+{{- define "rate_limit_pipe" -}}
+{{- if .Values.api_rate_limit.enabled }} rate_limit{{- end -}}
+{{- end }}
+
 {{- define "watcher_pipe" -}}
 {{- if .Values.watcher.enabled }} watcher{{- end -}}
 {{- end }}
@@ -19,7 +23,7 @@ use = call:manila.api:root_app_factory
 [composite:openstack_share_api]
 use = call:manila.api.middleware.auth:pipeline_factory
 noauth = cors {{- include "osprofiler_pipe" . }} faultwrap http_proxy_to_wsgi sizelimit noauth {{- include "watcher_pipe" . }} api
-keystone = cors {{- include "osprofiler_pipe" . }} faultwrap http_proxy_to_wsgi sizelimit authtoken keystonecontext {{- include "watcher_pipe" . }} {{- include "audit_pipe" . }} api
+keystone = cors {{- include "osprofiler_pipe" . }} faultwrap http_proxy_to_wsgi sizelimit authtoken keystonecontext {{- include "rate_limit_pipe" . }} {{- include "watcher_pipe" . }}
 keystone_nolimit = cors {{- include "osprofiler_pipe" . }} faultwrap http_proxy_to_wsgi sizelimit authtoken keystonecontext {{- include "watcher_pipe" . }} {{- include "audit_pipe" . }} api
 
 [composite:openstack_share_api_v2]
