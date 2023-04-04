@@ -48,6 +48,8 @@
   value: '300'  # per account
 - name:  KEPPEL_BURST_MANIFEST_PUSHES
   value: '15'   # per account
+- name:  KEPPEL_CLAIR_IGNORE_STALE_INDEX_REPORTS
+  value: 'true' # The reindex loop is causing wide-ranging stability issues. Until the root cause is known, we're disabling it.
 {{- if .Values.keppel.clair.hostname }}
 - name:  KEPPEL_CLAIR_PRESHARED_KEY
   valueFrom:

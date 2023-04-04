@@ -130,6 +130,7 @@ checksum/object.ring: {{ include "swift/templates/object-ring.yaml" . | sha256su
     limits:
       cpu: {{ required (printf "proxy_%s_resources_cpu is required" $kind) $resources_cpu | quote }}
       memory: {{ required (printf "proxy_%s_resources_memory is required" $kind) $resources_memory | quote }}
+  # TODO: securityContext: { runAsNonRoot: true }
   volumeMounts:
     - mountPath: /swift-etc
       name: swift-etc
@@ -188,6 +189,7 @@ checksum/object.ring: {{ include "swift/templates/object-ring.yaml" . | sha256su
     limits:
       cpu: "100m"
       memory: "150Mi"
+  # TODO: securityContext: { runAsNonRoot: true }
   volumeMounts:
     - mountPath: /swift-etc
       name: swift-etc
@@ -203,6 +205,8 @@ checksum/object.ring: {{ include "swift/templates/object-ring.yaml" . | sha256su
   args: [ --statsd.mapping-config=/swift-etc/statsd-exporter.yaml ]
   {{- $resources_cpu := index $context.Values "proxy_statsd_exporter_resources_cpu" }}
   {{- $resources_memory := index $context.Values "proxy_statsd_exporter_resources_memory" }}
+  securityContext:
+    runAsNonRoot: true
   resources:
     requests:
       cpu: {{ required "proxy_statsd_exporter_resources_cpu is required" $resources_cpu | quote }}
@@ -236,6 +240,7 @@ checksum/object.ring: {{ include "swift/templates/object-ring.yaml" . | sha256su
     - {{ $service }}
   # privileged access required for /usr/bin/unmount-helper (TODO: use shared/slave mount namespace instead)
   securityContext:
+    runAsUser: 0
     privileged: true
   env:
     - name: DEBUG_CONTAINER

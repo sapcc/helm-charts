@@ -412,21 +412,7 @@
       action: keep
 {{- end }}
 
-{{- $values := .Values.apic_exporter -}}
-{{- if $values.enabled }}
-- job_name: 'apic-exporter'
-  scrape_interval: {{$values.scrapeInterval}}
-  scrape_timeout: {{$values.scrapeTimeout}}
-  static_configs:
-    - targets:
-      - 'apic-exporter:9102'
-  metrics_path: /
-  relabel_configs:
-    - source_labels: [job]
-      regex: apic-exporter
-      action: keep
-{{- end }}
-
+{{- if .Values.netapp_cap_exporter.enabled}}
 {{- range $name, $app := .Values.netapp_cap_exporter.apps }}
 - job_name: '{{ $app.fullname }}'
   scrape_interval: {{ required ".Values.netapp_cap_exporter.apps[].scrapeInterval" $app.scrapeInterval }}
@@ -443,6 +429,7 @@
       target_label: app
       replacement: ${1}
       action: replace
+{{- end }}
 {{- end }}
 
 {{ if .Values.ask1k_tests.enabled }}

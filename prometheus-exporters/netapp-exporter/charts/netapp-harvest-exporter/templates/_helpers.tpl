@@ -77,5 +77,5 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 
 {{- define "prom-scrape-annotations" -}}
 prometheus.io/scrape: "true"
-prometheus.io/targets: {{ .Values.prometheus.target }}
+prometheus.io/targets: {{ .Values.global.prometheus }}
 {{- end }}

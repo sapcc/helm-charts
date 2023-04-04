@@ -66,11 +66,14 @@ spec:
             containerPort: 53
             protocol: UDP
           - name: rndc-tcp
-            containerPort: 953
+            containerPort: {{ .Values.rncd_port | default 953 }}
             protocol: TCP
+        {{ if .Values.extra_env }}
+{{ toYaml .Values.extra_env | indent 6 }}
+        {{ end }}
         volumeMounts:
           - name: persistent-storage
-            mountPath: /var/lib/bind
+            mountPath: {{ .Values.storage_mountpoint | default "/var/lib/bind" }}
           - name: bind-conf
             mountPath: /etc/bind
         livenessProbe:

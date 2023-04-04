@@ -1,16 +1,21 @@
-{{- define "volume_configmap" -}}
-{{- $volume := index . 1 -}}
+{{- define "volume_configmap" }}
+{{- $name := index . 1 }}
+{{- $volume := index . 2 }}
 {{- with index . 0 -}}
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: volume-{{$volume.name}}
+  name: {{ .Release.Name }}-volume-{{ $name }}
   labels:
     system: openstack
     type: configuration
     component: cinder
 data:
+  nfs_shares: |
+    {{- range $_, $value := $volume.nfs_shares }}
+    {{ $value.host }}:{{ $value.path }}
+    {{- end }}
   cinder-volume.conf: |
-{{ tuple . $volume | include "volume_conf" | indent 4 }}
-{{- end -}}
-{{- end -}}
+{{ tuple . $name $volume | include "volume_conf" | indent 4 }}
+{{- end }}
+{{- end }}

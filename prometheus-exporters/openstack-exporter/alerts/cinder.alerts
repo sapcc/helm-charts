@@ -1,7 +1,7 @@
 groups:
 - name: cinder
   rules:
-  - alert: CinderBackendStorageEmptyCritical
+  - alert: CinderBackendStorageEmpty
     expr: >
       sum(cinder_free_capacity_gib == 0) by (region, shard, backend) or sum(cinder_total_capacity_gib == 0) by (region, shard, backend)
     for: 15m
@@ -16,11 +16,23 @@ groups:
     annotations:
       description: "Cinder backend {{ $labels.shard }}/{{ $labels.backend }} has no storage capacity."
       summary: "Cinder backend {{ $labels.shard }}/{{ $labels.backend }} has no storage capacity."
-  - alert: CinderShardFreeSpaceWarning
-    expr: count by (shard, backend) (sum(cinder_available_capacity_gib) by (shard, backend, pool)) - (count by (shard,backend) (sum(cinder_virtual_free_capacity_gib / cinder_available_capacity_gib) by (shard, backend, pool) < .3)) < 2
+  - alert: CinderShardFreeSpace
+    expr: count by (shard, backend) (sum(cinder_available_capacity_gib) by (shard, backend, pool)) - (count by (shard,backend) (sum(cinder_virtual_free_capacity_gib / cinder_available_capacity_gib) by (shard, backend, pool) < .3)) <= 2
     for: 15m
     labels:
       severity: warning
+      tier: vmware
+      service: cinder
+      support_group: compute
+      playbook: docs/support/playbook/cinder/cinder-low-free-space
+    annotations:
+      description: 'Cinder backend {{ $labels.shard }}/{{ $labels.backend }} has 2 or less datastores with > 30% free space left'
+      summary: 'Cinder backend {{ $labels.shard }}/{{ $labels.backend }} has 2 or less datastores with > 30% free space left'
+  - alert: CinderShardFreeSpace
+    expr: count by (shard, backend) (sum(cinder_available_capacity_gib) by (shard, backend, pool)) - (count by (shard,backend) (sum(cinder_virtual_free_capacity_gib / cinder_available_capacity_gib) by (shard, backend, pool) < .3)) <= 1
+    for: 15m
+    labels:
+      severity: critical
       tier: vmware
       service: cinder
       support_group: compute
@@ -28,18 +40,6 @@ groups:
     annotations:
       description: 'Cinder backend {{ $labels.shard }}/{{ $labels.backend }} has 1 or less datastores with > 30% free space left'
       summary: 'Cinder backend {{ $labels.shard }}/{{ $labels.backend }} has 1 or less datastores with > 30% free space left'
-  - alert: CinderShardFreeSpaceCritical
-    expr: count by (shard, backend) (sum(cinder_available_capacity_gib) by (shard, backend, pool)) - (count by (shard,backend) (sum(cinder_virtual_free_capacity_gib / cinder_available_capacity_gib) by (shard, backend, pool) < .3)) < 1
-    for: 15m
-    labels:
-      severity: warning
-      tier: vmware
-      service: cinder
-      support_group: compute
-      playbook: docs/support/playbook/cinder/cinder-low-free-space
-    annotations:
-      description: 'Cinder backend {{ $labels.shard }}/{{ $labels.backend }} has less than 2 datastores with > 30% free space left'
-      summary: 'Cinder backend {{ $labels.shard }}/{{ $labels.backend }} has less than 2 datastores with > 30% free space left'
   - alert: CinderShardMaxVolumeSizeInfo
     expr: >
       count by (shard, backend) (sum(cinder_available_capacity_gib) by (shard, backend, pool)) - count by (shard, backend) (sum by(shard, backend, pool) (cinder_virtual_free_capacity_gib) - sum by(shard, backend, pool) (cinder_per_volume_gigabytes) <=0) < 3

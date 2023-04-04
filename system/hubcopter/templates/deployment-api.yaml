@@ -52,6 +52,10 @@ spec:
           image: "{{ required ".Values.global.dockerHubMirror variable missing" $.Values.global.dockerHubMirror }}/library/alpine:latest"
           imagePullPolicy: IfNotPresent
           command: ["sh", "-c", "until wget -O- $HUBCOPTER_GLAS_URL/healthcheck; do echo waiting for glas; sleep 1; done"]
+          securityContext:
+            runAsNonRoot: true
+            runAsUser:    65534 # nobody
+            runAsGroup:   65534 # nobody
       containers:
         - name: api
           image: {{ $.Values.global.registry }}/hubcopter:{{ $.Values.hubcopter.image_tag | required ".Values.hubcopter.image_tag is missing" }}
@@ -96,6 +100,8 @@ spec:
               value: 'Default'
             - name:  OS_USERNAME
               value: 'hubcopter'
+          securityContext:
+            runAsNonRoot: true
           volumeMounts:
             - mountPath: /etc/hubcopter
               name: config
