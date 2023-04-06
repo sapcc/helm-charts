@@ -363,7 +363,8 @@ groups:
       service: {{ default "metrics" .Values.alerts.service }}
       support_group: {{ default "observability" .Values.alerts.support_group }}
       severity: warning
-      meta: Prometheus `{{`{{ $labels.prometheus }}`}}` sends a high number of alerts.
+      meta: PrometheusThanos sidecar and Prometheus logLevel defaults to warn. `{{`{{ $labels.prometheus }}`}}` sends a high number of alerts.
+      playbook: docs/support/playbook/prometheus/high_alert_rate
     annotations:
       description: |
         Prometheus `{{`{{ $labels.prometheus }}`}}` sends

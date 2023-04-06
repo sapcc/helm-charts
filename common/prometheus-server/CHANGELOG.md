@@ -1,3 +1,7 @@
+## 7.1.40
+
+* HighAlert playbook link added
+
 ## 7.1.39
 
 * Thanos sidecar and Prometheus logLevel defaults to warn.

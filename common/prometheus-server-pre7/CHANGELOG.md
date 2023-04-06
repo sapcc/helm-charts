@@ -1,3 +1,7 @@
+## 6.4.22
+
+* HighAlert playbook link added
+
 ## 6.4.21
 
 * Limitation to own `pod-sd` scrape job for `PrometheusMultiplePodScrapes` alert
