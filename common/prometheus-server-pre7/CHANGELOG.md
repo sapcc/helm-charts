@@ -1,6 +1,7 @@
-## 6.4.22
+## 6.4.22 - 6.4.23
 
 * HighAlert playbook link added
+* HighAlert condition increased
 
 ## 6.4.21
 

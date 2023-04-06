@@ -1,6 +1,7 @@
-## 7.1.40
+## 7.1.40 - 7.1.41
 
 * HighAlert playbook link added
+* HighAlert condition increased
 
 ## 7.1.39
 
