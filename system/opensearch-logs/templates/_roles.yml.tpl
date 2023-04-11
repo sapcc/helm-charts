@@ -143,6 +143,17 @@ syslog:
     - "indices:data/write/delete"
     - "indices:data/write/index"
     - "indices:data/write/update"
+  - index_patterns:
+    - "netflow-*"
+    allowed_actions:
+    - "indices:admin/template/get"
+    - "indices:admin/template/put"
+    - "indices:admin/mapping/put"
+    - "indices:admin/create"
+    - "indices:data/write/bulk*"
+    - "indices:data/write/delete"
+    - "indices:data/write/index"
+    - "indices:data/write/update"
 
 jump:
   reserved: false
