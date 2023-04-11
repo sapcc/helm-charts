@@ -50,21 +50,6 @@ groups:
         summary: Scheduling failed due to insufficient memory
         description: The pod {{ $labels.pod_name }} failed to be scheduled. Insuffient memory!
 
-    - alert: OpenstackSwiftPodOOMKilled
-      expr: sum(rate(klog_pod_oomkill{pod_name=~"swift-.+"}[30m])) by (pod_name) > 0
-      for: 5m
-      labels:
-        support_group: containers
-        tier: os
-        service: swift
-        severity: info
-        context: memory
-        meta: "{{ $labels.pod_name }}"
-        no_alert_on_absence: "true" # the underlying metric is only generated after the first oomkill
-      annotations:
-        summary: Pod was oomkilled
-        description: The pod {{ $labels.pod_name }} was oomkilled recently
-
     - alert: OpenstackSwiftPodOOMExceedingLimits
       # NOTE: `container_memory_saturation_ratio` ranges from 0 to 1, so 0.7 = 70% and 1.0 = 100%
       expr: container_memory_saturation_ratio{namespace="swift",pod_name!~"keep-image-pulled-.*"} > 0.7 AND predict_linear(container_memory_saturation_ratio{namespace="swift",pod_name!~"keep-image-pulled-.*"}[1h], 7*3600) > 1.0
