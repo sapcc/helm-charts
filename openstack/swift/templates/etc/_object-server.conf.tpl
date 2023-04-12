@@ -38,7 +38,13 @@ allowed_headers = Content-Disposition, Content-Encoding, X-Delete-At, X-Object-M
 [object-replicator]
 concurrency = {{ .Values.object_replicator_concurrency }}
 replicator_workers = {{ .Values.object_replicator_workers }}
+{{- if .Values.object_replicator_rsync_bwlimit }}
 rsync_bwlimit = {{ .Values.object_replicator_rsync_bwlimit }}
+{{- else if .Values.node_count ge 10 }}
+object_replicator_rsync_bwlimit: 51200 # KBytes per second - 50MiB/s
+{{- else if .Values.node_count ge 80 }}
+object_replicator_rsync_bwlimit: 30720 # KBytes per second - 30MiB/s
+{{- end }}
 
 [object-updater]
 interval = 60
