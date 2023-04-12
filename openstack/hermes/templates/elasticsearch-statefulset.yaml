@@ -1,4 +1,4 @@
-{{- if .Values.elasticsearchStatefulSet.enabled }}
+{{- if .Values.elasticsearch.StatefulSet.enabled }}
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
@@ -77,9 +77,9 @@ spec:
             - name: ES_PATH_CONF
               value: "/data/es-config/"
             - name: discovery.seed_hosts
-              value: {{- range $i := until int .Values.elasticsearchStatefulSet.replicas }}{{- if $i }},{{- end }}elasticsearch-{{ $i }}.elasticsearch-headless{{- end }}
+              value: {{- range $i := until int .Values.elasticsearch.statefulSet.replicas }}{{- if $i }},{{- end }}elasticsearch-{{ $i }}.elasticsearch-headless{{- end }}
             - name: cluster.initial_master_nodes
-              value: {{- range $i := until int .Values.elasticsearchStatefulSet.replicas }}{{- if $i }},{{- end }}elasticsearch-{{ $i }}{{- end }}
+              value: {{- range $i := until int .Values.elasticsearch.statefulSet.replicas }}{{- if $i }},{{- end }}elasticsearch-{{ $i }}{{- end }}
           volumeMounts:
             - name: elasticsearch-data
               mountPath: /data
