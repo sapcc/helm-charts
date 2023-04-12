@@ -14,8 +14,8 @@ http.compression: true
 cluster.max_shards_per_node: 10000
 action.search.shard_count.limit: 10000
 
-discovery.zen.minimum_master_nodes: 1
-discovery.type: single-node
+cluster.initial_master_nodes: {{ .Values.elasticsearch.initialMasterNodes }}
+discovery.type: {{ .Values.elasticsearch.discoveryType }}
 
 indices.breaker.total.use_real_memory: false
 

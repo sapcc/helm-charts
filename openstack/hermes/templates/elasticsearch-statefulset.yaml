@@ -1,6 +1,6 @@
-{{- if .Values.elasticsearch.enabled }}
+{{- if .Values.elasticsearchStatefulSet.enabled }}
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
   name: elasticsearch
   namespace: hermes
@@ -11,15 +11,13 @@ metadata:
 #  annotations:
 #    kubernetes.io/change-cause: {{.Values.cluster_deployment_reason}}
 spec:
-  replicas: 1
   selector:
     matchLabels:
       component: elasticsearch
-  strategy:
+  updateStrategy:
     type: RollingUpdate
     rollingUpdate:
-      maxUnavailable: 1
-      maxSurge: 1
+      partition: 0
   template:
     metadata:
       labels:
@@ -45,7 +43,7 @@ spec:
               chown -R 1000:1000 /data/snapshots &&
               touch /data/es-config/elasticsearch.keystore && rm /data/es-config/elasticsearch.keystore
           volumeMounts:
-            - name: data
+            - name: elasticsearch-data
               mountPath: /data
             - name: hermes-etc
               mountPath: /hermes-etc
@@ -55,9 +53,15 @@ spec:
         - name: hermes-etc
           configMap:
             name: elasticsearch-etc
-        - name: data
-          persistentVolumeClaim:
-            claimName: hermes-elasticsearch
+      volumeClaimTemplates:
+        - metadata:
+            name: elasticsearch-data
+          spec:
+            accessModes:
+              - ReadWriteOnce
+            resources:
+              requests:
+                storage: 100Gi
       containers:
         - name: elasticsearch
           image: {{.Values.global.elasticCoMirror}}/elasticsearch/elasticsearch:{{.Values.hermes_image_version_elasticsearch}}
@@ -72,8 +76,12 @@ spec:
               value: "/data/es-config/jvm.options"
             - name: ES_PATH_CONF
               value: "/data/es-config/"
+            - name: discovery.seed_hosts
+              value: {{- range $i := until int .Values.elasticsearchStatefulSet.replicas }}{{- if $i }},{{- end }}elasticsearch-{{ $i }}.elasticsearch-headless{{- end }}
+            - name: cluster.initial_master_nodes
+              value: {{- range $i := until int .Values.elasticsearchStatefulSet.replicas }}{{- if $i }},{{- end }}elasticsearch-{{ $i }}{{- end }}
           volumeMounts:
-            - name: data
+            - name: elasticsearch-data
               mountPath: /data
           resources:
             requests:
