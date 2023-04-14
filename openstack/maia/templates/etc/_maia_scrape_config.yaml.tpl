@@ -211,6 +211,7 @@
       - '{__name__="cronus_event_mails_sent_provider_rate_perminute"}'
       - '{__name__="cronus_event_mails_sent_success_provider_rate_perminute"}'
       - '{__name__="cronus_event_mails_sent_error_provider_rate_perminute"}'
+      - '{__name__="aws_ses_cronus_identity_from_is_verified"}'
   metric_relabel_configs:
     - action: labeldrop
       regex: "exported_instance|exported_job|instance|job|tags|cluster|cluster_type|multicloud_id|alert_tier|alert_service"
