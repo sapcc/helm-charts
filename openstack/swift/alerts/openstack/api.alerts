@@ -158,7 +158,7 @@ groups:
       summary: swift-mismatched-config
 
   - alert: OpenstackSwiftNodeError
-    expr: sum(max by (storage_ip) (swift_cluster_md5_errors{kind="ring"})) > 0
+    expr: max by (storage_ip) (swift_cluster_md5_errors{kind="ring"}) > 0
     for: 15m
     labels:
       context: nodeerror
@@ -167,9 +167,10 @@ groups:
       severity: warning
       support_group: containers
       tier: os
-      meta: '{{ $value }} Swift nodes not reachable'
+      playbook: 'docs/support/playbook/swift/node_error'
+      meta: Swift node {{ $labels.storage_ip }} not reachable
     annotations:
-      description: Swift node error. {{ $value }} Node(s) not reachable.
+      description: Swift node error. Node with IP {{ $labels.storage_ip }} is not reachable.
       summary: swift-node-error
 
   - alert: OpenstackSwiftDisksUnmounted
