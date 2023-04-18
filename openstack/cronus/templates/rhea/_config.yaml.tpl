@@ -19,6 +19,23 @@ rhea:
     endpointType: {{ .Values.config.endpointType }}
 {{- end }}
   auth:
+    keystone:
+{{- if .Values.config.keystone }}
+{{- range $key, $value := .Values.config.keystone }}
+    {{- if $value }}
+      {{ $key }}: {{ $value }}
+    {{- end }}
+{{- end }}
+{{- if .Values.global.cronus_service_password }}
+      password: {{ .Values.global.cronus_service_password }}
+{{- end }}
+{{ else }}
+      authUrl: {{ .Values.config.authUrl }}
+      applicationCredentialID: {{ .Values.config.applicationCredentialID }}
+      applicationCredentialSecret: {{ .Values.config.applicationCredentialSecret }}
+      region: {{ .Values.config.region }}
+      endpointType: {{ .Values.config.endpointType }}
+{{- end }}
     policy:
 {{- range $key, $value := .Values.rhea.policy }}
       {{ $key }}: {{ $value }}
