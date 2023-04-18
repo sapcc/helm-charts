@@ -1,0 +1,69 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: openstack_performance
+  namespace: openstack_performance
+spec:
+  template:
+    spec:
+      serviceAccountName: "openstack_performance"
+      containers:
+        - name: {{ .Chart.Name }}
+          image: "{{ .Values.image.repository }}:{{ $locustVerion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command:
+            - "locust"
+          args:
+            - "-f"
+            - "openstack_performance/openstack.py"
+            - "OpenstackUser"
+          ports:
+            - name: http
+              containerPort: 8089
+              protocol: TCP
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          env:
+            - name: OS_USER_DOMAIN_NAME
+              value: "tempest"
+            - name: OS_PROJECT_DOMAIN_NAME
+              value: "tempest"
+            - name: OS_PASSWORD
+              value: {{ .Values.tempestAdminPassword | quote }}
+            - name: OS_USERNAME
+              value: "neutron-tempest-admin1"
+            - name: OS_PROJECT_NAME
+              value: "neutron-tempest-admin1"
+            - name: OS_AUTH_URL
+              value: "http://{{ if .Values.global.clusterDomain }}keystone.{{.Release.Namespace}}.svc.{{ required "Missing clusterDomain value!" .Values.global.clusterDomain}}{{ else }}keystone.{{.Release.Namespace}}.svc.kubernetes.{{required "Missing region value!" .Values.global.region}}.{{ required "Missing tld value!" .Values.global.tld}}{{end}}:5000/v3"
+          volumeMounts:
+            - mountPath: "openstack_performance"
+              name: openstack_performance
+      initContainers:
+        - name: git-sync
+          image: keppel.eu-de-1.cloud.sap/ccloud/git-sync:v3.6.5
+          volumeMounts:
+            - name: openstack_performance
+              mountPath: /data
+          env:
+            - name: GIT_SYNC_REPO
+              value: "https://github.wdf.sap.corp/cc/openstack_performance.git" ##Private repo-path-you-want-to-clone
+            - name: GIT_SYNC_USERNAME
+              value: {{.Values.openstack-performance.gitsync.username}}
+            - name: GIT_SYNC_PASSWORD
+              value: {{.Values.openstack-performance.gitsync.password}}
+            - name: GIT_SYNC_BRANCH
+              value: {{.Values.openstack-performance.gitsync.branch}}
+            - name: GIT_SYNC_ONE_TIME
+              value: "true"
+            - name: GIT_SSL_NO_VERIFY
+              value: "true"
+            - name: GIT_SYNC_ROOT
+              value: /data
+            - name: GIT_SYNC_DEST
+              value: "openstack_performance"
+          securityContext:
+            runAsUser: 0
+          volumes:
+            - name: openstack_performance
+              emptyDir: {}
