@@ -30,11 +30,9 @@ spec:
               command:
                 - /bin/sh
                 - '-c'
-                - restic snapshots &>/dev/null || restic init ; echo "Init done."; restic backup /bak -q --tag "${BACKUP_NAME}-backup-${TIMESTAMP}"; echo "Backup completed successfully."; restic forget --cleanup-cache --keep-within $PRUNE_SCHEDULE --prune; echo "Pruning done.";
+                - restic snapshots &>/dev/null || restic init ; echo "Init done."; restic backup /bak -q --tag "{{ .Values.volume.backup.pvcName }}-backup-${TIMESTAMP}"; echo "Backup completed successfully."; restic forget --cleanup-cache --keep-within {{ .Values.volume.backup.pruneSchedule }} --prune; echo "Pruning done.";
                 # - restic restore 76ca96f6 --target /
               env:
-                - name: BACKUP_NAME
-                  value: cookbooks
                 - name: RESTIC_REPOSITORY
                   value: swift:volume_backup:/{{.Values.global.region}}/{{ .Values.volume.backup.pvcName }}
                 - name: OS_AUTH_URL
@@ -53,8 +51,6 @@ spec:
                   value: {{.Values.global.region}}
                 - name: OS_PASSWORD
                   value: {{.Values.volume.backup.password}}
-                - name: PRUNE_SCHEDULE
-                  value: {{ .Values.volume.backup.pruneSchedule }}
               volumeMounts:
               - name: backup
                 mountPath: /bak
