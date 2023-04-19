@@ -2,9 +2,9 @@ credentials:
   default:
     username: {{ .Values.network_generic_ssh_exporter.user }}
     password: {{ .Values.network_generic_ssh_exporter.password }}
-#  apic:
-#    username: {{ .Values.network_generic_ssh_exporter.apic_user }}
-#    password: {{ .Values.network_generic_ssh_exporter.apic_password }}
+  apic:
+    username: {{ .Values.network_generic_ssh_exporter.apic_user }}
+    password: {{ .Values.network_generic_ssh_exporter.apic_password }}
 
 lookup_sources:
   metis:
@@ -17,19 +17,30 @@ lookup_sources:
       router_project: SELECT DISTINCT id, project_id FROM neutron.routers
 
 metrics:
-#  ep_learning_state:
-#    regex: |
-#      Xr.tcam.limit.learn.disabled.+\:.(\w+)|Peer.Xr.tcam.limit.learn.disabled.+\:.(\w+)|Hal.Learn.Disabled.+\:.(\w+)
-#    multi_value: true
-#    value: $3
-#    labels:
-#      hal_learn: $3
-#      xr_learn: $1
-#      xr_peer_learn: $2
-#    description: EP learing status check
-#    metric_type_name: string
-#    command: vsh_lc -c 'show system internal epmc global-info'
-#    timeout_secs: 5
+  xr_tcam_learn_disabled: &xr_tcam_learn_disabled
+    regex: |
+      ^Xr tcam limit learn disabled\s*:\s+(\w+)$
+    value: $1
+    map_values:
+    - regex: No
+      value: 0
+    - regex: Yes
+      value: 1
+    description: linecard xr learning state
+    metric_type_name: string
+    command: vsh_lc -c 'show system internal epmc global-info'
+    timeout_secs: 5
+  hal_learn_disabled:
+    <<: *xr_tcam_learn_disabled
+    regex: |
+      ^Hal Learn Disabled\s*:\s+(\w+)$
+    description: linecard hal learning state
+  epm_pending_epreg:
+    <<: *xr_tcam_learn_disabled
+    regex: |
+      ^EPM pending epreq\s*:\s+(\d+)$
+    metric_type_name: gauge
+    description: linecard pending EP requests
 
   nat_static:
     regex: >-
@@ -638,10 +649,10 @@ metrics:
     timeout_secs: 5
 
 batches:
-  test:
-    - redundancy_send_queue
-#  acileaf:
-#    - ep_learning_state
+  aci-leaf:
+    - xr_tcam_learn_disabled
+    - hal_learn_disabled
+    - epm_pending_epreg
   neutron-router:
     - nat_dynamic
     - nat_static
@@ -703,11 +714,11 @@ batches:
     - xr_ntp_configured
 
 devices:
-#  cisco-aci:
-#    prompt_regex: ^\S+\# $
   cisco-ios-xe:
     prompt_regex: ^\S+\#$
     init_command: terminal length 0
+  cisco-aci:
+    prompt_regex: ^\S+\# $
   cisco-nx-os:
     prompt_regex: ^\S+\# $
     init_command: terminal length 0
