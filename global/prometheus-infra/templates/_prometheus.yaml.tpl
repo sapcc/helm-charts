@@ -79,6 +79,7 @@
       - '{__name__=~"^logstash_node_plugin_failures_total", plugin=~"elasticsearch|opensearch"}'
       - '{__name__=~"^vcsa_service_status"}'
       - '{__name__=~"^windows_updates_.+"}'
+      - '{__name__=~"^windows_ad_certificate_.+"}'
       - '{__name__=~"^aws_ses_cronus_.+"}'
       - '{__name__=~"^cronus_simulator_.+"}'
       - '{__name__=~"^cronus_updater_.+"}'
