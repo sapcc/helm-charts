@@ -1,3 +1,7 @@
+## 7.2.0
+
+* Updating Prometheus to 2.43.0 (not yet stringlabels!)
+
 ## 7.1.40 - 7.1.41
 
 * HighAlert playbook link added
