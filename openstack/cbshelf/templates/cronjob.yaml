@@ -48,6 +48,9 @@ spec:
                   value: Default
                 - name: OS_REGION_NAME
                   value: {{.Values.global.region}}
+              envFrom:
+                - secretRef:
+                    name: volume-backup
               volumeMounts:
               - name: backup
                 mountPath: /bak
@@ -63,3 +66,4 @@ metadata:
     name: volume-backup
 data:
     OS_PASSWORD: {{ .Values.volume.backup.password | b64enc | quote }}
+    RESTIC_PASSWORD: {{ .Values.volume.backup.resticPassword | b64enc | quote }}
