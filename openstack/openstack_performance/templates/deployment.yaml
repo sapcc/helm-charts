@@ -1,21 +1,43 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: openstack_performance
-  namespace: openstack_performance
+  name: openstack-performance
+  namespace: openstack-performance
 spec:
+  selector:
+    matchLabels:
+      app: openstack-performance
   template:
+    metadata:
+      labels:
+        app: openstack-performance
     spec:
-      serviceAccountName: "openstack_performance"
+      securityContext:
+        runAsUser: 0
+      serviceAccountName: "openstack-performance"
+      imagePullSecrets:
+        - name: regcred
+      restartPolicy: Always
+      volumes:
+        - name: openstack-performance
+          emptyDir: {}
+        - name: config
+          configMap:
+            name: openstack-performance-config
+        - name: git-ssh-key
+          secret:
+            secretName: git-ssh-key
+            defaultMode: 0400
       containers:
         - name: {{ .Chart.Name }}
           image: "{{ .Values.image.repository }}:latest"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           command:
-            - "locust"
+            - sh
+            - /config/docker-entrypoint.sh
           args:
             - "-f"
-            - "openstack_performance/openstack.py"
+            - "/data/src/openstack_performance/openstack.py"
             - "OpenstackUser"
           ports:
             - name: http
@@ -26,11 +48,11 @@ spec:
             httpGet:
               path: /
               port: 8089
-            readinessProbe:
-              periodSeconds: 30
-              httpGet:
-                path: /
-                port: 8089
+          readinessProbe:
+            periodSeconds: 30
+            httpGet:
+              path: /
+              port: 8089
           env:
             - name: OS_USER_DOMAIN_NAME
               value: "tempest"
@@ -43,36 +65,40 @@ spec:
             - name: OS_PROJECT_NAME
               value: "neutron-tempest-admin1"
             - name: OS_AUTH_URL
-              value: "http://{{ if .Values.global.clusterDomain }}keystone.{{.Release.Namespace}}.svc.{{ required "Missing clusterDomain value!" .Values.global.clusterDomain}}{{ else }}keystone.{{.Release.Namespace}}.svc.kubernetes.{{required "Missing region value!" .Values.global.region}}.{{ required "Missing tld value!" .Values.global.tld}}{{end}}:5000/v3"
+              value: "https://identity-3.qa-de-1.cloud.sap/v3"
           volumeMounts:
-            - mountPath: "openstack_performance"
-              name: openstack_performance
+            - mountPath: "/data"
+              name: openstack-performance
+              readOnly: false
+            - name: config
+              mountPath: /config
         - name: git-sync
-          image: keppel.eu-de-1.cloud.sap/ccloud/git-sync:v3.6.5
+          image: "keppel.eu-de-1.cloud.sap/ccloud/git-sync:v3.5.0"
           volumeMounts:
-            - name: openstack_performance
-              mountPath: /data
+            - name: openstack-performance
+              mountPath: "/data"
+              readOnly: false
+            - name: git-ssh-key
+              mountPath: /etc/git-secret
+              readOnly: true
           env:
             - name: GIT_SYNC_REPO
-              value: "https://github.wdf.sap.corp/cc/openstack_performance.git"
-            - name: GIT_SYNC_USERNAME
-              value: {{.Values.openstack-performance.gitsync.username}}
-            - name: GIT_SYNC_PASSWORD
-              value: {{.Values.openstack-performance.gitsync.password}}
+              value: "git@github.wdf.sap.corp:cc/openstack_performance.git"
             - name: GIT_SYNC_BRANCH
-              value: {{.Values.openstack-performance.gitsync.branch}}
+              value: main
             - name: GIT_SYNC_ONE_TIME
               value: "false"
             - name: GIT_SSL_NO_VERIFY
               value: "true"
             - name: GIT_SYNC_ROOT
-              value: /data
-            - name: GIT_SYNC_DEST
-              value: "openstack_performance"
+              value: "/data"
             - name: GIT_SYNC_PERIOD
               value: "10000"
+            - name: GIT_SYNC_DEST
+              value: "src"
+            - name: GIT_SYNC_SSH
+              value: "true"
+            - name: GIT_SSH_KEY_FILE
+              value: /etc/git-secret/ssh
           securityContext:
             runAsUser: 0
-          volumes:
-            - name: openstack_performance
-              emptyDir: {}
