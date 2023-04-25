@@ -8,6 +8,16 @@ Expand the name of the chart.
 
 {{/*
 Create a default fully qualified app name.
+The limit is 63 chars as per RFC 1035, but we truncate to 48 chars to leave
+some space for the name suffixes on replicasets and pods.
+*/}}
+{{- define "fullname" -}}
+  {{- $name := default .Chart.Name .Values.nameOverride -}}
+  {{- printf "%s-%s" .Release.Name $name | trunc 48 | replace "_" "-" -}}
+{{- end -}}
+
+{{/*
+Create a default fully qualified app name.
 We truncate at 63 chars because some Kubernetes name fields are limited to this (by the DNS naming spec).
 */}}
 {{- define "redis.fullname" -}}
