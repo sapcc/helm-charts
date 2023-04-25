@@ -21,6 +21,8 @@ concourse:
       defaultGetTimeout: 1h
       defaultPutTimeout: 1h
       defaultTaskTimeout: 4h
+      apiMaxConns: 10
+      backendMaxConns: 30
 
       enableBuildAuditing: true
       enableContainerAuditing: true
@@ -52,7 +54,7 @@ concourse:
 
   web:
     enabled: true
-    replicas: 2
+    replicas: 3
     service:
       annotations:
         prometheus.io/targets: "kubernetes"
@@ -110,6 +112,18 @@ concourse:
           value: "system"
           effect: "NoSchedule"
     extendedConfConfigMap: postgresql-extended-config
+    #metrics:
+    #  enabled: true
+    #  image:
+    #    registry: keppel.eu-de-2.cloud.sap
+    #    repository: ccloud-dockerhub-mirror/bitnami/postgres-exporter
+    #    tag: 0.12.0-debian-11-r71
+    #  service:
+    #    ports:
+    #      metrics: 9187
+    #    annotations:
+    #      prometheus.io/scrape: "true"
+    #      prometheus.io/port: "9187"
 
   secrets:
     create: true
