@@ -76,6 +76,7 @@
       - '{__name__=~"^logstash_node_mem_heap_used_bytes"}'
       - '{__name__=~"^logstash_node_plugin_events_in_total", plugin=~"elasticsearch|opensearch"}'
       - '{__name__=~"^logstash_node_plugin_events_out_total", plugin=~"elasticsearch|opensearch"}'
+      - '{__name__=~"^opensearch_retention_.+"}'
       - '{__name__=~"^logstash_node_plugin_failures_total", plugin=~"elasticsearch|opensearch"}'
       - '{__name__=~"^vcsa_service_status"}'
       - '{__name__=~"^windows_updates_.+"}'
