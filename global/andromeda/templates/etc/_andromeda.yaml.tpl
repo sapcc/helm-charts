@@ -22,7 +22,7 @@ api_settings:
   disable_cors: false
 
 service_auth:
-{{- if hasPrefix "qa-de-" .Values.global.region }}
+{{- if ne .Values.global.clusterType "scaleout" }}
   auth_url: {{.Values.global.keystone_api_endpoint_protocol_internal | default "http"}}://{{include "andromeda_keystone_api_endpoint_internal" .}}:{{ .Values.global.keystone_api_port_internal | default 5000}}/v3
 {{- else }}
   auth_url: {{ .Values.global.keystone_api_endpoint_protocol_public | default "https"}}://{{include "keystone_api_endpoint_host_public" .}}/v3
