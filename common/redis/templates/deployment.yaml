@@ -8,6 +8,10 @@ metadata:
     release: "{{ .Release.Name }}"
     heritage: "{{ .Release.Service }}"
 spec:
+{{- if .Values.persistence.enabled }}
+  strategy:
+    type: Recreate
+{{- end }}
   selector:
     matchLabels:
       app: {{ template "redis.fullname" . }}
