@@ -1,5 +1,5 @@
 groups:
-- name: elk_index_size
+- name: opensearch_metrics
   rules:
   - record:  es_index_size_mb
     expr: sum by (index_docs) (es_index_store_size_bytes{elastic_cluster="elkelasticsearch",context="total"} / 1024 / 1024)
@@ -15,3 +15,9 @@ groups:
     expr: count(count by (index) (opensearch_index_store_size_bytes{index=~"syslog.+"}))
   - record:  opensearch_retention_systemd
     expr: count(count by (index) (opensearch_index_store_size_bytes{index=~"systemd.+"}))
+  - record:  opensearch_retention_virtual
+    expr: count(count by (index) (opensearch_index_store_size_bytes{index=~"virtual.+"}))
+  - record:  opensearch_retention_deployments
+    expr: count(count by (index) (opensearch_index_store_size_bytes{index=~"deployments.+"}))
+  - record:  opensearch_retention_alerts
+    expr: count(count by (index) (opensearch_index_store_size_bytes{index=~"alerts.+"}))
