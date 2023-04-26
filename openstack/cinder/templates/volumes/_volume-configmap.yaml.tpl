@@ -18,4 +18,6 @@ data:
   cinder-volume.conf: |
 {{ tuple . $name $volume | include "volume_conf" | indent 4 }}
 {{- end }}
+  initiatorname.iscsi: |
+    InitiatorName=iqn.2008-11.org.linux-kvm
 {{- end }}

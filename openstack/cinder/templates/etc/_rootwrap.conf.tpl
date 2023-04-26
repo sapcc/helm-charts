@@ -4,13 +4,13 @@
 [DEFAULT]
 # List of directories to load filter definitions from (separated by ',').
 # These directories MUST all be only writeable by root !
-filters_path=/etc/cinder/rootwrap.d,/usr/share/cinder/rootwrap
+filters_path=/etc/cinder/rootwrap.d,/usr/share/cinder/rootwrap,/var/lib/openstack/etc/cinder/rootwrap.d
 
 # List of directories to search executables in, in case filters do not
 # explicitely specify a full path (separated by ',')
 # If not specified, defaults to system PATH environment variable.
 # These directories MUST all be only writeable by root !
-exec_dirs=/sbin,/usr/sbin,/bin,/usr/bin,/usr/local/bin,/usr/local/sbin,/var/lib/openstack/bin
+exec_dirs=/usr/local/sbin,/usr/sbin,/sbin,/usr/local/bin,/usr/bin,/bin,/var/lib/openstack/bin
 
 # Enable logging to syslog
 # Default value is False
@@ -24,4 +24,4 @@ syslog_log_facility=syslog
 # Which messages to log.
 # INFO means log all usage
 # ERROR means only log unsuccessful attempts
-syslog_log_level=ERROR
+syslog_log_level=DEBUG

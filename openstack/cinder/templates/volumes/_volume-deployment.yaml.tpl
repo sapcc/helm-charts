@@ -40,6 +40,9 @@ spec:
 {{ include "utils.proxysql.pod_settings" . | indent 6 }}
       containers:
       - name: cinder-volume
+        securityContext:
+          capabilities:
+            add: ["SYS_ADMIN"]
         image: {{required ".Values.global.registry is missing" .Values.global.registry}}/loci-cinder:{{.Values.imageVersionCinderVolume | default .Values.imageVersion | required "Please set cinder.imageVersion or similar" }}
         imagePullPolicy: IfNotPresent
         command:
@@ -71,6 +74,14 @@ spec:
           mountPath: /etc/cinder/logging.ini
           subPath: logging.ini
           readOnly: true
+        - name: cinder-etc
+          mountPath: /etc/sudoers.d/cinder
+          subPath: sudoers-cinder
+          readOnly: true
+        - name: cinder-etc
+          mountPath: /etc/cinder/rootwrap.conf
+          subPath: rootwrap.conf
+          readOnly: true
         - name: volume-config
           mountPath: /etc/cinder/nfs_shares
           subPath: nfs_shares
@@ -79,9 +90,9 @@ spec:
           mountPath: /etc/cinder/cinder-volume.conf
           subPath: cinder-volume.conf
           readOnly: true
-        - name: cinder-etc
-          mountPath: /etc/sudoers
-          subPath: sudoers
+        - name: volume-config
+          mountPath: /etc/iscsi/initiatorname.iscsi
+          subPath: initiatorname.iscsi
           readOnly: true
         {{- range $_, $share := $volume.nfs_shares }}
         - name: share-{{ $share.name | required "Please set name to `printf '{host}:{path}' | md5sum`" }}
@@ -92,6 +103,10 @@ spec:
       {{- include "utils.proxysql.container" . | indent 6 }}
       {{- include "jaeger_agent_sidecar" . | indent 6 }}
       volumes:
+      - name: cinder-bin
+        configMap:
+          name: cinder-bin
+          defaultMode: 0500
       - name: etccinder
         emptyDir: {}
       - name: cinder-etc
@@ -100,6 +115,12 @@ spec:
       - name: volume-config
         configMap:
           name: {{ .Release.Name }}-volume-{{ $name }}
+      - name: host
+        hostPath:
+          path: /
+      - name: host-dev
+        hostPath:
+          path: /dev
       {{- range $_, $share := $volume.nfs_shares }}
       - name: share-{{ $share.name }}
         nfs:
