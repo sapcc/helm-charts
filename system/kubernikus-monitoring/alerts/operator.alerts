@@ -54,7 +54,10 @@ groups:
       summary: Deorbiter operations dropped to 0
 
   - alert: KubernikusHammertime
-    expr: kubernikus_hammertime_status == 1
+    # the kubernikus_hammertime_status can leave stale entries for already deleted clusters
+    # in joining with the kubernikus_kluster_info metric we filter out stale metrics as
+    # kluster info is not leaving behind stale metrics
+    expr: kubernikus_hammertime_status == 1 and on(kluster) label_replace(kubernikus_kluster_info,"kluster","$1","kluster_name","(.*)")
     for: 10m
     labels:
       tier: kks

@@ -45,7 +45,7 @@ groups:
           description: '{{ $labels.host }}'
 
       - alert: ManilaStorageAggregateHighUsage
-        expr: max_over_time(netapp_aggregate_used_percentage{app=~".*manila", availability_zone!="eu-de-2a"}[2h]) > 75
+        expr: max_over_time(netapp_aggregate_used_percentage{app=~".*manila"}[2h]) > 75
         for: 10m
         labels:
           severity: info
@@ -58,21 +58,6 @@ groups:
           support_component: manila_netapp
         annotations:
           description: 'Storage Capacity Usage on node {{$labels.node}} is above 75%'
-          summary: 'High Capacity Usage on {{$labels.filer}}'
-
-      - alert: ManilaStorageAggregateHighUsage
-        expr: max_over_time(netapp_aggregate_used_percentage{app=~".*manila", availability_zone="eu-de-2a"}[2h]) > 85
-        labels:
-          severity: info
-          tier: os
-          support_group: compute-storage-api
-          service: manila
-          context: netapp-usage
-          dashboard: netapp-capacity-manila?&var-region={{$labels.region}}&var-node={{$labels.node}}
-          playbook: 'docs/support/playbook/manila/netapp_aggr_full_maint'
-          support_component: manila_netapp
-        annotations:
-          description: 'Storage Capacity Usage on node {{$labels.node}} is above 85%'
           summary: 'High Capacity Usage on {{$labels.filer}}'
 
       - alert: ManilaStorageAggregateFull
@@ -106,7 +91,7 @@ groups:
           summary: 'NetApp Filer Aggregate {{ $labels.aggregate }} offline'
 
       - alert: ManilaAvailabilityZoneUsageHigh
-        expr: (min by(availability_zone) (avg_over_time(netapp_aggregate_used_percentage{app=~".*manila"}[1h]))) > 45
+        expr: (min by(availability_zone) (avg_over_time(netapp_aggregate_used_percentage{app=~".*manila", availability_zone!="eu-de-1a"}[1h]))) > 45
         for: 1h
         labels:
           severity: warning
@@ -120,6 +105,22 @@ groups:
         annotations:
           description: '{{ $labels.availability_zone }} has less than 5% capacity for new shares'
           summary: '{{ $labels.availability_zone }} usage above 45%'
+
+      - alert: ManilaAvailabilityZoneUsageHigh
+        expr: (min by(availability_zone) (avg_over_time(netapp_aggregate_used_percentage{app=~".*manila", availability_zone="eu-de-1a"}[1h]))) > 60
+        for: 1h
+        labels:
+          severity: warning
+          tier: os
+          support_group: compute-storage-api
+          service: manila
+          context: netapp-az-usage
+          meta: '{{ $labels.availability_zone }} usage high'
+          playbook: 'docs/support/playbook/manila/az_usage_high'
+          support_component: manila_netapp
+        annotations:
+          description: '{{ $labels.availability_zone }} has less than 5% capacity for new shares'
+          summary: '{{ $labels.availability_zone }} usage above 60%'
 
       - alert: ManilaShareInodeUsageHigh
         expr: max_over_time(netapp_volume_inode_files_used_percentage{app="netapp-capacity-exporter-manila",volume_type!="dp"}[1h]) > 0.85
@@ -161,7 +162,7 @@ groups:
           context: netapp-usage
           dashboard: netapp-capacity-vpods?&var-region={{$labels.region}}&var-node={{$labels.node}}
           meta: 'Aggregate usage above the high usage level for this region'
-          playbook: 'docs/support/playbook/cinder/balancing/cinder_balance_alert'
+          playbook: 'docs/support/playbook/cinder/balancing/cinder-balance-alert'
         annotations:
           description: 'Storage Capacity Usage on node {{$labels.node}} in az {{$labels.availability_zone}} is above the high usage level for this region'
           summary: 'High Capacity Usage on {{$labels.filer}}'

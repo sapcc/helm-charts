@@ -40,9 +40,24 @@ groups:
     annotations:
       description: 'Cinder backend {{ $labels.shard }}/{{ $labels.backend }} has 1 or less datastores with > 30% free space left'
       summary: 'Cinder backend {{ $labels.shard }}/{{ $labels.backend }} has 1 or less datastores with > 30% free space left'
-  - alert: CinderShardMaxVolumeSizeInfo
+  - alert: CinderShardMaxVolumeSize
     expr: >
-      count by (shard, backend) (sum(cinder_available_capacity_gib) by (shard, backend, pool)) - count by (shard, backend) (sum by(shard, backend, pool) (cinder_virtual_free_capacity_gib) - sum by(shard, backend, pool) (cinder_per_volume_gigabytes) <=0) < 3
+      count by (shard, backend) (sum(cinder_available_capacity_gib) by (shard, backend, pool)) - count by (shard, backend) (sum by(shard, backend, pool) (cinder_virtual_free_capacity_gib) - sum by(shard, backend, pool) (cinder_per_volume_gigabytes) <=0) < 1
+    for: 15m
+    labels:
+      severity: critical
+      tier: vmware
+      service: cinder
+      support_group: compute
+      context: "openstack-exporter"
+      meta: "Cinder backend {{ $labels.shard }}/{{ $labels.backend }} has no datastores that can accept max volume size"
+      playbook: docs/support/playbook/cinder/cinder-low-free-space
+    annotations:
+      description: "Cinder backend {{ $labels.shard }}/{{ $labels.backend }} has no datastores that can accept max volume size"
+      summary: "Cinder backend {{ $labels.shard }}/{{ $labels.backend }} has no datastores that can accept max volume size"
+  - alert: CinderShardMaxVolumeSize
+    expr: >
+      count by (shard, backend) (sum(cinder_available_capacity_gib) by (shard, backend, pool)) - count by (shard, backend) (sum by(shard, backend, pool) (cinder_virtual_free_capacity_gib) - sum by(shard, backend, pool) (cinder_per_volume_gigabytes) <=0) < 2
     for: 15m
     labels:
       severity: warning
@@ -50,11 +65,11 @@ groups:
       service: cinder
       support_group: compute
       context: "openstack-exporter"
-      meta: "Cinder backend {{ $labels.shard }}/{{ $labels.backend }} has 2 or less datastores that can accept max volume size"
+      meta: "Cinder backend {{ $labels.shard }}/{{ $labels.backend }} less than 2 datastores that can accept max volume size"
       playbook: docs/support/playbook/cinder/cinder-low-free-space
     annotations:
-      description: "Cinder backend {{ $labels.shard }}/{{ $labels.backend }} has 2 or less datastores that can accept max volume size"
-      summary: "Cinder backend {{ $labels.shard }}/{{ $labels.backend }} has 2 or less datastores that can accept max volume size"
+      description: "Cinder backend {{ $labels.shard }}/{{ $labels.backend }} less than 2 datastores that can accept max volume size"
+      summary: "Cinder backend {{ $labels.shard }}/{{ $labels.backend }} less than 2 datastores that can accept max volume size"
   - alert: CinderBackendDown
     expr: >
         cinder_backend_state_info{backend_state='down'}

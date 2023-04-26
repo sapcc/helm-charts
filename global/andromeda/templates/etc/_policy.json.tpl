@@ -1,9 +1,8 @@
 {
   "cloud_admin": "project_domain_name:ccadmin and project_name:cloud_admin",
-  "owner": "project_id:%(project_id)s",
-  "member": "role:member and rule:owner",
-  "viewer": "role:gtm_viewer and rule:owner",
-  "admin": "role:gtm_admin and rule:owner",
+  "member": "role:member",
+  "viewer": "role:gtm_viewer",
+  "admin": "role:gtm_admin or role:admin",
 
   "context_is_admin": "rule:cloud_admin or rule:admin",
   "context_is_editor": "rule:context_is_admin or rule:member",

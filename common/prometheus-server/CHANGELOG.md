@@ -1,3 +1,13 @@
+## 7.2.0 - 7.2.1
+
+* Updating Prometheus to 2.42.0
+* removing networking.k8s.io/v1beta1 for ingresses (not used in the clusters anymore)
+
+## 7.1.40 - 7.1.41
+
+* HighAlert playbook link added
+* HighAlert condition increased
+
 ## 7.1.39
 
 * Thanos sidecar and Prometheus logLevel defaults to warn.

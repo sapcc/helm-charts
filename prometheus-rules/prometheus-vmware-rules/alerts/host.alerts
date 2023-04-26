@@ -4,7 +4,7 @@ groups:
   - alert: HostWithRunningVMsNotResponding
     expr: |
       avg_over_time(vrops_hostsystem_runtime_connectionstate{state="notResponding"}[5m])
-      and on (hostsystem) avg_over_time(vrops_hostsystem_runtime_powerstate{state="Unknown"}[5m])
+      and on (hostsystem) avg_over_time(vrops_hostsystem_runtime_powerstate{state!="Powered Off"}[5m])
       and on (hostsystem) vrops_hostsystem_runtime_maintenancestate{state="notInMaintenance"}
       and on (hostsystem) count(vrops_virtualmachine_runtime_powerstate{virtualmachine!~"vCLS.*", state="Powered On"}) by (hostsystem) > 0
     for: 5m
@@ -26,7 +26,7 @@ groups:
       vrops_hostsystem_summary_running_vms_number == 0 and
       on (hostsystem) vrops_hostsystem_runtime_connectionstate{state="notResponding"} and
       on (hostsystem) vrops_hostsystem_runtime_maintenancestate{state="notInMaintenance"} and
-      on (hostsystem) vrops_hostsystem_runtime_powerstate{state="Powered On"}
+      on (hostsystem) vrops_hostsystem_runtime_powerstate{state!="Powered Off"}
     labels:
       severity: warning
       tier: vmware
@@ -197,6 +197,7 @@ groups:
     expr: |
       vrops_hostsystem_alert_info{alert_name="vSphere High Availability (HA) has detected a possible host failure"} 
       and on (hostsystem) vrops_hostsystem_runtime_maintenancestate{state!~"inMaintenance", vccluster!~".*controlplane-swift"}
+      and on (hostsystem) vrops_hostsystem_runtime_connectionstate{state!="notResponding"} 
     labels:
       severity: critical
       tier: vmware
@@ -379,3 +380,19 @@ groups:
     annotations:
       description: "storage paths for `{{ $labels.hostsystem }}` is less than other hosts in the `{{ $labels.vccluster }}`. ({{ $labels.vcenter }})"
       summary: "storage paths for `{{ $labels.hostsystem }}` is less than other hosts in the `{{ $labels.vccluster }}`. ({{ $labels.vcenter }})"
+
+  - alert: HostAdapterAllPathsDown
+    expr: |
+      vrops_hostsystem_alert_info{alert_name="All HBA paths are down"}
+      and on (hostsystem) vrops_hostsystem_runtime_maintenancestate{state!~"inMaintenance"}
+    labels:
+      severity: info
+      tier: vmware
+      service: compute
+      support_group: compute
+      meta: "All host bus adapters paths are down on `{{ $labels.hostsystem }}` in the *{{ $labels.vccluster }}* cluster\nLink to the vCenter: --> <{{ $labels.vcenter }}>"
+      playbook: docs/devops/alert/vcenter/#
+      no_alert_on_absence: "true"
+    annotations:
+      description: "All host bus adapters paths are down on `{{ $labels.hostsystem }}` in the *{{ $labels.vccluster }}* cluster\nLink to the vCenter: --> <{{ $labels.vcenter }}>"
+      summary: "All host bus adapters paths are down on `{{ $labels.hostsystem }}` in the *{{ $labels.vccluster }}* cluster\nLink to the vCenter: --> <{{ $labels.vcenter }}>"
