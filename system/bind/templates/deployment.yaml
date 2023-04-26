@@ -66,35 +66,38 @@ spec:
             containerPort: 53
             protocol: UDP
           - name: rndc-tcp
-            containerPort: {{ .Values.rncd_port | default 953 }}
+            containerPort: {{ .Values.rndc_port | default 953 }}
             protocol: TCP
         {{ if .Values.extra_env }}
-{{ toYaml .Values.extra_env | indent 6 }}
+{{ toYaml .Values.extra_env | indent 8 }}
         {{ end }}
         volumeMounts:
           - name: persistent-storage
             mountPath: {{ .Values.storage_mountpoint | default "/var/lib/bind" }}
+{{ if .Values.override_conf }}
           - name: bind-conf
             mountPath: /etc/bind
+{{ end }}
         livenessProbe:
           exec:
             command:
-              - sh
-              - /etc/bind/healthz
+              - rndc
+              - status
           initialDelaySeconds: 15
           timeoutSeconds: 3
           periodSeconds: 10
         readinessProbe:
           exec:
             command:
-              - sh
-              - /etc/bind/healthz
+              - rndc
+              - status
           initialDelaySeconds: 15
           timeoutSeconds: 3
           periodSeconds: 10
       - name: metric
         image: {{ required ".Values.global.registryAlternateRegion is missing" .Values.global.registryAlternateRegion }}/{{.Values.image_bind_exporter}}:{{ .Values.image_bind_exporter_tag}}
         imagePullPolicy: {{ .Values.image_pullPolicy }}
+        args: ["-bind.stats-url={{ .Values.exporter_stats_url }}"]
         ports:
           - name: metrics
             containerPort: 9119
@@ -102,6 +105,8 @@ spec:
       - name: persistent-storage
         persistentVolumeClaim:
           claimName: {{ .Release.Name }}
+{{ if .Values.override_conf }}
       - name: bind-conf
         configMap:
           name: {{ .Release.Name }}
+{{ end }}

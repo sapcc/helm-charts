@@ -172,6 +172,7 @@
       # filter for ltmVirtualServStatName to be present as it relabels into project_id. It gets enriched by "openstack/maia/aggregations/snmp-f5.rules with the openstack metric openstack_neutron_networks_projects"
       - '{__name__=~"^netapp_capacity_.+", project_id!=""}'
       - '{__name__=~"^netapp_volume_.+", app="netapp-capacity-exporter-manila", project_id!=""}'
+      - '{__name__=~"^openstack_manila_share_.+", project_id!=""}'
 
 
 # iteration over vmware-monitoring values
@@ -236,6 +237,7 @@
       - '{__name__="cronus_event_mails_sent_provider_rate_perminute"}'
       - '{__name__="cronus_event_mails_sent_success_provider_rate_perminute"}'
       - '{__name__="cronus_event_mails_sent_error_provider_rate_perminute"}'
+      - '{__name__="aws_ses_cronus_identity_from_is_verified"}'
   metric_relabel_configs:
     - action: labeldrop
       regex: "exported_instance|exported_job|instance|job|tags|cluster|cluster_type|multicloud_id|alert_tier|alert_service"

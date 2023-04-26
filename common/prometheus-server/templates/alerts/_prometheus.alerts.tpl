@@ -359,13 +359,14 @@ groups:
 
   - alert: PrometheusHighAlertRate
     expr: |
-      avg by (prometheus) (rate(prometheus_notifications_sent_total{prometheus="{{ include "prometheus.name" . }}"}[5m]) > 10)
+      avg by (prometheus) (rate(prometheus_notifications_sent_total{prometheus="{{ include "prometheus.name" . }}"}[5m]) > 50)
     for: 5m
     labels:
       service: {{ default "metrics" $root.Values.alerts.service }}
       support_group: {{ default "observability" $root.Values.alerts.support_group }}
       severity: warning
       meta: Prometheus `{{`{{ $labels.prometheus }}`}}` sends a high number of alerts.
+      playbook: docs/support/playbook/prometheus/high_alert_rate
     annotations:
       description: |
         Prometheus `{{`{{ $labels.prometheus }}`}}` sends

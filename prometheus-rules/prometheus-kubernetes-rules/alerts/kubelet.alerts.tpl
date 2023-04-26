@@ -34,21 +34,6 @@ groups:
       description: Kublet on {{`{{ $labels.node }}`}} is DOWN.
       summary: A Kubelet is DOWN
 
-  - alert: KubeletScrapeMissing
-    expr: absent(up{job="kubernetes-kubelet"})
-    for: 10m
-    labels:
-      tier: {{ required ".Values.tier missing" .Values.tier }}
-      service: kubelet
-      support_group: containers
-      severity: warning
-      context: kubelet
-      dashboard: kubernetes-health
-      playbook: docs/support/playbook/kubernetes/k8s_node_scrape_missing
-    annotations:
-      description: Kubelets cannot be scraped. Status unknown.
-      summary: Kubelets failed to be scraped.
-
   - alert: KubeletTooManyPods
     expr: kubelet_running_pod_count > 225
     for: 1h

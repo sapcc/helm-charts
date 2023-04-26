@@ -61,6 +61,8 @@ use = egg:swift#proxy_logging
 [filter:slo]
 use = egg:swift#slo
 max_manifest_segments = {{ .Values.max_manifest_segments }}
+# Default is true with 2023.1 - we might need to pimp the object expirers before allow this
+allow_async_delete = false
 
 # Note: Put after auth and staticweb in the pipeline.
 [filter:dlo]

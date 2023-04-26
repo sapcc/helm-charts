@@ -14,7 +14,7 @@ cronus:
       backend: {{$v.backend | quote }}
     {{- end }}
     {{- if $v.routing }}
-      routing: {{$v.routing | quote }}
+      routing: {{$v.routing }}
     {{- end }}
   {{- end }}
 {{- end }}
