@@ -69,8 +69,7 @@ driver = fake-hardware
 
 [compute]
 # image_ref and image_ref_alt will be changed to the image-id during init-script as the image-id can change over time.
-image_ref = CHANGE_ME_IMAGE_REF
-image_ref_alt = CHANGEMEIMAGEREFALT
+# Set them via environment variable OS_COMPUTE__IMAGE_REF and OS_COMPUTE__IMAGE_REF_ALT
 endpoint_type = internal
 v3_endpoint_type = internal
 region = {{ .Values.global.region }}
