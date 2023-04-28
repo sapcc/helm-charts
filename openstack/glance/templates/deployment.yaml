@@ -39,8 +39,9 @@ spec:
         {{- end }}
     spec:
       {{ include "utils.proxysql.pod_settings" . | indent 6 }}
-      {{- if .Values.file.persistence.enabled }}
       initContainers:
+      {{- tuple . (dict "jobs" (tuple . "migration-job" | include "job_name") "service" (print .Release.Name "-mariadb," .Release.Name "-memcached")) | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 6 }}
+      {{- if .Values.file.persistence.enabled }}
       - name: permissions
         securityContext:
           runAsUser: 0
@@ -82,22 +83,10 @@ spec:
           failureThreshold: 2
         command:
         - dumb-init
-        - kubernetes-entrypoint
+        - /var/lib/openstack/bin/glance-api
         env:
-        - name: COMMAND
-          value: "/var/lib/openstack/bin/glance-api"
-        - name: NAMESPACE
-          value: {{ .Release.Namespace }}
-        - name: DEPENDENCY_JOBS
-          value: "{{ tuple . "migration-job" | include "job_name" }}"
-        - name: DEPENDENCY_SERVICE
-          value: {{ .Release.Name }}-mariadb,{{ .Release.Name }}-memcached
         - name: DEBUG_CONTAINER
           value: "false"
-        - name: PGAPPNAME
-          valueFrom:
-            fieldRef:
-              fieldPath: metadata.name
         {{- if .Values.sentry.enabled }}
         - name: SENTRY_DSN
           valueFrom:
