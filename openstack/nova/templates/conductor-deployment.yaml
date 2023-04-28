@@ -35,22 +35,11 @@ spec:
         configmap-etc-hash: {{ include (print $.Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
     spec:
 {{ tuple . "nova" "conductor" | include "kubernetes_pod_anti_affinity" | indent 6 }}
-{{ include "utils.proxysql.pod_settings" . | indent 6 }}
+      {{- include "utils.proxysql.pod_settings" . | indent 6 }}
       terminationGracePeriodSeconds: {{ .Values.defaults.default.graceful_shutdown_timeout | add 5 }}
       hostname: nova-conductor
       initContainers:
-        - name: dependencies
-          image: {{ tuple . "conductor" | include "container_image_nova" }}
-          imagePullPolicy: IfNotPresent
-          command:
-            - kubernetes-entrypoint
-          env:
-            - name: COMMAND
-              value: "true"
-            - name: NAMESPACE
-              value: {{ .Release.Namespace }}
-            - name: DEPENDENCY_SERVICE
-              value: "nova-api,{{ .Release.Name }}-rabbitmq"
+      {{- tuple . (dict "service" (include "nova.helpers.cell01_services" .)) | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 6 }}
       containers:
         - name: nova-conductor
           image: {{ tuple . "conductor" | include "container_image_nova" }}

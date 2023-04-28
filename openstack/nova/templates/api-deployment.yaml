@@ -35,52 +35,52 @@ spec:
         {{- end }}
     spec:
       terminationGracePeriodSeconds: {{ .Values.defaults.default.graceful_shutdown_timeout | add 5 }}
-{{- if .Values.pod.debug.api }}
+      {{- if .Values.pod.debug.api }}
       securityContext:
         runAsUser: 0
-{{- end }}
+      {{- end }}
 {{ tuple . "nova" "api" | include "kubernetes_pod_anti_affinity" | indent 6 }}
-{{ include "utils.proxysql.pod_settings" . | indent 6 }}
+      {{- include "utils.proxysql.pod_settings" . | indent 6 }}
       hostname: nova-api
+      initContainers:
+      {{- tuple . (dict "service" (include "nova.helpers.cell01_services" .) "jobs" (tuple . "db-migrate" | include "job_name")) | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 6 }}
       containers:
         - name: nova-api
           image: {{ tuple . "api" | include "container_image_nova" }}
           imagePullPolicy: IfNotPresent
           command:
-            - dumb-init
-            - kubernetes-entrypoint
+          - dumb-init
+          {{- if .Values.api.use_uwsgi }}
+          - uwsgi
+          - --ini
+          - /etc/nova/api_uwsgi.ini
+          {{- else }}
+          - nova-api
+          {{- end }}
           env:
-            - name: COMMAND
-              value: "{{ if .Values.api.use_uwsgi }}uwsgi --ini /etc/nova/api_uwsgi.ini{{ else }}nova-api{{ end }}"
-            - name: NAMESPACE
-              value: {{ .Release.Namespace }}
-            - name: DEPENDENCY_JOBS
-              value: {{ tuple . "db-migrate" | include "job_name" }}
-            - name: DEPENDENCY_SERVICE
-              value: "{{ .Release.Name }}-mariadb,{{ .Release.Name }}-api-mariadb,{{ .Release.Name }}-rabbitmq"
-            - name: STATSD_HOST
-              value: "localhost"
-            - name: STATSD_PORT
-              value: "9125"
-            {{- if .Values.api.use_uwsgi }}
-            - name: OS_OSLO_MESSAGING_RABBIT__HEARTBEAT_IN_PTHREAD
-              value: "true"
-            {{- end }}
-            {{- if .Values.sentry.enabled }}
-            - name: SENTRY_DSN
-              valueFrom:
-                secretKeyRef:
-                  name: sentry
-                  key: {{ .Chart.Name }}.DSN.python
-            {{- end }}
-{{- if .Values.python_warnings }}
-            - name: PYTHONWARNINGS
-              value: {{ .Values.python_warnings | quote }}
-{{- end }}
+          - name: STATSD_HOST
+            value: "localhost"
+          - name: STATSD_PORT
+            value: "9125"
+          {{- if .Values.api.use_uwsgi }}
+          - name: OS_OSLO_MESSAGING_RABBIT__HEARTBEAT_IN_PTHREAD
+            value: "true"
+          {{- end }}
+          {{- if .Values.sentry.enabled }}
+          - name: SENTRY_DSN
+            valueFrom:
+              secretKeyRef:
+                name: sentry
+                key: {{ .Chart.Name }}.DSN.python
+          {{- end }}
+          {{- if .Values.python_warnings }}
+          - name: PYTHONWARNINGS
+            value: {{ .Values.python_warnings | quote }}
+          {{- end }}
           lifecycle:
             preStop:
               {{- include "utils.snippets.pre_stop_graceful_shutdown" . | indent 14 }}
-{{- if not .Values.pod.debug.api }}
+          {{- if not .Values.pod.debug.api }}
           livenessProbe:
             httpGet:
               path: /
@@ -93,7 +93,7 @@ spec:
               port: {{.Values.global.novaApiPortInternal}}
             initialDelaySeconds: 15
             timeoutSeconds: 5
-{{- end }}
+          {{- end }}
           {{- if .Values.pod.resources.api }}
           resources:
 {{ toYaml .Values.pod.resources.api | indent 12 }}

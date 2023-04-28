@@ -16,19 +16,15 @@ spec:
     spec:
       restartPolicy: OnFailure
       {{- include "utils.proxysql.job_pod_settings" . | indent 6 }}
+      initContainers:
+      {{- tuple . (dict "service" (include "nova.helpers.database_services" .)) | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 6 }}
       containers:
       - name: nova-migration
         image: {{ tuple . "api" | include "container_image_nova" }}
         imagePullPolicy: IfNotPresent
         command:
-        - kubernetes-entrypoint
+        - /container.init/db-migrate
         env:
-        - name: COMMAND
-          value: "/container.init/db-migrate"
-        - name: NAMESPACE
-          value: {{ .Release.Namespace }}
-        - name: DEPENDENCY_SERVICE
-          value: "{{ .Release.Name }}-mariadb,{{ .Release.Name }}-api-mariadb{{ if eq .Values.cell2.enabled true }},{{ .Values.mariadb_cell2.name }}-mariadb{{ end }}"
         - name: PYTHONWARNINGS
           value: {{ .Values.python_warnings | quote }}
         volumeMounts:

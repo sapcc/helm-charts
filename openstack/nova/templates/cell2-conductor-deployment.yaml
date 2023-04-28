@@ -40,18 +40,7 @@ spec:
       terminationGracePeriodSeconds: {{ .Values.defaults.default.graceful_shutdown_timeout | add 5 }}
       hostname: nova-conductor
       initContainers:
-        - name: dependencies
-          image: {{ tuple . "conductor" | include "container_image_nova" }}
-          imagePullPolicy: IfNotPresent
-          command:
-            - kubernetes-entrypoint
-          env:
-            - name: COMMAND
-              value: "true"
-            - name: NAMESPACE
-              value: {{ .Release.Namespace }}
-            - name: DEPENDENCY_SERVICE
-              value: "{{ .Release.Name }}-{{ .Values.cell2.name }}-rabbitmq,{{ .Release.Name }}-{{ .Values.cell2.name }}-mariadb"      
+      {{- tuple . (dict "service" (include "nova.helpers.cell2_services" .)) | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 6 }}
       containers:
         - name: nova-conductor
           image: {{ tuple . "conductor" | include "container_image_nova" }}
@@ -73,10 +62,10 @@ spec:
                   name: sentry
                   key: {{ .Chart.Name }}.DSN.python
             {{- end }}
-{{- if .Values.python_warnings}}
+            {{- if .Values.python_warnings}}
             - name: PYTHONWARNINGS
               value: {{ .Values.python_warnings | quote }}
-{{- end }}
+            {{- end }}
           livenessProbe:
             exec:
               command: ["openstack-agent-liveness", "--component", "nova", "--config-file", "/etc/nova/nova.conf"]

@@ -40,7 +40,7 @@ spec:
         {{- end }}
     spec:
 {{ tuple . "nova" (print "console-" $name) | include "kubernetes_pod_anti_affinity" | indent 6 }}
-{{ include "utils.proxysql.pod_settings" . | indent 6 }}
+      {{- include "utils.proxysql.pod_settings" . | indent 6 }}
       hostname: nova-console-{{ $name }}
       volumes:
       - name: nova-etc
@@ -75,12 +75,13 @@ spec:
         imagePullPolicy: IfNotPresent
         command:
         - dumb-init
-        - kubernetes-entrypoint
+        - nova-{{ $name }}proxy
+        {{- if $config.args }}
+          {{- range (regexSplit "\\s+" $config.args -1) }}
+        - {{ . }}
+          {{- end }}
+        {{- end }}
         env:
-        - name: COMMAND
-          value: nova-{{ $type }}proxy {{ $config.args }}
-        - name: NAMESPACE
-          value: {{ .Release.Namespace }}
         - name: LANG
           value: en_US.UTF-8
 {{- if .Values.python_warnings }}

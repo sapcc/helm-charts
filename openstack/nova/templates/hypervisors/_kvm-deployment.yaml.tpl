@@ -41,35 +41,30 @@ spec:
         value: "hypervisor"
         effect: "NoSchedule"
       initContainers:
-        - name: fix-permssion-instance-volume
-          image: busybox
-          command: ["sh", "-c", "chown -R 42436:42436 /var/lib/nova"]
-          volumeMounts:
-            - mountPath: /var/lib/nova/instances
-              name: instances
+      - name: fix-permssion-instance-volume
+        image: busybox
+        command: ["sh", "-c", "chown -R 42436:42436 /var/lib/nova"]
+        volumeMounts:
+          - mountPath: /var/lib/nova/instances
+            name: instances
       containers:
         - name: nova-compute
           image: {{ tuple . "compute" | include "container_image_nova" }}
           imagePullPolicy: IfNotPresent
           securityContext:
             privileged: true
-          command:
-            - kubernetes-entrypoint
+          command: ["dumb-init", "nova-compute"]
           env:
-            - name: COMMAND
-              value: "nova-compute"
-            - name: NAMESPACE
-              value: {{ .Release.Namespace }}
-            {{- if .Values.sentry.enabled }}
-            - name: SENTRY_DSN
-              valueFrom:
-                secretKeyRef:
-                  name: sentry
-                  key: {{ .Chart.Name }}.DSN.python
-            {{- end }}
+          {{- if .Values.sentry.enabled }}
+          - name: SENTRY_DSN
+            valueFrom:
+              secretKeyRef:
+                name: sentry
+                key: {{ .Chart.Name }}.DSN.python
+          {{- end }}
 {{- if or $hypervisor.python_warnings .Values.python_warnings }}
-            - name: PYTHONWARNINGS
-              value: {{ or $hypervisor.python_warnings .Values.python_warnings | quote }}
+          - name: PYTHONWARNINGS
+            value: {{ or $hypervisor.python_warnings .Values.python_warnings | quote }}
 {{- end }}
           volumeMounts:
             - mountPath: /var/lib/nova/instances
@@ -112,19 +107,15 @@ spec:
           securityContext:
             privileged: true
           command:
-            - kubernetes-entrypoint
+          - /container.init/nova-libvirt-start
           env:
-            - name: COMMAND
-              value: /container.init/nova-libvirt-start
-            - name: NAMESPACE
-              value: {{ .Release.Namespace }}
-            {{- if .Values.sentry.enabled }}
-            - name: SENTRY_DSN
-              valueFrom:
-                secretKeyRef:
-                  name: sentry
-                  key: {{ .Chart.Name }}.DSN.python
-            {{- end }}
+          {{- if .Values.sentry.enabled }}
+          - name: SENTRY_DSN
+            valueFrom:
+              secretKeyRef:
+                name: sentry
+                key: {{ .Chart.Name }}.DSN.python
+          {{- end }}
           volumeMounts:
             - mountPath: /var/lib/nova/instances
               name: instances
@@ -164,19 +155,15 @@ spec:
           securityContext:
             privileged: true
           command:
-            - kubernetes-entrypoint
+          - /usr/sbin/virtlogd
           env:
-            - name: COMMAND
-              value: /usr/sbin/virtlogd
-            - name: NAMESPACE
-              value: {{ .Release.Namespace }}
-            {{- if .Values.sentry.enabled }}
-            - name: SENTRY_DSN
-              valueFrom:
-                secretKeyRef:
-                  name: sentry
-                  key: {{ .Chart.Name }}.DSN.python
-            {{- end }}
+          {{- if .Values.sentry.enabled }}
+          - name: SENTRY_DSN
+            valueFrom:
+              secretKeyRef:
+                name: sentry
+                key: {{ .Chart.Name }}.DSN.python
+          {{- end }}
           volumeMounts:
             - mountPath: /var/lib/nova/instances
               name: instances
