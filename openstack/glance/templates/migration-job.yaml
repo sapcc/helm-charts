@@ -25,18 +25,7 @@ spec:
       restartPolicy: OnFailure
       {{- include "utils.proxysql.job_pod_settings" . | indent 6 }}
       initContainers:
-      - name: glance-init
-        image: {{ required ".Values.global.registry is missing" .Values.global.registry }}/loci-glance:{{ required "Please set glance.imageVersion or similar" .Values.imageVersion }}
-        imagePullPolicy: IfNotPresent
-        command:
-        - kubernetes-entrypoint
-        env:
-        - name: COMMAND
-          value: "true"
-        - name: NAMESPACE
-          value: {{ .Release.Namespace }}
-        - name: DEPENDENCY_SERVICE
-          value: {{ .Release.Name }}-mariadb
+      {{- tuple . (dict "service" (print .Release.Name "-mariadb" )) | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 6 }}
       containers:
       - name: glance-migration
         image: {{ required ".Values.global.registry is missing" .Values.global.registry }}/loci-glance:{{ required "Please set glance.imageVersion or similar" .Values.imageVersion }}
