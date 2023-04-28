@@ -227,13 +227,6 @@ route:
     match_re:
       context: sre
 
-  # deprecated
-  - receiver: slack_monitoring
-    continue: true
-    match_re:
-      tier: monitor
-      severity: critical|warning|info
-
   - receiver: octobus
     continue: true
     match_re:
