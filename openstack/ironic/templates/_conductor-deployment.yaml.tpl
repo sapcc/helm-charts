@@ -45,6 +45,8 @@ spec:
         {{- end }}
     spec:
       {{- include "utils.proxysql.pod_settings" . | indent 6 }}
+      initContainers:
+      {{- tuple . (dict "service" "ironic-api,ironic-rabbitmq") | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 6 }}
       containers:
       - name: ironic-conductor
         image: {{ .Values.global.registry }}/loci-ironic:{{ .Values.imageVersion }}
@@ -54,21 +56,14 @@ spec:
           runAsUser: 0
         {{- end }}
         command:
+        {{- if not $conductor.debug }}
         - dumb-init
-        - kubernetes-entrypoint
+        - ironic-conductor
+        {{- else }}
+        - sleep
+        - inf
+        {{- end }}
         env:
-        - name: COMMAND
-          {{- if not $conductor.debug }}
-          value: "ironic-conductor --config-file /etc/ironic/ironic.conf --config-file /etc/ironic/ironic-conductor.conf"
-          {{- else }}
-          value: "sleep inf"
-          {{- end }}
-        - name: POD_NAME
-          valueFrom: {fieldRef: {fieldPath: metadata.name}}
-        - name: NAMESPACE
-          value: {{ .Release.Namespace }}
-        - name: DEPENDENCY_SERVICE
-          value: "ironic-api,ironic-rabbitmq"
         - name: PYTHONWARNINGS
           value: ignore:Unverified HTTPS request
         {{- if .Values.logging.handlers.sentry }}
