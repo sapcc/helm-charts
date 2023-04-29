@@ -27,15 +27,21 @@ spec:
         pod.beta.kubernetes.io/hostname:  aci-agent-pet
         configmap-etc-hash: {{ include (print $.Template.BasePath "/configmap-etc.yaml") . | sha256sum }}
         configmap-etc-region-hash: {{ include (print $.Template.BasePath "/configmap-etc-region.yaml") . | sha256sum }}
-        configmap-etc-vendor-hash: {{ include (print $.Template.BasePath "/configmap-etc-vendor.yaml") . | sha256sum }}
     spec:
       hostname:  aci-agent-pet
       containers:
         - name: neutron-aci-agent
           image: {{.Values.global.registry}}/loci-neutron:{{.Values.imageVersionACI | default .Values.imageVersion | required "Please set neutron.imageVersionACI or similar"}}
           imagePullPolicy: IfNotPresent
-          command:
-            - /container.init/neutron-aci-agent-start
+          command: ['/var/lib/openstack/bin/python']
+          args:
+            - /var/lib/openstack/bin/neutron-aci-agent
+            - --config-file
+            - /etc/neutron/neutron.conf
+            - --config-file
+            - /etc/neutron/plugins/ml2/ml2-conf.ini
+            - --config-file
+            - /etc/neutron/plugins/ml2/ml2-conf-aci.ini
           livenessProbe:
             exec:
               command: ["neutron-agent-liveness", "--agent-type", "ACI Agent", "--config-file", "/etc/neutron/neutron.conf"]
@@ -45,8 +51,6 @@ spec:
           resources:
 {{ toYaml .Values.pod.resources.aci_agent | indent 12 }}
           env:
-            - name: DEBUG_CONTAINER
-              value: "false"
             - name: SENTRY_DSN
               valueFrom:
                 secretKeyRef:
@@ -55,15 +59,35 @@ spec:
           volumeMounts:
             - mountPath: /development
               name: development
-            - mountPath: /neutron-etc
+            - mountPath: /etc/neutron
+              name: empty-dir
+            - mountPath: /etc/neutron/neutron.conf
               name: neutron-etc
-            - mountPath: /neutron-etc-vendor
-              name: neutron-etc-vendor
-            - mountPath: /neutron-etc-region
+              subPath: neutron.conf
+              readOnly: true
+            - mountPath: /etc/neutron/plugins/ml2/ml2-conf.ini
+              name: neutron-etc
+              subPath: ml2-conf.ini
+              readOnly: true
+            - mountPath: /etc/neutron/plugins/ml2/ml2-conf-aci.ini
               name: neutron-etc-region
-            - mountPath: /container.init
-              name: container-init
+              subPath: ml2-conf-aci.ini
+              readOnly: true
+            - mountPath: /etc/neutron/policy.json
+              name: neutron-etc
+              subPath: neutron-policy.json
+              readOnly: true
+            - mountPath: /etc/neutron/rootwrap.conf
+              name: neutron-etc
+              subPath: rootwrap.conf
+              readOnly: true
+            - mountPath: /etc/neutron/logging.conf
+              name: neutron-etc
+              subPath: logging.conf
+              readOnly: true
       volumes:
+        - name: empty-dir
+          emptyDir: {}
         - name: development
           persistentVolumeClaim:
             claimName: development-pvclaim
@@ -73,11 +97,3 @@ spec:
         - name: neutron-etc-region
           configMap:
             name: neutron-etc-region
-        - name: neutron-etc-vendor
-          configMap:
-            name: neutron-etc-vendor
-        - name: container-init
-          configMap:
-            name: neutron-bin-vendor
-            defaultMode: 0755
-

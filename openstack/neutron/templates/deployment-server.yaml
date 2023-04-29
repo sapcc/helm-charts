@@ -31,11 +31,9 @@ spec:
         configmap-etc-vendor-hash: {{ include (print $.Template.BasePath "/configmap-etc-vendor.yaml") . | sha256sum }}
 {{- if .Values.api.uwsgi }}
         configmap-etc-api-hash: {{ include (print $.Template.BasePath "/configmap-etc-api.yaml") . | sha256sum }}
+{{- end }}
 {{- if .Values.cc_fabric.enabled }}
         configmap-etc-cc-fabric: {{ include (print $.Template.BasePath "/configmap-etc-cc-fabric.yaml") . | sha256sum }}
-{{- end }}
-{{- else }}
-        configmap-bin-hash: {{ include (print $.Template.BasePath "/configmap-bin.yaml") . | sha256sum }}
 {{- end }}
         prometheus.io/scrape: "true"
         prometheus.io/targets: "{{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus }}"
@@ -72,7 +70,24 @@ spec:
 {{- if .Values.api.uwsgi }}
               value: "uwsgi --ini /etc/neutron/uwsgi.ini"
 {{- else }}
-              value: "/container.init/neutron-server-start"
+              value: >-
+                neutron-server
+                --config-file /etc/neutron/neutron.conf
+                --config-file /etc/neutron/plugins/ml2/ml2-conf.ini
+                --config-file /etc/neutron/plugins/ml2/ml2-conf-aci.ini
+                --config-file /etc/neutron/plugins/ml2/ml2-conf-manila.ini
+                --config-file /etc/neutron/plugins/ml2/ml2-conf-arista.ini
+                --config-file /etc/neutron/plugins/ml2/ml2-conf-asr1k.ini
+                --config-file /etc/neutron/plugins/asr1k-global.ini
+                {{- if .Values.bgp_vpn.enabled }}
+                --config-file /etc/neutron/networking-bgpvpn.conf
+                {{- end }}
+                {{- if .Values.fwaas.enabled }}
+                --config-file /etc/neutron/neutron-fwaas.ini
+                {{- end -}}
+                {{- if .Values.interconnection.enabled }}
+                --config-file /etc/neutron/networking-interconnection.conf
+                {{- end }}
 {{- end }}
             - name: DEBUG_CONTAINER
             {{- if .Values.pod.debug.server }}
@@ -117,7 +132,6 @@ spec:
             - name: neutron-api
               containerPort: {{.Values.global.neutron_api_port_internal | default 9696}}
           volumeMounts:
-{{- if .Values.api.uwsgi }}
             - mountPath: /etc/neutron
               name: empty-dir
             - mountPath: /etc/neutron/neutron.conf
@@ -214,21 +228,6 @@ spec:
               subPath: uwsgi.ini
               readOnly: true
             {{- end }}
-{{- else }}
-            - mountPath: /neutron-etc
-              name: neutron-etc
-            - mountPath: /neutron-etc-vendor
-              name: neutron-etc-vendor
-            - mountPath: /neutron-etc-region
-              name: neutron-etc-region
-            - mountPath: /container.init
-              name: container-init
-            {{- if .Values.pod.debug.server }}
-            - mountPath: /development
-              name: development
-            {{- end }}
-
-{{- end }}
             {{- include "utils.proxysql.volume_mount" . | indent 12 }}
         {{- include "utils.proxysql.container" . | indent 8 }}
         - name: statsd
@@ -276,8 +275,4 @@ spec:
           configMap:
             name: neutron-etc-api
 {{- end }}
-        - name: container-init
-          configMap:
-            name: neutron-bin
-            defaultMode: 0755
         {{- include "utils.proxysql.volumes" . | indent 8 }}
