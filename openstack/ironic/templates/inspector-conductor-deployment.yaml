@@ -34,22 +34,26 @@ spec:
         prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
         {{- end }}
     spec:
+      securityContext:
+        fsGroup: 42424
+        fsGroupChangePolicy: "OnRootMismatch"
 {{ tuple . "ironic" "inspector" | include "kubernetes_pod_anti_affinity" | indent 6 }}
 {{ include "utils.proxysql.pod_settings" . | indent 6 }}
+      initContainers:
+      {{- tuple . (dict "service" "ironic-api,ironic-rabbitmq") |
+                        include "utils.snippets.kubernetes_entrypoint_init_container" |
+                        indent 6 }}
       containers:
       - name: ironic-inspector-conductor
         image: {{ .Values.global.registry }}/loci-ironic:{{ .Values.imageVersion }}
         imagePullPolicy: IfNotPresent
         command:
         - dumb-init
-        - kubernetes-entrypoint
+        - ironic-inspector-conductor
+        securityContext:
+          runAsUser: 42424
+          runAsGroup: 42424
         env:
-        - name: COMMAND
-          value: "ironic-inspector-conductor --config-file /etc/ironic-inspector/ironic-inspector.conf"
-        - name: NAMESPACE
-          value: {{ .Release.Namespace }}
-        - name: DEPENDENCY_SERVICE
-          value: "ironic-api,ironic-rabbitmq"
         {{- if .Values.logging.handlers.sentry }}
         - name: SENTRY_DSN
           valueFrom:
@@ -57,10 +61,7 @@ spec:
               name: sentry
               key: {{ .Chart.Name }}.DSN.python
         {{- end }}
-        - name: PGAPPNAME
-          valueFrom:
-            fieldRef:
-              fieldPath: metadata.name
+        {{- tuple . "ironic-inspector-conductor" | include "utils.env.pyroscope" | indent 10 }}
         resources:
 {{ toYaml .Values.pod.resources.inspector | indent 10 }}
         volumeMounts:
