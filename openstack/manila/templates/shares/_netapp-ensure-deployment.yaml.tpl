@@ -43,7 +43,7 @@ spec:
                   - manila-share-netapp-{{$share.name}}
               topologyKey: kubernetes.io/hostname
       initContainers:
-      {{- tuple . (dict "service" (print .Release.Name "-mariadb")) | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 6 }}
+      {{- tuple . (dict "service" (print .Release.Name "-mariadb")) | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 8 }}
       containers:
         - name: reexport
           image: "{{.Values.global.registry}}/manila-ensure:{{.Values.loci.imageVersionEnsure}}"
