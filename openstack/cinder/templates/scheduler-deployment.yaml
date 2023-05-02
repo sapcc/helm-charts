@@ -34,28 +34,24 @@ spec:
         {{- include "utils.linkerd.pod_and_service_annotation" . | indent 8 }}
     spec:
 {{ tuple . "cinder" "scheduler" | include "kubernetes_pod_anti_affinity" | indent 6 }}
-{{ include "utils.proxysql.pod_settings" . | indent 6 }}
+      {{- include "utils.proxysql.pod_settings" . | indent 6 }}
       hostname: cinder-scheduler
+      initContainers:
+      {{- tuple . (dict "service" (print "cinder-api," .Release.Name "-rabbitmq")) | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 6 }}
       containers:
         - name: cinder-scheduler
           image: {{required ".Values.global.registry is missing" .Values.global.registry}}/loci-cinder:{{.Values.imageVersionCinderScheduler | default .Values.imageVersion | required "Please set cinder.imageVersion or similar" }}
           imagePullPolicy: {{ required ".Values.global.imagePullPolicy is missing" .Values.global.imagePullPolicy }}
           command:
-            - kubernetes-entrypoint
+          - cinder-scheduler
           env:
-            - name: COMMAND
-              value: "cinder-scheduler"
-            - name: NAMESPACE
-              value: {{ .Release.Namespace }}
-            - name: DEPENDENCY_SERVICE
-              value: "cinder-api,{{ .Release.Name }}-rabbitmq"
-            {{- if .Values.sentry.enabled }}
-            - name: SENTRY_DSN
-              valueFrom:
-                secretKeyRef:
-                  name: sentry
-                  key: {{ .Chart.Name }}.DSN.python
-            {{- end }}
+          {{- if .Values.sentry.enabled }}
+          - name: SENTRY_DSN
+            valueFrom:
+              secretKeyRef:
+                name: sentry
+                key: {{ .Chart.Name }}.DSN.python
+          {{- end }}
           livenessProbe:
             exec:
               command: ["openstack-agent-liveness", "--component", "cinder", "--config-file", "/etc/cinder/cinder.conf"]
