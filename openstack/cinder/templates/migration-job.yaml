@@ -12,18 +12,7 @@ spec:
       restartPolicy: OnFailure
 {{ include "utils.proxysql.job_pod_settings" . | indent 6 }}
       initContainers:
-        - name: dependencies
-          image: {{required ".Values.global.registry is missing" .Values.global.registry}}/loci-cinder:{{.Values.imageVersionCinderApi | default .Values.imageVersion | required "Please set cinder.imageVersion or similar" }}
-          imagePullPolicy: IfNotPresent
-          command:
-            - kubernetes-entrypoint
-          env:
-            - name: COMMAND
-              value: "true"
-            - name: NAMESPACE
-              value: {{ .Release.Namespace }}
-            - name: DEPENDENCY_SERVICE
-              value: "{{ .Release.Name }}-mariadb"
+      {{- tuple . (dict "service" (print .Release.Name "-mariadb")) | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 6 }}
       containers:
         - name: cinder-migration
           image: {{required ".Values.global.registry is missing" .Values.global.registry}}/loci-cinder:{{.Values.imageVersionCinderApi | default .Values.imageVersion | required "Please set cinder.imageVersion or similar" }}
