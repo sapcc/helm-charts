@@ -51,11 +51,7 @@ spec:
             - name: DEPENDENCY_JOBS
               value: {{ include "cinder.migration_job_name" . }}
             - name: DEPENDENCY_SERVICE
-{{- if eq .Values.mariadb.enabled true }}
               value: "{{ .Release.Name }}-mariadb,{{ .Release.Name }}-rabbitmq"
-{{- else }}
-              value: "{{ .Release.Name }}-postgresql,{{ .Release.Name }}-rabbitmq"
-{{- end }}
             - name: STATSD_HOST
               value: "localhost"
             - name: STATSD_PORT
@@ -67,10 +63,6 @@ spec:
                   name: sentry
                   key: {{ .Chart.Name }}.DSN.python
             {{- end }}
-            - name: PGAPPNAME
-              valueFrom:
-                fieldRef:
-                  fieldPath: metadata.name
             {{- if .Values.api.use_uwsgi }}
             - name: OS_OSLO_MESSAGING_RABBIT__HEARTBEAT_IN_PTHREAD
               value: "true"
