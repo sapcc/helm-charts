@@ -1,7 +1,3 @@
-{{- define "placement_project" -}}
-{{ if contains "rocky" .Values.imageVersion }}nova{{ else }}placement{{ end }}
-{{- end -}}
-
 {{- define "job_name" }}
   {{- $name := index . 1 }}
   {{- with index . 0 }}
