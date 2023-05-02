@@ -39,7 +39,7 @@ spec:
 {{ tuple $availability_zone | include "kubernetes_pod_az_affinity" | indent 6 }}
 {{ include "utils.proxysql.pod_settings" . | indent 6 }}
       initContainers:
-      {{- tuple . (dict "service" (print .Release.Name "-mariadb," .Release.Name "-rabbitmq,")) | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 6 }}
+      {{- tuple . (dict "service" (print .Release.Name "-mariadb," .Release.Name "-rabbitmq")) | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 6 }}
         - name: fetch-rabbitmqadmin
           image: {{.Values.global.dockerHubMirror}}/library/busybox
           command: ["/scripts/fetch-rabbitmqadmin.sh"]
