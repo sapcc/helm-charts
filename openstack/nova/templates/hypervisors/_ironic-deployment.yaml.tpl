@@ -60,10 +60,6 @@ spec:
             - name: PYTHONWARNINGS
               value: {{ or $hypervisor.python_warnings .Values.python_warnings | quote }}
 {{- end }}
-            - name: PGAPPNAME
-              valueFrom:
-                fieldRef:
-                  fieldPath: metadata.name
           {{- if .Values.pod.resources.hv_ironic }}
           resources:
 {{ toYaml .Values.pod.resources.hv_ironic | indent 12 }}
