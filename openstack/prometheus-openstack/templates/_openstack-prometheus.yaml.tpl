@@ -54,7 +54,7 @@
     replacement: {{ .Values.global.cluster }}
   {{ end }}
   - source_labels: [__name__, device]
-    regex: 'octavia_as3_version_info;(.*)(\.)(.*)(.*)'
+    regex: 'octavia_as3_version_info;([0-9a-z-]*)(\.)(.*)'
     replacement: '$1'
     target_label: devicename
 
