@@ -53,6 +53,10 @@
     target_label: cluster
     replacement: {{ .Values.global.cluster }}
   {{ end }}
+  - source_labels: [__name__, device]
+    regex: 'octavia_as3_version_info;(.*)(\.)(.*)(.*)'
+    replacement: '$1'
+    target_label: devicename
 
 # Scrape config for pods with an additional port for metrics via `prometheus.io/port_1` annotation.
 #
@@ -109,7 +113,3 @@
     target_label: cluster
     replacement: {{ .Values.global.cluster }}
   {{ end }}
-  - source_labels: [__name__, device]
-    regex: 'octavia_as3_version_info;(.*)(\.)(.*)(.*)'
-    replacement: '$1'
-    target_label: devicename
