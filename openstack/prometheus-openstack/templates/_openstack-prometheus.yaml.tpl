@@ -109,3 +109,7 @@
     target_label: cluster
     replacement: {{ .Values.global.cluster }}
   {{ end }}
+  - source_labels: [__name__, device]
+    regex: 'octavia_as3_version_info;(.*)(\.)(.*)(.*)'
+    replacement: '$1'
+    target_label: devicename
