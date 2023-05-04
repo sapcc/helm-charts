@@ -43,3 +43,6 @@ quota:
   monitors: 100
   datacenters: 100
 {{- end }}
+
+house_keeping:
+  enabled: true
