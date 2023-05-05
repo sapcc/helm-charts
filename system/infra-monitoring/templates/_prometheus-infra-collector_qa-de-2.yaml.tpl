@@ -43,7 +43,7 @@
   scrape_interval: {{.Values.snmp_exporter.scrapeInterval}}
   scrape_timeout: {{.Values.snmp_exporter.scrapeTimeout}}
   http_sd_configs:
-    - url: {{ .Values.http_sd_configs.netbox_staging_url }}/devices/?metrics_label=ucs&model=ucs-fi-6332-16up&manufacturer=cisco&status=active&region={{ .Values.global.region }}
+    - url: {{ .Values.http_sd_configs.netbox_staging_url }}/devices/?custom_labels=__param_module=ucs&model=ucs-fi-6332-16up&manufacturer=cisco&status=active&region={{ .Values.global.region }}
       refresh_interval: {{ .Values.http_sd_configs.refresh_interval }}
   metrics_path: /snmp
   relabel_configs:
@@ -53,15 +53,13 @@
       target_label: instance
     - target_label: __address__
       replacement: snmp-exporter:{{.Values.snmp_exporter.listen_port}}
-    - target_label: module
-      replacement: ucs
 {{ include "snmp_metric_relabel_configs" . | indent 2 }}
 
 - job_name: 'snmp_f5'
   scrape_interval: {{.Values.snmp_exporter.scrapeInterval}}
   scrape_timeout: {{.Values.snmp_exporter.scrapeTimeout}}
   http_sd_configs:
-    - url: {{ .Values.http_sd_configs.netbox_staging_url }}/devices/?metrics_label=f5-gtm&model=f5-vcmp&manufacturer=f5&status=active&region={{ .Values.global.region }}&q=gtm
+    - url: {{ .Values.http_sd_configs.netbox_staging_url }}/devices/?custom_labels=__param_module=f5-gtm&model=f5-vcmp&manufacturer=f5&status=active&region={{ .Values.global.region }}&q=gtm
       refresh_interval: {{ .Values.http_sd_configs.refresh_interval }}
   metrics_path: /snmp
   relabel_configs:
@@ -71,15 +69,13 @@
       target_label: instance
     - target_label: __address__
       replacement: snmp-exporter:{{.Values.snmp_exporter.listen_port}}
-    - target_label: module
-      replacement: f5gtm
 {{ include "snmp_metric_relabel_configs" . | indent 2 }}
 
 - job_name: 'snmp_aristaevpn'
   scrape_interval: {{.Values.snmp_exporter.scrapeInterval}}
   scrape_timeout: {{.Values.snmp_exporter.scrapeTimeout}}
   http_sd_configs:
-    - url: {{ .Values.http_sd_configs.netbox_staging_url }}/devices/?metrics_label=evpn-arista&manufacturer=arista&status=active&region={{ .Values.global.region }}&role=evpn-leaf&target=loopback10
+    - url: {{ .Values.http_sd_configs.netbox_staging_url }}/devices/?custom_labels=__param_module=evpn-arista&manufacturer=arista&status=active&region={{ .Values.global.region }}&role=evpn-leaf&target=loopback10
       refresh_interval: {{ .Values.http_sd_configs.refresh_interval }}
   metrics_path: /snmp
   relabel_configs:
@@ -89,15 +85,13 @@
       target_label: instance
     - target_label: __address__
       replacement: snmp-exporter:{{.Values.snmp_exporter.listen_port}}
-    - target_label: module
-      replacement: aristaevpn
 {{ include "snmp_metric_relabel_configs" . | indent 2 }}
 
 - job_name: 'snmp_hsm'
   scrape_interval: {{.Values.snmp_exporter.scrapeInterval}}
   scrape_timeout: {{.Values.snmp_exporter.scrapeTimeout}}
   http_sd_configs:
-    - url: {{ .Values.http_sd_configs.netbox_staging_url }}/devices/?metrics_label=hsm&manufacturer=thales&status=active&region={{ .Values.global.region }}&role=hsm
+    - url: {{ .Values.http_sd_configs.netbox_staging_url }}/devices/?custom_labels=__param_module=hsm&manufacturer=thales&status=active&region={{ .Values.global.region }}&role=hsm
       refresh_interval: {{ .Values.http_sd_configs.refresh_interval }}
   metrics_path: /snmp
   relabel_configs:
@@ -107,15 +101,13 @@
       target_label: instance
     - target_label: __address__
       replacement: snmp-exporter:{{.Values.snmp_exporter.listen_port}}
-    - target_label: module
-      replacement: hsm
 {{ include "snmp_metric_relabel_configs" . | indent 2 }}
 
 - job_name: 'snmp_acileaf_gmp'
   scrape_interval: {{.Values.snmp_exporter.scrapeInterval}}
   scrape_timeout: {{.Values.snmp_exporter.scrapeTimeout}}
   http_sd_configs:
-    - url: {{ .Values.http_sd_configs.netbox_staging_url }}/devices/?metrics_label=acileaf&manufacturer=cisco&status=active&region={{ .Values.global.region }}&role=aci-leaf&tenant=cnd-gmponaci
+    - url: {{ .Values.http_sd_configs.netbox_staging_url }}/devices/?custom_labels=__param_module=acileaf&manufacturer=cisco&status=active&region={{ .Values.global.region }}&role=aci-leaf&tenant=cnd-gmponaci
       refresh_interval: {{ .Values.http_sd_configs.refresh_interval }}
   metrics_path: /snmp
   relabel_configs:
@@ -125,15 +117,13 @@
       target_label: instance
     - target_label: __address__
       replacement: snmp-exporter:{{.Values.snmp_exporter.listen_port}}
-    - target_label: module
-      replacement: acileaf
 {{ include "snmp_metric_relabel_configs" . | indent 2 }}
 
 - job_name: 'snmp_acileaf_cc'
   scrape_interval: {{.Values.snmp_exporter.scrapeInterval}}
   scrape_timeout: {{.Values.snmp_exporter.scrapeTimeout}}
   http_sd_configs:
-    - url: {{ .Values.http_sd_configs.netbox_staging_url }}/devices/?metrics_label=acileaf&manufacturer=cisco&status=active&region={{ .Values.global.region }}&role=aci-leaf&tenant=converged-cloud
+    - url: {{ .Values.http_sd_configs.netbox_staging_url }}/devices/?custom_labels=__param_module=acileaf&manufacturer=cisco&status=active&region={{ .Values.global.region }}&role=aci-leaf&tenant=converged-cloud
       refresh_interval: {{ .Values.http_sd_configs.refresh_interval }}
   metrics_path: /snmp
   relabel_configs:
@@ -143,15 +133,13 @@
       target_label: instance
     - target_label: __address__
       replacement: snmp-exporter:{{.Values.snmp_exporter.listen_port}}
-    - target_label: module
-      replacement: acileaf
 {{ include "snmp_metric_relabel_configs" . | indent 2 }}
 
 - job_name: 'snmp_aci'
   scrape_interval: {{.Values.snmp_exporter.scrapeInterval}}
   scrape_timeout: {{.Values.snmp_exporter.scrapeTimeout}}
   http_sd_configs:
-    - url: {{ .Values.http_sd_configs.netbox_staging_url }}/devices/?metrics_label=ipn&manufacturer=cisco&status=active&region={{ .Values.global.region }}&role=aci-ipn
+    - url: {{ .Values.http_sd_configs.netbox_staging_url }}/devices/?custom_labels=__param_module=ipn&manufacturer=cisco&status=active&region={{ .Values.global.region }}&role=aci-ipn
       refresh_interval: {{ .Values.http_sd_configs.refresh_interval }}
   metrics_path: /snmp
   relabel_configs:
@@ -161,15 +149,13 @@
       target_label: instance
     - target_label: __address__
       replacement: snmp-exporter:{{.Values.snmp_exporter.listen_port}}
-    - target_label: module
-      replacement: ipn
 {{ include "snmp_metric_relabel_configs" . | indent 2 }}
 
 - job_name: 'snmp_acispine'
   scrape_interval: {{.Values.snmp_exporter.scrapeInterval}}
   scrape_timeout: {{.Values.snmp_exporter.scrapeTimeout}}
   http_sd_configs:
-    - url: {{ .Values.http_sd_configs.netbox_staging_url }}/devices/?metrics_label=acispine&manufacturer=cisco&status=active&region={{ .Values.global.region }}&role=aci-spine
+    - url: {{ .Values.http_sd_configs.netbox_staging_url }}/devices/?custom_labels=__param_module=acispine&manufacturer=cisco&status=active&region={{ .Values.global.region }}&role=aci-spine
       refresh_interval: {{ .Values.http_sd_configs.refresh_interval }}
   metrics_path: /snmp
   relabel_configs:
@@ -179,15 +165,13 @@
       target_label: instance
     - target_label: __address__
       replacement: snmp-exporter:{{.Values.snmp_exporter.listen_port}}
-    - target_label: module
-      replacement: acispine
 {{ include "snmp_metric_relabel_configs" . | indent 2 }}
 
 - job_name: 'snmp_acistretch'
   scrape_interval: {{.Values.snmp_exporter.scrapeInterval}}
   scrape_timeout: {{.Values.snmp_exporter.scrapeTimeout}}
   http_sd_configs:
-    - url: {{ .Values.http_sd_configs.netbox_staging_url }}/devices/?metrics_label=acistretch&manufacturer=cisco&status=active&region={{ .Values.global.region }}&role=aci-stretch
+    - url: {{ .Values.http_sd_configs.netbox_staging_url }}/devices/?custom_labels=__param_module=acistretch&manufacturer=cisco&status=active&region={{ .Values.global.region }}&role=aci-stretch
       refresh_interval: {{ .Values.http_sd_configs.refresh_interval }}
   metrics_path: /snmp
   relabel_configs:
@@ -197,15 +181,13 @@
       target_label: instance
     - target_label: __address__
       replacement: snmp-exporter:{{.Values.snmp_exporter.listen_port}}
-    - target_label: module
-      replacement: acistretch
 {{ include "snmp_metric_relabel_configs" . | indent 2 }}
 
 - job_name: 'snmp_f5customer'
   scrape_interval: {{.Values.snmp_exporter.scrapeInterval}}
   scrape_timeout: {{.Values.snmp_exporter.scrapeTimeout}}
   http_sd_configs:
-    - url: {{ .Values.http_sd_configs.netbox_staging_url }}/devices/?metrics_label=f5customer&manufacturer=f5&status=active&region={{ .Values.global.region }}&tag=cc-net-f5-guest-lbaas
+    - url: {{ .Values.http_sd_configs.netbox_staging_url }}/devices/?custom_labels=__param_module=f5customer&manufacturer=f5&status=active&region={{ .Values.global.region }}&tag=cc-net-f5-guest-lbaas
       refresh_interval: {{ .Values.http_sd_configs.refresh_interval }}
   metrics_path: /snmp
   relabel_configs:
@@ -215,15 +197,13 @@
       target_label: instance
     - target_label: __address__
       replacement: snmp-exporter:{{.Values.snmp_exporter.listen_port}}
-    - target_label: module
-      replacement: f5customer
 {{ include "snmp_metric_relabel_configs" . | indent 2 }}
 
 - job_name: 'snmp_f5mgmt'
   scrape_interval: {{.Values.snmp_exporter.scrapeInterval}}
   scrape_timeout: {{.Values.snmp_exporter.scrapeTimeout}}
   http_sd_configs:
-    - url: {{ .Values.http_sd_configs.netbox_staging_url }}/devices/?metrics_label=f5mgmt&manufacturer=f5&status=active&region={{ .Values.global.region }}&tag=cc-net-f5-guest-mgmt
+    - url: {{ .Values.http_sd_configs.netbox_staging_url }}/devices/?custom_labels=__param_module=f5mgmt&manufacturer=f5&status=active&region={{ .Values.global.region }}&tag=cc-net-f5-guest-mgmt
       refresh_interval: {{ .Values.http_sd_configs.refresh_interval }}
   metrics_path: /snmp
   relabel_configs:
@@ -233,15 +213,13 @@
       target_label: instance
     - target_label: __address__
       replacement: snmp-exporter:{{.Values.snmp_exporter.listen_port}}
-    - target_label: module
-      replacement: f5mgmt
 {{ include "snmp_metric_relabel_configs" . | indent 2 }}
 
 - job_name: 'snmp_f5physical'
   scrape_interval: {{.Values.snmp_exporter.scrapeInterval}}
   scrape_timeout: {{.Values.snmp_exporter.scrapeTimeout}}
   http_sd_configs:
-    - url: {{ .Values.http_sd_configs.netbox_staging_url }}/devices/?metrics_label=f5physical&manufacturer=f5&status=active&region={{ .Values.global.region }}&tag=cc-net-f5-host
+    - url: {{ .Values.http_sd_configs.netbox_staging_url }}/devices/?custom_labels=__param_module=f5physical&manufacturer=f5&status=active&region={{ .Values.global.region }}&tag=cc-net-f5-host
       refresh_interval: {{ .Values.http_sd_configs.refresh_interval }}
   metrics_path: /snmp
   relabel_configs:
@@ -251,15 +229,13 @@
       target_label: instance
     - target_label: __address__
       replacement: snmp-exporter:{{.Values.snmp_exporter.listen_port}}
-    - target_label: module
-      replacement: f5physical
 {{ include "snmp_metric_relabel_configs" . | indent 2 }}
 
 - job_name: 'snmp_asr03'
   scrape_interval: {{.Values.snmp_exporter.scrapeInterval}}
   scrape_timeout: {{.Values.snmp_exporter.scrapeTimeout}}
   http_sd_configs:
-    - url: {{ .Values.http_sd_configs.netbox_staging_url }}/devices/?metrics_label=asr03&manufacturer=cisco&status=active&region={{ .Values.global.region }}&q=asr03
+    - url: {{ .Values.http_sd_configs.netbox_staging_url }}/devices/?custom_labels=__param_module=asr03&manufacturer=cisco&status=active&region={{ .Values.global.region }}&q=asr03
       refresh_interval: {{ .Values.http_sd_configs.refresh_interval }}
   metrics_path: /snmp
   relabel_configs:
@@ -269,15 +245,13 @@
       target_label: instance
     - target_label: __address__
       replacement: snmp-exporter:{{.Values.snmp_exporter.listen_port}}
-    - target_label: module
-      replacement: asr03
 {{ include "snmp_metric_relabel_configs" . | indent 2 }}
 
 - job_name: 'snmp_coreasr9k'
   scrape_interval: {{.Values.snmp_exporter.scrapeInterval}}
   scrape_timeout: {{.Values.snmp_exporter.scrapeTimeout}}
   http_sd_configs:
-    - url: {{ .Values.http_sd_configs.netbox_staging_url }}/devices/?metrics_label=coreasr9k&manufacturer=cisco&status=active&region={{ .Values.global.region }}&role=core-router&tenant=cnd-netbb&platform=cisco-ios-xr
+    - url: {{ .Values.http_sd_configs.netbox_staging_url }}/devices/?custom_labels=__param_module=coreasr9k&manufacturer=cisco&status=active&region={{ .Values.global.region }}&role=core-router&tenant=cnd-netbb&platform=cisco-ios-xr
       refresh_interval: {{ .Values.http_sd_configs.refresh_interval }}
   metrics_path: /snmp
   relabel_configs:
@@ -287,15 +261,13 @@
       target_label: instance
     - target_label: __address__
       replacement: snmp-exporter:{{.Values.snmp_exporter.listen_port}}
-    - target_label: module
-      replacement: coreasr9k
 {{ include "snmp_metric_relabel_configs" . | indent 2 }}
 
 - job_name: 'snmp_asr'
   scrape_interval: {{.Values.snmp_exporter.scrapeInterval}}
   scrape_timeout: {{.Values.snmp_exporter.scrapeTimeout}}
   http_sd_configs:
-    - url: {{ .Values.http_sd_configs.netbox_staging_url }}/devices/?metrics_label=asr&manufacturer=cisco&status=active&region={{ .Values.global.region }}&role=neutron-router
+    - url: {{ .Values.http_sd_configs.netbox_staging_url }}/devices/?custom_labels=__param_module=asr&manufacturer=cisco&status=active&region={{ .Values.global.region }}&role=neutron-router
       refresh_interval: {{ .Values.http_sd_configs.refresh_interval }}
   metrics_path: /snmp
   relabel_configs:
@@ -305,15 +277,13 @@
       target_label: instance
     - target_label: __address__
       replacement: snmp-exporter:{{.Values.snmp_exporter.listen_port}}
-    - target_label: module
-      replacement: asr
 {{ include "snmp_metric_relabel_configs" . | indent 2 }}
 
 - job_name: 'snmp_asw'
   scrape_interval: {{.Values.snmp_exporter.scrapeInterval}}
   scrape_timeout: {{.Values.snmp_exporter.scrapeTimeout}}
   http_sd_configs:
-    - url: {{ .Values.http_sd_configs.netbox_staging_url }}/devices/?metrics_label=asw&manufacturer=arista&status=active&region={{ .Values.global.region }}&q=asw2
+    - url: {{ .Values.http_sd_configs.netbox_staging_url }}/devices/?custom_labels=__param_module=asw&manufacturer=arista&status=active&region={{ .Values.global.region }}&q=asw2
       refresh_interval: {{ .Values.http_sd_configs.refresh_interval }}
   metrics_path: /snmp
   relabel_configs:
@@ -323,15 +293,13 @@
       target_label: instance
     - target_label: __address__
       replacement: snmp-exporter:{{.Values.snmp_exporter.listen_port}}
-    - target_label: module
-      replacement: asw
 {{ include "snmp_metric_relabel_configs" . | indent 2 }}
 
 - job_name: 'snmp_asw9'
   scrape_interval: {{.Values.snmp_exporter.scrapeInterval}}
   scrape_timeout: {{.Values.snmp_exporter.scrapeTimeout}}
   http_sd_configs:
-    - url: {{ .Values.http_sd_configs.netbox_staging_url }}/devices/?metrics_label=asw9&manufacturer=arista&status=active&region={{ .Values.global.region }}&q=asw9
+    - url: {{ .Values.http_sd_configs.netbox_staging_url }}/devices/?custom_labels=__param_module=asw9&manufacturer=arista&status=active&region={{ .Values.global.region }}&q=asw9
       refresh_interval: {{ .Values.http_sd_configs.refresh_interval }}
   metrics_path: /snmp
   relabel_configs:
@@ -341,15 +309,13 @@
       target_label: instance
     - target_label: __address__
       replacement: snmp-exporter:{{.Values.snmp_exporter.listen_port}}
-    - target_label: module
-      replacement: asw9
 {{ include "snmp_metric_relabel_configs" . | indent 2 }}
 
 - job_name: 'snmp_n9kpx'
   scrape_interval: {{.Values.snmp_exporter.scrapeInterval}}
   scrape_timeout: {{.Values.snmp_exporter.scrapeTimeout}}
   http_sd_configs:
-    - url: {{ .Values.http_sd_configs.netbox_staging_url }}/devices/?metrics_label=n9kpx&status=active&region={{ .Values.global.region }}&role=px-switch
+    - url: {{ .Values.http_sd_configs.netbox_staging_url }}/devices/?custom_labels=__param_module=n9kpx&status=active&region={{ .Values.global.region }}&role=px-switch
       refresh_interval: {{ .Values.http_sd_configs.refresh_interval }}
   metrics_path: /snmp
   relabel_configs:
@@ -359,15 +325,13 @@
       target_label: instance
     - target_label: __address__
       replacement: snmp-exporter:{{.Values.snmp_exporter.listen_port}}
-    - target_label: module
-      replacement: n9kpx
 {{ include "snmp_metric_relabel_configs" . | indent 2 }}
 
 - job_name: 'snmp_pxdlrouternxos'
   scrape_interval: {{.Values.snmp_exporter.scrapeInterval}}
   scrape_timeout: {{.Values.snmp_exporter.scrapeTimeout}}
   http_sd_configs:
-    - url: {{ .Values.http_sd_configs.netbox_staging_url }}/devices/?metrics_label=pxdlrouternxos&manufacturer=cisco&status=active&region={{ .Values.global.region }}&role=directlink-router&platform=cisco-nx-os
+    - url: {{ .Values.http_sd_configs.netbox_staging_url }}/devices/?custom_labels=__param_module=pxdlrouternxos&manufacturer=cisco&status=active&region={{ .Values.global.region }}&role=directlink-router&platform=cisco-nx-os
       refresh_interval: {{ .Values.http_sd_configs.refresh_interval }}
   metrics_path: /snmp
   relabel_configs:
@@ -377,15 +341,13 @@
       target_label: instance
     - target_label: __address__
       replacement: snmp-exporter:{{.Values.snmp_exporter.listen_port}}
-    - target_label: module
-      replacement: pxdlrouternxos
 {{ include "snmp_metric_relabel_configs" . | indent 2 }}
 
 - job_name: 'snmp_pxgeneric'
   scrape_interval: {{.Values.snmp_exporter.scrapeInterval}}
   scrape_timeout: {{.Values.snmp_exporter.scrapeTimeout}}
   http_sd_configs:
-    - url: {{ .Values.http_sd_configs.netbox_staging_url }}/devices/?metrics_label=pxgeneric&status=active&region={{ .Values.global.region }}&tenant=cnd-px
+    - url: {{ .Values.http_sd_configs.netbox_staging_url }}/devices/?custom_labels=__param_module=pxgeneric&status=active&region={{ .Values.global.region }}&tenant=cnd-px
       refresh_interval: {{ .Values.http_sd_configs.refresh_interval }}
   metrics_path: /snmp
   relabel_configs:
@@ -395,15 +357,13 @@
       target_label: instance
     - target_label: __address__
       replacement: snmp-exporter:{{.Values.snmp_exporter.listen_port}}
-    - target_label: module
-      replacement: pxgeneric
 {{ include "snmp_metric_relabel_configs" . | indent 2 }}
 
 - job_name: 'snmp_n3k'
   scrape_interval: {{.Values.snmp_exporter.scrapeInterval}}
   scrape_timeout: {{.Values.snmp_exporter.scrapeTimeout}}
   http_sd_configs:
-    - url: {{ .Values.http_sd_configs.netbox_staging_url }}/devices/?metrics_label=n3k&manufacturer=cisco&status=active&region={{ .Values.global.region }}&tenant=converged-cloud&role=management-switch
+    - url: {{ .Values.http_sd_configs.netbox_staging_url }}/devices/?custom_labels=__param_module=n3k&manufacturer=cisco&status=active&region={{ .Values.global.region }}&tenant=converged-cloud&role=management-switch
       refresh_interval: {{ .Values.http_sd_configs.refresh_interval }}
   metrics_path: /snmp
   relabel_configs:
@@ -413,15 +373,13 @@
       target_label: instance
     - target_label: __address__
       replacement: snmp-exporter:{{.Values.snmp_exporter.listen_port}}
-    - target_label: module
-      replacement: n3k
 {{ include "snmp_metric_relabel_configs" . | indent 2 }}
 
 - job_name: 'snmp_asa'
   scrape_interval: {{.Values.snmp_exporter.scrapeInterval}}
   scrape_timeout: {{.Values.snmp_exporter.scrapeTimeout}}
   http_sd_configs:
-    - url: {{ .Values.http_sd_configs.netbox_staging_url }}/virtual-machines/?metrics_label=asa&status=active&q={{ .Values.global.region }}&tenant=cnd&role=management-switch&platform=cisco-asa
+    - url: {{ .Values.http_sd_configs.netbox_staging_url }}/virtual-machines/?custom_labels=__param_module=asa&status=active&q={{ .Values.global.region }}&tenant=cnd&role=management-switch&platform=cisco-asa
       refresh_interval: {{ .Values.http_sd_configs.refresh_interval }}
   metrics_path: /snmp
   relabel_configs:
@@ -431,8 +389,6 @@
       target_label: instance
     - target_label: __address__
       replacement: snmp-exporter:{{.Values.snmp_exporter.listen_port}}
-    - target_label: module
-      replacement: asa
 {{ include "snmp_metric_relabel_configs" . | indent 2 }}
 
 {{- $values := .Values.ipmi_exporter -}}
