@@ -1,4 +1,4 @@
-## 7.2.2 - 7.2.3
+## 7.2.2 - 7.2.4
 
 * Enhance pod-sd to allow custom metric relabelings
 
