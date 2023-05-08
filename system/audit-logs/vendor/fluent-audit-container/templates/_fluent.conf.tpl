@@ -133,8 +133,11 @@
 </filter>
 {{- end }}
 
-{{- if .Values.additional_container_logs }}
-{{- range .Values.additional_container_logs }}
+{{- $container_logs := .Values.default_container_logs }}
+{{-  if .Values.additional_container_logs }}
+{{- $container_logs = concat $container_logs .Values.additional_container_logs }}
+{{- end }}
+{{- range $container_logs }}
 <source>
   @type tail
   @id {{ .id }}
@@ -189,7 +192,6 @@
     pattern {{ .filter.pattern }}
   </regexp>
 </filter>
-{{- end }}
 {{- end }}
 {{- end }}
 
