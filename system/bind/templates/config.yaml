@@ -48,15 +48,28 @@ data:
      statistics-channels {
        inet 127.0.0.1 port 8053 allow { 127.0.0.1; };
      };
+  healthz: |
+    #!/bin/sh
+    rndc status
+    return $?
+    };
+
+{{ end }}
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-keys
+data:
   rndc.key: |
     key "rndc-key" {
         algorithm hmac-md5;
-        secret "{{.Values.rndc_key}}";
+        secret "{{ .Values.rndc_key }}";
     };
   tsig.key: |
     key "tsig-key" {
         algorithm hmac-md5;
-        secret "{{.Values.tsig_key}}";
+        secret "{{ .Values.tsig_key }}";
     };
   {{- if .Values.nsi_key }}
   nsi.key: |
@@ -65,10 +78,33 @@ data:
         secret "{{ .Values.nsi_key }}";
     };
   {{- end }}
-  healthz: |
-    #!/bin/sh
-    rndc status
-    return $?
-    };
+
+
+{{ if .Values.zabbix.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-zabbix-conf
+data:
+  zabbix-bind.conf: |
+     UserParameter=bind.discoverzones,/usr/bin/bind/scripts/bind-stats.py discoverzones
+     UserParameter=bind.serialzones,/usr/bin/bind/scripts/bind-stats.py serialzones
+     UserParameter=bind.sapcomns,/usr/bin/bind/scripts/bind-stats.sh sapcomns
+     UserParameter=bind.zoneserial[*],/usr/bin/bind/scripts/bind-stats.py zoneserial -z $1
+     UserParameter=bind.counter[*],/usr/bin/bind/scripts/bind-stats.py counter -c $1
+     UserParameter=bind.zonecounter[*],/usr/bin/bind/scripts/bind-stats.py zonecounter -z $1 -c $2
+     UserParameter=bind.zonemaintenancecounter[*],/usr/bin/bind/scripts/bind-stats.py zonemaintenancecounter -c $1
+     UserParameter=bind.resolvercounter[*],/usr/bin/bind/scripts/bind-stats.py resolvercounter -c $1
+     UserParameter=bind.socketcounter[*],/usr/bin/bind/scripts/bind-stats.py socketcounter -c $1
+     UserParameter=bind.incounter[*],/usr/bin/bind/scripts/bind-stats.py incounter -c $1
+     #UserParameter=bind.acounter,/sbin/get_a_query.sh
+     UserParameter=bind.dncounter[*],/usr/bin/bind/scripts/bind-stats.py incounter -c $1
+     UserParameter=bind.outcounter[*],/usr/bin/bind/scripts/bind-stats.py outcounter -c $1
+     UserParameter=bind.memory[*],/usr/bin/bind/scripts/bind-stats.py memory -c $1
+     UserParameter=bind.cache[*],/usr/bin/bind/scripts/bind-stats.py cache -c $1
+     UserParameter=bind[*],/usr/bin/bind/scripts/bind-stats.sh $1
+     UserParameter=bind.zones[*],/usr/bin/bind/scripts/bind-stats.sh zones $1
+     UserParameter=bind.git,/usr/bin/bind/scripts/check_bind_git.sh
+     UserParameter=bind.stats[*],/usr/bin/curl -s http://localhost:8653/json | jq '. | {$1: .$1}'
 
 {{ end }}
