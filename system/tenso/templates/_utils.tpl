@@ -67,6 +67,7 @@
   value: /etc/tenso/servicenow-mapping.yaml
 - name:  TENSO_SERVICENOW_TOKEN_URL
   value: {{ quote $.Values.tenso.servicenow.auth_url }}
+{{- if .Values.tenso.servicenow.username }}
 - name:  TENSO_SERVICENOW_USERNAME
   value: {{ quote $.Values.tenso.servicenow.username }}
 - name:  TENSO_SERVICENOW_PASSWORD
@@ -74,6 +75,13 @@
     secretKeyRef:
       name: tenso-secret
       key: servicenow_password
+{{- end }}
+{{- if .Values.tenso.servicenow.client_cert }}
+- name:  TENSO_SERVICENOW_CLIENT_CERT
+  value: /etc/tenso/servicenow-client-cert.pem
+- name:  TENSO_SERVICENOW_PRIVATE_KEY
+  value: /etc/tenso/servicenow-private-key.pem
+{{- end }}
 {{- end }}
 - name:  TENSO_WORKER_LISTEN_ADDRESS
   value: ':80'

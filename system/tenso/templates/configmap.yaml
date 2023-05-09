@@ -16,5 +16,11 @@ data:
     'match_concourse_user': 'user_name:tenso-concourse and user_domain_name:Default'
     'match_ansible_event': '"infra-workflow-from-awx.v1":%(target.payload_type)s'
     'match_ansible_user': 'user_name:tenso-ansible and user_domain_name:Default'
+
   servicenow-mapping.yaml: |
 {{ toYaml .Values.tenso.servicenow.mapping_config | indent 4 }}
+
+{{- if .Values.tenso.servicenow.client_cert }}
+  servicenow-client-cert.pem: {{ toYaml .Values.tenso.servicenow.client_cert | nindent 4 }}
+  servicenow-private-key.pem: {{ toYaml .Values.tenso.servicenow.private_key | nindent 4 }}
+{{- end }}
