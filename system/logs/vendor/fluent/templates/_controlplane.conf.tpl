@@ -507,7 +507,7 @@
   {{- if .Values.opensearch.datastream.enabled }}
     @type opensearch_data_stream
     data_stream_name logs
-  {{- else -}}
+  {{- else }}
     @type opensearch
     logstash_prefix {{.Values.opensearch.indexname}}
     logstash_format true
