@@ -43,6 +43,13 @@
   "andromeda:datacenter:get_one": "rule:context_is_viewer",
   "andromeda:datacenter:delete": "rule:context_is_editor",
 
+  "andromeda:geomap:get_all": "rule:context_is_viewer",
+  "andromeda:geomap:get_all-global": "rule:cloud_admin",
+  "andromeda:geomap:post": "rule:context_is_editor",
+  "andromeda:geomap:put": "rule:context_is_editor",
+  "andromeda:geomap:get_one": "rule:context_is_viewer",
+  "andromeda:geomap:delete": "rule:context_is_editor",
+
   "andromeda:service:get_all": "rule:context_is_admin",
   "andromeda:sync:post": "rule:context_is_admin",
 
