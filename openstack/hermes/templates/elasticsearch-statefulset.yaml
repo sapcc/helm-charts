@@ -53,15 +53,6 @@ spec:
         - name: hermes-etc
           configMap:
             name: elasticsearch-etc
-      volumeClaimTemplates:
-        - metadata:
-            name: elasticsearch-data
-          spec:
-            accessModes:
-              - ReadWriteOnce
-            resources:
-              requests:
-                storage: 100Gi
       containers:
         - name: elasticsearch
           image: {{.Values.global.elasticCoMirror}}/elasticsearch/elasticsearch:{{.Values.hermes_image_version_elasticsearch}}
@@ -94,4 +85,13 @@ spec:
             - name: http
               containerPort: 9200
               protocol: TCP
+  volumeClaimTemplates:
+    - metadata:
+        name: elasticsearch-data
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 100Gi
 {{- end }}
