@@ -46,6 +46,7 @@ spec:
                   - manila-scheduler
               topologyKey: "failure-domain.beta.kubernetes.io/zone"
       initContainers:
+        {{- tuple . (dict "jobs" (print .Release.Name "-migration") "service" (print .Release.Name "-mariadb," .Release.Name "-rabbitmq")) | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 8 }}
         - name: fetch-rabbitmqadmin
           image: {{.Values.global.dockerHubMirror}}/library/busybox
           command: ["/scripts/fetch-rabbitmqadmin.sh"]
@@ -61,14 +62,10 @@ spec:
           imagePullPolicy: IfNotPresent
           command:
             - dumb-init
-            - kubernetes-entrypoint
+            - manila-scheduler
+            - --config-file
+            - /etc/manila/manila.conf
           env:
-            - name: COMMAND
-              value: "manila-scheduler --config-file /etc/manila/manila.conf"
-            - name: NAMESPACE
-              value: {{ .Release.Namespace }}
-            - name: DEPENDENCY_SERVICE
-              value: "{{ .Release.Name }}-mariadb,{{ .Release.Name }}-rabbitmq"
             {{- if .Values.sentry.enabled }}
             - name: SENTRY_DSN_SSL
               valueFrom:

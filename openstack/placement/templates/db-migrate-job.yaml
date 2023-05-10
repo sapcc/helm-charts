@@ -20,22 +20,7 @@ spec:
       restartPolicy: OnFailure
       {{- include "utils.proxysql.job_pod_settings" . | indent 6 }}
       initContainers:
-        - name: dependencies
-          image: {{ required ".Values.global.registry is missing" .Values.global.registry}}/loci-placement:{{.Values.imageVersion | required "Please set .imageVersion or similar" }}
-          imagePullPolicy: IfNotPresent
-          command:
-            - kubernetes-entrypoint
-          env:
-            - name: COMMAND
-              value: "true"
-            - name: NAMESPACE
-              value: {{ .Release.Namespace }}
-            - name: DEPENDENCY_SERVICE
-              value: {{ if .Values.mariadb.enabled -}}
-                "{{ .Values.mariadb.name }}-mariadb"
-                {{- else -}}
-                  "nova-api-mariadb"
-                {{- end }}
+      {{- tuple . (dict "service" (include "db_name" .)) | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 6 }}
       containers:
       - name: db-migrate
         image: {{ required ".Values.global.registry is missing" .Values.global.registry}}/loci-placement:{{.Values.imageVersion | required "Please set .imageVersion or similar" }}
@@ -64,7 +49,7 @@ spec:
         - name: PYTHONWARNINGS
           value: {{ .Values.python_warnings | quote }}
         volumeMounts:
-        - mountPath: /etc/{{ include "placement_project" . }}
+        - mountPath: /etc/placement
           name: placement-etc
         {{- include "utils.proxysql.volume_mount" . | indent 8 }}
       {{- include "utils.proxysql.container" . | indent 6 }}

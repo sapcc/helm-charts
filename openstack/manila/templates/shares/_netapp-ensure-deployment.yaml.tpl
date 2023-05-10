@@ -42,22 +42,17 @@ spec:
                   values:
                   - manila-share-netapp-{{$share.name}}
               topologyKey: kubernetes.io/hostname
+      initContainers:
+      {{- tuple . (dict "service" (print .Release.Name "-mariadb")) | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 8 }}
       containers:
         - name: reexport
           image: "{{.Values.global.registry}}/manila-ensure:{{.Values.loci.imageVersionEnsure}}"
           imagePullPolicy: IfNotPresent
           command:
             - dumb-init
-            - kubernetes-entrypoint
+            - /bin/bash
+            - /scripts/manila-ensure-reexport.sh
           env:
-            - name: COMMAND
-              value: "/bin/bash /scripts/manila-ensure-reexport.sh"
-            - name: NAMESPACE
-              valueFrom:
-                fieldRef:
-                  fieldPath: metadata.namespace
-            - name: DEPENDENCY_SERVICE
-              value: "{{ .Release.Name }}-mariadb"
             - name: MANILA_NETAPP_ENSURE_INTERVAL
               value: "240"
             {{- if .Values.sentry.enabled }}

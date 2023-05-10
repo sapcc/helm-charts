@@ -3,10 +3,10 @@ groups:
   rules:
   - alert: ElkFluentLogsMissing
 {{ if eq .Values.global.clusterType  "scaleout" }}
-    expr: sum(rate(fluentd_output_namespace_records_total{job="logs-fluent-exporter",cluster_type!="controlplane",job="logs-fluent-exporter"}[60m])) by (nodename,hostname) == 0
+    expr: sum by (nodename) (rate(fluentd_output_status_emit_records{cluster_type!="controlplane",component="fluent",type="elasticsearch"}[60m])) == 0
     for: 360m
 {{ else }}
-    expr: sum(rate(fluentd_output_namespace_records_total{job="logs-fluent-exporter"}[60m])) by (nodename,hostname) == 0
+    expr: sum by (nodename) (rate(fluentd_output_status_emit_records{component="fluent",type="elasticsearch"}[60m])) == 0
     for: 180m
 {{ end }}
     labels:
@@ -18,9 +18,9 @@ groups:
       playbook: docs/operation/elastic_kibana_issues/elk_logs/fluent-logs-are-missing
     annotations:
 {{ if eq .Values.global.clusterType  "scaleout" }}
-      description: 'Fluent container logs `scaleout` {{`{{ $labels.hostname }}`}} pod on {{`{{ $labels.nodename }}`}} is not shipping any log line. Please check'
+      description: 'No fluent container logs from  `scaleout` {{`{{ $labels.nodename }}`}} is not shipping any log line. Please check'
 {{ else }}
-      description: 'FLuent container logs `metal` {{`{{ $labels.hostname }}`}} pod on {{`{{ $labels.nodename }}`}} is not shipping any log line. Please check'
+      description: 'No fLuent container logs from `metal` {{`{{ $labels.nodename }}`}} is not shipping any log line. Please check'
 {{ end }}
       summary: fluent container is not shipping logs
   - alert: ElkFluentLogsIncreasing

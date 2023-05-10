@@ -1,7 +1,7 @@
 # placement.conf
 [DEFAULT]
-log_config_append = /etc/{{ include "placement_project" . }}/logging.ini
-state_path = /var/lib/{{ include "placement_project" . }}
+log_config_append = /etc/placement/logging.ini
+state_path = /var/lib/placement
 
 memcache_servers = {{ .Chart.Name }}-memcached.{{ include "svc_fqdn" . }}:{{ .Values.memcached.memcached.port | default 11211 }}
 
@@ -19,7 +19,7 @@ connection = {{ tuple . .Values.mariadb.name .Values.global.dbUser .Values.globa
 {{- include "osprofiler" . }}
 
 [oslo_concurrency]
-lock_path = /var/lib/{{ include "placement_project" . }}/tmp
+lock_path = /var/lib/placement/tmp
 
 [keystone_authtoken]
 auth_type = v3password

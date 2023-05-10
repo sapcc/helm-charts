@@ -29,19 +29,15 @@ spec:
 {{- if $proxysql }}
       {{- include "utils.proxysql.job_pod_settings" . | indent 6 }}
 {{- end }}
+      initContainers:
+      {{- tuple . (dict "service" (print .Release.Name "-mariadb")) | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 6 }}
       containers:
         - name: manila-migration
           image: {{.Values.global.registry}}/loci-manila:{{.Values.loci.imageVersion}}
           imagePullPolicy: IfNotPresent
           command:
-            - kubernetes-entrypoint
+            - /container.init/db-migrate
           env:
-            - name: COMMAND
-              value: "/container.init/db-migrate"
-            - name: NAMESPACE
-              value: {{ .Release.Namespace }}
-            - name: DEPENDENCY_SERVICE
-              value: "{{ .Release.Name }}-mariadb"
             {{- if .Values.sentry.enabled }}
             - name: SENTRY_DSN_SSL
               valueFrom:

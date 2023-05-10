@@ -39,6 +39,7 @@ spec:
 {{ tuple $availability_zone | include "kubernetes_pod_az_affinity" | indent 6 }}
 {{ include "utils.proxysql.pod_settings" . | indent 6 }}
       initContainers:
+      {{- tuple . (dict "service" (print .Release.Name "-mariadb," .Release.Name "-rabbitmq")) | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 8 }}
         - name: fetch-rabbitmqadmin
           image: {{.Values.global.dockerHubMirror}}/library/busybox
           command: ["/scripts/fetch-rabbitmqadmin.sh"]
@@ -54,14 +55,12 @@ spec:
           imagePullPolicy: IfNotPresent
           command:
             - dumb-init
-            - kubernetes-entrypoint
+            - manila-share
+            - --config-file
+            - /etc/manila/manila.conf
+            - --config-file
+            - /etc/manila/backend.conf
           env:
-            - name: COMMAND
-              value: "manila-share --config-file /etc/manila/manila.conf --config-file /etc/manila/backend.conf"
-            - name: NAMESPACE
-              value: {{ .Release.Namespace }}
-            - name: DEPENDENCY_SERVICE
-              value: "{{ .Release.Name }}-mariadb,{{ .Release.Name }}-rabbitmq"
             {{- if .Values.sentry.enabled }}
             - name: SENTRY_DSN_SSL
               valueFrom:

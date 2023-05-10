@@ -233,3 +233,32 @@ prometheus-kubernetes-rules:
 
 prometheus-scaleout-rules:
   prometheusName: kubernetes
+
+falco:
+  enabled: false
+  image:
+    registry: keppel.global.cloud.sap/ccloud-dockerhub-mirror
+
+  driver:
+    loader:
+      initContainer:
+        image:
+          registry: keppel.global.cloud.sap/ccloud-dockerhub-mirror
+
+  falcoctl:
+    image:
+      registry: keppel.global.cloud.sap/ccloud-dockerhub-mirror
+
+  tolerations:
+    - operator: Exists
+
+  extra:
+    args:
+      - -t
+      - pci
+      - -v
+      - --unbuffered
+
+  falco:
+    rules_file:
+      - /etc/falco/rules.d
