@@ -115,6 +115,9 @@ output {
       id => "opensearch-syslog"
       index => "syslog-%{+YYYY.MM.dd}"
       hosts => ["https://{{.Values.opensearch.http.endpoint}}.{{.Values.global.region}}.{{.Values.global.tld}}:{{.Values.opensearch.http_port}}"]
+      template => "/logstash-etc/syslog.json"
+      template_name => "syslog"
+      template_overwrite => true
       auth_type => {
         type => "basic"
         user => "{{.Values.opensearch.user}}"
