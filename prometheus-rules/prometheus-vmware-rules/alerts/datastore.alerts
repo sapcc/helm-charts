@@ -309,3 +309,19 @@ groups:
     annotations:
       description: 'Datastore {{ $labels.datastore }} is not accessible. ({{ $labels.vcenter }}, {{ $labels.datacenter }})'
       summary: 'Datastore {{ $labels.datastore }} is not accessible. ({{ $labels.vcenter }}, {{ $labels.datacenter }})'
+
+
+  - alert: EphemeralDatastoreNotPartOfSDRSCluster
+    expr: >
+      vrops_datastore_summary_datastore_accessible{type="ephemeral", storagepod=~"none|None|NONE", datastore=~"eph.*"} > 0
+    for: 20m
+    labels:
+      severity: info
+      tier: vmware
+      service: storage
+      support_group: compute
+      context: "{{ $labels.datastore }}"
+      meta: "Eph Datastore {{ $labels.datastore }} is not a part of SDRS cluster. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
+    annotations:
+      description: "Eph Datastore {{ $labels.datastore }} is not a part of SDRS Cluster. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
+      summary: "Eph Datastore {{ $labels.datastore }} is not a part of SDRS Cluster. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
