@@ -59,6 +59,9 @@
     {{- if .Values.tenso.servicenow.create_change_url }}
     helm-deployment-from-concourse.v1 -> helm-deployment-to-servicenow.v1,
     infra-workflow-from-awx.v1 -> infra-workflow-to-servicenow.v1,
+    {{- if hasPrefix "qa" .Values.global.region }}{{/* NOTE: Do not enable in prod until validation/translation/delivery is fully implemented in Tenso. */}}
+    terraform-deployment-from-concourse.v1 -> terraform-deployment-to-servicenow.v1,
+    {{- end }}
     {{- end }}
 {{- if .Values.tenso.servicenow.create_change_url }}
 - name:  TENSO_SERVICENOW_CREATE_CHANGE_URL
