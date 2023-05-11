@@ -490,6 +490,10 @@ route:
       severity: critical|warning|info
       region: qa-de-1|ap-jp-1|eu-ru-1
 
+  - receiver: email_k8s_alerting
+    continue: false
+    matchers: [alertname="KubernikusKlusterLowOnObjectStoreQuota"]
+
 receivers:
   - name: wham_metal
     webhook_configs:
@@ -1481,3 +1485,38 @@ receivers:
           Sentry: {{"'{{template \"pagerduty.sapcc.sentry\" . }}'"}}
           Playbook: {{"'{{template \"pagerduty.sapcc.playbook\" . }}'"}}
           firing: {{"'{{ template \"pagerduty.sapcc.firing\" . }}'"}}
+
+  # email receiver config for k8s alerting
+  - name: email_k8s_alerting
+    email_configs:
+    - to: {{"{{ .CommonLabels.primary_contact_email }}"}}
+      from: {{ required ".Values.email_k8s_alerting.email_from_address undefined" .Values.email_k8s_alerting.email_from_address | quote }}
+      headers:
+        subject: {{"{{ .CommonAnnotations.mail_subject }}"}}
+        cc: ""
+      text: {{"{{ .CommonAnnotations.mail_body }}"}}
+      smarthost: {{ required ".Values.email_k8s_alerting.smtp_host undefined" .Values.email_k8s_alerting.smtp_host | quote }}
+      auth_username: {{ required ".Values.email_k8s_alerting.auth_username undefined" .Values.email_k8s_alerting.auth_username | quote }}
+      auth_password: {{ required ".Values.email_k8s_alerting.auth_password undefined" .Values.email_k8s_alerting.auth_password | quote }}
+    - to: {{"{{ .CommonLabels.operator_contact_email }}"}}
+      from: {{ required ".Values.email_k8s_alerting.email_from_address undefined" .Values.email_k8s_alerting.email_from_address | quote }}
+      headers:
+        subject: {{"{{ .CommonAnnotations.mail_subject }}"}}
+        cc: ""
+      text: {{"{{ .CommonAnnotations.mail_body }}"}}
+      smarthost: {{ required ".Values.email_k8s_alerting.smtp_host undefined" .Values.email_k8s_alerting.smtp_host | quote }}
+      auth_username: {{ required ".Values.email_k8s_alerting.auth_username undefined" .Values.email_k8s_alerting.auth_username | quote }}
+      auth_password: {{ required ".Values.email_k8s_alerting.auth_password undefined" .Values.email_k8s_alerting.auth_password | quote }}
+    {{ if .Values.email_k8s_alerting.email_bcc_to_address }}
+    - to: {{"{{ .Values.email_k8s_alerting.email_bcc_to_address }}"}}
+      from: {{ required ".Values.email_k8s_alerting.email_from_address undefined" .Values.email_k8s_alerting.email_from_address | quote }}
+      headers:
+        subject: {{"{{ .CommonAnnotations.mail_subject }}"}}
+        cc: ""
+      text: {{"{{ .CommonAnnotations.mail_body }}"}}
+      smarthost: {{ required ".Values.email_k8s_alerting.smtp_host undefined" .Values.email_k8s_alerting.smtp_host | quote }}
+      auth_username: {{ required ".Values.email_k8s_alerting.auth_username undefined" .Values.email_k8s_alerting.auth_username | quote }}
+      auth_password: {{ required ".Values.email_k8s_alerting.auth_password undefined" .Values.email_k8s_alerting.auth_password | quote }}
+    {{- end -}}
+
+    
