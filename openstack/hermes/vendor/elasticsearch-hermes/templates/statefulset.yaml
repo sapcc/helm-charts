@@ -59,7 +59,11 @@ spec:
         - name: elasticsearch-hermes
           image: {{.Values.global.elasticCoMirror}}/elasticsearch/elasticsearch:{{.Values.hermes_image_version_elasticsearch}}
           imagePullPolicy: IfNotPresent
-          command: [elasticsearch]
+          command:
+            - /bin/bash
+            - -c
+            - elasticsearch-plugin install -b https://github.com/vvanholl/elasticsearch-prometheus-exporter/releases/download/7.17.2.0/prometheus-exporter-7.17.2.0.zip &&
+            - elasticsearch
           resources:
 {{ toYaml .Values.resources | indent 12 }}
           env:
