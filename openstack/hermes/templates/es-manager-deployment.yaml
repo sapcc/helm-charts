@@ -35,6 +35,12 @@ spec:
         - name: es-etc
           configMap:
             name: es-manager-hermes-etc
+{{- if .Values.elasticsearch_hermes.enabled }}
+        - name: truststore
+          secret:
+            defaultMode: 420
+            secretName: truststore
+{{- end }}
       containers:
       - name: es-manager
         image: {{.Values.global.dockerHubMirror}}/lmenezes/cerebro:{{.Values.hermes_image_version_elasticsearch_manager}}

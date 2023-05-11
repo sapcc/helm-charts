@@ -53,3 +53,11 @@ user-template = "%s@{{.Values.ldap.userdomain}}"
     }
   }
 }
+play.ws.ssl {
+  trustManager = {
+    stores = [
+      { type = "PKCS12", path = "/truststore/truststore", password = "{{.Values.hermes.elasticsearch.manager_cert_pw}}" }
+    ]
+  }
+}
+play.ws.ssl.loose.acceptAnyCertificate=true
