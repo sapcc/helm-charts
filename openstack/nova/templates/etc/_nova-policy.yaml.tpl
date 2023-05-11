@@ -414,7 +414,7 @@ os_compute_api:os-hypervisors:list: rule:context_is_admin
 # List all hypervisors with details
 #   GET /os-hypervisors/details
 #os_compute_api:os-hypervisors:list-detail: rule:system_reader_api
-os_compute_api:os-hypervisors:list: rule:context_is_admin
+os_compute_api:os-hypervisors:list-detail: rule:context_is_admin
 
 # Search hypervisor by hypervisor_hostname pattern.
 #   GET /os-hypervisors/{hypervisor_hostname_pattern}/search
