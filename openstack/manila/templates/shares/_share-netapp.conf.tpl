@@ -67,6 +67,9 @@ netapp_snapmirror_schedule = "10min"
 # set waiting time for snapmirror to complete on replica promote to 20 min (double the value of netapp_snapmirror_schedule), this is in line with our RPO
 netapp_snapmirror_quiesce_timeout = 1200
 
+# state, that will be reported as pool property. Valid values are `in_build`, `live`, `in_decom` and `replacing_decom`
+netapp_hardware_state = {{ $share.hardware_state | default "live" }}
+
 # The percentage of backend capacity reserved. Default 0 (integer value)
 
 {{- if eq 100 (int $share.reserved_share_percentage)}}
