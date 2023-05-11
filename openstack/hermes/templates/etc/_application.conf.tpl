@@ -53,6 +53,7 @@ user-template = "%s@{{.Values.ldap.userdomain}}"
     }
   }
 }
+{{- if .Values.elasticsearch_hermes.enabled }}
 play.ws.ssl {
   trustManager = {
     stores = [
@@ -61,3 +62,4 @@ play.ws.ssl {
   }
 }
 play.ws.ssl.loose.acceptAnyCertificate=true
+{{- end }}
