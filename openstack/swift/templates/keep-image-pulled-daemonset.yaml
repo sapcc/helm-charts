@@ -50,6 +50,21 @@ spec:
             limits:
               cpu: "1m"
               memory: "32Mi"
+        - name: swift-rings
+          image: {{ include "swift_rings_image" . }}
+          imagePullPolicy: IfNotPresent
+          command: [ '/bin/sleep', 'inf' ]
+          securityContext:
+            runAsNonRoot: true
+            runAsUser:    65534 # nobody
+            runAsGroup:   65534 # nobody
+          resources:
+            requests:
+              cpu: "1m"
+              memory: "32Mi"
+            limits:
+              cpu: "1m"
+              memory: "32Mi"
         - name: haproxy
           image: {{ .Values.global.registryAlternateRegion}}/swift-haproxy:{{ .Values.image_version_haproxy }}
           imagePullPolicy: IfNotPresent
