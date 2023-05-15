@@ -1511,9 +1511,9 @@ receivers:
     - to: {{ .Values.email_k8s_alerting.email_bcc_to_address }}
       from: {{ required ".Values.email_k8s_alerting.email_from_address undefined" .Values.email_k8s_alerting.email_from_address | quote }}
       headers:
-        subject: "[Info] BCC: {{'{{ .CommonAnnotations.mail_subject }}'}}"
-      text: "Sent the following mail to {{'{{.CommonLabels.primary_contact_email}}'}} and {{'{{.CommonLabels.operator_contact_email}}'}}: <br><br>{{'{{ .CommonAnnotations.mail_body }}'}}"
-      html: "Sent the following mail to {{'{{.CommonLabels.primary_contact_email}}'}} and {{'{{.CommonLabels.operator_contact_email}}'}}: <br><br>{{'{{ .CommonAnnotations.mail_body }}'}}"
+        subject: '[Info] BCC: {{"{{ .CommonAnnotations.mail_subject }}"}}'
+      text: 'Sent the following mail to {{"{{.CommonLabels.primary_contact_email}}"}} and {{"{{.CommonLabels.operator_contact_email}}"}}: <br><br>{{"{{ .CommonAnnotations.mail_body }}"}}'
+      html: 'Sent the following mail to {{"{{.CommonLabels.primary_contact_email}}"}} and {{"{{.CommonLabels.operator_contact_email}}"}}: <br><br>{{"{{ .CommonAnnotations.mail_body }}"}}'
       smarthost: {{ required ".Values.email_k8s_alerting.smtp_host undefined" .Values.email_k8s_alerting.smtp_host | quote }}
       auth_username: {{ required ".Values.email_k8s_alerting.auth_username undefined" .Values.email_k8s_alerting.auth_username | quote }}
       auth_password: {{ required ".Values.email_k8s_alerting.auth_password undefined" .Values.email_k8s_alerting.auth_password | quote }}
