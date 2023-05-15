@@ -94,3 +94,18 @@ use = egg:watcher-middleware#watcher
 service_type = share
 config_file = /etc/manila/watcher.yaml
 {{- end }}
+
+{{ if .Values.api_rate_limit.enabled }}
+[filter:rate_limit]
+use = egg:rate-limit-middleware#rate-limit
+config_file = /etc/manila/ratelimit.yaml
+service_type = share
+rate_limit_by = {{ .Values.api_rate_limit.rate_limit_by }}
+max_sleep_time_seconds = {{ .Values.api_rate_limit.max_sleep_time_seconds }}
+clock_accuracy = 1ns
+log_sleep_time_seconds = {{ .Values.api_rate_limit.log_sleep_time_seconds }}
+backend_host = {{ .Release.Name }}-api-ratelimit-redis
+backend_port = 6379
+backend_timeout_seconds = {{ .Values.api_rate_limit.backend_timeout_seconds }}
+{{- end }}
+
