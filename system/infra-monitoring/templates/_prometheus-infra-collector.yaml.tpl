@@ -281,9 +281,6 @@
     - url: {{ .Values.atlas_url }}
   metrics_path: /redfish
   relabel_configs:
-    - source_labels: [__name__]
-      regex: '!redfish_health'
-      action: keep
     - source_labels: [job]
       regex: redfish/bb
       action: keep
