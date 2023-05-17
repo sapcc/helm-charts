@@ -492,7 +492,7 @@ route:
 
   - receiver: cc_email_receiver
     continue: false
-    matchers: [alertname="KubernikusKlusterLowOnObjectStoreQuota"]
+    matchers: [alertname="KubernikusKlusterLowOnObjectStoreQuota",primary_email_recipients=".+"]
 
 receivers:
   - name: wham_metal
