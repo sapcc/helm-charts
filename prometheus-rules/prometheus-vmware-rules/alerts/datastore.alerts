@@ -189,7 +189,7 @@ groups:
 
   - alert: DatastoreDisconnectedWithVmsOnIt
     expr: >
-      (label_replace(vrops_datastore_summary_total_number_vms, "hostsystem", "$1", "datastore", "(node.*)(-.*)") > 0 and on(datastore)
+      (label_replace(vrops_datastore_summary_total_number_vms, "hostsystem", "$1", "datastore", "(node[0-9]{3}-[^-]*).*") > 0 and on(datastore)
       vrops_datastore_summary_datastore_accessible{state="PoweredOff",type!~"local"}) unless on (hostsystem)
       label_replace(vrops_hostsystem_runtime_maintenancestate{state="inMaintenance"}, "hostsystem", "$1", "hostsystem", "(node.*)(.cc.*)")
     for: 20m
@@ -207,7 +207,7 @@ groups:
 
   - alert: DatastoreDisconnectedWithoutVmsOnIt
     expr: >
-      (label_replace(vrops_datastore_summary_total_number_vms, "hostsystem", "$1", "datastore", "(node.*)(-.*)") == 0 and on(datastore)
+      (label_replace(vrops_datastore_summary_total_number_vms, "hostsystem", "$1", "datastore", "(node[0-9]{3}-[^-]*).*") == 0 and on(datastore)
       vrops_datastore_summary_datastore_accessible{state="PoweredOff",type!~"local"}) unless on (hostsystem)
       label_replace(vrops_hostsystem_runtime_maintenancestate{state="inMaintenance"}, "hostsystem", "$1", "hostsystem", "(node.*)(.cc.*)")
     for: 20m
