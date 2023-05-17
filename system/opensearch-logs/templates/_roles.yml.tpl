@@ -66,7 +66,7 @@ data:
     - "indices:data/write/index"
     - "indices:data/write/update"
   - index_patterns:
-    - "qa-de-2-*"
+    - "qade2-logstash-"
     allowed_actions:
     - "indices:admin/template/get"
     - "indices:admin/template/put"
@@ -77,7 +77,7 @@ data:
     - "indices:data/write/index"
     - "indices:data/write/update"
   - index_patterns:
-    - "qa-de-3-*"
+    - "qade3-logstash-*"
     allowed_actions:
     - "indices:admin/template/get"
     - "indices:admin/template/put"
@@ -88,7 +88,7 @@ data:
     - "indices:data/write/index"
     - "indices:data/write/update"
   - index_patterns:
-    - "qa-de-5-*"
+    - "qade5-logstash-*"
     allowed_actions:
     - "indices:admin/template/get"
     - "indices:admin/template/put"
