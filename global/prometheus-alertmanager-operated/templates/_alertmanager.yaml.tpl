@@ -1489,12 +1489,12 @@ receivers:
   # email receiver config
   - name: cc_email_receiver
     email_configs:
-    - to: {{"'{{.CommonLabels.primary_email_receivers}}','{{.CommonLabels.cc_email_receivers}}','{{.CommonLabels.bcc_email_receivers}}'"}}
+    - to: {{"'{{.CommonLabels.primary_email_recipients}}','{{.CommonLabels.cc_email_recipients}}','{{.CommonLabels.bcc_email_recipients}}'"}}
       from: {{ required ".Values.cc_email_receiver.email_from_address undefined" .Values.cc_email_receiver.email_from_address | quote }}
       headers:
         subject: {{"'{{ .CommonAnnotations.mail_subject }}'"}}
-        To: {{"'{{.CommonLabels.primary_email_receivers}}'"}}
-        CC: {{"'{{.CommonLabels.cc_email_receivers}}'"}}
+        To: {{"'{{.CommonLabels.primary_email_recipients}}'"}}
+        CC: {{"'{{.CommonLabels.cc_email_recipients}}'"}}
       text: {{"'{{ .CommonAnnotations.mail_body }}'"}}
       html: {{"'{{ .CommonAnnotations.mail_body }}'"}}
       smarthost: {{ required ".Values.cc_email_receiver.smtp_host undefined" .Values.cc_email_receiver.smtp_host | quote }}
