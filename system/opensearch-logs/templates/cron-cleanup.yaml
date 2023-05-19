@@ -3,9 +3,10 @@ kind: CronJob
 metadata:
   name: index-cleanup
 spec:
-  schedule: "0 0,3,6,9,12,15,18,21 * * *"
+  schedule: "30 0,6,12,18 * * *"
   jobTemplate:
     spec:
+      backoffLimit: 3
       template:
         spec:
           concurrencyPolicy: Forbid
@@ -16,5 +17,10 @@ spec:
             command:
             - /bin/bash
             - -c
-            - export LC_ALL=C.UTF-8; export LANG=C.UTF-8; curl --insecure -s -u {{.Values.global.users.admin.name}}:{{.Values.global.users.admin.password}} https://opensearch-logs-client:9200/_aliases?pretty=true|grep kubernikus|grep '20[3-9]'|awk '{ print $1}'|tr -d '"'|xargs -I {} curl --insecure -u {{.Values.global.users.admin.name}}:{{.Values.global.users.admin.password}} -X DELETE https://opensearch-logs-client:9200/{}?pretty
-          restartPolicy: OnFailure
+            - export LC_ALL=C.UTF-8; export LANG=C.UTF-8; curl --insecure -s -u "${ADMIN_USER}:${ADMIN_PW}" https://opensearch-logs-client:9200/_aliases?pretty=true|grep kubernikus|grep '20[3-9]'|awk '{ print $1}'|tr -d '"'|xargs -I {} curl --insecure -u "${ADMIN_USER}:${ADMIN_PW}" -X DELETE https://opensearch-logs-client:9200/{}?pretty
+            env:
+            - name: ADMIN_USER
+              value: "{{.Values.global.users.admin.name}}"
+            - name: ADMIN_PW
+              value: "{{.Values.global.users.admin.password}}"
+          restartPolicy: Never
