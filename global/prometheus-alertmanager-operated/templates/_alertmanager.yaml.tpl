@@ -490,6 +490,10 @@ route:
       severity: critical|warning|info
       region: qa-de-1|ap-jp-1|eu-ru-1
 
+  - receiver: cc_email_receiver
+    continue: false
+    matchers: [alertname="KubernikusKlusterLowOnObjectStoreQuota",primary_email_recipients=".+"]
+
 receivers:
   - name: wham_metal
     webhook_configs:
@@ -1481,3 +1485,19 @@ receivers:
           Sentry: {{"'{{template \"pagerduty.sapcc.sentry\" . }}'"}}
           Playbook: {{"'{{template \"pagerduty.sapcc.playbook\" . }}'"}}
           firing: {{"'{{ template \"pagerduty.sapcc.firing\" . }}'"}}
+
+  # email receiver config
+  - name: cc_email_receiver
+    email_configs:
+    - to: {{"'{{.CommonLabels.primary_email_recipients}}','{{.CommonLabels.cc_email_recipients}}','{{.CommonLabels.bcc_email_recipients}}'"}}
+      from: {{ required ".Values.cc_email_receiver.email_from_address undefined" .Values.cc_email_receiver.email_from_address | quote }}
+      headers:
+        subject: {{"'{{ .CommonAnnotations.mail_subject }}'"}}
+        To: {{"'{{.CommonLabels.primary_email_recipients}}'"}}
+        CC: {{"'{{.CommonLabels.cc_email_recipients}}'"}}
+      text: {{"'{{ .CommonAnnotations.mail_body }}'"}}
+      html: {{"'{{ .CommonAnnotations.mail_body }}'"}}
+      smarthost: {{ required ".Values.cc_email_receiver.smtp_host undefined" .Values.cc_email_receiver.smtp_host | quote }}
+      auth_username: {{ required ".Values.cc_email_receiver.auth_username undefined" .Values.cc_email_receiver.auth_username | quote }}
+      auth_password: {{ required ".Values.cc_email_receiver.auth_password undefined" .Values.cc_email_receiver.auth_password | quote }}
+    
