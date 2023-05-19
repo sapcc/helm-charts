@@ -9,8 +9,17 @@ waitfordatabase
 loginfo "null" "configuration job started"
 {{- if $.Values.monitoring.mysqld_exporter.enabled }}
 setupuser "${MARIADB_MONITORING_USER}" "${MARIADB_MONITORING_PASSWORD}" 'mysql_exporter' "${MARIADB_MONITORING_CONNECTION_LIMIT}" '%' 'mysql_native_password' " "
-setupuser "${MARIADB_MONITORING_USER}" "${MARIADB_MONITORING_PASSWORD}" 'mysql_exporter' "${MARIADB_MONITORING_CONNECTION_LIMIT}" '127.0.0.1' 'mysql_native_password' " "
 setupuser "${MARIADB_MONITORING_USER}" "${MARIADB_MONITORING_PASSWORD}" 'mysql_exporter' "${MARIADB_MONITORING_CONNECTION_LIMIT}" '::1' 'mysql_native_password' " "
+setupuser "${MARIADB_MONITORING_USER}" "${MARIADB_MONITORING_PASSWORD}" 'mysql_exporter' "${MARIADB_MONITORING_CONNECTION_LIMIT}" '127.0.0.1' 'mysql_native_password' " "
+setupuser "${MARIADB_MONITORING_USER}" "${MARIADB_MONITORING_PASSWORD}" 'mysql_exporter' "${MARIADB_MONITORING_CONNECTION_LIMIT}" 'localhost' 'mysql_native_password' " "
+grantrole 'mysql_exporter' "${MARIADB_MONITORING_USER}" '%' " "
+grantrole 'mysql_exporter' "${MARIADB_MONITORING_USER}" '::1' " "
+grantrole 'mysql_exporter' "${MARIADB_MONITORING_USER}" '127.0.0.1' " "
+grantrole 'mysql_exporter' "${MARIADB_MONITORING_USER}" 'localhost' " "
+setdefaultrole 'mysql_exporter' "${MARIADB_MONITORING_USER}" '%'
+setdefaultrole 'mysql_exporter' "${MARIADB_MONITORING_USER}" '::1'
+setdefaultrole 'mysql_exporter' "${MARIADB_MONITORING_USER}" '127.0.0.1'
+setdefaultrole 'mysql_exporter' "${MARIADB_MONITORING_USER}" 'localhost'
 {{- end }}
 
 {{- /* Load additional configuration files for MariaDB to be processed by the job container */}}
@@ -48,7 +57,6 @@ setupuser {{ $configfile.username | quote }} {{ $configfile.password | quote }} 
           {{- else }}
 setupuser {{ $configfile.username | quote }} {{ $configfile.password | quote }} {{ $configfile.defaultrole | quote }} {{ $configfile.maxconnections | quote }} {{ $hostnameValue | quote }} {{ $configfile.authplugin | quote }} " "
           {{- end }}
-setdefaultrole {{ $configfile.defaultrole | quote }} {{ $configfile.username | quote }} {{ $hostnameValue | quote }}
           {{- if and (hasKey $configfile "additionalroles") (kindIs "slice" $configfile.additionalroles) }}
             {{- range $rolenameKey, $rolenameValue := $configfile.additionalroles }}
               {{- if $configfile.adminoption }}
@@ -58,6 +66,7 @@ grantrole {{ $rolenameValue | quote }} {{ $configfile.username | quote }} {{ $ho
               {{- end }}
             {{- end }}
           {{- end }}
+setdefaultrole {{ $configfile.defaultrole | quote }} {{ $configfile.username | quote }} {{ $hostnameValue | quote }}
         {{- end }}
       {{- end }}
       {{- if (not $usernameEnvVarFound) }}

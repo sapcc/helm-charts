@@ -60,6 +60,7 @@ function initdb {
     setdefaultrole 'mysql_exporter' "${MARIADB_MONITORING_USER}" 'localhost'
     grantrole 'mysql_exporter' "${MARIADB_ROOT_USER}" '%' 'WITH ADMIN OPTION'
     grantrole 'mysql_exporter' "${MARIADB_ROOT_USER}" '::1' 'WITH ADMIN OPTION'
+    grantrole 'mysql_exporter' "${MARIADB_ROOT_USER}" 'localhost' 'WITH ADMIN OPTION'
     listdbandusers
     stopdb
   fi

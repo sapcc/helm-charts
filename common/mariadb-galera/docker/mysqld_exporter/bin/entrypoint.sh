@@ -46,7 +46,7 @@ if ! [ -z ${COLLECT_SLAVE_HOSTS+x} ] && [ "${COLLECT_SLAVE_HOSTS}" == "enable" ]
 if ! [ -z ${COLLECT_HEARTBEAT+x} ] && [ "${COLLECT_HEARTBEAT}" == "enable" ]; then exporterparams[collect.heartbeat]+=; else exporterparams[no-collect.heartbeat]+=; fi
 if ! [ -z ${COLLECT_HEARTBEAT_UTC+x} ] && [ "${COLLECT_HEARTBEAT_UTC}" == "enable" ]; then exporterparams[collect.heartbeat.utc]+=; else exporterparams[no-collect.heartbeat.utc]+=; fi
 if ! [ -z ${COLLECT_AUTO_INCREMENT_COLUMNS+x} ] && [ "${COLLECT_AUTO_INCREMENT_COLUMNS}" == "enable" ]; then exporterparams[collect.auto_increment.columns]+=; else exporterparams[no-collect.auto_increment.columns]+=; fi
-if ! [ -z ${COLLECT_INFO_SCHEMA_INNODB_TABLESSPACES+x} ] && [ "${COLLECT_INFO_SCHEMA_INNODB_TABLESSPACES}" == "enable" ]; then exporterparams[collect.info_schema.innodb_tablespaces]+=; else exporterparams[no-collect.info_schema.innodb_tablespaces]+=; fi
+if ! [ -z ${COLLECT_INFO_SCHEMA_INNODB_TABLESPACES+x} ] && [ "${COLLECT_INFO_SCHEMA_INNODB_TABLESPACES}" == "enable" ]; then exporterparams[collect.info_schema.innodb_tablespaces]+=; else exporterparams[no-collect.info_schema.innodb_tablespaces]+=; fi
 #all parameters that should per default be enabled
 if ! [ -z ${COLLECT_BIN_LOG_SIZE+x} ] && [ "${COLLECT_BIN_LOG_SIZE}" == "disable" ]; then exporterparams[no-collect.binlog_size]+=; else exporterparams[collect.binlog_size]+=; fi
 if ! [ -z ${COLLECT_ENGINE_INNODB_STATUS+x} ] && [ "${COLLECT_ENGINE_INNODB_STATUS}" == "disable" ]; then exporterparams[no-collect.engine_innodb_status]+=; else exporterparams[collect.engine_innodb_status]+=; fi

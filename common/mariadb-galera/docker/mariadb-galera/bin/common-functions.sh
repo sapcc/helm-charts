@@ -213,7 +213,7 @@ function setdefaultrole {
   fi
 }
 
-# setup username password rolename rolename connectionlimit hostname authplugin admingrant(or empty)
+# setup username password rolename connectionlimit hostname authplugin admingrant(or empty)
 # setupuser "${MARIADB_MONITORING_USER}" "${MARIADB_MONITORING_PASSWORD}" 'mysql_exporter' "${MARIADB_MONITORING_CONNECTION_LIMIT}" '%' 'mysql_native_password' 'WITH ADMIN OPTION'
 function setupuser {
   local tplfile=setupuser.sql.tpl
