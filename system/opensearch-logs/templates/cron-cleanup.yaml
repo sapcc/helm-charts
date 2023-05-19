@@ -1,0 +1,20 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: index-cleanup
+spec:
+  schedule: "0 0, 3, 6, 9, 12, 15,18,21 * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          concurrencyPolicy: Forbid
+          containers:
+          - name: index-cleanup
+            image: keppel.eu-de-1.cloud.sap/ccloud/unified-kubernetes-toolbox:latest
+            imagePullPolicy: IfNotPresent
+            command:
+            - /bin/bash
+            - -c
+            - export LC_ALL=C.UTF-8; export LANG=C.UTF-8; curl -s -u {{.Values.global.users.admin.name}}:{{.Values.global.users.admin.password}} https://opensearch-logs-client:9200/_aliases?pretty=true|grep kubernikus|grep '20[3-9]'|awk '{ print $1}'|tr -d '"'|xargs -I {} curl --insecure -u {{.Values.global.users.admin.name}}:{{.Values.global.users.admin.password}} -X DELETE https://opensearch-logs-client:9200/{}?pretty
+          restartPolicy: OnFailure
