@@ -60,6 +60,7 @@
     helm-deployment-from-concourse.v1 -> helm-deployment-to-servicenow.v1,
     infra-workflow-from-awx.v1 -> infra-workflow-to-servicenow.v1,
     {{- if hasPrefix "qa" .Values.global.region }}{{/* NOTE: Do not enable in prod until validation/translation/delivery is fully implemented in Tenso. */}}
+    active-directory-deployment-from-concourse.v1 -> active-directory-deployment-to-servicenow.v1,
     terraform-deployment-from-concourse.v1 -> terraform-deployment-to-servicenow.v1,
     {{- end }}
     {{- end }}
