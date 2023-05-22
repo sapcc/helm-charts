@@ -493,7 +493,7 @@ route:
   {{- if .Values.cc_email_receiver.enabled }}
   - receiver: cc_email_receiver
     continue: false
-    matchers: [alertname="KubernikusKlusterLowOnObjectStoreQuota",primary_email_recipients=".+"]
+    matchers: [alertname="KubernikusKlusterLowOnObjectStoreQuota",primary_email_recipients!=""]
   {{- end }}
 
 receivers:
