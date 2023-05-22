@@ -1492,7 +1492,7 @@ receivers:
   {{- if .Values.cc_email_receiver.enabled }}
   - name: cc_email_receiver
     email_configs:
-      - to: {{"'{{.CommonLabels.primary_email_recipients}}','{{.CommonLabels.cc_email_recipients}}','{{.CommonLabels.bcc_email_recipients}}'"}}
+      - to: {{"'{{.CommonLabels.primary_email_recipients}},{{.CommonLabels.cc_email_recipients}},{{.CommonLabels.bcc_email_recipients}}'"}}
         from: {{ required ".Values.cc_email_receiver.email_from_address undefined" .Values.cc_email_receiver.email_from_address | quote }}
         headers:
           subject: {{"'{{ .CommonAnnotations.mail_subject }}'"}}
