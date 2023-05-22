@@ -28,9 +28,6 @@
     - source_labels: [job]
       regex: asw-eapi
       action: keep
-    - source_labels: [__name__]
-      regex: '!arista_port_stats'
-      action: keep
     - source_labels: [__address__]
       target_label: __param_target
     - source_labels: [__param_target]
@@ -216,9 +213,6 @@
     - url: {{ .Values.atlas_url }}
   metrics_path: /ipmi
   relabel_configs:
-    - source_labels: [__name__]
-      regex: '!ipmi_temperature_state'
-      action: keep
     - source_labels: [job]
       regex: vmware-esxi
       action: keep
