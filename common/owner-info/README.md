@@ -38,7 +38,7 @@ The following fields can appear within the `owner-info` section of your chart's 
 | --------- | --------- | ----------- |
 | `helm-chart-url` | **yes** | An HTTP(S) URL describing where to find the Helm chart in GitHub etc., e.g. `https://github.com/sapcc/helm-charts/tree/master/common/owner-info`. |
 | `maintainers` | no | List of people that maintain the Helm chart. If multiple people can help with issues regarding the chart, feel free to include as many names as you like. The list should be ordered by priority, i.e. the primary maintainer should be at the top. |
-| `support-group` | **yes** | For routing alerts/tickets regarding this deployment to the right support group. |
-| `service` | no | Allows sorting alerts/tickets within the realm of a single support group. |
+| `support-group` | **yes** | Associates this deployment with the respective support group. This is used for routing generic Kubernetes alerts (pod not ready, PVC nearly full, etc.), for measuring resource consumption by support group and service, for delivering DOOP violations, and many other things. |
+| `service` | no | A subclassification for alerts, tickets, policy violations, resource consumption, etc. within the realm of a single support group. |
 
 The values for `support-group` and `service` will be carried over into all Kubernetes objects belonging to the Helm release (both directly and indirectly), and appear in `.metadata.labels["ccloud/support-group"]` and `.metadata.labels["ccloud/service"]`, respectively. This mapping is automatically performed by the owner-label-injector component.
