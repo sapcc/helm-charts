@@ -10,6 +10,7 @@ spec:
       template:
         spec:
           concurrencyPolicy: Forbid
+          restartPolicy: Never
           containers:
           - name: index-cleanup
             image: keppel.eu-de-1.cloud.sap/ccloud/unified-kubernetes-toolbox:latest
@@ -23,13 +24,11 @@ spec:
               value: "{{.Values.global.users.admin.name}}"
             - name: ADMIN_PW
               value: "{{.Values.global.users.admin.password}}"
-        volumeMounts:
-        - mountPath: /scripts/index_cleanup.sh
-          name: config
-          subPath: index_cleanup.sh
+            volumeMounts:
+            - mountPath: /scripts/index_cleanup.sh
+              name: config
       volumes:
       - name: config
         secret:
           defaultMode: 420
           secretName: security-config
-          restartPolicy: Never
