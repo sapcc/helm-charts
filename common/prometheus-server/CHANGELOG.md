@@ -1,3 +1,7 @@
+## 7.2.5
+
+* bump Prometheus to v2.43.0
+
 ## 7.2.2 - 7.2.4
 
 * Enhance pod-sd to allow custom metric relabelings
