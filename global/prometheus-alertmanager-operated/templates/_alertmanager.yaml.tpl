@@ -490,9 +490,11 @@ route:
       severity: critical|warning|info
       region: qa-de-1|ap-jp-1|eu-ru-1
 
+  {{- if .Values.cc_email_receiver.enabled }}
   - receiver: cc_email_receiver
     continue: false
     matchers: [alertname="KubernikusKlusterLowOnObjectStoreQuota",primary_email_recipients=".+"]
+  {{- end }}
 
 receivers:
   - name: wham_metal
@@ -1487,6 +1489,7 @@ receivers:
           firing: {{"'{{ template \"pagerduty.sapcc.firing\" . }}'"}}
 
   # email receiver config
+  {{- if .Values.cc_email_receiver.enabled }}
   - name: cc_email_receiver
     email_configs:
     - to: {{"'{{.CommonLabels.primary_email_recipients}}','{{.CommonLabels.cc_email_recipients}}','{{.CommonLabels.bcc_email_recipients}}'"}}
@@ -1500,4 +1503,6 @@ receivers:
       smarthost: {{ required ".Values.cc_email_receiver.smtp_host undefined" .Values.cc_email_receiver.smtp_host | quote }}
       auth_username: {{ required ".Values.cc_email_receiver.auth_username undefined" .Values.cc_email_receiver.auth_username | quote }}
       auth_password: {{ required ".Values.cc_email_receiver.auth_password undefined" .Values.cc_email_receiver.auth_password | quote }}
+  {{- end }}
+  
     
