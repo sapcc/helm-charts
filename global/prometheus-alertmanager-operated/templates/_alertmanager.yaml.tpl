@@ -1503,6 +1503,8 @@ receivers:
         smarthost: {{ required ".Values.cc_email_receiver.smtp_host undefined" .Values.cc_email_receiver.smtp_host | quote }}
         auth_username: {{ required ".Values.cc_email_receiver.auth_username undefined" .Values.cc_email_receiver.auth_username | quote }}
         auth_password: {{ required ".Values.cc_email_receiver.auth_password undefined" .Values.cc_email_receiver.auth_password | quote }}
+        require_tls: true
+        send_resolved: false
   {{- end }}
   
     
