@@ -1,7 +1,7 @@
 #!/bin/bash
 
 export HOST=https://opensearch-logs-client:9200
-export CLEANUP_INDEXES="kubernikus virtual"
+export CLEANUP_INDEXES="kubernikus virtual scaleout"
 
 export LC_ALL=C.UTF-8; export LANG=C.UTF-8
 
