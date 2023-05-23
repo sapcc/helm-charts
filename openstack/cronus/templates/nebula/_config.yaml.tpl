@@ -161,12 +161,9 @@ nebula:
 {{- if .Values.postfix.postfixEnabled }}
   postfixEnabled: {{ .Values.postfix.postfixEnabled }}
   ldap:
-    url: {{ .Values.postfix.ldap.url }}
-    certPem: |
-{{ .Values.postfix.ldap.certPem | indent 6 }}
-    certKey: |
-{{ .Values.postfix.ldap.certKey | indent 6 }}
-    baseDN: {{ .Values.postfix.ldap.baseDN }}
+    url: "{{ tpl .Values.postfix.ldap.url $ }}"
+    certPath: {{ .Values.postfix.ldap.certPath }}
+    baseDN: "{{ tpl .Values.postfix.ldap.baseDN $ }}"
     projectAttributes:
 {{- range $key, $value := .Values.postfix.ldap.projectAttributes }}
   {{- if $value }}
@@ -174,6 +171,6 @@ nebula:
   {{- end }}
 {{- end }}
 {{- end }}
-  
+
 {{- end -}}
 
