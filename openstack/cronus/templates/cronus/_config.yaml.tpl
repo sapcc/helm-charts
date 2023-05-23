@@ -129,6 +129,9 @@ cronus:
 {{- if .Values.config.workQueue.allowTrigger }}
     allowTrigger: {{ .Values.config.workQueue.allowTrigger }}
 {{- end }}
+{{- if .Values.config.workQueue.sendNdrs }}
+    sendNdrs: {{ .Values.config.workQueue.sendNdrs }}
+{{- end }}
     rabbitmqUri: amqp://{{ $r_user }}:{{ $r_creds }}@{{ $r_host }}/
 {{- if .Values.config.workQueue.queueName }}
     queueName: {{ .Values.config.workQueue.queueName }}
