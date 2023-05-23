@@ -142,9 +142,6 @@ cronus:
 {{- if .Values.config.workQueue.workerPrefetchSize }}
     workerPrefetchSize: {{ .Values.config.workQueue.workerPrefetchSize }}
 {{- end }}
-    trailLimit: {{ .Values.config.workQueue.trailLimit }}
-    trailTimeBaseFactor: {{ .Values.config.workQueue.trailTimeBaseFactor }}
-    trailTimeRandMaxNumber: {{ .Values.config.workQueue.trailTimeRandMaxNumber }}
     initialDelayTime: {{ .Values.config.workQueue.initialDelayTime }}
     delayGrowthFactor: {{ .Values.config.workQueue.delayGrowthFactor }}
     maxDelayTime: {{ .Values.config.workQueue.maxDelayTime }}
