@@ -62,6 +62,13 @@ route:
   - receiver: elastic
     continue: true
 
+  {{- if .Values.cc_email_receiver.enabled }}
+  - receiver: cc_email_receiver
+    continue: false
+    matchers: [alertname="KubernikusKlusterLowOnObjectStoreQuota",primary_email_recipients!=""]
+  {{- end }}
+
+
   # review for slack_by_cc_service
   - receiver: slack_hsm
     continue: false
@@ -489,12 +496,6 @@ route:
       tier: metal
       severity: critical|warning|info
       region: qa-de-1|ap-jp-1|eu-ru-1
-
-  {{- if .Values.cc_email_receiver.enabled }}
-  - receiver: cc_email_receiver
-    continue: false
-    matchers: [alertname="KubernikusKlusterLowOnObjectStoreQuota",primary_email_recipients!=""]
-  {{- end }}
 
 receivers:
   - name: wham_metal
