@@ -21,7 +21,7 @@ groups:
     ### Controlplane Filer probes ###
     - alert: KubernetesCpFilerProbeDown
       expr: probe_success{job=~"cp-nfs-filer-probe.*"} == 0
-      for: 20m
+      for: 15m
       labels:
         severity: warning
         tier: k8s
