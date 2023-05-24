@@ -17,3 +17,20 @@ groups:
       annotations:
         description: Failed to probe ApiServer on {{`{{ $labels.instance }}`}}. 
         summary: An ApiServer is DOWN
+
+    ### Controlplane Filer probes ###
+    - alert: KubernetesCpFilerProbeDown
+      expr: probe_success{job=~"cp-nfs-filer-probe.*"} == 0
+      for: 20m
+      labels:
+        severity: warning
+        tier: k8s
+        service: k8s
+        support_group: containers
+        playbook: docs/support/playbook/kubernetes/k8s_cp_filer_down
+      annotations:
+        description: |
+          Job {{`{{ $labels.job }}`}} failed to probe Controlplane filer on {{`{{ $labels.instance }}`}}.
+          Nodes in probed region cannot mount NFS Persistent Volumes.
+          Double check NFS IP address in Netbox, verify reachability and involve Storage and/or Network teams.
+        summary: Controlplane filer NFS target is DOWN
