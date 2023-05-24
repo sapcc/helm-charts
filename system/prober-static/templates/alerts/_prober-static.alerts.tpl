@@ -11,6 +11,7 @@ groups:
         tier: k8s
         service: k8s
         context: apiserver
+        support_group: containers
         dashboard: kubernetes-health
         playbook: docs/support/playbook/kubernetes/k8s_apiserver_down
       annotations:

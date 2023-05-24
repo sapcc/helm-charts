@@ -98,6 +98,7 @@ filter {
 
 output {
   if [type] == "syslog" {
+{{- if .Values.elasticsearch.enabled }}
     elasticsearch {
       id => "elk-syslog"
       index => "syslog-%{+YYYY.MM.dd}"
@@ -110,6 +111,7 @@ output {
       password => "{{.Values.global.elk_elasticsearch_data_password}}"
       ssl => true
     }
+{{- end }}
 {{- if .Values.opensearch.enabled }}
     opensearch {
       id => "opensearch-syslog"
@@ -129,6 +131,7 @@ output {
 {{- end }}
   }
   elseif [type] == "alert" and [alerts][labels][severity] == "critical"{
+{{- if .Values.elasticsearch.enabled }}
     elasticsearch {
       id => "elk-critical-alerts"
       index => "alerts-critical-%{+YYYY}"
@@ -141,6 +144,7 @@ output {
       password => "{{.Values.global.elk_elasticsearch_data_password}}"
       ssl => true
     }
+{{- end }}
 {{- if .Values.opensearch.enabled }}
     opensearch {
       id => "opensearch-critical-alerts"
@@ -157,6 +161,7 @@ output {
 {{- end }}
   }
   elseif [type] == "alert" and [alerts][labels][severity] == "warning"{
+{{- if .Values.elasticsearch.enabled }}
       elasticsearch {
       id => "elk-alerts-warnings"
         index => "alerts-warning-%{+YYYY}"
@@ -169,6 +174,7 @@ output {
         password => "{{.Values.global.elk_elasticsearch_data_password}}"
         ssl => true
     }
+{{- end }}
 {{- if .Values.opensearch.enabled }}
     opensearch {
       id => "opensearch-warnings"
@@ -185,6 +191,7 @@ output {
 {{- end }}
   }
   elseif [type] == "alert"{
+{{- if .Values.elasticsearch.enabled }}
     elasticsearch {
       id => "elk-alerts"
       index => "alerts-other-%{+YYYY}"
@@ -197,6 +204,7 @@ output {
       password => "{{.Values.global.elk_elasticsearch_data_password}}"
       ssl => true
     }
+{{- end }}
 {{- if .Values.opensearch.enabled }}
     opensearch {
       id => "opensearch-alerts"
@@ -213,6 +221,7 @@ output {
 {{- end }}
   }
   elseif [type] == "deployment" {
+{{- if .Values.elasticsearch.enabled }}
     elasticsearch {
       id => "elk-deployments"
       index => "deployments-%{+YYYY}"
@@ -225,6 +234,7 @@ output {
       password => "{{.Values.global.elk_elasticsearch_data_password}}"
       ssl => true
     }
+{{- end }}
 {{- if .Values.opensearch.enabled }}
     opensearch {
       id => "opensearch-deployments"
@@ -241,6 +251,7 @@ output {
 {{- end }}
   }
   elseif  [type] == "netflow" {
+{{- if .Values.elasticsearch.enabled }}
     elasticsearch {
       id => "elk-netflow"
       index => "netflow-%{+YYYY.MM.dd}"
@@ -253,6 +264,7 @@ output {
       password => "{{.Values.global.elk_elasticsearch_data_password}}"
       ssl => true
     }
+{{- end }}
 {{- if .Values.opensearch.enabled }}
     opensearch {
       id => "opensearch-netflow"
@@ -269,6 +281,7 @@ output {
 {{- end }}
   }
   elseif  [type] == "jumpserver" {
+{{- if .Values.elasticsearch.enabled }}
     elasticsearch {
       id => "elk-jump"
       index => "jump-%{+YYYY.MM.dd}"
@@ -281,6 +294,7 @@ output {
       password => "{{.Values.global.elk_elasticsearch_jump_password}}"
       ssl => true
     }
+{{- end }}
 {{- if .Values.opensearch.enabled }}
     opensearch {
       id => "opensearch-jump"

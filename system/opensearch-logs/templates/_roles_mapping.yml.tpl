@@ -39,6 +39,11 @@ logstash:
   backend_roles:
   - "logstash"
 
+jaeger:
+  reserved: false
+  users:
+  - "jaeger"
+
 complex-role:
   reserved: false
   hidden: false

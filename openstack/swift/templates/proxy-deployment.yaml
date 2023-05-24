@@ -35,7 +35,6 @@ spec:
       annotations:
         checksum/swift-cluster.etc: {{ include "swift/templates/etc/cluster-configmap.yaml" $ | sha256sum }}
         {{- include "swift_conf_annotations" $ | indent 8 }}
-        {{- include "swift_ring_annotations" $ | indent 8 }}
         {{- if $.Values.health_exporter }}
         # Prometheus annotations on pod level without port
         # discovery will find all exposed container ports for exporters running in containers
@@ -90,6 +89,8 @@ spec:
               topologyKey: "kubernetes.io/hostname"
       volumes:
         {{- include "swift_proxy_volumes" $ | indent 8 }}
+      initContainers:
+        {{- include "swift_ringloader_initcontainer" $ | indent 8 }}
       containers:
         {{- tuple "deployment" $ | include "swift_proxy_containers" | indent 8 }}
 

@@ -301,6 +301,49 @@ spec:
         {{- end }}
 
         ########################################################################
+        # allowlist for falco
+
+        default isFalcoPod = false
+        isFalcoPod = true {
+          iro.kind == "DaemonSet"
+          iro.metadata.name == "{{ $kubeMonitoringReleaseName }}-falco"
+          iro.metadata.namespace == "kube-monitoring"
+        }
+
+        # falco monitors container runtimes and wants to access it's kernel module
+        isContainerAllowedToAccessHostPath(container, hostPath, readOnly) = true {
+          isFalcoPod
+          container.name == "falco"
+          regex.match("^keppel\\.[a-z0-9-.]+/ccloud-dockerhub-mirror/falcosecurity/falco-no-driver:", container.image)
+          hostPath in ["/dev", "/proc", "/run/containerd/containerd.sock", "/run/crio/crio.sock", "/sys/module/falco", "/var/run/docker.sock"]
+        }
+        isContainerAllowedToBePrivileged(container) = true {
+          isFalcoPod
+          container.name == "falco"
+          regex.match("^keppel\\.[a-z0-9-.]+/ccloud-dockerhub-mirror/falcosecurity/falco-no-driver:", container.image)
+        }
+
+        # falco-driver-loader loads a kernel module for falco
+        isContainerAllowedToAccessHostPath(container, hostPath, readOnly) = true {
+          isFalcoPod
+          container.name == "falco-driver-loader"
+          regex.match("^keppel\\.[a-z0-9-.]+/ccloud-dockerhub-mirror/falcosecurity/falco-driver-loader:", container.image)
+          hostPath in ["/boot", "/etc", "/proc", "/usr"]
+          readOnly
+        }
+        isContainerAllowedToAccessHostPath(container, hostPath, readOnly) = true {
+          isFalcoPod
+          container.name == "falco-driver-loader"
+          regex.match("^keppel\\.[a-z0-9-.]+/ccloud-dockerhub-mirror/falcosecurity/falco-driver-loader:", container.image)
+          hostPath in ["/lib/modules"]
+        }
+        isContainerAllowedToBePrivileged(container) = true {
+          isFalcoPod
+          container.name == "falco-driver-loader"
+          regex.match("^keppel\\.[a-z0-9-.]+/ccloud-dockerhub-mirror/falcosecurity/falco-driver-loader:", container.image)
+        }
+
+        ########################################################################
         # allowlist for fluent and fluent-bit
 
         # TODO: Would it be advisable to merge all the different Fluent deployments?

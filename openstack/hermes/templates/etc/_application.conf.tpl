@@ -45,7 +45,7 @@ auth = {
     base-dn = "{{.Values.ldap.search_base_dbs}},{{.Values.ldap.suffix}}"
     bind-dn = "{{.Values.ldap.bind_dn}},{{.Values.ldap.suffix}}"
     bind-pw = "{{.Values.ldap.password}}"
-user-template = "%s@{{.Values.ldap.userdomain}}"
+    user-template = "%s@{{.Values.ldap.userdomain}}"
     group-search {
       user-attr = "sAMAccountName"
       user-attr-template = "%s"

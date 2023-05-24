@@ -46,7 +46,7 @@ groups:
       summary: '*elastiflow* cluster in `{{ $labels.region }}` is RED'
 
   - alert: ElastiflowClusterYellow
-    expr: es_cluster_status{elastic_cluster="elastiflow",pod=~".*-master-0"} == 1
+    expr: es_cluster_status{elastic_cluster="elastiflow",pod=~".*-master-0"} == 1 and sum(kube_statefulset_replicas{statefulset=~"elastiflow.*"}) - sum(kube_statefulset_status_replicas_ready{statefulset=~"elastiflow.*"}) > 0
     for: 30m
     labels:
       context: nodes

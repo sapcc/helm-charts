@@ -308,12 +308,12 @@ tests:
     object: fixtures/owner-info-on-helm-releases/configmap-no-owner.out.yaml
     assertions:
     - violations: 1
-      message: '^support-group=none,service=none: could not find ConfigMap: owner-of-almost-empty-chart$'
+      message: '^support-group=none,service=none: Chart does not contain owner info. Please add the common/owner-info chart as a direct dependency.$'
   - name: configmap-no-owner-pending-upgrade
     object: fixtures/owner-info-on-helm-releases/configmap-no-owner-pending-upgrade.out.yaml
     assertions:
     - violations: 1
-      message: '^support-group=none,service=none: could not find ConfigMap: owner-of-almost-empty-chart$'
+      message: '^support-group=none,service=none: Chart does not contain owner info. Please add the common/owner-info chart as a direct dependency.$'
   - name: configmap-no-owner-superseded
     object: fixtures/owner-info-on-helm-releases/configmap-no-owner-superseded.out.yaml
     assertions:
@@ -323,6 +323,10 @@ tests:
     assertions:
     - violations: 1
       message: '^support-group=none,service=none: Chart uses outdated owner-info version "0.1.2". Please update to at least "0.2.0".$'
+  - name: pod-owner-info
+    object: fixtures/owner-info-on-helm-releases/configmap-no-owner-but-allowlisted.out.yaml
+    assertions:
+    - violations: no
   - name: pod-owner-info
     object: fixtures/owner-info-on-helm-releases/configmap-pass.out.yaml
     assertions:
@@ -403,6 +407,10 @@ tests:
     - violations: no
   - name: pod-security-accept-elastiflow-data
     object: fixtures/pod-security/elastiflow-data.yaml
+    assertions:
+    - violations: no
+  - name: pod-security-accept-falco
+    object: fixtures/pod-security/falco.yaml
     assertions:
     - violations: no
   - name: pod-security-accept-fluent-bit

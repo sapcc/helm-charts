@@ -515,7 +515,7 @@
     template_file /fluentd/etc/{{.Values.opensearch.indexname}}.json
     template_overwrite false
   {{- end }}
-    hosts {{.Values.opensearch.http.endpoint}}.{{.Values.global.region}}.{{.Values.global.tld}}
+    hosts {{.Values.opensearch.http.endpoint}}.{{.Values.global.tld}}
     scheme https
     port {{.Values.opensearch.http_port}}
     user {{.Values.opensearch.user}}

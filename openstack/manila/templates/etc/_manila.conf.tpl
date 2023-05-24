@@ -6,7 +6,7 @@ log_config_append = /etc/manila/logging.ini
 
 use_forwarded_for = true
 # rate limiting is handled outside
-api_rate_limit = false
+api_rate_limit = {{ .Values.api_rate_limit.enabled | default false }}
 
 # Manila requires 'share-type' for share creation.
 # So, set here name of some share-type that will be used by default.
