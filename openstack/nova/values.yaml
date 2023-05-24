@@ -300,6 +300,13 @@ compute:
       default_hw_version: vmx-18
       memory_reservation_cluster_hosts_max_fail: 2
       memory_reservation_max_ratio_fallback: 0.8
+      # set this to (a little above) the maximum a flavor ever had in our env
+      # This query can look for currently used resources in Placement:
+      # SELECT a.used, a.consumer_id FROM allocations a
+      #   JOIN resource_providers r ON r.id = a.resource_provider_id
+      #   WHERE resource_class_id = 2 AND r.name like 'domain-%' ORDER BY a.used DESC LIMIT 2;
+      # additionally, the sap-seeds chart contains the flavors we currently have
+      resource_disk_gb_max_unit_limit: 700
   vmware:
     vnc:
       enabled: false
