@@ -30,7 +30,7 @@ groups:
         playbook: docs/support/playbook/kubernetes/k8s_cp_filer_down
       annotations:
         description: |
-          Job {{`{{ $labels.job }}`}} failed to probe Controlplane filer on {{`{{ $labels.instance }}`}}.
-          Nodes in probed region cannot mount NFS Persistent Volumes.
+          Failed to probe Controlplane filer on {{`{{ $labels.instance }}`}} in region {{`{{ $labels.probeRegion }}`}}.
+          Nodes in {{`{{ $labels.probeRegion }}`}} cannot mount NFS Persistent Volumes.
           Double check NFS IP address in Netbox, verify reachability and involve Storage and/or Network teams.
-        summary: Controlplane filer NFS target is DOWN
+        summary: Controlplane filer NFS target is DOWN in {{`{{ $labels.probeRegion }}`}}
