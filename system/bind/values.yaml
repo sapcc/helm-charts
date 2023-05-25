@@ -1,24 +1,43 @@
+name: bind
+
 image_bind: bind
 image_bind_exporter: bind_exporter
-image_bind_tag: "20220523144459"
+image_bind_tag: "20230505160803"
 image_bind_exporter_tag: "20220523144500"
+image_zabbix_agent: bind_zabbix_agent
+image_zabbix_agent_tag: "20220523144500"
 image_pullPolicy: IfNotPresent
+
 exporter_stats_url: "http://localhost:8053/"
+
+# if configs in the image should be overridden
+override_conf: true
+
 externalIP: DEFINED-REGION-CHART
 allow_notify: DEFINED-REGION-CHART
 master_server: DEFINED-REGION-CHART
 rndc_allow: DEFINED-REGION-CHART 
 rndc_key: DEFINED-REGION-CHART
 tsig_key: DEFINED-REGION-CHART
+
+# should be set to different AZs; this is where PV will be claimed
 failure_domain_zone: a
+
+# PVC size and whether AZ enforced
 pvc_size: "1Gi"
 pvc_zone_selector: false
-override_conf: true
-name: bind
 
 alerts:
   # Name of the Prometheus to which the alerts should be assigned to.
   prometheus: openstack
+
+# optional zabbix agent for core dns
+zabbix:
+  enabled: false
+  tls_ca: null
+  tls_crt: null
+  tls_key: null
+  server: null
 
 owner-info:
   support-group: network-api

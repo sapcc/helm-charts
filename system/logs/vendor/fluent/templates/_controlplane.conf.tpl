@@ -507,7 +507,7 @@
   {{- if .Values.opensearch.datastream.enabled }}
     @type opensearch_data_stream
     data_stream_name logs
-  {{- else -}}
+  {{- else }}
     @type opensearch
     logstash_prefix {{.Values.opensearch.indexname}}
     logstash_format true
@@ -515,7 +515,7 @@
     template_file /fluentd/etc/{{.Values.opensearch.indexname}}.json
     template_overwrite false
   {{- end }}
-    hosts {{.Values.opensearch.http.endpoint}}.{{.Values.global.region}}.{{.Values.global.tld}}
+    hosts {{.Values.opensearch.http.endpoint}}.{{.Values.global.tld}}
     scheme https
     port {{.Values.opensearch.http_port}}
     user {{.Values.opensearch.user}}

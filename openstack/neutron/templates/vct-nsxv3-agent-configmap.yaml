@@ -31,8 +31,12 @@ template: |
       firewall_driver = nsxv3
 
       [AGENT]
-      {{- range $k, $v := .Values.drivers.nsxv3.defaults.AGENT }}
-      {{ $k }} = {{ $v }}
+      {{- range $k, $confvals := .Values.drivers.nsxv3 }}
+      {%- if '{{ $k }}' == name or '{{ $k }}' == 'defaults' %}
+      {{- range $key, $v := $confvals.AGENT }}
+      {{ $key }} = {{ $v }}
+      {{- end }}
+      {%- endif %}
       {{- end }}
 
       [NSXV3]

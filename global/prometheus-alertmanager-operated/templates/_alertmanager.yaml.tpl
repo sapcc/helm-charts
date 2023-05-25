@@ -62,6 +62,13 @@ route:
   - receiver: elastic
     continue: true
 
+  {{- if .Values.cc_email_receiver.enabled }}
+  - receiver: cc_email_receiver
+    continue: false
+    matchers: [alertname="KubernikusKlusterLowOnObjectStoreQuota",primary_email_recipients!=""]
+  {{- end }}
+
+
   # review for slack_by_cc_service
   - receiver: slack_hsm
     continue: false
@@ -1481,3 +1488,24 @@ receivers:
           Sentry: {{"'{{template \"pagerduty.sapcc.sentry\" . }}'"}}
           Playbook: {{"'{{template \"pagerduty.sapcc.playbook\" . }}'"}}
           firing: {{"'{{ template \"pagerduty.sapcc.firing\" . }}'"}}
+
+  # email receiver config
+  {{- if .Values.cc_email_receiver.enabled }}
+  - name: cc_email_receiver
+    email_configs:
+      - to: {{"'{{.CommonLabels.primary_email_recipients}},{{.CommonLabels.cc_email_recipients}},{{.CommonLabels.bcc_email_recipients}}'"}}
+        from: {{ required ".Values.cc_email_receiver.email_from_address undefined" .Values.cc_email_receiver.email_from_address | quote }}
+        headers:
+          subject: {{"'{{ .CommonAnnotations.mail_subject }}'"}}
+          To: {{"'{{.CommonLabels.primary_email_recipients}}'"}}
+          CC: {{"'{{.CommonLabels.cc_email_recipients}}'"}}
+        text: {{"'{{ .CommonAnnotations.mail_body }}'"}}
+        html: {{"'{{ .CommonAnnotations.mail_body }}'"}}
+        smarthost: {{ required ".Values.cc_email_receiver.smtp_host undefined" .Values.cc_email_receiver.smtp_host | quote }}
+        auth_username: {{ required ".Values.cc_email_receiver.auth_username undefined" .Values.cc_email_receiver.auth_username | quote }}
+        auth_password: {{ required ".Values.cc_email_receiver.auth_password undefined" .Values.cc_email_receiver.auth_password | quote }}
+        require_tls: true
+        send_resolved: false
+  {{- end }}
+  
+    

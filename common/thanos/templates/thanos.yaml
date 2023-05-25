@@ -10,9 +10,9 @@ spec:
   queryDiscovery: {{ $.Values.queryDiscovery }}
   clusterDomain: {{ include "clusterDomainOrDefault" $root }}
   query:
-    {{- if ($.Values.useQueryRegions) }}
-    GRPCClientCA: thanos-grpcclient-ca
-    GRPCClientCertificate: thanos-grpcclient-crt
+    {{- if ($.Values.authentication.enabled) }}
+    GRPCClientCA: {{ include "thanos.fullName" (list $name $root) }}-grpcclient-ca
+    GRPCClientCertificate: {{ include "thanos.fullName" (list $name $root) }}-grpcclient-crt
     {{- end }}
     logLevel: {{ $.Values.logLevel }}
     queryAutoDownsampling: true
@@ -22,20 +22,28 @@ spec:
     webRoutePrefix: {{ required "$.Values.query.webRouteprefix missing" $.Values.query.webRouteprefix }}
     webExternalPrefix: {{ required "$.Values.query.webRouteprefix missing" $.Values.query.webRouteprefix }}
     {{- end }}
-    {{- if or $.Values.deployWholeThanos (($.Values.query).stores) ($.Values.useQueryRegions) }}
+    {{- if or $.Values.deployWholeThanos (($.Values.query).stores) ($.Values.useQueryRegions) ($.Values.clusterTypes) }}
     stores:
     {{- end }}
     {{- if (($.Values.query).stores) }}
+    # add stores manually
       {{- range $store := $.Values.query.stores }}
       - {{ $store.name }}.{{ $store.namespace }}.svc.{{ default "cluster.local" $.Values.clusterDomain }}:{{ $store.port }}
       {{- end }}
     {{- else if $.Values.deployWholeThanos }}
+    # add stores for prometheus and thanos setup
       - prometheus-{{ include "thanos.name" (list $name $root) }}:10901
-    {{- else if ($.Values.useQueryRegions) }}
+    {{- else if and $.Values.useQueryRegions $.Values.clusterTypes }}
+    # add stores for global thanos
       {{- range $region := $.Values.queryRegions }}
         {{- range $cluster := $root.Values.clusterTypes }}
         - thanos-{{ $cluster }}-grpc.{{ $region }}.{{ $root.Values.global.tld }}:443
         {{- end }}
+      {{- end }}
+    {{- else if ($.Values.clusterTypes) }}
+    # add stores for regional thanos
+      {{- range $cluster := $.Values.clusterTypes }}
+      - thanos-{{ $cluster }}-grpc.{{ $root.Values.global.region }}.{{ $root.Values.global.tld }}:443
       {{- end }}
     {{- end }}
     serviceOverrides:

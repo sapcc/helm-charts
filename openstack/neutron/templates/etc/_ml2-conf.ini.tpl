@@ -9,8 +9,12 @@ tenant_network_types = vxlan,vlan
 
 mechanism_drivers = {{required "A valid .Values.ml2_mechanismdrivers required!" .Values.ml2_mechanismdrivers}}
 
+{{- if .Values.ml2_extensiondrivers }}
+extension_drivers = {{.Values.ml2_extensiondrivers}}
+{{- else }}
 # Designate configuration
 extension_drivers = {{required "A valid .Values.dns_ml2_extension required!" .Values.dns_ml2_extension}}
+{{- end }}
 
 path_mtu = {{.Values.global.default_mtu | default 9000}}
 

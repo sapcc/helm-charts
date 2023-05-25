@@ -171,6 +171,15 @@
     secretKeyRef:
       name: keppel-secret
       key: redis_password
+{{- if .Values.keppel.trivy.hostname }}
+- name: KEPPEL_TRIVY_URL
+  value: "https://{{ .Values.keppel.trivy.hostname }}"
+- name: KEPPEL_TRIVY_TOKEN
+  valueFrom:
+    secretKeyRef:
+      name: keppel-secret
+      key: trivy_token
+{{- end }}
 - name:  OS_AUTH_URL
   value: "http://keystone.{{ $.Values.global.keystoneNamespace }}.svc.kubernetes.{{ $.Values.global.region }}.{{ $.Values.global.tld }}:5000/v3"
 - name:  OS_AUTH_VERSION

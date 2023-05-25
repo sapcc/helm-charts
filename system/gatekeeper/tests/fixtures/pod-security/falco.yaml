@@ -1,0 +1,52 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  annotations:
+    meta.helm.sh/release-name: kube-monitoring-scaleout
+    meta.helm.sh/release-namespace: kube-monitoring
+  labels:
+    app.kubernetes.io/managed-by: Helm
+  name: kube-monitoring-scaleout-falco
+  namespace: kube-monitoring
+spec:
+  template:
+    spec:
+      initContainers:
+      - image: keppel.eu-de-1.cloud.sap/ccloud-dockerhub-mirror/falcosecurity/falco-driver-loader:0.34.1
+        name: falco-driver-loader
+      containers:
+      - image: keppel.eu-de-1.cloud.sap/ccloud-dockerhub-mirror/falcosecurity/falco-no-driver:0.34.1
+        name: falco
+      securityContext:
+        privileged: true
+      volumes:
+      - name: boot-fs
+        hostPath:
+          path: /boot
+      - name: containerd-socket
+        hostPath:
+          path: /run/containerd/containerd.sock
+      - name: crio-socket
+        hostPath:
+          path: /run/crio/crio.sock
+      - name: dev-fs
+        hostPath:
+          path: /dev
+      - name: docker-socket
+        hostPath:
+          path: /var/run/docker.sock
+      - name: etc-fs
+        hostPath:
+          path: /etc
+      - name: lib-modules
+        hostPath:
+          path: /lib/modules
+      - name: proc-fs
+        hostPath:
+          path: /proc
+      - name: sys-fs
+        hostPath:
+          path: /sys/module/falco
+      - name: usr-fs
+        hostPath:
+          path: /usr

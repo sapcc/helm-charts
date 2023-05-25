@@ -1,0 +1,59 @@
+kind: Deployment
+apiVersion: apps/v1
+
+metadata:
+  name: trivy-api
+
+spec:
+  revisionHistoryLimit: 5
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  selector:
+    matchLabels:
+      name: trivy-api
+  template:
+    metadata:
+      labels:
+        name: trivy-api
+        alert-tier: os
+        alert-service: keppel
+      annotations:
+        checksum/secret: {{ include "keppel-trivy/templates/secret.yaml" . | sha256sum }}
+    spec:
+      containers:
+        - name: trivy-api
+          image: {{ $.Values.global.registry }}/keppel-trivy:{{ $.Values.keppel.image_version | required ".Values.keppel.image_version is not set!" }}
+          imagePullPolicy: IfNotPresent
+          command: [ "keppel", "server", "trivy-proxy" ]
+          env:
+            - name:  KEPPEL_API_LISTEN_ADDRESS
+              value: ":80"
+            - name: KEPPEL_TRIVY_DB_MIRROR_PREFIX
+              value: {{ $.Values.global.ghcrIoMirror }}
+            - name: KEPPEL_TRIVY_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: trivy-secret
+                  key: trivy_token
+            - name:  KEPPEL_TRIVY_URL
+              value: "http://trivy-server.trivy.svc:8080"
+          securityContext:
+            runAsNonRoot: true
+          livenessProbe:
+            httpGet:
+              path: /healthcheck
+              port: 80
+            timeoutSeconds: 10
+            periodSeconds: 60
+            initialDelaySeconds: 60
+          readinessProbe:
+            httpGet:
+              path: /healthcheck
+              port: 80
+            timeoutSeconds: 5
+            periodSeconds: 5
+          # resources: {} # TODO: configure once we have some data

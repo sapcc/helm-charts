@@ -28,9 +28,6 @@
     - source_labels: [job]
       regex: asw-eapi
       action: keep
-    - source_labels: [__name__]
-      regex: '!arista_port_stats'
-      action: keep
     - source_labels: [__address__]
       target_label: __param_target
     - source_labels: [__param_target]
@@ -216,9 +213,6 @@
     - url: {{ .Values.atlas_url }}
   metrics_path: /ipmi
   relabel_configs:
-    - source_labels: [__name__]
-      regex: '!ipmi_temperature_state'
-      action: keep
     - source_labels: [job]
       regex: vmware-esxi
       action: keep
@@ -228,6 +222,30 @@
       target_label: instance
     - target_label: __address__
       replacement: ipmi-exporter:{{$values.listen_port}}
+{{- end }}
+
+{{- $values := .Values.kvm }}
+{{- if $values.enabled }}
+- job_name: 'linux-kvm'
+  params:
+    job: [linux-kvm]
+  scrape_interval: {{$values.scrapeInterval}}
+  scrape_timeout: {{$values.scrapeTimeout}}
+  http_sd_configs:
+    - url: {{ .Values.atlas_url }}
+  metrics_path: /ipmi
+  relabel_configs:
+    - source_labels: [job]
+      regex: linux-kvm
+      action: keep
+    - source_labels: [__address__]
+      target_label: __param_target
+    - source_labels: [__param_target]
+      target_label: instance
+    - source_labels: [__address__]
+      target_label: __address__
+      regex:       '(.*)'
+      replacement: $1:9100
 {{- end }}
 
 {{- $values := .Values.redfish_exporter -}}
@@ -281,9 +299,6 @@
     - url: {{ .Values.atlas_url }}
   metrics_path: /redfish
   relabel_configs:
-    - source_labels: [__name__]
-      regex: '!redfish_health'
-      action: keep
     - source_labels: [job]
       regex: redfish/bb
       action: keep
