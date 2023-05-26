@@ -53,6 +53,9 @@ spec:
             - name: nebula
               mountPath: "/nebula/config.yaml"
               subPath: config.yaml
+            - name: certs
+              mountPath: "/etc/certs"
+              readOnly: true
           ports:
             - name: http
               containerPort: {{ .Values.nebula.http }}
@@ -68,4 +71,17 @@ spec:
         - name: nebula
           secret:
             secretName: nebula
+{{- if .Values.postfix.postfixEnabled }}
+        - name: certs
+          projected:
+            sources:
+              - secret:
+                  name: ldap-certs
+                  optional: false
+                  items:
+                    - key: tls.crt
+                      path: ldap.crt
+                    - key: tls.key
+                      path: ldap.key
+{{- end -}}
 {{- end -}}
