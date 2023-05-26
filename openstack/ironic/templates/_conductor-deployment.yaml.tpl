@@ -154,22 +154,26 @@ spec:
         ports:
           - name: ironic-console
             protocol: TCP
-            containerPort: 80
+            containerPort: 443
         volumeMounts:
           - mountPath: /etc/nginx/conf.d
             name: ironic-console
           - mountPath: /shellinabox
             name: shellinabox
+          - mountPath: /etc/nginx/certs
+            name: secret-tls
         livenessProbe:
           httpGet:
             path: /health
             port: ironic-console
+            scheme: HTTPS
           initialDelaySeconds: 5
           periodSeconds: 3
         readinessProbe:
           httpGet:
             path: /health
             port: ironic-console
+            scheme: HTTPS
           initialDelaySeconds: 5
           periodSeconds: 3
       {{- if $conductor.default.statsd_enabled }}
@@ -217,6 +221,9 @@ spec:
         persistentVolumeClaim:
           claimName: development-pvclaim
       {{- end }}
+      - name: secret-tls
+        secret:
+          secretName: tls-{{ include "ironic_console_endpoint_host_public" . | replace "." "-" }}
       {{- include "utils.proxysql.volumes" . | indent 6 }}
     {{- end }}
 {{- end }}
