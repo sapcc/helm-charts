@@ -7,8 +7,8 @@ metadata:
     type: config
     component: ironic
 data:
-  dhparam: |
-{{ .Values.console.ssl_dhparam | indent 2 }}
+  dhparam.pem: |-
+{{ .Values.console.ssl_dhparam | nindent 4 | trim  }}
 
   default.conf: |
     map $http_upgrade $connection_upgrade {
@@ -20,15 +20,15 @@ data:
 
         listen 443 default_server ssl http2;
         server_name  {{ include "ironic_console_endpoint_host_public" . }};
-        
-        # https://ssl-config.mozilla.org/
         ssl_certificate /etc/nginx/certs/tls.crt;
         ssl_certificate_key /etc/nginx/certs/tls.key;
+
+        # https://ssl-config.mozilla.org/
         ssl_session_timeout 1d;
         ssl_session_cache shared:MozSSL:10m;  # about 40000 sessions
         ssl_session_tickets off;
 
-        ssl_dhparam /etc/nginx/conf.d/dhparam
+        ssl_dhparam /etc/nginx/conf.d/dhparam.pem;
 
         # intermediate configuration
         ssl_protocols TLSv1.2 TLSv1.3;
