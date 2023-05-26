@@ -159,10 +159,10 @@ checksum/swift.secret: {{ include "swift/templates/secret.yaml" . | sha256sum }}
     # observed usage: CPU = ~10m, RAM = 70-100 MiB
     # low cpu allocation results in performance degradation
     requests:
-      cpu: "100m"
+      cpu: "300m"
       memory: "150Mi"
     limits:
-      cpu: "100m"
+      cpu: "300m"
       memory: "150Mi"
   # TODO: securityContext: { runAsNonRoot: true }
   volumeMounts:
