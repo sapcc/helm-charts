@@ -166,7 +166,6 @@
       action: replace
 
 {{- $values := .Values.ipmi_exporter -}}
-{{- if $values.enabled }}
 - job_name: 'ipmi/ironic'
   params:
     job: [baremetal/ironic]
@@ -222,7 +221,6 @@
       target_label: instance
     - target_label: __address__
       replacement: ipmi-exporter:{{$values.listen_port}}
-{{- end }}
 
 {{- $values := .Values.kvm }}
 {{- if $values.enabled }}
