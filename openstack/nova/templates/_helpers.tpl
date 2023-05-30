@@ -37,28 +37,6 @@ rabbit://{{ default "" .Values.global.user_suffix | print .Values.rabbitmq_cell2
   {{- end -}}
 {{- end -}}
 
-{{- define "container_image_openvswitch" -}}
-  {{- $name := index . 1 -}}
-  {{- with index . 0 -}}
-    {{- $version_name := printf "imageVersionOpenvswitch%s" ($name | lower | replace "-" " " | title | nospace) -}}
-    {{- $image_name := ( .Values.loci.nova | ternary .Values.imageNameNova (printf "ubuntu-source-openvswitch-%s" ($name | lower)) ) -}}
-
-    {{ required ".Values.global.registry is missing" .Values.global.registry}}/{{$image_name}}:{{index .Values $version_name | default .Values.imageVersionOpenvswitch | default .Values.imageVersionNova | default .Values.imageVersion | required "Please set imageVersionOpenvswitch or similar" }}
-
-  {{- end -}}
-{{- end -}}
-
-
-{{- define "container_image_neutron" -}}
-  {{- $name := index . 1 -}}
-  {{- with index . 0 -}}
-    {{- $version_name := printf "imageVersionNeutron%s" ($name | lower | replace "-" " " | title | nospace) -}}
-    {{- $image_name := .Values.imageNameNeutron -}}
-
-    {{ required ".Values.global.registry is missing" .Values.global.registry}}/{{$image_name}}:{{index .Values $version_name | default .Values.imageVersionNeutron | required "Please set imageVersionNeutron or similar" }}
-
-  {{- end -}}
-{{- end -}}
 
 {{- define "job_metadata" }}
   {{- $name := index . 1 }}
