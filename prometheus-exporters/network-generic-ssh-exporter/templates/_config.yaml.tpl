@@ -17,26 +17,15 @@ lookup_sources:
       router_project: SELECT DISTINCT id, project_id FROM neutron.routers
 
 metrics:
-  zmq_rx_error:
+  zmq_errors:
     regex: >-
-      ^ZmQ\:\s*RX\sCNT\:\s\d+\,\sBYTES\:\s\d+\,\sERRORS\:\s(\d*)
+      ^ZmQ\:\s*(RX|TX)\sCNT\:\s\d+\,\sBYTES\:\s\d+\,\sERRORS\:\s(\d*)
     multi_value: true
-    value: $1
+    value: $2
     labels:
-      errors: $1  
-    description: check for zmq rx errors
-    metric_type_name: gauge
-    command: show system internal epm counters zmq
-    timeout_secs: 5
-  zmq_tx_error:
-    regex: >-
-      ^ZmQ\:\s*TX\sCNT\:\s\d+\,\sBYTES\:\s\d+\,\sERRORS\:\s(\d*)
-    multi_value: true
-    value: $1
-    labels:
-      errors: $1  
-    description: check for zmq tx errors
-    metric_type_name: gauge
+      direction: $1
+    description: check for zmq  errors
+    metric_type_name: counter
     command: show system internal epm counters zmq
     timeout_secs: 5
 
@@ -676,8 +665,7 @@ batches:
     - xr_tcam_learn_disabled
     - hal_learn_disabled
     - epm_pending_epreg
-    - zmq_rx_error
-    - zmq_tx_error
+    - zmq_errors
   neutron-router:
     - nat_dynamic
     - nat_static
