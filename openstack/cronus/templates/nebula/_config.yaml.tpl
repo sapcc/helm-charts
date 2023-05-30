@@ -162,7 +162,7 @@ nebula:
   postfixEnabled: {{ .Values.postfix.postfixEnabled }}
   ldap:
     url: "{{ tpl .Values.postfix.ldap.url $ }}"
-    {{- if .Values.postfix.ldap.certPath }}
+    {{- if .Values.postfix.ldap.clientKeyPath }}
     clientCertPath: {{ .Values.postfix.ldap.clientCertPath }}
     clientKeyPath: {{ .Values.postfix.ldap.clientKeyPath }}
     {{- else }}
