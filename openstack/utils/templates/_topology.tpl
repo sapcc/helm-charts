@@ -55,3 +55,14 @@ release_revision: "{{ .Release.Revision }}"
     - pod-template-hash
   {{- end }}
 {{- end }}
+
+{{/* "utils.topology.service_topology_mode"
+  Enables topology aware routing
+  */}}
+{{- define "utils.topology.service_topology_mode" }}
+  {{- if semverCompare "< 1.27" .Capabilities.KubeVersion.Version }}
+  service.kubernetes.io/topology-aware-hints: "Auto"
+  {{- else }}
+  service.kubernetes.io/topology-mode: "Auto"
+  {{- end }}
+{{- end }}
