@@ -152,7 +152,7 @@
       action: labeldrop
     - action: drop
       source_labels: [__name__]
-      regex: netapp_volume_saved_.*
+      regex: netapp_volume_.*saved_.*
     - action: drop
       source_labels: [__name__]
       regex: netapp_volume_used_bytes
