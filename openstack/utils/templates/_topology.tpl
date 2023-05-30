@@ -28,8 +28,10 @@ topologySpreadConstraints:
  with the .Release.Revision.
 */}}
 {{- define "utils.topology.pod_label" }}
-  {{- if semverCompare "< 1.27" .Capabilities.KubeVersion.Version }}
+  {{- if gt (len .Values.global.availability_zones) 1  }}
+    {{- if semverCompare "< 1.27" .Capabilities.KubeVersion.Version }}
 release_revision: "{{ .Release.Revision }}"
+    {{- end }}
   {{- end }}
 {{- end }}
 
@@ -40,19 +42,21 @@ release_revision: "{{ .Release.Revision }}"
 {{- define "utils.topology.az_spread" }}
 {{- $envAll := index . 0 }}
 {{- $labels := index . 1 }}
+  {{- if gt (len $envAll.Values.global.availability_zones) 1  }}
 - maxSkew: 1
   topologyKey: "{{ $envAll.Values.global.topology_key | default "failure-domain.beta.kubernetes.io/zone" }}"
   whenUnsatisfiable: ScheduleAnyway
   labelSelector:
     matchLabels:
-  {{- range $k, $v := $labels }}
+    {{- range $k, $v := $labels }}
       {{ $k }}: "{{ $v }}"
-  {{- end }}
-  {{- if semverCompare "< 1.27" $envAll.Capabilities.KubeVersion.Version }}
+    {{- end }}
+    {{- if semverCompare "< 1.27" $envAll.Capabilities.KubeVersion.Version }}
       release_revision: "{{ $envAll.Release.Revision }}"
-  {{- else }}
+    {{- else }}
   matchLabelKeys:
     - pod-template-hash
+    {{- end }}
   {{- end }}
 {{- end }}
 
@@ -60,9 +64,11 @@ release_revision: "{{ .Release.Revision }}"
   Enables topology aware routing
   */}}
 {{- define "utils.topology.service_topology_mode" }}
-  {{- if semverCompare "< 1.27" .Capabilities.KubeVersion.Version }}
+  {{- if gt (len .Values.global.availability_zones) 1  }}
+    {{- if semverCompare "< 1.27" .Capabilities.KubeVersion.Version }}
   service.kubernetes.io/topology-aware-hints: "Auto"
-  {{- else }}
+    {{- else }}
   service.kubernetes.io/topology-mode: "Auto"
+    {{- end }}
   {{- end }}
 {{- end }}
