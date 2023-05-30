@@ -160,6 +160,13 @@
     - action: drop
       source_labels: [__name__]
       regex: netapp_volume_saved_.*
+    - action: drop
+      source_labels: [__name__]
+      regex: netapp_volume_used_bytes
+    - source_labels: [__name__]
+      target_label: __name__
+      regex: netapp_volume_used_bytes:customer
+      replacement: openstack_manila_share_used_bytes
     - source_labels: [__name__]
       target_label: __name__
       regex: netapp_volume_(.*)
