@@ -131,10 +131,6 @@
     - source_labels: [ltmVirtualServStatName]
       target_label: listener_id
       regex: /net_.*/lb_.*/listener_(.*)
-    - source_labels: [__name__]
-      target_label: __name__
-      regex: netapp_volume_(.*)
-      replacement: openstack_manila_share_${1}
 
   metrics_path: '/federate'
   params:
@@ -145,9 +141,6 @@
       - '{__name__=~"^ssh_nat_limits_miss", project_id!=""}'
       - '{__name__=~"^ssh_nat_limits_use", project_id!=""}'
       - '{__name__=~"^snmp_asr_ifHC.+", project_id!=""}'
-      - '{__name__=~"^netapp_capacity_.+", project_id!=""}'
-      - '{__name__=~"^netapp_volume_.+", app="netapp-capacity-exporter-manila", project_id!=""}'
-      - '{__name__=~"^openstack_manila_share_.+", project_id!=""}'
 
 - job_name: 'prometheus-storage'
   scrape_interval: 1m
