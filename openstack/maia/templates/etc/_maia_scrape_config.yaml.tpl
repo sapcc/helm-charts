@@ -155,8 +155,8 @@
       regex: "netapp_volume_.*saved_.*|netapp_volume_logical_used_bytes|netapp_volume_is_space_.*_logical|netapp_volume_used_bytes"
     - source_labels: [__name__]
       target_label: __name__
-      regex: netapp_volume_used_bytes:customer
-      replacement: openstack_manila_share_used_bytes
+      regex: netapp_volume_(.*):customer
+      replacement: openstack_manila_share_${1}
     - source_labels: [__name__]
       target_label: __name__
       regex: netapp_volume_(.*)
