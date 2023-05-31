@@ -24,15 +24,16 @@ affinity:
             - {{$component}}
 {{- end }}
 
-{{ define "kubernetes_pod_az_affinity" -}}
-{{- $availability_zone := index . 0 -}}
+{{ define "utils.kubernetes_pod_az_affinity" -}}
+{{- $envAll := index . 0 -}}
+{{- $availability_zone := index . 1 -}}
 affinity:
   nodeAffinity:
     preferredDuringSchedulingIgnoredDuringExecution:
       - weight: 1
         preference:
           matchExpressions:
-            - key: "{{ .Values.global.topology_key }}"
+            - key: "{{ $envAll.Values.global.topology_key | default "failure-domain.beta.kubernetes.io/zone" }}"
               operator: In
               values:
                 - {{ $availability_zone }}
