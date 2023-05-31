@@ -229,11 +229,11 @@
 - job_name: 'linux-kvm'
   params:
     job: [linux-kvm]
-  scrape_interval: {{$values.scrapeInterval}}
-  scrape_timeout: {{$values.scrapeTimeout}}
+  scrape_interval: {{ $values.scrapeInterval }}
+  scrape_timeout: {{ $values.scrapeTimeout }}
   http_sd_configs:
     - url: {{ .Values.atlas_url }}
-  metrics_path: /ipmi
+  metrics_path: /metrics
   relabel_configs:
     - source_labels: [job]
       regex: linux-kvm
