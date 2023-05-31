@@ -66,7 +66,7 @@ data:
     - "indices:data/write/index"
     - "indices:data/write/update"
   - index_patterns:
-    - "qade2-logstash-"
+    - "qade2-logstash-*"
     allowed_actions:
     - "indices:admin/template/get"
     - "indices:admin/template/put"
