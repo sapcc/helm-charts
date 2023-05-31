@@ -6,5 +6,10 @@ metadata:
   name: truststore
 
 data:
+  {{- if eq "qa-de-2" .Values.global.region }}
+  ldap: {{ required ".Values.hermes.elasticsearch.ldap_crt missing" .Values.hermes.elasticsearch.ldap_crt | quote }}
+  sap: {{ required ".Values.hermes.elasticsearch.sap_crt missing" .Values.hermes.elasticsearch.sap_crt | quote }}
+  {{- else -}}
   truststore: {{ required ".Values.hermes.elasticsearch.manager_cert missing" .Values.hermes.elasticsearch.manager_cert | quote }}
+  {{- end }}
 {{- end }}

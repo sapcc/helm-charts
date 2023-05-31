@@ -57,7 +57,12 @@ auth = {
 play.ws.ssl {
   trustManager = {
     stores = [
+{{- if eq "qa-de-2" .Values.global.region }}
+      { type = "PEM", path = "/truststore/ldap" }
+      { type = "PEM", path = "/truststore/sap" }
+{{- else -}}
       { type = "PKCS12", path = "/truststore/truststore", password = "{{.Values.hermes.elasticsearch.manager_cert_pw}}" }
+{{- end }}
     ]
   }
 }

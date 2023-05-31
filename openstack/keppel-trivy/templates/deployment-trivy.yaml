@@ -31,11 +31,12 @@ spec:
           command:
             - sh
             - -c
+            # NOTE: TTL = 1 week = 7 days = 168 hours
             - "trivy server \
                 --db-repository {{ $.Values.global.ghcrIoMirror }}/aquasecurity/trivy-db \
                 --java-db-repository {{ $.Values.global.ghcrIoMirror }}/aquasecurity/trivy-java-db \
                 --cache-backend redis://:$REDIS_PASSWORD@{{ .Release.Name }}-redis:6379 \
-                --cache-ttl 24h \
+                --cache-ttl 168h \
                 --listen 0.0.0.0:8080 \
                 --token $TRIVY_TOKEN"
           env:

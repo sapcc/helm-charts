@@ -32,10 +32,10 @@ affinity:
       - weight: 1
         preference:
           matchExpressions:
-            - key: "failure-domain.beta.kubernetes.io/zone"
+            - key: "{{ .Values.global.topology_key }}"
               operator: In
               values:
-                - {{$availability_zone}}
+                - {{ $availability_zone }}
 {{- end }}
 
 {{- define "kubernetes_maintenance_affinity" }}

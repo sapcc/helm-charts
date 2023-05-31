@@ -1,3 +1,7 @@
+## 7.2.6
+
+* Add labels to metrics that originate from servicemonitors to identify a kubernikus kluster
+
 ## 7.2.5
 
 * bump Prometheus to v2.43.0

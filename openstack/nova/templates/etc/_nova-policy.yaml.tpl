@@ -642,6 +642,12 @@ os_compute_api:os-server-groups:index:all_projects: rule:context_is_admin
 #os_compute_api:os-server-groups:show: rule:system_or_project_reader
 os_compute_api:os-server-groups:show: rule:context_is_editor
 
+# Edit details of a server group
+# [SAP-custom API extension]
+#   PUT /os-server-groups/{server_group_id}
+#os_compute_api:os-server-groups:update: rule:system_admin_or_owner
+os_compute_api:os-server-groups:update: rule:context_is_editor
+
 # Delete a Compute service.
 #   DELETE /os-services/{service_id}
 #os_compute_api:os-services:delete: rule:system_admin_api

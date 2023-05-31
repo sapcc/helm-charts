@@ -1,4 +1,4 @@
-{{- if .Values.enabled }}
+{{ if .Values.probe.enabled }}
 {{- $values := .Values -}}
 
 {{- range $i, $probes := .Values.probes -}}
@@ -10,7 +10,7 @@ kind: Probe
 metadata:
   name: {{$probes.name}}
   labels:
-    prometheus: {{ $values.prometheusName }}
+    prometheus: {{ $values.prometheus }}
 
 spec:
   jobName: {{$probes.name}}
@@ -18,8 +18,8 @@ spec:
     url: prober.{{ default $values.global.region $probes.region }}.cloud.sap
     scheme: {{ $values.scheme }}
   module: {{ $probes.module }}
-  interval: {{ default $values.scrapeInterval $probes.scrapeInterval }}
-  scrapeTimeout: {{ default $values.scrapeTimeout $probes.scrapeTimeout }}
+  interval: {{ $values.scrapeInterval }}
+  scrapeTimeout: {{ $values.scrapeTimeout }}
   targets:
     staticConfig:
       static:
@@ -27,11 +27,9 @@ spec:
         - {{ . }}
         {{- end }}
       labels:
+        {{ if $values.global.region -}}
         region: {{ $values.global.region }}
-{{- if $probes.extraLabels }}
-{{ toYaml $probes.extraLabels | indent 8 }}
-{{- end }}
-
+        {{- end }}
 ---
 {{ end -}}
 {{ end -}}
