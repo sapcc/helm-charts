@@ -155,18 +155,14 @@
       regex: "netapp_volume_.*saved_.*|netapp_volume_logical_used_bytes|netapp_volume_is_space_.*_logical|netapp_volume_used_bytes"
     - source_labels: [__name__]
       target_label: __name__
-      regex: netapp_volume_(.*):customer
-      replacement: openstack_manila_share_${1}
-    - source_labels: [__name__]
-      target_label: __name__
-      regex: netapp_volume_(.*)
+      regex: netapp_volume_(.*):maia
       replacement: openstack_manila_share_${1}
 
   metrics_path: '/federate'
   params:
     'match[]':
       # import any tenant-specific metric, except for those which already have been imported
-      - '{__name__=~"^netapp_volume_.+", app="netapp-capacity-exporter-manila", project_id!=""}'
+      - '{__name__=~"^netapp_volume_.+:maia", project_id!=""}'
 
 
 # iteration over vmware-monitoring values

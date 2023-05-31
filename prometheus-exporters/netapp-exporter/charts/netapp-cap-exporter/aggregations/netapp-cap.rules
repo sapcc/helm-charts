@@ -34,8 +34,35 @@ groups:
   - record: netapp_aggregate_used_percentage:vpod:big
     expr: netapp_aggregate_used_percentage * netapp_aggregate_total_bytes / on (aggregate, availability_zone, filer, node) netapp_aggregate_total_bytes:vpod:big
 
-  - record: netapp_volume_used_bytes:customer
+  # metrics for maia
+
+  - record: netapp_volume_total_bytes:maia
+    expr: netapp_volume_total_bytes{app="netapp-capacity-exporter-manila"}
+
+  # use logical used bytes when logical space reporting is enabled
+  - record: netapp_volume_used_bytes:maia
     expr: (netapp_volume_logical_used_bytes{app="netapp-capacity-exporter-manila"} and (netapp_volume_is_space_reporting_logical == 1)) or netapp_volume_used_bytes{app="netapp-capacity-exporter-manila"}
 
-  - record: netapp_volume_used_percentage:customer
-    expr: round(netapp_volume_used_bytes:customer / netapp_volume_total_bytes * 100)
+  - record: netapp_volume_available_bytes:maia
+    expr: netapp_volume_available_bytes{app="netapp-capacity-exporter-manila"}
+
+  - record: netapp_volume_used_percentage:maia
+    expr: round(netapp_volume_used_bytes:maia / netapp_volume_total_bytes * 100)
+
+  - record: netapp_volume_snapshot_reserved_bytes:maia
+    expr: netapp_volume_snapshot_reserved_bytes{app="netapp-capacity-exporter-manila"}
+
+  - record: netapp_volume_snapshot_used_bytes:maia
+    expr: netapp_volume_snapshot_used_bytes{app="netapp-capacity-exporter-manila"}
+
+  - record: netapp_volume_snapshot_available_bytes:maia
+    expr: netapp_volume_snapshot_available_bytes{app="netapp-capacity-exporter-manila"}
+
+  - record: netapp_volume_inode_files_total:maia
+    expr: netapp_volume_inode_files_total{app="netapp-capacity-exporter-manila"}
+
+  - record: netapp_volume_inode_files_used:maia
+    expr: netapp_volume_inode_files_used{app="netapp-capacity-exporter-manila"}
+
+  - record: netapp_volume_inode_files_used_percentage:maia
+    expr: netapp_volume_inode_files_used_percentage{app="netapp-capacity-exporter-manila"}
