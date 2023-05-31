@@ -150,9 +150,6 @@
   metric_relabel_configs:
     - regex: "cluster|cluster_type|instance|job|kubernetes_namespace|kubernetes_pod_name|kubernetes_name|pod_template_hash|exported_instance|exported_job|type|name|component|app|system|thanos_cluster|thanos_cluster_type|thanos_region|alert_tier|alert_service"
       action: labeldrop
-    - action: drop
-      source_labels: [__name__]
-      regex: "netapp_volume_.*saved_.*|netapp_volume_logical_used_bytes|netapp_volume_is_space_.*_logical|netapp_volume_used_bytes"
     - source_labels: [__name__]
       target_label: __name__
       regex: netapp_volume_(.*):maia
