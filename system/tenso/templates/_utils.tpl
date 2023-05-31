@@ -72,7 +72,7 @@
 - name:  TENSO_SERVICENOW_CLIENT_CERT
   value: /etc/tenso/servicenow-client-cert.pem
 - name:  TENSO_SERVICENOW_PRIVATE_KEY
-  value: /etc/tenso/servicenow-private-key.pem
+  value: /etc/tenso-keys/servicenow-private-key.pem
 {{- end }}
 - name:  TENSO_WORKER_LISTEN_ADDRESS
   value: ':80'
