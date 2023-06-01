@@ -1,13 +1,16 @@
 kind: Deployment
 apiVersion: apps/v1
+
 metadata:
   name: neutron-server
   labels:
     system: openstack
     type: api
     component: neutron
+  {{- if .Values.vpa.set_main_container }}
   annotations:
     vpa-butler.cloud.sap/main-container: neutron-server
+  {{- end }}
 spec:
   replicas: {{ if not .Values.pod.debug.server }}{{ .Values.pod.replicas.server }}{{ else }} 1 {{ end }}
   revisionHistoryLimit: {{ .Values.pod.lifecycle.upgrades.deployments.revision_history }}
@@ -24,42 +27,28 @@ spec:
   template:
     metadata:
       labels:
-        alert-tier: os
-        alert-service: neutron
         name: neutron-server
 {{ tuple . "neutron" "api" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
       annotations:
-        kubectl.kubernetes.io/default-container: neutron-server
         configmap-etc-hash: {{ include (print $.Template.BasePath "/configmap-etc.yaml") . | sha256sum }}
-        configmap-etc-aci-hash: {{ include (print $.Template.BasePath "/configmap-etc-aci.yaml") . | sha256sum }}
+        configmap-etc-region-hash: {{ include (print $.Template.BasePath "/configmap-etc-region.yaml") . | sha256sum }}
         configmap-etc-vendor-hash: {{ include (print $.Template.BasePath "/configmap-etc-vendor.yaml") . | sha256sum }}
         {{- include "utils.linkerd.pod_and_service_annotation" . | indent 8 }}
 {{- if .Values.api.uwsgi }}
         configmap-etc-api-hash: {{ include (print $.Template.BasePath "/configmap-etc-api.yaml") . | sha256sum }}
 {{- if .Values.cc_fabric.enabled }}
         configmap-etc-cc-fabric: {{ include (print $.Template.BasePath "/configmap-etc-cc-fabric.yaml") . | sha256sum }}
-        secret-cc-fabric: {{ include (print $.Template.BasePath "/secret-cc-fabric.yaml") $ | sha256sum }}
 {{- end }}
 {{- else }}
         configmap-bin-hash: {{ include (print $.Template.BasePath "/configmap-bin.yaml") . | sha256sum }}
 {{- end }}
+        {{- include "utils.topology.pod_label" . | indent 8 }}
         prometheus.io/scrape: "true"
         prometheus.io/targets: {{ required "$.Values.metrics.prometheus missing" $.Values.metrics.prometheus }}
-        config.linkerd.io/skip-outbound-ports: "6441,6442" # OVSDB ports
     spec:
-      {{- if .Values.rbac.enabled }}
-      serviceAccountName: {{ .Release.Name }}
-      {{- end }}
 {{ tuple . "neutron" "api" | include "kubernetes_pod_anti_affinity" | indent 6 }}
       {{- include "utils.proxysql.pod_settings" . | indent 6 }}
-      initContainers:
-{{- if .Values.proxysql.native_sidecar }}
-{{- if not .Values.api.uwsgi }}
-        {{- tuple . (add .Values.api_workers .Values.rpc_workers .Values.rpc_state_workers) | include "utils.proxysql.container" | indent 8 }}
-{{- else }}
-        {{- tuple . .Values.api.processes | include "utils.proxysql.container" | indent 8 }}
-{{- end }}
-{{- end }}
+      {{- tuple . (dict "name" "neutron-server") | include "utils.topology.constraints" | indent 6 }}
       containers:
         - name: neutron-server
           image: {{.Values.global.registry}}/loci-neutron:{{.Values.imageVersionServerAPI | default .Values.imageVersionServer | default .Values.imageVersion | required "Please set neutron.imageVersion or similar"}}
@@ -107,21 +96,24 @@ spec:
             - name: DEPENDENCY_JOBS
               value: "{{ include "neutron.migration_job_name" . }}"
             - name: DEPENDENCY_SERVICE
-              value: "{{ include "neutron.service_dependencies" . }}"
+              value: "{{ .Release.Name }}-mariadb,{{ .Release.Name }}-rabbitmq"
             - name: STATSD_HOST
               value: "localhost"
             - name: STATSD_PORT
               value: "9125"
             - name: STATSD_PREFIX
               value: "openstack"
-            {{- include "utils.sentry_config" . | nindent 12 }}
+            - name: SENTRY_DSN
+              valueFrom:
+                secretKeyRef:
+                  name: sentry
+                  key: neutron.DSN.python
             - name: PGAPPNAME
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.name
             - name: PYTHONWARNINGS
               value: "ignore:Unverified HTTPS request"
-            {{- include "utils.trust_bundle.env" . | indent 12 }}
           resources:
 {{- if .Values.api.uwsgi }}
 {{ toYaml .Values.pod.resources.uwsgi_server | indent 12 }}
@@ -139,29 +131,6 @@ spec:
               name: neutron-etc
               subPath: neutron.conf
               readOnly: true
-{{- if .Values.customdns.matches }}
-            - mountPath: /etc/neutron/customdns.yaml
-              name: neutron-etc
-              subPath: customdns.yaml
-              readOnly: true
-{{- end }}
-            - mountPath: /etc/neutron/secrets/neutron-server-secrets.conf
-              name: neutron-server-secrets
-              subPath: neutron-server-secrets.conf
-            - mountPath: /etc/neutron/secrets/neutron-common-secrets.conf
-              name: neutron-common-secrets
-              subPath: neutron-common-secrets.conf
-            - mountPath: /etc/neutron/secrets/neutron-interconnection-secrets.conf
-              name: neutron-interconnection-secrets
-              subPath: neutron-interconnection-secrets.conf
-            - mountPath: /etc/neutron/secrets/neutron-arista-secrets.conf
-              name: neutron-arista-secrets
-              subPath: neutron-arista-secrets.conf
-{{- if .Values.rate_limit.enabled }}
-            - mountPath: {{ .Values.rate_limit.backend_secret_file }}
-              name: neutron-ratelimit-backend-secret
-              subPath: ratelimit-backend-secret.conf
-{{- end }}
             - mountPath: /etc/neutron/plugins/asr1k-global.ini
               name: neutron-etc
               subPath: asr1k-global.ini
@@ -191,19 +160,15 @@ spec:
               name: neutron-etc-cc-fabric
               subPath: cc-fabric-driver-config.yaml
               readOnly: true
-            - mountPath: /etc/neutron/cc-fabric-secrets/
-              name: neutron-cc-fabric-secrets
 {{- end }}
             - mountPath: /etc/neutron/plugins/ml2/ml2-conf.ini
               name: neutron-etc
               subPath: ml2-conf.ini
               readOnly: true
-            {{- range until (int (include "neutron.aci_config_count" .)) }}
-            - mountPath: /etc/neutron/neutron.conf.d/ml2-conf-aci-{{ printf "%03d" . }}.conf
-              name: neutron-etc-aci
-              subPath: ml2-conf-aci-{{ printf "%03d" . }}.ini
+            - mountPath: /etc/neutron/plugins/ml2/ml2-conf-aci.ini
+              name: neutron-etc-region
+              subPath: ml2-conf-aci.ini
               readOnly: true
-            {{- end }}
             - mountPath: /etc/neutron/plugins/ml2/ml2-conf-arista.ini
               name: neutron-etc-vendor
               subPath: ml2-conf-arista.ini
@@ -263,23 +228,20 @@ spec:
               name: neutron-etc
             - mountPath: /neutron-etc-vendor
               name: neutron-etc-vendor
-            - mountPath: /neutron-etc-aci
-              name: neutron-etc-aci
+            - mountPath: /neutron-etc-region
+              name: neutron-etc-region
             - mountPath: /container.init
               name: container-init
 {{- end }}
             {{- include "utils.proxysql.volume_mount" . | indent 12 }}
-            {{- include "utils.trust_bundle.volume_mount" . | indent 12 }}
             {{- include "utils.coordination.volume_mount"  . | indent 12 }}
-{{- if not .Values.proxysql.native_sidecar }}
 {{- if not .Values.api.uwsgi }}
         {{- tuple . (add .Values.api_workers .Values.rpc_workers .Values.rpc_state_workers) | include "utils.proxysql.container" | indent 8 }}
 {{- else }}
         {{- tuple . .Values.api.processes | include "utils.proxysql.container" | indent 8 }}
 {{- end }}
-{{- end }}
         - name: statsd
-          image: {{ required ".Values.global.registry is missing" .Values.global.registry }}/{{ required ".Values.statsd.image is missing" .Values.statsd.image }}:{{ required ".Values.statsd.imageTag is missing" .Values.statsd.imageTag }}
+          image: {{.Values.global.dockerHubMirror}}/prom/statsd-exporter:v0.8.1
           imagePullPolicy: IfNotPresent
           args: [ --statsd.mapping-config=/etc/statsd/statsd-exporter.yaml ]
           ports:
@@ -302,44 +264,17 @@ spec:
         - name: neutron-etc
           configMap:
             name: neutron-etc
-        - name: neutron-server-secrets
-          secret:
-            secretName: neutron-server-secrets
-        - name: neutron-common-secrets
-          secret:
-            secretName: neutron-common-secrets
-        - name: neutron-interconnection-secrets
-          secret:
-            secretName: neutron-interconnection-secrets
-        - name: neutron-arista-secrets
-          secret:
-            secretName: neutron-arista-secrets
 {{- if .Values.cc_fabric.enabled }}
         - name: neutron-etc-cc-fabric
           configMap:
             name: neutron-etc-cc-fabric
-        - name: neutron-cc-fabric-secrets
-          secret:
-            secretName: neutron-cc-fabric-secrets
-{{- end }}
-{{- if .Values.rate_limit.enabled }}
-        - name: neutron-ratelimit-backend-secret
-          secret:
-            secretName: neutron-ratelimit-backend-secret
 {{- end }}
         - name: neutron-etc-vendor
           configMap:
             name: neutron-etc-vendor
-        - name: neutron-etc-aci
-          projected:
-            sources:
-            {{- range until (int (include "neutron.aci_config_count" .)) }}
-            - configMap:
-                name: neutron-etc-aci-{{ printf "%03d" . }}
-                items:
-                - key: ml2-conf-aci.ini
-                  path: ml2-conf-aci-{{ printf "%03d" . }}.ini
-            {{- end }}
+        - name: neutron-etc-region
+          configMap:
+            name: neutron-etc-region
 {{- if .Values.api.uwsgi }}
         - name: neutron-etc-api
           configMap:
@@ -350,5 +285,4 @@ spec:
             name: neutron-bin
             defaultMode: 0755
         {{- include "utils.proxysql.volumes" . | indent 8 }}
-        {{- include "utils.trust_bundle.volumes" . | indent 8 }}
         {{- include "utils.coordination.volumes" . | indent 8 }}

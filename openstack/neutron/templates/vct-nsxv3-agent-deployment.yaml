@@ -58,6 +58,7 @@ template: |
           uses-service-user: nsxt
           {{- end }}
       spec:
+{{ tuple . "{= availability_zone =}" | include "utils.kubernetes_pod_az_affinity" | indent 8 }}
         containers:
         - name: neutron-nsxv3-agent
           image: {{.Values.global.registry}}/loci-neutron:{{.Values.imageVersionNSXv3 | default .Values.imageVersion | required "Please set neutron.imageVersion or similar"}}
