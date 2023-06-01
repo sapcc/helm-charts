@@ -52,16 +52,5 @@ enable_ipset=True
 polling_interval=5
 prevent_arp_spoofing = False
 
-[linux_bridge]
-physical_interface_mappings = {{required "A valid .Values.cp_physical_network required!" .Values.cp_physical_network}}:{{required "A valid .Values.cp_network_interface required!" .Values.cp_network_interface}}
-
 [vxlan]
 enable_vxlan = false
-
-[ovs]
-bridge_mappings = {{required "A valid .Values.cp_physical_network required!" .Values.cp_physical_network}}:br-{{required "A valid .Values.cp_network_interface required!" .Values.cp_network_interface}}
-enable_tunneling=False
-
-
-
-
