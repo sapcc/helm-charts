@@ -36,7 +36,7 @@ spec:
         configmap-etc-hash: {{ include (print .Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
         configmap-netapp-hash: {{ list . $share | include "share_netapp_configmap" | sha256sum }}
     spec:
-{{ tuple $availability_zone | include "kubernetes_pod_az_affinity" | indent 6 }}
+{{ tuple . $availability_zone | include "utils.kubernetes_pod_az_affinity" | indent 6 }}
 {{ include "utils.proxysql.pod_settings" . | indent 6 }}
       initContainers:
       {{- tuple . (dict "service" (print .Release.Name "-mariadb," .Release.Name "-rabbitmq")) | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 8 }}
