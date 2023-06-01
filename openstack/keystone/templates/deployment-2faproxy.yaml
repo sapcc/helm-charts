@@ -19,8 +19,10 @@ spec:
         {{- end}}
       labels:
         {{- include "2faproxy.selectorLabels" . | nindent 8 }}
+        {{- include "utils.topology.pod_label" . | nindent 8 }}
     spec:
       serviceAccountName: {{ .Release.Name }}-2faproxy
+      {{- tuple . (dict "app.kubernetes.io/name" "2faproxy" "app.kubernetes.io/instance" .Release.Name) | include "utils.topology.constraints" | indent 6 }}
       containers:
         - name: 2fa
           image: {{ required ".Values.global.registryAlternateRegion is missing" .Values.global.registryAlternateRegion }}/{{ index .Values "2fa" "image" }}:{{ required ".Values.2fa.imageTag is missing" (index .Values "2fa" "imageTag") }}
