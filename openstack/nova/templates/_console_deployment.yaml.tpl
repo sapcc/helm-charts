@@ -31,7 +31,8 @@ spec:
     metadata:
       labels:
         name: nova-console-{{ $name }}
-{{ tuple . "nova" (print "console-" $name) | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
+        {{- tuple . "nova" (print "console-" $name) | include "helm-toolkit.snippets.kubernetes_metadata_labels" | nindent 8 }}
+        {{- include "utils.topology.pod_label" . | indent 8 }}
       annotations:
         configmap-etc-hash: {{ include (print .Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
         {{- if .Values.proxysql.mode }}
@@ -39,8 +40,9 @@ spec:
         prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
         {{- end }}
     spec:
-{{ tuple . "nova" (print "console-" $name) | include "kubernetes_pod_anti_affinity" | indent 6 }}
-      {{- include "utils.proxysql.pod_settings" . | indent 6 }}
+      {{- tuple . "nova" (print "console-" $name) | include "kubernetes_pod_anti_affinity" | nindent 6 }}
+      {{- include "utils.proxysql.pod_settings" . | nindent 6 }}
+      {{- tuple . (dict "name" (print "nova-console-" $name )) | include "utils.topology.constraints" | indent 6 }}
       hostname: nova-console-{{ $name }}
       volumes:
       - name: nova-etc

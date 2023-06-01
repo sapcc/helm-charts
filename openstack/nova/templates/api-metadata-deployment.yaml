@@ -26,7 +26,8 @@ spec:
         name: nova-api-metadata
         alert-tier: os
         alert-service: nova
-{{ tuple . "nova" "api-metadata" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
+        {{- tuple . "nova" "api-metadata" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | nindent 8 }}
+        {{- include "utils.topology.pod_label" . | indent 8 }}
       annotations:
         configmap-etc-hash: {{ include (print .Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
         {{- if or .Values.conductor.config_file.DEFAULT.statsd_enabled .Values.proxysql.mode }}
@@ -34,8 +35,9 @@ spec:
         prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
         {{- end }}
     spec:
-{{ tuple . "nova" "api-metadata" | include "kubernetes_pod_anti_affinity" | indent 6 }}
-      {{- include "utils.proxysql.pod_settings" . | indent 6 }}
+      {{- tuple . "nova" "api-metadata" | include "kubernetes_pod_anti_affinity" | nindent 6 }}
+      {{- include "utils.proxysql.pod_settings" . | nindent 6 }}
+      {{- tuple . (dict "name" "nova-api-metadata") | include "utils.topology.constraints" | indent 6 }}
       terminationGracePeriodSeconds: {{ .Values.defaults.default.graceful_shutdown_timeout | add 5 }}
       hostname: nova-api-metadata
       initContainers:

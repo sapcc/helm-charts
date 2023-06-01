@@ -26,7 +26,8 @@ spec:
         name: nova-api
         alert-tier: os
         alert-service: nova
-{{ tuple . "nova" "api" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
+        {{- tuple . "nova" "api" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | nindent 8 }}
+        {{- include "utils.topology.pod_label" . | indent 8 }}
       annotations:
         configmap-etc-hash: {{ include (print $.Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
         {{- if or .Values.conductor.config_file.DEFAULT.statsd_enabled .Values.proxysql.mode }}
@@ -35,12 +36,13 @@ spec:
         {{- end }}
     spec:
       terminationGracePeriodSeconds: {{ .Values.defaults.default.graceful_shutdown_timeout | add 5 }}
+      {{- tuple . (dict "name" "nova-api") | include "utils.topology.constraints" | indent 6 }}
       {{- if .Values.pod.debug.api }}
       securityContext:
         runAsUser: 0
       {{- end }}
-{{ tuple . "nova" "api" | include "kubernetes_pod_anti_affinity" | indent 6 }}
-      {{- include "utils.proxysql.pod_settings" . | indent 6 }}
+      {{- tuple . "nova" "api" | include "kubernetes_pod_anti_affinity" | nindent 6 }}
+      {{- include "utils.proxysql.pod_settings" . | nindent 6 }}
       hostname: nova-api
       initContainers:
       {{- tuple . (dict "service" (include "nova.helpers.cell01_services" .) "jobs" (tuple . "db-migrate" | include "job_name")) | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 6 }}

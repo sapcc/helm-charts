@@ -26,7 +26,7 @@ spec:
         name: nova-scheduler
         alert-tier: os
         alert-service: nova
-{{ tuple . "nova" "scheduler" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
+        {{- tuple . "nova" "scheduler" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | nindent 8 }}
       annotations:
         {{- if or .Values.scheduler.rpc_statsd_enabled .Values.proxysql.mode }}
         prometheus.io/scrape: "true"
@@ -35,8 +35,8 @@ spec:
         configmap-etc-hash: {{ include (print $.Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
         configmap-scheduler-etc-hash: {{ include (print $.Template.BasePath "/scheduler-etc-configmap.yaml") . | sha256sum }}
     spec:
-{{ tuple . "nova" "scheduler" | include "kubernetes_pod_anti_affinity" | indent 6 }}
-{{ include "utils.proxysql.pod_settings" . | indent 6 }}
+      {{- tuple . "nova" "scheduler" | include "kubernetes_pod_anti_affinity" | nindent 6 }}
+      {{- include "utils.proxysql.pod_settings" . | nindent 6 }}
       terminationGracePeriodSeconds: {{ .Values.defaults.default.graceful_shutdown_timeout | add 5 }}
       hostname: nova-scheduler
       initContainers:
