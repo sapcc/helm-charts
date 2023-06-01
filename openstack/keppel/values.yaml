@@ -138,7 +138,12 @@ pgmetrics:
 
   customMetrics:
     keppel_accounts:
-      query: 'SELECT COUNT(*) AS count, COALESCE(EXTRACT(epoch FROM MIN(next_blob_sweep_at)), 0) AS min_next_blob_sweep_at, COALESCE(EXTRACT(epoch FROM MIN(next_storage_sweep_at)), 0) AS min_next_storage_sweep_at, COALESCE(EXTRACT(epoch FROM MIN(next_federation_announcement_at)), 0) AS min_next_federation_announcement_at FROM accounts'
+      query: >
+        SELECT COUNT(*) AS count,
+               COALESCE(EXTRACT(epoch FROM MIN(next_blob_sweep_at)), 0) AS min_next_blob_sweep_at,
+               COALESCE(EXTRACT(epoch FROM MIN(next_storage_sweep_at)), 0) AS min_next_storage_sweep_at,
+               COALESCE(EXTRACT(epoch FROM MIN(next_federation_announcement_at)), 0) AS min_next_federation_announcement_at
+          FROM accounts
       metrics:
         - count:
             usage: "GAUGE"
@@ -196,7 +201,16 @@ pgmetrics:
             description: "UNIX timestamp of next scheduled manifest sync, or 0 if no replica repos have ever been synced"
     keppel_manifests:
       query: >
-        SELECT COUNT(*) AS count, EXTRACT(epoch FROM MIN(validated_at)) AS min_validated_at, SUM(CASE WHEN validation_error_message = '' THEN 0 ELSE 1 END) AS validation_errors, COALESCE(EXTRACT(epoch FROM MIN(vuln_info.next_check_at)), 0) AS min_next_vuln_check_at, COALESCE(EXTRACT(epoch FROM MIN(trivy_security_info.next_check_at)), 0) AS min_next_trivy_check_at, SUM(CASE WHEN vuln_info.next_check_at > NOW() THEN 0 ELSE 1 END) AS pending_vuln_checks, SUM(CASE WHEN trivy_security_info.next_check_at > NOW() THEN 0 ELSE 1 END) AS pending_trivy_checks from manifests INNER JOIN vuln_info on vuln_info.repo_id = manifests.repo_id and vuln_info.digest = manifests.digest INNER JOIN trivy_security_info on trivy_security_info.repo_id = manifests.repo_id and trivy_security_info.digest = manifests.digest
+        SELECT COUNT(*) AS count,
+               EXTRACT(epoch FROM MIN(validated_at)) AS min_validated_at,
+               SUM(CASE WHEN validation_error_message = '' THEN 0 ELSE 1 END) AS validation_errors,
+               COALESCE(EXTRACT(epoch FROM MIN(vuln_info.next_check_at)), 0) AS min_next_vuln_check_at,
+               COALESCE(EXTRACT(epoch FROM MIN(trivy_security_info.next_check_at)), 0) AS min_next_trivy_check_at,
+               SUM(CASE WHEN vuln_info.next_check_at > NOW() THEN 0 ELSE 1 END) AS pending_vuln_checks,
+               SUM(CASE WHEN trivy_security_info.next_check_at > NOW() THEN 0 ELSE 1 END) AS pending_trivy_checks
+          FROM manifests
+         INNER JOIN vuln_info ON vuln_info.repo_id = manifests.repo_id AND vuln_info.digest = manifests.digest
+         INNER JOIN trivy_security_info ON trivy_security_info.repo_id = manifests.repo_id AND trivy_security_info.digest = manifests.digest
       metrics:
         - count:
             usage: "GAUGE"
