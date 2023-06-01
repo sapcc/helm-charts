@@ -57,6 +57,8 @@ server_migration_extend_neutron_network = {{ .Values.server_migration_extend_neu
 statsd_port = {{ .Values.rpc_statsd_port }}
 statsd_enabled = {{ .Values.rpc_statsd_enabled }}
 
+{{- template "utils.snippets.debug.eventlet_backdoor_ini" "manila" }}
+
 # all default quotas are 0 to enforce usage of the Resource Management tool in Elektra
 [quota]
 shares = 0
@@ -68,8 +70,6 @@ share_groups = 0
 share_group_snapshots = 0
 share_replicas = 0
 replica_gigabytes = 0
-
-{{- template "utils.snippets.debug.eventlet_backdoor_ini" "manila" }}
 
 [neutron]
 auth_strategy = keystone
