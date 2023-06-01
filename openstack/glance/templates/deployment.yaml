@@ -30,6 +30,7 @@ spec:
         name: glance
         alert-tier: os
         alert-service: glance
+        {{- include "utils.topology.pod_label" . | indent 8 }}
       annotations:
         chart-version: {{.Chart.Version}}
         checksum/etc-configmap.conf: {{ include (print $.Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
@@ -39,6 +40,7 @@ spec:
         {{- end }}
     spec:
       {{ include "utils.proxysql.pod_settings" . | indent 6 }}
+      {{- tuple . (dict "name" "glance") | include "utils.topology.constraints" | indent 6 }}
       initContainers:
       {{- tuple . (dict "jobs" (tuple . "migration-job" | include "job_name") "service" (print .Release.Name "-mariadb," .Release.Name "-memcached")) | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 6 }}
       {{- if .Values.file.persistence.enabled }}
