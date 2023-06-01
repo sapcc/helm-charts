@@ -24,11 +24,13 @@ spec:
         name: nova-vspc
         alert-tier: os
         alert-service: nova
-{{ tuple . "nova" "vspc" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
+        {{- tuple . "nova" "vspc" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | nindent 8 }}
+        {{- include "utils.topology.pod_label" . | indent 8 }}
       annotations:
         configmap-etc-hash: {{ include (print $.Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
     spec:
       hostname: nova-vspc
+      {{- tuple . (dict "name" "nova-vspc") | include "utils.topology.constraints" | indent 6 }}
       containers:
         - name: vmware-vspc
           image: {{ required ".Values.global.registry is missing" .Values.global.registry}}/vmware-vspc:{{ required ".Values.imageVersionVspc is missing" .Values.imageVersionVspc }}

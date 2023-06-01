@@ -7,6 +7,8 @@ kind: Service
 apiVersion: v1
 metadata:
   name: nova-console-{{ $name }}
+  annotations:
+  {{- include "utils.topology.service_topology_mode" . | indent 2 }}
   labels:
     system: openstack
     type: backend

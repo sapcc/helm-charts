@@ -24,7 +24,8 @@ spec:
     metadata:
       labels:
         name: nova-console-cell1-shellinabox
-{{ tuple . "nova" "console-cell1-shellinabox" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
+        {{- tuple . "nova" "console-cell1-shellinabox" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | nindent 8 }}
+        {{- include "utils.topology.pod_label" . | indent 8 }}
       annotations:
         {{- if .Values.proxysql.mode }}
         prometheus.io/scrape: "true"
@@ -36,8 +37,9 @@ spec:
         runAsUser: 33
         runAsGroup: 33
         fsGroup: 33
-{{ tuple . "nova" "console-cell1-shellinabox" | include "kubernetes_pod_anti_affinity" | indent 6 }}
-{{ include "utils.proxysql.pod_settings" . | indent 6 }}
+      {{- tuple . "nova" "console-cell1-shellinabox" | include "kubernetes_pod_anti_affinity" | nindent 6 }}
+      {{- include "utils.proxysql.pod_settings" . | nindent 6 }}
+      {{- tuple . (dict "name" "nova-console-cell1-shellinabox") | include "utils.topology.constraints" | indent 6 }}
       containers:
       - name: nova-console-cell1-shellinabox
         image: {{ required ".Values.global.dockerHubMirror is missing" .Values.global.dockerHubMirror }}/bitnami/openresty:{{ .Values.imageVersionBitnamiOpenResty }}
