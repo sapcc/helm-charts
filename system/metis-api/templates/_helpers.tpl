@@ -37,3 +37,10 @@ Create chart name and version as used by the chart label.
 - name: OSLO_POLICIES
   value: '/etc/metis/policy.yaml'
 {{- end }}
+
+{{- define "netapp_filers" }}
+{{- range  $share := .Values.global.netapp.filers }}
+- name: {{ $share.name }}
+  host: {{ $share.host }}
+{{- end }}
+{{- end }}
