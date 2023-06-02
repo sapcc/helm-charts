@@ -15,6 +15,10 @@ spec:
     port: {{ required "proxy_port cannot be empty" $lg_config.proxy_port }}
     targetPort: {{ $lg }}proxy
 {{- end }}
+  - name: birdwatcher
+    protocol: TCP
+    port: 29184
+    targetPort: birdwatcher
   selector:
     app: {{ $deployment_name }}
 {{ end }}
