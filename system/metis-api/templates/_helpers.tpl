@@ -9,7 +9,18 @@ Create chart name and version as used by the chart label.
 {{- "metis-api" -}}
 {{- end -}}
 
+{{/* labels used for all resources */}}
+{{- define "labels" }}
+app.kubernetes.io/name: {{ template "name" . }}
+helm.sh/chart: {{ include "metisAPI.chart" $ }}
+app.kubernetes.io/instance: {{ template "name" . }}
+app.kubernetes.io/component: "api"
+app.kubernetes.io/part-of: "metis"
+app.kubernetes.io/managed-by: {{ .Release.Service }}
+{{- end -}}
 
+
+{{/* set OpenStack environment variables */}}
 {{- define "os_environment" }}
 - name:  OS_AUTH_URL
   value: "http://identity-3.{{ $.Values.global.region }}.{{ $.Values.global.tld }}/v3"
@@ -38,6 +49,7 @@ Create chart name and version as used by the chart label.
   value: '/etc/metis/policy.yaml'
 {{- end }}
 
+{{/* create a list of netapp filers*/}}
 {{- define "netapp_filers" }}
 {{- range  $share := .Values.global.netapp.filers }}
 - name: {{ $share.name }}
