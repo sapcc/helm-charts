@@ -33,8 +33,8 @@ groups:
       summary: 'Sentry API Availability is less than 100%'
 
   - alert: SentryDashboardIsDown
-    expr: probe_success{instance="https://sentry.qa-de-1.cloud.sap", job="sentry-probe"} == 0
-    for: 5m
+    expr: probe_success{instance="https://sentry.$region.cloud.sap", job="sentry-probe"} == 0
+    for: 1m
     labels:
       meta: Sentry Dashboard Is Down
       service: sentry
@@ -46,8 +46,8 @@ groups:
       summary: Sentry Dashboard Is Down
 
   - alert: SentryDashboardIsLoadingSlowly
-    expr: sum(sum_over_time(probe_http_duration_seconds{instance="https://sentry.qa-de-1.cloud.sap", job="sentry-probe"}[5m])) > 2
-    for: 5m
+    expr: sum(sum_over_time(probe_http_duration_seconds{instance="https://sentry.$region.cloud.sap", job="sentry-probe"}[5m])) > 2
+    for: 2m
     labels:
       meta: Sentry Dashboard Is Loading Slowly
       service: sentry
