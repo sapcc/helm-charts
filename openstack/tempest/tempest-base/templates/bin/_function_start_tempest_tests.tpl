@@ -38,7 +38,7 @@ function start_tempest_tests {
   # Install barbican-tempest-plugin for support HTTPS tests for octavia
   export SERVICE_NAME={{ .Chart.Name }}
   if [[ $SERVICE_NAME == "octavia-tempest" ]]; then
-    pip install git+git@github.com:sapcc/barbican-tempest-plugin.git@ccloud
+    pip install git+https://github.com/sapcc/barbican-tempest-plugin.git@ccloud
   fi
   # check if we can reach openstack endpoints
 
