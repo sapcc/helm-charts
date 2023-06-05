@@ -39,7 +39,7 @@ groups:
           sum by (thanos) (rate(prometheus_rule_evaluations_total{job=~".*thanos.*rule.*", thanos="{{ include "thanos.name" . }}"}[5m]))
         * 100 > 5
         )
-      for: 5m
+      for: 10m
       labels:
         service: {{ default "metrics" $root.Values.alerts.service }}
         support_group: {{ default "observability" $root.Values.alerts.support_group }}
