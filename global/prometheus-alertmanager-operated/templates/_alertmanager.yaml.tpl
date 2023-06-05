@@ -315,6 +315,14 @@ route:
       region: global|ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|ap-sa-2|eu-de-1|eu-de-2|eu-nl-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3
       support_group: observability
 
+  - receiver: support_group_alerts_critical_src
+    continue: true
+    match_re:
+      severity: critical
+      cluster_type: abapcloud|admin|controlplane|customer|internet|kubernikus|metal|scaleout|virtual
+      region: global|ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|ap-sa-2|eu-de-1|eu-de-2|eu-nl-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3
+      support_group: src
+
   - receiver: support_group_alerts_warning
     continue: true
     match_re:
@@ -1086,6 +1094,25 @@ receivers:
     slack_configs:
       - channel: '#alert-{{"{{ .CommonLabels.support_group }}"}}-{{"{{ .CommonLabels.severity }}"}}'
         api_url: {{ required ".Values.slack.observability.criticalWebhookURL undefined" .Values.slack.observability.criticalWebhookURL | quote }}
+        username: "Pulsar"
+        title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
+        title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
+        text: {{"'{{template \"slack.sapcc.text\" . }}'"}}
+        pretext: {{"'{{template \"slack.sapcc.pretext\" . }}'"}}
+        icon_emoji: {{"'{{template \"slack.sapcc.iconemoji\" . }}'"}}
+        callback_id: "alertmanager"
+        color: {{`'{{template "slack.sapcc.color" . }}'`}}
+        send_resolved: true
+        actions:
+          - name: {{"'{{template \"slack.sapcc.actionName\" . }}'"}}
+            type: {{"'{{template \"slack.sapcc.actionType\" . }}'"}}
+            text: {{"'{{template \"slack.sapcc.acknowledge.actionText\" . }}'"}}
+            value: {{"'{{template \"slack.sapcc.acknowledge.actionValue\" . }}'"}}
+
+  - name: support_group_alerts_critical_src
+    slack_configs:
+      - channel: '#alert-{{"{{ .CommonLabels.support_group }}"}}-{{"{{ .CommonLabels.severity }}"}}'
+        api_url: {{ required ".Values.slack.src.criticalWebhookURL undefined" .Values.slack.src.criticalWebhookURL | quote }}
         username: "Pulsar"
         title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
         title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
