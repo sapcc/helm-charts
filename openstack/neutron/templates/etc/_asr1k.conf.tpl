@@ -50,8 +50,9 @@ nc_timeout = {{$hosting_device.nc_timeout | default 20}}
 use_bdvif = {{$hosting_device.use_bdvif | default "True"}}
 {{end}}
 
-{{- if $config_agent.availability_zone }}
 [AGENT]
+scheduling_disabled = {{ or ($config_agent.scheduling_disabled | default false) ($config_agent.decommissioning | default false) }}
+{{- if $config_agent.availability_zone  }}
 availability_zone = {{$config_agent.availability_zone}}
 {{ end }}
 
