@@ -56,4 +56,4 @@ filer:
   - name: {{ $share.name }}
     host: {{ $share.host }}
 {{- end }}
-{{ end }}
+{{- end -}}
