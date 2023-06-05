@@ -1,0 +1,41 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: alicelg
+  namespace: px
+  labels:
+    app: alicelg
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: alicelg
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        alert-tier: px
+        alert-service: px
+        app: alicelg
+    spec:
+      containers:
+      - name: alicelg
+        image: keppel.{{ $.Values.registry }}.cloud.sap/{{ $.Values.alicelg_image }}
+        imagePullPolicy: Always
+        resources:
+{{ toYaml $.Values.resources.alicelg | indent 10 }}
+        volumeMounts:
+        - name: cfg-alice-lg
+          mountPath: /etc/alice-lg/
+        ports:
+        - containerPort: 7340
+          name: alicelg
+      volumes:
+        - name: cfg-alice-lg
+          configMap:
+            name: cfg-alice-lg
