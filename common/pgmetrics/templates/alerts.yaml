@@ -62,4 +62,19 @@ spec:
         description: >
           Some of the custom metrics in the postgres-exporter configuration cannot be evaluated. Check the pgmetrics pod log for errors.
 
+    - alert: {{ title $service }}PostgresMetricsSlowCollection
+      expr: scrape_duration_seconds{kubernetes_namespace="{{ .Release.Namespace }}",app="{{ .Release.Name }}-pgmetrics"} > {{ .Values.alerts.scrape_duration_threshold }}
+      for: 30m # slow-moving to avoid flapping during maintenance events etc.
+      labels:
+        context: database
+        support_group: {{ required ".Values.alerts.support_group missing" .Values.alerts.support_group }}
+        tier: {{ required ".Values.alerts.tier missing" .Values.alerts.tier }}
+        service: {{ $service }}
+        severity: info
+        meta: Slow metrics collection in postgres-exporter
+      annotations:
+        summary: Slow metrics collection in postgres-exporter
+        description: >
+          The {{ .Release.Name }}-pgmetrics pod is taking a long time to gather metrics. Check for throttling in the pgmetrics pod. If that's not a problem, this alert can be an early indication that the PostgreSQL server performance is degrading.
+
 {{- end }}
