@@ -11,7 +11,9 @@ $(openstack image list --sort-column created_at:desc --limit 1 -f value -c ID --
 function start_tempest_tests {
 
   echo -e "\n === PRE-CONFIG STEP  === \n"
-
+  if [[ {{ .Chart.Name }} == *"octavia-tempest"* ]]; then
+  pip install git+git@github.com:sapcc/barbican-tempest-plugin.git@ccloud
+  fi
   export OS_USERNAME={{ default "neutron-tempestadmin1" (index .Values (print .Chart.Name | replace "-" "_")).tempest.admin_name | quote }}
   export OS_TENANT_NAME={{ default "neutron-tempest-admin1" (index .Values (print .Chart.Name | replace "-" "_")).tempest.admin_project_name | quote }}
   export OS_PROJECT_NAME={{ default "neutron-tempest-admin1" (index .Values (print .Chart.Name | replace "-" "_")).tempest.admin_project_name | quote }}
