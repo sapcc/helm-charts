@@ -51,8 +51,9 @@ app.kubernetes.io/managed-by: {{ .Release.Service }}
 
 {{/* create a list of netapp filers*/}}
 {{- define "netapp_filers" -}}
+filer:
 {{- range  $share := .Values.global.netapp.filers }}
-- name: {{ $share.name }}
-  host: {{ $share.host }}
-{{- end -}}
-{{- end -}}
+  - name: {{ $share.name }}
+    host: {{ $share.host }}
+{{- end }}
+{{ end }}
