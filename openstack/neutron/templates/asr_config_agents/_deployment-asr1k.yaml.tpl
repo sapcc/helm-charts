@@ -33,6 +33,8 @@ spec:
         prometheus.io/scrape: "true"
         prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" $context.Values.alerts.prometheus | quote }}
         configmap-asr1k-{{ $config_agent.name }}: {{ tuple $context $config_agent |include "asr1k_configmap" | sha256sum  }}
+        cloud.sap/scheduling-disabled: {{ or ($config_agent.scheduling_disabled | default false) ($config_agent.decommissioning | default false) | quote }}
+        cloud.sap/decommissioning: {{ $config_agent.decommissioning | default false | quote }}
     spec:
       hostname:  asr1k-{{ $config_agent.name }}
       containers:
