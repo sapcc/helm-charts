@@ -147,7 +147,7 @@ spec:
         {{- include "utils.proxysql.volume_mount" . | indent 8 }}
       {{- include "utils.proxysql.container" . | indent 6 }}
       - name: console
-        image: {{.Values.imageVersionNginx | default "nginx:stable-alpine"}}
+        image: {{ .Values.global.dockerHubMirror }}/library/{{ .Values.imageVersionNginx | default "nginx:stable-alpine" }}
         imagePullPolicy: IfNotPresent
         resources:
 {{ toYaml .Values.pod.resources.console | indent 10 }}
