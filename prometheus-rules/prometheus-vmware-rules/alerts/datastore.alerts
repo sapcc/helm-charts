@@ -310,7 +310,6 @@ groups:
       description: 'Datastore {{ $labels.datastore }} is not accessible. ({{ $labels.vcenter }}, {{ $labels.datacenter }})'
       summary: 'Datastore {{ $labels.datastore }} is not accessible. ({{ $labels.vcenter }}, {{ $labels.datacenter }})'
 
-
   - alert: EphemeralDatastoreNotPartOfSDRSCluster
     expr: >
       vrops_datastore_summary_datastore_accessible{type="ephemeral", storagepod=~"none|None|NONE", datastore=~"eph.*"} > 0
@@ -326,7 +325,6 @@ groups:
       description: "Eph Datastore {{ $labels.datastore }} is not a part of SDRS Cluster. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
       summary: "Eph Datastore {{ $labels.datastore }} is not a part of SDRS Cluster. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
 
-
   - alert: EphemeralDatastorePartOfIncorrectSDRSCluster
     expr: >
       vrops_datastore_summary_datastore_accessible{type="ephemeral", storagepod=~".*hgb.*", datastore=~"eph.*hga"} or vrops_datastore_summary_datastore_accessible{type="ephemeral", storagepod=~".*hga.*", datastore=~"eph.*hgb"} > 0
@@ -341,3 +339,51 @@ groups:
     annotations:
       description: "Eph Datastore {{ $labels.datastore }} is not a part of correct SDRS Cluster. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
       summary: "Eph Datastore {{ $labels.datastore }} is not a part of correct SDRS Cluster. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
+
+  - alert: CinderTagMissingForDatastoreSSD
+    expr: >
+      vrops_datastore_cinder_tag{}
+    for: 5m
+    labels:
+      severity: info
+      tier: vmware
+      service: storage
+      support_group: compute
+      meta: ""
+      playbook: docs/support/playbook/cinder/#
+      no_alert_on_absence: "true"
+    annotations:
+      description: ""
+      summary: ""
+
+  - alert: CinderTagMissingForDatastoreHDD
+    expr: >
+      vrops_datastore_cinder_tag{}
+    for: 5m
+    labels:
+      severity: info
+      tier: vmware
+      service: storage
+      support_group: compute
+      meta: ""
+      playbook: docs/support/playbook/cinder/#
+      no_alert_on_absence: "true"
+    annotations:
+      description: ""
+      summary: ""
+
+  - alert: CinderTagAddedForReservedDatastore
+    expr: >
+      vrops_datastore_cinder_state{}
+    for: 5m
+    labels:
+      severity: info
+      tier: vmware
+      service: storage
+      support_group: compute
+      meta: ""
+      playbook: docs/support/playbook/cinder/#
+      no_alert_on_absence: "true"
+    annotations:
+      description: ""
+      summary: ""
