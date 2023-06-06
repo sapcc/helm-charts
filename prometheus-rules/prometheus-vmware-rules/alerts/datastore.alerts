@@ -342,48 +342,49 @@ groups:
 
   - alert: CinderTagMissingForDatastoreSSD
     expr: >
-      vrops_datastore_cinder_tag{}
+      vrops_datastore_cinder_tag{type="vmfs_p_ssd", cinder_tag="none"}
     for: 5m
     labels:
       severity: info
       tier: vmware
       service: storage
       support_group: compute
-      meta: ""
+      meta: "There is no Cinder tag present for the `{{ $labels.datastore }}` datastore in the *{{ $labels.storagepod }}* cluster\nLink to the vCenter: --> <{{ $labels.vcenter }}>"
       playbook: docs/support/playbook/cinder/#
       no_alert_on_absence: "true"
     annotations:
-      description: ""
-      summary: ""
+      description: "There is no Cinder tag present for the `{{ $labels.datastore }}` datastore in the *{{ $labels.storagepod }}* cluster\nLink to the vCenter: --> <{{ $labels.vcenter }}>"
+      summary: "There is no Cinder tag present for the `{{ $labels.datastore }}` datastore in the *{{ $labels.storagepod }}* cluster\nLink to the vCenter: --> <{{ $labels.vcenter }}>"
 
   - alert: CinderTagMissingForDatastoreHDD
     expr: >
-      vrops_datastore_cinder_tag{}
+      vrops_datastore_cinder_tag{type="vmfs_s_hdd", cinder_tag="none"}
     for: 5m
     labels:
       severity: info
       tier: vmware
       service: storage
       support_group: compute
-      meta: ""
+      meta: "There is no Cinder tag present for the `{{ $labels.datastore }}` datastore in the *{{ $labels.storagepod }}* cluster\nLink to the vCenter: --> <{{ $labels.vcenter }}>"
       playbook: docs/support/playbook/cinder/#
       no_alert_on_absence: "true"
     annotations:
-      description: ""
-      summary: ""
+      description: "There is no Cinder tag present for the `{{ $labels.datastore }}` datastore in the *{{ $labels.storagepod }}* cluster\nLink to the vCenter: --> <{{ $labels.vcenter }}>"
+      summary: "There is no Cinder tag present for the `{{ $labels.datastore }}` datastore in the *{{ $labels.storagepod }}* cluster\nLink to the vCenter: --> <{{ $labels.vcenter }}>"
 
   - alert: CinderTagAddedForReservedDatastore
     expr: >
-      vrops_datastore_cinder_state{}
+      vrops_datastore_cinder_state{cinder_state="reserved"}
+      and on (datastore) vrops_datastore_cinder_tag{cinder_tag=~".+\"category\":\"cinder\".+.*(\"name\":\"cinder\"|\"name\":\"slow\").+"}
     for: 5m
     labels:
       severity: info
       tier: vmware
       service: storage
       support_group: compute
-      meta: ""
+      meta: "The Cinder state is reserved but the Cinder tag still exists for the `{{ $labels.datastore }}` datastore in the *{{ $labels.storagepod }}* cluster of type: _{{ $labels.type }}_\nLink to the vCenter: --> <{{ $labels.vcenter }}>"
       playbook: docs/support/playbook/cinder/#
       no_alert_on_absence: "true"
     annotations:
-      description: ""
-      summary: ""
+      description: "The Cinder state is reserved but the Cinder tag still exists for the `{{ $labels.datastore }}` datastore in the *{{ $labels.storagepod }}* cluster of type: _{{ $labels.type }}_\nLink to the vCenter: --> <{{ $labels.vcenter }}>"
+      summary: "The Cinder state is reserved but the Cinder tag still exists for the `{{ $labels.datastore }}` datastore in the *{{ $labels.storagepod }}* cluster of type: _{{ $labels.type }}_\nLink to the vCenter: --> <{{ $labels.vcenter }}>"
