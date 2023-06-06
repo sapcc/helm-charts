@@ -21,6 +21,8 @@ spec:
           properties:
             doopImageCheckerURL:
               type: string
+            vulnStatusHeader:
+              type: string
 
   targets:
     - target: admission.k8s.gatekeeper.sh
@@ -45,14 +47,14 @@ spec:
         violation[{"msg": add_support_labels.from_k8s_object(iro, msg)}] {
           check := checks[_]
           check.error == ""
-          status := trim_space(object.get(check.headers, "X-Keppel-Vulnerability-Status", "Unclear"))
+          status := trim_space(object.get(check.headers, input.parameters.vulnStatusHeader, "Unclear"))
 
           # report everything with a definite vulnerability
           status != "Clean"
           status != "Unknown"
 
           msg := sprintf(
-            "image %s for container %q has vulnerability status %q",
-            [check.containerImage, check.containerName, status]
+            "image %s for container %q has \"%s: %s\"",
+            [check.containerImage, check.containerName, input.parameters.vulnStatusHeader, status]
           )
         }
