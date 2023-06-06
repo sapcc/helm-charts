@@ -285,7 +285,7 @@
       - '{__name__=~"^vrops_virtualmachine_summary_ethernetcards"}'
       - '{__name__=~"^vrops_virtualmachine_runtime_connectionstate",state="disconnected"}'
       - '{__name__=~"^vrops_virtualmachine_runtime_powerstate"}'
-      - '{__name__=~"^vrops_virtualmachine_guestfilesystem_storage_db_percentage"}'
+      - '{__name__=~"^vrops_virtualmachine_guestfilesystem_storage_?(db|log)_percentage"}'
       - '{__name__=~"^vrops_virtualmachine_cpu_contention_ratio"}'
       - '{__name__=~"^vrops_virtualmachine_memory_contention_ratio"}'
       - '{__name__=~"^vrops_datastore_.+", type!~"local"}'
