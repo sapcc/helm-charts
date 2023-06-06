@@ -72,7 +72,7 @@ groups:
       description: '{{ $labels.server_name }} root fs is 100% utilized for 10m.'
       summary: 'Home fs needs to be freed'
   - alert: JumpserverNonMainFSFillingUp
-    expr: 100 - ((node_filesystem_avail_bytes{job="jumpserver",mountpoint!="/"} * 100) / node_filesystem_size_bytes{job="jumpserver",mountpoint!="/|/home"}) > 90
+    expr: 100 - ((node_filesystem_avail_bytes{job="jumpserver",mountpoint!="/"} * 100) / node_filesystem_size_bytes{job="jumpserver",mountpoint!~"/|/home"}) > 90
     for: 10m
     labels:
       context: availability
@@ -86,7 +86,7 @@ groups:
       description: '{{ $labels.server_name }} fs {{ $labels.mountpoint }} is over 90% for 10m.'
       summary: 'Check mentioned mount point for a possible cleanup'
   - alert: JumpserverNonMainFSFull
-    expr: 100 - ((node_filesystem_avail_bytes{job="jumpserver",mountpoint!="/"} * 100) / node_filesystem_size_bytes{job="jumpserver",mountpoint!="/|/home"}) >= 100
+    expr: 100 - ((node_filesystem_avail_bytes{job="jumpserver",mountpoint!="/"} * 100) / node_filesystem_size_bytes{job="jumpserver",mountpoint!~"/|/home"}) >= 100
     for: 10m
     labels:
       context: availability
