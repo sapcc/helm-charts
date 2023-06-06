@@ -6,20 +6,17 @@ metadata:
   labels:
     system: openstack
     service: audit
-    component: elasticsearch
-    role: master
+    component: elasticsearch-cluster
 spec:
   serviceName: elasticsearch-hermes
   replicas: {{.Values.replicas}}
   selector:
     matchLabels:
-      component: elasticsearch
-      role: master
+      component: elasticsearch-cluster
   template:
     metadata:
       labels:
-        component: elasticsearch
-        role: master
+        component: elasticsearch-cluster
       annotations:
         checksum/configmap.yaml: {{ include  (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
         checksum/elasticsearch.yml: {{ include  (print $.Template.BasePath "/_elasticsearch.yml.tpl") . | sha256sum }}
