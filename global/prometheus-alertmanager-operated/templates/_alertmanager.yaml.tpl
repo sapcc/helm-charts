@@ -1112,7 +1112,7 @@ receivers:
   - name: support_group_alerts_critical_src
     slack_configs:
       - channel: '#alert-{{"{{ .CommonLabels.support_group }}"}}-{{"{{ .CommonLabels.severity }}"}}'
-        api_url: {{ required ".Values.slack.src.criticalWebhookURL undefined" .Values.slack.src.criticalWebhookURL | quote }}
+        api_url: {{ required ".Values.slack.webhookURL undefined" .Values.slack.webhookURL | quote }}
         username: "Pulsar"
         title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
         title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
@@ -1122,11 +1122,6 @@ receivers:
         callback_id: "alertmanager"
         color: {{`'{{template "slack.sapcc.color" . }}'`}}
         send_resolved: true
-        actions:
-          - name: {{"'{{template \"slack.sapcc.actionName\" . }}'"}}
-            type: {{"'{{template \"slack.sapcc.actionType\" . }}'"}}
-            text: {{"'{{template \"slack.sapcc.acknowledge.actionText\" . }}'"}}
-            value: {{"'{{template \"slack.sapcc.acknowledge.actionValue\" . }}'"}}
 
   - name: support_group_alerts_critical_containers
     slack_configs:
@@ -1534,5 +1529,3 @@ receivers:
         require_tls: true
         send_resolved: false
   {{- end }}
-  
-    
