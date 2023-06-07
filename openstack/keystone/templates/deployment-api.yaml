@@ -34,6 +34,7 @@ spec:
         type: api
         alert-tier: os
         alert-service: keystone
+        {{- include "utils.topology.pod_label" . | nindent 8 }}
       annotations:
         chart-version: {{.Chart.Version}}
         configmap-etc-hash: {{ include (print $.Template.BasePath "/configmap-etc.yaml") . | sha256sum }}
@@ -46,6 +47,7 @@ spec:
 {{- if .Values.rbac.enabled }}
       serviceAccountName: {{ .Release.Name }}
 {{- end }}
+      {{- tuple . (dict "name" (print .Release.Name "-api")) | include "utils.topology.constraints" | indent 6 }}
       affinity:
         podAntiAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
