@@ -197,10 +197,17 @@
 {{- if .filter }}
 <filter {{ .tag }}*>
   @type grep
+  {{- if eq .filter.keep true }}
   <regexp>
     key {{ .filter.key }}
     pattern {{ .filter.pattern }}
   </regexp>
+  {{- else }}
+  <exclude>
+    key {{ .filter.key }}
+    pattern {{ .filter.pattern }}
+  </exclude>
+  {{- end }}
 </filter>
 {{- end }}
 {{- end }}
