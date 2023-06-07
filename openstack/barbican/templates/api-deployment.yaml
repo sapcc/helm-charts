@@ -31,7 +31,8 @@ spec:
         name: barbican-api
         alert-tier: os
         alert-service: barbican
-{{ tuple . "barbican" "api" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
+        {{ tuple . "barbican" "api" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | nindent 8 }}
+        {{- include "utils.topology.pod_label" . | nindent 8 }}
       annotations:
         configmap-etc-hash: {{ include (print $.Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
         {{- if .Values.proxysql.mode }}
@@ -39,8 +40,9 @@ spec:
         prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
         {{- end }}
     spec:
-{{ tuple . "barbican" "api" | include "kubernetes_pod_anti_affinity" | indent 6 }}
+      {{ tuple . "barbican" "api" | include "kubernetes_pod_anti_affinity" | nindent 6 }}
       {{- include "utils.proxysql.pod_settings" . | indent 6 }}
+      {{- tuple . (dict "name" "barbican-api") | include "utils.topology.constraints" | indent 6 }}
       initContainers:
       {{- tuple . (dict "service" "barbican-mariadb,barbican-rabbitmq") | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 6 }}
       containers:
