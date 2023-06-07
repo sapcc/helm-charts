@@ -212,6 +212,14 @@
 {{- end }}
 {{- end }}
 
+<filter falco.**>
+  @type record_transformer
+  <record>
+    source_falco ${source}
+  </record>
+  remove_keys source
+</filter>
+
 <match fluent.**>
   @type null
 </match>
