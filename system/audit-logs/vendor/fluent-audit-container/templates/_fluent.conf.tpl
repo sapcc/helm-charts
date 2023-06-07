@@ -174,6 +174,15 @@
   </parse>
 </filter>
 {{- end }}
+<filter {{ .tag }}* >
+  @type kubernetes_metadata
+  @id kubernetes
+  bearer_token_file /var/run/secrets/kubernetes.io/serviceaccount/token
+  ca_file /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+  skip_container_metadata true
+  skip_master_url true
+  skip_namespace_metadata true
+</filter>
 <filter {{ .tag }}*>
   @type record_transformer
   <record>
@@ -293,7 +302,7 @@
 </match>
 {{- end }}
 
-<match iasapi.** iaschangelog.** vault.** github-guard.** github-guard-tools.** github-guard-corp.** concourse.** >
+<match iasapi.** iaschangelog.** vault.** github-guard.** github-guard-tools.** github-guard-corp.** concourse.** falco.**>
   @type copy
   @id duplicate_tools
   <store>
