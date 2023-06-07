@@ -82,6 +82,8 @@ max_workers = {{ .Values.max_workers | default "10" }}
 
 [database]
 connection = {{ include "db_url_mysql" . }}
+max_pool_size = 30
+max_overflow = 50
 
 [oslo_messaging]
 # Topic (i.e. Queue) Name
