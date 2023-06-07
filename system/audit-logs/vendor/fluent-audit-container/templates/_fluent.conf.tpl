@@ -176,7 +176,7 @@
 {{- end }}
 <filter {{ .tag }}* >
   @type kubernetes_metadata
-  @id kubernetes
+  @id {{ .id }}_kubernetes
   bearer_token_file /var/run/secrets/kubernetes.io/serviceaccount/token
   ca_file /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
   skip_container_metadata true
