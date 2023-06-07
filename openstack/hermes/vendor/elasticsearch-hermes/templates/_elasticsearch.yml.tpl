@@ -18,7 +18,6 @@ path:
 
 network.host: 0.0.0.0
 transport.host: 0.0.0.0
-http.max_content_length: 500mb
 indices.breaker.total.use_real_memory: false
 http.max_content_length: 1000mb
 http.compression: true
