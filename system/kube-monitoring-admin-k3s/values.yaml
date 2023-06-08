@@ -328,3 +328,34 @@ fluent-bit:
         enabled: "On"
         verify: "Off"
         debug: '1'
+
+falco:
+  enabled: false
+  image:
+    registry: keppel.global.cloud.sap/ccloud-dockerhub-mirror
+
+  driver:
+    loader:
+      initContainer:
+        image:
+          registry: keppel.global.cloud.sap/ccloud-dockerhub-mirror
+
+  falcoctl:
+    image:
+      registry: keppel.global.cloud.sap/ccloud-dockerhub-mirror
+
+  tolerations:
+    - operator: Exists
+
+  extra:
+    args:
+      - -t
+      - pci
+      - -v
+      - --unbuffered
+      - -o
+      - json_output=true
+
+  falco:
+    rules_file:
+      - /etc/falco/rules.d
