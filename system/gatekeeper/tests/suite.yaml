@@ -405,6 +405,10 @@ tests:
     object: fixtures/pod-security/elasticsearch-data.yaml
     assertions:
     - violations: no
+  - name: pod-security-accept-elasticsearch-hermes
+    object: fixtures/pod-security/elasticsearch-hermes.yaml
+    assertions:
+    - violations: no
   - name: pod-security-accept-elastiflow-data
     object: fixtures/pod-security/elastiflow-data.yaml
     assertions:
@@ -613,16 +617,39 @@ tests:
     object: fixtures/vulnerable-images/pod-vulnerable.yaml
     assertions:
     - violations: 1
-      message: '^support-group=foo-group,service=dummy: image keppel.example.com/vulnerability:low for container "dummylow" has vulnerability status "Low"$'
+      message: '^support-group=foo-group,service=dummy: image keppel.example.com/vulnerability:low for container "dummylow" has "X-Keppel-Vulnerability-Status: Low"$'
     - violations: 1
-      message: '^support-group=foo-group,service=dummy: image keppel.example.com/vulnerability:medium for container "dummymedium" has vulnerability status "Medium"$'
+      message: '^support-group=foo-group,service=dummy: image keppel.example.com/vulnerability:medium for container "dummymedium" has "X-Keppel-Vulnerability-Status: Medium"$'
     - violations: 1
-      message: '^support-group=foo-group,service=dummy: image keppel.example.com/vulnerability:high for container "starter" has vulnerability status "High"$'
+      message: '^support-group=foo-group,service=dummy: image keppel.example.com/vulnerability:high for container "starter" has "X-Keppel-Vulnerability-Status: High"$'
   - name: pod-unclear
     object: fixtures/vulnerable-images/pod-unclear.yaml
     assertions:
     - violations: 1
-      message: '^support-group=foo-group,service=dummy: image keppel.example.com/vulnerability:unclear for container "dummy" has vulnerability status "Unclear"$'
+      message: '^support-group=foo-group,service=dummy: image keppel.example.com/vulnerability:unclear for container "dummy" has "X-Keppel-Vulnerability-Status: Unclear"$'
+  - name: pod-clean
+    object: fixtures/vulnerable-images/pod-clean.yaml
+    assertions:
+    - violations: no
+
+- name: vulnerable-images-trivy
+  template: rendered-chart/gatekeeper/templates/constrainttemplate-vulnerable-images.yaml
+  constraint: rendered-chart/gatekeeper-config/templates/constraint-vulnerable-images-trivy.yaml
+  cases:
+  - name: pod-vulnerable
+    object: fixtures/vulnerable-images/pod-vulnerable.yaml
+    assertions:
+    - violations: 1
+      message: '^support-group=foo-group,service=dummy: image keppel.example.com/vulnerability:low for container "dummylow" has "X-Keppel-Trivy-Vulnerability-Status: Low"$'
+    - violations: 1
+      message: '^support-group=foo-group,service=dummy: image keppel.example.com/vulnerability:medium for container "dummymedium" has "X-Keppel-Trivy-Vulnerability-Status: Medium"$'
+    - violations: 1
+      message: '^support-group=foo-group,service=dummy: image keppel.example.com/vulnerability:high for container "starter" has "X-Keppel-Trivy-Vulnerability-Status: High"$'
+  - name: pod-unclear
+    object: fixtures/vulnerable-images/pod-unclear.yaml
+    assertions:
+    - violations: 1
+      message: '^support-group=foo-group,service=dummy: image keppel.example.com/vulnerability:unclear for container "dummy" has "X-Keppel-Trivy-Vulnerability-Status: Unclear"$'
   - name: pod-clean
     object: fixtures/vulnerable-images/pod-clean.yaml
     assertions:

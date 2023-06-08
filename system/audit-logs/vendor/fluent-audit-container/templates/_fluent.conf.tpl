@@ -174,6 +174,16 @@
   </parse>
 </filter>
 {{- end }}
+<filter {{ .tag }}* >
+  @type kubernetes_metadata
+  @id {{ .id }}_kubernetes
+  bearer_token_file /var/run/secrets/kubernetes.io/serviceaccount/token
+  ca_file /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+  skip_labels true
+  skip_container_metadata true
+  skip_master_url true
+  skip_namespace_metadata true
+</filter>
 <filter {{ .tag }}*>
   @type record_transformer
   <record>
@@ -187,13 +197,28 @@
 {{- if .filter }}
 <filter {{ .tag }}*>
   @type grep
+  {{- if eq .filter.keep true }}
   <regexp>
     key {{ .filter.key }}
     pattern {{ .filter.pattern }}
   </regexp>
+  {{- else }}
+  <exclude>
+    key {{ .filter.key }}
+    pattern {{ .filter.pattern }}
+  </exclude>
+  {{- end }}
 </filter>
 {{- end }}
 {{- end }}
+
+<filter falco.**>
+  @type record_transformer
+  <record>
+    source_falco ${source}
+  </record>
+  remove_keys source
+</filter>
 
 <match fluent.**>
   @type null
@@ -293,7 +318,7 @@
 </match>
 {{- end }}
 
-<match iasapi.** iaschangelog.** vault.** github-guard.** github-guard-tools.** github-guard-corp.** concourse.** >
+<match iasapi.** iaschangelog.** vault.** github-guard.** github-guard-tools.** github-guard-corp.** concourse.** falco.**>
   @type copy
   @id duplicate_tools
   <store>

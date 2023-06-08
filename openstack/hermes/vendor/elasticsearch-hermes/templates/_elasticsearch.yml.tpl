@@ -9,6 +9,8 @@ cluster.initial_master_nodes:
   {{- range $i, $e := untilStep 0 $replicas 1 }}
     elasticsearch-hermes-{{ $i }},
   {{- end }}
+cluster.max_shards_per_node: 10000
+action.search.shard_count.limit: 10000
 
 path:
   data: /data/data
@@ -16,7 +18,9 @@ path:
 
 network.host: 0.0.0.0
 transport.host: 0.0.0.0
-http.max_content_length: 500mb
+indices.breaker.total.use_real_memory: false
+http.max_content_length: 1000mb
+http.compression: true
 
 discovery.seed_hosts: elasticsearch-hermes
 
