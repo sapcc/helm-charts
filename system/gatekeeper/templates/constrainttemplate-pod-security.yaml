@@ -256,6 +256,9 @@ spec:
         # TODO: remove allowlist for ElasticSearch once migrated to OpenSearch
         default isElasticPod = false
         default isElasticOrOpenSearchPod = false
+        isElasticOrOpenSearchPod = true {
+          isElasticPod
+        }
 
         {{- if eq .Values.cluster_type "baremetal" "test" }}
         isElasticPod = true {
@@ -280,9 +283,6 @@ spec:
           helmReleaseName == "elk"
         }
 
-        isElasticOrOpenSearchPod = true {
-          isElasticPod
-        }
         isElasticOrOpenSearchPod = true {
           iro.kind == "StatefulSet"
           iro.metadata.namespace == "elastiflow"
