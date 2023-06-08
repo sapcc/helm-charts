@@ -122,6 +122,10 @@ mariadb:
     # -- enable [gtid_strict_mode](https://mariadb.com/kb/en/gtid/#gtid_strict_mode)
     # @default -- false
     gtidStrictMode: false
+    # -- configure [weighted Quorum](https://galeracluster.com/library/documentation/weighted-quorum.html#wq-three-nodes) values for the DB nodes
+    # eg: db-0: 4, db-1: 2, db-2: 1
+    # @default -- false
+    weightedQuorum:
     backup:
       # -- enable the [database backup](#database-backup). Should be done within custom instance configuration files
       enabled: false
@@ -286,7 +290,7 @@ image:
     # -- application part of the image version that should be pulled
     applicationversion: 22.04
     # -- image part of the image version that should be pulled
-    imageversion: 0.1.3
+    imageversion: 0.1.4
     # -- (string) `Always` to enforce that the image will be pulled even if it is already available on the worker node
     # @default -- IfNotPresent
     pullPolicy:
@@ -300,9 +304,9 @@ image:
     # -- folder/container used in the image registry and also part of the image name
     applicationname: mariadb-galera
     # -- application part of the image version that should be pulled
-    applicationversion: 10.5.18
+    applicationversion: 10.5.20
     # -- image part of the image version that should be pulled
-    imageversion: 0.4.3
+    imageversion: 0.4.4
     # -- (string) `Always` to enforce that the image will be pulled even if it is already available on the worker node
     # @default -- IfNotPresent
     pullPolicy:
@@ -332,9 +336,9 @@ image:
     # -- folder/container used in the image registry and also part of the image name
     applicationname: proxysql
     # -- application part of the image version that should be pulled
-    applicationversion: 2.4.6
+    applicationversion: 2.5.2
     # -- image part of the image version that should be pulled
-    imageversion: 0.1.5
+    imageversion: 0.1.6
     # -- (string) `Always` to enforce that the image will be pulled even if it is already available on the worker node
     # @default -- IfNotPresent
     pullPolicy:
@@ -689,9 +693,6 @@ revisionHistoryLimit: 3
 # During the MariaDB [full database restore](#full-database-restore) process that value will be reduced to 15 seconds
 # @default -- 86400
 terminationGracePeriodSeconds: 600
-# -- If enabled `topology.kubernetes.io/zone` infos will be added to the [podAntiAffinity rules](https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/) for the MariaDB Galera and ProxySQL cluster.
-# This is useful if the Kubernetes provider supports regional node pools to ensure a good pod distribution within that region
-regional: false
 job:
   mariadbconfig:
     # -- How many [retries](https://kubernetes.io/docs/concepts/workloads/controllers/job/#pod-backoff-failure-policy) before the MariaDB config job will be marked as failed

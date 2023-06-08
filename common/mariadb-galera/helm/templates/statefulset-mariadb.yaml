@@ -40,27 +40,33 @@ spec:
     spec:
       affinity:
         podAntiAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-          {{- if $.Values.regional }}
-          - labelSelector:
-              matchExpressions:
-              - key: "app"
-                operator: In
-                values:
-                - {{ $.Release.Name }}
-            namespaces:
-              - {{ $.Release.Namespace }}
-            topologyKey: "topology.kubernetes.io/zone"
-          {{- end }}
-          - labelSelector:
-              matchExpressions:
-                - key: "app"
-                  operator: In
-                  values:
-                  - {{ $.Release.Name }}
-            namespaces:
-              - {{ $.Release.Namespace }}
-            topologyKey: "kubernetes.io/hostname"
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 1
+              podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    - key: "app"
+                      operator: In
+                      values:
+                        - {{ $.Release.Name | quote }}
+                    - key: "component"
+                      operator: In
+                      values:
+                        - "application"
+                topologyKey: "topology.kubernetes.io/zone"
+            - weight: 2
+              podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    - key: "app"
+                      operator: In
+                      values:
+                        - {{ $.Release.Name | quote }}
+                    - key: "component"
+                      operator: In
+                      values:
+                        - "application"
+                topologyKey: "kubernetes.io/hostname"
       serviceAccount: {{ include "commonPrefix" $ }}{{ $.Release.Name }}
       automountServiceAccountToken: true
       securityContext:
@@ -139,13 +145,17 @@ spec:
           {{- /* https://galeracluster.com/library/documentation/weighted-quorum.html#wq-three-nodes */}}
           {{- range $int, $err := until ($.Values.replicas.application|int) }}
         - name: PC_WEIGHT_{{ $int }}
-            {{- $weight := (sub (sub ($.Values.replicas.application|int) $int) 1) }}
-            {{- $calculatedWeight := 1 }}
-              {{- range $_, $err := until ($weight|int) }}
-                {{- /* 2^n where n is the $calculatedWeight */}}
-                {{- $calculatedWeight = (mul 2 $calculatedWeight) }}
-              {{- end }}
+            {{- if and (hasKey $.Values.mariadb.galera "weightedQuorum") $.Values.mariadb.galera.weightedQuorum }}
+              {{- $weight := (sub (sub ($.Values.replicas.application|int) $int) 1) }}
+              {{- $calculatedWeight := 1 }}
+                {{- range $_, $err := until ($weight|int) }}
+                  {{- /* 2^n where n is the $calculatedWeight */}}
+                  {{- $calculatedWeight = (mul 2 $calculatedWeight) }}
+                {{- end }}
           value: {{ $calculatedWeight | quote }}
+            {{- else }}
+          value: "1"
+            {{- end }}
           {{- end }}
         - name: PC_RECOVERY
           value: {{ $.Values.mariadb.galera.pcrecovery | default "false" | quote }}

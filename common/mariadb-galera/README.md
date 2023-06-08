@@ -39,7 +39,7 @@ Docker images and Helm chart to deploy a [MariaDB](https://mariadb.com/kb/en/get
 ## Metadata
 | chart version | app version | type | url |
 |:--------------|:-------------|:-------------|:-------------|
-| 0.14.3 | 10.5.18 | application | [Git repo](https://github.com/businessbean/helm-charts/tree/master/common/mariadb-galera) |
+| 0.14.4 | 10.5.20 | application | [Git repo](https://github.com/businessbean/helm-charts/tree/master/common/mariadb-galera) |
 
 | Name | Email | Url |
 | ---- | ------ | --- |
@@ -70,11 +70,11 @@ Kubernetes: `>=1.18`
 
 * productive version
   ```bash
-  docker build --build-arg BASE_REGISTRY=keppel.eu-de-1.cloud.sap --build-arg BASE_ACCOUNT=ccloud --build-arg BASE_SOFT_NAME=ubuntu --build-arg BASE_SOFT_VERSION=20.04 --build-arg BASE_IMG_VERSION=0.1.3 --build-arg SOFT_NAME=mariadb --build-arg SOFT_VERSION=10.5.18+maria~ubu2004 --build-arg IMG_VERSION=0.4.3 --build-arg GALERA_VERSION=26.4.14-ubu2004 --build-arg YQ_VERSION=4.30.8 -t keppel.eu-de-1.cloud.sap/ccloud/mariadb-galera:10.5.18-0.4.3 ./docker/mariadb-galera/
+  docker build --build-arg BASE_REGISTRY=keppel.eu-de-1.cloud.sap --build-arg BASE_ACCOUNT=ccloud --build-arg BASE_SOFT_NAME=ubuntu --build-arg BASE_SOFT_VERSION=20.04 --build-arg BASE_IMG_VERSION=0.1.4 --build-arg SOFT_NAME=mariadb --build-arg SOFT_VERSION=10.5.20+maria~ubu2004 --build-arg IMG_VERSION=0.4.4 --build-arg GALERA_VERSION=26.4.14-ubu2004 --build-arg YQ_VERSION=4.33.3 -t keppel.eu-de-1.cloud.sap/ccloud/mariadb-galera:10.5.20-0.4.4 ./docker/mariadb-galera/
   ```
 * debug version
   ```bash
-  docker build --build-arg BASE_REGISTRY=keppel.eu-de-1.cloud.sap --build-arg BASE_ACCOUNT=ccloud --build-arg BASE_SOFT_NAME=ubuntu --build-arg BASE_SOFT_VERSION=20.04 --build-arg BASE_IMG_VERSION=0.1.3 --build-arg SOFT_NAME=mariadb --build-arg SOFT_VERSION=10.5.18+maria~ubu2004 --build-arg IMG_VERSION=0.4.3 --build-arg GALERA_VERSION=26.4.14-ubu2004 --build-arg YQ_VERSION=4.30.8 --build-arg GALERA_DEBUG=true -t keppel.eu-de-1.cloud.sap/ccloud/mariadb-galera-debug:10.5.18-0.4.3 ./docker/mariadb-galera/
+  docker build --build-arg BASE_REGISTRY=keppel.eu-de-1.cloud.sap --build-arg BASE_ACCOUNT=ccloud --build-arg BASE_SOFT_NAME=ubuntu --build-arg BASE_SOFT_VERSION=20.04 --build-arg BASE_IMG_VERSION=0.1.4 --build-arg SOFT_NAME=mariadb --build-arg SOFT_VERSION=10.5.20+maria~ubu2004 --build-arg IMG_VERSION=0.4.4 --build-arg GALERA_VERSION=26.4.14-ubu2004 --build-arg YQ_VERSION=4.33.3 --build-arg GALERA_DEBUG=true -t keppel.eu-de-1.cloud.sap/ccloud/mariadb-galera-debug:10.5.20-0.4.4 ./docker/mariadb-galera/
   ```
 
 ### MySQL Exporter image
@@ -92,7 +92,7 @@ docker build --build-arg BASE_REGISTRY=keppel.eu-de-1.cloud.sap --build-arg BASE
 | USERID | id of the user that should run the binary |
 
 ```bash
-docker build --build-arg BASE_REGISTRY=keppel.eu-de-1.cloud.sap --build-arg BASE_ACCOUNT=ccloud --build-arg BASE_SOFT_NAME=ubuntu --build-arg BASE_SOFT_VERSION=22.04 --build-arg BASE_IMG_VERSION=0.1.1 --build-arg SOFT_NAME=proxysql --build-arg SOFT_VERSION=2.4.6 --build-arg IMG_VERSION=0.1.5 --build-arg USERID=3100 -t keppel.eu-de-1.cloud.sap/ccloud/proxysql:2.4.6-0.1.5 ./docker/proxysql/
+docker build --build-arg BASE_REGISTRY=keppel.eu-de-1.cloud.sap --build-arg BASE_ACCOUNT=ccloud --build-arg BASE_SOFT_NAME=ubuntu --build-arg BASE_SOFT_VERSION=22.04 --build-arg BASE_IMG_VERSION=0.1.4 --build-arg SOFT_NAME=proxysql --build-arg SOFT_VERSION=2.5.2 --build-arg IMG_VERSION=0.1.6 --build-arg USERID=3100 -t keppel.eu-de-1.cloud.sap/ccloud/proxysql:2.5.2-0.1.6 ./docker/proxysql/
 ```
 
 ### Restic image
@@ -117,8 +117,8 @@ docker build --build-arg BASE_REGISTRY=keppel.eu-de-1.cloud.sap --build-arg BASE
 ### Ubuntu image
 
 ```bash
-docker build --build-arg BASE_SOFT_NAME=ubuntu --build-arg BASE_SOFT_VERSION=20.04 --build-arg IMG_VERSION=0.1.3 -t keppel.eu-de-1.cloud.sap/ccloud/ubuntu:22.04-0.1.3 ./docker/ubuntu/
-docker build --build-arg BASE_SOFT_NAME=ubuntu --build-arg BASE_SOFT_VERSION=22.04 --build-arg IMG_VERSION=0.1.3 -t keppel.eu-de-1.cloud.sap/ccloud/ubuntu:22.04-0.1.3 ./docker/ubuntu/
+docker build --build-arg BASE_SOFT_NAME=ubuntu --build-arg BASE_SOFT_VERSION=20.04 --build-arg IMG_VERSION=0.1.4 -t keppel.eu-de-1.cloud.sap/ccloud/ubuntu:20.04-0.1.4 ./docker/ubuntu/
+docker build --build-arg BASE_SOFT_NAME=ubuntu --build-arg BASE_SOFT_VERSION=22.04 --build-arg IMG_VERSION=0.1.4 -t keppel.eu-de-1.cloud.sap/ccloud/ubuntu:22.04-0.1.4 ./docker/ubuntu/
 ```
 
 ## Helm chart
@@ -252,8 +252,8 @@ docker build --build-arg BASE_SOFT_NAME=ubuntu --build-arg BASE_SOFT_VERSION=22.
 | hpa.proxy.maxReplicas | int | 5 | maximum number of replicas allowed for the ProxySQL cluster pods |
 | hpa.proxy.minReplicas | int | 3 | minimum number of replicas allowed for the ProxySQL cluster pods |
 | image.application.applicationname | string | `"mariadb-galera"` | folder/container used in the image registry and also part of the image name |
-| image.application.applicationversion | string | `"10.5.18"` | application part of the image version that should be pulled |
-| image.application.imageversion | string | `"0.4.3"` | image part of the image version that should be pulled |
+| image.application.applicationversion | string | `"10.5.20"` | application part of the image version that should be pulled |
+| image.application.imageversion | string | `"0.4.4"` | image part of the image version that should be pulled |
 | image.application.project | string | `"ccloud"` | project/tenant used in the image registry |
 | image.application.pullPolicy | string | IfNotPresent | `Always` to enforce that the image will be pulled even if it is already available on the worker node |
 | image.application.pullSecret | string | `nil` | name of the already defined Kubernetes secret that should be used for registry authentication |
@@ -274,14 +274,14 @@ docker build --build-arg BASE_SOFT_NAME=ubuntu --build-arg BASE_SOFT_VERSION=22.
 | image.monitoring.registry | string | `"keppel.eu-de-1.cloud.sap"` | hostname of the image registry used to pull the monitoring image that currently contains the MySQL exporter for Prometheus |
 | image.os.applicationname | string | `"ubuntu"` | folder/container used in the image registry and also part of the image name |
 | image.os.applicationversion | float | `22.04` | application part of the image version that should be pulled |
-| image.os.imageversion | string | `"0.1.3"` | image part of the image version that should be pulled |
+| image.os.imageversion | string | `"0.1.4"` | image part of the image version that should be pulled |
 | image.os.project | string | `"ccloud"` | project/tenant used in the image registry |
 | image.os.pullPolicy | string | IfNotPresent | `Always` to enforce that the image will be pulled even if it is already available on the worker node |
 | image.os.pullSecret | string | `nil` | name of the already defined Kubernetes secret that should be used for registry authentication |
 | image.os.registry | string | `"keppel.eu-de-1.cloud.sap"` | hostname of the image registry used to pull the basic OS image that will be used for certain init steps |
 | image.proxy.applicationname | string | `"proxysql"` | folder/container used in the image registry and also part of the image name |
-| image.proxy.applicationversion | string | `"2.4.6"` | application part of the image version that should be pulled |
-| image.proxy.imageversion | string | `"0.1.5"` | image part of the image version that should be pulled |
+| image.proxy.applicationversion | string | `"2.5.2"` | application part of the image version that should be pulled |
+| image.proxy.imageversion | string | `"0.1.6"` | image part of the image version that should be pulled |
 | image.proxy.project | string | `"ccloud"` | project/tenant used in the image registry |
 | image.proxy.pullPolicy | string | IfNotPresent | `Always` to enforce that the image will be pulled even if it is already available on the worker node |
 | image.proxy.pullSecret | string | `nil` | name of the already defined Kubernetes secret that should be used for registry authentication |
@@ -401,6 +401,7 @@ docker build --build-arg BASE_SOFT_NAME=ubuntu --build-arg BASE_SOFT_VERSION=22.
 | mariadb.galera.slaveThreads | int | 4 | [wsrep-slave-threads](https://galeracluster.com/library/documentation/mysql-wsrep-options.html#wsrep-slave-threads) |
 | mariadb.galera.sst_method | string | `"rsync"` | `rsync` or `mariabackup` (also requires GALERA_SST_USER and GALERA_SST_PASSWORD) |
 | mariadb.galera.waitForPrimaryTimeoutInSeconds | int | 30 | [pc.wait_prim_timeout](https://galeracluster.com/library/documentation/galera-parameters.html#pc.wait_prim_timeout) |
+| mariadb.galera.weightedQuorum | string | false | configure [weighted Quorum](https://galeracluster.com/library/documentation/weighted-quorum.html#wq-three-nodes) values for the DB nodes eg: db-0: 4, db-1: 2, db-2: 1 |
 | mariadb.innodbFlushLogAtTrxCommit | int | 0 | `1` to enable [innodb_flush_log_at_trx_commit for ACID compliance](https://mariadb.com/kb/en/innodb-system-variables/#innodb_flush_log_at_trx_commit) |
 | mariadb.performance_schema | bool | false | to enable the [Performance Schema](https://mariadb.com/kb/en/performance-schema-overview/) |
 | mariadb.wipeDataAndLog | bool | false | will trigger a pod restart and remove all content from the data and log dir. This option will cause data loss and should only be used before triggering a [full database restore](#full-database-restore) |
@@ -442,7 +443,6 @@ docker build --build-arg BASE_SOFT_NAME=ubuntu --build-arg BASE_SOFT_VERSION=22.
 | readinessProbe.timeoutSeconds.kopiaserver | int | 10 | How long should Kubernetes [wait](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) for the current check of the readiness probe for the Kopia UI pod |
 | readinessProbe.timeoutSeconds.monitoring | int | 10 | How long should Kubernetes [wait](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) for the current check of the readiness probe for the MariaDB monitoring sidecar container |
 | readinessProbe.timeoutSeconds.proxy | int | 10 | How long should Kubernetes [wait](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) for the current check of the readiness probe for the ProxySQL cluster pods |
-| regional | bool | `false` | If enabled `topology.kubernetes.io/zone` infos will be added to the [podAntiAffinity rules](https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/) for the MariaDB Galera and ProxySQL cluster. This is useful if the Kubernetes provider supports regional node pools to ensure a good pod distribution within that region |
 | replicas.application | int | 3 | amount of pods that will [scheduled](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#creating-a-deployment) for the MariaDB Galera cluster. An uneven number will be enforced to avoid simple split brain situations. For a good balance between the write and read performance not more than 3 pods a suggested |
 | replicas.proxy | int | 3 | amount of pods that will [scheduled](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#creating-a-deployment) for the ProxySQL cluster. An uneven number will be enforced to avoid simple split brain situations |
 | resourceLimits.cpu.application | int | 0.5 | CPU [resource reservation(request)](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#requests-and-limits) for the MariaDB containers |

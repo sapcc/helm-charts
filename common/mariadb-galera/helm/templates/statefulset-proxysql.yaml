@@ -45,27 +45,33 @@ spec:
     spec:
       affinity:
         podAntiAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-          {{- if $.Values.regional }}
-          - labelSelector:
-              matchExpressions:
-              - key: "app"
-                operator: In
-                values:
-                - {{ $.Release.Name }}
-            namespaces:
-              - {{ $.Release.Namespace }}
-            topologyKey: "topology.kubernetes.io/zone"
-          {{- end }}
-          - labelSelector:
-              matchExpressions:
-                - key: "app"
-                  operator: In
-                  values:
-                  - {{ $.Release.Name }}
-            namespaces:
-              - {{ $.Release.Namespace }}
-            topologyKey: "kubernetes.io/hostname"
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 1
+              podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    - key: "app"
+                      operator: In
+                      values:
+                        - {{ $.Release.Name | quote }}
+                    - key: "component"
+                      operator: In
+                      values:
+                        - "proxy"
+                topologyKey: "topology.kubernetes.io/zone"
+            - weight: 2
+              podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    - key: "app"
+                      operator: In
+                      values:
+                        - {{ $.Release.Name | quote }}
+                    - key: "component"
+                      operator: In
+                      values:
+                        - "proxy"
+                topologyKey: "kubernetes.io/hostname"
       serviceAccount: {{ include "commonPrefix" $ }}{{ $.Release.Name }}
       securityContext:
         runAsUser:  {{ $.Values.userId.proxy | default 3100 | int }}
