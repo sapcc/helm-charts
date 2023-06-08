@@ -26,12 +26,12 @@ data.path = "./cerebro.db"
 hosts = [
   {
     host = "http://elasticsearch.hermes:9200"
-    name = "hermes single cluster"
+    name = "hermes single node"
   },
 {{- if .Values.elasticsearch_hermes.enabled }}
   {
     host = "http://elasticsearch-hermes-http.hermes:9200"
-    name = "hermes cluster"
+    name = "elasticsearch-hermes cluster"
   }
 {{- end }}
 ]
