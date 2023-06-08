@@ -252,9 +252,21 @@ spec:
         ########################################################################
         # allowlist for ELK/OpenSearch/Elastiflow
 
-        {{- if eq .Values.cluster_type "scaleout" "test" }}
+        {{- if eq .Values.cluster_type "baremetal" "scaleout" "test" }}
         # TODO: remove allowlist for ElasticSearch once migrated to OpenSearch
         default isElasticPod = false
+        default isElasticOrOpenSearchPod = false
+
+        {{- if eq .Values.cluster_type "baremetal" "test" }}
+        isElasticPod = true {
+          iro.kind == "StatefulSet"
+          iro.metadata.namespace == "hermes"
+          iro.metadata.name in {"elasticsearch-hermes"}
+          helmReleaseName == "hermes"
+        }
+        {{- end }}
+
+        {{- if eq .Values.cluster_type "scaleout" "test" }}
         isElasticPod = true {
           iro.kind == "Deployment"
           iro.metadata.namespace == "elk"
@@ -268,7 +280,6 @@ spec:
           helmReleaseName == "elk"
         }
 
-        default isElasticOrOpenSearchPod = false
         isElasticOrOpenSearchPod = true {
           isElasticPod
         }
@@ -284,11 +295,12 @@ spec:
           iro.metadata.name in {"opensearch-logs-client", "opensearch-logs-data", "opensearch-logs-master"}
           helmReleaseName == "opensearch-logs"
         }
+        {{- end }}
 
         # TODO: Why does Elastic need CAP_IPC_LOCK and CAP_SYS_RESOURCE?
         isContainerAllowedToUseCapability(container, capability) = true {
           isElasticPod
-          container.name in {"es", "es-client", "es-data", "es-master"}
+          container.name in {"es", "es-client", "es-data", "es-master", "elasticsearch-hermes"}
           capability in {"IPC_LOCK", "SYS_RESOURCE"}
         }
         # Elastic and OpenSearch need to use sysctl to increase `vm.max_map_count`:
