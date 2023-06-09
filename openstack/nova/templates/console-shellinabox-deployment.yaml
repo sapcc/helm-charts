@@ -2,7 +2,7 @@ kind: Deployment
 apiVersion: apps/v1
 
 metadata:
-  name: nova-console-shellinabox
+  name: nova-console-cell1-shellinabox
   labels:
     system: openstack
     type: backend
@@ -19,12 +19,12 @@ spec:
     {{ end }}
   selector:
     matchLabels:
-      name: nova-console-shellinabox
+      name: nova-console-cell1-shellinabox
   template:
     metadata:
       labels:
-        name: nova-console-shellinabox
-{{ tuple . "nova" "console-shellinabox" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
+        name: nova-console-cell1-shellinabox
+{{ tuple . "nova" "console-cell1-shellinabox" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
       annotations:
         {{- if .Values.proxysql.mode }}
         prometheus.io/scrape: "true"
@@ -36,10 +36,10 @@ spec:
         runAsUser: 33
         runAsGroup: 33
         fsGroup: 33
-{{ tuple . "nova" "console-shellinabox" | include "kubernetes_pod_anti_affinity" | indent 6 }}
+{{ tuple . "nova" "console-cell1-shellinabox" | include "kubernetes_pod_anti_affinity" | indent 6 }}
 {{ include "utils.proxysql.pod_settings" . | indent 6 }}
       containers:
-      - name: nova-console-shellinabox
+      - name: nova-console-cell1-shellinabox
         image: {{ required ".Values.global.dockerHubMirror is missing" .Values.global.dockerHubMirror }}/bitnami/openresty:{{ .Values.imageVersionBitnamiOpenResty }}
         imagePullPolicy: IfNotPresent
         command:
@@ -74,18 +74,18 @@ spec:
         emptyDir: {}
       - name: config
         configMap:
-          name: nova-console-shellinabox
+          name: nova-console-cell1-shellinabox
       - name: app
         projected:
           defaultMode: 420
           sources:
           - configMap:
-              name: nova-console-shellinabox
+              name: nova-console-cell1-shellinabox
               items:
               - key: revproxy.lua
                 path: revproxy.lua
           - secret:
-              name: nova-console-shellinabox
+              name: nova-console-cell1-shellinabox
               items:
               - key: config.lua
                 path: config.lua

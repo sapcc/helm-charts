@@ -1,6 +1,9 @@
 {{- define "nova.console_deployment" }}
-{{- $name := index . 1 }}
-{{- $config := index . 2 }}
+{{- $cell_name := index . 1 }}
+{{- $type := index . 2 }}
+{{- $is_cell2 := index . 3 }}
+{{- $config := index . 4 }}
+{{- $name := print $cell_name "-" $type }}
 {{- with index . 0 }}
 kind: Deployment
 apiVersion: apps/v1
@@ -50,22 +53,32 @@ spec:
                 path: nova.conf
               - key:  logging.ini
                 path: logging.ini
+          {{- if $is_cell2 }}
+              - key: nova-cell2.conf
+                path: nova.conf.d/cell2.conf
+          {{- else }}
           - secret:
               name: nova-etc
               items:
               - key: db.conf
                 path: nova.conf.d/db.conf
+          {{- end }}
+          - configMap:
+              name: nova-console
+              items:
+              - key: console-{{ $cell_name }}-{{ $type }}.conf
+                path: nova.conf.d/console-{{ $cell_name }}-{{ $type }}.conf
       {{- include "utils.proxysql.volumes" . | indent 6 }}
       containers:
-      - name: nova-console-{{ $name }}
-        image: {{ tuple . (print (title $name) "proxy") | include "container_image_nova" }}
+      - name: nova-console-{{ $type }}
+        image: {{ tuple . (print (title $type) "proxy") | include "container_image_nova" }}
         imagePullPolicy: IfNotPresent
         command:
         - dumb-init
         - kubernetes-entrypoint
         env:
         - name: COMMAND
-          value: nova-{{ $name }}proxy {{ $config.args }}
+          value: nova-{{ $type }}proxy {{ $config.args }}
         - name: NAMESPACE
           value: {{ .Release.Namespace }}
         - name: LANG
@@ -85,8 +98,8 @@ spec:
           value: {{.Values.global.keystone_api_endpoint_protocol_internal | default "http"}}://{{include "keystone_api_endpoint_host_internal" .}}:{{ .Values.global.keystone_api_port_internal | default 5000}}/v3
 {{- end }}
         ports:
-        - name: {{ $name }}
-          containerPort: {{ index .Values.consoles $name "portInternal" }}
+        - name: {{ $type }}
+          containerPort: {{ $config.portInternal }}
         volumeMounts:
         - name: nova-etc
           mountPath: /etc/nova

@@ -9,7 +9,7 @@ local memcached = require "resty.memcached"
 local mysql = require "resty.mysql"
 
 local guid_pattern = "%x%x%x%x%x%x%x%x%-%x%x%x%x%-%x%x%x%x%-%x%x%x%x%-%x%x%x%x%x%x%x%x%x%x%x%x"
-local url_base = "/shellinabox/" -- TODO: Get the "shellinabox" from the proxy dynamically somehow
+local url_base = "/cell1/shellinabox/" -- TODO: Get the "shellinabox" from the proxy dynamically somehow
 
 -- Little wrapper function, which avoids a
 -- potentially expensive function call "f"

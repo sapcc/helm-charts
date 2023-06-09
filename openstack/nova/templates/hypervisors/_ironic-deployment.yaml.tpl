@@ -108,6 +108,13 @@ spec:
               items:
               - key: nova-compute.conf
                 path: nova-compute.conf
+          - configMap:
+              name: nova-console
+              items:
+              {{- range $type := list "serial" "shellinabox" }}
+              - key: console-cell1-{{ $type }}.conf
+                path: nova.conf.d/console-cell1-{{ $type }}.conf
+              {{- end }}
       - name: nova-patches
         projected:
           sources:

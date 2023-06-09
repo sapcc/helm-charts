@@ -57,44 +57,7 @@ until_refresh = {{ .Values.usage_until_refresh | default 0 }}
 
 {{- include "osprofiler" . }}
 
-[spice]
-enabled = {{ .Values.consoles.spice.enabled }}
-{{- if .Values.consoles.spice.enabled }}
-html5proxy_base_url = https://{{include "nova_console_endpoint_host_public" .}}:{{.Values.global.novaConsolePortPublic}}/spicehtml5/spice_auto.html
-{{- end }}
-
-[vnc]
-enabled = {{ .Values.consoles.novnc.enabled }}
-{{- if .Values.consoles.novnc.enabled }}
-server_listen = $my_ip
-server_proxyclient_address = $my_ip
-novncproxy_base_url = https://{{include "nova_console_endpoint_host_public" .}}:{{ .Values.global.novaConsolePortPublic }}/novnc/vnc_auto.html?path=/novnc/websockify
-novncproxy_host = 0.0.0.0
-novncproxy_port = {{ .Values.consoles.novnc.portInternal }}
-{{- end }}
-
-[serial_console]
-enabled = {{ .Values.consoles.serial.enabled }}
-{{- if .Values.consoles.serial.enabled }}
-base_url = https://{{include "nova_console_endpoint_host_public" .}}:{{ .Values.global.novaConsolePortPublic }}/serial
-{{- end }}
-
-[shellinabox]
-enabled = {{ .Values.consoles.shellinabox.enabled }}
-{{- if .Values.consoles.shellinabox.enabled }}
-host = 0.0.0.0
-port = {{ .Values.consoles.shellinabox.portInternal }}
-base_url = https://{{include "nova_console_endpoint_host_public" .}}:{{ .Values.global.novaConsolePortPublic }}/shellinabox
-proxyclient_url = https://{{include "ironic_console_endpoint_host_public" .}}
-{{- end }}
-
-[mks]
-enabled = {{ .Values.consoles.mks.enabled }}
-{{- if .Values.consoles.mks.enabled }}
-mksproxy_base_url = https://{{include "nova_console_endpoint_host_public" .}}:{{.Values.global.novaConsolePortPublic}}/mks/vnc_auto.html?path=mks/websockify
-{{- end }}
-
-{{- include "ini_sections.oslo_messaging_rabbit" .}}
+{{ include "ini_sections.oslo_messaging_rabbit" .}}
 
 [oslo_concurrency]
 lock_path = /var/lib/nova/tmp
