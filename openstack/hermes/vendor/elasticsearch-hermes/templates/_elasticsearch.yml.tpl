@@ -15,6 +15,7 @@ action.search.shard_count.limit: 10000
 path:
   data: /data/data
   logs: /data/log
+  repo: /data/snapshots
 
 network.host: 0.0.0.0
 transport.host: 0.0.0.0
