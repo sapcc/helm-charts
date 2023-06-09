@@ -64,6 +64,7 @@ route:
 
   {{- if .Values.cc_email_receiver.enabled }}
   - receiver: cc_email_receiver
+    group_by: ['...']
     continue: false
     matchers: [alertname="KubernikusKlusterLowOnObjectStoreQuota",primary_email_recipients!=""]
   {{- end }}
@@ -1522,7 +1523,7 @@ receivers:
           To: {{"'{{.CommonLabels.primary_email_recipients}}'"}}
           CC: {{"'{{.CommonLabels.cc_email_recipients}}'"}}
         text: {{"'{{ .CommonAnnotations.mail_body }}'"}}
-        html: {{"'{{ .CommonAnnotations.mail_body }}'"}}
+        html: {{"'{{ template \"cc_email_receiver.KubernikusKlusterLowOnObjectStoreQuota\" . }}'"}}
         smarthost: {{ required ".Values.cc_email_receiver.smtp_host undefined" .Values.cc_email_receiver.smtp_host | quote }}
         auth_username: {{ required ".Values.cc_email_receiver.auth_username undefined" .Values.cc_email_receiver.auth_username | quote }}
         auth_password: {{ required ".Values.cc_email_receiver.auth_password undefined" .Values.cc_email_receiver.auth_password | quote }}
