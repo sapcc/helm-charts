@@ -84,40 +84,10 @@ template: |
           {{- end }}
           volumeMounts:
           - mountPath: /etc/nova
-            name: etcnova
-          - mountPath: /etc/nova/nova.conf
             name: nova-etc
-            subPath: nova.conf
-            readOnly: true
-          {{- /* Note I533984: Replace with plain policy.yaml after Xena upgrade */}}
-          - mountPath: /etc/nova/{{if (.Values.imageVersion | hasPrefix "rocky") }}policy.json{{else}}policy.yaml{{end}}
-            name: nova-etc
-            subPath: {{if (.Values.imageVersion | hasPrefix "rocky") }}policy.json{{else}}policy.yaml{{end}}
-            readOnly: true
-          - mountPath: /etc/nova/logging.ini
-            name: nova-etc
-            subPath: logging.ini
-            readOnly: true
-          - mountPath: /etc/nova/nova-compute.conf
-            name: hypervisor-config
-            subPath: nova-compute.conf
-            readOnly: true
-          - mountPath: /etc/nova/hostgroup-reservations.json
-            name: hypervisor-config
-            subPath: hostgroup-reservations.json
-            readOnly: true
           - mountPath: /etc/sudoers
-            name: nova-etc
+            name: sudoers
             subPath: sudoers
-            readOnly: true
-          - mountPath: /etc/nova/rootwrap.conf
-            name: nova-etc
-            subPath: rootwrap.conf
-            readOnly: true
-          - mountPath: /etc/nova/rootwrap.d/compute.filters
-            name: nova-etc
-            subPath: compute.filters
-            readOnly: true
         - name: statsd
           image: {{ required ".Values.global.dockerHubMirror is missing" .Values.global.dockerHubMirror}}/prom/statsd-exporter:v0.8.1
           imagePullPolicy: IfNotPresent
@@ -129,17 +99,48 @@ template: |
           - name: metrics
             containerPort: 9102
           volumeMounts:
-            - name: nova-etc
-              mountPath: /etc/statsd/statsd-exporter.yaml
-              subPath: statsd-exporter.yaml
-              readOnly: true
+          - name: statsd-etc
+            mountPath: /etc/statsd/statsd-exporter.yaml
+            subPath: statsd-exporter.yaml
+            readOnly: true
         volumes:
-        - name: etcnova
-          emptyDir: {}
         - name: nova-etc
-          configMap:
-            name: nova-etc
-        - name: hypervisor-config
-          configMap:
-            name: nova-compute-vmware-{= name =}
+          projected:
+            sources:
+            - configMap:
+                name: nova-etc
+                items:
+                - key: nova.conf
+                  path: nova.conf
+                - key: policy.yaml
+                  path: policy.yaml
+                - key: logging.ini
+                  path: logging.ini
+                - key: rootwrap.conf
+                  path: rootwrap.conf
+                - key: compute.filters
+                  path: rootwrap.d/compute.filters
+            - configMap:
+                name: nova-compute-vmware-{= name =}
+                items:
+                - key: nova-compute.conf
+                  path: nova-compute.conf
+                - key: hostgroup-reservations.json
+                  path: hostgroup-reservations.json
+        - name: sudoers
+          projected:
+            sources:
+            - configMap:
+                name: nova-etc
+                items:
+                - key: sudoers
+                  path: sudoers
+        - name: statsd-etc
+          projected:
+            sources:
+            - configMap:
+                name: nova-etc
+                items:
+                - key:  statsd-exporter.yaml
+                  path: statsd-exporter.yaml
 {{- end }}
