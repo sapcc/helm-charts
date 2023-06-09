@@ -127,6 +127,22 @@ template: |
                   path: nova-compute.conf
                 - key: hostgroup-reservations.json
                   path: hostgroup-reservations.json
+            - configMap:
+                name: nova-console
+                items:
+                {%- if cells is not defined %}
+                  {%- set cell_name = 'cell1' %}
+                {%- elif 'cell-' + availability_zone in cells %}
+                  {%- set cell_name = 'cell-' + availability_zone %}
+                {%- elif 'cell-' + vcenter_name in cells %}
+                  {%- set cell_name = 'cell-' + vcenter_name %}
+                {%- else %}
+                  {%- set cell_name = 'cell1' %}
+                {%- endif %}
+                {{- range $type := list "novnc" "spice" "mks" }}
+                - key: console-{= cell_name =}-{{ $type }}.conf
+                  path: nova.conf.d/console-{= cell_name =}-{{ $type }}.conf
+                {{- end }}
         - name: sudoers
           projected:
             sources:
