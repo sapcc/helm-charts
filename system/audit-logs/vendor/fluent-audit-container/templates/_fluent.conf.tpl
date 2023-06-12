@@ -172,6 +172,9 @@
     time_format {{ .timeFormat | default "%Y-%m-%dT%T.%L%Z" | squote }}
     keep_time_key true
   </parse>
+  {{- .ignoreParseError }}
+    emit_invalid_record_to_error false
+  {{- end }}
 </filter>
 {{- end }}
 <filter {{ .tag }}* >
@@ -213,9 +216,9 @@
 {{- end }}
 
 <filter falco.**>
-  @type record_transformer
+  @type record_modifier
   <record>
-    source_falco ${source}
+    event_source ${record['source']}
   </record>
   remove_keys source
 </filter>
