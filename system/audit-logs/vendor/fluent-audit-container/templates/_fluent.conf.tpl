@@ -172,7 +172,7 @@
     time_format {{ .timeFormat | default "%Y-%m-%dT%T.%L%Z" | squote }}
     keep_time_key true
   </parse>
-  {{- .ignoreParseError }}
+  {{- if .ignoreParseError }}
     emit_invalid_record_to_error false
   {{- end }}
 </filter>
