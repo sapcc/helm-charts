@@ -162,6 +162,23 @@
     </pattern>
   </parse>
 </source>
+{{- if .preParseFilter -}}
+<filter {{ .tag }}*>
+  @type grep
+  @id {{ .id }}_pre_parser_filter
+  {{- if eq .preParseFilter.keep true }}
+  <regexp>
+    key {{ .preParseFilter.key }}
+    pattern {{ .preParseFilter.pattern }}
+  </regexp>
+  {{- else }}
+  <exclude>
+    key {{ .preParseFilter.key }}
+    pattern {{ .preParseFilter.pattern }}
+  </exclude>
+  {{- end }}
+</filter>
+{{- end}}
 {{- if .parse }}
 <filter {{ .tag }}*>
   @type parser
@@ -172,9 +189,6 @@
     time_format {{ .timeFormat | default "%Y-%m-%dT%T.%L%Z" | squote }}
     keep_time_key true
   </parse>
-  {{- if .ignoreParseError }}
-    emit_invalid_record_to_error false
-  {{- end }}
 </filter>
 {{- end }}
 <filter {{ .tag }}* >
