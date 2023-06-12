@@ -162,7 +162,7 @@
     </pattern>
   </parse>
 </source>
-{{- if .preParseFilter -}}
+{{- if .preParseFilter }}
 <filter {{ .tag }}*>
   @type grep
   @id {{ .id }}_pre_parser_filter
