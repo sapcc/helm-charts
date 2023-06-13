@@ -13,11 +13,9 @@ spec:
       {{- include "archer.selectorLabels" . | nindent 6 }}
   template:
     metadata:
-      {{- with .Values.podAnnotations }}
       annotations:
         checksum/etc: {{ include (print $.Template.BasePath  "/configmap.yaml") . | sha256sum }}
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
+        {{- toYaml .Values.podAnnotations | nindent 8 }}
       labels:
         {{- include "archer.selectorLabels" . | nindent 8 }}
     spec:
@@ -69,6 +67,9 @@ spec:
             - name: http
               containerPort: {{ .Values.service.port }}
               protocol: TCP
+            - name: metrics
+              containerPort: {{ required ".Values.metrics.port missing" .Values.metrics.port }}
+              protocol: TCP
           livenessProbe:
             httpGet:
               path: /healthcheck
@@ -78,7 +79,7 @@ spec:
               path: /healthcheck
               port: http
           resources:
-            {{- toYaml .Values.resources | nindent 12 }}
+            {{- toYaml .Values.resources.api | nindent 12 }}
           volumeMounts:
             - name: etc-archer
               mountPath: /etc/archer

@@ -1,6 +1,8 @@
 [DEFAULT]
 debug = {{ .Values.debug }}
 prometheus = true
+prometheus_listen = 0.0.0.0:{{ required ".Values.metrics.port missing" .Values.metrics.port }}
+sentry = true
 
 [api_settings]
 policy_file = /etc/archer/policy.json
