@@ -194,7 +194,11 @@ prometheus-{{- $name -}}.{{- required "$root.Values.global.region missing" $root
 {{- define "swift.userName" -}}
 {{- $name := index . 0 -}}
 {{- $root := index . 1 -}}
+{{- if $root.Values.thanosSeeds.seed.clusterType -}}
+{{- (include "prometheus.fullName" .) -}}-{{- $root.Values.thanosSeeds.seed.clusterType -}}-thanos
+{{- else -}}
 {{- (include "prometheus.fullName" .) -}}-thanos
+{{- end -}}
 {{- end -}}
 
 {{/* Special renaming for vmware-monitoring */}}
