@@ -42,6 +42,8 @@ network_vlan_ranges = {{ range $i, $aci_hostgroup := .Values.aci.aci_hostgroups.
 [ml2_type_vxlan]
 vni_ranges = 10000:20000
 
+[ml2_f5]
+supported_device_owner = network:f5listener,network:f5selfip,network:f5lbaasv2,network:f5snat,network:archer
 
 [securitygroup]
 firewall_driver = iptables_hybrid
