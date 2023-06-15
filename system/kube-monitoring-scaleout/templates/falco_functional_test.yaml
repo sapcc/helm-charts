@@ -1,0 +1,19 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: falco-functional-test
+spec:
+  schedule: "30 9 * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+            - name: fimintegrationmonitoringtest
+              image: keppel.eu-de-1.cloud.sap/ccloud/falco-functional-testing:latest
+              imagePullPolicy: IfNotPresent
+              command:
+                - /bin/sh
+                - -c
+                - /opt/functional_test.sh
+          restartPolicy: OnFailure
