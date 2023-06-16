@@ -85,6 +85,13 @@ spec:
       instances_hv_s8_c24_m6144: 0
       instances_hv_s8_c28_m12288: 0
 
+## we decided to count up the flavor ID continously for baremetal
+## new bm flavors start at 1000 historically and are public (zh*, zg*)
+## new hv_ flavors start at 2020 and are private
+## as soon as we start handing out hypervisor hosts from the new compute PODs (cPODs), we will have to create
+##  in parallel to the private hv_ flavors a bm_ public flavor which will have a 2 in front of the original flavor ID
+## vSMP flavors are also private like the original hv_ flavor but have a 1 in front of the original flavor ID.
+
   flavors:
   - name: "zg1bcm1.medium"
     id: "910"
@@ -366,6 +373,24 @@ spec:
       "resources:DISK_GB": "0"
       "resources:VCPU": "0"
 
+  # aPOD servers Dell PowerEdge R640 for vSMP. Only existing in qa-de-1.
+  # adding for documentation purposes
+  # - name: "hv_s2_c20_m384_vsmp"
+  #   id: "12021"
+  #   vcpus: 40
+  #   ram: 393216
+  #   disk: 240
+  #   is_public: false
+  #   extra_specs:
+  #     "catalog:description": Hypervisor Host 2 sockets, 20 cores, 384GB RAM
+  #     "capabilities:cpu_arch": "x86_64"
+  #     "quota:separate": "true"
+  #     "quota:instance_only": "true"
+  #     "resources:CUSTOM_HV_S2_C20_M384": "1"
+  #     "resources:MEMORY_MB": "0"
+  #     "resources:DISK_GB": "0"
+  #     "resources:VCPU": "0"
+
   # vPOD servers Lenovo Thinksystem SR950
   - name: "hv_s8_c24_m6144"
     id: "2022"
@@ -379,23 +404,6 @@ spec:
       "quota:separate": "true"
       "quota:instance_only": "true"
       "resources:CUSTOM_HV_S8_C24_M6144": "1"
-      "resources:MEMORY_MB": "0"
-      "resources:DISK_GB": "0"
-      "resources:VCPU": "0"
-
-  # vPOD servers Dell PowerEdge R840 with 6TB RAM
-  - name: "hv_s4_c24_m6144"
-    id: "2029"
-    vcpus: 96
-    ram: 6291456
-    disk: 240
-    is_public: false
-    extra_specs:
-      "catalog:description": Hypervisor Host 4 sockets, 24 cores, 6TB RAM
-      "capabilities:cpu_arch": "x86_64"
-      "quota:separate": "true"
-      "quota:instance_only": "true"
-      "resources:CUSTOM_HV_S4_C24_M6144": "1"
       "resources:MEMORY_MB": "0"
       "resources:DISK_GB": "0"
       "resources:VCPU": "0"
@@ -485,7 +493,7 @@ spec:
       "resources:DISK_GB": "0"
       "resources:VCPU": "0"
 
-  # vPOD servers Lenovo Thinksystem SR950 12TB
+  # vPOD servers Lenovo Thinksystem SR950 12TB<
   - name: "hv_s8_c28_m12288"
     id: "2028"
     vcpus: 224
@@ -501,6 +509,59 @@ spec:
       "resources:MEMORY_MB": "0"
       "resources:DISK_GB": "0"
       "resources:VCPU": "0"
+
+  # vPOD servers Dell PowerEdge R840 with 6TB RAM
+  - name: "hv_s4_c24_m6144"
+    id: "2029"
+    vcpus: 96
+    ram: 6291456
+    disk: 240
+    is_public: false
+    extra_specs:
+      "catalog:description": Hypervisor Host 4 sockets, 24 cores, 6TB RAM
+      "capabilities:cpu_arch": "x86_64"
+      "quota:separate": "true"
+      "quota:instance_only": "true"
+      "resources:CUSTOM_HV_S4_C24_M6144": "1"
+      "resources:MEMORY_MB": "0"
+      "resources:DISK_GB": "0"
+      "resources:VCPU": "0"
+
+  # Dell R760 only in qa-de-1 currently for testing and not for seeding in other regions
+  # just adding for documentation purposes
+  # - name: "hv_s2_c32_m2048"
+  #   id: "2030"
+  #   vcpus: 64
+  #   ram: 2097152
+  #   disk: 480
+  #   is_public: false
+  #   extra_specs:
+  #     "catalog:description": Hypervisor Host 2 sockets, 32 cores, 2TB RAM
+  #     "capabilities:cpu_arch": "x86_64"
+  #     "quota:separate": "true"
+  #     "quota:instance_only": "true"
+  #     "resources:CUSTOM_HV_HV_S2_C32_M2048": "1"
+  #     "resources:MEMORY_MB": "0"
+  #     "resources:DISK_GB": "0"
+  #     "resources:VCPU": "0"
+
+  # Dell R760 only in qa-de-1 currently for testing and not for seeding in other regions
+  # just adding for documentation purposes
+  # - name: "hv_s2_c32_m2048_vsmp"
+  #   id: 12030"
+  #   vcpus: 64
+  #   ram: 2097152
+  #   disk: 480
+  #   is_public: false
+  #   extra_specs:
+  #     "catalog:description": Hypervisor Host 2 sockets, 32 cores, 2TB RAM
+  #     "capabilities:cpu_arch": "x86_64"
+  #     "quota:separate": "true"
+  #     "quota:instance_only": "true"
+  #     "resources:CUSTOM_HV_HV_S2_C32_M2048_VSMP": "1"
+  #     "resources:MEMORY_MB": "0"
+  #     "resources:DISK_GB": "0"
+  #     "resources:VCPU": "0"
 
   domains:
   - name: Default
