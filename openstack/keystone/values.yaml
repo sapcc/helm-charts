@@ -349,6 +349,31 @@ mysql_metrics:
         WHERE domain_id != '<<keystone.domain.root>>'
       values:
         - "projects"
+    - name: openstack_projects_count_gauge
+      help: Keystone projects
+      query: |
+        SELECT
+          project.id as project_id,
+          project.name as project_name,
+          project.description,
+          project.domain_id,
+          domain.name as domain_name,
+          COUNT(*) AS count_gauge
+        FROM project
+        JOIN project AS domain ON project.domain_id=domain.id
+        WHERE project.is_domain=0
+        GROUP BY
+          project_id,
+          project_name,
+          project.description,
+          project.domain_id,
+          domain_name;
+      labels:
+        - "project_id"
+        - "project_name"
+        - "project_description"
+        - "domain_id"
+        - "domain_name"
     - name: openstack_assignments_total
       help: Total keystone role-assignment count
       query: |
