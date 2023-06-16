@@ -355,8 +355,8 @@ mysql_metrics:
         SELECT
           project.id as project_id,
           project.name as project_name,
-          project.description,
-          project.domain_id,
+          coalesce(nullif(project.description, ''), 'EMPTY') as project_description,
+          project.domain_id as domain_id,
           domain.name as domain_name,
           COUNT(*) AS count_gauge
         FROM project
@@ -365,8 +365,8 @@ mysql_metrics:
         GROUP BY
           project_id,
           project_name,
-          project.description,
-          project.domain_id,
+          project_description,
+          domain_id,
           domain_name;
       labels:
         - "project_id"
@@ -374,6 +374,8 @@ mysql_metrics:
         - "project_description"
         - "domain_id"
         - "domain_name"
+      values:
+        - "count_gauge"
     - name: openstack_assignments_total
       help: Total keystone role-assignment count
       query: |
