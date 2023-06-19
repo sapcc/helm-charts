@@ -13,8 +13,8 @@ function start_application {
   # Set cluster region
   export CLUSTER_REGION={{.Values.global.region}}
   # Set Grafana admin/local username & password
-  export GF_SECURITY_ADMIN_USER={{.Values.plutono.admin.user}}
-  export GF_SECURITY_ADMIN_PASSWORD={{.Values.plutono.admin.password}}
+  export PL_SECURITY_ADMIN_USER={{.Values.plutono.admin.user}}
+  export PL_SECURITY_ADMIN_PASSWORD={{.Values.plutono.admin.password}}
   export GRAFANA_LOCAL_USER={{.Values.plutono.local.user}}
   export GRAFANA_LOCAL_PASSWORD={{.Values.plutono.local.password}}
   # install some plugins
