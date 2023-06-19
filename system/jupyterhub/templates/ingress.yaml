@@ -14,17 +14,9 @@ metadata:
 spec:
   tls:
     - secretName: jupyterhub
-      {{- if eq .Values.global.region "qa-de-1" }}
       hosts: [ jupyterhub.{{ .Values.global.clusterType }}.{{ .Values.global.region }}.{{ .Values.global.tld }} ]
-      {{- else }}
-      hosts: [ jupyterhub.global.{{.Values.global.tld}} ]
-      {{- end }}
   rules:
-  {{- if eq .Values.global.region "qa-de-1" }}
     - host: jupyterhub.{{ .Values.global.clusterType }}.{{.Values.global.region}}.{{.Values.global.tld}}
-  {{- else }}
-    - host: jupyterhub.global.{{.Values.global.tld}}
-  {{- end }}
       http:
         paths:
         - path: {{ .Values.jupyterhub.hub.baseUrl | trimSuffix "/" }}/{{ .Values.jupyterhub.ingress.pathSuffix }}
