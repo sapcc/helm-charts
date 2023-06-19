@@ -11,17 +11,17 @@
 
 #################################### Paths ####################################
 [paths]
-# Path to where grafana can store temp files, sessions, and the sqlite3 db (if that is used)
+# Path to where plutono can store temp files, sessions, and the sqlite3 db (if that is used)
 #
-data = /var/lib/grafana
+data = /var/lib/plutono
 #
-# Directory where grafana can store logs
+# Directory where plutono can store logs
 #
-;logs = /var/log/grafana
+;logs = /var/log/plutono
 #
-# Directory where grafana will automatically scan and look for plugins
+# Directory where plutono will automatically scan and look for plugins
 #
-plugins = /var/lib/grafana/plugins
+plugins = /var/lib/plutono/plugins
 
 #
 #################################### Server ####################################
@@ -35,7 +35,7 @@ plugins = /var/lib/grafana/plugins
 # The http port  to use
 ;http_port = 3000
 
-# The public facing domain name used to access grafana from a browser
+# The public facing domain name used to access plutono from a browser
 ;domain = localhost
 
 # Redirect to correct domain if host header does not match domain
@@ -64,14 +64,14 @@ plugins = /var/lib/grafana/plugins
 
 #################################### Database ####################################
 [database]
-type={{.Values.grafana.db.type}}
+type={{.Values.plutono.db.type}}
 host={{.Release.Name}}-pgsql.{{.Release.Namespace}}
 user={{.Values.postgresql.postgresUser}}
 password={{.Values.postgresql.postgresPassword}}
 
 ssl_mode=disable
 #type=sqlite3
-#path=/etc/grafana/grafana.db
+#path=/etc/plutono/plutono.db
 
 #################################### Session ####################################
 [session]
@@ -81,15 +81,15 @@ provider = postgres
 
 # Provider config options
 # memory: not have any config yet
-# file: session dir path, is relative to grafana data_path
-# redis: config like redis server e.g. `addr=127.0.0.1:6379,pool_size=100,db=grafana`
+# file: session dir path, is relative to plutono data_path
+# redis: config like redis server e.g. `addr=127.0.0.1:6379,pool_size=100,db=plutono`
 # mysql: go-sql-driver/mysql dsn config string, e.g. `user:password@tcp(127.0.0.1:3306)/database_name`
 #;provider_config = sessions
-provider_config = user={{.Values.postgresql.postgresUser}} password={{.Values.postgresql.postgresPassword}} host={{.Release.Name}}-pgsql.{{.Release.Namespace}} port=5432 dbname=grafana sslmode=disable
+provider_config = user={{.Values.postgresql.postgresUser}} password={{.Values.postgresql.postgresPassword}} host={{.Release.Name}}-pgsql.{{.Release.Namespace}} port=5432 dbname=plutono sslmode=disable
 #provider_config = .
 
 # Session cookie name
-;cookie_name = grafana_sess
+;cookie_name = plutono_sess
 
 # If you use session in https only, default is false
 ;cookie_secure = false
@@ -101,18 +101,18 @@ session_life_time = 604800
 #################################### Security ####################################
 [security]
 # default admin user, created on startup
-admin_user = {{.Values.grafana.admin.user}}
+admin_user = {{.Values.plutono.admin.user}}
 
-# default admin password, can be changed before first start of grafana,  or in profile settings
-admin_password = {{.Values.grafana.admin.password}}
+# default admin password, can be changed before first start of plutono,  or in profile settings
+admin_password = {{.Values.plutono.admin.password}}
 
 # used for signing
 ;secret_key = SW2YcwTIb9zpOOhoPsMm
 
 # Auto-login remember days
 ;login_remember_days = 7
-;cookie_username = grafana_user
-;cookie_remember_name = grafana_remember
+;cookie_username = plutono_user
+;cookie_remember_name = plutono_remember
 
 # disable gravatar profile images
 ;disable_gravatar = false
@@ -120,7 +120,7 @@ admin_password = {{.Values.grafana.admin.password}}
 # data source proxy whitelist (ip_or_domain:port separated by spaces)
 ;data_source_proxy_whitelist =
 
-# allow embedding of grafana in a frame etc. - required for the kiosk mode
+# allow embedding of plutono in a frame etc. - required for the kiosk mode
 allow_embedding = true
 
 [snapshots]
@@ -154,7 +154,7 @@ verify_email_enabled = false
 # Background text for the user field on the login page
 login_hint = UserID[@domain]
 
-{{- if .Values.grafana.auth.tls_client_auth.enabled}}
+{{- if .Values.plutono.auth.tls_client_auth.enabled}}
 [auth.proxy]
 enabled = true
 header_name = X-REMOTE-USER
@@ -163,20 +163,20 @@ auto_sign_up = false
 {{- end }}
 
 [auth.basic]
-enabled = {{ default true .Values.grafana.auth.basic_auth.enabled }}
+enabled = {{ default true .Values.plutono.auth.basic_auth.enabled }}
 
 
 #################################### Auth LDAP ##########################
-{{- if .Values.grafana.auth.ldap.enabled}}
+{{- if .Values.plutono.auth.ldap.enabled}}
 [auth.ldap]
 enabled = true
-config_file = /grafana-etc/ldap.toml
+config_file = /plutono-etc/ldap.toml
 allow_sign_up = true
 {{- end }}
 
 
 #################################### Anonymous Auth ##########################
-{{- if .Values.grafana.auth.anonymous.enabled}}
+{{- if .Values.plutono.auth.anonymous.enabled}}
 [auth.anonymous]
 # enable anonymous access
 enabled = true
@@ -191,12 +191,12 @@ org_role = Viewer
 
 #################################### Logging ##########################
 [log]
-level = {{.Values.grafana.log_level}}
+level = {{.Values.plutono.log_level}}
 mode = console
 #filters = ldap:debug
 
 [log.console]
-level = {{.Values.grafana.log_level}}
+level = {{.Values.plutono.log_level}}
 
 # log line format, valid options are text, console and json
 format = json

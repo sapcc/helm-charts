@@ -3,62 +3,62 @@ kind: Ingress
 apiVersion: networking.k8s.io/v1
 
 metadata:
-  name: grafana
+  name: plutono
   annotations:
-    kubernetes.io/tls-acme: {{ default false .Values.grafana.tls | quote }}
-    disco: {{ default false .Values.grafana.disco | quote }}
-  {{- if .Values.grafana.auth.tls_client_auth.enabled}}
-    ingress.kubernetes.io/auth-tls-secret: {{ default "" .Values.grafana.auth.tls_client_auth.secret }}
+    kubernetes.io/tls-acme: {{ default false .Values.plutono.tls | quote }}
+    disco: {{ default false .Values.plutono.disco | quote }}
+  {{- if .Values.plutono.auth.tls_client_auth.enabled}}
+    ingress.kubernetes.io/auth-tls-secret: {{ default "" .Values.plutono.auth.tls_client_auth.secret }}
     ingress.kubernetes.io/auth-tls-verify-depth: "3"
     ingress.kubernetes.io/auth-tls-verify-client: "optional"
   {{- end }}
 
 spec:
   tls:
-    - secretName: "tls-{{.Values.grafana.endpoint.host.public | replace "." "-"}}"
-      hosts: ["{{.Values.grafana.endpoint.host.public}}"]
+    - secretName: "tls-{{.Values.plutono.endpoint.host.public | replace "." "-"}}"
+      hosts: ["{{.Values.plutono.endpoint.host.public}}"]
   rules:
-    - host: "{{.Values.grafana.endpoint.host.public}}"
+    - host: "{{.Values.plutono.endpoint.host.public}}"
       http:
         paths:
         - path: /
           pathType: Prefix
           backend:
             service:
-              name: grafana
+              name: plutono
               port:
-                number: {{.Values.grafana.endpoint.port.public}}
+                number: {{.Values.plutono.endpoint.port.public}}
 {{- if .Values.ingress.global }}
 ---
 kind: Ingress
 apiVersion: networking.k8s.io/v1
 
 metadata:
-  name: grafana-global
+  name: plutono-global
   annotations:
-    kubernetes.io/tls-acme: {{ default false .Values.grafana.tls | quote }}
-    disco: {{ default false .Values.grafana.disco | quote }}
+    kubernetes.io/tls-acme: {{ default false .Values.plutono.tls | quote }}
+    disco: {{ default false .Values.plutono.disco | quote }}
     disco/zone-name: "global.cloud.sap"
-  {{- if .Values.grafana.auth.tls_client_auth.enabled}}
-    ingress.kubernetes.io/auth-tls-secret: {{ default "" .Values.grafana.auth.tls_client_auth.secret }}
+  {{- if .Values.plutono.auth.tls_client_auth.enabled}}
+    ingress.kubernetes.io/auth-tls-secret: {{ default "" .Values.plutono.auth.tls_client_auth.secret }}
     ingress.kubernetes.io/auth-tls-verify-depth: "3"
     ingress.kubernetes.io/auth-tls-verify-client: "optional"
   {{- end }}
 
 spec:
   tls:
-    - secretName: "tls-{{.Values.grafana.endpoint.host.global | replace "." "-"}}"
-      hosts: ["{{.Values.grafana.endpoint.host.global}}"]
+    - secretName: "tls-{{.Values.plutono.endpoint.host.global | replace "." "-"}}"
+      hosts: ["{{.Values.plutono.endpoint.host.global}}"]
   rules:
-    - host: "{{.Values.grafana.endpoint.host.global}}"
+    - host: "{{.Values.plutono.endpoint.host.global}}"
       http:
         paths:
         - path: /
           pathType: Prefix
           backend:
             service:
-              name: grafana
+              name: plutono
               port:
-                number: {{.Values.grafana.endpoint.port.public}}
+                number: {{.Values.plutono.endpoint.port.public}}
 {{- end }}
 {{- end }}

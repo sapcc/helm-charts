@@ -2,9 +2,9 @@
 
 function process_config {
 
-  mkdir /var/lib/grafana/etc
-  cp /grafana-etc/grafana.ini /var/lib/grafana/etc/grafana.ini
-  cp /grafana-etc/ldap.toml /var/lib/grafana/etc/ldap.toml
+  mkdir /var/lib/plutono/etc
+  cp /plutono-etc/plutono.ini /var/lib/plutono/etc/plutono.ini
+  cp /plutono-etc/ldap.toml /var/lib/plutono/etc/ldap.toml
 
 }
 
@@ -13,89 +13,89 @@ function start_application {
   # Set cluster region
   export CLUSTER_REGION={{.Values.global.region}}
   # Set Grafana admin/local username & password
-  export GF_SECURITY_ADMIN_USER={{.Values.grafana.admin.user}}
-  export GF_SECURITY_ADMIN_PASSWORD={{.Values.grafana.admin.password}}
-  export GRAFANA_LOCAL_USER={{.Values.grafana.local.user}}
-  export GRAFANA_LOCAL_PASSWORD={{.Values.grafana.local.password}}
+  export GF_SECURITY_ADMIN_USER={{.Values.plutono.admin.user}}
+  export GF_SECURITY_ADMIN_PASSWORD={{.Values.plutono.admin.password}}
+  export GRAFANA_LOCAL_USER={{.Values.plutono.local.user}}
+  export GRAFANA_LOCAL_PASSWORD={{.Values.plutono.local.password}}
   # install some plugins
-  grafana-cli plugins install grafana-piechart-panel 1.6.2
-  grafana-cli plugins install flant-statusmap-panel 0.4.2
-  grafana-cli plugins install natel-discrete-panel 0.1.1
-  grafana-cli plugins install vonage-status-panel 1.0.11
-  grafana-cli plugins install blackmirror1-statusbygroup-panel 1.1.2
-  grafana-cli plugins install digrich-bubblechart-panel 1.2.0
-  grafana-cli plugins install briangann-datatable-panel 1.0.3
-  grafana-cli plugins install grafana-worldmap-panel 0.3.3
-  grafana-cli plugins install yesoreyeram-boomtable-panel 1.4.1
-  grafana-cli plugins install jdbranham-diagram-panel 1.7.3
-  grafana-cli plugins install agenty-flowcharting-panel 0.9.1
-  grafana-cli plugins install marcusolsson-json-datasource 1.3.2
-  # install sapcc/grafana-prometheus-alertmanager-datasource
-  grafana-cli --pluginUrl https://github.com/sapcc/grafana-prometheus-alertmanager-datasource/archive/master.zip plugins install prometheus-alertmanager
+  plutono-cli plugins install plutono-piechart-panel 1.6.2
+  plutono-cli plugins install flant-statusmap-panel 0.4.2
+  plutono-cli plugins install natel-discrete-panel 0.1.1
+  plutono-cli plugins install vonage-status-panel 1.0.11
+  plutono-cli plugins install blackmirror1-statusbygroup-panel 1.1.2
+  plutono-cli plugins install digrich-bubblechart-panel 1.2.0
+  plutono-cli plugins install briangann-datatable-panel 1.0.3
+  plutono-cli plugins install plutono-worldmap-panel 0.3.3
+  plutono-cli plugins install yesoreyeram-boomtable-panel 1.4.1
+  plutono-cli plugins install jdbranham-diagram-panel 1.7.3
+  plutono-cli plugins install agenty-flowcharting-panel 0.9.1
+  plutono-cli plugins install marcusolsson-json-datasource 1.3.2
+  # install sapcc/plutono-prometheus-alertmanager-datasource
+  plutono-cli --pluginUrl https://github.com/sapcc/plutono-prometheus-alertmanager-datasource/archive/master.zip plugins install prometheus-alertmanager
   # install sapcc/Grafana_Status_panel
-  grafana-cli --pluginUrl https://github.com/sapcc/Grafana_Status_panel/archive/master.zip plugins install cc-status-panel
+  plutono-cli --pluginUrl https://github.com/sapcc/Grafana_Status_panel/archive/master.zip plugins install cc-status-panel
   # setup the datasources and dashboards if the setup script exists
-  # wait a moment until grafana is up and write to stdout and logfile in parallel
-  if [ -f /grafana-bin/grafana-initial-setup ]; then
-  # no ss commnd in the new grafana container, so we have to use curl to check ...
-  #  (while ss -lnt | awk '$4 ~ /:{{.Values.grafana.port.public}}$/ {exit 1}'; do sleep 5; done; bash /grafana-bin/grafana-initial-setup ) 2>&1 | tee /var/log/grafana/initial-setup.log &
-  # no curl commnd in the new grafana container, so we have to use wget to check ...
-  #  (while [ `curl -s http://localhost:3000 > /dev/null ; echo $?` != "0" ]; do sleep 5; done; bash /grafana-bin/grafana-initial-setup ) 2>&1 | tee /var/log/grafana/initial-setup.log &
-    (while ! wget -q -O /dev/null http://localhost:3000; do sleep 5; done; bash /grafana-bin/grafana-initial-setup ) 2>&1 | tee /var/log/grafana/initial-setup.log &
+  # wait a moment until plutono is up and write to stdout and logfile in parallel
+  if [ -f /plutono-bin/plutono-initial-setup ]; then
+  # no ss commnd in the new plutono container, so we have to use curl to check ...
+  #  (while ss -lnt | awk '$4 ~ /:{{.Values.plutono.port.public}}$/ {exit 1}'; do sleep 5; done; bash /plutono-bin/plutono-initial-setup ) 2>&1 | tee /var/log/plutono/initial-setup.log &
+  # no curl commnd in the new plutono container, so we have to use wget to check ...
+  #  (while [ `curl -s http://localhost:3000 > /dev/null ; echo $?` != "0" ]; do sleep 5; done; bash /plutono-bin/plutono-initial-setup ) 2>&1 | tee /var/log/plutono/initial-setup.log &
+    (while ! wget -q -O /dev/null http://localhost:3000; do sleep 5; done; bash /plutono-bin/plutono-initial-setup ) 2>&1 | tee /var/log/plutono/initial-setup.log &
   fi
-  while [ ! -d /git/grafana-content/datasources-config ]; do
-    echo "waiting 5 more seconds for the grafana-content to be mounted and synced via git-sync ..."
+  while [ ! -d /git/plutono-content/datasources-config ]; do
+    echo "waiting 5 more seconds for the plutono-content to be mounted and synced via git-sync ..."
     sleep 5
   done
-  # create an auto provisioning dir for grafana and copy the content from the git to it
+  # create an auto provisioning dir for plutono and copy the content from the git to it
   # the cp is required in order to be able to modify the datasources below, the dashboard
   # config references back to the dashboard-sources dir in the git repo directly
-  mkdir -p /var/lib/grafana/provisioning
+  mkdir -p /var/lib/plutono/provisioning
   # do not do the above if the are in author more - then we do not provision anything
-  if [ "{{.Values.grafana.mode}}" != "author" ]; then
-    rm -rf /var/lib/grafana/provisioning/dashboards
-    cp -r /git/grafana-content/dashboards-config-{{.Values.grafana.mode}} /var/lib/grafana/provisioning/dashboards
+  if [ "{{.Values.plutono.mode}}" != "author" ]; then
+    rm -rf /var/lib/plutono/provisioning/dashboards
+    cp -r /git/plutono-content/dashboards-config-{{.Values.plutono.mode}} /var/lib/plutono/provisioning/dashboards
   fi
-  rm -rf /var/lib/grafana/provisioning/datasources
-  mkdir -p /var/lib/grafana/provisioning/datasources
-  cd /git/grafana-content/datasources-config
+  rm -rf /var/lib/plutono/provisioning/datasources
+  mkdir -p /var/lib/plutono/provisioning/datasources
+  cd /git/plutono-content/datasources-config
   for i in * ; do
     grep -qw "    tlsAuthWithCACert: true" $i
     ADD_CERTS_YN_LC=$?
     grep -qw "    tlsAuthWithCACert: True" $i
     ADD_CERTS_YN_UC=$?
     if [ "$ADD_CERTS_YN_LC" = "0" ] || [ "$ADD_CERTS_YN_UC" = "0" ]; then
-      cat $i | grep -v "json object of data that will be encrypted" | grep -v secureJsonData > /var/lib/grafana/provisioning/datasources/$i
-      echo "  # <string> json object of data that will be encrypted." >> /var/lib/grafana/provisioning/datasources/$i
-      echo "  secureJsonData:" >> /var/lib/grafana/provisioning/datasources/$i
-      if [ -f /grafana-secrets/cacert.crt ]; then
-        echo '    tlsCACert: |' >> /var/lib/grafana/provisioning/datasources/$i
-        cat /grafana-secrets/cacert.crt | sed 's/^/      /' >> /var/lib/grafana/provisioning/datasources/$i
+      cat $i | grep -v "json object of data that will be encrypted" | grep -v secureJsonData > /var/lib/plutono/provisioning/datasources/$i
+      echo "  # <string> json object of data that will be encrypted." >> /var/lib/plutono/provisioning/datasources/$i
+      echo "  secureJsonData:" >> /var/lib/plutono/provisioning/datasources/$i
+      if [ -f /plutono-secrets/cacert.crt ]; then
+        echo '    tlsCACert: |' >> /var/lib/plutono/provisioning/datasources/$i
+        cat /plutono-secrets/cacert.crt | sed 's/^/      /' >> /var/lib/plutono/provisioning/datasources/$i
       fi
-      if [ -f /grafana-secrets/sso.crt ]; then
-        echo '    tlsClientCert: |' >> /var/lib/grafana/provisioning/datasources/$i
-        cat /grafana-secrets/sso.crt | sed 's/^/      /' >> /var/lib/grafana/provisioning/datasources/$i
+      if [ -f /plutono-secrets/sso.crt ]; then
+        echo '    tlsClientCert: |' >> /var/lib/plutono/provisioning/datasources/$i
+        cat /plutono-secrets/sso.crt | sed 's/^/      /' >> /var/lib/plutono/provisioning/datasources/$i
       fi
-      if [ -f /grafana-secrets/sso.key ]; then
-        echo '    tlsClientKey: |' >> /var/lib/grafana/provisioning/datasources/$i
-        cat /grafana-secrets/sso.key | sed 's/^/      /' >> /var/lib/grafana/provisioning/datasources/$i
+      if [ -f /plutono-secrets/sso.key ]; then
+        echo '    tlsClientKey: |' >> /var/lib/plutono/provisioning/datasources/$i
+        cat /plutono-secrets/sso.key | sed 's/^/      /' >> /var/lib/plutono/provisioning/datasources/$i
       fi
     else
-      cp -a $i /var/lib/grafana/provisioning/datasources
+      cp -a $i /var/lib/plutono/provisioning/datasources
     fi
   done
-  sed -i 's,__ELK_PASSWORD__,{{.Values.authentication.elk_password}},g' /var/lib/grafana/provisioning/datasources/*
-  sed -i 's,__METISDB_PASSWORD__,{{.Values.authentication.metisdb_password}},g' /var/lib/grafana/provisioning/datasources/*
-  sed -i 's,__OPENSEARCH_PASSWORD__,{{.Values.authentication.opensearch_password}},g' /var/lib/grafana/provisioning/datasources/*
-  sed -i 's,__ALERTMANAGER_PASSWORD__,{{.Values.alertmanager.password}},g' /var/lib/grafana/provisioning/datasources/*
-  sed -i 's,__PROMETHEUS_REGION__,{{.Values.global.region}},g' /var/lib/grafana/provisioning/datasources/*
-  #for i in /var/lib/grafana/provisioning/datasources/elasticsearch* ; do
+  sed -i 's,__ELK_PASSWORD__,{{.Values.authentication.elk_password}},g' /var/lib/plutono/provisioning/datasources/*
+  sed -i 's,__METISDB_PASSWORD__,{{.Values.authentication.metisdb_password}},g' /var/lib/plutono/provisioning/datasources/*
+  sed -i 's,__OPENSEARCH_PASSWORD__,{{.Values.authentication.opensearch_password}},g' /var/lib/plutono/provisioning/datasources/*
+  sed -i 's,__ALERTMANAGER_PASSWORD__,{{.Values.alertmanager.password}},g' /var/lib/plutono/provisioning/datasources/*
+  sed -i 's,__PROMETHEUS_REGION__,{{.Values.global.region}},g' /var/lib/plutono/provisioning/datasources/*
+  #for i in /var/lib/plutono/provisioning/datasources/elasticsearch* ; do
   #  echo "=== $i ==="
   #  cat $i
   #done
-  # strange log config to get no file logging according to https://github.com/grafana/grafana/issues/5018
-  cd /usr/share/grafana
-  exec /usr/share/grafana/bin/grafana-server -config /var/lib/grafana/etc/grafana.ini --homepath /usr/share/grafana cfg:default.log.mode=console
+  # strange log config to get no file logging according to https://github.com/plutono/plutono/issues/5018
+  cd /usr/share/plutono
+  exec /usr/share/plutono/bin/plutono-server -config /var/lib/plutono/etc/plutono.ini --homepath /usr/share/plutono cfg:default.log.mode=console
 }
 
 process_config

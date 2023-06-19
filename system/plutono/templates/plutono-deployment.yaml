@@ -1,30 +1,30 @@
 kind: Deployment
 apiVersion: apps/v1
 metadata:
-  name: grafana
+  name: plutono
   labels:
     system: openstack
     service: monitoring
-    component: grafana
+    component: plutono
 spec:
   replicas: 1
   selector:
     matchLabels:
-        app: grafana
-        component: grafana
+        app: plutono
+        component: plutono
   template:
     metadata:
       labels:
-        app: grafana
-        component: grafana
+        app: plutono
+        component: plutono
       annotations:
-        checksum/grafana.etc: {{ include "grafanasix/templates/grafana-etc-configmap.yaml" . | sha256sum }}
-        checksum/grafana.bin: {{ include "grafanasix/templates/grafana-bin-configmap.yaml" . | sha256sum }}
-        checksum/grafana.ini: {{ include "grafanasix/templates/_grafana.ini.tpl" . | sha256sum }}
-        checksum/ldap.toml: {{ include "grafanasix/templates/_ldap.toml.tpl" . | sha256sum }}
-        checksum/grafana-start: {{ include "grafanasix/templates/_grafana-start.tpl" . | sha256sum }}
-        checksum/grafana-initial-setup: {{ include "grafanasix/templates/_grafana-initial-setup.tpl" . | sha256sum }}
-        checksum/helpers: {{ include "grafanasix/templates/_helpers.tpl" . | sha256sum }}
+        checksum/plutono.etc: {{ include "plutono/templates/plutono-etc-configmap.yaml" . | sha256sum }}
+        checksum/plutono.bin: {{ include "plutono/templates/plutono-bin-configmap.yaml" . | sha256sum }}
+        checksum/plutono.ini: {{ include "plutono/templates/_plutono.ini.tpl" . | sha256sum }}
+        checksum/ldap.toml: {{ include "plutono/templates/_ldap.toml.tpl" . | sha256sum }}
+        checksum/plutono-start: {{ include "plutono/templates/_plutono-start.tpl" . | sha256sum }}
+        checksum/plutono-initial-setup: {{ include "plutono/templates/_plutono-initial-setup.tpl" . | sha256sum }}
+        checksum/helpers: {{ include "plutono/templates/_helpers.tpl" . | sha256sum }}
         pod.alpha.kubernetes.io/initialized: "true"
         prometheus.io/scrape: "true"
         prometheus.io/targets: "openstack"
@@ -32,59 +32,59 @@ spec:
       nodeSelector:
         zone: farm
       volumes:
-        - name: grafana-bin
+        - name: plutono-bin
           configMap:
-            name: grafana-bin
-        - name: grafana-etc
+            name: plutono-bin
+        - name: plutono-etc
           configMap:
-            name: grafana-etc
+            name: plutono-etc
 {{- if .Values.authentication.enabled }}
-        - name: grafana-secrets
+        - name: plutono-secrets
           secret:
-            secretName: grafana-secrets
+            secretName: plutono-secrets
 {{- end }}
-        - name: grafana-git
-{{- if .Values.grafana.content.persistence.enabled }}
+        - name: plutono-git
+{{- if .Values.plutono.content.persistence.enabled }}
           persistentVolumeClaim:
-            claimName: grafana-content-gitsync-pvc
+            claimName: plutono-content-gitsync-pvc
 {{- else }}
           emptyDir: {}
 {{- end }}
-        - name: grafana-content
+        - name: plutono-content
           emptyDir: {}
       initContainers:
       - name: fix-permissions
         image: {{ .Values.global.dockerHubMirror | required ".Values.global.dockerHubMirror is missing" }}/library/busybox:1.34
         command: ["/bin/chown","-R","65533:65533", "/tmp/git"]
         volumeMounts:
-        - name: grafana-git
+        - name: plutono-git
           mountPath: /tmp/git
       containers:
-        - name: "grafana"
-          image: {{ .Values.global.dockerHubMirror | required ".Values.global.dockerHubMirror is missing" }}/{{.Values.grafana.image}}:{{.Values.grafana.image_version}}
+        - name: "plutono"
+          image: {{ .Values.global.dockerHubMirror | required ".Values.global.dockerHubMirror is missing" }}/{{.Values.plutono.image}}:{{.Values.plutono.image_version}}
           imagePullPolicy: {{.Values.image.pullPolicy}}
           command:
             - /bin/bash
           args:
             # - -c
             # - sleep inf
-            - /grafana-bin/grafana-start
+            - /plutono-bin/plutono-start
           env:
             - name: GF_PATHS_PROVISIONING
-              value: "/var/lib/grafana/provisioning"
+              value: "/var/lib/plutono/provisioning"
           ports:
             - name: nodejs
               containerPort: 3000
           volumeMounts:
-            - name: grafana-bin
-              mountPath: /grafana-bin
-            - name: grafana-etc
-              mountPath: /grafana-etc
+            - name: plutono-bin
+              mountPath: /plutono-bin
+            - name: plutono-etc
+              mountPath: /plutono-etc
 {{- if .Values.authentication.enabled }}
-            - name: grafana-secrets
-              mountPath: /grafana-secrets
+            - name: plutono-secrets
+              mountPath: /plutono-secrets
 {{- end }}
-            - name: grafana-content
+            - name: plutono-content
               mountPath: /git
           resources:
             requests:
@@ -103,8 +103,8 @@ spec:
           image: {{.Values.global.registry}}/git-sync:v3.1.6
           imagePullPolicy: {{.Values.image.pullPolicy}}
           args:
-            - "--repo={{.Values.grafana.gitsync.repository}}"
-            - "--branch={{.Values.grafana.gitsync.branch}}"
+            - "--repo={{.Values.plutono.gitsync.repository}}"
+            - "--branch={{.Values.plutono.gitsync.branch}}"
             - "--wait=30"
             - "--max-sync-failures=-1"
             - "--http-bind=localhost:9090"
@@ -112,11 +112,11 @@ spec:
             - name: GIT_SSL_NO_VERIFY
               value: "true"
             - name: GIT_SYNC_USERNAME
-              value: {{.Values.grafana.gitsync.username}}
+              value: {{.Values.plutono.gitsync.username}}
             - name: GIT_SYNC_PASSWORD
-              value: {{.Values.grafana.gitsync.password}}
+              value: {{.Values.plutono.gitsync.password}}
           volumeMounts:
-            - name: grafana-git
+            - name: plutono-git
               mountPath: /tmp/git
           resources:
             requests:
@@ -129,21 +129,21 @@ spec:
             - name: metrics
               containerPort: 9090
         - name: "minitrue"
-          image: {{.Values.global.registry}}/grafana-minitrue:{{.Values.grafana.minitrue_version}}
+          image: {{.Values.global.registry}}/plutono-minitrue:{{.Values.plutono.minitrue_version}}
           imagePullPolicy: {{.Values.image.pullPolicy}}
           command:
             - /minitrue.sh
           env:
             - name: PATH_IN
-              value: "/gitsync_in/grafana-content"
+              value: "/gitsync_in/plutono-content"
             - name: PATH_OUT
-              value: "/minitrue_out/grafana-content"
+              value: "/minitrue_out/plutono-content"
             - name: SLEEP_TIME_IN_SEC
               value: "60"
           volumeMounts:
-            - name: grafana-git
+            - name: plutono-git
               mountPath: /gitsync_in
-            - name: grafana-content
+            - name: plutono-content
               mountPath: /minitrue_out
           resources:
             requests:
@@ -157,7 +157,7 @@ spec:
           image: {{ .Values.global.dockerHubMirror | required ".Values.global.dockerHubMirror is missing" }}/library/{{ .Values.nginx.image }}:{{ .Values.nginx.image_version }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           volumeMounts:
-            - name: grafana-etc
+            - name: plutono-etc
               mountPath: /etc/nginx/nginx.conf
               subPath: nginx.conf
               readOnly: true

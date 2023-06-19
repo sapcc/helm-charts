@@ -29,12 +29,12 @@ http {
 
       location /public {
         allow all;
-        proxy_pass http://127.0.0.1:{{ .Values.grafana.port.public }};
+        proxy_pass http://127.0.0.1:{{ .Values.plutono.port.public }};
       }
 
       location ~ /(api|d) {
-        proxy_set_header Authorization "Basic {{ printf "%s:%s" .Values.grafana.local.user .Values.grafana.local.password | b64enc }}";
-        proxy_pass http://127.0.0.1:{{ .Values.grafana.port.public }};
+        proxy_set_header Authorization "Basic {{ printf "%s:%s" .Values.plutono.local.user .Values.plutono.local.password | b64enc }}";
+        proxy_pass http://127.0.0.1:{{ .Values.plutono.port.public }};
       }
     }
 }

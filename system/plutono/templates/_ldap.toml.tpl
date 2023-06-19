@@ -1,4 +1,4 @@
-# To troubleshoot and get more log info enable ldap debug logging in grafana.ini
+# To troubleshoot and get more log info enable ldap debug logging in plutono.ini
 # [log]
 # filters = ldap:debug
 
@@ -37,7 +37,7 @@ username = "cn"
 member_of = "memberOf"
 email =  "email"
 
-# Map ldap groups to grafana org roles
+# Map ldap groups to plutono org roles
 [[servers.group_mappings]]
 group_dn = "{{ .Values.ldap.monitoring_admin }},{{ .Values.ldap.suffix }}"
 org_role = "Admin"
