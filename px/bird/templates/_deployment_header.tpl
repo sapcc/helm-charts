@@ -75,7 +75,7 @@ spec:
 {{- if lt (len (keys $apods))  2 }}
 {{- fail "If the region consists of multiple AZs, PX must be scheduled in at least 2" -}}
 {{- end }}
-          - topologyKey: failure-domain.beta.kubernetes.io/zone
+          - topologyKey: topology.kubernetes.io/zone
             labelSelector:
               matchExpressions:
               - key: pxservice
