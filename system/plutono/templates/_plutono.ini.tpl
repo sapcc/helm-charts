@@ -1,4 +1,4 @@
-##################### Grafana Configuration Example #####################
+##################### Plutono Configuration Example #####################
 #
 # Everything has defaults so you only need to uncomment things you want to
 # change

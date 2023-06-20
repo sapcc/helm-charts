@@ -11,23 +11,23 @@ if [ "$PL_SECURITY_ADMIN_PASSWORD" = "" ]; then
   exit 1
 fi
 
-if [ "$GRAFANA_LOCAL_USER" = "" ]; then
-  echo "INFO: GRAFANA_LOCAL_USER not set, please set plutono.local.user in the secrets"
+if [ "$PLUTONO_LOCAL_USER" = "" ]; then
+  echo "INFO: PLUTONO_LOCAL_USER not set, please set plutono.local.user in the secrets"
   exit 1
 fi
 
-if [ "$GRAFANA_LOCAL_PASSWORD" = "" ]; then
-  echo "INFO: GRAFANA_LOCAL_PASSWORD not set, please set plutono.local.password in the secrets"
+if [ "$PLUTONO_LOCAL_PASSWORD" = "" ]; then
+  echo "INFO: PLUTONO_LOCAL_PASSWORD not set, please set plutono.local.password in the secrets"
   exit 1
 fi
 
 # create a local user, which can be used to login when keystone is down
 echo ""
-echo "creating the local user $GRAFANA_LOCAL_USER - this might fail if rerun with persistent storage"
+echo "creating the local user $PLUTONO_LOCAL_USER - this might fail if rerun with persistent storage"
 echo -n "==> "
 # there is no more curl in the original plutono container, so we do this post call with netcat (nc)
-#curl -s http://$PL_SECURITY_ADMIN_USER:$PL_SECURITY_ADMIN_PASSWORD@localhost:3000/api/admin/users -X POST -H 'Content-Type: application/json;charset=utf-8' --data-binary "{\"name\":\"Local User\",\"email\":\"\",\"login\":\"$GRAFANA_LOCAL_USER\",\"password\":\"$GRAFANA_LOCAL_PASSWORD\"}"
+#curl -s http://$PL_SECURITY_ADMIN_USER:$PL_SECURITY_ADMIN_PASSWORD@localhost:3000/api/admin/users -X POST -H 'Content-Type: application/json;charset=utf-8' --data-binary "{\"name\":\"Local User\",\"email\":\"\",\"login\":\"$PLUTONO_LOCAL_USER\",\"password\":\"$PLUTONO_LOCAL_PASSWORD\"}"
 AUTHSTRING=$(echo -n $PL_SECURITY_ADMIN_USER:$PL_SECURITY_ADMIN_PASSWORD | base64)
-PAYLOAD="{\"name\":\"Local User\",\"email\":\"\",\"login\":\"$GRAFANA_LOCAL_USER\",\"password\":\"$GRAFANA_LOCAL_PASSWORD\"}"
+PAYLOAD="{\"name\":\"Local User\",\"email\":\"\",\"login\":\"$PLUTONO_LOCAL_USER\",\"password\":\"$PLUTONO_LOCAL_PASSWORD\"}"
 REQUEST="POST /api/admin/users HTTP/1.1\r\nHost: localhost\r\nAuthorization: Basic $AUTHSTRING\r\nContent-type: application/json;charset=utf-8\r\nContent-length: $(echo -n $PAYLOAD | wc -c)\r\nConnection: Close\r\n\r\n$PAYLOAD"
 echo -ne "$REQUEST" | nc localhost 3000
