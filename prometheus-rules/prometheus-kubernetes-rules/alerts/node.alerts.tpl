@@ -5,19 +5,20 @@ groups:
 - name: node.alerts
   rules:
   - alert: NodeHostHighCPUUsage
-    expr: 100 - (avg by (node) (irate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 90
-    for: 15m
+    expr: 100 - (avg by (node) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 90
+    for: 6h
     labels:
       tier: {{ required ".Values.tier missing" .Values.tier }}
       service: node
+      support_group: containers
       severity: warning
       context: node
       meta: "High CPU usage on {{`{{ $labels.node }}`}}"
       dashboard: kubernetes-node?var-server={{`{{$labels.node}}`}}
-      playbook: docs/support/playbook/kubernetes/k8s_node_host_high_cpu_usage.html
+      playbook: docs/support/playbook/kubernetes/k8s_node_host_high_cpu_usage
     annotations:
-      summary: High load on node
-      description: "Node {{`{{ $labels.node }}`}} has more than {{`{{ $value }}`}}% CPU load"
+      summary: High CPU load on node
+      description: "Node {{`{{ $labels.node }}`}} has more than {{`{{ humanize $value }}`}}% CPU load for 6h"
 
   - alert: NodeKernelDeadlock
     expr: kube_node_status_condition_normalized{condition="KernelDeadlock", status="true"} == 1
@@ -25,10 +26,11 @@ groups:
     labels:
       tier: {{ required ".Values.tier missing" .Values.tier }}
       service: node
+      support_group: containers
       severity: info
       context: availability
       meta: "Kernel deadlock on {{`{{ $labels.node }}`}}"
-      playbook: docs/support/playbook/k8s_node_safe_rebooting.html
+      playbook: docs/support/playbook/k8s_node_safe_rebooting
     annotations:
       description: Node kernel has deadlock
       summary: Permanent kernel deadlock on {{`{{ $labels.node }}`}}. Please drain and reboot node
@@ -39,6 +41,7 @@ groups:
     labels:
       tier: {{ required ".Values.tier missing" .Values.tier }}
       service: node
+      support_group: containers
       severity: warning
       context: node
       meta: "Disk pressure on {{`{{ $labels.node }}`}}"
@@ -52,6 +55,7 @@ groups:
     labels:
       tier: {{ required ".Values.tier missing" .Values.tier }}
       service: node
+      support_group: containers
       severity: warning
       context: node
       meta: "Memory pressure on {{`{{ $labels.node }}`}}"
@@ -65,6 +69,7 @@ groups:
     labels:
       tier: {{ required ".Values.tier missing" .Values.tier }}
       service: node
+      support_group: containers
       severity: info
       context: node
       meta: "Node disk usage above 85% on {{`{{ $labels.node }}`}} device {{`{{ $labels.device }}`}}"
@@ -80,6 +85,7 @@ groups:
     labels:
       tier: {{ required ".Values.tier missing" .Values.tier }}
       service: node
+      support_group: containers
       severity: warning
       context: availability
       meta: "{{`{{ $labels.node }}`}}"
@@ -94,11 +100,12 @@ groups:
     labels:
       tier: {{ required ".Values.tier missing" .Values.tier }}
       service: node
+      support_group: containers
       severity: warning
       context: availability
       meta: "{{`{{ $labels.node }}"
       dashboard: "nodes?var-server={{$labels.node}}`}}"
-      playbook: "docs/support/playbook/kubernetes/k8s_high_tcp_connections.html"
+      playbook: "docs/support/playbook/kubernetes/k8s_high_tcp_connections"
     annotations:
       description: High number of open TCP connections
       summary: The node {{`{{ $labels.node }}`}} will likely reach 32768 active TCP connections within the next hour. If that happens, it cannot accept any new connections
@@ -108,6 +115,7 @@ groups:
     labels:
       tier: {{ required ".Values.tier missing" .Values.tier }}
       service: node
+      support_group: containers
       severity: info
       context: memory
     annotations:
@@ -120,10 +128,11 @@ groups:
     labels:
       tier: {{ required ".Values.tier missing" .Values.tier }}
       service: node
+      support_group: containers
       severity: critical
       context: threads
       meta: "Very high number of threads on {{`{{ $labels.node }}`}}. Forking problems are imminent."
-      playbook: "docs/support/playbook/kubernetes/k8s_high_threads.html"
+      playbook: "docs/support/playbook/kubernetes/k8s_high_threads"
     annotations:
       description: "Very high number of threads on {{`{{ $labels.node }}`}}. Forking problems are imminent."
       summary: Very high number of threads
@@ -134,10 +143,11 @@ groups:
     labels:
       tier: {{ required ".Values.tier missing" .Values.tier }}
       service: node
+      support_group: containers
       severity: info
       context: availability
       meta: "Node {{`{{ $labels.node }}`}} has a read-only filesystem."
-      playbook: docs/support/playbook/k8s_node_read_only_filesystem.html
+      playbook: docs/support/playbook/k8s_node_read_only_filesystem
     annotations:
       description: Node {{`{{ $labels.node }}`}} has a read-only filesystem.
       summary: Read-only file system on node
@@ -147,6 +157,7 @@ groups:
     labels:
       tier: {{ required ".Values.tier missing" .Values.tier }}
       service: node
+      support_group: containers
       severity: warning
       context: availability
       meta: "The node {{`{{ $labels.node }}`}} rebooted at least 3 times in the last hour"
@@ -160,6 +171,7 @@ groups:
     labels:
       tier: {{ required ".Values.tier missing" .Values.tier }}
       service: node
+      support_group: containers
       severity: warning
       context: node
       meta: "The root filesystem of node {{`{{ $labels.node }}`}} is filling up quickly"

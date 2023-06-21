@@ -2,6 +2,9 @@ credentials:
   default:
     username: {{ .Values.network_generic_ssh_exporter.user }}
     password: {{ .Values.network_generic_ssh_exporter.password }}
+  apic:
+    username: {{ .Values.network_generic_ssh_exporter.apic_user }}
+    password: {{ .Values.network_generic_ssh_exporter.apic_password }}
 
 lookup_sources:
   metis:
@@ -14,6 +17,43 @@ lookup_sources:
       router_project: SELECT DISTINCT id, project_id FROM neutron.routers
 
 metrics:
+  zmq_errors:
+    regex: >-
+      ^ZmQ\:\s*(RX|TX)\sCNT\:\s\d+\,\sBYTES\:\s\d+\,\sERRORS\:\s(\d*)
+    multi_value: true
+    value: $2
+    labels:
+      direction: $1
+    description: check for zmq  errors
+    metric_type_name: counter
+    command: show system internal epm counters zmq
+    timeout_secs: 5
+
+  xr_tcam_learn_disabled: &xr_tcam_learn_disabled
+    regex: |
+      ^Xr tcam limit learn disabled\s*:\s+(\w+)$
+    value: $1
+    map_values:
+    - regex: No
+      value: 0
+    - regex: Yes
+      value: 1
+    description: linecard xr learning state
+    metric_type_name: string
+    command: vsh_lc -c 'show system internal epmc global-info'
+    timeout_secs: 5
+  hal_learn_disabled:
+    <<: *xr_tcam_learn_disabled
+    regex: |
+      ^Hal Learn Disabled\s*:\s+(\w+)$
+    description: linecard hal learning state
+  epm_pending_epreg:
+    <<: *xr_tcam_learn_disabled
+    regex: |
+      ^EPM pending epreq\s*:\s+(\d+)$
+    metric_type_name: gauge
+    description: linecard pending EP requests
+
   nat_static:
     regex: >-
       Total active translations: (\d+) \((\d+) static, (\d+) dynamic; (\d+) extended\)
@@ -31,7 +71,7 @@ metrics:
     metric_type_name: gauge
     command: show ip nat statistic | include active
     timeout_secs: 3
-  
+
   nat_limits_use: &nat_limits_use
     regex: >-
       ^(([a-z0-9]{8})([a-z0-9]{4})([a-z0-9]{4})([a-z0-9]{4})([a-z0-9]{12}))\n\s+(\d+)\s+(\d+)\s+(\d+)
@@ -50,11 +90,11 @@ metrics:
         lookup_mapping: router_project
         key: $2-$3-$4-$5-$6
 
-  nat_limits_miss: 
+  nat_limits_miss:
     <<: *nat_limits_use
     description: The number of tranlations that hit the limit
     value: $9
-  
+
   nat_misses: &nat_misses
     regex: >-
       Hits:\s+(\d+)\s+Misses:\s(\d+)
@@ -426,6 +466,24 @@ metrics:
     command: show ip traffic | in Drop due to input queue
     timeout_secs: 5
 
+  memory_util_stats:
+    regex: >-
+      \s+RP0 Healthy (\d+)\s+(\d+)\s+\((\d+)\%\)\s+\d+\s+\((\d+)\%\)\s+\d+\s\((\d+)\%\)
+    value: $3
+    description: Used memory statistics of RP0 processor
+    metric_type_name: gauge
+    command: show platform software status control-processor brief | sec Memory
+    timeout_secs: 5
+
+  dynamic_mac_count:
+    regex: >-
+      ^Number of lines which match regexp = (\d+)
+    value: $1
+    description: Counts the number of dynamically learned mac address from all bridge domain on the router
+    metric_type_name: gauge
+    command: show bridge-domain | count dynamic
+    timeout_secs: 10
+
   firewall_vrf_stats_total:
     regex: >-
       VRF: (\S+).*?Total Session Count\(estab \+ half-open\): (\d+), Exceed: (\d+)
@@ -603,8 +661,11 @@ metrics:
     timeout_secs: 5
 
 batches:
-  test:
-    - redundancy_send_queue
+  aci-leaf:
+    - xr_tcam_learn_disabled
+    - hal_learn_disabled
+    - epm_pending_epreg
+    - zmq_errors
   neutron-router:
     - nat_dynamic
     - nat_static
@@ -645,6 +706,8 @@ batches:
     - firewall_vrf_stats_half_open_tcp
     - firewall_vrf_stats_half_open_icmp
     - arp_drop_input_queue_full
+    - memory_util_stats
+    - dynamic_mac_count
 
 
   cisco-nx-os_core-router:
@@ -667,6 +730,8 @@ devices:
   cisco-ios-xe:
     prompt_regex: ^\S+\#$
     init_command: terminal length 0
+  cisco-aci:
+    prompt_regex: ^\S+\# $
   cisco-nx-os:
     prompt_regex: ^\S+\# $
     init_command: terminal length 0

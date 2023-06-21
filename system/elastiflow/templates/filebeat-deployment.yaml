@@ -8,10 +8,6 @@ metadata:
     chart: "{{ .Chart.Name }}"
     heritage: {{ .Release.Service | quote }}
     release: {{ .Release.Name | quote }}
-  annotations:
-    prometheus.io/scrape: "true"
-    prometheus.io/port: "9479"
-    prometheus.io/targets: "infra-collector"
 spec:
   selector:
     matchLabels:
@@ -21,14 +17,14 @@ spec:
     metadata:
       labels:
         app: elastiflow-filebeat
+        component: "event-receiver"
         chart: "{{ .Chart.Name }}"
         heritage: {{ .Release.Service | quote }}
         release: {{ .Release.Name | quote }}
       annotations:
-        prometheus.io/scrape: "true"
-        prometheus.io/port: "9479"
-        prometheus.io/targets: "infra-collector"
         kubectl.kubernetes.io/default-container: "filebeat"
+        prometheus.io/scrape: "true"
+        prometheus.io/targets: "infra-collector"
     spec:
       affinity:
         podAntiAffinity:
@@ -48,7 +44,8 @@ spec:
         image: {{ required ".Values.global.registry variable missing" .Values.global.registry }}/{{ required ".Values.filebeat.image variable missing" .Values.filebeat.image }}:{{ required ".Values.filebeat.imageTag variable missing" .Values.filebeat.imageTag }}
       {{- end }}
         ports:
-          - containerPort: 2055
+          - name: netflow-udp
+            containerPort: 2055
             protocol: UDP
         env:
           - name: LOGSTASH_HOSTS

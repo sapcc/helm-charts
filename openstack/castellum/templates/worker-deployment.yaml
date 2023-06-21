@@ -24,27 +24,34 @@ spec:
         alert-service: castellum
       annotations:
         checksum/configmap: {{ include "castellum/templates/configmap.yaml" $ | sha256sum }}
-        checksum/secret: {{ include "castellum/templates/secret.yaml" $ | sha256sum }}
+        checksum/secrets: {{ include "castellum/templates/secret.yaml" $ | sha256sum }}
         prometheus.io/scrape: "true"
-        prometheus.io/port: "8080"
         prometheus.io/targets: {{ quote .Values.alerts.prometheus.openstack }}
     spec:
       volumes:
         - name: config
           configMap:
             name: castellum
+        - name: certs
+          secret:
+            secretName: castellum-certs
       containers:
         - name: worker
           image: {{ include "castellum_image" . }}
           imagePullPolicy: {{ .Values.castellum.image_pull_policy }}
           args:
             - worker
+            - /etc/castellum/castellum.yaml
           env: {{ include "castellum_common_envvars" . | indent 12 }}
+          securityContext:
+            runAsNonRoot: true
           volumeMounts:
             - mountPath: /etc/castellum
               name: config
+            - mountPath: /etc/castellum-certs
+              name: certs
           ports:
-            - name: http
+            - name: metrics
               containerPort: 8080
           {{- include "castellum_liveness_readiness_probes" . | indent 10 }}
           # NOTE: observed usage in eu-de-2 (as of 2021-08)

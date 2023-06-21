@@ -9,17 +9,13 @@ hermes:
     queue_name: "notifications.info"
     # hostnames are derived from this template using the key of the targets entry
     host_template: "%s-rabbitmq-notifications.monsoon3"
-    targets:
-      keystone:
-        # keystone's notification RabbitMQ omits the -notification suffix
-        host: "keystone-rabbitmq.monsoon3"
 logstash:
   debug: false
   swift: true
   audit: true
   jdbc:
     enabled: false
-    schedule: "0 0 * * *"
+    schedule: "12 0 * * *"
     namespace: metis
     service: metisdb-mariadb
     db: keystone
@@ -29,12 +25,12 @@ logstash:
 ## Configure resource requests and limits
 ## ref: http://kubernetes.io/docs/user-guide/compute-resources/
 ##
-resources_requests_memory_api: "256Mi"
+resources_requests_memory_api: "50Mi"
 resources_requests_cpu_api: "250m"
-resources_requests_memory_es: "256Mi"
-resources_requests_cpu_es: "250m"
-resources_requests_memory_ls: "6Gi"
-resources_requests_cpu_ls: "500m"
+resources_requests_memory_es: "18Gi"
+resources_requests_cpu_es: "1000m"
+resources_requests_memory_ls: "1536Mi"
+resources_requests_cpu_ls: "250m"
 resources_requests_memory_ki: "256Mi"
 resources_requests_cpu_ki: "250m"
 
@@ -54,6 +50,8 @@ rabbitmq_notifications:
   ## default: {{.Release.Name}}-rabbitmq.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}
   # host: rabbitmq
   kind: "statefulset"
+  # required due to circular dependency between keppel, keystone, and hermes
+  use_alternate_registry: true
   replicas: 3
   # pod distruption budget
   pdr: 
@@ -68,6 +66,8 @@ rabbitmq_notifications:
     admin:
       user: admin
       # password: DEFINED-IN-SECRETS
+  alerts:
+    support_group: observability
 
 # Pod Monitor
 exporter:
@@ -77,5 +77,36 @@ exporter:
 # Deploy hermes Prometheus alerts.
 alerts:
   enabled: true
+  support-group: observability
   # Name of the Prometheus to which the alerts should be assigned to.
-  prometheus: openstack
+  # Keys = directory names in alerts/ and aggregations/
+  prometheus:
+    openstack: openstack
+    kubernetes: kubernetes
+
+owner-info:
+  support-group: observability
+  maintainers:
+    - Nathan Oyler
+  helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/openstack/hermes
+
+
+elasticsearch_hermes:
+  enabled: false
+  http_port: 9200
+  cluster_port: 9301
+  legacy_service_name: true
+  noschedule_port: '63062'
+  replicas: '3'
+  resources:
+    requests:
+      cpu: "2000m"
+      memory: "6Gi"
+    limits:
+      cpu: "4000m"
+  exporter:
+    enabled: true
+    prometheus: openstack
+
+elasticsearch_hermes_kibana:
+  enabled: false

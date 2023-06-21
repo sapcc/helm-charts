@@ -6,6 +6,7 @@ metadata:
 data:
   unbound.conf: |
        server:
+        identity: "{{ .Values.unbound.name }}.{{ .Values.global.region }}"
         interface: {{.Values.unbound.interface}}
         port: 53
         do-ip4: yes
@@ -15,9 +16,37 @@ data:
         do-daemonize: no
         access-control: 0.0.0.0/0 allow_snoop
 
-        num-threads: 10
+        # not more then the number of cpus
+        num-threads: 8
+
+        # power of 2 close to num-threads
+        msg-cache-slabs: 8
+        rrset-cache-slabs: 8
+        infra-cache-slabs: 8
+        key-cache-slabs: 8
+
         cache-max-negative-ttl: 100
         cache-max-ttl: 28800
+
+        # time to live for entries in the host cache incl roundtrip timing
+        infra-host-ttl: 900
+        # to keep probing hosts that were marked down
+        infra-keep-probing: yes
+
+        # more cache memory (default is 4m), rrset=msg*2
+        rrset-cache-size: 100m
+        msg-cache-size: 50m
+
+        # prefetch cache before expiration
+        prefetch: yes
+
+        # to serve stale records
+        serve-expired: yes
+        serve-expired-ttl: 86400
+        serve-expired-client-timeout: 1800
+
+        # Faster UDP with multithreading (only on Linux)
+        so-reuseport: yes
         
         root-hints: "/etc/unbound/root.hints"
 
@@ -26,6 +55,9 @@ data:
         log-time-ascii: yes
         log-servfail: yes
         include: /etc/unbound/hosts.conf
+
+        # enable extended statistics (query types, answer codes, status)
+        extended-statistics: {{.Values.unbound.ext_stats}}
 
        # Remote control config section.
        remote-control:
@@ -116,16 +148,16 @@ data:
     ;       (e.g. reference this file in the "cache  .  <file>"
     ;       configuration file of BIND domain name servers).
     ;
-    ;       This file is made available by InterNIC 
+    ;       This file is made available by InterNIC
     ;       under anonymous FTP as
     ;           file                /domain/named.cache
     ;           on server           FTP.INTERNIC.NET
     ;       -OR-                    RS.INTERNIC.NET
     ;
-    ;       last update:    December 01, 2015
-    ;       related version of root zone:   2015120100
+    ;       last update:     February 09, 2023
+    ;       related version of root zone:     2023020901
     ;
-    ; formerly NS.INTERNIC.NET
+    ; FORMERLY NS.INTERNIC.NET
     ;
     .                        3600000      NS    A.ROOT-SERVERS.NET.
     A.ROOT-SERVERS.NET.      3600000      A     198.41.0.4
@@ -134,8 +166,8 @@ data:
     ; FORMERLY NS1.ISI.EDU
     ;
     .                        3600000      NS    B.ROOT-SERVERS.NET.
-    B.ROOT-SERVERS.NET.      3600000      A     192.228.79.201
-    B.ROOT-SERVERS.NET.      3600000      AAAA  2001:500:84::b
+    B.ROOT-SERVERS.NET.      3600000      A     199.9.14.201
+    B.ROOT-SERVERS.NET.      3600000      AAAA  2001:500:200::b
     ;
     ; FORMERLY C.PSI.NET
     ;
@@ -153,6 +185,7 @@ data:
     ;
     .                        3600000      NS    E.ROOT-SERVERS.NET.
     E.ROOT-SERVERS.NET.      3600000      A     192.203.230.10
+    E.ROOT-SERVERS.NET.      3600000      AAAA  2001:500:a8::e
     ;
     ; FORMERLY NS.ISC.ORG
     ;
@@ -164,6 +197,7 @@ data:
     ;
     .                        3600000      NS    G.ROOT-SERVERS.NET.
     G.ROOT-SERVERS.NET.      3600000      A     192.112.36.4
+    G.ROOT-SERVERS.NET.      3600000      AAAA  2001:500:12::d0d
     ;
     ; FORMERLY AOS.ARL.ARMY.MIL
     ;
@@ -193,7 +227,7 @@ data:
     ;
     .                        3600000      NS    L.ROOT-SERVERS.NET.
     L.ROOT-SERVERS.NET.      3600000      A     199.7.83.42
-    L.ROOT-SERVERS.NET.      3600000      AAAA  2001:500:3::42
+    L.ROOT-SERVERS.NET.      3600000      AAAA  2001:500:9f::42
     ;
     ; OPERATED BY WIDE
     ;

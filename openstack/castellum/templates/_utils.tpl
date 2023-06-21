@@ -10,7 +10,7 @@
 - name: CASTELLUM_DEBUG
   value: "false"
 - name: CASTELLUM_ASSET_MANAGERS
-  value: "nfs-shares,project-quota,server-groups"
+  value: "{{ $.Values.castellum.asset_managers | join "," }}"
 - name: CASTELLUM_DB_PASSWORD
   valueFrom:
     secretKeyRef:
@@ -24,10 +24,14 @@
   value: ":8080"
 - name: CASTELLUM_LOG_SCRAPES
   value: "true"
-- name: CASTELLUM_MAX_ASSET_SIZES
-  value: "nfs-shares=16384" # 16384 GiB = 16 TiB
-- name: CASTELLUM_NFS_PROMETHEUS_URL
-  value: "http://prometheus-infra-collector.infra-monitoring.svc:9090"
+  # ^ The Manila limit comes from the "provisioning:max_share_extend_size" setting in
+  # `openstack/manila/templates/_helpers.tpl`. The limit in Manila only applies to
+  # the "default" share type. The "hypervisor_storage" share types are not limited,
+  # but those are usually not autoscaled anyway, so it's not a problem as of now.
+{{- if $.Values.castellum.asset_managers | has "nfs-shares" }}
+- name: CASTELLUM_NFS_NETAPP_SCOUT_URL
+  value: "http://castellum-netapp-scout.{{ .Release.Namespace }}.svc:8080"
+{{- end }}
 - name: CASTELLUM_OSLO_POLICY_PATH
   value: /etc/castellum/policy.yaml
 - name: CASTELLUM_RABBITMQ_QUEUE_NAME
@@ -41,10 +45,16 @@
       key: rabbitmq_password
 - name: CASTELLUM_RABBITMQ_HOSTNAME
   value: "{{ .Values.castellum.rabbitmq.hostname }}"
+{{- if $.Values.castellum.asset_managers | has "server-groups" }}
 - name: CASTELLUM_SERVERGROUPS_LOCAL_ROLES
   value: "member,keymanager_viewer"
 - name: CASTELLUM_SERVERGROUPS_PROMETHEUS_URL
-  value: "http://prometheus-vmware.vmware-monitoring.svc:9090"
+  value: "https://metrics.scaleout.{{ .Values.global.region }}.cloud.sap"
+- name: CASTELLUM_SERVERGROUPS_PROMETHEUS_CERT
+  value: /etc/castellum-certs/prometheus-vmware.cert.pem
+- name: CASTELLUM_SERVERGROUPS_PROMETHEUS_KEY
+  value: /etc/castellum-certs/prometheus-vmware.key.pem
+{{- end }}
 - name: OS_AUTH_URL
   value: "http://keystone.{{ .Values.global.keystoneNamespace }}.svc.kubernetes.{{ .Values.global.region }}.{{ .Values.global.tld }}:5000/v3"
 - name: OS_AUTH_VERSION

@@ -1,8 +1,4 @@
-{{- if .Capabilities.APIVersions.Has "templates.gatekeeper.sh/v1" }}
 apiVersion: templates.gatekeeper.sh/v1
-{{- else }}
-apiVersion: templates.gatekeeper.sh/v1beta1
-{{- end }}
 kind: ConstraintTemplate
 metadata:
   name: gkprometheusscrapeannotations
@@ -14,18 +10,23 @@ spec:
 
   targets:
     - target: admission.k8s.gatekeeper.sh
+      libs:
+        - |
+          {{ .Files.Get "lib/add-support-labels.rego" | nindent 10 }}
       rego: |
         package prometheusscrapeannotations
+        import data.lib.add_support_labels
+
+        iro := input.review.object
 
         is_valid_target[target] {
           target := data.inventory.namespace[_]["monitoring.coreos.com/v1"].Prometheus[_].metadata.name
         }
 
-        violation[{"msg": msg}] {
+        violation[{"msg": add_support_labels.from_k8s_object(iro, msg)}] {
           # does this object have Prometheus scraping enabled at all?
-          obj := input.review.object
-          regex.match("^(?:Service|Pod)$", obj.kind)
-          anno := obj.metadata.annotations
+          regex.match("^(?:Service|Pod)$", iro.kind)
+          anno := object.get(iro, ["metadata", "annotations"], {})
           object.get(anno, "prometheus.io/scrape", "false") == "true"
 
           # check that prometheus.io/targets contains only valid values
@@ -34,6 +35,7 @@ spec:
           # ^ NOTE: If the annotation is missing, we will have `targets == [""]` and that empty string value will count as invalid.
 
           all_valid_targets := {t | is_valid_target[t]}
+
           msg := sprintf(
             "has prometheus.io/scrape annotation, but prometheus.io/targets annotation is missing or does not have a valid value (got: %s, valid: %s)",
             [json.marshal(sort(targets)), json.marshal(sort(all_valid_targets))],

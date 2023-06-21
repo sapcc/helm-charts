@@ -27,13 +27,24 @@
   @type tail
   @id keystone
   path /var/log/containers/keystone-api-*.log
-  exclude_path /var/log/containers/fluentd*
+  exclude_path /var/log/containers/fluent*
   pos_file /var/log/keystone-octobus.log.pos
   tag keystone.*
   <parse>
-    @type json
-    time_format %Y-%m-%dT%H:%M:%S.%N
-    keep_time_key true
+  @type multi_format
+    <pattern>
+      format regexp
+      expression /^(?<time>.+) (?<stream>stdout|stderr)( (?<logtag>.))? (?<log>.*)$/
+      time_key time
+      time_format '%Y-%m-%dT%H:%M:%S.%NZ'
+      keep_time_key true
+    </pattern>
+    <pattern>
+      format json
+      time_format '%Y-%m-%dT%H:%M:%S.%N%:z'
+      time_key time
+      keep_time_key true
+    </pattern>
   </parse>
 </source>
 
@@ -41,13 +52,24 @@
   @type tail
   @id keystone-global
   path /var/log/containers/keystone-global-api-*.log
-  exclude_path /var/log/containers/fluentd*
+  exclude_path /var/log/containers/fluent*
   pos_file /var/log/keystone-global-octobus.log.pos
   tag keystone-global.*
   <parse>
-    @type json
-    time_format %Y-%m-%dT%H:%M:%S.%N
-    keep_time_key true
+  @type multi_format
+    <pattern>
+      format regexp
+      expression /^(?<time>.+) (?<stream>stdout|stderr)( (?<logtag>.))? (?<log>.*)$/
+      time_key time
+      time_format '%Y-%m-%dT%H:%M:%S.%NZ'
+      keep_time_key true
+    </pattern>
+    <pattern>
+      format json
+      time_format '%Y-%m-%dT%H:%M:%S.%N%:z'
+      time_key time
+      keep_time_key true
+    </pattern>
   </parse>
 </source>
 {{- end }}
@@ -58,26 +80,28 @@
   @type tail
   @id {{.}}kube-api
   path /var/log/containers/{{ . }}{{ $.Values.global.region }}-*-apiserver-*_kubernikus_fluentd-*.log
-  exclude_path /var/log/containers/fluentd*
+  exclude_path /var/log/containers/fluent*
   pos_file /var/log/{{ . }}kube-api-octobus.log.pos
   tag kubeapi.{{ . }}{{ $.Values.global.region }}.*
-  {{- if eq $.Values.global.clusterType "admin" }}
   <parse>
-    @type cri
+  @type multi_format
+    <pattern>
+      format regexp
+      expression /^(?<time>.+) (?<stream>stdout|stderr)( (?<logtag>.))? (?<log>.*)$/
+      time_key time
+      time_format '%Y-%m-%dT%H:%M:%S.%NZ'
+      keep_time_key true
+    </pattern>
+    <pattern>
+      format json
+      time_format '%Y-%m-%dT%H:%M:%S.%N%:z'
+      time_key time
+      keep_time_key true
+    </pattern>
   </parse>
-  {{- else }}
-  <parse>
-    @type json
-    time_format %Y-%m-%dT%T.%L%Z
-    keep_time_key true
-  </parse>
-  {{- end }}
 </source>
 <filter kubeapi.{{ . }}{{ $.Values.global.region }}.**>
   @type record_transformer
-{{- if eq $.Values.global.clusterType "admin" }}
-  remove_keys logtag
-{{- end }}
   <record>
     sap.cc.audit.source "kube-api"
     sap.cc.cluster "{{ . }}{{ $.Values.global.region }}"
@@ -89,11 +113,7 @@
 <filter kubeapi.**>
   @type parser
   @id json_parser
-{{- if eq $.Values.global.clusterType "admin" }}
-  key_name message
-{{- else }}
   key_name log
-{{- end }}
   reserve_data true
   remove_key_name_field true
   <parse>
@@ -105,25 +125,60 @@
 # remove fields which cause parsing errors in elastic and are not audit relevant
 <filter kubeapi.**>
   @type record_transformer
-  remove_keys $["requestObject"]["metadata"]["labels"]["app.kubernetes.io/managed-by"],$.requestObject.metadata.managedFields
+  enable_ruby
+  remove_keys temp,$.requestObject.metadata.labels.app,$.requestObject.metadata.managedFields
+  <record>
+     temp ${ unless record.dig("requestObject","metadata","labels","app").nil?; t = record.dig("requestObject","metadata","labels","app"); record["requestObject"]["metadata"]["labels"]["app_"] = t; end; nil;}
+  </record>
 </filter>
 {{- end }}
 
-{{- if .Values.additional_container_logs }}
-{{- range .Values.additional_container_logs }}
+{{- $container_logs := .Values.default_container_logs }}
+{{-  if .Values.additional_container_logs }}
+{{- $container_logs = concat $container_logs .Values.additional_container_logs }}
+{{- end }}
+{{- range $container_logs }}
 <source>
   @type tail
   @id {{ .id }}
   path {{ .path }}
-  exclude_path /var/log/containers/fluentd*
+  exclude_path /var/log/containers/fluent*
   pos_file /var/log/additional-containers-{{ .id }}-octobus.log.pos
   tag {{ .tag }}
   <parse>
-    @type json
-    time_format %Y-%m-%dT%H:%M:%S.%N
-    keep_time_key true
+  @type multi_format
+    <pattern>
+      format regexp
+      expression /^(?<time>.+) (?<stream>stdout|stderr)( (?<logtag>.))? (?<log>.*)$/
+      time_key time
+      time_format '%Y-%m-%dT%H:%M:%S.%NZ'
+      keep_time_key true
+    </pattern>
+    <pattern>
+      format json
+      time_format '%Y-%m-%dT%H:%M:%S.%N%:z'
+      time_key time
+      keep_time_key true
+    </pattern>
   </parse>
 </source>
+{{- if .preParseFilter }}
+<filter {{ .tag }}*>
+  @type grep
+  @id {{ .id }}_pre_parser_filter
+  {{- if eq .preParseFilter.keep true }}
+  <regexp>
+    key {{ .preParseFilter.key }}
+    pattern {{ .preParseFilter.pattern }}
+  </regexp>
+  {{- else }}
+  <exclude>
+    key {{ .preParseFilter.key }}
+    pattern {{ .preParseFilter.pattern }}
+  </exclude>
+  {{- end }}
+</filter>
+{{- end}}
 {{- if .parse }}
 <filter {{ .tag }}*>
   @type parser
@@ -131,16 +186,27 @@
   key_name log
   <parse>
     @type json
-    time_format %Y-%m-%dT%T.%L%Z
+    time_format {{ .timeFormat | default "%Y-%m-%dT%T.%L%Z" | squote }}
     keep_time_key true
   </parse>
 </filter>
 {{- end }}
-{{- if .field }}
+<filter {{ .tag }}* >
+  @type kubernetes_metadata
+  @id {{ .id }}_kubernetes
+  bearer_token_file /var/run/secrets/kubernetes.io/serviceaccount/token
+  ca_file /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+  skip_labels true
+  skip_container_metadata true
+  skip_master_url true
+  skip_namespace_metadata true
+</filter>
 <filter {{ .tag }}*>
   @type record_transformer
   <record>
+{{- if .field }}
     {{ .field.name }} {{ .field.value | quote }}
+{{- end }}
     sap.cc.cluster "{{ $.Values.global.cluster }}"
     sap.cc.region "{{ $.Values.global.region }}"
   </record>
@@ -148,15 +214,28 @@
 {{- if .filter }}
 <filter {{ .tag }}*>
   @type grep
+  {{- if eq .filter.keep true }}
   <regexp>
     key {{ .filter.key }}
     pattern {{ .filter.pattern }}
   </regexp>
+  {{- else }}
+  <exclude>
+    key {{ .filter.key }}
+    pattern {{ .filter.pattern }}
+  </exclude>
+  {{- end }}
 </filter>
 {{- end }}
 {{- end }}
-{{- end }}
-{{- end }}
+
+<filter falco.**>
+  @type record_modifier
+  <record>
+    event_source ${record['source']}
+  </record>
+  remove_keys source
+</filter>
 
 <match fluent.**>
   @type null
@@ -164,17 +243,14 @@
 
 # prometheus monitoring config
 
-@include /fluent-bin/prometheus.conf
+@include /fluentd/etc/prometheus.conf
 
 {{- if eq .Values.global.clusterType "metal" }}
 <filter keystone.** keystone-global.**>
   @type kubernetes_metadata
   @id kubernetes
-  kubernetes_url https://KUBERNETES_SERVICE_HOST
   bearer_token_file /var/run/secrets/kubernetes.io/serviceaccount/token
   ca_file /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
-  use_journal 'false'
-  container_name_to_kubernetes_regexp '^(?<name_prefix>[^_]+)_(?<container_name>[^\._]+)(\.(?<container_hash>[^_]+))?_(?<pod_name>[^_]+)_(?<namespace>[^_]+)_[^_]+_[^_]+$'
 </filter>
 
 <filter keystone.** keystone-global.**>
@@ -185,7 +261,7 @@
   <parse>
     @type grok
     grok_pattern %{DATE_EU:timestamp} %{TIME:timestamp} %{NUMBER} %{NOTSPACE:loglevel} %{JAVACLASS:component} \[%{NOTSPACE:requestid} %{DATA:global_request_id} usr %{DATA:usr} prj %{DATA:prj} dom %{DATA:dom} usr-dom %{DATA:usr_domain} prj-dom %{DATA}\] %{DATA:action} %{METHOD:method} %{URIPATH:pri_path}, %{LOWER:action} (?:b')?%{NOTSPACE:user}(?:') (?:b')(?:(%{WORD:domain}|))(?:')%{GREEDYDATA:action}
-    custom_pattern_path /fluent-bin/pattern
+    custom_pattern_path /fluentd/etc/pattern
     grok_failure_key grok_failure
   </parse>
 </filter>
@@ -259,7 +335,7 @@
 </match>
 {{- end }}
 
-<match iasapi.** iaschangelog.** vault.** github-guard.** github-guard-tools.** github-guard-corp.** concourse.** >
+<match iasapi.** iaschangelog.** vault.** github-guard.** github-guard-tools.** github-guard-corp.** concourse.** falco.**>
   @type copy
   @id duplicate_tools
   <store>

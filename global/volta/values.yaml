@@ -6,7 +6,6 @@
 volta:
   role_id: DEFINED_IN_REGION_VALUES_FILE
   secret_id: DEFINED_IN_REGION_VALUES_FILE
-  port: DEFINED_IN_VALUES_FILE
   vault_url: DEFINED_IN_REGION_VALUES_FILE
   oidc_provider: DEFINED_IN_VALUES_FILE
   oidc_client_id: DEFINED_IN_VALUES_FILE
@@ -16,6 +15,8 @@ volta:
   ldap_bind_dn: DEFINED_IN_VALUES_FILE
   ldap_base_dn: DEFINED_IN_VALUES_FILE
   ldap_bind_pw: DEFINED_IN_VALUES_FILE
+  ca_names: [2fa-pki, galvani-pki, mutual_tls-pki]
+  app_url: https://assets.juno.qa-de-1.cloud.sap/apps/widget-loader@latest/build/app.js
 
 replicaCount: 1
 
@@ -23,7 +24,7 @@ image:
   repository: keppel.eu-de-1.cloud.sap/ccloud/volta
   pullPolicy: Always
   # Overrides the image tag whose default is the chart appVersion.
-  tag: "20220622082141"
+  tag: "20221219134155"
 
 imagePullSecrets: []
 nameOverride: ""
@@ -38,7 +39,9 @@ serviceAccount:
   # If not set and create is true, a name is generated using the fullname template
   name: ""
 
-podAnnotations: {}
+podAnnotations:
+  prometheus.io/scrape: "true"
+  prometheus.io/targets: "kubernetes"
 
 podSecurityContext: {}
   # fsGroup: 2000
@@ -85,3 +88,11 @@ nodeSelector: {}
 tolerations: []
 
 affinity: {}
+
+owner-info:
+  helm-chart-url: 'https://github.com/sapcc/helm-charts/tree/master/global/volta'
+  maintainers:
+    - Dimitrios Tassopoulos
+    - Fabian Ruff
+  support-group: src
+  service: volta

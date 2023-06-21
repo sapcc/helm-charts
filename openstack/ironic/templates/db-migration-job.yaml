@@ -2,30 +2,23 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: ironic-db-migration
+  name: ironic-db-migration-{{ randAlphaNum 4 | lower }}
   labels:
     system: openstack
     type: job
     component: ironic
+  annotations:
+    "helm.sh/hook": "post-install,pre-upgrade"
+    "helm.sh/hook-weight": "-1"
+    "helm.sh/hook-delete-policy": "before-hook-creation"
+    # hooks are not annotated as belonging to the Helm release, so we cannot rely on owner-info injection
+    ccloud/support-group: compute-storage-api
+    ccloud/service: ironic
 spec:
   template:
     spec:
       initContainers:
-      - name: "kubernetes-entrypoint"
-        image: {{ .Values.global.registry }}/loci-ironic:{{ .Values.imageVersion }}
-        imagePullPolicy: "IfNotPresent"
-        command: ["kubernetes-entrypoint"]
-        env:
-        - name: "NAMESPACE"
-          value: {{ .Release.Namespace | quote }}
-        - name: "DEPENDENCY_SERVICE"
-{{- if eq .Values.mariadb.enabled true }}
-          value: "ironic-mariadb"
-{{- else }}
-          value: "ironic-postgresql"
-{{- end }}
-        - name: "COMMAND"
-          value: "true"
+      {{- tuple . (dict "service" "ironic-mariadb") | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 6 }}
       restartPolicy: OnFailure
       containers:
       - name: ironic-dbsync
@@ -55,10 +48,6 @@ spec:
         - mountPath: /etc/ironic/policy.json
           name: ironic-etc
           subPath: policy.json
-          readOnly: true
-        - mountPath: /etc/ironic/pxe_config.template
-          name: ironic-etc
-          subPath: pxe_config.template
           readOnly: true
         - mountPath: /etc/ironic/rootwrap.conf
           name: ironic-etc

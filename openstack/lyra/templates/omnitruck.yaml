@@ -31,7 +31,7 @@ spec:
         - name: proxy
           args:
             - -cache-backend=swift
-          image: {{.Values.global.dockerHubMirror}}/{{ .Values.omnitruck.image.repository }}:{{ .Values.omnitruck.image.tag }}
+          image: {{.Values.global.registry}}/{{ .Values.omnitruck.image.repository }}:{{ .Values.omnitruck.image.tag }}
           imagePullPolicy: {{ .Values.omnitruck.image.pullPollicy }}
           env:
             - name: OS_AUTH_URL
@@ -54,4 +54,14 @@ spec:
               port: {{.Values.omnitruck.internalPort}}
             timeoutSeconds: 5
             initialDelaySeconds: 5
+          # NOTE: observed resource usage (vpa upperBound) in qa-de-1 and ap-cn-1 (as of 2022-10)
+          # - CPU: 25m with 2 replicas
+          # - RAM: levels off around 256Mi (262144k) 
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "356Mi"
+            limits:
+              cpu: "250m"
+              memory: "356Mi" 
 {{- end }}

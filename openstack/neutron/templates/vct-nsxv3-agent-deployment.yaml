@@ -9,7 +9,6 @@ options:
     variable_start_string: '{='
     variable_end_string: '=}'
 template: |
-  {% if nsx_t_enabled is defined and nsx_t_enabled -%}
   apiVersion: apps/v1
   kind: Deployment
   metadata:
@@ -18,6 +17,9 @@ template: |
       system: openstack
       type: backend
       component: neutron
+      vcenter: {= host =}
+      datacenter: {= availability_zone =}
+      vccluster: {= cluster_name =}
   spec:
     replicas: 1
     revisionHistoryLimit: 5
@@ -34,6 +36,9 @@ template: |
         labels:
 {{ tuple . "neutron" "nsxv3" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 10 }}
           name: neutron-nsxv3-agent-{= name =}
+          vcenter: {= host =}
+          datacenter: {= availability_zone =}
+          vccluster: {= cluster_name =}
         annotations:
           configmap-etc-hash: {{ include (print $.Template.BasePath "/configmap-etc.yaml") . | sha256sum }}
           prometheus.io/scrape: "true"
@@ -121,5 +126,4 @@ template: |
                 items:
                 - key: ml2-nsxv3.ini
                   path: plugins/ml2/ml2-nsxv3.ini
-  {% endif %}
 {{- end }}

@@ -1,0 +1,159 @@
+{{- if .Values.internalIngress.enabled }}
+{{- $root := . }}
+{{- if $root.Capabilities.APIVersions.Has "networking.k8s.io/v1/Ingress" }}
+apiVersion: networking.k8s.io/v1
+{{- else -}}
+apiVersion: networking.k8s.io/v1beta1
+{{- end }}
+kind: Ingress
+
+metadata:
+  name: {{ include "prometheus.fullName" . }}-internal
+  labels:
+    prometheus: {{ include "prometheus.name" . }}
+  annotations:
+    kubernetes.io/tls-acme: "true"
+    disco: "true"
+    {{- if .Values.internalIngress.authentication.oauth.enabled }}
+    ingress.kubernetes.io/auth-url: {{ required ".Values.internalIngress.authentication.oauth.authURL missing" .Values.internalIngress.authentication.oauth.authURL }}
+    {{ if .Values.internalIngress.authentication.oauth.authSignInURL }}ingress.kubernetes.io/auth-signin: {{ .Values.internalIngress.authentication.oauth.authSignInURL }} {{ end }}
+    {{ end }}
+    {{- if .Values.internalIngress.authentication.sso.enabled}}
+    ingress.kubernetes.io/auth-tls-secret: {{ required ".Values.internalIngress.authentication.sso.authTLSSecret missing" .Values.internalIngress.authentication.sso.authTLSSecret | quote }}
+    ingress.kubernetes.io/auth-tls-verify-depth: {{ required ".Values.internalIngress.authentication.sso.authTLSVerifyDepth missing" .Values.internalIngress.authentication.sso.authTLSVerifyDepth | quote }}
+    ingress.kubernetes.io/auth-tls-verify-client: {{ required ".Values.internalIngress.authentication.sso.authTLSVerifyClient missing" .Values.internalIngress.authentication.sso.authTLSVerifyClient | quote }}
+    {{ end }}
+    {{- if .Values.internalIngress.annotations }}
+{{ toYaml .Values.internalIngress.annotations | indent 4 }}
+    {{ end }}
+
+spec:
+  rules:
+    {{- range $host := .Values.internalIngress.hosts }}
+    - host: {{ include "fqdnHelper" (list $host $root) }}
+      http:
+        paths:
+          - path: /-/healthy
+            {{- if $root.Capabilities.APIVersions.Has "networking.k8s.io/v1/Ingress" }}
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: {{ include "prometheus.fullName" $root }}
+                port:
+                  name: http
+            {{- else }}
+            backend:
+              serviceName: {{ include "prometheus.fullName" $root }}
+              servicePort: http
+            {{- end }}
+          - path: /api
+            {{- if $root.Capabilities.APIVersions.Has "networking.k8s.io/v1/Ingress" }}
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: {{ include "prometheus.fullName" $root }}
+                port:
+                  name: http
+            {{- else }}
+            backend:
+              serviceName: {{ include "prometheus.fullName" $root }}
+              servicePort: http
+            {{- end }}
+          - path: /federate
+            {{- if $root.Capabilities.APIVersions.Has "networking.k8s.io/v1/Ingress" }}
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: {{ include "prometheus.fullName" $root }}
+                port:
+                  name: http
+            {{- else }}
+            backend:
+              serviceName: {{ include "prometheus.fullName" $root }}
+              servicePort: http
+            {{- end }}
+        {{- if $root.Values.thanos.enabled }}
+          - path: {{ required ".Values.thanos.querier.webRouteprefix missing" $root.Values.thanos.querier.webRouteprefix }}
+            {{- if $root.Capabilities.APIVersions.Has "networking.k8s.io/v1/Ingress" }}
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: {{ include "prometheus.fullName" $root }}-thanos-query
+                port:
+                  name: http
+            {{- else }}
+            backend:
+              serviceName: {{ include "prometheus.fullName" $root }}-thanos-query
+              servicePort: http
+            {{- end }}
+        {{- end }}
+    {{- end }}
+    {{- range $host := .Values.internalIngress.hostsFQDN }}
+    - host: {{ $host }}
+      http:
+        paths:
+          - path: /-/healthy
+            {{- if $root.Capabilities.APIVersions.Has "networking.k8s.io/v1/Ingress" }}
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: {{ include "prometheus.fullName" $root }}
+                port:
+                  name: http
+            {{- else }}
+            backend:
+              serviceName: {{ include "prometheus.fullName" $root }}
+              servicePort: http
+            {{- end }}
+          - path: /api
+            {{- if $root.Capabilities.APIVersions.Has "networking.k8s.io/v1/Ingress" }}
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: {{ include "prometheus.fullName" $root }}
+                port:
+                  name: http
+            {{- else }}
+            backend:
+              serviceName: {{ include "prometheus.fullName" $root }}
+              servicePort: http
+            {{- end }}
+          - path: /federate
+            {{- if $root.Capabilities.APIVersions.Has "networking.k8s.io/v1/Ingress" }}
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: {{ include "prometheus.fullName" $root }}
+                port:
+                  name: http
+            {{- else }}
+            backend:
+              serviceName: {{ include "prometheus.fullName" $root }}
+              servicePort: http
+            {{- end }}
+        {{- if $root.Values.thanos.enabled }}
+          - path: {{ required ".Values.thanos.querier.webRouteprefix missing" $root.Values.thanos.querier.webRouteprefix }}
+            {{- if $root.Capabilities.APIVersions.Has "networking.k8s.io/v1/Ingress" }}
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: {{ include "prometheus.fullName" $root }}-thanos-query
+                port:
+                  name: http
+            {{- else }}
+            backend:
+              serviceName: {{ include "prometheus.fullName" $root }}-thanos-query
+              servicePort: http
+            {{- end }}
+        {{- end }}
+    {{- end }}
+  tls:
+    - secretName: tls-internal-{{ include "prometheus.externalURL" $root | replace "." "-" }}
+      hosts:
+        {{- range $host := .Values.internalIngress.hosts }}
+        - {{ include "fqdnHelper" (list $host $root) }}
+        {{- end }}
+        {{- range $host := .Values.internalIngress.hostsFQDN }}
+        - {{ $host }}
+        {{- end }}
+{{- end }}

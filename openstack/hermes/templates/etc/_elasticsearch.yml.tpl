@@ -12,6 +12,7 @@ transport.host: 0.0.0.0
 http.max_content_length: 1000mb
 http.compression: true
 cluster.max_shards_per_node: 10000
+action.search.shard_count.limit: 10000
 
 discovery.zen.minimum_master_nodes: 1
 discovery.type: single-node

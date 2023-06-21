@@ -3,6 +3,10 @@ global:
   domain:
   clusterType: admin-k3s
 
+owner-info:
+  support-group: containers
+  helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/system/kube-monitoring-admin-k3s
+
 # Disable the prometheus-operator kube-state-metrics sub-chart. We deploy independently.
 kubeStateMetrics:
   enabled: false
@@ -11,180 +15,119 @@ kubeStateMetrics:
 nodeExporter:
   enabled: false
 
-kube-prometheus-stack:
-  nameOverride: prometheus
-  fullnameOverride: prometheus
-  # Never manage CRDs. They are deployed via prometheus-crds Helm chart.
-  manageCrds: false
+grafana:
+  image:
+    repository: keppel.global.cloud.sap/ccloud-dockerhub-mirror/grafana/grafana
+    tag: 7.5.16
 
-  prometheusOperator:
+  testFramework:
+    enabled: false
+  admin:
+    existingSecret: kube-monitoring-admin-grafana-admin
+    userKey: adminUser
+    passwordKey: adminPassword
+    # Defined via secrets.
+    # username: admin-user
+    # password: admin-password
+
+  rbac:
+    pspEnabled: false
+
+  # Ingress disabled by default as hosts and tls are set via secrets.
+  ingress:
+    enabled: false
+    annotations:
+      kubernetes.io/tls-acme: "true"
+      disco: "true"
+      nginx.ingress.kubernetes.io/auth-tls-secret: "kube-system/ingress-cacrt"
+      nginx.ingress.kubernetes.io/auth-tls-verify-depth: "3"
+      nginx.ingress.kubernetes.io/auth-tls-verify-client: "optional"
+
+    # Defined via secrets.
+    # hosts:
+    #   - grafana.domain.tld
+    #
+    # tls:
+    #  - secretName: tls-grafana-domain-tld
+    #    hosts:
+    #      - grafana.domain.tld
+
+  plugins: grafana-piechart-panel,natel-discrete-panel,grafana-worldmap-panel
+
+  # Sidecar for discovering & reloading dashboard, datasource configmaps.
+  sidecar:
     image:
-      repository: keppel.global.cloud.sap/ccloud-dockerhub-mirror/sapcc/prometheus-operator
-      tag: v0.47.0
+      repository: keppel.global.cloud.sap/ccloud-dockerhub-mirror/kiwigrid/k8s-sidecar
 
-    prometheusConfigReloaderImage:
-      repository: keppel.global.cloud.sap/ccloud-dockerhub-mirror/sapcc/prometheus-config-reloader
-      tag: v0.44.0
+    dashboards:
+      enabled: true
+      label: grafana-dashboard
+      searchNamespace: ALL
 
-    # Both admissionWebhooks and tls requires admissionregistration.k8s.io/v1 .
-    admissionWebhooks:
+    datasources:
+      enabled: true
+      defaultDatasourceEnabled: false
+      # Label that configmaps with datasources should have to be added.
+      label: grafana-datasource
+
+  grafana.ini:
+    paths:
+      data: /var/lib/grafana/data
+      logs: /var/log/grafana
+      plugins: /var/lib/grafana/plugins
+      provisioning: /var/lib/grafana/provisioning
+
+    server:
+      protocol: http
+      http_addr:
+      http_port: 3000
+      domain: localhost
+      enforce_domain: false
+      root_url: "%(protocol)s://%(domain)s:%(http_port)s"
+      router_logging: false
+      static_root_path: public
+      enable_gzip: false
+      cert_file:
+      cert_key:
+      socket: /tmp/grafana.sock
+
+    users:
+      allow_sign_up: false
+      allow_org_create: false
+      auto_assign_org: true
+      auto_assign_org_role: Admin
+      default_theme: dark
+
+    auth.anonymous:
+      enabled: true
+      org_name: Main Org.
+      org_role: Admin
+
+    auth.proxy:
+      enabled: true
+      header_name: X-REMOTE-USER
+      header_property: username
+      auto_sign_up: true
+
+    auth.basic:
       enabled: false
-    tls:
+
+    smtp:
       enabled: false
 
-    createCustomResource: false
-    service:
-      annotations:
-        prometheus.io/scrape: "true"
-        prometheus.io/targets: "kubernetes"
-        prometheus.io/port: "8080"
-    serviceAccount:
-      create: false
-    tlsProxy:
+    log:
+      mode: console
+      level: debug
+
+    alerting:
       enabled: false
-
-  operator:
-    serviceAccountName: default
-  # Disable creation of default aggregation and alerting rules.
-  defaultRules:
-    create: false
-  # Disable the Prometheus instance. We deploy our own Prometheis.
-  prometheus:
-    enabled: false
-  # Disable the Alertmanager instance. We deploy our own Alertmanagers.
-  alertmanager:
-    enabled: false
-  # Disable all exporters.
-  kubeApiServer:
-    enabled: false
-  kubelet:
-    enabled: false
-  kubeControllerManager:
-    enabled: false
-  coreDns:
-    enabled: false
-  kubeDns:
-    enabled: false
-  kubeEtcd:
-    enabled: false
-  kubeScheduler:
-    enabled: false
-  kubeStateMetrics:
-    enabled: false
-  nodeExporter:
-    enabled: false
-
-  grafana:
-    enabled: true
-    defaultDashboardsEnabled: false
-    admin:
-      existingSecret: kube-monitoring-admin-grafana-admin
-      userKey: adminUser
-      passwordKey: adminPassword
-      # Defined via secrets.
-      # username: admin-user
-      # password: admin-password
-
-    rbac:
-      pspEnabled: false
-
-    # Ingress disabled by default as hosts and tls are set via secrets.
-    ingress:
-      enabled: false
-      annotations:
-        kubernetes.io/tls-acme: "true"
-        disco: "true"
-
-      # Defined via secrets.
-      # hosts:
-      #   - grafana.domain.tld
-      #
-      # tls:
-      #  - secretName: tls-grafana-domain-tld
-      #    hosts:
-      #      - grafana.domain.tld
-
-    plugins: grafana-piechart-panel,natel-discrete-panel,grafana-worldmap-panel
-
-    additionalDataSources:
-      - name: prometheus
-        type: prometheus
-        isDefault: true
-        access: proxy
-        url: http://prometheus-kubernetes:9090/
-        version: 1
-
-    # Sidecar for discovering & reloading dashboard, datasource configmaps.
-    sidecar:
-      dashboards:
-        enabled: true
-        label: grafana-dashboard
-        searchNamespace: ALL
-
-      datasources:
-        enabled: true
-        defaultDatasourceEnabled: false
-        # Label that configmaps with datasources should have to be added.
-        label: grafana-datasource
-
-    grafana.ini:
-      paths:
-        data: /var/lib/grafana/data
-        logs: /var/log/grafana
-        plugins: /var/lib/grafana/plugins
-        provisioning: /var/lib/grafana/provisioning
-
-      server:
-        protocol: http
-        http_addr:
-        http_port: 3000
-        domain: localhost
-        enforce_domain: false
-        root_url: "%(protocol)s://%(domain)s:%(http_port)s"
-        router_logging: false
-        static_root_path: public
-        enable_gzip: false
-        cert_file:
-        cert_key:
-        socket: /tmp/grafana.sock
-
-      users:
-        allow_sign_up: false
-        allow_org_create: false
-        auto_assign_org: true
-        auto_assign_org_role: Admin
-        default_theme: dark
-
-      auth.anonymous:
-        enabled: true
-        org_name: Main Org.
-        org_role: Admin
-
-      auth.proxy:
-        enabled: true
-        header_name: X-REMOTE-USER
-        header_property: username
-        auto_sign_up: true
-
-      auth.basic:
-        enabled: false
-
-      smtp:
-        enabled: false
-
-      log:
-        mode: console
-        level: debug
-
-      alerting:
-        enabled: false
 
 absent-metrics-operator:
   enabled: true
 
 kube-state-metrics:
   image:
-    repository: keppel.global.cloud.sap/ccloud-k8sgcr-mirror/kube-state-metrics/kube-state-metrics
+    repository: keppel.global.cloud.sap/ccloud-registry-k8s-io-mirror/kube-state-metrics/kube-state-metrics
 
   customLabels:
     app: kube-state-metrics
@@ -204,32 +147,34 @@ ping-exporter:
 
 prometheus-node-exporter:
   image:
-    repository: prom/node-exporter
+    repository: keppel.global.cloud.sap/ccloud-dockerhub-mirror/prom/node-exporter
+
+  service:
+    annotations:
+      # Avoid duplicate scrapes via service.
+      prometheus.io/scrape: "false"
 
   extraArgs:
-    - --collector.filesystem.ignored-mount-points=^/(sys|proc|dev|host|etc)($$|/)
-    - --collector.filesystem.ignored-fs-types=^(autofs|binfmt_misc|bpf|cgroup|configfs|debugfs|devpts|devtmpfs|fusectl|hugetlbfs|mqueue|nsfs|overlay|proc|procfs|pstore|rpc_pipefs|securityfs|selinuxfs|squashfs|sysfs|tmpfs|tracefs)$$
-    - --collector.processes
-    - --path.rootfs=/rootfs
+    - --collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)
+    - --collector.filesystem.fs-types-exclude=^(autofs|binfmt_misc|bpf|cgroup|configfs|debugfs|devpts|devtmpfs|fusectl|hugetlbfs|mqueue|nsfs|overlay|proc|procfs|pstore|rpc_pipefs|securityfs|selinuxfs|squashfs|sysfs|tmpfs|tracefs)$$
     - --collector.systemd.enable-task-metrics
     - --collector.systemd.enable-restarts-metrics
     - --collector.systemd.enable-start-time-metrics
+    - --collector.processes
 
   extraHostVolumeMounts:
     - name: dbus
       hostPath: /var/run/dbus/system_bus_socket
       mountPath: /var/run/dbus/system_bus_socket
       readOnly: true
-    - name: rootfs
-      hostPath: /
-      mountPath: /rootfs
-      readOnly: true
-      mountPropagation: HostToContainer
 
   resources:
     requests:
       memory: 100Mi
       cpu: 100m
+
+  rbac:
+    pspEnabled: false
 
 prometheus-server:
   name: kubernetes
@@ -280,7 +225,7 @@ prometheus-server:
     nodeExporter:
       enabled: true
     kubeDNS:
-      enabled: true
+      enabled: false
     kubernikus:
       enabled: true
 
@@ -294,6 +239,17 @@ prometheus-server:
       - alertmanager-internal.scaleout.eu-de-1.cloud.sap
       - alertmanager-internal.scaleout.eu-nl-1.cloud.sap
 
+  alerts:
+    multipleTargetScrapes:
+      exceptions:
+        # we exclude cadvisor metrics because it has the same instance as the kubelet but a different path
+        # e.g. 10.246.204.80:10250/metrics vs. 10.246.204.80:10250/metrics/cadvisor
+        - kubernetes-cadvisors
+        - kubernetes-kubelet
+
+  thanos:
+    enabled: false
+
 prometheus-kubernetes-rules:
   prometheusName: kubernetes
   kubelet:
@@ -304,9 +260,6 @@ extraScrapeConfig: ""
 
 kubernikus-monitoring:
   prometheusName: kubernetes
-
-grafana-dashboards-kubernetes:
-  enableDatasources: false
 
 event-exporter:
   rbac:
@@ -359,3 +312,50 @@ event-exporter:
         expr: ".*failed to attach ([-0-9a-f]+) volume to.*compute: Invalid request due to incorrect syntax or missing required parameters."
       labels:
         volume: Message[1]
+
+fluent-bit:
+  backend:
+    es:
+      enabled: true
+    opensearch:
+      enabled: false
+      host: DEFINED-IN-SECRETS
+      http_user: DEFINED-IN-SECRETS
+      http_passwd: DEFINED-IN-SECRETS
+      port: DEFINED-IN-SECRETS
+      logstash_prefix: admin
+      tls:
+        enabled: "On"
+        verify: "Off"
+        debug: '1'
+
+falco:
+  enabled: false
+  image:
+    registry: keppel.global.cloud.sap/ccloud-dockerhub-mirror
+
+  driver:
+    loader:
+      initContainer:
+        image:
+          registry: keppel.global.cloud.sap/ccloud-dockerhub-mirror
+
+  falcoctl:
+    image:
+      registry: keppel.global.cloud.sap/ccloud-dockerhub-mirror
+
+  tolerations:
+    - operator: Exists
+
+  extra:
+    args:
+      - -t
+      - pci
+      - -v
+      - --unbuffered
+      - -o
+      - json_output=true
+
+  falco:
+    rules_file:
+      - /etc/falco/rules.d

@@ -27,6 +27,13 @@ spec:
         - name: tenso
           description: Tenso Service
           password: '{{ .Values.tenso.service_password | required ".Values.tenso.service_password is missing" }}'
+        - name: tenso-ansible
+          description: Technical User for submitting events into Tenso from Ansible
+          password: '{{ .Values.tenso.ansible_user_password | required ".Values.tenso.ansible_user_password is missing" }}'
+          role_assignments:
+            # The policy identifies this user by name instead of by role, but we need a project role somewhere to discover Tenso via Keystone catalog.
+            - project: service
+              role:    service
         - name: tenso-concourse
           description: Technical User for submitting events into Tenso from Concourse
           password: '{{ .Values.tenso.concourse_user_password | required ".Values.tenso.concourse_user_password is missing" }}'

@@ -29,6 +29,10 @@ spec:
 {{ tuple . "nova" "api" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
       annotations:
         configmap-etc-hash: {{ include (print $.Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
+        {{- if or .Values.conductor.config_file.DEFAULT.statsd_enabled .Values.proxysql.mode }}
+        prometheus.io/scrape: "true"
+        prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
+        {{- end }}
     spec:
       terminationGracePeriodSeconds: {{ .Values.defaults.default.graceful_shutdown_timeout | add 5 }}
 {{- if .Values.pod.debug.api }}
@@ -36,10 +40,11 @@ spec:
         runAsUser: 0
 {{- end }}
 {{ tuple . "nova" "api" | include "kubernetes_pod_anti_affinity" | indent 6 }}
+{{ include "utils.proxysql.pod_settings" . | indent 6 }}
       hostname: nova-api
       containers:
         - name: nova-api
-          image: {{ required ".Values.global.registry is missing" .Values.global.registry}}/ubuntu-source-nova-api:{{.Values.imageVersionNovaApi | default .Values.imageVersionNova | default .Values.imageVersion | required "Please set nova.imageVersion or similar"}}
+          image: {{ tuple . "api" | include "container_image_nova" }}
           imagePullPolicy: IfNotPresent
           command:
             - dumb-init
@@ -57,6 +62,10 @@ spec:
               value: "localhost"
             - name: STATSD_PORT
               value: "9125"
+            {{- if .Values.api.use_uwsgi }}
+            - name: OS_OSLO_MESSAGING_RABBIT__HEARTBEAT_IN_PTHREAD
+              value: "true"
+            {{- end }}
             {{- if .Values.sentry.enabled }}
             - name: SENTRY_DSN
               valueFrom:
@@ -97,80 +106,75 @@ spec:
             - name: nova-api
               containerPort: {{.Values.global.novaApiPortInternal}}
           volumeMounts:
-            - mountPath: /etc/nova
-              name: etcnova
-            - mountPath: /etc/nova/nova.conf
-              name: nova-etc
-              subPath: nova.conf
-              readOnly: true
-            - mountPath: /etc/nova/nova-api.conf
-              name: nova-etc
-              subPath: nova-api.conf
-              readOnly: true
-            - mountPath: /etc/nova/api-paste.ini
-              name: nova-etc
-              subPath: api-paste.ini
-              readOnly: true
-           {{- if .Values.api.use_uwsgi }}
-            - mountPath: /etc/nova/api_uwsgi.ini
-              name: nova-etc
-              subPath: api_uwsgi.ini
-              readOnly: true
-           {{- end }}
-{{- if .Values.audit.enabled }}
-            - mountPath: /etc/nova/nova_audit_map.yaml
-              name: nova-etc
-              subPath: nova_audit_map.yaml
-              readOnly: true
-{{- end }}
-            - mountPath: /etc/nova/policy.json
-              name: nova-etc
-              subPath: policy.json
-              readOnly: true
-            - mountPath: /etc/nova/logging.ini
-              name: nova-etc
-              subPath: logging.ini
-              readOnly: true
-            - mountPath: /etc/nova/rootwrap.conf
-              name: nova-etc
-              subPath: rootwrap.conf
-              readOnly: true
-            - mountPath: /etc/nova/rootwrap.d/api-metadata.filters
-              name: nova-etc
-              subPath: api-metadata.filters
-              readOnly: true
-            - mountPath: /var/lib/kolla/venv/bin/iptables-restore
-              name: nova-bin
-              subPath: iptables-restore.mock
-              readOnly: true
-            {{- if .Values.watcher.enabled }}
-            - name: nova-etc
-              mountPath: /etc/nova/watcher.yaml
-              subPath: watcher.yaml
-              readOnly: true
-            {{- end }}
+          - mountPath: /etc/nova
+            name: nova-etc
+            {{- include "utils.proxysql.volume_mount" . | indent 10 }}
+        {{- tuple . .Values.api.config_file.DEFAULT.osapi_compute_workers | include "utils.proxysql.container" | indent 8 }}
         - name: statsd
           image: {{ required ".Values.global.dockerHubMirror is missing" .Values.global.dockerHubMirror}}/prom/statsd-exporter:v0.8.1
           imagePullPolicy: IfNotPresent
           args: [ --statsd.mapping-config=/etc/statsd/statsd-exporter.yaml ]
           ports:
-            - name: statsd
-              containerPort: 9125
-              protocol: UDP
-            - name: metrics
-              containerPort: 9102
+          - name: statsd
+            containerPort: 9125
+            protocol: UDP
+          - name: metrics
+            containerPort: 9102
           volumeMounts:
-            - name: nova-etc
-              mountPath: /etc/statsd/statsd-exporter.yaml
-              subPath: statsd-exporter.yaml
-              readOnly: true
+          - name: statsd-etc
+            mountPath: /etc/statsd/statsd-exporter.yaml
+            subPath: statsd-exporter.yaml
+            readOnly: true
       volumes:
-        - name: etcnova
-          emptyDir: {}
-        - name: nova-etc
-          configMap:
-            name: nova-etc
-        - name: nova-bin
-          configMap:
-            name: nova-bin
-            defaultMode: 0755
+      - name: nova-etc
+        projected:
+          sources:
+          - configMap:
+              name: nova-etc
+              items:
+              - key:  nova.conf
+                path: nova.conf
+              - key:  nova-api.conf
+                path: nova-api.conf
+              - key:  api-paste.ini
+                path: api-paste.ini
+              - key:  policy.yaml
+                path: policy.yaml
+              - key:  logging.ini
+                path: logging.ini
+              - key:  rootwrap.conf
+                path: rootwrap.conf
+              - key:  api-metadata.filters
+                path: rootwrap.d/api-metadata.filters
+              - key:  release
+                path: release
+{{- if .Values.api.use_uwsgi }}
+              - key:  api_uwsgi.ini
+                path: api_uwsgi.ini
+{{- end }}
+{{- if .Values.audit.enabled }}
+              - key:  nova_audit_map.yaml
+                path: nova_audit_map.yaml
+{{- end }}
+{{- if .Values.watcher.enabled }}
+              - key:  watcher.yaml
+                path: watcher.yaml
+{{- end }}
+          - secret:
+              name: nova-etc
+              items:
+              - key: db.conf
+                path: nova.conf.d/db.conf
+      - name: statsd-etc
+        projected:
+          sources:
+          - configMap:
+              name: nova-etc
+              items:
+              - key:  statsd-exporter.yaml
+                path: statsd-exporter.yaml
+      - name: nova-bin
+        configMap:
+          name: nova-bin
+          defaultMode: 0755
+      {{- include "utils.proxysql.volumes" . | indent 6 }}

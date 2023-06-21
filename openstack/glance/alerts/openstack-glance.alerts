@@ -2,21 +2,22 @@ groups:
 - name: openstack-glance.alerts
   rules:
   - alert: OpenstackGlanceImageInQueuedState
-    expr: count(openstack_glance_image_gauge{status="queued"})by(id,name,project_id, created_at) > 0
+    expr: count(openstack_glance_image_gauge{status="queued"})by(id,image_name,project_id, created_at) > 0
     for: 30m
     labels:
       severity: info
       tier: os
+      support_group: compute-storage-api
       service: glance
       context: glance
       dashboard: glance
-      meta: 'Image {{ $labels.name }} is in Queued State'
+      meta: 'Image {{ $labels.image_name }} is in Queued State'
     annotations:
-      description: 'Image {{ $labels.name }} with id {{ $labels.id }} in project_id {{ $labels.project_id }} is Queued'
+      description: 'Image {{ $labels.image_name }} with id {{ $labels.id }} in project_id {{ $labels.project_id }} is Queued since {{ $labels.created_at}}'
       summary: 'Image is in Queued State'
 
   - alert: OpenstackGlanceImageInKilledState
-    expr: count(openstack_glance_image_gauge{status="killed"})by(id,name,project_id) > 0
+    expr: count(openstack_glance_image_gauge{status="killed"})by(id,image_name,project_id) > 0
     for: 30m
     labels:
       severity: info
@@ -24,9 +25,10 @@ groups:
       service: glance
       context: glance
       dashboard: glance
-      meta: 'Image {{ $labels.name }} is in Killed State'
+      meta: 'Image {{ $labels.image_name }} is in Killed State'
+      no_alert_on_absence: "true"
     annotations:
-      description: 'Image {{ $labels.name }} with id {{ $labels.id }} in project_id {{ $labels.project_id }} is Killed'
+      description: 'Image {{ $labels.image_name }} with id {{ $labels.id }} in project_id {{ $labels.project_id }} is Killed'
       summary: 'Image is in Killed State'
 
   - alert: OpenstackGlanceUnresolvedSentryIssues
@@ -38,6 +40,7 @@ groups:
       severity: info
       tier: os
       sentry: 'glance/'
+      support_group: compute-storage-api
     annotations:
       description: glance has encountered unexpected errors and reported
         them to Sentry. Please have a look at the list of unresolved issues
@@ -69,6 +72,7 @@ groups:
       dashboard: glance
       meta: "Glance Container {{ $labels.container_name }}"
       no_alert_on_absence: "true" # the underlying metric is only generated after the first oomkill
+      support_group: compute-storage-api
     annotations:
       summary: Glance Container was oomkilled
       description: Glance Container {{ $labels.container_name }} in Pod {{ $labels.pod_name }} was oomkilled recently
@@ -95,11 +99,13 @@ groups:
       service: glance
       severity: info
       tier: os
+      support_group: compute-storage-api
+      playbook: 'docs/devops/alert/{{ $labels.service }}'
     annotations:
       description: glances database running status failed to be scraped. Monitoring might miss metrics it needs to alert on
       summary: glance database cannot be scraped
 
-  - alert: OpenstackGlanceApiUp
+  - alert: OpenstackGlanceApiPodIsDown
     expr: up{component="glance",type="api"} == 0
     for: 5m
     labels:
@@ -108,20 +114,24 @@ groups:
       meta: "a glance instance went down on {{ $labels.instance }}"
       service: glance
       severity: info
-      tier: os
+      tier: warning
+      support_group: compute-storage-api
+      playbook: 'docs/devops/alert/{{ $labels.service }}'
     annotations:
       description: "A glance-api pod on {{ $labels.instance }} is DOWN. The remaining ones should keep the service up."
       summary: "A glance server is DOWN"
 
-  - alert: OpenstackGlanceDatabaseUp
+  - alert: OpenstackGlanceDatabaseDown
     expr: count(up{component="glance-mariadb"} == 0) == count(up{component="glance-mariadb"})
     for: 5m
     labels:
       context: availability
       service: glance
-      severity: info
+      severity: warning
       tier: os
       dashboard: mariadb-overview?var-host=glance-mariadb
+      support_group: compute-storage-api
+      playbook: 'docs/devops/alert/{{ $labels.service }}'
     annotations:
       description: "glance database on {{ $labels.instance }} is DOWN."
       summary: "glance Database is DOWN"
@@ -133,9 +143,11 @@ groups:
       context: availability
       meta: all glance instances are down
       service: glance
-      severity: info
+      severity: warning
       tier: os
       dashboard: glance
+      support_group: compute-storage-api
+      playbook: 'docs/devops/alert/{{ $labels.service }}'
     annotations:
       description: All glance-api server pods are down.
       summary: glance is unavailable.

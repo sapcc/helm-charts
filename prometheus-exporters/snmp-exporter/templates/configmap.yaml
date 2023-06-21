@@ -158,20 +158,6 @@ data:
         priv_protocol: {{ .Values.snmp_exporter.asr03.priv_protocol }}
         priv_password: {{ .Values.snmp_exporter.asr03.priv_password }}
 {{- end }}
-{{- if .Values.snmp_exporter.asr04.enabled }}
-{{ .Files.Get "_snmp-exporter-asr04.yaml" | indent 4}}
-      version: {{ .Values.snmp_exporter.asr04.version }}
-      max_repetitions: 25
-      retries: 3
-      timeout: 10s
-      auth:
-        security_level: {{ .Values.snmp_exporter.asr04.security_level }}
-        username: {{ .Values.snmp_exporter.asr04.username }}
-        password: {{ .Values.snmp_exporter.asr04.password }}
-        auth_protocol: {{ .Values.snmp_exporter.asr04.auth_protocol }}
-        priv_protocol: {{ .Values.snmp_exporter.asr04.priv_protocol }}
-        priv_password: {{ .Values.snmp_exporter.asr04.priv_password }}
-{{- end }}
 {{- if .Values.snmp_exporter.coreasr9k.enabled }}
 {{ .Files.Get "_snmp-exporter-coreasr9k.yaml" | indent 4}}
       version: {{ .Values.snmp_exporter.coreasr9k.version }}
@@ -192,45 +178,6 @@ data:
       auth:
         community: {{ .Values.snmp_exporter.n3k.community }}
 {{- end }}
-{{- if .Values.snmp_exporter.n7k.enabled }}
-{{- if .Values.global.n7k.enabled }}
-    n7k:
-{{ .Files.Get "_snmp-exporter-n7k.yaml" | indent 4}}
-      version: {{ .Values.global.n7k.version }}
-      max_repetitions: 25
-      retries: 3
-      timeout: 10s
-      auth:
-        security_level: {{ .Values.global.n7k.security_level }}
-        username: {{ .Values.global.n7k.username }}
-        password: {{ .Values.global.n7k.password }}
-        auth_protocol: {{ .Values.global.n7k.auth_protocol }}
-        priv_protocol: {{ .Values.global.n7k.priv_protocol }}
-        priv_password: {{ .Values.global.n7k.priv_password }}
-{{- range $switch := .Values.global.n7k.context }}
-    n7k{{ $switch.context_name | lower }}:
-{{ $.Files.Get "_snmp-exporter-n7kcontext.yaml" | indent 4}}
-      version: {{ $switch.version }}
-      max_repetitions: 25
-      retries: 3
-      timeout: 10s
-      auth:
-        security_level: {{ $switch.security_level }}
-        username: {{ $switch.username }}
-        password: {{ $switch.password }}
-        auth_protocol: {{ $switch.auth_protocol }}
-        priv_protocol: {{ $switch.priv_protocol }}
-        priv_password: {{ $switch.priv_password }}
-        context_name: {{ $switch.context_name }}
-{{- end }}
-{{- else if .Values.snmp_exporter.n7k.community }}
-    n7k:
-{{ $.Files.Get "_snmp-exporter-n7k.yaml" | indent 4}}
-      version: {{ .Values.snmp_exporter.n7k.version }}
-      auth:
-        community: {{ .Values.snmp_exporter.n7k.community }}
-{{- end }}
-{{- end }}
 {{- if .Values.snmp_exporter.pxgeneric.enabled }}
 {{ .Files.Get "_snmp-exporter-pxgeneric.yaml" | indent 4}}
       version: {{ .Values.snmp_exporter.pxgeneric.version }}
@@ -245,20 +192,30 @@ data:
         priv_protocol: {{ .Values.snmp_exporter.pxgeneric.priv_protocol }}
         priv_password: {{ .Values.snmp_exporter.pxgeneric.priv_password }}
 {{- end }}
-{{- if .Values.snmp_exporter.pxdlrouternxos.enabled }}
-{{ .Files.Get "_snmp-exporter-pxdlrouternxos.yaml" | indent 4}}
-      version: {{ .Values.snmp_exporter.pxdlrouternxos.version }}
+{{ .Files.Get "_snmp-exporter-pxdlrouteriosxe.yaml" | indent 4}}
+      version: {{ .Values.snmp_exporter.pxdlrouteriosxe.version }}
       max_repetitions: 25
       retries: 3
       timeout: 10s
       auth:
-        security_level: {{ .Values.snmp_exporter.pxdlrouternxos.security_level }}
-        username: {{ .Values.snmp_exporter.pxdlrouternxos.username }}
-        password: {{ .Values.snmp_exporter.pxdlrouternxos.password }}
-        auth_protocol: {{ .Values.snmp_exporter.pxdlrouternxos.auth_protocol }}
-        priv_protocol: {{ .Values.snmp_exporter.pxdlrouternxos.priv_protocol }}
-        priv_password: {{ .Values.snmp_exporter.pxdlrouternxos.priv_password }}
-{{- end }}
+        security_level: {{ .Values.snmp_exporter.pxdlrouteriosxe.security_level }}
+        username: {{ .Values.snmp_exporter.pxdlrouteriosxe.username }}
+        password: {{ .Values.snmp_exporter.pxdlrouteriosxe.password }}
+        auth_protocol: {{ .Values.snmp_exporter.pxdlrouteriosxe.auth_protocol }}
+        priv_protocol: {{ .Values.snmp_exporter.pxdlrouteriosxe.priv_protocol }}
+        priv_password: {{ .Values.snmp_exporter.pxdlrouteriosxe.priv_password }}
+{{ .Files.Get "_snmp-exporter-pxdlrouteriosxr.yaml" | indent 4}}
+      version: {{ .Values.snmp_exporter.pxdlrouteriosxr.version }}
+      max_repetitions: 25
+      retries: 3
+      timeout: 10s
+      auth:
+        security_level: {{ .Values.snmp_exporter.pxdlrouteriosxr.security_level }}
+        username: {{ .Values.snmp_exporter.pxdlrouteriosxr.username }}
+        password: {{ .Values.snmp_exporter.pxdlrouteriosxr.password }}
+        auth_protocol: {{ .Values.snmp_exporter.pxdlrouteriosxr.auth_protocol }}
+        priv_protocol: {{ .Values.snmp_exporter.pxdlrouteriosxr.priv_protocol }}
+        priv_password: {{ .Values.snmp_exporter.pxdlrouteriosxr.priv_password }}
 {{- if .Values.snmp_exporter.acileaf.enabled }}
 {{ .Files.Get "_snmp-exporter-acileaf.yaml" | indent 4}}
       version: {{ .Values.snmp_exporter.acileaf.version }}
@@ -348,4 +305,18 @@ data:
         auth_protocol: {{ .Values.snmp_exporter.hsm.auth_protocol }}
         priv_protocol: {{ .Values.snmp_exporter.hsm.priv_protocol }}
         priv_password: {{ .Values.snmp_exporter.hsm.priv_password }}
+{{- end }}
+{{- if .Values.snmp_exporter.aristaevpn.enabled }}
+{{ .Files.Get "_snmp-exporter-aristaevpn.yaml" | indent 4}}
+      version: {{ .Values.snmp_exporter.aristaevpn.version }}
+      max_repetitions: 25
+      retries: 3
+      timeout: 10s
+      auth:
+        security_level: {{ .Values.snmp_exporter.aristaevpn.security_level }}
+        username: {{ .Values.snmp_exporter.aristaevpn.username }}
+        password: {{ .Values.snmp_exporter.aristaevpn.password }}
+        auth_protocol: {{ .Values.snmp_exporter.aristaevpn.auth_protocol }}
+        priv_protocol: {{ .Values.snmp_exporter.aristaevpn.priv_protocol }}
+        priv_password: {{ .Values.snmp_exporter.aristaevpn.priv_password }}
 {{- end }}

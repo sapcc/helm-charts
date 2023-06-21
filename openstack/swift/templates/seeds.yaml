@@ -1,4 +1,3 @@
-{{- $swift_release := include "swift_release" . -}}
 apiVersion: "openstack.stable.sap.cc/v1"
 kind: "OpenstackSeed"
 metadata:
@@ -18,14 +17,10 @@ spec:
   - monsoon3/domain-cc3test-seed
 
   roles:
-  - name: swiftoperator
-  - name: swiftreseller
-{{- if ge $swift_release "yoga" }}
   - name: cloud_objectstore_admin
   - name: cloud_objectstore_viewer
   - name: objectstore_admin
   - name: objectstore_viewer
-{{- end }}
   services:
   - name: swift
     type: object-store
@@ -47,8 +42,6 @@ spec:
     - name: admin
       role_assignments:
       - project: admin
-        role: swiftreseller # TODO Remove - used by openstack-seeder to create Swift accounts
-      - project: admin
         role: cloud_objectstore_admin # used by openstack-seeder to create Swift accounts
     - name: swift
       description: 'Swift Service'
@@ -64,8 +57,6 @@ spec:
     projects:
     - name: cloud_admin
       role_assignments:
-      - group: CCADMIN_CLOUD_ADMINS
-        role: swiftreseller # TODO Remove
       - group: CCADMIN_CLOUD_ADMINS
         role: cloud_objectstore_admin
     - name: master # Swift account is enabled in swift-utils-seed

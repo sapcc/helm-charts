@@ -3,6 +3,9 @@ whitelist:
   - Default/service
   - monsoon3/cc-demo
 
+whitelist_users:
+  - TS4_S4_SMTP_01
+
 # Override default ratelimit response.
 ratelimit_response:
   status: 429 Rate Limited

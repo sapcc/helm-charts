@@ -8,7 +8,7 @@ global:
   master_password: ""
 
 image: library/rabbitmq
-imageTag: 3.6-management
+imageTag: 3.10.5-management
 ## Specify a imagePullPolicy
 ## 'Always' if imageTag is 'latest', else set to 'IfNotPresent'
 ## ref: http://kubernetes.io/docs/user-guide/images/#pre-pulling-images
@@ -69,7 +69,9 @@ resources:
 nodeAffinity: {}
 
 metrics:
-  enabled: true
+  enabled: &metrics true
+  sidecar:
+    enabled: *metrics
   image: kbudde/rabbitmq-exporter
   imageTag: 0.16.0
   user: monitoring

@@ -19,11 +19,14 @@ spec:
     metadata:
       labels:
         name: elektra
-      #We scrape the request metrics via annotion on the elektra service
-      #This annotation is for the puma metrics exporter
       annotations:
+        #We scrape the request metrics via annotion on the elektra service
+        #This annotation is for the puma metrics exporter
         prometheus.io/scrape: "true"
         prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
+        # ensure deployment's annotation section is updated if support-configmap file changes
+        # this logic ensure pod recreation when the configmap changes and elektra is initialized with the new values
+        checksum/configmap: {{ include "elektra/templates/support-config-map.yaml" . | sha256sum }}
     spec:
       affinity:
         podAntiAffinity:
@@ -38,24 +41,40 @@ spec:
                   values:
                   - elektra
       volumes:
-        - name: galvani-config
+        - name: support-config
           configMap:
-            name: galvani-config
+            name: support-config
       # The preStop hook below sleeps 30 seconds, extend the gracePeriod accordingly
       terminationGracePeriodSeconds: 60
+      initContainers:
+        - name: init-database
+          image: {{.Values.global.registry}}/elektra:{{.Values.image.tag}}
+          command: ['script/init-db.sh']
+          imagePullPolicy: {{.Values.image.pullPolicy}}
+          env: 
+{{ include (print .Template.BasePath "/_env.tpl") . | indent 12 }}
       containers:
         - name: rails
           image: {{.Values.global.registry}}/elektra:{{.Values.image.tag}}
           imagePullPolicy: {{.Values.image.pullPolicy}}
           ports:
-            - name: http
+            - name: metrics-rails
               containerPort: 80
           volumeMounts:
-            - name: galvani-config
+            - name: support-config
               mountPath: '/home/app/config/support'
-              readOnly: true  
+              readOnly: true
           env:
 {{ include (print .Template.BasePath "/_env.tpl") . | indent 12 }}
+          startupProbe: # The application will have a maximum of 5 minutes (30 * 10 = 300s) to finish its startup.
+            httpGet:
+              path: /system/startprobe
+              port: 80
+              httpHeaders:
+                - name: host
+                  value: elektra.cloud.sap # from rails 6 only hosts defined in config.host are allowed. We are simulating a valid host here.                  
+            failureThreshold: 30
+            periodSeconds: 10
           livenessProbe:
             httpGet:
               path: /system/liveliness
@@ -83,21 +102,23 @@ spec:
           # NOTE: observed resource usage in eu-de-2 (as of 2022-06)
           # - CPU: 49m with 8 replicas was running into throttling, so give plenty headroom
           # - RAM: levels off around 735 Mi
+          # k -n elektra describe vpa elektra
           resources:
             requests:
               cpu: "500m"
               memory: "800Mi"
             limits:
-              cpu: "500m"
-              memory: "800Mi"                
+              cpu: "2000m"
+              memory: "1Gi"                
         - name: puma-metrics
-          image: {{.Values.global.dockerHubMirror}}/sapcc/puma-exporter:0.1.0
+          image: {{.Values.global.registry}}/puma-exporter:1.0.0
           ports:
-            - name: metrics
+            - name: metrics-puma
               containerPort: 9235
           # NOTE: observed resource usage in eu-de-2 (as of 2022-06)
           # - CPU: 12m with 8 replicas was running into throttling, so give plenty headroom
           # - RAM: levels off around 128Mi
+          # k -n elektra describe vpa puma-metrics
           resources:
             requests:
               cpu: "120m"

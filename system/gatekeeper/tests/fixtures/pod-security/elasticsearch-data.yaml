@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  annotations:
+    meta.helm.sh/release-name: elk
+    meta.helm.sh/release-namespace: elk
+  labels:
+    app.kubernetes.io/managed-by: Helm
+  name: es-data
+  namespace: elk
+spec:
+  template:
+    spec:
+      containers:
+      - name: es
+        securityContext:
+          capabilities:
+            add:
+            - IPC_LOCK
+            - SYS_RESOURCE
+      initContainers:
+      - command:
+        - sysctl
+        - -w
+        - vm.max_map_count=262144
+        name: sysctl
+        securityContext:
+          privileged: true
+          runAsUser: 0
+      securityContext: {}

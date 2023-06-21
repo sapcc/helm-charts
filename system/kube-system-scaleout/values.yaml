@@ -16,20 +16,6 @@ ccauth:
 
 cert-manager:
   installCRDs: true
-  image:
-    repository: keppel.eu-de-1.cloud.sap/ccloud/cert-manager-controller
-    tag: v1.5.5-p1
-  webhook:
-    image:
-      repository: keppel.eu-de-1.cloud.sap/ccloud-quay-mirror/jetstack/cert-manager-webhook
-  cainjector:
-    image:
-      repository: keppel.eu-de-1.cloud.sap/ccloud-quay-mirror/jetstack/cert-manager-cainjector
-    extraArgs:
-    - --leader-elect=false
-  startupapicheck:
-    image:
-      repository: keppel.eu-de-1.cloud.sap/ccloud-quay-mirror/jetstack/cert-manager-ctl
   ingressShim:
     defaultIssuerName: digicert-issuer
     defaultIssuerKind: DigicertIssuer
@@ -38,6 +24,8 @@ cert-manager:
     enabled: true
   podAnnotations:
     prometheus.io/targets: kubernetes
+  extraArgs:
+    - --enable-certificate-owner-ref=true
 
 digicert-issuer:
   enableLeaderElection: "false"
@@ -48,3 +36,35 @@ ingress-nginx-internet:
 # For now enabled via regional values.
 maintenance-controller:
   enabled: false
+
+metrics-server:
+  image:
+    repository: keppel.global.cloud.sap/ccloud-registry-k8s-io-mirror/metrics-server/metrics-server
+
+  # Workaround for qa landscapes.
+  args:
+    - --kubelet-insecure-tls
+
+  replicas: 3
+  podLabels:
+    k8s-app: metrics-server
+  affinity:
+    podAntiAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        - labelSelector:
+            matchLabels:
+              k8s-app: metrics-server
+          namespaces:
+            - kube-system
+          topologyKey: kubernetes.io/hostname
+
+owner-info:
+  support-group: containers
+  helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/system/kube-system-scaleout
+
+vpa-butler:
+  image:
+    repository: keppel.global.cloud.sap/ccloud/vpa_butler
+
+vertical-pod-autoscaler:
+  enabled: true

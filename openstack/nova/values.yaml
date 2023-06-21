@@ -8,15 +8,11 @@ global:
   novaApiPortPublic: '443'
   novaApiMetadataPortInternal: '8775'
   novaConsolePortPublic: '443'
-  placementApiPortAdmin: '8778'
-  placementApiPortInternal: '8778'
-  placementApiPortPublic: '443'
   master_password: null
-
-  dbUser: nova
-
+  domain_seeds:
+    skip_hcm_domain: false
+    
   nova_service_user: nova
-  placement_service_user: placement
 
   hypervisors: []
   enable_kvm: false
@@ -24,8 +20,6 @@ global:
   hypervisors_kvm: []
   hypervisors_ironic: []
   osprofiler: {}
-  pgbouncer:
-    enabled: true
 
 osprofiler: {}
 
@@ -75,10 +69,8 @@ pod:
     api: 6
     metadata: 2
     console: 2
-    consoleauth: 0
     conductor: 2
     scheduler: 1
-    placement: 2
     vspc: 4
   lifecycle:
     upgrades:
@@ -102,15 +94,11 @@ pod:
     bigvm:
       requests:
         cpu: "100m"
-        memory: "256m"
+        memory: "256Mi"
     conductor:
       requests:
         cpu: "1500m"
         memory: "7Gi"
-    placement:
-      requests:
-        cpu: "400m"
-        memory: "150Mi"
     scheduler:
       requests:
         cpu: "500m"
@@ -123,10 +111,6 @@ pod:
       requests:
         cpu: "1000m"
         memory: "1Gi"
-    hv_vmware_dvs:
-      requests:
-        cpu: "1000m"
-        memory: "2Gi"
     vspc:
       requests:
         cpu: "200m"
@@ -153,19 +137,12 @@ apidbName: nova_api
 apidbUser: nova_api
 apidbPassword: null
 
-placementdbName: placement
-placementdbUser: placement
-placementdbPassword: null
-
 loci:
   nova: false
-  openvswitch: false
   # neutron images use loci by default
 
 #TODO we need to move to global or find another way to share image versions
 imageNameNeutron: loci-neutron
-imageVersionNeutronServer: null
-imageVersionNeutronOpenvswitchAgent: null
 
 imageNameOpenvswitch: loci-neutron
 imageVersionOpenvswitchVswitchd: null
@@ -177,12 +154,13 @@ imageVersionNovaApi: null
 imageVersionNovaCompute: null
 imageVersionNovaLibvirt: null
 imageVersionNovaConductor: null
-imageVersionNovaConsoleauth: null
 imageVersionNovaNovncproxy: null
 imageVersionNovaShellinaboxproxy: null
 imageVersionNovaSpicehtml5proxy: null
 imageVersionNovaScheduler: null
-imageVersionNovaPlacementApi: null
+imageVersionBitnamiOpenResty: 1.21.4-1-debian-11-r57
+
+imageVersionVspc: null
 
 vspc:
   enabled: false
@@ -194,16 +172,11 @@ vspc:
     portExternal: 1334
   nodeIP: null
   url: vmware-vspc
-  version: "20210111143046"
   pvc:
     existingClaim: null
     accessMode: ReadWriteMany
     size: 10Gi
 
-
-# I would move all that to the neutron deployment
-neutron: {}
-neutron_dvs_agent_enabled: true
 
 cross_az_attach: 'False'
 # for a total of 11 tries with 0.5s sleep in between we could get away with < 5s of problems
@@ -222,6 +195,7 @@ api:
     api:
       list_records_by_skipping_down_cells: false
       use_forwarded_for: true
+      disable_hypervisor_uptime_detail: true
 
     wsgi:
       api_paste_config: /etc/nova/api-paste.ini
@@ -243,6 +217,9 @@ api_metadata:
     wsgi:
       api_paste_config: /etc/nova/api-paste.ini
 
+bigvm:
+  config_file: {}
+
 consoles:
   novnc:
     enabled: false
@@ -253,6 +230,7 @@ consoles:
   shellinabox:
     enabled: true
     portInternal: '6084'
+    custom_deployment: true
   spice:
     enabled: false
   mks:
@@ -263,13 +241,14 @@ consoles:
 
 scheduler:
   driver: "filter_scheduler"
-  scheduler_tracks_instance_changes: false
+  workers: 1
+  track_instance_changes: false
   scheduler_instance_sync_interval: 120
   rpc_statsd_port: 9125
   # enables collecting metrics for RPC calls
   rpc_statsd_enabled: true
   default_filters: "CpuInfoMigrationFilter, ShardFilter, AggregateMultiTenancyIsolation, ComputeFilter, ComputeCapabilitiesFilter, BigVmFlavorHostSizeFilter, VmSizeThresholdFilter, ImagePropertiesFilter, ServerGroupAntiAffinityFilter, ServerGroupAffinityFilter"
-  vm_size_threshold_vm_size_mb: "8193"
+  vm_size_threshold_vm_size_mb: "16385"
   vm_size_threshold_hv_size_mb: "819200"
   ram_weight_multiplier: 1.0
   cpu_weight_multiplier: 1.0
@@ -283,6 +262,7 @@ scheduler:
   # if it doesn't have to - even if it's in the wrong RAM class currently.
   prefer_same_host_resize_weight_multiplier: 1000.0
   hv_ram_class_weight_multiplier: 100.0
+  image_properties_default_architecture: "x86_64"
 
 compute:
   defaults:
@@ -310,6 +290,16 @@ compute:
       default_hw_version: vmx-18
       memory_reservation_cluster_hosts_max_fail: 2
       memory_reservation_max_ratio_fallback: 0.8
+      # set this to (a little above) the maximum a flavor ever had in our env
+      # This query can look for currently used resources in Placement:
+      # SELECT a.used, a.consumer_id FROM allocations a
+      #   JOIN resource_providers r ON r.id = a.resource_provider_id
+      #   WHERE resource_class_id = 2 AND r.name like 'domain-%' ORDER BY a.used DESC LIMIT 2;
+      # additionally, the sap-seeds chart contains the flavors we currently have
+      resource_disk_gb_max_unit_limit: 700
+  vmware:
+    vnc:
+      enabled: false
 
 conductor:
   config_file:
@@ -330,25 +320,6 @@ quota:
   server_group_members: 40  # this is set by limes now
   # we don't want to set unlimited because that has too much potential to break things
   key_pairs: 10000
-
-
-placement:
-  enabled: false
-  wsgi_processes: 10
-  unsplit: false  # True: Revert split triggered by setting placementdbPassword
-  finalize_split: false # True: Remove placement table views from nova (after a migration)
-  tables:   # Do not modify, this is the list of all tables
-  - allocations
-  - consumers
-  - inventories
-  - placement_aggregates
-  - projects
-  - resource_classes
-  - resource_provider_aggregates
-  - resource_provider_traits
-  - resource_providers
-  - traits
-  - users
 
 mysql_metrics:
   db_name: nova
@@ -706,13 +677,29 @@ db_name: nova
 max_pool_size: 10
 max_overflow: 5
 
+proxysql:
+  mode: ""
+
 mariadb:
   enabled: false
   max_connections: 2048
   buffer_pool_size: "4096M"
   log_file_size: "1024M"
   name: nova
-  custom_initdb_configmap: nova-mysql-db-init
+  initdb_configmap: true
+  long_query_time: 8
+  databases:
+  - nova
+  - nova_cell0
+  users:
+    nova:
+      name: nova
+      grants:
+      - "ALL PRIVILEGES on nova.*"
+    nova_cell0:
+      name: nova_cell0
+      grants:
+      - "ALL PRIVILEGES on nova_cell0.*"
   persistence_claim:
     name: db-nova-pvc
     size: "50Gi"
@@ -729,13 +716,23 @@ mariadb:
       - nova_cell0.instance_metadata
     oauth:
       client_id: "nova"
+  alerts:
+    support_group: compute-storage-api
 
 mariadb_api:
   enabled: false
   buffer_pool_size: "4096M"
   log_file_size: "1024M"
   name: nova-api
-  custom_initdb_configmap: nova-api-db-init
+  initdb_configmap: true
+  long_query_time: 8
+  databases:
+  - nova_api
+  users:
+    nova_api:
+      name: nova_api
+      grants:
+      - "ALL PRIVILEGES on nova_api.*"
   persistence_claim:
     name: db-nova-api-pvc
     size: "50Gi"
@@ -751,12 +748,15 @@ mariadb_api:
       - nova_api.key_pairs
     oauth:
       client_id: "nova-api"
+  alerts:
+    support_group: compute-storage-api
 
 mariadb_cell2:
   enabled: false
   buffer_pool_size: "4096M"
   log_file_size: "1024M"
-  custom_initdb_configmap: nova-cell2-db-init
+  initdb_configmap: true
+  long_query_time: 8
   persistence_claim:
     name: db-nova-cell2-pvc
     size: "50Gi"
@@ -766,9 +766,11 @@ mariadb_cell2:
     enabled: true
     oauth:
       client_id: "nova-cell2"
+  alerts:
+    support_group: compute-storage-api
 
 rabbitmq_cell2:
-  name: nova-cell2
+  nameOverride: cell2-rabbitmq
   persistence:
     enabled: false
 
@@ -777,8 +779,12 @@ rabbitmq_cell2:
     rabbit_queue_length: 50
     unacknowledged_total_wait_for: 10m
     ready_total_wait_for: 10m
+    support_group: compute-storage-api
 
 audit:
+  central_service:
+    user: rabbitmq
+    password: null
   enabled: false
   # how many messages to buffer before dumping to log (when rabbit is down or too slow)
   mem_queue_size: 1000
@@ -786,7 +792,6 @@ audit:
   metrics_enabled: true
 
 rabbitmq:
-  name: nova
   users:
     default:
       password: null
@@ -807,11 +812,7 @@ rabbitmq:
     rabbit_queue_length: 50
     unacknowledged_total_wait_for: 10m
     ready_total_wait_for: 10m
-
-rabbitmq_notifications:
-  name: nova
-  persistence:
-    enabled: false
+    support_group: compute-storage-api
 
 logging:
   formatters:
@@ -883,3 +884,26 @@ pre_change_hook:
   image: "sapcc/unified-kubernetes-toolbox"
   image_version: "20220525082919"
   kubectl_version: 1.21.8
+
+cors:
+  enabled: true
+  additional_allow_headers: 'X-OpenStack-Nova-API-Version'
+
+memcached:
+  alerts:
+    support_group: compute-storage-api
+    yielded_connections_threshold: 100
+
+owner-info:
+  support-group: compute-storage-api
+  service: nova
+  maintainers:
+    - Johannes Kulik
+    - Fabian Wiesel
+    - Marius Leustean
+    - Jakob Karge
+  helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/openstack/nova
+
+default:
+  password_all_group_samples: 2
+  rpc_ping_enabled: true

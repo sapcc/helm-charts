@@ -1,8 +1,4 @@
-{{- if .Capabilities.APIVersions.Has "templates.gatekeeper.sh/v1" }}
 apiVersion: templates.gatekeeper.sh/v1
-{{- else }}
-apiVersion: templates.gatekeeper.sh/v1beta1
-{{- end }}
 kind: ConstraintTemplate
 metadata:
   name: gkownerinfoonhelmreleases
@@ -18,50 +14,65 @@ spec:
           properties:
             helmManifestParserURL:
               type: string
+            knownBrokenReleases:
+              type: array
+              items:
+                type: string
 
   targets:
     - target: admission.k8s.gatekeeper.sh
+      libs:
+        - |
+          {{ .Files.Get "lib/add-support-labels.rego" | nindent 10 }}
+        - |
+          {{ .Files.Get "lib/helm-release.rego" | nindent 10 }}
       rego: |
         package ownerinfoonhelmreleases
+        import data.lib.add_support_labels
+        import data.lib.helm_release
 
-        secret := input.review.object
-        parser_url := sprintf("%s/v3", [input.parameters.helmManifestParserURL])
-        parser_resp := http.send({"url": parser_url, "method": "POST", "raise_error": false, "raw_body": secret.data.release, "timeout": "15s"})
-
-        violation[{"msg": msg}] {
-          parser_resp.status_code != 200
-          msg := "helm-manifest-parser did not return HTTP status 200. Please retry in ~5 minutes."
+        iro := input.review.object
+        release := helm_release.parse_k8s_object(iro, input.parameters.helmManifestParserURL)
+        violation[{"msg": release.error}] {
+          release.error != ""
         }
 
-        configmaps = {obj |
-          input.review.object.kind == "Secret"
-          secret.type == "helm.sh/release.v1"
-          secret.metadata.labels.status == "deployed"
+        configmap_name := sprintf("owner-of-%s", [iro.metadata.labels.name])
 
-          parser_resp.status_code == 200
+        configmaps[obj] {
+          release.error == ""
 
-          obj := parser_resp.body.items[_]
+          obj := release.items[_]
           obj.kind == "ConfigMap"
-          startswith(obj.metadata.name, "owner-of-")
+          obj.metadata.name == configmap_name
         }
 
-        violation[{"msg": msg}] {
-          # Check if an 'owner-of-<release-name>' ConfigMap exists for this release.
+        violation[{"msg": add_support_labels.from_helm_release(release, msg)}] {
+          release.error == ""
+
+          # Complain if no 'owner-of-<release-name>' ConfigMap exists for this release.
           count(configmaps) == 0
-          release_name := input.review.object.metadata.labels.name
-          msg := sprintf("could not find ConfigMap: owner-of-%s", [release_name])
+
+          # Do not complain if this release is part of the knownBrokenReleases.
+          key := sprintf("%s/%s", [iro.metadata.namespace, iro.metadata.labels.name])
+          count({ k | k := input.parameters.knownBrokenReleases[_]; k == key }) == 0
+
+          msg := "Chart does not contain owner info. Please add the common/owner-info chart as a direct dependency."
         }
 
-        violation[{"msg": msg}] {
+        violation[{"msg": add_support_labels.from_helm_release(release, msg)}] {
+          release.error == ""
+
           count(configmaps) > 0
 
-          # Check if 'primary-maintainer' label is defined. Existence of this label denotes that
-          # the 'data.maintainers' field is defined and it contains at least one maintainer.
+          # Check if the owner-info chart is not outdated
+          upToDateVersion := "0.2.0"
           obj := configmaps[_]
-          pm := object.get(obj.metadata.labels, "primary-maintainer", "")
-          pm == ""
+          version := object.get(obj.metadata, ["labels", "owner-info-version"], "")
+          semver.compare(version, upToDateVersion) < 0
+
           msg := sprintf(
-            "ConfigMap %q does not have %q label: parent chart needs to define %q in its Values.yaml file with at least one maintainer",
-            [obj.metadata.name, "primary-maintainer", "owner-info.maintainers"],
+            "Chart uses outdated owner-info version %q. Please update to at least %q.",
+            [version, upToDateVersion],
           )
         }

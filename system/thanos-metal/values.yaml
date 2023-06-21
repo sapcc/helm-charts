@@ -1,0 +1,64 @@
+owner-info:
+  support-group: observability
+  maintainers:
+    - Tommy Sauer
+    - Richard Tief
+  helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/system/thanos-metal
+
+thanos:
+  name: metal
+  deployWholeThanos: false
+  ingress:
+    enabled: true
+    hosts:
+      - metrics.metal
+      - thanos-metal
+  grpcIngress:
+    enabled: true
+    hosts:
+      - thanos-metal
+  queryDiscovery: true
+  clusterDomain: kubernetes
+
+  ruler:
+    enabled: true
+    loglevel: warn
+    alertmanagers:
+      hosts:
+        - alertmanager-internal.scaleout.eu-de-1.cloud.sap
+        - alertmanager-internal.scaleout.eu-nl-1.cloud.sap
+
+  alerts:
+    prometheus: kubernetes
+
+regional_thanos:
+  name: regional
+  deployWholeThanos: false
+  ingress:
+    enabled: true
+    hosts:
+      - metrics
+      - thanos
+
+  queryDiscovery: false
+
+  authentication:
+    enabled: true
+
+  clusterTypes:
+    - metal
+    - virtual
+    - admin
+    - kubernikus
+    - scaleout
+
+  ruler:
+    enabled: true
+
+    alertmanagers:
+      hosts:
+        - alertmanager-internal.scaleout.eu-de-1.cloud.sap
+        - alertmanager-internal.scaleout.eu-nl-1.cloud.sap
+
+  alerts:
+    prometheus: kubernetes

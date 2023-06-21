@@ -14,6 +14,7 @@ spec:
     spec:
       restartPolicy: OnFailure
       serviceAccountName: {{ template "andromeda.serviceAccountName" . }}
+      {{- if not .Values.database_override.enabled }}
       initContainers:
         - name: wait-for-db
           image: "{{ .Values.global.registry }}/kubernetes-entrypoint:{{ .Values.image.kubernetes_entrypoint_version }}"
@@ -22,13 +23,15 @@ spec:
             - name: NAMESPACE
               value: "andromeda"
             - name: DEPENDENCY_SERVICE
-              value: "{{ include "andromeda.fullname" . }}-cockroachdb"
+              value: "{{ include "andromeda.database_service" . }}"
             - name: COMMAND
               value: "true"
+      {{- end }}
       containers:
         - name: {{ include "andromeda.fullname" . }}-migration
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | required ".Values.image.tag is required" }}"
-          args: ["--config-file", "/etc/andromeda/andromeda.conf", "migrate"]
+          command: [ "/usr/bin/andromeda-migrate" ]
+          args: ["--config-file", "/etc/andromeda/andromeda.yaml"]
           volumeMounts:
             - name: etc-andromeda
               mountPath: /etc/andromeda
@@ -41,5 +44,5 @@ spec:
               - configMap:
                   name: andromeda-etc
                   items:
-                    - key: andromeda.conf
-                      path: andromeda.conf
+                    - key: andromeda.yaml
+                      path: andromeda.yaml

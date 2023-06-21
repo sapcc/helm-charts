@@ -1,0 +1,19 @@
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: csi-manila-nfs
+provisioner: nfs.{{ index .Values "openstack-manila-csi" "driverName" }}
+allowVolumeExpansion: true
+parameters:
+  type: default
+  availability: {{ required "openstack.availabilityZone needs to be set" .Values.openstack.availabilityZone }}
+  shareNetworkID: {{ required "openstack.shareNetworkID needs to be set" .Values.openstack.shareNetworkID }}
+  nfs-shareClient: {{ required "openstack.shareClient needs to be set" .Values.openstack.shareClient }}
+  csi.storage.k8s.io/provisioner-secret-name: manila-csi-plugin
+  csi.storage.k8s.io/provisioner-secret-namespace: {{ .Release.Namespace }}
+  csi.storage.k8s.io/node-stage-secret-name: manila-csi-plugin
+  csi.storage.k8s.io/node-stage-secret-namespace: {{ .Release.Namespace }}
+  csi.storage.k8s.io/node-publish-secret-name: manila-csi-plugin
+  csi.storage.k8s.io/node-publish-secret-namespace: {{ .Release.Namespace }}
+  csi.storage.k8s.io/controller-expand-secret-name: manila-csi-plugin
+  csi.storage.k8s.io/controller-expand-secret-namespace: {{ .Release.Namespace }}

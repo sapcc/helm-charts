@@ -30,12 +30,20 @@ spec:
         name: glance
         alert-tier: os
         alert-service: glance
+        {{- include "utils.topology.pod_label" . | indent 8 }}
       annotations:
         chart-version: {{.Chart.Version}}
         checksum/etc-configmap.conf: {{ include (print $.Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
+        {{- if .Values.proxysql.mode }}
+        prometheus.io/scrape: "true"
+        prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
+        {{- end }}
     spec:
-      {{- if .Values.file.persistence.enabled }}
+      {{ include "utils.proxysql.pod_settings" . | indent 6 }}
+      {{- tuple . (dict "name" "glance") | include "utils.topology.constraints" | indent 6 }}
       initContainers:
+      {{- tuple . (dict "jobs" (tuple . "migration-job" | include "job_name") "service" (print .Release.Name "-mariadb," .Release.Name "-memcached")) | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 6 }}
+      {{- if .Values.file.persistence.enabled }}
       - name: permissions
         securityContext:
           runAsUser: 0
@@ -77,22 +85,10 @@ spec:
           failureThreshold: 2
         command:
         - dumb-init
-        - kubernetes-entrypoint
+        - /var/lib/openstack/bin/glance-api
         env:
-        - name: COMMAND
-          value: "/var/lib/openstack/bin/glance-api"
-        - name: NAMESPACE
-          value: {{ .Release.Namespace }}
-        - name: DEPENDENCY_JOBS
-          value: "glance-migration-job-{{ required "Please set glance.imageVersion or similar" .Values.imageVersion }}"
-        - name: DEPENDENCY_SERVICE
-          value: {{ .Release.Name }}-mariadb,{{ .Release.Name }}-memcached
         - name: DEBUG_CONTAINER
           value: "false"
-        - name: PGAPPNAME
-          valueFrom:
-            fieldRef:
-              fieldPath: metadata.name
         {{- if .Values.sentry.enabled }}
         - name: SENTRY_DSN
           valueFrom:
@@ -167,7 +163,8 @@ spec:
           subPath: ratelimit.yaml
           readOnly: true
         {{- end }}
-
+        {{- include "utils.proxysql.volume_mount" . | indent 8 }}
+      {{- tuple . (add .Values.rpc_workers .Values.workers) | include "utils.proxysql.container" | indent 6 }}
       {{- if .Values.imageVersionGlanceRegistry }}
       - name: registry
         image: {{ required ".Values.global.registry is missing" .Values.global.registry }}/ubuntu-source-glance-registry:{{ required "Please set glance.imageVersion or similar" .Values.imageVersion }}
@@ -277,6 +274,7 @@ spec:
             memory: {{ .Values.statsd.resources.requests.memory | quote }}
         {{- end }}
       {{- end }}
+{{- include "jaeger_agent_sidecar" . | indent 6 }}
       volumes:
       - name: etcglance
         emptyDir: {}
@@ -292,3 +290,4 @@ spec:
       - name: glance-etc
         configMap:
           name: glance-etc
+      {{- include "utils.proxysql.volumes" . | indent 6 }}

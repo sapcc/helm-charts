@@ -8,6 +8,7 @@ spec:
     - name: email_admin
     - name: email_user
     - name: cloud_email_admin
+    - name: email_router
 
   services:
     - name:        cronus
@@ -61,11 +62,17 @@ spec:
           role: email_admin # for monitoring and system accounts
         - user: cronus@Default
           role: cloud_identity_viewer # for keystone effective role assignment list
+        - user: cronus@Default
+          role: email_router
         swift:
           enabled: true
           containers:
           # allow a user who has a keymanager_admin role in the project to read and write to a swift container
           - name: cronus_usage_cache
+            metadata:
+              read: keymanager_admin
+              write: keymanager_admin
+          - name: cronus_inspections_1
             metadata:
               read: keymanager_admin
               write: keymanager_admin
@@ -132,6 +139,14 @@ spec:
       - name: CP_API_SUPPORT
         role_assignments:
         - domain: cp
+          role: cloud_email_admin
+          inherited: true
+
+    - name: hda
+      groups:
+      - name: HDA_API_SUPPORT
+        role_assignments:
+        - domain: hda
           role: cloud_email_admin
           inherited: true
 

@@ -36,6 +36,7 @@ spec:
 {{- if .Values.rbac.enabled }}
       serviceAccountName: {{ .Release.Name }}
 {{- end }}
+{{ include "utils.proxysql.pod_settings" . | indent 6 }}
       initContainers:
       - name: kubernetes-entrypoint
         #image: quay.io/stackanetes/kubernetes-entrypoint:v0.3.1
@@ -110,10 +111,12 @@ spec:
             - name: credential-keys
               mountPath: /credential-keys
               readOnly: true
+            {{- include "utils.proxysql.volume_mount" . | indent 12 }}
           {{- if .Values.cron.resources }}
           resources:
 {{ toYaml .Values.cron.resources | indent 12 }}
           {{- end }}
+{{- include "utils.proxysql.container" . | indent 8 }}
       volumes:
         - name: keystone-etc
           configMap:
@@ -129,3 +132,4 @@ spec:
           secret:
             secretName: keystone-credential-keys
             defaultMode: 0555
+        {{- include "utils.proxysql.volumes" . | indent 8 }}

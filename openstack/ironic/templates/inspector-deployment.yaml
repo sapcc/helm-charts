@@ -6,7 +6,7 @@ metadata:
   labels:
     system: openstack
     type: backend
-    component: none
+    component: ironic
 spec:
   replicas: {{ .Values.pod.replicas.inspector }}
   revisionHistoryLimit: {{ .Values.pod.lifecycle.upgrades.deployments.revisionHistory }}
@@ -28,12 +28,15 @@ spec:
       annotations:
         configmap-etc-hash: {{ include (print $.Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
         configmap-inspector-etc-hash: {{ include (print $.Template.BasePath "/inspector-etc-configmap.yaml") . | sha256sum }}
-        {{- if .Values.inspector.rpc_statsd_enabled }}
+        {{- if or .Values.inspector.rpc_statsd_enabled .Values.proxysql.mode }}
         prometheus.io/scrape: "true"
         prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
         {{- end }}
     spec:
 {{ tuple . "ironic" "inspector" | include "kubernetes_pod_anti_affinity" | indent 6 }}
+      {{- include "utils.proxysql.pod_settings" . | indent 6 }}
+      initContainers:
+      {{- tuple . (dict "service" "ironic-api,ironic-rabbitmq") | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 6 }}
       containers:
       - name: ironic-inspector
         {{- if .Values.oslo_metrics.enabled }}
@@ -44,18 +47,12 @@ spec:
         imagePullPolicy: IfNotPresent
         command:
         - dumb-init
-        - kubernetes-entrypoint
+        - ironic-inspector
         securityContext:
           capabilities:
             add:
               - NET_ADMIN
         env:
-        - name: COMMAND
-          value: "ironic-inspector --config-file /etc/ironic-inspector/ironic-inspector.conf"
-        - name: NAMESPACE
-          value: {{ .Release.Namespace }}
-        - name: DEPENDENCY_SERVICE
-          value: "ironic-api,ironic-rabbitmq"
         {{- if .Values.logging.handlers.sentry }}
         - name: SENTRY_DSN
           valueFrom:
@@ -63,10 +60,9 @@ spec:
               name: sentry
               key: {{ .Chart.Name }}.DSN.python
         {{- end }}
-        - name: PGAPPNAME
-          valueFrom:
-            fieldRef:
-              fieldPath: metadata.name
+        lifecycle:
+          preStop:
+            {{- include "utils.snippets.pre_stop_graceful_shutdown" . | indent 12 }}
         resources:
 {{ toYaml .Values.pod.resources.inspector | indent 10 }}
         volumeMounts:
@@ -96,6 +92,8 @@ spec:
           name: ironic-etc
           subPath: ironic-inspector.filters
           readOnly: true
+        {{- include "utils.proxysql.volume_mount" . | indent 8 }}
+      {{- tuple . .Values.api.api_workers | include "utils.proxysql.container" | indent 6 }}
       {{- if and .Values.global.ironic_tftp_ip .Values.inspector.dhcp.range .Values.inspector.dhcp.options.router }}
       - name: dhcp
         image: {{ .Values.global.registry }}/ubuntu-source-staticdhcpd:{{.Values.imageVersionStaticdhcpd | default .Values.imageVersion | required "Please set ironic.imageVersion or similar"}}
@@ -160,3 +158,4 @@ spec:
           name: ironic-inspector-dhcp
           defaultMode: 0444
       {{- end }}
+      {{- include "utils.proxysql.volumes" . | indent 6 }}

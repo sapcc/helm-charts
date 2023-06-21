@@ -2,9 +2,9 @@ replicas: "2"
 # Allows you to add any config files in /usr/share/logstash/config/
 # such as logstash.yml and log4j2.properties
 logstashConfig:
-    pipeline_workers: 4
-    pipeline_batch_size: 750
-    
+  pipeline_workers: 4
+  pipeline_batch_size: 750
+
 #  log4j2.properties: |
 #    key = value
 
@@ -37,11 +37,11 @@ imagePullSecrets: []
 
 podAnnotations:
   prometheus.io/scrape: "true"
-  prometheus.io/port: "9198"
   prometheus.io/targets: "infra-collector"
 
 # additionals labels
-labels: {}
+labels:
+  component: "event-receiver"
 
 logstashJavaOpts: "-Xmx1g -Xms1g"
 
@@ -54,7 +54,7 @@ logstashJavaOpts: "-Xmx1g -Xms1g"
 #     memory: "1536Mi"
 
 volumeClaimTemplate:
-  accessModes: [ "ReadWriteOnce" ]
+  accessModes: ["ReadWriteOnce"]
   resources:
     requests:
       storage: 1Gi
@@ -85,18 +85,21 @@ persistence:
   enabled: false
   annotations: {}
 
-extraVolumes: ""
+extraVolumes:
+  ""
   # - name: extras
   #   emptyDir: {}
 
-extraVolumeMounts: ""
+extraVolumeMounts:
+  ""
   # - name: extras
   #   mountPath: /usr/share/extras
   #   readOnly: true
 
 extraContainers: ""
 
-extraInitContainers: ""
+extraInitContainers:
+  ""
   # - name: do-something
   #   image: busybox
   #   command: ['do', 'something']
@@ -143,7 +146,7 @@ podSecurityContext:
 securityContext:
   capabilities:
     drop:
-    - ALL
+      - ALL
   # readOnlyRootFilesystem: true
   runAsNonRoot: true
   runAsUser: 1000
@@ -182,7 +185,8 @@ tolerations: []
 nameOverride: ""
 fullnameOverride: ""
 
-lifecycle: {}
+lifecycle:
+  {}
   # preStop:
   #   exec:
   #     command: ["/bin/sh", "-c", "echo Hello from the postStart handler > /usr/share/message"]

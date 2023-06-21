@@ -10,6 +10,8 @@
 {{- $domain := index . 8}}
 {{- $instance_number := index . 9}}
 {{- $instance := index . 10}}
+{{- $az_redundancy  := index . 11}}
+{{- $tolerate_arista_fabric  := index . 12}}
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -30,10 +32,7 @@ spec:
       pxdomain: '{{ $domain_number }}'
       pxinstance: '{{ $instance_number }}'
   strategy:
-    type: RollingUpdate
-    rollingUpdate:
-      maxSurge: 1
-      maxUnavailable: 1
+    type: Recreate
   template:
     metadata:
       labels:
@@ -43,13 +42,13 @@ spec:
         pxservice: '{{ $service_number }}'
         pxdomain: '{{ $domain_number }}'
         pxinstance: '{{ $instance_number }}'
+        app.kubernetes.io/name: px
       annotations:
         k8s.v1.cni.cncf.io/networks: '[{ "name": "{{ $deployment_name }}", "interface": "vlan{{ $multus_vlan}}"}]'
-        prometheus.io/scrape: "true"
-        prometheus.io/port: "9324"
-        prometheus.io/targets: "infra-collector"
     spec:
-{{- if len $apods | ne 0 }}
+{{- if len $apods | eq 0 }}
+{{- fail "You must supply at least one apod for scheduling" -}}
+{{ end }}
       affinity:
         nodeAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
@@ -58,8 +57,8 @@ spec:
               - key: kubernetes.cloud.sap/apod
                 operator: In
                 values: 
-{{- range $az_apods := values $apods }}
-{{- range $az_apods }}
+{{- range $site := keys $apods | sortAlpha }}
+{{- range get $apods $site | sortAlpha }}
                 - {{ . }}
 {{- end }}
 {{- end }}
@@ -72,8 +71,8 @@ spec:
                 operator: In
                 values:
                 - {{ $service_number | quote }}
-{{- if ge (len $azs) 2 }}
-{{- if lt (len (keys $apods))  2  }}
+{{- if and (ge (len $azs) 2) $az_redundancy }}
+{{- if lt (len (keys $apods))  2 }}
 {{- fail "If the region consists of multiple AZs, PX must be scheduled in at least 2" -}}
 {{- end }}
           - topologyKey: failure-domain.beta.kubernetes.io/zone
@@ -88,18 +87,11 @@ spec:
                 values:
                 - {{ $domain_number | quote }}
 {{- end }}
-{{- else }}
-{{ $domain_scheduling_labels := get $scheduling_labels $domain }}
-{{- if $domain_scheduling_labels | len | eq 0 -}}
-{{- fail "scheduling_labels must be set if not running on apod" -}}
-{{- end }}
+{{- if $tolerate_arista_fabric }}
       tolerations:
-        - key: species
-          operator: Equal
-          value: px
-          effect: NoSchedule
-      nodeSelector:
-          # This calculation only works if we have no more than 2 instances and no more than 2 scheduling labels per domain
-          pxdomain: "{{ index $domain_scheduling_labels (mod (sub $instance_number 1) (len $domain_scheduling_labels)) }}"
+      - key: "fabric"
+        operator: "Equal"
+        value: "arista"
+        effect: "NoSchedule"
 {{- end }}
 {{- end }}

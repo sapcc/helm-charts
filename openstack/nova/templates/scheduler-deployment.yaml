@@ -28,7 +28,7 @@ spec:
         alert-service: nova
 {{ tuple . "nova" "scheduler" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
       annotations:
-        {{- if .Values.scheduler.rpc_statsd_enabled }}
+        {{- if or .Values.scheduler.rpc_statsd_enabled .Values.proxysql.mode }}
         prometheus.io/scrape: "true"
         prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
         {{- end }}
@@ -36,11 +36,12 @@ spec:
         configmap-scheduler-etc-hash: {{ include (print $.Template.BasePath "/scheduler-etc-configmap.yaml") . | sha256sum }}
     spec:
 {{ tuple . "nova" "scheduler" | include "kubernetes_pod_anti_affinity" | indent 6 }}
+{{ include "utils.proxysql.pod_settings" . | indent 6 }}
       terminationGracePeriodSeconds: {{ .Values.defaults.default.graceful_shutdown_timeout | add 5 }}
       hostname: nova-scheduler
       containers:
         - name: nova-scheduler
-          image: {{ required ".Values.global.registry is missing" .Values.global.registry}}/ubuntu-source-nova-scheduler:{{.Values.imageVersionNovaScheduler | default .Values.imageVersionNova | default .Values.imageVersion | required "Please set nova.imageVersion or similar" }}
+          image: {{ tuple . "scheduler" | include "container_image_nova" }}
           imagePullPolicy: IfNotPresent
           command:
             - dumb-init
@@ -78,24 +79,10 @@ spec:
 {{ toYaml .Values.pod.resources.scheduler | indent 12 }}
           {{- end }}
           volumeMounts:
-            - name: etcnova
-              mountPath: /etc/nova
-            - name: nova-etc
-              mountPath: /etc/nova/nova.conf
-              subPath: nova.conf
-              readOnly: true
-            - name: nova-scheduler-etc
-              mountPath: /etc/nova/nova-scheduler.conf
-              subPath: nova-scheduler.conf
-              readOnly: true
-            - name: nova-etc
-              mountPath: /etc/nova/policy.json
-              subPath: policy.json
-              readOnly: true
-            - name: nova-etc
-              mountPath: /etc/nova/logging.ini
-              subPath: logging.ini
-              readOnly: true
+          - name: nova-etc
+            mountPath: /etc/nova
+          {{- include "utils.proxysql.volume_mount" . | indent 10 }}
+        {{- tuple . .Values.scheduler.workers | include "utils.proxysql.container" | indent 8 }}
         {{- if .Values.scheduler.rpc_statsd_enabled }}
         - name: statsd
           image: {{ required ".Values.global.dockerHubMirror is missing" .Values.global.dockerHubMirror}}/prom/statsd-exporter:v0.8.1
@@ -108,18 +95,40 @@ spec:
           - name: metrics
             containerPort: 9102
           volumeMounts:
-            - name: nova-etc
-              mountPath: /etc/statsd/statsd-exporter.yaml
-              subPath: statsd-exporter.yaml
-              readOnly: true
+          - name: statsd-etc
+            mountPath: /etc/statsd/statsd-exporter.yaml
+            subPath: statsd-exporter.yaml
+            readOnly: true
         {{- end }}
       volumes:
-        - name: etcnova
-          emptyDir: {}
-        - name: nova-etc
-          configMap:
-            name: nova-etc
-        - name: nova-scheduler-etc
-          configMap:
-            name: nova-scheduler-etc
-
+      - name: nova-etc
+        projected:
+          sources:
+          - configMap:
+              name: nova-etc
+              items:
+              - key:  nova.conf
+                path: nova.conf
+              - key:  logging.ini
+                path: logging.ini
+          - secret:
+              name: nova-etc
+              items:
+              - key:  db.conf
+                path: nova.conf.d/db.conf
+          - configMap:
+              name: nova-scheduler-etc
+              items:
+              - key:  nova-scheduler.conf
+                path: nova-scheduler.conf
+{{- if .Values.scheduler.rpc_statsd_enabled }}
+      - name: statsd-etc
+        projected:
+          sources:
+          - configMap:
+              name: nova-etc
+              items:
+              - key:  statsd-exporter.yaml
+                path: statsd-exporter.yaml
+{{- end }}
+      {{- include "utils.proxysql.volumes" . | indent 6 }}

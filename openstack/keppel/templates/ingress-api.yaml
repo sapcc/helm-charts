@@ -25,6 +25,13 @@ spec:
                 name: keppel-api
                 port:
                   number: 80
+          - path: /healthcheck # this is used by the loadbalancer for keppel.global to monitor the health of this region
+            pathType: Exact
+            backend:
+              service:
+                name: keppel-health-monitor
+                port:
+                  number: 8080
     - host: '*.keppel.{{ .Values.global.region }}.{{ .Values.global.tld }}'
       http:
         paths:

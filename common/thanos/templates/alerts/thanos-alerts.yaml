@@ -1,0 +1,60 @@
+{{- /*
+Alerts are deployed dependent upon the components chosen. It could either be Compactor|Query|Store, Query|Ruler or Query.
+*/}}
+{{- if .Values.enabled }}
+{{- $root := . }}
+{{- range $name := coalesce .Values.names .Values.global.targets (list .Values.name) }}
+{{- if $.Values.deployWholeThanos }} 
+{{- range $component := tuple "compactor" "query" "store" }}
+{{- $path := (printf "%s/alerts/_thanos-%s.alerts.tpl" $root.Template.BasePath $component ) }}
+---
+# This PrometheusRules cover Compactor|Query|Store alerts
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+
+metadata:
+  name: {{ include "thanos.fullName" (list $name $root) }}-{{ printf "%s" $component }}.alerts
+  labels:
+    prometheus: {{ default (include "thanos.name" (list $name $root)) $.Values.alerts.prometheus }}
+
+spec:
+{{ include $path (list $name $root) | indent 2 }}
+
+{{- end }}
+{{- else if and $.Values.ruler.enabled (eq $.Values.deployWholeThanos false) }}
+{{- range $component := tuple "query" "ruler" }}
+{{- $path := (printf "%s/alerts/_thanos-%s.alerts.tpl" $root.Template.BasePath $component ) }}
+---
+# This PrometheusRules cover Query|Ruler alerts
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+
+metadata:
+  name: {{ include "thanos.fullName" (list $name $root) }}-{{ printf "%s" $component }}.alerts
+  labels:
+    prometheus: {{ default (include "thanos.name" (list $name $root)) $.Values.alerts.prometheus }}
+
+spec:
+{{ include $path (list $name $root) | indent 2 }}
+
+{{- end }}
+{{- else }}
+{{- range $component := tuple "query" }}
+{{- $path := (printf "%s/alerts/_thanos-%s.alerts.tpl" $root.Template.BasePath $component ) }}
+---
+# This PrometheusRules cover Query alerts
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+
+metadata:
+  name: {{ include "thanos.fullName" (list $name $root) }}-{{ printf "%s" $component }}.alerts
+  labels:
+    prometheus: {{ default (include "thanos.name" (list $name $root)) $.Values.alerts.prometheus }}
+
+spec:
+{{ include $path (list $name $root) | indent 2 }}
+
+{{- end }}
+{{- end }}
+{{- end }}
+{{- end }}

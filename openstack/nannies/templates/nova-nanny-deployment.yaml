@@ -28,8 +28,41 @@ spec:
         zone: farm
       volumes:
         - name: nova-etc
+{{- if .Values.nova_nanny.new_config }}
+          projected:
+            sources:
+            - configMap:
+                name: nova-etc
+                items:
+                - key:  nova.conf
+                  path: nova.conf
+{{- if .Values.nova_nanny.cell2.enabled }}
+                - key:  nova-cell2.conf
+                  path: nova-cell2.conf
+{{- end }}
+                - key:  nova-api.conf
+                  path: nova-api.conf
+                - key:  api-paste.ini
+                  path: api-paste.ini
+                - key:  policy.yaml
+                  path: policy.yaml
+                - key:  logging.ini
+                  path: logging.ini
+                - key:  rootwrap.conf
+                  path: rootwrap.conf
+                - key:  api-metadata.filters
+                  path: rootwrap.d/api-metadata.filters
+                - key:  release
+                  path: release
+            - secret:
+                name: nova-etc
+                items:
+                - key: db.conf
+                  path: nova.conf.d/db.conf
+{{- else }}
           configMap:
             name: nova-etc
+{{- end }}
       containers:
 {{- if or .Values.nova_nanny.db_purge.enabled .Values.nova_nanny.consistency.enabled }}
         - name: db-consistency-and-purge
@@ -97,11 +130,11 @@ spec:
               name: nova-etc
           resources:
             requests:
-              memory: "1000Mi"
-              cpu: "25m"
+              memory: "5000Mi"
+              cpu: "1000m"
             limits:
-              memory: "1000Mi"
-              cpu: "100m"
+              memory: "5000Mi"
+              cpu: "1000m"
 {{- if .Values.nova_nanny.cell2.enabled }}
         - name: db-consistency-and-purge-cell2
           image: {{.Values.global.registry}}/nova-nanny:{{.Values.nova_nanny.image_version}}

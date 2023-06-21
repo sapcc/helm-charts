@@ -1,0 +1,52 @@
+global:
+  tld: DEFINED_IN_VALUES_FILE
+  region: DEFINED_IN_VALUES_FILE
+  registry: DEFINED_IN_VALUES_FILE
+
+owner-info:
+  support-group: containers
+  service: keppel
+  maintainers:
+    - Stefan Majewsky
+    - Sandro Jäckel
+    - Falk Reimann
+    - Muhammad Talal Anwar
+  helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/openstack/keppel-trivy
+
+keppel:
+  image_version: DEFINED_IN_VALUES_FILE
+
+trivy:
+  image_version: DEFINED_IN_VALUES_FILE
+  token: DEFINED_IN_VALUES_FILE
+
+redis:
+  persistence:
+    enabled: true
+    accessMode: ReadWriteOnce
+    size: 20Gi
+
+  redisPassword: DEFINED_IN_VALUES_FILE
+
+  config:
+    maxmemory: 4900mb # chosen to match resource limit below (with some headroom for application memory)
+    maxmemory-policy: volatile-ttl
+    maxmemory-samples: 5
+
+  resources:
+    limits:
+      memory: 5Gi
+      cpu: 100m
+    requests:
+      memory: 5Gi
+      cpu: 10m
+
+  metrics:
+    prometheus: infra-frontend
+    resources:
+      limits:
+        memory: 48Mi
+        cpu: 50m
+      requests:
+        memory: 48Mi
+        cpu: 5m

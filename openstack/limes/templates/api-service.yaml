@@ -6,14 +6,13 @@ metadata:
   labels:
     app: limes-api
   annotations:
-    # uncomment to have Maia scape as well: maia.io/scrape: "true"
     prometheus.io/scrape: "true"
-    prometheus.io/port: "80"
-    # The `openstack` Prometheus shall scrape metrics of OpenStack services.
     prometheus.io/targets: {{ required ".Values.alerts.prometheus.openstack missing" .Values.alerts.prometheus.openstack | quote }}
 
 spec:
   selector:
     name: limes-api-ccloud
   ports:
-    - port: 80
+    - name: metrics # this specific name is required for Prometheus scraping
+      port: 80
+      protocol: TCP

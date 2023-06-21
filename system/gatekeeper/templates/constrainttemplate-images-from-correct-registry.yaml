@@ -1,8 +1,4 @@
-{{- if .Capabilities.APIVersions.Has "templates.gatekeeper.sh/v1" }}
 apiVersion: templates.gatekeeper.sh/v1
-{{- else }}
-apiVersion: templates.gatekeeper.sh/v1beta1
-{{- end }}
 kind: ConstraintTemplate
 metadata:
   name: gkimagesfromcorrectregistry
@@ -23,8 +19,15 @@ spec:
 
   targets:
     - target: admission.k8s.gatekeeper.sh
+      libs:
+        - |
+          {{ .Files.Get "lib/add-support-labels.rego" | nindent 10 }}
+        - |
+          {{ .Files.Get "lib/traversal.rego" | nindent 10 }}
       rego: |
         package imagesfromcorrectregistry
+        import data.lib.add_support_labels
+        import data.lib.traversal
 
         extract_keppel_region(image) = region {
           matchList := regex.find_all_string_submatch_n(`^keppel\.([-\w]+)\.[a-zA-Z]+\.[a-zA-Z]+/`, image, 1)
@@ -43,6 +46,9 @@ spec:
           image_tag = sL[minus(count(sL), 1)]
         }
 
+        iro := input.review.object
+        containers := traversal.find_container_specs(iro)
+
         correct_regions[region] {
           region = extract_keppel_region(input.parameters.registry)
         }
@@ -51,9 +57,8 @@ spec:
           alternate_region = extract_keppel_region(input.parameters.registryAlternateRegion)
         }
 
-        violation[{"msg": msg}] {
-          input.review.object.kind == "Pod"
-          container := input.review.object.spec.containers[_]
+        violation[{"msg": add_support_labels.from_k8s_object(iro, msg)}] {
+          container := containers[_]
           image := container.image
 
           current_region = extract_keppel_region(image) # this will also check if image is using Keppel or not

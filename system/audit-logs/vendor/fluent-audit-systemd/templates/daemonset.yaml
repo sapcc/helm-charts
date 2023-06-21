@@ -23,12 +23,8 @@ spec:
         checksum/fluent.conf.tpl: {{ include  (print $.Template.BasePath "/_fluent.conf.tpl") . | sha256sum }}
         scheduler.alpha.kubernetes.io/tolerations: '[{"key":"species","value":"hypervisor"}]'
     spec:
-      {{- if ge .Capabilities.KubeVersion.Minor "7" }}
       tolerations:
-      - key: "species"
-        operator: "Exists"
-        effect: "NoSchedule"
-      {{- end }}
+      - operator: "Exists"
       volumes:
         - name: fluent-etc
           configMap:
@@ -40,7 +36,6 @@ spec:
         - name: fluent-audit-systemd
           image: {{.Values.global.registry}}/elk-fluent:{{.Values.image_version}}
           imagePullPolicy: IfNotPresent
-          command: ["/usr/local/bin/dumb-init", "/usr/local/bin/fluentd", "-c", "/fluent-etc/fluent.conf", "--use-v1-config", "--suppress-repeated-stacktrace"]
           env:
             - name: NAMESPACE
               valueFrom:
@@ -51,12 +46,10 @@ spec:
                 fieldRef:
                   fieldPath: spec.nodeName
           resources:
-#            limits:
-#              cpu: 1000m
-#              memory: 2000Mi
+{{ toYaml .Values.resources | indent 12 }}
           volumeMounts:
             - name: fluent-etc
-              mountPath: /fluent-etc
+              mountPath: /fluentd/etc
             - name: varlog
               mountPath: /var/log
           ports:

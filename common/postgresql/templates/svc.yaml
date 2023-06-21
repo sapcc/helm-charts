@@ -11,37 +11,8 @@ metadata:
     type: database
 spec:
   selector:
-{{- if or .Values.pgbouncer.enabled .Values.global.pgbouncer.enabled }}
-    name: {{.Values.postgresDatabase}}-pgbouncer
-{{- else }}
     app: {{ template "fullname" . }}
-{{- end }}
   ports:
   - name: postgresql
     port: 5432
-    targetPort: {{ if or .Values.pgbouncer.enabled .Values.global.pgbouncer.enabled }}pgbouncer{{ else }}postgresql{{ end }}
-
-{{- if .Values.backup.enabled }}
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: {{ template "fullname" . }}-backup-metrics
-  labels:
-    app: {{ template "fullname" . }}
-    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
-    release: "{{ .Release.Name }}"
-    heritage: "{{ .Release.Service }}"
-  annotations:
-    prometheus.io/scrape: "true"
-    prometheus.io/port: "9188"
-    prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
-spec:
-  clusterIP: None
-  ports:
-    - name: backup-metrics
-      port: 9188
-      protocol: TCP
-  selector:
-    app: {{ template "fullname" . }}
-{{- end }}
+    targetPort: postgresql

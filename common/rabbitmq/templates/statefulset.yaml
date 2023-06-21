@@ -64,8 +64,8 @@ spec:
         {{- end }}
         {{- if .Values.readinessProbe.enabled }}
         readinessProbe:
-          exec:
-            command: ["rabbitmqctl", "node_health_check"]
+          tcpSocket:
+            port: public 
           failureThreshold: {{ .Values.readinessProbe.failureThreshold }}
           initialDelaySeconds: {{ .Values.readinessProbe.initialDelaySeconds }}
           periodSeconds: {{ .Values.readinessProbe.periodSeconds }}
@@ -79,12 +79,16 @@ spec:
             containerPort: {{ default "5672" .Values.ports.public }}
           - name: management
             containerPort: {{ default "15672" .Values.ports.management }}
+{{- if and (not .Values.metrics.sidecar.enabled) .Values.metrics.enabled }}
+          - name: metrics
+            containerPort: {{ default "15692" .Values.metrics.port }}
+{{- end }}
         volumeMounts:
           - mountPath: /var/lib/rabbitmq
             name: rabbitmq-persistent-storage
           - mountPath: /container.init
             name: container-init
-{{- if .Values.metrics.enabled }}
+{{- if and .Values.metrics.sidecar.enabled .Values.metrics.enabled }}
       - name: metrics
         image: {{include "dockerHubMirror" .}}/{{ .Values.metrics.image }}:{{ .Values.metrics.imageTag }}
         imagePullPolicy: {{ default "IfNotPresent" .Values.metrics.imagePullPolicy | quote }}
@@ -118,7 +122,9 @@ spec:
       name: rabbitmq-persistent-storage
       labels:
         app: {{ template "fullname" . }}
-        chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+        {{- if .Values.volumeClaimTemplatesChartVersion }}
+        chart: "{{ .Chart.Name }}-{{ .Values.volumeClaimTemplatesChartVersion }}"
+        {{- end }}
         release: "{{ .Release.Name }}"
         heritage: "{{ .Release.Service }}"
         component: rabbitmq

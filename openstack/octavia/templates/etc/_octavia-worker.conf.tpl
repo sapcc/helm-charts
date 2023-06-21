@@ -4,6 +4,7 @@
 {{- $loadbalancer := index . 2 -}}
 [DEFAULT]
 host = {{ $lb_name }}
+backdoor_socket = /var/lib/octavia/backdoor.socket
 
 [networking]
 {{- if $loadbalancer.physical_interface_mapping }}
@@ -54,11 +55,5 @@ async_mode = {{ $envAll.Values.async_mode | default "false" }}
 
 # Unsafe Mode (don't check F5 running configuration when applying declarations)
 unsafe_mode = {{ $envAll.Values.unsafe_mode | default "false" }}
-
-# Default Server TLS Cipher
-[f5_tls_server]
-default_ciphers = {{ $envAll.Values.default_ciphers }}
-tls_1_0 = {{ $envAll.Values.default_tls_1_0 }}
-tls_1_1 = {{ $envAll.Values.default_tls_1_1 }}
 
 {{- end }}

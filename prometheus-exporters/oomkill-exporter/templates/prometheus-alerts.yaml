@@ -1,7 +1,7 @@
+{{- $root := . -}}
 {{- $values := .Values -}}
 {{- if $values.alerts.enabled }}
-{{- range $path, $bytes := .Files.Glob "alerts/*.alerts" }}
----
+{{- range $path, $bytes := .Files.Glob "alerts/*.alerts.tpl" }}
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
 
@@ -13,7 +13,10 @@ metadata:
     absent-metrics-operator/disable: "true"
 
 spec:
-{{ printf "%s" $bytes | indent 2 }}
-
+{{- with $root -}}
+{{- $content := printf "%s" $bytes }}
+{{ tpl $content . | indent 2 }}
+{{- end }}
+---
 {{- end }}
 {{- end }}

@@ -11,6 +11,7 @@ spec:
   - monsoon3/domain-cis-seed
   - monsoon3/domain-cp-seed
   - monsoon3/domain-fsn-seed
+  - monsoon3/domain-hda-seed
   - monsoon3/domain-hcm-seed
   - monsoon3/domain-hcp03-seed
   - monsoon3/domain-hec-seed
@@ -65,7 +66,6 @@ spec:
       instances_zg1bcm1.medium: 0
       instances_zg1bcm1.1medium: 0
       instances_zh0hpe1.large: 0
-      instances_zh0hpe1.large: 0
       instances_zh1vic1.small: 0
       instances_zh2vic1.medium: 0
       instances_zh2mlx1.large: 0
@@ -81,8 +81,16 @@ spec:
       instances_hv_s2_c26_m384: 0
       instances_hv_s2_c26_m768: 0
       instances_hv_s4_c24_m3072: 0
+      instances_hv_s4_c24_m6144: 0
       instances_hv_s8_c24_m6144: 0
       instances_hv_s8_c28_m12288: 0
+
+## we decided to count up the flavor ID continously for baremetal
+## new bm flavors start at 1000 historically and are public (zh*, zg*)
+## new hv_ flavors start at 2020 and are private
+## as soon as we start handing out hypervisor hosts from the new compute PODs (cPODs), we will have to create
+##  in parallel to the private hv_ flavors a bm_ public flavor which will have a 2 in front of the original flavor ID
+## vSMP flavors are also private like the original hv_ flavor but have a 1 in front of the original flavor ID.
 
   flavors:
   - name: "zg1bcm1.medium"
@@ -354,6 +362,7 @@ spec:
     vcpus: 40
     ram: 393216
     disk: 240
+    is_public: false
     extra_specs:
       "catalog:description": Hypervisor Host 2 sockets, 20 cores, 384GB RAM
       "capabilities:cpu_arch": "x86_64"
@@ -364,12 +373,31 @@ spec:
       "resources:DISK_GB": "0"
       "resources:VCPU": "0"
 
+  # aPOD servers Dell PowerEdge R640 for vSMP. Only existing in qa-de-1.
+  # adding for documentation purposes
+  # - name: "hv_s2_c20_m384_vsmp"
+  #   id: "12021"
+  #   vcpus: 40
+  #   ram: 393216
+  #   disk: 240
+  #   is_public: false
+  #   extra_specs:
+  #     "catalog:description": Hypervisor Host 2 sockets, 20 cores, 384GB RAM
+  #     "capabilities:cpu_arch": "x86_64"
+  #     "quota:separate": "true"
+  #     "quota:instance_only": "true"
+  #     "resources:CUSTOM_HV_S2_C20_M384": "1"
+  #     "resources:MEMORY_MB": "0"
+  #     "resources:DISK_GB": "0"
+  #     "resources:VCPU": "0"
+
   # vPOD servers Lenovo Thinksystem SR950
   - name: "hv_s8_c24_m6144"
     id: "2022"
     vcpus: 192
     ram: 6291456
     disk: 400
+    is_public: false
     extra_specs:
       "catalog:description": Hypervisor Host 8 sockets, 24 cores, 6TB RAM
       "capabilities:cpu_arch": "x86_64"
@@ -386,6 +414,7 @@ spec:
     vcpus: 96
     ram: 3145728
     disk: 240
+    is_public: false
     extra_specs:
       "catalog:description": Hypervisor Host 4 sockets, 24 cores, 3TB RAM
       "capabilities:cpu_arch": "x86_64"
@@ -402,6 +431,7 @@ spec:
     vcpus: 52
     ram: 786432
     disk: 240
+    is_public: false
     extra_specs:
       "catalog:description": Hypervisor Host 2 sockets, 26 cores, 768GB RAM
       "capabilities:cpu_arch": "x86_64"
@@ -418,6 +448,7 @@ spec:
     vcpus: 28
     ram: 262144
     disk: 480
+    is_public: false
     extra_specs:
       "catalog:description": Hypervisor Host 2 sockets, 14 cores, 256GB RAM
       "capabilities:cpu_arch": "x86_64"
@@ -434,6 +465,7 @@ spec:
     vcpus: 52
     ram: 393216
     disk: 240
+    is_public: false
     extra_specs:
       "catalog:description": Hypervisor Host 2 sockets, 26 cores, 384GB RAM
       "capabilities:cpu_arch": "x86_64"
@@ -450,6 +482,7 @@ spec:
     vcpus: 8
     ram: 131072
     disk: 450
+    is_public: false
     extra_specs:
       "catalog:description": Swift Hypervisor Host 2 sockets, 4 cores, 128GB RAM
       "capabilities:cpu_arch": "x86_64"
@@ -460,12 +493,13 @@ spec:
       "resources:DISK_GB": "0"
       "resources:VCPU": "0"
 
-  # vPOD servers Lenovo Thinksystem SR950 12TB
+  # vPOD servers Lenovo Thinksystem SR950 12TB<
   - name: "hv_s8_c28_m12288"
     id: "2028"
     vcpus: 224
     ram: 12582912
     disk: 240
+    is_public: false
     extra_specs:
       "catalog:description": Hypervisor Host 8 sockets, 28 cores, 12TB RAM
       "capabilities:cpu_arch": "x86_64"
@@ -475,6 +509,59 @@ spec:
       "resources:MEMORY_MB": "0"
       "resources:DISK_GB": "0"
       "resources:VCPU": "0"
+
+  # vPOD servers Dell PowerEdge R840 with 6TB RAM
+  - name: "hv_s4_c24_m6144"
+    id: "2029"
+    vcpus: 96
+    ram: 6291456
+    disk: 240
+    is_public: false
+    extra_specs:
+      "catalog:description": Hypervisor Host 4 sockets, 24 cores, 6TB RAM
+      "capabilities:cpu_arch": "x86_64"
+      "quota:separate": "true"
+      "quota:instance_only": "true"
+      "resources:CUSTOM_HV_S4_C24_M6144": "1"
+      "resources:MEMORY_MB": "0"
+      "resources:DISK_GB": "0"
+      "resources:VCPU": "0"
+
+  # Dell R760 only in qa-de-1 currently for testing and not for seeding in other regions
+  # just adding for documentation purposes
+  # - name: "hv_s2_c32_m2048"
+  #   id: "2030"
+  #   vcpus: 64
+  #   ram: 2097152
+  #   disk: 480
+  #   is_public: false
+  #   extra_specs:
+  #     "catalog:description": Hypervisor Host 2 sockets, 32 cores, 2TB RAM
+  #     "capabilities:cpu_arch": "x86_64"
+  #     "quota:separate": "true"
+  #     "quota:instance_only": "true"
+  #     "resources:CUSTOM_HV_HV_S2_C32_M2048": "1"
+  #     "resources:MEMORY_MB": "0"
+  #     "resources:DISK_GB": "0"
+  #     "resources:VCPU": "0"
+
+  # Dell R760 only in qa-de-1 currently for testing and not for seeding in other regions
+  # just adding for documentation purposes
+  # - name: "hv_s2_c32_m2048_vsmp"
+  #   id: 12030"
+  #   vcpus: 64
+  #   ram: 2097152
+  #   disk: 480
+  #   is_public: false
+  #   extra_specs:
+  #     "catalog:description": Hypervisor Host 2 sockets, 32 cores, 2TB RAM
+  #     "capabilities:cpu_arch": "x86_64"
+  #     "quota:separate": "true"
+  #     "quota:instance_only": "true"
+  #     "resources:CUSTOM_HV_HV_S2_C32_M2048_VSMP": "1"
+  #     "resources:MEMORY_MB": "0"
+  #     "resources:DISK_GB": "0"
+  #     "resources:VCPU": "0"
 
   domains:
   - name: Default
@@ -493,8 +580,6 @@ spec:
         role: cloud_baremetal_admin
       - project: service
         role: cloud_image_admin
-      - project: service
-        role: swiftreseller # TODO Remove
       - project: service
         role: cloud_objectstore_admin
     - name: ipmi_exporter
@@ -538,7 +623,7 @@ spec:
       - user: ipmi_exporter@Default
         role: cloud_compute_admin
       - user: ironic@Default
-        role: swiftoperator
+        role: objectstore_admin
     groups:
     - name: CCADMIN_CLOUD_ADMINS
       role_assignments:
@@ -746,6 +831,45 @@ spec:
         role: baremetal_viewer
         inherited: true
 
+  - name: hda
+    groups:
+    - name: HDA_API_SUPPORT
+      role_assignments:
+      - project: api_support
+        role: baremetal_admin
+      - domain: hda
+        role: baremetal_admin
+        inherited: true
+    - name: HDA_COMPUTE_SUPPORT
+      role_assignments:
+      - project: compute_support
+        role: baremetal_admin
+      - domain: hda
+        role: baremetal_admin
+        inherited: true
+    - name: HDA_NETWORK_SUPPORT
+      role_assignments:
+      - project: network_support
+        role: baremetal_admin
+      - domain: hda
+        role: baremetal_viewer
+        inherited: true
+    - name: HDA_STORAGE_SUPPORT
+      role_assignments:
+      - project: storage_support
+        role: baremetal_admin
+      - domain: hda
+        role: baremetal_viewer
+        inherited: true
+    - name: HDA_SERVICE_DESK
+      role_assignments:
+      - project: service_desk
+        role: baremetal_admin
+      - domain: hda
+        role: baremetal_viewer
+        inherited: true
+
+{{- if not .Values.global.domain_seeds.skip_hcm_domain }}
   - name: hcm
     groups:
     - name: HCM_API_SUPPORT
@@ -783,6 +907,7 @@ spec:
       - domain: hcm
         role: baremetal_viewer
         inherited: true
+{{- end }}
 
   - name: hcp03
     groups:

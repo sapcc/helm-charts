@@ -2,17 +2,17 @@ groups:
 - name: neutron-api.alerts
   rules:
   - alert: OpenstackNeutronApiOverloaded
-    expr: uwsgi_socket_listen_queue{component="neutron"} > 100
+    expr: uwsgi_socket_listen_queue{name="neutron-server"} > 100
     for: 5m
     labels:
-      no_alert_on_absence: "true"
       severity: warning
+      support_group: network-api
       tier: os
       service: neutron
       context: '{{ $labels.context }}'
       dashboard: uwsgi
       meta: 'Neutron API request queue is not clearing up, increase neutron-server deployment replicas for mitigiation.'
-      playbook: docs/support/playbook/neutron/api_overloaded.html
+      playbook: docs/support/playbook/neutron/api_overloaded
     annotations:
       description: 'Neutron API Pod `{{ $labels.pod }}` request queue > 100 for 5 min'
       summary: 'Neutron API request queue is not clearing up, increase neutron-server deployment replicas for mitigation.'

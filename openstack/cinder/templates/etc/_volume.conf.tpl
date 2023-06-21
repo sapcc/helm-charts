@@ -1,16 +1,35 @@
+{{- define "cinder.iniValues" -}}
+    {{- $values := index . 1 -}}
+    {{- $name := index . 0 -}}
+    {{- range $key, $value := $values }}
+        {{- if kindIs "string" $value }}
+{{ $key }} = {{ $value | required (print "Please set the value for [" $name "]" $key) | replace "$" "$$" | quote }}
+        {{- else if kindIs "map" $value }}
+{{ $key }} = {{ $value | required (print "Please set the value for [" $name "]" $key) | toJson | squote }}
+        {{- else }}
+{{ $key }} = {{ $value | required (print "Please set the value for [" $name "]" $key) }}
+        {{- end }}
+    {{- end }}
+{{- end }}
 {{- define "volume_conf" -}}
-{{- $volume := index . 1 -}}
-{{- with index . 0 -}}
-
+{{- $volume := index . 2 -}}
+{{- $name := index . 1 -}}
+{{- with $envAll := index . 0 -}}
 [DEFAULT]
-enabled_backends={{$volume.name}}
-storage_availability_zone={{$volume.availability_zone}}
+enabled_backends = {{ keys $volume.backends | sortAlpha | join ", " | quote }}
 
-[{{$volume.name}}]
-{{range $key, $value := $volume -}}
-{{- if and (ne $key "availability_zone") (ne $key "name")}}
-{{$key}}={{$value | quote}}
-{{- end}}
-{{- end -}}
-{{- end -}}
-{{- end -}}
+[backend_defaults]
+{{- $backend_defaults := merge (default (dict) $volume.backend_defaults) $envAll.Values.defaults.backends.common }}
+{{- tuple "backend_defaults" $backend_defaults | include "cinder.iniValues" }}
+
+{{- range $name, $backend := $volume.backends }}
+    {{- $values := merge $backend (get $envAll.Values.defaults.backends $backend.volume_driver) }}
+
+[{{$name}}]
+volume_backend_name = {{ $name | quote }}
+    {{- tuple $name $values | include "cinder.iniValues" }}
+
+{{- end }}
+
+{{- end }}
+{{- end }}

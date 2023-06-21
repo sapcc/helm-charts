@@ -23,9 +23,6 @@ spec:
         alert-service: keppel
       annotations:
         checksum/secret: {{ include "keppel/templates/secret.yaml" . | sha256sum }}
-        prometheus.io/scrape: "true"
-        prometheus.io/port: "8080"
-        prometheus.io/targets: "openstack"
     spec:
       containers:
         - name: monitor
@@ -58,6 +55,11 @@ spec:
               value: 'Default'
             - name:  OS_USERNAME
               value: 'keppel'
+          securityContext:
+            runAsNonRoot: true
+          ports:
+            - name: http
+              containerPort: 8080
           # NOTE: This is only a readiness probe for a reason.
           # - We want the readiness probe to have `k rollout status` fail (and
           #   therefore turn the pipeline red) when a new version is rotten.

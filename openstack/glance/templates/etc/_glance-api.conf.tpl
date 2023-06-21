@@ -16,8 +16,8 @@ show_image_direct_url = True
 admin_role = ''
 
 rpc_response_timeout = {{ .Values.rpc_response_timeout | default 300 }}
-rpc_workers = {{ .Values.rpc_workers | default 1 }}
-workers = {{ .Values.workers | default 4 }}
+rpc_workers = {{ .Values.rpc_workers }}
+workers = {{ .Values.workers }}
 
 wsgi_default_pool_size = {{ .Values.wsgi_default_pool_size | default 100 }}
 
@@ -97,11 +97,8 @@ policy_file = /etc/glance/policy.yaml
 [barbican]
 auth_endpoint = {{.Values.global.keystone_api_endpoint_protocol_internal | default "http"}}://{{include "keystone_api_endpoint_host_internal" .}}:{{ .Values.global.keystone_api_port_internal | default 5000}}/v3
 
-{{- if .Values.audit.enabled }}
-# Defines CADF Audit Middleware section
-[audit_middleware_notifications]
-topics = notifications
-driver = messagingv2
-transport_url = rabbit://rabbitmq:{{ .Values.rabbitmq_notifications.users.default.password }}@glance-rabbitmq-notifications:5672/
-mem_queue_size = 1000
+{{- include "ini_sections.audit_middleware_notifications" . }}
+
+{{- if .Values.osprofiler.enabled }}
+{{- include "osprofiler" . }}
 {{- end }}

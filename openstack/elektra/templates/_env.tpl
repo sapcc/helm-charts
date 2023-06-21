@@ -1,5 +1,7 @@
 - name: RAILS_ENV
   value: {{ .Values.rails_env | quote }}
+- name: ENFORCE_NATURAL_USER_LOGIN
+  value: {{ .Values.enforce_natural_user_login | quote }}
 - name: HAS_KEYSTONE_ROUTER
   value: {{ .Values.has_keystone_router | quote }}
 - name: MONSOON_DASHBOARD_REGION
@@ -8,6 +10,18 @@
   value: {{ .Values.monsoon_dashboard_landscape | quote }}
 - name: MONSOON_DASHBOARD_MAIL_SERVER
   value: {{ .Values.monsoon_dashboard_mail_server | quote }}
+- name: MONSOON_DASHBOARD_MAIL_SERVER_PORT
+  value: {{ .Values.monsoon_dashboard_mail_server_port | quote }}
+- name: MONSOON_DASHBOARD_MAIL_DOMAIN
+  value: {{ .Values.monsoon_dashboard_mail_domain | quote }}
+- name: MONSOON_DASHBOARD_MAIL_SENDER
+  value: {{ .Values.monsoon_dashboard_mail_sender | quote }}
+- name: MONSOON_DASHBOARD_MAIL_AUTHENTICATION
+  value: {{ .Values.monsoon_dashboard_mail_authentication | quote }}
+- name: MONSOON_DASHBOARD_MAIL_USER
+  valueFrom: { secretKeyRef: { name: elektra, key: monsoon.dashboard.mail.user } }
+- name: MONSOON_DASHBOARD_MAIL_PASSWORD
+  valueFrom: { secretKeyRef: { name: elektra, key: monsoon.dashboard.mail.password } }
 - name: MONSOON_DASHBOARD_AVATAR_URL
   value: {{ .Values.monsoon_dashboard_avatar_url | quote }}
 - name: MONSOON_DASHBOARD_CAM_URL

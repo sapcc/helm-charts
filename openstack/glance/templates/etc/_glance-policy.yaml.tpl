@@ -12,7 +12,7 @@
 "publicize_image": "rule:context_is_cloud_admin or role:image_publicize_admin"
 "communitize_image": "rule:context_is_editor"
 
-"download_image": "rule:context_is_editor"
+"download_image": "rule:context_is_viewer"
 "upload_image": "rule:context_is_editor"
 
 "delete_image_location": "rule:context_is_editor"

@@ -6,15 +6,16 @@ groups:
         cc3test_status{type="datapath",
             name=~"TestPrometheus_datapath.+"
         } == 0
-    for: 10m
+    for: 20m
     labels:
       severity: critical
+      support_group: observability
       tier: os
       service: '{{ $labels.service }}'
       context: '{{ $labels.service }}'
       meta: 'CCloud Prometheus {{ $labels.name }} is down'
       dashboard: 'cc3test-overview?var-service={{ $labels.service }}'
-      playbook: 'docs/devops/alert/prometheus'
+      playbook: 'docs/support/playbook/prometheus/alerts/cc3test-alert-datapath'
       report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
     annotations:
       description: 'CCloud Prometheus {{ $labels.name }} is down'
@@ -27,12 +28,13 @@ groups:
         }[30m]) > 8
     labels:
       severity: warning
+      support_group: observability
       tier: os
       service: '{{ $labels.service }}'
       context: '{{ $labels.service }}'
       meta: 'CCloud Prometheus {{ $labels.name }} is flapping'
       dashboard: 'cc3test-overview?var-service={{ $labels.service }}'
-      playbook: 'docs/devops/alert/prometheus'
+      playbook: 'docs/support/playbook/prometheus/alerts/cc3test-alert-datapath'
       report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
     annotations:
       description: 'CCloud Prometheus {{ $labels.name }} is flapping'

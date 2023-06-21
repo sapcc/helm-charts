@@ -29,7 +29,7 @@ spec:
       volumes:
         - name: secrets
           secret:
-            secretName: arc
+            secretName: arc-ca
 {{- if .Values.api.tls.enabled }}
         - name: tls-secrets
           secret:
@@ -70,6 +70,7 @@ spec:
                 - /tmp/tls.crt.livenesspobe
             initialDelaySeconds: 60
             periodSeconds: 60
+            timeoutSeconds: 3
 {{- else }}
             httpGet:
               path: /healthcheck
@@ -85,12 +86,12 @@ spec:
             - name: ARC_ENDPOINT
               value: tls://mosquitto:8883
             - name: ARC_PKI_CA_CERT
-              value: /secrets/ca.crt
+              value: /secrets/tls.crt
             - name: ARC_PKI_CA_KEY
-              value: /secrets/ca.key
+              value: /secrets/tls.key
 {{- if .Values.mosquitto.tls.crl }}
             - name: ARC_PKI_CA_CRL
-              value: /secrets/ca.crl
+              value: /secrets/tls.crl
 {{- end }}              
 {{- if .Values.api.tls.enabled }}
             - name: ARC_TLS_SERVER_CERT

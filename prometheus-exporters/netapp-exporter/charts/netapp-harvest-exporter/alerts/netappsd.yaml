@@ -1,0 +1,76 @@
+groups:
+  - name: netappsd
+    rules:
+      - alert: NetappHarvestExporterAuthenticationError
+        expr: netapp_harvest_probe_failure{reason="authentication error"} > 0
+        for: 15m
+        labels:
+          context: netapp-exporter
+          no_alert_on_absence: "true"
+          playbook: 'docs/support/playbook/storage/filer_inaccessible'
+          service: exporter
+          severity: warning
+          support_group: compute-storage-api
+          tier: os
+        annotations:
+          summary: Authentication failure during NetApp Filer discovery.
+          description: Filer [[ $labels.host ]] can't be accessed due to authentication error.
+
+      - alert: NetappHarvestExporterProbeError
+        expr: netapp_harvest_probe_failure{reason!="authentication error"} > 0
+        for: 15m
+        labels:
+          context: netapp-exporter
+          no_alert_on_absence: "true"
+          playbook: 'docs/support/playbook/storage/filer_inaccessible'
+          service: exporter
+          severity: info
+          support_group: compute-storage-api
+          tier: storage
+        annotations:
+          summary: Probe failure during NetApp Filer discovery.
+          description: Filer [[ $labels.host ]] can't be accessed due to [[ $labels.reason ]].
+
+      - alert: NetappHarvestMultipleInstances
+        expr: count (netapp_metadata_exporter_count) by (pod_template_hash, poller) > 1
+        for: 15m
+        labels:
+          context: netapp-exporter
+          no_alert_on_absence: "true"
+          service: exporter
+          severity: info
+          support_group: compute-storage-api
+          tier: storage
+        annotations:
+          summary:  Multiple Netapp Harvest poller instances for [[ $labels.poller ]]
+          description: There are [[ $value ]] pollers collecting metrics from NetApp Filer [[ $labels.poller ]].
+
+      - alert: NetappHarvestCinderNeedsMoreWorkers
+        expr: netapp_harvest_discovered_count{app_kubernetes_io_instance="netapp-harvest-exporter-cinder-sd"} - on () group_left count (netapp_metadata_exporter_count{app_kubernetes_io_instance="netapp-harvest-exporter-cinder"}) > 0
+        for: 15m
+        labels:
+          context: netapp-exporter
+          no_alert_on_absence: "true"
+          playbook: 'docs/support/playbook/storage/netapp_exporter'
+          service: exporter
+          severity: info
+          support_group: compute-storage-api
+          tier: storage
+        annotations:
+          summary:  Netapp Harvest (Cinder) does not have enough workers
+          description: Deployment netapp-harvest-exporter-cinder needs more workers. Add at least [[ $value ]] more wokers.
+
+      - alert: NetappHarvestCinderFreeWorkersLow
+        expr:  {{ .Values.apps.cinder.workerCount }} - netapp_harvest_discovered_count{app_kubernetes_io_instance="netapp-harvest-exporter-cinder-sd"} < 3
+        for: 15m
+        labels:
+          context: netapp-exporter
+          no_alert_on_absence: "true"
+          playbook: 'docs/support/playbook/storage/netapp_exporter'
+          service: exporter
+          severity: info
+          support_group: compute-storage-api
+          tier: storage
+        annotations:
+          summary:  Netapp Harvest (Cinder) has less than 3 free workers
+          description: Deployment netapp-harvest-exporter-cinder has less than 3 free workers. Consider increase deployment replica to {{ (mul (add (div .Values.apps.cinder.workerCount 5) 1) 5) }}.

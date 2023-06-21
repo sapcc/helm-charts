@@ -10,6 +10,7 @@ groups:
       meta: '{{ $labels.availability_zone }} DiskUsage above 90%'
       service: nova
       severity: critical
+      support_group: compute-storage-api
       tier: os
     annotations:
       description: Nova {{ $labels.availability_zone }} Disk Usage is above 90%
@@ -24,6 +25,7 @@ groups:
       meta: '{{ $labels.availability_zone }} RAMUsage above 95%'
       service: nova
       severity: warning
+      support_group: compute-storage-api
       tier: os
     annotations:
       description: Nova {{ $labels.availability_zone }} total RAM Usage is above 95%.
@@ -34,9 +36,10 @@ groups:
     for: 5m
     labels:
       dashboard: nova-hypervisor
-      playbook: docs/support/playbook/nova/instance_error_on_create.html
+      playbook: docs/support/playbook/nova/instance_error_on_create
       service: nova
       severity: info
+      support_group: compute-storage-api
       tier: os
     annotations:
       description: Nova Instance {{$labels.uuid }} Stuck in Error in {{ $labels.nova_host }}
@@ -47,9 +50,10 @@ groups:
     for: 5m
     labels:
       dashboard: nova-hypervisor
-      playbook: docs/support/playbook/nova/instance_error_on_create.html
+      playbook: docs/support/playbook/nova/instance_error_on_create
       service: nova
       severity: info
+      support_group: compute-storage-api
       tier: os
     annotations:
       description: Nova Instance Stuck in Building state over 15mins in {{ $labels.nova_host }}
@@ -60,9 +64,10 @@ groups:
     for: 5m
     labels:
       dashboard: nova-hypervisor
-      playbook: docs/support/playbook/nova/delete_stuck_instance.html#Delete
+      playbook: docs/support/playbook/nova/delete_stuck_instance#Delete
       service: nova
       severity: info
+      support_group: compute-storage-api
       tier: os
     annotations:
       description: Nova Instance Stuck in Deleting state over 15mins in {{ $labels.nova_host }}
@@ -75,6 +80,7 @@ groups:
       dashboard: nova-hypervisor
       service: nova
       severity: info
+      support_group: compute-storage-api
       tier: os
     annotations:
       description: Nova Instance Stuck in Stopping state over 15mins in {{ $labels.nova_host }}
@@ -88,6 +94,7 @@ groups:
       dashboard: nova-hypervisor
       service: nova
       severity: info
+      support_group: compute-storage-api
       tier: os
     annotations:
       description: Nova Instance Stuck in Starting state over 15mins in {{ $labels.nova_host }}
@@ -100,6 +107,7 @@ groups:
       dashboard: nova-hypervisor
       service: nova
       severity: info
+      support_group: compute-storage-api
       tier: os
     annotations:
       description: Nova Instance Stuck in Spawning state over 60 mins in {{ $labels.nova_host }}
@@ -110,9 +118,10 @@ groups:
     for: 5m
     labels:
       dashboard: nova-hypervisor
-      playbook: docs/support/playbook/nova/delete_stuck_instance.html#Rebooting
+      playbook: docs/support/playbook/nova/delete_stuck_instance#Rebooting
       service: nova
       severity: info
+      support_group: compute-storage-api
       tier: os
     annotations:
       description: Nova Instance Stuck in Rebooting state over 15mins in {{ $labels.nova_host }}
@@ -123,9 +132,23 @@ groups:
     for: 1h
     labels:
       severity: info
+      support_group: compute-storage-api
       tier: os
       service: nova
       context: '{{ $labels.context }}'
     annotations:
       description: Nova contains services with differing versions for 1h.
       summary: Nova service versions do not match.
+
+  - alert: OpenstackNovaConsistentlyFailingVolumeDetach
+    expr: (sum(delta(oslo_messaging_events{alert_service='nova', method="detach_volume", type="exception"}[20m])) by (name)) > 0
+    for: 90m
+    labels:
+      severity: info
+      support_group: compute-storage-api
+      tier: os
+      service: nova
+      context: '{{ $labels.context }}'
+    annotations:
+      description: Nova {{ $labels.name }} is consistently failing to detach a volume/volumes for 90m.
+      summary: Nova fails to detach a volume.

@@ -13,15 +13,16 @@ data:
           Daemon       Off
           Log_Level    info
           Parsers_File parsers.conf
+          Parsers_File parsers_custom.conf
           HTTP_Server  On
           HTTP_Listen  0.0.0.0
-          HTTP_Port    2020
+          HTTP_Port    {{ index .Values "fluent-bit" "metricsPort" }}
           Health_Check On
 
       [INPUT]
           Name             tail
           Path             /var/log/containers/*.log
-          Parser           docker
+          multiline.parser docker, cri
           Tag              kube.*
           Refresh_Interval 5
           Mem_Buf_Limit    5MB
@@ -63,11 +64,19 @@ data:
           Remove_key time
 
       [FILTER]
+          Name   modify
+          Match  kube.*
+          Rename message log
+
+      [FILTER]
           Name               kubernetes
           Match              kube.*
+          Kube_Tag_Prefix    kube.var.log.containers.
           Kube_URL           https://kubernetes.default.svc:443
           Kube_CA_File       /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
           Kube_Token_File    /var/run/secrets/kubernetes.io/serviceaccount/token
+          Merge_Log          On
+          Merge_Log_Trim     On
 
 {{ if index .Values "fluent-bit" "filter" "additionalValues" }}
       [FILTER]
@@ -77,7 +86,7 @@ data:
           Record {{ .key }} {{ .value }}
 {{- end }}
 {{- end }}
-
+{{ if index .Values "fluent-bit" "backend" "es" "enabled" }}
       [OUTPUT]
           Name  es
           Match *
@@ -86,7 +95,7 @@ data:
           Logstash_Format On
           Replace_Dots On
           Retry_Limit False
-          Type  flb_type
+          Type  _doc
           Time_Key @timestamp
           Logstash_Prefix {{ index .Values "fluent-bit" "backend" "es" "logstash_prefix" }}
           HTTP_User {{ index .Values "fluent-bit" "backend" "es" "http_user" }}
@@ -94,5 +103,22 @@ data:
           tls on
           tls.verify on
           tls.debug 1
+{{- end }}
+{{ if index .Values "fluent-bit" "backend" "opensearch" "enabled" }}
+      [OUTPUT]
+          Name  opensearch
+          Match *
+          Host  {{ index .Values "fluent-bit" "backend" "opensearch" "host" }}
+          Port  {{ index .Values "fluent-bit" "backend" "opensearch" "port" }}
+          Logstash_Format On
+          Replace_Dots On
+          Logstash_Prefix {{ index .Values "fluent-bit" "backend" "opensearch" "logstash_prefix" }}
+          Suppress_Type_Name On
+          HTTP_User {{ index .Values "fluent-bit" "backend" "opensearch" "http_user" }}
+          HTTP_Passwd {{ index .Values "fluent-bit" "backend" "opensearch" "http_passwd" }}
+          tls {{ index .Values "fluent-bit" "backend" "opensearch" "tls" "enabled"}}
+          tls.verify {{ index .Values "fluent-bit" "backend" "opensearch" "tls" "verify"}}
+          tls.debug {{ index .Values "fluent-bit" "backend" "opensearch" "tls" "debug"}}
+{{- end }}
   parsers.conf: ""
 {{- end }}

@@ -1,7 +1,8 @@
 {{- $mirror  := .Values.global.quayIoMirror | required "missing value for .Values.global.quayIoMirror" -}}
 {{- $db_name := .Values.db_name             | default .Release.Name -}}
 {{- $db_pass := .Values.db_password         | required "missing value for .Values.db_password" -}}
-{{- $db_host := printf "%s-postgresql.%s.svc" .Release.Name .Release.Namespace -}}
+{{- $db_host := .Values.db_host             | default (printf "%s-postgresql" .Release.Name) -}}
+{{- $db_host = printf "%s.%s.svc" $db_host .Release.Namespace -}}
 
 kind: Deployment
 apiVersion: apps/v1
@@ -36,15 +37,20 @@ spec:
     spec:
       containers:
       - name: metrics
-        image: "{{ $mirror }}/prometheuscommunity/postgres-exporter:v0.10.1"
+        image: "{{ $mirror }}/prometheuscommunity/postgres-exporter:v0.12.0"
         imagePullPolicy: IfNotPresent
         env:
         - name: DATA_SOURCE_NAME
-          value: postgresql://postgres:{{ $db_pass }}@{{ $db_host }}:5432/{{ $db_name }}?sslmode=disable
+          value: postgresql://postgres:{{ $db_pass }}@{{ $db_host }}:5432/{{ $db_name }}?sslmode=disable&application_name={{ .Release.Name }}-pgmetrics
         ports:
           - name: metrics
             containerPort: 9187
-        args: ["--extend.query-path", "/conf/custom-metrics.yaml", "--log.level", "info" ]
+        args:
+          - "--extend.query-path=/conf/custom-metrics.yaml"
+          - "--log.level=info"
+          {{- range $collector, $enabled := .Values.collectors }}
+          - "--{{ if not $enabled }}no-{{- end }}collector.{{ $collector }}"
+          {{- end }}
         volumeMounts:
           - name: custom-metrics
             mountPath: /conf

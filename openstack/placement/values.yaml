@@ -15,6 +15,9 @@ osprofiler: {}
 
 use_tls_acme: true
 
+proxysql:
+  mode: ""
+
 defaults:
   default:
     graceful_shutdown_timeout: 60
@@ -38,7 +41,7 @@ pod:
 
 uwsgi:
   processes: 10
-  wsgi_file: "/var/lib/kolla/venv/bin/nova-placement-api"
+  wsgi_file: "/var/lib/openstack/bin/placement-api"
 
 max_pool_size: 10
 max_overflow: 5
@@ -51,6 +54,12 @@ api_db: # Only used when mariadb.enabled=False to connect to the nova-api-mariad
 mariadb:
   enabled: true
   name: placement
+  alerts:
+    support_group: "compute-storage-api"
+
+memcached:
+  alerts:
+    support_group: "compute-storage-api"
 
 logging:
   formatters:
@@ -78,7 +87,7 @@ logging:
     migrate:
       handlers: stdout, sentry
       level: INFO
-    nova:
+    placement:
       handlers: stdout, sentry
       level: INFO
 
@@ -95,3 +104,13 @@ sentry:
 # Each first level item will become a section, and only on the second-level
 # we have key value pairs
 placement_conf: {}
+
+owner-info:
+  support-group: compute-storage-api
+  service: placement
+  maintainers:
+    - Fabian Wiesel
+    - Johannes Kulik
+    - Jakob Karge
+    - Marius Leustean
+  helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/openstack/placement

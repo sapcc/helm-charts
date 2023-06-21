@@ -1,3 +1,16 @@
+owner-info:
+  support-group: observability
+  maintainers:
+    - "Nathan Oyler"
+    - "Ivo Gosemann"
+  helm-chart-url: "https://github.com/sapcc/helm-charts/tree/master/system/elastiflow"
+
+# Deploy Prometheus alerts.
+alerts:
+  enabled: false
+  # Name of the Prometheus to which the alerts should be assigned to.
+  prometheus: infra-frontend
+
 curator:
   enabled: false
   retention: "92"
@@ -21,10 +34,10 @@ curator:
   nodeSelector:
     ccloud.sap.com/nodepool: elastiflow
   tolerations:
-  - key: "dedicated"
-    operator: Equal
-    value: "elastiflow"
-    effect: "NoSchedule"
+    - key: "dedicated"
+      operator: Equal
+      value: "elastiflow"
+      effect: "NoSchedule"
   configMaps:
     config_yml: |-
       ---
@@ -94,7 +107,6 @@ curator:
 # master node configs
 elasticsearch:
   enabled: false
-  image: "docker.elastic.co/elasticsearch/elasticsearch"
   annotations:
     kubernetes.io/tls-acme: true
     disco: true
@@ -129,8 +141,7 @@ elasticsearch:
     - name: configure-ownership
       securityContext:
         runAsUser: 0
-        privileged: true
-      image: "{{ .Values.image }}:{{ .Values.imageTag }}"
+      image: "{{ required ".Values.global.registry variable missing" .Values.global.registry }}/{{ .Values.global.elastic.image}}:{{ .Values.global.elastic.tag}}"
       imagePullPolicy: "{{ .Values.imagePullPolicy }}"
       command: ["sh", "-c", "mkdir -p /usr/share/elasticsearch/data && chown -R 1000:1000 /usr/share/elasticsearch/data"]
       volumeMounts:
@@ -150,10 +161,10 @@ elasticsearch-data:
   resources:
     requests:
       cpu: "4000m"
-      memory: "16Gi"
+      memory: "14Gi"
     limits:
       cpu: "6000m"
-      memory: "20Gi"
+      memory: "14Gi"
   esConfig:
     elasticsearch.yml: |
       indices.query.bool.max_clause_count: 8192
@@ -175,8 +186,7 @@ elasticsearch-data:
     - name: configure-ownership
       securityContext:
         runAsUser: 0
-        privileged: true
-      image: "{{ .Values.image }}:{{ .Values.imageTag }}"
+      image: "{{ required ".Values.global.registry variable missing" .Values.global.registry }}/{{ .Values.global.elastic.image}}:{{ .Values.global.elastic.tag}}"
       imagePullPolicy: "{{ .Values.imagePullPolicy }}"
       command: ["sh", "-c", "mkdir -p /usr/share/elasticsearch/data && chown -R 1000:1000 /usr/share/elasticsearch/data"]
       volumeMounts:
@@ -287,26 +297,21 @@ logstashExporter:
   listen_port: 9198
   targets: infra-collector
 
+elastiflow:
+  externalIPs:
+  sflow:
+    enabled: false
+
 filebeat:
   enabled: false
   image: "elastiflow-filebeat"
   imageTag: "20220331081029"
-  externalIPs:
-
-  service:
-    type: NodePort
-    externalTrafficPolicy: Local
-    ports:
-      - name: netflow-udp
-        port: 2055
-        targetPort: 2055
-        protocol: UDP
   resources:
     requests:
-      cpu: "2000m"
-      memory: "16G"
+      cpu: "500m"
+      memory: "1G"
     limits:
-      cpu: "4000m"
+      cpu: "2000m"
       memory: "16G"
 
 global:
@@ -315,6 +320,9 @@ global:
     host: "elastiflow-redis"
     logstash_imageTag: "202110081140"
     filebeat_imageTag: "202110071400"
+  elastic:
+    image: elastiflow-elastic
+    tag: <defined-in-pipeline>
 
 redis:
   enabled: false
@@ -338,9 +346,3 @@ kibana:
   #     memory: 4Gi
   #   limits:
   #     memory: 5Gi
-
-# Deploy Prometheus alerts.
-alerts:
-  enabled: false
-  # Name of the Prometheus to which the alerts should be assigned to.
-  prometheus: infra-frontend

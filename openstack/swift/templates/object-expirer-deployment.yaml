@@ -23,7 +23,6 @@ spec:
         alert-service: swift
       annotations:
         {{- include "swift_conf_annotations" . | indent 8 }}
-        {{- include "swift_ring_annotations" . | indent 8 }}
         prometheus.io/scrape: "true"
         prometheus.io/targets: {{ required ".Values.alerts.prometheus.openstack missing" $.Values.alerts.prometheus.openstack }}
     spec:
@@ -31,15 +30,10 @@ spec:
         - name: swift-etc
           configMap:
             name: swift-etc
-        - name: swift-account-ring
-          configMap:
-            name: swift-account-ring
-        - name: swift-container-ring
-          configMap:
-            name: swift-container-ring
-        - name: swift-object-ring
-          configMap:
-            name: swift-object-ring
+        - name: swift-rings
+          emptyDir: {}
+      initContainers:
+        {{- include "swift_ringloader_initcontainer" . | indent 8 }}
       containers:
         {{- range $i, $e := until (int .Values.object_expirer_processes) }}
         - name: expirer-{{ $i }}
@@ -65,6 +59,7 @@ spec:
                 secretKeyRef:
                   name: swift-secret
                   key: hash_path_suffix
+          # TODO: securityContext: { runAsNonRoot: true }
           resources:
             # observed usage: CPU = 1m-300m, RAM = 50-180 MiB
             requests:
@@ -76,16 +71,14 @@ spec:
           volumeMounts:
             - mountPath: /swift-etc
               name: swift-etc
-            - mountPath: /swift-rings/account
-              name: swift-account-ring
-            - mountPath: /swift-rings/container
-              name: swift-container-ring
-            - mountPath: /swift-rings/object
-              name: swift-object-ring
+            - mountPath: /swift-rings
+              name: swift-rings
         {{- end }}
         - name: statsd
           image: {{ .Values.global.dockerHubMirrorAlternateRegion }}/prom/statsd-exporter:{{ .Values.image_version_auxiliary_statsd_exporter }}
           args: [ --statsd.mapping-config=/swift-etc/statsd-exporter.yaml ]
+          securityContext:
+            runAsNonRoot: true
           resources:
             # observed usage: CPU = 10m-100m, RAM = 550-950 MiB
             requests:

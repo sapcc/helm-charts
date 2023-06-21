@@ -1,3 +1,4 @@
+{{- $root := . }}
 - job_name: 'maia-exporters'
   scrape_interval: 1m
   scrape_timeout: 55s
@@ -46,7 +47,7 @@
   metric_relabel_configs:
     - action: drop
       source_labels: [vmware_name]
-      regex: c_blackbox.*|c_regression.*
+      regex: cc3test.*
     - action: labeldrop
       regex: "instance|job|alert_tier|alert_service"
     - source_labels: [ltmVirtualServStatName]
@@ -95,6 +96,7 @@
       - '{__name__=~"^openstack_.+",project_id!=""}'
       - '{__name__=~"^limes_(?:project|domain)_(?:quota|usage)$"}'
       - '{__name__=~"^limes_swift_.+",project_id!=""}'
+      - '{__name__=~"^keppel_.+",project_id!=""}'
 
 - job_name: 'prometheus-infra-collector'
   scrape_interval: 1m
@@ -106,7 +108,7 @@
       action: labeldrop
     - action: drop
       source_labels: [vmware_name]
-      regex: c_blackbox.*|c_regression.*
+      regex: cc3test.*
     - action: drop
       source_labels: [__name__]
       regex: netapp_volume_saved_.*
@@ -129,69 +131,81 @@
     - source_labels: [ltmVirtualServStatName]
       target_label: listener_id
       regex: /net_.*/lb_.*/listener_(.*)
+
+  metrics_path: '/federate'
+  params:
+    'match[]':
+      # import any tenant-specific metric, except for those which already have been imported
+      # filter for ltmVirtualServStatName to be present as it relabels into project_id. It gets enriched by "openstack/maia/aggregations/snmp-f5.rules with the openstack metric openstack_neutron_networks_projects"
+      - '{__name__=~"^snmp_f5_.+", ltmVirtualServStatName!=""}'
+      - '{__name__=~"^ssh_nat_limits_miss", project_id!=""}'
+      - '{__name__=~"^ssh_nat_limits_use", project_id!=""}'
+      - '{__name__=~"^snmp_asr_ifHC.+", project_id!=""}'
+
+- job_name: 'prometheus-storage'
+  scrape_interval: 1m
+  scrape_timeout: 55s
+  static_configs:
+    - targets: ['prometheus-storage.infra-monitoring:9090']
+  metric_relabel_configs:
+    - regex: "cluster|cluster_type|instance|job|kubernetes_namespace|kubernetes_pod_name|kubernetes_name|pod_template_hash|exported_instance|exported_job|type|name|component|app|system|thanos_cluster|thanos_cluster_type|thanos_region|alert_tier|alert_service"
+      action: labeldrop
     - source_labels: [__name__]
       target_label: __name__
-      regex: netapp_volume_(.*)
+      regex: netapp_volume_(.*):maia
       replacement: openstack_manila_share_${1}
 
   metrics_path: '/federate'
   params:
     'match[]':
       # import any tenant-specific metric, except for those which already have been imported
-      - '{__name__=~"^snmp_f5_.+"}'
-      - '{__name__=~"^ssh_nat_limits_miss"}'
-      - '{__name__=~"^ssh_nat_limits_use"}'
-      - '{__name__=~"^snmp_asr_ifHC.+"}'
-      - '{__name__=~"^netapp_capacity_.+"}'
-      - '{__name__=~"^netapp_volume_.+", app="netapp-capacity-exporter-manila"}'
-      - '{__name__=~"^openstack_manila_share_.+", project_id!=""}'
+      - '{__name__=~"^netapp_volume_.+:maia", project_id!=""}'
 
-- job_name: 'prometheus-vmware'
+
+# iteration over vmware-monitoring values
+{{- range $target := .Values.global.targets }}
+# skip non-production targets called "mgmt"
+{{- if not (contains "mgmt" $target) }}
+- job_name: {{ include "prometheusVMware.fullName" (list $target $root) }}
   scheme: http
-  scrape_interval: 1m
-  scrape_timeout: 55s
+  scrape_interval: "{{ $root.Values.prometheus_vmware.scrape_interval }}"
+  scrape_timeout: "{{ $root.Values.prometheus_vmware.scrape_timeout }}"
+  tls_config:
+    cert_file: /etc/prometheus/secrets/prometheus-auth-sso-cert/sso.crt
+    key_file: /etc/prometheus/secrets/prometheus-auth-sso-cert/sso.key
   static_configs:
-    - targets: ['prometheus-vmware.vmware-monitoring.svc:9090']
+    - targets: 
+        - '{{ include "prometheusVMware.fullName" (list $target $root) }}-internal.{{ $root.Values.global.region }}.cloud.sap'
   metric_relabel_configs:
     - source_labels: [__name__, project ]
       regex: '^vrops_virtualmachine_.+;(.+)'
       replacement: '$1'
       target_label: project_id
-    - regex: 'project'
+    - regex: 'project|collector|exported_job|instance|internal_name|prometheus|prometheus_replica|resource_uuid|cluster|cluster_type|vccluster|vcenter'
       action: labeldrop
-{{- if .Values.neo.enabled }}
+  {{- if $root.Values.prometheus_vmware.neo.enabled }}
     - source_labels: [__name__]
       target_label: domain_id
       regex: ^vrops_hostsystem_.+
-      replacement: "{{ .Values.neo.domain_id  }}"
-{{- end }}
+      replacement: "{{ $root.Values.prometheus_vmware.neo.domain_id }}"
+  {{- end }}
 
   metrics_path: '/federate'
   params:
     'match[]':
-      # import any tenant-specific metric, except for those which already have been imported
-      - '{__name__=~"^vrops_virtualmachine_cpu_.+"}'
-      - '{__name__=~"^vrops_virtualmachine_disk_.+"}'
-      - '{__name__=~"^vrops_virtualmachine_memory_.+"}'
-      - '{__name__=~"^vrops_virtualmachine_network_.+"}'
-      - '{__name__=~"^vrops_virtualmachine_virtual_disk_.+"}'
-{{- if .Values.neo.enabled }}
-      - '{__name__=~"^vrops_hostsystem_cpu_model"}'
-      - '{__name__=~"^vrops_hostsystem_cpu_sockets_number"}'
-      - '{__name__=~"^vrops_hostsystem_cpu_usage_average_percentage"}'
-      - '{__name__=~"^vrops_hostsystem_memory_ballooning_kilobytes"}'
-      - '{__name__=~"^vrops_hostsystem_memory_contention_percentage"}'
+      - '{__name__=~"{{- include "prometheusVMwareFederationMatches" $root }}",project!~"internal",vccluster!~".*management.*"}'
+{{- end }}
 {{- end }}
 
-# For cronus reputation dashboard https://documentation.global.cloud.sap/services/email-howto-reputation
+# For cronus reputation dashboard https://documentation.global.cloud.sap/docs/customer/services/email-service/email-serv-howto/email-howto-reputation/
 {{- if .Values.cronus.enabled }}
 - job_name: 'cronus-reputation-statistics'
   scheme: https
   scrape_interval: 1m
   scrape_timeout: 55s
   tls_config:
-    cert_file: /etc/prometheus/secrets/prometheus-infra-sso-cert/sso.crt
-    key_file: /etc/prometheus/secrets/prometheus-infra-sso-cert/sso.key
+    cert_file: /etc/prometheus/secrets/prometheus-auth-sso-cert/sso.crt
+    key_file: /etc/prometheus/secrets/prometheus-auth-sso-cert/sso.key
   static_configs:
     - targets:
       - "prometheus-infra.scaleout.{{ .Values.global.region }}.cloud.sap"
@@ -204,6 +218,16 @@
       - '{__name__="aws_ses_cronus_provider_reputation_bouncerate"}'
       - '{__name__="aws_ses_cronus_provider_reputation_complaintrate"}'
       - '{__name__="aws_ses_cronus_provider_send"}'
+      - '{__name__="aws_ses_cronus_security_attributes_remaining_months_until_lease_ends"}'
+      - '{__name__="aws_ses_cronus_suppressed_email_since_last_update_minutes"}'
+      - '{__name__="aws_ses_cronus_identity_is_verified"}'
+      - '{__name__="cronus_event_mails_sent_provider_rate_perminute"}'
+      - '{__name__="cronus_event_mails_sent_success_provider_rate_perminute"}'
+      - '{__name__="cronus_event_mails_sent_error_provider_rate_perminute"}'
+      - '{__name__="aws_ses_cronus_identity_from_is_verified"}'
+      - '{__name__="aws_ses_cronus_provider_received"}'
+      - '{__name__="aws_ses_cronus_provider_publish_success"}'
+      - '{__name__="aws_ses_cronus_provider_publish_failure"}'
   metric_relabel_configs:
     - action: labeldrop
       regex: "exported_instance|exported_job|instance|job|tags|cluster|cluster_type|multicloud_id|alert_tier|alert_service"

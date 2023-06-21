@@ -22,7 +22,12 @@ spec:
               - |
                 token=$(vault write -field=token auth/approle/login role_id=$APPROLE_ID secret_id=@/creds/secret_id)
                 export VAULT_TOKEN=$token
-                vault read galvani-pki/crl/rotate
+                error=0
+                set +e #disable error on exit
+            {{- range $ca := .Values.volta.ca_names }}
+                vault read {{ $ca }}/crl/rotate || error=1
+            {{- end }}
+                exit $error
             imagePullPolicy: Always
             env:
             - name: VAULT_ADDR

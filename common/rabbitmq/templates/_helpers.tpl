@@ -15,7 +15,7 @@ We truncate at 63 chars because some Kubernetes name fields are limited to this 
 {{- printf "%s-%s" .Release.Name $name | trunc 63 | replace "_" "-" | trimSuffix "-" -}}
 {{- end -}}
 
-{{define "rabbitmq.release_host"}}{{.Release.Name}}-rabbitmq.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}{{end}}
+{{define "rabbitmq.release_host"}}{{.Release.Name}}-rabbitmq{{end}}
 
 {{- define "rabbitmq.transport_url" -}}{{ tuple . .Values.rabbitmq | include "rabbitmq._transport_url" }}{{- end}}
 
@@ -26,7 +26,25 @@ rabbit://{{ default "" $envAll.Values.global.user_suffix | print $rabbitmq.users
 {{- end}}
 
 {{- define "rabbitmq.shell_quote" -}}
-"{{- replace `"` `\"`  . | replace `$` `\$` | replace "`" (print `\` "`") -}}"
+"{{ replace `\` `\\` . | replace `"` `\"` | replace `$` `\$` | replace "`" "\\`" }}"
+{{- end }}
+
+{{- define "rabbitmq.upsert_user" -}}
+    {{- $path := index . 0 -}}
+    {{- $v := index . 1 -}}
+    {{- if not $v.user }}
+        {{- fail (printf "%v.user missing" $path) }}
+    {{- else if hasPrefix "-" $v.user }}
+        {{- fail (printf "%v.user starts with hypen" $path) }}
+    {{- else if not $v.password }}
+        {{- fail (printf "%v.password missing" $path) }}
+    {{- else if hasPrefix "-" $v.password }}
+        {{- fail (printf "%v.password starts with hypen" $path) }}
+    {{- else -}}
+        upsert_user {{ $v.user | include "rabbitmq.shell_quote" }} {{ $v.password | include "rabbitmq.shell_quote" }}
+        {{- if $v.tag }} {{ $v.tag | include "rabbitmq.shell_quote" }}
+        {{- end }}
+    {{- end }}
 {{- end }}
 
 {{/* Generate the service label for the templated Prometheus alerts. */}}

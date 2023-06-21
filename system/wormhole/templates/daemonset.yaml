@@ -28,7 +28,7 @@ spec:
         image: "{{ .Values.image.repository }}/kubernikus:{{ .Values.image.tag }}"
         command:
           - "sh"
-          - "-c"
+          - "-ec"
           - |
 {{- if .Values.restartOnFileChange }}
             cp ${KUBE_CLIENT_CERT} /tmp/client-cert.livenessprobe
@@ -50,6 +50,7 @@ spec:
               cmp -s ${KUBE_CLIENT_CERT} /tmp/client-cert.livenessprobe
           initialDelaySeconds: 60
           periodSeconds: 60
+          timeoutSeconds: 3
         env:
         - name: KUBE_CLIENT_CERT
           value: {{ .Values.restartOnFileChange }}

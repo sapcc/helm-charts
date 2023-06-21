@@ -3,18 +3,17 @@ groups:
   rules:
   - alert: OpenstackManilaApiDown
     expr: |
-        cc3test_status{type="api",
-            name=~"TestFileShareApi_.+"
-        } == 0
-    for: 10m
+        cc3test_status{service="manila", type="api"} == 0
+    for: 16m
     labels:
       severity: critical
+      support_group: compute-storage-api
       tier: os
       service: '{{ $labels.service }}'
       context: '{{ $labels.service }}'
       meta: 'Openstack Manila API is down'
       dashboard: 'cc3test-overview?var-service={{ $labels.service }}'
-      playbook: 'docs/devops/alert/manila/#test_api'
+      playbook: 'docs/support/playbook/manila/alerts/'
       report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
     annotations:
       description: 'Openstack Manila API is down'
@@ -22,17 +21,16 @@ groups:
 
   - alert: OpenstackManilaApiFlapping
     expr: |
-        changes(cc3test_status{type="api",
-            name=~"TestFileShareApi_.+"
-        }[30m]) > 8
+        changes(cc3test_status{service="manila", type="api"}[30m]) > 8
     labels:
       severity: warning
+      support_group: compute-storage-api
       tier: os
       service: '{{ $labels.service }}'
       context: '{{ $labels.service }}'
       meta: 'Openstack Manila API is flapping'
       dashboard: 'cc3test-overview?var-service={{ $labels.service }}'
-      playbook: 'docs/devops/alert/manila/#test_api'
+      playbook: 'docs/support/playbook/manila/alerts/'
       report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
     annotations:
       description: 'Openstack Manila API is flapping'
@@ -46,6 +44,7 @@ groups:
     for: 15m
     labels:
       severity: critical
+      support_group: compute-storage-api
       tier: os
       service: '{{ $labels.service }}'
       context: '{{ $labels.service }}'
@@ -62,11 +61,12 @@ groups:
     # we want a critical alert 7 days before (fixing during business hours is sufficient -> warning)
     labels:
       severity: warning
+      support_group: compute-storage-api
       tier: os
       service: manila
       context: filer
       meta: 'Certificate on {{ $labels.host }} expires in less than 8 days'
-      playbook: 'docs/support/playbook/manila/filer_cert_expired.html'
+      playbook: 'docs/support/playbook/manila/filer_cert_expired'
       support_component: manila_netapp
     annotations:
       description: Certificate on {{ $labels.host }} expires in less than 8 days
@@ -77,11 +77,12 @@ groups:
     # we want a warning alert 14 days before
     labels:
       severity: warning
+      support_group: compute-storage-api
       tier: os
       service: manila
       context: filer
       meta: 'Certificate on {{ $labels.host }} expires in less than 15 days'
-      playbook: 'docs/support/playbook/manila/filer_cert_expired.html'
+      playbook: 'docs/support/playbook/manila/filer_cert_expired'
       support_component: manila_netapp
     annotations:
       description: Certificate on {{ $labels.host }} expires in less than 15 days
@@ -92,6 +93,7 @@ groups:
     for: 2h
     labels:
       severity: warning
+      support_group: compute-storage-api
       tier: os
       service: '{{ $labels.service }}'
       context: '{{ $labels.service }}'

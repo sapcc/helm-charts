@@ -1,8 +1,12 @@
-{{- if or (eq .Values.global.region "qa-de-1") (eq .Values.global.region "qa-de-2") }}
-log-queries
-log-facility=/var/log/dnsmasq.log
+{{- range $k, $v := .Values.dnsmasq.conf }}
+    {{- if typeIsLike "bool" $v }}
+        {{- if $v }}
+{{ $k }}
+        {{- end }}
+    {{- else }}
+{{ $k }}={{ $v }}
+    {{- end }}
 {{- end }}
-no-negcache
 {{- range .Values.dnsmasq.dhcp_options }}
 dhcp-option={{ . }}
 {{- end }}

@@ -10,6 +10,7 @@ groups:
       meta: '{{ $labels.kubernetes_name }}'
       service: designate
       severity: critical
+      support_group: network-api
       tier: os
       playbook: 'docs/devops/alert/designate/#OpenstackDesignateDnsBindDown'
     annotations:
@@ -17,7 +18,7 @@ groups:
       summary: DNS Bind server {{ $labels.kubernetes_name }} down.
 
   - alert: OpenstackDesignateDnsUnboundEndpointNotAvailable
-    expr: max(kube_endpoint_address_available{namespace=~"dns-recursor"})by(region,endpoint) < 1
+    expr: max(kube_endpoint_address_available{namespace=~"dns-recursor"}) BY (region,endpoint) < 1
     for: 15m
     labels:
       context: unbound
@@ -25,21 +26,39 @@ groups:
       meta: '{{ $labels.endpoint }}'
       service: designate
       severity: warning
+      support_group: network-api
       tier: os
       playbook: 'docs/devops/alert/designate/#test_unbound_endpoint'
     annotations:
       description: 'DNS Unbound endpoint {{ $labels.endpoint }} not available in {{ $labels.region }} region.'
       summary: 'DNS Unbound endpoint {{ $labels.endpoint }} is not available. DNS resolution might be handled by another region.'
 
-  - alert: OpenstackDesignateDnsUnbound1Down
-    expr: absent(unbound_time_up{kubernetes_name=~"unbound1"}) == 1
+  - alert: OpenstackDesignateDnsUnboundManySERVFAIL
+    expr: sum(delta(unbound_answer_rcodes_total{rcode="SERVFAIL"}[1h])) BY (region, kubernetes_name) > 500000
     for: 60m
+    labels:
+      context: unbound
+      dashboard: designate-unbound
+      meta: '{{ $labels.kubernetes_name }}'
+      service: designate
+      severity: info
+      support_group: network-api
+      tier: os
+      playbook: 'docs/devops/alert/designate'
+    annotations:
+      description: 'Recursor {{ $labels.kubernetes_name }} returns lots of SERVFAIL responses in {{ $labels.region }} region.'
+      summary: '{{ $labels.kubernetes_name }} returned a lot of SERVFAIL responses in the last hour. Check the logs.'
+
+  - alert: OpenstackDesignateDnsUnbound1Down
+    expr: absent(unbound_up{kubernetes_name=~"unbound1"}) == 1 or unbound_up{kubernetes_name=~"unbound1"} != 1
+    for: 30m
     labels:
       context: unbound
       dashboard: designate-unbound
       meta: unbound1
       service: designate
       severity: warning
+      support_group: network-api
       tier: os
       playbook: 'docs/devops/alert/designate/#test_unbound_endpoint'
     annotations:
@@ -47,17 +66,17 @@ groups:
       summary: DNS Unbound1 recursor is down. DNS resolution might be handled by another region.
 
   - alert: OpenstackDesignateDnsUnbound2Down
-    expr: absent(unbound_time_up{kubernetes_name=~"unbound2"}) == 1
-    for: 60m
+    expr: absent(unbound_up{kubernetes_name=~"unbound2"}) == 1 or unbound_up{kubernetes_name=~"unbound2"} != 1
+    for: 30m
     labels:
       context: unbound
       dashboard: designate-unbound
       meta: unbound2
       service: designate
       severity: warning
+      support_group: network-api
       tier: os
       playbook: 'docs/devops/alert/designate/#test_unbound_endpoint'
     annotations:
       description: 'DNS Unbound2 recursor is down.'
       summary: DNS Unbound2 recursor is down. DNS resolution might be handled by another region.
-

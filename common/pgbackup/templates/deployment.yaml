@@ -1,0 +1,87 @@
+{{- $registry := .Values.global.registry                 | required "missing value for .Values.global.registry" -}}
+{{- if .Values.use_alternate_region -}}
+  {{- $registry = .Values.global.registryAlternateRegion | required "missing value for .Values.global.registryAlternateRegion" -}}
+{{- end -}}
+{{- $db_name  := .Values.database.name                   | default .Release.Name -}}
+{{- $db_host  := .Values.database.host                   | default (printf "%s-postgresql" .Release.Name) -}}
+{{- $auth_url := .Values.swift.os_auth_url               | default (printf "http://keystone.%s.svc:5000/v3" (.Values.global.keystoneNamespace | default .Release.Namespace)) -}}
+{{- $region   := .Values.swift.os_region_name            | default .Values.global.region -}}
+
+apiVersion: apps/v1
+kind: Deployment
+
+metadata:
+  name: "{{ .Release.Name }}-pgbackup"
+  labels:
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      name: "{{ .Release.Name }}-pgbackup"
+  template:
+    metadata:
+      labels:
+        name: "{{ .Release.Name }}-pgbackup"
+      annotations:
+        checksum/secret:       {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
+        prometheus.io/scrape:  "true"
+        prometheus.io/targets: {{ quote .Values.alerts.prometheus }}
+    spec:
+      containers:
+        - name: backup
+          {{- if eq .Release.Namespace "postgresql-test" }}
+          {{/* The E2E test pipeline is allowed to use unreleased pgbackup versions. */}}
+          image: '{{ $registry }}/backup-tools:{{ .Values.image_tag | default .Chart.AppVersion }}'
+          {{- else }}
+          image: '{{ $registry }}/backup-tools:{{ .Chart.AppVersion }}'
+          {{- end }}
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: BACKUP_PGSQL_FULL
+              value: {{ quote .Values.interval }}
+            - name: MY_POD_NAME
+              value: {{ quote $db_host }}
+            - name: MY_POD_NAMESPACE
+              value: {{ quote .Release.Namespace }}
+            - name: OS_AUTH_URL
+              value: {{ quote $auth_url }}
+            - name: OS_AUTH_VERSION
+              value: "3"
+            - name: OS_USERNAME
+              value: db_backup
+            - name: OS_USER_DOMAIN_NAME
+              value: Default
+            - name: OS_PROJECT_NAME
+              value: master
+            - name: OS_PROJECT_DOMAIN_NAME
+              value: ccadmin
+            - name: OS_REGION_NAME
+              value: {{ quote $region }}
+            - name: OS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-pgbackup"
+                  key: swift-password
+            - name: PGSQL_HOST
+              value: '{{ $db_host }}.{{ .Release.Namespace }}.svc'
+            - name: PGSQL_USER
+              value: {{ quote .Values.database.username }}
+            - name: PGPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-pgbackup"
+                  key: postgres-password
+          ports:
+          - name: metrics
+            containerPort: 9188
+          resources:
+            limits:
+              memory: {{ .Values.resources.memory_limit }}
+              cpu: '1'
+            requests:
+              memory: {{ .Values.resources.memory_limit }}
+              cpu: 100m

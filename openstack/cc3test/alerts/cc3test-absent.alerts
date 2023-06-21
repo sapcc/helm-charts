@@ -1,41 +1,67 @@
 groups:
 - name: cc3test-absent.alerts
   rules:
-  - alert: CCloudApiTestDown
-    expr: increase(cc3test_finished_seconds{type="api"}[10m]) == 0
+  - alert: CCloudApiTestNotRunningWell
+    expr: increase(cc3test_finished_seconds{type="api"}[20m]) == 0
+    for: 40m
     labels:
       severity: warning
-      tier: monitor
-      service: '{{ $labels.service }}'
+      service: cc3test
       context: '{{ $labels.service }}'
       dashboard: cc3test-overview
-      meta: 'cc3test {{ $labels.type }}/{{ $labels.name }} is not running for more than 10 minutes'
+      meta: 'cc3test {{ $labels.type }}/{{ $labels.name }} is not running for more than 40 minutes'
     annotations:
-      description: 'cc3test {{ $labels.type }}/{{ $labels.name }} is not running for more than 10 minutes'
+      description: 'cc3test {{ $labels.type }}/{{ $labels.name }} is not running for more than 40 minutes'
       summary: 'cc3test {{ $labels.type }}/{{ $labels.name }} is down'
 
-  - alert: CCloudDatapathTestDown
-    expr: increase(cc3test_finished_seconds{type="datapath"}[20m]) == 0
+  - alert: CCloudDatapathTestNotRunningWell
+    expr: increase(cc3test_finished_seconds{type="datapath"}[40m]) == 0
+    for: 40m
     labels:
       severity: warning
-      tier: monitor
-      service: '{{ $labels.service }}'
+      service: cc3test
       context: '{{ $labels.service }}'
       dashboard: cc3test-overview
-      meta: 'cc3test {{ $labels.type }}/{{ $labels.name }} is not running for more than 10 minutes'
+      meta: 'cc3test {{ $labels.type }}/{{ $labels.name }} is not running for more than 40 minutes'
     annotations:
-      description: 'cc3test {{ $labels.type }}/{{ $labels.name }} is not running for more than 10 minutes'
+      description: 'cc3test {{ $labels.type }}/{{ $labels.name }} is not running for more than 40 minutes'
       summary: 'cc3test {{ $labels.type }}/{{ $labels.name }} is down'
 
-  - alert: CCloudCanaryTestDown
+  - alert: CCloudCanaryTestNotRunningWell
     expr: increase(cc3test_finished_seconds{type="canary"}[1h]) == 0
+    for: 40m
     labels:
       severity: warning
-      tier: monitor
-      service: '{{ $labels.service }}'
+      service: cc3test
       context: '{{ $labels.service }}'
       dashboard: cc3test-overview
-      meta: 'cc3test {{ $labels.type }}/{{ $labels.name }} is not running for more than 10 minutes'
+      meta: 'cc3test {{ $labels.type }}/{{ $labels.name }} is not running for more than 40 minutes'
     annotations:
-      description: 'cc3test {{ $labels.type }}/{{ $labels.name }} is not running for more than 10 minutes'
+      description: 'cc3test {{ $labels.type }}/{{ $labels.name }} is not running for more than 40 minutes'
       summary: 'cc3test {{ $labels.type }}/{{ $labels.name }} is down'
+      
+  - alert: CC3TestNoMetrics
+    expr: absent(cc3test_status{type!="purge"}) == 1
+    for: 60m
+    labels:
+      severity: info
+      service: cc3test
+      context: 'cc3test'
+      dashboard: cc3test-overview
+      meta: 'cc3test does not create any cc3test metrics - most probably the tests are not running for some reason'
+    annotations:
+      description: 'cc3test does not create any cc3test metrics - most probably the tests are not running for some reason'
+      summary: 'cc3test does not create any cc3test metrics'
+
+  - alert: CC3TestNoPurgeMetrics
+    expr: absent(cc3test_status{type="purge"}) == 1
+    for: 60m
+    labels:
+      severity: info
+      service: cc3test
+      context: 'cc3test'
+      dashboard: cc3test-overview
+      meta: 'cc3test does not create any cc3test purge metrics - most probably the purgers are not running for some reason'
+    annotations:
+      description: 'cc3test does not create any cc3test purge metrics - most probably the purgers are not running for some reason'
+      summary: 'cc3test does not create any cc3test purge metrics'

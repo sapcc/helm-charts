@@ -1,14 +1,18 @@
+# vim: set ft=yaml:
+
 groups:
 - name: openstack-swift-caretaker.alerts
   rules:
   - alert: OpenstackSwiftOrphanAccounts
     expr: max(swift_cluster_accounts_orphan) > 0
-    for: 15m
+    # Avoid alerting too early if the complete project cleanup is not yet done
+    for: 8h
     labels:
       context: orphanaccounts
       dashboard: swift-overview
       service: swift
       severity: info
+      support_group: containers
       tier: os
       meta: '{{ $value }} orphaned Swift accounts'
     annotations:

@@ -8,6 +8,7 @@
       service: {{ include "alerts.service" . }}
       severity: info
       tier: {{ required ".Values.alerts.tier missing" .Values.alerts.tier }}
+      support_group: {{ required ".Values.alerts.support_group missing" .Values.alerts.support_group }}
     annotations:
       description: {{ include "fullName" . }} has too many connections open. Please check the service containers.
       summary: {{ include "fullName" . }} has too many connections open.
@@ -20,7 +21,8 @@
       service: {{ include "alerts.service" . }}
       severity: info
       tier: {{ required ".Values.alerts.tier missing" .Values.alerts.tier }}
-      playbook: 'docs/support/playbook/database/MariaDBSlowQueries.html'
+      playbook: 'docs/support/playbook/database/MariaDBSlowQueries'
+      support_group: {{ required ".Values.alerts.support_group missing" .Values.alerts.support_group }}
     annotations:
       description: {{ include "fullName" . }} has reported slow queries. Please check the DB.
       summary: {{ include "fullName" . }} reports slow queries.
@@ -33,6 +35,7 @@
       service: {{ include "alerts.service" . }}
       severity: info
       tier: {{ required ".Values.alerts.tier missing" .Values.alerts.tier }}
+      support_group: {{ required ".Values.alerts.support_group missing" .Values.alerts.support_group }}
     annotations:
       description: {{ include "fullName" . }} has queries waiting for lock more than 20 sec. Deadlock possible.
       summary: {{ include "fullName" . }} has queries waiting for lock.
@@ -45,13 +48,14 @@
       service: {{ include "alerts.service" . }}
       severity: info
       tier: {{ required ".Values.alerts.tier missing" .Values.alerts.tier }}
-      playbook: 'docs/support/playbook/manila/mariadb_high_running_threads.html'
+      playbook: 'docs/support/playbook/manila/mariadb_high_running_threads'
+      support_group: {{ required ".Values.alerts.support_group missing" .Values.alerts.support_group }}
     annotations:
       description: {{ include "fullName" . }} has more than 20 running threads.
       summary: {{ include "fullName" . }} running threads high.
 
-  - alert: {{ include "alerts.service" . | title }}PerconaClusterSizeTooSmall
-    expr: (mysql_global_status_wsrep_cluster_size{app=~"{{ include "fullName" . }}"} < 3)
+  - alert: {{ include "alerts.service" . | title }}PerconaClusterIncomplete
+    expr: (mysql_global_status_wsrep_cluster_size{app=~"{{ include "fullName" . }}"} < {{ .Values.cluster_size }})
     for: 10m
     labels:
       context: database
@@ -59,6 +63,7 @@
       severity: warning
       tier: {{ required ".Values.alerts.tier missing" .Values.alerts.tier }}
       playbook: ''
+      support_group: {{ required ".Values.alerts.support_group missing" .Values.alerts.support_group }}
     annotations:
       description: {{ include "fullName" . }} reports cluster size of less than 3 nodes.
       summary: {{ include "fullName" . }} cluster incomplete.
@@ -72,6 +77,7 @@
       severity: info
       tier: {{ required ".Values.alerts.tier missing" .Values.alerts.tier }}
       playbook: ''
+      support_group: {{ required ".Values.alerts.support_group missing" .Values.alerts.support_group }}
     annotations:
       description: {{ include "fullName" . }} InnoDB log writes stalling.
       summary: {{ include "fullName" . }} has problem writing to disk.
@@ -85,6 +91,7 @@
       severity: info
       tier: {{ required ".Values.alerts.tier missing" .Values.alerts.tier }}
       playbook: ''
+      support_group: {{ required ".Values.alerts.support_group missing" .Values.alerts.support_group }}
     annotations:
       description: {{ include "fullName" . }} Cluster node not ready.
       summary: {{ include "fullName" . }} reports as not ready.
@@ -98,6 +105,7 @@
       severity: info
       tier: {{ required ".Values.alerts.tier missing" .Values.alerts.tier }}
       playbook: ''
+      support_group: {{ required ".Values.alerts.support_group missing" .Values.alerts.support_group }}
     annotations:
       description: {{ include "fullName" . }} Cluster node out of sync.
       summary: {{ include "fullName" . }} reports as not synced.

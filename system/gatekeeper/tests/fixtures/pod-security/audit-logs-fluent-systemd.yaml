@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  annotations:
+    meta.helm.sh/release-name: audit-logs
+    meta.helm.sh/release-namespace: audit-logs
+  labels:
+    app.kubernetes.io/managed-by: Helm
+    ccloud/support-group: observability
+  name: fluent-audit-systemd
+  namespace: audit-logs
+spec:
+  template:
+    spec:
+      containers:
+      - name: fluent-audit-systemd
+        volumeMounts:
+        - mountPath: /fluent-etc
+          name: fluent-etc
+        - mountPath: /var/log
+          name: varlog
+      securityContext: {}
+      volumes:
+      - configMap:
+          defaultMode: 420
+          name: fluent-audit-systemd-etc
+        name: fluent-etc
+      - hostPath:
+          path: /var/log
+        name: varlog

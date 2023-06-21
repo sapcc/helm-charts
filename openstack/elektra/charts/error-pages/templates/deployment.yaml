@@ -16,9 +16,29 @@ spec:
         app: error-pages
     spec:
       containers:
-        - image: keppel.eu-de-1.cloud.sap/ccloud/juno-error-pages/default-backend:latest
-          imagePullPolicy: Always
-          name: error-pages
+        - name: hosting-maintenance
+          image: "{{ .Values.global.registry }}/juno-v2-hosting:latest"
+          imagePullPolicy: IfNotPresent
           ports:
-            - containerPort: 80
-              protocol: TCP
+            - name: web
+              containerPort: 80
+          env:
+            - name: PAGE_TITLE
+              value: Maintenance
+            - name: FAVICON_URL
+              value: https://assets.juno.{{ $.Values.global.region }}.cloud.sap/assets/favicon.ico
+            - name: NAME
+              value: maintenance
+            - name: VERSION
+              value: latest
+            - name: ASSETS_HOST
+              value: https://assets.juno.{{ $.Values.global.region }}.cloud.sap
+            - name: PROPS
+              value: ""
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "256M"
+            limits:
+              cpu: "100m"
+              memory: "256M"

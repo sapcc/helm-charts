@@ -17,6 +17,9 @@ template: |
       system: openstack
       type: configuration
       component: nova
+      vcenter: {= host =}
+      datacenter: {= availability_zone =}
+      vccluster: {= cluster_name =}
   data:
     nova-compute.conf: |
       [DEFAULT]
@@ -34,7 +37,6 @@ template: |
       statsd_port = {{ .Values.compute.defaults.default.rpc_statsd_port }}
       statsd_enabled = {{ .Values.compute.defaults.default.rpc_statsd_enabled }}
 
-      scheduler_tracks_instance_changes = {{ .Values.scheduler.scheduler_tracks_instance_changes }}
       scheduler_instance_sync_interval = {{ .Values.scheduler.scheduler_instance_sync_interval }}
       {% if cells is defined and 'cell-' + availability_zone in cells %}
       transport_url = {= cells['cell-' + availability_zone].transport_url | quote =}
@@ -47,6 +49,10 @@ template: |
       [database]
       connection = {= cells['cell-' + vcenter_name].database_connection | quote =}
       {% endif %}
+
+      [filter_scheduler]
+      # Needs to be same on hypervisor and scheduler
+      track_instance_changes = {{ .Values.scheduler.track_instance_changes }}
 
       [vmware]
       # integration_bridge = {= bridge | quote =}
@@ -76,6 +82,9 @@ template: |
       serial_log_uri = http://{{ .Values.vspc.nodeIP }}:{{ .Values.vspc.web.portExternal }}
       {{- end }}
       hostgroup_reservations_json_file = /etc/nova/hostgroup-reservations.json
+
+      {{"\n"}}
+      {{- include "util.helpers.valuesToIni" .Values.compute.vmware | indent 6 }}
     hostgroup-reservations.json: |
       {"__default__": {"memory_percent": 5} }
   {{ end }}

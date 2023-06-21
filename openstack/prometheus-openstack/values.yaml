@@ -8,6 +8,7 @@ global:
 thanos:
   name: openstack
   deployWholeThanos: true
+  clusterDomain: kubernetes
 
 openstack-prometheus:
   name: openstack
@@ -22,6 +23,11 @@ openstack-prometheus:
     enabled: true
     hosts:
       - prometheus-openstack
+  
+  internalIngress:
+    enabled: true
+    hosts:
+      - prometheus-openstack-internal
 
   persistence:
     enabled: true
@@ -56,6 +62,14 @@ openstack-prometheus:
         - openstack_http_response_time_sum
         - openstack_http_requests_created
         - openstack_http_requests_total
+      metricRelabelings:
+        - action: replace
+          sourceLabels: [__name__, device]
+          regex: 'octavia_as3_version_info;([0-9a-z]*)-([0-9a-z]*)-([0-9a-z]*)-([0-9a-z]*)-([0-9a-z]*)([.-])(.*)'
+          targetLabel: devicename
+          replacement: $1-$2-$3-$4-$5
+    probes:
+      enabled: true
 
   alertmanagers:
     # Enabled via secrets
@@ -66,7 +80,17 @@ openstack-prometheus:
       - alertmanager.scaleout.eu-de-1.cloud.sap
       - alertmanager.scaleout.eu-nl-1.cloud.sap
 
+  alerts:
+    multipleTargetScrapes:
+      # List of exceptions for scrape jobs. This is joined together with a `|`.
+      exceptions:
+        # jobs `maia/prometheus-maia-oprom` and `prometheus-maia-oprom` scrape prometheus-maia multiple times for different metrics
+        - .*prometheus-maia-oprom
+        # two different containers 'distributor' and 'webhook'
+        - netbox-webhook-dist-client
+
 owner-info:
+  support-group: observability
   maintainers:
     - Martin Vossen
     - Tommy Sauer

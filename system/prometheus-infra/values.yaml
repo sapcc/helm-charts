@@ -1,6 +1,9 @@
 owner-info:
+  support-group: observability
   maintainers:
     - Martin Vossen
+    - Tommy Sauer
+    - Richard Tief
   helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/system/prometheus-infra
 
 global:
@@ -44,7 +47,13 @@ prometheus-infra-frontend:
       - alertmanager.scaleout.eu-nl-1.cloud.sap
   # send alerts to dedicated tier
   alerts:
-    tier: monitor
+    multipleTargetScrapes:
+      enabled: true
+      # List of exceptions for scrape jobs. This is joined together with a `|`.
+      exceptions:
+        # prometheus-infra-collector and prometheus-infra-snmp scrape the same target but different metrics
+        - "prometheus-infra.*"
+
   # Kubernetes resource requests and limits for this Prometheus.
   resources:
     requests:
@@ -55,6 +64,9 @@ prometheus-infra-frontend:
       enabled: true
     scrapeInterval: 60s
     scrapeTimeout: 55s
+
+  thanos:
+    enabled: false
 
 # Import metrics from kubernetes Prometheus
 kube_state_metrics_exporter:
@@ -84,3 +96,7 @@ bastion:
   enabled: false
   scrapeInterval: 2m
   scrapeTimeout: 115s
+
+# migration to thanos directives
+# it removes the scrapeconfig and the job, therefore the respective alert
+migration_done: false

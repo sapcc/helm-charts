@@ -1,0 +1,14 @@
+{{- range .Values.hubcopter.instances }}
+---
+apiVersion: v1
+kind: ConfigMap
+
+metadata:
+  name: hubcopter-config-{{ .id }}
+
+data:
+  hubcopter.yaml: |
+    {{ .api_config | required (printf "api_config is missing for instance %q" .id) | toYaml | nindent 4 }}
+    regionQuality:
+      {{ toYaml $.Values.hubcopter.regionQuality | nindent 6 }}
+{{- end }}

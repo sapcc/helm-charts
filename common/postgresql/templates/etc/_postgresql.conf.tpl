@@ -61,11 +61,7 @@ listen_addresses = '*'		# what IP address(es) to listen on;
                     # defaults to 'localhost'; use '*' for all
                     # (change requires restart)
 #port = 5432				# (change requires restart)
-{{- if or .Values.pgbouncer.enabled .Values.global.pgbouncer.enabled  }}
-max_connections = {{.Values.max_connections | default 50 }}			# (change requires restart)
-{{- else }}
 max_connections = {{.Values.max_connections | default 400 }}			# (change requires restart)
-{{- end }}
 # Note:  Increasing max_connections costs ~400 bytes of shared memory per
 # connection slot, plus lock space (see max_locks_per_transaction).
 #superuser_reserved_connections = 3	# (change requires restart)
@@ -182,14 +178,8 @@ shared_preload_libraries = '{{ keys .Values.extensions | join ","}}'		# (change 
 #------------------------------------------------------------------------------
 
 # - Settings -
-
-{{- if $.Values.cdc.enabled }}
-# Adjust WAL-settings if change-data-capture is enabled
-wal_level = logical       # required by Debezium
-{{- else }}
 #wal_level = minimal			# minimal, archive, hot_standby, or logical
                     # (change requires restart)
-{{- end }}
 #fsync = on				# turns forced synchronization on or off
 #synchronous_commit = on		# synchronization level;
                     # off, local, remote_write, or on
@@ -238,22 +228,12 @@ wal_buffers = {{.Values.wal_buffers | default -1 }}		# min 32kB, -1 sets based o
 # - Sending Server(s) -
 
 # Set these on the master and on any standby that will send replication data.
-
-{{- if $.Values.cdc.enabled }}
-max_wal_senders = 5     # required by Debezium
-{{- else }}
 #max_wal_senders = 0		# max number of walsender processes
                 # (change requires restart)
-{{- end }}
 #wal_keep_segments = 0		# in logfile segments, 16MB each; 0 disables
 #wal_sender_timeout = 60s	# in milliseconds; 0 disables
-
-{{- if $.Values.cdc.enabled }}
-max_replication_slots = 1   # required by Debezium
-{{- else }}
 #max_replication_slots = 0	# max number of replication slots
                 # (change requires restart)
-{{- end }}
 #track_commit_timestamp = off	# collect timestamp of transaction commit
                 # (change requires restart)
 

@@ -31,6 +31,19 @@ enabled_provider_drivers = {{ .Values.providers }}
 # Default provider driver
 default_provider_driver = {{ .Values.default_provider | default "noop_driver" }}
 
+# Enable/disable specific features
+allow_prometheus_listeners = False
+
+# TLS ciphers
+tls_cipher_allow_list = {{ .Values.tls.cipher_suites.allow_list | join ":" }}
+default_listener_ciphers = {{ .Values.tls.cipher_suites.default.listeners | join ":" }}
+default_pool_ciphers = {{ .Values.tls.cipher_suites.default.pools | join ":" }}
+
+# TLS versions
+minimum_tls_version = {{ .Values.tls.versions.minimum }}
+default_listener_tls_versions = {{ .Values.tls.versions.default.listeners | join ", " }}
+default_pool_tls_versions = {{ .Values.tls.versions.default.pools | join ", " }}
+
 [healthcheck]
 backends = octavia_db_check
 
@@ -40,8 +53,16 @@ amphora_driver = {{ .Values.amphora_driver  | default "amphora_noop_driver" }}
 compute_driver = {{ .Values.compute_driver  | default "compute_noop_driver" }}
 network_driver = {{ .Values.network_driver  | default "network_noop_driver" }}
 
+{{ if .Values.status_manager }}
 [status_manager]
-health_check_interval = 120
+health_check_interval = {{ .Values.status_manager.health_check_interval }}
+{{- if .Values.status_manager.health_update_threads }}
+health_update_threads = {{ .Values.status_manager.health_update_threads }}
+{{- end }}
+{{- if .Values.status_manager.stats_update_threads }}
+stats_update_threads = {{ .Values.status_manager.stats_update_threads }}
+{{- end }}
+{{- end }}
 
 {{ if .Values.house_keeping }}
 [house_keeping]
@@ -61,6 +82,8 @@ max_workers = {{ .Values.max_workers | default "10" }}
 
 [database]
 connection = {{ include "db_url_mysql" . }}
+max_pool_size = 30
+max_overflow = 50
 
 [oslo_messaging]
 # Topic (i.e. Queue) Name

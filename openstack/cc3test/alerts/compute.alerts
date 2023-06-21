@@ -3,18 +3,17 @@ groups:
   rules:
   - alert: OpenstackNovaApiDown
     expr: |
-        cc3test_status{type="api",
-            name=~"TestComputeApi_.+"
-        } == 0
-    for: 10m
+        cc3test_status{service="nova", type="api",name!~"TestVcenterApi_.+"} == 0
+    for: 16m
     labels:
       severity: critical
+      support_group: compute-storage-api
       tier: os
       service: '{{ $labels.service }}'
       context: '{{ $labels.service }}'
       meta: 'Openstack Nova API is down'
       dashboard: 'cc3test-overview?var-service={{ $labels.service }}'
-      playbook: 'docs/devops/alert/nova/#test_api'
+      playbook: 'docs/support/playbook/nova/alerts'
       report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
     annotations:
       description: 'Openstack Nova API is down: {{ $labels.name }}'
@@ -22,17 +21,16 @@ groups:
 
   - alert: OpenstackNovaApiFlapping
     expr: |
-        changes(cc3test_status{type="api",
-            name=~"TestComputeApi_.+"
-        }[30m]) > 8
+        changes(cc3test_status{service="nova", type="api",name!~"TestVcenterApi_.+"}[30m]) > 8
     labels:
       severity: warning
+      support_group: compute-storage-api
       tier: os
       service: '{{ $labels.service }}'
       context: '{{ $labels.service }}'
       meta: 'Openstack Nova API is flapping'
       dashboard: 'cc3test-overview?var-service={{ $labels.service }}'
-      playbook: 'docs/devops/alert/nova/#test_api'
+      playbook: 'docs/support/playbook/nova/alerts'
       report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
     annotations:
       description: 'Openstack Nova API is flapping: {{ $labels.name }}'
@@ -48,12 +46,13 @@ groups:
     for: 20m
     labels:
       severity: critical
+      support_group: compute
       tier: vmware
       service: '{{ $labels.service }}'
       context: '{{ $labels.service }}'
       meta: 'VMWare vcenter API is down: {{ $labels.name }}'
       dashboard: 'cc3test-overview?var-service={{ $labels.service }}'
-      playbook: 'docs/devops/alert/vcenter/#test_api'
+      playbook: 'docs/devops/alert/vcenter/#vcenterapidown'
       report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
     annotations:
       description: 'VMWare vcenter API is down: {{ $labels.name }}'
@@ -66,12 +65,13 @@ groups:
         }[30m]) > 8
     labels:
       severity: warning
+      support_group: compute
       tier: vmware
       service: '{{ $labels.service }}'
       context: '{{ $labels.service }}'
       meta: 'VMWare vcenter API is flapping'
       dashboard: 'cc3test-overview?var-service={{ $labels.service }}'
-      playbook: 'docs/devops/alert/vcenter/#test_api'
+      playbook: 'docs/devops/alert/vcenter/#vcenterapidown'
       report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
     annotations:
       description: 'VMWare vcenter API is flapping: {{ $labels.name }}'
@@ -82,6 +82,7 @@ groups:
     for: 3h
     labels:
       severity: warning
+      support_group: compute-storage-api
       tier: os
       service: '{{ $labels.service }}'
       context: '{{ $labels.service }}'
@@ -97,6 +98,7 @@ groups:
     expr: changes(cc3test_status{service="nova",name=~"TestComputeServer_create_server_az.+"}[2h]) > 8
     labels:
       severity: info
+      support_group: compute-storage-api
       tier: os
       service: '{{ $labels.service }}'
       context: '{{ $labels.service }}'
@@ -113,12 +115,13 @@ groups:
     for: 3h
     labels:
       severity: warning
+      support_group: compute-storage-api
       tier: os
       service: '{{ $labels.service }}'
       context: '{{ $labels.service }}'
       meta: 'Openstack Compute Canary: {{ $labels.name }} is down, see report for more details'
       dashboard: cc3test-overview?var-service={{ $labels.service }}
-      playbook: 'docs/devops/alert/{{ $labels.service }}/#test_create_server'
+      playbook: 'docs/support/playbook/{{ $labels.service }}/alerts/cc3test-alert-create-server-bb/'
       report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
     annotations:
       description: 'Openstack Compute Canary: {{ $labels.name }} is down, see report for more details'
@@ -128,12 +131,13 @@ groups:
     expr: changes(cc3test_status{service="nova",name=~"TestComputeServer_create_server_regular.+"}[2h]) > 8
     labels:
       severity: info
+      support_group: compute-storage-api
       tier: os
       service: '{{ $labels.service }}'
       context: '{{ $labels.service }}'
       meta: 'Openstack Compute Canary is flapping for 2 hours, see last three reports for more details'
       dashboard: cc3test-overview?var-service={{ $labels.service }}
-      playbook: 'docs/devops/alert/{{ $labels.service }}/#test_create_server'
+      playbook: 'docs/support/playbook/{{ $labels.service }}/alerts/cc3test-alert-create-server-bb/'
       report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
     annotations:
       description: 'Openstack Compute Canary is flapping for 2 hours, see last three reports for more details'
@@ -144,12 +148,13 @@ groups:
     for: 3h
     labels:
       severity: warning
+      support_group: compute-storage-api
       tier: os
       service: '{{ $labels.service }}'
       context: '{{ $labels.service }}'
       meta: 'Openstack Compute Canary: {{ $labels.name }} is down, see report for more details'
       dashboard: cc3test-overview?var-service={{ $labels.service }}
-      playbook: 'docs/devops/alert/{{ $labels.service }}/#test_create_server'
+      playbook: 'docs/support/playbook/{{ $labels.service }}/alerts/cc3test-alert-create-server-bb/'
       report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
     annotations:
       description: 'Openstack Compute Canary: {{ $labels.name }} is down, see report for more details'
@@ -159,12 +164,46 @@ groups:
     expr: changes(cc3test_status{service="nova",name=~"TestComputeServer_create_server_hana.+"}[2h]) > 8
     labels:
       severity: info
+      support_group: compute-storage-api
       tier: os
       service: '{{ $labels.service }}'
       context: '{{ $labels.service }}'
       meta: 'Openstack Compute Canary is flapping for 2 hours, see last three reports for more details'
       dashboard: cc3test-overview?var-service={{ $labels.service }}
-      playbook: 'docs/devops/alert/{{ $labels.service }}/#test_create_server'
+      playbook: 'docs/support/playbook/{{ $labels.service }}/alerts/cc3test-alert-create-server-bb/'
+      report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
+    annotations:
+      description: 'Openstack Compute Canary is flapping for 2 hours, see last three reports for more details'
+      summary: 'Openstack Compute Canary is flapping for 2 hours, see last three reports for more details'
+
+  - alert: OpenstackComputeCanaryCreateServerDown
+    expr: cc3test_status{service="nova",name=~"TestComputeServer_create_server-.+"} == 0
+    for: 3h
+    labels:
+      severity: warning
+      support_group: compute-storage-api
+      tier: os
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.service }}'
+      meta: 'Openstack Compute Canary: {{ $labels.name }} is down, see report for more details'
+      dashboard: cc3test-overview?var-service={{ $labels.service }}
+      playbook: 'docs/support/playbook/{{ $labels.service }}/alerts/cc3test-alert-create-server-bb/'
+      report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
+    annotations:
+      description: 'Openstack Compute Canary: {{ $labels.name }} is down, see report for more details'
+      summary: 'Openstack Compute Canary: {{ $labels.name }} is down, see report for more details'
+
+  - alert: OpenstackComputeCanaryCreateServerFlapping
+    expr: changes(cc3test_status{service="nova",name=~"TestComputeServer_create_server-.+"}[2h]) > 8
+    labels:
+      severity: info
+      support_group: compute-storage-api
+      tier: os
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.service }}'
+      meta: 'Openstack Compute Canary is flapping for 2 hours, see last three reports for more details'
+      dashboard: cc3test-overview?var-service={{ $labels.service }}
+      playbook: 'docs/support/playbook/{{ $labels.service }}/alerts/cc3test-alert-create-server-bb/'
       report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
     annotations:
       description: 'Openstack Compute Canary is flapping for 2 hours, see last three reports for more details'
@@ -175,6 +214,7 @@ groups:
     for: 3h
     labels:
       severity: info
+      support_group: compute-storage-api
       tier: os
       service: '{{ $labels.service }}'
       context: '{{ $labels.service }}'
@@ -190,6 +230,7 @@ groups:
     expr: changes(cc3test_status{service="nova",name=~"TestComputeServer_resizing.+"}[2h]) > 8
     labels:
       severity: info
+      support_group: compute-storage-api
       tier: os
       service: '{{ $labels.service }}'
       context: '{{ $labels.service }}'
@@ -206,6 +247,7 @@ groups:
     for: 3h
     labels:
       severity: info
+      support_group: compute-storage-api
       tier: os
       service: '{{ $labels.service }}'
       context: '{{ $labels.service }}'
@@ -221,6 +263,7 @@ groups:
     expr: changes(cc3test_status{service="nova",name=~"TestComputeServer_start_stop_server.+"}[2h]) > 8
     labels:
       severity: info
+      support_group: compute-storage-api
       tier: os
       service: '{{ $labels.service }}'
       context: '{{ $labels.service }}'
@@ -237,6 +280,7 @@ groups:
     for: 3h
     labels:
       severity: info
+      support_group: compute-storage-api
       tier: os
       service: '{{ $labels.service }}'
       context: '{{ $labels.service }}'
@@ -252,6 +296,7 @@ groups:
     expr: changes(cc3test_status{service="nova",name=~"TestComputeServer_server_with_userdata.+"}[2h]) > 8
     labels:
       severity: info
+      support_group: compute-storage-api
       tier: os
       service: '{{ $labels.service }}'
       context: '{{ $labels.service }}'
@@ -268,6 +313,7 @@ groups:
     for: 20m
     labels:
       severity: warning
+      support_group: compute-storage-api
       tier: os
       service: '{{ $labels.service }}'
       context: '{{ $labels.service }}'
@@ -284,6 +330,7 @@ groups:
     for: 20m
     labels:
       severity: info
+      support_group: compute-storage-api
       tier: os
       service: '{{ $labels.service }}'
       context: '{{ $labels.service }}'
@@ -294,3 +341,5 @@ groups:
     annotations:
       description: '{{ $labels.host }}: host is disabled without reason. see last three reports for more details'
       summary: '{{ $labels.host }}: host is disabled without reason'
+      
+      

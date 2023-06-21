@@ -1,3 +1,7 @@
+{{- if and .Values.nameOverride (not (hasPrefix "grafanasix" .Release.Name)) -}}
+  {{- fail ".Values.postgresql.nameOverride is not supported for new deployments (please stick to the standard naming scheme)" -}}
+{{- end -}}
+
 kind: Deployment
 apiVersion: apps/v1
 metadata:
@@ -8,15 +12,10 @@ metadata:
     release: "{{ .Release.Name }}"
     heritage: "{{ .Release.Service }}"
 spec:
-  replicas: {{ .Values.replicas }}
-  revisionHistoryLimit: {{ .Values.upgrades.revisionHistory }}
+  replicas: 1
+  revisionHistoryLimit: 3
   strategy:
-    type: {{ .Values.upgrades.podReplacementStrategy }}
-    {{ if eq .Values.upgrades.podReplacementStrategy "RollingUpdate" }}
-    rollingUpdate:
-      maxUnavailable: {{ .Values.upgrades.rollingUpdate.maxUnavailable }}
-      maxSurge: {{ .Values.upgrades.rollingUpdate.maxSurge }}
-    {{ end }}
+    type: Recreate
   selector:
     matchLabels:
       app: {{ template "fullname" . }}
@@ -34,14 +33,20 @@ spec:
         checksum/secrets: {{ include (print $.Template.BasePath  "/secrets.yaml") . | sha256sum }}
         checksum/etc: {{ include (print $.Template.BasePath  "/etc-configmap.yaml") . | sha256sum }}
     spec:
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 1
+            preference:
+              matchExpressions:
+              - key: cloud.sap/maintenance-state
+                operator: In
+                values:
+                - operational
       containers:
       - name: postgres
-{{- if .Values.custom_repository }}
-        image: "{{.Values.global.imageRegistry}}/{{.Values.global.imageNamespace}}/{{ .Values.image }}:{{ .Values.imageTag }}"
-{{- else }}
-        image: "{{ .Values.image }}:{{ .Values.imageTag }}"
-{{- end }}
-        imagePullPolicy: {{ default "IfNotPresent" .Values.imagePullPolicy | quote }}
+        image: "{{ include "preferredRegistry" . }}/postgres:{{ .Values.imageTag }}"
+        imagePullPolicy: "IfNotPresent"
 {{- if .Values.debug }}
         command: ["sleep", "inf"]
 {{- else }}
@@ -77,7 +82,7 @@ spec:
             - exec pg_isready --host $POD_IP
           initialDelaySeconds: 120
           timeoutSeconds: {{ .Values.probe_timeout_secs }}
-          failureThreshold: 6
+          failureThreshold: {{ .Values.probe_failure_threshold }}
         # We use the POD_IP to not have the pod become ready during the inital database setup
         # where the docker image briefly starts the db  for creating the user,
         # running custom setup scripts etc.
@@ -103,56 +108,6 @@ spec:
 {{- if .Values.dbMaintain }}
         - name: db-maintain
           mountPath: /docker-entrypoint-maintaindb.d
-{{- end }}
-
-{{- if .Values.backup.enabled }}
-{{- if .Values.backup.custom_repository }}
-      - image: {{ .Values.backup.image }}:{{ .Values.backup.imageTag }}
-{{- else }}
-      - image: {{ default "hub.global.cloud.sap" .Values.global.imageRegistry}}/{{ .Values.backup.image }}:{{ .Values.backup.imageTag }}
-{{- end }}
-        imagePullPolicy: {{ default "IfNotPresent" .Values.backup.imagePullPolicy | quote }}
-        name: backup
-        env:
-          - name: MY_POD_NAME
-            value: {{ template "fullname" . }}
-          - name: MY_POD_NAMESPACE
-            value: {{.Release.Namespace}}
-          - name: OS_AUTH_URL
-{{- if .Values.backup.os_auth_url }}
-            value: {{ .Values.backup.os_auth_url }}
-{{- else }}
-            value: {{ include "keystone_url" . }}
-{{- end }}
-          - name: OS_AUTH_VERSION
-            value: "3"
-          - name: OS_USERNAME
-            value: {{.Values.backup.os_username}}
-          - name: OS_USER_DOMAIN_NAME
-            value: {{.Values.backup.os_user_domain}}
-          - name: OS_PROJECT_NAME
-            value: {{.Values.backup.os_project_name}}
-          - name: OS_PROJECT_DOMAIN_NAME
-            value: {{.Values.backup.os_project_domain}}
-          - name: OS_REGION_NAME
-{{- if .Values.backup.os_region_name }}
-            value: {{ .Values.backup.os_region_name }}
-{{ else }}
-            value: {{ .Values.global.region }}
-{{- end }}
-          - name: OS_PASSWORD
-            value: {{.Values.backup.os_password | required "Please set .Values.backup.os_password" | quote}}
-          - name: BACKUP_PGSQL_FULL
-            value: {{.Values.backup.interval_full | quote}}
-        {{- if .Values.backup.resources.enabled }}
-        resources:
-          limits:
-            cpu: {{ .Values.backup.resources.limits.cpu | quote }}
-            memory: {{ .Values.backup.resources.limits.memory | quote }}
-          requests:
-            cpu: {{ .Values.backup.resources.requests.cpu | quote }}
-            memory: {{ .Values.backup.resources.requests.memory | quote }}
-        {{- end }}
 {{- end }}
       volumes:
       - name: postgres-etc

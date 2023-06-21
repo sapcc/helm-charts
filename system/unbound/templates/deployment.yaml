@@ -5,7 +5,7 @@ metadata:
   labels:
     app: {{ .Values.unbound.name }}
 spec:
-  replicas: 1
+  replicas: 2
   selector:
     matchLabels:
       app: {{ .Values.unbound.name }}
@@ -29,11 +29,13 @@ spec:
                   - key: "app"
                     operator: In
                     values:
-                    {{ if eq .Values.unbound.name "unbound1" }}- unbound2{{ end }}
-                    {{ if eq .Values.unbound.name "unbound2" }}- unbound1{{ end }}
+                    {{ if eq .Values.unbound.name "unbound1" }} - unbound2{{ end }}
+                    {{ if eq .Values.unbound.name "unbound1" }} - unbound1{{ end }}
+                    {{ if eq .Values.unbound.name "unbound2" }} - unbound2{{ end }}
+                    {{ if eq .Values.unbound.name "unbound2" }} - unbound1{{ end }}
               topologyKey: "kubernetes.io/hostname"
       nodeSelector:
-        failure-domain.beta.kubernetes.io/zone: {{ .Values.global.region}}{{ .Values.unbound.failure_domain_zone}}
+        topology.kubernetes.io/zone: {{ .Values.global.region}}{{ .Values.unbound.failure_domain_zone}}
       containers:
       - name: unbound
         image: {{ required ".Values.global.registryAlternateRegion is missing" .Values.global.registryAlternateRegion }}/{{.Values.unbound.image_unbound}}:{{ .Values.unbound.image_unbound_tag}}
@@ -67,6 +69,16 @@ spec:
       - name: metric
         image: {{ required ".Values.global.registryAlternateRegion is missing" .Values.global.registryAlternateRegion }}/{{.Values.unbound.image_unbound_exporter}}:{{ .Values.unbound.image_unbound_exporter_tag}}
         imagePullPolicy: {{ .Values.unbound.image_pullPolicy }}
+        env:
+        - name: GODEBUG
+          value: "x509ignoreCN=0"
+        args:
+          - -unbound.ca
+          - /etc/unbound/unbound-server.pem
+          - -unbound.cert
+          - /etc/unbound/unbound-control.pem
+          - -unbound.key
+          - /etc/unbound/unbound-control.key
         ports:
           - name: metrics
             containerPort: {{.Values.unbound.port_unbound_exporter}}

@@ -37,7 +37,7 @@ netapp_transport_type={{ $share.protocol | default "https" }}
 netapp_login={{$share.username}}
 netapp_password={{$share.password}}
 netapp_mtu={{$share.mtu | default 9000 }}
-netapp_enabled_share_protocols={{$share.enabled_protocols | default "nfs3, nfs4.0, nfs4.1" }}
+netapp_enabled_share_protocols={{$share.enabled_protocols | default "nfs3, nfs4.1" }}
 
 netapp_root_volume_aggregate={{$share.root_volume_aggregate}}
 netapp_aggregate_name_search_pattern={{$share.aggregate_search_pattern}}
@@ -59,6 +59,17 @@ netapp_volume_snapshot_reserve_percent = {{ $share.netapp_volume_snapshot_reserv
 # Enable logical space reporting
 netapp_enable_logical_space_reporting = False
 
+# Set last transfer size limit to 1 PB (1024 * 1024 * 1024 * 1024 KB), effectively disabling that setting
+netapp_snapmirror_last_transfer_size_limit = 1099511627776
+
+# Set asynchronous SnapMirror schedule to 10 minutes
+netapp_snapmirror_schedule = "10min"
+# set waiting time for snapmirror to complete on replica promote to 20 min (double the value of netapp_snapmirror_schedule), this is in line with our RPO
+netapp_snapmirror_quiesce_timeout = 1200
+
+# state, that will be reported as pool property. Valid values are `in_build`, `live`, `in_decom` and `replacing_decom`
+netapp_hardware_state = {{ $share.hardware_state | default "live" }}
+
 # The percentage of backend capacity reserved. Default 0 (integer value)
 
 {{- if eq 100 (int $share.reserved_share_percentage)}}
@@ -66,6 +77,13 @@ reserved_share_percentage = 100
 {{- else }}
 reserved_share_percentage = {{ $share.reserved_share_percentage | default 50 }}
 {{- end }}
+
+{{- if eq 100 (int $share.reserved_share_extend_percentage)}}
+reserved_share_extend_percentage = 100
+{{- else }}
+reserved_share_extend_percentage = {{ $share.reserved_share_extend_percentage | default 25 }}
+{{- end }}
+
 # Time to kepp deleted volumes in recovery queue until space is reclaimed
 netapp_delete_retention_hours = {{ $context.Values.delete_retention_hours | default 12 }}
 

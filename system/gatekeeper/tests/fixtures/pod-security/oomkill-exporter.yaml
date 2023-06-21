@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  annotations:
+    meta.helm.sh/release-name: kube-monitoring-test
+    meta.helm.sh/release-namespace: kube-monitoring
+  labels:
+    app.kubernetes.io/managed-by: Helm
+  name: oomkill-exporter
+  namespace: kube-monitoring
+spec:
+  template:
+    spec:
+      containers:
+      - name: oomkill-exporter
+        securityContext:
+          privileged: true
+        volumeMounts:
+        - mountPath: /dev/kmsg
+          name: kmsg
+          readOnly: true
+        - mountPath: /var/run/docker.sock
+          name: docker
+        - mountPath: /run/containerd/containerd.sock
+          name: containerd
+      securityContext: {}
+      volumes:
+      - hostPath:
+          path: /dev/kmsg
+          type: ""
+        name: kmsg
+      - hostPath:
+          path: /var/run/docker.sock
+          type: ""
+        name: docker
+      - hostPath:
+          path: /run/containerd/containerd.sock
+          type: ""
+        name: containerd

@@ -5,16 +5,17 @@ groups:
   rules:
 
   - alert: OpenstackKeppelDown
-    expr: keppel_healthmonitor_result != 1 or absent(keppel_healthmonitor_result)
+    expr: max(keppel_healthmonitor_result) != 1 or absent(keppel_healthmonitor_result)
     for: 3m
     labels:
       context: api
       dashboard: keppel-overview
       service: keppel
       severity: warning # TODO raise to critical at some point
+      support_group: containers
       tier: os
       meta: 'Keppel health check is not reporting success'
-      playbook: docs/support/playbook/keppel/down.html
+      playbook: docs/support/playbook/keppel/down
     annotations:
       summary: Keppel health check is not reporting success.
       description: |
@@ -25,13 +26,14 @@ groups:
   # This alert is disabled for QA because the lab regions are literal testbeds
   # and therefore have connectivity issues all the time.
   - alert: OpenstackKeppelAnycastDown
-    expr: keppel_anycastmonitor_result{region!~"qa-.*"} != 1
+    expr: max by (account) (keppel_anycastmonitor_result{region!~"qa-.*"}) != 1
     for: 30m # triggers rather slowly because it does not make sense to ping the Keppel team for short-term network issues
     labels:
       context: anycast-api
       dashboard: keppel-overview
       service: keppel
       severity: info
+      support_group: containers
       tier: os
       meta: 'Keppel anycast health check failing for {{ $labels.account }}'
     annotations:
@@ -42,13 +44,14 @@ groups:
 
   # This alert is disabled for QA because the QA anycast looks kind of broken.
   - alert: OpenstackKeppelAnycastMembership
-    expr: keppel_anycastmonitor_membership{region!~"qa-.*"} != 1
+    expr: max(keppel_anycastmonitor_membership{region!~"qa-.*"}) != 1
     for: 10m
     labels:
       context: anycast-membership
       dashboard: keppel-overview
       service: keppel
       severity: info
+      support_group: containers
       tier: os
       meta: 'Keppel anycast membership check failing'
     annotations:
@@ -61,13 +64,14 @@ groups:
         of the "keppel-anycast-monitor" pod for details.
 
   - alert: OpenstackKeppelSlowPeering
-    expr: time() - keppel_peers_last_peered_at > 1800
+    expr: time() - max by (hostname) (keppel_peers_last_peered_at) > 1800
     for: 5m
     labels:
       context: api
       dashboard: keppel-overview
       service: keppel
       severity: info
+      support_group: containers
       tier: os
       meta: 'Keppel cannot peer with {{ $labels.hostname }}'
     annotations:
@@ -79,13 +83,14 @@ groups:
         additional information or error messages.
 
   - alert: OpenstackKeppelSlowBlobReplication
-    expr: keppel_blob_replication_min_started_at > 0 and time() - keppel_blob_replication_min_started_at > 900
+    expr: max(keppel_blob_replication_min_started_at) > 0 and time() - max(keppel_blob_replication_min_started_at) > 900
     for: 5m
     labels:
       context: api
       dashboard: keppel-overview
       service: keppel
       severity: info
+      support_group: containers
       tier: os
       meta: 'Blob replication is taking a long time'
     annotations:
@@ -93,15 +98,19 @@ groups:
       description: |
         A blob replication has been running in this Keppel instance for more
         than 15 minutes. This could indicate that the region interconnect is slow.
+        Check the "pending_blobs" DB table to see which blobs are affected.
+        Entries older than a few hours can usually be deleted safely in order
+        to allow another replication to take place.
 
   - alert: OpenstackKeppelDBConnectionPoolNearlyFull
-    expr: avg_over_time(go_sql_stats_connections_in_use{db_name="keppel"}[1h]) > 8
+    expr: max by (pod) (avg_over_time(go_sql_stats_connections_in_use{db_name="keppel"}[1h]) > 8)
     for: 5m
     labels:
       context: dbconnpool
       dashboard: keppel-overview
       service: keppel
       severity: info
+      support_group: containers
       tier: os
       meta: 'DB connection pool nearly full on {{ $labels.pod }}'
     annotations:
@@ -124,8 +133,9 @@ groups:
       dashboard: keppel-overview
       service: keppel
       severity: info
+      support_group: containers
       tier: os
       meta: '{{ $labels.pod }}'
     annotations:
       summary: "{{ $labels.pod }} cannot publish audit events"
-      description: "Audit events could not be published to the RabbitMQ server. Check the pod log for details. Once the underlying issue was addressed, delete the offending pod to clear this alert."
+      description: "Audit events from {{ $labels.pod }} could not be published to the RabbitMQ server. Check the pod log for details. Once the underlying issue was addressed, delete the offending pod to clear this alert."

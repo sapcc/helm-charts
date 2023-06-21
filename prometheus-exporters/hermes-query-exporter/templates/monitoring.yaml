@@ -1,0 +1,33 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+
+metadata:
+  name: hermes-query-exporter
+  labels:
+    prometheus: {{ .Values.alerts.prometheus }}
+
+spec:
+  jobLabel: hermes-query-exporter
+
+  selector:
+    matchLabels:
+      component: hermes-query-exporter
+
+  # Find pods in any namespace.
+  namespaceSelector:
+    matchNames: [hermes]
+
+  podMetricsEndpoints:
+    - interval: 60s
+      scrapeTimeout: 50s
+      path: /metrics
+      scheme: http
+      port: metrics
+      relabelings:
+        - action: labelmap
+          regex: '__meta_kubernetes_pod_label_(.+)'
+        - targetLabel: job
+          replacement: hermes-query-exporter
+      metricRelabelings:
+        - regex: "pod|app_kubernetes_io_managed_by|container|cluster_type|cluster|pod_template_hash"
+          action: labeldrop

@@ -58,6 +58,8 @@ cert-manager:
     enabled: true
   podAnnotations:
     prometheus.io/targets: "collector-kubernetes"
+  extraArgs:
+    - --enable-certificate-owner-ref=true
 
 digicert-issuer:
   enableLeaderElection: "false"
@@ -79,6 +81,27 @@ ingress:
       enabled: false
       prometheus: kubernetes
 
+ingress-nginx:
+  controller:
+    # Snippet annotations are disabled to prevent unauthorized access to secrets.
+    # See https://github.com/kubernetes/ingress-nginx/issues/7837 .
+    allowSnippetAnnotations: false
+
+    config:
+      custom-http-errors: "495"
+
+  defaultBackend:
+    image:
+      image: ingress-nginx/nginx-errors
+      tag: 1.3.0
+    extraVolumes:
+    - name: custom-error-pages
+      configMap:
+        name: ingress-custom-errors
+    extraVolumeMounts:
+    - name: custom-error-pages
+      mountPath: /www
+
 ingress-nginx-external:
   enabled: false
   fullnameOverride: kube-system-ingress-nginx-external
@@ -93,9 +116,7 @@ ingress-nginx-external:
 
   controller:
     image:
-      registry: keppel.eu-de-1.cloud.sap/ccloud-k8sgcr-mirror
-      tag: "v0.49.3"
-      digest: sha256:35fe394c82164efa8f47f3ed0be981b3f23da77175bbb8268a9ae438851c8324
+      registry: keppel.global.cloud.sap/ccloud-registry-k8s-io-mirror
 
     minReadySeconds: 60
     ingressClass: nginx-external
@@ -143,8 +164,10 @@ ingress-nginx-external:
         map '' $global_request_id {
             default '-';
         }
+
       location-snippet: |
         proxy_set_header X-REMOTE-USER $ssl_client_s_dn_cn;
+
       proxy-send-timeout: "300"
       proxy-read-timeout: "300"
       proxy-body-size: "0k"
@@ -189,7 +212,7 @@ ingress-nginx-external:
     nodeSelector: {}
 
     image:
-      registry: keppel.eu-de-1.cloud.sap/ccloud-k8sgcr-mirror
+      registry: keppel.global.cloud.sap/ccloud-registry-k8s-io-mirror
 
     service:
       omitClusterIP: true
@@ -229,3 +252,28 @@ maintenance-controller:
 # Kubernetes de-scheduler to auto-balance cluster is currently enabled on a regional basis.
 descheduler:
   enabled: false
+
+metrics-server:
+  image:
+    repository: keppel.global.cloud.sap/ccloud-registry-k8s-io-mirror/metrics-server/metrics-server
+
+  # Workaround for qa landscapes.
+  args:
+    - --kubelet-insecure-tls
+
+  replicas: 3
+  podLabels:
+    k8s-app: metrics-server
+  affinity:
+    podAntiAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        - labelSelector:
+            matchLabels:
+              k8s-app: metrics-server
+          namespaces:
+            - kube-system
+          topologyKey: kubernetes.io/hostname
+
+owner-info:
+  support-group: containers
+  helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/system/kube-system-metal

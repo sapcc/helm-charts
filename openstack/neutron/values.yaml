@@ -3,7 +3,10 @@
 # Declare name/value pairs to be passed into your templates.
 # name: value
 network_agents: []
-osprofiler: {}
+
+# osprofiler
+osprofiler:
+  enabled: false
 
 global:
   dbUser: neutron
@@ -11,6 +14,18 @@ global:
   # imageRegistry:
   metadata_workers: 1
   rpc_response_timeout: 60
+  domain_seeds:
+    skip_hcm_domain: false
+
+owner-info:
+  support-group: network-api
+  maintainers:
+    - Sebastian Lohff
+    - Sebastian Wagner
+    - Andrew Karpow
+    - Franziska Lichtblau
+    - Sven Rosenzweig
+  helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/openstack/neutron
 
 pod:
   replicas:
@@ -22,8 +37,8 @@ pod:
         revision_history: 5
         pod_replacement_strategy: RollingUpdate
         rolling_update:
-          max_unavailable: 0
-          max_surge: 1
+          max_unavailable: 10%
+          max_surge: 25%
   debug:
     server: false
     dhcp_agent: false
@@ -192,6 +207,7 @@ cc_fabric:
     enabled: false
     platforms: ['eos', 'nxos']
 
+coordinationBackend: "memcached"
 arista:
   api_type: nocvx
   sync_interval: 60
@@ -267,6 +283,7 @@ drivers:
         nsxv3_requests_per_second: 80
         nsxv3_policy_migration_limit: 6
         nsxv3_remove_orphan_ports_after: 2
+        nsxv3_default_policy_infrastructure_rules: true
 
 # cisco_ucsm_bm:
 #  example.com:
@@ -326,6 +343,9 @@ logging:
 pgmetrics:
   enabled: false
 
+proxysql:
+  mode: ""
+
 db_name: neutron
 
 mariadb:
@@ -349,6 +369,8 @@ mariadb:
       [mysqld]
       innodb_deadlock_detect    = 0
       innodb_lock_wait_timeout  = 5
+  alerts:
+    support_group: network-api
 
 mysql_metrics:
   db_name: neutron
@@ -515,10 +537,8 @@ mysql_metrics:
       query: |
         SELECT
           host AS hostgroup,
-          COUNT(*) AS value
+          SUM(segment_id IS NULL) AS value
         FROM aci_port_binding_allocations
-        WHERE
-          segment_id IS NULL
         GROUP BY host;
       values:
       - "value"
@@ -549,10 +569,20 @@ rabbitmq:
       cpu: 2000m
     limits:
       cpu: 4000m
-
+  metrics:
+    enabled: true
+    sidecar:
+      enabled: false
+  alerts:
+    support_group: network-api
 rabbitmq_notifications:
   name: neutron
-
+  metrics:
+    enabled: true
+    sidecar:
+      enabled: false
+  alerts:
+    support_group: network-api
 # openstack-watcher-middleware
 watcher:
   enabled: true
@@ -575,6 +605,12 @@ logger:
     size: 1Gi
 
 agent:
-  controlplane: true
+  controlplane: false
 
-dnsmasq: {}
+dnsmasq:
+  conf:
+    no-negcache: true
+
+memcached:
+  alerts:
+    support_group: network-api

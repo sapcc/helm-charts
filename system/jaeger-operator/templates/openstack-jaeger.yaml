@@ -15,8 +15,17 @@ spec:
         - tracing.{{ .Values.global.region }}.cloud.sap
         secretName: tls-tracing-{{ .Values.global.region }}-cloud-sap
 
+  allInOne:
+    options:
+      log-level: debug
+  serviceAccount: jaeger-operator
   storage:
     type: elasticsearch
+    esIndexCleaner:
+      enabled: false
     options:
       es:
-        server-urls: http://elasticsearch.hermes.svc:9200
+        server-urls: https://elk-elasticsearch.scaleout.{{ .Values.global.region }}.cloud.sap:443
+        create-index-templates: false
+        version: 7
+    secretName: openstack-jaeger

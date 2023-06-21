@@ -7,10 +7,11 @@ groups:
     labels:
       dashboard: manila
       meta: '{{ $value }} shares'
-      playbook: docs/support/playbook/manila/shares_stuck.html
+      playbook: docs/support/playbook/manila/shares_stuck
       service: manila
       severity: info
       tier: os
+      support_group: compute-storage-api
     annotations:
       description: Sum of Openstack Manila Shares Stuck is more than 1
       summary: Manila shares in stuck state
@@ -21,10 +22,11 @@ groups:
     labels:
       dashboard: manila
       meta: '{{ $value }} share snapshots'
-      playbook: docs/support/playbook/manila/shares_stuck.html
+      playbook: docs/support/playbook/manila/shares_stuck
       service: manila
       severity: info
       tier: os
+      support_group: compute-storage-api
     annotations:
       description: Sum of Openstack Manila Share Snapshots Stuck is more than 1
       summary: Manila share snapshots in stuck state
@@ -37,9 +39,10 @@ groups:
       service: manila
       severity: critical
       tier: os
-      playbook: docs/support/playbook/manila/snapshots_missing.html 
+      playbook: docs/support/playbook/manila/snapshots_missing
+      support_group: compute-storage-api
     annotations:
-      description: Share Snapshot not exist on backend filer
+      description: Share Snapshot does not exist on backend filer
       summary: Manila Share Snapshots missing
 
   - alert: OpenstackManilaSharesStuckCreate
@@ -48,10 +51,11 @@ groups:
     for: 5m
     labels:
       dashboard: manila
-      playbook: docs/support/playbook/manila/shares_stuck.html
+      playbook: docs/support/playbook/manila/shares_stuck
       service: manila
       severity: info
       tier: os
+      support_group: compute-storage-api
     annotations:
       description: Manila Shares taking more than 2 minutes to create in {{ $labels.manila_host }}
       summary: Manila Shares taking more than 2 minutes to create
@@ -62,10 +66,11 @@ groups:
     for: 5m
     labels:
       dashboard: manila
-      playbook: docs/support/playbook/manila/shares_stuck.html
+      playbook: docs/support/playbook/manila/shares_stuck
       service: manila
       severity: info
       tier: os
+      support_group: compute-storage-api
     annotations:
       description: Manila Shares taking more than 2 minutes to delete in {{ $labels.manila_host }}
       summary: Manila Shares taking more than 2 minutes to delete
@@ -76,10 +81,11 @@ groups:
     for: 5m
     labels:
       dashboard: manila
-      playbook: docs/support/playbook/manila/shares_stuck.html
+      playbook: docs/support/playbook/manila/shares_stuck
       service: manila
       severity: info
       tier: os
+      support_group: compute-storage-api
     annotations:
       description: Manila Shares taking more than 2 minutes to delete in {{ $labels.manila_host }}
       summary: Manila Shares taking more than 2 minutes to delete
@@ -90,24 +96,39 @@ groups:
     for: 5m
     labels:
       dashboard: manila
-      playbook: docs/support/playbook/manila/shares_stuck.html
+      playbook: docs/support/playbook/manila/shares_stuck
       service: manila
       severity: info
       tier: os
+      support_group: compute-storage-api
     annotations:
       description: Manila Shares taking more than 2 minutes to resize in {{ $labels.manila_host }}
       summary: Manila Shares taking more than 2 minutes to resize
 
+  - alert: OpenstackManilaSharesResizeError
+    expr: sum(manila_shares_stuck_count_gauge{status=~"shrinking_error|extending_error"}) > 0
+    for: 5m
+    labels:
+      dashboard: manila
+      service: manila
+      severity: info
+      tier: os
+      support_group: compute-storage-api
+    annotations:
+      description: Manila Shares resize error ({{ $value }})
+      summary: Multiple Manila Shares resize error
+
   - alert: OpenstackManilaShareServersStuck
-    expr: delta(sum(manila_share_servers_stuck_count_gauge) by (manila_host)[1d:]) > 1
+    expr: max by (id, manila_host) (manila_share_servers_stuck_duration_seconds) > 24*3600 <= 2*24*3600
     for: 15m
     labels:
       dashboard: manila
       service: manila
       severity: info
       tier: os
+      support_group: compute-storage-api
     annotations:
-      description: More than one Share server got stuck on {{ $labels.manila_host }} since yesterday
+      description: Share server {{ $labels.id }} got stuck on {{ $labels.manila_host }} since yesterday
       summary: Manila share servers in stuck state
 
   - alert: OpenstackManilaShareServersStuckHigh
@@ -118,6 +139,7 @@ groups:
       service: manila
       severity: info
       tier: os
+      support_group: compute-storage-api
     annotations:
       description: More than 5 percent of total Share servers stuck
       summary: Manila share servers in stuck state
@@ -130,6 +152,7 @@ groups:
       service: manila
       severity: info
       tier: os
+      support_group: compute-storage-api
     annotations:
       description: More than 1 percent of total shares are in error state
       summary: Manila shares in error
@@ -144,6 +167,7 @@ groups:
       service: manila
       severity: info
       tier: os
+      support_group: compute-storage-api
     annotations:
       description: More than 5 percent of total share replicas are in error state
       summary: Manila share replicas in error
@@ -156,19 +180,20 @@ groups:
       service: manila
       severity: info
       tier: os
+      support_group: compute-storage-api
     annotations:
       description: More than 5 percent of total snapshots are in error state
       summary: Manila share snapshots in error
 
   - alert: OpenstackManilaShareServersStuckCreate
-    expr: max(manila_share_servers_stuck_max_duration_gauge{status="creating"})
-      BY (id, manila_host) > 120
+    expr: max(manila_share_servers_stuck_duration_seconds{status="creating"}) BY (id, manila_host) > 120
     for: 24h
     labels:
       dashboard: manila
       service: manila
       severity: info
       tier: os
+      support_group: compute-storage-api
     annotations:
       description: Manila Share server {{ $labels.id }} stuck in creating on {{ $labels.manila_host }} for a day
       summary: Manila Share servers taking too long to create
@@ -179,11 +204,12 @@ groups:
     labels:
       dashboard: manila
       meta: '{{ $value }} share server'
-      playbook: docs/support/playbook/manila/backend_full.html
+      playbook: docs/support/playbook/manila/backend_full
       service: manila
       severity: warning
       tier: os
       context: share-server-limit
+      support_group: compute-storage-api
     annotations:
       description: 'Panel: Share Server netapp host distribution'
       summary: High number of share servers on {{ $labels.short_hostname }}
@@ -194,124 +220,15 @@ groups:
     labels:
       dashboard: manila
       meta: '{{ $value }} share server'
-      playbook: docs/support/playbook/manila/backend_full.html
+      playbook: docs/support/playbook/manila/backend_full
       service: manila
       severity: critical
       tier: os
       context: share-server-limit
+      support_group: compute-storage-api
     annotations:
       description: 'Panel: Share Server netapp host distribution'
       summary: Share servers on {{ $labels.short_hostname }} exhausted
-
-  - alert: OpenstackManilaCanaryMountShareDown
-    expr: blackbox_canary_status_gauge{service=~"manila", check=~"mount_share-.+"} == 1
-    for: 1h
-    labels:
-      severity: info
-      tier: os
-      service: '{{ $labels.service }}'
-      context: '{{ $labels.service }}'
-      dashboard: ccloud-health-canary-details
-      meta: 'Canary {{ $labels.service }} {{ $labels.check }} is down for 1 hour. See Sentry for details'
-      sentry: 'blackbox/?query=test_{{ $labels.check }}'
-      playbook: 'docs/devops/alert/{{ $labels.service }}/#test_mount_share'
-    annotations:
-      description: 'Canary {{ $labels.service }} {{ $labels.check }} is down for 1 hour. See Sentry for details'
-      summary: 'Canary {{ $labels.service }} {{ $labels.check }} is down'
-
-  - alert: OpenstackManilaCanaryDown
-    expr: blackbox_canary_status_gauge{service=~"manila", check!~"mount_share-.+"} == 1
-    for: 1h
-    labels:
-      severity: warning
-      tier: os
-      service: '{{ $labels.service }}'
-      context: '{{ $labels.service }}'
-      dashboard: ccloud-health-canary-details
-      meta: 'Canary {{ $labels.service }} {{ $labels.check }} is down for 1 hour. See Sentry for details'
-      sentry: 'blackbox/?query=test_{{ $labels.check }}'
-      playbook: 'docs/devops/alert/{{ $labels.service }}'
-    annotations:
-      description: 'Canary {{ $labels.service }} {{ $labels.check }} is down for 1 hour. See Sentry for details'
-      summary: 'Canary {{ $labels.service }} {{ $labels.check }} is down'
-
-  - alert: OpenstackManilaCanaryMountShareTimeout
-    expr: blackbox_canary_status_gauge{service=~"manila", check=~"mount_share-.+"} == 0.5
-    for: 1h
-    labels:
-      severity: info
-      tier: os
-      service: '{{ $labels.service }}'
-      context: '{{ $labels.service }}'
-      dashboard: ccloud-health-canary-details
-      meta: 'Canary {{ $labels.service }} {{ $labels.check }} is timing out for 1 hour. See Sentry for details'
-      sentry: 'blackbox/?query=test_{{ $labels.check }}'
-      playbook: 'docs/devops/alert/{{ $labels.service }}/#test_mount_share'
-    annotations:
-      description: 'Canary {{ $labels.service }} {{ $labels.check }} is timing out for 1 hour. See Sentry for details'
-      summary: 'Canary {{ $labels.service }} {{ $labels.check }} is timing out'
-
-  - alert: OpenstackManilaCanaryTimeout
-    expr: blackbox_canary_status_gauge{service=~"manila", check!~"mount_share-.+"} == 0.5
-    for: 1h
-    labels:
-      severity: info
-      tier: os
-      service: '{{ $labels.service }}'
-      context: '{{ $labels.service }}'
-      dashboard: ccloud-health-canary-details
-      meta: 'Canary {{ $labels.service }} {{ $labels.check }} is timing out for 1 hour. See Sentry for details'
-      sentry: 'blackbox/?query=test_{{ $labels.check }}'
-      playbook: 'docs/devops/alert/{{ $labels.service }}'
-    annotations:
-      description: 'Canary {{ $labels.service }} {{ $labels.check }} is timing out for 1 hour. See Sentry for details'
-      summary: 'Canary {{ $labels.service }} {{ $labels.check }} is timing out'
-
-  - alert: OpenstackManilaCanaryMountSharePrepFails
-    expr: blackbox_canary_status_gauge{service=~"manila", check=~"mount_share-.+"} == 0.4
-    for: 1h
-    labels:
-      severity: info
-      tier: os
-      service: '{{ $labels.service }}'
-      context: '{{ $labels.service }}'
-      dashboard: ccloud-health-canary-details
-      meta: 'Canary {{ $labels.service }} {{ $labels.check }} test preparation is broken for 1 hour. See Sentry for details'
-      sentry: 'blackbox/?query=test_{{ $labels.check }}'
-      playbook: 'docs/devops/alert/{{ $labels.service }}/#test_mount_share'
-    annotations:
-      description: 'Canary {{ $labels.service }} {{ $labels.check }} test preparation is broken for 1 hour. See Sentry for details'
-      summary: 'Canary {{ $labels.service }} {{ $labels.check }} test preparation is broken'
-
-  - alert: OpenstackManilaCanaryMountShareFlapping
-    expr: changes(blackbox_canary_status_gauge{service=~"manila", check=~"mount_share-.+"}[2h]) > 8
-    labels:
-      severity: info
-      tier: os
-      service: '{{ $labels.service }}'
-      context: '{{ $labels.service }}'
-      dashboard: ccloud-health-canary-details
-      meta: 'Canary {{ $labels.service }} {{ $labels.check }} is flapping for 2 hours. See Sentry for details'
-      sentry: 'blackbox/?query=test_{{ $labels.check }}'
-      playbook: 'docs/devops/alert/{{ $labels.service }}/#test_mount_share'
-    annotations:
-      description: 'Canary {{ $labels.service }} {{ $labels.check }} is flapping for 2 hours. See Sentry for details'
-      summary: 'Canary {{ $labels.service }} {{ $labels.check }} is flapping'
-
-  - alert: OpenstackManilaCanaryFlapping
-    expr: changes(blackbox_canary_status_gauge{service=~"manila", check!~"mount_share-.+"}[2h]) > 8
-    labels:
-      severity: warning
-      tier: os
-      service: '{{ $labels.service }}'
-      context: '{{ $labels.service }}'
-      dashboard: ccloud-health-canary-details
-      meta: 'Canary {{ $labels.service }} {{ $labels.check }} is flapping for 2 hours. See Sentry for details'
-      sentry: 'blackbox/?query=test_{{ $labels.check }}'
-      playbook: 'docs/devops/alert/{{ $labels.service }}'
-    annotations:
-      description: 'Canary {{ $labels.service }} {{ $labels.check }} is flapping for 2 hours. See Sentry for details'
-      summary: 'Canary {{ $labels.service }} {{ $labels.check }} is flapping'
 
   - alert: OpenstackManilaApiPodDown
     expr: up{component="manila",type="api"} == 0
@@ -323,6 +240,7 @@ groups:
       service: manila
       severity: info
       tier: os
+      support_group: compute-storage-api
     annotations:
       description: "{{ $labels.pod }} pod on {{ $labels.instance }} is DOWN. The remaining ones should keep the service up."
       summary: "A manila api pod is DOWN"
@@ -337,6 +255,7 @@ groups:
       service: '{{ $labels.service }}'
       context: '{{ $labels.service }}'
       meta: '{{ $labels.service }} db row locks'
+      support_group: compute-storage-api
     annotations:
       description: '{{ $labels.service }} db row locks'
       summary: '{{ $labels.service }} db row locks'
@@ -350,6 +269,7 @@ groups:
       severity: info
       tier: os
       sentry: 'manila/?query=is%3Aunresolved+firstSeen%3A-24h'
+      support_group: compute-storage-api
     annotations:
       description: manila has encountered new unexpected errors and reported
         them to Sentry. Please have a look at the list of unresolved issues,

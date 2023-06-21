@@ -1,0 +1,15 @@
+{{- range $path, $bytes := .Files.Glob "aggregations/*.yaml" }}
+{{- with $ }}
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: {{ printf "%s/%s" (include "netapp-harvest.fullname" .) $path | trimSuffix ".yaml" | replace "/"  "-" }}
+  labels:
+    type: aggregation-rules
+    {{- include "netapp-harvest.labels" . | nindent 4 }}
+    prometheus: {{ required ".Values.global.prometheus missing" .Values.global.prometheus }}
+spec:
+  {{- printf "%s" $bytes | nindent 2 }}
+---
+{{- end }}
+{{- end }}

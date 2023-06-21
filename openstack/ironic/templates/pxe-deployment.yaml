@@ -43,7 +43,7 @@ spec:
         resources:
 {{ toYaml .Values.pod.resources.pxe | indent 10 }}
       - name: ironic-ipxe
-        image: {{.Values.imageVersionNginx | default "nginx:stable-alpine"}}
+        image: {{ .Values.global.dockerHubMirror }}/library/{{ .Values.imageVersionNginx | default "nginx:stable-alpine" }}
         imagePullPolicy: IfNotPresent
         ports:
         - name: ironic-ipxe
@@ -54,6 +54,9 @@ spec:
           name: ironic-tftp
         - mountPath: /etc/nginx/conf.d
           name: ironic-pxe
+        lifecycle:
+          preStop:
+            {{- include "utils.snippets.pre_stop_graceful_shutdown" . | indent 12 }}
         livenessProbe:
           httpGet:
             path: /tftpboot/

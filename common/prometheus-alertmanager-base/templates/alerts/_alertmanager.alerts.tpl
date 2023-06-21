@@ -8,9 +8,9 @@ groups:
       context: availability
       service: alertmanager
       severity: critical
-      tier: {{ include "alerts.tier" . }}
-      playbook: 'docs/support/playbook/prometheus/failed_config_reload.html'
+      playbook: 'docs/support/playbook/prometheus/failed_config_reload'
       meta: 'Alertmanager {{`{{ $labels.alertmanager }}`}} failed to load it`s configuration.'
+      support_group: {{ include "alerts.support_group" . }}
     annotations:
       description: 'Alertmanager {{`{{ $labels.alertmanager }}`}} failed to load it`s configuration. Alertmanager cannot start with a malformed configuration.'
       summary: Alertmanager configuration reload has failed
@@ -22,9 +22,9 @@ groups:
       context: availability
       service: alertmanager
       severity: warning
-      tier: {{ include "alerts.tier" . }}
-      playbook: 'docs/support/playbook/prometheus/alertmanager_failed_notifications.html'
+      playbook: 'docs/support/playbook/prometheus/alertmanager_failed_notifications'
       meta: 'Alertmanager {{`{{ $labels.alertmanager }}`}} failing sending notifications.'
+      support_group: {{ include "alerts.support_group" . }}
     annotations:
       description: 'Alertmanager {{`{{ $labels.alertmanager }}`}} is failing to send notifications for integration {{`{{ $labels.integration }}`}}.'
       summary: Alertmanager failing to send notifications
@@ -36,9 +36,9 @@ groups:
       context: availability
       service: alertmanager
       severity: warning
-      tier: {{ include "alerts.tier" . }}
-      playbook: 'docs/support/playbook/prometheus/alertmanager_cluster_failures.html'
+      playbook: 'docs/support/playbook/prometheus/alertmanager_cluster_failures'
       meta: 'Alertmanager {{`{{ $labels.alertmanager }}`}} failing sending notifications.'
+      support_group: {{ include "alerts.support_group" . }}
     annotations:
       description: 'Alertmanager {{`{{ $labels.alertmanager }}`}} fails to synchronize with other Alertmanagers of the HA cluster. This can cause duplicate notifications.'
       summary: Alertmanager in HA cluster fail to synchronize.
@@ -50,10 +50,9 @@ groups:
       context: availability
       service: alertmanager
       severity: info
-      tier: {{ include "alerts.tier" . }}
       meta: 'Alertmanager {{`{{ $labels.alertmanager }}`}} receives invalid alerts.'
+      support_group: {{ include "alerts.support_group" . }}
     annotations:
       description: 'Alertmanager {{`{{ $labels.alertmanager }}`}} receives invalid alerts and discards them. Check the Alertmanagers log for details.'
       summary: Alertmanager receives invalid alerts.
-
 

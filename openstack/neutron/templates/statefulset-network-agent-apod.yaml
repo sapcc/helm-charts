@@ -1,6 +1,6 @@
 {{- if .Values.agent.apod | default false }}
 {{- if .Values.global.apods | default false }}
-{{- $ussuri := hasPrefix "ussuri" (default .Values.imageVersion .Values.imageVersionServerAPI) -}}
+{{- $release_requires_sec_cap:= or (hasPrefix "ussuri" (default .Values.imageVersion .Values.imageVersionServerAPI)) (hasPrefix "yoga" (default .Values.imageVersion .Values.imageVersionServerAPI)) -}}
 {{ range $az_long, $apods := .Values.global.apods }}
 {{ range $k, $apod := $apods }}
 {{- $az := trimPrefix $.Values.global.region $az_long }}
@@ -26,7 +26,7 @@ spec:
   serviceName: neutron-network-agent
   podManagementPolicy: "Parallel"
 {{- if $.Values.pod.replicas.network_agent_apod }}
-  replicas: {{ $.Values.pod.replicas.network_agent_apod}} 
+  replicas: {{ $.Values.pod.replicas.network_agent_apod }} 
 {{- else }}
   replicas: 15
 {{- end }}
@@ -43,7 +43,7 @@ spec:
       affinity:
         podAntiAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
-          - weight: 100
+          - weight: 50
             podAffinityTerm:
               topologyKey: kubernetes.io/hostname
               labelSelector:
@@ -52,9 +52,18 @@ spec:
                   operator: In
                   values:
                   - agent
+          - weight: 100
+            podAffinityTerm:
+              topologyKey: kubernetes.cloud.sap/host
+              labelSelector:
+                matchExpressions:
+                - key: component
+                  operator: In
+                  values:
+                  - agent
       nodeSelector:
         multus: bond1
-        failure-domain.beta.kubernetes.io/zone: {{ $az_long }}
+        topology.kubernetes.io/zone: {{ $az_long }}
         kubernetes.cloud.sap/apod: {{ $apod }}
       initContainers:
         - name: init
@@ -140,7 +149,7 @@ spec:
             capabilities:
               add:
                 - NET_ADMIN
-{{- if $ussuri }}
+{{- if $release_requires_sec_cap }}
                 - SYS_ADMIN
                 - DAC_OVERRIDE
                 - DAC_READ_SEARCH
@@ -175,12 +184,6 @@ spec:
               value: "ignore:Unverified HTTPS request"
             - name: DEBUG_CONTAINER
               value: "false"
-          livenessProbe:
-            exec:
-              command: ["neutron-agent-liveness", "--config-file", "/etc/neutron/neutron.conf", "--agent-type", "Metadata agent"]
-            initialDelaySeconds: 30
-            periodSeconds: 30
-            timeoutSeconds: 10
           resources:
 {{  toYaml $.Values.pod.resources.metadata_agent | indent 12 }}
           volumeMounts:

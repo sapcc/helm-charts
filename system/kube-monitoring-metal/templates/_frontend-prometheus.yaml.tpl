@@ -1,6 +1,6 @@
 - job_name: 'prometheus-collector-federation'
-  scrape_interval: 60s
-  scrape_timeout: 55s
+  scrape_interval: 80s
+  scrape_timeout: 75s
 
   honor_labels: true
   metrics_path: '/federate'
@@ -26,6 +26,7 @@
       - '{__name__=~"^container_scrape_error"}'
       - '{__name__=~"^container_start_time_seconds"}'
       - '{__name__=~"^container_task_state"}'
+      - '{__name__=~"^controller_runtime_.+"}'
       - '{__name__=~"^dnsmasq.+"}'
       - '{__name__=~"^doop_agent_.+"}'
       - '{__name__=~"^etcd_.+"}'
@@ -46,7 +47,6 @@
       - '{__name__=~"^node_.+"}'
       - '{__name__=~"^ntp_drift_seconds$"}'
       - '{__name__=~"^pg_.+"}'
-      - '{__name__=~"^pgbouncer_.+"}'
       - '{__name__=~"^probe_success$"}'
       - '{__name__=~"^probe_dns_lookup_time_seconds$"}'
       - '{__name__=~"^probe_duration_seconds$"}'
@@ -62,7 +62,8 @@
       - '{__name__=~"^scheduler_.+"}'
       - '{__name__=~"^scrape_duration_seconds"}'
       - '{__name__=~"^secrets_exporter_certificate_not_after"}'
-      - '{__name__=~"^skydns_.+"}'
+      - '{__name__=~"^coredns.+"}'
+      - '{__name__=~"^tcp_probe.+"}'
       - '{__name__=~"^unbound_.+"}'
       - '{__name__=~"^up"}'
       - '{__name__=~"^uwsgi_.+"}'
@@ -77,6 +78,7 @@
       - '{__name__=~"^pvc_usage"}'
       - '{__name__=~"^envoy_.+"}'
       - '{__name__=~"^auditbeat_.+"}'
+      - '{__name__=~"^vault.+"}'
 
   # Add region label to all metrics, don't delete this without knowing what you are doing.
   relabel_configs:

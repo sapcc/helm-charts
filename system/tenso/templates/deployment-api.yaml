@@ -41,15 +41,27 @@ spec:
         - name: config
           configMap:
             name: tenso
+        - name: keys
+          projected:
+            sources:
+              - secret:
+                  name: tenso-secret
+                  items:
+                    - key:  servicenow-private-key.pem
+                      path: servicenow-private-key.pem
       containers:
         - name: api
           image: {{ include "tenso_image" $ }}
           imagePullPolicy: IfNotPresent
           args: [ api ]
           env: {{ include "tenso_environment" $ | indent 12 }}
+          securityContext:
+            runAsNonRoot: true
           volumeMounts:
             - mountPath: /etc/tenso
               name: config
+            - mountPath: /etc/tenso-keys
+              name: keys
           livenessProbe:
             httpGet:
               path: /healthcheck

@@ -24,11 +24,18 @@ spec:
     metadata:
       labels:
         name: cinder-api
-{{ tuple . "cinder" "api" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
+        {{- tuple . "cinder" "api" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | nindent 8 }}
+        {{- include "utils.topology.pod_label" . | indent 8 }}
       annotations:
         configmap-etc-hash: {{ include (print $.Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
+        {{- if .Values.proxysql.mode }}
+        prometheus.io/scrape: "true"
+        prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
+        {{- end }}
     spec:
-{{ tuple . "cinder" "api" | include "kubernetes_pod_anti_affinity" | indent 6 }}
+      {{- tuple . "cinder" "api" | include "kubernetes_pod_anti_affinity" | nindent 6 }}
+      {{- include "utils.proxysql.pod_settings" . | nindent 6 }}
+      {{- tuple . (dict "name" "cinder-api") | include "utils.topology.constraints" | indent 6 }}
       containers:
         - name: cinder-api
           image: {{required ".Values.global.registry is missing" .Values.global.registry}}/loci-cinder:{{.Values.imageVersionCinderApi | default .Values.imageVersion | required "Please set cinder.imageVersion or similar" }}
@@ -41,7 +48,7 @@ spec:
             - name: NAMESPACE
               value: {{ .Release.Namespace }}
             - name: DEPENDENCY_JOBS
-              value: cinder-migration-{{.Values.imageVersion | required "Please set cinder.imageVersion or similar"}}
+              value: cinder-migration-{{.Values.imageVersion | required "Please set cinder.imageVersion or similar"}}{{- if .Values.proxysql.mode}}-{{ .Values.proxysql.mode | replace "_" "-" }}{{ end }}
             - name: DEPENDENCY_SERVICE
 {{- if eq .Values.mariadb.enabled true }}
               value: "{{ .Release.Name }}-mariadb,{{ .Release.Name }}-rabbitmq"
@@ -63,6 +70,10 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.name
+            {{- if .Values.api.use_uwsgi }}
+            - name: OS_OSLO_MESSAGING_RABBIT__HEARTBEAT_IN_PTHREAD
+              value: "true"
+            {{- end }}
           lifecycle:
             preStop:
               {{- include "utils.snippets.pre_stop_graceful_shutdown" . | indent 14 }}
@@ -130,6 +141,9 @@ spec:
               subPath: watcher.yaml
               readOnly: true
             {{- end }}
+            {{- include "utils.proxysql.volume_mount" . | indent 12 }}
+            {{- include "utils.coordination.volume_mount" . | indent 12 }}
+        {{- include "utils.proxysql.container" . | indent 8 }}
         - name: statsd
           image: {{ required ".Values.global.dockerHubMirror is missing" .Values.global.dockerHubMirror}}/prom/statsd-exporter:v0.8.1
           imagePullPolicy: IfNotPresent
@@ -152,3 +166,5 @@ spec:
         - name: cinder-etc
           configMap:
             name: cinder-etc
+        {{- include "utils.proxysql.volumes" . | indent 8 }}
+        {{- include "utils.coordination.volumes" . | indent 8 }}

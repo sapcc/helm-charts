@@ -2,6 +2,8 @@ nannies:
   vcenter_username: DEFINED-IN-REGION-CHART
   netapp_username: DEFINED-IN-REGION-CHART
   netapp_password: DEFINED-IN-REGION-CHART
+  manila_netapp_username: DEFINED-IN-REGION-CHART
+  manila_netapp_password: DEFINED-IN-REGION-CHART
 
 vcenter_nanny:
   enabled: false
@@ -62,6 +64,7 @@ vcenter_nanny_consistency:
 # nova nanny
 nova_nanny:
   image_version: DEFINED-IN-REGION-CHART
+  new_config: false
   enabled: false
   # run the pod with an infinite sleep loop for debugging
   debug: false
@@ -155,6 +158,19 @@ glance_nanny:
     older_than: 14
     # delete at max number of entries in one run
     max_number: 50
+
+# barbican nanny
+barbican_nanny:
+  image_version: DEFINED-IN-REGION-CHART
+  enabled: false
+  # debug mode - no script run in the containers, just a sleep loop
+  debug: true
+  # run the nanny every n minutes
+  interval: 180
+  db_purge:
+    enabled: true
+    # purge deleted db entries older than n days
+    older_than: 100
 
 # neutron nanny
 neutron_nanny:
@@ -275,7 +291,7 @@ vvol_balance_nanny:
 
 # manila nanny
 manila_nanny:
-  image_version: "20220620155106"
+  image_version: "20230516151017"
   enabled: false
   # debug mode - no script run in the containers, just a sleep loop
   debug: false
@@ -324,6 +340,7 @@ manila_nanny:
     task_share_snapshot_state_dry_run: false
   snapshot_missing:
     eanbled: false
+    interval: 1800
     prometheus_port: 9503
   db_cleanup:
     enabled: false
@@ -350,3 +367,10 @@ sentry:
 nova:
   mariadb:
     enabled: false
+
+owner-info:
+  support-group: observability
+  service: nannies
+  maintainers:
+    - Thomas Graichen
+  helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/openstack/nannies

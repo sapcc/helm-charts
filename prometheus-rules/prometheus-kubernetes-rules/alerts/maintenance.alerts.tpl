@@ -9,6 +9,7 @@ groups:
     labels:
       tier: {{ required ".Values.tier missing" .Values.tier }}
       service: node
+      support_group: containers
       severity: none
       context: node
       meta: "Node {{`{{ $labels.node }}`}} is in maintenance."

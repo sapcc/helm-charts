@@ -4,13 +4,10 @@
 # name: value
 global:
   dbUser: cinder
-
-  hypervisors_vmware: []
-  volumes_netapp: []
-  volumes: []
+  domain_seeds:
+    skip_hcm_domain: false
+    
   osprofiler: {}
-  pgbouncer:
-    enabled: false
   imagePullPolicy: IfNotPresent
 
 osprofiler:
@@ -72,6 +69,22 @@ cinderApiPortPublic: 443
 cinderApiPortInternal: 8776
 cinderApiPortAdmin: 8776
 
+defaults:
+  backends:
+    common: {}
+    cinder.volume.drivers.netapp.common.NetAppDriver:
+      netapp_transport_type: https
+      netapp_storage_family: ontap_cluster
+      netapp_storage_protocol: null
+      netapp_vserver: null
+      netapp_server_hostname: null
+      netapp_server_port: 443
+      netapp_login: null
+      netapp_password: null
+
+volumes: {}
+
+
 api:
   use_uwsgi: false
   # bare in mind, that with use_uwsgi=false, these workers also have
@@ -82,7 +95,7 @@ use_tls_acme: true
 
 db_name: cinder
 
-scheduler_default_filters: "AvailabilityZoneFilter,ShardFilter,CapacityFilter,CapabilitiesFilter,SAPLargeVolumeFilter,SAPDifferentBackendFilter,SAPSameBackendFilter"
+scheduler_default_filters: "AvailabilityZoneFilter,ShardFilter,SAPPoolDownFilter,CapabilitiesFilter,SAPLargeVolumeFilter,SAPDifferentBackendFilter,SAPSameBackendFilter,CapacityFilter"
 scheduler_default_weighers: "CapacityWeigher"
 
 capacity_weight_multiplier: 1.0
@@ -90,12 +103,29 @@ allocated_capacity_weight_multiplier: -1.0
 
 cinder_api_allow_migration_on_attach: True
 
+sap_disable_incremental_backup: True
+sap_allow_independent_snapshots: True
+sap_allow_independent_clone: True
+
+rpc_ping_enabled: true
+
+proxysql:
+  mode: null # Disabled by default
+
 mariadb:
   enabled: true
   max_connections: 2048
   buffer_pool_size: "2048M"
   log_file_size: "512M"
   name: cinder
+  databases:
+  - cinder
+  users:
+    cinder:
+      name: cinder
+      password: null
+      grants:
+      - "ALL PRIVILEGES on cinder.*"
   initdb_configmap: cinder-initdb
   persistence_claim:
     name: db-cinder-pvclaim
@@ -103,6 +133,8 @@ mariadb:
     cinder.cnf: |+
       [mysqld]
       connect_timeout = 15
+  alerts:
+    support_group: compute-storage-api
 
 max_pool_size: 15
 max_overflow: 5
@@ -278,6 +310,9 @@ audit:
   mem_queue_size: 1000
   record_payloads: false
   metrics_enabled: true
+  central_service:
+    user: rabbitmq
+    password: null
 
 rabbitmq:
   name: cinder
@@ -286,10 +321,13 @@ rabbitmq:
     rabbit_queue_length: 50
     unacknowledged_total_wait_for: 60m
     ready_total_wait_for: 60m
-
+    support_group: compute-storage-api
+  metrics:
+    enabled: &metrics true
+    sidecar:
+      enabled: *metrics
 rabbitmq_notifications:
   name: cinder
-
 logging:
   formatters:
     context:
@@ -347,3 +385,22 @@ alerts:
   enabled: true
   # Name of the Prometheus to which the alerts should be assigned to.
   prometheus: openstack
+
+cors:
+  enabled: true
+
+memcached:
+  alerts:
+    support_group: compute-storage-api
+
+owner-info:
+  support-group: compute-storage-api
+  service: cinder
+  maintainers:
+    - Walter Boring IV
+    - Johannes Kulik
+    - Csaba Seres
+    - Marius Leustean
+  helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/openstack/cinder
+
+coordinationBackend: "file"

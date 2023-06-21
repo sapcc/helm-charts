@@ -27,34 +27,27 @@ spec:
 {{ tuple . "ironic" "api" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
       annotations:
         configmap-etc-hash: {{ include (print $.Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
+        {{- if or .Values.watcher.enabled .Values.proxysql.mode }}
+        prometheus.io/scrape: "true"
+        prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
+        {{- end }}
     spec:
 {{ tuple . "ironic" "api" | include "kubernetes_pod_anti_affinity" | indent 6 }}
+      {{- include "utils.proxysql.pod_settings" . | indent 6 }}
+      initContainers:
+      {{- tuple . (dict "service" "ironic-mariadb,ironic-rabbitmq") | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 6 }}
       containers:
       - name: ironic-api
-        {{- if .Values.oslo_metrics.enabled }}
-        image: {{ .Values.global.registry }}/test-ironic:oslo-metrics01
-        {{- else}}
         image: {{ .Values.global.registry }}/loci-ironic:{{ .Values.imageVersion }}
-        {{- end }}
         imagePullPolicy: IfNotPresent
         resources:
 {{ toYaml .Values.pod.resources.api | indent 10 }}
         command:
-          - dumb-init
-          - kubernetes-entrypoint
+        - dumb-init
+        - ironic-api
         env:
-        - name: COMMAND
-          value: "ironic-api"
-        - name: NAMESPACE
-          value: {{ .Release.Namespace }}
-        - name: DEPENDENCY_JOBS
-          value: "ironic-db-migration"
-        - name: DEPENDENCY_SERVICE
-          {{- if eq .Values.mariadb.enabled true }}
-          value: "ironic-mariadb,ironic-rabbitmq"
-          {{- else }}
-          value: "ironic-postgresql,ironic-rabbitmq"
-          {{- end }}
+        - name: PYTHONWARNINGS
+          value: 'ignore:Unverified HTTPS request'
         {{- if .Values.logging.handlers.sentry }}
         - name: SENTRY_DSN
           valueFrom:
@@ -62,10 +55,9 @@ spec:
               name: sentry
               key: {{ .Chart.Name }}.DSN.python
         {{- end }}
-        - name: PGAPPNAME
-          valueFrom:
-            fieldRef:
-              fieldPath: metadata.name
+        lifecycle:
+          preStop:
+            {{- include "utils.snippets.pre_stop_graceful_shutdown" . | indent 12 }}
         livenessProbe:
           httpGet:
             path: /
@@ -85,10 +77,6 @@ spec:
         - mountPath: /etc/ironic/policy.json
           name: ironic-etc
           subPath: policy.json
-          readOnly: true
-        - mountPath: /etc/ironic/pxe_config.template
-          name: ironic-etc
-          subPath: pxe_config.template
           readOnly: true
         - mountPath: /etc/ironic/rootwrap.conf
           name: ironic-etc
@@ -110,6 +98,8 @@ spec:
           subPath: watcher.yaml
           readOnly: true
         {{- end }}
+        {{- include "utils.proxysql.volume_mount" . | indent 8 }}
+      {{- tuple . .Values.api.api_workers | include "utils.proxysql.container" | indent 6 }}
       - name: statsd
         image:  "{{.Values.global.dockerHubMirror}}/{{.Values.statsd.image.repository}}:{{.Values.statsd.image.tag}}"
         imagePullPolicy: IfNotPresent
@@ -128,26 +118,7 @@ spec:
             subPath: statsd-exporter.yaml
             readOnly: true
 {{- tuple . .Values.api.override "ironic-api" | include "utils.snippets.debug.debug_port_container" | indent 6 }}
-      {{- if .Values.oslo_metrics.enabled }}
-      - name: oslo-exporter
-        image: {{.Values.global.dockerHubMirror}}/prom/statsd-exporter
-        args:
-        - --web.listen-address=:9102
-        - --web.telemetry-path=/metrics
-        - --statsd.listen-udp=:8125
-        - --statsd.listen-tcp=
-        - --statsd.cache-size=1000
-        - --statsd.event-queue-size=10000
-        - --statsd.event-flush-threshold=1000
-        - --statsd.event-flush-interval=200ms
-        ports:
-        - name: web
-          containerPort: 9102
-          protocol: TCP
-        - name: statsd-udp
-          containerPort: 8125
-          protocol: UDP
-      {{- end }}
+{{- include "jaeger_agent_sidecar" . | indent 6 }}
       volumes:
       - name: etcironic
         emptyDir: {}
@@ -155,4 +126,5 @@ spec:
         configMap:
           name: ironic-etc
           defaultMode: 0444
-{{- tuple . .Values.api.override "ironic-api" .Values.global.ironicApiPortInternal | include "utils.snippets.debug.debug_port_volumes_and_configmap" }}
+      {{- include "utils.proxysql.volumes" . | indent 6 }}
+      {{- tuple . .Values.api.override "ironic-api" .Values.global.ironicApiPortInternal | include "utils.snippets.debug.debug_port_volumes_and_configmap" }}

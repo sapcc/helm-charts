@@ -10,9 +10,16 @@ rails_env: production
 has_keystone_router: 1
 #monsoon_dashboard_region: staging
 #monsoon_dashboard_landscape: staging
-monsoon_dashboard_mail_server: mail.sap.corp
+monsoon_dashboard_mail_server: defined_in_secrets
+monsoon_dashboard_mail_server_port: defined_in_secrets
+monsoon_dashboard_mail_domain: defined_in_secrets
+monsoon_dashboard_mail_sender: defined_in_secrets
+monsoon_dashboard_mail_authentication: defined_in_secrets
+monsoon_dashboard_mail_user: defined_in_secrets
+monsoon_dashboard_mail_password: defined_in_secrets
+
 monsoon_dashboard_avatar_url: https://avatars.wdf.sap.corp/avatar/#{current_user.name}?size=24x24
-monsoon_dashboard_cam_url: https://spc40-emea.byd.sap.corp/sap/bc/webdynpro/a1sspc/cam_wd_central
+monsoon_dashboard_cam_url: https://spc.ondemand.com/sap/bc/webdynpro/a1sspc/cam_wd_central#
 #monsoon_openstack_auth_api_endpoint:
 monsoon_openstack_auth_api_userid: dashboard
 monsoon_openstack_auth_api_domain: Default
@@ -52,7 +59,6 @@ postgresql:
   # less than the postgresql chart's default; I want to know early when connections start getting out of hand
   max_connections: 128
 
-  image: keppel.eu-de-1.cloud.sap/ccloud/postgres
   imageTag: "12.11"
   persistence:
     enabled: true
@@ -67,30 +73,32 @@ postgresql:
       memory: "1.5Gi"
       cpu: "400m"
 
-  backup:
-    enabled: true
-    image: keppel.eu-de-1.cloud.sap/ccloud/backup-tools
-    imageTag: v0.6.5
-    custom_repository: true
-    resources:
-      enabled: true
-      limits:
-        memory: "1.5Gi"
-        cpu: "300m"
-      requests:
-        memory: "1.5Gi"
-        cpu: "300m"
   probe_timeout_secs: 10 # instead of 3
+
+  alerts:
+    support_group: containers
+    service: elektra
+
+pgbackup:
+  database:
+    name: monsoon-dashboard_production
+  alerts:
+    support_group: containers
+    service: elektra
 
 pgmetrics:
   db_name: monsoon-dashboard_production
-  customMetrics:
-    pg_database:
-      query: "SELECT d.datname AS datname, CASE WHEN pg_catalog.has_database_privilege(d.datname, 'CONNECT') THEN pg_catalog.pg_database_size(d.datname) ELSE 0 END AS size_bytes FROM pg_catalog.pg_database d where datname not in ('template0', 'template1', 'postgres')"
-      metrics:
-        - datname:
-            usage: "LABEL"
-            description: "Name of the database"
-        - size_bytes:
-            usage: "GAUGE"
-            description: "Size of the database in bytes"
+  alerts:
+    support_group: containers
+    service: elektra
+
+owner-info:
+  support-group: containers
+  service: elektra
+  helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/openstack/elektra
+  maintainers:
+    - Esther Schmitz
+    - Hans-Georg Winkler
+    - Arturo Reuschenbach
+    - Andreas Pfau
+    - Hoda Noori

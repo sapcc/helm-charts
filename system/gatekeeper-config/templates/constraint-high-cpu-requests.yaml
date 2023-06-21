@@ -5,15 +5,14 @@ apiVersion: constraints.gatekeeper.sh/v1beta1
 kind: GkHighCPURequests
 metadata:
   name: highcpurequests
+  annotations:
+    {{- include "sources" (tuple "high-cpu-requests" "high-cpu-requests") | indent 4 }}
   labels:
     on-prod-ui: 'true'
 spec:
   enforcementAction: dryrun
+  match: {{ include "match_pods_and_pod_owners" . | indent 4 }}
   parameters:
     maxCpu: 6
-  match:
-    kinds:
-      - apiGroups: [""]
-        kinds: ["Pod"]
 
 {{- end -}}

@@ -42,29 +42,48 @@ spec:
                 key: changelogPassword
         volumeMounts:
           - name: audit-poller-etc
-            mountPath: /config
+            mountPath: /config/config.yaml
             readOnly: true
+            subPath: config.yaml
           - name: audit-dir
             mountPath: {{.Values.logDir}}
             readOnly: false
 
+{{- if .Values.sidecar.tail.enabled }}
       - name: iasapi-stdout
-        image: keppel.eu-de-1.cloud.sap/ccloud-dockerhub-mirror/library/busybox
-        args: [/bin/sh, -c, 'touch {{ .Values.logDir }}/{{ .Values.iasApi.fileName }}; tail -n+1 -f {{ .Values.logDir }}/{{ .Values.iasApi.fileName }}']
+        image: {{ .Values.global.dockerHubMirror }}/library/busybox
+        args: [/bin/sh, -c, 'touch {{ .Values.logDir }}/{{ .Values.iasApi.fileName }}; tail -n+1 -F {{ .Values.logDir }}/{{ .Values.iasApi.fileName }}']
         volumeMounts:
         - name: audit-dir
-          mountPath: /audit
+          mountPath: {{ .Values.logDir }}
 
       - name: iaschangelog-stdout
-        image: keppel.eu-de-1.cloud.sap/ccloud-dockerhub-mirror/library/busybox
-        args: [/bin/sh, -c, 'touch {{ .Values.logDir }}/{{ .Values.iasChangelog.fileName }}; tail -n+1 -f {{ .Values.logDir }}/{{ .Values.iasChangelog.fileName }}']
+        image: {{ .Values.global.dockerHubMirror }}/library/busybox
+        args: [/bin/sh, -c, 'touch {{ .Values.logDir }}/{{ .Values.iasChangelog.fileName }}; tail -n+1 -F {{ .Values.logDir }}/{{ .Values.iasChangelog.fileName }}']
         volumeMounts:
         - name: audit-dir
-          mountPath: /audit
-
+          mountPath: {{ .Values.logDir }}
+{{- else if .Values.sidecar.fluent.enabled }}
+      - name: fluent-bit
+        image: {{ .Values.global.dockerHubMirror }}/fluent/fluent-bit:{{ .Values.sidecar.fluent.imageTag }}
+        volumeMounts:
+        - name: audit-dir
+          mountPath: {{ .Values.logDir }}
+        - mountPath: /fluent-bit/etc/fluent-bit.conf
+          name: audit-poller-etc
+          subPath: fluent-bit.conf
+        - mountPath: /fluent-bit/etc/parsers.conf
+          name: audit-poller-etc
+          subPath: parsers.conf
+{{- end }}
       volumes:
         - name: audit-poller-etc
           configMap:
             name: audit-poller-etc
         - name: audit-dir
-          emptyDir: {}
+          {{- if .Values.persistence.enabled }}
+          persistentVolumeClaim:
+            claimName: audit-poller-pvc
+          {{- else }}
+            emptyDir: {}
+          {{- end }}

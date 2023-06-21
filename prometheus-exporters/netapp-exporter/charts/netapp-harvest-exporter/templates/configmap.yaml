@@ -1,0 +1,20 @@
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: {{ include "netapp-harvest.fullname" . }}
+  labels:
+    {{- include "netapp-harvest.labels" . | nindent 4 }}
+data:
+  start-poller.sh: |
+    {{- include (print .Template.BasePath  "/_start-poller.sh.tpl") . | nindent 4}}
+  harvest.yaml.tpl: |
+    {{- include (print .Template.BasePath  "/_harvest.yaml.tpl") . | nindent 4}}
+  zapi.limited.yaml: |
+    {{- .Files.Get "etc/zapi.limited.yaml" | nindent 4}}
+  zapiperf.limited.yaml: |
+    {{- .Files.Get "etc/zapiperf.limited.yaml" | nindent 4}}
+  rest.limited.yaml: |
+    {{- .Files.Get "etc/rest.limited.yaml" | nindent 4}}
+  restperf.limited.yaml: |
+    {{- .Files.Get "etc/restperf.limited.yaml" | nindent 4}}
+---

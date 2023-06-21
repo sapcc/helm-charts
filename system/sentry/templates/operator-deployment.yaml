@@ -1,12 +1,10 @@
 {{ if .Values.operator.enabled -}}
 kind: Deployment
 apiVersion: apps/v1
-
 metadata:
   name: {{ template "fullname" . }}-operator
   labels:
     chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
-
 spec:
   replicas: 1
   selector:
@@ -19,6 +17,9 @@ spec:
         alert-tier: os
         alert-service: sentry
     spec:
+      {{- if .Values.serviceAccount.enabled }}
+      serviceAccountName: {{ .Values.serviceAccount.name }}
+      {{- end }}
       containers:
         - name: operator
           image: "{{required ".Values.global.registry is missing" .Values.global.registry }}/{{ required ".Values.operator.image.repository is missing" .Values.operator.image.repository }}:{{ required ".Values.operator.image.tag is missing" .Values.operator.image.tag }}"

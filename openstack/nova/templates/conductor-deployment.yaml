@@ -28,29 +28,37 @@ spec:
         alert-service: nova
 {{ tuple . "nova" "conductor" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
       annotations:
-        {{- if .Values.conductor.config_file.DEFAULT.statsd_enabled }}
+        {{- if or .Values.conductor.config_file.DEFAULT.statsd_enabled .Values.proxysql.mode }}
         prometheus.io/scrape: "true"
         prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
         {{- end }}
         configmap-etc-hash: {{ include (print $.Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
     spec:
 {{ tuple . "nova" "conductor" | include "kubernetes_pod_anti_affinity" | indent 6 }}
+{{ include "utils.proxysql.pod_settings" . | indent 6 }}
       terminationGracePeriodSeconds: {{ .Values.defaults.default.graceful_shutdown_timeout | add 5 }}
       hostname: nova-conductor
-      containers:
-        - name: nova-conductor
-          image: {{ required ".Values.global.registry is missing" .Values.global.registry}}/ubuntu-source-nova-conductor:{{.Values.imageVersionNovaConductor | default .Values.imageVersionNova | default .Values.imageVersion | required "Please set nova.imageVersion or similar"}}
+      initContainers:
+        - name: dependencies
+          image: {{ tuple . "conductor" | include "container_image_nova" }}
           imagePullPolicy: IfNotPresent
           command:
-            - dumb-init
             - kubernetes-entrypoint
           env:
             - name: COMMAND
-              value: "nova-conductor"
+              value: "true"
             - name: NAMESPACE
               value: {{ .Release.Namespace }}
             - name: DEPENDENCY_SERVICE
               value: "nova-api,{{ .Release.Name }}-rabbitmq"
+      containers:
+        - name: nova-conductor
+          image: {{ tuple . "conductor" | include "container_image_nova" }}
+          imagePullPolicy: IfNotPresent
+          command:
+            - dumb-init
+            - nova-conductor
+          env:
             {{- if .Values.sentry.enabled }}
             - name: SENTRY_DSN
               valueFrom:
@@ -77,20 +85,10 @@ spec:
 {{ toYaml .Values.pod.resources.conductor | indent 12 }}
           {{- end }}
           volumeMounts:
-            - mountPath: /etc/nova
-              name: etcnova
-            - mountPath: /etc/nova/nova.conf
-              name: nova-etc
-              subPath: nova.conf
-              readOnly: true
-            - mountPath: /etc/nova/nova-conductor.conf
-              name: nova-etc
-              subPath: nova-conductor.conf
-              readOnly: true
-            - mountPath: /etc/nova/logging.ini
-              name: nova-etc
-              subPath: logging.ini
-              readOnly: true
+          - mountPath: /etc/nova
+            name: nova-etc
+          {{- include "utils.proxysql.volume_mount" . | indent 10 }}
+        {{- tuple . .Values.conductor.config_file.conductor.workers | include "utils.proxysql.container" | indent 8 }}
         {{- if .Values.conductor.config_file.DEFAULT.statsd_enabled }}
         - name: statsd
           image: {{ required ".Values.global.dockerHubMirror is missing" .Values.global.dockerHubMirror}}/prom/statsd-exporter:v0.8.1
@@ -103,14 +101,37 @@ spec:
           - name: metrics
             containerPort: 9102
           volumeMounts:
-            - name: nova-etc
-              mountPath: /etc/statsd/statsd-exporter.yaml
-              subPath: statsd-exporter.yaml
-              readOnly: true
+          - name: statsd-etc
+            mountPath: /etc/statsd/statsd-exporter.yaml
+            subPath: statsd-exporter.yaml
+            readOnly: true
         {{- end }}
       volumes:
-        - name: etcnova
-          emptyDir: {}
-        - name: nova-etc
-          configMap:
-            name: nova-etc
+      - name: nova-etc
+        projected:
+          sources:
+          - configMap:
+              name: nova-etc
+              items:
+              - key:  nova.conf
+                path: nova.conf
+              - key:  nova-conductor.conf
+                path: nova-conductor.conf
+              - key:  logging.ini
+                path: logging.ini
+          - secret:
+              name: nova-etc
+              items:
+              - key: db.conf
+                path: nova.conf.d/db.conf
+{{- if .Values.conductor.config_file.DEFAULT.statsd_enabled }}
+      - name: statsd-etc
+        projected:
+          sources:
+          - configMap:
+              name: nova-etc
+              items:
+              - key:  statsd-exporter.yaml
+                path: statsd-exporter.yaml
+{{- end }}
+      {{- include "utils.proxysql.volumes" . | indent 6 }}

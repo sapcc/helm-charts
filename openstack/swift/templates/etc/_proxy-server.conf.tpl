@@ -18,7 +18,7 @@ log_level = INFO
 
 [pipeline:main]
 # Rocky or higher pipeline
-pipeline = catch_errors gatekeeper healthcheck proxy-logging cache listing_formats cname_lookup domain_remap bulk tempurl {{ if not .Values.sapcc_ratelimit.enabled }}ratelimit {{ end }}authtoken{{ if .Values.s3api_enabled }} s3api s3token {{ if not .Values.sapcc_ratelimit.enabled }}ratelimit{{ end }}{{ end }} {{if .Values.watcher_enabled }}watcher {{ end }}{{ if .Values.sapcc_ratelimit.enabled }}sapcc_ratelimit {{ end }}keystoneauth sysmeta-domain-override staticweb copy container-quotas account-quotas slo dlo versioned_writes symlink proxy-logging proxy-server
+pipeline = catch_errors gatekeeper healthcheck proxy-logging cache listing_formats cname_lookup domain_remap bulk tempurl {{ if not .Values.sapcc_ratelimit.enabled }}ratelimit {{ end }}authtoken{{ if .Values.s3api_enabled }} s3api s3token {{ if not .Values.sapcc_ratelimit.enabled }}ratelimit{{ end }}{{ end }} {{if .Values.watcher_enabled }}watcher {{ end }}{{ if .Values.sapcc_ratelimit.enabled }}sapcc_ratelimit {{ end }}keystoneauth sysmeta-domain-override write-restriction staticweb copy container-quotas account-quotas slo dlo versioned_writes symlink proxy-logging proxy-server
 
 [app:proxy-server]
 use = egg:swift#proxy
@@ -60,6 +60,9 @@ use = egg:swift#proxy_logging
 # Note: Put after auth and staticweb in the pipeline.
 [filter:slo]
 use = egg:swift#slo
+max_manifest_segments = {{ .Values.max_manifest_segments }}
+# Default is true with 2023.1 - we might need to pimp the object expirers before allow this
+allow_async_delete = false
 
 # Note: Put after auth and staticweb in the pipeline.
 [filter:dlo]
@@ -71,10 +74,10 @@ use = egg:swift#gatekeeper
 # swift3 requires keystoneauth with exact name
 [filter:keystoneauth]
 use = egg:swift#keystoneauth
-operator_roles = admin, objectstore_admin, swiftoperator
+operator_roles = admin, objectstore_admin
 is_admin = false
 # TODO: Replace by cloud_objectstore_admin when rolled out
-reseller_admin_role = swiftreseller
+reseller_admin_role = cloud_objectstore_admin
 system_reader_roles = cloud_objectstore_viewer
 project_reader_roles = objectstore_viewer
 default_domain_id = default
@@ -115,6 +118,10 @@ set log_level = DEBUG
 
 [filter:sysmeta-domain-override]
 use = egg:sapcc-swift-addons#sysmeta_domain_override
+
+[filter:write-restriction]
+use = egg:sapcc-swift-addons#write_restriction
+allowed_roles = cloud_objectstore_admin
 
 {{- if not .Values.sapcc_ratelimit.enabled }}
 
@@ -182,6 +189,7 @@ use = egg:swift#s3api
 location = {{ .Values.global.region }}
 # The standard swift proxy logging is needed
 force_swift_request_proxy_log = true
+max_upload_part_num = {{ .Values.max_manifest_segments }}
 
 [filter:s3token]
 use = egg:swift#s3token

@@ -15,9 +15,9 @@ auth_plugin /usr/local/lib/mosquitto-auth.so
 require_certificate true
 use_subject_as_username true
 use_username_as_clientid true
-cafile /mosquitto/ca.crt
-certfile /mosquitto/server.crt
-keyfile /mosquitto/server.key
+cafile /mosquitto_tls/ca.crt
+certfile /mosquitto_tls/tls.crt
+keyfile /mosquitto_tls/tls.key
 {{- if .Values.tls.crl }}
 crlfile /mosquitto/ca.crl
 {{- end }}

@@ -10,6 +10,18 @@ logLevel: info
 # agentUpdateURL:
 # agentEndpointURL:
 
+owner-info:
+  support-group: containers
+  service: automation # optional
+  maintainers:
+    - Arturo Reuschenbach Puncernau
+    - Fabian Ruff
+  helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/openstack/arc
+
+global:
+  domain_seeds:
+    skip_hcm_domain: false
+
 api:
   replicaCount: 2
   image:
@@ -46,22 +58,29 @@ updatesProxy:
 
 postgresql:
   enabled: true
-  metrics:
-    database: arc_production
-    customMetrics:
-      arc:
-        query: "select split_part(facts->>'arc_version', ' ', 1) as arc_version, facts->>'platform_family' as os, count(*) AS active_agents FROM agents where facts->>'online'='true' AND updated_at > now() - INTERVAL '1 hour' group by 1, facts->>'platform_family' order by arc_version;"
-        metrics:
-          - active_agents:
-              usage: GAUGE
-              description: "Online agents"
-          - arc_version:
-              usage: LABEL
-          - os:
-              usage: LABEL
 
+pgbackup:
+  database:
+    name: arc_production
   alerts:
-    prometheus: openstack
+    support_group: containers
+
+pgmetrics:
+  db_name: arc_production
+  alerts:
+    support_group: containers
+
+  customMetrics:
+    arc:
+      query: "select split_part(facts->>'arc_version', ' ', 1) as arc_version, facts->>'platform_family' as os, count(*) AS active_agents FROM agents where facts->>'online'='true' AND updated_at > now() - INTERVAL '1 hour' group by 1, facts->>'platform_family' order by arc_version;"
+      metrics:
+        - active_agents:
+            usage: GAUGE
+            description: "Online agents"
+        - arc_version:
+            usage: LABEL
+        - os:
+            usage: LABEL
 
 mosquitto:
   alerts:

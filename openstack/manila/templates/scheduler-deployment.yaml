@@ -25,14 +25,14 @@ spec:
         alert-tier: os
         alert-service: manila
       annotations:
-        {{- if .Values.rpc_statsd_enabled }}
+        {{- if or .Values.rpc_statsd_enabled .Values.proxysql.mode }}
         prometheus.io/scrape: "true"
-        prometheus.io/port: "9102"
         prometheus.io/targets: {{ required ".Values.alerts.prometheus.openstack missing" .Values.alerts.prometheus.openstack | quote }}
         {{- end }}
         kubectl.kubernetes.io/default-container: manila-scheduler
         configmap-etc-hash: {{ include (print .Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
     spec:
+      {{ include "utils.proxysql.pod_settings" . | indent 6 }}
       affinity:
         podAntiAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
@@ -44,8 +44,9 @@ spec:
                   operator: In
                   values:
                   - manila-scheduler
-              topologyKey: "failure-domain.beta.kubernetes.io/zone"
+              topologyKey: "topology.kubernetes.io/zone"
       initContainers:
+        {{- tuple . (dict "jobs" (print .Release.Name "-migration") "service" (print .Release.Name "-mariadb," .Release.Name "-rabbitmq")) | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 8 }}
         - name: fetch-rabbitmqadmin
           image: {{.Values.global.dockerHubMirror}}/library/busybox
           command: ["/scripts/fetch-rabbitmqadmin.sh"]
@@ -61,14 +62,10 @@ spec:
           imagePullPolicy: IfNotPresent
           command:
             - dumb-init
-            - kubernetes-entrypoint
+            - manila-scheduler
+            - --config-file
+            - /etc/manila/manila.conf
           env:
-            - name: COMMAND
-              value: "manila-scheduler --config-file /etc/manila/manila.conf"
-            - name: NAMESPACE
-              value: {{ .Release.Namespace }}
-            - name: DEPENDENCY_SERVICE
-              value: "{{ .Release.Name }}-mariadb,{{ .Release.Name }}-rabbitmq"
             {{- if .Values.sentry.enabled }}
             - name: SENTRY_DSN_SSL
               valueFrom:
@@ -114,6 +111,8 @@ spec:
               mountPath: /etc/manila/healthz
               subPath: healthz
               readOnly: true
+            {{- include "utils.coordination.volume_mount" . | indent 12 }}
+            {{- include "utils.proxysql.volume_mount" . | indent 12 }}
           {{- if .Values.pod.resources.scheduler }}
           resources:
 {{ toYaml .Values.pod.resources.scheduler | indent 13 }}
@@ -135,7 +134,8 @@ spec:
               subPath: statsd-rpc-exporter.yaml
               readOnly: true
         {{- end }}
-      hostname: manila-scheduler
+        {{- include "jaeger_agent_sidecar" . | indent 8 }}
+        {{- tuple . .Values.rpc_workers | include "utils.proxysql.container" | indent 8 }}
       volumes:
         - name: etcmanila
           emptyDir: {}
@@ -146,3 +146,5 @@ spec:
         - name: manila-etc
           configMap:
             name: manila-etc
+        {{- include "utils.coordination.volumes" . | indent 8 }}
+        {{- include "utils.proxysql.volumes" . | indent 8 }}

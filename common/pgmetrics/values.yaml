@@ -6,8 +6,18 @@ global:
 
 # database name (default is .Release.Name)
 db_name: ""
+# database hostname (default is "{{.Release.Name}}-postgresql")
+db_host: ""
 # password for the "postgres" database user (required)
 db_password: ""
+
+# whether builtin collectors are enabled in the postgres-exporter (e.g. the
+# bgwriter queries can be quite costly, so you might want to disable them if
+# not used)
+collectors:
+  database: true
+  bgwriter: true
+  replication_slot: true
 
 # resource requests and limits <http://kubernetes.io/docs/user-guide/compute-resources/>
 resources:
@@ -23,22 +33,18 @@ alerts:
   enabled: true
   # name of the Prometheus that scrapes the metrics and produces alerts
   prometheus: openstack
-  # The tier of the alert.
+  # The tier label of the alerts.
   tier: os
+  # The support group label of the alerts. Must be given in values.yaml of parent chart.
+  support_group:
   # Configurable service label of the alerts. Defaults to `.Release.Name`.
   service: ""
 
-customMetrics:
-  pg_database:
-    query: "SELECT d.datname AS datname, CASE WHEN pg_catalog.has_database_privilege(d.datname, 'CONNECT') THEN pg_catalog.pg_database_size(d.datname) ELSE 0 END AS size_bytes FROM pg_catalog.pg_database d where datname not in ('template0', 'template1', 'postgres')"
-    metrics:
-      - datname:
-          usage: "LABEL"
-          description: "Name of the database"
-      - size_bytes:
-          usage: "GAUGE"
-          description: "Size of the database in bytes"
+  # An alert will be sent if the scrape duration of this exporter consistently
+  # exceeds this threshold (value in seconds).
+  scrape_duration_threshold: 5
 
+customMetrics:
   pg_stat_user_tables:
     query: "SELECT schemaname, relname, seq_scan, seq_tup_read, idx_scan, idx_tup_fetch, n_tup_ins, n_tup_upd, n_tup_del, n_tup_hot_upd, n_live_tup, n_dead_tup, n_mod_since_analyze, last_vacuum, last_autovacuum, last_analyze, last_autoanalyze, vacuum_count, autovacuum_count, analyze_count, autoanalyze_count FROM pg_stat_user_tables"
     metrics:

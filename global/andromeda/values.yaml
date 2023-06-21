@@ -4,6 +4,9 @@
 
 replicaCount: 1
 
+global:
+  keystoneNamespace: monsoon3
+
 image:
   repository: keppel.eu-de-1.cloud.sap/ccloud/andromeda
   kubernetes_entrypoint_version: v0.3.1
@@ -16,10 +19,22 @@ cockroachdb:
     updateStrategy:
       type: Recreate
     customLivenessProbe:
-      periodSeconds: 60
+      failureThreshold: 5
       initialDelaySeconds: 60
+      periodSeconds: 60
+      successThreshold: 1
+      timeoutSeconds: 5
       httpGet:
         path: /health
+        port: http
+    customReadinessProbe:
+      failureThreshold: 2
+      initialDelaySeconds: 60
+      periodSeconds: 60
+      successThreshold: 1
+      timeoutSeconds: 5
+      httpGet:
+        path: /health?ready=1
         port: http
     replicas: 1
     resources:
@@ -57,16 +72,58 @@ cockroachdb:
         cluster.organization: "Andromeda - Test Instance"
 
 postgresql:
-  image: keppel.eu-de-1.cloud.sap/ccloud-dockerhub-mirror/library/postgres
-  imageTag: 14-alpine
-  postgresDatabase: andromeda
   enabled: false
+  image: keppel.eu-de-1.cloud.sap/ccloud/postgres
+  imageTag: 12.14
+  postgresDatabase: andromeda
+  alerts:
+    support_group: network-api
+  extensions:
+    pgcrypto: []
+  dbInit: andromeda-db-init
+  external:
+    enabled: false
+
+alerts:
+  support_group: network-api
+
+mariadb:
+  priority_class: ""
+  alerts:
+    support_group: network-api
+  enabled: false
+  name: andromeda
+  initdb_configmap: true
+  persistence_claim:
+    name: db-andromeda-pvclaim
+    autoprovision: true
+    access_modes: ["ReadWriteOnce"]
+  backup:
+    enabled: false
+  backup_v2:
+    enabled: false
+  users:
+    andromeda:
+      grants:
+      - "ALL PRIVILEGES on andromeda.*"
+
+database_override:
+  enabled: false
+
+owner-info:
+  support-group: network-api
+  maintainers:
+    - Andrew Karpow
+  helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/global/andromeda
 
 nats:
   image:
     repository: keppel.eu-de-1.cloud.sap/ccloud-dockerhub-mirror/library/nats
   auth:
     enabled: false
+
+debug: false
+seed: false
 
 imagePullSecrets: []
 nameOverride: ""

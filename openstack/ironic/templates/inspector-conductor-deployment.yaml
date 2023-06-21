@@ -29,22 +29,23 @@ spec:
       annotations:
         configmap-etc-hash: {{ include (print $.Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
         configmap-inspector-etc-hash: {{ include (print $.Template.BasePath "/inspector-etc-configmap.yaml") . | sha256sum }}
+        {{- if .Values.proxysql.mode }}
+        prometheus.io/scrape: "true"
+        prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
+        {{- end }}
     spec:
 {{ tuple . "ironic" "inspector" | include "kubernetes_pod_anti_affinity" | indent 6 }}
+{{ include "utils.proxysql.pod_settings" . | indent 6 }}
+      initContainers:
+      {{- tuple . (dict "service" "ironic-api,ironic-rabbitmq") | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 6 }}
       containers:
       - name: ironic-inspector-conductor
         image: {{ .Values.global.registry }}/loci-ironic:{{ .Values.imageVersion }}
         imagePullPolicy: IfNotPresent
         command:
         - dumb-init
-        - kubernetes-entrypoint
+        - ironic-inspector-conductor
         env:
-        - name: COMMAND
-          value: "ironic-inspector-conductor --config-file /etc/ironic-inspector/ironic-inspector.conf"
-        - name: NAMESPACE
-          value: {{ .Release.Namespace }}
-        - name: DEPENDENCY_SERVICE
-          value: "ironic-api,ironic-rabbitmq"
         {{- if .Values.logging.handlers.sentry }}
         - name: SENTRY_DSN
           valueFrom:
@@ -52,10 +53,6 @@ spec:
               name: sentry
               key: {{ .Chart.Name }}.DSN.python
         {{- end }}
-        - name: PGAPPNAME
-          valueFrom:
-            fieldRef:
-              fieldPath: metadata.name
         resources:
 {{ toYaml .Values.pod.resources.inspector | indent 10 }}
         volumeMounts:
@@ -81,6 +78,8 @@ spec:
           name: ironic-etc
           subPath: policy.json
           readOnly: true
+        {{- include "utils.proxysql.volume_mount" . | indent 10 }}
+      {{- include "utils.proxysql.container" . | indent 8 }}
       volumes:
       - name: etcironic
         emptyDir: {}
@@ -96,4 +95,5 @@ spec:
         configMap:
           name: ironic-inspector-rootwrap
           defaultMode: 0444
+      {{- include "utils.proxysql.volumes" . | indent 8 }}
 {{- end }}

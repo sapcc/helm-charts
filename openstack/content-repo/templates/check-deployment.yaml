@@ -51,6 +51,7 @@ spec:
             value: {{ $.Values.statsd_hostname | quote }}
           - name: CHECK_INTERVAL
             value: "900" # 15 min
+        # TODO: securityContext: { runAsNonRoot: true }
         volumeMounts:
           - mountPath: /secret-check
             name: secret
@@ -65,4 +66,5 @@ spec:
             cpu: '1m'
             memory: '32Mi'
       {{- end}}
+      terminationGracePeriodSeconds: 1 # no need to wait long for a graceful shutdown
 {{- end }}

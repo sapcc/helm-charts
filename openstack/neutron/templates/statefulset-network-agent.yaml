@@ -1,4 +1,4 @@
-{{- $ussuri := hasPrefix "ussuri" (default .Values.imageVersion .Values.imageVersionServerAPI) -}}
+{{- $release_requires_sec_cap:= or (hasPrefix "ussuri" (default .Values.imageVersion .Values.imageVersionServerAPI)) (hasPrefix "yoga" (default .Values.imageVersion .Values.imageVersionServerAPI)) -}}
 {{- if and (.Values.agent.multus | default false) .Values.agent.controlplane }}
 {{- $az_count := len .Values.global.availability_zones -}}
 {{ range $i, $az_long := .Values.global.availability_zones | default (list (printf "%sa" $.Values.global.region) (printf "%sb" $.Values.global.region)) }}
@@ -64,7 +64,7 @@ spec:
                 operator: DoesNotExist
       nodeSelector:
         multus: bond1
-        failure-domain.beta.kubernetes.io/zone: {{ $az_long }}
+        topology.kubernetes.io/zone: {{ $az_long }}
       initContainers:
         - name: init
           image: {{$.Values.global.dockerHubMirror}}/library/{{$.Values.imageNameNetworkAgentDHCPInit | required "Please set neutron.imageNameNetworkAgentDHCPInit or similar"}}:{{$.Values.imageVersionNetworkAgentDHCPInit | required "Please set neutron.imageVersionNetworkAgentDHCPInit or similar"}}
@@ -224,6 +224,8 @@ spec:
               value: "false"
             - name: PYTHONWARNINGS
               value: "ignore:Unverified HTTPS request"
+            - name: OS_LINUX_BRIDGE__PHYSICAL_INTERFACE_MAPPINGS
+              value: {{required "A valid .Values.cp_physical_network required!" $.Values.cp_physical_network}}:{{required "A valid .Values.cp_network_interface required!" $.Values.cp_network_interface}}
           readinessProbe:
             exec:
               command: ["neutron-linuxbridge-readiness", "-config-file", "/etc/neutron/neutron.conf"]
@@ -234,7 +236,7 @@ spec:
             capabilities:
               add:
                 - NET_ADMIN
-{{- if $ussuri }}
+{{- if $release_requires_sec_cap }}
                 - SYS_ADMIN
                 - DAC_OVERRIDE
                 - DAC_READ_SEARCH

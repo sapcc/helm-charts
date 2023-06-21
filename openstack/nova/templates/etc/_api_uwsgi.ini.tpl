@@ -15,4 +15,5 @@ die-on-term = true
 master = true
 memory-report = true
 processes = {{ .Values.api.wsgi_processes }}
-wsgi-file = /var/lib/kolla/venv/bin/nova-api-wsgi
+wsgi-file = /var/lib/openstack/bin/nova-api-wsgi
+pyargv = --config-file /etc/nova/nova.conf --config-file /etc/nova/nova-api.conf

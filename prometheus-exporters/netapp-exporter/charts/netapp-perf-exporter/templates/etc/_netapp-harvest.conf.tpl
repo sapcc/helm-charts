@@ -12,6 +12,6 @@ graphite_proto    = tcp
 
 host_type         = FILER
 auth_type         = password
-data_update_freq  = 60
+data_update_freq  = {{ .Values.harvest.update_interval | default 60 }}
 
 latency_io_reqd   = 0

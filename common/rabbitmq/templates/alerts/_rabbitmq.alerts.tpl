@@ -7,6 +7,7 @@ groups:
     labels:
       severity: critical
       tier: {{ required ".Values.alerts.tier missing" .Values.alerts.tier }}
+      support_group: {{ required ".Values.alerts.support_group missing" .Values.alerts.support_group }}
       service:  {{ include "alerts.service" . }}
       context: '{{`{{ $labels.app }}`}}'
       dashboard: rabbitmq
@@ -22,6 +23,7 @@ groups:
     labels:
       severity: critical
       tier: {{ required ".Values.alerts.tier missing" .Values.alerts.tier }}
+      support_group: {{ required ".Values.alerts.support_group missing" .Values.alerts.support_group }}
       service: {{ include "alerts.service" . }}
       context: '{{`{{ $labels.app }}`}}'
       dashboard: rabbitmq

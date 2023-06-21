@@ -12,10 +12,10 @@ global:
 # registryAlternateRegion: keppel.$REGION.cloud.sap
 
 owner-info:
+  support-group: identity
   maintainers:
     - Boris Bobrov
     - Rajiv Mucheli
-    - Maurice Escher
   helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/openstack/keystone
 
 debug: false
@@ -27,9 +27,6 @@ run_db_migration: true
 
 # ignore invalid role assignments
 skipRepairRoleAssignments: false
-
-# suppress pre-deployment region check
-skipRegionCheck: false
 
 # current keystone release
 release: train
@@ -225,6 +222,8 @@ services:
       issuer_attribute: HTTP_SSL_CLIENT_I_DN
       #trusted_issuer: CN=SSO_CA,O=SAP-AG,C=DE
 
+    disco: true
+
   public:
     scheme: http
     host: identity-3
@@ -244,33 +243,12 @@ audit:
     host: hermes-rabbitmq-notifications.hermes
     port: 5672
 
-rabbitmq:
-  ## default: {{.Release.Name}}-rabbitmq.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}
-  # host: rabbitmq
-  # fetch rabbit keppel images from another region
-  name: keystone
-  use_alternate_registry: true
-  users:
-    default:
-      password: ""
-    admin:
-      password: ""
-
-  resources:
-    requests:
-      memory: 512Mi
-      cpu: 1000m
-
-  nodeAffinity: {}
-
-  metrics:
-    enabled: true
-    password: ""
-
 memcached:
   use_alternate_registry: true
   memcached:
     maxItemMemory: 2048
+  alerts:
+    support_group: identity
 
   resources:
     enabled: true
@@ -283,20 +261,36 @@ memcached:
 
   nodeAffinity: {}
 
+proxysql:
+  mode: null  # Disabled
+
 percona_cluster:
   enabled: false
   db_name: keystone
   db_user: keystone
+  alerts:
+    support_group: identity
+
+dbName: keystone
 
 mariadb:
   enabled: true
   name: keystone
   initdb_configmap: keystone-initdb
   use_alternate_registry: true
+  alerts:
+    support_group: identity
 
   persistence_claim:
     name: db-keystone-pvclaim
-
+  databases:
+  - keystone
+  users:
+    keystone:
+      name: keystone
+      password: null
+      grants:
+      - "ALL PRIVILEGES on keystone.*"
   resources:
     requests:
       cpu: 1000m
@@ -355,6 +349,33 @@ mysql_metrics:
         WHERE domain_id != '<<keystone.domain.root>>'
       values:
         - "projects"
+    - name: openstack_projects_count_gauge
+      help: Keystone projects
+      query: |
+        SELECT
+          project.id as project_id,
+          project.name as project_name,
+          coalesce(nullif(project.description, ''), 'EMPTY') as project_description,
+          project.domain_id as domain_id,
+          domain.name as domain_name,
+          COUNT(*) AS count_gauge
+        FROM project
+        JOIN project AS domain ON project.domain_id=domain.id
+        WHERE project.is_domain=0
+        GROUP BY
+          project_id,
+          project_name,
+          project_description,
+          domain_id,
+          domain_name;
+      labels:
+        - "project_id"
+        - "project_name"
+        - "project_description"
+        - "domain_id"
+        - "domain_name"
+      values:
+        - "count_gauge"
     - name: openstack_assignments_total
       help: Total keystone role-assignment count
       query: |
@@ -476,3 +497,14 @@ sapcc_rate_limit:
   enabled: false
   persistence:
     enabled: false
+
+2fa:
+  enabled: false
+  replicaCount: 3
+  pollInterval: 1m #how often do we list projects
+  image: 2faproxy
+  imageTag: latest
+  imagePullPolicy: IfNotPresent
+  openstack: {}
+  resources: {}
+  podAnnotations: {}

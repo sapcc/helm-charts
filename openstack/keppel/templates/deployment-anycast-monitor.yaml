@@ -21,7 +21,6 @@ spec:
         alert-service: keppel
       annotations:
         prometheus.io/scrape: "true"
-        prometheus.io/port: "8080"
         prometheus.io/targets: "openstack"
     spec:
       containers:
@@ -40,6 +39,11 @@ spec:
           env:
             - name:  KEPPEL_DEBUG
               value: 'false'
+          securityContext:
+            runAsNonRoot: true
+          ports:
+            - name: metrics
+              containerPort: 8080
           # initially same as keppel-health-monitor
           resources:
             requests:

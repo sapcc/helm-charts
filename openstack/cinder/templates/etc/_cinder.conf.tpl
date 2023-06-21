@@ -30,6 +30,7 @@ auth_strategy = keystone
 
 rpc_response_timeout = {{ .Values.rpc_response_timeout | default .Values.global.rpc_response_timeout | default 600 }}
 rpc_workers = {{ .Values.rpc_workers | default .Values.global.rpc_workers | default 1 }}
+rpc_ping_enabled = {{ .Values.rpc_ping_enabled }}
 
 {{- if not .Values.api.use_uwsgi }}
 osapi_volume_workers = {{ .Values.osapi_volume_workers | default .Values.api.workers }}
@@ -44,7 +45,7 @@ quota_backups = -1
 quota_backup_gigabytes = -1
 
 # limit the volume size because it's limited by flexvols. in GB
-per_volume_size_limit = {{ .Values.volume_size_limit_gb | default 2048 }}
+per_volume_size_limit = {{ .Values.volume_size_limit_gb | default 10240 }}
 
 # don't use quota class
 use_default_quota_class=false
@@ -55,8 +56,13 @@ capacity_weight_multiplier = {{ .Values.capacity_weight_multiplier }}
 allocated_capacity_weight_multiplier = {{ .Values.allocated_capacity_weight_multiplier }}
 
 allow_migration_on_attach = {{ .Values.cinder_api_allow_migration_on_attach }}
+sap_disable_incremental_backup = {{ .Values.sap_disable_incremental_backup }}
+sap_allow_independent_snapshots = {{ .Values.sap_allow_independent_snapshots }}
+sap_allow_independent_clone = {{ .Values.sap_allow_independent_clone }}
 
 {{- include "ini_sections.database" . }}
+
+{{ include "ini_sections.oslo_messaging_rabbit" . }}
 
 {{- include "osprofiler" . }}
 
@@ -109,8 +115,7 @@ project_name = "{{.Values.global.keystone_service_project | default "service" }}
 project_domain_name = "{{.Values.global.keystone_service_domain | default "Default" }}"
 region_name = {{.Values.global.region}}
 
-[coordination]
-backend_url = memcached://{{ .Chart.Name }}-memcached.{{ include "svc_fqdn" . }}:{{ .Values.memcached.memcached.port | default 11211 }}
+{{ include "ini_sections.coordination" . }}
 
 [nova]
 auth_type = v3password

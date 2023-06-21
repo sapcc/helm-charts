@@ -4,13 +4,16 @@
         {{- if .Values.proxysql.mode -}}
 {{- $max_pool_size := coalesce .Values.max_pool_size .Values.global.max_pool_size 50 }}
 {{- $max_overflow := coalesce .Values.max_overflow .Values.global.max_overflow 5 }}
-{{- $max_connections := .Values.proxysql.max_connnections | default (add $max_pool_size $max_overflow) }}
+{{- $max_connections := .Values.proxysql.max_connections_per_proc | default (add $max_pool_size $max_overflow) }}
 
 {{- $dbs := dict }}
 {{- range $d := $envAll.Chart.Dependencies }}
-    {{- if and $d.Enabled (hasPrefix "mariadb" $d.Name)}}
+    {{- if hasPrefix "mariadb" $d.Name }}
         {{- $_ := set $dbs $d.Name (get $envAll.Values $d.Name) }}
     {{- end }}
+{{- end }}
+{{- range $d := $envAll.Values.proxysql.force_enable }}
+    {{- $_ := set $dbs $d (get $envAll.Values $d) }}
 {{- end }}
 {{- $dbKeys := keys $dbs | sortAlpha }}
 apiVersion: v1
@@ -44,9 +47,9 @@ data:
                     fail (print ".Values. " $dbKey ".users needs to be set")
                 {{- else if not $db.users.proxysql_monitor }}
                     fail (print ".Values. " $dbKey ".users.proxysql_monitor needs to be set")
-                {{- else if not eq .Values.mariadb.users.proxysql_monitor.name $db.users.proxysql_monitor.name }}
+                {{- else if not (eq $envAll.Values.mariadb.users.proxysql_monitor.name $db.users.proxysql_monitor.name) }}
                     fail (print ".Values. " $dbKey ".users.proxysql_monitor.name needs to be equal to .Values.mariadb.users.proxysql_monitor.name")
-                {{- else if not eq .Values.mariadb.users.proxysql_monitor.password $db.users.proxysql_monitor.password }}
+                {{- else if not (eq $envAll.Values.mariadb.users.proxysql_monitor.password $db.users.proxysql_monitor.password) }}
                     fail (print ".Values. " $dbKey ".users.proxysql_monitor.password needs to be equal to .Values.mariadb.users.proxysql_monitor.password")
                 {{- end }}
             {{- end }}

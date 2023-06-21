@@ -1,7 +1,13 @@
+{{- if not (.Values.global.region | hasPrefix "qa-") }}
+
 # Swift is the backing store for Keppel. Therefore Swift is instrumental for
 # the continued availability of many other Docker images, so we want to be able
 # to start it reliably and fast. To ensure this, this daemonset (through its
 # existence) keeps the relevant images permanently pulled on all nodes.
+#
+# The condition above skips this daemonset on QA and lab regions, because high
+# availability is not a concern there. By omitting the daemonset there, the
+# Helm deployment will finish faster since it does not have to wait on it.
 
 kind: DaemonSet
 apiVersion: apps/v1
@@ -33,6 +39,25 @@ spec:
           image: {{ include "swift_image" . }}
           imagePullPolicy: IfNotPresent
           command: [ '/bin/sleep', 'inf' ]
+          securityContext:
+            runAsNonRoot: true
+            runAsUser:    65534 # nobody
+            runAsGroup:   65534 # nobody
+          resources:
+            requests:
+              cpu: "1m"
+              memory: "32Mi"
+            limits:
+              cpu: "1m"
+              memory: "32Mi"
+        - name: swift-rings
+          image: {{ include "swift_rings_image" . }}
+          imagePullPolicy: IfNotPresent
+          command: [ '/bin/sleep', 'inf' ]
+          securityContext:
+            runAsNonRoot: true
+            runAsUser:    65534 # nobody
+            runAsGroup:   65534 # nobody
           resources:
             requests:
               cpu: "1m"
@@ -44,6 +69,10 @@ spec:
           image: {{ .Values.global.registryAlternateRegion}}/swift-haproxy:{{ .Values.image_version_haproxy }}
           imagePullPolicy: IfNotPresent
           command: [ '/bin/sleep', 'inf' ]
+          securityContext:
+            runAsNonRoot: true
+            runAsUser:    65534 # nobody
+            runAsGroup:   65534 # nobody
           resources:
             requests:
               cpu: "1m"
@@ -55,6 +84,8 @@ spec:
           image: {{ .Values.global.dockerHubMirrorAlternateRegion }}/prom/statsd-exporter:{{ .Values.image_version_auxiliary_statsd_exporter }}
           imagePullPolicy: IfNotPresent
           command: [ '/bin/tail', '-f', '/dev/null' ] # does not support "sleep inf" in the image version currently in use
+          securityContext:
+            runAsNonRoot: true
           resources:
             requests:
               cpu: "1m"
@@ -62,3 +93,5 @@ spec:
             limits:
               cpu: "1m"
               memory: "32Mi"
+
+{{- end }}

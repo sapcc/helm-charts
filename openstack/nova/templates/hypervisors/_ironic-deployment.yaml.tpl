@@ -39,7 +39,7 @@ spec:
       terminationGracePeriodSeconds: {{ $hypervisor.default.graceful_shutdown_timeout | default .Values.defaults.default.graceful_shutdown_timeout | add 5 }}
       containers:
         - name: nova-compute
-          image: {{ required ".Values.global.registry is missing" .Values.global.registry}}/ubuntu-source-nova-compute:{{.Values.imageVersionNovaCompute | default .Values.imageVersionNova | default .Values.imageVersion | required "Please set nova.imageVersion or similar" }}
+          image: {{ tuple . "compute" | include "container_image_nova" }}
           imagePullPolicy: IfNotPresent
           command:
             - dumb-init
@@ -70,23 +70,7 @@ spec:
           {{- end }}
           volumeMounts:
             - mountPath: /etc/nova
-              name: etcnova
-            - mountPath: /etc/nova/nova.conf
               name: nova-etc
-              subPath: nova.conf
-              readOnly: true
-            - mountPath: /etc/nova/policy.json
-              name: nova-etc
-              subPath: policy.json
-              readOnly: true
-            - mountPath: /etc/nova/logging.ini
-              name: nova-etc
-              subPath: logging.ini
-              readOnly: true
-            - mountPath: /etc/nova/nova-compute.conf
-              name: hypervisor-config
-              subPath: nova-compute.conf
-              readOnly: true
             - mountPath: /nova-patches
               name: nova-patches
         {{- if $hypervisor.default.statsd_enabled }}
@@ -101,22 +85,50 @@ spec:
           - name: metrics
             containerPort: 9102
           volumeMounts:
-            - name: nova-etc
-              mountPath: /etc/statsd/statsd-exporter.yaml
-              subPath: statsd-exporter.yaml
-              readOnly: true
+          - name: statsd-etc
+            mountPath: /etc/statsd/statsd-exporter.yaml
+            subPath: statsd-exporter.yaml
+            readOnly: true
         {{- end }}
       volumes:
-        - name: etcnova
-          emptyDir: {}
-        - name: nova-etc
-          configMap:
-            name: nova-etc
-        - name: nova-patches
-          configMap:
-            name: nova-patches
-        - name: hypervisor-config
-          configMap:
-            name: nova-compute-{{$hypervisor.name}}
+      - name: nova-etc
+        projected:
+          sources:
+          - configMap:
+              name: nova-etc
+              items:
+              - key: nova.conf
+                path: nova.conf
+              - key: policy.yaml
+                path: policy.yaml
+              - key: logging.ini
+                path: logging.ini
+          - configMap:
+              name: nova-compute-{{$hypervisor.name}}
+              items:
+              - key: nova-compute.conf
+                path: nova-compute.conf
+          - configMap:
+              name: nova-console
+              items:
+              {{- range $type := list "serial" "shellinabox" }}
+              - key: console-cell1-{{ $type }}.conf
+                path: nova.conf.d/console-cell1-{{ $type }}.conf
+              {{- end }}
+      - name: nova-patches
+        projected:
+          sources:
+          - configMap:
+              name: nova-patches
+      {{- if $hypervisor.default.statsd_enabled }}
+      - name: statsd-etc
+        projected:
+          sources:
+          - configMap:
+              name: nova-etc
+              items:
+              - key:  statsd-exporter.yaml
+                path: statsd-exporter.yaml
+      {{- end }}
 {{- end -}}
 {{- end -}}

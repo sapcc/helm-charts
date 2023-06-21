@@ -1,0 +1,15 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+
+metadata:
+  name: "ocb-datain"
+  labels:
+    app.kubernetes.io/name: ocb-datain
+    helm.sh/chart: {{ printf "%s-%s" $.Chart.Name $.Chart.Version | replace "+" "_" | trunc 63 | trimSuffix "-" }}
+    app.kubernetes.io/instance: ocb-datain-{{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    type: alerting-rules
+    prometheus: {{ required ".Values.global.prometheus missing" .Values.global.prometheus | quote }}
+
+spec:
+{{ .Files.Get "alerts/_ocb-datain.alerts" | indent 2 }}

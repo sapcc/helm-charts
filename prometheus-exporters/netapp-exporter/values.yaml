@@ -1,9 +1,25 @@
 global:
-  prometheus:
-    targets: infra-collector
+  prometheus: infra-collector
+  namespace: infra-monitoring
+
+owner-info:
+  helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/prometheus-exporters/netapp-exporter
+  maintainers:
+    - Chuan Miao
+    - Maurice Escher
+  support-group: compute-storage-api
 
 netapp-cap-exporter:
   enabled: false
 
 netapp-perf-exporter:
   enabled: false
+    
+netapp-harvest-exporter:
+  enabled: false
+  fullnameOverride: netapp-harvest-exporter
+  apps:
+    manila:
+      # disable manila exporters by default
+      # manila volume metrics need to be extened to include project labels
+      workerCount: 0

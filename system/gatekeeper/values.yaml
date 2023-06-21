@@ -1,4 +1,6 @@
 owner-info:
+  support-group: containers
+  service: gatekeeper
   maintainers:
     - Stefan Majewsky
     - Falk Reimann
@@ -7,7 +9,7 @@ owner-info:
   helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/system/gatekeeper
 
 # documentation for this section: <https://github.com/open-policy-agent/gatekeeper/tree/master/charts/gatekeeper>
-gatekeeper-upstream: &upstream-config
+gatekeeper-upstream:
   createNamespace: false
   constraintViolationsLimit: 250
   logDenies: true
@@ -26,6 +28,10 @@ gatekeeper-upstream: &upstream-config
     controllerManager:
       minAvailable: 0
 
+  # PodSecurityPolicy is disabled to enable upgrade to k8s 1.25+
+  psp:
+    enabled: false
+
   audit:
     resources:
       limits:
@@ -41,11 +47,11 @@ gatekeeper-upstream: &upstream-config
     prometheus.io/scrape: "true"
     prometheus.io/targets: kubernetes
 
-# Must be provided via --set-string; e.g. "qa-de-1" for QA controlplane or "s-qa-de-1" for QA scaleout.
+# Must be provided via --set-string; e.g. "qa-de-1" for QA controlplane or "s-qa-de-1" for QA scaleout. Tests will have the bogus value "t-qa-de-1".
 cluster_name: null
-# Must be provided via --set-string; e.g. "lab" or "qa" or "prod".
+# Must be provided via --set-string; e.g. "labs" or "qa" or "prod". Tests will have the bogus value "test".
 cluster_layer: null
-# Must be provided via --set-string; e.g. "baremetal" or "scaleout".
+# Must be provided via --set-string; e.g. "baremetal" or "scaleout". Tests will have the bogus value "test".
 cluster_type: null
 
 gatekeeper_addons:
@@ -56,49 +62,3 @@ doop:
   # values with default value null must be provided by values.yaml
   swift_region: null
   swift_password: null
-
-# deployments need to set exactly one of these to true to pick which Gatekeeper version to use
-use_latest_gatekeeper: false
-use_legacy_gatekeeper: false
-gatekeeper-upstream-legacy:
-  nameOverride: gatekeeper-upstream
-  <<: *upstream-config
-# ^ TODO: remove this section after the remaining clusters were upgraded from k8s 1.15 to >=1.20
-
-# configuration for Tugger
-use_tugger: false
-
-tugger:
-  createMutatingWebhook: true
-  resources:
-    limits:
-      cpu: 100m
-      memory: 128Mi
-    requests:
-      cpu: 100m
-      memory: 128Mi
-  rules:
-    - pattern: '^docker\.elastic\.co/(.+)$'
-      replacement: 'keppel.global.cloud.sap/ccloud-elastic-mirror/$1'
-
-    - pattern: '^gcr\.io/(.+)$'
-      replacement: 'keppel.global.cloud.sap/ccloud-gcr-mirror/$1'
-
-    - pattern: '^k8s\.gcr\.io/(.+)$'
-      replacement: 'keppel.global.cloud.sap/ccloud-k8sgcr-mirror/$1'
-
-    - pattern: '^quay\.io/(.+)$'
-      replacement: 'keppel.global.cloud.sap/ccloud-quay-mirror/$1'
-
-    - pattern: '^registry\.opensource\.zalan\.do/(.+)$'
-      replacement: 'keppel.global.cloud.sap/ccloud-zalando-mirror/$1'
-
-    - pattern: '^(?:docker\.io/)?([^/]+)$'
-      replacement: 'keppel.global.cloud.sap/ccloud-dockerhub-mirror/library/$1'
-
-    - pattern: '^(?:docker\.io/)?([^/.]+/.+)$'
-      replacement: 'keppel.global.cloud.sap/ccloud-dockerhub-mirror/$1'
-
-    # enforcement is done by gatekeeper
-    - pattern: '.*'
-  whitelistNamespaces: []

@@ -26,11 +26,13 @@ global:
   designate_mdns_service_ip:
   designate_mdns_akamai_ip:
   designate_service_user: designate
+  domain_seeds:
+    skip_hcm_domain: false
 
 pod:
   replicas:
     api: 3
-    central: 2
+    central: 3
     mdns: 2
     poolmanager: 1
     producer: 1
@@ -101,6 +103,8 @@ percona_cluster:
   enabled: false
   db_name: designate
   db_user: designate
+  alerts:
+    support_group: network-api
 
 mariadb:
   enabled: true
@@ -108,8 +112,15 @@ mariadb:
   initdb_configmap: designate-initdb
   persistence_claim:
     name: db-designate-pvclaim
+  alerts:
+    support_group: network-api
   backup:
     enabled: false
+  users:
+    designate:
+      name: designate
+      grants:
+      - "ALL PRIVILEGES on designate.*"
   backup_v2:
     verification:
       enabled: false
@@ -263,6 +274,13 @@ audit:
   metrics_enabled: true
   # how many messages to buffer before dumping to log (when rabbit is down or too slow)
   mem_queue_size: 1000
+  central_service:
+    user: rabbitmq
+    password: null
+
+memcached:
+  alerts:
+    support_group: network-api
 
 rabbitmq:
   enabled: true
@@ -275,7 +293,12 @@ rabbitmq:
     admin:
       user: admin
       password: secret
-
+  alerts:
+    support_group: network-api
+  metrics:
+    enabled: true
+    sidecar:
+      enabled: false 
 rabbitmq_cluster:
   enabled: false
   use_alternate_registry: true
@@ -308,15 +331,15 @@ resources:
       cpu: "250m"
       memory: "256Mi"
     limits:
-      cpu: "4000m"
-      memory: "2048Mi"
+      cpu: "5000m"
+      memory: "8192Mi"
   mdns:
     requests:
       memory: "256Mi"
       cpu: "250m"
     limits:
-      memory: "2048Mi"
-      cpu: "4000m"
+      memory: "4096Mi"
+      cpu: "5000m"
   worker:
     requests:
       memory: "256Mi"
@@ -337,3 +360,15 @@ alerts:
   enabled: true
   # Name of the Prometheus to which the alerts should be assigned to.
   prometheus: openstack
+  support_group: network-api
+
+osprofiler:
+  enabled: false
+
+owner-info:
+  support-group: network-api
+  service: designate
+  maintainers:
+    - David Hoeller
+    - Benjamin Tinney
+  helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/openstack/designate

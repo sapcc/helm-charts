@@ -3,6 +3,8 @@ global:
   # domain: DEFINED-IN-REGION-SECRETS
   # imageRegistry: DEFINED-IN-REGION-SECRETS
   clusterType: controlplane
+  domain_seeds:
+    skip_hcm_domain: false
 
 maia:
   # maia is on in all regions by default
@@ -13,7 +15,7 @@ maia:
   endpoint_port_public: 443
   endpoint_protocol_public: https
   # docker_repo: DEFINED-IN-REGION-SECRETS
-  image_version: '20191024103753'
+  image_version: '20220810081107'
   debug: "0"
   listen_port: 9091
   # how long will label values be listed by the API (keep minimal)
@@ -43,7 +45,7 @@ prometheus_server:
 
   name: maia-oprom
 
-  retentionTime: 30d
+  retentionTime: 24h
   scrapeInterval: "60s"
 
   additionalScrapeConfigs:
@@ -51,8 +53,9 @@ prometheus_server:
     key: maia_scrape_config.yaml
 
   ingress:
-    enabled: true
-    host: [maia-prometheus-collector]
+    enabled: false
+    hosts:
+      - prometheus-maia
 
   service:
     annotations:
@@ -65,8 +68,12 @@ prometheus_server:
     # prom-operator does not support other accessModes than RWO
     # accessMode: ReadWriteOnce
     size: 300Gi
+
   rbac:
     create: false
+
+  secrets:
+    - prometheus-auth-sso-cert
 
   serviceAccount:
     create: false
@@ -85,11 +92,30 @@ prometheus_server:
       cpu: 8
       memory: 16Gi
 
+  thanos:
+    enabled: true
+    querier:
+      webRouteprefix: "/"
+  
+  alerts:
+    prometheus: openstack
+    service: maia
+
+    multipleTargetScrapes:
+      enabled: false
+
+    multiplePodScrapes:
+      enabled: false
+
 # Deploy Maia Prometheus alerts.
 alerts:
   enabled: true
   # Name of the Prometheus to which the alerts should be assigned to.
-  prometheus: openstack
+  # Keys = directory names in alerts/ and aggregations/
+  prometheus: 
+    openstack: openstack
+    kubernetes: kubernetes
+    maia-oprom: maia-oprom
 
 # Deploy Maia Prometheus aggregation rules
 aggregations:
@@ -105,3 +131,64 @@ authentication:
 
 neo:
   enabled: false
+
+prometheus_vmware:
+  enabled: true
+  scrape_interval: 1m
+  scrape_timeout: 55s
+  # to avoid HTTP 400 Bad Request (request header too long) with GET /federate
+  # the metrics prefixes are truncated and combined to one query
+  matches:
+    - vrops_virtualmachine_config_hardware_memory_kilobytes
+    - vrops_virtualmachine_cpu_contention_ratio
+    - vrops_virtualmachine_cpu_demand_ratio
+    - vrops_virtualmachine_cpu_usage_ratio
+    - vrops_virtualmachine_cpu_usage_average_mhz
+    - vrops_virtualmachine_cpu_wait_summation_miliseconds
+    - vrops_virtualmachine_cpu_workload_percentage
+    - vrops_virtualmachine_datastore_outstanding_io_requests
+    - vrops_virtualmachine_disk_usage_average_kilobytes_per_second
+    - vrops_virtualmachine_diskspace_gigabytes
+    - vrops_virtualmachine_diskspace_virtual_machine_used_gigabytes
+    - vrops_virtualmachine_guest_os_full_name_info
+    - vrops_virtualmachine_guest_tools_version_info
+    - vrops_virtualmachine_memory_active_ratio
+    - vrops_virtualmachine_memory_activewrite_kilobytes
+    - vrops_virtualmachine_memory_balloning_ratio
+    - vrops_virtualmachine_memory_consumed_kilobytes
+    - vrops_virtualmachine_memory_contention_ratio
+    - vrops_virtualmachine_memory_usage_average
+    - vrops_virtualmachine_network_data_received_kilobytes_per_second
+    - vrops_virtualmachine_network_data_transmitted_kilobytes_per_second
+    - vrops_virtualmachine_network_packets_dropped.+
+    - vrops_virtualmachine_network_packets.+
+    - vrops_virtualmachine_network_usage_average_kilobytes_per_second
+    - vrops_virtualmachine_number_vcpus_total
+    - vrops_virtualmachine_oversized.+
+    - vrops_virtualmachine_runtime_connectionstate
+    - vrops_virtualmachine_runtime_powerstate
+    - vrops_virtualmachine_summary_ethernetcards
+    - vrops_virtualmachine_swapin_memory_kilobytes
+    - vrops_virtualmachine_swapped_memory_kilobytes
+    - vrops_virtualmachine_undersized.+
+    - vrops_virtualmachine_virtual_disk_average.+
+    - vrops_virtualmachine_virtual_disk_read_kilobytes_per_second
+    - vrops_virtualmachine_virtual_disk_write_kilobytes_per_second
+
+  neo:
+    enabled: false
+    matches:
+      - vrops_hostsystem_cpu_model
+      - vrops_hostsystem_cpu_sockets_number
+      - vrops_hostsystem_cpu_usage_average_percentage
+      - vrops_hostsystem_memory_ballooning_kilobytes
+      - vrops_hostsystem_memory_contention_percentage
+
+owner-info:
+  support-group: observability
+  maintainers: 
+    - Nathan Oyler
+    - Martin Vossen
+    - Richard Tief
+    - Tommy Sauer
+  helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/openstack/maia

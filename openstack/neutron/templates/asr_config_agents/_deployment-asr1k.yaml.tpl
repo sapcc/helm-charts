@@ -27,6 +27,8 @@ spec:
     metadata:
       labels:
         name: neutron-asr1k-{{ $config_agent.name }}
+        cloud.sap/scheduling-disabled: {{ or ($config_agent.scheduling_disabled | default false) ($config_agent.decommissioning | default false) | quote }}
+        cloud.sap/decommissioning: {{ $config_agent.decommissioning | default false | quote }}
 {{ tuple $context "neutron" "asr1k-agent" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
       annotations:
         pod.beta.kubernetes.io/hostname:  asr1k-{{ $config_agent.name }}

@@ -12,21 +12,25 @@ use = call:manila.api:root_app_factory
 {{- if .Values.audit.enabled }} audit{{- end -}}
 {{- end }}
 
+{{- define "rate_limit_pipe" -}}
+{{- if .Values.api_rate_limit.enabled }} rate_limit{{- end -}}
+{{- end }}
+
 {{- define "watcher_pipe" -}}
 {{- if .Values.watcher.enabled }} watcher{{- end -}}
 {{- end }}
 
 [composite:openstack_share_api]
 use = call:manila.api.middleware.auth:pipeline_factory
-noauth = cors faultwrap http_proxy_to_wsgi sizelimit noauth {{- include "watcher_pipe" . }} api
-keystone = cors faultwrap http_proxy_to_wsgi sizelimit authtoken keystonecontext {{- include "watcher_pipe" . }} {{- include "audit_pipe" . }} api
-keystone_nolimit = cors faultwrap http_proxy_to_wsgi sizelimit authtoken keystonecontext {{- include "watcher_pipe" . }} {{- include "audit_pipe" . }} api
+noauth = cors {{- include "osprofiler_pipe" . }} faultwrap http_proxy_to_wsgi sizelimit noauth {{- include "watcher_pipe" . }} api
+keystone = cors {{- include "osprofiler_pipe" . }} faultwrap http_proxy_to_wsgi sizelimit authtoken keystonecontext {{- include "watcher_pipe" . }} {{- include "rate_limit_pipe" . }} {{- include "audit_pipe" . }} api
+keystone_nolimit = cors {{- include "osprofiler_pipe" . }} faultwrap http_proxy_to_wsgi sizelimit authtoken keystonecontext {{- include "watcher_pipe" . }} {{- include "audit_pipe" . }} api
 
 [composite:openstack_share_api_v2]
 use = call:manila.api.middleware.auth:pipeline_factory
-noauth = cors faultwrap http_proxy_to_wsgi sizelimit noauth {{- include "watcher_pipe" . }} apiv2
-keystone = cors faultwrap http_proxy_to_wsgi sizelimit authtoken keystonecontext {{- include "watcher_pipe" . }} {{- include "audit_pipe" . }} apiv2
-keystone_nolimit = cors faultwrap http_proxy_to_wsgi sizelimit authtoken keystonecontext {{- include "watcher_pipe" . }} {{- include "audit_pipe" . }} apiv2
+noauth = cors {{- include "osprofiler_pipe" . }} faultwrap http_proxy_to_wsgi sizelimit noauth {{- include "watcher_pipe" . }} apiv2
+keystone = cors {{- include "osprofiler_pipe" . }} faultwrap http_proxy_to_wsgi sizelimit authtoken keystonecontext {{- include "watcher_pipe" . }} {{- include "rate_limit_pipe" . }} {{- include "audit_pipe" . }} apiv2
+keystone_nolimit = cors {{- include "osprofiler_pipe" . }} faultwrap http_proxy_to_wsgi sizelimit authtoken keystonecontext {{- include "watcher_pipe" . }} {{- include "audit_pipe" . }} apiv2
 
 [filter:faultwrap]
 paste.filter_factory = manila.api.middleware.fault:FaultWrapper.factory
@@ -66,6 +70,9 @@ paste.filter_factory = keystonemiddleware.auth_token:filter_factory
 paste.filter_factory = oslo_middleware.cors:filter_factory
 oslo_config_project = manila
 
+[filter:osprofiler]
+paste.filter_factory = osprofiler.web:WsgiMiddleware.factory
+
 [filter:healthcheck]
 paste.filter_factory = oslo_middleware:Healthcheck.factory
 backends = disable_by_file
@@ -87,3 +94,18 @@ use = egg:watcher-middleware#watcher
 service_type = share
 config_file = /etc/manila/watcher.yaml
 {{- end }}
+
+{{ if .Values.api_rate_limit.enabled }}
+[filter:rate_limit]
+use = egg:rate-limit-middleware#rate-limit
+config_file = /etc/manila/ratelimit.yaml
+service_type = share
+rate_limit_by = {{ .Values.api_rate_limit.rate_limit_by }}
+max_sleep_time_seconds = {{ .Values.api_rate_limit.max_sleep_time_seconds }}
+clock_accuracy = 1ns
+log_sleep_time_seconds = {{ .Values.api_rate_limit.log_sleep_time_seconds }}
+backend_host = {{ .Release.Name }}-api-ratelimit-redis
+backend_port = 6379
+backend_timeout_seconds = {{ .Values.api_rate_limit.backend_timeout_seconds }}
+{{- end }}
+

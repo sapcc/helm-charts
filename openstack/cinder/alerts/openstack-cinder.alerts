@@ -2,12 +2,13 @@ groups:
 - name: openstack-cinder.alerts
   rules:
   - alert: OpenstackCinderVolumeInDeletingState
-    expr: sum(openstack_stuck_volumes_max_duration_gauge{status="deleting"}) BY (id,display_name) > 15
+    expr: count(sum(openstack_stuck_volumes_max_duration_gauge{status="deleting"}) BY (id,display_name) > 15) by (id, display_name)
     for: 5m
     labels:
       dashboard: cinder
       meta: 'Volume {{ $labels.display_name }} in Deleting state since {{ $value }}s'
-      playbook: docs/support/playbook/volumes.html
+      playbook: docs/support/playbook/volumes
+      support_group: compute-storage-api
       service: cinder
       severity: info
       tier: os
@@ -16,140 +17,31 @@ groups:
       summary: Cinder Volumes taking more than 15s to delete
 
   - alert: OpenstackCinderVolumeInAttachingState
-    expr: sum(openstack_stuck_volumes_max_duration_gauge{status="attaching"}) BY (id,display_name) > 15
+    expr: count(sum(openstack_stuck_volumes_max_duration_gauge{status="attaching"}) BY (id,display_name) > 3600) by (id, display_name)
     for: 5m
     labels:
       dashboard: cinder
       meta: 'Volume {{ $labels.display_name }} in Attaching state since {{ $value }}s'
-      playbook: docs/support/playbook/volumes.html
+      playbook: docs/support/playbook/cinder/cinder_attaching_stuck
+      support_group: compute-storage-api
       service: cinder
-      severity: info
+      severity: warning
       tier: os
     annotations:
       description: Volume {{ $labels.display_name }} with {{ $labels.id }} in Attaching State
-      summary: Cinder Volumes taking more than 15s to attach
+      summary: Cinder Volumes taking more than 1 hour to attach
 
   - alert: OpenstackCinderVolumeInDetachingState
-    expr: sum(openstack_stuck_volumes_max_duration_gauge{status="detaching"}) BY (id,display_name) > 15
+    expr: count(sum(openstack_stuck_volumes_max_duration_gauge{status="detaching"}) BY (id,display_name) > 15) by (id, display_name)
     for: 5m
     labels:
       dashboard: cinder
       meta: 'Volume {{ $labels.display_name }} in Detaching state since {{ $value }}s'
-      playbook: docs/support/playbook/volumes.html
+      playbook: docs/support/playbook/volumes
+      support_group: compute-storage-api
       service: cinder
       severity: info
       tier: os
     annotations:
       description: Volume {{ $labels.display_name }} with {{ $labels.id }} in Detaching State
       summary: Cinder Volumes taking more than 15s to detach
-
-  - alert: OpenstackCinderCanaryMountVolumeDown
-    expr: blackbox_canary_status_gauge{service=~"cinder", check=~"mount_volume-.+"} == 1
-    for: 1h
-    labels:
-      severity: info
-      tier: os
-      service: '{{ $labels.service }}'
-      context: '{{ $labels.service }}'
-      dashboard: ccloud-health-canary-details
-      meta: 'Canary {{ $labels.service }} {{ $labels.check }} is down for 1 hour. See Sentry for details'
-      sentry: 'blackbox/?query=test_{{ $labels.check }}'
-      playbook: 'docs/devops/alert/{{ $labels.service }}/#test_mount_volume'
-    annotations:
-      description: 'Canary {{ $labels.service }} {{ $labels.check }} is down for 1 hour. See Sentry for details'
-      summary: 'Canary {{ $labels.service }} {{ $labels.check }} is down'
-
-
-  - alert: OpenstackCinderCanaryDown
-    expr: blackbox_canary_status_gauge{service=~"cinder", check!~"mount_volume-.+"} == 1
-    for: 1h
-    labels:
-      severity: warning
-      tier: os
-      service: '{{ $labels.service }}'
-      context: '{{ $labels.service }}'
-      dashboard: ccloud-health-canary-details
-      meta: 'Canary {{ $labels.service }} {{ $labels.check }} is down for 1 hour. See Sentry for details'
-      sentry: 'blackbox/?query=test_{{ $labels.check }}'
-      playbook: 'docs/devops/alert/{{ $labels.service }}'
-    annotations:
-      description: 'Canary {{ $labels.service }} {{ $labels.check }} is down for 1 hour. See Sentry for details'
-      summary: 'Canary {{ $labels.service }} {{ $labels.check }} is down'
-
-  - alert: OpenstackCinderCanaryMountVolumeTimeout
-    expr: blackbox_canary_status_gauge{service=~"cinder", check=~"mount_volume-.+"} == 0.5
-    for: 1h
-    labels:
-      severity: info
-      tier: os
-      service: '{{ $labels.service }}'
-      context: '{{ $labels.service }}'
-      dashboard: ccloud-health-canary-details
-      meta: 'Canary {{ $labels.service }} {{ $labels.check }} is timing out for 1 hour. See Sentry for details'
-      sentry: 'blackbox/?query=test_{{ $labels.check }}'
-      playbook: 'docs/devops/alert/{{ $labels.service }}/#test_mount_volume'
-    annotations:
-      description: 'Canary {{ $labels.service }} {{ $labels.check }} is timing out for 1 hour. See Sentry for details'
-      summary: 'Canary {{ $labels.service }} {{ $labels.check }} is timing out'
-
-  - alert: OpenstackCinderCanaryTimeout
-    expr: blackbox_canary_status_gauge{service=~"cinder", check!~"mount_volume-.+"} == 0.5
-    for: 1h
-    labels:
-      severity: info
-      tier: os
-      service: '{{ $labels.service }}'
-      context: '{{ $labels.service }}'
-      dashboard: ccloud-health-canary-details
-      meta: 'Canary {{ $labels.service }} {{ $labels.check }} is timing out for 1 hour. See Sentry for details'
-      sentry: 'blackbox/?query=test_{{ $labels.check }}'
-      playbook: 'docs/devops/alert/{{ $labels.service }}'
-    annotations:
-      description: 'Canary {{ $labels.service }} {{ $labels.check }} is timing out for 1 hour. See Sentry for details'
-      summary: 'Canary {{ $labels.service }} {{ $labels.check }} is timing out'
-
-  - alert: OpenstackCinderCanaryMountVolumePrepFails
-    expr: blackbox_canary_status_gauge{service=~"cinder", check=~"mount_volume-.+"} == 0.4
-    for: 1h
-    labels:
-      severity: info
-      tier: os
-      service: '{{ $labels.service }}'
-      context: '{{ $labels.service }}'
-      dashboard: ccloud-health-canary-details
-      meta: 'Canary {{ $labels.service }} {{ $labels.check }} test preparation is broken for 1 hour. See Sentry for details'
-      sentry: 'blackbox/?query=test_{{ $labels.check }}'
-      playbook: 'docs/devops/alert/{{ $labels.service }}/#test_mount_volume'
-    annotations:
-      description: 'Canary {{ $labels.service }} {{ $labels.check }} test preparation is broken for 1 hour. See Sentry for details'
-      summary: 'Canary {{ $labels.service }} {{ $labels.check }} test preparation is broken.'
-
-  - alert: OpenstackCinderCanaryMountVolumeFlapping
-    expr: changes(blackbox_canary_status_gauge{service=~"cinder", check=~"mount_volume-.+"}[2h]) > 8
-    labels:
-      severity: warning
-      tier: os
-      service: '{{ $labels.service }}'
-      context: '{{ $labels.service }}'
-      dashboard: ccloud-health-canary-details
-      meta: 'Canary {{ $labels.service }} {{ $labels.check }} is flapping for 2 hours. See Sentry for details'
-      sentry: 'blackbox/?query=test_{{ $labels.check }}'
-      playbook: 'docs/devops/alert/{{ $labels.service }}/#test_mount_volume'
-    annotations:
-      description: 'Canary {{ $labels.service }} {{ $labels.check }} is flapping for 2 hours. See Sentry for details'
-      summary: 'Canary {{ $labels.service }} {{ $labels.check }} is flapping'
-
-  - alert: OpenstackCinderCanaryFlapping
-    expr: changes(blackbox_canary_status_gauge{service=~"cinder", check!~"mount_volume-.+"}[2h]) > 8
-    labels:
-      severity: warning
-      tier: os
-      service: '{{ $labels.service }}'
-      context: '{{ $labels.service }}'
-      dashboard: ccloud-health-canary-details
-      meta: 'Canary {{ $labels.service }} {{ $labels.check }} is flapping for 2 hours. See Sentry for details'
-      sentry: 'blackbox/?query=test_{{ $labels.check }}'
-      playbook: 'docs/devops/alert/{{ $labels.service }}'
-    annotations:
-      description: 'Canary {{ $labels.service }} {{ $labels.check }} is flapping for 2 hours. See Sentry for details'
-      summary: 'Canary {{ $labels.service }} {{ $labels.check }} is flapping'

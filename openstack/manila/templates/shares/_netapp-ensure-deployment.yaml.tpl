@@ -42,22 +42,17 @@ spec:
                   values:
                   - manila-share-netapp-{{$share.name}}
               topologyKey: kubernetes.io/hostname
+      initContainers:
+      {{- tuple . (dict "service" (print .Release.Name "-mariadb")) | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 8 }}
       containers:
         - name: reexport
           image: "{{.Values.global.registry}}/manila-ensure:{{.Values.loci.imageVersionEnsure}}"
           imagePullPolicy: IfNotPresent
           command:
             - dumb-init
-            - kubernetes-entrypoint
+            - /bin/bash
+            - /scripts/manila-ensure-reexport.sh
           env:
-            - name: COMMAND
-              value: "/bin/bash /scripts/manila-ensure-reexport.sh"
-            - name: NAMESPACE
-              valueFrom:
-                fieldRef:
-                  fieldPath: metadata.namespace
-            - name: DEPENDENCY_SERVICE
-              value: "{{ .Release.Name }}-mariadb"
             - name: MANILA_NETAPP_ENSURE_INTERVAL
               value: "240"
             {{- if .Values.sentry.enabled }}
@@ -86,6 +81,7 @@ spec:
               mountPath: /etc/manila/backend.conf
               subPath: backend.conf
               readOnly: true
+            {{- include "utils.proxysql.volume_mount" . | indent 12 }}
           {{- if .Values.pod.resources.share_ensure }}
           resources:
             {{ toYaml .Values.pod.resources.share_ensure | nindent 13 }}
@@ -106,6 +102,8 @@ spec:
             timeoutSeconds: 3
             periodSeconds: 5
             initialDelaySeconds: 5
+        {{- include "jaeger_agent_sidecar" . | indent 8 }}
+        {{- include "utils.proxysql.container" . | indent 8 }}
       volumes:
         - name: etcmanila
           emptyDir: {}
@@ -115,5 +113,6 @@ spec:
         - name: backend-config
           configMap:
             name: share-netapp-{{$share.name}}
+        {{- include "utils.proxysql.volumes" . | indent 8 }}
 {{ end }}
 {{- end -}}

@@ -1,11 +1,14 @@
+{{- $root := . }}
 {{- if .Values.serviceDiscoveries.kubelet.enabled }}
+{{- range $name := coalesce .Values.names .Values.global.targets (list .Values.name) }}
+---
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 
 metadata:
-  name: {{ include "prometheus.fullName" . }}-kubelet
+  name: {{ include "prometheus.fullName" (list $name $root) }}-kubelet
   labels:
-    prometheus: {{ include "prometheus.name" . }}
+    prometheus: {{ include "prometheus.name" (list $name $root) }}
 
 spec:
   jobLabel: kubernetes-kubelet
@@ -22,8 +25,8 @@ spec:
     - port: https-metrics
       path: /metrics
       scheme: https
-      interval: {{ required ".Values.serviceDiscoveries.scrapeInterval  missing" .Values.serviceDiscoveries.scrapeInterval }}
-      scrapeTimeout: {{ required ".Values.serviceDiscoveries.scrapeTimeout  missing" .Values.serviceDiscoveries.scrapeTimeout }}
+      interval: {{ required "$.Values.serviceDiscoveries.scrapeInterval  missing" $.Values.serviceDiscoveries.scrapeInterval }}
+      scrapeTimeout: {{ required "$.Values.serviceDiscoveries.scrapeTimeout  missing" $.Values.serviceDiscoveries.scrapeTimeout }}
       bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
       honorLabels: true
       tlsConfig:
@@ -45,7 +48,7 @@ spec:
           targetLabel: node
         - targetLabel: job
           replacement: kubernetes-kubelet
-{{ include "prometheus.defaultRelabelConfig" . | indent 8 }}
+{{ include "prometheus.defaultRelabelConfig" $root | indent 8 }}
 
       metricRelabelings:
         - sourceLabels: [ id ]
@@ -58,14 +61,14 @@ spec:
           regex: '^/system\.slice/(.+)\.service$'
           targetLabel: container_name
           replacement: '${1}'
-        {{ if .Values.serviceDiscoveries.kubelet.allowedMetrics }}
+        {{ if $.Values.serviceDiscoveries.kubelet.allowedMetrics }}
         - sourceLabels:
             - container_name
             - __name__
           # The system container POD is used for networking.
-          regex: POD;({{ .Values.serviceDiscoveries.kubelet.allowedMetrics | join "|" }})
+          regex: POD;({{ $.Values.serviceDiscoveries.kubelet.allowedMetrics | join "|" }})
           action: drop
-{{ include "prometheus.keep-metrics.metric-relabel-config" .Values.serviceDiscoveries.kubelet.allowedMetrics | indent 8 }}
+{{ include "prometheus.keep-metrics.metric-relabel-config" $.Values.serviceDiscoveries.kubelet.allowedMetrics | indent 8 }}
         {{ else }}
         - sourceLabels:
             - container_name
@@ -74,12 +77,12 @@ spec:
           action: drop
       {{ end }}
 
-{{- if semverCompare ">=1.20" .Capabilities.KubeVersion.Version }}
+{{- if semverCompare ">=1.20" $.Capabilities.KubeVersion.Version }}
     - port: https-metrics
       path: /metrics/probes
       scheme: https
-      interval: {{ required ".Values.serviceDiscoveries.scrapeInterval  missing" .Values.serviceDiscoveries.scrapeInterval }}
-      scrapeTimeout: {{ required ".Values.serviceDiscoveries.scrapeTimeout  missing" .Values.serviceDiscoveries.scrapeTimeout }}
+      interval: {{ required "$.Values.serviceDiscoveries.scrapeInterval  missing" $.Values.serviceDiscoveries.scrapeInterval }}
+      scrapeTimeout: {{ required "$.Values.serviceDiscoveries.scrapeTimeout  missing" $.Values.serviceDiscoveries.scrapeTimeout }}
       honorLabels: true
       tlsConfig:
         caFile: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
@@ -96,7 +99,7 @@ spec:
           targetLabel: node
         - targetLabel: job
           replacement: kubernetes-kubelet
-{{ include "prometheus.defaultRelabelConfig" . | indent 8 }}
+{{ include "prometheus.defaultRelabelConfig" $root | indent 8 }}
 
       metricRelabelings:
         # Ensure pod, pod_name, container, container_name labels are present.
@@ -112,14 +115,14 @@ spec:
         - sourceLabels: [ pod_name ]
           regex: (.+)
           targetLabel: pod
-          {{ if .Values.serviceDiscoveries.kubelet.allowedMetrics }}
+          {{ if $.Values.serviceDiscoveries.kubelet.allowedMetrics }}
         - sourceLabels:
             - container_name
             - __name__
           # The system container POD is used for networking.
-          regex: POD;({{ .Values.serviceDiscoveries.kubelet.allowedMetrics | join "|" }})
+          regex: POD;({{ $.Values.serviceDiscoveries.kubelet.allowedMetrics | join "|" }})
           action: drop
-{{ include "prometheus.keep-metrics.metric-relabel-config" .Values.serviceDiscoveries.kubelet.allowedMetrics | indent 8 }}
+{{ include "prometheus.keep-metrics.metric-relabel-config" $.Values.serviceDiscoveries.kubelet.allowedMetrics | indent 8 }}
         {{ else }}
         - sourceLabels:
             - container_name
@@ -127,5 +130,6 @@ spec:
           regex: POD
           action: drop
         {{ end }}
+{{- end }}
 {{- end }}
 {{- end }}

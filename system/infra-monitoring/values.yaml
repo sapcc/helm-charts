@@ -1,8 +1,14 @@
+owner-info:
+  support-group: observability
+  maintainers:
+    - Martin Vossen
+    - Tommy Sauer
+    - Richard Tief
+  helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/system/infra-monitoring
+
 global:
   imageRegistry: hub.global.cloud.sap
   domain: cloud.sap
-  n7k:
-    enabled: false
   asa:
     enabled: false
   # Defined via secrets.
@@ -15,7 +21,6 @@ global:
     prometheus: infra-collector
 
   aggregations:
-    enabled: true
     prometheus: infra-collector
 
 rbac:
@@ -39,6 +44,8 @@ prometheus_infra_collector:
   serviceDiscoveries:
     scrapeInterval: 60s
     scrapeTimeout: 55s
+    pods:
+      enabled: true
 
   additionalScrapeConfigs:
     name: infra-collector-additional-scrape-config
@@ -78,6 +85,31 @@ prometheus_infra_collector:
   alerts:
     tier: monitor
 
+    multipleTargetScrapes:
+      # List of exceptions for scrape jobs. This is joined together with a `|`.
+      exceptions:
+        # job `snmp` scrapes targets multiple times for different modules
+        - snmp
+        # job `network/ssh` scrapes some instances that snmp already does for different metrics
+        - network/ssh
+        # jobs `redfish/bb` and `vmware-esxi` scrape the same nodes for different metrics
+        - redfish/bb
+        - vmware-esxi
+        # jobs `cp/netbox` and `redfish/cp` scrape the same instances for different metrics
+        - cp/netbox
+        - redfish/cp
+        # jobs `redfish/bm` and `ipmi/ironic` scrape the same nodes for different metrics
+        - redfish/bm
+        - ipmi/ironic
+
+  thanos:
+    enabled: true
+
+thanos:
+  name: infra-collector
+  deployWholeThanos: true
+  clusterDomain: kubernetes
+
 kube_state_metrics_exporter:
   enabled: true
   prometheusName: infra-collector
@@ -93,7 +125,8 @@ netbox_exporter:
   scrapeTimeout: 55s
 
 netapp_cap_exporter:
-  enabled: false
+  # default to true for transition. Value was not checked so it was enabled by default.
+  enabled: true
   apps:
     manila:
       scrapeInterval: 2m
@@ -120,9 +153,6 @@ arista_exporter:
   scrapeInterval: 2m
   scrapeTimeout: 55s
 
-atlas_sd:
-  enabled: false
-
 vcenter-exporters:
   enabled: false
 
@@ -137,6 +167,12 @@ ipmi_exporter:
   cp_scrapeTimeout: 55s
   esxi_scrapeInterval: 1m
   esxi_scrapeTimeout: 55s
+  listen_port: 9290
+
+kvm:
+  enabled: false
+  scrapeInterval: 1m
+  scrapeTimeout: 55s
 
 vcenter_exporters:
   enabled: false
@@ -201,3 +237,10 @@ network_generic_ssh_exporter:
 prometheus_vmware:
   scrapeInterval: 1m
   scrapeTimeout: 55s
+
+atlas_url: http://atlas:8080/service_discovery/netbox
+atlas_ironic_url: http://atlas:8080/service_discovery/ironic
+
+http_sd_configs:
+  netbox_staging_url: https://netbox.staging.cloud.sap/api/plugins/atlas
+  refresh_interval: 60m

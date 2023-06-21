@@ -1,7 +1,7 @@
 # placement.conf
 [DEFAULT]
-log_config_append = /etc/{{ include "placement_project" . }}/logging.ini
-state_path = /var/lib/{{ include "placement_project" . }}
+log_config_append = /etc/placement/logging.ini
+state_path = /var/lib/placement
 
 memcache_servers = {{ .Chart.Name }}-memcached.{{ include "svc_fqdn" . }}:{{ .Values.memcached.memcached.port | default 11211 }}
 
@@ -9,7 +9,7 @@ memcache_servers = {{ .Chart.Name }}-memcached.{{ include "svc_fqdn" . }}:{{ .Va
 
 [placement_database]
 {{- if not .Values.mariadb.enabled }}
-connection = mysql+pymysql://{{ .Values.api_db.user }}:{{ .Values.api_db.password | required "not enabling mariadb requires a password for the nova-api-mariadb user" | urlquery }}@nova-api-mariadb/{{ .Values.api_db.name }}?charset=utf8
+connection = {{ tuple . .Values.api_db.name .Values.api_db.user .Values.api_db.password | include "db_url_mysql" }}
 {{- else }}
 connection = {{ tuple . .Values.mariadb.name .Values.global.dbUser .Values.global.dbPassword | include "db_url_mysql" }}
 {{- end }}
@@ -19,7 +19,7 @@ connection = {{ tuple . .Values.mariadb.name .Values.global.dbUser .Values.globa
 {{- include "osprofiler" . }}
 
 [oslo_concurrency]
-lock_path = /var/lib/{{ include "placement_project" . }}/tmp
+lock_path = /var/lib/placement/tmp
 
 [keystone_authtoken]
 auth_type = v3password
@@ -45,6 +45,9 @@ driver = noop
 
 [oslo_middleware]
 enable_proxy_headers_parsing = true
+
+[oslo_policy]
+policy_file = /etc/placement/policy.yaml
 
 {{- include "ini_sections.cache" . }}
 
