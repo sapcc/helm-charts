@@ -1,0 +1,15 @@
+{{- if additionalAuth -}}
+apiVersion: v1
+kind: Secret
+
+metadata:
+  name: prometheus-openstack-sso-cert
+
+{{ if .Values.alertmanagers.authentication.enabled }}
+data:
+  sso.crt: {{ required ".Values.alertmanagers.authentication.ssoCert missing" .Values.alertmanagers.authentication.ssoCert | b64enc | quote }}
+  sso.key: {{ required ".Values.alertmanagers.authentication.ssoKey missing" .Values.alertmanagers.authentication.ssoKey | b64enc | quote }}
+{{ else }}
+data: {}
+{{ end }}
+{{- end -}}
