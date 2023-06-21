@@ -121,3 +121,18 @@ groups:
     annotations:
       description: Hermes monitoring endpoint is down => Hermes is down
       summary: Hermes API is not available, check pod logs
+
+  - alert: ElasticsearchHermesClusterLowDiskSpace
+    expr: (100 / (count by (elastic_cluster) (es_fs_path_available_bytes{elastic_cluster="elasticsearch-hermes"}))) * (count by (elastic_cluster) (es_fs_path_available_bytes{elastic_cluster="elasticsearch-hermes"} * 100 /  es_fs_path_total_bytes{elastic_cluster="elasticsearch-hermes"} < 20)) > 60
+    for: 60m
+    labels:
+      context: diskspace
+      service: hermes
+      severity: warning
+      tier: os
+      support_group: observability
+      playbook: docs/operation/elastic_kibana_issues/generic/elasticlowdiskspace-alert
+      dashboard: health-elasticsearch?var-cluster=elasticsearch-hermes
+    annotations:
+      description: 'elasticsearch-hermes cluster 60 % of all data nodes are more than 80 % full. Please consider cleaning up elasticsearch or lower the retention period for the logs.'
+      summary: '*elasticsearch-hermes cluster* is low on disk space'
