@@ -1,25 +1,24 @@
-{{- if .Values.maillog.enabled }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: maillog
-  {{- if .Values.maillog.annotations }}
+  {{- if .Values.annotations }}
   annotations:
-    {{ toYaml .Values.maillog.annotations | indent 4 }}
+    {{ toYaml .Values.annotations | indent 4 }}
   {{- end  }}
-  {{- if .Values.maillog.labels }}
+  {{- if .Values.labels }}
   labels:
-    {{ toYaml .Values.maillog.labels | indent 4 }}
+    {{ toYaml .Values.labels | indent 4 }}
   {{- end }}
 spec:
-  replicas: {{ default .Values.maillog.deployment.replicas }}
+  replicas: {{ default .Values.deployment.replicas }}
   strategy:
-{{- if eq "RollingUpdate" .Values.maillog.updateStrategy }}
+{{- if eq "RollingUpdate" .Values.updateStrategy }}
     rollingUpdate:
-      maxSurge: {{ .Values.maillog.maxSurge }}
-      maxUnavailable: {{ .Values.maillog.maxUnavailable }}
+      maxSurge: {{ .Values.maxSurge }}
+      maxUnavailable: {{ .Values.maxUnavailable }}
 {{- end }}
-    type: {{ .Values.maillog.updateStrategy }}
+    type: {{ .Values.updateStrategy }}
   selector:
     matchLabels:
       name: maillog
@@ -27,42 +26,42 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: {{ include "cronus/templates/maillog/_config.yaml.tpl" . | sha256sum }}
+        checksum/config: {{ include "maillog-config" . | sha256sum }}
       labels:
         name: maillog
         instance: maillog
     spec:
       serviceAccountName: maillog
-{{- if .Values.maillog.affinity }}
-      affinity: {{ toYaml .Values.maillog.affinity | nindent 8 }}
+{{- if .Values.affinity }}
+      affinity: {{ toYaml .Values.affinity | nindent 8 }}
 {{- end }}
       containers:
         - name: maillog
-          image: "{{ .Values.maillog.image.name }}:{{ .Values.maillog.image.tag }}"
-          imagePullPolicy: {{ .Values.maillog.image.pullPolicy }}
+          image: "{{ .Values.image.name }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
           args:
             - "-config=/maillog/config.yaml"
           env:
           - name: GODEBUG
-            value: {{ .Values.maillog.godebug | quote }}
+            value: {{ .Values.godebug | quote }}
           volumeMounts:
             - name: maillog
               mountPath: "/maillog/config.yaml"
               subPath: config.yaml
           ports:
             - name: http
-              containerPort: {{ .Values.maillog.server.http }}
+              containerPort: {{ .Values.server.http }}
               protocol: TCP
           readinessProbe:
             httpGet:
-{{- if .Values.maillog.tls }}
+{{- if .Values.tls }}
               scheme: HTTPS
 {{- end }}
               path: /healthz
               port: http
             initialDelaySeconds: 3
             periodSeconds: 2
-      terminationGracePeriodSeconds: {{ .Values.maillog.terminationGracePeriod | default 60 }}
+      terminationGracePeriodSeconds: {{ .Values.terminationGracePeriod | default 60 }}
       dnsConfig:
         options:
         - name: ndots
@@ -71,4 +70,3 @@ spec:
         - name: maillog
           secret:
             secretName: maillog
-{{- end -}}
