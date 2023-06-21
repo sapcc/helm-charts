@@ -1,0 +1,76 @@
+{{- if .Values.maillog.enabled }}
+{{- if .Values.maillog.deployment.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: maillog
+  {{- if .Values.maillog.annotations }}
+  annotations:
+    {{ toYaml .Values.maillog.annotations | indent 4 }}
+  {{- end  }}
+  {{- if .Values.maillog.labels }}
+  labels:
+    {{ toYaml .Values.maillog.labels | indent 4 }}
+  {{- end }}
+spec:
+  replicas: {{ default .Values.maillog.deployment.replicas }}
+  strategy:
+{{- if eq "RollingUpdate" .Values.maillog.updateStrategy }}
+    rollingUpdate:
+      maxSurge: {{ .Values.maillog.maxSurge }}
+      maxUnavailable: {{ .Values.maillog.maxUnavailable }}
+{{- end }}
+    type: {{ .Values.maillog.updateStrategy }}
+  selector:
+    matchLabels:
+      name: maillog
+      instance: maillog
+  template:
+    metadata:
+      annotations:
+        checksum/config: {{ include "cronus/templates/maillog/_config.yaml.tpl" . | sha256sum }}
+      labels:
+        name: maillog
+        instance: maillog
+    spec:
+      serviceAccountName: maillog
+{{- if .Values.maillog.affinity }}
+      affinity: {{ toYaml .Values.maillog.affinity | nindent 8 }}
+{{- end }}
+      containers:
+        - name: maillog
+          image: "{{ .Values.maillog.image.name }}:{{ .Values.maillog.image.tag }}"
+          imagePullPolicy: {{ .Values.maillog.image.pullPolicy }}
+          args:
+            - "-config=/maillog/config.yaml"
+          env:
+          - name: GODEBUG
+            value: {{ .Values.maillog.godebug | quote }}
+          volumeMounts:
+            - name: maillog
+              mountPath: "/maillog/config.yaml"
+              subPath: config.yaml
+          ports:
+            - name: http
+              containerPort: {{ .Values.maillog.server.http }}
+              protocol: TCP
+          readinessProbe:
+            httpGet:
+{{- if .Values.maillog.tls }}
+              scheme: HTTPS
+{{- end }}
+              path: /healthz
+              port: http
+            initialDelaySeconds: 3
+            periodSeconds: 2
+      terminationGracePeriodSeconds: {{ .Values.maillog.terminationGracePeriod | default 60 }}
+      dnsConfig:
+        options:
+        - name: ndots
+          value: "1"
+      volumes:
+        - name: maillog
+          secret:
+            secretName: maillog
+{{- end -}}
+{{- end -}}
