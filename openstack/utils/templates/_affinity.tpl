@@ -33,7 +33,7 @@ affinity:
       - weight: 1
         preference:
           matchExpressions:
-            - key: "{{ $envAll.Values.global.topology_key | default "failure-domain.beta.kubernetes.io/zone" }}"
+            - key: "{{ $envAll.Values.global.topology_key | default "topology.kubernetes.io/zone" }}"
               operator: In
               values:
                 - {{ $availability_zone }}
