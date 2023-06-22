@@ -75,7 +75,7 @@ spec:
         imagePullPolicy: IfNotPresent
         command:
         - dumb-init
-        - nova-{{ $name }}proxy
+        - nova-{{ $type }}proxy
         {{- if $config.args }}
           {{- range (regexSplit "\\s+" $config.args -1) }}
         - {{ . }}
