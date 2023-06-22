@@ -27,6 +27,9 @@
       - '{__name__=~"^nginx_ingress_controller_requests", ingress=~"neutron-server"}'
       - '{__name__=~"^nginx_ingress_controller_requests", ingress=~"elektra"}'
       - '{__name__=~"^pg_database_size_bytes$", namespace=~"(arc|lyra|elektra)"}'
+      - '{__name__=~"^es_cluster_.+"}'
+      - '{__name__=~"^es_fs_.+"}'
+      - '{__name__=~"^es_indices_store_size_bytes"}'
 
   relabel_configs:
     - action: replace
