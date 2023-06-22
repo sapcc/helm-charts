@@ -30,6 +30,7 @@
       - '{__name__=~"^es_cluster_.+"}'
       - '{__name__=~"^es_fs_.+"}'
       - '{__name__=~"^es_indices_store_size_bytes"}'
+      - '{__name__=~"^es_indices_doc_number"}'
 
   relabel_configs:
     - action: replace
