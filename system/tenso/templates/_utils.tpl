@@ -55,13 +55,14 @@
   value: >
     helm-deployment-from-concourse.v1 -> helm-deployment-to-elk.v1,
     helm-deployment-from-concourse.v1 -> helm-deployment-to-swift.v1,
+    terraform-deployment-from-concourse.v1 -> terraform-deployment-to-swift.v1,
     infra-workflow-from-awx.v1 -> infra-workflow-to-swift.v1,
     {{- if .Values.tenso.servicenow.create_change_url }}
     helm-deployment-from-concourse.v1 -> helm-deployment-to-servicenow.v1,
+    terraform-deployment-from-concourse.v1 -> terraform-deployment-to-servicenow.v1,
     infra-workflow-from-awx.v1 -> infra-workflow-to-servicenow.v1,
     {{- if hasPrefix "qa" .Values.global.region }}{{/* NOTE: Do not enable in prod until validation/translation/delivery is fully implemented in Tenso. */}}
     active-directory-deployment-from-concourse.v1 -> active-directory-deployment-to-servicenow.v1,
-    terraform-deployment-from-concourse.v1 -> terraform-deployment-to-servicenow.v1,
     {{- end }}
     {{- end }}
 {{- if .Values.tenso.servicenow.create_change_url }}
@@ -73,6 +74,8 @@
   value: /etc/tenso/servicenow-client-cert.pem
 - name:  TENSO_SERVICENOW_PRIVATE_KEY
   value: /etc/tenso-keys/servicenow-private-key.pem
+- name:  TENSO_TERRAFORM_DEPLOYMENT_SWIFT_CONTAINER
+  value: tenso-terraform-deployment-events
 {{- end }}
 - name:  TENSO_WORKER_LISTEN_ADDRESS
   value: ':80'

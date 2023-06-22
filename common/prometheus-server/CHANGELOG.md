@@ -1,3 +1,11 @@
+## 7.2.8
+
+* Option to create unique swift containers
+
+## 7.2.7
+
+* Switch domain source to `.Values.global.tld`
+
 ## 7.2.6
 
 * Add labels to metrics that originate from servicemonitors to identify a kubernikus kluster

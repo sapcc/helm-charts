@@ -176,87 +176,10 @@ prometheus-node-exporter:
   rbac:
     pspEnabled: false
 
-prometheus-server:
-  name: kubernetes
-
-  retentionTime: 21d
-
-  additionalScrapeConfigs:
-    name: prometheus-kubernikus-additional-scrape-config
-    key: scrape-config.yaml
-
-  secrets:
-    - prometheus-openstack-sso-cert
-
-  ingress:
-    enabled: true
-    hosts:
-      - prometheus-kubernetes.admin
-      - prometheus.admin
-
-  internalIngress:
-    enabled: true
-    hosts:
-      - prometheus-kubernetes-internal.admin
-      - prometheus-internal.admin
-
-  # Store in memory.
-  persistence:
-    enabled: true
-    size: 100Gi
-
-  serviceDiscoveries:
-    endpoints:
-      enabled: true
-      # Scrape all targets regardless of their `prometheus.io/targets` annotation.
-      limitToPrometheusTargets: false
-    pods:
-      enabled: true
-      # Scrape all targets regardless of their `prometheus.io/targets` annotation.
-      limitToPrometheusTargets: false
-    probes:
-      enabled: true
-    kubeAPIServer:
-      enabled: true
-    cAdvisor:
-      enabled: true
-    kubelet:
-      enabled: true
-    nodeExporter:
-      enabled: true
-    kubeDNS:
-      enabled: false
-    kubernikus:
-      enabled: true
-
-  # Send alerts to these alertmanagers.
-  alertmanagers:
-    # Enabled via secrets.
-    authentication:
-      enabled: false
-
-    hosts:
-      - alertmanager-internal.scaleout.eu-de-1.cloud.sap
-      - alertmanager-internal.scaleout.eu-nl-1.cloud.sap
-
-  alerts:
-    multipleTargetScrapes:
-      exceptions:
-        # we exclude cadvisor metrics because it has the same instance as the kubelet but a different path
-        # e.g. 10.246.204.80:10250/metrics vs. 10.246.204.80:10250/metrics/cadvisor
-        - kubernetes-cadvisors
-        - kubernetes-kubelet
-
-  thanos:
-    enabled: false
-
 prometheus-kubernetes-rules:
   prometheusName: kubernetes
   kubelet:
     goroutinesHighCount: "8000"
-
-# Additional scrape configuration deployed via secrets.
-extraScrapeConfig: ""
 
 kubernikus-monitoring:
   prometheusName: kubernetes

@@ -162,6 +162,23 @@
     </pattern>
   </parse>
 </source>
+{{- if .preParseFilter }}
+<filter {{ .tag }}*>
+  @type grep
+  @id {{ .id }}_pre_parser_filter
+  {{- if eq .preParseFilter.keep true }}
+  <regexp>
+    key {{ .preParseFilter.key }}
+    pattern {{ .preParseFilter.pattern }}
+  </regexp>
+  {{- else }}
+  <exclude>
+    key {{ .preParseFilter.key }}
+    pattern {{ .preParseFilter.pattern }}
+  </exclude>
+  {{- end }}
+</filter>
+{{- end}}
 {{- if .parse }}
 <filter {{ .tag }}*>
   @type parser
@@ -213,9 +230,9 @@
 {{- end }}
 
 <filter falco.**>
-  @type record_transformer
+  @type record_modifier
   <record>
-    source_falco ${source}
+    event_source ${record['source']}
   </record>
   remove_keys source
 </filter>

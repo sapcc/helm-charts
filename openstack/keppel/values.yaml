@@ -304,13 +304,13 @@ pgmetrics:
     keppel_manifests_with_unclean_vuln_status:
       # NOTE: This metric is also exported to Maia and therefore visible to customers. Do not break compatibility unless strictly necessary!
       query: >
-        SELECT a.name AS account, a.auth_tenant_id AS project_id, r.name AS repo, v.status AS vuln_status, COUNT(*) AS count
+        SELECT a.name AS account, a.auth_tenant_id AS project_id, r.name AS repo, t.vuln_status AS vuln_status, COUNT(*) AS count
           FROM manifests m
-          JOIN vuln_info v ON v.repo_id = m.repo_id AND v.digest = m.digest
+          JOIN trivy_security_info t ON t.repo_id = m.repo_id AND t.digest = m.digest
           JOIN repos r ON m.repo_id = r.id
           JOIN accounts a ON r.account_name = a.name
-         WHERE v.status != 'Clean'
-         GROUP BY a.name, a.auth_tenant_id, r.name, v.status
+         WHERE t.vuln_status != 'Clean'
+         GROUP BY a.name, a.auth_tenant_id, r.name, t.vuln_status
       metrics:
         - account:
             usage: LABEL
@@ -323,7 +323,7 @@ pgmetrics:
             description: 'Name of repository within Keppel account'
         - vuln_status:
             usage: LABEL
-            description: 'Vulnerability status by Clair (or "Pending" for newly pushed images, or "Unsupported" if vulnerability scanning is not possible for this image)'
+            description: 'Vulnerability status by Trivy (or "Pending" for newly pushed images, or "Unsupported" if vulnerability scanning is not possible for this image)'
         - count:
             usage: GAUGE
             description: 'Number of Keppel images per repo and vulnerability status (excluding images with vulnerability status "Clean")'

@@ -64,7 +64,7 @@ spec:
                 operator: DoesNotExist
       nodeSelector:
         multus: bond1
-        failure-domain.beta.kubernetes.io/zone: {{ $az_long }}
+        topology.kubernetes.io/zone: {{ $az_long }}
       initContainers:
         - name: init
           image: {{$.Values.global.dockerHubMirror}}/library/{{$.Values.imageNameNetworkAgentDHCPInit | required "Please set neutron.imageNameNetworkAgentDHCPInit or similar"}}:{{$.Values.imageVersionNetworkAgentDHCPInit | required "Please set neutron.imageVersionNetworkAgentDHCPInit or similar"}}
@@ -224,6 +224,8 @@ spec:
               value: "false"
             - name: PYTHONWARNINGS
               value: "ignore:Unverified HTTPS request"
+            - name: OS_LINUX_BRIDGE__PHYSICAL_INTERFACE_MAPPINGS
+              value: {{required "A valid .Values.cp_physical_network required!" $.Values.cp_physical_network}}:{{required "A valid .Values.cp_network_interface required!" $.Values.cp_network_interface}}
           readinessProbe:
             exec:
               command: ["neutron-linuxbridge-readiness", "-config-file", "/etc/neutron/neutron.conf"]

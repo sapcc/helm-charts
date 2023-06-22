@@ -1,0 +1,22 @@
+{{- $envAll := . }}
+{{- range $name, $val := .Values.agents.f5 -}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "archer.fullname" $ }}-etc-{{ $name }}
+  labels:
+    {{- include "archer.labels" $ | nindent 4 }}
+data:
+  f5.ini: |
+    [DEFAULT]
+    host = {{ $name }}
+
+    [agent]
+{{- range $i, $value := $val.devices }}
+    device[] = {{ tuple $envAll $value | include "utils.bigip_url" }}
+{{- end }}
+{{- range $i, $value := $val.vcmps }}
+    vcmp[] = {{ tuple $envAll $value | include "utils.bigip_url" }}
+{{- end }}
+    physical_network = {{ .phyiscal_network }}
+{{- end }}

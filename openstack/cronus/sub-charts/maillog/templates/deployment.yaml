@@ -1,0 +1,51 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: maillog
+spec:
+  replicas: {{ .Values.deployment.replicas }}
+  strategy:
+    rollingUpdate:
+      maxSurge: {{ .Values.maxSurge }}
+      maxUnavailable: {{ .Values.maxUnavailable }}
+  selector:
+    matchLabels:
+      name: maillog
+  template:
+    metadata:
+      annotations:
+        checksum/config: {{ include "maillog-config" . | sha256sum }}
+      labels:
+        name: maillog
+    spec:
+      containers:
+        - name: maillog
+          image: "{{ .Values.image.name }}:{{ .Values.image.tag }}"
+          imagePullPolicy: "IfNotPresent"
+          args:
+            - "-config=/maillog/config.yaml"
+          env:
+          - name: GODEBUG
+            value: {{ .Values.godebug | quote }}
+          volumeMounts:
+            - name: maillog
+              mountPath: "/maillog/config.yaml"
+              subPath: config.yaml
+          ports:
+            - name: http
+              containerPort: {{ .Values.server.http }}
+              protocol: TCP
+          readinessProbe:
+            httpGet:
+{{- if .Values.tls }}
+              scheme: HTTPS
+{{- end }}
+              path: /healthz
+              port: http
+            initialDelaySeconds: 3
+            periodSeconds: 2
+      terminationGracePeriodSeconds: 60
+      volumes:
+        - name: maillog
+          secret:
+            secretName: maillog
