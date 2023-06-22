@@ -12,7 +12,7 @@ groups:
       playbook: docs/devops/alert/network/px#PXBirdExporterAvailabilityMissingExporter
     annotations:
       description: The bird exporter for PX does not send any metrics - this should be checked"
-      summary:  The bird exporter for the PX does not send any metrics - this should be checked"
+      summary:  No metrics from bird exporter
 
   - alert: PXDomainAllPeersDown
     expr: sum(bird_protocol_up{name!~"kernel."} ==bool 1)  by (pxdomain,region, pxservice) == 0
@@ -25,8 +25,8 @@ groups:
       playbook: docs/devops/alert/network/px#PXDomainAllPeersDown
       dashboard: px-control-plane
     annotations:
-      description:  "All PX BGP peers on PX domain {{ $labels.pxdomain }} in {{ $labels.region }} for service {{ $labels.pxservice }} are down. Redundancy for Service {{ $labels.pxservice }} is lost."
-      summary:  "All PX BGP peers on PX domain {{ $labels.pxdomain }} in {{ $labels.region }} for service {{ $labels.pxservice }} are down. Redundancy for Service {{ $labels.pxservice }} is lost."
+      description:  "{{ $labels.region }}, domain: {{ $labels.pxdomain }}, service: {{ $labels.pxservice }}: All PX peers are down!
+      summary:  All peers in a domain are down
   
   - alert: PXConsumerBgpConnectionDown
     expr: ((sum(bird_protocol_up{name!~"kernel."} ==bool 1)  by (region, pxservice, pxdomain) ==bool 0) ) + on(region, pxservice, pxdomain) group_right() ((bird_protocol_up{name!~"kernel.", peer_type="PL"} ==bool 0 ) * 1000) == 1000
@@ -39,8 +39,8 @@ groups:
       playbook: docs/devops/alert/network/px#PXConsumerBgpConnectionDown
       dashboard: px-control-plane
     annotations:
-      description:  A router {{ $labels.name }} of PX consumer {{ $labels.peer_id }} has lost the BGP session with the PX route server {{ $labels.app }}. Service availability for the platform is at risk.
-      summary:  A router {{ $labels.name }} of PX consumer {{ $labels.peer_id }} has lost the BGP session with the PX route server {{ $labels.app }}. Service availability for the platform is at risk.
+      description: BGP from {{ $labels.app }} to {{ $labels.peer_hostname }} went down.
+      summary:  Consumer BGP connection down
 
   - alert: PXTransportAllRouterBgpDown
     expr: sum(bird_protocol_up{name!~"kernel.", peer_type="TP"}) by (pxservice, pxdomain, pxinstance) == 0
@@ -53,8 +53,8 @@ groups:
       playbook: docs/devops/alert/network/px#PXTransportRouterBgpDown
       dashboard: px-control-plane
     annotations:
-      description:  All BGP sessions from {{ $labels.name }} to PX service {{$labels.pxservice}} in domain {{$labels.pxdomain}} are lost. All route server client peerings are down.
-      summary:  All BGP sessions from {{ $labels.name }} are lost. All route server client peerings in domain {{$labels.pxdomain}} on service {{$labels.pxservice}} are down.
+      description:  "{{ $labels.region }}, domain: {{ $labels.pxdomain }}, service: {{ $labels.pxservice }}: All transport router BGP connections are down.
+      summary:  All transport router BGP down
 
   - alert: PXTransportRedundancyLostRouterBgpDown
     expr: sum(bird_protocol_up{name!~"kernel.", peer_type="TP"}) by (pxservice, pxdomain, pxinstance) == 1
@@ -67,8 +67,8 @@ groups:
       playbook: docs/devops/alert/network/px#PXTransportRouterBgpDown
       dashboard: px-control-plane
     annotations:
-      description:  The BGP session from {{ $labels.name }} to {{ $labels.app }} is lost. Redundancy is lost for route server clients peering that route server.
-      summary:  The BGP session from {{ $labels.name }} to {{ $labels.app }} is lost. Redundancy is lost for route server clients peering that route server.
+      description:  "{{ $labels.region }}, domain: {{ $labels.pxdomain }}, service: {{ $labels.pxservice }}: A single transport router BGP connection went down.
+      summary:  Transport router BGP down
 
   - alert: PXTransportRouterPrefixImportCountZero
     expr: (sum(bird_protocol_up{peer_type="PL"}) by (app, ip_version, proto, pxdomain, pxinstance, pxservice) > 0 ) + on (app, ip_version, proto, pxdomain, pxinstance, pxservice) group_right() bird_protocol_prefix_import_count{name!~"kernel.", peer_type="TP"} <= 0 
@@ -81,8 +81,8 @@ groups:
       playbook: docs/devops/alert/network/px#PXTransportRouterPrefixImportCountZero
       dashboard: px-control-plane
     annotations:
-      description:  The BGP session from {{ $labels.name }} to {{ $labels.app }} is resulting in 0 imported routes. Transport routes via this peer are not received, hence redundancy is degraded.
-      summary:  The BGP session from {{ $labels.name }} to {{ $labels.app }} is resulting in 0 imported routes. Transport routes via this peer are not received, hence redundancy is degraded.
+      description: BGP session from {{ $labels.peer_hostname }} to {{ $labels.app }} is resulting in 0 imported routes.
+      summary: No routes imported from transport router
 
   - alert: PXTransportRouterPrefixExportCountZero
     expr: |
@@ -95,15 +95,15 @@ groups:
     for: 3m
     labels:
       severity: critical
-      tier: k8s
+      tier: net
       service: px
       context: px
       playbook: docs/devops/alert/network/px#PXTransportRouterPrefixImportCountZero
       dashboard: px-control-plane
     annotations:
-      description:  The BGP session from {{ $labels.name }} to {{ $labels.app }} is resulting in 0 exported routes. Transport routes via this peer are not sent, hence redundancy is degraded.
-      summary:  The BGP session from {{ $labels.name }} to {{ $labels.app }} is resulting in 0 exported routes. Transport routes via this peer are not sent, hence redundancy is degraded.
-  
+      description: BGP session from {{ $labels.peer_hostname }} to {{ $labels.app }} is resulting in 0 exported routes.
+      summary: No routes exported from transport router
+
   - alert: PXConsumerExceedingRouteLimit
     expr: bird_protocol_prefix_import_count{pxservice=~"1|2", peer_type="PL"} >=10000 or bird_protocol_prefix_import_count{pxservice="3", peer_type="PL"} >= 100000
     for: 2m
@@ -115,8 +115,8 @@ groups:
       playbook: docs/devops/alert/network/px#PXConsumerExceedingRouteLimit
       dashboard: px-control-plane
     annotations:
-      description:  The BGP session from {{ $labels.name }} to {{ $labels.app }} is advertising more than the maximal allowed number of prefixes. Routes exceeding the limit will be dropped to limit the effect on the PX service.
-      summary:  The BGP session from {{ $labels.name }} to {{ $labels.app }} is advertising more than the maximal allowed number of prefixes. Routes exceeding the limit will be dropped to limit the effect on the PX service.
+      description:  BGP session from {{ $labels.name }} to {{ $labels.app }} is advertising more than the maximal allowed number of prefixes.
+      summary:  Consumer advertising too many routes
   
   - alert: PXRouteTableSignificantChanges
     expr: floor((floor(delta(sum(bird_protocol_prefix_import_count{peer_type="PL"}) by (app)[30m:])) / sum(bird_protocol_prefix_import_count{peer_type="PL"} offset 30m) by (app)) * 100) > 25
@@ -129,5 +129,5 @@ groups:
       playbook: docs/devops/alert/network/px#PXRouteTableSignificantChanges
       dashboard: px-control-plane
     annotations:
-      description: The route table for PX route server {{$labels.app}} has changed significantly within the last 30 mins. This does not necesarrily inidicate an outage, but the origin of the deviation should be investigated.
-      summary: The route table for PX route server {{$labels.app}} has changed significantly within the last 30 mins. This does not necesarrily inidicate an outage, but the origin of the deviation should be investigated.
+      description: The route table for PX route server {{$labels.app}} has changed significantly within the last 30 mins. This does not necessarily indicate an outage, but the origin of the deviation should be investigated.
+      summary: Massive route changes

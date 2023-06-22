@@ -52,7 +52,7 @@ spec:
                     {{ if eq .Values.name (printf "bind2-%s" (.Values.global.region)) }}- bind1-{{.Values.global.region}}{{ end }}
                     {{ if eq .Values.name (printf "bind1-global-%s" (.Values.global.region)) }}- bind2-global-{{.Values.global.region}}{{ end }}
                     {{ if eq .Values.name (printf "bind2-global-%s" (.Values.global.region)) }}- bind1-global-{{.Values.global.region}}{{ end }}
-              topologyKey: "failure-domain.beta.kubernetes.io/zone"
+              topologyKey: "topology.kubernetes.io/zone"
         {{ end }} 
       containers:
       - name: {{ .Release.Name }}
@@ -110,9 +110,6 @@ spec:
         image: {{ required ".Values.global.registryAlternateRegion is missing" .Values.global.registryAlternateRegion }}/{{.Values.image_bind_exporter}}:{{ .Values.image_bind_exporter_tag }}
         imagePullPolicy: {{ .Values.image_pullPolicy }}
         args: ["-bind.stats-url={{ .Values.exporter_stats_url }}"]
-        ports:
-          - name: metrics
-            containerPort: 9119
 {{ if .Values.zabbix.enabled }}
       - name: zabbix
         image: {{ required ".Values.global.registryAlternateRegion is missing" .Values.global.registryAlternateRegion }}/{{.Values.image_zabbix_agent}}:{{ .Values.image_zabbix_agent_tag }}
@@ -134,10 +131,6 @@ spec:
           value: "/etc/zabbix/ssl/tls.key"
         - name: RNDC_BIN
           value: "/usr/sbin/rndc -k /etc/bind/rndc.key -s 127.0.0.1 -p {{ .Values.rndc_port | default 953 }}"
-        ports:
-          - name: zabbix-tcp
-            containerPort: 10051
-            protocol: TCP
         volumeMounts:
           - name: zabbix-tls
             mountPath: "/etc/zabbix/ssl/"

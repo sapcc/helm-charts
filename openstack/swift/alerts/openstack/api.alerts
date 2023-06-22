@@ -97,7 +97,7 @@ groups:
 
   - alert: OpenstackSwiftHealthCheck
     expr: avg(swift_recon_task_exit_code) BY (region) > 0.2 or avg(swift_dispersion_task_exit_code) BY (region) > 0.2 or absent(swift_dispersion_task_exit_code)
-    for: 5m
+    for: 10m
     labels:
       context: health
       dashboard: swift-overview
@@ -113,7 +113,7 @@ groups:
 
   - alert: OpenstackSwiftDispersionErrors
     expr: swift_dispersion_errors > 0
-    for: 5m
+    for: 10m
     labels:
       context: health
       dashboard: swift-overview
@@ -128,7 +128,7 @@ groups:
 
   - alert: OpenstackSwiftMismatchedRings
     expr: (sum(max by (storage_ip) (swift_cluster_md5_not_matched{kind="ring"})) - sum(max by (storage_ip) (swift_cluster_md5_errors{kind="ring"}))) > 0
-    for: 15m
+    for: 20m
     labels:
       context: mismatchedrings
       dashboard: swift-overview

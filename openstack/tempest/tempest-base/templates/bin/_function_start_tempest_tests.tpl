@@ -35,7 +35,13 @@ function start_tempest_tests {
   rally deployment create --file /{{ .Chart.Name }}-etc/tempest_deployment_config.json --name tempest_deployment
   RALLY_EXIT_CODE=$(($RALLY_EXIT_CODE + $?))
 
+  # Install barbican-tempest-plugin for support HTTPS tests for octavia
+  export SERVICE_NAME={{ .Chart.Name }}
+  if [[ $SERVICE_NAME == "octavia-tempest" ]]; then
+    pip install git+https://github.com/sapcc/barbican-tempest-plugin.git@ccloud
+  fi
   # check if we can reach openstack endpoints
+
   rally deployment check
   RALLY_EXIT_CODE=$(($RALLY_EXIT_CODE + $?))
   # create tempest verifier fetched from our repo

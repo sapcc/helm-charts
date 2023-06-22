@@ -1,11 +1,14 @@
 {{- define "nova.console_service" }}
 {{- $name := index . 1 }}
-{{- $config := index . 2 }}
+{{- $type := index . 2 }}
+{{- $config := index . 3 }}
 {{- with index . 0 }}
 kind: Service
 apiVersion: v1
 metadata:
   name: nova-console-{{ $name }}
+  annotations:
+  {{- include "utils.topology.service_topology_mode" . | indent 2 }}
   labels:
     system: openstack
     type: backend
@@ -14,8 +17,8 @@ spec:
   selector:
     name: nova-console-{{ $name }}
   ports:
-  - name: {{ $name }}
+  - name: {{ $type }}
     port: {{ $config.portInternal }}
-    targetPort: {{ $name }}
+    targetPort: {{ $type }}
 {{- end }}
 {{- end }}

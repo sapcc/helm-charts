@@ -43,6 +43,9 @@ ingress:
     kubernetes.io/tls-acme: "true"
     disco: "true"
 
+metrics:
+  port: 9090
+
 imagePullSecrets: []
 nameOverride: ""
 fullnameOverride: ""
@@ -56,7 +59,9 @@ serviceAccount:
   # If not set and create is true, a name is generated using the fullname template
   name: ""
 
-podAnnotations: {}
+podAnnotations:
+  prometheus.io/scrape: "true"
+  prometheus.io/targets: "kubernetes"
 
 podSecurityContext: {}
   # fsGroup: 2000
@@ -73,17 +78,10 @@ service:
   type: ClusterIP
   port: 8000
 
-resources: {}
-  # We usually recommend not to specify default resources and to leave this as a conscious
-  # choice for the user. This also increases chances charts run on environments with little
-  # resources, such as Minikube. If you do want to specify resources, uncomment the following
-  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
-  # limits:
-  #   cpu: 100m
-  #   memory: 128Mi
-  # requests:
-  #   cpu: 100m
-  #   memory: 128Mi
+resources:
+  api: {}
+  f5-agent: {}
+  ni-agent: {}
 
 autoscaling:
   enabled: false

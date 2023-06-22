@@ -34,15 +34,15 @@ prometheus-{{- (include "prometheus.name" .) -}}
 {{- end -}}
 {{- if $root.Values.ingress.hosts -}}
 {{- $firstHost := first $root.Values.ingress.hosts -}}
-{{- required ".Values.ingress.hosts must have at least one hostname set" $firstHost -}}.{{- required ".Values.global.region missing" $root.Values.global.region -}}.{{- required ".Values.global.domain missing" $root.Values.global.domain -}}
+{{- required ".Values.ingress.hosts must have at least one hostname set" $firstHost -}}.{{- required ".Values.global.region missing" $root.Values.global.region -}}.{{- required ".Values.global.tld missing" $root.Values.global.tld -}}
 {{- else if $root.Values.ingress.hostsFQDN -}}
 {{- $firstHost := first $root.Values.ingress.hostsFQDN -}}
 {{- required ".Values.ingress.hostsFQDN must have at least one hostname set" $firstHost -}}
 {{/* vmware prometheis need additional renaming */}}
 {{- else if $root.Values.vmware -}}
-prometheus-{{- include "vmwareRenaming" $name -}}.{{- required "$root.Values.global.region missing" $root.Values.global.region -}}.{{- required "$root.Values.global.domain missing" $root.Values.global.domain -}}
+prometheus-{{- include "vmwareRenaming" $name -}}.{{- required "$root.Values.global.region missing" $root.Values.global.region -}}.{{- required "$root.Values.global.tld missing" $root.Values.global.tld -}}
 {{- else -}}
-prometheus-{{- $name -}}.{{- required "$root.Values.global.region missing" $root.Values.global.region -}}.{{- required "$root.Values.global.domain missing" $root.Values.global.domain -}}
+prometheus-{{- $name -}}.{{- required "$root.Values.global.region missing" $root.Values.global.region -}}.{{- required "$root.Values.global.tld missing" $root.Values.global.tld -}}
 {{- end -}}
 {{- end -}}
 
@@ -50,9 +50,9 @@ prometheus-{{- $name -}}.{{- required "$root.Values.global.region missing" $root
 {{- $host := index . 0 -}}
 {{- $root := index . 1 -}}
 {{- if not $root.Values.ingress.hosts -}}
-{{- (include "prometheus.fullName" .) -}}.{{- required ".Values.global.region missing" $root.Values.global.region -}}.{{- required ".Values.global.domain missing" $root.Values.global.domain -}}
+{{- (include "prometheus.fullName" .) -}}.{{- required ".Values.global.region missing" $root.Values.global.region -}}.{{- required ".Values.global.tld missing" $root.Values.global.tld -}}
 {{- else -}}
-{{- $host -}}.{{- required ".Values.global.region missing" $root.Values.global.region -}}.{{- required ".Values.global.domain missing" $root.Values.global.domain -}}
+{{- $host -}}.{{- required ".Values.global.region missing" $root.Values.global.region -}}.{{- required ".Values.global.tld missing" $root.Values.global.tld -}}
 {{- end -}}
 {{- end -}}
 
@@ -60,9 +60,9 @@ prometheus-{{- $name -}}.{{- required "$root.Values.global.region missing" $root
 {{- $host := index . 0 -}}
 {{- $root := index . 1 -}}
 {{- if not $root.Values.internalIngress.hosts -}}
-{{- (include "prometheus.fullName" .) -}}-internal.{{- required ".Values.global.region missing" $root.Values.global.region -}}.{{- required ".Values.global.domain missing" $root.Values.global.domain -}}
+{{- (include "prometheus.fullName" .) -}}-internal.{{- required ".Values.global.region missing" $root.Values.global.region -}}.{{- required ".Values.global.tld missing" $root.Values.global.tld -}}
 {{- else -}}
-{{- $host -}}.{{- required ".Values.global.region missing" $root.Values.global.region -}}.{{- required ".Values.global.domain missing" $root.Values.global.domain -}}
+{{- $host -}}.{{- required ".Values.global.region missing" $root.Values.global.region -}}.{{- required ".Values.global.tld missing" $root.Values.global.tld -}}
 {{- end -}}
 {{- end -}}
 
@@ -194,7 +194,11 @@ prometheus-{{- $name -}}.{{- required "$root.Values.global.region missing" $root
 {{- define "swift.userName" -}}
 {{- $name := index . 0 -}}
 {{- $root := index . 1 -}}
+{{- if $root.Values.thanosSeeds.seed.clusterType -}}
+{{- (include "prometheus.fullName" .) -}}-{{- $root.Values.thanosSeeds.seed.clusterType -}}-thanos
+{{- else -}}
 {{- (include "prometheus.fullName" .) -}}-thanos
+{{- end -}}
 {{- end -}}
 
 {{/* Special renaming for vmware-monitoring */}}
