@@ -2,43 +2,26 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: maillog
-  {{- if .Values.annotations }}
-  annotations:
-    {{ toYaml .Values.annotations | indent 4 }}
-  {{- end  }}
-  {{- if .Values.labels }}
-  labels:
-    {{ toYaml .Values.labels | indent 4 }}
-  {{- end }}
 spec:
-  replicas: {{ default .Values.deployment.replicas }}
+  replicas: {{ .Values.deployment.replicas }}
   strategy:
-{{- if eq "RollingUpdate" .Values.updateStrategy }}
     rollingUpdate:
       maxSurge: {{ .Values.maxSurge }}
       maxUnavailable: {{ .Values.maxUnavailable }}
-{{- end }}
-    type: {{ .Values.updateStrategy }}
   selector:
     matchLabels:
       name: maillog
-      instance: maillog
   template:
     metadata:
       annotations:
         checksum/config: {{ include "maillog-config" . | sha256sum }}
       labels:
         name: maillog
-        instance: maillog
     spec:
-      serviceAccountName: maillog
-{{- if .Values.affinity }}
-      affinity: {{ toYaml .Values.affinity | nindent 8 }}
-{{- end }}
       containers:
         - name: maillog
           image: "{{ .Values.image.name }}:{{ .Values.image.tag }}"
-          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          imagePullPolicy: "IfNotPresent"
           args:
             - "-config=/maillog/config.yaml"
           env:
@@ -61,11 +44,7 @@ spec:
               port: http
             initialDelaySeconds: 3
             periodSeconds: 2
-      terminationGracePeriodSeconds: {{ .Values.terminationGracePeriod | default 60 }}
-      dnsConfig:
-        options:
-        - name: ndots
-          value: "1"
+      terminationGracePeriodSeconds: 60
       volumes:
         - name: maillog
           secret:
