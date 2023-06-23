@@ -17,23 +17,15 @@ maillog:
     - {{ $value | quote }}
 {{- end }}
   auth:
-    keystone:
-{{- if .Values.config.keystone }}
-{{- range $key, $value := .Values.config.keystone }}
-    {{- if $value }}
-      {{ $key }}: {{ $value }}
-    {{- end }}
-{{- end }}
-{{- if .Values.global.cronus_service_password }}
-      password: {{ .Values.global.cronus_service_password }}
-{{- end }}
-{{ else }}
-      authUrl: {{ .Values.config.authUrl }}
-      applicationCredentialID: {{ .Values.config.applicationCredentialID }}
-      applicationCredentialSecret: {{ .Values.config.applicationCredentialSecret }}
-      region: {{ .Values.config.region }}
-      endpointType: {{ .Values.config.endpointType }}
-{{- end }}
+     keystone:
+      region: {{.Values.global.region}}
+      authUrl: "https://identity-3.{{.Values.global.region}}.{{.Values.global.tld}}/v3"
+      endpointType: public
+      projectName: {{.Values.keystone.projectName}}
+      projectDomainName: {{.Values.keystone.projectDomainName}}
+      userDomainName: {{.Values.keystone.userDomainName}}
+      username: {{.Values.keystone.username}}
+      password: {{.Values.keystone.password}}
     policy:
 {{- range $key, $value := .Values.policy }}
       {{ $key }}: {{ $value }}
