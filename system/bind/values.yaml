@@ -20,6 +20,18 @@ rndc_allow: DEFINED-REGION-CHART
 rndc_key: DEFINED-REGION-CHART
 tsig_key: DEFINED-REGION-CHART
 
+# lets allow more outgoing SOA queries:
+serial_query_rate: 50
+
+# but don't overwhelm secondaries:
+notify_rate: 20
+
+# slow the rate of notifications to downstream servers on restart,
+# They will be removed from the start-up notify queue if their zone
+# is updated as part of regular zone maintenance, and we don't need
+# to flood them on each pod/container restart
+startup_notify_rate: 10
+
 # should be set to different AZs; this is where PV will be claimed
 failure_domain_zone: a
 
