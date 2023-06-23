@@ -258,9 +258,13 @@ scheduler:
   # The following weighers are crutches, but we can't express it otherwise
   # currently. They should overpower the other weighers even in worst-case
   # (e.g. least ram available + worst disk weight), so we have to make it >=
-  # len(other_weighers). At the same time, we, want a VM to not move on resize,
-  # if it doesn't have to - even if it's in the wrong RAM class currently.
+  # len(other_weighers). At the same time, we want a VM to not move on resize,
+  # if it doesn't have to - even if it's in the wrong RAM class currently,
+  # preferring the same host to keep the ephemeral disk on the same
+  # datastore-cluster, but using the same shard if possible for less
+  # volume-migrations.
   prefer_same_host_resize_weight_multiplier: 1000.0
+  prefer_same_shard_resize_weight_multiplier: 200.0
   hv_ram_class_weight_multiplier: 100.0
   image_properties_default_architecture: "x86_64"
 
