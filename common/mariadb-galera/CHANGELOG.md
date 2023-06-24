@@ -1,5 +1,23 @@
 # Changelog
 
+## v0.14.5 - 2023/06/24
+* imageversion type set to integer to support Container image versions like `10.5.20-20230620163110`
+* software versions bumped
+  * Ubuntu packages timestamp `20230620163110`
+
+## v0.14.4 - 2023/06/08
+* antiaffinity rules for hosts & zones distribute MariaDB and ProxySQL pods across different availibility zones and hosts if possible
+* [weighted Quorum](https://galeracluster.com/library/documentation/weighted-quorum.html#wq-three-nodes) as configurable option `mariadb.galera.weightedQuorum`
+* software versions bumped
+  * MariaDB [10.5.20](https://mariadb.com/kb/en/mariadb-10-5-20-release-notes/)
+  * ProxySQL [2.5.2](https://github.com/sysown/proxysql/releases/tag/v2.5.2)
+  * yq [4.33.3](https://github.com/mikefarah/yq/releases/tag/v4.33.3)
+
+## v0.14.3 - 2023/05/19
+* `mysqld_exporter` permissions setup fixed
+* software versions bumped
+  * Galera [26.4.14](https://fromdual.com/galera-cluster-release-notes#galera-plugin-26-4-14-release-notes)
+
 ## v0.14.2 - 2023/03/17
 * galerastatus configmap missing name prefix fixed
 

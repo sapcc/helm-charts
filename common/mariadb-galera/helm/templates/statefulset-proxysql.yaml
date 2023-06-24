@@ -83,7 +83,7 @@ spec:
       {{- end }}
       initContainers:
       - name: sysctl-tcp-keepalive
-        image: "{{ $.Values.image.os.registry }}/{{ $.Values.image.os.project }}/{{ $.Values.image.os.applicationname }}:{{ $.Values.image.os.applicationversion }}-{{ $.Values.image.os.imageversion }}"
+        image: "{{ $.Values.image.os.registry }}/{{ $.Values.image.os.project }}/{{ $.Values.image.os.applicationname }}:{{ $.Values.image.os.applicationversion }}-{{ $.Values.image.os.imageversion | int }}"
         imagePullPolicy: {{ $.Values.image.os.pullPolicy | default "IfNotPresent" | quote }}
         command:
         - sh
@@ -93,7 +93,7 @@ spec:
           privileged: {{ $.Values.initContainers.tcpKeepAlive.securityContext.privileged | default true }}
           runAsUser: {{ $.Values.initContainers.tcpKeepAlive.securityContext.runAsUser | default 0 | int }}
       - name: increase-map-count
-        image: "{{ $.Values.image.os.registry }}/{{ $.Values.image.os.project }}/{{ $.Values.image.os.applicationname }}:{{ $.Values.image.os.applicationversion }}-{{ $.Values.image.os.imageversion }}"
+        image: "{{ $.Values.image.os.registry }}/{{ $.Values.image.os.project }}/{{ $.Values.image.os.applicationname }}:{{ $.Values.image.os.applicationversion }}-{{ $.Values.image.os.imageversion | int }}"
         imagePullPolicy: {{ $.Values.image.os.pullPolicy | default "IfNotPresent" | quote }}
         command:
         - sh
@@ -104,7 +104,7 @@ spec:
           runAsUser: {{ $.Values.initContainers.increaseMapCount.securityContext.runAsUser | default 0 | int }}
       containers:
       - name: {{ (include "nodeNamePrefix" (dict "global" $ "component" "proxy")) }}
-        image: "{{ $.Values.image.proxy.registry }}/{{ $.Values.image.proxy.project }}/{{ $.Values.image.proxy.applicationname }}:{{ $.Values.image.proxy.applicationversion }}-{{ $.Values.image.proxy.imageversion }}"
+        image: "{{ $.Values.image.proxy.registry }}/{{ $.Values.image.proxy.project }}/{{ $.Values.image.proxy.applicationname }}:{{ $.Values.image.proxy.applicationversion }}-{{ $.Values.image.proxy.imageversion | int }}"
         imagePullPolicy: {{ $.Values.image.proxy.pullPolicy | default "IfNotPresent" | quote }}
         securityContext:
           runAsUser:  {{ $.Values.userId.proxy | default 3100 | int }}

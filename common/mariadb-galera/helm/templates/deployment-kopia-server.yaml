@@ -46,7 +46,7 @@ spec:
       {{- end }}
       initContainers:
       - name: sysctl-tcp-keepalive
-        image: "{{ $.Values.image.os.registry }}/{{ $.Values.image.os.project }}/{{ $.Values.image.os.applicationname }}:{{ $.Values.image.os.applicationversion }}-{{ $.Values.image.os.imageversion }}"
+        image: "{{ $.Values.image.os.registry }}/{{ $.Values.image.os.project }}/{{ $.Values.image.os.applicationname }}:{{ $.Values.image.os.applicationversion }}-{{ $.Values.image.os.imageversion | int }}"
         imagePullPolicy: {{ $.Values.image.os.pullPolicy | default "IfNotPresent" | quote }}
         command:
         - sh
@@ -57,7 +57,7 @@ spec:
           runAsUser: {{ $.Values.initContainers.tcpKeepAlive.securityContext.runAsUser | default 0 | int }}
       containers:
       - name: backup
-        image: "{{ $.Values.image.kopiabackup.registry }}/{{ $.Values.image.kopiabackup.project }}/{{ $.Values.image.kopiabackup.applicationname }}:{{ $.Values.image.kopiabackup.applicationversion }}-{{ $.Values.image.kopiabackup.imageversion }}"
+        image: "{{ $.Values.image.kopiabackup.registry }}/{{ $.Values.image.kopiabackup.project }}/{{ $.Values.image.kopiabackup.applicationname }}:{{ $.Values.image.kopiabackup.applicationversion }}-{{ $.Values.image.kopiabackup.imageversion | int }}"
         imagePullPolicy: {{ $.Values.image.kopiabackup.pullPolicy | default "IfNotPresent" | quote }}
         securityContext:
           runAsUser:  {{ $.Values.userId.backup | default 3200 | int }}
