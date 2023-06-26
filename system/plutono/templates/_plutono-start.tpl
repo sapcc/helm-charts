@@ -70,10 +70,11 @@ function start_application {
   # config references back to the dashboard-sources dir in the git repo directly
   mkdir -p /var/lib/plutono/provisioning
   # do not do the above if the are in author more - then we do not provision anything
-  if [ "{{.Values.plutono.mode}}" != "author" ]; then
-    rm -rf /var/lib/plutono/provisioning/dashboards
-    cp -r /git/plutono-content/dashboards-config-{{.Values.plutono.mode}} /var/lib/plutono/provisioning/dashboards
-  fi
+  # TODO: without dashboards initially
+  #if [ "{{.Values.plutono.mode}}" != "author" ]; then
+  #  rm -rf /var/lib/plutono/provisioning/dashboards
+  #  cp -r /git/plutono-content/dashboards-config-{{.Values.plutono.mode}} /var/lib/plutono/provisioning/dashboards
+  #fi
   rm -rf /var/lib/plutono/provisioning/datasources
   mkdir -p /var/lib/plutono/provisioning/datasources
   cd /git/plutono-content/datasources-config
@@ -107,11 +108,7 @@ function start_application {
   sed -i 's,__OPENSEARCH_PASSWORD__,{{.Values.authentication.opensearch_password}},g' /var/lib/plutono/provisioning/datasources/*
   sed -i 's,__ALERTMANAGER_PASSWORD__,{{.Values.alertmanager.password}},g' /var/lib/plutono/provisioning/datasources/*
   sed -i 's,__PROMETHEUS_REGION__,{{.Values.global.region}},g' /var/lib/plutono/provisioning/datasources/*
-  #for i in /var/lib/plutono/provisioning/datasources/elasticsearch* ; do
-  #  echo "=== $i ==="
-  #  cat $i
-  #done
-  # strange log config to get no file logging according to https://github.com/plutono/plutono/issues/5018
+
   cd /usr/share/plutono
   exec /usr/share/plutono/bin/plutono-server -config /var/lib/plutono/etc/plutono.ini --homepath /usr/share/plutono cfg:default.log.mode=console
 }
