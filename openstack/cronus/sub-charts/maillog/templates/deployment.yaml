@@ -20,7 +20,7 @@ spec:
     spec:
       containers:
         - name: maillog
-          image: "{{ .Values.image.name }}:{{ .Values.image.tag }}"
+          image: "{{ .Values.global.registry }}/{{ .Values.image.name }}:{{ .Values.image.tag }}"
           imagePullPolicy: "IfNotPresent"
           args:
             - "-config=/maillog/config.yaml"
@@ -37,9 +37,6 @@ spec:
               protocol: TCP
           readinessProbe:
             httpGet:
-{{- if .Values.tls }}
-              scheme: HTTPS
-{{- end }}
               path: /healthz
               port: http
             initialDelaySeconds: 3

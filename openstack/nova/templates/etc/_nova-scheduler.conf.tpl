@@ -26,5 +26,6 @@ disk_weight_multiplier =  {{ .Values.scheduler.disk_weight_multiplier }}
 io_ops_weight_multiplier = {{ .Values.scheduler.io_ops_weight_multiplier }}
 soft_affinity_weight_multiplier = {{ .Values.scheduler.soft_affinity_weight_multiplier }}
 prefer_same_host_resize_weight_multiplier = {{ .Values.scheduler.prefer_same_host_resize_weight_multiplier }}
+prefer_same_shard_resize_weight_multiplier = {{ .Values.scheduler.prefer_same_shard_resize_weight_multiplier }}
 hv_ram_class_weight_multiplier = {{ .Values.scheduler.hv_ram_class_weight_multiplier }}
 image_properties_default_architecture = {{ .Values.scheduler.image_properties_default_architecture }}
