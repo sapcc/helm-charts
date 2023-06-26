@@ -13,4 +13,9 @@ exporter:
   receivingDelayMinute: {{ .Values.exporter.receivingDelayMinute }}
   sendingDelayMinute: {{ .Values.exporter.sendingDelayMinute }}
   getAccountsDelayHour: {{ .Values.exporter.getAccountsDelayHour }}
+  applicationCredentialsProject: {{ .Values.updater.applicationCredentialsProject }}
+  applicationCredentialsDomain: {{ .Values.updater.applicationCredentialsDomain }}
+  applicationCredentialsName: {{ .Values.updater.applicationCredentialsName }}
+  applicationCredentialsSecret: {{ .Values.updater.applicationCredentialsSecret }}
+  applicationCredentialsId: {{ .Values.updater.applicationCredentialsId }}
 {{- end }}
