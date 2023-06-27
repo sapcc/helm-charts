@@ -9,6 +9,9 @@ groups:
     expr: floor(sum(container_memory_working_set_bytes{pod!=""}) BY (namespace, pod, container) / ON (namespace, pod, container) sum(kube_pod_container_resource_requests_memory_bytes > 0) BY (namespace, pod, container) * 100) < 10
     for: 1d
     labels:
+      tier: {{ include "alertTierLabelOrDefault" .Values.tier }}
+      service: {{ include "serviceFromLabelsOrDefault" "k8s" }}
+      support_group: {{ include "supportGroupFromLabelsOrDefault" "containers" }}
       severity: info
       context: container
       meta: "Low RAM usage on {{`{{ $labels.container }}`}}"
@@ -20,6 +23,9 @@ groups:
     expr: ceil(sum(container_memory_working_set_bytes{pod!=""}) BY (namespace, pod, container) / ON (namespace, pod, container) sum(kube_pod_container_resource_requests_memory_bytes > 0) BY (namespace, pod, container) * 100) > 150
     for: 1d
     labels:
+      tier: {{ include "alertTierLabelOrDefault" .Values.tier }}
+      service: {{ include "serviceFromLabelsOrDefault" "k8s" }}
+      support_group: {{ include "supportGroupFromLabelsOrDefault" "containers" }}
       severity: info
       context: container
       meta: "High RAM usage on {{`{{ $labels.container }}`}}"
@@ -31,6 +37,9 @@ groups:
     expr: count by (namespace, app)(sum by (namespace, app, pod,container)(kube_pod_container_info{container!=""}) unless sum by (namespace,app,pod,container)(kube_pod_container_resource_requests{resource="ram"}))
     for: 1d
     labels:
+      tier: {{ include "alertTierLabelOrDefault" .Values.tier }}
+      service: {{ include "serviceFromLabelsOrDefault" "k8s" }}
+      support_group: {{ include "supportGroupFromLabelsOrDefault" "containers" }}
       severity: info
       context: pod
       meta: "No RAM requests configured for {{`{{ $labels.pod }}`}}"
@@ -42,6 +51,9 @@ groups:
     expr: count by (namespace, app)(sum by (namespace, app, pod,container)(kube_pod_container_info{container!=""}) unless sum by (namespace,app,pod,container)(kube_pod_container_resource_requests{resource="cpu"}))
     for: 1d
     labels:
+      tier: {{ include "alertTierLabelOrDefault" .Values.tier }}
+      service: {{ include "serviceFromLabelsOrDefault" "k8s" }}
+      support_group: {{ include "supportGroupFromLabelsOrDefault" "containers" }}
       severity: info
       context: pod
       meta: "No CPU requests configured for {{`{{ $labels.pod }}`}}"
