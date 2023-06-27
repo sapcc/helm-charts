@@ -34,7 +34,7 @@ groups:
       summary: High RAM usage on container
       description: "Container {{`{{ $labels.container }}`}} of pod {{`{{ $labels.namespace }}`}}/{{`{{ $labels.pod }}`}} Memory usage is over 150% for 24 hours. Consider raising the requested memory."
   - alert: PodWithoutConfiguredMemoryRequests
-    expr: count by (namespace, app)(sum by (namespace, app, pod,container)(kube_pod_container_info{container!=""}) unless sum by (namespace,app,pod,container)(kube_pod_container_resource_requests{resource="ram"}))
+    expr: count by (namespace, app, pod, container)(sum by (namespace, app, pod,container)(kube_pod_container_info{container!=""}) unless sum by (namespace,app,pod,container)(kube_pod_container_resource_requests{resource="ram"}))
     for: 1d
     labels:
       tier: {{ include "alertTierLabelOrDefault" .Values.tier }}
@@ -48,7 +48,7 @@ groups:
       summary: No RAM requests configured for pod
       description: "Pod {{`{{ $labels.namespace }}`}}/{{`{{ $labels.pod }}`}} has no Memory requests configured."
   - alert: PodWithoutConfiguredCPURequests
-    expr: count by (namespace, app)(sum by (namespace, app, pod,container)(kube_pod_container_info{container!=""}) unless sum by (namespace,app,pod,container)(kube_pod_container_resource_requests{resource="cpu"}))
+    expr: count by (namespace, app, pod, container)(sum by (namespace, app, pod,container)(kube_pod_container_info{container!=""}) unless sum by (namespace,app,pod,container)(kube_pod_container_resource_requests{resource="cpu"}))
     for: 1d
     labels:
       tier: {{ include "alertTierLabelOrDefault" .Values.tier }}
