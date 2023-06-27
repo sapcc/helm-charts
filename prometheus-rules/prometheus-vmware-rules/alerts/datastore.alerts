@@ -170,9 +170,9 @@ groups:
       description: "{{ $labels.type }} datastore {{ $labels.datastore }} utilization > 90%. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
       summary: "{{ $labels.type }} datastore {{ $labels.datastore }} utilization > 90%. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
 
-  - alert: NVMeDataStoreAlmostFullyUtilised
+  - alert: SwapDataStoreUsageWithoutVMs
     expr: >
-      vrops_datastore_diskspace_total_usage_gigabytes{datastore=~".+swap"} / vrops_datastore_diskspace_capacity_gigabytes >=  0.9
+      vrops_datastore_diskspace_total_usage_gigabytes{datastore=~".*-swap"} > 10 and vrops_datastore_summary_total_number_vms == 0
     for: 10m
     labels:
       severity: info
@@ -180,12 +180,11 @@ groups:
       service: storage
       support_group: compute
       context: "{{ $labels.datastore }}"
-      meta: "NVMe datastore {{ $labels.datastore }} is used over 90%. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
-      dashboard: vcenter-datastore-utilization
-      playbook: docs/devops/alert/vcenter#nvme-swap-disk-is-reaching-90
+      meta: "NVMe swap datastore {{ $labels.datastore }} is utilized without associated VMs. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
+      playbook: docs/devops/alert/vcenter/#swap-files-exist-on-local-ds-without-running-vms
     annotations:
-      description: "NVMe datastore {{ $labels.datastore }} is used over 90%. Consider to move VMs. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
-      summary: "NVMe datastore {{ $labels.datastore }} is used over 90%. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
+      description: "NVMe swap datastore {{ $labels.datastore }} is utilized without associated VMs. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
+      summary: "NVMe swap datastore {{ $labels.datastore }} is utilized without associated VMs. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
 
   - alert: DatastoreDisconnectedWithVmsOnIt
     expr: >
