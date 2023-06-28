@@ -21,7 +21,7 @@ clair:
     preshared_key: DEFINED_IN_VALUES_FILE # the key that Keppel uses to sign API tokens for itself to access Clair with
 
 postgresql:
-  imageTag: '12.14'
+  imageTag: '12.15-20230627135717'
   persistence:
     enabled: true
     existingClaim: clair-postgresql-250gib # see templates/postgres-pvc.yaml
@@ -51,7 +51,11 @@ postgresql:
 
 pgmetrics:
   db_name: clair
+
   alerts:
     prometheus: infra-frontend # there is no prometheus-openstack in scaleout, so we need to improvise :|
     support_group: containers
     service: keppel            # Clair alerts go into the Keppel channel
+
+  collectors:
+    bgwriter: false

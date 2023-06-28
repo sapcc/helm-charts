@@ -24,7 +24,8 @@ spec:
     metadata:
       labels:
         name: cinder-api
-{{ tuple . "cinder" "api" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
+        {{- tuple . "cinder" "api" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | nindent 8 }}
+        {{- include "utils.topology.pod_label" . | indent 8 }}
       annotations:
         configmap-etc-hash: {{ include (print $.Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
         {{- if .Values.proxysql.mode }}
@@ -32,8 +33,9 @@ spec:
         prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
         {{- end }}
     spec:
-{{ tuple . "cinder" "api" | include "kubernetes_pod_anti_affinity" | indent 6 }}
-{{ include "utils.proxysql.pod_settings" . | indent 6 }}
+      {{- tuple . "cinder" "api" | include "kubernetes_pod_anti_affinity" | nindent 6 }}
+      {{- include "utils.proxysql.pod_settings" . | nindent 6 }}
+      {{- tuple . (dict "name" "cinder-api") | include "utils.topology.constraints" | indent 6 }}
       containers:
         - name: cinder-api
           image: {{required ".Values.global.registry is missing" .Values.global.registry}}/loci-cinder:{{.Values.imageVersionCinderApi | default .Values.imageVersion | required "Please set cinder.imageVersion or similar" }}

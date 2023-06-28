@@ -9,8 +9,12 @@ tenant_network_types = vxlan,vlan
 
 mechanism_drivers = {{required "A valid .Values.ml2_mechanismdrivers required!" .Values.ml2_mechanismdrivers}}
 
+{{- if .Values.ml2_extensiondrivers }}
+extension_drivers = {{.Values.ml2_extensiondrivers}}
+{{- else }}
 # Designate configuration
 extension_drivers = {{required "A valid .Values.dns_ml2_extension required!" .Values.dns_ml2_extension}}
+{{- end }}
 
 path_mtu = {{.Values.global.default_mtu | default 9000}}
 
@@ -38,6 +42,8 @@ network_vlan_ranges = {{ range $i, $aci_hostgroup := .Values.aci.aci_hostgroups.
 [ml2_type_vxlan]
 vni_ranges = 10000:20000
 
+[ml2_f5]
+supported_device_owners = network:f5listener,network:f5selfip,network:f5lbaasv2,network:f5snat,network:archer
 
 [securitygroup]
 firewall_driver = iptables_hybrid
@@ -48,16 +54,5 @@ enable_ipset=True
 polling_interval=5
 prevent_arp_spoofing = False
 
-[linux_bridge]
-physical_interface_mappings = {{required "A valid .Values.cp_physical_network required!" .Values.cp_physical_network}}:{{required "A valid .Values.cp_network_interface required!" .Values.cp_network_interface}}
-
 [vxlan]
 enable_vxlan = false
-
-[ovs]
-bridge_mappings = {{required "A valid .Values.cp_physical_network required!" .Values.cp_physical_network}}:br-{{required "A valid .Values.cp_network_interface required!" .Values.cp_network_interface}}
-enable_tunneling=False
-
-
-
-

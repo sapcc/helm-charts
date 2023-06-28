@@ -1,3 +1,8 @@
+{{ $envAll := . }}
+{{- $cells := dict "cell1" false }}
+{{- if .Values.cell2.enabled }}
+  {{- $_ := set $cells .Values.cell2.name true }}
+{{- end }}
 kind: Ingress
 apiVersion: networking.k8s.io/v1
 
@@ -21,22 +26,27 @@ spec:
   - host: {{include "nova_console_endpoint_host_public" .}}
     http:
       paths:
-      {{- range $name, $config := .Values.consoles }}
-        {{- if $config.enabled }}
-      - path: /{{ $name }}/?(.*)
+      {{- range $cell_name, $_ := $cells }}
+        {{- range $type, $config := $envAll.Values.consoles }}
+          {{- if $config.enabled }}
+            {{- $name := print $cell_name "-" $type }}
+      - path: /{{ $cell_name }}/{{ $type }}/?(.*)
         pathType: Prefix
         backend:
           service:
             name: nova-console-{{ $name }}
             port:
-              name: {{ $name }}
+              name: {{ $type }}
+          {{- end }}
         {{- end }}
       {{- end }}
 
-{{ $envAll := . }}
-{{- range $name, $config := .Values.consoles }}
-  {{- if $config.enabled }}
+{{- range $cell_name, $_ := $cells }}
+  {{- range $type, $config := $envAll.Values.consoles }}
+    {{- if $config.enabled }}
+      {{- $name := print $cell_name "-" $type }}
 ---
-{{ tuple $envAll $name $config | include "nova.console_service"  }}
+{{ tuple $envAll $name $type $config | include "nova.console_service"  }}
+    {{- end }}
   {{- end }}
 {{- end }}

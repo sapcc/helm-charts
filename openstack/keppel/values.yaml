@@ -107,7 +107,7 @@ redis:
         cpu: 5m
 
 postgresql:
-  imageTag: '12.14'
+  imageTag: '12.15-20230627135717'
   persistence:
     enabled: true
     accessMode: ReadWriteOnce
@@ -133,9 +133,17 @@ pgmetrics:
   alerts:
     support_group: containers
 
+  collectors:
+    bgwriter: false
+
   customMetrics:
     keppel_accounts:
-      query: 'SELECT COUNT(*) AS count, COALESCE(EXTRACT(epoch FROM MIN(next_blob_sweep_at)), 0) AS min_next_blob_sweep_at, COALESCE(EXTRACT(epoch FROM MIN(next_storage_sweep_at)), 0) AS min_next_storage_sweep_at, COALESCE(EXTRACT(epoch FROM MIN(next_federation_announcement_at)), 0) AS min_next_federation_announcement_at FROM accounts'
+      query: >
+        SELECT COUNT(*) AS count,
+               COALESCE(EXTRACT(epoch FROM MIN(next_blob_sweep_at)), 0) AS min_next_blob_sweep_at,
+               COALESCE(EXTRACT(epoch FROM MIN(next_storage_sweep_at)), 0) AS min_next_storage_sweep_at,
+               COALESCE(EXTRACT(epoch FROM MIN(next_federation_announcement_at)), 0) AS min_next_federation_announcement_at
+          FROM accounts
       metrics:
         - count:
             usage: "GAUGE"
@@ -193,7 +201,16 @@ pgmetrics:
             description: "UNIX timestamp of next scheduled manifest sync, or 0 if no replica repos have ever been synced"
     keppel_manifests:
       query: >
-        SELECT COUNT(*) AS count, EXTRACT(epoch FROM MIN(validated_at)) AS min_validated_at, SUM(CASE WHEN validation_error_message = '' THEN 0 ELSE 1 END) AS validation_errors, COALESCE(EXTRACT(epoch FROM MIN(vuln_info.next_check_at)), 0) AS min_next_vuln_check_at, SUM(CASE WHEN vuln_info.next_check_at > NOW() THEN 0 ELSE 1 END) AS pending_vuln_checks from manifests INNER JOIN vuln_info on vuln_info.repo_id = manifests.repo_id and vuln_info.digest = manifests.digest
+        SELECT COUNT(*) AS count,
+               EXTRACT(epoch FROM MIN(validated_at)) AS min_validated_at,
+               SUM(CASE WHEN validation_error_message = '' THEN 0 ELSE 1 END) AS validation_errors,
+               COALESCE(EXTRACT(epoch FROM MIN(vuln_info.next_check_at)), 0) AS min_next_vuln_check_at,
+               COALESCE(EXTRACT(epoch FROM MIN(trivy_security_info.next_check_at)), 0) AS min_next_trivy_check_at,
+               SUM(CASE WHEN vuln_info.next_check_at > NOW() THEN 0 ELSE 1 END) AS pending_vuln_checks,
+               SUM(CASE WHEN trivy_security_info.next_check_at > NOW() THEN 0 ELSE 1 END) AS pending_trivy_checks
+          FROM manifests
+         INNER JOIN vuln_info ON vuln_info.repo_id = manifests.repo_id AND vuln_info.digest = manifests.digest
+         INNER JOIN trivy_security_info ON trivy_security_info.repo_id = manifests.repo_id AND trivy_security_info.digest = manifests.digest
       metrics:
         - count:
             usage: "GAUGE"
@@ -206,10 +223,16 @@ pgmetrics:
             description: "Number of manifests stored in Keppel that failed their last validation"
         - min_next_vuln_check_at:
             usage: "GAUGE"
-            description: "UNIX timestamp of next scheduled vulnerability check, or 0 if no manifests have ever been checked for vulnerabilities"
+            description: "UNIX timestamp of next scheduled Clair vulnerability check, or 0 if no manifests have ever been checked for vulnerabilities"
+        - min_next_trivy_check_at:
+            usage: "GAUGE"
+            description: "UNIX timestamp of next scheduled Trivy security check, or 0 if no manifests have ever been checked for vulnerabilities"
+        - pending_trivy_checks:
+            usage: "GAUGE"
+            description: "Number of manifests stored in Keppel that are currently overdue for their next scheduled Trivy check"
         - pending_vuln_checks:
             usage: "GAUGE"
-            description: "Number of manifests stored in Keppel that are currently overdue for their next scheduled vulnerability check"
+            description: "Number of manifests stored in Keppel that are currently overdue for their next scheduled Clair check"
     keppel_unknown_blobs:
       query: 'SELECT COALESCE(EXTRACT(epoch FROM MIN(can_be_deleted_at)), 0) AS min_can_be_deleted_at FROM unknown_blobs'
       metrics:
@@ -265,16 +288,29 @@ pgmetrics:
         - counts:
             usage: "GAUGE"
             description: "Total number of manifests where indexing in Clair failed with a specific error message"
+    keppel_trivy_scan_error:
+      query: >
+        SELECT message, vuln_status, COUNT(*) AS counts FROM trivy_security_info GROUP BY message, vuln_status
+      metrics:
+        - message:
+            usage: "LABEL"
+            description: "Error message from Trivy"
+        - vuln_status:
+            usage: "LABEL"
+            description: "Vulnerability status computed by Keppel"
+        - counts:
+            usage: "GAUGE"
+            description: "Total number of manifests where Trivy failed with a specific error message"
     keppel_manifests_with_unclean_vuln_status:
       # NOTE: This metric is also exported to Maia and therefore visible to customers. Do not break compatibility unless strictly necessary!
       query: >
-        SELECT a.name AS account, a.auth_tenant_id AS project_id, r.name AS repo, v.status AS vuln_status, COUNT(*) AS count
+        SELECT a.name AS account, a.auth_tenant_id AS project_id, r.name AS repo, t.vuln_status AS vuln_status, COUNT(*) AS count
           FROM manifests m
-          JOIN vuln_info v ON v.repo_id = m.repo_id AND v.digest = m.digest
+          JOIN trivy_security_info t ON t.repo_id = m.repo_id AND t.digest = m.digest
           JOIN repos r ON m.repo_id = r.id
           JOIN accounts a ON r.account_name = a.name
-         WHERE v.status != 'Clean'
-         GROUP BY a.name, a.auth_tenant_id, r.name, v.status
+         WHERE t.vuln_status != 'Clean'
+         GROUP BY a.name, a.auth_tenant_id, r.name, t.vuln_status
       metrics:
         - account:
             usage: LABEL
@@ -287,7 +323,7 @@ pgmetrics:
             description: 'Name of repository within Keppel account'
         - vuln_status:
             usage: LABEL
-            description: 'Vulnerability status (or "Pending" for newly pushed images, or "Unsupported" if vulnerability scanning is not possible for this image)'
+            description: 'Vulnerability status by Trivy (or "Pending" for newly pushed images, or "Unsupported" if vulnerability scanning is not possible for this image)'
         - count:
             usage: GAUGE
             description: 'Number of Keppel images per repo and vulnerability status (excluding images with vulnerability status "Clean")'

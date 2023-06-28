@@ -16,7 +16,7 @@ groups:
       context: "ESXi not responding"
       meta: "Host {{ $labels.hostsystem }} with running VMs not responding. ({{ $labels.vcenter }}, {{ $labels.vccluster }})"
       dashboard: esxi-host-disconnected/esxi-host-disconnected?&var-host={{ $labels.hostsystem }}
-      playbook: docs/devops/alert/vcenter/#test_esxi_hs_1
+      playbook: docs/devops/alert/vcenter/#hostwithrunningvmsnotresponding
     annotations:
       description: "Host {{ $labels.hostsystem }} with running VMs not responding. ({{ $labels.vcenter }}, {{ $labels.vccluster }})"
       summary: "Host {{ $labels.hostsystem }} with running VMs not responding. ({{ $labels.vcenter }}, {{ $labels.vccluster }})"
@@ -35,7 +35,7 @@ groups:
       context: "ESXi not responding"
       meta: "Host {{ $labels.hostsystem }} not responding. ({{ $labels.vcenter }}, {{ $labels.vccluster }})"
       dashboard: esxi-host-disconnected/esxi-host-disconnected?&var-host={{ $labels.hostsystem }}
-      playbook: docs/devops/alert/vcenter/#test_esxi_hs_2
+      playbook: docs/devops/alert/vcenter/#hostnotresponding
     annotations:
       description: "Host {{ $labels.hostsystem }} not responding. ({{ $labels.vcenter }}, {{ $labels.vccluster }})"
       summary: "Host {{ $labels.hostsystem }} not responding. ({{ $labels.vcenter }}, {{ $labels.vccluster }})"
@@ -153,7 +153,7 @@ groups:
       support_group: compute
       context: "{{ $labels.hostsystem }} vCenter connection"
       meta: "`{{ $labels.hostsystem }}` has been unexpectedly disconnected from vCenter Server {{ $labels.vcenter }}."
-      playbook: docs/devops/alert/vcenter/#host_has_lost_connection_to_vcenter_server
+      playbook: docs/devops/alert/vcenter/#hosthaslostconnectiontovcenterserver
       no_alert_on_absence: "true"
     annotations:
       description: "`{{ $labels.hostsystem }}` has been unexpectedly disconnected from vCenter Server {{ $labels.vcenter }}."
@@ -197,7 +197,6 @@ groups:
     expr: |
       vrops_hostsystem_alert_info{alert_name="vSphere High Availability (HA) has detected a possible host failure"} 
       and on (hostsystem) vrops_hostsystem_runtime_maintenancestate{state!~"inMaintenance", vccluster!~".*controlplane-swift"}
-      and on (hostsystem) vrops_hostsystem_runtime_connectionstate{state!="notResponding"} 
     labels:
       severity: critical
       tier: vmware
@@ -205,7 +204,7 @@ groups:
       support_group: compute
       context: "{{ $labels.hostsystem }} failure"
       meta: "vSphere High Availability (HA) has detected a possible host failure for `{{ $labels.hostsystem }}`. ({{ $labels.vcenter }})."
-      playbook: docs/devops/alert/vcenter/#ha_detected_a_possible_host_failure
+      playbook: docs/devops/alert/vcenter/#hadetectedapossiblehostfailure
       no_alert_on_absence: "true"
     annotations:
       description: "vSphere High Availability (HA) has detected a possible host failure for `{{ $labels.hostsystem }}`. ({{ $labels.vcenter }})."
@@ -383,16 +382,16 @@ groups:
 
   - alert: HostAdapterAllPathsDown
     expr: |
-      vrops_hostsystem_alert_info{alert_name="All HBA paths are down"}
-      and on (hostsystem) vrops_hostsystem_runtime_maintenancestate{state!~"inMaintenance"}
+      vrops_hostsystem_alert_info{alert_name="All iSCSI HBA paths are down"}
+      and on (hostsystem) vrops_hostsystem_runtime_maintenancestate{state!="inMaintenance"}
     labels:
       severity: info
       tier: vmware
       service: compute
       support_group: compute
-      meta: "All host bus adapters paths are down on `{{ $labels.hostsystem }}` in the *{{ $labels.vccluster }}* cluster\nLink to the vCenter: --> <{{ $labels.vcenter }}>"
+      meta: "All iSCSI host bus adapter paths are down on `{{ $labels.hostsystem }}` in the *{{ $labels.vccluster }}* cluster\nLink to the vCenter: --> <https://{{ $labels.vcenter }}|{{ $labels.vcenter }}>"
       playbook: docs/devops/alert/vcenter/#
       no_alert_on_absence: "true"
     annotations:
-      description: "All host bus adapters paths are down on `{{ $labels.hostsystem }}` in the *{{ $labels.vccluster }}* cluster\nLink to the vCenter: --> <{{ $labels.vcenter }}>"
-      summary: "All host bus adapters paths are down on `{{ $labels.hostsystem }}` in the *{{ $labels.vccluster }}* cluster\nLink to the vCenter: --> <{{ $labels.vcenter }}>"
+      description: "All iSCSI host bus adapter paths are down on `{{ $labels.hostsystem }}` in the *{{ $labels.vccluster }}* cluster\nLink to the vCenter: --> <https://{{ $labels.vcenter }}|{{ $labels.vcenter }}>"
+      summary: "All iSCSI host bus adapter paths are down on `{{ $labels.hostsystem }}` in the *{{ $labels.vccluster }}* cluster\nLink to the vCenter: --> <https://{{ $labels.vcenter }}|{{ $labels.vcenter }}>"

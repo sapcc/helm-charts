@@ -8,6 +8,9 @@
 # In UcsmFaultCritical and UcsmFaultWarn we filter out type="fsm"
 # Therefore, we have to add those to UcsmFaultInfo but only display one alert per context. That's why the two expressions are combined with an or (in one or the other vector)
 
+# Cisco UCS Faults and Error Messages Reference
+# https://www.cisco.com/c/en/us/td/docs/unified_computing/ucs/ts/faults/reference/ErrMess/UCS_SEMs.html
+
 groups:
 - name: ucsmfaults.alerts
   rules:
@@ -43,8 +46,11 @@ groups:
       description: "UCS Manager {{ $labels.ucsm }} has an error with severity {{ $labels.severity }}: {{ $labels.description }} ({{ $labels.code }})"
       summary: "UCS Manager {{ $labels.ucsm }} has an error with severity {{ $labels.severity }}"
 
+# Filtered alerts:
+# F0909: is an alert about expired self-signed certificates
+# F0436: FirmwarePackItemImageMissing
   - alert: UcsmFaultInfo
-    expr: count(label_replace(label_replace(max_over_time(ucsm_faults{severity=~"critical", type=~"fsm", code!~"F0436"}[30m]), "context", "$2", "dn", "(sys|org-root)/(.+)/(.*)"), "ucsm", "$1", "server", "ucscluster-(.+).cc.+")) by (ucsm, severity, code, description, context) or on(ucsm, context) count(label_replace(label_replace(max_over_time(ucsm_faults{severity=~"major", code!~"F0436"}[30m]), "context", "$2", "dn", "(sys|org-root)/(.+)/(.*)"), "ucsm", "$1", "server", "ucscluster-(.+).cc.+")) by (ucsm, severity, code, description, context)
+    expr: count(label_replace(label_replace(max_over_time(ucsm_faults{severity=~"critical", type=~"fsm", code!~"F0436|F0909"}[30m]), "context", "$2", "dn", "(sys|org-root)/(.+)/(.*)"), "ucsm", "$1", "server", "ucscluster-(.+).cc.+")) by (ucsm, severity, code, description, context) or on(ucsm, context) count(label_replace(label_replace(max_over_time(ucsm_faults{severity=~"major", code!~"F0436|F0909"}[30m]), "context", "$2", "dn", "(sys|org-root)/(.+)/(.*)"), "ucsm", "$1", "server", "ucscluster-(.+).cc.+")) by (ucsm, severity, code, description, context)
     for: 10m
     labels:
       severity: info

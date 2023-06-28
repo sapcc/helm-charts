@@ -21,8 +21,8 @@ data:
       [INPUT]
           Name             tail
           Path             /var/log/containers/*.log
-          Exclude_Path     /var/log/containers/*-apiserver-*_kubernikus_fluentd-*.log
-          multiline.parser docker, cri
+          Exclude_Path     /var/log/containers/*-apiserver-*_kubernikus_fluentd-*.log,/var/log/containers/kube-monitoring-kubernikus-fluent-bit*.log
+          Parser           cri
           Tag              kube.*
           Refresh_Interval 5
           Mem_Buf_Limit    50MB
@@ -64,6 +64,7 @@ data:
           Name       record_modifier
           Match      kube.*
           Remove_key time
+          Remove_key ts
 
       [FILTER]
           Name   modify
@@ -89,6 +90,7 @@ data:
 {{- end }}
 {{- end }}
 
+{{ if index .Values "fluent-bit" "backend" "es" "enabled" }}
       [OUTPUT]
           Name  es
           Match *
@@ -106,6 +108,7 @@ data:
           tls on
           tls.verify on
           tls.debug 1
+{{- end }}
 {{ if index .Values "fluent-bit" "backend" "opensearch" "enabled" }}
       [OUTPUT]
           Name  opensearch
@@ -123,5 +126,12 @@ data:
           tls.verify {{ index .Values "fluent-bit" "backend" "opensearch" "tls" "verify"}}
           tls.debug {{ index .Values "fluent-bit" "backend" "opensearch" "tls" "debug"}}
 {{- end }}
-  parsers.conf: ""
+  parsers.conf: |-
+      [PARSER]
+          Name cri
+          Format regex
+          Regex ^(?<time>.+?) (?<stream>stdout|stderr) (?<_p>F|P) (?<log>.*)$
+          Time_Key    time
+          Time_Format %Y-%m-%dT%H:%M:%S.%L%z
+          Time_Keep   On
   labelmap.json: ""

@@ -1,0 +1,49 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: elasticsearch-hermes-kibana
+  namespace: hermes
+  labels:
+    component: elasticsearch-hermes-kibana
+spec:
+  selector:
+    matchLabels:
+      component: elasticsearch-hermes-kibana
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        component: elasticsearch-hermes-kibana
+      annotations:
+        checksum/configmap.yaml: {{ include  (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        checksum/kibana.yml.tpl: {{ include (print $.Template.BasePath "/_kibana.yml.tpl") . | sha256sum }}
+    spec:
+      nodeSelector:
+        zone: farm
+      volumes:
+        - name: kibana-etc
+          configMap:
+            name: elasticsearch-hermes-kibana-etc
+      containers:
+        - name: elasticsearch-hermes-kibana
+          image: {{.Values.global.elasticCoMirror}}/kibana/kibana:{{.Values.hermes_image_version_kibana}}
+          imagePullPolicy: Always
+          command: ["/usr/share/kibana/bin/kibana", "--allow-root"]
+          env:
+            - name: NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: DEPENDENCY_SERVICE
+              value: "elasticsearch-hermes.hermes"
+          ports:
+            - name: nodejs
+              containerPort: 5601
+          volumeMounts:
+            - mountPath: /usr/share/kibana/config
+              name: kibana-etc

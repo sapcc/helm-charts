@@ -34,7 +34,7 @@ template: |
       metadata:
         labels:
           name: cinder-volume-vmware-{= name =}
-{{ tuple . "cinder" "volume-vmware" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 10 }}
+          {{- tuple . "cinder" "volume-vmware" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | nindent 10 }}
           vcenter: {= host =}
           datacenter: {= availability_zone =}
         annotations:
@@ -46,8 +46,8 @@ template: |
           {{- end }}
       spec:
         hostname: cinder-volume-vmware-{= name =}
-{{ tuple "{= availability_zone =}" | include "kubernetes_pod_az_affinity" | indent 8 }}
-{{ include "utils.proxysql.pod_settings" . | indent 8 }}
+        {{- tuple . "{= availability_zone =}" | include "utils.kubernetes_pod_az_affinity" | nindent 8 }}
+        {{- include "utils.proxysql.pod_settings" . | nindent 8 }}
         containers:
         - name: cinder-volume-vmware-{= name =}
           image: {{required ".Values.global.registry is missing" .Values.global.registry}}/loci-cinder:{{.Values.imageVersionCinderScheduler | default .Values.imageVersion | required "Please set cinder.imageVersion or similar" }}

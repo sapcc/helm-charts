@@ -26,8 +26,14 @@ data.path = "./cerebro.db"
 hosts = [
   {
     host = "http://elasticsearch.hermes:9200"
-    name = "hermes cluster"
+    name = "hermes single node"
+  },
+{{- if .Values.elasticsearch_hermes.enabled }}
+  {
+    host = "http://elasticsearch-hermes-http.hermes:9200"
+    name = "elasticsearch-hermes cluster"
   }
+{{- end }}
 ]
 
 # Authentication
@@ -39,7 +45,7 @@ auth = {
     base-dn = "{{.Values.ldap.search_base_dbs}},{{.Values.ldap.suffix}}"
     bind-dn = "{{.Values.ldap.bind_dn}},{{.Values.ldap.suffix}}"
     bind-pw = "{{.Values.ldap.password}}"
-user-template = "%s@{{.Values.ldap.userdomain}}"
+    user-template = "%s@{{.Values.ldap.userdomain}}"
     group-search {
       user-attr = "sAMAccountName"
       user-attr-template = "%s"
@@ -47,3 +53,18 @@ user-template = "%s@{{.Values.ldap.userdomain}}"
     }
   }
 }
+{{- if .Values.elasticsearch_hermes.enabled }}
+play.ws.ssl {
+  trustManager = {
+    stores = [
+{{- if eq "qa-de-2" .Values.global.region }}
+      { type = "PEM", path = "/truststore/ldap" }
+      { type = "PEM", path = "/truststore/sap" }
+{{- else -}}
+      { type = "PKCS12", path = "/truststore/truststore", password = "{{.Values.hermes.elasticsearch.manager_cert_pw}}" }
+{{- end }}
+    ]
+  }
+}
+play.ws.ssl.loose.acceptAnyCertificate=true
+{{- end }}

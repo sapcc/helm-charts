@@ -37,57 +37,32 @@ spec:
         configmap-ironic-etc-hash: {{ tuple . $hypervisor | include "ironic_configmap" | sha256sum }}
     spec:
       terminationGracePeriodSeconds: {{ $hypervisor.default.graceful_shutdown_timeout | default .Values.defaults.default.graceful_shutdown_timeout | add 5 }}
+      initContainers:
+      {{- tuple . (dict "service" (print .Release.Name "-rabbitmq")) | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 6 }}
       containers:
         - name: nova-compute
           image: {{ tuple . "compute" | include "container_image_nova" }}
           imagePullPolicy: IfNotPresent
-          command:
-            - dumb-init
-            - kubernetes-entrypoint
+          command: ["dumb-init", "nova-compute"]
           env:
-            - name: COMMAND
-              value: "nova-compute"
-            - name: NAMESPACE
-              value: {{ .Release.Namespace }}
-            {{- if .Values.sentry.enabled }}
-            - name: SENTRY_DSN
-              valueFrom:
-                secretKeyRef:
-                  name: sentry
-                  key: {{ .Chart.Name }}.DSN.python
-            {{- end }}
+          {{- if .Values.sentry.enabled }}
+          - name: SENTRY_DSN
+            valueFrom:
+              secretKeyRef:
+                name: sentry
+                key: {{ .Chart.Name }}.DSN.python
+          {{- end }}
 {{- if or $hypervisor.python_warnings .Values.python_warnings }}
-            - name: PYTHONWARNINGS
-              value: {{ or $hypervisor.python_warnings .Values.python_warnings | quote }}
+          - name: PYTHONWARNINGS
+            value: {{ or $hypervisor.python_warnings .Values.python_warnings | quote }}
 {{- end }}
-            - name: PGAPPNAME
-              valueFrom:
-                fieldRef:
-                  fieldPath: metadata.name
           {{- if .Values.pod.resources.hv_ironic }}
           resources:
 {{ toYaml .Values.pod.resources.hv_ironic | indent 12 }}
           {{- end }}
           volumeMounts:
             - mountPath: /etc/nova
-              name: etcnova
-            - mountPath: /etc/nova/nova.conf
               name: nova-etc
-              subPath: nova.conf
-              readOnly: true
-            {{- /* Note I533984: Replace with plain policy.yaml after Xena upgrade */}}
-            - mountPath: /etc/nova/{{if (.Values.imageVersion | hasPrefix "rocky") }}policy.json{{else}}policy.yaml{{end}}
-              name: nova-etc
-              subPath: {{if (.Values.imageVersion | hasPrefix "rocky") }}policy.json{{else}}policy.yaml{{end}}
-              readOnly: true
-            - mountPath: /etc/nova/logging.ini
-              name: nova-etc
-              subPath: logging.ini
-              readOnly: true
-            - mountPath: /etc/nova/nova-compute.conf
-              name: hypervisor-config
-              subPath: nova-compute.conf
-              readOnly: true
             - mountPath: /nova-patches
               name: nova-patches
         {{- if $hypervisor.default.statsd_enabled }}
@@ -102,22 +77,50 @@ spec:
           - name: metrics
             containerPort: 9102
           volumeMounts:
-            - name: nova-etc
-              mountPath: /etc/statsd/statsd-exporter.yaml
-              subPath: statsd-exporter.yaml
-              readOnly: true
+          - name: statsd-etc
+            mountPath: /etc/statsd/statsd-exporter.yaml
+            subPath: statsd-exporter.yaml
+            readOnly: true
         {{- end }}
       volumes:
-        - name: etcnova
-          emptyDir: {}
-        - name: nova-etc
-          configMap:
-            name: nova-etc
-        - name: nova-patches
-          configMap:
-            name: nova-patches
-        - name: hypervisor-config
-          configMap:
-            name: nova-compute-{{$hypervisor.name}}
+      - name: nova-etc
+        projected:
+          sources:
+          - configMap:
+              name: nova-etc
+              items:
+              - key: nova.conf
+                path: nova.conf
+              - key: policy.yaml
+                path: policy.yaml
+              - key: logging.ini
+                path: logging.ini
+          - configMap:
+              name: nova-compute-{{$hypervisor.name}}
+              items:
+              - key: nova-compute.conf
+                path: nova-compute.conf
+          - configMap:
+              name: nova-console
+              items:
+              {{- range $type := list "serial" "shellinabox" }}
+              - key: console-cell1-{{ $type }}.conf
+                path: nova.conf.d/console-cell1-{{ $type }}.conf
+              {{- end }}
+      - name: nova-patches
+        projected:
+          sources:
+          - configMap:
+              name: nova-patches
+      {{- if $hypervisor.default.statsd_enabled }}
+      - name: statsd-etc
+        projected:
+          sources:
+          - configMap:
+              name: nova-etc
+              items:
+              - key:  statsd-exporter.yaml
+                path: statsd-exporter.yaml
+      {{- end }}
 {{- end -}}
 {{- end -}}

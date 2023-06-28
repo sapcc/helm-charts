@@ -504,19 +504,24 @@
 {{- end }}
 {{- if .Values.opensearch.enabled }}
   <store>
+  {{- if .Values.opensearch.datastream.enabled }}
+    @type opensearch_data_stream
+    data_stream_name logs
+  {{- else }}
     @type opensearch
-    hosts {{.Values.opensearch.http.endpoint}}.{{.Values.global.region}}.{{.Values.global.tld}}
+    logstash_prefix {{.Values.opensearch.indexname}}
+    logstash_format true
+    template_name {{.Values.opensearch.indexname}}
+    template_file /fluentd/etc/{{.Values.opensearch.indexname}}.json
+    template_overwrite false
+  {{- end }}
+    hosts {{.Values.opensearch.http.endpoint}}.{{.Values.global.tld}}
     scheme https
     port {{.Values.opensearch.http_port}}
     user {{.Values.opensearch.user}}
     password {{.Values.opensearch.password}}
     ssl_verify false
     ssl_version TLSv1_2
-    logstash_prefix {{.Values.opensearch.indexname}}
-    logstash_format true
-    template_name {{.Values.opensearch.indexname}}
-    template_file /fluentd/etc/{{.Values.opensearch.indexname}}.json
-    template_overwrite false
     time_as_integer false
     @log_level info
     slow_flush_log_threshold 50.0

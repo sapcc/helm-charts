@@ -42,7 +42,7 @@ fluent:
     http_port: 9200
     indexname: logstash
     http:
-      endpoint: "opensearch-logs-client.scaleout"
+      endpoint: "opensearch-logs-client.scaleout.qa-de-1"
     qalogs:
       enabled: false
     datastream:
@@ -62,7 +62,7 @@ fluent-bit:
   enabled: false
   podAnnotations:
     # manual versioning, raise if configmap changes
-    versioning: "5"
+    versioning: "12"
   nameOverride: "fluent-bit-systemd"
   existingConfigMap: "fluent-bit-config"
   image:
@@ -70,6 +70,7 @@ fluent-bit:
     pullPolicy: IfNotPresent
   backend:
     es:
+      enabled: true
       host: DEFINED-IN-SECRETS
       port: DEFINED-IN-SECRETS
       http_user: DEFINED-IN-SECRETS
@@ -131,6 +132,8 @@ logstash_external:
   alerts:
     enabled: false
     prometheus: infra-collector
+  elasticsearch:
+    enabled: true
   opensearch:
     enabled: false
     http_port: 9200

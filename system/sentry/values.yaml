@@ -72,6 +72,9 @@ postgresql:
     requests:
       memory: 10Gi
       cpu: 4
+    limits:
+      memory: 10Gi
+      cpu: 4
 
 redis:
   # redisPassword:
@@ -83,6 +86,18 @@ redis:
     requests:
       memory: 10Gi
       cpu: 2
+    limits:
+      memory: 10Gi
+      cpu: 2
+
+sentry:
+  resources:
+    requests:
+      memory: 10Gi
+      cpu: 4
+    limits:
+      memory: 10Gi
+      cpu: 4
 
 serviceAccount:
   annotations: {}
@@ -100,13 +115,13 @@ pgbackup:
   database:
     name: sentry
   alerts:
-    support_group: compute-storage-api
+    support_group: foundation
 
 pgmetrics:
   db_name: sentry
   alerts:
     large_database_size_enabled: false
-    support_group: compute-storage-api
+    support_group: foundation
 
   customMetrics:
     sentry_unresolved_issues:
@@ -133,3 +148,15 @@ pgmetrics:
         - project:      {usage: LABEL, description: "Sentry project"}
         - message:      {usage: LABEL, description: "Issue message"}
         - gauge:        {usage: GAUGE, description: "Number of unresolved issues in project"}
+
+probe:
+  enabled: false
+
+# enable when Sentry version is upgraded, also validate if GEOIP_PATH_MMDB is configured.
+databaseUpgrade:
+  enabled: false
+
+# sentry-sentry-tls is used, keeping the config for future reference.
+secretIngress:
+  tls_crt:
+    enabled: false

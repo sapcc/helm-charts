@@ -17,19 +17,9 @@ metadata:
 spec:
   template:
     spec:
-      initContainers:
-      - name: "kubernetes-entrypoint"
-        image: {{ .Values.global.registry }}/loci-ironic:{{ .Values.imageVersion }}
-        imagePullPolicy: "IfNotPresent"
-        command: ["kubernetes-entrypoint"]
-        env:
-        - name: "NAMESPACE"
-          value: {{ .Release.Namespace | quote }}
-        - name: "DEPENDENCY_SERVICE"
-          value: "ironic-mariadb"
-        - name: "COMMAND"
-          value: "true"
       restartPolicy: OnFailure
+      initContainers:
+      {{- tuple . (dict "service" "ironic-mariadb") | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 6 }}
       containers:
       - name: dbsync
         image: {{ .Values.global.registry }}/loci-ironic:{{ .Values.imageVersion }}

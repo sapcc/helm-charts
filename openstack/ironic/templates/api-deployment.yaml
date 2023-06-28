@@ -34,6 +34,8 @@ spec:
     spec:
 {{ tuple . "ironic" "api" | include "kubernetes_pod_anti_affinity" | indent 6 }}
       {{- include "utils.proxysql.pod_settings" . | indent 6 }}
+      initContainers:
+      {{- tuple . (dict "service" "ironic-mariadb,ironic-rabbitmq") | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 6 }}
       containers:
       - name: ironic-api
         image: {{ .Values.global.registry }}/loci-ironic:{{ .Values.imageVersion }}
@@ -41,17 +43,9 @@ spec:
         resources:
 {{ toYaml .Values.pod.resources.api | indent 10 }}
         command:
-          - dumb-init
-          - kubernetes-entrypoint
+        - dumb-init
+        - ironic-api
         env:
-        - name: COMMAND
-          value: "ironic-api"
-        - name: NAMESPACE
-          value: {{ .Release.Namespace }}
-        - name: DEPENDENCY_JOBS
-          value: "ironic-db-migration"
-        - name: DEPENDENCY_SERVICE
-          value: "ironic-mariadb,ironic-rabbitmq"
         - name: PYTHONWARNINGS
           value: 'ignore:Unverified HTTPS request'
         {{- if .Values.logging.handlers.sentry }}
@@ -61,10 +55,6 @@ spec:
               name: sentry
               key: {{ .Chart.Name }}.DSN.python
         {{- end }}
-        - name: PGAPPNAME
-          valueFrom:
-            fieldRef:
-              fieldPath: metadata.name
         lifecycle:
           preStop:
             {{- include "utils.snippets.pre_stop_graceful_shutdown" . | indent 12 }}

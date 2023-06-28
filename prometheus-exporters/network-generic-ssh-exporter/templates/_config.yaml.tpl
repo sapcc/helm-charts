@@ -17,6 +17,18 @@ lookup_sources:
       router_project: SELECT DISTINCT id, project_id FROM neutron.routers
 
 metrics:
+  zmq_errors:
+    regex: >-
+      ^ZmQ\:\s*(RX|TX)\sCNT\:\s\d+\,\sBYTES\:\s\d+\,\sERRORS\:\s(\d*)
+    multi_value: true
+    value: $2
+    labels:
+      direction: $1
+    description: check for zmq  errors
+    metric_type_name: counter
+    command: show system internal epm counters zmq
+    timeout_secs: 5
+
   xr_tcam_learn_disabled: &xr_tcam_learn_disabled
     regex: |
       ^Xr tcam limit learn disabled\s*:\s+(\w+)$
@@ -653,6 +665,7 @@ batches:
     - xr_tcam_learn_disabled
     - hal_learn_disabled
     - epm_pending_epreg
+    - zmq_errors
   neutron-router:
     - nat_dynamic
     - nat_static

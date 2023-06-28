@@ -5,10 +5,9 @@ metadata:
   name: {{ .Release.Name }}
   annotations:
     prometheus.io/scrape: "true"
-    prometheus.io/port: "9119"
     prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
     parrot.sap.cc/announce: 'true'
-
+    prometheus.io/port: "9119"
 spec:
   selector:
     app.kubernetes.io/instance: {{ .Release.Name }}
@@ -26,4 +25,10 @@ spec:
       protocol: TCP
       port: {{ .Values.rndc_port | default 953 }}
       targetPort: rndc-tcp
+{{ if .Values.zabbix.enabled }}
+    - name: zabbix-tcp
+      protocol: TCP
+      port: 10051
+      targetPort: zabbix-tcp
+{{ end }}
   externalIPs: ["{{.Values.externalIP}}"]

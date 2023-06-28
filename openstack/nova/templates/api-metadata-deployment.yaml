@@ -26,7 +26,8 @@ spec:
         name: nova-api-metadata
         alert-tier: os
         alert-service: nova
-{{ tuple . "nova" "api-metadata" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
+        {{- tuple . "nova" "api-metadata" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | nindent 8 }}
+        {{- include "utils.topology.pod_label" . | indent 8 }}
       annotations:
         configmap-etc-hash: {{ include (print .Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
         {{- if or .Values.conductor.config_file.DEFAULT.statsd_enabled .Values.proxysql.mode }}
@@ -34,45 +35,36 @@ spec:
         prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
         {{- end }}
     spec:
-{{ tuple . "nova" "api-metadata" | include "kubernetes_pod_anti_affinity" | indent 6 }}
-{{ include "utils.proxysql.pod_settings" . | indent 6 }}
+      {{- tuple . "nova" "api-metadata" | include "kubernetes_pod_anti_affinity" | nindent 6 }}
+      {{- include "utils.proxysql.pod_settings" . | nindent 6 }}
+      {{- tuple . (dict "name" "nova-api-metadata") | include "utils.topology.constraints" | indent 6 }}
       terminationGracePeriodSeconds: {{ .Values.defaults.default.graceful_shutdown_timeout | add 5 }}
       hostname: nova-api-metadata
+      initContainers:
+      {{- tuple . (dict "service" (print .Values.mariadb_api.name "-mariadb") "jobs" (tuple . "db-migrate" | include "job_name")) | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 6 }}
       containers:
         - name: nova-api-metadata
           image: {{ tuple . "api" | include "container_image_nova" }}
           imagePullPolicy: IfNotPresent
           command:
-            - dumb-init
-            - kubernetes-entrypoint
+          - dumb-init
+          - nova-api
           env:
-            - name: COMMAND
-              value: "nova-api"
-            - name: NAMESPACE
-              value: {{ .Release.Namespace }}
-            - name: DEPENDENCY_JOBS
-              value: {{ tuple . "db-migrate" | include "job_name" }}
-            - name: DEPENDENCY_SERVICE
-              value: "{{ .Release.Name }}-mariadb,{{ .Release.Name }}-api-mariadb,{{ .Release.Name }}-rabbitmq"
-            - name: STATSD_HOST
-              value: "localhost"
-            - name: STATSD_PORT
-              value: "9125"
-            {{- if .Values.sentry.enabled }}
-            - name: SENTRY_DSN
-              valueFrom:
-                secretKeyRef:
-                  name: sentry
-                  key: {{ .Chart.Name }}.DSN.python
-            {{- end }}
-{{- if .Values.python_warnings }}
-            - name: PYTHONWARNINGS
-              value: {{ .Values.python_warnings | quote }}
-{{- end }}
-            - name: PGAPPNAME
-              valueFrom:
-                fieldRef:
-                  fieldPath: metadata.name
+          - name: STATSD_HOST
+            value: "localhost"
+          - name: STATSD_PORT
+            value: "9125"
+          {{- if .Values.sentry.enabled }}
+          - name: SENTRY_DSN
+            valueFrom:
+              secretKeyRef:
+                name: sentry
+                key: {{ .Chart.Name }}.DSN.python
+          {{- end }}
+          {{- if .Values.python_warnings }}
+          - name: PYTHONWARNINGS
+            value: {{ .Values.python_warnings | quote }}
+          {{- end }}
           lifecycle:
             preStop:
               {{- include "utils.snippets.pre_stop_graceful_shutdown" . | indent 14 }}

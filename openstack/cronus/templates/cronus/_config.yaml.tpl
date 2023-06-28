@@ -33,6 +33,11 @@ cronus:
     {{- end }}
   {{- end }}
 {{- end }}
+{{- if .Values.cronus.ndr }}
+  ndr:
+    rheaUri: {{ .Values.cronus.ndr.rheaUri | quote }}
+    queue: {{ .Values.cronus.ndr.queue | quote }}
+{{- end }}
 {{- if or .Values.cronus.fileBufferPath .Values.global.fileBufferPath }}
   fileBufferPath: {{ .Values.cronus.fileBufferPath | default .Values.global.fileBufferPath }}
 {{- end }}
@@ -124,6 +129,9 @@ cronus:
 {{- if .Values.config.workQueue.allowTrigger }}
     allowTrigger: {{ .Values.config.workQueue.allowTrigger }}
 {{- end }}
+{{- if .Values.config.workQueue.sendNdrs }}
+    sendNdrs: {{ .Values.config.workQueue.sendNdrs }}
+{{- end }}
     rabbitmqUri: amqp://{{ $r_user }}:{{ $r_creds }}@{{ $r_host }}/
 {{- if .Values.config.workQueue.queueName }}
     queueName: {{ .Values.config.workQueue.queueName }}
@@ -137,9 +145,6 @@ cronus:
 {{- if .Values.config.workQueue.workerPrefetchSize }}
     workerPrefetchSize: {{ .Values.config.workQueue.workerPrefetchSize }}
 {{- end }}
-    trailLimit: {{ .Values.config.workQueue.trailLimit }}
-    trailTimeBaseFactor: {{ .Values.config.workQueue.trailTimeBaseFactor }}
-    trailTimeRandMaxNumber: {{ .Values.config.workQueue.trailTimeRandMaxNumber }}
     initialDelayTime: {{ .Values.config.workQueue.initialDelayTime }}
     delayGrowthFactor: {{ .Values.config.workQueue.delayGrowthFactor }}
     maxDelayTime: {{ .Values.config.workQueue.maxDelayTime }}

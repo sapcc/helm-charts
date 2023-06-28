@@ -1,0 +1,31 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: index-cleanup
+spec:
+  schedule: "30 0,6,12,18 * * *"
+  jobTemplate:
+    spec:
+      backoffLimit: 3
+      template:
+        spec:
+          concurrencyPolicy: Forbid
+          restartPolicy: Never
+          containers:
+          - name: index-cleanup
+            image: keppel.eu-de-1.cloud.sap/ccloud/unified-kubernetes-toolbox:latest
+            imagePullPolicy: IfNotPresent
+            command: ["/bin/bash", "/scripts/index_cleanup.sh"]
+            env:
+            - name: ADMIN_USER
+              value: "{{.Values.global.users.admin.name}}"
+            - name: ADMIN_PW
+              value: "{{.Values.global.users.admin.password}}"
+            volumeMounts:
+            - mountPath: /scripts
+              name: config
+          volumes:
+          - name: config
+            secret:
+              defaultMode: 420
+              secretName: security-config

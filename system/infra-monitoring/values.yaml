@@ -1,4 +1,5 @@
 owner-info:
+  service: prometheus
   support-group: observability
   maintainers:
     - Martin Vossen
@@ -99,13 +100,12 @@ prometheus_infra_collector:
         - ipmi/ironic
 
   thanos:
-    objectStorageConfig:
-      enabled: false
-    sidecarDiscovery:
-      - thanosName: thanos-metal
-        thanosNamespace: thanos
-        namespace: infra-monitoring
-        domain: kubernetes
+    enabled: true
+
+thanos:
+  name: infra-collector
+  deployWholeThanos: true
+  clusterDomain: kubernetes
 
 kube_state_metrics_exporter:
   enabled: true
@@ -164,6 +164,12 @@ ipmi_exporter:
   cp_scrapeTimeout: 55s
   esxi_scrapeInterval: 1m
   esxi_scrapeTimeout: 55s
+  listen_port: 9290
+
+kvm:
+  enabled: false
+  scrapeInterval: 1m
+  scrapeTimeout: 55s
 
 vcenter_exporters:
   enabled: false
@@ -231,3 +237,7 @@ prometheus_vmware:
 
 atlas_url: http://atlas:8080/service_discovery/netbox
 atlas_ironic_url: http://atlas:8080/service_discovery/ironic
+
+http_sd_configs:
+  netbox_staging_url: https://netbox.staging.cloud.sap/api/plugins/atlas
+  refresh_interval: 60m

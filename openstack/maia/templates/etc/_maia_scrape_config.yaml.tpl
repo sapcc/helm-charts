@@ -131,10 +131,6 @@
     - source_labels: [ltmVirtualServStatName]
       target_label: listener_id
       regex: /net_.*/lb_.*/listener_(.*)
-    - source_labels: [__name__]
-      target_label: __name__
-      regex: netapp_volume_(.*)
-      replacement: openstack_manila_share_${1}
 
   metrics_path: '/federate'
   params:
@@ -145,9 +141,6 @@
       - '{__name__=~"^ssh_nat_limits_miss", project_id!=""}'
       - '{__name__=~"^ssh_nat_limits_use", project_id!=""}'
       - '{__name__=~"^snmp_asr_ifHC.+", project_id!=""}'
-      - '{__name__=~"^netapp_capacity_.+", project_id!=""}'
-      - '{__name__=~"^netapp_volume_.+", app="netapp-capacity-exporter-manila", project_id!=""}'
-      - '{__name__=~"^openstack_manila_share_.+", project_id!=""}'
 
 - job_name: 'prometheus-storage'
   scrape_interval: 1m
@@ -157,22 +150,16 @@
   metric_relabel_configs:
     - regex: "cluster|cluster_type|instance|job|kubernetes_namespace|kubernetes_pod_name|kubernetes_name|pod_template_hash|exported_instance|exported_job|type|name|component|app|system|thanos_cluster|thanos_cluster_type|thanos_region|alert_tier|alert_service"
       action: labeldrop
-    - action: drop
-      source_labels: [__name__]
-      regex: netapp_volume_saved_.*
     - source_labels: [__name__]
       target_label: __name__
-      regex: netapp_volume_(.*)
+      regex: netapp_volume_(.*):maia
       replacement: openstack_manila_share_${1}
 
   metrics_path: '/federate'
   params:
     'match[]':
       # import any tenant-specific metric, except for those which already have been imported
-      # filter for ltmVirtualServStatName to be present as it relabels into project_id. It gets enriched by "openstack/maia/aggregations/snmp-f5.rules with the openstack metric openstack_neutron_networks_projects"
-      - '{__name__=~"^netapp_capacity_.+", project_id!=""}'
-      - '{__name__=~"^netapp_volume_.+", app="netapp-capacity-exporter-manila", project_id!=""}'
-      - '{__name__=~"^openstack_manila_share_.+", project_id!=""}'
+      - '{__name__=~"^netapp_volume_.+:maia", project_id!=""}'
 
 
 # iteration over vmware-monitoring values
@@ -225,6 +212,8 @@
   metrics_path: '/federate'
   params:
     'match[]':
+      - '{__name__="aws_sending_cronus_provider"}'
+      - '{__name__="aws_receiving_cronus_provider"}'
       - '{__name__="aws_ses_cronus_provider_bounce"}'
       - '{__name__="aws_ses_cronus_provider_complaint"}'
       - '{__name__="aws_ses_cronus_provider_delivery"}'
@@ -238,6 +227,9 @@
       - '{__name__="cronus_event_mails_sent_success_provider_rate_perminute"}'
       - '{__name__="cronus_event_mails_sent_error_provider_rate_perminute"}'
       - '{__name__="aws_ses_cronus_identity_from_is_verified"}'
+      - '{__name__="aws_ses_cronus_provider_received"}'
+      - '{__name__="aws_ses_cronus_provider_publish_success"}'
+      - '{__name__="aws_ses_cronus_provider_publish_failure"}'
   metric_relabel_configs:
     - action: labeldrop
       regex: "exported_instance|exported_job|instance|job|tags|cluster|cluster_type|multicloud_id|alert_tier|alert_service"
