@@ -490,6 +490,20 @@ mysql_metrics:
         WHERE admin_state_up AND heartbeat_timestamp > (DATE_SUB(now(), INTERVAL 90 SECOND));
       values:
       - "heartbeat_seconds"
+    - help: Neutron agent unix timestamp of the last heartbeat
+      labels:
+      - "neutron_host"
+      - "agent_type"
+      name: openstack_neutron_monitor_agents_heartbeat_timestamp
+      query: |
+        SELECT
+          host AS neutron_host,
+          agent_type,
+          UNIX_TIMESTAMP(heartbeat_timestamp) AS heartbeat_timestamp
+        FROM agents
+        WHERE admin_state_up
+      values:
+      - "heartbeat_timestamp"
     - help: Neutron agents load
       labels:
       - "neutron_host"
