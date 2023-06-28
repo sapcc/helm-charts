@@ -10,8 +10,8 @@ worker:
   name: concourse-worker
 
 concourse:
-  image: keppel.eu-de-2.cloud.sap/ccloud-dockerhub-mirror/concourse/concourse
-  imageTag: "7.8.3"
+  image: keppel.global.cloud.sap/ccloud-dockerhub-mirror/concourse/concourse
+  imageTag: "7.9.1"
 
   concourse:
     web:
@@ -21,6 +21,8 @@ concourse:
       defaultGetTimeout: 1h
       defaultPutTimeout: 1h
       defaultTaskTimeout: 4h
+      apiMaxConns: 10
+      backendMaxConns: 30
 
       enableBuildAuditing: true
       enableContainerAuditing: true
@@ -52,7 +54,7 @@ concourse:
 
   web:
     enabled: true
-    replicas: 2
+    replicas: 3
     service:
       annotations:
         prometheus.io/targets: "kubernetes"
@@ -89,9 +91,9 @@ concourse:
   postgresql:
     enabled: true
     image:
-      registry: keppel.eu-de-2.cloud.sap
+      registry: keppel.global.cloud.sap
       repository: ccloud-dockerhub-mirror/bitnami/postgresql
-      tag: 11.17.0-debian-11-r19
+      tag: 11.20.0-debian-11-r14
     postgresqlUsername: concourse
     postgresqlDatabase: concourse
     persistence:
@@ -110,12 +112,24 @@ concourse:
           value: "system"
           effect: "NoSchedule"
     extendedConfConfigMap: postgresql-extended-config
+    #metrics:
+    #  enabled: true
+    #  image:
+    #    registry: keppel.eu-de-2.cloud.sap
+    #    repository: ccloud-dockerhub-mirror/bitnami/postgres-exporter
+    #    tag: 0.12.0-debian-11-r71
+    #  service:
+    #    ports:
+    #      metrics: 9187
+    #    annotations:
+    #      prometheus.io/scrape: "true"
+    #      prometheus.io/port: "9187"
 
   secrets:
     create: true
 
 webhook-broadcaster:
-  image: keppel.eu-de-1.cloud.sap/ccloud/concourse-webhook-broadcaster
+  image: keppel.global.cloud.sap/ccloud/concourse-webhook-broadcaster
   imageTag: "0.8.6"
   pullPolicy: IfNotPresent
 
@@ -143,8 +157,8 @@ gitResourceProxy:
   replicas: 10
   timeout: 60s
   debug: true
-  image: keppel.eu-de-2.cloud.sap/ccloud-dockerhub-mirror/sapcc/concourse-git-resource-proxy
-  imageTag: 0.5.0
+  image: keppel.global.cloud.sap/ccloud/concourse-git-resource-proxy
+  imageTag: 0.5.1
   imagePullPolicy: IfNotPresent
 
 kubernetes-ingress:
@@ -152,8 +166,7 @@ kubernetes-ingress:
     kind: Deployment
     replicaCount: 1
     image:
-      repository: keppel.eu-de-2.cloud.sap/ccloud-dockerhub-mirror/haproxytech/kubernetes-ingress
-      tag: 1.8.12
+      repository: keppel.global.cloud.sap/ccloud-dockerhub-mirror/haproxytech/kubernetes-ingress
     ingressClass: git-proxy
     ingressClassResource:
       name: git-proxy

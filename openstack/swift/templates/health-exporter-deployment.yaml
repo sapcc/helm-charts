@@ -25,25 +25,18 @@ spec:
         alert-tier: os
         alert-service: swift
       annotations:
-        {{- include "swift_ring_annotations" . | indent 8 }}
         {{- include "swift_conf_annotations" . | indent 8 }}
         prometheus.io/scrape: "true"
-        prometheus.io/port: "9520"
         prometheus.io/targets: {{ required ".Values.alerts.prometheus.openstack missing" .Values.alerts.prometheus.openstack }}
     spec:
       volumes:
         - name: swift-etc
           configMap:
             name: swift-etc
-        - name: swift-account-ring
-          configMap:
-            name: swift-account-ring
-        - name: swift-container-ring
-          configMap:
-            name: swift-container-ring
-        - name: swift-object-ring
-          configMap:
-            name: swift-object-ring
+        - name: swift-rings
+          emptyDir: {}
+      initContainers:
+        {{- include "swift_ringloader_initcontainer" . | indent 8 }}
       containers:
         - name: collector
           image: {{ include "swift_image" . }}
@@ -81,7 +74,7 @@ spec:
                   key: dispersion_password
             - name: SWIFT_CLUSTER_RAW_CAPACITY_BYTES
               value: {{ quote .Values.raw_capacity }}
-
+          # TODO: securityContext: { runAsNonRoot: true }
           ports:
             - name: metrics
               containerPort: 9520
@@ -90,19 +83,15 @@ spec:
           # - RAM: ~40Mi during load
           resources:
             requests:
-              cpu: "300m"
+              cpu: "600m"
               memory: "200Mi"
             limits:
-              cpu: "300m"
+              cpu: "600m"
               memory: "200Mi"
           volumeMounts:
             - mountPath: /swift-etc
               name: swift-etc
-            - mountPath: /swift-rings/account
-              name: swift-account-ring
-            - mountPath: /swift-rings/container
-              name: swift-container-ring
-            - mountPath: /swift-rings/object
-              name: swift-object-ring
+            - mountPath: /swift-rings
+              name: swift-rings
 {{- end }}
 {{- end }}

@@ -48,6 +48,8 @@
   value: '300'  # per account
 - name:  KEPPEL_BURST_MANIFEST_PUSHES
   value: '15'   # per account
+- name:  KEPPEL_CLAIR_IGNORE_STALE_INDEX_REPORTS
+  value: 'false' # The reindex loop is currently enabled.
 {{- if .Values.keppel.clair.hostname }}
 - name:  KEPPEL_CLAIR_PRESHARED_KEY
   valueFrom:
@@ -169,6 +171,15 @@
     secretKeyRef:
       name: keppel-secret
       key: redis_password
+{{- if .Values.keppel.trivy.hostname }}
+- name: KEPPEL_TRIVY_URL
+  value: "https://{{ .Values.keppel.trivy.hostname }}"
+- name: KEPPEL_TRIVY_TOKEN
+  valueFrom:
+    secretKeyRef:
+      name: keppel-secret
+      key: trivy_token
+{{- end }}
 - name:  OS_AUTH_URL
   value: "http://keystone.{{ $.Values.global.keystoneNamespace }}.svc.kubernetes.{{ $.Values.global.region }}.{{ $.Values.global.tld }}:5000/v3"
 - name:  OS_AUTH_VERSION

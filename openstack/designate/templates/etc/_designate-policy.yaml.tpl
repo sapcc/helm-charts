@@ -80,11 +80,11 @@ create_AAAA_recordset: rule:context_is_webmaster or rule:context_is_editor
 create_CNAME_recordset: rule:context_is_webmaster or rule:context_is_editor
 create_CAA_recordset: rule:context_is_webmaster or rule:context_is_editor
 create_CERT_recordset: rule:context_is_webmaster or rule:context_is_editor
-create_MX_recordset: rule:context_is_mailmaster or rule:context_is_editor
-create_NS_recordset: rule:context_is_hostmaster or rule:context_is_editor
+create_MX_recordset: rule:context_is_mailmaster
+create_NS_recordset: rule:context_is_hostmaster
 create_PTR_recordset: rule:context_is_webmaster or rule:context_is_editor
 create_SOA_recordset: "!"
-create_SPF_recordset: rule:context_is_mailmaster or rule:context_is_editor
+create_SPF_recordset: rule:context_is_mailmaster
 create_SRV_recordset: rule:context_is_webmaster or rule:context_is_editor
 create_SSHFP_recordset: rule:admin
 create_NAPTR_recordset: rule:admin
@@ -95,11 +95,11 @@ update_AAAA_recordset: rule:context_is_webmaster or rule:context_is_editor
 update_CNAME_recordset: rule:context_is_webmaster or rule:context_is_editor
 update_CAA_recordset: rule:context_is_webmaster or rule:context_is_editor
 update_CERT_recordset: rule:context_is_webmaster or rule:context_is_editor
-update_MX_recordset: rule:context_is_mailmaster or rule:context_is_editor
-update_NS_recordset: rule:context_is_hostmaster or rule:context_is_editor
+update_MX_recordset: rule:context_is_mailmaster
+update_NS_recordset: rule:context_is_hostmaster
 update_PTR_recordset: rule:context_is_webmaster or rule:context_is_editor
 update_SOA_recordset: "!"
-update_SPF_recordset: rule:context_is_mailmaster or rule:context_is_editor
+update_SPF_recordset: rule:context_is_mailmaster
 update_SRV_recordset: rule:context_is_webmaster or rule:context_is_editor
 update_SSHFP_recordset: rule:admin
 update_NAPTR_recordset: rule:admin

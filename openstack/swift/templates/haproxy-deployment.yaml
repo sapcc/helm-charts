@@ -71,7 +71,7 @@ spec:
       {{- end }}
       nodeSelector:
         {{- if eq $apod "cp" }}
-        failure-domain.beta.kubernetes.io/zone: {{ $az }}
+        topology.kubernetes.io/zone: {{ $az }}
         {{- else }}
         kubernetes.cloud.sap/apod: {{ $apod }}
         {{- end }}
@@ -151,6 +151,7 @@ spec:
                 fieldRef:
                   apiVersion: v1
                   fieldPath: spec.nodeName
+          # TODO: securityContext: { runAsNonRoot: true }
           resources:
             requests:
               cpu: {{ $.Values.haproxy_deployment_resources_cpu | required "haproxy_deployment_resources_cpu is required" | quote }}

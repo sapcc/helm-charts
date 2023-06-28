@@ -36,38 +36,30 @@ spec:
         {{- end }}
     spec:
 {{ tuple . "nova" "bigvm" | include "kubernetes_pod_anti_affinity" | indent 6 }}
-{{ include "utils.proxysql.pod_settings" . | indent 6 }}
+      {{- include "utils.proxysql.pod_settings" . | indent 6 }}
       terminationGracePeriodSeconds: {{ .Values.defaults.default.graceful_shutdown_timeout | add 5 }}
       hostname: nova-bigvm
+      initContainers:
+      {{- tuple . (dict "service" (include "nova.helpers.all_cell_services" .)) | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 6 }}
       containers:
         - name: nova-bigvm
           image: {{ tuple . "scheduler" | include "container_image_nova" }}
           imagePullPolicy: IfNotPresent
           command:
-            - dumb-init
-            - kubernetes-entrypoint
+          - dumb-init
+          - nova-bigvm
           env:
-            - name: COMMAND
-              value: "nova-bigvm"
-            - name: NAMESPACE
-              value: {{ .Release.Namespace }}
-            - name: DEPENDENCY_SERVICE
-              value: "{{ .Release.Name }}-mariadb,{{ .Release.Name }}-api-mariadb,{{ .Release.Name }}-rabbitmq{{ if .Values.cell2.enabled }},{{ .Release.Name }}-{{ .Values.cell2.name }}-mariadb,{{ .Release.Name }}-{{ .Values.cell2.name }}-rabbitmq{{ end }}"
-            {{- if .Values.sentry.enabled }}
-            - name: SENTRY_DSN
-              valueFrom:
-                secretKeyRef:
-                  name: sentry
-                  key: {{ .Chart.Name }}.DSN.python
-            {{- end }}
-{{- if .Values.python_warnings}}
-            - name: PYTHONWARNINGS
-              value: {{ .Values.python_warnings | quote }}
-{{- end }}
-            - name: PGAPPNAME
-              valueFrom:
-                fieldRef:
-                  fieldPath: metadata.name
+          {{- if .Values.sentry.enabled }}
+          - name: SENTRY_DSN
+            valueFrom:
+              secretKeyRef:
+                name: sentry
+                key: {{ .Chart.Name }}.DSN.python
+          {{- end }}
+          {{- if .Values.python_warnings}}
+          - name: PYTHONWARNINGS
+            value: {{ .Values.python_warnings | quote }}
+          {{- end }}
           livenessProbe:
             exec:
               command: ["openstack-agent-liveness", "--component", "nova", "--config-file", "/etc/nova/nova.conf"]
@@ -79,23 +71,27 @@ spec:
 {{ toYaml .Values.pod.resources.bigvm | indent 12 }}
           {{- end }}
           volumeMounts:
-            - name: etcnova
-              mountPath: /etc/nova
-            - name: nova-etc
-              mountPath: /etc/nova/nova.conf
-              subPath: nova.conf
-              readOnly: true
-            - name: nova-etc
-              mountPath: /etc/nova/logging.ini
-              subPath: logging.ini
-              readOnly: true
-            {{- include "utils.proxysql.volume_mount" . | indent 12 }}
+          - name: nova-etc
+            mountPath: /etc/nova
+          {{- include "utils.proxysql.volume_mount" . | indent 10 }}
         {{- include "utils.proxysql.container" . | indent 8 }}
       volumes:
-        - name: etcnova
-          emptyDir: {}
-        - name: nova-etc
-          configMap:
-            name: nova-etc
-        {{- include "utils.proxysql.volumes" . | indent 8 }}
+      - name: nova-etc
+        projected:
+          sources:
+          - configMap:
+              name: nova-etc
+              items:
+              - key:  nova.conf
+                path: nova.conf
+              - key:  nova-bigvm.conf
+                path: nova-bigvm.conf
+              - key:  logging.ini
+                path: logging.ini
+          - secret:
+              name: nova-etc
+              items:
+              - key: db.conf
+                path: nova.conf.d/db.conf
+      {{- include "utils.proxysql.volumes" . | indent 6 }}
 {{- end }}

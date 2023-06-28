@@ -40,34 +40,28 @@ spec:
         {{- end }}
     spec:
 {{ tuple . "barbican" "api" | include "kubernetes_pod_anti_affinity" | indent 6 }}
-{{ include "utils.proxysql.pod_settings" . | indent 6 }}
+      {{- include "utils.proxysql.pod_settings" . | indent 6 }}
+      initContainers:
+      {{- tuple . (dict "service" "barbican-mariadb,barbican-rabbitmq") | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 6 }}
       containers:
         - name: barbican-api
           image: {{required ".Values.global.registry is missing" .Values.global.registry }}/loci-barbican:{{required "Values.imageVersionBarbicanApi is missing" .Values.imageVersionBarbicanApi}}
           imagePullPolicy: IfNotPresent
           command:
-            - dumb-init
-            - kubernetes-entrypoint
+          - dumb-init
+          - barbican-api
           env:
-            - name: COMMAND
-              value: "/var/lib/openstack/bin/barbican-api"
-            - name: NAMESPACE
-              value: {{ .Release.Namespace }}
-            - name: DEPENDENCY_JOBS
-              value: "barbican-migration-job-{{ required "Please set barbican.imageVersionBarbicanApi or similar" .Values.imageVersionBarbicanApi }}"
-            - name: DEPENDENCY_SERVICE
-              value: "barbican-mariadb,barbican-rabbitmq"
-            {{- if .Values.sentry.enabled }}
-            - name: SENTRY_DSN
-              valueFrom:
-                secretKeyRef:
-                  name: sentry
-                  key: barbican.DSN.python
-            {{- end }}
-            {{- if .Values.hsm.enabled }}
-            - name: ChrystokiConfigurationPath
-              value: "/thales/safenet/lunaclient/config"
-            {{- end }}
+          {{- if .Values.sentry.enabled }}
+          - name: SENTRY_DSN
+            valueFrom:
+              secretKeyRef:
+                name: sentry
+                key: barbican.DSN.python
+          {{- end }}
+          {{- if .Values.hsm.enabled }}
+          - name: ChrystokiConfigurationPath
+            value: "/thales/safenet/lunaclient/config"
+          {{- end }}
           {{- if .Values.api.resources.enabled }}
           resources:
             limits:
@@ -145,6 +139,15 @@ spec:
               value: "/thales/safenet/lunaclient/config"
           command: [ "/bin/bash", "-c", "--" ]
           args: [ "mv /usr/safenet /thales; while true; do sleep 30; done;" ]
+          {{- if .Values.api.resources.enabled }}
+          resources:
+            limits:
+              cpu: {{ .Values.api.resources.limits.cpu | quote }}
+              memory: {{ .Values.api.resources.limits.memory | quote }}
+            requests:
+              cpu: {{ .Values.api.resources.requests.cpu | quote }}
+              memory: {{ .Values.api.resources.requests.memory | quote }}
+          {{- end }}
           lifecycle:
             postStart:
               exec:

@@ -41,26 +41,12 @@ checksum/swift.secret: {{ include "swift/templates/secret.yaml" . | sha256sum }}
 {{- end -}}
 
 {{- /**********************************************************************************/ -}}
-{{- define "swift_ring_annotations" }}
-checksum/account.ring: {{ include "swift/templates/account-ring.yaml" . | sha256sum }}
-checksum/container.ring: {{ include "swift/templates/container-ring.yaml" . | sha256sum }}
-checksum/object.ring: {{ include "swift/templates/object-ring.yaml" . | sha256sum }}
-{{- end -}}
-
-{{- /**********************************************************************************/ -}}
 {{- define "swift_daemonset_volumes" }}
 - name: swift-etc
   configMap:
     name: swift-etc
-- name: swift-account-ring
-  configMap:
-    name: swift-account-ring
-- name: swift-container-ring
-  configMap:
-    name: swift-container-ring
-- name: swift-object-ring
-  configMap:
-    name: swift-object-ring
+- name: swift-rings
+  emptyDir: {}
 - name: swift-drives
   hostPath:
     path: /srv/node
@@ -80,15 +66,8 @@ checksum/object.ring: {{ include "swift/templates/object-ring.yaml" . | sha256su
 - name: swift-etc-cluster
   configMap:
     name: swift-etc-{{ .Values.cluster_name }}
-- name: swift-account-ring
-  configMap:
-    name: swift-account-ring
-- name: swift-container-ring
-  configMap:
-    name: swift-container-ring
-- name: swift-object-ring
-  configMap:
-    name: swift-object-ring
+- name: swift-rings
+  emptyDir: {}
 {{- end -}}
 
 {{- /**********************************************************************************/ -}}
@@ -130,17 +109,14 @@ checksum/object.ring: {{ include "swift/templates/object-ring.yaml" . | sha256su
     limits:
       cpu: {{ required (printf "proxy_%s_resources_cpu is required" $kind) $resources_cpu | quote }}
       memory: {{ required (printf "proxy_%s_resources_memory is required" $kind) $resources_memory | quote }}
+  # TODO: securityContext: { runAsNonRoot: true }
   volumeMounts:
     - mountPath: /swift-etc
       name: swift-etc
     - mountPath: /swift-etc-cluster
       name: swift-etc-cluster
-    - mountPath: /swift-rings/account
-      name: swift-account-ring
-    - mountPath: /swift-rings/container
-      name: swift-container-ring
-    - mountPath: /swift-rings/object
-      name: swift-object-ring
+    - mountPath: /swift-rings
+      name: swift-rings
   livenessProbe:
     httpGet:
       path: /healthcheck
@@ -183,26 +159,25 @@ checksum/object.ring: {{ include "swift/templates/object-ring.yaml" . | sha256su
     # observed usage: CPU = ~10m, RAM = 70-100 MiB
     # low cpu allocation results in performance degradation
     requests:
-      cpu: "100m"
+      cpu: "300m"
       memory: "150Mi"
     limits:
-      cpu: "100m"
+      cpu: "300m"
       memory: "150Mi"
+  # TODO: securityContext: { runAsNonRoot: true }
   volumeMounts:
     - mountPath: /swift-etc
       name: swift-etc
-    - mountPath: /swift-rings/account
-      name: swift-account-ring
-    - mountPath: /swift-rings/container
-      name: swift-container-ring
-    - mountPath: /swift-rings/object
-      name: swift-object-ring
+    - mountPath: /swift-rings
+      name: swift-rings
 {{- end}}
 - name: statsd
   image: {{ $context.Values.global.dockerHubMirrorAlternateRegion }}/prom/statsd-exporter:{{ $context.Values.image_version_auxiliary_statsd_exporter }}
   args: [ --statsd.mapping-config=/swift-etc/statsd-exporter.yaml ]
   {{- $resources_cpu := index $context.Values "proxy_statsd_exporter_resources_cpu" }}
   {{- $resources_memory := index $context.Values "proxy_statsd_exporter_resources_memory" }}
+  securityContext:
+    runAsNonRoot: true
   resources:
     requests:
       cpu: {{ required "proxy_statsd_exporter_resources_cpu is required" $resources_cpu | quote }}
@@ -236,6 +211,7 @@ checksum/object.ring: {{ include "swift/templates/object-ring.yaml" . | sha256su
     - {{ $service }}
   # privileged access required for /usr/bin/unmount-helper (TODO: use shared/slave mount namespace instead)
   securityContext:
+    runAsUser: 0
     privileged: true
   env:
     - name: DEBUG_CONTAINER
@@ -253,12 +229,8 @@ checksum/object.ring: {{ include "swift/templates/object-ring.yaml" . | sha256su
   volumeMounts:
     - mountPath: /swift-etc
       name: swift-etc
-    - mountPath: /swift-rings/account
-      name: swift-account-ring
-    - mountPath: /swift-rings/container
-      name: swift-container-ring
-    - mountPath: /swift-rings/object
-      name: swift-object-ring
+    - mountPath: /swift-rings
+      name: swift-rings
     - mountPath: /srv/node
       name: swift-drives
     - mountPath: /var/cache/swift
@@ -268,9 +240,36 @@ checksum/object.ring: {{ include "swift/templates/object-ring.yaml" . | sha256su
 {{- end -}}
 
 {{- /**********************************************************************************/ -}}
+{{- define "swift_ringloader_initcontainer" }}
+- name: ringloader
+  image: {{ include "swift_rings_image" . }}
+  command: [ /bin/sh ]
+  args:
+    - '-c'
+    - |
+      set -euo pipefail
+      cat < /swift-rings/{{ .Values.global.region }}/account.ring.gz   > /swift-rings-out/account.ring.gz
+      cat < /swift-rings/{{ .Values.global.region }}/container.ring.gz > /swift-rings-out/container.ring.gz
+      cat < /swift-rings/{{ .Values.global.region }}/object.ring.gz    > /swift-rings-out/object.ring.gz
+  # TODO: securityContext: { runAsNonRoot: true }
+  volumeMounts:
+    - mountPath: /swift-rings-out
+      name: swift-rings
+{{- end -}}
+
+{{- /**********************************************************************************/ -}}
 {{- define "swift_image" -}}
   {{- if ne .Values.image_version "DEFINED_BY_PIPELINE" -}}
     {{ .Values.global.registryAlternateRegion }}/{{ .Values.imageRegistry_repo }}:{{ .Values.image_version }}
+  {{- else -}}
+    {{ required "This release should be installed by the deployment pipeline!" "" }}
+  {{- end -}}
+{{- end }}
+
+{{- /**********************************************************************************/ -}}
+{{- define "swift_rings_image" -}}
+  {{- if ne .Values.rings_image_version "DEFINED_BY_PIPELINE" -}}
+    {{ .Values.global.registryAlternateRegion }}/swift-rings:{{ .Values.rings_image_version }}
   {{- else -}}
     {{ required "This release should be installed by the deployment pipeline!" "" }}
   {{- end -}}

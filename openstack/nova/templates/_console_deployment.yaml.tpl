@@ -1,6 +1,9 @@
 {{- define "nova.console_deployment" }}
-{{- $name := index . 1 }}
-{{- $config := index . 2 }}
+{{- $cell_name := index . 1 }}
+{{- $type := index . 2 }}
+{{- $is_cell2 := index . 3 }}
+{{- $config := index . 4 }}
+{{- $name := print $cell_name "-" $type }}
 {{- with index . 0 }}
 kind: Deployment
 apiVersion: apps/v1
@@ -28,7 +31,8 @@ spec:
     metadata:
       labels:
         name: nova-console-{{ $name }}
-{{ tuple . "nova" (print "console-" $name) | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
+        {{- tuple . "nova" (print "console-" $name) | include "helm-toolkit.snippets.kubernetes_metadata_labels" | nindent 8 }}
+        {{- include "utils.topology.pod_label" . | indent 8 }}
       annotations:
         configmap-etc-hash: {{ include (print .Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
         {{- if .Values.proxysql.mode }}
@@ -36,28 +40,50 @@ spec:
         prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
         {{- end }}
     spec:
-{{ tuple . "nova" (print "console-" $name) | include "kubernetes_pod_anti_affinity" | indent 6 }}
-{{ include "utils.proxysql.pod_settings" . | indent 6 }}
+      {{- tuple . "nova" (print "console-" $name) | include "kubernetes_pod_anti_affinity" | nindent 6 }}
+      {{- include "utils.proxysql.pod_settings" . | nindent 6 }}
+      {{- tuple . (dict "name" (print "nova-console-" $name )) | include "utils.topology.constraints" | indent 6 }}
       hostname: nova-console-{{ $name }}
       volumes:
-      - name: etcnova
-        emptyDir: {}
       - name: nova-etc
-        configMap:
-          name: nova-etc
+        projected:
+          sources:
+          - configMap:
+              name: nova-etc
+              items:
+              - key:  nova.conf
+                path: nova.conf
+              - key:  logging.ini
+                path: logging.ini
+          {{- if $is_cell2 }}
+              - key: nova-cell2.conf
+                path: nova.conf.d/cell2.conf
+          {{- else }}
+          - secret:
+              name: nova-etc
+              items:
+              - key: db.conf
+                path: nova.conf.d/db.conf
+          {{- end }}
+          - configMap:
+              name: nova-console
+              items:
+              - key: console-{{ $cell_name }}-{{ $type }}.conf
+                path: nova.conf.d/console-{{ $cell_name }}-{{ $type }}.conf
       {{- include "utils.proxysql.volumes" . | indent 6 }}
       containers:
-      - name: nova-console-{{ $name }}
-        image: {{ tuple . (print (title $name) "proxy") | include "container_image_nova" }}
+      - name: nova-console-{{ $type }}
+        image: {{ tuple . (print (title $type) "proxy") | include "container_image_nova" }}
         imagePullPolicy: IfNotPresent
         command:
         - dumb-init
-        - kubernetes-entrypoint
+        - nova-{{ $type }}proxy
+        {{- if $config.args }}
+          {{- range (regexSplit "\\s+" $config.args -1) }}
+        - {{ . }}
+          {{- end }}
+        {{- end }}
         env:
-        - name: COMMAND
-          value: nova-{{ $name }}proxy {{ $config.args }}
-        - name: NAMESPACE
-          value: {{ .Release.Namespace }}
         - name: LANG
           value: en_US.UTF-8
 {{- if .Values.python_warnings }}
@@ -75,19 +101,11 @@ spec:
           value: {{.Values.global.keystone_api_endpoint_protocol_internal | default "http"}}://{{include "keystone_api_endpoint_host_internal" .}}:{{ .Values.global.keystone_api_port_internal | default 5000}}/v3
 {{- end }}
         ports:
-        - name: {{ $name }}
-          containerPort: {{ index .Values.consoles $name "portInternal" }}
+        - name: {{ $type }}
+          containerPort: {{ $config.portInternal }}
         volumeMounts:
-        - name: etcnova
+        - name: nova-etc
           mountPath: /etc/nova
-        - name: nova-etc
-          mountPath: /etc/nova/nova.conf
-          subPath: nova.conf
-          readOnly: true
-        - name: nova-etc
-          mountPath: /etc/nova/logging.ini
-          subPath: logging.ini
-          readOnly: true
         {{- include "utils.proxysql.volume_mount" . | indent 8 }}
       {{- include "utils.proxysql.container" . | indent 6 }}
 {{- end }}

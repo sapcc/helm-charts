@@ -37,7 +37,7 @@ spec:
     spec:
       containers:
       - name: metrics
-        image: "{{ $mirror }}/prometheuscommunity/postgres-exporter:v0.11.1"
+        image: "{{ $mirror }}/prometheuscommunity/postgres-exporter:v0.12.0"
         imagePullPolicy: IfNotPresent
         env:
         - name: DATA_SOURCE_NAME
@@ -45,7 +45,12 @@ spec:
         ports:
           - name: metrics
             containerPort: 9187
-        args: ["--extend.query-path", "/conf/custom-metrics.yaml", "--log.level", "info" ]
+        args:
+          - "--extend.query-path=/conf/custom-metrics.yaml"
+          - "--log.level=info"
+          {{- range $collector, $enabled := .Values.collectors }}
+          - "--{{ if not $enabled }}no-{{- end }}collector.{{ $collector }}"
+          {{- end }}
         volumeMounts:
           - name: custom-metrics
             mountPath: /conf

@@ -8,10 +8,7 @@ spec:
   revisionHistoryLimit: 5
   replicas: 1
   strategy:
-    type: RollingUpdate
-    rollingUpdate:
-      maxUnavailable: 0
-      maxSurge: 2
+    type: Recreate
   selector:
     matchLabels:
       name: keppel-janitor
@@ -41,6 +38,8 @@ spec:
           imagePullPolicy: IfNotPresent
           args: [ server, janitor ]
           env: {{ include "keppel_environment" $ | indent 12 }}
+          securityContext:
+            runAsNonRoot: true
           volumeMounts:
             - mountPath: /etc/keppel
               name: config

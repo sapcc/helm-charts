@@ -23,6 +23,6 @@ spec:
   {{- end }}
   ports:
   - name: ironic-console
-    port: 80
+    port: 443
     {{- end }}
 {{- end }}

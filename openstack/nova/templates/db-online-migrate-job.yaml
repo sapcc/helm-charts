@@ -16,52 +16,45 @@ spec:
     spec:
       restartPolicy: OnFailure
       {{- include "utils.proxysql.job_pod_settings" . | indent 6 }}
+      initContainers:
+      {{- $dependencies := dict "jobs" (tuple . "db-migrate" | include "job_name") "service" (include "nova.helpers.database_services" .) }}
+      {{- tuple . $dependencies | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 6 }}
       containers:
       - name: nova-migrate
         image: {{ tuple . "api" | include "container_image_nova" }}
         imagePullPolicy: IfNotPresent
         command:
-        - kubernetes-entrypoint
+        - /container.init/db-online-migrate
         env:
-        - name: COMMAND
-          value: "/container.init/db-online-migrate"
-        - name: NAMESPACE
-          value: {{ .Release.Namespace }}
-        - name: DEPENDENCY_JOBS
-          value: {{ tuple . "db-migrate" | include "job_name" }}
-        - name: DEPENDENCY_SERVICE
-          value: "{{ .Release.Name }}-mariadb,{{ .Release.Name }}-api-mariadb{{ if eq .Values.cell2.enabled true }},{{ .Values.mariadb_cell2.name }}-mariadb{{ end }}"
-        - name: PGAPPNAME
-          valueFrom:
-            fieldRef:
-              fieldPath: metadata.name
+        - name: PYTHONWARNINGS
+          value: {{ .Values.python_warnings | quote }}
         volumeMounts:
         - mountPath: /etc/nova
-          name: etcnova
-        - mountPath: /etc/nova/nova.conf
           name: nova-etc
-          subPath: nova.conf
-          readOnly: true
-{{- if .Values.cell2.enabled }}
-        - mountPath: /etc/nova/nova-cell2.conf
-          name: nova-etc
-          subPath: nova-cell2.conf
-          readOnly: true
-{{- end }}
-        - mountPath: /etc/nova/logging.ini
-          name: nova-etc
-          subPath: logging.ini
-          readOnly: true
         - mountPath: /container.init
           name: container-init
         {{- include "utils.proxysql.volume_mount" . | indent 8 }}
       {{- include "utils.proxysql.container" . | indent 6 }}
       volumes:
-      - name: etcnova
-        emptyDir: {}
       - name: nova-etc
-        configMap:
-          name: nova-etc
+        projected:
+          sources:
+          - configMap:
+              name: nova-etc
+              items:
+              - key:  nova.conf
+                path: nova.conf
+              - key:  logging.ini
+                path: logging.ini
+              {{- if .Values.cell2.enabled }}
+              - key:  nova-cell2.conf
+                path: nova-cell2.conf
+              {{- end }}
+          - secret:
+              name: nova-etc
+              items:
+              - key: db.conf
+                path: nova.conf.d/db.conf
       - name: container-init
         configMap:
           name: nova-bin

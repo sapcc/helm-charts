@@ -24,8 +24,6 @@
   value: ":8080"
 - name: CASTELLUM_LOG_SCRAPES
   value: "true"
-- name: CASTELLUM_MAX_ASSET_SIZES
-  value: "nfs-shares.*=20480" # 20480 GiB = 20 TiB
   # ^ The Manila limit comes from the "provisioning:max_share_extend_size" setting in
   # `openstack/manila/templates/_helpers.tpl`. The limit in Manila only applies to
   # the "default" share type. The "hypervisor_storage" share types are not limited,

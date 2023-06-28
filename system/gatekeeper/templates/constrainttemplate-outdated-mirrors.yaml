@@ -38,3 +38,11 @@ spec:
           regex.match("^keppel\\.[^/.]*\\.cloud.sap/ccloud-dockerhub-mirror/sapcc/", image)
           msg := sprintf("container %q uses image from obsolete mirror: %s", [container.name, image])
         }
+
+        violation[{"msg": add_support_labels.from_k8s_object(iro, msg)}] {
+          container := containers[_]
+          image := container.image
+
+          regex.match("^keppel\\.[^/.]*\\.cloud.sap/ccloud-dockerhub-archive/", image)
+          msg := sprintf("container %q uses image from obsolete mirror: %s (use regular mirror accounts for foreign images, or build via CI and push to ccloud account for own images)", [container.name, image])
+        }

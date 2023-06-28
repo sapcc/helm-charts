@@ -28,17 +28,15 @@ imageRegistry_repo: swift
 # the version should follow the format openstackreleasename-versionnumber
 # e.g. rocky-12345
 image_version: DEFINED_BY_PIPELINE
+rings_image_version: DEFINED_BY_PIPELINE
 
 # image version of haproxy bundled with dumb-init
-image_version_haproxy: '2.3.6-20210316081242'
-
-# image version of envoy bundled with dumb-init
-image_version_envoy: 'v1.17.1-20210317124712'
+image_version_haproxy: '2.6.14-20230616092923'
 
 # image versions of auxiliary images from other sources
-image_version_auxiliary_memcached: '1.6.17-alpine'
-image_version_auxiliary_memcached_exporter: 'v0.10.0'
-image_version_auxiliary_statsd_exporter: 'v0.22.8'
+image_version_auxiliary_memcached: '1.6.20-alpine'
+image_version_auxiliary_memcached_exporter: 'v0.13.0'
+image_version_auxiliary_statsd_exporter: 'v0.24.0'
 
 # shared secrets and credentials
 hash_path_prefix: DEFINED_IN_REGION_CHART
@@ -49,10 +47,6 @@ hash_path_suffix: DEFINED_IN_REGION_CHART
 # The header size can become an issue with large catalogs
 # See https://github.com/sapcc/swift/blob/master/etc/swift.conf-sample#L133-L140
 max_header_size: 16384   # default 8192
-
-# BEGIN Temporary Flags, to be removed
-envoy_external: false
-# END Temporary Flags, to be removed
 
 # S3 API Emulation for seed cluster
 s3api_enabled: true
@@ -69,6 +63,9 @@ health_exporter: true
 
 # Enable prometheus probing
 probing: true
+
+# number of storage nodes participating in the cluster, can be used to derive some limits like rsync bandwidth
+node_count: 0
 
 # Object Server Configurations
 object_expirer_concurrency: 5
@@ -87,10 +84,13 @@ container_sharder: false
 fallocate_reserve: 2%                  # Availably since Rocky for all servers
 
 # Swift client timeout in seconds.
-client_timeout: 60 # same as default, but also sets haproxy/envoy timeout to a similar value
+client_timeout: 60 # same as default, but also sets haproxy timeout to a similar value
 
 # Swift node timeout in seconds, default 10
-node_timeout: 60
+# With a value 60 there were issue when a single disk was overloaded --> response timeout and the remaining
+# handoffs might raise a 408 (proxy broken pipe). Assumption is currently that the 60s are too long for the
+# haproxy/swift-proxy machinery in front. Producing too many 503. Reducing to 30s seems to have fixed that.
+node_timeout: 30
 
 # Swift node timeout in seconds for GET and HEAD, default 10
 recoverable_node_timeout: 10
@@ -186,12 +186,6 @@ proxy_statsd_exporter_resources_memory: "1024Mi" # observed: 550-950 MiB
 
 # # If using other hostnames for objectstore and you can't provide a CName for it, enter them here
 # additional_cname_storage_domains: [example.com,example2.com]
-
-# rings (TODO: having the rings in here is insane, but --values is currently
-# the only way to supply region-specific data; figure out a better way)
-account_ring_base64: DEFINED_IN_REGION_CHART
-container_ring_base64: DEFINED_IN_REGION_CHART
-object_ring_base64: DEFINED_IN_REGION_CHART
 
 # Use https://github.com/sapcc/openstack-rate-limit-middleware for watcher based rate limiting.
 sapcc_ratelimit:

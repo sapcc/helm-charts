@@ -12,6 +12,8 @@ spec:
     matchLabels:
       name: kube-proxy
   updateStrategy:
+    rollingUpdate:
+      maxUnavailable: '10%'
     type: RollingUpdate
   template:
     metadata:
@@ -37,7 +39,7 @@ spec:
       {{- end }}
       containers:
       - name: proxy
-        image: "{{ required ".Values.global.registryAlternateRegion is missing" .Values.global.registryAlternateRegion }}/{{ .Values.images.proxy.image }}:{{ .Values.images.proxy.tag }}"
+        image: "{{ required ".Values.global.registryK8sIoMirrorAlternateRegion is missing" .Values.global.registryK8sIoMirrorAlternateRegion }}/{{ .Values.images.proxy.image }}:{{ .Values.images.proxy.tag }}"
         imagePullPolicy: IfNotPresent
         lifecycle:
           postStart:

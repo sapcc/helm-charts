@@ -224,6 +224,30 @@
       replacement: ipmi-exporter:{{$values.listen_port}}
 {{- end }}
 
+{{- $values := .Values.kvm }}
+{{- if $values.enabled }}
+- job_name: 'linux-kvm'
+  params:
+    job: [linux-kvm]
+  scrape_interval: {{ $values.scrapeInterval }}
+  scrape_timeout: {{ $values.scrapeTimeout }}
+  http_sd_configs:
+    - url: {{ .Values.atlas_url }}
+  metrics_path: /metrics
+  relabel_configs:
+    - source_labels: [job]
+      regex: linux-kvm
+      action: keep
+    - source_labels: [__address__]
+      target_label: __param_target
+    - source_labels: [__param_target]
+      target_label: instance
+    - source_labels: [__address__]
+      target_label: __address__
+      regex:       '(.*)'
+      replacement: $1:9100
+{{- end }}
+
 {{- $values := .Values.redfish_exporter -}}
 {{- if $values.enabled }}
 - job_name: 'redfish/bm'
@@ -403,21 +427,7 @@
       action: keep
 {{- end }}
 
-{{- $values := .Values.apic_exporter -}}
-{{- if $values.enabled }}
-- job_name: 'apic-exporter'
-  scrape_interval: {{$values.scrapeInterval}}
-  scrape_timeout: {{$values.scrapeTimeout}}
-  static_configs:
-    - targets:
-      - 'apic-exporter:9102'
-  metrics_path: /
-  relabel_configs:
-    - source_labels: [job]
-      regex: apic-exporter
-      action: keep
-{{- end }}
-
+{{- if .Values.netapp_cap_exporter.enabled}}
 {{- range $name, $app := .Values.netapp_cap_exporter.apps }}
 - job_name: '{{ $app.fullname }}'
   scrape_interval: {{ required ".Values.netapp_cap_exporter.apps[].scrapeInterval" $app.scrapeInterval }}
@@ -434,6 +444,7 @@
       target_label: app
       replacement: ${1}
       action: replace
+{{- end }}
 {{- end }}
 
 {{ if .Values.ask1k_tests.enabled }}

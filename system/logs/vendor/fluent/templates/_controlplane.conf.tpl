@@ -85,7 +85,7 @@
   reserve_data true
   <parse>
     @type grok
-    grok_pattern (%{TIMESTAMP_ISO8601:logtime}|)( )?%{TIMESTAMP_ISO8601:timestamp}.%{NOTSPACE} %{NUMBER:pid} %{NOTSPACE:log_level} %{NOTSPACE:program} (\[?)%{NOTSPACE:request_id} %{NOTSPACE:user_id} %{NOTSPACE:project_id} %{NOTSPACE:domain_id} %{NOTSPACE:id1} %{REQUESTID:id2}(\]?) %{GREEDYDATA:log_request}
+    grok_pattern (%{TIMESTAMP_ISO8601:logtime}|)( )?%{TIMESTAMP_ISO8601:access_timestamp}.%{NOTSPACE} %{NUMBER:pid} %{NOTSPACE:log_level} %{NOTSPACE:program} (\[?)%{NOTSPACE:request_id} %{NOTSPACE:user_id} %{NOTSPACE:project_id} %{NOTSPACE:domain_id} %{NOTSPACE:id1} %{REQUESTID:id2}(\]?) %{GREEDYDATA:log_request}
     custom_pattern_path /fluentd/etc/pattern
   </parse>
 </filter>
@@ -116,7 +116,7 @@
   reserve_data true
   <parse>
     @type grok
-    grok_pattern %{IP:remote_addr} %{NOTSPACE:ident} %{NOTSPACE:auth} \[%{HAPROXYDATE:timestamp}\] "%{WORD:request_method} %{NOTSPACE:request_path} %{NOTSPACE:httpversion}" %{NUMBER:response} %{NUMBER:content_length} \"(?<referer>[^\"]{,255}).*?" "%{GREEDYDATA:user_agent}" %{GREEDYDATA} \[%{NOTSPACE:service}\] %{NOTSPACE:target} %{NUMBER} %{NUMBER:response_time} %{NOTSPACE} %{NOTSPACE:requestid}
+    grok_pattern %{IP:remote_addr} %{NOTSPACE:ident} %{NOTSPACE:auth} \[%{HAPROXYDATE:access_timestamp}\] "%{WORD:request_method} %{NOTSPACE:request_path} %{NOTSPACE:httpversion}" %{NUMBER:response} %{NUMBER:content_length} \"(?<referer>[^\"]{,255}).*?" "%{GREEDYDATA:user_agent}" %{GREEDYDATA} \[%{NOTSPACE:service}\] %{NOTSPACE:target} %{NUMBER} %{NUMBER:response_time} %{NOTSPACE} %{NOTSPACE:requestid}
     custom_pattern_path /fluentd/etc/pattern
   </parse>
 </filter>
@@ -504,19 +504,24 @@
 {{- end }}
 {{- if .Values.opensearch.enabled }}
   <store>
+  {{- if .Values.opensearch.datastream.enabled }}
+    @type opensearch_data_stream
+    data_stream_name logs
+  {{- else }}
     @type opensearch
-    hosts {{.Values.opensearch.http.endpoint}}.{{.Values.global.region}}.{{.Values.global.tld}}
+    logstash_prefix {{.Values.opensearch.indexname}}
+    logstash_format true
+    template_name {{.Values.opensearch.indexname}}
+    template_file /fluentd/etc/{{.Values.opensearch.indexname}}.json
+    template_overwrite false
+  {{- end }}
+    hosts {{.Values.opensearch.http.endpoint}}.{{.Values.global.tld}}
     scheme https
     port {{.Values.opensearch.http_port}}
     user {{.Values.opensearch.user}}
     password {{.Values.opensearch.password}}
     ssl_verify false
     ssl_version TLSv1_2
-    logstash_prefix {{.Values.opensearch.indexname}}
-    logstash_format true
-    template_name {{.Values.opensearch.indexname}}
-    template_file /fluentd/etc/{{.Values.opensearch.indexname}}.json
-    template_overwrite false
     time_as_integer false
     @log_level info
     slow_flush_log_threshold 50.0

@@ -6,15 +6,8 @@ metadata:
   name: metis-api
   namespace: {{ .Values.namespace }}
   labels:
-    app.kubernetes.io/name: {{ template "name" . }}
-    helm.sh/chart: {{ include "metisAPI.chart" $ }}
-    app.kubernetes.io/instance: {{ template "name" . }}
+    {{- include "labels" . | indent 4 }}
     app.kubernetes.io/version: "{{ $.Values.metisAPI.imageTag }}"
-    app.kubernetes.io/component: "api"
-    app.kubernetes.io/part-of: "metis"
-    app.kubernetes.io/managed-by: {{ .Release.Service }}
-    alert-service: "metis"
-    alert-tier: {{ required "$.Values.alerts.tier missing" $.Values.alerts.tier | quote }}
 spec:
   replicas: 1
   selector:
@@ -25,15 +18,8 @@ spec:
   template:
     metadata:
       labels:
-        app.kubernetes.io/name: {{ template "name" . }}
-        helm.sh/chart: {{ include "metisAPI.chart" $ }}
-        app.kubernetes.io/instance: {{ template "name" . }}
+        {{- include "labels" . | indent 8 }}
         app.kubernetes.io/version: "{{ $.Values.metisAPI.imageTag }}"
-        app.kubernetes.io/component: "api"
-        app.kubernetes.io/part-of: "metis"
-        app.kubernetes.io/managed-by: {{ .Release.Service }}
-        alert-service: "metis"
-        alert-tier: {{ required "$.Values.alerts.tier missing" $.Values.alerts.tier | quote }}
       annotations:
         checksum/config: {{ include ( print $.Template.BasePath "/configmap.yaml" ) . | sha256sum }}
         checksum/secret: {{ include ( print $.Template.BasePath "/secrets.yaml" ) . | sha256sum }}

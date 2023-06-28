@@ -9,7 +9,6 @@ options:
     variable_start_string: '{='
     variable_end_string: '=}'
 template: |
-  {% if nsx_t_enabled is defined and nsx_t_enabled -%}
   apiVersion: v1
   kind: ConfigMap
   metadata:
@@ -31,8 +30,12 @@ template: |
       firewall_driver = nsxv3
 
       [AGENT]
-      {{- range $k, $v := .Values.drivers.nsxv3.defaults.AGENT }}
-      {{ $k }} = {{ $v }}
+      {{- range $k, $confvals := .Values.drivers.nsxv3 }}
+      {%- if '{{ $k }}' == name or '{{ $k }}' == 'defaults' %}
+      {{- range $key, $v := $confvals.AGENT }}
+      {{ $key }} = {{ $v }}
+      {{- end }}
+      {%- endif %}
       {{- end }}
 
       [NSXV3]
@@ -48,5 +51,4 @@ template: |
       {{- range $k, $v := .Values.drivers.nsxv3.defaults.NSXV3 }}
       {{ $k }} = {{ $v }}
       {{- end }}
-  {% endif %}
 {{ end }}

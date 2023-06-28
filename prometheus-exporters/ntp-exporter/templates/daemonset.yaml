@@ -8,7 +8,7 @@ spec:
   updateStrategy:
     type: RollingUpdate
     rollingUpdate:
-      maxUnavailable: 1
+      maxUnavailable: '50%' # these pods can be rolled rather quickly since they are not in the hot path
 
   selector:
     matchLabels:
@@ -28,7 +28,7 @@ spec:
 
       containers:
         - name:  ntp-exporter
-          image: {{ required ".Values.global.dockerHubMirror missing" .Values.global.dockerHubMirror }}/{{ required ".Values.image.repository missing" .Values.image.repository }}:{{ .Chart.AppVersion }}
+          image: {{ required ".Values.global.ghcrIoMirror missing" .Values.global.ghcrIoMirror }}/sapcc/ntp_exporter:{{ .Chart.AppVersion }}
           args:
             - "-ntp.server={{ required ".Values.ntp.server missing" .Values.ntp.server }}"
           ports:

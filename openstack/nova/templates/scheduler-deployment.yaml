@@ -26,7 +26,7 @@ spec:
         name: nova-scheduler
         alert-tier: os
         alert-service: nova
-{{ tuple . "nova" "scheduler" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
+        {{- tuple . "nova" "scheduler" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | nindent 8 }}
       annotations:
         {{- if or .Values.scheduler.rpc_statsd_enabled .Values.proxysql.mode }}
         prometheus.io/scrape: "true"
@@ -35,39 +35,31 @@ spec:
         configmap-etc-hash: {{ include (print $.Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
         configmap-scheduler-etc-hash: {{ include (print $.Template.BasePath "/scheduler-etc-configmap.yaml") . | sha256sum }}
     spec:
-{{ tuple . "nova" "scheduler" | include "kubernetes_pod_anti_affinity" | indent 6 }}
-{{ include "utils.proxysql.pod_settings" . | indent 6 }}
+      {{- tuple . "nova" "scheduler" | include "kubernetes_pod_anti_affinity" | nindent 6 }}
+      {{- include "utils.proxysql.pod_settings" . | nindent 6 }}
       terminationGracePeriodSeconds: {{ .Values.defaults.default.graceful_shutdown_timeout | add 5 }}
       hostname: nova-scheduler
+      initContainers:
+      {{- tuple . (dict "service" (include "nova.helpers.cell01_services" .)) | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 6 }}
       containers:
         - name: nova-scheduler
           image: {{ tuple . "scheduler" | include "container_image_nova" }}
           imagePullPolicy: IfNotPresent
           command:
-            - dumb-init
-            - kubernetes-entrypoint
+          - dumb-init
+          - nova-scheduler
           env:
-            - name: COMMAND
-              value: "nova-scheduler"
-            - name: NAMESPACE
-              value: {{ .Release.Namespace }}
-            - name: DEPENDENCY_SERVICE
-              value: "nova-api,{{ .Release.Name }}-rabbitmq"
-            {{- if .Values.sentry.enabled }}
-            - name: SENTRY_DSN
-              valueFrom:
-                secretKeyRef:
-                  name: sentry
-                  key: {{ .Chart.Name }}.DSN.python
-            {{- end }}
-{{- if .Values.python_warnings}}
-            - name: PYTHONWARNINGS
-              value: {{ .Values.python_warnings | quote }}
-{{- end }}
-            - name: PGAPPNAME
-              valueFrom:
-                fieldRef:
-                  fieldPath: metadata.name
+          {{- if .Values.sentry.enabled }}
+          - name: SENTRY_DSN
+            valueFrom:
+              secretKeyRef:
+                name: sentry
+                key: {{ .Chart.Name }}.DSN.python
+          {{- end }}
+          {{- if .Values.python_warnings}}
+          - name: PYTHONWARNINGS
+            value: {{ .Values.python_warnings | quote }}
+          {{- end }}
           livenessProbe:
             exec:
               command: ["openstack-agent-liveness", "--component", "nova", "--config-file", "/etc/nova/nova.conf"]
@@ -79,26 +71,9 @@ spec:
 {{ toYaml .Values.pod.resources.scheduler | indent 12 }}
           {{- end }}
           volumeMounts:
-            - name: etcnova
-              mountPath: /etc/nova
-            - name: nova-etc
-              mountPath: /etc/nova/nova.conf
-              subPath: nova.conf
-              readOnly: true
-            - name: nova-scheduler-etc
-              mountPath: /etc/nova/nova-scheduler.conf
-              subPath: nova-scheduler.conf
-              readOnly: true
-            {{- /* Note I533984: Replace with plain policy.yaml after Xena upgrade */}}
-            - name: nova-etc
-              mountPath: /etc/nova/{{if (.Values.imageVersion | hasPrefix "rocky") }}policy.json{{else}}policy.yaml{{end}}
-              subPath: {{if (.Values.imageVersion | hasPrefix "rocky") }}policy.json{{else}}policy.yaml{{end}}
-              readOnly: true
-            - name: nova-etc
-              mountPath: /etc/nova/logging.ini
-              subPath: logging.ini
-              readOnly: true
-            {{- include "utils.proxysql.volume_mount" . | indent 12 }}
+          - name: nova-etc
+            mountPath: /etc/nova
+          {{- include "utils.proxysql.volume_mount" . | indent 10 }}
         {{- tuple . .Values.scheduler.workers | include "utils.proxysql.container" | indent 8 }}
         {{- if .Values.scheduler.rpc_statsd_enabled }}
         - name: statsd
@@ -112,18 +87,40 @@ spec:
           - name: metrics
             containerPort: 9102
           volumeMounts:
-            - name: nova-etc
-              mountPath: /etc/statsd/statsd-exporter.yaml
-              subPath: statsd-exporter.yaml
-              readOnly: true
+          - name: statsd-etc
+            mountPath: /etc/statsd/statsd-exporter.yaml
+            subPath: statsd-exporter.yaml
+            readOnly: true
         {{- end }}
       volumes:
-        - name: etcnova
-          emptyDir: {}
-        - name: nova-etc
-          configMap:
-            name: nova-etc
-        - name: nova-scheduler-etc
-          configMap:
-            name: nova-scheduler-etc
-        {{- include "utils.proxysql.volumes" . | indent 8 }}
+      - name: nova-etc
+        projected:
+          sources:
+          - configMap:
+              name: nova-etc
+              items:
+              - key:  nova.conf
+                path: nova.conf
+              - key:  logging.ini
+                path: logging.ini
+          - secret:
+              name: nova-etc
+              items:
+              - key:  db.conf
+                path: nova.conf.d/db.conf
+          - configMap:
+              name: nova-scheduler-etc
+              items:
+              - key:  nova-scheduler.conf
+                path: nova-scheduler.conf
+{{- if .Values.scheduler.rpc_statsd_enabled }}
+      - name: statsd-etc
+        projected:
+          sources:
+          - configMap:
+              name: nova-etc
+              items:
+              - key:  statsd-exporter.yaml
+                path: statsd-exporter.yaml
+{{- end }}
+      {{- include "utils.proxysql.volumes" . | indent 6 }}

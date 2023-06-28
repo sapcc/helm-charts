@@ -12,9 +12,14 @@ data:
 
     # building blocks
     'cloud_admin': 'project_name:cloud_admin and project_domain_name:ccadmin and role:admin'
-    'match_concourse_event': '"helm-deployment-from-concourse.v1":%(target.payload_type)s'
+    'match_concourse_event': '"helm-deployment-from-concourse.v1":%(target.payload_type)s or "active-directory-deployment-from-concourse.v1":%(target.payload_type)s or "terraform-deployment-from-concourse.v1":%(target.payload_type)s'
     'match_concourse_user': 'user_name:tenso-concourse and user_domain_name:Default'
     'match_ansible_event': '"infra-workflow-from-awx.v1":%(target.payload_type)s'
     'match_ansible_user': 'user_name:tenso-ansible and user_domain_name:Default'
+
   servicenow-mapping.yaml: |
 {{ toYaml .Values.tenso.servicenow.mapping_config | indent 4 }}
+
+{{- if .Values.tenso.servicenow.create_change_url }}
+  servicenow-client-cert.pem: {{ .Values.tenso.servicenow.client_cert | required ".Values.tenso.servicenow.client_cert is missing" | toYaml | nindent 4 }}
+{{- end }}

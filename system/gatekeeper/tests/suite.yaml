@@ -116,20 +116,6 @@ tests:
 ################################################################################
 # policy tests
 
-- name: deprecated-api-version-k8s1.25
-  template: rendered-chart/gatekeeper/templates/constrainttemplate-deprecated-api-version.yaml
-  constraint: rendered-chart/gatekeeper-config/templates/constraint-deprecated-api-version-k8s1.25.yaml
-  cases:
-  - name: helm-release-deprecated-api-version-1.25
-    object: fixtures/deprecated-api-version/helm-release-deprecated-1.25.out.yaml
-    assertions:
-    - violations: 1
-      message: '^support-group=foo-group,service=dummy: CronJob dummy declared with deprecated API version: batch/v1beta1 \(will break in k8s v1.25\)$'
-  - name: helm-release-clean
-    object: fixtures/deprecated-api-version/helm-release-clean.out.yaml
-    assertions:
-    - violations: no
-
 - name: deprecated-api-version-k8s1.26
   template: rendered-chart/gatekeeper/templates/constrainttemplate-deprecated-api-version.yaml
   constraint: rendered-chart/gatekeeper-config/templates/constraint-deprecated-api-version-k8s1.26.yaml
@@ -153,6 +139,20 @@ tests:
     assertions:
     - violations: 1
       message: '^support-group=foo-group,service=dummy: CSIStorageCapacity dummy declared with deprecated API version: storage.k8s.io/v1beta1 \(will break in k8s v1.27\)$'
+  - name: helm-release-clean
+    object: fixtures/deprecated-api-version/helm-release-clean.out.yaml
+    assertions:
+    - violations: no
+
+- name: deprecated-api-version-k8s1.29
+  template: rendered-chart/gatekeeper/templates/constrainttemplate-deprecated-api-version.yaml
+  constraint: rendered-chart/gatekeeper-config/templates/constraint-deprecated-api-version-k8s1.29.yaml
+  cases:
+  - name: helm-release-deprecated-api-version-1.29
+    object: fixtures/deprecated-api-version/helm-release-deprecated-1.29.out.yaml
+    assertions:
+    - violations: 1
+      message: '^support-group=foo-group,service=dummy: FlowSchema dummy declared with deprecated API version: flowcontrol.apiserver.k8s.io/v1beta2 \(will break in k8s v1.29\)$'
   - name: helm-release-clean
     object: fixtures/deprecated-api-version/helm-release-clean.out.yaml
     assertions:
@@ -308,12 +308,12 @@ tests:
     object: fixtures/owner-info-on-helm-releases/configmap-no-owner.out.yaml
     assertions:
     - violations: 1
-      message: '^support-group=none,service=none: could not find ConfigMap: owner-of-almost-empty-chart$'
+      message: '^support-group=none,service=none: Chart does not contain owner info. Please add the common/owner-info chart as a direct dependency.$'
   - name: configmap-no-owner-pending-upgrade
     object: fixtures/owner-info-on-helm-releases/configmap-no-owner-pending-upgrade.out.yaml
     assertions:
     - violations: 1
-      message: '^support-group=none,service=none: could not find ConfigMap: owner-of-almost-empty-chart$'
+      message: '^support-group=none,service=none: Chart does not contain owner info. Please add the common/owner-info chart as a direct dependency.$'
   - name: configmap-no-owner-superseded
     object: fixtures/owner-info-on-helm-releases/configmap-no-owner-superseded.out.yaml
     assertions:
@@ -323,6 +323,10 @@ tests:
     assertions:
     - violations: 1
       message: '^support-group=none,service=none: Chart uses outdated owner-info version "0.1.2". Please update to at least "0.2.0".$'
+  - name: pod-owner-info
+    object: fixtures/owner-info-on-helm-releases/configmap-no-owner-but-allowlisted.out.yaml
+    assertions:
+    - violations: no
   - name: pod-owner-info
     object: fixtures/owner-info-on-helm-releases/configmap-pass.out.yaml
     assertions:
@@ -401,8 +405,16 @@ tests:
     object: fixtures/pod-security/elasticsearch-data.yaml
     assertions:
     - violations: no
+  - name: pod-security-accept-elasticsearch-hermes
+    object: fixtures/pod-security/elasticsearch-hermes.yaml
+    assertions:
+    - violations: no
   - name: pod-security-accept-elastiflow-data
     object: fixtures/pod-security/elastiflow-data.yaml
+    assertions:
+    - violations: no
+  - name: pod-security-accept-falco
+    object: fixtures/pod-security/falco.yaml
     assertions:
     - violations: no
   - name: pod-security-accept-fluent-bit
@@ -605,16 +617,16 @@ tests:
     object: fixtures/vulnerable-images/pod-vulnerable.yaml
     assertions:
     - violations: 1
-      message: '^support-group=foo-group,service=dummy: image keppel.example.com/vulnerability:low for container "dummylow" has vulnerability status "Low"$'
+      message: '^support-group=foo-group,service=dummy: image keppel.example.com/vulnerability:low for container "dummylow" has "X-Keppel-Vulnerability-Status: Low"$'
     - violations: 1
-      message: '^support-group=foo-group,service=dummy: image keppel.example.com/vulnerability:medium for container "dummymedium" has vulnerability status "Medium"$'
+      message: '^support-group=foo-group,service=dummy: image keppel.example.com/vulnerability:medium for container "dummymedium" has "X-Keppel-Vulnerability-Status: Medium"$'
     - violations: 1
-      message: '^support-group=foo-group,service=dummy: image keppel.example.com/vulnerability:high for container "starter" has vulnerability status "High"$'
+      message: '^support-group=foo-group,service=dummy: image keppel.example.com/vulnerability:high for container "starter" has "X-Keppel-Vulnerability-Status: High"$'
   - name: pod-unclear
     object: fixtures/vulnerable-images/pod-unclear.yaml
     assertions:
     - violations: 1
-      message: '^support-group=foo-group,service=dummy: image keppel.example.com/vulnerability:unclear for container "dummy" has vulnerability status "Unclear"$'
+      message: '^support-group=foo-group,service=dummy: image keppel.example.com/vulnerability:unclear for container "dummy" has "X-Keppel-Vulnerability-Status: Unclear"$'
   - name: pod-clean
     object: fixtures/vulnerable-images/pod-clean.yaml
     assertions:

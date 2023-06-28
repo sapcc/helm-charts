@@ -11,15 +11,17 @@ data:
   nova.conf: |
 {{ include (print .Template.BasePath "/etc/_nova.conf.tpl") . | indent 4 }}
   nova-api.conf: |
-{{ include "util.helpers.valuesToIni" .Values.api.config_file | indent 4 }}
+{{ include (print .Template.BasePath "/etc/_nova-api.conf.tpl") . | indent 4 }}
 {{- if .Values.api.use_uwsgi }}
   api_uwsgi.ini: |
 {{ include (print .Template.BasePath "/etc/_api_uwsgi.ini.tpl") . | indent 4 }}
 {{- end }}
   nova-api-metadata.conf: |
-{{ include "util.helpers.valuesToIni" .Values.api_metadata.config_file | indent 4 }}
+{{ include (print .Template.BasePath "/etc/_nova-api-metadata.conf.tpl") . | indent 4 }}
+  nova-bigvm.conf: |
+{{ include "util.helpers.valuesToIni" .Values.bigvm.config_file | indent 4 }}
   nova-conductor.conf: |
-{{ include "util.helpers.valuesToIni" .Values.conductor.config_file | indent 4 }}
+{{ include (print .Template.BasePath "/etc/_nova-conductor.conf.tpl") . | indent 4 }}
 {{- /* Note I533984: Replace with plain policy.yaml after Xena upgrade */}}
 {{if (.Values.imageVersion | hasPrefix "rocky") }}
   policy.json: |

@@ -73,26 +73,27 @@ groups:
           summary: "F5 - high utilization of the \"/var/log\" directory."
       - alert: NetworkF5SyncFailed
         expr: snmp_f5_sysCmSyncStatusStatus{module="f5customer", snmp_f5_sysCmSyncStatusStatus="Sync Failed"}
-        for: 10m
+        for: 15m
         labels:
+          severity: warning
+          tier: net
+          service: f5
           context: f5
           meta: "Big-IP device {{ $labels.devicename }} reports config-sync failure."
-          service: f5
-          severity: info
-          tier: net
+          playbook: 'docs/devops/alert/network/f5#config-sync-failure'
         annotations:
-          description: Big-IP device {{ $labels.devicename }} reports config sync failure. See the exact reason on the device itself and resolve.
-          summary: Configuration failed to synchronize
+          description: Big-IP device {{ $labels.devicename }} reports config sync failure.
+          summary: Active Big-IP device configuration failed to synchronize to the standby device.
       - alert: NetworkF5PoolsFlapping
         expr: (ceil((count by (devicename) (changes(snmp_f5_ltmPoolStatusAvailState[10m]) > 5) / sum by (devicename) (snmp_f5_ltmPoolNumber)) * 100)) > 50
         for: 5m
         labels:
+          severity: critical
+          tier: net
+          service: f5
           context: f5
           meta: "Big-IP device {{ $labels.devicename }} reports that {{ $value }}% of all pools on the device are flapping."
           playbook: 'docs/devops/alert/network/f5#f5_pool_flapping'
-          service: f5
-          severity: critical
-          tier: net
         annotations:
           description: "Big-IP device {{ $labels.devicename }} reports {{ $value }}% of pools are flapping."
           summary: Load balancing pools are flapping.

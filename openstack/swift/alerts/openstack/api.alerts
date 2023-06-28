@@ -81,7 +81,7 @@ groups:
       summary: swift-service-haproxy-redispatch
 
   - alert: OpenstackSwiftHAProxyRedispatchPodS3
-    expr: sum by(os_cluster, kubernetes_pod_name) (increase(haproxy_server_redispatch_warnings_total{proxy="swift_proxy_s3"}[10m])) > 100
+    expr: sum by(os_cluster, kubernetes_pod_name) (increase(haproxy_server_redispatch_warnings_total{proxy="swift_proxy_s3"}[10m])) > 300
     for: 10m
     labels:
       context: haproxyredispatch
@@ -97,7 +97,7 @@ groups:
 
   - alert: OpenstackSwiftHealthCheck
     expr: avg(swift_recon_task_exit_code) BY (region) > 0.2 or avg(swift_dispersion_task_exit_code) BY (region) > 0.2 or absent(swift_dispersion_task_exit_code)
-    for: 5m
+    for: 10m
     labels:
       context: health
       dashboard: swift-overview
@@ -113,7 +113,7 @@ groups:
 
   - alert: OpenstackSwiftDispersionErrors
     expr: swift_dispersion_errors > 0
-    for: 5m
+    for: 10m
     labels:
       context: health
       dashboard: swift-overview
@@ -128,7 +128,7 @@ groups:
 
   - alert: OpenstackSwiftMismatchedRings
     expr: (sum(max by (storage_ip) (swift_cluster_md5_not_matched{kind="ring"})) - sum(max by (storage_ip) (swift_cluster_md5_errors{kind="ring"}))) > 0
-    for: 15m
+    for: 20m
     labels:
       context: mismatchedrings
       dashboard: swift-overview
@@ -158,7 +158,7 @@ groups:
       summary: swift-mismatched-config
 
   - alert: OpenstackSwiftNodeError
-    expr: sum(max by (storage_ip) (swift_cluster_md5_errors{kind="ring"})) > 0
+    expr: max by (storage_ip) (swift_cluster_md5_errors{kind="ring"}) > 0
     for: 15m
     labels:
       context: nodeerror
@@ -167,9 +167,10 @@ groups:
       severity: warning
       support_group: containers
       tier: os
-      meta: '{{ $value }} Swift nodes not reachable'
+      playbook: 'docs/support/playbook/swift/node_error'
+      meta: Swift node {{ $labels.storage_ip }} not reachable
     annotations:
-      description: Swift node error. {{ $value }} Node(s) not reachable.
+      description: Swift node error. Node with IP {{ $labels.storage_ip }} is not reachable.
       summary: swift-node-error
 
   - alert: OpenstackSwiftDisksUnmounted

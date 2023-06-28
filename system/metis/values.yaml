@@ -5,7 +5,6 @@ global:
   #dbPassword: <defined-in-secrets>
 
 alerts:
-  tier: "os"
   prometheus: "infra-collector"
   supportGroup: "observability"
 
@@ -33,6 +32,7 @@ mariadb:
   initdb_configmap: metis-initdb
   ronly_user: ronly
   ronly_password: DEFINED-IN-REGION
+  long_query_time: 10
   livenessProbe:
     enabled: false
   readinessProbe:
@@ -75,7 +75,6 @@ mariadb:
 
   alerts:
     enabled: true
-    tier: "os"
     service: "metis"
     prometheus: "infra-collector"
     alert_db_not_ready: false
@@ -117,7 +116,7 @@ backup_v2:
 
 metisSync:
   image: go-maria-sync
-  imageVersion: "20230123144256"
+  imageVersion: "20230425160817"
   alerts:
     enabled: false
     prometheus: "infra-collector"
@@ -133,6 +132,7 @@ metis:
   vcenter:
     enabled: false
   releaseLocks: false
+  migration_version: 3
   requiredDatabases:
     - "keystone"
     - "nova"

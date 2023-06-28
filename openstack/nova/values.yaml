@@ -111,10 +111,6 @@ pod:
       requests:
         cpu: "1000m"
         memory: "1Gi"
-    hv_vmware_dvs:
-      requests:
-        cpu: "1000m"
-        memory: "2Gi"
     vspc:
       requests:
         cpu: "200m"
@@ -143,13 +139,10 @@ apidbPassword: null
 
 loci:
   nova: false
-  openvswitch: false
   # neutron images use loci by default
 
 #TODO we need to move to global or find another way to share image versions
 imageNameNeutron: loci-neutron
-imageVersionNeutronServer: null
-imageVersionNeutronOpenvswitchAgent: null
 
 imageNameOpenvswitch: loci-neutron
 imageVersionOpenvswitchVswitchd: null
@@ -167,6 +160,8 @@ imageVersionNovaSpicehtml5proxy: null
 imageVersionNovaScheduler: null
 imageVersionBitnamiOpenResty: 1.21.4-1-debian-11-r57
 
+imageVersionVspc: null
+
 vspc:
   enabled: false
   telnet:
@@ -177,16 +172,11 @@ vspc:
     portExternal: 1334
   nodeIP: null
   url: vmware-vspc
-  version: "20210111143046"
   pvc:
     existingClaim: null
     accessMode: ReadWriteMany
     size: 10Gi
 
-
-# I would move all that to the neutron deployment
-neutron: {}
-neutron_dvs_agent_enabled: true
 
 cross_az_attach: 'False'
 # for a total of 11 tries with 0.5s sleep in between we could get away with < 5s of problems
@@ -205,6 +195,7 @@ api:
     api:
       list_records_by_skipping_down_cells: false
       use_forwarded_for: true
+      disable_hypervisor_uptime_detail: true
 
     wsgi:
       api_paste_config: /etc/nova/api-paste.ini
@@ -225,6 +216,9 @@ api_metadata:
 
     wsgi:
       api_paste_config: /etc/nova/api-paste.ini
+
+bigvm:
+  config_file: {}
 
 consoles:
   novnc:
@@ -264,10 +258,16 @@ scheduler:
   # The following weighers are crutches, but we can't express it otherwise
   # currently. They should overpower the other weighers even in worst-case
   # (e.g. least ram available + worst disk weight), so we have to make it >=
-  # len(other_weighers). At the same time, we, want a VM to not move on resize,
-  # if it doesn't have to - even if it's in the wrong RAM class currently.
+  # len(other_weighers). At the same time, we want a VM to not move on resize,
+  # if it doesn't have to - even if it's in the wrong RAM class currently,
+  # preferring the same host to keep the ephemeral disk on the same
+  # datastore-cluster, but using the same shard if possible for less
+  # volume-migrations.
   prefer_same_host_resize_weight_multiplier: 1000.0
+  prefer_same_shard_resize_weight_multiplier: 200.0
   hv_ram_class_weight_multiplier: 100.0
+  # this is a DictOpt and takes the form key1:value1,key2:value2
+  hv_ram_class_weights_gib: "1024:1"
   image_properties_default_architecture: "x86_64"
 
 compute:
@@ -283,6 +283,8 @@ compute:
       rpc_statsd_port: 9125
       # enables collecting metrics for RPC calls
       rpc_statsd_enabled: true
+      # confirm automatically a resize after 3 days
+      resize_confirm_window: 259200
     vmware:
       insecure: true
       use_linked_clone: false
@@ -296,6 +298,13 @@ compute:
       default_hw_version: vmx-18
       memory_reservation_cluster_hosts_max_fail: 2
       memory_reservation_max_ratio_fallback: 0.8
+      # set this to (a little above) the maximum a flavor ever had in our env
+      # This query can look for currently used resources in Placement:
+      # SELECT a.used, a.consumer_id FROM allocations a
+      #   JOIN resource_providers r ON r.id = a.resource_provider_id
+      #   WHERE resource_class_id = 2 AND r.name like 'domain-%' ORDER BY a.used DESC LIMIT 2;
+      # additionally, the sap-seeds chart contains the flavors we currently have
+      resource_disk_gb_max_unit_limit: 700
   vmware:
     vnc:
       enabled: false
@@ -769,7 +778,7 @@ mariadb_cell2:
     support_group: compute-storage-api
 
 rabbitmq_cell2:
-  name: nova-cell2
+  nameOverride: cell2-rabbitmq
   persistence:
     enabled: false
 
@@ -791,7 +800,6 @@ audit:
   metrics_enabled: true
 
 rabbitmq:
-  name: nova
   users:
     default:
       password: null

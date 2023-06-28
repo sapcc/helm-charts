@@ -9,6 +9,8 @@ qalogs:
   enabled: false
 scaleout:
   enabled: false
+prim_term: 1
+seq_num: 0
 
 alerts:
   enabled: false
@@ -59,6 +61,9 @@ opensearch_client:
   fullnameOverride: "opensearch-logs-client"
   nodeGroup: "client"
   masterService: "opensearch-logs-master"
+  podAnnotations:
+    # manual versioning, raise if secrets change
+    versioning: "3"	
   roles:
     - remote_cluster_client
   opensearchJavaOpts: "-Dlog4j2.formatMsgNoLookups=true -XX:MaxRAM=5g -XX:MaxGCPauseMillis=5000 -Xms1g -Xmx1g"
@@ -140,3 +145,19 @@ opensearch_dashboards:
     secret: dashboard-secrets
   ingress:
     enabled: false
+  logs_endpoint:
+    enabled: false
+
+elastic_manager:
+  enabled: false
+  port_internal: '9000'
+  http_port: 9200
+  cluster_port: 9301
+  endpoint_host_internal: es-client.elk
+  endpoint_host_public: elastic-manager.scaleout
+  image_elastic_manager: lmenezes/cerebro:0.9.4
+  opensearch:
+    enabled: false
+
+elasticdump:
+  enabled: false

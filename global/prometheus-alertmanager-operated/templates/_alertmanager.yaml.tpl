@@ -62,6 +62,14 @@ route:
   - receiver: elastic
     continue: true
 
+  {{- if .Values.cc_email_receiver.enabled }}
+  - receiver: cc_email_receiver
+    group_by: ['...']
+    continue: false
+    matchers: [alertname="KubernikusKlusterLowOnObjectStoreQuota",primary_email_recipients!=""]
+  {{- end }}
+
+
   # review for slack_by_cc_service
   - receiver: slack_hsm
     continue: false
@@ -308,27 +316,35 @@ route:
       region: global|ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|ap-sa-2|eu-de-1|eu-de-2|eu-nl-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3
       support_group: observability
 
+  - receiver: support_group_alerts_critical_src
+    continue: true
+    match_re:
+      severity: critical
+      cluster_type: abapcloud|admin|controlplane|customer|internet|kubernikus|metal|scaleout|virtual
+      region: global|ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|ap-sa-2|eu-de-1|eu-de-2|eu-nl-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3
+      support_group: src
+
   - receiver: support_group_alerts_warning
     continue: true
     match_re:
       severity: warning
       cluster_type: abapcloud|admin|controlplane|customer|internet|kubernikus|metal|scaleout|virtual
       region: global|ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|ap-sa-2|eu-de-1|eu-de-2|eu-nl-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3
-      support_group: compute|compute-storage-api|containers|email|identity|network-api|observability
+      support_group: compute|compute-storage-api|containers|email|identity|network-api|observability|src
 
   - receiver: support_group_alerts_qa
     continue: true
     match_re:
       severity: warning|critical
       region: qa-de-1
-      support_group: compute|compute-storage-api|containers|email|identity|network-api|observability
+      support_group: compute|compute-storage-api|containers|email|identity|network-api|observability|src
 
   - receiver: support_group_alerts_labs
     continue: true
     match_re:
       severity: warning|critical
       region: qa-de-2|qa-de-3|qa-de-4|qa-de-5|qa-de-6
-      support_group: compute|compute-storage-api|containers|email|identity|network-api|observability
+      support_group: compute|compute-storage-api|containers|email|identity|network-api|observability|src
   # sunset latest q1-23
   - receiver: pagerduty_api
     continue: true
@@ -1094,6 +1110,20 @@ receivers:
             text: {{"'{{template \"slack.sapcc.acknowledge.actionText\" . }}'"}}
             value: {{"'{{template \"slack.sapcc.acknowledge.actionValue\" . }}'"}}
 
+  - name: support_group_alerts_critical_src
+    slack_configs:
+      - channel: '#alert-{{"{{ .CommonLabels.support_group }}"}}-{{"{{ .CommonLabels.severity }}"}}'
+        api_url: {{ required ".Values.slack.webhookURL undefined" .Values.slack.webhookURL | quote }}
+        username: "Pulsar"
+        title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
+        title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
+        text: {{"'{{template \"slack.sapcc.text\" . }}'"}}
+        pretext: {{"'{{template \"slack.sapcc.pretext\" . }}'"}}
+        icon_emoji: {{"'{{template \"slack.sapcc.iconemoji\" . }}'"}}
+        callback_id: "alertmanager"
+        color: {{`'{{template "slack.sapcc.color" . }}'`}}
+        send_resolved: true
+
   - name: support_group_alerts_critical_containers
     slack_configs:
       - channel: '#alert-{{"{{ .CommonLabels.support_group }}"}}-{{"{{ .CommonLabels.severity }}"}}'
@@ -1481,3 +1511,22 @@ receivers:
           Sentry: {{"'{{template \"pagerduty.sapcc.sentry\" . }}'"}}
           Playbook: {{"'{{template \"pagerduty.sapcc.playbook\" . }}'"}}
           firing: {{"'{{ template \"pagerduty.sapcc.firing\" . }}'"}}
+
+  # email receiver config
+  {{- if .Values.cc_email_receiver.enabled }}
+  - name: cc_email_receiver
+    email_configs:
+      - to: {{"'{{.CommonLabels.primary_email_recipients}},{{.CommonLabels.cc_email_recipients}},{{.CommonLabels.bcc_email_recipients}}'"}}
+        from: {{ required ".Values.cc_email_receiver.email_from_address undefined" .Values.cc_email_receiver.email_from_address | quote }}
+        headers:
+          subject: {{"'{{ .CommonAnnotations.mail_subject }}'"}}
+          To: {{"'{{.CommonLabels.primary_email_recipients}}'"}}
+          CC: {{"'{{.CommonLabels.cc_email_recipients}}'"}}
+        text: {{"'{{ .CommonAnnotations.mail_body }}'"}}
+        html: {{"'{{ template \"cc_email_receiver.KubernikusKlusterLowOnObjectStoreQuota\" . }}'"}}
+        smarthost: {{ required ".Values.cc_email_receiver.smtp_host undefined" .Values.cc_email_receiver.smtp_host | quote }}
+        auth_username: {{ required ".Values.cc_email_receiver.auth_username undefined" .Values.cc_email_receiver.auth_username | quote }}
+        auth_password: {{ required ".Values.cc_email_receiver.auth_password undefined" .Values.cc_email_receiver.auth_password | quote }}
+        require_tls: true
+        send_resolved: false
+  {{- end }}

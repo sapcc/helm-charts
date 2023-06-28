@@ -414,7 +414,7 @@ os_compute_api:os-hypervisors:list: rule:context_is_admin
 # List all hypervisors with details
 #   GET /os-hypervisors/details
 #os_compute_api:os-hypervisors:list-detail: rule:system_reader_api
-os_compute_api:os-hypervisors:list: rule:context_is_admin
+os_compute_api:os-hypervisors:list-detail: rule:context_is_admin
 
 # Search hypervisor by hypervisor_hostname pattern.
 #   GET /os-hypervisors/{hypervisor_hostname_pattern}/search
@@ -641,6 +641,12 @@ os_compute_api:os-server-groups:index:all_projects: rule:context_is_admin
 #   GET /os-server-groups/{server_group_id}
 #os_compute_api:os-server-groups:show: rule:system_or_project_reader
 os_compute_api:os-server-groups:show: rule:context_is_editor
+
+# Edit details of a server group
+# [SAP-custom API extension]
+#   PUT /os-server-groups/{server_group_id}
+#os_compute_api:os-server-groups:update: rule:system_admin_or_owner
+os_compute_api:os-server-groups:update: rule:context_is_editor
 
 # Delete a Compute service.
 #   DELETE /os-services/{service_id}

@@ -4,7 +4,7 @@ groups:
   - alert: HostWithRunningVMsNotResponding
     expr: |
       avg_over_time(vrops_hostsystem_runtime_connectionstate{state="notResponding"}[5m])
-      and on (hostsystem) avg_over_time(vrops_hostsystem_runtime_powerstate{state="Unknown"}[5m])
+      and on (hostsystem) avg_over_time(vrops_hostsystem_runtime_powerstate{state!="Powered Off"}[5m])
       and on (hostsystem) vrops_hostsystem_runtime_maintenancestate{state="notInMaintenance"}
       and on (hostsystem) count(vrops_virtualmachine_runtime_powerstate{virtualmachine!~"vCLS.*", state="Powered On"}) by (hostsystem) > 0
     for: 5m
@@ -16,7 +16,7 @@ groups:
       context: "ESXi not responding"
       meta: "Host {{ $labels.hostsystem }} with running VMs not responding. ({{ $labels.vcenter }}, {{ $labels.vccluster }})"
       dashboard: esxi-host-disconnected/esxi-host-disconnected?&var-host={{ $labels.hostsystem }}
-      playbook: docs/devops/alert/vcenter/#test_esxi_hs_1
+      playbook: docs/devops/alert/vcenter/#hostwithrunningvmsnotresponding
     annotations:
       description: "Host {{ $labels.hostsystem }} with running VMs not responding. ({{ $labels.vcenter }}, {{ $labels.vccluster }})"
       summary: "Host {{ $labels.hostsystem }} with running VMs not responding. ({{ $labels.vcenter }}, {{ $labels.vccluster }})"
@@ -26,7 +26,7 @@ groups:
       vrops_hostsystem_summary_running_vms_number == 0 and
       on (hostsystem) vrops_hostsystem_runtime_connectionstate{state="notResponding"} and
       on (hostsystem) vrops_hostsystem_runtime_maintenancestate{state="notInMaintenance"} and
-      on (hostsystem) vrops_hostsystem_runtime_powerstate{state="Powered On"}
+      on (hostsystem) vrops_hostsystem_runtime_powerstate{state!="Powered Off"}
     labels:
       severity: warning
       tier: vmware
@@ -35,7 +35,7 @@ groups:
       context: "ESXi not responding"
       meta: "Host {{ $labels.hostsystem }} not responding. ({{ $labels.vcenter }}, {{ $labels.vccluster }})"
       dashboard: esxi-host-disconnected/esxi-host-disconnected?&var-host={{ $labels.hostsystem }}
-      playbook: docs/devops/alert/vcenter/#test_esxi_hs_2
+      playbook: docs/devops/alert/vcenter/#hostnotresponding
     annotations:
       description: "Host {{ $labels.hostsystem }} not responding. ({{ $labels.vcenter }}, {{ $labels.vccluster }})"
       summary: "Host {{ $labels.hostsystem }} not responding. ({{ $labels.vcenter }}, {{ $labels.vccluster }})"
@@ -153,7 +153,7 @@ groups:
       support_group: compute
       context: "{{ $labels.hostsystem }} vCenter connection"
       meta: "`{{ $labels.hostsystem }}` has been unexpectedly disconnected from vCenter Server {{ $labels.vcenter }}."
-      playbook: docs/devops/alert/vcenter/#host_has_lost_connection_to_vcenter_server
+      playbook: docs/devops/alert/vcenter/#hosthaslostconnectiontovcenterserver
       no_alert_on_absence: "true"
     annotations:
       description: "`{{ $labels.hostsystem }}` has been unexpectedly disconnected from vCenter Server {{ $labels.vcenter }}."
@@ -204,7 +204,7 @@ groups:
       support_group: compute
       context: "{{ $labels.hostsystem }} failure"
       meta: "vSphere High Availability (HA) has detected a possible host failure for `{{ $labels.hostsystem }}`. ({{ $labels.vcenter }})."
-      playbook: docs/devops/alert/vcenter/#ha_detected_a_possible_host_failure
+      playbook: docs/devops/alert/vcenter/#hadetectedapossiblehostfailure
       no_alert_on_absence: "true"
     annotations:
       description: "vSphere High Availability (HA) has detected a possible host failure for `{{ $labels.hostsystem }}`. ({{ $labels.vcenter }})."
@@ -364,3 +364,34 @@ groups:
     annotations:
       description: "aPod node `{{ $labels.hostsystem }}` runs multiple vCenter VMs. ({{ $labels.vcenter }})"
       summary: "aPod node `{{ $labels.hostsystem }}` runs multiple vCenter VMs. ({{ $labels.vcenter }})"
+
+  - alert: HostStoragePathCheck
+    expr: vrops_hostsystem_storage_number_of_path < on(vccluster) group_left() (max(vrops_hostsystem_storage_number_of_path) by(vccluster))
+    for: 30m
+    labels:
+      severity: info
+      tier: vmware
+      service: compute
+      support_group: compute
+      context: "{{ $labels.hostsystem }} storage paths"
+      meta: "storage paths for `{{ $labels.hostsystem }}` is less than other hosts in the `{{ $labels.vccluster }}`. ({{ $labels.vcenter }})"
+      no_alert_on_absence: "true"
+    annotations:
+      description: "storage paths for `{{ $labels.hostsystem }}` is less than other hosts in the `{{ $labels.vccluster }}`. ({{ $labels.vcenter }})"
+      summary: "storage paths for `{{ $labels.hostsystem }}` is less than other hosts in the `{{ $labels.vccluster }}`. ({{ $labels.vcenter }})"
+
+  - alert: HostAdapterAllPathsDown
+    expr: |
+      vrops_hostsystem_alert_info{alert_name="All iSCSI HBA paths are down"}
+      and on (hostsystem) vrops_hostsystem_runtime_maintenancestate{state!="inMaintenance"}
+    labels:
+      severity: info
+      tier: vmware
+      service: compute
+      support_group: compute
+      meta: "All iSCSI host bus adapter paths are down on `{{ $labels.hostsystem }}` in the *{{ $labels.vccluster }}* cluster\nLink to the vCenter: --> <https://{{ $labels.vcenter }}|{{ $labels.vcenter }}>"
+      playbook: docs/devops/alert/vcenter/#
+      no_alert_on_absence: "true"
+    annotations:
+      description: "All iSCSI host bus adapter paths are down on `{{ $labels.hostsystem }}` in the *{{ $labels.vccluster }}* cluster\nLink to the vCenter: --> <https://{{ $labels.vcenter }}|{{ $labels.vcenter }}>"
+      summary: "All iSCSI host bus adapter paths are down on `{{ $labels.hostsystem }}` in the *{{ $labels.vccluster }}* cluster\nLink to the vCenter: --> <https://{{ $labels.vcenter }}|{{ $labels.vcenter }}>"

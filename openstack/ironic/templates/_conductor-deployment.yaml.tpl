@@ -45,6 +45,8 @@ spec:
         {{- end }}
     spec:
       {{- include "utils.proxysql.pod_settings" . | indent 6 }}
+      initContainers:
+      {{- tuple . (dict "service" "ironic-api,ironic-rabbitmq") | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 6 }}
       containers:
       - name: ironic-conductor
         image: {{ .Values.global.registry }}/loci-ironic:{{ .Values.imageVersion }}
@@ -54,21 +56,14 @@ spec:
           runAsUser: 0
         {{- end }}
         command:
+        {{- if not $conductor.debug }}
         - dumb-init
-        - kubernetes-entrypoint
+        - ironic-conductor
+        {{- else }}
+        - sleep
+        - inf
+        {{- end }}
         env:
-        - name: COMMAND
-          {{- if not $conductor.debug }}
-          value: "ironic-conductor --config-file /etc/ironic/ironic.conf --config-file /etc/ironic/ironic-conductor.conf"
-          {{- else }}
-          value: "sleep inf"
-          {{- end }}
-        - name: POD_NAME
-          valueFrom: {fieldRef: {fieldPath: metadata.name}}
-        - name: NAMESPACE
-          value: {{ .Release.Namespace }}
-        - name: DEPENDENCY_SERVICE
-          value: "ironic-api,ironic-rabbitmq"
         - name: PYTHONWARNINGS
           value: ignore:Unverified HTTPS request
         {{- if .Values.logging.handlers.sentry }}
@@ -152,29 +147,33 @@ spec:
         {{- include "utils.proxysql.volume_mount" . | indent 8 }}
       {{- include "utils.proxysql.container" . | indent 6 }}
       - name: console
-        image: {{.Values.imageVersionNginx | default "nginx:stable-alpine"}}
+        image: {{ .Values.global.dockerHubMirror }}/library/{{ .Values.imageVersionNginx | default "nginx:stable-alpine" }}
         imagePullPolicy: IfNotPresent
         resources:
 {{ toYaml .Values.pod.resources.console | indent 10 }}
         ports:
           - name: ironic-console
             protocol: TCP
-            containerPort: 80
+            containerPort: 443
         volumeMounts:
           - mountPath: /etc/nginx/conf.d
             name: ironic-console
           - mountPath: /shellinabox
             name: shellinabox
+          - mountPath: /etc/nginx/certs
+            name: secret-tls
         livenessProbe:
           httpGet:
             path: /health
             port: ironic-console
+            scheme: HTTPS
           initialDelaySeconds: 5
           periodSeconds: 3
         readinessProbe:
           httpGet:
             path: /health
             port: ironic-console
+            scheme: HTTPS
           initialDelaySeconds: 5
           periodSeconds: 3
       {{- if $conductor.default.statsd_enabled }}
@@ -222,6 +221,9 @@ spec:
         persistentVolumeClaim:
           claimName: development-pvclaim
       {{- end }}
+      - name: secret-tls
+        secret:
+          secretName: tls-{{ include "ironic_console_endpoint_host_public" . | replace "." "-" }}
       {{- include "utils.proxysql.volumes" . | indent 6 }}
     {{- end }}
 {{- end }}

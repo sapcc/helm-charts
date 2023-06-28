@@ -1,3 +1,33 @@
+## 7.2.8
+
+* Option to create unique swift containers
+
+## 7.2.7
+
+* Switch domain source to `.Values.global.tld`
+
+## 7.2.6
+
+* Add labels to metrics that originate from servicemonitors to identify a kubernikus kluster
+
+## 7.2.5
+
+* bump Prometheus to v2.43.0
+
+## 7.2.2 - 7.2.4
+
+* Enhance pod-sd to allow custom metric relabelings
+
+## 7.2.0 - 7.2.1
+
+* Updating Prometheus to 2.42.0
+* removing networking.k8s.io/v1beta1 for ingresses (not used in the clusters anymore)
+
+## 7.1.40 - 7.1.41
+
+* HighAlert playbook link added
+* HighAlert condition increased
+
 ## 7.1.39
 
 * Thanos sidecar and Prometheus logLevel defaults to warn.

@@ -30,29 +30,18 @@ spec:
         name: manila-api
         alert-tier: os
         alert-service: manila
-{{ tuple . "manila" "api" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
+        {{- tuple . "manila" "api" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | nindent 8 }}
+        {{- include "utils.topology.pod_label" . | indent 8 }}
       annotations:
         configmap-etc-hash: {{ include (print $.Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
         configmap-bin-hash: {{ include (print $.Template.BasePath "/bin-configmap.yaml") . | sha256sum }}
         kubectl.kubernetes.io/default-container: manila-api
     spec:
-{{ tuple . "manila" "api" | include "kubernetes_pod_anti_affinity" | indent 6 }}
+      {{- tuple . "manila" "api" | include "kubernetes_pod_anti_affinity" | nindent 6 }}
+      {{- tuple . (dict "name" "manila-api") | include "utils.topology.constraints" | indent 6 }}
       {{- include "utils.proxysql.pod_settings" . | indent 6 }}
       initContainers:
-      - name: kubernetes-entrypoint
-        image: {{.Values.global.registry}}/loci-manila:{{.Values.loci.imageVersion}}
-        imagePullPolicy: IfNotPresent
-        command:
-          - kubernetes-entrypoint
-        env:
-            - name: NAMESPACE
-              value: {{ .Release.Namespace }}
-            - name: DEPENDENCY_JOBS
-              value: {{ .Release.Name }}-migration
-            - name: DEPENDENCY_SERVICE
-              value: "{{ .Release.Name }}-mariadb,{{ .Release.Name }}-rabbitmq,{{ .Release.Name }}-memcached"
-            - name: COMMAND
-              value: "true"
+      {{- tuple . (dict "jobs" (print .Release.Name "-migration") "service" (print .Release.Name "-mariadb," .Release.Name "-rabbitmq," .Release.Name "-memcached")) | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 6 }}
       - name: fetch-rabbitmqadmin
         image: {{.Values.global.dockerHubMirror}}/library/busybox
         command: ["/scripts/fetch-rabbitmqadmin.sh"]
@@ -62,6 +51,13 @@ spec:
             readOnly: true
           - name: etcmanila
             mountPath: /shared
+      {{- if eq .Values.coordinationBackend "file" }}
+      - name: chown
+        image: {{.Values.global.dockerHubMirror}}/library/busybox
+        command: ["sh", "-c", "chown -R 42424:42424 /var/lib/manila/coordination"]
+        volumeMounts:
+        {{- include "utils.coordination.volume_mount" . | indent 10 }}
+      {{- end }}
       containers:
         - name: manila-api
           image: {{.Values.global.registry}}/loci-manila:{{.Values.loci.imageVersion}}
@@ -151,6 +147,12 @@ spec:
             - name: manila-etc
               mountPath: /etc/manila/manila_audit_map.yaml
               subPath: manila_audit_map.yaml
+              readOnly: true
+            {{- end }}
+            {{- if .Values.api_rate_limit.enabled }}
+            - name: manila-etc
+              mountPath: /etc/manila/ratelimit.yaml
+              subPath: ratelimit.yaml
               readOnly: true
             {{- end }}
             {{- if .Values.watcher.enabled }}

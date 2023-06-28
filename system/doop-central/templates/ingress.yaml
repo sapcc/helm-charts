@@ -1,3 +1,9 @@
+{{- $tld := $.Values.global.tld | required ".Values.global.tld not found" }}
+{{- $domain := "doop" }}
+{{- if .Values.kubernikus }}
+  {{- $domain = "doop-kubernikus" }}
+{{- end }}
+
 kind: Ingress
 apiVersion: networking.k8s.io/v1
 
@@ -5,24 +11,53 @@ metadata:
   name: {{ .Release.Name }}
   annotations:
     kubernetes.io/tls-acme: "true"
-    ingress.kubernetes.io/auth-url: "https://auth-internal.eu-de-2.{{ $.Values.global.tld }}/oauth2/auth"
-    ingress.kubernetes.io/auth-signin: "https://auth-internal.eu-de-2.{{ $.Values.global.tld }}/oauth2/start"
+    disco: "true"
+    ingress.kubernetes.io/auth-url: "https://auth-internal.eu-de-2.{{ $tld }}/oauth2/auth"
+    ingress.kubernetes.io/auth-signin: "https://auth-internal.eu-de-2.{{ $tld }}/oauth2/start"
     ingress.kubernetes.io/auth-request-redirect: $escaped_request_uri
-
-{{- $domain := "doop" }}
-{{- if .Values.kubernikus }}
-  {{- $domain = "doop-kubernikus" }}
-{{- end }}
 
 spec:
   tls:
     - secretName: tls-{{ .Release.Name }}
-      hosts: [ {{ $domain }}.global.{{ $.Values.global.tld | required ".Values.global.tld not found" }} ]
+      hosts: [ {{ $domain }}.global.{{ $tld }} ]
   rules:
-    - host: {{ $domain }}.global.{{ $.Values.global.tld | required ".Values.global.tld not found" }}
+    - host: {{ $domain }}.global.{{ $tld }}
       http:
         paths:
           - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ .Release.Name }}
+                port:
+                  number: 80
+
+---
+
+# Same setup as for Prometheus and Alertmanager: Greenhouse needs to be able to
+# reach the API endpoints (GET /json and GET /json/all) without going through the
+# browser-based OAuth signin workflow.
+
+kind: Ingress
+apiVersion: networking.k8s.io/v1
+
+metadata:
+  name: {{ .Release.Name }}-api
+  annotations:
+    kubernetes.io/tls-acme: "true"
+    disco: "true"
+    ingress.kubernetes.io/enable-cors: "true"
+    ingress.kubernetes.io/cors-allow-origin: '*'
+
+spec:
+  tls:
+    - secretName: tls-{{ .Release.Name }}-api
+      hosts: [ {{ $domain }}-api.global.{{ $tld }} ]
+  rules:
+    - host: {{ $domain }}-api.global.{{ $tld }}
+      http:
+        paths:
+          - path: /json
             pathType: Prefix
             backend:
               service:

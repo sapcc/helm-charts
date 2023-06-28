@@ -5,7 +5,7 @@ groups:
   rules:
     - alert: ThanosRuleQueueIsDroppingAlerts
       expr: |
-        sum by (job, instance) (rate(thanos_alert_queue_alerts_dropped_total{job=~".*thanos.*rule.*", thanos="{{ include "thanos.name" . }}"}[5m])) > 0
+        sum by (thanos) (rate(thanos_alert_queue_alerts_dropped_total{job=~".*thanos.*rule.*", thanos="{{ include "thanos.name" . }}"}[5m])) > 0
       for: 5m
       labels:
         service: {{ default "metrics" $root.Values.alerts.service }}
@@ -19,7 +19,7 @@ groups:
 
     - alert: ThanosRuleSenderIsFailingAlerts
       expr: |
-        sum by (job, instance) (rate(thanos_alert_sender_alerts_dropped_total{job=~".*thanos.*rule.*", thanos="{{ include "thanos.name" . }}"}[5m])) > 0
+        sum by (thanos) (rate(thanos_alert_sender_alerts_dropped_total{job=~".*thanos.*rule.*", thanos="{{ include "thanos.name" . }}"}[5m])) > 0
       for: 5m
       labels:
         service: {{ default "metrics" $root.Values.alerts.service }}
@@ -34,12 +34,12 @@ groups:
     - alert: ThanosRuleHighRuleEvaluationFailures
       expr: |
         (
-          sum by (job, instance) (rate(prometheus_rule_evaluation_failures_total{job=~".*thanos.*rule.*", thanos="{{ include "thanos.name" . }}"}[5m]))
+          sum by (thanos) (rate(prometheus_rule_evaluation_failures_total{job=~".*thanos.*rule.*", thanos="{{ include "thanos.name" . }}"}[5m]))
         /
-          sum by (job, instance) (rate(prometheus_rule_evaluations_total{job=~".*thanos.*rule.*", thanos="{{ include "thanos.name" . }}"}[5m]))
+          sum by (thanos) (rate(prometheus_rule_evaluations_total{job=~".*thanos.*rule.*", thanos="{{ include "thanos.name" . }}"}[5m]))
         * 100 > 5
         )
-      for: 5m
+      for: 10m
       labels:
         service: {{ default "metrics" $root.Values.alerts.service }}
         support_group: {{ default "observability" $root.Values.alerts.support_group }}
@@ -52,7 +52,7 @@ groups:
 
     - alert: ThanosRuleHighRuleEvaluationWarnings
       expr: |
-        sum by (job, instance) (rate(thanos_rule_evaluation_with_warnings_total{job=~".*thanos.*rule.*", thanos="{{ include "thanos.name" . }}"}[5m])) > 0
+        sum by (thanos) (rate(thanos_rule_evaluation_with_warnings_total{job=~".*thanos.*rule.*", thanos="{{ include "thanos.name" . }}"}[5m])) > 0
       for: 15m
       labels:
         service: {{ default "metrics" $root.Values.alerts.service }}
@@ -67,9 +67,9 @@ groups:
     - alert: ThanosRuleEvaluationLatencyHigh
       expr: |
         (
-          sum by (job, instance, rule_group) (prometheus_rule_group_last_duration_seconds{job=~".*thanos.*rule.*", thanos="{{ include "thanos.name" . }}"})
+          sum by (thanos, rule_group) (prometheus_rule_group_last_duration_seconds{job=~".*thanos.*rule.*", thanos="{{ include "thanos.name" . }}"})
         >
-          sum by (job, instance, rule_group) (prometheus_rule_group_interval_seconds{job=~".*thanos.*rule.*", thanos="{{ include "thanos.name" . }}"})
+          sum by (thanos, rule_group) (prometheus_rule_group_interval_seconds{job=~".*thanos.*rule.*", thanos="{{ include "thanos.name" . }}"})
         )
       for: 5m
       labels:
@@ -86,9 +86,9 @@ groups:
     - alert: ThanosRuleGrpcErrorRate
       expr: |
         (
-          sum by (job, instance) (rate(grpc_server_handled_total{grpc_code=~"Unknown|ResourceExhausted|Internal|Unavailable|DataLoss|DeadlineExceeded", job=~".*thanos.*rule.*", thanos="{{ include "thanos.name" . }}"}[5m]))
+          sum by (thanos) (rate(grpc_server_handled_total{grpc_code=~"Unknown|ResourceExhausted|Internal|Unavailable|DataLoss|DeadlineExceeded", job=~".*thanos.*rule.*", thanos="{{ include "thanos.name" . }}"}[5m]))
         /
-          sum by (job, instance) (rate(grpc_server_started_total{job=~".*thanos.*rule.*", thanos="{{ include "thanos.name" . }}"}[5m]))
+          sum by (thanos) (rate(grpc_server_started_total{job=~".*thanos.*rule.*", thanos="{{ include "thanos.name" . }}"}[5m]))
         * 100 > 5
         )
       for: 5m
@@ -105,7 +105,7 @@ groups:
     
     - alert: ThanosRuleConfigReloadFailure
       expr: |
-        avg by (job, instance) (thanos_rule_config_last_reload_successful{job=~".*thanos.*rule.*", thanos="{{ include "thanos.name" . }}"}) != 1
+        avg by (thanos) (thanos_rule_config_last_reload_successful{job=~".*thanos.*rule.*", thanos="{{ include "thanos.name" . }}"}) != 1
       for: 5m
       labels:
         service: {{ default "metrics" $root.Values.alerts.service }}
@@ -120,9 +120,9 @@ groups:
     - alert: ThanosRuleQueryHighDNSFailures
       expr: |
         (
-          sum by (job, instance) (rate(thanos_rule_query_apis_dns_failures_total{job=~".*thanos.*rule.*", thanos="{{ include "thanos.name" . }}"}[5m]))
+          sum by (thanos) (rate(thanos_rule_query_apis_dns_failures_total{job=~".*thanos.*rule.*", thanos="{{ include "thanos.name" . }}"}[5m]))
         /
-          sum by (job, instance) (rate(thanos_rule_query_apis_dns_lookups_total{job=~".*thanos.*rule.*", thanos="{{ include "thanos.name" . }}"}[5m]))
+          sum by (thanos) (rate(thanos_rule_query_apis_dns_lookups_total{job=~".*thanos.*rule.*", thanos="{{ include "thanos.name" . }}"}[5m]))
         * 100 > 1
         )
       for: 15m
@@ -140,9 +140,9 @@ groups:
     - alert: ThanosRuleAlertmanagerHighDNSFailures
       expr: |
         (
-          sum by (job, instance) (rate(thanos_rule_alertmanagers_dns_failures_total{job=~".*thanos.*rule.*", thanos="{{ include "thanos.name" . }}"}[5m]))
+          sum by (thanos) (rate(thanos_rule_alertmanagers_dns_failures_total{job=~".*thanos.*rule.*", thanos="{{ include "thanos.name" . }}"}[5m]))
         /
-          sum by (job, instance) (rate(thanos_rule_alertmanagers_dns_lookups_total{job=~".*thanos.*rule.*", thanos="{{ include "thanos.name" . }}"}[5m]))
+          sum by (thanos) (rate(thanos_rule_alertmanagers_dns_lookups_total{job=~".*thanos.*rule.*", thanos="{{ include "thanos.name" . }}"}[5m]))
         * 100 > 1
         )
       for: 15m
@@ -159,9 +159,9 @@ groups:
     
     - alert: ThanosRuleNoEvaluationFor10Intervals
       expr: |
-        time() -  max by (job, instance, group) (prometheus_rule_group_last_evaluation_timestamp_seconds{job=~".*thanos.*rule.*", thanos="{{ include "thanos.name" . }}"})
+        time() -  max by (thanos, group) (prometheus_rule_group_last_evaluation_timestamp_seconds{job=~".*thanos.*rule.*", thanos="{{ include "thanos.name" . }}"})
         >
-        10 * max by (job, instance, group) (prometheus_rule_group_interval_seconds{job=~".*thanos.*rule.*", thanos="{{ include "thanos.name" . }}"})
+        10 * max by (thanos, group) (prometheus_rule_group_interval_seconds{job=~".*thanos.*rule.*", thanos="{{ include "thanos.name" . }}"})
       for: 5m
       labels:
         service: {{ default "metrics" $root.Values.alerts.service }}
@@ -176,9 +176,9 @@ groups:
     
     - alert: ThanosNoRuleEvaluations
       expr: |
-        sum by (job, instance) (rate(prometheus_rule_evaluations_total{job=~".*thanos.*rule.*", thanos="{{ include "thanos.name" . }}"}[5m])) <= 0
+        sum by (thanos) (rate(prometheus_rule_evaluations_total{job=~".*thanos.*rule.*", thanos="{{ include "thanos.name" . }}"}[5m])) <= 0
           and
-        sum by (job, instance) (thanos_rule_loaded_rules{job=~".*thanos.*rule.*", thanos="{{ include "thanos.name" . }}"}) > 0
+        sum by (thnaos) (thanos_rule_loaded_rules{job=~".*thanos.*rule.*", thanos="{{ include "thanos.name" . }}"}) > 0
       for: 5m
       labels:
         service: {{ default "metrics" $root.Values.alerts.service }}

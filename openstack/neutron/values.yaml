@@ -37,8 +37,8 @@ pod:
         revision_history: 5
         pod_replacement_strategy: RollingUpdate
         rolling_update:
-          max_unavailable: 0
-          max_surge: 1
+          max_unavailable: 10%
+          max_surge: 25%
   debug:
     server: false
     dhcp_agent: false
@@ -207,6 +207,7 @@ cc_fabric:
     enabled: false
     platforms: ['eos', 'nxos']
 
+coordinationBackend: "memcached"
 arista:
   api_type: nocvx
   sync_interval: 60
@@ -568,10 +569,20 @@ rabbitmq:
       cpu: 2000m
     limits:
       cpu: 4000m
-
+  metrics:
+    enabled: true
+    sidecar:
+      enabled: false
+  alerts:
+    support_group: network-api
 rabbitmq_notifications:
   name: neutron
-
+  metrics:
+    enabled: true
+    sidecar:
+      enabled: false
+  alerts:
+    support_group: network-api
 # openstack-watcher-middleware
 watcher:
   enabled: true
@@ -594,8 +605,12 @@ logger:
     size: 1Gi
 
 agent:
-  controlplane: true
+  controlplane: false
 
 dnsmasq:
   conf:
     no-negcache: true
+
+memcached:
+  alerts:
+    support_group: network-api

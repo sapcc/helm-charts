@@ -19,7 +19,7 @@ monsoon_dashboard_mail_user: defined_in_secrets
 monsoon_dashboard_mail_password: defined_in_secrets
 
 monsoon_dashboard_avatar_url: https://avatars.wdf.sap.corp/avatar/#{current_user.name}?size=24x24
-monsoon_dashboard_cam_url: https://spc40-emea.byd.sap.corp/sap/bc/webdynpro/a1sspc/cam_wd_central
+monsoon_dashboard_cam_url: https://spc.ondemand.com/sap/bc/webdynpro/a1sspc/cam_wd_central#
 #monsoon_openstack_auth_api_endpoint:
 monsoon_openstack_auth_api_userid: dashboard
 monsoon_openstack_auth_api_domain: Default
@@ -77,27 +77,20 @@ postgresql:
 
   alerts:
     support_group: containers
+    service: elektra
 
 pgbackup:
   database:
     name: monsoon-dashboard_production
   alerts:
     support_group: containers
+    service: elektra
 
 pgmetrics:
   db_name: monsoon-dashboard_production
   alerts:
     support_group: containers
-  customMetrics:
-    pg_database:
-      query: "SELECT d.datname AS datname, CASE WHEN pg_catalog.has_database_privilege(d.datname, 'CONNECT') THEN pg_catalog.pg_database_size(d.datname) ELSE 0 END AS size_bytes FROM pg_catalog.pg_database d where datname not in ('template0', 'template1', 'postgres')"
-      metrics:
-        - datname:
-            usage: "LABEL"
-            description: "Name of the database"
-        - size_bytes:
-            usage: "GAUGE"
-            description: "Size of the database in bytes"
+    service: elektra
 
 owner-info:
   support-group: containers

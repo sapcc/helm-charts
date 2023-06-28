@@ -5,6 +5,15 @@ metadata:
   name: castellum
 
 data:
+  castellum.yaml: |
+    max_asset_sizes:
+      - asset_type: 'nfs-shares.*'
+        value: 20480 # 20480 GiB = 20 TiB
+    {{- if .Values.castellum.project_seeds }}
+    project_seeds:
+      {{- toYaml .Values.castellum.project_seeds | nindent 6 }}
+    {{- end }}
+
   {{- if .Values.castellum.asset_managers | has "nfs-shares" }}
   netapp-scout.yaml: |
     http:
@@ -15,9 +24,9 @@ data:
       cert: /etc/castellum-certs/prometheus-infra.cert.pem
       key:  /etc/castellum-certs/prometheus-infra.key.pem
       {{- else }}
-      url:  http://prometheus-infra-collector.infra-monitoring.svc:9090
+      url:  http://prometheus-storage.infra-monitoring.svc:9090
       {{- end }}
   {{- end }}
 
   policy.yaml: |
-{{ .Files.Get "files/policy.yaml" | indent 4 }}
+    {{- .Files.Get "files/policy.yaml" | nindent 4 }}

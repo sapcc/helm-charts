@@ -2,6 +2,9 @@ credentials:
   default:
     username: {{ .Values.network_generic_ssh_exporter.user }}
     password: {{ .Values.network_generic_ssh_exporter.password }}
+  apic:
+    username: {{ .Values.network_generic_ssh_exporter.apic_user }}
+    password: {{ .Values.network_generic_ssh_exporter.apic_password }}
 
 lookup_sources:
   metis:
@@ -14,6 +17,43 @@ lookup_sources:
       router_project: SELECT DISTINCT id, project_id FROM neutron.routers
 
 metrics:
+  zmq_errors:
+    regex: >-
+      ^ZmQ\:\s*(RX|TX)\sCNT\:\s\d+\,\sBYTES\:\s\d+\,\sERRORS\:\s(\d*)
+    multi_value: true
+    value: $2
+    labels:
+      direction: $1
+    description: check for zmq  errors
+    metric_type_name: counter
+    command: show system internal epm counters zmq
+    timeout_secs: 5
+
+  xr_tcam_learn_disabled: &xr_tcam_learn_disabled
+    regex: |
+      ^Xr tcam limit learn disabled\s*:\s+(\w+)$
+    value: $1
+    map_values:
+    - regex: No
+      value: 0
+    - regex: Yes
+      value: 1
+    description: linecard xr learning state
+    metric_type_name: string
+    command: vsh_lc -c 'show system internal epmc global-info'
+    timeout_secs: 5
+  hal_learn_disabled:
+    <<: *xr_tcam_learn_disabled
+    regex: |
+      ^Hal Learn Disabled\s*:\s+(\w+)$
+    description: linecard hal learning state
+  epm_pending_epreg:
+    <<: *xr_tcam_learn_disabled
+    regex: |
+      ^EPM pending epreq\s*:\s+(\d+)$
+    metric_type_name: gauge
+    description: linecard pending EP requests
+
   nat_static:
     regex: >-
       Total active translations: (\d+) \((\d+) static, (\d+) dynamic; (\d+) extended\)
@@ -621,8 +661,11 @@ metrics:
     timeout_secs: 5
 
 batches:
-  test:
-    - redundancy_send_queue
+  aci-leaf:
+    - xr_tcam_learn_disabled
+    - hal_learn_disabled
+    - epm_pending_epreg
+    - zmq_errors
   neutron-router:
     - nat_dynamic
     - nat_static
@@ -687,6 +730,8 @@ devices:
   cisco-ios-xe:
     prompt_regex: ^\S+\#$
     init_command: terminal length 0
+  cisco-aci:
+    prompt_regex: ^\S+\# $
   cisco-nx-os:
     prompt_regex: ^\S+\# $
     init_command: terminal length 0

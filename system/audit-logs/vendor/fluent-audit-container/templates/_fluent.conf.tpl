@@ -133,8 +133,11 @@
 </filter>
 {{- end }}
 
-{{- if .Values.additional_container_logs }}
-{{- range .Values.additional_container_logs }}
+{{- $container_logs := .Values.default_container_logs }}
+{{-  if .Values.additional_container_logs }}
+{{- $container_logs = concat $container_logs .Values.additional_container_logs }}
+{{- end }}
+{{- range $container_logs }}
 <source>
   @type tail
   @id {{ .id }}
@@ -159,6 +162,23 @@
     </pattern>
   </parse>
 </source>
+{{- if .preParseFilter }}
+<filter {{ .tag }}*>
+  @type grep
+  @id {{ .id }}_pre_parser_filter
+  {{- if eq .preParseFilter.keep true }}
+  <regexp>
+    key {{ .preParseFilter.key }}
+    pattern {{ .preParseFilter.pattern }}
+  </regexp>
+  {{- else }}
+  <exclude>
+    key {{ .preParseFilter.key }}
+    pattern {{ .preParseFilter.pattern }}
+  </exclude>
+  {{- end }}
+</filter>
+{{- end}}
 {{- if .parse }}
 <filter {{ .tag }}*>
   @type parser
@@ -166,16 +186,27 @@
   key_name log
   <parse>
     @type json
-    time_format %Y-%m-%dT%T.%L%Z
+    time_format {{ .timeFormat | default "%Y-%m-%dT%T.%L%Z" | squote }}
     keep_time_key true
   </parse>
 </filter>
 {{- end }}
-{{- if .field }}
+<filter {{ .tag }}* >
+  @type kubernetes_metadata
+  @id {{ .id }}_kubernetes
+  bearer_token_file /var/run/secrets/kubernetes.io/serviceaccount/token
+  ca_file /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+  skip_labels true
+  skip_container_metadata true
+  skip_master_url true
+  skip_namespace_metadata true
+</filter>
 <filter {{ .tag }}*>
   @type record_transformer
   <record>
+{{- if .field }}
     {{ .field.name }} {{ .field.value | quote }}
+{{- end }}
     sap.cc.cluster "{{ $.Values.global.cluster }}"
     sap.cc.region "{{ $.Values.global.region }}"
   </record>
@@ -183,15 +214,28 @@
 {{- if .filter }}
 <filter {{ .tag }}*>
   @type grep
+  {{- if eq .filter.keep true }}
   <regexp>
     key {{ .filter.key }}
     pattern {{ .filter.pattern }}
   </regexp>
+  {{- else }}
+  <exclude>
+    key {{ .filter.key }}
+    pattern {{ .filter.pattern }}
+  </exclude>
+  {{- end }}
 </filter>
 {{- end }}
 {{- end }}
-{{- end }}
-{{- end }}
+
+<filter falco.**>
+  @type record_modifier
+  <record>
+    event_source ${record['source']}
+  </record>
+  remove_keys source
+</filter>
 
 <match fluent.**>
   @type null
@@ -291,7 +335,7 @@
 </match>
 {{- end }}
 
-<match iasapi.** iaschangelog.** vault.** github-guard.** github-guard-tools.** github-guard-corp.** concourse.** >
+<match iasapi.** iaschangelog.** vault.** github-guard.** github-guard-tools.** github-guard-corp.** concourse.** falco.**>
   @type copy
   @id duplicate_tools
   <store>

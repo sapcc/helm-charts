@@ -1,11 +1,20 @@
-global:
-  region: RegionOne
-  tld: openstack.local
-  alternateContact:
-    emailAddress: support-email
-    name: support
-    title: support
-    phoneNumber: 0
+anchors:
+  keystone: &keystone
+    projectName: master
+    projectDomainName: ccadmin
+    userDomainName: Default
+    username: cronus
+    # authUrl: https://identity
+    # region: eu-de-2
+    # endpointType: public
+    # applicationCredentialID: application-credential-id
+    # applicationCredentialSecret: application-credential-secret
+    # applicationCredentialName: application-credential-name
+    # projectID: project-id
+    # projectDomainID: project-domain-id
+    # domainName: domain-name
+    # domainID: domain-id
+    # userID: user-id
 cronus:
   certPath: /etc/certs
   enabled: true
@@ -137,24 +146,7 @@ nebula:
   maxUnavailable: 0
 
 config:
-  ## keystone optional authentication methods, add in @SECRETS the relevant method
-  keystone:
-    # authUrl: https://identity
-    # region: eu-de-2
-    # endpointType: public
-    # applicationCredentialID: application-credential-id
-    # applicationCredentialSecret: application-credential-secret
-    # applicationCredentialName: application-credential-name
-    # projectID: project-id
-    projectName: master
-    projectDomainName: ccadmin
-    # projectDomainID: project-domain-id
-    userDomainName: Default
-    # domainName: domain-name
-    # domainID: domain-id
-    username: cronus
-    # password: # a password must be defined in ".Values.global.cronus_service_password"
-    # userID: user-id
+  keystone: *keystone
   group: service-group
   jira:
     endpoint: http://url-to
@@ -259,11 +251,8 @@ config:
     allowTrigger: false
     queueName: cronus_work_queue
     exchangeName: cronus_work_queue_exchange
-    trailLimit: 6
     workerPrefetchCount: 1
     workerPrefetchSize: 0
-    trailTimeBaseFactor: 5 # in sec
-    trailTimeRandMaxNumber: 300 # in sec
     # initial waiting time before retry
     initialDelayTime: 5m
     # factor to multiply the waiting time with before each next retry
@@ -494,18 +483,7 @@ rhea:
       disco: "true"
       disco/record: my-ingress.region.cloud.com.
   deployment:
-    enabled: true
     replicas: 1
-  statefulSet:
-    enabled: false
-    replicas: 1
-    podManagementPolicy: OrderedReady
-    annotations: {}
-    labels: {}
-    headless:
-      annotations: {}
-      labels: {}
-      servicePort: 80
   updateStrategy: RollingUpdate
   terminationGracePeriod: 60
   # all below can be used only with a deployment style
@@ -531,7 +509,6 @@ rhea_rabbitmq:
     size: 10Gi
   metrics:
     enabled: false
-
 poller: # service that handles received emails
   enabled: false
   # all below can be used only with a deployment style
@@ -681,11 +658,17 @@ owner-info:
 postfix:
   postfixEnabled: false
   ldap:
-    url: ldap-url
-    certPem: |
-      pem
-    certKey: |
-      key
-    baseDN: dn
+    url: ldaps://ldapmaster-ext-svc.management.svc.{{.Values.global.region}}.cronus-pbe.only.sap:636
+    clientKeyPath: /etc/certs/ldap.key
+    clientCertPath: /etc/certs/ldap.crt
+    baseDN: ou=postfix,dc=cm,dc=net,dc=sap
     projectAttributes:
-      - projsec
+      - top
+      - x-sap-ccloudProject
+      - x-sap-eMailSystem
+
+
+#Chart dependecies
+maillog:
+  enabled: false
+  keystone: *keystone

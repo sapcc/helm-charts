@@ -50,6 +50,8 @@ rabbitmq_notifications:
   ## default: {{.Release.Name}}-rabbitmq.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}
   # host: rabbitmq
   kind: "statefulset"
+  # required due to circular dependency between keppel, keystone, and hermes
+  use_alternate_registry: true
   replicas: 3
   # pod distruption budget
   pdr: 
@@ -87,3 +89,24 @@ owner-info:
   maintainers:
     - Nathan Oyler
   helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/openstack/hermes
+
+
+elasticsearch_hermes:
+  enabled: false
+  http_port: 9200
+  cluster_port: 9301
+  legacy_service_name: true
+  noschedule_port: '63062'
+  replicas: '3'
+  resources:
+    requests:
+      cpu: "2000m"
+      memory: "6Gi"
+    limits:
+      cpu: "4000m"
+  exporter:
+    enabled: true
+    prometheus: openstack
+
+elasticsearch_hermes_kibana:
+  enabled: false

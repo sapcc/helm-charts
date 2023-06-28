@@ -74,6 +74,16 @@ spec:
               containerPort: {{ .Values.cronus.prometheus }}
               protocol: TCP
 {{- end }}
+          startupProbe:
+            httpGet:
+{{- if .Values.cronus.tls }}
+              scheme: HTTPS
+{{- end }}
+              path: /healthz
+              port: http
+            initialDelaySeconds: 5
+            failureThreshold: 3
+            periodSeconds: 5
           readinessProbe:
             httpGet:
 {{- if .Values.cronus.tls }}
@@ -81,7 +91,7 @@ spec:
 {{- end }}
               path: /healthz
               port: http
-            initialDelaySeconds: 3
+            initialDelaySeconds: 5
             periodSeconds: 2
       terminationGracePeriodSeconds: {{ .Values.cronus.terminationGracePeriod | default 60 }}
       dnsConfig:

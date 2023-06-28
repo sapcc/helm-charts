@@ -1,0 +1,50 @@
+{
+  "cloud_admin": "project_domain_name:ccadmin and project_name:cloud_admin",
+  "member": "role:member",
+  "viewer": "role:network_viewer",
+  "admin": "role:network_admin",
+
+  "context_is_admin": "rule:cloud_admin or rule:admin",
+  "context_is_editor": "rule:context_is_admin or rule:member",
+  "context_is_viewer": "rule:context_is_editor or rule:viewer",
+
+  "service:read": "rule:context_is_viewer",
+  "service:create": "rule:context_is_editor",
+  "service:update": "rule:context_is_editor",
+  "service:delete": "rule:context_is_editor",
+  "service:read-global": "rule:cloud_admin",
+  "service:create:provider": "rule:cloud_admin",
+  "service:update-global": "rule:cloud_admin",
+  "service:delete-global": "rule:cloud_admin",
+
+  "service-endpoint:read": "rule:context_is_viewer",
+  "service-endpoint:accept": "rule:context_is_editor",
+  "service-endpoint:reject": "rule:context_is_editor",
+  "service-endpoint:read-global": "rule:context_is_viewer",
+  "service-endpoint:accept-global": "rule:cloud_admin",
+  "service-endpoint:reject-global": "rule:cloud_admin",
+
+  "endpoint:read": "rule:context_is_viewer",
+  "endpoint:create": "rule:context_is_editor",
+  "endpoint:update": "rule:context_is_editor",
+  "endpoint:delete": "rule:context_is_editor",
+  "endpoint:read-global": "rule:cloud_admin",
+  "endpoint:create-global": "rule:cloud_admin",
+  "endpoint:update-global": "rule:cloud_admin",
+  "endpoint:delete-global": "rule:cloud_admin",
+
+  "rbac-policy:read": "rule:context_is_viewer",
+  "rbac-policy:create": "rule:context_is_editor",
+  "rbac-policy:update": "rule:context_is_editor",
+  "rbac-policy:delete": "rule:context_is_editor",
+  "rbac-policy:read-global": "rule:cloud_admin",
+  "rbac-policy:create-global": "rule:cloud_admin",
+  "rbac-policy:update-global": "rule:cloud_admin",
+  "rbac-policy:delete-global": "rule:cloud_admin",
+
+  "quota:read": "rule:context_is_admin",
+  "quota:read-global": "rule:cloud_admin",
+  "quota:read-defaults": "rule:context_is_viewer",
+  "quota:update": "rule:context_is_admin",
+  "quota:delete": "rule:context_is_admin"
+}

@@ -36,35 +36,29 @@ spec:
     spec:
 {{ tuple . "placement" "api" | include "kubernetes_pod_anti_affinity" | indent 6 }}
       {{- include "utils.proxysql.pod_settings" . | indent 6 }}
+      initContainers:
+      {{- tuple . (dict "service" (include "db_name" .) "jobs" (tuple . "db-migrate" | include "job_name") ) | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 6 }}
       containers:
       - name: placement-api
         image: {{ required ".Values.global.registry is missing" .Values.global.registry}}/loci-placement:{{.Values.imageVersion | required "Please set .imageVersion or similar" }}
         imagePullPolicy: IfNotPresent
         command:
         - dumb-init
-        - kubernetes-entrypoint
+        - uwsgi
+        - --ini
+        - /etc/placement/uwsgi.ini
         env:
-        - name: COMMAND
-          value: "uwsgi --ini /etc/{{ include "placement_project" . }}/uwsgi.ini"
-        - name: NAMESPACE
-          value: {{ .Release.Namespace }}
-        - name: DEPENDENCY_SERVICE
-          value: {{ if .Values.mariadb.enabled -}}
-            "{{ .Values.mariadb.name }}-mariadb"
-            {{- else -}}
-              "nova-api-mariadb"
-            {{- end }}
-          {{- if .Values.sentry.enabled }}
+        {{- if .Values.sentry.enabled }}
         - name: SENTRY_DSN
           valueFrom:
             secretKeyRef:
               name: sentry
               key: {{ .Chart.Name }}.DSN.python
-          {{- end }}
-{{- if .Values.python_warnings }}
+        {{- end }}
+        {{- if .Values.python_warnings }}
         - name: PYTHONWARNINGS
           value: {{ .Values.python_warnings | quote }}
-{{- end }}
+        {{- end }}
         lifecycle:
           preStop:
               {{- include "utils.snippets.pre_stop_graceful_shutdown" . | indent 14 }}
@@ -87,7 +81,7 @@ spec:
         - name: placement-api
           containerPort: {{.Values.global.placementApiPortInternal}}
         volumeMounts:
-        - mountPath: /etc/{{ include "placement_project" . }}
+        - mountPath: /etc/placement
           name: placement-etc
         {{- include "utils.proxysql.volume_mount" . | indent 8 }}
       {{- include "utils.proxysql.container" . | indent 6 }}
