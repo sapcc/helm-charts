@@ -18,18 +18,16 @@ blacklist_response:
   json_body: { "message": "Blacklisted" }
 
 # Group multiple CADF actions to one rate limit action.
-# Access rules are fetched with action "update/access_list" (obsolete). Assign it to "read" group.
 groups:
-  read:
-    - read
-    - read/list
-    - update/access_list
-
   write:
     - create
     - delete
     - update
     - update/*
+
+  read:
+    - read
+    - read/list
 
 rates:
   # local rate limits below applied to each project
