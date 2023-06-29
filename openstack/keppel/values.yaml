@@ -204,12 +204,9 @@ pgmetrics:
         SELECT COUNT(*) AS count,
                EXTRACT(epoch FROM MIN(validated_at)) AS min_validated_at,
                SUM(CASE WHEN validation_error_message = '' THEN 0 ELSE 1 END) AS validation_errors,
-               COALESCE(EXTRACT(epoch FROM MIN(vuln_info.next_check_at)), 0) AS min_next_vuln_check_at,
                COALESCE(EXTRACT(epoch FROM MIN(trivy_security_info.next_check_at)), 0) AS min_next_trivy_check_at,
-               SUM(CASE WHEN vuln_info.next_check_at > NOW() THEN 0 ELSE 1 END) AS pending_vuln_checks,
                SUM(CASE WHEN trivy_security_info.next_check_at > NOW() THEN 0 ELSE 1 END) AS pending_trivy_checks
           FROM manifests
-         INNER JOIN vuln_info ON vuln_info.repo_id = manifests.repo_id AND vuln_info.digest = manifests.digest
          INNER JOIN trivy_security_info ON trivy_security_info.repo_id = manifests.repo_id AND trivy_security_info.digest = manifests.digest
       metrics:
         - count:
@@ -221,18 +218,12 @@ pgmetrics:
         - validation_errors:
             usage: "GAUGE"
             description: "Number of manifests stored in Keppel that failed their last validation"
-        - min_next_vuln_check_at:
-            usage: "GAUGE"
-            description: "UNIX timestamp of next scheduled Clair vulnerability check, or 0 if no manifests have ever been checked for vulnerabilities"
         - min_next_trivy_check_at:
             usage: "GAUGE"
             description: "UNIX timestamp of next scheduled Trivy security check, or 0 if no manifests have ever been checked for vulnerabilities"
         - pending_trivy_checks:
             usage: "GAUGE"
             description: "Number of manifests stored in Keppel that are currently overdue for their next scheduled Trivy check"
-        - pending_vuln_checks:
-            usage: "GAUGE"
-            description: "Number of manifests stored in Keppel that are currently overdue for their next scheduled Clair check"
     keppel_unknown_blobs:
       query: 'SELECT COALESCE(EXTRACT(epoch FROM MIN(can_be_deleted_at)), 0) AS min_can_be_deleted_at FROM unknown_blobs'
       metrics:
@@ -275,19 +266,6 @@ pgmetrics:
         - min_updated_at:
             usage: "GAUGE"
             description: "UNIX timestamp when oldest still-active upload was started (or 0 when no upload is in progress)"
-    keppel_vuln_scan_error:
-      query: >
-        SELECT message, status, COUNT(*) AS counts FROM vuln_info GROUP BY message, status
-      metrics:
-        - message:
-            usage: "LABEL"
-            description: "Error message from the Clair indexer"
-        - status:
-            usage: "LABEL"
-            description: "Vulnerability status computed by Keppel"
-        - counts:
-            usage: "GAUGE"
-            description: "Total number of manifests where indexing in Clair failed with a specific error message"
     keppel_trivy_scan_error:
       query: >
         SELECT message, vuln_status, COUNT(*) AS counts FROM trivy_security_info GROUP BY message, vuln_status

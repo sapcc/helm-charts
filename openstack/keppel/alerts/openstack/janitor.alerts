@@ -270,12 +270,11 @@ groups:
         Check the logs of keppel-janitor for details.
 
   - alert: OpenstackKeppelNotCheckingVulnerabilities
-    # 9000 seconds = 2.5 hours (we would like 2 hours, but this limit is now being hit in eu-de-1; I'm raising the limit
-    # for now to silence the flapping alert while we refactor the Clair integration in Keppel to scale better)
-    expr: max(keppel_manifests_count) > 0 and time() - max(keppel_manifests_min_next_vuln_check_at) > 9000
+    # 7200 seconds = 2 hours
+    expr: max(keppel_manifests_count) > 0 and time() - max(keppel_manifests_min_next_trivy_check_at) > 7200
     for: 5m
     labels:
-      context: janitor
+      context: trivy-check
       dashboard: keppel-overview
       service: keppel
       severity: info
@@ -289,38 +288,16 @@ groups:
         Check the logs of keppel-janitor for details.
 
   - alert: OpenstackKeppelClairIndexingErrors
-    # Most failed indexing runs fail due to transient network errors, and Keppel can auto-retry these failed runs.
-    # To avoid flapping during these retries, this alert triggers very slowly. We use min_over_time() for the slow
-    # reaction, instead of a longer `for` period, to allow the alert to clear quickly after it is fixed manually.
-    expr: 'max by (message) (keppel_vuln_scan_error_counts{message!="",status!="Unsupported"} > 0) and max by (message) (min_over_time(keppel_vuln_scan_error_counts{message!="",status!="Unsupported"}[2h]) > 0)'
+    expr: 'max by (message) (keppel_trivy_scan_error_counts{message!="",status!="Unsupported"} > 0)'
     for: 5m
     labels:
-      context: clair-indexing
-      service: keppel
-      severity: info # This should be "warning", but most people on support duty don't like editing unfamiliar databases, so it does not make sense to put this on them.
-      support_group: containers
-      tier: os
-      meta: "{{ $labels.message }}"
-      playbook: 'docs/support/playbook/keppel/clairindexingerrors'
-    annotations:
-      summary: 'Clair failed to index some images'
-      description: |
-        Clair reported the indexing error "{{ $labels.message }}" for {{ $value }} images.
-
-  - alert: OpenstackKeppelClairExcessiveRetries
-    expr: 'max(increase(keppel_retried_vulnerability_checks[1h]) > 100)'
-    for: 5m
-    labels:
-      context: clair-indexing
+      context: trivy-check
       service: keppel
       severity: info
       support_group: containers
       tier: os
+      meta: "{{ $labels.message }}"
     annotations:
-      summary: 'Clair indexing is failing too frequently'
+      summary: 'Trivy check failed on some images'
       description: |
-        Keppel is submitting images to Clair for indexing, but a lot of these
-        indexing operations are coming back failed, causing Keppel to retry
-        them. The large amount of retries indicates that there may be a
-        large-scale problem with Clair. Please have a look at the logs for
-        Clair and/or keppel-janitor.
+        Keppel observed the error "{{ $labels.message }}" while checking the vulnerability status for {{ $value }} images.
