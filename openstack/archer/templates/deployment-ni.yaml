@@ -75,6 +75,8 @@ spec:
                 secretKeyRef:
                   name: sentry
                   key: archer.DSN
+            - name: AVAILABILITY_ZONE
+              value: {{ $az_long }}
           ports:
             - name: metrics
               containerPort: {{ required ".Values.metrics.port missing" $.Values.metrics.port }}
@@ -101,8 +103,6 @@ spec:
               value: {{ $apod }}:{{ required "A valid .Values.cp_network_interface required!" $.Values.cp_network_interface }}
             - name: OS_GLOBAL__HOST
               value: archer-agent-{{ $name }}-{{ $az_long }}
-            - name: AVAILABILITY_ZONE
-              value: {{ $az_long }}
           readinessProbe:
             exec:
               command: ["neutron-agent-liveness", "-config-file", "/etc/neutron/neutron.conf", "-agent-type", "Linux bridge agent"]
