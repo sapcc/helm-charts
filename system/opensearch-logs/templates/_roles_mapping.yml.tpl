@@ -81,3 +81,8 @@ promrole:
   reserved: false
   users:
   - "promuser"
+
+maillog:
+  reserved: false
+  users:
+  - "maillog"
