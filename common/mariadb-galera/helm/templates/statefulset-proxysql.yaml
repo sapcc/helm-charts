@@ -129,88 +129,138 @@ spec:
           value: "{{ (required ".services.proxy.frontend.ports.proxy.targetPort missing" $.Values.services.proxy.frontend.ports.proxy.targetPort) }}"
         - name: PROXYSQL_ADMIN_PORT
           value: "{{ (required ".services.proxy.backend.ports.proxy.targetPort missing" $.Values.services.proxy.backend.ports.proxy.targetPort) }}"
-          {{- range $envKey, $envValue := $.Values.env }}
-            {{- if (has "proxy" $envValue.containerType) }}
-        - name: {{ $envKey }}
-              {{- if $envValue.value }}
-          value: {{ $envValue.value | quote }}
+        {{- if $.Values.proxy.restapi.enabled }}
+        - name: PROXYSQL_RESTAPI_ENABLED
+          value: "true"
+          {{- range $servicesKey, $servicesValue := $.Values.services.proxy }}
+            {{- if eq $servicesValue.name "backend"}}
+              {{- range $portsKey, $portsValue := $servicesValue.ports }}
+                {{- if eq $portsValue.name "restapi"}}
+        - name: PROXYSQL_RESTAPI_PORT
+          value: {{ $portsValue.targetPort | quote }}
+                {{- end }}
               {{- end }}
-              {{- if $envValue.secretName }}
+            {{- end }}
+          {{- end }}
+        {{- end }}
+        {{- if $.Values.proxy.adminui.enabled }}
+        - name: PROXYSQL_WEB_ENABLED
+          value: "true"
+          {{- if $.Values.proxy.adminui.verbosity }}
+        - name: PROXYSQL_WEB_VERBOSITY
+          value: {{ ($.Values.proxy.adminui.verbosity | int) | quote }}
+          {{- end }}
+          {{- range $servicesKey, $servicesValue := $.Values.services.proxy }}
+            {{- if eq $servicesValue.name "backend"}}
+              {{- range $portsKey, $portsValue := $servicesValue.ports }}
+                {{- if eq $portsValue.name "adminui"}}
+        - name: PROXYSQL_WEB_PORT
+          value: {{ $portsValue.targetPort | quote }}
+                {{- end }}
+              {{- end }}
+            {{- end }}
+          {{- end }}
+        {{- end }}
+        {{- range $envKey, $envValue := $.Values.env }}
+          {{- if (has "proxy" $envValue.containerType) }}
+            {{- if $envValue.value }}
+        - name: {{ $envKey }}
+          value: {{ $envValue.value | quote }}
+            {{- end }}
+            {{- if $envValue.secretName }}
+              {{- range $userKey, $userValue := $.Values.mariadb.users }}
+                {{- if $userValue.enabled }}
+                  {{- if eq $userValue.secretName $envValue.secretName }}
+        - name: {{ $envKey }}
           valueFrom:
             secretKeyRef:
               name: {{ include "commonPrefix" $ }}{{ $.Release.Name }}-{{ $envValue.secretName }}
               key: {{ $envValue.secretKey }}
+                  {{- end }}
+                {{- end }}
+              {{- end }}
+              {{- range $userKey, $userValue := $.Values.proxy.users }}
+                {{- if $userValue.enabled }}
+                  {{- if eq $userValue.secretName $envValue.secretName }}
+        - name: {{ $envKey }}
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "commonPrefix" $ }}{{ $.Release.Name }}-{{ $envValue.secretName }}
+              key: {{ $envValue.secretKey }}
+                  {{- end }}
+                {{- end }}
               {{- end }}
             {{- end }}
           {{- end }}
+        {{- end }}
         resources:
           requests:
             cpu: {{ $.Values.resourceLimits.cpu.proxy | default 0.5 }}
           limits:
             memory: {{ $.Values.resourceLimits.memory.proxy | default "64Mi" | quote }}
         ports:
-          {{- range $portsKey, $portsValue := $.Values.services.proxy.backend.ports }}
+        {{- range $portsKey, $portsValue := $.Values.services.proxy.backend.ports }}
           - containerPort: {{ $portsValue.targetPort }}
             name: {{ $portsKey }}
             protocol: {{ $portsValue.protocol | default "TCP" }}
-          {{- end }}
-          {{- if $.Values.monitoring.proxy.enabled }}
+        {{- end }}
+        {{- if $.Values.monitoring.proxy.enabled }}
           - name: metrics
             containerPort: {{ (required ".services.proxy.backend.ports.restapi.targetPort missing" $.Values.services.proxy.backend.ports.restapi.targetPort) }}
-          {{- end }}
+        {{- end }}
         startupProbe:
           exec:
             command:
               - sh
               - -c
               - '/opt/proxysql/bin/startup.sh'
-          {{- if $.Values.startupProbe }}
+        {{- if $.Values.startupProbe }}
           {{ if $.Values.startupProbe.initialDelaySeconds.proxy }} {{- (printf "initialDelaySeconds: %d" (int64 $.Values.startupProbe.initialDelaySeconds.proxy)) }} {{ else }}initialDelaySeconds: 60 {{end}}
           {{ if $.Values.startupProbe.periodSeconds.proxy }} {{- (printf "periodSeconds: %d" (int64 $.Values.startupProbe.periodSeconds.proxy)) }} {{ else }}periodSeconds: 30 {{end}}
           {{ if $.Values.startupProbe.failureThreshold.proxy }} {{- (printf "failureThreshold: %d" (int64 $.Values.startupProbe.failureThreshold.proxy)) }} {{ else }}failureThreshold: 4 {{end}}
           {{ if $.Values.startupProbe.timeoutSeconds.proxy }} {{- (printf "timeoutSeconds: %d" (int64 $.Values.startupProbe.timeoutSeconds.proxy)) }} {{ else }}timeoutSeconds: 20 {{end}}
-          {{- else }}
+        {{- else }}
           initialDelaySeconds: 60
           periodSeconds: 30
           failureThreshold: 4
           timeoutSeconds: 20
-          {{- end }}
+        {{- end }}
         livenessProbe:
           exec:
             command:
               - sh
               - -c
               - '/opt/proxysql/bin/liveness.sh'
-          {{- if $.Values.livenessProbe }}
+        {{- if $.Values.livenessProbe }}
           {{ if $.Values.livenessProbe.initialDelaySeconds.proxy }} {{- (printf "initialDelaySeconds: %d" (int64 $.Values.livenessProbe.initialDelaySeconds.proxy)) }} {{ else }}initialDelaySeconds: 60 {{end}}
           {{ if $.Values.livenessProbe.periodSeconds.proxy }} {{- (printf "periodSeconds: %d" (int64 $.Values.livenessProbe.periodSeconds.proxy)) }} {{ else }}periodSeconds: 30 {{end}}
           {{ if $.Values.livenessProbe.failureThreshold.proxy }} {{- (printf "failureThreshold: %d" (int64 $.Values.livenessProbe.failureThreshold.proxy)) }} {{ else }}failureThreshold: 4 {{end}}
           {{ if $.Values.livenessProbe.timeoutSeconds.proxy }} {{- (printf "timeoutSeconds: %d" (int64 $.Values.livenessProbe.timeoutSeconds.proxy)) }} {{ else }}timeoutSeconds: 20 {{end}}
-          {{- else }}
+        {{- else }}
           initialDelaySeconds: 60
           periodSeconds: 30
           failureThreshold: 4
           timeoutSeconds: 20
-          {{- end }}
+        {{- end }}
         readinessProbe:
           exec:
             command:
               - sh
               - -c
               - '/opt/proxysql/bin/readiness.sh'
-          {{- if $.Values.readinessProbe }}
+        {{- if $.Values.readinessProbe }}
           {{ if $.Values.readinessProbe.initialDelaySeconds.proxy }} {{- (printf "initialDelaySeconds: %d" (int64 $.Values.readinessProbe.initialDelaySeconds.proxy)) }} {{ else }}initialDelaySeconds: 90 {{ end }}
           {{ if $.Values.readinessProbe.periodSeconds.proxy }} {{- (printf "periodSeconds: %d" (int64 $.Values.readinessProbe.periodSeconds.proxy)) }} {{ else }}periodSeconds: 20 {{ end }}
           {{ if $.Values.readinessProbe.successThreshold.proxy }} {{- (printf "successThreshold: %d" (int64 $.Values.readinessProbe.successThreshold.proxy)) }} {{ else }}successThreshold: 1 {{ end }}
           {{ if $.Values.readinessProbe.failureThreshold.proxy }} {{- (printf "failureThreshold: %d" (int64 $.Values.readinessProbe.failureThreshold.proxy)) }} {{ else }}failureThreshold: 3 {{ end }}
           {{ if $.Values.readinessProbe.timeoutSeconds.proxy }} {{- (printf "timeoutSeconds: %d" (int64 $.Values.readinessProbe.timeoutSeconds.proxy)) }} {{ else }}timeoutSeconds: 10 {{ end }}
-          {{- else }}
+        {{- else }}
           initialDelaySeconds: 90
           periodSeconds: 20
           successThreshold: 1
           failureThreshold: 2
           timeoutSeconds: 10
-          {{- end }}
+        {{- end }}
         lifecycle:
           preStop:
             exec:
@@ -225,7 +275,8 @@ spec:
                 - -c
                 - '/opt/proxysql/bin/post-start-hook.sh'
         volumeMounts:
-          {{- range $volumeMountsKey, $volumeMountsValue := $.Values.volumeMounts.proxy }}
+        {{- range $volumeMountsKey, $volumeMountsValue := $.Values.volumeMounts.proxy }}
+          {{- if $volumeMountsValue.enabled }}
             {{- if (hasKey $volumeMountsValue "claimName") }}
               {{- range $volumeClaimTemplatesKey, $volumeClaimTemplatesValue := $.Values.volumeClaimTemplates }}
                 {{- if eq $volumeClaimTemplatesKey $volumeMountsValue.claimName }}
@@ -244,6 +295,7 @@ spec:
               {{- end }}
             {{- end }}
           {{- end }}
+        {{- end }}
           - name: {{ include "commonPrefix" $ }}proxysql-conf
             mountPath: /opt/proxysql/etc/tpl/proxysql_servers.cfg.tpl
             subPath: proxysql_servers.cfg.tpl
@@ -299,17 +351,19 @@ spec:
       terminationGracePeriodSeconds: {{ $.Values.terminationGracePeriodSeconds | default 86400 | int }}
       volumes:
         {{- range $volumeMountsKey, $volumeMountsValue := $.Values.volumeMounts.proxy }}
-          {{- if $volumeMountsValue.type }}
-            {{- if ne $volumeMountsValue.type "persistentVolume" }}
+          {{- if $volumeMountsValue.enabled }}
+            {{- if $volumeMountsValue.type }}
+              {{- if ne $volumeMountsValue.type "persistentVolume" }}
         - name: {{ include "commonPrefix" $ }}{{ $volumeMountsKey }}
-              {{- if eq $volumeMountsValue.type "secret"}}
+                {{- if eq $volumeMountsValue.type "secret"}}
           {{ $volumeMountsValue.type }}:
             secretName: {{ include "commonPrefix" $ }}{{ $.Release.Name }}-{{ $volumeMountsKey }}
-              {{- else if eq $volumeMountsValue.type "hostPath" }}
+                {{- else if eq $volumeMountsValue.type "hostPath" }}
           {{ $volumeMountsValue.type }}:
             path: {{ $volumeMountsValue.hostPath }}
-              {{- else }}
+                {{- else }}
             name: {{ include "commonPrefix" $ }}{{ $volumeMountsKey }}
+                {{- end }}
               {{- end }}
             {{- end }}
           {{- end }}
@@ -335,22 +389,24 @@ spec:
             name: {{ include "commonPrefix" $ }}proxysql-hooks-sh
             defaultMode: 0755
   volumeClaimTemplates:
-  {{- range $volumeClaimTemplatesKey, $volumeClaimTemplatesValue := $.Values.volumeClaimTemplates }}
-    {{- range $volumeMountsKey, $volumeMountsValue := $.Values.volumeMounts.proxy }}
-      {{- if (hasKey $volumeMountsValue "claimName") }}
-        {{- if eq $volumeClaimTemplatesKey $volumeMountsValue.claimName }}
+        {{- range $volumeClaimTemplatesKey, $volumeClaimTemplatesValue := $.Values.volumeClaimTemplates }}
+          {{- range $volumeMountsKey, $volumeMountsValue := $.Values.volumeMounts.proxy }}
+            {{- if $volumeMountsValue.enabled }}
+              {{- if (hasKey $volumeMountsValue "claimName") }}
+                {{- if eq $volumeClaimTemplatesKey $volumeMountsValue.claimName }}
   - metadata:
       name: {{ include "commonPrefix" $ }}{{ $volumeMountsKey }}-{{ $volumeMountsValue.claimName | lower }}
     spec:
-          {{- if $volumeClaimTemplatesValue.storageClassName }}
+                {{- if $volumeClaimTemplatesValue.storageClassName }}
       storageClassName: {{ include "commonPrefix" $ }}{{ $.Release.Name }}-{{ $volumeClaimTemplatesValue.storageClassName }}
-          {{- end }}
+                {{- end }}
       accessModes: {{ $volumeClaimTemplatesValue.accessModes }}
       resources:
         requests:
           storage: {{ $volumeClaimTemplatesValue.capacity }}
+                {{- end }}
+              {{- end }}
+            {{- end }}
+          {{- end }}
         {{- end }}
-      {{- end }}
-    {{- end }}
-  {{- end }}
 {{- end }}

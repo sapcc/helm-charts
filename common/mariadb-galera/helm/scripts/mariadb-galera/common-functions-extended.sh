@@ -1,7 +1,7 @@
 MAX_RETRIES={{ $.Values.scripts.maxRetries | default 10 }}
 WAIT_SECONDS={{ $.Values.scripts.waitTimeBetweenRetriesInSeconds | default 6 }}
 if [ "$0" != "/opt/mariadb/bin/entrypoint-backup.sh" ]; then
-  MYSQL_SVC_CONNECT="mysql --protocol=tcp --user=${MARIADB_ROOT_USER} --password=${MARIADB_ROOT_PASSWORD} --host={{ (include "nodeNamePrefix" (dict "global" $ "component" "application")) }}-frontend-direct.database.svc.cluster.local --port=${MYSQL_PORT} --wait --connect-timeout=${WAIT_SECONDS} --reconnect --batch"
+  MYSQL_SVC_CONNECT="mysql --protocol=tcp --user=${MARIADB_ROOT_USERNAME} --password=${MARIADB_ROOT_PASSWORD} --host={{ (include "nodeNamePrefix" (dict "global" $ "component" "application")) }}-frontend-direct.database.svc.cluster.local --port=${MYSQL_PORT} --wait --connect-timeout=${WAIT_SECONDS} --reconnect --batch"
 fi
 declare -a NODENAME=()
 
@@ -272,7 +272,7 @@ function setupasyncreplication {
   {{- if $.Values.mariadb.asyncReplication.resetConfig }}
   for (( int=${MAX_RETRIES}; int >=1; int-=1));
     do
-    mysql --protocol=tcp --host={{ include "nodeNamePrefix" (dict "global" $ "component" "application") }}-0 --user=${MARIADB_ROOT_USER} --password=${MARIADB_ROOT_PASSWORD} --execute="SET GLOBAL gtid_slave_pos=\"${gtidbinlogposition}\";" --batch
+    mysql --protocol=tcp --host={{ include "nodeNamePrefix" (dict "global" $ "component" "application") }}-0 --user=${MARIADB_ROOT_USERNAME} --password=${MARIADB_ROOT_PASSWORD} --execute="SET GLOBAL gtid_slave_pos=\"${gtidbinlogposition}\";" --batch
     if [ $? -ne 0 ]; then
       logerror "${FUNCNAME[0]}" "'gtid_slave_pos update failed(${int} retries left)"
       sleep ${WAIT_SECONDS}
@@ -290,7 +290,7 @@ function setupasyncreplication {
 
   for (( int=${MAX_RETRIES}; int >=1; int-=1));
     do
-    mysql --protocol=tcp --host={{ include "nodeNamePrefix" (dict "global" $ "component" "application") }}-0 --user=${MARIADB_ROOT_USER} --password=${MARIADB_ROOT_PASSWORD} --execute="CHANGE MASTER TO MASTER_HOST=\"${primaryhost}\", MASTER_PORT=${MYSQL_PORT}, MASTER_USER=\"${REPLICA_USERNAME}\", MASTER_PASSWORD=\"${REPLICA_PASSWORD}\", MASTER_USE_GTID=slave_pos, DO_DOMAIN_IDS=({{ include "domainIdList" (dict "global" $) }}), IGNORE_SERVER_IDS=({{ include "serverIdList" (dict "global" $) }});" --batch
+    mysql --protocol=tcp --host={{ include "nodeNamePrefix" (dict "global" $ "component" "application") }}-0 --user=${MARIADB_ROOT_USERNAME} --password=${MARIADB_ROOT_PASSWORD} --execute="CHANGE MASTER TO MASTER_HOST=\"${primaryhost}\", MASTER_PORT=${MYSQL_PORT}, MASTER_USERNAME=\"${REPLICA_USERNAME}\", MASTER_PASSWORD=\"${REPLICA_PASSWORD}\", MASTER_USE_GTID=slave_pos, DO_DOMAIN_IDS=({{ include "domainIdList" (dict "global" $) }}), IGNORE_SERVER_IDS=({{ include "serverIdList" (dict "global" $) }});" --batch
     if [ $? -ne 0 ]; then
       logerror "${FUNCNAME[0]}" "'change master config failed(${int} retries left)"
       sleep ${WAIT_SECONDS}
@@ -312,7 +312,7 @@ function stopasyncreplication {
   loginfo "${FUNCNAME[0]}" "stop async replication"
   for (( int=${MAX_RETRIES}; int >=1; int-=1));
     do
-    mysql --protocol=tcp --host={{ include "nodeNamePrefix" (dict "global" $ "component" "application") }}-0 --user=${MARIADB_ROOT_USER} --password=${MARIADB_ROOT_PASSWORD} --execute={{- if $.Values.mariadb.asyncReplication.resetConfig }}"STOP ALL SLAVES;RESET SLAVE ALL;"{{- else }}"STOP ALL SLAVES;"{{- end }} --batch
+    mysql --protocol=tcp --host={{ include "nodeNamePrefix" (dict "global" $ "component" "application") }}-0 --user=${MARIADB_ROOT_USERNAME} --password=${MARIADB_ROOT_PASSWORD} --execute={{- if $.Values.mariadb.asyncReplication.resetConfig }}"STOP ALL SLAVES;RESET SLAVE ALL;"{{- else }}"STOP ALL SLAVES;"{{- end }} --batch
     if [ $? -ne 0 ]; then
       logerror "${FUNCNAME[0]}" "'replica stop failed(${int} retries left)"
       sleep ${WAIT_SECONDS}
@@ -334,7 +334,7 @@ function startasyncreplication {
   loginfo "${FUNCNAME[0]}" "start async replication"
   for (( int=${MAX_RETRIES}; int >=1; int-=1));
     do
-    mysql --protocol=tcp --host={{ include "nodeNamePrefix" (dict "global" $ "component" "application") }}-0 --user=${MARIADB_ROOT_USER} --password=${MARIADB_ROOT_PASSWORD} --execute="START ALL SLAVES;" --batch
+    mysql --protocol=tcp --host={{ include "nodeNamePrefix" (dict "global" $ "component" "application") }}-0 --user=${MARIADB_ROOT_USERNAME} --password=${MARIADB_ROOT_PASSWORD} --execute="START ALL SLAVES;" --batch
     if [ $? -ne 0 ]; then
       logerror "${FUNCNAME[0]}" "'replica start failed(${int} retries left)"
       sleep ${WAIT_SECONDS}
@@ -362,7 +362,7 @@ function checkasyncreplication {
   loginfo "${FUNCNAME[0]}" "check async replication status"
   for (( int=${MAX_RETRIES}; int >=1; int-=1));
     do
-    MYSQL_RESPONSE=$(mysql --protocol=tcp --host={{ include "nodeNamePrefix" (dict "global" $ "component" "application") }}-0 --user=${MARIADB_ROOT_USER} --password=${MARIADB_ROOT_PASSWORD} --execute="SHOW ALL SLAVES STATUS\G;" --batch)
+    MYSQL_RESPONSE=$(mysql --protocol=tcp --host={{ include "nodeNamePrefix" (dict "global" $ "component" "application") }}-0 --user=${MARIADB_ROOT_USERNAME} --password=${MARIADB_ROOT_PASSWORD} --execute="SHOW ALL SLAVES STATUS\G;" --batch)
     if [ $? -ne 0 ]; then
       logerror "${FUNCNAME[0]}" "replica status check failed(${int} retries left)"
       sleep ${WAIT_SECONDS}

@@ -1,6 +1,6 @@
 USE mysql;
 SET @host := '${DB_HOST}';
-SET @user := '${DB_USER}';
+SET @user := '${DB_USERNAME}';
 SET @rolename := '${DB_ROLE}';
 SET @admingrant := '${DB_ADMIN_GRANT}';
 SET @grantprivs := CONCAT("GRANT ", @rolename, " TO ", QUOTE(@user), "@", QUOTE(@host), @admingrant);

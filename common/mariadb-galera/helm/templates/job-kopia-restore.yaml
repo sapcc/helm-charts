@@ -12,9 +12,9 @@ metadata:
     release: {{ $.Release.Name }}
     backupsoftware: kopia
 spec:
-  backoffLimit: {{ $.Values.job.kopiarestore.backoffLimit | default 0 | int }}
-  activeDeadlineSeconds: {{ $.Values.job.kopiarestore.activeDeadlineSeconds | default 3600 | int }}
-  ttlSecondsAfterFinished: {{ $.Values.job.kopiarestore.ttlSecondsAfterFinished | default 43200 | int }}
+  backoffLimit: {{ $.Values.mariadb.galera.restore.kopia.job.backoffLimit | default 0 | int }}
+  activeDeadlineSeconds: {{ $.Values.mariadb.galera.restore.kopia.job.activeDeadlineSeconds | default 3600 | int }}
+  ttlSecondsAfterFinished: {{ $.Values.mariadb.galera.restore.kopia.job.ttlSecondsAfterFinished | default 43200 | int }}
   template:
     metadata:
       labels:
@@ -23,7 +23,7 @@ spec:
       annotations:
         checksum/configmap: {{ include (print $.Template.BasePath "/configmap-kopia.yaml") $ | sha256sum }}
     spec:
-      restartPolicy: {{ $.Values.job.kopiarestore.jobRestartPolicy | default "Never" | quote }}
+      restartPolicy: {{ $.Values.mariadb.galera.restore.kopia.job.jobRestartPolicy | default "Never" | quote }}
       serviceAccount: {{ include "commonPrefix" $ }}{{ $.Release.Name }}
       securityContext:
         runAsUser:  {{ $.Values.userId.backup | default 3200 | int }}
@@ -65,15 +65,33 @@ spec:
           value: {{ $.Values.mariadb.galera.restore.kopia.snapshotId | default "false" | quote }}
         {{- range $envKey, $envValue := $.Values.env }}
           {{- if (has "jobrestore-kopia" $envValue.containerType) }}
-        - name: {{ $envKey }}
             {{- if $envValue.value }}
+        - name: {{ $envKey }}
           value: {{ $envValue.value | quote }}
             {{- end }}
             {{- if $envValue.secretName }}
+              {{- range $userKey, $userValue := $.Values.mariadb.users }}
+                {{- if $userValue.enabled }}
+                  {{- if eq $userValue.secretName $envValue.secretName }}
+        - name: {{ $envKey }}
           valueFrom:
             secretKeyRef:
               name: {{ include "commonPrefix" $ }}{{ $.Release.Name }}-{{ $envValue.secretName }}
               key: {{ $envValue.secretKey }}
+                  {{- end }}
+                {{- end }}
+              {{- end }}
+              {{- range $userKey, $userValue := $.Values.mariadb.galera.backup.kopia.users }}
+                {{- if $userValue.enabled }}
+                  {{- if eq $userValue.secretName $envValue.secretName }}
+        - name: {{ $envKey }}
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "commonPrefix" $ }}{{ $.Release.Name }}-{{ $envValue.secretName }}
+              key: {{ $envValue.secretKey }}
+                  {{- end }}
+                {{- end }}
+              {{- end }}
             {{- end }}
           {{- end }}
         {{- end }}

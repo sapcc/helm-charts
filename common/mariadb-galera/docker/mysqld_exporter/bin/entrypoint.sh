@@ -5,12 +5,12 @@ set -o pipefail
 
 source /opt/${SOFTWARE_NAME}/bin/common-functions.sh
 
-DB_USER=${MARIADB_MONITORING_USER-user}
+DB_USERNAME=${MARIADB_MONITORING_USERNAME-user}
 DB_PASS=${MARIADB_MONITORING_PASSWORD-pass}
 MYSQL_HOST=${DB_HOST-localhost}
 MYSQL_PORT=${DB_PORT-3306}
 WEB_LISTEN_ADDRESS="${WEB_LISTEN_HOST-}:${WEB_LISTEN_PORT-9104}"
-export DATA_SOURCE_NAME=${COLLECT_DB_CONNECT_STRING-${DB_USER}:${DB_PASS}@(${MYSQL_HOST}:${MYSQL_PORT})/}
+export DATA_SOURCE_NAME=${COLLECT_DB_CONNECT_STRING-${DB_USERNAME}:${DB_PASS}@(${MYSQL_HOST}:${MYSQL_PORT})/}
 declare -A exporterparams
 
 #all parameters that should per default have values
@@ -58,10 +58,10 @@ if ! [ -z ${COLLECT_INFO_SCHEMA_INNODB_METRICS+x} ] && [ "${COLLECT_INFO_SCHEMA_
 if ! [ -z ${COLLECT_INFO_SCHEMA_PROCESS_LIST+x} ] && [ "${COLLECT_INFO_SCHEMA_PROCESS_LIST}" == "disable" ]; then exporterparams[no-collect.info_schema.processlist]+=; else exporterparams[collect.info_schema.processlist]+=; fi
 if ! [ -z ${COLLECT_INFO_SCHEMA_QUERY_RESPONSE_TIME+x} ] && [ "${COLLECT_INFO_SCHEMA_QUERY_RESPONSE_TIME}" == "disable" ]; then exporterparams[no-collect.info_schema.processlist]+=; else exporterparams[collect.info_schema.query_response_time]+=; fi
 if ! [ -z ${COLLECT_INFO_SCHEMA_SCHEMASTATS+x} ] && [ "${COLLECT_INFO_SCHEMA_SCHEMASTATS}" == "disable" ]; then exporterparams[no-collect.info_schema.schemastats]+=; else exporterparams[collect.info_schema.schemastats]+=; fi
-if ! [ -z ${COLLECT_INFO_SCHEMA_USERSTATS+x} ] && [ "${COLLECT_INFO_SCHEMA_USERSTATS}" == "disable" ]; then exporterparams[no-collect.info_schema.userstats]+=; else exporterparams[collect.info_schema.userstats]+=; fi
+if ! [ -z ${COLLECT_INFO_SCHEMA_USERNAMESTATS+x} ] && [ "${COLLECT_INFO_SCHEMA_USERNAMESTATS}" == "disable" ]; then exporterparams[no-collect.info_schema.userstats]+=; else exporterparams[collect.info_schema.userstats]+=; fi
 if ! [ -z ${COLLECT_INFO_SCHEMA_CLIENTSTATS+x} ] && [ "${COLLECT_INFO_SCHEMA_CLIENTSTATS}" == "disable" ]; then exporterparams[no-collect.info_schema.clientstats]+=; else exporterparams[collect.info_schema.clientstats]+=; fi
-if ! [ -z ${COLLECT_MYSQL_USER+x} ] && [ "${COLLECT_MYSQL_USER}" == "disable" ]; then exporterparams[no-collect.mysql.user]+=; else exporterparams[collect.mysql.user]+=; fi
-if ! [ -z ${COLLECT_MYSQL_USER_PRIVILEGES+x} ] && [ "${COLLECT_MYSQL_USER_PRIVILEGES}" == "disable" ]; then exporterparams[no-collect.mysql.user.privileges]+=; else exporterparams[collect.mysql.user.privileges]+=; fi
+if ! [ -z ${COLLECT_MYSQL_USERNAME+x} ] && [ "${COLLECT_MYSQL_USERNAME}" == "disable" ]; then exporterparams[no-collect.mysql.user]+=; else exporterparams[collect.mysql.user]+=; fi
+if ! [ -z ${COLLECT_MYSQL_USERNAME_PRIVILEGES+x} ] && [ "${COLLECT_MYSQL_USERNAME_PRIVILEGES}" == "disable" ]; then exporterparams[no-collect.mysql.user.privileges]+=; else exporterparams[collect.mysql.user.privileges]+=; fi
 if ! [ -z ${COLLECT_PERF_SCHEMA_INDEXIOWAITS+x} ] && [ "${COLLECT_PERF_SCHEMA_INDEXIOWAITS}" == "disable" ]; then exporterparams[no-collect.perf_schema.indexiowaits]+=; else exporterparams[collect.perf_schema.indexiowaits]+=; fi
 if ! [ -z ${COLLECT_INFO_SCHEMA_TABLES+x} ] && [ "${COLLECT_INFO_SCHEMA_TABLES}" == "disable" ]; then exporterparams[no-collect.info_schema.tables]+=; else exporterparams[collect.info_schema.tables]+=; fi
 if ! [ -z ${COLLECT_INFO_SCHEMA_TABLESTATS+x} ] && [ "${COLLECT_INFO_SCHEMA_TABLESTATS}" == "disable" ]; then exporterparams[no-collect.info_schema.tablestats]+=; else exporterparams[collect.info_schema.tablestats]+=; fi

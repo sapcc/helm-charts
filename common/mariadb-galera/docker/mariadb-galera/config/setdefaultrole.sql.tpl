@@ -1,6 +1,6 @@
 USE mysql;
 SET @host := '${DB_HOST}';
-SET @user := '${DB_USER}';
+SET @user := '${DB_USERNAME}';
 SET @rolename := '${DB_ROLE}';
 SET @setdefaultrole := CONCAT("SET DEFAULT ROLE ", @rolename, " FOR ", QUOTE(@user), "@", QUOTE(@host));
 PREPARE stmt_runcode FROM @setdefaultrole;

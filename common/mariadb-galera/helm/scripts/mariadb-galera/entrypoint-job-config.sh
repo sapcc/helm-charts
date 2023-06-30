@@ -7,80 +7,80 @@ source /opt/${SOFTWARE_NAME}/bin/common-functions.sh
 
 waitfordatabase
 loginfo "null" "configuration job started"
-{{- if $.Values.monitoring.mysqld_exporter.enabled }}
-setupuser "${MARIADB_MONITORING_USER}" "${MARIADB_MONITORING_PASSWORD}" 'mysql_exporter' "${MARIADB_MONITORING_CONNECTION_LIMIT}" '%' 'mysql_native_password' " "
-setupuser "${MARIADB_MONITORING_USER}" "${MARIADB_MONITORING_PASSWORD}" 'mysql_exporter' "${MARIADB_MONITORING_CONNECTION_LIMIT}" '::1' 'mysql_native_password' " "
-setupuser "${MARIADB_MONITORING_USER}" "${MARIADB_MONITORING_PASSWORD}" 'mysql_exporter' "${MARIADB_MONITORING_CONNECTION_LIMIT}" '127.0.0.1' 'mysql_native_password' " "
-setupuser "${MARIADB_MONITORING_USER}" "${MARIADB_MONITORING_PASSWORD}" 'mysql_exporter' "${MARIADB_MONITORING_CONNECTION_LIMIT}" 'localhost' 'mysql_native_password' " "
-grantrole 'mysql_exporter' "${MARIADB_MONITORING_USER}" '%' " "
-grantrole 'mysql_exporter' "${MARIADB_MONITORING_USER}" '::1' " "
-grantrole 'mysql_exporter' "${MARIADB_MONITORING_USER}" '127.0.0.1' " "
-grantrole 'mysql_exporter' "${MARIADB_MONITORING_USER}" 'localhost' " "
-setdefaultrole 'mysql_exporter' "${MARIADB_MONITORING_USER}" '%'
-setdefaultrole 'mysql_exporter' "${MARIADB_MONITORING_USER}" '::1'
-setdefaultrole 'mysql_exporter' "${MARIADB_MONITORING_USER}" '127.0.0.1'
-setdefaultrole 'mysql_exporter' "${MARIADB_MONITORING_USER}" 'localhost'
+
+{{- /* database configuration */}}
+{{- range $dbKey, $dbValue := $.Values.mariadb.databases }}
+  {{- if $dbValue.enabled }}
+setupdatabase {{ $dbKey | squote }} {{ $dbValue.comment | squote }} {{ $dbValue.collationName | squote }} {{ $dbValue.CharacterSetName | squote }} {{ $dbValue.enabled }} {{ $dbValue.overwrite }} {{ $dbValue.deleteIfDisabled }}
+  {{- end }}
 {{- end }}
 
-{{- /* Load additional configuration files for MariaDB to be processed by the job container */}}
-{{- $mariadbconfigs := $.Files.Get "config/mariadb-galera/values.yaml" | fromYaml }}
-{{- $usernameEnvVarFound := false }}
-{{- $passwordEnvVarFound := false }}
-{{- range $mariadbconfigKey, $mariadbconfigValue := required "A valid 'configs.' structure is required from config/mariadb-galera/values.yaml" $mariadbconfigs.configs }}
-  {{- if $mariadbconfigValue.enabled}}
-    {{- $configfile := $.Files.Get (printf "config/mariadb-galera/%s/%s" $mariadbconfigValue.type $mariadbconfigValue.file) | fromYaml }}
-    {{- if eq $mariadbconfigValue.type "database" }}
-setupdatabase {{ $mariadbconfigValue.name | quote }} {{ $configfile.comment | quote }} {{ $configfile.collationName | quote }} {{ $configfile.CharacterSetName | quote }} {{ $configfile.enabled }} {{ $configfile.overwrite }} {{ $configfile.deleteIfDisabled }}
-    {{- else if eq $mariadbconfigValue.type "role" }}
-      {{- if $configfile.grant }}
-setuprole {{ $mariadbconfigValue.name | quote }} {{ $configfile.privileges | join ", " | quote }} {{ $configfile.object | quote }} "WITH GRANT OPTION"
-      {{- else }}
-setuprole {{ $mariadbconfigValue.name | quote }} {{ $configfile.privileges | join ", " | quote }} {{ $configfile.object | quote }} ""
-      {{- end }}
-    {{- else if eq $mariadbconfigValue.type "user" }}
-      {{- range $hostnameKey, $hostnameValue := required (printf "A valid 'hostnames.' structure is required in config/mariadb-galera/%s/%s" $mariadbconfigValue.type $mariadbconfigValue.file) $configfile.hostnames }}
-        {{- $usernameEnvVarFound = false }}
-        {{- $passwordEnvVarFound = false }}
-        {{- range $envKey, $envValue := $.Values.env }}
-          {{- if (has "jobconfig" $envValue.containerType) }}
-            {{- if and (eq $envKey ($configfile.username | trimAll "${}")) ($envValue) }}
-              {{- $usernameEnvVarFound = true }}
-            {{- end }}
-            {{- if and (eq $envKey ($configfile.password | trimAll "${}")) ($envValue) }}
-              {{- $passwordEnvVarFound = true }}
-            {{- end }}
-          {{- end }}
-        {{- end }}
-        {{- if and $usernameEnvVarFound $passwordEnvVarFound }}
-          {{- if $configfile.adminoption }}
-setupuser {{ $configfile.username | quote }} {{ $configfile.password | quote }} {{ $configfile.defaultrole | quote }} {{ $configfile.maxconnections | quote }} {{ $hostnameValue | quote }} {{ $configfile.authplugin | quote }} "WITH ADMIN OPTION"
-          {{- else }}
-setupuser {{ $configfile.username | quote }} {{ $configfile.password | quote }} {{ $configfile.defaultrole | quote }} {{ $configfile.maxconnections | quote }} {{ $hostnameValue | quote }} {{ $configfile.authplugin | quote }} " "
-          {{- end }}
-          {{- if and (hasKey $configfile "additionalroles") (kindIs "slice" $configfile.additionalroles) }}
-            {{- range $rolenameKey, $rolenameValue := $configfile.additionalroles }}
-              {{- if $configfile.adminoption }}
-grantrole {{ $rolenameValue | quote }} {{ $configfile.username | quote }} {{ $hostnameValue | quote }} "WITH ADMIN OPTION"
-              {{- else }}
-grantrole {{ $rolenameValue | quote }} {{ $configfile.username | quote }} {{ $hostnameValue | quote }} " "
-              {{- end }}
-            {{- end }}
-          {{- end }}
-setdefaultrole {{ $configfile.defaultrole | quote }} {{ $configfile.username | quote }} {{ $hostnameValue | quote }}
-        {{- end }}
-      {{- end }}
-      {{- if (not $usernameEnvVarFound) }}
-        {{- fail (printf "%s environment variable not defined, but required for config/mariadb-galera/%s/%s" ($configfile.username | trimAll "${}" | quote) $mariadbconfigValue.type $mariadbconfigValue.file) }}
-      {{- end }}
-      {{- if (not $passwordEnvVarFound) }}
-        {{- fail (printf "%s environment variable not defined, but required for config/mariadb-galera/%s/%s" ($configfile.password | trimAll "${}" | quote) $mariadbconfigValue.type $mariadbconfigValue.file) }}
-      {{- end }}
+{{- /* role configuration */}}
+{{- range $roleKey, $roleValue := $.Values.mariadb.roles }}
+  {{- if $roleValue.enabled }}
+    {{- if $roleValue.grant }}
+setuprole {{ $roleKey | squote }} {{ $roleValue.privileges | join ", " | squote }} {{ $roleValue.object | squote }} "WITH GRANT OPTION"
+    {{- else }}
+setuprole {{ $roleKey | squote }} {{ $roleValue.privileges | join ", " | squote }} {{ $roleValue.object | squote }} ""
     {{- end }}
   {{- end }}
 {{- end }}
 
-
-
+{{- /* user configuration */}}
+{{- $usernameEnvVar := "" }}
+{{- $passwordEnvVar := "" }}
+{{- $userRequired := false }}
+{{- range $userKey, $userValue := $.Values.mariadb.users }}
+  {{- if $userValue.enabled }}
+    {{- range $hostnameKey, $hostnameValue := required (printf "A valid '.hostnames' structure is required for the '%s' user" $userKey) $userValue.hostnames }}
+      {{- $usernameEnvVar = "" }}
+      {{- $passwordEnvVar = "" }}
+      {{- $userRequired = false }}
+      {{- range $envKey, $envValue := $.Values.env }}
+        {{- if (has "jobconfig" $envValue.containerType) }}
+          {{- if eq $userValue.secretName $envValue.secretName }}
+            {{- $userRequired = true }}
+            {{- if hasSuffix "_USERNAME" $envKey }}
+              {{- $usernameEnvVar = $envKey }}
+            {{- end }}
+            {{- if hasSuffix "_PASSWORD" $envKey }}
+              {{- $passwordEnvVar = $envKey }}
+            {{- end }}
+          {{- end }}
+        {{- end }}
+      {{- end }}
+      {{- if $userRequired }}
+        {{- if and $usernameEnvVar $passwordEnvVar }}
+          {{- if and (eq $usernameEnvVar "MARIADB_ROOT_USERNAME") (or (eq $hostnameValue "127.0.0.1") (eq $hostnameValue "localhost")) }}
+            {{- /* do not configure localhost root accounts to not break socket authentication */}}
+          {{- else }}
+            {{- if $userValue.adminoption }}
+setupuser {{ (printf "${%s}" $usernameEnvVar) | quote }} {{ (printf "${%s}" $passwordEnvVar) | quote }} {{ $userValue.defaultrole | squote }} {{ $userValue.maxconnections | int }} {{ $hostnameValue | squote }} {{ $userValue.authplugin | squote }} "WITH ADMIN OPTION"
+            {{- else }}
+setupuser {{ (printf "${%s}" $usernameEnvVar) | quote }} {{ (printf "${%s}" $passwordEnvVar) | quote }} {{ $userValue.defaultrole | squote }} {{ $userValue.maxconnections | int }} {{ $hostnameValue | squote }} {{ $userValue.authplugin | squote }} " "
+            {{- end }}
+            {{- if and (hasKey $userValue "additionalroles") (kindIs "slice" $userValue.additionalroles) }}
+              {{- range $rolenameKey, $rolenameValue := $userValue.additionalroles }}
+                {{- if $userValue.adminoption }}
+grantrole {{ $rolenameValue | squote }} {{ $userKey | squote }} {{ $hostnameValue | squote }} "WITH ADMIN OPTION"
+                {{- else }}
+grantrole {{ $rolenameValue | squote }} {{ $userKey | squote }} {{ $hostnameValue | squote }} " "
+                {{- end }}
+              {{- end }}
+            {{- end }}
+setdefaultrole {{ $userValue.defaultrole | squote }} {{ $userKey | squote }} {{ $hostnameValue | squote }}
+          {{- end }}
+        {{- end }}
+      {{- end }}
+    {{- end }}
+    {{- if (not $usernameEnvVar) }}
+      {{ (printf "'_USERNAME' environment variable for the '%s' user is not defined, but required for the MariaDB user setup" $userKey) }}
+    {{- end }}
+    {{- if (not $passwordEnvVar) }}
+      {{ (printf "'_PASSWORD' environment variable for the '%s' user password is not defined, but required for the MariaDB user setup" $userKey) }}
+    {{- end }}
+  {{- end }}
+{{- end }}
 
 listdbandusers
 

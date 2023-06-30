@@ -8,7 +8,7 @@ source /opt/${SOFTWARE_NAME}/bin/common-functions.sh
 function checkkopiaserver {
   kopia server status \
   --address="http://${CONTAINER_IP}:${KOPIA_PORT}" \
-  --server-control-username="${KOPIA_SERVER_CONTROL_USER}" \
+  --server-control-username="${KOPIA_SERVER_CONTROL_USERNAME}" \
   --server-control-password="${KOPIA_SERVER_CONTROL_PASSWORD}" \
   --remote
   if [ $? -eq 0 ]; then

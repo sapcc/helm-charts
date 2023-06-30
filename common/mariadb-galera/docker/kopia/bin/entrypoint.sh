@@ -15,7 +15,7 @@ function startkopiaserver {
         --check-for-updates=false \
         --control-api=false --grpc=false --legacy-api=false \
         --enable-actions=false \
-        --server-username=${KOPIA_ADMIN_USER} --server-password=${KOPIA_ADMIN_PASSWORD} \
+        --server-username=${KOPIA_ADMIN_USERNAME} --server-password=${KOPIA_ADMIN_PASSWORD} \
         --ui-preferences-file=/opt/${SOFTWARE_NAME}/etc/ui.config.json \
         --config-file=/opt/${SOFTWARE_NAME}/etc/repository.config \
         --insecure=true \

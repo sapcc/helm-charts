@@ -1,4 +1,14 @@
 # Changelog
+## v0.15.0 - 2023/06/30
+* credential support in values.yaml (to be used with external templating)
+  * based on that the secrets.yaml will generate Kubernetes secrets
+  * the related [environment variables will lookup the credential infos](https://kubernetes.io/docs/tasks/inject-data-application/distribute-credentials-secure/#define-container-environment-variables-using-secret-data) from the secrets
+  * Credentials for the different components can be maintained (MariaDB, mysqld_exporter, ProxySQL, Kopia, Restic)
+* database and roles management also moved into the values.yaml
+* separate config folder structure for MariaDB credentials, roles and databases removed
+* `CREATE USER IF NOT EXISTS` and `ALTER USER IF EXISTS` instead of `CREATE OR REPLACE USER` to avoid lockouts during MariaDB credential management
+* software versions bumped
+  * Ubuntu packages timestamp `20230629170110`
 
 ## v0.14.5 - 2023/06/24
 * imageversion type set to integer to support Container image versions like `10.5.20-20230620163110`

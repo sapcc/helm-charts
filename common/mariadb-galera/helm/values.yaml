@@ -74,6 +74,21 @@ mariadb:
   # -- to define the [verbosity](https://mariadb.com/kb/en/error-log/#configuring-the-error-log-verbosity) of the MariaDB logs
   # @default -- 2
   errorLogWarningVerbosity: 1
+  job:
+    config:
+      # -- How many [retries](https://kubernetes.io/docs/concepts/workloads/controllers/job/#pod-backoff-failure-policy) before the MariaDB config job will be marked as failed
+      # @default -- 6
+      backoffLimit: 12
+      # -- Maximum [allowed runtime](https://kubernetes.io/docs/concepts/workloads/controllers/job/#job-termination-and-cleanup) before the MariaDB config job will be stopped
+      # @default -- 300
+      activeDeadlineSeconds: 600
+      # -- After how many seconds will a stopped MariaDB config job be [deleted from the Kubernetes cluster](https://kubernetes.io/docs/concepts/workloads/controllers/job/#clean-up-finished-jobs-automatically)
+      # @default -- 120
+      ttlSecondsAfterFinished: 7200
+      # -- Define how the MariaDB config job pod [will be restarted](https://kubernetes.io/docs/concepts/workloads/controllers/job/#handling-pod-and-container-failures) in case of an error.
+      # It can be on the same worker node or another
+      # @default -- OnFailure
+      jobRestartPolicy: OnFailure
   asyncReplication:
     # -- to enable the [asynchronous replication config](#asynchronous-replication-config). Should be done within custom instance configuration files
     # @default -- false
@@ -108,7 +123,7 @@ mariadb:
       # -- `false` until [PR#624](https://github.com/codership/galera/issues/624) is fixed
       # @default -- false
       recover: false
-    # -- `rsync` or `mariabackup` (also requires GALERA_SST_USER and GALERA_SST_PASSWORD)
+    # -- `rsync` or `mariabackup` (also requires GALERA_SST_USERNAME and GALERA_SST_PASSWORD)
     sst_method: rsync
     # -- (int) [wsrep-slave-threads](https://galeracluster.com/library/documentation/mysql-wsrep-options.html#wsrep-slave-threads)
     # @default -- 4
@@ -132,6 +147,30 @@ mariadb:
       restic:
         # -- enable [restic](https://restic.net/) for the Galera backup
         enabled: false
+        job:
+          schedule:
+            # -- [Schedule](https://kubernetes.io/docs/tasks/job/automated-tasks-with-cron-jobs/#schedule) for the Restic full backup job based on that [syntax](https://kubernetes.io/docs/concepts/workloads/controllers/cron-jobs/#cron-schedule-syntax)
+            # @default -- 15 2 * * *
+            full:
+            # -- [Schedule](https://kubernetes.io/docs/tasks/job/automated-tasks-with-cron-jobs/#schedule) for the Restic transaction backup job based on that [syntax](https://kubernetes.io/docs/concepts/workloads/controllers/cron-jobs/#cron-schedule-syntax)
+            # @default -- */15 0-1,3-12 * * *
+            binlog:
+          # -- (int) Define how many seconds [after a missed schedule](https://kubernetes.io/docs/concepts/workloads/controllers/cron-jobs/#job-creation) the job should still be scheduled or skipped
+          # @default -- 15
+          startingDeadlineSeconds:
+          # -- Define how the Restic backup job pod [will be restarted](https://kubernetes.io/docs/concepts/workloads/controllers/job/#handling-pod-and-container-failures) in case of an error.
+          # It can be on the same worker node or another
+          # @default -- OnFailure
+          jobRestartPolicy: OnFailure
+          # -- Define if and how Restic backup jobs can run in [parallel](https://kubernetes.io/docs/tasks/job/automated-tasks-with-cron-jobs/#concurrency-policy)
+          # @default -- Forbid
+          concurrencyPolicy: Forbid
+          # -- Define how how many completed Restic backup jobs [should be kept](https://kubernetes.io/docs/tasks/job/automated-tasks-with-cron-jobs/#jobs-history-limits)
+          # @default -- 1
+          successfulJobsHistoryLimit: 1
+          # -- Define how how many failed Restic backup jobs [should be kept](https://kubernetes.io/docs/tasks/job/automated-tasks-with-cron-jobs/#jobs-history-limits)
+          # @default -- 1
+          failedJobsHistoryLimit: 1
         # --  (float) update interval for the console output [RESTIC_PROGRESS_FPS](https://restic.readthedocs.io/en/stable/040_backup.html?highlight=RESTIC_PROGRESS_FPS#environment-variables)
         # @default -- 0.01666
         progressFps:
@@ -150,6 +189,25 @@ mariadb:
         # -- [removing backup snapshots](https://restic.readthedocs.io/en/stable/060_forget.html?highlight=prune#removing-backup-snapshots)
         # @default -- false
         pruneBackups: false
+        users:
+          repository:
+            # -- (bool) enable this user
+            enabled: false
+            # -- (string) Restic repository username
+            username:
+            # -- (string) Restic repository password
+            password:
+            # -- (string) the [secret](https://kubernetes.io/docs/concepts/configuration/secret/) name that contains the Restic repository password
+            secretName: restic-repository
+          openstack:
+            # -- enable this Openstack API user
+            enabled: false
+            # -- (string) Openstack API username
+            username:
+            # -- (string) Openstack API user password
+            password:
+            # -- (string) the [secret](https://kubernetes.io/docs/concepts/configuration/secret/) name that contains the Openstack API user password
+            secretName: restic-openstack
         keep:
           # -- (int) [keep-last](https://restic.readthedocs.io/en/stable/060_forget.html#removing-snapshots-according-to-a-policy)
           # @default -- 2
@@ -185,6 +243,30 @@ mariadb:
       kopia:
         # -- enable [kopia](https://kopia.io/) for the Galera backup
         enabled: false
+        job:
+          schedule:
+            # -- [Schedule](https://kubernetes.io/docs/tasks/job/automated-tasks-with-cron-jobs/#schedule) for the Kopia full backup job based on that [syntax](https://kubernetes.io/docs/concepts/workloads/controllers/cron-jobs/#cron-schedule-syntax)
+            # @default -- 15 2 * * *
+            full:
+            # -- [Schedule](https://kubernetes.io/docs/tasks/job/automated-tasks-with-cron-jobs/#schedule) for the Kopia transaction log backup job based on that [syntax](https://kubernetes.io/docs/concepts/workloads/controllers/cron-jobs/#cron-schedule-syntax)
+            # @default -- */30 * * * *
+            binlog:
+          # -- (int) Define how many seconds [after a missed schedule](https://kubernetes.io/docs/concepts/workloads/controllers/cron-jobs/#job-creation) the job should still be scheduled or skipped
+          # @default -- 15
+          startingDeadlineSeconds:
+          # -- Define how the Kopia backup job pod [will be restarted](https://kubernetes.io/docs/concepts/workloads/controllers/job/#handling-pod-and-container-failures) in case of an error.
+          # It can be on the same worker node or another
+          # @default -- OnFailure
+          jobRestartPolicy: OnFailure
+          # -- Define if and how Kopia backup jobs can run in [parallel](https://kubernetes.io/docs/tasks/job/automated-tasks-with-cron-jobs/#concurrency-policy)
+          # @default -- Forbid
+          concurrencyPolicy: Forbid
+          # -- Define how how many completed Kopia backup jobs [should be kept](https://kubernetes.io/docs/tasks/job/automated-tasks-with-cron-jobs/#jobs-history-limits)
+          # @default -- 1
+          successfulJobsHistoryLimit: 1
+          # -- Define how how many failed Kopia backup jobs [should be kept](https://kubernetes.io/docs/tasks/job/automated-tasks-with-cron-jobs/#jobs-history-limits)
+          # @default -- 1
+          failedJobsHistoryLimit: 1
         # --  (string) How often to update progress information [--progress-update-interval](https://kopia.io/docs/reference/command-line/flags/)
         # @default -- 300ms
         progressUpdateInterval:
@@ -194,6 +276,41 @@ mariadb:
         # -- [list backup snapshots](https://kopia.io/docs/reference/command-line/common/snapshot-list/)
         # @default -- false
         listBackups: false
+        users:
+          repository:
+            # -- (bool) enable this user
+            enabled: false
+            # -- (string) Kopia repository password
+            password:
+            # -- (string) the [secret](https://kubernetes.io/docs/concepts/configuration/secret/) name that contains the Kopia repository password
+            secretName: kopia-repository
+          s3:
+            # -- enable this S3 API user
+            enabled: false
+            # -- (string) S3 API username
+            username:
+            # -- (string) S3 API user password
+            password:
+            # -- (string) the [secret](https://kubernetes.io/docs/concepts/configuration/secret/) name that contains the S3 API user password
+            secretName: kopia-s3
+          admin:
+            # -- enable this Kopia server user
+            enabled: false
+            # -- (string) Kopia server username
+            username:
+            # -- (string) Kopia server user password
+            password:
+            # -- (string) the [secret](https://kubernetes.io/docs/concepts/configuration/secret/) name that contains the Kopia server user password
+            secretName: kopia-admin
+          control:
+            # -- enable this Kopia server control user
+            enabled: false
+            # -- (string) Kopia server control username
+            username:
+            # -- (string) Kopia server control user password
+            password:
+            # -- (string) the [secret](https://kubernetes.io/docs/concepts/configuration/secret/) name that contains the Kopia server control user password
+            secretName: kopia-control
         keep:
           # -- (int) [keep-latest](https://kopia.io/docs/reference/command-line/common/policy-set/)
           # @default -- 2
@@ -230,6 +347,20 @@ mariadb:
       restic:
         # -- enable the [full database restore](#full-database-restore). Should be done as described in the documentation with `--set` parameters
         enabled: false
+        job:
+          # -- How many [retries](https://kubernetes.io/docs/concepts/workloads/controllers/job/#pod-backoff-failure-policy) before the Restic restore job will be marked as failed
+          # @default -- 0
+          backoffLimit: 0
+          # -- Maximum [allowed runtime](https://kubernetes.io/docs/concepts/workloads/controllers/job/#job-termination-and-cleanup) before the Restic restore job will be stopped
+          # @default -- 3600
+          activeDeadlineSeconds: 7200
+          # -- After how many seconds will a stopped Restic restore job be [deleted from the Kubernetes cluster](https://kubernetes.io/docs/concepts/workloads/controllers/job/#clean-up-finished-jobs-automatically)
+          # @default -- 43200
+          ttlSecondsAfterFinished: 86400
+          # -- Define how the Restic restore job pod [will be restarted](https://kubernetes.io/docs/concepts/workloads/controllers/job/#handling-pod-and-container-failures) in case of an error.
+          # It can be on the same worker node or another
+          # @default -- Never
+          jobRestartPolicy: Never
         # -- If set the beforeTimestamp option will be ignored and the configured id will be used
         snapshotId: false
         # --  (float) update interval for the console output [RESTIC_PROGRESS_FPS](https://restic.readthedocs.io/en/stable/040_backup.html?highlight=RESTIC_PROGRESS_FPS#environment-variables)
@@ -238,8 +369,284 @@ mariadb:
       kopia:
         # -- enable the [full database restore](#full-database-restore). Should be done as described in the documentation with `--set` parameters
         enabled: false
+        job:
+          # -- How many [retries](https://kubernetes.io/docs/concepts/workloads/controllers/job/#pod-backoff-failure-policy) before the Kopia restore job will be marked as failed
+          # @default -- 0
+          backoffLimit: 0
+          # -- Maximum [allowed runtime](https://kubernetes.io/docs/concepts/workloads/controllers/job/#job-termination-and-cleanup) before the Kopia restore job will be stopped
+          # @default -- 3600
+          activeDeadlineSeconds: 7200
+          # -- After how many seconds will a stopped Kopia restore job be [deleted from the Kubernetes cluster](https://kubernetes.io/docs/concepts/workloads/controllers/job/#clean-up-finished-jobs-automatically)
+          # @default -- 43200
+          ttlSecondsAfterFinished: 86400
+          # -- Define how the Kopia restore job pod [will be restarted](https://kubernetes.io/docs/concepts/workloads/controllers/job/#handling-pod-and-container-failures) in case of an error.
+          # It can be on the same worker node or another
+          # @default -- Never
+          jobRestartPolicy: Never
         # -- If set the beforeTimestamp option will be ignored and the configured id(".rootEntry.obj" or "Root" column in the snapshot list) will be used
         snapshotId: false
+  users:
+    root:
+      # -- (bool) enable this user
+      enabled: true
+      # -- (string) MariaDB root username
+      username:
+      # -- (string) MariaDB root user password
+      password:
+      # -- (string) the [secret](https://kubernetes.io/docs/concepts/configuration/secret/) name that contains the MariaDB root user password
+      secretName: mariadb-root
+      # -- (list) list of allowed hostnames like "%", "::1"
+      # -- "localhost" and "127.0.0.1" will be ignored to not break the local socket authentication
+      hostnames:
+        - '%'
+        - '::1'
+        - '127.0.0.1'
+        - 'localhost'
+      # -- (string) MariaDB authentication plugin ([mysql_native_password](https://mariadb.com/kb/en/authentication-plugin-mysql_native_password/)|[ed25519](https://mariadb.com/kb/en/authentication-plugin-ed25519/))
+      authplugin: ed25519
+      # -- (bool) grant the [admin option](https://mariadb.com/kb/en/grant/#roles) to that user
+      # -- that allows the user to grant his own permissions to other users
+      adminoption: true
+      # -- (int) [maximum number of connections](https://mariadb.com/kb/en/create-user/#resource-limit-options) for that user
+      maxconnections: 0
+      # -- (string) [default role](https://mariadb.com/kb/en/set-default-role/) for that user
+      defaultrole: fullaccess
+      # -- (list) additional [roles](https://mariadb.com/kb/en/set-role/) for that user
+      additionalroles:
+      proxysql:
+        # -- (bool) enable the [ProxySQL fastforward](https://proxysql.com/documentation/main-runtime/#mysql_users) feature for that user
+        fastforward: false
+    monitor:
+      # -- (bool) enable this user
+      enabled: true
+      # -- (string) MariaDB monitoring user username
+      username:
+      # -- (string) MariaDB monitoring user password
+      password:
+      # -- (string) the [secret](https://kubernetes.io/docs/concepts/configuration/secret/) name that contains the MariaDB monitor user password
+      secretName: mariadb-monitor
+      # -- (list) list of allowed hostnames like "%", "::1" or "localhost"
+      hostnames:
+        - '%'
+        - '::1'
+        - '127.0.0.1'
+        - 'localhost'
+      # -- (string) MariaDB authentication plugin ([mysql_native_password](https://mariadb.com/kb/en/authentication-plugin-mysql_native_password/)|[ed25519](https://mariadb.com/kb/en/authentication-plugin-ed25519/))
+      authplugin: mysql_native_password
+      # -- (bool) grant the [admin option](https://mariadb.com/kb/en/grant/#roles) to that user
+      # -- that allows the user to grant his own permissions to other users
+      adminoption: false
+      # -- (int) [maximum number of connections](https://mariadb.com/kb/en/create-user/#resource-limit-options) for that user
+      maxconnections: 0
+      # -- (string) [default role](https://mariadb.com/kb/en/set-default-role/) for that user
+      defaultrole: mysql_exporter
+      # -- (list) additional [roles](https://mariadb.com/kb/en/set-role/) for that user
+      additionalroles:
+      proxysql:
+        # -- (bool) enable the [ProxySQL fastforward](https://proxysql.com/documentation/main-runtime/#mysql_users) feature for that user
+        fastforward: false
+    mariabackup:
+      # -- (bool) enable the user (required if `mariabackup` is used as `sst_method`)
+      enabled: false
+      # -- (string) MariaDB backup username
+      username:
+      # -- (string) MariaDB backup user password
+      password:
+      # -- (string) the [secret](https://kubernetes.io/docs/concepts/configuration/secret/) name that contains the MariaDB mariabackup user password
+      secretName: mariadb-mariabackup
+      # -- (list) list of allowed hostnames like "%", "::1" or "localhost"
+      hostnames:
+        - "%"
+        - "::1"
+        - "localhost"
+      # -- (string) MariaDB authentication plugin ([mysql_native_password](https://mariadb.com/kb/en/authentication-plugin-mysql_native_password/)|[ed25519](https://mariadb.com/kb/en/authentication-plugin-ed25519/))
+      authplugin: mysql_native_password
+      # -- (bool) grant the [admin option](https://mariadb.com/kb/en/grant/#roles) to that user
+      # -- that allows the user to grant his own permissions to other users
+      adminoption: false
+      # -- (int) [maximum number of connections](https://mariadb.com/kb/en/create-user/#resource-limit-options) for that user
+      maxconnections: 0
+      # -- (string) [default role](https://mariadb.com/kb/en/set-default-role/) for that user
+      defaultrole: sstbackup
+      # -- (list) additional [roles](https://mariadb.com/kb/en/set-role/) for that user
+      additionalroles:
+      proxysql:
+        # -- (bool) enable the [ProxySQL fastforward](https://proxysql.com/documentation/main-runtime/#mysql_users) feature for that user
+        fastforward: false
+    openstack_citest:
+      # -- (bool) enable the user
+      enabled: false
+      # -- (string) MariaDB user username
+      username:
+      # -- (string) MariaDB user password
+      password:
+      # -- (string) the [secret](https://kubernetes.io/docs/concepts/configuration/secret/) name that contains the MariaDB openstack_citest user password
+      secretName: mariadb-openstack-citest
+      # -- (list) list of allowed hostnames like "%", "::1" or "localhost"
+      hostnames:
+        - "%"
+        - "::1"
+        - "localhost"
+      # -- (string) MariaDB authentication plugin ([mysql_native_password](https://mariadb.com/kb/en/authentication-plugin-mysql_native_password/)|[ed25519](https://mariadb.com/kb/en/authentication-plugin-ed25519/))
+      authplugin: mysql_native_password
+      # -- (bool) grant the [admin option](https://mariadb.com/kb/en/grant/#roles) to that user
+      # -- that allows the user to grant his own permissions to other users
+      adminoption: false
+      # -- (int) [maximum number of connections](https://mariadb.com/kb/en/create-user/#resource-limit-options) for that user
+      maxconnections: 0
+      # -- (string) [default role](https://mariadb.com/kb/en/set-default-role/) for that user
+      defaultrole: contentfullaccess
+      # -- (list) additional [roles](https://mariadb.com/kb/en/set-role/) for that user
+      additionalroles:
+        - replication
+      proxysql:
+        # -- (bool) enable the [ProxySQL fastforward](https://proxysql.com/documentation/main-runtime/#mysql_users) feature for that user
+        fastforward: false
+    replicator:
+      # -- (bool) enable the user (required if asyncReplication.enabled is true)
+      enabled: false
+      # -- (string) MariaDB user username
+      username:
+      # -- (string) MariaDB user password
+      password:
+      # -- (string) the [secret](https://kubernetes.io/docs/concepts/configuration/secret/) name that contains the MariaDB replicator user password
+      secretName: mariadb-replicator
+      # -- (list) list of allowed hostnames like "%", "::1" or "localhost"
+      hostnames:
+        - "%"
+        - "::1"
+        - "localhost"
+      # -- (string) MariaDB authentication plugin ([mysql_native_password](https://mariadb.com/kb/en/authentication-plugin-mysql_native_password/)|[ed25519](https://mariadb.com/kb/en/authentication-plugin-ed25519/))
+      authplugin: mysql_native_password
+      # -- (bool) grant the [admin option](https://mariadb.com/kb/en/grant/#roles) to that user
+      # -- that allows the user to grant his own permissions to other users
+      adminoption: false
+      # -- (int) [maximum number of connections](https://mariadb.com/kb/en/create-user/#resource-limit-options) for that user
+      maxconnections: 0
+      # -- (string) [default role](https://mariadb.com/kb/en/set-default-role/) for that user
+      defaultrole: replication
+      # -- (list) additional [roles](https://mariadb.com/kb/en/set-role/) for that user
+      additionalroles:
+      proxysql:
+        # -- (bool) enable the [ProxySQL fastforward](https://proxysql.com/documentation/main-runtime/#mysql_users) feature for that user
+        fastforward: false
+    sysbench:
+      # -- (bool) enable the user
+      enabled: false
+      # -- (string) MariaDB user username
+      username:
+      # -- (string) MariaDB user password
+      password:
+      # -- (string) the [secret](https://kubernetes.io/docs/concepts/configuration/secret/) name that contains the MariaDB sysbench user password
+      secretName: mariadb-sysbench
+      # -- (list) list of allowed hostnames like "%", "::1" or "localhost"
+      hostnames:
+        - "%"
+        - "::1"
+        - "localhost"
+      # -- (string) MariaDB authentication plugin ([mysql_native_password](https://mariadb.com/kb/en/authentication-plugin-mysql_native_password/)|[ed25519](https://mariadb.com/kb/en/authentication-plugin-ed25519/))
+      authplugin: mysql_native_password
+      # -- (bool) grant the [admin option](https://mariadb.com/kb/en/grant/#roles) to that user
+      # -- that allows the user to grant his own permissions to other users
+      adminoption: false
+      # -- (int) [maximum number of connections](https://mariadb.com/kb/en/create-user/#resource-limit-options) for that user
+      maxconnections: 0
+      # -- (string) [default role](https://mariadb.com/kb/en/set-default-role/) for that user
+      defaultrole: contentfullaccess
+      # -- (list) additional [roles](https://mariadb.com/kb/en/set-role/) for that user
+      additionalroles:
+      proxysql:
+        # -- (bool) enable the [ProxySQL fastforward](https://proxysql.com/documentation/main-runtime/#mysql_users) feature for that user
+        fastforward: false
+  roles:
+    fullaccess:
+      # -- enable this role
+      enabled: true
+      # -- (list) list of [privileges](https://mariadb.com/kb/en/grant/#global-privileges) that should be granted to the role
+      privileges:
+        - ALL PRIVILEGES
+      # -- (list) list of [objects](https://mariadb.com/kb/en/grant/#syntax) for the privileges are allowed to use like "*.*", "database.table" or "database.*"
+      object: "*.*"
+      # -- (bool) allow to grant the [privileges](https://mariadb.com/kb/en/grant/#the-grant-option-privilege) to other users
+      grant: true
+    mysql_exporter:
+      # -- enable this role
+      enabled: true
+      # -- (list) list of [privileges](https://mariadb.com/kb/en/grant/#global-privileges) that should be granted to the role
+      privileges:
+        - SHOW DATABASES
+        - SLAVE MONITOR
+        - BINLOG MONITOR
+        - PROCESS
+        - REPLICA MONITOR
+        - SELECT
+      # -- (list) list of [objects](https://mariadb.com/kb/en/grant/#syntax) for the privileges are allowed to use like "*.*", "database.table" or "database.*"
+      object: "*.*"
+      # -- (bool) allow to grant the [privileges](https://mariadb.com/kb/en/grant/#the-grant-option-privilege) to other users
+      grant: false
+    replication:
+      # -- enable this role (required if asyncReplication.enabled is true)
+      enabled: false
+      # -- (list) list of [privileges](https://mariadb.com/kb/en/grant/#global-privileges) that should be granted to the role
+      privileges:
+        - REPLICATION SLAVE
+      # -- (list) list of [objects](https://mariadb.com/kb/en/grant/#syntax) for the privileges are allowed to use like "*.*", "database.table" or "database.*"
+      object: "*.*"
+      # -- (bool) allow to grant the [privileges](https://mariadb.com/kb/en/grant/#the-grant-option-privilege) to other users
+      grant: false
+    contentfullaccess:
+      # -- enable this role
+      enabled: false
+      # -- (list) list of [privileges](https://mariadb.com/kb/en/grant/#global-privileges) that should be granted to the role
+      privileges:
+        - SHOW DATABASES
+        - SELECT
+        - CREATE
+        - UPDATE
+        - ALTER
+        - INSERT
+        - DELETE
+        - DROP
+        - INDEX
+        - CREATE VIEW
+        - SHOW VIEW
+        - CREATE ROUTINE
+        - ALTER ROUTINE
+        - EXECUTE
+        - CREATE TEMPORARY TABLES
+        - EVENT
+        - LOCK TABLES
+      # -- (list) list of [objects](https://mariadb.com/kb/en/grant/#syntax) for the privileges are allowed to use like "*.*", "database.table" or "database.*"
+      object: "*.*"
+      # -- (bool) allow to grant the [privileges](https://mariadb.com/kb/en/grant/#the-grant-option-privilege) to other users
+      grant: false
+    sstbackup:
+      # -- enable this role (required if `mariabackup` is used as `sst_method`)
+      enabled: false
+      # -- (list) list of [privileges](https://mariadb.com/kb/en/grant/#global-privileges) that should be granted to the role
+      privileges:
+        - RELOAD
+        - PROCESS
+        - LOCK TABLES
+        - BINLOG MONITOR
+      # -- (list) list of [objects](https://mariadb.com/kb/en/grant/#syntax) for the privileges are allowed to use like "*.*", "database.table" or "database.*"
+      object: "*.*"
+      # -- (bool) allow to grant the [privileges](https://mariadb.com/kb/en/grant/#the-grant-option-privilege) to other users
+      grant: false
+  databases:
+    sb_oltp_ro:
+      # -- enable this database
+      enabled: false
+      # -- (string) database comment
+      comment:  "for the sysbench oltp readonly benchmark"
+      # -- (string) database collation
+      collationName: "utf8_general_ci"
+      # -- (string) database character set
+      CharacterSetName: "utf8"
+      # -- (bool) overwrite the database if it already exists
+      overwrite: false
+      # -- (bool) delete the database if it is disabled
+      deleteIfDisabled: false
 monitoring:
   mysqld_exporter:
     # -- run the default entrypoint.sh script or just sleep to be able to troubleshoot and debug
@@ -277,6 +684,43 @@ proxy:
     genericReadWriteSplit:
       # -- check the "Generic Read/Write split using regex" section in the [howto](https://proxysql.com/documentation/proxysql-read-write-split-howto/) for details
       enabled: false
+  users:
+    admin:
+      # -- enable this user
+      enabled: true
+      # -- (string) Proxy admin user username
+      username:
+      # -- (string) Proxy admin user password
+      password:
+      # -- (string) the [secret](https://kubernetes.io/docs/concepts/configuration/secret/) name that contains the ProxySQL admin user password
+      secretName: proxysql-admin
+      proxysql:
+        # -- (bool) enable the [ProxySQL fastforward](https://proxysql.com/documentation/main-runtime/#mysql_users) feature for that user
+        fastforward: false
+    monitor:
+      # -- enable this user
+      enabled: true
+      # -- (string) Proxy monitor user username
+      username:
+      # -- (string) Proxy monitor user password
+      password:
+      # -- (string) the [secret](https://kubernetes.io/docs/concepts/configuration/secret/) name that contains the ProxySQL monitor user password
+      secretName: proxysql-monitor
+      proxysql:
+        # -- (bool) enable the [ProxySQL fastforward](https://proxysql.com/documentation/main-runtime/#mysql_users) feature for that user
+        fastforward: false
+    stats:
+      # -- enable this user
+      enabled: false
+      # -- (string) Proxy stats user username
+      username:
+      # -- (string) Proxy stats user password
+      password:
+      # -- (string) the [secret](https://kubernetes.io/docs/concepts/configuration/secret/) name that contains the ProxySQL stats user password
+      secretName: proxysql-stats
+      proxysql:
+        # -- (bool) enable the [ProxySQL fastforward](https://proxysql.com/documentation/main-runtime/#mysql_users) feature for that user
+        fastforward: false
 
 # Docker image
 image:
@@ -286,11 +730,11 @@ image:
     # -- project/tenant used in the image registry
     project: ccloud
     # -- folder/container used in the image registry and also part of the image name
-    applicationname: ubuntu
+    applicationname: mariadb-galera-ubuntu
     # -- application part of the image version that should be pulled
     applicationversion: 22.04
     # -- image part of the image version that should be pulled
-    imageversion: 20230620163110
+    imageversion: 20230629170110
     # -- (string) `Always` to enforce that the image will be pulled even if it is already available on the worker node
     # @default -- IfNotPresent
     pullPolicy:
@@ -306,7 +750,7 @@ image:
     # -- application part of the image version that should be pulled
     applicationversion: 10.5.20
     # -- image part of the image version that should be pulled
-    imageversion: 20230620163110
+    imageversion: 20230629170110
     # -- (string) `Always` to enforce that the image will be pulled even if it is already available on the worker node
     # @default -- IfNotPresent
     pullPolicy:
@@ -318,11 +762,11 @@ image:
     # -- project/tenant used in the image registry
     project: ccloud
     # -- folder/container used in the image registry and also part of the image name
-    applicationname: mysqld_exporter
+    applicationname: mariadb-galera-mysqld_exporter
     # -- application part of the image version that should be pulled
     applicationversion: 0.14.0
     # -- image part of the image version that should be pulled
-    imageversion: 20230620163110
+    imageversion: 20230629170110
     # -- (string) `Always` to enforce that the image will be pulled even if it is already available on the worker node
     # @default -- IfNotPresent
     pullPolicy:
@@ -334,11 +778,11 @@ image:
     # -- project/tenant used in the image registry
     project: ccloud
     # -- folder/container used in the image registry and also part of the image name
-    applicationname: proxysql
+    applicationname: mariadb-galera-proxysql
     # -- application part of the image version that should be pulled
     applicationversion: 2.5.2
     # -- image part of the image version that should be pulled
-    imageversion: 20230620163110
+    imageversion: 20230629170110
     # -- (string) `Always` to enforce that the image will be pulled even if it is already available on the worker node
     # @default -- IfNotPresent
     pullPolicy:
@@ -354,7 +798,7 @@ image:
     # -- application part of the image version that should be pulled
     applicationversion: 0.12.1
     # -- image part of the image version that should be pulled
-    imageversion: 20230620163110
+    imageversion: 20230629170110
     # -- (string) `Always` to enforce that the image will be pulled even if it is already available on the worker node
     # @default -- IfNotPresent
     pullPolicy:
@@ -370,7 +814,7 @@ image:
     # -- application part of the image version that should be pulled
     applicationversion: 0.15.0
     # -- image part of the image version that should be pulled
-    imageversion: 20230620163110
+    imageversion: 20230629170110
     # -- (string) `Always` to enforce that the image will be pulled even if it is already available on the worker node
     # @default -- IfNotPresent
     pullPolicy:
@@ -525,6 +969,8 @@ services:
 volumeMounts:
   application:
     data:
+      # -- enable this volume
+      enabled: true
       # -- name for the [persistent volume claim](https://kubernetes.io/docs/concepts/storage/persistent-volumes/#persistentvolumeclaims) requested for the MariaDB [data directory](https://mariadb.com/kb/en/server-system-variables/#datadir)
       claimName: mariadb
       # -- mount path of the persistent volume in the container used for the MariaDB data directory
@@ -532,12 +978,16 @@ volumeMounts:
       # -- volume type [(persistent)](https://kubernetes.io/docs/concepts/storage/persistent-volumes/)
       type: persistentVolume
     log:
+      # -- enable this volume
+      enabled: true
       claimName: marialog
       # -- mount path of the persistent volume in the container used for the MariaDB log directory
       mountPath: /opt/mariadb/log
       # -- volume type [(persistent)](https://kubernetes.io/docs/concepts/storage/persistent-volumes/)
       type: persistentVolume
     cert-wildcard:
+      # -- enable this volume
+      enabled: false
       # -- if a `cert-wildcard` Kubernetes secret has been defined it will be mounted into that directory
       mountPath: /opt/mariadb/etc/certs
       # -- volume type [(secret)](https://kubernetes.io/docs/concepts/storage/volumes/#secret)
@@ -546,6 +996,8 @@ volumeMounts:
       readOnly: true
   proxy:
     data:
+      # -- enable this volume
+      enabled: true
       # -- name for the [persistent volume claim](https://kubernetes.io/docs/concepts/storage/persistent-volumes/#persistentvolumeclaims) requested for the ProxySQL [data directory](https://proxysql.com/documentation/configuration-file/#general-variables)
       claimName: proxysql
       # -- mount path of the persistent volume in the container used for the for the ProxySQL data directory
@@ -693,97 +1145,7 @@ revisionHistoryLimit: 3
 # During the MariaDB [full database restore](#full-database-restore) process that value will be reduced to 15 seconds
 # @default -- 86400
 terminationGracePeriodSeconds: 600
-job:
-  mariadbconfig:
-    # -- How many [retries](https://kubernetes.io/docs/concepts/workloads/controllers/job/#pod-backoff-failure-policy) before the MariaDB config job will be marked as failed
-    # @default -- 6
-    backoffLimit: 12
-    # -- Maximum [allowed runtime](https://kubernetes.io/docs/concepts/workloads/controllers/job/#job-termination-and-cleanup) before the MariaDB config job will be stopped
-    # @default -- 300
-    activeDeadlineSeconds: 600
-    # -- After how many seconds will a stopped MariaDB config job be [deleted from the Kubernetes cluster](https://kubernetes.io/docs/concepts/workloads/controllers/job/#clean-up-finished-jobs-automatically)
-    # @default -- 120
-    ttlSecondsAfterFinished: 7200
-    # -- Define how the MariaDB config job pod [will be restarted](https://kubernetes.io/docs/concepts/workloads/controllers/job/#handling-pod-and-container-failures) in case of an error.
-    # It can be on the same worker node or another
-    # @default -- OnFailure
-    jobRestartPolicy: OnFailure
-  resticbackup:
-    schedule:
-      # -- [Schedule](https://kubernetes.io/docs/tasks/job/automated-tasks-with-cron-jobs/#schedule) for the Restic full backup job based on that [syntax](https://kubernetes.io/docs/concepts/workloads/controllers/cron-jobs/#cron-schedule-syntax)
-      # @default -- 15 2 * * *
-      full:
-      # -- [Schedule](https://kubernetes.io/docs/tasks/job/automated-tasks-with-cron-jobs/#schedule) for the Restic transaction backup job based on that [syntax](https://kubernetes.io/docs/concepts/workloads/controllers/cron-jobs/#cron-schedule-syntax)
-      # @default -- */15 0-1,3-12 * * *
-      binlog:
-    # -- (int) Define how many seconds [after a missed schedule](https://kubernetes.io/docs/concepts/workloads/controllers/cron-jobs/#job-creation) the job should still be scheduled or skipped
-    # @default -- 15
-    startingDeadlineSeconds:
-    # -- Define how the Restic backup job pod [will be restarted](https://kubernetes.io/docs/concepts/workloads/controllers/job/#handling-pod-and-container-failures) in case of an error.
-    # It can be on the same worker node or another
-    # @default -- OnFailure
-    jobRestartPolicy: OnFailure
-    # -- Define if and how Restic backup jobs can run in [parallel](https://kubernetes.io/docs/tasks/job/automated-tasks-with-cron-jobs/#concurrency-policy)
-    # @default -- Forbid
-    concurrencyPolicy: Forbid
-    # -- Define how how many completed Restic backup jobs [should be kept](https://kubernetes.io/docs/tasks/job/automated-tasks-with-cron-jobs/#jobs-history-limits)
-    # @default -- 1
-    successfulJobsHistoryLimit: 1
-    # -- Define how how many failed Restic backup jobs [should be kept](https://kubernetes.io/docs/tasks/job/automated-tasks-with-cron-jobs/#jobs-history-limits)
-    # @default -- 1
-    failedJobsHistoryLimit: 1
-  resticrestore:
-    # -- How many [retries](https://kubernetes.io/docs/concepts/workloads/controllers/job/#pod-backoff-failure-policy) before the Restic restore job will be marked as failed
-    # @default -- 0
-    backoffLimit: 0
-    # -- Maximum [allowed runtime](https://kubernetes.io/docs/concepts/workloads/controllers/job/#job-termination-and-cleanup) before the Restic restore job will be stopped
-    # @default -- 3600
-    activeDeadlineSeconds: 7200
-    # -- After how many seconds will a stopped Restic restore job be [deleted from the Kubernetes cluster](https://kubernetes.io/docs/concepts/workloads/controllers/job/#clean-up-finished-jobs-automatically)
-    # @default -- 43200
-    ttlSecondsAfterFinished: 86400
-    # -- Define how the Restic restore job pod [will be restarted](https://kubernetes.io/docs/concepts/workloads/controllers/job/#handling-pod-and-container-failures) in case of an error.
-    # It can be on the same worker node or another
-    # @default -- Never
-    jobRestartPolicy: Never
-  kopiabackup:
-    schedule:
-      # -- [Schedule](https://kubernetes.io/docs/tasks/job/automated-tasks-with-cron-jobs/#schedule) for the Kopia full backup job based on that [syntax](https://kubernetes.io/docs/concepts/workloads/controllers/cron-jobs/#cron-schedule-syntax)
-      # @default -- 15 2 * * *
-      full:
-      # -- [Schedule](https://kubernetes.io/docs/tasks/job/automated-tasks-with-cron-jobs/#schedule) for the Kopia transaction log backup job based on that [syntax](https://kubernetes.io/docs/concepts/workloads/controllers/cron-jobs/#cron-schedule-syntax)
-      # @default -- */30 * * * *
-      binlog:
-    # -- (int) Define how many seconds [after a missed schedule](https://kubernetes.io/docs/concepts/workloads/controllers/cron-jobs/#job-creation) the job should still be scheduled or skipped
-    # @default -- 15
-    startingDeadlineSeconds:
-    # -- Define how the Kopia backup job pod [will be restarted](https://kubernetes.io/docs/concepts/workloads/controllers/job/#handling-pod-and-container-failures) in case of an error.
-    # It can be on the same worker node or another
-    # @default -- OnFailure
-    jobRestartPolicy: OnFailure
-    # -- Define if and how Kopia backup jobs can run in [parallel](https://kubernetes.io/docs/tasks/job/automated-tasks-with-cron-jobs/#concurrency-policy)
-    # @default -- Forbid
-    concurrencyPolicy: Forbid
-    # -- Define how how many completed Kopia backup jobs [should be kept](https://kubernetes.io/docs/tasks/job/automated-tasks-with-cron-jobs/#jobs-history-limits)
-    # @default -- 1
-    successfulJobsHistoryLimit: 1
-    # -- Define how how many failed Kopia backup jobs [should be kept](https://kubernetes.io/docs/tasks/job/automated-tasks-with-cron-jobs/#jobs-history-limits)
-    # @default -- 1
-    failedJobsHistoryLimit: 1
-  kopiarestore:
-    # -- How many [retries](https://kubernetes.io/docs/concepts/workloads/controllers/job/#pod-backoff-failure-policy) before the Kopia restore job will be marked as failed
-    # @default -- 0
-    backoffLimit: 0
-    # -- Maximum [allowed runtime](https://kubernetes.io/docs/concepts/workloads/controllers/job/#job-termination-and-cleanup) before the Kopia restore job will be stopped
-    # @default -- 3600
-    activeDeadlineSeconds: 7200
-    # -- After how many seconds will a stopped Kopia restore job be [deleted from the Kubernetes cluster](https://kubernetes.io/docs/concepts/workloads/controllers/job/#clean-up-finished-jobs-automatically)
-    # @default -- 43200
-    ttlSecondsAfterFinished: 86400
-    # -- Define how the Kopia restore job pod [will be restarted](https://kubernetes.io/docs/concepts/workloads/controllers/job/#handling-pod-and-container-failures) in case of an error.
-    # It can be on the same worker node or another
-    # @default -- Never
-    jobRestartPolicy: Never
+
 
 #Container Health Checks
 startupProbe:
@@ -948,9 +1310,9 @@ readinessProbe:
     kopiaserver: 10
 
 env:
-  MARIADB_ROOT_USER:
-    # -- Name of the predefined [Kubernetes secret](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-environment-variables) that contains the key for the `username` of the `MariaDB root user`
-    secretName: db-full-auth
+  MARIADB_ROOT_USERNAME:
+    # -- Name of the [Kubernetes secret](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-environment-variables) that contains the key for the `username` of the `MariaDB root user`
+    secretName: mariadb-root
     # -- Name of the key of the predefined Kubernetes secret that contains the `username` for the `MariaDB root user`
     secretKey: username
     # -- for which containers this environment variable will be used
@@ -963,8 +1325,8 @@ env:
       - cronjob-kopia
       - jobrestore-kopia
   MARIADB_ROOT_PASSWORD:
-    # -- Name of the predefined [Kubernetes secret](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-environment-variables) that contains the key for the `password` of the `MariaDB root user`
-    secretName: db-full-auth
+    # -- Name of the [Kubernetes secret](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-environment-variables) that contains the key for the `password` of the `MariaDB root user`
+    secretName: mariadb-root
     # -- Name of the key of the predefined Kubernetes secret that contains the `password` for the `MariaDB root user`
     secretKey: password
     # -- for which containers this environment variable will be used
@@ -976,9 +1338,9 @@ env:
       - jobrestore-restic
       - cronjob-kopia
       - jobrestore-kopia
-  GALERA_SST_USER:
-    # -- Name of the predefined [Kubernetes secret](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-environment-variables) that contains the key for the `username` of the `MariaDB Galera state snapshot transfer user`
-    secretName: ga-sync-auth
+  GALERA_SST_USERNAME:
+    # -- Name of the [Kubernetes secret](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-environment-variables) that contains the key for the `username` of the `MariaDB Galera state snapshot transfer user`
+    secretName: mariadb-mariabackup
     # -- Name of the key of the predefined Kubernetes secret that contains the `username` for the `MariaDB Galera state snapshot transfer user`
     secretKey: username
     # -- for which containers this environment variable will be used
@@ -987,8 +1349,8 @@ env:
       - jobconfig
       - proxy
   GALERA_SST_PASSWORD:
-    # -- Name of the predefined [Kubernetes secret](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-environment-variables) that contains the key for the `password` of the `MariaDB Galera state snapshot transfer user`
-    secretName: ga-sync-auth
+    # -- Name of the [Kubernetes secret](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-environment-variables) that contains the key for the `password` of the `MariaDB Galera state snapshot transfer user`
+    secretName: mariadb-mariabackup
     # -- Name of the key of the predefined Kubernetes secret that contains the `password` for the `MariaDB Galera state snapshot transfer user`
     secretKey: password
     # -- for which containers this environment variable will be used
@@ -996,9 +1358,9 @@ env:
       - application
       - jobconfig
       - proxy
-  MARIADB_MONITORING_USER:
-    # -- Name of the predefined [Kubernetes secret](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-environment-variables) that contains the key for the `username` of the `MariaDB monitoring user`
-    secretName: db-mon-auth
+  MARIADB_MONITORING_USERNAME:
+    # -- Name of the [Kubernetes secret](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-environment-variables) that contains the key for the `username` of the `MariaDB monitoring user`
+    secretName: mariadb-monitor
     # -- Name of the key of the predefined Kubernetes secret that contains the `username` for the `MariaDB monitoring user`
     secretKey: username
     # -- for which containers this environment variable will be used
@@ -1007,8 +1369,8 @@ env:
       - monitoring
       - jobconfig
   MARIADB_MONITORING_PASSWORD:
-    # -- Name of the predefined [Kubernetes secret](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-environment-variables) that contains the key for the `password` of the `MariaDB monitoring user`
-    secretName: db-mon-auth
+    # -- Name of the [Kubernetes secret](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-environment-variables) that contains the key for the `password` of the `MariaDB monitoring user`
+    secretName: mariadb-monitor
     # -- Name of the key of the predefined Kubernetes secret that contains the `password` for the `MariaDB monitoring user`
     secretKey: password
     # -- for which containers this environment variable will be used
@@ -1029,57 +1391,57 @@ env:
     # -- for which containers this environment variable will be used
     containerType:
       - monitoring
-  PROXYSQL_ADMIN_USER:
-    # -- Name of the predefined [Kubernetes secret](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-environment-variables) that contains the key for the `username` of the `ProxySQL admin user`
-    secretName: proxy-full-auth
+  PROXYSQL_ADMIN_USERNAME:
+    # -- Name of the [Kubernetes secret](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-environment-variables) that contains the key for the `username` of the `ProxySQL admin user`
+    secretName: proxysql-admin
     # -- Name of the key of the predefined Kubernetes secret that contains the `username` for the `ProxySQL admin user`
     secretKey: username
     # -- for which containers this environment variable will be used
     containerType:
       - proxy
   PROXYSQL_ADMIN_PASSWORD:
-    # -- Name of the predefined [Kubernetes secret](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-environment-variables) that contains the key for the `password` of the `ProxySQL admin user`
-    secretName: proxy-full-auth
+    # -- Name of the [Kubernetes secret](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-environment-variables) that contains the key for the `password` of the `ProxySQL admin user`
+    secretName: proxysql-admin
     # -- Name of the key of the predefined Kubernetes secret that contains the `password` for the `ProxySQL admin user`
     secretKey: password
     # -- for which containers this environment variable will be used
     containerType:
       - proxy
-  PROXYSQL_MONITOR_USER:
-    # -- Name of the predefined [Kubernetes secret](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-environment-variables) that contains the key for the `username` of the `ProxySQL monitoring user for MariaDB`
-    secretName: db-mon-auth
+  PROXYSQL_MONITOR_USERNAME:
+    # -- Name of the [Kubernetes secret](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-environment-variables) that contains the key for the `username` of the `ProxySQL monitoring user for MariaDB`
+    secretName: proxysql-monitor
     # -- Name of the key of the predefined Kubernetes secret that contains the `username` for the `ProxySQL monitoring user for MariaDB`
     secretKey: username
     # -- for which containers this environment variable will be used
     containerType:
       - proxy
   PROXYSQL_MONITOR_PASSWORD:
-    # -- Name of the predefined [Kubernetes secret](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-environment-variables) that contains the key for the `password` of the `ProxySQL monitoring user for MariaDB`
-    secretName: db-mon-auth
+    # -- Name of the [Kubernetes secret](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-environment-variables) that contains the key for the `password` of the `ProxySQL monitoring user for MariaDB`
+    secretName: proxysql-monitor
     # -- Name of the key of the predefined Kubernetes secret that contains the `password` for the `ProxySQL monitoring user for MariaDB`
     secretKey: password
     # -- for which containers this environment variable will be used
     containerType:
       - proxy
-  PROXYSQL_STATS_USER:
-    # -- Name of the predefined [Kubernetes secret](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-environment-variables) that contains the key for the `username` of the `ProxySQL statistics user`
-    secretName: proxy-stats-auth
+  PROXYSQL_STATS_USERNAME:
+    # -- Name of the [Kubernetes secret](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-environment-variables) that contains the key for the `username` of the `ProxySQL statistics user`
+    secretName: proxysql-stats
     # -- Name of the key of the predefined Kubernetes secret that contains the `username` for the `ProxySQL statistics user`
     secretKey: username
     # -- for which containers this environment variable will be used
     containerType:
       - proxy
   PROXYSQL_STATS_PASSWORD:
-    # -- Name of the predefined [Kubernetes secret](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-environment-variables) that contains the key for the `password` of the `ProxySQL statistics user`
-    secretName: proxy-stats-auth
+    # -- Name of the [Kubernetes secret](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-environment-variables) that contains the key for the `password` of the `ProxySQL statistics user`
+    secretName: proxysql-stats
     # -- Name of the key of the predefined Kubernetes secret that contains the `password` for the `ProxySQL statistics user`
     secretKey: password
     # -- for which containers this environment variable will be used
     containerType:
       - proxy
   OPENSTACK_CITEST_USERNAME:
-    # -- Name of the predefined [Kubernetes secret](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-environment-variables) that contains the key for the `username` of the `Openstack oslo.db unit test user`
-    secretName: db-oslodb-auth
+    # -- Name of the [Kubernetes secret](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-environment-variables) that contains the key for the `username` of the `Openstack oslo.db unit test user`
+    secretName: mariadb-openstack_citest
     # -- Name of the key of the predefined Kubernetes secret that contains the `username` for the `Openstack oslo.db unit test user`
     secretKey: username
     # -- for which containers this environment variable will be used
@@ -1087,8 +1449,8 @@ env:
       - jobconfig
       - proxy
   OPENSTACK_CITEST_PASSWORD:
-    # -- Name of the predefined [Kubernetes secret](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-environment-variables) that contains the key for the `password` of the `Openstack oslo.db unit test user`
-    secretName: db-oslodb-auth
+    # -- Name of the [Kubernetes secret](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-environment-variables) that contains the key for the `password` of the `Openstack oslo.db unit test user`
+    secretName: mariadb-openstack_citest
     # -- Name of the key of the predefined Kubernetes secret that contains the `password` for the `Openstack oslo.db unit test user`
     secretKey: password
     # -- for which containers this environment variable will be used
@@ -1096,8 +1458,8 @@ env:
       - jobconfig
       - proxy
   SYSBENCH_USERNAME:
-    # -- Name of the predefined [Kubernetes secret](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-environment-variables) that contains the key for the `username` of the `sysbench user`
-    secretName: db-sysbench-auth
+    # -- Name of the [Kubernetes secret](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-environment-variables) that contains the key for the `username` of the `sysbench user`
+    secretName: mariadb-sysbench
     # -- Name of the key of the predefined Kubernetes secret that contains the `username` for the `sysbench user`
     secretKey: username
     # -- for which containers this environment variable will be used
@@ -1105,8 +1467,8 @@ env:
       - jobconfig
       - proxy
   SYSBENCH_PASSWORD:
-    # -- Name of the predefined [Kubernetes secret](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-environment-variables) that contains the key for the `password` of the `sysbench user`
-    secretName: db-sysbench-auth
+    # -- Name of the [Kubernetes secret](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-environment-variables) that contains the key for the `password` of the `sysbench user`
+    secretName: mariadb-sysbench
     # -- Name of the key of the predefined Kubernetes secret that contains the `password` for the `sysbench user`
     secretKey: password
     # -- for which containers this environment variable will be used
@@ -1114,8 +1476,8 @@ env:
       - jobconfig
       - proxy
   OS_USERNAME:
-    # -- Name of the predefined [Kubernetes secret](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-environment-variables) that contains the key for the `username` of the `Openstack swift user for restic`
-    secretName: restic-swift-auth
+    # -- Name of the [Kubernetes secret](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-environment-variables) that contains the key for the `username` of the `Openstack swift user for restic`
+    secretName: restic-openstack
     # -- Name of the key of the predefined Kubernetes secret that contains the `username` for the `Openstack swift user for restic`
     secretKey: username
     # -- for which containers this environment variable will be used
@@ -1123,8 +1485,8 @@ env:
       - cronjob-restic
       - jobrestore-restic
   OS_PASSWORD:
-    # -- Name of the predefined [Kubernetes secret](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-environment-variables) that contains the key for the `password` of the `Openstack swift user for restic`
-    secretName: restic-swift-auth
+    # -- Name of the [Kubernetes secret](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-environment-variables) that contains the key for the `password` of the `Openstack swift user for restic`
+    secretName: restic-openstack
     # -- Name of the key of the predefined Kubernetes secret that contains the `password` for the `Openstack swift user for restic`
     secretKey: password
     # -- for which containers this environment variable will be used
@@ -1132,8 +1494,8 @@ env:
       - cronjob-restic
       - jobrestore-restic
   RESTIC_PASSWORD:
-    # -- Name of the predefined [Kubernetes secret](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-environment-variables) that contains the key for the `password` of the `Restic repository encryption key`
-    secretName: restic-repo-auth
+    # -- Name of the [Kubernetes secret](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-environment-variables) that contains the key for the `password` of the `Restic repository encryption key`
+    secretName: restic-repository
     # -- Name of the key of the predefined Kubernetes secret that contains the `password` for the `Restic repository encryption key`
     secretKey: password
     # -- for which containers this environment variable will be used
@@ -1141,8 +1503,8 @@ env:
       - cronjob-restic
       - jobrestore-restic
   REPLICA_USERNAME:
-    # -- Name of the predefined [Kubernetes secret](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-environment-variables) that contains the key for the `username` of the `MariaDB async replication user`
-    secretName: replica-primary-auth
+    # -- Name of the [Kubernetes secret](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-environment-variables) that contains the key for the `username` of the `MariaDB async replication user`
+    secretName: mariadb-replicator
     # -- Name of the key of the predefined Kubernetes secret that contains the `username` for the `MariaDB async replication user`
     secretKey: username
     # -- for which containers this environment variable will be used
@@ -1151,8 +1513,8 @@ env:
       - jobconfig
       - proxy
   REPLICA_PASSWORD:
-    # -- Name of the predefined [Kubernetes secret](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-environment-variables) that contains the key for the `password` of the `MariaDB async replication user`
-    secretName: replica-primary-auth
+    # -- Name of the [Kubernetes secret](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-environment-variables) that contains the key for the `password` of the `MariaDB async replication user`
+    secretName: mariadb-replicator
     # -- Name of the key of the predefined Kubernetes secret that contains the `password` for the `MariaDB async replication user`
     secretKey: password
     # -- for which containers this environment variable will be used
@@ -1161,8 +1523,8 @@ env:
       - jobconfig
       - proxy
   KOPIA_PASSWORD:
-    # -- Name of the predefined [Kubernetes secret](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-environment-variables) that contains the key for the `password` of the `Kopia repository encryption key`
-    secretName: kopia-repo-auth
+    # -- Name of the [Kubernetes secret](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-environment-variables) that contains the key for the `password` of the `Kopia repository encryption key`
+    secretName: kopia-repository
     # -- Name of the key of the predefined Kubernetes secret that contains the `password` for the `Kopia repository encryption key`
     secretKey: password
     # -- for which containers this environment variable will be used
@@ -1171,8 +1533,8 @@ env:
       - jobrestore-kopia
       - kopiaserver
   KOPIA_S3_USERNAME:
-    # -- Name of the predefined [Kubernetes secret](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-environment-variables) that contains the key for the `username` of the `Kopia EC2 secret for the s3 bucket`
-    secretName: kopia-s3-auth
+    # -- Name of the [Kubernetes secret](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-environment-variables) that contains the key for the `username` of the `Kopia EC2 secret for the s3 bucket`
+    secretName: kopia-s3
     # -- Name of the key of the predefined Kubernetes secret that contains the `username` of the `Kopia EC2 secret for the s3 bucket`
     secretKey: username
     # -- for which containers this environment variable will be used
@@ -1181,8 +1543,8 @@ env:
       - jobrestore-kopia
       - kopiaserver
   KOPIA_S3_PASSWORD:
-    # -- Name of the predefined [Kubernetes secret](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-environment-variables) that contains the key for the `password` of the `Kopia EC2 secret for the s3 bucket`
-    secretName: kopia-s3-auth
+    # -- Name of the [Kubernetes secret](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-environment-variables) that contains the key for the `password` of the `Kopia EC2 secret for the s3 bucket`
+    secretName: kopia-s3
     # -- Name of the key of the predefined Kubernetes secret that contains the `password` of the `Kopia EC2 secret for the s3 bucket`
     secretKey: password
     # -- for which containers this environment variable will be used
@@ -1191,32 +1553,32 @@ env:
       - jobrestore-kopia
       - kopiaserver
   KOPIA_SERVER_USERNAME:
-    # -- Name of the predefined [Kubernetes secret](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-environment-variables) that contains the key for the `username` of the `Kopia UI admin`
-    secretName: kopia-ui-auth
+    # -- Name of the [Kubernetes secret](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-environment-variables) that contains the key for the `username` of the `Kopia UI admin`
+    secretName: kopia-admin
     # -- Name of the key of the predefined Kubernetes secret that contains the key for the `username` of the `Kopia UI admin`
     secretKey: username
     # -- for which containers this environment variable will be used
     containerType:
       - kopiaserver
   KOPIA_SERVER_PASSWORD:
-    # -- Name of the predefined [Kubernetes secret](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-environment-variables) that contains the key for the `password` of the `Kopia UI admin`
-    secretName: kopia-ui-auth
+    # -- Name of the [Kubernetes secret](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-environment-variables) that contains the key for the `password` of the `Kopia UI admin`
+    secretName: kopia-admin
     # -- Name of the key of the predefined Kubernetes secret that contains the key for the `password` of the `Kopia UI admin`
     secretKey: password
     # -- for which containers this environment variable will be used
     containerType:
       - kopiaserver
-  KOPIA_SERVER_CONTROL_USER:
-    # -- Name of the predefined [Kubernetes secret](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-environment-variables) that contains the key for the `username` of the `Kopia UI admin`
-    secretName: kopia-serverctrl-auth
+  KOPIA_SERVER_CONTROL_USERNAME:
+    # -- Name of the [Kubernetes secret](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-environment-variables) that contains the key for the `username` of the `Kopia UI admin`
+    secretName: kopia-control
     # -- Name of the key of the predefined Kubernetes secret that contains the key for the `username` of the `Kopia server control user`
     secretKey: username
     # -- for which containers this environment variable will be used
     containerType:
       - kopiaserver
   KOPIA_SERVER_CONTROL_PASSWORD:
-    # -- Name of the predefined [Kubernetes secret](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-environment-variables) that contains the key for the `password` of the `Kopia UI admin`
-    secretName: kopia-serverctrl-auth
+    # -- Name of the [Kubernetes secret](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-environment-variables) that contains the key for the `password` of the `Kopia UI admin`
+    secretName: kopia-control
     # -- Name of the key of the predefined Kubernetes secret that contains the key for the `password` of the `Kopia server control user`
     secretKey: password
     # -- for which containers this environment variable will be used

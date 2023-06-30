@@ -12,9 +12,9 @@ metadata:
     release: {{ $.Release.Name }}
     backupsoftware: restic
 spec:
-  backoffLimit: {{ $.Values.job.resticrestore.backoffLimit | default 0 | int }}
-  activeDeadlineSeconds: {{ $.Values.job.resticrestore.activeDeadlineSeconds | default 3600 | int }}
-  ttlSecondsAfterFinished: {{ $.Values.job.resticrestore.ttlSecondsAfterFinished | default 43200 | int }}
+  backoffLimit: {{ $.Values.mariadb.galera.restore.restic.job.backoffLimit | default 0 | int }}
+  activeDeadlineSeconds: {{ $.Values.mariadb.galera.restore.restic.job.activeDeadlineSeconds | default 3600 | int }}
+  ttlSecondsAfterFinished: {{ $.Values.mariadb.galera.restore.restic.job.ttlSecondsAfterFinished | default 43200 | int }}
   template:
     metadata:
       labels:
@@ -23,7 +23,7 @@ spec:
       annotations:
         checksum/configmap: {{ include (print $.Template.BasePath "/configmap-restic.yaml") $ | sha256sum }}
     spec:
-      restartPolicy: {{ $.Values.job.resticrestore.jobRestartPolicy | default "Never" | quote }}
+      restartPolicy: {{ $.Values.mariadb.galera.restore.restic.job.jobRestartPolicy | default "Never" | quote }}
       serviceAccount: {{ include "commonPrefix" $ }}{{ $.Release.Name }}
       securityContext:
         runAsUser:  {{ $.Values.userId.backup | default 3200 | int }}
@@ -75,15 +75,33 @@ spec:
           value: {{ $.Values.mariadb.galera.restore.restic.snapshotId | default "false" | quote }}
         {{- range $envKey, $envValue := $.Values.env }}
           {{- if (has "jobrestore-restic" $envValue.containerType) }}
-        - name: {{ $envKey }}
             {{- if $envValue.value }}
+        - name: {{ $envKey }}
           value: {{ $envValue.value | quote }}
             {{- end }}
             {{- if $envValue.secretName }}
+              {{- range $userKey, $userValue := $.Values.mariadb.users }}
+                {{- if $userValue.enabled }}
+                  {{- if eq $userValue.secretName $envValue.secretName }}
+        - name: {{ $envKey }}
           valueFrom:
             secretKeyRef:
               name: {{ include "commonPrefix" $ }}{{ $.Release.Name }}-{{ $envValue.secretName }}
               key: {{ $envValue.secretKey }}
+                  {{- end }}
+                {{- end }}
+              {{- end }}
+              {{- range $userKey, $userValue := $.Values.mariadb.galera.backup.restic.users }}
+                {{- if $userValue.enabled }}
+                  {{- if eq $userValue.secretName $envValue.secretName }}
+        - name: {{ $envKey }}
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "commonPrefix" $ }}{{ $.Release.Name }}-{{ $envValue.secretName }}
+              key: {{ $envValue.secretKey }}
+                  {{- end }}
+                {{- end }}
+              {{- end }}
             {{- end }}
           {{- end }}
         {{- end }}

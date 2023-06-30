@@ -93,20 +93,27 @@ spec:
           value: "{{ (required ".services.kopiaserver.frontend.ports.kopia.targetPort missing" $.Values.services.kopiaserver.frontend.ports.kopia.targetPort) }}"
         - name: KOPIA_UI_TITLE_PREFIX
           value: {{ (required "mariadb.galera.clustername is required to configure the wsrep-cluster-name option for MariaDB" $.Values.mariadb.galera.clustername) | quote }}
-          {{- range $envKey, $envValue := $.Values.env }}
-            {{- if (has "kopiaserver" $envValue.containerType) }}
+        {{- range $envKey, $envValue := $.Values.env }}
+          {{- if (has "kopiaserver" $envValue.containerType) }}
+            {{- if $envValue.value }}
         - name: {{ $envKey }}
-              {{- if $envValue.value }}
           value: {{ $envValue.value | quote }}
-              {{- end }}
-              {{- if $envValue.secretName }}
+            {{- end }}
+            {{- if $envValue.secretName }}
+              {{- range $userKey, $userValue := $.Values.mariadb.galera.backup.kopia.users }}
+                {{- if $userValue.enabled }}
+                  {{- if eq $userValue.secretName $envValue.secretName }}
+        - name: {{ $envKey }}
           valueFrom:
             secretKeyRef:
               name: {{ include "commonPrefix" $ }}{{ $.Release.Name }}-{{ $envValue.secretName }}
               key: {{ $envValue.secretKey }}
+                  {{- end }}
+                {{- end }}
               {{- end }}
             {{- end }}
           {{- end }}
+        {{- end }}
         resources:
           requests:
             cpu: {{ $.Values.resourceLimits.cpu.kopiaserver | default 0.5 }}

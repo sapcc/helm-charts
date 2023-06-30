@@ -12,9 +12,9 @@ metadata:
     app: {{ $.Release.Name }}
     release: {{ $.Release.Name }}
 spec:
-  backoffLimit: {{ $.Values.job.mariadbconfig.backoffLimit | default 6 | int }}
-  activeDeadlineSeconds: {{ $.Values.job.mariadbconfig.activeDeadlineSeconds | default 300 | int }}
-  ttlSecondsAfterFinished: {{ $.Values.job.mariadbconfig.ttlSecondsAfterFinished | default 120 | int }}
+  backoffLimit: {{ $.Values.mariadb.job.config.backoffLimit | default 6 | int }}
+  activeDeadlineSeconds: {{ $.Values.mariadb.job.config.activeDeadlineSeconds | default 300 | int }}
+  ttlSecondsAfterFinished: {{ $.Values.mariadb.job.config.ttlSecondsAfterFinished | default 120 | int }}
   template:
     metadata:
       labels:
@@ -23,7 +23,7 @@ spec:
       annotations:
         checksum/configmap: {{ include (print $.Template.BasePath "/configmap-mariadb-job.yaml") $ | sha256sum }}
     spec:
-      restartPolicy: {{ $.Values.job.mariadbconfig.jobRestartPolicy | default "OnFailure" | quote }}
+      restartPolicy: {{ $.Values.mariadb.job.config.jobRestartPolicy | default "OnFailure" | quote }}
       serviceAccount: {{ include "commonPrefix" $ }}{{ $.Release.Name }}
       securityContext:
         fsGroup:  {{ $.Values.groupId.application | default 101 | int }}
@@ -54,15 +54,22 @@ spec:
         {{- end }}
         {{- range $envKey, $envValue := $.Values.env }}
           {{- if (has "jobconfig" $envValue.containerType) }}
-        - name: {{ $envKey }}
             {{- if $envValue.value }}
+        - name: {{ $envKey }}
           value: {{ $envValue.value | quote }}
             {{- end }}
             {{- if $envValue.secretName }}
+              {{- range $userKey, $userValue := $.Values.mariadb.users }}
+                {{- if $userValue.enabled }}
+                  {{- if eq $userValue.secretName $envValue.secretName }}
+        - name: {{ $envKey }}
           valueFrom:
             secretKeyRef:
               name: {{ include "commonPrefix" $ }}{{ $.Release.Name }}-{{ $envValue.secretName }}
               key: {{ $envValue.secretKey }}
+                  {{- end }}
+                {{- end }}
+              {{- end }}
             {{- end }}
           {{- end }}
         {{- end }}
@@ -82,17 +89,19 @@ spec:
           readOnly: true
       volumes:
       {{- range $volumeMountsKey, $volumeMountsValue := $.Values.volumeMounts.application }}
-        {{- if $volumeMountsValue.type }}
-          {{- if ne $volumeMountsValue.type "persistentVolume" }}
+        {{- if $volumeMountsValue.enabled }}
+          {{- if $volumeMountsValue.type }}
+            {{- if ne $volumeMountsValue.type "persistentVolume" }}
       - name: {{ include "commonPrefix" $ }}{{ $volumeMountsKey }}
-            {{- if eq $volumeMountsValue.type "secret"}}
+              {{- if eq $volumeMountsValue.type "secret"}}
         {{ $volumeMountsValue.type }}:
           secretName: {{ include "commonPrefix" $ }}{{ $.Release.Name }}-{{ $volumeMountsKey }}
-            {{- else if eq $volumeMountsValue.type "hostPath" }}
+              {{- else if eq $volumeMountsValue.type "hostPath" }}
         {{ $volumeMountsValue.type }}:
           path: {{ $volumeMountsValue.hostPath }}
-            {{- else }}
+              {{- else }}
           name: {{ include "commonPrefix" $ }}{{ $volumeMountsKey }}
+              {{- end }}
             {{- end }}
           {{- end }}
         {{- end }}

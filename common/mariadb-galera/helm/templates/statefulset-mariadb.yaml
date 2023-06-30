@@ -175,15 +175,22 @@ spec:
           {{- end }}
           {{- range $envKey, $envValue := $.Values.env }}
             {{- if (has "application" $envValue.containerType) }}
-        - name: {{ $envKey }}
               {{- if $envValue.value }}
+        - name: {{ $envKey }}
           value: {{ $envValue.value | quote }}
               {{- end }}
               {{- if $envValue.secretName }}
+                {{- range $userKey, $userValue := $.Values.mariadb.users }}
+                  {{- if $userValue.enabled }}
+                    {{- if eq $userValue.secretName $envValue.secretName }}
+        - name: {{ $envKey }}
           valueFrom:
             secretKeyRef:
               name: {{ include "commonPrefix" $ }}{{ $.Release.Name }}-{{ $envValue.secretName }}
               key: {{ $envValue.secretKey }}
+                    {{- end }}
+                  {{- end }}
+                {{- end }}
               {{- end }}
             {{- end }}
           {{- end }}
@@ -272,21 +279,23 @@ spec:
         {{- end }}
         volumeMounts:
           {{- range $volumeMountsKey, $volumeMountsValue := $.Values.volumeMounts.application }}
-            {{- if (hasKey $volumeMountsValue "claimName") }}
-              {{- range $volumeClaimTemplatesKey, $volumeClaimTemplatesValue := $.Values.volumeClaimTemplates }}
-                {{- if eq $volumeClaimTemplatesKey $volumeMountsValue.claimName }}
+            {{- if $volumeMountsValue.enabled }}
+              {{- if (hasKey $volumeMountsValue "claimName") }}
+                {{- range $volumeClaimTemplatesKey, $volumeClaimTemplatesValue := $.Values.volumeClaimTemplates }}
+                  {{- if eq $volumeClaimTemplatesKey $volumeMountsValue.claimName }}
           - name: {{ include "commonPrefix" $ }}{{ $volumeMountsKey }}-{{ $volumeMountsValue.claimName | lower }}
             mountPath: {{ $volumeMountsValue.mountPath }}
-                  {{- if $volumeMountsValue.readOnly }}
+                    {{- if $volumeMountsValue.readOnly }}
             readOnly: {{ $volumeMountsValue.readOnly }}
+                    {{- end }}
                   {{- end }}
                 {{- end }}
-              {{- end }}
-            {{- else }}
+              {{- else }}
           - name: {{ include "commonPrefix" $ }}{{ $volumeMountsKey | lower }}
             mountPath: {{ $volumeMountsValue.mountPath }}
-              {{- if $volumeMountsValue.readOnly }}
+                {{- if $volumeMountsValue.readOnly }}
             readOnly: {{ $volumeMountsValue.readOnly }}
+                {{- end }}
               {{- end }}
             {{- end }}
           {{- end }}
@@ -380,20 +389,27 @@ spec:
         - name: COLLECT_PERF_SCHEMA_MEMORY_EVENTS
           value: "disable"
         {{- end }}
-          {{- range $envKey, $envValue := $.Values.env }}
-            {{- if (has "monitoring" $envValue.containerType) }}
+        {{- range $envKey, $envValue := $.Values.env }}
+          {{- if (has "monitoring" $envValue.containerType) }}
+            {{- if $envValue.value }}
         - name: {{ $envKey }}
-              {{- if $envValue.value }}
           value: {{ $envValue.value | quote }}
-              {{- end }}
-              {{- if $envValue.secretName }}
+            {{- end }}
+            {{- if $envValue.secretName }}
+              {{- range $userKey, $userValue := $.Values.mariadb.users }}
+                {{- if $userValue.enabled }}
+                  {{- if eq $userValue.secretName $envValue.secretName }}
+        - name: {{ $envKey }}
           valueFrom:
             secretKeyRef:
               name: {{ include "commonPrefix" $ }}{{ $.Release.Name }}-{{ $envValue.secretName }}
               key: {{ $envValue.secretKey }}
+                  {{- end }}
+                {{- end }}
               {{- end }}
             {{- end }}
           {{- end }}
+        {{- end }}
         resources:
           requests:
             cpu: {{ $.Values.resourceLimits.cpu.monitoring | default 0.25 }}
@@ -472,17 +488,19 @@ spec:
       {{- end }}
       volumes:
         {{- range $volumeMountsKey, $volumeMountsValue := $.Values.volumeMounts.application }}
-          {{- if $volumeMountsValue.type }}
-            {{- if ne $volumeMountsValue.type "persistentVolume" }}
+          {{- if $volumeMountsValue.enabled }}
+            {{- if $volumeMountsValue.type }}
+              {{- if ne $volumeMountsValue.type "persistentVolume" }}
         - name: {{ include "commonPrefix" $ }}{{ $volumeMountsKey }}
-              {{- if eq $volumeMountsValue.type "secret"}}
+                {{- if eq $volumeMountsValue.type "secret"}}
           {{ $volumeMountsValue.type }}:
             secretName: {{ include "commonPrefix" $ }}{{ $.Release.Name }}-{{ $volumeMountsKey }}
-              {{- else if eq $volumeMountsValue.type "hostPath" }}
+                {{- else if eq $volumeMountsValue.type "hostPath" }}
           {{ $volumeMountsValue.type }}:
             path: {{ $volumeMountsValue.hostPath }}
-              {{- else }}
+                {{- else }}
             name: {{ include "commonPrefix" $ }}{{ $volumeMountsKey }}
+                {{- end }}
               {{- end }}
             {{- end }}
           {{- end }}
@@ -532,18 +550,20 @@ spec:
   volumeClaimTemplates:
   {{- range $volumeClaimTemplatesKey, $volumeClaimTemplatesValue := $.Values.volumeClaimTemplates }}
     {{- range $volumeMountsKey, $volumeMountsValue := $.Values.volumeMounts.application }}
-      {{- if (hasKey $volumeMountsValue "claimName") }}
-        {{- if eq $volumeClaimTemplatesKey $volumeMountsValue.claimName }}
+      {{- if $volumeMountsValue.enabled }}
+        {{- if (hasKey $volumeMountsValue "claimName") }}
+          {{- if eq $volumeClaimTemplatesKey $volumeMountsValue.claimName }}
   - metadata:
       name: {{ include "commonPrefix" $ }}{{ $volumeMountsKey }}-{{ $volumeMountsValue.claimName | lower }}
     spec:
-          {{- if $volumeClaimTemplatesValue.storageClassName }}
+            {{- if $volumeClaimTemplatesValue.storageClassName }}
       storageClassName: {{ include "commonPrefix" $ }}{{ $.Release.Name }}-{{ $volumeClaimTemplatesValue.storageClassName }}
-          {{- end }}
+            {{- end }}
       accessModes: {{ $volumeClaimTemplatesValue.accessModes }}
       resources:
         requests:
           storage: {{ $volumeClaimTemplatesValue.capacity }}
+          {{- end }}
         {{- end }}
       {{- end }}
     {{- end }}

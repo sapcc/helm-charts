@@ -31,7 +31,7 @@ function createkopiadbbackup {
 
     loginfo "${FUNCNAME[0]}" "mariadb-dump using ${DB_HOST} started"
     mariadb-dump --protocol=tcp --host=${DB_HOST}.database.svc.cluster.local --port=${MYSQL_PORT} \
-                --user=${MARIADB_ROOT_USER} --password=${MARIADB_ROOT_PASSWORD} \
+                --user=${MARIADB_ROOT_USERNAME} --password=${MARIADB_ROOT_PASSWORD} \
                 --all-databases --add-drop-database --flush-privileges --flush-logs --hex-blob --events --routines --comments --triggers --skip-log-queries \
                 --gtid --master-data=1 --single-transaction | \
     kopia snapshot create /mariadb.${MARIADB_BACKUP_TYPE} --stdin-file=dump.sql \
@@ -57,7 +57,7 @@ function createkopiabinlogbackup {
 
     loginfo "${FUNCNAME[0]}" "mariadb-binlog using ${BINLOGNAME} and newer from ${DB_HOST} started"
     mariadb-binlog --protocol=tcp --host=${DB_HOST}.database.svc.cluster.local --port=${MYSQL_PORT} \
-                --user=${MARIADB_ROOT_USER} --password=${MARIADB_ROOT_PASSWORD} \
+                --user=${MARIADB_ROOT_USERNAME} --password=${MARIADB_ROOT_PASSWORD} \
                 --read-from-remote-server --to-last-log --verify-binlog-checksum ${BINLOGNAME} | \
     kopia snapshot create /mariadb.${MARIADB_BACKUP_TYPE} --stdin-file=binlog.sql \
                   --tags=mariadb.version:${MARIADB_VERSION} \

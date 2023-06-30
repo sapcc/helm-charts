@@ -2,41 +2,43 @@
 {{- $galeraPort := (required ".services.application.backend.ports.galera.targetPort missing" $.Values.services.application.backend.ports.galera.targetPort) }}
 {{- $proxysqlAdminPort := (required ".services.proxy.backend.ports.proxy.targetPort missing" $.Values.services.proxy.backend.ports.proxy.targetPort) }}
 
-{{- /* Load additional configuration files for MariaDB to to use them for ProxySQL */}}
-{{- $mariadbconfigs := $.Files.Get "config/mariadb-galera/values.yaml" | fromYaml }}
-{{- $usernameEnvVarFound := false }}
-{{- $passwordEnvVarFound := false }}
+{{- $usernameEnvVar := "" }}
+{{- $passwordEnvVar := "" }}
+{{- $userRequired := false }}
 {{- $mySQLUsers := dict }}
 {{- $fastforward := 0 }}
-{{- $_ := set $mySQLUsers "MARIADB_ROOT_USER" "{ username = \"${MARIADB_ROOT_USER}\", password = \"${MARIADB_ROOT_PASSWORD}\", default_hostgroup = 10, transaction_persistent = 0, fast_forward = 1, active = 1 }"}}
-{{- range $mariadbconfigKey, $mariadbconfigValue := required "A valid 'configs.' structure is required from config/mariadb-galera/values.yaml" $mariadbconfigs.configs }}
-  {{- if $mariadbconfigValue.enabled}}
-    {{- $configfile := $.Files.Get (printf "config/mariadb-galera/%s/%s" $mariadbconfigValue.type $mariadbconfigValue.file) | fromYaml }}
-    {{- if eq $mariadbconfigValue.type "user" }}
-      {{- $usernameEnvVarFound = false }}
-      {{- $passwordEnvVarFound = false }}
-      {{- $fastforward = 0 }}
-      {{- range $envKey, $envValue := $.Values.env }}
-        {{- if (has "proxy" $envValue.containerType) }}
-          {{- if and (eq $envKey ($configfile.username | trimAll "${}")) ($envValue) }}
-            {{- $usernameEnvVarFound = true }}
+
+{{- range $userKey, $userValue := $.Values.mariadb.users }}
+  {{- if $userValue.enabled }}
+    {{- $usernameEnvVar = "" }}
+    {{- $passwordEnvVar = "" }}
+    {{- $userRequired = false }}
+    {{- $fastforward = 0 }}
+    {{- range $envKey, $envValue := $.Values.env }}
+      {{- if (has "proxy" $envValue.containerType) }}
+        {{- if eq $userValue.secretName $envValue.secretName }}
+          {{- $userRequired = true }}
+          {{- if hasSuffix "_USERNAME" $envKey }}
+            {{- $usernameEnvVar = $envKey }}
           {{- end }}
-          {{- if and (eq $envKey ($configfile.password | trimAll "${}")) ($envValue) }}
-            {{- $passwordEnvVarFound = true }}
+          {{- if hasSuffix "_PASSWORD" $envKey }}
+            {{- $passwordEnvVar = $envKey }}
           {{- end }}
         {{- end }}
       {{- end }}
-      {{- if and (hasKey $configfile "proxysql") $configfile.proxysql.fastforward }}
-        {{- $fastforward = 1 }}
+    {{- end }}
+    {{- if and (hasKey $userValue "proxysql") $userValue.proxysql.fastforward }}
+      {{- $fastforward = 1 }}
+    {{- end }}
+    {{- if $userRequired }}
+      {{- if and $usernameEnvVar $passwordEnvVar }}
+        {{- $_ := set $mySQLUsers ($usernameEnvVar | quote) (printf "{ username = \"${%s}\", password = \"${%s}\", default_hostgroup = 10, transaction_persistent = 0, fast_forward = %d, active = 1 }" $usernameEnvVar $passwordEnvVar $fastforward) }}
       {{- end }}
-      {{- if and $usernameEnvVarFound $passwordEnvVarFound }}
-        {{- $_ := set $mySQLUsers ($configfile.username | trimAll "${}" | quote) (printf "{ username = %s, password = %s, default_hostgroup = 10, transaction_persistent = 0, fast_forward = %d, active = 1 }" ($configfile.username | quote) ($configfile.password | quote) $fastforward) }}
+      {{- if (not $usernameEnvVar) }}
+        {{- fail (printf "'_USERNAME' environment variable for the '%s' user is not defined, but required for the ProxySQL 'mysql_users.cfg' configuration" $userKey) }}
       {{- end }}
-      {{- if (not $usernameEnvVarFound) }}
-      {{- fail (printf "%s environment variable not defined, but required for config/mariadb-galera/%s/%s" ($configfile.username | trimAll "${}" | quote) $mariadbconfigValue.type $mariadbconfigValue.file) }}
-      {{- end }}
-      {{- if (not $passwordEnvVarFound) }}
-        {{- fail (printf "%s environment variable not defined, but required for config/mariadb-galera/%s/%s" ($configfile.password | trimAll "${}" | quote) $mariadbconfigValue.type $mariadbconfigValue.file) }}
+      {{- if (not $passwordEnvVar) }}
+        {{- fail (printf "'_PASSWORD' environment variable for the '%s' user password is not defined, but required for the ProxySQL 'mysql_users.cfg' configuration" $userKey) }}
       {{- end }}
     {{- end }}
   {{- end }}

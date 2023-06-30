@@ -134,17 +134,17 @@ function setuprole {
 }
 
 # grantrole rolename username hostname admingrant(or empty)
-# grantrole 'mysql_exporter' "${MARIADB_MONITORING_USER}" '%' 'WITH ADMIN OPTION'
+# grantrole 'mysql_exporter' "${MARIADB_MONITORING_USERNAME}" '%' 'WITH ADMIN OPTION'
 function grantrole {
   local tplfile=grantrole.sql.tpl
   if [ -f "${BASE}/etc/sql/${tplfile}" ]; then
     local int
     export DB_ROLE=${1}
-    export DB_USER=${2}
+    export DB_USERNAME=${2}
     export DB_HOST=${3}
     export DB_ADMIN_GRANT=${4}
 
-    loginfo "${FUNCNAME[0]}" "grant ${DB_ROLE} role to '${DB_USER}@${DB_HOST}'"
+    loginfo "${FUNCNAME[0]}" "grant ${DB_ROLE} role to '${DB_USERNAME}@${DB_HOST}'"
     for (( int=${MAX_RETRIES}; int >=1; int-=1));
       do
       if [ "$0" == "/opt/mariadb/bin/entrypoint-job-config.sh" ]; then
@@ -166,7 +166,7 @@ function grantrole {
       exit 1
     fi
     export -n DB_HOST
-    export -n DB_USER
+    export -n DB_USERNAME
     export -n DB_ROLE
     export -n DB_ADMIN_GRANT
   else
@@ -175,16 +175,16 @@ function grantrole {
 }
 
 # setdefaultrole rolename username hostname
-# setdefaultrole 'mysql_exporter' "${MARIADB_MONITORING_USER}" '%'
+# setdefaultrole 'mysql_exporter' "${MARIADB_MONITORING_USERNAME}" '%'
 function setdefaultrole {
   local tplfile=setdefaultrole.sql.tpl
   if [ -f "${BASE}/etc/sql/${tplfile}" ]; then
     local int
     export DB_ROLE=${1}
-    export DB_USER=${2}
+    export DB_USERNAME=${2}
     export DB_HOST=${3}
 
-    loginfo "${FUNCNAME[0]}" "set ${DB_ROLE} as default role to '${DB_USER}@${DB_HOST}'"
+    loginfo "${FUNCNAME[0]}" "set ${DB_ROLE} as default role to '${DB_USERNAME}@${DB_HOST}'"
     for (( int=${MAX_RETRIES}; int >=1; int-=1));
       do
       if [ "$0" == "/opt/mariadb/bin/entrypoint-job-config.sh" ]; then
@@ -206,7 +206,7 @@ function setdefaultrole {
       exit 1
     fi
     export -n DB_HOST
-    export -n DB_USER
+    export -n DB_USERNAME
     export -n DB_ROLE
   else
     loginfo "${FUNCNAME[0]}" "default role config skipped because of missing ${BASE}/etc/sql/${tplfile} file"
@@ -214,12 +214,12 @@ function setdefaultrole {
 }
 
 # setup username password rolename connectionlimit hostname authplugin admingrant(or empty)
-# setupuser "${MARIADB_MONITORING_USER}" "${MARIADB_MONITORING_PASSWORD}" 'mysql_exporter' "${MARIADB_MONITORING_CONNECTION_LIMIT}" '%' 'mysql_native_password' 'WITH ADMIN OPTION'
+# setupuser "${MARIADB_MONITORING_USERNAME}" "${MARIADB_MONITORING_PASSWORD}" 'mysql_exporter' "${MARIADB_MONITORING_CONNECTION_LIMIT}" '%' 'mysql_native_password' 'WITH ADMIN OPTION'
 function setupuser {
   local tplfile=setupuser.sql.tpl
   if [ -f "${BASE}/etc/sql/${tplfile}" ] && [ -n "${1}" ] && [ -n "${2}" ]; then
     local int
-    export DB_USER=${1}
+    export DB_USERNAME=${1}
     export DB_PASS=${2}
     export DB_ROLE=${3}
     export CONN_LIMIT=${4}
@@ -227,7 +227,7 @@ function setupuser {
     export DB_AUTHPLUGIN=${6}
     export DB_ADMIN_GRANT=${7}
 
-    loginfo "${FUNCNAME[0]}" "setup '${DB_USER}@${DB_HOST}' privileges"
+    loginfo "${FUNCNAME[0]}" "setup '${DB_USERNAME}@${DB_HOST}' privileges"
     for (( int=${MAX_RETRIES}; int >=1; int-=1));
       do
       if [ "$0" == "/opt/mariadb/bin/entrypoint-job-config.sh" ]; then
@@ -236,7 +236,7 @@ function setupuser {
         cat ${BASE}/etc/sql/${tplfile} | envsubst | mysql --protocol=socket --user=root --batch
       fi
       if [ $? -ne 0 ]; then
-        logerror "${FUNCNAME[0]}" "'${DB_USER}@${DB_HOST}' user setup has been failed(${int} retries left)"
+        logerror "${FUNCNAME[0]}" "'${DB_USERNAME}@${DB_HOST}' user setup has been failed(${int} retries left)"
         sleep ${WAIT_SECONDS}
       else
         if [ "$0" == "/opt/mariadb/bin/entrypoint-job-config.sh" ]; then
@@ -248,7 +248,7 @@ function setupuser {
           logerror "${FUNCNAME[0]}" "flush privileges failed(${int} retries left)"
           sleep ${WAIT_SECONDS}
         else
-          loginfo "${FUNCNAME[0]}" "'${DB_USER}@${DB_HOST}' user setup done"
+          loginfo "${FUNCNAME[0]}" "'${DB_USERNAME}@${DB_HOST}' user setup done"
           break
         fi
       fi
@@ -259,7 +259,7 @@ function setupuser {
       exit 1
     fi
     loginfo "${FUNCNAME[0]}" "user setup done"
-    export -n DB_USER
+    export -n DB_USERNAME
     export -n DB_PASS
     export -n DB_ROLE
     export -n DB_HOST
@@ -267,7 +267,7 @@ function setupuser {
     export -n DB_AUTHPLUGIN
     export -n DB_ADMIN_GRANT
   else
-    loginfo "${FUNCNAME[0]}" "user setup skipped because of missing ${BASE}/etc/sql/${tplfile} file and/or missing MARIADB_XYZ_USER and/or MARIADB_XYZ_PASSWORD env vars"
+    loginfo "${FUNCNAME[0]}" "user setup skipped because of missing ${BASE}/etc/sql/${tplfile} file and/or missing MARIADB_XYZ_USERNAME and/or MARIADB_XYZ_PASSWORD env vars"
   fi
 }
 

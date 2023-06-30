@@ -54,7 +54,7 @@ function recoverkopiadbbackup {
   fi
 
   loginfo "${FUNCNAME[0]}" "kopia database recovery using snapshot ${snapshotid} to ${DB_HOST} started"
-  kopia show ${snapshotid}/dump.sql | mysql --protocol=tcp --host=${DB_HOST} --user=${MARIADB_ROOT_USER} --password=${MARIADB_ROOT_PASSWORD} --port=${MYSQL_PORT} --wait --connect-timeout=${WAIT_SECONDS} --reconnect --batch
+  kopia show ${snapshotid}/dump.sql | mysql --protocol=tcp --host=${DB_HOST} --user=${MARIADB_ROOT_USERNAME} --password=${MARIADB_ROOT_PASSWORD} --port=${MYSQL_PORT} --wait --connect-timeout=${WAIT_SECONDS} --reconnect --batch
   if [ $? -ne 0 ]; then
     logerror "${FUNCNAME[0]}" "kopia database recovery failed"
     exit 1

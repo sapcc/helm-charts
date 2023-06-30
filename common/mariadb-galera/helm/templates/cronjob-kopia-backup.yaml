@@ -5,7 +5,7 @@
 {{- else if and (and (hasKey $.Values.mariadb.galera "backup") ($.Values.mariadb.galera.backup.enabled)) (and (hasKey $.Values.mariadb.galera.backup "kopia") ($.Values.mariadb.galera.backup.kopia.enabled)) (and (hasKey $.Values.mariadb.galera.backup "restic") ($.Values.mariadb.galera.backup.restic.enabled)) }}
   {{- fail "Please enable either 'mariadb.galera.backup.kopia.enabled' OR 'mariadb.galera.backup.restic.enabled'" }}
 {{- else if and (and (hasKey $.Values.mariadb.galera "backup") ($.Values.mariadb.galera.backup.enabled)) (and (hasKey $.Values.mariadb.galera.backup "kopia") ($.Values.mariadb.galera.backup.kopia.enabled)) }}
-  {{- range $scheduleKey, $scheduleValue := required ".job.kopiabackup.schedule map(full + binlog) required to define the cronjobs" $.Values.job.kopiabackup.schedule }}
+  {{- range $scheduleKey, $scheduleValue := required ".mariadb.galera.backup.kopia.job.schedule map(full + binlog) required to define the cronjobs" $.Values.mariadb.galera.backup.kopia.job.schedule }}
 ---
 apiVersion: batch/v1
 kind: CronJob
@@ -22,10 +22,10 @@ spec:
     {{- else if eq $scheduleKey "binlog" }}
   schedule: {{ $scheduleValue | default "*/30 * * * *" | quote }}
     {{- end }}
-  startingDeadlineSeconds: {{ $.Values.job.kopiabackup.startingDeadlineSeconds | default 15 | int }}
-  concurrencyPolicy: {{ $.Values.job.kopiabackup.concurrencyPolicy | default "Forbid" | quote }}
-  successfulJobsHistoryLimit: {{ $.Values.job.kopiabackup.successfulJobsHistoryLimit | default 1 | int }}
-  failedJobsHistoryLimit: {{ $.Values.job.kopiabackup.failedJobsHistoryLimit | default 1 | int }}
+  startingDeadlineSeconds: {{ $.Values.mariadb.galera.backup.kopia.job.startingDeadlineSeconds | default 15 | int }}
+  concurrencyPolicy: {{ $.Values.mariadb.galera.backup.kopia.job.concurrencyPolicy | default "Forbid" | quote }}
+  successfulJobsHistoryLimit: {{ $.Values.mariadb.galera.backup.kopia.job.successfulJobsHistoryLimit | default 1 | int }}
+  failedJobsHistoryLimit: {{ $.Values.mariadb.galera.backup.kopia.job.failedJobsHistoryLimit | default 1 | int }}
   jobTemplate:
     spec:
       template:
@@ -36,7 +36,7 @@ spec:
           annotations:
             checksum/configmap: {{ include (print $.Template.BasePath "/configmap-kopia.yaml") $ | sha256sum }}
         spec:
-          restartPolicy: {{ $.Values.job.kopiabackup.jobRestartPolicy | default "OnFailure" | quote }}
+          restartPolicy: {{ $.Values.mariadb.galera.backup.kopia.job.jobRestartPolicy | default "OnFailure" | quote }}
           serviceAccount: {{ include "commonPrefix" $ }}{{ $.Release.Name }}
           securityContext:
             runAsUser: {{ $.Values.userId.backup | default 3200 | int }}
@@ -76,15 +76,33 @@ spec:
               value: {{ $scheduleKey | quote }}
             {{- range $envKey, $envValue := $.Values.env }}
               {{- if (has "cronjob-kopia" $envValue.containerType) }}
-            - name: {{ $envKey }}
                 {{- if $envValue.value }}
+            - name: {{ $envKey }}
               value: {{ $envValue.value | quote }}
                 {{- end }}
                 {{- if $envValue.secretName }}
+                  {{- range $userKey, $userValue := $.Values.mariadb.users }}
+                    {{- if $userValue.enabled }}
+                      {{- if eq $userValue.secretName $envValue.secretName }}
+            - name: {{ $envKey }}
               valueFrom:
                 secretKeyRef:
                   name: {{ include "commonPrefix" $ }}{{ $.Release.Name }}-{{ $envValue.secretName }}
                   key: {{ $envValue.secretKey }}
+                      {{- end }}
+                    {{- end }}
+                  {{- end }}
+                  {{- range $userKey, $userValue := $.Values.mariadb.galera.backup.kopia.users }}
+                    {{- if $userValue.enabled }}
+                      {{- if eq $userValue.secretName $envValue.secretName }}
+            - name: {{ $envKey }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "commonPrefix" $ }}{{ $.Release.Name }}-{{ $envValue.secretName }}
+                  key: {{ $envValue.secretKey }}
+                      {{- end }}
+                    {{- end }}
+                  {{- end }}
                 {{- end }}
               {{- end }}
             {{- end }}

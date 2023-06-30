@@ -5,7 +5,7 @@
 {{- else if and (and (hasKey $.Values.mariadb.galera "backup") ($.Values.mariadb.galera.backup.enabled)) (and (hasKey $.Values.mariadb.galera.backup "restic") ($.Values.mariadb.galera.backup.restic.enabled)) (and (hasKey $.Values.mariadb.galera.backup "kopia") ($.Values.mariadb.galera.backup.kopia.enabled)) }}
   {{- fail "Please enable either 'mariadb.galera.backup.restic.enabled' OR 'mariadb.galera.backup.kopia.enabled'" }}
 {{- else if and (and (hasKey $.Values.mariadb.galera "backup") ($.Values.mariadb.galera.backup.enabled)) (and (hasKey $.Values.mariadb.galera.backup "restic") ($.Values.mariadb.galera.backup.restic.enabled)) }}
-  {{- range $scheduleKey, $scheduleValue := required ".job.resticbackup.schedule map(full + binlog) required to define the cronjobs" $.Values.job.resticbackup.schedule }}
+  {{- range $scheduleKey, $scheduleValue := required ".mariadb.galera.backup.restic.job.schedule map(full + binlog) required to define the cronjobs" $.Values.mariadb.galera.backup.restic.job.schedule }}
 ---
 apiVersion: batch/v1
 kind: CronJob
@@ -22,10 +22,10 @@ spec:
     {{- else if eq $scheduleKey "binlog" }}
   schedule: {{ $scheduleValue | default "*/30 * * * *" | quote }}
     {{- end }}
-  startingDeadlineSeconds: {{ $.Values.job.resticbackup.startingDeadlineSeconds | default 15 | int }}
-  concurrencyPolicy: {{ $.Values.job.resticbackup.concurrencyPolicy | default "Forbid" | quote }}
-  successfulJobsHistoryLimit: {{ $.Values.job.resticbackup.successfulJobsHistoryLimit | default 1 | int }}
-  failedJobsHistoryLimit: {{ $.Values.job.resticbackup.failedJobsHistoryLimit | default 1 | int }}
+  startingDeadlineSeconds: {{ $.Values.mariadb.galera.backup.restic.job.startingDeadlineSeconds | default 15 | int }}
+  concurrencyPolicy: {{ $.Values.mariadb.galera.backup.restic.job.concurrencyPolicy | default "Forbid" | quote }}
+  successfulJobsHistoryLimit: {{ $.Values.mariadb.galera.backup.restic.job.successfulJobsHistoryLimit | default 1 | int }}
+  failedJobsHistoryLimit: {{ $.Values.mariadb.galera.backup.restic.job.failedJobsHistoryLimit | default 1 | int }}
   jobTemplate:
     spec:
       template:
@@ -36,7 +36,7 @@ spec:
           annotations:
             checksum/configmap: {{ include (print $.Template.BasePath "/configmap-restic.yaml") $ | sha256sum }}
         spec:
-          restartPolicy: {{ $.Values.job.resticbackup.jobRestartPolicy | default "OnFailure" | quote }}
+          restartPolicy: {{ $.Values.mariadb.galera.backup.restic.job.jobRestartPolicy | default "OnFailure" | quote }}
           serviceAccount: {{ include "commonPrefix" $ }}{{ $.Release.Name }}
           securityContext:
             runAsUser: {{ $.Values.userId.backup | default 3200 | int }}
@@ -84,15 +84,33 @@ spec:
               value: {{ (required ".services.application.frontend.ports.mysql.targetPort missing" $.Values.services.application.frontend.ports.mysql.targetPort) | quote }}
             {{- range $envKey, $envValue := $.Values.env }}
               {{- if (has "cronjob-restic" $envValue.containerType) }}
-            - name: {{ $envKey }}
                 {{- if $envValue.value }}
+            - name: {{ $envKey }}
               value: {{ $envValue.value | quote }}
                 {{- end }}
                 {{- if $envValue.secretName }}
+                  {{- range $userKey, $userValue := $.Values.mariadb.users }}
+                    {{- if $userValue.enabled }}
+                      {{- if eq $userValue.secretName $envValue.secretName }}
+            - name: {{ $envKey }}
               valueFrom:
                 secretKeyRef:
                   name: {{ include "commonPrefix" $ }}{{ $.Release.Name }}-{{ $envValue.secretName }}
                   key: {{ $envValue.secretKey }}
+                      {{- end }}
+                    {{- end }}
+                  {{- end }}
+                  {{- range $userKey, $userValue := $.Values.mariadb.galera.backup.restic.users }}
+                    {{- if $userValue.enabled }}
+                      {{- if eq $userValue.secretName $envValue.secretName }}
+            - name: {{ $envKey }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "commonPrefix" $ }}{{ $.Release.Name }}-{{ $envValue.secretName }}
+                  key: {{ $envValue.secretKey }}
+                      {{- end }}
+                    {{- end }}
+                  {{- end }}
                 {{- end }}
               {{- end }}
             {{- end }}
