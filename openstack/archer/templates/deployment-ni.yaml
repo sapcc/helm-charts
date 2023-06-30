@@ -87,6 +87,8 @@ spec:
             - name: etc-archer
               mountPath: /etc/archer
               readOnly: true
+            - name: socat-proxy
+              mountPath: /var/run/socat-proxy
         - name: neutron-linuxbridge-agent
           image: "{{ $.Values.global.registry }}/loci-neutron:{{ $.Values.image.neutron_version | default "latest" }}"
           imagePullPolicy: IfNotPresent
@@ -130,8 +132,6 @@ spec:
               mountPath: /etc/sudoers
               subPath: sudoers
               readOnly: true
-            - name: network-namespace
-              mountPath: /var/run/netns
         - name: socat
           image: "{{ $.Values.global.dockerHubMirror }}/alpine/socat:{{ $.Values.image.socat_version | default "latest" }}"
           imagePullPolicy: IfNotPresent
@@ -144,8 +144,6 @@ spec:
             - name: socat-proxy
               mountPath: /var/run/socat-proxy
       volumes:
-        - name: network-namespace
-          emptyDir: { }
         - name: socat-proxy
           emptyDir: { }
         - name: modules
