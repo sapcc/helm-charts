@@ -27,8 +27,10 @@ spec:
       serviceAccount: {{ include "commonPrefix" $ }}{{ $.Release.Name }}
       securityContext:
         fsGroup:  {{ $.Values.groupId.application | default 101 | int }}
+      {{- if and (hasKey $.Values.image.application "pullSecret") $.Values.image.application.pullSecret }}
       imagePullSecrets:
       - name: {{ include "commonPrefix" $ }}{{ $.Release.Name }}-{{$.Values.image.application.pullSecret}}
+      {{- end }}
       containers:
       - name: cfg
         image: "{{ $.Values.image.application.registry }}/{{ $.Values.image.application.project }}/{{ $.Values.image.application.applicationname }}:{{ $.Values.image.application.applicationversion }}-{{ $.Values.image.application.imageversion | int }}"

@@ -1,4 +1,9 @@
 # Changelog
+
+## v0.15.3 - 2023/07/03
+* pull secret enablement fixed for the different components
+* chart version bumped
+
 ## v0.15.2 - 2023/07/03
 * support for [Kubernetes pull secrets](https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/) added
 * chart version bumped

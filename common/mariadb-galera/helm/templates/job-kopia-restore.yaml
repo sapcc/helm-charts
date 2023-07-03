@@ -29,8 +29,10 @@ spec:
         runAsUser:  {{ $.Values.userId.backup | default 3200 | int }}
         runAsGroup: {{ $.Values.groupId.backup | default 3200 | int }}
         fsGroup:  {{ $.Values.groupId.backup | default 3200 | int }}
+      {{- if and (hasKey $.Values.image.kopiabackup "pullSecret") $.Values.image.kopiabackup.pullSecret }}
       imagePullSecrets:
-      - name: {{ include "commonPrefix" $ }}{{ $.Release.Name }}-{{$.Values.image.application.pullSecret}}
+      - name: {{ include "commonPrefix" $ }}{{ $.Release.Name }}-{{$.Values.image.kopiabackup.pullSecret}}
+      {{- end }}
       containers:
       - name: restore
         image: "{{ $.Values.image.kopiabackup.registry }}/{{ $.Values.image.kopiabackup.project }}/{{ $.Values.image.kopiabackup.applicationname }}:{{ $.Values.image.kopiabackup.applicationversion }}-{{ $.Values.image.kopiabackup.imageversion | int }}"

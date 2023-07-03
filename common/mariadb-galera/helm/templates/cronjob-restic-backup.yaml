@@ -42,8 +42,10 @@ spec:
             runAsUser: {{ $.Values.userId.backup | default 3200 | int }}
             runAsGroup: {{ $.Values.groupId.backup | default 3200 | int }}
             fsGroup: {{ $.Values.groupId.backup | default 3200 | int }}
-          imagePullSecrets:
-          - name: {{ include "commonPrefix" $ }}{{ $.Release.Name }}-{{$.Values.image.resticbackup.pullSecret}}
+      {{- if and (hasKey $.Values.image.kopiabackup "pullSecret") $.Values.image.resticbackup.pullSecret }}
+      imagePullSecrets:
+      - name: {{ include "commonPrefix" $ }}{{ $.Release.Name }}-{{$.Values.image.resticbackup.pullSecret}}
+      {{- end }}
           containers:
           - name: backup
             image: "{{ $.Values.image.resticbackup.registry }}/{{ $.Values.image.resticbackup.project }}/{{ $.Values.image.resticbackup.applicationname }}:{{ $.Values.image.resticbackup.applicationversion }}-{{ $.Values.image.resticbackup.imageversion | int }}"

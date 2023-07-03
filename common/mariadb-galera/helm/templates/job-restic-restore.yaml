@@ -29,8 +29,10 @@ spec:
         runAsUser:  {{ $.Values.userId.backup | default 3200 | int }}
         runAsGroup: {{ $.Values.groupId.backup | default 3200 | int }}
         fsGroup:  {{ $.Values.groupId.backup | default 3200 | int }}
+      {{- if and (hasKey $.Values.image.application "pullSecret") $.Values.image.application.pullSecret }}
       imagePullSecrets:
       - name: {{ include "commonPrefix" $ }}{{ $.Release.Name }}-{{$.Values.image.application.pullSecret}}
+      {{- end }}
       containers:
       - name: restore
         image: "{{ $.Values.image.resticbackup.registry }}/{{ $.Values.image.resticbackup.project }}/{{ $.Values.image.resticbackup.applicationname }}:{{ $.Values.image.resticbackup.applicationversion }}-{{ $.Values.image.resticbackup.imageversion | int }}"
