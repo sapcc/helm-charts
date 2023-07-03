@@ -305,3 +305,24 @@ promrole:
     - "*"
     allowed_actions:
     - "kibana_all_write"
+
+maillog:
+  reserved: false
+  cluster_permissions:
+  - "indices:admin/template/get"
+  - "cluster_manage_index_templates"
+  index_permissions:
+  - index_patterns:
+    - "maillog-*"
+    allowed_actions:
+    - "indices:admin/template/get"
+    - "indices:admin/template/put"
+    - "indices:admin/mappings/get"
+    - "indices:admin/mapping/put"
+    - "indices:admin/create"
+    - "indices:data/write/bulk*"
+    - "indices:data/write/delete"
+    - "indices:data/write/index"
+    - "indices:data/write/update"
+    - "indices:data/read/search"
+    - "indices:data/read/search*"
