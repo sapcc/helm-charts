@@ -1,7 +1,7 @@
 groups:
 - name: fluent.alerts
   rules:
-  - alert: ElkFluentLogsMissing
+  - alert: OpenSearchLogsFluentLogsMissing
 {{ if eq .Values.global.clusterType  "scaleout" }}
     expr: sum by (nodename) (rate(fluentd_output_status_emit_records{cluster_type!="controlplane",component="fluent",type="opensearch"}[60m])) == 0
     for: 360m
