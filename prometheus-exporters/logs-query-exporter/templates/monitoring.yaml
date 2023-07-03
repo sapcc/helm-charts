@@ -2,16 +2,16 @@ apiVersion: monitoring.coreos.com/v1
 kind: PodMonitor
 
 metadata:
-  name: elk-query-exporter
+  name: logs-query-exporter
   labels:
     prometheus: {{ .Values.alerts.prometheus }}
 
 spec:
-  jobLabel: elk-query-exporter
+  jobLabel: logs-query-exporter
 
   selector:
     matchLabels:
-      component: elk-query-exporter
+      component: logs-query-exporter
 
   # Find pods in any namespace.
   namespaceSelector:
@@ -27,7 +27,7 @@ spec:
         - action: labelmap
           regex: '__meta_kubernetes_pod_label_(.+)'
         - targetLabel: job
-          replacement: elk-query-exporter
+          replacement: logs-query-exporter
       metricRelabelings:
         - regex: "pod|app_kubernetes_io_managed_by|container|cluster_type|cluster|pod_template_hash"
           action: labeldrop

@@ -1,8 +1,8 @@
 groups:
-- name: elkquery.alerts
+- name: opensearchlogsquery.alerts
   rules:
-  - alert: ElkEsQueryExporterMissing
-    expr: up{job=~"es-query-exporter"} == 0
+  - alert: OpenSearchLogsQueryExporterMissing
+    expr: up{job=~"opensearch-logs-query-exporter"} == 0
     for: 30m
     labels:
       context: nodes
@@ -12,8 +12,8 @@ groups:
       support_group: observability
       playbook: docs/operation/monitor/elk_query
     annotations:
-      description: 'es-query-exporter in {{ $labels.region }} is missing.'
-      summary: 'es-query-exporter in {{ $labels.region }} is missing.'
+      description: 'opensearch-logs-query-exporter in {{ $labels.region }} is missing.'
+      summary: 'opensearch-logs-query-exporter in {{ $labels.region }} is missing.'
   - alert: OctobusQueryExporterError
     expr: elasticsearch_octobus_exporter_error_hits > 0
     labels:
@@ -48,18 +48,3 @@ groups:
     annotations:
       description: "Esxi-exporter can't login with production root password, please check Kibana link."
       summary: "Login to ESX not possible with production root password"
-
-  - alert: ElasticExporterMissing
-    expr: up{job=~"es-exporter.*"} == 0
-    for: 30m
-    labels:
-      context: nodes
-      service: logs
-      severity: warning
-      support_group: observability
-      tier: os
-      playbook: docs/support/playbook/elastic_kibana_issues
-      dashboard: health-elasticsearch?var-cluster={{ $labels.elastic_cluster }}
-    annotations:
-      description: 'cluster *{{ $labels.elastic_cluster }}* es-exporter in `{{ $labels.region }}` is missing.'
-      summary: 'cluster: *{{ $labels.elastic_cluster }}* es-exporter in `{{ $labels.region }}` is missing.'
