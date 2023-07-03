@@ -1,5 +1,9 @@
 # Changelog
-## v0.15.1 - 2023/06/30
+## v0.15.2 - 2023/07/03
+* support for [Kubernetes pull secrets](https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/) added
+* chart version bumped
+
+## v0.15.1 - 2023/07/03
 * mysqld_exporter config templating fixed
   * _USERNAME reverted back to _USER
 * chart version bumped

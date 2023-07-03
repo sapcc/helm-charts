@@ -187,11 +187,15 @@ spec:
 
 {{/*
   Generate Kubernetes secrets based on the provided credentials
-  include "generateSecret" (dict "global" $ "name" $userKey "credential" $userValue "suffix" "mariadb" "kind" "Secret")
+  include "generateSecret" (dict "global" $ "name" $credentialKey "credential" $credentialValue "suffix" "mariadb" "kind" "Secret")
+  include "generateSecret" (dict "global" $ "name" $credentialKey "credential" $credentialValue "kind" "Dockerconfigjson")
 */}}
 {{- define "generateSecret" }}
   {{- if eq $.kind "Secret" }}
     {{- include "generateSecretKindSecret" (dict "global" .global "name" $.name "credential" $.credential "suffix" $.suffix) }}
+  {{- end }}
+  {{- if eq $.kind "Dockerconfigjson" }}
+    {{- include "generateSecretKindDockerconfigjson" (dict "global" .global "name" $.name "credential" $.credential "suffix" $.suffix) }}
   {{- end }}
 {{- end }}
 
@@ -205,10 +209,25 @@ spec:
   type: Opaque
   metadata:
     namespace: {{ $.global.Release.Namespace }}
-    name: {{ include "commonPrefix" .global }}{{ $.global.Release.Namespace }}-{{ $.suffix }}-{{ $.name }}
+    name: {{ include "commonPrefix" .global }}{{ $.global.Release.Name }}-{{ $.suffix }}-{{ $.name }}
   data:
   {{- if $.credential.username }}
     username: {{ $.credential.username | b64enc }}
   {{- end }}
-    password: {{ (required (printf "%s.users.%s.password is required to configure the Kubernetes secret for the %s user" $.suffix $.name $.name) $.credential.password) | b64enc }}
+    password: {{ (required (printf "%s.users.%s.password is required to configure the Kubernetes secret for the '%s' user" $.suffix $.name $.name) $.credential.password) | b64enc }}
+{{- end }}
+
+{{/*
+  Generate Kubernetes secret kind structure
+  include "generateSecretKindDockerconfigjson" (dict "global" .global "name" $.name "credential" $.credential "suffix" $.suffix)
+*/}}
+{{- define "generateSecretKindDockerconfigjson" }}
+- apiVersion: v1
+  kind: Secret
+  type: kubernetes.io/dockerconfigjson
+  metadata:
+    namespace: {{ $.global.Release.Namespace }}
+    name: {{ include "commonPrefix" .global }}{{ $.global.Release.Name }}-pullsecret-{{ $.name }}
+  data:
+    .dockerconfigjson: {{ printf "{\"auths\": {\"%s\": {\"auth\": \"%s\"}}}" (required (printf "image.pullSecrets.%s.registry is required to configure the Kubernetes pull secret '%s'" $.name $.name) $.credential.registry) (printf "%s" (required (printf "image.pullSecrets.%s.credential is required to configure the Kubernetes pull secret '%s'" $.name $.name) $.credential.credential) | b64enc) | b64enc }}
 {{- end }}
