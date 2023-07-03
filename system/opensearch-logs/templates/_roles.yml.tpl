@@ -288,6 +288,7 @@ promrole:
     - "cluster:monitor/nodes/info"
     - "cluster:monitor/nodes/stats"
     - "indices:data/read/scroll*"
+    - "indices:data/read/msearch"
   index_permissions:
   - index_patterns:
     - "*"
