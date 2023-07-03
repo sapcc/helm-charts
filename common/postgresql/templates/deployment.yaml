@@ -109,6 +109,10 @@ spec:
         - name: db-maintain
           mountPath: /docker-entrypoint-maintaindb.d
 {{- end }}
+{{- if .Values.sharedMemoryLimit }}
+        - name: dev-shm
+          mountPath: /dev/shm
+{{- end }}
       volumes:
       - name: postgres-etc
         configMap:
@@ -129,4 +133,10 @@ spec:
       - name: db-maintain
         configMap:
           name: {{ .Values.dbMaintain }}
+{{- end }}
+{{- if .Values.sharedMemoryLimit }}
+      - name: dev-shm
+        emptyDir:
+          medium: Memory
+          sizeLimit: {{ .Values.sharedMemoryLimit }}
 {{- end }}
