@@ -1,4 +1,9 @@
 # Changelog
+## v0.15.1 - 2023/06/30
+* mysqld_exporter config templating fixed
+  * _USERNAME reverted back to _USER
+* chart version bumped
+
 ## v0.15.0 - 2023/06/30
 * credential support in values.yaml (to be used with external templating)
   * based on that the secrets.yaml will generate Kubernetes secrets

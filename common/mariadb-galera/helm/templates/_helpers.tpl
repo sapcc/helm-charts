@@ -184,3 +184,31 @@ spec:
   {{- end }}
   {{- (join "," $domainIds) }}
 {{- end }}
+
+{{/*
+  Generate Kubernetes secrets based on the provided credentials
+  include "generateSecret" (dict "global" $ "name" $userKey "credential" $userValue "suffix" "mariadb" "kind" "Secret")
+*/}}
+{{- define "generateSecret" }}
+  {{- if eq $.kind "Secret" }}
+    {{- include "generateSecretKindSecret" (dict "global" .global "name" $.name "credential" $.credential "suffix" $.suffix) }}
+  {{- end }}
+{{- end }}
+
+{{/*
+  Generate Kubernetes secret kind structure
+  include "generateSecretKindSecret" (dict "global" .global "name" $.name "credential" $.credential "suffix" $.suffix)
+*/}}
+{{- define "generateSecretKindSecret" }}
+- apiVersion: v1
+  kind: Secret
+  type: Opaque
+  metadata:
+    namespace: {{ $.global.Release.Namespace }}
+    name: {{ include "commonPrefix" .global }}{{ $.global.Release.Namespace }}-{{ $.suffix }}-{{ $.name }}
+  data:
+  {{- if $.credential.username }}
+    username: {{ $.credential.username | b64enc }}
+  {{- end }}
+    password: {{ (required (printf "%s.users.%s.password is required to configure the Kubernetes secret for the %s user" $.suffix $.name $.name) $.credential.password) | b64enc }}
+{{- end }}
