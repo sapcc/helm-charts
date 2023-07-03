@@ -301,3 +301,19 @@ groups:
       summary: 'Trivy check failed on some images'
       description: |
         Keppel observed the error "{{ $labels.message }}" while checking the vulnerability status for {{ $value }} images.
+
+  - alert: OpenstackKeppelTrivyIndexingFailsAtHighRate
+    expr: 'max(increase(keppel_trivy_security_status_checks{task_outcome="success"}[5m])) < max(increase(keppel_trivy_security_status_checks{task_outcome="failure"}[5m]))'
+    for: 5m
+    labels:
+      context: trivy-check
+      service: keppel
+      severity: info
+      support_group: containers
+      tier: os
+      meta: "{{ $labels.message }}"
+    annotations:
+      summary: 'Most Trivy checks are failing'
+      description: |
+        Keppel observes that currently more Trivy checks are failing than succeed.
+        Check the logs of keppel-janitor for more details, and the logs of the pods in scaleout namespace trivy for any errors.
