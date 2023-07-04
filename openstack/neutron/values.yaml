@@ -86,7 +86,7 @@ pod:
         memory: '1Gi'
       requests:
         cpu: '250m'
-        memory: '512Mi' 
+        memory: '512Mi'
     server:
       requests:
         cpu: "4000m"
@@ -343,6 +343,9 @@ logging:
     auditmiddleware:
       handlers: stdout, sentry
       level: INFO
+    rate_limit.rate_limit:
+      handlers: stdout, sentry
+      level: INFO
 
 pgmetrics:
   enabled: false
@@ -590,6 +593,20 @@ rabbitmq_notifications:
 # openstack-watcher-middleware
 watcher:
   enabled: true
+
+# openstack-rate-limit
+rate_limit:
+  enabled: false
+  rate_limit_by: target_project_id
+  max_sleep_time_seconds: 0
+  log_sleep_time_seconds: 10
+  backend_timeout_seconds: 1
+  whitelist:
+    - Default/service
+    - Default/admin
+  whitelist_users: null
+  blacklist: null
+  blacklist_users: null
 
 unittest:
   enabled: false
