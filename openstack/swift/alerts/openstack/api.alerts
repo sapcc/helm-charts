@@ -32,7 +32,7 @@ groups:
       meta: 503 responses from Swift in {{ $labels.os_cluster }}
     annotations:
       description: Swift is responding with 503 in {{ $labels.os_cluster }}. Usually the root cause is a broken
-        token validation or overloaded object servers.
+        token validation or overloaded object servers or HEAD requests to objects missing 2 replicas.
       summary: swift-service-unavailable
 
   - alert: OpenstackSwiftHAProxyServer
@@ -128,7 +128,7 @@ groups:
 
   - alert: OpenstackSwiftMismatchedRings
     expr: (sum(max by (storage_ip) (swift_cluster_md5_not_matched{kind="ring"})) - sum(max by (storage_ip) (swift_cluster_md5_errors{kind="ring"}))) > 0
-    for: 20m
+    for: 25m
     labels:
       context: mismatchedrings
       dashboard: swift-overview
