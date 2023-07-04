@@ -17,7 +17,7 @@ maillog:
     - {{ $value | quote }}
 {{- end }}
   auth:
-     keystone:
+    keystone:
       region: {{.Values.global.region}}
       authUrl: "https://identity-3.{{.Values.global.region}}.{{.Values.global.tld}}/v3"
       endpointType: public
