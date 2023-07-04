@@ -199,13 +199,6 @@ route:
       region: global|ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|ap-sa-2|eu-de-1|eu-de-2|eu-nl-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3
       support_group: observability
 
-  # deprecated
-  - receiver: pagerduty_alertchain_test
-    continue: false
-    match_re:
-      tier: test-tier
-      region: area51
-
   - receiver: slack_by_k8s_service
     continue: true
     match_re:
@@ -345,14 +338,7 @@ route:
       severity: warning|critical
       region: qa-de-2|qa-de-3|qa-de-4|qa-de-5|qa-de-6
       support_group: compute|compute-storage-api|containers|email|identity|network-api|observability|src
-  # sunset latest q1-23
-  - receiver: pagerduty_api
-    continue: true
-    match_re:
-      tier: os|k8s|kks
-      severity: critical
-      cluster_type: abapcloud|admin|controlplane|customer|internet|kubernikus|metal|scaleout|virtual
-      region: global|ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|ap-sa-2|eu-de-1|eu-de-2|eu-nl-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3
+
   # sunset latest q1-23
   - receiver: slack_api_critical
     continue: false
@@ -1185,41 +1171,8 @@ receivers:
         color: {{`'{{template "slack.sapcc.color" . }}'`}}
         send_resolved: true
 
-  - name: pagerduty_api
-    pagerduty_configs:
-      - service_key: {{ required ".Values.pagerduty_sap.api.serviceKey undefined" .Values.pagerduty_sap.api.serviceKey | quote }}
-        description: {{"'{{ template \"pagerduty.sapcc.description\" . }}'"}}
-        component: {{"'{{template \"pagerduty.sapcc.tier\" . }}'"}}
-        group: {{"'{{template \"pagerduty.sapcc.service\" . }}'"}}
-        details:
-          Details: {{"'{{template \"pagerduty.sapcc.details\" . }}'"}}
-          Region: {{"'{{template \"pagerduty.sapcc.region\" . }}'"}}
-          Tier: {{"'{{template \"pagerduty.sapcc.tier\" . }}'"}}
-          Service: {{"'{{template \"pagerduty.sapcc.service\" . }}'"}}
-          Context: {{"'{{template \"pagerduty.sapcc.context\" . }}'"}}
-          Prometheus: {{"'{{template \"pagerduty.sapcc.prometheus\" . }}'"}}
-          Dashboard: {{"'{{template \"pagerduty.sapcc.dashboard\" . }}'"}}
-          Sentry: {{"'{{template \"pagerduty.sapcc.sentry\" . }}'"}}
-          Playbook: {{"'{{template \"pagerduty.sapcc.playbook\" . }}'"}}
-          firing: {{"'{{ template \"pagerduty.sapcc.firing\" . }}'"}}
-
   - name: pagerduty_metal
     pagerduty_configs:
-      - service_key: {{ required ".Values.pagerduty_sap.metal.serviceKey undefined" .Values.pagerduty_sap.metal.serviceKey | quote }}
-        description: {{"'{{ template \"pagerduty.sapcc.description\" . }}'"}}
-        component: {{"'{{template \"pagerduty.sapcc.tier\" . }}'"}}
-        group: {{"'{{template \"pagerduty.sapcc.service\" . }}'"}}
-        details:
-          Details: {{"'{{template \"pagerduty.sapcc.details\" . }}'"}}
-          Region: {{"'{{template \"pagerduty.sapcc.region\" . }}'"}}
-          Tier: {{"'{{template \"pagerduty.sapcc.tier\" . }}'"}}
-          Service: {{"'{{template \"pagerduty.sapcc.service\" . }}'"}}
-          Context: {{"'{{template \"pagerduty.sapcc.context\" . }}'"}}
-          Prometheus: {{"'{{template \"pagerduty.sapcc.prometheus\" . }}'"}}
-          Dashboard: {{"'{{template \"pagerduty.sapcc.dashboard\" . }}'"}}
-          Sentry: {{"'{{template \"pagerduty.sapcc.sentry\" . }}'"}}
-          Playbook: {{"'{{template \"pagerduty.sapcc.playbook\" . }}'"}}
-          firing: {{"'{{ template \"pagerduty.sapcc.firing\" . }}'"}}
       - service_key: {{ required ".Values.pagerduty_sap.osd_mom_compute.serviceKey undefined" .Values.pagerduty_sap.osd_mom_compute.serviceKey | quote }}
         description: {{"'{{ template \"pagerduty.sapcc.description\" . }}'"}}
         component: {{"'{{template \"pagerduty.sapcc.tier\" . }}'"}}
@@ -1353,24 +1306,6 @@ receivers:
           Playbook: {{"'{{template \"pagerduty.sapcc.playbook\" . }}'"}}
           firing: {{"'{{ template \"pagerduty.sapcc.firing\" . }}'"}}
       - service_key: {{ required ".Values.pagerduty_sap.osd_mom_compute.serviceKey undefined" .Values.pagerduty_sap.osd_mom_compute.serviceKey | quote }}
-        description: {{"'{{ template \"pagerduty.sapcc.description\" . }}'"}}
-        component: {{"'{{template \"pagerduty.sapcc.tier\" . }}'"}}
-        group: {{"'{{template \"pagerduty.sapcc.service\" . }}'"}}
-        details:
-          Details: {{"'{{template \"pagerduty.sapcc.details\" . }}'"}}
-          Region: {{"'{{template \"pagerduty.sapcc.region\" . }}'"}}
-          Tier: {{"'{{template \"pagerduty.sapcc.tier\" . }}'"}}
-          Service: {{"'{{template \"pagerduty.sapcc.service\" . }}'"}}
-          Context: {{"'{{template \"pagerduty.sapcc.context\" . }}'"}}
-          Prometheus: {{"'{{template \"pagerduty.sapcc.prometheus\" . }}'"}}
-          Dashboard: {{"'{{template \"pagerduty.sapcc.dashboard\" . }}'"}}
-          Sentry: {{"'{{template \"pagerduty.sapcc.sentry\" . }}'"}}
-          Playbook: {{"'{{template \"pagerduty.sapcc.playbook\" . }}'"}}
-          firing: {{"'{{ template \"pagerduty.sapcc.firing\" . }}'"}}
-
-  - name: pagerduty_alertchain_test
-    pagerduty_configs:
-      - service_key: {{ required ".Values.pagerduty_sap.alertTest.serviceKey undefined" .Values.pagerduty_sap.alertTest.serviceKey | quote }}
         description: {{"'{{ template \"pagerduty.sapcc.description\" . }}'"}}
         component: {{"'{{template \"pagerduty.sapcc.tier\" . }}'"}}
         group: {{"'{{template \"pagerduty.sapcc.service\" . }}'"}}
