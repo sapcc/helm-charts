@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.15.4 - 2023/07/05
+* proxysql Kubernetes secret names fixed
+* chart version bumped
+
 ## v0.15.3 - 2023/07/03
 * pull secret enablement fixed for the different components
 * chart version bumped
