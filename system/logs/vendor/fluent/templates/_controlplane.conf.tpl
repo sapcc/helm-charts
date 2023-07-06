@@ -52,6 +52,7 @@
   reserve_data true
   <parse>
     @type grok
+    zgrok_failure_key grokstatus_neutron_network_agent
     grok_pattern (%{TIMESTAMP_ISO8601:logtime}|)( )?%{TIMESTAMP_ISO8601:timestamp}.%{NOTSPACE}? %{NUMBER:pid} %{WORD:loglevel} %{NOTSPACE:logger} \[-] %{GREEDYDATA} method: %{WORD:uri_method} path: \"%{NOTSPACE:uri_path}\" status: %{NUMBER:uri_status} client-ip: %{IPV4:client_ip} project-id: %{NOTSPACE:project_id} os-network-id: %{NOTSPACE:os_network_id} os-router-id: %{NOTSPACE:os_router_id} os-instance-id: %{NOTSPACE:os_instance_id} req-duration: %{NUMBER:uri_req_duration} user-agent: \"%{NOTSPACE:user_agent}\"
     custom_pattern_path /fluentd/etc/pattern
   </parse>
