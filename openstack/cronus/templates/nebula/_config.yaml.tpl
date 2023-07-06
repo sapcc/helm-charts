@@ -51,6 +51,7 @@ nebula:
     region: {{ .Values.config.allowedServices.email }}
     access: {{ .Values.config.awsAccess }}
     secret: {{ .Values.config.awsSecret }}
+    accessKeyRotationDays: {{ .Values.global.accessKeyRotationDays }}
     technicalUsername: {{ .Values.config.technicalUsername }}
     policyName: {{ .Values.config.policyName }}
     roleName: {{ .Values.config.roleName }}
