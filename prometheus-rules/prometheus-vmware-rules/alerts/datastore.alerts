@@ -320,6 +320,7 @@ groups:
       support_group: compute
       context: "{{ $labels.datastore }}"
       meta: "Eph Datastore {{ $labels.datastore }} is not a part of SDRS cluster. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
+      playbook: docs/devops/alert/vcenter/#ephemeraldatastorenotpartofsdrscluster
     annotations:
       description: "Eph Datastore {{ $labels.datastore }} is not a part of SDRS Cluster. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
       summary: "Eph Datastore {{ $labels.datastore }} is not a part of SDRS Cluster. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
@@ -335,6 +336,7 @@ groups:
       support_group: compute
       context: "{{ $labels.datastore }}"
       meta: "Eph Datastore {{ $labels.datastore }} is not a part of correct SDRS cluster. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
+      playbook: docs/devops/alert/vcenter/#ephemeraldatastorepartofincorrectsdrscluster
     annotations:
       description: "Eph Datastore {{ $labels.datastore }} is not a part of correct SDRS Cluster. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
       summary: "Eph Datastore {{ $labels.datastore }} is not a part of correct SDRS Cluster. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
@@ -345,7 +347,7 @@ groups:
       unless on (datastore) vrops_datastore_summary_custom_tag_cinder_state{summary_custom_tag_cinder_state="reserved"}
     for: 5m
     labels:
-      severity: info
+      severity: warning
       tier: vmware
       service: storage
       support_group: compute
@@ -361,7 +363,7 @@ groups:
       unless on (datastore) vrops_datastore_summary_custom_tag_cinder_state{summary_custom_tag_cinder_state="reserved"}
     for: 5m
     labels:
-      severity: info
+      severity: warning
       tier: vmware
       service: storage
       support_group: compute
@@ -374,10 +376,10 @@ groups:
   - alert: CinderTagAddedForReservedDatastore
     expr: >
       vrops_datastore_summary_custom_tag_cinder_state{type=~"^(vmfs_s_hdd|vmfs_p_ssd)$", summary_custom_tag_cinder_state="reserved"}
-      and on (datastore) vrops_datastore_summary_tag{summary_tag=~".+\"category\":\"cinder\".+.*(\"name\":\"cinder\"|\"name\":\"slow\").+"}
+      and on (datastore) vrops_datastore_summary_tag{summary_tag=~".+{\"category\":\"cinder\",(\"name\":\"cinder\"|\"name\":\"slow\")}.+"}
     for: 5m
     labels:
-      severity: info
+      severity: warning
       tier: vmware
       service: storage
       support_group: compute
