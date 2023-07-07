@@ -49,3 +49,27 @@ spec:
   tls:
     - hosts: [{{ $hostname }}]
       secretName: tls-{{ .Release.Name }}-backoffice
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: slack-rule
+  annotations:
+    disco: "true"
+    kubernetes.io/tls-acme: "true"
+{{- $hostname :=  print .Release.Name "-slack." .Values.tarslite.domain }}
+spec:
+  rules:
+    - host: {{ $hostname }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: tarslite
+                port:
+                  name: webhook
+  tls:
+    - hosts: [{{ $hostname }}]
+      secretName: tls-{{ .Release.Name }}-slack
