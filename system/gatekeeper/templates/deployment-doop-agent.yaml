@@ -1,3 +1,7 @@
+{{- $cname  := .Values.cluster_name  | required ".Values.cluster_name not found"  -}}
+{{- $clayer := .Values.cluster_layer | required ".Values.cluster_layer not found" -}}
+{{- $ctype  := .Values.cluster_type  | required ".Values.cluster_type not found"  -}}
+
 kind: Deployment
 apiVersion: apps/v1
 
@@ -30,14 +34,13 @@ spec:
           imagePullPolicy: IfNotPresent
           command: [ doop-agent ]
           args: [
-          {{- if .Values.cluster_name | required ".Values.cluster_name not found" | regexMatch "^[akv]-" }}
+          {{- if $cname | regexMatch "^[akv]-" }}
             '-container', 'doop-agent-kubernikus', # the Kubernikus-related clusters report into a separate dashboard since they usually have a ton of very similar violations that would clutter up the main dashboard
           {{- else }}
             '-container', 'doop-agent',
           {{- end }}
-            '-object', {{.Values.cluster_name | required ".Values.cluster_name not found" | quote}},
-            {{.Values.cluster_layer | required ".Values.cluster_layer not found" | quote}},
-            {{.Values.cluster_type | required ".Values.cluster_type not found" | quote}},
+            '-object', {{quote $cname}},
+            '{"layer":{{quote $clayer}},"type":{{quote $ctype}}}',
           ]
           env:
             - name: OS_AUTH_URL

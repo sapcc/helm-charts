@@ -245,6 +245,23 @@ groups:
       description: "{{ $labels.pod }} pod on {{ $labels.instance }} is DOWN. The remaining ones should keep the service up."
       summary: "A manila api pod is DOWN"
 
+  # Use rate() to make spiky signals flatter, so that the alert can be fired
+  - alert: OpenstackManilaApiRatelimitExceeded
+    expr: sum by (action, target_type_uri, target_project_id) (rate(openstack_ratelimit_requests_ratelimit_total{service="share"}[5m])) > 0
+    for: 2m
+    labels:
+      context: api
+      dashboard: manila
+      meta: manila api rate limits exceeded
+      service: manila
+      severity: info
+      no_alert_on_absence: true
+      tier: os
+      support_group: compute-storage-api
+    annotations:
+      description: "Rate limit for {{ $labels.target_type_uri }} with action {{ $labels.action }} exceeded. Target project: {{ $labels.target_project_id }}."
+      summary: Manila API rate limit exceeded
+
 # row locks
   - alert: OpenstackManilaMariadbRowLocks
     expr: mysql_global_status_innodb_row_lock_current_waits{app="manila-mariadb"} > 0

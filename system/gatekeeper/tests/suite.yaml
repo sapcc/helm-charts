@@ -15,22 +15,22 @@ tests:
     object: fixtures/libtest-add-support-labels/pod-filled.yaml
     assertions:
     - violations: 1
-      message: '^support-group=foo-group,service=dummy: test for from_k8s_object\(\)$'
+      message: '^\{"support_group":"foo-group","service":"dummy"\} >> test for from_k8s_object\(\)$'
   - name: support-labels-on-pod-missing
     object: fixtures/libtest-add-support-labels/pod-missing.yaml
     assertions:
     - violations: 1
-      message: '^support-group=none,service=none: test for from_k8s_object\(\)$'
+      message: '^\{"support_group":"none","service":"none"\} >> test for from_k8s_object\(\)$'
   - name: support-labels-on-helm-release-filled
     object: fixtures/libtest-add-support-labels/helm-release-filled.out.yaml
     assertions:
     - violations: 1
-      message: '^support-group=foo-group,service=dummy: test for from_helm_release\(\)$'
+      message: '^\{"support_group":"foo-group","service":"dummy"\} >> test for from_helm_release\(\)$'
   - name: support-labels-on-helm-release-missing
     object: fixtures/libtest-add-support-labels/helm-release-missing.out.yaml
     assertions:
     - violations: 1
-      message: '^support-group=none,service=none: test for from_helm_release\(\)$'
+      message: '^\{"support_group":"none","service":"none"\} >> test for from_helm_release\(\)$'
 
 - name: libtest-traversal
   template: rendered-chart/gatekeeper/templates/constrainttemplate-libtest-traversal.yaml
@@ -124,7 +124,7 @@ tests:
     object: fixtures/deprecated-api-version/helm-release-deprecated-1.26.out.yaml
     assertions:
     - violations: 1
-      message: '^support-group=foo-group,service=dummy: FlowSchema dummy declared with deprecated API version: flowcontrol.apiserver.k8s.io/v1beta1 \(will break in k8s v1.26\)$'
+      message: '^\{"support_group":"foo-group","service":"dummy"\} >> FlowSchema dummy declared with deprecated API version: flowcontrol.apiserver.k8s.io/v1beta1 \(will break in k8s v1.26\)$'
   - name: helm-release-clean
     object: fixtures/deprecated-api-version/helm-release-clean.out.yaml
     assertions:
@@ -138,7 +138,7 @@ tests:
     object: fixtures/deprecated-api-version/helm-release-deprecated-1.27.out.yaml
     assertions:
     - violations: 1
-      message: '^support-group=foo-group,service=dummy: CSIStorageCapacity dummy declared with deprecated API version: storage.k8s.io/v1beta1 \(will break in k8s v1.27\)$'
+      message: '^\{"support_group":"foo-group","service":"dummy"\} >> CSIStorageCapacity dummy declared with deprecated API version: storage.k8s.io/v1beta1 \(will break in k8s v1.27\)$'
   - name: helm-release-clean
     object: fixtures/deprecated-api-version/helm-release-clean.out.yaml
     assertions:
@@ -152,7 +152,7 @@ tests:
     object: fixtures/deprecated-api-version/helm-release-deprecated-1.29.out.yaml
     assertions:
     - violations: 1
-      message: '^support-group=foo-group,service=dummy: FlowSchema dummy declared with deprecated API version: flowcontrol.apiserver.k8s.io/v1beta2 \(will break in k8s v1.29\)$'
+      message: '^\{"support_group":"foo-group","service":"dummy"\} >> FlowSchema dummy declared with deprecated API version: flowcontrol.apiserver.k8s.io/v1beta2 \(will break in k8s v1.29\)$'
   - name: helm-release-clean
     object: fixtures/deprecated-api-version/helm-release-clean.out.yaml
     assertions:
@@ -171,21 +171,21 @@ tests:
     assertions:
     # TODO: repair this
     - violations: 1
-      message: '^support-group=foo-group,service=dummy: webhook "webhook.cert-manager.io" does not match our allowlist$'
+      message: '^\{"support_group":"foo-group","service":"dummy"\} >> webhook "webhook.cert-manager.io" does not match our allowlist$'
   - name: cert-manager-validating-webhook
     object: fixtures/forbidden-clusterwide-objects/cert-manager-validating-webhook.yaml
     assertions:
     # TODO: repair this
     - violations: 1
-      message: '^support-group=foo-group,service=dummy: webhook "webhook.cert-manager.io" does not match our allowlist$'
+      message: '^\{"support_group":"foo-group","service":"dummy"\} >> webhook "webhook.cert-manager.io" does not match our allowlist$'
   - name: seeder.cloud.sap
     object: fixtures/forbidden-clusterwide-objects/seeder.cloud.sap.yaml
     assertions:
     # TODO: repair this
     - violations: 1
-      message: '^support-group=foo-group,service=dummy: webhook "validate-networks.spec.openstack.networks.seeder.cloud.sap" does not match our allowlist$'
+      message: '^\{"support_group":"foo-group","service":"dummy"\} >> webhook "validate-networks.spec.openstack.networks.seeder.cloud.sap" does not match our allowlist$'
     - violations: 1
-      message: '^support-group=foo-group,service=dummy: webhook "validate-domains.spec.openstack.domains.seeder.cloud.sap" does not match our allowlist$'
+      message: '^\{"support_group":"foo-group","service":"dummy"\} >> webhook "validate-domains.spec.openstack.domains.seeder.cloud.sap" does not match our allowlist$'
 
 - name: high-cpu-requests
   template: rendered-chart/gatekeeper/templates/constrainttemplate-high-cpu-requests.yaml
@@ -195,7 +195,7 @@ tests:
     object: fixtures/high-cpu-requests/pod-failure.yaml
     assertions:
     - violations: 1
-      message: "^support-group=foo-group,service=dummy: requests 6.064 CPU in total$"
+      message: '^\{"support_group":"foo-group","service":"dummy"\} >> requests 6.064 CPU in total$'
   - name: pod-close-violation
     object: fixtures/high-cpu-requests/pod-close-violation.yaml
     assertions:
@@ -217,7 +217,7 @@ tests:
     object: fixtures/images-from-correct-registry/pod-one-image-wrong.yaml
     assertions:
     - violations: 1
-      message: '^support-group=foo-group,service=dummy: container "dummy-small" uses incorrect regional registry for image: alpine:3$'
+      message: '^\{"support_group":"foo-group","service":"dummy"\} >> container "dummy-small" uses incorrect regional registry for image: alpine:3$'
   - name: pod-pass
     object: fixtures/images-from-correct-registry/pod-pass.yaml
     assertions:
@@ -231,14 +231,14 @@ tests:
     object: fixtures/images-from-non-keppel/pod-failure.yaml
     assertions:
     - violations: 1
-      message: '^support-group=foo-group,service=dummy: container "dummy" uses an image that is not from a Keppel registry: alpine:3$'
+      message: '^\{"support_group":"foo-group","service":"dummy"\} >> container "dummy" uses an image that is not from a Keppel registry: alpine:3$'
     - violations: 1
-      message: '^support-group=foo-group,service=dummy: container "dummy" uses an image that is not from a Keppel registry: alpine:3$'
+      message: '^\{"support_group":"foo-group","service":"dummy"\} >> container "dummy" uses an image that is not from a Keppel registry: alpine:3$'
   - name: pod-one-of-two
     object: fixtures/images-from-non-keppel/pod-one-of-two.yaml
     assertions:
     - violations: 1
-      message: '^support-group=foo-group,service=dummy: container "dummy" uses an image that is not from a Keppel registry: alpine:3$'
+      message: '^\{"support_group":"foo-group","service":"dummy"\} >> container "dummy" uses an image that is not from a Keppel registry: alpine:3$'
   - name: pod-pass
     object: fixtures/images-from-non-keppel/pod-pass.yaml
     assertions:
@@ -252,9 +252,9 @@ tests:
     object: fixtures/images-from-non-keppel/deployment-mixed.yaml
     assertions:
     - violations: 1
-      message: '^support-group=foo-group,service=dummy: container "container-bad" uses an image that is not from a Keppel registry: alpine:3$'
+      message: '^\{"support_group":"foo-group","service":"dummy"\} >> container "container-bad" uses an image that is not from a Keppel registry: alpine:3$'
     - violations: 1
-      message: '^support-group=foo-group,service=dummy: container "starter-bad" uses an image that is not from a Keppel registry: alpine:3$'
+      message: '^\{"support_group":"foo-group","service":"dummy"\} >> container "starter-bad" uses an image that is not from a Keppel registry: alpine:3$'
 
 - name: ingress-annotations-insecure-snippets
   template: rendered-chart/gatekeeper/templates/constrainttemplate-ingress-annotations.yaml
@@ -264,7 +264,7 @@ tests:
     object: fixtures/ingress-annotations/networking-disabled-snippet.yaml
     assertions:
     - violations: 1
-      message: '^support-group=foo-group,service=dummy: has disabled annotation: "ingress.kubernetes.io/configuration-snippet" \(disabled due to CVE-2021-25742\)$'
+      message: '^\{"support_group":"foo-group","service":"dummy"\} >> has disabled annotation: "ingress.kubernetes.io/configuration-snippet" \(disabled due to CVE-2021-25742\)$'
   - name: networking-pass
     object: fixtures/ingress-annotations/networking-pass.yaml
     assertions:
@@ -278,7 +278,7 @@ tests:
     object: fixtures/ingress-annotations/networking-wrong-prefix.yaml
     assertions:
     - violations: 1
-      message: '^support-group=foo-group,service=dummy: has disabled annotation: "nginx.ingress.kubernetes.io/proxy-request-buffering" \(use the prefix "ingress.kubernetes.io/" instead\)$'
+      message: '^\{"support_group":"foo-group","service":"dummy"\} >> has disabled annotation: "nginx.ingress.kubernetes.io/proxy-request-buffering" \(use the prefix "ingress.kubernetes.io/" instead\)$'
   - name: networking-pass
     object: fixtures/ingress-annotations/networking-pass.yaml
     assertions:
@@ -292,9 +292,9 @@ tests:
     object: fixtures/outdated-image-bases/pod-old.yaml
     assertions:
     - violations: 1
-      message: '^support-group=foo-group,service=dummy: image keppel.example.com/vulnerability:old for container "dummy" uses a very old base image \(oldest layer is 417 days old\)$'
+      message: '^\{"support_group":"foo-group","service":"dummy"\} >> image keppel.example.com/vulnerability:old for container "dummy" uses a very old base image \(oldest layer is 417 days old\)$'
     - violations: 1
-      message: '^support-group=foo-group,service=dummy: image keppel.example.com/vulnerability:old for container "starter" uses a very old base image \(oldest layer is 417 days old\)$'
+      message: '^\{"support_group":"foo-group","service":"dummy"\} >> image keppel.example.com/vulnerability:old for container "starter" uses a very old base image \(oldest layer is 417 days old\)$'
   - name: pod-new
     object: fixtures/outdated-image-bases/pod-new.yaml
     assertions:
@@ -308,12 +308,12 @@ tests:
     object: fixtures/owner-info-on-helm-releases/configmap-no-owner.out.yaml
     assertions:
     - violations: 1
-      message: '^support-group=none,service=none: Chart does not contain owner info. Please add the common/owner-info chart as a direct dependency.$'
+      message: '^\{"support_group":"none","service":"none"\} >> Chart does not contain owner info. Please add the common/owner-info chart as a direct dependency.$'
   - name: configmap-no-owner-pending-upgrade
     object: fixtures/owner-info-on-helm-releases/configmap-no-owner-pending-upgrade.out.yaml
     assertions:
     - violations: 1
-      message: '^support-group=none,service=none: Chart does not contain owner info. Please add the common/owner-info chart as a direct dependency.$'
+      message: '^\{"support_group":"none","service":"none"\} >> Chart does not contain owner info. Please add the common/owner-info chart as a direct dependency.$'
   - name: configmap-no-owner-superseded
     object: fixtures/owner-info-on-helm-releases/configmap-no-owner-superseded.out.yaml
     assertions:
@@ -322,7 +322,7 @@ tests:
     object: fixtures/owner-info-on-helm-releases/configmap-outdated-chart.out.yaml
     assertions:
     - violations: 1
-      message: '^support-group=none,service=none: Chart uses outdated owner-info version "0.1.2". Please update to at least "0.2.0".$'
+      message: '^\{"support_group":"none","service":"none"\} >> Chart uses outdated owner-info version "0.1.2". Please update to at least "0.2.0".$'
   - name: pod-owner-info
     object: fixtures/owner-info-on-helm-releases/configmap-no-owner-but-allowlisted.out.yaml
     assertions:
@@ -340,7 +340,7 @@ tests:
     object: fixtures/pci-forbidden-images/pod-with-forbidden-image.yaml
     assertions:
     - violations: 1
-      message: '^support-group=foo-group,service=dummy: container "dummy" uses forbidden image: bogus-pattern-for-testing:3$'
+      message: '^\{"support_group":"foo-group","service":"dummy"\} >> container "dummy" uses forbidden image: bogus-pattern-for-testing:3$'
   - name: pod-pass
     object: fixtures/pci-forbidden-images/pod-pass.yaml
     assertions:
@@ -354,12 +354,12 @@ tests:
     object: fixtures/pod-labels/pod-invalid-labels.yaml
     assertions:
     - violations: 1
-      message: '^support-group=gatekeeper,service=containers: pod has an unacceptable label value: ccloud/support-group="gatekeeper"$'
+      message: '^\{"support_group":"gatekeeper","service":"containers"\} >> pod has an unacceptable label value: ccloud/support-group="gatekeeper"$'
   - name: pod-no-labels
     object: fixtures/pod-labels/pod-no-labels.yaml
     assertions:
     - violations: 1
-      message: '^support-group=none,service=none: pod does not have the required label: ccloud/support-group$'
+      message: '^\{"support_group":"none","service":"none"\} >> pod does not have the required label: ccloud/support-group$'
   - name: deployment-labels
     object: fixtures/pod-labels/deployment-labels.yaml
     assertions:
@@ -501,17 +501,17 @@ tests:
     object: fixtures/pod-security/invalid.yaml
     assertions:
     - violations: 1
-      message: '^support-group=none,service=none: pod is not allowed to set spec.hostNetwork = true$'
+      message: '^\{"support_group":"none","service":"none"\} >> pod is not allowed to set spec.hostNetwork = true$'
     - violations: 1
-      message: '^support-group=none,service=none: pod is not allowed to set spec.hostPID = true$'
+      message: '^\{"support_group":"none","service":"none"\} >> pod is not allowed to set spec.hostPID = true$'
     - violations: 1
-      message: '^support-group=none,service=none: pod is not allowed to set spec.containers\["mallory"].securityContext.allowPrivilegeEscalation = true$'
+      message: '^\{"support_group":"none","service":"none"\} >> pod is not allowed to set spec.containers\["mallory"].securityContext.allowPrivilegeEscalation = true$'
     - violations: 1
-      message: '^support-group=none,service=none: pod is not allowed to set spec.containers\["mallory"].securityContext.privileged = true$'
+      message: '^\{"support_group":"none","service":"none"\} >> pod is not allowed to set spec.containers\["mallory"].securityContext.privileged = true$'
     - violations: 1
-      message: '^support-group=none,service=none: pod is not allowed to set spec.containers\["mallory"].securityContext.capabilities.add = \["CAP_SYS_ADMIN"]$'
+      message: '^\{"support_group":"none","service":"none"\} >> pod is not allowed to set spec.containers\["mallory"].securityContext.capabilities.add = \["CAP_SYS_ADMIN"]$'
     - violations: 1
-      message: '^support-group=none,service=none: container \"mallory\" in this pod is not allowed to mount hostPath volumes with path \"/\" \(readonly = false\)$'
+      message: '^\{"support_group":"none","service":"none"\} >> container \"mallory\" in this pod is not allowed to mount hostPath volumes with path \"/\" \(readonly = false\)$'
 
 - name: prometheus-scrape-annotations
   template: rendered-chart/gatekeeper/templates/constrainttemplate-prometheus-scrape-annotations.yaml
@@ -523,7 +523,7 @@ tests:
     - fixtures/prometheus-scrape-annotations/inventory.yaml
     assertions:
     - violations: 1
-      message: '^support-group=foo-group,service=dummy: has prometheus.io/scrape annotation, but prometheus.io/targets annotation is missing or does not have a valid value \(got: \[""\], valid: \["openstack"\]\)$'
+      message: '^\{"support_group":"foo-group","service":"dummy"\} >> has prometheus.io/scrape annotation, but prometheus.io/targets annotation is missing or does not have a valid value \(got: \[""\], valid: \["openstack"\]\)$'
   - name: pod-pass
     object: fixtures/prometheus-scrape-annotations/pod-pass.yaml
     inventory:
@@ -539,16 +539,16 @@ tests:
     object: fixtures/prometheusrule-alert-labels/prometheus-rule-no-label.yaml
     assertions:
     - violations: 1
-      message: '^support-group=foo-group,service=dummy: rule DummyBackupWentMissing in group backup.alerts does not have a valid value for labels.severity \("critical", "warning" or "info"\)$'
+      message: '^\{"support_group":"foo-group","service":"dummy"\} >> rule DummyBackupWentMissing in group backup.alerts does not have a valid value for labels.severity \("critical", "warning" or "info"\)$'
     - violations: 1
-      message: '^support-group=foo-group,service=dummy: rule DummyBackupWentMissing in group backup.alerts does not have labels.support_group$'
+      message: '^\{"support_group":"foo-group","service":"dummy"\} >> rule DummyBackupWentMissing in group backup.alerts does not have labels.support_group$'
   - name: prometheus-rule-only-severity
     object: fixtures/prometheusrule-alert-labels/prometheus-rule-only-severity.yaml
     assertions:
     - violations: 1
-      message: '^support-group=foo-group,service=dummy: rule DummyBackupWentMissing in group backup.alerts does not have a valid value for labels.playbook \(required for critical alerts\)$'
+      message: '^\{"support_group":"foo-group","service":"dummy"\} >> rule DummyBackupWentMissing in group backup.alerts does not have a valid value for labels.playbook \(required for critical alerts\)$'
     - violations: 1
-      message: '^support-group=foo-group,service=dummy: rule DummyBackupWentMissing in group backup.alerts does not have labels.support_group$'
+      message: '^\{"support_group":"foo-group","service":"dummy"\} >> rule DummyBackupWentMissing in group backup.alerts does not have labels.support_group$'
   - name: prometheus-rule-pass
     object: fixtures/prometheusrule-alert-labels/prometheus-rule-pass.yaml
     assertions:
@@ -562,7 +562,7 @@ tests:
     object: fixtures/region-value-mismatch/helm-release-region-mismatch.out.yaml
     assertions:
     - violations: 1
-      message: '^support-group=foo-group,service=dummy: .Values.global.region does not match the deployed region: expected qa-de-1, but found "qa-de-9"$'
+      message: '^\{"support_group":"foo-group","service":"dummy"\} >> .Values.global.region does not match the deployed region: expected qa-de-1, but found "qa-de-9"$'
   - name: helm-release-no-region
     object: fixtures/region-value-mismatch/helm-release-no-region.out.yaml
     assertions:
@@ -584,7 +584,7 @@ tests:
     object: fixtures/region-value-missing/helm-release-no-region.out.yaml
     assertions:
     - violations: 1
-      message: '^support-group=foo-group,service=dummy: missing or invalid .Values.global.region value$'
+      message: '^\{"support_group":"foo-group","service":"dummy"\} >> missing or invalid .Values.global.region value$'
   - name: helm-release-pass
     object: fixtures/region-value-missing/helm-release-pass.out.yaml
     assertions:
@@ -598,12 +598,12 @@ tests:
     object: fixtures/resource-limits/pod-complete-failure.yaml
     assertions:
     - violations: 1
-      message: "^support-group=foo-group,service=dummy: cpu and memory limits not set on some or all containers$"
+      message: '^\{"support_group":"foo-group","service":"dummy"\} >> cpu and memory limits not set on some or all containers$'
   - name: pod-some-failure
     object: fixtures/resource-limits/pod-some-failure.yaml
     assertions:
     - violations: 1
-      message: "^support-group=foo-group,service=dummy: cpu and memory limits not set on some or all containers$"
+      message: '^\{"support_group":"foo-group","service":"dummy"\} >> cpu and memory limits not set on some or all containers$'
   - name: pod-pass
     object: fixtures/resource-limits/pod-pass.yaml
     assertions:
@@ -617,16 +617,16 @@ tests:
     object: fixtures/vulnerable-images/pod-vulnerable.yaml
     assertions:
     - violations: 1
-      message: '^support-group=foo-group,service=dummy: image keppel.example.com/vulnerability:low for container "dummylow" has "X-Keppel-Trivy-Vulnerability-Status: Low"$'
+      message: '^\{"support_group":"foo-group","service":"dummy"\} >> image keppel.example.com/vulnerability:low for container "dummylow" has "X-Keppel-Vulnerability-Status: Low"$'
     - violations: 1
-      message: '^support-group=foo-group,service=dummy: image keppel.example.com/vulnerability:medium for container "dummymedium" has "X-Keppel-Trivy-Vulnerability-Status: Medium"$'
+      message: '^\{"support_group":"foo-group","service":"dummy"\} >> image keppel.example.com/vulnerability:medium for container "dummymedium" has "X-Keppel-Vulnerability-Status: Medium"$'
     - violations: 1
-      message: '^support-group=foo-group,service=dummy: image keppel.example.com/vulnerability:high for container "starter" has "X-Keppel-Trivy-Vulnerability-Status: High"$'
+      message: '^\{"support_group":"foo-group","service":"dummy"\} >> image keppel.example.com/vulnerability:high for container "starter" has "X-Keppel-Vulnerability-Status: High"$'
   - name: pod-unclear
     object: fixtures/vulnerable-images/pod-unclear.yaml
     assertions:
     - violations: 1
-      message: '^support-group=foo-group,service=dummy: image keppel.example.com/vulnerability:unclear for container "dummy" has "X-Keppel-Trivy-Vulnerability-Status: Unclear"$'
+      message: '^\{"support_group":"foo-group","service":"dummy"\} >> image keppel.example.com/vulnerability:unclear for container "dummy" has "X-Keppel-Vulnerability-Status: Unclear"$'
   - name: pod-clean
     object: fixtures/vulnerable-images/pod-clean.yaml
     assertions:

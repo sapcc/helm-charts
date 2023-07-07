@@ -1,0 +1,20 @@
+# vim: set ft=yaml:
+
+groups:
+- name: openstack-keppel-trivy-redis.alerts
+  rules:
+      - alert: OpenstackKeppelTrivyEvictedKeysHigh
+        expr: increase(redis_evicted_keys_total{namespace="trivy"}[1h]) > 1
+        for: 5m
+        labels:
+          support_group: containers
+          tier: os
+          service: keppel
+          severity: info
+          context: memory
+          dashboard: keppel-trivy-vulnerability-check
+        annotations:
+          summary: Redis is evicting keys at a high rate
+          description: |
+            This is an indication that the Trivy redis is running low or out of memory.
+            Take a look at the Trivy redis memory usage and other metrics on the Keppel Trivy dashboard for more details.
