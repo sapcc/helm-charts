@@ -8,7 +8,7 @@
 
   params:
     'match[]':
-      - '{job="snmp", __name__!~"^(up|ALERTS.*|scrape.+)"}'
+      - '{job="snmp", __name__!~"^(ALERTS.*|scrape.+)"}'
       - '{job="snmp-apod", __name__!~"^(up|ALERTS.*|scrape.+)"}'
 
   relabel_configs:
