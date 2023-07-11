@@ -17,7 +17,15 @@ data:
       api_host: {{ required "Missing required global billing API endpoint" .Values.metis.billingApiHost}}
     vcenter:
       enabled: {{ .Values.metis.vcenter.enabled }}
-      sync_cron_schedule: "0 */12 * * *"
+      sync_cron_schedule: "12 */1 * * *"
+{{- if .Values.metis.prometheus.enabled }}
+    prometheus:
+      enabled: {{ .Values.metis.prometheus.enabled }}
+      prometheusURL: "https://prometheus-openstack.{{ .Values.global.region }}.{{ .Values.global.tld }}"
+      certPath: "/etc/certs/tls.crt"
+      keyPath: "/etc/certs/tls.key"
+      cronSchedule: "*/30 * * * *"
+{{- end }}
     db:
       user: "root"
       host: metisdb-mariadb.metis
