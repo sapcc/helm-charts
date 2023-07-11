@@ -173,9 +173,10 @@ groups:
   - alert: SwapDataStoreUsageWithoutVMs
     expr: >
       vrops_datastore_diskspace_total_usage_gigabytes{datastore=~".*-swap"} > 10 and vrops_datastore_summary_total_number_vms == 0
+      unless on (datastore) label_replace(vrops_hostsystem_runtime_maintenancestate{state="inMaintenance"}, "datastore", "$1-swap", "hostsystem", "(node...-bb...).*")
     for: 10m
     labels:
-      severity: info
+      severity: warning
       tier: vmware
       service: storage
       support_group: compute
