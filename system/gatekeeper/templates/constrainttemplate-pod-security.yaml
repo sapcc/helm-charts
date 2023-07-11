@@ -253,7 +253,6 @@ spec:
         # allowlist for ELK/OpenSearch/Elastiflow
 
         {{- if eq .Values.cluster_type "baremetal" "scaleout" "test" }}
-        # TODO: remove allowlist for ElasticSearch once migrated to OpenSearch
         default isElasticPod = false
         default isElasticOrOpenSearchPod = false
         isElasticOrOpenSearchPod = true {
@@ -270,19 +269,6 @@ spec:
         {{- end }}
 
         {{- if eq .Values.cluster_type "scaleout" "test" }}
-        isElasticPod = true {
-          iro.kind == "Deployment"
-          iro.metadata.namespace == "elk"
-          iro.metadata.name == "es-client"
-          helmReleaseName == "elk"
-        }
-        isElasticPod = true {
-          iro.kind == "StatefulSet"
-          iro.metadata.namespace == "elk"
-          iro.metadata.name in {"es-data", "es-master"}
-          helmReleaseName == "elk"
-        }
-
         isElasticOrOpenSearchPod = true {
           iro.kind == "StatefulSet"
           iro.metadata.namespace == "elastiflow"
@@ -298,9 +284,10 @@ spec:
         {{- end }}
 
         # TODO: Why does Elastic need CAP_IPC_LOCK and CAP_SYS_RESOURCE?
+        # TODO: Remove this case once Hermes was migrated from Elastic to OpenSearch.
         isContainerAllowedToUseCapability(container, capability) = true {
           isElasticPod
-          container.name in {"es", "es-client", "es-data", "es-master", "elasticsearch-hermes"}
+          container.name == "elasticsearch-hermes"
           capability in {"IPC_LOCK", "SYS_RESOURCE"}
         }
         # Elastic and OpenSearch need to use sysctl to increase `vm.max_map_count`:

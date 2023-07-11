@@ -3,6 +3,11 @@ Rabbitmq CHANGELOG
 
 This file is used to list changes made in each version of the common chart rabbitmq.
 
+0.5.2
+-----
+b.alkhateeb@sap.com
+- update rabbitmq to version 3.11.15-management (bug fixes).
+
 0.5.1
 _____
 fabian.wiesel@sap.common

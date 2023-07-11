@@ -32,7 +32,7 @@ groups:
       playbook: docs/support/playbook/kubernetes/k8s_container_pod_resources/#low-ram-usage
     annotations:
       summary: Low RAM usage on container
-      description: "Memory usage for the container {{`{{ $labels.container }}`}} of pod {{`{{ $labels.namespace }}}}/{{{{ $labels.pod }}`}} is under `10%` in the last 24h compared to the requested memory resources. Consider reducing `resources.requests.memory`"
+      description: "Memory usage for the container {{`{{ $labels.container }}`}} of pod {{`{{ $labels.namespace }}`}}/{{`{{ $labels.pod }}`}} is under `10%` in the last 24h compared to the requested memory resources. Consider reducing `resources.requests.memory`"
   - alert: ContainerHighMemoryUsage
     expr: |
         sum by (pod, namespace, container, label_alert_service, label_alert_tier, label_ccloud_service, label_ccloud_support_group) (
@@ -61,7 +61,7 @@ groups:
       playbook: docs/support/playbook/kubernetes/k8s_container_pod_resources/#high-ram-usage
     annotations:
       summary: High RAM usage on container
-      description: "Memory usage for the container {{`{{ $labels.container }}`}} of pod {{`{{ $labels.namespace }}}}/{{{{ $labels.pod }}`}} is over `400%` in the last 24h compared to the requested memory resources. Consider raising `resources.requests.memory`"
+      description: "Memory usage for the container {{`{{ $labels.container }}`}} of pod {{`{{ $labels.namespace }}`}}/{{`{{ $labels.pod }}`}} is over `400%` in the last 24h compared to the requested memory resources. Consider raising `resources.requests.memory`"
   - alert: PodWithoutConfiguredMemoryRequests
     expr: |
         sum by (namespace, pod, container, label_alert_service, label_alert_tier, label_ccloud_service, label_ccloud_support_group) (
@@ -86,7 +86,7 @@ groups:
       playbook: docs/support/playbook/kubernetes/k8s_container_pod_resources/#no-ram-requests-configured
     annotations:
       summary: No RAM requests configured for container
-      description: "The container {{`{{ $labels.container }}`}} of pod {{`{{ $labels.namespace }}}}/{{{{ $labels.pod }}`}} has no `resources.requests.memory` configured."
+      description: "The container {{`{{ $labels.container }}`}} of pod {{`{{ $labels.namespace }}`}}/{{`{{ $labels.pod }}`}} has no `resources.requests.memory` configured."
   - alert: PodWithoutConfiguredCPURequests
     expr: |
         sum by (namespace, pod, container, label_alert_service, label_alert_tier, label_ccloud_service, label_ccloud_support_group) (
@@ -111,4 +111,4 @@ groups:
       playbook: docs/support/playbook/kubernetes/k8s_container_pod_resources/#no-cpu-requests-configured
     annotations:
       summary: No CPU requests configured for container
-      description: "The container {{`{{ $labels.container }}`}} of pod {{`{{ $labels.namespace }}}}/{{{{ $labels.pod }}`}} has no `resources.requests.cpu` configured."
+      description: "The container {{`{{ $labels.container }}`}} of pod {{`{{ $labels.namespace }}`}}/{{`{{ $labels.pod }}`}} has no `resources.requests.cpu` configured."

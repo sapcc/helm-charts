@@ -156,6 +156,7 @@
       - '{__name__=~"^snmp_n9kpx_ciscoImageString"}'
       - '{__name__=~"^snmp_ipn_sysDescr"}'
       - '{__name__=~"^snmp_acispine_sysDescr"}'
+      - '{__name__=~"^snmp_acileaf_sysDescr"}'
       - '{__name__=~"^snmp_acistretch_sysDescr"}'
       - '{__name__=~"^snmp_arista_entPhysicalSoftwareRev"}'
       - '{__name__=~"^snmp_f5_sysProductVersion"}'
