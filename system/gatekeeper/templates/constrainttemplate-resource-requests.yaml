@@ -1,12 +1,12 @@
 apiVersion: templates.gatekeeper.sh/v1
 kind: ConstraintTemplate
 metadata:
-  name: gkresourcelimits
+  name: gkresourcerequests
 spec:
   crd:
     spec:
       names:
-        kind: GkResourceLimits
+        kind: GkResourceRequests
 
   targets:
     - target: admission.k8s.gatekeeper.sh
@@ -16,7 +16,7 @@ spec:
         - |
           {{ .Files.Get "lib/traversal.rego" | nindent 10 }}
       rego: |
-        package resourcelimits
+        package resourcerequests
         import data.lib.add_support_labels
         import data.lib.traversal
 
@@ -31,16 +31,17 @@ spec:
 
         resource_types = {"cpu", "memory"}
 
-        missing_limits[{"container": container.name, "type": resource_type}] {
+        missing_requests[{"container": container.name, "type": resource_type}] {
           pod.isFound
           container := pod.spec.containers[_]
-          limits := object.get(container, ["resources", "limits"], {})
+          requests := object.get(container, ["resources", "requests"], {})
           resource_type := resource_types[_]
-          object.get(limits, resource_type, "") == ""
+          object.get(requests, resource_type, "") == ""
         }
 
         violation[{"msg": add_support_labels.from_k8s_object(iro, msg)}] {
           pod.isFound
-          count(missing_limits) > 0
-          msg := "CPU and memory limits not set on some or all containers"
+          count(missing_requests) > 0
+          msg := "CPU and memory requests not set on some or all containers"
         }
+
