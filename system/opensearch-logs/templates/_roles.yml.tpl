@@ -332,5 +332,6 @@ maillog:
     - "indices:data/write/delete"
     - "indices:data/write/index"
     - "indices:data/write/update"
-    - "indices:data/read/search"
+    - "read"
     - "indices:monitor/settings/get"
+    - "indices:monitor/stats"
