@@ -21,9 +21,9 @@ groups:
 
   - alert: NodeStuckInMaintenance
 {{- if eq .Values.global.clusterType "metal" }}
-    expr: kube_node_labels{label_cloud_sap_esx_in_maintenance="false",label_cloud_sap_maintenance_state="in-maintenance"} * on (node) (kube_node_status_condition{condition="Ready",status="true"} == 0)
+    expr: kube_node_labels{label_cloud_sap_esx_in_maintenance="false",label_cloud_sap_maintenance_state="in-maintenance"} * on (node) group_left() (kube_node_status_condition{condition="Ready",status="true"} == 0)
 {{- else }}
-    expr: kube_node_labels{label_cloud_sap_maintenance_state="in-maintenance"} * on (node) (kube_node_status_condition{condition="Ready",status="true"} == 0)
+    expr: kube_node_labels{label_cloud_sap_maintenance_state="in-maintenance"} * on (node) group_left() (kube_node_status_condition{condition="Ready",status="true"} == 0)
 {{- end }}
     for: 1h
     labels:
