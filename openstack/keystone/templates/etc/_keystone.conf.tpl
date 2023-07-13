@@ -240,5 +240,5 @@ allow_headers = Content-Type,Cache-Control,Content-Language,Expires,Last-Modifie
 {{- end }}
 
 [cron]
-redis_connection = {{ .Values.cron.redis_connection | default keystone-cron-redis }}
+redis_connection = {{ .Values.cron.redis_connection | default keystone_cron_redis }}
 repair_tolerance_days = {{ .Values.cron.repair_tolerance_days | default 14 }}
