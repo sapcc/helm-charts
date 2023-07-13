@@ -43,7 +43,7 @@ groups:
       summary:  Consumer BGP connection down
 
   - alert: PXTransportAllRouterBgpDown
-    expr: sum(bird_protocol_up{name!~"kernel.", peer_type="TP"}) by (pxservice, pxdomain, pxinstance) == 0
+    expr: sum(bird_protocol_up{name!~"kernel.", peer_type="TP"}) by (app, pxservice, pxdomain, pxinstance) == 0
     for: 2m
     labels:
       severity: critical
@@ -53,7 +53,7 @@ groups:
       playbook: docs/devops/alert/network/px#PXTransportRouterBgpDown
       dashboard: px-control-plane
     annotations:
-      description: "{{ $labels.region }}, domain: {{ $labels.pxdomain }}, service: {{ $labels.pxservice }}: All transport router BGP connections are down."
+      description: "Route-Server {{ $labels.app }}: All transport router BGP connections are down."
       summary:  All transport router BGP down
 
   - alert: PXTransportRedundancyLostRouterBgpDown
