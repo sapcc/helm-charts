@@ -1,7 +1,7 @@
 - name: health.alerts
   rules:
   - alert: {{ include "alerts.service" . | title }}MariaDBNotReady
-    expr: (kube_pod_status_ready_normalized{condition="true", pod=~"{{ include "fullName" . }}.*", pod!~"{{ include "fullName" . }}-backup.*", pod!~"{{ include "fullName" . }}-verification.*"} < 1)
+    expr: (sum(kube_pod_status_ready_normalized{condition="true", pod=~"{{ include "fullName" . }}.*", pod!~"{{ include "fullName" . }}-backup.*", pod!~"{{ include "fullName" . }}-verification.*"}) < 1)
     for: 10m
     labels:
       context: availability
@@ -11,5 +11,5 @@
       support_group: {{ required ".Values.alerts.support_group missing" .Values.alerts.support_group }}
       playbook: 'docs/support/playbook/db_crashloop'
     annotations:
-      description: {{ include "fullName" . }} database is not ready for 10 minutes.
-      summary: {{ include "fullName" . }} is not ready for 10 minutes. Please check the pod.
+      description: No {{ include "fullName" . }} database is ready for 10 minutes.
+      summary: No {{ include "fullName" . }} is ready for 10 minutes. Please check the pod.
