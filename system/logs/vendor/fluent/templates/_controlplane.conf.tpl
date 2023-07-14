@@ -52,6 +52,7 @@
   reserve_data true
   <parse>
     @type grok
+    grok_failure_key grokstatus_neutron_network_agent
     grok_pattern (%{TIMESTAMP_ISO8601:logtime}|)( )?%{TIMESTAMP_ISO8601:timestamp}.%{NOTSPACE}? %{NUMBER:pid} %{WORD:loglevel} %{NOTSPACE:logger} \[-] %{GREEDYDATA} method: %{WORD:uri_method} path: \"%{NOTSPACE:uri_path}\" status: %{NUMBER:uri_status} client-ip: %{IPV4:client_ip} project-id: %{NOTSPACE:project_id} os-network-id: %{NOTSPACE:os_network_id} os-router-id: %{NOTSPACE:os_router_id} os-instance-id: %{NOTSPACE:os_instance_id} req-duration: %{NUMBER:uri_req_duration} user-agent: \"%{NOTSPACE:user_agent}\"
     custom_pattern_path /fluentd/etc/pattern
   </parse>
@@ -63,7 +64,8 @@
   reserve_data true
   <parse>
     @type grok
-    grok_pattern (%{TIMESTAMP_ISO8601:logtime}|)( )?%{TIMESTAMP_ISO8601:timestamp}.%{NOTSPACE}? %{NUMBER:pid} %{WORD:loglevel} %{NOTSPACE:logger} (\[)?(req-)%{NOTSPACE:requestid} ?(greq-%{UUID:global_requestid})? ?%{NOTSPACE:userid} ?%{NOTSPACE:projectid} ?%{NOTSPACE:domainid} ?%{NOTSPACE:user_domainid} ?%{NOTSPACE:project_domainid}] %{IPV4:client_ip} "%{URIQUERY:uri_method} %{URIP:uri_path}
+    grok_failure_key grokstatus_neutron_server
+    grok_pattern %{TIMESTAMP_ISO8601:timestamp} %{NOTSPACE} %{NOTSPACE:loglevel} %{NOTSPACE:process} (\[)?(req-)%{NOTSPACE:requestid} ?(greq-%{UUID:global_requestid})? ?%{NOTSPACE:userid} ?%{NOTSPACE:projectid} ?%{NOTSPACE:domainid} ?%{NOTSPACE:user_domainid} ?%{NOTSPACE:project_domainid}] %{IPV4:client_ip} "%{WORD:request_method} %{NOTSPACE:request_path} HTTP/%{NOTSPACE}" status: %{NUMBER:response}?( ).*len: %{NUMBER:content_length} time: %{NUMBER:request_time} agent: %{NOTSPACE:agent}
     custom_pattern_path /fluentd/etc/pattern
   </parse>
 </filter>

@@ -1,8 +1,36 @@
+owner-info:
+  support-group: containers
+  helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/system/servicemesh
+
+rootCA:
+  #cert:
+  #key:
+
 linkerd-crds:
   enabled: false
 
 linkerd-control-plane:
   enabled: false
+
+  #identityTrustAnchorsPEM:
+
+  identity:
+    issuer:
+      scheme: kubernetes.io/tls
+
+  controllerImage: keppel.global.cloud.sap/ccloud/linkerd/controller
+
+  policyController:
+    image:
+      name: keppel.global.cloud.sap/ccloud/linkerd/policy-controller
+
+  proxyInit:
+    image:
+      name: keppel.global.cloud.sap/ccloud/linkerd/proxy-init
+
+  debugContainer:
+    image:
+      name: keppel.global.cloud.sap/ccloud/linkerd/debug
 
   # enables webhook in kube-system
   proxyInjector:
@@ -33,6 +61,9 @@ linkerd-control-plane:
 
   # proxy configuration
   proxy:
+    image:
+      name: keppel.global.cloud.sap/ccloud/linkerd/proxy
+
     resources:
       cpu:
         request: 100m
@@ -63,7 +94,41 @@ linkerd-control-plane:
 
   # proxy injector configuration
   proxyInjectorResources: *controller_resources
-  webhookFailurePolicy: Fail
+  webhookFailurePolicy: Ignore
 
   # service profile validator configuration
   spValidatorResources: *controller_resources
+
+linkerd-viz:
+  enabled: false
+
+  #clusterDomain:
+
+  defaultRegistry: keppel.global.cloud.sap/ccloud/linkerd
+
+  resources:
+    memory:
+      request: 50Mi
+
+  tap:
+    resources:
+      memory:
+        request: 50Mi
+
+  tapInjector:
+    resources:
+      memory:
+        request: 50Mi
+
+  dashboard:
+    enforcedHostRegexp: ".*"
+    resources:
+      memory:
+        request: 50Mi
+
+  prometheus:
+    image:
+      registry: keppel.global.cloud.sap/ccloud/prom
+    resources:
+      memory:
+        request: 100Mi

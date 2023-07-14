@@ -17,6 +17,10 @@ keppel:
   image_version: DEFINED_IN_VALUES_FILE
 
 trivy:
+  api:
+    # 2 are usually enough to keep the queue from growing
+    # but not enough to decrease it at a good speed
+    replicas: 4
   image_version: DEFINED_IN_VALUES_FILE
   token: DEFINED_IN_VALUES_FILE
 
@@ -29,17 +33,8 @@ redis:
   redisPassword: DEFINED_IN_VALUES_FILE
 
   config:
-    maxmemory: 4900mb # chosen to match resource limit below (with some headroom for application memory)
     maxmemory-policy: volatile-ttl
     maxmemory-samples: 5
-
-  resources:
-    limits:
-      memory: 5Gi
-      cpu: 100m
-    requests:
-      memory: 5Gi
-      cpu: 10m
 
   metrics:
     prometheus: infra-frontend
@@ -49,4 +44,4 @@ redis:
         cpu: 50m
       requests:
         memory: 48Mi
-        cpu: 5m
+        cpu: 50m

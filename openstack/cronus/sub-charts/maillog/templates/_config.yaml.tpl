@@ -11,13 +11,13 @@ maillog:
     indexDateFormat: {{ .Values.storage.indexDateFormat | default "2006_02_01_15_04_05" | quote }}
     cutOffTime: {{ .Values.storage.cutOffTime | default "720h" | quote }}
     granularity: {{ .Values.storage.granularity | default "24h"  | quote}}
-    lookBacks: {{ .Values.storage.lookbacks | default 5 }} # update active mail states up to x * granularity
+    lookbacks: {{ .Values.storage.lookbacks | default 5 }} # update active mail states up to x * granularity
   headers: # Specify which headers we want to keep
 {{- range $key, $value := .Values.headers }}
     - {{ $value | quote }}
 {{- end }}
   auth:
-     keystone:
+    keystone:
       region: {{.Values.global.region}}
       authUrl: "https://identity-3.{{.Values.global.region}}.{{.Values.global.tld}}/v3"
       endpointType: public

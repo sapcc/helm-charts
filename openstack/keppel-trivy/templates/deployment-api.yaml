@@ -9,7 +9,7 @@ spec:
   # When running the Trivy client against a server, lots of computations are
   # still performed on the clide side, i.e. in these pods. Therefore we have
   # this scaled up more than the server itself.
-  replicas: 4
+  replicas: {{ $.Values.trivy.api.replicas }}
   strategy:
     type: RollingUpdate
     rollingUpdate:
@@ -59,4 +59,11 @@ spec:
               port: 80
             timeoutSeconds: 5
             periodSeconds: 5
-          # resources: {} # TODO: configure once we have some data
+          # half of the replicas usually sit at 1Gi RAM usage
+          resources:
+            limits:
+              memory: 1.5Gi
+              cpu: 2
+            requests:
+              memory: 1.5Gi
+              cpu: 2

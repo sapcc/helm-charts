@@ -19,7 +19,7 @@ groups:
       summary: first byte timing for {{ $labels.type }} in {{ $labels.os_cluster }}
         increased
 
-  - alert: OpenstackSwiftServiceUnavailable
+  - alert: OpenstackSwift503Responses
     expr: sum(increase(swift_proxy_count{policy="all", status="503", method!~"PUT|DELETE|POST"}[5m])) by (os_cluster) > 100
     for: 5m
     labels:
@@ -32,7 +32,7 @@ groups:
       meta: 503 responses from Swift in {{ $labels.os_cluster }}
     annotations:
       description: Swift is responding with 503 in {{ $labels.os_cluster }}. Usually the root cause is a broken
-        token validation or overloaded object servers.
+        token validation or overloaded object servers or HEAD requests to non existing objects with offline replica locations (disk failures)
       summary: swift-service-unavailable
 
   - alert: OpenstackSwiftHAProxyServer
@@ -108,7 +108,7 @@ groups:
       playbook: 'docs/support/playbook/swift/healthcheck'
       meta: some health checks for Swift are failing
     annotations:
-      description: Swift health check failures. Run kubectl log (swift-proxy-... / swift-health-exporter-...) collector to get details
+      description: Swift health check failures. Run `kubectl logs -l component=swift-health-exporter -c collector` and `kubectl logs -l component=swift-proxy-cluster-3 -c collector` to get details
       summary: swift-health-check
 
   - alert: OpenstackSwiftDispersionErrors
@@ -128,7 +128,7 @@ groups:
 
   - alert: OpenstackSwiftMismatchedRings
     expr: (sum(max by (storage_ip) (swift_cluster_md5_not_matched{kind="ring"})) - sum(max by (storage_ip) (swift_cluster_md5_errors{kind="ring"}))) > 0
-    for: 20m
+    for: 25m
     labels:
       context: mismatchedrings
       dashboard: swift-overview

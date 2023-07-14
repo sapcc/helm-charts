@@ -132,6 +132,35 @@ mysql_metrics:
         GROUP BY secrets.id, secrets.status, secrets.name, projects.external_id, secrets.secret_type, secrets.expiration;
       values:
       - "count_gauge"
+    - help: Barbican secret count in HSM Backend
+      labels:
+      - "id"
+      - "status"
+      - "secret_name"
+      - "expiration"
+      - "project_id"
+      - "secret_type"
+      name: openstack_barbican_hsm_secrets_count_gauge
+      query: |
+        SELECT 
+          secrets.id,
+          secrets.status,
+          COALESCE(secrets.name, "No Secret Name") AS secret_name,
+          UNIX_TIMESTAMP(STR_TO_DATE(IFNULL(secrets.expiration,'1970-01-01 00:00:00'), '%Y-%c-%e %T')) AS expiration,
+          projects.external_id  AS project_id,
+          secrets.secret_type,
+          COUNT(*) AS count_gauge
+        FROM encrypted_data 
+        JOIN kek_data 
+        ON encrypted_data.kek_id = kek_data.id 
+        JOIN secrets 
+        ON secrets.id = encrypted_data.secret_id 
+        JOIN projects
+        ON secrets.project_id=projects.id
+        WHERE kek_data.plugin_name='barbican.plugin.crypto.p11_crypto.P11CryptoPlugin' AND secrets.deleted='false'
+        GROUP BY secrets.id, secrets.status, secrets.name, projects.external_id, secrets.secret_type, secrets.expiration;
+      values:
+      - "count_gauge"
     - help: Barbican container expiration date
       labels:
       - "expiration_date"
@@ -238,8 +267,16 @@ alerts:
 hsm:
   enabled: false
   luna:
-    image: lunaclient-r2
+    image: lunaclient-r3
   multistore:
     enabled: false
   ha:
     enabled: false
+  resources:
+    enabled: true
+    limits:
+      memory: 1Gi
+      cpu: 500m
+    requests:
+      memory: 500Mi
+      cpu: 300m

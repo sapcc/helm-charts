@@ -173,9 +173,10 @@ groups:
   - alert: SwapDataStoreUsageWithoutVMs
     expr: >
       vrops_datastore_diskspace_total_usage_gigabytes{datastore=~".*-swap"} > 10 and vrops_datastore_summary_total_number_vms == 0
+      unless on (datastore) label_replace(vrops_hostsystem_runtime_maintenancestate{state="inMaintenance"}, "datastore", "$1-swap", "hostsystem", "(node...-bb...).*")
     for: 10m
     labels:
-      severity: info
+      severity: warning
       tier: vmware
       service: storage
       support_group: compute
@@ -314,12 +315,13 @@ groups:
       vrops_datastore_summary_datastore_accessible{type="ephemeral", storagepod=~"none|None|NONE", datastore=~"eph.*"} > 0
     for: 20m
     labels:
-      severity: info
+      severity: warning
       tier: vmware
       service: storage
       support_group: compute
       context: "{{ $labels.datastore }}"
       meta: "Eph Datastore {{ $labels.datastore }} is not a part of SDRS cluster. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
+      playbook: docs/devops/alert/vcenter/#ephemeraldatastorenotpartofsdrscluster
     annotations:
       description: "Eph Datastore {{ $labels.datastore }} is not a part of SDRS Cluster. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
       summary: "Eph Datastore {{ $labels.datastore }} is not a part of SDRS Cluster. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
@@ -329,12 +331,13 @@ groups:
       vrops_datastore_summary_datastore_accessible{type="ephemeral", storagepod=~".*hgb.*", datastore=~"eph.*hga"} or vrops_datastore_summary_datastore_accessible{type="ephemeral", storagepod=~".*hga.*", datastore=~"eph.*hgb"} > 0
     for: 20m
     labels:
-      severity: info
+      severity: warning
       tier: vmware
       service: storage
       support_group: compute
       context: "{{ $labels.datastore }}"
       meta: "Eph Datastore {{ $labels.datastore }} is not a part of correct SDRS cluster. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
+      playbook: docs/devops/alert/vcenter/#ephemeraldatastorepartofincorrectsdrscluster
     annotations:
       description: "Eph Datastore {{ $labels.datastore }} is not a part of correct SDRS Cluster. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
       summary: "Eph Datastore {{ $labels.datastore }} is not a part of correct SDRS Cluster. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
@@ -343,14 +346,14 @@ groups:
     expr: >
       vrops_datastore_summary_tag{type="vmfs_p_ssd", summary_tag="none"}
       unless on (datastore) vrops_datastore_summary_custom_tag_cinder_state{summary_custom_tag_cinder_state="reserved"}
-    for: 5m
+    for: 1h
     labels:
       severity: info
       tier: vmware
       service: storage
       support_group: compute
       meta: "There is no Cinder tag present for the `{{ $labels.datastore }}` datastore in the *{{ $labels.datacenter }}* datacenter\nLink to the vCenter: --> <https://{{ $labels.vcenter }}|{{ $labels.vcenter }}>"
-      playbook: docs/support/playbook/cinder/CinderTagMissingForDatastoreSSD
+      playbook: docs/support/playbook/cinder/cinder-tag-missing
     annotations:
       description: "There is no Cinder tag present for the `{{ $labels.datastore }}` datastore in the *{{ $labels.datacenter }}* datacenter\nLink to the vCenter: --> <https://{{ $labels.vcenter }}|{{ $labels.vcenter }}>"
       summary: "There is no Cinder tag present for the `{{ $labels.datastore }}` datastore in the *{{ $labels.datacenter }}* datacenter\nLink to the vCenter: --> <https://{{ $labels.vcenter }}|{{ $labels.vcenter }}>"
@@ -359,14 +362,14 @@ groups:
     expr: >
       vrops_datastore_summary_tag{type="vmfs_s_hdd", summary_tag="none"}
       unless on (datastore) vrops_datastore_summary_custom_tag_cinder_state{summary_custom_tag_cinder_state="reserved"}
-    for: 5m
+    for: 1h
     labels:
       severity: info
       tier: vmware
       service: storage
       support_group: compute
       meta: "There is no Cinder tag present for the `{{ $labels.datastore }}` datastore in the *{{ $labels.datacenter }}* datacenter\nLink to the vCenter: --> <https://{{ $labels.vcenter }}|{{ $labels.vcenter }}>"
-      playbook: docs/support/playbook/cinder/CinderTagMissingForDatastoreHDD
+      playbook: docs/support/playbook/cinder/cinder-tag-missing
     annotations:
       description: "There is no Cinder tag present for the `{{ $labels.datastore }}` datastore in the *{{ $labels.datacenter }}* datacenter\nLink to the vCenter: --> <https://{{ $labels.vcenter }}|{{ $labels.vcenter }}>"
       summary: "There is no Cinder tag present for the `{{ $labels.datastore }}` datastore in the *{{ $labels.datacenter }}* datacenter\nLink to the vCenter: --> <https://{{ $labels.vcenter }}|{{ $labels.vcenter }}>"
@@ -374,15 +377,15 @@ groups:
   - alert: CinderTagAddedForReservedDatastore
     expr: >
       vrops_datastore_summary_custom_tag_cinder_state{type=~"^(vmfs_s_hdd|vmfs_p_ssd)$", summary_custom_tag_cinder_state="reserved"}
-      and on (datastore) vrops_datastore_summary_tag{summary_tag=~".+\"category\":\"cinder\".+.*(\"name\":\"cinder\"|\"name\":\"slow\").+"}
-    for: 5m
+      and on (datastore) vrops_datastore_summary_tag{summary_tag=~".+{\"category\":\"cinder\",(\"name\":\"cinder\"|\"name\":\"slow\")}.+"}
+    for: 1h
     labels:
       severity: info
       tier: vmware
       service: storage
       support_group: compute
       meta: "The Cinder state is reserved but the Cinder tag still exists for the `{{ $labels.datastore }}` datastore of type: _{{ $labels.type }}_ in the *{{ $labels.datacenter }}* datacenter\nLink to the vCenter: --> <https://{{ $labels.vcenter }}|{{ $labels.vcenter }}>"
-      playbook: docs/support/playbook/cinder/CinderTagAddedForReservedDatastore
+      playbook: docs/support/playbook/cinder/cinder-tag-added
     annotations:
       description: "The Cinder state is reserved but the Cinder tag still exists for the `{{ $labels.datastore }}` datastore of type: _{{ $labels.type }}_ in the *{{ $labels.datacenter }}* datacenter\nLink to the vCenter: --> <https://{{ $labels.vcenter }}|{{ $labels.vcenter }}>"
       summary: "The Cinder state is reserved but the Cinder tag still exists for the `{{ $labels.datastore }}` datastore of type: _{{ $labels.type }}_ in the *{{ $labels.datacenter }}* datacenter\nLink to the vCenter: --> <https://{{ $labels.vcenter }}|{{ $labels.vcenter }}>"
