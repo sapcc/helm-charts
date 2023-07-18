@@ -62,7 +62,7 @@ groups:
     for: 5m
     labels:
       context: availability
-      service: alertmanager
+      service: alerting
       severity: info
       meta: 'Alertmanager {{`{{ $labels.alertmanager }}`}} receives invalid alerts.'
       support_group: {{ include "alerts.support_group" . }}
