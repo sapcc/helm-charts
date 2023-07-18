@@ -48,8 +48,8 @@ groups:
     for: 10m
     labels:
       context: availability
-      service: alertmanager
-      severity: warning
+      service: alerting
+      severity: info
       playbook: 'docs/support/playbook/prometheus/alertmanager_cluster_failures'
       meta: 'Alertmanager {{`{{ $labels.alertmanager }}`}} is queing cluster messages.'
       support_group: {{ include "alerts.support_group" . }}
