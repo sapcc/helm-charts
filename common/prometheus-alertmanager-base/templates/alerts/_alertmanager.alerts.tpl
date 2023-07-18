@@ -44,8 +44,8 @@ groups:
       summary: Alertmanager in HA cluster fails to synchronize
 
   - alert: AlertmanagerClusterMessagesQueued
-    expr: alertmanager_cluster_messages_queued{alertmanager="{{ include "alertmanager.name" . }}"} !=0
-    for: 5m
+    expr: max_over_time(alertmanager_cluster_messages_queued{alertmanager="{{ include "alertmanager.name" . }}"}[5m]) != 0
+    for: 10m
     labels:
       context: availability
       service: alertmanager
