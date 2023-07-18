@@ -1,0 +1,31 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  namespace: {{ $.Release.Namespace }}
+  name: {{ include "commonPrefix" $ }}restic-common-functions-extended-sh
+  labels:
+    app: {{ $.Release.Name }}
+data:
+{{ tpl (.Files.Glob "scripts/backup/common-functions-extended.sh").AsConfig . | indent 2 }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  namespace: {{ $.Release.Namespace }}
+  name: {{ include "commonPrefix" $ }}restic-job-entrypoint-restore-sh
+  labels:
+    app: {{ $.Release.Name }}
+data:
+{{ tpl (.Files.Glob "scripts/backup/restic/entrypoint-job-restore.sh").AsConfig . | indent 2 }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  namespace: {{ $.Release.Namespace }}
+  name: {{ include "commonPrefix" $ }}restic-entrypoint-sh
+  labels:
+    app: {{ $.Release.Name }}
+data:
+{{ tpl (.Files.Glob "scripts/backup/restic/entrypoint-backup.sh").AsConfig . | indent 2 }}
+{{ tpl (.Files.Glob "scripts/backup/restic/entrypoint-restore.sh").AsConfig . | indent 2 }}
