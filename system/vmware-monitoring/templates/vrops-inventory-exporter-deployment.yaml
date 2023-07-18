@@ -88,6 +88,12 @@ spec:
       relabelings:
         - targetLabel: job
           replacement: {{ include "vropsInventoryExporter.fullName" (list $target $root) }}
+        - action: replace
+          regex: (vrops-inventory-)(exporter-)(vc-.*)
+          replacement: ${1}${3}
+          sourceLabels:
+          - __meta_kubernetes_pod_label_target
+          targetLabel: inventory
       metricRelabelings:
         - action: labeldrop
           regex: "container|instance|endpoint|pod|namespace|service"
