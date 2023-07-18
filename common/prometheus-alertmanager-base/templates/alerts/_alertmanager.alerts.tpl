@@ -29,19 +29,33 @@ groups:
       description: 'Alertmanager {{`{{ $labels.alertmanager }}`}} is failing to send notifications for integration {{`{{ $labels.integration }}`}}.'
       summary: Alertmanager failing to send notifications
 
-  - alert: AlertmanagerClusterPrunedMessages
-    expr: alertmanager_cluster_messages_pruned_total
+  - alert: AlertmanagerClusterMessagesPruned
+    expr: rate(alertmanager_cluster_messages_pruned_total{alertmanager="{{ include "alertmanager.name" . }}"}[5m]) > 0
     for: 10m
     labels:
       context: availability
       service: alertmanager
       severity: warning
       playbook: 'docs/support/playbook/prometheus/alertmanager_cluster_failures'
-      meta: 'Alertmanager {{`{{ $labels.alertmanager }}`}} failing sending notifications.'
+      meta: 'Alertmanager {{`{{ $labels.alertmanager }}`}} is pruning the cluster message queue.'
       support_group: {{ include "alerts.support_group" . }}
     annotations:
-      description: 'Alertmanager {{`{{ $labels.alertmanager }}`}} fails to synchronize with other Alertmanagers of the HA cluster. This can cause duplicate notifications.'
-      summary: Alertmanager in HA cluster fail to synchronize.
+      description: 'Alertmanager {{`{{ $labels.alertmanager }}`}} is pruning the message queue and cluster messages are dropped.'
+      summary: Alertmanager in HA cluster fails to synchronize
+
+  - alert: AlertmanagerClusterMessagesQueued
+    expr: alertmanager_cluster_messages_queued{alertmanager="{{ include "alertmanager.name" . }}"} !=0
+    for: 5m
+    labels:
+      context: availability
+      service: alertmanager
+      severity: warning
+      playbook: 'docs/support/playbook/prometheus/alertmanager_cluster_failures'
+      meta: 'Alertmanager {{`{{ $labels.alertmanager }}`}} is queing cluster messages.'
+      support_group: {{ include "alerts.support_group" . }}
+    annotations:
+      description: 'Alertmanager {{`{{ $labels.alertmanager }}`}} is queing cluster messages. This can cause dropping messages because too many are queued.'
+      summary: Alertmanager in HA cluster fails to synchronize
 
   - alert: AlertmanagerInvalidAlerts
     expr: rate(alertmanager_alerts_invalid_total{alertmanager="{{ include "alertmanager.name" . }}"}[5m]) > 0
