@@ -36,7 +36,7 @@ groups:
       context: availability
       service: alertmanager
       severity: warning
-      playbook: 'docs/support/playbook/prometheus/alertmanager_cluster_failures'
+      playbook: 'docs/support/playbook/prometheus/alertmanager_alerts/cluster-messages-pruned'
       meta: 'Alertmanager {{`{{ $labels.alertmanager }}`}} is pruning the cluster message queue.'
       support_group: {{ include "alerts.support_group" . }}
     annotations:
@@ -44,13 +44,13 @@ groups:
       summary: Alertmanager in HA cluster fails to synchronize
 
   - alert: AlertmanagerClusterMessagesQueued
-    expr: max_over_time(alertmanager_cluster_messages_queued{alertmanager="{{ include "alertmanager.name" . }}"}[5m]) != 0
-    for: 10m
+    expr: alertmanager_cluster_messages_queued{alertmanager="{{ include "alertmanager.name" . }}"} != 0
+    for: 15m
     labels:
       context: availability
       service: alerting
       severity: info
-      playbook: 'docs/support/playbook/prometheus/alertmanager_cluster_failures'
+      playbook: 'docs/support/playbook/prometheus/alertmanager_alerts/cluster-messages-queued'
       meta: 'Alertmanager {{`{{ $labels.alertmanager }}`}} is queing cluster messages.'
       support_group: {{ include "alerts.support_group" . }}
     annotations:
