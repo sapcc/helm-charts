@@ -7,7 +7,13 @@ source /opt/${SOFTWARE_NAME}/bin/common-functions.sh
 
 function bootstrapgalera {
   loginfo "${FUNCNAME[0]}" "init Galera cluster"
-  exec mariadbd --defaults-file=${BASE}/etc/my.cnf --basedir=/usr --wsrep-new-cluster
+  {{- /* disable Galera replication to be able to do PITR with mariadb-binlog https://jira.mariadb.org/browse/MDEV-29665 */}}
+  if [ -f "${BASE}/etc/wipedata.flag" ]; then
+    exec mariadbd --defaults-file=${BASE}/etc/my.cnf --basedir=/usr --wsrep-new-cluster --wsrep_on=OFF --expire-logs-days=0
+  else
+    exec mariadbd --defaults-file=${BASE}/etc/my.cnf --basedir=/usr --wsrep-new-cluster
+  fi
+
 }
 
 function fetchseqnofromgrastate {

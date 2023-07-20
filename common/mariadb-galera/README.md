@@ -21,7 +21,8 @@ Docker images and Helm chart to deploy a [MariaDB](https://mariadb.com/kb/en/get
   * [values description](#values-description)
   * [network config](#network-config)
   * [database backup](#database-backup)
-  * [full database restore](#full-database-restore)
+  * [full database recovery](#full-database-recovery)
+  * [point in time database recovery](#point-in-time-database-recovery)
   * [asynchronous replication config](#asynchronous-replication-config)
   * [MariaDB Galera flow charts](#mariadb-galera-flow-charts)
     * [node startup](#node-startup)
@@ -40,7 +41,7 @@ Docker images and Helm chart to deploy a [MariaDB](https://mariadb.com/kb/en/get
 ## Metadata
 | chart version | app version | type | url |
 |:--------------|:-------------|:-------------|:-------------|
-| 0.15.4 | 10.5.20 | application | [Git repo](https://github.com/businessbean/helm-charts/tree/master/common/mariadb-galera) |
+| 0.16.0 | 10.5.20 | application | [Git repo](https://github.com/businessbean/helm-charts/tree/master/common/mariadb-galera) |
 
 | Name | Email | Url |
 | ---- | ------ | --- |
@@ -368,6 +369,7 @@ docker build --build-arg BASE_SOFT_NAME=ubuntu --build-arg BASE_SOFT_VERSION=22.
 | mariadb.galera.backup.kopia.keep.yearly | int | 0 | [keep-yearly](https://kopia.io/docs/reference/command-line/common/policy-set/) |
 | mariadb.galera.backup.kopia.listBackups | bool | false | [list backup snapshots](https://kopia.io/docs/reference/command-line/common/snapshot-list/) |
 | mariadb.galera.backup.kopia.progressUpdateInterval | string | 300ms | How often to update progress information [--progress-update-interval](https://kopia.io/docs/reference/command-line/flags/) |
+| mariadb.galera.backup.kopia.purgeBinlogsAfterFullBackup | bool | `false` | [purge binlogs](https://mariadb.com/kb/en/purge-binary-logs/) after a full backup. |
 | mariadb.galera.backup.kopia.s3.bucket | string | `nil` | S3 bucket name |
 | mariadb.galera.backup.kopia.s3.endpoint | string | s3.amazonaws.com | S3 endpoint FQDN |
 | mariadb.galera.backup.kopia.s3.region | string | `nil` | S3 [region name|https://docs.aws.amazon.com/general/latest/gr/s3.html] |
@@ -428,13 +430,14 @@ docker build --build-arg BASE_SOFT_NAME=ubuntu --build-arg BASE_SOFT_VERSION=22.
 | mariadb.galera.gtidStrictMode | bool | false | enable [gtid_strict_mode](https://mariadb.com/kb/en/gtid/#gtid_strict_mode) |
 | mariadb.galera.logLevel | string | info | [wsrep_debug](https://mariadb.com/kb/en/galera-cluster-system-variables/#wsrep_debug) |
 | mariadb.galera.pcrecovery | bool | false | [primary component recovery](https://galeracluster.com/library/documentation/pc-recovery.html) |
-| mariadb.galera.restore.beforeTimestamp | string | `nil` | define the backup timestamp that should be used for the restore. Only the `%Y-%m-%d %H:%M:%S` format is currently supported and the restic snapshot nearest before will be used |
+| mariadb.galera.restore.beforeTimestamp | string | `nil` | without `mariab.galera.restore.pointInTimeRecovery` only the full snapshot will be recovered |
 | mariadb.galera.restore.kopia.enabled | bool | `false` | enable the [full database restore](#full-database-restore). Should be done as described in the documentation with `--set` parameters |
 | mariadb.galera.restore.kopia.job.activeDeadlineSeconds | int | 3600 | Maximum [allowed runtime](https://kubernetes.io/docs/concepts/workloads/controllers/job/#job-termination-and-cleanup) before the Kopia restore job will be stopped |
 | mariadb.galera.restore.kopia.job.backoffLimit | int | 0 | How many [retries](https://kubernetes.io/docs/concepts/workloads/controllers/job/#pod-backoff-failure-policy) before the Kopia restore job will be marked as failed |
 | mariadb.galera.restore.kopia.job.jobRestartPolicy | string | Never | Define how the Kopia restore job pod [will be restarted](https://kubernetes.io/docs/concepts/workloads/controllers/job/#handling-pod-and-container-failures) in case of an error. It can be on the same worker node or another |
 | mariadb.galera.restore.kopia.job.ttlSecondsAfterFinished | int | 43200 | After how many seconds will a stopped Kopia restore job be [deleted from the Kubernetes cluster](https://kubernetes.io/docs/concepts/workloads/controllers/job/#clean-up-finished-jobs-automatically) |
 | mariadb.galera.restore.kopia.snapshotId | bool | `false` | If set the beforeTimestamp option will be ignored and the configured id(".rootEntry.obj" or "Root" column in the snapshot list) will be used |
+| mariadb.galera.restore.pointInTimeRecovery | bool | `nil` | use binlog backups to recover the database to the defined `mariab.galera.restore.beforeTimestamp` and not only the nearest full backup. The `snapshotId` value will be ignored |
 | mariadb.galera.restore.restic.enabled | bool | `false` | enable the [full database restore](#full-database-restore). Should be done as described in the documentation with `--set` parameters |
 | mariadb.galera.restore.restic.job.activeDeadlineSeconds | int | 3600 | Maximum [allowed runtime](https://kubernetes.io/docs/concepts/workloads/controllers/job/#job-termination-and-cleanup) before the Restic restore job will be stopped |
 | mariadb.galera.restore.restic.job.backoffLimit | int | 0 | How many [retries](https://kubernetes.io/docs/concepts/workloads/controllers/job/#pod-backoff-failure-policy) before the Restic restore job will be marked as failed |
@@ -723,10 +726,8 @@ The [Openstack cloud provider documentation](https://github.com/kubernetes/cloud
 * mariadb-binlog will be used to include the existing binary logs in the backup. That allows to do a point in time recovery in addition to the full restore of the database
 * restic will be used to encrypt, compress and deduplicate the backup data. Currently the Openstack Swift backend is supported
 
-### full database restore
+### full database recovery
 ```shell
-helm upgrade --install --namespace database mariadb-galera helm --set mariadb.wipeDataAndLog=true
-or
 helm upgrade --install --namespace database mariadb-galera helm --set mariadb.wipeDataAndLog=true --values helm/custom/eu-de-2.yaml
 ```
 * prepare the database nodes with the `mariadb.wipeDataAndLog` option
@@ -757,8 +758,6 @@ helm upgrade --install --namespace database mariadb-galera helm --set mariadb.wi
     ```
 * start the restore and recovery process using the `mariadb.galera.restore.beforeTimestamp` option
 ```sh
-helm upgrade --install --namespace database mariadb-galera helm --set mariadb.galera.restore.restic.enabled=true --set mariadb.galera.restore.beforeTimestamp="2022-12-13 12:00:00"
-or
 helm upgrade --install --namespace database mariadb-galera helm --set mariadb.galera.restore.kopia.enabled=true --set mariadb.galera.restore.beforeTimestamp="2023-02-19 15:45:00" --values helm/custom/eu-de-2.yaml
 ```
   * a new job pod will be started
@@ -773,10 +772,84 @@ helm upgrade --install --namespace database mariadb-galera helm --set mariadb.ga
     ```
 * run `helm upgrade` again to remove the `mariadb.wipeDataAndLog` and `mariadb.galera.restore.restic.enabled` options
 ```sh
-helm upgrade --install --namespace database mariadb-galera helm
-or
 helm upgrade --install --namespace database mariadb-galera helm --values helm/custom/eu-de-2.yaml
 ```
+  * ProxySQL, the config job and the Backup cronjob will be enabled again (if they have been enabled before)
+  * the MariaDB pods will be restarted and Galera will replicate the restored data
+
+### point in time database recovery
+```shell
+helm upgrade --install --namespace database mariadb-galera helm --set mariadb.wipeDataAndLog=true --values helm/custom/eu-de-2.yaml
+```
+* prepare the database nodes with the `mariadb.wipeDataAndLog` option
+  * the mariadb pods will be restarted
+  * the content of the `data` and the `log` folders will be wiped
+  * the first pod will start MariaDB with Galera
+  * the other pods will only start a sleep process
+  * the backup cronjob and the ProxySQL pods will disabled
+  * check the logs of the first MariaDB pod for the wipe and Galera startup messages
+    ```json
+    {"log.origin.function":"wipedata","log.level":"info","message":"starting wipe of data and log folder content"}
+    {"log.origin.function":"wipedata","log.level":"info","message":"wipe of data and log folder content done"}
+    {"..."}
+    {"log.origin.function":"bootstrapgalera","log.level":"info","message":"init Galera cluster"}
+    {"..."}
+    ```
+    ```text
+    [Note] mariadbd: ready for connections.
+    Version: '10.5.18-MariaDB-1:10.5.18+maria~ubu2004-log'  socket: '/opt/mariadb/run/mariadbd.sock'  port: 3306  mariadb.org binary distribution
+    [Note] WSREP: Starting applier thread 21
+    ```
+  * check the logs of the other MariaDB pod for the wipe and sleep startup messages
+    ```json
+    {"log.origin.function":"wipedata","log.level":"info","message":"starting wipe of data and log folder content"}
+    {"log.origin.function":"wipedata","log.level":"info","message":"wipe of data and log folder content done"}
+    {"..."}
+    {"log.origin.function":"initgalera","log.level":"info","message":"start sleep mode because wipedata flag has been set"}
+    ```
+* start the restore and recovery process using the `mariadb.galera.restore.beforeTimestamp` and the `mariadb.galera.restore.pointInTimeRecovery` option
+  ```sh
+  helm upgrade --install --namespace database mariadb-galera helm --set mariadb.galera.restore.kopia.enabled=true --set mariadb.galera.restore.beforeTimestamp="2023-07-17 13:50:00+CEST" --set mariadb.galera.restore.pointInTimeRecovery=true --values helm/custom/eu-de-2.yaml
+  ```
+  * a new job pod will be started
+  * restic will query the nearest snapshot id related to the provided timestamp
+  * the MariaDB dump included in the snapshot will be restored
+  * the mysql client will import the dump into the first MariaDB node
+  * check the recovery logs of the `restore-kopia-*` pod
+    ```json
+    {"log.origin.function":"initkopiarepo","log.level":"info","message":"init kopia repository if required"}
+    Connected to repository.
+    {"log.origin.function":"initkopiarepo","log.level":"info","message":"kopia repository already exist"}
+    {"log.origin.function":"recoverkopiapointintime","log.level":"info","message":"fetch kopia snapshotid for the '2023-07-20 13:59:00+CEST' timestamp"}
+    {"log.origin.function":"recoverkopiapointintime","log.level":"info","message":"fetch kopia backup starttime for the snapshotid 'k0f18417e1f8c6052241f5f4dcea29b0e'"}
+    {"log.origin.function":"recoverkopiapointintime","log.level":"info","message":"fetch kopia backup startposition for the snapshotid 'k0f18417e1f8c6052241f5f4dcea29b0e'"}
+    {"log.origin.function":"recoverkopiapointintime","log.level":"info","message":"fetch kopia binlog snapshot for the requested timeframe"}
+    {"log.origin.function":"recoverkopiapointintime","log.level":"info","message":"kopia database recovery from '2023-07-20T11:01:05' to nova-mariadb-g-0.database.svc.cluster.local started"}
+    {"log.origin.function":"recoverkopiapointintime","log.level":"info","message":"kopia database recovery done"}
+    {"log.origin.function":"recoverkopiapointintime","log.level":"info","message":"starting kopia binlog recovery from '2023-07-20T11:55:12+UTC' to nova-mariadb-g-0.database.svc.cluster.local"}
+    {"log.origin.function":"recoverkopiapointintime","log.level":"info","message":"kopia binlog recovery using 'nova_binlog.000143'[1/6] started"}
+    {"log.origin.function":"recoverkopiapointintime","log.level":"info","message":"kopia binlog recovery done"}
+    {"log.origin.function":"recoverkopiapointintime","log.level":"info","message":"kopia binlog recovery using 'nova_binlog.000144'[2/6] started"}
+    {"log.origin.function":"recoverkopiapointintime","log.level":"info","message":"kopia binlog recovery done"}
+    {"log.origin.function":"recoverkopiapointintime","log.level":"info","message":"kopia binlog recovery using 'nova_binlog.000145'[3/6] started"}
+    {"log.origin.function":"recoverkopiapointintime","log.level":"info","message":"kopia binlog recovery done"}
+    {"log.origin.function":"recoverkopiapointintime","log.level":"info","message":"kopia binlog recovery using 'nova_binlog.000146'[4/6] started"}
+    {"log.origin.function":"recoverkopiapointintime","log.level":"info","message":"kopia binlog recovery done"}
+    {"log.origin.function":"recoverkopiapointintime","log.level":"info","message":"kopia binlog recovery using 'nova_binlog.000147'[5/6] started"}
+    {"log.origin.function":"recoverkopiapointintime","log.level":"info","message":"kopia binlog recovery done"}
+    {"log.origin.function":"recoverkopiapointintime","log.level":"info","message":"kopia binlog recovery using 'nova_binlog.000148'[6/6] started"}
+    {"log.origin.function":"recoverkopiapointintime","log.level":"info","message":"kopia binlog recovery done"}
+    ```
+* run `helm upgrade` again to remove the `mariadb.wipeDataAndLog` and `mariadb.galera.restore.restic.enabled` options
+  ```sh
+  helm upgrade --install --namespace database mariadb-galera helm --set replicas.application=1 --values helm/custom/eu-de-2.yaml
+  ```
+* restart the other pods after `mariadb-g-0` is ready again
+  ```sh
+  helm upgrade --install --namespace database mariadb-galera helm
+  or
+  helm upgrade --install --namespace database mariadb-galera helm --values helm/custom/eu-de-2.yaml
+  ```
   * ProxySQL, the config job and the Backup cronjob will be enabled again (if they have been enabled before)
   * the MariaDB pods will be restarted and Galera will replicate the restored data
 

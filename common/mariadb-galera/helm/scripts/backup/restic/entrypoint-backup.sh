@@ -27,14 +27,16 @@ function createresticdbbackup {
   if [ "${MARIADB_BACKUP_TYPE}" == "full" ]; then
     local DB_HOST=${1}
     local SEQNO=${2}
+    local BINLOGNAME=$(queryoldestbinlogname ${DB_HOST})
+    local BINLOGPOSITION=$(querybinlogposition ${DB_HOST})
 
     loginfo "${FUNCNAME[0]}" "mariadb-dump using ${DB_HOST} started"
     mariadb-dump --protocol=tcp --host=${DB_HOST}.database.svc.cluster.local --port=${MYSQL_PORT} \
                 --user=${MARIADB_ROOT_USERNAME} --password=${MARIADB_ROOT_PASSWORD} \
                 --all-databases --add-drop-database --flush-privileges --flush-logs --hex-blob --events --routines --comments --triggers --skip-log-queries \
                 --gtid --master-data=1 --single-transaction | \
-    restic backup --stdin --stdin-filename=mariadb.dump \
-                  --tag "${SOFTWARE_VERSION}" --tag "${MARIADB_CLUSTER_NAME}" --tag "${SEQNO}" --tag "dump" \
+    restic backup --stdin --stdin-filename=dump.sql \
+                  --tag "${SOFTWARE_VERSION}" --tag "${MARIADB_CLUSTER_NAME}" --tag "${SEQNO}" --tag "${BINLOGNAME}" --tag "${BINLOGPOSITION}" --tag "dump" \
                   --compression {{ $.Values.mariadb.galera.backup.restic.compression | default "auto" | quote }} \
                   --pack-size {{ $.Values.mariadb.galera.backup.restic.packsizeInMB | default 16 | int }} \
                   --json
@@ -51,13 +53,14 @@ function createresticbinlogbackup {
     local DB_HOST=${1}
     local SEQNO=${2}
     local BINLOGNAME=$(queryoldestbinlogname ${DB_HOST})
+    local BINLOGPOSITION=$(querybinlogposition ${DB_HOST})
 
     loginfo "${FUNCNAME[0]}" "mariadb-binlog using ${BINLOGNAME} and newer from ${DB_HOST} started"
     mariadb-binlog --protocol=tcp --host=${DB_HOST}.database.svc.cluster.local --port=${MYSQL_PORT} \
                   --user=${MARIADB_ROOT_USERNAME} --password=${MARIADB_ROOT_PASSWORD} \
-                  --read-from-remote-server --to-last-log --verify-binlog-checksum ${BINLOGNAME} | \
-    restic backup --stdin --stdin-filename=mariadb.binlog \
-                  --tag "${SOFTWARE_VERSION}" --tag "${MARIADB_CLUSTER_NAME}" --tag "${SEQNO}" --tag "${BINLOGNAME}" --tag "binlog" \
+                  --raw --read-from-remote-server --to-last-log --verify-binlog-checksum ${BINLOGNAME} | \
+    restic backup --stdin --stdin-filename=binlog.raw \
+                  --tag "${SOFTWARE_VERSION}" --tag "${MARIADB_CLUSTER_NAME}" --tag "${SEQNO}" --tag "${BINLOGNAME}" --tag "${BINLOGPOSITION}" --tag "binlog" \
                   --compression {{ $.Values.mariadb.galera.backup.restic.compression | default "auto" | quote }} \
                   --pack-size {{ $.Values.mariadb.galera.backup.restic.packsizeInMB | default 16 | int }} \
                   --json

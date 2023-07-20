@@ -276,6 +276,8 @@ mariadb:
         # -- [list backup snapshots](https://kopia.io/docs/reference/command-line/common/snapshot-list/)
         # @default -- false
         listBackups: false
+        # -- (bool) [purge binlogs](https://mariadb.com/kb/en/purge-binary-logs/) after a full backup.
+        purgeBinlogsAfterFullBackup: false
         users:
           repository:
             # -- (bool) enable this user
@@ -342,8 +344,11 @@ mariadb:
           # -- (string) S3 bucket name
           bucket:
     restore:
-      # -- define the backup timestamp that should be used for the restore. Only the `%Y-%m-%d %H:%M:%S` format is currently supported and the restic snapshot nearest before will be used
+      # -- define the backup timestamp that should be used for the restore. Only the `%Y-%m-%d %H:%M:%S+%Z` format (e.g 2023-07-18 20:59:00+CEST) is currently supported and the backup created nearest before will be used
+      # -- without `mariab.galera.restore.pointInTimeRecovery` only the full snapshot will be recovered
       beforeTimestamp:
+      # -- (bool) use binlog backups to recover the database to the defined `mariab.galera.restore.beforeTimestamp` and not only the nearest full backup. The `snapshotId` value will be ignored
+      pointInTimeRecovery:
       restic:
         # -- enable the [full database restore](#full-database-restore). Should be done as described in the documentation with `--set` parameters
         enabled: false
@@ -1597,7 +1602,7 @@ env:
     containerType:
       - monitoring
 
-#command:
+# command:
 #   application:
 #     - "sh"
 #     - "-c"

@@ -32,7 +32,7 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ include "commonPrefix" $ }}my-cnf
+  name: {{ include "commonPrefix" $ }}mariadb-my-cnf
   namespace: {{ $.Release.Namespace }}
 data:
 {{- range $int, $err := until ($.Values.replicas.application|int) }}
@@ -56,20 +56,22 @@ data:
     wsrep-provider=/usr/lib/libgalera_smm.so
     plugin_load_add = wsrep_info #https://mariadb.com/kb/en/wsrep_info-plugin/
     binlog_format=ROW
-    log-bin=/opt/${SOFTWARE_NAME}/{{ $.Values.mariadb.binLogDir | default "data" }}/mysql-bin.log
+    max_binlog_size=104857600
+    log-bin=/opt/${SOFTWARE_NAME}/{{ $.Values.mariadb.binLogDir | default "data" }}/{{ (required "mariadb.galera.clustername is required to configure the log-bin option for MariaDB" $.Values.mariadb.galera.clustername) }}_binlog
     expire_logs_days=1
     sync_binlog={{ $.Values.mariadb.binLogSync | default 0 | int }}
     default_storage_engine=InnoDB
     innodb_autoinc_lock_mode=2
     innodb_flush_log_at_trx_commit={{ $.Values.mariadb.innodbFlushLogAtTrxCommit | default 0 | int }}
-    wsrep_gtid_mode=on
     {{- if $.Values.mariadb.galera.gtidStrictMode }}
     gtid-strict-mode=1
     {{- else }}
     gtid-strict-mode=0
     {{- end }}
+    {{- /* https://mariadb.com/kb/en/using-mariadb-gtids-with-mariadb-galera-cluster/#enabling-wsrep-gtid-mode */}}
+    wsrep_gtid_mode=on
     wsrep_gtid_domain_id={{ (printf "%d%d%d%d%d" ($.Values.mariadb.galera.gtidDomainId | default 1 | int) 0 8 1 5) | int }}
-    gtid_domain_id={{ $int | int }}
+    gtid_domain_id={{ (printf "%d%d%d%d%d" ($.Values.mariadb.galera.gtidDomainId | default 1 | int) $int 8 1 6) | int }}
     expire_logs_days=1
     wsrep-cluster-name={{ (required "mariadb.galera.clustername is required to configure the wsrep-cluster-name option for MariaDB" $.Values.mariadb.galera.clustername) | quote }}
     wsrep_cluster_address={{ include "wsrepClusterAddress" (dict "global" $) }}
@@ -119,8 +121,9 @@ data:
     auto_increment_offset={{ (add (mul (sub ($.Values.mariadb.galera.gtidDomainIdCount| default 1 | int) ($.Values.mariadb.galera.gtidDomainId | default 1 | int)) ($.Values.replicas.application|int)) (add1 ($int | int))) | int }}
 
     # async replication with MariaDB instances outside of the Galera cluster
-    relay_log=/opt/${SOFTWARE_NAME}/{{ $.Values.mariadb.binLogDir | default "data" }}/mysql-relay-bin.log
-    server_id={{ (printf "%d%d" ($.Values.mariadb.galera.gtidDomainId | default 1 | int) $int) | int }}
+    relay_log=/opt/${SOFTWARE_NAME}/{{ $.Values.mariadb.binLogDir | default "data" }}/{{ (required "mariadb.galera.clustername is required to configure the relay_log option for MariaDB" $.Values.mariadb.galera.clustername) }}_relaylog
+    {{- /* https://mariadb.com/kb/en/using-mariadb-replication-with-mariadb-galera-cluster-using-mariadb-replica/#setting-the-same-server_id-on-each-cluster-node */}}
+    server_id={{ $.Values.mariadb.galera.gtidDomainId | default 1 | int }}
     log_slave_updates=on
     {{- if and ($.Values.mariadb.asyncReplication.autostart) ($.Values.mariadb.asyncReplication.enabled) }}
     wsrep_restart_slave=on
