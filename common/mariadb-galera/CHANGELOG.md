@@ -1,5 +1,16 @@
 # Changelog
 
+## v0.16.0 - 2023/07/20
+* Point in time recovery option added
+  * documentation added
+  * optional binary log file purging after full backup
+    * to free up disk space on the `log` persistent volume
+    * keep the binlog backups small and fast
+  * binlog filename and position added to snapshot tags
+  * binlog file size limited to 100MB
+    * to limit the required disk space on the backup job container
+* chart version bumped
+
 ## v0.15.4 - 2023/07/05
 * proxysql Kubernetes secret names fixed
 * chart version bumped
