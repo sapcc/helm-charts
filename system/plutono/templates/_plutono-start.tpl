@@ -70,11 +70,10 @@ function start_application {
   # config references back to the dashboard-sources dir in the git repo directly
   mkdir -p /var/lib/plutono/provisioning
   # do not do the above if the are in author more - then we do not provision anything
-  # TODO: without dashboards initially
-  #if [ "{{.Values.plutono.mode}}" != "author" ]; then
-  #  rm -rf /var/lib/plutono/provisioning/dashboards
-  #  cp -r /git/plutono-content/dashboards-config-{{.Values.plutono.mode}} /var/lib/plutono/provisioning/dashboards
-  #fi
+  if [ "{{.Values.plutono.mode}}" != "author" ]; then
+    rm -rf /var/lib/plutono/provisioning/dashboards
+    cp -r /git/plutono-content/dashboards-config-{{.Values.plutono.mode}} /var/lib/plutono/provisioning/dashboards
+  fi
   rm -rf /var/lib/plutono/provisioning/datasources
   mkdir -p /var/lib/plutono/provisioning/datasources
   cd /git/plutono-content/datasources-config
