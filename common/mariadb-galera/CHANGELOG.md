@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.17.0 - 2023/07/21
+* Restic backup option removed
+  * Kopia is the only backup option now
+* chart version bumped
+
 ## v0.16.0 - 2023/07/20
 * Point in time recovery option added
   * documentation added

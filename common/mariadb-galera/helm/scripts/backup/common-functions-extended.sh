@@ -115,44 +115,6 @@ function querybinlogposition {
   echo ${BINLOGPOSITION}
 }
 
-function unlockresticrepo {
-  loginfo "${FUNCNAME[0]}" "unlock restic repository if required"
-  restic unlock --remove-all --json
-  if [ $? -ne 0 ]; then
-    logerror "${FUNCNAME[0]}" "restic repository unlock failed"
-    exit 1
-  else
-    loginfo "${FUNCNAME[0]}" "restic repository unlock done"
-  fi
-}
-
-function pruneresticbackups {
-  loginfo "${FUNCNAME[0]}" "remove old restic backups if required"
-  restic forget --prune \
-                --keep-last {{ $.Values.mariadb.galera.backup.restic.keep.last | default 2 | int }} \
-                --keep-hourly {{ $.Values.mariadb.galera.backup.restic.keep.hourly | default 24 | int }} \
-                --keep-daily {{ $.Values.mariadb.galera.backup.restic.keep.daily | default 1 | int }} \
-                --keep-weekly {{ $.Values.mariadb.galera.backup.restic.keep.weekly | default 0 | int }} \
-                --keep-monthly {{ $.Values.mariadb.galera.backup.restic.keep.monthly | default 0 | int }} \
-                --keep-yearly {{ $.Values.mariadb.galera.backup.restic.keep.yearly | default 0 | int }} \
-                --compact --quiet
-  if [ $? -ne 0 ]; then
-    logerror "${FUNCNAME[0]}" "restic backup pruning failed"
-    exit 1
-  fi
-  loginfo "${FUNCNAME[0]}" "restic backup pruning done"
-}
-
-function checkresticrepo {
-  loginfo "${FUNCNAME[0]}" "check restic repository structure"
-  restic check --json --quiet
-  if [ $? -ne 0 ]; then
-    logerror "${FUNCNAME[0]}" "restic check failed"
-    exit 1
-  fi
-  loginfo "${FUNCNAME[0]}" "restic check done"
-}
-
 function expirekopiabackups {
   local KOPIA_SNAPSHOT_PATH
   loginfo "${FUNCNAME[0]}" "remove old kopia snapshots if required"
@@ -172,16 +134,6 @@ function expirekopiabackups {
     exit 1
   fi
   loginfo "${FUNCNAME[0]}" "kopia snapshot removal done"
-}
-
-function listresticbackups {
-  loginfo "${FUNCNAME[0]}" "list available restic backups"
-  restic snapshots --json
-  if [ $? -ne 0 ]; then
-    logerror "${FUNCNAME[0]}" "restic backup listing failed"
-    exit 1
-  fi
-  loginfo "${FUNCNAME[0]}" "restic backup listing done"
 }
 
 function listkopiabackups {
