@@ -2,8 +2,6 @@
 {{- else if and ($.Values.command) (hasKey $.Values.command "application") }}
 {{- else if and (hasKey $.Values.mariadb.galera.restore "kopia") ($.Values.mariadb.galera.restore.kopia.enabled) }}
 {{- else if and (hasKey $.Values.mariadb "wipeDataAndLog") ($.Values.mariadb.wipeDataAndLog) }}
-{{- else if and (and (hasKey $.Values.mariadb.galera "backup") ($.Values.mariadb.galera.backup.enabled)) (and (hasKey $.Values.mariadb.galera.backup "kopia") ($.Values.mariadb.galera.backup.kopia.enabled)) (and (hasKey $.Values.mariadb.galera.backup "restic") ($.Values.mariadb.galera.backup.restic.enabled)) }}
-  {{- fail "Please enable either 'mariadb.galera.backup.kopia.enabled' OR 'mariadb.galera.backup.restic.enabled'" }}
 {{- else if and (and (hasKey $.Values.mariadb.galera "backup") ($.Values.mariadb.galera.backup.enabled)) (and (hasKey $.Values.mariadb.galera.backup "kopia") ($.Values.mariadb.galera.backup.kopia.enabled)) }}
   {{- range $scheduleKey, $scheduleValue := required ".mariadb.galera.backup.kopia.job.schedule map(full + binlog) required to define the cronjobs" $.Values.mariadb.galera.backup.kopia.job.schedule }}
 ---
