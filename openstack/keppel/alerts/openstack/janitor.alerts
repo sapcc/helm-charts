@@ -288,7 +288,7 @@ groups:
         Check the logs of keppel-janitor for details.
 
   - alert: OpenstackKeppelTrivyIndexingErrors
-    expr: 'max by (message) (keppel_trivy_scan_error_counts{message!="",vuln_status!="Unsupported"} > 0)'
+    expr: 'max (keppel_trivy_scan_error_counts{vuln_status!="Unsupported"} > 0)'
     for: 5m
     labels:
       context: trivy-check
@@ -296,11 +296,10 @@ groups:
       severity: info
       support_group: containers
       tier: os
-      meta: "{{ $labels.message }}"
     annotations:
       summary: 'Trivy check failed on some images'
       description: |
-        Keppel observed the error "{{ $labels.message }}" while checking the vulnerability status for {{ $value }} images.
+        Keppel observed an error while checking the vulnerability status for {{ $value }} images. Check the logs for more details.
 
   - alert: OpenstackKeppelTrivyIndexingFailsAtHighRate
     expr: 'max(increase(keppel_trivy_security_status_checks{task_outcome="success"}[5m])) < max(increase(keppel_trivy_security_status_checks{task_outcome="failure"}[5m]))'
