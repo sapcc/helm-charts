@@ -1,5 +1,5 @@
 {{/* Generate Prometheus Alert Rules */}}
-{{- $values := .Values.alerts }}
+{{- $values := .Values.redfish.alerts }}
 {{- if $values.enabled }}
 {{- range $path, $bytes := .Files.Glob "alerts/*.alerts" }}
 ---
@@ -7,8 +7,9 @@ apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
 
 metadata:
-  name: {{ printf "%s" $path | replace "/" "-" }}
+  name: {{ printf "redfish-exporter-%s" $path | replace "/" "-" }}
   labels:
+    app: redfish-exporter
     type: alerting-rules
   {{- if contains "metal-redfish-esxi" $path }}
     # metal-esxi alerts, which combine metrics from infra-collector and vmware, are available from the thanos regional query.
@@ -16,6 +17,26 @@ metadata:
   {{- else }}
     prometheus: {{ required "$values.prometheus missing" $values.prometheus }}
   {{- end }}
+spec:
+{{ printf "%s" $bytes | indent 2 }}
+
+{{- end }}
+{{- end }}
+
+{{- $values := .Values.redfish.exporterAlerts }}
+{{- if $values.enabled }}
+{{- range $path, $bytes := .Files.Glob "exporter.alerts/*.alerts" }}
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+
+metadata:
+  name: {{ printf "redfish-exporter-%s" $path | replace "/" "-" }}
+  labels:
+    app: redfish-exporter
+    type: alerting-rules
+    prometheus: {{ required "$values.prometheus missing" $values.prometheus }}
+
 spec:
 {{ printf "%s" $bytes | indent 2 }}
 
