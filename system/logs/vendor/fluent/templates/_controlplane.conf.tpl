@@ -2,13 +2,20 @@
   @type parser
   key_name log
   reserve_data true
+  keep_time_key true
   <parse>
     @type grok
     <grok>
       pattern \[%{TIMESTAMP_ISO8601:timestamp}\]\[%{WORD:loglevel}
+      keep_time_key true
+      time_key timestamp
+      time_format %iso8601
     </grok>
     <grok>
       pattern %{TIMESTAMP_ISO8601:timestamp} \| %{NOTSPACE:loglevel}
+      keep_time_key true
+      time_key timestamp
+      time_format %iso8601
     </grok>
   </parse>
 </filter>
@@ -21,6 +28,9 @@
     @type grok
     grok_pattern (%{TIMESTAMP_ISO8601:logtime}|)( )?%{TIMESTAMP_ISO8601:timestamp}.%{NOTSPACE}? %{NUMBER:pid} %{WORD:loglevel} %{NOTSPACE:logger} (\[)?(req-)?%{NOTSPACE:requestid} (greq-%{UUID:global_requestid})?
     custom_pattern_path /fluentd/etc/pattern
+    keep_time_key true
+    time_key timestamp
+    time_format %iso8601
   </parse>
 </filter>
 
@@ -78,6 +88,9 @@
     @type grok
     grok_pattern %{TIMESTAMP_ISO8601:timestamp} %{NOTSPACE} %{NOTSPACE:loglevel} %{NOTSPACE:process} \[%{GREEDYDATA}\] ?([0-9.,].*) "%{WORD:request_method} %{NOTSPACE:request_path} HTTP/%{NOTSPACE}" status: %{NUMBER:response}?( ).*len: %{NUMBER:content_length} time: %{NUMBER:request_time}
     custom_pattern_path /fluentd/etc/pattern
+    keep_time_key true
+    time_key timestamp
+    time_format %iso8601
   </parse>
 </filter>
 
@@ -89,6 +102,8 @@
     @type grok
     grok_pattern %{DATE_EU:timestamp}%{SPACE}%{GREEDYDATA}"%{WORD:method}%{SPACE}%{IMAGE_METHOD:path}%{NOTSPACE}%{SPACE}%{NOTSPACE:httpversion}"%{SPACE}%{NUMBER:response}
     custom_pattern_path /fluentd/etc/pattern
+    keep_time_key true
+    time_key timestamp
   </parse>
 </filter>
 
@@ -100,6 +115,9 @@
     @type grok
     grok_pattern (%{TIMESTAMP_ISO8601:logtime}|)( )?%{TIMESTAMP_ISO8601:access_timestamp}.%{NOTSPACE} %{NUMBER:pid} %{NOTSPACE:log_level} %{NOTSPACE:program} (\[?)%{NOTSPACE:request_id} %{NOTSPACE:user_id} %{NOTSPACE:project_id} %{NOTSPACE:domain_id} %{NOTSPACE:id1} %{REQUESTID:id2}(\]?) %{GREEDYDATA:log_request}
     custom_pattern_path /fluentd/etc/pattern
+    keep_time_key true
+    time_key timestamp
+    time_format %iso8601
   </parse>
 </filter>
 
@@ -119,6 +137,8 @@
     @type grok
     grok_pattern %{IP:remote_addr} %{NOTSPACE:ident} %{NOTSPACE:auth} \[%{HAPROXYDATE:timestamp}\] "%{WORD:request_method} %{NOTSPACE:request_path} %{NOTSPACE:httpversion}" %{NUMBER:response} %{NUMBER:content_length} \"(?<referer>[^\"]{,255}).*?" "%{GREEDYDATA:user_agent}\"?( )?(%{NOTSPACE:request_time})
     custom_pattern_path /fluentd/etc/pattern
+    keep_time_key true
+    time_key timestamp
   </parse>
 </filter>
 
@@ -131,6 +151,8 @@
     @type grok
     grok_pattern %{IP:remote_addr} %{NOTSPACE:ident} %{NOTSPACE:auth} \[%{HAPROXYDATE:access_timestamp}\] "%{WORD:request_method} %{NOTSPACE:request_path} %{NOTSPACE:httpversion}" %{NUMBER:response} %{NUMBER:content_length} \"(?<referer>[^\"]{,255}).*?" "%{GREEDYDATA:user_agent}" %{GREEDYDATA} \[%{NOTSPACE:service}\] %{NOTSPACE:target} %{NUMBER} %{NUMBER:response_time} %{NOTSPACE} %{NOTSPACE:requestid}
     custom_pattern_path /fluentd/etc/pattern
+    keep_time_key true
+    time_key timestamp
   </parse>
 </filter>
 
@@ -160,6 +182,8 @@
     @type grok
     <grok>
       pattern \[%{NOTSPACE:request}\] %{WORD} %{WORD:method} \"%{NOTSPACE:url} %{WORD} %{IP:ip} %{WORD} %{TIMESTAMP_ISO8601:timestamp}
+      keep_time_key true
+      time_key timestamp
     </grok>
     <grok>
       pattern \[%{NOTSPACE:request}\] %{WORD} %{NUMBER:response}
@@ -177,6 +201,9 @@
   <parse>
     @type grok
     grok_pattern %{TIMESTAMP_ISO8601:timestamp} \| %{NOTSPACE:loglevel} \| %{NOTSPACE:process}
+    keep_time_key true
+    time_key timestamp
+    time_format %iso8601
   </parse>
 </filter>
 
@@ -197,6 +224,9 @@
   <parse>
     @type grok
     grok_pattern %{TIMESTAMP_ISO8601:timestamp} \+0000 %{WORD:process}
+    keep_time_key true
+    time_key timestamp
+    time_format %iso8601
   </parse>
 </filter>
 
@@ -208,9 +238,15 @@
     @type grok
     <grok>
       pattern time=\"%{TIMESTAMP_ISO8601:timestamp}\" level=%{NOTSPACE:loglevel}
+      keep_time_key true
+      time_key timestamp
+      time_format %iso8601
     </grok>
     <grok>
       pattern %{TIMESTAMP_ISO8601:timestamp}.%{NUMBER} \| %{WORD:loglevel} \| %{WORD:process}
+      keep_time_key true
+      time_key timestamp
+      time_format %iso8601
     </grok>
   </parse>
 </filter>
@@ -222,6 +258,8 @@
   <parse>
     @type grok
     grok_pattern %{DATE_EU:timestamp} %{TIME:timestamp} %{NOTSPACE:loglevel}\:
+    keep_time_key true
+    time_key timestamp
   </parse>
 </filter>
 
@@ -232,6 +270,9 @@
   <parse>
     @type grok
     grok_pattern level=%{NOTSPACE:loglevel} ts=%{TIMESTAMP_ISO8601:timestamp} caller=%{NOTSPACE} module=%{NOTSPACE:snmp_module} target=%{IP:ip} msg=\"%{GREEDYDATA:snmp_error}\" err=\"%{GREEDYDATA:snmp_msg}\"
+    keep_time_key true
+    time_key timestamp
+    time_format %iso8601
   </parse>
 </filter>
 
@@ -242,6 +283,9 @@
   <parse>
     @type grok
     grok_pattern %{TIMESTAMP_ISO8601:timestamp} \+0000 \[%{WORD:loglevel}
+    keep_time_key true
+    time_key timestamp
+    time_format %iso8601
   </parse>
 </filter>
 
@@ -296,6 +340,8 @@
     grok_pattern %{DATE_EU:timestamp} %{TIME:timestamp} %{NUMBER} %{NOTSPACE:loglevel} %{JAVACLASS:component} \[%{NOTSPACE:requestid} %{NOTSPACE:global_request_id} usr %{DATA:usr} prj %{DATA:prj} dom %{DATA:dom} usr-dom %{DATA:usr_domain} prj-dom %{DATA}\] %{DATA:action} %{METHOD:method} %{URIPATH:pri_path}, %{LOWER:action} (?:b\')?%{NOTSPACE:user}(?:\') (?:b\')?%{WORD:domain}(?:\') %{GREEDYDATA:action}
     custom_pattern_path /fluentd/etc/pattern
     grok_failure_key grok_failure
+    keep_time_key true
+    time_key timestamp
   </parse>
 </filter>
 
@@ -308,8 +354,9 @@
   remove_key_name_field true
   <parse>
     @type json
-    time_format %Y-%m-%dT%T.%L%Z
     keep_time_key true
+    time_key timestamp
+    time_format %Y-%m-%dT%T.%L%Z
   </parse>
 </filter>
 
