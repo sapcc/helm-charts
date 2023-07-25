@@ -28,7 +28,7 @@ groups:
       summary: 'cc3test {{ $labels.type }}/{{ $labels.name }}/{{ $labels.when }} is down'
 
   - alert: CC3TestCanaryTestsNotRunning
-    expr: sum without (pod, instance) (increase(cc3test_total{type!~'api|datapath|(.+)purge$|purge|certificate|baremetal_and_regression', when='call'}[60m])) == 0
+    expr: sum without (pod, instance) (increase(cc3test_total{type!~'api|datapath|(.+)purge$|purge|certificate|baremetal_and_regression|compute_and_allhosts|block_storage_and_canary_and_allhosts', when='call'}[60m])) == 0
     for: 120m
     labels:
       severity: info
@@ -39,6 +39,20 @@ groups:
     annotations:
       description: 'cc3test {{ $labels.type }}/{{ $labels.name }}/{{ $labels.when }} is not running for more than 60 minutes'
       summary: 'cc3test {{ $labels.type }}/{{ $labels.name }}/{{ $labels.when }} is down'
+
+  - alert: CC3TestCanaryAllHostsTestsNotRunning
+    expr: sum without (pod, instance) (increase(cc3test_total{type='compute_and_allhosts|block_storage_and_canary_and_allhosts', when='call'}[12h])) == 0
+    for: 1d
+    labels:
+      severity: info
+      service: cc3test
+      context: '{{ $labels.service }}'
+      dashboard: cc3test-overview
+      meta: 'cc3test {{ $labels.type }}/{{ $labels.name }}/{{ $labels.when }} is not running for more than 1 day'
+    annotations:
+      description: 'cc3test {{ $labels.type }}/{{ $labels.name }}/{{ $labels.when }} is not running for more than 1 day'
+      summary: 'cc3test {{ $labels.type }}/{{ $labels.name }}/{{ $labels.when }} is down'
+
 
   - alert: CC3TestCertificateTestsNotRunning
     expr: sum without (pod, instance) (increase(cc3test_total{type='certificate', when='call'}[24h])) == 0
