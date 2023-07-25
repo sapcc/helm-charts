@@ -40,6 +40,8 @@ spec:
       annotations:
         k8s.v1.cni.cncf.io/networks: '[{ "name": "cbr1-bridge", "interface":"{{$.Values.cp_network_interface}}" }]'
         configmap-etc-hash: {{ include (print $.Template.BasePath "/configmap-etc.yaml") $ | sha256sum }}
+        prometheus.io/scrape: "true"
+        prometheus.io/targets: {{ required "$.Values.alerts.prometheus missing" $.Values.alerts.prometheus | quote }}
       labels:
         name: neutron-network-agent-{{ $az }}
 {{ tuple $ "neutron" "agent" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
@@ -99,10 +101,15 @@ spec:
               value: "ignore:Unverified HTTPS request"
           readinessProbe:
             exec:
-              command: ["neutron-dhcp-readiness", "-config-file", "/etc/neutron/neutron.conf"]
-            initialDelaySeconds: 30
-            periodSeconds: 60
+              command:
+              - python
+              - -c
+              - |
+{{ include "neutron.network-agent.liveness.query"  "network" | indent 16 }}
+            initialDelaySeconds: 20
+            periodSeconds: 15
             timeoutSeconds: 10
+            successThreshold: 2
           securityContext:
             privileged: true
           resources:
@@ -152,6 +159,25 @@ spec:
             - name: logvol
               mountPath: /dev/log
               readOnly: false
+            - name: network-namespace
+              mountPath: /var/run/netns
+        - name: agent-checks-exporter
+          image: {{$.Values.global.registry}}/openstack-agent-checks:{{ $.Values.imageVersionAgentChecksExporter | default "latest" }}
+          args: ["neutron-linuxbridge-dhcp-exporter", "--update-interval=10", "--metric-prefix=neutron_agent_checks_"]
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: metrics-export
+              containerPort: 9116
+          livenessProbe:
+            httpGet:
+              path: /metrics
+              port: 9116
+            initialDelaySeconds: 15
+            timeoutSeconds: 5
+            periodSeconds: 60
+          resources:
+{{ toYaml $.Values.pod.resources.agent_checks_exporter | indent 12 }}
+          volumeMounts:
             - name: network-namespace
               mountPath: /var/run/netns
 {{- if $.Values.agent.neutron_l3 | default false }}
@@ -228,10 +254,15 @@ spec:
               value: {{required "A valid .Values.global.cp required!" $.Values.global.cp}}:{{required "A valid .Values.cp_network_interface required!" $.Values.cp_network_interface}}
           readinessProbe:
             exec:
-              command: ["neutron-linuxbridge-readiness", "-config-file", "/etc/neutron/neutron.conf"]
-            initialDelaySeconds: 30
-            periodSeconds: 60
+              command:
+              - python
+              - -c
+              - |
+{{ include "neutron.network-agent.liveness.query"  "bridge" | indent 16 }}
+            initialDelaySeconds: 20
+            periodSeconds: 15
             timeoutSeconds: 10
+            successThreshold: 2
           securityContext:
             capabilities:
               add:
