@@ -18,40 +18,6 @@ function start_application {
   export PLUTONO_LOCAL_USER={{.Values.plutono.local.user}}
   export PLUTONO_LOCAL_PASSWORD={{.Values.plutono.local.password}}
 
-  # install some pluginsa - this is just for reference as external plugins do not work with plutono and we will most probably drop them
-  #wget -nv https://repo.eu-de-1.cloud.sap/grafana-plugins/agenty-flowcharting-panel-0.9.1.zip -O /tmp/agenty-flowcharting-panel-0.9.1.zip
-  #(cd /var/lib/plutono/plugins; unzip /tmp/agenty-flowcharting-panel-0.9.1.zip; rm -f /tmp/agenty-flowcharting-panel-0.9.1.zip)
-  #wget -nv https://repo.eu-de-1.cloud.sap/grafana-plugins/blackmirror1-statusbygroup-panel-1.1.2.zip -O /tmp/blackmirror1-statusbygroup-panel-1.1.2.zip
-  #(cd /var/lib/plutono/plugins; unzip /tmp/blackmirror1-statusbygroup-panel-1.1.2.zip; rm -f /tmp/blackmirror1-statusbygroup-panel-1.1.2.zip)
-  #wget -nv https://repo.eu-de-1.cloud.sap/grafana-plugins/briangann-datatable-panel-1.0.3.zip -O /tmp/briangann-datatable-panel-1.0.3.zip
-  #(cd /var/lib/plutono/plugins; unzip /tmp/briangann-datatable-panel-1.0.3.zip; rm -f /tmp/briangann-datatable-panel-1.0.3.zip)
-  #wget -nv https://repo.eu-de-1.cloud.sap/grafana-plugins/digrich-bubblechart-panel-1.2.1.zip -O /tmp/digrich-bubblechart-panel-1.2.1.zip
-  #(cd /var/lib/plutono/plugins; unzip /tmp/digrich-bubblechart-panel-1.2.1.zip; rm -f /tmp/digrich-bubblechart-panel-1.2.1.zip)
-  #wget -nv https://repo.eu-de-1.cloud.sap/grafana-plugins/flant-statusmap-panel-0.5.1.zip -O /tmp/flant-statusmap-panel-0.5.1.zip
-  #(cd /var/lib/plutono/plugins; unzip /tmp/flant-statusmap-panel-0.5.1.zip; rm -f /tmp/flant-statusmap-panel-0.5.1.zip)
-  #wget -nv https://repo.eu-de-1.cloud.sap/grafana-plugins/grafana-piechart-panel-1.6.4.zip -O /tmp/grafana-piechart-panel-1.6.4.zip
-  #(cd /var/lib/plutono/plugins; unzip /tmp/grafana-piechart-panel-1.6.4.zip; rm -f /tmp/grafana-piechart-panel-1.6.4.zip)
-  #wget -nv https://repo.eu-de-1.cloud.sap/grafana-plugins/grafana-worldmap-panel-1.0.3.zip -O /tmp/grafana-worldmap-panel-1.0.3.zip
-  #(cd /var/lib/plutono/plugins; unzip /tmp/grafana-worldmap-panel-1.0.3.zip; rm -f /tmp/grafana-worldmap-panel-1.0.3.zip)
-  #wget -nv https://repo.eu-de-1.cloud.sap/grafana-plugins/jdbranham-diagram-panel-1.7.3.zip -O /tmp/jdbranham-diagram-panel-1.7.3.zip
-  #(cd /var/lib/plutono/plugins; unzip /tmp/jdbranham-diagram-panel-1.7.3.zip; rm -f /tmp/jdbranham-diagram-panel-1.7.3.zip)
-  #wget -nv https://repo.eu-de-1.cloud.sap/grafana-plugins/marcusolsson-json-datasource-1.3.2.zip -O /tmp/marcusolsson-json-datasource-1.3.2.zip
-  #(cd /var/lib/plutono/plugins; unzip /tmp/marcusolsson-json-datasource-1.3.2.zip; rm -f /tmp/marcusolsson-json-datasource-1.3.2.zip)
-  #wget -nv https://repo.eu-de-1.cloud.sap/grafana-plugins/natel-discrete-panel-0.1.1.zip -O /tmp/natel-discrete-panel-0.1.1.zip
-  #(cd /var/lib/plutono/plugins; unzip /tmp/natel-discrete-panel-0.1.1.zip; rm -f /tmp/natel-discrete-panel-0.1.1.zip)
-  #wget -nv https://repo.eu-de-1.cloud.sap/grafana-plugins/vonage-status-panel-1.0.11.zip -O /tmp/vonage-status-panel-1.0.11.zip
-  #(cd /var/lib/plutono/plugins; unzip /tmp/vonage-status-panel-1.0.11.zip; rm -f /tmp/vonage-status-panel-1.0.11.zip)
-  #wget -nv https://repo.eu-de-1.cloud.sap/grafana-plugins/yesoreyeram-boomtable-panel-1.4.1.zip -O /tmp/yesoreyeram-boomtable-panel-1.4.1.zip
-  #(cd /var/lib/plutono/plugins; unzip /tmp/yesoreyeram-boomtable-panel-1.4.1.zip; rm -f /tmp/yesoreyeram-boomtable-panel-1.4.1.zip)
-  ## install sapcc/grafana-prometheus-alertmanager-datasource
-  #wget -nv https://repo.eu-de-1.cloud.sap/grafana-plugins/grafana_prometheus_alertmanager_datasource-master.zip -O /tmp/grafana_prometheus_alertmanager_datasource-master.zip
-  #(cd /var/lib/plutono/plugins; unzip /tmp/grafana_prometheus_alertmanager_datasource-master.zip; rm -f /tmp/grafana_prometheus_alertmanager_datasource-master.zip)
-  ## install sapcc/Grafana_Status_panel
-  #wget -nv https://repo.eu-de-1.cloud.sap/grafana-plugins/grafana_status_panel-master.zip -O /tmp/grafana_status_panel-master.zip
-  #(cd /var/lib/plutono/plugins; unzip /tmp/grafana_status_panel-master.zip; rm -f /tmp/grafana_status_panel-master.zip)
-  #echo "installed plugins:"
-  #plutono-cli plugins ls
-
   # setup the datasources and dashboards if the setup script exists
   # wait a moment until plutono is up and write to stdout and logfile in parallel
   if [ -f /plutono-bin/plutono-initial-setup ]; then
