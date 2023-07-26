@@ -1,10 +1,31 @@
 groups:
 - name: cc3test-prometheus.alerts
   rules:
+  - alert: CCloudPrometheusKubernetesGlobalDown
+    expr: |
+        cc3test_status{type="datapath",
+            name="TestPrometheus_datapath-prometheus_kubernetes_internal_global"
+        } == 0
+    for: 20m
+    labels:
+      severity: warning
+      support_group: observability
+      tier: os
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.service }}'
+      meta: 'CCloud Prometheus {{ $labels.name }} is down'
+      dashboard: 'cc3test-overview?var-service={{ $labels.service }}'
+      playbook: 'docs/support/playbook/prometheus/alerts/cc3test-alert-datapath'
+      report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
+    annotations:
+      description: 'CCloud Prometheus {{ $labels.name }} is down'
+      summary: 'CCloud Prometheus {{ $labels.name }} is down'
+
   - alert: CCloudPrometheusDown
     expr: |
         cc3test_status{type="datapath",
-            name=~"TestPrometheus_datapath.+"
+            name=~"TestPrometheus_datapath.+",
+            name!="TestPrometheus_datapath-prometheus_kubernetes_internal_global"
         } == 0
     for: 20m
     labels:

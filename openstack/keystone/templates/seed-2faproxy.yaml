@@ -1,0 +1,26 @@
+{{- if and (index .Values "2fa" "enabled") (index .Values "2fa" "seed_user") }}
+apiVersion: "openstack.stable.sap.cc/v1"
+kind: OpenstackSeed
+metadata:
+  name: {{ .Release.Name }}-2faproxy-seed
+
+spec:
+  requires:
+    - {{ .Values.global.keystoneNamespace }}/keystone-seed
+    - monsoon3/domain-default-seed
+    - monsoon3/domain-ccadmin-seed
+
+  domains:
+    - name: {{ index .Values "2fa" "openstack" "OS_DOMAIN_NAME" | required ".Values.2fa.openstack.OS_DOMAIN_NAME is missing" }}
+      users:
+        - name: {{ index .Values "2fa" "openstack" "OS_USERNAME" | required ".Values.2fa.openstack.OS_USERNAME is missing" }}
+          description: Keystone 2faproxy service user
+          password: '{{ index .Values "2fa" "openstack" "OS_PASSWORD" | required ".Values.2fa.openstack.OS_PASSWORD is missing" }}'
+
+    - name: ccadmin
+      projects:
+        - name: cloud_admin
+          role_assignments:
+            - user: {{ index .Values "2fa" "openstack" "OS_USERNAME"}}@{{ index .Values "2fa" "openstack" "OS_DOMAIN_NAME" }}
+              role: cloud_identity_viewer
+{{- end }}

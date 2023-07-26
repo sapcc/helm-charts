@@ -1,3 +1,7 @@
+## 6.5.1
+
+* VerticalPodAutoscaler for prometheus container only
+
 ## 6.5.0
 
 * Prometheus updated to v2.43.0

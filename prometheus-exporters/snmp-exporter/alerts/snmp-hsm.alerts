@@ -3,7 +3,7 @@ groups:
   rules:
   - alert: hsmPartitionStorageAvailibilityLessThan5Percentage
     expr: snmp_hsm_hsmPartitionStorageAvailableBytes{hsmModel!="Luna G7"} < 5000
-    for: 2m
+    for: 5m
     labels:
       severity: info
       service: barbican
@@ -18,7 +18,7 @@ groups:
 
   - alert: hsmAribaClientsMoreThan14
     expr: sum((snmp_hsm_hsmClientName{hsmClientName!~"barb.*"})) by (devicename) > 14
-    for: 2m
+    for: 15m
     labels:
       severity: info
       service: barbican
@@ -47,8 +47,8 @@ groups:
       summary: "HSM Operational Errors in {{ $labels.devicename }}"
 
   - alert: hsmSensorTemperatureIsCritical
-    expr: sum by(devicename, lmTempSensorsDevice) (snmp_hsm_lmTempSensorsValue{lmTempSensorsDevice!~"loc1"}) > 60000
-    for: 2m
+    expr: sum by(devicename, lmTempSensorsDevice) (snmp_hsm_lmTempSensorsValue{lmTempSensorsDevice!~"loc1"}) > 50000
+    for: 5m
     labels:
       severity: info
       service: barbican
@@ -63,7 +63,7 @@ groups:
 
   - alert: hsmClientsMoreThan20
     expr: sum(snmp_hsm_hsmClientName) by (devicename) > 20
-    for: 2m
+    for: 15m
     labels:
       severity: info
       service: barbican
@@ -76,9 +76,9 @@ groups:
       description: "HSM Client License in {{ $labels.devicename }} is {{ $value }}"
       summary: "HSM Client License in {{ $labels.devicename }} is {{ $value }}"
 
-  - alert: hsmBarbicanClientsMoreThan2
-    expr: sum((snmp_hsm_hsmClientName{hsmClientName=~"barb.*"})) by (devicename) > 2
-    for: 2m
+  - alert: hsmBarbicanClientsMoreThan4
+    expr: sum((snmp_hsm_hsmClientName{hsmClientName=~"barb.*"})) by (devicename) > 4
+    for: 15m
     labels:
       severity: info
       service: barbican
@@ -93,7 +93,7 @@ groups:
 
   - alert: hsm01B700IsUnReachable
     expr: irate(snmp_hsm_hsmUpTime{hsmModel="Luna G7",devicename=~"hsm01.*"}[5m]) < 1
-    for: 2m
+    for: 5m
     labels:
       severity: info
       service: barbican
@@ -108,7 +108,7 @@ groups:
 
   - alert: hsm02B700IsUnReachable
     expr: irate(snmp_hsm_hsmUpTime{hsmModel="Luna G7",devicename=~"hsm02.*"}[5m]) < 1
-    for: 2m
+    for: 5m
     labels:
       severity: info
       service: barbican
@@ -123,7 +123,7 @@ groups:
 
   - alert: hsm01A790IsUnReachable
     expr: irate(snmp_hsm_hsmUpTime{hsmModel="Luna K7",devicename=~"hsm01.*"}[5m]) < 1
-    for: 2m
+    for: 5m
     labels:
       severity: info
       service: barbican
@@ -138,7 +138,7 @@ groups:
 
   - alert: hsm02A790IsUnReachable
     expr: irate(snmp_hsm_hsmUpTime{hsmModel="Luna K7",devicename=~"hsm02.*"}[5m]) < 1
-    for: 2m
+    for: 5m
     labels:
       severity: info
       service: barbican

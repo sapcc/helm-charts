@@ -312,6 +312,13 @@ maillog:
   cluster_permissions:
   - "indices:admin/template/get"
   - "cluster_manage_index_templates"
+  - "cluster:monitor/main"
+  - "cluster:monitor/health"
+  - "cluster:monitor/state"
+  - "indices:data/read/scroll*"
+  - "indices:data/read/msearch"
+  - "indices:monitor/settings/get"
+  - "indices:data/write/bulk"
   index_permissions:
   - index_patterns:
     - "maillog-*"
@@ -325,5 +332,6 @@ maillog:
     - "indices:data/write/delete"
     - "indices:data/write/index"
     - "indices:data/write/update"
-    - "indices:data/read/search"
-    - "indices:data/read/search*"
+    - "read"
+    - "indices:monitor/settings/get"
+    - "indices:monitor/stats"
