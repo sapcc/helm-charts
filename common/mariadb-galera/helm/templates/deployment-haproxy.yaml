@@ -1,0 +1,144 @@
+{{- if and ($.Values.proxy.enabled) (eq $.Values.proxy.type "haproxy") }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: {{ $.Release.Namespace }}
+  name: {{ include "commonPrefix" $ }}ha-proxy
+  labels:
+    app: {{ $.Release.Name }}
+    component: "haproxy"
+    release: {{ $.Release.Name }}
+spec:
+  replicas: {{ $.Values.replicas.haproxy | default 3 }}
+  selector:
+    matchLabels:
+      component: "haproxy"
+  template:
+    metadata:
+      labels:
+        app: {{ $.Release.Name }}
+        component: "haproxy"
+        release: {{ $.Release.Name }}
+      annotations:
+        {{- if $.Values.monitoring.haproxy.enabled }}
+        prometheus.io/scrape: "true"
+        prometheus.io/port: {{ (required ".services.haproxy.backend.ports.restapi.targetPort missing" $.Values.services.haproxy.backend.ports.restapi.targetPort) }}
+        prometheus.io/targets: {{ $.Values.monitoring.prometheus.instance | default "prometheus" | quote }}
+        {{- end }}
+        checksum/configmap: {{ include (print $.Template.BasePath "/configmap-haproxy.yaml") $ | sha256sum }}
+    spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 1
+              podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    - key: "app"
+                      operator: In
+                      values:
+                        - {{ $.Release.Name | quote }}
+                    - key: "component"
+                      operator: In
+                      values:
+                        - "proxy"
+                topologyKey: "topology.kubernetes.io/zone"
+            - weight: 2
+              podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    - key: "app"
+                      operator: In
+                      values:
+                        - {{ $.Release.Name | quote }}
+                    - key: "component"
+                      operator: In
+                      values:
+                        - "proxy"
+                topologyKey: "kubernetes.io/hostname"
+      serviceAccount: {{ include "commonPrefix" $ }}{{ $.Release.Name }}
+      securityContext:
+        runAsUser:  {{ $.Values.userId.haproxy | default 3100 | int }}
+        runAsGroup: {{ $.Values.groupId.haproxy | default 3100 | int }}
+        fsGroup:  {{ $.Values.groupId.haproxy | default 3100 | int }}
+      {{- if and (hasKey $.Values.image.haproxy "pullSecret") $.Values.image.haproxy.pullSecret }}
+      imagePullSecrets:
+      - name: {{ include "commonPrefix" $ }}{{ $.Release.Name }}-{{$.Values.image.haproxy.pullSecret}}
+      {{- end }}
+      containers:
+      - name: {{ (include "nodeNamePrefix" (dict "global" $ "component" "proxy")) }}
+        image: "{{ $.Values.image.haproxy.registry }}/{{ $.Values.image.haproxy.project }}/{{ $.Values.image.haproxy.applicationname }}:{{ $.Values.image.haproxy.applicationversion }}-{{ $.Values.image.haproxy.imageversion | int }}"
+        imagePullPolicy: {{ $.Values.image.haproxy.pullPolicy | default "IfNotPresent" | quote }}
+        securityContext:
+          runAsUser:  {{ $.Values.userId.haproxy | default 3100 | int }}
+          runAsGroup: {{ $.Values.groupId.haproxy | default 3100 | int }}
+        resources:
+          requests:
+            cpu: {{ $.Values.resourceLimits.cpu.haproxy | default 0.5 }}
+          limits:
+            memory: {{ $.Values.resourceLimits.memory.haproxy | default "64Mi" | quote }}
+        ports:
+        {{- range $portsKey, $portsValue := $.Values.services.haproxy.backend.ports }}
+          - containerPort: {{ $portsValue.targetPort }}
+            name: {{ $portsKey }}
+            protocol: {{ $portsValue.protocol | default "TCP" }}
+        {{- end }}
+        {{- if $.Values.monitoring.haproxy.enabled }}
+          - name: metrics
+            containerPort: {{ (required ".services.haproxy.backend.ports.restapi.targetPort missing" $.Values.services.haproxy.backend.ports.restapi.targetPort) }}
+        {{- end }}
+        livenessProbe:
+          exec:
+            command:
+              - sh
+              - -c
+              - '/opt/haproxy/bin/liveness.sh'
+        {{- if $.Values.livenessProbe }}
+          {{ if $.Values.livenessProbe.initialDelaySeconds.haproxy }} {{- (printf "initialDelaySeconds: %d" (int64 $.Values.livenessProbe.initialDelaySeconds.haproxy)) }} {{ else }}initialDelaySeconds: 60 {{end}}
+          {{ if $.Values.livenessProbe.periodSeconds.haproxy }} {{- (printf "periodSeconds: %d" (int64 $.Values.livenessProbe.periodSeconds.haproxy)) }} {{ else }}periodSeconds: 30 {{end}}
+          {{ if $.Values.livenessProbe.failureThreshold.haproxy }} {{- (printf "failureThreshold: %d" (int64 $.Values.livenessProbe.failureThreshold.haproxy)) }} {{ else }}failureThreshold: 4 {{end}}
+          {{ if $.Values.livenessProbe.timeoutSeconds.haproxy }} {{- (printf "timeoutSeconds: %d" (int64 $.Values.livenessProbe.timeoutSeconds.haproxy)) }} {{ else }}timeoutSeconds: 20 {{end}}
+        {{- else }}
+          initialDelaySeconds: 60
+          periodSeconds: 30
+          failureThreshold: 4
+          timeoutSeconds: 20
+        {{- end }}
+        readinessProbe:
+          exec:
+            command:
+              - sh
+              - -c
+              - '/opt/haproxy/bin/readiness.sh'
+        {{- if $.Values.readinessProbe }}
+          {{ if $.Values.readinessProbe.initialDelaySeconds.haproxy }} {{- (printf "initialDelaySeconds: %d" (int64 $.Values.readinessProbe.initialDelaySeconds.haproxy)) }} {{ else }}initialDelaySeconds: 90 {{ end }}
+          {{ if $.Values.readinessProbe.periodSeconds.haproxy }} {{- (printf "periodSeconds: %d" (int64 $.Values.readinessProbe.periodSeconds.haproxy)) }} {{ else }}periodSeconds: 20 {{ end }}
+          {{ if $.Values.readinessProbe.successThreshold.haproxy }} {{- (printf "successThreshold: %d" (int64 $.Values.readinessProbe.successThreshold.haproxy)) }} {{ else }}successThreshold: 1 {{ end }}
+          {{ if $.Values.readinessProbe.failureThreshold.haproxy }} {{- (printf "failureThreshold: %d" (int64 $.Values.readinessProbe.failureThreshold.haproxy)) }} {{ else }}failureThreshold: 3 {{ end }}
+          {{ if $.Values.readinessProbe.timeoutSeconds.haproxy }} {{- (printf "timeoutSeconds: %d" (int64 $.Values.readinessProbe.timeoutSeconds.haproxy)) }} {{ else }}timeoutSeconds: 10 {{ end }}
+        {{- else }}
+          initialDelaySeconds: 90
+          periodSeconds: 20
+          successThreshold: 1
+          failureThreshold: 2
+          timeoutSeconds: 10
+        {{- end }}
+        volumeMounts:
+          - name: {{ include "commonPrefix" $ }}haproxy-conf
+            mountPath: //usr/local/etc/haproxy
+            readOnly: true
+          - name: {{ include "commonPrefix" $ }}haproxy-probes-sh
+            mountPath: /opt/haproxy/bin
+            readOnly: true
+      terminationGracePeriodSeconds: {{ $.Values.terminationGracePeriodSeconds | default 86400 | int }}
+      volumes:
+        - name: {{ include "commonPrefix" $ }}haproxy-conf
+          configMap:
+            name: {{ include "commonPrefix" $ }}haproxy-conf
+            defaultMode: 0755
+        - name: {{ include "commonPrefix" $ }}haproxy-probes-sh
+          configMap:
+            name: {{ include "commonPrefix" $ }}haproxy-probes-sh
+            defaultMode: 0755
+{{- end }}
