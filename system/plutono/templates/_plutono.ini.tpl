@@ -65,7 +65,7 @@ plugins = /var/lib/plutono/plugins
 #################################### Database ####################################
 [database]
 type={{.Values.plutono.db.type}}
-host={{.Release.Name}}-postgresg.{{.Release.Namespace}}
+host={{.Release.Name}}-postgresq.{{.Release.Namespace}}
 user={{.Values.postgresql.postgresUser}}
 password={{.Values.postgresql.postgresPassword}}
 
