@@ -28,3 +28,10 @@ allow_reauth = true
 enabled = true
 service = 0
 endpoint = 0
+
+{{- if .Values.audit.enabled }}
+[audit_middleware_notifications]
+enabled = true
+transport_url = amqp://{{ .Values.audit.user }}:{{ required ".Values.audit.password missing" .Values.audit.password }}@{{ .Values.audit.host }}:{{ .Values.audit.port }}/
+queue_name = notifications.info
+{{- end }}

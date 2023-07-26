@@ -741,3 +741,26 @@ spec:
           regex.match("^keppel\\.[a-z0-9-.]+/ccloud-dockerhub-mirror/library/docker:(?:[0-9.]+-)?dind$", container.image)
         }
         {{- end }}
+
+        ########################################################################
+        # allowlist for project-aurora
+
+        {{- if eq .Values.cluster_type "baremetal" "test" }}
+        default isProjectAuroraPod = false
+        isProjectAuroraPod = true {
+          iro.kind == "Deployment"
+          iro.metadata.name == "project-aurora-dhcp"
+          iro.metadata.namespace == "aurora-system"
+          helmReleaseName == "aurora"
+        }
+
+        # aurora modifies iptables rules
+        isContainerAllowedToBePrivileged(container) = true {
+          isProjectAuroraPod
+        }
+
+        # aurora listens on external IPs
+        isPodAllowedToUseHostNetwork = true {
+          isProjectAuroraPod
+        }
+        {{- end }}

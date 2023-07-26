@@ -1,0 +1,13 @@
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: GkResourceRequests
+metadata:
+  name: resourcerequests
+  annotations:
+    {{- include "sources" (tuple "resource-requests" "resource-requests") | indent 4 }}
+    {{- include "docstring" (tuple $ "GkResourceRequests") | indent 4 }}
+  labels:
+    on-prod-ui: 'true'
+spec:
+  enforcementAction: dryrun
+  match: {{ include "match_pods_and_pod_owners" . | indent 4 }}
+

@@ -55,6 +55,9 @@ spec:
           imagePullPolicy: IfNotPresent
           command:
             - dumb-init
+            {{- if .Values.pyreloader_enabled }}
+            - pyreloader
+            {{- end }}
             - manila-share
             - --config-file
             - /etc/manila/manila.conf
