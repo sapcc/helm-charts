@@ -65,7 +65,11 @@ plugins = /var/lib/plutono/plugins
 #################################### Database ####################################
 [database]
 type={{.Values.plutono.db.type}}
+{{ if or (contains "public" .Release.Name) (contains "author" .Release.Name) (contains "global" .Release.Name) -}}
 host={{.Release.Name}}-postgresq.{{.Release.Namespace}}
+{{- else -}}
+host={{.Release.Name}}-postgresql.{{.Release.Namespace}}
+{{ end }}
 user={{.Values.postgresql.postgresUser}}
 password={{.Values.postgresql.postgresPassword}}
 
@@ -85,7 +89,11 @@ provider = postgres
 # redis: config like redis server e.g. `addr=127.0.0.1:6379,pool_size=100,db=plutono`
 # mysql: go-sql-driver/mysql dsn config string, e.g. `user:password@tcp(127.0.0.1:3306)/database_name`
 #;provider_config = sessions
+{{ if or (contains "public" .Release.Name) (contains "author" .Release.Name) (contains "global" .Release.Name) -}}
 provider_config = user={{.Values.postgresql.postgresUser}} password={{.Values.postgresql.postgresPassword}} host={{.Release.Name}}-postgresq.{{.Release.Namespace}} port=5432 dbname=plutono sslmode=disable
+{{- else -}}
+provider_config = user={{.Values.postgresql.postgresUser}} password={{.Values.postgresql.postgresPassword}} host={{.Release.Name}}-postgresql.{{.Release.Namespace}} port=5432 dbname=plutono sslmode=disable
+{{ end }}
 #provider_config = .
 
 # Session cookie name
