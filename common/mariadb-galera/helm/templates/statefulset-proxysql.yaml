@@ -2,7 +2,7 @@
 {{- else if and ($.Values.command) (hasKey $.Values.command "application") }}
 {{- else if or (and (hasKey $.Values.mariadb.galera.restore "restic") ($.Values.mariadb.galera.restore.restic.enabled)) (and (hasKey $.Values.mariadb.galera.restore "kopia") ($.Values.mariadb.galera.restore.kopia.enabled)) }}
 {{- else if and (hasKey $.Values.mariadb "wipeDataAndLog") ($.Values.mariadb.wipeDataAndLog) }}
-{{- else if $.Values.proxy.enabled }}
+{{- else if and ($.Values.proxy.enabled) (eq $.Values.proxy.type "proxysql") }}
   {{- $unevenNodeCount := "" }}
   {{- if eq (mod ($.Values.replicas.proxy|int) 2) 1 }}
     {{- $unevenNodeCount = "true" }}
