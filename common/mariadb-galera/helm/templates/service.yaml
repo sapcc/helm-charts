@@ -16,6 +16,7 @@
     {{- end }}
 
 {{/* ProxySQL services */}}
+{{- if and ($.Values.proxy.enabled) (eq $.Values.proxy.type "proxysql") }}
   {{/* backend */}}
     {{/* per pod service to generate per pod hostnames */}}
     {{- range $replicaNumber, $err := until ($.Values.replicas.proxy|int) }}
@@ -28,6 +29,23 @@
     {{- if $.Values.proxy.enabled }}
       {{ include "networkService" (dict "global" $ "type" "frontend" "service" (required ".services.proxy.frontend missing" $.Values.services.proxy.frontend) "component" "proxy" "replica" "notused") }}
     {{- end }}
+{{- end }}
+
+{{/* Haproxy services */}}
+{{- if and ($.Values.proxy.enabled) (eq $.Values.proxy.type "haproxy") }}
+  {{/* backend */}}
+    {{/* per pod service to generate per pod hostnames */}}
+    {{- range $replicaNumber, $err := until ($.Values.replicas.haproxy|int) }}
+      {{ include "networkService" (dict "global" $ "type" "backend" "service" (required ".services.haproxy.backend missing" $.Values.services.proxy.backend) "component" "haproxy" "replica" ($replicaNumber | toString)) }}
+    {{- end }}
+    {{/* shared service for all pods */}}
+    {{ include "networkService" (dict "global" $ "type" "backend" "service" (required ".services.haproxy.backend missing" $.Values.services.proxy.backend) "component" "haproxy" "replica" "notused") }}
+  {{/* frontend */}}
+  {{/* other frontend services for all pods */}}
+    {{- if $.Values.proxy.enabled }}
+      {{ include "networkService" (dict "global" $ "type" "frontend" "service" (required ".services.haproxy.frontend missing" $.Values.services.proxy.frontend) "component" "haproxy" "replica" "notused") }}
+    {{- end }}
+{{- end }}
 
 {{/* Kopia services */}}
   {{/* frontend */}}
