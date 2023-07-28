@@ -681,9 +681,9 @@ monitoring:
     enabled: false
 proxy:
   # -- use ProxySQL in front of the MariaDB Galera pods to reduce the service downtimes for the clients
-  enabled: false
+  enabled: true
   # -- type of the proxy service which will be depolyed, we support tow options: proxysql | haproxy (only one can be configured) 
-  type: "proxysql"
+  type: "haproxy"
   restapi:
     # -- the [ProxySQL RestAPI](https://proxysql.com/documentation/REST-API/)
     enabled: true
@@ -980,7 +980,7 @@ services:
       sessionAffinity:
         # -- `None` or `ClientIP` if connections from a single client should be [routed to the same endpoint](https://kubernetes.io/docs/reference/networking/virtual-ips/#session-affinity) every time.
         type: None
-  hproxy:
+  haproxy:
     backend:
       # -- `ClusterIP` to configure a Kubernetes internal service or `LoadBalancer` to publish the service outside of the [Kubernetes cluster network](https://kubernetes.io/docs/concepts/services-networking/service/#publishing-services-service-types)
       type: ClusterIP
@@ -988,29 +988,21 @@ services:
       headless: true
       ports:
         proxy:
-          # -- exposed ProxySQL [Admin SQL port](https://proxysql.com/Documentation/global-variables/admin-variables/#admin-mysql_ifaces)
-          port: 6032
-          # -- ProxySQL [Admin SQL port](https://proxysql.com/Documentation/global-variables/admin-variables/#admin-mysql_ifaces) configured in the container
-          targetPort: 6032
-          # -- ProxySQL [Admin SQL port](https://proxysql.com/Documentation/global-variables/admin-variables/#admin-mysql_ifaces) protocol
+          # -- exposed haproxy [Admin SQL port](https://proxysql.com/Documentation/global-variables/admin-variables/#admin-mysql_ifaces)
+          port: 3306 
+          # -- haproxy [Admin SQL port](https://proxysql.com/Documentation/global-variables/admin-variables/#admin-mysql_ifaces) configured in the container
+          targetPort: 3306
+          # -- haproxy [Admin SQL port](https://proxysql.com/Documentation/global-variables/admin-variables/#admin-mysql_ifaces) protocol
           protocol: TCP
-            #restapi:
-            #  # -- exposed ProxySQL [Rest API port](https://proxysql.com/documentation/REST-API/)
-            #  port: 6070
-            #  # -- ProxySQL [Rest API port](https://proxysql.com/documentation/REST-API/) configured in the container
-            #  targetPort: 6070
-            #  # -- ProxySQL [Rest API port](https://proxysql.com/documentation/REST-API/) protocol
-            #  protocol: TCP
-            #adminui:
-            #  # -- exposed ProxySQL [Admin UI port](https://proxysql.com/documentation/http-web-server/)
-            #  port: 6080
-            #  # -- ProxySQL [Admin UI port](https://proxysql.com/documentation/http-web-server/) configured in the container
-            #  targetPort: 6080
-            #  # -- ProxySQL [Admin UI port](https://proxysql.com/documentation/http-web-server/) protocol
-            #  protocol: TCP
+        status:
+          # -- exposed haproxy [status exporter](https://proxysql.com/documentation/http-web-server/)
+          port: 8080
+          # -- haproxy [status exporter](https://proxysql.com/documentation/http-web-server/) configured in the container
+          targetPort: 8080
+          # -- haproxy [status exporter](https://proxysql.com/documentation/http-web-server/) protocol
+          protocol: TCP
       sessionAffinity:
         # -- `None` or `ClientIP` if connections from a single client should be [routed to the same endpoint](https://kubernetes.io/docs/reference/networking/virtual-ips/#session-affinity) every time.
-   
         type: None
     frontend:
       # -- `ClusterIP` to configure a Kubernetes internal service or `LoadBalancer` to publish the service outside of the [Kubernetes cluster network](https://kubernetes.io/docs/concepts/services-networking/service/#publishing-services-service-types)
@@ -1019,11 +1011,11 @@ services:
       headless: false
       ports:
         proxy:
-          # -- exposed ProxySQL [SQL port](https://proxysql.com/Documentation/global-variables/mysql-variables/#mysql-interfaces)
+          # -- exposed haproxy [SQL port](https://proxysql.com/Documentation/global-variables/mysql-variables/#mysql-interfaces)
           port: 3306
-          # -- ProxySQL [SQL port](https://proxysql.com/Documentation/global-variables/mysql-variables/#mysql-interfaces) configured in the container
-          targetPort: 6033
-          # -- ProxySQL [SQL port](https://proxysql.com/Documentation/global-variables/mysql-variables/#mysql-interfaces) protocol
+          # -- haproxy [SQL port](https://proxysql.com/Documentation/global-variables/mysql-variables/#mysql-interfaces) configured in the container
+          targetPort: 3306
+          # -- haproxy [SQL port](https://proxysql.com/Documentation/global-variables/mysql-variables/#mysql-interfaces) protocol
           protocol: TCP
       sessionAffinity:
         # -- `None` or `ClientIP` if connections from a single client should be [routed to the same endpoint](https://kubernetes.io/docs/reference/networking/virtual-ips/#session-affinity) every time.
@@ -1724,32 +1716,32 @@ env:
     containerType:
       - monitoring
 
-#command:
-#   application:
-#     - "sh"
-#     - "-c"
-#     - "/bin/sleep 3600"
-#   monitoring:
-#     - "sh"
-#     - "-c"
-#     - "/bin/sleep 3600"
-#    jobconfig:
-#     - "sh"
-#     - "-c"
-#     - "/bin/sleep 3600"
-#    jobrestore:
-#     - "sh"
-#     - "-c"
-#     - "/bin/sleep 3600"
-#  cronjob:
-#    - "sh"
-#    - "-c"
-#    - "/bin/sleep 3600"
-#   proxy:
-#     - "sh"
-#     - "-c"
-#     - "/bin/sleep 3600"
-#   haproxy:
-#     - "sh"
-#     - "-c"
-#     - "/bin/sleep 3600"
+command:
+  application:
+    - "sh"
+    - "-c"
+    - "/bin/sleep 3600"
+  monitoring:
+    - "sh"
+    - "-c"
+    - "/bin/sleep 3600"
+  jobconfig:
+    - "sh"
+    - "-c"
+    - "/bin/sleep 3600"
+  jobrestore:
+    - "sh"
+    - "-c"
+    - "/bin/sleep 3600"
+  cronjob:
+    - "sh"
+    - "-c"
+    - "/bin/sleep 3600"
+  proxy:
+    - "sh"
+    - "-c"
+    - "/bin/sleep 3600"
+  haproxy:
+    - "sh"
+    - "-c"
+    - "/bin/sleep 3600"
