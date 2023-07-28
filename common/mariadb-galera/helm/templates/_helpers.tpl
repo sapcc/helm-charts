@@ -109,6 +109,12 @@ spec:
     {{- else }}
       {{- printf "%s%s" (include "commonPrefix" .global) "backup-kopiaserver" }}
     {{- end }}
+  {{- else if eq .component "haproxy" }}
+    {{- if and (.global.Values.namePrefix) (hasKey .global.Values.namePrefix .component) }}
+      {{- printf "%s%s" (include "commonPrefix" .global) (.global.Values.namePrefix.haproxy | default "haproxy") }}
+    {{- else }}
+      {{- printf "%s%s" (include "commonPrefix" .global) "haproxy" }}
+    {{- end }}
   {{- else }}
     {{- fail "No supported component provided for the nodeNamePrefix function" }}
   {{- end }}
