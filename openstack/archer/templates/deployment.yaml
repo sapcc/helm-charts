@@ -11,13 +11,15 @@ spec:
   selector:
     matchLabels:
       {{- include "archer.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: api
   template:
     metadata:
       annotations:
         checksum/etc: {{ include (print $.Template.BasePath  "/configmap.yaml") . | sha256sum }}
         {{- toYaml .Values.podAnnotations | nindent 8 }}
       labels:
-        {{- include "archer.selectorLabels" . | nindent 8 }}
+        {{- include "archer.labels" . | nindent 8 }}
+        app.kubernetes.io/component: api
     spec:
       {{- with .Values.imagePullSecrets }}
       imagePullSecrets:

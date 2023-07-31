@@ -12,6 +12,7 @@
 {{- $instance := index . 10}}
 {{- $az_redundancy  := index . 11}}
 {{- $tolerate_arista_fabric  := index . 12}}
+{{- $prevent_hosts := index . 13 }}
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -61,6 +62,12 @@ spec:
 {{- range get $apods $site | sortAlpha }}
                 - {{ . }}
 {{- end }}
+{{- end }}
+{{- if $prevent_hosts }}
+              - key: kubernetes.cloud.sap/host
+                operator: NotIn
+                values:
+{{ $prevent_hosts | toYaml | indent  16 }}
 {{- end }}
         podAntiAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:

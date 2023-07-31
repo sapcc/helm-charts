@@ -3,9 +3,7 @@ kind: ConfigMap
 metadata:
   name: {{ include "archer.fullname" . }}-db-init
   labels:
-    app.kubernetes.io/name: {{ include "archer.name" . }}
-    app.kubernetes.io/instance: {{ .Release.Name }}
-    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    {{- include "archer.labels" $ | nindent 4 }}
 data:
   db-init.sh: |
 {{ include (print .Template.BasePath "/etc/_postgresql-db-init.sh.tpl") . | indent 4 }}

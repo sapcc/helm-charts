@@ -34,5 +34,5 @@ groups:
       context: maintenance-controller
       meta: "Node {{`{{ $labels.node }}`}} is stuck in maintenance for 1 hour."
     annotations:
-      summary: Node in maintenance
+      summary: Node stuck in maintenance
       description: "Node {{`{{ $labels.node }}`}} is stuck on reboot after OS upgrade or hardware maintenance. Check node console."

@@ -24,7 +24,6 @@ spec:
         checksum/ldap.toml: {{ include "plutono/templates/_ldap.toml.tpl" . | sha256sum }}
         checksum/plutono-start: {{ include "plutono/templates/_plutono-start.tpl" . | sha256sum }}
         checksum/plutono-initial-setup: {{ include "plutono/templates/_plutono-initial-setup.tpl" . | sha256sum }}
-        checksum/helpers: {{ include "plutono/templates/_helpers.tpl" . | sha256sum }}
         pod.alpha.kubernetes.io/initialized: "true"
     spec:
       nodeSelector:
@@ -71,7 +70,8 @@ spec:
             - name: PL_PATHS_PROVISIONING
               value: "/var/lib/plutono/provisioning"
           ports:
-            - name: nodejs
+            # Note: even if the port is called metrics, Grafana UI also runs on it
+            - name: metrics
               containerPort: 3000
           volumeMounts:
             - name: plutono-bin
@@ -105,7 +105,8 @@ spec:
             - "--branch={{.Values.plutono.gitsync.branch}}"
             - "--wait=30"
             - "--max-sync-failures=-1"
-            - "--http-bind=localhost:9090"
+            - "--http-bind=:9090"
+            - "--http-metrics"
           env:
             - name: GIT_SSL_NO_VERIFY
               value: "true"
