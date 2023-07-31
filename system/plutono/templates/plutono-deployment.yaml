@@ -70,7 +70,8 @@ spec:
             - name: PL_PATHS_PROVISIONING
               value: "/var/lib/plutono/provisioning"
           ports:
-            - name: nodejs
+            # Note: even if the port is called metrics, Grafana UI also runs on it
+            - name: metrics
               containerPort: 3000
           volumeMounts:
             - name: plutono-bin
@@ -105,6 +106,7 @@ spec:
             - "--wait=30"
             - "--max-sync-failures=-1"
             - "--http-bind=localhost:9090"
+            - "--http-metrics"
           env:
             - name: GIT_SSL_NO_VERIFY
               value: "true"
