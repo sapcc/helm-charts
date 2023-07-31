@@ -28,6 +28,10 @@ spec:
         component: manila-nanny
         alert-tier: os
         alert-service: manila
+{{- if .Values.manila_nanny.snapshot_missing.enabled }}
+      annotations:
+        configmap-filer-hash: {{ include (print .Template.BasePath "/manila-filers.yaml") . | sha256sum }}
+{{- end }}
     spec:
       nodeSelector:
         zone: farm

@@ -31,6 +31,36 @@ debug: "True"
 
 kos_conductor: true
 
+cert_robot:
+  image_tag: "latest"
+  schedule: "@weekly"
+  env:
+    issuer:
+    dns_resolvers:
+    acme_server:
+    csr:
+      country:
+      state:
+      city:
+      organization:
+      organizational_unit:
+    os_cloud: default  # Needs to match the name of the cloud in cloud_common and cloud_secure
+  cloud_common:
+    clouds:
+      default:
+        auth:
+          auth_url: http://keystone:5000/v3
+          username:
+          password:
+          user_domain_name: ccadmin
+          project_name: master
+          project_domain_name: ccadmin
+  cloud_sdk:
+    clouds:
+      default:
+        auth:
+          project_name: cloud_admin
+
 tempest:
   enabled: false
 
@@ -216,7 +246,7 @@ mysql_metrics:
           COALESCE(power_state, 'unknown') AS power_state,
           provision_state,
           COALESCE(retired, 'unknown') AS retired,
-          last_error IS NOT NULL AS last_error,
+          COALESCE(last_error, 'unknown') AS last_error,
           COUNT(*) AS gauge
         FROM nodes
         GROUP BY uuid;
@@ -352,7 +382,7 @@ rabbitmq:
       memory: 756Mi
       cpu: 1000m
   alerts:
-    support_group: compute-storage-api
+    support_group: foundation
   metrics:
     enabled: true
     sidecar:
@@ -387,7 +417,7 @@ logging:
 
 memcached:
   alerts:
-    support_group: compute-storage-api
+    support_group: foundation
 
 watcher:
   enabled: false
@@ -400,4 +430,4 @@ alerts:
   enabled: true
   # Name of the Prometheus to which the alerts should be assigned to.
   prometheus: openstack
-  support_group: compute-storage-api
+  support_group: foundation

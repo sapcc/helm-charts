@@ -57,11 +57,6 @@ keppel:
     password: ""
     hostname: ""
 
-  # credentials for Clair (vulnerability scanning service)
-  clair:
-    hostname: "" # set to non-empty value to enable
-    auth_preshared_key: DEFINED_IN_VALUES_FILE
-
 # This refers to the region holding the shared Swift container where the
 # "swift" federation driver tracks account name claims.
 federation:
@@ -112,6 +107,8 @@ postgresql:
     enabled: true
     accessMode: ReadWriteOnce
     size: 100Gi
+
+  sharedMemoryLimit: 256Mi
 
   log_min_duration_statement: 250
   # less than the postgresql chart's default; I want to know early when connections start getting out of hand
@@ -267,12 +264,11 @@ pgmetrics:
             usage: "GAUGE"
             description: "UNIX timestamp when oldest still-active upload was started (or 0 when no upload is in progress)"
     keppel_trivy_scan_error:
+      # The UNION SELECT adds a dummy row to satisfy the absent-metrics-operator.
       query: >
-        SELECT message, vuln_status, COUNT(*) AS counts FROM trivy_security_info GROUP BY message, vuln_status
+        SELECT vuln_status, COUNT(*) AS counts FROM trivy_security_info WHERE message != '' GROUP BY vuln_status
+         UNION SELECT 'none' AS vuln_status, 0 AS counts
       metrics:
-        - message:
-            usage: "LABEL"
-            description: "Error message from Trivy"
         - vuln_status:
             usage: "LABEL"
             description: "Vulnerability status computed by Keppel"

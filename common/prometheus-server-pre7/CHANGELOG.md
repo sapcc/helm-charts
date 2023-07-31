@@ -1,3 +1,11 @@
+## 6.5.3
+
+* bump Thanos version to v0.30.1
+
+## 6.5.1
+
+* VerticalPodAutoscaler for prometheus container only
+
 ## 6.5.0
 
 * Prometheus updated to v2.43.0

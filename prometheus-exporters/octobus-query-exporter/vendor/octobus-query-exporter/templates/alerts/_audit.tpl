@@ -18,7 +18,7 @@ spec:
           expr: rate(elasticsearch_octobus_audit_no_source_hits[60m]) > 0
           for: 5m
           labels:
-            severity: info
+            severity: warning
             service: "logs"
             support_group: "observability"
             meta: "Audit events have no source set"
