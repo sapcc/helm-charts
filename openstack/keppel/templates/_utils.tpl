@@ -48,6 +48,8 @@
   value: '300'  # per account
 - name:  KEPPEL_BURST_MANIFEST_PUSHES
   value: '15'   # per account
+- name:  KEPPEL_BURST_TRIVY_REPORT_RETRIEVALS
+  value: '50'   # per account
 - name:  KEPPEL_DB_PASSWORD
   valueFrom:
     secretKeyRef:
@@ -146,6 +148,8 @@
                     # it up to account for clients that just poll the state of certain tags without
                     # actually pulling the image contents)
 - name:  KEPPEL_RATELIMIT_MANIFEST_PUSHES
+  value: '10r/m'   # per account
+- name:  KEPPEL_RATELIMIT_TRIVY_REPORT_RETRIEVALS
   value: '10r/m'   # per account
 - name: KEPPEL_REDIS_ENABLE
   value: '1'
