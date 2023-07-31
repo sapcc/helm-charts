@@ -4,12 +4,14 @@ kind: Deployment
 metadata:
   name: archer-agent-f5-{{ $host }}
   labels:
-    app.kubernetes.io/name: archer-agent-f5-{{ $host }}
+    {{- include "archer.labels" $ | nindent 4 }}
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app.kubernetes.io/name: archer-agent-f5-{{ $host }}
+      {{- include "archer.selectorLabels" $ | nindent 6 }}
+      app.kubernetes.io/component: agent
+      cloud.sap/host: {{ $host }}
   template:
     metadata:
       {{- with $.Values.podAnnotations }}
@@ -19,7 +21,9 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       labels:
-        app.kubernetes.io/name: archer-agent-f5-{{ $host }}
+        {{- include "archer.labels" $ | nindent 8 }}
+        app.kubernetes.io/component: agent
+        cloud.sap/host: {{ $host }}
     spec:
       containers:
         - name: {{ $.Chart.Name }}-agent-f5
