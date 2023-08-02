@@ -1,24 +1,33 @@
+{{- if .Values.jupyterhub_cron.enabled }}
 apiVersion: batch/v1
 kind: CronJob
 metadata:
   name: cronjob-availability
   namespace: jupyterhub
 spec:
-  schedule: "0 1 4 * * "
+  schedule: "10 * * * *"
   jobTemplate:
     spec:
       backoffLimit: 2
       activeDeadlineSeconds: 1800
       template:
         spec:
-          volumes:
-            - name: jupyterhub-secrets
-              secret:
-                secretName: jupyterhub-secrets
           containers:
           - name: jupyterhub-api-availability
-            image: "{{ required ".Values.global.registry variable missing" .Values.global.registry }}/{{ .Values.jupyterhub_cron.image }}:{{ .Values.jupyterhub_cron.imageTag }}"
-              - name: jupyterhub-secrets
-                mountPath: /jupyterhub/secrets
-                readOnly: true
-          restartPolicy: Never
+            image: "{{ required ".Values.global.registry variable missing" .Values.global.registry }}/{{ .Values.jupyterhub_cron.image.name }}:{{ .Values.jupyterhub_cron.image.tag }}"
+            env:
+              - name: client_cert_prometheus
+                valueFrom:
+                  secretKeyRef:
+                    name: jupyterhub-secrets
+                    key: client_cert_prometheus
+              - name: client_key_prometheus
+                valueFrom:
+                  secretKeyRef:
+                    name: jupyterhub-secrets
+                    key: client_key_prometheus
+              - name: swift_password
+                valueFrom:
+                  secretKeyRef:
+                    name: jupyterhub-secrets
+                    key: swift_password
