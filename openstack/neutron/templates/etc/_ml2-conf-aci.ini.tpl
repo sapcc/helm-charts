@@ -113,7 +113,8 @@ segment_id = {{ $fixed_binding.segment_id }}
 {{ range $i, $address_scope := concat .Values.global_address_scopes .Values.local_address_scopes -}}
 {{ $address_scope.description }}
 [address-scope:{{ $address_scope.name }}]
-l3_outs = {{ default (print "common/"  $address_scope.vrf) $address_scope.l3_outs}}
+l3_outs = {{ default (print "common/"  $address_scope.vrf) $address_scope.l3_outs }}
+nullroute_l3_out = {{ default (print "common/"  ($address_scope.vrf | replace "cc-cloud" "cc-neutron" )) $address_scope.l3_outs }}
 consumed_contracts = {{ default $address_scope.vrf (join "," $address_scope.consumed_contracts) }}
 provided_contracts = {{ default $address_scope.vrf (join "," $address_scope.provided_contracts) }}
 scope = {{ default "public" $address_scope.scope }}
