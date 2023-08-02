@@ -38,6 +38,9 @@ az_checks_enabled = {{ .Values.aci.az_checks_enabled }}
 {{- if .Values.aci.handle_all_l3_gateways }}
 handle_all_l3_gateways = {{ .Values.aci.handle_all_l3_gateways }}
 {{- end }}
+{{- if .Values.aci.advertise_hostroutes }}
+advertise_hostroutes = {{ .Values.aci.advertise_hostroutes }}
+{{- end }}
 
 {{- if .Values.aci.pc_policy_groups }}
 {{ range $i, $pc_policy_group := .Values.aci.pc_policy_groups }}
