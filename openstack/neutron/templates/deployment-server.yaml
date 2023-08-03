@@ -204,10 +204,6 @@ spec:
               subPath: watcher.yaml
               readOnly: true
             {{- end }}
-            {{- if .Values.pod.debug.server }}
-            - mountPath: /development
-              name: development
-            {{- end }}
             {{- if .Values.api.uwsgi }}
             - mountPath: /etc/neutron/uwsgi.ini
               name: neutron-etc-api
@@ -223,10 +219,6 @@ spec:
               name: neutron-etc-region
             - mountPath: /container.init
               name: container-init
-            {{- if .Values.pod.debug.server }}
-            - mountPath: /development
-              name: development
-            {{- end }}
 {{- end }}
             {{- include "utils.proxysql.volume_mount" . | indent 12 }}
             {{- include "utils.coordination.volume_mount"  . | indent 12 }}
@@ -270,11 +262,6 @@ spec:
         - name: neutron-etc-region
           configMap:
             name: neutron-etc-region
-{{- if .Values.pod.debug.server }}
-        - name: development
-          persistentVolumeClaim:
-            claimName: development-pvclaim
-{{- end }}
 {{- if .Values.api.uwsgi }}
         - name: neutron-etc-api
           configMap:
