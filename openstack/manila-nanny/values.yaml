@@ -11,7 +11,7 @@ debug: false
 
 image:
   name: manila-nanny
-  version: latest
+  version: "20230710122341"
 
 dependencyService: manila-mariadb,manila-api
 
@@ -52,18 +52,20 @@ nannies:
   share_sync:
     enabled: true
     dry_run: false
-    task_share_size: true
-    task_share_size_dry_run: false
-    task_missing_volume: true
-    task_missing_volume_dry_run: false
-    task_offline_volume: true
-    task_offline_volume_dry_run: false
-    task_orphan_volume: true
-    task_orphan_volume_dry_run: false
-    task_share_state: true
-    task_share_state_dry_run: true # do not reset share state automatically
     http_port: 8002
     prometheus_port: 9502
+    task_missing_volume: true
+    task_missing_volume_dry_run: true
+    task_offline_volume: true
+    task_offline_volume_dry_run: true
+    task_orphan_volume: true
+    task_orphan_volume_dry_run: true
+    # Fix share size when it does not match volume size
+    task_share_size: true
+    task_share_size_dry_run: false
+    # Fix shares stucked in "deleting", "error_deleteing" or "error_creating" for more than 15 mins
+    task_share_state: true
+    task_share_state_dry_run: false
 
   share_server:
     enabled: true
@@ -83,6 +85,6 @@ nannies:
     prometheus_port: 9503
 
   db_cleanup:
-    enabled: true
+    enabled: false
     dry_run: false
 

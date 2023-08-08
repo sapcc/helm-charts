@@ -36,7 +36,7 @@ spec:
         - name: manila-etc
           configMap:
             name: manila-etc
-        - name: netapp-filers
+        - name: manila-netapp-filers
           configMap:
             name: manila-netapp-filers
         - name: secret-volume
@@ -45,7 +45,7 @@ spec:
       containers:
 {{- if .Values.nannies.db_purge.enabled }}
         - name: db-consistency-and-purge
-          image: {{.Values.global.registry}}/{{.Values.image.name}}:{{.Values.image.version}}
+          image: "{{.Values.global.registry}}/{{.Values.image.name}}:{{.Values.image.version}}"
           imagePullPolicy: IfNotPresent
           command:
             - dumb-init
@@ -62,14 +62,14 @@ spec:
             - name: MANILA_CONSISTENCY_DRY_RUN
               value: {{ .Values.nannies.consistency.dry_run | quote }}
             - name: MANILA_NANNY_INTERVAL
-              value: {{ default .Values.nannies.db_purge.interval .Values.interval | quote }}
+              value: {{ .Values.nannies.db_purge.interval | default .Values.interval | quote }}
+            - {{ include "envNamespace" . |  nindent 14 | trim }}
+            - {{ include "envDependencyService" . | nindent 14 | trim }}
             {{- include "envSentry" . | nindent 12 }}
-            {{- include "envNamespace" . |  nindent 12 }}
-            {{- include "envDependencyService" . | nindent 12 }}
           volumeMounts:
-            {{- include "mountManilaConfig" . | nindent 12 }}
+            - {{ include "mountManilaConfig" . | nindent 14 | trim }}
           resources:
-            {{- default .Values.nannies.db_purge.resources .Values.resources | toYaml | nindent 12 }}
+            {{- .Values.nannies.db_purge.resources | default .Values.resources | toYaml | nindent 12 }}
           ports:
             - name: metrics
               containerPort: 9104
@@ -83,22 +83,22 @@ spec:
             - kubernetes-entrypoint
           env:
             - name: COMMAND
-              value: {{- include "shellCommand" (merge (dict "script" "manila-quota-sync.sh") .) | quote }}
+              value: {{ include "shellCommand" (merge (dict "script" "manila-quota-sync.sh") .) | quote }}
             - name: MANILA_QUOTA_SYNC_ENABLED
               value: {{ .Values.nannies.quota_sync.enabled | quote }}
             - name: MANILA_QUOTA_SYNC_DRY_RUN
               value: {{ .Values.nannies.quota_sync.dry_run | quote }}
             - name: MANILA_NANNY_INTERVAL
-              value: {{ .Values.nannies.interval | quote }}
+              value: {{ .Values.nannies.quota_sync.interval | default .Values.interval | quote }}
             - name: PYTHONUNBUFFERED
               value: "1"
-            {{- include "envSentry" . | nindent 12 -}}
-            {{- include "envNamespace" . | nindent 12 -}}
-            {{- include "envDependencyService" . | nindent 12 -}}
+            - {{ include "envNamespace" . | nindent 14 | trim  }}
+            - {{ include "envDependencyService" . | nindent 14 | trim }}
+            {{- include "envSentry" . | nindent 12 }}
           volumeMounts:
-            {{- include "mountManilaConfig" . | nindent 12 -}}
+            - {{ include "mountManilaConfig" . | nindent 14 | trim }}
           resources:
-            {{- default .Values.nannies.db_purge.resources .Values.resources | toYaml | nindent 12 }}
+            {{- .Values.nannies.quota_sync.resources | default .Values.resources | toYaml | nindent 12 }}
 {{- end }}
 {{- if .Values.nannies.db_cleanup.enabled }}
         - name: db-cleanup
@@ -109,22 +109,20 @@ spec:
             - kubernetes-entrypoint
           env:
             - name: COMMAND
-              value: {{- include "shellCommand" (merge (dict "script" "manila-db-cleanup.sh") .) | quote }}
+              value: {{ include "shellCommand" (merge (dict "script" "manila-db-cleanup.sh") .) | quote }}
             - name: MANILA_DB_CLEANUP_ENABLED
               value: {{ .Values.nannies.db_cleanup.enabled | quote }}
             - name: MANILA_DB_CLEANUP_DRY_RUN
               value: {{ .Values.nannies.db_cleanup.dry_run | quote }}
             - name: MANILA_NANNY_INTERVAL
-              value: {{ .Values.nannies.interval | quote }}
+              value: {{ .Values.nannies.db_cleanup.interval | default .Values.interval | quote }}
             - name: PYTHONUNBUFFERED
               value: "1"
-            {{- include "envSentry" . | nindent 12 -}}
-            {{- include "envNamespace" . | nindent 12 -}}
-            {{- include "envDependencyService" . | nindent 12 -}}
+            {{- include "envSentry" . | nindent 12 }}
           volumeMounts:
-            {{- include "mountManilaConfig" . | nindent 12 -}}
+            - {{ include "mountManilaConfig" . | nindent 14 | trim }}
           resources:
-            {{- default .Values.nannies.db_purge.resources .Values.resources | toYaml | nindent 12 }}
+            {{- .Values.nannies.db_cleanup.resources | default .Values.resources | toYaml | nindent 12 }}
 {{- end }}
 {{- if .Values.nannies.share_sync.enabled }}
         - name: share-sync
@@ -135,7 +133,7 @@ spec:
             - kubernetes-entrypoint
           env:
             - name: COMMAND
-              value: {{- include "shellCommand" (merge (dict "script" "manila-share-sync.sh") .) | quote }}
+              value: {{ include "shellCommand" (merge (dict "script" "manila-share-sync.sh") .) | quote }}
             - name: MANILA_SHARE_SIZE_SYNC_ENABLED
               value: "true"
             - name: MANILA_SHARE_SIZE_SYNC_DRY_RUN
@@ -143,7 +141,7 @@ spec:
             - name: PROMETHEUS_HOST
               value: http://prometheus-storage.infra-monitoring.svc:9090
             - name: MANILA_NANNY_INTERVAL
-              value: {{ .Values.nannies.share_sync.interval | quote }}
+              value: {{ .Values.nannies.share_sync.interval | default .Values.interval | quote }}
             - name: TASK_SHARE_SIZE
               value: {{ .Values.nannies.share_sync.task_share_size | quote }}
             - name: TASK_SHARE_SIZE_DRY_RUN
@@ -170,13 +168,13 @@ spec:
               value: {{ .Values.nannies.share_sync.task_share_state_dry_run | quote }}
             - name: PYTHONUNBUFFERED
               value: "1"
-            {{- include "envSentry" . | nindent 12 -}}
-            {{- include "envNamespace" . | nindent 12 -}}
-            {{- include "envDependencyService" . | nindent 12 -}}
+            - {{ include "envNamespace" . | nindent 14 | trim }}
+            - {{ include "envDependencyService" . | nindent 14 | trim }}
+            {{- include "envSentry" . | nindent 12 }}
           volumeMounts:
-            {{- include "mountManilaConfig" . | nindent 12 -}}
+            - {{ include "mountManilaConfig" . | nindent 14 | trim }}
           resources:
-            {{- default .Values.nannies.db_purge.resources .Values.resources | toYaml | nindent 12 }}
+            {{- .Values.nannies.share_sync.resources | default .Values.resources | toYaml | nindent 12 }}
 {{- end }}
 {{- if .Values.nannies.share_server.enabled }}
         - name: share-server
@@ -187,22 +185,22 @@ spec:
             - kubernetes-entrypoint
           env:
             - name: COMMAND
-              value: {{- include "shellCommand" (merge (dict "script" "manila-share-server.sh") .) | quote }}
+              value: {{ include "shellCommand" (merge (dict "script" "manila-share-server.sh") .) | quote }}
             - name: MANILA_NANNY_INTERVAL
-              value: {{ .Values.nannies.interval | quote }}
+              value: {{ .Values.nannies.share_server.interval | default .Values.interval | quote }}
             - name: MANILA_NANNY_LISTEN_PORT
               value: {{ .Values.nannies.share_server.listen_port | quote }}
             - name: MANILA_NANNY_PROMETHEUS_PORT
               value: {{ .Values.nannies.share_server.prometheus_port | quote }}
             - name: PYTHONUNBUFFERED
               value: "1"
-            {{- include "envSentry" . | nindent 12 -}}
-            {{- include "envNamespace" . | nindent 12 -}}
-            {{- include "envDependencyService" . | nindent 12 -}}
+            - {{ include "envNamespace" . | nindent 14 | trim }}
+            - {{ include "envDependencyService" . | nindent 14 | trim }}
+            {{- include "envSentry" . | nindent 12 }}
           volumeMounts:
-            {{- include "mountManilaConfig" . | nindent 12 -}}
+            - {{ include "mountManilaConfig" . | nindent 14 | trim }}
           resources:
-            {{- default .Values.nannies.db_purge.resources .Values.resources | toYaml | nindent 12 }}
+            {{- .Values.nannies.share_server.resources | default .Values.resources | toYaml | nindent 12 }}
 {{- end }}
 {{- if .Values.nannies.snapshot.enabled }}
         - name: snapshot
@@ -213,9 +211,9 @@ spec:
             - kubernetes-entrypoint
           env:
             - name: COMMAND
-              value: {{- include "shellCommand" (merge (dict "script" "manila-share-snapshot.sh") .) | quote }}
+              value: {{ include "shellCommand" (merge (dict "script" "manila-share-snapshot.sh") .) | quote }}
             - name: MANILA_NANNY_INTERVAL
-              value: {{ .Values.nannies.interval | quote }}
+              value: {{ .Values.nannies.snapshot.interval | default .Values.interval | quote }}
             - name: MANILA_NANNY_LISTEN_PORT
               value: {{ .Values.nannies.snapshot.listen_port | quote }}
             - name: MANILA_NANNY_PROMETHEUS_PORT
@@ -226,13 +224,13 @@ spec:
               value: {{ .Values.nannies.snapshot.task_share_snapshot_state_dry_run | quote }}
             - name: PYTHONUNBUFFERED
               value: "1"
-            {{- include "envSentry" . | nindent 12 -}}
-            {{- include "envNamespace" . | nindent 12 -}}
-            {{- include "envDependencyService" . | nindent 12 -}}
+            - {{ include "envNamespace" . | indent 14 | trim }}
+            - {{ include "envDependencyService" . | indent 14 | trim  }}
+            {{- include "envSentry" . | nindent 12 }}
           volumeMounts:
-            {{- include "mountManilaConfig" . | nindent 12 -}}
+            - {{ include "mountManilaConfig" . | nindent 14 | trim }}
           resources:
-            {{- default .Values.nannies.db_purge.resources .Values.resources | toYaml | nindent 12 }}
+            {{- .Values.nannies.snapshot.resources | default .Values.resources | toYaml | nindent 12 }}
 {{- end }}
 {{- if .Values.nannies.snapshot_missing.enabled }}
         - name: snapshot-missing
@@ -243,13 +241,13 @@ spec:
             - kubernetes-entrypoint
           env:
             - name: COMMAND
-              value: {{- include "shellCommand" (merge (dict "script" "manila-missing-snapshot.sh") .) | quote }}
+              value: {{ include "shellCommand" (merge (dict "script" "manila-missing-snapshot.sh") .) | quote }}
             - name: MANILA_NANNY_CONFIG
               value: /manila-etc/manila.conf
             - name: MANILA_NANNY_NETAPP_FILERS
               value: /manila-etc/netapp-filers.yaml
             - name: MANILA_NANNY_INTERVAL
-              value: {{ .Values.nannies.snapshot_missing.interval | quote }}
+              value: {{ .Values.nannies.snapshot_missing.interval | default .Values.interval | quote }}
             - name: MANILA_NANNY_PROMETHEUS_PORT
               value: {{ .Values.nannies.snapshot_missing.prometheus_port | quote }}
             - name: MANILA_NANNY_NETAPP_API_USERNAME
@@ -264,18 +262,19 @@ spec:
                   key: manila_netapp_api_password
             - name: PYTHONUNBUFFERED
               value: "1"
+            - {{ include "envNamespace" . | nindent 14 | trim }}
+            - {{ include "envDependencyService" . | nindent 14 | trim }}
             {{- include "envSentry" . | nindent 12 }}
-            {{- include "envNamespace" . | nindent 12 }}
-            {{- include "envDependencyService" . | nindent 12 }}
           volumeMounts:
-            {{- include "mountManilaConfig" . | nindent 12 }}
+            - name: manila-etc
+              mountPath: /manila-etc/manila.conf
               subPath: manila.conf
-            - name: netapp-filers
+            - name: manila-netapp-filers
               mountPath: /manila-etc/netapp-filers.yaml
               subPath: netapp-filers.yaml
             - name: secret-volume
               mountPath: /etc/secret-volume
           resources:
-            {{- default .Values.nannies.db_purge.resources .Values.resources | toYaml | nindent 13 }}
+            {{- .Values.nannies.snapshot_missing.resources | default .Values.resources | toYaml | nindent 13 }}
 {{- end }}
 {{- end }}

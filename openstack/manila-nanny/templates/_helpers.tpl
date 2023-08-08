@@ -89,30 +89,26 @@ Sentry environment variables
 {{- end -}}
 {{- end -}}
 
-{{/*
-Namespace environment variable
-*/}}
+{{/* Namespace environment variable */}}
 {{- define "envNamespace" -}}
-- name: NAMESPACE
-  valueFrom:
-    fieldRef:
-      fieldPath: metadata.namespace
+name: NAMESPACE
+valueFrom:
+  fieldRef:
+    fieldPath: metadata.namespace
 {{- end -}}
 
-{{/*
-Dependent service environment variable
-*/}}
+{{/* Dependent service environment variable */}}
 {{- define "envDependencyService" -}}
 {{- if .Values.dependencyService -}}
-- name: DEPENDENCY_SERVICE
-  value: {{ .Values.dependencyService }}
+name: DEPENDENCY_SERVICE
+value: {{ .Values.dependencyService }}
 {{- end -}}
 {{- end -}}
 
 {{/* Volume mounts */}}
 {{- define "mountManilaConfig" -}}
-- mountPath: /manila-etc
-  name: manila-etc
+mountPath: /manila-etc
+name: manila-etc
 {{- end -}}
 
 {{/* Start shell command or sleep */}}
