@@ -116,3 +116,19 @@ name: manila-etc
 {{ if not .Values.debug }}/bin/bash /scripts/{{ .script }}{{ else }}sleep inf{{ end }}
 {{- end -}}
 
+{{/* Configmap Hash (changes when netapp filer list is updated) */}}
+{{- define "configmapHash" -}}
+{{- if .Values.nannies.snapshot_missing.enabled -}}
+configmap-filer-hash: {{ include (print .Template.BasePath "/configmap.yaml") . | sha256sum }}
+{{- end -}}
+{{- end -}}
+
+
+{{- define "promPort" -}}
+{{- if .prometheus_port -}}
+ports:
+  - name: metrics
+    containerPort: {{ .prometheus_port }}
+{{- end -}}
+{{- end -}}
+

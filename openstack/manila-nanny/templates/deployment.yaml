@@ -25,10 +25,10 @@ spec:
         component: manila-nanny
         alert-tier: os
         alert-service: manila
-{{- if .Values.nannies.snapshot_missing.enabled }}
       annotations:
-        configmap-filer-hash: {{ include (print .Template.BasePath "/configmap.yaml") . | sha256sum }}
-{{- end }}
+        prometheus.io/scrape: "true"
+        prometheus.io/targets: {{ quote .Values.alerts.prometheus }}
+        {{ include "configmapHash" . | nindent 8 | trim }}
     spec:
       nodeSelector:
         zone: farm
@@ -70,9 +70,7 @@ spec:
             - {{ include "mountManilaConfig" . | nindent 14 | trim }}
           resources:
             {{- .Values.nannies.db_purge.resources | default .Values.resources | toYaml | nindent 12 }}
-          ports:
-            - name: metrics
-              containerPort: 9104
+          {{ include "promPort" .Values.nannies.db_purge | nindent 10 | trim }}
 {{- end }}
 {{- if .Values.nannies.quota_sync.enabled }}
         - name: quota-sync
@@ -99,6 +97,7 @@ spec:
             - {{ include "mountManilaConfig" . | nindent 14 | trim }}
           resources:
             {{- .Values.nannies.quota_sync.resources | default .Values.resources | toYaml | nindent 12 }}
+          {{ include "promPort" .Values.nannies.quota_sync | nindent 10 | trim }}
 {{- end }}
 {{- if .Values.nannies.db_cleanup.enabled }}
         - name: db-cleanup
@@ -123,6 +122,7 @@ spec:
             - {{ include "mountManilaConfig" . | nindent 14 | trim }}
           resources:
             {{- .Values.nannies.db_cleanup.resources | default .Values.resources | toYaml | nindent 12 }}
+          {{ include "promPort" .Values.nannies.db_cleanup | nindent 10 | trim }}
 {{- end }}
 {{- if .Values.nannies.share_sync.enabled }}
         - name: share-sync
@@ -175,6 +175,7 @@ spec:
             - {{ include "mountManilaConfig" . | nindent 14 | trim }}
           resources:
             {{- .Values.nannies.share_sync.resources | default .Values.resources | toYaml | nindent 12 }}
+          {{ include "promPort" .Values.nannies.share_sync | nindent 10 | trim }}
 {{- end }}
 {{- if .Values.nannies.share_server.enabled }}
         - name: share-server
@@ -201,6 +202,7 @@ spec:
             - {{ include "mountManilaConfig" . | nindent 14 | trim }}
           resources:
             {{- .Values.nannies.share_server.resources | default .Values.resources | toYaml | nindent 12 }}
+          {{ include "promPort" .Values.nannies.share_server | nindent 10 | trim }}
 {{- end }}
 {{- if .Values.nannies.snapshot.enabled }}
         - name: snapshot
@@ -231,6 +233,7 @@ spec:
             - {{ include "mountManilaConfig" . | nindent 14 | trim }}
           resources:
             {{- .Values.nannies.snapshot.resources | default .Values.resources | toYaml | nindent 12 }}
+          {{ include "promPort" .Values.nannies.snapshot | nindent 10 | trim }}
 {{- end }}
 {{- if .Values.nannies.snapshot_missing.enabled }}
         - name: snapshot-missing
@@ -276,5 +279,6 @@ spec:
               mountPath: /etc/secret-volume
           resources:
             {{- .Values.nannies.snapshot_missing.resources | default .Values.resources | toYaml | nindent 13 }}
+          {{ include "promPort" .Values.nannies.snapshot_missing | nindent 10 | trim }}
 {{- end }}
 {{- end }}
