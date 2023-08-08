@@ -1,6 +1,9 @@
 GENERATED_FIXTURES=$(patsubst %.in.yaml,%.out.yaml,$(wildcard tests/gatekeeper-policies/fixtures/*/*.in.yaml))
 
-check: check-gatekeeper-policies
+check: check-doop-analyzer-rules check-gatekeeper-policies
+
+check-doop-analyzer-rules: FORCE render-charts
+	./tests/doop-analyzer-rules/run.sh
 
 check-gatekeeper-policies: FORCE render-charts $(GENERATED_FIXTURES)
 	./tests/gatekeeper-policies/run.sh
