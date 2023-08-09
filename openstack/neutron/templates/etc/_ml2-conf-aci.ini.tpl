@@ -41,6 +41,12 @@ handle_all_l3_gateways = {{ .Values.aci.handle_all_l3_gateways }}
 {{- if .Values.aci.advertise_hostroutes }}
 advertise_hostroutes = {{ .Values.aci.advertise_hostroutes }}
 {{- end }}
+{{- if .Values.aci.enable_nullroute_sync }}
+enable_nullroute_sync = {{ .Values.aci.enable_nullroute_sync }}
+{{- end }}
+{{- if .Values.aci.enable_az_aware_subnet_routes_sync }}
+enable_az_aware_subnet_routes_sync = {{ .Values.aci.enable_az_aware_subnet_routes_sync }}
+{{- end }}
 
 {{- if .Values.aci.pc_policy_groups }}
 {{ range $i, $pc_policy_group := .Values.aci.pc_policy_groups }}
