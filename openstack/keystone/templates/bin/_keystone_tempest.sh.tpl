@@ -15,8 +15,7 @@ start_rally_tests() {
     rally deployment check
 
     # create tempest verifier fetched from our repo
-    # this stays bound to train for now, while we figure out whether we need it at all
-    rally verify create-verifier --type tempest --name keystone-tempest-verifier --source https://github.com/sapcc/tempest --version ccloud-train
+    rally verify create-verifier --type tempest --name keystone-tempest-verifier --source https://github.com/sapcc/tempest --version ccloud
 
     # configure tempest verifier
     rally verify configure-verifier --extend /etc/tempest/tempest.conf --show
