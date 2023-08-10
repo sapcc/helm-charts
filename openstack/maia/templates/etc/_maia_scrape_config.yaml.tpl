@@ -141,6 +141,8 @@
       - '{__name__=~"^ssh_nat_limits_miss", project_id!=""}'
       - '{__name__=~"^ssh_nat_limits_use", project_id!=""}'
       - '{__name__=~"^snmp_asr_ifHC.+", project_id!=""}'
+      - '{__name__=~"^snmp_asr_ifInUcastPkts", project_id!=""}'
+      - '{__name__=~"^snmp_asr_ifOutUcastPkts", project_id!=""}'
 
 - job_name: 'prometheus-storage'
   scrape_interval: 1m
