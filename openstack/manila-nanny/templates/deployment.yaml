@@ -282,4 +282,31 @@ spec:
             {{- .Values.nannies.snapshot_missing.resources | default .Values.resources | toYaml | nindent 13 }}
           {{ include "promPort" .Values.nannies.snapshot_missing | nindent 10 | trim }}
 {{- end }}
+{{- if .Values.nannies.affinity }}
+        - name: affinity
+          image: {{.Values.global.registry}}/{{.Values.image.name}}:{{.Values.image.version}}
+          imagePullPolicy: IfNotPresent
+          command:
+            - dumb-init
+            - kubernetes-entrypoint
+          env:
+            - name: COMMAND
+              value: "pyreloader /scripts/manila-check-affinity.py"
+            - name: MANILA_NANNY_CONFIG
+              value: /manila-etc/manila.conf
+            - name: MANILA_NANNY_INTERVAL
+              value: {{ .Values.nannies.affinity.interval | default .Values.interval | quote }}
+            - name: MANILA_NANNY_PROMETHEUS_PORT
+              value: {{ .Values.nannies.snapshot_missing.prometheus_port | quote }}
+            - name: PYTHONUNBUFFERED
+              value: "1"
+            - {{ include "envNamespace" . | indent 14 | trim }}
+            - {{ include "envDependencyService" . | indent 14 | trim  }}
+            {{- include "envSentry" . | nindent 12 }}
+          volumeMounts:
+            - {{ include "mountManilaConfig" . | nindent 14 | trim }}
+          resources:
+            {{- .Values.nannies.snapshot.resources | default .Values.resources | toYaml | nindent 12 }}
+          {{ include "promPort" .Values.nannies.snapshot | nindent 10 | trim }}
+{{- end }}
 {{- end }}
