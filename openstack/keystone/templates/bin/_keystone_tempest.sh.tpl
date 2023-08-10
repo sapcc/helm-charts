@@ -67,9 +67,7 @@ main() {
     start_rally_tests &
     wait $!
     exit_code=$?
-{{- if eq .Values.release "rocky" }}
     cleanup_tempest_leftovers
-{{- end }}
     return $exit_code
 }
 
