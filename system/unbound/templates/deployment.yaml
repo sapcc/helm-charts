@@ -40,6 +40,8 @@ spec:
       - name: unbound
         image: {{ required ".Values.global.registryAlternateRegion is missing" .Values.global.registryAlternateRegion }}/{{.Values.unbound.image_unbound}}:{{ .Values.unbound.image_unbound_tag}}
         imagePullPolicy: {{ .Values.unbound.image_pullPolicy }}
+        resources:
+{{ toYaml .Values.resources.unbound | indent 10 }}
         securityContext:
          privileged: true
         ports:
@@ -58,17 +60,21 @@ spec:
               - sh
               - /etc/unbound/healthz
           initialDelaySeconds: 5
-          periodSeconds: 5
+          timeoutSeconds: 5
+          periodSeconds: 10
         readinessProbe:
           exec:
             command:
               - sh
               - /etc/unbound/healthz
           initialDelaySeconds: 5
-          periodSeconds: 5
+          timeoutSeconds: 3
+          periodSeconds: 10
       - name: metric
         image: {{ required ".Values.global.registryAlternateRegion is missing" .Values.global.registryAlternateRegion }}/{{.Values.unbound.image_unbound_exporter}}:{{ .Values.unbound.image_unbound_exporter_tag}}
         imagePullPolicy: {{ .Values.unbound.image_pullPolicy }}
+        resources:
+{{ toYaml .Values.resources.metric | indent 10 }}
         env:
         - name: GODEBUG
           value: "x509ignoreCN=0"
