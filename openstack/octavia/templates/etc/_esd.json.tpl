@@ -53,5 +53,8 @@
   },
   "cc_esd_udp_stateless": {
     "lbaas_cudp": "cc_udp_datagram_profile"
+  },
+  "ccloud_special_udp_stateless": {
+    "lbaas_cudp": "cc_udp_datagram_profile"
   }
 }
