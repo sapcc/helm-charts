@@ -106,7 +106,7 @@ groups:
 
     - alert: KubernetesHighPVCUsagePredicted
       # NOTE: The labels for support-group and service are already present in `kubelet_volume_stats_available_percent`, cf. the aggregation rule that defines it.
-      expr: sum((kubelet_volume_stats_available_percent < 30) and (predict_linear(kubelet_volume_stats_available_percent[1d], 7 * 24 * 3600) < 10)) by (namespace, persistentvolumeclaim)
+      expr: sum((kubelet_volume_stats_available_percent < 30) and (predict_linear(kubelet_volume_stats_available_percent[1d], 7 * 24 * 3600) < 10)) by (label_ccloud_support_group, label_ccloud_service, namespace, persistentvolumeclaim)
       for: 1h
       labels:
         tier: k8s
