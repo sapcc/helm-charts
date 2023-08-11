@@ -1,0 +1,24 @@
+{{- range $deployment := .Values.runnerDeployments }}
+---
+apiVersion: actions.summerwind.dev/v1alpha1
+kind: RunnerDeployment
+metadata:
+  name: {{ $deployment.name }}
+  annotations:
+    "helm.sh/hook": post-install,post-upgrade
+spec:
+  replicas: {{ default 5 $deployment.replicas }}
+  template:
+    spec:
+      {{ $deployment.spec | toYaml | nindent 6 }}
+      volumeMounts:
+      - name: sap-global-root-ca
+        mountPath: /etc/ssl/certs/ca-certificates.crt
+        readOnly: true
+        subPath: SAP_Global_Root_CA.crt
+      volumes:
+      - name: sap-global-root-ca
+        configMap:
+          name: sap-global-root-ca
+          defaultMode: 420
+{{- end }}
