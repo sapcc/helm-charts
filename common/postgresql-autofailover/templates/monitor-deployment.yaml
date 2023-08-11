@@ -1,0 +1,105 @@
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: {{ include "postgresql-auto-failover.monitor.fullname" . }}
+  labels:
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    app: {{ include "postgresql-auto-failover.fullname" . }}
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+    component: "{{ .Values.postgresDatabase }}"
+    type: database
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ include "postgresql-auto-failover.fullname" . }}
+      app.kubernetes.io/component: monitor
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      annotations:
+        {{- with .Values.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      labels:
+        app: {{ include "postgresql-auto-failover.fullname" . }}
+        app.kubernetes.io/component: monitor
+        component: "{{ .Values.postgresDatabase }}"
+        type: database
+        {{- if .Values.alerts.enabled }}
+        alert-tier: {{ required ".Values.alerts.tier missing" .Values.alerts.tier }}
+        alert-service: {{ include "alerts.service" . }}
+        {{- end }}
+    spec:
+      containers:
+        - name: postgresql
+          image: "{{ .Values.image }}:{{ .Values.imageTag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.pullPolicy }}
+          command: ["/postgresql-bin/monitor.sh"]
+          ports:
+            - name: postgresql
+              containerPort: 5432
+              protocol: TCP
+          env:
+            - name: PGUSER
+              value: "postgres"
+            - name: PGDATA
+              value: /postgresql/data
+            - name: XDG_CONFIG_HOME
+              value: /postgresql
+          readinessProbe:
+            exec:
+              command:
+                - sh
+                - -c
+                - exec pg_isready -U "postgres" -d "monitor" -h localhost
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            successThreshold: 2
+          livenessProbe:
+            exec:
+              command:
+                - sh
+                - -c
+                - exec pg_isready -U "postgres" -d "monitor" -h localhost
+            initialDelaySeconds: 30
+            periodSeconds: 30
+          resources:
+            {{- toYaml .Values.monitor.resources | nindent 12 }}
+          volumeMounts:
+            - name: data
+              mountPath: /postgresql
+            - name: postgres-etc
+              mountPath: /postgresql-conf
+            - name: postgres-bin
+              mountPath: /postgresql-bin
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      volumes:
+        - name: postgres-etc
+          configMap:
+            name: {{ include "postgresql-auto-failover.fullname" . }}-etc
+            defaultMode: 0444
+        - name: postgres-bin
+          configMap:
+            name: {{ include "postgresql-auto-failover.fullname" . }}-bin
+            defaultMode: 0555
+        - name: data
+      {{- if .Values.persistence.enabled }}
+          persistentVolumeClaim:
+            claimName: {{ .Values.persistence.monitor.existingClaim | default (include "postgresql-auto-failover.monitor.fullname" .) }}
+      {{- else }}
+          emptyDir: {}
+      {{- end }}

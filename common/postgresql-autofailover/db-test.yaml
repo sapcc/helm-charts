@@ -1,0 +1,54 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: archer-db-test
+spec:
+  containers:
+  - name: db-test
+    image: keppel.eu-de-1.cloud.sap/ccloud-dockerhub-mirror/library/python:3.11
+    volumeMounts:
+      - name: my-script-volume
+        mountPath: /script
+    command: ["sh", "-c", "pip install psycopg2 && /script/script.py"]
+  volumes:
+    - name: my-script-volume
+      configMap:
+        name: archer-db-test-cm
+        defaultMode: 0744
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: archer-db-test-cm
+data:
+  script.py: |
+    #!/usr/bin/env python3
+    
+    import psycopg2
+    import time
+    import signal
+
+    class GracefulKiller:
+      kill_now = False
+      def __init__(self):
+        signal.signal(signal.SIGINT, self.exit_gracefully)
+        signal.signal(signal.SIGTERM, self.exit_gracefully)
+
+      def exit_gracefully(self, *args):
+        self.kill_now = True
+
+    if __name__ == '__main__':
+      killer = GracefulKiller()
+      last_update = time.time()
+      while not killer.kill_now:
+        try:
+          with psycopg2.connect("postgres://postgres@archer-postgresql:5432/archer?target_session_attrs=read-write", connect_timeout=1) as conn:  
+            with conn.cursor() as cursor:
+                cursor.execute("UPDATE test SET test = test + 1 RETURNING *;")
+                conn.commit() 
+                print(f"i++ = {cursor.fetchone()[0]}\n", end="", flush=True)
+                last_update = time.time()
+        except Exception as e:
+          print(f"Connection Failed since {time.time() - last_update} seconds\n", end="", flush=True)
+        time.sleep(1)

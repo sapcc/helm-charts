@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "postgresql-auto-failover.fullname" . }}
+  labels:
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    app: {{ include "postgresql-auto-failover.node.fullname" . }}
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+    component: "{{ .Values.postgresDatabase }}"
+    type: database
+spec:
+  type: ClusterIP
+  clusterIP: None
+  selector:
+    app: {{ include "postgresql-auto-failover.fullname" . }}
+    app.kubernetes.io/component: node
+  ports:
+  - name: postgresql
+    port: 5432
+    targetPort: postgresql

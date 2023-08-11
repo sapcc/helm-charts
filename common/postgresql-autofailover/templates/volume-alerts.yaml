@@ -1,0 +1,20 @@
+{{- if and .Values.persistence.enabled .Values.alerts.enabled }}
+{{- range $path, $bytes := .Files.Glob "alerts/*.alerts" }}
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+
+metadata:
+  name: {{ printf "%s-%s" (include "postgresql-auto-failover.fullname" .) $path | replace "/" "-" }}
+  labels:
+    app: {{ template "postgresql-auto-failover.fullname" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+    prometheus: {{ quote .Values.alerts.prometheus_for_disk_usage }}
+
+spec:
+  {{ printf "%s" $bytes | nindent 2 }}
+
+{{- end }}
+{{- end }}

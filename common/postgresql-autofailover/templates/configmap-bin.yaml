@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "postgresql-auto-failover.fullname" . }}-bin
+  labels:
+    app: {{ include "postgresql-auto-failover.fullname" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+    component: database
+data:
+  monitor.sh: |
+    {{- include (print .Template.BasePath "/bin/_monitor.sh.tpl") . | nindent 4 }}
+  node.sh: |
+    {{- include (print .Template.BasePath "/bin/_node.sh.tpl") . | nindent 4 }}
+  {{- if .Values.node.haproxy }}
+  pg_check.sh: |
+    {{- include (print .Template.BasePath "/bin/_pg_check.sh.tpl") . | nindent 4 }}
+  {{- end }}

@@ -1,0 +1,23 @@
+{{-/* This is the legacy postgres database, after migration, set .Values.perstistance.legacy_pvc = false*/}}
+{{- if and .Values.persistence.legacy_pvc (and .Values.persistence.enabled (not .Values.persistence.existingClaim)) -}}
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: {{ template "postgresql-auto-failover.fullname" . }}
+  labels:
+    app: {{ template "postgresql-auto-failover.fullname" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+    component: database
+  annotations:
+  {{- if .Values.persistence.storageClass }}
+    volume.beta.kubernetes.io/storage-class: {{ .Values.persistence.storageClass | quote }}
+  {{- end }}
+spec:
+  accessModes:
+    - {{ .Values.persistence.accessMode | quote }}
+  resources:
+    requests:
+      storage: {{ .Values.persistence.size | quote }}
+{{- end -}}
