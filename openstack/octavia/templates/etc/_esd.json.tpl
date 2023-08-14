@@ -51,7 +51,7 @@
     "lbaas_ctcp": "cc_tcp_profile",
     "lbaas_irule": ["cc_hcm_rmk_restrict_internal"]
   },
-  "cc_esd_udp_stateless": {
+  "ccloud_special_udp_stateless": {
     "lbaas_cudp": "cc_udp_datagram_profile"
   }
 }
