@@ -69,3 +69,16 @@ groups:
     annotations:
       description: 'Alertmanager {{`{{ $labels.alertmanager }}`}} receives invalid alerts and discards them. Check the Alertmanagers log for details.'
       summary: Alertmanager receives invalid alerts.
+
+  - alert: AlertmanagerHealthIndicatorAlert
+    expr: alertmanager_cluster_health_score{alertmanager="{{ include "alertmanager.name" . }}"} != 0
+    for: 15m
+    labels:
+      context: availability
+      service: alerting
+      severity: info
+      meta: 'Alertmanager {{`{{ $labels.alertmanager }}`}} needs to be checked.'
+      support_group: {{ include "alerts.support_group" . }}
+    annotations:
+      description: 'Alertmanager {{`{{ $labels.alertmanager }}`}} health indicates something went wrong.'
+      summary: Alertmanager not fully healthy and needs to be checked
