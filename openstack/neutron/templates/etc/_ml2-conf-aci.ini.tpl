@@ -38,6 +38,15 @@ az_checks_enabled = {{ .Values.aci.az_checks_enabled }}
 {{- if .Values.aci.handle_all_l3_gateways }}
 handle_all_l3_gateways = {{ .Values.aci.handle_all_l3_gateways }}
 {{- end }}
+{{- if .Values.aci.advertise_hostroutes }}
+advertise_hostroutes = {{ .Values.aci.advertise_hostroutes }}
+{{- end }}
+{{- if .Values.aci.enable_nullroute_sync }}
+enable_nullroute_sync = {{ .Values.aci.enable_nullroute_sync }}
+{{- end }}
+{{- if .Values.aci.enable_az_aware_subnet_routes_sync }}
+enable_az_aware_subnet_routes_sync = {{ .Values.aci.enable_az_aware_subnet_routes_sync }}
+{{- end }}
 
 {{- if .Values.aci.pc_policy_groups }}
 {{ range $i, $pc_policy_group := .Values.aci.pc_policy_groups }}
@@ -113,7 +122,8 @@ segment_id = {{ $fixed_binding.segment_id }}
 {{ range $i, $address_scope := concat .Values.global_address_scopes .Values.local_address_scopes -}}
 {{ $address_scope.description }}
 [address-scope:{{ $address_scope.name }}]
-l3_outs = {{ default (print "common/"  $address_scope.vrf) $address_scope.l3_outs}}
+l3_outs = {{ default (print "common/"  $address_scope.vrf) $address_scope.l3_outs }}
+nullroute_l3_out = {{ default (print "common/"  ($address_scope.vrf | replace "cc-cloud" "cc-neutron" )) $address_scope.l3_outs }}
 consumed_contracts = {{ default $address_scope.vrf (join "," $address_scope.consumed_contracts) }}
 provided_contracts = {{ default $address_scope.vrf (join "," $address_scope.provided_contracts) }}
 scope = {{ default "public" $address_scope.scope }}

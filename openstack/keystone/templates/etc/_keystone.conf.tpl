@@ -112,17 +112,13 @@ expiration_buffer = 3600
 key_repository = /fernet-keys
 max_active_keys = {{ .Values.api.fernet.maxActiveKeys | default 3 }}
 
-{{- if ne .Values.release "rocky" }}
 [fernet_receipts]
 key_repository = /fernet-keys
 max_active_keys = {{ .Values.api.fernet.maxActiveKeys | default 3 }}
-{{- end }}
 
-{{- if ne .Values.release "rocky" }}
 [access_rules_config]
 rules_file = /etc/keystone/access_rules.json
 permissive = true
-{{- end }}
 
 [database]
 # Database connection string - MariaDB for regional setup

@@ -17,11 +17,11 @@ groups:
 
   - alert: AlertmanagerNotificationsFailing
     expr: rate(alertmanager_notifications_failed_total{alertmanager="{{ include "alertmanager.name" . }}"}[5m]) > 0
-    for: 1m
+    for: 10m
     labels:
       context: availability
-      service: alertmanager
-      severity: warning
+      service: alerting
+      severity: info
       playbook: 'docs/support/playbook/prometheus/alertmanager_failed_notifications'
       meta: 'Alertmanager {{`{{ $labels.alertmanager }}`}} failing sending notifications.'
       support_group: {{ include "alerts.support_group" . }}
@@ -69,4 +69,3 @@ groups:
     annotations:
       description: 'Alertmanager {{`{{ $labels.alertmanager }}`}} receives invalid alerts and discards them. Check the Alertmanagers log for details.'
       summary: Alertmanager receives invalid alerts.
-
