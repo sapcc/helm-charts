@@ -82,3 +82,16 @@ groups:
     annotations:
       description: 'Alertmanager {{`{{ $labels.alertmanager }}`}} health indicates something went wrong.'
       summary: Alertmanager not fully healthy and needs to be checked
+
+  - alert: AlertmanagerInstancesFailedToConnect
+    expr: rate(alertmanager_cluster_reconnections_failed_total{alertmanager="{{ include "alertmanager.name" . }}"}[5m]) != 0
+    for: 15m
+    labels:
+      context: availability
+      service: alerting
+      severity: info
+      meta: 'Alertmanager instances failed to sync.'
+      support_group: {{ include "alerts.support_group" . }}
+    annotations:
+      description: 'Alertmanager instances failed to sync.'
+      summary: Alertmanager instance failed to sync for a long time and need to checked.
