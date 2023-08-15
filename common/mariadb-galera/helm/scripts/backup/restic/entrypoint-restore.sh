@@ -55,7 +55,7 @@ function recoverresticdbbackup {
   fi
 
   loginfo "${FUNCNAME[0]}" "restic database recovery using snapshot ${snapshotid} to ${DB_HOST} started"
-  restic dump --tag dump ${snapshotid} mariadb.dump | mysql --protocol=tcp --host=${DB_HOST} --user=${MARIADB_ROOT_USERNAME} --password=${MARIADB_ROOT_PASSWORD} --port=${MYSQL_PORT} --wait --connect-timeout=${WAIT_SECONDS} --reconnect --batch
+  restic dump --tag dump ${snapshotid} dump.sql | mysql --protocol=tcp --host=${DB_HOST} --user=${MARIADB_ROOT_USERNAME} --password=${MARIADB_ROOT_PASSWORD} --port=${MYSQL_PORT} --wait --connect-timeout=${WAIT_SECONDS} --reconnect --batch
   if [ $? -ne 0 ]; then
     logerror "${FUNCNAME[0]}" "restic database recovery failed"
     exit 1

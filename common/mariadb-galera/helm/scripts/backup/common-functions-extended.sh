@@ -73,12 +73,46 @@ function queryoldestbinlogname {
   local DB_HOST=${1}
   local BINLOGNAME
 
-  IFS=$'\t' BINLOGNAME=($(mysql --protocol=tcp --host=${DB_HOST}.database.svc.cluster.local --port=${MYSQL_PORT} --user=${MARIADB_ROOT_USERNAME} --password=${MARIADB_ROOT_PASSWORD} --execute="SHOW GLOBAL STATUS LIKE 'Binlog_snapshot_file';" --batch --skip-column-names))
+  IFS=$'\t' BINLOGNAME=($(mysql --protocol=tcp --host=${DB_HOST}.database.svc.cluster.local --port=${MYSQL_PORT} --user=${MARIADB_ROOT_USERNAME} --password=${MARIADB_ROOT_PASSWORD} --execute="SHOW BINARY LOGS;" --batch --skip-column-names | sort --key=1 | head -n 1))
   IFS="${oldIFS}"
   if [ $? -ne 0 ]; then
     exit 1
   fi
-  echo ${BINLOGNAME[1]}
+  echo ${BINLOGNAME[0]}
+}
+
+{{- /* https://mariadb.com/kb/en/purge-binary-logs/ */}}
+function purgebinlogfiles {
+  local DB_HOST=${1}
+  local BINLOGNAME
+  local BINLOGNAMEARRAY
+
+  loginfo "${FUNCNAME[0]}" "purge rolled over binlog files on ${DB_HOST}"
+  IFS=$'\t' BINLOGNAMEARRAY=($(mysql --protocol=tcp --host=${DB_HOST}.database.svc.cluster.local --port=${MYSQL_PORT} --user=${MARIADB_ROOT_USERNAME} --password=${MARIADB_ROOT_PASSWORD} --execute="SHOW BINARY LOGS;" --batch --skip-column-names | sort --key=1 --reverse | awk '{print $1}'))
+  if [ $? -ne 0 ]; then
+    logerror "${FUNCNAME[0]}" "binlog file listing failed"
+    exit 1
+  fi
+  IFS="${oldIFS}"
+
+  BINLOGNAME=$(echo "${BINLOGNAMEARRAY[@]}" | head -n 2 | sort | head -n 1)
+  mysql --protocol=tcp --host=${DB_HOST}.database.svc.cluster.local --port=${MYSQL_PORT} --user=${MARIADB_ROOT_USERNAME} --password=${MARIADB_ROOT_PASSWORD} --execute="PURGE BINARY LOGS TO '${BINLOGNAME}';" --batch --skip-column-names | sort --key=1 --reverse | awk '{print $1}'
+  if [ $? -ne 0 ]; then
+    logerror "${FUNCNAME[0]}" "binlog file purge failed"
+    exit 1
+  fi
+  loginfo "${FUNCNAME[0]}" "purging binlog files on ${DB_HOST} before '${BINLOGNAME}' done"
+}
+
+function querybinlogposition {
+  local DB_HOST=${1}
+  local BINLOGPOSITION
+
+  BINLOGPOSITION=$(mysql --protocol=tcp --host=${DB_HOST}.database.svc.cluster.local --port=${MYSQL_PORT} --user=${MARIADB_ROOT_USERNAME} --password=${MARIADB_ROOT_PASSWORD} --execute="SELECT VARIABLE_VALUE FROM information_schema.GLOBAL_STATUS where variable_name like 'BINLOG_SNAPSHOT_POSITION';" --batch --skip-column-names)
+  if [ $? -ne 0 ]; then
+    exit 1
+  fi
+  echo ${BINLOGPOSITION}
 }
 
 function unlockresticrepo {
@@ -119,12 +153,20 @@ function checkresticrepo {
   loginfo "${FUNCNAME[0]}" "restic check done"
 }
 
-
 function expirekopiabackups {
+  local KOPIA_SNAPSHOT_PATH
   loginfo "${FUNCNAME[0]}" "remove old kopia snapshots if required"
-  kopia snapshot expire /mariadb.${MARIADB_BACKUP_TYPE} \
+
+  if [ "${MARIADB_BACKUP_TYPE}" == "full" ]; then
+    KOPIA_SNAPSHOT_PATH="kopia@backup-kopia:/mariadb.full"
+  elif [ "${MARIADB_BACKUP_TYPE}" == "binlog" ]; then
+    KOPIA_SNAPSHOT_PATH="kopia@backup-kopia:/opt/kopia/var/tmp/binlog"
+  fi
+
+  kopia snapshot expire ${KOPIA_SNAPSHOT_PATH} \
                 --delete \
                 --progress-update-interval={{ $.Values.mariadb.galera.backup.kopia.progressUpdateInterval | default "300ms" | quote }}
+
   if [ $? -ne 0 ]; then
     logerror "${FUNCNAME[0]}" "kopia snapshot removal failed"
     exit 1
@@ -148,6 +190,7 @@ function listkopiabackups {
                 --json \
                 --all \
                 --progress-update-interval={{ $.Values.mariadb.galera.backup.kopia.progressUpdateInterval | default "300ms" | quote }}
+
   if [ $? -ne 0 ]; then
     logerror "${FUNCNAME[0]}" "kopia backup listing failed"
     exit 1
@@ -163,6 +206,7 @@ function initkopiarepo {
             --access-key=${KOPIA_S3_USERNAME} --secret-access-key=${KOPIA_S3_PASSWORD} \
             --override-hostname=backup-kopia \
             --progress-update-interval={{ $.Values.mariadb.galera.backup.kopia.progressUpdateInterval | default "300ms" | quote }}
+
   if [ $? -ne 0 ]; then
     loginfo "${FUNCNAME[0]}" "No kopia repository found"
     kopia repository create ${KOPIA_REPOSITORY_TYPE} \
@@ -173,6 +217,7 @@ function initkopiarepo {
             --ecc=REED-SOLOMON-CRC32 --ecc-overhead-percent=2 \
             --object-splitter=DYNAMIC-8M-BUZHASH \
             --progress-update-interval={{ $.Values.mariadb.galera.backup.kopia.progressUpdateInterval | default "300ms" | quote }}
+
     if [ $? -ne 0 ]; then
       logerror "${FUNCNAME[0]}" "kopia repository initialization failed"
       exit 1
