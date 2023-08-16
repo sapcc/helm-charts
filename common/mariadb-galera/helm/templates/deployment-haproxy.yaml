@@ -23,7 +23,7 @@ spec:
       annotations:
         {{- if $.Values.monitoring.haproxy.enabled }}
         prometheus.io/scrape: "true"
-        prometheus.io/port: {{ (required ".services.haproxy.backend.ports.restapi.targetPort missing" $.Values.services.haproxy.backend.ports.restapi.targetPort) }}
+        prometheus.io/port: {{ (required ".services.haproxy.backend.ports.status.targetPort missing" $.Values.services.haproxy.backend.ports.status.targetPort) }}
         prometheus.io/targets: {{ $.Values.monitoring.prometheus.instance | default "prometheus" | quote }}
         {{- end }}
         checksum/configmap: {{ include (print $.Template.BasePath "/configmap-haproxy.yaml") $ | sha256sum }}
@@ -42,7 +42,7 @@ spec:
                     - key: "component"
                       operator: In
                       values:
-                        - "proxy"
+                        - "haproxy"
                 topologyKey: "topology.kubernetes.io/zone"
             - weight: 2
               podAffinityTerm:
@@ -55,7 +55,7 @@ spec:
                     - key: "component"
                       operator: In
                       values:
-                        - "proxy"
+                        - "haproxy"
                 topologyKey: "kubernetes.io/hostname"
       serviceAccount: {{ include "commonPrefix" $ }}{{ $.Release.Name }}
       securityContext:
@@ -67,7 +67,7 @@ spec:
       - name: {{ include "commonPrefix" $ }}{{ $.Release.Name }}-{{$.Values.image.haproxy.pullSecret}}
       {{- end }}
       containers:
-      - name: {{ (include "nodeNamePrefix" (dict "global" $ "component" "proxy")) }}
+      - name: {{ (include "nodeNamePrefix" (dict "global" $ "component" "haproxy")) }}
         image: "{{ $.Values.image.haproxy.registry }}/{{ $.Values.image.haproxy.project }}/{{ $.Values.image.haproxy.applicationname }}:{{ $.Values.image.haproxy.applicationversion }}-{{ $.Values.image.haproxy.imageversion | int }}"
         imagePullPolicy: {{ $.Values.image.haproxy.pullPolicy | default "IfNotPresent" | quote }}
         securityContext:
@@ -86,7 +86,7 @@ spec:
         {{- end }}
         {{- if $.Values.monitoring.haproxy.enabled }}
           - name: metrics
-            containerPort: {{ (required ".services.haproxy.backend.ports.restapi.targetPort missing" $.Values.services.haproxy.backend.ports.restapi.targetPort) }}
+            containerPort: {{ (required ".services.haproxy.backend.ports.status.targetPort missing" $.Values.services.haproxy.backend.ports.status.targetPort) }}
         {{- end }}
         livenessProbe:
           exec:
