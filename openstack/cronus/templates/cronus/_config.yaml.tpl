@@ -80,6 +80,9 @@ cronus:
 {{- if .Values.cronus.proxyHeaderTimeout }}
     proxyHeaderTimeout: {{ .Values.cronus.proxyHeaderTimeout }}
 {{- end }}
+{{- if .Values.cronus.skipProxyForCIDR }}
+    skipProxyForCIDR: {{ .Values.cronus.skipProxyForCIDR }}
+{{- end }}
     shutdownTimeout: {{ .Values.cronus.terminationGracePeriod | default 60 }}s
     readTimeout: {{ .Values.cronus.readTimeout | default 30 }}s
     writeTimeout: {{ .Values.cronus.writeTimeout | default 30 }}s
