@@ -10,7 +10,6 @@ metadata:
   annotations:
     disco: "true"
     kubernetes.io/tls-acme: "true"
-    kubernetes.io/ingress.class: "nginx"
     {{- if $.Values.ingress.authentication.oauth.enabled }}
     ingress.kubernetes.io/auth-url: {{ required "$.Values.ingress.authentication.oauth.authURL missing" $.Values.ingress.authentication.oauth.authURL }}
     {{ if $.Values.ingress.authentication.oauth.authSignInURL }}ingress.kubernetes.io/auth-signin: {{ $.Values.ingress.authentication.oauth.authSignInURL }} {{ end }}
@@ -24,7 +23,6 @@ metadata:
 {{ toYaml $.Values.ingress.annotations | indent 4 }}
     {{ end }}
 spec:
-  ingressClassName: nginx
   rules:
     {{- range $host := coalesce $.Values.ingress.hosts (list $name) }}
     - host: {{ include "fqdnHelper" (list $host $root) }}
