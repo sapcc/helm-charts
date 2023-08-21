@@ -9,8 +9,8 @@ metadata:
     on-prod-ui: 'true' # TODO: remove after migration from doop-agent to doop-analyzer
     severity: 'error'
 spec:
-  # NOTE: isDeny = qa || (scaleout && !phase3)
-  enforcementAction: {{ if or (eq .Values.cluster_layer "qa") (and (eq .Values.cluster_type "scaleout") (ne .Values.cluster_phase "phase3")) }}deny{{ else }}dryrun{{ end }}
+  # NOTE: isDeny = qa || scaleout
+  enforcementAction: {{ if or (eq .Values.cluster_layer "qa") (eq .Values.cluster_type "scaleout") }}deny{{ else }}dryrun{{ end }}
   match: {{ include "match_active_helm_releases" . | indent 4 }}
   parameters:
     helmManifestParserURL: {{ quote .Values.helm_manifest_parser_url }}
