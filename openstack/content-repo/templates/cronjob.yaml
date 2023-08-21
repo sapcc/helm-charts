@@ -22,20 +22,13 @@ spec:
         metadata:
           labels:
             component: content-repo-{{ $repo }}
-            alert-tier: os
-            alert-service: swift
           annotations:
-            checksum/check.bin: {{ include "content-repo/templates/bin-configmap.yaml" $ | sha256sum }}
             checksum/check.etc: {{ include "content-repo/templates/configmap.yaml" $ | sha256sum }}
             checksum/check.secrets: {{ include "content-repo/templates/secret.yaml" $ | sha256sum }}
             checksum/check.secrets-certs: {{ include "content-repo/templates/secret-certs.yaml" $ | sha256sum }}
         spec:
           restartPolicy: OnFailure
           volumes:
-          - name: bin
-            configMap:
-              name: bin-content-repo
-              defaultMode: 0755
           - name: config
             configMap:
               name: swift-http-import
@@ -58,16 +51,12 @@ spec:
             securityContext:
               runAsNonRoot: true
             volumeMounts:
-              - mountPath: /bin-content-repo
-                name: bin
               - mountPath: /etc/http-import/config
                 name: config
               - mountPath: /etc/http-import/secret
                 name: secret
             resources:
-              # observed usage in qa-de-1:
-              # - during active sync: CPU = 300-400m, RAM = 200-1100 MiB
-              # - while sitting idle: CPU = 0, RAM = 50-100 MiB
+              # observed usage in qa-de-1: CPU = 300-400m, RAM = 200-1100 MiB
               # Note that we can live with the job running throttled since it's a background job anyway.
               limits:
                 cpu: '300m'
