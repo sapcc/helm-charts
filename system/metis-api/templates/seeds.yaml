@@ -35,18 +35,14 @@ spec:
           role_assignments:
           - project: service
             role: service # for validating Keystone user tokens
-        - name: sism-viewer
-          description: Technical User for SISM to retrieve CCLoud Inventory Data
-          password: '{{ .Values.metisAPI.sism_viewer_password | required ".Values.metisApi.sism_viewer_password is missing" }}'
+{{- range .Values.metisAPI.technicalUsers }}
+        - name: '{{ .name | required "Name for Technical User missing"}}'
+          description: '{{ .description | required "Description for Technical User missing"}}'
+          password: '{{ .password | required "Password for Technical User is missing" }}'
           role_assignments:
             - project: service
               role: cloud_inventory_viewer
-        - name: viewer
-          description: Technical User for CC services to access the Metis API
-          password: '{{ .Values.metisAPI.viewer_password | required ".Values.metisApi.viewer_password is missing" }}'
-          role_assignments:
-            - project: service
-              role: cloud_inventory_viewer
+{{- end }}
     - name: ccadmin
       projects:
         - name: cloud_admin
