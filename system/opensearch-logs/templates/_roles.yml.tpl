@@ -336,7 +336,6 @@ maillog:
     - "indices:admin/create"
     - "indices:data/write/bulk*"
     - "indices:data/write/delete"
-    - "
     - "indices:data/write/delete/byquery"
     - "indices:data/write/index"
     - "indices:data/write/update"
