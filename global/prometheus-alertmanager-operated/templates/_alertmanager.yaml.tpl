@@ -493,6 +493,10 @@ route:
       severity: critical|warning|info
       region: qa-de-1|ap-jp-1|eu-ru-1
 
+  - receiver: alertflow
+    continue: true
+    matchers: [mail_notification_enabled=true]
+
 receivers:
   - name: wham_metal
     webhook_configs:
@@ -518,6 +522,11 @@ receivers:
           username: {{ required ".Values.awx.basicAuthUser undefined" .Values.awx.basicAuthUser | quote }}
           password: {{ required ".Values.awx.basicAuthPwd undefined" .Values.awx.basicAuthPwd | quote }}
       url: {{ required ".Values.awx.listenerURL undefined" .Values.awx.listenerURL | quote }}
+
+  - name: alertflow
+    webhook_configs:
+    - send_resolved: true
+      url: {{ required ".Values.alertflow.url undefined" .Values.alertflow.url | quote }}
 
   - name: slack_metal_info
     slack_configs:
