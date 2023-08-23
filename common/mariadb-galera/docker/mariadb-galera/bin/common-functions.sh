@@ -10,6 +10,7 @@ softMinorVer="${softVerProps[0]}.${softVerProps[1]}"
 IFS="+ " softVerProps=($(echo ${softVerProps[2]}))
 IFS="${oldIFS}"
 export SOFTWARE_VERSION_CLEAN="${softMinorVer}.${softVerProps[0]}"
+export PATH=${PATH}:${BASE}/bin
 
 if [ -f "${BASE}/bin/common-functions-extended.sh" ]; then
   source ${BASE}/bin/common-functions-extended.sh
