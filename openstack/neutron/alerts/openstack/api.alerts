@@ -16,3 +16,39 @@ groups:
     annotations:
       description: 'Neutron API Pod `{{ $labels.pod }}` request queue > 100 for 5 min'
       summary: 'Neutron API request queue is not clearing up, increase neutron-server deployment replicas for mitigation.'
+
+- name: neutron-globalrate-limit.alerts
+  rules:
+  - alert: GlobalRateLimitExceeded
+    expr: sum by (target_type_uri, action) (rate(openstack_requests_ratelimit_total{service="network",container="statsd", level="global"}[1m])) / 
+            sum by (target_type_uri, action) (rate(openstack_watcher_api_requests_total{service="network", container="statsd"}[1m])) > 0.1
+    for: 5m
+    labels:
+      severity: warning
+      support_group: network-api
+      tier: os
+      service: neutron
+      context: '{{ $labels.context }}'
+      meta: 'Due to high amount of requests Neutron API global rate limit is hit'
+      playbook: docs/support/playbook/neutron/api_overloaded
+    annotations:
+      description: 'Neutron API URI `{{ $labels.target_type_uri }}` `{{ $labels.action }}` exceeds the global limit by 10%'
+      summary: 'Neutron API global rate limit hit'
+
+- name: neutron-localrate-limit.alerts
+  rules:
+  - alert: LocalRateLimitExceeded
+    expr: sum by (target_type_uri, action, target_project_id) (rate(openstack_requests_ratelimit_total{service="network",container="statsd", level="local"}[1m])) /
+            sum by (target_type_uri, action, target_project_id) (rate(openstack_watcher_api_requests_total{service="network", container="statsd"}[1m])) > 0.1
+    for: 5m
+    labels:
+      severity: warning
+      support_group: network-api
+      tier: os
+      service: neutron
+      context: '{{ $labels.context }}'
+      meta: 'Due to high amount of requests Neutron API local (project based) rate limit is hit'
+      playbook: docs/support/playbook/neutron/api_overloaded
+    annotations:
+      description: 'Neutron project `{{ $labels.target_project_id }}  exceeds local rate limit for `{{ $labels.target_type_uri }}` `{{ $labels.action }}` by 10%'
+      summary: 'Neutron API local rate limit hit'
