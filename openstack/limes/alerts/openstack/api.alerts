@@ -42,7 +42,7 @@ groups:
       summary: Server errors on {{ $labels.kubernetes_name }}
 
   - alert: OpenstackLimesNotScraping
-    expr: absent(rate(limes_successful_scrapes[30m]) > 0)
+    expr: absent(rate(limes_resource_scrapes{task_outcome="success"}[30m]) > 0)
     for: 5m
     labels:
       context: failedscrapes
@@ -98,7 +98,7 @@ groups:
       summary: Limes reports zero capacity for {{ $labels.full_resource }}
 
   - alert: OpenstackLimesFailedScrapes
-    expr: sum(increase(limes_failed_scrapes[5m])) BY (service, service_name, region) > 0
+    expr: sum(increase(limes_resource_scrapes{task_outcome="failure"}[5m])) BY (service, service_name, region) > 0
     for: 1h
     labels:
       context: failedscrapes
@@ -132,7 +132,7 @@ groups:
       summary: Limes cannot scrape {{ title $labels.service_name }}
 
   - alert: OpenstackLimesFailedRateScrapes
-    expr: sum(increase(limes_failed_rate_scrapes[5m])) BY (service, service_name, region) > 0
+    expr: sum(increase(limes_rate_scrapes{task_outcome="failure"}[5m])) BY (service, service_name, region) > 0
     for: 1h
     labels:
       context: failedratescrapes
