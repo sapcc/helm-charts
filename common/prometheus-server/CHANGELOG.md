@@ -1,3 +1,7 @@
+## 7.2.9
+
+* adding thanos endpoint for internalIngress 
+
 ## 7.2.8
 
 * Option to create unique swift containers

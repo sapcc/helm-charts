@@ -70,6 +70,21 @@ spec:
               serviceName: {{ include "prometheus.fullName" (list $name $root) }}
               servicePort: http
             {{- end }}
+            {{- if $root.Values.thanos.enabled }}
+          - path: /thanos
+            {{- if $root.Capabilities.APIVersions.Has "networking.k8s.io/v1/Ingress" }}
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: thanos-{{ include "prometheus.name" (list $name $root) }}-query
+                port:
+                  name: http
+            {{- else }}
+            backend:
+              serviceName: thanos-{{ include "prometheus.name" (list $name $root) }}-query
+              servicePort: http
+            {{- end }}
+            {{- end }}
     {{- end }}
     {{- range $host := $.Values.internalIngress.hostsFQDN }}
     - host: {{ $host }}
