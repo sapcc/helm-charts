@@ -8,6 +8,6 @@ mkdir -p /host/var/log/sysstat-log
 while true
 do
   d=`date +%d-%m-%Y`
-  sar -dubr $dataInterval 1 -o /host/var/log/sysstat-log/${NODE_NAME}-sysstat-sar-$d.log
+  sar -dubr -n ALL $dataInterval 1 -o /host/var/log/sysstat-log/${NODE_NAME}-sysstat-sar-$d.log
   sleep $runInterval
 done
