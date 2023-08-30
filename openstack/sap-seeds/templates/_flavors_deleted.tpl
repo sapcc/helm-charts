@@ -32,7 +32,7 @@
   is_public: false
   extra_specs:
 {{- if .Values.use_hana_exclusive }}
-    {{- tuple . "vmware_hana_exclusive" | include "sap_seeds.helpers.flavor_extra_specs" | indent 4 }}
+    {{- tuple . "vmware_hana_exclusive" | include "sap_seeds.helpers.extra_specs" | indent 4 }}
     "trait:CUSTOM_NUMASIZE_C48_M729": "required"
 {{- else }}
     {{- tuple . "vmware_common" | include "sap_seeds.helpers.extra_specs" | indent 4 }}
