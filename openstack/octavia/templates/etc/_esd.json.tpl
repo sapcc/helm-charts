@@ -53,5 +53,8 @@
   },
   "ccloud_special_udp_stateless": {
     "lbaas_cudp": "cc_udp_datagram_profile"
+  },
+  "ccloud_special_fastl4_noaging": {
+    "lbaas_fastl4": "cc_fastL4_noaging_profile"
   }
 }
