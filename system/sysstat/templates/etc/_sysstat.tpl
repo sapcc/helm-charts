@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-dataInterval=6 # for how many seconds do we gather data
+dataInterval=300 # for how many seconds do we gather data
 runInterval=60 # how often do we gather data
 
 mkdir -p /host/var/log/sysstat-log
