@@ -441,7 +441,6 @@ groups:
       playbook: docs/support/playbook/prometheus/remote_write
     annotations:
       description: |
-        Prometheus `{{`{{ $labels.prometheus }}`}}` remote write is `{{`{{ printf "%.1f" $value }}`}}s`
-        behind for `{{`{{ $labels.url }}`}}`.
+        Prometheus `{{`{{ $labels.prometheus }}`}}` remote write is behind for `{{`{{ $labels.url }}`}}`.
       summary: Prometheus remote write is behind.
   {{- end }}
