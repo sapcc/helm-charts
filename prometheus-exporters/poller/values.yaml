@@ -1,0 +1,213 @@
+poller:
+  enabled: false
+  replicas: 1
+  image:
+    name: cronus-poller-repository
+    pullPolicy: IfNotPresent
+    tag: latest
+    imagePullSecrets: []
+  serviceAccount: poller
+  # should be less than a default cronus ResponseHeaderTimeout (9 seconds)
+  pollInterval: 5s
+  # maximum amount of queue processing threads
+  maxThreads: 5
+  # an action with parameters to perform with a received email
+  # supported values: forwardEmail, activateEmail, simulator
+  action: forwardEmail
+    # configuration options for the forwardEmail action
+  forwardEmail:
+    postgres:
+      dsn: "postgres://poller:secret@localhost:5432/mydatabase?sslmode=disable"
+    # maximum amount of SMTP send threads per one processing thread
+    # will generate N threads for forwardEmail action
+    # N = maxThreads * (maxSendThreads + maxBounceThreads)
+    maxSendThreads: 5
+    # maximum amount of bounce threads per one processing thread
+    maxBounceThreads: 5
+    # sender name for bounce emails
+    bounceSender: mail-daemon@example.com
+    # The reporting MTA that attempted to deliver the message, formatted as specified
+    # in RFC 3464 (https://tools.ietf.org/html/rfc3464) (mta-name-type; mta-name).
+    mtaName: dns; cronus-poller.example.com
+    # a list of SMTP ports to forward emails to
+    smtpPorts:
+      - 25000
+    # SMTP client hostname provided during HELO/EHLO commands
+    # when empty, defaults to localhost
+    localName: localhost
+    # Alternative SESv2 credentials for cases to call SendBounce on the email receiving account, optional
+  sesCredentials:
+    # same format as parent "aws"
+    aws:
+    # same format as parent "keystone"
+    keystone:
+    # same format as parent "endpoint"
+    endpoint: 
+  # configuration options for the activateEmail action
+  activateEmail:
+    signatureSecret: 123
+    expirationTime: 60s
+    domain: example.com
+  # dump container name in Swift/S3 to put successful messages' copies to
+  dumpContainer:
+    name: dump
+  # quarantine container name in Swift/S3 to put messages to
+  quarContainer:
+    name: quarantine
+  # container name in Swift/S3 to put messages, which cannot be processed for some reasons
+  errContainer:
+    name: error
+  # pretty print message events while uploading them to swift containers
+  prettyPrint: false
+  # whether to print email details
+  printMessage: false
+  # Try to restore original Message-ID header in bounce status report attachment
+  rebuildDSN: false
+  rhea:
+    queueName: ndr
+    uri:  "https://rhea.qa-de-1.cloud.sap:443"
+    domainMode: false
+  # an SQS queue name to listen from
+  queueName: my-queue-name
+  # a list of checks to accept emails (logical AND for all verdics and logical OR per each verdict's list value)
+  # otherwie put emails to quarantine
+  # see more details on the URL below
+  # https://docs.aws.amazon.com/ses/latest/dg/receiving-email-notifications-contents.html#receiving-email-notifications-contents-dkimverdict-object
+  emailPassVerdicts:
+    # a special exception when a technical sender is empty and Return-Path header is "<>"
+    bouncePassVerdicts:
+      # a list of From headers regexps to trigger an exception
+      # "(?i)" flag states to case insensitive
+      # more details on regexp syntax: https://github.com/google/re2/wiki/Syntax
+      fromRegexp:
+        - (?i)^MAILER-DAEMON@[a-z0-9]+-[a-z0-9]+-[a-z0-9]+\.amazonses\.com$
+        # see details for top level verdics below
+      spam:
+        - PASS
+        #- FAIL
+        #- GRAY
+        #- PROCESSING_FAILED
+      virus:
+        - PASS
+        #- FAIL
+        #- GRAY
+        #- PROCESSING_FAILED
+      spf:
+        - PASS
+        #- FAIL
+        #- GRAY
+        #- PROCESSING_FAILED
+      dkim:
+        - PASS
+        #- FAIL
+        #- GRAY
+        #- PROCESSING_FAILED
+      dmarc:
+        - PASS
+        #- FAIL
+        #- GRAY
+        #- PROCESSING_FAILED
+    spam:
+      # The spam scan determined that the message is unlikely to contain spam
+      - PASS
+      # The spam scan determined that the message is likely to contain spam
+      #- FAIL
+      # Amazon SES scanned the email but could not determine with confidence whether it is spam
+      #- GRAY
+      # Amazon SES was unable to scan the email. For example, the email is not a valid MIME message
+      #- PROCESSING_FAILED
+    virus:
+      # The message does not contain a virus
+      - PASS
+      # The message contains a virus
+      #- FAIL
+      # Amazon SES scanned the email but could not determine with confidence whether it contains a virus
+      #- GRAY
+      # Amazon SES is unable to scan the content of the email. For example, the email is not a valid MIME message
+      #- PROCESSING_FAILED
+    spf:
+      # The message passed SPF authentication
+      - PASS
+      # The message failed SPF authentication
+      #- FAIL
+      # There is no SPF policy under the domain used in the MAIL FROM command
+      #- GRAY
+      # There is an issue that prevents Amazon SES from checking the SPF record. For example, DNS queries are failing
+      #- PROCESSING_FAILED
+    dkim:
+      # The message passed DKIM authentication
+      - PASS
+      # The message failed DKIM authentication
+      #- FAIL
+      # # The message is not DKIM-signed
+      #- GRAY
+      # # There is an issue that prevents Amazon SES from checking the DKIM signature. For example, DNS queries are failing or the DKIM signature header is not formatted properly
+      #- PROCESSING_FAILED
+    dmarc:
+      # The message passed DMARC authentication
+      - PASS
+      # The message failed DMARC authentication
+      #- FAIL
+      # At least one of SPF or DKIM passed authentication, but the sending domain does not have a DMARC policy or uses the p=none policy
+      #- GRAY
+      # There is an issue that prevents Amazon SES from providing a DMARC verdict
+      #- PROCESSING_FAILED
+  # debug HTTP requests
+  debug: false
+  # retry settings for failed connections
+  retry:
+    maxConnectionRetries: 5 # 5 retries per connection
+    retryInterval: 0.5s # 500ms to wait after each try, e.g. in total 2.5 seconds
+  # override cronus endpoint URL
+  endpoint: http://localhost:5000
+  # AWS credentials, conflict with keystone credentials
+  aws:
+    access: access
+    secret: secret
+    region: region
+  # custom DNS resolvers, when LDAP is not defined
+  dnsResolvers:
+    - 10.47.10.20:53
+  # timeouts are relevant only when "dnsResolvers" are defined
+  dnsResolversTimeouts:
+    # timeout is a cumulative timeout for dial, write and read, defaults to 0 (disabled) - overrides DialTimeout, ReadTimeout,
+    # WriteTimeout when non-zero. Can be overridden with net.Dialer.Timeout (see Client.ExchangeWithDialer and
+    # Client.Dialer) or context.Context.Deadline (see ExchangeContext)
+    timeout: 0s
+    # net.DialTimeout, defaults to 2 seconds, or net.Dialer.Timeout if expiring earlier - overridden by Timeout when that value is non-zero
+    dialTimeout: 2s
+    # net.Conn.SetReadTimeout value for connections, defaults to 2 seconds - overridden by Timeout when that value is non-zero
+    readTimeout: 2s
+    # net.Conn.SetWriteTimeout value for connections, defaults to 2 seconds - overridden by Timeout when that value is non-zero
+    writeTimeout: 2s
+  # run local DNS server
+  dnsExpose: :5353
+  # LDAP source for MX records
+  # when not set, a local backup and system DNS resolver will be used
+  ldap:
+    server: server:389
+    username: cn=user,ou=users,ou=SYS,dc=example,dc=com
+    password: password
+    baseDN: dc=DNS
+    tls: false
+    startTLS: false
+    # update interval in seconds
+    # 0s means no periodic updates
+    updateInterval: 5m
+    # whether to randomize internal DNS MX records (slower DNS response)
+    randomizeEntries: false
+    stopOnError: false
+  # keystone credentials, conflict with aws credentials
+  keystone:
+    authUrl: https://identity/v3
+    endpointType: public
+    projectDomainName: default
+    projectName: project
+    region: region
+    domainID: default
+    username: username
+    password: password
+
+owner-info:
+  helm-chart-url: 'https://github.com/sapcc/helm-charts/tree/master/prometheus-exporters/poller'
+  support-group: email
