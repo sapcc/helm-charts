@@ -1,3 +1,7 @@
+## 7.2.10
+
+* Improved RemoteWriteBehind alert
+
 ## 7.2.9
 
 * adding thanos endpoint for internalIngress 
