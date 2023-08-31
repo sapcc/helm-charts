@@ -63,3 +63,17 @@ groups:
     annotations:
       description: 'cluster *{{ $labels.elastic_cluster }}* opensearch-logs-query-exporter in `{{ $labels.region }}` is missing.'
       summary: 'cluster: *{{ $labels.elastic_cluster }}* opensearch-logs-query-exporter in `{{ $labels.region }}` is missing.'
+
+  - alert: SrcSiemRulesUpdaterLogError
+    expr: elasticsearch_siem_error_doc_count > 0
+    for: 30m
+    labels:
+      context: nodes
+      service: logs
+      severity: warning
+      support_group: src
+      tier: os
+      kibana: "https://logs.eu-de-1.cloud.sap/goto/283e4879cc4158e2cf7a68de47d39507"
+    annotations:
+      description: 'The siem-rules-updater service pod has error logs.'
+      summary: 'The siem-rules-updater service pod has error logs.'
