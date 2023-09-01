@@ -1,3 +1,7 @@
+## 7.2.11
+
+* Defaulting ingressClassName to nginx to avoid picking up traefik 
+
 ## 7.2.10
 
 * Improved RemoteWriteBehind alert
