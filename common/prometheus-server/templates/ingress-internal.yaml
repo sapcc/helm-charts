@@ -26,6 +26,9 @@ metadata:
     {{ end }}
 
 spec:
+  {{- if not $.Values.traefik.enabled }}
+  ingressClassName: nginx
+  {{- end }}
   rules:
     {{- range $host := coalesce $.Values.internalIngress.hosts (list $name) }}
     - host: {{ include "internalFQDNHelper" (list $host $root) }}
