@@ -49,24 +49,6 @@ poller:
     localName: {{ $val.forwardEmail.localName }}
     {{- end }}
   {{- end }}
-  {{- if $val.sesCredentials }}
-  sesCredentials:
-    {{- if $val.sesCredentials.aws }}
-    aws:
-    {{- range $k, $v := $val.sesCredentials.aws }}
-      {{ $k }}: {{ $v }}
-    {{- end }}
-    {{- end }}
-    {{- if $val.sesCredentials.keystone }}
-    keystone:
-    {{- range $k, $v := $val.sesCredentials.keystone }}
-      {{ $k }}: {{ $v }}
-    {{- end }}
-    {{- end }}
-    {{- if $val.sesCredentials.endpoint }}
-    endpoint: {{ $val.sesCredentials.endpoint }}
-    {{- end }}
-  {{- end }}
   {{- if $val.rhea }}
   rhea:
     queueName: {{ $val.rhea.queueName }}
