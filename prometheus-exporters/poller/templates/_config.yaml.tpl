@@ -1,11 +1,16 @@
 {{- $val := .Values.poller }}
 {{- if $val.enabled -}}
 poller:
+  {{- if $val.prometheusPort }}
+  prometheusPort: {{ $val.prometheusPort }}
+  {{- end }}
   pollInterval: {{ $val.pollInterval }}
   maxThreads: {{ $val.maxThreads }}
   action: {{ $val.action }}
   debug: {{ $val.debug }}
+  {{- if $val.endpoint }}
   endpoint: {{ $val.endpoint }}
+  {{- end }}
   retry:
     maxConnectionRetries: {{ $val.retry.maxConnectionRetries }}
     retryInterval: {{ $val.retry.retryInterval }}
@@ -17,7 +22,9 @@ poller:
     name: {{ $val.errContainer.name }}
   prettyPrint: {{ $val.prettyPrint }}
   printMessage: {{ $val.printMessage }}
+  {{- if $val.rebuildDSN }}
   rebuildDSN: {{ $val.rebuildDSN }}
+  {{- end }}
   {{- if $val.activateEmail }}
   activateEmail:
     signatureSecret: {{ $val.activateEmail.signatureSecret }}
@@ -26,8 +33,10 @@ poller:
   {{- end }}
   {{- if $val.forwardEmail }}
   forwardEmail:
+    {{- if $val.forwardEmail.postgres }}
     postgres:
       dsn: {{ $val.forwardEmail.postgres.dsn }}
+    {{- end }}
     maxSendThreads: {{ $val.forwardEmail.maxSendThreads }}
     maxBounceThreads: {{ $val.forwardEmail.maxBounceThreads }}
     bounceSender: {{ $val.forwardEmail.bounceSender }}
@@ -36,7 +45,9 @@ poller:
     {{- range $v := $val.forwardEmail.smtpPorts }}
       - {{ $v }}
     {{- end }}
+    {{- if $val.forwardEmail.localName }}
     localName: {{ $val.forwardEmail.localName }}
+    {{- end }}
   {{- end }}
   {{- if $val.sesCredentials }}
   sesCredentials:
@@ -62,7 +73,9 @@ poller:
     uri: {{ $val.rhea.uri }}
     domainMode: {{ $val.rhea.domainMode }}
   {{- end }}
+  {{- if $val.queueName }}
   queueName: {{ $val.queueName }}
+  {{- end }}
   {{- if $val.emailPassVerdicts }}
   emailPassVerdicts:
     spam:
@@ -119,24 +132,28 @@ poller:
     {{ $k }}: {{ $v }}
     {{- end }}
   {{- end  }}
+  {{- if $val.dnsResolvers }}
   dnsResolvers:
   {{- range $v := $val.dnsResolvers }}
     - {{ $v }}
   {{- end }}
+  {{- end  }}
   {{- if $val.dnsResolversTimeouts }}
   dnsResolversTimeouts:
   {{- range $k, $v := $val.dnsResolversTimeouts }}
     {{ $k }}: {{ $v }}
   {{- end }}
   {{- end }}
+  {{- if $val.dnsExpose }}
   dnsExpose: {{ $val.dnsExpose }}
+  {{- end }}
   {{- if $val.ldap }}
   ldap:
   {{- range $k, $v := $val.ldap }}
     {{ $k }}: {{ $v }}
   {{- end }}
   {{- end }}
-  {{- if $val.ldap }}
+  {{- if $val.keystone }}
   keystone:
   {{- range $k, $v := $val.keystone }}
     {{ $k }}: {{ $v }}
