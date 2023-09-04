@@ -3,7 +3,7 @@ groups:
   rules:
   - alert: LogsFluentBitSystemdLogsMissing
 {{ if eq .Values.global.clusterType  "scaleout" }}
-    expr: sum(rate(fluentbit_output_proc_records_total{job="logs-fluent-bit-systemd-exporter",cluster_type!="controlplane"}[60m])) by (nodename,name) == 0
+    expr: sum(rate(fluentbit_output_proc_records_total{job="logs-fluent-bit-systemd-exporter",cluster_type!="controlplane",cluster_type!="metal"}[60m])) by (nodename,name) == 0
     for: 180m
 {{ else }}
     expr: sum(rate(fluentbit_output_proc_records_total{job="logs-fluent-bit-systemd-exporter"}[60m])) by (nodename,name) == 0
@@ -25,7 +25,7 @@ groups:
       summary: logs-fluent-bit-systemd is not shipping logs
   - alert: LogsFluentBitSystemdLogsIncreasing
 {{ if eq .Values.global.clusterType  "scaleout" }}
-    expr: (sum(increase(fluentbit_output_proc_records_total{cluster_type!="controlplane",job="logs-fluent-bit-systemd-exporter"}[1h])) by (name) / sum(increase(fluentbit_output_proc_records_total{cluster_type!="controlplane",job="logs-fluent-bit-systemd-exporter"}[1h]offset 2h)) by (name)) > 4
+    expr: (sum(increase(fluentbit_output_proc_records_total{cluster_type!="controlplane",cluster_type!="metal",job="logs-fluent-bit-systemd-exporter"}[1h])) by (name) / sum(increase(fluentbit_output_proc_records_total{cluster_type!="controlplane",cluster_type!="metal",job="logs-fluent-bit-systemd-exporter"}[1h]offset 2h)) by (name)) > 4
 {{ else }}
     expr: (sum(increase(fluentbit_output_proc_records_total{job="logs-fluent-bit-systemd-exporter"}[1h])) by (name) / sum(increase(fluentbit_output_proc_records_total{job="logs-fluent-bit-systemd-exporter"}[1h]offset 2h)) by (name)) > 4
 {{ end }}
