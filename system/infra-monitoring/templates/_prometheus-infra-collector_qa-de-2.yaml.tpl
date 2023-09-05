@@ -55,22 +55,6 @@
       replacement: snmp-exporter:{{.Values.snmp_exporter.listen_port}}
 {{ include "snmp_metric_relabel_configs" . | indent 2 }}
 
-- job_name: 'snmp_f5'
-  scrape_interval: {{.Values.snmp_exporter.scrapeInterval}}
-  scrape_timeout: {{.Values.snmp_exporter.scrapeTimeout}}
-  http_sd_configs:
-    - url: {{ .Values.http_sd_configs.netbox_staging_url }}/devices/?custom_labels=__param_module=f5-gtm&model=f5-vcmp&manufacturer=f5&status=active&region={{ .Values.global.region }}&q=gtm
-      refresh_interval: {{ .Values.http_sd_configs.refresh_interval }}
-  metrics_path: /snmp
-  relabel_configs:
-    - source_labels: [__address__]
-      target_label: __param_target
-    - source_labels: [__param_target]
-      target_label: instance
-    - target_label: __address__
-      replacement: snmp-exporter:{{.Values.snmp_exporter.listen_port}}
-{{ include "snmp_metric_relabel_configs" . | indent 2 }}
-
 - job_name: 'snmp_aristaevpn'
   scrape_interval: {{.Values.snmp_exporter.scrapeInterval}}
   scrape_timeout: {{.Values.snmp_exporter.scrapeTimeout}}
@@ -135,7 +119,7 @@
       replacement: snmp-exporter:{{.Values.snmp_exporter.listen_port}}
 {{ include "snmp_metric_relabel_configs" . | indent 2 }}
 
-- job_name: 'snmp_aci'
+- job_name: 'snmp_ipn'
   scrape_interval: {{.Values.snmp_exporter.scrapeInterval}}
   scrape_timeout: {{.Values.snmp_exporter.scrapeTimeout}}
   http_sd_configs:
@@ -204,6 +188,22 @@
   scrape_timeout: {{.Values.snmp_exporter.scrapeTimeout}}
   http_sd_configs:
     - url: {{ .Values.http_sd_configs.netbox_staging_url }}/devices/?custom_labels=__param_module=f5mgmt&manufacturer=f5&status=active&region={{ .Values.global.region }}&tag=cc-net-f5-guest-mgmt
+      refresh_interval: {{ .Values.http_sd_configs.refresh_interval }}
+  metrics_path: /snmp
+  relabel_configs:
+    - source_labels: [__address__]
+      target_label: __param_target
+    - source_labels: [__param_target]
+      target_label: instance
+    - target_label: __address__
+      replacement: snmp-exporter:{{.Values.snmp_exporter.listen_port}}
+{{ include "snmp_metric_relabel_configs" . | indent 2 }}
+
+- job_name: 'snmp_f5gtm'
+  scrape_interval: {{.Values.snmp_exporter.scrapeInterval}}
+  scrape_timeout: {{.Values.snmp_exporter.scrapeTimeout}}
+  http_sd_configs:
+    - url: {{ .Values.http_sd_configs.netbox_staging_url }}/devices/?custom_labels=__param_module=f5gtm&manufacturer=f5&status=active&region={{ .Values.global.region }}&model=f5-vcmp&q=gtm
       refresh_interval: {{ .Values.http_sd_configs.refresh_interval }}
   metrics_path: /snmp
   relabel_configs:
@@ -327,11 +327,43 @@
       replacement: snmp-exporter:{{.Values.snmp_exporter.listen_port}}
 {{ include "snmp_metric_relabel_configs" . | indent 2 }}
 
-- job_name: 'snmp_pxdlrouternxos'
+- job_name: 'snmp_pxdlrouteriosxe'
   scrape_interval: {{.Values.snmp_exporter.scrapeInterval}}
   scrape_timeout: {{.Values.snmp_exporter.scrapeTimeout}}
   http_sd_configs:
-    - url: {{ .Values.http_sd_configs.netbox_staging_url }}/devices/?custom_labels=__param_module=pxdlrouternxos&manufacturer=cisco&status=active&region={{ .Values.global.region }}&role=directlink-router&platform=cisco-nx-os
+    - url: {{ .Values.http_sd_configs.netbox_staging_url }}/devices/?custom_labels=__param_module=pxdlrouteriosxe&platform=cisco-ios-xe&status=active&region={{ .Values.global.region }}&role=directlink-router
+      refresh_interval: {{ .Values.http_sd_configs.refresh_interval }}
+  metrics_path: /snmp
+  relabel_configs:
+    - source_labels: [__address__]
+      target_label: __param_target
+    - source_labels: [__param_target]
+      target_label: instance
+    - target_label: __address__
+      replacement: snmp-exporter:{{.Values.snmp_exporter.listen_port}}
+{{ include "snmp_metric_relabel_configs" . | indent 2 }}
+
+- job_name: 'snmp_pxdlrouteriosxr'
+  scrape_interval: {{.Values.snmp_exporter.scrapeInterval}}
+  scrape_timeout: {{.Values.snmp_exporter.scrapeTimeout}}
+  http_sd_configs:
+    - url: {{ .Values.http_sd_configs.netbox_staging_url }}/devices/?custom_labels=__param_module=pxdlrouteriosxr&platform=cisco-ios-xr&status=active&region={{ .Values.global.region }}&role=directlink-router
+      refresh_interval: {{ .Values.http_sd_configs.refresh_interval }}
+  metrics_path: /snmp
+  relabel_configs:
+    - source_labels: [__address__]
+      target_label: __param_target
+    - source_labels: [__param_target]
+      target_label: instance
+    - target_label: __address__
+      replacement: snmp-exporter:{{.Values.snmp_exporter.listen_port}}
+{{ include "snmp_metric_relabel_configs" . | indent 2 }}
+
+- job_name: 'snmp_pxdlroutergeneric'
+  scrape_interval: {{.Values.snmp_exporter.scrapeInterval}}
+  scrape_timeout: {{.Values.snmp_exporter.scrapeTimeout}}
+  http_sd_configs:
+    - url: {{ .Values.http_sd_configs.netbox_staging_url }}/devices/?custom_labels=__param_module=pxdlroutergeneric&status=active&region={{ .Values.global.region }}&role=directlink-router
       refresh_interval: {{ .Values.http_sd_configs.refresh_interval }}
   metrics_path: /snmp
   relabel_configs:
@@ -380,6 +412,22 @@
   scrape_timeout: {{.Values.snmp_exporter.scrapeTimeout}}
   http_sd_configs:
     - url: {{ .Values.http_sd_configs.netbox_staging_url }}/virtual-machines/?custom_labels=__param_module=asa&status=active&q={{ .Values.global.region }}&tenant=cnd&role=management-switch&platform=cisco-asa
+      refresh_interval: {{ .Values.http_sd_configs.refresh_interval }}
+  metrics_path: /snmp
+  relabel_configs:
+    - source_labels: [__address__]
+      target_label: __param_target
+    - source_labels: [__param_target]
+      target_label: instance
+    - target_label: __address__
+      replacement: snmp-exporter:{{.Values.snmp_exporter.listen_port}}
+{{ include "snmp_metric_relabel_configs" . | indent 2 }}
+
+- job_name: 'snmp_fortinet'
+  scrape_interval: {{.Values.snmp_exporter.scrapeInterval}}
+  scrape_timeout: {{.Values.snmp_exporter.scrapeTimeout}}
+  http_sd_configs:
+    - url: {{ .Values.http_sd_configs.netbox_staging_url }}/virtual-machines/?custom_labels=__param_module=fortinet&status=active&q={{ .Values.global.region }}&manufacturer=fortinet&role=firewall
       refresh_interval: {{ .Values.http_sd_configs.refresh_interval }}
   metrics_path: /snmp
   relabel_configs:
