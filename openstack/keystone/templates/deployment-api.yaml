@@ -34,6 +34,7 @@ spec:
         type: api
         alert-tier: os
         alert-service: keystone
+        app: keystone
       annotations:
         chart-version: {{.Chart.Version}}
         configmap-etc-hash: {{ include (print $.Template.BasePath "/configmap-etc.yaml") . | sha256sum }}
@@ -47,7 +48,7 @@ spec:
       serviceAccountName: {{ .Release.Name }}
 {{- end }}
 
-{{ tuple . "keystone" "api" | include "kubernetes_pod_AZ_spread" | indent 6 }}
+{{ tuple . "keystone" "keystone" | include "kubernetes_pod_AZ_spread" | indent 6 }}
       terminationGracePeriodSeconds: {{ .Values.api.terminationGracePeriodSeconds | default "30" }}
 {{ include "utils.proxysql.pod_settings" . | indent 6 }}
       initContainers:
