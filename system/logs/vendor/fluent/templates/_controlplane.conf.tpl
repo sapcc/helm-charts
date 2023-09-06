@@ -477,6 +477,7 @@
 
 # count number of outgoing records per tag
 <match kubernetes.**>
+  @copy
   <store>
   {{- if .Values.opensearch.datastream.enabled }}
     @type opensearch_data_stream
