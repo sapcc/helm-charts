@@ -60,6 +60,12 @@ spec:
       - name: arp-discovery-exporter
         image: keppel.{{ required "A registry mus be set" .Values.registry }}.cloud.sap/{{ required "A arp_discovery_exporter_image must be set" .Values.arp_discovery_exporter_image }}
         imagePullPolicy: Always
+        command: ["/usr/bin/arp_discovery_exporter", "--labels-from-env=NODE_NAME:vm_name"]
+        env:
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
         ports:
         - containerPort: 9116
           name: arp-discovery
