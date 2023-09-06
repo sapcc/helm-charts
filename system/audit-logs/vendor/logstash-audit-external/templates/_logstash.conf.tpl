@@ -208,18 +208,4 @@ output {
       http_method => "post"
     }
   }
-{{- if .Values.syslog.elkOutputEnabled }}
-  elseif [type] == "syslog" {
-    elasticsearch {
-      index => "syslog-%{+YYYY.MM.dd}"
-      template => "/audit-etc/syslog.json"
-      template_name => "syslog"
-      template_overwrite => true
-      hosts => ["{{.Values.global.elk_elasticsearch_endpoint_host_scaleout}}.{{.Values.global.region}}.{{.Values.global.tld}}:{{.Values.global.elk_elasticsearch_ssl_port}}"]
-      user => "{{.Values.global.elk_elasticsearch_data_user}}"
-      password => "{{.Values.global.elk_elasticsearch_data_password}}"
-      ssl => true
-    }
-  }
-{{- end }}
 }
