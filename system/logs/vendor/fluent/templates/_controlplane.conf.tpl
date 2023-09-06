@@ -477,45 +477,6 @@
 
 # count number of outgoing records per tag
 <match kubernetes.**>
-  @type copy
-{{- if .Values.elasticsearch.enabled }}
-  <store>
-    @type elasticsearch
-    host {{.Values.global.elk_elasticsearch_endpoint_host_scaleout}}.{{.Values.global.elk_cluster_region}}.{{.Values.global.tld}}
-    port {{.Values.global.elk_elasticsearch_ssl_port}}
-    user {{.Values.global.elk_elasticsearch_data_user}}
-    password {{.Values.global.elk_elasticsearch_data_password}}
-    scheme https
-    ssl_verify false
-    ssl_version TLSv1_2
-    logstash_prefix {{.Values.indexname}}
-    logstash_format true
-    template_name {{.Values.indexname}}
-    template_file /fluentd/etc/{{.Values.indexname}}.json
-    template_overwrite false
-    time_as_integer false
-    type_name _doc
-    @log_level info
-    slow_flush_log_threshold 50.0
-    request_timeout 60s
-    include_tag_key true
-    reload_connections false
-    reload_on_failure true
-    resurrect_after 120
-    reconnect_on_error true
-    <buffer>
-      total_limit_size 256MB
-      flush_at_shutdown true
-      flush_thread_interval 5
-      overflow_action block
-      retry_forever true
-      retry_wait 2s
-      flush_thread_count 2
-      flush_interval 2s
-    </buffer>
-  </store>
-{{- end }}
-{{- if .Values.opensearch.enabled }}
   <store>
   {{- if .Values.opensearch.datastream.enabled }}
     @type opensearch_data_stream
@@ -556,7 +517,6 @@
       flush_interval 2s
     </buffer>
   </store>
-{{- end }}
   <store>
     @type prometheus
     <metric>
