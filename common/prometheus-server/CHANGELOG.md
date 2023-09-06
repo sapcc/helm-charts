@@ -1,6 +1,6 @@
 ## 7.2.13
 
-* Chart version and Release name labeled
+* Chart version labeled
 
 ## 7.2.12
 
