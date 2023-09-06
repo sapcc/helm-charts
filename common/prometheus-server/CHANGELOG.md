@@ -1,3 +1,7 @@
+## 7.2.13
+
+* Chart version labeled
+
 ## 7.2.12
 
 * scrapeConfigSelector added to the Prometheus CR
