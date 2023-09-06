@@ -1,3 +1,7 @@
+## 7.2.12
+
+* scrapeConfigSelector added to the Prometheus CR
+
 ## 7.2.11
 
 * Defaulting ingressClassName to nginx to avoid picking up traefik 
