@@ -77,11 +77,6 @@ filter {
       replace => { "type" => "audit" }
       add_field => { "[sap][cc][audit][source]" => "remoteboard"}
     }
-    {{- if .Values.syslog.elkOutputEnabled }}
-    clone {
-      clones => ['audit', 'syslog']
-    }
-    {{- end }}
   }
 
 # Set source for ucs central instances
@@ -99,11 +94,6 @@ filter {
         replace => { "type" => "audit" }
         add_field => { "[sap][cc][audit][source]" => "ucsm" }
       }
-    {{- if .Values.syslog.elkOutputEnabled }}
-      clone {
-        clones => ['audit', 'syslog']
-      }
-    {{- end }}
     }
   }
 
@@ -113,23 +103,10 @@ filter {
         replace => { "type" => "audit" }
         add_field => { "[sap][cc][audit][source]" => "hsm" }
     }
-    {{- if .Values.syslog.elkOutputEnabled }}
-    clone {
-      clones => ['audit', 'syslog']
-    }
-    {{- end }}
   }
-  {{- if .Values.syslog.elkOutputEnabled }}
-  if [type] == "syslog" and [sap][cc][audit][source] {
-    mutate{
-      remove_field => "[sap][cc][audit][source]"
-    }
-  }
-  {{- else}}
   if [type] == "syslog" {
     drop{}
   }
-  {{- end }}
  }
  {{- end }}
  {{- if eq .Values.global.clusterType "metal" }}

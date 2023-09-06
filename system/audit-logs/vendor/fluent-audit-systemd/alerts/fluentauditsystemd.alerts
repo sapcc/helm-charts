@@ -1,7 +1,7 @@
 groups:
 - name: fluent_audit_systemd.alerts
   rules:
-  - alert: ElkControlplaneSystemdAuditLogsMissing
+  - alert: AuditLogsControlplaneSystemdAuditLogsMissing
     expr: sum(rate(fluentd_output_status_num_records_total{component="fluent-audit-systemd"}[30m])) by (nodename,kubernetes_pod_name) == 0
     for: 60m
     labels:
@@ -12,5 +12,5 @@ groups:
       tier: os
       playbook: docs/operation/elastic_kibana_issues/octobus/keystone-api-logs-in-octobus-missing
     annotations:
-      description: 'ELK in {{ $labels.region }} `{{ $labels.kubernetes_pod_name }}` pod on `{{ $labels.nodename }}` is not shipping any log line. Please check'
-      summary:  fluent-systemd logs are not shipped
+      description: 'Audit Logs in {{ $labels.region }} `{{ $labels.kubernetes_pod_name }}` pod on `{{ $labels.nodename }}` is not shipping any log line. Please check'
+      summary:  fluent-audit-systemd logs are not shipped
