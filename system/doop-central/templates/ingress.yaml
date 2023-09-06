@@ -1,4 +1,5 @@
 {{- $tld := $.Values.global.tld | required ".Values.global.tld not found" }}
+{{- $region := $.Values.global.region | required ".Values.global.region not found" }}
 {{- $domain := "doop" }}
 {{- if .Values.kubernikus }}
   {{- $domain = "doop-kubernikus" }}
@@ -19,9 +20,12 @@ metadata:
 spec:
   tls:
     - secretName: tls-{{ .Release.Name }}
-      hosts: [ {{ $domain }}.global.{{ $tld }} ]
+      hosts:
+        - '{{ $domain }}.global.{{ $tld }}'
+        - '{{ $domain }}.{{ $region }}.{{ $tld }}'
   rules:
-    - host: {{ $domain }}.global.{{ $tld }}
+    - &rule
+      host: '{{ $domain }}.global.{{ $tld }}'
       http:
         paths:
           - path: /
@@ -31,6 +35,8 @@ spec:
                 name: {{ .Release.Name }}
                 port:
                   number: 80
+    - <<: *rule
+      host: '{{ $domain }}.{{ $region }}.{{ $tld }}'
 
 ---
 
@@ -52,9 +58,12 @@ metadata:
 spec:
   tls:
     - secretName: tls-{{ .Release.Name }}-api
-      hosts: [ {{ $domain }}-api.global.{{ $tld }} ]
+      hosts:
+        - '{{ $domain }}-api.global.{{ $tld }}'
+        - '{{ $domain }}-api.{{ $region }}.{{ $tld }}'
   rules:
-    - host: {{ $domain }}-api.global.{{ $tld }}
+    - &rule
+      host: '{{ $domain }}-api.global.{{ $tld }}'
       http:
         paths:
           - path: /json
@@ -64,3 +73,5 @@ spec:
                 name: {{ .Release.Name }}
                 port:
                   number: 80
+    - <<: *rule
+      host: '{{ $domain }}-api.{{ $region }}.{{ $tld }}'
