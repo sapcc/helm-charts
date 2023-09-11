@@ -92,6 +92,22 @@ groups:
       description: "Ironic node {{ $labels.server_name }} hardware error. Module {{ $labels.name }} more than 16000 correctable ECC errors. Manufacturer: {{ $labels.manufacturer }} / Model: {{ $labels.model }} / Serial: {{ $labels.serial }}"
       summary: "Hardware error for server: {{ $labels.name }}"
 
+  - alert: MetalIronicMemSensorWarn
+    expr: count(ipmi_sensor_state{job="ipmi/ironic", type=~"(Memory)"} == 1) by (server_name, exported_name, manufacturer, model, serial) by (server_name)
+    for: 10m
+    labels:
+      severity: warning
+      tier: metal
+      service: baremetal
+      support_group: compute
+      context: "{{ $labels.server_name }}"
+      meta: "Ironic node {{ $labels.server_name }} Dimm Sensor error. Modul Name: {{ $labels.exported_name }} /  Serial: {{ $labels.serial }}"
+      playbook: docs/devops/alert/baremetal/vpod
+    annotations:
+      description: "Ironic node {{ $labels.server_name }} Dimm Sensor error. Modul Name: {{ $labels.exported_name }} / Manufacturer: {{ $labels.manufacturer }} / Model: {{ $labels.model }} /  Serial: {{ $labels.serial }}, check if Server needs a restart for DIMM self healing."
+      summary: "Dimm error for server: {{ $labels.server_name }}"
+      
+
   - alert: MetalIronicMetricsDownCritical
     expr: count(up{job="ipmi/ironic", provision_state="active", maintenance="false"} == 0) by (server_name, maintenance, manufacturer, model, serial, provision_state, server_id, project_id, serial)
     for: 30m
