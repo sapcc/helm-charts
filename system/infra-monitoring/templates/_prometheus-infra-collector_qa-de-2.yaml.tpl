@@ -567,9 +567,9 @@
 {{- end }}
 
 {{- if $values.firmware.enabled }}
-- job_name: 'redfish_fw'
+- job_name: 'redfish-fw'
   params:
-    job: [redfish_fw]
+    job: [redfish-fw]
   scrape_interval: {{$values.redfish_fw_scrapeInterval}}
   scrape_timeout: {{$values.redfish_fw_scrapeTimeout}}
   http_sd_configs:
@@ -577,7 +577,7 @@
   metrics_path: /firmware
   relabel_configs:
     - source_labels: [job]
-      regex: redfish_fw
+      regex: redfish-fw
       action: keep
     - source_labels: [__address__]
       target_label: __param_target
