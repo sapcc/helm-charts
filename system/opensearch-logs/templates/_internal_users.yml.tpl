@@ -73,7 +73,6 @@ kibanaro:
   hash: "{{ .Values.users.kibanaro.hash }}"
   reserved: false
   backend_roles:
-  - "kibanauser"
   - "readall"
 
 maillog:
