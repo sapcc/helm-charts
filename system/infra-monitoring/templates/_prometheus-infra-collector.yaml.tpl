@@ -310,6 +310,27 @@
       replacement: redfish-exporter:9220
 {{- end }}
 
+{{- if $values.firmware.enabled }}
+- job_name: 'redfish_fw'
+  params:
+    job: [redfish_fw]
+  scrape_interval: {{$values.redfish_fw_scrapeInterval}}
+  scrape_timeout: {{$values.redfish_fw_scrapeTimeout}}
+  http_sd_configs:
+    - url: {{ .Values.atlas_url }}
+  metrics_path: /firmware
+  relabel_configs:
+    - source_labels: [job]
+      regex: redfish_fw
+      action: keep
+    - source_labels: [__address__]
+      target_label: __param_target
+    - source_labels: [__param_target]
+      target_label: instance
+    - target_label: __address__
+      replacement: redfish-exporter:9220
+{{- end }}
+
 {{- $values := .Values.windows_exporter -}}
 {{- if $values.enabled }}
 - job_name: 'win-exporter-ad'
