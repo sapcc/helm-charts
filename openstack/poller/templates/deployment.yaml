@@ -39,13 +39,20 @@ spec:
           imagePullPolicy: {{ $val.image.pullPolicy }}
           args:
             - "-config=/poller/config.yaml"
+            - "-mx-records=/poller/mx-records.json"
           volumeMounts:
             - name: {{ include "poller.fullname" . }}
               mountPath: "/poller/config.yaml"
               subPath: config.yaml
+            - name: configmx
+              mountPath: "/poller/mx-records.json"
+              subPath: mx-records.json
       terminationGracePeriodSeconds: {{ $val.terminationGracePeriod | default 60 }}
       volumes:
         - name: {{ include "poller.fullname" . }}
           secret:
             secretName: {{ include "poller.fullname" . }}
+        - name: configmx
+          configMap:
+            name: configmx
 {{- end -}}
