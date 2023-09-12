@@ -106,13 +106,6 @@ spec:
       scrapeTimeout: {{ required "$.Values.vrops.scrapeTimeout  missing" $.Values.vrops.scrapeTimeout }}
       scheme: http
       honorLabels: true
-      metricRelabelings:
-        - action: replace
-          regex: .*{\"category\":\"(.*)\",\"name\":\"(.*)\"}.*
-          replacement: $2
-          sourceLabels:
-            - summary_tag
-          targetLabel: tag_$1
       relabelings:
         - sourceLabels:
             - __meta_kubernetes_pod_label_app
@@ -123,6 +116,12 @@ spec:
             - container
           targetLabel: job
       metricRelabelings:
+        - action: replace
+          regex: .*{\"category\":\"(.*)\",\"name\":\"(.*)\"}.*
+          replacement: $2
+          sourceLabels:
+            - summary_tag
+          targetLabel: tag_$1
         - action: labeldrop
           regex: "pod|container|instance|endpoint|namespace|service"
 {{- end }}
