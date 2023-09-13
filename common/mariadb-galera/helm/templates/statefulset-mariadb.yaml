@@ -208,7 +208,7 @@ spec:
         {{- if and (hasKey $.Values.mariadb "autostart") (not $.Values.mariadb.autostart) }}
         {{- else if and ($.Values.command) (hasKey $.Values.command "application") }}
         {{- else if and (hasKey $.Values.mariadb "wipeDataAndLog") ($.Values.mariadb.wipeDataAndLog) }}
-        {{- else if or (and (hasKey $.Values.mariadb.galera.restore "restic") ($.Values.mariadb.galera.restore.restic.enabled)) (and (hasKey $.Values.mariadb.galera.restore "kopia") ($.Values.mariadb.galera.restore.kopia.enabled)) }}
+        {{- else if and (hasKey $.Values.mariadb.galera.restore "kopia") ($.Values.mariadb.galera.restore.kopia.enabled) }}
         {{- else }}
         startupProbe:
           exec:
@@ -299,7 +299,7 @@ spec:
               {{- end }}
             {{- end }}
           {{- end }}
-          - name: {{ include "commonPrefix" $ }}my-cnf
+          - name: {{ include "commonPrefix" $ }}mariadb-my-cnf
             mountPath: /opt/mariadb/etc/conf.d/tpl
             readOnly: true
           - name: {{ include "commonPrefix" $ }}galerastatus
@@ -333,7 +333,7 @@ spec:
             mountPath: /opt/mariadb/bin/common-functions-extended.sh
             subPath: common-functions-extended.sh
             readOnly: true
-          {{- if or (and (hasKey $.Values.mariadb "wipeDataAndLog") ($.Values.mariadb.wipeDataAndLog)) (or (and (hasKey $.Values.mariadb.galera.restore "restic") ($.Values.mariadb.galera.restore.restic.enabled)) (and (hasKey $.Values.mariadb.galera.restore "kopia") ($.Values.mariadb.galera.restore.kopia.enabled))) }}
+          {{- if or (and (hasKey $.Values.mariadb "wipeDataAndLog") ($.Values.mariadb.wipeDataAndLog)) (and (hasKey $.Values.mariadb.galera.restore "kopia") ($.Values.mariadb.galera.restore.kopia.enabled)) }}
           - name: {{ include "commonPrefix" $ }}mariadb-wipedata
             mountPath: /opt/mariadb/etc/wipedata.flag
             subPath: wipedata.flag
@@ -343,7 +343,7 @@ spec:
         {{- if and (hasKey $.Values.mariadb "autostart") (not $.Values.mariadb.autostart) }}
         {{- else if and ($.Values.command) (hasKey $.Values.command "application") }}
         {{- else if and (hasKey $.Values.mariadb "wipeDataAndLog") ($.Values.mariadb.wipeDataAndLog) }}
-        {{- else if or (and (hasKey $.Values.mariadb.galera.restore "restic") ($.Values.mariadb.galera.restore.restic.enabled)) (and (hasKey $.Values.mariadb.galera.restore "kopia") ($.Values.mariadb.galera.restore.kopia.enabled)) }}
+        {{- else if and (hasKey $.Values.mariadb.galera.restore "kopia") ($.Values.mariadb.galera.restore.kopia.enabled) }}
         {{- else if $.Values.monitoring.mysqld_exporter.enabled }}
       - name: mon
         image: "{{ $.Values.image.monitoring.registry }}/{{ $.Values.image.monitoring.project }}/{{ $.Values.image.monitoring.applicationname }}:{{ $.Values.image.monitoring.applicationversion }}-{{ $.Values.image.monitoring.imageversion | int }}"
@@ -480,7 +480,7 @@ spec:
       {{- if and (hasKey $.Values.mariadb "autostart") (not $.Values.mariadb.autostart) }}
       {{- else if and ($.Values.command) (hasKey $.Values.command "application") }}
       {{- else }}
-        {{- if or (and (hasKey $.Values.mariadb "wipeDataAndLog") ($.Values.mariadb.wipeDataAndLog)) (or (and (hasKey $.Values.mariadb.galera.restore "restic") ($.Values.mariadb.galera.restore.restic.enabled)) (and (hasKey $.Values.mariadb.galera.restore "kopia") ($.Values.mariadb.galera.restore.kopia.enabled))) }}
+        {{- if or (and (hasKey $.Values.mariadb "wipeDataAndLog") ($.Values.mariadb.wipeDataAndLog)) (and (hasKey $.Values.mariadb.galera.restore "kopia") ($.Values.mariadb.galera.restore.kopia.enabled)) }}
       terminationGracePeriodSeconds: 15
         {{- else }}
       terminationGracePeriodSeconds: {{ $.Values.terminationGracePeriodSeconds | default 86400 | int }}
@@ -505,9 +505,9 @@ spec:
             {{- end }}
           {{- end }}
         {{- end }}
-        - name: {{ include "commonPrefix" $ }}my-cnf
+        - name: {{ include "commonPrefix" $ }}mariadb-my-cnf
           configMap:
-            name: {{ include "commonPrefix" $ }}my-cnf
+            name: {{ include "commonPrefix" $ }}mariadb-my-cnf
             defaultMode: 0444
         - name: {{ include "commonPrefix" $ }}galerastatus
           configMap:
@@ -529,7 +529,7 @@ spec:
           configMap:
             name: {{ include "commonPrefix" $ }}mariadb-common-functions-extended-sh
             defaultMode: 0755
-        {{- if or (and (hasKey $.Values.mariadb "wipeDataAndLog") ($.Values.mariadb.wipeDataAndLog)) (or (and (hasKey $.Values.mariadb.galera.restore "restic") ($.Values.mariadb.galera.restore.restic.enabled)) (and (hasKey $.Values.mariadb.galera.restore "kopia") ($.Values.mariadb.galera.restore.kopia.enabled))) }}
+        {{- if or (and (hasKey $.Values.mariadb "wipeDataAndLog") ($.Values.mariadb.wipeDataAndLog)) (and (hasKey $.Values.mariadb.galera.restore "kopia") ($.Values.mariadb.galera.restore.kopia.enabled)) }}
         - name: {{ include "commonPrefix" $ }}mariadb-wipedata
           configMap:
             name: {{ include "commonPrefix" $ }}mariadb-wipedata

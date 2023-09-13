@@ -33,7 +33,7 @@ ADD https://github.com/${SOFTWARE_NAME}/${SOFTWARE_NAME}/releases/download/v${SO
 USER root
 WORKDIR /opt
 SHELL ["/bin/bash", "-euo", "pipefail", "-c"]
-RUN mkdir -p /opt/${SOFTWARE_NAME}/{bin,etc,var/run,var/tmp} \
+RUN mkdir -p /opt/${SOFTWARE_NAME}/{bin,etc,var/run,var/tmp/binlog} \
   && groupadd ${SOFTWARE_NAME} --gid ${USERID} \
   && adduser ${SOFTWARE_NAME} --home /opt/${SOFTWARE_NAME} --uid ${USERID} --gid ${USERID} --gecos "" --shell /sbin/nologin --no-create-home --disabled-login \
   && echo 'export PATH=${PATH}:/opt/${SOFTWARE_NAME}/bin' > /opt/${SOFTWARE_NAME}/.bashrc \

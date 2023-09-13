@@ -54,7 +54,7 @@ spec:
     component: "disabledBecauseOf-command.application-defined"
   {{- else if and (hasKey .global.Values.mariadb "wipeDataAndLog") (.global.Values.mariadb.wipeDataAndLog) }}
     component: "disabledBecauseOf-mariadb.wipeDataAndLog-enabled"
-  {{- else if or (and (hasKey .global.Values.mariadb.galera.restore "restic") (.global.Values.mariadb.galera.restore.restic.enabled)) (and (hasKey .global.Values.mariadb.galera.restore "kopia") (.global.Values.mariadb.galera.restore.kopia.enabled)) }}
+  {{- else if and (hasKey .global.Values.mariadb.galera.restore "kopia") (.global.Values.mariadb.galera.restore.kopia.enabled) }}
     component: "disabledBecauseOf-mariadb.galera.restore-enabled"
   {{- else if eq .component "application-direct" }}
     component: "application"
