@@ -57,6 +57,7 @@ shared_physical_network= {{ .Values.tempest_common.shared_physical_network | def
 floating_network_name = FloatingIP-external-monsoon3-01
 build_timeout=600
 build_interval=20
+subnet_id = a5703f23-ffcb-4ca7-9dfe-ab9861d91bf5
 
 [network-feature-enabled]
 ipv6 = False
