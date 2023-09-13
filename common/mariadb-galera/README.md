@@ -167,12 +167,24 @@ docker build --build-arg BASE_SOFT_NAME=ubuntu --build-arg BASE_SOFT_VERSION=22.
 | cleanOsCacheAtStartup | bool | `false` | only useful for benchmarking [www.kernel.org drop_caches](https://www.kernel.org/doc/html/latest/admin-guide/sysctl/vm.html?highlight=drop_caches#drop-caches) |
 | env.COLLECT_INFO_SCHEMA_INNODB_TABLESPACES.containerType[0] | string | `"monitoring"` |  |
 | env.COLLECT_INFO_SCHEMA_INNODB_TABLESPACES.value | string | `"enable"` |  |
-| env.GALERA_SST_PASSWORD.containerType | list | `["application","jobconfig","proxy"]` | for which containers this environment variable will be used |
+| env.GALERA_SST_PASSWORD.containerType | list | `["application","jobconfig","proxysql"]` | for which containers this environment variable will be used |
 | env.GALERA_SST_PASSWORD.secretKey | string | `"password"` | Name of the key of the predefined Kubernetes secret that contains the `password` for the `MariaDB Galera state snapshot transfer user` |
 | env.GALERA_SST_PASSWORD.secretName | string | `"mariadb-mariabackup"` | Name of the [Kubernetes secret](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-environment-variables) that contains the key for the `password` of the `MariaDB Galera state snapshot transfer user` |
-| env.GALERA_SST_USERNAME.containerType | list | `["application","jobconfig","proxy"]` | for which containers this environment variable will be used |
+| env.GALERA_SST_USERNAME.containerType | list | `["application","jobconfig","proxysql"]` | for which containers this environment variable will be used |
 | env.GALERA_SST_USERNAME.secretKey | string | `"username"` | Name of the key of the predefined Kubernetes secret that contains the `username` for the `MariaDB Galera state snapshot transfer user` |
 | env.GALERA_SST_USERNAME.secretName | string | `"mariadb-mariabackup"` | Name of the [Kubernetes secret](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-environment-variables) that contains the key for the `username` of the `MariaDB Galera state snapshot transfer user` |
+| env.HAPROXY_MYSQL_PASSWORD.containerType | list | `["haproxy","jobconfig"]` | for which containers this environment variable will be used |
+| env.HAPROXY_MYSQL_PASSWORD.secretKey | string | `"password"` | Name of the key of the predefined Kubernetes secret that contains the `password` for the [HAProxy healthcheck user for MariaDB](http://docs.haproxy.org/2.8/configuration.html#4-option%20mysql-check) |
+| env.HAPROXY_MYSQL_PASSWORD.secretName | string | `"mariadb-haproxy-check"` | Name of the [Kubernetes secret](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-environment-variables) that contains the key for the `password` of the `HAProxy statistics user` |
+| env.HAPROXY_MYSQL_USERNAME.containerType | list | `["haproxy","jobconfig"]` | for which containers this environment variable will be used |
+| env.HAPROXY_MYSQL_USERNAME.secretKey | string | `"username"` | Name of the key of the predefined Kubernetes secret that contains the `username` for the [HAProxy healthcheck user for MariaDB](http://docs.haproxy.org/2.8/configuration.html#4-option%20mysql-check) |
+| env.HAPROXY_MYSQL_USERNAME.secretName | string | `"mariadb-haproxy-check"` | Name of the [Kubernetes secret](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-environment-variables) that contains the key for the `username` of the `HAProxy statistics user` |
+| env.HAPROXY_STATS_PASSWORD.containerType | list | `["haproxy"]` | for which containers this environment variable will be used |
+| env.HAPROXY_STATS_PASSWORD.secretKey | string | `"password"` | Name of the key of the predefined Kubernetes secret that contains the `password` for the [HAProxy statistics user](http://docs.haproxy.org/2.8/configuration.html#4.2-stats%20enable) |
+| env.HAPROXY_STATS_PASSWORD.secretName | string | `"haproxy-stats"` | Name of the [Kubernetes secret](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-environment-variables) that contains the key for the `password` of the `HAProxy statistics user` |
+| env.HAPROXY_STATS_USERNAME.containerType | list | `["haproxy"]` | for which containers this environment variable will be used |
+| env.HAPROXY_STATS_USERNAME.secretKey | string | `"username"` | Name of the key of the predefined Kubernetes secret that contains the `username` for the [HAProxy statistics user](http://docs.haproxy.org/2.8/configuration.html#4.2-stats%20enable) |
+| env.HAPROXY_STATS_USERNAME.secretName | string | `"haproxy-stats"` | Name of the [Kubernetes secret](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-environment-variables) that contains the key for the `username` of the `HAProxy statistics user` |
 | env.KOPIA_PASSWORD.containerType | list | `["cronjob-kopia","jobrestore-kopia","kopiaserver"]` | for which containers this environment variable will be used |
 | env.KOPIA_PASSWORD.secretKey | string | `"password"` | Name of the key of the predefined Kubernetes secret that contains the `password` for the `Kopia repository encryption key` |
 | env.KOPIA_PASSWORD.secretName | string | `"kopia-repository"` | Name of the [Kubernetes secret](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-environment-variables) that contains the key for the `password` of the `Kopia repository encryption key` |
@@ -202,16 +214,16 @@ docker build --build-arg BASE_SOFT_NAME=ubuntu --build-arg BASE_SOFT_VERSION=22.
 | env.MARIADB_MONITORING_USERNAME.containerType | list | `["application","monitoring","jobconfig"]` | for which containers this environment variable will be used |
 | env.MARIADB_MONITORING_USERNAME.secretKey | string | `"username"` | Name of the key of the predefined Kubernetes secret that contains the `username` for the `MariaDB monitoring user` |
 | env.MARIADB_MONITORING_USERNAME.secretName | string | `"mariadb-monitor"` | Name of the [Kubernetes secret](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-environment-variables) that contains the key for the `username` of the `MariaDB monitoring user` |
-| env.MARIADB_ROOT_PASSWORD.containerType | list | `["application","jobconfig","proxy","cronjob-restic","jobrestore-restic","cronjob-kopia","jobrestore-kopia"]` | for which containers this environment variable will be used |
+| env.MARIADB_ROOT_PASSWORD.containerType | list | `["application","jobconfig","proxysql","cronjob-restic","jobrestore-restic","cronjob-kopia","jobrestore-kopia"]` | for which containers this environment variable will be used |
 | env.MARIADB_ROOT_PASSWORD.secretKey | string | `"password"` | Name of the key of the predefined Kubernetes secret that contains the `password` for the `MariaDB root user` |
 | env.MARIADB_ROOT_PASSWORD.secretName | string | `"mariadb-root"` | Name of the [Kubernetes secret](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-environment-variables) that contains the key for the `password` of the `MariaDB root user` |
-| env.MARIADB_ROOT_USERNAME.containerType | list | `["application","jobconfig","proxy","cronjob-restic","jobrestore-restic","cronjob-kopia","jobrestore-kopia"]` | for which containers this environment variable will be used |
+| env.MARIADB_ROOT_USERNAME.containerType | list | `["application","jobconfig","proxysql","cronjob-restic","jobrestore-restic","cronjob-kopia","jobrestore-kopia"]` | for which containers this environment variable will be used |
 | env.MARIADB_ROOT_USERNAME.secretKey | string | `"username"` | Name of the key of the predefined Kubernetes secret that contains the `username` for the `MariaDB root user` |
 | env.MARIADB_ROOT_USERNAME.secretName | string | `"mariadb-root"` | Name of the [Kubernetes secret](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-environment-variables) that contains the key for the `username` of the `MariaDB root user` |
-| env.OPENSTACK_CITEST_PASSWORD.containerType | list | `["jobconfig","proxy"]` | for which containers this environment variable will be used |
+| env.OPENSTACK_CITEST_PASSWORD.containerType | list | `["jobconfig","proxysql"]` | for which containers this environment variable will be used |
 | env.OPENSTACK_CITEST_PASSWORD.secretKey | string | `"password"` | Name of the key of the predefined Kubernetes secret that contains the `password` for the `Openstack oslo.db unit test user` |
 | env.OPENSTACK_CITEST_PASSWORD.secretName | string | `"mariadb-openstack_citest"` | Name of the [Kubernetes secret](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-environment-variables) that contains the key for the `password` of the `Openstack oslo.db unit test user` |
-| env.OPENSTACK_CITEST_USERNAME.containerType | list | `["jobconfig","proxy"]` | for which containers this environment variable will be used |
+| env.OPENSTACK_CITEST_USERNAME.containerType | list | `["jobconfig","proxysql"]` | for which containers this environment variable will be used |
 | env.OPENSTACK_CITEST_USERNAME.secretKey | string | `"username"` | Name of the key of the predefined Kubernetes secret that contains the `username` for the `Openstack oslo.db unit test user` |
 | env.OPENSTACK_CITEST_USERNAME.secretName | string | `"mariadb-openstack_citest"` | Name of the [Kubernetes secret](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-environment-variables) that contains the key for the `username` of the `Openstack oslo.db unit test user` |
 | env.OS_PASSWORD.containerType | list | `["cronjob-restic","jobrestore-restic"]` | for which containers this environment variable will be used |
@@ -220,37 +232,37 @@ docker build --build-arg BASE_SOFT_NAME=ubuntu --build-arg BASE_SOFT_VERSION=22.
 | env.OS_USERNAME.containerType | list | `["cronjob-restic","jobrestore-restic"]` | for which containers this environment variable will be used |
 | env.OS_USERNAME.secretKey | string | `"username"` | Name of the key of the predefined Kubernetes secret that contains the `username` for the `Openstack swift user for restic` |
 | env.OS_USERNAME.secretName | string | `"restic-openstack"` | Name of the [Kubernetes secret](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-environment-variables) that contains the key for the `username` of the `Openstack swift user for restic` |
-| env.PROXYSQL_ADMIN_PASSWORD.containerType | list | `["proxy"]` | for which containers this environment variable will be used |
+| env.PROXYSQL_ADMIN_PASSWORD.containerType | list | `["proxysql"]` | for which containers this environment variable will be used |
 | env.PROXYSQL_ADMIN_PASSWORD.secretKey | string | `"password"` | Name of the key of the predefined Kubernetes secret that contains the `password` for the `ProxySQL admin user` |
 | env.PROXYSQL_ADMIN_PASSWORD.secretName | string | `"proxysql-admin"` | Name of the [Kubernetes secret](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-environment-variables) that contains the key for the `password` of the `ProxySQL admin user` |
-| env.PROXYSQL_ADMIN_USERNAME.containerType | list | `["proxy"]` | for which containers this environment variable will be used |
+| env.PROXYSQL_ADMIN_USERNAME.containerType | list | `["proxysql"]` | for which containers this environment variable will be used |
 | env.PROXYSQL_ADMIN_USERNAME.secretKey | string | `"username"` | Name of the key of the predefined Kubernetes secret that contains the `username` for the `ProxySQL admin user` |
 | env.PROXYSQL_ADMIN_USERNAME.secretName | string | `"proxysql-admin"` | Name of the [Kubernetes secret](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-environment-variables) that contains the key for the `username` of the `ProxySQL admin user` |
-| env.PROXYSQL_MONITOR_PASSWORD.containerType | list | `["proxy"]` | for which containers this environment variable will be used |
+| env.PROXYSQL_MONITOR_PASSWORD.containerType | list | `["proxysql"]` | for which containers this environment variable will be used |
 | env.PROXYSQL_MONITOR_PASSWORD.secretKey | string | `"password"` | Name of the key of the predefined Kubernetes secret that contains the `password` for the `ProxySQL monitoring user for MariaDB` |
 | env.PROXYSQL_MONITOR_PASSWORD.secretName | string | `"proxysql-monitor"` | Name of the [Kubernetes secret](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-environment-variables) that contains the key for the `password` of the `ProxySQL monitoring user for MariaDB` |
-| env.PROXYSQL_MONITOR_USERNAME.containerType | list | `["proxy"]` | for which containers this environment variable will be used |
+| env.PROXYSQL_MONITOR_USERNAME.containerType | list | `["proxysql"]` | for which containers this environment variable will be used |
 | env.PROXYSQL_MONITOR_USERNAME.secretKey | string | `"username"` | Name of the key of the predefined Kubernetes secret that contains the `username` for the `ProxySQL monitoring user for MariaDB` |
 | env.PROXYSQL_MONITOR_USERNAME.secretName | string | `"proxysql-monitor"` | Name of the [Kubernetes secret](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-environment-variables) that contains the key for the `username` of the `ProxySQL monitoring user for MariaDB` |
-| env.PROXYSQL_STATS_PASSWORD.containerType | list | `["proxy"]` | for which containers this environment variable will be used |
+| env.PROXYSQL_STATS_PASSWORD.containerType | list | `["proxysql"]` | for which containers this environment variable will be used |
 | env.PROXYSQL_STATS_PASSWORD.secretKey | string | `"password"` | Name of the key of the predefined Kubernetes secret that contains the `password` for the `ProxySQL statistics user` |
 | env.PROXYSQL_STATS_PASSWORD.secretName | string | `"proxysql-stats"` | Name of the [Kubernetes secret](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-environment-variables) that contains the key for the `password` of the `ProxySQL statistics user` |
-| env.PROXYSQL_STATS_USERNAME.containerType | list | `["proxy"]` | for which containers this environment variable will be used |
+| env.PROXYSQL_STATS_USERNAME.containerType | list | `["proxysql"]` | for which containers this environment variable will be used |
 | env.PROXYSQL_STATS_USERNAME.secretKey | string | `"username"` | Name of the key of the predefined Kubernetes secret that contains the `username` for the `ProxySQL statistics user` |
 | env.PROXYSQL_STATS_USERNAME.secretName | string | `"proxysql-stats"` | Name of the [Kubernetes secret](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-environment-variables) that contains the key for the `username` of the `ProxySQL statistics user` |
-| env.REPLICA_PASSWORD.containerType | list | `["application","jobconfig","proxy"]` | for which containers this environment variable will be used |
+| env.REPLICA_PASSWORD.containerType | list | `["application","jobconfig","proxysql"]` | for which containers this environment variable will be used |
 | env.REPLICA_PASSWORD.secretKey | string | `"password"` | Name of the key of the predefined Kubernetes secret that contains the `password` for the `MariaDB async replication user` |
 | env.REPLICA_PASSWORD.secretName | string | `"mariadb-replicator"` | Name of the [Kubernetes secret](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-environment-variables) that contains the key for the `password` of the `MariaDB async replication user` |
-| env.REPLICA_USERNAME.containerType | list | `["application","jobconfig","proxy"]` | for which containers this environment variable will be used |
+| env.REPLICA_USERNAME.containerType | list | `["application","jobconfig","proxysql"]` | for which containers this environment variable will be used |
 | env.REPLICA_USERNAME.secretKey | string | `"username"` | Name of the key of the predefined Kubernetes secret that contains the `username` for the `MariaDB async replication user` |
 | env.REPLICA_USERNAME.secretName | string | `"mariadb-replicator"` | Name of the [Kubernetes secret](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-environment-variables) that contains the key for the `username` of the `MariaDB async replication user` |
 | env.RESTIC_PASSWORD.containerType | list | `["cronjob-restic","jobrestore-restic"]` | for which containers this environment variable will be used |
 | env.RESTIC_PASSWORD.secretKey | string | `"password"` | Name of the key of the predefined Kubernetes secret that contains the `password` for the `Restic repository encryption key` |
 | env.RESTIC_PASSWORD.secretName | string | `"restic-repository"` | Name of the [Kubernetes secret](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-environment-variables) that contains the key for the `password` of the `Restic repository encryption key` |
-| env.SYSBENCH_PASSWORD.containerType | list | `["jobconfig","proxy"]` | for which containers this environment variable will be used |
+| env.SYSBENCH_PASSWORD.containerType | list | `["jobconfig","proxysql"]` | for which containers this environment variable will be used |
 | env.SYSBENCH_PASSWORD.secretKey | string | `"password"` | Name of the key of the predefined Kubernetes secret that contains the `password` for the `sysbench user` |
 | env.SYSBENCH_PASSWORD.secretName | string | `"mariadb-sysbench"` | Name of the [Kubernetes secret](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-environment-variables) that contains the key for the `password` of the `sysbench user` |
-| env.SYSBENCH_USERNAME.containerType | list | `["jobconfig","proxy"]` | for which containers this environment variable will be used |
+| env.SYSBENCH_USERNAME.containerType | list | `["jobconfig","proxysql"]` | for which containers this environment variable will be used |
 | env.SYSBENCH_USERNAME.secretKey | string | `"username"` | Name of the key of the predefined Kubernetes secret that contains the `username` for the `sysbench user` |
 | env.SYSBENCH_USERNAME.secretName | string | `"mariadb-sysbench"` | Name of the [Kubernetes secret](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-environment-variables) that contains the key for the `username` of the `sysbench user` |
 | env.WEB_TELEMETRY_PATH.containerType | list | `["monitoring"]` | for which containers this environment variable will be used |
@@ -258,7 +270,7 @@ docker build --build-arg BASE_SOFT_NAME=ubuntu --build-arg BASE_SOFT_VERSION=22.
 | groupId.application | string | 101 | run the MariaDB containers with that [group id](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-container) |
 | groupId.backup | string | 3200 | run the Kopia/Restic containers with that [group id](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-container) |
 | groupId.monitoring | string | 3000 | run the MariaDB monitoring containers with that [group id](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-container) |
-| groupId.proxy | string | 3100 | run the ProxySQL containers with that [group id](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-container) |
+| groupId.proxy | string | 3100 | run the ProxySQL/HAProxy containers with that [group id](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-container) |
 | hpa.application.enabled | bool | false | enable [horizontal pod autoscaling](https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/) for the MariaDB Galera pods. Currently not suggested because even replica numbers cannot be avoided |
 | hpa.application.maxCpuPercent | int | 66 | average CPU usage in percent across all MariaDB Galera pods that triggers the scaling process |
 | hpa.application.maxReplicas | int | 5 | maximum number of replicas allowed for the MariaDB Galera pods |
@@ -274,6 +286,12 @@ docker build --build-arg BASE_SOFT_NAME=ubuntu --build-arg BASE_SOFT_VERSION=22.
 | image.application.pullPolicy | string | IfNotPresent | `Always` to enforce that the image will be pulled even if it is already available on the worker node |
 | image.application.pullSecret | string | `nil` | name of the defined Kubernetes secret defined in `image.pullSecrets` that should be used for container registry authentication |
 | image.application.registry | string | `"keppel.eu-de-1.cloud.sap"` | hostname of the image registry used to pull the application image that contains `MariaDB`, `Galera` and the two helpers `yq` and `restic` |
+| image.haproxy.applicationname | string | `"library/haproxy"` | folder/container used in the image registry and also part of the image name |
+| image.haproxy.applicationversion | string | `"2.8.2-alpine"` | application part of the image version that should be pulled |
+| image.haproxy.project | string | `"ccloud-dockerhub-mirror"` | project/tenant used in the image registry |
+| image.haproxy.pullPolicy | string | IfNotPresent | `Always` to enforce that the image will be pulled even if it is already available on the worker node |
+| image.haproxy.pullSecret | string | `nil` | name of the defined Kubernetes secret defined in `image.pullSecrets` that should be used for container registry authentication |
+| image.haproxy.registry | string | `"keppel.eu-de-1.cloud.sap"` | hostname of the image registry used to pull the proxy image that contains the Restic backup software |
 | image.kopiabackup.applicationname | string | `"mariadb-galera-kopiabackup"` | folder/container used in the image registry and also part of the image name |
 | image.kopiabackup.applicationversion | string | `"0.12.1"` | application part of the image version that should be pulled |
 | image.kopiabackup.imageversion | int | `20230629170110` | image part of the image version that should be pulled |
@@ -321,19 +339,19 @@ docker build --build-arg BASE_SOFT_NAME=ubuntu --build-arg BASE_SOFT_VERSION=22.
 | livenessProbe.failureThreshold.application | int | 4 | How many [retries](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) are allowed before the liveness probe for the MariaDB Galera pods are marked as failed |
 | livenessProbe.failureThreshold.kopiaserver | int | 4 | How many [retries](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) are allowed before the liveness probe for the Kopia UI pod is marked as failed |
 | livenessProbe.failureThreshold.monitoring | int | 4 | How many [retries](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) are allowed before the liveness probe for the MariaDB monitoring sidecar container is marked as failed |
-| livenessProbe.failureThreshold.proxy | int | 4 | How many [retries](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) are allowed before the liveness probe for the ProxySQL cluster pods are marked as failed |
+| livenessProbe.failureThreshold.proxy | int | 4 | How many [retries](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) are allowed before the liveness probe for the ProxySQL/HAProxy pods are marked as failed |
 | livenessProbe.initialDelaySeconds.application | int | 60 | Define the [initial delay](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) of the liveness probe for MariaDB Galera pods |
 | livenessProbe.initialDelaySeconds.kopiaserver | int | 60 | Define the [initial delay](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) of the liveness probe for Kopia UI pod |
 | livenessProbe.initialDelaySeconds.monitoring | int | 5 | Define the [initial delay](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) of the liveness probe for MariaDB monitoring sidecar container |
-| livenessProbe.initialDelaySeconds.proxy | int | 60 | Define the [initial delay](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) of the liveness probe for ProxySQL cluster pods |
+| livenessProbe.initialDelaySeconds.proxy | int | 60 | Define the [initial delay](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) of the liveness probe for ProxySQL/HAProxy pods |
 | livenessProbe.periodSeconds.application | int | 30 | Define the [check interval](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) of the liveness probe for MariaDB Galera pods |
 | livenessProbe.periodSeconds.kopiaserver | int | 30 | Define the [check interval](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) of the liveness probe for Kopia UI pod |
 | livenessProbe.periodSeconds.monitoring | int | 30 | Define the [check interval](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) of the liveness probe for MariaDB monitoring sidecar container |
-| livenessProbe.periodSeconds.proxy | int | 30 | Define the [check interval](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) of the liveness probe for ProxySQL cluster pods |
+| livenessProbe.periodSeconds.proxy | int | 30 | Define the [check interval](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) of the liveness probe for ProxySQL/HAProxy pods |
 | livenessProbe.timeoutSeconds.application | int | 20 | How long should Kubernetes [wait](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) for the current check of the liveness probe for the MariaDB Galera pods |
 | livenessProbe.timeoutSeconds.kopiaserver | int | 20 | How long should Kubernetes [wait](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) for the current check of the liveness probe for the Kopia UI pod |
 | livenessProbe.timeoutSeconds.monitoring | int | 20 | How long should Kubernetes [wait](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) for the current check of the liveness probe for the MariaDB monitoring sidecar container |
-| livenessProbe.timeoutSeconds.proxy | int | 20 | How long should Kubernetes [wait](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) for the current check of the liveness probe for the ProxySQL cluster pods |
+| livenessProbe.timeoutSeconds.proxy | int | 20 | How long should Kubernetes [wait](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) for the current check of the liveness probe for the ProxySQL/HAProxy pods |
 | mariadb.asyncReplication.autostart | bool | false | start configured slave during database node startup [wsrep_restart_slave](https://mariadb.com/kb/en/galera-cluster-system-variables/#wsrep_restart_slave) |
 | mariadb.asyncReplication.enabled | bool | false | to enable the [asynchronous replication config](#asynchronous-replication-config). Should be done within custom instance configuration files |
 | mariadb.asyncReplication.primaryHost | bool | `false` | #Hostname or IP of the replication source [master_host](https://mariadb.com/kb/en/change-master-to/#master_host) |
@@ -472,6 +490,16 @@ docker build --build-arg BASE_SOFT_NAME=ubuntu --build-arg BASE_SOFT_VERSION=22.
 | mariadb.roles.sstbackup.grant | bool | `false` | allow to grant the [privileges](https://mariadb.com/kb/en/grant/#the-grant-option-privilege) to other users |
 | mariadb.roles.sstbackup.object | list | `"*.*"` | list of [objects](https://mariadb.com/kb/en/grant/#syntax) for the privileges are allowed to use like "*.*", "database.table" or "database.*" |
 | mariadb.roles.sstbackup.privileges | list | `["RELOAD","PROCESS","LOCK TABLES","BINLOG MONITOR"]` | list of [privileges](https://mariadb.com/kb/en/grant/#global-privileges) that should be granted to the role |
+| mariadb.users.haproxycheck.additionalroles | list | `nil` | additional [roles](https://mariadb.com/kb/en/set-role/) for that user |
+| mariadb.users.haproxycheck.adminoption | bool | `false` | that allows the user to grant his own permissions to other users |
+| mariadb.users.haproxycheck.authplugin | string | `"mysql_native_password"` | MariaDB authentication plugin ([mysql_native_password](https://mariadb.com/kb/en/authentication-plugin-mysql_native_password/)|[ed25519](https://mariadb.com/kb/en/authentication-plugin-ed25519/)) |
+| mariadb.users.haproxycheck.defaultrole | string | `"contentfullaccess"` | [default role](https://mariadb.com/kb/en/set-default-role/) for that user |
+| mariadb.users.haproxycheck.enabled | bool | `false` | enable the user |
+| mariadb.users.haproxycheck.hostnames | list | `["%","::1","localhost"]` | list of allowed hostnames like "%", "::1" or "localhost" |
+| mariadb.users.haproxycheck.maxconnections | int | `0` | [maximum number of connections](https://mariadb.com/kb/en/create-user/#resource-limit-options) for that user |
+| mariadb.users.haproxycheck.password | string | `nil` | MariaDB user password |
+| mariadb.users.haproxycheck.secretName | string | `"mariadb-haproxy-check"` | the [secret](https://kubernetes.io/docs/concepts/configuration/secret/) name that contains the MariaDB sysbench user password |
+| mariadb.users.haproxycheck.username | string | `nil` | MariaDB user username |
 | mariadb.users.mariabackup.additionalroles | list | `nil` | additional [roles](https://mariadb.com/kb/en/set-role/) for that user |
 | mariadb.users.mariabackup.adminoption | bool | `false` | that allows the user to grant his own permissions to other users |
 | mariadb.users.mariabackup.authplugin | string | `"mysql_native_password"` | MariaDB authentication plugin ([mysql_native_password](https://mariadb.com/kb/en/authentication-plugin-mysql_native_password/)|[ed25519](https://mariadb.com/kb/en/authentication-plugin-ed25519/)) |
@@ -546,66 +574,78 @@ docker build --build-arg BASE_SOFT_NAME=ubuntu --build-arg BASE_SOFT_VERSION=22.
 | monitoring.kopia.enabled | bool | false | enable the Kopia [/metrics endpoint](https://kopia.io/docs/reference/command-line/flags/) to be scraped by Prometheus |
 | monitoring.mysqld_exporter.autostart | bool | `true` | run the default entrypoint.sh script or just sleep to be able to troubleshoot and debug |
 | monitoring.mysqld_exporter.enabled | bool | false | enable the [Prometheus MySQL exporter](https://github.com/prometheus/mysqld_exporter) as sidecar container |
+| monitoring.mysqld_exporter.metricsPort | int | 9104 | [MySQL Prometheus exporter](https://github.com/prometheus/mysqld_exporter) port |
 | monitoring.prometheus.instance | string | prometheus | name of the Prometheus instance that should pull metrics |
-| monitoring.proxy.enabled | bool | false | enable the ProxySQL [/metrics endpoint](https://proxysql.com/documentation/prometheus-exporter/) to be scraped by Prometheus |
+| monitoring.proxy.enabled | bool | false | enable the ProxySQL/HAProxy [/metrics endpoint](https://proxysql.com/documentation/prometheus-exporter/) to be scraped by Prometheus |
+| monitoring.proxy.haproxy.metricsPort | int | 8404 | [HAProxy Prometheus exporter](https://github.com/prometheus/mysqld_exporter) port |
 | namePrefix.application | bool | `false` | name prefix used for the MariaDB pods, services etc. @default mariadb-g |
-| namePrefix.kopiaserver | bool | `false` | name prefix used for the ProxySQL pods, services etc. @default backup-kopiaserver |
-| namePrefix.proxy | bool | `false` | name prefix used for the ProxySQL pods, services etc. @default proxysql |
+| namePrefix.kopiaserver | bool | `false` | name prefix used for the Kopia pods, services etc. @default backup-kopiaserver |
+| namePrefix.proxy | bool | `false` | name prefix used for the ProxySQL/HAProxy pods, services etc. @default proxysql or haproxy |
 | podManagementPolicy | string | OrderedReady | [Pod Management Policy](https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/#pod-management-policies) for the MariaDB Galera and ProxySQL cluster pods. |
-| proxy.adminui.enabled | bool | `true` | the [ProxySQL Admin UI](https://proxysql.com/documentation/http-web-server/) |
-| proxy.adminui.verbosity | int | `0` | the variable defines the [verbosity level](https://proxysql.com/documentation/global-variables/admin-variables/#admin-web_verbosity) of the web server |
-| proxy.enabled | bool | `false` | use ProxySQL in front of the MariaDB Galera pods to reduce the service downtimes for the clients |
-| proxy.queryRules.genericReadWriteSplit.enabled | bool | `false` | check the "Generic Read/Write split using regex" section in the [howto](https://proxysql.com/documentation/proxysql-read-write-split-howto/) for details |
-| proxy.restapi.enabled | bool | `true` | the [ProxySQL RestAPI](https://proxysql.com/documentation/REST-API/) |
-| proxy.users.admin.enabled | bool | `true` | enable this user |
-| proxy.users.admin.password | string | `nil` | Proxy admin user password |
-| proxy.users.admin.proxysql.fastforward | bool | `false` | enable the [ProxySQL fastforward](https://proxysql.com/documentation/main-runtime/#mysql_users) feature for that user |
-| proxy.users.admin.secretName | string | `"proxysql-admin"` | the [secret](https://kubernetes.io/docs/concepts/configuration/secret/) name that contains the ProxySQL admin user password |
-| proxy.users.admin.username | string | `nil` | Proxy admin user username |
-| proxy.users.monitor.enabled | bool | `true` | enable this user |
-| proxy.users.monitor.password | string | `nil` | Proxy monitor user password |
-| proxy.users.monitor.proxysql.fastforward | bool | `false` | enable the [ProxySQL fastforward](https://proxysql.com/documentation/main-runtime/#mysql_users) feature for that user |
-| proxy.users.monitor.secretName | string | `"proxysql-monitor"` | the [secret](https://kubernetes.io/docs/concepts/configuration/secret/) name that contains the ProxySQL monitor user password |
-| proxy.users.monitor.username | string | `nil` | Proxy monitor user username |
-| proxy.users.stats.enabled | bool | `false` | enable this user |
-| proxy.users.stats.password | string | `nil` | Proxy stats user password |
-| proxy.users.stats.proxysql.fastforward | bool | `false` | enable the [ProxySQL fastforward](https://proxysql.com/documentation/main-runtime/#mysql_users) feature for that user |
-| proxy.users.stats.secretName | string | `"proxysql-stats"` | the [secret](https://kubernetes.io/docs/concepts/configuration/secret/) name that contains the ProxySQL stats user password |
-| proxy.users.stats.username | string | `nil` | Proxy stats user username |
+| proxy.enabled | bool | false | use ProxySQL in front of the MariaDB Galera pods to reduce the service downtimes for the clients |
+| proxy.haproxy.backend.balance | string | leastconn | [load balancing algorithm](http://docs.haproxy.org/2.8/configuration.html#4.2-balance) to be used for the MariaDB connections |
+| proxy.haproxy.retries | int | 2 | [connection retries](http://docs.haproxy.org/2.8/configuration.html#4-retries) on a server after a failure |
+| proxy.haproxy.timeout.client | string | 5s | [inactivity timeout](http://docs.haproxy.org/2.8/configuration.html#3.10-timeout%20client) on the client side |
+| proxy.haproxy.timeout.connect | string | 3s | [connection timeout](http://docs.haproxy.org/2.8/configuration.html#4.2-timeout%20connect) to a server |
+| proxy.haproxy.timeout.server | string | 5s | [server timeout](http://docs.haproxy.org/2.8/configuration.html#3.9-timeout%20server) for pending data staying in the output buffer |
+| proxy.haproxy.users.stats.enabled | bool | `false` | enable this user |
+| proxy.haproxy.users.stats.password | string | `nil` | HAProxy stats user password |
+| proxy.haproxy.users.stats.secretName | string | `"haproxy-stats"` | the [secret](https://kubernetes.io/docs/concepts/configuration/secret/) name that contains the HAProxy stats user password |
+| proxy.haproxy.users.stats.username | string | `nil` | HAProxy stats user username |
+| proxy.proxysql.adminui.enabled | bool | `true` | the [ProxySQL Admin UI](https://proxysql.com/documentation/http-web-server/) |
+| proxy.proxysql.adminui.verbosity | int | `0` | the variable defines the [verbosity level](https://proxysql.com/documentation/global-variables/admin-variables/#admin-web_verbosity) of the web server |
+| proxy.proxysql.queryRules.genericReadWriteSplit.enabled | bool | `false` | check the "Generic Read/Write split using regex" section in the [howto](https://proxysql.com/documentation/proxysql-read-write-split-howto/) for details |
+| proxy.proxysql.restapi.enabled | bool | `true` | the [ProxySQL RestAPI](https://proxysql.com/documentation/REST-API/) |
+| proxy.proxysql.users.admin.enabled | bool | `true` | enable this user |
+| proxy.proxysql.users.admin.password | string | `nil` | Proxy admin user password |
+| proxy.proxysql.users.admin.proxysql.fastforward | bool | `false` | enable the [ProxySQL fastforward](https://proxysql.com/documentation/main-runtime/#mysql_users) feature for that user |
+| proxy.proxysql.users.admin.secretName | string | `"proxysql-admin"` | the [secret](https://kubernetes.io/docs/concepts/configuration/secret/) name that contains the ProxySQL admin user password |
+| proxy.proxysql.users.admin.username | string | `nil` | Proxy admin user username |
+| proxy.proxysql.users.monitor.enabled | bool | `true` | enable this user |
+| proxy.proxysql.users.monitor.password | string | `nil` | Proxy monitor user password |
+| proxy.proxysql.users.monitor.proxysql.fastforward | bool | `false` | enable the [ProxySQL fastforward](https://proxysql.com/documentation/main-runtime/#mysql_users) feature for that user |
+| proxy.proxysql.users.monitor.secretName | string | `"proxysql-monitor"` | the [secret](https://kubernetes.io/docs/concepts/configuration/secret/) name that contains the ProxySQL monitor user password |
+| proxy.proxysql.users.monitor.username | string | `nil` | Proxy monitor user username |
+| proxy.proxysql.users.stats.enabled | bool | `false` | enable this user |
+| proxy.proxysql.users.stats.password | string | `nil` | Proxy stats user password |
+| proxy.proxysql.users.stats.proxysql.fastforward | bool | `false` | enable the [ProxySQL fastforward](https://proxysql.com/documentation/main-runtime/#mysql_users) feature for that user |
+| proxy.proxysql.users.stats.secretName | string | `"proxysql-stats"` | the [secret](https://kubernetes.io/docs/concepts/configuration/secret/) name that contains the ProxySQL stats user password |
+| proxy.proxysql.users.stats.username | string | `nil` | Proxy stats user username |
+| proxy.type | string | `"proxysql"` | type of the proxy service which will be deployed, we support two options: proxysql | haproxy (only one can be configured) |
 | readinessProbe.failureThreshold.application | int | 2 | How many [retries](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) are allowed before the readiness probe for the MariaDB Galera pods are marked as failed |
 | readinessProbe.failureThreshold.kopiaserver | int | 2 | How many [retries](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) are allowed before the readiness probe for the Kopia UI pod is marked as failed |
 | readinessProbe.failureThreshold.monitoring | int | 2 | How many [retries](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) are allowed before the readiness probe for the MariaDB monitoring sidecar container is marked as failed |
-| readinessProbe.failureThreshold.proxy | int | 2 | How many [retries](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) are allowed before the readiness probe for the ProxySQL cluster pods are marked as failed |
+| readinessProbe.failureThreshold.proxy | int | 2 | How many [retries](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) are allowed before the readiness probe for the ProxySQL/HAProxy pods are marked as failed |
 | readinessProbe.initialDelaySeconds.application | int | 90 | Define the [initial delay](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) of the readiness probe for MariaDB Galera pods |
 | readinessProbe.initialDelaySeconds.kopiaserver | int | 90 | Define the [initial delay](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) of the readiness probe for Kopia UI pod |
 | readinessProbe.initialDelaySeconds.monitoring | int | 10 | Define the [initial delay](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) of the readiness probe for MariaDB monitoring sidecar container |
-| readinessProbe.initialDelaySeconds.proxy | int | 90 | Define the [initial delay](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) of the readiness probe for ProxySQL cluster pods |
+| readinessProbe.initialDelaySeconds.proxy | int | 90 | Define the [initial delay](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) of the readiness probe for ProxySQL/HAProxy pods |
 | readinessProbe.periodSeconds.application | int | 20 | Define the [check interval](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) of the readiness probe for MariaDB Galera pods |
 | readinessProbe.periodSeconds.kopiaserver | int | 20 | Define the [check interval](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) of the readiness probe for Kopia UI pod |
 | readinessProbe.periodSeconds.monitoring | int | 20 | Define the [check interval](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) of the readiness probe for MariaDB monitoring sidecar container |
-| readinessProbe.periodSeconds.proxy | int | 20 | Define the [check interval](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) of the readiness probe for ProxySQL cluster pods |
+| readinessProbe.periodSeconds.proxy | int | 20 | Define the [check interval](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) of the readiness probe for ProxySQL/HAProxy pods |
 | readinessProbe.successThreshold.application | int | 1 | After [how many](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) checks the readiness probe for the MariaDB Galera pods will be marked as successful |
 | readinessProbe.successThreshold.kopiaserver | int | 1 | After [how many](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) checks the readiness probe for the Kopia UI pod will be marked as successful |
 | readinessProbe.successThreshold.monitoring | int | 1 | After [how many](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) checks the readiness probe for the MariaDB monitoring sidecar container will be marked as successful |
-| readinessProbe.successThreshold.proxy | int | 1 | After [how many](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) checks the readiness probe for the ProxySQL cluster pods will be marked as successful |
+| readinessProbe.successThreshold.proxy | int | 1 | After [how many](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) checks the readiness probe for the ProxySQL/HAProxy pods will be marked as successful |
 | readinessProbe.timeoutSeconds.application | int | 10 | How long should Kubernetes [wait](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) for the current check of the readiness probe for the MariaDB Galera pods |
 | readinessProbe.timeoutSeconds.kopiaserver | int | 10 | How long should Kubernetes [wait](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) for the current check of the readiness probe for the Kopia UI pod |
 | readinessProbe.timeoutSeconds.monitoring | int | 10 | How long should Kubernetes [wait](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) for the current check of the readiness probe for the MariaDB monitoring sidecar container |
-| readinessProbe.timeoutSeconds.proxy | int | 10 | How long should Kubernetes [wait](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) for the current check of the readiness probe for the ProxySQL cluster pods |
+| readinessProbe.timeoutSeconds.proxy | int | 10 | How long should Kubernetes [wait](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) for the current check of the readiness probe for the ProxySQL/HAProxy pods |
 | replicas.application | int | 3 | amount of pods that will [scheduled](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#creating-a-deployment) for the MariaDB Galera cluster. An uneven number will be enforced to avoid simple split brain situations. For a good balance between the write and read performance not more than 3 pods a suggested |
 | replicas.proxy | int | 3 | amount of pods that will [scheduled](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#creating-a-deployment) for the ProxySQL cluster. An uneven number will be enforced to avoid simple split brain situations |
 | resourceLimits.cpu.application | int | 0.5 | CPU [resource reservation(request)](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#requests-and-limits) for the MariaDB containers |
 | resourceLimits.cpu.cronjob | int | 0.25 | CPU [resource reservation(request)](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#requests-and-limits) for the MariaDB backup cronjob |
 | resourceLimits.cpu.jobconfig | float | 0.25 | CPU [resource reservation(request)](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#requests-and-limits) for the MariaDB configuration job |
 | resourceLimits.cpu.jobrestore | float | 0.25 | CPU [resource reservation(request)](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#requests-and-limits) for the MariaDB restore job |
-| resourceLimits.cpu.kopiaserver | float | 0.5 | CPU [resource reservation(request)](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#requests-and-limits) for the Kopia UI containers |
+| resourceLimits.cpu.kopiaserver | float | 0.5 | CPU [resource reservation(request)](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#requests-and-limits) for the Haproxy containers |
 | resourceLimits.cpu.monitoring | float | 0.25 | CPU [resource reservation(request)](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#requests-and-limits) for the Monitoring sidecar containers for MariaDB |
 | resourceLimits.cpu.proxy | int | 0.5 | CPU [resource reservation(request)](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#requests-and-limits) for the ProxySQL containers |
 | resourceLimits.memory.application | string | 64Mi | RAM [resource limit](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#requests-and-limits) for the MariaDB containers |
 | resourceLimits.memory.cronjob | string | 32Mi | RAM [resource limit](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#requests-and-limits) for the MariaDB backup cronjob |
 | resourceLimits.memory.jobconfig | string | 32Mi | RAM [resource limit](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#requests-and-limits) for the MariaDB configuration job |
 | resourceLimits.memory.jobrestore | string | 128Mi | RAM [resource limit](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#requests-and-limits) for the MariaDB restore job |
-| resourceLimits.memory.kopiaserver | string | 64Mi | RAM [resource limit](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#requests-and-limits) for the Kopia UI containers |
+| resourceLimits.memory.kopiaserver | string | 64Mi | RAM [resource limit](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#requests-and-limits) for the Haproxy containers |
 | resourceLimits.memory.monitoring | string | 32Mi | RAM [resource limit](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#requests-and-limits) for the Monitoring sidecar containers for MariaDB |
 | resourceLimits.memory.proxy | string | 64Mi | RAM [resource limit](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#requests-and-limits) for the ProxySQL containers |
 | revisionHistoryLimit | int | 10 | how many [versions](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#clean-up-policy) of the rolled out statefulsets for the MariaDB Galera and ProxySQL cluster pods should be kept |
@@ -639,42 +679,51 @@ docker build --build-arg BASE_SOFT_NAME=ubuntu --build-arg BASE_SOFT_VERSION=22.
 | services.kopiaserver.frontend.sessionAffinity.ClientIpTimeoutSeconds | int | 10800 | [Session stickiness timeout](https://kubernetes.io/docs/reference/networking/virtual-ips/#session-affinity) for the `sessionAffinity` option |
 | services.kopiaserver.frontend.sessionAffinity.type | string | `"ClientIP"` | `None` or `ClientIP` if connections from a single client should be [routed to the same endpoint](https://kubernetes.io/docs/reference/networking/virtual-ips/#session-affinity) every time. |
 | services.kopiaserver.frontend.type | string | `"LoadBalancer"` | `ClusterIP` to configure a Kubernetes internal service or `LoadBalancer` to publish the service outside of the [Kubernetes cluster network](https://kubernetes.io/docs/concepts/services-networking/service/#publishing-services-service-types) |
-| services.proxy.backend.headless | bool | `true` | `false` or `true` if the IP adresses of the pods that are [endpoints for that service](https://kubernetes.io/docs/concepts/services-networking/service/#headless-services) should be advertised. Required to let the client make it's own load balancing decisions |
-| services.proxy.backend.ports.adminui.port | int | `6080` | exposed ProxySQL [Admin UI port](https://proxysql.com/documentation/http-web-server/) |
-| services.proxy.backend.ports.adminui.protocol | string | `"TCP"` | ProxySQL [Admin UI port](https://proxysql.com/documentation/http-web-server/) protocol |
-| services.proxy.backend.ports.adminui.targetPort | int | `6080` | ProxySQL [Admin UI port](https://proxysql.com/documentation/http-web-server/) configured in the container |
-| services.proxy.backend.ports.proxy.port | int | `6032` | exposed ProxySQL [Admin SQL port](https://proxysql.com/Documentation/global-variables/admin-variables/#admin-mysql_ifaces) |
-| services.proxy.backend.ports.proxy.protocol | string | `"TCP"` | ProxySQL [Admin SQL port](https://proxysql.com/Documentation/global-variables/admin-variables/#admin-mysql_ifaces) protocol |
-| services.proxy.backend.ports.proxy.targetPort | int | `6032` | ProxySQL [Admin SQL port](https://proxysql.com/Documentation/global-variables/admin-variables/#admin-mysql_ifaces) configured in the container |
-| services.proxy.backend.ports.restapi.port | int | `6070` | exposed ProxySQL [Rest API port](https://proxysql.com/documentation/REST-API/) |
-| services.proxy.backend.ports.restapi.protocol | string | `"TCP"` | ProxySQL [Rest API port](https://proxysql.com/documentation/REST-API/) protocol |
-| services.proxy.backend.ports.restapi.targetPort | int | `6070` | ProxySQL [Rest API port](https://proxysql.com/documentation/REST-API/) configured in the container |
-| services.proxy.backend.sessionAffinity.type | string | `"None"` | `None` or `ClientIP` if connections from a single client should be [routed to the same endpoint](https://kubernetes.io/docs/reference/networking/virtual-ips/#session-affinity) every time. |
-| services.proxy.backend.type | string | `"ClusterIP"` | `ClusterIP` to configure a Kubernetes internal service or `LoadBalancer` to publish the service outside of the [Kubernetes cluster network](https://kubernetes.io/docs/concepts/services-networking/service/#publishing-services-service-types) |
-| services.proxy.frontend.headless | bool | `false` | `false` or `true` if the IP adresses of the pods that are [endpoints for that service](https://kubernetes.io/docs/concepts/services-networking/service/#headless-services) should be advertised. Required to let the client make it's own load balancing decisions |
-| services.proxy.frontend.ports.proxy.port | int | `3306` | exposed ProxySQL [SQL port](https://proxysql.com/Documentation/global-variables/mysql-variables/#mysql-interfaces) |
-| services.proxy.frontend.ports.proxy.protocol | string | `"TCP"` | ProxySQL [SQL port](https://proxysql.com/Documentation/global-variables/mysql-variables/#mysql-interfaces) protocol |
-| services.proxy.frontend.ports.proxy.targetPort | int | `6033` | ProxySQL [SQL port](https://proxysql.com/Documentation/global-variables/mysql-variables/#mysql-interfaces) configured in the container |
-| services.proxy.frontend.sessionAffinity.type | string | `"None"` | `None` or `ClientIP` if connections from a single client should be [routed to the same endpoint](https://kubernetes.io/docs/reference/networking/virtual-ips/#session-affinity) every time. |
-| services.proxy.frontend.type | string | `"ClusterIP"` | `ClusterIP` to configure a Kubernetes internal service or `LoadBalancer` to publish the service outside of the [Kubernetes cluster network](https://kubernetes.io/docs/concepts/services-networking/service/#publishing-services-service-types) |
+| services.proxy.haproxy.frontend.headless | bool | `false` | `false` or `true` if the IP adresses of the pods that are [endpoints for that service](https://kubernetes.io/docs/concepts/services-networking/service/#headless-services) should be advertised. Required to let the client make it's own load balancing decisions |
+| services.proxy.haproxy.frontend.ports.proxy.port | int | `3306` | exposed HAProxy [SQL port](http://docs.haproxy.org/2.8/configuration.html#2.7) |
+| services.proxy.haproxy.frontend.ports.proxy.protocol | string | `"TCP"` | HAProxy [SQL port](http://docs.haproxy.org/2.8/configuration.html#2.7) protocol |
+| services.proxy.haproxy.frontend.ports.proxy.targetPort | int | `3306` | HAProxy [SQL port](http://docs.haproxy.org/2.8/configuration.html#2.7) configured in the container |
+| services.proxy.haproxy.frontend.ports.stats.port | int | `8080` | exposed HAProxy [statistics](http://docs.haproxy.org/2.8/configuration.html#4.2-stats%20enable) port |
+| services.proxy.haproxy.frontend.ports.stats.protocol | string | `"TCP"` | HAProxy [statistics](http://docs.haproxy.org/2.8/configuration.html#4.2-stats%20enable) protocol |
+| services.proxy.haproxy.frontend.ports.stats.targetPort | int | `8080` | HAProxy [statistics](http://docs.haproxy.org/2.8/configuration.html#4.2-stats%20enable) port configured in the container |
+| services.proxy.haproxy.frontend.sessionAffinity.type | string | `"ClientIP"` | `None` or `ClientIP` if connections from a single client should be [routed to the same endpoint](https://kubernetes.io/docs/reference/networking/virtual-ips/#session-affinity) every time. |
+| services.proxy.haproxy.frontend.type | string | `"ClusterIP"` | `ClusterIP` to configure a Kubernetes internal service or `LoadBalancer` to publish the service outside of the [Kubernetes cluster network](https://kubernetes.io/docs/concepts/services-networking/service/#publishing-services-service-types) |
+| services.proxy.proxysql.backend.headless | bool | `true` | `false` or `true` if the IP adresses of the pods that are [endpoints for that service](https://kubernetes.io/docs/concepts/services-networking/service/#headless-services) should be advertised. Required to let the client make it's own load balancing decisions |
+| services.proxy.proxysql.backend.ports.adminui.port | int | `6080` | exposed ProxySQL [Admin UI port](https://proxysql.com/documentation/http-web-server/) |
+| services.proxy.proxysql.backend.ports.adminui.protocol | string | `"TCP"` | ProxySQL [Admin UI port](https://proxysql.com/documentation/http-web-server/) protocol |
+| services.proxy.proxysql.backend.ports.adminui.targetPort | int | `6080` | ProxySQL [Admin UI port](https://proxysql.com/documentation/http-web-server/) configured in the container |
+| services.proxy.proxysql.backend.ports.proxy.port | int | `6032` | exposed ProxySQL [Admin SQL port](https://proxysql.com/Documentation/global-variables/admin-variables/#admin-mysql_ifaces) |
+| services.proxy.proxysql.backend.ports.proxy.protocol | string | `"TCP"` | ProxySQL [Admin SQL port](https://proxysql.com/Documentation/global-variables/admin-variables/#admin-mysql_ifaces) protocol |
+| services.proxy.proxysql.backend.ports.proxy.targetPort | int | `6032` | ProxySQL [Admin SQL port](https://proxysql.com/Documentation/global-variables/admin-variables/#admin-mysql_ifaces) configured in the container |
+| services.proxy.proxysql.backend.ports.restapi.port | int | `6070` | exposed ProxySQL [Rest API port](https://proxysql.com/documentation/REST-API/) |
+| services.proxy.proxysql.backend.ports.restapi.protocol | string | `"TCP"` | ProxySQL [Rest API port](https://proxysql.com/documentation/REST-API/) protocol |
+| services.proxy.proxysql.backend.ports.restapi.targetPort | int | `6070` | ProxySQL [Rest API port](https://proxysql.com/documentation/REST-API/) configured in the container |
+| services.proxy.proxysql.backend.sessionAffinity.type | string | `"None"` | `None` or `ClientIP` if connections from a single client should be [routed to the same endpoint](https://kubernetes.io/docs/reference/networking/virtual-ips/#session-affinity) every time. |
+| services.proxy.proxysql.backend.type | string | `"ClusterIP"` | `ClusterIP` to configure a Kubernetes internal service or `LoadBalancer` to publish the service outside of the [Kubernetes cluster network](https://kubernetes.io/docs/concepts/services-networking/service/#publishing-services-service-types) |
+| services.proxy.proxysql.frontend.headless | bool | `false` | `false` or `true` if the IP adresses of the pods that are [endpoints for that service](https://kubernetes.io/docs/concepts/services-networking/service/#headless-services) should be advertised. Required to let the client make it's own load balancing decisions |
+| services.proxy.proxysql.frontend.ports.proxy.port | int | `3306` | exposed ProxySQL [SQL port](https://proxysql.com/Documentation/global-variables/mysql-variables/#mysql-interfaces) |
+| services.proxy.proxysql.frontend.ports.proxy.protocol | string | `"TCP"` | ProxySQL [SQL port](https://proxysql.com/Documentation/global-variables/mysql-variables/#mysql-interfaces) protocol |
+| services.proxy.proxysql.frontend.ports.proxy.targetPort | int | `6033` | ProxySQL [SQL port](https://proxysql.com/Documentation/global-variables/mysql-variables/#mysql-interfaces) configured in the container |
+| services.proxy.proxysql.frontend.sessionAffinity.type | string | `"None"` | `None` or `ClientIP` if connections from a single client should be [routed to the same endpoint](https://kubernetes.io/docs/reference/networking/virtual-ips/#session-affinity) every time. |
+| services.proxy.proxysql.frontend.type | string | `"ClusterIP"` | `ClusterIP` to configure a Kubernetes internal service or `LoadBalancer` to publish the service outside of the [Kubernetes cluster network](https://kubernetes.io/docs/concepts/services-networking/service/#publishing-services-service-types) |
 | startupProbe.failureThreshold.application | int | 4 | How many [retries](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) are allowed before the startup probe for the MariaDB Galera pods are marked as failed |
 | startupProbe.failureThreshold.kopiaserver | int | 4 | How many [retries](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) are allowed before the startup probe for the Kopia UI pod is marked as failed |
-| startupProbe.failureThreshold.proxy | int | 4 | How many [retries](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) are allowed before the startup probe for the ProxySQL cluster pods are marked as failed |
+| startupProbe.failureThreshold.proxy | int | 4 | How many [retries](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) are allowed before the startup probe for the ProxySQL/HAProxy pods are marked as failed |
 | startupProbe.initialDelaySeconds.application | int | 60 | Define the [initial delay](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) of the startup probe for MariaDB Galera pods |
 | startupProbe.initialDelaySeconds.kopiaserver | int | 60 | Define the [initial delay](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) of the startup probe for the Kopia UI pod |
-| startupProbe.initialDelaySeconds.proxy | int | 60 | Define the [initial delay](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) of the startup probe for ProxySQL cluster pods |
+| startupProbe.initialDelaySeconds.proxy | int | 60 | Define the [initial delay](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) of the startup probe for ProxySQL/HAProxy pods |
 | startupProbe.periodSeconds.application | int | 30 | Define the [check interval](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) of the startup probe for MariaDB Galera pods |
 | startupProbe.periodSeconds.kopiaserver | int | 30 | Define the [check interval](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) of the startup probe for Kopia UI pod |
-| startupProbe.periodSeconds.proxy | int | 30 | Define the [check interval](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) of the startup probe for ProxySQL cluster pods |
+| startupProbe.periodSeconds.proxy | int | 30 | Define the [check interval](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) of the startup probe for ProxySQL/HAProxy pods |
 | startupProbe.timeoutSeconds.application | int | 20 | How long should Kubernetes [wait](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) for the current check of the startup probe for the MariaDB Galera pods |
 | startupProbe.timeoutSeconds.kopiaserver | int | 20 | How long should Kubernetes [wait](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) for the current check of the startup probe for the Kopia UI pod |
-| startupProbe.timeoutSeconds.proxy | int | 20 | How long should Kubernetes [wait](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) for the current check of the startup probe for the ProxySQL cluster pods |
+| startupProbe.timeoutSeconds.proxy | int | 20 | How long should Kubernetes [wait](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) for the current check of the startup probe for the ProxySQL/HAProxy pods |
 | terminationGracePeriodSeconds | int | 86400 | how many seconds should [Kubernetes wait](https://kubernetes.io/docs/concepts/containers/container-lifecycle-hooks/#hook-handler-execution) before forcefully stopping a MariaDB Galera and ProxySQL cluster pod. During the MariaDB [full database restore](#full-database-restore) process that value will be reduced to 15 seconds |
 | updateStrategy | string | RollingUpdate | [Update strategy](https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/#update-strategies) for the MariaDB Galera and ProxySQL cluster pods. |
 | userId.application | string | 101 | run the MariaDB containers with that [user id](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-container) |
 | userId.backup | string | 3200 | run the Kopia/Restic containers with that [user id](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-container) |
 | userId.monitoring | string | 3000 | run the MariaDB monitoring containers with that [user id](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-container) |
-| userId.proxy | string | 3100 | run the ProxySQL containers with that [user id](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-container) |
+| userId.proxy | string | 3100 | run the ProxySQL/HAProxy containers with that [user id](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-container) |
 | volumeClaimTemplates.mariadb.accessModes | list | `["ReadWriteOnce"]` | [access mode](https://kubernetes.io/docs/concepts/storage/persistent-volumes/#access-modes) for the MariaDB data volume |
 | volumeClaimTemplates.mariadb.capacity | string | `"10Gi"` | capacity for the MariaDB data volume |
 | volumeClaimTemplates.mariadb.storageClassName | bool | `false` | custom storageclass (currently `cinder` and `nfs` are supported) for the MariaDB data volume |
@@ -699,10 +748,10 @@ docker build --build-arg BASE_SOFT_NAME=ubuntu --build-arg BASE_SOFT_VERSION=22.
 | volumeMounts.kopiabackup | string | `nil` |  |
 | volumeMounts.kopiarestore | string | `nil` |  |
 | volumeMounts.kopiaserver | string | `nil` |  |
-| volumeMounts.proxy.data.claimName | string | `"proxysql"` | name for the [persistent volume claim](https://kubernetes.io/docs/concepts/storage/persistent-volumes/#persistentvolumeclaims) requested for the ProxySQL [data directory](https://proxysql.com/documentation/configuration-file/#general-variables) |
-| volumeMounts.proxy.data.enabled | bool | `true` | enable this volume |
-| volumeMounts.proxy.data.mountPath | string | `"/opt/proxysql/data"` | mount path of the persistent volume in the container used for the for the ProxySQL data directory |
-| volumeMounts.proxy.data.type | string | `"persistentVolume"` | volume type [(persistent)](https://kubernetes.io/docs/concepts/storage/persistent-volumes/) |
+| volumeMounts.proxy.proxysql.data.claimName | string | `"proxysql"` | name for the [persistent volume claim](https://kubernetes.io/docs/concepts/storage/persistent-volumes/#persistentvolumeclaims) requested for the ProxySQL [data directory](https://proxysql.com/documentation/configuration-file/#general-variables) |
+| volumeMounts.proxy.proxysql.data.enabled | bool | `true` | enable this volume |
+| volumeMounts.proxy.proxysql.data.mountPath | string | `"/opt/proxysql/data"` | mount path of the persistent volume in the container used for the for the ProxySQL data directory |
+| volumeMounts.proxy.proxysql.data.type | string | `"persistentVolume"` | volume type [(persistent)](https://kubernetes.io/docs/concepts/storage/persistent-volumes/) |
 | volumeMounts.resticbackup | string | `nil` |  |
 | volumeMounts.resticrestore | string | `nil` |  |
 
