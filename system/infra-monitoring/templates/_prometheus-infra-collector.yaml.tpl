@@ -253,8 +253,8 @@
 - job_name: 'redfish/bm'
   params:
     job: [redfish/bm]
-  scrape_interval: {{$values.redfish_scrapeInterval}}
-  scrape_timeout: {{$values.redfish_scrapeTimeout}}
+  scrape_interval: {{$values.scrapeInterval}}
+  scrape_timeout: {{$values.scrapeTimeout}}
   http_sd_configs:
     - url: {{ .Values.atlas_url }}
   metrics_path: /redfish
@@ -272,8 +272,8 @@
 - job_name: 'redfish/cp'
   params:
     job: [redfish/cp]
-  scrape_interval: {{$values.redfish_scrapeInterval}}
-  scrape_timeout: {{$values.redfish_scrapeTimeout}}
+  scrape_interval: {{$values.scrapeInterval}}
+  scrape_timeout: {{$values.scrapeTimeout}}
   http_sd_configs:
     - url: {{ .Values.atlas_url }}
   metrics_path: /redfish
@@ -293,8 +293,8 @@
 - job_name: 'redfish/bb'
   params:
     job: [redfish/bb]
-  scrape_interval: {{$values.redfish_scrapeInterval}}
-  scrape_timeout: {{$values.redfish_scrapeTimeout}}
+  scrape_interval: {{$values.scrapeInterval}}
+  scrape_timeout: {{$values.scrapeTimeout}}
   http_sd_configs:
     - url: {{ .Values.atlas_url }}
   metrics_path: /redfish
@@ -314,8 +314,8 @@
 - job_name: 'redfish-fw'
   params:
     job: [redfish-fw]
-  scrape_interval: {{$values.redfish_fw_scrapeInterval}}
-  scrape_timeout: {{$values.redfish_fw_scrapeTimeout}}
+  scrape_interval: {{$values.firewall.scrapeInterval}}
+  scrape_timeout: {{$values.firewall.scrapeTimeout}}
   http_sd_configs:
     - url: {{ .Values.http_sd_configs.netbox_staging_url }}/devices/?custom_labels=job=redfish_fw&target=2&metric_label=redfish-fw&status=active&role=server&tenant=converged-cloud&tagn=no-redfish&region={{ .Values.global.region }}
       refresh_interval: {{ .Values.http_sd_configs.refresh_interval }}

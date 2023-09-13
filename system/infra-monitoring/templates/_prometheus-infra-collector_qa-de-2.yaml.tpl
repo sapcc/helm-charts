@@ -570,8 +570,8 @@
 - job_name: 'redfish-fw'
   params:
     job: [redfish-fw]
-  scrape_interval: 1h
-  scrape_timeout: 230s
+  scrape_interval: {{$values.firewall.scrapeInterval}}
+  scrape_timeout: {{$values.firewall.scrapeTimeout}}
   http_sd_configs:
     - url: {{ .Values.http_sd_configs.netbox_staging_url }}/devices/?custom_labels=job=redfish-fw&target=2&metric_label=redfish-fw&status=active&role=server&tenant=converged-cloud&tagn=no-redfish&region={{ .Values.global.region }}
       refresh_interval: {{ .Values.http_sd_configs.refresh_interval }}
