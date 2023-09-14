@@ -317,7 +317,7 @@
   scrape_interval: {{$values.firmware.scrapeInterval}}
   scrape_timeout: {{$values.firmware.scrapeTimeout}}
   http_sd_configs:
-    - url: {{ .Values.http_sd_configs.netbox_staging_url }}/devices/?custom_labels=job=redfish-fw&target=2&status=active&role=server&tenant=converged-cloud&tagn=no-redfish&region={{ .Values.global.region }}
+    - url: {{ .Values.http_sd_configs.netbox_staging_url }}/devices/?custom_labels=job=redfish-fw&target=mgmt_only&status=active&role=server&tenant=converged-cloud&tagn=no-redfish&region={{ .Values.global.region }}
       refresh_interval: {{ .Values.http_sd_configs.refresh_interval }}
   metrics_path: /firmware
   relabel_configs:
