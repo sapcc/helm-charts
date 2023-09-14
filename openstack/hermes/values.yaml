@@ -110,3 +110,50 @@ elasticsearch_hermes:
 
 elasticsearch_hermes_kibana:
   enabled: false
+
+opensearch_hermes:
+  enabled: false
+  ca:
+    crt: DEFINED-IN-SECRETS
+  image:
+    tag: 2.9.0
+  nameOverride: "opensearch-hermes"
+  fullnameOverride: "opensearch-hermes"
+  nodeGroup: "data"
+  masterService: "opensearch-hermes"
+  roles:
+    - master
+    - client
+    - ingest
+    - data
+  replicas: 3
+  opensearchJavaOpts: "-Dlog4j2.formatMsgNoLookups=true -XX:MaxRAM=7g -XX:MaxGCPauseMillis=500 -Xms5g -Xmx5g"
+  persistence:
+    enabled: true
+    enableInitChown: true
+    size: 100Gi
+    image: "library/busybox"
+  clusterName: "opensearch-hermes"
+  secretMounts:
+    - name: opensearch-certificates
+      secretName: cert-manager
+      path: /usr/share/opensearch/config/certs/
+      defaultMode: 0700
+  plugins:
+    enabled: true
+    installList:
+      - https://github.com/aiven/prometheus-exporter-plugin-for-opensearch/releases/download/2.9.0.0/prometheus-exporter-2.9.0.0.zip
+  securityConfig:
+    path: "/usr/share/opensearch/config/opensearch-security"
+    enabled: true
+    config:
+      securityConfigSecret: "security-config"
+
+opensearch_hermes_dashboards:
+  enabled: false
+
+global:
+  clusterType: local
+  users:
+    admin:
+      name: admin

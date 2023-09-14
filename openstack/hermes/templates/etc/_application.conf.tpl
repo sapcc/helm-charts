@@ -34,6 +34,12 @@ hosts = [
     name = "elasticsearch-hermes cluster"
   }
 {{- end }}
+{{- if .Values.opensearch_hermes.enabled }}
+  {
+    host = "https://opensearch-hermes.hermes:9200"
+    name = "OpenSearch Hermes cluster"
+  }
+{{- end }}
 ]
 
 # Authentication
@@ -57,9 +63,8 @@ auth = {
 play.ws.ssl {
   trustManager = {
     stores = [
-{{- if eq "qa-de-2" .Values.global.region }}
-      { type = "PEM", path = "/truststore/ldap" }
-      { type = "PEM", path = "/truststore/sap" }
+{{- if .Values.elasticsearch_hermes.enabled }}
+      { type = "PEM", path = "/opt/certs/opensearchCA.crt" }
 {{- else -}}
       { type = "PKCS12", path = "/truststore/truststore", password = "{{.Values.hermes.elasticsearch.manager_cert_pw}}" }
 {{- end }}
@@ -67,4 +72,4 @@ play.ws.ssl {
   }
 }
 play.ws.ssl.loose.acceptAnyCertificate=true
-{{- end }}
+

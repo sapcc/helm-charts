@@ -35,7 +35,12 @@ spec:
         - name: es-etc
           configMap:
             name: es-manager-hermes-etc
-{{- if .Values.elasticsearch_hermes.enabled }}
+{{- if and .Values.elasticsearch_hermes.enabled .Values.opensearch_hermes.enabled}}
+        - name: opensearch-certs
+          secret:
+            defaultMode: 420
+            secretName: opensearch-hermes-certs
+{{ else }}
         - name: truststore
           secret:
             defaultMode: 420
@@ -62,7 +67,10 @@ spec:
         volumeMounts:
           - mountPath: /es-etc
             name: es-etc
-{{- if .Values.elasticsearch_hermes.enabled }}
+{{- if .Values.opensearch_hermes.enabled}}
+          - mountPath: /opt/certs
+            name: opensearch-certs
+{{ else }}
           - mountPath: /truststore
             name: truststore
 {{- end }}
