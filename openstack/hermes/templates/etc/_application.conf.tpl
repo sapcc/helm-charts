@@ -62,7 +62,7 @@ auth = {
 play.ws.ssl {
   trustManager = {
     stores = [
-{{- if .Values.elasticsearch_hermes.enabled }}
+{{- if .Values.opensearch_hermes.enabled }}
       { type = "PEM", path = "/opt/certs/opensearchCA.crt" }
 {{- else -}}
       { type = "PKCS12", path = "/truststore/truststore", password = "{{.Values.hermes.elasticsearch.manager_cert_pw}}" }
