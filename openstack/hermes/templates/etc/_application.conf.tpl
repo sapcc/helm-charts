@@ -59,7 +59,6 @@ auth = {
     }
   }
 }
-{{- if .Values.elasticsearch_hermes.enabled }}
 play.ws.ssl {
   trustManager = {
     stores = [
