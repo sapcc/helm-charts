@@ -86,6 +86,9 @@
   is_public: true
   extra_specs:
     {{- tuple . "vmware" | include "sap_seeds.helpers.extra_specs" | indent 4 }}
+    "trait:CUSTOM_NUMASIZE_C48_M729": "required"
+    "hw:cpu_cores": "48"  # used in nova-vmware as cores-per-socket (24pCPU = 48vCPU)
+    "vmware:hw_version": "vmx-18"
     "host_fraction": "1/4,3/4,1/2,1"
 - name: "x1.32xlarge"
   id: "250"
@@ -95,5 +98,8 @@
   is_public: true
   extra_specs:
     {{- tuple . "vmware" | include "sap_seeds.helpers.extra_specs" | indent 4 }}
+    "trait:CUSTOM_NUMASIZE_C48_M729": "required"
+    "hw:cpu_cores": "48"  # used in nova-vmware as cores-per-socket (24pCPU = 48vCPU)
+    "vmware:hw_version": "vmx-18"
     "host_fraction": "1,0.67,0.34"
 {{- end }}
