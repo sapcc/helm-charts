@@ -1,6 +1,6 @@
 {{- $values := .Values }}
 {{- if $values.alerts.enabled }}
-{{- range $target := list "kubernetes" "openstack" }}
+{{- range $target := list "kubernetes" "openstack" "metrics-metal" }}
 {{- range $path, $bytes := $.Files.Glob (printf "alerts/%s/*.alerts" $target) }}
 ---
 apiVersion: monitoring.coreos.com/v1
@@ -12,7 +12,11 @@ metadata:
     app: nova
     tier: os
     type: alerting-rules
+    {{- if eq (first (splitList "-" $target)) "metrics" }}
+    thanos-ruler: {{ trimPrefix "metrics-" $target }}
+    {{- else }}
     prometheus: {{ $target }}
+    {{- end }}
 
 spec:
 {{ printf "%s" $bytes | indent 2 }}
