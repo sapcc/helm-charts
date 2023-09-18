@@ -38,6 +38,10 @@ hosts = [
   {
     host = "https://opensearch-hermes.hermes:9200"
     name = "OpenSearch Hermes cluster"
+    auth = {
+      username = "{{.Values.users.admin.name}}"
+      password = "{{.Values.users.admin.password}}"
+    }
   }
 {{- end }}
 ]
