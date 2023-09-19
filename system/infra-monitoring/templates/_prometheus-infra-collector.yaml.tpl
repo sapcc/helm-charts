@@ -36,6 +36,8 @@
       replacement: arista-exporter:9200
 {{- end }}
 
+
+{{- if .Values.snmp_exporter.operatoroff }}
 - job_name: 'snmp'
   scrape_interval: {{.Values.snmp_exporter.scrapeInterval}}
   scrape_timeout: {{.Values.snmp_exporter.scrapeTimeout}}
@@ -164,6 +166,7 @@
       replacement: '$1'
       target_label: asr_pair
       action: replace
+{{- end }}
 
 {{- $values := .Values.ipmi_exporter -}}
 {{- if $values.enabled }}
