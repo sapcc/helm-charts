@@ -93,7 +93,7 @@ audit:
   - "indices:data/write/bulk"
   index_permissions:
   - index_patterns:
-    - "maillog-*"
+    - "audit-*"
     allowed_actions:
     - "indices:admin/template/get"
     - "indices:admin/template/put"
