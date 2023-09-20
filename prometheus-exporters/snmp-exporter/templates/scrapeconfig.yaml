@@ -1,4 +1,4 @@
-{{- if .Values.snmp_exporter.operatoroff }}
+{{- if .Values.snmp_exporter.operator }}
 apiVersion: monitoring.coreos.com/v1alpha1
 kind: ScrapeConfig
 metadata:
@@ -9,7 +9,7 @@ metadata:
     app.kubernetes.io/name: snmp-exporter-acileaf-cc
 spec:
   httpSDConfigs:
-    - url: {{ .Values.global.http_sd_configs.netbox_url }}/devices/?custom_labels=__param_module=acileaf&manufacturer=cisco&status=active&region={{ .Values.global.region }}&role=aci-leaf&tenant=converged-cloud
+    - url: {{ .Values.global.http_sd_configs.netbox_production_url }}/devices/?custom_labels=__param_module=acileaf&manufacturer=cisco&status=active&region={{ .Values.global.region }}&role=aci-leaf&tenant=converged-cloud
       refreshInterval: 15s
   metrics_path: /snmp
   relabel_configs:
@@ -19,22 +19,22 @@ spec:
       target_label: instance
     - target_label: __address__
       replacement: snmp-exporter:{{.Values.snmp_exporter.listen_port}}
-metric_relabel_configs:
-  - source_labels: [server_name]
-    target_label:  devicename
-  - source_labels: [devicename]
-    regex: '(\w*-\w*-\w*)-(\S*)'
-    replacement: '$1'
-    target_label: availability_zone
-  - source_labels: [devicename]
-    regex: '(\w*-\w*-\w*)-(\S*)'
-    replacement: '$2'
-    target_label: device
-  - source_labels: [__name__, ifDescr]
-    regex: 'snmp_acileaf_if.+;(Tunnel)[0-9]*'
-    action: drop
-  - source_labels: [__name__, snmp_acileaf_sysDescr]
-    regex: 'snmp_acileaf_sysDescr;(?s)(.*)(Version )([0-9().a-z]*)(,.*)'
-    replacement: '$3'
-    target_label: image_version
+  metric_relabel_configs:
+    - source_labels: [server_name]
+      target_label:  devicename
+    - source_labels: [devicename]
+      regex: '(\w*-\w*-\w*)-(\S*)'
+      replacement: '$1'
+      target_label: availability_zone
+    - source_labels: [devicename]
+      regex: '(\w*-\w*-\w*)-(\S*)'
+      replacement: '$2'
+      target_label: device
+    - source_labels: [__name__, ifDescr]
+      regex: 'snmp_acileaf_if.+;(Tunnel)[0-9]*'
+      action: drop
+    - source_labels: [__name__, snmp_acileaf_sysDescr]
+      regex: 'snmp_acileaf_sysDescr;(?s)(.*)(Version )([0-9().a-z]*)(,.*)'
+      replacement: '$3'
+      target_label: image_version
 {{- end }}
