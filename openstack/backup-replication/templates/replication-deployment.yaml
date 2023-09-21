@@ -23,6 +23,9 @@ spec:
         checksum/bin: {{ include (print $.Template.BasePath "/bin-configmap.yaml") $ | sha256sum }}
         checksum/config: {{ include (print $.Template.BasePath "/replication-configmap.yaml") $ | sha256sum }}
         checksum/secret: {{ include (print $.Template.BasePath "/secret.yaml") $ | sha256sum }}
+        {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+        linkerd.io/inject: enabled
+        {{- end }}
     spec:
       volumes:
       - name: bin

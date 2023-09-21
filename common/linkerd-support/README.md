@@ -13,7 +13,7 @@ $ cat Chart.yaml
 ...
 dependencies:
   - name: linkerd-support
-    repository: https://charts.eu-de-2.cloud.sap
+    repository: oci://keppel.eu-de-1.cloud.sap/ccloud-helm
     version: 0.1.1
 ```
 
