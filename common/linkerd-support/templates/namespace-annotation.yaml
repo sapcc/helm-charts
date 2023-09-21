@@ -41,6 +41,11 @@ metadata:
   annotations:
     "helm.sh/hook": post-install,post-upgrade
     "helm.sh/hook-delete-policy": hook-succeeded
+    # We need to disable Linkerd injection for this job.
+    # Otherwise, the linkerd-proxy container will keep running forever and the job will never complete.
+    # This does not cause unencrypted network traffic since this job only talks to the Kubernetes API, which is via HTTPS.
+    # Ref: <https://github.com/linkerd/linkerd2/discussions/7430>
+    "linkerd.io/inject": disabled
 spec:
   template:
     metadata:
