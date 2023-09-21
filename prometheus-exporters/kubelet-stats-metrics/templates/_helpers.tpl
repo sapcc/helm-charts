@@ -36,3 +36,11 @@ app.kubernetes.io/managed-by: {{ .Release.Service }}
 app.kubernetes.io/name: kubelet-stats-metrics
 app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}
+
+{{- define "serviceFromLabelsOrDefault" -}}
+"{{`{{ if $labels.label_ccloud_service }}{{ $labels.label_ccloud_service }}{{ else }}{{ if $labels.label_alert_service }}{{ $labels.label_alert_service }}{{ else }}`}}{{ . }}{{`{{ end }}{{ end }}`}}"
+{{- end -}}
+
+{{- define "supportGroupFromLabelsOrDefault" -}}
+"{{`{{ if $labels.label_ccloud_support_group }}{{ $labels.label_ccloud_support_group }}{{ else }}`}}{{ required "default value is missing" . }}{{`{{ end }}`}}"
+{{- end -}}
