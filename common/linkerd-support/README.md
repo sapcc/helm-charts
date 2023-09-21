@@ -14,7 +14,7 @@ $ cat Chart.yaml
 dependencies:
   - name: linkerd-support
     repository: https://charts.eu-de-2.cloud.sap
-    version: 0.1.0
+    version: 0.1.1
 ```
 
 Run `helm dep up` in the chart's root directory to generate the `Chart.lock` file.
