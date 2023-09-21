@@ -549,6 +549,22 @@ mysql_metrics:
         GROUP BY host;
       values:
       - "value"
+    - help: Neutron used routers per project by AZ
+      name: openstack_neutron_routers_used_per_project
+      query: |
+        SELECT
+            r.project_id AS project_id,
+            CASE WHEN a.availability_zone = 'nova' THEN null ELSE a.availability_zone END AS availability_zone,
+            count(r.id) AS count
+        FROM routers r
+        INNER JOIN routerl3agentbindings rabs ON r.id = rabs.router_id
+        INNER JOIN agents a ON a.id = rabs.l3_agent_id
+        GROUP BY r.project_id, a.availability_zone;
+      labels:
+      - project_id
+      - availability_zone
+      values:
+      - count
 
 max_pool_size: 20
 max_overflow: 5
