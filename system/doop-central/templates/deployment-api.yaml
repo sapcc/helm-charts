@@ -19,10 +19,13 @@ spec:
     metadata:
       labels:
         name: {{ .Release.Name }}-api
-      # TODO: enable Prometheus scraping when flipping over from doop-central data to doop-api data in Greenhouse
-      # annotations:
-      #   prometheus.io/scrape: "true"
-      #   prometheus.io/targets: infra-frontend
+      annotations:
+        {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+        linkerd.io/inject: enabled
+        {{- end }}
+        # TODO: enable Prometheus scraping when flipping over from doop-central data to doop-api data in Greenhouse
+        # prometheus.io/scrape: "true"
+        # prometheus.io/targets: infra-frontend
     spec:
       automountServiceAccountToken: false
       enableServiceLinks: false
