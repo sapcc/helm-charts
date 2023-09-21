@@ -91,13 +91,6 @@
       - '{__name__=~"^prom_fluentd_.+"}'
       - '{__name__=~"^metis_.+"}'
       - '{__name__=~"^maria_backup.+"}'
-      - '{__name__=~"netapp_aggregate_.+"}'
-      - '{__name__=~"netapp_volume_.+"}'
-      - '{__name__=~"netapp_filer_.+"}'
-      - '{__name__=~"netapp_aggr_.+"}'
-      - '{__name__=~"netapp_node_.+"}'
-      - '{__name__=~"netapp_lun_.+"}'
-      - '{__name__=~"netapp_harvest_.+"}'
       - '{__name__=~"^neutron_router:.+"}'
 
   relabel_configs:
@@ -139,54 +132,3 @@
       {{ end }}
   scrape_interval: 5m
 {{ end }}
-
-# exporter for user inactivity but not part of infrastructure monitoring project itself.
-{{ if .Values.bastion.enabled }}
-- job_name: 'bastion'
-  scrape_interval: {{ .Values.bastion.scrapeInterval }}
-  scrape_timeout: {{ .Values.bastion.scrapeTimeout }}
-
-  metrics_path: /metrics
-  params:
-    'match[]':
-      - '{__name__=~"^bastion_audit_log"}'
-  scheme: https
-  static_configs:
-    - targets:
-      - 'bastion.{{ .Values.global.region }}.cloud.sap'
-{{- end }}
-
-- job_name: 'prometheus-storage'
-  scheme: https
-  scrape_interval: {{ .Values.collector.scrapeInterval }}
-  scrape_timeout: {{ .Values.collector.scrapeTimeout }}
-
-  honor_labels: true
-  metrics_path: '/federate'
-
-  params:
-    'match[]':
-      - '{__name__=~"netapp_aggregate_.+"}'
-      - '{__name__=~"netapp_volume_.+"}'
-      - '{__name__=~"netapp_filer_.+"}'
-      - '{__name__=~"netapp_aggr_.+"}'
-      - '{__name__=~"netapp_node_.+"}'
-      - '{__name__=~"netapp_lun_.+"}'
-      - '{__name__=~"netapp_harvest_.+"}'
-
-  relabel_configs:
-    - action: replace
-      source_labels: [__address__]
-      target_label: region
-      regex: prometheus-storage.(.+).cloud.sap
-      replacement: $1
-
-  {{ if .Values.authentication.enabled }}
-  tls_config:
-    cert_file: /etc/prometheus/secrets/prometheus-infra-frontend-sso-cert/sso.crt
-    key_file: /etc/prometheus/secrets/prometheus-infra-frontend-sso-cert/sso.key
-  {{ end }}
-
-  static_configs:
-    - targets:
-      - "prometheus-storage.{{ .Values.global.region }}.cloud.sap"
