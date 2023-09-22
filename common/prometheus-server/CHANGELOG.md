@@ -1,3 +1,7 @@
+## 7.2.14
+
+* Refine PrometheusTargetSyncFailure alert
+
 ## 7.2.13
 
 * Chart version labeled
