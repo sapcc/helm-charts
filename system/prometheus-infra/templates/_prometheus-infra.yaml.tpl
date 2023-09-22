@@ -52,7 +52,6 @@
       - '{job="bios/ironic", __name__!~"^(up|ALERTS.*|scrape.+)"}'
       - '{job="bios/cisco_cp", __name__!~"^(up|ALERTS.*|scrape.+)"}'
       - '{job="bios/vpod", __name__!~"^(up|ALERTS.*|scrape.+)"}'
-      - '{job="infra-monitoring/image-usage-exporter", __name__!~"^(up|ALERTS.*|scrape.+)"}'
       - '{job="ipmi/ironic", __name__!~"^(up|ALERTS.*|scrape.+)"}'
       - '{job="vmware-esxi", __name__!~"^(up|ALERTS.*|scrape.+)"}'
       - '{job="atlas", __name__!~"^(up|ALERTS.*|scrape.+)"}'
