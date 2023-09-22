@@ -258,7 +258,7 @@ groups:
     annotations:
       description: |
         Targets in Prometheus `{{`{{ $labels.prometheus }}`}}` have failed to sync because invalid configuration was supplied.
-        <https://{{ include "prometheus.externalURL" . }}/graph?g0.expr={{ urlquery `sum by (scrape_job) (increase(prometheus_target_sync_failed_total{prometheus="PLACEHOLDER"}[30m])) > 0` | replace "PLACEHOLDER" "{{ include "prometheus.name" . }}"}}|Affected targets>
+        <https://{{ include "prometheus.externalURL" . }}/graph?g0.expr={{ urlquery `sum by (scrape_job) (increase(prometheus_target_sync_failed_total{prometheus="PLACEHOLDER"}[30m])) > 0` | replace "PLACEHOLDER" "{{ $labels.prometheus }}"}}|Affected targets>
       summary: Prometheus has failed to sync targets.
 
   - alert: PrometheusHighQueryLoad
