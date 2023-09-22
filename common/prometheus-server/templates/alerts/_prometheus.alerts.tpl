@@ -252,13 +252,13 @@ groups:
     labels:
       service: {{ default "metrics" $root.Values.alerts.service }}
       support_group: {{ default "observability" $root.Values.alerts.support_group }}
-      severity: critical
+      severity: warning
       playbook: docs/support/playbook/prometheus/failed_scrapes
-      meta: Prometheus `{{`{{ $labels.prometheus }}`}}` has failed to sync targets.
+      meta: Prometheus `{{`{{ $labels.prometheus }}`}}` could not synchronize targets.
     annotations:
       description: |
-        `{{`{{ printf "%.0f" $value }}`}} targets in Prometheus `{{`{{ $labels.prometheus }}`}}`
-        have failed to sync because invalid configuration was supplied.
+        Targets in Prometheus `{{`{{ $labels.prometheus }}`}}` have failed to sync because invalid configuration was supplied.
+        <https://{{ include "prometheus.externalURL" . }}/graph?g0.expr={{ urlquery `sum by (scrape_job) (increase(prometheus_target_sync_failed_total{prometheus="PLACEHOLDER"}[30m])) > 0` | replace "PLACEHOLDER" "{{ $labels.prometheus }}"}}|Affected targets>
       summary: Prometheus has failed to sync targets.
 
   - alert: PrometheusHighQueryLoad
