@@ -88,7 +88,7 @@ metadata:
 
 Use exactly this conditional statement around each such annotation.
 
-### Step 4: Jobs and CronJobs require special care
+## Step 4: Jobs and CronJobs require special care
 
 The annotations that we added in step 2 cause Linkerd to add a sidecar container to all respective pods.
 For long-running pods that are part of Deployments, DaemonSets or StatefulSets, this does not require any additional care.
