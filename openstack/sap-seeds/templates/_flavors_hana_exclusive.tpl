@@ -83,7 +83,7 @@
   vcpus: 90
   ram: 1468416
   disk: 64
-  is_public: true
+  is_public: false
   extra_specs:
     {{- tuple . "vmware" | include "sap_seeds.helpers.extra_specs" | indent 4 }}
     "trait:CUSTOM_NUMASIZE_C48_M729": "required"
@@ -95,7 +95,7 @@
   vcpus: 128
   ram: 1991680
   disk: 64
-  is_public: true
+  is_public: false
   extra_specs:
     {{- tuple . "vmware" | include "sap_seeds.helpers.extra_specs" | indent 4 }}
     "trait:CUSTOM_NUMASIZE_C48_M729": "required"
