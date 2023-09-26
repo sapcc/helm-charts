@@ -1,0 +1,97 @@
+{{- if .Values.nanny.enabled }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+ name: designate-nanny-{{ .Release.Revision }}
+ labels:
+    ccloud/support-group: network-api
+    system: openstack
+    application: designate
+spec:
+ backoffLimit: 0
+ template:
+   metadata:
+     name: designate-nanny-{{ .Release.Revision }}
+   spec:
+     containers:
+     - name: job
+       image: {{ required ".Values.global.registry is missing" .Values.global.registry }}/{{ .Values.image.name }}:{{required "missing .Values.image.image_tag" .Values.image.image_tag }}
+       command: ["/opt/venv/bin/designate-nanny", "swiftbackup"]
+       env:
+         - name: NANNY_RNDC_SERVER
+           value: "bind1-{{.Values.global.region}}"
+         - name: NANNY_LOGLEVEL
+           value: {{ .Values.nanny.loglevel }}
+{{- if .Values.nanny.dryrun }}
+         - name: NANNY_DRY_RUN
+           value: "yes"
+{{- end }}
+{{- if .Values.nanny.mdns_endpoint }}
+         - name: NANNY_MDNS_ENDPOINT
+           value: "{{ .Values.nanny.mdns_endpoint }}"
+{{- end }}
+         - name: NANNY_SWIFT_PROJECT_NAME
+           value: "{{ .Values.nannies.swift_backup.project_name }}"
+         - name: NANNY_SWIFT_PROJECT_DOMAIN_NAME
+           value: "{{ .Values.nannies.swift_backup.project_domain_name }}"
+         - name: NANNY_SWIFT_CONTAINER
+           value: "{{ .Values.nannies.swift_backup.container }}"
+         - name: OS_AUTH_URL
+           value: "https://{{ include "keystone_api_endpoint_host_public" . }}/v3"
+         - name: PYCCLOUD_USE_DUMMY_SECRETS
+           value: "yes"          
+         - name: OS_REGION_NAME
+           value: "{{.Values.global.region}}"
+         - name: OS_PROJECT_NAME
+           value:  "{{ .Values.credentials.designate_api.project_name}}"
+         - name: OS_PROJECT_DOMAIN_NAME
+           value:  "{{ .Values.credentials.designate_api.project_domain_name}}"
+         - name: OS_USERNAME
+           value: "{{ .Values.credentials.designate_api.user}}"
+         - name: OS_PASSWORD
+           valueFrom:
+             secretKeyRef:
+               name: designate-nanny-secret
+               key:  designate_nanny_os_password
+         - name: OS_USER_DOMAIN_NAME
+           value:  "{{ .Values.credentials.designate_api.project_user_domain_name}}"
+       resources:
+{{ toYaml .Values.resources | indent 8 }}
+       volumeMounts:
+       - mountPath: /var/lib/bind
+         name: persistent-storage
+       - mountPath: /etc/bind/rndc.key
+         name: bind-keys-rndc
+         subPath: rndc.key
+       - mountPath: /etc/bind/tsig.key
+         name: bind-keys-tsig
+         subPath: tsig.key
+       - mountPath: /etc/bind/named.conf
+         name: bind-conf
+         subPath: named.conf
+     restartPolicy: Never
+
+     volumes:
+     - name: persistent-storage
+       persistentVolumeClaim:
+         claimName: bind1-{{.Values.global.region}}
+     - configMap:
+         defaultMode: 420
+         items:
+         - key: rndc.key
+           path: rndc.key
+         name: bind1-{{.Values.global.region}}-keys
+       name: bind-keys-rndc
+     - configMap:
+         defaultMode: 420
+         items:
+         - key: tsig.key
+           path: tsig.key
+         name: bind1-{{.Values.global.region}}-keys
+       name: bind-keys-tsig
+     - configMap:
+         defaultMode: 420
+         name: bind1-{{.Values.global.region}}
+       name: bind-conf
+
+{{- end }}
