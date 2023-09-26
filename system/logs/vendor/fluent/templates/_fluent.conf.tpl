@@ -22,6 +22,11 @@
   path /var/log/containers/*.log
   exclude_path /var/log/containers/fluent*
   pos_file /var/log/es-containers.log.pos
+  read_from_head true
+  follow_inodes true
+  enable_stat_watcher false
+  @log_level warn
+  tag kubernetes.*
   <parse>
     @type multi_format
      <pattern>
@@ -38,9 +43,6 @@
        keep_time_key true
      </pattern>
   </parse>
-  read_from_head
-  @log_level warn
-  tag kubernetes.*
 </source>
 
 <label @FLUENT_LOG>

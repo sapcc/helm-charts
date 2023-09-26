@@ -27,7 +27,8 @@ spec:
         name: nova-conductor
         alert-tier: os
         alert-service: nova
-{{ tuple . "nova" "conductor" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
+        {{- tuple . "nova" "conductor" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | nindent 8 }}
+        {{- include "utils.topology.pod_label" . | indent 8 }}
       annotations:
         {{- if or .Values.cell2.conductor.config_file.DEFAULT.statsd_enabled .Values.proxysql.mode }}
         prometheus.io/scrape: "true"
@@ -35,23 +36,13 @@ spec:
         {{- end }}
         configmap-etc-hash: {{ include (print $.Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
     spec:
-{{ tuple . "nova" "conductor" | include "kubernetes_pod_anti_affinity" | indent 6 }}
-{{ include "utils.proxysql.pod_settings" . | indent 6 }}
+      {{- tuple . "nova" "conductor" | include "kubernetes_pod_anti_affinity" | nindent 6 }}
+      {{- include "utils.proxysql.pod_settings" . | nindent 6 }}
+      {{- tuple . (dict "name" "nova-conductor") | include "utils.topology.constraints" | indent 6 }}
       terminationGracePeriodSeconds: {{ .Values.defaults.default.graceful_shutdown_timeout | add 5 }}
       hostname: nova-conductor
       initContainers:
-        - name: dependencies
-          image: {{ tuple . "conductor" | include "container_image_nova" }}
-          imagePullPolicy: IfNotPresent
-          command:
-            - kubernetes-entrypoint
-          env:
-            - name: COMMAND
-              value: "true"
-            - name: NAMESPACE
-              value: {{ .Release.Namespace }}
-            - name: DEPENDENCY_SERVICE
-              value: "{{ .Release.Name }}-{{ .Values.cell2.name }}-rabbitmq,{{ .Release.Name }}-{{ .Values.cell2.name }}-mariadb"      
+      {{- tuple . (dict "service" (include "nova.helpers.cell2_services" .)) | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 6 }}
       containers:
         - name: nova-conductor
           image: {{ tuple . "conductor" | include "container_image_nova" }}
@@ -73,14 +64,10 @@ spec:
                   name: sentry
                   key: {{ .Chart.Name }}.DSN.python
             {{- end }}
-{{- if .Values.python_warnings}}
+            {{- if .Values.python_warnings}}
             - name: PYTHONWARNINGS
               value: {{ .Values.python_warnings | quote }}
-{{- end }}
-            - name: PGAPPNAME
-              valueFrom:
-                fieldRef:
-                  fieldPath: metadata.name
+            {{- end }}
           livenessProbe:
             exec:
               command: ["openstack-agent-liveness", "--component", "nova", "--config-file", "/etc/nova/nova.conf"]

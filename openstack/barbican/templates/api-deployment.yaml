@@ -139,6 +139,15 @@ spec:
               value: "/thales/safenet/lunaclient/config"
           command: [ "/bin/bash", "-c", "--" ]
           args: [ "mv /usr/safenet /thales; while true; do sleep 30; done;" ]
+          {{- if .Values.hsm.resources.enabled }}
+          resources:
+            limits:
+              cpu: {{ .Values.hsm.resources.limits.cpu | quote }}
+              memory: {{ .Values.hsm.resources.limits.memory | quote }}
+            requests:
+              cpu: {{ .Values.hsm.resources.requests.cpu | quote }}
+              memory: {{ .Values.hsm.resources.requests.memory | quote }}
+          {{- end }}
           lifecycle:
             postStart:
               exec:

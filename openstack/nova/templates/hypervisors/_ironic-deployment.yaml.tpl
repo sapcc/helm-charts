@@ -37,33 +37,25 @@ spec:
         configmap-ironic-etc-hash: {{ tuple . $hypervisor | include "ironic_configmap" | sha256sum }}
     spec:
       terminationGracePeriodSeconds: {{ $hypervisor.default.graceful_shutdown_timeout | default .Values.defaults.default.graceful_shutdown_timeout | add 5 }}
+      initContainers:
+      {{- tuple . (dict "service" (print .Release.Name "-rabbitmq")) | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 6 }}
       containers:
         - name: nova-compute
           image: {{ tuple . "compute" | include "container_image_nova" }}
           imagePullPolicy: IfNotPresent
-          command:
-            - dumb-init
-            - kubernetes-entrypoint
+          command: ["dumb-init", "nova-compute"]
           env:
-            - name: COMMAND
-              value: "nova-compute"
-            - name: NAMESPACE
-              value: {{ .Release.Namespace }}
-            {{- if .Values.sentry.enabled }}
-            - name: SENTRY_DSN
-              valueFrom:
-                secretKeyRef:
-                  name: sentry
-                  key: {{ .Chart.Name }}.DSN.python
-            {{- end }}
+          {{- if .Values.sentry.enabled }}
+          - name: SENTRY_DSN
+            valueFrom:
+              secretKeyRef:
+                name: sentry
+                key: {{ .Chart.Name }}.DSN.python
+          {{- end }}
 {{- if or $hypervisor.python_warnings .Values.python_warnings }}
-            - name: PYTHONWARNINGS
-              value: {{ or $hypervisor.python_warnings .Values.python_warnings | quote }}
+          - name: PYTHONWARNINGS
+            value: {{ or $hypervisor.python_warnings .Values.python_warnings | quote }}
 {{- end }}
-            - name: PGAPPNAME
-              valueFrom:
-                fieldRef:
-                  fieldPath: metadata.name
           {{- if .Values.pod.resources.hv_ironic }}
           resources:
 {{ toYaml .Values.pod.resources.hv_ironic | indent 12 }}

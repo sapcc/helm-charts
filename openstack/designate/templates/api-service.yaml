@@ -10,7 +10,6 @@ metadata:
     component: api
   annotations:
     prometheus.io/scrape: "true"
-    prometheus.io/port: {{ required ".Values.global.designate_metrics_port missing" .Values.global.designate_metrics_port | quote }}
     prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
 spec:
   selector:
@@ -18,6 +17,8 @@ spec:
   ports:
     - name: designate-api
       port: {{ .Values.global.designate_api_port_internal }}
+    - name: metrics
+      port: {{ .Values.global.designate_metrics_port }}
 {{- if .Values.global_setup }}
   externalIPs:
 {{- if .Values.global.designate_api_external_ip }}

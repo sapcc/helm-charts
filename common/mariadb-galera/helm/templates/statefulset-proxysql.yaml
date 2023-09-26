@@ -2,7 +2,7 @@
 {{- else if and ($.Values.command) (hasKey $.Values.command "application") }}
 {{- else if and (hasKey $.Values.mariadb.galera.restore "kopia") ($.Values.mariadb.galera.restore.kopia.enabled) }}
 {{- else if and (hasKey $.Values.mariadb "wipeDataAndLog") ($.Values.mariadb.wipeDataAndLog) }}
-{{- else if $.Values.proxy.enabled }}
+{{- else if and ($.Values.proxy.enabled) (eq $.Values.proxy.type "proxysql") }}
   {{- $unevenNodeCount := "" }}
   {{- if eq (mod ($.Values.replicas.proxy|int) 2) 1 }}
     {{- $unevenNodeCount = "true" }}
@@ -13,17 +13,17 @@ apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   namespace: {{ $.Release.Namespace }}
-  name: {{ (include "nodeNamePrefix" (dict "global" $ "component" "proxy")) }}
+  name: {{ (include "nodeNamePrefix" (dict "global" $ "component" "proxysql")) }}
   labels:
     app: {{ $.Release.Name }}
-    component: "proxy"
+    component: "proxysql"
     release: {{ $.Release.Name }}
 spec:
   replicas: {{ $.Values.replicas.proxy | default 3 }}
   serviceName: {{ $.Release.Name }}
   selector:
     matchLabels:
-      component: "proxy"
+      component: "proxysql"
   revisionHistoryLimit: {{ $.Values.revisionHistoryLimit | default 10 | int }}
   podManagementPolicy: {{ $.Values.podManagementPolicy | default "OrderedReady" | quote }}
   updateStrategy:
@@ -32,12 +32,12 @@ spec:
     metadata:
       labels:
         app: {{ $.Release.Name }}
-        component: "proxy"
+        component: "proxysql"
         release: {{ $.Release.Name }}
       annotations:
         {{- if $.Values.monitoring.proxy.enabled }}
         prometheus.io/scrape: "true"
-        prometheus.io/port: {{ (required ".services.proxy.backend.ports.restapi.targetPort missing" $.Values.services.proxy.backend.ports.restapi.targetPort) }}
+        prometheus.io/port: {{ (required ".services.proxy.proxysql.backend.ports.restapi.targetPort missing" $.Values.services.proxy.proxysql.backend.ports.restapi.targetPort) | quote }}
         prometheus.io/targets: {{ $.Values.monitoring.prometheus.instance | default "prometheus" | quote }}
         {{- end }}
         checksum/configmap: {{ include (print $.Template.BasePath "/configmap-proxysql.yaml") $ | sha256sum }}
@@ -57,7 +57,7 @@ spec:
                     - key: "component"
                       operator: In
                       values:
-                        - "proxy"
+                        - "proxysql"
                 topologyKey: "topology.kubernetes.io/zone"
             - weight: 2
               podAffinityTerm:
@@ -70,7 +70,7 @@ spec:
                     - key: "component"
                       operator: In
                       values:
-                        - "proxy"
+                        - "proxysql"
                 topologyKey: "kubernetes.io/hostname"
       serviceAccount: {{ include "commonPrefix" $ }}{{ $.Release.Name }}
       securityContext:
@@ -103,7 +103,7 @@ spec:
           privileged: {{ $.Values.initContainers.increaseMapCount.securityContext.privileged | default true }}
           runAsUser: {{ $.Values.initContainers.increaseMapCount.securityContext.runAsUser | default 0 | int }}
       containers:
-      - name: {{ (include "nodeNamePrefix" (dict "global" $ "component" "proxy")) }}
+      - name: {{ (include "nodeNamePrefix" (dict "global" $ "component" "proxysql")) }}
         image: "{{ $.Values.image.proxy.registry }}/{{ $.Values.image.proxy.project }}/{{ $.Values.image.proxy.applicationname }}:{{ $.Values.image.proxy.applicationversion }}-{{ $.Values.image.proxy.imageversion | int }}"
         imagePullPolicy: {{ $.Values.image.proxy.pullPolicy | default "IfNotPresent" | quote }}
         securityContext:
@@ -126,10 +126,10 @@ spec:
         {{- end }}
         env:
         - name: PROXYSQL_MYSQL_PORT
-          value: "{{ (required ".services.proxy.frontend.ports.proxy.targetPort missing" $.Values.services.proxy.frontend.ports.proxy.targetPort) }}"
+          value: "{{ (required ".services.proxy.proxysql.frontend.ports.proxy.targetPort missing" $.Values.services.proxy.proxysql.frontend.ports.proxy.targetPort) }}"
         - name: PROXYSQL_ADMIN_PORT
-          value: "{{ (required ".services.proxy.backend.ports.proxy.targetPort missing" $.Values.services.proxy.backend.ports.proxy.targetPort) }}"
-        {{- if $.Values.proxy.restapi.enabled }}
+          value: "{{ (required ".services.proxy.proxysql.backend.ports.proxy.targetPort missing" $.Values.services.proxy.proxysql.backend.ports.proxy.targetPort) }}"
+        {{- if $.Values.proxy.proxysql.restapi.enabled }}
         - name: PROXYSQL_RESTAPI_ENABLED
           value: "true"
           {{- range $servicesKey, $servicesValue := $.Values.services.proxy }}
@@ -143,12 +143,12 @@ spec:
             {{- end }}
           {{- end }}
         {{- end }}
-        {{- if $.Values.proxy.adminui.enabled }}
+        {{- if $.Values.proxy.proxysql.adminui.enabled }}
         - name: PROXYSQL_WEB_ENABLED
           value: "true"
-          {{- if $.Values.proxy.adminui.verbosity }}
+          {{- if $.Values.proxy.proxysql.adminui.verbosity }}
         - name: PROXYSQL_WEB_VERBOSITY
-          value: {{ ($.Values.proxy.adminui.verbosity | int) | quote }}
+          value: {{ ($.Values.proxy.proxysql.adminui.verbosity | int) | quote }}
           {{- end }}
           {{- range $servicesKey, $servicesValue := $.Values.services.proxy }}
             {{- if eq $servicesValue.name "backend"}}
@@ -162,7 +162,7 @@ spec:
           {{- end }}
         {{- end }}
         {{- range $envKey, $envValue := $.Values.env }}
-          {{- if (has "proxy" $envValue.containerType) }}
+          {{- if (has "proxysql" $envValue.containerType) }}
             {{- if $envValue.value }}
         - name: {{ $envKey }}
           value: {{ $envValue.value | quote }}
@@ -179,7 +179,7 @@ spec:
                   {{- end }}
                 {{- end }}
               {{- end }}
-              {{- range $userKey, $userValue := $.Values.proxy.users }}
+              {{- range $userKey, $userValue := $.Values.proxy.proxysql.users }}
                 {{- if $userValue.enabled }}
                   {{- if eq $userValue.secretName $envValue.secretName }}
         - name: {{ $envKey }}
@@ -199,14 +199,15 @@ spec:
           limits:
             memory: {{ $.Values.resourceLimits.memory.proxy | default "64Mi" | quote }}
         ports:
-        {{- range $portsKey, $portsValue := $.Values.services.proxy.backend.ports }}
+        {{- range $portsKey, $portsValue := $.Values.services.proxy.proxysql.backend.ports }}
+          {{- if and ($.Values.monitoring.proxy.enabled) (eq $portsKey "restapi") }}
+          - name: metrics
+            containerPort: {{ (required "services.proxy.proxysql.backend.ports.restapi.targetPort missing" $.Values.services.proxy.proxysql.backend.ports.restapi.targetPort) }}
+          {{- else }}
           - containerPort: {{ $portsValue.targetPort }}
             name: {{ $portsKey }}
             protocol: {{ $portsValue.protocol | default "TCP" }}
-        {{- end }}
-        {{- if $.Values.monitoring.proxy.enabled }}
-          - name: metrics
-            containerPort: {{ (required ".services.proxy.backend.ports.restapi.targetPort missing" $.Values.services.proxy.backend.ports.restapi.targetPort) }}
+          {{- end }}
         {{- end }}
         startupProbe:
           exec:

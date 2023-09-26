@@ -98,21 +98,6 @@ filter {
 
 output {
   if [type] == "syslog" {
-{{- if .Values.elasticsearch.enabled }}
-    elasticsearch {
-      id => "elk-syslog"
-      index => "syslog-%{+YYYY.MM.dd}"
-      template => "/logstash-etc/syslog.json"
-      template_name => "syslog"
-      template_overwrite => true
-      data_stream => false
-      hosts => ["{{.Values.global.elk_elasticsearch_endpoint_host_scaleout}}.{{.Values.global.region}}.{{.Values.global.tld}}:{{.Values.global.elk_elasticsearch_ssl_port}}"]
-      user => "{{.Values.global.elk_elasticsearch_data_user}}"
-      password => "{{.Values.global.elk_elasticsearch_data_password}}"
-      ssl => true
-    }
-{{- end }}
-{{- if .Values.opensearch.enabled }}
     opensearch {
       id => "opensearch-syslog"
       index => "syslog-%{+YYYY.MM.dd}"
@@ -128,24 +113,8 @@ output {
       ssl => true
       ssl_certificate_verification => false
     }
-{{- end }}
   }
   elseif [type] == "alert" and [alerts][labels][severity] == "critical"{
-{{- if .Values.elasticsearch.enabled }}
-    elasticsearch {
-      id => "elk-critical-alerts"
-      index => "alerts-critical-%{+YYYY}"
-      template => "/logstash-etc/alerts.json"
-      template_name => "alerts"
-      template_overwrite => true
-      data_stream => false
-      hosts => ["{{.Values.global.elk_elasticsearch_endpoint_host_scaleout}}.{{.Values.global.region}}.{{.Values.global.tld}}:{{.Values.global.elk_elasticsearch_ssl_port}}"]
-      user => "{{.Values.global.elk_elasticsearch_data_user}}"
-      password => "{{.Values.global.elk_elasticsearch_data_password}}"
-      ssl => true
-    }
-{{- end }}
-{{- if .Values.opensearch.enabled }}
     opensearch {
       id => "opensearch-critical-alerts"
       index => "alerts-critical-%{+YYYY}"
@@ -158,24 +127,8 @@ output {
       ssl => true
       ssl_certificate_verification => false
     }
-{{- end }}
   }
   elseif [type] == "alert" and [alerts][labels][severity] == "warning"{
-{{- if .Values.elasticsearch.enabled }}
-      elasticsearch {
-      id => "elk-alerts-warnings"
-        index => "alerts-warning-%{+YYYY}"
-        template => "/logstash-etc/alerts.json"
-        template_name => "alerts"
-        template_overwrite => true
-        data_stream => false
-        hosts => ["{{.Values.global.elk_elasticsearch_endpoint_host_scaleout}}.{{.Values.global.region}}.{{.Values.global.tld}}:{{.Values.global.elk_elasticsearch_ssl_port}}"]
-        user => "{{.Values.global.elk_elasticsearch_data_user}}"
-        password => "{{.Values.global.elk_elasticsearch_data_password}}"
-        ssl => true
-    }
-{{- end }}
-{{- if .Values.opensearch.enabled }}
     opensearch {
       id => "opensearch-warnings"
       index => "alerts-warnings-%{+YYYY}"
@@ -188,24 +141,8 @@ output {
       ssl => true
       ssl_certificate_verification => false
     }
-{{- end }}
   }
   elseif [type] == "alert"{
-{{- if .Values.elasticsearch.enabled }}
-    elasticsearch {
-      id => "elk-alerts"
-      index => "alerts-other-%{+YYYY}"
-      template => "/logstash-etc/alerts.json"
-      template_name => "alerts"
-      template_overwrite => true
-      data_stream => false
-      hosts => ["{{.Values.global.elk_elasticsearch_endpoint_host_scaleout}}.{{.Values.global.region}}.{{.Values.global.tld}}:{{.Values.global.elk_elasticsearch_ssl_port}}"]
-      user => "{{.Values.global.elk_elasticsearch_data_user}}"
-      password => "{{.Values.global.elk_elasticsearch_data_password}}"
-      ssl => true
-    }
-{{- end }}
-{{- if .Values.opensearch.enabled }}
     opensearch {
       id => "opensearch-alerts"
       index => "alerts-other-%{+YYYY}"
@@ -218,24 +155,8 @@ output {
       ssl => true
       ssl_certificate_verification => false
     }
-{{- end }}
   }
   elseif [type] == "deployment" {
-{{- if .Values.elasticsearch.enabled }}
-    elasticsearch {
-      id => "elk-deployments"
-      index => "deployments-%{+YYYY}"
-      template => "/logstash-etc/deployments.json"
-      template_name => "deployments"
-      template_overwrite => true
-      data_stream => false
-      hosts => ["{{.Values.global.elk_elasticsearch_endpoint_host_scaleout}}.{{.Values.global.region}}.{{.Values.global.tld}}:{{.Values.global.elk_elasticsearch_ssl_port}}"]
-      user => "{{.Values.global.elk_elasticsearch_data_user}}"
-      password => "{{.Values.global.elk_elasticsearch_data_password}}"
-      ssl => true
-    }
-{{- end }}
-{{- if .Values.opensearch.enabled }}
     opensearch {
       id => "opensearch-deployments"
       index => "deployments-%{+YYYY}"
@@ -248,24 +169,8 @@ output {
       ssl => true
       ssl_certificate_verification => false
     }
-{{- end }}
   }
   elseif  [type] == "netflow" {
-{{- if .Values.elasticsearch.enabled }}
-    elasticsearch {
-      id => "elk-netflow"
-      index => "netflow-%{+YYYY.MM.dd}"
-      template => "/logstash-etc/netflow.json"
-      template_name => "netflow"
-      template_overwrite => true
-      data_stream => false
-      hosts => ["{{.Values.global.elk_elasticsearch_endpoint_host_scaleout}}.{{.Values.global.region}}.{{.Values.global.tld}}:{{.Values.global.elk_elasticsearch_ssl_port}}"]
-      user => "{{.Values.global.elk_elasticsearch_data_user}}"
-      password => "{{.Values.global.elk_elasticsearch_data_password}}"
-      ssl => true
-    }
-{{- end }}
-{{- if .Values.opensearch.enabled }}
     opensearch {
       id => "opensearch-netflow"
       index => "netflow-%{+YYYY.MM.dd}"
@@ -278,24 +183,8 @@ output {
       ssl => true
       ssl_certificate_verification => false
     }
-{{- end }}
   }
   elseif  [type] == "jumpserver" {
-{{- if .Values.elasticsearch.enabled }}
-    elasticsearch {
-      id => "elk-jump"
-      index => "jump-%{+YYYY.MM.dd}"
-      template => "/logstash-etc/jump.json"
-      template_name => "jump"
-      template_overwrite => true
-      data_stream => false
-      hosts => ["{{.Values.global.elk_elasticsearch_endpoint_host_scaleout}}.{{.Values.global.region}}.{{.Values.global.tld}}:{{.Values.global.elk_elasticsearch_ssl_port}}"]
-      user => "{{.Values.global.elk_elasticsearch_jump_user}}"
-      password => "{{.Values.global.elk_elasticsearch_jump_password}}"
-      ssl => true
-    }
-{{- end }}
-{{- if .Values.opensearch.enabled }}
     opensearch {
       id => "opensearch-jump"
       index => "jump-%{+YYYY.MM.dd}"
@@ -308,6 +197,5 @@ output {
       ssl => true
       ssl_certificate_verification => false
     }
-{{- end }}
   }
 }

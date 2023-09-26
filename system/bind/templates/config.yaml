@@ -31,6 +31,9 @@ data:
       transfers-in {{ .Values.transfers_in | default 100 }};
       tcp-clients {{ .Values.tcp_clients | default 250 }};
       tcp-listen-queue {{ .Values.tcp_listen_queue | default 25 }};
+      serial-query-rate {{.Values.serial_query_rate | default 20}};
+      notify-rate {{.Values.notify_rate | default 20}};
+      startup-notify-rate {{.Values.startup_notify_rate | default 20}};
      };
      server {{ .Values.master_server }} {
       keys tsig-key;
@@ -54,8 +57,8 @@ metadata:
   name: {{ .Release.Name }}-keys
 data:
   rndc.key: |
-    key "rndc-key" {
-        algorithm hmac-md5;
+    key "{{ .Values.rndc_key_name | default "rndc-key" }}" {
+        algorithm "{{ .Values.rndc_key_algorithm | default "hmac-md5" }}";
         secret "{{ .Values.rndc_key }}";
     };
   tsig.key: |
@@ -97,5 +100,5 @@ data:
      UserParameter=bind.zones[*],/usr/bin/bind/scripts/bind-stats.sh zones $1
      UserParameter=bind.git,/usr/bin/bind/scripts/check_bind_git.sh
      UserParameter=bind.stats[*],/usr/bin/curl -s http://localhost:8653/json | jq '. | {$1: .$1}'
-
+     Server={{ .Values.zabbix.server }}
 {{ end }}

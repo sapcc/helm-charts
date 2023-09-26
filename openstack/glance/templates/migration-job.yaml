@@ -37,6 +37,15 @@ spec:
         - |
           glance-manage db_sync
           {{ include "utils.proxysql.proxysql_signal_stop_script" . | trim }}
+        {{- if .Values.api.resources.enabled }}
+        resources:
+          limits:
+            cpu: {{ .Values.api.resources.limits.cpu | quote }}
+            memory: {{ .Values.api.resources.limits.memory | quote }}
+          requests:
+            cpu: {{ .Values.api.resources.requests.cpu | quote }}
+            memory: {{ .Values.api.resources.requests.memory | quote }}
+        {{- end }}
         volumeMounts:
           - mountPath: /etc/glance
             name: etcglance

@@ -1,0 +1,36 @@
+---
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: {{ include "kubelet-stats-metrics.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels: {{- include "kubelet-stats-metrics.labels" . | nindent 4 }}
+rules:
+  - apiGroups: [""]
+    resources: ["nodes/proxy"]
+    verbs: ["get"]
+  - apiGroups: [""]
+    resources: ["nodes"]
+    verbs: ["get", "list"]
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ include "kubelet-stats-metrics.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels: {{- include "kubelet-stats-metrics.labels" . | nindent 4 }}
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: {{ include "kubelet-stats-metrics.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels: {{- include "kubelet-stats-metrics.labels" . | nindent 4 }}
+subjects:
+  - kind: ServiceAccount
+    name: {{ include "kubelet-stats-metrics.fullname" . }}
+    namespace: {{ .Release.Namespace }}
+roleRef:
+  kind: ClusterRole
+  name: {{ include "kubelet-stats-metrics.fullname" . }}
+  apiGroup: rbac.authorization.k8s.io

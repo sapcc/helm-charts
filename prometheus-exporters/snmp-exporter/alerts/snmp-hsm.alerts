@@ -3,7 +3,7 @@ groups:
   rules:
   - alert: hsmPartitionStorageAvailibilityLessThan5Percentage
     expr: snmp_hsm_hsmPartitionStorageAvailableBytes{hsmModel!="Luna G7"} < 5000
-    for: 2m
+    for: 5m
     labels:
       severity: info
       service: barbican
@@ -11,13 +11,14 @@ groups:
       meta: "Partition {{ $labels.hsmPartitionSerialNumber }} has less than 5% storage availability"
       dashboard: hsm
       no_alert_on_absence: "true"
+      support_group: foundation
     annotations:
       description: "Partition {{ $labels.hsmPartitionSerialNumber }} in {{ $labels.devicename }} has {{ $value }}kb storage availability"
       summary: "Partition {{ $labels.hsmPartitionSerialNumber }} has less than 5% storage availability"
 
   - alert: hsmAribaClientsMoreThan14
     expr: sum((snmp_hsm_hsmClientName{hsmClientName!~"barb.*"})) by (devicename) > 14
-    for: 2m
+    for: 15m
     labels:
       severity: info
       service: barbican
@@ -25,6 +26,7 @@ groups:
       meta: "HSM Client License in {{ $labels.devicename }} is {{ $value }}"
       dashboard: hsm
       no_alert_on_absence: "true"
+      support_group: foundation
     annotations:
       description: "HSM Client License in {{ $labels.devicename }} is {{ $value }}"
       summary: "HSM Client License in {{ $labels.devicename }} is {{ $value }}"
@@ -39,13 +41,14 @@ groups:
       meta: "HSM Operational Errors in {{ $labels.devicename }}"
       dashboard: hsm
       no_alert_on_absence: "true"
+      support_group: foundation
     annotations:
       description: "HSM Operational Errors in {{ $labels.devicename }}"
       summary: "HSM Operational Errors in {{ $labels.devicename }}"
 
   - alert: hsmSensorTemperatureIsCritical
-    expr: sum by(devicename, lmTempSensorsDevice) (snmp_hsm_lmTempSensorsValue{lmTempSensorsDevice!~"loc1"}) > 60000
-    for: 2m
+    expr: sum by(devicename, lmTempSensorsDevice) (snmp_hsm_lmTempSensorsValue{lmTempSensorsDevice!~"loc1"}) > 50000
+    for: 5m
     labels:
       severity: info
       service: barbican
@@ -53,13 +56,14 @@ groups:
       meta: "HSM Sensor {{ $labels.lmTempSensorsDevice }} in {{ $labels.devicename }} Temperature is Critical"
       dashboard: hsm
       no_alert_on_absence: "true"
+      support_group: foundation
     annotations:
       description: "HSM Sensor {{ $labels.lmTempSensorsDevice }} in {{ $labels.devicename }} Temperature is {{ $value }}"
       summary: "HSM Sensor {{ $labels.lmTempSensorsDevice }} in {{ $labels.devicename }} Temperature is {{ $value }}"
 
   - alert: hsmClientsMoreThan20
     expr: sum(snmp_hsm_hsmClientName) by (devicename) > 20
-    for: 2m
+    for: 15m
     labels:
       severity: info
       service: barbican
@@ -67,13 +71,14 @@ groups:
       meta: "HSM Client License in {{ $labels.devicename }} is {{ $value }}"
       dashboard: hsm
       no_alert_on_absence: "true"
+      support_group: foundation
     annotations:
       description: "HSM Client License in {{ $labels.devicename }} is {{ $value }}"
       summary: "HSM Client License in {{ $labels.devicename }} is {{ $value }}"
 
-  - alert: hsmBarbicanClientsMoreThan2
-    expr: sum((snmp_hsm_hsmClientName{hsmClientName=~"barb.*"})) by (devicename) > 2
-    for: 2m
+  - alert: hsmBarbicanClientsMoreThan4
+    expr: sum((snmp_hsm_hsmClientName{hsmClientName=~"barb.*"})) by (devicename) > 4
+    for: 15m
     labels:
       severity: info
       service: barbican
@@ -81,13 +86,14 @@ groups:
       meta: "HSM Client License in {{ $labels.devicename }} is {{ $value }}"
       dashboard: hsm
       no_alert_on_absence: "true"
+      support_group: foundation
     annotations:
       description: "HSM Client License in {{ $labels.devicename }} is {{ $value }}"
       summary: "HSM Client License in {{ $labels.devicename }} is {{ $value }}"
 
   - alert: hsm01B700IsUnReachable
     expr: irate(snmp_hsm_hsmUpTime{hsmModel="Luna G7",devicename=~"hsm01.*"}[5m]) < 1
-    for: 2m
+    for: 5m
     labels:
       severity: info
       service: barbican
@@ -95,13 +101,14 @@ groups:
       meta: "HSM01 B700 Device is UnReachable"
       dashboard: hsm
       no_alert_on_absence: "true"
+      support_group: foundation
     annotations:
       description: "HSM01 B700 Device is UnReachable"
       summary: "HSM01 B700 Device is UnReachable"
 
   - alert: hsm02B700IsUnReachable
     expr: irate(snmp_hsm_hsmUpTime{hsmModel="Luna G7",devicename=~"hsm02.*"}[5m]) < 1
-    for: 2m
+    for: 5m
     labels:
       severity: info
       service: barbican
@@ -109,13 +116,14 @@ groups:
       meta: "HSM02 B700 Device is UnReachable"
       dashboard: hsm
       no_alert_on_absence: "true"
+      support_group: foundation
     annotations:
       description: "HSM02 B700 Device is UnReachable"
       summary: "HSM02 B700 Device is UnReachable"
 
   - alert: hsm01A790IsUnReachable
     expr: irate(snmp_hsm_hsmUpTime{hsmModel="Luna K7",devicename=~"hsm01.*"}[5m]) < 1
-    for: 2m
+    for: 5m
     labels:
       severity: info
       service: barbican
@@ -123,13 +131,14 @@ groups:
       meta: "HSM01 A790 Device is UnReachable"
       dashboard: hsm
       no_alert_on_absence: "true"
+      support_group: foundation
     annotations:
       description: "HSM01 A790 Device is UnReachable"
       summary: "HSM01 A790 Device is UnReachable"
 
   - alert: hsm02A790IsUnReachable
     expr: irate(snmp_hsm_hsmUpTime{hsmModel="Luna K7",devicename=~"hsm02.*"}[5m]) < 1
-    for: 2m
+    for: 5m
     labels:
       severity: info
       service: barbican
@@ -137,6 +146,7 @@ groups:
       meta: "HSM02 A790 Device is UnReachable"
       dashboard: hsm
       no_alert_on_absence: "true"
+      support_group: foundation
     annotations:
       description: "HSM02 A790 Device is UnReachable"
       summary: "HSM02 A790 Device is UnReachable"

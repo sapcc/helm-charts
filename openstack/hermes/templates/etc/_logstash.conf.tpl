@@ -386,7 +386,7 @@ output {
     if ([@metadata][index]) {
       elasticsearch {
           id => "clone_for_audit_1"
-          index => "audit-%{[@metadata][index]}-6-%{+YYYY.MM}"
+          index => "audit-%{[@metadata][index]}-%{+YYYY.MM}"
           template => "/hermes-etc/audit.json"
           template_name => "audit"
           template_overwrite => true
@@ -399,7 +399,7 @@ output {
     } else {
       elasticsearch {
           id => "clone_for_audit_2"
-          index => "audit-default-6-%{+YYYY.MM}"
+          index => "audit-default-%{+YYYY.MM}"
           template => "/hermes-etc/audit.json"
           template_name => "audit"
           template_overwrite => true
@@ -415,7 +415,7 @@ output {
   if ([@metadata][index2] and [@metadata][index2] != [@metadata][index] and [type] == 'clone_for_cc') {
     elasticsearch {
         id => "clone_for_cc"
-        index => "audit-%{[@metadata][index2]}-6-%{+YYYY.MM}"
+        index => "audit-%{[@metadata][index2]}-%{+YYYY.MM}"
         template => "/hermes-etc/audit.json"
         template_name => "audit"
         template_overwrite => true

@@ -54,8 +54,61 @@ annotations:
   {{- $name := index . 1 }}
   {{- with index . 0 }}
     {{- $bin := include (print .Template.BasePath "/bin/_" $name ".tpl") . }}
-    {{- $all := list $bin (include "utils.proxysql.job_pod_settings" . ) (include "utils.proxysql.volume_mount" . ) (include "utils.proxysql.container" . ) (include "utils.proxysql.volumes" .) | join "\n" }}
+    {{- $all := list $bin (include "utils.proxysql.job_pod_settings" . ) (include "utils.proxysql.volume_mount" . ) (include "utils.proxysql.container" . ) (include "utils.proxysql.volumes" .) (tuple . (dict) | include "utils.snippets.kubernetes_entrypoint_init_container") | join "\n" }}
     {{- $hash := empty .Values.proxysql.mode | ternary $bin $all | sha256sum }}
 {{- .Release.Name }}-{{ $name }}-{{ substr 0 4 $hash }}-{{ .Values.imageVersion | required "Please set nova.imageVersion or similar"}}
+  {{- end }}
+{{- end }}
+
+
+{{- define "nova.helpers.database_services" }}
+  {{- $envAll := . }}
+  {{- $dbs := dict }}
+  {{- range $d := $envAll.Chart.Dependencies }}
+    {{- if and (hasPrefix "mariadb" $d.Name) }}
+        {{- $db := get $envAll.Values $d.Name }}
+        {{- if get $db "enabled" }}
+          {{- $_ := set $dbs (print (get $db "name") "-mariadb") $db }}
+        {{- end }}
+    {{- end }}
+  {{- end }}
+  {{- keys $dbs | sortAlpha | join "," }}
+{{- end }}
+
+{{/* TODO: Expose and use the logic in the rabbitmq subchart */}}
+{{- define "nova.helpers.rabbitmq_name" }}
+  {{- $vals := index . 1 }}
+  {{- with index . 0 }}
+    {{- $name := default "rabbitmq" $vals.nameOverride -}}
+    {{- printf "%s-%s" .Release.Name $name | trunc 63 | replace "_" "-" | trimSuffix "-" -}}
+  {{- end}}
+{{- end }}
+
+{{- define "nova.helpers.cell01_rabbitmq" }}
+  {{- tuple . .Values.rabbitmq | include "nova.helpers.rabbitmq_name" }}
+{{- end }}
+
+{{- define "nova.helpers.cell2_rabbitmq" }}
+  {{- tuple . .Values.rabbitmq_cell2 | include "nova.helpers.rabbitmq_name" }}
+{{- end }}
+
+{{- define "nova.helpers.cell01_services" }}
+  {{- print .Values.mariadb_api.name "-mariadb," .Values.mariadb.name "-mariadb," (include "nova.helpers.cell01_rabbitmq" .) }}
+{{- end }}
+
+{{- define "nova.helpers.cell1_services" }}
+  {{- print .Values.mariadb.name "-mariadb," (include "nova.helpers.cell01_rabbitmq" .) }}
+{{- end }}
+
+{{- define "nova.helpers.cell2_services" }}
+  {{- if .Values.cell2.enabled }}
+    {{- print .Values.mariadb_cell2.name "-mariadb," (include "nova.helpers.cell2_rabbitmq" .) }}
+  {{- end }}
+{{- end }}
+
+{{- define "nova.helpers.all_cell_services" }}
+  {{- include "nova.helpers.cell01_services" . }}
+  {{- if .Values.cell2.enabled -}}
+    ,{{ include "nova.helpers.cell2_services" . }}
   {{- end }}
 {{- end }}

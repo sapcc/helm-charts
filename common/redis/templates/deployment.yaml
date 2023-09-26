@@ -23,6 +23,10 @@ spec:
         alert-tier: {{ required ".Values.alerts.tier missing" .Values.alerts.tier }}
         alert-service: {{ include "alerts.service" . }}
         {{- end }}
+      annotations:
+        {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+        linkerd.io/inject: enabled
+        {{- end }}
     spec:
       containers:
       - name: {{ template "redis.fullname" . }}
@@ -52,6 +56,13 @@ spec:
             - ping
           initialDelaySeconds: 30
           timeoutSeconds: 5
+        startupProbe:
+          exec:
+            command:
+            - redis-cli
+            - ping
+          initialDelaySeconds: 5
+          failureThreshold: 600 # consider to lower this?
         readinessProbe:
           exec:
             command:

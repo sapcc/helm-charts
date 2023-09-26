@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.18.0 - 2023/09/13
+* HAProxy as additional proxy option added
+  * currently in alpha state
+  * no readiness/liveness checks yet
+  * no proper mysql health check yet
+* chart version bumped
+
 ## v0.17.0 - 2023/07/21
 * Restic backup option removed
   * Kopia is the only backup option now

@@ -19,15 +19,16 @@ blacklist_response:
 
 # Group multiple CADF actions to one rate limit action.
 groups:
+  read:
+    - read
+    - read/list
+    - update/access_list
+
   write:
     - create
     - delete
     - update
     - update/*
-
-  read:
-    - read
-    - read/list
 
 rates:
   # local rate limits below applied to each project
@@ -45,6 +46,8 @@ rates:
         limit: 100r/m
 
     shares/share/action:
+      - action: read
+        limit: 1000r/m
       - action: write
         limit: 100r/m
 

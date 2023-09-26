@@ -1,3 +1,31 @@
+## 7.2.15
+
+* Removal of Prometheus limit warnings, as no limits are defined at all
+
+## 7.2.14
+
+* Refine PrometheusTargetSyncFailure alert
+
+## 7.2.13
+
+* Chart version labeled
+
+## 7.2.12
+
+* scrapeConfigSelector added to the Prometheus CR
+
+## 7.2.11
+
+* Defaulting ingressClassName to nginx to avoid picking up traefik 
+
+## 7.2.10
+
+* Improved RemoteWriteBehind alert
+
+## 7.2.9
+
+* adding thanos endpoint for internalIngress 
+
 ## 7.2.8
 
 * Option to create unique swift containers

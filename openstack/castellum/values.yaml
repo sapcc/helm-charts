@@ -1,14 +1,16 @@
 global:
   registry: DEFINED_IN_VALUES_FILE
+  linkerd_requested: true
+
+linkerd-support:
+  annotate_namespace: true
 
 owner-info:
   support-group: containers
   service: castellum
   maintainers:
     - Stefan Majewsky
-    - Falk Reimann
     - Sandro Jäckel
-    - Muhammad Talal Anwar
   helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/openstack/castellum
 
 castellum:
@@ -30,12 +32,19 @@ castellum:
   # described in <https://github.com/sapcc/castellum/blob/master/README.md#building-and-running>
   project_seeds: []
 
+  # List of max_asset_sizes constraints. Entries must for the most part follow
+  # the same format as in the castellum.yaml config file, described in
+  # <https://github.com/sapcc/castellum/blob/master/README.md#building-and-running>.
+  # Also, all entries must have the key "region". They will only be considered
+  # if "region" has the value "any" or a value equal to .Values.global.region.
+  max_asset_sizes: []
+
   # # Whether to apply resource requests/limits to containers.
   # resources:
   #   enabled: false
 
 postgresql:
-  imageTag: '12.14'
+  imageTag: '12.16-20230814073048'
   persistence:
     enabled: true
     size: 10Gi
@@ -69,7 +78,7 @@ pgmetrics:
     support_group: containers
 
   collectors:
-    bgwriter: false
+    stat_bgwriter: false
 
   customMetrics:
     castellum_asset_count:

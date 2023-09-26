@@ -17,6 +17,10 @@ global:
   domain_seeds:
     skip_hcm_domain: false
 
+api_workers: 12
+rpc_workers: 5
+rpc_state_workers: 5
+
 owner-info:
   support-group: network-api
   maintainers:
@@ -82,7 +86,7 @@ pod:
         memory: '1Gi'
       requests:
         cpu: '250m'
-        memory: '512Mi' 
+        memory: '512Mi'
     server:
       requests:
         cpu: "4000m"
@@ -131,10 +135,10 @@ pod:
         memory: "1Gi"
     nsxv3_agent:
       requests:
-        cpu: "64m"
+        cpu: "128m"
         memory: "256Mi"
       limits:
-        cpu: "128m"
+        cpu: "256m"
         memory: "512Mi"
     nsxv3_exporter:
       requests:
@@ -337,6 +341,9 @@ logging:
       handlers: stdout, sentry
       level: WARNING
     auditmiddleware:
+      handlers: stdout, sentry
+      level: INFO
+    rate_limit.rate_limit:
       handlers: stdout, sentry
       level: INFO
 
@@ -586,6 +593,20 @@ rabbitmq_notifications:
 # openstack-watcher-middleware
 watcher:
   enabled: true
+
+# openstack-rate-limit
+rate_limit:
+  enabled: false
+  rate_limit_by: target_project_id
+  max_sleep_time_seconds: 0
+  log_sleep_time_seconds: 10
+  backend_timeout_seconds: 1
+  whitelist:
+    - Default/service
+    - Default/admin
+  whitelist_users: null
+  blacklist: null
+  blacklist_users: null
 
 unittest:
   enabled: false

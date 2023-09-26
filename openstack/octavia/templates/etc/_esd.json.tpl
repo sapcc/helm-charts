@@ -50,5 +50,11 @@
   "hcm_rmk_restrict_internal": {
     "lbaas_ctcp": "cc_tcp_profile",
     "lbaas_irule": ["cc_hcm_rmk_restrict_internal"]
+  },
+  "ccloud_special_udp_stateless": {
+    "lbaas_cudp": "cc_udp_datagram_profile"
+  },
+  "ccloud_special_fastl4_noaging": {
+    "lbaas_fastl4": "cc_fastL4_noaging_profile"
   }
 }

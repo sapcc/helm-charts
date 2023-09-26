@@ -31,13 +31,15 @@ spec:
         {{- end }}
       annotations:
         configmap-etc-hash: {{ include (print $.Template.BasePath "/configmap-etc.yaml") . | sha256sum }}
+        {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+        linkerd.io/inject: enabled
+        {{- end }}
         prometheus.io/scrape: "true"
-        prometheus.io/port: "9187"
         prometheus.io/targets: {{ quote .Values.alerts.prometheus }}
     spec:
       containers:
       - name: metrics
-        image: "{{ $mirror }}/prometheuscommunity/postgres-exporter:v0.12.0"
+        image: "{{ $mirror }}/prometheuscommunity/postgres-exporter:v0.13.2"
         imagePullPolicy: IfNotPresent
         env:
         - name: DATA_SOURCE_NAME

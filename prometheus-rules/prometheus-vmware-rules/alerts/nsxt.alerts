@@ -255,19 +255,21 @@ groups:
       summary: "CRITICAL: NSX-T management service `{{ $labels.nsxt_mgmt_service }}` has failed. ({{ $labels.nsxt_mgmt_node }}, {{ $labels.nsxt_adapter }}) https://{{ $labels.target }}"
 
   - alert: NSXTSslCertificateExpiry
-    expr: vrops_nsxt_mgmt_node_alert_info{alert_name="AlertDefinition-NSXTCertificateExpiryAlert"}
+    expr: vrops_nsxt_mgmt_node_alert_info{alert_name="AlertDefinition-NSXTCertificateExpiryAlert"} or
+          vrops_nsxt_adapter_alert_info{alert_name="Adapter certificate has expired or will expire shortly"} or
+          vrops_sddc_alert_info{alert_name="NSX-T certificate has expired or will expire shortly"}
     labels:
       severity: info
       tier: vmware
       service: network
       support_group: compute
       context: "nsxt certificate"
-      meta: "NSX-T Certificate of {{ $labels.nsxt_mgmt_node }} has expired or will expire shortly. {{ $labels.nsxt_adapter}} https://{{ $labels.target }}"
+      meta: "NSX-T Certificate of {{ if $labels.nsxt_adapter }}{{ else }}{{ $labels.sddc }}{{ end }} has expired or will expire shortly. https://{{ $labels.target }}"
       playbook: docs/devops/alert/nsxt/#applying-nsx-t-ssl-certificate-in-the-manager-nodes-and-the-vip
       no_alert_on_absence: "true"
     annotations:
-      description: "NSX-T Certificate of {{ $labels.nsxt_mgmt_node }} has expired or will expire shortly. {{ $labels.nsxt_adapter}} https://{{ $labels.target }}"
-      summary: "NSX-T Certificate of {{ $labels.nsxt_mgmt_node }} has expired or will expire shortly.  {{ $labels.nsxt_adapter}} https://{{ $labels.target }}"
+      description: "NSX-T Certificate of {{ if $labels.nsxt_adapter }}{{ else }}{{ $labels.sddc }}{{ end }} has expired or will expire shortly. https://{{ $labels.target }}"
+      summary: "NSX-T Certificate of {{ if $labels.nsxt_adapter }}{{ else }}{{ $labels.sddc }}{{ end }} has expired or will expire shortly. https://{{ $labels.target }}"
     
   - alert: NSXTManagementServiceHasFailed
     expr: |

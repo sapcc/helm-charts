@@ -1,6 +1,6 @@
 {{- $mysqlPort := (required ".services.application.frontend.ports.mysql.targetPort missing" $.Values.services.application.frontend.ports.mysql.targetPort) }}
 {{- $galeraPort := (required ".services.application.backend.ports.galera.targetPort missing" $.Values.services.application.backend.ports.galera.targetPort) }}
-{{- $proxysqlAdminPort := (required ".services.proxy.backend.ports.proxy.targetPort missing" $.Values.services.proxy.backend.ports.proxy.targetPort) }}
+{{- $proxysqlAdminPort := (required ".services.proxy.proxysql.backend.ports.proxy.targetPort missing" $.Values.services.proxy.proxysql.backend.ports.proxy.targetPort) }}
 
 {{- $usernameEnvVar := "" }}
 {{- $passwordEnvVar := "" }}
@@ -15,7 +15,7 @@
     {{- $userRequired = false }}
     {{- $fastforward = 0 }}
     {{- range $envKey, $envValue := $.Values.env }}
-      {{- if (has "proxy" $envValue.containerType) }}
+      {{- if (has "proxysql" $envValue.containerType) }}
         {{- if eq $userValue.secretName $envValue.secretName }}
           {{- $userRequired = true }}
           {{- if hasSuffix "_USERNAME" $envKey }}
@@ -60,7 +60,7 @@ data:
         {{- $calculatedWeight = (mul 2 $calculatedWeight) }}
       {{- end }}
       {
-        hostname="{{ (printf "%s-%d.%s.svc.cluster.local" (include "nodeNamePrefix" (dict "global" $ "component" "proxy")) $int $.Release.Namespace) }}"
+        hostname="{{ (printf "%s-%d.%s.svc.cluster.local" (include "nodeNamePrefix" (dict "global" $ "component" "proxysql")) $int $.Release.Namespace) }}"
         port={{ $proxysqlAdminPort }}
         weight={{ $calculatedWeight }}
       {{- if eq (add1 $int) ($.Values.replicas.application|int) }}
@@ -107,7 +107,7 @@ data:
   mysql_query_rules.cfg.tpl: |-
       {
           rule_id=100
-          {{- if $.Values.proxy.queryRules.genericReadWriteSplit.enabled }}
+          {{- if $.Values.proxy.proxysql.queryRules.genericReadWriteSplit.enabled }}
           active=1
           {{- else }}
           active=0
@@ -119,7 +119,7 @@ data:
       },
       {
           rule_id=200
-          {{- if $.Values.proxy.queryRules.genericReadWriteSplit.enabled }}
+          {{- if $.Values.proxy.proxysql.queryRules.genericReadWriteSplit.enabled }}
           active=1
           {{- else }}
           active=0
@@ -131,7 +131,7 @@ data:
       },
       {
           rule_id=300
-          {{- if $.Values.proxy.queryRules.genericReadWriteSplit.enabled }}
+          {{- if $.Values.proxy.proxysql.queryRules.genericReadWriteSplit.enabled }}
           active=1
           {{- else }}
           active=0

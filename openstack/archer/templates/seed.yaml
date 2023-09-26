@@ -17,6 +17,9 @@ spec:
         - interface: public
           region: '{{.Values.global.region}}'
           url: 'https://{{include "archer_api_endpoint_public" .}}'
+        - interface: internal # Limes accesses backend service APIs using OS_INTERFACE=internal
+          region: '{{.Values.global.region}}'
+          url: 'http://archer.{{ include "svc_fqdn" . }}:{{ .Values.service.port }}'
 
   domains:
     - name: Default
@@ -27,3 +30,5 @@ spec:
           role_assignments:
             - project: service
               role: service
+            - project: service
+              role: cloud_network_admin

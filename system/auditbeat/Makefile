@@ -1,4 +1,4 @@
-VERSION=7.16.0
+VERSION=7.17.12-amd64
 
 all: build push
 

@@ -218,7 +218,9 @@ api_metadata:
       api_paste_config: /etc/nova/api-paste.ini
 
 bigvm:
-  config_file: {}
+  config_file:
+    DEFAULT:
+      bigvm_cluster_max_usage_percent: 100
 
 consoles:
   novnc:
@@ -258,10 +260,16 @@ scheduler:
   # The following weighers are crutches, but we can't express it otherwise
   # currently. They should overpower the other weighers even in worst-case
   # (e.g. least ram available + worst disk weight), so we have to make it >=
-  # len(other_weighers). At the same time, we, want a VM to not move on resize,
-  # if it doesn't have to - even if it's in the wrong RAM class currently.
+  # len(other_weighers). At the same time, we want a VM to not move on resize,
+  # if it doesn't have to - even if it's in the wrong RAM class currently,
+  # preferring the same host to keep the ephemeral disk on the same
+  # datastore-cluster, but using the same shard if possible for less
+  # volume-migrations.
   prefer_same_host_resize_weight_multiplier: 1000.0
+  prefer_same_shard_resize_weight_multiplier: 200.0
   hv_ram_class_weight_multiplier: 100.0
+  # this is a DictOpt and takes the form key1:value1,key2:value2
+  hv_ram_class_weights_gib: "1024:1"
   image_properties_default_architecture: "x86_64"
 
 compute:
@@ -277,6 +285,8 @@ compute:
       rpc_statsd_port: 9125
       # enables collecting metrics for RPC calls
       rpc_statsd_enabled: true
+      # confirm automatically a resize after 3 days
+      resize_confirm_window: 259200
     vmware:
       insecure: true
       use_linked_clone: false
@@ -768,19 +778,20 @@ mariadb_cell2:
       client_id: "nova-cell2"
   alerts:
     support_group: compute-storage-api
-
 rabbitmq_cell2:
   nameOverride: cell2-rabbitmq
   persistence:
     enabled: false
-
   alerts:
     # unacked/ready messages in rabbitmq
     rabbit_queue_length: 50
     unacknowledged_total_wait_for: 10m
     ready_total_wait_for: 10m
     support_group: compute-storage-api
-
+  metrics:
+    enabled: true
+    sidecar:
+      enabled: false
 audit:
   central_service:
     user: rabbitmq
@@ -801,7 +812,9 @@ rabbitmq:
     enabled: false
   metrics:
     password: null
-
+    enabled: true
+    sidecar:
+      enabled: false
   resources:
     requests:
       memory: 2Gi

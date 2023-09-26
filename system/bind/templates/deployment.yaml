@@ -52,12 +52,14 @@ spec:
                     {{ if eq .Values.name (printf "bind2-%s" (.Values.global.region)) }}- bind1-{{.Values.global.region}}{{ end }}
                     {{ if eq .Values.name (printf "bind1-global-%s" (.Values.global.region)) }}- bind2-global-{{.Values.global.region}}{{ end }}
                     {{ if eq .Values.name (printf "bind2-global-%s" (.Values.global.region)) }}- bind1-global-{{.Values.global.region}}{{ end }}
-              topologyKey: "topology.kubernetes.io/zone"
+              topologyKey: "failure-domain.beta.kubernetes.io/zone"
         {{ end }} 
       containers:
       - name: {{ .Release.Name }}
         image: {{ required ".Values.global.registryAlternateRegion is missing" .Values.global.registryAlternateRegion }}/{{.Values.image_bind}}:{{ .Values.image_bind_tag}}
         imagePullPolicy: {{ .Values.image_pullPolicy }}
+        resources:
+{{ toYaml .Values.resources.bind | indent 10 }}
         ports:
           - name: dns-tcp
             containerPort: 53
@@ -68,6 +70,11 @@ spec:
           - name: rndc-tcp
             containerPort: {{ .Values.rndc_port | default 953 }}
             protocol: TCP
+{{- if .Values.zabbix.enabled }}
+          - name: zabbix-tcp
+            containerPort: {{ .Values.zabbix.port | default 10050 }}
+            protocol: TCP
+{{- end }}
         {{ if .Values.extra_env }}
 {{ toYaml .Values.extra_env | indent 8 }}
         {{ end }}
@@ -96,7 +103,7 @@ spec:
               - rndc
               - status
           initialDelaySeconds: 15
-          timeoutSeconds: 3
+          timeoutSeconds: 5
           periodSeconds: 10
         readinessProbe:
           exec:
@@ -109,11 +116,15 @@ spec:
       - name: metric
         image: {{ required ".Values.global.registryAlternateRegion is missing" .Values.global.registryAlternateRegion }}/{{.Values.image_bind_exporter}}:{{ .Values.image_bind_exporter_tag }}
         imagePullPolicy: {{ .Values.image_pullPolicy }}
-        args: ["-bind.stats-url={{ .Values.exporter_stats_url }}"]
+        args: ["--bind.stats-url={{ .Values.exporter_stats_url }}","--bind.pid-file=/var/run/named/named.pid","--bind.stats-groups=server,view,tasks"]
+        resources:
+{{ toYaml .Values.resources.metric | indent 10 }}
 {{ if .Values.zabbix.enabled }}
       - name: zabbix
         image: {{ required ".Values.global.registryAlternateRegion is missing" .Values.global.registryAlternateRegion }}/{{.Values.image_zabbix_agent}}:{{ .Values.image_zabbix_agent_tag }}
         imagePullPolicy: {{ .Values.image_pullPolicy }}
+        resources:
+{{ toYaml .Values.resources.zabbix | indent 10 }}
         env:
         - name: ZBX_DEBUGLEVEL
           value: "3"
@@ -130,7 +141,7 @@ spec:
         - name: ZBX_TLSKEYFILE
           value: "/etc/zabbix/ssl/tls.key"
         - name: RNDC_BIN
-          value: "/usr/sbin/rndc -k /etc/bind/rndc.key -s 127.0.0.1 -p {{ .Values.rndc_port | default 953 }}"
+          value: "/usr/sbin/rndc -k /etc/rndc/rndc.key -s 127.0.0.1 -p 953"
         volumeMounts:
           - name: zabbix-tls
             mountPath: "/etc/zabbix/ssl/"
@@ -139,7 +150,7 @@ spec:
           - name: persistent-storage
             mountPath: {{ .Values.storage_mountpoint | default "/var/lib/bind" }}
           - name: bind-keys-rndc
-            mountPath: "/etc/bind/rndc.key"
+            mountPath: "/etc/rndc/rndc.key"
             subPath: rndc.key
 {{ end }}
       volumes:

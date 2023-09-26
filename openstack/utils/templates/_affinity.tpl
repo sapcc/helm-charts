@@ -48,3 +48,39 @@ affinity:
                   values:
                   - operational
 {{- end }}
+
+{{ define "kubernetes_pod_AZ_spread" -}}
+{{- $envAll := index . 0 -}}
+{{- $application := index . 1 -}}
+{{- $component := index . 2 -}}
+affinity:
+  podAntiAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+    - weight: 1
+      podAffinityTerm:
+        labelSelector:
+          matchExpressions:
+            - key: "app"
+              operator: In
+              values:
+                - {{$envAll.Release.Name}}
+            - key: "component"
+              operator: In
+              values:
+                - {{$component}}
+        topologyKey: "topology.kubernetes.io/zone"
+    - weight: 2
+      podAffinityTerm:
+        labelSelector:
+          matchExpressions:
+            - key: "app"
+              operator: In
+              values:
+                - {{$envAll.Release.Name}}
+            - key: "component"
+              operator: In
+              values:
+                - {{$component}}
+        topologyKey: "kubernetes.io/hostname"
+{{- end }}
+

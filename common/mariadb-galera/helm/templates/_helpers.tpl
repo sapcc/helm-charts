@@ -16,7 +16,7 @@ kind: Service
 metadata:
   namespace: {{ .global.Release.Namespace }}
   {{- if eq .replica "notused" }}
-    {{- if and (eq .type "frontend") (.global.Values.proxy.enabled) (eq .component "proxy")}}
+    {{- if and (eq .type "frontend") (.global.Values.proxy.enabled) (or (eq .component "proxysql") (eq .component "haproxy"))}}
   name: {{ (printf "%s-%s" (include "nodeNamePrefix" (dict "global" .global "component" "application")) "frontend") }}
     {{- else if and (eq .type "frontend") (eq .component "application-direct")}}
   name: {{ (printf "%s-%s-direct" $nodeNamePrefix "frontend") }}
@@ -88,7 +88,7 @@ spec:
 {{/*
   Fetch current node name prefix for a component (currently application and proxy are supported)
   application node name prefix:   include "nodeNamePrefix" (dict "global" $ "component" "application")
-  proxy node name prefix:         include "nodeNamePrefix" (dict "global" $ "component" "proxy")
+  proxysql node name prefix:      include "nodeNamePrefix" (dict "global" $ "component" "proxysql")
 */}}
 {{- define "nodeNamePrefix" }}
   {{- if eq .component "application" }}
@@ -97,9 +97,9 @@ spec:
     {{- else }}
       {{- printf "%s%s" (include "commonPrefix" .global) "mariadb-g" }}
     {{- end }}
-  {{- else if eq .component "proxy" }}
-    {{- if and (.global.Values.namePrefix) (hasKey .global.Values.namePrefix .component) }}
-      {{- printf "%s%s" (include "commonPrefix" .global) (.global.Values.namePrefix.proxy | default "proxysql") }}
+  {{- else if eq .component "proxysql" }}
+    {{- if and (.global.Values.namePrefix.proxy) (hasKey .global.Values.namePrefix.proxy .component) }}
+      {{- printf "%s%s" (include "commonPrefix" .global) (.global.Values.namePrefix.proxy.proxysql | default "proxysql") }}
     {{- else }}
       {{- printf "%s%s" (include "commonPrefix" .global) "proxysql" }}
     {{- end }}
@@ -108,6 +108,12 @@ spec:
       {{- printf "%s%s" (include "commonPrefix" .global) (.global.Values.namePrefix.kopiaserver | default "backup-kopiaserver") }}
     {{- else }}
       {{- printf "%s%s" (include "commonPrefix" .global) "backup-kopiaserver" }}
+    {{- end }}
+  {{- else if eq .component "haproxy" }}
+    {{- if and (.global.Values.namePrefix.proxy) (hasKey .global.Values.namePrefix.proxy .component) }}
+      {{- printf "%s%s" (include "commonPrefix" .global) (.global.Values.namePrefix.proxy.haproxy | default "haproxy") }}
+    {{- else }}
+      {{- printf "%s%s" (include "commonPrefix" .global) "haproxy" }}
     {{- end }}
   {{- else }}
     {{- fail "No supported component provided for the nodeNamePrefix function" }}
