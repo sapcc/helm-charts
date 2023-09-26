@@ -177,9 +177,6 @@
       refresh_interval: {{ .Values.http_sd_configs.refresh_interval }}
   metrics_path: /firmware
   relabel_configs:
-    - source_labels: [job]
-      regex: redfish/fw
-      action: keep
     - source_labels: [__address__]
       target_label: __param_target
     - source_labels: [__param_target]
@@ -198,13 +195,12 @@
     - url: {{ .Values.http_sd_configs.netbox_production_url }}/virtual-machines/?custom_labels=job={{ $name }}&target=primary_ip&status=active&role=server&tenant=converged-cloud&platform=windows-server&tag=active-directory-domain-controller&region={{ .Values.global.region }}
   metrics_path: /metrics
   relabel_configs:
-    - source_labels: [job]
-      regex: {{ $name }}
-      action: keep
     - source_labels: [__address__]
       replacement: $1:{{$values.listen_port}}
       target_label: __address__
-    - regex: 'name|state'
+    - source_labels: [name]
+      target_label: server_name
+    - regex: 'state'
       action: labeldrop
   metric_relabel_configs:
     - source_labels: [__name__]
@@ -227,13 +223,12 @@
     - url: {{ .Values.http_sd_configs.netbox_production_url }}/virtual-machines/?custom_labels=job={{ $name }}&target=primary_ip&status=active&q=wsus&role=server&tenant=converged-cloud&platform=windows-server&region={{ .Values.global.region }}
   metrics_path: /metrics
   relabel_configs:
-    - source_labels: [job]
-      regex: {{ $name }}
-      action: keep
     - source_labels: [__address__]
       replacement: $1:{{$values.listen_port}}
       target_label: __address__
-    - regex: 'name|state'
+    - source_labels: [name]
+      target_label: server_name
+    - regex: 'state'
       action: labeldrop
   metric_relabel_configs:
     - source_labels: [__name__]
