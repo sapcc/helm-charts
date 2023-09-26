@@ -5,7 +5,7 @@ metadata:
   name: vpa-admission-controller
   namespace: {{ .Release.Namespace }}
 spec:
-  replicas: 1
+  replicas: {{ required ".Values.admission.replicas missing" .Values.admission.replicas }}
   selector:
     matchLabels:
       app: vpa-admission-controller
@@ -23,6 +23,13 @@ spec:
       securityContext:
         runAsNonRoot: true
         runAsUser: 65534 # nobody
+      topologySpreadConstraints:
+      - maxSkew: 1
+        topologyKey: kubernetes.io/hostname
+        whenUnsatisfiable: DoNotSchedule
+        labelSelector:
+          matchLabels:
+            app: vpa-admission-controller
       containers:
         - name: admission-controller
           image: {{ include "admission.image" . }}
