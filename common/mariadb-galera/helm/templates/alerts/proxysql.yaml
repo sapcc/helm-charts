@@ -1,0 +1,2 @@
+- name: proxysql.alerts
+  rules:
