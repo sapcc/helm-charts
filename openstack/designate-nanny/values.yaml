@@ -1,0 +1,42 @@
+owner-info:
+  helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/openstack/designate-nanny
+  service: designate
+  support-group: network-api
+  maintainers:
+    - Florian Streibelt
+    - Dmitry Galkin
+    - David Hoeller
+
+image:
+  name: designate-nanny
+  # image_tag: ""
+
+resources:
+  requests:
+    memory: "128Mi"
+    cpu: "50m"
+  limits:
+    memory: "256Mi"
+    cpu: "80m"
+
+credentials:
+  designate_api:
+    user: designate_nanny
+    project_name: "cloud_admin"
+    project_domain_name: "ccadmin"
+    project_user_domain_name: "Default"
+#   password: DEFINED_IN_SECRETS_REPO
+
+nanny:
+  enabled: true
+  dryrun: true
+  loglevel: "ERROR"
+  mdns_endpoint: "auto"
+
+nannies:
+  swift_backup:
+    enabled: true
+    dryrun: false
+    container: "designate-nanny"
+    project_name: "master"
+    project_domain_name: "ccadmin"
