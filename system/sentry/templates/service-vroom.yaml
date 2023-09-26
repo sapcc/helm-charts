@@ -1,0 +1,25 @@
+{{- if .Values.sentry.features.enableProfiling }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ template "fullname" . }}-vroom
+  annotations:
+    {{- range $key, $value := .Values.vroom.service.annotations }}
+      {{ $key }}: {{ $value | quote }}
+    {{- end }}
+  labels:
+    app: {{ template "fullname" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+  - port: {{ template "vroom.port" . }}
+    targetPort: {{ template "vroom.port" }}
+    protocol: TCP
+    name: {{ .Values.service.name }}-vroom
+  selector:
+    app: {{ template "fullname" . }}
+    role: vroom
+{{- end }}
