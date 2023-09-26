@@ -200,7 +200,7 @@
       target_label: __address__
     - source_labels: [name]
       target_label: server_name
-    - regex: 'state'
+    - regex: 'name|state'
       action: labeldrop
   metric_relabel_configs:
     - source_labels: [__name__]
@@ -228,7 +228,7 @@
       target_label: __address__
     - source_labels: [name]
       target_label: server_name
-    - regex: 'state'
+    - regex: 'name|state'
       action: labeldrop
   metric_relabel_configs:
     - source_labels: [__name__]
