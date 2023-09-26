@@ -87,3 +87,29 @@ metadata:
 ```
 
 Use exactly this conditional statement around each such annotation.
+
+## Step 4: Jobs and CronJobs require special care
+
+The annotations that we added in step 2 cause Linkerd to add a sidecar container to all respective pods.
+For long-running pods that are part of Deployments, DaemonSets or StatefulSets, this does not require any additional care.
+For short-lived pods that are part of Jobs and CronJobs, we need to make the Linkerd sidecar container terminate once the main container is done.
+Otherwise, the job pod will linger even after its work is complete.
+
+The solution recommended by upstream is to bundle the `linkerd-await` tool into your job's container image.
+This tool signals to the Linkerd sidecar container to shutdown once the main container is done, thus allowing the pod termination to proceed.
+To integrate `linkerd-await`, please follow the [example from the upstream repo](https://github.com/linkerd/linkerd-await/blob/main/README.md#examples).
+
+Once the image is updated, add this environment variable to all containers that use this image:
+
+```
+spec:
+  containers:
+    - name: myapp
+      env:
+        {{- if not (and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested) }}
+        - name: LINKERD_AWAIT_DISABLED
+          value: "Linkerd was not enabled or not requested"
+        {{- end }}
+```
+
+Use exactly this conditional statement around each such environment variable declaration.

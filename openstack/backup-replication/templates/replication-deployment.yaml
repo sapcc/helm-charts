@@ -62,6 +62,10 @@ spec:
           value: 'true'
         - name: 'DEBUG'
           value: {{ $.Values.swift_http_import.debug | quote }}
+        {{- if not (and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested) }}
+        - name: LINKERD_AWAIT_DISABLED
+          value: "Linkerd was not enabled or not requested"
+        {{- end }}
         securityContext:
           runAsNonRoot: true
         volumeMounts:

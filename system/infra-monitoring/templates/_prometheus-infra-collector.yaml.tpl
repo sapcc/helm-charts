@@ -320,7 +320,7 @@
   scrape_interval: {{$values.firmware.scrapeInterval}}
   scrape_timeout: {{$values.firmware.scrapeTimeout}}
   http_sd_configs:
-    - url: {{ .Values.http_sd_configs.netbox_staging_url }}/devices/?custom_labels=job=redfish/fw&target=mgmt_only&status=active&role=server&tenant=converged-cloud&tagn=no-redfish&region={{ .Values.global.region }}
+    - url: {{ .Values.http_sd_configs.netbox_production_url }}/devices/?custom_labels=job=redfish/fw&target=mgmt_only&status=active&role=server&tenant=converged-cloud&tagn=no-redfish&region={{ .Values.global.region }}
       refresh_interval: {{ .Values.http_sd_configs.refresh_interval }}
   metrics_path: /firmware
   relabel_configs:
@@ -341,7 +341,7 @@
   scrape_interval: {{$values.scrapeInterval}}
   scrape_timeout: {{$values.scrapeTimeout}}
   http_sd_configs:
-    - url: {{ .Values.atlas_url }}
+    - url: {{ .Values.http_sd_configs.netbox_production_url }}/devices/?custom_labels=job=redfish/fw&target=primary_ip&status=active&role=server&tenant=converged-cloud&platform=windows-server&tag=active-directory-domain-controller&region={{ .Values.global.region }}
   metrics_path: /metrics
   relabel_configs:
     - source_labels: [job]
