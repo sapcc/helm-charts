@@ -187,7 +187,7 @@
 
 {{- $values := .Values.windows_exporter -}}
 {{- if $values.enabled }}
-{{- $name := "win-exporter-ad" -}}
+{{- $name := "win-exporter-ad" }}
 - job_name: '{{ $name }}'
   scrape_interval: {{$values.scrapeInterval}}
   scrape_timeout: {{$values.scrapeTimeout}}
@@ -215,7 +215,7 @@
       replacement: '$1'
       target_label: 'service_state'
 
-{{- $name := "win-exporter-wsus" -}}
+{{- $name := "win-exporter-wsus" }}
 - job_name: '{{ $name }}'
   scrape_interval: {{$values.scrapeInterval}}
   scrape_timeout: {{$values.scrapeTimeout}}
