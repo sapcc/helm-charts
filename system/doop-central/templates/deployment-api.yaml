@@ -23,9 +23,8 @@ spec:
         {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
         linkerd.io/inject: enabled
         {{- end }}
-        # TODO: enable Prometheus scraping when flipping over from doop-central data to doop-api data in Greenhouse
-        # prometheus.io/scrape: "true"
-        # prometheus.io/targets: infra-frontend
+        prometheus.io/scrape: "true"
+        prometheus.io/targets: infra-frontend
     spec:
       automountServiceAccountToken: false
       enableServiceLinks: false
@@ -82,13 +81,12 @@ spec:
             timeoutSeconds: 5
             periodSeconds: 5
           resources:
-            # observed usage for doop-central: CPU = 600m, RAM = 110 MiB
-            # This component will definitely need less CPU power, so we are starting a bit lower there.
+            # observed usage for doop-api: CPU = 20m long average, but very spiky, RAM = 150 MiB
             limits:
-              cpu: '0.5'
+              cpu: '2'
               memory: '256Mi'
             requests:
-              cpu: '0.5'
+              cpu: '0.1'
               memory: '256Mi'
           securityContext:
             allowPrivilegeEscalation: false
