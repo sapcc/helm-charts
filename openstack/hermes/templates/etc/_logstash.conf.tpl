@@ -395,11 +395,8 @@ output {
           retry_max_interval => 10
           # validate_after_inactivity default 10000
           validate_after_inactivity => 1000
-{{- if .Values.opensearch_hermes.enabled }}
-          ilm_enabled => false
-{{- end }}
       }
-{{- if .Values.opensearch_hermes.enabled }}
+      {{- if .Values.opensearch_hermes.enabled }}
       opensearch {
           id => "clone_for_audit_1"
           index => "audit-%{[@metadata][index]}-%{+YYYY.MM}"
@@ -417,7 +414,7 @@ output {
           ssl => true
           ssl_certificate_verification => true
       }
-{{- end }}
+      {{- end }}
     } else {
       elasticsearch {
           id => "clone_for_audit_2"
@@ -430,11 +427,8 @@ output {
           retry_max_interval => 10
           # validate_after_inactivity default 10000
           validate_after_inactivity => 1000
-{{- if .Values.opensearch_hermes.enabled }}
-          ilm_enabled => false
-{{- end }}
       }
-{{- if .Values.opensearch_hermes.enabled }}
+      {{- if .Values.opensearch_hermes.enabled }}
       opensearch {
           id => "clone_for_audit_2"
           index => "audit-default-%{+YYYY.MM}"
@@ -452,7 +446,7 @@ output {
           ssl => true
           ssl_certificate_verification => true
         }
-{{- end }}
+      {{- end }}
     }
   }
   # cc the target tenant
@@ -468,9 +462,6 @@ output {
         retry_max_interval => 10
         # validate_after_inactivity default 10000
         validate_after_inactivity => 1000
-{{- if .Values.opensearch_hermes.enabled }}
-          ilm_enabled => false
-{{- end }}
     }
 {{- if .Values.opensearch_hermes.enabled }}
     opensearch {
