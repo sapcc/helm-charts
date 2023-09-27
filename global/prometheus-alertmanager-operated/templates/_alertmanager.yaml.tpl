@@ -46,11 +46,6 @@ inhibit_rules:
       inhibited_by: node-maintenance
     equal: ['node']
 
-  # Inhibit specific KubernikusEtcdBackupFailed alert if KubernikusKlusterLowOnObjectStoreQuota is firing
-  - source_matchers: [alertname="KubernikusKlusterLowOnObjectStoreQuota"]
-    target_matchers: [alertname="KubernikusEtcdBackupFailed"]
-    equal: ['kluster_name']
-
 route:
   group_by: ['region', 'service', 'alertname', 'cluster', 'support_group']
   group_wait: 1m
