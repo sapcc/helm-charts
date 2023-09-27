@@ -161,7 +161,7 @@ filter {
 
   # With several different event types using jdbc_static, not sure an if makes sense.
   # we will have to handle several events that don't match a query
-  
+
   jdbc_static {
     id => "jdbc_project_id"
     loaders => [
@@ -319,7 +319,7 @@ filter {
     mutate {
       remove_field => ["[domain_mapping]"]
     }
-    
+
     # Cleanup unavailable entries
     if [initiator][project_id] == "unavailable" {
       mutate {
@@ -512,7 +512,7 @@ output {
         url => "https://{{ .Values.global.forwarding.audit.host }}"
         format => "json"
         http_method => "post"
-        automatic_retries => 60 
+        automatic_retries => 60
         retry_non_idempotent => true
       }
     }
