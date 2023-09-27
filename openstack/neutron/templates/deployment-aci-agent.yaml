@@ -53,8 +53,10 @@ spec:
                   name: sentry
                   key: neutron.DSN.python
           volumeMounts:
+            {{- if .Values.pod.debug.aci_agent }}
             - mountPath: /development
               name: development
+            {{- end }}
             - mountPath: /neutron-etc
               name: neutron-etc
             - mountPath: /neutron-etc-vendor
@@ -64,9 +66,11 @@ spec:
             - mountPath: /container.init
               name: container-init
       volumes:
+        {{- if .Values.pod.debug.aci_agent }}
         - name: development
           persistentVolumeClaim:
             claimName: development-pvclaim
+        {{- end }}
         - name: neutron-etc
           configMap:
             name: neutron-etc
