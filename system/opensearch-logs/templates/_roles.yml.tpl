@@ -353,6 +353,7 @@ jupyterhub:
   cluster_permissions:
     - "cluster:monitor/prometheus/metrics"
     - "cluster:monitor/health"
+    - "cluster:monitor/main"
     - "cluster:monitor/state"
     - "cluster:monitor/nodes/info"
     - "cluster:monitor/nodes/stats"
