@@ -395,6 +395,9 @@ output {
           retry_max_interval => 10
           # validate_after_inactivity default 10000
           validate_after_inactivity => 1000
+{{- if .Values.opensearch_hermes.enabled }}
+          ilm_enabled => false
+{{- end }}
       }
 {{- if .Values.opensearch_hermes.enabled }}
       opensearch {
@@ -427,6 +430,9 @@ output {
           retry_max_interval => 10
           # validate_after_inactivity default 10000
           validate_after_inactivity => 1000
+{{- if .Values.opensearch_hermes.enabled }}
+          ilm_enabled => false
+{{- end }}
       }
 {{- if .Values.opensearch_hermes.enabled }}
       opensearch {
@@ -462,6 +468,9 @@ output {
         retry_max_interval => 10
         # validate_after_inactivity default 10000
         validate_after_inactivity => 1000
+{{- if .Values.opensearch_hermes.enabled }}
+          ilm_enabled => false
+{{- end }}
     }
 {{- if .Values.opensearch_hermes.enabled }}
     opensearch {
