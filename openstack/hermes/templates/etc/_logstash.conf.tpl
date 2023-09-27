@@ -398,7 +398,7 @@ output {
       }
       {{- if .Values.opensearch_hermes.enabled }}
       opensearch {
-          id => "clone_for_audit_1"
+          id => "opensearch_clone_for_audit_1"
           index => "audit-%{[@metadata][index]}-%{+YYYY.MM}"
           template => "/hermes-etc/audit.json"
           template_name => "audit"
@@ -430,7 +430,7 @@ output {
       }
       {{- if .Values.opensearch_hermes.enabled }}
       opensearch {
-          id => "clone_for_audit_2"
+          id => "opensearch_clone_for_audit_2"
           index => "audit-default-%{+YYYY.MM}"
           template => "/hermes-etc/audit.json"
           template_name => "audit"
@@ -465,7 +465,7 @@ output {
     }
 {{- if .Values.opensearch_hermes.enabled }}
     opensearch {
-        id => "clone_for_cc"
+        id => "opensearch_clone_for_cc"
         index => "audit-%{[@metadata][index2]}-%{+YYYY.MM}"
         template => "/hermes-etc/audit.json"
         template_name => "audit"
