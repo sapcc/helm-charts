@@ -82,7 +82,7 @@ kind: Ingress
 metadata:
   annotations:
     {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
-    nginx.ingress.kubernetes.io/service-upstream: "true"
+    ingress.kubernetes.io/service-upstream: "true"
     {{- end }}
 ```
 
