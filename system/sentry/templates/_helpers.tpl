@@ -44,25 +44,26 @@ We truncate at 24 chars because some Kubernetes name fields are limited to this 
 {{- define "vroom.port" -}}8085{{- end -}}
 
 {{- define "relay.image" -}}
-{{- default "getsentry/relay" .Values.images.relay.repository -}}
+{{- default "getsentry/relay" .Values.image.relay.repository -}}
 :
-{{- default .Chart.AppVersion .Values.images.relay.tag -}}
+{{- default .Chart.AppVersion .Values.image.relay.tag -}}
 {{- end -}}
 {{- define "sentry.image" -}}
-{{- default "getsentry/sentry" .Values.images.sentry.repository -}}
+{{- default "getsentry/sentry" .Values.image.sentry.repository -}}
 :
-{{- default .Chart.AppVersion .Values.images.sentry.tag -}}
+{{- default .Chart.AppVersion .Values.image.sentry.tag -}}
 {{- end -}}
 {{- define "snuba.image" -}}
-{{- default "getsentry/snuba" .Values.images.snuba.repository -}}
+{{- default "getsentry/snuba" .Values.image.snuba.repository -}}
+
 :
-{{- default .Chart.AppVersion .Values.images.snuba.tag -}}
+{{- default .Chart.AppVersion .Values.image.snuba.tag -}}
 {{- end -}}
 
 {{- define "symbolicator.image" -}}
-{{- default "getsentry/symbolicator" .Values.images.symbolicator.repository -}}
+{{- default "getsentry/symbolicator" .Values.image.symbolicator.repository -}}
 :
-{{- default .Chart.AppVersion .Values.images.symbolicator.tag -}}
+{{- default .Chart.AppVersion .Values.image.symbolicator.tag -}}
 {{- end -}}
 
 {{- define "dbCheck.image" -}}
@@ -72,9 +73,9 @@ We truncate at 24 chars because some Kubernetes name fields are limited to this 
 {{- end -}}
 
 {{- define "vroom.image" -}}
-{{- default "getsentry/vroom" .Values.images.vroom.repository -}}
+{{- default "getsentry/vroom" .Values.image.vroom.repository -}}
 :
-{{- default .Chart.AppVersion .Values.images.vroom.tag -}}
+{{- default .Chart.AppVersion .Values.image.vroom.tag -}}
 {{- end -}}
 
 {{/*
@@ -246,7 +247,7 @@ Set postgres port
 */}}
 {{- define "sentry.postgresql.port" -}}
 {{- if .Values.postgresql.enabled -}}
-{{- default 5432 .Values.postgresql.primary.service.ports.postgresql }}
+{{- "5432" }}
 {{- else -}}
 {{- required "A valid .Values.externalPostgresql.port is required" .Values.externalPostgresql.port -}}
 {{- end -}}
@@ -279,9 +280,16 @@ Set redis host
 */}}
 {{- define "sentry.redis.host" -}}
 {{- if .Values.redis.enabled -}}
-{{- template "sentry.redis.fullname" . -}}-master
-{{- else -}}
-{{ required "A valid .Values.externalRedis.host is required" .Values.externalRedis.host }}
+{{ template "redis.fullname" . }}
+{{- end -}}
+{{- end -}}
+
+{{/*
+Set redis password
+*/}}
+{{- define "sentry.redis.password" -}}
+{{- if .Values.redis.enabled -}}
+{{- "redis-password" -}}
 {{- end -}}
 {{- end -}}
 
@@ -301,20 +309,7 @@ Set redis port
 */}}
 {{- define "sentry.redis.port" -}}
 {{- if .Values.redis.enabled -}}
-{{- default 6379 .Values.redis.redisPort }}
-{{- else -}}
-{{ required "A valid .Values.externalRedis.port is required" .Values.externalRedis.port }}
-{{- end -}}
-{{- end -}}
-
-{{/*
-Set redis password
-*/}}
-{{- define "sentry.redis.password" -}}
-{{- if .Values.redis.enabled -}}
-{{ .Values.redis.password }}
-{{- else -}}
-{{ .Values.externalRedis.password }}
+{{- "6379" }}
 {{- end -}}
 {{- end -}}
 
@@ -511,47 +506,10 @@ Common Sentry environment variables
 {{- end }}
 {{- if .Values.postgresql.enabled }}
 - name: POSTGRES_PASSWORD
-  valueFrom:
-    secretKeyRef:
-      name: {{ default (include "sentry.postgresql.fullname" .) .Values.postgresql.auth.existingSecret }}
-      key: {{ default "postgres-password" .Values.postgresql.auth.secretKeys.adminPasswordKey }}
-{{- else if .Values.externalPostgresql.password }}
-- name: POSTGRES_PASSWORD
-  value: {{ .Values.externalPostgresql.password | quote }}
-{{- else if .Values.externalPostgresql.existingSecret }}
-- name: POSTGRES_PASSWORD
-  valueFrom:
-    secretKeyRef:
-      name: {{ .Values.externalPostgresql.existingSecret }}
-      key: {{ default "postgresql-password" .Values.externalPostgresql.existingSecretKey }}
+  valueFrom: { secretKeyRef: { name: {{ template "postgresql.fullname" . }}, key: postgres-password } }
 {{- end }}
-{{- if .Values.mail.password }}
 - name: SENTRY_EMAIL_PASSWORD
-  value: {{ .Values.mail.password | quote }}
-{{- else if .Values.mail.existingSecret }}
-- name: SENTRY_EMAIL_PASSWORD
-  valueFrom:
-    secretKeyRef:
-      name: {{ .Values.mail.existingSecret }}
-      key: {{ default "mail-password" .Values.mail.existingSecretKey }}
-{{- end }}
-{{- if .Values.slack.existingSecret }}
-- name: SLACK_CLIENT_ID
-  valueFrom:
-    secretKeyRef:
-      name: {{ .Values.slack.existingSecret }}
-      key: "client-id"
-- name: SLACK_CLIENT_SECRET
-  valueFrom:
-    secretKeyRef:
-      name: {{ .Values.slack.existingSecret }}
-      key: "client-secret"
-- name: SLACK_SIGNING_SECRET
-  valueFrom:
-    secretKeyRef:
-      name: {{ .Values.slack.existingSecret }}
-      key: "signing-secret"
-{{- end }}
+  value: {{ .Values.emailPassword | squote }}
 {{- if and .Values.github.existingSecret }}
 - name: GITHUB_APP_PRIVATE_KEY
   valueFrom:
@@ -574,11 +532,61 @@ Common Sentry environment variables
       name: {{ .Values.github.existingSecret }}
       key: {{ default "client-secret" .Values.github.existingSecretClientSecretKey }}
 {{- end }}
-{{- if .Values.openai.existingSecret }}
-- name: OPENAI_API_KEY
-  valueFrom:
-    secretKeyRef:
-      name: {{ .Values.openai.existingSecret }}
-      key: {{ default "api-token" .Values.openai.existingSecretKey }}
-{{- end }}
+{{- end -}}
+
+{{/* vim: set filetype=mustache: */}}
+{{/*
+Expand the name of the chart.
+*/}}
+{{- define "clickhouse.name" -}}
+{{- default .Chart.Name .Values.nameOverride | trunc 63 | trimSuffix "-" -}}
+{{- end -}}
+
+{{/*
+Create a default fully qualified app name.
+We truncate at 63 chars because some Kubernetes name fields are limited to this (by the DNS naming spec).
+If release name contains chart name it will be used as a full name.
+*/}}
+{{- define "clickhouse.fullname" -}}
+{{- if .Values.fullnameOverride -}}
+{{- .Values.fullnameOverride | trunc 63 | trimSuffix "-" -}}
+{{- else -}}
+{{- $name := default .Chart.Name .Values.nameOverride -}}
+{{- if contains $name .Release.Name -}}
+{{- .Release.Name | trunc 63 | trimSuffix "-" -}}
+{{- else -}}
+{{- printf "%s-%s" .Release.Name $name | trunc 63 | trimSuffix "-" -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
+Create chart name and version as used by the chart label.
+*/}}
+{{- define "clickhouse.chart" -}}
+{{- printf "%s-%s" .Chart.Name .Chart.Version | replace "+" "_" | trunc 63 | trimSuffix "-" -}}
+{{- end -}}
+
+{{/*
+Create clickhouse path. 
+if .Values.clickhouse.path is empty, default value "/var/lib/clickhouse".
+*/}}
+{{- define "clickhouse.fullpath" -}}
+{{- if .Values.clickhouse.path -}}
+{{- .Values.clickhouse.path | trunc 63 | trimSuffix "-" -}}
+{{- else -}}
+{{- printf "%s" "/var/lib/clickhouse" -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
+Create clickhouse log path.
+if .Values.clickhouse.configmap.logger.path is empty, default value "/var/log/clickhouse-server".
+*/}}
+{{- define "clickhouse.logpath" -}}
+{{- if .Values.clickhouse.configmap.logger.path -}}
+{{- .Values.clickhouse.configmap.logger.path | trunc 63 | trimSuffix "-" -}}
+{{- else -}}
+{{- printf "%s" "/var/log/clickhouse-server" -}}
+{{- end -}}
 {{- end -}}

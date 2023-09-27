@@ -29,7 +29,7 @@ spec:
       annotations:
         checksum/configYml: {{ .Values.config.configYml | toYaml | toString | sha256sum }}
         checksum/sentryConfPy: {{ .Values.config.sentryConfPy | sha256sum }}
-        checksum/config.yaml: {{ include (print $.Template.BasePath "/configmap-sentry.yaml") . | sha256sum }}
+        # checksum/config.yaml: {{ include (print $.Template.BasePath "/configmap-sentry.yaml") . | sha256sum }}
         {{- if .Values.sentry.postProcessForwardIssuePlatform.annotations }}
 {{ toYaml .Values.sentry.postProcessForwardIssuePlatform.annotations | indent 8 }}
         {{- end }}
@@ -40,34 +40,6 @@ spec:
         {{- if .Values.sentry.postProcessForwardIssuePlatform.podLabels }}
 {{ toYaml .Values.sentry.postProcessForwardIssuePlatform.podLabels | indent 8 }}
         {{- end }}
-    spec:
-      affinity:
-      {{- if .Values.sentry.postProcessForwardIssuePlatform.affinity }}
-{{ toYaml .Values.sentry.postProcessForwardIssuePlatform.affinity | indent 8 }}
-      {{- end }}
-      {{- if .Values.sentry.postProcessForwardIssuePlatform.nodeSelector }}
-      nodeSelector:
-{{ toYaml .Values.sentry.postProcessForwardIssuePlatform.nodeSelector | indent 8 }}
-      {{- end }}
-      {{- if .Values.sentry.postProcessForwardIssuePlatform.tolerations }}
-      tolerations:
-{{ toYaml .Values.sentry.postProcessForwardIssuePlatform.tolerations | indent 8 }}
-      {{- end }}
-      {{- if .Values.images.sentry.imagePullSecrets }}
-      imagePullSecrets:
-{{ toYaml .Values.images.sentry.imagePullSecrets | indent 8 }}
-      {{- end }}
-      {{- if .Values.dnsPolicy }}
-      dnsPolicy: {{ .Values.dnsPolicy | quote }}
-      {{- end }}
-      {{- if .Values.dnsConfig }}
-      dnsConfig:
-{{ toYaml .Values.dnsConfig | indent 8 }}
-      {{- end }}
-      {{- if .Values.sentry.postProcessForwardIssuePlatform.securityContext }}
-      securityContext:
-{{ toYaml .Values.sentry.postProcessForwardIssuePlatform.securityContext | indent 8 }}
-      {{- end }}
       containers:
       - name: {{ .Chart.Name }}-post-process-forward-issue-platform
         image: "{{ template "sentry.image" . }}"

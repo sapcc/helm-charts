@@ -29,7 +29,7 @@ spec:
       annotations:
         checksum/configYml: {{ .Values.config.configYml | toYaml | toString | sha256sum }}
         checksum/sentryConfPy: {{ .Values.config.sentryConfPy | sha256sum }}
-        checksum/config.yaml: {{ include (print $.Template.BasePath "/configmap-sentry.yaml") . | sha256sum }}
+        # checksum/config.yaml: {{ include (print $.Template.BasePath "/configmap-sentry.yaml") . | sha256sum }}
         {{- if .Values.sentry.postProcessForwardTransactions.annotations }}
 {{ toYaml .Values.sentry.postProcessForwardTransactions.annotations | indent 8 }}
         {{- end }}
@@ -40,34 +40,6 @@ spec:
         {{- if .Values.sentry.postProcessForwardTransactions.podLabels }}
 {{ toYaml .Values.sentry.postProcessForwardTransactions.podLabels | indent 8 }}
         {{- end }}
-    spec:
-      affinity:
-      {{- if .Values.sentry.postProcessForwardTransactions.affinity }}
-{{ toYaml .Values.sentry.postProcessForwardTransactions.affinity | indent 8 }}
-      {{- end }}
-      {{- if .Values.sentry.postProcessForwardTransactions.nodeSelector }}
-      nodeSelector:
-{{ toYaml .Values.sentry.postProcessForwardTransactions.nodeSelector | indent 8 }}
-      {{- end }}
-      {{- if .Values.sentry.postProcessForwardTransactions.tolerations }}
-      tolerations:
-{{ toYaml .Values.sentry.postProcessForwardTransactions.tolerations | indent 8 }}
-      {{- end }}
-      {{- if .Values.images.sentry.imagePullSecrets }}
-      imagePullSecrets:
-{{ toYaml .Values.images.sentry.imagePullSecrets | indent 8 }}
-      {{- end }}
-      {{- if .Values.dnsPolicy }}
-      dnsPolicy: {{ .Values.dnsPolicy | quote }}
-      {{- end }}
-      {{- if .Values.dnsConfig }}
-      dnsConfig:
-{{ toYaml .Values.dnsConfig | indent 8 }}
-      {{- end }}
-      {{- if .Values.sentry.postProcessForwardTransactions.securityContext }}
-      securityContext:
-{{ toYaml .Values.sentry.postProcessForwardTransactions.securityContext | indent 8 }}
-      {{- end }}
       containers:
       - name: {{ .Chart.Name }}-post-process-forward-transactions
         image: "{{ template "sentry.image" . }}"

@@ -29,7 +29,7 @@ spec:
       annotations:
         checksum/configYml: {{ .Values.config.configYml | toYaml | toString | sha256sum }}
         checksum/sentryConfPy: {{ .Values.config.sentryConfPy | sha256sum }}
-        checksum/config.yaml: {{ include (print $.Template.BasePath "/configmap-sentry.yaml") . | sha256sum }}
+        # checksum/config.yaml: {{ include (print $.Template.BasePath "/configmap-sentry.yaml") . | sha256sum }}
         {{- if .Values.sentry.subscriptionConsumerTransactions.annotations }}
 {{ toYaml .Values.sentry.subscriptionConsumerTransactions.annotations | indent 8 }}
         {{- end }}
@@ -40,27 +40,6 @@ spec:
         {{- if .Values.sentry.subscriptionConsumerTransactions.podLabels }}
 {{ toYaml .Values.sentry.subscriptionConsumerTransactions.podLabels | indent 8 }}
         {{- end }}
-    spec:
-      affinity:
-      {{- if .Values.sentry.subscriptionConsumerTransactions.affinity }}
-{{ toYaml .Values.sentry.subscriptionConsumerTransactions.affinity | indent 8 }}
-      {{- end }}
-      {{- if .Values.sentry.subscriptionConsumerTransactions.nodeSelector }}
-      nodeSelector:
-{{ toYaml .Values.sentry.subscriptionConsumerTransactions.nodeSelector | indent 8 }}
-      {{- end }}
-      {{- if .Values.sentry.subscriptionConsumerTransactions.tolerations }}
-      tolerations:
-{{ toYaml .Values.sentry.subscriptionConsumerTransactions.tolerations | indent 8 }}
-      {{- end }}
-      {{- if .Values.images.sentry.imagePullSecrets }}
-      imagePullSecrets:
-{{ toYaml .Values.images.sentry.imagePullSecrets | indent 8 }}
-      {{- end }}
-      {{- if .Values.sentry.subscriptionConsumerTransactions.securityContext }}
-      securityContext:
-{{ toYaml .Values.sentry.subscriptionConsumerTransactions.securityContext | indent 8 }}
-      {{- end }}
       containers:
       - name: {{ .Chart.Name }}-subscription-consumer-transactions
         image: "{{ template "sentry.image" . }}"

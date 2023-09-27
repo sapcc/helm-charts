@@ -23,59 +23,13 @@ spec:
       name: {{ template "fullname" . }}-db-init
       annotations:
         checksum/configmap.yaml: {{ include (print $.Template.BasePath "/configmap-sentry.yaml") . | sha256sum }}
-        {{- if .Values.sentry.worker.annotations }}
-{{ toYaml .Values.sentry.worker.annotations | indent 8 }}
-        {{- end }}
-        {{- if .Values.hooks.dbInit.podAnnotations }}
-{{ toYaml .Values.hooks.dbInit.podAnnotations | indent 8 }}
-        {{- end }}
       labels:
         app: sentry
         release: "{{ .Release.Name }}"
-        {{- if .Values.sentry.worker.podLabels }}
-{{ toYaml .Values.sentry.worker.podLabels | indent 8 }}
-        {{- end }}
-        {{- if .Values.hooks.dbInit.podLabels }}
-{{ toYaml .Values.hooks.dbInit.podLabels | indent 8 }}
-        {{- end }}
-    spec:
-      {{- if .Values.hooks.dbInit.affinity }}
-      affinity:
-{{ toYaml .Values.hooks.dbInit.affinity | indent 8 }}
-      {{- end }}
-      {{- if .Values.hooks.dbInit.nodeSelector }}
-      nodeSelector:
-{{ toYaml .Values.hooks.dbInit.nodeSelector | indent 8 }}
-      {{- end }}
-      {{- if .Values.hooks.dbInit.tolerations }}
-      tolerations:
-{{ toYaml .Values.hooks.dbInit.tolerations | indent 8 }}
-      {{- end }}
-      restartPolicy: Never
-      {{- if .Values.images.sentry.imagePullSecrets }}
-      imagePullSecrets:
-{{ toYaml .Values.images.sentry.imagePullSecrets | indent 8 }}
-      {{- end }}
-      {{- if .Values.dnsPolicy }}
-      dnsPolicy: {{ .Values.dnsPolicy | quote }}
-      {{- end }}
-      {{- if .Values.dnsConfig }}
-      dnsConfig:
-{{ toYaml .Values.dnsConfig | indent 8 }}
-      {{- end }}
-      {{- if .Values.hooks.dbInit.securityContext }}
-      securityContext:
-{{ toYaml .Values.hooks.dbInit.securityContext | indent 8 }}
-      {{- else }}
-      {{- if .Values.hooks.securityContext }}
-      securityContext:
-{{ toYaml .Values.hooks.securityContext | indent 8 }}
-      {{- end }}
-      {{- end }}
       containers:
       - name: db-init-job
         image: "{{ template "sentry.image" . }}"
-        imagePullPolicy: {{ default "IfNotPresent" .Values.images.sentry.pullPolicy }}
+        imagePullPolicy: {{ default "IfNotPresent" .Values.image.sentry.pullPolicy }}
         command: ["sentry","upgrade","--noinput"]
         env:
 {{ include "sentry.env" . | indent 8 }}

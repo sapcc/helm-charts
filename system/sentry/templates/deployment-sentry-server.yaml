@@ -22,14 +22,14 @@ spec:
       {{- if .Values.databaseUpgrade.enabled }}
       initContainers:
       - name: "upgrade"
-        image: "{{required ".Values.global.registry is missing" .Values.global.registry }}/{{ .Values.image.repository }}:{{required ".Values.image.tag is missing" .Values.image.tag }}"
+        image: "{{required ".Values.global.registry is missing" .Values.global.registry }}/{{ .Values.image.sentry.repository }}:{{required ".Values.image.sentry.tag is missing" .Values.image.sentry.tag }}"
         args: ["upgrade", "--noinput", "--lock"]
         env:
 {{ include "env-vars" . | indent  10 }}
       {{- end }}
       containers:
       - name: {{ .Chart.Name }}
-        image: "{{required ".Values.global.registry is missing" .Values.global.registry }}/{{ .Values.image.repository }}:{{required ".Values.image.tag is missing" .Values.image.tag }}"
+        image: "{{required ".Values.global.registry is missing" .Values.global.registry }}/{{ .Values.image.sentry.repository }}:{{required ".Values.image.sentry.tag is missing" .Values.image.sentry.tag }}"
         args: [ run, web ]
         #command: [tail, -f, /dev/null]
         imagePullPolicy: {{ .Values.image.pullPolicy }}

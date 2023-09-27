@@ -32,7 +32,7 @@ spec:
       annotations:
         checksum/configYml: {{ .Values.config.configYml | toYaml | toString | sha256sum }}
         checksum/sentryConfPy: {{ .Values.config.sentryConfPy | sha256sum }}
-        checksum/config.yaml: {{ include (print $.Template.BasePath "/configmap-sentry.yaml") . | sha256sum }}
+        # checksum/config.yaml: {{ include (print $.Template.BasePath "/configmap-sentry.yaml") . | sha256sum }}
         {{- if .Values.sentry.ingestProfiles.annotations }}
 {{ toYaml .Values.sentry.ingestProfiles.annotations | indent 8 }}
         {{- end }}
@@ -43,34 +43,6 @@ spec:
         {{- if .Values.sentry.ingestProfiles.podLabels }}
 {{ toYaml .Values.sentry.ingestProfiles.podLabels | indent 8 }}
         {{- end }}
-    spec:
-      affinity:
-      {{- if .Values.sentry.ingestProfiles.affinity }}
-{{ toYaml .Values.sentry.ingestProfiles.affinity | indent 8 }}
-      {{- end }}
-      {{- if .Values.sentry.ingestProfiles.nodeSelector }}
-      nodeSelector:
-{{ toYaml .Values.sentry.ingestProfiles.nodeSelector | indent 8 }}
-      {{- end }}
-      {{- if .Values.sentry.ingestProfiles.tolerations }}
-      tolerations:
-{{ toYaml .Values.sentry.ingestProfiles.tolerations | indent 8 }}
-      {{- end }}
-      {{- if .Values.images.sentry.imagePullSecrets }}
-      imagePullSecrets:
-{{ toYaml .Values.images.sentry.imagePullSecrets | indent 8 }}
-      {{- end }}
-      {{- if .Values.dnsPolicy }}
-      dnsPolicy: {{ .Values.dnsPolicy | quote }}
-      {{- end }}
-      {{- if .Values.dnsConfig }}
-      dnsConfig:
-{{ toYaml .Values.dnsConfig | indent 8 }}
-      {{- end }}
-      {{- if .Values.sentry.ingestProfiles.securityContext }}
-      securityContext:
-{{ toYaml .Values.sentry.ingestProfiles.securityContext | indent 8 }}
-      {{- end }}
       containers:
       - name: {{ .Chart.Name }}-ingest-profiles
         image: "{{ template "sentry.image" . }}"

@@ -31,7 +31,7 @@ spec:
       annotations:
         checksum/configYml: {{ .Values.config.configYml | toYaml | toString | sha256sum }}
         checksum/sentryConfPy: {{ .Values.config.sentryConfPy | sha256sum }}
-        checksum/config.yaml: {{ include (print $.Template.BasePath "/configmap-sentry.yaml") . | sha256sum }}
+        # checksum/config.yaml: {{ include (print $.Template.BasePath "/configmap-sentry.yaml") . | sha256sum }}
         {{- if .Values.sentry.ingestReplayRecordings.annotations }}
 {{ toYaml .Values.sentry.ingestReplayRecordings.annotations | indent 8 }}
         {{- end }}
@@ -42,34 +42,6 @@ spec:
         {{- if .Values.sentry.ingestReplayRecordings.podLabels }}
 {{ toYaml .Values.sentry.ingestReplayRecordings.podLabels | indent 8 }}
         {{- end }}
-    spec:
-      affinity:
-      {{- if .Values.sentry.ingestReplayRecordings.affinity }}
-{{ toYaml .Values.sentry.ingestReplayRecordings.affinity | indent 8 }}
-      {{- end }}
-      {{- if .Values.sentry.ingestReplayRecordings.nodeSelector }}
-      nodeSelector:
-{{ toYaml .Values.sentry.ingestReplayRecordings.nodeSelector | indent 8 }}
-      {{- end }}
-      {{- if .Values.sentry.ingestReplayRecordings.tolerations }}
-      tolerations:
-{{ toYaml .Values.sentry.ingestReplayRecordings.tolerations | indent 8 }}
-      {{- end }}
-      {{- if .Values.images.sentry.imagePullSecrets }}
-      imagePullSecrets:
-{{ toYaml .Values.images.sentry.imagePullSecrets | indent 8 }}
-      {{- end }}
-      {{- if .Values.dnsPolicy }}
-      dnsPolicy: {{ .Values.dnsPolicy | quote }}
-      {{- end }}
-      {{- if .Values.dnsConfig }}
-      dnsConfig:
-{{ toYaml .Values.dnsConfig | indent 8 }}
-      {{- end }}
-      {{- if .Values.sentry.ingestReplayRecordings.securityContext }}
-      securityContext:
-{{ toYaml .Values.sentry.ingestReplayRecordings.securityContext | indent 8 }}
-      {{- end }}
       containers:
       - name: {{ .Chart.Name }}-ingest-replay-recordings
         image: "{{ template "sentry.image" . }}"

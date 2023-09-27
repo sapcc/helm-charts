@@ -29,7 +29,7 @@ spec:
       annotations:
         checksum/configYml: {{ .Values.config.configYml | toYaml | toString | sha256sum }}
         checksum/sentryConfPy: {{ .Values.config.sentryConfPy | sha256sum }}
-        checksum/config.yaml: {{ include (print $.Template.BasePath "/configmap-sentry.yaml") . | sha256sum }}
+        # checksum/config.yaml: {{ include (print $.Template.BasePath "/configmap-sentry.yaml") . | sha256sum }}
         {{- if .Values.sentry.postProcessForwardErrors.annotations }}
 {{ toYaml .Values.sentry.postProcessForwardErrors.annotations | indent 8 }}
         {{- end }}
@@ -40,34 +40,6 @@ spec:
         {{- if .Values.sentry.postProcessForwardErrors.podLabels }}
 {{ toYaml .Values.sentry.postProcessForwardErrors.podLabels | indent 8 }}
         {{- end }}
-    spec:
-      affinity:
-      {{- if .Values.sentry.postProcessForwardErrors.affinity }}
-{{ toYaml .Values.sentry.postProcessForwardErrors.affinity | indent 8 }}
-      {{- end }}
-      {{- if .Values.sentry.postProcessForwardErrors.nodeSelector }}
-      nodeSelector:
-{{ toYaml .Values.sentry.postProcessForwardErrors.nodeSelector | indent 8 }}
-      {{- end }}
-      {{- if .Values.sentry.postProcessForwardErrors.tolerations }}
-      tolerations:
-{{ toYaml .Values.sentry.postProcessForwardErrors.tolerations | indent 8 }}
-      {{- end }}
-      {{- if .Values.images.sentry.imagePullSecrets }}
-      imagePullSecrets:
-{{ toYaml .Values.images.sentry.imagePullSecrets | indent 8 }}
-      {{- end }}
-      {{- if .Values.dnsPolicy }}
-      dnsPolicy: {{ .Values.dnsPolicy | quote }}
-      {{- end }}
-      {{- if .Values.dnsConfig }}
-      dnsConfig:
-{{ toYaml .Values.dnsConfig | indent 8 }}
-      {{- end }}
-      {{- if .Values.sentry.postProcessForwardErrors.securityContext }}
-      securityContext:
-{{ toYaml .Values.sentry.postProcessForwardErrors.securityContext | indent 8 }}
-      {{- end }}
       containers:
       - name: {{ .Chart.Name }}-post-process-forward-errors
         image: "{{ template "sentry.image" . }}"

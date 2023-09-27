@@ -39,38 +39,10 @@ spec:
         {{- if .Values.snuba.transactionsConsumer.podLabels }}
 {{ toYaml .Values.snuba.transactionsConsumer.podLabels | indent 8 }}
         {{- end }}
-    spec:
-      affinity:
-      {{- if .Values.snuba.transactionsConsumer.affinity }}
-{{ toYaml .Values.snuba.transactionsConsumer.affinity | indent 8 }}
-      {{- end }}
-      {{- if .Values.snuba.transactionsConsumer.nodeSelector }}
-      nodeSelector:
-{{ toYaml .Values.snuba.transactionsConsumer.nodeSelector | indent 8 }}
-      {{- end }}
-      {{- if .Values.snuba.transactionsConsumer.tolerations }}
-      tolerations:
-{{ toYaml .Values.snuba.transactionsConsumer.tolerations | indent 8 }}
-      {{- end }}
-      {{- if .Values.images.snuba.imagePullSecrets }}
-      imagePullSecrets:
-{{ toYaml .Values.images.snuba.imagePullSecrets | indent 8 }}
-      {{- end }}
-      {{- if .Values.dnsPolicy }}
-      dnsPolicy: {{ .Values.dnsPolicy | quote }}
-      {{- end }}
-      {{- if .Values.dnsConfig }}
-      dnsConfig:
-{{ toYaml .Values.dnsConfig | indent 8 }}
-      {{- end }}
-      {{- if .Values.snuba.transactionsConsumer.securityContext }}
-      securityContext:
-{{ toYaml .Values.snuba.transactionsConsumer.securityContext | indent 8 }}
-      {{- end }}
       containers:
       - name: {{ .Chart.Name }}-snuba
         image: "{{ template "snuba.image" . }}"
-        imagePullPolicy: {{ default "IfNotPresent" .Values.images.snuba.pullPolicy }}
+        imagePullPolicy: {{ default "IfNotPresent" .Values.image.snuba.pullPolicy }}
         command:
           - "snuba"
           - "consumer"
