@@ -32,10 +32,17 @@ spec:
       http:
         paths:
           - path: /
-            pathType: Prefix
+            pathType: Exact
             backend:
               service:
-                name: {{ .Release.Name }}
+                name: {{ .Release.Name }}-landing-page
+                port:
+                  number: 80
+          - path: /logo.svg
+            pathType: Exact
+            backend:
+              service:
+                name: {{ .Release.Name }}-landing-page
                 port:
                   number: 80
           - path: /v2/
@@ -76,14 +83,7 @@ spec:
       host: '{{ $domain }}-api.global.{{ $tld }}'
       http:
         paths:
-          - path: /json
-            pathType: Prefix
-            backend:
-              service:
-                name: {{ .Release.Name }}
-                port:
-                  number: 80
-          - path: /v2/violations
+          - path: /v2/
             pathType: Prefix
             backend:
               service:
