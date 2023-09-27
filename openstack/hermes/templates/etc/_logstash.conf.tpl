@@ -466,7 +466,7 @@ output {
 {{- if .Values.opensearch_hermes.enabled }}
     opensearch {
         id => "clone_for_cc"
-        index => ""audit-%{[@metadata][index2]}-%{+YYYY.MM}"
+        index => "audit-%{[@metadata][index2]}-%{+YYYY.MM}"
         template => "/hermes-etc/audit.json"
         template_name => "audit"
         template_overwrite => true
