@@ -346,3 +346,30 @@ maillog:
     - "read"
     - "indices:monitor/settings/get"
     - "indices:monitor/stats"
+
+jupyterhub:
+  reserved: false
+  hidden: false
+  cluster_permissions:
+    - "cluster:monitor/prometheus/metrics"
+    - "cluster:monitor/health"
+    - "cluster:monitor/state"
+    - "cluster:monitor/nodes/info"
+    - "cluster:monitor/nodes/stats"
+    - "indices:data/read/scroll*"
+    - "indices:data/read/msearch"
+  index_permissions:
+  - index_patterns:
+    - "*"
+    allowed_actions:
+    - "indices:monitor/stats"
+    - "indices:admin/mappings/get"
+    - "indices:admin/aliases/get"
+    - "indices:data/read/scroll"
+    - "indices:data/read/scroll/clear"
+    - "indices:data/read/search"
+    - "indices:data/read/search*"
+    - "read"
+  tenant_permissions:
+  - tenant_patterns:
+    - "*"
