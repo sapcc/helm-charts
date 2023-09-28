@@ -1,0 +1,10 @@
+USE mysql;
+SET @host := '${DB_HOST}';
+SET @user := '${DB_USERNAME}';
+SET @rolename := '${DB_ROLE}';
+SET @admingrant := '${DB_ADMIN_GRANT}';
+SET @grantprivs := CONCAT("GRANT ", @rolename, " TO ", QUOTE(@user), "@", QUOTE(@host), @admingrant);
+PREPARE stmt_runcode FROM @grantprivs;
+EXECUTE stmt_runcode;
+DROP PREPARE stmt_runcode;
+FLUSH USER_VARIABLES;

@@ -1,0 +1,33 @@
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  namespace: {{ $.Release.Namespace }}
+  name: {{ include "commonPrefix" $ }}{{ $.Release.Name }}-application
+spec:
+  maxUnavailable: {{ $.Values.maxUnavailable.application | default 1 }}
+  selector:
+    matchLabels:
+      component: "application"
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  namespace: {{ $.Release.Namespace }}
+  name: {{ include "commonPrefix" $ }}{{ $.Release.Name }}-proxy
+spec:
+  maxUnavailable: {{ $.Values.maxUnavailable.proxy | default 1 }}
+  selector:
+    matchLabels:
+      component: "proxy"
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  namespace: {{ $.Release.Namespace }}
+  name: {{ include "commonPrefix" $ }}backup-kopiaserver
+spec:
+  maxUnavailable: {{ $.Values.maxUnavailable.kopiaserver | default 1 }}
+  selector:
+    matchLabels:
+      component: "kopiaserver"
