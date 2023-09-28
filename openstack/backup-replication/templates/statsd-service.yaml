@@ -1,4 +1,3 @@
-{{ if .Values.source }}
 kind: Service
 apiVersion: v1
 metadata:
@@ -6,6 +5,9 @@ metadata:
   labels:
     component: backup-replication
   annotations:
+    {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+    linkerd.io/inject: enabled
+    {{- end }}
     prometheus.io/scrape: "true"
     prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
 spec:
@@ -18,4 +20,3 @@ spec:
     - name: metrics
       port: 9102
       protocol: TCP
-{{ end }}

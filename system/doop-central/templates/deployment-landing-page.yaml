@@ -1,0 +1,65 @@
+kind: Deployment
+apiVersion: apps/v1
+
+metadata:
+  name: {{ .Release.Name }}-landing-page
+
+spec:
+  revisionHistoryLimit: 5
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 2
+  selector:
+    matchLabels:
+      name: {{ .Release.Name }}-landing-page
+  template:
+    metadata:
+      labels:
+        name: {{ .Release.Name }}-landing-page
+      annotations:
+        {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+        linkerd.io/inject: enabled
+        {{- end }}
+    spec:
+      automountServiceAccountToken: false
+      enableServiceLinks: false
+      containers:
+        - name: nginx
+          image: {{ .Values.global.dockerHubMirror | required ".Values.global.dockerHubMirror not found" }}/library/nginx:{{ .Values.image_tag_nginx }}
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 80
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 80
+            timeoutSeconds: 10
+            periodSeconds: 60
+            initialDelaySeconds: 60
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 80
+            timeoutSeconds: 5
+            periodSeconds: 5
+          resources:
+            limits:
+              cpu: '0.1'
+              memory: '64Mi'
+            requests:
+              cpu: '0.1'
+              memory: '64Mi'
+          securityContext:
+            allowPrivilegeEscalation: false
+          volumeMounts:
+            - name: docroot
+              mountPath: /usr/share/nginx/html
+              readOnly: true
+      volumes:
+        - name: docroot
+          configMap:
+            name: {{ .Release.Name }}-landing-page

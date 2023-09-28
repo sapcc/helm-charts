@@ -73,74 +73,6 @@ groups:
         Aggregation or alerting rules may provide false results.
       summary: Prometheus is missing rule evaluations due to slow rule group evaluation.
 
-  - alert: PrometheusTargetLimitHit
-    expr: |
-      increase(prometheus_target_scrape_pool_exceeded_target_limit_total{prometheus="{{ include "prometheus.name" . }}"}[5m]) > 0
-    for: 15m
-    labels:
-      service: {{ default "metrics" $root.Values.alerts.service }}
-      support_group: {{ default "observability" $root.Values.alerts.support_group }}
-      severity: warning
-      playbook: docs/support/playbook/prometheus/rule_evaluation
-      meta: Prometheus `{{`{{ $labels.prometheus }}`}}` has dropped targets because some scrape configs have exceeded the targets limit.
-    annotations:
-      description: |
-        Prometheus `{{`{{ $labels.prometheus }}`}}` has dropped
-        `{{`{{ printf "%.0f" $value }}`}}` targets because the number of targets
-        exceeded the configured target_limit.
-      summary: Prometheus has dropped targets because some scrape configs have exceeded the targets limit.
-
-  - alert: PrometheusLabelLimitHit
-    expr: |
-      increase(prometheus_target_scrape_pool_exceeded_label_limits_total{prometheus="{{ include "prometheus.name" . }}"}[5m]) > 0
-    for: 15m
-    labels:
-      service: {{ default "metrics" $root.Values.alerts.service }}
-      support_group: {{ default "observability" $root.Values.alerts.support_group }}
-      severity: warning
-      playbook: docs/support/playbook/prometheus/rule_evaluation
-      meta: Prometheus `{{`{{ $labels.prometheus }}`}}` has dropped targets because some scrape configs have exceeded the labels limit.
-    annotations:
-      description: |
-        Prometheus `{{`{{ $labels.prometheus }}`}}` has dropped
-        `{{`{{ printf "%.0f" $value }}`}}` targets because the number of targets
-        exceeded the configured target_limit.
-      summary: Prometheus has dropped targets because some scrape configs have exceeded the labels limit.
-
-  - alert: PrometheusScrapeBodySizeLimitHit
-    expr: |
-      increase(prometheus_target_scrapes_exceeded_body_size_limit_total{prometheus="{{ include "prometheus.name" . }}"}[5m]) > 0
-    for: 15m
-    labels:
-      service: {{ default "metrics" $root.Values.alerts.service }}
-      support_group: {{ default "observability" $root.Values.alerts.support_group }}
-      severity: warning
-      playbook: docs/support/playbook/prometheus/rule_evaluation
-      meta: Prometheus `{{`{{ $labels.prometheus }}`}}` has dropped some targets that exceeded body size limit.
-    annotations:
-      description: |
-        Prometheus `{{`{{ $labels.prometheus }}`}}` as failed
-        `{{`{{ printf "%.0f" $value }}`}}` scrapes in the last 5m because
-        some targets exceeded the configured body_size_limit.
-      summary: Prometheus has dropped some targets that exceeded body size limit.
-
-  - alert: PrometheusScrapeSampleLimitHit
-    expr: |
-      increase(prometheus_target_scrapes_exceeded_sample_limit_total{prometheus="{{ include "prometheus.name" . }}"}[5m]) > 0
-    for: 15m
-    labels:
-      service: {{ default "metrics" $root.Values.alerts.service }}
-      support_group: {{ default "observability" $root.Values.alerts.support_group }}
-      severity: warning
-      playbook: docs/support/playbook/prometheus/rule_evaluation
-      meta: Prometheus `{{`{{ $labels.prometheus }}`}}` has failed scrapes that have exceeded the configured sample limit.
-    annotations:
-      description: |
-        Prometheus `{{`{{ $labels.prometheus }}`}}` as failed
-        `{{`{{ printf "%.0f" $value }}`}}` scrapes in the last 5m because
-        some targets exceeded the configured sample_limit.
-      summary: Prometheus has failed scrapes that have exceeded the configured sample limit.
-
   - alert: PrometheusWALCorruption
     expr: |
       round(increase(prometheus_tsdb_wal_corruptions_total{prometheus="{{ include "prometheus.name" . }}"}[2h1m]) > 0)
@@ -252,13 +184,13 @@ groups:
     labels:
       service: {{ default "metrics" $root.Values.alerts.service }}
       support_group: {{ default "observability" $root.Values.alerts.support_group }}
-      severity: critical
+      severity: warning
       playbook: docs/support/playbook/prometheus/failed_scrapes
-      meta: Prometheus `{{`{{ $labels.prometheus }}`}}` has failed to sync targets.
+      meta: Prometheus `{{`{{ $labels.prometheus }}`}}` could not synchronize targets.
     annotations:
       description: |
-        `{{`{{ printf "%.0f" $value }}`}} targets in Prometheus `{{`{{ $labels.prometheus }}`}}`
-        have failed to sync because invalid configuration was supplied.
+        Targets in Prometheus `{{`{{ $labels.prometheus }}`}}` have failed to sync because invalid configuration was supplied.
+        <https://{{ include "prometheus.externalURL" . }}/graph?g0.expr={{ urlquery `sum by (scrape_job) (increase(prometheus_target_sync_failed_total{prometheus="PLACEHOLDER"}[30m])) > 0` | replace "PLACEHOLDER" "{{ $labels.prometheus }}"}}|Affected targets>
       summary: Prometheus has failed to sync targets.
 
   - alert: PrometheusHighQueryLoad

@@ -6,6 +6,7 @@ groups:
     for: 15m
     labels:
       severity: critical
+      support_group: network-data
       tier: k8s
       service: px
       context: px
@@ -19,6 +20,7 @@ groups:
     for: 2m
     labels:
       severity: critical
+      support_group: network-data
       tier: net
       service: px
       context: px
@@ -27,12 +29,13 @@ groups:
     annotations:
       description: "{{ $labels.region }}, domain: {{ $labels.pxdomain }}, service: {{ $labels.pxservice }}: All PX peers are down!"
       summary:  All peers in a domain are down
-  
+
   - alert: PXConsumerBgpConnectionDown
     expr: ((sum(bird_protocol_up{name!~"kernel."} ==bool 1)  by (region, pxservice, pxdomain) ==bool 0) ) + on(region, pxservice, pxdomain) group_right() ((bird_protocol_up{name!~"kernel.", peer_type="PL"} ==bool 0 ) * 1000) == 1000
     for: 5m
     labels:
       severity: warning
+      support_group: network-data
       tier: net
       service: px
       context: px
@@ -47,6 +50,7 @@ groups:
     for: 2m
     labels:
       severity: critical
+      support_group: network-data
       tier: net
       service: px
       context: px
@@ -61,6 +65,7 @@ groups:
     for: 15m
     labels:
       severity: critical
+      support_group: network-data
       tier: net
       service: px
       context: px
@@ -75,6 +80,7 @@ groups:
     for: 3m
     labels:
       severity: warning
+      support_group: network-data
       tier: net
       service: px
       context: px
@@ -95,6 +101,7 @@ groups:
     for: 3m
     labels:
       severity: critical
+      support_group: network-data
       tier: net
       service: px
       context: px
@@ -109,6 +116,7 @@ groups:
     for: 2m
     labels:
       severity: critical
+      support_group: network-data
       tier: net
       service: px
       context: px
@@ -117,12 +125,13 @@ groups:
     annotations:
       description: BGP session from {{ $labels.name }} to {{ $labels.app }} is advertising more than the maximal allowed number of prefixes.
       summary:  Consumer advertising too many routes
-  
+
   - alert: PXRouteTableSignificantChanges
     expr: floor((floor(delta(sum(bird_protocol_prefix_import_count{peer_type="PL"}) by (app)[30m:])) / sum(bird_protocol_prefix_import_count{peer_type="PL"} offset 30m) by (app)) * 100) > 25
     for: 2m
     labels:
       severity: warning
+      support_group: network-data
       tier: net
       service: px
       context: px

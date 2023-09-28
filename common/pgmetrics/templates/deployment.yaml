@@ -31,8 +31,10 @@ spec:
         {{- end }}
       annotations:
         configmap-etc-hash: {{ include (print $.Template.BasePath "/configmap-etc.yaml") . | sha256sum }}
+        {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+        linkerd.io/inject: enabled
+        {{- end }}
         prometheus.io/scrape: "true"
-        prometheus.io/port: "9187"
         prometheus.io/targets: {{ quote .Values.alerts.prometheus }}
     spec:
       containers:

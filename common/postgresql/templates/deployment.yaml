@@ -32,6 +32,9 @@ spec:
       annotations:
         checksum/secrets: {{ include (print $.Template.BasePath  "/secrets.yaml") . | sha256sum }}
         checksum/etc: {{ include (print $.Template.BasePath  "/etc-configmap.yaml") . | sha256sum }}
+        {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+        linkerd.io/inject: enabled
+        {{- end }}
     spec:
       affinity:
         nodeAffinity:

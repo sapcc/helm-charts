@@ -49,5 +49,5 @@ groups:
       context: maintenance-controller
       meta: "Cluster {{`{{ $labels.cluster }}`}} has a disparity in flatcar versions."
     annotations:
-      summary: Node in maintenance
+      summary: More than 2 flatcar versions
       description: "Cluster {{`{{ $labels.cluster }}`}} has a disparity in flatcar versions. This indicates some issue with the maintenance-controller."

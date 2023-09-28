@@ -10,8 +10,10 @@ metadata:
 spec:
   httpSDConfigs:
     - url: {{ .Values.global.http_sd_configs.netbox_url }}/devices/?custom_labels=__param_module=asr&manufacturer=cisco&status=active&region={{ .Values.global.region }}&role=neutron-router
-      refresh_interval: {{ .Values.global.http_sd_configs.refresh_interval }}
+      refreshInterval: {{ .Values.global.http_sd_configs.refresh_interval }}
   metricsPath: /snmp
+  interval: 60s
+  scrapeTimeout: 50s
   relabelings:
     - sourceLabels: [__address__]
       targetLabel: __param_target
@@ -20,7 +22,7 @@ spec:
     - targetLabel: __address__
       replacement: snmp-exporter:{{.Values.snmp_exporter.listen_port}}
   metricRelabelings:
-    - sourceLabels: [server_name]
+    - sourceLabels: [name]
       targetLabel:  devicename
     - sourceLabels: [devicename]
       regex: '(\w*-\w*-\w*)-(\S*)'

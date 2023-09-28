@@ -28,6 +28,9 @@ spec:
         name: "{{ .Release.Name }}-pgbackup"
       annotations:
         checksum/secret:       {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
+        {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+        linkerd.io/inject: enabled
+        {{- end }}
         prometheus.io/scrape:  "true"
         prometheus.io/targets: {{ quote .Values.alerts.prometheus }}
     spec:

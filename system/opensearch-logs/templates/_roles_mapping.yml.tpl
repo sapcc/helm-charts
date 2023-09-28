@@ -82,6 +82,11 @@ promrole:
   users:
   - "promuser"
 
+jupyterhub:
+  reserved: false
+  users:
+  - "jupyterhub"
+
 maillog:
   reserved: false
   users:

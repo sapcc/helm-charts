@@ -173,13 +173,10 @@
   scrape_interval: {{$values.firmware.scrapeInterval}}
   scrape_timeout: {{$values.firmware.scrapeTimeout}}
   http_sd_configs:
-    - url: {{ .Values.http_sd_configs.netbox_staging_url }}/devices/?custom_labels=job=redfish/fw&target=mgmt_only&status=active&role=server&tenant=converged-cloud&tagn=no-redfish&region={{ .Values.global.region }}
+    - url: {{ .Values.http_sd_configs.netbox_production_url }}/devices/?custom_labels=job=redfish/fw&target=mgmt_only&status=active&role=server&tenant=converged-cloud&tagn=no-redfish&region={{ .Values.global.region }}
       refresh_interval: {{ .Values.http_sd_configs.refresh_interval }}
   metrics_path: /firmware
   relabel_configs:
-    - source_labels: [job]
-      regex: redfish/fw
-      action: keep
     - source_labels: [__address__]
       target_label: __param_target
     - source_labels: [__param_target]
@@ -190,19 +187,19 @@
 
 {{- $values := .Values.windows_exporter -}}
 {{- if $values.enabled }}
-- job_name: 'win-exporter-ad'
+{{- $name := "win-exporter-ad" }}
+- job_name: '{{ $name }}'
   scrape_interval: {{$values.scrapeInterval}}
   scrape_timeout: {{$values.scrapeTimeout}}
   http_sd_configs:
-    - url: {{ .Values.atlas_url }}
+    - url: {{ .Values.http_sd_configs.netbox_production_url }}/virtual-machines/?custom_labels=job={{ $name }}&target=primary_ip&status=active&role=server&tenant=converged-cloud&platform=windows-server&tag=active-directory-domain-controller&region={{ .Values.global.region }}
   metrics_path: /metrics
   relabel_configs:
-    - source_labels: [job]
-      regex: win-exporter-ad
-      action: keep
     - source_labels: [__address__]
       replacement: $1:{{$values.listen_port}}
       target_label: __address__
+    - source_labels: [name]
+      target_label: server_name
     - regex: 'name|state'
       action: labeldrop
   metric_relabel_configs:
@@ -218,19 +215,19 @@
       replacement: '$1'
       target_label: 'service_state'
 
-- job_name: 'win-exporter-wsus'
+{{- $name := "win-exporter-wsus" }}
+- job_name: '{{ $name }}'
   scrape_interval: {{$values.scrapeInterval}}
   scrape_timeout: {{$values.scrapeTimeout}}
   http_sd_configs:
-    - url: {{ .Values.atlas_url }}
+    - url: {{ .Values.http_sd_configs.netbox_production_url }}/virtual-machines/?custom_labels=job={{ $name }}&target=primary_ip&status=active&q=wsus&role=server&tenant=converged-cloud&platform=windows-server&region={{ .Values.global.region }}
   metrics_path: /metrics
   relabel_configs:
-    - source_labels: [job]
-      regex: win-exporter-wsus
-      action: keep
     - source_labels: [__address__]
       replacement: $1:{{$values.listen_port}}
       target_label: __address__
+    - source_labels: [name]
+      target_label: server_name
     - regex: 'name|state'
       action: labeldrop
   metric_relabel_configs:

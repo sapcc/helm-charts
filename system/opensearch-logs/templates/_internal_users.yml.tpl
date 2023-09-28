@@ -81,3 +81,9 @@ maillog:
   reserved: true
   backend_roles:
   - "maillog"
+
+jupyterhub:
+  hash: "{{ .Values.users.jupyterhub.hash }}"
+  reserved: true
+  backend_roles:
+  - "jupyterhub"

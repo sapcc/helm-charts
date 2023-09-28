@@ -161,7 +161,7 @@ filter {
 
   # With several different event types using jdbc_static, not sure an if makes sense.
   # we will have to handle several events that don't match a query
-  
+
   jdbc_static {
     id => "jdbc_project_id"
     loaders => [
@@ -319,7 +319,7 @@ filter {
     mutate {
       remove_field => ["[domain_mapping]"]
     }
-    
+
     # Cleanup unavailable entries
     if [initiator][project_id] == "unavailable" {
       mutate {
@@ -396,6 +396,25 @@ output {
           # validate_after_inactivity default 10000
           validate_after_inactivity => 1000
       }
+      {{- if .Values.opensearch_hermes.enabled }}
+      opensearch {
+          id => "opensearch_clone_for_audit_1"
+          index => "audit-%{[@metadata][index]}-%{+YYYY.MM}"
+          template => "/hermes-etc/audit.json"
+          template_name => "audit"
+          template_overwrite => true
+          hosts => ["https://{{.Values.opensearch_hermes.host}}.{{.Values.global.region}}.{{.Values.global.tld}}:{{.Values.opensearch_hermes.http_port}}"]
+          auth_type => {
+            type => 'basic'
+            user => "{{.Values.users.audit.username}}"
+            password => "{{.Values.users.audit.password}}"
+          }
+          retry_max_interval => 10
+          validate_after_inactivity => 1000
+          ssl => true
+          ssl_certificate_verification => true
+      }
+      {{- end }}
     } else {
       elasticsearch {
           id => "clone_for_audit_2"
@@ -409,6 +428,25 @@ output {
           # validate_after_inactivity default 10000
           validate_after_inactivity => 1000
       }
+      {{- if .Values.opensearch_hermes.enabled }}
+      opensearch {
+          id => "opensearch_clone_for_audit_2"
+          index => "audit-default-%{+YYYY.MM}"
+          template => "/hermes-etc/audit.json"
+          template_name => "audit"
+          template_overwrite => true
+          hosts => ["https://{{.Values.opensearch_hermes.host}}.{{.Values.global.region}}.{{.Values.global.tld}}:{{.Values.opensearch_hermes.http_port}}"]
+          retry_max_interval => 10
+          validate_after_inactivity => 1000
+          auth_type => {
+            type => 'basic'
+            user => "{{.Values.users.audit.username}}"
+            password => "{{.Values.users.audit.password}}"
+          }
+          ssl => true
+          ssl_certificate_verification => true
+        }
+      {{- end }}
     }
   }
   # cc the target tenant
@@ -425,6 +463,25 @@ output {
         # validate_after_inactivity default 10000
         validate_after_inactivity => 1000
     }
+{{- if .Values.opensearch_hermes.enabled }}
+    opensearch {
+        id => "opensearch_clone_for_cc"
+        index => "audit-%{[@metadata][index2]}-%{+YYYY.MM}"
+        template => "/hermes-etc/audit.json"
+        template_name => "audit"
+        template_overwrite => true
+        hosts => ["https://{{.Values.opensearch_hermes.host}}.{{.Values.global.region}}.{{.Values.global.tld}}:{{.Values.opensearch_hermes.http_port}}"]
+        retry_max_interval => 10
+        validate_after_inactivity => 1000
+        auth_type => {
+          type => 'basic'
+          user => "{{.Values.users.audit.username}}"
+          password => "{{.Values.users.audit.password}}"
+        }
+        ssl => true
+        ssl_certificate_verification => true
+        }
+{{- end }}
   }
 
   {{ if .Values.logstash.swift -}}
@@ -455,7 +512,7 @@ output {
         url => "https://{{ .Values.global.forwarding.audit.host }}"
         format => "json"
         http_method => "post"
-        automatic_retries => 60 
+        automatic_retries => 60
         retry_non_idempotent => true
       }
     }

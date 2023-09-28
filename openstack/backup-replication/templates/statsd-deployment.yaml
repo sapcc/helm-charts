@@ -1,4 +1,3 @@
-{{ if .Values.source }}
 kind: Deployment
 apiVersion: apps/v1
 metadata:
@@ -21,6 +20,9 @@ spec:
         alert-service: backup
       annotations:
         checksum/config: {{ include (print $.Template.BasePath "/statsd-configmap.yaml") $ | sha256sum }}
+        {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+        linkerd.io/inject: enabled
+        {{- end }}
     spec:
       volumes:
       - name: config
@@ -49,4 +51,3 @@ spec:
           requests:
             cpu: '5m'
             memory: '32Mi'
-{{ end }}

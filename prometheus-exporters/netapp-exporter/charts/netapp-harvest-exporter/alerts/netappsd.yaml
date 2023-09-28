@@ -74,3 +74,17 @@ groups:
         annotations:
           summary:  Netapp Harvest (Cinder) has less than 3 free workers
           description: Deployment netapp-harvest-exporter-cinder has less than 3 free workers. Consider increase deployment replica to {{ (mul (add (div .Values.apps.cinder.workerCount 5) 1) 5) }}.
+
+      - alert: NetappHarvestCinderNotWorking
+        expr: absent(count ({__name__=~"netapp_.*", app_kubernetes_io_instance="netapp-harvest-exporter-cinder"}))
+        for: 15m
+        labels:
+          context: netapp-exporter
+          no_alert_on_absence: "true"
+          service: exporter
+          severity: info
+          support_group: compute-storage-api
+          tier: storage
+        annotations:
+          summary:  Netapp Harvest (Cinder) not working
+          description: No metrics with netapp_* scraped from app netapp-harvest-exporter-cinder.

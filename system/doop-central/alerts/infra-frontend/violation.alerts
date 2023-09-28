@@ -1,0 +1,19 @@
+# vim: set ft=yaml:
+
+groups:
+  - name: doop-violation.alerts
+    rules:
+      # alert for vulnerable images in productive deployments of workgroup "Storage & Resource Services"
+      - alert: GkVulnerableImagesForSRS
+        expr: 'sum by (template_kind, service) (doop_raw_violations{template_kind="GkVulnerableImages",cluster!~".*qa.*",support_group="containers",service=~"backup|castellum|gatekeeper|hubcopter|keppel|limes|repo|tenso"})'
+        for: 5m
+        labels:
+          context: GkVulnerableImages
+          support_group: containers
+          service: "{{ $labels.service }}"
+          severity: warning
+          meta: "Vulnerable images in prod deployments of {{ title $labels.service }}"
+        annotations:
+          summary: "Vulnerable images in prod deployments of {{ title $labels.service }}"
+          description: |
+            Please check <https://ccloud.dashboard.greenhouse.global.cloud.sap/?__s=(doop:(f:((key:check~Isupport~Sgroup,label:support_group,value:containers),(key:check~Iservice,value:{{ $labels.service }}),(key:cluster~Ilayer,value:prod)),s:-+,v:GkVulnerableImages),greenhouse:(a:doop),supernova:(d:-+,f:(support~Sgroup:(containers)),p:prod,s:%27%27))|this view in Greenhouse> for which images are vulnerable.

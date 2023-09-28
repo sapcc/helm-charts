@@ -124,6 +124,9 @@ output {
         user => "{{.Values.opensearch.user}}"
         password => "{{.Values.opensearch.password}}"
       }
+      template => "/logstash-etc/alerts.json"
+      template_name => "alerts"
+      template_overwrite => true
       ssl => true
       ssl_certificate_verification => false
     }
@@ -138,6 +141,9 @@ output {
         user => "{{.Values.opensearch.user}}"
         password => "{{.Values.opensearch.password}}"
       }
+      template => "/logstash-etc/alerts.json"
+      template_name => "alerts"
+      template_overwrite => true
       ssl => true
       ssl_certificate_verification => false
     }
@@ -152,6 +158,9 @@ output {
         user => "{{.Values.opensearch.user}}"
         password => "{{.Values.opensearch.password}}"
       }
+      template => "/logstash-etc/alerts.json"
+      template_name => "alerts"
+      template_overwrite => true
       ssl => true
       ssl_certificate_verification => false
     }
@@ -166,6 +175,9 @@ output {
         user => "{{.Values.opensearch.user}}"
         password => "{{.Values.opensearch.password}}"
       }
+      template => "/logstash-etc/deployments.json"
+      template_name => "deployments"
+      template_overwrite => true
       ssl => true
       ssl_certificate_verification => false
     }

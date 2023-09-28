@@ -1,3 +1,11 @@
+## 7.2.15
+
+* Removal of Prometheus limit warnings, as no limits are defined at all
+
+## 7.2.14
+
+* Refine PrometheusTargetSyncFailure alert
+
 ## 7.2.13
 
 * Chart version labeled
