@@ -109,12 +109,10 @@
   scrape_interval: {{$values.scrapeInterval}}
   scrape_timeout: {{$values.scrapeTimeout}}
   http_sd_configs:
-    - url: {{ .Values.atlas_url }}
+    - url: {{ .Values.http_sd_configs.netbox_production_url }}/devices/?custom_labels=job=redfish/bm&target=mgmt_only&status=active&role=server&tenant=converged-cloud&platform=ironic&tagn=no-redfish&region={{ .Values.global.region }}
+      refresh_interval: {{ .Values.http_sd_configs.refresh_interval }}
   metrics_path: /redfish
   relabel_configs:
-    - source_labels: [job]
-      regex: redfish/bm
-      action: keep
     - source_labels: [__address__]
       target_label: __param_target
     - source_labels: [__param_target]
@@ -149,12 +147,10 @@
   scrape_interval: {{$values.scrapeInterval}}
   scrape_timeout: {{$values.scrapeTimeout}}
   http_sd_configs:
-    - url: {{ .Values.atlas_url }}
+    - url: {{ .Values.http_sd_configs.netbox_production_url }}/devices/?custom_labels=job=redfish/bb&target=mgmt_only&status=active&role=server&tenant=converged-cloud&platform=vmware-esxi&tagn=no-redfish&region={{ .Values.global.region }}
+      refresh_interval: {{ .Values.http_sd_configs.refresh_interval }}
   metrics_path: /redfish
   relabel_configs:
-    - source_labels: [__name__]
-      regex: '!redfish_health'
-      action: keep
     - source_labels: [job]
       regex: redfish/bb
       action: keep
@@ -193,6 +189,7 @@
   scrape_timeout: {{$values.scrapeTimeout}}
   http_sd_configs:
     - url: {{ .Values.http_sd_configs.netbox_production_url }}/virtual-machines/?custom_labels=job={{ $name }}&target=primary_ip&status=active&role=server&tenant=converged-cloud&platform=windows-server&tag=active-directory-domain-controller&region={{ .Values.global.region }}
+      refresh_interval: {{ .Values.http_sd_configs.refresh_interval }}
   metrics_path: /metrics
   relabel_configs:
     - source_labels: [__address__]
@@ -221,6 +218,7 @@
   scrape_timeout: {{$values.scrapeTimeout}}
   http_sd_configs:
     - url: {{ .Values.http_sd_configs.netbox_production_url }}/virtual-machines/?custom_labels=job={{ $name }}&target=primary_ip&status=active&q=wsus&role=server&tenant=converged-cloud&platform=windows-server&region={{ .Values.global.region }}
+      refresh_interval: {{ .Values.http_sd_configs.refresh_interval }}
   metrics_path: /metrics
   relabel_configs:
     - source_labels: [__address__]
