@@ -24,7 +24,8 @@ spec:
     metadata:
       labels:
         name: placement-api
-{{ tuple . "placement" "api" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
+        {{ tuple . "placement" "api" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | nindent 8 }}
+        {{- include "utils.topology.pod_label" . | indent 8 }}
         alert-tier: os
         alert-service: placement
       annotations:
@@ -34,7 +35,8 @@ spec:
         prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
         {{- end }}
     spec:
-{{ tuple . "placement" "api" | include "kubernetes_pod_anti_affinity" | indent 6 }}
+      {{ tuple . "placement" "api" | include "kubernetes_pod_anti_affinity" | nindent 6 }}
+      {{- tuple . (dict "name" "placement-api") | include "utils.topology.constraints" | indent 6 }}
       {{- include "utils.proxysql.pod_settings" . | indent 6 }}
       initContainers:
       {{- tuple . (dict "service" (include "db_name" .) "jobs" (tuple . "db-migrate" | include "job_name") ) | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 6 }}
