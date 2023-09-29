@@ -351,6 +351,7 @@ mysql_metrics:
           coalesce(JSON_VALUE(instance_extra.flavor, '$.cur."nova_object.data".name'),'N/A') AS flavor_name
         FROM instances
         LEFT JOIN instance_extra ON instances.uuid=instance_extra.instance_uuid
+        WHERE instances.deleted = 0
         GROUP BY instances.vm_state, instances.host, instances.project_id, flavor_name;
       values:
       - "gauge"
@@ -533,7 +534,8 @@ mysql_metrics:
           coalesce(JSON_VALUE(instance_extra.flavor, '$.cur."nova_object.data".name'),'N/A') AS flavor_name,
           COUNT(*) AS gauge
         FROM instances
-        LEFT JOIN instance_extra ON instances.uuid=instance_extra.instance_uuid WHERE host LIKE 'nova-compute-ironic%'
+        LEFT JOIN instance_extra ON instances.uuid=instance_extra.instance_uuid
+        WHERE host LIKE 'nova-compute-ironic%' AND instances.deleted = 0
         GROUP BY instances.vm_state, instances.project_id, flavor_name, instances.uuid, instances.hostname, instances.node;
       values:
       - "gauge"
