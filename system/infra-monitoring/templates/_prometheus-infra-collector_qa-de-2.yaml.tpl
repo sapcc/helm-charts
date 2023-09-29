@@ -109,7 +109,7 @@
   scrape_interval: {{$values.scrapeInterval}}
   scrape_timeout: {{$values.scrapeTimeout}}
   http_sd_configs:
-    - url: {{ .Values.http_sd_configs.netbox_production_url }}/devices/?custom_labels=job=redfish/bm&target=mgmt_only&status=active&role=server&tenant=converged-cloud&platform=ironic&tagn=no-redfish&region={{ .Values.global.region }}
+    - url: {{ .Values.http_sd_configs.netbox_production_url }}/devices/?custom_labels=job=redfish/bm&target=mgmt_only&status=active&role=server&tenant=converged-cloud&platform=ironic&tag__n=no-redfish&region={{ .Values.global.region }}
       refresh_interval: {{ .Values.http_sd_configs.refresh_interval }}
   metrics_path: /redfish
   relabel_configs:
@@ -147,7 +147,7 @@
   scrape_interval: {{$values.scrapeInterval}}
   scrape_timeout: {{$values.scrapeTimeout}}
   http_sd_configs:
-    - url: {{ .Values.http_sd_configs.netbox_production_url }}/devices/?custom_labels=job=redfish/bb&target=mgmt_only&status=active&role=server&tenant=converged-cloud&platform=vmware-esxi&tagn=no-redfish&region={{ .Values.global.region }}
+    - url: {{ .Values.http_sd_configs.netbox_production_url }}/devices/?custom_labels=job=redfish/bb&target=mgmt_only&status=active&role=server&tenant=converged-cloud&platform=vmware-esxi&tag__n=no-redfish&region={{ .Values.global.region }}
       refresh_interval: {{ .Values.http_sd_configs.refresh_interval }}
   metrics_path: /redfish
   relabel_configs:
@@ -169,7 +169,7 @@
   scrape_interval: {{$values.firmware.scrapeInterval}}
   scrape_timeout: {{$values.firmware.scrapeTimeout}}
   http_sd_configs:
-    - url: {{ .Values.http_sd_configs.netbox_production_url }}/devices/?custom_labels=job=redfish/fw&target=mgmt_only&status=active&role=server&tenant=converged-cloud&tagn=no-redfish&region={{ .Values.global.region }}
+    - url: {{ .Values.http_sd_configs.netbox_production_url }}/devices/?custom_labels=job=redfish/fw&target=mgmt_only&status=active&role=server&tenant=converged-cloud&tag__n=no-redfish&region={{ .Values.global.region }}
       refresh_interval: {{ .Values.http_sd_configs.refresh_interval }}
   metrics_path: /firmware
   relabel_configs:
