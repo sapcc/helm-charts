@@ -29,16 +29,10 @@ spec:
       annotations:
         checksum/snubaSettingsPy: {{ .Values.config.snubaSettingsPy | sha256sum }}
         checksum/config.yaml: {{ include (print $.Template.BasePath "/configmap-snuba.yaml") . | sha256sum }}
-        {{- if .Values.snuba.transactionsConsumer.annotations }}
-{{ toYaml .Values.snuba.transactionsConsumer.annotations | indent 8 }}
-        {{- end }}
       labels:
         app: {{ template "fullname" . }}
         release: "{{ .Release.Name }}"
         role: snuba-transactions-consumer
-        {{- if .Values.snuba.transactionsConsumer.podLabels }}
-{{ toYaml .Values.snuba.transactionsConsumer.podLabels | indent 8 }}
-        {{- end }}
       containers:
       - name: {{ .Chart.Name }}-snuba
         image: "{{ template "snuba.image" . }}"

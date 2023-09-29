@@ -24,28 +24,22 @@ spec:
       release: "{{ .Release.Name }}"
       role: ingest-monitors
 {{- if not .Values.sentry.ingestMonitors.autoscaling.enabled }}
-  replicas: {{ .Values.sentry.ingestMonitors.replicas }}
+  replicas: 1
 {{- end }}
   template:
     metadata:
       annotations:
         checksum/configYml: {{ .Values.config.configYml | toYaml | toString | sha256sum }}
         checksum/sentryConfPy: {{ .Values.config.sentryConfPy | sha256sum }}
-        # checksum/config.yaml: {{ include (print $.Template.BasePath "/configmap-sentry.yaml") . | sha256sum }}
-        {{- if .Values.sentry.ingestMonitors.annotations }}
-{{ toYaml .Values.sentry.ingestMonitors.annotations | indent 8 }}
-        {{- end }}
+        checksum/config.yaml: {{ include (print $.Template.BasePath "/configmap-sentry.yaml") . | sha256sum }}
       labels:
         app: {{ template "fullname" . }}
         release: "{{ .Release.Name }}"
         role: ingest-monitors
-        {{- if .Values.sentry.ingestMonitors.podLabels }}
-{{ toYaml .Values.sentry.ingestMonitors.podLabels | indent 8 }}
-        {{- end }}
       containers:
       - name: {{ .Chart.Name }}-ingest-monitors
         image: "{{ template "sentry.image" . }}"
-        imagePullPolicy: {{ default "IfNotPresent" .Values.images.sentry.pullPolicy }}
+        imagePullPolicy: {{ default "IfNotPresent" .Values.image.sentry.pullPolicy }}
         command: ["sentry"]
         args:
           - "run"
@@ -54,27 +48,10 @@ spec:
         - name: C_FORCE_ROOT
           value: "true"
 {{ include "sentry.env" . | indent 8 }}
-{{- if .Values.sentry.ingestMonitors.env }}
-{{ toYaml .Values.sentry.ingestMonitors.env | indent 8 }}
-{{- end }}
         volumeMounts:
         - mountPath: /etc/sentry
           name: config
           readOnly: true
-        - mountPath: {{ .Values.filestore.filesystem.path }}
-          name: sentry-data
-{{- if .Values.sentry.ingestMonitors.volumeMounts }}
-{{ toYaml .Values.sentry.ingestMonitors.volumeMounts | indent 8 }}
-{{- end }}
-        resources:
-{{ toYaml .Values.sentry.ingestMonitors.resources | indent 12 }}
-{{- if .Values.sentry.ingestMonitors.containerSecurityContext }}
-        securityContext:
-{{ toYaml .Values.sentry.ingestMonitors.containerSecurityContext | indent 12 }}
-{{- end }}
-{{- if .Values.sentry.ingestMonitors.sidecars }}
-{{ toYaml .Values.sentry.ingestMonitors.sidecars | indent 6 }}
-{{- end }}
       {{- if .Values.serviceAccount.enabled }}
       serviceAccountName: {{ .Values.serviceAccount.name }}-ingest-monitors
       {{- end }}
@@ -94,9 +71,3 @@ spec:
       {{- else }}
         emptyDir: {}
       {{ end }}
-{{- if .Values.sentry.ingestMonitors.volumes }}
-{{ toYaml .Values.sentry.ingestMonitors.volumes | indent 6 }}
-{{- end }}
-      {{- if .Values.sentry.ingestMonitors.priorityClassName }}
-      priorityClassName: "{{ .Values.sentry.ingestMonitors.priorityClassName }}"
-      {{- end }}

@@ -23,27 +23,21 @@ spec:
         app: sentry
         release: "{{ .Release.Name }}"
         role: sentry-post-process-forward-errors
-  replicas: {{ .Values.sentry.postProcessForwardErrors.replicas }}
+  replicas: 1
   template:
     metadata:
       annotations:
         checksum/configYml: {{ .Values.config.configYml | toYaml | toString | sha256sum }}
         checksum/sentryConfPy: {{ .Values.config.sentryConfPy | sha256sum }}
-        # checksum/config.yaml: {{ include (print $.Template.BasePath "/configmap-sentry.yaml") . | sha256sum }}
-        {{- if .Values.sentry.postProcessForwardErrors.annotations }}
-{{ toYaml .Values.sentry.postProcessForwardErrors.annotations | indent 8 }}
-        {{- end }}
+        checksum/config.yaml: {{ include (print $.Template.BasePath "/configmap-sentry.yaml") . | sha256sum }}
       labels:
         app: sentry
         release: "{{ .Release.Name }}"
         role: sentry-post-process-forward-errors
-        {{- if .Values.sentry.postProcessForwardErrors.podLabels }}
-{{ toYaml .Values.sentry.postProcessForwardErrors.podLabels | indent 8 }}
-        {{- end }}
       containers:
       - name: {{ .Chart.Name }}-post-process-forward-errors
         image: "{{ template "sentry.image" . }}"
-        imagePullPolicy: {{ default "IfNotPresent" .Values.images.sentry.pullPolicy }}
+        imagePullPolicy: {{ default "IfNotPresent" .Values.image.sentry.pullPolicy }}
         command: ["sentry"]
         args:
           - "run"
@@ -55,27 +49,10 @@ spec:
           - "--synchronize-commit-group=snuba-consumers"
         env:
 {{ include "sentry.env" . | indent 8 }}
-{{- if .Values.sentry.postProcessForwardErrors.env }}
-{{ toYaml .Values.sentry.postProcessForwardErrors.env | indent 8 }}
-{{- end }}
         volumeMounts:
         - mountPath: /etc/sentry
           name: config
           readOnly: true
-        - mountPath: {{ .Values.filestore.filesystem.path }}
-          name: sentry-data
-{{- if .Values.sentry.postProcessForwardErrors.volumeMounts }}
-{{ toYaml .Values.sentry.postProcessForwardErrors.volumeMounts | indent 8 }}
-{{- end }}
-        resources:
-{{ toYaml .Values.sentry.postProcessForwardErrors.resources | indent 12 }}
-{{- if .Values.sentry.postProcessForwardErrors.containerSecurityContext }}
-        securityContext:
-{{ toYaml .Values.sentry.postProcessForwardErrors.containerSecurityContext | indent 12 }}
-{{- end }}
-{{- if .Values.sentry.postProcessForwardErrors.sidecars }}
-{{ toYaml .Values.sentry.postProcessForwardErrors.sidecars | indent 6 }}
-{{- end }}
       {{- if .Values.serviceAccount.enabled }}
       serviceAccountName: {{ .Values.serviceAccount.name }}-post-process-forwarder-errors
       {{- end }}
@@ -95,9 +72,3 @@ spec:
       {{- else }}
         emptyDir: {}
       {{ end }}
-{{- if .Values.sentry.postProcessForwardErrors.volumes }}
-{{ toYaml .Values.sentry.postProcessForwardErrors.volumes | indent 6 }}
-{{- end }}
-      {{- if .Values.sentry.postProcessForwardErrors.priorityClassName }}
-      priorityClassName: "{{ .Values.sentry.postProcessForwardErrors.priorityClassName }}"
-      {{- end }}

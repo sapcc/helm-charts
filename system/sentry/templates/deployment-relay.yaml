@@ -44,25 +44,13 @@ spec:
       initContainers:
         - name: {{ .Chart.Name }}-relay-init
           image: "{{ template "relay.image" . }}"
-          imagePullPolicy: {{ default "IfNotPresent" .Values.images.sentry.pullPolicy }}
+          imagePullPolicy: {{ default "IfNotPresent" .Values.image.sentry.pullPolicy }}
           args:
             - "credentials"
             - "generate"
-{{- if .Values.relay.init.additionalArgs }}
-{{ toYaml .Values.relay.init.additionalArgs | indent 12 }}
-{{- end }}
-          resources:
-{{ toYaml .Values.relay.init.resources | indent 12 }}
-{{- if .Values.relay.containerSecurityContext }}
-          securityContext:
-{{ toYaml .Values.relay.containerSecurityContext | indent 12 }}
-{{- end }}
           env:
             - name: RELAY_PORT
               value: '{{ template "relay.port" }}'
-{{- if .Values.relay.init.env }}
-{{ toYaml .Values.relay.init.env | indent 12 }}
-{{- end }}
           volumeMounts:
             - name: credentials
               mountPath: /work/.relay
@@ -70,16 +58,6 @@ spec:
               mountPath: /work/.relay/config.yml
               subPath: config.yml
               readOnly: true
-{{- if .Values.relay.init.volumeMounts }}
-{{ toYaml .Values.relay.volumeMounts | indent 12 }}
-{{- end }}
-      {{- if .Values.dnsPolicy }}
-      dnsPolicy: {{ .Values.dnsPolicy | quote }}
-      {{- end }}
-      {{- if .Values.dnsConfig }}
-      dnsConfig:
-{{ toYaml .Values.dnsConfig | indent 8 }}
-      {{- end }}
       containers:
       - name: {{ .Chart.Name }}-relay
 {{- if .Values.relay.args }}
@@ -87,7 +65,7 @@ spec:
 {{ toYaml .Values.relay.args | indent 10 }}
 {{- end }}
         image: "{{ template "relay.image" . }}"
-        imagePullPolicy: {{ default "IfNotPresent" .Values.images.sentry.pullPolicy }}
+        imagePullPolicy: {{ default "IfNotPresent" .Values.image.sentry.pullPolicy }}
         ports:
         - containerPort: {{ template "relay.port" }}
         env:
@@ -149,9 +127,3 @@ spec:
           defaultMode: 0644
       - name: credentials
         emptyDir: {}
-{{- if .Values.relay.volumes }}
-{{ toYaml .Values.relay.volumes | indent 6 }}
-{{- end }}
-      {{- if .Values.relay.priorityClassName }}
-      priorityClassName: "{{ .Values.relay.priorityClassName }}"
-      {{- end }}

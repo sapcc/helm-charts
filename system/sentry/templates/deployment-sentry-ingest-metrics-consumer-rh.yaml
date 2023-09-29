@@ -24,56 +24,22 @@ spec:
       release: "{{ .Release.Name }}"
       role: ingest-metrics-consumer-rh
 {{- if not .Values.sentry.ingestMetricsConsumerRh.autoscaling.enabled }}
-  replicas: {{ .Values.sentry.ingestMetricsConsumerRh.replicas }}
+  replicas: 1
 {{- end }}
   template:
     metadata:
       annotations:
         checksum/configYml: {{ .Values.config.configYml | toYaml | toString | sha256sum }}
         checksum/sentryConfPy: {{ .Values.config.sentryConfPy | sha256sum }}
-        # checksum/config.yaml: {{ include (print $.Template.BasePath "/configmap-sentry.yaml") . | sha256sum }}
-        {{- if .Values.sentry.ingestMetricsConsumerRh.annotations }}
-{{ toYaml .Values.sentry.ingestMetricsConsumerRh.annotations | indent 8 }}
-        {{- end }}
+        checksum/config.yaml: {{ include (print $.Template.BasePath "/configmap-sentry.yaml") . | sha256sum }}
       labels:
         app: {{ template "fullname" . }}
         release: "{{ .Release.Name }}"
         role: ingest-metrics-consumer-rh
-        {{- if .Values.sentry.ingestMetricsConsumerRh.podLabels }}
-{{ toYaml .Values.sentry.ingestMetricsConsumerRh.podLabels | indent 8 }}
-        {{- end }}
-    spec:
-      affinity:
-      {{- if .Values.sentry.ingestMetricsConsumerRh.affinity }}
-{{ toYaml .Values.sentry.ingestMetricsConsumerRh.affinity | indent 8 }}
-      {{- end }}
-      {{- if .Values.sentry.ingestMetricsConsumerRh.nodeSelector }}
-      nodeSelector:
-{{ toYaml .Values.sentry.ingestMetricsConsumerRh.nodeSelector | indent 8 }}
-      {{- end }}
-      {{- if .Values.sentry.ingestMetricsConsumerRh.tolerations }}
-      tolerations:
-{{ toYaml .Values.sentry.ingestMetricsConsumerRh.tolerations | indent 8 }}
-      {{- end }}
-      {{- if .Values.images.sentry.imagePullSecrets }}
-      imagePullSecrets:
-{{ toYaml .Values.images.sentry.imagePullSecrets | indent 8 }}
-      {{- end }}
-      {{- if .Values.dnsPolicy }}
-      dnsPolicy: {{ .Values.dnsPolicy | quote }}
-      {{- end }}
-      {{- if .Values.dnsConfig }}
-      dnsConfig:
-{{ toYaml .Values.dnsConfig | indent 8 }}
-      {{- end }}
-      {{- if .Values.sentry.ingestMetricsConsumerRh.securityContext }}
-      securityContext:
-{{ toYaml .Values.sentry.ingestMetricsConsumerRh.securityContext | indent 8 }}
-      {{- end }}
       containers:
       - name: {{ .Chart.Name }}-ingest-metrics-consumer-rh
         image: "{{ template "sentry.image" . }}"
-        imagePullPolicy: {{ default "IfNotPresent" .Values.images.sentry.pullPolicy }}
+        imagePullPolicy: {{ default "IfNotPresent" .Values.image.sentry.pullPolicy }}
         command: ["sentry"]
         args:
           - "run"
@@ -88,27 +54,10 @@ spec:
         - name: C_FORCE_ROOT
           value: "true"
 {{ include "sentry.env" . | indent 8 }}
-{{- if .Values.sentry.ingestMetricsConsumerRh.env }}
-{{ toYaml .Values.sentry.ingestMetricsConsumerRh.env | indent 8 }}
-{{- end }}
         volumeMounts:
         - mountPath: /etc/sentry
           name: config
           readOnly: true
-        - mountPath: {{ .Values.filestore.filesystem.path }}
-          name: sentry-data
-{{- if .Values.sentry.ingestMetricsConsumerRh.volumeMounts }}
-{{ toYaml .Values.sentry.ingestMetricsConsumerRh.volumeMounts | indent 8 }}
-{{- end }}
-        resources:
-{{ toYaml .Values.sentry.ingestMetricsConsumerRh.resources | indent 12 }}
-{{- if .Values.sentry.ingestMetricsConsumerRh.containerSecurityContext }}
-        securityContext:
-{{ toYaml .Values.sentry.ingestMetricsConsumerRh.containerSecurityContext | indent 12 }}
-{{- end }}
-{{- if .Values.sentry.ingestMetricsConsumerRh.sidecars }}
-{{ toYaml .Values.sentry.ingestMetricsConsumerRh.sidecars | indent 6 }}
-{{- end }}
       {{- if .Values.serviceAccount.enabled }}
       serviceAccountName: {{ .Values.serviceAccount.name }}-ingest-metrics-consumer-rh
       {{- end }}
@@ -128,9 +77,3 @@ spec:
       {{- else }}
         emptyDir: {}
       {{ end }}
-{{- if .Values.sentry.ingestMetricsConsumerRh.volumes }}
-{{ toYaml .Values.sentry.ingestMetricsConsumerRh.volumes | indent 6 }}
-{{- end }}
-      {{- if .Values.sentry.ingestMetricsConsumerRh.priorityClassName }}
-      priorityClassName: "{{ .Values.sentry.ingestMetricsConsumerRh.priorityClassName }}"
-      {{- end }}

@@ -23,27 +23,21 @@ spec:
         app: sentry
         release: "{{ .Release.Name }}"
         role: sentry-post-process-forward-transactions
-  replicas: {{ .Values.sentry.postProcessForwardTransactions.replicas }}
+  replicas: 1
   template:
     metadata:
       annotations:
         checksum/configYml: {{ .Values.config.configYml | toYaml | toString | sha256sum }}
         checksum/sentryConfPy: {{ .Values.config.sentryConfPy | sha256sum }}
-        # checksum/config.yaml: {{ include (print $.Template.BasePath "/configmap-sentry.yaml") . | sha256sum }}
-        {{- if .Values.sentry.postProcessForwardTransactions.annotations }}
-{{ toYaml .Values.sentry.postProcessForwardTransactions.annotations | indent 8 }}
-        {{- end }}
+        checksum/config.yaml: {{ include (print $.Template.BasePath "/configmap-sentry.yaml") . | sha256sum }}
       labels:
         app: sentry
         release: "{{ .Release.Name }}"
         role: sentry-post-process-forward-transactions
-        {{- if .Values.sentry.postProcessForwardTransactions.podLabels }}
-{{ toYaml .Values.sentry.postProcessForwardTransactions.podLabels | indent 8 }}
-        {{- end }}
       containers:
       - name: {{ .Chart.Name }}-post-process-forward-transactions
         image: "{{ template "sentry.image" . }}"
-        imagePullPolicy: {{ default "IfNotPresent" .Values.images.sentry.pullPolicy }}
+        imagePullPolicy: {{ default "IfNotPresent" .Values.image.sentry.pullPolicy }}
         command: ["sentry"]
         args:
           - "run"
@@ -54,29 +48,10 @@ spec:
           - "--synchronize-commit-log-topic=snuba-transactions-commit-log"
           - "--synchronize-commit-group"
           - "transactions_group"
-        env:
-{{ include "sentry.env" . | indent 8 }}
-{{- if .Values.sentry.postProcessForwardTransactions.env }}
-{{ toYaml .Values.sentry.postProcessForwardTransactions.env | indent 8 }}
-{{- end }}
         volumeMounts:
         - mountPath: /etc/sentry
           name: config
           readOnly: true
-        - mountPath: {{ .Values.filestore.filesystem.path }}
-          name: sentry-data
-{{- if .Values.sentry.postProcessForwardTransactions.volumeMounts }}
-{{ toYaml .Values.sentry.postProcessForwardTransactions.volumeMounts | indent 8 }}
-{{- end }}
-        resources:
-{{ toYaml .Values.sentry.postProcessForwardTransactions.resources | indent 12 }}
-{{- if .Values.sentry.postProcessForwardTransactions.containerSecurityContext }}
-        securityContext:
-{{ toYaml .Values.sentry.postProcessForwardTransactions.containerSecurityContext | indent 12 }}
-{{- end }}
-{{- if .Values.sentry.postProcessForwardTransactions.sidecars }}
-{{ toYaml .Values.sentry.postProcessForwardTransactions.sidecars | indent 6 }}
-{{- end }}
       {{- if .Values.serviceAccount.enabled }}
       serviceAccountName: {{ .Values.serviceAccount.name }}-post-process-forwarder-transactions
       {{- end }}
@@ -96,9 +71,4 @@ spec:
       {{- else }}
         emptyDir: {}
       {{ end }}
-{{- if .Values.sentry.postProcessForwardTransactions.volumes }}
-{{ toYaml .Values.sentry.postProcessForwardTransactions.volumes | indent 6 }}
-{{- end }}
-      {{- if .Values.sentry.postProcessForwardTransactions.priorityClassName }}
-      priorityClassName: "{{ .Values.sentry.postProcessForwardTransactions.priorityClassName }}"
-      {{- end }}
+

@@ -24,63 +24,36 @@ spec:
       release: "{{ .Release.Name }}"
       role: ingest-metrics-consumer-perf
 {{- if not .Values.sentry.ingestMetricsConsumerPerf.autoscaling.enabled }}
-  replicas: {{ .Values.sentry.ingestMetricsConsumerPerf.replicas }}
+  replicas: 1
 {{- end }}
   template:
     metadata:
       annotations:
         checksum/configYml: {{ .Values.config.configYml | toYaml | toString | sha256sum }}
         checksum/sentryConfPy: {{ .Values.config.sentryConfPy | sha256sum }}
-        # checksum/config.yaml: {{ include (print $.Template.BasePath "/configmap-sentry.yaml") . | sha256sum }}
-        {{- if .Values.sentry.ingestMetricsConsumerPerf.annotations }}
-{{ toYaml .Values.sentry.ingestMetricsConsumerPerf.annotations | indent 8 }}
-        {{- end }}
+        checksum/config.yaml: {{ include (print $.Template.BasePath "/configmap-sentry.yaml") . | sha256sum }}
       labels:
         app: {{ template "fullname" . }}
         release: "{{ .Release.Name }}"
         role: ingest-metrics-consumer-perf
-        {{- if .Values.sentry.ingestMetricsConsumerPerf.podLabels }}
-{{ toYaml .Values.sentry.ingestMetricsConsumerPerf.podLabels | indent 8 }}
-        {{- end }}
       containers:
       - name: {{ .Chart.Name }}-ingest-metrics-consumer-perf
         image: "{{ template "sentry.image" . }}"
-        imagePullPolicy: {{ default "IfNotPresent" .Values.images.sentry.pullPolicy }}
+        imagePullPolicy: {{ default "IfNotPresent" .Values.image.sentry.pullPolicy }}
         command: ["sentry"]
         args:
           - "run"
           - "ingest-metrics-parallel-consumer"
           - "--ingest-profile"
           - "performance"
-          {{- if .Values.sentry.ingestMetricsConsumerPerf.maxBatchSize }}
-          - "--max-msg-batch-size"
-          - "{{ .Values.sentry.ingestMetricsConsumerPerf.maxBatchSize }}"
-          {{- end }}
         env:
         - name: C_FORCE_ROOT
           value: "true"
 {{ include "sentry.env" . | indent 8 }}
-{{- if .Values.sentry.ingestMetricsConsumerPerf.env }}
-{{ toYaml .Values.sentry.ingestMetricsConsumerPerf.env | indent 8 }}
-{{- end }}
         volumeMounts:
         - mountPath: /etc/sentry
           name: config
           readOnly: true
-        - mountPath: {{ .Values.filestore.filesystem.path }}
-          name: sentry-data
-{{- if .Values.sentry.ingestMetricsConsumerPerf.volumeMounts }}
-{{ toYaml .Values.sentry.ingestMetricsConsumerPerf.volumeMounts | indent 8 }}
-{{- end }}
-        resources:
-{{ toYaml .Values.sentry.ingestMetricsConsumerPerf.resources | indent 12 }}
-{{- if .Values.sentry.ingestMetricsConsumerPerf.containerSecurityContext }}
-        securityContext:
-{{ toYaml .Values.sentry.ingestMetricsConsumerPerf.containerSecurityContext | indent 12 }}
-{{- end }}
-{{- if .Values.sentry.ingestMetricsConsumerPerf.sidecars }}
-{{ toYaml .Values.sentry.ingestMetricsConsumerPerf.sidecars | indent 6 }}
-{{- end }}
       {{- if .Values.serviceAccount.enabled }}
       serviceAccountName: {{ .Values.serviceAccount.name }}-ingest-metrics-consumer-perf
       {{- end }}
@@ -100,9 +73,3 @@ spec:
       {{- else }}
         emptyDir: {}
       {{ end }}
-{{- if .Values.sentry.ingestMetricsConsumerPerf.volumes }}
-{{ toYaml .Values.sentry.ingestMetricsConsumerPerf.volumes | indent 6 }}
-{{- end }}
-      {{- if .Values.sentry.ingestMetricsConsumerPerf.priorityClassName }}
-      priorityClassName: "{{ .Values.sentry.ingestMetricsConsumerPerf.priorityClassName }}"
-      {{- end }}

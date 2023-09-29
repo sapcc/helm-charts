@@ -24,28 +24,22 @@ spec:
       release: "{{ .Release.Name }}"
       role: ingest-consumer
 {{- if not .Values.sentry.ingestConsumer.autoscaling.enabled }}
-  replicas: {{ .Values.sentry.ingestConsumer.replicas }}
+  replicas: 1
 {{- end }}
   template:
     metadata:
       annotations:
         checksum/configYml: {{ .Values.config.configYml | toYaml | toString | sha256sum }}
         checksum/sentryConfPy: {{ .Values.config.sentryConfPy | sha256sum }}
-        # checksum/config.yaml: {{ include (print $.Template.BasePath "/configmap-sentry.yaml") . | sha256sum }}
-        {{- if .Values.sentry.ingestConsumer.annotations }}
-{{ toYaml .Values.sentry.ingestConsumer.annotations | indent 8 }}
-        {{- end }}
+        checksum/config.yaml: {{ include (print $.Template.BasePath "/configmap-sentry.yaml") . | sha256sum }}
       labels:
         app: {{ template "fullname" . }}
         release: "{{ .Release.Name }}"
         role: ingest-consumer
-        {{- if .Values.sentry.ingestConsumer.podLabels }}
-{{ toYaml .Values.sentry.ingestConsumer.podLabels | indent 8 }}
-        {{- end }}
       containers:
       - name: {{ .Chart.Name }}-ingest-consumer-transactions
         image: "{{ template "sentry.image" . }}"
-        imagePullPolicy: {{ default "IfNotPresent" .Values.images.sentry.pullPolicy }}
+        imagePullPolicy: {{ default "IfNotPresent" .Values.image.sentry.pullPolicy }}
         command: ["sentry"]
         args:
           - "run"
@@ -53,39 +47,14 @@ spec:
           - "ingest-transactions"
           - "--consumer-group"
           - "ingest-consumer"
-          {{- if .Values.sentry.ingestConsumer.concurrency }}
-          - "--concurrency"
-          - "{{ .Values.sentry.ingestConsumer.concurrency }}"
-          {{- end }}
-          {{- if .Values.sentry.ingestConsumer.maxBatchSize }}
-          - "--max-batch-size"
-          - "{{ .Values.sentry.ingestConsumer.maxBatchSize }}"
-          {{- end }}
         env:
         - name: C_FORCE_ROOT
           value: "true"
 {{ include "sentry.env" . | indent 8 }}
-{{- if .Values.sentry.ingestConsumer.env }}
-{{ toYaml .Values.sentry.ingestConsumer.env | indent 8 }}
-{{- end }}
         volumeMounts:
         - mountPath: /etc/sentry
           name: config
           readOnly: true
-        - mountPath: {{ .Values.filestore.filesystem.path }}
-          name: sentry-data
-{{- if .Values.sentry.ingestConsumer.volumeMounts }}
-{{ toYaml .Values.sentry.ingestConsumer.volumeMounts | indent 8 }}
-{{- end }}
-        resources:
-{{ toYaml .Values.sentry.ingestConsumer.resources | indent 12 }}
-{{- if .Values.sentry.ingestConsumer.containerSecurityContext }}
-        securityContext:
-{{ toYaml .Values.sentry.ingestConsumer.containerSecurityContext | indent 12 }}
-{{- end }}
-{{- if .Values.sentry.ingestConsumer.sidecars }}
-{{ toYaml .Values.sentry.ingestConsumer.sidecars | indent 6 }}
-{{- end }}
       {{- if .Values.serviceAccount.enabled }}
       serviceAccountName: {{ .Values.serviceAccount.name }}-ingest-consumer-transactions
       {{- end }}
@@ -105,9 +74,3 @@ spec:
       {{- else }}
         emptyDir: {}
       {{ end }}
-{{- if .Values.sentry.ingestConsumer.volumes }}
-{{ toYaml .Values.sentry.ingestConsumer.volumes | indent 6 }}
-{{- end }}
-      {{- if .Values.sentry.ingestConsumer.priorityClassName }}
-      priorityClassName: "{{ .Values.sentry.ingestConsumer.priorityClassName }}"
-      {{- end }}

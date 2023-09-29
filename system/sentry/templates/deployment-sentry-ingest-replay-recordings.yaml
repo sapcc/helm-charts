@@ -24,28 +24,22 @@ spec:
       release: "{{ .Release.Name }}"
       role: ingest-replay-recordings
 {{- if not .Values.sentry.ingestReplayRecordings.autoscaling.enabled }}
-  replicas: {{ .Values.sentry.ingestReplayRecordings.replicas }}
+  replicas: 1
 {{- end }}
   template:
     metadata:
       annotations:
         checksum/configYml: {{ .Values.config.configYml | toYaml | toString | sha256sum }}
         checksum/sentryConfPy: {{ .Values.config.sentryConfPy | sha256sum }}
-        # checksum/config.yaml: {{ include (print $.Template.BasePath "/configmap-sentry.yaml") . | sha256sum }}
-        {{- if .Values.sentry.ingestReplayRecordings.annotations }}
-{{ toYaml .Values.sentry.ingestReplayRecordings.annotations | indent 8 }}
-        {{- end }}
+        checksum/config.yaml: {{ include (print $.Template.BasePath "/configmap-sentry.yaml") . | sha256sum }}
       labels:
         app: {{ template "fullname" . }}
         release: "{{ .Release.Name }}"
         role: ingest-replay-recordings
-        {{- if .Values.sentry.ingestReplayRecordings.podLabels }}
-{{ toYaml .Values.sentry.ingestReplayRecordings.podLabels | indent 8 }}
-        {{- end }}
       containers:
       - name: {{ .Chart.Name }}-ingest-replay-recordings
         image: "{{ template "sentry.image" . }}"
-        imagePullPolicy: {{ default "IfNotPresent" .Values.images.sentry.pullPolicy }}
+        imagePullPolicy: {{ default "IfNotPresent" .Values.image.sentry.pullPolicy }}
         command: ["sentry"]
         args:
           - "run"
@@ -57,27 +51,10 @@ spec:
         - name: C_FORCE_ROOT
           value: "true"
 {{ include "sentry.env" . | indent 8 }}
-{{- if .Values.sentry.ingestReplayRecordings.env }}
-{{ toYaml .Values.sentry.ingestReplayRecordings.env | indent 8 }}
-{{- end }}
         volumeMounts:
         - mountPath: /etc/sentry
           name: config
           readOnly: true
-        - mountPath: {{ .Values.filestore.filesystem.path }}
-          name: sentry-data
-{{- if .Values.sentry.ingestReplayRecordings.volumeMounts }}
-{{ toYaml .Values.sentry.ingestReplayRecordings.volumeMounts | indent 8 }}
-{{- end }}
-        resources:
-{{ toYaml .Values.sentry.ingestReplayRecordings.resources | indent 12 }}
-{{- if .Values.sentry.ingestReplayRecordings.containerSecurityContext }}
-        securityContext:
-{{ toYaml .Values.sentry.ingestReplayRecordings.containerSecurityContext | indent 12 }}
-{{- end }}
-{{- if .Values.sentry.ingestReplayRecordings.sidecars }}
-{{ toYaml .Values.sentry.ingestReplayRecordings.sidecars | indent 6 }}
-{{- end }}
       {{- if .Values.serviceAccount.enabled }}
       serviceAccountName: {{ .Values.serviceAccount.name }}-ingest-replay-recordings
       {{- end }}
@@ -97,9 +74,3 @@ spec:
       {{- else }}
         emptyDir: {}
       {{ end }}
-{{- if .Values.sentry.ingestReplayRecordings.volumes }}
-{{ toYaml .Values.sentry.ingestReplayRecordings.volumes | indent 6 }}
-{{- end }}
-      {{- if .Values.sentry.ingestReplayRecordings.priorityClassName }}
-      priorityClassName: "{{ .Values.sentry.ingestReplayRecordings.priorityClassName }}"
-      {{- end }}

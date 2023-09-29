@@ -23,69 +23,31 @@ spec:
         app: {{ template "fullname" . }}
         release: "{{ .Release.Name }}"
         role: snuba-outcomes-consumer
-  replicas: {{ .Values.snuba.outcomesConsumer.replicas }}
+  replicas: 1
   template:
     metadata:
       annotations:
         checksum/snubaSettingsPy: {{ .Values.config.snubaSettingsPy | sha256sum }}
         checksum/config.yaml: {{ include (print $.Template.BasePath "/configmap-snuba.yaml") . | sha256sum }}
-        {{- if .Values.snuba.outcomesConsumer.annotations }}
-{{ toYaml .Values.snuba.outcomesConsumer.annotations | indent 8 }}
-        {{- end }}
       labels:
         app: {{ template "fullname" . }}
         release: "{{ .Release.Name }}"
         role: snuba-outcomes-consumer
-        {{- if .Values.snuba.outcomesConsumer.podLabels }}
-{{ toYaml .Values.snuba.outcomesConsumer.podLabels | indent 8 }}
-        {{- end }}
       containers:
       - name: {{ .Chart.Name }}-snuba
         image: "{{ template "snuba.image" . }}"
-        imagePullPolicy: {{ default "IfNotPresent" .Values.images.snuba.pullPolicy }}
+        imagePullPolicy: {{ default "IfNotPresent" .Values.image.snuba.pullPolicy }}
         command:
           - "snuba"
           - "consumer"
           - "--storage"
           - "outcomes_raw"
           - "--auto-offset-reset"
-          - "{{ .Values.snuba.outcomesConsumer.autoOffsetReset }}"
+          - "earliest"
           - "--max-batch-size"
-          - "{{ default "3" .Values.snuba.outcomesConsumer.maxBatchSize }}"
-          {{- if .Values.snuba.outcomesConsumer.processes }}
-          - "--processes"
-          - "{{ .Values.snuba.outcomesConsumer.processes }}"
-          {{- end }}
-          {{- if .Values.snuba.outcomesConsumer.inputBlockSize }}
-          - "--input-block-size"
-          - "{{ .Values.snuba.outcomesConsumer.inputBlockSize }}"
-          {{- end }}
-          {{- if .Values.snuba.outcomesConsumer.outputBlockSize }}
-          - "--output-block-size"
-          - "{{ .Values.snuba.outcomesConsumer.outputBlockSize }}"
-          {{- end }}
-          {{- if .Values.snuba.outcomesConsumer.maxBatchTimeMs }}
-          - "--max-batch-time-ms"
-          - "{{ .Values.snuba.outcomesConsumer.maxBatchTimeMs }}"
-          {{- end }}
-          {{- if .Values.snuba.outcomesConsumer.queuedMaxMessagesKbytes }}
-          - "--queued-max-messages-kbytes"
-          - "{{ .Values.snuba.outcomesConsumer.queuedMaxMessagesKbytes }}"
-          {{- end }}
-          {{- if .Values.snuba.outcomesConsumer.queuedMinMessages }}
-          - "--queued-min-messages"
-          - "{{ .Values.snuba.outcomesConsumer.queuedMinMessages }}"
-          {{- end }}
-          {{- if .Values.snuba.outcomesConsumer.noStrictOffsetReset }}
-          - "--no-strict-offset-reset"
-          {{- end }}
+          - "3"
         ports:
         - containerPort: {{ template "snuba.port" }}
-        env:
-{{ include "sentry.snuba.env" . | indent 8 }}
-{{- if .Values.snuba.outcomesConsumer.env }}
-{{ toYaml .Values.snuba.outcomesConsumer.env | indent 8 }}
-{{- end }}
         envFrom:
         - secretRef:
             name: {{ template "fullname" . }}-snuba-env
@@ -93,15 +55,6 @@ spec:
         - mountPath: /etc/snuba
           name: config
           readOnly: true
-{{- if .Values.snuba.outcomesConsumer.volumeMounts }}
-{{ toYaml .Values.snuba.outcomesConsumer.volumeMounts | indent 8 }}
-{{- end }}
-        resources:
-{{ toYaml .Values.snuba.outcomesConsumer.resources | indent 12 }}
-{{- if .Values.snuba.outcomesConsumer.containerSecurityContext }}
-        securityContext:
-{{ toYaml .Values.snuba.outcomesConsumer.containerSecurityContext | indent 12 }}
-{{- end }}
       {{- if .Values.serviceAccount.enabled }}
       serviceAccountName: {{ .Values.serviceAccount.name }}-snuba
       {{- end }}
@@ -109,6 +62,3 @@ spec:
         - name: config
           configMap:
             name: {{ template "fullname" . }}-snuba
-{{- if .Values.snuba.outcomesConsumer.volumes }}
-{{ toYaml .Values.snuba.outcomesConsumer.volumes | indent 8 }}
-{{- end }}

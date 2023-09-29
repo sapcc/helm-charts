@@ -23,27 +23,21 @@ spec:
         app: sentry
         release: "{{ .Release.Name }}"
         role: sentry-post-process-forward-issue-platform
-  replicas: {{ .Values.sentry.postProcessForwardIssuePlatform.replicas }}
+  replicas: 1
   template:
     metadata:
       annotations:
         checksum/configYml: {{ .Values.config.configYml | toYaml | toString | sha256sum }}
         checksum/sentryConfPy: {{ .Values.config.sentryConfPy | sha256sum }}
-        # checksum/config.yaml: {{ include (print $.Template.BasePath "/configmap-sentry.yaml") . | sha256sum }}
-        {{- if .Values.sentry.postProcessForwardIssuePlatform.annotations }}
-{{ toYaml .Values.sentry.postProcessForwardIssuePlatform.annotations | indent 8 }}
-        {{- end }}
+        checksum/config.yaml: {{ include (print $.Template.BasePath "/configmap-sentry.yaml") . | sha256sum }}
       labels:
         app: sentry
         release: "{{ .Release.Name }}"
         role: sentry-post-process-forward-issue-platform
-        {{- if .Values.sentry.postProcessForwardIssuePlatform.podLabels }}
-{{ toYaml .Values.sentry.postProcessForwardIssuePlatform.podLabels | indent 8 }}
-        {{- end }}
       containers:
       - name: {{ .Chart.Name }}-post-process-forward-issue-platform
         image: "{{ template "sentry.image" . }}"
-        imagePullPolicy: {{ default "IfNotPresent" .Values.images.sentry.pullPolicy }}
+        imagePullPolicy: {{ default "IfNotPresent" .Values.image.sentry.pullPolicy }}
         command: ["sentry"]
         args:
           - "run"
@@ -56,27 +50,10 @@ spec:
           - "generic_events_group"
         env:
 {{ include "sentry.env" . | indent 8 }}
-{{- if .Values.sentry.postProcessForwardIssuePlatform.env }}
-{{ toYaml .Values.sentry.postProcessForwardIssuePlatform.env | indent 8 }}
-{{- end }}
         volumeMounts:
         - mountPath: /etc/sentry
           name: config
           readOnly: true
-        - mountPath: {{ .Values.filestore.filesystem.path }}
-          name: sentry-data
-{{- if .Values.sentry.postProcessForwardIssuePlatform.volumeMounts }}
-{{ toYaml .Values.sentry.postProcessForwardIssuePlatform.volumeMounts | indent 8 }}
-{{- end }}
-        resources:
-{{ toYaml .Values.sentry.postProcessForwardIssuePlatform.resources | indent 12 }}
-{{- if .Values.sentry.postProcessForwardIssuePlatform.containerSecurityContext }}
-        securityContext:
-{{ toYaml .Values.sentry.postProcessForwardIssuePlatform.containerSecurityContext | indent 12 }}
-{{- end }}
-{{- if .Values.sentry.postProcessForwardIssuePlatform.sidecars }}
-{{ toYaml .Values.sentry.postProcessForwardIssuePlatform.sidecars | indent 6 }}
-{{- end }}
       {{- if .Values.serviceAccount.enabled }}
       serviceAccountName: {{ .Values.serviceAccount.name }}-post-process-forwarder-issue-platform
       {{- end }}
@@ -96,9 +73,3 @@ spec:
       {{- else }}
         emptyDir: {}
       {{ end }}
-{{- if .Values.sentry.postProcessForwardIssuePlatform.volumes }}
-{{ toYaml .Values.sentry.postProcessForwardIssuePlatform.volumes | indent 6 }}
-{{- end }}
-      {{- if .Values.sentry.postProcessForwardIssuePlatform.priorityClassName }}
-      priorityClassName: "{{ .Values.sentry.postProcessForwardIssuePlatform.priorityClassName }}"
-      {{- end }}

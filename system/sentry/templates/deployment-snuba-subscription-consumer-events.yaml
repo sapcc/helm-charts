@@ -23,35 +23,27 @@ spec:
         app: {{ template "fullname" . }}
         release: "{{ .Release.Name }}"
         role: snuba-subscription-consumer-events
-  replicas: {{ .Values.snuba.subscriptionConsumerEvents.replicas }}
+  replicas: 1
   template:
     metadata:
       annotations:
         checksum/snubaSettingsPy: {{ .Values.config.snubaSettingsPy | sha256sum }}
         checksum/config.yaml: {{ include (print $.Template.BasePath "/configmap-snuba.yaml") . | sha256sum }}
-        {{- if .Values.snuba.subscriptionConsumerEvents.annotations }}
-{{ toYaml .Values.snuba.subscriptionConsumerEvents.annotations | indent 8 }}
-        {{- end }}
       labels:
         app: {{ template "fullname" . }}
         release: "{{ .Release.Name }}"
         role: snuba-subscription-consumer-events
-        {{- if .Values.snuba.subscriptionConsumerEvents.podLabels }}
-{{ toYaml .Values.snuba.subscriptionConsumerEvents.podLabels | indent 8 }}
-        {{- end }}
       containers:
       - name: {{ .Chart.Name }}-snuba
         image: "{{ template "snuba.image" . }}"
-        imagePullPolicy: {{ default "IfNotPresent" .Values.images.snuba.pullPolicy }}
+        imagePullPolicy: {{ default "IfNotPresent" .Values.image.snuba.pullPolicy }}
         command:
           - "snuba"
           - "subscriptions-scheduler-executor"
-          - "--auto-offset-reset={{ .Values.snuba.subscriptionConsumerEvents.autoOffsetReset }}"
+          - "--auto-offset-reset=earliest"
           - "--dataset=events"
           - "--entity=events"
-          {{- if .Values.snuba.subscriptionConsumerEvents.noStrictOffsetReset }}
           - "--no-strict-offset-reset"
-          {{- end }}
           - "--consumer-group=snuba-events-subscriptions-consumers"
           - "--followed-consumer-group=snuba-consumers"
           - "--delay-seconds=60"
@@ -61,9 +53,6 @@ spec:
         - containerPort: {{ template "snuba.port" }}
         env:
 {{ include "sentry.snuba.env" . | indent 8 }}
-{{- if .Values.snuba.subscriptionConsumerEvents.env }}
-{{ toYaml .Values.snuba.subscriptionConsumerEvents.env | indent 8 }}
-{{- end }}
         envFrom:
         - secretRef:
             name: {{ template "fullname" . }}-snuba-env
@@ -71,15 +60,7 @@ spec:
         - mountPath: /etc/snuba
           name: config
           readOnly: true
-{{- if .Values.snuba.subscriptionConsumerEvents.volumeMounts }}
-{{ toYaml .Values.snuba.subscriptionConsumerEvents.volumeMounts | indent 8 }}
-{{- end }}
         resources:
-{{ toYaml .Values.snuba.subscriptionConsumerEvents.resources | indent 12 }}
-{{- if .Values.snuba.subscriptionConsumerEvents.containerSecurityContext }}
-        securityContext:
-{{ toYaml .Values.snuba.subscriptionConsumerEvents.containerSecurityContext | indent 12 }}
-{{- end }}
       {{- if .Values.serviceAccount.enabled }}
       serviceAccountName: {{ .Values.serviceAccount.name }}-snuba
       {{- end }}
@@ -87,6 +68,3 @@ spec:
       - name: config
         configMap:
           name: {{ template "fullname" . }}-snuba
-{{- if .Values.snuba.subscriptionConsumerEvents.volumes }}
-{{ toYaml .Values.snuba.subscriptionConsumerEvents.volumes | indent 6 }}
-{{- end }}
