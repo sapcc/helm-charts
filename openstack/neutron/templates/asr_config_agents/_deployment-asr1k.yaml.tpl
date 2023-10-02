@@ -64,8 +64,6 @@ spec:
             - name: METRICS_PORT
               value: "{{$context.Values.port_l3_metrics |  default 9103 }}"
           volumeMounts:
-            - mountPath: /development
-              name: development
             - mountPath: /neutron-etc
               name: neutron-etc
             - mountPath: /neutron-etc-vendor
@@ -107,8 +105,6 @@ spec:
             - name: METRICS_PORT
               value: "{{$context.Values.port_l2_metrics |  default 9102}}"
           volumeMounts:
-            - mountPath: /development
-              name: development
             - mountPath: /neutron-etc
               name: neutron-etc
             - mountPath: /neutron-etc-vendor
@@ -137,7 +133,4 @@ spec:
         - name:  neutron-etc-asr1k
           configMap:
             name: neutron-etc-asr1k-{{ $config_agent.name }}
-        - name: development
-          persistentVolumeClaim:
-            claimName: development-pvclaim
 {{- end -}}
