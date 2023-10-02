@@ -379,6 +379,7 @@
 {{- end }}
 
 {{ if .Values.network_generic_ssh_exporter.enabled }}
+{{- if .Values.network_generic_ssh_exporter.operatoroff }}
 - job_name: 'network/ssh'
   scrape_interval: 120s
   scrape_timeout: 60s
@@ -409,6 +410,7 @@
       replacement: '$1'
       target_label: asr_pair
       action: replace
+{{- end }}
 {{ end }}
 
 {{ $root := . }}

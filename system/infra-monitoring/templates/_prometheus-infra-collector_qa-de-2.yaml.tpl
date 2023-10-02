@@ -358,6 +358,7 @@ s    - source_labels: [__address__]
 {{- end }}
 
 {{ if .Values.network_generic_ssh_exporter.enabled }}
+{{- if .Values.network_generic_ssh_exporter.operatoroff }}
 - job_name: 'network/ssh'
   scrape_interval: 120s
   scrape_timeout: 60s
@@ -388,6 +389,7 @@ s    - source_labels: [__address__]
       replacement: '$1'
       target_label: asr_pair
       action: replace
+{{- end }}
 {{ end }}
 
 {{ $root := . }}
