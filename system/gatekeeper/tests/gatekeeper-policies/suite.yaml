@@ -646,9 +646,32 @@ tests:
     assertions:
     - violations: no
 
-- name: vulnerable-images
+- name: vulnerable-images-on-pod-owner
   template: ../rendered-chart/gatekeeper/templates/constrainttemplate-vulnerable-images.yaml
-  constraint: ../rendered-chart/gatekeeper-config/templates/constraint-vulnerable-images.yaml
+  constraint: ../rendered-chart/gatekeeper-config/templates/constraint-vulnerable-images-on-pod-owner.yaml
+  cases:
+  - name: pod-vulnerable
+    object: fixtures/vulnerable-images/deployment-vulnerable.yaml
+    assertions:
+    - violations: 1
+      message: '^\{"support_group":"foo-group","service":"dummy"\} >> image keppel.example.com/vulnerability-unpinned:low for container "dummylow" has "X-Keppel-Vulnerability-Status: Low"$'
+    - violations: 1
+      message: '^\{"support_group":"foo-group","service":"dummy"\} >> image keppel.example.com/vulnerability-unpinned:medium for container "dummymedium" has "X-Keppel-Vulnerability-Status: Medium"$'
+    - violations: 1
+      message: '^\{"support_group":"foo-group","service":"dummy"\} >> image keppel.example.com/vulnerability-unpinned:high for container "starter" has "X-Keppel-Vulnerability-Status: High"$'
+  - name: pod-unclear
+    object: fixtures/vulnerable-images/deployment-unclear.yaml
+    assertions:
+    - violations: 1
+      message: '^\{"support_group":"foo-group","service":"dummy"\} >> image keppel.example.com/vulnerability-unpinned:unclear for container "dummy" has "X-Keppel-Vulnerability-Status: Unclear"$'
+  - name: pod-clean
+    object: fixtures/vulnerable-images/deployment-clean.yaml
+    assertions:
+    - violations: no
+
+- name: vulnerable-images-on-pod
+  template: ../rendered-chart/gatekeeper/templates/constrainttemplate-vulnerable-images.yaml
+  constraint: ../rendered-chart/gatekeeper-config/templates/constraint-vulnerable-images-on-pod.yaml
   cases:
   - name: pod-vulnerable
     object: fixtures/vulnerable-images/pod-vulnerable.yaml
