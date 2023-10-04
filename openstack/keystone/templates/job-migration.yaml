@@ -2,7 +2,7 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: {{ .Release.Name }}-job-migration
+  name: "{{ tuple . "job-migration" | include "job_name" }}"
   labels:
     app: {{ template "fullname" . }}
     chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
@@ -18,7 +18,7 @@ spec:
   template:
     metadata:
       labels:
-        name: {{ .Release.Name }}-job-migration
+        name: "{{ tuple . "job-migration" | include "job_name" }}"
         system: openstack
         component: keystone
         type: job
