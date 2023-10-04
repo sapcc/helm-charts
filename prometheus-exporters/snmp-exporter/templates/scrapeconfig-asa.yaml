@@ -9,7 +9,7 @@ metadata:
     app.kubernetes.io/name: snmp-exporter-asa
 spec:
   httpSDConfigs:
-    - url: {{ .Values.global.http_sd_configs.netbox_url }}/virtual-machines/?custom_labels=__param_module=asa;module=asa&status=active&q={{ .Values.global.region }}&tenant=cnd&platform=cisco-asa
+    - url: {{ .Values.global.http_sd_configs.netbox_url }}/virtual-machines/?custom_labels=__param_module=asa&status=active&q={{ .Values.global.region }}&tenant=cnd&platform=cisco-asa
       refreshInterval: {{ .Values.global.http_sd_configs.refresh_interval }}
   metricsPath: /snmp
   interval: 60s
@@ -21,6 +21,8 @@ spec:
       targetLabel: instance
     - targetLabel: __address__
       replacement: snmp-exporter:{{.Values.snmp_exporter.listen_port}}
+    - targetLabel: module
+      replacement: asa
   metricRelabelings:
     - sourceLabels: [name]
       targetLabel:  devicename

@@ -9,7 +9,7 @@ metadata:
     app.kubernetes.io/name: snmp-exporter-asw9
 spec:
   httpSDConfigs:
-    - url: {{ .Values.global.http_sd_configs.netbox_url }}/devices/?custom_labels=__param_module=asw9;module=asw9&manufacturer=arista&status=active&region={{ .Values.global.region }}&q=asw9
+    - url: {{ .Values.global.http_sd_configs.netbox_url }}/devices/?custom_labels=__param_module=asw9&manufacturer=arista&status=active&region={{ .Values.global.region }}&q=asw9
       refreshInterval: {{ .Values.global.http_sd_configs.refresh_interval }}
   metricsPath: /snmp
   interval: 60s
@@ -21,6 +21,8 @@ spec:
       targetLabel: instance
     - targetLabel: __address__
       replacement: snmp-exporter:{{.Values.snmp_exporter.listen_port}}
+    - targetLabel: module
+      replacement: asw9
   metricRelabelings:
     - sourceLabels: [name]
       targetLabel:  devicename
