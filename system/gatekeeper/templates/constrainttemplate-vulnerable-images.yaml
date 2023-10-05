@@ -57,7 +57,8 @@ spec:
         __run_image_check() = result {
           input.parameters.reportingLevel == "pod-owner"
           not pod.isFound
-          result = [{"error": "could not find a pod template"}]
+          # ignore pod owners that are suppressed, e.g. ReplicaSets within Deployments
+          result = []
         }
 
         violation[{"msg": check.error}] {
