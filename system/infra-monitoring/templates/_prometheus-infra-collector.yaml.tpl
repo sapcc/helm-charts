@@ -151,6 +151,9 @@
       refresh_interval: {{ .Values.http_sd_configs.refresh_interval }}
   metrics_path: /redfish
   relabel_configs:
+    - source_labels: [job]
+      regex: redfish/cp
+      action: keep
     - source_labels: [__address__]
       target_label: __param_target
     - source_labels: [__param_target]
