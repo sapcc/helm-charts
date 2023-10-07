@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.19.0 - 2023/09/27
+* Prometheus alert definitions added
+  * MariaDB & Galera Cluster alerts added
+  * Kubernetes alerts added
+  * ProxySQL & Kopia alerts will follow
+* chart version bumped
+
 ## v0.18.0 - 2023/09/13
 * HAProxy as additional proxy option added
   * currently in alpha state

@@ -40,10 +40,11 @@ Docker images and Helm chart to deploy a [MariaDB](https://mariadb.com/kb/en/get
 ## Metadata
 | chart version | app version | type | url |
 |:--------------|:-------------|:-------------|:-------------|
-| 0.18.0 | 10.5.20 | application | [Git repo](https://github.com/businessbean/helm-charts/tree/master/common/mariadb-galera) |
+| 0.19.0 | 10.5.20 | application | [Git repo](https://github.com/sapcc/helm-charts/tree/mariadb-galera/common/mariadb-galera) |
 
 | Name | Email | Url |
 | ---- | ------ | --- |
+| Bashar Alkhateeb |  | <https://github.com/bashar-alkhateeb> |
 | Birk Bohne |  | <https://github.com/businessbean> |
 
 ### Changelog
@@ -495,7 +496,12 @@ docker build --build-arg BASE_SOFT_NAME=ubuntu --build-arg BASE_SOFT_VERSION=22.
 | monitoring.mysqld_exporter.autostart | bool | `true` | run the default entrypoint.sh script or just sleep to be able to troubleshoot and debug |
 | monitoring.mysqld_exporter.enabled | bool | false | enable the [Prometheus MySQL exporter](https://github.com/prometheus/mysqld_exporter) as sidecar container |
 | monitoring.mysqld_exporter.metricsPort | int | 9104 | [MySQL Prometheus exporter](https://github.com/prometheus/mysqld_exporter) port |
-| monitoring.prometheus.instance | string | prometheus | name of the Prometheus instance that should pull metrics |
+| monitoring.prometheus.alerts.enabled | bool | `nil` | enable Prometheus alert definitions |
+| monitoring.prometheus.alerts.service | string | `$.Values.mariadb.galera.clustername` | The `service` label to be used for the alert definitions |
+| monitoring.prometheus.alerts.support_group | string | `nil` | The `support_group` label to be used for the alert definitions |
+| monitoring.prometheus.alerts.tier | string | `nil` | The `tier` label to be used for the alert definitions |
+| monitoring.prometheus.instance.application | string | prometheus | name of the Prometheus instance that should pull application (DB, Proxy, Backup) metrics |
+| monitoring.prometheus.instance.kubernetes | string | prometheus | name of the Prometheus instance that should import alert definitions for Kubernetes (pod, deployment etc.) metrics |
 | monitoring.proxy.enabled | bool | false | enable the ProxySQL/HAProxy [/metrics endpoint](https://proxysql.com/documentation/prometheus-exporter/) to be scraped by Prometheus |
 | monitoring.proxy.haproxy.metricsPort | int | 8404 | [HAProxy Prometheus exporter](https://github.com/prometheus/mysqld_exporter) port |
 | namePrefix.application | string | `nil` | name prefix used for the MariaDB pods, services etc. @default mariadb-g |
