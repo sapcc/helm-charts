@@ -169,7 +169,12 @@ spec:
             {{- end }}
             {{- if $envValue.secretName }}
               {{- range $userKey, $userValue := $.Values.mariadb.users }}
-                {{- if $userValue.enabled }}
+                {{- $requiredUsers := list "admin" }}
+                {{- if or ($.Values.monitoring.mysqld_exporter.enabled) (and ($.Values.proxy.enabled) (eq $.Values.proxy.type "proxysql")) }}
+                  {{- $requiredUsers = append $requiredUsers "monitor" }}
+                  {{- $requiredUsers = $requiredUsers | uniq | compact }}
+                {{- end}}
+                {{- if or (has $userKey $requiredUsers) $userValue.enabled }}
                   {{- if eq $userValue.secretName $envValue.secretName }}
         - name: {{ $envKey }}
           valueFrom:

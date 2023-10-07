@@ -1,4 +1,9 @@
 # Changelog
+## v0.20.0 - 2023/10/07
+* `mariadb.users.monitor` user only mandatory if the mysqld_exporter or ProxySQL are enabled
+  * redundant ProxySQL monitor user config removed
+  * `MARIADB_MONITORING_USERNAME` environment variable check added for the mysqld_exporter container image
+* chart version bumped
 
 ## v0.19.0 - 2023/09/27
 * Prometheus alert definitions added

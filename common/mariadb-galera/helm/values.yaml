@@ -309,10 +309,10 @@ mariadb:
         fastforward: false
     monitor:
       # -- (bool) enable this user
-      enabled: true
-      # -- (string) MariaDB monitoring user username
+      enabled: false
+      # -- (string) Username for the monitoring user (used by the mysqld_exporter and ProxySQL)
       username:
-      # -- (string) MariaDB monitoring user password
+      # -- (string) Password for the monitoring user
       password:
       # -- (string) the [secret](https://kubernetes.io/docs/concepts/configuration/secret/) name that contains the MariaDB monitor user password
       secretName: mariadb-monitor
@@ -330,7 +330,7 @@ mariadb:
       # -- (int) [maximum number of connections](https://mariadb.com/kb/en/create-user/#resource-limit-options) for that user
       maxconnections: 0
       # -- (string) [default role](https://mariadb.com/kb/en/set-default-role/) for that user
-      defaultrole: mysql_exporter
+      defaultrole: monitor
       # -- (list) additional [roles](https://mariadb.com/kb/en/set-role/) for that user
       additionalroles:
       proxysql:
@@ -460,7 +460,7 @@ mariadb:
       object: "*.*"
       # -- (bool) allow to grant the [privileges](https://mariadb.com/kb/en/grant/#the-grant-option-privilege) to other users
       grant: true
-    mysql_exporter:
+    monitor:
       # -- enable this role
       enabled: true
       # -- (list) list of [privileges](https://mariadb.com/kb/en/grant/#global-privileges) that should be granted to the role
@@ -639,18 +639,6 @@ proxy:
         password:
         # -- (string) the [secret](https://kubernetes.io/docs/concepts/configuration/secret/) name that contains the ProxySQL admin user password
         secretName: proxysql-admin
-        proxysql:
-          # -- (bool) enable the [ProxySQL fastforward](https://proxysql.com/documentation/main-runtime/#mysql_users) feature for that user
-          fastforward: false
-      monitor:
-        # -- enable this user
-        enabled: true
-        # -- (string) Proxy monitor user username
-        username:
-        # -- (string) Proxy monitor user password
-        password:
-        # -- (string) the [secret](https://kubernetes.io/docs/concepts/configuration/secret/) name that contains the ProxySQL monitor user password
-        secretName: proxysql-monitor
         proxysql:
           # -- (bool) enable the [ProxySQL fastforward](https://proxysql.com/documentation/main-runtime/#mysql_users) feature for that user
           fastforward: false
@@ -1344,9 +1332,9 @@ env:
     secretKey: username
     # -- for which containers this environment variable will be used
     containerType:
-      - application
       - monitoring
       - jobconfig
+      - proxysql
   MARIADB_MONITORING_PASSWORD:
     # -- Name of the [Kubernetes secret](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-environment-variables) that contains the key for the `password` of the `MariaDB monitoring user`
     secretName: mariadb-monitor
@@ -1354,9 +1342,9 @@ env:
     secretKey: password
     # -- for which containers this environment variable will be used
     containerType:
-      - application
       - monitoring
       - jobconfig
+      - proxysql
   MARIADB_MONITORING_CONNECTION_LIMIT:
     # -- maximum number of allowed parallel connections for the `MariaDB monitoring user` defined within the [MAX_USER_CONNECTIONS](https://mariadb.com/kb/en/create-user/#resource-limit-options) option
     value: 6
@@ -1382,22 +1370,6 @@ env:
     # -- Name of the [Kubernetes secret](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-environment-variables) that contains the key for the `password` of the `ProxySQL admin user`
     secretName: proxysql-admin
     # -- Name of the key of the predefined Kubernetes secret that contains the `password` for the `ProxySQL admin user`
-    secretKey: password
-    # -- for which containers this environment variable will be used
-    containerType:
-      - proxysql
-  PROXYSQL_MONITOR_USERNAME:
-    # -- Name of the [Kubernetes secret](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-environment-variables) that contains the key for the `username` of the `ProxySQL monitoring user for MariaDB`
-    secretName: proxysql-monitor
-    # -- Name of the key of the predefined Kubernetes secret that contains the `username` for the `ProxySQL monitoring user for MariaDB`
-    secretKey: username
-    # -- for which containers this environment variable will be used
-    containerType:
-      - proxysql
-  PROXYSQL_MONITOR_PASSWORD:
-    # -- Name of the [Kubernetes secret](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-environment-variables) that contains the key for the `password` of the `ProxySQL monitoring user for MariaDB`
-    secretName: proxysql-monitor
-    # -- Name of the key of the predefined Kubernetes secret that contains the `password` for the `ProxySQL monitoring user for MariaDB`
     secretKey: password
     # -- for which containers this environment variable will be used
     containerType:

@@ -4,15 +4,17 @@ set -u
 set -o pipefail
 
 source /opt/${SOFTWARE_NAME}/bin/common-functions.sh
+REQUIRED_ENV_VARS=("MARIADB_MONITORING_USERNAME" "MARIADB_MONITORING_PASSWORD")
+checkenv
 
-DB_USERNAME=${MARIADB_MONITORING_USERNAME-user}
-DB_PASS=${MARIADB_MONITORING_PASSWORD-pass}
+DB_USERNAME=${MARIADB_MONITORING_USERNAME}
+DB_PASS=${MARIADB_MONITORING_PASSWORD}
 MYSQL_HOST=${DB_HOST-localhost}
 MYSQL_PORT=${DB_PORT-3306}
 WEB_LISTEN_ADDRESS="${WEB_LISTEN_HOST-}:${WEB_LISTEN_PORT-9104}"
 export DATA_SOURCE_NAME=${COLLECT_DB_CONNECT_STRING-${DB_USERNAME}:${DB_PASS}@(${MYSQL_HOST}:${MYSQL_PORT})/}
-declare -A exporterparams
 
+declare -A exporterparams
 #all parameters that should per default have values
 exporterparams[log.level]+=${LOG_LEVEL-info}
 exporterparams[log.format]+=${LOG_FORMAT-json}
@@ -70,6 +72,15 @@ if ! [ -z ${COLLECT_PERF_SCHEMA_FILE_EVENTS+x} ] && [ "${COLLECT_PERF_SCHEMA_FIL
 if ! [ -z ${COLLECT_PERF_SCHEMA_EVENTSSTATEMENTS_SUM+x} ] && [ "${COLLECT_PERF_SCHEMA_EVENTSSTATEMENTS_SUM}" == "disable" ]; then exporterparams[no-collect.perf_schema.eventsstatementssum]+=; else exporterparams[collect.perf_schema.eventsstatementssum]+=; fi
 if ! [ -z ${COLLECT_PERF_SCHEMA_EVENTSSTATEMENTS+x} ] && [ "${COLLECT_PERF_SCHEMA_EVENTSSTATEMENTS}" == "disable" ]; then exporterparams[no-collect.perf_schema.eventsstatements]+=; else exporterparams[collect.perf_schema.eventsstatements]+=; fi
 if ! [ -z ${COLLECT_PERF_SCHEMA_MEMORY_EVENTS+x} ] && [ "${COLLECT_PERF_SCHEMA_MEMORY_EVENTS}" == "disable" ]; then exporterparams[no-collect.perf_schema.memory_events]+=; else exporterparams[collect.perf_schema.memory_events]+=; fi
+
+function checkenv {
+  for name in ${REQUIRED_ENV_VARS[@]}; do
+    if [ -z ${!name+x} ]; then
+      logerror "${FUNCNAME[0]}" "${name} environment variable not set"
+      exit 1
+    fi
+  done
+}
 
 function geteffectiveparametervalue {
   local -a paramlist=()

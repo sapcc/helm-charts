@@ -40,7 +40,7 @@ Docker images and Helm chart to deploy a [MariaDB](https://mariadb.com/kb/en/get
 ## Metadata
 | chart version | app version | type | url |
 |:--------------|:-------------|:-------------|:-------------|
-| 0.19.0 | 10.5.20 | application | [Git repo](https://github.com/sapcc/helm-charts/tree/mariadb-galera/common/mariadb-galera) |
+| 0.20.0 | 10.5.20 | application | [Git repo](https://github.com/sapcc/helm-charts/tree/mariadb-galera/common/mariadb-galera) |
 
 | Name | Email | Url |
 | ---- | ------ | --- |
@@ -194,10 +194,10 @@ docker build --build-arg BASE_SOFT_NAME=ubuntu --build-arg BASE_SOFT_VERSION=22.
 | env.KOPIA_SERVER_USERNAME.secretName | string | `"kopia-admin"` | Name of the [Kubernetes secret](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-environment-variables) that contains the key for the `username` of the `Kopia UI admin` |
 | env.MARIADB_MONITORING_CONNECTION_LIMIT.containerType | list | `["application","jobconfig"]` | for which containers this environment variable will be used |
 | env.MARIADB_MONITORING_CONNECTION_LIMIT.value | int | `6` | maximum number of allowed parallel connections for the `MariaDB monitoring user` defined within the [MAX_USER_CONNECTIONS](https://mariadb.com/kb/en/create-user/#resource-limit-options) option |
-| env.MARIADB_MONITORING_PASSWORD.containerType | list | `["application","monitoring","jobconfig"]` | for which containers this environment variable will be used |
+| env.MARIADB_MONITORING_PASSWORD.containerType | list | `["monitoring","jobconfig","proxysql"]` | for which containers this environment variable will be used |
 | env.MARIADB_MONITORING_PASSWORD.secretKey | string | `"password"` | Name of the key of the predefined Kubernetes secret that contains the `password` for the `MariaDB monitoring user` |
 | env.MARIADB_MONITORING_PASSWORD.secretName | string | `"mariadb-monitor"` | Name of the [Kubernetes secret](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-environment-variables) that contains the key for the `password` of the `MariaDB monitoring user` |
-| env.MARIADB_MONITORING_USERNAME.containerType | list | `["application","monitoring","jobconfig"]` | for which containers this environment variable will be used |
+| env.MARIADB_MONITORING_USERNAME.containerType | list | `["monitoring","jobconfig","proxysql"]` | for which containers this environment variable will be used |
 | env.MARIADB_MONITORING_USERNAME.secretKey | string | `"username"` | Name of the key of the predefined Kubernetes secret that contains the `username` for the `MariaDB monitoring user` |
 | env.MARIADB_MONITORING_USERNAME.secretName | string | `"mariadb-monitor"` | Name of the [Kubernetes secret](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-environment-variables) that contains the key for the `username` of the `MariaDB monitoring user` |
 | env.MARIADB_ROOT_PASSWORD.containerType | list | `["application","jobconfig","proxysql","cronjob-kopia","jobrestore-kopia"]` | for which containers this environment variable will be used |
@@ -218,12 +218,6 @@ docker build --build-arg BASE_SOFT_NAME=ubuntu --build-arg BASE_SOFT_VERSION=22.
 | env.PROXYSQL_ADMIN_USERNAME.containerType | list | `["proxysql"]` | for which containers this environment variable will be used |
 | env.PROXYSQL_ADMIN_USERNAME.secretKey | string | `"username"` | Name of the key of the predefined Kubernetes secret that contains the `username` for the `ProxySQL admin user` |
 | env.PROXYSQL_ADMIN_USERNAME.secretName | string | `"proxysql-admin"` | Name of the [Kubernetes secret](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-environment-variables) that contains the key for the `username` of the `ProxySQL admin user` |
-| env.PROXYSQL_MONITOR_PASSWORD.containerType | list | `["proxysql"]` | for which containers this environment variable will be used |
-| env.PROXYSQL_MONITOR_PASSWORD.secretKey | string | `"password"` | Name of the key of the predefined Kubernetes secret that contains the `password` for the `ProxySQL monitoring user for MariaDB` |
-| env.PROXYSQL_MONITOR_PASSWORD.secretName | string | `"proxysql-monitor"` | Name of the [Kubernetes secret](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-environment-variables) that contains the key for the `password` of the `ProxySQL monitoring user for MariaDB` |
-| env.PROXYSQL_MONITOR_USERNAME.containerType | list | `["proxysql"]` | for which containers this environment variable will be used |
-| env.PROXYSQL_MONITOR_USERNAME.secretKey | string | `"username"` | Name of the key of the predefined Kubernetes secret that contains the `username` for the `ProxySQL monitoring user for MariaDB` |
-| env.PROXYSQL_MONITOR_USERNAME.secretName | string | `"proxysql-monitor"` | Name of the [Kubernetes secret](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-environment-variables) that contains the key for the `username` of the `ProxySQL monitoring user for MariaDB` |
 | env.PROXYSQL_STATS_PASSWORD.containerType | list | `["proxysql"]` | for which containers this environment variable will be used |
 | env.PROXYSQL_STATS_PASSWORD.secretKey | string | `"password"` | Name of the key of the predefined Kubernetes secret that contains the `password` for the `ProxySQL statistics user` |
 | env.PROXYSQL_STATS_PASSWORD.secretName | string | `"proxysql-stats"` | Name of the [Kubernetes secret](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-environment-variables) that contains the key for the `password` of the `ProxySQL statistics user` |
@@ -409,10 +403,10 @@ docker build --build-arg BASE_SOFT_NAME=ubuntu --build-arg BASE_SOFT_VERSION=22.
 | mariadb.roles.fullaccess.grant | bool | `true` | allow to grant the [privileges](https://mariadb.com/kb/en/grant/#the-grant-option-privilege) to other users |
 | mariadb.roles.fullaccess.object | list | `"*.*"` | list of [objects](https://mariadb.com/kb/en/grant/#syntax) for the privileges are allowed to use like "*.*", "database.table" or "database.*" |
 | mariadb.roles.fullaccess.privileges | list | `["ALL PRIVILEGES"]` | list of [privileges](https://mariadb.com/kb/en/grant/#global-privileges) that should be granted to the role |
-| mariadb.roles.mysql_exporter.enabled | bool | `true` | enable this role |
-| mariadb.roles.mysql_exporter.grant | bool | `false` | allow to grant the [privileges](https://mariadb.com/kb/en/grant/#the-grant-option-privilege) to other users |
-| mariadb.roles.mysql_exporter.object | list | `"*.*"` | list of [objects](https://mariadb.com/kb/en/grant/#syntax) for the privileges are allowed to use like "*.*", "database.table" or "database.*" |
-| mariadb.roles.mysql_exporter.privileges | list | `["SHOW DATABASES","SLAVE MONITOR","BINLOG MONITOR","PROCESS","REPLICA MONITOR","SELECT"]` | list of [privileges](https://mariadb.com/kb/en/grant/#global-privileges) that should be granted to the role |
+| mariadb.roles.monitor.enabled | bool | `true` | enable this role |
+| mariadb.roles.monitor.grant | bool | `false` | allow to grant the [privileges](https://mariadb.com/kb/en/grant/#the-grant-option-privilege) to other users |
+| mariadb.roles.monitor.object | list | `"*.*"` | list of [objects](https://mariadb.com/kb/en/grant/#syntax) for the privileges are allowed to use like "*.*", "database.table" or "database.*" |
+| mariadb.roles.monitor.privileges | list | `["SHOW DATABASES","SLAVE MONITOR","BINLOG MONITOR","PROCESS","REPLICA MONITOR","SELECT"]` | list of [privileges](https://mariadb.com/kb/en/grant/#global-privileges) that should be granted to the role |
 | mariadb.roles.replication.enabled | bool | `false` | enable this role (required if asyncReplication.enabled is true) |
 | mariadb.roles.replication.grant | bool | `false` | allow to grant the [privileges](https://mariadb.com/kb/en/grant/#the-grant-option-privilege) to other users |
 | mariadb.roles.replication.object | list | `"*.*"` | list of [objects](https://mariadb.com/kb/en/grant/#syntax) for the privileges are allowed to use like "*.*", "database.table" or "database.*" |
@@ -435,14 +429,14 @@ docker build --build-arg BASE_SOFT_NAME=ubuntu --build-arg BASE_SOFT_VERSION=22.
 | mariadb.users.monitor.additionalroles | list | `nil` | additional [roles](https://mariadb.com/kb/en/set-role/) for that user |
 | mariadb.users.monitor.adminoption | bool | `false` | that allows the user to grant his own permissions to other users |
 | mariadb.users.monitor.authplugin | string | `"mysql_native_password"` | MariaDB authentication plugin ([mysql_native_password](https://mariadb.com/kb/en/authentication-plugin-mysql_native_password/)|[ed25519](https://mariadb.com/kb/en/authentication-plugin-ed25519/)) |
-| mariadb.users.monitor.defaultrole | string | `"mysql_exporter"` | [default role](https://mariadb.com/kb/en/set-default-role/) for that user |
-| mariadb.users.monitor.enabled | bool | `true` | enable this user |
+| mariadb.users.monitor.defaultrole | string | `"monitor"` | [default role](https://mariadb.com/kb/en/set-default-role/) for that user |
+| mariadb.users.monitor.enabled | bool | `false` | enable this user |
 | mariadb.users.monitor.hostnames | list | `["%","::1","127.0.0.1","localhost"]` | list of allowed hostnames like "%", "::1" or "localhost" |
 | mariadb.users.monitor.maxconnections | int | `0` | [maximum number of connections](https://mariadb.com/kb/en/create-user/#resource-limit-options) for that user |
-| mariadb.users.monitor.password | string | `nil` | MariaDB monitoring user password |
+| mariadb.users.monitor.password | string | `nil` | Password for the monitoring user |
 | mariadb.users.monitor.proxysql.fastforward | bool | `false` | enable the [ProxySQL fastforward](https://proxysql.com/documentation/main-runtime/#mysql_users) feature for that user |
 | mariadb.users.monitor.secretName | string | `"mariadb-monitor"` | the [secret](https://kubernetes.io/docs/concepts/configuration/secret/) name that contains the MariaDB monitor user password |
-| mariadb.users.monitor.username | string | `nil` | MariaDB monitoring user username |
+| mariadb.users.monitor.username | string | `nil` | Username for the monitoring user (used by the mysqld_exporter and ProxySQL) |
 | mariadb.users.openstack_citest.additionalroles | list | `["replication"]` | additional [roles](https://mariadb.com/kb/en/set-role/) for that user |
 | mariadb.users.openstack_citest.adminoption | bool | `false` | that allows the user to grant his own permissions to other users |
 | mariadb.users.openstack_citest.authplugin | string | `"mysql_native_password"` | MariaDB authentication plugin ([mysql_native_password](https://mariadb.com/kb/en/authentication-plugin-mysql_native_password/)|[ed25519](https://mariadb.com/kb/en/authentication-plugin-ed25519/)) |
@@ -528,11 +522,6 @@ docker build --build-arg BASE_SOFT_NAME=ubuntu --build-arg BASE_SOFT_VERSION=22.
 | proxy.proxysql.users.admin.proxysql.fastforward | bool | `false` | enable the [ProxySQL fastforward](https://proxysql.com/documentation/main-runtime/#mysql_users) feature for that user |
 | proxy.proxysql.users.admin.secretName | string | `"proxysql-admin"` | the [secret](https://kubernetes.io/docs/concepts/configuration/secret/) name that contains the ProxySQL admin user password |
 | proxy.proxysql.users.admin.username | string | `nil` | Proxy admin user username |
-| proxy.proxysql.users.monitor.enabled | bool | `true` | enable this user |
-| proxy.proxysql.users.monitor.password | string | `nil` | Proxy monitor user password |
-| proxy.proxysql.users.monitor.proxysql.fastforward | bool | `false` | enable the [ProxySQL fastforward](https://proxysql.com/documentation/main-runtime/#mysql_users) feature for that user |
-| proxy.proxysql.users.monitor.secretName | string | `"proxysql-monitor"` | the [secret](https://kubernetes.io/docs/concepts/configuration/secret/) name that contains the ProxySQL monitor user password |
-| proxy.proxysql.users.monitor.username | string | `nil` | Proxy monitor user username |
 | proxy.proxysql.users.stats.enabled | bool | `false` | enable this user |
 | proxy.proxysql.users.stats.password | string | `nil` | Proxy stats user password |
 | proxy.proxysql.users.stats.proxysql.fastforward | bool | `false` | enable the [ProxySQL fastforward](https://proxysql.com/documentation/main-runtime/#mysql_users) feature for that user |
