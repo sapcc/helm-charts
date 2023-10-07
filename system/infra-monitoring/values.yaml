@@ -1,4 +1,5 @@
 owner-info:
+  service: prometheus
   support-group: observability
   maintainers:
     - Martin Vossen
@@ -14,13 +15,14 @@ global:
   # Defined via secrets.
   # region:
   # cluster:
-  # clusterType:
+  clusterType: metal
 
   alerts:
     enabled: true
     prometheus: infra-collector
 
   aggregations:
+    enabled: true
     prometheus: infra-collector
 
 rbac:
@@ -33,6 +35,11 @@ rbac:
   service_account:
     name: default
     namespace: infra-monitoring
+
+  http_sd_configs:
+    netbox_staging_url: https://netbox.staging.cloud.sap/api/plugins/atlas
+    netbox_production_url: https://netbox.global.cloud.sap/api/plugins/atlas
+    refresh_interval: 60m
 
 prometheus_infra_collector:
   name: infra-collector
@@ -81,10 +88,7 @@ prometheus_infra_collector:
       - alertmanager.scaleout.eu-de-1.cloud.sap
       - alertmanager.scaleout.eu-nl-1.cloud.sap
 
-  # send alerts to dedicated tier
   alerts:
-    tier: monitor
-
     multipleTargetScrapes:
       # List of exceptions for scrape jobs. This is joined together with a `|`.
       exceptions:
@@ -101,7 +105,12 @@ prometheus_infra_collector:
         # jobs `redfish/bm` and `ipmi/ironic` scrape the same nodes for different metrics
         - redfish/bm
         - ipmi/ironic
-
+        # jobs `redfish/*` and `redfish-fw` scrape the same nodes for different metrics
+        - redfish/bb
+        - redfish/cp
+        - redfish/bm
+        - redfish-fw
+ 
   thanos:
     enabled: true
 
@@ -191,9 +200,14 @@ px_exporter:
     enabled: false
 
 redfish_exporter:
+  listen_port: 9220
+  scrapeInterval: 4m
+  scrapeTimeout: 230s
   enabled: false
-  redfish_scrapeInterval: 4m
-  redfish_scrapeTimeout: 230s
+  firmware:
+    scrapeInterval: 1h
+    scrapeTimeout: 230s
+    enabled: false
 
 firmware_exporter:
   enabled: false
@@ -204,6 +218,7 @@ snmp_exporter:
   scrapeInterval: 2m
   scrapeTimeout: 115s
   listen_port: 9116
+  operatoroff: true
 
 snmp_exporter_apod:
   scrapeInterval: 10m
@@ -243,4 +258,5 @@ atlas_ironic_url: http://atlas:8080/service_discovery/ironic
 
 http_sd_configs:
   netbox_staging_url: https://netbox.staging.cloud.sap/api/plugins/atlas
+  netbox_production_url: https://netbox.global.cloud.sap/api/plugins/atlas
   refresh_interval: 60m

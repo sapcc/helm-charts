@@ -1,0 +1,12 @@
+{{- $val := .Values.poller }}
+{{- if $val.enabled -}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: configmx
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ include "poller.fullname" . }}
+data:
+  mx-records.json: {{ $val.mxrecords | toJson }}
+{{- end }}

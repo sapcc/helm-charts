@@ -1,0 +1,107 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  annotations:
+    meta.helm.sh/release-name: swift
+    meta.helm.sh/release-namespace: swift
+  labels:
+    app.kubernetes.io/managed-by: Helm
+    ccloud/service: swift
+    ccloud/support-group: storage
+  name: swift-servers
+  namespace: swift
+spec:
+  template:
+    spec:
+      containers:
+      - name: object-server
+        image: keppel.example.com/ccloud/swift:zed
+        securityContext:
+          privileged: true
+        volumeMounts:
+        - mountPath: /swift-etc
+          name: swift-etc
+        - mountPath: /swift-rings/account
+          name: swift-account-ring
+        - mountPath: /swift-rings/container
+          name: swift-container-ring
+        - mountPath: /swift-rings/object
+          name: swift-object-ring
+        - mountPath: /srv/node
+          name: swift-drives
+        - mountPath: /var/cache/swift
+          name: swift-cache
+        - mountPath: /swift-drive-state
+          name: swift-drive-state
+      - name: container-server
+        image: keppel.example.com/ccloud/swift:zed
+        securityContext:
+          privileged: true
+        volumeMounts:
+        - mountPath: /swift-etc
+          name: swift-etc
+        - mountPath: /swift-rings/account
+          name: swift-account-ring
+        - mountPath: /swift-rings/container
+          name: swift-container-ring
+        - mountPath: /swift-rings/object
+          name: swift-object-ring
+        - mountPath: /srv/node
+          name: swift-drives
+        - mountPath: /var/cache/swift
+          name: swift-cache
+        - mountPath: /swift-drive-state
+          name: swift-drive-state
+      - name: account-server
+        image: keppel.example.com/ccloud/swift:zed
+        securityContext:
+          privileged: true
+        volumeMounts:
+        - mountPath: /swift-etc
+          name: swift-etc
+        - mountPath: /swift-rings/account
+          name: swift-account-ring
+        - mountPath: /swift-rings/container
+          name: swift-container-ring
+        - mountPath: /swift-rings/object
+          name: swift-object-ring
+        - mountPath: /srv/node
+          name: swift-drives
+        - mountPath: /var/cache/swift
+          name: swift-cache
+        - mountPath: /swift-drive-state
+          name: swift-drive-state
+      hostNetwork: true
+      nodeSelector:
+        species: swift-storage
+      tolerations:
+      - effect: NoSchedule
+        key: species
+        operator: Equal
+        value: swift-storage
+      volumes:
+      - configMap:
+          defaultMode: 420
+          name: swift-etc
+        name: swift-etc
+      - configMap:
+          defaultMode: 420
+          name: swift-account-ring
+        name: swift-account-ring
+      - configMap:
+          defaultMode: 420
+          name: swift-container-ring
+        name: swift-container-ring
+      - configMap:
+          defaultMode: 420
+          name: swift-object-ring
+        name: swift-object-ring
+      - hostPath:
+          path: /srv/node
+        name: swift-drives
+      - hostPath:
+          path: /var/cache/swift
+        name: swift-cache
+      - hostPath:
+          path: /run/swift-storage/state
+        name: swift-drive-state

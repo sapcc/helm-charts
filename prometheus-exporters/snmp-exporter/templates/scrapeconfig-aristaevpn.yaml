@@ -1,0 +1,37 @@
+{{- if .Values.snmp_exporter.operator }}
+apiVersion: monitoring.coreos.com/v1alpha1
+kind: ScrapeConfig
+metadata:
+  name: snmp-exporter-aristaevpn
+  namespace: infra-monitoring
+  labels:
+    prometheus: {{ .Values.snmp_exporter.aggregations.prometheus }}
+    app.kubernetes.io/name: snmp-exporter-aristaevpn
+spec:
+  httpSDConfigs:
+    - url: {{ .Values.global.http_sd_configs.netbox_url }}/devices/?custom_labels=__param_module=aristaevpn&manufacturer=arista&status=active&region={{ .Values.global.region }}&role=evpn-leaf&target=loopback10
+      refresh_interval: {{ .Values.global.http_sd_configs.refresh_interval }}
+  metricsPath: /snmp
+  relabelings:
+    - sourceLabels: [__address__]
+      targetLabel: __param_target
+    - sourceLabels: [__param_target]
+      targetLabel: instance
+    - targetLabel: __address__
+      replacement: snmp-exporter:{{.Values.snmp_exporter.listen_port}}
+  metricRelabelings:
+    - sourceLabels: [name]
+      targetLabel:  devicename
+    - sourceLabels: [devicename]
+      regex: '(\w*-\w*-\w*)-(\S*)'
+      replacement: '$1'
+      targetLabel: availability_zone
+    - sourceLabels: [devicename]
+      regex: '(\w*-\w*-\w*)-(\S*)'
+      replacement: '$2'
+      targetLabel: device
+    - sourceLabels: [__name__, snmp_aristaevpn_sysDescr]
+      regex: 'snmp_aristaevpn_sysDescr;(?s)(.*)(version )([0-9.a-zA-Z]*)(.*)'
+      replacement: '$3'
+      targetLabel: image_version
+{{- end }}

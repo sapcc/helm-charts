@@ -38,6 +38,10 @@ cronus:
     rheaUri: {{ .Values.cronus.ndr.rheaUri | quote }}
     queue: {{ .Values.cronus.ndr.queue | quote }}
 {{- end }}
+{{- if .Values.cronus.maillog }}
+  maillog:
+    uri: {{ .Values.cronus.maillog.uri | quote }}
+{{- end }}
 {{- if or .Values.cronus.fileBufferPath .Values.global.fileBufferPath }}
   fileBufferPath: {{ .Values.cronus.fileBufferPath | default .Values.global.fileBufferPath }}
 {{- end }}
@@ -75,6 +79,9 @@ cronus:
 {{- end }}
 {{- if .Values.cronus.proxyHeaderTimeout }}
     proxyHeaderTimeout: {{ .Values.cronus.proxyHeaderTimeout }}
+{{- end }}
+{{- if .Values.cronus.skipProxyForCIDR }}
+    skipProxyForCIDR: {{ .Values.cronus.skipProxyForCIDR }}
 {{- end }}
     shutdownTimeout: {{ .Values.cronus.terminationGracePeriod | default 60 }}s
     readTimeout: {{ .Values.cronus.readTimeout | default 30 }}s

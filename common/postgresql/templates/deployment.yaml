@@ -32,6 +32,9 @@ spec:
       annotations:
         checksum/secrets: {{ include (print $.Template.BasePath  "/secrets.yaml") . | sha256sum }}
         checksum/etc: {{ include (print $.Template.BasePath  "/etc-configmap.yaml") . | sha256sum }}
+        {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+        linkerd.io/inject: enabled
+        {{- end }}
     spec:
       affinity:
         nodeAffinity:
@@ -109,6 +112,10 @@ spec:
         - name: db-maintain
           mountPath: /docker-entrypoint-maintaindb.d
 {{- end }}
+{{- if .Values.sharedMemoryLimit }}
+        - name: dev-shm
+          mountPath: /dev/shm
+{{- end }}
       volumes:
       - name: postgres-etc
         configMap:
@@ -129,4 +136,10 @@ spec:
       - name: db-maintain
         configMap:
           name: {{ .Values.dbMaintain }}
+{{- end }}
+{{- if .Values.sharedMemoryLimit }}
+      - name: dev-shm
+        emptyDir:
+          medium: Memory
+          sizeLimit: {{ .Values.sharedMemoryLimit }}
 {{- end }}

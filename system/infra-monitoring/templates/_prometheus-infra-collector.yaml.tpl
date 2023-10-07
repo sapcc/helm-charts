@@ -36,6 +36,8 @@
       replacement: arista-exporter:9200
 {{- end }}
 
+
+{{- if .Values.snmp_exporter.operatoroff }}
 - job_name: 'snmp'
   scrape_interval: {{.Values.snmp_exporter.scrapeInterval}}
   scrape_timeout: {{.Values.snmp_exporter.scrapeTimeout}}
@@ -164,6 +166,7 @@
       replacement: '$1'
       target_label: asr_pair
       action: replace
+{{- end }}
 
 {{- $values := .Values.ipmi_exporter -}}
 {{- if $values.enabled }}
@@ -253,8 +256,8 @@
 - job_name: 'redfish/bm'
   params:
     job: [redfish/bm]
-  scrape_interval: {{$values.redfish_scrapeInterval}}
-  scrape_timeout: {{$values.redfish_scrapeTimeout}}
+  scrape_interval: {{$values.scrapeInterval}}
+  scrape_timeout: {{$values.scrapeTimeout}}
   http_sd_configs:
     - url: {{ .Values.atlas_url }}
   metrics_path: /redfish
@@ -267,13 +270,13 @@
     - source_labels: [__param_target]
       target_label: instance
     - target_label: __address__
-      replacement: redfish-exporter:9220
+      replacement: redfish-exporter:{{$values.listen_port}}
 
 - job_name: 'redfish/cp'
   params:
     job: [redfish/cp]
-  scrape_interval: {{$values.redfish_scrapeInterval}}
-  scrape_timeout: {{$values.redfish_scrapeTimeout}}
+  scrape_interval: {{$values.scrapeInterval}}
+  scrape_timeout: {{$values.scrapeTimeout}}
   http_sd_configs:
     - url: {{ .Values.atlas_url }}
   metrics_path: /redfish
@@ -286,15 +289,15 @@
     - source_labels: [__param_target]
       target_label: instance
     - target_label: __address__
-      replacement: redfish-exporter:9220
+      replacement: redfish-exporter:{{$values.listen_port}}
     - source_labels: [__meta_serial]
       target_label: server_serial
 
 - job_name: 'redfish/bb'
   params:
     job: [redfish/bb]
-  scrape_interval: {{$values.redfish_scrapeInterval}}
-  scrape_timeout: {{$values.redfish_scrapeTimeout}}
+  scrape_interval: {{$values.scrapeInterval}}
+  scrape_timeout: {{$values.scrapeTimeout}}
   http_sd_configs:
     - url: {{ .Values.atlas_url }}
   metrics_path: /redfish
@@ -307,7 +310,29 @@
     - source_labels: [__param_target]
       target_label: instance
     - target_label: __address__
-      replacement: redfish-exporter:9220
+      replacement: redfish-exporter:{{$values.listen_port}}
+{{- end }}
+
+{{- if $values.firmware.enabled }}
+- job_name: 'redfish/fw'
+  params:
+    job: [redfish/fw]
+  scrape_interval: {{$values.firmware.scrapeInterval}}
+  scrape_timeout: {{$values.firmware.scrapeTimeout}}
+  http_sd_configs:
+    - url: {{ .Values.http_sd_configs.netbox_production_url }}/devices/?custom_labels=job=redfish/fw&target=mgmt_only&status=active&role=server&tenant=converged-cloud&tagn=no-redfish&region={{ .Values.global.region }}
+      refresh_interval: {{ .Values.http_sd_configs.refresh_interval }}
+  metrics_path: /firmware
+  relabel_configs:
+    - source_labels: [job]
+      regex: redfish/fw
+      action: keep
+    - source_labels: [__address__]
+      target_label: __param_target
+    - source_labels: [__param_target]
+      target_label: instance
+    - target_label: __address__
+      replacement: redfish-exporter:{{$values.listen_port}}
 {{- end }}
 
 {{- $values := .Values.windows_exporter -}}
@@ -316,7 +341,7 @@
   scrape_interval: {{$values.scrapeInterval}}
   scrape_timeout: {{$values.scrapeTimeout}}
   http_sd_configs:
-    - url: {{ .Values.atlas_url }}
+    - url: {{ .Values.http_sd_configs.netbox_production_url }}/devices/?custom_labels=job=redfish/fw&target=primary_ip&status=active&role=server&tenant=converged-cloud&platform=windows-server&tag=active-directory-domain-controller&region={{ .Values.global.region }}
   metrics_path: /metrics
   relabel_configs:
     - source_labels: [job]

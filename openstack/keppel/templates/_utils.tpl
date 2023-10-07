@@ -48,17 +48,8 @@
   value: '300'  # per account
 - name:  KEPPEL_BURST_MANIFEST_PUSHES
   value: '15'   # per account
-- name:  KEPPEL_CLAIR_IGNORE_STALE_INDEX_REPORTS
-  value: 'false' # The reindex loop is currently enabled.
-{{- if .Values.keppel.clair.hostname }}
-- name:  KEPPEL_CLAIR_PRESHARED_KEY
-  valueFrom:
-    secretKeyRef:
-      name: keppel-secret
-      key: clair_preshared_key
-- name:  KEPPEL_CLAIR_URL
-  value: "https://{{ .Values.keppel.clair.hostname }}"
-{{- end }}
+- name:  KEPPEL_BURST_TRIVY_REPORT_RETRIEVALS
+  value: '50'   # per account
 - name:  KEPPEL_DB_PASSWORD
   valueFrom:
     secretKeyRef:
@@ -157,6 +148,8 @@
                     # it up to account for clients that just poll the state of certain tags without
                     # actually pulling the image contents)
 - name:  KEPPEL_RATELIMIT_MANIFEST_PUSHES
+  value: '10r/m'   # per account
+- name:  KEPPEL_RATELIMIT_TRIVY_REPORT_RETRIEVALS
   value: '10r/m'   # per account
 - name: KEPPEL_REDIS_ENABLE
   value: '1'

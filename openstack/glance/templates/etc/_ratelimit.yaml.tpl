@@ -38,8 +38,8 @@ rates:
   default:
     images/*:
       - action: read
-        limit: 300r/m
+        limit: 600r/m
       - action: list
-        limit: 300r/m
+        limit: 600r/m
       - action: create
-        limit: 300r/m
+        limit: 600r/m

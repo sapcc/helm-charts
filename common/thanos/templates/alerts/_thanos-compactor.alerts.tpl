@@ -95,7 +95,7 @@ groups:
 
     - alert: ThanosCompactIsDown
       expr: up{job=~".*thanos.*compact.*", thanos="{{ include "thanos.name" . }}"} == 0 or absent({job=~".*thanos.*compact.*", thanos="{{ include "thanos.name" . }}"})
-      for: 5m
+      for: 15m
       labels:
         no_alert_on_absence: "true" # because the expression already checks for absence
         service: {{ default "metrics" $root.Values.alerts.service }}

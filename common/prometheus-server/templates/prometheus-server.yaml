@@ -8,6 +8,7 @@ metadata:
   name: {{ include "prometheus.name" (list $name $root) }}
   labels:
     prometheus: {{ include "prometheus.name" (list $name $root) }}
+    common-chart: prometheus-server-{{ $.Chart.Version }}
 
 spec:
   replicas: 1
@@ -25,6 +26,11 @@ spec:
 
   # Select all PodMonitors with the label 'prometheus: <name>'.
   podMonitorSelector:
+    matchLabels:
+      prometheus: {{ include "prometheus.name" (list $name $root) }}
+
+  # Select all ScrapeConfigs with the label 'prometheus: <name>'.
+  scrapeConfigSelector:
     matchLabels:
       prometheus: {{ include "prometheus.name" (list $name $root) }}
 

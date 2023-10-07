@@ -25,7 +25,7 @@ spec:
     {{- if or $.Values.deployWholeThanos (($.Values.query).stores) ($.Values.useQueryRegions) ($.Values.clusterTypes) }}
     stores:
     {{- end }}
-    {{- if (($.Values.query).stores) }}
+    {{- if and (($.Values.query).stores) (not $.Values.useQueryRegions) }}
     # add stores manually
       {{- range $store := $.Values.query.stores }}
       - {{ $store.name }}.{{ $store.namespace }}.svc.{{ default "cluster.local" $.Values.clusterDomain }}:{{ $store.port }}
@@ -40,6 +40,9 @@ spec:
         - thanos-{{ $cluster }}-grpc.{{ $region }}.{{ $root.Values.global.tld }}:443
         {{- end }}
       {{- end }}
+      {{- range $store := $.Values.query.stores }}
+        - {{ $store }}.{{ $root.Values.global.tld }}:443
+      {{- end }}
     {{- else if ($.Values.clusterTypes) }}
     # add stores for regional thanos
       {{- range $cluster := $.Values.clusterTypes }}
@@ -52,6 +55,7 @@ spec:
           thanos: {{ include "thanos.name" (list $name $root) }}
     deploymentOverrides:
       spec:
+        replicas: {{ $.Values.query.replicas }}
         template:
           spec:
             containers:

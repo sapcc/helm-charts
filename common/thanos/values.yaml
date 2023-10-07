@@ -122,6 +122,13 @@ compactor:
     - --wait
     - --wait-interval=900s
 
+  # In case the root fs of the node is not providing sufficient space this will add a data volume (pvc) and mounting it to /data in the compactor.
+  # Pay attention to use the correct storageClass.
+  dataVolume:
+    enabled: false
+    size: 100Gi
+    storageClassName: cinder-default
+
 store:
   # Maximum size of items held in the index cache.
   indexCacheSize: 1GB
@@ -143,6 +150,7 @@ store:
 
 # not relevant when deployWholeTHanos set to false
 query:
+  replicas: 1
   webRouteprefix: /thanos
   # statically specify stores, if deployWholeThanos is set and this is not present, it will default to query the single Prometheus sidecar container prometheus-<thanos-name>:10901
   # stores from the following list will be build as an cluster internal dns fqdn. Like store1.default.svc.cluster.local:10901
@@ -284,8 +292,11 @@ alerts:
 vmware: false
 
 traefik:
-  # defaults to false. Should only be enabled if traefik is used over default ingress-nginx. Please set grpcIngress.enabled to false in this case.
-  # it will spawn a dummy ingress resource to annotate the hostname for dns record creation. However, this dummy will not do anything because the grpc service is not exposing on 80.
+  # there are two scenarios when this is needed
+  # 1 Should be enabled only if no ingressClass is present in the cluster. Please set grpcIngress.enabled to false and set route.enabled to true.
+  # 
+  # 2 if k8s.io/ingress-nginx and traefik.io/ingress-controller are present, set traefik.enabled: false and route.enabled: true
+  # General information: it will spawn a dummy ingress resource to annotate the hostname for dns record creation. However, this dummy will not do anything because the grpc service is not exposing on 80.
   enabled: false
 
   # List of hostnames to match, typically the same which are configured in grpcIngress.hosts
@@ -293,3 +304,5 @@ traefik:
 
   route:
     enabled: false
+    # service the route should point to. Needs to match Thanos Query.
+    serviceName: thanos-kubernetes-query

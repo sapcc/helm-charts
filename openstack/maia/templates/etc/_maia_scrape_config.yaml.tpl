@@ -141,6 +141,8 @@
       - '{__name__=~"^ssh_nat_limits_miss", project_id!=""}'
       - '{__name__=~"^ssh_nat_limits_use", project_id!=""}'
       - '{__name__=~"^snmp_asr_ifHC.+", project_id!=""}'
+      - '{__name__=~"^snmp_asr_ifInUcastPkts", project_id!=""}'
+      - '{__name__=~"^snmp_asr_ifOutUcastPkts", project_id!=""}'
 
 - job_name: 'prometheus-storage'
   scrape_interval: 1m
@@ -212,6 +214,8 @@
   metrics_path: '/federate'
   params:
     'match[]':
+      - '{__name__="aws_sending_cronus_provider"}'
+      - '{__name__="aws_receiving_cronus_provider"}'
       - '{__name__="aws_ses_cronus_provider_bounce"}'
       - '{__name__="aws_ses_cronus_provider_complaint"}'
       - '{__name__="aws_ses_cronus_provider_delivery"}'

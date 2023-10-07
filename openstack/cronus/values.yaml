@@ -1,11 +1,22 @@
 global:
-  region: RegionOne
-  tld: openstack.local
-  alternateContact:
-    emailAddress: support-email
-    name: support
-    title: support
-    phoneNumber: 0
+  accessKeyRotationDays: 80
+anchors:
+  keystone: &keystone
+    projectName: master
+    projectDomainName: ccadmin
+    userDomainName: Default
+    username: cronus
+    # authUrl: https://identity
+    # region: eu-de-2
+    # endpointType: public
+    # applicationCredentialID: application-credential-id
+    # applicationCredentialSecret: application-credential-secret
+    # applicationCredentialName: application-credential-name
+    # projectID: project-id
+    # projectDomainID: project-domain-id
+    # domainName: domain-name
+    # domainID: domain-id
+    # userID: user-id
 cronus:
   certPath: /etc/certs
   enabled: true
@@ -137,24 +148,7 @@ nebula:
   maxUnavailable: 0
 
 config:
-  ## keystone optional authentication methods, add in @SECRETS the relevant method
-  keystone:
-    # authUrl: https://identity
-    # region: eu-de-2
-    # endpointType: public
-    # applicationCredentialID: application-credential-id
-    # applicationCredentialSecret: application-credential-secret
-    # applicationCredentialName: application-credential-name
-    # projectID: project-id
-    projectName: master
-    projectDomainName: ccadmin
-    # projectDomainID: project-domain-id
-    userDomainName: Default
-    # domainName: domain-name
-    # domainID: domain-id
-    username: cronus
-    # password: # a password must be defined in ".Values.global.cronus_service_password"
-    # userID: user-id
+  keystone: *keystone
   group: service-group
   jira:
     endpoint: http://url-to
@@ -491,18 +485,7 @@ rhea:
       disco: "true"
       disco/record: my-ingress.region.cloud.com.
   deployment:
-    enabled: true
     replicas: 1
-  statefulSet:
-    enabled: false
-    replicas: 1
-    podManagementPolicy: OrderedReady
-    annotations: {}
-    labels: {}
-    headless:
-      annotations: {}
-      labels: {}
-      servicePort: 80
   updateStrategy: RollingUpdate
   terminationGracePeriod: 60
   # all below can be used only with a deployment style
@@ -528,7 +511,6 @@ rhea_rabbitmq:
     size: 10Gi
   metrics:
     enabled: false
-
 poller: # service that handles received emails
   enabled: false
   # all below can be used only with a deployment style
@@ -544,7 +526,7 @@ poller: # service that handles received emails
   statefulSet:
     enabled: false
   action: forwardEmail # supported values: forwardEmail, activateEmail, simulator
-  pollInterval: 5 # should be less than a default cronus ResponseHeaderTimeout (9 seconds)
+  pollInterval: 5s # should be less than a default cronus ResponseHeaderTimeout (9 seconds)
   maxThreads: 5 # maximum amount of queue processing threads.will generate N threads = maxThreads * (maxSendThreads + maxBounceThreads)
   maxSendThreads: 5 # maximum amount of SMTP send threads per one processing thread
   maxBounceThreads: 5 # maximum amount of bounce threads per one processing thread
@@ -686,3 +668,9 @@ postfix:
       - top
       - x-sap-ccloudProject
       - x-sap-eMailSystem
+
+
+#Chart dependecies
+maillog:
+  enabled: false
+  keystone: *keystone

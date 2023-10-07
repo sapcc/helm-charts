@@ -26,6 +26,7 @@
       - '{__name__=~"^elasticsearch_hermes_.+"}'
       - '{__name__=~"^elasticsearch_scaleout_.+"}'
       - '{__name__=~"^elasticsearch_kubernikus_.+"}'
+      - '{__name__=~"^elasticsearch_jump_.+"}'
       - '{__name__=~"^elastiflow_.+"}'
       - '{__name__=~"^neutron_router:.+"}'
       - '{__name__=~"^elasticsearch_openstack_glance.+"}'
@@ -46,8 +47,6 @@
       - '{__name__=~"^ipmi_up"}'
       - '{__name__=~"^redfish_.+"}'
       - '{__name__=~"^ucsm_.+"}'
-      - '{__name__=~"^netapp_aggregate_.*"}'
-      - '{__name__=~"^netapp_filer_.*"}'
       - '{__name__=~"^vasa_.*"}'
       - '{__name__=~"^vcenter_esxi_mem_swapout_.*"}'
       - '{__name__=~"^pxcloudprober_.+"}'
@@ -156,6 +155,7 @@
       - '{__name__=~"^snmp_n9kpx_ciscoImageString"}'
       - '{__name__=~"^snmp_ipn_sysDescr"}'
       - '{__name__=~"^snmp_acispine_sysDescr"}'
+      - '{__name__=~"^snmp_acileaf_sysDescr"}'
       - '{__name__=~"^snmp_acistretch_sysDescr"}'
       - '{__name__=~"^snmp_arista_entPhysicalSoftwareRev"}'
       - '{__name__=~"^snmp_f5_sysProductVersion"}'
@@ -298,52 +298,6 @@
       - '{__name__=~"^vrops_self_object_primary_metrics_count"}'
       - '{__name__=~"^vrops_self_object_primary_objects_count"}'
       
-  relabel_configs:
-    - action: replace
-      source_labels: [__address__]
-      target_label: region
-      regex: prometheus-infra.scaleout.(.+).cloud.sap
-      replacement: $1
-    - action: replace
-      target_label: cluster_type
-      replacement: controlplane
-
-  metric_relabel_configs:
-    - action: replace
-      source_labels: [__name__]
-      target_label: __name__
-      regex: global:(.+)
-      replacement: $1
-    - source_labels: [__name__, prometheus_source, prometheus]
-      regex: '^up;^$;(.+)'
-      replacement: '$1'
-      target_label: prometheus_source
-      action: replace
-
-  {{ if .Values.authentication.enabled }}
-  tls_config:
-    cert_file: /etc/prometheus/secrets/prometheus-infra-sso-cert/sso.crt
-    key_file: /etc/prometheus/secrets/prometheus-infra-sso-cert/sso.key
-  {{ end }}
-
-  static_configs:
-    - targets:
-{{- range $region := .Values.regionList }}
-      - "prometheus-infra.scaleout.{{ $region }}.cloud.sap"
-{{- end }}
-
-- job_name: 'prometheus-regions-bastion-federation'
-  scheme: https
-  scrape_interval: 2m
-  scrape_timeout: 115s
-
-  honor_labels: true
-  metrics_path: '/federate'
-
-  params:
-    'match[]':
-      - '{__name__=~"^bastion_audit_log"}'
-
   relabel_configs:
     - action: replace
       source_labels: [__address__]

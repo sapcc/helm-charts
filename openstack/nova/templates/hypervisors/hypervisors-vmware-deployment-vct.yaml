@@ -34,7 +34,7 @@ template: |
     template:
       metadata:
         labels:
-{{ tuple . "nova" "compute" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 10 }}
+          {{- tuple . "nova" "compute" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | nindent 10 }}
           name: nova-compute-{= name =}
           alert-tier: os
           alert-service: nova
@@ -48,21 +48,15 @@ template: |
           configmap-etc-hash: {{ include (print .Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
           configmap-nova-compute-hash: {= "vcenter_cluster/{{ .Release.Namespace }}/vcenter-cluster-nova-compute-configmap.yaml.j2" | render | sha256sum =}
       spec:
-{{ tuple "{= availability_zone =}" | include "kubernetes_pod_az_affinity" | indent 8 }}
-{{- include "kubernetes_maintenance_affinity" . | indent 4 }}
+        {{- tuple . "{= availability_zone =}" | include "utils.kubernetes_pod_az_affinity" | nindent 8 }}
+        {{- include "kubernetes_maintenance_affinity" . | nindent 4 }}
         terminationGracePeriodSeconds: 900
         containers:
         - name: nova-compute
           image: {{ tuple . "compute" | include "container_image_nova" }}
           imagePullPolicy: IfNotPresent
-          command:
-          - dumb-init
-          - kubernetes-entrypoint
+          command: ["dumb-init", "nova-compute"]
           env:
-          - name: COMMAND
-            value: "nova-compute"
-          - name: NAMESPACE
-            value: {{ .Release.Namespace }}
           {{- if .Values.sentry.enabled }}
           - name: SENTRY_DSN
             valueFrom:
@@ -76,8 +70,6 @@ template: |
             value: "9125"
           - name: PYTHONWARNINGS
             value: "ignore:Unverified HTTPS request"
-          - name: PGAPPNAME
-            value: nova-compute-{= name =}
           {{- if .Values.pod.resources.hv_vmware }}
           resources:
 {{ toYaml .Values.pod.resources.hv_vmware | indent 12 }}

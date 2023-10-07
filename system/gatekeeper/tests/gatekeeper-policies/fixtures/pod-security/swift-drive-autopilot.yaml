@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  annotations:
+    meta.helm.sh/release-name: swift-drive-autopilot
+    meta.helm.sh/release-namespace: swift
+  labels:
+    app.kubernetes.io/managed-by: Helm
+    ccloud/service: swift
+    ccloud/support-group: storage
+  name: swift-drive-autopilot
+  namespace: swift
+spec:
+  template:
+    spec:
+      containers:
+      - name: boot
+        image: keppel.eu-de-2.cloud.sap/ccloud/swift-drive-autopilot:20221014073938
+        securityContext:
+          privileged: true
+        volumeMounts:
+        - mountPath: /etc/drive-autopilot
+          name: config
+        - mountPath: /coreos
+          name: coreos
+      nodeSelector:
+        species: swift-storage
+      securityContext: {}
+      volumes:
+      - configMap:
+          defaultMode: 420
+          name: swift-drive-autopilot
+        name: config
+      - hostPath:
+          path: /
+        name: coreos

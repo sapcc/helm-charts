@@ -23,6 +23,9 @@ spec:
         alert-service: gatekeeper
       annotations:
         checksum/configmap: {{ include "doop-central/templates/configmap.yaml" $ | sha256sum }}
+        {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+        linkerd.io/inject: enabled
+        {{- end }}
         prometheus.io/scrape: "true"
         prometheus.io/targets: infra-frontend
     spec:
@@ -85,13 +88,13 @@ spec:
             timeoutSeconds: 5
             periodSeconds: 5
           resources:
-            # observed usage: CPU = 30m, RAM = 60 MiB
+            # observed usage: CPU = 600m, RAM = 110 MiB
             limits:
               cpu: '1'
-              memory: '128Mi'
+              memory: '256Mi'
             requests:
-              cpu: '50m'
-              memory: '128Mi'
+              cpu: '1'
+              memory: '256Mi'
           securityContext:
             runAsNonRoot: true
             allowPrivilegeEscalation: false

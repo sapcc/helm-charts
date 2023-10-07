@@ -1,0 +1,28 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    meta.helm.sh/release-name: concourse-main
+    meta.helm.sh/release-namespace: concourse
+  labels:
+    app.kubernetes.io/managed-by: Helm
+  name: concourse-main-kubernetes-ingress
+  namespace: concourse
+spec:
+  template:
+    spec:
+      containers:
+      - name: kubernetes-ingress-controller
+        securityContext:
+          allowPrivilegeEscalation: true
+          capabilities:
+            add:
+            - NET_BIND_SERVICE
+            drop:
+            - ALL
+          runAsGroup: 1000
+          runAsNonRoot: true
+          runAsUser: 1000
+          seccompProfile:
+            type: RuntimeDefault
+      securityContext: {}

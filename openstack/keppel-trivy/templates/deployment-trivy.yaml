@@ -6,7 +6,7 @@ metadata:
 
 spec:
   revisionHistoryLimit: 5
-  replicas: 1
+  replicas: 2
   strategy:
     type: RollingUpdate
     rollingUpdate:
@@ -26,7 +26,7 @@ spec:
     spec:
       containers:
         - name: trivy-server
-          image: {{ $.Values.global.ghcrIoMirror }}/aquasecurity/trivy:{{ $.Values.trivy.image_version | required ".Values.trivy.image_version is not set!" }}
+          image: {{ $.Values.global.registry }}/trivy:{{ $.Values.trivy.image_version | required ".Values.trivy.image_version is not set!" }}
           imagePullPolicy: IfNotPresent
           command:
             - sh
@@ -53,6 +53,11 @@ spec:
           # TODO: upstream image runs as root
           # securityContext:
           #   runAsNonRoot: true
-          # livenessProbe: {} # TODO:
-          # readinessProbe: {} # TODO:
-          # resources: {} # TODO: configure once we have some data
+          # livenessProbe and readinessProbe are not easily possible because the server only exposes a grpc port
+          resources:
+            limits:
+              memory: 400Mi
+              cpu: 2
+            requests:
+              memory: 400Mi
+              cpu: 2

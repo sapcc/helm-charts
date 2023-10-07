@@ -3,6 +3,7 @@ debug = {{ .Values.debug }}
 prometheus = true
 prometheus_listen = 0.0.0.0:{{ required ".Values.metrics.port missing" .Values.metrics.port }}
 sentry = true
+endpoint_type = internal
 
 [api_settings]
 policy_file = /etc/archer/policy.json
@@ -27,3 +28,10 @@ allow_reauth = true
 enabled = true
 service = 0
 endpoint = 0
+
+{{- if .Values.audit.enabled }}
+[audit_middleware_notifications]
+enabled = true
+transport_url = amqp://{{ .Values.audit.user }}:{{ required ".Values.audit.password missing" .Values.audit.password }}@{{ .Values.audit.host }}:{{ .Values.audit.port }}/
+queue_name = notifications.info
+{{- end }}

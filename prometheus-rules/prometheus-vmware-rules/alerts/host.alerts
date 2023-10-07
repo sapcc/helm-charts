@@ -128,6 +128,7 @@ groups:
     expr: |
       vrops_hostsystem_alert_info{alert_name=~"ESXi host has detected a link status down on a physical NIC"}
       and on (hostsystem) vrops_hostsystem_runtime_maintenancestate{state!~"inMaintenance"}
+    for: 10m
     labels:
       severity: critical
       tier: vmware
@@ -379,19 +380,3 @@ groups:
     annotations:
       description: "storage paths for `{{ $labels.hostsystem }}` is less than other hosts in the `{{ $labels.vccluster }}`. ({{ $labels.vcenter }})"
       summary: "storage paths for `{{ $labels.hostsystem }}` is less than other hosts in the `{{ $labels.vccluster }}`. ({{ $labels.vcenter }})"
-
-  - alert: HostAdapterAllPathsDown
-    expr: |
-      vrops_hostsystem_alert_info{alert_name="All HBA paths are down"}
-      and on (hostsystem) vrops_hostsystem_runtime_maintenancestate{state!~"inMaintenance"}
-    labels:
-      severity: info
-      tier: vmware
-      service: compute
-      support_group: compute
-      meta: "All host bus adapters paths are down on `{{ $labels.hostsystem }}` in the *{{ $labels.vccluster }}* cluster\nLink to the vCenter: --> <{{ $labels.vcenter }}>"
-      playbook: docs/devops/alert/vcenter/#
-      no_alert_on_absence: "true"
-    annotations:
-      description: "All host bus adapters paths are down on `{{ $labels.hostsystem }}` in the *{{ $labels.vccluster }}* cluster\nLink to the vCenter: --> <{{ $labels.vcenter }}>"
-      summary: "All host bus adapters paths are down on `{{ $labels.hostsystem }}` in the *{{ $labels.vccluster }}* cluster\nLink to the vCenter: --> <{{ $labels.vcenter }}>"

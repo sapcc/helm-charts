@@ -1,10 +1,8 @@
 #!/usr/bin/env bash
 trap "{{ include "utils.proxysql.proxysql_signal_stop_script" . | trim }}" EXIT
 
-{{- if ne .Values.release "rocky" }}
 echo "Status before migration:"
 keystone-status --config-file=/etc/keystone/keystone.conf upgrade check
-{{- end }}
 
 echo "DB Version before migration:"
 keystone-manage --config-file=/etc/keystone/keystone.conf db_version

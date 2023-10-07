@@ -33,7 +33,7 @@ spec:
         {{- if $.Values.monitoring.mysqld_exporter.enabled }}
         prometheus.io/scrape: "true"
         prometheus.io/port: "9104"
-        prometheus.io/targets: {{ $.Values.monitoring.prometheus.instance | default "prometheus" | quote }}
+        prometheus.io/targets: {{ $.Values.monitoring.prometheus.instance.application | default "prometheus" | quote }}
         {{- end }}
         checksum/my.cnf: {{ include (print $.Template.BasePath "/configmap-mariadb-my.cnf.yaml") $ | sha256sum }}
         checksum/configmap: {{ include (print $.Template.BasePath "/configmap-mariadb.yaml") $ | sha256sum }}
@@ -345,7 +345,7 @@ spec:
         {{- else if and (hasKey $.Values.mariadb "wipeDataAndLog") ($.Values.mariadb.wipeDataAndLog) }}
         {{- else if and (hasKey $.Values.mariadb.galera.restore "kopia") ($.Values.mariadb.galera.restore.kopia.enabled) }}
         {{- else if $.Values.monitoring.mysqld_exporter.enabled }}
-      - name: mon
+      - name: metrics
         image: "{{ $.Values.image.monitoring.registry }}/{{ $.Values.image.monitoring.project }}/{{ $.Values.image.monitoring.applicationname }}:{{ $.Values.image.monitoring.applicationversion }}-{{ $.Values.image.monitoring.imageversion | int }}"
         imagePullPolicy: {{ $.Values.image.monitoring.pullPolicy | default "IfNotPresent" | quote }}
         securityContext:

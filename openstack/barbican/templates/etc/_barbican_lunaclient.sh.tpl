@@ -1,5 +1,5 @@
 #!/bin/bash
-set -e
+set -ex
 
 lunaclient () {
     NOW="$(date +%Y%m%d)"
@@ -8,6 +8,7 @@ lunaclient () {
     /thales/safenet/lunaclient/bin/64/configurator setValue -s Chrystoki2 -e LibUNIX -v /thales/safenet/lunaclient/libs/64/libCryptoki2.so
     /thales/safenet/lunaclient/bin/64/configurator setValue -s Chrystoki2 -e LibUNIX64 -v /thales/safenet/lunaclient/libs/64/libCryptoki2_64.so
     /thales/safenet/lunaclient/bin/64/configurator setValue -s Misc -e ToolsDir -v /thales/safenet/lunaclient/bin/64/
+    /thales/safenet/lunaclient/bin/64/configurator setValue -s Misc -e MutexFolder -v /thales/safenet/lunaclient/lock
     /thales/safenet/lunaclient/bin/64/configurator setValue -s "LunaSA Client" -e SSLConfigFile -v /thales/safenet/lunaclient/openssl.cnf
     /thales/safenet/lunaclient/bin/64/configurator setValue -s "LunaSA Client" -e ServerCAFile -v /thales/safenet/lunaclient/config/certs/CAFile.pem
     /thales/safenet/lunaclient/bin/64/configurator setValue -s "LunaSA Client" -e "ClientCertFile" -v /thales/safenet/lunaclient/config/certs/

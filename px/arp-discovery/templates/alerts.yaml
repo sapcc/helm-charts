@@ -1,0 +1,27 @@
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+
+metadata:
+  name: arp-discovery-exporter
+  labels:
+    app: px
+    tier: px
+    type: alerting-rules
+    prometheus: infra-collector
+
+spec:
+  groups:
+    - name: arp-discovery.alerts
+      rules:
+      - alert: PXNoARPSeenOnVLAN
+        expr: sum(arp_host_discovered) by (interface, vm_name) < 2
+        for: 2h
+        labels:
+          severity: info
+          tier: net
+          service: px
+          context: px
+        annotations:
+          summary: "PX VLANs are missing on some aPod VMs, no ARP responses seen."
+          description: "VM {{`{{ $labels.vm_name }}`}} on interface {{`{{ $labels.interface }}`}} is not receiving any ARP responses."
