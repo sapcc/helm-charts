@@ -404,6 +404,6 @@ function checkasyncreplication {
   if [ ${SLAVEIO_STATUS} == "Yes" ] && [ ${SLAVESQL_STATUS} == "Yes" ]; then
     loginfo "${FUNCNAME[0]}" "async replication active"
   else
-    {{ if eq $.Values.scripts.logLevel "debug" }} logdebug "${FUNCNAME[0]}" "async replication summary: '${MYSQL_RESPONSE}'" {{ end }}
+    {{ if eq $.Values.scripts.logLevel "debug" }}logdebug "${FUNCNAME[0]}" "async replication summary: '${MYSQL_RESPONSE}'" {{ else }}loginfo "${FUNCNAME[0]}" "async replication not active" {{ end }}
   fi
 }
