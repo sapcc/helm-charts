@@ -3,6 +3,10 @@
 * `mariadb.users.monitor` user only mandatory if the mysqld_exporter or ProxySQL are enabled
   * redundant ProxySQL monitor user config removed
   * `MARIADB_MONITORING_USERNAME` environment variable check added for the mysqld_exporter container image
+* software versions bumped
+  * Ubuntu packages timestamp `20231009043336`
+  * ProxySQL updated to version `2.5.5`
+  * yq updated to `4.35.2`
 * chart version bumped
 
 ## v0.19.0 - 2023/09/27
