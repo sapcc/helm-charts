@@ -40,6 +40,9 @@ namePrefix:
   # -- name prefix used for the Kopia pods, services etc.
   # @default backup-kopiaserver
   kopiaserver: false
+  # -- Use `mariadb.galera.clustername` as prefix for all generated Kubernetes objects. If used as a [subchart of another Helm chart](https://helm.sh/docs/chart_template_guide/subcharts_and_globals/#creating-a-subchart) the parent chart name will be added to.
+  # @default -- false
+  includeClusterName:
 # -- only useful for benchmarking [www.kernel.org drop_caches](https://www.kernel.org/doc/html/latest/admin-guide/sysctl/vm.html?highlight=drop_caches#drop-caches)
 cleanOsCacheAtStartup: false
 scripts:
@@ -109,7 +112,7 @@ mariadb:
     slaveReplicaThreads:
   galera:
     # -- (string) Name of the MariaDB Galera cluster defined with the [wsrep_cluster_name](https://mariadb.com/kb/en/galera-cluster-system-variables/#wsrep_cluster_name) option.
-    # It is also be used as the prefix for all generated objects to avoid name collisions. This is important for subchart configs where multiple parents use this chart in the same namespace
+    # It can also be used as the prefix for all generated objects to avoid name collisions by enabling the `namePrefix.includeClusterName` option
     clustername:
     # -- [Galera debug](https://galeracluster.com/library/documentation/galera-parameters.html#debug)
     # @default -- false

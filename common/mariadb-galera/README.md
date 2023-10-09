@@ -40,7 +40,7 @@ Docker images and Helm chart to deploy a [MariaDB](https://mariadb.com/kb/en/get
 ## Metadata
 | chart version | app version | type | url |
 |:--------------|:-------------|:-------------|:-------------|
-| 0.20.0 | 10.5.20 | application | [Git repo](https://github.com/sapcc/helm-charts/tree/mariadb-galera/common/mariadb-galera) |
+| 0.20.1 | 10.5.22 | application | [Git repo](https://github.com/sapcc/helm-charts/tree/mariadb-galera/common/mariadb-galera) |
 
 | Name | Email | Url |
 | ---- | ------ | --- |
@@ -150,7 +150,7 @@ docker build --build-arg BASE_SOFT_NAME=ubuntu --build-arg BASE_SOFT_VERSION=22.
   ```
 * [push](https://helm.sh/docs/topics/registries/#the-push-subcommand) the chart to the registry
   ```shell
-  helm push mariadb-galera-0.20.0.tgz oci://keppel.eu-de-1.cloud.sap/ccloud-helm/
+  helm push mariadb-galera-0.20.1.tgz oci://keppel.eu-de-1.cloud.sap/ccloud-helm/
   ```
 
 ### values description
@@ -369,7 +369,7 @@ docker build --build-arg BASE_SOFT_NAME=ubuntu --build-arg BASE_SOFT_VERSION=22.
 | mariadb.galera.backup.kopia.users.s3.password | string | `nil` | S3 API user password |
 | mariadb.galera.backup.kopia.users.s3.secretName | string | `"kopia-s3"` | the [secret](https://kubernetes.io/docs/concepts/configuration/secret/) name that contains the S3 API user password |
 | mariadb.galera.backup.kopia.users.s3.username | string | `nil` | S3 API username |
-| mariadb.galera.clustername | string | `nil` | Name of the MariaDB Galera cluster defined with the [wsrep_cluster_name](https://mariadb.com/kb/en/galera-cluster-system-variables/#wsrep_cluster_name) option. It is also be used as the prefix for all generated objects to avoid name collisions. This is important for subchart configs where multiple parents use this chart in the same namespace |
+| mariadb.galera.clustername | string | `nil` | Name of the MariaDB Galera cluster defined with the [wsrep_cluster_name](https://mariadb.com/kb/en/galera-cluster-system-variables/#wsrep_cluster_name) option. It can also be used as the prefix for all generated objects to avoid name collisions by enabling the `namePrefix.includeClusterName` option |
 | mariadb.galera.debug | bool | false | [Galera debug](https://galeracluster.com/library/documentation/galera-parameters.html#debug) |
 | mariadb.galera.gcache.recover | bool | false | `false` until [PR#624](https://github.com/codership/galera/issues/624) is fixed |
 | mariadb.galera.gtidDomainId | int | 1 | must be a positive integer [wsrep_gtid_domain_id](https://mariadb.com/kb/en/galera-cluster-system-variables/#wsrep_gtid_domain_id) |
@@ -499,6 +499,7 @@ docker build --build-arg BASE_SOFT_NAME=ubuntu --build-arg BASE_SOFT_VERSION=22.
 | monitoring.proxy.enabled | bool | false | enable the ProxySQL/HAProxy [/metrics endpoint](https://proxysql.com/documentation/prometheus-exporter/) to be scraped by Prometheus |
 | monitoring.proxy.haproxy.metricsPort | int | 8404 | [HAProxy Prometheus exporter](https://github.com/prometheus/mysqld_exporter) port |
 | namePrefix.application | string | `nil` | name prefix used for the MariaDB pods, services etc. @default mariadb-g |
+| namePrefix.includeClusterName | string | false | Use `mariadb.galera.clustername` as prefix for all generated Kubernetes objects. If used as a [subchart of another Helm chart](https://helm.sh/docs/chart_template_guide/subcharts_and_globals/#creating-a-subchart) the parent chart name will be added to. |
 | namePrefix.kopiaserver | bool | `false` | name prefix used for the Kopia pods, services etc. @default backup-kopiaserver |
 | namePrefix.proxy.haproxy | string | `nil` | name prefix used for the HAProxy pods, services etc. @default haproxy |
 | namePrefix.proxy.proxysql | string | `nil` | name prefix used for the ProxySQL pods, services etc. @default proxysql |

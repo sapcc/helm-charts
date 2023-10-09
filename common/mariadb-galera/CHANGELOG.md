@@ -1,4 +1,10 @@
 # Changelog
+
+## v0.20.1 - 2023/10/09
+* `namePrefix.includeClusterName` parameter added to use the `mariadb.galera.clustername` as name prefix for all generated Kubernetes objects
+  * disabled per default
+* chart version bumped
+
 ## v0.20.0 - 2023/10/07
 * `mariadb.users.monitor` user only mandatory if the mysqld_exporter or ProxySQL are enabled
   * redundant ProxySQL monitor user config removed

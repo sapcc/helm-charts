@@ -79,7 +79,7 @@ spec:
   include "commonPrefix" .
 */}}
 {{- define "commonPrefix" }}
-  {{- if and (hasKey .Values.mariadb.galera "clustername") (.Values.mariadb.galera.clustername) }}
+  {{- if and (hasKey .Values.mariadb.galera "clustername") (.Values.mariadb.galera.clustername) (hasKey .Values.namePrefix "includeClusterName") (.Values.namePrefix.includeClusterName) }}
     {{- printf "%s-" .Values.mariadb.galera.clustername }}
   {{- end }}
 {{- end }}
