@@ -9,7 +9,7 @@ metadata:
     app.kubernetes.io/name: network-generic-ssh-exporter-aci-leaf
 spec:
   httpSDConfigs:
-    - url: {{ .Values.global.http_sd_configs.netbox_url }}/devices/?status=active&region={{ .Values.global.region }}&tenant=converged-cloud&role=aci-leaf&manufacturer=cisco
+    - url: {{ .Values.global.http_sd_configs.netbox_url }}/devices/?custom_labels=__param_batch=aci-leaf;__param_credential=apic;__param_device=cisco-aci&status=active&region={{ .Values.global.region }}&tenant=converged-cloud&role=aci-leaf&manufacturer=cisco
       refreshInterval: {{ .Values.global.http_sd_configs.refresh_interval }}
   metricsPath: /ssh
   interval: 120s
@@ -20,11 +20,11 @@ spec:
       action: keep
     - sourceLabels: [__address__]
       targetLabel: __param_target
-    - targetLabel: __param_batch
+    - targetLabel: batch
       replacement: aci-leaf
-    - targetLabel: __param_credential
+    - targetLabel: credential
       replacement: apic
-    - targetLabel: __param_device
+    - targetLabel: device
       replacement: cisco-aci
     - sourceLabels: [__param_target]
       targetLabel: instance
