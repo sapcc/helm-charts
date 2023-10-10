@@ -1,5 +1,15 @@
 # Changelog
 
+## v0.20.2 - 2023/10/10
+* name prefix for K8s objects refactored
+  * use the same function structure everywhere
+  * no trailing '-' character
+* monitoring user also made optional on Docker level
+* mysql_exporter role renamed to monitor on Docker level too
+* software versions bumped
+  * Ubuntu packages timestamp `20231010194415`
+* chart version bumped
+
 ## v0.20.1 - 2023/10/09
 * `namePrefix.includeClusterName` parameter added to use the `mariadb.galera.clustername` as name prefix for all generated Kubernetes objects
   * disabled per default
