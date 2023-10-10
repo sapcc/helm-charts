@@ -40,7 +40,7 @@ Docker images and Helm chart to deploy a [MariaDB](https://mariadb.com/kb/en/get
 ## Metadata
 | chart version | app version | type | url |
 |:--------------|:-------------|:-------------|:-------------|
-| 0.20.1 | 10.5.22 | application | [Git repo](https://github.com/sapcc/helm-charts/tree/mariadb-galera/common/mariadb-galera) |
+| 0.20.2 | 10.5.22 | application | [Git repo](https://github.com/sapcc/helm-charts/tree/mariadb-galera/common/mariadb-galera) |
 
 | Name | Email | Url |
 | ---- | ------ | --- |
@@ -150,7 +150,7 @@ docker build --build-arg BASE_SOFT_NAME=ubuntu --build-arg BASE_SOFT_VERSION=22.
   ```
 * [push](https://helm.sh/docs/topics/registries/#the-push-subcommand) the chart to the registry
   ```shell
-  helm push mariadb-galera-0.20.1.tgz oci://keppel.eu-de-1.cloud.sap/ccloud-helm/
+  helm push mariadb-galera-0.20.2.tgz oci://keppel.eu-de-1.cloud.sap/ccloud-helm/
   ```
 
 ### values description
@@ -498,9 +498,9 @@ docker build --build-arg BASE_SOFT_NAME=ubuntu --build-arg BASE_SOFT_VERSION=22.
 | monitoring.prometheus.instance.kubernetes | string | prometheus | name of the Prometheus instance that should import alert definitions for Kubernetes (pod, deployment etc.) metrics |
 | monitoring.proxy.enabled | bool | false | enable the ProxySQL/HAProxy [/metrics endpoint](https://proxysql.com/documentation/prometheus-exporter/) to be scraped by Prometheus |
 | monitoring.proxy.haproxy.metricsPort | int | 8404 | [HAProxy Prometheus exporter](https://github.com/prometheus/mysqld_exporter) port |
-| namePrefix.application | string | `nil` | name prefix used for the MariaDB pods, services etc. @default mariadb-g |
-| namePrefix.includeClusterName | string | false | Use `mariadb.galera.clustername` as prefix for all generated Kubernetes objects. If used as a [subchart of another Helm chart](https://helm.sh/docs/chart_template_guide/subcharts_and_globals/#creating-a-subchart) the parent chart name will be added to. |
-| namePrefix.kopiaserver | bool | `false` | name prefix used for the Kopia pods, services etc. @default backup-kopiaserver |
+| namePrefix.application | string | `nil` | name prefix used for the MariaDB pods, services etc. **CRITICAL**: *Enabling or changing this setting after the Galera cluster has been rolled out will cause (temporary) data loss, because pods with new names and new persistant volumes will be created* @default mariadb-g |
+| namePrefix.includeClusterName | string | false | Use `mariadb.galera.clustername` as additional prefix for all generated Kubernetes objects. The Helm chart release name (for instance `mariadb-galera`) will be added every time **CRITICAL**: *Enabling or changing this setting after the Galera cluster has been rolled out will cause (temporary) data loss, because pods with new names and new persistant volumes will be created* |
+| namePrefix.kopiaserver | string | `nil` | name prefix used for the Kopia pods, services etc. @default backup-kopiaserver |
 | namePrefix.proxy.haproxy | string | `nil` | name prefix used for the HAProxy pods, services etc. @default haproxy |
 | namePrefix.proxy.proxysql | string | `nil` | name prefix used for the ProxySQL pods, services etc. @default proxysql |
 | podManagementPolicy | string | OrderedReady | [Pod Management Policy](https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/#pod-management-policies) for the MariaDB Galera and ProxySQL cluster pods. |

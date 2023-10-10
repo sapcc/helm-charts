@@ -5,7 +5,7 @@ set -o pipefail
 
 source /opt/${SOFTWARE_NAME}/bin/common-functions.sh
 
-REQUIRED_ENV_VARS=("MARIADB_ROOT_PASSWORD")
+REQUIRED_ENV_VARS=("MARIADB_ROOT_USERNAME" "MARIADB_ROOT_PASSWORD")
 declare -i MARIADBD_PID
 MAX_RETRIES=10
 WAIT_SECONDS=6
@@ -44,23 +44,29 @@ function initdb {
     readroleobject 'fullaccess' '/opt/mariadb/etc/sql/'
     readrolegrant 'fullaccess' '/opt/mariadb/etc/sql/'
     setuprole 'fullaccess' "${DB_ROLE_PRIVS}" "${DB_ROLE_OBJ}" "${DB_ROLE_GRANT}"
-    readroleprivileges 'mysql_exporter' '/opt/mariadb/etc/sql/'
-    readroleobject 'mysql_exporter' '/opt/mariadb/etc/sql/'
-    readrolegrant 'mysql_exporter' '/opt/mariadb/etc/sql/'
-    setuprole 'mysql_exporter' "${DB_ROLE_PRIVS}" "${DB_ROLE_OBJ}" "${DB_ROLE_GRANT}"
+    if [ -n "${MARIADB_MONITORING_USERNAME}" ] && [ -n "${MARIADB_MONITORING_USERNAME}" ] ; then
+      readroleprivileges 'monitor' '/opt/mariadb/etc/sql/'
+      readroleobject 'monitor' '/opt/mariadb/etc/sql/'
+      readrolegrant 'monitor' '/opt/mariadb/etc/sql/'
+      setuprole 'monitor' "${DB_ROLE_PRIVS}" "${DB_ROLE_OBJ}" "${DB_ROLE_GRANT}"
+    fi
     setupuser "${MARIADB_ROOT_USERNAME}" "${MARIADB_ROOT_PASSWORD}" 'fullaccess' 0 '%' 'ed25519' "WITH ADMIN OPTION"
     setupuser "${MARIADB_ROOT_USERNAME}" "${MARIADB_ROOT_PASSWORD}" 'fullaccess' 0 '::1' 'ed25519' "WITH ADMIN OPTION"
-    setupuser "${MARIADB_MONITORING_USERNAME}" "${MARIADB_MONITORING_PASSWORD}" 'mysql_exporter' "${MARIADB_MONITORING_CONNECTION_LIMIT}" '%' 'mysql_native_password' " "
-    setupuser "${MARIADB_MONITORING_USERNAME}" "${MARIADB_MONITORING_PASSWORD}" 'mysql_exporter' "${MARIADB_MONITORING_CONNECTION_LIMIT}" '::1' 'mysql_native_password' " "
-    setupuser "${MARIADB_MONITORING_USERNAME}" "${MARIADB_MONITORING_PASSWORD}" 'mysql_exporter' "${MARIADB_MONITORING_CONNECTION_LIMIT}" 'localhost' 'mysql_native_password' " "
+    if [ -n "${MARIADB_MONITORING_USERNAME}" ] && [ -n "${MARIADB_MONITORING_USERNAME}" ] ; then
+      setupuser "${MARIADB_MONITORING_USERNAME}" "${MARIADB_MONITORING_PASSWORD}" 'monitor' "${MARIADB_MONITORING_CONNECTION_LIMIT}" '%' 'mysql_native_password' " "
+      setupuser "${MARIADB_MONITORING_USERNAME}" "${MARIADB_MONITORING_PASSWORD}" 'monitor' "${MARIADB_MONITORING_CONNECTION_LIMIT}" '::1' 'mysql_native_password' " "
+      setupuser "${MARIADB_MONITORING_USERNAME}" "${MARIADB_MONITORING_PASSWORD}" 'monitor' "${MARIADB_MONITORING_CONNECTION_LIMIT}" 'localhost' 'mysql_native_password' " "
+    fi
     setdefaultrole 'fullaccess' "${MARIADB_ROOT_USERNAME}" '%'
     setdefaultrole 'fullaccess' "${MARIADB_ROOT_USERNAME}" '::1'
-    setdefaultrole 'mysql_exporter' "${MARIADB_MONITORING_USERNAME}" '%'
-    setdefaultrole 'mysql_exporter' "${MARIADB_MONITORING_USERNAME}" '::1'
-    setdefaultrole 'mysql_exporter' "${MARIADB_MONITORING_USERNAME}" 'localhost'
-    grantrole 'mysql_exporter' "${MARIADB_ROOT_USERNAME}" '%' 'WITH ADMIN OPTION'
-    grantrole 'mysql_exporter' "${MARIADB_ROOT_USERNAME}" '::1' 'WITH ADMIN OPTION'
-    grantrole 'mysql_exporter' "${MARIADB_ROOT_USERNAME}" 'localhost' 'WITH ADMIN OPTION'
+    if [ -n "${MARIADB_MONITORING_USERNAME}" ] && [ -n "${MARIADB_MONITORING_USERNAME}" ] ; then
+      setdefaultrole 'monitor' "${MARIADB_MONITORING_USERNAME}" '%'
+      setdefaultrole 'monitor' "${MARIADB_MONITORING_USERNAME}" '::1'
+      setdefaultrole 'monitor' "${MARIADB_MONITORING_USERNAME}" 'localhost'
+      grantrole 'monitor' "${MARIADB_ROOT_USERNAME}" '%' 'WITH ADMIN OPTION'
+      grantrole 'monitor' "${MARIADB_ROOT_USERNAME}" '::1' 'WITH ADMIN OPTION'
+      grantrole 'monitor' "${MARIADB_ROOT_USERNAME}" 'localhost' 'WITH ADMIN OPTION'
+    fi
     listdbandusers
     stopdb
   fi

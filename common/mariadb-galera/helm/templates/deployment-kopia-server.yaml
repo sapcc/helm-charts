@@ -5,7 +5,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   namespace: {{ $.Release.Namespace }}
-  name: {{ include "commonPrefix" $ }}backup-kopiaserver
+  name: {{ include "commonPrefix" $ }}-backup-kopiaserver
   labels:
     app: {{ $.Release.Name }}
     release: {{ $.Release.Name }}
@@ -34,7 +34,7 @@ spec:
         {{- end }}
         checksum/configmap: {{ include (print $.Template.BasePath "/configmap-kopia.yaml") $ | sha256sum }}
     spec:
-      serviceAccount: {{ include "commonPrefix" $ }}{{ $.Release.Name }}
+      serviceAccount: {{ include "commonPrefix" $ }}
       automountServiceAccountToken: false
       securityContext:
         runAsUser:  {{ $.Values.userId.backup | default 3200 | int }}
@@ -42,7 +42,7 @@ spec:
         fsGroup:  {{ $.Values.groupId.backup | default 3200 | int }}
       {{- if and (hasKey $.Values.image.kopiabackup "pullSecret") $.Values.image.kopiabackup.pullSecret }}
       imagePullSecrets:
-      - name: {{ include "commonPrefix" $ }}{{ $.Release.Name }}-{{$.Values.image.kopiabackup.pullSecret}}
+      - name: {{ include "commonPrefix" $ }}-{{$.Values.image.kopiabackup.pullSecret}}
       {{- end }}
       initContainers:
       - name: sysctl-tcp-keepalive
@@ -106,7 +106,7 @@ spec:
         - name: {{ $envKey }}
           valueFrom:
             secretKeyRef:
-              name: {{ include "commonPrefix" $ }}{{ $.Release.Name }}-{{ $envValue.secretName }}
+              name: {{ include "commonPrefix" $ }}-{{ $envValue.secretName }}
               key: {{ $envValue.secretKey }}
                   {{- end }}
                 {{- end }}
@@ -184,29 +184,29 @@ spec:
           {{- end }}
         volumeMounts:
           {{- range $volumeMountsKey, $volumeMountsValue := $.Values.volumeMounts.kopiaserver }}
-          - name: {{ include "commonPrefix" $ }}{{ $volumeMountsKey | lower }}
+          - name: {{ include "commonPrefix" $ }}-{{ $volumeMountsKey | lower }}
             mountPath: {{ $volumeMountsValue.mountPath }}
             {{- if $volumeMountsValue.readOnly }}
             readOnly: {{ $volumeMountsValue.readOnly }}
             {{- end }}
           {{- end }}
-          - name: {{ include "commonPrefix" $ }}kopia-entrypoint-sh
+          - name: {{ include "commonPrefix" $ }}-kopia-entrypoint-sh
             mountPath: /opt/kopia/bin/entrypoint.sh
             subPath: entrypoint-server.sh
             readOnly: true
-          - name: {{ include "commonPrefix" $ }}kopia-probes-sh
+          - name: {{ include "commonPrefix" $ }}-kopia-probes-sh
             mountPath: /opt/kopia/bin/startup.sh
             subPath: startup.sh
             readOnly: true
-          - name: {{ include "commonPrefix" $ }}kopia-probes-sh
+          - name: {{ include "commonPrefix" $ }}-kopia-probes-sh
             mountPath: /opt/kopia/bin/liveness.sh
             subPath: liveness.sh
             readOnly: true
-          - name: {{ include "commonPrefix" $ }}kopia-probes-sh
+          - name: {{ include "commonPrefix" $ }}-kopia-probes-sh
             mountPath: /opt/kopia/bin/readiness.sh
             subPath: readiness.sh
             readOnly: true
-          - name: {{ include "commonPrefix" $ }}kopia-common-functions-extended-sh
+          - name: {{ include "commonPrefix" $ }}-kopia-common-functions-extended-sh
             mountPath: /opt/kopia/bin/common-functions-extended.sh
             subPath: common-functions-extended.sh
             readOnly: true
@@ -215,29 +215,29 @@ spec:
         {{- range $volumeMountsKey, $volumeMountsValue := $.Values.volumeMounts.kopiaserver }}
           {{- if $volumeMountsValue.type }}
             {{- if ne $volumeMountsValue.type "persistentVolume" }}
-        - name: {{ include "commonPrefix" $ }}{{ $volumeMountsKey }}
+        - name: {{ include "commonPrefix" $ }}-{{ $volumeMountsKey }}
               {{- if eq $volumeMountsValue.type "secret"}}
           {{ $volumeMountsValue.type }}:
-            secretName: {{ include "commonPrefix" $ }}{{ $.Release.Name }}-{{ $volumeMountsKey }}
+            secretName: {{ include "commonPrefix" $ }}-{{ $volumeMountsKey }}
               {{- else if eq $volumeMountsValue.type "hostPath" }}
           {{ $volumeMountsValue.type }}:
             path: {{ $volumeMountsValue.hostPath }}
               {{- else }}
-            name: {{ include "commonPrefix" $ }}{{ $volumeMountsKey }}
+            name: {{ include "commonPrefix" $ }}-{{ $volumeMountsKey }}
               {{- end }}
             {{- end }}
           {{- end }}
         {{- end }}
-        - name: {{ include "commonPrefix" $ }}kopia-entrypoint-sh
+        - name: {{ include "commonPrefix" $ }}-kopia-entrypoint-sh
           configMap:
-            name: {{ include "commonPrefix" $ }}kopia-entrypoint-sh
+            name: {{ include "commonPrefix" $ }}-kopia-entrypoint-sh
             defaultMode: 0755
-        - name: {{ include "commonPrefix" $ }}kopia-probes-sh
+        - name: {{ include "commonPrefix" $ }}-kopia-probes-sh
           configMap:
-            name: {{ include "commonPrefix" $ }}kopia-probes-sh
+            name: {{ include "commonPrefix" $ }}-kopia-probes-sh
             defaultMode: 0755
-        - name: {{ include "commonPrefix" $ }}kopia-common-functions-extended-sh
+        - name: {{ include "commonPrefix" $ }}-kopia-common-functions-extended-sh
           configMap:
-            name: {{ include "commonPrefix" $ }}kopia-common-functions-extended-sh
+            name: {{ include "commonPrefix" $ }}-kopia-common-functions-extended-sh
             defaultMode: 0755
 {{- end }}

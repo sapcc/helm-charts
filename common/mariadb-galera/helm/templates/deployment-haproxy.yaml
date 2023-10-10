@@ -8,7 +8,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   namespace: {{ $.Release.Namespace }}
-  name: {{ include "commonPrefix" $ }}haproxy
+  name: {{ include "commonPrefix" $ }}-haproxy
   labels:
     app: {{ $.Release.Name }}
     component: "haproxy"
@@ -61,14 +61,14 @@ spec:
                       values:
                         - "haproxy"
                 topologyKey: "kubernetes.io/hostname"
-      serviceAccount: {{ include "commonPrefix" $ }}{{ $.Release.Name }}
+      serviceAccount: {{ include "commonPrefix" $ }}
       securityContext:
         runAsUser:  {{ $.Values.userId.proxy | default 3100 | int }}
         runAsGroup: {{ $.Values.groupId.proxy | default 3100 | int }}
         fsGroup:  {{ $.Values.groupId.proxy | default 3100 | int }}
       {{- if and (hasKey $.Values.image.proxy "pullSecret") $.Values.image.haproxy.pullSecret }}
       imagePullSecrets:
-      - name: {{ include "commonPrefix" $ }}{{ $.Release.Name }}-{{$.Values.image.haproxy.pullSecret}}
+      - name: {{ include "commonPrefix" $ }}-{{$.Values.image.haproxy.pullSecret}}
       {{- end }}
       containers:
       - name: {{ (include "nodeNamePrefix" (dict "global" $ "component" "haproxy")) }}
@@ -96,7 +96,7 @@ spec:
         - name: {{ $envKey }}
           valueFrom:
             secretKeyRef:
-              name: {{ include "commonPrefix" $ }}{{ $.Release.Name }}-{{ $envValue.secretName }}
+              name: {{ include "commonPrefix" $ }}-{{ $envValue.secretName }}
               key: {{ $envValue.secretKey }}
                   {{- end }}
                 {{- end }}
@@ -168,21 +168,21 @@ spec:
           timeoutSeconds: 10
         {{- end }}
         volumeMounts:
-          - name: {{ include "commonPrefix" $ }}haproxy-config
+          - name: {{ include "commonPrefix" $ }}-haproxy-config
             mountPath: /usr/local/etc/haproxy/haproxy.cfg
             subPath: haproxy.cfg
             readOnly: true
-          - name: {{ include "commonPrefix" $ }}haproxy-probes-sh
+          - name: {{ include "commonPrefix" $ }}-haproxy-probes-sh
             mountPath: /opt/haproxy/bin
             readOnly: true
       terminationGracePeriodSeconds: {{ $.Values.terminationGracePeriodSeconds | default 86400 | int }}
       volumes:
-        - name: {{ include "commonPrefix" $ }}haproxy-config
+        - name: {{ include "commonPrefix" $ }}-haproxy-config
           configMap:
-            name: {{ include "commonPrefix" $ }}haproxy-config
+            name: {{ include "commonPrefix" $ }}-haproxy-config
             defaultMode: 0755
-        - name: {{ include "commonPrefix" $ }}haproxy-probes-sh
+        - name: {{ include "commonPrefix" $ }}-haproxy-probes-sh
           configMap:
-            name: {{ include "commonPrefix" $ }}haproxy-probes-sh
+            name: {{ include "commonPrefix" $ }}-haproxy-probes-sh
             defaultMode: 0755
 {{- end }}

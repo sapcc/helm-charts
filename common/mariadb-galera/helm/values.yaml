@@ -28,6 +28,7 @@ groupId:
 
 namePrefix:
   # -- name prefix used for the MariaDB pods, services etc.
+  # **CRITICAL**: *Enabling or changing this setting after the Galera cluster has been rolled out will cause (temporary) data loss, because pods with new names and new persistant volumes will be created*
   # @default mariadb-g
   application:
   proxy:
@@ -39,8 +40,9 @@ namePrefix:
     haproxy:
   # -- name prefix used for the Kopia pods, services etc.
   # @default backup-kopiaserver
-  kopiaserver: false
-  # -- Use `mariadb.galera.clustername` as prefix for all generated Kubernetes objects. If used as a [subchart of another Helm chart](https://helm.sh/docs/chart_template_guide/subcharts_and_globals/#creating-a-subchart) the parent chart name will be added to.
+  kopiaserver:
+  # -- Use `mariadb.galera.clustername` as additional prefix for all generated Kubernetes objects. The Helm chart release name (for instance `mariadb-galera`) will be added every time
+  # **CRITICAL**: *Enabling or changing this setting after the Galera cluster has been rolled out will cause (temporary) data loss, because pods with new names and new persistant volumes will be created*
   # @default -- false
   includeClusterName:
 # -- only useful for benchmarking [www.kernel.org drop_caches](https://www.kernel.org/doc/html/latest/admin-guide/sysctl/vm.html?highlight=drop_caches#drop-caches)

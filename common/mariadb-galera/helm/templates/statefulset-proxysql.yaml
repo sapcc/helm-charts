@@ -72,14 +72,14 @@ spec:
                       values:
                         - "proxysql"
                 topologyKey: "kubernetes.io/hostname"
-      serviceAccount: {{ include "commonPrefix" $ }}{{ $.Release.Name }}
+      serviceAccount: {{ include "commonPrefix" $ }}
       securityContext:
         runAsUser:  {{ $.Values.userId.proxy | default 3100 | int }}
         runAsGroup: {{ $.Values.groupId.proxy | default 3100 | int }}
         fsGroup:  {{ $.Values.groupId.proxy | default 3100 | int }}
       {{- if and (hasKey $.Values.image.proxy "pullSecret") $.Values.image.proxy.pullSecret }}
       imagePullSecrets:
-      - name: {{ include "commonPrefix" $ }}{{ $.Release.Name }}-{{$.Values.image.proxy.pullSecret}}
+      - name: {{ include "commonPrefix" $ }}-{{$.Values.image.proxy.pullSecret}}
       {{- end }}
       initContainers:
       - name: sysctl-tcp-keepalive
@@ -179,7 +179,7 @@ spec:
         - name: {{ $envKey }}
           valueFrom:
             secretKeyRef:
-              name: {{ include "commonPrefix" $ }}{{ $.Release.Name }}-{{ $envValue.secretName }}
+              name: {{ include "commonPrefix" $ }}-{{ $envValue.secretName }}
               key: {{ $envValue.secretKey }}
                   {{- end }}
                 {{- end }}
@@ -190,7 +190,7 @@ spec:
         - name: {{ $envKey }}
           valueFrom:
             secretKeyRef:
-              name: {{ include "commonPrefix" $ }}{{ $.Release.Name }}-{{ $envValue.secretName }}
+              name: {{ include "commonPrefix" $ }}-{{ $envValue.secretName }}
               key: {{ $envValue.secretKey }}
                   {{- end }}
                 {{- end }}
@@ -281,12 +281,12 @@ spec:
                 - -c
                 - '/opt/proxysql/bin/post-start-hook.sh'
         volumeMounts:
-        {{- range $volumeMountsKey, $volumeMountsValue := $.Values.volumeMounts.proxy }}
+        {{- range $volumeMountsKey, $volumeMountsValue := $.Values.volumeMounts.proxy.proxysql }}
           {{- if $volumeMountsValue.enabled }}
             {{- if (hasKey $volumeMountsValue "claimName") }}
               {{- range $volumeClaimTemplatesKey, $volumeClaimTemplatesValue := $.Values.volumeClaimTemplates }}
                 {{- if eq $volumeClaimTemplatesKey $volumeMountsValue.claimName }}
-          - name: {{ include "commonPrefix" $ }}{{ $volumeMountsKey }}-{{ $volumeMountsValue.claimName | lower }}
+          - name: {{ include "commonPrefix" $ }}-{{ $volumeMountsKey }}-{{ $volumeMountsValue.claimName | lower }}
             mountPath: {{ $volumeMountsValue.mountPath }}
                   {{- if $volumeMountsValue.readOnly }}
             readOnly: {{ $volumeMountsValue.readOnly }}
@@ -294,7 +294,7 @@ spec:
                 {{- end }}
               {{- end }}
             {{- else }}
-          - name: {{ include "commonPrefix" $ }}{{ $volumeMountsKey | lower }}
+          - name: {{ include "commonPrefix" $ }}-{{ $volumeMountsKey | lower }}
             mountPath: {{ $volumeMountsValue.mountPath }}
               {{- if $volumeMountsValue.readOnly }}
             readOnly: {{ $volumeMountsValue.readOnly }}
@@ -302,109 +302,109 @@ spec:
             {{- end }}
           {{- end }}
         {{- end }}
-          - name: {{ include "commonPrefix" $ }}proxysql-conf
+          - name: {{ include "commonPrefix" $ }}-proxysql-conf
             mountPath: /opt/proxysql/etc/tpl/proxysql_servers.cfg.tpl
             subPath: proxysql_servers.cfg.tpl
             readOnly: true
-          - name: {{ include "commonPrefix" $ }}proxysql-conf
+          - name: {{ include "commonPrefix" $ }}-proxysql-conf
             mountPath: /opt/proxysql/etc/tpl/mysql_variables.cfg.tpl
             subPath: mysql_variables.cfg.tpl
             readOnly: true
-          - name: {{ include "commonPrefix" $ }}proxysql-conf
+          - name: {{ include "commonPrefix" $ }}-proxysql-conf
             mountPath: /opt/proxysql/etc/tpl/galera_hostgroups.cfg.tpl
             subPath: galera_hostgroups.cfg.tpl
             readOnly: true
-          - name: {{ include "commonPrefix" $ }}proxysql-conf
+          - name: {{ include "commonPrefix" $ }}-proxysql-conf
             mountPath: /opt/proxysql/etc/tpl/mysql_servers.cfg.tpl
             subPath: mysql_servers.cfg.tpl
             readOnly: true
-          - name: {{ include "commonPrefix" $ }}proxysql-conf
+          - name: {{ include "commonPrefix" $ }}-proxysql-conf
             mountPath: /opt/proxysql/etc/tpl/mysql_query_rules.cfg.tpl
             subPath: mysql_query_rules.cfg.tpl
             readOnly: true
-          - name: {{ include "commonPrefix" $ }}proxysql-conf
+          - name: {{ include "commonPrefix" $ }}-proxysql-conf
             mountPath: /opt/proxysql/etc/tpl/mysql_users.cfg.tpl
             subPath: mysql_users.cfg.tpl
             readOnly: true
-          - name: {{ include "commonPrefix" $ }}proxysql-entrypoint-sh
+          - name: {{ include "commonPrefix" $ }}-proxysql-entrypoint-sh
             mountPath: /opt/proxysql/bin/entrypoint-cluster.sh
             subPath: entrypoint-cluster.sh
             readOnly: true
-          - name: {{ include "commonPrefix" $ }}proxysql-common-functions-extended-sh
+          - name: {{ include "commonPrefix" $ }}-proxysql-common-functions-extended-sh
             mountPath: /opt/proxysql/bin/common-functions-extended.sh
             subPath: common-functions-extended.sh
             readOnly: true
-          - name: {{ include "commonPrefix" $ }}proxysql-probes-sh
+          - name: {{ include "commonPrefix" $ }}-proxysql-probes-sh
             mountPath: /opt/proxysql/bin/startup.sh
             subPath: startup.sh
             readOnly: true
-          - name: {{ include "commonPrefix" $ }}proxysql-probes-sh
+          - name: {{ include "commonPrefix" $ }}-proxysql-probes-sh
             mountPath: /opt/proxysql/bin/liveness.sh
             subPath: liveness.sh
             readOnly: true
-          - name: {{ include "commonPrefix" $ }}proxysql-probes-sh
+          - name: {{ include "commonPrefix" $ }}-proxysql-probes-sh
             mountPath: /opt/proxysql/bin/readiness.sh
             subPath: readiness.sh
             readOnly: true
-          - name: {{ include "commonPrefix" $ }}proxysql-hooks-sh
+          - name: {{ include "commonPrefix" $ }}-proxysql-hooks-sh
             mountPath: /opt/proxysql/bin/pre-stop-hook.sh
             subPath: pre-stop-hook.sh
             readOnly: true
-          - name: {{ include "commonPrefix" $ }}proxysql-hooks-sh
+          - name: {{ include "commonPrefix" $ }}-proxysql-hooks-sh
             mountPath: /opt/proxysql/bin/post-start-hook.sh
             subPath: post-start-hook.sh
             readOnly: true
       terminationGracePeriodSeconds: {{ $.Values.terminationGracePeriodSeconds | default 86400 | int }}
       volumes:
-        {{- range $volumeMountsKey, $volumeMountsValue := $.Values.volumeMounts.proxy }}
+        {{- range $volumeMountsKey, $volumeMountsValue := $.Values.volumeMounts.proxy.proxysql }}
           {{- if $volumeMountsValue.enabled }}
             {{- if $volumeMountsValue.type }}
               {{- if ne $volumeMountsValue.type "persistentVolume" }}
-        - name: {{ include "commonPrefix" $ }}{{ $volumeMountsKey }}
+        - name: {{ include "commonPrefix" $ }}-{{ $volumeMountsKey }}
                 {{- if eq $volumeMountsValue.type "secret"}}
           {{ $volumeMountsValue.type }}:
-            secretName: {{ include "commonPrefix" $ }}{{ $.Release.Name }}-{{ $volumeMountsKey }}
+            secretName: {{ include "commonPrefix" $ }}-{{ $volumeMountsKey }}
                 {{- else if eq $volumeMountsValue.type "hostPath" }}
           {{ $volumeMountsValue.type }}:
             path: {{ $volumeMountsValue.hostPath }}
                 {{- else }}
-            name: {{ include "commonPrefix" $ }}{{ $volumeMountsKey }}
+            name: {{ include "commonPrefix" $ }}-{{ $volumeMountsKey }}
                 {{- end }}
               {{- end }}
             {{- end }}
           {{- end }}
         {{- end }}
-        - name: {{ include "commonPrefix" $ }}proxysql-conf
+        - name: {{ include "commonPrefix" $ }}-proxysql-conf
           configMap:
-            name: {{ include "commonPrefix" $ }}proxysql-conf
+            name: {{ include "commonPrefix" $ }}-proxysql-conf
             defaultMode: 0755
-        - name: {{ include "commonPrefix" $ }}proxysql-entrypoint-sh
+        - name: {{ include "commonPrefix" $ }}-proxysql-entrypoint-sh
           configMap:
-            name: {{ include "commonPrefix" $ }}proxysql-entrypoint-sh
+            name: {{ include "commonPrefix" $ }}-proxysql-entrypoint-sh
             defaultMode: 0755
-        - name: {{ include "commonPrefix" $ }}proxysql-common-functions-extended-sh
+        - name: {{ include "commonPrefix" $ }}-proxysql-common-functions-extended-sh
           configMap:
-            name: {{ include "commonPrefix" $ }}proxysql-common-functions-extended-sh
+            name: {{ include "commonPrefix" $ }}-proxysql-common-functions-extended-sh
             defaultMode: 0755
-        - name: {{ include "commonPrefix" $ }}proxysql-probes-sh
+        - name: {{ include "commonPrefix" $ }}-proxysql-probes-sh
           configMap:
-            name: {{ include "commonPrefix" $ }}proxysql-probes-sh
+            name: {{ include "commonPrefix" $ }}-proxysql-probes-sh
             defaultMode: 0755
-        - name: {{ include "commonPrefix" $ }}proxysql-hooks-sh
+        - name: {{ include "commonPrefix" $ }}-proxysql-hooks-sh
           configMap:
-            name: {{ include "commonPrefix" $ }}proxysql-hooks-sh
+            name: {{ include "commonPrefix" $ }}-proxysql-hooks-sh
             defaultMode: 0755
   volumeClaimTemplates:
         {{- range $volumeClaimTemplatesKey, $volumeClaimTemplatesValue := $.Values.volumeClaimTemplates }}
-          {{- range $volumeMountsKey, $volumeMountsValue := $.Values.volumeMounts.proxy }}
+          {{- range $volumeMountsKey, $volumeMountsValue := $.Values.volumeMounts.proxy.proxysql }}
             {{- if $volumeMountsValue.enabled }}
               {{- if (hasKey $volumeMountsValue "claimName") }}
                 {{- if eq $volumeClaimTemplatesKey $volumeMountsValue.claimName }}
   - metadata:
-      name: {{ include "commonPrefix" $ }}{{ $volumeMountsKey }}-{{ $volumeMountsValue.claimName | lower }}
+      name: {{ include "commonPrefix" $ }}-{{ $volumeMountsKey }}-{{ $volumeMountsValue.claimName | lower }}
     spec:
                 {{- if $volumeClaimTemplatesValue.storageClassName }}
-      storageClassName: {{ include "commonPrefix" $ }}{{ $.Release.Name }}-{{ $volumeClaimTemplatesValue.storageClassName }}
+      storageClassName: {{ include "commonPrefix" $ }}-{{ $volumeClaimTemplatesValue.storageClassName }}
                 {{- end }}
       accessModes: {{ $volumeClaimTemplatesValue.accessModes }}
       resources:

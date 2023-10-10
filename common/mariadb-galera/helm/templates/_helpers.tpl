@@ -80,7 +80,9 @@ spec:
 */}}
 {{- define "commonPrefix" }}
   {{- if and (hasKey .Values.mariadb.galera "clustername") (.Values.mariadb.galera.clustername) (hasKey .Values.namePrefix "includeClusterName") (.Values.namePrefix.includeClusterName) }}
-    {{- printf "%s-" .Values.mariadb.galera.clustername }}
+    {{- printf "%s-%s" $.Release.Name .Values.mariadb.galera.clustername }}
+  {{- else }}
+    {{- printf "%s" $.Release.Name }}
   {{- end }}
 {{- end }}
 
@@ -93,27 +95,27 @@ spec:
 {{- define "nodeNamePrefix" }}
   {{- if eq .component "application" }}
     {{- if and (.global.Values.namePrefix) (hasKey .global.Values.namePrefix .component) }}
-      {{- printf "%s%s" (include "commonPrefix" .global) (.global.Values.namePrefix.application | default "mariadb-g") }}
+      {{- printf "%s-%s" (include "commonPrefix" .global) (.global.Values.namePrefix.application | default "mariadb-g") }}
     {{- else }}
-      {{- printf "%s%s" (include "commonPrefix" .global) "mariadb-g" }}
+      {{- printf "%s-%s" (include "commonPrefix" .global) "mariadb-g" }}
     {{- end }}
   {{- else if eq .component "proxysql" }}
     {{- if and (.global.Values.namePrefix.proxy) (hasKey .global.Values.namePrefix.proxy .component) }}
-      {{- printf "%s%s" (include "commonPrefix" .global) (.global.Values.namePrefix.proxy.proxysql | default "proxysql") }}
+      {{- printf "%s-%s" (include "commonPrefix" .global) (.global.Values.namePrefix.proxy.proxysql | default "proxysql") }}
     {{- else }}
-      {{- printf "%s%s" (include "commonPrefix" .global) "proxysql" }}
+      {{- printf "%s-%s" (include "commonPrefix" .global) "proxysql" }}
     {{- end }}
   {{- else if eq .component "kopiaserver" }}
     {{- if and (.global.Values.namePrefix) (hasKey .global.Values.namePrefix .component) }}
-      {{- printf "%s%s" (include "commonPrefix" .global) (.global.Values.namePrefix.kopiaserver | default "backup-kopiaserver") }}
+      {{- printf "%s-%s" (include "commonPrefix" .global) (.global.Values.namePrefix.kopiaserver | default "backup-kopiaserver") }}
     {{- else }}
-      {{- printf "%s%s" (include "commonPrefix" .global) "backup-kopiaserver" }}
+      {{- printf "%s-%s" (include "commonPrefix" .global) "backup-kopiaserver" }}
     {{- end }}
   {{- else if eq .component "haproxy" }}
     {{- if and (.global.Values.namePrefix.proxy) (hasKey .global.Values.namePrefix.proxy .component) }}
-      {{- printf "%s%s" (include "commonPrefix" .global) (.global.Values.namePrefix.proxy.haproxy | default "haproxy") }}
+      {{- printf "%s-%s" (include "commonPrefix" .global) (.global.Values.namePrefix.proxy.haproxy | default "haproxy") }}
     {{- else }}
-      {{- printf "%s%s" (include "commonPrefix" .global) "haproxy" }}
+      {{- printf "%s-%s" (include "commonPrefix" .global) "haproxy" }}
     {{- end }}
   {{- else }}
     {{- fail "No supported component provided for the nodeNamePrefix function" }}
@@ -215,7 +217,7 @@ spec:
   type: Opaque
   metadata:
     namespace: {{ $.global.Release.Namespace }}
-    name: {{ include "commonPrefix" .global }}{{ $.global.Release.Name }}-{{ $.suffix }}-{{ $.name }}
+    name: {{ include "commonPrefix" .global }}-{{ $.suffix }}-{{ $.name }}
   data:
   {{- if $.credential.username }}
     username: {{ $.credential.username | b64enc }}
@@ -233,7 +235,7 @@ spec:
   type: kubernetes.io/dockerconfigjson
   metadata:
     namespace: {{ $.global.Release.Namespace }}
-    name: {{ include "commonPrefix" .global }}{{ $.global.Release.Name }}-pullsecret-{{ $.name }}
+    name: {{ include "commonPrefix" .global }}-pullsecret-{{ $.name }}
   data:
     .dockerconfigjson: {{ printf "{\"auths\": {\"%s\": {\"auth\": \"%s\"}}}" (required (printf "image.pullSecrets.%s.registry is required to configure the Kubernetes pull secret '%s'" $.name $.name) $.credential.registry) (printf "%s" (required (printf "image.pullSecrets.%s.credential is required to configure the Kubernetes pull secret '%s'" $.name $.name) $.credential.credential) | b64enc) | b64enc }}
 {{- end }}
