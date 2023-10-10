@@ -2,7 +2,7 @@ groups:
 - name: kubelet-stats-metrics.alerts
   rules:
   - alert: PodEphemeralStorageUsage
-    expr: kubelet_stats_ephemeral_storage_pod_usage / kubelet_stats_ephemeral_storage_pod_capacity >= 0.1
+    expr: (kubelet_stats_ephemeral_storage_pod_usage / kubelet_stats_ephemeral_storage_pod_capacity >= 0.3) * on (pod_name) group_left (label_ccloud_support_group) (label_replace(kube_pod_labels, "pod_name", "$1", "pod", "(.*)"))
     for: 1h
     labels:
       tier: k8s
@@ -10,10 +10,10 @@ groups:
       support_group: {{ include "supportGroupFromLabelsOrDefault" "containers" }}
       severity: warning
       context: storage
-      meta: "Pod {{`{{ $labels.pod_namespace }}/{{ $labels.pod_name }}`}} is using more than 10% of the node's ephemeral storage."
+      meta: "Pod {{`{{ $labels.pod_namespace }}/{{ $labels.pod_name }}`}} is using more than 30% of the node's ephemeral storage."
     annotations:
-      summary: "Pod {{`{{ $labels.pod_namespace }}/{{ $labels.pod_name }}`}} is using more than 10% of available ephemeral storage for the last hour."
-      description: "Pod {{`{{ $labels.pod_namespace }}/{{ $labels.pod_name }}`}} is using more than 10% of node {{`{{ $labels.node_name }}`}} ephemeral storage. Please check with the service owner if this is the expected behavior."
+      summary: "Pod {{`{{ $labels.pod_namespace }}/{{ $labels.pod_name }}`}} is using more than 30% of available ephemeral storage for the last hour."
+      description: "Pod {{`{{ $labels.pod_namespace }}/{{ $labels.pod_name }}`}} is using more than 30% of node {{`{{ $labels.node_name }}`}} ephemeral storage. Please check with the service owner if this is the expected behavior."
   - alert: NodeEphemeralStorageUsage
     expr: sum by (node_name) (kubelet_stats_ephemeral_storage_pod_usage / kubelet_stats_ephemeral_storage_pod_capacity) > 0.5
     for: 15m
