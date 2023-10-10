@@ -9,15 +9,12 @@ metadata:
     app.kubernetes.io/name: network-generic-ssh-exporter-neutron-router
 spec:
   httpSDConfigs:
-    - url: {{ .Values.global.http_sd_configs.netbox_url }}/devices/?status=active&region={{ .Values.global.region }}&tenant=converged-cloud&role=neutron-router
+    - url: {{ .Values.global.http_sd_configs.netbox_url }}/devices/?custom_labels=__param_batch=neutron-router;__param_credential=default;__param_device=cisco-ios-xe&status=active&region={{ .Values.global.region }}&tenant=converged-cloud&role=neutron-router
       refreshInterval: {{ .Values.global.http_sd_configs.refresh_interval }}
   metricsPath: /ssh
   interval: 120s
   scrapeTimeout: 60s
   relabelings:
-    - sourceLabels: [job]
-      regex: network/ssh
-      action: keep
     - sourceLabels: [__address__]
       targetLabel: __param_target
     - targetLabel: __param_batch
