@@ -4,22 +4,22 @@ apiVersion: monitoring.coreos.com/v1alpha1
 kind: ScrapeConfig
 
 metadata:
-  name: 'redfish/bb'
+  name: 'redfish-bb'
   namespace: {{ $values.namespace }}
   labels:
     prometheus: {{ required "$values.prometheus missing" $values.prometheus }}
-    app.kubernetes.io/name: 'redfish/bb'
+    app.kubernetes.io/name: 'redfish-bb'
 
 spec:
   interval: {{$values.scrapeInterval}}
   scrapeTimeout: {{$values.scrapeTimeout}}
   httpSDConfigs:
-    - url: {{ $values.http_sd_configs.netbox_production_url }}/devices/?custom_labels=job=redfish/bb&target=mgmt_only&status=active&role=server&tenant=converged-cloud&platform=vmware-esxi&tag__n=no-redfish&region={{ .Values.global.region }}
+    - url: {{ $values.http_sd_configs.netbox_production_url }}/devices/?custom_labels=job=redfish-bb&target=mgmt_only&status=active&role=server&tenant=converged-cloud&platform=vmware-esxi&tag__n=no-redfish&region={{ .Values.global.region }}
       refreshInterval: {{ $values.http_sd_configs.refresh_interval }}
   metricsPath: /redfish
   relabelings:
     - sourceLabels: [job]
-      regex: redfish/bb
+      regex: redfish-bb
       action: keep
     - sourceLabels: [__address__]
       targetLabel: __param_target

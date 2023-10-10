@@ -3,22 +3,22 @@
 apiVersion: monitoring.coreos.com/v1alpha1
 kind: ScrapeConfig
 metadata:
-  name: 'redfish/bm'
+  name: 'redfish-bm'
   namespace: {{ $values.namespace }}
   labels:
     prometheus: {{ required "$values.prometheus missing" $values.prometheus }}
-    app.kubernetes.io/name: 'redfish/bm'
+    app.kubernetes.io/name: 'redfish-bm'
 
 spec:
   interval: {{$values.scrapeInterval}}
   scrapeTimeout: {{$values.scrapeTimeout}}
   httpSDConfigs:
-    - url: {{ $values.http_sd_configs.netbox_production_url }}/devices/?custom_labels=job=redfish/bm&target=mgmt_only&status=active&role=server&tenant=converged-cloud&platform=ironic&tag__n=no-redfish&region={{ .Values.global.region }}
+    - url: {{ $values.http_sd_configs.netbox_production_url }}/devices/?custom_labels=job=redfish-bm&target=mgmt_only&status=active&role=server&tenant=converged-cloud&platform=ironic&tag__n=no-redfish&region={{ .Values.global.region }}
       refreshInterval: {{ $values.http_sd_configs.refresh_interval }}
   metricsPath: /redfish
   relabelings:
     - sourceLabels: [job]
-      regex: redfish/bm
+      regex: redfish-bm
       action: keep
     - sourceLabels: [__address__]
       targetLabel: __param_target
