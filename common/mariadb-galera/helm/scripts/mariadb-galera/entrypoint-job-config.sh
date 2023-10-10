@@ -31,7 +31,12 @@ setuprole {{ $roleKey | squote }} {{ $roleValue.privileges | join ", " | squote 
 {{- $passwordEnvVar := "" }}
 {{- $userRequired := false }}
 {{- range $userKey, $userValue := $.Values.mariadb.users }}
-  {{- if $userValue.enabled }}
+  {{- $requiredUsers := list "root" }}
+  {{- if or ($.Values.monitoring.mysqld_exporter.enabled) (and ($.Values.proxy.enabled) (eq $.Values.proxy.type "proxysql")) }}
+    {{- $requiredUsers = append $requiredUsers "monitor" }}
+    {{- $requiredUsers = $requiredUsers | uniq | compact }}
+  {{- end}}
+  {{- if or (has $userKey $requiredUsers) $userValue.enabled }}
     {{- range $hostnameKey, $hostnameValue := required (printf "A valid '.hostnames' structure is required for the '%s' user" $userKey) $userValue.hostnames }}
       {{- $usernameEnvVar = "" }}
       {{- $passwordEnvVar = "" }}

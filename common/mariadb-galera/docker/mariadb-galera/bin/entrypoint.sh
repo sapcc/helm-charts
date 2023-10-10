@@ -45,7 +45,8 @@ function initdb {
     readrolegrant 'fullaccess' '/opt/mariadb/etc/sql/'
     setuprole 'fullaccess' "${DB_ROLE_PRIVS}" "${DB_ROLE_OBJ}" "${DB_ROLE_GRANT}"
     # check if variables are set without triggering the "unbound variable" error
-    if [ -z ${!MARIADB_MONITORING_USERNAME+set} ] && [ -z ${!MARIADB_MONITORING_PASSWORD+set} ] ; then
+    # https://www.gnu.org/software/bash/manual/bash.html#Shell-Parameter-Expansion
+    if [ ! -z ${MARIADB_MONITORING_USERNAME+x} ] && [ ! -z ${MARIADB_MONITORING_PASSWORD+x} ] ; then
       readroleprivileges 'monitor' '/opt/mariadb/etc/sql/'
       readroleobject 'monitor' '/opt/mariadb/etc/sql/'
       readrolegrant 'monitor' '/opt/mariadb/etc/sql/'
@@ -54,7 +55,8 @@ function initdb {
     setupuser "${MARIADB_ROOT_USERNAME}" "${MARIADB_ROOT_PASSWORD}" 'fullaccess' 0 '%' 'ed25519' "WITH ADMIN OPTION"
     setupuser "${MARIADB_ROOT_USERNAME}" "${MARIADB_ROOT_PASSWORD}" 'fullaccess' 0 '::1' 'ed25519' "WITH ADMIN OPTION"
     # check if variables are set without triggering the "unbound variable" error
-    if [ -z ${!MARIADB_MONITORING_USERNAME+set} ] && [ -z ${!MARIADB_MONITORING_PASSWORD+set} ] ; then
+    # https://www.gnu.org/software/bash/manual/bash.html#Shell-Parameter-Expansion
+    if [ ! -z ${MARIADB_MONITORING_USERNAME+x} ] && [ ! -z ${MARIADB_MONITORING_PASSWORD+x} ] ; then
       setupuser "${MARIADB_MONITORING_USERNAME}" "${MARIADB_MONITORING_PASSWORD}" 'monitor' "${MARIADB_MONITORING_CONNECTION_LIMIT}" '%' 'mysql_native_password' " "
       setupuser "${MARIADB_MONITORING_USERNAME}" "${MARIADB_MONITORING_PASSWORD}" 'monitor' "${MARIADB_MONITORING_CONNECTION_LIMIT}" '::1' 'mysql_native_password' " "
       setupuser "${MARIADB_MONITORING_USERNAME}" "${MARIADB_MONITORING_PASSWORD}" 'monitor' "${MARIADB_MONITORING_CONNECTION_LIMIT}" 'localhost' 'mysql_native_password' " "
@@ -62,7 +64,8 @@ function initdb {
     setdefaultrole 'fullaccess' "${MARIADB_ROOT_USERNAME}" '%'
     setdefaultrole 'fullaccess' "${MARIADB_ROOT_USERNAME}" '::1'
     # check if variables are set without triggering the "unbound variable" error
-    if [ -z ${!MARIADB_MONITORING_USERNAME+set} ] && [ -z ${!MARIADB_MONITORING_PASSWORD+set} ] ; then
+    # https://www.gnu.org/software/bash/manual/bash.html#Shell-Parameter-Expansion
+    if [ ! -z ${MARIADB_MONITORING_USERNAME+x} ] && [ ! -z ${MARIADB_MONITORING_PASSWORD+x} ] ; then
       setdefaultrole 'monitor' "${MARIADB_MONITORING_USERNAME}" '%'
       setdefaultrole 'monitor' "${MARIADB_MONITORING_USERNAME}" '::1'
       setdefaultrole 'monitor' "${MARIADB_MONITORING_USERNAME}" 'localhost'
