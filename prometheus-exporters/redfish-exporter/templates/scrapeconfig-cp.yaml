@@ -1,0 +1,31 @@
+{{- $values := .Values.redfish_exporter -}}
+{{- if $values.enabled }}
+apiVersion: monitoring.coreos.com/v1alpha1
+kind: ScrapeConfig
+metadata:
+  name: 'redfish/cp'
+  namespace: {{ $values.namespace }}
+  labels:
+    prometheus: {{ required "$values.prometheus missing" $values.prometheus }}
+    app.kubernetes.io/name: 'redfish/cp'
+
+spec:
+  interval: {{$values.scrapeInterval}}
+  scrapeTimeout: {{$values.scrapeTimeout}}
+  httpSDConfigs:
+    - url: {{ $values.http_sd_configs.netbox_production_url }}/devices/?custom_labels=job=redfish/cp&target=mgmt_only&status=active&role=server&tenant=converged-cloud&platform=coreos&tag__n=no-redfish&region={{ .Values.global.region }}
+      refreshInterval: {{ $values.http_sd_configs.refresh_interval }}
+  metricsPath: /redfish
+  relabelings:
+    - sourceLabels: [job]
+      regex: redfish/cp
+      action: keep
+    - sourceLabels: [__address__]
+      targetLabel: __param_target
+    - sourceLabels: [__param_target]
+      targetLabel: instance
+    - targetLabel: __address__
+      replacement: redfish-exporter:{{$values.listen_port}}
+    - sourceLabels: [__meta_serial]
+      targetLabel: server_serial
+{{- end }}
