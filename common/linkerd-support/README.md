@@ -19,6 +19,9 @@ dependencies:
 
 Run `helm dep up` in the chart's root directory to generate the `Chart.lock` file.
 
+> [!NOTE]  
+> OCI support in Helm is generally available since version 3.8.0. If you are still using an older version, you must first upgrade to an up-to-date version of helm.
+
 You also need to set the field `.Values.global.linkerd_requested` in your top-level chart.
 No Linkerd annotations will be rendered unless this flag is set to true.
 This allows you to control when to add your service to the mesh.
