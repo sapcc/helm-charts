@@ -5,8 +5,8 @@
 */}}
 {{- define "networkService" }}
 {{ $nodeNamePrefix := "" }}
-{{ if or (eq .component "application") (eq .component "application-direct") }}
-  {{ $nodeNamePrefix = (include "nodeNamePrefix" (dict "global" .global "component" "application")) }}
+{{ if or (eq .component "database") (eq .component "database-direct") }}
+  {{ $nodeNamePrefix = (include "nodeNamePrefix" (dict "global" .global "component" "database")) }}
 {{ else }}
   {{ $nodeNamePrefix = (include "nodeNamePrefix" (dict "global" .global "component" .component)) }}
 {{ end }}
@@ -17,8 +17,8 @@ metadata:
   namespace: {{ .global.Release.Namespace }}
   {{- if eq .replica "notused" }}
     {{- if and (eq .type "frontend") (.global.Values.proxy.enabled) (or (eq .component "proxysql") (eq .component "haproxy"))}}
-  name: {{ (printf "%s-%s" (include "nodeNamePrefix" (dict "global" .global "component" "application")) "frontend") }}
-    {{- else if and (eq .type "frontend") (eq .component "application-direct")}}
+  name: {{ (printf "%s-%s" (include "nodeNamePrefix" (dict "global" .global "component" "database")) "frontend") }}
+    {{- else if and (eq .type "frontend") (eq .component "database-direct")}}
   name: {{ (printf "%s-%s-direct" $nodeNamePrefix "frontend") }}
     {{- else }}
   name: {{ (printf "%s-%s" $nodeNamePrefix .type) }}
@@ -50,14 +50,14 @@ spec:
     statefulset.kubernetes.io/pod-name: {{ (printf "%s-%s" $nodeNamePrefix .replica) }}
   {{- else if and (hasKey .global.Values.mariadb "autostart") (not .global.Values.mariadb.autostart) }}
     component: "disabledBecauseOf-mariadb.autostart-disabled"
-  {{- else if and (.global.Values.command) (hasKey .global.Values.command "application") }}
-    component: "disabledBecauseOf-command.application-defined"
+  {{- else if and (.global.Values.command) (hasKey .global.Values.command "database") }}
+    component: "disabledBecauseOf-command.database-defined"
   {{- else if and (hasKey .global.Values.mariadb "wipeDataAndLog") (.global.Values.mariadb.wipeDataAndLog) }}
     component: "disabledBecauseOf-mariadb.wipeDataAndLog-enabled"
   {{- else if and (hasKey .global.Values.mariadb.galera.restore "kopia") (.global.Values.mariadb.galera.restore.kopia.enabled) }}
     component: "disabledBecauseOf-mariadb.galera.restore-enabled"
-  {{- else if eq .component "application-direct" }}
-    component: "application"
+  {{- else if eq .component "database-direct" }}
+    component: "database"
   {{- else }}
     component: {{ .component | quote }}
   {{- end }}
@@ -88,14 +88,14 @@ spec:
 
 
 {{/*
-  Fetch current node name prefix for a component (currently application and proxy are supported)
-  application node name prefix:   include "nodeNamePrefix" (dict "global" $ "component" "application")
+  Fetch current node name prefix for a component (currently database and proxy are supported)
+  database node name prefix:   include "nodeNamePrefix" (dict "global" $ "component" "database")
   proxysql node name prefix:      include "nodeNamePrefix" (dict "global" $ "component" "proxysql")
 */}}
 {{- define "nodeNamePrefix" }}
-  {{- if eq .component "application" }}
+  {{- if eq .component "database" }}
     {{- if and (.global.Values.namePrefix) (hasKey .global.Values.namePrefix .component) }}
-      {{- printf "%s-%s" (include "commonPrefix" .global) (.global.Values.namePrefix.application | default "mariadb-g") }}
+      {{- printf "%s-%s" (include "commonPrefix" .global) (.global.Values.namePrefix.database | default "mariadb-g") }}
     {{- else }}
       {{- printf "%s-%s" (include "commonPrefix" .global) "mariadb-g" }}
     {{- end }}
@@ -130,11 +130,11 @@ spec:
 {{- define "wsrepClusterAddress" }}
   {{- $galeraPort := "" }}
   {{- $nodeNames := list -}}
-  {{- $nodeNamePrefix := (include "nodeNamePrefix" (dict "global" .global "component" "application")) -}}
-  {{- range $int, $err := until ($.global.Values.replicas.application|int) }}
-    {{- $nodeNames = (printf "%s-%d.%s.svc.cluster.local:%d" $nodeNamePrefix $int $.global.Release.Namespace ((required ".services.application.backend.ports.galera.targetPort missing" $.global.Values.services.application.backend.ports.galera.port) | int)) | append $nodeNames -}}
+  {{- $nodeNamePrefix := (include "nodeNamePrefix" (dict "global" .global "component" "database")) -}}
+  {{- range $int, $err := until ($.global.Values.replicas.database|int) }}
+    {{- $nodeNames = (printf "%s-%d.%s.svc.cluster.local:%d" $nodeNamePrefix $int $.global.Release.Namespace ((required ".services.database.backend.ports.galera.targetPort missing" $.global.Values.services.database.backend.ports.galera.port) | int)) | append $nodeNames -}}
   {{- end }}
-  {{- (printf "gcomm://%s,%s-backend.%s.svc.cluster.local:%d" (join "," $nodeNames) $nodeNamePrefix $.global.Release.Namespace ((required ".services.application.backend.ports.galera.targetPort missing" $.global.Values.services.application.backend.ports.galera.port) | int)) }}
+  {{- (printf "gcomm://%s,%s-backend.%s.svc.cluster.local:%d" (join "," $nodeNames) $nodeNamePrefix $.global.Release.Namespace ((required ".services.database.backend.ports.galera.targetPort missing" $.global.Values.services.database.backend.ports.galera.port) | int)) }}
 {{- end }}
 
 {{/*
@@ -158,7 +158,7 @@ spec:
   include "getNetworkPort" (dict "global" $ "type" "backend" "name" "ist")
 */}}
 {{- define "getNetworkPort" }}
-  {{- range $servicesKey, $servicesValue := $.global.Values.services.application }}
+  {{- range $servicesKey, $servicesValue := $.global.Values.services.database }}
     {{- if eq $servicesValue.name $.type }}
       {{- range $portsKey, $portsValue := $servicesValue.ports }}
         {{- if eq $portsValue.name $.name }}
@@ -175,7 +175,7 @@ spec:
 */}}
 {{- define "serverIdList" }}
   {{- $serverIds := list -}}
-  {{- range $int, $err := until ($.global.Values.replicas.application|int) }}
+  {{- range $int, $err := until ($.global.Values.replicas.database|int) }}
     {{- $serverIds = ((printf "%d%d" ($.global.Values.mariadb.galera.gtidDomainId | default 1 | int) $int) | int) | append $serverIds -}}
   {{- end }}
   {{- (join "," $serverIds) }}

@@ -75,7 +75,7 @@
 ## v0.15.0 - 2023/06/30
 * credential support in values.yaml (to be used with external templating)
   * based on that the secrets.yaml will generate Kubernetes secrets
-  * the related [environment variables will lookup the credential infos](https://kubernetes.io/docs/tasks/inject-data-application/distribute-credentials-secure/#define-container-environment-variables-using-secret-data) from the secrets
+  * the related [environment variables will lookup the credential infos](https://kubernetes.io/docs/tasks/inject-data-database/distribute-credentials-secure/#define-container-environment-variables-using-secret-data) from the secrets
   * Credentials for the different components can be maintained (MariaDB, mysqld_exporter, ProxySQL, Kopia, Restic)
 * database and roles management also moved into the values.yaml
 * separate config folder structure for MariaDB credentials, roles and databases removed

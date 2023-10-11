@@ -1,5 +1,5 @@
 {{- if and (hasKey $.Values.mariadb "autostart") (not $.Values.mariadb.autostart) }}
-{{- else if and ($.Values.command) (hasKey $.Values.command "application") }}
+{{- else if and ($.Values.command) (hasKey $.Values.command "database") }}
 {{- else if and (hasKey $.Values.mariadb.galera.restore "kopia") ($.Values.mariadb.galera.restore.kopia.enabled) }}
 {{- else if and (hasKey $.Values.mariadb "wipeDataAndLog") ($.Values.mariadb.wipeDataAndLog) }}
 {{- else if and ($.Values.proxy.enabled) (eq $.Values.proxy.type "proxysql") }}
@@ -38,7 +38,7 @@ spec:
         {{- if $.Values.monitoring.proxy.enabled }}
         prometheus.io/scrape: "true"
         prometheus.io/port: {{ (required ".services.proxy.proxysql.backend.ports.restapi.targetPort missing" $.Values.services.proxy.proxysql.backend.ports.restapi.targetPort) | quote }}
-        prometheus.io/targets: {{ $.Values.monitoring.prometheus.instance.application | default "prometheus" | quote }}
+        prometheus.io/targets: {{ $.Values.monitoring.prometheus.instance.database | default "prometheus" | quote }}
         {{- end }}
         checksum/configmap: {{ include (print $.Template.BasePath "/configmap-proxysql.yaml") $ | sha256sum }}
         checksum/proxysql.conf: {{ include (print $.Template.BasePath "/configmap-proxysql.conf.yaml") $ | sha256sum }}
@@ -83,7 +83,7 @@ spec:
       {{- end }}
       initContainers:
       - name: sysctl-tcp-keepalive
-        image: "{{ $.Values.image.os.registry }}/{{ $.Values.image.os.project }}/{{ $.Values.image.os.applicationname }}:{{ $.Values.image.os.applicationversion }}-{{ $.Values.image.os.imageversion | int }}"
+        image: "{{ $.Values.image.os.registry }}/{{ $.Values.image.os.project }}/{{ $.Values.image.os.databasename }}:{{ $.Values.image.os.databaseversion }}-{{ $.Values.image.os.imageversion | int }}"
         imagePullPolicy: {{ $.Values.image.os.pullPolicy | default "IfNotPresent" | quote }}
         command:
         - sh
@@ -93,7 +93,7 @@ spec:
           privileged: {{ $.Values.initContainers.tcpKeepAlive.securityContext.privileged | default true }}
           runAsUser: {{ $.Values.initContainers.tcpKeepAlive.securityContext.runAsUser | default 0 | int }}
       - name: increase-map-count
-        image: "{{ $.Values.image.os.registry }}/{{ $.Values.image.os.project }}/{{ $.Values.image.os.applicationname }}:{{ $.Values.image.os.applicationversion }}-{{ $.Values.image.os.imageversion | int }}"
+        image: "{{ $.Values.image.os.registry }}/{{ $.Values.image.os.project }}/{{ $.Values.image.os.databasename }}:{{ $.Values.image.os.databaseversion }}-{{ $.Values.image.os.imageversion | int }}"
         imagePullPolicy: {{ $.Values.image.os.pullPolicy | default "IfNotPresent" | quote }}
         command:
         - sh
@@ -104,7 +104,7 @@ spec:
           runAsUser: {{ $.Values.initContainers.increaseMapCount.securityContext.runAsUser | default 0 | int }}
       containers:
       - name: {{ (include "nodeNamePrefix" (dict "global" $ "component" "proxysql")) }}
-        image: "{{ $.Values.image.proxy.registry }}/{{ $.Values.image.proxy.project }}/{{ $.Values.image.proxy.applicationname }}:{{ $.Values.image.proxy.applicationversion }}-{{ $.Values.image.proxy.imageversion | int }}"
+        image: "{{ $.Values.image.proxy.registry }}/{{ $.Values.image.proxy.project }}/{{ $.Values.image.proxy.databasename }}:{{ $.Values.image.proxy.databaseversion }}-{{ $.Values.image.proxy.imageversion | int }}"
         imagePullPolicy: {{ $.Values.image.proxy.pullPolicy | default "IfNotPresent" | quote }}
         securityContext:
           runAsUser:  {{ $.Values.userId.proxy | default 3100 | int }}

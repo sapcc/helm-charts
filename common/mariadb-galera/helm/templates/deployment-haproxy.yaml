@@ -1,5 +1,5 @@
 {{- if and (hasKey $.Values.mariadb "autostart") (not $.Values.mariadb.autostart) }}
-{{- else if and ($.Values.command) (hasKey $.Values.command "application") }}
+{{- else if and ($.Values.command) (hasKey $.Values.command "database") }}
 {{- else if or (and (hasKey $.Values.mariadb.galera.restore "restic") ($.Values.mariadb.galera.restore.restic.enabled)) (and (hasKey $.Values.mariadb.galera.restore "kopia") ($.Values.mariadb.galera.restore.kopia.enabled)) }}
 {{- else if and (hasKey $.Values.mariadb "wipeDataAndLog") ($.Values.mariadb.wipeDataAndLog) }}
 {{- else if and ($.Values.proxy.enabled) (eq $.Values.proxy.type "haproxy") }}
@@ -28,7 +28,7 @@ spec:
         {{- if $.Values.monitoring.proxy.enabled }}
         prometheus.io/scrape: "true"
         prometheus.io/port: {{ ($.Values.monitoring.proxy.haproxy.metricsPort | int) | default 8404 | quote }}
-        prometheus.io/targets: {{ $.Values.monitoring.prometheus.instance.application | default "prometheus" | quote }}
+        prometheus.io/targets: {{ $.Values.monitoring.prometheus.instance.database | default "prometheus" | quote }}
         {{- end }}
         checksum/configmap: {{ include (print $.Template.BasePath "/configmap-haproxy.yaml") $ | sha256sum }}
     spec:
@@ -72,7 +72,7 @@ spec:
       {{- end }}
       containers:
       - name: {{ (include "nodeNamePrefix" (dict "global" $ "component" "haproxy")) }}
-        image: "{{ $.Values.image.haproxy.registry }}/{{ $.Values.image.haproxy.project }}/{{ $.Values.image.haproxy.applicationname }}:{{ $.Values.image.haproxy.applicationversion }}"
+        image: "{{ $.Values.image.haproxy.registry }}/{{ $.Values.image.haproxy.project }}/{{ $.Values.image.haproxy.databasename }}:{{ $.Values.image.haproxy.databaseversion }}"
         imagePullPolicy: {{ $.Values.image.haproxy.pullPolicy | default "IfNotPresent" | quote }}
         securityContext:
           runAsUser:  {{ $.Values.userId.proxy | default 3100 | int }}

@@ -159,7 +159,7 @@ If you want/have to specify a certain network (currently only supported for the 
 * `--set OpenstackFloatingSubnetId=$(openstack subnet list --name <external subnet name> --network <external network name> -f value -c ID)`
 * `--set OpenstackSubnetId=$(openstack subnet list --name <private subnet name> --network <private network name> -f value -c ID)`
 
-The [Openstack cloud provider documentation](https://github.com/kubernetes/cloud-provider-openstack/blob/master/docs/openstack-cloud-controller-manager/expose-applications-using-loadbalancer-type-service.md) has the details about these and more network settings.
+The [Openstack cloud provider documentation](https://github.com/kubernetes/cloud-provider-openstack/blob/master/docs/openstack-cloud-controller-manager/expose-databases-using-loadbalancer-type-service.md) has the details about these and more network settings.
 
 ### database backup
 * The scheduled [backup](#backup) can be enabled and configured in the `mariadb.galera.backup` section
@@ -284,7 +284,7 @@ helm upgrade --install --namespace database mariadb-galera helm --set mariadb.wi
     ```
 * run `helm upgrade` again to remove the `mariadb.wipeDataAndLog` and `mariadb.galera.restore.kopia.enabled` options
   ```sh
-  helm upgrade --install --namespace database mariadb-galera helm --set replicas.application=1 --values helm/custom/eu-de-2.yaml
+  helm upgrade --install --namespace database mariadb-galera helm --set replicas.database=1 --values helm/custom/eu-de-2.yaml
   ```
 * restart the other pods after `mariadb-g-0` is ready again
   ```sh
@@ -320,7 +320,7 @@ mariadb:
 * add the service definition to the custom configuration files of both instances
 ```yaml
 services:
-  application:
+  database:
     frontend:
       type: LoadBalancer
 ```
