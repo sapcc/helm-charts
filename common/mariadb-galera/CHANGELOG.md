@@ -1,4 +1,7 @@
 # Changelog
+## v0.20.3 - 2023/10/11
+* label 'application' replaced with 'database' to be more specific about the different components
+* chart version bumped
 
 ## v0.20.2 - 2023/10/10
 * name prefix for K8s objects refactored
