@@ -279,41 +279,6 @@
       regex: ucs-exporter
 {{- end }}
 
-{{ if .Values.network_generic_ssh_exporter.enabled }}
-{{- if .Values.network_generic_ssh_exporter.operatoroff }}
-- job_name: 'network/ssh'
-  scrape_interval: 120s
-  scrape_timeout: 60s
-  http_sd_configs:
-    - url: {{ .Values.atlas_url }}
-  metrics_path: /ssh
-  relabel_configs:
-    - source_labels: [job]
-      regex: network/ssh
-      action: keep
-    - source_labels: [__address__]
-      target_label: __param_target
-    - source_labels: [credential]
-      target_label: __param_credential
-    - source_labels: [batch]
-      target_label: __param_batch
-    - source_labels: [device]
-      target_label: __param_device
-    - source_labels: [__param_target]
-      target_label: instance
-    - target_label: __address__
-      replacement: network-generic-ssh-exporter:9116
-  metric_relabel_configs:
-    - action: labeldrop
-      regex: "metrics_label"
-    - source_labels: [__name__, server_name]
-      regex: '^ssh_[A-za-z0-9]+;.*((rt|asr)[0-9]+)[a|b]$'
-      replacement: '$1'
-      target_label: asr_pair
-      action: replace
-{{- end }}
-{{ end }}
-
 {{ $root := . }}
 {{- range $target := .Values.global.targets }}
 - job_name: {{ include "prometheusVMware.fullName" (list $target $root) }}
