@@ -56,50 +56,6 @@ groups:
       description:  'NSX-T Exporter has no data'
       summary:  'NSX-T Exporter has no data'
 
-  - alert: NSXTExporterNoMetrics
-    expr: label_replace(kube_pod_info{created_by_name=~'neutron-nsxv3-agent-bb.*'}, 'nsxv3_agent', '$1', 'created_by_name', '^(neutron-nsxv3-agent-bb[^-]+)-.*') unless on (nsxv3_agent) label_replace(nsxv3_cluster_management_last_successful_data_fetch{name=~"neutron-nsxv3-agent-bb.*"}, 'nsxv3_agent', '$1', 'name', '(.*)')
-    for: 60m
-    labels:
-      severity: info
-      support_group: network-api
-      tier: os
-      service: neutron
-      meta: 'NSX-T Exporter has no metrics'
-      dashboard: nsx-t
-      playbook: docs/devops/alert/nsxt/#NSXT_ExporterScrapeOlder_OneHour
-    annotations:
-      description:  'NSX-T pod {{ $labels.nsxv3_agent }} is running, but we do not have metrics for it in prometheus.'
-      summary:  'NSX-T Exporter has no metrics'
-
-  - alert: NSXTPodNotReady
-    expr: kube_pod_status_phase_normalized{phase="Running", pod=~"neutron-nsxv3-agent-.+"}
-      * on(pod, node) kube_pod_status_ready_normalized{condition="false", pod=~"neutron-nsxv3-agent-.+"} * on(node)
-      group_left() sum by(node) (kube_node_status_condition{condition="Ready",status="true"})
-      == 1
-    for: 30m
-    labels:
-      support_group: network-api
-      severity: warning
-      tier: k8s
-      service: k8s
-      playbook: docs/devops/alert/nsxt/#nsxt_pod_not_ready
-    annotations:
-      description: "NSX-T Pod {{ $labels.pod }} is not ready for more than 30m"
-      summary: "NSX-T Pod not ready for 30m"
-
-  - alert: NSXTPodRestartingTooMuch
-    expr: sum by(pod, container) (rate(kube_pod_container_status_restarts_total{container="neutron-nsxv3-agent"}[15m])) > 0
-    for: 30m
-    labels:
-      support_group: network-api
-      severity: info
-      tier: k8s
-      service: k8s
-      playbook: docs/devops/alert/nsxt/#nsxt_pod_not_ready
-    annotations:
-      description: "NSX-T Agent {{ $labels.pod }} is restarting constantly"
-      summary: "Pod is in a restart loop"
-
   - alert: NSXTFirewallSectionCountDiffersBetweenNodes
     expr: sum by (name, nsxv3_manager_hostname) (abs(avg without (nsxv3_node_ip)(nsxv3_management_node_firewall_section_count) - ignoring(nsxv3_node_ip) group_right nsxv3_management_node_firewall_section_count)) > 0
     for: 60m
