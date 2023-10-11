@@ -11,17 +11,19 @@ spec:
   httpSDConfigs:
     - url: {{ .Values.global.http_sd_configs.netbox_url }}/devices/?region={{ .Values.global.region }}&platform=vmware-esxi&status=activep&target=mgmt_only
       refreshInterval: {{ .Values.global.http_sd_configs.refresh_interval }}
-  metrics_path: /ipmi
+  metricsPath: /ipmi
+  scrapeInterval: 600s
+  scrapeTimeout: 60s
   params:
     job: [esxi]
-  relabel_configs:
-    - source_labels: [__name__]
+  relabelings:
+    - sourceLabels: [__name__]
       regex: '!ipmi_temperature_state'
       action: keep
-    - source_labels: [__address__]
-      target_label: __param_target
-    - source_labels: [__param_target]
-      target_label: instance
-    - target_label: __address__
+    - sourceLabels: [__address__]
+      targetLabel: __param_target
+    - sourceLabels: [__param_target]
+      targetLabel: instance
+    - targetLabel: __address__
       replacement: ipmi-exporter:{{ .Values.listen_port }}
 {{- end }}
