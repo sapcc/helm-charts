@@ -5,6 +5,16 @@ metadata:
   labels:
     ccloud/support-group: foo-group
     ccloud/service: dummy
+  # The vulnerable-images-on-pod check explicitly wants to see all the pods, without suppressing owned pods!
+  # The running pod may use different images from what the pod spec implies because referenced image tags
+  # may have been overwritten since the pod was started.
+  ownerReferences:
+  - apiVersion: apps/v1
+    blockOwnerDeletion: true
+    controller: true
+    kind: ReplicaSet
+    name: dummy-819861372
+    uid: 72aa456e-c3aa-4de7-bbb0-bb547cfaac7d
 status:
   containerStatuses:
     - image: keppel.example.com/vulnerability:unclear

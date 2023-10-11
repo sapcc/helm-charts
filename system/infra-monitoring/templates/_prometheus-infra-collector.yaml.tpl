@@ -36,65 +36,6 @@
       replacement: arista-exporter:9200
 {{- end }}
 
-{{- $values := .Values.ipmi_exporter -}}
-{{- if $values.enabled }}
-- job_name: 'ipmi/ironic'
-  params:
-    job: [baremetal/ironic]
-  scrape_interval: {{$values.ironic_scrapeInterval}}
-  scrape_timeout: {{$values.ironic_scrapeTimeout}}
-  http_sd_configs:
-    - url: {{ .Values.atlas_ironic_url }}
-  metrics_path: /ipmi
-  relabel_configs:
-    - source_labels: [__address__]
-      target_label: __param_target
-    - source_labels: [__param_target]
-      target_label: instance
-    - target_label: __address__
-      replacement: ipmi-exporter:{{$values.listen_port}}
-
-- job_name: 'cp/netbox'
-  params:
-    job: [cp/netbox]
-  scrape_interval: {{$values.cp_scrapeInterval}}
-  scrape_timeout: {{$values.cp_scrapeTimeout}}
-  http_sd_configs:
-    - url: {{ .Values.atlas_url }}
-  metrics_path: /ipmi
-  relabel_configs:
-    - source_labels: [job]
-      regex: cp/netbox
-      action: keep
-    - source_labels: [__address__]
-      target_label: __param_target
-    - source_labels: [__param_target]
-      target_label: instance
-    - target_label: __address__
-      replacement: ipmi-exporter:{{$values.listen_port}}
-    - source_labels: [__meta_serial]
-      target_label: server_serial
-
-- job_name: 'ipmi/esxi'
-  params:
-    job: [esxi]
-  scrape_interval: {{$values.esxi_scrapeInterval}}
-  scrape_timeout: {{$values.esxi_scrapeTimeout}}
-  http_sd_configs:
-    - url: {{ .Values.atlas_url }}
-  metrics_path: /ipmi
-  relabel_configs:
-    - source_labels: [job]
-      regex: vmware-esxi
-      action: keep
-    - source_labels: [__address__]
-      target_label: __param_target
-    - source_labels: [__param_target]
-      target_label: instance
-    - target_label: __address__
-      replacement: ipmi-exporter:{{$values.listen_port}}
-{{- end }}
-
 {{- $values := .Values.kvm }}
 {{- if $values.enabled }}
 - job_name: 'linux-kvm'
@@ -119,87 +60,6 @@
       replacement: $1:9100
 {{- end }}
 
-{{- $values := .Values.redfish_exporter -}}
-{{- if $values.enabled }}
-- job_name: 'redfish/bm'
-  params:
-    job: [redfish/bm]
-  scrape_interval: {{$values.scrapeInterval}}
-  scrape_timeout: {{$values.scrapeTimeout}}
-  http_sd_configs:
-    - url: {{ .Values.atlas_url }}
-  metrics_path: /redfish
-  relabel_configs:
-    - source_labels: [job]
-      regex: redfish/bm
-      action: keep
-    - source_labels: [__address__]
-      target_label: __param_target
-    - source_labels: [__param_target]
-      target_label: instance
-    - target_label: __address__
-      replacement: redfish-exporter:{{$values.listen_port}}
-
-- job_name: 'redfish/cp'
-  params:
-    job: [redfish/cp]
-  scrape_interval: {{$values.scrapeInterval}}
-  scrape_timeout: {{$values.scrapeTimeout}}
-  http_sd_configs:
-    - url: {{ .Values.atlas_url }}
-  metrics_path: /redfish
-  relabel_configs:
-    - source_labels: [job]
-      regex: redfish/cp
-      action: keep
-    - source_labels: [__address__]
-      target_label: __param_target
-    - source_labels: [__param_target]
-      target_label: instance
-    - target_label: __address__
-      replacement: redfish-exporter:{{$values.listen_port}}
-    - source_labels: [__meta_serial]
-      target_label: server_serial
-
-- job_name: 'redfish/bb'
-  params:
-    job: [redfish/bb]
-  scrape_interval: {{$values.scrapeInterval}}
-  scrape_timeout: {{$values.scrapeTimeout}}
-  http_sd_configs:
-    - url: {{ .Values.atlas_url }}
-  metrics_path: /redfish
-  relabel_configs:
-    - source_labels: [job]
-      regex: redfish/bb
-      action: keep
-    - source_labels: [__address__]
-      target_label: __param_target
-    - source_labels: [__param_target]
-      target_label: instance
-    - target_label: __address__
-      replacement: redfish-exporter:{{$values.listen_port}}
-{{- end }}
-
-{{- if $values.firmware.enabled }}
-- job_name: 'redfish/fw'
-  params:
-    job: [redfish/fw]
-  scrape_interval: {{$values.firmware.scrapeInterval}}
-  scrape_timeout: {{$values.firmware.scrapeTimeout}}
-  http_sd_configs:
-    - url: {{ .Values.http_sd_configs.netbox_production_url }}/devices/?custom_labels=job=redfish/fw&target=mgmt_only&status=active&role=server&tenant=converged-cloud&tagn=no-redfish&region={{ .Values.global.region }}
-      refresh_interval: {{ .Values.http_sd_configs.refresh_interval }}
-  metrics_path: /firmware
-  relabel_configs:
-    - source_labels: [__address__]
-      target_label: __param_target
-    - source_labels: [__param_target]
-      target_label: instance
-    - target_label: __address__
-      replacement: redfish-exporter:{{$values.listen_port}}
-{{- end }}
-
 {{- $values := .Values.windows_exporter -}}
 {{- if $values.enabled }}
 {{- $name := "win-exporter-ad" }}
@@ -208,6 +68,7 @@
   scrape_timeout: {{$values.scrapeTimeout}}
   http_sd_configs:
     - url: {{ .Values.http_sd_configs.netbox_production_url }}/virtual-machines/?custom_labels=job={{ $name }}&target=primary_ip&status=active&role=server&tenant=converged-cloud&platform=windows-server&tag=active-directory-domain-controller&region={{ .Values.global.region }}
+      refresh_interval: {{ .Values.http_sd_configs.refresh_interval }}
   metrics_path: /metrics
   relabel_configs:
     - source_labels: [__address__]
@@ -236,6 +97,7 @@
   scrape_timeout: {{$values.scrapeTimeout}}
   http_sd_configs:
     - url: {{ .Values.http_sd_configs.netbox_production_url }}/virtual-machines/?custom_labels=job={{ $name }}&target=primary_ip&status=active&q=wsus&role=server&tenant=converged-cloud&platform=windows-server&region={{ .Values.global.region }}
+      refresh_interval: {{ .Values.http_sd_configs.refresh_interval }}
   metrics_path: /metrics
   relabel_configs:
     - source_labels: [__address__]
@@ -375,39 +237,6 @@
       source_labels: [__meta_kubernetes_service_name]
       regex: ucs-exporter
 {{- end }}
-
-{{ if .Values.network_generic_ssh_exporter.enabled }}
-- job_name: 'network/ssh'
-  scrape_interval: 120s
-  scrape_timeout: 60s
-  http_sd_configs:
-    - url: {{ .Values.atlas_url }}
-  metrics_path: /ssh
-  relabel_configs:
-    - source_labels: [job]
-      regex: network/ssh
-      action: keep
-    - source_labels: [__address__]
-      target_label: __param_target
-    - source_labels: [credential]
-      target_label: __param_credential
-    - source_labels: [batch]
-      target_label: __param_batch
-    - source_labels: [device]
-      target_label: __param_device
-    - source_labels: [__param_target]
-      target_label: instance
-    - target_label: __address__
-      replacement: network-generic-ssh-exporter:9116
-  metric_relabel_configs:
-    - action: labeldrop
-      regex: "metrics_label"
-    - source_labels: [__name__, server_name]
-      regex: '^ssh_[A-za-z0-9]+;.*((rt|asr)[0-9]+)[a|b]$'
-      replacement: '$1'
-      target_label: asr_pair
-      action: replace
-{{ end }}
 
 {{ $root := . }}
 {{- range $target := .Values.global.targets }}

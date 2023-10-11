@@ -5,10 +5,13 @@ groups:
     rules:
       # alert for vulnerable images in productive deployments of workgroup "Storage & Resource Services"
       - alert: GkVulnerableImagesForSRS
-        expr: 'sum by (template_kind, service) (doop_raw_violations{template_kind="GkVulnerableImages",cluster!~".*qa.*",support_group="containers",service=~"backup|castellum|gatekeeper|hubcopter|keppel|limes|repo|tenso"})'
+        # NOTE: The max_over_time() ensures that the alert does not flap when doop-central is restarted.
+        # (There appear to be gaps in the metrics for one or two minutes on each deployment.)
+        expr: 'sum by (template_kind, service) (max_over_time(doop_raw_violations{template_kind="GkVulnerableImages",cluster!~".*qa.*",support_group="containers",service=~"backup|castellum|gatekeeper|hubcopter|keppel|limes|repo|tenso"}[10m])) > 0'
         for: 5m
         labels:
           context: GkVulnerableImages
+          tier: os # still needed for routing to service-level alert channels
           support_group: containers
           service: "{{ $labels.service }}"
           severity: warning

@@ -12,7 +12,7 @@ labelSelector:
     - { key: "status", operator: "In", values: [ "pending-install", "pending-upgrade", "deployed" ]}
 {{- end -}}
 
-{{/* This match expression is only for checks that need to see the "status" section of the Pod. */}}
+{{/* This match expression is only for checks that need to see Pod fields that are not visible in a PodSpec (e.g. status or owner refs). */}}
 {{- define "match_pods_only" }}
 kinds:
   - apiGroups: [""]

@@ -63,3 +63,13 @@ app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
 {{- end }}
 app.kubernetes.io/managed-by: {{ .Release.Service }}
 {{- end }}
+
+{{- define "job_name" }}
+  {{- $name := index . 1 }}
+  {{- with index . 0 }}
+    {{- $bin := include "utils.proxysql.proxysql_signal_stop_script" . | trim }}
+    {{- $all := list $bin (include "utils.proxysql.job_pod_settings" . ) (include "utils.proxysql.volume_mount" . ) (include "utils.proxysql.container" . ) (include "utils.proxysql.volumes" .) | join "\n" }}
+    {{- $hash := empty .Values.proxysql.mode | ternary $bin $all | sha256sum }}
+{{- .Release.Name }}-{{ $name }}-{{ substr 0 4 $hash }}-{{ .Values.api.imageTag | required "Please set api.imageTag or similar"}}
+  {{- end }}
+{{- end }}

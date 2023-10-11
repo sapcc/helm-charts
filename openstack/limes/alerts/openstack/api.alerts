@@ -215,22 +215,6 @@ groups:
       summary: "{{ $labels.pod }} cannot publish audit events"
       description: "Audit events from {{ $labels.pod }} could not be published to the RabbitMQ server. Check the pod log for details. Once the underlying issue was addressed, delete the offending pod to clear this alert."
 
-  - alert: OpenstackLimesPodSchedulingFailedInsufficientCPU
-    expr: sum(rate(kube_pod_failed_scheduling_cpu_total{pod_name=~"limes-.+"}[30m])) by (pod_name) > 0
-    for: 15m
-    labels:
-      severity: warning
-      support_group: containers
-      tier: os
-      service: limes
-      context: cpu
-      dashboard: limes-overview
-      meta: "{{ $labels.pod_name }}"
-      no_alert_on_absence: "true" # the underlying metric is only generated when scheduling fails
-    annotations:
-      summary: Scheduling failed due to insufficient cpu
-      description: The pod {{ $labels.pod_name }} failed to be scheduled. Insuffient CPU!
-
   - alert: OpenstackLimesIncompleteProjectResourceData
     expr: max by (service, resource) (limes_project_resources_by_type_count) != on () group_left max(limes_project_count)
     # Do not trigger too fast! When a new resource is added, it takes one full scrape cycle to create all resource records.

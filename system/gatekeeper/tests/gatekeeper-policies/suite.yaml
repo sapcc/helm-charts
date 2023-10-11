@@ -288,15 +288,15 @@ tests:
   template: ../rendered-chart/gatekeeper/templates/constrainttemplate-outdated-image-bases.yaml
   constraint: ../rendered-chart/gatekeeper-config/templates/constraint-outdated-image-bases.yaml
   cases:
-  - name: pod-old
-    object: fixtures/outdated-image-bases/pod-old.yaml
+  - name: deployment-old
+    object: fixtures/outdated-image-bases/deployment-old.yaml
     assertions:
     - violations: 1
-      message: '^\{"support_group":"foo-group","service":"dummy"\} >> image keppel.example.com/vulnerability:old for container "dummy" uses a very old base image \(oldest layer is 417 days old\)$'
+      message: '^\{"support_group":"foo-group","service":"dummy"\} >> image keppel.example.com/vulnerability-unpinned:old for container "dummy" uses a very old base image \(oldest layer is 417 days old\)$'
     - violations: 1
-      message: '^\{"support_group":"foo-group","service":"dummy"\} >> image keppel.example.com/vulnerability:old for container "starter" uses a very old base image \(oldest layer is 417 days old\)$'
-  - name: pod-new
-    object: fixtures/outdated-image-bases/pod-new.yaml
+      message: '^\{"support_group":"foo-group","service":"dummy"\} >> image keppel.example.com/vulnerability-unpinned:old for container "starter" uses a very old base image \(oldest layer is 417 days old\)$'
+  - name: deployment-new
+    object: fixtures/outdated-image-bases/deployment-new.yaml
     assertions:
     - violations: no
 
@@ -628,9 +628,50 @@ tests:
     assertions:
     - violations: no
 
-- name: vulnerable-images
+- name: unmanaged-pods
+  template: ../rendered-chart/gatekeeper/templates/constrainttemplate-unmanaged-pods.yaml
+  constraint: ../rendered-chart/gatekeeper-config/templates/constraint-unmanaged-pods.yaml
+  cases:
+  - name: pod-without-owner
+    object: fixtures/unmanaged-pods/pod-without-owner.yaml
+    assertions:
+    - violations: 1
+      message: '^\{"support_group":"none","service":"none"\} >> pod is not owned by a managing construct$'
+  - name: pod-in-deployment
+    object: fixtures/unmanaged-pods/pod-in-deployment.yaml
+    assertions:
+    - violations: no
+  - name: pv-recycler-pod
+    object: fixtures/unmanaged-pods/pv-recycler-pod.yaml
+    assertions:
+    - violations: no
+
+- name: vulnerable-images-on-pod-owner
   template: ../rendered-chart/gatekeeper/templates/constrainttemplate-vulnerable-images.yaml
-  constraint: ../rendered-chart/gatekeeper-config/templates/constraint-vulnerable-images.yaml
+  constraint: ../rendered-chart/gatekeeper-config/templates/constraint-vulnerable-images-on-pod-owner.yaml
+  cases:
+  - name: pod-vulnerable
+    object: fixtures/vulnerable-images/deployment-vulnerable.yaml
+    assertions:
+    - violations: 1
+      message: '^\{"support_group":"foo-group","service":"dummy"\} >> image keppel.example.com/vulnerability-unpinned:low for container "dummylow" has "X-Keppel-Vulnerability-Status: Low"$'
+    - violations: 1
+      message: '^\{"support_group":"foo-group","service":"dummy"\} >> image keppel.example.com/vulnerability-unpinned:medium for container "dummymedium" has "X-Keppel-Vulnerability-Status: Medium"$'
+    - violations: 1
+      message: '^\{"support_group":"foo-group","service":"dummy"\} >> image keppel.example.com/vulnerability-unpinned:high for container "starter" has "X-Keppel-Vulnerability-Status: High"$'
+  - name: pod-unclear
+    object: fixtures/vulnerable-images/deployment-unclear.yaml
+    assertions:
+    - violations: 1
+      message: '^\{"support_group":"foo-group","service":"dummy"\} >> image keppel.example.com/vulnerability-unpinned:unclear for container "dummy" has "X-Keppel-Vulnerability-Status: Unclear"$'
+  - name: pod-clean
+    object: fixtures/vulnerable-images/deployment-clean.yaml
+    assertions:
+    - violations: no
+
+- name: vulnerable-images-on-pod
+  template: ../rendered-chart/gatekeeper/templates/constrainttemplate-vulnerable-images.yaml
+  constraint: ../rendered-chart/gatekeeper-config/templates/constraint-vulnerable-images-on-pod.yaml
   cases:
   - name: pod-vulnerable
     object: fixtures/vulnerable-images/pod-vulnerable.yaml

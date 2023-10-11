@@ -348,10 +348,11 @@ mysql_metrics:
           instances.project_id,
           COUNT(*) AS gauge,
           instances.vm_state,
-          coalesce(instance_types.name,'N/A') AS flavor_name
+          coalesce(JSON_VALUE(instance_extra.flavor, '$.cur."nova_object.data".name'),'N/A') AS flavor_name
         FROM instances
-        JOIN instance_types ON instances.instance_type_id=instance_types.id
-        GROUP BY instances.vm_state, instances.host, instances.project_id, instance_types.name;
+        LEFT JOIN instance_extra ON instances.uuid=instance_extra.instance_uuid
+        WHERE instances.deleted = 0
+        GROUP BY instances.vm_state, instances.host, instances.project_id, flavor_name;
       values:
       - "gauge"
     - help: Total Nova VM Stuck count
@@ -530,11 +531,12 @@ mysql_metrics:
           instances.project_id,
           instances.hostname,
           instances.vm_state,
-          coalesce(instance_types.name,'N/A') AS flavor_name,
+          coalesce(JSON_VALUE(instance_extra.flavor, '$.cur."nova_object.data".name'),'N/A') AS flavor_name,
           COUNT(*) AS gauge
         FROM instances
-        JOIN instance_types ON instances.instance_type_id=instance_types.id where host LIKE 'nova-compute-ironic%'
-        GROUP BY instances.vm_state, instances.project_id, instance_types.name, instances.uuid, instances.hostname, instances.node;
+        LEFT JOIN instance_extra ON instances.uuid=instance_extra.instance_uuid
+        WHERE host LIKE 'nova-compute-ironic%' AND instances.deleted = 0
+        GROUP BY instances.vm_state, instances.project_id, flavor_name, instances.uuid, instances.hostname, instances.node;
       values:
       - "gauge"
     - help: Stats on compute nodes

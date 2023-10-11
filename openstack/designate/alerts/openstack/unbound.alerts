@@ -17,22 +17,6 @@ groups:
       description: DNS Bind server {{ $labels.kubernetes_name }} down in region {{ $labels.region }}.
       summary: DNS Bind server {{ $labels.kubernetes_name }} down.
 
-  - alert: OpenstackDesignateDnsUnboundEndpointNotAvailable
-    expr: max(kube_endpoint_address_available{namespace=~"dns-recursor"}) BY (region,endpoint) < 1
-    for: 15m
-    labels:
-      context: unbound
-      dashboard: designate-unbound
-      meta: '{{ $labels.endpoint }}'
-      service: designate
-      severity: warning
-      support_group: network-api
-      tier: os
-      playbook: 'docs/devops/alert/designate/#test_unbound_endpoint'
-    annotations:
-      description: 'DNS Unbound endpoint {{ $labels.endpoint }} not available in {{ $labels.region }} region.'
-      summary: 'DNS Unbound endpoint {{ $labels.endpoint }} is not available. DNS resolution might be handled by another region.'
-
   - alert: OpenstackDesignateDnsUnboundManySERVFAIL
     expr: sum(delta(unbound_answer_rcodes_total{rcode="SERVFAIL"}[1h])) BY (region, kubernetes_name) > 500000
     for: 60m
