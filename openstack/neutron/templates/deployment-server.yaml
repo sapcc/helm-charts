@@ -38,7 +38,7 @@ spec:
         configmap-bin-hash: {{ include (print $.Template.BasePath "/configmap-bin.yaml") . | sha256sum }}
 {{- end }}
         prometheus.io/scrape: "true"
-        prometheus.io/targets: "{{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus }}"
+        prometheus.io/targets: {{ required "$.Values.metrics.prometheus missing" $.Values.metrics.prometheus }}
     spec:
 {{ tuple . "neutron" "api" | include "kubernetes_pod_anti_affinity" | indent 6 }}
       {{- include "utils.proxysql.pod_settings" . | indent 6 }}
