@@ -1,4 +1,3 @@
-{{- if .Values.scrape_config }}
 apiVersion: monitoring.coreos.com/v1alpha1
 kind: ScrapeConfig
 metadata:
@@ -17,13 +16,9 @@ spec:
   params:
     job: [esxi]
   relabelings:
-    - sourceLabels: [__name__]
-      regex: '!ipmi_temperature_state'
-      action: keep
     - sourceLabels: [__address__]
       targetLabel: __param_target
     - sourceLabels: [__param_target]
       targetLabel: instance
     - targetLabel: __address__
       replacement: ipmi-exporter:{{ .Values.listen_port }}
-{{- end }}
