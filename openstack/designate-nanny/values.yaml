@@ -29,14 +29,28 @@ credentials:
 
 nanny:
   enabled: true
-  dryrun: true
-  loglevel: "ERROR"
-  mdns_endpoint: "auto"
 
-nannies:
+nanny_config:
+  global:
+    # see example nanny.yaml config in
+    # https://github.wdf.sap.corp/cc/dns-docker/tree/main/designate-nanny
+    #
+    # note: global settings only come into
+    # effect, if not overriden in the specific subsections,
+    # except for "dryrun" to 'fail to the secure side' 
+    # on conflicting settings
+    dryrun: false       # do not change anything unless set in region otherwise
+    autorun: yes        # globally enable autorun feature
+    enabled: yes        # globally enable nanny 
+    loglevel: "INFO"
+    oneshot: true       # terminate after one run (currently deploying as job)
+    mdns_endpoint: auto # will be set in values per region
   swift_backup:
-    enabled: true
-    dryrun: false
-    container: "designate-nanny"
-    project_name: "master"
-    project_domain_name: "ccadmin"
+    interval: 1h
+    swift:
+      # autorun: true/false   # run this nanny plugin in autorun
+      # enabled: true/false   # enable/disable this plugin
+      container: designate-nanny
+      prefix: zone-backups
+      project_domain_name: ccadmin
+      project_name: master
