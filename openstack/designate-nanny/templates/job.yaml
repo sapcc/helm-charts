@@ -65,41 +65,49 @@ spec:
 
 
      volumes:
+     - name: nanny-conf
+       configMap:
+         name: designate-nanny-{{ .Release.Revision }}
+
      - name: bind1-persistent-storage
        persistentVolumeClaim:
          claimName: bind1-{{.Values.global.region}}
-     - configMap:
+
+     - name: bind1-keys-rndc
+       configMap:
          defaultMode: 420
          items:
          - key: rndc.key
            path: rndc.key
          name: bind1-{{.Values.global.region}}-keys
-       name: bind1-keys-rndc
-     - configMap:
+
+     - name: bind1-keys-tsig
+       configMap:
          defaultMode: 420
          items:
          - key: tsig.key
            path: tsig.key
          name: bind1-{{.Values.global.region}}-keys
-       name: bind1-keys-tsig
 
      - name: bind2-persistent-storage
        persistentVolumeClaim:
-         claimName: bind2-{{.Values.global.region}}
-     - configMap:
+         chttps://github.com/sapcc/helm-charts/pull/5439laimName: bind2-{{.Values.global.region}}
+
+     - name: bind2-keys-rndc
+       configMap:
          defaultMode: 420
          items:
          - key: rndc.key
            path: rndc.key
          name: bind2-{{.Values.global.region}}-keys
-       name: bind2-keys-rndc
-     - configMap:
+
+     - name: bind2-keys-tsig
+       configMap:
          defaultMode: 420
          items:
          - key: tsig.key
            path: tsig.key
          name: bind2-{{.Values.global.region}}-keys
-       name: bind2-keys-tsig
 
 
 {{- end }}
