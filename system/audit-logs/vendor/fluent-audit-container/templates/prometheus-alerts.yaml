@@ -13,12 +13,7 @@ metadata:
     app: fluent-audit-container-prometheus
     tier: infra
     type: alerting-rules
-    {{- if contains "thanos" $target }}
-    # alerts, which combine metrics from infra-collector and kubernetes, are available from the thanos metal query.
-    {{ $target }}: {{ index $values.alerts.prometheus $target | required (printf "$values.alerts.prometheus.%s missing" $target) }}
-    {{- else }}
-    prometheus: {{ index $values.alerts.prometheus $target | required (printf "$values.alerts.prometheus.%s missing" $target) }}
-    {{- end }}
+    {{ $target.type | required (printf "$values.alerts.prometheus.[%v].type missing" $i) }}: {{ $target.name | required (printf "$values.alerts.prometheus.[%v].name missing" $i) }}
 
 spec:
 {{ printf "%s" $bytes | indent 2 }}
