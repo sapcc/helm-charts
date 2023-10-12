@@ -2,8 +2,8 @@
 
 {{- $values := .Values -}}
 {{- if $values.alerts.enabled }}
-{{- range $target, $unused := $values.alerts.prometheus }}
-{{- range $path, $bytes := $.Files.Glob (printf "alerts/%s/*.alerts" $target) }}
+{{- range $i, $target := $values.alerts.prometheus }}
+{{- range $path, $bytes := $.Files.Glob (printf "alerts/%s/*.alerts" $target.name) }}
 ---
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
@@ -12,7 +12,7 @@ metadata:
   name: {{ printf "px-exporter-%s" $path | replace "/" "-" }}
   labels:
     app: snmp-exporter
-    prometheus: {{ index $values.alerts.prometheus $target | required (printf "$values.alerts.prometheus.%s missing" $target) }}
+    {{ $target.type | required (printf "$values.alerts.prometheus.[%v].type missing" $i) }}: {{ $target.name | required (printf "$values.alerts.prometheus.[%v].name missing" $i) }}
 
 spec:
 {{ printf "%s" $bytes | indent 2 }}
