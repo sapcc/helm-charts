@@ -495,7 +495,7 @@ route:
 
   - receiver: alertflow
     continue: true
-    matchers: [mail_notification_enabled=true]
+    matchers: [alertflow_notification=".*"]
 
 receivers:
   - name: wham_metal
