@@ -40,7 +40,7 @@ Docker images and Helm chart to deploy a [MariaDB](https://mariadb.com/kb/en/get
 ## Metadata
 | chart version | app version | type | url |
 |:--------------|:-------------|:-------------|:-------------|
-| 0.20.3 | 10.5.22 | application | [Git repo](https://github.com/sapcc/helm-charts/tree/mariadb-galera/common/mariadb-galera) |
+| 0.20.4 | 10.5.22 | application | [Git repo](https://github.com/sapcc/helm-charts/tree/mariadb-galera/common/mariadb-galera) |
 
 | Name | Email | Url |
 | ---- | ------ | --- |
@@ -150,7 +150,7 @@ docker build --build-arg BASE_SOFT_NAME=ubuntu --build-arg BASE_SOFT_VERSION=22.
   ```
 * [push](https://helm.sh/docs/topics/registries/#the-push-subcommand) the chart to the registry
   ```shell
-  helm push mariadb-galera-0.20.3.tgz oci://keppel.eu-de-1.cloud.sap/ccloud-helm/
+  helm push mariadb-galera-0.20.4.tgz oci://keppel.eu-de-1.cloud.sap/ccloud-helm/
   ```
 
 ### values description
@@ -159,10 +159,10 @@ docker build --build-arg BASE_SOFT_NAME=ubuntu --build-arg BASE_SOFT_VERSION=22.
 | cleanOsCacheAtStartup | bool | `false` | only useful for benchmarking [www.kernel.org drop_caches](https://www.kernel.org/doc/html/latest/admin-guide/sysctl/vm.html?highlight=drop_caches#drop-caches) |
 | env.COLLECT_INFO_SCHEMA_INNODB_TABLESPACES.containerType[0] | string | `"monitoring"` |  |
 | env.COLLECT_INFO_SCHEMA_INNODB_TABLESPACES.value | string | `"enable"` |  |
-| env.GALERA_SST_PASSWORD.containerType | list | `["database","jobconfig","proxysql"]` | for which containers this environment variable will be used |
+| env.GALERA_SST_PASSWORD.containerType | list | `["database","databasecfgjob","proxysql"]` | for which containers this environment variable will be used |
 | env.GALERA_SST_PASSWORD.secretKey | string | `"password"` | Name of the key of the predefined Kubernetes secret that contains the `password` for the `MariaDB Galera state snapshot transfer user` |
 | env.GALERA_SST_PASSWORD.secretName | string | `"mariadb-mariabackup"` | Name of the [Kubernetes secret](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-environment-variables) that contains the key for the `password` of the `MariaDB Galera state snapshot transfer user` |
-| env.GALERA_SST_USERNAME.containerType | list | `["database","jobconfig","proxysql"]` | for which containers this environment variable will be used |
+| env.GALERA_SST_USERNAME.containerType | list | `["database","databasecfgjob","proxysql"]` | for which containers this environment variable will be used |
 | env.GALERA_SST_USERNAME.secretKey | string | `"username"` | Name of the key of the predefined Kubernetes secret that contains the `username` for the `MariaDB Galera state snapshot transfer user` |
 | env.GALERA_SST_USERNAME.secretName | string | `"mariadb-mariabackup"` | Name of the [Kubernetes secret](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-environment-variables) that contains the key for the `username` of the `MariaDB Galera state snapshot transfer user` |
 | env.HAPROXY_STATS_PASSWORD.containerType | list | `["haproxy"]` | for which containers this environment variable will be used |
@@ -192,24 +192,24 @@ docker build --build-arg BASE_SOFT_NAME=ubuntu --build-arg BASE_SOFT_VERSION=22.
 | env.KOPIA_SERVER_USERNAME.containerType | list | `["kopiaserver"]` | for which containers this environment variable will be used |
 | env.KOPIA_SERVER_USERNAME.secretKey | string | `"username"` | Name of the key of the predefined Kubernetes secret that contains the key for the `username` of the `Kopia UI admin` |
 | env.KOPIA_SERVER_USERNAME.secretName | string | `"kopia-admin"` | Name of the [Kubernetes secret](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-environment-variables) that contains the key for the `username` of the `Kopia UI admin` |
-| env.MARIADB_MONITORING_CONNECTION_LIMIT.containerType | list | `["database","jobconfig"]` | for which containers this environment variable will be used |
+| env.MARIADB_MONITORING_CONNECTION_LIMIT.containerType | list | `["database","databasecfgjob"]` | for which containers this environment variable will be used |
 | env.MARIADB_MONITORING_CONNECTION_LIMIT.value | int | `6` | maximum number of allowed parallel connections for the `MariaDB monitoring user` defined within the [MAX_USER_CONNECTIONS](https://mariadb.com/kb/en/create-user/#resource-limit-options) option |
-| env.MARIADB_MONITORING_PASSWORD.containerType | list | `["database","monitoring","jobconfig","proxysql"]` | for which containers this environment variable will be used |
+| env.MARIADB_MONITORING_PASSWORD.containerType | list | `["database","monitoring","databasecfgjob","proxysql"]` | for which containers this environment variable will be used |
 | env.MARIADB_MONITORING_PASSWORD.secretKey | string | `"password"` | Name of the key of the predefined Kubernetes secret that contains the `password` for the `MariaDB monitoring user` |
 | env.MARIADB_MONITORING_PASSWORD.secretName | string | `"mariadb-monitor"` | Name of the [Kubernetes secret](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-environment-variables) that contains the key for the `password` of the `MariaDB monitoring user` |
-| env.MARIADB_MONITORING_USERNAME.containerType | list | `["database","monitoring","jobconfig","proxysql"]` | for which containers this environment variable will be used |
+| env.MARIADB_MONITORING_USERNAME.containerType | list | `["database","monitoring","databasecfgjob","proxysql"]` | for which containers this environment variable will be used |
 | env.MARIADB_MONITORING_USERNAME.secretKey | string | `"username"` | Name of the key of the predefined Kubernetes secret that contains the `username` for the `MariaDB monitoring user` |
 | env.MARIADB_MONITORING_USERNAME.secretName | string | `"mariadb-monitor"` | Name of the [Kubernetes secret](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-environment-variables) that contains the key for the `username` of the `MariaDB monitoring user` |
-| env.MARIADB_ROOT_PASSWORD.containerType | list | `["database","jobconfig","proxysql","cronjob-kopia","jobrestore-kopia"]` | for which containers this environment variable will be used |
+| env.MARIADB_ROOT_PASSWORD.containerType | list | `["database","databasecfgjob","proxysql","cronjob-kopia","jobrestore-kopia"]` | for which containers this environment variable will be used |
 | env.MARIADB_ROOT_PASSWORD.secretKey | string | `"password"` | Name of the key of the predefined Kubernetes secret that contains the `password` for the `MariaDB root user` |
 | env.MARIADB_ROOT_PASSWORD.secretName | string | `"mariadb-root"` | Name of the [Kubernetes secret](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-environment-variables) that contains the key for the `password` of the `MariaDB root user` |
-| env.MARIADB_ROOT_USERNAME.containerType | list | `["database","jobconfig","proxysql","cronjob-kopia","jobrestore-kopia"]` | for which containers this environment variable will be used |
+| env.MARIADB_ROOT_USERNAME.containerType | list | `["database","databasecfgjob","proxysql","cronjob-kopia","jobrestore-kopia"]` | for which containers this environment variable will be used |
 | env.MARIADB_ROOT_USERNAME.secretKey | string | `"username"` | Name of the key of the predefined Kubernetes secret that contains the `username` for the `MariaDB root user` |
 | env.MARIADB_ROOT_USERNAME.secretName | string | `"mariadb-root"` | Name of the [Kubernetes secret](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-environment-variables) that contains the key for the `username` of the `MariaDB root user` |
-| env.OPENSTACK_CITEST_PASSWORD.containerType | list | `["jobconfig","proxysql"]` | for which containers this environment variable will be used |
+| env.OPENSTACK_CITEST_PASSWORD.containerType | list | `["databasecfgjob","proxysql"]` | for which containers this environment variable will be used |
 | env.OPENSTACK_CITEST_PASSWORD.secretKey | string | `"password"` | Name of the key of the predefined Kubernetes secret that contains the `password` for the `Openstack oslo.db unit test user` |
 | env.OPENSTACK_CITEST_PASSWORD.secretName | string | `"mariadb-openstack_citest"` | Name of the [Kubernetes secret](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-environment-variables) that contains the key for the `password` of the `Openstack oslo.db unit test user` |
-| env.OPENSTACK_CITEST_USERNAME.containerType | list | `["jobconfig","proxysql"]` | for which containers this environment variable will be used |
+| env.OPENSTACK_CITEST_USERNAME.containerType | list | `["databasecfgjob","proxysql"]` | for which containers this environment variable will be used |
 | env.OPENSTACK_CITEST_USERNAME.secretKey | string | `"username"` | Name of the key of the predefined Kubernetes secret that contains the `username` for the `Openstack oslo.db unit test user` |
 | env.OPENSTACK_CITEST_USERNAME.secretName | string | `"mariadb-openstack_citest"` | Name of the [Kubernetes secret](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-environment-variables) that contains the key for the `username` of the `Openstack oslo.db unit test user` |
 | env.PROXYSQL_ADMIN_PASSWORD.containerType | list | `["proxysql"]` | for which containers this environment variable will be used |
@@ -224,16 +224,16 @@ docker build --build-arg BASE_SOFT_NAME=ubuntu --build-arg BASE_SOFT_VERSION=22.
 | env.PROXYSQL_STATS_USERNAME.containerType | list | `["proxysql"]` | for which containers this environment variable will be used |
 | env.PROXYSQL_STATS_USERNAME.secretKey | string | `"username"` | Name of the key of the predefined Kubernetes secret that contains the `username` for the `ProxySQL statistics user` |
 | env.PROXYSQL_STATS_USERNAME.secretName | string | `"proxysql-stats"` | Name of the [Kubernetes secret](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-environment-variables) that contains the key for the `username` of the `ProxySQL statistics user` |
-| env.REPLICA_PASSWORD.containerType | list | `["database","jobconfig","proxysql"]` | for which containers this environment variable will be used |
+| env.REPLICA_PASSWORD.containerType | list | `["database","databasecfgjob","proxysql"]` | for which containers this environment variable will be used |
 | env.REPLICA_PASSWORD.secretKey | string | `"password"` | Name of the key of the predefined Kubernetes secret that contains the `password` for the `MariaDB async replication user` |
 | env.REPLICA_PASSWORD.secretName | string | `"mariadb-replicator"` | Name of the [Kubernetes secret](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-environment-variables) that contains the key for the `password` of the `MariaDB async replication user` |
-| env.REPLICA_USERNAME.containerType | list | `["database","jobconfig","proxysql"]` | for which containers this environment variable will be used |
+| env.REPLICA_USERNAME.containerType | list | `["database","databasecfgjob","proxysql"]` | for which containers this environment variable will be used |
 | env.REPLICA_USERNAME.secretKey | string | `"username"` | Name of the key of the predefined Kubernetes secret that contains the `username` for the `MariaDB async replication user` |
 | env.REPLICA_USERNAME.secretName | string | `"mariadb-replicator"` | Name of the [Kubernetes secret](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-environment-variables) that contains the key for the `username` of the `MariaDB async replication user` |
-| env.SYSBENCH_PASSWORD.containerType | list | `["jobconfig","proxysql"]` | for which containers this environment variable will be used |
+| env.SYSBENCH_PASSWORD.containerType | list | `["databasecfgjob","proxysql"]` | for which containers this environment variable will be used |
 | env.SYSBENCH_PASSWORD.secretKey | string | `"password"` | Name of the key of the predefined Kubernetes secret that contains the `password` for the `sysbench user` |
 | env.SYSBENCH_PASSWORD.secretName | string | `"mariadb-sysbench"` | Name of the [Kubernetes secret](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-environment-variables) that contains the key for the `password` of the `sysbench user` |
-| env.SYSBENCH_USERNAME.containerType | list | `["jobconfig","proxysql"]` | for which containers this environment variable will be used |
+| env.SYSBENCH_USERNAME.containerType | list | `["databasecfgjob","proxysql"]` | for which containers this environment variable will be used |
 | env.SYSBENCH_USERNAME.secretKey | string | `"username"` | Name of the key of the predefined Kubernetes secret that contains the `username` for the `sysbench user` |
 | env.SYSBENCH_USERNAME.secretName | string | `"mariadb-sysbench"` | Name of the [Kubernetes secret](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-environment-variables) that contains the key for the `username` of the `sysbench user` |
 | env.WEB_TELEMETRY_PATH.containerType | list | `["monitoring"]` | for which containers this environment variable will be used |
@@ -324,12 +324,12 @@ docker build --build-arg BASE_SOFT_NAME=ubuntu --build-arg BASE_SOFT_VERSION=22.
 | mariadb.autostart | bool | `true` | run the default entrypoint.sh script or just sleep to be able to troubleshoot and debug |
 | mariadb.binLogDir | string | `"log"` | if not defined the data dir will be used. Needs a log volume mount to be configured too |
 | mariadb.binLogSync | int | 0 | `1` to enable [sync_binlog for ACID compliance](https://mariadb.com/kb/en/replication-and-binary-log-system-variables/#sync_binlog) |
-| mariadb.databases.sb_oltp_ro.CharacterSetName | string | `"utf8"` | database character set |
-| mariadb.databases.sb_oltp_ro.collationName | string | `"utf8_general_ci"` | database collation |
-| mariadb.databases.sb_oltp_ro.comment | string | `"for the sysbench oltp readonly benchmark"` | database comment |
-| mariadb.databases.sb_oltp_ro.deleteIfDisabled | bool | `false` | delete the database if it is disabled |
+| mariadb.databases.sb_oltp_ro.CharacterSetName | string | utf8 | database character set |
+| mariadb.databases.sb_oltp_ro.collationName | string | utf8_general_ci | database collation |
+| mariadb.databases.sb_oltp_ro.comment | string | custom DB | database comment |
+| mariadb.databases.sb_oltp_ro.deleteIfDisabled | bool | false | delete the database if it is disabled |
 | mariadb.databases.sb_oltp_ro.enabled | bool | `false` | enable this database |
-| mariadb.databases.sb_oltp_ro.overwrite | bool | `false` | overwrite the database if it already exists |
+| mariadb.databases.sb_oltp_ro.overwrite | bool | false | overwrite the database if it already exists |
 | mariadb.errorLogWarningVerbosity | int | 2 | to define the [verbosity](https://mariadb.com/kb/en/error-log/#configuring-the-error-log-verbosity) of the MariaDB logs |
 | mariadb.galera.backup.enabled | bool | `false` | enable the [database backup](#database-backup). Should be done within custom instance configuration files |
 | mariadb.galera.backup.kopia.backend | string | `"s3"` | Openstack Swift and others provide an S3 compatible interface |
@@ -553,14 +553,14 @@ docker build --build-arg BASE_SOFT_NAME=ubuntu --build-arg BASE_SOFT_VERSION=22.
 | replicas.proxy | int | 3 | amount of pods that will [scheduled](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#creating-a-deployment) for the ProxySQL cluster. An uneven number will be enforced to avoid simple split brain situations |
 | resourceLimits.cpu.cronjob | int | 0.25 | CPU [resource reservation(request)](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#requests-and-limits) for the MariaDB backup cronjob |
 | resourceLimits.cpu.database | int | 0.5 | CPU [resource reservation(request)](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#requests-and-limits) for the MariaDB containers |
-| resourceLimits.cpu.jobconfig | float | 0.25 | CPU [resource reservation(request)](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#requests-and-limits) for the MariaDB configuration job |
+| resourceLimits.cpu.databasecfgjob | float | 0.25 | CPU [resource reservation(request)](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#requests-and-limits) for the MariaDB configuration job |
 | resourceLimits.cpu.jobrestore | float | 0.25 | CPU [resource reservation(request)](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#requests-and-limits) for the MariaDB restore job |
 | resourceLimits.cpu.kopiaserver | float | 0.5 | CPU [resource reservation(request)](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#requests-and-limits) for the Haproxy containers |
 | resourceLimits.cpu.monitoring | float | 0.25 | CPU [resource reservation(request)](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#requests-and-limits) for the Monitoring sidecar containers for MariaDB |
 | resourceLimits.cpu.proxy | int | 0.5 | CPU [resource reservation(request)](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#requests-and-limits) for the ProxySQL containers |
 | resourceLimits.memory.cronjob | string | 32Mi | RAM [resource limit](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#requests-and-limits) for the MariaDB backup cronjob |
 | resourceLimits.memory.database | string | 64Mi | RAM [resource limit](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#requests-and-limits) for the MariaDB containers |
-| resourceLimits.memory.jobconfig | string | 32Mi | RAM [resource limit](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#requests-and-limits) for the MariaDB configuration job |
+| resourceLimits.memory.databasecfgjob | string | 32Mi | RAM [resource limit](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#requests-and-limits) for the MariaDB configuration job |
 | resourceLimits.memory.jobrestore | string | 128Mi | RAM [resource limit](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#requests-and-limits) for the MariaDB restore job |
 | resourceLimits.memory.kopiaserver | string | 64Mi | RAM [resource limit](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#requests-and-limits) for the Haproxy containers |
 | resourceLimits.memory.monitoring | string | 32Mi | RAM [resource limit](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#requests-and-limits) for the Monitoring sidecar containers for MariaDB |
@@ -854,7 +854,7 @@ helm upgrade --install --create-namespace --namespace database mariadb-galera he
 * query the load balancer ip of the eu-de-2 instance and add it to the custom configuration of eu-nl-1
 * eu-de-2
 ```bash
-kubectl get svc/mariadb-g-frontend-direct --namespace database -o jsonpath={.status.loadBalancer.ingress[0].ip}
+kubectl get svc/"Helm release name"-mariadb-g-frontend-direct --namespace database -o jsonpath={.status.loadBalancer.ingress[0].ip}
 ```
 * eu-nl-1
 ```yaml

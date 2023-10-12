@@ -64,7 +64,7 @@ data:
         {{- $calculatedWeight = (mul 2 $calculatedWeight) }}
       {{- end }}
       {
-        hostname="{{ (printf "%s-%d.%s.svc.cluster.local" (include "nodeNamePrefix" (dict "global" $ "component" "proxysql")) $int $.Release.Namespace) }}"
+        hostname="{{ (printf "%s-%d.%s" (include "nodeNamePrefix" (dict "global" $ "component" "proxysql")) $int $.Release.Namespace) }}"
         port={{ $proxysqlAdminPort }}
         weight={{ $calculatedWeight }}
       {{- if eq (add1 $int) ($.Values.replicas.database|int) }}
@@ -94,7 +94,7 @@ data:
         {{- $calculatedWeight = (mul 2 $calculatedWeight) }}
       {{- end }}
       {
-        address="{{ (printf "%s-%d.%s.svc.cluster.local" (include "nodeNamePrefix" (dict "global" $ "component" "database")) $int $.Release.Namespace) }}"
+        address="{{ (printf "%s-%d.%s" (include "nodeNamePrefix" (dict "global" $ "component" "database")) $int $.Release.Namespace) }}"
         port={{ $mysqlPort }}
         use_ssl=0
         weight={{ $calculatedWeight }}

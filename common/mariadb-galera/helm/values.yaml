@@ -534,15 +534,20 @@ mariadb:
       # -- enable this database
       enabled: false
       # -- (string) database comment
-      comment:  "for the sysbench oltp readonly benchmark"
+      # @default -- custom DB
+      comment:
       # -- (string) database collation
-      collationName: "utf8_general_ci"
+      # @default -- utf8_general_ci
+      collationName:
       # -- (string) database character set
-      CharacterSetName: "utf8"
+      # @default -- utf8
+      CharacterSetName:
       # -- (bool) overwrite the database if it already exists
-      overwrite: false
+      # @default -- false
+      overwrite:
       # -- (bool) delete the database if it is disabled
-      deleteIfDisabled: false
+      # @default -- false
+      deleteIfDisabled:
 monitoring:
   mysqld_exporter:
     # -- run the default entrypoint.sh script or just sleep to be able to troubleshoot and debug
@@ -1021,7 +1026,7 @@ resourceLimits:
     monitoring: 0.5
     # -- CPU [resource reservation(request)](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#requests-and-limits) for the MariaDB configuration job
     # @default -- 0.25
-    jobconfig: 0.5
+    databasecfgjob: 0.5
     # -- CPU [resource reservation(request)](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#requests-and-limits) for the MariaDB restore job
     # @default -- 0.25
     jobrestore: 0.5
@@ -1043,7 +1048,7 @@ resourceLimits:
     monitoring: 48Mi
     # -- RAM [resource limit](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#requests-and-limits) for the MariaDB configuration job
     # @default -- 32Mi
-    jobconfig: 48Mi
+    databasecfgjob: 48Mi
     # -- RAM [resource limit](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#requests-and-limits) for the MariaDB restore job
     # @default -- 128Mi
     jobrestore: 256Mi
@@ -1294,7 +1299,7 @@ env:
     # -- for which containers this environment variable will be used
     containerType:
       - database
-      - jobconfig
+      - databasecfgjob
       - proxysql
       - cronjob-kopia
       - jobrestore-kopia
@@ -1306,7 +1311,7 @@ env:
     # -- for which containers this environment variable will be used
     containerType:
       - database
-      - jobconfig
+      - databasecfgjob
       - proxysql
       - cronjob-kopia
       - jobrestore-kopia
@@ -1318,7 +1323,7 @@ env:
     # -- for which containers this environment variable will be used
     containerType:
       - database
-      - jobconfig
+      - databasecfgjob
       - proxysql
   GALERA_SST_PASSWORD:
     # -- Name of the [Kubernetes secret](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-environment-variables) that contains the key for the `password` of the `MariaDB Galera state snapshot transfer user`
@@ -1328,7 +1333,7 @@ env:
     # -- for which containers this environment variable will be used
     containerType:
       - database
-      - jobconfig
+      - databasecfgjob
       - proxysql
   MARIADB_MONITORING_USERNAME:
     # -- Name of the [Kubernetes secret](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-environment-variables) that contains the key for the `username` of the `MariaDB monitoring user`
@@ -1339,7 +1344,7 @@ env:
     containerType:
       - database
       - monitoring
-      - jobconfig
+      - databasecfgjob
       - proxysql
   MARIADB_MONITORING_PASSWORD:
     # -- Name of the [Kubernetes secret](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-environment-variables) that contains the key for the `password` of the `MariaDB monitoring user`
@@ -1350,7 +1355,7 @@ env:
     containerType:
       - database
       - monitoring
-      - jobconfig
+      - databasecfgjob
       - proxysql
   MARIADB_MONITORING_CONNECTION_LIMIT:
     # -- maximum number of allowed parallel connections for the `MariaDB monitoring user` defined within the [MAX_USER_CONNECTIONS](https://mariadb.com/kb/en/create-user/#resource-limit-options) option
@@ -1358,7 +1363,7 @@ env:
     # -- for which containers this environment variable will be used
     containerType:
       - database
-      - jobconfig
+      - databasecfgjob
   WEB_TELEMETRY_PATH:
     # -- The MySQL exporter monitoring sidecar container will expose the [Prometheus metrics](https://github.com/prometheus/mysqld_exporter#general-flags) under that path
     value: /metrics
@@ -1404,7 +1409,7 @@ env:
     secretKey: username
     # -- for which containers this environment variable will be used
     containerType:
-      - jobconfig
+      - databasecfgjob
       - proxysql
   OPENSTACK_CITEST_PASSWORD:
     # -- Name of the [Kubernetes secret](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-environment-variables) that contains the key for the `password` of the `Openstack oslo.db unit test user`
@@ -1413,7 +1418,7 @@ env:
     secretKey: password
     # -- for which containers this environment variable will be used
     containerType:
-      - jobconfig
+      - databasecfgjob
       - proxysql
   SYSBENCH_USERNAME:
     # -- Name of the [Kubernetes secret](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-environment-variables) that contains the key for the `username` of the `sysbench user`
@@ -1422,7 +1427,7 @@ env:
     secretKey: username
     # -- for which containers this environment variable will be used
     containerType:
-      - jobconfig
+      - databasecfgjob
       - proxysql
   SYSBENCH_PASSWORD:
     # -- Name of the [Kubernetes secret](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-environment-variables) that contains the key for the `password` of the `sysbench user`
@@ -1431,7 +1436,7 @@ env:
     secretKey: password
     # -- for which containers this environment variable will be used
     containerType:
-      - jobconfig
+      - databasecfgjob
       - proxysql
   REPLICA_USERNAME:
     # -- Name of the [Kubernetes secret](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-environment-variables) that contains the key for the `username` of the `MariaDB async replication user`
@@ -1441,7 +1446,7 @@ env:
     # -- for which containers this environment variable will be used
     containerType:
       - database
-      - jobconfig
+      - databasecfgjob
       - proxysql
   REPLICA_PASSWORD:
     # -- Name of the [Kubernetes secret](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-environment-variables) that contains the key for the `password` of the `MariaDB async replication user`
@@ -1451,7 +1456,7 @@ env:
     # -- for which containers this environment variable will be used
     containerType:
       - database
-      - jobconfig
+      - databasecfgjob
       - proxysql
   KOPIA_PASSWORD:
     # -- Name of the [Kubernetes secret](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-environment-variables) that contains the key for the `password` of the `Kopia repository encryption key`
@@ -1545,7 +1550,7 @@ env:
 #     - "sh"
 #     - "-c"
 #     - "/bin/sleep 3600"
-#   jobconfig:
+#   databasecfgjob:
 #     - "sh"
 #     - "-c"
 #     - "/bin/sleep 3600"

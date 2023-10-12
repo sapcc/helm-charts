@@ -24,7 +24,7 @@ spec:
         checksum/configmap: {{ include (print $.Template.BasePath "/configmap-mariadb-job.yaml") $ | sha256sum }}
     spec:
       restartPolicy: {{ $.Values.mariadb.job.config.jobRestartPolicy | default "OnFailure" | quote }}
-      serviceAccount: {{ include "commonPrefix" $ }}
+      serviceAccount: {{ include "commonPrefix" $ }}-mariadb-galera
       securityContext:
         fsGroup:  {{ $.Values.groupId.database | default 101 | int }}
       {{- if and (hasKey $.Values.image.database "pullSecret") $.Values.image.database.pullSecret }}
@@ -38,9 +38,9 @@ spec:
         securityContext:
           runAsUser:  {{ $.Values.userId.database | default 101 | int }}
           runAsGroup: {{ $.Values.groupId.database | default 101 | int }}
-        {{- if and ($.Values.command) (hasKey $.Values.command "jobconfig") }}
+        {{- if and ($.Values.command) (hasKey $.Values.command "databasecfgjob") }}
         command:
-{{ $.Values.command.jobconfig | toYaml | indent 8 }}
+{{ $.Values.command.databasecfgjob | toYaml | indent 8 }}
         {{- else }}
         command:
           - "sh"
@@ -55,7 +55,7 @@ spec:
           value: 3
         {{- end }}
         {{- range $envKey, $envValue := $.Values.env }}
-          {{- if (has "jobconfig" $envValue.containerType) }}
+          {{- if (has "databasecfgjob" $envValue.containerType) }}
             {{- if $envValue.value }}
         - name: {{ $envKey }}
           value: {{ $envValue.value | quote }}
@@ -82,9 +82,9 @@ spec:
         {{- end }}
         resources:
           requests:
-            cpu: {{ $.Values.resourceLimits.cpu.jobconfig | default 0.25 }}
+            cpu: {{ $.Values.resourceLimits.cpu.databasecfgjob | default 0.25 }}
           limits:
-            memory: {{ $.Values.resourceLimits.memory.jobconfig | default "32Mi" | quote }}
+            memory: {{ $.Values.resourceLimits.memory.databasecfgjob | default "32Mi" | quote }}
         volumeMounts:
         - name: {{ include "commonPrefix" $ }}-mariadb-config-job-entrypoint-sh
           mountPath: /opt/mariadb/bin/entrypoint-job-config.sh
