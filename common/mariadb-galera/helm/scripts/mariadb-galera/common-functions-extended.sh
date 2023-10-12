@@ -6,7 +6,7 @@ fi
 declare -a NODENAME=()
 
 #entrypoint-galera
-# updateconfigmap "scope[seqno|running|primary]" "value[sequence number|true|false]" "output[Update|Reset]"
+# setconfigmap "scope[seqno|running|primary]" "value[sequence number|true|false]" "output[Update|Reset]"
 function setconfigmap {
   local int
   local SCOPE=$1
@@ -27,7 +27,7 @@ function setconfigmap {
     CURL_RESPONSE=$(curl --max-time ${WAIT_SECONDS} --retry ${MAX_RETRIES} --silent \
                     --write-out '\n{"curl":{"http_code":"%{http_code}","response_code":"%{response_code}","url":"%{url_effective}"}}\n' \
                     --cacert /var/run/secrets/kubernetes.io/serviceaccount/ca.crt \
-                    --header "Authorization: Bearer ${KUBE_TOKEN}" --header "Accept: database/json" --header "Content-Type: database/strategic-merge-patch+json" \
+                    --header "Authorization: Bearer ${KUBE_TOKEN}" --header "Accept: application/json" --header "Content-Type: application/strategic-merge-patch+json" \
                     --data "{\"kind\":\"ConfigMap\",\"apiVersion\":\"v1\",\"data\":{\"${POD_NAME}.${SCOPE}\":\"${POD_NAME}:${CONTENT}\"}}" \
                     --request PATCH https://${KUBERNETES_SERVICE_HOST}:${KUBERNETES_PORT_443_TCP_PORT}/api/v1/namespaces/{{ $.Release.Namespace }}/configmaps/${CONFIGMAP_NAME})
     CURL_STATUS=$?
@@ -196,7 +196,7 @@ function selectbootstrapnode {
     do
     loginfo "${FUNCNAME[0]}" "Find Galera node with highest sequence number (${int} retries left)"
     SEQNO_FILE_COUNT=$(grep -c '{{ (include "nodeNamePrefix" (dict "global" $ "component" "database")) }}-*' ${SEQNO_FILES} | grep -c -e ${BASE}/etc/galerastatus/{{ (include "nodeNamePrefix" (dict "global" $ "component" "database")) }}-.*.seqno:1)
-    if [ ${SEQNO_FILE_COUNT} -ge {{ ($.Values.replicas|int) }} ]; then
+    if [ ${SEQNO_FILE_COUNT} -ge {{ ($.Values.replicas.database|int) }} ]; then
       IFS=":" SEQNO_OLDEST_TIMESTAMP=($(grep --no-filename --perl-regex --regexp='^timestamp:\d+$' ${SEQNO_FILES} | sort --key=2 --numeric-sort --field-separator=: | head --lines=1))
       IFS="${oldIFS}"
       if ! [ -z ${SEQNO_OLDEST_TIMESTAMP[1]+x} ]; then
@@ -227,14 +227,14 @@ function selectbootstrapnode {
         sleep  $(( ${WAIT_SECONDS} * (${MAX_RETRIES} - ${int} + 1) ))
       fi
     else
-      loginfo "${FUNCNAME[0]}" "${SEQNO_FILE_COUNT} of {{ ($.Values.replicas|int) }} sequence numbers found. Will wait $(( ${WAIT_SECONDS} * (${MAX_RETRIES} - ${int} + 1) ))s"
+      loginfo "${FUNCNAME[0]}" "${SEQNO_FILE_COUNT} of {{ ($.Values.replicas.database|int) }} sequence numbers found. Will wait $(( ${WAIT_SECONDS} * (${MAX_RETRIES} - ${int} + 1) ))s"
       sleep  $(( ${WAIT_SECONDS} * (${MAX_RETRIES} - ${int} + 1) ))
     fi
     setconfigmap "seqno" "${SEQNO}" "Update"
   done
 
   if [ ${int} -eq 0 ]; then
-    logerror "${FUNCNAME[0]}" "Sequence number search finally incomplete(${SEQNO_FILE_COUNT}/{{ ($.Values.replicas|int)}})"
+    logerror "${FUNCNAME[0]}" "Sequence number search finally incomplete(${SEQNO_FILE_COUNT}/{{ ($.Values.replicas.database|int)}})"
     exit 1
   fi
   loginfo "${FUNCNAME[0]}" "Sequence number search done"
