@@ -1,3 +1,7 @@
+## 7.2.16
+
+* If no `kube_` metrics available within the Prometheus, send `PrometheusMultiplePodScrape` alerts to specified Thanos Rule
+
 ## 7.2.15
 
 * Removal of Prometheus limit warnings, as no limits are defined at all
