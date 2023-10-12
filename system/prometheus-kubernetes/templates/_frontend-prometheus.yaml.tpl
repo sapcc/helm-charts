@@ -79,6 +79,7 @@
       - '{__name__=~"^envoy_.+"}'
       - '{__name__=~"^auditbeat_.+"}'
       - '{__name__=~"^vault.+"}'
+      - '{__name__=~"^vpa_butler.+"}'
 
   # Add region label to all metrics, don't delete this without knowing what you are doing.
   relabel_configs:
