@@ -13,29 +13,12 @@ spec:
    metadata:
      name: designate-nanny-{{ .Release.Revision }}
    spec:
+     restartPolicy: Never
      containers:
      - name: job
        image: {{ required ".Values.global.registry is missing" .Values.global.registry }}/{{ .Values.image.name }}:{{required "missing .Values.image.image_tag" .Values.image.image_tag }}
-       command: ["/opt/venv/bin/designate-nanny", "swiftbackup"]
+       command: ["/opt/venv/bin/designate-nanny", "--config", "/srv/nanny.yaml", "autorun"]
        env:
-         - name: NANNY_RNDC_SERVER
-           value: "bind1-{{.Values.global.region}}"
-         - name: NANNY_LOGLEVEL
-           value: {{ .Values.nanny.loglevel }}
-{{- if .Values.nanny.dryrun }}
-         - name: NANNY_DRY_RUN
-           value: "yes"
-{{- end }}
-{{- if .Values.nanny.mdns_endpoint }}
-         - name: NANNY_MDNS_ENDPOINT
-           value: "{{ .Values.nanny.mdns_endpoint }}"
-{{- end }}
-         - name: NANNY_SWIFT_PROJECT_NAME
-           value: "{{ .Values.nannies.swift_backup.project_name }}"
-         - name: NANNY_SWIFT_PROJECT_DOMAIN_NAME
-           value: "{{ .Values.nannies.swift_backup.project_domain_name }}"
-         - name: NANNY_SWIFT_CONTAINER
-           value: "{{ .Values.nannies.swift_backup.container }}"
          - name: OS_AUTH_URL
            value: "https://{{ include "keystone_api_endpoint_host_public" . }}/v3"
          - name: PYCCLOUD_USE_DUMMY_SECRETS
@@ -58,21 +41,31 @@ spec:
        resources:
 {{ toYaml .Values.resources | indent 8 }}
        volumeMounts:
-       - mountPath: /var/lib/bind
-         name: persistent-storage
-       - mountPath: /etc/bind/rndc.key
-         name: bind-keys-rndc
+       - mountPath: /srv/nanny.yaml
+         name: nanny-conf
+         subPath: nanny.yaml
+
+       - mountPath: /srv/bind1/var/lib/bind
+         name: bind1-persistent-storage
+       - mountPath: /srv/bind1/etc/bind/rndc.key
+         name: bind1-keys-rndc
          subPath: rndc.key
-       - mountPath: /etc/bind/tsig.key
-         name: bind-keys-tsig
+       - mountPath: /srv/bind1/etc/bind/tsig.key
+         name: bind1-keys-tsig
          subPath: tsig.key
-       - mountPath: /etc/bind/named.conf
-         name: bind-conf
-         subPath: named.conf
-     restartPolicy: Never
+       - mountPath: /srv/bind2/var/lib/bind
+         name: bind2-persistent-storage
+       - mountPath: /srv/bind2/etc/bind/rndc.key
+         name: bind2-keys-rndc
+         subPath: rndc.key
+       - mountPath: /srv/bind2/etc/bind/tsig.key
+         name: bind2-keys-tsig
+         subPath: tsig.key
+
+
 
      volumes:
-     - name: persistent-storage
+     - name: bind1-persistent-storage
        persistentVolumeClaim:
          claimName: bind1-{{.Values.global.region}}
      - configMap:
@@ -81,17 +74,32 @@ spec:
          - key: rndc.key
            path: rndc.key
          name: bind1-{{.Values.global.region}}-keys
-       name: bind-keys-rndc
+       name: bind1-keys-rndc
      - configMap:
          defaultMode: 420
          items:
          - key: tsig.key
            path: tsig.key
          name: bind1-{{.Values.global.region}}-keys
-       name: bind-keys-tsig
+       name: bind1-keys-tsig
+
+     - name: bind2-persistent-storage
+       persistentVolumeClaim:
+         claimName: bind2-{{.Values.global.region}}
      - configMap:
          defaultMode: 420
-         name: bind1-{{.Values.global.region}}
-       name: bind-conf
+         items:
+         - key: rndc.key
+           path: rndc.key
+         name: bind2-{{.Values.global.region}}-keys
+       name: bind2-keys-rndc
+     - configMap:
+         defaultMode: 420
+         items:
+         - key: tsig.key
+           path: tsig.key
+         name: bind2-{{.Values.global.region}}-keys
+       name: bind2-keys-tsig
+
 
 {{- end }}
