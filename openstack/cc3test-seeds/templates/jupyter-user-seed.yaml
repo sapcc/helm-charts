@@ -1,0 +1,24 @@
+{{- if .Values.jupyter.enabled }}
+apiVersion: "openstack.stable.sap.cc/v1"
+kind: "OpenstackSeed"
+metadata:
+  name: jupyter-user-seed
+  labels:
+    component: jupyter reports 
+spec:
+  requires:
+  - monsoon3/domain-default-seed
+  - monsoon3/domain-cc3test-seed
+
+  roles:
+  - name: objectstore_admin
+
+  domains:
+  - name: {{ default "Default" .Values.jupyter.user_domain_name | quote }}
+    users:
+    - name: {{ default "jupyter" .Values.jupyter.service_user.name | quote }}
+      description: 'service user for uploading jupyter reports'
+      password: {{ .Values.jupyter.service_user.password | quote }}
+      role_assignments:
+      - project: jupyter-reports@cc3test
+        role: objectstore_admin

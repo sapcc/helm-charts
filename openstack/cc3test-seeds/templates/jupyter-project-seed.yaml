@@ -1,0 +1,33 @@
+---
+{{- if .Values.jupyter.enabled }}
+{{ $values := .Values }}
+{{- range $i, $project := .Values.jupyter.projects }}
+apiVersion: "openstack.stable.sap.cc/v1"
+kind: "OpenstackSeed"
+metadata:
+  name: {{ $project.name }}-seed 
+  labels: 
+    component: {{ $project.name }}
+
+spec:
+  requires:
+  - monsoon3/domain-cc3test-seed
+
+  domains:
+  - name: {{ $project.project_domain_name }} 
+    description: 'Converged Cloud Jupyter Reports'
+
+    groups:
+    - name: CC3TEST_DOMAIN_ADMINS 
+      role_assignments:
+      - project: {{ $project.name }}
+        role: objectstore_admin
+
+    projects:
+    - name: {{ $project.name }} 
+      role_assignments:
+      - user: {{ $values.jupyter.service_user.name }} 
+        role: objectstore_admin
+
+---
+{{- end }}
