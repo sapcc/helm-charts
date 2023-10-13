@@ -45,69 +45,9 @@ spec:
          name: nanny-conf
          subPath: nanny.yaml
 
-       - mountPath: /srv/bind1/var/lib/bind
-         name: bind1-persistent-storage
-       - mountPath: /srv/bind1/etc/bind/rndc.key
-         name: bind1-keys-rndc
-         subPath: rndc.key
-       - mountPath: /srv/bind1/etc/bind/tsig.key
-         name: bind1-keys-tsig
-         subPath: tsig.key
-       - mountPath: /srv/bind2/var/lib/bind
-         name: bind2-persistent-storage
-       - mountPath: /srv/bind2/etc/bind/rndc.key
-         name: bind2-keys-rndc
-         subPath: rndc.key
-       - mountPath: /srv/bind2/etc/bind/tsig.key
-         name: bind2-keys-tsig
-         subPath: tsig.key
-
-
-
      volumes:
      - name: nanny-conf
        configMap:
          name: designate-nanny-{{ .Release.Revision }}
-
-     - name: bind1-persistent-storage
-       persistentVolumeClaim:
-         claimName: bind1-{{.Values.global.region}}
-
-     - name: bind1-keys-rndc
-       configMap:
-         defaultMode: 420
-         items:
-         - key: rndc.key
-           path: rndc.key
-         name: bind1-{{.Values.global.region}}-keys
-
-     - name: bind1-keys-tsig
-       configMap:
-         defaultMode: 420
-         items:
-         - key: tsig.key
-           path: tsig.key
-         name: bind1-{{.Values.global.region}}-keys
-
-     - name: bind2-persistent-storage
-       persistentVolumeClaim:
-         claimName: bind2-{{.Values.global.region}}
-
-     - name: bind2-keys-rndc
-       configMap:
-         defaultMode: 420
-         items:
-         - key: rndc.key
-           path: rndc.key
-         name: bind2-{{.Values.global.region}}-keys
-
-     - name: bind2-keys-tsig
-       configMap:
-         defaultMode: 420
-         items:
-         - key: tsig.key
-           path: tsig.key
-         name: bind2-{{.Values.global.region}}-keys
-
 
 {{- end }}
