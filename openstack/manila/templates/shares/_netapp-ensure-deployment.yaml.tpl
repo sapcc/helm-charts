@@ -46,15 +46,20 @@ spec:
       {{- tuple . (dict "service" (print .Release.Name "-mariadb")) | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 8 }}
       containers:
         - name: reexport
-          image: "{{.Values.global.registry}}/manila-ensure:{{.Values.loci.imageVersionEnsure}}"
+          image: "{{.Values.global.registry}}/loci-manila:{{.Values.loci.imageVersion}}"
           imagePullPolicy: IfNotPresent
           command:
             - dumb-init
-            - /bin/bash
-            - /scripts/manila-ensure-reexport.sh
+            {{- if .Values.pyreloader_enabled }}
+            - pyreloader
+            {{- end }}
+            - manila-share
+            - --config-file
+            - /etc/manila/manila.conf
+            - --config-file
+            - /etc/manila/backend.conf
+            - --reexport
           env:
-            - name: MANILA_NETAPP_ENSURE_INTERVAL
-              value: "240"
             {{- if .Values.sentry.enabled }}
             - name: SENTRY_DSN_SSL
               valueFrom:
