@@ -51,8 +51,10 @@ migration_ignore_scheduler = True
 # default time to wait for access rules to become active in migration cutover was 180 seconds
 migration_wait_access_rules_timeout = 3600
 
+# options for manila.share.manager
 server_migration_driver_continue_update_interval = {{ .Values.server_migration_driver_continue_update_interval | default 900 }}
 server_migration_extend_neutron_network = {{ .Values.server_migration_extend_neutron_network | default true }}
+ensure_driver_resources_interval = {{ .Values.ensure_driver_resources_interval | default 14400 }}
 
 statsd_port = {{ .Values.rpc_statsd_port }}
 statsd_enabled = {{ .Values.rpc_statsd_enabled }}
