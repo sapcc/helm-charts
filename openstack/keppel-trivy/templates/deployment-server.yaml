@@ -32,9 +32,10 @@ spec:
             - sh
             - -c
             # NOTE: TTL = 1 week = 7 days = 168 hours
+            # Note #2: java scanning is currently only on the client possible (sigh...) and they removed the flag on server side with release 0.46.0
+            # --java-db-repository {{ $.Values.global.ghcrIoMirror }}/aquasecurity/trivy-java-db
             - "trivy server \
                 --db-repository {{ $.Values.global.ghcrIoMirror }}/aquasecurity/trivy-db \
-                --java-db-repository {{ $.Values.global.ghcrIoMirror }}/aquasecurity/trivy-java-db \
                 --cache-backend redis://:$REDIS_PASSWORD@{{ .Release.Name }}-redis:6379 \
                 --cache-ttl 168h \
                 --listen 0.0.0.0:8080 \
