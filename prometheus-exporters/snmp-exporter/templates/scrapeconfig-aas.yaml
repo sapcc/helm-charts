@@ -1,14 +1,14 @@
 apiVersion: monitoring.coreos.com/v1alpha1
 kind: ScrapeConfig
 metadata:
-  name: snmp-exporter-arista-management-switch
+  name: snmp-exporter-aas
   namespace: infra-monitoring
   labels:
     prometheus: {{ .Values.snmp_exporter.aggregations.prometheus }}
-    app.kubernetes.io/name: snmp-exporter-arista-management-switch
+    app.kubernetes.io/name: snmp-exporter-aas
 spec:
   httpSDConfigs:
-    - url: {{ .Values.global.http_sd_configs.netbox_url }}/devices/?custom_labels=__param_module=ams&manufacturer=arista&status=active&region={{ .Values.global.region }}&role=management-switch
+    - url: {{ .Values.global.http_sd_configs.netbox_url }}/devices/?custom_labels=__param_module=aas&manufacturer=arista&status=active&region={{ .Values.global.region }}&role=access-switch
       refreshInterval: {{ .Values.global.http_sd_configs.refresh_interval }}
   metricsPath: /snmp
   scrapeInterval: 60s
@@ -21,7 +21,7 @@ spec:
     - targetLabel: __address__
       replacement: snmp-exporter:{{.Values.snmp_exporter.listen_port}}
     - targetLabel: module
-      replacement: ams
+      replacement: aas
   metricRelabelings:
     - sourceLabels: [name]
       targetLabel:  devicename
