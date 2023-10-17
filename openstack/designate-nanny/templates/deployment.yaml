@@ -1,21 +1,30 @@
 {{- if .Values.nanny.enabled }}
-apiVersion: batch/v1
-kind: Job
+apiVersion: apps/v1
+kind: Deployment
 metadata:
- name: designate-nanny-{{ .Release.Revision }}
+ name: {{ .Release.Name }}
  labels:
+    app.kubernetes.io/name: {{ .Release.Name }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app: {{ .Release.Name }}
     ccloud/support-group: network-api
     system: openstack
     application: designate
 spec:
- backoffLimit: 0
+ replicas: 1
+ selector:
+    matchLabels:
+      app.kubernetes.io/instance: {{ .Release.Name }}
+      app.kubernetes.io/name: {{ .Release.Name }}
  template:
    metadata:
-     name: designate-nanny-{{ .Release.Revision }}
+     labels:
+       app.kubernetes.io/instance: {{ .Release.Name }}
+       app.kubernetes.io/name: {{ .Release.Name }}
    spec:
-     restartPolicy: Never
+
      containers:
-     - name: job
+     - name: {{ .Release.Name }}
        image: {{ required ".Values.global.registry is missing" .Values.global.registry }}/{{ .Values.image.name }}:{{required "missing .Values.image.image_tag" .Values.image.image_tag }}
        command: ["/opt/venv/bin/designate-nanny", "--config", "/srv/nanny.yaml", "autorun"]
        env:
@@ -48,6 +57,6 @@ spec:
      volumes:
      - name: nanny-conf
        configMap:
-         name: designate-nanny-{{ .Release.Revision }}
+         name: {{ .Release.Name }}
 
 {{- end }}
