@@ -1,0 +1,15 @@
+groups:
+- name: CronusQueue
+  rules:
+  - alert: CronusHighQueue
+    expr: sum (rabbitmq_queue_messages{queue=~"cronus_waiting_queue|cronus_work_queue"}) by (queue) > 10000
+    for: 30m
+    labels:
+      meta: cronus high queuing
+      service: email
+      severity: warning
+      tier: os
+      support_group: email
+    annotations:
+      description: cronus high queuing -  above 100k emails for more than 30 minutes
+      summary: cronus high queuing - above 100k emails for more than 30 minutes
