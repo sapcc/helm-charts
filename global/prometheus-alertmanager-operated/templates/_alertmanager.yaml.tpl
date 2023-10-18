@@ -247,13 +247,13 @@ route:
       region: global|ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|ap-sa-2|eu-de-1|eu-de-2|eu-nl-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3
       support_group: observability
 
-  - receiver: support_group_alerts_critical_src
+  - receiver: support_group_alerts_critical_common
     continue: true
     match_re:
       severity: critical
       cluster_type: abapcloud|admin|controlplane|customer|internet|kubernikus|metal|scaleout|virtual
       region: global|ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|ap-sa-2|eu-de-1|eu-de-2|eu-nl-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3
-      support_group: src
+      support_group: src|network-data|network-security|network-lb|network-wan|storage
 
   - receiver: support_group_alerts_warning
     continue: true
@@ -261,21 +261,21 @@ route:
       severity: warning
       cluster_type: abapcloud|admin|controlplane|customer|internet|kubernikus|metal|scaleout|virtual
       region: global|ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|ap-sa-2|eu-de-1|eu-de-2|eu-nl-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3
-      support_group: compute|compute-storage-api|containers|email|identity|foundation|network-api|observability|src
+      support_group: compute|compute-storage-api|containers|email|identity|foundation|network-api|observability|src|network-data|network-security|network-lb|network-wan|storage
 
   - receiver: support_group_alerts_qa
     continue: true
     match_re:
       severity: warning|critical
       region: qa-de-1
-      support_group: compute|compute-storage-api|containers|email|identity|foundation|network-api|observability|src
+      support_group: compute|compute-storage-api|containers|email|identity|foundation|network-api|observability|src|network-data|network-security|network-lb|network-wan|storage
 
   - receiver: support_group_alerts_labs
     continue: true
     match_re:
       severity: warning|critical
       region: qa-de-2|qa-de-3|qa-de-4|qa-de-5|qa-de-6
-      support_group: compute|compute-storage-api|containers|email|identity|foundation|network-api|observability|src
+      support_group: compute|compute-storage-api|containers|email|identity|foundation|network-api|observability|src|network-data|network-security|network-lb|network-wan
 
   # sunset latest q1-23
   - receiver: slack_api_critical
@@ -353,6 +353,7 @@ route:
       severity: info
       region: ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|ap-sa-2|eu-de-1|eu-de-2|eu-nl-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3
 
+  # sunset - network-data | network-security | network-lb | network-wan
   - receiver: slack_net_critical
     continue: true
     match_re:
@@ -360,6 +361,7 @@ route:
       severity: critical
       region: ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|ap-sa-2|eu-de-1|eu-de-2|eu-nl-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3
 
+  # sunset - network-data | network-security | network-lb | network-wan
   - receiver: slack_net_warning
     continue: false
     match_re:
@@ -367,6 +369,7 @@ route:
       severity: warning
       region: ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|ap-sa-2|eu-de-1|eu-de-2|eu-nl-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3
 
+  # sunset - network-data | network-security | network-lb | network-wan
   - receiver: slack_net_info
     continue: false
     match_re:
@@ -937,7 +940,7 @@ receivers:
         color: {{`'{{template "slack.sapcc.color" . }}'`}}
         send_resolved: true
 
-  - name: support_group_alerts_critical_src
+  - name: support_group_alerts_critical_common
     slack_configs:
       - channel: '#alert-{{"{{ .CommonLabels.support_group }}"}}-{{"{{ .CommonLabels.severity }}"}}'
         api_url: {{ required ".Values.slack.webhookURL undefined" .Values.slack.webhookURL | quote }}
