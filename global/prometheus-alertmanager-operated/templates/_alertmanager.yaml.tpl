@@ -138,62 +138,6 @@ route:
       severity: info|warning|critical
       service: cc-cp
 
-  - receiver: pagerduty_compute
-    continue: true
-    match_re:
-      severity: critical
-      cluster_type: abapcloud|admin|controlplane|customer|internet|kubernikus|metal|scaleout|virtual
-      region: global|ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|ap-sa-2|eu-de-1|eu-de-2|eu-nl-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3
-      support_group: compute
-
-  - receiver: pagerduty_compute_storage_api
-    continue: true
-    match_re:
-      severity: critical
-      cluster_type: abapcloud|admin|controlplane|customer|internet|kubernikus|metal|scaleout|virtual
-      region: global|ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|ap-sa-2|eu-de-1|eu-de-2|eu-nl-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3
-      support_group: compute-storage-api
-
-  - receiver: pagerduty_network_api
-    continue: true
-    match_re:
-      severity: critical
-      cluster_type: abapcloud|admin|controlplane|customer|internet|kubernikus|metal|scaleout|virtual
-      region: global|ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|ap-sa-2|eu-de-1|eu-de-2|eu-nl-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3
-      support_group: network-api
-
-  - receiver: pagerduty_containers
-    continue: true
-    match_re:
-      severity: critical
-      cluster_type: abapcloud|admin|controlplane|customer|internet|kubernikus|metal|scaleout|virtual
-      region: global|ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|ap-sa-2|eu-de-1|eu-de-2|eu-nl-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3
-      support_group: containers
-
-  - receiver: pagerduty_email
-    continue: true
-    match_re:
-      severity: critical
-      cluster_type: abapcloud|admin|controlplane|customer|internet|kubernikus|metal|scaleout|virtual
-      region: global|ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|ap-sa-2|eu-de-1|eu-de-2|eu-nl-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3
-      support_group: email
-
-  - receiver: pagerduty_identity
-    continue: true
-    match_re:
-      severity: critical
-      cluster_type: abapcloud|admin|controlplane|customer|internet|kubernikus|metal|scaleout|virtual
-      region: global|ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|ap-sa-2|eu-de-1|eu-de-2|eu-nl-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3
-      support_group: identity
-
-  - receiver: pagerduty_observability
-    continue: true
-    match_re:
-      severity: critical
-      cluster_type: abapcloud|admin|controlplane|customer|internet|kubernikus|metal|scaleout|virtual
-      region: global|ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|ap-sa-2|eu-de-1|eu-de-2|eu-nl-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3
-      support_group: observability
-
   - receiver: slack_by_k8s_service
     continue: true
     match_re:
@@ -207,7 +151,6 @@ route:
     match_re:
       tier: os
       severity: info|warning|critical
-      # NOTE: Please keep this list in sync with the identical list in `system/gatekeeper-config/values.yaml`.
       service: arc|backup|barbican|castellum|cinder|cronus|designate|documentation|elektra|elk|glance|ironic|keppel|limes|lyra|manila|neutron|nova|octavia|placement|repo|sentry|swift|snmp|tenso
       region: qa-de-1|ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|ap-sa-2|eu-de-1|eu-de-2|eu-nl-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3
 
@@ -215,9 +158,10 @@ route:
     continue: true
     match_re:
       severity: info|warning|critical
-      service: alerting|cc3test|exporter|grafana|hermes|jumpserver|maia|metis|metrics|logs|slack-alert-reactions
+      service: alerting|backup|castellum|cc3test|exporter|gatekeeper|grafana|hermes|jumpserver|keppel|limes|logs|maia|metis|metrics|repo|slack-alert-reactions|tenso
       region: qa-de-1|ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|ap-sa-2|eu-de-1|eu-de-2|eu-nl-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3
 
+  # to be reviewed
   - receiver: slack_sre
     continue: false
     match_re:
@@ -229,6 +173,7 @@ route:
       severity: info|warning|critical
       region: ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|ap-sa-2|eu-de-1|eu-de-2|eu-nl-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3
 
+  # to be reviewed
   - receiver: slack_storage
     continue: false
     match_re:
@@ -304,13 +249,13 @@ route:
       region: global|ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|ap-sa-2|eu-de-1|eu-de-2|eu-nl-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3
       support_group: observability
 
-  - receiver: support_group_alerts_critical_src
+  - receiver: support_group_alerts_critical
     continue: true
     match_re:
       severity: critical
       cluster_type: abapcloud|admin|controlplane|customer|internet|kubernikus|metal|scaleout|virtual
       region: global|ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|ap-sa-2|eu-de-1|eu-de-2|eu-nl-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3
-      support_group: src
+      support_group: src|network-data|network-security|network-lb|network-wan|storage
 
   - receiver: support_group_alerts_warning
     continue: true
@@ -318,21 +263,21 @@ route:
       severity: warning
       cluster_type: abapcloud|admin|controlplane|customer|internet|kubernikus|metal|scaleout|virtual
       region: global|ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|ap-sa-2|eu-de-1|eu-de-2|eu-nl-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3
-      support_group: compute|compute-storage-api|containers|email|identity|foundation|network-api|observability|src
+      support_group: compute|compute-storage-api|containers|email|identity|foundation|network-api|observability|src|network-data|network-security|network-lb|network-wan|storage
 
   - receiver: support_group_alerts_qa
     continue: true
     match_re:
       severity: warning|critical
       region: qa-de-1
-      support_group: compute|compute-storage-api|containers|email|identity|foundation|network-api|observability|src
+      support_group: compute|compute-storage-api|containers|email|identity|foundation|network-api|observability|src|network-data|network-security|network-lb|network-wan|storage
 
   - receiver: support_group_alerts_labs
     continue: true
     match_re:
       severity: warning|critical
       region: qa-de-2|qa-de-3|qa-de-4|qa-de-5|qa-de-6
-      support_group: compute|compute-storage-api|containers|email|identity|foundation|network-api|observability|src
+      support_group: compute|compute-storage-api|containers|email|identity|foundation|network-api|observability|src|network-data|network-security|network-lb|network-wan|storage
 
   # sunset latest q1-23
   - receiver: slack_api_critical
@@ -351,14 +296,7 @@ route:
       cluster_type: abapcloud|admin|controlplane|customer|internet|kubernikus|metal|scaleout|virtual
       region: global|ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|ap-sa-2|eu-de-1|eu-de-2|eu-nl-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3
 
-  # sunset latest q1-23
-  - receiver: pagerduty_metal
-    continue: true
-    match_re:
-      tier: metal
-      severity: critical
-      region: ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|ap-sa-2|eu-de-1|eu-de-2|eu-nl-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3|qa-de-1|qa-de-2|qa-de-3|qa-de-5
-  # sunset latest q1-23
+   # sunset
   - receiver: slack_metal_critical
     continue: false
     match_re:
@@ -366,14 +304,14 @@ route:
       severity: critical
       region: ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|ap-sa-2|eu-de-1|eu-de-2|eu-nl-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3|qa-de-1|qa-de-2|qa-de-3|qa-de-5
 
-  # sunset latest q1-23
+  # sunset
   - receiver: slack_metal_warning
     continue: false
     match_re:
       tier: metal
       severity: warning
       region: ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|ap-sa-2|eu-de-1|eu-de-2|eu-nl-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3|qa-de-1|qa-de-2|qa-de-3|qa-de-5
-  # sunset latest q1-23
+  # sunset
   - receiver: slack_metal_info
     continue: false
     match_re:
@@ -394,28 +332,22 @@ route:
       tier: ad
       severity: info
       region: ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|ap-sa-2|eu-de-1|eu-de-2|eu-nl-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3|qa-de-1
-  # sunset latest q1-23
-  - receiver: pagerduty_vmware
-    continue: true
-    match_re:
-      tier: vmware
-      severity: critical
-      region: ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|ap-sa-2|eu-de-1|eu-de-2|eu-nl-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3
-  # sunset latest q1-23
+
+  # rework to match support group compute needed
   - receiver: slack_vmware_critical
     continue: false
     match_re:
       tier: vmware
       severity: critical
       region: ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|ap-sa-2|eu-de-1|eu-de-2|eu-nl-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3
-  # sunset latest q1-23
+  # rework to match support group compute needed
   - receiver: slack_vmware_warning
     continue: false
     match_re:
       tier: vmware
       severity: warning
       region: ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|ap-sa-2|eu-de-1|eu-de-2|eu-nl-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3
-  # sunset latest q1-23
+  # rework to match support group compute needed
   - receiver: slack_vmware_info
     continue: false
     match_re:
@@ -423,6 +355,7 @@ route:
       severity: info
       region: ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|ap-sa-2|eu-de-1|eu-de-2|eu-nl-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3
 
+  # sunset - network-data | network-security | network-lb | network-wan
   - receiver: slack_net_critical
     continue: true
     match_re:
@@ -430,29 +363,7 @@ route:
       severity: critical
       region: ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|ap-sa-2|eu-de-1|eu-de-2|eu-nl-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3
 
-  - receiver: pagerduty_network_cisco
-    continue: false
-    match_re:
-      tier: net
-      severity: critical
-      module: acispine|acileaf|acistretch
-      region: ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|ap-sa-2|eu-de-1|eu-de-2|eu-nl-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3
-
-  - receiver: pagerduty_network_apic_exporter
-    continue: false
-    match_re:
-      tier: net
-      severity: critical
-      app: apic-exporter
-      region: ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|ap-sa-2|eu-de-1|eu-de-2|eu-nl-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3
-
-  - receiver: pagerduty_network
-    continue: false
-    match_re:
-      tier: net
-      severity: critical
-      region: ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|ap-sa-2|eu-de-1|eu-de-2|eu-nl-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3
-
+  # sunset - network-data | network-security | network-lb | network-wan
   - receiver: slack_net_warning
     continue: false
     match_re:
@@ -460,6 +371,7 @@ route:
       severity: warning
       region: ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|ap-sa-2|eu-de-1|eu-de-2|eu-nl-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3
 
+  # sunset - network-data | network-security | network-lb | network-wan
   - receiver: slack_net_info
     continue: false
     match_re:
@@ -540,11 +452,6 @@ receivers:
         callback_id: "alertmanager"
         color: {{`'{{template "slack.sapcc.color" . }}'`}}
         send_resolved: true
-        actions:
-          - name: {{"'{{template \"slack.sapcc.actionName\" . }}'"}}
-            type: {{"'{{template \"slack.sapcc.actionType\" . }}'"}}
-            text: {{"'{{template \"slack.sapcc.acknowledge.actionText\" . }}'"}}
-            value: {{"'{{template \"slack.sapcc.acknowledge.actionValue\" . }}'"}}
 
   - name: slack_metal_critical
     slack_configs:
@@ -559,11 +466,6 @@ receivers:
         callback_id: "alertmanager"
         color: {{`'{{template "slack.sapcc.color" . }}'`}}
         send_resolved: true
-        actions:
-          - name: {{"'{{template \"slack.sapcc.actionName\" . }}'"}}
-            type: {{"'{{template \"slack.sapcc.actionType\" . }}'"}}
-            text: {{"'{{template \"slack.sapcc.acknowledge.actionText\" . }}'"}}
-            value: {{"'{{template \"slack.sapcc.acknowledge.actionValue\" . }}'"}}
 
   - name: slack_ad_info
     slack_configs:
@@ -620,11 +522,6 @@ receivers:
         callback_id: "alertmanager"
         color: {{`'{{template "slack.sapcc.color" . }}'`}}
         send_resolved: true
-        actions:
-          - name: {{"'{{template \"slack.sapcc.actionName\" . }}'"}}
-            type: {{"'{{template \"slack.sapcc.actionType\" . }}'"}}
-            text: {{"'{{template \"slack.sapcc.acknowledge.actionText\" . }}'"}}
-            value: {{"'{{template \"slack.sapcc.acknowledge.actionValue\" . }}'"}}
 
   - name: slack_net_critical
     slack_configs:
@@ -639,11 +536,6 @@ receivers:
         callback_id: "alertmanager"
         color: {{`'{{template "slack.sapcc.color" . }}'`}}
         send_resolved: true
-        actions:
-          - name: {{"'{{template \"slack.sapcc.actionName\" . }}'"}}
-            type: {{"'{{template \"slack.sapcc.actionType\" . }}'"}}
-            text: {{"'{{template \"slack.sapcc.acknowledge.actionText\" . }}'"}}
-            value: {{"'{{template \"slack.sapcc.acknowledge.actionValue\" . }}'"}}
 
   - name: slack_vmware_info
     slack_configs:
@@ -672,11 +564,6 @@ receivers:
         callback_id: "alertmanager"
         color: {{`'{{template "slack.sapcc.color" . }}'`}}
         send_resolved: true
-        actions:
-          - name: {{"'{{template \"slack.sapcc.actionName\" . }}'"}}
-            type: {{"'{{template \"slack.sapcc.actionType\" . }}'"}}
-            text: {{"'{{template \"slack.sapcc.acknowledge.actionText\" . }}'"}}
-            value: {{"'{{template \"slack.sapcc.acknowledge.actionValue\" . }}'"}}
 
   - name: slack_vmware_critical
     slack_configs:
@@ -691,11 +578,6 @@ receivers:
         callback_id: "alertmanager"
         color: {{`'{{template "slack.sapcc.color" . }}'`}}
         send_resolved: true
-        actions:
-          - name: {{"'{{template \"slack.sapcc.actionName\" . }}'"}}
-            type: {{"'{{template \"slack.sapcc.actionType\" . }}'"}}
-            text: {{"'{{template \"slack.sapcc.acknowledge.actionText\" . }}'"}}
-            value: {{"'{{template \"slack.sapcc.acknowledge.actionValue\" . }}'"}}
 
   - name: slack_api_warning
     slack_configs:
@@ -710,11 +592,6 @@ receivers:
         callback_id: "alertmanager"
         color: {{`'{{template "slack.sapcc.color" . }}'`}}
         send_resolved: true
-        actions:
-          - name: {{"'{{template \"slack.sapcc.actionName\" . }}'"}}
-            type: {{"'{{template \"slack.sapcc.actionType\" . }}'"}}
-            text: {{"'{{template \"slack.sapcc.acknowledge.actionText\" . }}'"}}
-            value: {{"'{{template \"slack.sapcc.acknowledge.actionValue\" . }}'"}}
 
   - name: slack_api_critical
     slack_configs:
@@ -729,11 +606,6 @@ receivers:
         callback_id: "alertmanager"
         color: {{`'{{template "slack.sapcc.color" . }}'`}}
         send_resolved: true
-        actions:
-          - name: {{"'{{template \"slack.sapcc.actionName\" . }}'"}}
-            type: {{"'{{template \"slack.sapcc.actionType\" . }}'"}}
-            text: {{"'{{template \"slack.sapcc.acknowledge.actionText\" . }}'"}}
-            value: {{"'{{template \"slack.sapcc.acknowledge.actionValue\" . }}'"}}
 
   - name: slack_monitoring
     slack_configs:
@@ -854,11 +726,6 @@ receivers:
         callback_id: "alertmanager"
         color: {{`'{{template "slack.sapcc.color" . }}'`}}
         send_resolved: true
-        actions:
-          - name: {{"'{{template \"slack.sapcc.actionName\" . }}'"}}
-            type: {{"'{{template \"slack.sapcc.actionType\" . }}'"}}
-            text: {{"'{{template \"slack.sapcc.acknowledge.actionText\" . }}'"}}
-            value: {{"'{{template \"slack.sapcc.acknowledge.actionValue\" . }}'"}}
 
   - name: slack_concourse
     slack_configs:
@@ -990,11 +857,6 @@ receivers:
         callback_id: "alertmanager"
         color: {{`'{{template "slack.sapcc.color" . }}'`}}
         send_resolved: true
-        actions:
-          - name: {{"'{{template \"slack.sapcc.actionName\" . }}'"}}
-            type: {{"'{{template \"slack.sapcc.actionType\" . }}'"}}
-            text: {{"'{{template \"slack.sapcc.acknowledge.actionText\" . }}'"}}
-            value: {{"'{{template \"slack.sapcc.acknowledge.actionValue\" . }}'"}}
 
   - name: support_group_alerts_critical_compute_storage_api
     slack_configs:
@@ -1009,11 +871,6 @@ receivers:
         callback_id: "alertmanager"
         color: {{`'{{template "slack.sapcc.color" . }}'`}}
         send_resolved: true
-        actions:
-          - name: {{"'{{template \"slack.sapcc.actionName\" . }}'"}}
-            type: {{"'{{template \"slack.sapcc.actionType\" . }}'"}}
-            text: {{"'{{template \"slack.sapcc.acknowledge.actionText\" . }}'"}}
-            value: {{"'{{template \"slack.sapcc.acknowledge.actionValue\" . }}'"}}
 
   - name: support_group_alerts_critical_email
     slack_configs:
@@ -1028,11 +885,6 @@ receivers:
         callback_id: "alertmanager"
         color: {{`'{{template "slack.sapcc.color" . }}'`}}
         send_resolved: true
-        actions:
-          - name: {{"'{{template \"slack.sapcc.actionName\" . }}'"}}
-            type: {{"'{{template \"slack.sapcc.actionType\" . }}'"}}
-            text: {{"'{{template \"slack.sapcc.acknowledge.actionText\" . }}'"}}
-            value: {{"'{{template \"slack.sapcc.acknowledge.actionValue\" . }}'"}}
 
   - name: support_group_alerts_critical_identity
     slack_configs:
@@ -1047,11 +899,6 @@ receivers:
         callback_id: "alertmanager"
         color: {{`'{{template "slack.sapcc.color" . }}'`}}
         send_resolved: true
-        actions:
-          - name: {{"'{{template \"slack.sapcc.actionName\" . }}'"}}
-            type: {{"'{{template \"slack.sapcc.actionType\" . }}'"}}
-            text: {{"'{{template \"slack.sapcc.acknowledge.actionText\" . }}'"}}
-            value: {{"'{{template \"slack.sapcc.acknowledge.actionValue\" . }}'"}}
 
   - name: support_group_alerts_critical_foundation
     slack_configs:
@@ -1066,11 +913,6 @@ receivers:
         callback_id: "alertmanager"
         color: {{`'{{template "slack.sapcc.color" . }}'`}}
         send_resolved: true
-        actions:
-          - name: {{"'{{template \"slack.sapcc.actionName\" . }}'"}}
-            type: {{"'{{template \"slack.sapcc.actionType\" . }}'"}}
-            text: {{"'{{template \"slack.sapcc.acknowledge.actionText\" . }}'"}}
-            value: {{"'{{template \"slack.sapcc.acknowledge.actionValue\" . }}'"}}
 
   - name: support_group_alerts_critical_network_api
     slack_configs:
@@ -1085,11 +927,6 @@ receivers:
         callback_id: "alertmanager"
         color: {{`'{{template "slack.sapcc.color" . }}'`}}
         send_resolved: true
-        actions:
-          - name: {{"'{{template \"slack.sapcc.actionName\" . }}'"}}
-            type: {{"'{{template \"slack.sapcc.actionType\" . }}'"}}
-            text: {{"'{{template \"slack.sapcc.acknowledge.actionText\" . }}'"}}
-            value: {{"'{{template \"slack.sapcc.acknowledge.actionValue\" . }}'"}}
 
   - name: support_group_alerts_critical_observability
     slack_configs:
@@ -1104,13 +941,8 @@ receivers:
         callback_id: "alertmanager"
         color: {{`'{{template "slack.sapcc.color" . }}'`}}
         send_resolved: true
-        actions:
-          - name: {{"'{{template \"slack.sapcc.actionName\" . }}'"}}
-            type: {{"'{{template \"slack.sapcc.actionType\" . }}'"}}
-            text: {{"'{{template \"slack.sapcc.acknowledge.actionText\" . }}'"}}
-            value: {{"'{{template \"slack.sapcc.acknowledge.actionValue\" . }}'"}}
 
-  - name: support_group_alerts_critical_src
+  - name: support_group_alerts_critical
     slack_configs:
       - channel: '#alert-{{"{{ .CommonLabels.support_group }}"}}-{{"{{ .CommonLabels.severity }}"}}'
         api_url: {{ required ".Values.slack.webhookURL undefined" .Values.slack.webhookURL | quote }}
@@ -1137,11 +969,6 @@ receivers:
         callback_id: "alertmanager"
         color: {{`'{{template "slack.sapcc.color" . }}'`}}
         send_resolved: true
-        actions:
-          - name: {{"'{{template \"slack.sapcc.actionName\" . }}'"}}
-            type: {{"'{{template \"slack.sapcc.actionType\" . }}'"}}
-            text: {{"'{{template \"slack.sapcc.acknowledge.actionText\" . }}'"}}
-            value: {{"'{{template \"slack.sapcc.acknowledge.actionValue\" . }}'"}}
 
   - name: support_group_alerts_warning
     slack_configs:
@@ -1184,282 +1011,6 @@ receivers:
         callback_id: "alertmanager"
         color: {{`'{{template "slack.sapcc.color" . }}'`}}
         send_resolved: true
-
-  - name: pagerduty_metal
-    pagerduty_configs:
-      - service_key: {{ required ".Values.pagerduty_sap.osd_mom_compute.serviceKey undefined" .Values.pagerduty_sap.osd_mom_compute.serviceKey | quote }}
-        description: {{"'{{ template \"pagerduty.sapcc.description\" . }}'"}}
-        component: {{"'{{template \"pagerduty.sapcc.tier\" . }}'"}}
-        group: {{"'{{template \"pagerduty.sapcc.service\" . }}'"}}
-        details:
-          Details: {{"'{{template \"pagerduty.sapcc.details\" . }}'"}}
-          Region: {{"'{{template \"pagerduty.sapcc.region\" . }}'"}}
-          Tier: {{"'{{template \"pagerduty.sapcc.tier\" . }}'"}}
-          Service: {{"'{{template \"pagerduty.sapcc.service\" . }}'"}}
-          Context: {{"'{{template \"pagerduty.sapcc.context\" . }}'"}}
-          Prometheus: {{"'{{template \"pagerduty.sapcc.prometheus\" . }}'"}}
-          Dashboard: {{"'{{template \"pagerduty.sapcc.dashboard\" . }}'"}}
-          Sentry: {{"'{{template \"pagerduty.sapcc.sentry\" . }}'"}}
-          Playbook: {{"'{{template \"pagerduty.sapcc.playbook\" . }}'"}}
-          firing: {{"'{{ template \"pagerduty.sapcc.firing\" . }}'"}}
-
-  - name: pagerduty_network
-    pagerduty_configs:
-      - service_key: {{ required ".Values.pagerduty_sap.network.serviceKey undefined" .Values.pagerduty_sap.network.serviceKey | quote }}
-        description: {{"'{{ template \"pagerduty.sapcc.description\" . }}'"}}
-        component: {{"'{{template \"pagerduty.sapcc.tier\" . }}'"}}
-        group: {{"'{{template \"pagerduty.sapcc.service\" . }}'"}}
-        details:
-          Details: {{"'{{template \"pagerduty.sapcc.details\" . }}'"}}
-          Region: {{"'{{template \"pagerduty.sapcc.region\" . }}'"}}
-          Tier: {{"'{{template \"pagerduty.sapcc.tier\" . }}'"}}
-          Service: {{"'{{template \"pagerduty.sapcc.service\" . }}'"}}
-          Context: {{"'{{template \"pagerduty.sapcc.context\" . }}'"}}
-          Prometheus: {{"'{{template \"pagerduty.sapcc.prometheus\" . }}'"}}
-          Dashboard: {{"'{{template \"pagerduty.sapcc.dashboard\" . }}'"}}
-          Sentry: {{"'{{template \"pagerduty.sapcc.sentry\" . }}'"}}
-          Playbook: {{"'{{template \"pagerduty.sapcc.playbook\" . }}'"}}
-          firing: {{"'{{ template \"pagerduty.sapcc.firing\" . }}'"}}
-      - service_key: {{ required ".Values.pagerduty_sap.osd_mom_network.serviceKey undefined" .Values.pagerduty_sap.osd_mom_network.serviceKey | quote }}
-        description: {{"'{{ template \"pagerduty.sapcc.description\" . }}'"}}
-        component: {{"'{{template \"pagerduty.sapcc.tier\" . }}'"}}
-        group: {{"'{{template \"pagerduty.sapcc.service\" . }}'"}}
-        details:
-          Details: {{"'{{template \"pagerduty.sapcc.details\" . }}'"}}
-          Region: {{"'{{template \"pagerduty.sapcc.region\" . }}'"}}
-          Tier: {{"'{{template \"pagerduty.sapcc.tier\" . }}'"}}
-          Service: {{"'{{template \"pagerduty.sapcc.service\" . }}'"}}
-          Context: {{"'{{template \"pagerduty.sapcc.context\" . }}'"}}
-          Prometheus: {{"'{{template \"pagerduty.sapcc.prometheus\" . }}'"}}
-          Dashboard: {{"'{{template \"pagerduty.sapcc.dashboard\" . }}'"}}
-          Sentry: {{"'{{template \"pagerduty.sapcc.sentry\" . }}'"}}
-          Playbook: {{"'{{template \"pagerduty.sapcc.playbook\" . }}'"}}
-          firing: {{"'{{ template \"pagerduty.sapcc.firing\" . }}'"}}
-
-  - name: pagerduty_network_cisco
-    pagerduty_configs:
-      - service_key: {{ required ".Values.pagerduty_sap.network.serviceKeyCsm undefined" .Values.pagerduty_sap.network.serviceKeyCsm | quote }}
-        description: {{"'{{ template \"pagerduty.sapcc.description\" . }}'"}}
-        component: {{"'{{template \"pagerduty.sapcc.tier\" . }}'"}}
-        group: {{"'{{template \"pagerduty.sapcc.service\" . }}'"}}
-        details:
-          Details: {{"'{{template \"pagerduty.sapcc.details\" . }}'"}}
-          Region: {{"'{{template \"pagerduty.sapcc.region\" . }}'"}}
-          Tier: {{"'{{template \"pagerduty.sapcc.tier\" . }}'"}}
-          Service: {{"'{{template \"pagerduty.sapcc.service\" . }}'"}}
-          Context: {{"'{{template \"pagerduty.sapcc.context\" . }}'"}}
-          Prometheus: {{"'{{template \"pagerduty.sapcc.prometheus\" . }}'"}}
-          Dashboard: {{"'{{template \"pagerduty.sapcc.dashboard\" . }}'"}}
-          Sentry: {{"'{{template \"pagerduty.sapcc.sentry\" . }}'"}}
-          Playbook: {{"'{{template \"pagerduty.sapcc.playbook\" . }}'"}}
-          firing: {{"'{{ template \"pagerduty.sapcc.firing\" . }}'"}}
-      - service_key: {{ required ".Values.pagerduty_sap.osd_mom_network.serviceKey undefined" .Values.pagerduty_sap.osd_mom_network.serviceKey | quote }}
-        description: {{"'{{ template \"pagerduty.sapcc.description\" . }}'"}}
-        component: {{"'{{template \"pagerduty.sapcc.tier\" . }}'"}}
-        group: {{"'{{template \"pagerduty.sapcc.service\" . }}'"}}
-        details:
-          Details: {{"'{{template \"pagerduty.sapcc.details\" . }}'"}}
-          Region: {{"'{{template \"pagerduty.sapcc.region\" . }}'"}}
-          Tier: {{"'{{template \"pagerduty.sapcc.tier\" . }}'"}}
-          Service: {{"'{{template \"pagerduty.sapcc.service\" . }}'"}}
-          Context: {{"'{{template \"pagerduty.sapcc.context\" . }}'"}}
-          Prometheus: {{"'{{template \"pagerduty.sapcc.prometheus\" . }}'"}}
-          Dashboard: {{"'{{template \"pagerduty.sapcc.dashboard\" . }}'"}}
-          Sentry: {{"'{{template \"pagerduty.sapcc.sentry\" . }}'"}}
-          Playbook: {{"'{{template \"pagerduty.sapcc.playbook\" . }}'"}}
-          firing: {{"'{{ template \"pagerduty.sapcc.firing\" . }}'"}}
-
-  - name: pagerduty_network_apic_exporter
-    pagerduty_configs:
-      - service_key: {{ required ".Values.pagerduty_sap.network.serviceKeyCsm undefined" .Values.pagerduty_sap.network.serviceKeyCsm | quote }}
-        description: {{"'{{ template \"pagerduty.sapcc.description\" . }}'"}}
-        component: {{"'{{template \"pagerduty.sapcc.tier\" . }}'"}}
-        group: {{"'{{template \"pagerduty.sapcc.service\" . }}'"}}
-        details:
-          Details: {{"'{{template \"pagerduty.sapcc.details\" . }}'"}}
-          Region: {{"'{{template \"pagerduty.sapcc.region\" . }}'"}}
-          Tier: {{"'{{template \"pagerduty.sapcc.tier\" . }}'"}}
-          Service: {{"'{{template \"pagerduty.sapcc.service\" . }}'"}}
-          Context: {{"'{{template \"pagerduty.sapcc.context\" . }}'"}}
-          Prometheus: {{"'{{template \"pagerduty.sapcc.prometheus\" . }}'"}}
-          Dashboard: {{"'{{template \"pagerduty.sapcc.dashboard\" . }}'"}}
-          Sentry: {{"'{{template \"pagerduty.sapcc.sentry\" . }}'"}}
-          Playbook: {{"'{{template \"pagerduty.sapcc.playbook\" . }}'"}}
-          firing: {{"'{{ template \"pagerduty.sapcc.firing\" . }}'"}}
-      - service_key: {{ required ".Values.pagerduty_sap.osd_mom_network.serviceKey undefined" .Values.pagerduty_sap.osd_mom_network.serviceKey | quote }}
-        description: {{"'{{ template \"pagerduty.sapcc.description\" . }}'"}}
-        component: {{"'{{template \"pagerduty.sapcc.tier\" . }}'"}}
-        group: {{"'{{template \"pagerduty.sapcc.service\" . }}'"}}
-        details:
-          Details: {{"'{{template \"pagerduty.sapcc.details\" . }}'"}}
-          Region: {{"'{{template \"pagerduty.sapcc.region\" . }}'"}}
-          Tier: {{"'{{template \"pagerduty.sapcc.tier\" . }}'"}}
-          Service: {{"'{{template \"pagerduty.sapcc.service\" . }}'"}}
-          Context: {{"'{{template \"pagerduty.sapcc.context\" . }}'"}}
-          Prometheus: {{"'{{template \"pagerduty.sapcc.prometheus\" . }}'"}}
-          Dashboard: {{"'{{template \"pagerduty.sapcc.dashboard\" . }}'"}}
-          Sentry: {{"'{{template \"pagerduty.sapcc.sentry\" . }}'"}}
-          Playbook: {{"'{{template \"pagerduty.sapcc.playbook\" . }}'"}}
-          firing: {{"'{{ template \"pagerduty.sapcc.firing\" . }}'"}}
-
-  - name: pagerduty_vmware
-    pagerduty_configs:
-      - service_key: {{ required ".Values.pagerduty_sap.vmware.serviceKey undefined" .Values.pagerduty_sap.vmware.serviceKey | quote }}
-        description: {{"'{{ template \"pagerduty.sapcc.description\" . }}'"}}
-        component: {{"'{{template \"pagerduty.sapcc.tier\" . }}'"}}
-        group: {{"'{{template \"pagerduty.sapcc.service\" . }}'"}}
-        details:
-          Details: {{"'{{template \"pagerduty.sapcc.details\" . }}'"}}
-          Region: {{"'{{template \"pagerduty.sapcc.region\" . }}'"}}
-          Tier: {{"'{{template \"pagerduty.sapcc.tier\" . }}'"}}
-          Service: {{"'{{template \"pagerduty.sapcc.service\" . }}'"}}
-          Context: {{"'{{template \"pagerduty.sapcc.context\" . }}'"}}
-          Prometheus: {{"'{{template \"pagerduty.sapcc.prometheus\" . }}'"}}
-          Dashboard: {{"'{{template \"pagerduty.sapcc.dashboard\" . }}'"}}
-          Sentry: {{"'{{template \"pagerduty.sapcc.sentry\" . }}'"}}
-          Playbook: {{"'{{template \"pagerduty.sapcc.playbook\" . }}'"}}
-          firing: {{"'{{ template \"pagerduty.sapcc.firing\" . }}'"}}
-      - service_key: {{ required ".Values.pagerduty_sap.osd_mom_compute.serviceKey undefined" .Values.pagerduty_sap.osd_mom_compute.serviceKey | quote }}
-        description: {{"'{{ template \"pagerduty.sapcc.description\" . }}'"}}
-        component: {{"'{{template \"pagerduty.sapcc.tier\" . }}'"}}
-        group: {{"'{{template \"pagerduty.sapcc.service\" . }}'"}}
-        details:
-          Details: {{"'{{template \"pagerduty.sapcc.details\" . }}'"}}
-          Region: {{"'{{template \"pagerduty.sapcc.region\" . }}'"}}
-          Tier: {{"'{{template \"pagerduty.sapcc.tier\" . }}'"}}
-          Service: {{"'{{template \"pagerduty.sapcc.service\" . }}'"}}
-          Context: {{"'{{template \"pagerduty.sapcc.context\" . }}'"}}
-          Prometheus: {{"'{{template \"pagerduty.sapcc.prometheus\" . }}'"}}
-          Dashboard: {{"'{{template \"pagerduty.sapcc.dashboard\" . }}'"}}
-          Sentry: {{"'{{template \"pagerduty.sapcc.sentry\" . }}'"}}
-          Playbook: {{"'{{template \"pagerduty.sapcc.playbook\" . }}'"}}
-          firing: {{"'{{ template \"pagerduty.sapcc.firing\" . }}'"}}
-
-  - name: pagerduty_compute
-    pagerduty_configs:
-      - service_key: {{ required ".Values.pagerduty_sap.compute.serviceKey undefined" .Values.pagerduty_sap.compute.serviceKey | quote }}
-        description: {{"'{{ template \"pagerduty.sapcc.description\" . }}'"}}
-        component: {{"'{{template \"pagerduty.sapcc.tier\" . }}'"}}
-        group: {{"'{{template \"pagerduty.sapcc.service\" . }}'"}}
-        details:
-          Details: {{"'{{template \"pagerduty.sapcc.details\" . }}'"}}
-          Region: {{"'{{template \"pagerduty.sapcc.region\" . }}'"}}
-          Tier: {{"'{{template \"pagerduty.sapcc.tier\" . }}'"}}
-          Service: {{"'{{template \"pagerduty.sapcc.service\" . }}'"}}
-          Context: {{"'{{template \"pagerduty.sapcc.context\" . }}'"}}
-          Prometheus: {{"'{{template \"pagerduty.sapcc.prometheus\" . }}'"}}
-          Dashboard: {{"'{{template \"pagerduty.sapcc.dashboard\" . }}'"}}
-          Sentry: {{"'{{template \"pagerduty.sapcc.sentry\" . }}'"}}
-          Playbook: {{"'{{template \"pagerduty.sapcc.playbook\" . }}'"}}
-          firing: {{"'{{ template \"pagerduty.sapcc.firing\" . }}'"}}
-
-  - name: pagerduty_compute_storage_api
-    pagerduty_configs:
-      - service_key: {{ required ".Values.pagerduty_sap.compute_storage_api.serviceKey undefined" .Values.pagerduty_sap.compute_storage_api.serviceKey | quote }}
-        description: {{"'{{ template \"pagerduty.sapcc.description\" . }}'"}}
-        component: {{"'{{template \"pagerduty.sapcc.tier\" . }}'"}}
-        group: {{"'{{template \"pagerduty.sapcc.service\" . }}'"}}
-        details:
-          Details: {{"'{{template \"pagerduty.sapcc.details\" . }}'"}}
-          Region: {{"'{{template \"pagerduty.sapcc.region\" . }}'"}}
-          Tier: {{"'{{template \"pagerduty.sapcc.tier\" . }}'"}}
-          Service: {{"'{{template \"pagerduty.sapcc.service\" . }}'"}}
-          Context: {{"'{{template \"pagerduty.sapcc.context\" . }}'"}}
-          Prometheus: {{"'{{template \"pagerduty.sapcc.prometheus\" . }}'"}}
-          Dashboard: {{"'{{template \"pagerduty.sapcc.dashboard\" . }}'"}}
-          Sentry: {{"'{{template \"pagerduty.sapcc.sentry\" . }}'"}}
-          Playbook: {{"'{{template \"pagerduty.sapcc.playbook\" . }}'"}}
-          firing: {{"'{{ template \"pagerduty.sapcc.firing\" . }}'"}}
-
-  - name: pagerduty_containers
-    pagerduty_configs:
-      - service_key: {{ required ".Values.pagerduty_sap.containers.serviceKey undefined" .Values.pagerduty_sap.containers.serviceKey | quote }}
-        description: {{"'{{ template \"pagerduty.sapcc.description\" . }}'"}}
-        component: {{"'{{template \"pagerduty.sapcc.tier\" . }}'"}}
-        group: {{"'{{template \"pagerduty.sapcc.service\" . }}'"}}
-        details:
-          Details: {{"'{{template \"pagerduty.sapcc.details\" . }}'"}}
-          Region: {{"'{{template \"pagerduty.sapcc.region\" . }}'"}}
-          Tier: {{"'{{template \"pagerduty.sapcc.tier\" . }}'"}}
-          Service: {{"'{{template \"pagerduty.sapcc.service\" . }}'"}}
-          Context: {{"'{{template \"pagerduty.sapcc.context\" . }}'"}}
-          Prometheus: {{"'{{template \"pagerduty.sapcc.prometheus\" . }}'"}}
-          Dashboard: {{"'{{template \"pagerduty.sapcc.dashboard\" . }}'"}}
-          Sentry: {{"'{{template \"pagerduty.sapcc.sentry\" . }}'"}}
-          Playbook: {{"'{{template \"pagerduty.sapcc.playbook\" . }}'"}}
-          firing: {{"'{{ template \"pagerduty.sapcc.firing\" . }}'"}}
-
-  - name: pagerduty_email
-    pagerduty_configs:
-      - service_key: {{ required ".Values.pagerduty_sap.email.serviceKey undefined" .Values.pagerduty_sap.email.serviceKey | quote }}
-        description: {{"'{{ template \"pagerduty.sapcc.description\" . }}'"}}
-        component: {{"'{{template \"pagerduty.sapcc.tier\" . }}'"}}
-        group: {{"'{{template \"pagerduty.sapcc.service\" . }}'"}}
-        details:
-          Details: {{"'{{template \"pagerduty.sapcc.details\" . }}'"}}
-          Region: {{"'{{template \"pagerduty.sapcc.region\" . }}'"}}
-          Tier: {{"'{{template \"pagerduty.sapcc.tier\" . }}'"}}
-          Service: {{"'{{template \"pagerduty.sapcc.service\" . }}'"}}
-          Context: {{"'{{template \"pagerduty.sapcc.context\" . }}'"}}
-          Prometheus: {{"'{{template \"pagerduty.sapcc.prometheus\" . }}'"}}
-          Dashboard: {{"'{{template \"pagerduty.sapcc.dashboard\" . }}'"}}
-          Sentry: {{"'{{template \"pagerduty.sapcc.sentry\" . }}'"}}
-          Playbook: {{"'{{template \"pagerduty.sapcc.playbook\" . }}'"}}
-          firing: {{"'{{ template \"pagerduty.sapcc.firing\" . }}'"}}
-
-  - name: pagerduty_identity
-    pagerduty_configs:
-      - service_key: {{ required ".Values.pagerduty_sap.identity.serviceKey undefined" .Values.pagerduty_sap.identity.serviceKey | quote }}
-        description: {{"'{{ template \"pagerduty.sapcc.description\" . }}'"}}
-        component: {{"'{{template \"pagerduty.sapcc.tier\" . }}'"}}
-        group: {{"'{{template \"pagerduty.sapcc.service\" . }}'"}}
-        details:
-          Details: {{"'{{template \"pagerduty.sapcc.details\" . }}'"}}
-          Region: {{"'{{template \"pagerduty.sapcc.region\" . }}'"}}
-          Tier: {{"'{{template \"pagerduty.sapcc.tier\" . }}'"}}
-          Service: {{"'{{template \"pagerduty.sapcc.service\" . }}'"}}
-          Context: {{"'{{template \"pagerduty.sapcc.context\" . }}'"}}
-          Prometheus: {{"'{{template \"pagerduty.sapcc.prometheus\" . }}'"}}
-          Dashboard: {{"'{{template \"pagerduty.sapcc.dashboard\" . }}'"}}
-          Sentry: {{"'{{template \"pagerduty.sapcc.sentry\" . }}'"}}
-          Playbook: {{"'{{template \"pagerduty.sapcc.playbook\" . }}'"}}
-          firing: {{"'{{ template \"pagerduty.sapcc.firing\" . }}'"}}
-
-  - name: pagerduty_network_api
-    pagerduty_configs:
-      - service_key: {{ required ".Values.pagerduty_sap.network_api.serviceKey undefined" .Values.pagerduty_sap.network_api.serviceKey | quote }}
-        description: {{"'{{ template \"pagerduty.sapcc.description\" . }}'"}}
-        component: {{"'{{template \"pagerduty.sapcc.tier\" . }}'"}}
-        group: {{"'{{template \"pagerduty.sapcc.service\" . }}'"}}
-        details:
-          Details: {{"'{{template \"pagerduty.sapcc.details\" . }}'"}}
-          Region: {{"'{{template \"pagerduty.sapcc.region\" . }}'"}}
-          Tier: {{"'{{template \"pagerduty.sapcc.tier\" . }}'"}}
-          Service: {{"'{{template \"pagerduty.sapcc.service\" . }}'"}}
-          Context: {{"'{{template \"pagerduty.sapcc.context\" . }}'"}}
-          Prometheus: {{"'{{template \"pagerduty.sapcc.prometheus\" . }}'"}}
-          Dashboard: {{"'{{template \"pagerduty.sapcc.dashboard\" . }}'"}}
-          Sentry: {{"'{{template \"pagerduty.sapcc.sentry\" . }}'"}}
-          Playbook: {{"'{{template \"pagerduty.sapcc.playbook\" . }}'"}}
-          firing: {{"'{{ template \"pagerduty.sapcc.firing\" . }}'"}}
-
-  - name: pagerduty_observability
-    pagerduty_configs:
-      - service_key: {{ required ".Values.pagerduty_sap.observability.serviceKey undefined" .Values.pagerduty_sap.observability.serviceKey | quote }}
-        description: {{"'{{ template \"pagerduty.sapcc.description\" . }}'"}}
-        component: {{"'{{template \"pagerduty.sapcc.tier\" . }}'"}}
-        group: {{"'{{template \"pagerduty.sapcc.service\" . }}'"}}
-        details:
-          Details: {{"'{{template \"pagerduty.sapcc.details\" . }}'"}}
-          Region: {{"'{{template \"pagerduty.sapcc.region\" . }}'"}}
-          Tier: {{"'{{template \"pagerduty.sapcc.tier\" . }}'"}}
-          Service: {{"'{{template \"pagerduty.sapcc.service\" . }}'"}}
-          Context: {{"'{{template \"pagerduty.sapcc.context\" . }}'"}}
-          Prometheus: {{"'{{template \"pagerduty.sapcc.prometheus\" . }}'"}}
-          Dashboard: {{"'{{template \"pagerduty.sapcc.dashboard\" . }}'"}}
-          Sentry: {{"'{{template \"pagerduty.sapcc.sentry\" . }}'"}}
-          Playbook: {{"'{{template \"pagerduty.sapcc.playbook\" . }}'"}}
-          firing: {{"'{{ template \"pagerduty.sapcc.firing\" . }}'"}}
 
   # email receiver config
   {{- if .Values.cc_email_receiver.enabled }}
