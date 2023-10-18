@@ -161,7 +161,7 @@ unique_last_password_count = 5
 disable_user_account_days_inactive = {{ .Values.disable_user_account_days_inactive }}
 {{- end }}
 
-{{- if not .Values.oslo_messaging_notifications.disabled }}
+{{- if not (and (hasKey $.Values "oslo_messaging_notifications") ($.Values.oslo_messaging_notifications.disabled)) }}
 [oslo_messaging_notifications]
 driver = messaging
   {{- if and (.Values.audit.central_service.user) (.Values.audit.central_service.password) }}
