@@ -852,11 +852,6 @@ receivers:
         callback_id: "alertmanager"
         color: {{`'{{template "slack.sapcc.color" . }}'`}}
         send_resolved: true
-        actions:
-          - name: {{"'{{template \"slack.sapcc.actionName\" . }}'"}}
-            type: {{"'{{template \"slack.sapcc.actionType\" . }}'"}}
-            text: {{"'{{template \"slack.sapcc.acknowledge.actionText\" . }}'"}}
-            value: {{"'{{template \"slack.sapcc.acknowledge.actionValue\" . }}'"}}
 
   - name: support_group_alerts_critical_compute_storage_api
     slack_configs:
@@ -871,11 +866,6 @@ receivers:
         callback_id: "alertmanager"
         color: {{`'{{template "slack.sapcc.color" . }}'`}}
         send_resolved: true
-        actions:
-          - name: {{"'{{template \"slack.sapcc.actionName\" . }}'"}}
-            type: {{"'{{template \"slack.sapcc.actionType\" . }}'"}}
-            text: {{"'{{template \"slack.sapcc.acknowledge.actionText\" . }}'"}}
-            value: {{"'{{template \"slack.sapcc.acknowledge.actionValue\" . }}'"}}
 
   - name: support_group_alerts_critical_email
     slack_configs:
@@ -890,11 +880,6 @@ receivers:
         callback_id: "alertmanager"
         color: {{`'{{template "slack.sapcc.color" . }}'`}}
         send_resolved: true
-        actions:
-          - name: {{"'{{template \"slack.sapcc.actionName\" . }}'"}}
-            type: {{"'{{template \"slack.sapcc.actionType\" . }}'"}}
-            text: {{"'{{template \"slack.sapcc.acknowledge.actionText\" . }}'"}}
-            value: {{"'{{template \"slack.sapcc.acknowledge.actionValue\" . }}'"}}
 
   - name: support_group_alerts_critical_identity
     slack_configs:
@@ -909,11 +894,6 @@ receivers:
         callback_id: "alertmanager"
         color: {{`'{{template "slack.sapcc.color" . }}'`}}
         send_resolved: true
-        actions:
-          - name: {{"'{{template \"slack.sapcc.actionName\" . }}'"}}
-            type: {{"'{{template \"slack.sapcc.actionType\" . }}'"}}
-            text: {{"'{{template \"slack.sapcc.acknowledge.actionText\" . }}'"}}
-            value: {{"'{{template \"slack.sapcc.acknowledge.actionValue\" . }}'"}}
 
   - name: support_group_alerts_critical_foundation
     slack_configs:
@@ -928,11 +908,6 @@ receivers:
         callback_id: "alertmanager"
         color: {{`'{{template "slack.sapcc.color" . }}'`}}
         send_resolved: true
-        actions:
-          - name: {{"'{{template \"slack.sapcc.actionName\" . }}'"}}
-            type: {{"'{{template \"slack.sapcc.actionType\" . }}'"}}
-            text: {{"'{{template \"slack.sapcc.acknowledge.actionText\" . }}'"}}
-            value: {{"'{{template \"slack.sapcc.acknowledge.actionValue\" . }}'"}}
 
   - name: support_group_alerts_critical_network_api
     slack_configs:
@@ -947,11 +922,6 @@ receivers:
         callback_id: "alertmanager"
         color: {{`'{{template "slack.sapcc.color" . }}'`}}
         send_resolved: true
-        actions:
-          - name: {{"'{{template \"slack.sapcc.actionName\" . }}'"}}
-            type: {{"'{{template \"slack.sapcc.actionType\" . }}'"}}
-            text: {{"'{{template \"slack.sapcc.acknowledge.actionText\" . }}'"}}
-            value: {{"'{{template \"slack.sapcc.acknowledge.actionValue\" . }}'"}}
 
   - name: support_group_alerts_critical_observability
     slack_configs:
@@ -966,11 +936,6 @@ receivers:
         callback_id: "alertmanager"
         color: {{`'{{template "slack.sapcc.color" . }}'`}}
         send_resolved: true
-        actions:
-          - name: {{"'{{template \"slack.sapcc.actionName\" . }}'"}}
-            type: {{"'{{template \"slack.sapcc.actionType\" . }}'"}}
-            text: {{"'{{template \"slack.sapcc.acknowledge.actionText\" . }}'"}}
-            value: {{"'{{template \"slack.sapcc.acknowledge.actionValue\" . }}'"}}
 
   - name: support_group_alerts_critical_src
     slack_configs:
