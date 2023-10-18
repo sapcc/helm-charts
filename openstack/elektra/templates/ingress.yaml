@@ -21,21 +21,30 @@ metadata:
 
     {{- if .Values.ingress.ca }}
     ingress.kubernetes.io/auth-tls-pass-certificate-to-upstream: {{ default true .Values.ingress.pass_certificate_to_upstream | quote }}
+    nginx.ingress.kubernetes.io/auth-tls-pass-certificate-to-upstream: {{ default true .Values.ingress.pass_certificate_to_upstream | quote }}
     ingress.kubernetes.io/auth-tls-secret: kube-system/ingress-cacrt
+    nginx.ingress.kubernetes.io/auth-tls-secret: kube-system/ingress-cacrt
     ingress.kubernetes.io/auth-tls-verify-client: "optional"
+    nginx.ingress.kubernetes.io/auth-tls-verify-client: "optional"
     ingress.kubernetes.io/auth-tls-verify-depth: "3"
+    nginx.ingress.kubernetes.io/auth-tls-verify-depth: "3"
     {{- end }}
     {{- if .Values.enable_linkerd }}
     ingress.kubernetes.io/service-upstream: "true"
+    nginx.ingress.kubernetes.io/service-upstream: "true"
     {{- end }}
     disco: "true"
     kubernetes.io/tls-acme: {{ default false .Values.ingress.vice_president | quote }}
     prometheus.io/probe: {{ default false .Values.ingress.probe | quote }}
     {{- if .Values.ingress.oauth_proxy }}
     ingress.kubernetes.io/auth-url: "https://auth.{{ .Values.global.region}}.{{ .Values.global.tld}}/oauth2/auth"
+    nginx.ingress.kubernetes.io/auth-url: "https://auth.{{ .Values.global.region}}.{{ .Values.global.tld}}/oauth2/auth"
     ingress.kubernetes.io/auth-signin: "https://auth.{{ .Values.global.region}}.{{ .Values.global.tld}}/oauth2/start"
+    nginx.ingress.kubernetes.io/auth-signin: "https://auth.{{ .Values.global.region}}.{{ .Values.global.tld}}/oauth2/start"
     ingress.kubernetes.io/auth-request-redirect: $escaped_request_uri
+    nginx.ingress.kubernetes.io/auth-request-redirect: $escaped_request_uri
     ingress.kubernetes.io/auth-response-headers: "Authorization, X-Auth-Request-Email, X-Auth-Request-User, X-Forwarded-Access-Token"
+    nginx.ingress.kubernetes.io/auth-response-headers: "Authorization, X-Auth-Request-Email, X-Auth-Request-User, X-Forwarded-Access-Token"
     {{- end }}
 spec:
   tls:
@@ -63,12 +72,17 @@ metadata:
   annotations:
     {{- if .Values.ingress.ca }}
     ingress.kubernetes.io/auth-tls-pass-certificate-to-upstream: {{ default true .Values.ingress.pass_certificate_to_upstream | quote }}
+    nginx.ingress.kubernetes.io/auth-tls-pass-certificate-to-upstream: {{ default true .Values.ingress.pass_certificate_to_upstream | quote }}
     ingress.kubernetes.io/auth-tls-secret: kube-system/ingress-cacrt
+    nginx.ingress.kubernetes.io/auth-tls-secret: kube-system/ingress-cacrt
     ingress.kubernetes.io/auth-tls-verify-client: "optional"
+    nginx.ingress.kubernetes.io/auth-tls-verify-client: "optional"
     ingress.kubernetes.io/auth-tls-verify-depth: "3"
+    nginx.ingress.kubernetes.io/auth-tls-verify-depth: "3"
     {{- end }}
     {{- if .Values.enable_linkerd }}
     ingress.kubernetes.io/service-upstream: "true"
+    nginx.ingress.kubernetes.io/service-upstream: "true"
     {{- end }}
     disco: "true"
     kubernetes.io/tls-acme: {{ default false .Values.ingress.vice_president | quote }}

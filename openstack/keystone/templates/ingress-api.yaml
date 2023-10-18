@@ -49,17 +49,25 @@ metadata:
     # clear the trusted key header from external requests
     ingress.kubernetes.io/configuration-snippet: |
       proxy_set_header X-Trusted-Key        "";
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+      proxy_set_header X-Trusted-Key        "";
     {{- if .Values.services.ingress.limitRps }}
     ingress.kubernetes.io/limit-rps: {{ .Values.services.ingress.limitRps | quote }}
+    nginx.ingress.kubernetes.io/limit-rps: {{ .Values.services.ingress.limitRps | quote }}
     {{- end }}
     {{- if .Values.services.ingress.limitConnections }}
     ingress.kubernetes.io/limit-connections: {{ .Values.services.ingress.limitConnections | quote }}
+    nginx.ingress.kubernetes.io/limit-connections: {{ .Values.services.ingress.limitConnections | quote }}
     {{- end }}
     {{- if .Values.services.ingress.x509.ca }}
     ingress.kubernetes.io/auth-tls-secret: {{ .Release.Namespace }}/{{ .Release.Name }}-x509-ca
+    nginx.ingress.kubernetes.io/auth-tls-secret: {{ .Release.Namespace }}/{{ .Release.Name }}-x509-ca
     ingress.kubernetes.io/auth-tls-pass-certificate-to-upstream: "true"
+    nginx.ingress.kubernetes.io/auth-tls-pass-certificate-to-upstream: "true"
     ingress.kubernetes.io/auth-tls-verify-client: "optional"
+    nginx.ingress.kubernetes.io/auth-tls-verify-client: "optional"
     ingress.kubernetes.io/auth-tls-verify-depth: "3"
+    nginx.ingress.kubernetes.io/auth-tls-verify-depth: "3"
     {{- end }}
     {{- if .Values.services.ingress.tlsacme }}
     kubernetes.io/tls-acme: "true"
