@@ -1,6 +1,6 @@
 {{- if $.Values.monitoring.prometheus.alerts.enabled }}
   {{- if and (hasKey $.Values.mariadb "autostart") (not $.Values.mariadb.autostart) }}
-  {{- else if and ($.Values.command) (hasKey $.Values.command "application") }}
+  {{- else if and ($.Values.command) (hasKey $.Values.command "database") }}
   {{- else if and (hasKey $.Values.mariadb "wipeDataAndLog") ($.Values.mariadb.wipeDataAndLog) }}
   {{- else if and (hasKey $.Values.mariadb.galera.restore "kopia") ($.Values.mariadb.galera.restore.kopia.enabled) }}
   {{- else if and (hasKey $.Values.monitoring.mysqld_exporter "autostart") (not $.Values.monitoring.mysqld_exporter.autostart) }}
@@ -9,21 +9,21 @@
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
 metadata:
-  name: {{ (include "nodeNamePrefix" (dict "global" $ "component" "application")) }}-alerts
+  name: {{ (include "nodeNamePrefix" (dict "global" $ "component" "database")) }}-alerts
   namespace: {{ $.Release.Namespace }}
   labels:
     app: {{ $.Release.Name }}
-    component: "application"
+    component: "database"
     release: {{ $.Release.Name }}
     chart: "{{ $.Chart.Name }}-{{ $.Chart.Version }}"
     heritage: "{{ $.Release.Service }}"
-    prometheus: {{ $.Values.monitoring.prometheus.instance.application | default "prometheus" | quote }}
+    prometheus: {{ $.Values.monitoring.prometheus.instance.database | default "prometheus" | quote }}
 spec:
   groups:
 {{ include (print .Template.BasePath "/alerts/_mariadb.tpl") . | indent 2 }}
   {{- end }}
   {{- if and (hasKey $.Values.mariadb "autostart") (not $.Values.mariadb.autostart) }}
-  {{- else if and ($.Values.command) (hasKey $.Values.command "application") }}
+  {{- else if and ($.Values.command) (hasKey $.Values.command "database") }}
   {{- else if and (hasKey $.Values.mariadb "wipeDataAndLog") ($.Values.mariadb.wipeDataAndLog) }}
   {{- else if and (hasKey $.Values.mariadb.galera.restore "kopia") ($.Values.mariadb.galera.restore.kopia.enabled) }}
   {{- else if and $.Values.proxy.enabled (eq $.Values.proxy.type "proxysql") $.Values.monitoring.proxy.enabled }}
@@ -39,13 +39,13 @@ metadata:
     release: {{ $.Release.Name }}
     chart: "{{ $.Chart.Name }}-{{ $.Chart.Version }}"
     heritage: "{{ $.Release.Service }}"
-    prometheus: {{ $.Values.monitoring.prometheus.instance.application | default "prometheus" | quote }}
+    prometheus: {{ $.Values.monitoring.prometheus.instance.database | default "prometheus" | quote }}
 spec:
   groups:
 {{ include (print .Template.BasePath "/alerts/_proxysql.tpl") . | indent 2 }}
   {{- end }}
   {{- if and (hasKey $.Values.mariadb "autostart") (not $.Values.mariadb.autostart) }}
-  {{- else if and ($.Values.command) (hasKey $.Values.command "application") }}
+  {{- else if and ($.Values.command) (hasKey $.Values.command "database") }}
   {{- else if and (hasKey $.Values.mariadb "wipeDataAndLog") ($.Values.mariadb.wipeDataAndLog) }}
   {{- else if and (hasKey $.Values.mariadb.galera.restore "kopia") ($.Values.mariadb.galera.restore.kopia.enabled) }}
   {{- else if and (and (hasKey $.Values.mariadb.galera "backup") ($.Values.mariadb.galera.backup.enabled)) (and (hasKey $.Values.mariadb.galera.backup "kopia") ($.Values.mariadb.galera.backup.kopia.enabled)) $.Values.monitoring.kopia.enabled }}
@@ -53,7 +53,7 @@ spec:
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
 metadata:
-  name: {{ include "commonPrefix" $ }}backup-kopiaserver-alerts
+  name: {{ include "commonPrefix" $ }}-backup-kopiaserver-alerts
   namespace: {{ $.Release.Namespace }}
   labels:
     app: {{ $.Release.Name }}
@@ -61,13 +61,13 @@ metadata:
     release: {{ $.Release.Name }}
     chart: "{{ $.Chart.Name }}-{{ $.Chart.Version }}"
     heritage: "{{ $.Release.Service }}"
-    prometheus: {{ $.Values.monitoring.prometheus.instance.application | default "prometheus" | quote }}
+    prometheus: {{ $.Values.monitoring.prometheus.instance.database | default "prometheus" | quote }}
 spec:
   groups:
 {{ include (print .Template.BasePath "/alerts/_kopia.tpl") . | indent 2 }}
   {{- end }}
   {{- if and (hasKey $.Values.mariadb "autostart") (not $.Values.mariadb.autostart) }}
-  {{- else if and ($.Values.command) (hasKey $.Values.command "application") }}
+  {{- else if and ($.Values.command) (hasKey $.Values.command "database") }}
   {{- else if and (hasKey $.Values.mariadb "wipeDataAndLog") ($.Values.mariadb.wipeDataAndLog) }}
   {{- else if and (hasKey $.Values.mariadb.galera.restore "kopia") ($.Values.mariadb.galera.restore.kopia.enabled) }}
   {{- else }}
@@ -75,7 +75,7 @@ spec:
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
 metadata:
-  name: {{ include "commonPrefix" $ }}kubernetes-alerts
+  name: {{ include "commonPrefix" $ }}-kubernetes-alerts
   namespace: {{ $.Release.Namespace }}
   labels:
     app: {{ $.Release.Name }}

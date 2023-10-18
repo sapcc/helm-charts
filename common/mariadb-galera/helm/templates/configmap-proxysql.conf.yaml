@@ -1,69 +1,73 @@
-{{- $mysqlPort := (required ".services.application.frontend.ports.mysql.targetPort missing" $.Values.services.application.frontend.ports.mysql.targetPort) }}
-{{- $galeraPort := (required ".services.application.backend.ports.galera.targetPort missing" $.Values.services.application.backend.ports.galera.targetPort) }}
-{{- $proxysqlAdminPort := (required ".services.proxy.proxysql.backend.ports.proxy.targetPort missing" $.Values.services.proxy.proxysql.backend.ports.proxy.targetPort) }}
+{{- if and (hasKey $.Values.mariadb "autostart") (not $.Values.mariadb.autostart) }}
+{{- else if and ($.Values.command) (hasKey $.Values.command "database") }}
+{{- else if and (hasKey $.Values.mariadb.galera.restore "kopia") ($.Values.mariadb.galera.restore.kopia.enabled) }}
+{{- else if and (hasKey $.Values.mariadb "wipeDataAndLog") ($.Values.mariadb.wipeDataAndLog) }}
+{{- else if and ($.Values.proxy.enabled) (eq $.Values.proxy.type "proxysql") }}
+  {{- $mysqlPort := (required ".services.database.frontend.ports.mysql.targetPort missing" $.Values.services.database.frontend.ports.mysql.targetPort) }}
+  {{- $galeraPort := (required ".services.database.backend.ports.galera.targetPort missing" $.Values.services.database.backend.ports.galera.targetPort) }}
+  {{- $proxysqlAdminPort := (required ".services.proxy.proxysql.backend.ports.proxy.targetPort missing" $.Values.services.proxy.proxysql.backend.ports.proxy.targetPort) }}
 
-{{- $usernameEnvVar := "" }}
-{{- $passwordEnvVar := "" }}
-{{- $userRequired := false }}
-{{- $mySQLUsers := dict }}
-{{- $fastforward := 0 }}
+  {{- $usernameEnvVar := "" }}
+  {{- $passwordEnvVar := "" }}
+  {{- $userRequired := false }}
+  {{- $mySQLUsers := dict }}
+  {{- $fastforward := 0 }}
 
-{{- range $userKey, $userValue := $.Values.mariadb.users }}
-  {{- if $userValue.enabled }}
-    {{- $usernameEnvVar = "" }}
-    {{- $passwordEnvVar = "" }}
-    {{- $userRequired = false }}
-    {{- $fastforward = 0 }}
-    {{- range $envKey, $envValue := $.Values.env }}
-      {{- if (has "proxysql" $envValue.containerType) }}
-        {{- if eq $userValue.secretName $envValue.secretName }}
-          {{- $userRequired = true }}
-          {{- if hasSuffix "_USERNAME" $envKey }}
-            {{- $usernameEnvVar = $envKey }}
-          {{- end }}
-          {{- if hasSuffix "_PASSWORD" $envKey }}
-            {{- $passwordEnvVar = $envKey }}
+  {{- range $userKey, $userValue := $.Values.mariadb.users }}
+    {{- if $userValue.enabled }}
+      {{- $usernameEnvVar = "" }}
+      {{- $passwordEnvVar = "" }}
+      {{- $userRequired = false }}
+      {{- $fastforward = 0 }}
+      {{- range $envKey, $envValue := $.Values.env }}
+        {{- if (has "proxysql" $envValue.containerType) }}
+          {{- if eq $userValue.secretName $envValue.secretName }}
+            {{- $userRequired = true }}
+            {{- if hasSuffix "_USERNAME" $envKey }}
+              {{- $usernameEnvVar = $envKey }}
+            {{- end }}
+            {{- if hasSuffix "_PASSWORD" $envKey }}
+              {{- $passwordEnvVar = $envKey }}
+            {{- end }}
           {{- end }}
         {{- end }}
       {{- end }}
-    {{- end }}
-    {{- if and (hasKey $userValue "proxysql") $userValue.proxysql.fastforward }}
-      {{- $fastforward = 1 }}
-    {{- end }}
-    {{- if $userRequired }}
-      {{- if and $usernameEnvVar $passwordEnvVar }}
-        {{- $_ := set $mySQLUsers ($usernameEnvVar | quote) (printf "{ username = \"${%s}\", password = \"${%s}\", default_hostgroup = 10, transaction_persistent = 0, fast_forward = %d, active = 1 }" $usernameEnvVar $passwordEnvVar $fastforward) }}
+      {{- if and (hasKey $userValue "proxysql") $userValue.proxysql.fastforward }}
+        {{- $fastforward = 1 }}
       {{- end }}
-      {{- if (not $usernameEnvVar) }}
-        {{- fail (printf "'_USERNAME' environment variable for the '%s' user is not defined, but required for the ProxySQL 'mysql_users.cfg' configuration" $userKey) }}
-      {{- end }}
-      {{- if (not $passwordEnvVar) }}
-        {{- fail (printf "'_PASSWORD' environment variable for the '%s' user password is not defined, but required for the ProxySQL 'mysql_users.cfg' configuration" $userKey) }}
+      {{- if $userRequired }}
+        {{- if and $usernameEnvVar $passwordEnvVar }}
+          {{- $_ := set $mySQLUsers ($usernameEnvVar | quote) (printf "{ username = \"${%s}\", password = \"${%s}\", default_hostgroup = 10, transaction_persistent = 0, fast_forward = %d, active = 1 }" $usernameEnvVar $passwordEnvVar $fastforward) }}
+        {{- end }}
+        {{- if (not $usernameEnvVar) }}
+          {{- fail (printf "'_USERNAME' environment variable for the '%s' user is not defined, but required for the ProxySQL 'mysql_users.cfg' configuration" $userKey) }}
+        {{- end }}
+        {{- if (not $passwordEnvVar) }}
+          {{- fail (printf "'_PASSWORD' environment variable for the '%s' user password is not defined, but required for the ProxySQL 'mysql_users.cfg' configuration" $userKey) }}
+        {{- end }}
       {{- end }}
     {{- end }}
   {{- end }}
-{{- end }}
-
 ---
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ include "commonPrefix" $ }}proxysql-conf
+  name: {{ include "commonPrefix" $ }}-proxysql-conf
   namespace: {{ $.Release.Namespace }}
 data:
   proxysql_servers.cfg.tpl: |-
     {{- range $int, $err := until ($.Values.replicas.proxy|int) }}
-      {{- $weight := (sub (sub ($.Values.replicas.application|int) $int) 1) }}
+      {{- $weight := (sub (sub ($.Values.replicas.database|int) $int) 1) }}
       {{- $calculatedWeight := 1 }}
       {{- range $_, $err := until ($weight|int) }}
         {{- /* 2^n where n is the $calculatedWeight */}}
         {{- $calculatedWeight = (mul 2 $calculatedWeight) }}
       {{- end }}
       {
-        hostname="{{ (printf "%s-%d.%s.svc.cluster.local" (include "nodeNamePrefix" (dict "global" $ "component" "proxysql")) $int $.Release.Namespace) }}"
+        hostname="{{ (printf "%s-%d.%s" (include "nodeNamePrefix" (dict "global" $ "component" "proxysql")) $int $.Release.Namespace) }}"
         port={{ $proxysqlAdminPort }}
         weight={{ $calculatedWeight }}
-      {{- if eq (add1 $int) ($.Values.replicas.application|int) }}
+      {{- if eq (add1 $int) ($.Values.replicas.database|int) }}
       }
       {{- else }}
       },
@@ -82,15 +86,15 @@ data:
       active=1
     }
   mysql_servers.cfg.tpl: |-
-    {{- range $int, $err := until ($.Values.replicas.application|int) }}
-    {{- $weight := (sub (sub ($.Values.replicas.application|int) $int) 1) }}
+    {{- range $int, $err := until ($.Values.replicas.database|int) }}
+    {{- $weight := (sub (sub ($.Values.replicas.database|int) $int) 1) }}
       {{- $calculatedWeight := 1 }}
       {{- range $_, $err := until ($weight|int) }}
         {{- /* 2^n where n is the $calculatedWeight */}}
         {{- $calculatedWeight = (mul 2 $calculatedWeight) }}
       {{- end }}
       {
-        address="{{ (printf "%s-%d.%s.svc.cluster.local" (include "nodeNamePrefix" (dict "global" $ "component" "application")) $int $.Release.Namespace) }}"
+        address="{{ (printf "%s-%d.%s" (include "nodeNamePrefix" (dict "global" $ "component" "database")) $int $.Release.Namespace) }}"
         port={{ $mysqlPort }}
         use_ssl=0
         weight={{ $calculatedWeight }}
@@ -98,7 +102,7 @@ data:
         max_connections=100
         max_replication_lag=0
         max_latency_ms=0
-      {{- if eq (add1 $int) ($.Values.replicas.application|int) }}
+      {{- if eq (add1 $int) ($.Values.replicas.database|int) }}
       }
       {{- else }}
       },
@@ -142,14 +146,14 @@ data:
           comment="all other statements will also be routed to hostgroup 10(writer_hostgroup)"
       }
   mysql_users.cfg.tpl: |-
-{{- $int := 0 }}
-{{- $mySQLUserCount := (len $mySQLUsers) }}
-{{- range $mySQLUserKey, $mySQLUserValue := (values $mySQLUsers | sortAlpha) }}
-  {{- $int = add1 $int }}
-  {{- if eq $int $mySQLUserCount }}
-    {{ $mySQLUserValue }}
-  {{- else }}
-    {{ $mySQLUserValue }},
+  {{- $int := 0 }}
+  {{- $mySQLUserCount := (len $mySQLUsers) }}
+  {{- range $mySQLUserKey, $mySQLUserValue := (values $mySQLUsers | sortAlpha) }}
+    {{- $int = add1 $int }}
+    {{- if eq $int $mySQLUserCount }}
+      {{ $mySQLUserValue }}
+    {{- else }}
+      {{ $mySQLUserValue }},
+    {{- end }}
   {{- end }}
 {{- end }}
-

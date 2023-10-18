@@ -9,7 +9,7 @@ function fetchseqnofromremotenode {
 
   for (( int=${MAX_RETRIES}; int >=1; int-=1));
     do
-    IFS=$'\t' SEQNOARRAY=($(mysql --protocol=tcp --user=${MARIADB_ROOT_USERNAME} --password=${MARIADB_ROOT_PASSWORD} --host=${DB_HOST}.database.svc.cluster.local --port=${MYSQL_PORT} --database=mysql --connect-timeout={{ $.Values.readinessProbe.timeoutSeconds.application }} --execute="SHOW GLOBAL STATUS LIKE 'wsrep_last_committed';" --batch --skip-column-names | grep 'wsrep_last_committed'))
+    IFS=$'\t' SEQNOARRAY=($(mysql --protocol=tcp --user=${MARIADB_ROOT_USERNAME} --password=${MARIADB_ROOT_PASSWORD} --host=${DB_HOST}.{{ $.Release.Namespace }} --port=${MYSQL_PORT} --database=mysql --connect-timeout={{ $.Values.readinessProbe.timeoutSeconds.database }} --execute="SHOW GLOBAL STATUS LIKE 'wsrep_last_committed';" --batch --skip-column-names | grep 'wsrep_last_committed'))
     if [ $? -ne 0 ]; then
       sleep ${WAIT_SECONDS}
     else
@@ -31,7 +31,7 @@ function selectbackupnode {
     loginfo "${FUNCNAME[0]}" "Find Galera node with highest sequence number (${int} retries left)"
     IFS=": " NODENAME=($(cat /tmp/nodelist.seqno | sort --key=2 --reverse --numeric-sort --field-separator=: | head -1))
     IFS="${oldIFS}"
-    if [[ "${NODENAME[0]}" =~ ^{{ (include "nodeNamePrefix" (dict "global" $ "component" "application")) }}-.* ]]; then
+    if [[ "${NODENAME[0]}" =~ ^{{ (include "nodeNamePrefix" (dict "global" $ "component" "database")) }}-.* ]]; then
       loginfo "${FUNCNAME[0]}" "Galera nodename '${NODENAME[0]}' with the sequence number '${NODENAME[1]}' selected"
       break
     else
@@ -55,7 +55,7 @@ function setclusterdesyncmode {
   for (( int=${MAX_RETRIES}; int >=1; int-=1));
     do
     loginfo "${FUNCNAME[0]}" "set cluster desync ${DISABLESYNC} for node ${DB_HOST} (${int} retries left)"
-    mysql --protocol=tcp --user=${MARIADB_ROOT_USERNAME} --password=${MARIADB_ROOT_PASSWORD} --host=${DB_HOST}.database.svc.cluster.local --port=${MYSQL_PORT} --connect-timeout={{ $.Values.readinessProbe.timeoutSeconds.application }} --execute="SET GLOBAL wsrep_desync = ${DISABLESYNC};" --batch --skip-column-names
+    mysql --protocol=tcp --user=${MARIADB_ROOT_USERNAME} --password=${MARIADB_ROOT_PASSWORD} --host=${DB_HOST}.{{ $.Release.Namespace }} --port=${MYSQL_PORT} --connect-timeout={{ $.Values.readinessProbe.timeoutSeconds.database }} --execute="SET GLOBAL wsrep_desync = ${DISABLESYNC};" --batch --skip-column-names
     if [ $? -ne 0 ]; then
       sleep ${WAIT_SECONDS}
     else
@@ -73,7 +73,7 @@ function queryoldestbinlogname {
   local DB_HOST=${1}
   local BINLOGNAME
 
-  IFS=$'\t' BINLOGNAME=($(mysql --protocol=tcp --host=${DB_HOST}.database.svc.cluster.local --port=${MYSQL_PORT} --user=${MARIADB_ROOT_USERNAME} --password=${MARIADB_ROOT_PASSWORD} --execute="SHOW BINARY LOGS;" --batch --skip-column-names | sort --key=1 | head -n 1))
+  IFS=$'\t' BINLOGNAME=($(mysql --protocol=tcp --host=${DB_HOST}.{{ $.Release.Namespace }} --port=${MYSQL_PORT} --user=${MARIADB_ROOT_USERNAME} --password=${MARIADB_ROOT_PASSWORD} --execute="SHOW BINARY LOGS;" --batch --skip-column-names | sort --key=1 | head -n 1))
   IFS="${oldIFS}"
   if [ $? -ne 0 ]; then
     exit 1
@@ -88,7 +88,7 @@ function purgebinlogfiles {
   local BINLOGNAMEARRAY
 
   loginfo "${FUNCNAME[0]}" "purge rolled over binlog files on ${DB_HOST}"
-  IFS=$'\t' BINLOGNAMEARRAY=($(mysql --protocol=tcp --host=${DB_HOST}.database.svc.cluster.local --port=${MYSQL_PORT} --user=${MARIADB_ROOT_USERNAME} --password=${MARIADB_ROOT_PASSWORD} --execute="SHOW BINARY LOGS;" --batch --skip-column-names | sort --key=1 --reverse | awk '{print $1}'))
+  IFS=$'\t' BINLOGNAMEARRAY=($(mysql --protocol=tcp --host=${DB_HOST}.{{ $.Release.Namespace }} --port=${MYSQL_PORT} --user=${MARIADB_ROOT_USERNAME} --password=${MARIADB_ROOT_PASSWORD} --execute="SHOW BINARY LOGS;" --batch --skip-column-names | sort --key=1 --reverse | awk '{print $1}'))
   if [ $? -ne 0 ]; then
     logerror "${FUNCNAME[0]}" "binlog file listing failed"
     exit 1
@@ -96,7 +96,7 @@ function purgebinlogfiles {
   IFS="${oldIFS}"
 
   BINLOGNAME=$(echo "${BINLOGNAMEARRAY[@]}" | head -n 2 | sort | head -n 1)
-  mysql --protocol=tcp --host=${DB_HOST}.database.svc.cluster.local --port=${MYSQL_PORT} --user=${MARIADB_ROOT_USERNAME} --password=${MARIADB_ROOT_PASSWORD} --execute="PURGE BINARY LOGS TO '${BINLOGNAME}';" --batch --skip-column-names | sort --key=1 --reverse | awk '{print $1}'
+  mysql --protocol=tcp --host=${DB_HOST}.{{ $.Release.Namespace }} --port=${MYSQL_PORT} --user=${MARIADB_ROOT_USERNAME} --password=${MARIADB_ROOT_PASSWORD} --execute="PURGE BINARY LOGS TO '${BINLOGNAME}';" --batch --skip-column-names | sort --key=1 --reverse | awk '{print $1}'
   if [ $? -ne 0 ]; then
     logerror "${FUNCNAME[0]}" "binlog file purge failed"
     exit 1
@@ -108,7 +108,7 @@ function querybinlogposition {
   local DB_HOST=${1}
   local BINLOGPOSITION
 
-  BINLOGPOSITION=$(mysql --protocol=tcp --host=${DB_HOST}.database.svc.cluster.local --port=${MYSQL_PORT} --user=${MARIADB_ROOT_USERNAME} --password=${MARIADB_ROOT_PASSWORD} --execute="SELECT VARIABLE_VALUE FROM information_schema.GLOBAL_STATUS where variable_name like 'BINLOG_SNAPSHOT_POSITION';" --batch --skip-column-names)
+  BINLOGPOSITION=$(mysql --protocol=tcp --host=${DB_HOST}.{{ $.Release.Namespace }} --port=${MYSQL_PORT} --user=${MARIADB_ROOT_USERNAME} --password=${MARIADB_ROOT_PASSWORD} --execute="SELECT VARIABLE_VALUE FROM information_schema.GLOBAL_STATUS where variable_name like 'BINLOG_SNAPSHOT_POSITION';" --batch --skip-column-names)
   if [ $? -ne 0 ]; then
     exit 1
   fi

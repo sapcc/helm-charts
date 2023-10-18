@@ -1,5 +1,5 @@
 {{- if and (hasKey $.Values.mariadb "autostart") (not $.Values.mariadb.autostart) }}
-{{- else if and ($.Values.command) (hasKey $.Values.command "application") }}
+{{- else if and ($.Values.command) (hasKey $.Values.command "database") }}
 {{- else if and (hasKey $.Values.mariadb.galera.restore "kopia") (not $.Values.mariadb.galera.restore.kopia.enabled) }}
 {{- else }}
 apiVersion: batch/v1
@@ -24,7 +24,7 @@ spec:
         checksum/configmap: {{ include (print $.Template.BasePath "/configmap-kopia.yaml") $ | sha256sum }}
     spec:
       restartPolicy: {{ $.Values.mariadb.galera.restore.kopia.job.jobRestartPolicy | default "Never" | quote }}
-      serviceAccount: {{ include "commonPrefix" $ }}{{ $.Release.Name }}
+      serviceAccount: {{ include "commonPrefix" $ }}-mariadb-galera
       securityContext:
         runAsUser:  {{ $.Values.userId.backup | default 3200 | int }}
         runAsGroup: {{ $.Values.groupId.backup | default 3200 | int }}
@@ -35,7 +35,7 @@ spec:
       {{- end }}
       containers:
       - name: restore
-        image: "{{ $.Values.image.kopiabackup.registry }}/{{ $.Values.image.kopiabackup.project }}/{{ $.Values.image.kopiabackup.applicationname }}:{{ $.Values.image.kopiabackup.applicationversion }}-{{ $.Values.image.kopiabackup.imageversion | int }}"
+        image: "{{ $.Values.image.kopiabackup.registry }}/{{ $.Values.image.kopiabackup.project }}/{{ $.Values.image.kopiabackup.databasename }}:{{ $.Values.image.kopiabackup.databaseversion }}-{{ $.Values.image.kopiabackup.imageversion | int }}"
         imagePullPolicy: {{ $.Values.image.kopiabackup.pullPolicy | default "IfNotPresent" | quote }}
         securityContext:
           runAsUser:  {{ $.Values.userId.backup | default 3200 | int }}
@@ -56,11 +56,11 @@ spec:
           value: {{ required "Values.mariadb.galera.backup.kopia.s3.bucket is missing, but required for the S3 API authentication." $.Values.mariadb.galera.backup.kopia.s3.bucket }}
         {{- end }}
         - name: MARIADB_VERSION
-          value: {{ (required ".image.application.applicationversion" $.Values.image.application.applicationversion) | quote }}
+          value: {{ (required ".image.database.databaseversion" $.Values.image.database.databaseversion) | quote }}
         - name: MYSQL_PORT
-          value: {{ (required ".services.application.frontend.ports.mysql.targetPort missing" $.Values.services.application.frontend.ports.mysql.targetPort) | quote }}
+          value: {{ (required ".services.database.frontend.ports.mysql.targetPort missing" $.Values.services.database.frontend.ports.mysql.targetPort) | quote }}
         - name: DB_HOST
-          value: "{{ (include "nodeNamePrefix" (dict "global" $ "component" "application")) }}-0.database.svc.cluster.local"
+          value: "{{ (include "nodeNamePrefix" (dict "global" $ "component" "database")) }}-0.{{ $.Release.Namespace }}"
         - name: RESTORE_TIMESTAMP
           value: {{ $.Values.mariadb.galera.restore.beforeTimestamp | default "false" | quote }}
         - name: RESTORE_SNAPSHOT_ID
@@ -114,7 +114,7 @@ spec:
           subPath: common-functions-extended.sh
           readOnly: true
       volumes:
-      {{- range $volumeMountsKey, $volumeMountsValue := $.Values.volumeMounts.application }}
+      {{- range $volumeMountsKey, $volumeMountsValue := $.Values.volumeMounts.database }}
         {{- if $volumeMountsValue.type }}
           {{- if ne $volumeMountsValue.type "persistentVolume" }}
       - name: {{ include "commonPrefix" $ }}{{ $volumeMountsKey }}

@@ -1,5 +1,5 @@
 {{- if and (hasKey $.Values.mariadb "autostart") (not $.Values.mariadb.autostart) }}
-{{- else if and ($.Values.command) (hasKey $.Values.command "application") }}
+{{- else if and ($.Values.command) (hasKey $.Values.command "database") }}
 {{- else if and (hasKey $.Values.mariadb.galera.restore "kopia") ($.Values.mariadb.galera.restore.kopia.enabled) }}
 {{- else if and (hasKey $.Values.mariadb "wipeDataAndLog") ($.Values.mariadb.wipeDataAndLog) }}
 {{- else if and (and (hasKey $.Values.mariadb.galera "backup") ($.Values.mariadb.galera.backup.enabled)) (and (hasKey $.Values.mariadb.galera.backup "kopia") ($.Values.mariadb.galera.backup.kopia.enabled)) }}
@@ -9,7 +9,7 @@ apiVersion: batch/v1
 kind: CronJob
 metadata:
   namespace: {{ $.Release.Namespace }}
-  name: {{ include "commonPrefix" $ }}backup-kopia-{{ $scheduleKey }}-{{ randAlphaNum 8 | lower }}
+  name: {{ include "commonPrefix" $ }}-backup-kopia-{{ $scheduleKey }}-{{ randAlphaNum 8 | lower }}
   labels:
     app: {{ $.Release.Name }}
     release: {{ $.Release.Name }}
@@ -35,18 +35,18 @@ spec:
             checksum/configmap: {{ include (print $.Template.BasePath "/configmap-kopia.yaml") $ | sha256sum }}
         spec:
           restartPolicy: {{ $.Values.mariadb.galera.backup.kopia.job.jobRestartPolicy | default "OnFailure" | quote }}
-          serviceAccount: {{ include "commonPrefix" $ }}{{ $.Release.Name }}
+          serviceAccount: {{ include "commonPrefix" $ }}-mariadb-galera
           securityContext:
             runAsUser: {{ $.Values.userId.backup | default 3200 | int }}
             runAsGroup: {{ $.Values.groupId.backup | default 3200 | int }}
             fsGroup: {{ $.Values.groupId.backup | default 3200 | int }}
           {{- if and (hasKey $.Values.image.kopiabackup "pullSecret") $.Values.image.kopiabackup.pullSecret }}
           imagePullSecrets:
-          - name: {{ include "commonPrefix" $ }}{{ $.Release.Name }}-{{$.Values.image.kopiabackup.pullSecret}}
+          - name: {{ include "commonPrefix" $ }}-{{$.Values.image.kopiabackup.pullSecret}}
           {{- end }}
           containers:
           - name: backup
-            image: "{{ $.Values.image.kopiabackup.registry }}/{{ $.Values.image.kopiabackup.project }}/{{ $.Values.image.kopiabackup.applicationname }}:{{ $.Values.image.kopiabackup.applicationversion }}-{{ $.Values.image.kopiabackup.imageversion | int }}"
+            image: "{{ $.Values.image.kopiabackup.registry }}/{{ $.Values.image.kopiabackup.project }}/{{ $.Values.image.kopiabackup.databasename }}:{{ $.Values.image.kopiabackup.databaseversion }}-{{ $.Values.image.kopiabackup.imageversion | int }}"
             imagePullPolicy: {{ $.Values.image.kopiabackup.pullPolicy | default "IfNotPresent" | quote }}
             securityContext:
               runAsUser:  {{ $.Values.userId.backup | default 3200 | int }}
@@ -69,9 +69,9 @@ spec:
             - name: MARIADB_CLUSTER_NAME
               value: {{ (required "mariadb.galera.clustername is required to configure the wsrep-cluster-name option for MariaDB" $.Values.mariadb.galera.clustername) | quote }}
             - name: MARIADB_VERSION
-              value: {{ (required ".image.application.applicationversion" $.Values.image.application.applicationversion) | quote }}
+              value: {{ (required ".image.database.databaseversion" $.Values.image.database.databaseversion) | quote }}
             - name: MYSQL_PORT
-              value: {{ (required ".services.application.frontend.ports.mysql.targetPort missing" $.Values.services.application.frontend.ports.mysql.targetPort) | quote }}
+              value: {{ (required ".services.database.frontend.ports.mysql.targetPort missing" $.Values.services.database.frontend.ports.mysql.targetPort) | quote }}
             - name: MARIADB_BACKUP_TYPE
               value: {{ $scheduleKey | quote }}
             {{- range $envKey, $envValue := $.Values.env }}
@@ -87,7 +87,7 @@ spec:
             - name: {{ $envKey }}
               valueFrom:
                 secretKeyRef:
-                  name: {{ include "commonPrefix" $ }}{{ $.Release.Name }}-{{ $envValue.secretName }}
+                  name: {{ include "commonPrefix" $ }}-{{ $envValue.secretName }}
                   key: {{ $envValue.secretKey }}
                       {{- end }}
                     {{- end }}
@@ -98,7 +98,7 @@ spec:
             - name: {{ $envKey }}
               valueFrom:
                 secretKeyRef:
-                  name: {{ include "commonPrefix" $ }}{{ $.Release.Name }}-{{ $envValue.secretName }}
+                  name: {{ include "commonPrefix" $ }}-{{ $envValue.secretName }}
                   key: {{ $envValue.secretKey }}
                       {{- end }}
                     {{- end }}
@@ -112,11 +112,11 @@ spec:
               limits:
                 memory: {{ $.Values.resourceLimits.memory.cronjob | default "32Mi" | quote }}
             volumeMounts:
-            - name: {{ include "commonPrefix" $ }}kopia-entrypoint-sh
+            - name: {{ include "commonPrefix" $ }}-kopia-entrypoint-sh
               mountPath: /opt/kopia/bin/entrypoint.sh
               subPath: entrypoint-backup.sh
               readOnly: true
-            - name: {{ include "commonPrefix" $ }}kopia-common-functions-extended-sh
+            - name: {{ include "commonPrefix" $ }}-kopia-common-functions-extended-sh
               mountPath: /opt/kopia/bin/common-functions-extended.sh
               subPath: common-functions-extended.sh
               readOnly: true
@@ -124,26 +124,26 @@ spec:
           {{- range $volumeMountsKey, $volumeMountsValue := $.Values.volumeMounts.kopiabackup }}
             {{- if $volumeMountsValue.type }}
               {{- if ne $volumeMountsValue.type "persistentVolume" }}
-          - name: {{ include "commonPrefix" $ }}{{ $volumeMountsKey }}
+          - name: {{ include "commonPrefix" $ }}-{{ $volumeMountsKey }}
                 {{- if eq $volumeMountsValue.type "secret"}}
             {{ $volumeMountsValue.type }}:
-              secretName: {{ include "commonPrefix" $ }}{{ $.Release.Name }}-{{ $volumeMountsKey }}
+              secretName: {{ include "commonPrefix" $ }}-{{ $volumeMountsKey }}
                 {{- else if eq $volumeMountsValue.type "hostPath" }}
             {{ $volumeMountsValue.type }}:
               path: {{ $volumeMountsValue.hostPath }}
                 {{- else }}
-              name: {{ include "commonPrefix" $ }}{{ $volumeMountsKey }}
+              name: {{ include "commonPrefix" $ }}-{{ $volumeMountsKey }}
                 {{- end }}
               {{- end }}
             {{- end }}
           {{- end }}
-          - name: {{ include "commonPrefix" $ }}kopia-entrypoint-sh
+          - name: {{ include "commonPrefix" $ }}-kopia-entrypoint-sh
             configMap:
-              name: {{ include "commonPrefix" $ }}kopia-entrypoint-sh
+              name: {{ include "commonPrefix" $ }}-kopia-entrypoint-sh
               defaultMode: 0750
-          - name: {{ include "commonPrefix" $ }}kopia-common-functions-extended-sh
+          - name: {{ include "commonPrefix" $ }}-kopia-common-functions-extended-sh
             configMap:
-              name: {{ include "commonPrefix" $ }}kopia-common-functions-extended-sh
+              name: {{ include "commonPrefix" $ }}-kopia-common-functions-extended-sh
               defaultMode: 0755
   {{- end }}
 {{- end }}

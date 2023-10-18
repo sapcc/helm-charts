@@ -1,24 +1,24 @@
 {{- $unevenNodeCount := "" }}
-{{- if eq (mod ($.Values.replicas.application|int) 2) 1 }}
+{{- if eq (mod ($.Values.replicas.database|int) 2) 1 }}
     {{- $unevenNodeCount = "true" }}
 {{- end }}
-{{- $_ := (required ".replicas.application value not an uneven integer. This is required to avoid a split brain cluster state." $unevenNodeCount) }}
+{{- $_ := (required ".replicas.database value not an uneven integer. This is required to avoid a split brain cluster state." $unevenNodeCount) }}
 ---
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   namespace: {{ $.Release.Namespace }}
-  name: {{ (include "nodeNamePrefix" (dict "global" $ "component" "application")) }}
+  name: {{ (include "nodeNamePrefix" (dict "global" $ "component" "database")) }}
   labels:
     app: {{ $.Release.Name }}
-    component: "application"
+    component: "database"
     release: {{ $.Release.Name }}
 spec:
-  replicas: {{ $.Values.replicas.application | default 3 }}
+  replicas: {{ $.Values.replicas.database | default 3 }}
   serviceName: {{ $.Release.Name }}
   selector:
     matchLabels:
-      component: "application"
+      component: "database"
   revisionHistoryLimit: {{ $.Values.revisionHistoryLimit | default 10 | int }}
   podManagementPolicy: {{ $.Values.podManagementPolicy | default "OrderedReady" | quote }}
   updateStrategy:
@@ -27,13 +27,13 @@ spec:
     metadata:
       labels:
         app: {{ $.Release.Name }}
-        component: "application"
+        component: "database"
         release: {{ $.Release.Name }}
       annotations:
         {{- if $.Values.monitoring.mysqld_exporter.enabled }}
         prometheus.io/scrape: "true"
         prometheus.io/port: "9104"
-        prometheus.io/targets: {{ $.Values.monitoring.prometheus.instance.application | default "prometheus" | quote }}
+        prometheus.io/targets: {{ $.Values.monitoring.prometheus.instance.database | default "prometheus" | quote }}
         {{- end }}
         checksum/my.cnf: {{ include (print $.Template.BasePath "/configmap-mariadb-my.cnf.yaml") $ | sha256sum }}
         checksum/configmap: {{ include (print $.Template.BasePath "/configmap-mariadb.yaml") $ | sha256sum }}
@@ -52,7 +52,7 @@ spec:
                     - key: "component"
                       operator: In
                       values:
-                        - "application"
+                        - "database"
                 topologyKey: "topology.kubernetes.io/zone"
             - weight: 2
               podAffinityTerm:
@@ -65,21 +65,21 @@ spec:
                     - key: "component"
                       operator: In
                       values:
-                        - "application"
+                        - "database"
                 topologyKey: "kubernetes.io/hostname"
-      serviceAccount: {{ include "commonPrefix" $ }}{{ $.Release.Name }}
+      serviceAccount: {{ include "commonPrefix" $ }}-mariadb-galera
       automountServiceAccountToken: true
       securityContext:
-        runAsUser:  {{ $.Values.userId.application | default 101 | int }}
-        runAsGroup: {{ $.Values.groupId.application | default 101 | int }}
-        fsGroup:  {{ $.Values.groupId.application | default 101 | int }}
-      {{- if and (hasKey $.Values.image.application "pullSecret") $.Values.image.application.pullSecret }}
+        runAsUser:  {{ $.Values.userId.database | default 101 | int }}
+        runAsGroup: {{ $.Values.groupId.database | default 101 | int }}
+        fsGroup:  {{ $.Values.groupId.database | default 101 | int }}
+      {{- if and (hasKey $.Values.image.database "pullSecret") $.Values.image.database.pullSecret }}
       imagePullSecrets:
-      - name: {{ include "commonPrefix" $ }}{{ $.Release.Name }}-{{$.Values.image.application.pullSecret}}
+      - name: {{ include "commonPrefix" $ }}-{{$.Values.image.database.pullSecret}}
       {{- end }}
       initContainers:
       - name: sysctl-tcp-keepalive
-        image: "{{ $.Values.image.os.registry }}/{{ $.Values.image.os.project }}/{{ $.Values.image.os.applicationname }}:{{ $.Values.image.os.applicationversion }}-{{ $.Values.image.os.imageversion | int }}"
+        image: "{{ $.Values.image.os.registry }}/{{ $.Values.image.os.project }}/{{ $.Values.image.os.databasename }}:{{ $.Values.image.os.databaseversion }}-{{ $.Values.image.os.imageversion | int }}"
         imagePullPolicy: {{ $.Values.image.os.pullPolicy | default "IfNotPresent" | quote }}
         command:
         - sh
@@ -89,7 +89,7 @@ spec:
           privileged: {{ $.Values.initContainers.tcpKeepAlive.securityContext.privileged | default true }}
           runAsUser: {{ $.Values.initContainers.tcpKeepAlive.securityContext.runAsUser | default 0 | int }}
       - name: increase-map-count
-        image: "{{ $.Values.image.os.registry }}/{{ $.Values.image.os.project }}/{{ $.Values.image.os.applicationname }}:{{ $.Values.image.os.applicationversion }}-{{ $.Values.image.os.imageversion | int }}"
+        image: "{{ $.Values.image.os.registry }}/{{ $.Values.image.os.project }}/{{ $.Values.image.os.databasename }}:{{ $.Values.image.os.databaseversion }}-{{ $.Values.image.os.imageversion | int }}"
         imagePullPolicy: {{ $.Values.image.os.pullPolicy | default "IfNotPresent" | quote }}
         command:
         - sh
@@ -100,7 +100,7 @@ spec:
           runAsUser: {{ $.Values.initContainers.increaseMapCount.securityContext.runAsUser | default 0 | int }}
       {{- if $.Values.cleanOsCacheAtStartup }}
       - name: clean-os-cache
-        image: "{{ $.Values.image.os.registry }}/{{ $.Values.image.os.project }}/{{ $.Values.image.os.applicationname }}:{{ $.Values.image.os.applicationversion }}-{{ $.Values.image.os.imageversion | int }}"
+        image: "{{ $.Values.image.os.registry }}/{{ $.Values.image.os.project }}/{{ $.Values.image.os.databasename }}:{{ $.Values.image.os.databaseversion }}-{{ $.Values.image.os.imageversion | int }}"
         imagePullPolicy: {{ $.Values.image.os.pullPolicy | default "IfNotPresent" | quote }}
         command:
         - sh
@@ -112,11 +112,11 @@ spec:
       {{- end }}
       containers:
       - name: db
-        image: "{{ $.Values.image.application.registry }}/{{ $.Values.image.application.project }}/{{ $.Values.image.application.applicationname }}:{{ $.Values.image.application.applicationversion }}-{{ $.Values.image.application.imageversion | int }}"
-        imagePullPolicy: {{ $.Values.image.application.pullPolicy | default "IfNotPresent" | quote }}
+        image: "{{ $.Values.image.database.registry }}/{{ $.Values.image.database.project }}/{{ $.Values.image.database.databasename }}:{{ $.Values.image.database.databaseversion }}-{{ $.Values.image.database.imageversion | int }}"
+        imagePullPolicy: {{ $.Values.image.database.pullPolicy | default "IfNotPresent" | quote }}
         securityContext:
-          runAsUser:  {{ $.Values.userId.application | default 101 | int }}
-          runAsGroup: {{ $.Values.groupId.application | default 101 | int }}
+          runAsUser:  {{ $.Values.userId.database | default 101 | int }}
+          runAsGroup: {{ $.Values.groupId.database | default 101 | int }}
           capabilities:
             add:
               - IPC_LOCK
@@ -133,20 +133,20 @@ spec:
           - "sh"
           - "-c"
           - "/bin/sleep 86400"
-        {{- else if and ($.Values.command) (hasKey $.Values.command "application") }}
+        {{- else if and ($.Values.command) (hasKey $.Values.command "database") }}
         command:
-{{ $.Values.command.application | toYaml | indent 8 }}
+{{ $.Values.command.database | toYaml | indent 8 }}
         {{- end }}
         env:
         - name: MYSQL_PORT
-          value: "{{ (required ".services.application.frontend.ports.mysql.targetPort missing" $.Values.services.application.frontend.ports.mysql.targetPort) }}"
+          value: "{{ (required ".services.database.frontend.ports.mysql.targetPort missing" $.Values.services.database.frontend.ports.mysql.targetPort) }}"
         - name: GALERA_PORT
-          value: "{{ (required ".services.application.backend.ports.galera.targetPort missing" $.Values.services.application.backend.ports.galera.targetPort) }}"
+          value: "{{ (required ".services.database.backend.ports.galera.targetPort missing" $.Values.services.database.backend.ports.galera.targetPort) }}"
           {{- /* https://galeracluster.com/library/documentation/weighted-quorum.html#wq-three-nodes */}}
-          {{- range $int, $err := until ($.Values.replicas.application|int) }}
+          {{- range $int, $err := until ($.Values.replicas.database|int) }}
         - name: PC_WEIGHT_{{ $int }}
             {{- if and (hasKey $.Values.mariadb.galera "weightedQuorum") $.Values.mariadb.galera.weightedQuorum }}
-              {{- $weight := (sub (sub ($.Values.replicas.application|int) $int) 1) }}
+              {{- $weight := (sub (sub ($.Values.replicas.database|int) $int) 1) }}
               {{- $calculatedWeight := 1 }}
                 {{- range $_, $err := until ($weight|int) }}
                   {{- /* 2^n where n is the $calculatedWeight */}}
@@ -165,28 +165,33 @@ spec:
         - name: MARIADB_MONITORING_CONNECTION_LIMIT
           value: 3
           {{- end }}
-          {{- if (hasKey $.Values.volumeMounts.application.data "mountPath") }}
+          {{- if (hasKey $.Values.volumeMounts.database.data "mountPath") }}
         - name: MARIADB_DATADIR
-          value: {{ $.Values.volumeMounts.application.data.mountPath | quote }}
+          value: {{ $.Values.volumeMounts.database.data.mountPath | quote }}
           {{- end }}
-          {{- if (hasKey $.Values.volumeMounts.application.log "mountPath") }}
+          {{- if (hasKey $.Values.volumeMounts.database.log "mountPath") }}
         - name: MARIADB_LOGDIR
-          value: {{ $.Values.volumeMounts.application.log.mountPath | quote }}
+          value: {{ $.Values.volumeMounts.database.log.mountPath | quote }}
           {{- end }}
           {{- range $envKey, $envValue := $.Values.env }}
-            {{- if (has "application" $envValue.containerType) }}
+            {{- if (has "database" $envValue.containerType) }}
               {{- if $envValue.value }}
         - name: {{ $envKey }}
           value: {{ $envValue.value | quote }}
               {{- end }}
               {{- if $envValue.secretName }}
                 {{- range $userKey, $userValue := $.Values.mariadb.users }}
-                  {{- if $userValue.enabled }}
+                  {{- $requiredUsers := list "root" }}
+                  {{- if or ($.Values.monitoring.mysqld_exporter.enabled) (and ($.Values.proxy.enabled) (eq $.Values.proxy.type "proxysql")) }}
+                    {{- $requiredUsers = append $requiredUsers "monitor" }}
+                    {{- $requiredUsers = $requiredUsers | uniq | compact }}
+                  {{- end}}
+                  {{- if or (has $userKey $requiredUsers) $userValue.enabled }}
                     {{- if eq $userValue.secretName $envValue.secretName }}
         - name: {{ $envKey }}
           valueFrom:
             secretKeyRef:
-              name: {{ include "commonPrefix" $ }}{{ $.Release.Name }}-{{ $envValue.secretName }}
+              name: {{ include "commonPrefix" $ }}-{{ $envValue.secretName }}
               key: {{ $envValue.secretKey }}
                     {{- end }}
                   {{- end }}
@@ -196,17 +201,17 @@ spec:
           {{- end }}
         resources:
           requests:
-            cpu: {{ $.Values.resourceLimits.cpu.application | default 0.5 }}
+            cpu: {{ $.Values.resourceLimits.cpu.database | default 0.5 }}
           limits:
-            memory: {{ $.Values.resourceLimits.memory.application | default "64Mi" | quote }}
+            memory: {{ $.Values.resourceLimits.memory.database | default "64Mi" | quote }}
         ports:
-          {{- range $portsKey, $portsValue := $.Values.services.application.backend.ports }}
+          {{- range $portsKey, $portsValue := $.Values.services.database.backend.ports }}
           - containerPort: {{ $portsValue.targetPort }}
             name: {{ $portsKey }}
             protocol: {{ $portsValue.protocol | default "TCP" }}
           {{- end }}
         {{- if and (hasKey $.Values.mariadb "autostart") (not $.Values.mariadb.autostart) }}
-        {{- else if and ($.Values.command) (hasKey $.Values.command "application") }}
+        {{- else if and ($.Values.command) (hasKey $.Values.command "database") }}
         {{- else if and (hasKey $.Values.mariadb "wipeDataAndLog") ($.Values.mariadb.wipeDataAndLog) }}
         {{- else if and (hasKey $.Values.mariadb.galera.restore "kopia") ($.Values.mariadb.galera.restore.kopia.enabled) }}
         {{- else }}
@@ -217,10 +222,10 @@ spec:
               - -c
               - '/opt/mariadb/bin/startup.sh'
           {{- if $.Values.startupProbe }}
-          {{ if $.Values.startupProbe.initialDelaySeconds.application }} {{- (printf "initialDelaySeconds: %d" (int64 $.Values.startupProbe.initialDelaySeconds.application)) }} {{ else }}initialDelaySeconds: 60 {{end}}
-          {{ if $.Values.startupProbe.periodSeconds.application }} {{- (printf "periodSeconds: %d" (int64 $.Values.startupProbe.periodSeconds.application)) }} {{ else }}periodSeconds: 30 {{end}}
-          {{ if $.Values.startupProbe.failureThreshold.application }} {{- (printf "failureThreshold: %d" (int64 $.Values.startupProbe.failureThreshold.application)) }} {{ else }}failureThreshold: 4 {{end}}
-          {{ if $.Values.startupProbe.timeoutSeconds.application }} {{- (printf "timeoutSeconds: %d" (int64 $.Values.startupProbe.timeoutSeconds.application)) }} {{ else }}timeoutSeconds: 20 {{end}}
+          {{ if $.Values.startupProbe.initialDelaySeconds.database }} {{- (printf "initialDelaySeconds: %d" (int64 $.Values.startupProbe.initialDelaySeconds.database)) }} {{ else }}initialDelaySeconds: 60 {{end}}
+          {{ if $.Values.startupProbe.periodSeconds.database }} {{- (printf "periodSeconds: %d" (int64 $.Values.startupProbe.periodSeconds.database)) }} {{ else }}periodSeconds: 30 {{end}}
+          {{ if $.Values.startupProbe.failureThreshold.database }} {{- (printf "failureThreshold: %d" (int64 $.Values.startupProbe.failureThreshold.database)) }} {{ else }}failureThreshold: 4 {{end}}
+          {{ if $.Values.startupProbe.timeoutSeconds.database }} {{- (printf "timeoutSeconds: %d" (int64 $.Values.startupProbe.timeoutSeconds.database)) }} {{ else }}timeoutSeconds: 20 {{end}}
           {{- else }}
           initialDelaySeconds: 60
           periodSeconds: 30
@@ -234,10 +239,10 @@ spec:
               - -c
               - '/opt/mariadb/bin/liveness.sh'
           {{- if $.Values.livenessProbe }}
-          {{ if $.Values.livenessProbe.initialDelaySeconds.application }} {{- (printf "initialDelaySeconds: %d" (int64 $.Values.livenessProbe.initialDelaySeconds.application)) }} {{ else }}initialDelaySeconds: 60 {{end}}
-          {{ if $.Values.livenessProbe.periodSeconds.application }} {{- (printf "periodSeconds: %d" (int64 $.Values.livenessProbe.periodSeconds.application)) }} {{ else }}periodSeconds: 30 {{end}}
-          {{ if $.Values.livenessProbe.failureThreshold.application }} {{- (printf "failureThreshold: %d" (int64 $.Values.livenessProbe.failureThreshold.application)) }} {{ else }}failureThreshold: 4 {{end}}
-          {{ if $.Values.livenessProbe.timeoutSeconds.application }} {{- (printf "timeoutSeconds: %d" (int64 $.Values.livenessProbe.timeoutSeconds.application)) }} {{ else }}timeoutSeconds: 20 {{end}}
+          {{ if $.Values.livenessProbe.initialDelaySeconds.database }} {{- (printf "initialDelaySeconds: %d" (int64 $.Values.livenessProbe.initialDelaySeconds.database)) }} {{ else }}initialDelaySeconds: 60 {{end}}
+          {{ if $.Values.livenessProbe.periodSeconds.database }} {{- (printf "periodSeconds: %d" (int64 $.Values.livenessProbe.periodSeconds.database)) }} {{ else }}periodSeconds: 30 {{end}}
+          {{ if $.Values.livenessProbe.failureThreshold.database }} {{- (printf "failureThreshold: %d" (int64 $.Values.livenessProbe.failureThreshold.database)) }} {{ else }}failureThreshold: 4 {{end}}
+          {{ if $.Values.livenessProbe.timeoutSeconds.database }} {{- (printf "timeoutSeconds: %d" (int64 $.Values.livenessProbe.timeoutSeconds.database)) }} {{ else }}timeoutSeconds: 20 {{end}}
           {{- else }}
           initialDelaySeconds: 60
           periodSeconds: 30
@@ -251,11 +256,11 @@ spec:
               - -c
               - '/opt/mariadb/bin/readiness.sh'
           {{- if $.Values.readinessProbe }}
-          {{ if $.Values.readinessProbe.initialDelaySeconds.application }} {{- (printf "initialDelaySeconds: %d" (int64 $.Values.readinessProbe.initialDelaySeconds.application)) }} {{ else }}initialDelaySeconds: 90 {{ end }}
-          {{ if $.Values.readinessProbe.periodSeconds.application }} {{- (printf "periodSeconds: %d" (int64 $.Values.readinessProbe.periodSeconds.application)) }} {{ else }}periodSeconds: 20 {{ end }}
-          {{ if $.Values.readinessProbe.successThreshold.application }} {{- (printf "successThreshold: %d" (int64 $.Values.readinessProbe.successThreshold.application)) }} {{ else }}successThreshold: 1 {{ end }}
-          {{ if $.Values.readinessProbe.failureThreshold.application }} {{- (printf "failureThreshold: %d" (int64 $.Values.readinessProbe.failureThreshold.application)) }} {{ else }}failureThreshold: 3 {{ end }}
-          {{ if $.Values.readinessProbe.timeoutSeconds.application }} {{- (printf "timeoutSeconds: %d" (int64 $.Values.readinessProbe.timeoutSeconds.application)) }} {{ else }}timeoutSeconds: 10 {{ end }}
+          {{ if $.Values.readinessProbe.initialDelaySeconds.database }} {{- (printf "initialDelaySeconds: %d" (int64 $.Values.readinessProbe.initialDelaySeconds.database)) }} {{ else }}initialDelaySeconds: 90 {{ end }}
+          {{ if $.Values.readinessProbe.periodSeconds.database }} {{- (printf "periodSeconds: %d" (int64 $.Values.readinessProbe.periodSeconds.database)) }} {{ else }}periodSeconds: 20 {{ end }}
+          {{ if $.Values.readinessProbe.successThreshold.database }} {{- (printf "successThreshold: %d" (int64 $.Values.readinessProbe.successThreshold.database)) }} {{ else }}successThreshold: 1 {{ end }}
+          {{ if $.Values.readinessProbe.failureThreshold.database }} {{- (printf "failureThreshold: %d" (int64 $.Values.readinessProbe.failureThreshold.database)) }} {{ else }}failureThreshold: 3 {{ end }}
+          {{ if $.Values.readinessProbe.timeoutSeconds.database }} {{- (printf "timeoutSeconds: %d" (int64 $.Values.readinessProbe.timeoutSeconds.database)) }} {{ else }}timeoutSeconds: 10 {{ end }}
           {{- else }}
           initialDelaySeconds: 90
           periodSeconds: 20
@@ -278,12 +283,12 @@ spec:
                 - '/opt/mariadb/bin/post-start-hook.sh'
         {{- end }}
         volumeMounts:
-          {{- range $volumeMountsKey, $volumeMountsValue := $.Values.volumeMounts.application }}
+          {{- range $volumeMountsKey, $volumeMountsValue := $.Values.volumeMounts.database }}
             {{- if $volumeMountsValue.enabled }}
               {{- if (hasKey $volumeMountsValue "claimName") }}
                 {{- range $volumeClaimTemplatesKey, $volumeClaimTemplatesValue := $.Values.volumeClaimTemplates }}
                   {{- if eq $volumeClaimTemplatesKey $volumeMountsValue.claimName }}
-          - name: {{ include "commonPrefix" $ }}{{ $volumeMountsKey }}-{{ $volumeMountsValue.claimName | lower }}
+          - name: {{ include "commonPrefix" $ }}-{{ $volumeMountsKey }}-{{ $volumeMountsValue.claimName | lower }}
             mountPath: {{ $volumeMountsValue.mountPath }}
                     {{- if $volumeMountsValue.readOnly }}
             readOnly: {{ $volumeMountsValue.readOnly }}
@@ -291,7 +296,7 @@ spec:
                   {{- end }}
                 {{- end }}
               {{- else }}
-          - name: {{ include "commonPrefix" $ }}{{ $volumeMountsKey | lower }}
+          - name: {{ include "commonPrefix" $ }}-{{ $volumeMountsKey | lower }}
             mountPath: {{ $volumeMountsValue.mountPath }}
                 {{- if $volumeMountsValue.readOnly }}
             readOnly: {{ $volumeMountsValue.readOnly }}
@@ -299,54 +304,54 @@ spec:
               {{- end }}
             {{- end }}
           {{- end }}
-          - name: {{ include "commonPrefix" $ }}mariadb-my-cnf
+          - name: {{ include "commonPrefix" $ }}-mariadb-my-cnf
             mountPath: /opt/mariadb/etc/conf.d/tpl
             readOnly: true
-          - name: {{ include "commonPrefix" $ }}galerastatus
+          - name: {{ include "commonPrefix" $ }}-galerastatus
             mountPath: /opt/mariadb/etc/galerastatus
             readOnly: false
-          - name: {{ include "commonPrefix" $ }}mariadb-entrypoint-sh
+          - name: {{ include "commonPrefix" $ }}-mariadb-entrypoint-sh
             mountPath: /opt/mariadb/bin/entrypoint-galera.sh
             subPath: entrypoint-galera.sh
             readOnly: true
-          - name: {{ include "commonPrefix" $ }}mariadb-probes-sh
+          - name: {{ include "commonPrefix" $ }}-mariadb-probes-sh
             mountPath: /opt/mariadb/bin/startup.sh
             subPath: startup.sh
             readOnly: true
-          - name: {{ include "commonPrefix" $ }}mariadb-probes-sh
+          - name: {{ include "commonPrefix" $ }}-mariadb-probes-sh
             mountPath: /opt/mariadb/bin/liveness.sh
             subPath: liveness.sh
             readOnly: true
-          - name: {{ include "commonPrefix" $ }}mariadb-probes-sh
+          - name: {{ include "commonPrefix" $ }}-mariadb-probes-sh
             mountPath: /opt/mariadb/bin/readiness.sh
             subPath: readiness.sh
             readOnly: true
-          - name: {{ include "commonPrefix" $ }}mariadb-hooks-sh
+          - name: {{ include "commonPrefix" $ }}-mariadb-hooks-sh
             mountPath: /opt/mariadb/bin/pre-stop-hook.sh
             subPath: pre-stop-hook.sh
             readOnly: true
-          - name: {{ include "commonPrefix" $ }}mariadb-hooks-sh
+          - name: {{ include "commonPrefix" $ }}-mariadb-hooks-sh
             mountPath: /opt/mariadb/bin/post-start-hook.sh
             subPath: post-start-hook.sh
             readOnly: true
-          - name: {{ include "commonPrefix" $ }}mariadb-common-functions-extended-sh
+          - name: {{ include "commonPrefix" $ }}-mariadb-common-functions-extended-sh
             mountPath: /opt/mariadb/bin/common-functions-extended.sh
             subPath: common-functions-extended.sh
             readOnly: true
           {{- if or (and (hasKey $.Values.mariadb "wipeDataAndLog") ($.Values.mariadb.wipeDataAndLog)) (and (hasKey $.Values.mariadb.galera.restore "kopia") ($.Values.mariadb.galera.restore.kopia.enabled)) }}
-          - name: {{ include "commonPrefix" $ }}mariadb-wipedata
+          - name: {{ include "commonPrefix" $ }}-mariadb-wipedata
             mountPath: /opt/mariadb/etc/wipedata.flag
             subPath: wipedata.flag
             readOnly: true
           {{- end }}
         {{- /* monitoring sidecar start */}}
         {{- if and (hasKey $.Values.mariadb "autostart") (not $.Values.mariadb.autostart) }}
-        {{- else if and ($.Values.command) (hasKey $.Values.command "application") }}
+        {{- else if and ($.Values.command) (hasKey $.Values.command "database") }}
         {{- else if and (hasKey $.Values.mariadb "wipeDataAndLog") ($.Values.mariadb.wipeDataAndLog) }}
         {{- else if and (hasKey $.Values.mariadb.galera.restore "kopia") ($.Values.mariadb.galera.restore.kopia.enabled) }}
         {{- else if $.Values.monitoring.mysqld_exporter.enabled }}
       - name: metrics
-        image: "{{ $.Values.image.monitoring.registry }}/{{ $.Values.image.monitoring.project }}/{{ $.Values.image.monitoring.applicationname }}:{{ $.Values.image.monitoring.applicationversion }}-{{ $.Values.image.monitoring.imageversion | int }}"
+        image: "{{ $.Values.image.monitoring.registry }}/{{ $.Values.image.monitoring.project }}/{{ $.Values.image.monitoring.databasename }}:{{ $.Values.image.monitoring.databaseversion }}-{{ $.Values.image.monitoring.imageversion | int }}"
         imagePullPolicy: {{ $.Values.image.monitoring.pullPolicy | default "IfNotPresent" | quote }}
         securityContext:
           runAsUser:  {{ $.Values.userId.monitoring | default 3000 | int }}
@@ -362,7 +367,7 @@ spec:
           {{- end }}
         env:
         - name: MYSQL_PORT
-          value: {{ (required ".services.application.frontend.ports.mysql.targetPort missing" $.Values.services.application.frontend.ports.mysql.targetPort) | quote }}
+          value: {{ (required ".services.database.frontend.ports.mysql.targetPort missing" $.Values.services.database.frontend.ports.mysql.targetPort) | quote }}
         - name: WEB_LISTEN_PORT
           value: {{ $.Values.monitoring.mysqld_exporter.metricsPort | default 9104 | quote }}
         {{- if not $.Values.mariadb.performance_schema }}
@@ -397,12 +402,17 @@ spec:
             {{- end }}
             {{- if $envValue.secretName }}
               {{- range $userKey, $userValue := $.Values.mariadb.users }}
-                {{- if $userValue.enabled }}
+                {{- $requiredUsers := list "root" }}
+                {{- if or ($.Values.monitoring.mysqld_exporter.enabled) (and ($.Values.proxy.enabled) (eq $.Values.proxy.type "proxysql")) }}
+                  {{- $requiredUsers = append $requiredUsers "monitor" }}
+                  {{- $requiredUsers = $requiredUsers | uniq | compact }}
+                {{- end}}
+                {{- if or (has $userKey $requiredUsers) $userValue.enabled }}
                   {{- if eq $userValue.secretName $envValue.secretName }}
         - name: {{ $envKey }}
           valueFrom:
             secretKeyRef:
-              name: {{ include "commonPrefix" $ }}{{ $.Release.Name }}-{{ $envValue.secretName }}
+              name: {{ include "commonPrefix" $ }}-{{ $envValue.secretName }}
               key: {{ $envValue.secretKey }}
                   {{- end }}
                 {{- end }}
@@ -459,26 +469,26 @@ spec:
           {{- end }}
         {{- end }}
         volumeMounts:
-          - name: {{ include "commonPrefix" $ }}monitoring-entrypoint-sh
+          - name: {{ include "commonPrefix" $ }}-monitoring-entrypoint-sh
             mountPath: /opt/mysqld_exporter/bin/entrypoint-mysqld_exporter.sh
             subPath: entrypoint-mysqld_exporter.sh
             readOnly: true
-          - name: {{ include "commonPrefix" $ }}monitoring-probes-sh
+          - name: {{ include "commonPrefix" $ }}-monitoring-probes-sh
             mountPath: /opt/mysqld_exporter/bin/liveness.sh
             subPath: liveness.sh
             readOnly: true
-          - name: {{ include "commonPrefix" $ }}monitoring-probes-sh
+          - name: {{ include "commonPrefix" $ }}-monitoring-probes-sh
             mountPath: /opt/mysqld_exporter/bin/readiness.sh
             subPath: readiness.sh
             readOnly: true
-          - name: {{ include "commonPrefix" $ }}monitoring-common-functions-extended-sh
+          - name: {{ include "commonPrefix" $ }}-monitoring-common-functions-extended-sh
             mountPath: /opt/mysqld_exporter/bin/common-functions-extended.sh
             subPath: common-functions-extended.sh
             readOnly: true
         {{- end }}
         {{- /* monitoring sidecar end */}}
       {{- if and (hasKey $.Values.mariadb "autostart") (not $.Values.mariadb.autostart) }}
-      {{- else if and ($.Values.command) (hasKey $.Values.command "application") }}
+      {{- else if and ($.Values.command) (hasKey $.Values.command "database") }}
       {{- else }}
         {{- if or (and (hasKey $.Values.mariadb "wipeDataAndLog") ($.Values.mariadb.wipeDataAndLog)) (and (hasKey $.Values.mariadb.galera.restore "kopia") ($.Values.mariadb.galera.restore.kopia.enabled)) }}
       terminationGracePeriodSeconds: 15
@@ -487,77 +497,77 @@ spec:
         {{- end }}
       {{- end }}
       volumes:
-        {{- range $volumeMountsKey, $volumeMountsValue := $.Values.volumeMounts.application }}
+        {{- range $volumeMountsKey, $volumeMountsValue := $.Values.volumeMounts.database }}
           {{- if $volumeMountsValue.enabled }}
             {{- if $volumeMountsValue.type }}
               {{- if ne $volumeMountsValue.type "persistentVolume" }}
-        - name: {{ include "commonPrefix" $ }}{{ $volumeMountsKey }}
+        - name: {{ include "commonPrefix" $ }}-{{ $volumeMountsKey }}
                 {{- if eq $volumeMountsValue.type "secret"}}
           {{ $volumeMountsValue.type }}:
-            secretName: {{ include "commonPrefix" $ }}{{ $.Release.Name }}-{{ $volumeMountsKey }}
+            secretName: {{ include "commonPrefix" $ }}-{{ $volumeMountsKey }}
                 {{- else if eq $volumeMountsValue.type "hostPath" }}
           {{ $volumeMountsValue.type }}:
             path: {{ $volumeMountsValue.hostPath }}
                 {{- else }}
-            name: {{ include "commonPrefix" $ }}{{ $volumeMountsKey }}
+            name: {{ include "commonPrefix" $ }}-{{ $volumeMountsKey }}
                 {{- end }}
               {{- end }}
             {{- end }}
           {{- end }}
         {{- end }}
-        - name: {{ include "commonPrefix" $ }}mariadb-my-cnf
+        - name: {{ include "commonPrefix" $ }}-mariadb-my-cnf
           configMap:
-            name: {{ include "commonPrefix" $ }}mariadb-my-cnf
+            name: {{ include "commonPrefix" $ }}-mariadb-my-cnf
             defaultMode: 0444
-        - name: {{ include "commonPrefix" $ }}galerastatus
+        - name: {{ include "commonPrefix" $ }}-galerastatus
           configMap:
-            name: {{ include "commonPrefix" $ }}galerastatus
+            name: {{ include "commonPrefix" $ }}-galerastatus
             defaultMode: 0750
-        - name: {{ include "commonPrefix" $ }}mariadb-entrypoint-sh
+        - name: {{ include "commonPrefix" $ }}-mariadb-entrypoint-sh
           configMap:
-            name: {{ include "commonPrefix" $ }}mariadb-entrypoint-sh
+            name: {{ include "commonPrefix" $ }}-mariadb-entrypoint-sh
             defaultMode: 0755
-        - name: {{ include "commonPrefix" $ }}mariadb-probes-sh
+        - name: {{ include "commonPrefix" $ }}-mariadb-probes-sh
           configMap:
-            name: {{ include "commonPrefix" $ }}mariadb-probes-sh
+            name: {{ include "commonPrefix" $ }}-mariadb-probes-sh
             defaultMode: 0755
-        - name: {{ include "commonPrefix" $ }}mariadb-hooks-sh
+        - name: {{ include "commonPrefix" $ }}-mariadb-hooks-sh
           configMap:
-            name: {{ include "commonPrefix" $ }}mariadb-hooks-sh
+            name: {{ include "commonPrefix" $ }}-mariadb-hooks-sh
             defaultMode: 0755
-        - name: {{ include "commonPrefix" $ }}mariadb-common-functions-extended-sh
+        - name: {{ include "commonPrefix" $ }}-mariadb-common-functions-extended-sh
           configMap:
-            name: {{ include "commonPrefix" $ }}mariadb-common-functions-extended-sh
+            name: {{ include "commonPrefix" $ }}-mariadb-common-functions-extended-sh
             defaultMode: 0755
         {{- if or (and (hasKey $.Values.mariadb "wipeDataAndLog") ($.Values.mariadb.wipeDataAndLog)) (and (hasKey $.Values.mariadb.galera.restore "kopia") ($.Values.mariadb.galera.restore.kopia.enabled)) }}
-        - name: {{ include "commonPrefix" $ }}mariadb-wipedata
+        - name: {{ include "commonPrefix" $ }}-mariadb-wipedata
           configMap:
-            name: {{ include "commonPrefix" $ }}mariadb-wipedata
+            name: {{ include "commonPrefix" $ }}-mariadb-wipedata
             defaultMode: 0444
         {{- end }}
-        - name: {{ include "commonPrefix" $ }}monitoring-entrypoint-sh
+        - name: {{ include "commonPrefix" $ }}-monitoring-entrypoint-sh
           configMap:
-            name: {{ include "commonPrefix" $ }}monitoring-entrypoint-sh
+            name: {{ include "commonPrefix" $ }}-monitoring-entrypoint-sh
             defaultMode: 0755
-        - name: {{ include "commonPrefix" $ }}monitoring-probes-sh
+        - name: {{ include "commonPrefix" $ }}-monitoring-probes-sh
           configMap:
-            name: {{ include "commonPrefix" $ }}monitoring-probes-sh
+            name: {{ include "commonPrefix" $ }}-monitoring-probes-sh
             defaultMode: 0755
-        - name: {{ include "commonPrefix" $ }}monitoring-common-functions-extended-sh
+        - name: {{ include "commonPrefix" $ }}-monitoring-common-functions-extended-sh
           configMap:
-            name: {{ include "commonPrefix" $ }}monitoring-common-functions-extended-sh
+            name: {{ include "commonPrefix" $ }}-monitoring-common-functions-extended-sh
             defaultMode: 0755
   volumeClaimTemplates:
   {{- range $volumeClaimTemplatesKey, $volumeClaimTemplatesValue := $.Values.volumeClaimTemplates }}
-    {{- range $volumeMountsKey, $volumeMountsValue := $.Values.volumeMounts.application }}
+    {{- range $volumeMountsKey, $volumeMountsValue := $.Values.volumeMounts.database }}
       {{- if $volumeMountsValue.enabled }}
         {{- if (hasKey $volumeMountsValue "claimName") }}
           {{- if eq $volumeClaimTemplatesKey $volumeMountsValue.claimName }}
   - metadata:
-      name: {{ include "commonPrefix" $ }}{{ $volumeMountsKey }}-{{ $volumeMountsValue.claimName | lower }}
+      name: {{ include "commonPrefix" $ }}-{{ $volumeMountsKey }}-{{ $volumeMountsValue.claimName | lower }}
     spec:
             {{- if $volumeClaimTemplatesValue.storageClassName }}
-      storageClassName: {{ include "commonPrefix" $ }}{{ $.Release.Name }}-{{ $volumeClaimTemplatesValue.storageClassName }}
+      storageClassName: {{ include "commonPrefix" $ }}-{{ $volumeClaimTemplatesValue.storageClassName }}
             {{- end }}
       accessModes: {{ $volumeClaimTemplatesValue.accessModes }}
       resources:

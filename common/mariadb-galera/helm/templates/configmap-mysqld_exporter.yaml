@@ -1,9 +1,14 @@
+{{- if and (hasKey $.Values.mariadb "autostart") (not $.Values.mariadb.autostart) }}
+{{- else if and ($.Values.command) (hasKey $.Values.command "database") }}
+{{- else if and (hasKey $.Values.mariadb "wipeDataAndLog") ($.Values.mariadb.wipeDataAndLog) }}
+{{- else if and (hasKey $.Values.mariadb.galera.restore "kopia") ($.Values.mariadb.galera.restore.kopia.enabled) }}
+{{- else if $.Values.monitoring.mysqld_exporter.enabled }}
 ---
 apiVersion: v1
 kind: ConfigMap
 metadata:
   namespace: {{ $.Release.Namespace }}
-  name:  {{ include "commonPrefix" $ }}monitoring-entrypoint-sh
+  name:  {{ include "commonPrefix" $ }}-monitoring-entrypoint-sh
   labels:
     app: {{ $.Release.Name }}
 data:
@@ -12,7 +17,7 @@ data:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name:  {{ include "commonPrefix" $ }}monitoring-probes-sh
+  name:  {{ include "commonPrefix" $ }}-monitoring-probes-sh
   namespace: {{ $.Release.Namespace }}
 data:
 {{ tpl (.Files.Glob "scripts/mysqld_exporter/liveness.sh").AsConfig . | indent 2 }}
@@ -22,8 +27,9 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   namespace: {{ $.Release.Namespace }}
-  name:  {{ include "commonPrefix" $ }}monitoring-common-functions-extended-sh
+  name:  {{ include "commonPrefix" $ }}-monitoring-common-functions-extended-sh
   labels:
     app: {{ $.Release.Name }}
 data:
 {{ tpl (.Files.Glob "scripts/mysqld_exporter/common-functions-extended.sh").AsConfig . | indent 2 }}
+{{- end }}

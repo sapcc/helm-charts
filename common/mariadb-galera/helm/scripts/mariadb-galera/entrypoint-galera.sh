@@ -97,7 +97,7 @@ function startgalera {
 
 function initgalera {
   if [ -f "${BASE}/etc/wipedata.flag" ]; then
-    if [ ${HOSTNAME} == "{{ (include "nodeNamePrefix" (dict "global" $ "component" "application")) }}-0" ]; then
+    if [ ${HOSTNAME} == "{{ (include "nodeNamePrefix" (dict "global" $ "component" "database")) }}-0" ]; then
       bootstrapgalera
     else
       loginfo "${FUNCNAME[0]}" "start sleep mode because wipedata flag has been set"
@@ -108,7 +108,7 @@ function initgalera {
         loginfo "${FUNCNAME[0]}" "init Galera cluster configuration already done"
         recovergalera
       else
-        if [ ${HOSTNAME} == "{{ (include "nodeNamePrefix" (dict "global" $ "component" "application")) }}-0" ]; then
+        if [ ${HOSTNAME} == "{{ (include "nodeNamePrefix" (dict "global" $ "component" "database")) }}-0" ]; then
           bootstrapgalera
         else
           loginfo "${FUNCNAME[0]}" "will join the Galera cluster during the initial bootstrap triggered on the first node"
