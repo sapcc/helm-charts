@@ -1,0 +1,44 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: "cron-reports"
+  namespace: jupyterhub
+spec:
+  schedule: "0 0 1 * *"
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      activeDeadlineSeconds: 1800
+      template:
+        spec:
+          restartPolicy: Never
+          containers:
+          - name: "cron-reports"
+            image: "{{ required ".Values.global.registry variable missing" .Values.global.registry }}/{{ .Values.jupyterhub_cron.image.name }}:{{ .Values.jupyterhub_cron.image.tag }}"
+            command: ["jupyter", "nbconvert", "--execute", "--to", "notebook", "api-availability.ipynb"]
+            env:
+              - name: client_cert_prometheus
+                valueFrom:
+                  secretKeyRef:
+                    name: cron-reports-secrets
+                    key: client_cert_prometheus
+              - name: client_key_prometheus
+                valueFrom:
+                  secretKeyRef:
+                    name: cron-reports-secrets
+                    key: client_key_prometheus
+              - name: swift_password
+                valueFrom:
+                  secretKeyRef:
+                    name: cron-reports-secrets
+                    key: swift_password
+              - name: approle_role_id
+                valueFrom:
+                  secretKeyRef:
+                    name: cron-reports-secrets
+                    key: approle_role_id
+              - name: approle_secret_id
+                valueFrom:
+                  secretKeyRef:
+                    name: cron-reports-secrets
+                    key: approle_secret_id
