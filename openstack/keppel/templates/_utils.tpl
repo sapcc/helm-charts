@@ -165,6 +165,8 @@
       name: keppel-secret
       key: redis_password
 {{- if .Values.keppel.trivy.hostname }}
+- name: KEPPEL_TRIVY_ADDITIONAL_PULLABLE_REPOS
+  value: "ccloud-ghcr-io-mirror/aquasecurity/trivy-db,ccloud-ghcr-io-mirror/aquasecurity/trivy-java-db"
 - name: KEPPEL_TRIVY_URL
   value: "https://{{ .Values.keppel.trivy.hostname }}"
 - name: KEPPEL_TRIVY_TOKEN

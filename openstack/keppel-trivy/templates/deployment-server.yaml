@@ -1,0 +1,67 @@
+kind: Deployment
+apiVersion: apps/v1
+
+metadata:
+  name: trivy-server
+
+spec:
+  revisionHistoryLimit: 5
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  selector:
+    matchLabels:
+      name: trivy-server
+  template:
+    metadata:
+      labels:
+        name: trivy-server
+        alert-tier: os
+        alert-service: keppel
+      annotations:
+        checksum/secret: {{ include "keppel-trivy/templates/secret.yaml" . | sha256sum }}
+        kubectl.kubernetes.io/default-container: trivy-server
+    spec:
+      containers:
+        - name: trivy-server
+          image: {{ $.Values.global.registry }}/trivy:{{ $.Values.trivy.image_version | required ".Values.trivy.image_version is not set!" }}
+          imagePullPolicy: IfNotPresent
+          command:
+            - sh
+            - -c
+            # NOTE: TTL = 1 week = 7 days = 168 hours
+            # Note #2: java scanning is currently only on the client possible (sigh...) and they removed the flag on server side with release 0.46.0
+            # --java-db-repository {{ $.Values.global.ghcrIoMirror }}/aquasecurity/trivy-java-db
+            - "trivy server \
+                --db-repository {{ $.Values.global.ghcrIoMirror }}/aquasecurity/trivy-db \
+                --cache-backend redis://:$REDIS_PASSWORD@{{ .Release.Name }}-redis:6379 \
+                --cache-ttl 168h \
+                --listen 0.0.0.0:8080 \
+                --token $TRIVY_TOKEN"
+          env:
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: trivy-secret
+                  key: redis_password
+            - name: TRIVY_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: trivy-secret
+                  key: trivy_token
+          # TODO: upstream image runs as root
+          # securityContext:
+          #   runAsNonRoot: true
+          # livenessProbe and readinessProbe are not easily possible because the server only exposes a grpc port
+          resources:
+            limits:
+              cpu: 2
+              memory: 400Mi
+            requests:
+              cpu: 2
+              # roughly at least the size of aquasecurity/trivy-java-db and aquasecurity/trivy-db
+              ephemeral-storage: 500Mi
+              memory: 400Mi

@@ -1,0 +1,62 @@
+{{- if .Values.nanny.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+ name: {{ .Release.Name }}
+ labels:
+    app.kubernetes.io/name: {{ .Release.Name }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app: {{ .Release.Name }}
+    ccloud/support-group: network-api
+    system: openstack
+    application: designate
+spec:
+ replicas: 1
+ selector:
+    matchLabels:
+      app.kubernetes.io/instance: {{ .Release.Name }}
+      app.kubernetes.io/name: {{ .Release.Name }}
+ template:
+   metadata:
+     labels:
+       app.kubernetes.io/instance: {{ .Release.Name }}
+       app.kubernetes.io/name: {{ .Release.Name }}
+   spec:
+
+     containers:
+     - name: {{ .Release.Name }}
+       image: {{ required ".Values.global.registry is missing" .Values.global.registry }}/{{ .Values.image.name }}:{{required "missing .Values.image.image_tag" .Values.image.image_tag }}
+       command: ["/opt/venv/bin/designate-nanny", "--config", "/srv/nanny.yaml", "autorun"]
+       env:
+         - name: OS_AUTH_URL
+           value: "https://{{ include "keystone_api_endpoint_host_public" . }}/v3"
+         - name: PYCCLOUD_USE_DUMMY_SECRETS
+           value: "yes"          
+         - name: OS_REGION_NAME
+           value: "{{.Values.global.region}}"
+         - name: OS_PROJECT_NAME
+           value:  "{{ .Values.credentials.designate_api.project_name}}"
+         - name: OS_PROJECT_DOMAIN_NAME
+           value:  "{{ .Values.credentials.designate_api.project_domain_name}}"
+         - name: OS_USERNAME
+           value: "{{ .Values.credentials.designate_api.user}}"
+         - name: OS_PASSWORD
+           valueFrom:
+             secretKeyRef:
+               name: designate-nanny-secret
+               key:  designate_nanny_os_password
+         - name: OS_USER_DOMAIN_NAME
+           value:  "{{ .Values.credentials.designate_api.project_user_domain_name}}"
+       resources:
+{{ toYaml .Values.resources | indent 8 }}
+       volumeMounts:
+       - mountPath: /srv/nanny.yaml
+         name: nanny-conf
+         subPath: nanny.yaml
+
+     volumes:
+     - name: nanny-conf
+       configMap:
+         name: {{ .Release.Name }}
+
+{{- end }}

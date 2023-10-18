@@ -6,7 +6,7 @@ data:
   snmp-exporter.yaml: |
 {{- if .Values.snmp_exporter.arista.enabled }}
 {{- if .Values.snmp_exporter.arista.snmpv3.enabled }}
-    asw:
+    aas:
 {{ .Files.Get "_snmp-exporter-arista.yaml" | indent 4}}
       version: {{ .Values.snmp_exporter.arista.snmpv3.version }}
       max_repetitions: 25
@@ -20,14 +20,14 @@ data:
         priv_protocol: {{ .Values.snmp_exporter.arista.snmpv3.priv_protocol }}
         priv_password: {{ .Values.snmp_exporter.arista.snmpv3.priv_password }}
 {{- else }}
-    asw:
+    aas:
 {{ .Files.Get "_snmp-exporter-arista.yaml" | indent 4}}
       version: {{ .Values.snmp_exporter.arista.version }}
       auth:
         community: {{ .Values.snmp_exporter.arista.community }}
 {{- end }}
 {{- if .Values.snmp_exporter.arista.snmpv3.enabled }}
-    asw9:
+    ams:
   {{ .Files.Get "_snmp-exporter-arista.yaml" | indent 4}}
       version: {{ .Values.snmp_exporter.arista.snmpv3.version }}
       max_repetitions: 25
@@ -41,7 +41,7 @@ data:
         priv_protocol: {{ .Values.snmp_exporter.arista.snmpv3.priv_protocol }}
         priv_password: {{ .Values.snmp_exporter.arista.snmpv3.priv_password }}
 {{- else }}
-    asw9:
+    ams:
 {{ .Files.Get "_snmp-exporter-arista.yaml" | indent 4}}
       version: {{ .Values.snmp_exporter.arista.version }}
       auth:
@@ -338,6 +338,21 @@ data:
         priv_protocol: {{ .Values.snmp_exporter.aristaevpn.priv_protocol }}
         priv_password: {{ .Values.snmp_exporter.aristaevpn.priv_password }}
 {{- end }}
+{{- if .Values.snmp_exporter.aristaspine.enabled }}
+{{ .Files.Get "_snmp-exporter-aristaspine.yaml" | indent 4}}
+      version: {{ .Values.snmp_exporter.aristaspine.version }}
+      max_repetitions: 25
+      retries: 3
+      timeout: 10s
+      auth:
+        security_level: {{ .Values.snmp_exporter.aristaspine.security_level }}
+        username: {{ .Values.snmp_exporter.aristaspine.username }}
+        password: {{ .Values.snmp_exporter.aristaspine.password }}
+        auth_protocol: {{ .Values.snmp_exporter.aristaspine.auth_protocol }}
+        priv_protocol: {{ .Values.snmp_exporter.aristaspine.priv_protocol }}
+        priv_password: {{ .Values.snmp_exporter.aristaspine.priv_password }}
+{{- end }}
+
 {{- if .Values.snmp_exporter.fortinet.enabled }}
 {{ .Files.Get "_snmp-exporter-fortinet.yaml" | indent 4}}
       version: {{ .Values.snmp_exporter.fortinet.version }}
