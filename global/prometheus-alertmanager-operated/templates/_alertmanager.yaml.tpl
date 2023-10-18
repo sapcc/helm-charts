@@ -215,7 +215,7 @@ route:
     continue: true
     match_re:
       severity: info|warning|critical
-      service: alerting|cc3test|exporter|grafana|hermes|jumpserver|maia|metis|metrics|logs|slack-alert-reactions
+      service: alerting|backup|castellum|cc3test|exporter|gatekeeper|grafana|hermes|jumpserver|keppel|limes|logs|maia|metis|metrics|repo|slack-alert-reactions|tenso
       region: qa-de-1|ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|ap-sa-2|eu-de-1|eu-de-2|eu-nl-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3
 
   - receiver: slack_sre
