@@ -26,7 +26,9 @@ spec:
         prometheus.io/scrape: "true"
         prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
 {{- end }}
-
+{{- if .Values.vpa.set_main_container }}
+        vpa-butler.cloud.sap/main-container: mariadb
+{{- end }}
     spec:
       affinity:
         nodeAffinity:
