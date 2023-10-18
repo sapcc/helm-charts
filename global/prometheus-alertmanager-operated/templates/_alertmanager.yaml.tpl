@@ -161,6 +161,7 @@ route:
       service: alerting|backup|castellum|cc3test|exporter|gatekeeper|grafana|hermes|jumpserver|keppel|limes|logs|maia|metis|metrics|repo|slack-alert-reactions|tenso
       region: qa-de-1|ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|ap-sa-2|eu-de-1|eu-de-2|eu-nl-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3
 
+  # to be reviewed
   - receiver: slack_sre
     continue: false
     match_re:
@@ -172,6 +173,7 @@ route:
       severity: info|warning|critical
       region: ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|ap-sa-2|eu-de-1|eu-de-2|eu-nl-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3
 
+  # to be reviewed
   - receiver: slack_storage
     continue: false
     match_re:
@@ -275,7 +277,7 @@ route:
     match_re:
       severity: warning|critical
       region: qa-de-2|qa-de-3|qa-de-4|qa-de-5|qa-de-6
-      support_group: compute|compute-storage-api|containers|email|identity|foundation|network-api|observability|src|network-data|network-security|network-lb|network-wan
+      support_group: compute|compute-storage-api|containers|email|identity|foundation|network-api|observability|src|network-data|network-security|network-lb|network-wan|storage
 
   # sunset latest q1-23
   - receiver: slack_api_critical
