@@ -1,7 +1,7 @@
 MAX_RETRIES={{ $.Values.scripts.maxRetries | default 10 }}
 WAIT_SECONDS={{ $.Values.scripts.waitTimeBetweenRetriesInSeconds | default 6 }}
 if [ "$0" != "/opt/mariadb/bin/entrypoint-backup.sh" ]; then
-  MYSQL_SVC_CONNECT="mysql --protocol=tcp --user=${MARIADB_ROOT_USERNAME} --password=${MARIADB_ROOT_PASSWORD} --host={{ (include "nodeNamePrefix" (dict "global" $ "component" "database")) }}-frontend-direct.{{ $.Release.Namespace }} --port=${MYSQL_PORT} --wait --connect-timeout=${WAIT_SECONDS} --reconnect --batch"
+  MYSQL_SVC_CONNECT="mysql --protocol=tcp --user=${MARIADB_ROOT_USERNAME} --password=${MARIADB_ROOT_PASSWORD} --host={{ printf "%s-%s-direct.%s" (include "commonPrefix" $) "mariadb" $.Release.Namespace }} --port=${MYSQL_PORT} --wait --connect-timeout=${WAIT_SECONDS} --reconnect --batch"
 fi
 declare -a NODENAME=()
 

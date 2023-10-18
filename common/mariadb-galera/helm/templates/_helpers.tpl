@@ -16,10 +16,10 @@ kind: Service
 metadata:
   namespace: {{ .global.Release.Namespace }}
   {{- if eq .replica "notused" }}
-    {{- if and (eq .type "frontend") (.global.Values.proxy.enabled) (or (eq .component "proxysql") (eq .component "haproxy"))}}
-  name: {{ (printf "%s-%s" (include "nodeNamePrefix" (dict "global" .global "component" "database")) "frontend") }}
+    {{- if and (eq .type "frontend") (or (eq .component "database") (eq .component "proxysql") (eq .component "haproxy"))}}
+  name: {{ (printf "%s-%s" (include "commonPrefix" .global) "mariadb") }}
     {{- else if and (eq .type "frontend") (eq .component "database-direct")}}
-  name: {{ (printf "%s-%s-direct" $nodeNamePrefix "frontend") }}
+  name: {{ (printf "%s-%s-direct" (include "commonPrefix" .global) "mariadb") }}
     {{- else }}
   name: {{ (printf "%s-%s" $nodeNamePrefix .type) }}
     {{- end }}
