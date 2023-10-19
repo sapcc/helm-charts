@@ -26,8 +26,10 @@ spec:
      containers:
      - name: {{ .Release.Name }}
        image: {{ required ".Values.global.registry is missing" .Values.global.registry }}/{{ .Values.image.name }}:{{required "missing .Values.image.image_tag" .Values.image.image_tag }}
-       command: ["/opt/venv/bin/designate-nanny", "--config", "/srv/nanny.yaml", "autorun"]
+       command: ["/opt/venv/bin/designate-nanny", "autorun"]
        env:
+         - name: NANNY_CONFIG
+           value: "/srv/nanny.yaml"
          - name: OS_AUTH_URL
            value: "https://{{ include "keystone_api_endpoint_host_public" . }}/v3"
          - name: PYCCLOUD_USE_DUMMY_SECRETS
