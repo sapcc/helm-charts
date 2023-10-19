@@ -8,8 +8,7 @@ metadata:
     app: octobus-query-exporter
     tier: infra
     type: alerting-rules
-    prometheus: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
-
+    prometheus: infra-frontend
 spec:
   groups:
     - name: audit
