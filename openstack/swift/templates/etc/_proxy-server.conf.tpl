@@ -131,8 +131,8 @@ set log_name = proxy-ratelimit
 max_sleep_time_seconds = 20
 log_sleep_time_seconds = 18
 account_ratelimit = 10
-container_ratelimit_0 = {{ .Values.ratelimit.container_ratelimit_0 | default 50 }}
-container_ratelimit_100 = {{ .Values.ratelimit.container_ratelimit_100 | default 50 }}
+container_ratelimit_0 = {{ if .Values.ratelimit }}{{ .Values.ratelimit.container_ratelimit_0 }}{{ else }} 50 {{ end }}
+container_ratelimit_100 = {{ if .Values.ratelimit }}{{ .Values.ratelimit.container_ratelimit_100 }}{{ else }} 50 {{ end }}
 container_listing_ratelimit_0 = 100
 container_listing_ratelimit_100 = 100
 {{- end }}
