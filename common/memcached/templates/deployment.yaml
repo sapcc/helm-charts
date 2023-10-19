@@ -93,6 +93,10 @@ spec:
             memory: {{ .Values.metrics.resources.requests.memory | quote }}
         {{- end }}
       {{- end }}
-      {{- if not (and (hasKey $.Values "priorityClass") (hasKey $.Values.priorityClass "disabled") ($.Values.priorityClass.disabled)) }}
-      priorityClassName: {{ default "openstack-service-critical" .Values.priority_class | quote }}
+      {{- if .Values.priority_class }}
+        {{- if and (kindIs "bool" .Values.priority_class) (eq .Values.priority_class true) }}
+      priorityClassName: "openstack-service-critical"
+        {{- else }}
+      priorityClassName: {{ .Values.priority_class | quote }}
+        {{- end }}
       {{- end }}
