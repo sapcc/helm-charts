@@ -41,18 +41,36 @@ spec:
             - "-config=/poller/config.yaml"
             - "-mx-records=/poller/mx-records.json"
           volumeMounts:
-            - name: {{ include "poller.fullname" . }}
+            - name: config-{{ include "poller.fullname" . }}
               mountPath: "/poller/config.yaml"
               subPath: config.yaml
+            {{- if not $val.mxrecords }}
+            - name: ldap-mx-records
+              mountPath: "/poller/mx-records.json"
+            {{- end }}
+            {{- if $val.mxrecords }}
             - name: configmx
               mountPath: "/poller/mx-records.json"
-              subPath: mx-records.json
+            {{- end }}
       terminationGracePeriodSeconds: {{ $val.terminationGracePeriod | default 60 }}
       volumes:
-        - name: {{ include "poller.fullname" . }}
+        - name: config-{{ include "poller.fullname" . }}
           secret:
-            secretName: {{ include "poller.fullname" . }}
-        - name: configmx
+            secretName: config-{{ include "poller.fullname" . }}
+        {{- if $val.mxrecords }}
+        - name: poller-mx-records
           configMap:
-            name: configmx
+            name: configmx-{{ include "poller.fullname" . }}
+        {{- end }}
+  {{- if not $val.mxrecords }}
+  volumeClaimTemplates:
+  - metadata:
+      name: ldap-mx-records
+    spec:
+      accessModes:
+        - ReadWriteOnce
+      resources:
+        requests:
+          storage: 2Gi
+  {{- end }}
 {{- end -}}
