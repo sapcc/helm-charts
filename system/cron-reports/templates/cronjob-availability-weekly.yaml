@@ -1,10 +1,10 @@
 apiVersion: batch/v1
 kind: CronJob
 metadata:
-  name: "cron-reports"
+  name: "cron-availability-weekly"
   namespace: jupyterhub
 spec:
-  schedule: "0 0 1 * *"
+  schedule: "0 6 * * 1"
   jobTemplate:
     spec:
       backoffLimit: 2
@@ -13,9 +13,9 @@ spec:
         spec:
           restartPolicy: Never
           containers:
-          - name: "cron-reports"
+          - name: "cron-availability"
             image: "{{ required ".Values.global.registry variable missing" .Values.global.registry }}/{{ .Values.jupyterhub_cron.image.name }}:{{ .Values.jupyterhub_cron.image.tag }}"
-            command: ["jupyter", "nbconvert", "--execute", "--to", "notebook", "api-availability.ipynb"]
+            command: ["jupyter", "nbconvert", "--execute", "--to", "notebook", "api-availability-weekly.ipynb"]
             env:
               - name: approle_role_id
                 valueFrom:

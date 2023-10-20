@@ -1,0 +1,29 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: "cron-availability-monthly"
+  namespace: jupyterhub
+spec:
+  schedule: "0 0 1 * *"
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      activeDeadlineSeconds: 1800
+      template:
+        spec:
+          restartPolicy: Never
+          containers:
+          - name: "cron-availability"
+            image: "{{ required ".Values.global.registry variable missing" .Values.global.registry }}/{{ .Values.jupyterhub_cron.image.name }}:{{ .Values.jupyterhub_cron.image.tag }}"
+            command: ["jupyter", "nbconvert", "--execute", "--to", "notebook", "api-availability.ipynb"]
+            env:
+              - name: approle_role_id
+                valueFrom:
+                  secretKeyRef:
+                    name: cron-reports-secrets
+                    key: approle_role_id
+              - name: approle_secret_id
+                valueFrom:
+                  secretKeyRef:
+                    name: cron-reports-secrets
+                    key: approle_secret_id
