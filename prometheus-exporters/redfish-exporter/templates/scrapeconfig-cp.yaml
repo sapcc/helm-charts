@@ -2,6 +2,7 @@
 {{- if $values.enabled }}
 apiVersion: monitoring.coreos.com/v1alpha1
 kind: ScrapeConfig
+
 metadata:
   name: 'redfish-cp'
   namespace: {{ $values.namespace }}
@@ -28,6 +29,8 @@ spec:
       targetLabel: instance
     - targetLabel: __address__
       replacement: redfish-exporter:{{$values.listen_port}}
-    - sourceLabels: [__meta_serial]
-      targetLabel: server_serial
+    - sourceLabels: [device_type]
+      action: labeldrop
+    - regex: 'cluster.*'
+      action: labeldrop
 {{- end }}

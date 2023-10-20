@@ -2,6 +2,7 @@
 {{- if $values.firmware.enabled }}
 apiVersion: monitoring.coreos.com/v1alpha1
 kind: ScrapeConfig
+
 metadata:
   name: 'redfish-fw'
   namespace: {{ $values.namespace }}
@@ -19,10 +20,17 @@ spec:
   params:
     job: [redfish-fw]
   relabelings:
+    - sourceLabels: [job]
+      regex: redfish-fw
+      action: keep
     - sourceLabels: [__address__]
       targetLabel: __param_target
     - sourceLabels: [__param_target]
       targetLabel: instance
     - targetLabel: __address__
       replacement: redfish-exporter:{{$values.listen_port}}
+    - sourceLabels: [device_type]
+      action: labeldrop
+    - regex: 'cluster.*'
+      action: labeldrop
 {{- end }}
