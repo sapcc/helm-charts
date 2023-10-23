@@ -79,7 +79,11 @@ thanos-{{- $host -}}-grpc.{{- required ".Values.global.region missing" $root.Val
 {{- define "thanos.objectStorageConfigName" -}}
 {{- $name := index . 0 -}}
 {{- $root := index . 1 -}}
+{{- if $root.Values.objectStorageConfigName -}} 
+{{- $root.Values.objectStorageConfigName -}}
+{{- else -}}
 prometheus-{{- include "thanos.name" . -}}-thanos-storage-config
+{{- end -}}
 {{- end -}}
 
 {{- define "thanos.defaultRelabelConfig" -}}
