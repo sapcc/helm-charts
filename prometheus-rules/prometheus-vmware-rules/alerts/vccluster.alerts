@@ -99,3 +99,19 @@ groups:
     annotations:
       description: "Cluster {{ $labels.vccluster }} cannot evenly distribute new NSX-T controllers. {{ $labels.vcenter}}"
       summary: "Cluster {{ $labels.vccluster }} cannot evenly distribute new NSX-T controllers. {{ $labels.vcenter }}"
+
+  - alert: HanaExclusiveVCClusterDRSNotPartiallyAutomated
+    expr: |
+      vrops_cluster_configuration_drsconfig_defaultvmbehavior{vccluster=~"productionbb.+", state != "partiallyAutomated"}
+      and on (vccluster) vrops_cluster_summary_custom_tag_openstack_nova_traits_hana_exclusive_host{summary_custom_tag_openstack_nova_traits_hana_exclusive_host="true"}
+    labels:
+      severity: info
+      tier: vmware
+      service: compute
+      support_group: compute
+      context: "Cluster DRS configuration"
+      meta: "The HANA-exclusive {{ $labels.vccluster }} cluster DRS configuration is not set to partially automated in the *{{ $labels.datacenter }}* availability zone\nLink to the vCenter: --> <https://{{ $labels.vcenter }}|{{ $labels.vcenter }}"
+      playbook: docs/devops/alert/vcenter/#hanaexclusivevcclusterdrsnotpartiallyautomated
+    annotations:
+      description: "The HANA-exclusive {{ $labels.vccluster }} cluster DRS configuration is not set to partially automated in the *{{ $labels.datacenter }}* availability zone\nLink to the vCenter: --> <https://{{ $labels.vcenter }}|{{ $labels.vcenter }}"
+      summary: "The HANA-exclusive {{ $labels.vccluster }} cluster DRS configuration is not set to partially automated in the *{{ $labels.datacenter }}* availability zone\nLink to the vCenter: --> <https://{{ $labels.vcenter }}|{{ $labels.vcenter }}"
