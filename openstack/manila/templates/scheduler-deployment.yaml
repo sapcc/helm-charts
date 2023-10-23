@@ -2,7 +2,7 @@ kind: Deployment
 apiVersion: apps/v1
 
 metadata:
-  name: manila-scheduler
+  name: {{ .Release.Name }}-scheduler
   labels:
     system: openstack
     type: backend
@@ -17,11 +17,11 @@ spec:
       maxSurge: 3
   selector:
     matchLabels:
-      name: manila-scheduler
+      name: {{ .Release.Name }}-scheduler
   template:
     metadata:
       labels:
-        name: manila-scheduler
+        name: {{ .Release.Name }}-scheduler
         alert-tier: os
         alert-service: manila
       annotations:
@@ -43,7 +43,7 @@ spec:
                 - key: name
                   operator: In
                   values:
-                  - manila-scheduler
+                  - {{ .Release.Name }}-scheduler
               topologyKey: "topology.kubernetes.io/zone"
       initContainers:
         {{- tuple . (dict "jobs" (print .Release.Name "-migration") "service" (print .Release.Name "-mariadb," .Release.Name "-rabbitmq")) | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 8 }}
@@ -141,10 +141,10 @@ spec:
           emptyDir: {}
         - name: manila-bin
           configMap:
-            name: manila-bin
+            name: {{ .Release.Name }}-bin
             defaultMode: 0555
         - name: manila-etc
           configMap:
-            name: manila-etc
+            name: {{ .Release.Name }}-etc
         {{- include "utils.coordination.volumes" . | indent 8 }}
         {{- include "utils.proxysql.volumes" . | indent 8 }}

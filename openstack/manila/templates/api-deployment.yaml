@@ -2,7 +2,7 @@ kind: Deployment
 apiVersion: apps/v1
 
 metadata:
-  name: manila-api
+  name: {{ .Release.Name }}-api
   labels:
     app: {{ template "fullname" . }}
     chart: {{ .Chart.Name }}-{{ .Chart.Version }}
@@ -23,11 +23,11 @@ spec:
     {{ end }}
   selector:
     matchLabels:
-      name: manila-api
+      name: {{ .Release.Name }}-api
   template:
     metadata:
       labels:
-        name: manila-api
+        name: {{ .Release.Name }}-api
         alert-tier: os
         alert-service: manila
         {{- tuple . "manila" "api" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | nindent 8 }}
@@ -208,10 +208,10 @@ spec:
         {{- end }}
         - name: manila-etc
           configMap:
-            name: manila-etc
+            name: {{ .Release.Name }}-etc
         - name: manila-bin
           configMap:
-            name: manila-bin
+            name: {{ .Release.Name }}-bin
             defaultMode: 0555
         {{- include "utils.coordination.volumes" . | indent 8 }}
         {{- include "utils.proxysql.volumes" . | indent 8 }}
