@@ -27,7 +27,7 @@ driver_handles_share_servers = true
 automatic_share_server_cleanup = true
 # Unallocated share servers reclamation time interval (minutes).
 unused_share_server_cleanup_interval = {{ $share.share_server_cleanup_interval | default 60 }}
-netapp_vserver_name_template = ma_%s
+netapp_vserver_name_template = {{ $share.netapp_vserver_name_template | default $context.Values.netapp_vserver_name_template | default "ma_%s" }}
 {{- end }}
 
 netapp_storage_family=ontap_cluster
@@ -43,6 +43,7 @@ netapp_root_volume_aggregate={{$share.root_volume_aggregate}}
 netapp_aggregate_name_search_pattern={{$share.aggregate_search_pattern}}
 netapp_reset_snapdir_visibility = hidden
 
+netapp_volume_name_template = {{ $share.netapp_volume_name_template | default $context.Values.netapp_volume_name_template | default "share_%(share_id)s" }}
 netapp_lif_name_template = os_%(net_allocation_id)s
 netapp_port_name_search_pattern = {{ $share.port_search_pattern  | default "(a0b)" }}
 

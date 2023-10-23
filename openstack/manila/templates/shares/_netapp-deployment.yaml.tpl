@@ -5,7 +5,7 @@
 kind: Deployment
 apiVersion: apps/v1
 metadata:
-  name: manila-share-netapp-{{$share.name}}
+  name: {{ .Release.Name }}-share-netapp-{{$share.name}}
   labels:
     system: openstack
     type: backend
@@ -20,11 +20,11 @@ spec:
       maxSurge: 1
   selector:
     matchLabels:
-        name: manila-share-netapp-{{$share.name}}
+        name: {{ .Release.Name }}-share-netapp-{{$share.name}}
   template:
     metadata:
       labels:
-        name: manila-share-netapp-{{$share.name}}
+        name: {{ .Release.Name }}-share-netapp-{{$share.name}}
         alert-tier: os
         alert-service: manila
       annotations:
@@ -143,11 +143,11 @@ spec:
           emptyDir: {}
         - name: manila-bin
           configMap:
-            name: manila-bin
+            name: {{ .Release.Name }}-bin
             defaultMode: 0555
         - name: manila-etc
           configMap:
-            name: manila-etc
+            name: {{ .Release.Name }}-etc
         - name: backend-config
           configMap:
             name: share-netapp-{{$share.name}}
