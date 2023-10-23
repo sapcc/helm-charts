@@ -30,9 +30,10 @@ spec:
         checksum/snubaSettingsPy: {{ .Values.config.snubaSettingsPy | sha256sum }}
         checksum/config.yaml: {{ include (print $.Template.BasePath "/configmap-snuba.yaml") . | sha256sum }}
       labels:
-        app: {{ template "fullname" . }}
+        app: {{ template "sentry.fullname" . }}
         release: "{{ .Release.Name }}"
         role: snuba-subscription-consumer-transactions
+    spec:
       containers:
       - name: {{ .Chart.Name }}-snuba
         image: "{{ template "snuba.image" . }}"
@@ -40,7 +41,7 @@ spec:
         command:
           - "snuba"
           - "subscriptions-scheduler-executor"
-          - "--auto-offset-reset="earliest"
+          - "--auto-offset-reset=earliest"
           - "--dataset=transactions"
           - "--entity=transactions"
           - "--consumer-group=snuba-transactions-subscriptions-consumers"
@@ -52,7 +53,7 @@ spec:
         - containerPort: {{ template "snuba.port" }}
         envFrom:
         - secretRef:
-            name: {{ template "fullname" . }}-snuba-env
+            name: {{ template "sentry.fullname" . }}-snuba-env
         volumeMounts:
         - mountPath: /etc/snuba
           name: config
@@ -63,4 +64,4 @@ spec:
       volumes:
       - name: config
         configMap:
-          name: {{ template "fullname" . }}-snuba
+          name: {{ template "sentry.fullname" . }}-snuba
