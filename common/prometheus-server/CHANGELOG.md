@@ -1,3 +1,7 @@
+## 7.3.0
+
+* Swift container userName and containerName now can be set explicitly
+
 ## 7.2.16
 
 * If no `kube_` metrics available within the Prometheus, send `PrometheusMultiplePodScrape` alerts to specified Thanos Rule

@@ -3,7 +3,8 @@
     job: [jumpserver]
   metrics_path: /metrics
   http_sd_configs:
-    - url: {{ .Values.atlas_url }}
+    - url: {{ .Values.http_sd_configs.netbox_production_url }}/virtual-machines/?custom_labels=job=jumpserver&target=primary_ip&obj_types=virtualization.virtualmachine&tenant=converged-cloud&platform=vmware-esxi&q=jump&region={{ .Values.global.region }}
+      refresh_interval: {{ .Values.http_sd_configs.refresh_interval }}
   relabel_configs:
     - source_labels: [job]
       regex: jumpserver

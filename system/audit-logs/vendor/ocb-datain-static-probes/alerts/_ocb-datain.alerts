@@ -2,13 +2,15 @@ groups:
 - name: ocb-data.alerts
   rules:
   - alert: OctobusDataInNotReachable
-    expr: probe_success{instance=~".+/c0001/log/audit$"} == 0
+    expr: probe_success{namespace="audit-logs", job="ocb-data-in"} == 0
     for: 15m
     labels:
       context: octobus
       service: logs
       severity: warning
       support_group: observability
+      playbook: 'docs/operation/elastic_kibana_issues/octobus/data-in-not-reachable'
+      dashboard: 'audit-log-shipping'
     annotations:
-      description: '*{{ $labels.region }}/{{ $labels.clusterType }} * cannot reach Octobus https data in'
-      summary:  Cannot reach Octobus https data input
+      description: '*{{ $labels.region }}/{{ $labels.clusterType }} * cannot reach Octobus endpoint: {{$labels.instance}}'
+      summary:  Cannot reach Octobus data input

@@ -1,0 +1,17 @@
+{{- $val := .Values.poller }}
+{{- if and ($val.enabled) (eq $val.action "forwardEmail") (not $val.mxrecords) }}
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: ldap-mx-records
+  labels:
+    app: {{ include "poller.fullname" . }}
+  annotations:
+    volume.beta.kubernetes.io/storage-class: cinder-default
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 2Gi
+{{- end -}}

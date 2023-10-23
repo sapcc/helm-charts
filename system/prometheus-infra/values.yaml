@@ -24,9 +24,6 @@ prometheus-infra-frontend:
   name: infra-frontend
   enabled: true
   retentionTime: 14d
-  additionalScrapeConfigs:
-    name: prometheus-infra-frontend-additional-scrape-config
-    key: scrape-config.yaml
   ingress:
     enabled: true
     hosts:
@@ -67,12 +64,18 @@ prometheus-infra-frontend:
     scrapeTimeout: 55s
 
   thanos:
-    enabled: false
+    enabled: true
 
-# Import metrics from kubernetes Prometheus
-kube_state_metrics_exporter:
-  enabled: true
-  prometheusName: infra-frontend
+  # Frontend should not be in the name anymore, so this is the overwritten name without frontend.
+  # Eventually this naming is going to fade out and this section can be removed.
+  thanosSeeds:
+    swiftStorageConfig:
+      containerName: prometheus-infra-scaleout-thanos
+      userName: prometheus-infra-scaleout-thanos
+
+thanos:
+  name: infra
+  deployWholeThanos: true
 
 # Collector Prometheus are only accessible after presenting a valid SSO certificate.
 authentication:
