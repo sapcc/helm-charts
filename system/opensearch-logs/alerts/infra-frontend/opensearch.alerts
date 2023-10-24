@@ -47,19 +47,3 @@ groups:
     annotations:
       description: 'Opensearch cluster *opensearch-logs* in `{{ $labels.region }}` is RED. Please check all nodes.'
       summary: '*opensearch-logs* cluster in `{{ $labels.region }}` is RED'
-
-  - alert: OpensearchLogsClusterYellow
-    expr: opensearch_cluster_status{elastic_cluster="opensearch-logs",pod=~".*-master-0"} == 1 and sum(kube_statefulset_replicas{statefulset=~"opensearch-logs.*"}) - sum(kube_statefulset_status_replicas_ready{statefulset=~"opensearch-logs.*"}) > 0
-    for: 30m
-    labels:
-      context: nodes
-      service: logs
-      severity: warning
-      support_group: observability
-      tier: os
-      playbook: docs/operation/elastic_kibana_issues/generic/cluster-yellow-no-resync
-      dashboard: health-elasticsearch?var-cluster=opensearch-logs
-    annotations:
-      description: 'Opensearch cluster *opensearch-logs* in `{{ $labels.region }}` is YELLOW. Please check all nodes.
-        nodes one or more are missing.'
-      summary: 'Opensearch cluster *opensearch-logs* in `{{ $labels.region }}` is YELLOW'
