@@ -33,9 +33,10 @@ spec:
   # The labels to add to any alert when communicating with Alertmanager
   labels:
     region: {{ required ".Values.global.region missing" $.Values.global.region }}
+{{- if $.Values.externalClusterLabels.enabled }}
     cluster: {{ if $.Values.global.cluster }}{{ $.Values.global.cluster }}{{ else }}{{ $.Values.global.region }}{{ end }}
     cluster_type: {{ required ".Values.global.clusterType missing" $.Values.global.clusterType }}
-
+{{- end }}
   alertQueryUrl: https://{{ include "thanos.externalURL" (list $name $root) }}
 {{ if required "$.Values.ruler.alertmanagers.hosts missing" $.Values.ruler.alertmanagers.hosts }}
   # Alertmanager configuration.
