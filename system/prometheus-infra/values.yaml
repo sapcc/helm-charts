@@ -44,14 +44,16 @@ prometheus-infra-frontend:
     hosts:
       - alertmanager.scaleout.eu-de-1.cloud.sap
       - alertmanager.scaleout.eu-nl-1.cloud.sap
-  # send alerts to dedicated tier
+
   alerts:
-    multipleTargetScrapes:
+
+    # thanos name that picks up the alerts from Prometheus - mainly used when kube_ metrics needs to be present
+    thanos:
       enabled: true
-      # List of exceptions for scrape jobs. This is joined together with a `|`.
-      exceptions:
-        # prometheus-infra-collector and prometheus-infra-snmp scrape the same target but different metrics
-        - "prometheus-infra.*"
+      name: scaleout
+
+    multipleTargetScrapes:
+      enabled: false
 
   # Kubernetes resource requests and limits for this Prometheus.
   resources:
