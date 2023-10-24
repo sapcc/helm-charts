@@ -150,7 +150,7 @@ spec:
             name: {{ .Release.Name }}-etc
         - name: backend-config
           configMap:
-            name: share-netapp-{{$share.name}}
+            name: {{ .Release.Name }}-share-netapp-{{$share.name}}
         {{- include "utils.proxysql.volumes" . | indent 8 }}
 {{ end }}
 {{- end -}}
