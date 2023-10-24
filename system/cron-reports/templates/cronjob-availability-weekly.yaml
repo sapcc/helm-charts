@@ -15,7 +15,7 @@ spec:
           containers:
           - name: "cron-availability"
             image: "{{ required ".Values.global.registry variable missing" .Values.global.registry }}/{{ .Values.jupyterhub_cron.image.name }}:{{ .Values.jupyterhub_cron.image.tag }}"
-            command: ["jupyter", "nbconvert", "--execute", "--to", "notebook", "api-availability-weekly.ipynb"]
+            command: ["papermill", "api-availability-weekly.ipynb", "output.ipynb", "-r", "swift_url", "${swift_url}"]
             env:
               - name: approle_role_id
                 valueFrom:
@@ -27,3 +27,8 @@ spec:
                   secretKeyRef:
                     name: cron-reports-secrets
                     key: approle_secret_id
+              - name: swift_url
+                valueFrom:
+                  secretKeyRef:
+                    name: cron-reports-secrets
+                    key: swift_url
