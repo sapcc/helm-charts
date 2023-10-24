@@ -56,6 +56,8 @@ Create the name of the service account to use
 {{- end -}}
 
 {{define "andromeda_keystone_api_endpoint_internal"}}keystone.{{ required ".Values.global.keystoneNamespace required" .Values.global.keystoneNamespace }}.svc.kubernetes.{{ include "host_fqdn" . }}{{end}}
+{{define "andromeda_keystone_global_api_endpoint_internal"}}keystone-global.{{ required ".Values.global.keystoneNamespace required" .Values.global.keystoneNamespace }}.svc.kubernetes.{{ include "host_fqdn" . }}{{end}}
+
 
 {{- define "andromeda.database_service" -}}
 {{- if.Values.mariadb.enabled -}}
