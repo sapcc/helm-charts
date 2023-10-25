@@ -1,22 +1,3 @@
-- job_name: 'jumpserver'
-  params:
-    job: [jumpserver]
-  metrics_path: /metrics
-  http_sd_configs:
-    - url: {{ .Values.http_sd_configs.netbox_production_url }}/virtual-machines/?custom_labels=job=jumpserver&target=primary_ip&obj_types=virtualization.virtualmachine&tenant=converged-cloud&platform=vmware-esxi&q=jump&region={{ .Values.global.region }}
-      refresh_interval: {{ .Values.http_sd_configs.refresh_interval }}
-  relabel_configs:
-    - source_labels: [job]
-      regex: jumpserver
-      action: keep
-    - source_labels: [__address__]
-      target_label: __address__
-      regex:       '(.*)'
-      replacement: $1:9100
-  metric_relabel_configs:
-    - regex: "role|server_id|state"
-      action: labeldrop
-
 {{- $values := .Values.arista_exporter -}}
 {{- if $values.enabled }}
 - job_name: 'arista'
