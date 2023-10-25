@@ -9,22 +9,22 @@ metadata:
 spec:
   httpSDConfigs:
     - url: {{ .Values.http_sd_configs.netbox_production_url }}/virtual-machines/?custom_labels=job=jumpserver&target=primary_ip&obj_types=virtualization.virtualmachine&tenant=converged-cloud&platform=vmware-esxi&q=jump&region={{ .Values.global.region }}
-      refresh_interval: {{ .Values.http_sd_configs.refresh_interval }}
-  metrics_path: /metrics
+      refreshInterval: {{ .Values.http_sd_configs.refresh_interval }}
+  metricsPath: /metrics
   scrapeInterval: 60s
   scrapeTimeout: 50s
-  relabel_configs:
-    - source_labels: [job]
+  relabelings:
+    - sourceLabels: [job]
       regex: jumpserver
       action: keep
-    - source_labels: [__address__]
-      target_label: __address__
+    - sourceLabels: [__address__]
+      targetLabel: __address__
       regex: '(.*)'
       replacement: $1:9100
-    - soure_labels: [name]
-      target_label: server_name
-    - soure_labels: [exported_name]
-      target_label: name
-  metric_relabel_configs:
+    - sourceLabels: [name]
+      targetLabel: server_name
+    - sourceLabels: [exported_name]
+      targetLabel: name
+  metricRelabelings:
     - regex: "server_id|platform|cluster_type|cluster|cluster_group|site"
       action: labeldrop
