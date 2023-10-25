@@ -62,15 +62,9 @@ spec:
           configMap:
             name: configmx-{{ include "poller.fullname" . }}
         {{- end }}
-  {{- if not $val.mxrecords }}
-  volumeClaimTemplates:
-  - metadata:
-      name: ldap-mx-records
-    spec:
-      accessModes:
-        - ReadWriteOnce
-      resources:
-        requests:
-          storage: 2Gi
-  {{- end }}
+        {{- if not $val.mxrecords }}
+        - name: ldap-mx-records
+          persistentVolumeClaim:
+            claimName: ldap-mx-records
+        {{- end }}
 {{- end -}}
