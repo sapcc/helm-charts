@@ -46,6 +46,23 @@ inhibit_rules:
       inhibited_by: node-maintenance
     equal: ['node']
 
+# TODO: add prod regions
+{{- range tuple "qa-de-1" }}
+  - source_matchers:
+      - alertname = "OpenstackKeppelDown"
+      - region = "{{ . }}"
+    target_matchers:
+      - alertname = "OpenstackKeppelAnycastDown"
+      - meta = "Keppel anycast health check failing for healthcheck-{{ . }}"
+
+  - source_matchers:
+      - alertname =~ "OpenstackKeppelDown"
+      - region = "{{ . }}"
+    target_matchers:
+      - alertname = "OpenstackKeppelSlowPeering"
+      - meta = "Keppel cannot peer with keppel.{{ . }}.cloud.sap"
+{{- end }}
+
 route:
   group_by: ['region', 'service', 'alertname', 'cluster', 'support_group']
   group_wait: 1m
