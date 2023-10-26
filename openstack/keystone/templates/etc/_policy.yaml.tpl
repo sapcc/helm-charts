@@ -56,6 +56,9 @@
 
 "blocklist_projects": "'{{required ".Values.api.cloudAdminProjectId is missing" .Values.api.cloudAdminProjectId}}':%(target.project.id)s"
 
+# Project Creation
+"project_creation": "role:project_creator"
+
 # Show access rule details.
 # GET  /v3/users/{user_id}/access_rules/{access_rule_id}
 # HEAD  /v3/users/{user_id}/access_rules/{access_rule_id}
@@ -934,7 +937,7 @@
 # POST  /v3/projects
 # Intended scope(s): system, domain
 #"identity:create_project": "(role:admin and system_scope:all) or (role:admin and domain_id:%(target.project.domain_id)s)"
-"identity:create_project": "rule:cloud_admin or (role:admin and domain_id:%(target.project.domain_id)s)"
+"identity:create_project": "rule:cloud_admin or (role:admin and domain_id:%(target.project.domain_id)s) or rule:project_creation"
 
 # Update project.
 # PATCH  /v3/projects/{project_id}
