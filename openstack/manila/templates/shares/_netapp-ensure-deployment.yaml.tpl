@@ -4,7 +4,7 @@
 kind: Deployment
 apiVersion: apps/v1
 metadata:
-  name: manila-share-netapp-{{$share.name}}-ensure
+  name: {{ .Release.Name }}-share-netapp-{{$share.name}}-ensure
   labels:
     system: openstack
     component: manila
@@ -18,11 +18,11 @@ spec:
       maxSurge: 1
   selector:
     matchLabels:
-        name: manila-share-netapp-{{$share.name}}-ensure
+        name: {{ .Release.Name }}-share-netapp-{{$share.name}}-ensure
   template:
     metadata:
       labels:
-        name: manila-share-netapp-{{$share.name}}-ensure
+        name: {{ .Release.Name }}-share-netapp-{{$share.name}}-ensure
         alert-tier: os
         alert-service: manila
       annotations:
@@ -40,7 +40,7 @@ spec:
                 - key: name
                   operator: In
                   values:
-                  - manila-share-netapp-{{$share.name}}
+                  - {{ .Release.Name }}-share-netapp-{{$share.name}}
               topologyKey: kubernetes.io/hostname
       initContainers:
       {{- tuple . (dict "service" (print .Release.Name "-mariadb")) | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 8 }}
@@ -117,7 +117,7 @@ spec:
             name: manila-etc
         - name: backend-config
           configMap:
-            name: share-netapp-{{$share.name}}
+            name: {{ .Release.Name }}-share-netapp-{{$share.name}}
         {{- include "utils.proxysql.volumes" . | indent 8 }}
 {{ end }}
 {{- end -}}

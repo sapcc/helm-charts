@@ -2,7 +2,7 @@ kind: Deployment
 apiVersion: apps/v1
 
 metadata:
-  name: manila-api
+  name: {{ .Release.Name }}-api
   labels:
     app: {{ template "fullname" . }}
     chart: {{ .Chart.Name }}-{{ .Chart.Version }}
@@ -23,11 +23,11 @@ spec:
     {{ end }}
   selector:
     matchLabels:
-      name: manila-api
+      name: {{ .Release.Name }}-api
   template:
     metadata:
       labels:
-        name: manila-api
+        name: {{ .Release.Name }}-api
         alert-tier: os
         alert-service: manila
         {{- tuple . "manila" "api" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | nindent 8 }}
@@ -38,7 +38,7 @@ spec:
         kubectl.kubernetes.io/default-container: manila-api
     spec:
       {{- tuple . "manila" "api" | include "kubernetes_pod_anti_affinity" | nindent 6 }}
-      {{- tuple . (dict "name" "manila-api") | include "utils.topology.constraints" | indent 6 }}
+      {{- tuple . (dict "name" (print .Release.Name "-api")) | include "utils.topology.constraints" | indent 6 }}
       {{- include "utils.proxysql.pod_settings" . | indent 6 }}
       initContainers:
       {{- tuple . (dict "jobs" (print .Release.Name "-migration") "service" (print .Release.Name "-mariadb," .Release.Name "-rabbitmq," .Release.Name "-memcached")) | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 6 }}
@@ -208,10 +208,10 @@ spec:
         {{- end }}
         - name: manila-etc
           configMap:
-            name: manila-etc
+            name: {{ .Release.Name }}-etc
         - name: manila-bin
           configMap:
-            name: manila-bin
+            name: {{ .Release.Name }}-bin
             defaultMode: 0555
         {{- include "utils.coordination.volumes" . | indent 8 }}
         {{- include "utils.proxysql.volumes" . | indent 8 }}

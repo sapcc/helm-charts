@@ -48,6 +48,10 @@ wsgi_default_pool_size = {{ .Values.wsgi_default_pool_size | default .Values.glo
 api_workers = {{ .Values.api_workers }}
 periodic_fuzzy_delay = 10
 
+{{- if not (empty .Values.api.owner_check_cache_expiration_time) }}
+owner_check_cache_expiration_time = {{ .Values.api.owner_check_cache_expiration_time }}
+{{- end }}
+
 {{- template "utils.snippets.debug.eventlet_backdoor_ini" "neutron" }}
 
 [nova]
