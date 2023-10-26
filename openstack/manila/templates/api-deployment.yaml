@@ -38,7 +38,7 @@ spec:
         kubectl.kubernetes.io/default-container: manila-api
     spec:
       {{- tuple . "manila" "api" | include "kubernetes_pod_anti_affinity" | nindent 6 }}
-      {{- tuple . (dict "name" "manila-api") | include "utils.topology.constraints" | indent 6 }}
+      {{- tuple . (dict "name" (print .Release.Name "-api")) | include "utils.topology.constraints" | indent 6 }}
       {{- include "utils.proxysql.pod_settings" . | indent 6 }}
       initContainers:
       {{- tuple . (dict "jobs" (print .Release.Name "-migration") "service" (print .Release.Name "-mariadb," .Release.Name "-rabbitmq," .Release.Name "-memcached")) | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 6 }}
