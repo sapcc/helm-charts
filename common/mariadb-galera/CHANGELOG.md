@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.21.0 - 2023/10/26
+* NFS support for Kopia added
+  * now S3 and NFS backends are supported
+  * the [nfs-subdir-external-provisioner](https://github.com/kubernetes-sigs/nfs-subdir-external-provisioner) has to installed in the cluster
+* chart version bumped
+
 ## v0.20.4 - 2023/10/18
 * MariaDB service name aligned to the existing MariaDB single pod Helm chart
   * for easier migration

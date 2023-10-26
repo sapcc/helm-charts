@@ -20,6 +20,8 @@ Docker images and Helm chart to deploy a [MariaDB](https://mariadb.com/kb/en/get
   * [values description](#values-description)
   * [network config](#network-config)
   * [database backup](#database-backup)
+    * [S3 backend](#s3-backend)
+    * [NFS backend](#nfs-backend)
   * [full database recovery](#full-database-recovery)
   * [point in time database recovery](#point-in-time-database-recovery)
   * [asynchronous replication config](#asynchronous-replication-config)
@@ -40,7 +42,7 @@ Docker images and Helm chart to deploy a [MariaDB](https://mariadb.com/kb/en/get
 ## Metadata
 | chart version | app version | type | url |
 |:--------------|:-------------|:-------------|:-------------|
-| 0.20.4 | 10.5.22 | application | [Git repo](https://github.com/sapcc/helm-charts/tree/mariadb-galera/common/mariadb-galera) |
+| 0.21.0 | 10.5.22 | application | [Git repo](https://github.com/sapcc/helm-charts/tree/mariadb-galera/common/mariadb-galera) |
 
 | Name | Email | Url |
 | ---- | ------ | --- |
@@ -150,7 +152,7 @@ docker build --build-arg BASE_SOFT_NAME=ubuntu --build-arg BASE_SOFT_VERSION=22.
   ```
 * [push](https://helm.sh/docs/topics/registries/#the-push-subcommand) the chart to the registry
   ```shell
-  helm push mariadb-galera-0.20.4.tgz oci://keppel.eu-de-1.cloud.sap/ccloud-helm/
+  helm push mariadb-galera-0.21.0.tgz oci://keppel.eu-de-1.cloud.sap/ccloud-helm/
   ```
 
 ### values description
@@ -335,6 +337,7 @@ docker build --build-arg BASE_SOFT_NAME=ubuntu --build-arg BASE_SOFT_VERSION=22.
 | mariadb.galera.backup.kopia.backend | string | `"s3"` | Openstack Swift and others provide an S3 compatible interface |
 | mariadb.galera.backup.kopia.enabled | bool | `false` | enable [kopia](https://kopia.io/) for the Galera backup |
 | mariadb.galera.backup.kopia.expireBackups | bool | false | [expire backup snapshots](https://kopia.io/docs/reference/command-line/common/snapshot-expire/) |
+| mariadb.galera.backup.kopia.filesystem.name | string | `"data"` | looked up from `volumeMounts.backup.kopia` |
 | mariadb.galera.backup.kopia.job.concurrencyPolicy | string | Forbid | Define if and how Kopia backup jobs can run in [parallel](https://kubernetes.io/docs/tasks/job/automated-tasks-with-cron-jobs/#concurrency-policy) |
 | mariadb.galera.backup.kopia.job.failedJobsHistoryLimit | int | 1 | Define how how many failed Kopia backup jobs [should be kept](https://kubernetes.io/docs/tasks/job/automated-tasks-with-cron-jobs/#jobs-history-limits) |
 | mariadb.galera.backup.kopia.job.jobRestartPolicy | string | OnFailure | Define how the Kopia backup job pod [will be restarted](https://kubernetes.io/docs/concepts/workloads/controllers/job/#handling-pod-and-container-failures) in case of an error. It can be on the same worker node or another |
@@ -644,6 +647,9 @@ docker build --build-arg BASE_SOFT_NAME=ubuntu --build-arg BASE_SOFT_VERSION=22.
 | userId.database | string | 101 | run the MariaDB containers with that [user id](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-container) |
 | userId.monitoring | string | 3000 | run the MariaDB monitoring containers with that [user id](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-container) |
 | userId.proxy | string | 3100 | run the ProxySQL/HAProxy containers with that [user id](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-container) |
+| volumeClaimTemplates.mariabackup.accessModes | list | `["ReadWriteMany"]` | [access mode](https://kubernetes.io/docs/concepts/storage/persistent-volumes/#access-modes) for the MariaDB backup volume (used by Kopia) |
+| volumeClaimTemplates.mariabackup.capacity | string | `"100Gi"` | capacity for the MariaDB backup volume |
+| volumeClaimTemplates.mariabackup.storageClassName | string | `"nfs"` | custom storageclass (currently `nfs` is supported) for the MariaDB backup volume to allow the shared access for all Kopia pods |
 | volumeClaimTemplates.mariadb.accessModes | list | `["ReadWriteOnce"]` | [access mode](https://kubernetes.io/docs/concepts/storage/persistent-volumes/#access-modes) for the MariaDB data volume |
 | volumeClaimTemplates.mariadb.capacity | string | `"10Gi"` | capacity for the MariaDB data volume |
 | volumeClaimTemplates.mariadb.storageClassName | bool | `false` | custom storageclass (currently `cinder` and `nfs` are supported) for the MariaDB data volume |
@@ -653,6 +659,10 @@ docker build --build-arg BASE_SOFT_NAME=ubuntu --build-arg BASE_SOFT_VERSION=22.
 | volumeClaimTemplates.proxysql.accessModes | list | `["ReadWriteOnce"]` | [access mode](https://kubernetes.io/docs/concepts/storage/persistent-volumes/#access-modes) for the ProxySQL data volume |
 | volumeClaimTemplates.proxysql.capacity | string | `"128Mi"` | capacity for the ProxySQL data volume |
 | volumeClaimTemplates.proxysql.storageClassName | bool | `false` | custom storageclass (currently `cinder` and `nfs` are supported) for the ProxySQL data volume |
+| volumeMounts.backup.kopia.data.claimName | string | `"mariabackup"` | name for the [persistent volume claim](https://kubernetes.io/docs/concepts/storage/persistent-volumes/#persistentvolumeclaims) requested for the Kopia [data directory](https://mariadb.com/kb/en/server-system-variables/#datadir) |
+| volumeMounts.backup.kopia.data.enabled | bool | `false` | enable this volume |
+| volumeMounts.backup.kopia.data.mountPath | string | `"/opt/kopia/data"` | mount path of the persistent volume in the container used for the MariaDB data directory |
+| volumeMounts.backup.kopia.data.type | string | `"persistentVolume"` | volume type [(persistent)](https://kubernetes.io/docs/concepts/storage/persistent-volumes/) |
 | volumeMounts.database.cert-wildcard.enabled | bool | `false` | enable this volume |
 | volumeMounts.database.cert-wildcard.mountPath | string | `"/opt/mariadb/etc/certs"` | if a `cert-wildcard` Kubernetes secret has been defined it will be mounted into that directory |
 | volumeMounts.database.cert-wildcard.readOnly | bool | `true` | `true` to [mount the secret](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-files-from-a-pod) in read only mode |
@@ -665,9 +675,6 @@ docker build --build-arg BASE_SOFT_NAME=ubuntu --build-arg BASE_SOFT_VERSION=22.
 | volumeMounts.database.log.enabled | bool | `true` | enable this volume |
 | volumeMounts.database.log.mountPath | string | `"/opt/mariadb/log"` | mount path of the persistent volume in the container used for the MariaDB log directory |
 | volumeMounts.database.log.type | string | `"persistentVolume"` | volume type [(persistent)](https://kubernetes.io/docs/concepts/storage/persistent-volumes/) |
-| volumeMounts.kopiabackup | string | `nil` |  |
-| volumeMounts.kopiarestore | string | `nil` |  |
-| volumeMounts.kopiaserver | string | `nil` |  |
 | volumeMounts.proxy.proxysql.data.claimName | string | `"proxysql"` | name for the [persistent volume claim](https://kubernetes.io/docs/concepts/storage/persistent-volumes/#persistentvolumeclaims) requested for the ProxySQL [data directory](https://proxysql.com/documentation/configuration-file/#general-variables) |
 | volumeMounts.proxy.proxysql.data.enabled | bool | `true` | enable this volume |
 | volumeMounts.proxy.proxysql.data.mountPath | string | `"/opt/proxysql/data"` | mount path of the persistent volume in the container used for the for the ProxySQL data directory |
@@ -688,7 +695,21 @@ The [Openstack cloud provider documentation](https://github.com/kubernetes/cloud
 * a Kubernetes cronjob will be configured
 * [mariadb-dump](https://mariadb.com/kb/en/mariadb-dumpmysqldump/) will be used to create a logical backup of all databases
 * mariadb-binlog will be used to include the existing binary logs in the backup. That allows to do a point in time recovery in addition to the full restore of the database
-* Kopia will be used to encrypt, compress and deduplicate the backup data. Currently the S3 backend is supported and used for Openstack Swift
+* Kopia will be used to encrypt, compress and deduplicate the backup data. Currently the S3(also usable for Openstack Swift) and the NFS backend are supported
+
+#### S3 backend
+* `mariadb.galera.backup.kopia.backend` set to `s3` to use the S3 backend
+* `mariadb.galera.backup.kopia.s3.endpoint` set to the hostname of the S3 endpoint
+* `mariadb.galera.backup.kopia.s3.region` to configure the region of the S3 endpoint
+* `mariadb.galera.backup.kopia.s3.bucket` to configure the name of the S3 bucket
+* the `KOPIA_S3_USERNAME` environment variable must contain the S3 access key
+* the `KOPIA_S3_PASSWORD` environment variable must contain the S3 secret access key
+
+#### NFS backend
+* Access to an NFS export is required
+* The [nfs-subdir-external-provisioner](https://github.com/kubernetes-sigs/nfs-subdir-external-provisioner) has to installed in the cluster
+  * installation of the [Helm chart](https://github.com/kubernetes-sigs/nfs-subdir-external-provisioner#with-helm)
+* The NFS storageclass requests a persistent volume from the `nfs-subdir-external-provisioner`
 
 ### full database recovery
 ```shell

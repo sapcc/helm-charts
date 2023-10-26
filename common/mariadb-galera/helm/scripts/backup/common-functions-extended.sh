@@ -152,19 +152,14 @@ function listkopiabackups {
 
 function initkopiarepo {
   loginfo "${FUNCNAME[0]}" "init kopia repository if required"
-  kopia repository connect ${KOPIA_REPOSITORY_TYPE} \
-            --endpoint=${KOPIA_S3_ENDPOINT} --region=${KOPIA_S3_REGION} \
-            --bucket=${KOPIA_S3_BUCKET} \
-            --access-key=${KOPIA_S3_USERNAME} --secret-access-key=${KOPIA_S3_PASSWORD} \
+
+  kopia repository connect ${KOPIA_REPOSITORY_TYPE} ${KOPIA_REPOSITORY_OPTIONS} \
             --override-hostname=backup-kopia \
             --progress-update-interval={{ $.Values.mariadb.galera.backup.kopia.progressUpdateInterval | default "300ms" | quote }}
 
   if [ $? -ne 0 ]; then
     loginfo "${FUNCNAME[0]}" "No kopia repository found"
-    kopia repository create ${KOPIA_REPOSITORY_TYPE} \
-            --endpoint=${KOPIA_S3_ENDPOINT} --region=${KOPIA_S3_REGION} \
-            --bucket=${KOPIA_S3_BUCKET} \
-            --access-key=${KOPIA_S3_USERNAME} --secret-access-key=${KOPIA_S3_PASSWORD} \
+    kopia repository create ${KOPIA_REPOSITORY_TYPE} ${KOPIA_REPOSITORY_OPTIONS} \
             --override-hostname=backup-kopia \
             --ecc=REED-SOLOMON-CRC32 --ecc-overhead-percent=2 \
             --object-splitter=DYNAMIC-8M-BUZHASH \

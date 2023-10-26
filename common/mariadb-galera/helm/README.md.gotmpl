@@ -19,6 +19,8 @@
   * [values description](#values-description)
   * [network config](#network-config)
   * [database backup](#database-backup)
+    * [S3 backend](#s3-backend)
+    * [NFS backend](#nfs-backend)
   * [full database recovery](#full-database-recovery)
   * [point in time database recovery](#point-in-time-database-recovery)
   * [asynchronous replication config](#asynchronous-replication-config)
@@ -166,7 +168,21 @@ The [Openstack cloud provider documentation](https://github.com/kubernetes/cloud
 * a Kubernetes cronjob will be configured
 * [mariadb-dump](https://mariadb.com/kb/en/mariadb-dumpmysqldump/) will be used to create a logical backup of all databases
 * mariadb-binlog will be used to include the existing binary logs in the backup. That allows to do a point in time recovery in addition to the full restore of the database
-* Kopia will be used to encrypt, compress and deduplicate the backup data. Currently the S3 backend is supported and used for Openstack Swift
+* Kopia will be used to encrypt, compress and deduplicate the backup data. Currently the S3(also usable for Openstack Swift) and the NFS backend are supported
+
+#### S3 backend
+* `mariadb.galera.backup.kopia.backend` set to `s3` to use the S3 backend
+* `mariadb.galera.backup.kopia.s3.endpoint` set to the hostname of the S3 endpoint
+* `mariadb.galera.backup.kopia.s3.region` to configure the region of the S3 endpoint
+* `mariadb.galera.backup.kopia.s3.bucket` to configure the name of the S3 bucket
+* the `KOPIA_S3_USERNAME` environment variable must contain the S3 access key
+* the `KOPIA_S3_PASSWORD` environment variable must contain the S3 secret access key
+
+#### NFS backend
+* Access to an NFS export is required
+* The [nfs-subdir-external-provisioner](https://github.com/kubernetes-sigs/nfs-subdir-external-provisioner) has to installed in the cluster
+  * installation of the [Helm chart](https://github.com/kubernetes-sigs/nfs-subdir-external-provisioner#with-helm)
+* The NFS storageclass requests a persistent volume from the `nfs-subdir-external-provisioner`
 
 ### full database recovery
 ```shell

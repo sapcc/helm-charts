@@ -75,15 +75,28 @@ spec:
 {{ $.Values.command.kopiaserver | toYaml | indent 8 }}
         {{- end }}
         env:
-        {{- if and (hasKey $.Values.mariadb.galera.backup.kopia "backend") (eq $.Values.mariadb.galera.backup.kopia.backend "s3") }}
         - name: KOPIA_REPOSITORY_TYPE
-          value: "s3"
+          value: {{ required "Values.mariadb.galera.backup.kopia.backend is missing, but required for the Kopia backend configuration." $.Values.mariadb.galera.backup.kopia.backend | quote }}
+        {{- if and (hasKey $.Values.mariadb.galera.backup.kopia "backend") (eq $.Values.mariadb.galera.backup.kopia.backend "s3") }}
         - name: KOPIA_S3_ENDPOINT
-          value: {{ required "Values.mariadb.galera.backup.kopia.s3.endpoint is missing, but required for the S3 API authentication." $.Values.mariadb.galera.backup.kopia.s3.endpoint }}
+          value: {{ required "Values.mariadb.galera.backup.kopia.s3.endpoint is missing, but required for the S3 API authentication." $.Values.mariadb.galera.backup.kopia.s3.endpoint | quote }}
         - name: KOPIA_S3_REGION
-          value: {{ required "Values.mariadb.galera.backup.kopia.s3.region is missing, but required for the S3 API authentication." $.Values.mariadb.galera.backup.kopia.s3.region }}
+          value: {{ required "Values.mariadb.galera.backup.kopia.s3.region is missing, but required for the S3 API authentication." $.Values.mariadb.galera.backup.kopia.s3.region | quote }}
         - name: KOPIA_S3_BUCKET
-          value: {{ required "Values.mariadb.galera.backup.kopia.s3.bucket is missing, but required for the S3 API authentication." $.Values.mariadb.galera.backup.kopia.s3.bucket }}
+          value: {{ required "Values.mariadb.galera.backup.kopia.s3.bucket is missing, but required for the S3 API authentication." $.Values.mariadb.galera.backup.kopia.s3.bucket | quote }}
+        {{- end }}
+        {{- if and (hasKey $.Values.mariadb.galera.backup.kopia "backend") (eq $.Values.mariadb.galera.backup.kopia.backend "s3") }}
+        - name: KOPIA_REPOSITORY_OPTIONS
+          value: "--endpoint=${KOPIA_S3_ENDPOINT} --region=${KOPIA_S3_REGION} --bucket=${KOPIA_S3_BUCKET} --access-key=${KOPIA_S3_USERNAME} --secret-access-key=${KOPIA_S3_PASSWORD}"
+        {{- else if and (hasKey $.Values.mariadb.galera.backup.kopia "backend") (eq $.Values.mariadb.galera.backup.kopia.backend "filesystem") }}
+          {{- range $volumeMountsKey, $volumeMountsValue := $.Values.volumeMounts.backup.kopia }}
+            {{- if eq $volumeMountsKey (required "mariadb.galera.backup.kopia.filesystem.name is required to configure the Kopia backup filesystem backend type" $.Values.mariadb.galera.backup.kopia.filesystem.name) }}
+              {{- if $volumeMountsValue.enabled }}
+        - name: KOPIA_REPOSITORY_OPTIONS
+          value: "--path={{ $volumeMountsValue.mountPath }}"
+              {{- end }}
+            {{- end }}
+          {{- end }}
         {{- end }}
         - name: MARIADB_CLUSTER_NAME
           value: {{ (required "mariadb.galera.clustername is required to configure the wsrep-cluster-name option for MariaDB" $.Values.mariadb.galera.clustername) | quote }}
@@ -183,6 +196,27 @@ spec:
           timeoutSeconds: 10
           {{- end }}
         volumeMounts:
+          {{- range $volumeMountsKey, $volumeMountsValue := $.Values.volumeMounts.backup.kopia }}
+            {{- if $volumeMountsValue.enabled }}
+              {{- if (hasKey $volumeMountsValue "claimName") }}
+                {{- range $volumeClaimTemplatesKey, $volumeClaimTemplatesValue := $.Values.volumeClaimTemplates }}
+                  {{- if eq $volumeClaimTemplatesKey $volumeMountsValue.claimName }}
+          - name: {{ include "commonPrefix" $ }}-{{ $volumeMountsKey }}-{{ $volumeMountsValue.claimName | lower }}
+            mountPath: {{ $volumeMountsValue.mountPath }}
+                    {{- if $volumeMountsValue.readOnly }}
+            readOnly: {{ $volumeMountsValue.readOnly }}
+                    {{- end }}
+                  {{- end }}
+                {{- end }}
+              {{- else }}
+          - name: {{ include "commonPrefix" $ }}-{{ $volumeMountsKey | lower }}
+            mountPath: {{ $volumeMountsValue.mountPath }}
+                {{- if $volumeMountsValue.readOnly }}
+            readOnly: {{ $volumeMountsValue.readOnly }}
+                {{- end }}
+              {{- end }}
+            {{- end }}
+          {{- end }}
           {{- range $volumeMountsKey, $volumeMountsValue := $.Values.volumeMounts.kopiaserver }}
           - name: {{ include "commonPrefix" $ }}-{{ $volumeMountsKey | lower }}
             mountPath: {{ $volumeMountsValue.mountPath }}
@@ -212,6 +246,28 @@ spec:
             readOnly: true
       terminationGracePeriodSeconds: 5
       volumes:
+        {{- range $volumeMountsKey, $volumeMountsValue := $.Values.volumeMounts.backup.kopia }}
+          {{- if $volumeMountsValue.enabled }}
+            {{- if $volumeMountsValue.type }}
+              {{- if ne $volumeMountsValue.type "persistentVolume" }}
+        - name: {{ include "commonPrefix" $ }}-{{ $volumeMountsKey }}
+                {{- if eq $volumeMountsValue.type "secret"}}
+          {{ $volumeMountsValue.type }}:
+            secretName: {{ include "commonPrefix" $ }}-{{ $volumeMountsKey }}
+                {{- else if eq $volumeMountsValue.type "hostPath" }}
+          {{ $volumeMountsValue.type }}:
+            path: {{ $volumeMountsValue.hostPath }}
+                {{- else }}
+            name: {{ include "commonPrefix" $ }}-{{ $volumeMountsKey }}
+                {{- end }}
+              {{- else }}
+        - name: {{ include "commonPrefix" $ }}-{{ $volumeMountsKey }}-{{ $volumeMountsValue.claimName | lower }}
+          persistentVolumeClaim:
+            claimName: {{ include "commonPrefix" $ }}-{{ $volumeMountsKey }}-{{ $volumeMountsValue.claimName | lower }}
+              {{- end }}
+            {{- end }}
+          {{- end }}
+        {{- end }}
         {{- range $volumeMountsKey, $volumeMountsValue := $.Values.volumeMounts.kopiaserver }}
           {{- if $volumeMountsValue.type }}
             {{- if ne $volumeMountsValue.type "persistentVolume" }}
