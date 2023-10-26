@@ -36,6 +36,13 @@ RUN apt-get update \
 COPY ./entrypoint.sh /usr/local/bin/
 
 ENV LANG en_US.utf8
+
+LABEL source_repository="https://github.com/sapcc/helm-charts/blob/master/common/postgresql-ng/docker/Dockerfile" \
+  org.opencontainers.image.url="https://github.com/sapcc/helm-charts/blob/master/common/postgresql-ng/docker/Dockerfile" \
+  org.opencontainers.image.created=${BININFO_BUILD_DATE} \
+  org.opencontainers.image.revision=${BININFO_COMMIT_HASH} \
+  org.opencontainers.image.version=${BININFO_VERSION}
+
 # dropped almost immeadetly by gosu
 USER root
 STOPSIGNAL SIGINT
