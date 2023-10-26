@@ -1,0 +1,72 @@
+# If enabled, image references use `.Values.registryAlternateRegion` instead of `.Values.registry`.
+useAlternateRegion: false
+
+extensions:
+  pg_stat_statements:
+    max: 1000
+    track: all
+
+# Refer to the "ccloud/postgres" repository in Keppel to see which image tags exist.
+imageTag: latest
+
+# The version of postgres to start.
+# This will be bumped over time and auto upgrade the database.
+postgresVersion: "16"
+# The default database user.
+postgresUser: postgres
+# Required: random 10 character string
+# postgresPassword:
+# The name of the database to create
+postgresDatabase: postgres
+
+# custom db-init.sql
+# dbInit: name of a configmap that provides the db-init.sql script
+
+# custom db-maintain.sql
+# dbMaintain: name of a configmap that provides the db-maintain.sql script
+
+# a selection of postgresql.conf settings which can be changed via values
+config:
+  # Sets the option of the same name in the postgresql.conf.
+  # If set to a positive integer value, logs statements that run for longer than this many milliseconds.
+  log_min_duration_statement: -1
+
+  # max allowed connections to the database
+  # Note: Increasing max_connections costs ~400 bytes of shared memory per
+  max_connections: 100
+
+  random_page_cost: 1.1
+
+# Persist data to a persitent volume
+persistence:
+  enabled: false
+  accessMode: ReadWriteMany
+  size: 10Gi
+  # Re-use existing (unmanged) PVC
+  # existingClaim: claimName
+
+# Size of /dev/shm. If null, we use whatever default amount the container
+# runtime gives us (see `df -h /dev/shm` inside the Postgres container).
+sharedMemoryLimit: null
+
+probe_timeout_secs: 3
+probe_failure_threshold: 6 # number of liveness probes that need to fail to trigger a pod restart
+
+# Configure resource requests and limits
+# ref: http://kubernetes.io/docs/user-guide/compute-resources/
+resources: {}
+
+# Default Prometheus alerts and rules.
+alerts:
+  enabled: true
+
+  # Name of the Prometheus containing the disk usage metrics.
+  prometheus_for_disk_usage: kubernetes
+
+  # The tier label of the alerts.
+  tier: os
+  # The support group label of the alerts. Must be given in values.yaml of parent chart.
+  support_group:
+
+  # Configurable service label of the alerts. Defaults to `.Release.Name`.
+  # service:
