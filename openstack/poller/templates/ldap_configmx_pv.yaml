@@ -1,0 +1,14 @@
+{{- $val := .Values.poller }}
+{{- if and ($val.enabled) (eq $val.action "forwardEmail") (not $val.mxrecords) }}
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: ldap-configmx-pv
+spec:
+  capacity:
+    storage: 1Gi
+  accessModes:
+    - ReadWriteOnce
+  hostPath:
+    path: /poller/mx
+{{- end -}}
