@@ -25,7 +25,6 @@ filter {
   # unwrap messagingv2 envelope
   if [oslo.message] {
     json { source => "oslo.message" }
-      id => "unwrap_messagingv2_envelope"
   }
   # Strip oslo header
   ruby {
