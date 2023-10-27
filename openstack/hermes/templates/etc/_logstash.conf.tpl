@@ -65,11 +65,15 @@ filter {
   # When scope is missing from initiator, get it from action-specific parameters
   if ![initiator][project_id] and ![initiator][domain_id] {
     if [project] {
-      mutate { add_field => { "%{[initiator][project_id]}" => "%{[project]}" } }
+      mutate {
+        add_field => { "%{[initiator][project_id]}" => "%{[project]}" }
         id => "mutate_initiator_project_id"
+        }
     } else if [domain] {
-      mutate { add_field => { "%{[initiator][domain_id]}" => "%{[domain]}" } }
+      mutate {
+        add_field => { "%{[initiator][domain_id]}" => "%{[domain]}" }
         id => "mutate_initiator_domain_id"
+      }
     }
   }
 
@@ -161,18 +165,24 @@ filter {
   # pipeline shutsdown if a lookup field is not available.
 
   if ![initiator][project_id] {
-    mutate { add_field => { "[initiator][project_id]" => "unavailable" } }
+    mutate {
+      add_field => { "[initiator][project_id]" => "unavailable" }
       id => "add_initiator_project_id_unavailable"
+    }
   }
 
   if ![target][project_id] {
-    mutate { add_field => { "[target][project_id]" => "unavailable" } }
-      id => "add_target_project_id_unavailable"
+    mutate {
+     add_field => { "[target][project_id]" => "unavailable" }
+     id => "add_target_project_id_unavailable"
+    }
   }
 
   if ![initiator][id] {
-    mutate { add_field => { "[initiator][id]" => "unavailable" } }
+    mutate {
+      add_field => { "[initiator][id]" => "unavailable" }
       id => "add_initiator_id_unavailable"
+    }
   }
 
   # With several different event types using jdbc_static, not sure an if makes sense.
@@ -384,20 +394,28 @@ filter {
 
   # primary index
   if [initiator][project_id] {
-    mutate { add_field => { "[@metadata][index]" => "%{[initiator][project_id]}" } }
+    mutate {
+      add_field => { "[@metadata][index]" => "%{[initiator][project_id]}" }
       id => "calculate_index_name_primary_project_id"
+    }
   } else if [initiator][domain_id] {
-    mutate { add_field => { "[@metadata][index]" => "%{[initiator][domain_id]}" } }
+    mutate {
+      add_field => { "[@metadata][index]" => "%{[initiator][domain_id]}" }
       id => "calculate_index_name_primary_domain_id"
+    }
   }
 
   # secondary index
   if [target][project_id] {
-    mutate { add_field => { "[@metadata][index2]" => "%{[target][project_id]}" } }
+    mutate {
+      add_field => { "[@metadata][index2]" => "%{[target][project_id]}" }
       id => "calculate_index_name_secondary_project_id"
+    }
   } else if [target][domain_id] {
-    mutate { add_field => { "[@metadata][index2]" => "%{[target][domain_id]}" } }
+    mutate {
+      add_field => { "[@metadata][index2]" => "%{[target][domain_id]}" }
       id => "calculate_index_name_secondary_domain_id"
+    }
   }
 
   # remove keystone specific fields after they have been mapped to standard attachments
