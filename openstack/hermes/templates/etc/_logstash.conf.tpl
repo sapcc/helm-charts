@@ -125,8 +125,8 @@ filter {
   }
   if [group] {
     ruby {
-      code => "
       id => "ruby_group_set_attachments"
+      code => "
         attachments = event.get('[attachments]')
         if attachments.nil?
           attachments = []
