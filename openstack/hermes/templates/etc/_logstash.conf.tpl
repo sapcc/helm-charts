@@ -24,7 +24,10 @@ rabbitmq {
 filter {
   # unwrap messagingv2 envelope
   if [oslo.message] {
-    json { source => "oslo.message" }
+    json {
+      id => "unwrap_messagingv2_envelope"
+      source => "oslo.message"
+    }
   }
   # Strip oslo header
   ruby {
@@ -262,7 +265,7 @@ filter {
     # Add Fields to audit events, checking if the field exists first to not overwrite.
     if ![initiator][project_name] {
       mutate {
-        id => "adding_initiator_project_name"
+        id => "initiator_project_name_adding_initiator_project_name"
         add_field => {
             "[initiator][project_name]" => "%{[project_mapping][0][project_name]}"
         }
@@ -270,7 +273,7 @@ filter {
     }
     if ![initiator][domain_id] {
       mutate {
-        id => "adding_initiator_domain_id"
+        id => "initiator_project_name_adding_initiator_domain_id"
         add_field => {
             "[initiator][domain_id]" => "%{[project_mapping][0][domain_id]}"
         }
@@ -278,7 +281,7 @@ filter {
     }
     if ![initiator][project_domain_name] {
       mutate {
-        id => "adding_project_domain_name"
+        id => "initiator_project_name_adding_project_domain_name"
         add_field => {
             "[initiator][project_domain_name]" => "%{[project_mapping][0][domain_name]}"
         }
@@ -330,7 +333,7 @@ filter {
     # Add Fields to audit events, checking if the field exists so it doesn't create an array.
     if ![initiator][name] {
       mutate {
-        id => "adding_initiator_name"
+        id => "initiator_name_adding_initiator_name"
         add_field => {
             "[initiator][name]" => "%{[domain_mapping][0][user_name]}"
         }
@@ -338,7 +341,7 @@ filter {
     }
     if ![initiator][domain_id] {
       mutate {
-        id => "adding_initiator_domain_id"
+        id => "initiator_name_adding_initiator_domain_id"
         add_field => {
             "[initiator][domain_id]" => "%{[domain_mapping][0][domain_id]}"
         }
@@ -346,7 +349,7 @@ filter {
     }
     if ![initiator][domain] {
       mutate {
-        id => "adding_initiator_domain"
+        id => "initiator_name_adding_initiator_domain"
         add_field => {
             "[initiator][domain]" => "%{[domain_mapping][0][domain_name]}"
         }
