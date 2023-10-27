@@ -424,8 +424,10 @@ filter {
     remove_field => ["[domain]", "[project]", "[user]", "[role]", "[group]", "[inherited_to_projects]"]
   }
 
-  kv { source => "_source" }
+  kv {
+    source => "_source"
     id => "kv_source_to_underscore"
+    }
 
   # The following line will create 2 additional
   # copies of each document (i.e. including the
