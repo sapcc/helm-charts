@@ -14,6 +14,10 @@ metadata:
     nginx.ingress.kubernetes.io/auth-response-headers: "Authorization, X-Auth-Request-Email, X-Auth-Request-User, X-Forwarded-Access-Token"
 {{- end }}
     kubernetes.io/tls-acme: "true"
+{{- if and (and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested) $.Values.linkerd.backup.enabled }}
+    ingress.kubernetes.io/service-upstream: "true"
+    nginx.ingress.kubernetes.io/service-upstream: "true"
+{{- end }}
   name:  {{ include "fullName" . }}-backup
 
 spec:
