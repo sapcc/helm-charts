@@ -1,5 +1,6 @@
 {{- if .Values.opensearch_hermes.enabled }}
 #xpack.monitoring.enabled: false
+pipeline.ecs_compatibility: disabled
 {{- else -}}
 xpack.monitoring.enabled: false
 {{- end }}

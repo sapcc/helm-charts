@@ -25,13 +25,13 @@ filter {
   # unwrap messagingv2 envelope
   if [oslo.message] {
     json {
-      id => "unwrap_messagingv2_envelope"
+      id => "02_unwrap_messagingv2_envelope"
       source => "oslo.message"
     }
   }
   # Strip oslo header
   ruby {
-    id => "strip_oslo_header"
+    id => "03_strip_oslo_header"
     code => "
       v1pl = event.get('payload')
       if !v1pl.nil?
@@ -44,14 +44,14 @@ filter {
   }
   # remove all the oslo stuff
   mutate {
-    id => "remove_oslo_stuff"
+    id => "04_remove_oslo_stuff"
     remove_field => [ "oslo.message", "oslo.version", "publisher_id", "event_type", "message_id", "priority", "timestamp" ]
   }
 
   # KEYSTONE TRANSFORMATIONS
 
   mutate {
-    id => "rename_actions"
+    id => "05_rename_actions"
     gsub => [
        # use proper CADF taxonomy for actions
        "action", "created\.", "create/",
@@ -70,12 +70,12 @@ filter {
     if [project] {
       mutate {
         add_field => { "%{[initiator][project_id]}" => "%{[project]}" }
-        id => "mutate_initiator_project_id"
+        id => "06a_mutate_initiator_project_id"
         }
     } else if [domain] {
       mutate {
         add_field => { "%{[initiator][domain_id]}" => "%{[domain]}" }
-        id => "mutate_initiator_domain_id"
+        id => "06b_mutate_initiator_domain_id"
       }
     }
   }
@@ -83,7 +83,7 @@ filter {
   # rename initiator user_id into the 'id' field for consistency
   if [initiator][user_id] {
     mutate {
-      id => "rename_initiator_user_id"
+      id => "07_rename_initiator_user_id"
       replace => { "[initiator][id]" => "%{[initiator][user_id]}" }
       remove_field => ["[initiator][user_id]"]
     }
@@ -92,7 +92,7 @@ filter {
   # rename intiator domain_name into initiator domain field for consistency.
   if [initiator][domain_name] {
     mutate {
-      id => "rename_intiator_domain_name"
+      id => "08_rename_intiator_domain_name"
       replace => { "[initiator][domain]" => "%{[initiator][domain_name]}" }
       remove_field => ["[initiator][domain_name]"]
     }
@@ -102,20 +102,20 @@ filter {
   # see https://sourcegraph.com/github.com/openstack/keystone@81f9fe6fed62ec629804c9367fbb9ebfd584388c/-/blob/keystone/notifications.py#L590
   if [project] {
     mutate {
-      id => "normalize_role_assignments_project"
+      id => "09a_normalize_role_assignments_project"
       replace => { "[target][project_id]" => "%{[project]}" }
       remove_field => ["[project]"]
     }
   } else if [domain] {
     mutate {
-      id => "normalize_role_assignments_domain"
+      id => "09b_normalize_role_assignments_domain"
       replace => { "[target][domain_id]" => "%{[domain]}" }
       remove_field => ["[domain]"]
     }
   }
   if [role] {
     ruby {
-      id => "ruby_role_set_attachments"
+      id => "10_ruby_role_set_attachments"
       code => "
         attachments = event.get('[attachments]')
         if attachments.nil?
@@ -128,7 +128,7 @@ filter {
   }
   if [group] {
     ruby {
-      id => "ruby_group_set_attachments"
+      id => "11_ruby_group_set_attachments"
       code => "
         attachments = event.get('[attachments]')
         if attachments.nil?
@@ -141,7 +141,7 @@ filter {
   }
   if [inherited_to_projects] {
     ruby {
-      id => "ruby_project_set_attachments"
+      id => "12_ruby_project_set_attachments"
       code => "
         attachments = event.get('[attachments]')
         if attachments.nil?
@@ -156,7 +156,7 @@ filter {
   # replace target ID with real user ID
   if [target][typeURI] == "service/security/account/user" and [user] {
      mutate {
-       id => "replace_target_id_with_user_id"
+       id => "13_replace_target_id_with_user_id"
        replace => { "[target][id]" => "%{[user]}" }
        remove_field => ["[user]"]
      }
@@ -170,21 +170,21 @@ filter {
   if ![initiator][project_id] {
     mutate {
       add_field => { "[initiator][project_id]" => "unavailable" }
-      id => "add_initiator_project_id_unavailable"
+      id => "14_add_initiator_project_id_unavailable"
     }
   }
 
   if ![target][project_id] {
     mutate {
      add_field => { "[target][project_id]" => "unavailable" }
-     id => "add_target_project_id_unavailable"
+     id => "15_add_target_project_id_unavailable"
     }
   }
 
   if ![initiator][id] {
     mutate {
       add_field => { "[initiator][id]" => "unavailable" }
-      id => "add_initiator_id_unavailable"
+      id => "16_add_initiator_id_unavailable"
     }
   }
 
@@ -195,12 +195,12 @@ filter {
     id => "jdbc_project_id"
     loaders => [
       {
-        id  => "keystone_project_domain"
+        id  => "17a_keystone_project_domain"
         query => "select project.name as project_name, project.id as project_id, domain.name as domain_name, domain.id as domain_id from keystone.project join keystone.project domain on project.domain_id = domain.id"
         local_table => "project_domain_mapping"
       },
       {
-        id  => "keystone_user_domain"
+        id  => "17b_keystone_user_domain"
         query => "select u.id as user_id, CONCAT_WS('', m.local_id, lu.name) as user_name, p.id as domain_id, p.name as domain_name  from keystone.user as u left join keystone.id_mapping m on m.public_id = u.id left join keystone.local_user lu on lu.user_id = u.id left join keystone.project as p on p.id = u.domain_id where p.name <> 'kubernikus'"
         local_table => "user_domain_mapping"
       }
@@ -231,21 +231,21 @@ filter {
 
     local_lookups => [
       {
-        id => "project_name_lookup"
+        id => "17c_project_name_lookup"
         query => "select project_name, domain_id, domain_name from project_domain_mapping where project_id = ?"
         prepared_parameters => ["[initiator][project_id]"]
         target => "project_mapping"
         tag_on_failure => ["Project_Mapping"]
       },
       {
-        id => "target_project_name_lookup"
+        id => "17d_target_project_name_lookup"
         query => "select project_name, domain_id, domain_name from project_domain_mapping where project_id = ?"
         prepared_parameters => ["[target][project_id]"]
         target => "target_project_mapping"
         tag_on_failure => ["Target_Project_Mapping"]
       },
       {
-        id => "domain_lookup"
+        id => "17e_domain_lookup"
         query => "select user_name, domain_id, domain_name from user_domain_mapping where user_id = ?"
         prepared_parameters => ["[initiator][id]"]
         target => "domain_mapping"
@@ -265,7 +265,7 @@ filter {
     # Add Fields to audit events, checking if the field exists first to not overwrite.
     if ![initiator][project_name] {
       mutate {
-        id => "initiator_project_name_adding_initiator_project_name"
+        id => "18a_initiator_project_name_adding_initiator_project_name"
         add_field => {
             "[initiator][project_name]" => "%{[project_mapping][0][project_name]}"
         }
@@ -273,7 +273,7 @@ filter {
     }
     if ![initiator][domain_id] {
       mutate {
-        id => "initiator_project_name_adding_initiator_domain_id"
+        id => "18b_initiator_project_name_adding_initiator_domain_id"
         add_field => {
             "[initiator][domain_id]" => "%{[project_mapping][0][domain_id]}"
         }
@@ -281,7 +281,7 @@ filter {
     }
     if ![initiator][project_domain_name] {
       mutate {
-        id => "initiator_project_name_adding_project_domain_name"
+        id => "18c_initiator_project_name_adding_project_domain_name"
         add_field => {
             "[initiator][project_domain_name]" => "%{[project_mapping][0][domain_name]}"
         }
@@ -290,7 +290,7 @@ filter {
 
     # Cleanup
     mutate {
-      id => "remove_field_project_mapping"
+      id => "18d_remove_field_project_mapping"
       remove_field => ["[project_mapping]"]
     }
   }
@@ -299,7 +299,7 @@ filter {
     # Add Fields to audit events, checking if the field exists first to not overwrite.
     if ![target][project_name] {
       mutate {
-        id => "adding_target_project_name"
+        id => "19a_adding_target_project_name"
         add_field => {
             "[target][project_name]" => "%{[target_project_mapping][0][project_name]}"
         }
@@ -307,7 +307,7 @@ filter {
     }
     if ![target][domain_id] {
       mutate {
-        id => "adding_target_domain_id"
+        id => "19b_adding_target_domain_id"
         add_field => {
             "[target][domain_id]" => "%{[target_project_mapping][0][domain_id]}"
         }
@@ -315,7 +315,7 @@ filter {
     }
     if ![target][project_domain_name] {
       mutate {
-        id => "adding_target_domain_name"
+        id => "19c_adding_target_domain_name"
         add_field => {
             "[target][project_domain_name]" => "%{[target_project_mapping][0][domain_name]}"
         }
@@ -324,7 +324,7 @@ filter {
 
     # Cleanup
     mutate {
-      id => "removing_target_project_mapping"
+      id => "19d_removing_target_project_mapping"
       remove_field => ["[target_project_mapping]"]
     }
   }
@@ -333,7 +333,7 @@ filter {
     # Add Fields to audit events, checking if the field exists so it doesn't create an array.
     if ![initiator][name] {
       mutate {
-        id => "initiator_name_adding_initiator_name"
+        id => "20a_initiator_name_adding_initiator_name"
         add_field => {
             "[initiator][name]" => "%{[domain_mapping][0][user_name]}"
         }
@@ -341,7 +341,7 @@ filter {
     }
     if ![initiator][domain_id] {
       mutate {
-        id => "initiator_name_adding_initiator_domain_id"
+        id => "20b_initiator_name_adding_initiator_domain_id"
         add_field => {
             "[initiator][domain_id]" => "%{[domain_mapping][0][domain_id]}"
         }
@@ -349,7 +349,7 @@ filter {
     }
     if ![initiator][domain] {
       mutate {
-        id => "initiator_name_adding_initiator_domain"
+        id => "20c_initiator_name_adding_initiator_domain"
         add_field => {
             "[initiator][domain]" => "%{[domain_mapping][0][domain_name]}"
         }
@@ -357,28 +357,28 @@ filter {
     }
     # Cleanup
     mutate {
-      id => "removing_domain_mapping"
+      id => "20d_removing_domain_mapping"
       remove_field => ["[domain_mapping]"]
     }
 
     # Cleanup unavailable entries
     if [initiator][project_id] == "unavailable" {
       mutate {
-        id => "removing_initiator_project_id"
+        id => "20e_removing_initiator_project_id"
         remove_field => ["[initiator][project_id]"]
       }
     }
 
     if [target][project_id] == "unavailable" {
       mutate {
-        id => "removing_target_project_id"
+        id => "20f_removing_target_project_id"
         remove_field => ["[target][project_id]"]
       }
     }
 
     if [initiator][id] == "unavailable" {
       mutate {
-        id => "removing_initiator_id"
+        id => "20g_removing_initiator_id"
         remove_field => ["[initiator][id]"]
       }
     }
@@ -388,7 +388,7 @@ filter {
   # Octobus setting Source to TypeURI. Unused in Hermes.
   if [observer][typeURI] {
     mutate {
-      id => "octobus_source_to_typeuri"
+      id => "21_octobus_source_to_typeuri"
       add_field => {  "[sap][cc][audit][source]" => "%{[observer][typeURI]}" }
     }
   }
@@ -399,12 +399,12 @@ filter {
   if [initiator][project_id] {
     mutate {
       add_field => { "[@metadata][index]" => "%{[initiator][project_id]}" }
-      id => "calculate_index_name_primary_project_id"
+      id => "22a_calculate_index_name_primary_project_id"
     }
   } else if [initiator][domain_id] {
     mutate {
       add_field => { "[@metadata][index]" => "%{[initiator][domain_id]}" }
-      id => "calculate_index_name_primary_domain_id"
+      id => "22b_calculate_index_name_primary_domain_id"
     }
   }
 
@@ -412,24 +412,24 @@ filter {
   if [target][project_id] {
     mutate {
       add_field => { "[@metadata][index2]" => "%{[target][project_id]}" }
-      id => "calculate_index_name_secondary_project_id"
+      id => "23a_calculate_index_name_secondary_project_id"
     }
   } else if [target][domain_id] {
     mutate {
       add_field => { "[@metadata][index2]" => "%{[target][domain_id]}" }
-      id => "calculate_index_name_secondary_domain_id"
+      id => "23b_calculate_index_name_secondary_domain_id"
     }
   }
 
   # remove keystone specific fields after they have been mapped to standard attachments
   mutate {
-    id => "remove_keystone_fields_after_mapping"
+    id => "24_remove_keystone_fields_after_mapping"
     remove_field => ["[domain]", "[project]", "[user]", "[role]", "[group]", "[inherited_to_projects]"]
   }
 
   kv {
     source => "_source"
-    id => "kv_source_to_underscore"
+    id => "25_kv_source_to_underscore"
     }
 
   # The following line will create 2 additional
@@ -438,7 +438,7 @@ filter {
   # Each copy will automatically have a "type" field added
   # corresponding to the name given in the array.
   clone {
-    id => "clone_events_three_times"
+    id => "26_clone_events_three_times"
     clones => ['clone_for_audit', 'clone_for_swift', 'clone_for_cc', 'audit']
   }
 }
@@ -457,6 +457,7 @@ output {
           retry_max_interval => 10
           # validate_after_inactivity default 10000
           validate_after_inactivity => 1000
+          data_streamedit => false
       }
       {{- if .Values.opensearch_hermes.enabled }}
       opensearch {
@@ -489,6 +490,7 @@ output {
           retry_max_interval => 10
           # validate_after_inactivity default 10000
           validate_after_inactivity => 1000
+          data_streamedit => false
       }
       {{- if .Values.opensearch_hermes.enabled }}
       opensearch {
@@ -524,6 +526,7 @@ output {
         retry_max_interval => 10
         # validate_after_inactivity default 10000
         validate_after_inactivity => 1000
+        data_streamedit => false
     }
 {{- if .Values.opensearch_hermes.enabled }}
     opensearch {
