@@ -33,6 +33,9 @@ spec:
 {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
         linkerd.io/inject: enabled
 {{- end }}
+{{- if or (and (hasKey $.Values "global") (and (hasKey $.Values.global "linkerd_enabled") $.Values.global.linkerd_enabled) (and (hasKey $.Values.global "linkerd_requested") $.Values.global.linkerd_requested)) $.Values.linkerd.mariadb.enabled }}
+        linkerd.io/inject: enabled
+{{- end }}
     spec:
       affinity:
         nodeAffinity:

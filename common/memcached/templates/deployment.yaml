@@ -26,9 +26,9 @@ spec:
         app: {{ template "fullname" . }}
         component: memcached
       annotations:
-        {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+{{- if or (and (hasKey $.Values "global") (and (hasKey $.Values.global "linkerd_enabled") $.Values.global.linkerd_enabled) (and (hasKey $.Values.global "linkerd_requested") $.Values.global.linkerd_requested)) $.Values.linkerd.enabled }}
         linkerd.io/inject: enabled
-        {{- end }}
+{{- end }}
     spec:
       affinity:
         nodeAffinity:
