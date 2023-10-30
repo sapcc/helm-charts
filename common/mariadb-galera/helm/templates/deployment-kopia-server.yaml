@@ -32,6 +32,9 @@ spec:
         prometheus.io/port: "8080"
         prometheus.io/targets: {{ $.Values.monitoring.prometheus.instance.database | default "prometheus" | quote }}
         {{- end }}
+        {{- if or (and (hasKey $.Values "global") (and (hasKey $.Values.global "linkerd_enabled") $.Values.global.linkerd_enabled) (and (hasKey $.Values.global "linkerd_requested") $.Values.global.linkerd_requested)) $.Values.mariadb.galera.backup.kopia.linkerd.enabled }}
+        linkerd.io/inject: enabled
+        {{- end }}
         checksum/configmap: {{ include (print $.Template.BasePath "/configmap-kopia.yaml") $ | sha256sum }}
     spec:
       serviceAccount: {{ include "commonPrefix" $ }}-mariadb-galera

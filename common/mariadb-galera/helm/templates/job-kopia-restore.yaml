@@ -21,6 +21,9 @@ spec:
         app: {{ $.Release.Name }}
         release: {{ $.Release.Name }}
       annotations:
+        {{- if or (and (hasKey $.Values "global") (and (hasKey $.Values.global "linkerd_enabled") $.Values.global.linkerd_enabled) (and (hasKey $.Values.global "linkerd_requested") $.Values.global.linkerd_requested)) $.Values.mariadb.galera.restore.kopia.linkerd.enabled }}
+        linkerd.io/inject: enabled
+        {{- end }}
         checksum/configmap: {{ include (print $.Template.BasePath "/configmap-kopia.yaml") $ | sha256sum }}
     spec:
       restartPolicy: {{ $.Values.mariadb.galera.restore.kopia.job.jobRestartPolicy | default "Never" | quote }}

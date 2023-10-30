@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.22.0 - 2023/10/30
+* linkerd [annotation support](https://linkerd.io/2.14/tasks/adding-your-service/#meshing-a-service-with-annotations) added
+  *  for linkerd to inject the transport encryption sidecar container
+* chart version bumped
+
 ## v0.21.0 - 2023/10/26
 * NFS support for Kopia added
   * now S3 and NFS backends are supported
