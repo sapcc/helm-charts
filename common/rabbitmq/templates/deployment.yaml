@@ -30,6 +30,9 @@ spec:
         app: {{ template "fullname" . }}
       annotations:
         checksum/container.init: {{ include (print $.Template.BasePath "/bin-configmap.yaml") . | sha256sum }}
+{{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+        linkerd.io/inject: enabled
+{{- end }}
     spec:
       affinity:
         nodeAffinity:
