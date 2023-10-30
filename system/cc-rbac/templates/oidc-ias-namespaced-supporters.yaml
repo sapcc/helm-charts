@@ -1,0 +1,17 @@
+{{- range $namespace, $data := .Values.oidcIAS.namespacedSupporterGroups }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: cc:oidc-ias-supporter
+  namspace: {{ $namespace }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cc:supporter
+subjects:
+  {{- range $data.groups }}
+  - kind: Group
+    name: {{ . }}
+  {{- end }}
+{{- end }}
