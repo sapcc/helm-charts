@@ -24,17 +24,12 @@ data.path = "./cerebro.db"
 
 # A list of known hosts
 hosts = [
-  {
-    host = "http://elasticsearch.hermes:9200"
-    name = "hermes single node"
-  },
 {{- if .Values.elasticsearch_hermes.enabled }}
   {
     host = "http://elasticsearch-hermes-http.hermes:9200"
     name = "elasticsearch-hermes cluster"
   }
 {{- end }}
-{{- if .Values.opensearch_hermes.enabled }}
   {
     host = "https://opensearch-hermes.hermes:9200"
     name = "OpenSearch Hermes cluster"
@@ -43,7 +38,6 @@ hosts = [
       password = "{{.Values.users.admin.password}}"
     }
   }
-{{- end }}
 ]
 
 # Authentication
@@ -66,11 +60,7 @@ auth = {
 play.ws.ssl {
   trustManager = {
     stores = [
-{{- if .Values.opensearch_hermes.enabled }}
       { type = "PEM", path = "/opt/certs/opensearchCA.crt" }
-{{- else -}}
-      { type = "PKCS12", path = "/truststore/truststore", password = "{{.Values.hermes.elasticsearch.manager_cert_pw}}" }
-{{- end }}
     ]
   }
 }

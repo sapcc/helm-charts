@@ -5,7 +5,7 @@ PolicyFilePath = "/etc/hermes/policy.json"
 ListenAddress = "0.0.0.0:80"
 
 [elasticsearch]
-url = "https://{{.Values.hermes_elasticsearch_host}}:{{.Values.hermes_elasticsearch_port}}"
+url = "https://{{.Values.hermes_elasticsearch_host}}.{{.Values.global.region}}.{{.Values.global.tld}}:{{.Values.hermes_elasticsearch_port}}"
 
 [keystone]
 auth_url = "{{.Values.hermes.auth_url}}"
