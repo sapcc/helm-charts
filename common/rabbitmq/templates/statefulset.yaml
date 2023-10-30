@@ -23,6 +23,9 @@ spec:
       labels:
         app: {{ template "fullname" . }}
       annotations:
+{{- if and (and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested) $.Values.linkerd.enabled }}
+        linkerd.io/inject: enabled
+{{- end }}
         checksum/container.init: {{ include (print $.Template.BasePath "/bin-configmap.yaml") . | sha256sum }}
     spec:
       affinity:
@@ -65,7 +68,7 @@ spec:
         {{- if .Values.readinessProbe.enabled }}
         readinessProbe:
           tcpSocket:
-            port: public 
+            port: public
           failureThreshold: {{ .Values.readinessProbe.failureThreshold }}
           initialDelaySeconds: {{ .Values.readinessProbe.initialDelaySeconds }}
           periodSeconds: {{ .Values.readinessProbe.periodSeconds }}
