@@ -446,26 +446,13 @@ filter {
 output {
   if [type] == 'clone_for_audit' {
     if ([@metadata][index]) {
-      elasticsearch {
-          id => "output_elasticsearch_clone_for_audit_1"
-          index => "audit-%{[@metadata][index]}-%{+YYYY.MM}"
-          template => "/hermes-etc/audit.json"
-          template_name => "audit"
-          template_overwrite => true
-          hosts => ["{{.Values.hermes_elasticsearch_host}}:{{.Values.hermes_elasticsearch_port}}"]
-          # retry_max_interval default 64
-          retry_max_interval => 10
-          # validate_after_inactivity default 10000
-          validate_after_inactivity => 1000
-      }
-      {{- if .Values.opensearch_hermes.enabled }}
       opensearch {
           id => "output_opensearch_clone_for_audit_1"
           index => "audit-%{[@metadata][index]}-%{+YYYY.MM}"
           template => "/hermes-etc/audit.json"
           template_name => "audit"
           template_overwrite => true
-          hosts => ["https://{{.Values.opensearch_hermes.host}}.{{.Values.global.region}}.{{.Values.global.tld}}:{{.Values.opensearch_hermes.http_port}}"]
+          hosts => ["https://{{.Values.hermes_elasticsearch_host}}.{{.Values.global.region}}.{{.Values.global.tld}}:{{.Values.hermes_elasticsearch_port}}"]
           auth_type => {
             type => 'basic'
             user => "{{.Values.users.audit.username}}"
@@ -476,28 +463,14 @@ output {
           ssl => true
           ssl_certificate_verification => true
       }
-      {{- end }}
     } else {
-      elasticsearch {
-          id => "output_elasticsearch_clone_for_audit_2"
-          index => "audit-default-%{+YYYY.MM}"
-          template => "/hermes-etc/audit.json"
-          template_name => "audit"
-          template_overwrite => true
-          hosts => ["{{.Values.hermes_elasticsearch_host}}:{{.Values.hermes_elasticsearch_port}}"]
-          # retry_max_interval default 64
-          retry_max_interval => 10
-          # validate_after_inactivity default 10000
-          validate_after_inactivity => 1000
-      }
-      {{- if .Values.opensearch_hermes.enabled }}
       opensearch {
           id => "output_opensearch_clone_for_audit_2"
           index => "audit-default-%{+YYYY.MM}"
           template => "/hermes-etc/audit.json"
           template_name => "audit"
           template_overwrite => true
-          hosts => ["https://{{.Values.opensearch_hermes.host}}.{{.Values.global.region}}.{{.Values.global.tld}}:{{.Values.opensearch_hermes.http_port}}"]
+          hosts => ["https://{{.Values.hermes_elasticsearch_host}}.{{.Values.global.region}}.{{.Values.global.tld}}:{{.Values.hermes_elasticsearch_port}}"]
           retry_max_interval => 10
           validate_after_inactivity => 1000
           auth_type => {
@@ -508,31 +481,17 @@ output {
           ssl => true
           ssl_certificate_verification => true
         }
-      {{- end }}
     }
   }
   # cc the target tenant
   if ([@metadata][index2] and [@metadata][index2] != [@metadata][index] and [type] == 'clone_for_cc') {
-    elasticsearch {
-        id => "output_elasticsearch_clone_for_cc"
-        index => "audit-%{[@metadata][index2]}-%{+YYYY.MM}"
-        template => "/hermes-etc/audit.json"
-        template_name => "audit"
-        template_overwrite => true
-        hosts => ["{{.Values.hermes_elasticsearch_host}}:{{.Values.hermes_elasticsearch_port}}"]
-        # retry_max_interval default 64
-        retry_max_interval => 10
-        # validate_after_inactivity default 10000
-        validate_after_inactivity => 1000
-    }
-{{- if .Values.opensearch_hermes.enabled }}
     opensearch {
         id => "output_opensearch_clone_for_cc"
         index => "audit-%{[@metadata][index2]}-%{+YYYY.MM}"
         template => "/hermes-etc/audit.json"
         template_name => "audit"
         template_overwrite => true
-        hosts => ["https://{{.Values.opensearch_hermes.host}}.{{.Values.global.region}}.{{.Values.global.tld}}:{{.Values.opensearch_hermes.http_port}}"]
+        hosts => ["https://{{.Values.hermes_elasticsearch_host}}.{{.Values.global.region}}.{{.Values.global.tld}}:{{.Values.hermes_elasticsearch_port}}"]
         retry_max_interval => 10
         validate_after_inactivity => 1000
         auth_type => {
@@ -543,7 +502,6 @@ output {
         ssl => true
         ssl_certificate_verification => true
         }
-{{- end }}
   }
 
   {{ if .Values.logstash.swift -}}
