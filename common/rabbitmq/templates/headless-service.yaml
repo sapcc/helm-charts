@@ -11,6 +11,10 @@ metadata:
     type: rabbitmq
     component: {{ .Release.Name }}
     system: openstack
+  annotations:
+{{- if and (and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested) $.Values.linkerd.enabled }}
+    linkerd.io/inject: enabled
+{{- end }}
 spec:
   selector:
     app: {{ template "fullname" . }}
