@@ -1,8 +1,6 @@
-{{- if eq .Values.global.clusterType "scaleout" }}
 {{- $values := .Values }}
 {{- if $values.alerts.enabled }}
-{{- range $i, $target := $values.alerts.prometheus }}
-{{- range $path, $bytes := $.Files.Glob (printf "alerts/*.alerts" $target.name) }}
+{{- range $path, $bytes := .Files.Glob "alerts/*.alerts" }}
 ---
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
@@ -13,11 +11,10 @@ metadata:
     app: opensearch-logs
     tier: os
     type: alerting-rules
-    {{ $target.type | required (printf "$values.alerts.prometheus.[%v].type missing" $i) }}: {{ $target.name | required (printf "$values.alerts.prometheus.[%v].name missing" $i) }}
+    prometheus: {{ required ".Values.alerts.prometheus missing" $values.alerts.prometheus | quote }}
 
 spec:
 {{ printf "%s" $bytes | indent 2 }}
-{{- end }}
-{{- end }}
+
 {{- end }}
 {{- end }}
