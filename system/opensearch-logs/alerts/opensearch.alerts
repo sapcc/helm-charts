@@ -33,8 +33,23 @@ groups:
                    Please consider cleaning up opensearch-logs or lower the retention period for the logs.'
       summary: '*opensearch-logs cluster* in is out of disk space'
 
+  - alert: OpensearchLogsClusterYellow
+    expr: (sum by (elastic_cluster) (opensearch_cluster_status{elastic_cluster="opensearch-logs"})) / count by (elastic_cluster) (opensearch_cluster_status{elastic_cluster="opensearch-logs"}) == 1
+    for: 30m
+    labels:
+      context: nodes
+      service: logs
+      severity: critical
+      support_group: observability
+      tier: os
+      playbook: docs/operation/elastic_kibana_issues/generic/cluster-yellow
+      dashboard: health-elasticsearch?var-cluster=opensearch-logs
+    annotations:
+      description: 'Opensearch cluster *opensearch-logs* in `{{ $labels.region }}` is YELLOW. Please check all nodes.'
+      summary: '*opensearch-logs* cluster in `{{ $labels.region }}` is YELLOW'
+
   - alert: OpensearchLogsClusterRed
-    expr: opensearch_cluster_status{elastic_cluster="opensearch-logs",pod=~".*-master-0"} == 2
+    expr: (sum by (elastic_cluster) (opensearch_cluster_status{elastic_cluster="opensearch-logs"})) / count by (elastic_cluster) (opensearch_cluster_status{elastic_cluster="opensearch-logs"}) == 2
     for: 30m
     labels:
       context: nodes
