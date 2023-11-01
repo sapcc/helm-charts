@@ -55,7 +55,7 @@ spec:
         topology.kubernetes.io/zone: {{ $az_long }}
         kubernetes.cloud.sap/apod: {{ $apod }}
       hostname: archer-agent-{{ $name }}-{{ $az_long }}
-      containers:
+      initContainers:
         - name: wait-for-server
           image: "{{ .Values.global.registry }}/kubernetes-entrypoint:{{ .Values.image.kubernetes_entrypoint_version }}"
           env:
@@ -65,6 +65,7 @@ spec:
               value: {{ include "archer.fullname" . }}
             - name: COMMAND
               value: "true"
+      containers:
         - name: archer-agent-ni
           securityContext:
             privileged: true

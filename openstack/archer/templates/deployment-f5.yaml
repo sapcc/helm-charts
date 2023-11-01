@@ -26,7 +26,7 @@ spec:
         app.kubernetes.io/component: agent
         cloud.sap/host: {{ $host }}
     spec:
-      containers:
+      initContainers:
         - name: wait-for-server
           image: "{{ .Values.global.registry }}/kubernetes-entrypoint:{{ .Values.image.kubernetes_entrypoint_version }}"
           env:
@@ -36,6 +36,7 @@ spec:
               value: {{ include "archer.fullname" . }}
             - name: COMMAND
               value: "true"
+      containers:
         - name: {{ $.Chart.Name }}-agent-f5
           securityContext:
           {{- toYaml $.Values.securityContext | nindent 12 }}
