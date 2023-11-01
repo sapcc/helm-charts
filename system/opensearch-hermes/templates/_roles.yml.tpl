@@ -100,6 +100,7 @@ audit:
     - "indices:admin/template/put"
     - "indices:admin/mappings/get"
     - "indices:admin/mapping/put"
+    - "indices:admin/refresh"
     - "indices:admin/delete"
     - "indices:admin/create"
     - "indices:data/write/bulk*"
