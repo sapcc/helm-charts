@@ -100,7 +100,7 @@ port_selectors = {{ $subgroup.port_selectors | join "," }}
 {{- if and (empty $subgroup.infra_pc_policy_group) (eq (len $subgroup.bindings) 1) }}
 infra_pc_policy_group = {{ (split "/" (index $subgroup.bindings 0))._3 }}
 {{ else }}
-infra_pc_policy_group = {{ $subgroup.infra_pc_policy_group }}
+infra_pc_policy_group = {{ required "If more than one direct binding is supplied, the field infra_pc_policy_group is mandatory" $subgroup.infra_pc_policy_group }}
 {{ end -}}
 {{- if or $aci_hostgroup.baremetal_pc_policy_group $subgroup.baremetal_pc_policy_group -}}
 baremetal_pc_policy_group = {{ default $aci_hostgroup.baremetal_pc_policy_group $subgroup.baremetal_pc_policy_group }}
