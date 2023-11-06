@@ -1,6 +1,6 @@
 # Secret will be used to sign session cookies, CSRF tokens and for other encryption utilities.
 # It is highly recommended to change this value before running cerebro in production.
-secret="{{.Values.manager.manager_secret}}"
+secret="{{.Values.manager_secret}}"
 
 # Application base path
 basePath = "/"
