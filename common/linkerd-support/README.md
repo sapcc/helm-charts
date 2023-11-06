@@ -56,6 +56,14 @@ metadata:
     {{- end }}
 ```
 
+or use the snippet
+
+```yaml
+metadata:
+  annotations:
+    {{- include "linkerd-support.snippets.pod_and_service_annotation" . | indent 4 }}
+```
+
 Use exactly this conditional statement around each such annotation.
 
 ### Simplified option: This Helm release is the only one in its namespace
@@ -88,6 +96,17 @@ metadata:
     ingress.kubernetes.io/service-upstream: "true"
     nginx.ingress.kubernetes.io/service-upstream: "true"
     {{- end }}
+```
+
+or use the snippet
+
+```yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+
+metadata:
+  annotations:
+    {{- include "linkerd-support.snippets.ingress_annotation" . | indent 4 }}
 ```
 
 Use exactly this conditional statement around each such annotation.
