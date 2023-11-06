@@ -42,7 +42,7 @@ hosts = [
 auth = {
   type: ldap
   settings: {
-    url = "ldaps://{{.Values.global.ldap.host}}:{{.Values.ldap.port}}"
+    url = "ldaps://{{.Values.global.ldap.host}}:{{.Values.global.ldap.port}}"
     method = "simple"
     base-dn = "{{.Values.global.ldap.search_base_dbs}},{{.Values.global.ldap.suffix}}"
     bind-dn = "{{.Values.global.ldap.bind_dn}},{{.Values.global.ldap.suffix}}"
