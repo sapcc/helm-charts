@@ -9,24 +9,24 @@ _meta:
 # Define your internal users here
 
 audit:
-  hash: "{{ .Values.users.audit.hash }}"
+  hash: "{{ .Values.global.users.audit.hash }}"
   reserved: true
   backend_roles:
   - "audit"
 
 promuser:
-  hash: "{{ .Values.users.promuser.hash }}"
+  hash: "{{ .Values.global.users.promuser.hash }}"
   reserved: true
   backend_roles:
   - "promuser"
 
 admin:
-  hash: "{{ .Values.users.admin.hash }}"
+  hash: "{{ .Values.global.users.admin.hash }}"
   reserved: true
   backend_roles:
   - "adminrole"
 
 kibanaserver:
-  hash: "{{ .Values.users.kibanaserver.hash }}"
+  hash: "{{ .Values.global.users.kibanaserver.hash }}"
   reserved: true
   description: "Demo OpenSearch Dashboards user"
