@@ -33,10 +33,17 @@ spec:
         - name: es-etc
           configMap:
             name: opensearch-hermes-manager-configmap
+{{- if .Values.global.truststore.enabled}}
+        - name: truststore
+          secret:
+            defaultMode: 420
+            secretName: truststore
+{{ else }}
         - name: opensearch-certs
           secret:
             defaultMode: 420
             secretName: certs
+{{- end }}
       containers:
       - name: es-manager
         image: {{.Values.global.dockerHubMirror}}/lmenezes/cerebro:{{.Values.image_version}}
