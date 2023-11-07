@@ -6,7 +6,7 @@ The limit is 63 chars as per RFC 1035, but we truncate to 48 chars to leave
 some space for the name suffixes on replicasets and pods.
 */}}
 {{- define "fullname" -}}
-  {{- printf "%s-%s" .Release.Name .Chart.Name | trunc 48 | replace "_" "-" -}}
+  {{- printf "%s-postgresql" .Release.Name | trunc 48 | replace "_" "-" -}}
 {{- end -}}
 
 {{/* Generate the service label for the templated Prometheus alerts. */}}
