@@ -26,6 +26,7 @@ spec:
         alert-service: nova
         hypervisor: "kvm"
       annotations:
+        {{- include "utils.linkerd.pod_and_service_annotation" . | indent 8 }}
         configmap-etc-hash: {{ include (print .Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
         configmap-ironic-etc-hash: {{ tuple . $hypervisor | include "kvm_configmap" | sha256sum }}
     spec:
