@@ -26,9 +26,9 @@ groups:
     - alert: ThanosStoreSeriesGateLatencyHigh
       expr: |
         (
-          histogram_quantile(0.99, sum by (thanos, le) (rate(thanos_bucket_store_series_gate_duration_seconds_bucket{job=~".*thanos.*store.*", thanos="{{ include "thanos.name" . }}"}[5m]))) > 2
+          histogram_quantile(0.99, sum by (thanos, le) (rate(thanos_bucket_store_series_gate_queries_duration_seconds_bucket{job=~".*thanos.*store.*", thanos="{{ include "thanos.name" . }}"}[5m]))) > 2
         and
-          sum by (thanos) (rate(thanos_bucket_store_series_gate_duration_seconds_bucket{job=~".*thanos.*store.*", thanos="{{ include "thanos.name" . }}"}[5m])) > 0
+          sum by (thanos) (rate(thanos_bucket_store_series_gate_queries_duration_seconds_bucket{job=~".*thanos.*store.*", thanos="{{ include "thanos.name" . }}"}[5m])) > 0
         )
       for: 10m
       labels:
