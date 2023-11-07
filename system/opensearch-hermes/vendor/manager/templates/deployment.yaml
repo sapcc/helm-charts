@@ -65,8 +65,13 @@ spec:
         volumeMounts:
           - mountPath: /es-etc
             name: es-etc
+{{- if .Values.global.truststore.enabled}}
+          - mountPath: /truststore/truststore
+            name: truststore
+{{ else }}
           - mountPath: /opt/certs
             name: opensearch-certs
+{{- end }}
         ports:
           - name: manager
             containerPort: {{.Values.port_internal}}
