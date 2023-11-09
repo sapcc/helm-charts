@@ -16,10 +16,6 @@ spec:
         app: {{ template "fullname" . }}
         component: "{{ .Values.postgresDatabase }}"
         type: database
-        {{- if .Values.alerts.enabled }}
-        alert-tier: {{ required ".Values.alerts.tier missing" .Values.alerts.tier }}
-        alert-service: {{ include "alerts.service" . }}
-        {{- end }}
       annotations:
         kubectl.kubernetes.io/default-container: postgres
         checksum/secrets: {{ include (print $.Template.BasePath  "/secrets.yaml") . | sha256sum }}
@@ -45,13 +41,13 @@ spec:
         args: ["-c", "config_file=/postgresql-conf/postgresql.conf"]
         env:
         - name: DEBUG
-          value: {{ .Values.debug | required "missing value for .debug" | quote }}
+          value: {{ .Values.debug | quote }}
         - name: PGVERSION
-          value: {{ .Values.postgresVersion | required "missing value for .postgresVersion" | quote }}
+          value: {{ .Values.postgresVersion | quote }}
         - name: PGDATABASE
-          value: {{ .Values.postgresDatabase | required "missing value for .postgresDatabase" | quote }}
+          value: {{ .Values.postgresDatabase | quote }}
         - name: PGUSER
-          value: {{ .Values.postgresUser | required "missing value for .postgresUser" | quote }}
+          value: {{ .Values.postgresUser | quote }}
         - name: PGPASSWORD
           valueFrom:
             secretKeyRef:
@@ -92,25 +88,24 @@ spec:
             - /tmp/init-done
           initialDelaySeconds: 5
           timeoutSeconds: {{ .Values.probe_timeout_secs }}
-        resources:
-{{ toYaml (required "missing .resources" .Values.resources) | indent 10 }}
+        resources: {{ toYaml .Values.resources | nindent 10 }}
         volumeMounts:
         - name: data
           mountPath: /data
         - name: postgres-etc
           mountPath: /postgresql-conf
-{{- if .Values.dbInit }}
+        {{- if .Values.dbInit }}
         - name: db-init
           mountPath: /initdb.d
-{{- end }}
-{{- if .Values.dbMaintain }}
+        {{- end }}
+        {{- if .Values.dbMaintain }}
         - name: db-maintain
           mountPath: /maintaindb.d
-{{- end }}
-{{- if .Values.sharedMemoryLimit }}
+        {{- end }}
+        {{- if .Values.sharedMemoryLimit }}
         - name: dev-shm
           mountPath: /dev/shm
-{{- end }}
+        {{- end }}
       volumes:
       - name: postgres-etc
         configMap:
@@ -122,19 +117,19 @@ spec:
       {{- else }}
         emptyDir: {}
       {{- end }}
-{{- if .Values.dbInit }}
+      {{- if .Values.dbInit }}
       - name: db-init
         configMap:
           name: {{ .Values.dbInit }}
-{{- end }}
-{{- if .Values.dbMaintain }}
+      {{- end }}
+      {{- if .Values.dbMaintain }}
       - name: db-maintain
         configMap:
           name: {{ .Values.dbMaintain }}
-{{- end }}
-{{- if .Values.sharedMemoryLimit }}
+      {{- end }}
+      {{- if .Values.sharedMemoryLimit }}
       - name: dev-shm
         emptyDir:
           medium: Memory
           sizeLimit: {{ .Values.sharedMemoryLimit }}
-{{- end }}
+      {{- end }}
