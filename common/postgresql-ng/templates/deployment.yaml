@@ -84,6 +84,14 @@ spec:
             - exec pg_isready --host $POD_IP
           initialDelaySeconds: 5
           timeoutSeconds: {{ .Values.probe_timeout_secs }}
+        startupProbe:
+          exec:
+            command:
+            - test
+            - -f
+            - /tmp/init-done
+          initialDelaySeconds: 5
+          timeoutSeconds: {{ .Values.probe_timeout_secs }}
         resources:
 {{ toYaml (required "missing .resources" .Values.resources) | indent 10 }}
         volumeMounts:
