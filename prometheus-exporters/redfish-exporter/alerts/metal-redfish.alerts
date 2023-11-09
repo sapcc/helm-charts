@@ -15,3 +15,17 @@ groups:
     annotations:
       description: "Server {{ $labels.server_name }} hardware error. Type: {{ $labels.type }} / Name: {{ $labels.exported_name }} /  Serial: {{ $labels.serial }}"
       summary: "Hardware error for server: {{ $labels.server_name }}"
+  - alert: MetalRedfishDownWarning
+    expr: count (max_over_time(redfish_up[24h]) == 0) by (host, instance, manufacturer)
+    for: 10m
+    labels:
+      severity: warning
+      tier: metal
+      service: baremetal
+      support_group: compute
+      context: "{{ $labels.server_name }}"
+      meta: "Server {{ $labels.server_name }} remote board connectivity error. Type: {{ $labels.type }} Name: {{ $labels.exported_name }} /  Serial: {{ $labels.serial }}"
+      playbook: docs/devops/alert/baremetal/vpod
+    annotations:
+      description: "Server {{ $labels.server_name }} remote board connectivity error. Type: {{ $labels.type }} / Name: {{ $labels.exported_name }} /  Serial: {{ $labels.serial }}"
+      summary: "Remote board connectivity error for server: {{ $labels.server_name }}"
