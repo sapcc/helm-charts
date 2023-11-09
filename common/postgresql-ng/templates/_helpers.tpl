@@ -1,5 +1,9 @@
 {{/* vim: set filetype=gotpl: */}}
 
+{{- if .Values.postgresDatabase "postgres" }}
+  {{- fail "postgresDatabase cannot be set to postgres because that is the name of an internal database!" }}
+{{- end }}
+
 {{/*
 Create a default fully qualified app name.
 The limit is 63 chars as per RFC 1035, but we truncate to 48 chars to leave
