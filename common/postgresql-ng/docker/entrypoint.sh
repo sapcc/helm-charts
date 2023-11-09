@@ -97,8 +97,8 @@ fi
 # check for older postgres databases and upgrade from them if possible
 found_current_db=false
 for data in $(find /var/lib/postgresql/ -mindepth 1 -maxdepth 1 | sort --version-sort); do
-  # double postgresql
-  if [[ $data != /var/lib/postgresql && $found_current_db == true ]]; then
+  # we found a newer postgres version than the user wants to start
+  if [[ $found_current_db == true ]]; then
     echo "Found a newer postgres database than being run. This is not supported and not a valid way to rollback"
     echo "Please restore a backup instead"
     exit 1
