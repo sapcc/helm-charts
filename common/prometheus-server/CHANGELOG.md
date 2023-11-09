@@ -1,3 +1,15 @@
+## 7.4.2 
+
+* playbook link adjusted
+
+## 7.4.1
+
+* switch Ingress nginx-annotation
+
+## 7.4.0
+
+* updating Prometheus to v2.46.0
+
 ## 7.3.0
 
 * Swift container userName and containerName now can be set explicitly
