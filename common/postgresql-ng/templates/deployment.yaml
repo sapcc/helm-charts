@@ -41,13 +41,13 @@ spec:
         args: ["-c", "config_file=/postgresql-conf/postgresql.conf"]
         env:
         - name: DEBUG
-          value: {{ .Values.debug | required "missing value for .debug" | quote }}
+          value: {{ .Values.debug | quote }}
         - name: PGVERSION
-          value: {{ .Values.postgresVersion | required "missing value for .postgresVersion" | quote }}
+          value: {{ .Values.postgresVersion | quote }}
         - name: PGDATABASE
-          value: {{ .Values.postgresDatabase | required "missing value for .postgresDatabase" | quote }}
+          value: {{ .Values.postgresDatabase | quote }}
         - name: PGUSER
-          value: {{ .Values.postgresUser | required "missing value for .postgresUser" | quote }}
+          value: {{ .Values.postgresUser | quote }}
         - name: PGPASSWORD
           valueFrom:
             secretKeyRef:
@@ -89,7 +89,7 @@ spec:
           initialDelaySeconds: 5
           timeoutSeconds: {{ .Values.probe_timeout_secs }}
         resources:
-{{ toYaml (required "missing .resources" .Values.resources) | indent 10 }}
+{{ toYaml .Values.resources | indent 10 }}
         volumeMounts:
         - name: data
           mountPath: /data
