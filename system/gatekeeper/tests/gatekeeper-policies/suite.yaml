@@ -270,6 +270,30 @@ tests:
     assertions:
     - violations: no
 
+- name: ingress-annotations-migration
+  template: ../rendered-chart/gatekeeper/templates/constrainttemplate-ingress-annotations-migration.yaml
+  constraint: ../rendered-chart/gatekeeper-config/templates/constraint-ingress-annotations-migration.yaml
+  cases:
+  - name: fail-mismatch
+    object: fixtures/ingress-annotations-migration/fail-mismatch.yaml
+    assertions:
+    - violations: 1
+      message: '^\{"support_group":"foo-group","service":"dummy"\} >> has not correctly migrated ingress.kubernetes.io/proxy-request-buffering annotation \(value in old annotation is "off", value in new annotation is "on"\)$'
+  - name: fail-new-missing
+    object: fixtures/ingress-annotations-migration/fail-new-missing.yaml
+    assertions:
+    - violations: 1
+      message: '^\{"support_group":"foo-group","service":"dummy"\} >> has not correctly migrated ingress.kubernetes.io/proxy-request-buffering annotation \(value in old annotation is "off", value in new annotation is "<unset>"\)$'
+  - name: fail-old-missing
+    object: fixtures/ingress-annotations-migration/fail-old-missing.yaml
+    assertions:
+    - violations: 1
+      message: '^\{"support_group":"foo-group","service":"dummy"\} >> has deleted ingress.kubernetes.io/proxy-request-buffering annotation too early \(ingress-nginx is still using the old prefix right now\)'
+  - name: pass
+    object: fixtures/ingress-annotations-migration/pass.yaml
+    assertions:
+    - violations: no
+
 - name: ingress-annotations-wrong-prefix
   template: ../rendered-chart/gatekeeper/templates/constrainttemplate-ingress-annotations.yaml
   constraint: ../rendered-chart/gatekeeper-config/templates/constraint-ingress-annotations-wrong-prefix.yaml
@@ -403,6 +427,10 @@ tests:
     - violations: no
   - name: pod-security-accept-elasticsearch-hermes
     object: fixtures/pod-security/elasticsearch-hermes.yaml
+    assertions:
+    - violations: no
+  - name: pod-security-accept-opensearch-hermes
+    object: fixtures/pod-security/opensearch-hermes.yaml
     assertions:
     - violations: no
   - name: pod-security-accept-elastiflow-data

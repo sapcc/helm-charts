@@ -46,21 +46,6 @@ groups:
       description: Global Prometheus cannot federate from Prometheus Frontend in region {{ $labels.region }}. Alerting and dashboards are unavailable. This could mean the region {{ $labels.region }} is partly down!
       summary: Prometheus Frontend federation is down
 
-  - alert: KubernetesControlplanePrometheusFederationCollectorDown
-    expr: absent(up{job="prometheus-collector-federation"}) or up{job="prometheus-collector-federation"} == 0
-    for: 15m
-    labels:
-      context: availability
-      dashboard: kubernetes-prometheus?var-instance=frontend
-      meta: Prometheus frontend can't federate data from the collector
-      service: metrics
-      severity: warning
-      support_group: observability
-      playbook: docs/support/playbook/prometheus/federation
-    annotations:
-      description: Prometheus Frontend can't federate data from the collector. Data will be stale
-      summary: Prometheus frontend-collector federation is down
-
   - alert: KubernetesScaleoutPrometheusFederationDown
     expr: count by(cluster) (up{job="scaleout-federation"}) unless count by(cluster) (up{job="prometheus-kubernetes", cluster_type="scaleout"})
     for: 15m

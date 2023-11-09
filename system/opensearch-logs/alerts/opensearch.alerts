@@ -1,0 +1,64 @@
+groups:
+- name: opensearch-logs.alerts
+  rules:
+  - alert: OpensearchLogsClusterLowDiskSpace
+    expr:  (100 / (count by (elastic_cluster) (opensearch_fs_path_available_bytes{node=~".*data.*",elastic_cluster="opensearch-logs"}))) * (count by (elastic_cluster) (opensearch_fs_path_available_bytes{node=~".*data.*",elastic_cluster="opensearch-logs"} * 100 /  opensearch_fs_path_total_bytes{node=~".*data.*",elastic_cluster="opensearch-logs"} < 20)) > 60
+    for: 60m
+    labels:
+      context: diskspace
+      service: opensearch-logs
+      severity: warning
+      tier: os
+      support_group: observability
+      playbook: docs/operation/elastic_kibana_issues/generic/elasticlowdiskspace-alert
+      dashboard: health-elasticsearch?var-cluster=opensearch-logs
+    annotations:
+      description: 'Opensearch-logs cluster 60 % of all data nodes are more than 80 % full.
+                   Please consider cleaning up Opensearch-logs or lower the retention period for the logs.'
+      summary: '*opensearch-logs cluster* is low on disk space'
+
+  - alert: OpensearchLogsClusterOutOfDiskSpace
+    expr: (100 / (count by (elastic_cluster) (opensearch_fs_path_available_bytes{node=~".*data.*",elastic_cluster="opensearch-logs"}))) * (count by (elastic_cluster) (opensearch_fs_path_available_bytes{node=~".*data.*",elastic_cluster="opensearch-logs"} * 100 /  opensearch_fs_path_total_bytes{node=~".*data.*",elastic_cluster="opensearch-logs"} < 20)) > 80
+    for: 60m
+    labels:
+      context: diskspace
+      service: opensearch-logs
+      support_group: observability
+      severity: critical
+      tier: os
+      playbook: docs/operation/elastic_kibana_issues/generic/elasticlowdiskspace-alert
+      dashboard: health-elasticsearch?var-cluster=opensearch-logs
+    annotations:
+      description: 'opensearch-logs cluster 80 % of all data nodes are more than 80 % full.
+                   Please consider cleaning up opensearch-logs or lower the retention period for the logs.'
+      summary: '*opensearch-logs cluster* in is out of disk space'
+
+  - alert: OpensearchLogsClusterYellow
+    expr: (sum by (elastic_cluster) (opensearch_cluster_status{elastic_cluster="opensearch-logs"})) / count by (elastic_cluster) (opensearch_cluster_status{elastic_cluster="opensearch-logs"}) == 1
+    for: 30m
+    labels:
+      context: nodes
+      service: opensearch-logs
+      severity: critical
+      support_group: observability
+      tier: os
+      playbook: docs/operation/elastic_kibana_issues/generic/cluster-yellow
+      dashboard: health-elasticsearch?var-cluster=opensearch-logs
+    annotations:
+      description: 'Opensearch cluster *opensearch-logs* in `{{ $labels.region }}` is YELLOW. Please check all nodes.'
+      summary: '*opensearch-logs* cluster in `{{ $labels.region }}` is YELLOW'
+
+  - alert: OpensearchLogsClusterRed
+    expr: (sum by (elastic_cluster) (opensearch_cluster_status{elastic_cluster="opensearch-logs"})) / count by (elastic_cluster) (opensearch_cluster_status{elastic_cluster="opensearch-logs"}) == 2
+    for: 30m
+    labels:
+      context: nodes
+      service: opensearch-logs
+      severity: critical
+      support_group: observability
+      tier: os
+      playbook: docs/operation/elastic_kibana_issues/generic/cluster-red
+      dashboard: health-elasticsearch?var-cluster=opensearch-logs
+    annotations:
+      description: 'Opensearch cluster *opensearch-logs* in `{{ $labels.region }}` is RED. Please check all nodes.'
+      summary: '*opensearch-logs* cluster in `{{ $labels.region }}` is RED'

@@ -1,0 +1,81 @@
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: opensearch-hermes-manager
+  namespace: hermes
+  labels:
+    system: opensearch-hermes
+    service: audit
+    component: opensearch-hermes-manager
+    role: manager
+
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      component: opensearch-hermes-manager
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        component: opensearch-hermes-manager
+        role: manager
+      annotations:
+        checksum/application.conf.tpl: {{ include  (print $.Template.BasePath "/_application.conf.tpl") . | sha256sum }}
+    spec:
+      nodeSelector:
+        zone: farm
+      volumes:
+        - name: es-etc
+          configMap:
+            name: opensearch-hermes-manager-configmap
+{{- if .Values.global.truststore.enabled}}
+        - name: truststore
+          secret:
+            defaultMode: 420
+            secretName: truststore
+{{ else }}
+        - name: opensearch-certs
+          secret:
+            defaultMode: 420
+            secretName: certs
+{{- end }}
+      containers:
+      - name: es-manager
+        image: {{.Values.global.dockerHubMirror}}/lmenezes/cerebro:{{.Values.image_version}}
+        imagePullPolicy: IfNotPresent
+        command:
+          - /opt/cerebro/bin/cerebro
+        args:
+          - -Dconfig.file=/es-etc/elasticsearch-application.conf
+          - -Dlogback.configurationFile=/es-etc/logback.xml
+          - -Dlogger.file=/es-etc/logback.xml
+          - -Dcom.sun.jndi.ldap.object.disableEndpointIdentification=true
+          - -Des.networkaddress.cache.ttl=20
+          - -Des.networkaddress.cache.negative.ttl=10
+{{- if .Values.global.truststore.enabled}}
+          - -Djavax.net.ssl.trustStore=/truststore/truststore
+          - -Djavax.net.ssl.trustStorePassword={{.Values.global.truststore.cert_pw }}
+{{- end }}
+        env:
+          - name: NAMESPACE
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.namespace
+        volumeMounts:
+          - mountPath: /es-etc
+            name: es-etc
+{{- if .Values.global.truststore.enabled}}
+          - mountPath: /truststore
+            name: truststore
+{{ else }}
+          - mountPath: /opt/certs
+            name: opensearch-certs
+{{- end }}
+        ports:
+          - name: manager
+            containerPort: {{.Values.port_internal}}

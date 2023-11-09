@@ -1,3 +1,7 @@
+## 1.5.1
+
+* prepare switch of ingress annotation prefix
+
 ## 1.5.0
 
 * update pushgateway to 1.4.2

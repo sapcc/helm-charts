@@ -2,11 +2,6 @@ kind: Deployment
 apiVersion: apps/v1
 metadata:
   name: {{ template "fullname" . }}
-  labels:
-    app: {{ template "fullname" . }}
-    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
-    release: "{{ .Release.Name }}"
-    heritage: "{{ .Release.Service }}"
 spec:
   replicas: 1
   revisionHistoryLimit: 3
@@ -21,10 +16,6 @@ spec:
         app: {{ template "fullname" . }}
         component: "{{ .Values.postgresDatabase }}"
         type: database
-        {{- if .Values.alerts.enabled }}
-        alert-tier: {{ required ".Values.alerts.tier missing" .Values.alerts.tier }}
-        alert-service: {{ include "alerts.service" . }}
-        {{- end }}
       annotations:
         kubectl.kubernetes.io/default-container: postgres
         checksum/secrets: {{ include (print $.Template.BasePath  "/secrets.yaml") . | sha256sum }}
@@ -45,21 +36,19 @@ spec:
                 - operational
       containers:
       - name: postgres
-        image: "{{ include "preferredRegistry" . }}/postgres:{{ .Values.imageTag }}"
+        image: "{{ include "preferredRegistry" . }}/postgres-ng:{{ .Values.imageTag }}"
         imagePullPolicy: "IfNotPresent"
-{{- if .Values.debug }}
-        command: ["sleep", "inf"]
-{{- else }}
         args: ["-c", "config_file=/postgresql-conf/postgresql.conf"]
-{{- end }}
         env:
+        - name: DEBUG
+          value: {{ .Values.debug | quote }}
         - name: PGVERSION
-          value: {{ default "postgres" .Value.postgresVersion| quote }}
+          value: {{ .Values.postgresVersion | quote }}
         - name: PGDATABASE
-          value: {{ default "postgres" .Value.postgresDatabase | quote }}
+          value: {{ .Values.postgresDatabase | quote }}
         - name: PGUSER
-          value: {{ default "postgres" .Values.postgresUser | quote }}
-        - name: POSTGRES_PASSWORD
+          value: {{ .Values.postgresUser | quote }}
+        - name: PGPASSWORD
           valueFrom:
             secretKeyRef:
               name: {{ template "fullname" . }}
@@ -91,25 +80,32 @@ spec:
             - exec pg_isready --host $POD_IP
           initialDelaySeconds: 5
           timeoutSeconds: {{ .Values.probe_timeout_secs }}
-        resources:
-{{ toYaml (required "missing .resources" .Values.resources) | indent 10 }}
+        startupProbe:
+          exec:
+            command:
+            - test
+            - -f
+            - /tmp/init-done
+          initialDelaySeconds: 5
+          timeoutSeconds: {{ .Values.probe_timeout_secs }}
+        resources: {{ toYaml .Values.resources | nindent 10 }}
         volumeMounts:
         - name: data
           mountPath: /data
         - name: postgres-etc
           mountPath: /postgresql-conf
-{{- if .Values.dbInit }}
+        {{- if .Values.dbInit }}
         - name: db-init
           mountPath: /initdb.d
-{{- end }}
-{{- if .Values.dbMaintain }}
+        {{- end }}
+        {{- if .Values.dbMaintain }}
         - name: db-maintain
           mountPath: /maintaindb.d
-{{- end }}
-{{- if .Values.sharedMemoryLimit }}
+        {{- end }}
+        {{- if .Values.sharedMemoryLimit }}
         - name: dev-shm
           mountPath: /dev/shm
-{{- end }}
+        {{- end }}
       volumes:
       - name: postgres-etc
         configMap:
@@ -121,19 +117,19 @@ spec:
       {{- else }}
         emptyDir: {}
       {{- end }}
-{{- if .Values.dbInit }}
+      {{- if .Values.dbInit }}
       - name: db-init
         configMap:
           name: {{ .Values.dbInit }}
-{{- end }}
-{{- if .Values.dbMaintain }}
+      {{- end }}
+      {{- if .Values.dbMaintain }}
       - name: db-maintain
         configMap:
           name: {{ .Values.dbMaintain }}
-{{- end }}
-{{- if .Values.sharedMemoryLimit }}
+      {{- end }}
+      {{- if .Values.sharedMemoryLimit }}
       - name: dev-shm
         emptyDir:
           medium: Memory
           sizeLimit: {{ .Values.sharedMemoryLimit }}
-{{- end }}
+      {{- end }}

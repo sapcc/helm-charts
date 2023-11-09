@@ -37,6 +37,7 @@ COPY ./entrypoint.sh /usr/local/bin/
 
 ENV LANG en_US.utf8
 
+ARG BININFO_BUILD_DATE BININFO_COMMIT_HASH BININFO_VERSION
 LABEL source_repository="https://github.com/sapcc/helm-charts/blob/master/common/postgresql-ng/docker/Dockerfile" \
   org.opencontainers.image.url="https://github.com/sapcc/helm-charts/blob/master/common/postgresql-ng/docker/Dockerfile" \
   org.opencontainers.image.created=${BININFO_BUILD_DATE} \

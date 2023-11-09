@@ -1,6 +1,8 @@
 # If enabled, image references use `.Values.registryAlternateRegion` instead of `.Values.registry`.
 useAlternateRegion: false
 
+debug: false
+
 extensions:
   pg_stat_statements:
     max: 1000
@@ -17,7 +19,7 @@ postgresUser: postgres
 # Required: random 10 character string
 # postgresPassword:
 # The name of the database to create
-postgresDatabase: postgres
+postgresDatabase: acme-db
 
 # custom db-init.sql
 # dbInit: name of a configmap that provides the db-init.sql script
@@ -39,8 +41,8 @@ config:
 
 # Persist data to a persitent volume
 persistence:
-  enabled: false
-  accessMode: ReadWriteMany
+  enabled: true
+  accessMode: ReadWriteOnce
   size: 10Gi
   # Re-use existing (unmanged) PVC
   # existingClaim: claimName
@@ -55,18 +57,3 @@ probe_failure_threshold: 6 # number of liveness probes that need to fail to trig
 # Configure resource requests and limits
 # ref: http://kubernetes.io/docs/user-guide/compute-resources/
 resources: {}
-
-# Default Prometheus alerts and rules.
-alerts:
-  enabled: true
-
-  # Name of the Prometheus containing the disk usage metrics.
-  prometheus_for_disk_usage: kubernetes
-
-  # The tier label of the alerts.
-  tier: os
-  # The support group label of the alerts. Must be given in values.yaml of parent chart.
-  support_group:
-
-  # Configurable service label of the alerts. Defaults to `.Release.Name`.
-  # service:

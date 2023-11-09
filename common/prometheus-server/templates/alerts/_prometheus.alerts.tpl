@@ -111,7 +111,7 @@ groups:
       service: {{ default "metrics" $root.Values.alerts.service }}
       support_group: {{ default "observability" $root.Values.alerts.support_group }}
       severity: info
-      playbook: docs/support/playbook/prometheus/failed_tsdb_reload
+      playbook: docs/support/playbook/prometheus/prom_compaction_errors
       meta: Prometheus `{{`{{ $labels.prometheus }}`}}` has issues compacting blocks.
     annotations:
       description: |
