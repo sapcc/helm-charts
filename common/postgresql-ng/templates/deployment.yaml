@@ -88,25 +88,24 @@ spec:
             - /tmp/init-done
           initialDelaySeconds: 5
           timeoutSeconds: {{ .Values.probe_timeout_secs }}
-        resources:
-{{ toYaml .Values.resources | indent 10 }}
+        resources: {{ toYaml .Values.resources | nindent 10 }}
         volumeMounts:
         - name: data
           mountPath: /data
         - name: postgres-etc
           mountPath: /postgresql-conf
-{{- if .Values.dbInit }}
+        {{- if .Values.dbInit }}
         - name: db-init
           mountPath: /initdb.d
-{{- end }}
-{{- if .Values.dbMaintain }}
+        {{- end }}
+        {{- if .Values.dbMaintain }}
         - name: db-maintain
           mountPath: /maintaindb.d
-{{- end }}
-{{- if .Values.sharedMemoryLimit }}
+        {{- end }}
+        {{- if .Values.sharedMemoryLimit }}
         - name: dev-shm
           mountPath: /dev/shm
-{{- end }}
+        {{- end }}
       volumes:
       - name: postgres-etc
         configMap:
@@ -118,19 +117,19 @@ spec:
       {{- else }}
         emptyDir: {}
       {{- end }}
-{{- if .Values.dbInit }}
+      {{- if .Values.dbInit }}
       - name: db-init
         configMap:
           name: {{ .Values.dbInit }}
-{{- end }}
-{{- if .Values.dbMaintain }}
+      {{- end }}
+      {{- if .Values.dbMaintain }}
       - name: db-maintain
         configMap:
           name: {{ .Values.dbMaintain }}
-{{- end }}
-{{- if .Values.sharedMemoryLimit }}
+      {{- end }}
+      {{- if .Values.sharedMemoryLimit }}
       - name: dev-shm
         emptyDir:
           medium: Memory
           sizeLimit: {{ .Values.sharedMemoryLimit }}
-{{- end }}
+      {{- end }}
