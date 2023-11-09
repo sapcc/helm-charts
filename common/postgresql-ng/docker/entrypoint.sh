@@ -35,7 +35,7 @@ if [[ $(id -u) == 0 ]]; then
 
   # setup the default directories with correct permissions
   # we cannot change the owner of the volume mount point or make /var/lib a volume
-  if [[ ! -e /var/lib/postgresql || ! -e /data/postgresql ]]; then
+  if [[ ! -h /var/lib/postgresql || ! -e /data/postgresql ]]; then
     mkdir -p /data/postgresql
     rmdir /var/lib/postgresql
     ln -sr /data/postgresql /var/lib/
