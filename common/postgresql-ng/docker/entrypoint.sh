@@ -166,4 +166,4 @@ for file in /maintaindb.d/*; do
 done
 pg_ctl -D "$PGDATA" -m fast -w stop
 
-exec postgres
+exec postgres "$@"
