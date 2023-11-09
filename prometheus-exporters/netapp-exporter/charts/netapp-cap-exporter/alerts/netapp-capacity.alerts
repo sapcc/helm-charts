@@ -194,3 +194,18 @@ groups:
         annotations:
           description: 'Usage of VVol flex-volume {{$labels.volume}} on filer {{$labels.filer}} in az {{$labels.availability_zone}} is very high'
           summary: 'Flex-volume {{$labels.filer}}/{{$labels.volume}} usage larger than 8TB and 90 percent usage'
+
+      - alert: NetappVolumeInconsistentLogicalSpaceSetting
+        expr: netapp_volume_is_space_reporting_logical == 1 AND netapp_volume_is_space_enforcement_logical == 0
+        for: 5m
+        labels:
+          context: share
+          service: manila
+          severity: warning
+          tier: os
+          support_group: compute-storage-api
+          meta: netapp volume logical space reporting is enabled but logical space enforcement is disabled
+          playbook: 'docs/support/playbook/manila/netapp_volume_logical_setting'
+        annotations:
+          description: 'Netapp volume {{$labels.volume}} (Share {{$labels.share_id}}) has logical space reporting enabled but logical space enforcement disabled'
+          summary: 'Netapp volume logical space reporting is enabled but logical space enforcement is disabled'
