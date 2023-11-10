@@ -32,7 +32,7 @@
   key_name log
   reserve_data true
   <parse>
-    @type json_parser
+    @type json
   </parse>
 </filter>
 
