@@ -24,6 +24,18 @@
   </parse>
 </filter>
 
+
+
+<filter kubernetes.var.log.containers.network-generic-ssh-exporter**>
+  @type parser
+  @id ssh_json
+  key_name log
+  reserve_data true
+  <parse>
+    @type json_parser
+  </parse>
+</filter>
+
 <filter kubernetes.var.log.containers.neutron**>
   @type parser
   key_name log
