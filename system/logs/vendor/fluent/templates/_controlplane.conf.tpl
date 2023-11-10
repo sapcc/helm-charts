@@ -36,6 +36,25 @@
   </parse>
 </filter>
 
+<filter kubernetes.var.log.containers.network-generic-ssh-exporter**>
+  @type parser
+  @id ssh_grok
+  key_name msg
+  <parse>
+    @type grok
+    grok_failure_key grokstatus_ssh_exporter
+    <grok>
+      pattern %{GREEDYDATA}: %{GREEDYDATA:ssh_reason} \^%{GREEDYDATA}on %{IPORHOST:ssh_ip}\:
+    </grok>
+    <grok>
+      pattern Error parsing metric: %{GREEDYDATA:ssh_reason}\, address: %{IPORHOST:ssh_ip}
+    </grok>
+    <grok>
+      pattern %{GREEDYDATA:ssh_reason}: dial tcp %{IPORHOST:ssh_ip}
+    </grok>
+  </parse>
+</filter>
+
 <filter kubernetes.var.log.containers.neutron**>
   @type parser
   key_name log
