@@ -66,6 +66,7 @@ spec:
                 secretKeyRef:
                   name: sentry
                   key: neutron.DSN.python
+            {{- include "utils.trust_bundle.env" $ | indent 12 }}
           ports:
             - containerPort: 9090
               name: metrics
@@ -96,6 +97,7 @@ spec:
               name: neutron-etc
               subPath: logging.conf
               readOnly: true
+            {{- include "utils.trust_bundle.volume_mount" $ | indent 12 }}
       volumes:
         - name: empty-neutron-ml2
           emptyDir: {}
@@ -105,5 +107,6 @@ spec:
         - name: neutron-etc-cc-fabric
           configMap:
             name: neutron-etc-cc-fabric
+        {{- include "utils.trust_bundle.volumes" $ | indent 8 }}
 {{- end }}
 {{- end }}

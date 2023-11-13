@@ -1,3 +1,4 @@
+{{- $envAll := . }}
 {{- if .Values.agent.apod | default false }}
 {{- if .Values.global.apods | default false }}
 {{- $release_requires_sec_cap:= or (hasPrefix "ussuri" (default .Values.imageVersion .Values.imageVersionServerAPI)) (hasPrefix "yoga" (default .Values.imageVersion .Values.imageVersionServerAPI)) -}}
@@ -101,6 +102,7 @@ spec:
               value: "yes,please"
             - name: PYTHONWARNINGS
               value: "ignore:Unverified HTTPS request"
+            {{- include "utils.trust_bundle.env" $ | indent 12 }}
           readinessProbe:
             exec:
               command: ["neutron-dhcp-readiness", "-config-file", "/etc/neutron/neutron.conf"]
@@ -129,6 +131,7 @@ spec:
               readOnly: true
             - name: network-namespace
               mountPath: /var/run/netns
+            {{- include "utils.trust_bundle.volume_mount" $ | indent 12 }}
         - name: neutron-linuxbridge-agent
           image: {{$.Values.global.registry}}/loci-neutron:{{$.Values.imageVersionNetworkAgentLinuxBridge | default $.Values.imageVersionNetworkAgent | default $.Values.imageVersion | required "Please set neutron.imageVersionNetworkAgentLinuxBridge or similar"}}
           imagePullPolicy: IfNotPresent
@@ -143,6 +146,7 @@ spec:
               value: "false"
             - name: PYTHONWARNINGS
               value: "ignore:Unverified HTTPS request"
+            {{- include "utils.trust_bundle.env" $ | indent 12 }}
           readinessProbe:
             exec:
               command: ["neutron-linuxbridge-readiness", "-config-file", "/etc/neutron/neutron.conf"]
@@ -174,6 +178,7 @@ spec:
               readOnly: true
             - name: network-namespace
               mountPath: /var/run/netns
+            {{- include "utils.trust_bundle.volume_mount" $ | indent 12 }}
         - name: neutron-metadata-agent
           image: {{$.Values.global.registry}}/loci-neutron:{{$.Values.imageVersionNetworkAgentMetadata | default $.Values.imageVersionNetworkAgent | default $.Values.imageVersion | required "Please set neutron.imageVersionNetworkAgentMetadata or similar"}}
           imagePullPolicy: IfNotPresent
@@ -188,6 +193,7 @@ spec:
               value: "ignore:Unverified HTTPS request"
             - name: DEBUG_CONTAINER
               value: "false"
+            {{- include "utils.trust_bundle.env" $ | indent 12 }}
           resources:
 {{  toYaml $.Values.pod.resources.metadata_agent | indent 12 }}
           volumeMounts:
@@ -196,6 +202,7 @@ spec:
             - name: etc-neutron-metadata-agent
               mountPath: /etc/neutron
               readOnly: true
+            {{- include "utils.trust_bundle.volume_mount" $ | indent 12 }}
       volumes:
         - name: metadata-proxy
           emptyDir: {}
@@ -271,6 +278,7 @@ spec:
                   path: logging.conf
                 - key: metadata-agent.ini
                   path: metadata-agent.ini
+        {{- include "utils.trust_bundle.volumes" $ | indent 8 }}
 {{- end }}
 {{- end }}
 {{- end }}

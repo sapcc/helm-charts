@@ -63,6 +63,7 @@ template: |
             value: neutron-nsxv3-agent-{= name =}
           - name: REQUESTS_CA_BUNDLE
             value: ""
+          {{- include "utils.trust_bundle.env" . | indent 10 }}
           ports:
             - name: metrics-agent
               containerPort: 8000
@@ -78,6 +79,7 @@ template: |
           - name: etc-neutron
             mountPath: /etc/neutron
             readOnly: true
+          {{- include "utils.trust_bundle.volume_mount" . | indent 10 }}
         - name: exporter
           image: {{.Values.global.registry}}/nsx-t-exporter:{{.Values.imageVersionNSXTExporter | required "Please set neutron.imageVersionNSXTExporter"}}
           ports:
@@ -127,4 +129,5 @@ template: |
                 items:
                 - key: ml2-nsxv3.ini
                   path: plugins/ml2/ml2-nsxv3.ini
+        {{- include "utils.trust_bundle.volumes" . | indent 8 }}
 {{- end }}

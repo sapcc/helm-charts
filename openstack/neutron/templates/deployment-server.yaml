@@ -112,6 +112,7 @@ spec:
                   fieldPath: metadata.name
             - name: PYTHONWARNINGS
               value: "ignore:Unverified HTTPS request"
+            {{- include "utils.trust_bundle.env" . | indent 12 }}
           resources:
 {{- if .Values.api.uwsgi }}
 {{ toYaml .Values.pod.resources.uwsgi_server | indent 12 }}
@@ -232,6 +233,7 @@ spec:
               name: container-init
 {{- end }}
             {{- include "utils.proxysql.volume_mount" . | indent 12 }}
+            {{- include "utils.trust_bundle.volume_mount" . | indent 12 }}
             {{- include "utils.coordination.volume_mount"  . | indent 12 }}
 {{- if not .Values.api.uwsgi }}
         {{- tuple . (add .Values.api_workers .Values.rpc_workers .Values.rpc_state_workers) | include "utils.proxysql.container" | indent 8 }}
@@ -283,4 +285,5 @@ spec:
             name: neutron-bin
             defaultMode: 0755
         {{- include "utils.proxysql.volumes" . | indent 8 }}
+        {{- include "utils.trust_bundle.volumes" . | indent 8 }}
         {{- include "utils.coordination.volumes" . | indent 8 }}
