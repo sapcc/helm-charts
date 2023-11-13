@@ -14,21 +14,48 @@ spec:
           restartPolicy: Never
           containers:
           - name: "cron-availability"
-            image: "{{ required ".Values.global.registry variable missing" .Values.global.registry }}/{{ .Values.jupyterhub_cron.image.name }}:{{ .Values.jupyterhub_cron.image.tag }}"
+            image: "{{ required ".Values.global.registry variable missing" .Values.global.registry }}/{{ .Values.jupyterhub_cron.images.application.name }}:{{ .Values.jupyterhub_cron.images.application.tag }}"
             command: ["papermill", "api-availability.ipynb", "-", "-r", "swift_url", "$(swift_url)"]
+            volumeMounts:
+            - name: notebooks-git
+              mountPath: /notebooks-git
             env:
-              - name: approle_role_id
-                valueFrom:
-                  secretKeyRef:
-                    name: jupyter-cron-reports-secrets
-                    key: approle_role_id
-              - name: approle_secret_id
-                valueFrom:
-                  secretKeyRef:
-                    name: jupyter-cron-reports-secrets
-                    key: approle_secret_id
-              - name: swift_url
-                valueFrom:
-                  secretKeyRef:
-                    name: jupyter-cron-reports-secrets
-                    key: swift_url
+            - name: approle_role_id
+              valueFrom:
+                secretKeyRef:
+                  name: jupyter-cron-reports-secrets
+                  key: approle_role_id
+            - name: approle_secret_id
+              valueFrom:
+                secretKeyRef:
+                  name: jupyter-cron-reports-secrets
+                  key: approle_secret_id
+            - name: swift_url
+              valueFrom:
+                secretKeyRef:
+                  name: jupyter-cron-reports-secrets
+                  key: swift_url
+          initContainers:
+          - name: "clone-notebooks"
+            volumeMounts:
+            - name: notebooks-git
+              mountPath: /notebooks-git
+            env:
+            - name: github_token
+              valueFrom:
+                secretKeyRef:
+                  name: jupyter-cron-reports-secrets
+                  key: github_token
+            - name: github_url
+              valueFrom:
+                secretKeyRef:
+                  name: jupyter-cron-reports-secrets
+                  key: github_url
+            image: "{{ required ".Values.global.dockerRegistry variable missing" .Values.global.dockerRegistry }}/{{ .Values.jupyterhub_cron.images.init.name }}:{{ .Values.jupyterhub_cron.images.init.tag }}"
+            command: ['sh', '-c']
+            args:
+            - >
+              curl -L -k \   -H "Accept: application/vnd.github.raw+json" \   -H "Authorization: Bearer $(github_token)" \   -H "X-GitHub-Api-Version: 2022-11-28" \   "$(github_url)api-availability.ipynb" > api-availability.ipynb
+          volumes:
+          - name: notebooks-git
+            emptyDir: {}
