@@ -29,11 +29,16 @@ spec:
       annotations:
         configmap-etc-hash: {{ include (print $.Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
         configmap-bin-hash: {{ include (print $.Template.BasePath "/bin-configmap.yaml") . | sha256sum }}
+        {{- if .Values.proxysql.mode }}
+        prometheus.io/scrape: "true"
+        prometheus.io/targets: {{ required ".Values.metrics.prometheus missing" .Values.metrics.prometheus | quote }}
+        {{- end }}
     spec:
 {{- if .Values.rbac.enabled }}
       serviceAccountName: {{ .Release.Name }}
 {{- end }}
 {{ tuple . "designate" "worker" | include "kubernetes_pod_anti_affinity" | indent 6 }}
+      {{- include "utils.proxysql.pod_settings" . | indent 6 }}
       containers:
         - name: designate-worker
           image: {{ required ".Values.global.registry is missing" .Values.global.registry }}/loci-designate:{{ required ".Values.global.image_version_designate is missing" .Values.image_version_designate }}
@@ -72,6 +77,8 @@ spec:
               name: designate-etc
             - mountPath: /container.init
               name: container-init
+            {{- include "utils.proxysql.volume_mount" . | indent 12 }}
+        {{- include "utils.proxysql.container" . | indent 8 }}
       volumes:
         - name: designate-etc
           configMap:
@@ -80,4 +87,5 @@ spec:
           configMap:
             name: designate-bin
             defaultMode: 0755
+        {{- include "utils.proxysql.volumes" . | indent 8 }}
 {{- end }}

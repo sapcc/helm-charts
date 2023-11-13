@@ -36,7 +36,11 @@ spec:
             {{- end}}
           env:
             - name: OS_AUTH_URL
+{{- if .Values.global_setup }}
+              value: "http://$(KEYSTONE_GLOBAL_SERVICE_HOST):$(KEYSTONE_GLOBAL_SERVICE_PORT)/v3"
+{{- else }}
               value: "http://$(KEYSTONE_SERVICE_HOST):$(KEYSTONE_SERVICE_PORT)/v3"
+{{- end }}
           {{- range $key, $value :=  index .Values "2fa" "openstack" }}
             - name: {{ $key }}
               valueFrom: { secretKeyRef: { name: {{ $.Release.Name }}-2faproxy, key: {{ $key }} } }

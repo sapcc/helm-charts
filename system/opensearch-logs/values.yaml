@@ -138,6 +138,52 @@ opensearch_data:
     config:
       securityConfigSecret: "security-config"
 
+opensearch_ml:
+  enabled: false
+  image:
+    tag: 2.9.0
+  replicas: 2
+  nameOverride: "opensearch-logs-ml"
+  fullnameOverride: "opensearch-logs-ml"
+  nodeGroup: "ml"
+  masterService: "opensearch-logs-master"
+  podAnnotations:
+    # manual versioning, raise if secrets change
+    versioning: "3"
+  roles:
+    - ml
+  opensearchJavaOpts: "-Dlog4j2.formatMsgNoLookups=true -XX:MaxRAM=5g -XX:MaxGCPauseMillis=5000 -Xms1g -Xmx1g"
+  secretMounts:
+    - name: opensearch-certificates
+      secretName: cert-manager
+      path: /usr/share/opensearch/config/certs/
+      defaultMode: 0700
+  persistence:
+    enabled: false
+    enableInitChown: false
+    image: "library/busybox"
+  service:
+    type: LoadBalancer
+  ingress:
+    enabled: false
+  clusterName: "opensearch-logs"
+  securityConfig:
+    path: "/usr/share/opensearch/config/opensearch-security"
+    enabled: true
+    actionGroupsSecret: "security-config"
+    configSecret: "security-config"
+    internalUsersSecret: "security-config"
+    rolesSecret: "security-config"
+    rolesMappingSecret: "security-config"
+    tenantsSecret: "security-config"
+  extraEnvs:
+    - name: DISABLE_INSTALL_DEMO_CONFIG
+      value: "true"
+  plugins:
+    enabled: true
+    installList:
+      - https://github.com/aiven/prometheus-exporter-plugin-for-opensearch/releases/download/2.9.0.0/prometheus-exporter-2.9.0.0.zip
+
 opensearch_dashboards:
   enabled: false
   image:
