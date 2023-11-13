@@ -7,7 +7,7 @@
       "number_of_shards": 1,
       "number_of_replicas": 1,
       "codec": "best_compression",
-      "max_result_window": 50000,
+      "max_result_window": 20000,
       "analysis": {
         "char_filter": {
           "hyphen_char_filter": {
