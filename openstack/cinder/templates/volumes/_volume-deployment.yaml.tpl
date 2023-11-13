@@ -89,6 +89,7 @@ spec:
         {{- end }}
         {{- include "utils.coordination.volume_mount" . | indent 8 }}
         {{- include "utils.proxysql.volume_mount" . | indent 8 }}
+        {{- include "utils.trust_bundle.volume_mount" . | indent 8 }}
       {{- include "utils.proxysql.container" . | indent 6 }}
       {{- include "jaeger_agent_sidecar" . | indent 6 }}
       volumes:
@@ -108,5 +109,6 @@ spec:
       {{- end }}
       {{- include "utils.coordination.volumes" . | indent 6 }}
       {{- include "utils.proxysql.volumes" . | indent 6 }}
+      {{- include "utils.trust_bundle.volumes" . | indent 6 }}
 {{- end }}
 {{- end }}
