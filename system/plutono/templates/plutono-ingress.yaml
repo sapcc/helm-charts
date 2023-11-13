@@ -18,10 +18,14 @@ metadata:
 
 spec:
   tls:
-    - secretName: tls-{{.Values.plutono.endpoint.host.public | replace "." "-" }}
-      hosts: ["{{.Values.plutono.endpoint.host.public}}"]
+    - secretName: tls-{{ first .Values.plutono.endpoint.host.public | replace "." "-" }}
+      hosts:
+      {{- range $host := .Values.plutono.endpoint.host.public }}
+        - {{ $host }}
+      {{- end }}
   rules:
-    - host: "{{.Values.plutono.endpoint.host.public}}"
+  {{- range $host := .Values.plutono.endpoint.host.public }}
+    - host: {{ $host }}
       http:
         paths:
         - path: /
@@ -30,7 +34,8 @@ spec:
             service:
               name: plutono
               port:
-                number: {{.Values.plutono.endpoint.port.public}}
+                number: {{$.Values.plutono.endpoint.port.public}}
+  {{- end }}
 {{- if .Values.ingress.global }}
 ---
 kind: Ingress
@@ -53,10 +58,14 @@ metadata:
 
 spec:
   tls:
-    - secretName: tls-{{.Values.plutono.endpoint.host.global | replace "." "-"}}
-      hosts: ["{{.Values.plutono.endpoint.host.global}}"]
+    - secretName: tls-{{ first .Values.plutono.endpoint.host.global | replace "." "-" }}
+      hosts:
+      {{- range $host := .Values.plutono.endpoint.host.global }}
+        - {{ $host }}
+      {{- end }}
   rules:
-    - host: "{{.Values.plutono.endpoint.host.global}}"
+  {{- range $host := .Values.plutono.endpoint.host.global }}
+    - host: {{ $host }}
       http:
         paths:
         - path: /
@@ -65,6 +74,7 @@ spec:
             service:
               name: plutono
               port:
-                number: {{.Values.plutono.endpoint.port.public}}
+                number: {{$.Values.plutono.endpoint.port.public}}
+  {{- end }}
 {{- end }}
 {{- end }}
