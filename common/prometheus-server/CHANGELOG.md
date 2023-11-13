@@ -1,3 +1,7 @@
+## 7.4.4
+
+* default MultiplePodScrape-alert to false 
+
 ## 7.4.3
 
 * Thanos sidecar to v0.31.0 to match Thanos environment 
