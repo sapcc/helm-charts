@@ -47,10 +47,12 @@ spec:
                 secretKeyRef:
                   name: sentry
                   key: neutron.DSN.python
+            {{- include "utils.trust_bundle.env" . | indent 12 }}
           volumeMounts:
             - name: etc-neutron
               mountPath: /etc/neutron
               readOnly: true
+            {{- include "utils.trust_bundle.volume_mount" . | indent 12 }}
       volumes:
         - name: etc-neutron
           projected:
@@ -68,4 +70,5 @@ spec:
                 items:
                 - key: ironic_neutron_agent.ini
                   path: plugins/ml2/ironic_neutron_agent.ini
+        {{- include "utils.trust_bundle.volumes" . | indent 8 }}
 {{- end }}

@@ -77,6 +77,7 @@ spec:
                   fieldPath: metadata.name
             - name: PYTHONWARNINGS
               value: "ignore:Unverified HTTPS request"
+            {{- include "utils.trust_bundle.env" . | indent 12 }}
           resources:
 {{ toYaml .Values.pod.resources.rpc_server | indent 12 }}
           volumeMounts:
@@ -139,6 +140,7 @@ spec:
               readOnly: true
             {{- end}}
             {{- include "utils.proxysql.volume_mount" . | indent 12 }}
+            {{- include "utils.trust_bundle.volume_mount" . | indent 12 }}
             {{- include "utils.coordination.volume_mount"  . | indent 12 }}
         {{- tuple . (add .Values.rpc_workers .Values.rpc_state_workers)| include "utils.proxysql.container" | indent 8 }}
 {{- include "jaeger_agent_sidecar" . | indent 8 }}
@@ -164,5 +166,6 @@ spec:
             name: neutron-bin
             defaultMode: 0755
         {{- include "utils.proxysql.volumes" . | indent 8 }}
+        {{- include "utils.trust_bundle.volumes" . | indent 8 }}
         {{- include "utils.coordination.volumes" . | indent 8 }}
 {{- end }}

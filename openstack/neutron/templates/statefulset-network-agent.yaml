@@ -1,3 +1,4 @@
+{{- $envAll := . }}
 {{- $release_requires_sec_cap:= or (hasPrefix "ussuri" (default .Values.imageVersion .Values.imageVersionServerAPI)) (hasPrefix "yoga" (default .Values.imageVersion .Values.imageVersionServerAPI)) -}}
 {{- if and (.Values.agent.multus | default false) .Values.agent.controlplane }}
 {{- $az_count := len .Values.global.availability_zones -}}
@@ -97,6 +98,7 @@ spec:
               value: "yes,please"
             - name: PYTHONWARNINGS
               value: "ignore:Unverified HTTPS request"
+            {{- include "utils.trust_bundle.env" $ | indent 12 }}
           readinessProbe:
             exec:
               command: ["neutron-dhcp-readiness", "-config-file", "/etc/neutron/neutron.conf"]
@@ -154,6 +156,7 @@ spec:
               readOnly: false
             - name: network-namespace
               mountPath: /var/run/netns
+            {{- include "utils.trust_bundle.volume_mount" $ | indent 12 }}
 {{- if $.Values.agent.neutron_l3 | default false }}
         - name: neutron-l3-agent
           image: {{$.Values.global.registry}}/loci-neutron:{{$.Values.imageVersionNetworkAgentL3 | default $.Values.imageVersionNetworkAgent | default $.Values.imageVersion | required "Please set neutron.imageVersionNetworkAgentL3 or similar"}}
@@ -167,6 +170,7 @@ spec:
                   key: neutron.DSN.python
             - name: DEBUG_CONTAINER
               value: "false"
+            {{- include "utils.trust_bundle.env" $ | indent 12 }}
           securityContext:
             privileged: true
           volumeMounts:
@@ -209,6 +213,7 @@ spec:
               mountPath: /etc/sudoers
               subPath: sudoers
               readOnly: true
+            {{- include "utils.trust_bundle.volume_mount" $ | indent 12 }}
 {{- end }}
         - name: neutron-linuxbridge-agent
           image: {{$.Values.global.registry}}/loci-neutron:{{$.Values.imageVersionNetworkAgentLinuxBridge | default $.Values.imageVersionNetworkAgent | default $.Values.imageVersion | required "Please set neutron.imageVersionNetworkAgentLinuxBridge or similar"}}
@@ -226,6 +231,7 @@ spec:
               value: "ignore:Unverified HTTPS request"
             - name: OS_LINUX_BRIDGE__PHYSICAL_INTERFACE_MAPPINGS
               value: {{required "A valid .Values.global.cp required!" $.Values.global.cp}}:{{required "A valid .Values.cp_network_interface required!" $.Values.cp_network_interface}}
+            {{- include "utils.trust_bundle.env" $ | indent 12 }}
           readinessProbe:
             exec:
               command: ["neutron-linuxbridge-readiness", "-config-file", "/etc/neutron/neutron.conf"]
@@ -274,6 +280,7 @@ spec:
               readOnly: true
             - name: network-namespace
               mountPath: /var/run/netns
+            {{- include "utils.trust_bundle.volume_mount" $ | indent 12 }}
       volumes:
         - name: metadata-proxy
           hostPath:
@@ -292,5 +299,6 @@ spec:
         - name: host
           hostPath:
               path: "/"
+        {{- include "utils.trust_bundle.volumes" $ | indent 8 }}
 {{- end }}
 {{- end }}
