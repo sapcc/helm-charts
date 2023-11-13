@@ -37,3 +37,8 @@ qualname={{$item}}
 {{- end}}
 {{end}}
 {{- end -}}
+
+
+{{- define "migration_job_name" -}}
+{{ .Release.Name }}-migration-{{ required ".Values.image_version_designate is missing" .Values.image_version_designate }}{{ if .Values.proxysql.mode }}-proxysql{{ end }}
+{{- end }}
