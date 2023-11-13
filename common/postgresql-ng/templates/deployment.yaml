@@ -14,8 +14,6 @@ spec:
     metadata:
       labels:
         app: {{ template "fullname" . }}
-        component: "{{ .Values.postgresDatabase }}"
-        type: database
       annotations:
         kubectl.kubernetes.io/default-container: postgres
         checksum/secrets: {{ include (print $.Template.BasePath  "/secrets.yaml") . | sha256sum }}
@@ -51,7 +49,7 @@ spec:
         - name: PGPASSWORD
           valueFrom:
             secretKeyRef:
-              name: {{ template "fullname" . }}
+              name: postgres-password
               key: postgres-password
         - name: POD_IP
           valueFrom:
