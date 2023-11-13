@@ -64,6 +64,7 @@ kibana_user:
 
 ml_full_access:
   reserved: false
+  backend_roles:
   {{- range .Values.global.ldap.opensearch_dashboard_groups }}
   - {{ . | title }}
   {{- end }}
