@@ -74,6 +74,7 @@ spec:
               name: nova-etc
               subPath: vspc.conf
               readOnly: true
+            {{- include "utils.trust_bundle.volume_mount" . | indent 12 }}
         - name: log-nanny
           image: {{ required ".Values.global.dockerHubMirror: is missing" .Values.global.dockerHubMirror }}/library/busybox
           args: ['sh', '-c', 'while true; do find /var/run/serial_log_dir -mtime +30 -exec rm {} \;; sleep 1d; done']
@@ -89,3 +90,4 @@ spec:
         - name: serial-log-dir
           persistentVolumeClaim:
             claimName: {{ .Values.vspc.pvc.existingClaim | default "nova-vspc-pvclaim" }}
+        {{- include "utils.trust_bundle.volumes" . | indent 8 }}
