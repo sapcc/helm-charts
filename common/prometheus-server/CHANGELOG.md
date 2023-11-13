@@ -1,4 +1,8 @@
-## 7.4.2 
+## 7.4.3
+
+* Thanos sidecar to v0.31.0 to match Thanos environment 
+
+## 7.4.2
 
 * playbook link adjusted
 
