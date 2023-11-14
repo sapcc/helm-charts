@@ -63,7 +63,7 @@ for i in $modules;
             mv -f ./_snmp-exporter-${i}.yaml.tmp ../_snmp-exporter-${i}.yaml
         fi
  
-        if [[ "$i" =~ ^(f5mgmt|f5physical|f5customer|f5gtm)$ ]]; then
+        if [[ "$i" =~ ^(f5mgmt|f5physical|f5customer|f5gtm|f5archer)$ ]]; then
             sed -i "s/- name: /- name: snmp_f5_/g" ../_snmp-exporter-${i}.yaml
         else
             sed -i "s/- name: /- name: snmp_${i}_/g" ../_snmp-exporter-${i}.yaml
