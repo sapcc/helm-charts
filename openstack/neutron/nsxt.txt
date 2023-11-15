@@ -1,0 +1,3498 @@
+[0;33mmonsoon3, neutron-aci-agent, Deployment (apps) has changed:[0m
+  # Source: neutron/templates/deployment-aci-agent.yaml
+  kind: Deployment
+  apiVersion: apps/v1
+
+  metadata:
+    name: neutron-aci-agent
+    labels:
+      system: openstack
+      type: backend
+      component: neutron
+  spec:
+    replicas: 1
+    revisionHistoryLimit: 5
+    strategy:
+      type: RollingUpdate
+      rollingUpdate:
+        maxUnavailable: 0
+        maxSurge: 3
+    selector:
+      matchLabels:
+        name: neutron-aci-agent
+    template:
+      metadata:
+        labels:
+          name: neutron-aci-agent
+          release_name: neutron
+          application: neutron
+          component: aci-agent
+        annotations:
+          pod.beta.kubernetes.io/hostname:  aci-agent-pet
+          configmap-etc-hash: c7755af8ac2d977d623c6d53fba876fb8b752bed83fd6eaaa949a6bcc092fca2
+          configmap-etc-region-hash: 23c244f5535bade3aa14fe62de3b28c6aaa81d5b0618bf62daf095d083f28c95
+          configmap-etc-vendor-hash: eeacd547d5407700f856b4c1abf5a6a0f3b39376572a6900caa72b89069048bf
+      spec:
+        hostname:  aci-agent-pet
+        containers:
+          - name: neutron-aci-agent
+[0;31m-           image: keppel.eu-de-1.cloud.sap/ccloud/loci-neutron:yoga-20231106114334[0m
+[0;32m+           image: keppel.eu-de-1.cloud.sap/ccloud/loci-neutron:yoga-20231114115012[0m
+            imagePullPolicy: IfNotPresent
+            command:
+              - /container.init/neutron-aci-agent-start
+            livenessProbe:
+              exec:
+                command: ["neutron-agent-liveness", "--agent-type", "ACI Agent", "--config-file", "/etc/neutron/neutron.conf"]
+              initialDelaySeconds: 30
+              periodSeconds: 30
+              timeoutSeconds: 10
+            resources:
+              limits:
+                cpu: 500m
+                memory: 1Gi
+              requests:
+                cpu: 250m
+                memory: 512Mi
+            env:
+              - name: DEBUG_CONTAINER
+                value: "false"
+              - name: SENTRY_DSN
+                valueFrom:
+                  secretKeyRef:
+                    name: sentry
+                    key: neutron.DSN.python
+            volumeMounts:
+              - mountPath: /neutron-etc
+                name: neutron-etc
+              - mountPath: /neutron-etc-vendor
+                name: neutron-etc-vendor
+              - mountPath: /neutron-etc-region
+                name: neutron-etc-region
+              - mountPath: /container.init
+                name: container-init
+        volumes:
+          - name: neutron-etc
+            configMap:
+              name: neutron-etc
+          - name: neutron-etc-region
+            configMap:
+              name: neutron-etc-region
+          - name: neutron-etc-vendor
+            configMap:
+              name: neutron-etc-vendor
+          - name: container-init
+            configMap:
+              name: neutron-bin-vendor
+              defaultMode: 0755
+[0;33mmonsoon3, neutron-asr1k-agent-01, Deployment (apps) has changed:[0m
+  # Source: neutron/templates/asr_config_agents/config_agents.yaml
+  kind: Deployment
+
+  apiVersion: apps/v1
+
+  metadata:
+    name: neutron-asr1k-agent-01
+    labels:
+      system: openstack
+      type: backend
+      component: neutron
+
+  spec:
+    replicas: 1
+    revisionHistoryLimit: 5
+    strategy:
+      type: RollingUpdate
+      rollingUpdate:
+        maxUnavailable: 0
+        maxSurge: 3
+    selector:
+      matchLabels:
+        name: neutron-asr1k-agent-01
+    template:
+      metadata:
+        labels:
+          name: neutron-asr1k-agent-01
+          cloud.sap/scheduling-disabled: "false"
+          cloud.sap/decommissioning: "false"
+          release_name: neutron
+          application: neutron
+          component: asr1k-agent
+        annotations:
+          pod.beta.kubernetes.io/hostname:  asr1k-agent-01
+          prometheus.io/scrape: "true"
+          prometheus.io/targets: "openstack"
+          configmap-asr1k-agent-01: 5d8a3cee015c11cfe7327363c9d0bb38a349453e0891888eed42239f52784798
+      spec:
+        hostname:  asr1k-agent-01
+        containers:
+          - name: neutron-asr1k
+[0;31m-           image: keppel.eu-de-1.cloud.sap/ccloud/loci-neutron:yoga-20231106114334[0m
+[0;32m+           image: keppel.eu-de-1.cloud.sap/ccloud/loci-neutron:yoga-20231114115012[0m
+            imagePullPolicy: IfNotPresent
+            command:
+              - /container.init/neutron-asr1k-start
+            livenessProbe:
+              exec:
+                command: ["neutron-agent-liveness", "--agent-type", "ASR1K L3 Agent", "--config-file", "/etc/neutron/neutron.conf"]
+              initialDelaySeconds: 30
+              periodSeconds: 30
+              timeoutSeconds: 10
+            env:
+              - name: DEBUG_CONTAINER
+              
+                value: "false"
+              
+              - name: SENTRY_DSN
+                valueFrom:
+                  secretKeyRef:
+                    name: sentry
+                    key: neutron.DSN.python
+              - name: METRICS_PORT
+                value: "9103"
+            volumeMounts:
+              - mountPath: /neutron-etc
+                name: neutron-etc
+              - mountPath: /neutron-etc-vendor
+                name: neutron-etc-vendor
+              - mountPath: /neutron-etc-asr1k
+                name: neutron-etc-asr1k
+              - mountPath: /container.init
+                name: container-init
+            ports:
+              - containerPort: 9103
+                name: metrics-l3
+                protocol: TCP
+            resources:
+              limits:
+                cpu: 256m
+                memory: 256Mi
+              requests:
+                cpu: 64m
+                memory: 160Mi
+
+          - name: neutron-asr1k-ml2
+[0;31m-           image: keppel.eu-de-1.cloud.sap/ccloud/loci-neutron:yoga-20231106114334[0m
+[0;32m+           image: keppel.eu-de-1.cloud.sap/ccloud/loci-neutron:yoga-20231114115012[0m
+            imagePullPolicy: IfNotPresent
+            command:
+              - /container.init/neutron-asr1k-ml2-start
+            livenessProbe:
+              exec:
+                command: ["neutron-agent-liveness", "--agent-type", "ASR1K ML2 Agent", "--config-file", "/etc/neutron/neutron.conf"]
+              initialDelaySeconds: 30
+              periodSeconds: 30
+              timeoutSeconds: 10
+            env:
+              - name: DEBUG_CONTAINER
+              
+                value: "false"
+              
+              - name: SENTRY_DSN
+                valueFrom:
+                  secretKeyRef:
+                    name: sentry
+                    key: neutron.DSN.python
+              - name: METRICS_PORT
+                value: "9102"
+            volumeMounts:
+              - mountPath: /neutron-etc
+                name: neutron-etc
+              - mountPath: /neutron-etc-vendor
+                name: neutron-etc-vendor
+              - mountPath: /neutron-etc-asr1k
+                name: neutron-etc-asr1k
+              - mountPath: /container.init
+                name: container-init
+            ports:
+              - containerPort: 9102
+                name: metrics-l2
+                protocol: TCP
+            resources:
+              limits:
+                cpu: 128m
+                memory: 256Mi
+              requests:
+                cpu: 32m
+                memory: 160Mi
+        volumes:
+          - name: neutron-etc
+            configMap:
+              name: neutron-etc
+          - name: neutron-etc-vendor
+            configMap:
+              name: neutron-etc-vendor
+          - name: container-init
+            configMap:
+              name: neutron-bin-vendor
+              defaultMode: 0755
+          - name:  neutron-etc-asr1k
+            configMap:
+              name: neutron-etc-asr1k-agent-01
+[0;33mmonsoon3, neutron-asr1k-agent-02, Deployment (apps) has changed:[0m
+  # Source: neutron/templates/asr_config_agents/config_agents.yaml
+  kind: Deployment
+
+  apiVersion: apps/v1
+
+  metadata:
+    name: neutron-asr1k-agent-02
+    labels:
+      system: openstack
+      type: backend
+      component: neutron
+
+  spec:
+    replicas: 1
+    revisionHistoryLimit: 5
+    strategy:
+      type: RollingUpdate
+      rollingUpdate:
+        maxUnavailable: 0
+        maxSurge: 3
+    selector:
+      matchLabels:
+        name: neutron-asr1k-agent-02
+    template:
+      metadata:
+        labels:
+          name: neutron-asr1k-agent-02
+          cloud.sap/scheduling-disabled: "false"
+          cloud.sap/decommissioning: "false"
+          release_name: neutron
+          application: neutron
+          component: asr1k-agent
+        annotations:
+          pod.beta.kubernetes.io/hostname:  asr1k-agent-02
+          prometheus.io/scrape: "true"
+          prometheus.io/targets: "openstack"
+          configmap-asr1k-agent-02: 863a5a67fc52d773d79479f809815ad8e11d0d8b82b12db294f50b6977ffc6a3
+      spec:
+        hostname:  asr1k-agent-02
+        containers:
+          - name: neutron-asr1k
+[0;31m-           image: keppel.eu-de-1.cloud.sap/ccloud/loci-neutron:yoga-20231106114334[0m
+[0;32m+           image: keppel.eu-de-1.cloud.sap/ccloud/loci-neutron:yoga-20231114115012[0m
+            imagePullPolicy: IfNotPresent
+            command:
+              - /container.init/neutron-asr1k-start
+            livenessProbe:
+              exec:
+                command: ["neutron-agent-liveness", "--agent-type", "ASR1K L3 Agent", "--config-file", "/etc/neutron/neutron.conf"]
+              initialDelaySeconds: 30
+              periodSeconds: 30
+              timeoutSeconds: 10
+            env:
+              - name: DEBUG_CONTAINER
+              
+                value: "false"
+              
+              - name: SENTRY_DSN
+                valueFrom:
+                  secretKeyRef:
+                    name: sentry
+                    key: neutron.DSN.python
+              - name: METRICS_PORT
+                value: "9103"
+            volumeMounts:
+              - mountPath: /neutron-etc
+                name: neutron-etc
+              - mountPath: /neutron-etc-vendor
+                name: neutron-etc-vendor
+              - mountPath: /neutron-etc-asr1k
+                name: neutron-etc-asr1k
+              - mountPath: /container.init
+                name: container-init
+            ports:
+              - containerPort: 9103
+                name: metrics-l3
+                protocol: TCP
+            resources:
+              limits:
+                cpu: 256m
+                memory: 256Mi
+              requests:
+                cpu: 64m
+                memory: 160Mi
+
+          - name: neutron-asr1k-ml2
+[0;31m-           image: keppel.eu-de-1.cloud.sap/ccloud/loci-neutron:yoga-20231106114334[0m
+[0;32m+           image: keppel.eu-de-1.cloud.sap/ccloud/loci-neutron:yoga-20231114115012[0m
+            imagePullPolicy: IfNotPresent
+            command:
+              - /container.init/neutron-asr1k-ml2-start
+            livenessProbe:
+              exec:
+                command: ["neutron-agent-liveness", "--agent-type", "ASR1K ML2 Agent", "--config-file", "/etc/neutron/neutron.conf"]
+              initialDelaySeconds: 30
+              periodSeconds: 30
+              timeoutSeconds: 10
+            env:
+              - name: DEBUG_CONTAINER
+              
+                value: "false"
+              
+              - name: SENTRY_DSN
+                valueFrom:
+                  secretKeyRef:
+                    name: sentry
+                    key: neutron.DSN.python
+              - name: METRICS_PORT
+                value: "9102"
+            volumeMounts:
+              - mountPath: /neutron-etc
+                name: neutron-etc
+              - mountPath: /neutron-etc-vendor
+                name: neutron-etc-vendor
+              - mountPath: /neutron-etc-asr1k
+                name: neutron-etc-asr1k
+              - mountPath: /container.init
+                name: container-init
+            ports:
+              - containerPort: 9102
+                name: metrics-l2
+                protocol: TCP
+            resources:
+              limits:
+                cpu: 128m
+                memory: 256Mi
+              requests:
+                cpu: 32m
+                memory: 160Mi
+        volumes:
+          - name: neutron-etc
+            configMap:
+              name: neutron-etc
+          - name: neutron-etc-vendor
+            configMap:
+              name: neutron-etc-vendor
+          - name: container-init
+            configMap:
+              name: neutron-bin-vendor
+              defaultMode: 0755
+          - name:  neutron-etc-asr1k
+            configMap:
+              name: neutron-etc-asr1k-agent-02
+[0;33mmonsoon3, neutron-asr1k-agent-03, Deployment (apps) has changed:[0m
+  # Source: neutron/templates/asr_config_agents/config_agents.yaml
+  kind: Deployment
+
+  apiVersion: apps/v1
+
+  metadata:
+    name: neutron-asr1k-agent-03
+    labels:
+      system: openstack
+      type: backend
+      component: neutron
+
+  spec:
+    replicas: 1
+    revisionHistoryLimit: 5
+    strategy:
+      type: RollingUpdate
+      rollingUpdate:
+        maxUnavailable: 0
+        maxSurge: 3
+    selector:
+      matchLabels:
+        name: neutron-asr1k-agent-03
+    template:
+      metadata:
+        labels:
+          name: neutron-asr1k-agent-03
+          cloud.sap/scheduling-disabled: "false"
+          cloud.sap/decommissioning: "false"
+          release_name: neutron
+          application: neutron
+          component: asr1k-agent
+        annotations:
+          pod.beta.kubernetes.io/hostname:  asr1k-agent-03
+          prometheus.io/scrape: "true"
+          prometheus.io/targets: "openstack"
+          configmap-asr1k-agent-03: 9e1adb0822d632c0f1c04bb25f29e2a20e0f82efffc00ca9a2fb7432244faeba
+      spec:
+        hostname:  asr1k-agent-03
+        containers:
+          - name: neutron-asr1k
+[0;31m-           image: keppel.eu-de-1.cloud.sap/ccloud/loci-neutron:yoga-20231106114334[0m
+[0;32m+           image: keppel.eu-de-1.cloud.sap/ccloud/loci-neutron:yoga-20231114115012[0m
+            imagePullPolicy: IfNotPresent
+            command:
+              - /container.init/neutron-asr1k-start
+            livenessProbe:
+              exec:
+                command: ["neutron-agent-liveness", "--agent-type", "ASR1K L3 Agent", "--config-file", "/etc/neutron/neutron.conf"]
+              initialDelaySeconds: 30
+              periodSeconds: 30
+              timeoutSeconds: 10
+            env:
+              - name: DEBUG_CONTAINER
+              
+                value: "false"
+              
+              - name: SENTRY_DSN
+                valueFrom:
+                  secretKeyRef:
+                    name: sentry
+                    key: neutron.DSN.python
+              - name: METRICS_PORT
+                value: "9103"
+            volumeMounts:
+              - mountPath: /neutron-etc
+                name: neutron-etc
+              - mountPath: /neutron-etc-vendor
+                name: neutron-etc-vendor
+              - mountPath: /neutron-etc-asr1k
+                name: neutron-etc-asr1k
+              - mountPath: /container.init
+                name: container-init
+            ports:
+              - containerPort: 9103
+                name: metrics-l3
+                protocol: TCP
+            resources:
+              limits:
+                cpu: 256m
+                memory: 256Mi
+              requests:
+                cpu: 64m
+                memory: 160Mi
+
+          - name: neutron-asr1k-ml2
+[0;31m-           image: keppel.eu-de-1.cloud.sap/ccloud/loci-neutron:yoga-20231106114334[0m
+[0;32m+           image: keppel.eu-de-1.cloud.sap/ccloud/loci-neutron:yoga-20231114115012[0m
+            imagePullPolicy: IfNotPresent
+            command:
+              - /container.init/neutron-asr1k-ml2-start
+            livenessProbe:
+              exec:
+                command: ["neutron-agent-liveness", "--agent-type", "ASR1K ML2 Agent", "--config-file", "/etc/neutron/neutron.conf"]
+              initialDelaySeconds: 30
+              periodSeconds: 30
+              timeoutSeconds: 10
+            env:
+              - name: DEBUG_CONTAINER
+              
+                value: "false"
+              
+              - name: SENTRY_DSN
+                valueFrom:
+                  secretKeyRef:
+                    name: sentry
+                    key: neutron.DSN.python
+              - name: METRICS_PORT
+                value: "9102"
+            volumeMounts:
+              - mountPath: /neutron-etc
+                name: neutron-etc
+              - mountPath: /neutron-etc-vendor
+                name: neutron-etc-vendor
+              - mountPath: /neutron-etc-asr1k
+                name: neutron-etc-asr1k
+              - mountPath: /container.init
+                name: container-init
+            ports:
+              - containerPort: 9102
+                name: metrics-l2
+                protocol: TCP
+            resources:
+              limits:
+                cpu: 128m
+                memory: 256Mi
+              requests:
+                cpu: 32m
+                memory: 160Mi
+        volumes:
+          - name: neutron-etc
+            configMap:
+              name: neutron-etc
+          - name: neutron-etc-vendor
+            configMap:
+              name: neutron-etc-vendor
+          - name: container-init
+            configMap:
+              name: neutron-bin-vendor
+              defaultMode: 0755
+          - name:  neutron-etc-asr1k
+            configMap:
+              name: neutron-etc-asr1k-agent-03
+[0;33mmonsoon3, neutron-asr1k-agent-05, Deployment (apps) has changed:[0m
+  # Source: neutron/templates/asr_config_agents/config_agents.yaml
+  kind: Deployment
+
+  apiVersion: apps/v1
+
+  metadata:
+    name: neutron-asr1k-agent-05
+    labels:
+      system: openstack
+      type: backend
+      component: neutron
+
+  spec:
+    replicas: 1
+    revisionHistoryLimit: 5
+    strategy:
+      type: RollingUpdate
+      rollingUpdate:
+        maxUnavailable: 0
+        maxSurge: 3
+    selector:
+      matchLabels:
+        name: neutron-asr1k-agent-05
+    template:
+      metadata:
+        labels:
+          name: neutron-asr1k-agent-05
+          cloud.sap/scheduling-disabled: "false"
+          cloud.sap/decommissioning: "false"
+          release_name: neutron
+          application: neutron
+          component: asr1k-agent
+        annotations:
+          pod.beta.kubernetes.io/hostname:  asr1k-agent-05
+          prometheus.io/scrape: "true"
+          prometheus.io/targets: "openstack"
+          configmap-asr1k-agent-05: 403fe161553e320c9b01a7381279747dcabf57ebd2547c997f73838ddc730ee9
+      spec:
+        hostname:  asr1k-agent-05
+        containers:
+          - name: neutron-asr1k
+[0;31m-           image: keppel.eu-de-1.cloud.sap/ccloud/loci-neutron:yoga-20231106114334[0m
+[0;32m+           image: keppel.eu-de-1.cloud.sap/ccloud/loci-neutron:yoga-20231114115012[0m
+            imagePullPolicy: IfNotPresent
+            command:
+              - /container.init/neutron-asr1k-start
+            livenessProbe:
+              exec:
+                command: ["neutron-agent-liveness", "--agent-type", "ASR1K L3 Agent", "--config-file", "/etc/neutron/neutron.conf"]
+              initialDelaySeconds: 30
+              periodSeconds: 30
+              timeoutSeconds: 10
+            env:
+              - name: DEBUG_CONTAINER
+              
+                value: "false"
+              
+              - name: SENTRY_DSN
+                valueFrom:
+                  secretKeyRef:
+                    name: sentry
+                    key: neutron.DSN.python
+              - name: METRICS_PORT
+                value: "9103"
+            volumeMounts:
+              - mountPath: /neutron-etc
+                name: neutron-etc
+              - mountPath: /neutron-etc-vendor
+                name: neutron-etc-vendor
+              - mountPath: /neutron-etc-asr1k
+                name: neutron-etc-asr1k
+              - mountPath: /container.init
+                name: container-init
+            ports:
+              - containerPort: 9103
+                name: metrics-l3
+                protocol: TCP
+            resources:
+              limits:
+                cpu: 256m
+                memory: 256Mi
+              requests:
+                cpu: 64m
+                memory: 160Mi
+
+          - name: neutron-asr1k-ml2
+[0;31m-           image: keppel.eu-de-1.cloud.sap/ccloud/loci-neutron:yoga-20231106114334[0m
+[0;32m+           image: keppel.eu-de-1.cloud.sap/ccloud/loci-neutron:yoga-20231114115012[0m
+            imagePullPolicy: IfNotPresent
+            command:
+              - /container.init/neutron-asr1k-ml2-start
+            livenessProbe:
+              exec:
+                command: ["neutron-agent-liveness", "--agent-type", "ASR1K ML2 Agent", "--config-file", "/etc/neutron/neutron.conf"]
+              initialDelaySeconds: 30
+              periodSeconds: 30
+              timeoutSeconds: 10
+            env:
+              - name: DEBUG_CONTAINER
+              
+                value: "false"
+              
+              - name: SENTRY_DSN
+                valueFrom:
+                  secretKeyRef:
+                    name: sentry
+                    key: neutron.DSN.python
+              - name: METRICS_PORT
+                value: "9102"
+            volumeMounts:
+              - mountPath: /neutron-etc
+                name: neutron-etc
+              - mountPath: /neutron-etc-vendor
+                name: neutron-etc-vendor
+              - mountPath: /neutron-etc-asr1k
+                name: neutron-etc-asr1k
+              - mountPath: /container.init
+                name: container-init
+            ports:
+              - containerPort: 9102
+                name: metrics-l2
+                protocol: TCP
+            resources:
+              limits:
+                cpu: 128m
+                memory: 256Mi
+              requests:
+                cpu: 32m
+                memory: 160Mi
+        volumes:
+          - name: neutron-etc
+            configMap:
+              name: neutron-etc
+          - name: neutron-etc-vendor
+            configMap:
+              name: neutron-etc-vendor
+          - name: container-init
+            configMap:
+              name: neutron-bin-vendor
+              defaultMode: 0755
+          - name:  neutron-etc-asr1k
+            configMap:
+              name: neutron-etc-asr1k-agent-05
+[0;33mmonsoon3, neutron-cc-fabric-eos-agent, Deployment (apps) has changed:[0m
+  # Source: neutron/templates/deployment-cc-fabric-agent.yaml
+  kind: Deployment
+  apiVersion: apps/v1
+
+  metadata:
+    name: neutron-cc-fabric-eos-agent
+    labels:
+      system: openstack
+      type: backend
+      component: neutron
+  spec:
+    replicas: 1
+    revisionHistoryLimit: 5
+    strategy:
+      type: RollingUpdate
+      rollingUpdate:
+        maxUnavailable: 0
+        maxSurge: 3
+    selector:
+      matchLabels:
+        name: neutron-cc-fabric-eos-agent
+    template:
+      metadata:
+        labels:
+          name: neutron-cc-fabric-eos-agent
+          release_name: neutron
+          application: neutron
+          component: cc-fabric-eos-agent
+        annotations:
+          pod.beta.kubernetes.io/hostname:  cc-fabric-eos-agent
+          configmap-etc-hash: c7755af8ac2d977d623c6d53fba876fb8b752bed83fd6eaaa949a6bcc092fca2
+          configmap-etc-cc-fabric: fc8f785bce813634a987f4df3c47e510d42170329e0b81f14779ab8b59dfcd9b
+          prometheus.io/scrape: "true"
+          prometheus.io/targets: openstack
+      spec:
+        hostname: cc-fabric-eos-agent
+        containers:
+          - name: neutron-cc-fabric-eos-agent
+[0;31m-           image: keppel.eu-de-1.cloud.sap/ccloud/loci-neutron:yoga-20231106114334[0m
+[0;32m+           image: keppel.eu-de-1.cloud.sap/ccloud/loci-neutron:yoga-20231114115012[0m
+            imagePullPolicy: IfNotPresent
+            command:
+              - cc-eos-switch-agent
+            args:
+              - --config-file
+              - /etc/neutron/neutron.conf
+              - --config-file
+              - /etc/neutron/plugins/ml2/ml2-conf.ini
+              - --config-file
+              - /etc/neutron/plugins/ml2/ml2_conf_cc-fabric.ini
+            livenessProbe:
+              exec:
+                command: ["neutron-agent-liveness", "--agent-type", "CC fabric agent", "--config-file", "/etc/neutron/neutron.conf"]
+              initialDelaySeconds: 30
+              periodSeconds: 30
+              timeoutSeconds: 10
+            resources:
+              limits:
+                cpu: 1000m
+                memory: 1Gi
+              requests:
+                cpu: 250m
+                memory: 512Mi
+            env:
+              - name: SENTRY_DSN
+                valueFrom:
+                  secretKeyRef:
+                    name: sentry
+                    key: neutron.DSN.python
+            ports:
+              - containerPort: 9090
+                name: metrics
+            volumeMounts:
+              - mountPath: /etc/neutron/neutron.conf
+                name: neutron-etc
+                subPath: neutron.conf
+                readOnly: true
+              - mountPath: /etc/neutron/plugins/ml2/
+                name: empty-neutron-ml2
+              - mountPath: /etc/neutron/plugins/ml2/ml2_conf_cc-fabric.ini
+                name: neutron-etc-cc-fabric
+                subPath: ml2_conf_cc-fabric.ini
+                readOnly: true
+              - mountPath: /etc/neutron/plugins/ml2/cc-fabric-driver-config.yaml
+                name: neutron-etc-cc-fabric
+                subPath: cc-fabric-driver-config.yaml
+                readOnly: true
+              - mountPath: /etc/neutron/plugins/ml2/ml2-conf.ini
+                name: neutron-etc
+                subPath: ml2-conf.ini
+                readOnly: true
+              - mountPath: /etc/neutron/rootwrap.conf
+                name: neutron-etc
+                subPath: rootwrap.conf
+                readOnly: true
+              - mountPath: /etc/neutron/logging.conf
+                name: neutron-etc
+                subPath: logging.conf
+                readOnly: true
+        volumes:
+          - name: empty-neutron-ml2
+            emptyDir: {}
+          - name: neutron-etc
+            configMap:
+              name: neutron-etc
+          - name: neutron-etc-cc-fabric
+            configMap:
+              name: neutron-etc-cc-fabric
+[0;33mmonsoon3, neutron-cc-fabric-nxos-agent, Deployment (apps) has changed:[0m
+  # Source: neutron/templates/deployment-cc-fabric-agent.yaml
+  kind: Deployment
+  apiVersion: apps/v1
+
+  metadata:
+    name: neutron-cc-fabric-nxos-agent
+    labels:
+      system: openstack
+      type: backend
+      component: neutron
+  spec:
+    replicas: 1
+    revisionHistoryLimit: 5
+    strategy:
+      type: RollingUpdate
+      rollingUpdate:
+        maxUnavailable: 0
+        maxSurge: 3
+    selector:
+      matchLabels:
+        name: neutron-cc-fabric-nxos-agent
+    template:
+      metadata:
+        labels:
+          name: neutron-cc-fabric-nxos-agent
+          release_name: neutron
+          application: neutron
+          component: cc-fabric-nxos-agent
+        annotations:
+          pod.beta.kubernetes.io/hostname:  cc-fabric-nxos-agent
+          configmap-etc-hash: c7755af8ac2d977d623c6d53fba876fb8b752bed83fd6eaaa949a6bcc092fca2
+          configmap-etc-cc-fabric: fc8f785bce813634a987f4df3c47e510d42170329e0b81f14779ab8b59dfcd9b
+          prometheus.io/scrape: "true"
+          prometheus.io/targets: openstack
+      spec:
+        hostname: cc-fabric-nxos-agent
+        containers:
+          - name: neutron-cc-fabric-nxos-agent
+[0;31m-           image: keppel.eu-de-1.cloud.sap/ccloud/loci-neutron:yoga-20231106114334[0m
+[0;32m+           image: keppel.eu-de-1.cloud.sap/ccloud/loci-neutron:yoga-20231114115012[0m
+            imagePullPolicy: IfNotPresent
+            command:
+              - cc-nxos-switch-agent
+            args:
+              - --config-file
+              - /etc/neutron/neutron.conf
+              - --config-file
+              - /etc/neutron/plugins/ml2/ml2-conf.ini
+              - --config-file
+              - /etc/neutron/plugins/ml2/ml2_conf_cc-fabric.ini
+            livenessProbe:
+              exec:
+                command: ["neutron-agent-liveness", "--agent-type", "CC fabric agent", "--config-file", "/etc/neutron/neutron.conf"]
+              initialDelaySeconds: 30
+              periodSeconds: 30
+              timeoutSeconds: 10
+            resources:
+              limits:
+                cpu: 1000m
+                memory: 1Gi
+              requests:
+                cpu: 250m
+                memory: 512Mi
+            env:
+              - name: SENTRY_DSN
+                valueFrom:
+                  secretKeyRef:
+                    name: sentry
+                    key: neutron.DSN.python
+            ports:
+              - containerPort: 9090
+                name: metrics
+            volumeMounts:
+              - mountPath: /etc/neutron/neutron.conf
+                name: neutron-etc
+                subPath: neutron.conf
+                readOnly: true
+              - mountPath: /etc/neutron/plugins/ml2/
+                name: empty-neutron-ml2
+              - mountPath: /etc/neutron/plugins/ml2/ml2_conf_cc-fabric.ini
+                name: neutron-etc-cc-fabric
+                subPath: ml2_conf_cc-fabric.ini
+                readOnly: true
+              - mountPath: /etc/neutron/plugins/ml2/cc-fabric-driver-config.yaml
+                name: neutron-etc-cc-fabric
+                subPath: cc-fabric-driver-config.yaml
+                readOnly: true
+              - mountPath: /etc/neutron/plugins/ml2/ml2-conf.ini
+                name: neutron-etc
+                subPath: ml2-conf.ini
+                readOnly: true
+              - mountPath: /etc/neutron/rootwrap.conf
+                name: neutron-etc
+                subPath: rootwrap.conf
+                readOnly: true
+              - mountPath: /etc/neutron/logging.conf
+                name: neutron-etc
+                subPath: logging.conf
+                readOnly: true
+        volumes:
+          - name: empty-neutron-ml2
+            emptyDir: {}
+          - name: neutron-etc
+            configMap:
+              name: neutron-etc
+          - name: neutron-etc-cc-fabric
+            configMap:
+              name: neutron-etc-cc-fabric
+[0;33mmonsoon3, neutron-ml2-nsxv3-configmap, VCenterTemplate (vcenter-operator.stable.sap.cc) has changed:[0m
+  # Source: neutron/templates/vct-nsxv3-agent-configmap.yaml
+  apiVersion: vcenter-operator.stable.sap.cc/v1
+  kind: VCenterTemplate
+  metadata:
+    name: 'neutron-ml2-nsxv3-configmap'
+  options:
+    scope: 'cluster'
+    jinja2_options:
+      variable_start_string: '{='
+      variable_end_string: '=}'
+  template: |
+    apiVersion: v1
+    kind: ConfigMap
+    metadata:
+      name: neutron-ml2-nsxv3-{= name =}
+      labels:
+        system: openstack
+        type: configuration
+        component: neutron
+        vcenter: {= host =}
+        datacenter: {= availability_zone =}
+        vccluster: {= cluster_name =}
+    data:
+      ml2-nsxv3.ini: |
+        [DEFAULT]
+        # The agent binds only port with the same host
+        host = nova-compute-{= name =}
+
+        [securitygroup]
+        firewall_driver = nsxv3
+
+        [AGENT]
+        {%- if 'bb271' == name or 'bb271' == 'defaults' %}
+        force_mp_to_policy = true
+        {%- endif %}
+        {%- if 'bb272' == name or 'bb272' == 'defaults' %}
+        force_mp_to_policy = true
+        {%- endif %}
+        {%- if 'bb273' == name or 'bb273' == 'defaults' %}
+        force_mp_to_policy = true
+        {%- endif %}
+        {%- if 'bb274' == name or 'bb274' == 'defaults' %}
+        force_mp_to_policy = true
+        {%- endif %}
+        {%- if 'bb275' == name or 'bb275' == 'defaults' %}
+        force_mp_to_policy = true
+        {%- endif %}
+        {%- if 'bb91' == name or 'bb91' == 'defaults' %}
+        force_mp_to_policy = true
+        {%- endif %}
+        {%- if 'bb92' == name or 'bb92' == 'defaults' %}
+        force_mp_to_policy = true
+        {%- endif %}
+        {%- if 'bb93' == name or 'bb93' == 'defaults' %}
+        force_mp_to_policy = true
+        {%- endif %}
+        {%- if 'bb94' == name or 'bb94' == 'defaults' %}
+        force_mp_to_policy = true
+        {%- endif %}
+        {%- if 'bb95' == name or 'bb95' == 'defaults' %}
+        force_mp_to_policy = true
+        {%- endif %}
+        {%- if 'bb96' == name or 'bb96' == 'defaults' %}
+        force_mp_to_policy = true
+        {%- endif %}
+        {%- if 'bb97' == name or 'bb97' == 'defaults' %}
+        force_mp_to_policy = true
+        {%- endif %}
+        {%- if 'defaults' == name or 'defaults' == 'defaults' %}
+        db_max_records_per_query = 1000
+        polling_interval = 240
+        quitting_rpc_timeout = 120
+        retry_on_failure_delay = 3
+        retry_on_failure_max = 3
+        {%- endif %}
+
+        [NSXV3]
+        # nsx-t has only admin / audit user
+[0;31m-       nsxv3_login_user = admin[0m
+[0;32m+       nsxv3_login_user = {= username =}[0m
+        {%- set bb = name | replace( "bb", "") | int %}
+        {%- set hostname = "nsx-ctl-" + "bb" + ( '%03d' % bb ) + "." + domain %}
+        nsxv3_login_hostname = {= hostname =}
+        nsxv3_login_password = {= username | derive_password(hostname) | quote =}
+[0;32m+       test = test[0m
+
+        {%- set tzname = "bb" + ( '%03d' % bb ) + "-vlan" %}
+        nsxv3_transport_zone_name = {= tzname =}
+        nsxv3_connection_retry_count = 2
+        nsxv3_connection_retry_sleep = 2
+        nsxv3_default_policy_infrastructure_rules = true
+        nsxv3_login_port = 443
+        nsxv3_max_records_per_query = 200
+        nsxv3_policy_migration_limit = 6
+        nsxv3_realization_timeout = 300
+        nsxv3_remove_orphan_ports_after = 2
+        nsxv3_requests_per_second = 80
+        nsxv3_suppress_ssl_wornings = true
+[0;33mmonsoon3, neutron-network-agent-ap001, StatefulSet (apps) has changed:[0m
+  # Source: neutron/templates/statefulset-network-agent-apod.yaml
+  apiVersion: apps/v1
+  kind: StatefulSet
+  metadata:
+    name: neutron-network-agent-ap001
+    labels:
+      system: openstack
+      application: neutron
+      component: agent
+  spec:
+    updateStrategy:
+      type: RollingUpdate
+    selector:
+      matchLabels:
+        name: neutron-network-agent-ap001
+    serviceName: neutron-network-agent
+    podManagementPolicy: "Parallel"
+    replicas: 15
+    template:
+      metadata:
+        annotations:
+          k8s.v1.cni.cncf.io/networks: '[{ "name": "cbr1-bridge", "interface":"bond1" }]'
+          configmap-etc-hash: c7755af8ac2d977d623c6d53fba876fb8b752bed83fd6eaaa949a6bcc092fca2
+          configmap-etc-apod-hash: bebf8c0481441a33bb1a13bc60dbfb73daa87b95a574bec00b7de7611c9e178d
+        labels:
+          name: neutron-network-agent-ap001
+          release_name: neutron
+          application: neutron
+          component: agent
+      spec:
+        affinity:
+          podAntiAffinity:
+            preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 50
+              podAffinityTerm:
+                topologyKey: kubernetes.io/hostname
+                labelSelector:
+                  matchExpressions:
+                  - key: component
+                    operator: In
+                    values:
+                    - agent
+            - weight: 100
+              podAffinityTerm:
+                topologyKey: kubernetes.cloud.sap/host
+                labelSelector:
+                  matchExpressions:
+                  - key: component
+                    operator: In
+                    values:
+                    - agent
+        nodeSelector:
+          multus: bond1
+          topology.kubernetes.io/zone: qa-de-1a
+          kubernetes.cloud.sap/apod: ap001
+        initContainers:
+          - name: init
+            image: keppel.eu-de-1.cloud.sap/ccloud-dockerhub-mirror/library/alpine:3.8
+            securityContext:
+              privileged: true
+            command:
+              - sh
+              - -c
+            args:
+              - |-
+                set -xe
+                chroot /host modprobe ebtable_nat
+            volumeMounts:
+              - name: host
+                mountPath: "/host"
+        containers:
+          - name: neutron-dhcp-agent
+[0;31m-           image: keppel.eu-de-1.cloud.sap/ccloud/loci-neutron:yoga-20231106114334[0m
+[0;32m+           image: keppel.eu-de-1.cloud.sap/ccloud/loci-neutron:yoga-20231114115012[0m
+            imagePullPolicy: IfNotPresent
+            command: ["dumb-init", "neutron-dhcp-agent", "--config-file", "/etc/neutron/neutron.conf", "--config-file", "/etc/neutron/dhcp-agent.ini", "--config-file", "/etc/neutron/linux-bridge.ini", "--config-file", "/etc/neutron/az-a.conf"]
+            env:
+              - name: SENTRY_DSN
+                valueFrom:
+                  secretKeyRef:
+                    name: sentry
+                    key: neutron.DSN.python
+              - name: DEBUG_CONTAINER
+                value: "false"
+              - name: SPT_NOENV
+                value: "yes,please"
+              - name: PYTHONWARNINGS
+                value: "ignore:Unverified HTTPS request"
+            readinessProbe:
+              exec:
+                command: ["neutron-dhcp-readiness", "-config-file", "/etc/neutron/neutron.conf"]
+              initialDelaySeconds: 30
+              periodSeconds: 60
+              timeoutSeconds: 10
+            securityContext:
+              privileged: true
+            resources:
+              limits:
+                cpu: 4000m
+                memory: 2.5Gi
+              requests:
+                cpu: 1000m
+                memory: 1Gi
+            volumeMounts:
+              - name: metadata-proxy
+                mountPath: /run/metadata_proxy
+              - name: modules
+                mountPath: /lib/modules
+                readOnly: true
+              - name: logvol
+                mountPath: /dev/log
+                readOnly: false
+              - name: etc-neutron-dhcp-agent
+                mountPath: /etc/neutron
+                readOnly: true
+              - name: neutron-etc
+                mountPath: /etc/sudoers
+                subPath: sudoers
+                readOnly: true
+              - name: network-namespace
+                mountPath: /var/run/netns
+          - name: neutron-linuxbridge-agent
+[0;31m-           image: keppel.eu-de-1.cloud.sap/ccloud/loci-neutron:yoga-20231106114334[0m
+[0;32m+           image: keppel.eu-de-1.cloud.sap/ccloud/loci-neutron:yoga-20231114115012[0m
+            imagePullPolicy: IfNotPresent
+            command: ["dumb-init", "neutron-linuxbridge-agent", "--config-file", "/etc/neutron/neutron.conf", "--config-file", "/etc/neutron/plugins/ml2/ml2_conf.ini", "--config-file", "/etc/neutron/linux-bridge.ini", "--config-file", "/etc/neutron/apod-ap001.conf"]
+            env:
+              - name: SENTRY_DSN
+                valueFrom:
+                  secretKeyRef:
+                    name: sentry
+                    key: neutron.DSN.python
+              - name: DEBUG_CONTAINER
+                value: "false"
+              - name: PYTHONWARNINGS
+                value: "ignore:Unverified HTTPS request"
+            readinessProbe:
+              exec:
+                command: ["neutron-linuxbridge-readiness", "-config-file", "/etc/neutron/neutron.conf"]
+              initialDelaySeconds: 30
+              periodSeconds: 60
+              timeoutSeconds: 10
+            securityContext:
+              capabilities:
+                add:
+                  - NET_ADMIN
+                  - SYS_ADMIN
+                  - DAC_OVERRIDE
+                  - DAC_READ_SEARCH
+                  - SYS_PTRACE
+
+            resources:
+              limits:
+                cpu: 2000m
+                memory: 1Gi
+              requests:
+                cpu: 256m
+                memory: 512Mi
+            volumeMounts:
+              - mountPath: /lib/modules
+                name: modules
+                readOnly: true
+              - name: etc-neutron-linuxbridge-agent
+                mountPath: /etc/neutron
+                readOnly: true
+              - name: neutron-etc
+                mountPath: /etc/sudoers
+                subPath: sudoers
+                readOnly: true
+              - name: network-namespace
+                mountPath: /var/run/netns
+          - name: neutron-metadata-agent
+[0;31m-           image: keppel.eu-de-1.cloud.sap/ccloud/loci-neutron:yoga-20231106114334[0m
+[0;32m+           image: keppel.eu-de-1.cloud.sap/ccloud/loci-neutron:yoga-20231114115012[0m
+            imagePullPolicy: IfNotPresent
+            command: ["dumb-init", "neutron-metadata-agent", "--config-file", "/etc/neutron/neutron.conf", "--config-file", "/etc/neutron/metadata-agent.ini"]
+            env:
+              - name: SENTRY_DSN
+                valueFrom:
+                  secretKeyRef:
+                    name: sentry
+                    key: neutron.DSN.python
+              - name: PYTHONWARNINGS
+                value: "ignore:Unverified HTTPS request"
+              - name: DEBUG_CONTAINER
+                value: "false"
+            resources:
+              limits:
+                cpu: 500m
+                memory: 512Mi
+              requests:
+                cpu: 250m
+                memory: 256Mi
+            volumeMounts:
+              - name: metadata-proxy
+                mountPath: /run/metadata_proxy
+              - name: etc-neutron-metadata-agent
+                mountPath: /etc/neutron
+                readOnly: true
+        volumes:
+          - name: metadata-proxy
+            emptyDir: {}
+          - name: network-namespace
+            emptyDir: {}
+          - name: modules
+            hostPath:
+              path: /lib/modules
+          - name: logvol
+            hostPath:
+              path: /dev/log
+          - name: neutron-etc
+            configMap:
+              name: neutron-etc
+          - name: host
+            hostPath:
+                path: "/"
+          - name: etc-neutron-dhcp-agent
+            projected:
+              defaultMode: 420
+              sources:
+              - configMap:
+                  name: neutron-etc
+                  items:
+                  - key: neutron.conf
+                    path: neutron.conf
+                  - key: logging.conf
+                    path: logging.conf
+                  - key: rootwrap.conf
+                    path: rootwrap.conf
+                  - key: dnsmasq.conf
+                    path: dnsmasq.conf
+                  - key: dhcp.filters
+                    path: rootwrap.d/dhcp.filters
+                  - key: linux-bridge.ini
+                    path: linux-bridge.ini
+                  - key: dhcp-agent.ini
+                    path: dhcp-agent.ini
+                  - key: az-a.conf
+                    path: az-a.conf
+          - name: etc-neutron-linuxbridge-agent
+            projected:
+              defaultMode: 420
+              sources:
+              - configMap:
+                  name: neutron-etc
+                  items:
+                  - key: neutron.conf
+                    path: neutron.conf
+                  - key: logging.conf
+                    path: logging.conf
+                  - key: rootwrap.conf
+                    path: rootwrap.conf
+                  - key: linux-bridge.ini
+                    path: linux-bridge.ini
+                  - key: ml2-conf.ini
+                    path: plugins/ml2/ml2_conf.ini
+              - configMap:
+                  name: neutron-etc-apod
+                  items:
+                  - key: apod-ap001.conf
+                    path: apod-ap001.conf
+          - name: etc-neutron-metadata-agent
+            projected:
+              defaultMode: 420
+              sources:
+              - configMap:
+                  name: neutron-etc
+                  items:
+                  - key: neutron.conf
+                    path: neutron.conf
+                  - key: logging.conf
+                    path: logging.conf
+                  - key: metadata-agent.ini
+                    path: metadata-agent.ini
+[0;33mmonsoon3, neutron-network-agent-ap002, StatefulSet (apps) has changed:[0m
+  # Source: neutron/templates/statefulset-network-agent-apod.yaml
+  apiVersion: apps/v1
+  kind: StatefulSet
+  metadata:
+    name: neutron-network-agent-ap002
+    labels:
+      system: openstack
+      application: neutron
+      component: agent
+  spec:
+    updateStrategy:
+      type: RollingUpdate
+    selector:
+      matchLabels:
+        name: neutron-network-agent-ap002
+    serviceName: neutron-network-agent
+    podManagementPolicy: "Parallel"
+    replicas: 15
+    template:
+      metadata:
+        annotations:
+          k8s.v1.cni.cncf.io/networks: '[{ "name": "cbr1-bridge", "interface":"bond1" }]'
+          configmap-etc-hash: c7755af8ac2d977d623c6d53fba876fb8b752bed83fd6eaaa949a6bcc092fca2
+          configmap-etc-apod-hash: bebf8c0481441a33bb1a13bc60dbfb73daa87b95a574bec00b7de7611c9e178d
+        labels:
+          name: neutron-network-agent-ap002
+          release_name: neutron
+          application: neutron
+          component: agent
+      spec:
+        affinity:
+          podAntiAffinity:
+            preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 50
+              podAffinityTerm:
+                topologyKey: kubernetes.io/hostname
+                labelSelector:
+                  matchExpressions:
+                  - key: component
+                    operator: In
+                    values:
+                    - agent
+            - weight: 100
+              podAffinityTerm:
+                topologyKey: kubernetes.cloud.sap/host
+                labelSelector:
+                  matchExpressions:
+                  - key: component
+                    operator: In
+                    values:
+                    - agent
+        nodeSelector:
+          multus: bond1
+          topology.kubernetes.io/zone: qa-de-1b
+          kubernetes.cloud.sap/apod: ap002
+        initContainers:
+          - name: init
+            image: keppel.eu-de-1.cloud.sap/ccloud-dockerhub-mirror/library/alpine:3.8
+            securityContext:
+              privileged: true
+            command:
+              - sh
+              - -c
+            args:
+              - |-
+                set -xe
+                chroot /host modprobe ebtable_nat
+            volumeMounts:
+              - name: host
+                mountPath: "/host"
+        containers:
+          - name: neutron-dhcp-agent
+[0;31m-           image: keppel.eu-de-1.cloud.sap/ccloud/loci-neutron:yoga-20231106114334[0m
+[0;32m+           image: keppel.eu-de-1.cloud.sap/ccloud/loci-neutron:yoga-20231114115012[0m
+            imagePullPolicy: IfNotPresent
+            command: ["dumb-init", "neutron-dhcp-agent", "--config-file", "/etc/neutron/neutron.conf", "--config-file", "/etc/neutron/dhcp-agent.ini", "--config-file", "/etc/neutron/linux-bridge.ini", "--config-file", "/etc/neutron/az-b.conf"]
+            env:
+              - name: SENTRY_DSN
+                valueFrom:
+                  secretKeyRef:
+                    name: sentry
+                    key: neutron.DSN.python
+              - name: DEBUG_CONTAINER
+                value: "false"
+              - name: SPT_NOENV
+                value: "yes,please"
+              - name: PYTHONWARNINGS
+                value: "ignore:Unverified HTTPS request"
+            readinessProbe:
+              exec:
+                command: ["neutron-dhcp-readiness", "-config-file", "/etc/neutron/neutron.conf"]
+              initialDelaySeconds: 30
+              periodSeconds: 60
+              timeoutSeconds: 10
+            securityContext:
+              privileged: true
+            resources:
+              limits:
+                cpu: 4000m
+                memory: 2.5Gi
+              requests:
+                cpu: 1000m
+                memory: 1Gi
+            volumeMounts:
+              - name: metadata-proxy
+                mountPath: /run/metadata_proxy
+              - name: modules
+                mountPath: /lib/modules
+                readOnly: true
+              - name: logvol
+                mountPath: /dev/log
+                readOnly: false
+              - name: etc-neutron-dhcp-agent
+                mountPath: /etc/neutron
+                readOnly: true
+              - name: neutron-etc
+                mountPath: /etc/sudoers
+                subPath: sudoers
+                readOnly: true
+              - name: network-namespace
+                mountPath: /var/run/netns
+          - name: neutron-linuxbridge-agent
+[0;31m-           image: keppel.eu-de-1.cloud.sap/ccloud/loci-neutron:yoga-20231106114334[0m
+[0;32m+           image: keppel.eu-de-1.cloud.sap/ccloud/loci-neutron:yoga-20231114115012[0m
+            imagePullPolicy: IfNotPresent
+            command: ["dumb-init", "neutron-linuxbridge-agent", "--config-file", "/etc/neutron/neutron.conf", "--config-file", "/etc/neutron/plugins/ml2/ml2_conf.ini", "--config-file", "/etc/neutron/linux-bridge.ini", "--config-file", "/etc/neutron/apod-ap002.conf"]
+            env:
+              - name: SENTRY_DSN
+                valueFrom:
+                  secretKeyRef:
+                    name: sentry
+                    key: neutron.DSN.python
+              - name: DEBUG_CONTAINER
+                value: "false"
+              - name: PYTHONWARNINGS
+                value: "ignore:Unverified HTTPS request"
+            readinessProbe:
+              exec:
+                command: ["neutron-linuxbridge-readiness", "-config-file", "/etc/neutron/neutron.conf"]
+              initialDelaySeconds: 30
+              periodSeconds: 60
+              timeoutSeconds: 10
+            securityContext:
+              capabilities:
+                add:
+                  - NET_ADMIN
+                  - SYS_ADMIN
+                  - DAC_OVERRIDE
+                  - DAC_READ_SEARCH
+                  - SYS_PTRACE
+
+            resources:
+              limits:
+                cpu: 2000m
+                memory: 1Gi
+              requests:
+                cpu: 256m
+                memory: 512Mi
+            volumeMounts:
+              - mountPath: /lib/modules
+                name: modules
+                readOnly: true
+              - name: etc-neutron-linuxbridge-agent
+                mountPath: /etc/neutron
+                readOnly: true
+              - name: neutron-etc
+                mountPath: /etc/sudoers
+                subPath: sudoers
+                readOnly: true
+              - name: network-namespace
+                mountPath: /var/run/netns
+          - name: neutron-metadata-agent
+[0;31m-           image: keppel.eu-de-1.cloud.sap/ccloud/loci-neutron:yoga-20231106114334[0m
+[0;32m+           image: keppel.eu-de-1.cloud.sap/ccloud/loci-neutron:yoga-20231114115012[0m
+            imagePullPolicy: IfNotPresent
+            command: ["dumb-init", "neutron-metadata-agent", "--config-file", "/etc/neutron/neutron.conf", "--config-file", "/etc/neutron/metadata-agent.ini"]
+            env:
+              - name: SENTRY_DSN
+                valueFrom:
+                  secretKeyRef:
+                    name: sentry
+                    key: neutron.DSN.python
+              - name: PYTHONWARNINGS
+                value: "ignore:Unverified HTTPS request"
+              - name: DEBUG_CONTAINER
+                value: "false"
+            resources:
+              limits:
+                cpu: 500m
+                memory: 512Mi
+              requests:
+                cpu: 250m
+                memory: 256Mi
+            volumeMounts:
+              - name: metadata-proxy
+                mountPath: /run/metadata_proxy
+              - name: etc-neutron-metadata-agent
+                mountPath: /etc/neutron
+                readOnly: true
+        volumes:
+          - name: metadata-proxy
+            emptyDir: {}
+          - name: network-namespace
+            emptyDir: {}
+          - name: modules
+            hostPath:
+              path: /lib/modules
+          - name: logvol
+            hostPath:
+              path: /dev/log
+          - name: neutron-etc
+            configMap:
+              name: neutron-etc
+          - name: host
+            hostPath:
+                path: "/"
+          - name: etc-neutron-dhcp-agent
+            projected:
+              defaultMode: 420
+              sources:
+              - configMap:
+                  name: neutron-etc
+                  items:
+                  - key: neutron.conf
+                    path: neutron.conf
+                  - key: logging.conf
+                    path: logging.conf
+                  - key: rootwrap.conf
+                    path: rootwrap.conf
+                  - key: dnsmasq.conf
+                    path: dnsmasq.conf
+                  - key: dhcp.filters
+                    path: rootwrap.d/dhcp.filters
+                  - key: linux-bridge.ini
+                    path: linux-bridge.ini
+                  - key: dhcp-agent.ini
+                    path: dhcp-agent.ini
+                  - key: az-b.conf
+                    path: az-b.conf
+          - name: etc-neutron-linuxbridge-agent
+            projected:
+              defaultMode: 420
+              sources:
+              - configMap:
+                  name: neutron-etc
+                  items:
+                  - key: neutron.conf
+                    path: neutron.conf
+                  - key: logging.conf
+                    path: logging.conf
+                  - key: rootwrap.conf
+                    path: rootwrap.conf
+                  - key: linux-bridge.ini
+                    path: linux-bridge.ini
+                  - key: ml2-conf.ini
+                    path: plugins/ml2/ml2_conf.ini
+              - configMap:
+                  name: neutron-etc-apod
+                  items:
+                  - key: apod-ap002.conf
+                    path: apod-ap002.conf
+          - name: etc-neutron-metadata-agent
+            projected:
+              defaultMode: 420
+              sources:
+              - configMap:
+                  name: neutron-etc
+                  items:
+                  - key: neutron.conf
+                    path: neutron.conf
+                  - key: logging.conf
+                    path: logging.conf
+                  - key: metadata-agent.ini
+                    path: metadata-agent.ini
+[0;33mmonsoon3, neutron-network-agent-ap028, StatefulSet (apps) has changed:[0m
+  # Source: neutron/templates/statefulset-network-agent-apod.yaml
+  apiVersion: apps/v1
+  kind: StatefulSet
+  metadata:
+    name: neutron-network-agent-ap028
+    labels:
+      system: openstack
+      application: neutron
+      component: agent
+  spec:
+    updateStrategy:
+      type: RollingUpdate
+    selector:
+      matchLabels:
+        name: neutron-network-agent-ap028
+    serviceName: neutron-network-agent
+    podManagementPolicy: "Parallel"
+    replicas: 15
+    template:
+      metadata:
+        annotations:
+          k8s.v1.cni.cncf.io/networks: '[{ "name": "cbr1-bridge", "interface":"bond1" }]'
+          configmap-etc-hash: c7755af8ac2d977d623c6d53fba876fb8b752bed83fd6eaaa949a6bcc092fca2
+          configmap-etc-apod-hash: bebf8c0481441a33bb1a13bc60dbfb73daa87b95a574bec00b7de7611c9e178d
+        labels:
+          name: neutron-network-agent-ap028
+          release_name: neutron
+          application: neutron
+          component: agent
+      spec:
+        affinity:
+          podAntiAffinity:
+            preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 50
+              podAffinityTerm:
+                topologyKey: kubernetes.io/hostname
+                labelSelector:
+                  matchExpressions:
+                  - key: component
+                    operator: In
+                    values:
+                    - agent
+            - weight: 100
+              podAffinityTerm:
+                topologyKey: kubernetes.cloud.sap/host
+                labelSelector:
+                  matchExpressions:
+                  - key: component
+                    operator: In
+                    values:
+                    - agent
+        nodeSelector:
+          multus: bond1
+          topology.kubernetes.io/zone: qa-de-1d
+          kubernetes.cloud.sap/apod: ap028
+        initContainers:
+          - name: init
+            image: keppel.eu-de-1.cloud.sap/ccloud-dockerhub-mirror/library/alpine:3.8
+            securityContext:
+              privileged: true
+            command:
+              - sh
+              - -c
+            args:
+              - |-
+                set -xe
+                chroot /host modprobe ebtable_nat
+            volumeMounts:
+              - name: host
+                mountPath: "/host"
+        containers:
+          - name: neutron-dhcp-agent
+[0;31m-           image: keppel.eu-de-1.cloud.sap/ccloud/loci-neutron:yoga-20231106114334[0m
+[0;32m+           image: keppel.eu-de-1.cloud.sap/ccloud/loci-neutron:yoga-20231114115012[0m
+            imagePullPolicy: IfNotPresent
+            command: ["dumb-init", "neutron-dhcp-agent", "--config-file", "/etc/neutron/neutron.conf", "--config-file", "/etc/neutron/dhcp-agent.ini", "--config-file", "/etc/neutron/linux-bridge.ini", "--config-file", "/etc/neutron/az-d.conf"]
+            env:
+              - name: SENTRY_DSN
+                valueFrom:
+                  secretKeyRef:
+                    name: sentry
+                    key: neutron.DSN.python
+              - name: DEBUG_CONTAINER
+                value: "false"
+              - name: SPT_NOENV
+                value: "yes,please"
+              - name: PYTHONWARNINGS
+                value: "ignore:Unverified HTTPS request"
+            readinessProbe:
+              exec:
+                command: ["neutron-dhcp-readiness", "-config-file", "/etc/neutron/neutron.conf"]
+              initialDelaySeconds: 30
+              periodSeconds: 60
+              timeoutSeconds: 10
+            securityContext:
+              privileged: true
+            resources:
+              limits:
+                cpu: 4000m
+                memory: 2.5Gi
+              requests:
+                cpu: 1000m
+                memory: 1Gi
+            volumeMounts:
+              - name: metadata-proxy
+                mountPath: /run/metadata_proxy
+              - name: modules
+                mountPath: /lib/modules
+                readOnly: true
+              - name: logvol
+                mountPath: /dev/log
+                readOnly: false
+              - name: etc-neutron-dhcp-agent
+                mountPath: /etc/neutron
+                readOnly: true
+              - name: neutron-etc
+                mountPath: /etc/sudoers
+                subPath: sudoers
+                readOnly: true
+              - name: network-namespace
+                mountPath: /var/run/netns
+          - name: neutron-linuxbridge-agent
+[0;31m-           image: keppel.eu-de-1.cloud.sap/ccloud/loci-neutron:yoga-20231106114334[0m
+[0;32m+           image: keppel.eu-de-1.cloud.sap/ccloud/loci-neutron:yoga-20231114115012[0m
+            imagePullPolicy: IfNotPresent
+            command: ["dumb-init", "neutron-linuxbridge-agent", "--config-file", "/etc/neutron/neutron.conf", "--config-file", "/etc/neutron/plugins/ml2/ml2_conf.ini", "--config-file", "/etc/neutron/linux-bridge.ini", "--config-file", "/etc/neutron/apod-ap028.conf"]
+            env:
+              - name: SENTRY_DSN
+                valueFrom:
+                  secretKeyRef:
+                    name: sentry
+                    key: neutron.DSN.python
+              - name: DEBUG_CONTAINER
+                value: "false"
+              - name: PYTHONWARNINGS
+                value: "ignore:Unverified HTTPS request"
+            readinessProbe:
+              exec:
+                command: ["neutron-linuxbridge-readiness", "-config-file", "/etc/neutron/neutron.conf"]
+              initialDelaySeconds: 30
+              periodSeconds: 60
+              timeoutSeconds: 10
+            securityContext:
+              capabilities:
+                add:
+                  - NET_ADMIN
+                  - SYS_ADMIN
+                  - DAC_OVERRIDE
+                  - DAC_READ_SEARCH
+                  - SYS_PTRACE
+
+            resources:
+              limits:
+                cpu: 2000m
+                memory: 1Gi
+              requests:
+                cpu: 256m
+                memory: 512Mi
+            volumeMounts:
+              - mountPath: /lib/modules
+                name: modules
+                readOnly: true
+              - name: etc-neutron-linuxbridge-agent
+                mountPath: /etc/neutron
+                readOnly: true
+              - name: neutron-etc
+                mountPath: /etc/sudoers
+                subPath: sudoers
+                readOnly: true
+              - name: network-namespace
+                mountPath: /var/run/netns
+          - name: neutron-metadata-agent
+[0;31m-           image: keppel.eu-de-1.cloud.sap/ccloud/loci-neutron:yoga-20231106114334[0m
+[0;32m+           image: keppel.eu-de-1.cloud.sap/ccloud/loci-neutron:yoga-20231114115012[0m
+            imagePullPolicy: IfNotPresent
+            command: ["dumb-init", "neutron-metadata-agent", "--config-file", "/etc/neutron/neutron.conf", "--config-file", "/etc/neutron/metadata-agent.ini"]
+            env:
+              - name: SENTRY_DSN
+                valueFrom:
+                  secretKeyRef:
+                    name: sentry
+                    key: neutron.DSN.python
+              - name: PYTHONWARNINGS
+                value: "ignore:Unverified HTTPS request"
+              - name: DEBUG_CONTAINER
+                value: "false"
+            resources:
+              limits:
+                cpu: 500m
+                memory: 512Mi
+              requests:
+                cpu: 250m
+                memory: 256Mi
+            volumeMounts:
+              - name: metadata-proxy
+                mountPath: /run/metadata_proxy
+              - name: etc-neutron-metadata-agent
+                mountPath: /etc/neutron
+                readOnly: true
+        volumes:
+          - name: metadata-proxy
+            emptyDir: {}
+          - name: network-namespace
+            emptyDir: {}
+          - name: modules
+            hostPath:
+              path: /lib/modules
+          - name: logvol
+            hostPath:
+              path: /dev/log
+          - name: neutron-etc
+            configMap:
+              name: neutron-etc
+          - name: host
+            hostPath:
+                path: "/"
+          - name: etc-neutron-dhcp-agent
+            projected:
+              defaultMode: 420
+              sources:
+              - configMap:
+                  name: neutron-etc
+                  items:
+                  - key: neutron.conf
+                    path: neutron.conf
+                  - key: logging.conf
+                    path: logging.conf
+                  - key: rootwrap.conf
+                    path: rootwrap.conf
+                  - key: dnsmasq.conf
+                    path: dnsmasq.conf
+                  - key: dhcp.filters
+                    path: rootwrap.d/dhcp.filters
+                  - key: linux-bridge.ini
+                    path: linux-bridge.ini
+                  - key: dhcp-agent.ini
+                    path: dhcp-agent.ini
+                  - key: az-d.conf
+                    path: az-d.conf
+          - name: etc-neutron-linuxbridge-agent
+            projected:
+              defaultMode: 420
+              sources:
+              - configMap:
+                  name: neutron-etc
+                  items:
+                  - key: neutron.conf
+                    path: neutron.conf
+                  - key: logging.conf
+                    path: logging.conf
+                  - key: rootwrap.conf
+                    path: rootwrap.conf
+                  - key: linux-bridge.ini
+                    path: linux-bridge.ini
+                  - key: ml2-conf.ini
+                    path: plugins/ml2/ml2_conf.ini
+              - configMap:
+                  name: neutron-etc-apod
+                  items:
+                  - key: apod-ap028.conf
+                    path: apod-ap028.conf
+          - name: etc-neutron-metadata-agent
+            projected:
+              defaultMode: 420
+              sources:
+              - configMap:
+                  name: neutron-etc
+                  items:
+                  - key: neutron.conf
+                    path: neutron.conf
+                  - key: logging.conf
+                    path: logging.conf
+                  - key: metadata-agent.ini
+                    path: metadata-agent.ini
+[0;33mmonsoon3, neutron-nsxv3-agent-deployment, VCenterTemplate (vcenter-operator.stable.sap.cc) has changed:[0m
+  # Source: neutron/templates/vct-nsxv3-agent-deployment.yaml
+  apiVersion: vcenter-operator.stable.sap.cc/v1
+  kind: VCenterTemplate
+  metadata:
+    name: 'neutron-nsxv3-agent-deployment'
+  options:
+    scope: 'cluster'
+    jinja2_options:
+      variable_start_string: '{='
+      variable_end_string: '=}'
+  template: |
+    apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      name: neutron-nsxv3-agent-{= name =}
+      labels:
+        system: openstack
+        type: backend
+        component: neutron
+        vcenter: {= host =}
+        datacenter: {= availability_zone =}
+        vccluster: {= cluster_name =}
+    spec:
+      replicas: 1
+      revisionHistoryLimit: 5
+      strategy:
+        type: RollingUpdate
+        rollingUpdate:
+          maxUnavailable: 0
+          maxSurge: 1
+      selector:
+        matchLabels:
+            name: neutron-nsxv3-agent-{= name =}
+      template:
+        metadata:
+          labels:
+            release_name: neutron
+            application: neutron
+            component: nsxv3
+            name: neutron-nsxv3-agent-{= name =}
+            vcenter: {= host =}
+            datacenter: {= availability_zone =}
+            vccluster: {= cluster_name =}
+          annotations:
+            configmap-etc-hash: c7755af8ac2d977d623c6d53fba876fb8b752bed83fd6eaaa949a6bcc092fca2
+            prometheus.io/scrape: "true"
+            prometheus.io/targets: "openstack"
+        spec:
+          containers:
+          - name: neutron-nsxv3-agent
+[0;31m-           image: keppel.eu-de-1.cloud.sap/ccloud/loci-neutron:yoga-20231106114334[0m
+[0;32m+           image: keppel.eu-de-1.cloud.sap/ccloud/loci-neutron:yoga-20231114115012[0m
+            imagePullPolicy: IfNotPresent
+            command: ["dumb-init"]
+            args: ["neutron-nsxv3-agent", "--config-file", "/etc/neutron/neutron.conf", "--config-file", "/etc/neutron/plugins/ml2/ml2-conf.ini", "--config-file", "/etc/neutron/plugins/ml2/ml2-nsxv3.ini"]
+            env:
+            - name: SENTRY_DSN
+              valueFrom:
+                secretKeyRef:
+                  name: sentry
+                  key: neutron.DSN.python
+            - name: PYTHONWARNINGS
+              value: "ignore:Unverified HTTPS request"
+            - name: PGAPPNAME
+              value: neutron-nsxv3-agent-{= name =}
+            - name: REQUESTS_CA_BUNDLE
+              value: ""
+            ports:
+              - name: metrics-agent
+                containerPort: 8000
+            livenessProbe:
+              exec:
+                command: ["neutron-agent-liveness", "--config-file", "/etc/neutron/neutron.conf", "--config-file", "/etc/neutron/plugins/ml2/ml2-nsxv3.ini", "--agent-type", "NSXv3 Agent"]
+              initialDelaySeconds: 90
+              periodSeconds: 30
+              timeoutSeconds: 10
+            resources:
+              limits:
+                cpu: 256m
+                memory: 512Mi
+              requests:
+                cpu: 128m
+                memory: 256Mi
+            volumeMounts:
+            - name: etc-neutron
+              mountPath: /etc/neutron
+              readOnly: true
+          - name: exporter
+            image: keppel.eu-de-1.cloud.sap/ccloud/nsx-t-exporter:20220616123322
+            ports:
+              - name: metrics-export
+                containerPort: 9191
+            env:
+              {%- set bb = name | replace( "bb", "") | int %}
+              {%- set hostname = "nsx-ctl-" + "bb" + ( '%03d' % bb ) + "." + domain %}
+              - name: NSXV3_LOGIN_HOST
+                value: {= hostname =}
+              - name: NSXV3_LOGIN_PORT
+                value: "443"
+              - name: NSXV3_LOGIN_USER
+[0;31m-               value: "admin"[0m
+[0;32m+               value: {= username =}[0m
+              - name: NSXV3_LOGIN_PASSWORD
+                value: {= username | derive_password(hostname) | quote =}
+              - name: NSXV3_REQUESTS_PER_SECOND
+                value: "10"
+              - name: NSXV3_REQUEST_TIMEOUT_SECONDS
+                value: "120"
+              - name: NSXV3_CONNECTION_POOL_SIZE
+                value: "100"
+              - name: NSXV3_SUPPRESS_SSL_WARNINGS
+                value: "true"
+              - name: SCRAP_PORT
+                value: "9191"
+              - name: SCRAP_SCHEDULE_SECONDS
+                value: "300"
+            resources:
+              limits:
+                cpu: 128m
+                memory: 128Mi
+              requests:
+                cpu: 32m
+                memory: 64Mi
+          volumes:
+          - name: etc-neutron
+            projected:
+              defaultMode: 420
+              sources:
+              - configMap:
+                  name: neutron-etc
+                  items:
+                  - key: neutron.conf
+                    path: neutron.conf
+                  - key: logging.conf
+                    path: logging.conf
+                  - key: ml2-conf.ini
+                    path: plugins/ml2/ml2-conf.ini
+              - configMap:
+                  name: neutron-ml2-nsxv3-{= name =}
+                  items:
+                  - key: ml2-nsxv3.ini
+                    path: plugins/ml2/ml2-nsxv3.ini
+[0;33mmonsoon3, neutron-rpc-server, Deployment (apps) has changed:[0m
+  # Source: neutron/templates/deployment-rpc-server.yaml
+  kind: Deployment
+  apiVersion: apps/v1
+
+  metadata:
+    name: neutron-rpc-server
+    labels:
+      system: openstack
+      type: rpc
+      component: neutron
+  spec:
+    replicas: 2
+    revisionHistoryLimit: 5
+    strategy:
+      type: RollingUpdate
+      
+      rollingUpdate:
+        maxUnavailable: 10%
+        maxSurge: 25%
+      
+    selector:
+      matchLabels:
+        name: neutron-rpc-server
+    template:
+      metadata:
+        labels:
+          name: neutron-rpc-server
+          release_name: neutron
+          application: neutron
+          component: rpc
+        annotations:
+          configmap-etc-hash: c7755af8ac2d977d623c6d53fba876fb8b752bed83fd6eaaa949a6bcc092fca2
+          configmap-etc-region-hash: 23c244f5535bade3aa14fe62de3b28c6aaa81d5b0618bf62daf095d083f28c95
+          configmap-etc-vendor-hash: eeacd547d5407700f856b4c1abf5a6a0f3b39376572a6900caa72b89069048bf
+          configmap-bin-hash: b9fb770fa1d8492cd21f84aa755a40acc342e3bfdde7b3b84e24527c7b12e4be
+          configmap-etc-cc-fabric: fc8f785bce813634a987f4df3c47e510d42170329e0b81f14779ab8b59dfcd9b
+          prometheus.io/scrape: "true"
+          prometheus.io/targets: openstack
+      spec:
+        affinity:
+          podAntiAffinity:
+            preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 10
+              podAffinityTerm:
+                topologyKey: kubernetes.io/hostname
+                labelSelector:
+                  matchExpressions:
+                  - key: release_name
+                    operator: In
+                    values:
+                    - neutron
+                  - key: application
+                    operator: In
+                    values:
+                    - neutron
+                  - key: component
+                    operator: In
+                    values:
+                    - rpc      
+        hostAliases:
+        - ip: "127.0.0.1"
+          hostnames:
+          - "neutron-mariadb"
+        containers:
+          - name: neutron-rpc-server
+[0;31m-           image: keppel.eu-de-1.cloud.sap/ccloud/loci-neutron:yoga-20231106114334[0m
+[0;32m+           image: keppel.eu-de-1.cloud.sap/ccloud/loci-neutron:yoga-20231114115012[0m
+            imagePullPolicy: IfNotPresent
+            command: ['dumb-init', 'kubernetes-entrypoint']
+            env:
+              - name: COMMAND
+                value: "neutron-rpc-server --config-file /etc/neutron/neutron.conf --config-file /etc/neutron/plugins/ml2/ml2-conf.ini --config-file /etc/neutron/plugins/ml2/ml2-conf-aci.ini --config-file /etc/neutron/plugins/ml2/ml2-conf-manila.ini --config-file /etc/neutron/plugins/ml2/ml2-conf-arista.ini --config-file /etc/neutron/plugins/ml2/ml2-conf-asr1k.ini --config-file /etc/neutron/networking-bgpvpn.conf --config-file /etc/neutron/networking-interconnection.conf --config-file /etc/neutron/plugins/ml2/ml2_conf_cc-fabric.ini"
+              - name: NAMESPACE
+                value: monsoon3
+              - name: DEPENDENCY_JOBS
+[0;31m-               value: "neutron-migration-yoga-20231106114334-unix-socket"[0m
+[0;32m+               value: "neutron-migration-yoga-20231114115012-unix-socket"[0m
+              - name: DEPENDENCY_SERVICE
+                value: "neutron-mariadb,neutron-rabbitmq"
+              - name: STATSD_HOST
+                value: "localhost"
+              - name: STATSD_PORT
+                value: "9125"
+              - name: STATSD_PREFIX
+                value: "openstack"
+              - name: SENTRY_DSN
+                valueFrom:
+                  secretKeyRef:
+                    name: sentry
+                    key: neutron.DSN.python
+              - name: PGAPPNAME
+                valueFrom:
+                  fieldRef:
+                    fieldPath: metadata.name
+              - name: PYTHONWARNINGS
+                value: "ignore:Unverified HTTPS request"
+            resources:
+              limits:
+                cpu: 4000m
+                memory: 4Gi
+              requests:
+                cpu: 1000m
+                memory: 3Gi
+            volumeMounts:
+              - mountPath: /etc/neutron
+                name: empty-dir
+              - mountPath: /etc/neutron/neutron.conf
+                name: neutron-etc
+                subPath: neutron.conf
+                readOnly: true
+              - mountPath: /etc/neutron/logging.conf
+                name: neutron-etc
+                subPath: logging.conf
+                readOnly: true
+              - mountPath: /etc/neutron/plugins/ml2/ml2_conf_cc-fabric.ini
+                name: neutron-etc-cc-fabric
+                subPath: ml2_conf_cc-fabric.ini
+                readOnly: true
+              - mountPath: /etc/neutron/plugins/ml2/cc-fabric-driver-config.yaml
+                name: neutron-etc-cc-fabric
+                subPath: cc-fabric-driver-config.yaml
+                readOnly: true
+              - mountPath: /etc/neutron/plugins/ml2/ml2-conf.ini
+                name: neutron-etc
+                subPath: ml2-conf.ini
+                readOnly: true
+              - mountPath: /etc/neutron/plugins/ml2/ml2-conf-aci.ini
+                name: neutron-etc-region
+                subPath: ml2-conf-aci.ini
+                readOnly: true
+              - mountPath: /etc/neutron/plugins/ml2/ml2-conf-arista.ini
+                name: neutron-etc-vendor
+                subPath: ml2-conf-arista.ini
+                readOnly: true
+              - mountPath: /etc/neutron/plugins/ml2/ml2-conf-manila.ini
+                name: neutron-etc-vendor
+                subPath: ml2-conf-manila.ini
+                readOnly: true
+              - mountPath: /etc/neutron/plugins/ml2/ml2-conf-asr1k.ini
+                name: neutron-etc-vendor
+                subPath: ml2-conf-asr1k.ini
+                readOnly: true
+              - mountPath: /etc/neutron/networking-bgpvpn.conf
+                name: neutron-etc
+                subPath: networking-bgpvpn.conf
+                readOnly: true
+              - mountPath: /etc/neutron/networking-interconnection.conf
+                name: neutron-etc
+                subPath: networking-interconnection.conf
+                readOnly: true            
+              - mountPath: /run/proxysql
+                name: runproxysql                    
+          - name: proxysql
+            image: keppel.eu-de-1.cloud.sap/ccloud-dockerhub-mirror/proxysql/proxysql:2.4.7-debian
+            imagePullPolicy: IfNotPresent
+            command: ["proxysql"]
+            args: ["--config", "/etc/proxysql/proxysql.cnf", "--exit-on-error", "--foreground", "--idle-threads", "--admin-socket", "/run/proxysql/admin.sock", "--no-version-check", "-D", "/run/proxysql"]
+            lifecycle:
+              postStart:
+                exec:
+                  command:
+                  - /bin/bash
+                  - -c
+                  - |
+                    for ((i=0;i<10;++i)); do
+                      test -S /run/proxysql/admin.sock && break || sleep 1
+                    done
+                    for ((i=0;i<10;++i)); do
+                      mysql --wait -S /run/proxysql/admin.sock -uadmin -padmin -e '
+                        UPDATE mysql_servers SET max_connections=225;
+                        LOAD MYSQL SERVERS TO RUNTIME;
+                      ' && exit 0 || sleep 1
+                    done
+                    exit 1
+            ports:
+            - name: metrics-psql
+              containerPort: 6070
+            livenessProbe:
+              exec:
+                command:
+                - test
+                - -S
+                - /run/proxysql/mysql.sock
+            volumeMounts:
+            - mountPath: /etc/proxysql
+              name: etcproxysql  
+            - mountPath: /run/proxysql
+              name: runproxysql        
+        volumes:
+          - name: empty-dir
+            emptyDir: {}
+          - name: neutron-etc
+            configMap:
+              name: neutron-etc
+          - name: neutron-etc-cc-fabric
+            configMap:
+              name: neutron-etc-cc-fabric
+          - name: neutron-etc-vendor
+            configMap:
+              name: neutron-etc-vendor
+          - name: neutron-etc-region
+            configMap:
+              name: neutron-etc-region
+          - name: neutron-bin
+            configMap:
+              name: neutron-bin
+              defaultMode: 0755        
+          - name: runproxysql
+            emptyDir: {}
+          - name: etcproxysql
+            configMap:
+              name: neutron-proxysql-etc
+[0;33mmonsoon3, neutron-server, Deployment (apps) has changed:[0m
+  # Source: neutron/templates/deployment-server.yaml
+  kind: Deployment
+  apiVersion: apps/v1
+
+  metadata:
+    name: neutron-server
+    labels:
+      system: openstack
+      type: api
+      component: neutron
+  spec:
+    replicas: 3
+    revisionHistoryLimit: 5
+    strategy:
+      type: RollingUpdate
+      
+      rollingUpdate:
+        maxUnavailable: 10%
+        maxSurge: 25%
+      
+    selector:
+      matchLabels:
+        name: neutron-server
+    template:
+      metadata:
+        labels:
+          name: neutron-server
+          release_name: neutron
+          application: neutron
+          component: api
+        annotations:
+          configmap-etc-hash: c7755af8ac2d977d623c6d53fba876fb8b752bed83fd6eaaa949a6bcc092fca2
+          configmap-etc-region-hash: 23c244f5535bade3aa14fe62de3b28c6aaa81d5b0618bf62daf095d083f28c95
+          configmap-etc-vendor-hash: eeacd547d5407700f856b4c1abf5a6a0f3b39376572a6900caa72b89069048bf
+          configmap-etc-api-hash: 1ddebfeb0024b46981600ddf565aabecac402ef5dfb11de4d998e089fa2bdc53
+          configmap-etc-cc-fabric: fc8f785bce813634a987f4df3c47e510d42170329e0b81f14779ab8b59dfcd9b
+          prometheus.io/scrape: "true"
+          prometheus.io/targets: openstack
+      spec:
+        affinity:
+          podAntiAffinity:
+            preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 10
+              podAffinityTerm:
+                topologyKey: kubernetes.io/hostname
+                labelSelector:
+                  matchExpressions:
+                  - key: release_name
+                    operator: In
+                    values:
+                    - neutron
+                  - key: application
+                    operator: In
+                    values:
+                    - neutron
+                  - key: component
+                    operator: In
+                    values:
+                    - api      
+        hostAliases:
+        - ip: "127.0.0.1"
+          hostnames:
+          - "neutron-mariadb"
+        containers:
+          - name: neutron-server
+[0;31m-           image: keppel.eu-de-1.cloud.sap/ccloud/loci-neutron:yoga-20231106114334[0m
+[0;32m+           image: keppel.eu-de-1.cloud.sap/ccloud/loci-neutron:yoga-20231114115012[0m
+            imagePullPolicy: IfNotPresent
+            lifecycle:
+              preStop:              
+                exec:
+                  command: [
+                    # Introduce a delay to the shutdown sequence to wait for the
+                    # pod eviction event to propagate.
+                    "/bin/sleep",
+                    "10"
+                  ]
+            readinessProbe:
+              httpGet:
+                path: /healthcheck
+                port: 9696
+              initialDelaySeconds: 15
+              timeoutSeconds: 5
+            command: ['dumb-init', 'kubernetes-entrypoint']
+            env:
+              - name: COMMAND
+                value: "uwsgi --ini /etc/neutron/uwsgi.ini"
+              - name: DEBUG_CONTAINER
+                value: "false"
+              - name: OS_OSLO_MESSAGING_RABBIT__HEARTBEAT_IN_PTHREAD
+                value: "true"
+              - name: NAMESPACE
+                value: monsoon3
+              - name: DEPENDENCY_JOBS
+[0;31m-               value: "neutron-migration-yoga-20231106114334-unix-socket"[0m
+[0;32m+               value: "neutron-migration-yoga-20231114115012-unix-socket"[0m
+              - name: DEPENDENCY_SERVICE
+                value: "neutron-mariadb,neutron-rabbitmq"
+              - name: STATSD_HOST
+                value: "localhost"
+              - name: STATSD_PORT
+                value: "9125"
+              - name: STATSD_PREFIX
+                value: "openstack"
+              - name: SENTRY_DSN
+                valueFrom:
+                  secretKeyRef:
+                    name: sentry
+                    key: neutron.DSN.python
+              - name: PGAPPNAME
+                valueFrom:
+                  fieldRef:
+                    fieldPath: metadata.name
+              - name: PYTHONWARNINGS
+                value: "ignore:Unverified HTTPS request"
+            resources:
+              limits:
+                cpu: 4000m
+                memory: 3Gi
+              requests:
+                cpu: 2000m
+                memory: 2Gi
+            ports:
+              - name: neutron-api
+                containerPort: 9696
+            volumeMounts:
+              - mountPath: /etc/neutron
+                name: empty-dir
+              - mountPath: /etc/neutron/neutron.conf
+                name: neutron-etc
+                subPath: neutron.conf
+                readOnly: true
+              - mountPath: /etc/neutron/plugins/asr1k-global.ini
+                name: neutron-etc
+                subPath: asr1k-global.ini
+                readOnly: true
+              - mountPath: /etc/neutron/policy.json
+                name: neutron-etc
+                subPath: neutron-policy.json
+                readOnly: true
+              - mountPath: /etc/neutron/rootwrap.conf
+                name: neutron-etc
+                subPath: rootwrap.conf
+                readOnly: true
+              - mountPath: /etc/neutron/api-paste.ini
+                name: neutron-etc
+                subPath: api-paste.ini
+                readOnly: true
+              - mountPath: /etc/neutron/logging.conf
+                name: neutron-etc
+                subPath: logging.conf
+                readOnly: true
+              - mountPath: /etc/neutron/plugins/ml2/ml2_conf_cc-fabric.ini
+                name: neutron-etc-cc-fabric
+                subPath: ml2_conf_cc-fabric.ini
+                readOnly: true
+              - mountPath: /etc/neutron/plugins/ml2/cc-fabric-driver-config.yaml
+                name: neutron-etc-cc-fabric
+                subPath: cc-fabric-driver-config.yaml
+                readOnly: true
+              - mountPath: /etc/neutron/plugins/ml2/ml2-conf.ini
+                name: neutron-etc
+                subPath: ml2-conf.ini
+                readOnly: true
+              - mountPath: /etc/neutron/plugins/ml2/ml2-conf-aci.ini
+                name: neutron-etc-region
+                subPath: ml2-conf-aci.ini
+                readOnly: true
+              - mountPath: /etc/neutron/plugins/ml2/ml2-conf-arista.ini
+                name: neutron-etc-vendor
+                subPath: ml2-conf-arista.ini
+                readOnly: true
+              - mountPath: /etc/neutron/plugins/ml2/ml2-conf-manila.ini
+                name: neutron-etc-vendor
+                subPath: ml2-conf-manila.ini
+                readOnly: true
+              - mountPath: /etc/neutron/plugins/ml2/ml2-conf-asr1k.ini
+                name: neutron-etc-vendor
+                subPath: ml2-conf-asr1k.ini
+                readOnly: true
+              - mountPath: /etc/neutron/networking-bgpvpn.conf
+                name: neutron-etc
+                subPath: networking-bgpvpn.conf
+                readOnly: true
+              - mountPath: /etc/neutron/networking-interconnection.conf
+                name: neutron-etc
+                subPath: networking-interconnection.conf
+                readOnly: true
+              - mountPath: /etc/neutron/neutron_audit_map.yaml
+                name: neutron-etc
+                subPath: neutron_audit_map.yaml
+                readOnly: true
+              - mountPath: /etc/neutron/watcher.yaml
+                name: neutron-etc
+                subPath: watcher.yaml
+                readOnly: true
+              - mountPath: /etc/neutron/ratelimit.yaml
+                name: neutron-etc
+                subPath: ratelimit.yaml
+                readOnly: true
+              - mountPath: /etc/neutron/uwsgi.ini
+                name: neutron-etc-api
+                subPath: uwsgi.ini
+                readOnly: true            
+              - mountPath: /run/proxysql
+                name: runproxysql                    
+          - name: proxysql
+            image: keppel.eu-de-1.cloud.sap/ccloud-dockerhub-mirror/proxysql/proxysql:2.4.7-debian
+            imagePullPolicy: IfNotPresent
+            command: ["proxysql"]
+            args: ["--config", "/etc/proxysql/proxysql.cnf", "--exit-on-error", "--foreground", "--idle-threads", "--admin-socket", "/run/proxysql/admin.sock", "--no-version-check", "-D", "/run/proxysql"]
+            lifecycle:
+              postStart:
+                exec:
+                  command:
+                  - /bin/bash
+                  - -c
+                  - |
+                    for ((i=0;i<10;++i)); do
+                      test -S /run/proxysql/admin.sock && break || sleep 1
+                    done
+                    for ((i=0;i<10;++i)); do
+                      mysql --wait -S /run/proxysql/admin.sock -uadmin -padmin -e '
+                        UPDATE mysql_servers SET max_connections=120;
+                        LOAD MYSQL SERVERS TO RUNTIME;
+                      ' && exit 0 || sleep 1
+                    done
+                    exit 1
+            ports:
+            - name: metrics-psql
+              containerPort: 6070
+            livenessProbe:
+              exec:
+                command:
+                - test
+                - -S
+                - /run/proxysql/mysql.sock
+            volumeMounts:
+            - mountPath: /etc/proxysql
+              name: etcproxysql  
+            - mountPath: /run/proxysql
+              name: runproxysql
+          - name: statsd
+            image: keppel.eu-de-1.cloud.sap/ccloud-dockerhub-mirror/prom/statsd-exporter:v0.8.1
+            imagePullPolicy: IfNotPresent
+            args: [ --statsd.mapping-config=/etc/statsd/statsd-exporter.yaml ]
+            ports:
+              - name: statsd
+                containerPort: 9125
+                protocol: UDP
+              - name: metrics
+                containerPort: 9102
+            resources:
+              limits:
+                cpu: 128m
+                memory: 128Mi
+              requests:
+                cpu: 64m
+                memory: 64Mi
+            volumeMounts:
+              - name: neutron-etc
+                mountPath: /etc/statsd/statsd-exporter.yaml
+                subPath: statsd-exporter.yaml
+                readOnly: true        
+        volumes:
+          - name: empty-dir
+            emptyDir: {}
+          - name: neutron-etc
+            configMap:
+              name: neutron-etc
+          - name: neutron-etc-cc-fabric
+            configMap:
+              name: neutron-etc-cc-fabric
+          - name: neutron-etc-vendor
+            configMap:
+              name: neutron-etc-vendor
+          - name: neutron-etc-region
+            configMap:
+              name: neutron-etc-region
+          - name: neutron-etc-api
+            configMap:
+              name: neutron-etc-api
+          - name: container-init
+            configMap:
+              name: neutron-bin
+              defaultMode: 0755        
+          - name: runproxysql
+            emptyDir: {}
+          - name: etcproxysql
+            configMap:
+              name: neutron-proxysql-etc
+[0;33mmonsoon3, neutron-swift-injector-ap001, StatefulSet (apps) has changed:[0m
+  # Source: neutron/templates/statefulset-swift-injector.yaml
+  apiVersion: apps/v1
+  kind: StatefulSet
+  metadata:
+    name: neutron-swift-injector-ap001
+    labels:
+      system: openstack
+      application: neutron
+      component: swift-injector
+  spec:
+    updateStrategy:
+      type: RollingUpdate
+    selector:
+      matchLabels:
+        name: neutron-swift-injector-ap001
+    serviceName: neutron-swift-injector
+    podManagementPolicy: "Parallel"
+    replicas: 1
+    template:
+      metadata:
+        annotations:
+          k8s.v1.cni.cncf.io/networks: '[{ "name": "cbr1-bridge", "interface":"bond1" }]'
+          configmap-etc-hash: c7755af8ac2d977d623c6d53fba876fb8b752bed83fd6eaaa949a6bcc092fca2
+          configmap-etc-apod-hash: bebf8c0481441a33bb1a13bc60dbfb73daa87b95a574bec00b7de7611c9e178d
+          prometheus.io/scrape: "true"
+          prometheus.io/targets: openstack
+        labels:
+          name: neutron-swift-injector-ap001
+          release_name: neutron
+          application: neutron
+          component: swift-injector
+      spec:
+        affinity:
+          podAntiAffinity:
+            preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 50
+              podAffinityTerm:
+                topologyKey: kubernetes.io/hostname
+                labelSelector:
+                  matchExpressions:
+                  - key: component
+                    operator: In
+                    values:
+                    - agent
+            - weight: 100
+              podAffinityTerm:
+                topologyKey: kubernetes.cloud.sap/host
+                labelSelector:
+                  matchExpressions:
+                  - key: component
+                    operator: In
+                    values:
+                    - agent
+        nodeSelector:
+          multus: bond1
+          topology.kubernetes.io/zone: qa-de-1a
+          kubernetes.cloud.sap/apod: ap001
+        containers:
+          - name: swift-agent
+            image: keppel.eu-de-1.cloud.sap/ccloud/network-injector:latest
+            imagePullPolicy: IfNotPresent
+            command:
+              - "dumb-init"
+              - "/manager"
+              - "-upstream-host"
+              - "objectstore-3.qa-de-1.cloud.sap"
+              - "-network-tag"
+              - "cc-swift-injector-ap001"
+              - "-injector-dns"
+              - "swift"
+            env:
+              - name: OS_AUTH_URL
+                value: http://keystone.monsoon3.svc.kubernetes.qa-de-1.cloud.sap:5000/v3
+              - name: OS_DOMAIN_NAME
+                value: Default
+              - name: OS_USERNAME
+                value: neutron
+              - name: OS_PASSWORD
+                value: kiedaiYaik4quohf3Bae
+              - name: OS_REGION_NAME
+                value: qa-de-1
+              - name: OS_TENANT_NAME
+                value: service
+              - name: OS_USER_DOMAIN_NAME
+                value: Default
+            securityContext:
+              privileged: true
+            volumeMounts:
+              - name: network-namespace
+                mountPath: /var/run/netns
+              - name: socat-proxy
+                mountPath: /var/run/socat-proxy
+            ports:
+              - name: metrics-inject
+                containerPort: 8080
+            livenessProbe:
+              httpGet:
+                path: /healthz
+                port: metrics-inject
+          - name: neutron-linuxbridge-agent
+[0;31m-           image: keppel.eu-de-1.cloud.sap/ccloud/loci-neutron:yoga-20231106114334[0m
+[0;32m+           image: keppel.eu-de-1.cloud.sap/ccloud/loci-neutron:yoga-20231114115012[0m
+            imagePullPolicy: IfNotPresent
+            command: ["dumb-init", "neutron-linuxbridge-agent", "--config-file", "/etc/neutron/neutron.conf", "--config-file", "/etc/neutron/plugins/ml2/ml2_conf.ini", "--config-file", "/etc/neutron/linux-bridge.ini", "--config-file", "/etc/neutron/apod-ap001.conf"]
+            env:
+              - name: SENTRY_DSN
+                valueFrom:
+                  secretKeyRef:
+                    name: sentry
+                    key: neutron.DSN.python
+              - name: DEBUG_CONTAINER
+                value: "false"
+              - name: PYTHONWARNINGS
+                value: "ignore:Unverified HTTPS request"
+            readinessProbe:
+              exec:
+                command: ["neutron-agent-liveness", "-config-file", "/etc/neutron/neutron.conf", "-agent-type", "Linux bridge agent"]
+              initialDelaySeconds: 30
+              periodSeconds: 60
+              timeoutSeconds: 10
+            securityContext:
+              capabilities:
+                add:
+                  - NET_ADMIN
+                  - SYS_ADMIN
+                  - DAC_OVERRIDE
+                  - DAC_READ_SEARCH
+                  - SYS_PTRACE
+            resources:
+              limits:
+                cpu: 2000m
+                memory: 1Gi
+              requests:
+                cpu: 256m
+                memory: 512Mi
+            volumeMounts:
+              - mountPath: /lib/modules
+                name: modules
+                readOnly: true
+              - name: etc-neutron-linuxbridge-agent
+                mountPath: /etc/neutron
+                readOnly: true
+              - name: neutron-etc
+                mountPath: /etc/sudoers
+                subPath: sudoers
+                readOnly: true
+              - name: network-namespace
+                mountPath: /var/run/netns
+          - name: socat
+            image: keppel.eu-de-1.cloud.sap/ccloud/network-injector:latest
+            imagePullPolicy: IfNotPresent
+            command:
+              - "dumb-init"
+              - "socat"
+              - "UNIX-LISTEN:/var/run/socat-proxy/proxy.sock,fork,reuseaddr,unlink-early,user=nobody,group=nobody,mode=777"
+              - "TCP:swift-proxy-internal-cluster-3.swift.svc.kubernetes.qa-de-1.cloud.sap:8080"
+            volumeMounts:
+              - name: socat-proxy
+                mountPath: /var/run/socat-proxy
+        volumes:
+          - name: network-namespace
+            emptyDir: {}
+          - name: socat-proxy
+            emptyDir: {}
+          - name: modules
+            hostPath:
+              path: /lib/modules
+          - name: neutron-etc
+            configMap:
+              name: neutron-etc
+          - name: etc-neutron-linuxbridge-agent
+            projected:
+              defaultMode: 420
+              sources:
+              - configMap:
+                  name: neutron-etc
+                  items:
+                  - key: neutron.conf
+                    path: neutron.conf
+                  - key: logging.conf
+                    path: logging.conf
+                  - key: rootwrap.conf
+                    path: rootwrap.conf
+                  - key: linux-bridge.ini
+                    path: linux-bridge.ini
+                  - key: ml2-conf.ini
+                    path: plugins/ml2/ml2_conf.ini
+              - configMap:
+                  name: neutron-etc-apod
+                  items:
+                  - key: apod-ap001.conf
+                    path: apod-ap001.conf
+[0;33mmonsoon3, neutron-swift-injector-ap002, StatefulSet (apps) has changed:[0m
+  # Source: neutron/templates/statefulset-swift-injector.yaml
+  apiVersion: apps/v1
+  kind: StatefulSet
+  metadata:
+    name: neutron-swift-injector-ap002
+    labels:
+      system: openstack
+      application: neutron
+      component: swift-injector
+  spec:
+    updateStrategy:
+      type: RollingUpdate
+    selector:
+      matchLabels:
+        name: neutron-swift-injector-ap002
+    serviceName: neutron-swift-injector
+    podManagementPolicy: "Parallel"
+    replicas: 1
+    template:
+      metadata:
+        annotations:
+          k8s.v1.cni.cncf.io/networks: '[{ "name": "cbr1-bridge", "interface":"bond1" }]'
+          configmap-etc-hash: c7755af8ac2d977d623c6d53fba876fb8b752bed83fd6eaaa949a6bcc092fca2
+          configmap-etc-apod-hash: bebf8c0481441a33bb1a13bc60dbfb73daa87b95a574bec00b7de7611c9e178d
+          prometheus.io/scrape: "true"
+          prometheus.io/targets: openstack
+        labels:
+          name: neutron-swift-injector-ap002
+          release_name: neutron
+          application: neutron
+          component: swift-injector
+      spec:
+        affinity:
+          podAntiAffinity:
+            preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 50
+              podAffinityTerm:
+                topologyKey: kubernetes.io/hostname
+                labelSelector:
+                  matchExpressions:
+                  - key: component
+                    operator: In
+                    values:
+                    - agent
+            - weight: 100
+              podAffinityTerm:
+                topologyKey: kubernetes.cloud.sap/host
+                labelSelector:
+                  matchExpressions:
+                  - key: component
+                    operator: In
+                    values:
+                    - agent
+        nodeSelector:
+          multus: bond1
+          topology.kubernetes.io/zone: qa-de-1b
+          kubernetes.cloud.sap/apod: ap002
+        containers:
+          - name: swift-agent
+            image: keppel.eu-de-1.cloud.sap/ccloud/network-injector:latest
+            imagePullPolicy: IfNotPresent
+            command:
+              - "dumb-init"
+              - "/manager"
+              - "-upstream-host"
+              - "objectstore-3.qa-de-1.cloud.sap"
+              - "-network-tag"
+              - "cc-swift-injector-ap002"
+              - "-injector-dns"
+              - "swift"
+            env:
+              - name: OS_AUTH_URL
+                value: http://keystone.monsoon3.svc.kubernetes.qa-de-1.cloud.sap:5000/v3
+              - name: OS_DOMAIN_NAME
+                value: Default
+              - name: OS_USERNAME
+                value: neutron
+              - name: OS_PASSWORD
+                value: kiedaiYaik4quohf3Bae
+              - name: OS_REGION_NAME
+                value: qa-de-1
+              - name: OS_TENANT_NAME
+                value: service
+              - name: OS_USER_DOMAIN_NAME
+                value: Default
+            securityContext:
+              privileged: true
+            volumeMounts:
+              - name: network-namespace
+                mountPath: /var/run/netns
+              - name: socat-proxy
+                mountPath: /var/run/socat-proxy
+            ports:
+              - name: metrics-inject
+                containerPort: 8080
+            livenessProbe:
+              httpGet:
+                path: /healthz
+                port: metrics-inject
+          - name: neutron-linuxbridge-agent
+[0;31m-           image: keppel.eu-de-1.cloud.sap/ccloud/loci-neutron:yoga-20231106114334[0m
+[0;32m+           image: keppel.eu-de-1.cloud.sap/ccloud/loci-neutron:yoga-20231114115012[0m
+            imagePullPolicy: IfNotPresent
+            command: ["dumb-init", "neutron-linuxbridge-agent", "--config-file", "/etc/neutron/neutron.conf", "--config-file", "/etc/neutron/plugins/ml2/ml2_conf.ini", "--config-file", "/etc/neutron/linux-bridge.ini", "--config-file", "/etc/neutron/apod-ap002.conf"]
+            env:
+              - name: SENTRY_DSN
+                valueFrom:
+                  secretKeyRef:
+                    name: sentry
+                    key: neutron.DSN.python
+              - name: DEBUG_CONTAINER
+                value: "false"
+              - name: PYTHONWARNINGS
+                value: "ignore:Unverified HTTPS request"
+            readinessProbe:
+              exec:
+                command: ["neutron-agent-liveness", "-config-file", "/etc/neutron/neutron.conf", "-agent-type", "Linux bridge agent"]
+              initialDelaySeconds: 30
+              periodSeconds: 60
+              timeoutSeconds: 10
+            securityContext:
+              capabilities:
+                add:
+                  - NET_ADMIN
+                  - SYS_ADMIN
+                  - DAC_OVERRIDE
+                  - DAC_READ_SEARCH
+                  - SYS_PTRACE
+            resources:
+              limits:
+                cpu: 2000m
+                memory: 1Gi
+              requests:
+                cpu: 256m
+                memory: 512Mi
+            volumeMounts:
+              - mountPath: /lib/modules
+                name: modules
+                readOnly: true
+              - name: etc-neutron-linuxbridge-agent
+                mountPath: /etc/neutron
+                readOnly: true
+              - name: neutron-etc
+                mountPath: /etc/sudoers
+                subPath: sudoers
+                readOnly: true
+              - name: network-namespace
+                mountPath: /var/run/netns
+          - name: socat
+            image: keppel.eu-de-1.cloud.sap/ccloud/network-injector:latest
+            imagePullPolicy: IfNotPresent
+            command:
+              - "dumb-init"
+              - "socat"
+              - "UNIX-LISTEN:/var/run/socat-proxy/proxy.sock,fork,reuseaddr,unlink-early,user=nobody,group=nobody,mode=777"
+              - "TCP:swift-proxy-internal-cluster-3.swift.svc.kubernetes.qa-de-1.cloud.sap:8080"
+            volumeMounts:
+              - name: socat-proxy
+                mountPath: /var/run/socat-proxy
+        volumes:
+          - name: network-namespace
+            emptyDir: {}
+          - name: socat-proxy
+            emptyDir: {}
+          - name: modules
+            hostPath:
+              path: /lib/modules
+          - name: neutron-etc
+            configMap:
+              name: neutron-etc
+          - name: etc-neutron-linuxbridge-agent
+            projected:
+              defaultMode: 420
+              sources:
+              - configMap:
+                  name: neutron-etc
+                  items:
+                  - key: neutron.conf
+                    path: neutron.conf
+                  - key: logging.conf
+                    path: logging.conf
+                  - key: rootwrap.conf
+                    path: rootwrap.conf
+                  - key: linux-bridge.ini
+                    path: linux-bridge.ini
+                  - key: ml2-conf.ini
+                    path: plugins/ml2/ml2_conf.ini
+              - configMap:
+                  name: neutron-etc-apod
+                  items:
+                  - key: apod-ap002.conf
+                    path: apod-ap002.conf
+[0;33mmonsoon3, neutron-swift-injector-ap028, StatefulSet (apps) has changed:[0m
+  # Source: neutron/templates/statefulset-swift-injector.yaml
+  apiVersion: apps/v1
+  kind: StatefulSet
+  metadata:
+    name: neutron-swift-injector-ap028
+    labels:
+      system: openstack
+      application: neutron
+      component: swift-injector
+  spec:
+    updateStrategy:
+      type: RollingUpdate
+    selector:
+      matchLabels:
+        name: neutron-swift-injector-ap028
+    serviceName: neutron-swift-injector
+    podManagementPolicy: "Parallel"
+    replicas: 1
+    template:
+      metadata:
+        annotations:
+          k8s.v1.cni.cncf.io/networks: '[{ "name": "cbr1-bridge", "interface":"bond1" }]'
+          configmap-etc-hash: c7755af8ac2d977d623c6d53fba876fb8b752bed83fd6eaaa949a6bcc092fca2
+          configmap-etc-apod-hash: bebf8c0481441a33bb1a13bc60dbfb73daa87b95a574bec00b7de7611c9e178d
+          prometheus.io/scrape: "true"
+          prometheus.io/targets: openstack
+        labels:
+          name: neutron-swift-injector-ap028
+          release_name: neutron
+          application: neutron
+          component: swift-injector
+      spec:
+        affinity:
+          podAntiAffinity:
+            preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 50
+              podAffinityTerm:
+                topologyKey: kubernetes.io/hostname
+                labelSelector:
+                  matchExpressions:
+                  - key: component
+                    operator: In
+                    values:
+                    - agent
+            - weight: 100
+              podAffinityTerm:
+                topologyKey: kubernetes.cloud.sap/host
+                labelSelector:
+                  matchExpressions:
+                  - key: component
+                    operator: In
+                    values:
+                    - agent
+        nodeSelector:
+          multus: bond1
+          topology.kubernetes.io/zone: qa-de-1d
+          kubernetes.cloud.sap/apod: ap028
+        containers:
+          - name: swift-agent
+            image: keppel.eu-de-1.cloud.sap/ccloud/network-injector:latest
+            imagePullPolicy: IfNotPresent
+            command:
+              - "dumb-init"
+              - "/manager"
+              - "-upstream-host"
+              - "objectstore-3.qa-de-1.cloud.sap"
+              - "-network-tag"
+              - "cc-swift-injector-ap028"
+              - "-injector-dns"
+              - "swift"
+            env:
+              - name: OS_AUTH_URL
+                value: http://keystone.monsoon3.svc.kubernetes.qa-de-1.cloud.sap:5000/v3
+              - name: OS_DOMAIN_NAME
+                value: Default
+              - name: OS_USERNAME
+                value: neutron
+              - name: OS_PASSWORD
+                value: kiedaiYaik4quohf3Bae
+              - name: OS_REGION_NAME
+                value: qa-de-1
+              - name: OS_TENANT_NAME
+                value: service
+              - name: OS_USER_DOMAIN_NAME
+                value: Default
+            securityContext:
+              privileged: true
+            volumeMounts:
+              - name: network-namespace
+                mountPath: /var/run/netns
+              - name: socat-proxy
+                mountPath: /var/run/socat-proxy
+            ports:
+              - name: metrics-inject
+                containerPort: 8080
+            livenessProbe:
+              httpGet:
+                path: /healthz
+                port: metrics-inject
+          - name: neutron-linuxbridge-agent
+[0;31m-           image: keppel.eu-de-1.cloud.sap/ccloud/loci-neutron:yoga-20231106114334[0m
+[0;32m+           image: keppel.eu-de-1.cloud.sap/ccloud/loci-neutron:yoga-20231114115012[0m
+            imagePullPolicy: IfNotPresent
+            command: ["dumb-init", "neutron-linuxbridge-agent", "--config-file", "/etc/neutron/neutron.conf", "--config-file", "/etc/neutron/plugins/ml2/ml2_conf.ini", "--config-file", "/etc/neutron/linux-bridge.ini", "--config-file", "/etc/neutron/apod-ap028.conf"]
+            env:
+              - name: SENTRY_DSN
+                valueFrom:
+                  secretKeyRef:
+                    name: sentry
+                    key: neutron.DSN.python
+              - name: DEBUG_CONTAINER
+                value: "false"
+              - name: PYTHONWARNINGS
+                value: "ignore:Unverified HTTPS request"
+            readinessProbe:
+              exec:
+                command: ["neutron-agent-liveness", "-config-file", "/etc/neutron/neutron.conf", "-agent-type", "Linux bridge agent"]
+              initialDelaySeconds: 30
+              periodSeconds: 60
+              timeoutSeconds: 10
+            securityContext:
+              capabilities:
+                add:
+                  - NET_ADMIN
+                  - SYS_ADMIN
+                  - DAC_OVERRIDE
+                  - DAC_READ_SEARCH
+                  - SYS_PTRACE
+            resources:
+              limits:
+                cpu: 2000m
+                memory: 1Gi
+              requests:
+                cpu: 256m
+                memory: 512Mi
+            volumeMounts:
+              - mountPath: /lib/modules
+                name: modules
+                readOnly: true
+              - name: etc-neutron-linuxbridge-agent
+                mountPath: /etc/neutron
+                readOnly: true
+              - name: neutron-etc
+                mountPath: /etc/sudoers
+                subPath: sudoers
+                readOnly: true
+              - name: network-namespace
+                mountPath: /var/run/netns
+          - name: socat
+            image: keppel.eu-de-1.cloud.sap/ccloud/network-injector:latest
+            imagePullPolicy: IfNotPresent
+            command:
+              - "dumb-init"
+              - "socat"
+              - "UNIX-LISTEN:/var/run/socat-proxy/proxy.sock,fork,reuseaddr,unlink-early,user=nobody,group=nobody,mode=777"
+              - "TCP:swift-proxy-internal-cluster-3.swift.svc.kubernetes.qa-de-1.cloud.sap:8080"
+            volumeMounts:
+              - name: socat-proxy
+                mountPath: /var/run/socat-proxy
+        volumes:
+          - name: network-namespace
+            emptyDir: {}
+          - name: socat-proxy
+            emptyDir: {}
+          - name: modules
+            hostPath:
+              path: /lib/modules
+          - name: neutron-etc
+            configMap:
+              name: neutron-etc
+          - name: etc-neutron-linuxbridge-agent
+            projected:
+              defaultMode: 420
+              sources:
+              - configMap:
+                  name: neutron-etc
+                  items:
+                  - key: neutron.conf
+                    path: neutron.conf
+                  - key: logging.conf
+                    path: logging.conf
+                  - key: rootwrap.conf
+                    path: rootwrap.conf
+                  - key: linux-bridge.ini
+                    path: linux-bridge.ini
+                  - key: ml2-conf.ini
+                    path: plugins/ml2/ml2_conf.ini
+              - configMap:
+                  name: neutron-etc-apod
+                  items:
+                  - key: apod-ap028.conf
+                    path: apod-ap028.conf
+[0;33mmonsoon3, neutron-migration-yoga-20231106114334-unix-socket, Job (batch) has been removed:[0m
+[0;31m- # Source: neutron/templates/job-migration.yaml[0m
+[0;31m- apiVersion: batch/v1[0m
+[0;31m- kind: Job[0m
+[0;31m- metadata:[0m
+[0;31m-   name: neutron-migration-yoga-20231106114334-unix-socket[0m
+[0;31m-   labels:[0m
+[0;31m-     system: openstack[0m
+[0;31m-     type: configuration[0m
+[0;31m-     component: neutron[0m
+[0;31m- spec:[0m
+[0;31m-   template:[0m
+[0;31m-     spec:[0m
+[0;31m-       restartPolicy: OnFailure[0m
+[0;31m-       [0m
+[0;31m-       hostAliases:[0m
+[0;31m-       - ip: "127.0.0.1"[0m
+[0;31m-         hostnames:[0m
+[0;31m-         - "neutron-mariadb"[0m
+[0;31m-       shareProcessNamespace: true[0m
+[0;31m-       securityContext:[0m
+[0;31m-         runAsUser: 65534[0m
+[0;31m-       initContainers:[0m
+[0;31m-         - name: dependencies[0m
+[0;31m-           image: keppel.eu-de-1.cloud.sap/ccloud/loci-neutron:yoga-20231106114334[0m
+[0;31m-           imagePullPolicy: IfNotPresent[0m
+[0;31m-           command:[0m
+[0;31m-             - kubernetes-entrypoint[0m
+[0;31m-           env:[0m
+[0;31m-             - name: COMMAND[0m
+[0;31m-               value: "true"[0m
+[0;31m-             - name: NAMESPACE[0m
+[0;31m-               value: monsoon3[0m
+[0;31m-             - name: DEPENDENCY_SERVICE[0m
+[0;31m-               value: "neutron-mariadb"[0m
+[0;31m-       containers:[0m
+[0;31m-         - name: neutron-migration[0m
+[0;31m-           image: keppel.eu-de-1.cloud.sap/ccloud/loci-neutron:yoga-20231106114334[0m
+[0;31m-           imagePullPolicy: IfNotPresent[0m
+[0;31m-           command:[0m
+[0;31m-             - /usr/bin/env[0m
+[0;31m-             - bash[0m
+[0;31m-             - -c[0m
+[0;31m-             - |[0m
+[0;31m-               set -euo pipefail[0m
+[0;31m-               neutron-db-manage upgrade head[0m
+[0;31m-               pkill proxysql || true[0m
+[0;31m-           env:[0m
+[0;31m-             - name: PGAPPNAME[0m
+[0;31m-               valueFrom:[0m
+[0;31m-                 fieldRef:[0m
+[0;31m-                   fieldPath: metadata.name[0m
+[0;31m-           volumeMounts:[0m
+[0;31m-             - mountPath: /etc/neutron[0m
+[0;31m-               name: etc-neutron[0m
+[0;31m-               readOnly: true            [0m
+[0;31m-             - mountPath: /run/proxysql[0m
+[0;31m-               name: runproxysql        [0m
+[0;31m-         - name: proxysql[0m
+[0;31m-           image: keppel.eu-de-1.cloud.sap/ccloud-dockerhub-mirror/proxysql/proxysql:2.4.7-debian[0m
+[0;31m-           imagePullPolicy: IfNotPresent[0m
+[0;31m-           command: ["proxysql"][0m
+[0;31m-           args: ["--config", "/etc/proxysql/proxysql.cnf", "--exit-on-error", "--foreground", "--idle-threads", "--admin-socket", "/run/proxysql/admin.sock", "--no-version-check", "-D", "/run/proxysql"][0m
+[0;31m-           ports:[0m
+[0;31m-           - name: metrics-psql[0m
+[0;31m-             containerPort: 6070[0m
+[0;31m-           livenessProbe:[0m
+[0;31m-             exec:[0m
+[0;31m-               command:[0m
+[0;31m-               - test[0m
+[0;31m-               - -S[0m
+[0;31m-               - /run/proxysql/mysql.sock[0m
+[0;31m-           volumeMounts:[0m
+[0;31m-           - mountPath: /etc/proxysql[0m
+[0;31m-             name: etcproxysql  [0m
+[0;31m-           - mountPath: /run/proxysql[0m
+[0;31m-             name: runproxysql[0m
+[0;31m-       volumes:[0m
+[0;31m-         - name: etc-neutron[0m
+[0;31m-           projected:[0m
+[0;31m-             defaultMode: 420[0m
+[0;31m-             sources:[0m
+[0;31m-             - configMap:[0m
+[0;31m-                 items:[0m
+[0;31m-                 - key: neutron.conf[0m
+[0;31m-                   path: neutron.conf[0m
+[0;31m-                 - key: ml2-conf.ini[0m
+[0;31m-                   path: plugins/ml2/ml2-conf.ini[0m
+[0;31m-                 name: neutron-etc        [0m
+[0;31m-         - name: runproxysql[0m
+[0;31m-           emptyDir: {}[0m
+[0;31m-         - name: etcproxysql[0m
+[0;31m-           configMap:[0m
+[0;31m-             name: neutron-proxysql-etc[0m
+[0;32m+ [0m
+[0;33mmonsoon3, neutron-rabbitmq-notifications, Deployment (apps) has been removed:[0m
+[0;31m- # Source: neutron/charts/rabbitmq_notifications/templates/deployment.yaml[0m
+[0;31m- apiVersion: apps/v1[0m
+[0;31m- kind: Deployment[0m
+[0;31m- metadata:[0m
+[0;31m-   name: neutron-rabbitmq-notifications[0m
+[0;31m-   labels:[0m
+[0;31m-     app: neutron-rabbitmq-notifications[0m
+[0;31m-     chart: "rabbitmq_notifications-0.5.1"[0m
+[0;31m-     release: "neutron"[0m
+[0;31m-     heritage: "Helm"[0m
+[0;31m-     type: rabbitmq[0m
+[0;31m-     component: neutron[0m
+[0;31m-     system: openstack[0m
+[0;31m- spec:[0m
+[0;31m-   replicas: 1[0m
+[0;31m-   revisionHistoryLimit: 3[0m
+[0;31m-   strategy:[0m
+[0;31m-     type: Recreate[0m
+[0;31m-     [0m
+[0;31m-   selector:[0m
+[0;31m-     matchLabels:[0m
+[0;31m-       app: neutron-rabbitmq-notifications[0m
+[0;31m-   template:[0m
+[0;31m-     metadata:[0m
+[0;31m-       labels:[0m
+[0;31m-         app: neutron-rabbitmq-notifications[0m
+[0;31m-       annotations:[0m
+[0;31m-         checksum/container.init: 2dbea50882ec4ae69d373ddb63ee9e78dbb1d3503f8e2987def9a4f18e946625[0m
+[0;31m-     spec:[0m
+[0;31m-       affinity:[0m
+[0;31m-         nodeAffinity:[0m
+[0;31m-           preferredDuringSchedulingIgnoredDuringExecution:[0m
+[0;31m-           - weight: 1[0m
+[0;31m-             preference:[0m
+[0;31m-               matchExpressions:[0m
+[0;31m-               - key: cloud.sap/maintenance-state[0m
+[0;31m-                 operator: In[0m
+[0;31m-                 values:[0m
+[0;31m-                 - operational[0m
+[0;31m-           - weight: 1[0m
+[0;31m-             preference:[0m
+[0;31m-               matchExpressions:[0m
+[0;31m-               - key: cloud.sap/deployment-state[0m
+[0;31m-                 operator: NotIn[0m
+[0;31m-                 values:[0m
+[0;31m-                 - reinstalling[0m
+[0;31m-       hostname: neutron-rabbitmq-notifications[0m
+[0;31m-       securityContext:[0m
+[0;31m-         runAsUser: 999[0m
+[0;31m-         runAsGroup: 999[0m
+[0;31m-         fsGroup: 999[0m
+[0;31m-         fsGroupChangePolicy: "OnRootMismatch"[0m
+[0;31m-       containers:[0m
+[0;31m-       - name: rabbitmq[0m
+[0;31m-         image: "keppel.eu-de-1.cloud.sap/ccloud-dockerhub-mirror/library/rabbitmq:3.10.5-management"[0m
+[0;31m-         imagePullPolicy: "IfNotPresent"[0m
+[0;31m-         command:[0m
+[0;31m-           - bash[0m
+[0;31m-         args:[0m
+[0;31m-           - /container.init/rabbitmq-start[0m
+[0;31m-         livenessProbe:[0m
+[0;31m-           exec:[0m
+[0;31m-             command:[0m
+[0;31m-             - rabbitmqctl[0m
+[0;31m-             - status[0m
+[0;31m-           failureThreshold: 3[0m
+[0;31m-           initialDelaySeconds: 60[0m
+[0;31m-           periodSeconds: 10[0m
+[0;31m-           successThreshold: 1[0m
+[0;31m-           timeoutSeconds: 10[0m
+[0;31m-         readinessProbe:[0m
+[0;31m-           tcpSocket:[0m
+[0;31m-             port: public[0m
+[0;31m-           failureThreshold: 3[0m
+[0;31m-           initialDelaySeconds: 15[0m
+[0;31m-           periodSeconds: 10[0m
+[0;31m-           successThreshold: 1[0m
+[0;31m-           timeoutSeconds: 5[0m
+[0;31m-         resources:[0m
+[0;31m-           limits:[0m
+[0;31m-             cpu: 5000m[0m
+[0;31m-           requests:[0m
+[0;31m-             cpu: 800m[0m
+[0;31m-             memory: 512Mi[0m
+[0;31m-         ports:[0m
+[0;31m-           - name: public[0m
+[0;31m-             containerPort: 5672[0m
+[0;31m-           - name: management[0m
+[0;31m-             containerPort: 15672[0m
+[0;31m-           - name: metrics[0m
+[0;31m-             containerPort: 9150[0m
+[0;31m-         volumeMounts:[0m
+[0;31m-           - mountPath: /var/lib/rabbitmq[0m
+[0;31m-             name: rabbitmq-persistent-storage[0m
+[0;31m-           - mountPath: /container.init[0m
+[0;31m-             name: container-init[0m
+[0;31m-       priorityClassName: "openstack-service-critical"[0m
+[0;31m-       volumes:[0m
+[0;31m-         - name: rabbitmq-persistent-storage[0m
+[0;31m-           emptyDir: {}[0m
+[0;31m-         - name: container-init[0m
+[0;31m-           configMap:[0m
+[0;31m-             name: neutron-rabbitmq-notifications-bin[0m
+[0;32m+ [0m
+[0;33mmonsoon3, neutron-rabbitmq-notifications, Service (v1) has been removed:[0m
+[0;31m- # Source: neutron/charts/rabbitmq_notifications/templates/service.yaml[0m
+[0;31m- apiVersion: v1[0m
+[0;31m- kind: Service[0m
+[0;31m- metadata:[0m
+[0;31m-   name: neutron-rabbitmq-notifications[0m
+[0;31m-   labels:[0m
+[0;31m-     app: neutron-rabbitmq-notifications[0m
+[0;31m-     chart: "rabbitmq_notifications-0.5.1"[0m
+[0;31m-     release: "neutron"[0m
+[0;31m-     heritage: "Helm"[0m
+[0;31m-     type: rabbitmq[0m
+[0;31m-     component: neutron[0m
+[0;31m-     system: openstack[0m
+[0;31m-   annotations:[0m
+[0;31m-     prometheus.io/scrape: "true"[0m
+[0;31m-     prometheus.io/port: "9150"[0m
+[0;31m-     prometheus.io/targets: "openstack"[0m
+[0;31m- spec:[0m
+[0;31m-   ports:[0m
+[0;31m-     - name: public[0m
+[0;31m-       port: 5672[0m
+[0;31m-     - name: management[0m
+[0;31m-       port: 15672[0m
+[0;31m-   selector:[0m
+[0;31m-     app: neutron-rabbitmq-notifications[0m
+[0;32m+ [0m
+[0;33mmonsoon3, neutron-rabbitmq-notifications-bin, ConfigMap (v1) has been removed:[0m
+[0;31m- # Source: neutron/charts/rabbitmq_notifications/templates/bin-configmap.yaml[0m
+[0;31m- apiVersion: v1[0m
+[0;31m- kind: ConfigMap[0m
+[0;31m- metadata:[0m
+[0;31m-   name: neutron-rabbitmq-notifications-bin[0m
+[0;31m-   labels:[0m
+[0;31m-     app: neutron-rabbitmq-notifications[0m
+[0;31m-     release: "neutron"[0m
+[0;31m-     heritage: "Helm"[0m
+[0;31m-     component: rabbitmq[0m
+[0;31m- data:[0m
+[0;31m-   rabbitmq-start: |[0m
+[0;31m-     #!/usr/bin/env bash[0m
+[0;31m-     set -euo pipefail[0m
+[0;31m-     echo "prometheus.tcp.port = 9150" >> /etc/rabbitmq/conf.d/10-defaults.conf[0m
+[0;31m-     LOCKFILE=/var/lib/rabbitmq/rabbitmq-server.lock[0m
+[0;31m-     echo "Starting RabbitMQ with lock ${LOCKFILE}"[0m
+[0;31m-     exec 9>${LOCKFILE}[0m
+[0;31m-     /usr/bin/flock -n 9[0m
+[0;31m-     [0m
+[0;31m-     declare -A users[0m
+[0;31m-     [0m
+[0;31m-     function upsert_user {[0m
+[0;31m-         if [ "${users[$1]+set}" ]; then[0m
+[0;31m-             rabbitmqctl -q change_password "$1" "$2"[0m
+[0;31m-             if [ "${3+set}" ]; then[0m
+[0;31m-                 [ "${users[$1]}" == "${3}" ] || rabbitmqctl -q set_user_tags "$1" "$3"[0m
+[0;31m-             elif [ "${users[$1]+set}" ]; then[0m
+[0;31m-                 rabbitmqctl -q set_user_tags "$1"[0m
+[0;31m-             fi[0m
+[0;31m-         else[0m
+[0;31m-             rabbitmqctl -q add_user "$1" "$2"[0m
+[0;31m-             rabbitmqctl -q set_permissions "$1" ".*" ".*" ".*"[0m
+[0;31m-             if [ "${3+set}" ]; then[0m
+[0;31m-                 rabbitmqctl -q set_user_tags "$1" "$3"[0m
+[0;31m-             else[0m
+[0;31m-                 rabbitmqctl -q set_user_tags "$1"[0m
+[0;31m-             fi[0m
+[0;31m-         fi[0m
+[0;31m-     }[0m
+[0;31m-     [0m
+[0;31m-     rabbitmq-server &[0m
+[0;31m-     PID=$![0m
+[0;31m-     function cleanup() {[0m
+[0;31m-         kill -SIGTERM $PID[0m
+[0;31m-         wait $(jobs -rp) || true[0m
+[0;31m-     }[0m
+[0;31m-     trap cleanup EXIT[0m
+[0;31m-     [0m
+[0;31m-     timeout 60 rabbitmqctl wait /var/lib/rabbitmq/mnesia/rabbit@$HOSTNAME.pid[0m
+[0;31m-     [0m
+[0;31m-     eval $(timeout 5.0 rabbitmqctl list_users -q | awk '{printf "users[\"%s\"]=\"%s\"\n", $1, substr($2, 2, length($2)-2)}')[0m
+[0;31m-     upsert_user "admin" "J5YNcpwzEzOCuF4j0ZA28waa" "administrator"[0m
+[0;31m-     upsert_user "rabbitmq" "Lqt4eDF0R04aGkdLuZZf5Aaa"[0m
+[0;31m-     upsert_user "monitoring" "9Yd9z-NXW5amodNySc2ZWQaa" monitoring[0m
+[0;31m-     upsert_user guest "Lqt4eDF0R04aGkdLuZZf5Aaa" monitoring[0m
+[0;31m-     [0m
+[0;31m-     wait $(jobs -rp) || true[0m
+[0;31m-     sleep inf[0m
+[0;32m+ [0m
+[0;33mmonsoon3, neutron-rabbitmq-notifications-health-alerts, PrometheusRule (monitoring.coreos.com) has been removed:[0m
+[0;31m- # Source: neutron/charts/rabbitmq_notifications/templates/alerts.yaml[0m
+[0;31m- apiVersion: monitoring.coreos.com/v1[0m
+[0;31m- kind: PrometheusRule[0m
+[0;31m- [0m
+[0;31m- metadata:[0m
+[0;31m-   name: neutron-rabbitmq-notifications-health-alerts[0m
+[0;31m-   labels:[0m
+[0;31m-     app: neutron-rabbitmq-notifications[0m
+[0;31m-     chart: "rabbitmq_notifications-0.5.1"[0m
+[0;31m-     release: "neutron"[0m
+[0;31m-     heritage: "Helm"[0m
+[0;31m-     component: rabbitmq[0m
+[0;31m-     prometheus: "kubernetes"[0m
+
+[0;31m- spec:[0m
+[0;31m-   groups:[0m
+[0;31m-   - name: health.alerts[0m
+[0;31m-     rules:[0m
+[0;31m-     - alert: NeutronRabbitMQNotReady[0m
+[0;31m-       expr: (kube_pod_status_ready_normalized{condition="true", pod=~"neutron-rabbitmq-notifications.*", pod!~"neutron-rabbitmq-notifications-notifications.*"} < 1)[0m
+[0;31m-       for: 10m[0m
+[0;31m-       labels:[0m
+[0;31m-         severity: critical[0m
+[0;31m-         context: availability[0m
+[0;31m-         service: neutron[0m
+[0;31m-         dashboard: rabbitmq[0m
+[0;31m-         tier: os[0m
+[0;31m-         playbook: 'docs/devops/alert/rabbitmq/'[0m
+[0;31m-         support_group: network-api[0m
+[0;31m-       annotations:[0m
+[0;31m-         description: neutron-rabbitmq-notifications is not ready for 10 minutes.[0m
+[0;31m-         summary: neutron-rabbitmq-notifications is not ready for 10 minutes. Please check the pod.[0m
+[0;33mmonsoon3, neutron-rabbitmq-notifications-rabbitmq-alerts, PrometheusRule (monitoring.coreos.com) has been removed:[0m
+[0;31m- # Source: neutron/charts/rabbitmq_notifications/templates/alerts.yaml[0m
+[0;31m- apiVersion: monitoring.coreos.com/v1[0m
+[0;31m- kind: PrometheusRule[0m
+[0;31m- [0m
+[0;31m- metadata:[0m
+[0;31m-   name: neutron-rabbitmq-notifications-rabbitmq-alerts[0m
+[0;31m-   labels:[0m
+[0;31m-     app: neutron-rabbitmq-notifications[0m
+[0;31m-     chart: "rabbitmq_notifications-0.5.1"[0m
+[0;31m-     release: "neutron"[0m
+[0;31m-     heritage: "Helm"[0m
+[0;31m-     component: rabbitmq[0m
+[0;31m-     prometheus: openstack[0m
+
+[0;31m- spec:[0m
+[0;31m-   groups:[0m
+[0;31m-   - name: Neutron-rabbitmq.alerts[0m
+[0;31m-     rules:[0m
+[0;31m-     - alert: NeutronRabbitMQRPCUnackTotal[0m
+[0;31m-       expr: sum(rabbitmq_queue_messages_unacknowledged{app=~"neutron-rabbitmq"}) by (app) > 1000[0m
+[0;31m-       for: 1m[0m
+[0;31m-       labels:[0m
+[0;31m-         severity: critical[0m
+[0;31m-         tier: os[0m
+[0;31m-         support_group: network-api[0m
+[0;31m-         service:  neutron[0m
+[0;31m-         context: '{{ $labels.app }}'[0m
+[0;31m-         dashboard: rabbitmq[0m
+[0;31m-         meta: '{{ $labels.app }} has over 1000 unacknowledged messages.'[0m
+[0;31m-         playbook: 'docs/devops/alert/rabbitmq/'[0m
+[0;31m-       annotations:[0m
+[0;31m-         description: 'RPC Messages are not being collected. {{ $labels.app }} has over 1000 unacknowledged messages.'[0m
+[0;31m-         summary: 'RPC messages are not being collected.'[0m
+[0;31m-   [0m
+[0;31m-     - alert: NeutronRabbitMQRPCReadyTotal[0m
+[0;31m-       expr: sum(rabbitmq_queue_messages_ready{app=~"neutron-rabbitmq"}) by (app) > 1000[0m
+[0;31m-       for: 1m[0m
+[0;31m-       labels:[0m
+[0;31m-         severity: critical[0m
+[0;31m-         tier: os[0m
+[0;31m-         support_group: network-api[0m
+[0;31m-         service: neutron[0m
+[0;31m-         context: '{{ $labels.app }}'[0m
+[0;31m-         dashboard: rabbitmq[0m
+[0;31m-         meta: 'RPC Messages are not being collected. {{ $labels.app }} has over 1000 rpc messages waiting.'[0m
+[0;31m-         playbook: 'docs/devops/alert/rabbitmq/'[0m
+[0;31m-       annotations:[0m
+[0;31m-         description: 'RPC Messages are not being collected. {{ $labels.app }} has over 1000 rpc messages waiting.'[0m
+[0;31m-         summary: 'RPC messages are not being collected.'[0m
+[0;33mmonsoon3, neutron-migration-yoga-20231114115012-unix-socket, Job (batch) has been added:[0m
+[0;31m- [0m
+[0;32m+ # Source: neutron/templates/job-migration.yaml[0m
+[0;32m+ apiVersion: batch/v1[0m
+[0;32m+ kind: Job[0m
+[0;32m+ metadata:[0m
+[0;32m+   name: neutron-migration-yoga-20231114115012-unix-socket[0m
+[0;32m+   labels:[0m
+[0;32m+     system: openstack[0m
+[0;32m+     type: configuration[0m
+[0;32m+     component: neutron[0m
+[0;32m+ spec:[0m
+[0;32m+   template:[0m
+[0;32m+     spec:[0m
+[0;32m+       restartPolicy: OnFailure[0m
+[0;32m+       [0m
+[0;32m+       hostAliases:[0m
+[0;32m+       - ip: "127.0.0.1"[0m
+[0;32m+         hostnames:[0m
+[0;32m+         - "neutron-mariadb"[0m
+[0;32m+       shareProcessNamespace: true[0m
+[0;32m+       securityContext:[0m
+[0;32m+         runAsUser: 65534[0m
+[0;32m+       initContainers:[0m
+[0;32m+         - name: dependencies[0m
+[0;32m+           image: keppel.eu-de-1.cloud.sap/ccloud/loci-neutron:yoga-20231114115012[0m
+[0;32m+           imagePullPolicy: IfNotPresent[0m
+[0;32m+           command:[0m
+[0;32m+             - kubernetes-entrypoint[0m
+[0;32m+           env:[0m
+[0;32m+             - name: COMMAND[0m
+[0;32m+               value: "true"[0m
+[0;32m+             - name: NAMESPACE[0m
+[0;32m+               value: monsoon3[0m
+[0;32m+             - name: DEPENDENCY_SERVICE[0m
+[0;32m+               value: "neutron-mariadb"[0m
+[0;32m+       containers:[0m
+[0;32m+         - name: neutron-migration[0m
+[0;32m+           image: keppel.eu-de-1.cloud.sap/ccloud/loci-neutron:yoga-20231114115012[0m
+[0;32m+           imagePullPolicy: IfNotPresent[0m
+[0;32m+           command:[0m
+[0;32m+             - /usr/bin/env[0m
+[0;32m+             - bash[0m
+[0;32m+             - -c[0m
+[0;32m+             - |[0m
+[0;32m+               set -euo pipefail[0m
+[0;32m+               neutron-db-manage upgrade head[0m
+[0;32m+               pkill proxysql || true[0m
+[0;32m+           env:[0m
+[0;32m+             - name: PGAPPNAME[0m
+[0;32m+               valueFrom:[0m
+[0;32m+                 fieldRef:[0m
+[0;32m+                   fieldPath: metadata.name[0m
+[0;32m+           volumeMounts:[0m
+[0;32m+             - mountPath: /etc/neutron[0m
+[0;32m+               name: etc-neutron[0m
+[0;32m+               readOnly: true            [0m
+[0;32m+             - mountPath: /run/proxysql[0m
+[0;32m+               name: runproxysql        [0m
+[0;32m+         - name: proxysql[0m
+[0;32m+           image: keppel.eu-de-1.cloud.sap/ccloud-dockerhub-mirror/proxysql/proxysql:2.4.7-debian[0m
+[0;32m+           imagePullPolicy: IfNotPresent[0m
+[0;32m+           command: ["proxysql"][0m
+[0;32m+           args: ["--config", "/etc/proxysql/proxysql.cnf", "--exit-on-error", "--foreground", "--idle-threads", "--admin-socket", "/run/proxysql/admin.sock", "--no-version-check", "-D", "/run/proxysql"][0m
+[0;32m+           ports:[0m
+[0;32m+           - name: metrics-psql[0m
+[0;32m+             containerPort: 6070[0m
+[0;32m+           livenessProbe:[0m
+[0;32m+             exec:[0m
+[0;32m+               command:[0m
+[0;32m+               - test[0m
+[0;32m+               - -S[0m
+[0;32m+               - /run/proxysql/mysql.sock[0m
+[0;32m+           volumeMounts:[0m
+[0;32m+           - mountPath: /etc/proxysql[0m
+[0;32m+             name: etcproxysql  [0m
+[0;32m+           - mountPath: /run/proxysql[0m
+[0;32m+             name: runproxysql[0m
+[0;32m+       volumes:[0m
+[0;32m+         - name: etc-neutron[0m
+[0;32m+           projected:[0m
+[0;32m+             defaultMode: 420[0m
+[0;32m+             sources:[0m
+[0;32m+             - configMap:[0m
+[0;32m+                 items:[0m
+[0;32m+                 - key: neutron.conf[0m
+[0;32m+                   path: neutron.conf[0m
+[0;32m+                 - key: ml2-conf.ini[0m
+[0;32m+                   path: plugins/ml2/ml2-conf.ini[0m
+[0;32m+                 name: neutron-etc        [0m
+[0;32m+         - name: runproxysql[0m
+[0;32m+           emptyDir: {}[0m
+[0;32m+         - name: etcproxysql[0m
+[0;32m+           configMap:[0m
+[0;32m+             name: neutron-proxysql-etc[0m
