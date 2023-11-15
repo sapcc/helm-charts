@@ -31,7 +31,7 @@ Create chart name and version as used by the chart label.
 {{- end }}
 
 {{- define "nats.fqdn" -}}
-{{- template "nats.fullname" . }}.cc.{{ .Values.global.region }}.{{ .Values.global.tld -}}
+{{- template "nats.fullname" . }}.cc.{{ template "nats.region" . }}.{{ .Values.global.tld -}}
 {{- end -}}
 
 {{/*
@@ -62,5 +62,13 @@ Create the name of the service account to use
 {{- default (include "nats.fullname" .) .Values.serviceAccount.name }}
 {{- else }}
 {{- default "default" .Values.serviceAccount.name }}
+{{- end }}
+{{- end }}
+
+{{- define "nats.region" -}}
+{{- if eq .Values.global.region "global" }}
+{{- .Values.region | default "global" }}
+{{- else }}
+{{- .Values.global.region }}
 {{- end }}
 {{- end }}

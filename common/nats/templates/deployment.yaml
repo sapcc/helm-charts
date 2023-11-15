@@ -36,12 +36,6 @@ spec:
           - nats-server
           - --config
           - /etc/nats/nats-server.conf
-          - --cluster_advertise
-          - "{{ template "nats.fqdn" . }}"
-          {{- if .Values.seed.join }}
-          - --routes
-          - "nats-route://{{ .Values.seed.user }}:{{ .Values.seed.pass }}@{{ .Values.seed.join }}:6222"
-          {{- end }}
           - -V
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           ports:
@@ -58,6 +52,10 @@ spec:
               port: http
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
+          volumeMounts:
+            - name: etc-nats
+              mountPath: /etc/nats
+              readOnly: true
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
@@ -70,3 +68,13 @@ spec:
       tolerations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
+      volumes:
+        - name: etc-nats
+          projected:
+            defaultMode: 420
+            sources:
+              - configMap:
+                  name: {{ include "nats.fullname" . }}-etc
+                  items:
+                    - key: nats-server.conf
+                      path: nats-server.conf
