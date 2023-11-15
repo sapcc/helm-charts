@@ -10,20 +10,16 @@
       "max_result_window": 20000,
       "analysis": {
         "char_filter": {
-          "hyphen_char_filter": {
+          "custom_char_filter": {
             "type": "mapping",
-            "mappings": ["-=>"]
-          },
-          "slash_char_filter": {
-            "type": "mapping",
-            "mappings": ["/=>"]
+            "mappings": ["/=>/, .=>., -=>-, _=>_"]
           }
         },
         "analyzer": {
           "custom_analyzer": {
             "type": "custom",
             "tokenizer": "standard",
-            "char_filter": ["hyphen_char_filter", "slash_char_filter"]
+            "char_filter": ["custom_char_filter"]
           }
         }
       }
