@@ -99,10 +99,25 @@ mariadb:
     enabled: false
   backup_v2:
     enabled: false
+    verification:
+      enabled: false
+      run_after_inc_backups: 12
+    databases:
+      - andromeda
+    verify_tables:
+      - andromeda.agents
+      - andromeda.schema_migration
+    oauth:
+      client_id: "andromeda"
   users:
     andromeda:
       grants:
       - "ALL PRIVILEGES on andromeda.*"
+
+mysql_metrics:
+  enabled: false
+  db_name: andromeda
+  db_user: andromeda
 
 database_override:
   enabled: false
@@ -119,8 +134,16 @@ nats:
   auth:
     enabled: false
 
+audit:
+  enabled: false
+  user: rabbitmq
+  host: hermes-rabbitmq-notifications.hermes
+  port: 5672
+  queue_name: notifications.info
+
 debug: false
 seed: false
+qa: false
 
 imagePullSecrets: []
 nameOverride: ""
