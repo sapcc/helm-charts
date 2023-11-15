@@ -18,8 +18,15 @@
         "analyzer": {
           "custom_analyzer": {
             "type": "custom",
-            "tokenizer": "standard",
+            "tokenizer": "custom_tokenizer",
             "char_filter": ["custom_char_filter"]
+          }
+        },
+        "tokenizer": {
+          "custom_tokenizer": {
+            "type": "pattern",
+            "pattern": "[\\/\\-._]+", // Tokenize based on these characters
+            "group": 0 // Group the entire string into one token
           }
         }
       }
