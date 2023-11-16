@@ -7,7 +7,29 @@
       "number_of_shards": 1,
       "number_of_replicas": 1,
       "codec": "best_compression",
-      "max_result_window": 20000
+      "max_result_window": 20000,
+      "analysis": {
+        "char_filter": {
+          "custom_char_filter": {
+            "type": "mapping",
+            "mappings": ["/=>/, .=>., -=>-, _=>_"]
+          }
+        },
+        "analyzer": {
+          "custom_analyzer": {
+            "type": "custom",
+            "tokenizer": "custom_tokenizer",
+            "char_filter": ["custom_char_filter"]
+          }
+        },
+        "tokenizer": {
+          "custom_tokenizer": {
+            "type": "pattern",
+            "pattern": "[\\/\\-._]+", // Tokenize based on these characters
+            "group": 0 // Group the entire string into one token
+          }
+        }
+      }
     }
   },
   "mappings" : {
@@ -16,13 +38,16 @@
         "type" : "date"
       },
       "@version" : {
-        "type" : "keyword"
+        "type" : "text",
+        "analyzer": "custom_analyzer"
       },
       "_unique_id" : {
-        "type" : "keyword"
+        "type" : "text",
+        "analyzer": "custom_analyzer"
       },
       "action" : {
-        "type" : "keyword"
+        "type" : "text",
+        "analyzer": "custom_analyzer"
       },
       "attachments" : {
         "properties" : {
@@ -30,10 +55,12 @@
             "type" : "text"
           },
           "name" : {
-            "type" : "keyword"
+            "type" : "text",
+        "analyzer": "custom_analyzer"
           },
           "typeURI" : {
-            "type" : "keyword"
+            "type" : "text",
+        "analyzer": "custom_analyzer"
           }
         }
       },
@@ -42,106 +69,132 @@
         "format" : "date_optional_time"
       },
       "eventType" : {
-        "type" : "keyword"
+        "type" : "text",
+        "analyzer": "custom_analyzer"
       },
       "id" : {
-        "type" : "keyword"
+        "type" : "text",
+        "analyzer": "custom_analyzer"
       },
       "initiator" : {
         "properties" : {
           "domain" : {
-            "type" : "keyword"
+            "type" : "text",
+            "analyzer": "custom_analyzer"
           },
           "domain_id" : {
-            "type" : "keyword"
+            "type" : "text",
+            "analyzer": "custom_analyzer"
           },
           "host" : {
             "properties" : {
               "address" : {
-                "type" : "keyword"
+                "type" : "text",
+                "analyzer": "custom_analyzer"
               },
               "agent" : {
-                "type" : "keyword"
+                "type" : "text",
+                "analyzer": "custom_analyzer"
               }
             }
           },
           "id" : {
-            "type" : "keyword"
+            "type" : "text",
+            "analyzer": "custom_analyzer"
           },
           "name" : {
-            "type" : "keyword"
+            "type" : "text",
+            "analyzer": "custom_analyzer"
           },
           "project_id" : {
-            "type" : "keyword"
+            "type" : "text",
+            "analyzer": "custom_analyzer"
           },
           "typeURI" : {
-            "type" : "keyword"
+            "type" : "text",
+            "analyzer": "custom_analyzer"
           }
         }
       },
       "observer" : {
         "properties" : {
           "id" : {
-            "type" : "keyword"
+            "type" : "text",
+            "analyzer": "custom_analyzer"
           },
           "name" : {
-            "type" : "keyword"
+            "type" : "text",
+            "analyzer": "custom_analyzer"
           },
           "typeURI" : {
-            "type" : "keyword"
+            "type" : "text",
+            "analyzer": "custom_analyzer"
           }
         }
       },
       "outcome" : {
-        "type" : "keyword"
+        "type" : "text",
+        "analyzer": "custom_analyzer"
       },
       "reason" : {
         "properties" : {
           "reasonCode" : {
-            "type" : "keyword"
+            "type" : "text",
+            "analyzer": "custom_analyzer"
           },
           "reasonType" : {
-            "type" : "keyword"
+            "type" : "text",
+            "analyzer": "custom_analyzer"
           }
         }
       },
       "requestPath" : {
-        "type" : "keyword"
+        "type" : "text",
+        "analyzer": "custom_analyzer"
       },
       "target" : {
         "properties" : {
           "attachments" : {
             "properties" : {
               "content" : {
-                "type" : "keyword"
+                "type" : "text",
+                "analyzer": "custom_analyzer"
               },
               "name" : {
-                "type" : "keyword"
+                "type" : "text",
+                "analyzer": "custom_analyzer"
               },
               "typeURI" : {
-                "type" : "keyword"
+                "type" : "text",
+                "analyzer": "custom_analyzer"
               }
             }
           },
           "domain_id" : {
-            "type" : "keyword"
+            "type" : "text",
+            "analyzer": "custom_analyzer"
           },
           "id" : {
-            "type" : "keyword"
+            "type" : "text",
+            "analyzer": "custom_analyzer"
           },
           "name" : {
-            "type" : "keyword"
+            "type" : "text",
+            "analyzer": "custom_analyzer"
           },
           "project_id" : {
-            "type" : "keyword"
+            "type" : "text",
+            "analyzer": "custom_analyzer"
           },
           "typeURI" : {
-            "type" : "keyword"
+            "type" : "text",
+            "analyzer": "custom_analyzer"
           }
         }
       },
       "typeURI" : {
-        "type" : "keyword"
+        "type" : "text",
+        "analyzer": "custom_analyzer"
       }
     }
   }
