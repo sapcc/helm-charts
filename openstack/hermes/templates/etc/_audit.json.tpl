@@ -25,7 +25,7 @@
         "tokenizer": {
           "custom_tokenizer": {
             "type": "pattern",
-            "pattern": "[^a-zA-Z0-9\\/\\-\\._]+" // Tokenize based on characters that are not in this set
+            "pattern": "[^a-zA-Z0-9\-\.\/\_]+" // Tokenize based on characters that are not in this set
           }
         }
       }
