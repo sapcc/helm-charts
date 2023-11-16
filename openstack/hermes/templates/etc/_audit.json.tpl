@@ -9,23 +9,16 @@
       "codec": "best_compression",
       "max_result_window": 20000,
       "analysis": {
-        "char_filter": {
-          "custom_char_filter": {
-            "type": "mapping",
-            "mappings": ["/=>/, .=>., -=>-, _=>_"]
-          }
-        },
         "analyzer": {
           "custom_analyzer": {
             "type": "custom",
             "tokenizer": "custom_tokenizer",
-            "char_filter": ["custom_char_filter"]
           }
         },
         "tokenizer": {
           "custom_tokenizer": {
             "type": "pattern",
-            "pattern": "[^a-zA-Z0-9\-\.\/\_]+" // Tokenize based on characters that are not in this set
+            "pattern": "[^a-zA-Z0-9\\-\\.\\/\\_]+" // Tokenize based on characters that are not in this set, java regex engine
           }
         }
       }
