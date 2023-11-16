@@ -25,8 +25,7 @@
         "tokenizer": {
           "custom_tokenizer": {
             "type": "pattern",
-            "pattern": "[\\/\\-._]+", // Tokenize based on these characters
-            "group": 0 // Group the entire string into one token
+            "pattern": "[^a-zA-Z0-9\\/\\-\\._]+" // Tokenize based on characters that are not in this set
           }
         }
       }
