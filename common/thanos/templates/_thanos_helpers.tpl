@@ -123,3 +123,35 @@ cluster.local
 {{- default "default" $svcName -}}
 {{- end -}}
 {{- end -}}
+
+{{- define "thanos.storeAPIs" -}}
+{{- $host := index . 0 -}}
+{{- $root := index . 1 -}}
+{{/* Thanos Query discovery within the cluster */}}
+{{- if $root.Values.queryDiscovery -}}
+- targets:
+{{- range $index, $service := (lookup "v1" "Service" "" "").items }}
+{{- if and (hasPrefix "thanos" $service.metadata.name) (contains "query" $service.metadata.name) (not (contains "maia" $service.metadata.name)) (not (contains "metal" $service.metadata.name)) (not (contains "scaleout" $service.metadata.name)) (not (contains "regional" $service.metadata.name)) }}
+{{- $store := $service.metadata.name }}
+{{ printf "- dnssrvnoa+_grpc._tcp.%s.%s.svc.%s" $store $service.metadata.namespace (include "clusterDomainOrDefault" $root) | indent 2 }}
+{{- end }}
+{{- end }}
+{{/* Global Thanos Query Store API endpoints */}}
+{{- else if and $root.Values.useQueryRegions $root.Values.clusterTypes -}}
+- targets:
+{{- range $region := $.Values.queryRegions }}
+{{- range $cluster := $root.Values.clusterTypes }}
+  - thanos-{{ $cluster }}-grpc.{{ $region }}.{{ $root.Values.global.tld }}:443
+{{- end }}
+{{- end }}
+{{- range $store := $.Values.query.stores }}
+  - {{ $store }}.{{ $root.Values.global.tld }}:443
+{{- end }}
+{{/* Regional Thanos Query Store API endpoints */}}
+{{- else if $root.Values.clusterTypes -}}
+- targets:
+{{- range $cluster := $root.Values.clusterTypes }}
+  - thanos-{{ $cluster }}-grpc.{{ $root.Values.global.region }}.{{ $root.Values.global.tld }}:443
+{{- end }}
+{{- end }}
+{{- end }}
