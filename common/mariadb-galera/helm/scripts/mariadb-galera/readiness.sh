@@ -6,7 +6,7 @@ set -o pipefail
 source /opt/${SOFTWARE_NAME}/bin/common-functions.sh
 
 function checkgaleraclusterstatus {
-  mysql --protocol=socket --user=root --database=mysql --connect-timeout={{ $.Values.readinessProbe.timeoutSeconds.application }} --execute="SHOW GLOBAL STATUS LIKE 'wsrep_cluster_status';" --batch --skip-column-names | grep --silent 'Primary'
+  mysql --protocol=socket --user=root --database=mysql --connect-timeout={{ $.Values.readinessProbe.timeoutSeconds.database }} --execute="SHOW GLOBAL STATUS LIKE 'wsrep_cluster_status';" --batch --skip-column-names | grep --silent 'Primary'
   if [ $? -eq 0 ]; then
     echo 'MariaDB Galera node reports a working cluster status'
   else
@@ -16,7 +16,7 @@ function checkgaleraclusterstatus {
 }
 
 function checkgaleranodejoinstatus {
-  mysql --protocol=socket --user=root --database=mysql --connect-timeout={{ $.Values.readinessProbe.timeoutSeconds.application }} --execute="SHOW GLOBAL STATUS LIKE 'wsrep_local_state_comment';" --batch --skip-column-names | grep --silent 'Synced'
+  mysql --protocol=socket --user=root --database=mysql --connect-timeout={{ $.Values.readinessProbe.timeoutSeconds.database }} --execute="SHOW GLOBAL STATUS LIKE 'wsrep_local_state_comment';" --batch --skip-column-names | grep --silent 'Synced'
   if [ $? -eq 0 ]; then
     echo 'MariaDB Galera node is in sync with the cluster'
   else
@@ -26,7 +26,7 @@ function checkgaleranodejoinstatus {
 }
 
 function checkgaleranodeconnectstatus {
-  mysql --protocol=socket --user=root --database=mysql --connect-timeout={{ $.Values.readinessProbe.timeoutSeconds.application }} --execute="SHOW GLOBAL STATUS LIKE 'wsrep_connected';" --batch --skip-column-names | grep --silent 'ON'
+  mysql --protocol=socket --user=root --database=mysql --connect-timeout={{ $.Values.readinessProbe.timeoutSeconds.database }} --execute="SHOW GLOBAL STATUS LIKE 'wsrep_connected';" --batch --skip-column-names | grep --silent 'ON'
   if [ $? -eq 0 ]; then
     echo 'MariaDB Galera node connected to other cluster nodes'
   else
@@ -36,7 +36,7 @@ function checkgaleranodeconnectstatus {
 }
 
 function checkgaleraready {
-  mysql --protocol=socket --user=root --database=mysql --connect-timeout={{ $.Values.readinessProbe.timeoutSeconds.application }} --execute="SHOW GLOBAL STATUS LIKE 'wsrep_ready';" --batch --skip-column-names | grep --silent 'ON'
+  mysql --protocol=socket --user=root --database=mysql --connect-timeout={{ $.Values.readinessProbe.timeoutSeconds.database }} --execute="SHOW GLOBAL STATUS LIKE 'wsrep_ready';" --batch --skip-column-names | grep --silent 'ON'
   if [ $? -eq 0 ]; then
     echo 'MariaDB Galera ready for queries'
   else
@@ -46,7 +46,7 @@ function checkgaleraready {
 }
 
 function checknoderejectsconnections {
-  mysql --protocol=socket --user=root --database=mysql --connect-timeout={{ $.Values.readinessProbe.timeoutSeconds.application }} --execute="SHOW VARIABLES LIKE 'wsrep_reject_queries';" --batch --skip-column-names | grep --silent 'NONE'
+  mysql --protocol=socket --user=root --database=mysql --connect-timeout={{ $.Values.readinessProbe.timeoutSeconds.database }} --execute="SHOW VARIABLES LIKE 'wsrep_reject_queries';" --batch --skip-column-names | grep --silent 'NONE'
   if [ $? -eq 0 ]; then
     echo 'MariaDB Galera node does accept new client connections'
   else

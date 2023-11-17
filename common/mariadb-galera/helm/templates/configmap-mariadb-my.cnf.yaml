@@ -1,5 +1,5 @@
 {{- $wsrepProviderOptions := dict }}
-{{- $nodeNamePrefix := (include "nodeNamePrefix" (dict "global" $ "component" "application")) -}}
+{{- $nodeNamePrefix := (include "nodeNamePrefix" (dict "global" $ "component" "database")) -}}
 {{- if $.Values.mariadb.galera.pcrecovery }}
   {{- $_ := set $wsrepProviderOptions "pc.recovery" "pc.recovery=TRUE"}}
 {{- else  }}
@@ -32,10 +32,10 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ include "commonPrefix" $ }}mariadb-my-cnf
+  name: {{ include "commonPrefix" $ }}-mariadb-my-cnf
   namespace: {{ $.Release.Namespace }}
 data:
-{{- range $int, $err := until ($.Values.replicas.application|int) }}
+{{- range $int, $err := until ($.Values.replicas.database|int) }}
   my.cnf.{{ $nodeNamePrefix }}-{{ $int }}.tpl: |-
     [mysqld]
     {{- if $.Values.mariadb.performance_schema }}
@@ -97,7 +97,7 @@ data:
       replicas(5) * DomainCount(2) = 10
       replicas(5) * DomainCount(1) = 5
     */}}
-    auto_increment_increment={{ mul ($.Values.replicas.application|int) ($.Values.mariadb.galera.gtidDomainIdCount| default 1 | int) }}
+    auto_increment_increment={{ mul ($.Values.replicas.database|int) ($.Values.mariadb.galera.gtidDomainIdCount| default 1 | int) }}
     {{- /*
       calculate the auto increment offset based on ((Galera domain count - Galera domain id) * amount of pod replicas + (current replica number + 1)) to ensure unique values across all database nodes in all connected clusters
       (DomainCount(2) - domainId(2) * replicas(3) + (replica(0) + 1) = 1
@@ -118,7 +118,7 @@ data:
       (DomainCount(2) - domainId(1) * replicas(5) + (replica(3) + 1) = 9
       (DomainCount(2) - domainId(1) * replicas(5) + (replica(4) + 1) = 10
     */}}
-    auto_increment_offset={{ (add (mul (sub ($.Values.mariadb.galera.gtidDomainIdCount| default 1 | int) ($.Values.mariadb.galera.gtidDomainId | default 1 | int)) ($.Values.replicas.application|int)) (add1 ($int | int))) | int }}
+    auto_increment_offset={{ (add (mul (sub ($.Values.mariadb.galera.gtidDomainIdCount| default 1 | int) ($.Values.mariadb.galera.gtidDomainId | default 1 | int)) ($.Values.replicas.database|int)) (add1 ($int | int))) | int }}
 
     # async replication with MariaDB instances outside of the Galera cluster
     relay_log=/opt/${SOFTWARE_NAME}/{{ $.Values.mariadb.binLogDir | default "data" }}/{{ (required "mariadb.galera.clustername is required to configure the relay_log option for MariaDB" $.Values.mariadb.galera.clustername) }}_relaylog

@@ -6,7 +6,7 @@ set -o pipefail
 source /opt/${SOFTWARE_NAME}/bin/common-functions.sh
 
 function checkdblogon {
-  mysql --protocol=socket --user=root --batch --connect-timeout={{ $.Values.livenessProbe.timeoutSeconds.application }} --execute="SHOW DATABASES;" | grep --silent 'mysql'
+  mysql --protocol=socket --user=root --batch --connect-timeout={{ $.Values.livenessProbe.timeoutSeconds.database }} --execute="SHOW DATABASES;" | grep --silent 'mysql'
   if [ $? -eq 0 ]; then
     echo 'MariaDB MySQL API reachable'
   else
@@ -16,7 +16,7 @@ function checkdblogon {
 }
 
 function checkgaleraport {
-  timeout {{ $.Values.livenessProbe.timeoutSeconds.application }} bash -c "</dev/tcp/${CONTAINER_IP}/${GALERA_PORT}"
+  timeout {{ $.Values.livenessProbe.timeoutSeconds.database }} bash -c "</dev/tcp/${CONTAINER_IP}/${GALERA_PORT}"
   if [ $? -eq 0 ]; then
     echo 'MariaDB Galera API reachable'
   else

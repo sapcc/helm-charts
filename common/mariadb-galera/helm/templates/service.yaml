@@ -1,18 +1,18 @@
 {{/* MariaDB services */}}
   {{/* backend */}}
     {{/* per pod service to generate per pod hostnames */}}
-    {{- range $replicaNumber, $err := until ($.Values.replicas.application|int) }}
-      {{ include "networkService" (dict "global" $ "type" "backend" "service" (required ".services.application.backend missing" $.Values.services.application.backend) "component" "application" "replica" ($replicaNumber | toString)) }}
+    {{- range $replicaNumber, $err := until ($.Values.replicas.database|int) }}
+      {{ include "networkService" (dict "global" $ "type" "backend" "service" (required ".services.database.backend missing" $.Values.services.database.backend) "component" "database" "replica" ($replicaNumber | toString)) }}
     {{- end }}
     {{/* shared service for all pods */}}
-    {{ include "networkService" (dict "global" $ "type" "backend" "service" (required ".services.application.backend missing" $.Values.services.application.backend) "component" "application" "replica" "notused") }}
+    {{ include "networkService" (dict "global" $ "type" "backend" "service" (required ".services.database.backend missing" $.Values.services.database.backend) "component" "database" "replica" "notused") }}
   {{/* frontend */}}
   {{/* other frontend services for all pods */}}
     {{- if not $.Values.proxy.enabled }}
-      {{ include "networkService" (dict "global" $ "type" "frontend" "service" (required ".services.application.frontend missing" $.Values.services.application.frontend) "component" "application" "replica" "notused") }}
-      {{ include "networkService" (dict "global" $ "type" "frontend" "service" (required ".services.application.frontend missing" $.Values.services.application.frontend) "component" "application-direct" "replica" "notused") }}
+      {{ include "networkService" (dict "global" $ "type" "frontend" "service" (required ".services.database.frontend missing" $.Values.services.database.frontend) "component" "database" "replica" "notused") }}
+      {{ include "networkService" (dict "global" $ "type" "frontend" "service" (required ".services.database.frontend missing" $.Values.services.database.frontend) "component" "database-direct" "replica" "notused") }}
     {{- else if $.Values.proxy.enabled }}
-      {{ include "networkService" (dict "global" $ "type" "frontend" "service" (required ".services.application.frontend missing" $.Values.services.application.frontend) "component" "application-direct" "replica" "notused") }}
+      {{ include "networkService" (dict "global" $ "type" "frontend" "service" (required ".services.database.frontend missing" $.Values.services.database.frontend) "component" "database-direct" "replica" "notused") }}
     {{- end }}
 
 {{/* ProxySQL services */}}

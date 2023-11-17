@@ -1,5 +1,5 @@
 {{- if and (hasKey $.Values.mariadb "autostart") (not $.Values.mariadb.autostart) }}
-{{- else if and ($.Values.command) (hasKey $.Values.command "application") }}
+{{- else if and ($.Values.command) (hasKey $.Values.command "database") }}
 {{- else if or (and (hasKey $.Values.mariadb.galera.restore "restic") ($.Values.mariadb.galera.restore.restic.enabled)) (and (hasKey $.Values.mariadb.galera.restore "kopia") ($.Values.mariadb.galera.restore.kopia.enabled)) }}
 {{- else if and (hasKey $.Values.mariadb "wipeDataAndLog") ($.Values.mariadb.wipeDataAndLog) }}
 {{- else if and ($.Values.proxy.enabled) (eq $.Values.proxy.type "haproxy") }}
@@ -8,7 +8,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   namespace: {{ $.Release.Namespace }}
-  name: {{ include "commonPrefix" $ }}haproxy
+  name: {{ include "commonPrefix" $ }}-haproxy
   labels:
     app: {{ $.Release.Name }}
     component: "haproxy"
@@ -28,7 +28,7 @@ spec:
         {{- if $.Values.monitoring.proxy.enabled }}
         prometheus.io/scrape: "true"
         prometheus.io/port: {{ ($.Values.monitoring.proxy.haproxy.metricsPort | int) | default 8404 | quote }}
-        prometheus.io/targets: {{ $.Values.monitoring.prometheus.instance.application | default "prometheus" | quote }}
+        prometheus.io/targets: {{ $.Values.monitoring.prometheus.instance.database | default "prometheus" | quote }}
         {{- end }}
         checksum/configmap: {{ include (print $.Template.BasePath "/configmap-haproxy.yaml") $ | sha256sum }}
     spec:
@@ -61,18 +61,18 @@ spec:
                       values:
                         - "haproxy"
                 topologyKey: "kubernetes.io/hostname"
-      serviceAccount: {{ include "commonPrefix" $ }}{{ $.Release.Name }}
+      serviceAccount: {{ include "commonPrefix" $ }}-mariadb-galera
       securityContext:
         runAsUser:  {{ $.Values.userId.proxy | default 3100 | int }}
         runAsGroup: {{ $.Values.groupId.proxy | default 3100 | int }}
         fsGroup:  {{ $.Values.groupId.proxy | default 3100 | int }}
       {{- if and (hasKey $.Values.image.proxy "pullSecret") $.Values.image.haproxy.pullSecret }}
       imagePullSecrets:
-      - name: {{ include "commonPrefix" $ }}{{ $.Release.Name }}-{{$.Values.image.haproxy.pullSecret}}
+      - name: {{ include "commonPrefix" $ }}-{{$.Values.image.haproxy.pullSecret}}
       {{- end }}
       containers:
       - name: {{ (include "nodeNamePrefix" (dict "global" $ "component" "haproxy")) }}
-        image: "{{ $.Values.image.haproxy.registry }}/{{ $.Values.image.haproxy.project }}/{{ $.Values.image.haproxy.applicationname }}:{{ $.Values.image.haproxy.applicationversion }}"
+        image: "{{ $.Values.image.haproxy.registry }}/{{ $.Values.image.haproxy.project }}/{{ $.Values.image.haproxy.databasename }}:{{ $.Values.image.haproxy.databaseversion }}"
         imagePullPolicy: {{ $.Values.image.haproxy.pullPolicy | default "IfNotPresent" | quote }}
         securityContext:
           runAsUser:  {{ $.Values.userId.proxy | default 3100 | int }}
@@ -96,7 +96,7 @@ spec:
         - name: {{ $envKey }}
           valueFrom:
             secretKeyRef:
-              name: {{ include "commonPrefix" $ }}{{ $.Release.Name }}-{{ $envValue.secretName }}
+              name: {{ include "commonPrefix" $ }}-{{ $envValue.secretName }}
               key: {{ $envValue.secretKey }}
                   {{- end }}
                 {{- end }}
@@ -168,21 +168,21 @@ spec:
           timeoutSeconds: 10
         {{- end }}
         volumeMounts:
-          - name: {{ include "commonPrefix" $ }}haproxy-config
+          - name: {{ include "commonPrefix" $ }}-haproxy-config
             mountPath: /usr/local/etc/haproxy/haproxy.cfg
             subPath: haproxy.cfg
             readOnly: true
-          - name: {{ include "commonPrefix" $ }}haproxy-probes-sh
+          - name: {{ include "commonPrefix" $ }}-haproxy-probes-sh
             mountPath: /opt/haproxy/bin
             readOnly: true
       terminationGracePeriodSeconds: {{ $.Values.terminationGracePeriodSeconds | default 86400 | int }}
       volumes:
-        - name: {{ include "commonPrefix" $ }}haproxy-config
+        - name: {{ include "commonPrefix" $ }}-haproxy-config
           configMap:
-            name: {{ include "commonPrefix" $ }}haproxy-config
+            name: {{ include "commonPrefix" $ }}-haproxy-config
             defaultMode: 0755
-        - name: {{ include "commonPrefix" $ }}haproxy-probes-sh
+        - name: {{ include "commonPrefix" $ }}-haproxy-probes-sh
           configMap:
-            name: {{ include "commonPrefix" $ }}haproxy-probes-sh
+            name: {{ include "commonPrefix" $ }}-haproxy-probes-sh
             defaultMode: 0755
 {{- end }}

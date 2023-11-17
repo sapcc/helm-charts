@@ -1,5 +1,5 @@
 {{- if and (hasKey $.Values.mariadb "autostart") (not $.Values.mariadb.autostart) }}
-{{- else if and ($.Values.command) (hasKey $.Values.command "application") }}
+{{- else if and ($.Values.command) (hasKey $.Values.command "database") }}
 {{- else if and (hasKey $.Values.mariadb.galera.restore "kopia") ($.Values.mariadb.galera.restore.kopia.enabled) }}
 {{- else if and (hasKey $.Values.mariadb "wipeDataAndLog") ($.Values.mariadb.wipeDataAndLog) }}
 {{- else }}
@@ -7,7 +7,7 @@ apiVersion: batch/v1
 kind: Job
 metadata:
   namespace: {{ $.Release.Namespace }}
-  name: {{ (include "nodeNamePrefix" (dict "global" $ "component" "application")) }}-cfg-{{ randAlphaNum 8 | lower }}
+  name: {{ (include "nodeNamePrefix" (dict "global" $ "component" "database")) }}-cfg-{{ randAlphaNum 8 | lower }}
   labels:
     app: {{ $.Release.Name }}
     release: {{ $.Release.Name }}
@@ -24,23 +24,23 @@ spec:
         checksum/configmap: {{ include (print $.Template.BasePath "/configmap-mariadb-job.yaml") $ | sha256sum }}
     spec:
       restartPolicy: {{ $.Values.mariadb.job.config.jobRestartPolicy | default "OnFailure" | quote }}
-      serviceAccount: {{ include "commonPrefix" $ }}{{ $.Release.Name }}
+      serviceAccount: {{ include "commonPrefix" $ }}-mariadb-galera
       securityContext:
-        fsGroup:  {{ $.Values.groupId.application | default 101 | int }}
-      {{- if and (hasKey $.Values.image.application "pullSecret") $.Values.image.application.pullSecret }}
+        fsGroup:  {{ $.Values.groupId.database | default 101 | int }}
+      {{- if and (hasKey $.Values.image.database "pullSecret") $.Values.image.database.pullSecret }}
       imagePullSecrets:
-      - name: {{ include "commonPrefix" $ }}{{ $.Release.Name }}-{{$.Values.image.application.pullSecret}}
+      - name: {{ include "commonPrefix" $ }}-{{$.Values.image.database.pullSecret}}
       {{- end }}
       containers:
       - name: cfg
-        image: "{{ $.Values.image.application.registry }}/{{ $.Values.image.application.project }}/{{ $.Values.image.application.applicationname }}:{{ $.Values.image.application.applicationversion }}-{{ $.Values.image.application.imageversion | int }}"
-        imagePullPolicy: {{ $.Values.image.application.pullPolicy | default "IfNotPresent" | quote }}
+        image: "{{ $.Values.image.database.registry }}/{{ $.Values.image.database.project }}/{{ $.Values.image.database.databasename }}:{{ $.Values.image.database.databaseversion }}-{{ $.Values.image.database.imageversion | int }}"
+        imagePullPolicy: {{ $.Values.image.database.pullPolicy | default "IfNotPresent" | quote }}
         securityContext:
-          runAsUser:  {{ $.Values.userId.application | default 101 | int }}
-          runAsGroup: {{ $.Values.groupId.application | default 101 | int }}
-        {{- if and ($.Values.command) (hasKey $.Values.command "jobconfig") }}
+          runAsUser:  {{ $.Values.userId.database | default 101 | int }}
+          runAsGroup: {{ $.Values.groupId.database | default 101 | int }}
+        {{- if and ($.Values.command) (hasKey $.Values.command "databasecfgjob") }}
         command:
-{{ $.Values.command.jobconfig | toYaml | indent 8 }}
+{{ $.Values.command.databasecfgjob | toYaml | indent 8 }}
         {{- else }}
         command:
           - "sh"
@@ -49,25 +49,30 @@ spec:
         {{- end }}
         env:
         - name: MYSQL_PORT
-          value: {{ (required ".services.application.frontend.ports.mysql.targetPort missing" $.Values.services.application.frontend.ports.mysql.targetPort) | quote }}
+          value: {{ (required ".services.database.frontend.ports.mysql.targetPort missing" $.Values.services.database.frontend.ports.mysql.targetPort) | quote }}
         {{- if not (hasKey $.Values.env "MARIADB_MONITORING_CONNECTION_LIMIT") }}
         - name: MARIADB_MONITORING_CONNECTION_LIMIT
           value: 3
         {{- end }}
         {{- range $envKey, $envValue := $.Values.env }}
-          {{- if (has "jobconfig" $envValue.containerType) }}
+          {{- if (has "databasecfgjob" $envValue.containerType) }}
             {{- if $envValue.value }}
         - name: {{ $envKey }}
           value: {{ $envValue.value | quote }}
             {{- end }}
             {{- if $envValue.secretName }}
               {{- range $userKey, $userValue := $.Values.mariadb.users }}
-                {{- if $userValue.enabled }}
+                {{- $requiredUsers := list "root" }}
+                {{- if or ($.Values.monitoring.mysqld_exporter.enabled) (and ($.Values.proxy.enabled) (eq $.Values.proxy.type "proxysql")) }}
+                  {{- $requiredUsers = append $requiredUsers "monitor" }}
+                  {{- $requiredUsers = $requiredUsers | uniq | compact }}
+                {{- end}}
+                {{- if or (has $userKey $requiredUsers) $userValue.enabled }}
                   {{- if eq $userValue.secretName $envValue.secretName }}
         - name: {{ $envKey }}
           valueFrom:
             secretKeyRef:
-              name: {{ include "commonPrefix" $ }}{{ $.Release.Name }}-{{ $envValue.secretName }}
+              name: {{ include "commonPrefix" $ }}-{{ $envValue.secretName }}
               key: {{ $envValue.secretKey }}
                   {{- end }}
                 {{- end }}
@@ -77,43 +82,43 @@ spec:
         {{- end }}
         resources:
           requests:
-            cpu: {{ $.Values.resourceLimits.cpu.jobconfig | default 0.25 }}
+            cpu: {{ $.Values.resourceLimits.cpu.databasecfgjob | default 0.25 }}
           limits:
-            memory: {{ $.Values.resourceLimits.memory.jobconfig | default "32Mi" | quote }}
+            memory: {{ $.Values.resourceLimits.memory.databasecfgjob | default "32Mi" | quote }}
         volumeMounts:
-        - name: {{ include "commonPrefix" $ }}mariadb-config-job-entrypoint-sh
+        - name: {{ include "commonPrefix" $ }}-mariadb-config-job-entrypoint-sh
           mountPath: /opt/mariadb/bin/entrypoint-job-config.sh
           subPath: entrypoint-job-config.sh
           readOnly: true
-        - name: {{ include "commonPrefix" $ }}mariadb-common-functions-extended-sh
+        - name: {{ include "commonPrefix" $ }}-mariadb-common-functions-extended-sh
           mountPath: /opt/mariadb/bin/common-functions-extended.sh
           subPath: common-functions-extended.sh
           readOnly: true
       volumes:
-      {{- range $volumeMountsKey, $volumeMountsValue := $.Values.volumeMounts.application }}
+      {{- range $volumeMountsKey, $volumeMountsValue := $.Values.volumeMounts.database }}
         {{- if $volumeMountsValue.enabled }}
           {{- if $volumeMountsValue.type }}
             {{- if ne $volumeMountsValue.type "persistentVolume" }}
-      - name: {{ include "commonPrefix" $ }}{{ $volumeMountsKey }}
+      - name: {{ include "commonPrefix" $ }}-{{ $volumeMountsKey }}
               {{- if eq $volumeMountsValue.type "secret"}}
         {{ $volumeMountsValue.type }}:
-          secretName: {{ include "commonPrefix" $ }}{{ $.Release.Name }}-{{ $volumeMountsKey }}
+          secretName: {{ include "commonPrefix" $ }}-{{ $volumeMountsKey }}
               {{- else if eq $volumeMountsValue.type "hostPath" }}
         {{ $volumeMountsValue.type }}:
           path: {{ $volumeMountsValue.hostPath }}
               {{- else }}
-          name: {{ include "commonPrefix" $ }}{{ $volumeMountsKey }}
+          name: {{ include "commonPrefix" $ }}-{{ $volumeMountsKey }}
               {{- end }}
             {{- end }}
           {{- end }}
         {{- end }}
       {{- end }}
-      - name: {{ include "commonPrefix" $ }}mariadb-config-job-entrypoint-sh
+      - name: {{ include "commonPrefix" $ }}-mariadb-config-job-entrypoint-sh
         configMap:
-          name: {{ include "commonPrefix" $ }}mariadb-config-job-entrypoint-sh
+          name: {{ include "commonPrefix" $ }}-mariadb-config-job-entrypoint-sh
           defaultMode: 0750
-      - name: {{ include "commonPrefix" $ }}mariadb-common-functions-extended-sh
+      - name: {{ include "commonPrefix" $ }}-mariadb-common-functions-extended-sh
         configMap:
-          name: {{ include "commonPrefix" $ }}mariadb-common-functions-extended-sh
+          name: {{ include "commonPrefix" $ }}-mariadb-common-functions-extended-sh
           defaultMode: 0755
 {{- end }}

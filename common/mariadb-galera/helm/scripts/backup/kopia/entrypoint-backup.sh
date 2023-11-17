@@ -32,7 +32,7 @@ function createkopiadbbackup {
     local BINLOGPOSITION=$(querybinlogposition ${DB_HOST})
 
     loginfo "${FUNCNAME[0]}" "mariadb-dump using ${DB_HOST} started"
-    mariadb-dump --protocol=tcp --host=${DB_HOST}.database.svc.cluster.local --port=${MYSQL_PORT} \
+    mariadb-dump --protocol=tcp --host=${DB_HOST}.{{ $.Release.Namespace }} --port=${MYSQL_PORT} \
                 --user=${MARIADB_ROOT_USERNAME} --password=${MARIADB_ROOT_PASSWORD} \
                 --all-databases --add-drop-database --flush-privileges --flush-logs --hex-blob --events --routines --comments --triggers --skip-log-queries \
                 --gtid --master-data=1 --single-transaction | \
@@ -66,7 +66,7 @@ function createkopiabinlogbackup {
     cd /opt/${SOFTWARE_NAME}/var/tmp/binlog
 
     loginfo "${FUNCNAME[0]}" "mariadb-binlog using ${BINLOGNAME} and newer from ${DB_HOST} started"
-    mariadb-binlog --protocol=tcp --host=${DB_HOST}.database.svc.cluster.local --port=${MYSQL_PORT} \
+    mariadb-binlog --protocol=tcp --host=${DB_HOST}.{{ $.Release.Namespace }} --port=${MYSQL_PORT} \
                 --user=${MARIADB_ROOT_USERNAME} --password=${MARIADB_ROOT_PASSWORD} \
                 --raw --read-from-remote-server \
                 --to-last-log --verify-binlog-checksum ${BINLOGNAME}
@@ -94,8 +94,8 @@ function createkopiabinlogbackup {
   fi
 }
 
-{{- range $int, $err := until ($.Values.replicas.application|int) }}
-fetchseqnofromremotenode {{ (printf "%s-%d" (include "nodeNamePrefix" (dict "global" $ "component" "application")) $int) }} >>/tmp/nodelist.seqno
+{{- range $int, $err := until ($.Values.replicas.database|int) }}
+fetchseqnofromremotenode {{ (printf "%s-%d" (include "nodeNamePrefix" (dict "global" $ "component" "database")) $int) }} >>/tmp/nodelist.seqno
 {{- end }}
 selectbackupnode
 initkopiarepo

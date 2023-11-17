@@ -5,7 +5,7 @@ set -o pipefail
 
 source /opt/${SOFTWARE_NAME}/bin/common-functions.sh
 
-mysql --protocol=socket --user=root --batch --connect-timeout={{ $.Values.startupProbe.timeoutSeconds.application }} --execute="SHOW DATABASES;" | grep --silent 'mysql'
+mysql --protocol=socket --user=root --batch --connect-timeout={{ $.Values.startupProbe.timeoutSeconds.database }} --execute="SHOW DATABASES;" | grep --silent 'mysql'
 if [ $? -eq 0 ]; then
   echo 'MariaDB MySQL API reachable'
 else
@@ -13,7 +13,7 @@ else
   exit 1
 fi
 
-timeout {{ $.Values.startupProbe.timeoutSeconds.application }} bash -c "</dev/tcp/${CONTAINER_IP}/${GALERA_PORT}"
+timeout {{ $.Values.startupProbe.timeoutSeconds.database }} bash -c "</dev/tcp/${CONTAINER_IP}/${GALERA_PORT}"
 if [ $? -eq 0 ]; then
   echo 'MariaDB Galera API reachable'
 else

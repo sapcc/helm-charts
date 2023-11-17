@@ -1,5 +1,42 @@
 # Changelog
 
+## v0.20.4 - 2023/10/18
+* MariaDB service name aligned to the existing MariaDB single pod Helm chart
+  * for easier migration
+  * less changes required if used as a subchart dependency
+* Ubuntu packages timestamp `20231117111140`
+* `MARIADB_MONITORING` credential for ProxySQL fixed
+* chart version bumped
+
+## v0.20.3 - 2023/10/11
+* label 'application' replaced with 'database' to be more specific about the different components
+* chart version bumped
+
+## v0.20.2 - 2023/10/10
+* name prefix for K8s objects refactored
+  * use the same function structure everywhere
+  * no trailing '-' character
+* monitoring user also made optional on Docker level
+* mysql_exporter role renamed to monitor on Docker level too
+* software versions bumped
+  * Ubuntu packages timestamp `20231010194415`
+* chart version bumped
+
+## v0.20.1 - 2023/10/09
+* `namePrefix.includeClusterName` parameter added to use the `mariadb.galera.clustername` as name prefix for all generated Kubernetes objects
+  * disabled per default
+* chart version bumped
+
+## v0.20.0 - 2023/10/07
+* `mariadb.users.monitor` user only mandatory if the mysqld_exporter or ProxySQL are enabled
+  * redundant ProxySQL monitor user config removed
+  * `MARIADB_MONITORING_USERNAME` environment variable check added for the mysqld_exporter container image
+* software versions bumped
+  * Ubuntu packages timestamp `20231009043336`
+  * ProxySQL updated to version `2.5.5`
+  * yq updated to `4.35.2`
+* chart version bumped
+
 ## v0.19.0 - 2023/09/27
 * Prometheus alert definitions added
   * MariaDB & Galera Cluster alerts added
@@ -50,7 +87,7 @@
 ## v0.15.0 - 2023/06/30
 * credential support in values.yaml (to be used with external templating)
   * based on that the secrets.yaml will generate Kubernetes secrets
-  * the related [environment variables will lookup the credential infos](https://kubernetes.io/docs/tasks/inject-data-application/distribute-credentials-secure/#define-container-environment-variables-using-secret-data) from the secrets
+  * the related [environment variables will lookup the credential infos](https://kubernetes.io/docs/tasks/inject-data-database/distribute-credentials-secure/#define-container-environment-variables-using-secret-data) from the secrets
   * Credentials for the different components can be maintained (MariaDB, mysqld_exporter, ProxySQL, Kopia, Restic)
 * database and roles management also moved into the values.yaml
 * separate config folder structure for MariaDB credentials, roles and databases removed

@@ -1,19 +1,19 @@
 
-{{- if $.Values.hpa.application.enabled }}
+{{- if $.Values.hpa.database.enabled }}
 ---
 apiVersion: autoscaling/v1
 kind: HorizontalPodAutoscaler
 metadata:
-  name: {{ (include "nodeNamePrefix" (dict "global" $ "component" "application")) }}
+  name: {{ (include "nodeNamePrefix" (dict "global" $ "component" "database")) }}
   namespace: {{ $.Release.Namespace }}
 spec:
   scaleTargetRef:
     apiVersion: apps/v1
     kind: StatefulSet
-    name: {{ (include "nodeNamePrefix" (dict "global" $ "component" "application")) }}
-  minReplicas: {{ $.Values.hpa.application.minReplicas | default 3 | int }}
-  maxReplicas: {{ $.Values.hpa.application.maxReplicas | default 5 | int }}
-  targetCPUUtilizationPercentage: {{ $.Values.hpa.application.maxCpuPercent | default 66 | int }}
+    name: {{ (include "nodeNamePrefix" (dict "global" $ "component" "database")) }}
+  minReplicas: {{ $.Values.hpa.database.minReplicas | default 3 | int }}
+  maxReplicas: {{ $.Values.hpa.database.maxReplicas | default 5 | int }}
+  targetCPUUtilizationPercentage: {{ $.Values.hpa.database.maxCpuPercent | default 66 | int }}
 {{- end }}
 {{- if $.Values.hpa.proxy.enabled }}
 ---

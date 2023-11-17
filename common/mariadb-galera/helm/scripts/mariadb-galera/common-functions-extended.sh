@@ -1,12 +1,12 @@
 MAX_RETRIES={{ $.Values.scripts.maxRetries | default 10 }}
 WAIT_SECONDS={{ $.Values.scripts.waitTimeBetweenRetriesInSeconds | default 6 }}
 if [ "$0" != "/opt/mariadb/bin/entrypoint-backup.sh" ]; then
-  MYSQL_SVC_CONNECT="mysql --protocol=tcp --user=${MARIADB_ROOT_USERNAME} --password=${MARIADB_ROOT_PASSWORD} --host={{ (include "nodeNamePrefix" (dict "global" $ "component" "application")) }}-frontend-direct.database.svc.cluster.local --port=${MYSQL_PORT} --wait --connect-timeout=${WAIT_SECONDS} --reconnect --batch"
+  MYSQL_SVC_CONNECT="mysql --protocol=tcp --user=${MARIADB_ROOT_USERNAME} --password=${MARIADB_ROOT_PASSWORD} --host={{ printf "%s-%s-direct.%s" (include "commonPrefix" $) "mariadb" $.Release.Namespace }} --port=${MYSQL_PORT} --wait --connect-timeout=${WAIT_SECONDS} --reconnect --batch"
 fi
 declare -a NODENAME=()
 
 #entrypoint-galera
-# updateconfigmap "scope[seqno|running|primary]" "value[sequence number|true|false]" "output[Update|Reset]"
+# setconfigmap "scope[seqno|running|primary]" "value[sequence number|true|false]" "output[Update|Reset]"
 function setconfigmap {
   local int
   local SCOPE=$1
@@ -18,7 +18,7 @@ function setconfigmap {
   else
     local CONTENT="${VALUE}\ntimestamp:$(date +%s)\n"
   fi
-  local CONFIGMAP_NAME={{ include "commonPrefix" $ }}galerastatus
+  local CONFIGMAP_NAME={{ include "commonPrefix" $ }}-galerastatus
   local KUBE_TOKEN=$(</var/run/secrets/kubernetes.io/serviceaccount/token)
 
   for (( int=${MAX_RETRIES}; int >=1; int-=1));
@@ -54,7 +54,7 @@ function fetchcurrentseqno {
 
   for (( int=${MAX_RETRIES}; int >=1; int-=1));
     do
-    IFS=$'\t' SEQNOARRAY=($(mysql --protocol=socket --user=root --database=mysql --connect-timeout={{ $.Values.readinessProbe.timeoutSeconds.application }} --execute="SHOW GLOBAL STATUS LIKE 'wsrep_last_committed';" --batch --skip-column-names | grep 'wsrep_last_committed'))
+    IFS=$'\t' SEQNOARRAY=($(mysql --protocol=socket --user=root --database=mysql --connect-timeout={{ $.Values.readinessProbe.timeoutSeconds.database }} --execute="SHOW GLOBAL STATUS LIKE 'wsrep_last_committed';" --batch --skip-column-names | grep 'wsrep_last_committed'))
     if [ $? -ne 0 ]; then
       sleep ${WAIT_SECONDS}
     else
@@ -187,7 +187,7 @@ function setupdatabase {
 function selectbootstrapnode {
   local int
   local SEQNO=$(fetchseqnofromgrastate)
-  local SEQNO_FILES="${BASE}/etc/galerastatus/{{ (include "nodeNamePrefix" (dict "global" $ "component" "application")) }}-*.seqno"
+  local SEQNO_FILES="${BASE}/etc/galerastatus/{{ (include "nodeNamePrefix" (dict "global" $ "component" "database")) }}-*.seqno"
   local SEQNO_OLDEST_TIMESTAMP
   local SEQNO_OLDEST_TIMESTAMP_WITH_BUFFER
   local CURRENT_EPOCH
@@ -195,21 +195,21 @@ function selectbootstrapnode {
   for (( int=${MAX_RETRIES}; int >=1; int-=1));
     do
     loginfo "${FUNCNAME[0]}" "Find Galera node with highest sequence number (${int} retries left)"
-    SEQNO_FILE_COUNT=$(grep -c '{{ (include "nodeNamePrefix" (dict "global" $ "component" "application")) }}-*' ${SEQNO_FILES} | grep -c -e ${BASE}/etc/galerastatus/{{ (include "nodeNamePrefix" (dict "global" $ "component" "application")) }}-.*.seqno:1)
-    if [ ${SEQNO_FILE_COUNT} -ge {{ ($.Values.replicas|int) }} ]; then
+    SEQNO_FILE_COUNT=$(grep -c '{{ (include "nodeNamePrefix" (dict "global" $ "component" "database")) }}-*' ${SEQNO_FILES} | grep -c -e ${BASE}/etc/galerastatus/{{ (include "nodeNamePrefix" (dict "global" $ "component" "database")) }}-.*.seqno:1)
+    if [ ${SEQNO_FILE_COUNT} -ge {{ ($.Values.replicas.database|int) }} ]; then
       IFS=":" SEQNO_OLDEST_TIMESTAMP=($(grep --no-filename --perl-regex --regexp='^timestamp:\d+$' ${SEQNO_FILES} | sort --key=2 --numeric-sort --field-separator=: | head --lines=1))
       IFS="${oldIFS}"
       if ! [ -z ${SEQNO_OLDEST_TIMESTAMP[1]+x} ]; then
-        SEQNO_OLDEST_TIMESTAMP_WITH_BUFFER=$(( ${SEQNO_OLDEST_TIMESTAMP[1]} + ({{ $.Values.readinessProbe.timeoutSeconds.application | int }} * {{ $.Values.scripts.maxAllowedTimeDifferenceFactor | default 3 | int }}) ))
+        SEQNO_OLDEST_TIMESTAMP_WITH_BUFFER=$(( ${SEQNO_OLDEST_TIMESTAMP[1]} + ({{ $.Values.readinessProbe.timeoutSeconds.database | int }} * {{ $.Values.scripts.maxAllowedTimeDifferenceFactor | default 3 | int }}) ))
         CURRENT_EPOCH=$(date +%s)
         {{- if $.Values.scripts.useTimeDifferenceForSeqnoCheck }}
         if [ ${CURRENT_EPOCH} -le ${SEQNO_OLDEST_TIMESTAMP_WITH_BUFFER} ]; then
         {{- else }}
         # time difference check disabled
         {{- end }}
-          IFS=": " NODENAME=($(grep --no-filename '{{ (include "nodeNamePrefix" (dict "global" $ "component" "application")) }}-*' ${SEQNO_FILES} | sort --key=2 --reverse --numeric-sort --field-separator=: | head -1))
+          IFS=": " NODENAME=($(grep --no-filename '{{ (include "nodeNamePrefix" (dict "global" $ "component" "database")) }}-*' ${SEQNO_FILES} | sort --key=2 --reverse --numeric-sort --field-separator=: | head -1))
           IFS="${oldIFS}"
-          if [[ "${NODENAME[0]}" =~ ^{{ (include "nodeNamePrefix" (dict "global" $ "component" "application")) }}-.* ]]; then
+          if [[ "${NODENAME[0]}" =~ ^{{ (include "nodeNamePrefix" (dict "global" $ "component" "database")) }}-.* ]]; then
             loginfo "${FUNCNAME[0]}" "Galera nodename '${NODENAME[0]}' with the sequence number '${NODENAME[1]}' selected"
             break
           else
@@ -227,14 +227,14 @@ function selectbootstrapnode {
         sleep  $(( ${WAIT_SECONDS} * (${MAX_RETRIES} - ${int} + 1) ))
       fi
     else
-      loginfo "${FUNCNAME[0]}" "${SEQNO_FILE_COUNT} of {{ ($.Values.replicas|int) }} sequence numbers found. Will wait $(( ${WAIT_SECONDS} * (${MAX_RETRIES} - ${int} + 1) ))s"
+      loginfo "${FUNCNAME[0]}" "${SEQNO_FILE_COUNT} of {{ ($.Values.replicas.database|int) }} sequence numbers found. Will wait $(( ${WAIT_SECONDS} * (${MAX_RETRIES} - ${int} + 1) ))s"
       sleep  $(( ${WAIT_SECONDS} * (${MAX_RETRIES} - ${int} + 1) ))
     fi
     setconfigmap "seqno" "${SEQNO}" "Update"
   done
 
   if [ ${int} -eq 0 ]; then
-    logerror "${FUNCNAME[0]}" "Sequence number search finally incomplete(${SEQNO_FILE_COUNT}/{{ ($.Values.replicas|int)}})"
+    logerror "${FUNCNAME[0]}" "Sequence number search finally incomplete(${SEQNO_FILE_COUNT}/{{ ($.Values.replicas.database|int)}})"
     exit 1
   fi
   loginfo "${FUNCNAME[0]}" "Sequence number search done"
@@ -272,7 +272,7 @@ function setupasyncreplication {
   {{- if $.Values.mariadb.asyncReplication.resetConfig }}
   for (( int=${MAX_RETRIES}; int >=1; int-=1));
     do
-    mysql --protocol=tcp --host={{ include "nodeNamePrefix" (dict "global" $ "component" "application") }}-0 --user=${MARIADB_ROOT_USERNAME} --password=${MARIADB_ROOT_PASSWORD} --execute="SET GLOBAL gtid_slave_pos=\"${gtidbinlogposition}\";" --batch
+    mysql --protocol=tcp --host={{ include "nodeNamePrefix" (dict "global" $ "component" "database") }}-0 --user=${MARIADB_ROOT_USERNAME} --password=${MARIADB_ROOT_PASSWORD} --execute="SET GLOBAL gtid_slave_pos=\"${gtidbinlogposition}\";" --batch
     if [ $? -ne 0 ]; then
       logerror "${FUNCNAME[0]}" "'gtid_slave_pos update failed(${int} retries left)"
       sleep ${WAIT_SECONDS}
@@ -290,7 +290,7 @@ function setupasyncreplication {
 
   for (( int=${MAX_RETRIES}; int >=1; int-=1));
     do
-    mysql --protocol=tcp --host={{ include "nodeNamePrefix" (dict "global" $ "component" "application") }}-0 --user=${MARIADB_ROOT_USERNAME} --password=${MARIADB_ROOT_PASSWORD} --execute="CHANGE MASTER TO MASTER_HOST=\"${primaryhost}\", MASTER_PORT=${MYSQL_PORT}, MASTER_USERNAME=\"${REPLICA_USERNAME}\", MASTER_PASSWORD=\"${REPLICA_PASSWORD}\", MASTER_USE_GTID=slave_pos, DO_DOMAIN_IDS=({{ include "domainIdList" (dict "global" $) }}), IGNORE_SERVER_IDS=({{ include "serverIdList" (dict "global" $) }});" --batch
+    mysql --protocol=tcp --host={{ include "nodeNamePrefix" (dict "global" $ "component" "database") }}-0 --user=${MARIADB_ROOT_USERNAME} --password=${MARIADB_ROOT_PASSWORD} --execute="CHANGE MASTER TO MASTER_HOST=\"${primaryhost}\", MASTER_PORT=${MYSQL_PORT}, MASTER_USERNAME=\"${REPLICA_USERNAME}\", MASTER_PASSWORD=\"${REPLICA_PASSWORD}\", MASTER_USE_GTID=slave_pos, DO_DOMAIN_IDS=({{ include "domainIdList" (dict "global" $) }}), IGNORE_SERVER_IDS=({{ include "serverIdList" (dict "global" $) }});" --batch
     if [ $? -ne 0 ]; then
       logerror "${FUNCNAME[0]}" "'change master config failed(${int} retries left)"
       sleep ${WAIT_SECONDS}
@@ -312,7 +312,7 @@ function stopasyncreplication {
   loginfo "${FUNCNAME[0]}" "stop async replication"
   for (( int=${MAX_RETRIES}; int >=1; int-=1));
     do
-    mysql --protocol=tcp --host={{ include "nodeNamePrefix" (dict "global" $ "component" "application") }}-0 --user=${MARIADB_ROOT_USERNAME} --password=${MARIADB_ROOT_PASSWORD} --execute={{- if $.Values.mariadb.asyncReplication.resetConfig }}"STOP ALL SLAVES;RESET SLAVE ALL;"{{- else }}"STOP ALL SLAVES;"{{- end }} --batch
+    mysql --protocol=tcp --host={{ include "nodeNamePrefix" (dict "global" $ "component" "database") }}-0 --user=${MARIADB_ROOT_USERNAME} --password=${MARIADB_ROOT_PASSWORD} --execute={{- if $.Values.mariadb.asyncReplication.resetConfig }}"STOP ALL SLAVES;RESET SLAVE ALL;"{{- else }}"STOP ALL SLAVES;"{{- end }} --batch
     if [ $? -ne 0 ]; then
       logerror "${FUNCNAME[0]}" "'replica stop failed(${int} retries left)"
       sleep ${WAIT_SECONDS}
@@ -334,7 +334,7 @@ function startasyncreplication {
   loginfo "${FUNCNAME[0]}" "start async replication"
   for (( int=${MAX_RETRIES}; int >=1; int-=1));
     do
-    mysql --protocol=tcp --host={{ include "nodeNamePrefix" (dict "global" $ "component" "application") }}-0 --user=${MARIADB_ROOT_USERNAME} --password=${MARIADB_ROOT_PASSWORD} --execute="START ALL SLAVES;" --batch
+    mysql --protocol=tcp --host={{ include "nodeNamePrefix" (dict "global" $ "component" "database") }}-0 --user=${MARIADB_ROOT_USERNAME} --password=${MARIADB_ROOT_PASSWORD} --execute="START ALL SLAVES;" --batch
     if [ $? -ne 0 ]; then
       logerror "${FUNCNAME[0]}" "'replica start failed(${int} retries left)"
       sleep ${WAIT_SECONDS}
@@ -362,7 +362,7 @@ function checkasyncreplication {
   loginfo "${FUNCNAME[0]}" "check async replication status"
   for (( int=${MAX_RETRIES}; int >=1; int-=1));
     do
-    MYSQL_RESPONSE=$(mysql --protocol=tcp --host={{ include "nodeNamePrefix" (dict "global" $ "component" "application") }}-0 --user=${MARIADB_ROOT_USERNAME} --password=${MARIADB_ROOT_PASSWORD} --execute="SHOW ALL SLAVES STATUS\G;" --batch)
+    MYSQL_RESPONSE=$(mysql --protocol=tcp --host={{ include "nodeNamePrefix" (dict "global" $ "component" "database") }}-0 --user=${MARIADB_ROOT_USERNAME} --password=${MARIADB_ROOT_PASSWORD} --execute="SHOW ALL SLAVES STATUS\G;" --batch)
     if [ $? -ne 0 ]; then
       logerror "${FUNCNAME[0]}" "replica status check failed(${int} retries left)"
       sleep ${WAIT_SECONDS}
@@ -404,6 +404,6 @@ function checkasyncreplication {
   if [ ${SLAVEIO_STATUS} == "Yes" ] && [ ${SLAVESQL_STATUS} == "Yes" ]; then
     loginfo "${FUNCNAME[0]}" "async replication active"
   else
-    {{ if eq $.Values.scripts.logLevel "debug" }} logdebug "${FUNCNAME[0]}" "async replication summary: '${MYSQL_RESPONSE}'" {{ end }}
+    {{ if eq $.Values.scripts.logLevel "debug" }}logdebug "${FUNCNAME[0]}" "async replication summary: '${MYSQL_RESPONSE}'" {{ else }}loginfo "${FUNCNAME[0]}" "async replication not active" {{ end }}
   fi
 }

@@ -6,7 +6,7 @@ set -o pipefail
 source /opt/${SOFTWARE_NAME}/bin/common-functions.sh
 
 function checkproxybackendport {
-  timeout {{ $.Values.livenessProbe.timeoutSeconds.application }} bash -c "</dev/tcp/${CONTAINER_IP}/${PROXYSQL_ADMIN_PORT}"
+  timeout {{ $.Values.livenessProbe.timeoutSeconds.database }} bash -c "</dev/tcp/${CONTAINER_IP}/${PROXYSQL_ADMIN_PORT}"
   if [ $? -eq 0 ]; then
     echo 'MariaDB Galera API reachable'
   else
