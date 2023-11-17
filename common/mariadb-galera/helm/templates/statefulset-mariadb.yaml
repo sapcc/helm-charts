@@ -35,6 +35,9 @@ spec:
         prometheus.io/port: "9104"
         prometheus.io/targets: {{ $.Values.monitoring.prometheus.instance.database | default "prometheus" | quote }}
         {{- end }}
+        {{- if or (and (hasKey $.Values "global") (and (hasKey $.Values.global "linkerd_enabled") $.Values.global.linkerd_enabled) (and (hasKey $.Values.global "linkerd_requested") $.Values.global.linkerd_requested)) $.Values.mariadb.linkerd.enabled }}
+        linkerd.io/inject: enabled
+        {{- end }}
         checksum/my.cnf: {{ include (print $.Template.BasePath "/configmap-mariadb-my.cnf.yaml") $ | sha256sum }}
         checksum/configmap: {{ include (print $.Template.BasePath "/configmap-mariadb.yaml") $ | sha256sum }}
     spec:

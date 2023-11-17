@@ -30,6 +30,9 @@ spec:
         prometheus.io/port: {{ ($.Values.monitoring.proxy.haproxy.metricsPort | int) | default 8404 | quote }}
         prometheus.io/targets: {{ $.Values.monitoring.prometheus.instance.database | default "prometheus" | quote }}
         {{- end }}
+        {{- if or (and (hasKey $.Values "global") (and (hasKey $.Values.global "linkerd_enabled") $.Values.global.linkerd_enabled) (and (hasKey $.Values.global "linkerd_requested") $.Values.global.linkerd_requested)) $.Values.proxy.haproxy.linkerd.enabled }}
+        linkerd.io/inject: enabled
+        {{- end }}
         checksum/configmap: {{ include (print $.Template.BasePath "/configmap-haproxy.yaml") $ | sha256sum }}
     spec:
       affinity:

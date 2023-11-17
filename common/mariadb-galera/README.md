@@ -42,7 +42,7 @@ Docker images and Helm chart to deploy a [MariaDB](https://mariadb.com/kb/en/get
 ## Metadata
 | chart version | app version | type | url |
 |:--------------|:-------------|:-------------|:-------------|
-| 0.21.0 | 10.5.22 | application | [Git repo](https://github.com/sapcc/helm-charts/tree/mariadb-galera/common/mariadb-galera) |
+| 0.22.0 | 10.5.22 | application | [Git repo](https://github.com/sapcc/helm-charts/tree/mariadb-galera/common/mariadb-galera) |
 
 | Name | Email | Url |
 | ---- | ------ | --- |
@@ -152,7 +152,7 @@ docker build --build-arg BASE_SOFT_NAME=ubuntu --build-arg BASE_SOFT_VERSION=22.
   ```
 * [push](https://helm.sh/docs/topics/registries/#the-push-subcommand) the chart to the registry
   ```shell
-  helm push mariadb-galera-0.21.0.tgz oci://keppel.eu-de-1.cloud.sap/ccloud-helm/
+  helm push mariadb-galera-0.22.0.tgz oci://keppel.eu-de-1.cloud.sap/ccloud-helm/
   ```
 
 ### values description
@@ -351,6 +351,7 @@ docker build --build-arg BASE_SOFT_NAME=ubuntu --build-arg BASE_SOFT_VERSION=22.
 | mariadb.galera.backup.kopia.keep.monthly | int | 0 | [keep-monthly](https://kopia.io/docs/reference/command-line/common/policy-set/) |
 | mariadb.galera.backup.kopia.keep.weekly | int | 0 | [keep-weekly](https://kopia.io/docs/reference/command-line/common/policy-set/) |
 | mariadb.galera.backup.kopia.keep.yearly | int | 0 | [keep-yearly](https://kopia.io/docs/reference/command-line/common/policy-set/) |
+| mariadb.galera.backup.kopia.linkerd.enabled | bool | false | enable the [annotation](https://linkerd.io/2.14/tasks/adding-your-service/#meshing-a-service-with-annotations) for linkerd to inject the sidecar container for transport encryption |
 | mariadb.galera.backup.kopia.listBackups | bool | false | [list backup snapshots](https://kopia.io/docs/reference/command-line/common/snapshot-list/) |
 | mariadb.galera.backup.kopia.progressUpdateInterval | string | 300ms | How often to update progress information [--progress-update-interval](https://kopia.io/docs/reference/command-line/flags/) |
 | mariadb.galera.backup.kopia.purgeBinlogsAfterFullBackup | bool | `false` | [purge binlogs](https://mariadb.com/kb/en/purge-binary-logs/) after a full backup. |
@@ -386,6 +387,7 @@ docker build --build-arg BASE_SOFT_NAME=ubuntu --build-arg BASE_SOFT_VERSION=22.
 | mariadb.galera.restore.kopia.job.backoffLimit | int | 0 | How many [retries](https://kubernetes.io/docs/concepts/workloads/controllers/job/#pod-backoff-failure-policy) before the Kopia restore job will be marked as failed |
 | mariadb.galera.restore.kopia.job.jobRestartPolicy | string | Never | Define how the Kopia restore job pod [will be restarted](https://kubernetes.io/docs/concepts/workloads/controllers/job/#handling-pod-and-container-failures) in case of an error. It can be on the same worker node or another |
 | mariadb.galera.restore.kopia.job.ttlSecondsAfterFinished | int | 43200 | After how many seconds will a stopped Kopia restore job be [deleted from the Kubernetes cluster](https://kubernetes.io/docs/concepts/workloads/controllers/job/#clean-up-finished-jobs-automatically) |
+| mariadb.galera.restore.kopia.linkerd.enabled | bool | false | enable the [annotation](https://linkerd.io/2.14/tasks/adding-your-service/#meshing-a-service-with-annotations) for linkerd to inject the sidecar container for transport encryption |
 | mariadb.galera.restore.kopia.snapshotId | bool | `false` | If set the beforeTimestamp option will be ignored and the configured id(".rootEntry.obj" or "Root" column in the snapshot list) will be used |
 | mariadb.galera.restore.pointInTimeRecovery | bool | `nil` | use binlog backups to recover the database to the defined `mariab.galera.restore.beforeTimestamp` and not only the nearest full backup. The `snapshotId` value will be ignored |
 | mariadb.galera.slaveThreads | int | 4 | [wsrep-slave-threads](https://galeracluster.com/library/documentation/mysql-wsrep-options.html#wsrep-slave-threads) |
@@ -397,6 +399,8 @@ docker build --build-arg BASE_SOFT_NAME=ubuntu --build-arg BASE_SOFT_VERSION=22.
 | mariadb.job.config.backoffLimit | int | 6 | How many [retries](https://kubernetes.io/docs/concepts/workloads/controllers/job/#pod-backoff-failure-policy) before the MariaDB config job will be marked as failed |
 | mariadb.job.config.jobRestartPolicy | string | OnFailure | Define how the MariaDB config job pod [will be restarted](https://kubernetes.io/docs/concepts/workloads/controllers/job/#handling-pod-and-container-failures) in case of an error. It can be on the same worker node or another |
 | mariadb.job.config.ttlSecondsAfterFinished | int | 120 | After how many seconds will a stopped MariaDB config job be [deleted from the Kubernetes cluster](https://kubernetes.io/docs/concepts/workloads/controllers/job/#clean-up-finished-jobs-automatically) |
+| mariadb.job.linkerd.enabled | bool | false | enable the [annotation](https://linkerd.io/2.14/tasks/adding-your-service/#meshing-a-service-with-annotations) for linkerd to inject the sidecar container for transport encryption |
+| mariadb.linkerd.enabled | bool | false | enable the [annotation](https://linkerd.io/2.14/tasks/adding-your-service/#meshing-a-service-with-annotations) for linkerd to inject the sidecar container for transport encryption |
 | mariadb.performance_schema | bool | false | to enable the [Performance Schema](https://mariadb.com/kb/en/performance-schema-overview/) |
 | mariadb.roles.contentfullaccess.enabled | bool | `false` | enable this role |
 | mariadb.roles.contentfullaccess.grant | bool | `false` | allow to grant the [privileges](https://mariadb.com/kb/en/grant/#the-grant-option-privilege) to other users |
@@ -492,6 +496,7 @@ docker build --build-arg BASE_SOFT_NAME=ubuntu --build-arg BASE_SOFT_VERSION=22.
 | monitoring.kopia.enabled | bool | false | enable the Kopia [/metrics endpoint](https://kopia.io/docs/reference/command-line/flags/) to be scraped by Prometheus |
 | monitoring.mysqld_exporter.autostart | bool | `true` | run the default entrypoint.sh script or just sleep to be able to troubleshoot and debug |
 | monitoring.mysqld_exporter.enabled | bool | false | enable the [Prometheus MySQL exporter](https://github.com/prometheus/mysqld_exporter) as sidecar container |
+| monitoring.mysqld_exporter.linkerd.enabled | bool | false | enable the [annotation](https://linkerd.io/2.14/tasks/adding-your-service/#meshing-a-service-with-annotations) for linkerd to inject the sidecar container for transport encryption |
 | monitoring.mysqld_exporter.metricsPort | int | 9104 | [MySQL Prometheus exporter](https://github.com/prometheus/mysqld_exporter) port |
 | monitoring.prometheus.alerts.enabled | bool | `nil` | enable Prometheus alert definitions |
 | monitoring.prometheus.alerts.service | string | `$.Values.mariadb.galera.clustername` | The `service` label to be used for the alert definitions |
@@ -509,6 +514,7 @@ docker build --build-arg BASE_SOFT_NAME=ubuntu --build-arg BASE_SOFT_VERSION=22.
 | podManagementPolicy | string | OrderedReady | [Pod Management Policy](https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/#pod-management-policies) for the MariaDB Galera and ProxySQL cluster pods. |
 | proxy.enabled | bool | false | use ProxySQL in front of the MariaDB Galera pods to reduce the service downtimes for the clients |
 | proxy.haproxy.backend.balance | string | source | [load balancing algorithm](http://docs.haproxy.org/2.8/configuration.html#4.2-balance) to be used for the MariaDB connections |
+| proxy.haproxy.linkerd.enabled | bool | false | enable the [annotation](https://linkerd.io/2.14/tasks/adding-your-service/#meshing-a-service-with-annotations) for linkerd to inject the sidecar container for transport encryption |
 | proxy.haproxy.retries | int | 2 | [connection retries](http://docs.haproxy.org/2.8/configuration.html#4-retries) on a server after a failure |
 | proxy.haproxy.timeout.client | string | 5s | [inactivity timeout](http://docs.haproxy.org/2.8/configuration.html#3.10-timeout%20client) on the client side |
 | proxy.haproxy.timeout.connect | string | 3s | [connection timeout](http://docs.haproxy.org/2.8/configuration.html#4.2-timeout%20connect) to a server |
@@ -519,6 +525,7 @@ docker build --build-arg BASE_SOFT_NAME=ubuntu --build-arg BASE_SOFT_VERSION=22.
 | proxy.haproxy.users.stats.username | string | `nil` | HAProxy stats user username |
 | proxy.proxysql.adminui.enabled | bool | `true` | the [ProxySQL Admin UI](https://proxysql.com/documentation/http-web-server/) |
 | proxy.proxysql.adminui.verbosity | int | `0` | the variable defines the [verbosity level](https://proxysql.com/documentation/global-variables/admin-variables/#admin-web_verbosity) of the web server |
+| proxy.proxysql.linkerd.enabled | bool | false | enable the [annotation](https://linkerd.io/2.14/tasks/adding-your-service/#meshing-a-service-with-annotations) for linkerd to inject the sidecar container for transport encryption |
 | proxy.proxysql.queryRules.genericReadWriteSplit.enabled | bool | `false` | check the "Generic Read/Write split using regex" section in the [howto](https://proxysql.com/documentation/proxysql-read-write-split-howto/) for details |
 | proxy.proxysql.restapi.enabled | bool | `true` | the [ProxySQL RestAPI](https://proxysql.com/documentation/REST-API/) |
 | proxy.proxysql.users.admin.enabled | bool | `true` | enable this user |
