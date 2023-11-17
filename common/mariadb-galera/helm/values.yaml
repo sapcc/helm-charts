@@ -245,7 +245,8 @@ mariadb:
           # -- (int) [keep-yearly](https://kopia.io/docs/reference/command-line/common/policy-set/)
           # @default -- 0
           yearly: 0
-        # -- currently only AWS S3 is supported, but Kopia provides more [backends|https://kopia.io/docs/repositories/]
+        # -- (string) `s3` to use an AWS S3 compatible backend or `filesystem` to store the backups directly into a (mounted) folder
+        # -- currently only AWS S3 and local folders are supported, but Kopia provides more [backends|https://kopia.io/docs/repositories/]
         # -- Openstack Swift and others provide an S3 compatible interface
         backend: s3
         s3:
@@ -256,6 +257,10 @@ mariadb:
           region:
           # -- (string) S3 bucket name
           bucket:
+        filesystem:
+          # -- (string) persistent volume to be used
+          # -- looked up from `volumeMounts.backup.kopia`
+          name: data
     restore:
       # -- define the backup timestamp that should be used for the restore. Only the `%Y-%m-%d %H:%M:%S+%Z` format (e.g 2023-07-18 20:59:00+CEST) is currently supported and the backup created nearest before will be used
       # -- without `mariab.galera.restore.pointInTimeRecovery` only the full snapshot will be recovered
@@ -988,9 +993,17 @@ volumeMounts:
         mountPath: /opt/proxysql/data
         # -- volume type [(persistent)](https://kubernetes.io/docs/concepts/storage/persistent-volumes/)
         type: persistentVolume
-  kopiaserver:
-  kopiabackup:
-  kopiarestore:
+  backup:
+    kopia:
+      data:
+        # -- enable this volume
+        enabled: false
+        # -- name for the [persistent volume claim](https://kubernetes.io/docs/concepts/storage/persistent-volumes/#persistentvolumeclaims) requested for the Kopia [data directory](https://mariadb.com/kb/en/server-system-variables/#datadir)
+        claimName: mariabackup
+        # -- mount path of the persistent volume in the container used for the MariaDB data directory
+        mountPath: /opt/kopia/data
+        # -- volume type [(persistent)](https://kubernetes.io/docs/concepts/storage/persistent-volumes/)
+        type: persistentVolume
 
 volumeClaimTemplates:
   mariadb:
@@ -1007,6 +1020,13 @@ volumeClaimTemplates:
     capacity: 30Gi
     # -- custom storageclass (currently `cinder` and `nfs` are supported) for the MariaDB log volume
     storageClassName: false
+  mariabackup:
+    # -- [access mode](https://kubernetes.io/docs/concepts/storage/persistent-volumes/#access-modes) for the MariaDB backup volume (used by Kopia)
+    accessModes: [ReadWriteMany]
+    # -- capacity for the MariaDB backup volume
+    capacity: 100Gi
+    # -- custom storageclass (currently `nfs` is supported) for the MariaDB backup volume to allow the shared access for all Kopia pods
+    storageClassName: nfs
   proxysql:
     # -- [access mode](https://kubernetes.io/docs/concepts/storage/persistent-volumes/#access-modes) for the ProxySQL data volume
     accessModes: [ReadWriteOnce]
