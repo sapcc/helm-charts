@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.22.1 - 2023/11/17
+* fixes from 0.20.4 added
+  * Ubuntu packages timestamp `20231117111140`
+  * `MARIADB_MONITORING` credential for ProxySQL fixed
+* chart version bumped
+
 ## v0.22.0 - 2023/10/30
 * linkerd [annotation support](https://linkerd.io/2.14/tasks/adding-your-service/#meshing-a-service-with-annotations) added
   *  for linkerd to inject the transport encryption sidecar container
