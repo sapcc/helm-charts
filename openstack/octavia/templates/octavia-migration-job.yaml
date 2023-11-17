@@ -1,15 +1,8 @@
-{{/*
-   With Helm3, we don't force the replacements of job specs anymore, which
-   causes deployment issues since kuberentes job specs are immutable by
-   default.  We solve this by generating an image specific name for every
-   deployment, therefore no job will be replaced. Instead, a new job will be
-   spawned while the old one will be deleted.
-*/}}
 {{- $proxysql := lookup "v1" "ConfigMap" .Release.Namespace (print .Release.Name "-proxysql-etc") -}}
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: {{ include "octavia.migration_job_name" . }}
+  name: octavia-migration
   labels:
     system: openstack
     type: configuration
