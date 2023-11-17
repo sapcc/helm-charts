@@ -4,6 +4,8 @@
 * MariaDB service name aligned to the existing MariaDB single pod Helm chart
   * for easier migration
   * less changes required if used as a subchart dependency
+* Ubuntu packages timestamp `20231117111140`
+* `MARIADB_MONITORING` credential for ProxySQL fixed
 * chart version bumped
 
 ## v0.20.3 - 2023/10/11
