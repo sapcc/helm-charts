@@ -10,8 +10,7 @@ groups:
         expr: 'sum by (template_kind, service) (max_over_time(doop_raw_violations{template_kind="GkVulnerableImages",cluster!~".*qa.*",support_group="containers",service=~"backup|castellum|gatekeeper|hubcopter|keppel|limes|repo|tenso"}[10m])) > 0'
         for: 5m
         labels:
-          context: GkVulnerableImages
-          tier: os # still needed for routing to service-level alert channels
+          context: GkVulnerableImagesForSRS
           support_group: containers
           service: "{{ $labels.service }}"
           severity: info
@@ -26,8 +25,7 @@ groups:
         expr: 'sum by (template_kind, service) (max_over_time(doop_raw_violations{template_kind="GkVulnerableImages",support_group="storage"}[10m])) > 0'
         for: 5m
         labels:
-          context: GkVulnerableImages
-          tier: os # still needed for routing to service-level alert channels
+          context: GkVulnerableImagesForStorage
           support_group: storage
           service: "{{ $labels.service }}"
           severity: warning

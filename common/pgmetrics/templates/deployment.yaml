@@ -8,8 +8,6 @@ kind: Deployment
 apiVersion: apps/v1
 metadata:
   name: {{ .Release.Name }}-pgmetrics
-  labels:
-    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
 spec:
   replicas: 1
   revisionHistoryLimit: 3
@@ -23,7 +21,6 @@ spec:
       labels:
         app: {{ .Release.Name }}-pgmetrics
         component: {{ $db_name }}
-        chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
         type: metrics
         {{- if .Values.alerts.enabled }}
         alert-tier: {{ required ".Values.alerts.tier missing" .Values.alerts.tier }}

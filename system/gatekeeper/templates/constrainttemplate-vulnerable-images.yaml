@@ -40,15 +40,27 @@ spec:
         import data.lib.add_support_labels
         import data.lib.image_check
         import data.lib.traversal
+        import future.keywords.in
 
         iro := input.review.object
+        phase := object.get(iro, ["status", "phase"], "Running") # only relevant for iro.kind == "Pod"
         pod := traversal.find_pod(iro)
         checks := __run_image_check()
 
         __run_image_check() = result {
           input.parameters.reportingLevel == "pod"
+          phase != "Succeeded"
+          phase != "Failed"
           result = image_check.for_pod(iro, input.parameters.doopImageCheckerURL)
         }
+        __run_image_check() = result {
+          input.parameters.reportingLevel == "pod"
+          # ignore pods that have already finished running, but still exist
+          # as a k8s object (e.g. leftovers of completed or failed jobs)
+          phase in ["Succeeded", "Failed"]
+          result = []
+        }
+
         __run_image_check() = result {
           input.parameters.reportingLevel == "pod-owner"
           pod.isFound

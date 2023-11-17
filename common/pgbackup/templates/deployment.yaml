@@ -12,8 +12,6 @@ kind: Deployment
 
 metadata:
   name: "{{ .Release.Name }}-pgbackup"
-  labels:
-    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
 
 spec:
   replicas: 1
@@ -77,7 +75,7 @@ spec:
             - name: PGPASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: "{{ .Release.Name }}-pgbackup"
+                  name: {{ if .Values.isPostgresNG }}"postgres-password"{{ else }}"{{ .Release.Name }}-pgbackup"{{ end }}
                   key: postgres-password
           ports:
           - name: metrics

@@ -61,6 +61,7 @@
   - mountPath: /etc/proxysql
     name: etcproxysql
     {{- include "utils.proxysql.volume_mount" . | indent 2 }}
+    {{- include "utils.trust_bundle.volume_mount" . | indent 2 }}
       {{- end }}
     {{- end }}
   {{- end }}

@@ -15,10 +15,13 @@ spec:
           containers:
           - name: "cron-availability"
             image: "{{ required ".Values.global.registry variable missing" .Values.global.registry }}/{{ .Values.jupyterhub_cron.images.application.name }}:{{ .Values.jupyterhub_cron.images.application.tag }}"
-            command: ["papermill", "api-availability.ipynb", "-", "-r", "swift_url", "$(swift_url)"]
+            command: ['sh', '-c']
+            args:
+            - >
+              papermill api-availability.ipynb - -r swift_url $(swift_url) \
             volumeMounts:
             - name: notebooks-git
-              mountPath: /notebooks-git
+              mountPath: /home/jovyan
             env:
             - name: approle_role_id
               valueFrom:
@@ -55,7 +58,7 @@ spec:
             command: ['sh', '-c']
             args:
             - >
-              curl -L -k \   -H "Accept: application/vnd.github.raw+json" \   -H "Authorization: Bearer $(github_token)" \   -H "X-GitHub-Api-Version: 2022-11-28" \   "$(github_url)api-availability.ipynb" > api-availability.ipynb
+              curl -L -k -o \   -H "Accept: application/vnd.github.raw+json" \   -H "Authorization: Bearer $(github_token)" \   -H "X-GitHub-Api-Version: 2022-11-28" \   "$(github_url)api-availability.ipynb" > /notebooks-git/api-availability.ipynb
           volumes:
           - name: notebooks-git
             emptyDir: {}
