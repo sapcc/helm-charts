@@ -194,6 +194,7 @@ mysql_metrics:
         - "share_id"
         - "id"
         - "status"
+        - "share_type_id"
         - "availability_zone_name"
       name: openstack_manila_snapshot_count_gauge
       query: |
@@ -202,6 +203,7 @@ mysql_metrics:
           snap.share_id as share_id,
           snap.id as id,
           si.status as status,
+          coalesce(share_instances.share_type_id, 'N/A') AS share_type_id,
           availability_zones.name AS availability_zone_name,
           COUNT(*) AS count_gauge
         FROM share_snapshots AS snap
@@ -221,6 +223,7 @@ mysql_metrics:
           'none' AS project_id,
           'none' AS share_id,
           'none' AS status,
+          'none' AS share_type_id,
           'none' AS availability_zone_name,
           0 AS count_gauge;
       values:
@@ -231,6 +234,7 @@ mysql_metrics:
         - "share_id"
         - "id"
         - "status"
+        - "share_type_id"
         - "availability_zone_name"
       name: openstack_manila_snapshot_size_gauge
       query: |
@@ -239,6 +243,7 @@ mysql_metrics:
           share_snapshots.share_id,
           share_snapshots.id,
           share_snapshot_instances.status,
+          coalesce(share_instances.share_type_id, 'N/A') AS share_type_id,
           availability_zones.name AS availability_zone_name,
           SUM(share_snapshots.size) size_gauge
         FROM share_snapshots
