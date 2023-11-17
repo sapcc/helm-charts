@@ -12,7 +12,7 @@
         "analyzer": {
           "custom_analyzer": {
             "type": "custom",
-            "tokenizer": "custom_tokenizer",
+            "tokenizer": "custom_tokenizer"
           }
         },
         "tokenizer": {
