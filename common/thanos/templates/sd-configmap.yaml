@@ -1,0 +1,16 @@
+{{- if .Values.enabled }}
+{{- if not $.Values.deployWholeThanos }}
+{{- $root := . }}
+{{- range $name := coalesce .Values.names .Values.global.targets (list .Values.name) }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "thanos.fullName" (list $name $root) }}-query-sd-configmap
+  labels:
+    app.kubernetes.io/component: query
+data:
+  servicediscovery.yaml: |-
+{{ include "thanos.storeAPIs" (list $name $root) | indent 8 }}
+{{- end }}
+{{- end }}
+{{- end }}

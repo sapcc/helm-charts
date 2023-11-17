@@ -36,8 +36,14 @@ queryRegions: []
 # thanos-$clusterType-grpc is the corresponding ingress to be queried
 clusterTypes: []
 
-# If true it will discovery all Thaneis Services deployed by Thanos operator
-queryDiscovery:
+# Replaces the default thanos-operator discovery
+# If true it will discover all Thaneis Query Services starting with 'thanos', containing 'query'.
+# Excluded are 'maia', 'metal', 'scaleout', 'regional'
+# Needs to be disabled if the added stores are cluster external like in regional, global.
+queryDiscovery: true
+
+# Refresh interval to re-read file SD files
+# querySDInterval:
 
 # set name only, region and domain will be generated like clusterDomain.region.cloud.sap
 # defaults to cluster.local
@@ -158,6 +164,9 @@ store:
 # not relevant when deployWholeTHanos set to false
 query:
   replicas: 1
+
+  # logLevel:
+
   webRouteprefix: /thanos
   # statically specify stores, if deployWholeThanos is set and this is not present, it will default to query the single Prometheus sidecar container prometheus-<thanos-name>:10901
   # stores from the following list will be build as an cluster internal dns fqdn. Like store1.default.svc.cluster.local:10901
@@ -168,6 +177,8 @@ query:
     # - name: storeN
     #   namespace: default
     #   port: 10901
+
+  extraArgs: []
 
 ruler:
   enabled: false
