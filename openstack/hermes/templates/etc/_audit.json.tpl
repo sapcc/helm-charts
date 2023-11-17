@@ -78,6 +78,14 @@
             "type" : "text",
             "analyzer": "custom_analyzer"
           },
+          "global_request_id" : {
+            "type" : "text",
+            "analyzer": "custom_analyzer"
+          },
+          "request_id" : {
+            "type" : "text",
+            "analyzer": "custom_analyzer"
+          },
           "host" : {
             "properties" : {
               "address" : {
@@ -98,7 +106,15 @@
             "type" : "text",
             "analyzer": "custom_analyzer"
           },
+          "project_domain_name": {
+            "type" : "text",
+            "analyzer": "custom_analyzer"
+          },
           "project_id" : {
+            "type" : "text",
+            "analyzer": "custom_analyzer"
+          },
+          "project_name": {
             "type" : "text",
             "analyzer": "custom_analyzer"
           },
