@@ -8,7 +8,9 @@ metadata:
     kubernetes.io/tls-acme: {{ default false .Values.plutono.tls | quote }}
     disco: {{ default false .Values.plutono.disco | quote }}
   {{- if .Values.plutono.oauth.enabled }}
+    ingress.kubernetes.io/auth-url: {{ required ".Values.plutono.oauth.authURL missing" .Values.plutono.oauth.authURL }}
     nginx.ingress.kubernetes.io/auth-url: {{ required ".Values.plutono.oauth.authURL missing" .Values.plutono.oauth.authURL }}
+    {{ if .Values.plutono.oauth.authSignInURL }}ingress.kubernetes.io/auth-signin: {{ .Values.plutono.oauth.authSignInURL }} {{ end }}
     {{ if .Values.plutono.oauth.authSignInURL }}nginx.ingress.kubernetes.io/auth-signin: {{ .Values.plutono.oauth.authSignInURL }} {{ end }}
   {{ end }}
   {{- if .Values.plutono.auth.tls_client_auth.enabled}}
@@ -50,8 +52,11 @@ metadata:
     kubernetes.io/tls-acme: {{ default false .Values.plutono.tls | quote }}
     disco: {{ default false .Values.plutono.disco | quote }}
   {{- if .Values.plutono.auth.tls_client_auth.enabled}}
+    ingress.kubernetes.io/auth-tls-secret: {{ default "" .Values.plutono.auth.tls_client_auth.secret }}
     nginx.ingress.kubernetes.io/auth-tls-secret: {{ default "" .Values.plutono.auth.tls_client_auth.secret }}
+    ingress.kubernetes.io/auth-tls-verify-depth: "3"
     nginx.ingress.kubernetes.io/auth-tls-verify-depth: "3"
+    ingress.kubernetes.io/auth-tls-verify-client: "optional"
     nginx.ingress.kubernetes.io/auth-tls-verify-client: "optional"
   {{- end }}
 
@@ -88,12 +93,17 @@ metadata:
     disco: {{ default false .Values.plutono.disco | quote }}
     disco/zone-name: "global.cloud.sap"
   {{- if .Values.plutono.oauth.enabled }}
+    ingress.kubernetes.io/auth-url: {{ required ".Values.plutono.oauth.authURL missing" .Values.plutono.oauth.authURL }}
     nginx.ingress.kubernetes.io/auth-url: {{ required ".Values.plutono.oauth.authURL missing" .Values.plutono.oauth.authURL }}
+    {{ if .Values.plutono.oauth.authSignInURL }}ingress.kubernetes.io/auth-signin: {{ .Values.plutono.oauth.authSignInURL }} {{ end }}
     {{ if .Values.plutono.oauth.authSignInURL }}nginx.ingress.kubernetes.io/auth-signin: {{ .Values.plutono.oauth.authSignInURL }} {{ end }}
   {{ end }}
   {{- if .Values.plutono.auth.tls_client_auth.enabled}}
+    ingress.kubernetes.io/auth-tls-secret: {{ default "" .Values.plutono.auth.tls_client_auth.secret }}
     nginx.ingress.kubernetes.io/auth-tls-secret: {{ default "" .Values.plutono.auth.tls_client_auth.secret }}
+    ingress.kubernetes.io/auth-tls-verify-depth: "3"
     nginx.ingress.kubernetes.io/auth-tls-verify-depth: "3"
+    ingress.kubernetes.io/auth-tls-verify-client: "optional"
     nginx.ingress.kubernetes.io/auth-tls-verify-client: "optional"
   {{- end }}
 
@@ -128,8 +138,11 @@ metadata:
     disco: {{ default false .Values.plutono.disco | quote }}
     disco/zone-name: "global.cloud.sap"
   {{- if .Values.plutono.auth.tls_client_auth.enabled}}
+    ingress.kubernetes.io/auth-tls-secret: {{ default "" .Values.plutono.auth.tls_client_auth.secret }}
     nginx.ingress.kubernetes.io/auth-tls-secret: {{ default "" .Values.plutono.auth.tls_client_auth.secret }}
+    ingress.kubernetes.io/auth-tls-verify-depth: "3"
     nginx.ingress.kubernetes.io/auth-tls-verify-depth: "3"
+    ingress.kubernetes.io/auth-tls-verify-client: "optional"
     nginx.ingress.kubernetes.io/auth-tls-verify-client: "optional"
   {{- end }}
 
