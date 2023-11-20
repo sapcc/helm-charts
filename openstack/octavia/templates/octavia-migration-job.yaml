@@ -5,6 +5,7 @@
    deployment, therefore no job will be replaced. Instead, a new job will be
    spawned while the old one will be deleted.
 */}}
+{{- $proxysql := lookup "v1" "ConfigMap" .Release.Namespace (print .Release.Name "-proxysql-etc") -}}
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -26,7 +27,9 @@ spec:
   template:
     spec:
       restartPolicy: OnFailure
-{{ include "utils.proxysql.job_pod_settings" . | indent 6 }}
+    {{- if $proxysql}}
+      {{- include "utils.proxysql.job_pod_settings" . | nindent 6 }}
+    {{- end }}
       initContainers:
         - name: wait-for-dependencies
           image: {{required ".Values.global.registry is missing" .Values.global.registry}}/loci-octavia:{{required "Values.imageVersion is missing" .Values.imageVersion}}
@@ -68,10 +71,14 @@ spec:
               mountPath: /etc/octavia/logging.ini
               subPath: logging.ini
               readOnly: true
+    {{- if $proxysql}}
             {{- include "utils.proxysql.volume_mount" . | indent 12 }}
         {{- include "utils.proxysql.container" . | indent 8 }}
+    {{- end }}
       volumes:
         - name: octavia-etc
           configMap:
             name: octavia-etc
+    {{- if $proxysql}}
         {{- include "utils.proxysql.volumes" . | indent 8 }}
+    {{- end }}
