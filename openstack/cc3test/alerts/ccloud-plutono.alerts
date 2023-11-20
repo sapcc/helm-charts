@@ -1,10 +1,10 @@
 groups:
-- name: cc3test-grafana.alerts
+- name: cc3test-plutono.alerts
   rules:
-  - alert: CCloudGrafanaDown
+  - alert: CCloudPlutonoDown
     expr: |
         cc3test_status{type="datapath",
-            name=~"TestGrafana_datapath.+"
+            name=~"TestPlutono_datapath.+"
         } == 0
     for: 30m
     labels:
@@ -13,18 +13,18 @@ groups:
       tier: os
       service: '{{ $labels.service }}'
       context: '{{ $labels.service }}'
-      meta: 'CCloud Grafana {{ $labels.name }} is down'
+      meta: 'CCloud Plutono {{ $labels.name }} is down'
       dashboard: 'cc3test-datapath-status?var-service={{ $labels.service }}'
-      playbook: 'docs/support/playbook/grafana'
+      playbook: 'docs/support/playbook/plutono'
       report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
     annotations:
-      description: 'CCloud Grafana {{ $labels.name }} is down'
-      summary: 'CCloud Grafana {{ $labels.name }} is down'
+      description: 'CCloud Plutono {{ $labels.name }} is down'
+      summary: 'CCloud Plutono {{ $labels.name }} is down'
 
-  - alert: CCloudGrafanaFlapping
+  - alert: CCloudPlutonoFlapping
     expr: |
         changes(cc3test_status{type="datapath",
-            name=~"TestGrafana_datapath.+"
+            name=~"TestPlutono_datapath.+"
         }[30m]) > 8
     labels:
       severity: warning
@@ -32,10 +32,10 @@ groups:
       tier: os
       service: '{{ $labels.service }}'
       context: '{{ $labels.service }}'
-      meta: 'CCloud Grafana is flapping'
+      meta: 'CCloud Plutono is flapping'
       dashboard: 'cc3test-datapath-status?var-service={{ $labels.service }}'
-      playbook: 'docs/support/playbook/grafana'
+      playbook: 'docs/support/playbook/plutono'
       report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
     annotations:
-      description: 'CCloud Grafana {{ $labels.name }} is flapping'
-      summary: 'CCloud Grafana {{ $labels.name }} is flapping'
+      description: 'CCloud Plutono {{ $labels.name }} is flapping'
+      summary: 'CCloud Plutono {{ $labels.name }} is flapping'
