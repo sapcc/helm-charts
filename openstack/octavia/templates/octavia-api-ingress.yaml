@@ -12,10 +12,10 @@ metadata:
     type: api
     component: octavia
   annotations:
+    # linkerd annotations
     {{- include "utils.linkerd.ingress_annotation" . | indent 4 }}
-    {{- with .Values.ingress.annotations }}  
-{{ toYaml . | indent 4 }}
-    {{- end }}
+    # other annotations
+    {{- .Values.ingress.annotations | toYaml | nindent 4 }}
 spec:
   tls:
      - secretName: tls-{{ include "octavia_api_endpoint_host_public" . | replace "." "-" }}
