@@ -137,10 +137,10 @@ cluster.local
 {{- end }}
 {{- end }}
 {{/* Global Thanos Query Store API endpoints */}}
-{{- else if and $root.Values.useQueryRegions $root.Values.clusterTypes -}}
+{{- else if and $root.Values.useQueryRegions $root.Values.queryStoreAPIs -}}
 - targets:
 {{- range $region := $root.Values.queryRegions }}
-{{- range $cluster := $root.Values.clusterTypes }}
+{{- range $cluster := $root.Values.queryStoreAPIs }}
   - thanos-{{ $cluster }}-grpc.{{ $region }}.{{ $root.Values.global.tld }}:443
 {{- end }}
 {{- end }}
@@ -148,9 +148,9 @@ cluster.local
   - {{ $store }}.{{ $root.Values.global.tld }}:443
 {{- end }}
 {{/* Regional Thanos Query Store API endpoints */}}
-{{- else if $root.Values.clusterTypes -}}
+{{- else if $root.Values.queryStoreAPIs -}}
 - targets:
-{{- range $cluster := $root.Values.clusterTypes }}
+{{- range $cluster := $root.Values.queryStoreAPIs }}
   - thanos-{{ $cluster }}-grpc.{{ $root.Values.global.region }}.{{ $root.Values.global.tld }}:443
 {{- end }}
 {{- end }}
