@@ -40,6 +40,42 @@ spec:
               port:
                 number: {{$.Values.plutono.endpoint.port.public}}
   {{- end }}
+---
+kind: Ingress
+apiVersion: networking.k8s.io/v1
+
+metadata:
+  name: plutono-api-health
+  annotations:
+    kubernetes.io/tls-acme: {{ default false .Values.plutono.tls | quote }}
+    disco: {{ default false .Values.plutono.disco | quote }}
+  {{- if .Values.plutono.auth.tls_client_auth.enabled}}
+    nginx.ingress.kubernetes.io/auth-tls-secret: {{ default "" .Values.plutono.auth.tls_client_auth.secret }}
+    nginx.ingress.kubernetes.io/auth-tls-verify-depth: "3"
+    nginx.ingress.kubernetes.io/auth-tls-verify-client: "optional"
+  {{- end }}
+
+spec:
+  tls:
+    - secretName: tls-{{ first .Values.plutono.endpoint.host.test | replace "." "-" }}
+      hosts:
+      {{- range $host := .Values.plutono.endpoint.host.test }}
+        - {{ $host }}
+      {{- end }}
+  rules:
+  {{- range $host := .Values.plutono.endpoint.host.test }}
+    - host: {{ $host }}
+      http:
+        paths:
+        - path: /api/health
+          pathType: Prefix
+          backend:
+            service:
+              name: plutono
+              port:
+                number: {{$.Values.plutono.endpoint.port.public}}
+  {{- end }}
+{{- end }}
 {{- if .Values.ingress.global }}
 ---
 kind: Ingress
@@ -56,11 +92,8 @@ metadata:
     {{ if .Values.plutono.oauth.authSignInURL }}nginx.ingress.kubernetes.io/auth-signin: {{ .Values.plutono.oauth.authSignInURL }} {{ end }}
   {{ end }}
   {{- if .Values.plutono.auth.tls_client_auth.enabled}}
-    ingress.kubernetes.io/auth-tls-secret: {{ default "" .Values.plutono.auth.tls_client_auth.secret }}
     nginx.ingress.kubernetes.io/auth-tls-secret: {{ default "" .Values.plutono.auth.tls_client_auth.secret }}
-    ingress.kubernetes.io/auth-tls-verify-depth: "3"
     nginx.ingress.kubernetes.io/auth-tls-verify-depth: "3"
-    ingress.kubernetes.io/auth-tls-verify-client: "optional"
     nginx.ingress.kubernetes.io/auth-tls-verify-client: "optional"
   {{- end }}
 
@@ -84,5 +117,40 @@ spec:
               port:
                 number: {{$.Values.plutono.endpoint.port.public}}
   {{- end }}
-{{- end }}
+---
+kind: Ingress
+apiVersion: networking.k8s.io/v1
+
+metadata:
+  name: plutono-global-api-health
+  annotations:
+    kubernetes.io/tls-acme: {{ default false .Values.plutono.tls | quote }}
+    disco: {{ default false .Values.plutono.disco | quote }}
+    disco/zone-name: "global.cloud.sap"
+  {{- if .Values.plutono.auth.tls_client_auth.enabled}}
+    nginx.ingress.kubernetes.io/auth-tls-secret: {{ default "" .Values.plutono.auth.tls_client_auth.secret }}
+    nginx.ingress.kubernetes.io/auth-tls-verify-depth: "3"
+    nginx.ingress.kubernetes.io/auth-tls-verify-client: "optional"
+  {{- end }}
+
+spec:
+  tls:
+    - secretName: tls-{{ first .Values.plutono.endpoint.host.testGlobal | replace "." "-" }}
+      hosts:
+      {{- range $host := .Values.plutono.endpoint.host.testGlobal }}
+        - {{ $host }}
+      {{- end }}
+  rules:
+  {{- range $host := .Values.plutono.endpoint.host.testGlobal }}
+    - host: {{ $host }}
+      http:
+        paths:
+        - path: /api/health
+          pathType: Prefix
+          backend:
+            service:
+              name: plutono
+              port:
+                number: {{$.Values.plutono.endpoint.port.public}}
+  {{- end }}
 {{- end }}
