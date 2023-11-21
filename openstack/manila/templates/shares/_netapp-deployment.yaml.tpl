@@ -97,6 +97,7 @@ spec:
               subPath: backend.conf
               readOnly: true
             {{- include "utils.proxysql.volume_mount" . | indent 12 }}
+            {{- include "utils.trust_bundle.volume_mount" . | indent 12 }}
           {{- if .Values.pod.resources.share }}
           resources:
 {{ toYaml .Values.pod.resources.share | indent 13 }}
@@ -152,5 +153,6 @@ spec:
           configMap:
             name: {{ .Release.Name }}-share-netapp-{{$share.name}}
         {{- include "utils.proxysql.volumes" . | indent 8 }}
+        {{- include "utils.trust_bundle.volumes" . | indent 8 }}
 {{ end }}
 {{- end -}}
