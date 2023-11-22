@@ -1,0 +1,26 @@
+groups:
+- name: haproxy.rules
+  rules:
+  - record: global:api_errors_per_request_sli:ratio_rate5m
+    expr: |2
+        (sum by(region, ingress) (label_replace( ( sum by(region, proxy) (rate(haproxy_backend_http_responses_total{proxy="swift_proxy", code=~"5.."}[5m]))
+        or
+        (0 * count by(region, proxy) (haproxy_backend_http_responses_total{proxy="swift_proxy"})))
+        /
+        sum by(region, proxy) (rate(haproxy_backend_http_responses_total{proxy="swift_proxy"}[5m])) , "ingress", "swift-api", "proxy", "swift_proxy")))
+
+  - record: global:api_errors_per_request_sli:ratio_rate1h
+    expr: |2
+        (sum by(region, ingress) (label_replace( ( sum by(region, proxy) (rate(haproxy_backend_http_responses_total{proxy="swift_proxy", code=~"5.."}[1h]))
+        or
+        (0 * count by(region, proxy) (haproxy_backend_http_responses_total{proxy="swift_proxy"})))
+        /
+        sum by(region, proxy) (rate(haproxy_backend_http_responses_total{proxy="swift_proxy"}[1h])) , "ingress", "swift-api", "proxy", "swift_proxy")))
+
+  - record: global:api_errors_per_request_sli:ratio_rate1d
+    expr: |2
+        (sum by(region, ingress) (label_replace( ( sum by(region, proxy) (rate(haproxy_backend_http_responses_total{proxy="swift_proxy", code=~"5.."}[1d]))
+        or
+        (0 * count by(region, proxy) (haproxy_backend_http_responses_total{proxy="swift_proxy"})))
+        /
+        sum by(region, proxy) (rate(haproxy_backend_http_responses_total{proxy="swift_proxy"}[1d])) , "ingress", "swift-api", "proxy", "swift_proxy")))
