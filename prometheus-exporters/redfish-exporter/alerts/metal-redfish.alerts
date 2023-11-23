@@ -1,6 +1,6 @@
 groups:
 - name: metal-redfish.alerts
-  rules:      
+  rules:   
   - alert: MetalDiskRedfishWarning
     expr: count(max_over_time(redfish_health{job!="redfish-bb", type=~"(disk|storage|chassis)"}[30m]) == 1) by (server_name, type, exported_name, serial)
     for: 10m
@@ -15,8 +15,9 @@ groups:
     annotations:
       description: "Server {{ $labels.server_name }} hardware error. Type: {{ $labels.type }} / Name: {{ $labels.exported_name }} /  Serial: {{ $labels.serial }}"
       summary: "Hardware error for server: {{ $labels.server_name }}"
+
   - alert: MetalRedfishDownWarning
-    expr: count(redfish_up == 0) by (host, instance, manufacturer)
+    expr: count(max_over_time(redfish_up[10m]) == 0) by (host, instance, manufacturer)
     for: 1h
     labels:
       severity: warning
