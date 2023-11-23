@@ -74,7 +74,7 @@ filter {
         }
     } else if [domain] {
       mutate {
-        add_field => { "%{[domain]}" ==> "%{[initiator][domain_id]}"}
+        add_field => { "%{[domain]}" => "%{[initiator][domain_id]}"}
         id => "f06b_mutate_initiator_domain_id"
       }
     }
