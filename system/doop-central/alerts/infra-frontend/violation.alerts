@@ -34,3 +34,18 @@ groups:
           summary: "Vulnerable images in prod deployments of {{ title $labels.service }}"
           description: |
             Please check <https://ccloud.dashboard.greenhouse.global.cloud.sap/?__s=(doop:(f:((key:check~Isupport~Sgroup,label:support_group,value:storage)),s:-+,v:GkVulnerableImages),greenhouse:(a:doop),supernova:(d:-+,f:(support~Sgroup:(swift)),p:prod,s:%27%27))|this view in Greenhouse> for which images are vulnerable.
+
+      # alert for vulnerable images in productive deployments of support group "foundation"
+      - alert: GkVulnerableImagesForFoundation
+        expr: 'sum by (template_kind, service) (max_over_time(doop_raw_violations{template_kind="GkVulnerableImages",support_group="foundation"}[10m])) > 0'
+        for: 5m
+        labels:
+          context: GkVulnerableImagesForFoundation
+          support_group: foundation
+          service: "{{ $labels.service }}"
+          severity: warning
+          meta: "Vulnerable images in prod deployments of {{ title $labels.service }}"
+        annotations:
+          summary: "Vulnerable images in prod deployments of {{ title $labels.service }}"
+          description: |
+            Please check <https://ccloud.dashboard.greenhouse.global.cloud.sap/?__s=(doop:(f:((key:check~Isupport~Sgroup,label:support_group,value:foundation),(key:check~Iservice,value:{{ $labels.service }}),(key:cluster~Ilayer,value:prod)),s:-+,v:GkVulnerableImages),greenhouse:(a:doop),supernova:(d:-+,f:(support~Sgroup:(foundation)),p:prod,s:%27%27))|this view in Greenhouse> for which images are vulnerable.
