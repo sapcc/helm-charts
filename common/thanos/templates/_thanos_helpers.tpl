@@ -131,7 +131,7 @@ cluster.local
 {{- if $root.Values.queryDiscovery -}}
 - targets:
 {{- range $index, $service := (lookup "v1" "Service" "" "").items }}
-{{- if and (hasPrefix "thanos" $service.metadata.name) (contains "query" $service.metadata.name) (not (contains "maia" $service.metadata.name)) (not (contains "metal" $service.metadata.name)) (not (contains "scaleout" $service.metadata.name)) (not (contains "regional" $service.metadata.name)) }}
+{{- if and (hasPrefix "thanos" $service.metadata.name) (contains "query" $service.metadata.name) (not (contains "maia" $service.metadata.name)) (not (contains "metal" $service.metadata.name)) (not (contains "scaleout" $service.metadata.name)) (not (contains "regional" $service.metadata.name)) (not (contains "global" $service.metadata.name)) }}
 {{- $store := $service.metadata.name }}
 {{ printf "- dnssrvnoa+_grpc._tcp.%s.%s.svc.%s" $store $service.metadata.namespace (include "clusterDomainOrDefault" $root) | indent 2 }}
 {{- end }}
