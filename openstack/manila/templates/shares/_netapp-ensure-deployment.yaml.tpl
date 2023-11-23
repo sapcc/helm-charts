@@ -9,7 +9,7 @@ metadata:
     system: openstack
     component: manila
 spec:
-  replicas: 1
+  replicas: {{ .Values.pod.replicas.ensure }}
   revisionHistoryLimit: 2
   strategy:
     type: RollingUpdate
