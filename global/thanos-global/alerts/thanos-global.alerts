@@ -1,0 +1,14 @@
+groups:
+- name: thanos-global.alerts
+  rules:
+  - alert: ThanosGlobalNotFetchingAllStores
+    expr: count by (region)(sum by (pod, cluster_type, region) (thanos_build_info{container="store", pod!~"thanos-vmware.*", cluster_type!~"customer|ci|internet", cluster!="k-master", region!~"qa-de-2|qa-de-3"})) < 9 
+    for: 10m
+    labels:
+      severity: info
+      service: metrics 
+      support_group: observability
+      meta: Thanos global can't reach all expected stores. {{ $labels.region }} is not providing all 9 stores.
+    annotations:
+      description: There is a connection problem or a store in {{ $labels.region }} is down. Usually GRPC error rate grows as well.
+      summary: Thanos global can't reach all stores.
