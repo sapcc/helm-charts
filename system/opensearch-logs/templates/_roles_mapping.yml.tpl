@@ -46,7 +46,7 @@ complex-role:
   reserved: false
   hidden: false
   backend_roles:
-  - CC_IAS_TEAM_SUPERVISION
+  #- CC_IAS_TEAM_SUPERVISION
   - CC_IAS_OPERATIONS_UI_KIBANA_SUPPORT
 
 kibana_user:
@@ -59,10 +59,6 @@ ml_full_access:
   backend_roles:
   - CC_IAS_OPERATIONS_UI_KIBANA_SUPPORT
 
-mlrole:
-  reserved: false
-  backend_roles:
-  - CC_IAS_OPERATIONS_UI_KIBANA_SUPPORT
 
 readall:
   reserved: false
