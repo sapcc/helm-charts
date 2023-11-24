@@ -62,15 +62,15 @@ statsd_enabled = {{ .Values.rpc_statsd_enabled }}
 {{- template "utils.snippets.debug.eventlet_backdoor_ini" "manila" }}
 
 [quota]
-shares = {{ .Values.quota.shares}}
-gigabytes = {{ .Values.quota.gigabytes}}
-snapshots = {{ .Values.quota.snapshots}}
-snapshot_gigabytes = {{ .Values.quota.snapshot_gigabytes}
-share_networks = {{ .Values.quota.share_networks}}
-share_groups = {{ .Values.quota.share_groups}}
-share_group_snapshots = {{ .Values.quota.share_group_snapshots}}
-share_replicas = {{ .Values.quota.share_replicas}}
-replica_gigabytes = {{ .Values.quota.replica_gigabytes}}
+shares = {{ .Values.quota.shares }}
+gigabytes = {{ .Values.quota.gigabytes }}
+snapshots = {{ .Values.quota.snapshots }}
+snapshot_gigabytes = {{ .Values.quota.snapshot_gigabytes }}
+share_networks = {{ .Values.quota.share_networks }}
+share_groups = {{ .Values.quota.share_groups }}
+share_group_snapshots = {{ .Values.quota.share_group_snapshots }}
+share_replicas = {{ .Values.quota.share_replicas }}
+replica_gigabytes = {{ .Values.quota.replica_gigabytes }}
 
 [neutron]
 auth_strategy = keystone
