@@ -63,15 +63,15 @@ statsd_enabled = {{ .Values.rpc_statsd_enabled }}
 
 # all default quotas are 0 to enforce usage of the Resource Management tool in Elektra
 [quota]
-shares = 0
-gigabytes = 0
-snapshots = 0
-snapshot_gigabytes = 0
-share_networks = 0
-share_groups = 0
-share_group_snapshots = 0
-share_replicas = 0
-replica_gigabytes = 0
+shares = {{ .Values.quota.shares | default 0}}
+gigabytes = {{ .Values.quota.gigabytes | default 0}}
+snapshots = {{ .Values.quota.snapshots | default 0}}
+snapshot_gigabytes = {{ .Values.quota.snapshot_gigabytes | default 0}}
+share_networks = {{ .Values.quota.share_networks | default 0}}
+share_groups = {{ .Values.quota.share_groups | default 0}}
+share_group_snapshots = {{ .Values.quota.share_group_snapshots | default 0}}
+share_replicas = {{ .Values.quota.share_replicas | default 0}}
+replica_gigabytes = {{ .Values.quota.replica_gigabytes | default 0}}
 
 [neutron]
 auth_strategy = keystone
