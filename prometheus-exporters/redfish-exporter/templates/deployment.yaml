@@ -38,8 +38,8 @@ spec:
         command:
           - /usr/bin/python3
         args:
-          - -u
-          - ./main.py
+{{ toYaml $values.args | indent 10 }}
+
         env:
         - name: LISTEN_PORT
           value: "{{ required "listen_port needs to be defined in resfish_exporter values" $values.listen_port }}"
@@ -70,9 +70,4 @@ spec:
           value: {{ required "redfish_fw_password needs to be defined in users values" $values.users.redfish_fw_password }}
         {{- end }}
         resources:
-          limits:
-            memory: {{ required "$values.limits.memory missing" $values.limits.memory }}
-            cpu: {{ required "$values.limits.cpu missing" $values.limits.cpu }}
-          requests:
-            memory: {{ required "$values.resources.memory missing" $values.resources.memory }}
-            cpu: {{ required "$values.resources.cpu missing" $values.resources.cpu }}
+{{ toYaml $values.resources | indent 10 }}

@@ -14,6 +14,9 @@ redfish_exporter:
   listen_port: 9220
   namespace: infra-monitoring
   replicas: 1
+  args:
+    - -u
+    - ./main.py
 
   prometheus: infra-collector
   alerts:
@@ -22,12 +25,14 @@ redfish_exporter:
   exporterAlerts:
     enabled: true
     prometheus: infra-collector
-  limits:
-    memory: 200Mi
-    cpu: 400m
+    
   resources:
-    memory: 100Mi
-    cpu: 200m
+    limits:
+      memory: 200Mi
+      cpu: 400m
+    requests:
+      memory: 100Mi
+      cpu: 200m
 
   scrapeInterval: 4m
   scrapeTimeout: 230s
