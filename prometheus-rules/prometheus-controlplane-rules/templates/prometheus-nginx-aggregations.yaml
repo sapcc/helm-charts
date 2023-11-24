@@ -1,0 +1,23 @@
+{{- $values := .Values }}
+
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+
+metadata:
+  name: nginx-ingress.rules
+  labels:
+    type: aggregation-rules
+    prometheus: {{ required ".Values.prometheus.aggregations missing" $values.prometheus.aggregations }}
+
+spec:
+  groups:
+  - name: nginx-ingress.rules
+    rules:
+{{- range $period := $values.nginx-ingress-rules.aggregation-periods }}
+    - record: global:api_errors_per_request_sli:ratio_rate{{$period}}
+        (sum by(region, ingress) (rate(nginx_ingress_controller_requests{status=~"5.."}[{{$period}}]))
+        or
+        (0 * count by(region, ingress) (nginx_ingress_controller_requests{ingress!=""})))
+        /
+        sum by(region, ingress) (rate(nginx_ingress_controller_requests[{{$period}}]))
+{{- end }}
