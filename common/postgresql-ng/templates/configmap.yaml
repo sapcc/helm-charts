@@ -1,0 +1,70 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ template "fullname" . }}-etc
+data:
+  postgresql.conf: |
+    {{- include (print .Template.BasePath "/etc/_postgresql.conf.tpl") . | nindent 4 }}
+
+{{- if (hasKey .Values "sqlOnCreate") }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ template "fullname" . }}-sql-on-create
+data:
+  on-create.sql: |
+    {{ .Values.sqlOnCreate }}
+{{- end }}
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ template "fullname" . }}-sql-on-startup
+data:
+{{- $dummyDict := dict "dummy" "dummy" }}
+{{- $users := .Values.users }}
+{{- if .Values.persistence.createBackupUser }}
+{{- $users = dict "backup" $dummyDict }}
+{{- end }}
+{{- if .Values.createMetricsUser }}
+{{- $users = dict "metrics" $dummyDict }}
+{{- end }}
+  on-startup.sql: |
+    {{- range $user, $settings := $users }}
+    do $$ begin
+      if not exists (select from pg_catalog.pg_user where usename = '{{ $user }}') then
+        CREATE USER {{ $user }} WITH PASSWORD '%USER_PASSWORD_{{ $user }}%' LOGIN;
+      end if;
+    end $$;
+
+    # https://www.postgresql.org/docs/current/ddl-priv.html
+    {{- if and (hasKey $settings "createBackupUser") $settings.createBackupUser }}
+    GRANT SELECT,INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER,CREATE,CONNECT,TEMPORARY ON DATABASE '%PGDATABASE%' to "{{ $user }}";
+    {{- end }}
+
+    {{- if ne $settings.grant nil }}
+    {{ $settings.grant }} to "{{ $user }}";
+    {{- end }}
+
+    {{- if $settings.setOwnerOnTable }}
+    SELECT format('ALTER TABLE %I.%I.%I OWNER TO %I;', table_catalog, table_schema, table_name, "{{ $user }}")
+      FROM information_schema.tables
+      WHERE table_schema = '%PGDATABASE%';
+    {{- end }}
+
+    {{- if eq $user "backup" }}
+    GRANT SELECT ON DATABASE "%PGDATABASE%" to backup;
+    GRANT SELECT ON ALL TABLES IN SCHEMA public TO backup;
+    GRANT SELECT ON ALL SEQUENCES IN SCHEMA public TO backup;
+    {{- end }}
+
+    {{- if eq $user "metrics" }}
+    GRANT pg_monitor to metrics;
+    ALTER USER metrics SET SEARCH_PATH TO postgres_exporter,pg_catalog;
+    {{- end }}
+    {{- end }}
+
+    {{ .Values.sqlOnStartup }}
