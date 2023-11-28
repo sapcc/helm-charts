@@ -184,8 +184,8 @@ nebula:
   cors:
     enabled: {{ .Values.nebula.cors.enabled }}
     allowedOrigins:
-{{- .Values.nebula.cors.allowedOrigins | toYaml | indent 6 }}
+{{- .Values.nebula.cors.allowedOrigins | toYaml | nindent 6 }}
     allowedHeaders:
-{{- .Values.nebula.cors.allowedHeaders | toYaml | indent 6 }}
+{{- .Values.nebula.cors.allowedHeaders | toYaml | nindent 6 }}
 {{- end }}
 {{- end -}}
