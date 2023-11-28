@@ -16,7 +16,6 @@ spec:
         app: {{ template "fullname" . }}
       annotations:
         kubectl.kubernetes.io/default-container: postgres
-        checksum/secrets: {{ include (print $.Template.BasePath  "/secrets.yaml") . | sha256sum }}
         checksum/etc: {{ include (print $.Template.BasePath  "/configmap.yaml") . | sha256sum }}
         {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
         linkerd.io/inject: enabled
@@ -32,6 +31,20 @@ spec:
                 operator: In
                 values:
                 - operational
+
+      initContainers:
+      - name: generate-secrets
+        # at the time of writing, kubectl is only available in edge
+        image: "{{ include "preferredDockerHubMirror" . }}/library/alpine:edge"
+        env:
+        - name: DEBUG
+          value: {{ quote .Values.debug }}
+        - name: RELEASE
+          value: {{ quote .Release.Name }}
+        - name: USERS
+          value: {{ keys .Values.users | join " " | quote }}
+        command: [ ash, -c, {{ .Files.Get "bin/init-generate-secrets.sh" | quote }} ]
+
       containers:
       - name: postgres
         image: "{{ include "preferredRegistry" . }}/postgres-ng:{{ .Values.imageTag }}"
@@ -99,6 +112,7 @@ spec:
           initialDelaySeconds: 5
           timeoutSeconds: {{ .Values.probe_timeout_secs }}
         resources: {{ toYaml .Values.resources | nindent 10 }}
+        serviceAccountName: {{ template "fullname" . }}
         volumeMounts:
         - name: data
           mountPath: /data
