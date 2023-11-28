@@ -42,7 +42,7 @@ spec:
         - name: RELEASE
           value: {{ quote .Release.Name }}
         - name: USERS
-          value: {{ keys .Values.users | join " " | quote }}
+          value: {{ keys (.Values.users | required ".Values.users must be configured") | join " " | quote }}
         command: [ ash, -c, {{ .Files.Get "bin/init-generate-secrets.sh" | quote }} ]
 
       containers:
