@@ -1,6 +1,9 @@
 {{- $mirror  := .Values.global.quayIoMirror | required "missing value for .Values.global.quayIoMirror" -}}
 {{- $db_name := .Values.db_name             | default .Release.Name -}}
+{{- $db_pass := "" -}}
+{{- if not .Values.isPostgresNG }}
 {{- $db_pass := .Values.db_password         | required "missing value for .Values.db_password" -}}
+{{- end }}
 {{- $db_host := .Values.db_host             | default (printf "%s-postgresql" .Release.Name) -}}
 {{- $db_host = printf "%s.%s.svc" $db_host .Release.Namespace -}}
 
@@ -40,8 +43,18 @@ spec:
         image: "{{ $mirror }}/{{ .Values.image.repository }}:{{ .Values.image.tag }}"
         imagePullPolicy: IfNotPresent
         env:
-        - name: DATA_SOURCE_NAME
-          value: postgresql://postgres:{{ $db_pass }}@{{ $db_host }}:5432/{{ $db_name }}?sslmode=disable&application_name={{ .Release.Name }}-pgmetrics
+        - name: DATA_SOURCE_URI
+          value: postgresql://{{ $db_host }}:5432/{{ $db_name }}?sslmode=disable&application_name={{ .Release.Name }}-pgmetrics
+        - name: DATA_SOURCE_USER
+          value: postgres
+        - name: DATA_SOURCE_PASS
+        {{- if .Values.isPostgresNG }}
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Release.Name }}-pguser-postgres
+        {{- else }}
+          value: {{ $db_pass }}
+        {{- end }}
         ports:
           - name: metrics
             containerPort: 9187
