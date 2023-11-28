@@ -39,3 +39,11 @@ groups:
     expr: ({job=~"scrapeconfig/infra-monitoring/snmp-exporter-.*",__name__=~"up"} == 0)
   - record: snmp_scrape_time_devices
     expr: scrape_duration_seconds{job=~"scrapeconfig/infra-monitoring/snmp-exporter-.*"}
+  - record: elasticsearch_snmp_error_reason
+    expr: sum(elasticsearch_snmp_reason_module_ip_doc_count) by (reason, region)
+  - record: snmp_arista_vlans_counted
+    expr: count(snmp_arista_dot1qVlanFdbId) by (name)
+  - record: snmp_apod_arista_devices
+    expr: group by (server_name,module) (snmp_apod_arista_entPhysicalName)
+  - record: snmp_apod_asr_devices
+    expr: group by (server_name) (snmp_apod_asr_entPhysicalName)
