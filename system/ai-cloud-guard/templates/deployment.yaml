@@ -1,0 +1,33 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}
+  namespace: {{ required ".Values.ai-cloud-guard.namespace missing" .Values.ai-cloud-guard.namespace }}
+spec:
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Release.Name }}
+    spec:
+      containers:
+         - name: {{ .Release.Name }}
+           image: {{ required ".Values.ai-cloud-guard.image.registry missing" .Values.ai-cloud-guard.image.registry }}/{{ .Release.Name }}:{{ required ".Values.ai-cloud-guard.image.tag missing" .Values.ai-cloud-guard.image.tag }}
+           ports:
+             - name: webhook
+               containerPort: {{ required ".Values.ai-cloud-guard.webhook.port" .Values.ai-cloud-guard.webhook.port }}
+           command:
+             - python3
+           args:
+             - main.py
+           volumeMounts:
+             - mountPath: /ai-cloud-guard/appliance_config
+               name: ai-cloud-guard-config
+               readOnly: true
+      volumes:
+        - configMap:
+            name: {{ .Release.Name }}-config
+          name: {{ .Release.Name }}-config
