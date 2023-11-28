@@ -180,6 +180,16 @@ nebula:
   {{- end }}
 {{- end }}
 {{- end }}
-
+{{- if .Values.nebula.cors.enabled -}}
+  cors:
+    enabled: {{ .Values.nebula.cors.enabled }}
+    allowedOrigins:
+{{- range $k, $v := .Values.nebula.cors.allowedOrigins }}
+      - {{ $v }}
+{{- end }}
+    allowedHeaders:
+{{- range $k, $v := .Values.nebula.cors.allowedHeaders }}
+      - {{ $v }}
+{{- end }}
+{{- end }}
 {{- end -}}
-
