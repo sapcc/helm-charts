@@ -1,0 +1,77 @@
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: end-user-rule
+  annotations:
+    disco: "true"
+    kubernetes.io/tls-acme: "true"
+{{ toYaml .Values.ai-cloud-guard.ingress.annotations | indent 4 }}
+{{- $hostname :=  print .Release.Name "." .Values.ai-cloud-guard.domain }}
+spec:
+  rules:
+    - host: {{ $hostname }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: ai-cloud-guard
+                port:
+                  name: webhook
+  tls:
+    - hosts: [{{ $hostname }}]
+      secretName: tls-{{ .Release.Name }}
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: alertmanager-rule
+  annotations:
+    disco: "true"
+    kubernetes.io/tls-acme: "true"
+    ingress.kubernetes.io/auth-type: basic
+    nginx.ingress.kubernetes.io/auth-type: basic
+    ingress.kubernetes.io/auth-secret: {{ required ".Values.ai-cloud-guard.secrets.name missing" .Values.ai-cloud-guard.secrets.name }}
+    nginx.ingress.kubernetes.io/auth-secret: {{ required ".Values.ai-cloud-guard.secrets.name missing" .Values.ai-cloud-guard.secrets.name }}
+{{- $hostname :=  print .Release.Name "-backoffice." .Values.ai-cloud-guard.domain }}
+spec:
+  rules:
+    - host: {{ $hostname }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: ai-cloud-guard
+                port:
+                  name: webhook
+  tls:
+    - hosts: [{{ $hostname }}]
+      secretName: tls-{{ .Release.Name }}-backoffice
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: slack-rule
+  annotations:
+    disco: "true"
+    kubernetes.io/tls-acme: "true"
+{{- $hostname :=  print .Release.Name "-slack." .Values.ai-cloud-guard.domain }}
+spec:
+  rules:
+    - host: {{ $hostname }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: ai-cloud-guard
+                port:
+                  name: webhook
+  tls:
+    - hosts: [{{ $hostname }}]
+      secretName: tls-{{ .Release.Name }}-slack
