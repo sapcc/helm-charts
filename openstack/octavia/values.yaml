@@ -18,7 +18,7 @@ global:
   rpc_response_timeout: 60
   osprofiler: {}
   linkerd_requested: true
-  
+
 osprofiler:
   enabled: false
 
@@ -158,14 +158,18 @@ mysql_metrics:
       labels:
         - "loadbalancer_status"
         - "loadbalancer_host"
+        - "loadbalancer_project"
+        - "loadbalancer_availabilityzone"
       help: Total Load Balancer count
       query: |
         SELECT
           COUNT(*) AS count_gauge,
           provisioning_status AS loadbalancer_status,
-          server_group_id as loadbalancer_host
+          server_group_id as loadbalancer_host,
+          project_id as loadbalancer_project,
+          availability_zone as loadbalancer_availabilityzone
         FROM load_balancer
-        GROUP BY loadbalancer_host, loadbalancer_status;
+        GROUP BY loadbalancer_host, loadbalancer_status, loadbalancer_project, loadbalancer_availabilityzone;
       values:
         - "count_gauge"
     - name: octavia_seconds_since_last_nonpending_status
