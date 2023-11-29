@@ -180,7 +180,7 @@ nebula:
   {{- end }}
 {{- end }}
 {{- end }}
-{{- if .Values.nebula.cors.enabled }}
+{{- if .Values.nebula.cors }}
   cors:
     enabled: {{ .Values.nebula.cors.enabled }}
     allowedOrigins:
