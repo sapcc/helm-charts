@@ -40,7 +40,7 @@ spec:
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
-          args: ["--config-file", "/etc/andromeda/andromeda.yaml", "--port", "8000"]
+          args: ["--config-file", "/etc/andromeda/andromeda.yaml", "--config-file", "/etc/andromeda/akamai.yaml", "--port", "8000"]
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           env:
             - name: HOST
@@ -93,3 +93,8 @@ spec:
                       path: andromeda.yaml
                     - key: policy.json
                       path: policy.json
+              - configMap:
+                  name: andromeda-etc-akamai
+                  items:
+                    - key: akamai.yaml
+                      path: akamai.yaml
