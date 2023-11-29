@@ -380,6 +380,7 @@ ml_full_access:
   cluster_permissions:
     - "cluster:admin/opensearch/ml/*"
     - "cluster_monitor"
+    - "cluster:admin/opensearch/mlinternal/*"
   index_permissions:
     - index_patterns:
         - "*"
