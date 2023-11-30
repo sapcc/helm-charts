@@ -10,12 +10,13 @@ metadata:
     system: openstack
     component: keystone
     type: api
-{{- if .Values.api.metrics.enabled }}
   annotations:
+{{- if .Values.api.metrics.enabled }}
     prometheus.io/scrape: "true"
     prometheus.io/port: "{{.Values.api.metrics.port}}"
     prometheus.io/targets: "{{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus }}"
 {{- end }}
+    {{- include "utils.linkerd.pod_and_service_annotation" . | indent 4 }}
 spec:
   selector:
     name: {{ .Release.Name }}-api
