@@ -15,9 +15,9 @@ groups:
       summary: Thanos global can't reach all stores.
   - alert: ThanosGlobalMissingVMwareThanos
     expr: |
-      (count by (region, thanos)(label_replace(openstack_volumes_size_gauge{cinder_host=~"(cinder-volume-vmware-vc-[a-z]-[0-9])(@.*)",region!~"qa-de-[1-9]",thanos!~"vmware-vc-a-1|vmware-vc-b-1|vmware-vc-b-2|vmware-vc-d-0|vmware-vc-d-1"}, "thanos", "$2", "cinder_host", "(cinder-volume-)(vmware-vc-[a-z]-[0-9])(@.*)")) * 0 + 1) 
-      unless 
-      (count by (thanos, region)(thanos_build_info{container="store",pod=~"thanos-vmware.*",region!~"qa-de-[1-9]"}) * 0 + 1)
+      (count by (region, thanos) (label_replace(kube_pod_container_info{pod=~"thanos-vmware-vc-.+-store-.+", region!="qa-de-1"}, "thanos", "$2", "pod", "(thanos-)(vmware-vc-.+)(-thanos-vmware-vc-.+)")) * 0 + 1)
+      unless
+      (count by (thanos, region) (thanos_build_info{container="store",pod=~"thanos-vmware.*",region!~"qa-de-[1-9]"}) * 0 + 1)
     for: 10m
     labels:
       severity: info
@@ -30,9 +30,9 @@ groups:
       summary: Thanos global can't reach VMware store.
   - alert: ThanosGlobalMissingVMwareThanosQA
     expr: |
-      (count by (region, thanos)(label_replace(openstack_volumes_size_gauge{cinder_host=~"(cinder-volume-vmware-vc-[a-z]-[0-9])(@.*)",region="qa-de-1", cinder_host!~".+vmware-vc-a-1.+|.+vmware-vc-b-1.+|.+vmware-vc-b-2.+|.+vmware-vc-d-0.+|.+vmware-vc-d-1.+"}, "thanos", "$2", "cinder_host", "(cinder-volume-)(vmware-vc-[a-z]-[0-9])(@.*)")) * 0 + 1)
-      unless 
-      (count by (thanos, region)(thanos_build_info{container="store",pod=~"thanos-vmware.*",region="qa-de-1"}) * 0 + 1)
+      (count by (region, thanos) (label_replace(kube_pod_container_info{pod=~"thanos-vmware-vc-.+-store-.+", region!="qa-de-1"}, "thanos", "$2", "pod", "(thanos-)(vmware-vc-.+)(-thanos-vmware-vc-.+)")) * 0 + 1)
+      unless
+      (count by (thanos, region) (thanos_build_info{container="store",pod=~"thanos-vmware.*",region="qa-de-1"}) * 0 + 1)
     for: 10m
     labels:
       severity: info
