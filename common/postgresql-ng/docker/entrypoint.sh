@@ -8,13 +8,13 @@ shopt -s nullglob # who thought it is a good idea to return the glob if it match
 [[ -n ${DEBUG:-} ]] && set -x
 
 # those are set by default in values, too but are kept here to easen testing
-export PGVERSION=${PGVERSION:-16}
-export PGUSER=${PGUSER:-postgres}
+export PGVERSION="${PGVERSION:-16}"
+export PGUSER="${PGUSER:-postgres}"
 # export PGPASSWORD=${PGPASSWORD:-secure} # this not to not create security incidents
-export PGDATABASE=${PGDATABASE:-acme-db}
+export PGDATABASE="${PGDATABASE:-acme-db}"
 
 if [[ $(id -u) == 0 ]]; then
-  for d in /var/lib/postgresql/*; do
+  for _ in /var/lib/postgresql/*; do
     echo "/var/lib/postgresql must be empty otherwise data is being deleted! Mount your PVC at /data"
     exit 1
   done
@@ -28,8 +28,8 @@ if [[ $(id -u) == 0 ]]; then
     mv /data/* /data-old/
 
     # and move back to the right place
-    mkdir /data/postgresql/$old_version
-    mv /data-old/* /data/postgresql/$old_version/
+    mkdir "/data/postgresql/$old_version"
+    mv /data-old/* "/data/postgresql/$old_version/"
     chown postgres:postgres -R /data/postgresql
   fi
 
