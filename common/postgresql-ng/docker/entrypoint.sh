@@ -11,6 +11,9 @@ shopt -s nullglob # who thought it is a good idea to return the glob if it match
 export PGVERSION="${PGVERSION:-16}"
 export PGUSER="${PGUSER:-postgres}"
 # export PGPASSWORD=${PGPASSWORD:-secure} # this not to not create security incidents
+# always generate a new password on each start
+PGPASSWORD="$(head -c 30 </dev/urandom | base64)"
+export PGPASSWORD
 export PGDATABASE="${PGDATABASE:-acme-db}"
 
 if [[ $(id -u) == 0 ]]; then
