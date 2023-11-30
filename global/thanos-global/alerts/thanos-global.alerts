@@ -30,7 +30,7 @@ groups:
       summary: Thanos global can't reach VMware store.
   - alert: ThanosGlobalMissingVMwareThanosQA
     expr: |
-      (count by (region, thanos) (label_replace(kube_pod_container_info{pod=~"thanos-vmware-vc-.+-store-.+", region!="qa-de-1"}, "thanos", "$2", "pod", "(thanos-)(vmware-vc-.+)(-thanos-vmware-vc-.+)")) * 0 + 1)
+      (count by (region, thanos) (label_replace(kube_pod_container_info{pod=~"thanos-vmware-vc-.+-store-.+", region="qa-de-1"}, "thanos", "$2", "pod", "(thanos-)(vmware-vc-.+)(-thanos-vmware-vc-.+)")) * 0 + 1)
       unless
       (count by (thanos, region) (thanos_build_info{container="store",pod=~"thanos-vmware.*",region="qa-de-1"}) * 0 + 1)
     for: 10m
