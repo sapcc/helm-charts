@@ -538,6 +538,20 @@ spec:
         {{- end }}
 
         ########################################################################
+        # allowlist for linkerd
+
+        {{- if eq .Values.cluster_type "baremetal" "scaleout" }}
+        isContainerAllowedToUseCapability(container, capability) = true {
+          iro.kind == "Deployment"
+          iro.metadata.namespace == "linkerd"
+          iro.metadata.name in {"linkerd-destination", "linkerd-identity", "linkerd-proxy-injector"}
+          helmReleaseName == "linkerd"
+          container.name == "linkerd-init"
+          capability in {"NET_ADMIN", "NET_RAW"}
+        }
+        {{- end }}
+
+        ########################################################################
         # allowlist for neutron-network-agent
 
         {{- if eq .Values.cluster_type "baremetal" "test" }}
