@@ -336,7 +336,7 @@
   key_name log
   reserve_data true
   inject_key_prefix k8s.
-  remove_key_name_field true
+  remove_key_name_field false
   <parse>
     @type json
     time_format %Y-%m-%dT%T.%L%Z
