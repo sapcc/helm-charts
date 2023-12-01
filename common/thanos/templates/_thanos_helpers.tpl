@@ -139,10 +139,18 @@ cluster.local
 {{/* Global Thanos Query Store API endpoints */}}
 {{- else if and $root.Values.useQueryRegions $root.Values.queryStoreAPIs -}}
 - targets:
+{{- $globalList := list }}
 {{- range $region := $root.Values.queryRegions }}
 {{- range $cluster := $root.Values.queryStoreAPIs }}
-  - thanos-{{ $cluster }}-grpc.{{ $region }}.{{ $root.Values.global.tld }}:443
+{{- $storeItem := printf "thanos-%s-grpc.%s.%s" $cluster $region $root.Values.global.tld }}
+{{- $globalList = append $globalList $storeItem }}
 {{- end }}
+{{- end }} 
+{{- range $ignore := $root.Values.queryStoreIgnores }}
+{{- $globalList = without $globalList $ignore }}
+{{- end }}
+{{- range $storesFiltered := $globalList }}
+  - {{ $storesFiltered }}:443
 {{- end }}
 {{- range $store := $root.Values.query.stores }}
   - {{ $store }}.{{ $root.Values.global.tld }}:443
