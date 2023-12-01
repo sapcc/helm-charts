@@ -32,6 +32,22 @@ spec:
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | required ".Values.image.tag is required" }}"
           command: [ "/usr/bin/andromeda-migrate" ]
           args: ["--config-file", "/etc/andromeda/andromeda.yaml"]
+          env:
+            - name: GOMEMLIMIT
+              valueFrom:
+                resourceFieldRef:
+                  containerName: {{ include "andromeda.fullname" . }}-migration
+                  resource: limits.memory
+            - name: GOMAXPROCS
+              valueFrom:
+                resourceFieldRef:
+                  containerName: {{ include "andromeda.fullname" . }}-migration
+                  resource: limits.cpu
+            - name: SENTRY_DSN
+              valueFrom:
+                secretKeyRef:
+                  name: sentry
+                  key: {{ include "andromeda.fullname" . }}.DSN
           volumeMounts:
             - name: etc-andromeda
               mountPath: /etc/andromeda
