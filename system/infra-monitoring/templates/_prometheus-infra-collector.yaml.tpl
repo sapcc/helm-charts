@@ -1,23 +1,3 @@
-{{- $values := .Values.arista_exporter -}}
-{{- if $values.enabled }}
-- job_name: 'arista'
-  scrape_interval: {{$values.scrapeInterval}}
-  scrape_timeout: {{$values.scrapeTimeout}}
-  http_sd_configs:
-    - url: {{ .Values.atlas_url }}
-  metrics_path: /arista
-  relabel_configs:
-    - source_labels: [job]
-      regex: asw-eapi
-      action: keep
-    - source_labels: [__address__]
-      target_label: __param_target
-    - source_labels: [__param_target]
-      target_label: instance
-    - target_label: __address__
-      replacement: arista-exporter:9200
-{{- end }}
-
 {{- $values := .Values.kvm }}
 {{- if $values.enabled }}
 - job_name: 'linux-kvm'
