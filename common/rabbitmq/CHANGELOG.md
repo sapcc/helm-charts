@@ -3,13 +3,41 @@ Rabbitmq CHANGELOG
 
 This file is used to list changes made in each version of the common chart rabbitmq.
 
+
+0.6.2
+-----
+b.alkhateeb@sap.com
+- new mechanism to add custom configuration file to RabbitMQ pods, under /etc/rabbitmq/conf.d/20-custom.conf
+  custom configuration can be added as `key, value` pairs under .Values.customConfig
+  ```
+  customConfig:
+    key1: value1
+    key2: value2
+  ```
+  Any key under .Values.customConfig with null value will be ignored in the config file.
+
+0.6.1
+-----
+maurice.escher@sap.com
+- fixing alerts to fire only if there is no RabbitMQ pods are ready
+
+0.6.0
+-----
+b.alkhateeb@sap.com
+- build Linkerd integration for RabbitMQ Chart
+  to activate/deactivate linkerd annotation please set the following (active by default)
+  ```
+  linkerd:
+    enabled: true
+  ```
+
 0.5.2
 -----
 b.alkhateeb@sap.com
 - update rabbitmq to version 3.11.15-management (bug fixes).
 
 0.5.1
-_____
+----- 
 fabian.wiesel@sap.common
 - Use just the hostname without domain for the transport-url
 
