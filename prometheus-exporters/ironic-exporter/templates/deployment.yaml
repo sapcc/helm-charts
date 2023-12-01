@@ -15,11 +15,11 @@ spec:
         type: exporter
       annotations:
         prometheus.io/scrape: "true"
-        prometheus.io/port: "{{ .Values.port_number }}"
+        prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
     spec:
       containers:
       - name: ironic-exporter
-        image: "{{ .Values.global.imageRegistry }}/{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+        image: "{{ .Values.global.registry }}/ironic-exporter:{{ .Values.image.tag }}"
         ports:
         - containerPort: {{ .Values.port_number }}
           name: metrics
@@ -32,9 +32,9 @@ spec:
         - name: OS_VERSION
           value: "{{ .Values.tag }}"
         - name: OS_IRONIC_USERNAME
-          value: "{{ .Values.global.ipmi_exporter_user }}"
+          value: "{{ .Values.global.ipmi_exporter_user | replace "\"" "\\\"" }}"
         - name: OS_IRONIC_PASSWORD
-          value: "{{ .Values.global.ipmi_exporter_user_passwd }}"
+          value: "{{ .Values.global.ipmi_exporter_user_passwd | replace "\"" "\\\"" }}"
         - name: OS_USER_DOMAIN_NAME
           value: "{{ .Values.os_user_domain_name }}"
         - name: OS_PROJECT_NAME
