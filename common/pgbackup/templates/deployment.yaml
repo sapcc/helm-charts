@@ -75,7 +75,11 @@ spec:
             - name: PGPASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: {{ if .Values.isPostgresNG }}"postgres-password"{{ else }}"{{ .Release.Name }}-pgbackup"{{ end }}
+                  {{- if .Values.isPostgresNG }}
+                  name: "{{ .Release.Name }}-pguser-postgres"
+                  {{- else }}
+                  name: "{{ .Release.Name }}-pgbackup"
+                  {{- end }}
                   key: postgres-password
           ports:
           - name: metrics

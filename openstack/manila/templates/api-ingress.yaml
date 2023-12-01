@@ -7,14 +7,15 @@ metadata:
     system: openstack
     type: api
     component: manila
-  {{- if .Values.use_tls_acme }}
   annotations:
+  {{- if .Values.use_tls_acme }}
     ingress.kubernetes.io/proxy-read-timeout: "720"
     nginx.ingress.kubernetes.io/proxy-read-timeout: "720"
     ingress.kubernetes.io/proxy-send-timeout: "720"
     nginx.ingress.kubernetes.io/proxy-send-timeout: "720"
     kubernetes.io/tls-acme: "true"
   {{- end }}
+    {{- include "utils.linkerd.ingress_annotation" . | indent 4 }}
 spec:
   tls:
      - secretName: tls-{{.Values.seeds.endpoint_prefix}}{{include "manila_api_endpoint_host_public" . | replace "." "-" }}

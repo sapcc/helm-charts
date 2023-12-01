@@ -375,11 +375,25 @@ jupyterhub:
   - tenant_patterns:
     - "*"
 
+mlrole:
+  reserved: false
+  hidden: false
+  cluster_permissions:
+    - "cluster:monitor/prometheus/metrics"
+  index_permissions:
+  - index_patterns:
+    - "*"
+    allowed_actions:
+    - "indices:admin/mappings/get"
+    - "cluster:admin/opensearch/ql/datasources/*"
+
 ml_full_access:
   reserved: true
   cluster_permissions:
     - "cluster:admin/opensearch/ml/*"
     - "cluster_monitor"
+    - "cluster:admin/opensearch/mlinternal/*"
+    - "cluster:admin/ingest/*"
   index_permissions:
     - index_patterns:
         - "*"

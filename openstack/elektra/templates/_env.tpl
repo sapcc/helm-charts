@@ -61,3 +61,9 @@
 {{- end }}
 - name: DOMAIN_MASTERDATA_INHERITANCE_BLACKLIST
   value: hcp03,monsoon3
+- name: CEREBRO_REGION
+{{- if .Values.cerebro_region }}
+  value: {{ .Values.cerebro_region | quote }}
+{{- else }}
+  value: {{ .Values.monsoon_dashboard_region | quote }}
+{{- end }}

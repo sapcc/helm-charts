@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    meta.helm.sh/release-name: linkerd
+    meta.helm.sh/release-namespace: linkerd
+  name: linkerd-identity
+  namespace: linkerd
+spec:
+  template:
+    spec:
+      containers:
+      - name: linkerd-init
+        securityContext:
+          capabilities:
+            add:
+            - NET_ADMIN
+            - NET_RAW
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault

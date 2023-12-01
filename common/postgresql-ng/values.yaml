@@ -9,7 +9,7 @@ extensions:
     track: all
 
 # Refer to the "ccloud/postgres" repository in Keppel to see which image tags exist.
-imageTag: latest
+imageTag: 20231128130317
 
 # The version of postgres to start.
 # This will be bumped over time and auto upgrade the database.
@@ -19,11 +19,10 @@ postgresUser: postgres
 # The name of the database to create
 postgresDatabase: acme-db
 
-# custom db-init.sql
-# dbInit: name of a configmap that provides the db-init.sql script
-
-# custom db-maintain.sql
-# dbMaintain: name of a configmap that provides the db-maintain.sql script
+# A custom SQL script that will run when the database is first created.
+# sqlOnCreate: ""
+# A custom SQL script that will run everytime the database starts up.
+# sqlOnStartup: ""
 
 # a selection of postgresql.conf settings which can be changed via values
 config:
@@ -37,12 +36,27 @@ config:
 
   random_page_cost: 1.1
 
-# Persist data to a persitent volume
+# users to create
+users:
+  # NOTE: backup, metrics and postgres are reserved user names and adding them here might cause unexpected issues
+  # acme-user:
+    # Ensure the user has those grant lines run on each start.
+    # TO $USER with the username is added per line.
+    # %PGDATABASE% is replaced with the actual database name.
+    # For example, a read-only application user would need `GRANT CONNECT,SELECT ON DATABASE "%PGDATABASE%"`
+    #grant: GRANT CONNECT,SELECT ON DATABASE "%PGDATABASE%"
+    # Alter the table owner to this user. Make sure to only set this once!
+    #setOwnerOnTable: true
+
+createMetricsUser: true
+
+# Persist data to a persistent volume
 persistence:
   enabled: true
+  createBackupUser: true
   accessMode: ReadWriteOnce
   size: 10Gi
-  # Re-use existing (unmanged) PVC
+  # Re-use existing (unmanaged) PVC
   # existingClaim: claimName
 
 # Size of /dev/shm. If null, we use whatever default amount the container

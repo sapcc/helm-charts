@@ -1,0 +1,24 @@
+{{- $values := .Values }}
+
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+
+metadata:
+  name: haproxy.rules
+  labels:
+    type: aggregation-rules
+    prometheus: {{ required ".Values.prometheusName missing" $values.prometheusName | quote }}
+
+spec:
+  groups:
+  - name: haproxy.rules
+    rules:
+{{- range $period := $values.periods }}
+    - record: global:api_errors_per_request_sli:ratio_rate{{$period}}
+      expr: |2
+        (sum by(region, ingress) (label_replace( ( sum by(region, proxy) (rate(haproxy_backend_http_responses_total{proxy="swift_proxy", code=~"5.."}[{{$period}}]))
+        or
+        (0 * count by(region, proxy) (haproxy_backend_http_responses_total{proxy="swift_proxy"})))
+        /
+        sum by(region, proxy) (rate(haproxy_backend_http_responses_total{proxy="swift_proxy"}[{{$period}}])) , "ingress", "swift-api", "proxy", "swift_proxy")))
+{{- end }}

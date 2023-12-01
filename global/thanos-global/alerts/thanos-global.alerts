@@ -9,6 +9,37 @@ groups:
       service: metrics 
       support_group: observability
       meta: Thanos global can't reach all expected stores. {{ $labels.region }} is not providing all 9 stores.
+      playbook: docs/support/playbook/prometheus/thanos_stores/#thanos-global-cant-reach-all-stores
     annotations:
       description: There is a connection problem or a store in {{ $labels.region }} is down. Usually GRPC error rate grows as well.
       summary: Thanos global can't reach all stores.
+  - alert: ThanosGlobalMissingVMwareThanos
+    expr: |
+      (count by (region, thanos) (label_replace(kube_pod_container_info{pod=~"thanos-vmware-vc-.+-store-.+", region!="qa-de-1"}, "thanos", "$2", "pod", "(thanos-)(vmware-vc-.+)(-thanos-vmware-vc-.+)")) * 0 + 1)
+      unless
+      (count by (thanos, region) (thanos_build_info{container="store",pod=~"thanos-vmware.*",region!~"qa-de-[1-9]"}) * 0 + 1)
+    for: 10m
+    labels:
+      severity: info
+      service: metrics 
+      support_group: observability
+      meta: Thanos global can't reach thanos store {{ $labels.thanos }} in {{ $labels.region }}
+      playbook: docs/support/playbook/prometheus/thanos_stores/#thanos-global-cant-reach-vmware-store
+    annotations:
+      description: There is a connection problem to store {{ $labels.thanos }} {{ $labels.region }} or the store itself is down. Usually GRPC error rate grows as well in metrics.scaleout.
+      summary: Thanos global can't reach VMware store.
+  - alert: ThanosGlobalMissingVMwareThanosQA
+    expr: |
+      (count by (region, thanos) (label_replace(kube_pod_container_info{pod=~"thanos-vmware-vc-.+-store-.+", region="qa-de-1"}, "thanos", "$2", "pod", "(thanos-)(vmware-vc-.+)(-thanos-vmware-vc-.+)")) * 0 + 1)
+      unless
+      (count by (thanos, region) (thanos_build_info{container="store",pod=~"thanos-vmware.*",region="qa-de-1"}) * 0 + 1)
+    for: 10m
+    labels:
+      severity: info
+      service: metrics 
+      support_group: observability
+      meta: Thanos global can't reach thanos store {{ $labels.thanos }} in {{ $labels.region }}
+      playbook: docs/support/playbook/prometheus/thanos_stores/#thanos-global-cant-reach-vmware-store
+    annotations:
+      description: There is a connection problem to store {{ $labels.thanos }} {{ $labels.region }} or the store itself is down. Usually GRPC error rate grows as well in metrics.scaleout.
+      summary: Thanos global can't reach VMware store.

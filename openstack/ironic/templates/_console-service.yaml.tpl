@@ -14,6 +14,8 @@ metadata:
     system: openstack
     type: api
     component: ironic-conductor
+  annotations:
+    {{- include "utils.linkerd.pod_and_service_annotation" . | indent 4 }}
 spec:
   selector:
   {{- if $conductor.name }}
