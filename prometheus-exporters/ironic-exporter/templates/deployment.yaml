@@ -19,29 +19,29 @@ spec:
     spec:
       containers:
       - name: ironic-exporter
-        image: "{{ .Values.global.registry }}/ironic-exporter:{{ .Values.image.tag }}"
+        image: "{{ .Values.global.registry | required "Missing .Values.global.registry" }}/ironic-exporter:{{ .Values.image.tag }}"
         ports:
         - containerPort: {{ .Values.port_number }}
           name: metrics
           protocol: TCP
         env:
         - name: LOGLEVEL
-          value: "{{ .Values.log_level }}"
+          value: {{ .Values.log_level | quote }}
         - name: PORT_NUMBER
-          value: "{{ .Values.port_number }}"
+          value: {{ .Values.port_number | quote }}
         - name: OS_VERSION
-          value: "{{ .Values.tag }}"
+          value: {{ .Values.image.tag | quote }}
         - name: OS_IRONIC_USERNAME
-          value: "{{ .Values.global.ipmi_exporter_user | replace "\"" "\\\"" }}"
+          value: {{ .Values.global.ipmi_exporter_user | required "Missing .Values.global.ipmi_exporter_user" | quote }}
         - name: OS_IRONIC_PASSWORD
-          value: "{{ .Values.global.ipmi_exporter_user_passwd | replace "\"" "\\\"" }}"
+          value: {{ .Values.global.ipmi_exporter_user_passwd | required "Missing .Values.global.ipmi_exporter_user_passwd" | replace "$" "$$" | quote }}{{/* Escape $. See: https://docs.openstack.org/oslo.config/latest/configuration/format.html#substitution */}}
         - name: OS_USER_DOMAIN_NAME
-          value: "{{ .Values.os_user_domain_name }}"
+          value: {{ .Values.os_user_domain_name | quote }}
         - name: OS_PROJECT_NAME
-          value: "{{ .Values.os_project_name }}"
+          value: {{ .Values.os_project_name | quote }}
         - name: OS_PROJECT_DOMAIN_NAME
-          value: "{{ .Values.os_project_domain_name }}"
+          value: {{ .Values.os_project_domain_name | quote }}
         - name: REGION
-          value: "{{ .Values.global.region }}"
+          value: {{ .Values.global.region | required "Missing .Values.global.region" | quote }}
         - name: NOTIFICATIONS
-          value: "{{ .Values.global.notifications }}"
+          value: {{ .Values.global.notifications | required "Missing .Values.global.notifications" | quote }}
