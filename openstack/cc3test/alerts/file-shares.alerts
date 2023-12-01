@@ -56,6 +56,26 @@ groups:
       description: 'Datapath to mounted file share is down'
       summary: 'Datapath to mounted file share is down'
 
+  - alert: FileShareDatapathDown
+    expr: |
+        cc3test_status{type="datapath",
+            name=~"TestFileShareMount_debug_static.+"
+        } == 0
+    for: 15m
+    labels:
+      severity: warning
+      support_group: compute-storage-api
+      tier: os
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.service }}'
+      meta: 'Datapath to mounted file share is down'
+      dashboard: 'cc3test-datapath-status?var-service={{ $labels.service }}'
+      playbook: 'docs/devops/alert/manila/#filesharedatapathdown'
+      report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
+    annotations:
+      description: 'Datapath to mounted file share is down'
+      summary: 'Datapath to mounted file share is down'
+
   - alert: FilerCertificateExpiresInLessThan1Week
     expr: cc3test_cert_expires_in_days{type="filer"} < 8
     # we want a critical alert 7 days before (fixing during business hours is sufficient -> warning)
