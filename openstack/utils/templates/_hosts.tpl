@@ -165,7 +165,7 @@ mysql+pymysql://{{ include "db_credentials" . }}@
 {{define "octavia_api_endpoint_host_internal"}}octavia-api.{{ include "svc_fqdn" . }}{{end}}
 {{define "octavia_api_endpoint_host_public"}}loadbalancer-3.{{ include "host_fqdn" . }}{{end}}
 
-{{define "andromeda_api_endpoint_public"}}gtm.{{ include "host_fqdn" . }}{{end}}
+{{define "andromeda_api_endpoint_public"}}gtm-3.{{ include "host_fqdn" . }}{{end}}
 {{define "arc_api_endpoint_host_public"}}arc.{{ include "host_fqdn" . }}{{end}}
 {{define "archer_api_endpoint_public"}}archer.{{ include "host_fqdn" . }}{{end}}
 {{define "lyra_api_endpoint_host_public"}}lyra.{{ include "host_fqdn" . }}{{end}}
