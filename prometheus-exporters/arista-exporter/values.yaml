@@ -1,14 +1,52 @@
-# global:
-#   imageRegistry:
-#   arista_username:
-#   arista_password:
-
-app_env: "production"
-image: monsoon/arista-exporter
-tag: v0.2.2
 owner-info:
   support-group: foundation
   # service: foobar        # optional
   maintainers:
     - Bernd Kuespert
   helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/prometheus-exporters/arista-exporter
+
+global:
+  registry: DEFINED-IN-GLOBAL-SECRETS
+  arista_username: DEFINED-IN-GLOBAL-SECRETS
+  arista_password: DEFINED-IN-GLOBAL-SECRETS
+
+arista_exporter:
+  name: arista-exporter
+  enabled: false
+  image: 
+    name: arista-exporter
+    tag: latest
+  fullnameOverride: arista-exporter
+  listen_port: 9220
+  namespace: infra-monitoring
+  replicas: 1
+
+  app_env: "production"
+
+  prometheus: infra-collector
+  alerts:
+    enabled: true
+    prometheus: infra-collector
+  exporterAlerts:
+    enabled: true
+    prometheus: infra-collector
+    
+  resources:
+    limits:
+      memory: 200Mi
+      cpu: 400m
+    requests:
+      memory: 100Mi
+      cpu: 200m
+
+  scrapeInterval: 4m
+  scrapeTimeout: 230s
+  firmware:
+    scrapeInterval: 1h
+    scrapeTimeout: 230s
+    enabled: false
+
+  httpSDConfigs:
+    netbox_staging_url: https://netbox.staging.cloud.sap/api/plugins/atlas
+    netbox_production_url: https://netbox.global.cloud.sap/api/plugins/atlas
+    refreshInterval: 60m

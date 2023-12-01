@@ -1,22 +1,37 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: arista-exporter
+  name: {{ include "fullName" . }}
+{{- $values := .Values.arista_exporter -}}
+{{- if $values.namespace }}
+  namespace: {{ $values.namespace }}
+{{- end }}
 spec:
-  replicas: 1
   selector:
     matchLabels:
-      app: arista-exporter
+      app: {{ include "fullName" . }}
       type: exporter
+  replicas: {{ required "$values.replicas missing" $values.replicas }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
   template:
     metadata:
+      annotations:
+        rollme: {{ randAlphaNum 5 | quote }}
       labels:
-        app: arista-exporter
+        app: {{ include "fullName" . }}
         type: exporter
     spec:
       containers:
-      - name: arista-exporter
-        image: "{{ .Values.global.imageRegistry }}/{{ .Values.image }}:{{ .Values.tag }}"
+      - name: {{ include "fullName" . }}
+        image: {{ required ".Values.global.registry missing" .Values.global.registry }}/{{ required "$values.image.name missing" $values.image.name }}:{{ required "$values.image.tag missing" $values.image.tag  }}
+        imagePullPolicy: Always
+        ports:
+          - name: metrics
+            containerPort: {{ $values.listen_port }}
         env:
         - name: APP_ENV
           value: "{{ .Values.app_env }}"
@@ -24,5 +39,5 @@ spec:
           value: "{{ .Values.global.arista_username }}"
         - name: ARISTA_PASSWORD
           value: "{{ .Values.global.arista_password }}"
-        ports:
-        - containerPort: 9200
+        resources:
+{{ toYaml $values.resources | indent 10 }}
