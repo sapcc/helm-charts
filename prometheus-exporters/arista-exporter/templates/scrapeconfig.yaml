@@ -1,0 +1,32 @@
+{{- $values := .Values.arista_exporter -}}
+{{- if $values.enabled }}
+apiVersion: monitoring.coreos.com/v1alpha1
+kind: ScrapeConfig
+
+metadata:
+  name: 'asw-eapi'
+  namespace: {{ $values.namespace }}
+  labels:
+    prometheus: {{ required "$values.prometheus missing" $values.prometheus }}
+    app.kubernetes.io/name: {{ include "fullName" . }}
+
+spec:
+  scrapeInterval: {{$values.scrapeInterval}}
+  scrapeTimeout: {{$values.scrapeTimeout}}
+  httpSDConfigs:
+    - url: {{ $values.httpSDConfigs.netbox_production_url }}/devices/?custom_labels=job=asw-eapi;module=asw-eapi&target=mgmt_only&q=asw20&status=active&manufacturer=arista&tenant=converged-cloud&region={{ .Values.global.region }}
+      refreshInterval: {{ $values.httpSDConfigs.refreshInterval }}
+  metricsPath: /arista
+  params:
+    job: [asw-eapi]
+  relabelings:
+    - sourceLabels: [job]
+      regex: asw-eapi
+      action: keep
+    - sourceLabels: [__address__]
+      targetLabel: __param_target
+    - sourceLabels: [__param_target]
+      targetLabel: instance
+    - targetLabel: __address__
+      replacement: arista-exporter:{{$values.listen_port}}
+{{- end }}
