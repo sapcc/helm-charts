@@ -519,7 +519,7 @@
     logstash_format true
     template_name {{.Values.opensearch.indexname}}
     template_file /fluentd/etc/{{.Values.opensearch.indexname}}.json
-    template_overwrite true
+    template_overwrite false
   {{- end }}
     hosts {{.Values.opensearch.http.endpoint}}.{{.Values.global.tld}}
     scheme https
