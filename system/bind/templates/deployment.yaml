@@ -149,9 +149,9 @@ spec:
             mountPath: "/etc/zabbix/zabbix_agentd.d/"
           - name: persistent-storage
             mountPath: {{ .Values.storage_mountpoint | default "/var/lib/bind" }}
-          - name: bind-keys-rndc
-            mountPath: "/etc/bind/rndc.key"
-            subPath: rndc.key
+          - name: bind-rndc-keys
+            mountPath: "/etc/bind/rndc-key.key"
+            subPath: rndc-key.key
 {{ end }}
       volumes:
       - name: persistent-storage
@@ -189,4 +189,10 @@ spec:
       - name: zabbix-conf
         configMap:
           name: {{ .Release.Name }}-zabbix-conf
+      - name: bind-rndc-keys
+        configMap:
+          name: {{ .Release.Name }}-bind-rndc-keys
+          items:
+          - key: rndc-key.key
+            path: rndc-key.key
       {{- end }}
