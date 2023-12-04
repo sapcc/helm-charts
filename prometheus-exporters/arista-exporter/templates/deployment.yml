@@ -1,11 +1,17 @@
 apiVersion: apps/v1
 kind: Deployment
+
 metadata:
   name: {{ include "fullName" . }}
 {{- $values := .Values.arista_exporter -}}
 {{- if $values.namespace }}
   namespace: {{ $values.namespace }}
 {{- end }}
+  labels:
+    app: {{ include "fullName" . }}
+    chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+    release: "{{ .Release.Name }}"
+
 spec:
   selector:
     matchLabels:

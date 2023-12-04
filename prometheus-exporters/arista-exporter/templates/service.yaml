@@ -1,11 +1,18 @@
 apiVersion: v1
 kind: Service
+
 metadata:
   name: {{ include "fullName" . }}
+  namespace: {{ .Values.arista_exporter.namespace }}
+  labels:
+    app: {{ include "fullName" . }}
+    system: infra_monitoring
+    type: exporter
+
 spec:
   selector:
     app: {{ include "fullName" . }}
     type: exporter
   ports:
     - name: metrics
-      port: {{ .Values.arista_exporter.listen_port }}
+    - port: {{ .Values.arista_exporter.listen_port }}
