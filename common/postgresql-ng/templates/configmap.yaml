@@ -24,16 +24,17 @@ kind: ConfigMap
 metadata:
   name: {{ template "fullname" . }}-sql-on-startup
 data:
-{{- $dummyDict := dict "dummy" "dummy" }}
 {{- $users := .Values.users }}
 {{- if .Values.persistence.createBackupUser }}
-{{- $users = dict "backup" $dummyDict }}
+{{- $users := merge $users (dict "backup" (dict)) }}
 {{- end }}
 {{- if .Values.createMetricsUser }}
-{{- $users = dict "metrics" $dummyDict }}
+{{- $users := merge $users (dict "metrics" (dict)) }}
 {{- end }}
   on-startup.sql: |
     {{- range $user, $settings := $users }}
+    {{- /* prevent more suffering and pain by forgotten {} in users */}}
+    {{- $settings = $settings | default (dict) }}
     do $$ begin
       if not exists (select from pg_catalog.pg_user where usename = '{{ $user }}') then
         CREATE USER {{ $user }} WITH PASSWORD '%USER_PASSWORD_{{ $user }}%' LOGIN;
@@ -41,11 +42,11 @@ data:
     end $$;
 
     # https://www.postgresql.org/docs/current/ddl-priv.html
-    {{- if and (hasKey $settings "createBackupUser") $settings.createBackupUser }}
+    {{- if $.Values.persistence.createBackupUser }}
     GRANT SELECT,INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER,CREATE,CONNECT,TEMPORARY ON DATABASE '%PGDATABASE%' to "{{ $user }}";
     {{- end }}
 
-    {{- if ne $settings.grant nil }}
+    {{- if $settings.grant }}
     {{ $settings.grant }} to "{{ $user }}";
     {{- end }}
 
