@@ -23,8 +23,8 @@ for USER in postgres ${USERS:-}; do
       ownerReferences:
         - apiVersion: v1
           kind: Deployment
-          name: $RELEASE
-          uid: $(kubectl get deployment "$RELEASE" -o jsonpath='{.metadata.uid}')
+          name: $RELEASE-postgresql
+          uid: $(kubectl get deployment "$RELEASE-postgresql" -o jsonpath='{.metadata.uid}')
     data:
       postgres-password: $(head -c 30 </dev/urandom | base64)
   " > secret.yaml
