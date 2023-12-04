@@ -11,7 +11,6 @@ metadata:
     system: openstack
     type: backend
     component: neutron
-
 spec:
   replicas: 1
   revisionHistoryLimit: 5

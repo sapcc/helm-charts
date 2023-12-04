@@ -8,6 +8,10 @@ metadata:
     system: openstack
     type: rpc
     component: neutron
+  {{- if .Values.vpa.set_main_container }}
+  annotations:
+    vpa-butler.cloud.sap/main-container: neutron-rpc-server
+  {{- end }}
 spec:
   replicas: {{ if not .Values.pod.debug.rpc_server }}{{ .Values.pod.replicas.rpc_server }}{{ else }} 1 {{ end }}
   revisionHistoryLimit: {{ .Values.pod.lifecycle.upgrades.deployments.revision_history }}
