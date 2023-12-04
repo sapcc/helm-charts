@@ -6,7 +6,7 @@ set -eou pipefail
 [[ -n ${DEBUG:-} ]] && set -x
 apk add --no-cache --no-progress kubectl
 
-for USER in postgres ${USERS:-}; do
+for USER in ${USERS:-}; do
   SECRET="$RELEASE-pguser-$USER"
 
   # if we already have a secret, we can stop here
