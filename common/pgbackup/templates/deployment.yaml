@@ -71,11 +71,17 @@ spec:
             - name: PGSQL_HOST
               value: '{{ $db_host }}.{{ .Release.Namespace }}.svc'
             - name: PGSQL_USER
+              {{- if .Values.isPostgresNG }}
+              value: pgbackup
+              {{- else }}
               value: {{ quote .Values.database.username }}
+              {{- end }}
             - name: PGPASSWORD
               valueFrom:
                 secretKeyRef:
-                  {{- if not .Values.isPostgresNG }}
+                  {{- if .Values.isPostgresNG }}
+                  name: "{{ .Release.Name }}-pguser-pgbackup"
+                  {{- else }}
                   name: "{{ .Release.Name }}-pgbackup"
                   {{- end }}
                   key: postgres-password
