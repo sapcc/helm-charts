@@ -40,6 +40,9 @@ spec:
       annotations:
         k8s.v1.cni.cncf.io/networks: '[{ "name": "cbr1-bridge", "interface":"{{$.Values.cp_network_interface}}" }]'
         configmap-etc-hash: {{ include (print $.Template.BasePath "/configmap-etc.yaml") $ | sha256sum }}
+        {{- if .Values.vpa.set_main_container }}
+        vpa-butler.cloud.sap/main-container: neutron-server
+        {{- end }}
       labels:
         name: neutron-network-agent-{{ $az }}
 {{ tuple $ "neutron" "agent" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}

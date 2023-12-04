@@ -23,6 +23,9 @@ spec:
       annotations:
         configmap-logger-hash: {{ include (print .Template.BasePath "/configmap-nsxv3-logstash.yaml") . | sha256sum }}
         {{- include "utils.linkerd.pod_and_service_annotation" . | indent 8 }}
+        {{- if .Values.vpa.set_main_container }}
+        vpa-butler.cloud.sap/main-container: neutron-server
+        {{- end }}
     spec:
       {{- if .Values.logger.persistence.enabled }}
       initContainers:

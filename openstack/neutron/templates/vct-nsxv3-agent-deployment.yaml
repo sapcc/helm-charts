@@ -44,6 +44,9 @@ template: |
           prometheus.io/scrape: "true"
           prometheus.io/targets: {{ required ".Values.metrics.prometheus missing" .Values.metrics.prometheus | quote }}
           {{- include "utils.linkerd.pod_and_service_annotation" . | indent 10 }}
+          {{- if .Values.vpa.set_main_container }}
+          vpa-butler.cloud.sap/main-container: neutron-server
+          {{- end }}
       spec:
         containers:
         - name: neutron-nsxv3-agent
