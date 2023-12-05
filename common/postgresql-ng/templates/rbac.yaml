@@ -17,6 +17,15 @@ rules:
     resources: [ secrets ]
     verbs:     [ get ]
     resourceNames:
+      # duplicated with the code in configmap because the templating is to limited in its features
+      {{- $users := .Values.users }}
+      {{- if .Values.persistence.createBackupUser }}
+        {{- $users := merge $users (dict "backup" (dict)) }}
+      {{- end }}
+      {{- if .Values.createMetricsUser }}
+        {{- $users := merge $users (dict "metrics" (dict)) }}
+      {{- end }}
+
       {{- range $user, $settings := $users }}
       - {{ $.Release.Name }}-pguser-{{ $user }}
       {{- end }}

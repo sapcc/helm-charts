@@ -1,13 +1,5 @@
 {{/* vim: set filetype=go */}}
 
-{{- $users := .Values.users }}
-{{- if .Values.persistence.createBackupUser }}
-  {{- $users := merge $users (dict "backup" (dict)) }}
-{{- end }}
-{{- if .Values.createMetricsUser }}
-  {{- $users := merge $users (dict "metrics" (dict)) }}
-{{- end }}
-
 {{- if eq .Values.postgresDatabase "postgres" }}
   {{- fail "postgresDatabase cannot be set to postgres because that is the name of an internal database!" }}
 {{- end }}
