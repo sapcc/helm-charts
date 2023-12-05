@@ -24,13 +24,6 @@ kind: ConfigMap
 metadata:
   name: {{ template "fullname" . }}-sql-on-startup
 data:
-{{- $users := .Values.users }}
-{{- if .Values.persistence.createBackupUser }}
-{{- $users := merge $users (dict "backup" (dict)) }}
-{{- end }}
-{{- if .Values.createMetricsUser }}
-{{- $users := merge $users (dict "metrics" (dict)) }}
-{{- end }}
   on-startup.sql: |
     {{- range $user, $settings := $users }}
     {{- /* prevent more suffering and pain by forgotten {} in users */}}
