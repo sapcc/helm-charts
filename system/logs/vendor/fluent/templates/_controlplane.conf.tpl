@@ -526,6 +526,7 @@
     port {{.Values.opensearch.http_port}}
     user {{.Values.opensearch.user}}
     password {{.Values.opensearch.password}}
+    log_os_400_reason true
     ssl_verify false
     ssl_version TLSv1_2
     time_as_integer false
