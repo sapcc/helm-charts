@@ -20,6 +20,7 @@ data:
   - "cluster:admin/ingest/pipeline/get"
   - "indices:admin/template/get"
   - "cluster_manage_index_templates"
+  - "cluster:admin/opensearch/ml/predict"
   index_permissions:
   - index_patterns:
     - "logstash-*"

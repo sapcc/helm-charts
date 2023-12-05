@@ -67,7 +67,7 @@ spec:
         - name: USER_PASSWORD_{{ $user }}
           valueFrom:
             secretKeyRef:
-              name: {{ .Release.Name }}-pguser-{{ $user }}
+              name: {{ $.Release.Name }}-pguser-{{ $user }}
               key: postgres-password
         {{- end }}
         - name: POD_IP
@@ -107,7 +107,6 @@ spec:
           initialDelaySeconds: 5
           timeoutSeconds: {{ .Values.probe_timeout_secs }}
         resources: {{ toYaml .Values.resources | nindent 10 }}
-        serviceAccountName: {{ template "fullname" . }}
         volumeMounts:
         - name: data
           mountPath: /data
@@ -125,6 +124,7 @@ spec:
         - name: dev-shm
           mountPath: /dev/shm
         {{- end }}
+      serviceAccountName: {{ template "fullname" . }}
       volumes:
       - name: postgres-etc
         configMap:
