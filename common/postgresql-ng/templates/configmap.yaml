@@ -38,6 +38,9 @@ data:
     {{- /* prevent more suffering and pain by forgotten {} in users */}}
     {{- $settings = $settings | default (dict) }}
     do $$ begin
+      if not exists (select from pg_catalog.pg_roles where rolname = '{{ $user }}') then
+        CREATE ROLE {{ $user }};
+      end if;
       if not exists (select from pg_catalog.pg_user where usename = '{{ $user }}') then
         CREATE USER {{ $user }} WITH PASSWORD '%USER_PASSWORD_{{ $user }}%' LOGIN;
       end if;
