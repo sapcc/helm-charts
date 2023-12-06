@@ -8,7 +8,7 @@ groups:
         # NOTE: The max_over_time() ensures that the alert does not flap when doop-central is restarted.
         # (There appear to be gaps in the metrics for one or two minutes on each deployment.)
         expr: 'sum by (template_kind, service) (max_over_time(doop_raw_violations{template_kind="GkVulnerableImages",cluster!~".*qa.*",support_group="containers",service=~"backup|castellum|gatekeeper|hubcopter|keppel|limes|repo|tenso"}[10m])) > 0'
-        for: 5m
+        for: 10m
         labels:
           context: GkVulnerableImagesForSRS
           support_group: containers
@@ -23,7 +23,7 @@ groups:
       # alert for vulnerable images in productive deployments of support group "storage" (currently just Swift)
       - alert: GkVulnerableImagesForStorage
         expr: 'sum by (template_kind, service) (max_over_time(doop_raw_violations{template_kind="GkVulnerableImages",support_group="storage"}[10m])) > 0'
-        for: 5m
+        for: 10m
         labels:
           context: GkVulnerableImagesForStorage
           support_group: storage
@@ -38,7 +38,7 @@ groups:
       # alert for vulnerable images in productive deployments of support group "foundation"
       - alert: GkVulnerableImagesForFoundation
         expr: 'sum by (template_kind, service) (max_over_time(doop_raw_violations{template_kind="GkVulnerableImages",support_group="foundation"}[10m])) > 0'
-        for: 5m
+        for: 10m
         labels:
           context: GkVulnerableImagesForFoundation
           support_group: foundation
