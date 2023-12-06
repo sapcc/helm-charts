@@ -26,7 +26,7 @@ for USER in ${USERS:-}; do
           name: $RELEASE-postgresql
           uid: $(kubectl get deployment "$RELEASE-postgresql" -o jsonpath='{.metadata.uid}')
     data:
-      postgres-password: $(head -c 30 </dev/urandom | base64)
+      postgres-password: $(head -c 30 </dev/urandom | base64 | base64)
   " > secret.yaml
   kubectl create -f secret.yaml
 done

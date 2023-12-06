@@ -519,13 +519,14 @@
     logstash_format true
     template_name {{.Values.opensearch.indexname}}
     template_file /fluentd/etc/{{.Values.opensearch.indexname}}.json
-    template_overwrite true
+    template_overwrite false
   {{- end }}
     hosts {{.Values.opensearch.http.endpoint}}.{{.Values.global.tld}}
     scheme https
     port {{.Values.opensearch.http_port}}
     user {{.Values.opensearch.user}}
     password {{.Values.opensearch.password}}
+    log_os_400_reason true
     ssl_verify false
     ssl_version TLSv1_2
     time_as_integer false

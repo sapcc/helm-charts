@@ -22,14 +22,18 @@ spec:
       containers:
         - name: {{ include "archer.fullname" . }}-migration
           image: "{{ .Values.global.registry }}/archer:{{ .Values.image.tag | required ".Values.image.tag is required" }}"
-          command: [ "/usr/bin/archer-migrate" ]
-          args: ["--config-file=/etc/archer/archer.ini"]
+          command: [ "/linkerd-await" ]
+          args: [ "--shutdown", "--", "/usr/bin/archer-migrate", "--config-file=/etc/archer/archer.ini" ]
           env:
             - name: SENTRY_DSN
               valueFrom:
                 secretKeyRef:
                   name: sentry
                   key: archer.DSN
+            {{- if not (and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested) }}
+            - name: LINKERD_AWAIT_DISABLED
+              value: "Linkerd was not enabled or not requested"
+            {{- end }}
           volumeMounts:
             - name: etc-archer
               mountPath: /etc/archer

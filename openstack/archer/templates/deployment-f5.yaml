@@ -19,6 +19,9 @@ spec:
       annotations:
         checksum/etc: {{ include (print $.Template.BasePath  "/configmap.yaml") $ | sha256sum }}
         checksum/etc-f5: {{ include (print $.Template.BasePath  "/configmap-f5.yaml") $ | sha256sum }}
+        {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+        linkerd.io/inject: enabled
+        {{- end }}
         {{- toYaml . | nindent 8 }}
       {{- end }}
       labels:

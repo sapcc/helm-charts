@@ -1,4 +1,4 @@
-{{/* vim: set filetype=gotpl: */}}
+{{/* vim: set filetype=go */}}
 
 {{- if eq .Values.postgresDatabase "postgres" }}
   {{- fail "postgresDatabase cannot be set to postgres because that is the name of an internal database!" }}
