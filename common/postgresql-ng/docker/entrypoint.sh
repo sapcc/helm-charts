@@ -145,7 +145,7 @@ substituteSqlEnvs() {
   local file="$1" sedArgs=()
 
   for line in $(env | grep ^USER_PASSWORD_); do
-    sedArgs+=(-e "'s/%$(echo "$line" | cut -d= -f1)%/$(echo "$line" | cut -d= -f2)/g'")
+    sedArgs+=(-e "s|%$(echo "$line" | cut -d= -f1)%|$(echo "$line" | cut -d= -f2)|g")
   done
 
   sed -e "s/%PGDATABASE%/$PGDATABASE/g" "${sedArgs[@]}" "$file"
