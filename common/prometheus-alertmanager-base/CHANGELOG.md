@@ -1,3 +1,7 @@
+## 2.2.8
+
+* explicitly set version for to avoid operator assumptions
+
 ## 2.0.1
 
 * Specify prometheus to pick up the alerts
