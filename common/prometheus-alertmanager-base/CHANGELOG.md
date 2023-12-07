@@ -1,3 +1,7 @@
+## 3.0.0
+
+* upgrading to v0.26.0
+
 ## 2.2.8
 
 * explicitly set version for to avoid operator assumptions
