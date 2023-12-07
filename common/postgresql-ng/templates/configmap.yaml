@@ -25,7 +25,7 @@ metadata:
   name: {{ template "fullname" . }}-sql-on-startup
 data:
   on-startup.sql: |
-    # duplicated with the code in rbac because the templating is to limited in its features
+    {{- /* duplicated with the code in rbac because the templating is to limited in its features */}}
     {{- $users := .Values.users }}
     {{- if .Values.persistence.createBackupUser }}
       {{- $users := merge $users (dict "backup" (dict)) }}
@@ -43,7 +43,7 @@ data:
       end if;
     end $$;
 
-    # https://www.postgresql.org/docs/current/ddl-priv.html
+    -- https://www.postgresql.org/docs/current/ddl-priv.html
     {{- if $.Values.persistence.createBackupUser }}
     GRANT SELECT,INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER,CREATE,CONNECT,TEMPORARY ON DATABASE '%PGDATABASE%' to "{{ $user }}";
     {{- end }}
