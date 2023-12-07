@@ -4,6 +4,7 @@
 
 set -eou pipefail
 shopt -s nullglob # who thought it is a good idea to return the glob if it matches nothing?
+shopt -s inherit_errexit # fail if any subshell fails
 
 [[ -n ${DEBUG:-} ]] && set -x
 
@@ -144,7 +145,7 @@ substituteSqlEnvs() {
   local file="$1" sedArgs=()
 
   for line in $(env | grep ^USER_PASSWORD_); do
-    sedArgs+=(-e "s/%$(echo "$line" | cut -d= -f1)%/$(echo "$line" | cut -d= -f2)/g")
+    sedArgs+=(-e "'s/%$(echo "$line" | cut -d= -f1)%/$(echo "$line" | cut -d= -f2)/g'")
   done
 
   sed -e "s/%PGDATABASE%/$PGDATABASE/g" "${sedArgs[@]}" "$file"
