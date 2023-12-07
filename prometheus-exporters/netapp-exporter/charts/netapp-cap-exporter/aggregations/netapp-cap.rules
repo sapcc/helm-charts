@@ -16,23 +16,6 @@ groups:
   - record: global:netapp_volume_encrypted_total:manila
     expr: count by (filer) (netapp_volume_is_encrypted{app=~".*manila"}==1)
 
-  - record: netapp_aggregate_total_bytes:vpod:small
-    expr: netapp_aggregate_total_bytes{app=~".*cinder"} <= 20*1024*1024*1024*1024
-
-  - record: netapp_aggregate_total_bytes:vpod:big
-    expr: netapp_aggregate_total_bytes{app=~".*cinder"} > 20*1024*1024*1024*1024
-
-  - record: netapp_aggregate_used_bytes:vpod:small
-    expr: netapp_aggregate_used_bytes * netapp_aggregate_total_bytes / on (aggregate, availability_zone, filer, node) netapp_aggregate_total_bytes:vpod:small
-
-  - record: netapp_aggregate_used_bytes:vpod:big
-    expr: netapp_aggregate_used_bytes * netapp_aggregate_total_bytes / on (aggregate, availability_zone, filer, node) netapp_aggregate_total_bytes:vpod:big
-
-  - record: netapp_aggregate_used_percentage:vpod:small
-    expr: netapp_aggregate_used_percentage * netapp_aggregate_total_bytes / on (aggregate, availability_zone, filer, node) netapp_aggregate_total_bytes:vpod:small
-
-  - record: netapp_aggregate_used_percentage:vpod:big
-    expr: netapp_aggregate_used_percentage * netapp_aggregate_total_bytes / on (aggregate, availability_zone, filer, node) netapp_aggregate_total_bytes:vpod:big
 
   # metrics for maia
 
