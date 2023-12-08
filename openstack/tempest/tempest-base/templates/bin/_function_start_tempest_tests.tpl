@@ -15,10 +15,9 @@ function start_tempest_tests {
   export OS_USERNAME={{ default "neutron-tempestadmin1" (index .Values (print .Chart.Name | replace "-" "_")).tempest.admin_name | quote }}
   export OS_TENANT_NAME={{ default "neutron-tempest-admin1" (index .Values (print .Chart.Name | replace "-" "_")).tempest.admin_project_name | quote }}
   export OS_PROJECT_NAME={{ default "neutron-tempest-admin1" (index .Values (print .Chart.Name | replace "-" "_")).tempest.admin_project_name | quote }}
-  export IMAGE_REF={{ default "ubuntu-18.04-amd64-vmware" (index .Values (print .Chart.Name | replace "-" "_")).tempest.image_ref | include "tempest-base._image_ref" }}
+  export IMAGE_REF={{ default "ubuntu-22.04-amd64-vmware" (index .Values (print .Chart.Name | replace "-" "_")).tempest.image_ref | include "tempest-base._image_ref" }}
   export IMAGE_REF_ALT={{ default "ubuntu-20.04-amd64-vmware" (index .Values (print .Chart.Name | replace "-" "_")).tempest.image_ref_alt | include "tempest-base._image_ref" }}
   cp /{{ .Chart.Name }}-etc/tempest_extra_options /tmp
-  echo $IMAGE_REF
   sed -i "s/CHANGE_ME_IMAGE_REF/$(echo $IMAGE_REF)/g" /tmp/tempest_extra_options
   sed -i "s/CHANGEMEIMAGEREFALT/$(echo $IMAGE_REF_ALT)/g" /tmp/tempest_extra_options
 
