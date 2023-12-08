@@ -21,9 +21,6 @@ lc_numeric = 'en_US.utf8'
 lc_time = 'en_US.utf8'
 default_text_search_config = 'pg_catalog.english'
 
-# none default settings that cannot be changed with helm values
-password_encryption = 'scram-sha-256'
-
 # settings which can be changed by helm values
 # those are kept small on purpose to keep complexity small
 log_min_duration_statement = {{ .Values.config.log_min_duration_statement }}
