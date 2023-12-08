@@ -68,7 +68,7 @@ if [[ ${#PGPASSWORD} -ge 100 ]]; then
 fi
 
 process_sql() {
-  local query_runner=(psql -v ON_ERROR_STOP=1 --username "$PGUSER" --no-password --no-psqlrc --set pw_method="$auth")
+  local query_runner=(psql -v ON_ERROR_STOP=1 --username "$PGUSER" --no-password --no-psqlrc)
   if [[ -n $PGDATABASE ]]; then
     query_runner+=(--dbname "$PGDATABASE")
   fi
@@ -85,17 +85,13 @@ if [[ ! -e $PGDATA/PG_VERSION ]]; then
   initdb --username="$PGUSER" --pwfile=<(printf "%s\n" "$PGPASSWORD")
 fi
 
-# postgres 9.5,12 returns "on" instead of the the algorithm which is not a valid value for method
-# see https://github.com/docker-library/postgres/commit/56eb8091dc67efe65b7a5a101e80ab83a9ca70a3#diff-9e7ea2740289a7dcbb948937cee573694c05642f9cd154c0a6f68547d8ac1ab4L215
-auth="$(postgres -C password_encryption)"
-
 if [[ $created_db == true ]]; then
-  if [[ $auth == on ]]; then
-    postgres_host_auth_method=md5
+  if [[ $PGVERSION -lt 12 ]]; then
+    postgres_auth_method=md5
   else
-    postgres_host_auth_method="$auth"
+    postgres_auth_method=scram-sha-256
   fi
-  echo -e "host  all  all  all  $postgres_host_auth_method\n" >>"$PGDATA/pg_hba.conf"
+  echo -e "host  all  all  all  $postgres_auth_method\n" >>"$PGDATA/pg_hba.conf"
 fi
 
 # check for older postgres databases and upgrade from them if possible
@@ -168,8 +164,7 @@ fi
 # ensure that the configured password matches the password in the database
 # this is required when upgrading the password hashing from md5 to scram-sha-256 which is the case when eg. updating from 9.5 to 15
 # this also allows password rotations with restarts
-PGDATABASE='' process_sql --dbname postgres --set user="$PGUSER" --set pw_method="$auth" --set password="$PGPASSWORD" <<-'EOSQL'
-  SET password_encryption = :'pw_method';
+PGDATABASE='' process_sql --dbname postgres --set user="$PGUSER" --set password="$PGPASSWORD" <<-'EOSQL'
   ALTER USER :user WITH PASSWORD :'password';
 EOSQL
 

@@ -34,17 +34,10 @@ data:
       {{- $users := merge $users (dict "metrics" (dict)) }}
     {{- end }}
 
-    -- pw_method is set in the entrypoint where psql executes this sql file
-    SET password_encryption = :'pw_method';
-
     {{- range $user, $settings := $users }}
     {{- /* prevent more suffering and pain by forgotten {} in users */}}
     {{- $settings = $settings | default (dict) }}
-    do $$ begin
-      if not exists (select from pg_catalog.pg_roles where rolname = '{{ $user }}') then
-        CREATE ROLE "{{ $user }}" WITH PASSWORD '%USER_PASSWORD_{{ $user }}%' LOGIN;
-      end if;
-    end $$;
+    SELECT 'CREATE ROLE "{{ $user }}" WITH PASSWORD ''%USER_PASSWORD_{{ $user }}%'' LOGIN' where not exists (select rolname from pg_authid where rolname = '{{ $user }}')\gexec
 
     -- https://www.postgresql.org/docs/current/ddl-priv.html
     {{- if $.Values.persistence.createBackupUser }}
