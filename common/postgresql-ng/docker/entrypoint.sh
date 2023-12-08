@@ -68,7 +68,7 @@ if [[ ${#PGPASSWORD} -ge 100 ]]; then
 fi
 
 process_sql() {
-  local query_runner=(psql -v ON_ERROR_STOP=1 --username "$PGUSER" --no-password --no-psqlrc)
+  local query_runner=(psql -v ON_ERROR_STOP=1 --username "$PGUSER" --no-password --no-psqlrc --set pw_method="$auth")
   if [[ -n $PGDATABASE ]]; then
     query_runner+=(--dbname "$PGDATABASE")
   fi
