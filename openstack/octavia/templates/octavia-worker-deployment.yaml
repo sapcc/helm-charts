@@ -21,7 +21,9 @@ spec:
       labels:
         app.kubernetes.io/name: octavia-worker-{{ $name }}
         app.kubernetes.io/instance: {{ .Release.Name }}
-        f5-device-model: {{ $v.model }} # used by Limes for capacity discovery (via Prometheus metric "kube_pod_labels")
+        # Labels used by Limes for capacity discovery (via Prometheus metric "kube_pod_labels")
+        f5-device-model: {{ $v.model }}
+        availability-zone: {{ $v.availability_zone }}
       annotations:
         configmap-etc-hash: {{ include (print $.Template.BasePath "/octavia-etc-configmap.yaml") . | sha256sum }}
         configmap-worker-hash: {{ include (print $.Template.BasePath "/octavia-worker-configmap.yaml") . | sha256sum }}
