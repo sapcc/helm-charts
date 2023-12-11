@@ -54,6 +54,10 @@ spec:
         volumeMounts:
           - name: unbound-conf
             mountPath: /etc/unbound
+{{ if .Values.unbound.dnstap.enabled }}
+          - name: dnstap-socket
+            mountPath: /run/dnstap
+{{ end }}
         livenessProbe:
           exec:
             command:
@@ -91,7 +95,34 @@ spec:
         volumeMounts:
           - name: unbound-conf
             mountPath: /etc/unbound
+{{ if .Values.unbound.dnstap.enabled }}
+      - name: dnstap
+        image: {{ required ".Values.global.registryAlternateRegion is missing" .Values.global.registryAlternateRegion }}/{{.Values.unbound.dnstap.image}}:{{ .Values.unbound.dnstap.image_tag}}
+        imagePullPolicy: {{ .Values.unbound.image_pullPolicy }}
+        resources:
+{{ toYaml .Values.resources.dnstap | indent 10 }}
+        args:
+          - -u {{ .Values.unbound.dnstap.socket-path | default "/run/dnstap/dnstap.sock" }}
+{{ if .Values.unbound.dnstap.hec-splunk-url }}
+{{ if .Values.unbound.dnstap.hec-splunk-token }}
+{{ if .Values.unbound.dnstap.hec-splunk-server_uuid }}
+          - -H {{ .Values.unbound.dnstap.hec-splunk-url }}
+          - -token {{ .Values.unbound.dnstap.hec-splunk-token }}
+          - -server_uuid {{ .Values.unbound.dnstap.hec-splunk-server_uuid }}
+{{ end }}
+{{ end }}
+{{ end }}
+{{ toYaml .Values.unbound.dnstap.additional-cmdline-args | indent 10 }}
+        volumeMounts:
+          - name: dnstap-socket
+            mountPath: {{ .Values.unbound.dnstap.socket-path | default "/run/dnstap/dnstap.sock" | dir }}
+{{ end }}
       volumes:
       - name: unbound-conf
         configMap:
           name: {{.Values.unbound.name}}
+{{ if .Values.unbound.dnstap.enabled }}
+      - name: dnstap-socket
+        emptyDir:
+          medium: Memory
+{{ end }}
