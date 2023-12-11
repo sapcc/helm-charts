@@ -1,3 +1,7 @@
+## 3.0.2
+
+* make version for operator customizable 
+
 ## 3.0.0
 
 * upgrading to v0.26.0
