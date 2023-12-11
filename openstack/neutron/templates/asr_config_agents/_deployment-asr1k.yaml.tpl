@@ -11,6 +11,10 @@ metadata:
     system: openstack
     type: backend
     component: neutron
+  {{- if $context.Values.vpa.set_main_container }}
+  annotations:
+    vpa-butler.cloud.sap/main-container: neutron-dhcp-agent
+  {{- end }}
 spec:
   replicas: 1
   revisionHistoryLimit: 5
