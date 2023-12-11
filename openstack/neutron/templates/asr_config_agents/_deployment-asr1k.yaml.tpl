@@ -13,7 +13,7 @@ metadata:
     component: neutron
   {{- if $context.Values.vpa.set_main_container }}
   annotations:
-    vpa-butler.cloud.sap/main-container: neutron-dhcp-agent
+    vpa-butler.cloud.sap/main-container: neutron-asr1k  
   {{- end }}
 spec:
   replicas: 1
