@@ -8,7 +8,7 @@ metadata:
     app.kubernetes.io/name: snmp-exporter-pxdlroutergeneric
 spec:
   httpSDConfigs:
-    - url: {{ .Values.global.http_sd_configs.netbox_url }}/devices/?custom_labels=__param_module=pxdlroutergeneric&status=active&region={{ .Values.global.region }}&role=directlink-router
+    - url: {{ .Values.global.http_sd_configs.netbox_url }}/devices/?custom_labels=__param_module=pxdlroutergeneric_v3&status=active&region={{ .Values.global.region }}&role=directlink-router
       refreshInterval: {{ .Values.global.http_sd_configs.refresh_interval }}
   metricsPath: /snmp
   scrapeInterval: 60s
@@ -22,6 +22,8 @@ spec:
       replacement: snmp-exporter:{{.Values.snmp_exporter.listen_port}}
     - targetLabel: module
       replacement: pxdlroutergeneric
+    - targetLabel: __param_auth
+      replacement: pxdlroutergeneric_v3
   metricRelabelings:
     - sourceLabels: [name]
       targetLabel:  devicename

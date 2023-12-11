@@ -8,7 +8,7 @@ metadata:
     app.kubernetes.io/name: snmp-exporter-aristaevpn
 spec:
   httpSDConfigs:
-    - url: {{ .Values.global.http_sd_configs.netbox_url }}/devices/?custom_labels=__param_module=aristaevpn&manufacturer=arista&status=active&region={{ .Values.global.region }}&role=evpn-leaf&target=loopback10
+    - url: {{ .Values.global.http_sd_configs.netbox_url }}/devices/?custom_labels=__param_module=aristaevpn;__param_auth=aristaevpn_v3&manufacturer=arista&status=active&region={{ .Values.global.region }}&role=evpn-leaf&target=loopback10
       refreshInterval: {{ .Values.global.http_sd_configs.refresh_interval }}
   metricsPath: /snmp
   scrapeInterval: 60s
@@ -22,6 +22,8 @@ spec:
       replacement: snmp-exporter:{{.Values.snmp_exporter.listen_port}}
     - targetLabel: module
       replacement: aristaevpn
+    - targetLabel: __param_auth
+      replacement: aristaevpn_v3
   metricRelabelings:
     - sourceLabels: [name]
       targetLabel:  devicename

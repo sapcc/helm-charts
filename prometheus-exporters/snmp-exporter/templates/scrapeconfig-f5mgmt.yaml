@@ -8,7 +8,7 @@ metadata:
     app.kubernetes.io/name: snmp-exporter-f5mgmt
 spec:
   httpSDConfigs:
-    - url: {{ .Values.global.http_sd_configs.netbox_url }}/devices/?custom_labels=__param_module=f5mgmt&manufacturer=f5&status=active&region={{ .Values.global.region }}&tag=cc-net-f5-guest-mgmt
+    - url: {{ .Values.global.http_sd_configs.netbox_url }}/devices/?custom_labels=__param_module=f5mgmt;__param_auth=f5_v3&manufacturer=f5&status=active&region={{ .Values.global.region }}&tag=cc-net-f5-guest-mgmt
       refreshInterval: {{ .Values.global.http_sd_configs.refresh_interval }}
   metricsPath: /snmp
   scrapeInterval: 60s
@@ -22,6 +22,8 @@ spec:
       replacement: snmp-exporter:{{.Values.snmp_exporter.listen_port}}
     - targetLabel: module
       replacement: f5mgmt
+    - targetLabel: __param_auth
+      replacement: f5_v3
   metricRelabelings:
     - sourceLabels: [name]
       targetLabel:  devicename

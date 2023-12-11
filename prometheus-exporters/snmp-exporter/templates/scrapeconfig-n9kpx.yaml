@@ -8,7 +8,7 @@ metadata:
     app.kubernetes.io/name: snmp-exporter-n9kpx
 spec:
   httpSDConfigs:
-    - url: {{ .Values.global.http_sd_configs.netbox_url }}/devices/?custom_labels=__param_module=n9kpx&status=active&region={{ .Values.global.region }}&role=px-switch
+    - url: {{ .Values.global.http_sd_configs.netbox_url }}/devices/?custom_labels=__param_module=n9kpx;__param_auth=n9kpx_v3&status=active&region={{ .Values.global.region }}&role=px-switch
       refreshInterval: {{ .Values.global.http_sd_configs.refresh_interval }}
   metricsPath: /snmp
   scrapeInterval: 60s
@@ -22,6 +22,8 @@ spec:
       replacement: snmp-exporter:{{.Values.snmp_exporter.listen_port}}
     - targetLabel: module
       replacement: n9kpx
+    - targetLabel: __param_auth
+      replacement: n9kpx_v3
   metricRelabelings:
     - sourceLabels: [name]
       targetLabel:  devicename

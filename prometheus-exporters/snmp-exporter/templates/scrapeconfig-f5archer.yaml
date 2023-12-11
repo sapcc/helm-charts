@@ -8,7 +8,7 @@ metadata:
     app.kubernetes.io/name: snmp-exporter-f5archer
 spec:
   httpSDConfigs:
-    - url: {{ .Values.global.http_sd_configs.netbox_url }}/devices/?custom_labels=__param_module=f5archer&manufacturer=f5&status=active&region={{ .Values.global.region }}&model=f5-vcmp&tag=cc-net-f5-guest-archer
+    - url: {{ .Values.global.http_sd_configs.netbox_url }}/devices/?custom_labels=__param_module=f5archer;__param_auth=f5_v3&manufacturer=f5&status=active&region={{ .Values.global.region }}&model=f5-vcmp&tag=cc-net-f5-guest-archer
       refreshInterval: {{ .Values.global.http_sd_configs.refresh_interval }}
   metricsPath: /snmp
   scrapeInterval: 60s
@@ -22,6 +22,8 @@ spec:
       replacement: snmp-exporter:{{.Values.snmp_exporter.listen_port}}
     - targetLabel: module
       replacement: f5archer
+    - targetLabel: __param_auth
+      replacement: f5_v3
   metricRelabelings:
     - sourceLabels: [name]
       targetLabel:  devicename

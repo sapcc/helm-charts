@@ -8,7 +8,7 @@ metadata:
     app.kubernetes.io/name: snmp-exporter-fortinet
 spec:
   httpSDConfigs:
-    - url: {{ .Values.global.http_sd_configs.netbox_url }}/virtual-machines/?custom_labels=__param_module=fortinet&status=active&q={{ .Values.global.region }}&manufacturer=fortinet&role=firewall&platform=fortios
+    - url: {{ .Values.global.http_sd_configs.netbox_url }}/virtual-machines/?custom_labels=__param_module=fortinet;__param_auth=fortinet_v3&status=active&q={{ .Values.global.region }}&manufacturer=fortinet&role=firewall&platform=fortios
       refreshInterval: {{ .Values.global.http_sd_configs.refresh_interval }}
   metricsPath: /snmp
   scrapeInterval: 60s
@@ -22,6 +22,8 @@ spec:
       replacement: snmp-exporter:{{.Values.snmp_exporter.listen_port}}
     - targetLabel: module
       replacement: fortinet
+    - targetLabel: __param_auth
+      replacement: fortinet_v3
   metricRelabelings:
     - sourceLabels: [name]
       targetLabel:  devicename
