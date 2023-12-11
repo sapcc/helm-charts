@@ -58,11 +58,11 @@ for i in $modules;
 
         if test -f "${i}-additional-oids.yaml"; then
             awk -v f=$i '{ print; } /walk:/ { system ( "cat "f"-additional-oids.yaml" ) } \' _snmp-exporter-${i}.yaml.tmp  > ../_snmp-exporter-${i}.yaml
-            #sed -i '2d' ../_snmp-exporter-${i}.yaml
+            sed -i '2d' ../_snmp-exporter-${i}.yaml
             rm -f  _snmp-exporter-${i}.yaml.tmp
         else
             mv -f ./_snmp-exporter-${i}.yaml.tmp ../_snmp-exporter-${i}.yaml
-            #sed -i '2d' ../_snmp-exporter-${i}.yaml
+            sed -i '2d' ../_snmp-exporter-${i}.yaml
             rm -f  _snmp-exporter-${i}.yaml.tmp
         fi
  
