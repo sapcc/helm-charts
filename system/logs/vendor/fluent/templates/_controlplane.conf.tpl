@@ -262,7 +262,7 @@
   reserve_data true
   <parse>
     @type grok
-    grok_pattern ts=%{TIMESTAMP_ISO8601:timestamp} caller=%{NOTSPACE} level=%{NOTSPACE:loglevel} module=%{NOTSPACE:snmp_module} target=%{IP:snmp_ip} msg=\"%{GREEDYDATA:snmp_error}\" err=\"%{GREEDYDATA}: %{GREEDYDATA:snmp_reason}\"
+    grok_pattern ts=%{TIMESTAMP_ISO8601:timestamp} caller=%{NOTSPACE} level=%{NOTSPACE:loglevel} auth=%{NOTSPACE:snmp_auth} target=%{IP:snmp_ip} module=%{NOTSPACE:snmp_module} msg=\"%{GREEDYDATA:snmp_error}\" err=\"%{GREEDYDATA}: %{GREEDYDATA:snmp_reason}\"
   </parse>
 </filter>
 
