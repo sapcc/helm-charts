@@ -1,5 +1,5 @@
 auths:
-{{- if .Values.snmp_exporter.aas.enabled }}
+{{- if .Values.snmp_exporter.arista.enabled }}
   aas_v3:
     version: {{ .Values.snmp_exporter.arista.snmpv3.version }}
     security_level: {{ .Values.snmp_exporter.arista.snmpv3.security_level }}
@@ -8,8 +8,6 @@ auths:
     auth_protocol: {{ .Values.snmp_exporter.arista.snmpv3.auth_protocol }}
     priv_protocol: {{ .Values.snmp_exporter.arista.snmpv3.priv_protocol }}
     priv_password: {{ .Values.snmp_exporter.arista.snmpv3.priv_password }}
-{{- end }}
-{{- if .Values.snmp_exporter.ams.enabled }}
   ams_v3:
     version: {{ .Values.snmp_exporter.arista.snmpv3.version }}
     security_level: {{ .Values.snmp_exporter.arista.snmpv3.security_level }}
