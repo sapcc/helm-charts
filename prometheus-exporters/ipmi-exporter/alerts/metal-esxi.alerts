@@ -20,7 +20,7 @@ groups:
 - name: metal-esxi.alerts
   rules:      
   - alert: MetalESXiSensorCritical
-    expr: count(ipmi_sensor_state{job="scrapeconfig/infra-monitoring/ipmi-exporter-vmware-esxi", type=~"(Memory|Processor|Critical Interrupt|Drive Slot)"} == 2) by (name, type, exported_name, manufacturer, model, serial) * on(name) group_left count(label_replace(max_over_time(vrops_hostsystem_runtime_maintenancestate{state="notInMaintenance"}[15m]), "name", "$1", "hostsystem", "(.*).cc.*")) by (name)
+    expr: count(ipmi_sensor_state{job="scrapeConfig/infra-monitoring/ipmi-exporter-vmware-esxi", type=~"(Memory|Processor|Critical Interrupt|Drive Slot)"} == 2) by (name, type, exported_name, manufacturer, model, serial) * on(name) group_left count(label_replace(max_over_time(vrops_hostsystem_runtime_maintenancestate{state="notInMaintenance"}[15m]), "name", "$1", "hostsystem", "(.*).cc.*")) by (name)
     for: 10m
     labels:
       severity: critical
@@ -35,7 +35,7 @@ groups:
       summary: "Hardware error for server: {{ $labels.name }}"
       
   - alert: MetalESXiSensorWarn
-    expr: count(ipmi_sensor_state{job="scrapeconfig/infra-monitoring/ipmi-exporter-vmware-esxi", type=~"(Memory|Processor|Critical Interrupt|Drive Slot|Power Supply|Cable/Interconnect|Version Change)"} == 2) by (name, type, exported_name, manufacturer, model, serial)
+    expr: count(ipmi_sensor_state{job="scrapeConfig/infra-monitoring/ipmi-exporter-vmware-esxi", type=~"(Memory|Processor|Critical Interrupt|Drive Slot|Power Supply|Cable/Interconnect|Version Change)"} == 2) by (name, type, exported_name, manufacturer, model, serial)
     for: 10m
     labels:
       severity: warning
@@ -50,7 +50,7 @@ groups:
       summary: "Hardware error for server: {{ $labels.name }}"
       
   - alert: MetalESXiMemCritical
-    expr: count(ipmi_memory_state{job="scrapeconfig/infra-monitoring/ipmi-exporter-vmware-esxi"} == 2) by (name, exported_name, manufacturer, model, serial) * on(name) group_left count(label_replace(max_over_time(vrops_hostsystem_runtime_maintenancestate{state="notInMaintenance"}[15m]), "name", "$1", "hostsystem", "(.*).cc.*")) by (name)
+    expr: count(ipmi_memory_state{job="scrapeConfig/infra-monitoring/ipmi-exporter-vmware-esxi"} == 2) by (name, exported_name, manufacturer, model, serial) * on(name) group_left count(label_replace(max_over_time(vrops_hostsystem_runtime_maintenancestate{state="notInMaintenance"}[15m]), "name", "$1", "hostsystem", "(.*).cc.*")) by (name)
     for: 10m
     labels:
       severity: critical
@@ -65,7 +65,7 @@ groups:
       summary: "Dimm error for server: {{ $labels.name }}"
       
   - alert: MetalESXiMemWarn
-    expr: count(ipmi_memory_state{job="scrapeconfig/infra-monitoring/ipmi-exporter-vmware-esxi"} == 2) by (name, exported_name, manufacturer, model, serial) * on(name) group_left count(label_replace(max_over_time(vrops_hostsystem_runtime_maintenancestate{state="InMaintenance"}[15m]), "name", "$1", "hostsystem", "(.*).cc.*")) by (name)
+    expr: count(ipmi_memory_state{job="scrapeConfig/infra-monitoring/ipmi-exporter-vmware-esxi"} == 2) by (name, exported_name, manufacturer, model, serial) * on(name) group_left count(label_replace(max_over_time(vrops_hostsystem_runtime_maintenancestate{state="InMaintenance"}[15m]), "name", "$1", "hostsystem", "(.*).cc.*")) by (name)
     for: 10m
     labels:
       severity: warning
@@ -80,7 +80,7 @@ groups:
       summary: "Dimm error for server: {{ $labels.name }}"
       
   - alert: MetalESXiMemSensorWarn
-    expr: count(ipmi_sensor_state{job="scrapeconfig/infra-monitoring/ipmi-exporter-vmware-esxi", type=~"(Memory)"} == 1) by (name, exported_name, manufacturer, model, serial)
+    expr: count(ipmi_sensor_state{job="scrapeConfig/infra-monitoring/ipmi-exporter-vmware-esxi", type=~"(Memory)"} == 1) by (name, exported_name, manufacturer, model, serial)
     for: 10m
     labels:
       severity: warning
@@ -95,7 +95,7 @@ groups:
       summary: "Dimm error for server: {{ $labels.name }}"
       
   - alert: MetalESXiECCMemCritical
-    expr: count(ipmi_memory_errors{job="scrapeconfig/infra-monitoring/ipmi-exporter-vmware-esxi"} > 60000) by (name, exported_name, manufacturer, model, serial)
+    expr: count(ipmi_memory_errors{job="scrapeConfig/infra-monitoring/ipmi-exporter-vmware-esxi"} > 60000) by (name, exported_name, manufacturer, model, serial)
     for: 30m
     labels:
       severity: critical
@@ -110,7 +110,7 @@ groups:
       summary: "Hardware error for server: {{ $labels.name }}"
       
   - alert: MetalESXiECCMemWarn
-    expr: count(ipmi_memory_errors{job="scrapeconfig/infra-monitoring/ipmi-exporter-vmware-esxi"} > 16000) by (name, exported_name, manufacturer, model, serial)
+    expr: count(ipmi_memory_errors{job="scrapeConfig/infra-monitoring/ipmi-exporter-vmware-esxi"} > 16000) by (name, exported_name, manufacturer, model, serial)
     for: 30m
     labels:
       severity: warning
@@ -125,7 +125,7 @@ groups:
       summary: "Hardware error for server: {{ $labels.name }}"
       
   - alert: MetalESXiMetricsDownWarn
-    expr: (count(ipmi_up{job="scrapeconfig/infra-monitoring/ipmi-exporter-vmware-esxi"} == 0 or up{job="scrapeconfig/infra-monitoring/ipmi-exporter-vmware-esxi"} == 0) by (name, maintenance, manufacturer, model, serial) * on(name) group_left count(label_replace(max_over_time(vrops_hostsystem_runtime_maintenancestate{state="notInMaintenance"}[15m]), "name", "$1", "hostsystem", "(.*).cc.*")) by (name))
+    expr: (count(ipmi_up{job="scrapeConfig/infra-monitoring/ipmi-exporter-vmware-esxi"} == 0 or up{job="scrapeConfig/infra-monitoring/ipmi-exporter-vmware-esxi"} == 0) by (name, maintenance, manufacturer, model, serial) * on(name) group_left count(label_replace(max_over_time(vrops_hostsystem_runtime_maintenancestate{state="notInMaintenance"}[15m]), "name", "$1", "hostsystem", "(.*).cc.*")) by (name))
     for: 10m
     labels:
       severity: warning
