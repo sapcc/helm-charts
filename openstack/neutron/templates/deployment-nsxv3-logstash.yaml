@@ -8,6 +8,10 @@ metadata:
     system: openstack
     type: backend
     component: neutron
+  {{- if .Values.vpa.set_main_container }}
+  annotations:
+    vpa-butler.cloud.sap/main-container: neutron-nsxv3-logstash
+  {{- end }}
 spec:
   replicas: {{ .Values.logger.logstash.replicas | default 3 }}
   revisionHistoryLimit: {{ .Values.pod.lifecycle.upgrades.deployments.revision_history }}
