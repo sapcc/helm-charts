@@ -159,6 +159,7 @@ auths:
     version: {{ .Values.snmp_exporter.acistretch.version }}
     community: {{ .Values.snmp_exporter.acistretch.community }}
 {{- end }}
+{{- if .Values.snmp_exporter.ucs.enabled }}
   ucs_3:
     version: {{ .Values.snmp_exporter.ucs.version }}
     security_level: {{ .Values.snmp_exporter.ucs.security_level }}
