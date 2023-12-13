@@ -1,6 +1,7 @@
 {{- define "utils.trust_bundle.volume_mount" }}
   {{- if .Values.utils.trust_bundle.enabled }}
-- mountPath: /etc/ssl/certs
+- mountPath: /etc/ssl/certs/ca-certificates.crt
+  subPath: ca-certificates.crt
   name: trust-bundle
   readOnly: true
   {{- end }}
