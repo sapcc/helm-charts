@@ -9,6 +9,10 @@ metadata:
     application: designate
     type: backend
     component: worker
+  {{- if .Values.vpa.set_main_container }}
+  annotations:
+    vpa-butler.cloud.sap/main-container: designate-worker
+  {{- end }}
 spec:
   replicas: {{ .Values.pod.replicas.worker }}
   revisionHistoryLimit: {{ .Values.pod.lifecycle.upgrades.deployments.revision_history }}
