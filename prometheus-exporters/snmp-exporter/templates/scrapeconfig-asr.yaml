@@ -1,3 +1,4 @@
+{{- if .Values.snmp_exporter.asr.enabled }}
 apiVersion: monitoring.coreos.com/v1alpha1
 kind: ScrapeConfig
 metadata:
@@ -8,7 +9,7 @@ metadata:
     app.kubernetes.io/name: snmp-exporter-asr
 spec:
   httpSDConfigs:
-    - url: {{ .Values.global.http_sd_configs.netbox_url }}/devices/?custom_labels=__param_module=asr&manufacturer=cisco&status=active&region={{ .Values.global.region }}&role=neutron-router
+    - url: {{ .Values.global.http_sd_configs.netbox_url }}/devices/?custom_labels=__param_module=asr;__param_auth=asr_v3&manufacturer=cisco&status=active&region={{ .Values.global.region }}&role=neutron-router
       refreshInterval: {{ .Values.global.http_sd_configs.refresh_interval }}
   metricsPath: /snmp
   scrapeInterval: 60s
@@ -22,6 +23,8 @@ spec:
       replacement: snmp-exporter:{{.Values.snmp_exporter.listen_port}}
     - targetLabel: module
       replacement: asr
+    - targetLabel: __param_auth
+      replacement: asr_v3
   metricRelabelings:
     - sourceLabels: [name]
       targetLabel:  devicename
@@ -60,3 +63,4 @@ spec:
       replacement: '$1'
       targetLabel: asr_pair
       action: replace
+{{- end }}

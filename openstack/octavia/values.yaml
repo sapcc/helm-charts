@@ -4,6 +4,7 @@
 
 owner-info:
   support-group: network-api
+  service: octavia
   maintainers:
     - Benjamin Ludwig
     - Andrew Karpow
@@ -17,7 +18,8 @@ global:
   dbUser: octavia
   rpc_response_timeout: 60
   osprofiler: {}
-
+  linkerd_requested: true
+  
 osprofiler:
   enabled: false
 
@@ -103,8 +105,7 @@ mysql_metrics:
           OR tag='cookie_encryption_b82a_v1_0'
           OR tag='sso_22b0_v1_0'
           OR tag='sso_required_f544_v1_0'
-          OR tag='http_redirect_a26c_v1_0'
-          OR tag='hcm_rmk_restrict_internal';
+          OR tag='http_redirect_a26c_v1_0';
       values:
         - "count_gauge"
     - name: octavia_esd_l7policies_count_gauge
@@ -126,8 +127,7 @@ mysql_metrics:
           OR name='cookie_encryption_b82a_v1_0'
           OR name='sso_22b0_v1_0'
           OR name='sso_required_f544_v1_0'
-          OR name='http_redirect_a26c_v1_0'
-          OR name='hcm_rmk_restrict_internal';
+          OR name='http_redirect_a26c_v1_0';
       values:
         - "count_gauge"
     - name: octavia_normal_l7policies_count_gauge
@@ -149,8 +149,7 @@ mysql_metrics:
           AND name!='cookie_encryption_b82a_v1_0'
           AND name!='sso_22b0_v1_0'
           AND name!='sso_required_f544_v1_0'
-          AND name!='http_redirect_a26c_v1_0'
-          AND name!='hcm_rmk_restrict_internal';
+          AND name!='http_redirect_a26c_v1_0';
       values:
         - "count_gauge"
     - name: octavia_loadbalancers_count_gauge
@@ -357,3 +356,7 @@ logging:
     sqlalchemy:
       handlers: stdout, sentry
       level: WARNING
+
+utils:
+  trust_bundle:
+    enable: true

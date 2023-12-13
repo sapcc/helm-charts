@@ -25,7 +25,7 @@
 apiVersion: batch/v1
 kind: CronJob
 metadata:
-  name: {{ .Release.Name }}-redfish-certrobot
+  name: {{ .Release.Name }}-redfish-certrobot-0
 spec:
   schedule: {{ .Values.cert_robot.schedule | quote }}
   jobTemplate:
@@ -49,6 +49,7 @@ spec:
             - name: config
               mountPath: "/etc/openstack"
               readOnly: true
+            {{- include "utils.trust_bundle.volume_mount" . | indent 12 }}
           volumes:
           - name: config
             projected:
@@ -60,3 +61,4 @@ spec:
                     path: clouds.yaml
                   - key: sdk
                     path: sdk.yaml
+          {{- include "utils.trust_bundle.volumes" . | indent 10 }}

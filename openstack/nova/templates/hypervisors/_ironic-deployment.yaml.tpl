@@ -66,6 +66,7 @@ spec:
               name: nova-etc
             - mountPath: /nova-patches
               name: nova-patches
+            {{- include "utils.trust_bundle.volume_mount" . | indent 12 }}
         {{- if $hypervisor.default.statsd_enabled }}
         - name: statsd
           image: {{ required ".Values.global.dockerHubMirror is missing" .Values.global.dockerHubMirror}}/prom/statsd-exporter:v0.8.1
@@ -123,5 +124,6 @@ spec:
               - key:  statsd-exporter.yaml
                 path: statsd-exporter.yaml
       {{- end }}
+      {{- include "utils.trust_bundle.volumes" . | indent 6 }}
 {{- end -}}
 {{- end -}}

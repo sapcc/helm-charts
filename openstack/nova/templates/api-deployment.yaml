@@ -108,6 +108,7 @@ spec:
           - mountPath: /etc/nova
             name: nova-etc
             {{- include "utils.proxysql.volume_mount" . | indent 10 }}
+            {{- include "utils.trust_bundle.volume_mount" . | indent 10 }}
         {{- tuple . .Values.api.config_file.DEFAULT.osapi_compute_workers | include "utils.proxysql.container" | indent 8 }}
         - name: statsd
           image: {{ required ".Values.global.dockerHubMirror is missing" .Values.global.dockerHubMirror}}/prom/statsd-exporter:v0.8.1
@@ -177,3 +178,4 @@ spec:
           name: nova-bin
           defaultMode: 0755
       {{- include "utils.proxysql.volumes" . | indent 6 }}
+      {{- include "utils.trust_bundle.volumes" . | indent 6 }}

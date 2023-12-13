@@ -4,17 +4,21 @@
 
 set -eou pipefail
 shopt -s nullglob # who thought it is a good idea to return the glob if it matches nothing?
+shopt -s inherit_errexit # fail if any subshell fails
 
 [[ -n ${DEBUG:-} ]] && set -x
 
 # those are set by default in values, too but are kept here to easen testing
-export PGVERSION=${PGVERSION:-16}
-export PGUSER=${PGUSER:-postgres}
+export PGVERSION="${PGVERSION:-16}"
+export PGUSER="${PGUSER:-postgres}"
 # export PGPASSWORD=${PGPASSWORD:-secure} # this not to not create security incidents
-export PGDATABASE=${PGDATABASE:-acme-db}
+# always generate a new password on each start
+PGPASSWORD="$(head -c 30 </dev/urandom | base64)"
+export PGPASSWORD
+export PGDATABASE="${PGDATABASE:-acme-db}"
 
 if [[ $(id -u) == 0 ]]; then
-  for d in /var/lib/postgresql/*; do
+  for _ in /var/lib/postgresql/*; do
     echo "/var/lib/postgresql must be empty otherwise data is being deleted! Mount your PVC at /data"
     exit 1
   done
@@ -28,8 +32,8 @@ if [[ $(id -u) == 0 ]]; then
     mv /data/* /data-old/
 
     # and move back to the right place
-    mkdir /data/postgresql/$old_version
-    mv /data-old/* /data/postgresql/$old_version/
+    mkdir "/data/postgresql/$old_version"
+    mv /data-old/* "/data/postgresql/$old_version/"
     chown postgres:postgres -R /data/postgresql
   fi
 
@@ -64,7 +68,7 @@ if [[ ${#PGPASSWORD} -ge 100 ]]; then
 fi
 
 process_sql() {
-  local query_runner=(psql -v ON_ERROR_STOP=1 --username "$PGUSER" --no-password --no-psqlrc)
+  local query_runner=(psql -v ON_ERROR_STOP=1 --username "$PGUSER" --no-password --no-psqlrc --set pw_method="$auth")
   if [[ -n $PGDATABASE ]]; then
     query_runner+=(--dbname "$PGDATABASE")
   fi
@@ -137,6 +141,16 @@ if [[ $updated_db == true ]]; then
   vacuumdb --all --analyze-in-stages
 fi
 
+substituteSqlEnvs() {
+  local file="$1" sedArgs=()
+
+  for line in $(env | grep ^USER_PASSWORD_); do
+    sedArgs+=(-e "s|%$(echo "$line" | cut -d= -f1)%|$(echo "$line" | cut -d= -f2)|g")
+  done
+
+  sed -e "s/%PGDATABASE%/$PGDATABASE/g" "${sedArgs[@]}" "$file"
+}
+
 # if a new db was initted, create the databse inside of it and run init scripts
 if [[ $created_db == true ]]; then
   # shellcheck disable=SC2097,SC2098 # false positive
@@ -144,9 +158,9 @@ if [[ $created_db == true ]]; then
     CREATE DATABASE :"db";
 	EOSQL
 
-  for file in /initdb.d/*; do
+  for file in /sql-on-create.d/*.sql; do
     echo "Processing $file ..."
-    process_sql -f "$file"
+    process_sql -f <(substituteSqlEnvs "$file")
     echo
   done
 fi
@@ -159,9 +173,9 @@ PGDATABASE='' process_sql --dbname postgres --set user="$PGUSER" --set pw_method
   ALTER USER :user WITH PASSWORD :'password';
 EOSQL
 
-for file in /maintaindb.d/*; do
+for file in /sql-on-startup.d/*.sql; do
   echo "Processing $file ..."
-  process_sql -f "$file"
+  process_sql -f <(substituteSqlEnvs "$file")
   echo
 done
 pg_ctl -D "$PGDATA" -m fast -w stop

@@ -15,6 +15,8 @@ global:
   domain_seeds:
     skip_hcm_domain: false
 
+  linkerd_requested: false
+
 loci:
   imageNamespace: monsoon
 
@@ -194,6 +196,7 @@ mysql_metrics:
         - "share_id"
         - "id"
         - "status"
+        - "share_type_id"
         - "availability_zone_name"
       name: openstack_manila_snapshot_count_gauge
       query: |
@@ -202,6 +205,7 @@ mysql_metrics:
           snap.share_id as share_id,
           snap.id as id,
           si.status as status,
+          coalesce(share_instances.share_type_id, 'N/A') AS share_type_id,
           availability_zones.name AS availability_zone_name,
           COUNT(*) AS count_gauge
         FROM share_snapshots AS snap
@@ -209,7 +213,7 @@ mysql_metrics:
         INNER JOIN share_instances ON si.share_instance_id=share_instances.id
         INNER JOIN availability_zones ON share_instances.availability_zone_id=availability_zones.id
         WHERE snap.deleted = 'False'
-        AND share_instances.replica_state='active'
+        AND (share_instances.replica_state='active' OR share_instances.replica_state IS NULL)
         GROUP BY
           snap.id,
           snap.project_id,
@@ -221,6 +225,7 @@ mysql_metrics:
           'none' AS project_id,
           'none' AS share_id,
           'none' AS status,
+          'none' AS share_type_id,
           'none' AS availability_zone_name,
           0 AS count_gauge;
       values:
@@ -231,6 +236,7 @@ mysql_metrics:
         - "share_id"
         - "id"
         - "status"
+        - "share_type_id"
         - "availability_zone_name"
       name: openstack_manila_snapshot_size_gauge
       query: |
@@ -239,6 +245,7 @@ mysql_metrics:
           share_snapshots.share_id,
           share_snapshots.id,
           share_snapshot_instances.status,
+          coalesce(share_instances.share_type_id, 'N/A') AS share_type_id,
           availability_zones.name AS availability_zone_name,
           SUM(share_snapshots.size) size_gauge
         FROM share_snapshots
@@ -246,7 +253,7 @@ mysql_metrics:
         INNER JOIN share_instances ON share_snapshot_instances.share_instance_id=share_instances.id
         INNER JOIN availability_zones ON share_instances.availability_zone_id=availability_zones.id
         WHERE share_snapshots.deleted = 'False'
-        AND share_instances.replica_state='active'
+        AND (share_instances.replica_state='active' OR share_instances.replica_state IS NULL)
         GROUP BY
           share_snapshots.id,
           share_snapshots.project_id,
@@ -537,6 +544,7 @@ mysql_metrics:
 pod:
   replicas:
     api: 5
+    ensure: 1
     scheduler: 1
   lifecycle:
     upgrades:
@@ -546,6 +554,8 @@ pod:
         rolling_update:
           max_unavailable: 0
           max_surge: 1
+  health:
+    use_agent: true
   resources:
     api:
       requests:
@@ -570,6 +580,18 @@ pod:
       requests:
         memory: "2Gi"
         cpu: "500m"
+
+# all default quotas are 0 to enforce usage of the Resource Management tool (aka Limes) in Elektra
+quota:
+  shares: 0
+  gigabytes: 0
+  snapshots: 0
+  snapshot_gigabytes: 0
+  share_networks: 0
+  share_groups: 0
+  share_group_snapshots: 0
+  share_replicas: 0
+  replica_gigabytes: 0
 
 db_name: manila
 

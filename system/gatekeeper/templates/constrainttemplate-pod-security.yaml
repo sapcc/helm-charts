@@ -275,7 +275,7 @@ spec:
         isElasticOrOpenSearchPod = true {
           iro.kind == "StatefulSet"
           iro.metadata.namespace == "hermes"
-          iro.metadata.name in {"opensearch-hermes"}
+          iro.metadata.name in {"opensearch-hermes", "opensearch-hermes-master"}
           helmReleaseName == "opensearch-hermes"
         }
         {{- end }}
@@ -536,6 +536,18 @@ spec:
           capability in {"NET_ADMIN"}
         }
         {{- end }}
+
+        ########################################################################
+        # allowlist for linkerd
+
+        isContainerAllowedToUseCapability(container, capability) = true {
+          iro.kind == "Deployment"
+          iro.metadata.namespace == "linkerd"
+          iro.metadata.name in {"linkerd-destination", "linkerd-identity", "linkerd-proxy-injector"}
+          helmReleaseName == "linkerd"
+          container.name == "linkerd-init"
+          capability in {"NET_ADMIN", "NET_RAW"}
+        }
 
         ########################################################################
         # allowlist for neutron-network-agent

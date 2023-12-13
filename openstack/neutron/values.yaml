@@ -16,6 +16,7 @@ global:
   rpc_response_timeout: 60
   domain_seeds:
     skip_hcm_domain: false
+  linkerd_requested: false
 
 api_workers: 12
 rpc_workers: 5
@@ -23,6 +24,7 @@ rpc_state_workers: 5
 
 owner-info:
   support-group: network-api
+  service: neutron
   maintainers:
     - Sebastian Lohff
     - Sebastian Wagner
@@ -658,3 +660,9 @@ dnsmasq:
 memcached:
   alerts:
     support_group: network-api
+
+vpa:
+  # https://github.com/sapcc/vpa_butler
+  # The maximum available capacity is split evenly across containers specified in the Deployment, StatefulSet or DaemonSet to derive the upper recommendation bound. This does not work out for pods with a single resource-hungry container with several sidecar containers
+  # Annotate the Deployment, StatefulSet or DaemonSet with vpa-butler.cloud.sap/main-container=$MAIN_CONTAINER. That will distribute 75% of the maximum available capacity to the main container and the rest evenly across all others
+  set_main_container: true

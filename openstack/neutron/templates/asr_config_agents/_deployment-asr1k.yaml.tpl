@@ -11,7 +11,10 @@ metadata:
     system: openstack
     type: backend
     component: neutron
-
+  {{- if $context.Values.vpa.set_main_container }}
+  annotations:
+    vpa-butler.cloud.sap/main-container: neutron-asr1k  
+  {{- end }}
 spec:
   replicas: 1
   revisionHistoryLimit: 5
@@ -35,6 +38,7 @@ spec:
         prometheus.io/scrape: "true"
         prometheus.io/targets: {{ required ".Values.metrics.prometheus missing" $context.Values.metrics.prometheus | quote }}
         configmap-asr1k-{{ $config_agent.name }}: {{ tuple $context $config_agent |include "asr1k_configmap" | sha256sum  }}
+        {{- include "utils.linkerd.pod_and_service_annotation" $context | indent 8 }}
     spec:
       hostname:  asr1k-{{ $config_agent.name }}
       containers:

@@ -22,7 +22,11 @@
     {{- if .Values.proxysql }}
       {{- if .Values.proxysql.mode }}
 - name: proxysql
-  image: {{ required ".Values.global.dockerHubMirror is missing" .Values.global.dockerHubMirror }}/{{ default "proxysql/proxysql" .Values.proxysql.image }}:{{ .Values.proxysql.imageTag | default "2.4.7-debian" }}
+  image: {{ if .Values.proxysql.imageRepository -}}
+            {{ .Values.proxysql.imageRepository }}
+        {{- else -}}
+          {{ required ".Values.global.dockerHubMirror is missing" .Values.global.dockerHubMirror }}/{{ default "proxysql/proxysql" .Values.proxysql.image }}
+        {{- end }}:{{ .Values.proxysql.imageTag | default "2.4.7-debian" }}
   imagePullPolicy: IfNotPresent
   command: ["proxysql"]
   args: ["--config", "/etc/proxysql/proxysql.cnf", "--exit-on-error", "--foreground", "--idle-threads", "--admin-socket", "/run/proxysql/admin.sock", "--no-version-check", "-D", "/run/proxysql"]
@@ -61,9 +65,9 @@
   - mountPath: /etc/proxysql
     name: etcproxysql
     {{- include "utils.proxysql.volume_mount" . | indent 2 }}
+    {{- include "utils.trust_bundle.volume_mount" . | indent 2 }}
       {{- end }}
     {{- end }}
-  {{- include "utils.trust_bundle.volume_mount" . | indent 2 }}
   {{- end }}
 {{- end }}
 

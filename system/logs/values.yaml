@@ -19,7 +19,7 @@ fluent:
   port: 8885
   logstash_shards: 3
   indexname: logstash
-  image_version: '20230829081607'
+  image_version: '20231213092430'
   alerts:
     enabled: false
     prometheus: infra-collector
@@ -48,7 +48,7 @@ fluent:
 fluent_prometheus:
   enabled: false
   port: 8884
-  image_version: '20221206095123'
+  image_version: '20231213092430'
   exporter:
     prometheus: DEFINED-IN-SECRETS
   alerts:
@@ -62,8 +62,13 @@ fluent-bit:
     versioning: "12"
   nameOverride: "fluent-bit-systemd"
   existingConfigMap: "fluent-bit-config"
-  tolerations: 
-  - operator: Exists
+  tolerations:
+  - key: "species"
+    operator: "Exists"
+  updateStrategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 5
   image:
     repository: keppel.global.cloud.sap/ccloud-dockerhub-mirror/fluent/fluent-bit
     pullPolicy: IfNotPresent
@@ -146,6 +151,11 @@ k8s_event_logger:
   fullnameOverride: elk-k8s-event-exporter
   env:
     KUBERNETES_API_URL: https://${KUBERNETES_SERVICE_HOST}:${KUBERNETES_SERVICE_PORT_HTTPS}
+  resources:
+    requests:
+    limits:
+      cpu: 100m
+      memory: 512M
 
 
 fluent_testing:

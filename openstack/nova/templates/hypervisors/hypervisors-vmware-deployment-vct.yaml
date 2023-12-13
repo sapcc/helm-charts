@@ -81,6 +81,7 @@ template: |
           - mountPath: /etc/sudoers
             name: sudoers
             subPath: sudoers
+          {{- include "utils.trust_bundle.volume_mount" . | indent 10 }}
         - name: statsd
           image: {{ required ".Values.global.dockerHubMirror is missing" .Values.global.dockerHubMirror}}/prom/statsd-exporter:v0.8.1
           imagePullPolicy: IfNotPresent
@@ -152,4 +153,5 @@ template: |
                 items:
                 - key:  statsd-exporter.yaml
                   path: statsd-exporter.yaml
+        {{- include "utils.trust_bundle.volumes" . | indent 8 }}
 {{- end }}

@@ -36,6 +36,7 @@ spec:
         configmap-etc-hash: {{ include (print $.Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
         configmap-bin-hash: {{ include (print $.Template.BasePath "/bin-configmap.yaml") . | sha256sum }}
         kubectl.kubernetes.io/default-container: manila-api
+        {{- include "utils.linkerd.pod_and_service_annotation" . | indent 8 }}
     spec:
       {{- tuple . "manila" "api" | include "kubernetes_pod_anti_affinity" | nindent 6 }}
       {{- tuple . (dict "name" (print .Release.Name "-api")) | include "utils.topology.constraints" | indent 6 }}
@@ -172,6 +173,7 @@ spec:
               readOnly: true
             {{- include "utils.coordination.volume_mount" . | indent 12 }}
             {{- include "utils.proxysql.volume_mount" . | indent 12 }}
+            {{- include "utils.trust_bundle.volume_mount" . | indent 12 }}
           {{- if .Values.pod.resources.api }}
           resources:
             {{ toYaml .Values.pod.resources.api | nindent 13 }}
@@ -215,3 +217,4 @@ spec:
             defaultMode: 0555
         {{- include "utils.coordination.volumes" . | indent 8 }}
         {{- include "utils.proxysql.volumes" . | indent 8 }}
+        {{- include "utils.trust_bundle.volumes" . | indent 8 }}

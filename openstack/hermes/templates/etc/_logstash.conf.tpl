@@ -69,12 +69,12 @@ filter {
   if ![initiator][project_id] and ![initiator][domain_id] {
     if [project] {
       mutate {
-        add_field => { "%{[initiator][project_id]}" => "%{[project]}" }
+        add_field => { "%{[project]}" => "%{[initiator][project_id]}"  }
         id => "f06a_mutate_initiator_project_id"
         }
     } else if [domain] {
       mutate {
-        add_field => { "%{[initiator][domain_id]}" => "%{[domain]}" }
+        add_field => { "%{[domain]}" => "%{[initiator][domain_id]}"}
         id => "f06b_mutate_initiator_domain_id"
       }
     }
@@ -163,7 +163,7 @@ filter {
   }
 
   # Enrich keystone events with domain mapping from Metis
-  {{ if .Values.logstash.audit -}}
+  {{- if .Values.logstash.audit }}
   # Fill in lookup fields with "unavailable" to provide the lookup with a field so it doesn't error
   # pipeline shutsdown if a lookup field is not available.
 
@@ -504,7 +504,7 @@ output {
         }
   }
 
-  {{ if .Values.logstash.swift -}}
+  {{- if .Values.logstash.swift }}
   if [type] == 'clone_for_swift' {
     s3 {
       id => "output_s3_for_swift"
@@ -525,7 +525,7 @@ output {
   }
   {{- end}}
 
-  {{ if .Values.logstash.audit -}}
+  {{- if .Values.logstash.audit }}
   if [type] == 'audit' {
     if (([initiator][domain] == 'Default' and [initiator][name] == 'admin') or [initiator][domain] == 'ccadmin' or [target][project_domain_name] == 'ccadmin' or [initiator][project_domain_name] == 'ccadmin') or ([observer][typeURI] == 'service/security' and [action] == "authenticate" and [outcome] == 'failure') or ([observer][typeURI] == 'service/security' and ([action] == 'create/user') or [action] == 'delete/user') {
       http {

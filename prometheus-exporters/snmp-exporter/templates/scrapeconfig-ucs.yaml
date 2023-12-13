@@ -1,3 +1,4 @@
+{{- if .Values.snmp_exporter.ucs.enabled }}
 apiVersion: monitoring.coreos.com/v1alpha1
 kind: ScrapeConfig
 metadata:
@@ -8,7 +9,7 @@ metadata:
     app.kubernetes.io/name: snmp-exporter-ucs
 spec:
   httpSDConfigs:
-    - url: {{ .Values.global.http_sd_configs.netbox_url }}/devices/?custom_labels=__param_module=ucs&model=ucs-fi-6332-16up&manufacturer=cisco&status=active&region={{ .Values.global.region }}
+    - url: {{ .Values.global.http_sd_configs.netbox_url }}/devices/?custom_labels=__param_module=ucs;__param_auth=ucs_v3&model=ucs-fi-6332-16up&manufacturer=cisco&status=active&region={{ .Values.global.region }}
       refreshInterval: {{ .Values.global.http_sd_configs.refresh_interval }}
   metricsPath: /snmp
   scrapeInterval: 60s
@@ -22,6 +23,8 @@ spec:
       replacement: snmp-exporter:{{.Values.snmp_exporter.listen_port}}
     - targetLabel: module
       replacement: ucs
+    - targetLabel: __param_auth
+      replacement: ucs_v3
   metricRelabelings:
     - sourceLabels: [name]
       targetLabel:  devicename
@@ -39,3 +42,4 @@ spec:
     - sourceLabels: [__name__, cucsFcErrStatsDn]
       regex: 'snmp_ucs_cucsFcErrStats.+;.+(port)-([3-9]|\d{2}).+'
       action: drop
+{{- end }}

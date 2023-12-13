@@ -1,3 +1,7 @@
+## 7.4.4
+
+* Soften out-of-order alert 
+
 ## 7.4.3
 
 * Thanos sidecar to v0.31.0 to match Thanos environment 

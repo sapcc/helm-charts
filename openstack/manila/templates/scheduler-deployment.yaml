@@ -31,6 +31,8 @@ spec:
         {{- end }}
         kubectl.kubernetes.io/default-container: manila-scheduler
         configmap-etc-hash: {{ include (print .Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
+        {{- include "utils.linkerd.pod_and_service_annotation" . | indent 8 }}
+
     spec:
       {{ include "utils.proxysql.pod_settings" . | indent 6 }}
       affinity:
@@ -113,6 +115,7 @@ spec:
               readOnly: true
             {{- include "utils.coordination.volume_mount" . | indent 12 }}
             {{- include "utils.proxysql.volume_mount" . | indent 12 }}
+            {{- include "utils.trust_bundle.volume_mount" . | indent 12 }}
           {{- if .Values.pod.resources.scheduler }}
           resources:
 {{ toYaml .Values.pod.resources.scheduler | indent 13 }}
@@ -148,3 +151,4 @@ spec:
             name: {{ .Release.Name }}-etc
         {{- include "utils.coordination.volumes" . | indent 8 }}
         {{- include "utils.proxysql.volumes" . | indent 8 }}
+        {{- include "utils.trust_bundle.volumes" . | indent 8 }}

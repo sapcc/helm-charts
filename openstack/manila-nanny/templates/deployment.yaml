@@ -30,6 +30,7 @@ spec:
         prometheus.io/scrape: "true"
         prometheus.io/targets: {{ quote .Values.alerts.prometheus }}
         {{ include "configmapHash" . | nindent 8 | trim }}
+        {{- include "utils.linkerd.pod_and_service_annotation" . | indent 8 }}
     spec:
       nodeSelector:
         zone: farm
@@ -46,7 +47,7 @@ spec:
       containers:
 {{- if .Values.nannies.db_purge.enabled }}
         - name: db-consistency-and-purge
-          image: "{{.Values.global.registry}}/{{.Values.image.name}}:{{.Values.image.version}}"
+          image: "{{.Values.global.registry}}/{{.Values.imageName}}:{{.Values.imageTag}}"
           imagePullPolicy: IfNotPresent
           command:
             - dumb-init
@@ -75,7 +76,7 @@ spec:
 {{- end }}
 {{- if .Values.nannies.quota_sync.enabled }}
         - name: quota-sync
-          image: {{.Values.global.registry}}/{{.Values.image.name}}:{{.Values.image.version}}
+          image: {{.Values.global.registry}}/{{.Values.imageName}}:{{.Values.imageTag}}
           imagePullPolicy: IfNotPresent
           command:
             - dumb-init
@@ -102,7 +103,7 @@ spec:
 {{- end }}
 {{- if .Values.nannies.db_cleanup.enabled }}
         - name: db-cleanup
-          image: {{.Values.global.registry}}/{{.Values.image.name}}:{{.Values.image.version}}
+          image: {{.Values.global.registry}}/{{.Values.imageName}}:{{.Values.imageTag}}
           imagePullPolicy: IfNotPresent
           command:
             - dumb-init
@@ -127,7 +128,7 @@ spec:
 {{- end }}
 {{- if .Values.nannies.share_sync.enabled }}
         - name: share-sync
-          image: {{.Values.global.registry}}/{{.Values.image.name}}:{{.Values.image.version}}
+          image: {{.Values.global.registry}}/{{.Values.imageName}}:{{.Values.imageTag}}
           imagePullPolicy: IfNotPresent
           command:
             - dumb-init
@@ -180,7 +181,7 @@ spec:
 {{- end }}
 {{- if .Values.nannies.share_server.enabled }}
         - name: share-server
-          image: {{.Values.global.registry}}/{{.Values.image.name}}:{{.Values.image.version}}
+          image: {{.Values.global.registry}}/{{.Values.imageName}}:{{.Values.imageTag}}
           imagePullPolicy: IfNotPresent
           command:
             - dumb-init
@@ -207,7 +208,7 @@ spec:
 {{- end }}
 {{- if .Values.nannies.snapshot.enabled }}
         - name: snapshot
-          image: {{.Values.global.registry}}/{{.Values.image.name}}:{{.Values.image.version}}
+          image: {{.Values.global.registry}}/{{.Values.imageName}}:{{.Values.imageTag}}
           imagePullPolicy: IfNotPresent
           command:
             - dumb-init
@@ -238,7 +239,7 @@ spec:
 {{- end }}
 {{- if .Values.nannies.snapshot_missing.enabled }}
         - name: snapshot-missing
-          image: {{.Values.global.registry}}/{{.Values.image.name}}:{{.Values.image.version}}
+          image: {{.Values.global.registry}}/{{.Values.imageName}}:{{.Values.imageTag}}
           imagePullPolicy: IfNotPresent
           command:
             - dumb-init
@@ -284,7 +285,7 @@ spec:
 {{- end }}
 {{- if .Values.nannies.affinity }}
         - name: affinity
-          image: {{.Values.global.registry}}/{{.Values.image.name}}:{{.Values.image.version}}
+          image: {{.Values.global.registry}}/{{.Values.imageName}}:{{.Values.imageTag}}
           imagePullPolicy: IfNotPresent
           command:
             - dumb-init

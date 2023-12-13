@@ -9,7 +9,7 @@ metadata:
     system: openstack
     component: manila
 spec:
-  replicas: 1
+  replicas: {{ .Values.pod.replicas.ensure }}
   revisionHistoryLimit: 2
   strategy:
     type: RollingUpdate
@@ -29,6 +29,7 @@ spec:
         configmap-etc-hash: {{ include (print .Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
         configmap-netapp-hash: {{ list . $share | include "share_netapp_configmap" | sha256sum }}
         netapp_deployment-hash: {{ list . $share | include "share_netapp" | sha256sum }}
+        {{- include "utils.linkerd.pod_and_service_annotation" . | indent 8 }}
     spec:
       affinity:
         podAffinity:
@@ -87,6 +88,7 @@ spec:
               subPath: backend.conf
               readOnly: true
             {{- include "utils.proxysql.volume_mount" . | indent 12 }}
+            {{- include "utils.trust_bundle.volume_mount" . | indent 12 }}
           {{- if .Values.pod.resources.share_ensure }}
           resources:
             {{ toYaml .Values.pod.resources.share_ensure | nindent 13 }}
@@ -119,5 +121,6 @@ spec:
           configMap:
             name: {{ .Release.Name }}-share-netapp-{{$share.name}}
         {{- include "utils.proxysql.volumes" . | indent 8 }}
+        {{- include "utils.trust_bundle.volumes" . | indent 8 }}
 {{ end }}
 {{- end -}}
