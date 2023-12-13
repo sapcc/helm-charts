@@ -2,7 +2,7 @@ groups:
 - name: SendingGlobalEmails
   rules:
   - alert: SendingEmailsWithSESFails
-    expr: sum(irate(cronus_event_mails_sent{provider="aws", status_code="250"}[5m])*60) == 0
+    expr: sum(sum_over_time(cronus_event_mails_sent_success_provider_rate_perminute{provider="aws"}[5m]) OR on() vector(0)) == 0
     for: 15m
     labels:
       service: email
@@ -14,7 +14,31 @@ groups:
     annotations:
       description: sending emails with aws ses relay fails
       summary: sending emails with aws ses relay fails
-
+  - alert: SendingEmailsWithSESHighErrorRate
+    expr: (sum(sum_over_time(cronus_event_mails_sent_error_provider_rate_perminute{provider="aws"}[5m]) OR on() vector(0)) ) / (sum (sum_over_time(cronus_event_mails_sent_provider_rate_perminute{provider="aws"}[5m]) OR on() vector(0))) > 0.5
+    for: 15m
+    labels:
+      service: email
+      severity: warning
+      tier: os
+      playbook: docs/devops/alert/cronus/#send_email
+      kibana: "app/discover#/?_g=(filters:!(),refreshInterval:(pause:!t,value:0),time:(from:now-5m,to:now))&_a=(columns:!(_source),filters:!(('$state':(store:appState),meta:(alias:!n,disabled:!f,index:'logstash-*',key:kubernetes_labels_name,negate:!f,params:(query:cronus),type:phrase),query:(match_phrase:(kubernetes_labels_name:cronus)))),index:'logstash-*',interval:auto,query:(language:kuery,query:'%22email%20delivery%20result%20%231:%20%5C%22aws%5C%22%20250%22'),sort:!())"
+      support_group: email
+    annotations:
+      description: sending emails with aws ses relay high error rate greater than 50%
+      summary: sending emails with aws ses relay high error rate greater than 50%
+  - alert: EmailHealthTest
+    expr: avg (cronus_health_test) by (name) == 0
+    for: 30m
+    labels:
+      service: email
+      severity: info
+      tier: os
+      support_group: email
+    annotations:
+      description: dashboard - https://plutono.global.cloud.sap/d/s5NfHYvSk/email-sending-health?orgId=1, email health tests
+      summary: email health tests
+      
 - name: Nebula
   rules:
   - alert: NebulaMulticloudAPIFails
