@@ -2,22 +2,31 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: cc3test-config
+  # from cc3test helm-chart values
   namespace: {{ .Values.cc3test.namespace }}
 data:
   config.yaml: |
     global:
+      # from secrets/REGION/values/globals.yaml
       region: {{ .Values.global.region }}
       availability_zones:
+# from secrets/region/values/globals.yaml
 {{ toYaml .Values.global.availability_zones | indent 8 }}
       netapp:
         filers:
+# from secrets/REGION/values/manila-vendor.yaml
 {{ toYaml .Values.global.netapp.filers | indent 10 }}
+      # from secrets/REGION/values/designate.yaml
       designate_mdns_external_ip: {{ .Values.global.designate_mdns_external_ip }}
     config:
+# from secrets/scaleout/s-REGION/values/cc3test.yaml
 {{ toYaml .Values.config | indent 6 }}
     workers:
+# from secrets/REGION/values/octavia.yaml
 {{ toYaml .Values.workers | indent 6 }}
     new_f5:
+# from secrets/scaleout/s-REGION/values/cc3test.yaml
 {{ toYaml .Values.new_f5 | indent 6 }}
     bind_pools:
+# from secrets/REGION/values/designate.yaml
 {{ toYaml .Values.bind_pools | indent 6 }}
