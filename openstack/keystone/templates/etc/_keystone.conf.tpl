@@ -127,6 +127,8 @@ permissive = true
 connection = {{ include "db_url_pxc" . }}
 {{- else if .Values.global.clusterDomain -}}
 connection = mysql+pymysql://{{ default .Release.Name .Values.global.dbUser }}:{{.Values.global.dbPassword }}@{{include "db_host" .}}/{{ default .Release.Name .Values.mariadb.name }}?charset=utf8
+{{- else if .Values.mariadb_galera.enabled -}}
+connection = mysql+pymysql://{{ .Values.mariadb_galera.mariadb.users.keystone.username }}:{{.Values.mariadb_galera.mariadb.users.keystone.password }}@{{include "db_host" .}}/{{ .Values.mariadb_galera.mariadb.galera.clustername }}?charset=utf8
 {{- else }}
 connection = {{ include "db_url_mysql" . }}
 {{- end }}
@@ -159,9 +161,10 @@ unique_last_password_count = 5
 disable_user_account_days_inactive = {{ .Values.disable_user_account_days_inactive }}
 {{- end }}
 
+{{- if not (and (hasKey $.Values "oslo_messaging_notifications") ($.Values.oslo_messaging_notifications.disabled)) }}
 [oslo_messaging_notifications]
 driver = messaging
-{{- if and .Values.audit.central_service.user .Values.audit.central_service.password }}
+  {{- if and (.Values.audit.central_service.user) (.Values.audit.central_service.password) }}
 transport_url = rabbit://{{ .Values.audit.central_service.user }}:{{ .Values.audit.central_service.password | urlquery }}@{{ .Values.audit.central_service.host }}:{{ .Values.audit.central_service.port }}/
 
 [oslo_messaging_rabbit]
@@ -175,10 +178,11 @@ heartbeat_timeout_threshold = {{ .Values.audit.central_service.heartbeat_timeout
       It is exploiting a bug in the logic which seems to be triggered
       when rabbit_interval_max >= rabbit_retry_interval
 */}}
-{{- else if .Values.rabbitmq.host }}
+  {{- else if .Values.rabbitmq.host }}
 transport_url = rabbit://{{ .Values.rabbitmq.users.default.user | default "rabbitmq" }}:{{ .Values.rabbitmq.users.default.password }}@{{ .Values.rabbitmq.host }}:{{ .Values.rabbitmq.port | default 5672 }}
-{{ else }}
+  {{ else }}
 transport_url = rabbit://{{ .Values.rabbitmq.users.default.user | default "rabbitmq" }}:{{ .Values.rabbitmq.users.default.password }}@{{ include "rabbitmq_host" . }}:{{ .Values.rabbitmq.port | default 5672 }}
+  {{- end }}
 {{- end }}
 
 [oslo_middleware]
