@@ -10,6 +10,10 @@ metadata:
     system: openstack
     type: backend
     component: manila
+  {{- if .Values.vpa.set_main_container }}
+  annotations:
+    vpa-butler.cloud.sap/main-container: manila-share-netapp-{{$share.name}}
+  {{- end }}
 spec:
   replicas: 1
   revisionHistoryLimit: 5
