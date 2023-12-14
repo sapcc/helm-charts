@@ -10,6 +10,10 @@ metadata:
     helm.sh/chart: {{ include "octavia.chart" . }}
     app.kubernetes.io/instance: {{ .Release.Name }}
     app.kubernetes.io/managed-by: {{ .Release.Service }}
+  {{- if .Values.vpa.set_main_container }}
+  annotations:
+    vpa-butler.cloud.sap/main-container: octavia-worker
+  {{- end }}
 spec:
   replicas: 1
   selector:
