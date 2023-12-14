@@ -8,6 +8,10 @@ metadata:
   labels:
     system: openstack
     component: manila
+  {{- if .Values.vpa.set_main_container }}
+  annotations:
+    vpa-butler.cloud.sap/main-container: reexport
+  {{- end }}
 spec:
   replicas: {{ .Values.pod.replicas.ensure }}
   revisionHistoryLimit: 2
