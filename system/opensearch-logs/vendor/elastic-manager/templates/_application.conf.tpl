@@ -24,14 +24,6 @@ data.path = "./cerebro.db"
 
 # A list of known hosts
 hosts = [
-  {
-    host = "http://elastiflow-master.elastiflow:9200"
-    name = "{{ .Values.global.cluster }} Elastiflow cluster"
-    auth = {
-      username = "{{.Values.global.elastiflow_admin_user}}"
-      password = "{{.Values.global.elastiflow_admin_password}}"
-    }
-  },
 {{- if .Values.opensearch_manager.enabled }}
   {
     host = "https://opensearch-logs-client.opensearch-logs:9200"
