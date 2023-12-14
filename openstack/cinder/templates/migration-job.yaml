@@ -10,7 +10,7 @@ spec:
   template:
     spec:
       restartPolicy: OnFailure
-{{ include "utils.proxysql.job_pod_settings" . | indent 6 }}
+      {{- include "utils.proxysql.job_pod_settings" . | nindent 6 }}
       initContainers:
       {{- tuple . (dict "service" (print .Release.Name "-mariadb")) | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 6 }}
       containers:
@@ -21,8 +21,8 @@ spec:
             - bash
             - -c
             - |
-              trap "{{ include "utils.proxysql.proxysql_signal_stop_script" . | trim }}" EXIT
               cinder-manage db sync
+              {{ include "utils.proxysql.proxysql_signal_stop_script" . | trim }}
           volumeMounts:
             - name: etccinder
               mountPath: /etc/cinder
