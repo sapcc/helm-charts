@@ -14,6 +14,10 @@ metadata:
     system: openstack
     type: backend
     component: nova
+  {{- if .Values.vpa.set_main_container }}
+  annotations:
+    vpa-butler.cloud.sap/main-container: nova-console-{{ $type }}
+  {{- end }}
 spec:
   replicas: {{ .Values.pod.replicas.console }}
   revisionHistoryLimit: {{ .Values.pod.lifecycle.upgrades.deployments.revision_history }}
