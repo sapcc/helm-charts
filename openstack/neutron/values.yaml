@@ -16,6 +16,7 @@ global:
   rpc_response_timeout: 60
   domain_seeds:
     skip_hcm_domain: false
+  linkerd_requested: false
 
 api_workers: 12
 rpc_workers: 5
@@ -23,6 +24,7 @@ rpc_state_workers: 5
 
 owner-info:
   support-group: network-api
+  service: neutron
   maintainers:
     - Sebastian Lohff
     - Sebastian Wagner
@@ -192,6 +194,10 @@ api:
   # minimum number of workers to keep at all times
   cheaper: 0
   uwsgi: false
+  # time to cache the OwnerCheck's result in seconds
+  # 0/nil/null results in not setting the config option at all and thus using
+  # the default from Neutron
+  owner_check_cache_expiration_time: null
 
 service_plugins: asr1k_l3_routing
 default_router_type: ASR1k_router
@@ -598,14 +604,7 @@ rabbitmq:
       enabled: false
   alerts:
     support_group: network-api
-rabbitmq_notifications:
-  name: neutron
-  metrics:
-    enabled: true
-    sidecar:
-      enabled: false
-  alerts:
-    support_group: network-api
+
 # openstack-watcher-middleware
 watcher:
   enabled: true
@@ -627,11 +626,21 @@ rate_limit:
 unittest:
   enabled: false
 
+metrics:
+  prometheus: openstack
+
 # Deploy Neutron Prometheus alerts.
 alerts:
   enabled: true
   # Name of the Prometheus to which the alerts should be assigned to.
-  prometheus: openstack
+  # Keys = directory names in alerts/ and aggregations/
+  prometheus:
+    - name: openstack
+      type: prometheus
+    - name: kubernetes
+      type: prometheus
+    - name: metal
+      type: thanos-ruler
 
 logger:
   enabled: false
@@ -651,3 +660,9 @@ dnsmasq:
 memcached:
   alerts:
     support_group: network-api
+
+vpa:
+  # https://github.com/sapcc/vpa_butler
+  # The maximum available capacity is split evenly across containers specified in the Deployment, StatefulSet or DaemonSet to derive the upper recommendation bound. This does not work out for pods with a single resource-hungry container with several sidecar containers
+  # Annotate the Deployment, StatefulSet or DaemonSet with vpa-butler.cloud.sap/main-container=$MAIN_CONTAINER. That will distribute 75% of the maximum available capacity to the main container and the rest evenly across all others
+  set_main_container: true

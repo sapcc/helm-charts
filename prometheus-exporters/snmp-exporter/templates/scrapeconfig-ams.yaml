@@ -1,3 +1,4 @@
+{{- if .Values.snmp_exporter.arista.enabled }}
 apiVersion: monitoring.coreos.com/v1alpha1
 kind: ScrapeConfig
 metadata:
@@ -8,7 +9,7 @@ metadata:
     app.kubernetes.io/name: snmp-exporter-ams
 spec:
   httpSDConfigs:
-    - url: {{ .Values.global.http_sd_configs.netbox_url }}/devices/?custom_labels=__param_module=ams&manufacturer=arista&status=active&region={{ .Values.global.region }}&role=management-switch
+    - url: {{ .Values.global.http_sd_configs.netbox_url }}/devices/?custom_labels=__param_module=ams;__param_auth=ams_v3&manufacturer=arista&status=active&region={{ .Values.global.region }}&role=management-switch
       refreshInterval: {{ .Values.global.http_sd_configs.refresh_interval }}
   metricsPath: /snmp
   scrapeInterval: 60s
@@ -22,6 +23,8 @@ spec:
       replacement: snmp-exporter:{{.Values.snmp_exporter.listen_port}}
     - targetLabel: module
       replacement: ams
+    - targetLabel: __param_auth
+      replacement: ams_v3
   metricRelabelings:
     - sourceLabels: [name]
       targetLabel:  devicename
@@ -41,3 +44,4 @@ spec:
       regex: 'snmp_arista_etherStatsCRCAlignErrors;(1\.3\.6\.1\.2\.1\.2\.2\.1\.1\.)([0-9]*)'
       replacement: '$2'
       targetLabel: ifIndex
+{{- end }}

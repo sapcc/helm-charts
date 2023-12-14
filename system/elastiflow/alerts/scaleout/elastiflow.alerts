@@ -1,0 +1,17 @@
+groups:
+- name: elastiflow.alerts
+  rules:
+  - alert: ElastiflowClusterYellow
+    expr: es_cluster_status{elastic_cluster="elastiflow",pod=~".*-master-0"} == 1 and sum(kube_statefulset_replicas{statefulset=~"elastiflow.*"}) - sum(kube_statefulset_status_replicas_ready{statefulset=~"elastiflow.*"}) > 0
+    for: 30m
+    labels:
+      context: nodes
+      service: logs
+      severity: warning
+      support_group: observability
+      playbook: docs/operation/elastic_kibana_issues/generic/cluster-yellow-no-resync
+      dashboard: health-elasticsearch?var-cluster=elastiflow
+    annotations:
+      description: 'Elastic cluster *elastiflow* in `{{ $labels.region }}` is YELLOW. Please check all nodes.
+        nodes one or more are missing.'
+      summary: 'Elastic cluster *elastiflow* in `{{ $labels.region }}` is YELLOW'

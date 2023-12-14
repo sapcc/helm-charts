@@ -1,7 +1,7 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: barbican-migration-job-{{ required "Please set barbican.imageVersionBarbicanApi or similar" .Values.imageVersionBarbicanApi }}
+  name: barbican-migration-job
   labels:
     system: openstack
     type: configuration
@@ -64,9 +64,11 @@ spec:
               mountPath: /etc/barbican/logging.ini
               subPath: logging.ini
               readOnly: true
+            {{- include "utils.trust_bundle.volume_mount" . | indent 12 }}
       volumes:
         - name: etcbarbican
           emptyDir: {}
         - name: barbican-etc
           configMap:
             name: barbican-etc
+        {{- include "utils.trust_bundle.volumes" . | indent 8 }}

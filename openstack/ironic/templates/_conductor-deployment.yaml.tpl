@@ -43,6 +43,7 @@ spec:
         prometheus.io/scrape: "true"
         prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
         {{- end }}
+        {{- include "utils.linkerd.pod_and_service_annotation" . | indent 8 }}
     spec:
       {{- include "utils.proxysql.pod_settings" . | indent 6 }}
       initContainers:
@@ -145,6 +146,7 @@ spec:
           name: development
         {{- end }}
         {{- include "utils.proxysql.volume_mount" . | indent 8 }}
+        {{- include "utils.trust_bundle.volume_mount" . | indent 8 }}
       {{- include "utils.proxysql.container" . | indent 6 }}
       - name: console
         image: {{ .Values.global.dockerHubMirror }}/library/{{ .Values.imageVersionNginx | default "nginx:stable-alpine" }}
@@ -225,5 +227,6 @@ spec:
         secret:
           secretName: tls-{{ include "ironic_console_endpoint_host_public" . | replace "." "-" }}
       {{- include "utils.proxysql.volumes" . | indent 6 }}
+      {{- include "utils.trust_bundle.volumes" . | indent 6 }}
     {{- end }}
 {{- end }}

@@ -111,7 +111,7 @@ groups:
       service: {{ default "metrics" $root.Values.alerts.service }}
       support_group: {{ default "observability" $root.Values.alerts.support_group }}
       severity: info
-      playbook: docs/support/playbook/prometheus/failed_tsdb_reload
+      playbook: docs/support/playbook/prometheus/prom_compaction_errors
       meta: Prometheus `{{`{{ $labels.prometheus }}`}}` has issues compacting blocks.
     annotations:
       description: |
@@ -163,7 +163,7 @@ groups:
 
   - alert: PrometheusOutOfOrderTimestamps
     expr: |
-      rate(prometheus_target_scrapes_sample_out_of_order_total{prometheus="{{ include "prometheus.name" . }}"}[5m]) > 0
+      rate(prometheus_target_scrapes_sample_out_of_order_total{prometheus="{{ include "prometheus.name" . }}"}[5m]) > 0.1
     labels:
       service: {{ default "metrics" $root.Values.alerts.service }}
       support_group: {{ default "observability" $root.Values.alerts.support_group }}

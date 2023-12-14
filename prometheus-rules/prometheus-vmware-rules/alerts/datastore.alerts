@@ -232,13 +232,12 @@ groups:
       tier: vmware
       service: storage
       support_group: compute
-      context: "{{ $labels.datastore }} connectivity"
-      meta: "Datastore `{{ $labels.datastore }}` has lost connectivity to a storage device. ({{ $labels.vcenter }})"
-      playbook: docs/devops/alert/vcenter/#datastore_has_lost_connectivity_to_a_storage_device
+      meta: "The `{{ $labels.datastore }}` datastore of type: _{{ $labels.type }}_ in the *{{ $labels.datacenter }}* availability zone has lost connectivity to a storage device\nLink to the vCenter: --> <https://{{ $labels.vcenter }}|{{ $labels.vcenter }}>"
+      playbook: docs/devops/alert/vcenter/#datastorehashoststhathavelostredundantpathsanddatastorehaslostconnectivitytoastoragedevice
       no_alert_on_absence: "true"
     annotations:
-      description: "Datastore `{{ $labels.datastore }}` has lost connectivity to a storage device. ({{ $labels.vcenter }})"
-      summary: "Datastore `{{ $labels.datastore }}` has lost connectivity to a storage device. ({{ $labels.vcenter }})"
+      description: "The `{{ $labels.datastore }}` datastore of type: _{{ $labels.type }}_ in the *{{ $labels.datacenter }}* availability zone has lost connectivity to a storage device\nLink to the vCenter: --> <https://{{ $labels.vcenter }}|{{ $labels.vcenter }}>"
+      summary: "The `{{ $labels.datastore }}` datastore of type: _{{ $labels.type }}_ in the *{{ $labels.datacenter }}* availability zone has lost connectivity to a storage device\nLink to the vCenter: --> <https://{{ $labels.vcenter }}|{{ $labels.vcenter }}>"
 
   - alert: DatastoreHasHostsThatHaveLostRedundantPathsToAStorageDevice
     expr: >
@@ -249,13 +248,12 @@ groups:
       tier: vmware
       service: storage
       support_group: compute
-      context: "{{ $labels.datastore }} host connectivity"
-      meta: "Datastore `{{ $labels.datastore }}` has hosts that have lost all of the redundant paths to a storage device. ({{ $labels.vcenter }})"
-      playbook: docs/devops/alert/vcenter/#datastore_has_lost_connectivity_to_a_storage_device
+      meta: "The `{{ $labels.datastore }}` datastore of type: _{{ $labels.type }}_ in the *{{ $labels.datacenter }}* availability zone has hosts that have lost redundant paths to a storage device\nLink to the vCenter: --> <https://{{ $labels.vcenter }}|{{ $labels.vcenter }}>"
+      playbook: docs/devops/alert/vcenter/#datastorehashoststhathavelostredundantpathsanddatastorehaslostconnectivitytoastoragedevice
       no_alert_on_absence: "true"
     annotations:
-      description: "Datastore `{{ $labels.datastore }}` has hosts that have lost all of the redundant paths to a storage device. ({{ $labels.vcenter }})"
-      summary: "Datastore `{{ $labels.datastore }}` has hosts that have lost all of the redundant paths to a storage device. ({{ $labels.vcenter }})"
+      description: "The `{{ $labels.datastore }}` datastore of type: _{{ $labels.type }}_ in the *{{ $labels.datacenter }}* availability zone has hosts that have lost redundant paths to a storage device\nLink to the vCenter: --> <https://{{ $labels.vcenter }}|{{ $labels.vcenter }}>"
+      summary: "The `{{ $labels.datastore }}` datastore of type: _{{ $labels.type }}_ in the *{{ $labels.datacenter }}* availability zone has hosts that have lost redundant paths to a storage device\nLink to the vCenter: --> <https://{{ $labels.vcenter }}|{{ $labels.vcenter }}>"
       
   - alert: SDRSClusterCapacity
     expr: >
@@ -389,18 +387,3 @@ groups:
     annotations:
       description: "The Cinder state is reserved but the Cinder tag still exists for the `{{ $labels.datastore }}` datastore of type: _{{ $labels.type }}_ in the *{{ $labels.datacenter }}* availability zone\nLink to the vCenter: --> <https://{{ $labels.vcenter }}|{{ $labels.vcenter }}>"
       summary: "The Cinder state is reserved but the Cinder tag still exists for the `{{ $labels.datastore }}` datastore of type: _{{ $labels.type }}_ in the *{{ $labels.datacenter }}* availability zone\nLink to the vCenter: --> <https://{{ $labels.vcenter }}|{{ $labels.vcenter }}>"
-
-  - alert: StoragePathsDown
-    expr: >
-      vrops_datastore_alert_info{alert_name="Paths to storage down"}
-    labels:
-      severity: warning
-      tier: vmware
-      service: compute
-      support_group: compute
-      meta: "Paths to storage are down for the `{{ $labels.datastore }}` datastore of type: _{{ $labels.type }}_ in the *{{ $labels.datacenter }}* availability zone\nLink to the vCenter: --> <https://{{ $labels.vcenter }}|{{ $labels.vcenter }}>"
-      playbook: docs/devops/alert/vcenter/#storagepathsdown
-      no_alert_on_absence: "true"
-    annotations:
-      description: "Paths to storage are down for the `{{ $labels.datastore }}` datastore of type: _{{ $labels.type }}_ in the *{{ $labels.datacenter }}* availability zone\nLink to the vCenter: --> <https://{{ $labels.vcenter }}|{{ $labels.vcenter }}>"
-      summary: "Paths to storage are down for the `{{ $labels.datastore }}` datastore of type: _{{ $labels.type }}_ in the *{{ $labels.datacenter }}* availability zone\nLink to the vCenter: --> <https://{{ $labels.vcenter }}|{{ $labels.vcenter }}>"

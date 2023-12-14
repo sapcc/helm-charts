@@ -2,6 +2,7 @@
 {{- if $values.enabled }}
 apiVersion: monitoring.coreos.com/v1alpha1
 kind: ScrapeConfig
+
 metadata:
   name: 'redfish-bm'
   namespace: {{ $values.namespace }}
@@ -15,7 +16,7 @@ spec:
   httpSDConfigs:
     - url: {{ $values.httpSDConfigs.netbox_production_url }}/devices/?custom_labels=job=redfish-bm&target=mgmt_only&status=active&role=server&tenant=converged-cloud&platform=ironic&tag__n=no-redfish&region={{ .Values.global.region }}
       refreshInterval: {{ $values.httpSDConfigs.refreshInterval }}
-  metricsPath: /redfish
+  metricsPath: /health
   params:
     job: [redfish-bm]
   relabelings:
@@ -28,4 +29,6 @@ spec:
       targetLabel: instance
     - targetLabel: __address__
       replacement: redfish-exporter:{{$values.listen_port}}
+    - regex: 'device_type|cluster.*|role|platform|status'
+      action: labeldrop
 {{- end }}

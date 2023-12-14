@@ -1,7 +1,8 @@
+{{- $proxysql := lookup "v1" "ConfigMap" .Release.Namespace (print .Release.Name "-proxysql-etc") -}}
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: {{ .Release.Name }}-migration-{{ required ".Values.image_version_designate is missing" .Values.image_version_designate }}
+  name: {{ include "migration_job_name" . }}
   labels:
     system: openstack
     type: configuration
@@ -13,6 +14,9 @@ spec:
       serviceAccountName: {{ .Release.Name }}
 {{- end }}
       restartPolicy: OnFailure
+      {{- if $proxysql}}
+      {{- include "utils.proxysql.job_pod_settings" . | indent 6 }}
+      {{- end }}
       containers:
         - name: designate-migration
           image: {{ required ".Values.global.registry is missing" .Values.global.registry }}/loci-designate:{{ required ".Values.image_version_designate is missing" .Values.image_version_designate }}
@@ -31,10 +35,15 @@ spec:
               value: {{ .Release.Name }}-mariadb
 {{- end }}
           volumeMounts:
-            - mountPath: /designate-etc
+            - mountPath: /etc/designate
               name: designate-etc
             - mountPath: /container.init
               name: container-init
+      {{- if $proxysql}}
+            {{- include "utils.proxysql.volume_mount" . | indent 12 }}
+            {{- include "utils.trust_bundle.volume_mount" . | indent 12 }}
+        {{- include "utils.proxysql.container" . | indent 8 }}
+      {{- end }}
       volumes:
         - name: designate-etc
           configMap:
@@ -43,3 +52,5 @@ spec:
           configMap:
             name: designate-bin
             defaultMode: 0755
+        {{- include "utils.proxysql.volumes" . | indent 8 }}
+        {{- include "utils.trust_bundle.volumes" . | indent 8 }}

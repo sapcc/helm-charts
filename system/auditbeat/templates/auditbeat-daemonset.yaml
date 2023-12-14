@@ -9,6 +9,10 @@ spec:
   selector:
     matchLabels:
       k8s-app: auditbeat
+  updateStrategy:
+    rollingUpdate:
+      maxUnavailable: '10%'
+    type: RollingUpdate
   template:
     metadata:
       annotations:
@@ -22,7 +26,7 @@ spec:
       - operator: Exists
       serviceAccountName: {{ include "auditbeat.serviceAccountName" . }}
       terminationGracePeriodSeconds: 30
-      hostNetwork: true
+      hostNetwork: false
       hostPID: true  # Required by auditd module
       dnsPolicy: ClusterFirstWithHostNet
 {{- if .Values.enable_pamd_tty }}
@@ -46,7 +50,7 @@ spec:
 {{- end }}
       containers:
       - name: exporter
-        image: "{{ required ".Values.global.dockerHubMirror variable missing" .Values.global.dockerHubMirror }}/{{ .Values.exporter.image.repository }}:{{ .Values.exporter.image.tag }}"
+        image: "{{ required ".Values.global.registry variable missing" .Values.global.registry }}/{{ .Values.exporter.image.repository }}:{{ .Values.exporter.image.tag }}"
         imagePullPolicy: {{ .Values.exporter.image.pullPolicy }}
         args:
           - -p=5066
@@ -58,7 +62,7 @@ spec:
         resources:
           {{- toYaml .Values.exporter.resources | nindent 10 }}
       - name: auditbeat
-        image: "{{ required ".Values.global.registry variable missing" .Values.global.registry }}/{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+        image: "{{ required ".Values.global.elasticCoMirror variable missing" .Values.global.elasticCoMirror }}/{{ .Values.image.repository }}:{{ .Values.image.tag }}"
         imagePullPolicy: {{ .Values.image.pullPolicy }}
         args: [
           "-c", "/etc/auditbeat.yml",

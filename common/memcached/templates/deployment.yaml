@@ -26,7 +26,7 @@ spec:
         app: {{ template "fullname" . }}
         component: memcached
       annotations:
-        {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+        {{- if and (and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested) $.Values.linkerd.enabled }}
         linkerd.io/inject: enabled
         {{- end }}
     spec:
@@ -93,4 +93,10 @@ spec:
             memory: {{ .Values.metrics.resources.requests.memory | quote }}
         {{- end }}
       {{- end }}
-      priorityClassName: {{ default "openstack-service-critical" .Values.priority_class | quote }}
+      {{- if .Values.priority_class }}
+        {{- if and (kindIs "bool" .Values.priority_class) (eq .Values.priority_class true) }}
+      priorityClassName: "openstack-service-critical"
+        {{- else }}
+      priorityClassName: {{ .Values.priority_class | quote }}
+        {{- end }}
+      {{- end }}

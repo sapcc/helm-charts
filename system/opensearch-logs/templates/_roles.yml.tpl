@@ -20,6 +20,7 @@ data:
   - "cluster:admin/ingest/pipeline/get"
   - "indices:admin/template/get"
   - "cluster_manage_index_templates"
+  - "cluster:admin/opensearch/ml/predict"
   index_permissions:
   - index_patterns:
     - "logstash-*"
@@ -374,3 +375,28 @@ jupyterhub:
   tenant_permissions:
   - tenant_patterns:
     - "*"
+
+mlrole:
+  reserved: false
+  hidden: false
+  cluster_permissions:
+    - "cluster:monitor/prometheus/metrics"
+  index_permissions:
+  - index_patterns:
+    - "*"
+    allowed_actions:
+    - "indices:admin/mappings/get"
+    - "cluster:admin/opensearch/ql/datasources/*"
+
+ml_full_access:
+  reserved: true
+  cluster_permissions:
+    - "cluster:admin/opensearch/ml/*"
+    - "cluster_monitor"
+    - "cluster:admin/opensearch/mlinternal/*"
+    - "cluster:admin/ingest/*"
+  index_permissions:
+    - index_patterns:
+        - "*"
+      allowed_actions:
+        - "indices_monitor"

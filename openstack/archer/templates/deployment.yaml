@@ -16,6 +16,9 @@ spec:
     metadata:
       annotations:
         checksum/etc: {{ include (print $.Template.BasePath  "/configmap.yaml") . | sha256sum }}
+        {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+        linkerd.io/inject: enabled
+        {{- end }}
         {{- toYaml .Values.podAnnotations | nindent 8 }}
       labels:
         {{- include "archer.labels" . | nindent 8 }}

@@ -39,20 +39,34 @@ spec:
           imagePullPolicy: {{ $val.image.pullPolicy }}
           args:
             - "-config=/poller/config.yaml"
-            - "-mx-records=/poller/mx-records.json"
+            - "-mx-records=/poller/mx/mx-records.json"
           volumeMounts:
-            - name: {{ include "poller.fullname" . }}
+            - name: config-{{ include "poller.fullname" . }}
               mountPath: "/poller/config.yaml"
               subPath: config.yaml
-            - name: configmx
-              mountPath: "/poller/mx-records.json"
+            {{- if not $val.mxrecords }}
+            - name: ldap-configmx
+              mountPath: "/poller/mx"
               subPath: mx-records.json
+            {{- end }}
+            {{- if $val.mxrecords }}
+            - name: poller-mx-records
+              mountPath: "/poller/mx/mx-records.json"
+              subPath: mx-records.json
+            {{- end }}
       terminationGracePeriodSeconds: {{ $val.terminationGracePeriod | default 60 }}
       volumes:
-        - name: {{ include "poller.fullname" . }}
+        - name: config-{{ include "poller.fullname" . }}
           secret:
-            secretName: {{ include "poller.fullname" . }}
-        - name: configmx
+            secretName: config-{{ include "poller.fullname" . }}
+        {{- if $val.mxrecords }}
+        - name: poller-mx-records
           configMap:
-            name: configmx
+            name: configmx-{{ include "poller.fullname" . }}
+        {{- end }}
+        {{- if not $val.mxrecords }}
+        - name: ldap-configmx
+          persistentVolumeClaim:
+            claimName: ldap-configmx-pvc
+        {{- end }}
 {{- end -}}

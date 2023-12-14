@@ -6,7 +6,7 @@ groups:
 
   - alert: OpenstackKeppelDown
     expr: max(keppel_healthmonitor_result) != 1 or absent(keppel_healthmonitor_result)
-    for: 3m
+    for: 10m
     labels:
       context: api
       dashboard: keppel-overview
@@ -35,6 +35,7 @@ groups:
       severity: info
       support_group: containers
       tier: os
+      # meta is part of an alertmanager inhibition rule
       meta: 'Keppel anycast health check failing for {{ $labels.account }}'
     annotations:
       summary: 'Keppel anycast health check failing for {{ $labels.account }}'
@@ -74,6 +75,7 @@ groups:
       severity: info
       support_group: containers
       tier: os
+      # meta is part of an alertmanager inhibition rule
       meta: 'Keppel cannot peer with {{ $labels.hostname }}'
     annotations:
       summary: 'Keppel cannot peer with {{ $labels.hostname }}'
@@ -104,7 +106,7 @@ groups:
         to allow another replication to take place.
 
   - alert: OpenstackKeppelDBConnectionPoolNearlyFull
-    expr: max by (pod) (avg_over_time(go_sql_stats_connections_in_use{db_name="keppel"}[1h]) > 8)
+    expr: max by (pod) (avg_over_time(go_sql_stats_connections_in_use{db_name="keppel"}[1h]) > 12)
     for: 5m
     labels:
       context: dbconnpool

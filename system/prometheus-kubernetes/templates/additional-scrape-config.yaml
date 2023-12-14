@@ -1,24 +1,10 @@
-{{- if .Values.prometheus_collector.enabled -}}
 apiVersion: v1
 kind: Secret
 
 metadata:
-  name: k8s-collector-additional-scrape-config
-  labels:
-    prometheus: collector-kubernetes
-
-data:
-  scrape-config.yaml: {{ include (print $.Template.BasePath  "/_collector-prometheus.yaml.tpl") . | b64enc }}
-
----
-apiVersion: v1
-kind: Secret
-
-metadata:
-  name: k8s-frontend-additional-scrape-config
+  name: k8s-additional-scrape-config
   labels:
     prometheus: kubernetes
 
 data:
-  scrape-config.yaml: {{ include (print $.Template.BasePath  "/_frontend-prometheus.yaml.tpl") . | b64enc }}
-{{- end -}}
+  scrape-config.yaml: {{ include (print $.Template.BasePath  "/_prometheus-scrape.yaml.tpl") . | b64enc }}

@@ -5,6 +5,10 @@ metadata:
   name: neutron-sftp-backup
   labels:
     release: "{{.Release.Name}}"
+  {{- if .Values.vpa.set_main_container }}
+  annotations:
+    vpa-butler.cloud.sap/main-container: sftp
+  {{- end }}
 spec:
   revisionHistoryLimit: 5
   replicas: 1
@@ -19,6 +23,7 @@ spec:
         component: neutron-sftp-backup
       annotations:
         configmap-etc-hash: {{ include (print $.Template.BasePath "/sftp-configmap.yaml") . | sha256sum }}
+        {{- include "utils.linkerd.pod_and_service_annotation" . | indent 8 }}
     spec:
       containers:
         - name: sftp

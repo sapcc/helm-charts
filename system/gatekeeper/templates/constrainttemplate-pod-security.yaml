@@ -253,7 +253,7 @@ spec:
         {{- end }}
 
         ########################################################################
-        # allowlist for ELK/OpenSearch/Elastiflow
+        # allowlist for ELK/OpenSearch
 
         {{- if eq .Values.cluster_type "baremetal" "scaleout" "test" }}
         default isElasticPod = false
@@ -271,13 +271,16 @@ spec:
         }
         {{- end }}
 
-        {{- if eq .Values.cluster_type "scaleout" "test" }}
+        {{- if eq .Values.cluster_type "baremetal" "test" }}
         isElasticOrOpenSearchPod = true {
           iro.kind == "StatefulSet"
-          iro.metadata.namespace == "elastiflow"
-          iro.metadata.name in {"elastiflow-data", "elastiflow-master"}
-          helmReleaseName == "elastiflow"
+          iro.metadata.namespace == "hermes"
+          iro.metadata.name in {"opensearch-hermes", "opensearch-hermes-master"}
+          helmReleaseName == "opensearch-hermes"
         }
+        {{- end }}
+
+        {{- if eq .Values.cluster_type "scaleout" "test" }}
         isElasticOrOpenSearchPod = true {
           iro.kind == "StatefulSet"
           iro.metadata.namespace == "opensearch-logs"
@@ -527,6 +530,18 @@ spec:
           capability in {"NET_ADMIN"}
         }
         {{- end }}
+
+        ########################################################################
+        # allowlist for linkerd
+
+        isContainerAllowedToUseCapability(container, capability) = true {
+          iro.kind == "Deployment"
+          iro.metadata.namespace == "linkerd"
+          iro.metadata.name in {"linkerd-destination", "linkerd-identity", "linkerd-proxy-injector"}
+          helmReleaseName == "linkerd"
+          container.name == "linkerd-init"
+          capability in {"NET_ADMIN", "NET_RAW"}
+        }
 
         ########################################################################
         # allowlist for neutron-network-agent

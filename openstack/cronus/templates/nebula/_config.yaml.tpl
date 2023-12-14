@@ -180,6 +180,12 @@ nebula:
   {{- end }}
 {{- end }}
 {{- end }}
-
+{{- if .Values.nebula.cors }}
+  cors:
+    enabled: {{ .Values.nebula.cors.enabled }}
+    allowedOrigins:
+{{- .Values.nebula.cors.allowedOrigins | toYaml | nindent 6 }}
+    allowedHeaders:
+{{- .Values.nebula.cors.allowedHeaders | toYaml | nindent 6 }}
+{{- end }}
 {{- end -}}
-

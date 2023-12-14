@@ -4,6 +4,7 @@ owner-info:
   maintainers:
     - Bernd Kuespert
   helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/prometheus-exporters/redfish-exporter
+  
 redfish_exporter:
   name: redfish-exporter
   enabled: false
@@ -14,6 +15,9 @@ redfish_exporter:
   listen_port: 9220
   namespace: infra-monitoring
   replicas: 1
+  args:
+    - -u
+    - ./main.py
 
   prometheus: infra-collector
   alerts:
@@ -22,12 +26,14 @@ redfish_exporter:
   exporterAlerts:
     enabled: true
     prometheus: infra-collector
-  limits:
-    memory: 200Mi
-    cpu: 400m
+    
   resources:
-    memory: 100Mi
-    cpu: 200m
+    limits:
+      memory: 200Mi
+      cpu: 400m
+    requests:
+      memory: 100Mi
+      cpu: 200m
 
   scrapeInterval: 4m
   scrapeTimeout: 230s
@@ -37,7 +43,7 @@ redfish_exporter:
     enabled: false
 
   httpSDConfigs:
-    netbox_staging_url: https://netbox.staging.cloud.sap/api/plugins/atlas
+    netbox_staging_url: https://netbox-test.global.cloud.sap/api/plugins/atlas
     netbox_production_url: https://netbox.global.cloud.sap/api/plugins/atlas
     refreshInterval: 60m
 

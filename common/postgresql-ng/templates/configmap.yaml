@@ -1,0 +1,77 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ template "fullname" . }}-etc
+data:
+  postgresql.conf: |
+    {{- include (print .Template.BasePath "/_postgresql.conf.tpl") . | nindent 4 }}
+
+{{- if (hasKey .Values "sqlOnCreate") }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ template "fullname" . }}-sql-on-create
+data:
+  on-create.sql: |
+    {{ .Values.sqlOnCreate }}
+{{- end }}
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ template "fullname" . }}-sql-on-startup
+data:
+  on-startup.sql: |
+    {{- /* duplicated with the code in rbac because the templating is to limited in its features */}}
+    {{- $users := .Values.users }}
+    {{- if .Values.persistence.createBackupUser }}
+      {{- $users := merge $users (dict "backup" (dict)) }}
+    {{- end }}
+    {{- if .Values.createMetricsUser }}
+      {{- $users := merge $users (dict "metrics" (dict)) }}
+    {{- end }}
+
+    -- pw_method is set in the entrypoint where psql executes this sql file
+    SET password_encryption = :'pw_method';
+
+    {{- range $user, $settings := $users }}
+    {{- /* prevent more suffering and pain by forgotten {} in users */}}
+    {{- $settings = $settings | default (dict) }}
+    do $$ begin
+      if not exists (select from pg_catalog.pg_roles where rolname = '{{ $user }}') then
+        CREATE ROLE "{{ $user }}" WITH PASSWORD '%USER_PASSWORD_{{ $user }}%' LOGIN;
+      end if;
+    end $$;
+
+    -- https://www.postgresql.org/docs/current/ddl-priv.html
+    {{- if $.Values.persistence.createBackupUser }}
+    GRANT CREATE,CONNECT,TEMPORARY ON DATABASE "%PGDATABASE%" TO "{{ $user }}";
+    GRANT SELECT,INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER ON ALL TABLES IN SCHEMA public TO "{{ $user }}";
+    {{- end }}
+
+    {{- if $settings.grant }}
+    {{ $settings.grant }} to "{{ $user }}";
+    {{- end }}
+
+    {{- if $settings.setOwnerOnTable }}
+    SELECT format('ALTER TABLE %I.%I.%I OWNER TO %I;', table_catalog, table_schema, table_name, "{{ $user }}")
+      FROM information_schema.tables
+      WHERE table_schema = '%PGDATABASE%';
+    {{- end }}
+
+    {{- if eq $user "backup" }}
+    GRANT CONNECT ON DATABASE "%PGDATABASE%" to backup;
+    GRANT SELECT ON ALL TABLES IN SCHEMA public TO backup;
+    GRANT SELECT ON ALL SEQUENCES IN SCHEMA public TO backup;
+    {{- end }}
+
+    {{- if eq $user "metrics" }}
+    GRANT pg_monitor to metrics;
+    ALTER USER metrics SET SEARCH_PATH TO postgres_exporter,pg_catalog;
+    {{- end }}
+    {{- end }}
+
+    {{ .Values.sqlOnStartup }}

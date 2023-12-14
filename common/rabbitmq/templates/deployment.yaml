@@ -30,6 +30,12 @@ spec:
         app: {{ template "fullname" . }}
       annotations:
         checksum/container.init: {{ include (print $.Template.BasePath "/bin-configmap.yaml") . | sha256sum }}
+{{- if and (and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested) $.Values.linkerd.enabled }}
+        linkerd.io/inject: enabled
+{{- end }}
+{{- if .Values.customConfig }}
+        checksum/custom.conf: {{ include (print .Template.BasePath "/etc/_rabbitmq-custom-config.tpl") . | sha256sum }}
+{{- end }}
     spec:
       affinity:
         nodeAffinity:
@@ -96,6 +102,11 @@ spec:
             name: rabbitmq-persistent-storage
           - mountPath: /container.init
             name: container-init
+        {{- if .Values.customConfig }}
+          - mountPath: /etc/rabbitmq/conf.d/20-custom.conf
+            name: rabbitmq-custom-config
+            subPath: 20-custom.conf
+        {{- end }}
 {{- if and .Values.metrics.sidecar.enabled .Values.metrics.enabled }}
       - name: metrics
         image: {{include "dockerHubMirror" .}}/{{ .Values.metrics.image }}:{{ .Values.metrics.imageTag }}
@@ -130,4 +141,9 @@ spec:
         - name: container-init
           configMap:
             name: {{ template "fullname" . }}-bin
+      {{- if .Values.customConfig }}
+        - name: rabbitmq-custom-config
+          configMap:
+            name: {{ template "fullname" . }}-custom-conf
+      {{- end }}
 {{- end }}

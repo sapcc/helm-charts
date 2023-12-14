@@ -15,8 +15,12 @@ function cleanup_security_groups() {
 function cleanup_images() {
   for image in $(openstack image list -f value -c Name | grep tempest);
   do
-    echo "Image $image will be deleted";
-    openstack image delete ${image};
+    if [ "$image" = "ubuntu-20.04-tempest" ]; then
+        echo "Tempest specific image will not deleted";
+    else
+        echo "Image $image will be deleted";
+        openstack image delete ${image};
+    fi
   done
 }
 

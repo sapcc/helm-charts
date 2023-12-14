@@ -1,3 +1,27 @@
+## 7.4.4
+
+* Soften out-of-order alert 
+
+## 7.4.3
+
+* Thanos sidecar to v0.31.0 to match Thanos environment 
+
+## 7.4.2
+
+* playbook link adjusted
+
+## 7.4.1
+
+* switch Ingress nginx-annotation
+
+## 7.4.0
+
+* updating Prometheus to v2.46.0
+
+## 7.3.0
+
+* Swift container userName and containerName now can be set explicitly
+
 ## 7.2.16
 
 * If no `kube_` metrics available within the Prometheus, send `PrometheusMultiplePodScrape` alerts to specified Thanos Rule

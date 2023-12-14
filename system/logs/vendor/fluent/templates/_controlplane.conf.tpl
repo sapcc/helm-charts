@@ -24,6 +24,37 @@
   </parse>
 </filter>
 
+
+
+<filter kubernetes.var.log.containers.network-generic-ssh-exporter**>
+  @type parser
+  @id ssh_json
+  key_name log
+  reserve_data true
+  <parse>
+    @type json
+  </parse>
+</filter>
+
+<filter kubernetes.var.log.containers.network-generic-ssh-exporter**>
+  @type parser
+  @id ssh_grok
+  key_name msg
+  <parse>
+    @type grok
+    grok_failure_key grokstatus_ssh_exporter
+    <grok>
+      pattern %{GREEDYDATA}: %{GREEDYDATA:ssh_reason} \^%{GREEDYDATA}on %{IPORHOST:ssh_ip}\:
+    </grok>
+    <grok>
+      pattern Error parsing metric: %{GREEDYDATA:ssh_reason}\, address: %{IPORHOST:ssh_ip}
+    </grok>
+    <grok>
+      pattern %{GREEDYDATA:ssh_reason}: dial tcp %{IPORHOST:ssh_ip}
+    </grok>
+  </parse>
+</filter>
+
 <filter kubernetes.var.log.containers.neutron**>
   @type parser
   key_name log
@@ -231,7 +262,7 @@
   reserve_data true
   <parse>
     @type grok
-    grok_pattern ts=%{TIMESTAMP_ISO8601:timestamp} caller=%{NOTSPACE} level=%{NOTSPACE:loglevel} module=%{NOTSPACE:snmp_module} target=%{IP:snmp_ip} msg=\"%{GREEDYDATA:snmp_error}\" err=\"%{GREEDYDATA}: %{GREEDYDATA:snmp_reason}\"
+    grok_pattern ts=%{TIMESTAMP_ISO8601:timestamp} caller=%{NOTSPACE} level=%{NOTSPACE:loglevel} auth=%{NOTSPACE:snmp_auth} target=%{IP:snmp_ip} module=%{NOTSPACE:snmp_module} msg=\"%{GREEDYDATA:snmp_error}\" err=\"%{GREEDYDATA}: %{GREEDYDATA:snmp_reason}\"
   </parse>
 </filter>
 
@@ -305,7 +336,7 @@
   key_name log
   reserve_data true
   inject_key_prefix k8s.
-  remove_key_name_field true
+  remove_key_name_field false
   <parse>
     @type json
     time_format %Y-%m-%dT%T.%L%Z
@@ -495,6 +526,7 @@
     port {{.Values.opensearch.http_port}}
     user {{.Values.opensearch.user}}
     password {{.Values.opensearch.password}}
+    log_os_400_reason true
     ssl_verify false
     ssl_version TLSv1_2
     time_as_integer false

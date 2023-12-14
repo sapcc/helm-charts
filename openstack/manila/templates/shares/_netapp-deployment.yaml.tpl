@@ -5,11 +5,15 @@
 kind: Deployment
 apiVersion: apps/v1
 metadata:
-  name: manila-share-netapp-{{$share.name}}
+  name: {{ .Release.Name }}-share-netapp-{{$share.name}}
   labels:
     system: openstack
     type: backend
     component: manila
+  {{- if .Values.vpa.set_main_container }}
+  annotations:
+    vpa-butler.cloud.sap/main-container: manila-share-netapp-{{$share.name}}
+  {{- end }}
 spec:
   replicas: 1
   revisionHistoryLimit: 5
@@ -20,11 +24,11 @@ spec:
       maxSurge: 1
   selector:
     matchLabels:
-        name: manila-share-netapp-{{$share.name}}
+        name: {{ .Release.Name }}-share-netapp-{{$share.name}}
   template:
     metadata:
       labels:
-        name: manila-share-netapp-{{$share.name}}
+        name: {{ .Release.Name }}-share-netapp-{{$share.name}}
         alert-tier: os
         alert-service: manila
       annotations:
@@ -35,6 +39,7 @@ spec:
         kubectl.kubernetes.io/default-container: manila-share-netapp-{{$share.name}}
         configmap-etc-hash: {{ include (print .Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
         configmap-netapp-hash: {{ list . $share | include "share_netapp_configmap" | sha256sum }}
+        {{- include "utils.linkerd.pod_and_service_annotation" . | indent 8 }}
     spec:
 {{ tuple . $availability_zone | include "utils.kubernetes_pod_az_affinity" | indent 6 }}
 {{ include "utils.proxysql.pod_settings" . | indent 6 }}
@@ -97,6 +102,7 @@ spec:
               subPath: backend.conf
               readOnly: true
             {{- include "utils.proxysql.volume_mount" . | indent 12 }}
+            {{- include "utils.trust_bundle.volume_mount" . | indent 12 }}
           {{- if .Values.pod.resources.share }}
           resources:
 {{ toYaml .Values.pod.resources.share | indent 13 }}
@@ -143,14 +149,15 @@ spec:
           emptyDir: {}
         - name: manila-bin
           configMap:
-            name: manila-bin
+            name: {{ .Release.Name }}-bin
             defaultMode: 0555
         - name: manila-etc
           configMap:
-            name: manila-etc
+            name: {{ .Release.Name }}-etc
         - name: backend-config
           configMap:
-            name: share-netapp-{{$share.name}}
+            name: {{ .Release.Name }}-share-netapp-{{$share.name}}
         {{- include "utils.proxysql.volumes" . | indent 8 }}
+        {{- include "utils.trust_bundle.volumes" . | indent 8 }}
 {{ end }}
 {{- end -}}

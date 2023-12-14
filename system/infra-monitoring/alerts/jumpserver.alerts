@@ -12,7 +12,7 @@ groups:
       meta: '{{ $labels.server_name }} root fs over 90% utilized for 10m.'
       playbook: 'docs/support/playbook/jumpserver/jumpserver_general_issues/#jumpserverrootfsfillingup--jumpserverrootfsfull'
     annotations:
-      description: '{{ $labels.server_name }} root fs over 90% utilized'
+      description: '{{ $labels.server_name }} {{ $labels.mountpoint }} fs over 90% utilized'
       summary: 'Root fs needs to be taken care of to avoid 100% usage for 10m'
   - alert: JumpserverRootFSFull
     expr: 100 - ((node_filesystem_avail_bytes{job="jumpserver",mountpoint="/",fstype!="rootfs"} * 100) / node_filesystem_size_bytes{job="jumpserver",mountpoint="/",fstype!="rootfs"}) >= 99
@@ -25,7 +25,7 @@ groups:
       meta: '{{ $labels.server_name }} root fs is 100% utilized for 10m.'
       playbook: 'docs/support/playbook/jumpserver/jumpserver_general_issues/#jumpserverrootfsfillingup--jumpserverrootfsfull'
     annotations:
-      description: '{{ $labels.server_name }} root fs is 100% utilized for 10m.'
+      description: '{{ $labels.server_name }} {{ $labels.mountpoint }} fs is 100% utilized for 10m.'
       summary: 'Root fs needs to be freed'
   - alert: JumpserverHomeFSFillingUp
     expr: 100 - ((node_filesystem_avail_bytes{job="jumpserver",mountpoint="/home"} * 100) / node_filesystem_size_bytes{job="jumpserver",mountpoint="/home"}) > 90
@@ -35,10 +35,10 @@ groups:
       service: jumpserver
       severity: warning
       support_group: observability
-      meta: '{{ $labels.server_name }} root fs over 90% utilized for 10m.'
+      meta: '{{ $labels.server_name }} {{ $labels.mountpoint }} fs over 90% utilized for 10m.'
       playbook: 'docs/support/playbook/jumpserver/jumpserver_general_issues/#jumpservernonmainfsfillingup--jumpservernonmainfsfull--jumpserverhomefsfillingup--jumpserverhomefsfull' 
     annotations:
-      description: '{{ $labels.server_name }} root fs over 90% utilized'
+      description: '{{ $labels.server_name }} {{ $labels.mountpoint }} fs over 90% utilized'
       summary: 'Home fs needs to be taken care of to avoid 100% usage for 10m'
   - alert: JumpserverHomeFSFull
     expr: 100 - ((node_filesystem_avail_bytes{job="jumpserver",mountpoint="/home"} * 100) / node_filesystem_size_bytes{job="jumpserver",mountpoint="/home"}) >= 99
@@ -48,10 +48,10 @@ groups:
       service: jumpserver
       severity: critical
       support_group: observability
-      meta: '{{ $labels.server_name }} root fs is 100% utilized for 10m.'
+      meta: '{{ $labels.server_name }} {{ $labels.mountpoint }} fs is 100% utilized for 10m.'
       playbook: 'docs/support/playbook/jumpserver/jumpserver_general_issues/#jumpservernonmainfsfillingup--jumpservernonmainfsfull--jumpserverhomefsfillingup--jumpserverhomefsfull' 
     annotations:
-      description: '{{ $labels.server_name }} root fs is 100% utilized for 10m.'
+      description: '{{ $labels.server_name }} {{ $labels.mountpoint }} fs is 100% utilized for 10m.'
       summary: 'Home fs needs to be freed'
   - alert: JumpserverNonMainFSFillingUp
     expr: 100 - ((node_filesystem_avail_bytes{job="jumpserver",mountpoint!="/"} * 100) / node_filesystem_size_bytes{job="jumpserver",mountpoint!~"/|/home"}) > 90
@@ -106,7 +106,7 @@ groups:
       description: '{{ $labels.server_name }} fs {{ $labels.mountpoint }} is 100% utilized'
       summary: 'Check what is causing this high CPU usage'
   - alert: JumpserverCriticalServiceFailed
-    expr: node_systemd_unit_state{job="jumpserver", exported_state="active", name=~"filebeataudit.service|auditd.service|filebeat.service|sssd.service|mcafee.ma.service"} == 0
+    expr: node_systemd_unit_state{job="jumpserver", state="active", name=~"filebeataudit.service|auditd.service|filebeat.service|sssd.service|mcafee.ma.service"} == 0
     for: 10m
     labels:
       context: availability

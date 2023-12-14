@@ -6,7 +6,7 @@
 {{- if eq .Values.coordinationBackend "file" }}
 - name: coordination
   # The parent dir of mountPath only matches by convention to $state_path in config and Dockerfile
-  mountPath: /var/lib/{{ .Chart.Name }}/coordination
+  mountPath: /var/lib/{{ .Values.coordinationBackendMountPath | default .Chart.Name }}/coordination
 {{- end }}
 {{- end }}
 

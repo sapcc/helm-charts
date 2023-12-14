@@ -80,15 +80,23 @@ spec:
       instances_hv_s4_c24_m6144: 0
       instances_hv_s8_c24_m6144: 0
       instances_hv_s8_c28_m12288: 0
-      instances_hv_s2_c32_m1024: 0
       instances_hv_s2_c32_m1024_v0: 0
+      instances_hv_s2_c32_m512_v0: 0
+      instances_bg_s2_c48_m1024_v0: 0
+      instances_bm_s2_c32_m1024_v0: 0
+      instances_hv_s4_c32_m4096_v0: 0
+      instances_bm_s4_c32_m4096_v0: 0
 
 ## we decided to count up the flavor ID continously for baremetal
-## new bm flavors start at 1000 historically and are public (zh*, zg*)
+## new bm flavors start at 1000 historically and are public (former zh*, zg*; now bm_*, bg_*)
 ## new hv_ flavors start at 2020 and are private
 ## as soon as we start handing out hypervisor hosts from the new compute PODs (cPODs), we will have to create
-##  in parallel to the private hv_ flavors a bm_ public flavor which will have a 2 in front of the original flavor ID
+## in parallel to the private hv_ flavors a bm_ public flavor which will have a 2 in front of the original flavor ID
 ## vSMP flavors are also private like the original hv_ flavor but have a 1 in front of the original flavor ID.
+## Example:
+## 2032  hv_s2_c32_m512_v0 private
+## 12032 hv_s2_c32_m512_v0_vsmp private
+## 22032 bm_s2_c32_m512_v0 public
 
   flavors:
   - name: "zg1bcm1.medium"
@@ -431,7 +439,7 @@ spec:
       "resources:DISK_GB": "0"
       "resources:VCPU": "0"
 
-  # vPOD servers Lenovo Thinksystem SR950 12TB<
+  # vPOD servers Lenovo Thinksystem SR950 12TB
   - name: "hv_s8_c28_m12288"
     id: "2028"
     vcpus: 224
@@ -514,6 +522,91 @@ spec:
       "quota:separate": "true"
       "quota:instance_only": "true"
       "resources:CUSTOM_HV_S2_C32_M1024_V0": "1"
+      "resources:MEMORY_MB": "0"
+      "resources:DISK_GB": "0"
+      "resources:VCPU": "0"
+
+  # New Sapphire Rapids 2S1T
+  - name: "bm_s2_c32_m1024_v0"
+    id: "22031"
+    vcpus: 64
+    ram: 1048576
+    disk: 447
+    is_public: true
+    extra_specs:
+      "catalog:description": BareMetal 2 sockets, 32 cores, 1TB RAM, Sapphire Rapids
+      "capabilities:cpu_arch": "x86_64"
+      "quota:separate": "true"
+      "quota:instance_only": "true"
+      "resources:CUSTOM_BM_S2_C32_M1024_V0": "1"
+      "resources:MEMORY_MB": "0"
+      "resources:DISK_GB": "0"
+      "resources:VCPU": "0"
+
+  # New Sapphire Rapids Swift nodes
+  - name: "hv_s2_c32_m512_v0"
+    id: "2032"
+    vcpus: 64
+    ram: 524288
+    disk: 960
+    is_public: false
+    extra_specs:
+      "catalog:description": Hypervisor Host 2 sockets, 32 cores, 512MB RAM, Sapphire Rapids
+      "capabilities:cpu_arch": "x86_64"
+      "quota:separate": "true"
+      "quota:instance_only": "true"
+      "resources:CUSTOM_HV_S2_C32_M512_V0": "1"
+      "resources:MEMORY_MB": "0"
+      "resources:DISK_GB": "0"
+      "resources:VCPU": "0"
+
+  # New GPU Nodes Dell PowerEdge XE9680 with Nvidia H100
+  - name: "bg_s2_c48_m1024_v0"
+    id: "2033"
+    vcpus: 96
+    ram: 1048576
+    disk: 480
+    is_public: true
+    extra_specs:
+      "catalog:description": GPU Baremetal 2 Socket Sapphire Rapids 5x Nvidia Tesla H100
+      "capabilities:cpu_arch": "x86_64"
+      "quota:separate": "true"
+      "quota:instance_only": "true"
+      "resources:CUSTOM_BG_S2_C48_M_V0": "1"
+      "resources:MEMORY_MB": "0"
+      "resources:DISK_GB": "0"
+      "resources:VCPU": "0"
+
+  # New Sapphire Rapids 4S4T
+  - name: "hv_s4_c32_m4096_v0"
+    id: "2034"
+    vcpus: 128
+    ram: 4194304
+    disk: 447
+    is_public: false
+    extra_specs:
+      "catalog:description": Hypervisor Host 4 sockets, 32 cores, 4TB RAM, Sapphire Rapids
+      "capabilities:cpu_arch": "x86_64"
+      "quota:separate": "true"
+      "quota:instance_only": "true"
+      "resources:CUSTOM_HV_S4_C32_M4096_V0": "1"
+      "resources:MEMORY_MB": "0"
+      "resources:DISK_GB": "0"
+      "resources:VCPU": "0"
+
+  # New Sapphire Rapids 4S4T
+  - name: "bm_s4_c32_m4096_v0"
+    id: "22034"
+    vcpus: 128
+    ram: 4194304
+    disk: 447
+    is_public: true
+    extra_specs:
+      "catalog:description": BareMetal 4 sockets, 32 cores, 4TB RAM, Sapphire Rapids
+      "capabilities:cpu_arch": "x86_64"
+      "quota:separate": "true"
+      "quota:instance_only": "true"
+      "resources:CUSTOM_BM_S4_C32_M4096_V0": "1"
       "resources:MEMORY_MB": "0"
       "resources:DISK_GB": "0"
       "resources:VCPU": "0"

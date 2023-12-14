@@ -33,6 +33,8 @@ spec:
         prometheus.io/scrape: "true"
         prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
         {{- end }}
+        {{- include "utils.linkerd.pod_and_service_annotation" . | indent 8 }}
+        
     spec:
       {{- include "utils.proxysql.pod_settings" . | nindent 6 }}
       {{- tuple . (dict "app.kubernetes.io/name" "octavia-api") | include "utils.topology.constraints" | indent 6 }}
@@ -49,7 +51,7 @@ spec:
             - name: COMMAND
               value: "/usr/sbin/apachectl -D FOREGROUND"
             - name: DEPENDENCY_JOBS
-              value: "{{ include "octavia.migration_job_name" . }}"
+              value: octavia-migration
             - name: NAMESPACE
               value: {{ .Release.Namespace }}
             - name: PYTHONWARNINGS
@@ -112,6 +114,7 @@ spec:
               readOnly: true
             {{- end }}
             {{- include "utils.proxysql.volume_mount" . | indent 12 }}
+            {{- include "utils.trust_bundle.volume_mount" . | indent 12 }}
         {{- include "utils.proxysql.container" . | indent 8 }}
         {{- include "jaeger_agent_sidecar" . | indent 8 }}
 {{- if .Values.watcher.enabled }}
@@ -132,3 +135,4 @@ spec:
           configMap:
             name: octavia-etc
         {{- include "utils.proxysql.volumes" . | indent 8 }}
+        {{- include "utils.trust_bundle.volumes" . | indent 8 }}

@@ -45,6 +45,7 @@ template: |
         annotations:
           prometheus.io/scrape: "true"
           prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
+          {{- include "utils.linkerd.pod_and_service_annotation" . | indent 10 }}
           configmap-etc-hash: {{ include (print .Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
           configmap-nova-compute-hash: {= "vcenter_cluster/{{ .Release.Namespace }}/vcenter-cluster-nova-compute-configmap.yaml.j2" | render | sha256sum =}
       spec:
@@ -80,6 +81,7 @@ template: |
           - mountPath: /etc/sudoers
             name: sudoers
             subPath: sudoers
+          {{- include "utils.trust_bundle.volume_mount" . | indent 10 }}
         - name: statsd
           image: {{ required ".Values.global.dockerHubMirror is missing" .Values.global.dockerHubMirror}}/prom/statsd-exporter:v0.8.1
           imagePullPolicy: IfNotPresent
@@ -151,4 +153,5 @@ template: |
                 items:
                 - key:  statsd-exporter.yaml
                   path: statsd-exporter.yaml
+        {{- include "utils.trust_bundle.volumes" . | indent 8 }}
 {{- end }}

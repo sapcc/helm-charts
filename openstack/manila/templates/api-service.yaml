@@ -2,7 +2,7 @@ kind: Service
 apiVersion: v1
 
 metadata:
-  name: manila-api
+  name: {{ .Release.Name }}-api
   labels:
     system: openstack
     type: api
@@ -10,10 +10,11 @@ metadata:
   annotations:
     prometheus.io/scrape: "true"
     prometheus.io/targets: {{ required ".Values.alerts.prometheus.openstack" .Values.alerts.prometheus.openstack |  quote }}
+    {{- include "utils.linkerd.pod_and_service_annotation" . | indent 4 }}
   {{- include "utils.topology.service_topology_mode" . | indent 2 }}
 spec:
   selector:
-    name: manila-api
+    name: {{ .Release.Name }}-api
   ports:
     - name: manila-api
       port: {{.Values.api_port_internal}}

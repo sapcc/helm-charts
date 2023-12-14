@@ -28,7 +28,8 @@ global:
   designate_service_user: designate
   domain_seeds:
     skip_hcm_domain: false
-
+  linkerd_requested: false
+  
 pod:
   replicas:
     api: 3
@@ -106,6 +107,11 @@ percona_cluster:
   alerts:
     support_group: network-api
 
+proxysql:
+  connect_retries_delay: 1000
+  mode: unix_socket
+  max_connections_per_proc: 15
+
 mariadb:
   enabled: true
   name: designate
@@ -116,6 +122,8 @@ mariadb:
     support_group: network-api
   backup:
     enabled: false
+  databases:
+  - designate
   users:
     designate:
       name: designate
@@ -378,3 +386,7 @@ owner-info:
     - David Hoeller
     - Benjamin Tinney
   helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/openstack/designate
+
+utils:
+  trust_bundle:
+    enabled: true

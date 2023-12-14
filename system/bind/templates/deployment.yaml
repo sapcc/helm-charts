@@ -81,22 +81,22 @@ spec:
         volumeMounts:
           - name: persistent-storage
             mountPath: {{ .Values.storage_mountpoint | default "/var/lib/bind" }}
+          {{- if .Values.override_conf }}
           - name: bind-keys-rndc
             mountPath: "/etc/bind/rndc.key"
             subPath: rndc.key
           - name: bind-keys-tsig
             mountPath: "/etc/bind/tsig.key"
             subPath: tsig.key
-{{- if .Values.nsi_key }}
+          {{- if .Values.nsi_key }}
           - name: bind-keys-nsi
             mountPath: "/etc/bind/nsi.key"
             subPath: nsi.key
-{{- end }}
-{{ if .Values.override_conf }}
+          {{- end }}
           - name: bind-conf
             mountPath: "/etc/bind/named.conf"
             subPath: named.conf
-{{ end }}
+          {{- end }}
         livenessProbe:
           exec:
             command:
@@ -149,14 +149,15 @@ spec:
             mountPath: "/etc/zabbix/zabbix_agentd.d/"
           - name: persistent-storage
             mountPath: {{ .Values.storage_mountpoint | default "/var/lib/bind" }}
-          - name: bind-keys-rndc
-            mountPath: "/etc/rndc/rndc.key"
+          - name: bind-rndc-keys
+            mountPath: "/etc/bind/rndc.key"
             subPath: rndc.key
 {{ end }}
       volumes:
       - name: persistent-storage
         persistentVolumeClaim:
           claimName: {{ .Release.Name }}
+      {{- if .Values.override_conf }}
       - name: bind-keys-rndc
         configMap:
           name: {{ .Release.Name }}-keys
@@ -169,24 +170,32 @@ spec:
           items:
           - key: tsig.key
             path: tsig.key
-{{- if .Values.nsi_key }}
+      - name: bind-conf
+        configMap:
+          name: {{ .Release.Name }}
+      {{- end }}
+      {{- if .Values.nsi_key }}
       - name: bind-keys-nsi
         configMap:
           name: {{ .Release.Name }}-keys
           items:
           - key: nsi.key
             path: nsi.key
-{{- end }}
-{{ if .Values.zabbix.enabled }}
+      {{- end }}
+      {{- if .Values.zabbix.enabled }}
       - name: zabbix-tls
         secret:
           secretName: {{ .Release.Name }}-zabbix-tls
       - name: zabbix-conf
         configMap:
           name: {{ .Release.Name }}-zabbix-conf
-{{ end }}
-{{ if .Values.override_conf }}
-      - name: bind-conf
+          items:
+          - key: zabbix-bind.conf
+            path: zabbix-bind.conf
+      - name: bind-rndc-keys
         configMap:
-          name: {{ .Release.Name }}
-{{ end }}
+          name: {{ .Release.Name }}-zabbix-conf
+          items:
+          - key: rndc.key
+            path: rndc.key
+      {{- end }}

@@ -74,8 +74,9 @@ service_type = key-manager
 {{- include "ini_sections.cache" . }}
 
 [oslo_policy]
-
 policy_file = /etc/barbican/policy.yaml
+enforce_new_defaults=False
+enforce_scope=False
 
 {{- if .Values.hsm.multistore.enabled }}
 [secretstore]

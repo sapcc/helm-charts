@@ -270,6 +270,30 @@ tests:
     assertions:
     - violations: no
 
+- name: ingress-annotations-migration
+  template: ../rendered-chart/gatekeeper/templates/constrainttemplate-ingress-annotations-migration.yaml
+  constraint: ../rendered-chart/gatekeeper-config/templates/constraint-ingress-annotations-migration.yaml
+  cases:
+  - name: fail-mismatch
+    object: fixtures/ingress-annotations-migration/fail-mismatch.yaml
+    assertions:
+    - violations: 1
+      message: '^\{"support_group":"foo-group","service":"dummy"\} >> has not correctly migrated ingress.kubernetes.io/proxy-request-buffering annotation \(value in old annotation is "off", value in new annotation is "on"\)$'
+  - name: fail-new-missing
+    object: fixtures/ingress-annotations-migration/fail-new-missing.yaml
+    assertions:
+    - violations: 1
+      message: '^\{"support_group":"foo-group","service":"dummy"\} >> has not correctly migrated ingress.kubernetes.io/proxy-request-buffering annotation \(value in old annotation is "off", value in new annotation is "<unset>"\)$'
+  - name: fail-old-missing
+    object: fixtures/ingress-annotations-migration/fail-old-missing.yaml
+    assertions:
+    - violations: 1
+      message: '^\{"support_group":"foo-group","service":"dummy"\} >> has deleted ingress.kubernetes.io/proxy-request-buffering annotation too early \(ingress-nginx is still using the old prefix right now\)'
+  - name: pass
+    object: fixtures/ingress-annotations-migration/pass.yaml
+    assertions:
+    - violations: no
+
 - name: ingress-annotations-wrong-prefix
   template: ../rendered-chart/gatekeeper/templates/constrainttemplate-ingress-annotations.yaml
   constraint: ../rendered-chart/gatekeeper-config/templates/constraint-ingress-annotations-wrong-prefix.yaml
@@ -405,8 +429,12 @@ tests:
     object: fixtures/pod-security/elasticsearch-hermes.yaml
     assertions:
     - violations: no
-  - name: pod-security-accept-elastiflow-data
-    object: fixtures/pod-security/elastiflow-data.yaml
+  - name: pod-security-accept-opensearch-hermes
+    object: fixtures/pod-security/opensearch-hermes.yaml
+    assertions:
+    - violations: no
+  - name: pod-security-accept-opensearch-hermes-master
+    object: fixtures/pod-security/opensearch-hermes-master.yaml
     assertions:
     - violations: no
   - name: pod-security-accept-falco
@@ -431,6 +459,18 @@ tests:
     - violations: no
   - name: pod-security-accept-kubernikus-apiserver
     object: fixtures/pod-security/kubernikus-apiserver.yaml
+    assertions:
+    - violations: no
+  - name: pod-security-accept-linkerd-destination
+    object: fixtures/pod-security/linkerd-destination.yaml
+    assertions:
+    - violations: no
+  - name: pod-security-accept-linkerd-identity
+    object: fixtures/pod-security/linkerd-identity.yaml
+    assertions:
+    - violations: no
+  - name: pod-security-accept-linkerd-proxy-injector
+    object: fixtures/pod-security/linkerd-proxy-injector.yaml
     assertions:
     - violations: no
   - name: pod-security-accept-logs-fluent
@@ -587,44 +627,6 @@ tests:
       message: '^\{"support_group":"foo-group","service":"dummy"\} >> missing or invalid .Values.global.region value$'
   - name: helm-release-pass
     object: fixtures/region-value-missing/helm-release-pass.out.yaml
-    assertions:
-    - violations: no
-
-- name: resource-limits
-  template: ../rendered-chart/gatekeeper/templates/constrainttemplate-resource-limits.yaml
-  constraint: ../rendered-chart/gatekeeper-config/templates/constraint-resource-limits.yaml
-  cases:
-  - name: pod-complete-failure
-    object: fixtures/resource-limits/pod-complete-failure.yaml
-    assertions:
-    - violations: 1
-      message: '^\{"support_group":"foo-group","service":"dummy"\} >> CPU and memory limits not set on some or all containers$'
-  - name: pod-some-failure
-    object: fixtures/resource-limits/pod-some-failure.yaml
-    assertions:
-    - violations: 1
-      message: '^\{"support_group":"foo-group","service":"dummy"\} >> CPU and memory limits not set on some or all containers$'
-  - name: pod-pass
-    object: fixtures/resource-limits/pod-pass.yaml
-    assertions:
-    - violations: no
-
-- name: resource-requests
-  template: ../rendered-chart/gatekeeper/templates/constrainttemplate-resource-requests.yaml
-  constraint: ../rendered-chart/gatekeeper-config/templates/constraint-resource-requests.yaml
-  cases:
-  - name: pod-complete-failure
-    object: fixtures/resource-requests/pod-complete-failure.yaml
-    assertions:
-    - violations: 1
-      message: '^\{"support_group":"foo-group","service":"dummy"\} >> CPU and memory requests not set on some or all containers$'
-  - name: pod-some-failure
-    object: fixtures/resource-requests/pod-some-failure.yaml
-    assertions:
-    - violations: 1
-      message: '^\{"support_group":"foo-group","service":"dummy"\} >> CPU and memory requests not set on some or all containers$'
-  - name: pod-pass
-    object: fixtures/resource-requests/pod-pass.yaml
     assertions:
     - violations: no
 

@@ -13,21 +13,27 @@ metadata:
 spec:
  replicas: 1
  selector:
-    matchLabels:
-      app.kubernetes.io/instance: {{ .Release.Name }}
-      app.kubernetes.io/name: {{ .Release.Name }}
+   matchLabels:
+     app.kubernetes.io/instance: {{ .Release.Name }}
+     app.kubernetes.io/name: {{ .Release.Name }}
  template:
    metadata:
      labels:
        app.kubernetes.io/instance: {{ .Release.Name }}
        app.kubernetes.io/name: {{ .Release.Name }}
+     annotations:
+       prometheus.io/port: "9102"
+       prometheus.io/scrape: "true"
+       prometheus.io/targets: openstack
    spec:
 
      containers:
      - name: {{ .Release.Name }}
        image: {{ required ".Values.global.registry is missing" .Values.global.registry }}/{{ .Values.image.name }}:{{required "missing .Values.image.image_tag" .Values.image.image_tag }}
-       command: ["/opt/venv/bin/designate-nanny", "--config", "/srv/nanny.yaml", "autorun"]
+       command: ["/opt/venv/bin/designate-nanny", "autorun"]
        env:
+         - name: NANNY_CONFIG
+           value: "/srv/nanny.yaml"
          - name: OS_AUTH_URL
            value: "https://{{ include "keystone_api_endpoint_host_public" . }}/v3"
          - name: PYCCLOUD_USE_DUMMY_SECRETS
@@ -47,6 +53,10 @@ spec:
                key:  designate_nanny_os_password
          - name: OS_USER_DOMAIN_NAME
            value:  "{{ .Values.credentials.designate_api.project_user_domain_name}}"
+       ports:
+       - containerPort: 9102
+         name: metrics
+         protocol: TCP
        resources:
 {{ toYaml .Values.resources | indent 8 }}
        volumeMounts:

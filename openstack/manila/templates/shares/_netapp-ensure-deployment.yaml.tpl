@@ -4,12 +4,16 @@
 kind: Deployment
 apiVersion: apps/v1
 metadata:
-  name: manila-share-netapp-{{$share.name}}-ensure
+  name: {{ .Release.Name }}-share-netapp-{{$share.name}}-ensure
   labels:
     system: openstack
     component: manila
+  {{- if .Values.vpa.set_main_container }}
+  annotations:
+    vpa-butler.cloud.sap/main-container: reexport
+  {{- end }}
 spec:
-  replicas: 1
+  replicas: {{ .Values.pod.replicas.ensure }}
   revisionHistoryLimit: 2
   strategy:
     type: RollingUpdate
@@ -18,17 +22,18 @@ spec:
       maxSurge: 1
   selector:
     matchLabels:
-        name: manila-share-netapp-{{$share.name}}-ensure
+        name: {{ .Release.Name }}-share-netapp-{{$share.name}}-ensure
   template:
     metadata:
       labels:
-        name: manila-share-netapp-{{$share.name}}-ensure
+        name: {{ .Release.Name }}-share-netapp-{{$share.name}}-ensure
         alert-tier: os
         alert-service: manila
       annotations:
         configmap-etc-hash: {{ include (print .Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
         configmap-netapp-hash: {{ list . $share | include "share_netapp_configmap" | sha256sum }}
         netapp_deployment-hash: {{ list . $share | include "share_netapp" | sha256sum }}
+        {{- include "utils.linkerd.pod_and_service_annotation" . | indent 8 }}
     spec:
       affinity:
         podAffinity:
@@ -40,7 +45,7 @@ spec:
                 - key: name
                   operator: In
                   values:
-                  - manila-share-netapp-{{$share.name}}
+                  - {{ .Release.Name }}-share-netapp-{{$share.name}}
               topologyKey: kubernetes.io/hostname
       initContainers:
       {{- tuple . (dict "service" (print .Release.Name "-mariadb")) | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 8 }}
@@ -87,6 +92,7 @@ spec:
               subPath: backend.conf
               readOnly: true
             {{- include "utils.proxysql.volume_mount" . | indent 12 }}
+            {{- include "utils.trust_bundle.volume_mount" . | indent 12 }}
           {{- if .Values.pod.resources.share_ensure }}
           resources:
             {{ toYaml .Values.pod.resources.share_ensure | nindent 13 }}
@@ -117,7 +123,8 @@ spec:
             name: manila-etc
         - name: backend-config
           configMap:
-            name: share-netapp-{{$share.name}}
+            name: {{ .Release.Name }}-share-netapp-{{$share.name}}
         {{- include "utils.proxysql.volumes" . | indent 8 }}
+        {{- include "utils.trust_bundle.volumes" . | indent 8 }}
 {{ end }}
 {{- end -}}

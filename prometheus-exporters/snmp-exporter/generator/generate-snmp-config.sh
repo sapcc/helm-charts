@@ -58,19 +58,23 @@ for i in $modules;
 
         if test -f "${i}-additional-oids.yaml"; then
             awk -v f=$i '{ print; } /walk:/ { system ( "cat "f"-additional-oids.yaml" ) } \' _snmp-exporter-${i}.yaml.tmp  > ../_snmp-exporter-${i}.yaml
+            sed -i '2d' ../_snmp-exporter-${i}.yaml
             rm -f  _snmp-exporter-${i}.yaml.tmp
         else
             mv -f ./_snmp-exporter-${i}.yaml.tmp ../_snmp-exporter-${i}.yaml
+            sed -i '2d' ../_snmp-exporter-${i}.yaml
+            rm -f  _snmp-exporter-${i}.yaml.tmp
         fi
  
-        if [[ "$i" =~ ^(f5mgmt|f5physical|f5customer|f5gtm)$ ]]; then
+        if [[ "$i" =~ ^(f5mgmt|f5physical|f5customer|f5gtm|f5archer)$ ]]; then
             sed -i "s/- name: /- name: snmp_f5_/g" ../_snmp-exporter-${i}.yaml
         else
             sed -i "s/- name: /- name: snmp_${i}_/g" ../_snmp-exporter-${i}.yaml
         fi
  
         if test -f "${i}-additional-metrics.yaml"; then
-                cat ${i}-additional-metrics.yaml >> ../_snmp-exporter-${i}.yaml
+                #cat ${i}-additional-metrics.yaml >> ../_snmp-exporter-${i}.yaml
+                sed -i "/max_repetitions: 25/e cat ${i}-additional-metrics.yaml" ../_snmp-exporter-${i}.yaml
                 rm -f ./_snmp-exporter-${i}.yaml.tmp
         fi
 done

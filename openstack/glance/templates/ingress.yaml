@@ -9,10 +9,12 @@ metadata:
     component: glance
   annotations:
     ingress.kubernetes.io/proxy-request-buffering: "off"
+    nginx.ingress.kubernetes.io/proxy-request-buffering: "off"
     {{- if .Values.tlsacme }}
     kubernetes.io/tls-acme: "true"
     disco: "true"
     {{- end }}
+    {{- include "utils.linkerd.ingress_annotation" . | indent 4 }}
 spec:
   tls:
     - secretName: tls-{{ include "glance_api_endpoint_host_public" . | replace "." "-" }}

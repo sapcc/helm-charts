@@ -4,7 +4,7 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: share-netapp-{{$share.name}}
+  name: {{ $context.Release.Name }}-share-netapp-{{$share.name}}
   labels:
     system: openstack
     type: configuration

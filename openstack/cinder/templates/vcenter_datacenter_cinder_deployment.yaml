@@ -44,6 +44,7 @@ template: |
           prometheus.io/scrape: "true"
           prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
           {{- end }}
+          {{- include "utils.linkerd.pod_and_service_annotation" . | indent 10 }}
       spec:
         hostname: cinder-volume-vmware-{= name =}
         {{- tuple . "{= availability_zone =}" | include "utils.kubernetes_pod_az_affinity" | nindent 8 }}

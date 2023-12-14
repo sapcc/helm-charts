@@ -47,10 +47,6 @@
     "lbaas_ctcp": "cc_tcp_profile",
     "lbaas_irule": ["cc_http_redirect_a26c_v1_0"]
   },
-  "hcm_rmk_restrict_internal": {
-    "lbaas_ctcp": "cc_tcp_profile",
-    "lbaas_irule": ["cc_hcm_rmk_restrict_internal"]
-  },
   "ccloud_special_udp_stateless": {
     "lbaas_cudp": "cc_udp_datagram_profile"
   },
