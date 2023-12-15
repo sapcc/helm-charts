@@ -19,7 +19,7 @@ data:
           Parser           docker
           Tag              kube.*
           Refresh_Interval 5
-          Mem_Buf_Limit    50MB
+          Mem_Buf_Limit    256MB
           Skip_Long_Lines  Off
           Ignore_Older     1m
 
@@ -27,13 +27,14 @@ data:
           Name           systemd
           Path           /var/log/journal
           Tag            systemd.*
-          Mem_Buf_Limit  5MB
+          Mem_Buf_Limit  10MB
           Read_From_Tail true
           Strip_Underscores On
           Lowercase On
 
       [INPUT]
           Name            fluentbit_metrics
+          Mem_Buf_Limit   5MB
           Tag             internal_metrics
           Scrape_interval 2
 
@@ -99,6 +100,5 @@ data:
           Match           internal_metrics
           Host            0.0.0.0
           Port            2021
-          Add_label       app fluent-bit
-          Add_label       nodename ${NODE_NAME}
+          Add_label       app fluent-bit-admin-k3s
   parsers.conf: ""
