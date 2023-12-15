@@ -88,6 +88,9 @@
   is_public: false
   extra_specs:
     {{- tuple . "vmware" | include "sap_seeds.helpers.extra_specs" | indent 4 }}
+    trait:CUSTOM_NUMASIZE_C48_M729: required
+    hw:cpu_cores: '48'  # cores-per-socket
+    vmware:hw_version: vmx-18
 
 - name: gmp_m1024_c96
   id: 97709ba4-e52e-4a92-ae28-caf53f28243e
@@ -97,6 +100,9 @@
   is_public: false
   extra_specs:
     {{- tuple . "vmware" | include "sap_seeds.helpers.extra_specs" | indent 4 }}
+    trait:CUSTOM_NUMASIZE_C48_M729: required
+    hw:cpu_cores: '48'  # cores-per-socket
+    vmware:hw_version: vmx-18
 
 - name: gmp_m1024_c96_hana
   id: a219a815-e08e-47c6-9b71-bc77bc1cbbfd
@@ -106,6 +112,9 @@
   is_public: false
   extra_specs:
     {{- tuple . "vmware" | include "sap_seeds.helpers.extra_specs" | indent 4 }}
+    trait:CUSTOM_NUMASIZE_C48_M729: required
+    hw:cpu_cores: '48'  # cores-per-socket
+    vmware:hw_version: vmx-18
 
 - name: gmp_m128_c20
   id: 85a96f15-70f8-43fd-86f3-cdde3c26874a
