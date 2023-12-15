@@ -28,6 +28,6 @@ groups:
 {{ .Values.rate_limit.groups | toYaml | indent 2 }}
 {{- end }}
 {{- if .Values.rate_limit.rates }}
-rates: 
+rates:
 {{ .Values.rate_limit.rates | toYaml | indent 2 }}
 {{- end }}
