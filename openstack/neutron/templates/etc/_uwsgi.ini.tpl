@@ -43,6 +43,10 @@ memory-report = true
 # Limits, Kill requests after 120 seconds
 harakiri = 120
 harakiri-verbose = true
+{{ if .Values.api.uwsgi_enable_harakiri_graceful_signal -}}
+harakiri-graceful-signal = SIGWINCH
+harakiri-graceful-timeout = 5
+{{ end -}}
 post-buffering = 4096
 backlog-status = true
 py-tracebacker = /var/lib/neutron/uwsgi_pytracebacker.
