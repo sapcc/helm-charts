@@ -7,6 +7,10 @@ metadata:
     system: openstack
     type: api
     component: nova
+  {{- if .Values.vpa.set_main_container }}
+  annotations:
+    vpa-butler.cloud.sap/main-container: nova-api
+  {{- end }}
 spec:
   replicas: {{ if not .Values.pod.debug.api }}{{ .Values.pod.replicas.api }}{{ else }} 1 {{ end }}
   revisionHistoryLimit: {{ .Values.pod.lifecycle.upgrades.deployments.revision_history }}
