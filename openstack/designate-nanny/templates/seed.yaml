@@ -5,9 +5,14 @@ metadata:
   name: designate-nanny-seed
 spec:
   requires:
-  - monsoon3/domain-default-seed
-  - monsoon3/domain-ccadmin-seed
-  - monsoon3/designate-seed
+  - {{ .Release.Namespace }}/domain-default-seed
+  - {{ .Release.Namespace }}/domain-ccadmin-seed
+{{- if .Values.global_setup }}
+  - {{ .Release.Namespace }}/designate-global-seed
+  - {{ .Release.Namespace }}/domain-global-seed
+{{- else}}
+  - {{ .Release.Namespace }}/designate-seed
+{{- end }}
   - swift/swift-seed
 
   domains:
