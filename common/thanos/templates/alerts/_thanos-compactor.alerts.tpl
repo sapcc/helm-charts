@@ -111,7 +111,7 @@ groups:
         summary: Thanos component has disappeared.
 
     - alert: ThanosCompactSpawningManyPods 
-      expr: count by (region, namespace) (kube_pod_info{pod=~"thanos-.*-compactor-*.+"}) > 100 
+      expr: count by (region, namespace) (kube_pod_info{pod=~"thanos-{{ include "thanos.name" . }}-compactor-*.+"}) > 100 
       for: 15m
       labels:
         service: {{ default "metrics" $root.Values.alerts.service }}
