@@ -1,0 +1,30 @@
+---
+suite: mariadb-my-cnf-configmap
+values:
+  - default_values.yaml
+set:
+  mariadb.galera.clustername: "testname"
+release:
+  name: testrelease
+  namespace: testnamespace
+templates:
+  - configmap-mariadb-my-cnf.yaml
+tests:
+  - it: default mariadb entrypoint script
+    template: configmap-mariadb.yaml
+    documentIndex: 0
+    set:
+      mariadb.galera.clustername: "testname"
+    asserts:
+      - isKind:
+          of: ConfigMap
+      - equal:
+          path: metadata.namespace
+          value: testnamespace
+      - equal:
+          path: metadata.name
+          value: testrelease-mariadb-entrypoint-sh
+      - equal:
+          path: metadata.labels.app
+          value: testrelease
+
