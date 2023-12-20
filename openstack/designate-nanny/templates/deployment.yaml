@@ -1,4 +1,4 @@
-{{- if .Values.nanny.enabled }}
+{{- if .Values.nanny_enabled }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -35,24 +35,24 @@ spec:
          - name: NANNY_CONFIG
            value: "/srv/nanny.yaml"
          - name: OS_AUTH_URL
-           value: {{ required "missing .Values.credentials.designate_api.auth_url" .Values.credentials.designate_api.auth_url}}
+           value: {{ required "missing .Values.designate_nanny.credentials.designate_api.auth_url" .Values.designate_nanny.credentials.designate_api.auth_url}}
          - name: PYCCLOUD_USE_DUMMY_SECRETS
            value: "yes"          
          - name: OS_REGION_NAME
            value: "{{ required "missing .Values.global.region" .Values.global.region}}"
          - name: OS_PROJECT_NAME
-           value:  "{{ required "missing .Values.credentials.designate_api.project_name" .Values.credentials.designate_api.project_name}}"
+           value:  "{{ required "missing .Values.designate_nanny.credentials.designate_api.project_name" .Values.designate_nanny.credentials.designate_api.project_name}}"
          - name: OS_PROJECT_DOMAIN_NAME
-           value:  "{{ required "missing .Values.credentials.designate_api.project_domain_name" .Values.credentials.designate_api.project_domain_name}}"
+           value:  "{{ required "missing .Values.designate_nanny.credentials.designate_api.project_domain_name" .Values.designate_nanny.credentials.designate_api.project_domain_name}}"
          - name: OS_USERNAME
-           value: "{{ required "missing .Values.credentials.designate_api.user" .Values.credentials.designate_api.user}}"
+           value: "{{ required "missing .Values.designate_nanny.credentials.designate_api.user" .Values.designate_nanny.credentials.designate_api.user}}"
          - name: OS_PASSWORD
            valueFrom:
              secretKeyRef:
                name: designate-nanny-secret
                key:  designate_nanny_os_password
          - name: OS_USER_DOMAIN_NAME
-           value:  "{{ required "missing .Values.credentials.designate_api.project_user_domain_name" .Values.credentials.designate_api.project_user_domain_name}}"
+           value:  "{{ required "missing .Values.designate_nanny.credentials.designate_api.project_user_domain_name" .Values.designate_nanny.credentials.designate_api.project_user_domain_name}}"
        ports:
        - containerPort: 9102
          name: metrics
