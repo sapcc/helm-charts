@@ -89,7 +89,7 @@ spec:
         - -c
         - 'sysctl -w net.ipv4.tcp_keepalive_time=60 net.ipv4.tcp_keepalive_intvl=60 net.ipv4.tcp_keepalive_probes=5'
         securityContext:
-          privileged: {{ $.Values.initContainers.tcpKeepAlive.securityContext.privileged | default true }}
+          privileged: {{ $.Values.initContainers.tcpKeepAlive.securityContext.privileged }}
           runAsUser: {{ $.Values.initContainers.tcpKeepAlive.securityContext.runAsUser | default 0 | int }}
       - name: increase-map-count
         image: "{{ $.Values.image.os.registry }}/{{ $.Values.image.os.project }}/{{ $.Values.image.os.databasename }}:{{ $.Values.image.os.databaseversion }}-{{ $.Values.image.os.imageversion | int }}"
@@ -99,7 +99,7 @@ spec:
         - -c
         - 'echo 262144 > /proc/sys/vm/max_map_count'
         securityContext:
-          privileged: {{ $.Values.initContainers.increaseMapCount.securityContext.privileged | default true }}
+          privileged: {{ $.Values.initContainers.increaseMapCount.securityContext.privileged }}
           runAsUser: {{ $.Values.initContainers.increaseMapCount.securityContext.runAsUser | default 0 | int }}
       {{- if $.Values.cleanOsCacheAtStartup }}
       - name: clean-os-cache
@@ -110,8 +110,8 @@ spec:
         - -c
         - 'echo 3 > /proc/sys/vm/drop_caches'
         securityContext:
-          privileged: {{ $.Values.initContainers.increaseMapCount.cleanoscache.privileged | default true }}
-          runAsUser: {{ $.Values.initContainers.increaseMapCount.cleanoscache.runAsUserr | default 0 | int }}
+          privileged: {{ $.Values.initContainers.cleanoscache.securityContext.privileged }}
+          runAsUser: {{ $.Values.initContainers.cleanoscache.securityContext.runAsUser | default 0 | int }}
       {{- end }}
       containers:
       - name: db
