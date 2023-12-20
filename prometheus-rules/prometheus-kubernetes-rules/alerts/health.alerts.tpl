@@ -3,7 +3,7 @@ groups:
 - name: kubernetes.alerts
   rules:
   - alert: KubernetesNodeManyNotReady
-    expr: count((kube_node_status_condition{condition="Ready",status="true"} unless on (node) kube_node_labels{label_cloud_sap_maintenance_state="in-maintenance"}) == 0) > 2
+    expr: count((kube_node_status_condition{condition="Ready",status="true"} unless on (node) (kube_node_labels{label_cloud_sap_maintenance_state="in-maintenance"} or kube_node_labels{label_kubernetes_cloud_sap_role="storage"})) == 0) > 4
     for: 1h
     labels:
       tier: {{ required ".Values.tier missing" .Values.tier }}

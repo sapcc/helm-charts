@@ -1,3 +1,59 @@
+## 7.4.4
+
+* Soften out-of-order alert 
+
+## 7.4.3
+
+* Thanos sidecar to v0.31.0 to match Thanos environment 
+
+## 7.4.2
+
+* playbook link adjusted
+
+## 7.4.1
+
+* switch Ingress nginx-annotation
+
+## 7.4.0
+
+* updating Prometheus to v2.46.0
+
+## 7.3.0
+
+* Swift container userName and containerName now can be set explicitly
+
+## 7.2.16
+
+* If no `kube_` metrics available within the Prometheus, send `PrometheusMultiplePodScrape` alerts to specified Thanos Rule
+
+## 7.2.15
+
+* Removal of Prometheus limit warnings, as no limits are defined at all
+
+## 7.2.14
+
+* Refine PrometheusTargetSyncFailure alert
+
+## 7.2.13
+
+* Chart version labeled
+
+## 7.2.12
+
+* scrapeConfigSelector added to the Prometheus CR
+
+## 7.2.11
+
+* Defaulting ingressClassName to nginx to avoid picking up traefik 
+
+## 7.2.10
+
+* Improved RemoteWriteBehind alert
+
+## 7.2.9
+
+* adding thanos endpoint for internalIngress 
+
 ## 7.2.8
 
 * Option to create unique swift containers

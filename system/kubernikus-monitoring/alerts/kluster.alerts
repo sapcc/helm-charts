@@ -55,7 +55,7 @@ groups:
       summary: "{{ $labels.kubernetes_name }} is unavailable"
 
   - alert: KubernikusKlusterLowOnObjectStoreQuota
-    expr: label_replace(max(kubernikus_kluster_info{phase="Running", backup="swift"}) by (kluster_name, creator, project_id), "shortname", "$1", "kluster_name", "(.*)-[a-f0-9]{32}") * on(project_id) group_left(project, domain) (min(limes_free_swift_quota_gauge) by (project_id, project, domain) < 90 * 1024 * 1024) * on(project_id) group_left(business_criticality,secondary_mist,operator_contact_email,primary_contact_id,operator_contact_id) (project_masterdata) or on (project_id) label_replace(max(kubernikus_kluster_info{phase="Running", backup="swift"}) by (kluster_name, creator, project_id), "shortname", "$1", "kluster_name", "(.*)-[a-f0-9]{32}") * on(project_id) group_left(project, domain) (min(limes_free_swift_quota_gauge) by (project_id, project, domain) < 90 * 1024 * 1024)
+    expr: label_replace(max(kubernikus_kluster_info{phase="Running", backup="swift"}) by (kluster_name, creator, project_id), "shortname", "$1", "kluster_name", "(.*)-[a-f0-9]{32}") * on(project_id) group_left(project, domain) (min(limes_free_swift_quota_gauge) by (project_id, project, domain) < 90 * 1024 * 1024) * on(project_id) group_left(business_criticality,primary_contact_email,operator_contact_email,primary_contact_id,operator_contact_id) (project_masterdata) or on (project_id) label_replace(max(kubernikus_kluster_info{phase="Running", backup="swift"}) by (kluster_name, creator, project_id), "shortname", "$1", "kluster_name", "(.*)-[a-f0-9]{32}") * on(project_id) group_left(project, domain) (min(limes_free_swift_quota_gauge) by (project_id, project, domain) < 90 * 1024 * 1024)
     for: 10m
     labels:
       tier: kks
@@ -67,6 +67,7 @@ groups:
       kluster_name: "{{ $labels.kluster_name }}"
       primary_email_recipients: "{{ $labels.primary_contact_email }},{{ $labels.operator_contact_email}}"
       bcc_email_recipients: "DL_645B919A5407AA8EFFC0269D@global.corp.sap"
+      visibility: "hidden"
     annotations:
       storage_left: "{{ humanize1024 $value }}B"
       dashboard_url: "https://dashboard.{{ $externalLabels.region }}.cloud.sap/_/{{ $labels.project_id }}/object-storage/"

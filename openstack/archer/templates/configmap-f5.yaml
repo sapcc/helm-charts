@@ -1,5 +1,6 @@
 {{- $envAll := . }}
-{{- range $name, $val := .Values.agents.f5 -}}
+{{- range $name, $val := .Values.agents.f5 }}
+---
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -10,6 +11,9 @@ data:
   f5.ini: |
     [DEFAULT]
     host = {{ $name }}
+{{- if $val.availability_zone }}
+    availability_zone = {{ $val.availability_zone }}
+{{- end }}
 
     [agent]
 {{- range $i, $value := $val.devices }}

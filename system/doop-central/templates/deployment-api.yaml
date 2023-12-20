@@ -1,0 +1,94 @@
+kind: Deployment
+apiVersion: apps/v1
+
+metadata:
+  name: {{ .Release.Name }}-api
+
+spec:
+  revisionHistoryLimit: 5
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 2
+  selector:
+    matchLabels:
+      name: {{ .Release.Name }}-api
+  template:
+    metadata:
+      labels:
+        name: {{ .Release.Name }}-api
+      annotations:
+        {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+        linkerd.io/inject: enabled
+        {{- end }}
+        prometheus.io/scrape: "true"
+        prometheus.io/targets: infra-frontend
+    spec:
+      automountServiceAccountToken: false
+      enableServiceLinks: false
+      containers:
+        - name: api
+          image: {{.Values.global.registry | required ".Values.global.registry not found"}}/gatekeeper-addons:{{.Values.image_tag}}
+          imagePullPolicy: IfNotPresent
+          command: [ doop-api ]
+          args: [ ':8080', '/etc/doop-central/docs.html.yaml' ]
+          env:
+            - name: DOOP_API_DEBUG
+              value: 'false'
+            - name: DOOP_API_LISTEN_ADDRESS
+              value: ':8080'
+            - name: DOOP_API_OBJECT_IDENTITY_LABELS
+              value: '{{ .Values.doop.object_identity_labels | join " " }}'
+            - name: DOOP_API_SWIFT_CONTAINER
+              value: 'doop-analyzer{{ if .Values.kubernikus }}-kubernikus{{ end }}'
+            - name: OS_AUTH_URL
+              value: 'https://identity-3.{{.Values.doop.swift_region | required ".Values.doop.swift_region not found"}}.cloud.sap/v3'
+            - name: OS_AUTH_VERSION
+              value: '3'
+            - name: OS_IDENTITY_API_VERSION
+              value: '3'
+            - name: OS_PROJECT_DOMAIN_NAME
+              value: ccadmin
+            - name: OS_PROJECT_NAME
+              value: master
+            - name: OS_REGION_NAME
+              value: {{.Values.doop.swift_region | required ".Values.doop.swift_region not found" | quote}}
+            - name: OS_USER_DOMAIN_NAME
+              value: Default
+            - name: OS_USERNAME
+              value: doop
+            - name: OS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}
+                  key: swift_password
+          ports:
+            - name: metrics # also exposes the API, but this specific name is required for Prometheus scraping
+              containerPort: 8080
+          livenessProbe:
+            httpGet:
+              path: /healthcheck
+              port: 8080
+            timeoutSeconds: 10
+            periodSeconds: 60
+            initialDelaySeconds: 60
+          readinessProbe:
+            httpGet:
+              path: /healthcheck
+              port: 8080
+            timeoutSeconds: 5
+            periodSeconds: 5
+          resources:
+            # observed usage for doop-api: CPU = 20m long average, but very spiky, RAM = 150 MiB
+            limits:
+              cpu: '2'
+              memory: '384Mi'
+            requests:
+              cpu: '0.1'
+              memory: '384Mi'
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true

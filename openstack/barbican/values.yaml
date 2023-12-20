@@ -10,6 +10,7 @@ global:
   dbUser: barbican
   domain_seeds:
     skip_hcm_domain: false
+  linkerd_requested: false
 
 owner-info:
   support-group: identity
@@ -40,11 +41,11 @@ statsd:
   resources:
     enabled: true
     limits:
-      memory: 64Mi
-      cpu: 50m
+      memory: 128Mi
+      cpu: 150m
     requests:
-      memory: 32Mi
-      cpu: 30m
+      memory: 64Mi
+      cpu: 100m
 
 db_name: barbican
 
@@ -182,7 +183,27 @@ mysql_metrics:
         GROUP BY secrets.creator_id, secrets.name, projects.external_id, secrets.expiration;
       values:
       - "expiration_date"
-
+    - help: Barbican container expiration date
+      labels:
+      - "expiration_date"
+      - "certificate_name"
+      - "project_id"
+      - "creator_id"
+      name: openstack_barbican_opaque_certificate_expiration_date
+      query: |
+        SELECT
+          UNIX_TIMESTAMP(STR_TO_DATE(IFNULL(secrets.expiration,'1970-01-01 00:00:00'), '%Y-%c-%e %T')) AS expiration_date,
+          secrets.name  AS certificate_name,
+          creator_id,
+          projects.external_id  AS project_id,
+          COUNT(*)  AS count_gauge
+        from secrets
+        INNER JOIN projects
+        on secrets.project_id=projects.id
+        where secrets.deleted='false' AND secret_type='opaque' AND expiration!='0'
+        GROUP BY secrets.creator_id, secrets.name, projects.external_id, secrets.expiration;
+      values:
+      - "expiration_date"
 
 rabbitmq:
   name: barbican
@@ -267,7 +288,7 @@ alerts:
 hsm:
   enabled: false
   luna:
-    image: lunaclient-r3
+    image: lunaclient-r5
   multistore:
     enabled: false
   ha:
@@ -276,7 +297,11 @@ hsm:
     enabled: true
     limits:
       memory: 1Gi
-      cpu: 500m
+      cpu: 1
     requests:
       memory: 500Mi
       cpu: 300m
+
+utils:
+  trust_bundle:
+    enabled: true

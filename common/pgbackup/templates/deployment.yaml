@@ -12,8 +12,6 @@ kind: Deployment
 
 metadata:
   name: "{{ .Release.Name }}-pgbackup"
-  labels:
-    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
 
 spec:
   replicas: 1
@@ -27,7 +25,11 @@ spec:
       labels:
         name: "{{ .Release.Name }}-pgbackup"
       annotations:
+        kubectl.kubernetes.io/default-container: backup
         checksum/secret:       {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
+        {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+        linkerd.io/inject: enabled
+        {{- end }}
         prometheus.io/scrape:  "true"
         prometheus.io/targets: {{ quote .Values.alerts.prometheus }}
     spec:
@@ -69,11 +71,19 @@ spec:
             - name: PGSQL_HOST
               value: '{{ $db_host }}.{{ .Release.Namespace }}.svc'
             - name: PGSQL_USER
+              {{- if .Values.isPostgresNG }}
+              value: backup
+              {{- else }}
               value: {{ quote .Values.database.username }}
+              {{- end }}
             - name: PGPASSWORD
               valueFrom:
                 secretKeyRef:
+                  {{- if .Values.isPostgresNG }}
+                  name: "{{ .Release.Name }}-pguser-backup"
+                  {{- else }}
                   name: "{{ .Release.Name }}-pgbackup"
+                  {{- end }}
                   key: postgres-password
           ports:
           - name: metrics
@@ -81,7 +91,7 @@ spec:
           resources:
             limits:
               memory: {{ .Values.resources.memory_limit }}
-              cpu: '1'
+              cpu: {{ .Values.resources.cpu_limit }}
             requests:
               memory: {{ .Values.resources.memory_limit }}
-              cpu: 100m
+              cpu: {{ .Values.resources.cpu_request }}

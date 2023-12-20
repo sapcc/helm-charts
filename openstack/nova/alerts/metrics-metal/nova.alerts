@@ -1,0 +1,16 @@
+groups:
+- name: openstack-nova.alerts
+  rules:
+  - alert: OpenstackNovaComputeIdle
+    expr: (max(label_replace(rate(container_cpu_usage_seconds_total{pod_name=~"nova-compute-bb.*"}[5m]), 'host', '$1', 'pod_name', '(nova-compute-bb[0-9]+).*')) by (host) * 1000 < 15) AND (max(nova_compute_service_status) by (host) == 1)
+    for: 60m
+    labels:
+      severity: warning
+      support_group: compute-storage-api
+      tier: os
+      service: 'nova'
+      meta: 'Something is fishy with pod of host {{ $labels.host }}, it usually uses more CPU.'
+      playbook: docs/devops/alert/nova/#OpenstackNovaComputeIdle
+    annotations:
+      description: 'Something is fishy with pod of host {{ $labels.host }}, it usually uses more CPU.'
+      summary: 'Pod idles, but normally does not.'

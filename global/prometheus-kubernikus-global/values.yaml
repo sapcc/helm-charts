@@ -50,6 +50,14 @@ prometheus-kubernikus-global:
       - alertmanager-internal.scaleout.eu-de-1.cloud.sap
       - alertmanager-internal.scaleout.eu-nl-1.cloud.sap
 
+  alerts:
+    multipleTargetScrapes:
+      exceptions:
+        # we exclude cadvisor metrics because it has the same instance as the kubelet but a different path
+        # e.g. 10.246.204.80:10250/metrics vs. 10.246.204.80:10250/metrics/cadvisor
+        - kubernetes-cadvisors
+        - kubernetes-kubelet
+
 # Basic alerts for global Prometheus.
 alerts:
   prometheus: kubernikus-global

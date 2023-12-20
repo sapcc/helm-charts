@@ -1,4 +1,3 @@
-{{ if .Values.source }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -11,39 +10,38 @@ data:
   {{ $source_region }}.yaml: |
     swift:
       auth_url: {{ $.Values.target.auth_url }}
-      user_name: {{ $.Values.target.user_name }}
-      user_domain_name: {{ $.Values.target.user_domain_name }}
-      project_name: {{ $.Values.target.project_name }}
-      project_domain_name: {{ $.Values.target.project_domain_name }}
+      user_name: db_backup
+      user_domain_name: Default
+      project_name: master
+      project_domain_name: ccadmin
       password:
-        fromEnv: {{ $.Values.global.region | upper }}_AUTH_PASSWORD
+        fromEnv: TARGET_AUTH_PASSWORD
     statsd:
       hostname: statsd
       port: 9125
       prefix: backup_replication.{{ $source_region }}
     workers:
-      transfer: {{ $.Values.swift_http_import.transfer_workers }}
+      transfer: 3
     jobs:
     {{- range $index, $job := $source.jobs }}
       - from:
           auth_url: {{ $source.auth_url }}
-          user_name: {{ $source.user_name }}
-          user_domain_name: {{ $source.user_domain_name }}
-          project_name: {{ $source.project_name }}
-          project_domain_name: {{ $source.project_domain_name }}
+          user_name: db_backup
+          user_domain_name: Default
+          project_name: master
+          project_domain_name: ccadmin
           password:
-            fromEnv: {{ $source_region | upper }}_AUTH_PASSWORD
+            fromEnv: SOURCE_AUTH_PASSWORD
           container: {{ $job.from.container }}
           object_prefix: {{ $job.from.object_prefix }}
         to:
           container: {{ $job.to.container }}
           object_prefix: {{ $job.to.object_prefix }}
         segmenting:
-          min_bytes: {{ $.Values.swift_http_import.segmenting.min_bytes | printf "%0.f" }}
-          segment_bytes: {{ $.Values.swift_http_import.segmenting.segment_bytes | printf "%0.f" }}
+          min_bytes: 1073741824 # 1 GiB
+          segment_bytes: 1073741824 # 1 GiB
         match:
-          not_older_than: {{ $.Values.swift_http_import.not_older_than }}
-        immutable: {{ $.Values.swift_http_import.immutable }}
+          not_older_than: 1 day
+        immutable: .sql.gz$
     {{- end }}
 {{- end }}
-{{ end }}

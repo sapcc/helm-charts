@@ -1,0 +1,72 @@
+{{- if .Values.nanny.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+ name: {{ .Release.Name }}
+ labels:
+    app.kubernetes.io/name: {{ .Release.Name }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app: {{ .Release.Name }}
+    ccloud/support-group: network-api
+    system: openstack
+    application: designate
+spec:
+ replicas: 1
+ selector:
+   matchLabels:
+     app.kubernetes.io/instance: {{ .Release.Name }}
+     app.kubernetes.io/name: {{ .Release.Name }}
+ template:
+   metadata:
+     labels:
+       app.kubernetes.io/instance: {{ .Release.Name }}
+       app.kubernetes.io/name: {{ .Release.Name }}
+     annotations:
+       prometheus.io/port: "9102"
+       prometheus.io/scrape: "true"
+       prometheus.io/targets: openstack
+   spec:
+
+     containers:
+     - name: {{ .Release.Name }}
+       image: {{ required ".Values.global.registry is missing" .Values.global.registry }}/{{ .Values.image.name }}:{{required "missing .Values.image.image_tag" .Values.image.image_tag }}
+       command: ["/opt/venv/bin/designate-nanny", "autorun"]
+       env:
+         - name: NANNY_CONFIG
+           value: "/srv/nanny.yaml"
+         - name: OS_AUTH_URL
+           value: {{ required "missing .Values.credentials.designate_api.auth_url" .Values.credentials.designate_api.auth_url}}
+         - name: PYCCLOUD_USE_DUMMY_SECRETS
+           value: "yes"          
+         - name: OS_REGION_NAME
+           value: "{{ required "missing .Values.global.region" .Values.global.region}}"
+         - name: OS_PROJECT_NAME
+           value:  "{{ required "missing .Values.credentials.designate_api.project_name" .Values.credentials.designate_api.project_name}}"
+         - name: OS_PROJECT_DOMAIN_NAME
+           value:  "{{ required "missing .Values.credentials.designate_api.project_domain_name" .Values.credentials.designate_api.project_domain_name}}"
+         - name: OS_USERNAME
+           value: "{{ required "missing .Values.credentials.designate_api.user" .Values.credentials.designate_api.user}}"
+         - name: OS_PASSWORD
+           valueFrom:
+             secretKeyRef:
+               name: designate-nanny-secret
+               key:  designate_nanny_os_password
+         - name: OS_USER_DOMAIN_NAME
+           value:  "{{ required "missing .Values.credentials.designate_api.project_user_domain_name" .Values.credentials.designate_api.project_user_domain_name}}"
+       ports:
+       - containerPort: 9102
+         name: metrics
+         protocol: TCP
+       resources:
+{{ toYaml .Values.resources | indent 8 }}
+       volumeMounts:
+       - mountPath: /srv/nanny.yaml
+         name: nanny-conf
+         subPath: nanny.yaml
+
+     volumes:
+     - name: nanny-conf
+       configMap:
+         name: {{ .Release.Name }}
+
+{{- end }}

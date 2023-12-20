@@ -8,7 +8,7 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: manila-migration
+  name: {{ .Release.Name }}-migration
   labels:
     system: openstack
     type: configuration
@@ -64,6 +64,7 @@ spec:
               readOnly: true
             - mountPath: /container.init
               name: container-init
+            {{- include "utils.trust_bundle.volume_mount" . | indent 12 }}
 {{- if $proxysql }}
             {{- include "utils.proxysql.volume_mount" . | indent 12 }}
         {{- include "utils.proxysql.container" . | indent 8 }}
@@ -73,11 +74,12 @@ spec:
           emptyDir: {}
         - name: manila-etc
           configMap:
-            name: manila-etc
+            name: {{ .Release.Name }}-etc
         - name: container-init
           configMap:
-            name: manila-bin
+            name: {{ .Release.Name }}-bin
             defaultMode: 0755
+        {{- include "utils.trust_bundle.volumes" . | indent 8 }}
 {{- if $proxysql }}
         {{- include "utils.proxysql.volumes" . | indent 8 }}
 {{- end }}

@@ -77,11 +77,6 @@ filter {
       replace => { "type" => "audit" }
       add_field => { "[sap][cc][audit][source]" => "remoteboard"}
     }
-    {{- if .Values.syslog.elkOutputEnabled }}
-    clone {
-      clones => ['audit', 'syslog']
-    }
-    {{- end }}
   }
 
 # Set source for ucs central instances
@@ -99,11 +94,6 @@ filter {
         replace => { "type" => "audit" }
         add_field => { "[sap][cc][audit][source]" => "ucsm" }
       }
-    {{- if .Values.syslog.elkOutputEnabled }}
-      clone {
-        clones => ['audit', 'syslog']
-      }
-    {{- end }}
     }
   }
 
@@ -113,23 +103,10 @@ filter {
         replace => { "type" => "audit" }
         add_field => { "[sap][cc][audit][source]" => "hsm" }
     }
-    {{- if .Values.syslog.elkOutputEnabled }}
-    clone {
-      clones => ['audit', 'syslog']
-    }
-    {{- end }}
   }
-  {{- if .Values.syslog.elkOutputEnabled }}
-  if [type] == "syslog" and [sap][cc][audit][source] {
-    mutate{
-      remove_field => "[sap][cc][audit][source]"
-    }
-  }
-  {{- else}}
   if [type] == "syslog" {
     drop{}
   }
-  {{- end }}
  }
  {{- end }}
  {{- if eq .Values.global.clusterType "metal" }}
@@ -231,18 +208,4 @@ output {
       http_method => "post"
     }
   }
-{{- if .Values.syslog.elkOutputEnabled }}
-  elseif [type] == "syslog" {
-    elasticsearch {
-      index => "syslog-%{+YYYY.MM.dd}"
-      template => "/audit-etc/syslog.json"
-      template_name => "syslog"
-      template_overwrite => true
-      hosts => ["{{.Values.global.elk_elasticsearch_endpoint_host_scaleout}}.{{.Values.global.region}}.{{.Values.global.tld}}:{{.Values.global.elk_elasticsearch_ssl_port}}"]
-      user => "{{.Values.global.elk_elasticsearch_data_user}}"
-      password => "{{.Values.global.elk_elasticsearch_data_password}}"
-      ssl => true
-    }
-  }
-{{- end }}
 }

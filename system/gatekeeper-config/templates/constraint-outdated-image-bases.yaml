@@ -6,10 +6,9 @@ metadata:
     {{- include "sources" (tuple "outdated-image-bases" "outdated-image-bases") | indent 4 }}
     {{- include "docstring" (tuple $ "GkOutdatedImageBases") | indent 4 }}
   labels:
-    on-prod-ui: 'true' # TODO: remove after migration from doop-agent to doop-analyzer
     severity: 'info'
 spec:
   enforcementAction: dryrun # change to "deny" to enforce
-  match: {{ include "match_pods_only" . | indent 4 }}
+  match: {{ include "match_pods_and_pod_owners" . | indent 4 }}
   parameters:
     doopImageCheckerURL: {{ quote .Values.doop_image_checker_url }}

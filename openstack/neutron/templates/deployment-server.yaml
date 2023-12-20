@@ -7,6 +7,10 @@ metadata:
     system: openstack
     type: api
     component: neutron
+  {{- if .Values.vpa.set_main_container }}
+  annotations:
+    vpa-butler.cloud.sap/main-container: neutron-server
+  {{- end }}
 spec:
   replicas: {{ if not .Values.pod.debug.server }}{{ .Values.pod.replicas.server }}{{ else }} 1 {{ end }}
   revisionHistoryLimit: {{ .Values.pod.lifecycle.upgrades.deployments.revision_history }}
@@ -29,6 +33,7 @@ spec:
         configmap-etc-hash: {{ include (print $.Template.BasePath "/configmap-etc.yaml") . | sha256sum }}
         configmap-etc-region-hash: {{ include (print $.Template.BasePath "/configmap-etc-region.yaml") . | sha256sum }}
         configmap-etc-vendor-hash: {{ include (print $.Template.BasePath "/configmap-etc-vendor.yaml") . | sha256sum }}
+        {{- include "utils.linkerd.pod_and_service_annotation" . | indent 8 }}
 {{- if .Values.api.uwsgi }}
         configmap-etc-api-hash: {{ include (print $.Template.BasePath "/configmap-etc-api.yaml") . | sha256sum }}
 {{- if .Values.cc_fabric.enabled }}
@@ -38,7 +43,7 @@ spec:
         configmap-bin-hash: {{ include (print $.Template.BasePath "/configmap-bin.yaml") . | sha256sum }}
 {{- end }}
         prometheus.io/scrape: "true"
-        prometheus.io/targets: "{{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus }}"
+        prometheus.io/targets: {{ required "$.Values.metrics.prometheus missing" $.Values.metrics.prometheus }}
     spec:
 {{ tuple . "neutron" "api" | include "kubernetes_pod_anti_affinity" | indent 6 }}
       {{- include "utils.proxysql.pod_settings" . | indent 6 }}
@@ -210,10 +215,6 @@ spec:
               subPath: ratelimit.yaml
               readOnly: true
             {{- end }}
-            {{- if .Values.pod.debug.server }}
-            - mountPath: /development
-              name: development
-            {{- end }}
             {{- if .Values.api.uwsgi }}
             - mountPath: /etc/neutron/uwsgi.ini
               name: neutron-etc-api
@@ -229,10 +230,6 @@ spec:
               name: neutron-etc-region
             - mountPath: /container.init
               name: container-init
-            {{- if .Values.pod.debug.server }}
-            - mountPath: /development
-              name: development
-            {{- end }}
 {{- end }}
             {{- include "utils.proxysql.volume_mount" . | indent 12 }}
             {{- include "utils.coordination.volume_mount"  . | indent 12 }}
@@ -276,11 +273,6 @@ spec:
         - name: neutron-etc-region
           configMap:
             name: neutron-etc-region
-{{- if .Values.pod.debug.server }}
-        - name: development
-          persistentVolumeClaim:
-            claimName: development-pvclaim
-{{- end }}
 {{- if .Values.api.uwsgi }}
         - name: neutron-etc-api
           configMap:

@@ -128,7 +128,8 @@ absent-metrics-operator:
 
 kube-state-metrics:
   image:
-    repository: keppel.global.cloud.sap/ccloud-registry-k8s-io-mirror/kube-state-metrics/kube-state-metrics
+    registry: keppel.global.cloud.sap/ccloud-registry-k8s-io-mirror
+    repository: kube-state-metrics/kube-state-metrics
 
   customLabels:
     app: kube-state-metrics
@@ -142,6 +143,9 @@ kube-state-metrics:
   metricLabelsAllowlist:
     - nodes=[*]
     - namespaces=[*]
+
+  selfMonitor:
+    enabled: true
 
 kube-state-metrics-exporter:
   prometheusName: kubernetes
@@ -193,6 +197,13 @@ falco:
       initContainer:
         image:
           registry: keppel.global.cloud.sap/ccloud-dockerhub-mirror
+
+  controller:
+    daemonset:
+      updateStrategy:
+        type: RollingUpdate
+        rollingUpdate:
+          maxUnavailable: 25%
 
   falcoctl:
     image:

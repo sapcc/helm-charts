@@ -1,0 +1,24 @@
+apiVersion: monitoring.coreos.com/v1alpha1
+kind: ScrapeConfig
+metadata:
+  name: ipmi-exporter-ironic
+  namespace: infra-monitoring
+  labels:
+    prometheus: {{ .Values.aggregations.prometheus }}
+    app.kubernetes.io/name: ipmi-exporter-ironic
+spec:
+  httpSDConfigs:
+    - url: {{ .Values.global.http_sd_configs.netbox_url }}/devices/?status=active&region={{ .Values.global.region }}&platform=ironic&tenant=converged-cloud&role=server&target=mgmt_only
+      refreshInterval: {{ .Values.http_sd_configs.refresh_interval }}
+  metricsPath: /ipmi
+  scrapeInterval: 150s
+  scrapeTimeout: 60s
+  params:
+    job: [baremetal/ironic]
+  relabelings:
+    - sourceLabels: [__address__]
+      targetLabel: __param_target
+    - sourceLabels: [__param_target]
+      targetLabel: instance
+    - targetLabel: __address__
+      replacement: ipmi-exporter:{{ .Values.listen_port }}

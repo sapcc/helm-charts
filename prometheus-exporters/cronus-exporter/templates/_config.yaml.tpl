@@ -10,8 +10,12 @@ exporter:
   awsAccess: {{ .Values.config.awsAccess }}
   awsSecret: {{ .Values.config.awsSecret }}
   keystoneRegion: {{ .Values.config.keystone.region }}
-  receivingDelayMinute: {{ .Values.exporter.receivingDelayMinute }}
-  sendingDelayMinute: {{ .Values.exporter.sendingDelayMinute }}
+  receivingDelay: {{ .Values.exporter.receivingDelay }}
+  sendingDelay: {{ .Values.exporter.sendingDelay }}
+  suppressionDelay: {{ .Values.exporter.suppressionDelay }}
+  accountsDelay: {{ .Values.exporter.accountsDelay }}
+  identityDelay: {{ .Values.exporter.identityDelay }}
+  maxAllowedSuppression: {{ .Values.exporter.maxAllowedSuppression }}
   getAccountsDelayHour: {{ .Values.exporter.getAccountsDelayHour }}
   applicationCredentialsProject: {{ .Values.updater.applicationCredentialsProject }}
   applicationCredentialsDomain: {{ .Values.updater.applicationCredentialsDomain }}

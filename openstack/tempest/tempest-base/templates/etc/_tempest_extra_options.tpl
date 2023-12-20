@@ -57,6 +57,7 @@ shared_physical_network= {{ .Values.tempest_common.shared_physical_network | def
 floating_network_name = FloatingIP-external-monsoon3-01
 build_timeout=600
 build_interval=20
+subnet_id = a5703f23-ffcb-4ca7-9dfe-ab9861d91bf5
 
 [network-feature-enabled]
 ipv6 = False
@@ -69,8 +70,10 @@ driver = fake-hardware
 
 [compute]
 # image_ref and image_ref_alt will be changed to the image-id during init-script as the image-id can change over time.
-image_ref = CHANGE_ME_IMAGE_REF
-image_ref_alt = CHANGEMEIMAGEREFALT
+#image_ref = CHANGE_ME_IMAGE_REF
+#image_ref_alt = CHANGEMEIMAGEREFALT
+image_ref = 84f9f266-3f11-4447-ae6c-f7940b2f5eb1
+image_ref_alt = 84f9f266-3f11-4447-ae6c-f7940b2f5eb1
 endpoint_type = internal
 v3_endpoint_type = internal
 region = {{ .Values.global.region }}
@@ -127,6 +130,7 @@ storage_protocol = vmdk
 disk_format = vmdk
 volume_size = 10
 build_timeout=600
+volume_type = vmware
 
 [volume-feature-enabled]
 backup = true

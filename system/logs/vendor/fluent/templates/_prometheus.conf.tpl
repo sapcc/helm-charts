@@ -36,7 +36,7 @@
 {{- if eq .Values.global.clusterType  "scaleout" }}
       cluster_type scaleout
 {{- else }}
-      cluster_type controlplane
+      cluster_type metal
 {{- end }}
       tag ${tag}
       hostname ${hostname}

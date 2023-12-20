@@ -35,12 +35,6 @@ spec:
           secret:
             defaultMode: 420
             secretName: opensearch-certs
-{{- if .Values.opensearch_manager.enabled }}
-        - name: truststore
-          secret:
-            defaultMode: 420
-            secretName: truststore 
-{{- end }}
       containers:
       - name: elastic-manager
         image: {{.Values.global.dockerHubMirror}}/{{.Values.image_elastic_manager}}
@@ -64,10 +58,6 @@ spec:
             name: elastic-etc
           - mountPath: /opt/certs
             name: opensearch-certs
-{{- if .Values.opensearch_manager.enabled }}
-          - mountPath: /truststore
-            name: truststore
-{{- end }}
         ports:
           - name: manager
             containerPort: {{.Values.port_internal}}

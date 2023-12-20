@@ -20,3 +20,19 @@ groups:
           description: The container {{ $labels.pod }}/{{ $labels.container }} is being CPU-throttled
             constantly. This is probably impacting performance, so check if we can increase the number
             of replicas or the resource requests/limits.
+
+      - alert: OpenstackLimesPodSchedulingFailedInsufficientCPU
+        expr: sum(rate(kube_pod_failed_scheduling_cpu_total{pod_name=~"limes-.+"}[30m])) by (pod_name) > 0
+        for: 15m
+        labels:
+          severity: warning
+          support_group: containers
+          tier: os
+          service: limes
+          context: cpu
+          dashboard: limes-overview
+          meta: "{{ $labels.pod_name }}"
+          no_alert_on_absence: "true" # the underlying metric is only generated when scheduling fails
+        annotations:
+          summary: Scheduling failed due to insufficient cpu
+          description: The pod {{ $labels.pod_name }} failed to be scheduled. Insuffient CPU!

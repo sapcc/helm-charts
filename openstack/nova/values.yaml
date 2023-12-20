@@ -21,6 +21,8 @@ global:
   hypervisors_ironic: []
   osprofiler: {}
 
+  linkerd_requested: false
+
 osprofiler: {}
 
 auto_assign_aggregates: 'dry_run'
@@ -218,7 +220,9 @@ api_metadata:
       api_paste_config: /etc/nova/api-paste.ini
 
 bigvm:
-  config_file: {}
+  config_file:
+    DEFAULT:
+      bigvm_cluster_max_usage_percent: 100
 
 consoles:
   novnc:
@@ -346,10 +350,11 @@ mysql_metrics:
           instances.project_id,
           COUNT(*) AS gauge,
           instances.vm_state,
-          coalesce(instance_types.name,'N/A') AS flavor_name
+          coalesce(JSON_VALUE(instance_extra.flavor, '$.cur."nova_object.data".name'),'N/A') AS flavor_name
         FROM instances
-        JOIN instance_types ON instances.instance_type_id=instance_types.id
-        GROUP BY instances.vm_state, instances.host, instances.project_id, instance_types.name;
+        LEFT JOIN instance_extra ON instances.uuid=instance_extra.instance_uuid
+        WHERE instances.deleted = 0
+        GROUP BY instances.vm_state, instances.host, instances.project_id, flavor_name;
       values:
       - "gauge"
     - help: Total Nova VM Stuck count
@@ -528,11 +533,12 @@ mysql_metrics:
           instances.project_id,
           instances.hostname,
           instances.vm_state,
-          coalesce(instance_types.name,'N/A') AS flavor_name,
+          coalesce(JSON_VALUE(instance_extra.flavor, '$.cur."nova_object.data".name'),'N/A') AS flavor_name,
           COUNT(*) AS gauge
         FROM instances
-        JOIN instance_types ON instances.instance_type_id=instance_types.id where host LIKE 'nova-compute-ironic%'
-        GROUP BY instances.vm_state, instances.project_id, instance_types.name, instances.uuid, instances.hostname, instances.node;
+        LEFT JOIN instance_extra ON instances.uuid=instance_extra.instance_uuid
+        WHERE host LIKE 'nova-compute-ironic%' AND instances.deleted = 0
+        GROUP BY instances.vm_state, instances.project_id, flavor_name, instances.uuid, instances.hostname, instances.node;
       values:
       - "gauge"
     - help: Stats on compute nodes
@@ -696,6 +702,8 @@ mariadb:
   name: nova
   initdb_configmap: true
   long_query_time: 8
+  vpa:
+    set_main_container: true
   databases:
   - nova
   - nova_cell0
@@ -734,6 +742,8 @@ mariadb_api:
   name: nova-api
   initdb_configmap: true
   long_query_time: 8
+  vpa:
+    set_main_container: true
   databases:
   - nova_api
   users:
@@ -765,6 +775,8 @@ mariadb_cell2:
   log_file_size: "1024M"
   initdb_configmap: true
   long_query_time: 8
+  vpa:
+    set_main_container: true
   persistence_claim:
     name: db-nova-cell2-pvc
     size: "50Gi"
@@ -918,3 +930,13 @@ owner-info:
 default:
   password_all_group_samples: 2
   rpc_ping_enabled: true
+
+utils:
+  trust_bundle:
+    enabled: true
+
+vpa:
+  # https://github.com/sapcc/vpa_butler
+  # The maximum available capacity is split evenly across containers specified in the Deployment, StatefulSet or DaemonSet to derive the upper recommendation bound. This does not work out for pods with a single resource-hungry container with several sidecar containers
+  # Annotate the Deployment, StatefulSet or DaemonSet with vpa-butler.cloud.sap/main-container=$MAIN_CONTAINER. That will distribute 75% of the maximum available capacity to the main container and the rest evenly across all others
+  set_main_container: true

@@ -24,16 +24,11 @@ logstash_audit_external:
   input_http_port: 443
   syslog:
     enabled: false
-    elkOutputEnabled: false
   tls:
     crt: DEFINED-IN-SECRETS
     key: DEFINED-IN-SECRETS
   ingress:
     enabled: false
-  elk_elasticsearch_endpoint_host_scaleout: "elk-elasticsearch.scaleout"
-  elk_elasticsearch_ssl_port: "443"
-  elk_elasticsearch_endpoint_host_internal: "es-client"
-  elk_elasticsearch_http_port_internal: 9200
   beats:
     enabled: true
     port: 5044
@@ -49,7 +44,7 @@ fluent_audit_container:
   enabled: false
   port: 8887
   metrics_port: 24231
-  image_version: "20230216092201"
+  image_version: "20231213092430"
   resources:
     limits:
       memory: 500Mi
@@ -61,12 +56,17 @@ fluent_audit_container:
       host: none
   alerts:
     enabled: false
-    prometheus: infra-collector
+    # Keys = directory names in alerts/ and aggregations/
+    prometheus:
+      - name: infra-collector
+        type: prometheus
+      - name: metal
+        type: thanos-ruler
   default_container_logs: []
 
 fluent_audit_systemd:
   enabled: false
-  image_version: "20230216092201"
+  image_version: "20231213092430"
   resources:
     limits:
       memory: 500Mi

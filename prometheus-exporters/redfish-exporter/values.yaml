@@ -3,8 +3,9 @@ owner-info:
   # service: foobar        # optional
   maintainers:
     - Bernd Kuespert
-  helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/prometheus-exporters/ucs-exporter
-redfish:
+  helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/prometheus-exporters/redfish-exporter
+  
+redfish_exporter:
   name: redfish-exporter
   enabled: false
   image: 
@@ -14,17 +15,48 @@ redfish:
   listen_port: 9220
   namespace: infra-monitoring
   replicas: 1
+  args:
+    - -u
+    - ./main.py
+
+  prometheus: infra-collector
   alerts:
     enabled: true
     prometheus: infra-collector
   exporterAlerts:
     enabled: true
     prometheus: infra-collector
-  limits:
-    memory: 200Mi
-    cpu: 400m
+    
   resources:
-    memory: 100Mi
-    cpu: 200m
+    limits:
+      memory: 200Mi
+      cpu: 400m
+    requests:
+      memory: 100Mi
+      cpu: 200m
+
+  scrapeInterval: 4m
+  scrapeTimeout: 230s
+  firmware:
+    scrapeInterval: 1h
+    scrapeTimeout: 230s
+    enabled: false
+
+  httpSDConfigs:
+    netbox_staging_url: https://netbox-test.global.cloud.sap/api/plugins/atlas
+    netbox_production_url: https://netbox.global.cloud.sap/api/plugins/atlas
+    refreshInterval: 60m
+
+  users:
+    # redfish users
+    redfish_bb_username: DEFINED-IN-REGION-SECRETS
+    redfish_bb_password: DEFINED-IN-REGION-SECRETS
+    redfish_bm_username: DEFINED-IN-REGION-SECRETS
+    redfish_bm_password: DEFINED-IN-REGION-SECRETS
+    redfish_cp_username: DEFINED-IN-REGION-SECRETS
+    redfish_cp_password: DEFINED-IN-REGION-SECRETS
+    redfish_fw_username: DEFINED-IN-REGION-SECRETS
+    redfish_fw_password: DEFINED-IN-REGION-SECRETS
+
 global:
   registry: DEFINED-IN-GLOBAL-SECRETS

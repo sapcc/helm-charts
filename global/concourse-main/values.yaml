@@ -11,7 +11,7 @@ worker:
 
 concourse:
   image: keppel.global.cloud.sap/ccloud-dockerhub-mirror/concourse/concourse
-  imageTag: "7.9.1"
+  imageTag: "7.10.0"
 
   concourse:
     web:
@@ -93,7 +93,7 @@ concourse:
     image:
       registry: keppel.global.cloud.sap
       repository: ccloud-dockerhub-mirror/bitnami/postgresql
-      tag: 11.20.0-debian-11-r14
+      tag: 11.21.0-debian-11-r10
     postgresqlUsername: concourse
     postgresqlDatabase: concourse
     persistence:
@@ -103,6 +103,12 @@ concourse:
       requests:
         memory: 10Gi
         cpu: "4"
+    pgHbaConfiguration: |-
+      # TYPE  DATABASE        USER            ADDRESS                 METHOD
+      local   all             all                                     trust
+      host    all             all             127.0.0.1/32            trust
+      host    all             all             ::1/128                 trust
+      host    all             all             0.0.0.0/0               password
     primary:
       nodeSelector:
         ccloud.sap.com/nodepool: "ci-system"

@@ -80,6 +80,10 @@ alertmanagers:
 service:
   annotations: {}
 
+# Will explicitly set ingressClassName to nginx. If the cluster has traefik deployed only, this needs to be set to true
+traefik:
+  enabled: false
+
 # Optional ingress for this Prometheus.
 ingress:
   enabled: false
@@ -220,7 +224,7 @@ thanos:
   # See https://github.com/coreos/prometheus-operator/blob/master/Documentation/api.md#thanosspec .
   spec:
     baseImage: keppel.eu-de-1.cloud.sap/ccloud-quay-mirror/thanos/thanos
-    version: v0.28.1
+    version: v0.31.0
 
   # Being one of debug, info, warn, error. Defaults to warn.
   # logLevel: info
@@ -252,7 +256,6 @@ thanosSeeds:
     projectDomainName:
     # all settings below are not mandatory and auto-generated
     userName:
-    regionName:
     containerName:
 
     # Currently not supported are:
@@ -411,6 +414,10 @@ nodeSelector: {}
 alerts:
   # prometheus name picking up the prometheus self metrics, defaults to prometheus.name
   prometheus:
+  # thanos name that picks up the alerts from Prometheus - mainly used when kube_ metrics needs to be present
+  thanos:
+    enabled: false
+    # name:
   # service name routing the alerts, defaults to `metrics`
   service:
   # support_group routing the alerts, defaults to `observability`

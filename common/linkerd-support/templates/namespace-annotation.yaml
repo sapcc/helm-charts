@@ -1,0 +1,68 @@
+{{- if and .Values.global.linkerd_enabled .Values.global.linkerd_requested .Values.annotate_namespace }}
+
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: annotate-namespace-for-linkerd
+
+---
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: annotate-namespace-for-linkerd
+rules:
+- apiGroups: [ "" ]
+  resources: [ namespaces ]
+  resourceNames: [ {{ .Release.Namespace }} ]
+  verbs: [ get, patch ]
+
+---
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: annotate-namespace-for-linkerd
+subjects:
+  - kind: ServiceAccount
+    name: annotate-namespace-for-linkerd
+    namespace: {{ .Release.Namespace }}
+roleRef:
+  kind: Role
+  name: annotate-namespace-for-linkerd
+  apiGroup: rbac.authorization.k8s.io
+
+---
+
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: annotate-namespace-for-linkerd
+  annotations:
+    "helm.sh/hook": post-install,post-upgrade
+    "helm.sh/hook-delete-policy": hook-succeeded
+spec:
+  template:
+    metadata:
+      labels:
+        name: annotate-namespace-for-linkerd
+      annotations:
+        # We need to disable Linkerd injection for this job.
+        # Otherwise, the linkerd-proxy container will keep running forever and the job will never complete.
+        # This does not cause unencrypted network traffic since this job only talks to the Kubernetes API, which is via HTTPS.
+        # Ref: <https://github.com/linkerd/linkerd2/discussions/7430>
+        "linkerd.io/inject": disabled
+    spec:
+      restartPolicy: Never
+      serviceAccountName: annotate-namespace-for-linkerd
+      containers:
+      - name: annotate
+        image: "{{ .Values.global.dockerHubMirror | required ".Values.global.dockerHubMirror not found" }}/bitnami/kubectl:latest"
+        command:
+          - kubectl
+          - annotate
+          - ns
+          - {{ .Release.Namespace }}
+          - linkerd.io/inject=enabled
+
+{{- end }}

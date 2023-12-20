@@ -28,6 +28,7 @@ thanos:
   ruler:
     enabled: true
     loglevel: warn
+    evaluationInterval: 30s
     alertmanagers:
       hosts:
         - alertmanager-internal.scaleout.eu-de-1.cloud.sap
@@ -38,6 +39,8 @@ thanos:
 
 regional_thanos:
   name: regional
+  loglevel: warn
+  evaluationInterval: 60s
   deployWholeThanos: false
   ingress:
     enabled: true
@@ -49,19 +52,29 @@ regional_thanos:
 
   query:
     replicas: 5
+    extraArgs:
+      - --query.promql-engine=thanos
 
   authentication:
     enabled: true
 
-  clusterTypes:
-    - metal
-    - virtual
-    - admin
-    - kubernikus
+  queryStoreAPIs:
+    # scaleout includes prometheus-infra, kubernetes-scaleout, vmware-*-*
+    # Regional secrets may override the list of store APIs
     - scaleout
+    - openstack
+    - infra-collector
+    - storage
+    - kubernetes-metal
+    - kubernetes-virtual
+    - kubernetes-admin
+    - kubernetes-kubernikus
 
   ruler:
     enabled: true
+
+    externalClusterLabels:
+      enabled: false
 
     alertmanagers:
       hosts:

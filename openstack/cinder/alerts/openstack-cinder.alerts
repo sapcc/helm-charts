@@ -2,7 +2,7 @@ groups:
 - name: openstack-cinder.alerts
   rules:
   - alert: OpenstackCinderVolumeInDeletingState
-    expr: count(sum(openstack_stuck_volumes_max_duration_gauge{status="deleting"}) BY (id,display_name) > 15) by (id, display_name)
+    expr: count(sum(openstack_stuck_volumes_max_duration_gauge{status="deleting"}) BY (id,display_name) > 120) by (id, display_name)
     for: 5m
     labels:
       dashboard: cinder
@@ -14,7 +14,7 @@ groups:
       tier: os
     annotations:
       description: Volume {{ $labels.display_name }} with {{ $labels.id }} in Deleting State
-      summary: Cinder Volumes taking more than 15s to delete
+      summary: Cinder Volumes taking more than 2 minutes to delete
 
   - alert: OpenstackCinderVolumeInAttachingState
     expr: count(sum(openstack_stuck_volumes_max_duration_gauge{status="attaching"}) BY (id,display_name) > 3600) by (id, display_name)

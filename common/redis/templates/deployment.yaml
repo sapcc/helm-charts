@@ -23,6 +23,11 @@ spec:
         alert-tier: {{ required ".Values.alerts.tier missing" .Values.alerts.tier }}
         alert-service: {{ include "alerts.service" . }}
         {{- end }}
+      annotations:
+        kubectl.kubernetes.io/default-container: {{ template "redis.fullname" . }}
+        {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+        linkerd.io/inject: enabled
+        {{- end }}
     spec:
       containers:
       - name: {{ template "redis.fullname" . }}

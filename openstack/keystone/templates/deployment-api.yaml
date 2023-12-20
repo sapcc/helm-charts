@@ -34,6 +34,7 @@ spec:
         type: api
         alert-tier: os
         alert-service: keystone
+        app: keystone
       annotations:
         chart-version: {{.Chart.Version}}
         configmap-etc-hash: {{ include (print $.Template.BasePath "/configmap-etc.yaml") . | sha256sum }}
@@ -42,38 +43,12 @@ spec:
         prometheus.io/scrape: "true"
         prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
         {{- end }}
+        {{- include "utils.linkerd.pod_and_service_annotation" . | indent 8 }}
     spec:
 {{- if .Values.rbac.enabled }}
       serviceAccountName: {{ .Release.Name }}
 {{- end }}
-      affinity:
-        podAntiAffinity:
-          preferredDuringSchedulingIgnoredDuringExecution:
-          - weight: 10
-            podAffinityTerm:
-              topologyKey: kubernetes.io/hostname
-              labelSelector:
-                matchExpressions:
-                - key: name
-                  operator: In
-                  values:
-                  - keystone-api
-                - key: system
-                  operator: In
-                  values:
-                  - openstack
-                - key: component
-                  operator: In
-                  values:
-                  - keystone
-                - key: type
-                  operator: In
-                  values:
-                  - api
-      {{- with .Values.nodeAffinity }}
-        nodeAffinity:
-{{ toYaml . | indent 10 }}
-      {{- end }}
+{{ tuple . "keystone" "keystone" | include "kubernetes_pod_AZ_spread" | indent 6 }}
       terminationGracePeriodSeconds: {{ .Values.api.terminationGracePeriodSeconds | default "30" }}
 {{ include "utils.proxysql.pod_settings" . | indent 6 }}
       initContainers:
@@ -88,11 +63,11 @@ spec:
           value: {{ .Release.Namespace }}
 {{- if .Release.IsInstall }}
         - name: DEPENDENCY_JOBS
-          value: {{ .Release.Name }}-job-migration,{{ .Release.Name }}-job-bootstrap
+          value: "{{ tuple . "job-migration" | include "job_name" }}","{{ tuple . "job-bootstrap" | include "job_name" }}"
 {{- else }}
   {{- if or .Values.run_db_migration }}
         - name: DEPENDENCY_JOBS
-          value: {{ .Release.Name }}-job-migration
+          value: "{{ tuple . "job-migration" | include "job_name" }}"
   {{- end }}
 {{- end }}
         - name: DEPENDENCY_SERVICE
@@ -153,14 +128,14 @@ spec:
 {{- end }}
             initialDelaySeconds: 5
             periodSeconds: 10
-            timeoutSeconds: 5
+            timeoutSeconds: 20
           livenessProbe:
             httpGet:
               path: /healthcheck
               port: 5000
             initialDelaySeconds: 50
             periodSeconds: 20
-            timeoutSeconds: 5
+            timeoutSeconds: 20
           volumeMounts:
             - name: etc-keystone
               mountPath: /etc/keystone
@@ -223,6 +198,7 @@ spec:
               readOnly: true
             {{- end }}
             {{- include "utils.proxysql.volume_mount" . | indent 12 }}
+            {{- include "utils.trust_bundle.volume_mount" . | indent 12 }}
           {{- if .Values.api.resources }}
           resources:
 {{ toYaml .Values.api.resources | indent 12 }}
@@ -274,3 +250,4 @@ spec:
             secretName: keystone-credential-keys
             defaultMode: 0555
         {{- include "utils.proxysql.volumes" . | indent 8 }}
+        {{- include "utils.trust_bundle.volumes" . | indent 8 }}

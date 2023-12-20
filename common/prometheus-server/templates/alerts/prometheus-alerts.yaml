@@ -13,5 +13,19 @@ metadata:
 spec:
 {{ include (print $.Template.BasePath "/alerts/_prometheus.alerts.tpl") (list $name $root) | indent 2 }}
 
+{{- if $root.Values.alerts.thanos.enabled }}
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+
+metadata:
+  name: {{ include "prometheus.fullName" (list $name $root) }}-prometheus-thanos-rule.alerts
+  labels:
+    thanos-ruler: {{ required "$.Values.alerts.thanos.name " $.Values.alerts.thanos.name }}
+
+spec:
+{{ include (print $.Template.BasePath "/alerts/_prometheus-thanos-rule.alerts.tpl") (list $name $root) | indent 2 }}
+
+{{- end }}
 {{- end }}
 {{- end }}

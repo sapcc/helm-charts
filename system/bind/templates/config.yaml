@@ -51,14 +51,15 @@ data:
      };
 {{ end }}
 ---
+{{ if .Values.override_conf }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
   name: {{ .Release.Name }}-keys
 data:
   rndc.key: |
-    key "rndc-key" {
-        algorithm hmac-md5;
+    key "{{ .Values.rndc_key_name | default "rndc-key" }}" {
+        algorithm "{{ .Values.rndc_key_algorithm | default "hmac-md5" }}";
         secret "{{ .Values.rndc_key }}";
     };
   tsig.key: |
@@ -73,6 +74,7 @@ data:
         secret "{{ .Values.nsi_key }}";
     };
   {{- end }}
+{{ end }}  
 ---
 {{ if .Values.zabbix.enabled }}
 apiVersion: v1
@@ -80,6 +82,11 @@ kind: ConfigMap
 metadata:
   name: {{ .Release.Name }}-zabbix-conf
 data:
+  rndc.key: |
+    key "{{ .Values.rndc_key_name | default "rndc-key" }}" {
+        algorithm "{{ .Values.rndc_key_algorithm | default "hmac-md5" }}";
+        secret "{{ .Values.rndc_key }}";
+    };
   zabbix-bind.conf: |
      UserParameter=bind.discoverzones,/usr/bin/bind/scripts/bind-stats.py discoverzones
      UserParameter=bind.serialzones,/usr/bin/bind/scripts/bind-stats.py serialzones
@@ -100,5 +107,6 @@ data:
      UserParameter=bind.zones[*],/usr/bin/bind/scripts/bind-stats.sh zones $1
      UserParameter=bind.git,/usr/bin/bind/scripts/check_bind_git.sh
      UserParameter=bind.stats[*],/usr/bin/curl -s http://localhost:8653/json | jq '. | {$1: .$1}'
-
+     UserParameter=bind.stats.memory,/usr/bin/curl -s http://localhost:8653/json | jq '. | del(.memory.contexts) | {memory: .memory}'
+     Server={{ .Values.zabbix.server }}
 {{ end }}

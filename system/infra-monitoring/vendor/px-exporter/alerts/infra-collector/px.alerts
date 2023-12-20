@@ -1,0 +1,142 @@
+groups:
+- name: alerts for PX control plane
+  rules:
+  - alert: PXBirdExporterAvailabilityMissingExporter
+    expr: sum(up{app=~".+-pxrs-.+", app!~".*pxmon.*"} ==bool  1) != 12
+    for: 15m
+    labels:
+      severity: critical
+      support_group: network-data
+      tier: k8s
+      service: px
+      context: px
+      playbook: docs/devops/alert/network/px#PXBirdExporterAvailabilityMissingExporter
+    annotations:
+      description: The bird exporter for PX does not send any metrics - this should be checked"
+      summary:  No metrics from bird exporter
+
+  - alert: PXDomainAllPeersDown
+    expr: sum(bird_protocol_up{name!~"kernel."} ==bool 1)  by (pxdomain,region, pxservice) == 0
+    for: 2m
+    labels:
+      severity: critical
+      support_group: network-data
+      tier: net
+      service: px
+      context: px
+      playbook: docs/devops/alert/network/px#PXDomainAllPeersDown
+      dashboard: px-control-plane
+    annotations:
+      description: "{{ $labels.region }}, domain: {{ $labels.pxdomain }}, service: {{ $labels.pxservice }}: All PX peers are down!"
+      summary:  All peers in a domain are down
+
+  - alert: PXConsumerBgpConnectionDown
+    expr: ((sum(bird_protocol_up{name!~"kernel."} ==bool 1)  by (region, pxservice, pxdomain) ==bool 0) ) + on(region, pxservice, pxdomain) group_right() ((bird_protocol_up{name!~"kernel.", peer_type="PL"} ==bool 0 ) * 1000) == 1000
+    for: 5m
+    labels:
+      severity: warning
+      support_group: network-data
+      tier: net
+      service: px
+      context: px
+      playbook: docs/devops/alert/network/px#PXConsumerBgpConnectionDown
+      dashboard: px-control-plane
+    annotations:
+      description: BGP from {{ $labels.app }} to {{ $labels.peer_hostname }} went down.
+      summary:  Consumer BGP connection down
+
+  - alert: PXTransportAllRouterBgpDown
+    expr: sum(bird_protocol_up{name!~"kernel.", peer_type="TP"}) by (app, pxservice, pxdomain, pxinstance) == 0
+    for: 2m
+    labels:
+      severity: critical
+      support_group: network-data
+      tier: net
+      service: px
+      context: px
+      playbook: docs/devops/alert/network/px#PXTransportRouterBgpDown
+      dashboard: px-control-plane
+    annotations:
+      description: "Route-Server {{ $labels.app }}: All transport router BGP connections are down."
+      summary:  All transport router BGP down
+
+  - alert: PXTransportRedundancyLostRouterBgpDown
+    expr: sum(bird_protocol_up{name!~"kernel.", peer_type="TP"}) by (pxservice, pxdomain, pxinstance) == 1
+    for: 15m
+    labels:
+      severity: critical
+      support_group: network-data
+      tier: net
+      service: px
+      context: px
+      playbook: docs/devops/alert/network/px#PXTransportRouterBgpDown
+      dashboard: px-control-plane
+    annotations:
+      description: "{{ $labels.region }}, domain: {{ $labels.pxdomain }}, service: {{ $labels.pxservice }}: A single transport router BGP connection went down."
+      summary:  Transport router BGP down
+
+  - alert: PXTransportRouterPrefixImportCountZero
+    expr: (sum(bird_protocol_up{peer_type="PL"}) by (app, ip_version, proto, pxdomain, pxinstance, pxservice) > 0 ) + on (app, ip_version, proto, pxdomain, pxinstance, pxservice) group_right() bird_protocol_prefix_import_count{name!~"kernel.", peer_type="TP"} <= 0 
+    for: 3m
+    labels:
+      severity: warning
+      support_group: network-data
+      tier: net
+      service: px
+      context: px
+      playbook: docs/devops/alert/network/px#PXTransportRouterPrefixImportCountZero
+      dashboard: px-control-plane
+    annotations:
+      description: BGP session from {{ $labels.peer_hostname }} to {{ $labels.app }} is resulting in 0 imported routes.
+      summary: No routes imported from transport router
+
+  - alert: PXTransportRouterPrefixExportCountZero
+    expr: |
+      (sum by(app, ip_version, proto, pxdomain, pxinstance, pxservice) (bird_protocol_prefix_import_count{peer_type="PL"}) > 0)  # exclude all domains, instances, services without any routes advertised to
+        + on(app, ip_version, proto, pxdomain, pxinstance, pxservice)
+          group_right()
+      (bird_protocol_up == 1) # exclude all peers that are not up
+        +
+      (bird_protocol_prefix_export_count{name!~"kernel.",peer_type="TP"} == 0) # actual metric, 0 exported routes
+    for: 3m
+    labels:
+      severity: critical
+      support_group: network-data
+      tier: net
+      service: px
+      context: px
+      playbook: docs/devops/alert/network/px#PXTransportRouterPrefixImportCountZero
+      dashboard: px-control-plane
+    annotations:
+      description: BGP session from {{ $labels.peer_hostname }} to {{ $labels.app }} is resulting in 0 exported routes.
+      summary: No routes exported from transport router
+
+  - alert: PXConsumerExceedingRouteLimit
+    expr: bird_protocol_prefix_import_count{pxservice=~"1|2", peer_type="PL"} >=10000 or bird_protocol_prefix_import_count{pxservice="3", peer_type="PL"} >= 100000
+    for: 2m
+    labels:
+      severity: critical
+      support_group: network-data
+      tier: net
+      service: px
+      context: px
+      playbook: docs/devops/alert/network/px#PXConsumerExceedingRouteLimit
+      dashboard: px-control-plane
+    annotations:
+      description: BGP session from {{ $labels.name }} to {{ $labels.app }} is advertising more than the maximal allowed number of prefixes.
+      summary:  Consumer advertising too many routes
+
+  - alert: PXRouteTableSignificantChanges
+    expr: floor((floor(delta(sum(bird_protocol_prefix_import_count{peer_type="PL"}) by (app)[30m:])) / sum(bird_protocol_prefix_import_count{peer_type="PL"} offset 30m) by (app)) * 100) > 25
+    for: 2m
+    labels:
+      severity: warning
+      support_group: network-data
+      tier: net
+      service: px
+      context: px
+      playbook: docs/devops/alert/network/px#PXRouteTableSignificantChanges
+      dashboard: px-control-plane
+    annotations:
+      description: The route table for PX route server {{$labels.app}} has changed significantly within the last 30 mins. This does not necessarily indicate an outage, but the origin of the deviation should be investigated.
+      summary: Massive route changes

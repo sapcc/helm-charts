@@ -13,7 +13,16 @@ spec:
       secretKeyRef:
         name: {{ include "thanos.objectStorageConfigName" (list $name $root) }}
         key: thanos.yaml
-  compactor: 
+  compactor:
+    {{- if $.Values.compactor.dataVolume.enabled }}
+    dataVolume:
+      pvc:
+        spec:
+          resources:
+            requests:
+              storage: {{ $.Values.compactor.dataVolume.size }}
+          storageClassName: {{ $.Values.compactor.dataVolume.storageClassName }}
+    {{ end }}
     consistencyDelay: {{ required "thanos.compactor.consistencyDelay" $.Values.compactor.consistencyDelay }}
     retentionResolutionRaw: {{ mul 24 (required "thanos.compactor.retentionResolutionRaw" $.Values.compactor.retentionResolutionRaw) }}h
     retentionResolution5m: {{ mul 24 (required "thanos.compactor.retentionResolution5m" $.Values.compactor.retentionResolution5m) }}h
@@ -34,6 +43,11 @@ spec:
                 {{- range $arg := $.Values.compactor.customArgs }}
                 - {{ $arg }}
                 {{- end }}
+              {{- end }}
+              {{- if not $.Values.compactor.dataVolume.enabled }}
+              resources:
+                requests:
+                  ephemeral-storage: {{ $.Values.compactor.resources.requests.ephemeralStorage }}
               {{- end }}
 {{ end }}
 {{ end }}

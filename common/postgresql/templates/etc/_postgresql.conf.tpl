@@ -145,7 +145,7 @@ dynamic_shared_memory_type = posix	# the default is the first option
 #max_files_per_process = 1000		# min 25
                     # (change requires restart)
 
-shared_preload_libraries = '{{ keys .Values.extensions | join ","}}'		# (change requires restart)
+shared_preload_libraries = '{{ keys .Values.extensions | sortAlpha | join ","}}'		# (change requires restart)
 
 {{- range $k, $v := .Values.extensions }}
 {{- range $k2, $v2 := $v }}

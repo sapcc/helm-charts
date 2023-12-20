@@ -16,6 +16,7 @@ global:
   rpc_response_timeout: 60
   domain_seeds:
     skip_hcm_domain: false
+  linkerd_requested: false
 
 api_workers: 12
 rpc_workers: 5
@@ -23,6 +24,7 @@ rpc_state_workers: 5
 
 owner-info:
   support-group: network-api
+  service: neutron
   maintainers:
     - Sebastian Lohff
     - Sebastian Wagner
@@ -135,10 +137,10 @@ pod:
         memory: "1Gi"
     nsxv3_agent:
       requests:
-        cpu: "64m"
+        cpu: "128m"
         memory: "256Mi"
       limits:
-        cpu: "128m"
+        cpu: "256m"
         memory: "512Mi"
     nsxv3_exporter:
       requests:
@@ -192,6 +194,10 @@ api:
   # minimum number of workers to keep at all times
   cheaper: 0
   uwsgi: false
+  # time to cache the OwnerCheck's result in seconds
+  # 0/nil/null results in not setting the config option at all and thus using
+  # the default from Neutron
+  owner_check_cache_expiration_time: null
 
 service_plugins: asr1k_l3_routing
 default_router_type: ASR1k_router
@@ -549,6 +555,22 @@ mysql_metrics:
         GROUP BY host;
       values:
       - "value"
+    - help: Neutron used routers per project by AZ
+      name: openstack_neutron_routers_used_per_project
+      query: |
+        SELECT
+            r.project_id AS project_id,
+            CASE WHEN a.availability_zone = 'nova' THEN null ELSE a.availability_zone END AS availability_zone,
+            count(r.id) AS count
+        FROM routers r
+        INNER JOIN routerl3agentbindings rabs ON r.id = rabs.router_id
+        INNER JOIN agents a ON a.id = rabs.l3_agent_id
+        GROUP BY r.project_id, a.availability_zone;
+      labels:
+      - project_id
+      - availability_zone
+      values:
+      - count
 
 max_pool_size: 20
 max_overflow: 5
@@ -582,14 +604,7 @@ rabbitmq:
       enabled: false
   alerts:
     support_group: network-api
-rabbitmq_notifications:
-  name: neutron
-  metrics:
-    enabled: true
-    sidecar:
-      enabled: false
-  alerts:
-    support_group: network-api
+
 # openstack-watcher-middleware
 watcher:
   enabled: true
@@ -607,15 +622,144 @@ rate_limit:
   whitelist_users: null
   blacklist: null
   blacklist_users: null
+  groups:
+    write:
+      - delete
+      - update
+  rates:
+    default:
+      address-scopes:
+        - action: read/list
+          limit: 43r/m
+      agents:
+        - action: read/list
+          limit: 279r/m
+      agents/agent/*:
+        - action: read
+          limit: 159r/m
+      extensions:
+        - action: read/list
+          limit: 83r/m
+      extensions/extension:
+        - action: read
+          limit: 83r/m
+      floatingips:
+        - action: read/list
+          limit: 454r/m
+        - action: create
+          limit: 83r/m
+      floatingips.json:
+        - action: read
+          limit: 202r/m
+      floatingips/floatingip:
+        - action: read
+          limit: 83r/m
+        - action: write
+          limit: 83r/m
+      network-ip-availabilities/network-ip-availability:
+        - action: read
+          limit: 83r/m
+      networks:
+        - action: read/list
+          limit: 154r/m
+      networks/default:
+        - action: read
+          limit: 83r/m
+      networks/network:
+        - action: read
+          limit: 289r/m
+      ports:
+        - action: read/list
+          limit: 3042r/m
+        - action: create
+          limit: 83r/m
+        - action: write
+          limit: 52r/m
+      ports.json:
+        - action: read
+          limit: 174r/m
+      ports/port:
+        - action: read
+          limit: 108r/m
+        - action: write
+          limit: 83r/m
+      ports/port/*:
+        - action: read
+          limit: 20r/m
+      quotas/quota:
+        - action: read
+          limit: 83r/m
+        - action: write
+          limit: 83r/m
+      quotas/quota/*:
+        - action: read
+          limit: 83r/m
+      resource_type/resource/*:
+        - action: write
+          limit: 83r/m
+      routers:
+        - action: read/list
+          limit: 105r/m
+      routers/router:
+        - action: read
+          limit: 663r/m
+      routers/router/*:
+        - action: write
+          limit: 43r/m
+      security-group-rules:
+        - action: create
+          limit: 83r/m
+        - action: read/list
+          limit: 52r/m
+      security-group-rules/security-group-rule:
+        - action: read
+          limit: 552r/m
+        - action: write
+          limit: 83r/m
+      security-groups:
+        - action: read/list
+          limit: 2080r/m
+        - action: create
+          limit: 83r/m
+      security-groups/default:
+        - action: read
+          limit: 83r/m
+      security-groups/security-group:
+        - action: read
+          limit: 83r/m
+      subnetpools:
+        - action: read/list
+          limit: 83r/m
+      subnetpools/subnetpool:
+        - action: write
+          limit: 41r/m
+      subnets:
+        - action: read/list
+          limit: 228r/m
+      subnets/subnet:
+        - action: read
+          limit: 261r/m
+        - action: write
+          limit: 83r/m
 
 unittest:
   enabled: false
+
+metrics:
+  prometheus: openstack
 
 # Deploy Neutron Prometheus alerts.
 alerts:
   enabled: true
   # Name of the Prometheus to which the alerts should be assigned to.
-  prometheus: openstack
+  # Keys = directory names in alerts/ and aggregations/
+  prometheus:
+    - name: openstack
+      type: prometheus
+    - name: kubernetes
+      type: prometheus
+    - name: metal
+      type: thanos-ruler
 
 logger:
   enabled: false
@@ -635,3 +779,9 @@ dnsmasq:
 memcached:
   alerts:
     support_group: network-api
+
+vpa:
+  # https://github.com/sapcc/vpa_butler
+  # The maximum available capacity is split evenly across containers specified in the Deployment, StatefulSet or DaemonSet to derive the upper recommendation bound. This does not work out for pods with a single resource-hungry container with several sidecar containers
+  # Annotate the Deployment, StatefulSet or DaemonSet with vpa-butler.cloud.sap/main-container=$MAIN_CONTAINER. That will distribute 75% of the maximum available capacity to the main container and the rest evenly across all others
+  set_main_container: true

@@ -187,12 +187,11 @@ kubernikus-monitoring:
   prometheusName: kubernetes
 
 fluent-bit:
+  existingConfigMap: fluent-bit-config
   image:
     repository: keppel.global.cloud.sap/ccloud-dockerhub-mirror/fluent/fluent-bit
     pullPolicy: IfNotPresent
   backend:
-    es:
-      enabled: true
     opensearch:
       enabled: false
       host: DEFINED-IN-SECRETS
@@ -215,6 +214,13 @@ falco:
       initContainer:
         image:
           registry: keppel.global.cloud.sap/ccloud-dockerhub-mirror
+
+  controller:
+    daemonset:
+      updateStrategy:
+        type: RollingUpdate
+        rollingUpdate:
+          maxUnavailable: 25%
 
   falcoctl:
     image:

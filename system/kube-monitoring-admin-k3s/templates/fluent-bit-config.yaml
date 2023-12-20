@@ -19,7 +19,7 @@ data:
           Parser           docker
           Tag              kube.*
           Refresh_Interval 5
-          Mem_Buf_Limit    50MB
+          Mem_Buf_Limit    256MB
           Skip_Long_Lines  Off
           Ignore_Older     1m
 
@@ -27,10 +27,16 @@ data:
           Name           systemd
           Path           /var/log/journal
           Tag            systemd.*
-          Mem_Buf_Limit  5MB
+          Mem_Buf_Limit  10MB
           Read_From_Tail true
           Strip_Underscores On
           Lowercase On
+
+      [INPUT]
+          Name            fluentbit_metrics
+          Mem_Buf_Limit   5MB
+          Tag             internal_metrics
+          Scrape_interval 2
 
       [FILTER]
           Name          record_modifier
@@ -73,24 +79,6 @@ data:
 {{- end }}
 {{- end }}
 
-{{ if index .Values "fluent-bit" "backend" "es" "enabled" }}
-      [OUTPUT]
-          Name  es
-          Match *
-          Host  {{ index .Values "fluent-bit" "backend" "es" "host" }}
-          Port  443
-          Logstash_Format On
-          Replace_Dots On
-          Retry_Limit False
-          Type  flb_type
-          Time_Key @timestamp
-          Logstash_Prefix {{ index .Values "fluent-bit" "backend" "es" "logstash_prefix" }}
-          HTTP_User {{ index .Values "fluent-bit" "backend" "es" "http_user" }}
-          HTTP_Passwd {{ index .Values "fluent-bit" "backend" "es" "http_passwd" }}
-          tls on
-          tls.verify on
-          tls.debug 1
-{{- end }}
 {{ if index .Values "fluent-bit" "backend" "opensearch" "enabled" }}
       [OUTPUT]
           Name  opensearch
@@ -107,4 +95,10 @@ data:
           tls.verify {{ index .Values "fluent-bit" "backend" "opensearch" "tls" "verify"}}
           tls.debug {{ index .Values "fluent-bit" "backend" "opensearch" "tls" "debug"}}
 {{- end }}
+      [OUTPUT]
+          Name            prometheus_exporter
+          Match           internal_metrics
+          Host            0.0.0.0
+          Port            2021
+          Add_label       app fluent-bit-admin-k3s
   parsers.conf: ""

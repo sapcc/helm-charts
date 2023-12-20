@@ -87,6 +87,12 @@ spec:
             - /etc/harvest
             - -log-level
             - debug
+            - -netbox-host
+            {{- if eq .Values.global.region "qa-de-1" }}
+            - netbox-test.global.cloud.sap
+            {{- else }}
+            - netbox.global.cloud.sap
+            {{- end }}
           env:
             - name: NETAPPSD_PROMETHEUS_OBSERVE_URL
               value: http://prometheus-{{ .Values.global.prometheus }}.{{ .Release.Namespace }}.svc:9090

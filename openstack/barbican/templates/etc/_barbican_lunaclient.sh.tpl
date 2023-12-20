@@ -1,5 +1,5 @@
 #!/bin/bash
-set -e
+set -ex
 
 lunaclient () {
     NOW="$(date +%Y%m%d)"

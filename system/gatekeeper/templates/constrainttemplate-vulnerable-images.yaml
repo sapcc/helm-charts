@@ -23,6 +23,8 @@ spec:
               type: string
             vulnStatusHeader:
               type: string
+            reportingLevel: # either "pod" or "pod-owner"
+              type: string
 
   targets:
     - target: admission.k8s.gatekeeper.sh
@@ -31,15 +33,47 @@ spec:
           {{ .Files.Get "lib/add-support-labels.rego" | nindent 10 }}
         - |
           {{ .Files.Get "lib/image-check.rego" | nindent 10 }}
+        - |
+          {{ .Files.Get "lib/traversal.rego" | nindent 10 }}
       rego: |
         package vulnerableimages
         import data.lib.add_support_labels
         import data.lib.image_check
+        import data.lib.traversal
+        import future.keywords.in
 
         iro := input.review.object
-        checks := image_check.for_pod(iro, input.parameters.doopImageCheckerURL)
+        phase := object.get(iro, ["status", "phase"], "Running") # only relevant for iro.kind == "Pod"
+        pod := traversal.find_pod(iro)
+        checks := __run_image_check()
 
-        violation[{"msg": check.result.error}] {
+        __run_image_check() = result {
+          input.parameters.reportingLevel == "pod"
+          phase != "Succeeded"
+          phase != "Failed"
+          result = image_check.for_pod(iro, input.parameters.doopImageCheckerURL)
+        }
+        __run_image_check() = result {
+          input.parameters.reportingLevel == "pod"
+          # ignore pods that have already finished running, but still exist
+          # as a k8s object (e.g. leftovers of completed or failed jobs)
+          phase in ["Succeeded", "Failed"]
+          result = []
+        }
+
+        __run_image_check() = result {
+          input.parameters.reportingLevel == "pod-owner"
+          pod.isFound
+          result = image_check.for_pod_template(pod, input.parameters.doopImageCheckerURL)
+        }
+        __run_image_check() = result {
+          input.parameters.reportingLevel == "pod-owner"
+          not pod.isFound
+          # ignore pod owners that are suppressed, e.g. ReplicaSets within Deployments
+          result = []
+        }
+
+        violation[{"msg": check.error}] {
           check := checks[_]
           check.error != ""
         }

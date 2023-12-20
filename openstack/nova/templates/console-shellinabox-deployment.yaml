@@ -7,6 +7,10 @@ metadata:
     system: openstack
     type: backend
     component: nova
+  {{- if .Values.vpa.set_main_container }}
+  annotations:
+    vpa-butler.cloud.sap/main-container: nova-console-cell1-shellinabox
+  {{- end }}
 spec:
   replicas: {{ .Values.pod.replicas.console }}
   revisionHistoryLimit: {{ .Values.pod.lifecycle.upgrades.deployments.revision_history }}
@@ -31,6 +35,7 @@ spec:
         prometheus.io/scrape: "true"
         prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
         {{- end }}
+        {{- include "utils.linkerd.pod_and_service_annotation" . | indent 8 }}
         config-hash: {{ print (.Files.Glob "shellinabox/*").AsConfig (include "nova.etc_config_lua" .) | sha256sum }}
     spec:
       securityContext:
@@ -92,3 +97,4 @@ spec:
               - key: config.lua
                 path: config.lua
       {{- include "utils.proxysql.volumes" . | indent 6 }}
+      {{- include "utils.trust_bundle.volumes" . | indent 6 }}

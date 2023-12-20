@@ -75,14 +75,15 @@ kibanaro:
   backend_roles:
   - "kibanauser"
   - "readall"
-  attributes:
-    attribute1: "value1"
-    attribute2: "value2"
-    attribute3: "value3"
-  description: "Demo OpenSearch Dashboards read only user"
 
 maillog:
   hash: "{{ .Values.users.maillog.hash }}"
   reserved: true
   backend_roles:
   - "maillog"
+
+jupyterhub:
+  hash: "{{ .Values.users.jupyterhub.hash }}"
+  reserved: true
+  backend_roles:
+  - "jupyterhub"

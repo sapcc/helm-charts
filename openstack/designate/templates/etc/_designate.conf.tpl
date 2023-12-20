@@ -316,7 +316,7 @@ per_page = 200
 
 # How old deleted zones should be (deleted_at) to be purged, in seconds (integer
 # value)
-time_threshold = 604800
+time_threshold = 2592000
 
 # How many zones to be purged on each run (integer value)
 batch_size = 200

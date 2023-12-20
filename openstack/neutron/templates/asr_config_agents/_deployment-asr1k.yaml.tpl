@@ -11,7 +11,10 @@ metadata:
     system: openstack
     type: backend
     component: neutron
-
+  {{- if $context.Values.vpa.set_main_container }}
+  annotations:
+    vpa-butler.cloud.sap/main-container: neutron-asr1k
+  {{- end }}
 spec:
   replicas: 1
   revisionHistoryLimit: 5
@@ -33,8 +36,9 @@ spec:
       annotations:
         pod.beta.kubernetes.io/hostname:  asr1k-{{ $config_agent.name }}
         prometheus.io/scrape: "true"
-        prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" $context.Values.alerts.prometheus | quote }}
+        prometheus.io/targets: {{ required ".Values.metrics.prometheus missing" $context.Values.metrics.prometheus | quote }}
         configmap-asr1k-{{ $config_agent.name }}: {{ tuple $context $config_agent |include "asr1k_configmap" | sha256sum  }}
+        {{- include "utils.linkerd.pod_and_service_annotation" $context | indent 8 }}
     spec:
       hostname:  asr1k-{{ $config_agent.name }}
       containers:
@@ -64,8 +68,6 @@ spec:
             - name: METRICS_PORT
               value: "{{$context.Values.port_l3_metrics |  default 9103 }}"
           volumeMounts:
-            - mountPath: /development
-              name: development
             - mountPath: /neutron-etc
               name: neutron-etc
             - mountPath: /neutron-etc-vendor
@@ -107,8 +109,6 @@ spec:
             - name: METRICS_PORT
               value: "{{$context.Values.port_l2_metrics |  default 9102}}"
           volumeMounts:
-            - mountPath: /development
-              name: development
             - mountPath: /neutron-etc
               name: neutron-etc
             - mountPath: /neutron-etc-vendor
@@ -137,7 +137,4 @@ spec:
         - name:  neutron-etc-asr1k
           configMap:
             name: neutron-etc-asr1k-{{ $config_agent.name }}
-        - name: development
-          persistentVolumeClaim:
-            claimName: development-pvclaim
 {{- end -}}

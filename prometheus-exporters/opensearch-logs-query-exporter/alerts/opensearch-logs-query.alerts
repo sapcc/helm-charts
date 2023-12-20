@@ -63,3 +63,31 @@ groups:
     annotations:
       description: 'cluster *{{ $labels.elastic_cluster }}* opensearch-logs-query-exporter in `{{ $labels.region }}` is missing.'
       summary: 'cluster: *{{ $labels.elastic_cluster }}* opensearch-logs-query-exporter in `{{ $labels.region }}` is missing.'
+
+  - alert: SrcSiemRulesUpdaterLogError
+    expr: elasticsearch_siem_error_doc_count > 0
+    labels:
+      context: nodes
+      service: logs
+      severity: warning
+      support_group: src
+      tier: os
+      kibana: "https://logs.eu-de-1.cloud.sap/goto/283e4879cc4158e2cf7a68de47d39507"
+      no_alert_on_absence: "true"
+    annotations:
+      description: 'The siem-rules-updater service pod has error logs.'
+      summary: 'The siem-rules-updater service pod has error logs.'
+
+  - alert: OpenstackManilaPromotedReplicaError
+    expr: count_over_time(opensearch_logs_manila_replica_error_doc_count{}[2h]) > 0
+    for: 5m
+    labels:
+      no_alert_on_absence: "true"
+      service: manila
+      severity: info
+      support_group: compute-storage-api
+      tier: os
+      kibana: "app/discover#/?_g=(filters:!(),refreshInterval:(pause:!t,value:0),time:(from:now-15m,to:now))&_a=(columns:!(_source),filters:!(),index:'logstash-*',interval:auto,query:(language:kuery,query:'\"to%20the%20promoted%20replica\"'),sort:!())"
+    annotations:
+      description: "Exception while applying properties to promoted Replica"
+      summary: "Exception while applying properties to promoted Replica"

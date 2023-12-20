@@ -1,0 +1,16 @@
+groups:
+- name: CronusPostfixAlerts
+  rules:
+  - alert: SendingEmailsWithPostfixFails
+    expr: sum(irate(cronus_event_mails_sent{provider="postfix",status_code="250"}[5m]) * 60) == 0
+    for: 1h
+    labels:
+      service: email
+      severity: warning
+      tier: os
+      playbook: docs/devops/alert/cronus/postfix-relay-fails/
+      kibana: "app/discover#/?_g=(filters:!(),refreshInterval:(pause:!t,value:0),time:(from:now-5m,to:now))&_a=(columns:!(_source),filters:!(('$state':(store:appState),meta:(alias:!n,disabled:!f,index:'logstash-*',key:kubernetes_labels_name,negate:!f,params:(query:cronus),type:phrase),query:(match_phrase:(kubernetes_labels_name:cronus)))),index:'logstash-*',interval:auto,query:(language:kuery,query:'%22email%20delivery%20result%20%231:%20%5C%22postfix%5C%22%20250%22'),sort:!())"
+      support_group: email
+    annotations:
+      description: sending emails with postfix relay fails
+      summary: sending emails with postfix relay fails

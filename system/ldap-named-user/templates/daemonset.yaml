@@ -30,13 +30,13 @@ spec:
         args:
         - |-
           set -xe
-          cp -f /secret/sssd.conf /hostfs/etc/sssd
-          cp -f /secret/sudoers-ldap /hostfs/etc/sudoers.d
-          chroot /hostfs systemctl enable sssd
-          chroot /hostfs systemctl restart sssd
+          cp -f /secret/sssd.conf /hostmount/etc/sssd
+          cp -f /secret/sudoers-ldap /hostmount/etc/sudoers.d
+          chroot /hostmount systemctl enable sssd
+          chroot /hostmount systemctl restart sssd
         volumeMounts:
-        - name: hostfs
-          mountPath: /hostfs
+        - name: hostmount
+          mountPath: /hostmount
           readOnly: false
         - name: secret
           mountPath: /secret  
@@ -44,7 +44,7 @@ spec:
         - name: pause
           image: keppel.eu-de-1.cloud.sap/ccloud-dockerhub-mirror/sapcc/pause-amd64:3.1
       volumes:
-      - name: hostfs
+      - name: hostmount
         hostPath:
           path: /
       - name: secret

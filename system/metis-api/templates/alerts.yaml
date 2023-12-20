@@ -1,0 +1,18 @@
+{{- range $target := list "openstack" }}
+{{- range $path, $bytes := $.Files.Glob (printf "alerts/%s/*.alerts" $target) }}
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+
+metadata:
+  name: metis-{{ replace "/" "-" $path }}
+  labels:
+    {{- include "labels" $ | indent 4 }}
+    type: alerting-rules
+    prometheus: {{ $target }}
+
+spec:
+{{ printf "%s" $bytes | indent 2 }}
+
+{{- end }}
+{{- end }}

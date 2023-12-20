@@ -1,0 +1,34 @@
+{{- $values := .Values.redfish_exporter -}}
+{{- if $values.enabled }}
+apiVersion: monitoring.coreos.com/v1alpha1
+kind: ScrapeConfig
+
+metadata:
+  name: 'redfish-bb'
+  namespace: {{ $values.namespace }}
+  labels:
+    prometheus: {{ required "$values.prometheus missing" $values.prometheus }}
+    app.kubernetes.io/name: 'redfish-bb'
+
+spec:
+  scrapeInterval: {{$values.scrapeInterval}}
+  scrapeTimeout: {{$values.scrapeTimeout}}
+  httpSDConfigs:
+    - url: {{ $values.httpSDConfigs.netbox_production_url }}/devices/?custom_labels=job=redfish-bb&target=mgmt_only&status=active&role=server&tenant=converged-cloud&platform=vmware-esxi&tag__n=no-redfish&region={{ .Values.global.region }}
+      refreshInterval: {{ $values.httpSDConfigs.refreshInterval }}
+  metricsPath: /health
+  params:
+    job: [redfish-bb]
+  relabelings:
+    - sourceLabels: [job]
+      regex: redfish-bb
+      action: keep
+    - sourceLabels: [__address__]
+      targetLabel: __param_target
+    - sourceLabels: [__param_target]
+      targetLabel: instance
+    - targetLabel: __address__
+      replacement: redfish-exporter:{{$values.listen_port}}
+    - regex: 'device_type|cluster.*|role|platform|status'
+      action: labeldrop
+{{- end }}

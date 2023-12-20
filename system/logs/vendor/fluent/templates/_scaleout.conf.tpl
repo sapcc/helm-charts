@@ -15,7 +15,7 @@
   key_name log
   reserve_data true
   inject_key_prefix k8s.
-  remove_key_name_field true
+  remove_key_name_field false
   <parse>
     @type json
     time_format %Y-%m-%dT%T.%L%Z
@@ -139,41 +139,6 @@
 # count number of outgoing records per tag
 <match kubernetes.**>
   @type copy
-{{- if .Values.elasticsearch.enabled }}
-  <store>
-    @type elasticsearch
-    host {{.Values.endpoint_host_internal}}
-    port {{.Values.http_port}}
-    user {{.Values.global.elk_elasticsearch_data_user}}
-    password {{.Values.global.elk_elasticsearch_data_password}}
-    ssl_verify false
-    ssl_version TLSv1_2
-    logstash_prefix {{.Values.indexname}}
-    logstash_format true
-    template_name {{.Values.indexname}}
-    template_file /fluentd/etc/{{.Values.indexname}}.json
-    template_overwrite false
-    time_as_integer false
-    type_name _doc
-    @log_level info
-    slow_flush_log_threshold 50.0
-    request_timeout 60s
-    include_tag_key true
-    resurrect_after 120
-    reconnect_on_error true
-    <buffer>
-      total_limit_size 256MB
-      flush_at_shutdown true
-      flush_thread_interval 5
-      overflow_action block
-      retry_forever true
-      retry_wait 2s
-      flush_thread_count 2
-      flush_interval 1s
-    </buffer>
-  </store>
-{{- end }}
-{{- if .Values.opensearch.enabled }}
   <store>
   {{- if .Values.opensearch.datastream.enabled }}
     @type opensearch_data_stream
@@ -193,6 +158,7 @@
     password {{.Values.opensearch.password}}
     ssl_verify false
     ssl_version TLSv1_2
+    log_os_400_reason true
     time_as_integer false
     @log_level info
     slow_flush_log_threshold 50.0
@@ -214,7 +180,6 @@
       flush_interval 2s
     </buffer>
   </store>
-{{- end }}
   <store>
     @type prometheus
     <metric>

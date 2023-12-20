@@ -1,0 +1,129 @@
+# global.region: DEFINED_IN_VALUES_FILE
+
+owner-info:
+  support-group: observability
+  service: hermes
+  maintainers:
+    - Olaf Heydorn
+  helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/system/opensearch-hermes
+
+alerts:
+  enabled: false
+  prometheus: DEFINED-IN-SECRETS
+# Pod Monitor
+exporter:
+  enabled: false
+  prometheus: DEFINED-IN-SECRETS
+tag: 2.11.0
+
+opensearch_hermes:
+  enabled: false
+  antiAffinityTopologyKey: "kubernetes.io/host"
+  ca:
+    crt: DEFINED-IN-SECRETS
+  image:
+    tag: 2.11.0
+  service:
+    port: 5601
+  nameOverride: "opensearch-hermes"
+  fullnameOverride: "opensearch-hermes"
+  nodeGroup: "data"
+  masterService: "opensearch-hermes-master"
+  roles:
+    - client
+    - ingest
+    - data
+  replicas: 3
+  opensearchJavaOpts: "-Dlog4j2.formatMsgNoLookups=true -XX:MaxRAM=20g -XX:MaxGCPauseMillis=500 -Xms20g -Xmx20g"
+  updateStrategy: RollingUpdate
+  persistence:
+    enabled: true
+    enableInitChown: true
+    size: 100Gi
+    image: "library/busybox"
+  clusterName: "opensearch-hermes"
+  secretMounts:
+    - name: opensearch-certificates
+      secretName: cert-manager
+      path: /usr/share/opensearch/config/certs/
+      defaultMode: 0700
+  plugins:
+    enabled: true
+    installList:
+      - https://github.com/aiven/prometheus-exporter-plugin-for-opensearch/releases/download/2.11.0.0/prometheus-exporter-2.11.0.0.zip
+  securityConfig:
+    path: "/usr/share/opensearch/config/opensearch-security"
+    enabled: true
+    config:
+      securityConfigSecret: "security-config"
+
+opensearch_hermes_master:
+  enabled: false
+  antiAffinityTopologyKey: "kubernetes.io/host"
+  ca:
+    crt: DEFINED-IN-SECRETS
+  image:
+    tag: 2.11.0
+  service:
+    port: 5601
+  nameOverride: "opensearch-hermes-master"
+  fullnameOverride: "opensearch-hermes-master"
+  nodeGroup: "master"
+  masterService: "opensearch-hermes-master"
+  roles:
+    - master
+  replicas: 3
+  opensearchJavaOpts: "-Dlog4j2.formatMsgNoLookups=true -XX:MaxRAM=5g -XX:MaxGCPauseMillis=500 -Xms5g -Xmx5g"
+  updateStrategy: RollingUpdate
+  persistence:
+    enabled: true
+    enableInitChown: true
+    size: 1Gi
+    image: "library/busybox"
+  clusterName: "opensearch-hermes"
+  secretMounts:
+    - name: opensearch-certificates
+      secretName: cert-manager
+      path: /usr/share/opensearch/config/certs/
+      defaultMode: 0700
+  plugins:
+    enabled: true
+    installList:
+      - https://github.com/aiven/prometheus-exporter-plugin-for-opensearch/releases/download/2.11.0.0/prometheus-exporter-2.11.0.0.zip
+  securityConfig:
+    path: "/usr/share/opensearch/config/opensearch-security"
+    enabled: true
+    config:
+      securityConfigSecret: "security-config"
+
+opensearch_hermes_dashboards:
+  enabled: false
+  image:
+    tag: "2.11.0"
+  fullnameOverride: opensearch-hermes-dashboards
+  nameOverride: opensearch-hermes-dashboards
+  serviceAccount:
+    create: true
+    name: "opensearch-hermes-dashboards"
+  opensearchAccount:
+    secret: dashboard-secrets
+  ingress:
+    enabled: false
+  resources:
+    limits:
+      memory: 4096M
+
+global:
+  clusterType: local
+  truststore:
+    enabled: false
+    cert_pw: DEFINIED-IN-REGIONS
+    cert: DEFINIED-IN-REGIONS
+
+elasticdump:
+  enabled: true
+
+opensearch_hermes_manager:
+  enabled: false
+  port_internal: 9000 
+  image_version: "0.9.4"

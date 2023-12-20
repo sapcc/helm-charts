@@ -31,17 +31,6 @@ spec:
         prometheus.io/targets: infra-collector
         prometheus.io/port: "9116"
     spec:
-      affinity:
-        nodeAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            nodeSelectorTerms:
-            - matchExpressions:
-              - key: kubernetes.cloud.sap/apod
-{{- if .Values.snmp_exporter.apod.enabled }}
-                operator: Exists
-{{- else }}
-                operator: DoesNotExist
-{{- end }}
       nodeSelector:
         zone: farm
       volumes:
@@ -50,12 +39,12 @@ spec:
             name: snmp-exporter
       containers:
         - name: snmp-exporter
-          image: {{ .Values.global.registry }}/snmp-exporter-generator:{{ .Values.image_version }}
+          image: {{ .Values.global.registry }}/snmp-exporter-generator:{{ .Values.snmp_exporter.image_version }}
           imagePullPolicy: IfNotPresent
           command:
             - /gopath/snmp_exporter/snmp_exporter
           args:
-            - --config.file=/snmp-exporter-etc/snmp-exporter.yaml
+            - --config.file=/snmp-exporter-etc/*.yaml
           volumeMounts:
             - mountPath: /snmp-exporter-etc
               name: snmp-exporter-etc

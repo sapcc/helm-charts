@@ -6,9 +6,9 @@ groups:
     for: 5m
     labels:
       dashboard: manila
-      meta: '{{ $value }} shares'
       playbook: docs/support/playbook/manila/shares_stuck
       service: manila
+      context: share_stuck
       severity: info
       tier: os
       support_group: compute-storage-api
@@ -21,7 +21,6 @@ groups:
     for: 5m
     labels:
       dashboard: manila
-      meta: '{{ $value }} share snapshots'
       playbook: docs/support/playbook/manila/shares_stuck
       service: manila
       severity: info
@@ -47,48 +46,51 @@ groups:
 
   - alert: OpenstackManilaSharesStuckCreate
     expr: max(manila_shares_stuck_max_duration_gauge{status="creating"})
-      BY (manila_host) > 120
-    for: 5m
+      BY (manila_host) > 900
+    for: 90m
     labels:
       dashboard: manila
       playbook: docs/support/playbook/manila/shares_stuck
       service: manila
-      severity: info
+      context: share_stuck
+      severity: warning
       tier: os
       support_group: compute-storage-api
     annotations:
-      description: Manila Shares taking more than 2 minutes to create in {{ $labels.manila_host }}
-      summary: Manila Shares taking more than 2 minutes to create
+      description: Manila Shares taking more than 15 minutes to create in {{ $labels.manila_host }}
+      summary: Manila Shares taking more than 15 minutes to create
 
   - alert: OpenstackManilaSharesStuckDelete
     expr: max(manila_shares_stuck_max_duration_gauge{status="deleting"})
-      BY (manila_host) > 120
-    for: 5m
+      BY (manila_host) > 900
+    for: 90m
     labels:
       dashboard: manila
       playbook: docs/support/playbook/manila/shares_stuck
       service: manila
-      severity: info
+      context: share_stuck
+      severity: warning
       tier: os
       support_group: compute-storage-api
     annotations:
-      description: Manila Shares taking more than 2 minutes to delete in {{ $labels.manila_host }}
-      summary: Manila Shares taking more than 2 minutes to delete
+      description: Manila Shares taking more than 15 minutes to delete in {{ $labels.manila_host }}
+      summary: Manila Shares taking more than 15 minutes to delete
 
   - alert: OpenstackManilaSharesStuckErrorDelete
     expr: max(manila_shares_stuck_max_duration_gauge{status="error_deleting"})
-      BY (manila_host) > 120
-    for: 5m
+      BY (manila_host) > 900
+    for: 90m
     labels:
       dashboard: manila
       playbook: docs/support/playbook/manila/shares_stuck
       service: manila
-      severity: info
+      context: share_stuck
+      severity: warning
       tier: os
       support_group: compute-storage-api
     annotations:
-      description: Manila Shares taking more than 2 minutes to delete in {{ $labels.manila_host }}
-      summary: Manila Shares taking more than 2 minutes to delete
+      description: Manila Shares taking more than 15 minutes to delete in {{ $labels.manila_host }}
+      summary: Manila Shares taking more than 15 minutes to delete
 
   - alert: OpenstackManilaSharesStuckResize
     expr: max(manila_shares_stuck_max_duration_gauge{status=~"shrinking|extending"})
@@ -98,6 +100,7 @@ groups:
       dashboard: manila
       playbook: docs/support/playbook/manila/shares_stuck
       service: manila
+      context: share_stuck
       severity: info
       tier: os
       support_group: compute-storage-api
@@ -111,11 +114,12 @@ groups:
     labels:
       dashboard: manila
       service: manila
+      context: share_stuck
       severity: info
       tier: os
       support_group: compute-storage-api
     annotations:
-      description: Manila Shares resize error ({{ $value }})
+      description: Manila Shares resize error
       summary: Multiple Manila Shares resize error
 
   - alert: OpenstackManilaShareServersStuck
@@ -124,6 +128,7 @@ groups:
     labels:
       dashboard: manila
       service: manila
+      context: share_server_stuck
       severity: info
       tier: os
       support_group: compute-storage-api
@@ -137,6 +142,7 @@ groups:
     labels:
       dashboard: manila
       service: manila
+      context: share_server_stuck
       severity: info
       tier: os
       support_group: compute-storage-api
@@ -191,6 +197,7 @@ groups:
     labels:
       dashboard: manila
       service: manila
+      context: share_server_stuck
       severity: info
       tier: os
       support_group: compute-storage-api
@@ -203,7 +210,6 @@ groups:
       "short_hostname", "$1", "manila_host", "(.*)@.*") >= 240
     labels:
       dashboard: manila
-      meta: '{{ $value }} share server'
       playbook: docs/support/playbook/manila/backend_full
       service: manila
       severity: warning
@@ -219,7 +225,6 @@ groups:
       "short_hostname", "$1", "manila_host", "(.*)@.*") >= 250
     labels:
       dashboard: manila
-      meta: '{{ $value }} share server'
       playbook: docs/support/playbook/manila/backend_full
       service: manila
       severity: critical
@@ -261,7 +266,7 @@ groups:
       tier: os
       support_group: compute-storage-api
     annotations:
-      description: "Rate limit for {{ $labels.target_type_uri }} with action {{ $labels.action }} exceeded. Target project: {{ $labels.domain_name }}/{{ $labels.project_name }} ({{ $labels.target_project_id }})."
+      description: "Rate limit for {{ $labels.target_type_uri }} with action {{ $labels.action }} exceeded. Target project: {{ $labels.domain_name }}/{{ $labels.project_name }} ({{ $labels.project_id }})."
       summary: Manila API rate limit exceeded
 
 # row locks

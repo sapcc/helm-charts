@@ -4,13 +4,16 @@ owner-info:
   maintainers:
     - Stefan Majewsky
     - Sandro Jäckel
-    - Falk Reimann
-    - Muhammad Talal Anwar
   helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/openstack/keppel
 
 global:
   domain_seeds:
     skip_hcm_domain: false
+
+  linkerd_requested: true
+
+linkerd-support:
+  annotate_namespace: true
 
 keppel:
   image_tag: DEFINED_BY_PIPELINE
@@ -69,7 +72,8 @@ federation:
 redis:
   persistence:
     enabled: false
-
+  image:
+    tag: 7.2.3-alpine-20231114141244
   redisPassword: DEFINED_IN_VALUES_FILE
 
   # evict unused keys automatically
@@ -102,7 +106,7 @@ redis:
         cpu: 5m
 
 postgresql:
-  imageTag: '12.16-20230814073048'
+  imageTag: '12.17-20231211122240'
   persistence:
     enabled: true
     accessMode: ReadWriteOnce
@@ -111,8 +115,10 @@ postgresql:
   sharedMemoryLimit: 256Mi
 
   log_min_duration_statement: 250
-  # less than the postgresql chart's default; I want to know early when connections start getting out of hand
-  max_connections: 128
+
+  # We previously had 128, which should technically be enough for 6 API pods and 1 janitor pod (with max. 16 conns each)
+  # as well as the pgmetrics and pgbackup pods with 1-2 conns each, but we still had a "too many clients already" issue regardless.
+  max_connections: 160
 
   alerts:
     support_group: containers
@@ -131,7 +137,7 @@ pgmetrics:
     support_group: containers
 
   collectors:
-    bgwriter: false
+    stat_bgwriter: false
 
   customMetrics:
     keppel_accounts:

@@ -28,16 +28,6 @@ spec:
         checksum/config: {{ include ( print $.Template.BasePath "/metis-etc-configmap.yaml" ) . | sha256sum }}
         checksum/secret: {{ include ( print $.Template.BasePath "/metis-secrets.yaml" ) . | sha256sum }}
     spec:
-      affinity:
-        podAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-          - labelSelector:
-              matchExpressions:
-                - key: app
-                  operator: In
-                  values:
-                  - "metisdb-mariadb"
-            topologyKey: kubernetes.io/hostname
       containers:
       - name: metis
         image: "{{ required ".Values.global.registry variable missing" .Values.global.registry }}/{{ .Values.metis.image }}:{{ .Values.metis.imageTag }}"

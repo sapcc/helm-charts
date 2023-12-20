@@ -14,6 +14,10 @@ metadata:
     system: openstack
     type: backend
     component: nova
+  {{- if .Values.vpa.set_main_container }}
+  annotations:
+    vpa-butler.cloud.sap/main-container: nova-console-{{ $type }}
+  {{- end }}
 spec:
   replicas: {{ .Values.pod.replicas.console }}
   revisionHistoryLimit: {{ .Values.pod.lifecycle.upgrades.deployments.revision_history }}
@@ -39,6 +43,7 @@ spec:
         prometheus.io/scrape: "true"
         prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
         {{- end }}
+        {{- include "utils.linkerd.pod_and_service_annotation" . | indent 8 }}
     spec:
       {{- tuple . "nova" (print "console-" $name) | include "kubernetes_pod_anti_affinity" | nindent 6 }}
       {{- include "utils.proxysql.pod_settings" . | nindent 6 }}
@@ -71,6 +76,7 @@ spec:
               - key: console-{{ $cell_name }}-{{ $type }}.conf
                 path: nova.conf.d/console-{{ $cell_name }}-{{ $type }}.conf
       {{- include "utils.proxysql.volumes" . | indent 6 }}
+      {{- include "utils.trust_bundle.volumes" . | indent 6 }}
       containers:
       - name: nova-console-{{ $type }}
         image: {{ tuple . (print (title $type) "proxy") | include "container_image_nova" }}
@@ -107,6 +113,7 @@ spec:
         - name: nova-etc
           mountPath: /etc/nova
         {{- include "utils.proxysql.volume_mount" . | indent 8 }}
+        {{- include "utils.trust_bundle.volume_mount" . | indent 8 }}
       {{- include "utils.proxysql.container" . | indent 6 }}
 {{- end }}
 {{- end }}

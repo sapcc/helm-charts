@@ -45,6 +45,7 @@ harakiri = 120
 harakiri-verbose = true
 post-buffering = 4096
 backlog-status = true
+py-tracebacker = /var/lib/neutron/uwsgi_pytracebacker.
 
 {{ if gt (.Values.api.cheaper | int64) 0 -}}
 # Automatic scaling of workers

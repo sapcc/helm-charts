@@ -1,4 +1,5 @@
 {{- $tld := $.Values.global.tld | required ".Values.global.tld not found" }}
+{{- $region := $.Values.global.region | required ".Values.global.region not found" }}
 {{- $domain := "doop" }}
 {{- if .Values.kubernikus }}
   {{- $domain = "doop-kubernikus" }}
@@ -13,24 +14,50 @@ metadata:
     kubernetes.io/tls-acme: "true"
     disco: "true"
     ingress.kubernetes.io/auth-url: "https://auth-internal.eu-de-2.{{ $tld }}/oauth2/auth"
+    nginx.ingress.kubernetes.io/auth-url: "https://auth-internal.eu-de-2.{{ $tld }}/oauth2/auth"
     ingress.kubernetes.io/auth-signin: "https://auth-internal.eu-de-2.{{ $tld }}/oauth2/start"
+    nginx.ingress.kubernetes.io/auth-signin: "https://auth-internal.eu-de-2.{{ $tld }}/oauth2/start"
     ingress.kubernetes.io/auth-request-redirect: $escaped_request_uri
+    nginx.ingress.kubernetes.io/auth-request-redirect: $escaped_request_uri
+    {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+    ingress.kubernetes.io/service-upstream: "true"
+    nginx.ingress.kubernetes.io/service-upstream: "true"
+    {{- end }}
 
 spec:
   tls:
     - secretName: tls-{{ .Release.Name }}
-      hosts: [ {{ $domain }}.global.{{ $tld }} ]
+      hosts:
+        - '{{ $domain }}.global.{{ $tld }}'
+        - '{{ $domain }}.{{ $region }}.{{ $tld }}'
   rules:
-    - host: {{ $domain }}.global.{{ $tld }}
+    - &rule
+      host: '{{ $domain }}.global.{{ $tld }}'
       http:
         paths:
           - path: /
+            pathType: Exact
+            backend:
+              service:
+                name: {{ .Release.Name }}-landing-page
+                port:
+                  number: 80
+          - path: /logo.svg
+            pathType: Exact
+            backend:
+              service:
+                name: {{ .Release.Name }}-landing-page
+                port:
+                  number: 80
+          - path: /v2/
             pathType: Prefix
             backend:
               service:
-                name: {{ .Release.Name }}
+                name: {{ .Release.Name }}-api
                 port:
                   number: 80
+    - <<: *rule
+      host: '{{ $domain }}.{{ $region }}.{{ $tld }}'
 
 ---
 
@@ -47,20 +74,27 @@ metadata:
     kubernetes.io/tls-acme: "true"
     disco: "true"
     ingress.kubernetes.io/enable-cors: "true"
+    nginx.ingress.kubernetes.io/enable-cors: "true"
     ingress.kubernetes.io/cors-allow-origin: '*'
+    nginx.ingress.kubernetes.io/cors-allow-origin: '*'
 
 spec:
   tls:
     - secretName: tls-{{ .Release.Name }}-api
-      hosts: [ {{ $domain }}-api.global.{{ $tld }} ]
+      hosts:
+        - '{{ $domain }}-api.global.{{ $tld }}'
+        - '{{ $domain }}-api.{{ $region }}.{{ $tld }}'
   rules:
-    - host: {{ $domain }}-api.global.{{ $tld }}
+    - &rule
+      host: '{{ $domain }}-api.global.{{ $tld }}'
       http:
         paths:
-          - path: /json
+          - path: /v2/
             pathType: Prefix
             backend:
               service:
-                name: {{ .Release.Name }}
+                name: {{ .Release.Name }}-api
                 port:
                   number: 80
+    - <<: *rule
+      host: '{{ $domain }}-api.{{ $region }}.{{ $tld }}'

@@ -39,8 +39,8 @@ spec:
           memory: "1024Mi"
           cpu: "750m"
         limits:
-          memory: "2048Mi"
-          cpu: "1000m"
+          memory: "4096Mi"
+          cpu: "2000m"
       volumeMounts:
         - mountPath: /{{ .Chart.Name }}-etc
           name: {{ .Chart.Name }}-etc

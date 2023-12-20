@@ -1,0 +1,73 @@
+---
+{{ $multus_conf := list }}
+{{- range $service, $service_config := .Values.config -}}
+{{- range $domain, $domain_config := $service_config -}}
+{{ $vlan_name := printf "vlan%d"  ($domain_config.multus_vlan | int) }}
+{{ $multus_conf = append $multus_conf (dict "name" (printf "layer-2-only-%s" $vlan_name)  "interface"  $vlan_name) }}
+{{- end }}
+{{- end }}
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: arp-discovery-exporter
+  namespace: px
+  labels:
+    app: arp-discovery-exporter
+spec:
+  selector:
+    matchLabels:
+      app: arp-discovery-exporter
+  updateStrategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 100%
+  template:
+    metadata:
+      labels:
+        alert-tier: px
+        alert-service: px
+        app: arp-discovery-exporter
+        app.kubernetes.io/name: px
+      annotations:
+        k8s.v1.cni.cncf.io/networks: |
+          {{ $multus_conf | toJson }}
+    spec:
+{{- if len .Values.apods | eq 0 }}
+{{- fail "You must supply at least one apod for scheduling" -}}
+{{ end }}
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: kubernetes.cloud.sap/apod
+                operator: In
+                values: 
+{{- range $site := keys .Values.apods | sortAlpha }}
+{{- range get $.Values.apods $site | sortAlpha }}
+                - {{ . }}
+{{- end }}
+{{- end }}
+{{- if .Values.tolerate_arista_fabric }}
+      tolerations:
+      - key: "fabric"
+        operator: "Equal"
+        value: "arista"
+        effect: "NoSchedule"
+{{- end }}
+      containers:
+      - name: arp-discovery-exporter
+        image: keppel.{{ required "A registry mus be set" .Values.registry }}.cloud.sap/{{ required "A arp_discovery_exporter_image must be set" .Values.arp_discovery_exporter_image }}
+        imagePullPolicy: Always
+        command: ["/usr/bin/arp_discovery_exporter", "--labels-from-env=NODE_NAME:vm_name"]
+        env:
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        ports:
+        - containerPort: 9116
+          name: arp-discovery
+        resources:
+{{ toYaml .Values.resources.arp_discovery_exporter | indent 10 }}

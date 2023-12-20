@@ -28,11 +28,17 @@ spec:
       annotations:
         configmap-etc-hash: {{ include (print $.Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
         configmap-bin-hash: {{ include (print $.Template.BasePath "/bin-configmap.yaml") . | sha256sum }}
+        {{- if .Values.proxysql.mode }}
+        prometheus.io/scrape: "true"
+        prometheus.io/targets: {{ required ".Values.metrics.prometheus missing" .Values.metrics.prometheus | quote }}
+        {{- end }}
+        {{- include "utils.linkerd.pod_and_service_annotation" . | indent 8 }}
     spec:
 {{- if .Values.rbac.enabled }}
       serviceAccountName: {{ .Release.Name }}
 {{- end }}
 {{ tuple . "designate" "api" | include "kubernetes_pod_anti_affinity" | indent 6 }}
+      {{- include "utils.proxysql.pod_settings" . | indent 6 }}
       initContainers:
       - name: kubernetes-entrypoint
         image: {{ required ".Values.global.registry is missing" .Values.global.registry }}/loci-designate:{{ required ".Values.image_version_designate is missing" .Values.image_version_designate }}
@@ -43,7 +49,7 @@ spec:
             - name: NAMESPACE
               value: {{ .Release.Namespace }}
             - name: DEPENDENCY_JOBS
-              value: {{ .Release.Name }}-migration-{{ required ".Values.image_version_designate is missing" .Values.image_version_designate }}
+              value: {{ include "migration_job_name" . }}
             - name: DEPENDENCY_SERVICE
 {{- if .Values.percona_cluster.enabled }}
               value: "{{ .Release.Name }}-percona-pxc,{{ .Release.Name }}-rabbitmq,{{ .Release.Name }}-memcached"
@@ -115,9 +121,17 @@ spec:
               name: container-init
             - name: wsgi-designate
               mountPath: /var/www/cgi-bin/designate
+{{- if .Values.global_setup }}
+            - mountPath: /var/www/html/test.html
+              name: designate-etc
+              subPath: test.html
+{{- end }}
             - name: designate-etc-wsgi
               mountPath: /etc/apache2/conf-enabled/wsgi-designate.conf
               subPath: wsgi-designate.conf
+            {{- include "utils.proxysql.volume_mount" . | indent 12 }}
+            {{- include "utils.trust_bundle.volume_mount" . | indent 12 }}
+        {{- include "utils.proxysql.container" . | indent 8 }}
         - name: statsd
           image: {{ required ".Values.global.dockerHubMirror is missing" .Values.global.dockerHubMirror }}/prom/statsd-exporter:v0.8.1
           imagePullPolicy: IfNotPresent
@@ -147,3 +161,5 @@ spec:
           configMap:
             name: designate-bin
             defaultMode: 0755
+        {{- include "utils.proxysql.volumes" . | indent 8 }}
+        {{- include "utils.trust_bundle.volumes" . | indent 8 }}

@@ -15,18 +15,25 @@ metadata:
     disco: "true"
     {{- if $.Values.ingress.authentication.oauth.enabled }}
     ingress.kubernetes.io/auth-url: {{ required "$.Values.ingress.authentication.oauth.authURL missing" $.Values.ingress.authentication.oauth.authURL }}
+    nginx.ingress.kubernetes.io/auth-url: {{ required "$.Values.ingress.authentication.oauth.authURL missing" $.Values.ingress.authentication.oauth.authURL }}
     {{ if $.Values.ingress.authentication.oauth.authSignInURL }}ingress.kubernetes.io/auth-signin: {{ $.Values.ingress.authentication.oauth.authSignInURL }} {{ end }}
     {{ end }}
     {{- if $.Values.ingress.authentication.sso.enabled}}
     ingress.kubernetes.io/auth-tls-secret: {{ required "$.Values.ingress.authentication.sso.authTLSSecret missing" $.Values.ingress.authentication.sso.authTLSSecret | quote }}
+    nginx.ingress.kubernetes.io/auth-tls-secret: {{ required "$.Values.ingress.authentication.sso.authTLSSecret missing" $.Values.ingress.authentication.sso.authTLSSecret | quote }}
     ingress.kubernetes.io/auth-tls-verify-depth: {{ required "$.Values.ingress.authentication.sso.authTLSVerifyDepth missing" $.Values.ingress.authentication.sso.authTLSVerifyDepth | quote }}
+    nginx.ingress.kubernetes.io/auth-tls-verify-depth: {{ required "$.Values.ingress.authentication.sso.authTLSVerifyDepth missing" $.Values.ingress.authentication.sso.authTLSVerifyDepth | quote }}
     ingress.kubernetes.io/auth-tls-verify-client: {{ required "$.Values.ingress.authentication.sso.authTLSVerifyClient missing" $.Values.ingress.authentication.sso.authTLSVerifyClient | quote }}
+    nginx.ingress.kubernetes.io/auth-tls-verify-client: {{ required "$.Values.ingress.authentication.sso.authTLSVerifyClient missing" $.Values.ingress.authentication.sso.authTLSVerifyClient | quote }}
     {{ end }}
     {{- if $.Values.ingress.annotations }}
 {{ toYaml $.Values.ingress.annotations | indent 4 }}
     {{ end }}
 
 spec:
+  {{- if not $.Values.traefik.enabled }}
+  ingressClassName: nginx
+  {{- end }}
   rules:
     {{- range $host := coalesce $.Values.ingress.hosts (list $name) }}
     - host: {{ include "fqdnHelper" (list $host $root) }}

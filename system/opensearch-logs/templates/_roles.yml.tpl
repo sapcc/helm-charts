@@ -20,6 +20,7 @@ data:
   - "cluster:admin/ingest/pipeline/get"
   - "indices:admin/template/get"
   - "cluster_manage_index_templates"
+  - "cluster:admin/opensearch/ml/predict"
   index_permissions:
   - index_patterns:
     - "logstash-*"
@@ -333,11 +334,69 @@ maillog:
     - "indices:admin/template/put"
     - "indices:admin/mappings/get"
     - "indices:admin/mapping/put"
+    - "indices:admin/delete"
     - "indices:admin/create"
     - "indices:data/write/bulk*"
     - "indices:data/write/delete"
+    - "indices:data/write/delete/byquery"
     - "indices:data/write/index"
+    - "indices:data/write/reindex"
+
     - "indices:data/write/update"
+    - "indices:data/write/update/byquery"
     - "read"
     - "indices:monitor/settings/get"
     - "indices:monitor/stats"
+
+jupyterhub:
+  reserved: false
+  hidden: false
+  cluster_permissions:
+    - "cluster:monitor/prometheus/metrics"
+    - "cluster:monitor/health"
+    - "cluster:monitor/main"
+    - "cluster:monitor/state"
+    - "cluster:monitor/nodes/info"
+    - "cluster:monitor/nodes/stats"
+    - "indices:data/read/scroll*"
+    - "indices:data/read/msearch"
+  index_permissions:
+  - index_patterns:
+    - "*"
+    allowed_actions:
+    - "indices:monitor/stats"
+    - "indices:admin/mappings/get"
+    - "indices:admin/aliases/get"
+    - "indices:data/read/scroll"
+    - "indices:data/read/scroll/clear"
+    - "indices:data/read/search"
+    - "indices:data/read/search*"
+    - "read"
+  tenant_permissions:
+  - tenant_patterns:
+    - "*"
+
+mlrole:
+  reserved: false
+  hidden: false
+  cluster_permissions:
+    - "cluster:monitor/prometheus/metrics"
+  index_permissions:
+  - index_patterns:
+    - "*"
+    allowed_actions:
+    - "indices:admin/mappings/get"
+    - "cluster:admin/opensearch/ql/datasources/*"
+
+ml_full_access:
+  reserved: true
+  cluster_permissions:
+    - "cluster:admin/opensearch/ml/*"
+    - "cluster_monitor"
+    - "cluster:admin/opensearch/mlinternal/*"
+    - "cluster:admin/ingest/*"
+  index_permissions:
+    - index_patterns:
+        - "*"
+      allowed_actions:
+        - "indices_monitor"

@@ -77,25 +77,3 @@
     "trait:CUSTOM_NUMASIZE_C48_M729": "required"
     "hw:cpu_cores": "48"  # used in nova-vmware as cores-per-socket (24pCPU = 48vCPU)
     "vmware:hw_version": "vmx-18"
-
-### Deprecated BigVM flavors
-- name: "m5.96xlarge"
-  id: "270"
-  vcpus: 90
-  ram: 1468416
-  disk: 64
-  is_public: true
-  extra_specs:
-    {{- tuple . "vmware" | include "sap_seeds.helpers.extra_specs" | indent 4 }}
-    "host_fraction": "1/4,3/4,1/2,1"
-    "resources:CUSTOM_BIGVM": "2"
-- name: "x1.32xlarge"
-  id: "250"
-  vcpus: 128
-  ram: 1991680
-  disk: 64
-  is_public: true
-  extra_specs:
-    {{- tuple . "vmware" | include "sap_seeds.helpers.extra_specs" | indent 4 }}
-    "host_fraction": "1,0.67,0.34"
-    "resources:CUSTOM_BIGVM": "2"

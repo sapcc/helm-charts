@@ -15,6 +15,8 @@ global:
   domain_seeds:
     skip_hcm_domain: false
 
+  linkerd_requested: false
+
 loci:
   imageNamespace: monsoon
 
@@ -144,6 +146,7 @@ mysql_metrics:
         JOIN share_instances ON shares.id=share_instances.share_id
         JOIN availability_zones ON share_instances.availability_zone_id=availability_zones.id
         WHERE share_instances.deleted = 'False'
+        AND share_instances.replica_state='active'
         GROUP BY
           share_instances.share_type_id,
           manila_host,
@@ -177,6 +180,7 @@ mysql_metrics:
         JOIN share_instances ON shares.id=share_instances.share_id
         JOIN availability_zones ON share_instances.availability_zone_id=availability_zones.id
         WHERE share_instances.deleted = 'False'
+        AND share_instances.replica_state='active'
         GROUP BY
           share_instances.share_type_id,
           manila_host,
@@ -192,6 +196,8 @@ mysql_metrics:
         - "share_id"
         - "id"
         - "status"
+        - "share_type_id"
+        - "availability_zone_name"
       name: openstack_manila_snapshot_count_gauge
       query: |
         SELECT
@@ -199,20 +205,28 @@ mysql_metrics:
           snap.share_id as share_id,
           snap.id as id,
           si.status as status,
+          coalesce(share_instances.share_type_id, 'N/A') AS share_type_id,
+          availability_zones.name AS availability_zone_name,
           COUNT(*) AS count_gauge
         FROM share_snapshots AS snap
         INNER JOIN share_snapshot_instances AS si ON snap.id=si.snapshot_id
+        INNER JOIN share_instances ON si.share_instance_id=share_instances.id
+        INNER JOIN availability_zones ON share_instances.availability_zone_id=availability_zones.id
         WHERE snap.deleted = 'False'
+        AND (share_instances.replica_state='active' OR share_instances.replica_state IS NULL)
         GROUP BY
           snap.id,
           snap.project_id,
           snap.share_id,
-          si.status
+          si.status,
+          availability_zones.id
         UNION SELECT
           'none' AS id,
           'none' AS project_id,
           'none' AS share_id,
           'none' AS status,
+          'none' AS share_type_id,
+          'none' AS availability_zone_name,
           0 AS count_gauge;
       values:
         - "count_gauge"
@@ -222,6 +236,8 @@ mysql_metrics:
         - "share_id"
         - "id"
         - "status"
+        - "share_type_id"
+        - "availability_zone_name"
       name: openstack_manila_snapshot_size_gauge
       query: |
         SELECT
@@ -229,15 +245,21 @@ mysql_metrics:
           share_snapshots.share_id,
           share_snapshots.id,
           share_snapshot_instances.status,
+          coalesce(share_instances.share_type_id, 'N/A') AS share_type_id,
+          availability_zones.name AS availability_zone_name,
           SUM(share_snapshots.size) size_gauge
         FROM share_snapshots
         INNER JOIN share_snapshot_instances ON share_snapshots.id=share_snapshot_instances.snapshot_id
+        INNER JOIN share_instances ON share_snapshot_instances.share_instance_id=share_instances.id
+        INNER JOIN availability_zones ON share_instances.availability_zone_id=availability_zones.id
         WHERE share_snapshots.deleted = 'False'
+        AND (share_instances.replica_state='active' OR share_instances.replica_state IS NULL)
         GROUP BY
           share_snapshots.id,
           share_snapshots.project_id,
           share_snapshots.share_id,
-          share_snapshot_instances.status;
+          share_snapshot_instances.status,
+          availability_zones.id;
       values:
         - "size_gauge"
     - help: Manila Replicas count
@@ -277,8 +299,45 @@ mysql_metrics:
           replicas.replica_state;
       values:
         - "count_gauge"
+    - help: Manila Replicas size
+      labels:
+        - "share_type_id"
+        - "availability_zone_name"
+        - "manila_host"
+        - "project_id"
+        - "id"
+        - "share_id"
+        - "status"
+        - "replica_state"
+      name: openstack_manila_replicas_size_gauge
+      query: |
+        SELECT
+          coalesce(replicas.share_type_id, 'N/A') AS share_type_id,
+          availability_zones.name AS availability_zone_name,
+          replicas.host AS manila_host,
+          shares.project_id,
+          replicas.id,
+          replicas.share_id,
+          replicas.status,
+          replicas.replica_state,
+          SUM(shares.size) size_gauge
+        FROM share_instances AS replicas
+        JOIN availability_zones ON replicas.availability_zone_id=availability_zones.id
+        JOIN shares ON replicas.share_id=shares.id
+        WHERE replicas.deleted = 'False' AND replicas.replica_state IS NOT NULL
+        GROUP BY
+          replicas.share_type_id,
+          replicas.availability_zone_id,
+          manila_host,
+          shares.project_id,
+          replicas.id,
+          replicas.share_id,
+          replicas.status,
+          replicas.replica_state;
+      values:
+        - "size_gauge"
     # The final UNION SELECT adds a dummy row that always exists even when no
-    # stcuk objects exist. This allows us to have our cake and eat it (we
+    # stuck objects exist. This allows us to have our cake and eat it (we
     # don't insert unnecessary timeseries, but the absence alert generated by
     # the absent-metrics-operator is still useful).
     - help: Manila Shares Stuck Count
@@ -485,6 +544,7 @@ mysql_metrics:
 pod:
   replicas:
     api: 5
+    ensure: 1
     scheduler: 1
   lifecycle:
     upgrades:
@@ -494,6 +554,8 @@ pod:
         rolling_update:
           max_unavailable: 0
           max_surge: 1
+  health:
+    use_agent: true
   resources:
     api:
       requests:
@@ -518,6 +580,18 @@ pod:
       requests:
         memory: "2Gi"
         cpu: "500m"
+
+# all default quotas are 0 to enforce usage of the Resource Management tool (aka Limes) in Elektra
+quota:
+  shares: 0
+  gigabytes: 0
+  snapshots: 0
+  snapshot_gigabytes: 0
+  share_networks: 0
+  share_groups: 0
+  share_group_snapshots: 0
+  share_replicas: 0
+  replica_gigabytes: 0
 
 db_name: manila
 
@@ -582,6 +656,10 @@ rabbitmq:
       enabled: false
 sentry:
   enabled: true
+seeds:
+  all_enabled: true
+  service_type: share
+  endpoint_prefix: ""
 
 share_ensure:
   enabled: true
@@ -628,8 +706,8 @@ api_rate_limit:
   max_sleep_time_seconds: 15
   log_sleep_time_seconds: 10
   backend_timeout_seconds: 15
-  project_whitelist:
-    - ccadmin/cloud_admin  # castellum scraping
+  project_whitelist_default:
+    - ccadmin/cloud_admin # castellum scraping
 
 # openstack-watcher-middleware
 watcher:
@@ -650,3 +728,9 @@ alerts:
 # osprofiler
 osprofiler:
   enabled: false
+
+vpa:
+  # https://github.com/sapcc/vpa_butler
+  # The maximum available capacity is split evenly across containers specified in the Deployment, StatefulSet or DaemonSet to derive the upper recommendation bound. This does not work out for pods with a single resource-hungry container with several sidecar containers
+  # Annotate the Deployment, StatefulSet or DaemonSet with vpa-butler.cloud.sap/main-container=$MAIN_CONTAINER. That will distribute 75% of the maximum available capacity to the main container and the rest evenly across all others
+  set_main_container: true

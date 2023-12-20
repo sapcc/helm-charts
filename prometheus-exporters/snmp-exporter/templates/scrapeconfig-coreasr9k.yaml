@@ -1,0 +1,43 @@
+{{- if .Values.snmp_exporter.coreasr9k.enabled }}
+apiVersion: monitoring.coreos.com/v1alpha1
+kind: ScrapeConfig
+metadata:
+  name: snmp-exporter-coreasr9k
+  namespace: infra-monitoring
+  labels:
+    prometheus: {{ .Values.snmp_exporter.aggregations.prometheus }}
+    app.kubernetes.io/name: snmp-exporter-coreasr9k
+spec:
+  httpSDConfigs:
+    - url: {{ .Values.global.http_sd_configs.netbox_url }}/devices/?custom_labels=__param_module=coreasr9k;__param_auth=coreasr9k_v3&manufacturer=cisco&status=active&region={{ .Values.global.region }}&role=core-router&tenant=cnd-netbb&platform=cisco-ios-xr
+      refreshInterval: {{ .Values.global.http_sd_configs.refresh_interval }}
+  metricsPath: /snmp
+  scrapeInterval: 60s
+  scrapeTimeout: 50s
+  relabelings:
+    - sourceLabels: [__address__]
+      targetLabel: __param_target
+    - sourceLabels: [__param_target]
+      targetLabel: instance
+    - targetLabel: __address__
+      replacement: snmp-exporter:{{.Values.snmp_exporter.listen_port}}
+    - targetLabel: module
+      replacement: coreasr9k
+    - targetLabel: __param_auth
+      replacement: coreasr9k_v3
+  metricRelabelings:
+    - sourceLabels: [name]
+      targetLabel:  devicename
+    - sourceLabels: [devicename]
+      regex: '(\w*-\w*-\w*)-(\S*)'
+      replacement: '$1'
+      targetLabel: availability_zone
+    - sourceLabels: [devicename]
+      regex: '(\w*-\w*-\w*)-(\S*)'
+      replacement: '$2'
+      targetLabel: device
+    - sourceLabels: [__name__, snmp_coreasr9k_sysDescr]
+      regex: 'snmp_coreasr9k_sysDescr;(?s)(.*)(Version )([0-9.]*)(.*)'
+      replacement: '$3'
+      targetLabel: image_version
+{{- end }}

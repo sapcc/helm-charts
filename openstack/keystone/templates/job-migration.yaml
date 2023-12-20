@@ -2,7 +2,7 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: {{ .Release.Name }}-job-migration
+  name: "{{ tuple . "job-migration" | include "job_name" }}"
   labels:
     app: {{ template "fullname" . }}
     chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
@@ -18,7 +18,7 @@ spec:
   template:
     metadata:
       labels:
-        name: {{ .Release.Name }}-job-migration
+        name: "{{ tuple . "job-migration" | include "job_name" }}"
         system: openstack
         component: keystone
         type: job
@@ -96,6 +96,7 @@ spec:
               mountPath: /credential-keys
               readOnly: true
             {{- include "utils.proxysql.volume_mount" . | indent 12 }}
+            {{- include "utils.trust_bundle.volume_mount" . | indent 12 }}
         {{- include "utils.proxysql.container" . | indent 8 }}
       volumes:
         - name: etc-keystone
@@ -117,4 +118,5 @@ spec:
             secretName: keystone-credential-keys
             defaultMode: 0555
         {{- include "utils.proxysql.volumes" . | indent 8 }}
+        {{- include "utils.trust_bundle.volumes" . | indent 8 }}
 {{ end -}}

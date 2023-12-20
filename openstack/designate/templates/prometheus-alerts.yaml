@@ -1,6 +1,7 @@
 {{- $values := .Values }}
 {{- if $values.alerts.enabled }}
-{{- range $path, $bytes := .Files.Glob "alerts/*.alerts" }}
+{{- range $target, $unused := $values.alerts.prometheus }}
+{{- range $path, $bytes := $.Files.Glob (printf "alerts/%s/*.alerts" $target) }}
 ---
 apiVersion: "monitoring.coreos.com/v1"
 kind: "PrometheusRule"
@@ -14,10 +15,11 @@ metadata:
     app: designate
     tier: os
     type: alerting-rules
-    prometheus: {{ required ".Values.alerts.prometheus missing" $values.alerts.prometheus | quote }}
+    prometheus: {{ index $values.alerts.prometheus $target | required (printf "$values.alerts.prometheus.%s missing" $target) }}
 
 spec:
 {{ printf "%s" $bytes | indent 2 }}
 
+{{- end }}
 {{- end }}
 {{- end }}

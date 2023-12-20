@@ -32,6 +32,7 @@ spec:
         chart-version: {{.Chart.Version}}
         configmap-etc-hash: {{ include (print $.Template.BasePath "/configmap-etc.yaml") . | sha256sum }}
         configmap-bin-hash: {{ include (print $.Template.BasePath "/configmap-bin.yaml") . | sha256sum }}
+        {{- include "utils.linkerd.pod_and_service_annotation" . | indent 8 }}
     spec:
 {{- if .Values.rbac.enabled }}
       serviceAccountName: {{ .Release.Name }}
@@ -49,11 +50,11 @@ spec:
           value: {{ .Release.Namespace }}
 {{- if .Release.IsInstall }}
         - name: DEPENDENCY_JOBS
-          value: {{ .Release.Name }}-job-migration,{{ .Release.Name }}-job-bootstrap
+          value: "{{ tuple . "job-migration" | include "job_name" }}","{{ tuple . "job-bootstrap" | include "job_name" }}"
 {{- else }}
   {{- if or .Values.run_db_migration }}
         - name: DEPENDENCY_JOBS
-          value: {{ .Release.Name }}-job-migration
+          value: "{{ tuple . "job-migration" | include "job_name" }}"
   {{- end }}
 {{- end }}
         - name: DEPENDENCY_SERVICE
@@ -112,6 +113,7 @@ spec:
               mountPath: /credential-keys
               readOnly: true
             {{- include "utils.proxysql.volume_mount" . | indent 12 }}
+            {{- include "utils.trust_bundle.volume_mount" . | indent 12 }}
           {{- if .Values.cron.resources }}
           resources:
 {{ toYaml .Values.cron.resources | indent 12 }}
@@ -133,3 +135,4 @@ spec:
             secretName: keystone-credential-keys
             defaultMode: 0555
         {{- include "utils.proxysql.volumes" . | indent 8 }}
+        {{- include "utils.trust_bundle.volumes" . | indent 8 }}

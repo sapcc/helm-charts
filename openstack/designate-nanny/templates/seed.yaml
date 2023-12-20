@@ -1,0 +1,37 @@
+{{- if .Values.nanny.enabled }}
+apiVersion: "openstack.stable.sap.cc/v1"
+kind: "OpenstackSeed"
+metadata:
+  name: designate-nanny-seed
+spec:
+  requires:
+  - {{ .Release.Namespace }}/domain-default-seed
+  - {{ .Release.Namespace }}/domain-ccadmin-seed
+{{- if .Values.global_setup }}
+  - {{ .Release.Namespace }}/designate-global-seed
+  - {{ .Release.Namespace }}/domain-global-seed
+{{- else}}
+  - {{ .Release.Namespace }}/designate-seed
+{{- end }}
+  - swift/swift-seed
+
+  domains:
+  - name: Default
+    users:
+    - name: "{{ .Values.credentials.designate_api.user}}"
+      description: Designate Nanny
+      password: {{ required "set password in .Values.credentials.designate_api.password" .Values.credentials.designate_api.password }}
+
+  - name: ccadmin
+    projects:
+    - name: cloud_admin
+      role_assignments:
+      - user: "{{ .Values.credentials.designate_api.user}}@Default"
+        role: cloud_dns_viewer
+
+    - name: master
+      role_assignments:
+      - user: "{{ .Values.credentials.designate_api.user}}@Default"
+        role: objectstore_admin
+
+{{- end }}

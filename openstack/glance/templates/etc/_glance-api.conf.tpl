@@ -91,6 +91,8 @@ driver = noop
 
 [oslo_policy]
 policy_file = /etc/glance/policy.yaml
+enforce_new_defaults=False
+enforce_scope=False
 
 {{- include "ini_sections.cache" . }}
 

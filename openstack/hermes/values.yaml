@@ -43,9 +43,6 @@ elasticsearch_pv_size: 92
 
 hermes_image_version_elasticsearch_manager: "0.9.4"
 
-hermes_kibana_port_public: '5601'
-deploy_kibana: false # true in staging values
-
 rabbitmq_notifications:
   ## default: {{.Release.Name}}-rabbitmq.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}
   # host: rabbitmq
@@ -74,6 +71,9 @@ exporter:
   enabled: false
   prometheus: openstack
 
+metrics:
+  prometheus: openstack
+
 # Deploy hermes Prometheus alerts.
 alerts:
   enabled: true
@@ -83,6 +83,7 @@ alerts:
   prometheus:
     openstack: openstack
     kubernetes: kubernetes
+    thanos-ruler: metal
 
 owner-info:
   support-group: observability
@@ -101,7 +102,7 @@ elasticsearch_hermes:
   resources:
     requests:
       cpu: "2000m"
-      memory: "6Gi"
+      memory: "20Gi"
     limits:
       cpu: "4000m"
   exporter:
@@ -110,3 +111,12 @@ elasticsearch_hermes:
 
 elasticsearch_hermes_kibana:
   enabled: false
+
+opensearch_hermes:
+  enabled: false
+
+global:
+  clusterType: local
+  users:
+    admin:
+      name: admin

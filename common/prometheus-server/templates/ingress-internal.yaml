@@ -14,18 +14,25 @@ metadata:
     disco: "true"
     {{- if $.Values.internalIngress.authentication.oauth.enabled }}
     ingress.kubernetes.io/auth-url: {{ required "$.Values.internalIngress.authentication.oauth.authURL missing" $.Values.internalIngress.authentication.oauth.authURL }}
+    nginx.ingress.kubernetes.io/auth-url: {{ required "$.Values.internalIngress.authentication.oauth.authURL missing" $.Values.internalIngress.authentication.oauth.authURL }}
     {{ if $.Values.internalIngress.authentication.oauth.authSignInURL }}ingress.kubernetes.io/auth-signin: {{ $.Values.internalIngress.authentication.oauth.authSignInURL }} {{ end }}
     {{ end }}
     {{- if $.Values.internalIngress.authentication.sso.enabled}}
     ingress.kubernetes.io/auth-tls-secret: {{ required "$.Values.internalIngress.authentication.sso.authTLSSecret missing" $.Values.internalIngress.authentication.sso.authTLSSecret | quote }}
+    nginx.ingress.kubernetes.io/auth-tls-secret: {{ required "$.Values.internalIngress.authentication.sso.authTLSSecret missing" $.Values.internalIngress.authentication.sso.authTLSSecret | quote }}
     ingress.kubernetes.io/auth-tls-verify-depth: {{ required "$.Values.internalIngress.authentication.sso.authTLSVerifyDepth missing" $.Values.internalIngress.authentication.sso.authTLSVerifyDepth | quote }}
+    nginx.ingress.kubernetes.io/auth-tls-verify-depth: {{ required "$.Values.internalIngress.authentication.sso.authTLSVerifyDepth missing" $.Values.internalIngress.authentication.sso.authTLSVerifyDepth | quote }}
     ingress.kubernetes.io/auth-tls-verify-client: {{ required "$.Values.internalIngress.authentication.sso.authTLSVerifyClient missing" $.Values.internalIngress.authentication.sso.authTLSVerifyClient | quote }}
+    nginx.ingress.kubernetes.io/auth-tls-verify-client: {{ required "$.Values.internalIngress.authentication.sso.authTLSVerifyClient missing" $.Values.internalIngress.authentication.sso.authTLSVerifyClient | quote }}
     {{ end }}
     {{- if $.Values.internalIngress.annotations }}
 {{ toYaml $.Values.internalIngress.annotations | indent 4 }}
     {{ end }}
 
 spec:
+  {{- if not $.Values.traefik.enabled }}
+  ingressClassName: nginx
+  {{- end }}
   rules:
     {{- range $host := coalesce $.Values.internalIngress.hosts (list $name) }}
     - host: {{ include "internalFQDNHelper" (list $host $root) }}
@@ -69,6 +76,21 @@ spec:
             backend:
               serviceName: {{ include "prometheus.fullName" (list $name $root) }}
               servicePort: http
+            {{- end }}
+            {{- if $root.Values.thanos.enabled }}
+          - path: /thanos
+            {{- if $root.Capabilities.APIVersions.Has "networking.k8s.io/v1/Ingress" }}
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: thanos-{{ include "prometheus.name" (list $name $root) }}-query
+                port:
+                  name: http
+            {{- else }}
+            backend:
+              serviceName: thanos-{{ include "prometheus.name" (list $name $root) }}-query
+              servicePort: http
+            {{- end }}
             {{- end }}
     {{- end }}
     {{- range $host := $.Values.internalIngress.hostsFQDN }}

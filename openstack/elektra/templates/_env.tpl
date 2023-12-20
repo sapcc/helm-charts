@@ -61,3 +61,6 @@
 {{- end }}
 - name: DOMAIN_MASTERDATA_INHERITANCE_BLACKLIST
   value: hcp03,monsoon3
+- name: CEREBRO_CUSTOM_ENDPOINT
+  value: {{ .Values.cerebro_custom_endpoint | quote }}
+

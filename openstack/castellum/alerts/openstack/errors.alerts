@@ -227,7 +227,11 @@ groups:
         meta: '{{ $labels.asset }} `{{ $labels.asset_id }}` is stuck in critical usage levels without getting resized'
       annotations:
         description: |
-          The {{ $labels.asset }} asset `{{ $labels.asset_id }}` is at critical usage levels, but has not been resized by Castellum for more than 15 minutes. If asset scraping and resizing is otherwise working fine, this might be an instance of a particularly elusive bug. Use the chance and investigate while it's happening!
+          The {{ $labels.asset }} asset `{{ $labels.asset_id }}` is at critical usage levels,
+          but has not been resized by Castellum for more than 15 minutes.
+          The asset is probably stuck waiting on `expected_size`.
+          If the `expected_size` field is not null in the DB, set it to null and also set `next_scrape_at = NOW()` to force a new scrape.
+          This will do the required resize, then the alert will clear 5 minutes later.
         summary: Asset is stuck in critical usage levels without getting resized
 
     ############################################################################

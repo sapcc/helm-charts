@@ -1,10 +1,12 @@
 {{- if .Values.enabled }}
 {{- if .Values.traefik.route.enabled }}
 {{- $root := . }}
+{{- range $name := coalesce .Values.names .Values.global.targets (list .Values.name) }}
+---
 apiVersion: traefik.containo.us/v1alpha1
 kind: IngressRoute
 metadata:
-  name: {{ include "thanos.fullName" . }}-grpc
+  name: {{ include "thanos.fullName" (list $name $root) }}-grpc
 spec:
   entryPoints:
   - websecure
@@ -15,11 +17,12 @@ spec:
     priority: 11
     services:
     - kind: Service
-      name: thanos-admin-query
+      name: {{ $root.Values.traefik.route.serviceName }}
       port: 10901
       scheme: h2c
   {{- end }}
   tls:
-    secretName: tls-{{ include "thanos.grpcURL" $root | replace "." "-" }}
+    secretName: tls-{{ include "thanos.externalGrpcURL" (list $name $root) | replace "." "-" }}
+{{- end }}
 {{- end }}
 {{- end }}

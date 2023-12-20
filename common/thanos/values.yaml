@@ -32,12 +32,18 @@ deployWholeThanos: true
 useQueryRegions: false
 queryRegions: []
 
-# clusters to be queried from regional and global.
-# thanos-$clusterType-grpc is the corresponding ingress to be queried
-clusterTypes: []
+# Thanos Query Store API's to be queried from regional and global.
+# thanos-$queryStoreAPIs-grpc is the corresponding ingress to be queried
+queryStoreAPIs: []
 
-# If true it will discovery all Thaneis Services deployed by Thanos operator
-queryDiscovery:
+# Replaces the default thanos-operator discovery
+# If true it will discover all Thaneis Query Services starting with 'thanos', containing 'query'.
+# Excluded are 'maia', 'metal', 'scaleout', 'regional'
+# Needs to be disabled if the added stores are cluster external like in regional, global.
+queryDiscovery: true
+
+# Refresh interval to re-read file SD files
+# querySDInterval:
 
 # set name only, region and domain will be generated like clusterDomain.region.cloud.sap
 # defaults to cluster.local
@@ -122,6 +128,20 @@ compactor:
     - --wait
     - --wait-interval=900s
 
+  # In case the root fs of the node is not providing sufficient space this will add a data volume (pvc) and mounting it to /data in the compactor.
+  # Pay attention to use the correct storageClass.
+  # If this isn't set, it will request a 25Gi ephemeral storage by default, unless specified different
+  dataVolume:
+    enabled: false
+    size: 100Gi
+    storageClassName: cinder-default
+
+  # If dataVolume is not set and node can provide more than 25Gi ephemeral storage you can overwrite it to use more
+  resources:
+    requests:
+      ephemeralStorage: "25Gi"
+
+
 store:
   # Maximum size of items held in the index cache.
   indexCacheSize: 1GB
@@ -144,6 +164,9 @@ store:
 # not relevant when deployWholeTHanos set to false
 query:
   replicas: 1
+
+  # logLevel:
+
   webRouteprefix: /thanos
   # statically specify stores, if deployWholeThanos is set and this is not present, it will default to query the single Prometheus sidecar container prometheus-<thanos-name>:10901
   # stores from the following list will be build as an cluster internal dns fqdn. Like store1.default.svc.cluster.local:10901
@@ -154,6 +177,8 @@ query:
     # - name: storeN
     #   namespace: default
     #   port: 10901
+
+  extraArgs: []
 
 ruler:
   enabled: false
@@ -174,6 +199,10 @@ ruler:
   # The external URL the Thanos Ruler instances will be available under. This
   # is necessary to generate correct URLs to serve Thanos Ruler from a subpath of Thanos Query.
   externalPrefix: /ruler
+
+  # disabled if no cluster information should be added as external labels (cross cluster evaluation)
+  externalClusterLabels:
+    enabled: true
 
   # Define URLs to send alerts to Alertmanager.
   alertmanagers:
@@ -285,8 +314,11 @@ alerts:
 vmware: false
 
 traefik:
-  # defaults to false. Should only be enabled if traefik is used over default ingress-nginx. Please set grpcIngress.enabled to false in this case.
-  # it will spawn a dummy ingress resource to annotate the hostname for dns record creation. However, this dummy will not do anything because the grpc service is not exposing on 80.
+  # there are two scenarios when this is needed
+  # 1 Should be enabled only if no ingressClass is present in the cluster. Please set grpcIngress.enabled to false and set route.enabled to true.
+  # 
+  # 2 if k8s.io/ingress-nginx and traefik.io/ingress-controller are present, set traefik.enabled: false and route.enabled: true
+  # General information: it will spawn a dummy ingress resource to annotate the hostname for dns record creation. However, this dummy will not do anything because the grpc service is not exposing on 80.
   enabled: false
 
   # List of hostnames to match, typically the same which are configured in grpcIngress.hosts
@@ -294,3 +326,5 @@ traefik:
 
   route:
     enabled: false
+    # service the route should point to. Needs to match Thanos Query.
+    serviceName: thanos-kubernetes-query

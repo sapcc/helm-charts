@@ -102,6 +102,21 @@ groups:
         description: Bond {{ $labels.master }} on {{ $labels.node }} is degraded. Imminent network outage for this node.
         summary: Bond {{ $labels.master }} is degraded. Node network connectivity is not HA. Switch failover or ACI upgrade will cause an outage!
 
+    - alert: NodeVirtualInterfaceDown
+      expr: sum(node_network_up{device=~"bond.*|vlan.*"} == 0) by (node, device)
+      for: 15m
+      labels:
+        tier: k8s
+        service: node
+        severity: warning 
+        context: bond 
+        meta: "{{ $labels.node }}"
+        support_group: containers
+        playbook: "docs/support/playbook/kubernetes/k8s_node_interface_down"
+      annotations:
+        description: Interface {{ $labels.device }} on {{ $labels.node }} is down. Tenant network outage for this node.
+        summary: Interface {{ $labels.device }} is down. Node network connectivity is degraded. Check ESX node state in vCenter.
+
     ### PVC usage ###
 
     - alert: KubernetesHighPVCUsagePredicted

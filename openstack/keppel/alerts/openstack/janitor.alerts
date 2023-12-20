@@ -111,8 +111,25 @@ groups:
     annotations:
       summary: 'Manifests in replicated repos are not being synced'
       description: |
-        In replica accounts, each repository should run through a manifest sync once per hour to replicate manifest deletions from the primary account.
+        In replica accounts, each repository should go through a manifest sync once per hour to replicate manifest deletions and tag updates from the primary account.
         However, some repositories have not had their manifests synced on schedule, so it looks like manifest syncing is having issues.
+        Check the logs of keppel-janitor for details.
+
+  - alert: OpenstackKeppelReplicatedManifestSyncFailed
+    expr: rate(keppel_manifest_syncs{task_outcome="failure"}[5m]) > 0
+    for: 15m
+    labels:
+      context: janitor
+      dashboard: keppel-overview
+      service: keppel
+      severity: info
+      support_group: containers
+      tier: os
+    annotations:
+      summary: 'Manifest sync in replicated repos is failing'
+      description: |
+        Repositories in replica accounts go through a manifest sync once per hour to replicate manifest deletions and tag updates from the primary account.
+        However, some of these manifest syncs are failing.
         Check the logs of keppel-janitor for details.
 
   - alert: OpenstackKeppelNotSweepingBlobMounts

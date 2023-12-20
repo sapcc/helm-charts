@@ -2,7 +2,7 @@
 ## ref: https://hub.docker.com/r/library/memcached/tags/
 ##
 image: library/memcached
-imageTag: 1.6.20-alpine
+imageTag: 1.6.21-alpine
 # set to true to use .Values.global.dockerHubMirrorAlternateRegion instead of .Values.global.dockerHubMirror
 use_alternate_registry: false
 
@@ -19,7 +19,10 @@ imagePullPolicy: IfNotPresent
 nodeAffinity: {}
 
 # name of priorityClass to influence scheduling priority
-#priority_class:
+# false = disabled
+# true = enabled and set to 'openstack-service-critical'
+# <string> = set the priorityClassName to that value
+priority_class: true
 
 memcached:
   ## Various values that get set as command-line flags.
@@ -45,7 +48,7 @@ resources:
 metrics:
   enabled: true
   image: 'prom/memcached-exporter'
-  imageTag: 'v0.13.0'
+  imageTag: 'v0.14.1'
 
   port: '9150'
   resources:
@@ -83,3 +86,8 @@ alerts:
   # Define the threshold for the MemcachedManyConnectionsThrottled alert in
   # yielded connections per minute
   yielded_connections_threshold: 5
+
+global: {}
+linkerd:
+  #linkerd annotation for the Memcached pod (true/false)
+  enabled: true

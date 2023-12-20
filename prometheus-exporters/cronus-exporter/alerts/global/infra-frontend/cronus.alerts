@@ -1,0 +1,69 @@
+groups:
+- name: SendingGlobalEmails
+  rules:
+  - alert: SendingEmailsWithSESFails
+    expr: sum(sum_over_time(cronus_event_mails_sent_success_provider_rate_perminute{provider="aws"}[5m]) OR on() vector(0)) == 0
+    for: 15m
+    labels:
+      service: email
+      severity: critical
+      tier: os
+      playbook: docs/devops/alert/cronus/#send_email
+      kibana: "app/discover#/?_g=(filters:!(),refreshInterval:(pause:!t,value:0),time:(from:now-5m,to:now))&_a=(columns:!(_source),filters:!(('$state':(store:appState),meta:(alias:!n,disabled:!f,index:'logstash-*',key:kubernetes_labels_name,negate:!f,params:(query:cronus),type:phrase),query:(match_phrase:(kubernetes_labels_name:cronus)))),index:'logstash-*',interval:auto,query:(language:kuery,query:'%22email%20delivery%20result%20%231:%20%5C%22aws%5C%22%20250%22'),sort:!())"
+      support_group: email
+    annotations:
+      description: sending emails with aws ses relay fails
+      summary: sending emails with aws ses relay fails
+  - alert: SendingEmailsWithSESHighErrorRate
+    expr: (sum(sum_over_time(cronus_event_mails_sent_error_provider_rate_perminute{provider="aws"}[5m]) OR on() vector(0)) ) / (sum (sum_over_time(cronus_event_mails_sent_provider_rate_perminute{provider="aws"}[5m]) OR on() vector(0))) > 0.5
+    for: 15m
+    labels:
+      service: email
+      severity: warning
+      tier: os
+      playbook: docs/devops/alert/cronus/#send_email
+      kibana: "app/discover#/?_g=(filters:!(),refreshInterval:(pause:!t,value:0),time:(from:now-5m,to:now))&_a=(columns:!(_source),filters:!(('$state':(store:appState),meta:(alias:!n,disabled:!f,index:'logstash-*',key:kubernetes_labels_name,negate:!f,params:(query:cronus),type:phrase),query:(match_phrase:(kubernetes_labels_name:cronus)))),index:'logstash-*',interval:auto,query:(language:kuery,query:'%22email%20delivery%20result%20%231:%20%5C%22aws%5C%22%20250%22'),sort:!())"
+      support_group: email
+    annotations:
+      description: sending emails with aws ses relay high error rate greater than 50%
+      summary: sending emails with aws ses relay high error rate greater than 50%
+  - alert: EmailHealthTest
+    expr: avg (cronus_health_test) by (name) == 0
+    for: 30m
+    labels:
+      service: email
+      severity: info
+      tier: os
+      support_group: email
+    annotations:
+      description: dashboard - https://plutono.global.cloud.sap/d/s5NfHYvSk/email-sending-health?orgId=1, email health tests
+      summary: email health tests
+      
+- name: Nebula
+  rules:
+  - alert: NebulaMulticloudAPIFails
+    expr: cronus_simulator_event_test_passed == 0
+    for: 30m
+    labels:
+      meta: nebula multicloud api
+      service: email
+      severity: warning
+      tier: os
+      playbook: docs/devops/alert/cronus
+      support_group: email
+    annotations:
+      description: nebula reconcile fails, can indicate a problem with Multicloud API
+      summary: nebula reconcile fails, can indicate a problem with Multicloud API
+
+  - alert: CronusProductionReadyFails48H
+    expr: (sum (cronus_updater_production_ready offset 1d) by (project_id)) + (sum (cronus_updater_production_ready) by (project_id)) == 0
+    for: 60m
+    labels:
+      meta: Cronus Activation to Production Fails For More Than 24H
+      service: email
+      severity: warning
+      tier: os
+      support_group: email
+    annotations:
+      description: Cronus Activation to Production Fails For More Than 24H
+      summary: Cronus Activation to Production Fails For More Than 24H

@@ -1,0 +1,63 @@
+kind: Deployment
+apiVersion: apps/v1
+
+metadata:
+  name: limes-collect-ccloud
+  labels:
+    app: limes-collect
+    release: "{{.Release.Name}}"
+
+spec:
+  minReadySeconds: 10 # to capture errors from config/constraint parsing
+  revisionHistoryLimit: 5
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      name: limes-collect-ccloud
+  template:
+    metadata:
+      labels:
+        name: limes-collect-ccloud
+        app: limes-collect
+        alert-tier: os
+        alert-service: limes
+      annotations:
+        checksum/configmap: {{ include "limes/templates/configmap.yaml" . | sha256sum }}
+        checksum/secret: {{ include "limes/templates/secret.yaml" . | sha256sum }}
+        kubectl.kubernetes.io/default-container: collect
+        prometheus.io/scrape: "true"
+        prometheus.io/targets: {{ required ".Values.alerts.prometheus.openstack missing" .Values.alerts.prometheus.openstack | quote }}
+    spec:
+      volumes:
+        - name: config
+          configMap:
+            name: limes
+      containers:
+        - name: collect
+          image: {{ include "limes_image" . }}
+          imagePullPolicy: IfNotPresent
+          args:
+            - collect
+            - /etc/limes/limes.yaml
+          env:
+            {{ include "limes_common_envvars" . | indent 12 }}
+          securityContext:
+            runAsNonRoot: true
+          volumeMounts:
+            - mountPath: /etc/limes
+              name: config
+          ports:
+            - name: metrics
+              containerPort: 8080
+          {{- if .Values.limes.resources.enabled }}
+          resources:
+            # observed usage: CPU = 50m-500m, RAM = 100-250 MiB
+            limits:
+                cpu: '1000m'
+                memory: '400Mi'
+            requests:
+                cpu: '250m'
+                memory: '400Mi'
+          {{- end }}

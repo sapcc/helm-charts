@@ -1,22 +1,24 @@
-# The aggregations apply both to doop-central and doop-central-kubernikus, but to avoid conflicts, they're only deployed as part of doop-central.
-{{- if not .Values.kubernikus }}
-{{- range $target := list "infra-frontend" }}
-{{- range $path, $bytes := $.Files.Glob (printf "aggregations/%s/*.rules" $target) }}
+# The aggregations apply both to doop-central and doop-central-kubernikus, but to avoid conflicts, they're only deployed as part of doop-central, and also only for the prod instance.
+{{- if and (not .Values.kubernikus) (not (.Values.global.region | contains "qa")) }}
 ---
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
 
 metadata:
-  name: {{ replace "/" "-" $path }}
+  name: {{ .Release.Name }}-aggregations
   labels:
-    app: keppel-api
-    tier: os
+    app: doop-central
     type: aggregation-rules
-    prometheus: {{ $target }}
+    prometheus: infra-frontend
 
 spec:
-{{ printf "%s" $bytes | indent 2 }}
+  groups:
+  - name: doop-central
+    rules:
+      {{- $oid_labels := .Values.doop.object_identity_labels | join ", " }}
+      - record: global:doop_grouped_violations
+        expr: 'max by (template_kind, constraint_name, name, {{$oid_labels}}) (doop_grouped_violations)'
+      - record: global:doop_raw_violations
+        expr: 'max by (template_kind, constraint_name, cluster, name, {{$oid_labels}}) (doop_raw_violations)'
 
-{{- end }}
-{{- end }}
 {{- end }}

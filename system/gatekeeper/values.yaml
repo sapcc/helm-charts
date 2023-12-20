@@ -3,15 +3,13 @@ owner-info:
   service: gatekeeper
   maintainers:
     - Stefan Majewsky
-    - Falk Reimann
     - Sandro Jäckel
-    - Muhammad Talal Anwar
   helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/system/gatekeeper
 
 # documentation for this section: <https://github.com/open-policy-agent/gatekeeper/tree/master/charts/gatekeeper>
 gatekeeper-upstream:
   createNamespace: false
-  constraintViolationsLimit: 250
+  constraintViolationsLimit: 1000
   logDenies: true
   disabledBuiltins: [] # do not disable `http.send`
 
@@ -28,9 +26,15 @@ gatekeeper-upstream:
     controllerManager:
       minAvailable: 0
 
-  # PodSecurityPolicy is disabled to enable upgrade to k8s 1.25+
+  # We have our own Gatekeeper policy to replace PodSecurityPolicy.
   psp:
     enabled: false
+  postInstall:
+    labelNamespace:
+      enabled: false
+  postUpgrade:
+    labelNamespace:
+      enabled: false
 
   audit:
     resources:

@@ -1,0 +1,18 @@
+groups:
+- name: openstack-metis-roleassignment.alerts
+  rules:
+  # allowed role assignments for the `cloud_inventory_viewer` role:
+  # - group CCADMIN_CLOUD_ADMINS@ccadmin in project cloud_admin@ccadmin
+  # - user sism-viewer, viewer, whois, alertflow in project service@default
+  - alert: OpenstackMetisUnexpectedCloudInventoryViewerRoleAssignments
+    expr: max(openstack_assignments_per_role{role_name="cloud_inventory_viewer"}) > 5
+    for: 10m
+    labels:
+      support_group: observability
+      service: metis
+      severity: info
+      playbook: 'docs/support/playbook/unexpected-role-assignments'
+      meta: 'Unexpected role assignments found for Keystone role "cloud_inventory_viewer"'
+    annotations:
+      summary: 'Unexpected role assignments'
+      description: 'The Keystone role "cloud_inventory_viewer" is assigned to more users/groups than expected.'

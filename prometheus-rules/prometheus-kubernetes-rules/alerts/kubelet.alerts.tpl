@@ -3,7 +3,7 @@ groups:
 - name: kubelet.alerts
   rules:
   - alert: ManyKubeletDown
-    expr: count(count(up{job="kubernetes-kubelet"} unless on (node) kube_node_labels{label_cloud_sap_maintenance_state="in-maintenance"}) - sum(up{job="kubernetes-kubelet"} unless on (node) kube_node_labels{label_cloud_sap_maintenance_state="in-maintenance"})) > 2
+    expr: count(count(up{job="kubernetes-kubelet"} unless on (node) (kube_node_labels{label_cloud_sap_maintenance_state="in-maintenance"} or kube_node_labels{label_kubernetes_cloud_sap_role="storage"})) - sum(up{job="kubernetes-kubelet"} unless on (node) (kube_node_labels{label_cloud_sap_maintenance_state="in-maintenance"} or kube_node_labels{label_kubernetes_cloud_sap_role="storage"}))) > 4
     for: 10m
     labels:
       tier: {{ required ".Values.tier missing" .Values.tier }}

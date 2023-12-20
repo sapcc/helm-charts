@@ -1,6 +1,5 @@
 kind: Service
 apiVersion: v1
-
 metadata:
   name: {{ .Release.Name }}-api
   labels:
@@ -10,7 +9,8 @@ metadata:
     component: api
   annotations:
     prometheus.io/scrape: "true"
-    prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
+    prometheus.io/targets: {{ required ".Values.metrics.prometheus missing" .Values.metrics.prometheus | quote }}
+    {{- include "utils.linkerd.pod_and_service_annotation" . | indent 4 }}
 spec:
   selector:
     app: {{ .Release.Name }}-api
@@ -20,6 +20,8 @@ spec:
     - name: metrics
       port: {{ .Values.global.designate_metrics_port }}
 {{- if .Values.global_setup }}
+    - name: static
+      port: 80
   externalIPs:
 {{- if .Values.global.designate_api_external_ip }}
     - {{ .Values.global.designate_api_external_ip }}

@@ -51,25 +51,26 @@ migration_ignore_scheduler = True
 # default time to wait for access rules to become active in migration cutover was 180 seconds
 migration_wait_access_rules_timeout = 3600
 
+# options for manila.share.manager
 server_migration_driver_continue_update_interval = {{ .Values.server_migration_driver_continue_update_interval | default 900 }}
-server_migration_extend_neutron_network = {{ .Values.server_migration_extend_neutron_network | default false }}
+server_migration_extend_neutron_network = {{ .Values.server_migration_extend_neutron_network | default true }}
+ensure_driver_resources_interval = {{ .Values.ensure_driver_resources_interval | default 14400 }}
 
 statsd_port = {{ .Values.rpc_statsd_port }}
 statsd_enabled = {{ .Values.rpc_statsd_enabled }}
 
 {{- template "utils.snippets.debug.eventlet_backdoor_ini" "manila" }}
 
-# all default quotas are 0 to enforce usage of the Resource Management tool in Elektra
 [quota]
-shares = 0
-gigabytes = 0
-snapshots = 0
-snapshot_gigabytes = 0
-share_networks = 0
-share_groups = 0
-share_group_snapshots = 0
-share_replicas = 0
-replica_gigabytes = 0
+shares = {{ .Values.quota.shares }}
+gigabytes = {{ .Values.quota.gigabytes }}
+snapshots = {{ .Values.quota.snapshots }}
+snapshot_gigabytes = {{ .Values.quota.snapshot_gigabytes }}
+share_networks = {{ .Values.quota.share_networks }}
+share_groups = {{ .Values.quota.share_groups }}
+share_group_snapshots = {{ .Values.quota.share_group_snapshots }}
+share_replicas = {{ .Values.quota.share_replicas }}
+replica_gigabytes = {{ .Values.quota.replica_gigabytes }}
 
 [neutron]
 auth_strategy = keystone

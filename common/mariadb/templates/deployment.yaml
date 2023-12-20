@@ -6,6 +6,10 @@ metadata:
     system: openstack
     type: database
     component: {{ .Values.name }}
+{{- if .Values.vpa.set_main_container }}
+  annotations:
+    vpa-butler.cloud.sap/main-container: mariadb
+{{- end }}
 spec:
   replicas: 1
   revisionHistoryLimit: 5
@@ -26,7 +30,9 @@ spec:
         prometheus.io/scrape: "true"
         prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
 {{- end }}
-
+{{- if and (and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested) $.Values.linkerd.mariadb.enabled }}
+        linkerd.io/inject: enabled
+{{- end }}
     spec:
       affinity:
         nodeAffinity:

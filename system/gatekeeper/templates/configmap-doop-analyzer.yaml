@@ -89,6 +89,24 @@ data:
           target:
             message: '$1<region>$2'
 
+      {{- if contains "qa" $region }}
+      - description: 'M213: Merge across usages of eu-de-1 as a primary image source (if eu-de-1 mentioned in name)'
+        replace:
+          source: name
+          pattern: '(.*)keppel.eu-de-1(.*)'
+          target:
+            # We want to merge with instances from prod clusters where the image comes from the same cluster,
+            # so we treat eu-de-1 as <region> here even though it technically is not.
+            name: '$1keppel.<region>$2'
+
+      - description: 'M214: Merge across usages of eu-de-1 as a primary image source (if eu-de-1 mentioned in message)'
+        replace:
+          source: message
+          pattern: '(.*)keppel.eu-de-1(.*)'
+          target:
+            message: '$1keppel.<region>$2'
+      {{- end }}
+
       {{- if ne $altregion $region }}
       - description: 'M221: Merge across alternate regions (if alternate region mentioned in name)'
         replace:
@@ -111,7 +129,7 @@ data:
       # This section is only for rules that need to take precedence over M4xx.
       # Most rules for specific Kubernetes operators are in M5xx.
 
-      {{- if eq $ctype "ccloudshell" "test" }}
+      {{- if eq $ctype "cloudshell" "test" }}
       - description: 'M301: Merge across pods managed by cloud-shell'
         match:
           namespace: cloud-shell

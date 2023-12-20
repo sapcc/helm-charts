@@ -1,0 +1,66 @@
+owner-info:
+  helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/openstack/designate-nanny
+  service: designate
+  support-group: network-api
+  maintainers:
+    - Florian Streibelt
+    - Dmitry Galkin
+    - David Hoeller
+
+image:
+  name: designate-nanny
+  # image_tag: ""
+
+resources:
+  requests:
+    memory: "128Mi"
+    cpu: "100m"
+  limits:
+    memory: "512Mi"
+    cpu: "800m"
+
+credentials:
+  designate_api:
+    user: designate_nanny
+    project_name: "cloud_admin"
+    project_domain_name: "ccadmin"
+    project_user_domain_name: "Default"
+#   auth_url: DEFINED_IN_SECRETS_REPO
+#   password: DEFINED_IN_SECRETS_REPO
+
+global_setup: false
+
+nanny:
+  enabled: true
+
+nanny_config:
+  global:
+    # see example nanny.yaml config in
+    # https://github.wdf.sap.corp/cc/dns-docker/tree/main/designate-nanny
+    #
+    # note: global settings only come into
+    # effect, if not overriden in the specific subsections,
+    # except for "dryrun" to 'fail to the secure side' 
+    # on conflicting settings
+    # 
+    # all nanny plugings with autorun enabled will be run by the nanny
+    # when the nanny is called with this config and the autorun command,
+    # autorun also has to be enabled globally, to prevent accidental autorun
+    # when using the nanny locally with a user config
+    #
+    dryrun: false       # do not change anything unless set in region otherwise
+    autorun: yes        # globally enable autorun feature
+    enabled: yes        # globally enable nanny 
+    loglevel: "INFO"
+    oneshot: false       # terminate after one run (when deploying as job)
+    mdns_endpoint: auto # will be set in values per region
+  swift_backup:
+    interval: 1h
+    record_lastrun: true
+    swift:
+      # autorun: true/false   # run this nanny plugin in autorun
+      # enabled: true/false   # enable/disable this plugin
+      container: designate-nanny
+      prefix: zone-backups
+      project_domain_name: ccadmin
+      project_name: master

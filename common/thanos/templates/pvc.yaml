@@ -1,0 +1,18 @@
+{{- $root := . }}
+{{- if .Values.compactor.dataVolume.enabled }}
+{{- range $name := coalesce .Values.names .Values.global.targets (list .Values.name) }}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "thanos.fullName" (list $name $root) }}-compactor
+  namespace: kube-monitoring
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: {{ $.Values.compactor.dataVolume.size }}
+  storageClassName: {{ $.Values.compactor.dataVolume.storageClassName }}
+{{ end }}
+{{ end }}

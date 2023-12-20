@@ -238,8 +238,6 @@ event-exporter:
 
 fluent-bit:
   backend:
-    es:
-      enabled: true
     opensearch:
       enabled: false
       host: DEFINED-IN-SECRETS
@@ -251,6 +249,20 @@ fluent-bit:
         enabled: "On"
         verify: "Off"
         debug: '1'
+  existingConfigMap: fluent-bit-config
+  extraPorts:
+  - name: prometheus
+    port: 2021
+    containerPort: 2021
+    protocol: TCP
+  livenessProbe:
+    httpGet:
+      path: /
+      port: prometheus
+  readinessProbe:
+    httpGet:
+      path: /api/v1/health
+      port: prometheus
 
 falco:
   enabled: false
@@ -262,6 +274,13 @@ falco:
       initContainer:
         image:
           registry: keppel.global.cloud.sap/ccloud-dockerhub-mirror
+
+  controller:
+    daemonset:
+      updateStrategy:
+        type: RollingUpdate
+        rollingUpdate:
+          maxUnavailable: 25%
 
   falcoctl:
     image:

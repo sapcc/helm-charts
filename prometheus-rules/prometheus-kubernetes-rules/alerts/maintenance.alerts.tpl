@@ -36,3 +36,19 @@ groups:
     annotations:
       summary: Node stuck in maintenance
       description: "Node {{`{{ $labels.node }}`}} is stuck on reboot after OS upgrade or hardware maintenance. Check node console."
+
+### Flatcar version disparity ###
+  - alert: FlatcarVersionDisparity
+    expr: count by (cluster) (count by (label_flatcar_linux_update_v1_flatcar_linux_net_version,cluster) (kube_node_labels)) > 2
+    for: 1h
+    labels:
+      tier: {{ required ".Values.tier missing" .Values.tier }}
+      service: node
+      support_group: containers
+      severity: warning
+      context: maintenance-controller
+      meta: "Cluster {{`{{ $labels.cluster }}`}} has a disparity in flatcar versions."
+      playbook: docs/support/playbook/kubernetes/flatcar_version_disparity
+    annotations:
+      summary: More than 2 flatcar versions
+      description: "Cluster {{`{{ $labels.cluster }}`}} has a disparity in flatcar versions. This indicates some issue with the maintenance-controller."
