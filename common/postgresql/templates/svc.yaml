@@ -6,6 +6,9 @@ metadata:
     {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
     linkerd.io/inject: enabled
     {{- end }}
+    {{- if .Values.loadbalancer.enabled }}
+    loadbalancer.openstack.org/floating-network-id: {{  required ".Values.loadbalancer.floatingNetworkId missing" .Values.loadbalancer.floatingNetworkId }}
+    {{- end }}
   labels:
     app: {{ template "fullname" . }}
     chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
@@ -16,7 +19,13 @@ metadata:
 spec:
   selector:
     app: {{ template "fullname" . }}
+  {{- if .Values.loadbalancer.enabled }}
+  type: LoadBalancer
+  {{- end }}
   ports:
   - name: postgresql
     port: 5432
     targetPort: postgresql
+    {{- if .Values.loadbalancer.enabled }}
+    protocol: TCP
+    {{- end }}

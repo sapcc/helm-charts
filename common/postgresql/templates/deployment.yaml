@@ -49,14 +49,20 @@ spec:
                 - operational
       containers:
       - name: postgres
-        image: "{{ include "preferredRegistry" . }}/postgres:{{ .Values.imageTag }}"
+        image: "{{ include "preferredRegistry" . }}/{{ .Values.imageName }}:{{ .Values.imageTag }}"
         imagePullPolicy: "IfNotPresent"
+{{- if eq .Values.skipCmd false }}
 {{- if .Values.debug }}
         command: ["sleep", "inf"]
 {{- else }}
         args: ["-c", "config_file=/postgresql-conf/postgresql.conf", "-c", "hba_file=/postgresql-conf/pg-hba.conf"]
 {{- end }}
+{{- end }}
         env:
+{{- if .Values.timescaleDbTelemetry.enabled }}
+        - name: TIMESCALEDB_TELEMETRY
+          value: {{  required ".Values.timescaleDbTelemetry.value missing" .Values.timescaleDbTelemetry.value }}
+{{- end }}
         - name: POSTGRES_USER
           value: {{ default "postgres" .Values.postgresUser | quote }}
           # Required for pg_isready in the health probes.
