@@ -1,18 +1,3 @@
-<filter kubernetes.var.log.containers.es**>
-  @type parser
-  key_name log
-  reserve_data true
-  <parse>
-    @type grok
-    <grok>
-      pattern \[%{TIMESTAMP_ISO8601:timestamp}\]\[%{WORD:loglevel}
-    </grok>
-    <grok>
-      pattern %{TIMESTAMP_ISO8601:timestamp} \| %{NOTSPACE:loglevel}
-    </grok>
-  </parse>
-</filter>
-
 <filter kubernetes.var.log.containers.cinder**  kubernetes.var.log.containers.nova** kubernetes.var.log.containers.designate** kubernetes.var.log.containers.barbican**>
   @type parser
   key_name log
@@ -23,8 +8,6 @@
     custom_pattern_path /fluentd/etc/pattern
   </parse>
 </filter>
-
-
 
 <filter kubernetes.var.log.containers.network-generic-ssh-exporter**>
   @type parser
@@ -290,7 +273,7 @@
   </record>
 </filter>
 
-<filter kubernetes.var.log.containers.swift-proxy**>
+<filter swift.var.log.containers.swift-proxy**>
   @type parser
   key_name log
   reserve_data true
@@ -301,14 +284,14 @@
   </parse>
 </filter>
 
-<filter kubernetes.var.log.containers.swift-proxy**>
+<filter swift.var.log.containers.swift-proxy**>
   @type record_transformer
   <record>
     remove_keys auth_token
   </record>
 </filter>
 
-<filter kubernetes.var.log.containers.swift-servers**>
+<filter swift.var.log.containers.swift-servers**>
   @type parser
   key_name log
   reserve_data true
@@ -428,49 +411,19 @@
   </record>
 </filter>
 
-<filter kubernetes.var.log.containers.elk-wall-e**>
-  @type record_transformer
-  <record>
-    process "elk-wall-e"
-  </record>
-</filter>
-
-<filter kubernetes.var.log.containers.elk-fluent**>
-  @type record_transformer
-  <record>
-    process "elk-fluent"
-  </record>
-</filter>
-
-
 <filter kubernetes.var.log.containers.blackbox-datapath**>
   @type record_transformer
   <record>
     process "blackbox-datapath"
   </record>
 </filter>
-<filter kubernetes.var.log.containers.es-client**>
-  @type record_transformer
-  <record>
-    process "es-client"
-  </record>
-</filter>
-
-<filter kubernetes.var.log.containers.es-master**>
-  @type record_transformer
-  <record>
-    process "es-master"
-  </record>
-</filter>
-
-<filter kubernetes.var.log.containers.es-data**>
-  @type record_transformer
-  <record>
-    process "es-data"
-  </record>
-</filter>
 
 <filter kubernetes.**>
+  @type record_modifier
+    remove_keys message,stream
+</filter>
+
+<filter swift.**>
   @type record_modifier
     remove_keys message,stream
 </filter>
@@ -500,11 +453,79 @@
   flatten_array false
 </filter>
 
+<filter swift.**>
+  @type flatten_hash
+  @id flatten_hash
+  separator _
+  flatten_array false
+</filter>
+
 <filter kubernetes.**>
   @type rename_key
   @id rename_key
   rename_rule1 kubernetes_labels_app kubernetes_labels_app_name
 </filter>
+
+<filter swift.**>
+  @type rename_key
+  @id rename_key
+  rename_rule1 kubernetes_labels_app kubernetes_labels_app_name
+</filter>
+
+<match swift.**>
+  @type copy
+  <store>
+    @type opensearch
+    logstash_prefix logstash-swift
+    logstash_format true
+    template_name logstash-swift
+    template_file /fluentd/etc/logstashswift.json
+    template_overwrite false
+    hosts {{.Values.opensearch.http.endpoint}}.{{.Values.global.tld}}
+    scheme https
+    port {{.Values.opensearch.http_port}}
+    user {{.Values.opensearch.user}}
+    password {{.Values.opensearch.password}}
+    log_os_400_reason true
+    ssl_verify false
+    ssl_version TLSv1_2
+    time_as_integer false
+    @log_level info
+    slow_flush_log_threshold 50.0
+    request_timeout 60s
+    include_tag_key true
+    resurrect_after 120
+    reconnect_on_error true
+    reload_connections false
+    reload_on_failure false
+    suppress_type_name true
+    <buffer>
+      total_limit_size 256MB
+      flush_at_shutdown true
+      flush_thread_interval 5
+      overflow_action block
+      retry_forever true
+      retry_wait 2s
+      flush_thread_count 2
+      flush_interval 2s
+    </buffer>
+  </store>
+  <store>
+    @type prometheus
+    <metric>
+      name fluentd_output_status_num_records_total
+      type counter
+      desc The total number of outgoing records
+      <labels>
+        cluster_type metal
+        tag ${tag}
+        nodename "#{ENV['K8S_NODE_NAME']}"
+        hostname ${hostname}
+      </labels>
+    </metric>
+  </store>
+ </match>
+
 
 # count number of outgoing records per tag
 <match kubernetes.**>
@@ -565,3 +586,5 @@
     </metric>
   </store>
  </match>
+
+
