@@ -30,6 +30,12 @@ spec:
      containers:
      - name: {{ .Release.Name }}
        image: {{ required ".Values.global.registry is missing" .Values.global.registry }}/{{ .Values.image.name }}:{{required "missing .Values.image.image_tag" .Values.image.image_tag }}
+       {{- if .Values.global.region == "qa" }}
+       {{- if or (eq .Values.global.region "qa-de-1") (eq .Values.global.region "qa-de-2") }}
+       imagePullPolicy: Always
+       {{- else }}
+       imagePullPolicy: IfNotPresent
+       {{- end }}
        command: ["/opt/venv/bin/designate-nanny", "autorun"]
        env:
          - name: NANNY_CONFIG
