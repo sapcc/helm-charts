@@ -72,7 +72,7 @@ driver = fake-hardware
 # image_ref and image_ref_alt will be changed to the image-id during init-script as the image-id can change over time.
 #image_ref = CHANGE_ME_IMAGE_REF
 #image_ref_alt = CHANGEMEIMAGEREFALT
-image_ref = 84f9f266-3f11-4447-ae6c-f7940b2f5eb1
+image_ref = 6f76b8c8-ca51-4f6a-a4bc-47893ae83dcf
 image_ref_alt = 84f9f266-3f11-4447-ae6c-f7940b2f5eb1
 endpoint_type = internal
 v3_endpoint_type = internal
