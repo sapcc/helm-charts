@@ -455,7 +455,7 @@
 
 <filter swift.**>
   @type flatten_hash
-  @id flatten_hash
+  @id flatten_swift_hash
   separator _
   flatten_array false
 </filter>
@@ -468,7 +468,7 @@
 
 <filter swift.**>
   @type rename_key
-  @id rename_key
+  @id rename_swift_key
   rename_rule1 kubernetes_labels_app kubernetes_labels_app_name
 </filter>
 
