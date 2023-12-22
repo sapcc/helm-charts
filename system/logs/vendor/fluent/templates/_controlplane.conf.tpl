@@ -456,11 +456,6 @@
   @type record_modifier
     remove_keys message,stream
 </filter>
-{{- else }}
-<filter kubernetes.**>
-  @type record_modifier
-    remove_keys message,stream
-</filter>
 {{- end }}
 
 {{- if not .Values.logs.unbound.enabled }}
