@@ -272,7 +272,7 @@
     process "arc-proxy"
   </record>
 </filter>
-
+{{- if .Values.swift.enabled }}
 <filter swift.var.log.containers.swift-proxy**>
   @type parser
   key_name log
@@ -300,6 +300,35 @@
     grok_pattern %{SYSLOGTIMESTAMP:date} %{HOSTNAME:host} %{WORD}.%{LOGLEVEL} %{SYSLOGPROG}: %{HOSTNAME:remote_addr} - - \[%{NOTSPACE:datetime} %{NOTSPACE:tz}\] \"%{WORD:request_method} (?<request_path>[^\"\s]{,255}).*?\" %{NUMBER:response} %{NOTSPACE:content_length} \"(?<referer>[^\"]{,255}).*?\" \"%{NOTSPACE:transaction_id}\" \"%{DATA:user_agent}\" %{NOTSPACE:request_time} \"%{NOTSPACE:additional_info}\" %{NOTSPACE:server_pid} %{NOTSPACE:policy_index}
   </parse>
 </filter>
+{{- else }}
+<filter kubernetes.var.log.containers.swift-proxy**>
+  @type parser
+  key_name log
+  reserve_data true
+  <parse>
+    @type grok
+    grok_pattern %{SYSLOGTIMESTAMP:date} %{HOSTNAME:host} %{WORD}.%{LOGLEVEL} %{SYSLOGPROG}: %{HOSTNAME:client_ip} %{HOSTNAME:remote_addr} %{NOTSPACE:datetime} %{WORD:request_method} %{SWIFTREQPATH:request_path}(?:%{SWIFTREQPARAM:request_param})? %{NOTSPACE:protocol} %{NUMBER:response} (?<referer>\S{,255})\S*? %{NOTSPACE:user_agent} %{NOTSPACE:auth_token} %{NOTSPACE:bytes_recvd} %{NOTSPACE:bytes_sent} %{NOTSPACE:client_etag} %{NOTSPACE:transaction_id} %{NOTSPACE:headers} %{NOTSPACE:request_time} %{NOTSPACE:source} %{NOTSPACE:log_info} %{NUMBER:request_start_time} %{NUMBER:request_end_time} %{NOTSPACE:policy_index}
+    custom_pattern_path /fluentd/etc/pattern
+  </parse>
+</filter>
+
+<filter kubernetes.var.log.containers.swift-proxy**>
+  @type record_transformer
+  <record>
+    remove_keys auth_token
+  </record>
+</filter>
+
+<filter kubernetes.var.log.containers.swift-servers**>
+  @type parser
+  key_name log
+  reserve_data true
+  <parse>
+    @type grok
+    grok_pattern %{SYSLOGTIMESTAMP:date} %{HOSTNAME:host} %{WORD}.%{LOGLEVEL} %{SYSLOGPROG}: %{HOSTNAME:remote_addr} - - \[%{NOTSPACE:datetime} %{NOTSPACE:tz}\] \"%{WORD:request_method} (?<request_path>[^\"\s]{,255}).*?\" %{NUMBER:response} %{NOTSPACE:content_length} \"(?<referer>[^\"]{,255}).*?\" \"%{NOTSPACE:transaction_id}\" \"%{DATA:user_agent}\" %{NOTSPACE:request_time} \"%{NOTSPACE:additional_info}\" %{NOTSPACE:server_pid} %{NOTSPACE:policy_index}
+  </parse>
+</filter>
+{{- end }}
 
 <filter kubernetes.var.log.containers.keystone-api**>
   @type parser
@@ -422,11 +451,17 @@
   @type record_modifier
     remove_keys message,stream
 </filter>
-
+{{- if .Values.swift.enabled }}
 <filter swift.**>
   @type record_modifier
     remove_keys message,stream
 </filter>
+{{- else }}
+<filter kubernetes.**>
+  @type record_modifier
+    remove_keys message,stream
+</filter>
+{{- end }}
 
 {{- if not .Values.logs.unbound.enabled }}
 <match kubernetes.var.log.containers.unbound**>
@@ -453,12 +488,14 @@
   flatten_array false
 </filter>
 
+{{- if .Values.swift.enabled }}
 <filter swift.**>
   @type flatten_hash
   @id flatten_swift_hash
   separator _
   flatten_array false
 </filter>
+{{- end }}
 
 <filter kubernetes.**>
   @type rename_key
@@ -466,12 +503,15 @@
   rename_rule1 kubernetes_labels_app kubernetes_labels_app_name
 </filter>
 
+{{- if .Values.swift.enabled }}
 <filter swift.**>
   @type rename_key
   @id rename_swift_key
   rename_rule1 kubernetes_labels_app kubernetes_labels_app_name
 </filter>
+{{- end }}
 
+{{- if .Values.swift.enabled }}
 <match swift.**>
   @type copy
   <store>
@@ -525,6 +565,7 @@
     </metric>
   </store>
  </match>
+{{- end }}
 
 
 # count number of outgoing records per tag
