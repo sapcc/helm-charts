@@ -21,7 +21,7 @@
   @id in_tail_container_logs
   path /var/log/containers/*.log
 {{- if .Values.swift.enabled }}
-  exclude_path ["/var/log/containers/fluent*","/var/log/containers/swift"]
+  exclude_path ["/var/log/containers/fluent*","/var/log/containers/swift*"]
 {{- else}}
   exclude_path /var/log/containers/fluent*
 {{- end}}
