@@ -1,3 +1,8 @@
+{{- define "utils.trust_bundle.env" }}
+- name: SSL_CERT_FILE
+  value: /etc/ssl/certs/ca-certificates.crt
+{{- end }}
+
 {{- define "utils.trust_bundle.volume_mount" }}
   {{- if .Values.utils.trust_bundle.enabled }}
 - mountPath: /etc/ssl/certs/ca-certificates.crt
