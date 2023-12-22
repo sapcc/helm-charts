@@ -93,12 +93,13 @@
   bearer_token_file /var/run/secrets/kubernetes.io/serviceaccount/token
   ca_file /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
 </filter>
-
+{{- if .Values.swift.enabled }}
 <filter swift.**>
   @type kubernetes_metadata
   bearer_token_file /var/run/secrets/kubernetes.io/serviceaccount/token
   ca_file /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
 </filter>
+{{- end }}
 
 @include /fluentd/etc/prometheus.conf
 
