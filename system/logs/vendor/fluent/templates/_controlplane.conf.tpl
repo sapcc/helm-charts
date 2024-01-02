@@ -553,9 +553,9 @@
       desc The total number of outgoing records
       <labels>
         cluster_type metal
-        tag ${tag}
         nodename "#{ENV['K8S_NODE_NAME']}"
         hostname ${hostname}
+        source swift
       </labels>
     </metric>
   </store>
@@ -615,9 +615,9 @@
       desc The total number of outgoing records
       <labels>
         cluster_type metal
-        tag ${tag}
         nodename "#{ENV['K8S_NODE_NAME']}"
         hostname ${hostname}
+        source all
       </labels>
     </metric>
   </store>
