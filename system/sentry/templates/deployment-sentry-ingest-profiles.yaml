@@ -56,50 +56,7 @@ spec:
         - name: C_FORCE_ROOT
           value: "true"
 {{ include "sentry.env" . | indent 8 }}
-{{- if .Values.sentry.ingestProfiles.env }}
-{{ toYaml .Values.sentry.ingestProfiles.env | indent 8 }}
-{{- end }}
-        volumeMounts:
-        - mountPath: /etc/sentry
-          name: config
-          readOnly: true
-        - mountPath: {{ .Values.filestore.filesystem.path }}
-          name: sentry-data
-{{- if .Values.sentry.ingestProfiles.volumeMounts }}
-{{ toYaml .Values.sentry.ingestProfiles.volumeMounts | indent 8 }}
-{{- end }}
-        resources:
-{{ toYaml .Values.sentry.ingestProfiles.resources | indent 12 }}
-{{- if .Values.sentry.ingestProfiles.containerSecurityContext }}
-        securityContext:
-{{ toYaml .Values.sentry.ingestProfiles.containerSecurityContext | indent 12 }}
-{{- end }}
-{{- if .Values.sentry.ingestProfiles.sidecars }}
-{{ toYaml .Values.sentry.ingestProfiles.sidecars | indent 6 }}
-{{- end }}
       {{- if .Values.serviceAccount.enabled }}
       serviceAccountName: {{ .Values.serviceAccount.name }}-ingest-profiles
-      {{- end }}
-      volumes:
-      - name: config
-        configMap:
-          name: {{ template "fullname" . }}-sentry
-      - name: sentry-data
-      {{- if and (eq .Values.filestore.backend "filesystem") .Values.filestore.filesystem.persistence.enabled (.Values.filestore.filesystem.persistence.persistentWorkers) }}
-      {{- if .Values.filestore.filesystem.persistence.existingClaim }}
-        persistentVolumeClaim:
-          claimName: {{ .Values.filestore.filesystem.persistence.existingClaim }}
-      {{- else }}
-        persistentVolumeClaim:
-          claimName: {{ template "fullname" . }}-data
-      {{- end }}
-      {{- else }}
-        emptyDir: {}
-      {{ end }}
-{{- if .Values.sentry.ingestProfiles.volumes }}
-{{ toYaml .Values.sentry.ingestProfiles.volumes | indent 6 }}
-{{- end }}
-      {{- if .Values.sentry.ingestProfiles.priorityClassName }}
-      priorityClassName: "{{ .Values.sentry.ingestProfiles.priorityClassName }}"
       {{- end }}
 {{- end }}

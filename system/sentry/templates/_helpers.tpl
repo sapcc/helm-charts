@@ -456,19 +456,8 @@ Common Sentry environment variables
   value: http://{{ template "fullname" . }}-snuba:{{ template "snuba.port" . }}
 - name: VROOM
   value: http://{{ template "fullname" . }}-vroom:{{ template "vroom.port" . }}
-{{- if .Values.sentry.existingSecret }}
 - name: SENTRY_SECRET_KEY
-  valueFrom:
-    secretKeyRef:
-      name: {{ .Values.sentry.existingSecret }}
-      key: {{ default "key" .Values.sentry.existingSecretKey }}
-{{- else }}
-- name: SENTRY_SECRET_KEY
-  valueFrom:
-    secretKeyRef:
-      name: {{ template "fullname" . }}-sentry-secret
-      key: "key"
-{{- end }}
+  valueFrom: { secretKeyRef: { name: {{ template "fullname" . }}, key: sentry-secret-key } }
 {{- if .Values.postgresql.enabled }}
 - name: POSTGRES_PASSWORD
   valueFrom: { secretKeyRef: { name: {{ template "postgresql.fullname" . }}, key: postgres-password } }
@@ -533,7 +522,7 @@ Create chart name and version as used by the chart label.
 {{- end -}}
 
 {{/*
-Create clickhouse path. 
+Create clickhouse path.
 if .Values.clickhouse.path is empty, default value "/var/lib/clickhouse".
 */}}
 {{- define "clickhouse.fullpath" -}}

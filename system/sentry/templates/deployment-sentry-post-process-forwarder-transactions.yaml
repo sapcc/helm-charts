@@ -49,27 +49,7 @@ spec:
           - "--synchronize-commit-log-topic=snuba-transactions-commit-log"
           - "--synchronize-commit-group"
           - "transactions_group"
-        volumeMounts:
-        - mountPath: /etc/sentry
-          name: config
-          readOnly: true
       {{- if .Values.serviceAccount.enabled }}
       serviceAccountName: {{ .Values.serviceAccount.name }}-post-process-forwarder-transactions
       {{- end }}
-      volumes:
-      - name: config
-        configMap:
-          name: {{ template "fullname" . }}-sentry
-      - name: sentry-data
-      {{- if and (eq .Values.filestore.backend "filesystem") .Values.filestore.filesystem.persistence.enabled (.Values.filestore.filesystem.persistence.persistentWorkers) }}
-      {{- if .Values.filestore.filesystem.persistence.existingClaim }}
-        persistentVolumeClaim:
-          claimName: {{ .Values.filestore.filesystem.persistence.existingClaim }}
-      {{- else }}
-        persistentVolumeClaim:
-          claimName: {{ template "fullname" . }}-data
-      {{- end }}
-      {{- else }}
-        emptyDir: {}
-      {{ end }}
 
