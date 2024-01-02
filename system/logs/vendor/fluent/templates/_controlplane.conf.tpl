@@ -576,7 +576,7 @@
     data_stream_name logs
   {{- else }}
     @type opensearch
-    @id kubernetes_opensearch
+    @id opensearch_kubernetes
     logstash_prefix {{.Values.opensearch.indexname}}
     logstash_format true
     template_name {{.Values.opensearch.indexname}}
