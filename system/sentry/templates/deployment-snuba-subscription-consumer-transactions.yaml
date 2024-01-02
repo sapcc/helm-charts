@@ -30,7 +30,7 @@ spec:
         checksum/snubaSettingsPy: {{ .Values.config.snubaSettingsPy | sha256sum }}
         checksum/config.yaml: {{ include (print $.Template.BasePath "/configmap-snuba.yaml") . | sha256sum }}
       labels:
-        app: {{ template "sentry.fullname" . }}
+        app: {{ template "fullname" . }}
         release: "{{ .Release.Name }}"
         role: snuba-subscription-consumer-transactions
     spec:
@@ -53,7 +53,7 @@ spec:
         - containerPort: {{ template "snuba.port" }}
         envFrom:
         - secretRef:
-            name: {{ template "sentry.fullname" . }}-snuba-env
+            name: {{ template "fullname" . }}-snuba-env
         volumeMounts:
         - mountPath: /etc/snuba
           name: config
@@ -64,4 +64,4 @@ spec:
       volumes:
       - name: config
         configMap:
-          name: {{ template "sentry.fullname" . }}-snuba
+          name: {{ template "fullname" . }}-snuba
