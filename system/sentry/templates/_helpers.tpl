@@ -43,41 +43,6 @@ We truncate at 24 chars because some Kubernetes name fields are limited to this 
 {{- define "symbolicator.port" -}}3021{{- end -}}
 {{- define "vroom.port" -}}8085{{- end -}}
 
-{{- define "relay.image" -}}
-{{- default "getsentry/relay" .Values.image.relay.repository -}}
-:
-{{- default .Chart.AppVersion .Values.image.relay.tag -}}
-{{- end -}}
-{{- define "sentry.image" -}}
-{{- default "getsentry/sentry" .Values.image.sentry.repository -}}
-:
-{{- default .Chart.AppVersion .Values.image.sentry.tag -}}
-{{- end -}}
-{{- define "snuba.image" -}}
-{{- default "getsentry/snuba" .Values.image.snuba.repository -}}
-
-:
-{{- default .Chart.AppVersion .Values.image.snuba.tag -}}
-{{- end -}}
-
-{{- define "symbolicator.image" -}}
-{{- default "getsentry/symbolicator" .Values.image.symbolicator.repository -}}
-:
-{{- default .Chart.AppVersion .Values.image.symbolicator.tag -}}
-{{- end -}}
-
-{{- define "dbCheck.image" -}}
-{{- default "subfuzion/netcat" .Values.hooks.dbCheck.image.repository -}}
-:
-{{- default "latest" .Values.hooks.dbCheck.image.tag -}}
-{{- end -}}
-
-{{- define "vroom.image" -}}
-{{- default "getsentry/vroom" .Values.image.vroom.repository -}}
-:
-{{- default .Chart.AppVersion .Values.image.vroom.tag -}}
-{{- end -}}
-
 {{/*
 Expand the name of the chart.
 */}}

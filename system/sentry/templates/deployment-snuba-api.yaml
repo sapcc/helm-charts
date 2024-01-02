@@ -26,7 +26,7 @@ spec:
         role: snuba-api
       containers:
       - name: {{ .Chart.Name }}-snuba
-        image: "{{ template "snuba.image" . }}"
+        image: {{required ".Values.global.dockerHubMirror is missing" .Values.global.dockerHubMirror }}/{{ required ".Values.image.snuba.repository is missing" .Values.image.snuba.repository }}:{{ required ".Values.image.snuba.tag is missing" .Values.image.snuba.tag }}
         imagePullPolicy: {{ default "IfNotPresent" .Values.image.snuba.pullPolicy }}
       {{- if .Values.snuba.api.command }}
         command:

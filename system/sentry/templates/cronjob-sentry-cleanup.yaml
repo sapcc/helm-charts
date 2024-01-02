@@ -35,36 +35,9 @@ spec:
 {{ toYaml .Values.sentry.cleanup.podLabels | indent 12 }}
             {{- end }}
         spec:
-          affinity:
-            {{- if .Values.sentry.cleanup.affinity }}
-{{ toYaml .Values.sentry.cleanup.affinity | indent 12 }}
-            {{- end }}
-            {{- if .Values.sentry.cleanup.nodeSelector }}
-          nodeSelector:
-{{ toYaml .Values.sentry.cleanup.nodeSelector | indent 12 }}
-            {{- end }}
-            {{- if .Values.sentry.cleanup.tolerations }}
-          tolerations:
-{{ toYaml .Values.sentry.cleanup.tolerations | indent 12 }}
-            {{- end }}
-            {{- if .Values.dnsPolicy }}
-          dnsPolicy: {{ .Values.dnsPolicy | quote }}
-            {{- end }}
-            {{- if .Values.dnsConfig }}
-          dnsConfig:
-{{ toYaml .Values.dnsConfig | indent 12 }}
-            {{- end }}
-            {{- if .Values.image.sentry.imagePullSecrets }}
-          imagePullSecrets:
-{{ toYaml .Values.images.sentry.imagePullSecrets | indent 12 }}
-            {{- end }}
-            {{- if .Values.sentry.cleanup.securityContext }}
-          securityContext:
-{{ toYaml .Values.sentry.cleanup.securityContext | indent 12 }}
-      {{- end }}
           containers:
           - name: {{ .Chart.Name }}-sentry-cleanup
-            image: "{{ template "sentry.image" . }}"
+            image: "{{required ".Values.global.dockerHubMirror is missing" .Values.global.dockerHubMirror }}/{{ required ".Values.image.sentry.repository is missing" .Values.image.sentry.repository }}:{{ required ".Values.image.sentry.tag is missing" .Values.image.sentry.tag }}
             imagePullPolicy: {{ default "IfNotPresent" .Values.image.sentry.pullPolicy }}
             command: ["sentry"]
             args:

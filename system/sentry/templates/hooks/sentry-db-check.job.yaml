@@ -30,8 +30,8 @@ spec:
         release: "{{ .Release.Name }}"
       containers:
       - name: db-check
-        image: {{ template "dbCheck.image" . }}
-        imagePullPolicy: {{ default "IfNotPresent" .Values.hooks.dbCheck.image.pullPolicy }}
+        image: "{{required ".Values.global.dockerHubMirror is missing" .Values.global.dockerHubMirror }}/{{ required ".Values.image.relay.repository is missing" .Values.image.relay.repository }}:{{ required ".Values.image.relay.tag is missing" .Values.image.relay.tag }}"
+        imagePullPolicy: {{ default "IfNotPresent" .Values.image.relay.pullPolicy }}
         command:
           - /bin/sh
           - -c

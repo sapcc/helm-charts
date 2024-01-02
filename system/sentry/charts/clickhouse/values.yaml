@@ -1,0 +1,190 @@
+clickhouse:
+  configmap:
+    builtin_dictionaries_reload_interval: "3600"
+    compression:
+      cases:
+      - method: zstd
+        min_part_size: "10000000000"
+        min_part_size_ratio: "0.01"
+      enabled: false
+    default_session_timeout: "60"
+    disable_internal_dns_cache: "1"
+    enabled: true
+    graphite:
+      config:
+      - asynchronous_metrics: true
+        events: true
+        events_cumulative: true
+        interval: "60"
+        metrics: true
+        root_path: one_min
+        timeout: "0.1"
+      enabled: false
+    keep_alive_timeout: "3"
+    logger:
+      count: "10"
+      level: trace
+      path: /var/log/clickhouse-server
+      size: 1000M
+      stdoutLogsEnabled: false
+    mark_cache_size: "5368709120"
+    max_concurrent_queries: "100"
+    max_connections: "4096"
+    max_session_timeout: "3600"
+    merge_tree:
+      enabled: false
+      max_part_loading_threads: auto
+      parts_to_delay_insert: 150
+      parts_to_throw_insert: 300
+    mlock_executable: false
+    profiles:
+      enabled: false
+      profile:
+      - config:
+          load_balancing: random
+          max_memory_usage: "10000000000"
+          use_uncompressed_cache: "0"
+        name: default
+    quotas:
+      enabled: false
+      quota:
+      - config:
+        - duration: "3600"
+          errors: "0"
+          execution_time: "0"
+          queries: "0"
+          read_rows: "0"
+          result_rows: "0"
+        name: default
+    remote_servers:
+      enabled: true
+      internal_replication: false
+      replica:
+        backup:
+          enabled: true
+        compression: true
+        user: default
+    umask: "022"
+    uncompressed_cache_size: "8589934592"
+    users:
+      enabled: false
+      user:
+      - config:
+          networks:
+          - ::/0
+          profile: default
+          quota: default
+        name: default
+    zookeeper_servers:
+      config:
+      - host: ""
+        index: ""
+        port: ""
+      enabled: false
+      operation_timeout_ms: "10000"
+      session_timeout_ms: "30000"
+  http_port: "8123"
+  image: yandex/clickhouse-server
+  imagePullPolicy: IfNotPresent
+  imageVersion: "19.14"
+  ingress:
+    enabled: false
+  interserver_http_port: "9009"
+  livenessProbe:
+    enabled: true
+    failureThreshold: "3"
+    initialDelaySeconds: "30"
+    periodSeconds: "30"
+    successThreshold: "1"
+    timeoutSeconds: "5"
+  metrics:
+    enabled: false
+    image:
+      port: 9116
+      pullPolicy: IfNotPresent
+      registry: docker.io
+      repository: f1yegor/clickhouse-exporter
+      tag: latest
+    podAnnotations:
+      prometheus.io/port: "9116"
+      prometheus.io/scrape: "true"
+    podLabels: {}
+    prometheusRule:
+      additionalLabels: {}
+      enabled: false
+      namespace: ""
+      rules: []
+    service:
+      annotations: {}
+      labels: {}
+      type: ClusterIP
+    serviceMonitor:
+      enabled: false
+      selector:
+        prometheus: kube-prometheus
+  path: /var/lib/clickhouse
+  persistentVolumeClaim:
+    dataPersistentVolume:
+      accessModes:
+      - ReadWriteOnce
+      enabled: false
+      storage: 500Gi
+    enabled: false
+    logsPersistentVolume:
+      accessModes:
+      - ReadWriteOnce
+      enabled: false
+      storage: 50Gi
+  podManagementPolicy: Parallel
+  podSecurityContext: {}
+  readinessProbe:
+    enabled: true
+    failureThreshold: "3"
+    initialDelaySeconds: "30"
+    periodSeconds: "30"
+    successThreshold: "1"
+    timeoutSeconds: "5"
+  replicas: "3"
+  resources: {}
+  securityContext: {}
+  tcp_port: "9000"
+  updateStrategy: RollingUpdate
+clusterDomain: cluster.local
+serviceAccount:
+  annotations: {}
+  automountServiceAccountToken: true
+  enabled: false
+  name: clickhouse
+tabix:
+  enabled: false
+  image: spoonest/clickhouse-tabix-web-client
+  imagePullPolicy: IfNotPresent
+  imageVersion: stable
+  ingress:
+    enabled: false
+  livenessProbe:
+    enabled: true
+    failureThreshold: "3"
+    initialDelaySeconds: "30"
+    periodSeconds: "30"
+    successThreshold: "1"
+    timeoutSeconds: "5"
+  podAnnotations: null
+  podLabels: null
+  readinessProbe:
+    enabled: true
+    failureThreshold: "3"
+    initialDelaySeconds: "30"
+    periodSeconds: "30"
+    successThreshold: "1"
+    timeoutSeconds: "5"
+  replicas: "1"
+  resources: {}
+  security:
+    password: admin
+    user: admin
+  updateStrategy:
+    maxSurge: 3
+    maxUnavailable: 1
+    type: RollingUpdate
+timezone: UTC
