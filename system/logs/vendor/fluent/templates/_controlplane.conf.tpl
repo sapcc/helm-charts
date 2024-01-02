@@ -509,8 +509,10 @@
 {{- if .Values.swift.enabled }}
 <match swift.**>
   @type copy
+  @id copy_swift
   <store>
     @type opensearch
+    @id opensearch_swift
     logstash_prefix logstash-swift
     logstash_format true
     template_name logstash-swift
@@ -547,6 +549,7 @@
   </store>
   <store>
     @type prometheus
+    @id prometheus_swift
     <metric>
       name fluentd_output_status_num_records_total
       type counter
@@ -555,6 +558,7 @@
         cluster_type metal
         nodename "#{ENV['K8S_NODE_NAME']}"
         hostname ${hostname}
+        source swift
       </labels>
     </metric>
   </store>
@@ -565,12 +569,14 @@
 # count number of outgoing records per tag
 <match kubernetes.**>
   @type copy
+  @id copy_kubernetes
   <store>
   {{- if .Values.opensearch.datastream.enabled }}
     @type opensearch_data_stream
     data_stream_name logs
   {{- else }}
     @type opensearch
+    @id kubernetes_opensearch
     logstash_prefix {{.Values.opensearch.indexname}}
     logstash_format true
     template_name {{.Values.opensearch.indexname}}
@@ -608,6 +614,7 @@
   </store>
   <store>
     @type prometheus
+    @id prometheus_kubernetes
     <metric>
       name fluentd_output_status_num_records_total
       type counter
@@ -616,6 +623,7 @@
         cluster_type metal
         nodename "#{ENV['K8S_NODE_NAME']}"
         hostname ${hostname}
+        source all
       </labels>
     </metric>
   </store>
