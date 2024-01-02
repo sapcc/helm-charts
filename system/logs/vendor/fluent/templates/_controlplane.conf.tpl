@@ -555,7 +555,6 @@
         cluster_type metal
         nodename "#{ENV['K8S_NODE_NAME']}"
         hostname ${hostname}
-        source swift
       </labels>
     </metric>
   </store>
@@ -617,7 +616,6 @@
         cluster_type metal
         nodename "#{ENV['K8S_NODE_NAME']}"
         hostname ${hostname}
-        source all
       </labels>
     </metric>
   </store>
