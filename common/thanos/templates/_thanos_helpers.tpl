@@ -155,9 +155,9 @@ cluster.local
 {{- $storeItem := printf "%s.%s" $store $root.Values.global.tld -}}
 {{- $globalList = append $globalList $storeItem -}}
 {{- end -}}
-{{- $sortedGlobalList := $globalList | sortAlpha -}}
-{{- range $queryStoreAPI := $sortedGlobalList }}
-  - {{ $queryStoreAPI }}:443
+{{- range $globalList | sortAlpha -}}
+  - {{ . }}
+{{- end }}
 {{- end }}
 {{/* Regional Thanos Query Store API endpoints */}}
 {{- else if and (not $root.Values.useQueryRegions) $root.Values.queryStoreAPIs -}}
