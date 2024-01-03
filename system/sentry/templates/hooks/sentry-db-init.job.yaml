@@ -1,4 +1,3 @@
-{{- if .Values.hooks.enabled -}}
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -33,33 +32,3 @@ spec:
         command: ["sentry","upgrade","--noinput"]
         env:
 {{ include "sentry.env" . | indent 8 }}
-        {{- if .Values.hooks.dbInit.env }}
-{{ toYaml .Values.hooks.dbInit.env | indent 8 }}
-        {{- end }}
-        volumeMounts:
-        - mountPath: /etc/sentry
-          name: config
-          readOnly: true
-{{- if .Values.hooks.dbInit.volumeMounts }}
-{{ toYaml .Values.hooks.dbInit.volumeMounts | indent 8 }}
-{{- end }}
-        resources:
-{{ toYaml .Values.hooks.dbInit.resources | indent 10 }}
-{{- if .Values.hooks.dbInit.containerSecurityContext }}
-        securityContext:
-{{ toYaml .Values.hooks.dbInit.containerSecurityContext | indent 10 }}
-{{- end }}
-{{- if .Values.hooks.dbInit.sidecars }}
-{{ toYaml .Values.hooks.dbInit.sidecars | indent 6 }}
-{{- end }}
-      volumes:
-      - name: config
-        configMap:
-          name: {{ template "fullname" . }}-sentry
-{{- if .Values.hooks.dbInit.volumes }}
-{{ toYaml .Values.hooks.dbInit.volumes | indent 6 }}
-{{- end }}
-      {{- if .Values.hooks.shareProcessNamespace }}
-      shareProcessNamespace: {{ .Values.hooks.shareProcessNamespace }}
-      {{- end }}
-{{- end -}}

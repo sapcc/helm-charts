@@ -30,8 +30,8 @@ spec:
         release: "{{ .Release.Name }}"
       containers:
       - name: db-check
-        image: "{{required ".Values.global.dockerHubMirror is missing" .Values.global.dockerHubMirror }}/{{ required ".Values.image.relay.repository is missing" .Values.image.relay.repository }}:{{ required ".Values.image.relay.tag is missing" .Values.image.relay.tag }}"
-        imagePullPolicy: {{ default "IfNotPresent" .Values.image.relay.pullPolicy }}
+        image: "{{required ".Values.global.dockerHubMirror is missing" .Values.global.dockerHubMirror }}/{{ required ".Values.hooks.dbCheck.image.repository is missing" .Values.hooks.dbCheck.image.repository }}:{{ required ".Values.hooks.dbCheck.image.tag is missing" .Values.hooks.dbCheck.image.tag }}"
+        imagePullPolicy: {{ default "IfNotPresent" .Values.hooks.dbCheck.image }}
         command:
           - /bin/sh
           - -c
@@ -102,25 +102,10 @@ spec:
               fi
             done
             echo "Kafka is up"
-{{- if .Values.hooks.dbCheck.volumeMounts }}
-        volumeMounts:
-{{ toYaml .Values.hooks.dbCheck.volumeMounts | indent 8 }}
-{{- end }}
         env:
 {{- if .Values.hooks.dbCheck.env }}
 {{ toYaml .Values.hooks.dbCheck.env | indent 8 }}
 {{- end }}
         resources:
 {{ toYaml .Values.hooks.dbCheck.resources | indent 10 }}
-{{- if .Values.hooks.dbCheck.containerSecurityContext }}
-        securityContext:
-{{ toYaml .Values.hooks.dbCheck.containerSecurityContext | indent 10 }}
-{{- end }}
-{{- if .Values.hooks.dbCheck.volumes }}
-      volumes:
-{{ toYaml .Values.hooks.dbCheck.volumes | indent 6 }}
-{{- end }}
-      {{- if .Values.hooks.shareProcessNamespace }}
-      shareProcessNamespace: {{ .Values.hooks.shareProcessNamespace }}
-      {{- end }}
 {{- end }}
