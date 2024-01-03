@@ -138,9 +138,8 @@ cluster.local
 {{- $clusterList = append $clusterList $storeItem -}}
 {{- end }}
 {{- end }}
-{{- $sortedClusterList := $clusterList | sortAlpha -}}
-{{- range $queryStoreAPI := $sortedClusterList }}
-  - {{ $queryStoreAPI }}
+{{- range $clusterList | sortAlpha -}}
+  - {{ . }}
 {{- end }}
 {{/* Global Thanos Query Store API endpoints */}}
 {{- else if and $root.Values.useQueryRegions $root.Values.queryStoreAPIs -}}
