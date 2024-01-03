@@ -29,11 +29,11 @@ spec:
         app: sentry
         release: "{{ .Release.Name }}"
     spec:
-      restartPolicy: Never        
+      restartPolicy: Never
       containers:
       - name: db-check
         image: "{{required ".Values.global.dockerHubMirror is missing" .Values.global.dockerHubMirror }}/{{ required ".Values.hooks.dbCheck.image.repository is missing" .Values.hooks.dbCheck.image.repository }}:{{ required ".Values.hooks.dbCheck.image.tag is missing" .Values.hooks.dbCheck.image.tag }}"
-        imagePullPolicy: {{ default "IfNotPresent" .Values.hooks.dbCheck.image }}
+        imagePullPolicy: {{ .Values.image.sentry.pullPolicy}}
         command:
           - /bin/sh
           - -c

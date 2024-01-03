@@ -3,7 +3,7 @@ kind: Deployment
 metadata:
   name: {{ template "fullname" . }}-relay
   labels:
-    app: {{ template "fullname" . }}
+    app: {{ template "fullname" . }}-relay
     chart: "{{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}"
     release: "{{ .Release.Name }}"
     heritage: "{{ .Release.Service }}"
@@ -19,7 +19,7 @@ metadata:
 spec:
   selector:
     matchLabels:
-      app: {{ template "fullname" . }}
+      app: {{ template "fullname" . }}-relay
       release: "{{ .Release.Name }}"
       role: relay
 {{- if not .Values.relay.autoscaling.enabled }}
@@ -35,7 +35,7 @@ spec:
 {{ toYaml .Values.relay.annotations | indent 8 }}
         {{- end }}
       labels:
-        app: {{ template "fullname" . }}
+        app: {{ template "fullname" . }}-relay
         release: "{{ .Release.Name }}"
         role: relay
         {{- if .Values.relay.podLabels }}
@@ -72,9 +72,6 @@ spec:
         env:
         - name: RELAY_PORT
           value: '{{ template "relay.port" }}'
-{{- if .Values.relay.env }}
-{{ toYaml .Values.relay.env | indent 8 }}
-{{- end }}
         volumeMounts:
           - name: credentials
             mountPath: /work/.relay
