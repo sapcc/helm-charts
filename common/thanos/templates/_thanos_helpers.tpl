@@ -138,7 +138,7 @@ cluster.local
 {{- $clusterList = append $clusterList $storeItem -}}
 {{- end }}
 {{- end }}
-{{- range $clusterList | sortAlpha -}}
+{{- range $clusterList | sortAlpha }}
   - {{ . }}
 {{- end }}
 {{/* Global Thanos Query Store API endpoints */}}
@@ -155,9 +155,8 @@ cluster.local
 {{- $storeItem := printf "%s.%s" $store $root.Values.global.tld -}}
 {{- $globalList = append $globalList $storeItem -}}
 {{- end -}}
-{{- range $globalList | sortAlpha -}}
+{{- range $globalList | sortAlpha }}
   - {{ . }}:443
-{{- end }}
 {{- end }}
 {{/* Regional Thanos Query Store API endpoints */}}
 {{- else if and (not $root.Values.useQueryRegions) $root.Values.queryStoreAPIs -}}
@@ -167,7 +166,7 @@ cluster.local
 {{- $storeItem := printf "thanos-%s-grpc.%s.%s" $cluster $root.Values.global.region $root.Values.global.tld -}}
 {{- $regionalList = append $regionalList $storeItem -}}
 {{- end }}
-{{- range $regionalList | sortAlpha -}}
+{{- range $regionalList | sortAlpha }}
   - {{ . }}:443
 {{- end }}
 {{- end }}
