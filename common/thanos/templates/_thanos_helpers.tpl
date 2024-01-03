@@ -167,9 +167,8 @@ cluster.local
 {{- $storeItem := printf "thanos-%s-grpc.%s.%s" $cluster $root.Values.global.region $root.Values.global.tld -}}
 {{- $regionalList = append $regionalList $storeItem -}}
 {{- end }}
-{{- $sortedRegionalList := $regionalList | sortAlpha -}}
-{{- range $queryStoreAPI := $sortedRegionalList }}
-  - {{ $queryStoreAPI }}:443
+{{- range $regionalList | sortAlpha -}}
+  - {{ . }}:443
 {{- end }}
 {{- end }}
 {{- end }}
