@@ -55,3 +55,28 @@ groups:
 
       - record: manila_share_minimal_size_bytes_for_castellum
         expr: netapp_volume_provision_case_three * on (share_id) group_left max({__name__=~"netapp_volume_logical_used_bytes|netapp_volume_snapshot_used_bytes"}) by (share_id)
+
+      # If the `manila_share_exclusion_reasons_for_castellum` metric has entries, Castellum will ignore the respective share.
+      # This is required because Castellum discovers shares through the Manila API, but some shares do not have
+      # size/usage metrics in the `..._for_castellum` metrics above because they are not supposed to be autoscaled.
+      # This exclusion mechanism is required to keep Castellum from being confused about the shares it's not supposed to
+      # be interested in.
+      #
+      # The `reason` label in the final aggregation rule is used by Castellum for logging ignored shares.
+
+      # Scraping will fail on shares in state "offline" because their size is always reported as 0.
+      - record: netapp_volume_exclusion_reason_offline
+        expr: count(netapp_volume_total_bytes{project_id!="",share_id!="",volume_state="offline"}) by (project_id, share_id) > 0
+      - record: manila_share_exclusion_reasons_for_castellum
+        expr: label_replace(netapp_volume_exclusion_reason_offline, "reason", "volume_state = offline", "share_id", ".*")
+
+      # We want to ignore "shares" that are actually snapmirror targets. It's possible that we have both metrics with
+      # volume_type="dp" and other volume_type values, in which case Castellum will only use the non-dp metrics.
+      # This check is specifically about excluding shares that are *only* snapmirrors.
+      #
+      # NOTE: Not having any useful metrics at all is not a valid reason for ignoring the share.
+      # If we lack metrics about a share, we want to be alerted by the failing scrape.
+      - record: netapp_volume_exclusion_reason_dponly
+        expr: (count(netapp_volume_total_bytes{project_id!="",share_id!="",volume_type="dp"}) by (project_id, share_id) > 0) unless (count(netapp_volume_total_bytes{project_id!="",share_id!="",volume_type!="dp"}) by (project_id, share_id) > 0)
+      - record: manila_share_exclusion_reasons_for_castellum
+        expr: label_replace(netapp_volume_exclusion_reason_dponly, "reason", "volume_type = dp", "share_id", ".*")
