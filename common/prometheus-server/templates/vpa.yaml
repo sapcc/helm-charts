@@ -15,17 +15,13 @@ spec:
     updateMode: {{ default "Off" $.Values.vpaUpdateMode | quote }}
   resourcePolicy:
     containerPolicies:
-      - containerName: 'prometheus'
+{{- range $vpaResources := $.Values.vpaResources }}
+      - containerName: {{ $vpaResources.name  }}
         controlledValues: RequestsOnly
         controlledResources:
           - cpu
           - memory
-{{- if and $.Values.resources $.Values.resources.requests }}
-        minAllowed:
-{{ toYaml $.Values.resources.requests | indent 10 }}
-{{- end }}
-{{- if and $.Values.resources $.Values.resources.limits }}
         maxAllowed:
-{{ toYaml $.Values.resources.limits | indent 10 }}
+{{ toYaml $vpaResources.maxAllowed | indent 10 }}
 {{- end }}
 {{- end }}

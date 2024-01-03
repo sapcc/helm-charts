@@ -281,8 +281,24 @@ resources:
     cpu: "1"
     memory: 8Gi
 
+# specifying container specific maximal values.
+vpaResources:
+  # if prometheus needs more than 10Gi memory, this needs to be increased otherwise the VPA will not set it accordingly
+  - name: prometheus
+    maxAllowed:
+      cpu: "3"
+      mem: "10Gi"
+  - name: config-reloader
+    maxAllowed:
+      cpu: "100"
+      mem: "200Mi"
+  - name: thanos-sidecar
+    maxAllowed:
+      cpu: "1"
+      mem: "3Gi"
+
 # VerticalPodAutoscaler UpdateMode defaults to Off.
-# vpaUpdateMode: "Initial"
+# vpaUpdateMode: "Auto"
 
 # A security context defines privilege and access control settings for a Pod or Container.
 # See: https://kubernetes.io/docs/tasks/configure-pod-container/security-context .
