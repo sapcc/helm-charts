@@ -448,46 +448,6 @@ Common Snuba environment variables
   value: http://{{ template "fullname" . }}-snuba:{{ template "snuba.port" . }}
 {{- end -}}
 
-{{/*
-Common Sentry environment variables
-*/}}
-{{- define "sentry.env" -}}
-- name: SNUBA
-  value: http://{{ template "fullname" . }}-snuba:{{ template "snuba.port" . }}
-- name: VROOM
-  value: http://{{ template "fullname" . }}-vroom:{{ template "vroom.port" . }}
-- name: SENTRY_SECRET_KEY
-  valueFrom: { secretKeyRef: { name: {{ template "fullname" . }}, key: sentry-secret-key } }
-{{- if .Values.postgresql.enabled }}
-- name: POSTGRES_PASSWORD
-  valueFrom: { secretKeyRef: { name: {{ template "postgresql.fullname" . }}, key: postgres-password } }
-{{- end }}
-- name: SENTRY_EMAIL_PASSWORD
-  value: {{ .Values.emailPassword | squote }}
-{{- if and .Values.github.existingSecret }}
-- name: GITHUB_APP_PRIVATE_KEY
-  valueFrom:
-    secretKeyRef:
-      name: {{ .Values.github.existingSecret }}
-      key: {{ default "private-key" .Values.github.existingSecretPrivateKeyKey }}
-- name: GITHUB_APP_WEBHOOK_SECRET
-  valueFrom:
-    secretKeyRef:
-      name: {{ .Values.github.existingSecret }}
-      key: {{ default "webhook-secret" .Values.github.existingSecretWebhookSecretKey }}
-- name: GITHUB_APP_CLIENT_ID
-  valueFrom:
-    secretKeyRef:
-      name: {{ .Values.github.existingSecret }}
-      key: {{ default "client-id" .Values.github.existingSecretClientIdKey }}
-- name: GITHUB_APP_CLIENT_SECRET
-  valueFrom:
-    secretKeyRef:
-      name: {{ .Values.github.existingSecret }}
-      key: {{ default "client-secret" .Values.github.existingSecretClientSecretKey }}
-{{- end }}
-{{- end -}}
-
 {{/* vim: set filetype=mustache: */}}
 {{/*
 Expand the name of the chart.
