@@ -156,7 +156,7 @@ cluster.local
 {{- $globalList = append $globalList $storeItem -}}
 {{- end -}}
 {{- range $globalList | sortAlpha -}}
-  - {{ . }}
+  - {{ . }}:443
 {{- end }}
 {{- end }}
 {{/* Regional Thanos Query Store API endpoints */}}
