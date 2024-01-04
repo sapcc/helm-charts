@@ -1,3 +1,11 @@
+## 7.4.6
+
+* bump to v2.47.2
+
+## 7.4.5
+
+* preparing VPA for rollout (make maxAllowed configurable)
+
 ## 7.4.4
 
 * Soften out-of-order alert 
