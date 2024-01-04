@@ -3,12 +3,14 @@
 groups:
   - name: castellum_manila
     rules:
-      # Case one: old provision style, where snapshot reserve is allocated AS PART OF the target share size and snapshot reserve percentage is 5.
-      # The logical space reporting/enforcement is always disabled for them.
+      # Case one: default provision style, where snapshot reserve is allocated AS PART OF the target share size and snapshot reserve percentage is 5.
+      # Logical space reporting and enforcement are always disabled for them. Once resized, the share will be converted to case two or three.
       # Share size = netapp_volume_total_bytes + netapp_volume_snapshot_reserved_bytes
       # Share usage = netapp_volume_used_bytes
+      # Share minimal size = netapp_volume_used_bytes + netapp_volume_snapshot_reserved_bytes
+
       - record: netapp_volume_provision_case_one
-        expr: netapp_volume_percentage_snapshot_reserve{share_id!="", volume=~"share.*", volume_type="rw"} / 5 == 1
+        expr: netapp_volume_percentage_snapshot_reserve{share_id!="", volume=~"share_[0-9a-f]{8}_[0-9a-f]{4}_[0-9a-f]{4}_[0-9a-f]{4}_[0-9a-f]{12}", volume_type="rw"} / 5 == 1
 
       - record: manila_share_size_bytes_for_castellum
         expr: netapp_volume_provision_case_one * (netapp_volume_total_bytes + netapp_volume_snapshot_reserved_bytes)
@@ -16,18 +18,18 @@ groups:
       - record: manila_share_used_bytes_for_castellum
         expr: netapp_volume_provision_case_one * netapp_volume_used_bytes
 
-      # We don't monitor snapshot usage for the minimal size in case one, they trun to other cases once resized.
       - record: manila_share_minimal_size_bytes_for_castellum
         expr: netapp_volume_provision_case_one * (netapp_volume_used_bytes + netapp_volume_snapshot_reserved_bytes)
 
       # Case two: new provision style and logical space is NOT enabled
-      # New provision style means snapshot reserve is allocated IN ADDTION TO share size, and sanpshot reserve percentage is 50
-      # To avoid snapshot spill, share's minimal size must be larger than the snapshot used size.
+      # New provision style means snapshot reserve is allocated side by side to the share space.
+      # The volume is provisioned with double of share size and sanpshot reserve percentage is set to 50.
+      # To avoid snapshot spill, share's minimal size must be larger than the snapshot used size or share used size, whichever is larger.
       # Share size = netapp_volume_total_bytes
       # Share usage = netapp_volume_used_bytes
       # Share minimal size = max(netapp_volume_used_bytes, netapp_volume_snapshot_used_bytes)
       - record: netapp_volume_provision_case_two
-        expr: (netapp_volume_percentage_snapshot_reserve{share_id!="", volume=~"share.*", volume_type="rw"} / 50 == 1) * ((1 + netapp_volume_is_space_enforcement_logical) == 1)
+        expr: (netapp_volume_percentage_snapshot_reserve{share_id!="", volume=~"share_[0-9a-f]{8}_[0-9a-f]{4}_[0-9a-f]{4}_[0-9a-f]{4}_[0-9a-f]{12}", volume_type="rw"} / 50 == 1) * ((1 + netapp_volume_is_space_enforcement_logical) == 1)
 
       - record: manila_share_size_bytes_for_castellum
         expr: netapp_volume_provision_case_two * netapp_volume_total_bytes
@@ -38,13 +40,12 @@ groups:
       - record: manila_share_minimal_size_bytes_for_castellum
         expr: netapp_volume_provision_case_two * on (share_id) group_left max({__name__=~"netapp_volume_used_bytes|netapp_volume_snapshot_used_bytes"}) by (share_id)
 
-      # Case three: new provision style and logical space enabled
-      # To avoid snapshot spill, share's minimal size must be larger than the snapshot used size.
+      # Case three: same as case two, but logical space reporting and enforcement are enabled.
       # Share size = netapp_volume_total_bytes
       # Share usage = netapp_volume_logical_used_bytes
       # Share minimal size = max(netapp_volume_logical_used_bytes, netapp_volume_snapshot_used_bytes)
       - record: netapp_volume_provision_case_three
-        expr: (netapp_volume_percentage_snapshot_reserve{share_id!="", volume=~"share.*", volume_type="rw"} / 50 == 1) * (netapp_volume_is_space_enforcement_logical == 1)
+        expr: (netapp_volume_percentage_snapshot_reserve{share_id!="", volume=~"share_[0-9a-f]{8}_[0-9a-f]{4}_[0-9a-f]{4}_[0-9a-f]{4}_[0-9a-f]{12}", volume_type="rw"} / 50 == 1) * (netapp_volume_is_space_enforcement_logical == 1)
 
       - record: manila_share_size_bytes_for_castellum
         expr: netapp_volume_provision_case_three * netapp_volume_total_bytes
