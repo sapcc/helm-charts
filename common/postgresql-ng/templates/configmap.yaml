@@ -34,15 +34,20 @@ data:
       {{- $users := merge $users (dict "metrics" (dict)) }}
     {{- end }}
 
+    {{- if lt ($.Values.postgresVersion | int) 14 }}
+    SELECT 'CREATE ROLE "poor_mans_pg_read_all_data"' where not exists (select rolname from pg_authid where rolname = 'poor_mans_pg_read_all_data')\gexec
+    {{- end }}
+
     {{- range $user, $settings := $users }}
     {{- /* prevent more suffering and pain by forgotten {} in users */}}
     {{- $settings = $settings | default (dict) }}
     SELECT 'CREATE ROLE "{{ $user }}" WITH PASSWORD ''%USER_PASSWORD_{{ $user }}%'' LOGIN' where not exists (select rolname from pg_authid where rolname = '{{ $user }}')\gexec
 
     -- https://www.postgresql.org/docs/current/ddl-priv.html
-    {{- if $.Values.persistence.createBackupUser }}
     GRANT CREATE,CONNECT,TEMPORARY ON DATABASE "%PGDATABASE%" TO "{{ $user }}";
     GRANT SELECT,INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER ON ALL TABLES IN SCHEMA public TO "{{ $user }}";
+    {{- if lt ($.Values.postgresVersion | int) 14 }}
+    GRANT poor_mans_pg_read_all_data to "{{ $user }}";
     {{- end }}
 
     {{- if $settings.grant }}
@@ -57,9 +62,14 @@ data:
     {{- end }}
 
     {{- if eq $user "backup" }}
-    GRANT CONNECT ON DATABASE "%PGDATABASE%" to backup;
-    GRANT SELECT ON ALL TABLES IN SCHEMA public TO backup;
-    GRANT SELECT ON ALL SEQUENCES IN SCHEMA public TO backup;
+    GRANT CONNECT ON DATABASE "%PGDATABASE%" TO backup;
+
+    {{ if ge ($.Values.postgresVersion | int) 14 }}
+    GRANT pg_read_all_data to backup;
+    {{- else }}
+    GRANT poor_mans_pg_read_all_data to backup;
+    ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT ON TABLES TO backup;
+    {{- end }}
     {{- end }}
 
     {{- if eq $user "metrics" }}
