@@ -73,4 +73,52 @@ digicert-issuer:
 owner-info:
   support-group: containers
   helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/system/kube-system-admin-k3s
-  
+
+velero:
+  enabled: false
+
+  metrics:
+    podAnnotations:
+      prometheus.io/scrape: "true"
+      prometheus.io/path: "/metrics"
+      prometheus.io/port: null
+
+  image:
+    repository: keppel.global.cloud.sap/ccloud-dockerhub-mirror/velero/velero
+    tag: v1.11.1
+
+  kubectl:
+    image:
+      repository: keppel.global.cloud.sap/ccloud-dockerhub-mirror/bitnami/kubectl
+      tag: 1.28.3
+
+  initContainers:
+  - name: velero-plugin-openstack
+    image: keppel.global.cloud.sap/ccloud-dockerhub-mirror/lirt/velero-plugin-for-openstack:v0.6.0
+    imagePullPolicy: IfNotPresent
+    volumeMounts:
+      - mountPath: /target
+        name: plugins
+
+  snapshotsEnabled: false
+  backupsEnabled: true
+  deployNodeAgent: true
+
+  credentials:
+    extraSecretRef: velero-credentials
+
+  configuration:
+    backupStorageLocation:
+    - name: swift
+      provider: community.openstack.org/openstack
+      #bucket: velero-admin/region
+      config:
+        resticRepoPrefix: swift:velero-virtual:/restic
+
+  schedules:
+    clusterbackup:
+      disabled: false
+      schedule: "0 3 * * *"
+      template:
+        ttl: "720h"
+        storageLocation: swift
