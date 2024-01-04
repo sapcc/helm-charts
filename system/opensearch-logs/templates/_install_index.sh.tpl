@@ -61,8 +61,11 @@ fi
 # update of policy based on existing SEQ_NUMBER and PRIM_TERM, both have to be the same as the one, which is installed. Otherwise an update is not possible.
 # Only update ism template, if schema_version has a new version number
 
-export FILE_RETENTION_SCHEMA_VERSION=$(grep schema_version ${PW_FILE}|awk -F: '{ print $2 }'| sed 's/ //'|tr -d \")
 export CLUSTER_RETENTION_SCHEMA_VERSION=$(curl -s --insecure -u "admin:${ADMINPW}" -XGET --insecure "${CLUSTER_HOST}/_plugins/_ism/policies/${RETENTION_NAME}retention"|jq ._version?)
+
+echo -e "secret file schema_version: ${FILE_RETENTION_SCHEMA_VERSION}"
+echo -e "secret installed schema_version: ${CLUSTER_RETENTION_SCHEMA_VERSION}"
+
 
 if [ "$FILE_RETENTION_SCHEMA_VERSION" -gt "$CLUSTER_RETENTION_SCHEMA_VERSION" ]; then
   export RUN_PRIM_TERM=$(curl -s --insecure -u "admin:${ADMINPW}" -XGET --insecure "${CLUSTER_HOST}/_plugins/_ism/policies/${RETENTION_NAME}retention" |jq ._primary_term)
