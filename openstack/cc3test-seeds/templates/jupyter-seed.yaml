@@ -19,22 +19,22 @@ spec:
   domains:
     - name: Default
       users:
-        - name: '{{ .Values.jupyter.user.name | required "Name for Technical User missing"}}'
-          description: '{{ .Values.jupyter.user.description | required "Description for Technical User missing"}}'
-          password: '{{ .Values.jupyter.user.password | required "Password for Technical User is missing" }}'
-          role_assignments:
-            - project: '{{ .Values.jupyter.project.name | required "Name for Project missing"}}'@cc3test
-              role: objectstore_admin
+      - name: '{{ .Values.jupyter.user.name | required "Name for Technical User missing"}}'
+        description: '{{ .Values.jupyter.user.description | required "Description for Technical User missing"}}'
+        password: '{{ .Values.jupyter.user.password | required "Password for Technical User is missing" }}'
+        role_assignments:
+        - project: '{{ printf(%s@cc3test) .Values.jupyter.project.name }}'
+          role: objectstore_admin
 
     - name: cc3test
       projects:
-        - name: '{{ .Values.jupyter.project.name | required "Name for Project missing"}}'
-          role_assignments:
-            - group: CC3TEST_DOMAIN_ADMINS
-              role: admin
-            - group: CC3TEST_DOMAIN_ADMINS
-              role: objectstore_admin
-            - group: CC3TEST_DOMAIN_ADMINS
-              role: resource_admin
+      - name: '{{ .Values.jupyter.project.name | required "Name for Project missing"}}'
+        role_assignments:
+        - group: CC3TEST_DOMAIN_ADMINS
+          role: admin
+        - group: CC3TEST_DOMAIN_ADMINS
+          role: objectstore_admin
+        - group: CC3TEST_DOMAIN_ADMINS
+          role: resource_admin
 
 {{- end }}
