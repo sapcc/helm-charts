@@ -1,0 +1,40 @@
+{{- if .Values.jupyter.enabled }}
+apiVersion: "openstack.stable.sap.cc/v1"
+kind: "OpenstackSeed"
+metadata:
+  name: cc3test-technical-seed
+
+spec:
+  requires:
+  - {{ .Values.global.keystoneNamespace }}/keystone-seed
+  - monsoon3/domain-default-seed
+  - monsoon3/domain-ccadmin-seed
+  - monsoon3/domain-cc3test-seed
+
+  roles:
+  - name: objectstore_admin
+  - name: resource_admin
+  - name: admin
+
+  domains:
+    - name: Default
+      users:
+        - name: '{{ .Values.jupyter.user.name | required "Name for Technical User missing"}}'
+          description: '{{ .Values.jupyter.user.description | required "Description for Technical User missing"}}'
+          password: '{{ .Values.jupyter.user.password | required "Password for Technical User is missing" }}'
+          role_assignments:
+            - project: '{{ .Values.jupyter.project.name | required "Name for Project missing"}}'@cc3test
+              role: objectstore_admin
+
+    - name: cc3test
+      projects:
+        - name: jupyter-reports
+          role_assignments:
+            - group: CC3TEST_DOMAIN_ADMINS
+              role: admin
+            - group: CC3TEST_DOMAIN_ADMINS
+              role: objectstore_admin
+            - group: CC3TEST_DOMAIN_ADMINS
+              role: resource_admin
+
+{{- end }}
