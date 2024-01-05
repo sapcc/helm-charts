@@ -18,27 +18,26 @@ echo -e "0. Check for index policy\n"
 
 export ILM_FILE=/scripts/ilm.json
 
-export POLICY_RETURN_CODE=$( curl -s -o /dev/null -s -w "%{http_code}\n" --insecure -u "admin:${ADMINPW}" -XGET "${CLUSTER_HOST}/_plugins/_ism/policies/${RETENTION_NAME}retention")
+export POLICY_RETURN_CODE=$( curl -s -o /dev/null -s -w "%{http_code}\n" -k -u "admin:${ADMINPW}" -XGET "${CLUSTER_HOST}/_plugins/_ism/policies/${RETENTION_NAME}retention")
 echo -e "Return code is $POLICY_RETURN_CODE"
 if [ "${POLICY_RETURN_CODE}" -eq 404 ]; then
   # 1. Part: install of new index policy
   echo -e "inital upload of index policy\n"
   echo -e "Upload index policy, there is no policy "${RETENTION_NAME}retention" installed"
-  curl --insecure -u "admin:${ADMINPW}" -XPUT "${CLUSTER_HOST}/_plugins/_ism/policies/${RETENTION_NAME}retention" -H 'Content-Type: application/json' -d @${ILM_FILE}
+  curl -k -u "admin:${ADMINPW}" -XPUT "${CLUSTER_HOST}/_plugins/_ism/policies/${RETENTION_NAME}retention" -H 'Content-Type: application/json' -d @${ILM_FILE};
 
   # add all indexes, which need a retention
   echo "\nManaged indexes are ${ILM_INDEXES}\n"
 
   # get all indexes without a policy
-  export MISSING_INDEXES=$(for l in ${ILM_INDEXES}; do    curl -s --insecure -u "admin:${ADMINPW}" -XGET "${CLUSTER_HOST}/_plugins/_ism/explain/${l}-*"|jq|grep -B4 "enabled\": null"|grep ${l}|awk -F: '{ print $1}'|awk -F\" '{ print $2}'; done)
+  export MISSING_INDEXES=$(for l in ${ILM_INDEXES}; do    curl -s -k -u "admin:${ADMINPW}" -XGET "${CLUSTER_HOST}/_plugins/_ism/explain/${l}-*"|jq|grep -B4 "enabled\": null"|grep ${l}|awk -F: '{ print $1}'|awk -F\" '{ print $2}'; done)
   if [ -z "$MISSING_INDEXES" ]; then
     echo -e "\nNo index without policy\n";
   else
 for i in ${MISSING_INDEXES}
 do
   echo -e "\nIndex without a policy ${i}, appying ism policy\n"
-  echo curl --header 'content-type: application/JSON' --silent --insecure -u "admin:pw" -XPOST "${CLUSTER_HOST}/_plugins/_ism/add/${i}" -d "{ \"policy_id\": \"${RETENTION_NAME}retention\" }"
-  curl --header 'content-type: application/JSON' --silent --insecure -u "admin:${ADMINPW}" -XPOST "${CLUSTER_HOST}/_plugins/_ism/add/${i}" -d "{ \"policy_id\": \"${RETENTION_NAME}retention\" }"
+  curl -H "Content-Type: application/json" --silent -k -u "admin:${ADMINPW}" -XPOST "${CLUSTER_HOST}/_plugins/_ism/add/${i}" -d @/scripts/add.json;
 done;
   fi;
 elif [ "${POLICY_RETURN_CODE}" -eq 401 ]; then
@@ -46,7 +45,7 @@ elif [ "${POLICY_RETURN_CODE}" -eq 401 ]; then
 else
   echo -e "\nISM policy already exists, return code is ${POLICY_RETURN_CODE}\n";
   # get all indexes without a policy
-  export MISSING_INDEXES=$(for l in ${ILM_INDEXES}; do    curl -s --insecure -u "admin:${ADMINPW}" -XGET "${CLUSTER_HOST}/_plugins/_ism/explain/${l}-*"|jq|grep -B4 "enabled\": null"|grep ${l}|awk -F: '{ print $1}'|awk -F\" '{ print $2}'; done)
+  export MISSING_INDEXES=$(for l in ${ILM_INDEXES}; do    curl -s -k -u "admin:${ADMINPW}" -XGET "${CLUSTER_HOST}/_plugins/_ism/explain/${l}-*"|jq|grep -B4 "enabled\": null"|grep ${l}|awk -F: '{ print $1}'|awk -F\" '{ print $2}'; done)
   echo -e "ILM_INDEXES=${ILM_INDEXES}\n"
   echo -e "MISSING_INDEXES=${MISSING_INDEXES}\n"
   if [ -z "$MISSING_INDEXES" ]; then
@@ -55,8 +54,7 @@ else
 for i in ${MISSING_INDEXES}
 do
   echo -e "\nindex without a policy ${i}, appying ism policy\n"
-  echo curl --insecure --header "content-type: application/JSON" -u "admin:PW" -XPOST "${CLUSTER_HOST}/_plugins/_ism/add/${i}" -d "{ \"policy_id\": \"auditretention\" }"
-  curl --insecure --header "content-type: application/JSON" -u "admin:${ADMINPW}" -XPOST "${CLUSTER_HOST}/_plugins/_ism/add/${i}" -d "{ \"policy_id\": \"auditretention\" }"
+  curl -k -H "Content-Type: application/json" -u "admin:${ADMINPW}" -XPOST "${CLUSTER_HOST}/_plugins/_ism/add/${i}" -d @/scripts/add.json;
 done;
   fi;
 fi
@@ -65,25 +63,25 @@ fi
 # update of policy based on existing SEQ_NUMBER and PRIM_TERM, both have to be the same as the one, which is installed. Otherwise an update is not possible.
 # Only update ism template, if schema_version has a new version number
 
-export CLUSTER_RETENTION_SCHEMA_VERSION=$(curl -s --insecure -u "admin:${ADMINPW}" -XGET "${CLUSTER_HOST}/_plugins/_ism/policies/${RETENTION_NAME}retention"|jq ._version?)
+export CLUSTER_RETENTION_SCHEMA_VERSION=$(curl -s -k -u "admin:${ADMINPW}" -XGET "${CLUSTER_HOST}/_plugins/_ism/policies/${RETENTION_NAME}retention"|jq ._version?)
 
 echo -e "secret file schema_version: ${FILE_RETENTION_SCHEMA_VERSION}"
 echo -e "secret installed schema_version: ${CLUSTER_RETENTION_SCHEMA_VERSION}"
 
 
 if [ "$FILE_RETENTION_SCHEMA_VERSION" -gt "$CLUSTER_RETENTION_SCHEMA_VERSION" ]; then
-  export RUN_PRIM_TERM=$(curl -s --insecure -u "admin:${ADMINPW}" -XGET "${CLUSTER_HOST}/_plugins/_ism/policies/${RETENTION_NAME}retention" |jq ._primary_term)
-  export RUN_SEQ_NUMBER=$(curl -s --insecure -u "admin:${ADMINPW}" -XGET "${CLUSTER_HOST}/_plugins/_ism/policies/${RETENTION_NAME}retention" |jq ._seq_no )
+  export RUN_PRIM_TERM=$(curl -s -k -u "admin:${ADMINPW}" -XGET "${CLUSTER_HOST}/_plugins/_ism/policies/${RETENTION_NAME}retention" |jq ._primary_term)
+  export RUN_SEQ_NUMBER=$(curl -s -k -u "admin:${ADMINPW}" -XGET "${CLUSTER_HOST}/_plugins/_ism/policies/${RETENTION_NAME}retention" |jq ._seq_no )
   echo -e "\nupload of new ism template with primary number: ${RUN_PRIM_TERM} and existing sequence number: ${RUN_SEQ_NUMBER}\n"
-  curl --insecure -u "admin:${ADMINPW}" -XPUT "${CLUSTER_HOST}/_plugins/_ism/policies/${RETENTION_NAME}retention?if_seq_no=${RUN_SEQ_NUMBER}&if_primary_term=${RUN_PRIM_TERM}" -H 'Content-Type: application/json' -d @${ILM_FILE};
+  curl -k -u "admin:${ADMINPW}" -XPUT "${CLUSTER_HOST}/_plugins/_ism/policies/${RETENTION_NAME}retention?if_seq_no=${RUN_SEQ_NUMBER}&if_primary_term=${RUN_PRIM_TERM}" -H 'Content-Type: application/json' -d @${ILM_FILE};
 
   # update all indexes with new policy
-  export UPDATE_INDEXES=$(for l in ${ILM_INDEXES}; do curl -s --insecure -u "admin:${ADMINPW}" -XGET "${CLUSTER_HOST}/_cat/indices?v"|grep ${l}|awk '{ print $3 }'  ; done)
+  export UPDATE_INDEXES=$(for l in ${ILM_INDEXES}; do curl -s -k -u "admin:${ADMINPW}" -XGET "${CLUSTER_HOST}/_cat/indices?v"|grep ${l}|awk '{ print $3 }'  ; done)
   for e in ${UPDATE_INDEXES}; do
      echo -e "\nAssigning new ism policy version to index: ${e}\n"
-     curl -u "admin:${ADMINPW}" -H 'Content-Type: application/json' -XPOST "${CLUSTER_HOST}/_plugins/_ism/change_policy/${e}" -d "{ "policy_id": "auditretention" }"
+     curl -u "admin:${ADMINPW}" -H 'Content-Type: application/json' -XPOST "${CLUSTER_HOST}/_plugins/_ism/change_policy/${e}" -d @/scripts/add.json;
   done;
 fi
 
-export NEW_CLUSTER_RETENTION_SCHEMA_VERSION=$(curl -s --insecure -u "admin:${ADMINPW}" -XGET "${CLUSTER_HOST}/_plugins/_ism/policies/${RETENTION_NAME}retention"|jq ._version?)
+export NEW_CLUSTER_RETENTION_SCHEMA_VERSION=$(curl -s -k -u "admin:${ADMINPW}" -XGET "${CLUSTER_HOST}/_plugins/_ism/policies/${RETENTION_NAME}retention"|jq ._version?)
 echo -e "\nNew schema_version is: ${NEW_CLUSTER_RETENTION_SCHEMA_VERSION}\n, increase this value by 1 to install new ism policy for ${RETENTION_NAME}etention\n"
