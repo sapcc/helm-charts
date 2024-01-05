@@ -36,7 +36,8 @@ if [ "${POLICY_RETURN_CODE}" -eq 404 ]; then
   else
 for i in ${MISSING_INDEXES}
 do
-  echo -e "\nindex without a policy ${i}, appying ism policy\n"
+  echo -e "\nIndex without a policy ${i}, appying ism policy\n"
+  echo curl --header 'content-type: application/JSON' --silent --insecure -u "admin:pw" -XPOST "${CLUSTER_HOST}/_plugins/_ism/add/${i}" -d "{ \"policy_id\": \"${RETENTION_NAME}retention\" }"
   curl --header 'content-type: application/JSON' --silent --insecure -u "admin:${ADMINPW}" -XPOST "${CLUSTER_HOST}/_plugins/_ism/add/${i}" -d "{ \"policy_id\": \"${RETENTION_NAME}retention\" }"
 done;
   fi;
@@ -46,13 +47,15 @@ else
   echo -e "\nISM policy already exists, return code is ${POLICY_RETURN_CODE}\n";
   # get all indexes without a policy
   export MISSING_INDEXES=$(for l in ${ILM_INDEXES}; do    curl -s --insecure -u "admin:${ADMINPW}" -XGET "${CLUSTER_HOST}/_plugins/_ism/explain/${l}-*"|jq|grep -B4 "enabled\": null"|grep ${l}|awk -F: '{ print $1}'|awk -F\" '{ print $2}'; done)
+  echo -e "ILM_INDEXES=${ILM_INDEXES}\n"
+  echo -e "MISSING_INDEXES=${MISSING_INDEXES}\n"
   if [ -z "$MISSING_INDEXES" ]; then
     echo -e "\nNo index without policy\n";
   else
 for i in ${MISSING_INDEXES}
 do
   echo -e "\nindex without a policy ${i}, appying ism policy\n"
-  curl --header 'content-type: application/JSON' -u "admin:${ADMINPW}" -XPOST "${CLUSTER_HOST}/_plugins/_ism/add/${i}" -d "{ \"policy_id\": \"auditretention\" }"
+  curl --header "content-type: application/JSON" -u "admin:${ADMINPW}" -XPOST "${CLUSTER_HOST}/_plugins/_ism/add/${i}" -d "{ \"policy_id\": \"auditretention\" }"
 done;
   fi;
 fi
