@@ -52,7 +52,7 @@ else
 for i in ${MISSING_INDEXES}
 do
   echo -e "\nindex without a policy ${i}, appying ism policy\n"
-  curl --header 'content-type: application/JSON' -u "admin:${ADMINPW}" -XPOST "${CLUSTER_HOST}/_plugins/_ism/add/${i}" -d "{ "policy_id": "auditretention" }"
+  curl --header 'content-type: application/JSON' -u "admin:${ADMINPW}" -XPOST "${CLUSTER_HOST}/_plugins/_ism/add/${i}" -d "{ \"policy_id\": \"auditretention\" }"
 done;
   fi;
 fi
