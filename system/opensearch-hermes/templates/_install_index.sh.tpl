@@ -64,7 +64,7 @@ fi
 
 export CLUSTER_RETENTION_SCHEMA_VERSION=$(curl -s -k -u "admin:${ADMINPW}" -XGET "${CLUSTER_HOST}/_plugins/_ism/policies/${RETENTION_NAME}retention"|jq ._version?)
 
-echo -e "secret file schema_version: ${FILE_RETENTION_SCHEMA_VERSION}"
+echo -e "\n\n\nsecret file schema_version: ${FILE_RETENTION_SCHEMA_VERSION}"
 echo -e "secret installed schema_version: ${CLUSTER_RETENTION_SCHEMA_VERSION}"
 
 
@@ -83,4 +83,4 @@ if [ "$FILE_RETENTION_SCHEMA_VERSION" -gt "$CLUSTER_RETENTION_SCHEMA_VERSION" ];
 fi
 
 export NEW_CLUSTER_RETENTION_SCHEMA_VERSION=$(curl -s -k -u "admin:${ADMINPW}" -XGET "${CLUSTER_HOST}/_plugins/_ism/policies/${RETENTION_NAME}retention"|jq ._version?)
-echo -e "\nNew schema_version is: ${NEW_CLUSTER_RETENTION_SCHEMA_VERSION}\n, increase this value by 1 to install new ism policy for ${RETENTION_NAME}etention\n"
+echo -e "\nNew schema_version is: ${NEW_CLUSTER_RETENTION_SCHEMA_VERSION}\nIncrease this value by 1 to install new ism policy for ${RETENTION_NAME}retention\n"
