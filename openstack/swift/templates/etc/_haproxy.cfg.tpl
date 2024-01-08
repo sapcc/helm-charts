@@ -4,7 +4,7 @@ global
   uid 99
   gid 99
 
-  log stdout format raw local0 info
+  log stdout format raw local0 {{ .Values.default_log_level }}
   zero-warning
 
   maxconn 2000
