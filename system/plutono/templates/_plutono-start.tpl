@@ -73,6 +73,7 @@ function start_application {
   sed -i 's,__OPENSEARCH_PASSWORD__,{{.Values.authentication.opensearch_password}},g' /var/lib/plutono/provisioning/datasources/*
   sed -i 's,__ALERTMANAGER_PASSWORD__,{{.Values.alertmanager.password}},g' /var/lib/plutono/provisioning/datasources/*
   sed -i 's,__PROMETHEUS_REGION__,{{.Values.global.region}},g' /var/lib/plutono/provisioning/datasources/*
+  sed -i 's,__LOCUST_TIMESCALEDB_PASSWORD__,{{.Values.authentication.locust_timescaledb_password}},g' /var/lib/plutono/provisioning/datasources/*
 
   cd /usr/share/plutono
   exec /usr/share/plutono/bin/plutono-server -config /var/lib/plutono/etc/plutono.ini --homepath /usr/share/plutono cfg:default.log.mode=console
