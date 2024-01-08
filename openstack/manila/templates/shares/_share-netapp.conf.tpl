@@ -61,13 +61,19 @@ netapp_volume_snapshot_reserve_percent = {{ $share.netapp_volume_snapshot_reserv
 # Enable logical space reporting
 netapp_enable_logical_space_reporting = False
 
-# Set last transfer size limit to 1 PB (1024 * 1024 * 1024 * 1024 KB), effectively disabling that setting
-netapp_snapmirror_last_transfer_size_limit = 1099511627776
+# Set the last transfer size limit to 1 GB (1024 * 1024 KB). We need to find a sweet
+# spot for this value. Our goal is to alert customers about large data copies occurring,
+# allowing them to take preventive actions before replica promotion. While 1GB is a
+# relatively high value, it helps to avoid too many 'out-of-sync' replicas. We could
+# also consider lowering this value to 512MB, but we need to be careful about the
+# impact.
+netapp_snapmirror_last_transfer_size_limit = 1048576
 
-# Set asynchronous SnapMirror schedule to 10 minutes
-netapp_snapmirror_schedule = "10min"
-# set waiting time for snapmirror to complete on replica promote to 20 min (double the value of netapp_snapmirror_schedule), this is in line with our RPO
-netapp_snapmirror_quiesce_timeout = 1200
+# Set asynchronous SnapMirror schedule to one hour, and configure the waiting time for
+# snapmirror to complete on replica promote to be double of this value, alligning with
+# our RPO (Recovery Point Objective) of 2 hours.
+netapp_snapmirror_schedule = "hourly"
+netapp_snapmirror_quiesce_timeout = 7200
 
 # state, that will be reported as pool property. Valid values are `in_build`, `live`, `in_decom` and `replacing_decom`
 netapp_hardware_state = {{ $share.hardware_state | default "live" }}
