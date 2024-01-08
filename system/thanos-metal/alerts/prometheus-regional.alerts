@@ -1,0 +1,33 @@
+groups:
+- name: prometheus-regional.alerts
+  rules:
+  - alert: PrometheusVpaMemoryExceeded
+    expr: vpa_butler_vpa_container_recommendation_excess{verticalpodautoscaler=~"prometheus-(infra-collector|storage|openstack|infra-frontend|kubernetes|vmware|)(-vc-.+)*", resource="memory"} / 1024 / 1024 / 1024 > 0
+    for: 15m
+    labels:
+      service: metrics 
+      support_group: observability 
+      severity: info
+      meta: Prometheus VPA for `{{ $labels.verticalpodautoscaler }}` in `{{ $labels.namespace }}` is recommending more memory.
+    annotations:
+      description: |
+        `{{ $labels.verticalpodautoscaler }}` in `{{ $labels.cluster }}/{{ $labels.namespace }}` needs more `{{ $labels.resource }}`. It is overutilized by `{{ $value }}` GiB.
+
+        It is hitting the VPA maxAllowed boundary and is not ensured to run properly at its current place. Consider upgrading the VPA maxAllowed
+        memory value if the host memory size permits.
+      summary: Prometheus needs more memory.
+  - alert: PrometheusVpaCPUExceeded
+    expr: vpa_butler_vpa_container_recommendation_excess{verticalpodautoscaler=~"prometheus-(infra-collector|storage|openstack|infra-frontend|kubernetes|vmware|)(-vc-.+)*", resource="cpu"} > 0
+    for: 15m
+    labels:
+      service: metrics 
+      support_group: observability 
+      severity: info
+      meta: Prometheus VPA for `{{ $labels.verticalpodautoscaler }}` in `{{ $labels.namespace }}` is recommending more CPUs.
+    annotations:
+      description: |
+        `{{ $labels.verticalpodautoscaler }}` in `{{ $labels.cluster }}/{{ $labels.namespace }}` needs more `{{ $labels.resource }}`. It is overutilized by `{{ $value }}` cores.
+
+        It is hitting the VPA maxAllowed boundary and is not ensured to run properly at its current place. Consider upgrading the VPA maxAllowed
+        CPU core value if the host memory size permits.
+      summary: Prometheus needs more CPU. 

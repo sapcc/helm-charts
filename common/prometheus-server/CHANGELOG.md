@@ -1,3 +1,7 @@
+## 7.4.7
+
+* corrected VPA memory directive 
+
 ## 7.4.6
 
 * bump to v2.47.2
