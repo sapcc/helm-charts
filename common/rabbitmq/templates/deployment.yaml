@@ -29,7 +29,7 @@ spec:
       labels:
         app: {{ template "fullname" . }}
       annotations:
-        checksum/container.init: {{ include (print $.Template.BasePath "/bin-configmap.yaml") . | sha256sum }}
+        checksum/container.init: {{ include (print $.Template.BasePath "/bin-secret.yaml") . | sha256sum }}
 {{- if and (and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested) $.Values.linkerd.enabled }}
         linkerd.io/inject: enabled
 {{- end }}
@@ -139,8 +139,8 @@ spec:
           emptyDir: {}
         {{- end }}
         - name: container-init
-          configMap:
-            name: {{ template "fullname" . }}-bin
+          secret:
+            secretName: {{ template "fullname" . }}-bin
       {{- if .Values.customConfig }}
         - name: rabbitmq-custom-config
           configMap:
