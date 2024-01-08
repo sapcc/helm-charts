@@ -20,7 +20,7 @@
       name: limes-secret
       key: rabbitmq_password
 - name: LIMES_AUDIT_RABBITMQ_USERNAME
-  value: "rabbitmq"
+  value: "{{ default "rabbitmq" .Values.limes.passwords.ccloud.rabbitmq_user }}"
 {{- end }}
 - name: LIMES_AUTHORITATIVE
   value: "true"
