@@ -2,13 +2,14 @@
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
+  annotations:
   labels:
-    app.kubernetes.io/name: conntrack-nanny
-    name: conntrack-nanny
+    app.kubernetes.io/name: externalip
+  name: externalip
 spec:
   selector:
     matchLabels:
-      app.kubernetes.io/name: conntrack-nanny
+      app.kubernetes.io/name: externalip
   updateStrategy:
     rollingUpdate:
       maxUnavailable: '10%'
@@ -16,17 +17,27 @@ spec:
   template:
     metadata:
       labels:
-        app.kubernetes.io/name: conntrack-nanny
+        app.kubernetes.io/name: externalip
     spec:
       priorityClassName: system-node-critical
       containers:
-      - name: nanny
-        imagePullPolicy: IfNotPresent
+      - name: externalip
         image: "{{ required ".Values.images.image is missing" .Values.images.image }}:{{ required ".Values.images.tag is missing" .Values.images.tag }}"
+        command:
+          - /externalip 
+{{- if .Values.externalip.ignoreaddress }}
+          - --ignore-address={{ .Values.externalip.ignoreaddress}} 
+{{- end }}
+          - --source-address=$(HOST_IP) 
+          - --interface=dummy0 
+          - --logtostderr 
+        env: 
+          - name: HOST_IP
+            valueFrom:
+              fieldRef:
+                fieldPath: status.hostIP
         securityContext:
-          capabilities:
-            add:
-            - NET_ADMIN
+            privileged: true
         resources:
 {{ toYaml .Values.resources | indent 12 }}
       hostNetwork: true
