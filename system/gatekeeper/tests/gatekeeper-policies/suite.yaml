@@ -116,20 +116,6 @@ tests:
 ################################################################################
 # policy tests
 
-- name: deprecated-api-version-k8s1.26
-  template: ../rendered-chart/gatekeeper/templates/constrainttemplate-deprecated-api-version.yaml
-  constraint: ../rendered-chart/gatekeeper-config/templates/constraint-deprecated-api-version-k8s1.26.yaml
-  cases:
-  - name: helm-release-deprecated-api-version-1.26
-    object: fixtures/deprecated-api-version/helm-release-deprecated-1.26.out.yaml
-    assertions:
-    - violations: 1
-      message: '^\{"support_group":"foo-group","service":"dummy"\} >> FlowSchema dummy declared with deprecated API version: flowcontrol.apiserver.k8s.io/v1beta1 \(will break in k8s v1.26\)$'
-  - name: helm-release-clean
-    object: fixtures/deprecated-api-version/helm-release-clean.out.yaml
-    assertions:
-    - violations: no
-
 - name: deprecated-api-version-k8s1.27
   template: ../rendered-chart/gatekeeper/templates/constrainttemplate-deprecated-api-version.yaml
   constraint: ../rendered-chart/gatekeeper-config/templates/constraint-deprecated-api-version-k8s1.27.yaml
@@ -153,6 +139,20 @@ tests:
     assertions:
     - violations: 1
       message: '^\{"support_group":"foo-group","service":"dummy"\} >> FlowSchema dummy declared with deprecated API version: flowcontrol.apiserver.k8s.io/v1beta2 \(will break in k8s v1.29\)$'
+  - name: helm-release-clean
+    object: fixtures/deprecated-api-version/helm-release-clean.out.yaml
+    assertions:
+    - violations: no
+
+- name: deprecated-api-version-k8s1.32
+  template: ../rendered-chart/gatekeeper/templates/constrainttemplate-deprecated-api-version.yaml
+  constraint: ../rendered-chart/gatekeeper-config/templates/constraint-deprecated-api-version-k8s1.32.yaml
+  cases:
+  - name: helm-release-deprecated-api-version-1.32
+    object: fixtures/deprecated-api-version/helm-release-deprecated-1.32.out.yaml
+    assertions:
+    - violations: 1
+      message: '^\{"support_group":"foo-group","service":"dummy"\} >> FlowSchema dummy declared with deprecated API version: flowcontrol.apiserver.k8s.io/v1beta3 \(will break in k8s v1.32\)$'
   - name: helm-release-clean
     object: fixtures/deprecated-api-version/helm-release-clean.out.yaml
     assertions:
