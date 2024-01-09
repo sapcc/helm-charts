@@ -1,0 +1,96 @@
+{{- $values := .Values }}
+
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+
+metadata:
+  name: sre.rules
+  labels:
+    prometheus: {{ required ".Values.prometheusName missing" $values.prometheusName | quote }}
+
+spec:
+  groups:
+  - name: slo
+    rules:
+{{- range $api, $slo := $values.slo.api_availability_percent }}
+    - record: api_availability_warning_slo:percent
+      labels:
+          ingress: {{ $api | quote }}
+      expr: {{ $slo.warning | default $values.slo.defaults.api_availability_percent.warning | quote }}
+{{- end }}
+
+{{- range $api, $slo := $values.slo.api_availability_percent }}
+    - record: api_availability_critical_slo:percent
+      labels:
+          ingress: {{ $api | quote }}
+      expr: {{ $slo.critical | default $values.slo.defaults.api_availability_percent.critical | quote }}
+{{- end }}
+
+  # https://landing.google.com/sre/workbook/chapters/alerting-on-slos/#short_and_long_windows_for_alerting
+  - name: alerts
+    rules:
+    # quick availability check - target deployments
+    - alert: ApiAvailabilityWarning2Hour
+      expr: |
+        (
+          (1 - api_errors_per_request_sli:ratio_rate2h) * 100
+          <= on (ingress) api_availability_warning_slo:percent
+        )
+        + ignoring(slo) group_right count_values without() ("slo", api_availability_warning_slo:percent) * 0
+      labels:
+        tier: os
+        service: '{{`{{reReplaceAll "^([^-]+)[-.+]?" "${1}" $labels.ingress}}`}}'
+        severity: warning
+        no_alert_on_absence: "true"
+      annotations:
+        summary: "API availability warning SLO hit: 2h"
+        description: "{{`{{$labels.ingress}}`}} fell below availability warning SLO {{`{{$labels.slo}}`}} in the last 2 hours."
+
+    - alert: ApiAvailabilityCritical2Hour
+      expr: |
+        (
+          (1 - api_errors_per_request_sli:ratio_rate2h) * 100
+          <= on (ingress) api_availability_critical_slo:percent
+        )
+        + ignoring(slo) group_right count_values without() ("slo", api_availability_critical_slo:percent) * 0
+      labels:
+        tier: os
+        service: '{{`{{reReplaceAll "^([^-]+)[-.+]?" "${1}" $labels.ingress}}`}}'
+        severity: critical
+        no_alert_on_absence: "true"
+      annotations:
+        summary: "API availability critical SLO hit: 2h"
+        description: "{{`{{$labels.ingress}}`}} fell below availability critical SLO {{`{{$labels.slo}}`}} in the last 2 hours."
+
+    # rolling 7 days
+    - alert: ApiAvailabilityWarningLast7days
+      expr: |
+        (
+          (1 - api_errors_per_request_sli:ratio_rate7d) * 100
+          <= on (ingress) api_availability_warning_slo:percent
+        )
+        + ignoring(slo) group_right count_values without() ("slo", api_availability_warning_slo:percent) * 0
+      labels:
+        tier: os
+        service: '{{`{{reReplaceAll "^([^-]+)[-.+]?" "${1}" $labels.ingress}}`}}'
+        severity: warning
+        no_alert_on_absence: "true"
+      annotations:
+        summary: "API availability warning SLO hit: 7d"
+        description: "{{`{{$labels.ingress}}`}} fell below weekly availability warning SLO {{`{{$labels.slo}}`}}."
+
+    - alert: ApiAvailabilityCriticalLast7days
+      expr: |
+        (
+          (1 - api_errors_per_request_sli:ratio_rate7d) * 100
+          <= on (ingress) api_availability_critical_slo:percent
+        )
+        + ignoring(slo) group_right count_values without() ("slo", api_availability_critical_slo:percent) * 0
+      labels:
+        tier: os
+        service: '{{`{{reReplaceAll "^([^-]+)[-.+]?" "${1}" $labels.ingress}}`}}'
+        severity: critical
+        no_alert_on_absence: "true"
+      annotations:
+        summary: "API availability critical SLO hit: 7d"
+        description: "{{`{{$labels.ingress}}`}} fell below weekly availability critical SLO {{`{{$labels.slo}}`}}."
