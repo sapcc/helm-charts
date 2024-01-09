@@ -249,6 +249,41 @@ groups:
       summary: Prometheus scrapes pods multiple times
   {{- end }}
 
+  {{- if and (eq $root.Values.vpaUpdateMode "Auto") (not $root.Values.alerts.thanos.enabled) }}
+  {{/* Only affecting all prometheus-kubernetes and using Thanos alerts directive to distinguish */}}
+  - alert: PrometheusVpaMemoryExceeded
+    expr: |
+      vpa_butler_vpa_container_recommendation_excess{verticalpodautoscaler=~"{{ include "prometheus.fullName" . }}",resource="memory"} / 1024 / 1024 / 1024 > 0
+    for: 15m
+    labels:
+      service: {{ include "alertServiceLabelOrDefault" "metrics" }}
+      support_group: {{ include "alertSupportGroupOrDefault" "observability" }}
+      severity: info
+      meta: Prometheus VPA for `{{`{{ $labels.verticalpodautoscaler }}`}}` in `{{`{{ $labels.namespace }}`}}` is recommending more memory.
+    annotations:
+      description: |
+        `{{`{{ $labels.verticalpodautoscaler }}`}}` in `{{`{{ $labels.cluster }}/{{ $labels.namespace }}`}}` needs more `{{`{{ $labels.resource }}`}}`. It is overutilized by `{{`{{ $value }}`}}` GiB.
+        It is hitting the VPA maxAllowed boundary and is not ensured to run properly at its current place. Consider upgrading the VPA maxAllowed
+        memory value if the host memory size permits.
+      summary: Prometheus needs more memory.
+
+  - alert: PrometheusVpaCPUExceeded
+    expr: |
+      vpa_butler_vpa_container_recommendation_excess{verticalpodautoscaler=~"{{ include "prometheus.fullName" . }}",resource="cpu"} > 0
+    for: 15m
+    labels:
+      service: {{ include "alertServiceLabelOrDefault" "metrics" }}
+      support_group: {{ include "alertSupportGroupOrDefault" "observability" }}
+      severity: info
+      meta: Prometheus VPA for `{{`{{ $labels.verticalpodautoscaler }}`}}` in `{{`{{ $labels.namespace }}`}}` is recommending more CPUs.
+    annotations:
+      description: |
+        `{{`{{ $labels.verticalpodautoscaler }}`}}` in `{{`{{ $labels.cluster }}/{{ $labels.namespace }}`}}` needs more `{{`{{ $labels.resource }}`}}`. It is overutilized by `{{`{{ $value }}`}}` cores.
+        It is hitting the VPA maxAllowed boundary and is not ensured to run properly at its current place. Consider upgrading the VPA maxAllowed
+        CPU core value if the host has enough CPU cores.
+      summary: Prometheus needs more CPU.
+  {{- end }}
+
   {{- if and $root.Values.alertmanagers (gt (len $root.Values.alertmanagers) 0) }}
   - alert: PrometheusNotConnectedToAlertmanagers
     # Without max_over_time, failed scrapes could create false negatives, see
