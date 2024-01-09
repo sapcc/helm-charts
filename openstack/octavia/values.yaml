@@ -159,13 +159,16 @@ mysql_metrics:
         - "loadbalancer_project"
         - "loadbalancer_availabilityzone"
       help: Total Load Balancer count
+      # We select 'any' for availability_zone if it is null, because it
+      # corresponds to the enum symbol used by Limes:
+      # https://pkg.go.dev/github.com/sapcc/go-api-declarations/limes#AvailabilityZone
       query: |
         SELECT
           COUNT(*) AS count_gauge,
           provisioning_status AS loadbalancer_status,
           server_group_id as loadbalancer_host,
           project_id as loadbalancer_project,
-          availability_zone as loadbalancer_availabilityzone
+          IFNULL(availability_zone, 'any') as loadbalancer_availabilityzone
         FROM load_balancer
         GROUP BY loadbalancer_host, loadbalancer_status, loadbalancer_project, loadbalancer_availabilityzone;
       values:
