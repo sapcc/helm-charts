@@ -279,7 +279,7 @@ groups:
       description: |
         `{{`{{ $labels.verticalpodautoscaler }}`}}` in `{{`{{ $labels.cluster }}/{{ $labels.namespace }}`}}` needs more `{{`{{ $labels.resource }}`}}`. It is overutilized by `{{`{{ $value }}`}}` cores.
         It is hitting the VPA maxAllowed boundary and is not ensured to run properly at its current place. Consider upgrading the VPA maxAllowed
-        CPU core value if the host memory size permits.
+        CPU core value if the host has enough CPU cores.
       summary: Prometheus needs more CPU.
   {{- end }}
 
