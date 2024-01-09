@@ -9,13 +9,9 @@ shopt -s inherit_errexit # fail if any subshell fails
 [[ -n ${DEBUG:-} ]] && set -x
 
 # those are set by default in values, too but are kept here to easen testing
-export PGVERSION="${PGVERSION:-16}"
-export PGUSER="${PGUSER:-postgres}"
-# export PGPASSWORD=${PGPASSWORD:-secure} # this not to not create security incidents
-# always generate a new password on each start
-PGPASSWORD="$(head -c 30 </dev/urandom | base64)"
-export PGPASSWORD
 export PGDATABASE="${PGDATABASE:-acme-db}"
+export PGUSER="${PGUSER:-postgres}"
+export PGVERSION="${PGVERSION:-16}"
 
 if [[ $(id -u) == 0 ]]; then
   for _ in /var/lib/postgresql/*; do
@@ -46,8 +42,17 @@ if [[ $(id -u) == 0 ]]; then
     chown postgres:postgres /var/lib/postgresql
   fi
 
+  # pre-create the file to give the postgres user permission to write into it
+  touch /postgres-password
+  chown postgres:postgres /postgres-password
+
   exec gosu postgres "$0"
 fi
+
+# always generate a new password on each start
+PGPASSWORD="$(head -c 30 </dev/urandom | base64)"
+echo -n "$PGPASSWORD" > /postgres-password
+export PGPASSWORD
 
 if [[ ! -e /usr/lib/postgresql/$PGVERSION ]]; then
   PGBIN=/usr/lib/postgresql/$PGVERSION
