@@ -1,3 +1,7 @@
+## 7.4.8
+
+* VPA memory and cpu alerts added
+
 ## 7.4.7
 
 * corrected VPA memory directive 
