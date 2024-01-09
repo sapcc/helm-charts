@@ -250,6 +250,7 @@ groups:
   {{- end }}
 
   {{- if and (eq $root.Values.vpaUpdateMode "Auto") (not $root.Values.alerts.thanos.enabled) }}
+  {{/* Only affecting all prometheus-kubernetes and using Thanos alerts directive to distinguish */}}
   - alert: PrometheusVpaMemoryExceeded
     expr: |
       vpa_butler_vpa_container_recommendation_excess{verticalpodautoscaler=~"{{ include "prometheus.fullName" . }}",resource="memory"} / 1024 / 1024 / 1024 > 0
