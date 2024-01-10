@@ -15,13 +15,13 @@ spec:
     updateMode: {{ default "Off" $.Values.vpaUpdateMode | quote }}
   resourcePolicy:
     containerPolicies:
-{{- range $vpaResources := $.Values.vpaResources }}
-      - containerName: {{ $vpaResources.name  }}
+{{- range $_, $vpa := $.Values.vpaResources }}
+      - containerName: {{ $vpa.containerName }}
         controlledValues: RequestsOnly
         controlledResources:
           - cpu
           - memory
         maxAllowed:
-{{ toYaml $vpaResources.maxAllowed | indent 10 }}
+{{ toYaml $vpa.maxAllowed | indent 10 }}
 {{- end }}
 {{- end }}
