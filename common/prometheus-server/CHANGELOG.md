@@ -1,3 +1,7 @@
+## 7.4.9
+
+* VPA mapping adjustment to set individual values 
+
 ## 7.4.8
 
 * VPA memory and cpu alerts added
