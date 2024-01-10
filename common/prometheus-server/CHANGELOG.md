@@ -1,6 +1,7 @@
-## 7.4.9
+## 7.4.9 - 7.4.10
 
 * VPA mapping adjustment to set individual values 
+* minReplicas set to 1
 
 ## 7.4.8
 
