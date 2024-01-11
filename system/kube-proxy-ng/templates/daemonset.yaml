@@ -71,19 +71,22 @@ spec:
           - name: proxy-metrics
             containerPort: {{ required ".Values.metricPort missing" .Values.metricPort }}
         {{- end }}
+        resources:
+{{ toYaml .Values.resources | indent 12 }}
       hostNetwork: true
       nodeSelector:
-        kubernetes.cloud.sap/cp: nextgen
+      {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+      {{ toYaml . | indent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+      {{ toYaml . | indent 8 }}
+      {{- end }}
       serviceAccountName: kube-proxy-ng
       terminationGracePeriodSeconds: 5
-      tolerations:
-{{- if .Values.toleration }}
-        - key: "kubernetes.cloud.sap/unification"
-          operator: "Exists"
-          effect: "NoSchedule"
-{{- else }}
-        - operator: Exists
-{{- end }}
       volumes:
         - name: kube-proxy
           configMap:
