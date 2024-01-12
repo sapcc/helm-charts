@@ -267,6 +267,45 @@ ingress:
   # Additional annotations for the ingress.
   annotations: {}
 
+# Optional ingress for this Thanos. Only needed when net deployed alongside Prometheus. So to say, if deployWholeThanos is set, this shouldn't be needed
+internalIngress:
+  enabled: false
+
+  # List of hostnames for this Thanos Query. If empty, the FQDN will be generated using the pattern  thanos-<name>.<region>.<domain> otherwise <host>.<region>.<domain>.
+  # The first host is used to generate the external URL for the Thanos. Remaining hosts will be used as SANs.
+  # If the ingress is enabled, it's also used for the ingress host.
+  hosts: []
+
+  # List of fully qualified host names to be used for this Thanos server. Mutually exclusive with hosts.
+  # The first host is used to generate the external URL for the Thanos. Remaining hosts will be used as SANs.
+  # If the ingress is enabled, it's also used for the ingress host.
+  hostsFQDN: []
+
+  # Client certificate authentication on ingress level.
+  authentication:
+    oauth:
+      enabled: false
+
+      # The URL to the authentication service.
+      authURL:
+
+      # Optional URL to specify the location of the error page.
+      authSignInURL:
+
+    sso:
+      enabled: true
+      # The key (<namespace>/<name>) of the secret containing the CA certificate (`ca.crt`) that is enabled to authenticate against this Ingress.
+      authTLSSecret: kube-system/ingress-cacrt
+
+      # The validation depth between the provided client certificate and the certification authority chain.
+      authTLSVerifyDepth: 3
+
+      # Enables verification of client certificates.
+      authTLSVerifyClient: on
+
+  # Additional annotations for the ingress.
+  annotations: {}
+
 grpcIngress:
   enabled: false
 
