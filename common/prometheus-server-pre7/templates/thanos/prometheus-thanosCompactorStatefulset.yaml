@@ -26,7 +26,14 @@ spec:
         - --log.level={{ .Values.logLevel }}
         - --data-dir=/var/thanos/store
         - --objstore.config=$(OBJSTORE_CONFIG)
+        - --consistency-delay={{ Values.thanos.compactor.consistencyDelay }}
+        - --retention.resolution-raw={{ mul 24 (required ".Values.thanos.compactor.retentionResolutionRaw" $.Values.thanos.compactor.retentionResolutionRaw) }}h
+        - --retention.resolution-5m={{ mul 24 (required ".Values.thanos.compactor.retentionResolution5m" $.Values.thanos.compactor.retentionResolution5m) }}h
+        - --retention.resolution-1h={{ mul 365 24 (required ".Values.thanos.compactor.retentionResolution1h" $.Values.thanos.compactor.retentionResolution1h) }}h
+        - --compact.concurrency=1
+        - --compact.cleanup-interval={{ .Values.thanos.compactor.cleanupInterval }}
         - --wait
+        - --wait-interval={{ .Values.thanos.compactor.waitInterval }}
         env:
         - name: OBJSTORE_CONFIG
           valueFrom:
