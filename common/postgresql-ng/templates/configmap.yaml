@@ -34,38 +34,44 @@ data:
       {{- $users := merge $users (dict "metrics" (dict)) }}
     {{- end }}
 
-    -- pw_method is set in the entrypoint where psql executes this sql file
-    SET password_encryption = :'pw_method';
+    {{- if lt ($.Values.postgresVersion | int) 14 }}
+    SELECT 'CREATE ROLE "poor_mans_pg_read_all_data"' where not exists (select rolname from pg_authid where rolname = 'poor_mans_pg_read_all_data')\gexec
+    {{- end }}
 
     {{- range $user, $settings := $users }}
     {{- /* prevent more suffering and pain by forgotten {} in users */}}
     {{- $settings = $settings | default (dict) }}
-    do $$ begin
-      if not exists (select from pg_catalog.pg_roles where rolname = '{{ $user }}') then
-        CREATE ROLE "{{ $user }}" WITH PASSWORD '%USER_PASSWORD_{{ $user }}%' LOGIN;
-      end if;
-    end $$;
+    SELECT 'CREATE ROLE "{{ $user }}" WITH PASSWORD ''%USER_PASSWORD_{{ $user }}%'' LOGIN' where not exists (select rolname from pg_authid where rolname = '{{ $user }}')\gexec
+    {{- /* update password in case it changed or the password hashing format changed */}}
+    ALTER USER "{{ $user }}" WITH PASSWORD '%USER_PASSWORD_{{ $user }}%';
 
     -- https://www.postgresql.org/docs/current/ddl-priv.html
-    {{- if $.Values.persistence.createBackupUser }}
     GRANT CREATE,CONNECT,TEMPORARY ON DATABASE "%PGDATABASE%" TO "{{ $user }}";
     GRANT SELECT,INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER ON ALL TABLES IN SCHEMA public TO "{{ $user }}";
+    {{- if lt ($.Values.postgresVersion | int) 14 }}
+    GRANT poor_mans_pg_read_all_data to "{{ $user }}";
     {{- end }}
 
     {{- if $settings.grant }}
     {{ $settings.grant }} to "{{ $user }}";
     {{- end }}
 
-    {{- if $settings.setOwnerOnTable }}
-    SELECT format('ALTER TABLE %I.%I.%I OWNER TO %I;', table_catalog, table_schema, table_name, "{{ $user }}")
+    {{- if $settings.setOwner }}
+    ALTER DATABASE "%PGDATABASE%" OWNER TO "{{ $user }}";
+    SELECT format('ALTER TABLE %I.%I.%I OWNER TO %I;', table_catalog, table_schema, table_name, '{{ $user }}')
       FROM information_schema.tables
       WHERE table_schema = '%PGDATABASE%';
     {{- end }}
 
     {{- if eq $user "backup" }}
-    GRANT CONNECT ON DATABASE "%PGDATABASE%" to backup;
-    GRANT SELECT ON ALL TABLES IN SCHEMA public TO backup;
-    GRANT SELECT ON ALL SEQUENCES IN SCHEMA public TO backup;
+    GRANT CONNECT ON DATABASE "%PGDATABASE%" TO backup;
+
+    {{ if ge ($.Values.postgresVersion | int) 14 }}
+    GRANT pg_read_all_data to backup;
+    {{- else }}
+    GRANT poor_mans_pg_read_all_data to backup;
+    ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT ON TABLES TO backup;
+    {{- end }}
     {{- end }}
 
     {{- if eq $user "metrics" }}

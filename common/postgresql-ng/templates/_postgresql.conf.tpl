@@ -20,6 +20,7 @@ lc_monetary = 'en_US.utf8'
 lc_numeric = 'en_US.utf8'
 lc_time = 'en_US.utf8'
 default_text_search_config = 'pg_catalog.english'
+{{ if ge (.Values.postgresVersion | int) 12 }}password_encryption = 'scram-sha-256'{{ end }}
 
 # settings which can be changed by helm values
 # those are kept small on purpose to keep complexity small
