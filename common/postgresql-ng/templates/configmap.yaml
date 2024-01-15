@@ -42,6 +42,8 @@ data:
     {{- /* prevent more suffering and pain by forgotten {} in users */}}
     {{- $settings = $settings | default (dict) }}
     SELECT 'CREATE ROLE "{{ $user }}" WITH PASSWORD ''%USER_PASSWORD_{{ $user }}%'' LOGIN' where not exists (select rolname from pg_authid where rolname = '{{ $user }}')\gexec
+    {{- /* update password in case it changed or the password hashing format changed */}}
+    ALTER USER "{{ $user }}" WITH PASSWORD '%USER_PASSWORD_{{ $user }}%';
 
     -- https://www.postgresql.org/docs/current/ddl-priv.html
     GRANT CREATE,CONNECT,TEMPORARY ON DATABASE "%PGDATABASE%" TO "{{ $user }}";
