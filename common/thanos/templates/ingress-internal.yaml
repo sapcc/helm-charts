@@ -1,0 +1,66 @@
+{{- if .Values.enabled }}
+{{- if .Values.internalIngress.enabled }}
+{{- $root := . }}
+{{- range $name := coalesce .Values.names .Values.global.targets (list .Values.name) }}
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "thanos.fullName" (list $name $root) }}-internal
+  annotations:
+    disco: "true"
+    kubernetes.io/tls-acme: "true"
+    {{- if $.Values.ingress.authentication.oauth.enabled }}
+    ingress.kubernetes.io/auth-url: {{ required "$.Values.ingress.authentication.oauth.authURL missing" $.Values.ingress.authentication.oauth.authURL }}
+    nginx.ingress.kubernetes.io/auth-url: {{ required "$.Values.ingress.authentication.oauth.authURL missing" $.Values.ingress.authentication.oauth.authURL }}
+    {{ if $.Values.ingress.authentication.oauth.authSignInURL }}ingress.kubernetes.io/auth-signin: {{ $.Values.ingress.authentication.oauth.authSignInURL }} {{ end }}
+    {{ end }}
+    {{- if $.Values.ingress.authentication.sso.enabled}}
+    ingress.kubernetes.io/auth-tls-secret: {{ required "$.Values.ingress.authentication.sso.authTLSSecret missing" $.Values.ingress.authentication.sso.authTLSSecret | quote }}
+    nginx.ingress.kubernetes.io/auth-tls-secret: {{ required "$.Values.ingress.authentication.sso.authTLSSecret missing" $.Values.ingress.authentication.sso.authTLSSecret | quote }}
+    ingress.kubernetes.io/auth-tls-verify-depth: {{ required "$.Values.ingress.authentication.sso.authTLSVerifyDepth missing" $.Values.ingress.authentication.sso.authTLSVerifyDepth | quote }}
+    nginx.ingress.kubernetes.io/auth-tls-verify-depth: {{ required "$.Values.ingress.authentication.sso.authTLSVerifyDepth missing" $.Values.ingress.authentication.sso.authTLSVerifyDepth | quote }}
+    ingress.kubernetes.io/auth-tls-verify-client: {{ required "$.Values.ingress.authentication.sso.authTLSVerifyClient missing" $.Values.ingress.authentication.sso.authTLSVerifyClient | quote }}
+    nginx.ingress.kubernetes.io/auth-tls-verify-client: {{ required "$.Values.ingress.authentication.sso.authTLSVerifyClient missing" $.Values.ingress.authentication.sso.authTLSVerifyClient | quote }}
+    {{ end }}
+    {{- if $.Values.ingress.annotations }}
+{{ toYaml $.Values.ingress.annotations | indent 4 }}
+    {{ end }}
+spec:
+  rules:
+    {{- range $host := coalesce $.Values.internalIngress.hosts (list $name) }}
+    - host: {{ include "fqdnHelper" (list $host $root) }}
+      http:
+        paths:
+        - path: /api
+          backend:
+            service:
+              name:  {{ include "thanos.fullName" (list $name $root) }}-query
+              port:
+                name: http
+          pathType: ImplementationSpecific
+    {{- end }}
+    {{- range $host := $.Values.internalIngress.hostsFQDN }}
+    - host: {{ $host }}
+      http:
+        paths:
+        - path: /api
+          backend:
+            service:
+              name:  {{ include "thanos.fullName" (list $name $root) }}-query
+              port:
+                name: http
+          pathType: ImplementationSpecific
+    {{- end }}
+  tls:
+    - secretName: tls-{{ include "thanos.externalURL" (list $name $root) | replace "." "-" }}
+      hosts:
+        {{- range $host := coalesce $.Values.internalIngress.hosts (list $name) }}
+        - {{ include "fqdnHelper" (list $host $root) }}
+        {{- end }}
+        {{- range $host := $.Values.internalIngress.hostsFQDN }}
+        - {{ $host }}
+        {{- end }}
+{{- end }}
+{{- end }}
+{{- end }}
