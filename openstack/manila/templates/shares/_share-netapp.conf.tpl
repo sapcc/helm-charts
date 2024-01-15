@@ -49,6 +49,9 @@ netapp_lif_name_template = os_%(net_allocation_id)s
 netapp_port_name_search_pattern = {{ $share.port_search_pattern  | default "(a0b)" }}
 
 neutron_physical_net_name={{$share.physical_network}}
+{{ if hasKey $share "binding_host" }}
+neutron_host_id={{$share.binding_host}}
+{{- end }}
 network_api_class=manila.network.neutron.neutron_network_plugin.NeutronBindNetworkPlugin
 {{- if $share.debug }}
 netapp_trace_flags=api,method
