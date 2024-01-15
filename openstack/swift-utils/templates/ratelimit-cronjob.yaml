@@ -1,0 +1,45 @@
+{{- if .Values.ratelimits.enabled }}
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: ratelimit-enforcer
+spec:
+  schedule: "*/10 * * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+            - name: ratelimit-enforcer
+              image: {{ include "swift_image" . }}
+              imagePullPolicy: IfNotPresent
+              command:
+                - /usr/bin/dumb-init
+              args:
+                - /bin/bash
+                - /ratelimit/apply_ratelimit.sh
+              env:
+                - name: OS_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: swift-utils-secret
+                      key: caretaker_password
+                - name: OS_USERNAME
+                  value: swift_caretaker
+                - name: OS_USER_DOMAIN_NAME
+                  value: Default
+                - name: OS_AUTH_URL
+                  value: {{ .Values.swift_account_caretaker.auth_url }}
+                - name: OS_PROJECT_DOMAIN_NAME
+                  value: cc3test
+                - name: OS_PROJECT_NAME
+                  value: swift_test
+              volumeMounts:
+                - mountPath: /ratelimit
+                  name: ratelimit-script
+          restartPolicy: OnFailure
+          volumes:
+            - name: ratelimit-script
+              configMap:
+                name: swift-ratelimit
+{{- end }}
