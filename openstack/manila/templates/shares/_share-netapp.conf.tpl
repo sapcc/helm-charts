@@ -86,7 +86,7 @@ netapp_hardware_state = {{ $share.hardware_state | default "live" }}
 {{- if eq 100 (int $share.reserved_share_percentage)}}
 reserved_share_percentage = 100
 {{- else }}
-reserved_share_percentage = {{ $share.reserved_share_percentage | default 50 }}
+reserved_share_percentage = {{ $share.reserved_share_percentage | default 40 }}
 {{- end }}
 
 {{- if eq 100 (int $share.reserved_share_extend_percentage)}}
