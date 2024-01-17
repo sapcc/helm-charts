@@ -6,8 +6,9 @@ set -eou pipefail
 shopt -s nullglob # who thought it is a good idea to return the glob if it matches nothing?
 shopt -s inherit_errexit # fail if any subshell fails
 
-start_local_postgres() {
-  pg_ctl -D "$PGDATA" -o "$(printf '%q ' -c listen_addresses='' -p 5432)" -w start
+# it is save to listen on 0.0.0.0 as the service is only exposed after the startupProbe passed
+start_postgres() {
+  pg_ctl -D "$PGDATA" -o "$(printf '%q ' -p 5432)" -w start
 }
 
 stop_postgres() {
@@ -129,7 +130,7 @@ for data in $(find /var/lib/postgresql/ -mindepth 1 -maxdepth 1 | sort --version
   fi
 
   # create backup just in case anything goes wrong
-  start_local_postgres
+  start_postgres
   # shellcheck disable=SC2154 # supplied by k8s
   curl --no-progress-meter --fail-with-body -X POST -u "backup:$USER_PASSWORD_backup" "http://$PGBACKUP_HOST:8080/v1/backup-now"
   stop_postgres
@@ -149,7 +150,7 @@ for data in $(find /var/lib/postgresql/ -mindepth 1 -maxdepth 1 | sort --version
   break
 done
 
-start_local_postgres
+start_postgres
 
 # run the recommended optimization by pg_upgrade to not mitigate performance decreases after an upgrade
 if [[ $updated_db == true ]]; then
