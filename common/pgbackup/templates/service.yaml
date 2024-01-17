@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: "{{ .Release.Name }}-pgbackup"
+  annotations:
+    {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+    linkerd.io/inject: enabled
+    {{- end }}
+spec:
+  selector:
+    name: "{{ .Release.Name }}-pgbackup"
+  ports:
+  - name: pgbackup
+    port: 8080

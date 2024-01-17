@@ -6,6 +6,23 @@ set -eou pipefail
 shopt -s nullglob # who thought it is a good idea to return the glob if it matches nothing?
 shopt -s inherit_errexit # fail if any subshell fails
 
+start_local_postgres() {
+  pg_ctl -D "$PGDATA" -o "$(printf '%q ' -c listen_addresses='' -p 5432)" -w start
+}
+
+stop_postgres() {
+  pg_ctl -D "$PGDATA" -m fast -w stop
+}
+
+process_sql() {
+  local query_runner=(psql -v ON_ERROR_STOP=1 --username "$PGUSER" --no-password --no-psqlrc)
+  if [[ -n $PGDATABASE ]]; then
+    query_runner+=(--dbname "$PGDATABASE")
+  fi
+
+  PGHOST='' PGHOSTADDR='' "${query_runner[@]}" "$@"
+}
+
 [[ -n ${DEBUG:-} ]] && set -x
 
 # those are set by default in values, too but are kept here to easen testing
@@ -72,15 +89,6 @@ if [[ ${#PGPASSWORD} -ge 100 ]]; then
   exit 1
 fi
 
-process_sql() {
-  local query_runner=(psql -v ON_ERROR_STOP=1 --username "$PGUSER" --no-password --no-psqlrc)
-  if [[ -n $PGDATABASE ]]; then
-    query_runner+=(--dbname "$PGDATABASE")
-  fi
-
-  PGHOST='' PGHOSTADDR='' "${query_runner[@]}" "$@"
-}
-
 created_db=false
 updated_db=false
 
@@ -120,6 +128,11 @@ for data in $(find /var/lib/postgresql/ -mindepth 1 -maxdepth 1 | sort --version
     exit 1
   fi
 
+  # create backup just in case anything goes wrong
+  start_postgres
+  curl --no-progress-meter --fail-with-body -X POST "http://pgbackup:8080/v1/backup-now"
+  stop_postgres
+
   # pg_upgrade wants to have write permission for cwd
   cd /var/lib/postgresql
   pg_upgrade --link --jobs="$(nproc)" \
@@ -135,7 +148,7 @@ for data in $(find /var/lib/postgresql/ -mindepth 1 -maxdepth 1 | sort --version
   break
 done
 
-pg_ctl -D "$PGDATA" -o "$(printf '%q ' -c listen_addresses='' -p 5432)" -w start
+start_local_postgres
 
 # run the recommended optimization by pg_upgrade to not mitigate performance decreases after an upgrade
 if [[ $updated_db == true ]]; then
@@ -178,7 +191,8 @@ for file in /sql-on-startup.d/*.sql; do
   process_sql -f <(substituteSqlEnvs "$file")
   echo
 done
-pg_ctl -D "$PGDATA" -m fast -w stop
+
+stop_postgres
 
 # tell the startupProbe that we are done
 touch /tmp/init-done

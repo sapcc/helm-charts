@@ -12,7 +12,9 @@ RUN apt-get update \
   && apt-get install --no-install-recommends -y \
     # required for https \
     ca-certificates \
-    # drop privilges easy
+    # create backup via API \
+    curl \
+    # drop privilges easy \
     gosu \
     # required utf-8 encoding \
     locales \
