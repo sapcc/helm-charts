@@ -130,7 +130,8 @@ for data in $(find /var/lib/postgresql/ -mindepth 1 -maxdepth 1 | sort --version
 
   # create backup just in case anything goes wrong
   start_local_postgres
-  curl --no-progress-meter --fail-with-body -X POST "http://$PGBACKUP_HOST:8080/v1/backup-now"
+  # shellcheck disable=SC2154 # supplied by k8s
+  curl --no-progress-meter --fail-with-body -X POST -u "backup:$USER_PASSWORD_backup" "http://$PGBACKUP_HOST:8080/v1/backup-now"
   stop_postgres
 
   # pg_upgrade wants to have write permission for cwd
