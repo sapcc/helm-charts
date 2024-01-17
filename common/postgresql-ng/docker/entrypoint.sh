@@ -129,7 +129,7 @@ for data in $(find /var/lib/postgresql/ -mindepth 1 -maxdepth 1 | sort --version
   fi
 
   # create backup just in case anything goes wrong
-  start_postgres
+  start_local_postgres
   curl --no-progress-meter --fail-with-body -X POST "http://pgbackup:8080/v1/backup-now"
   stop_postgres
 
