@@ -221,7 +221,7 @@ user_blocklist = {{ .Values.lifesaver.user_blocklist | default "" }}
 # initial user credit
 initial_credit = {{ .Values.lifesaver.initial_credit | default 500 }}
 # how often do we refill credit
-refill_seconds = {{ .Values.lifesaver.refill_seconds | default 60 }}
+refill_seconds = {{ .Values.lifesaver.refill_seconds | default 1 }}
 # and with what amount
 refill_amount = {{ .Values.lifesaver.refill_amount | default 5 }}
 # cost of each status
