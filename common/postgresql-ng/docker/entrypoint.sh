@@ -99,13 +99,10 @@ if [[ ! -e $PGDATA/PG_VERSION ]]; then
   initdb --username="$PGUSER" --pwfile=<(printf "%s\n" "$PGPASSWORD")
 fi
 
-if [[ $created_db == true ]]; then
-  if [[ $PGVERSION -lt 12 ]]; then
-    postgres_auth_method=md5
-  else
-    postgres_auth_method=scram-sha-256
-  fi
-  echo -e "host  all  all  all  $postgres_auth_method\n" >>"$PGDATA/pg_hba.conf"
+if [[ $PGVERSION -lt 12 ]]; then
+  postgres_auth_method=md5
+else
+  postgres_auth_method=scram-sha-256
 fi
 
 # check for older postgres databases and upgrade from them if possible
@@ -129,10 +126,22 @@ for data in $(find /var/lib/postgresql/ -mindepth 1 -maxdepth 1 | sort --version
     exit 1
   fi
 
-  # create backup just in case anything goes wrong
+  # only allow backup container to connect
+  echo -e "local  all  postgres  trust\nhost  all  backup  all  all\nhost  all  postgres  all  all\n" >"$PGDATA/pg_hba.conf"
+  touch /tmp/in-init # fake that we are online to expose the service
   start_postgres
-  # shellcheck disable=SC2154 # supplied by k8s
-  curl --no-progress-meter --fail-with-body -X POST -u "backup:$USER_PASSWORD_backup" "http://$PGBACKUP_HOST:8080/v1/backup-now"
+  PGDATABASE='' process_sql --dbname postgres -c "SELECT pg_reload_conf()"
+
+  # we need to retry loop here because the service, through which pgbackup goes, is probably not up yet
+  for i in {1..60}; do
+    # shellcheck disable=SC2154 # supplied by k8s
+    curl --no-progress-meter --fail-with-body -X POST -u "backup:$USER_PASSWORD_backup" "http://$PGBACKUP_HOST:8080/v1/backup-now" && break
+    sleep 1
+  done
+  if [[ $i == 60 ]]; then
+    echo "Backup failed"
+    exit 1
+  fi
   stop_postgres
 
   # pg_upgrade wants to have write permission for cwd
@@ -150,7 +159,10 @@ for data in $(find /var/lib/postgresql/ -mindepth 1 -maxdepth 1 | sort --version
   break
 done
 
+cp /usr/local/share/pg_hba.conf "$PGDATA/pg_hba.conf"
+echo -e "host  all  all  all  $postgres_auth_method\n" >>"$PGDATA/pg_hba.conf"
 start_postgres
+PGDATABASE='' process_sql --dbname postgres -c "SELECT pg_reload_conf()"
 
 # run the recommended optimization by pg_upgrade to not mitigate performance decreases after an upgrade
 if [[ $updated_db == true ]]; then
@@ -195,8 +207,7 @@ for file in /sql-on-startup.d/*.sql; do
 done
 
 stop_postgres
-
-# tell the startupProbe that we are done
+rm -f /tmp/in-init
 touch /tmp/init-done
 
 exec postgres "$@"

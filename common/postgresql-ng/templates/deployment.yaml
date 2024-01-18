@@ -85,27 +85,16 @@ spec:
             command:
             - sh
             - -c
-            - exec pg_isready --host $POD_IP
+            - "[[ -e /tmp/in-init ]] || exec pg_isready --host $POD_IP"
           initialDelaySeconds: 120
           timeoutSeconds: {{ .Values.probe_timeout_secs }}
           failureThreshold: {{ .Values.probe_failure_threshold }}
-        # We use the POD_IP to not have the pod become ready during the inital database setup
-        # where the docker image briefly starts the db  for creating the user,
-        # running custom setup scripts etc.
         readinessProbe:
           exec:
             command:
             - sh
             - -c
-            - exec pg_isready --host $POD_IP
-          initialDelaySeconds: 5
-          timeoutSeconds: {{ .Values.probe_timeout_secs }}
-        startupProbe:
-          exec:
-            command:
-            - test
-            - -f
-            - /tmp/init-done
+            - "[[ -e /tmp/in-init ]] || exec pg_isready --host $POD_IP"
           initialDelaySeconds: 5
           timeoutSeconds: {{ .Values.probe_timeout_secs }}
         resources: {{ toYaml .Values.resources | nindent 10 }}
