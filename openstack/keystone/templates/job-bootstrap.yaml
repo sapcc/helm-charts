@@ -2,7 +2,7 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: {{ .Release.Name }}-job-bootstrap
+  name: "{{ tuple . "job-bootstrap" | include "job_name" }}"
   labels:
     app: {{ template "fullname" . }}
     chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
@@ -18,7 +18,7 @@ spec:
   template:
     metadata:
       labels:
-        name: {{ .Release.Name }}-job-bootstrap
+        name: "{{ tuple . "job-bootstrap" | include "job_name" }}"
         system: openstack
         component: keystone
         type: job
@@ -52,7 +52,7 @@ spec:
               value: "{{ .Release.Name }}-mariadb"
 {{- end }}
             - name: DEPENDENCY_JOBS
-              value: {{ .Release.Name }}-job-migration
+              value: "{{ tuple . "job-migration" | include "job_name" }}"
             {{- if .Values.sentry.enabled }}
             - name: SENTRY_DSN
             {{- if .Values.sentry.dsn }}
