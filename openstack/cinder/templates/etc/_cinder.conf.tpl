@@ -86,7 +86,7 @@ include_service_catalog = true
 service_type = volumev3
 
 [oslo_policy]
-policy_file = /etc/cinder/policy.json
+policy_file = /etc/cinder/policy.yaml
 
 [oslo_concurrency]
 lock_path = /var/lib/cinder/tmp

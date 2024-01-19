@@ -64,8 +64,8 @@ spec:
           subPath: cinder.conf
           readOnly: true
         - name: cinder-etc
-          mountPath: /etc/cinder/policy.json
-          subPath: policy.json
+          mountPath: /etc/cinder/policy.yaml
+          subPath: policy.yaml
           readOnly: true
         - name: cinder-etc
           mountPath: /etc/cinder/logging.ini
