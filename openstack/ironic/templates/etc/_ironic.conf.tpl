@@ -67,7 +67,7 @@ region = {{ .Values.global.region }}
 auth_type = v3password
 auth_interface = internal
 auth_version = v3
-www_authenticate_uri = https://{{include "keystone_api_endpoint_host_public" .}}/v3
+www_authenticate_uri = https://{{include "keystone_api_endpoint_host_internal" .}}/v3
 auth_url = {{.Values.global.keystone_api_endpoint_protocol_internal | default "http"}}://{{include "keystone_api_endpoint_host_internal" .}}:{{ .Values.global.keystone_api_port_internal | default 5000}}/v3
 user_domain_name = {{.Values.global.keystone_service_domain | default "Default"}}
 username = {{ .Values.global.ironicServiceUser }}{{ .Values.global.user_suffix }}
@@ -89,7 +89,7 @@ region_name = {{ .Values.global.region }}
 # auth_section
 auth_type = v3password
 auth_version = v3
-www_authenticate_uri = https://{{include "keystone_api_endpoint_host_public" .}}/v3
+www_authenticate_uri = https://{{include "keystone_api_endpoint_host_internal" .}}/v3
 auth_url = {{.Values.global.keystone_api_endpoint_protocol_internal | default "http"}}://{{include "keystone_api_endpoint_host_internal" .}}:{{ .Values.global.keystone_api_port_internal | default 5000}}/v3
 user_domain_name = {{.Values.global.keystone_service_domain | default "Default"}}
 username = {{ .Values.global.ironicServiceUser }}{{ .Values.global.user_suffix }}

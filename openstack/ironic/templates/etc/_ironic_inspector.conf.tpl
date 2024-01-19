@@ -62,7 +62,7 @@ connection = {{ tuple . .Values.mariadb.users.ironic_inspector.name .Values.mari
 {{- include "ini_sections.audit_middleware_notifications" . }}
 
 [keystone_authtoken]
-www_authenticate_uri = https://{{include "keystone_api_endpoint_host_public" .}}/v3
+www_authenticate_uri = https://{{include "keystone_api_endpoint_host_internal" .}}/v3
 auth_url = {{.Values.global.keystone_api_endpoint_protocol_internal | default "http"}}://{{include "keystone_api_endpoint_host_internal" .}}:{{ .Values.global.keystone_api_port_internal | default 5000}}/v3
 auth_type = v3password
 auth_interface = internal

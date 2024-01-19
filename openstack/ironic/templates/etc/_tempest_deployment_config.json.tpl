@@ -1,6 +1,6 @@
 {
     "openstack": {
-        "auth_url": "{{ .Values.global.keystone_api_endpoint_protocol_public | default "https"}}://{{include "keystone_api_endpoint_host_public" .}}/v3",
+        "auth_url": "{{ .Values.global.keystone_api_endpoint_protocol_public | default "https"}}://{{include "keystone_api_endpoint_host_internal" .}}/v3",
         "region_name": "{{ .Values.global.region }}",
         "endpoint_type": "public",
         "admin": {
