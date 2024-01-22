@@ -14,6 +14,12 @@ data:
   backend_roles:
   - "data"
 
+greenhouse:
+  hash: "{{ .Values.users.greenhouse.hash }}"
+  reserved: true
+  backend_roles:
+  - "greenhouse"
+
 {{- if .Values.qalogs.enabled }}
 dataqade2:
   hash: "{{ .Values.users.dataqade2.hash }}"

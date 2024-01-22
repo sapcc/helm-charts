@@ -27,6 +27,11 @@ syslog:
   users:
   - "syslog"
 
+greenhouse:
+  reserved: false
+  users:
+  - "greenhouse"
+
 jump:
   reserved: false
   users:
