@@ -23,6 +23,10 @@ spec:
             - name: notebooks-git
               mountPath: /home/jovyan
             env:
+            {{- if not (and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested) }}
+            - name: LINKERD_AWAIT_DISABLED
+              value: "Linkerd was not enabled or not requested"
+            {{- end }}
             - name: approle_role_id
               valueFrom:
                 secretKeyRef:
