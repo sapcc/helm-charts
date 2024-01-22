@@ -24,12 +24,22 @@ process_sql() {
   PGHOST='' PGHOSTADDR='' "${query_runner[@]}" "$@"
 }
 
+substituteSqlEnvs() {
+  local file="$1" sedArgs=()
+
+  for line in $(env | grep ^USER_PASSWORD_); do
+    sedArgs+=(-e "s|%$(echo "$line" | cut -d= -f1)%|$(echo "$line" | cut -d= -f2)|g")
+  done
+
+  sed -e "s/%PGDATABASE%/$PGDATABASE/g" "${sedArgs[@]}" "$file"
+}
+
 [[ -n ${DEBUG:-} ]] && set -x
 
-# those are set by default in values, too but are kept here to easen testing
-export PGDATABASE="${PGDATABASE:-acme-db}"
-export PGUSER="${PGUSER:-postgres}"
-export PGVERSION="${PGVERSION:-16}"
+if [[ ! -e /usr/lib/postgresql/$PGVERSION ]]; then
+  echo "PostgreSQL $PGVERSION is not installed, aborting"
+  exit 1
+fi
 
 if [[ $(id -u) == 0 ]]; then
   for _ in /var/lib/postgresql/*; do
@@ -67,31 +77,22 @@ if [[ $(id -u) == 0 ]]; then
   exec gosu postgres "$0"
 fi
 
-# always generate a new password on each start
+# those are set by default in values, too but are kept here to easen testing
+export PGDATABASE="${PGDATABASE:-acme-db}"
+export PGUSER="${PGUSER:-postgres}"
+export PGVERSION="${PGVERSION:-16}"
+export PGBIN="/usr/lib/postgresql/$PGVERSION/bin"
+export PGDATA="/var/lib/postgresql/$PGVERSION" # hardcoded because we are being lazy
+
+# always generate a new, random password on each start
 PGPASSWORD="$(head -c 30 </dev/urandom | base64)"
 echo -n "$PGPASSWORD" > /postgres-password
 export PGPASSWORD
 
-if [[ ! -e /usr/lib/postgresql/$PGVERSION ]]; then
-  PGBIN=/usr/lib/postgresql/$PGVERSION
-  echo "Postgresql $PGVERSION is not installed, aborting"
-  exit 1
-fi
-export PGBIN="/usr/lib/postgresql/$PGVERSION/bin"
-export PATH="$PGBIN:$PATH"
-export PGDATA="/var/lib/postgresql/$PGVERSION" # hardcoded because we are being lazy
-
-if [[ -z ${PGPASSWORD:-} ]]; then
-  echo "PGPASSWORD env must be set!"
-  exit 1
-fi
-if [[ ${#PGPASSWORD} -ge 100 ]]; then
-  echo "PGPASSWORD env cannot be 100 chars long"
-  exit 1
-fi
-
 created_db=false
 updated_db=false
+old_path=$PATH
+export PATH="$PGBIN:$old_path"
 
 # create the database if the version file is missing. This is also required when running pg_upgrade.
 if [[ ! -e $PGDATA/PG_VERSION ]]; then
@@ -159,6 +160,10 @@ for data in $(find /var/lib/postgresql/ -mindepth 1 -maxdepth 1 | sort --version
   break
 done
 
+# set PATH env late again as it might have been overwritten in by the upgrade
+export PATH="$PGBIN:$old_path"
+
+# restore standard pg_hba.conf and reload the config into postgres
 cp /usr/local/share/pg_hba.conf "$PGDATA/pg_hba.conf"
 echo -e "host  all  all  all  $postgres_auth_method\n" >>"$PGDATA/pg_hba.conf"
 start_postgres
@@ -168,16 +173,6 @@ PGDATABASE='' process_sql --dbname postgres -c "SELECT pg_reload_conf()"
 if [[ $updated_db == true ]]; then
   vacuumdb --all --analyze-in-stages
 fi
-
-substituteSqlEnvs() {
-  local file="$1" sedArgs=()
-
-  for line in $(env | grep ^USER_PASSWORD_); do
-    sedArgs+=(-e "s|%$(echo "$line" | cut -d= -f1)%|$(echo "$line" | cut -d= -f2)|g")
-  done
-
-  sed -e "s/%PGDATABASE%/$PGDATABASE/g" "${sedArgs[@]}" "$file"
-}
 
 # if a new db was initted, create the databse inside of it and run init scripts
 if [[ $created_db == true ]]; then
@@ -206,6 +201,7 @@ for file in /sql-on-startup.d/*.sql; do
   echo
 done
 
+# stop and exec later to properly attach to forward signals and stdout/stderr properly
 stop_postgres
 rm -f /tmp/in-init
 touch /tmp/init-done
