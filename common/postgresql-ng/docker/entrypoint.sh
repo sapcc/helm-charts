@@ -34,6 +34,13 @@ substituteSqlEnvs() {
   sed -e "s/%PGDATABASE%/$PGDATABASE/g" "${sedArgs[@]}" "$file"
 }
 
+exportPostgresVarsForVersion() {
+  version="${1:-16}"
+  export PGBIN="/usr/lib/postgresql/$version/bin"
+  export PGDATA="/var/lib/postgresql/$version" # hardcoded because we are being lazy
+  export PATH="$PGBIN:$old_path"
+}
+
 [[ -n ${DEBUG:-} ]] && set -x
 
 if [[ ! -e /usr/lib/postgresql/$PGVERSION ]]; then
@@ -80,30 +87,22 @@ fi
 # those are set by default in values, too but are kept here to easen testing
 export PGDATABASE="${PGDATABASE:-acme-db}"
 export PGUSER="${PGUSER:-postgres}"
-export PGVERSION="${PGVERSION:-16}"
-export PGBIN="/usr/lib/postgresql/$PGVERSION/bin"
-export PGDATA="/var/lib/postgresql/$PGVERSION" # hardcoded because we are being lazy
+
+created_db=false
+updated_db=false
+old_path=$PATH
 
 # always generate a new, random password on each start
 PGPASSWORD="$(head -c 30 </dev/urandom | base64)"
 echo -n "$PGPASSWORD" > /postgres-password
 export PGPASSWORD
 
-created_db=false
-updated_db=false
-old_path=$PATH
-export PATH="$PGBIN:$old_path"
+exportPostgresVarsForVersion "${PGVERSION:-16}"
 
 # create the database if the version file is missing. This is also required when running pg_upgrade.
 if [[ ! -e $PGDATA/PG_VERSION ]]; then
   created_db=true
   initdb --username="$PGUSER" --pwfile=<(printf "%s\n" "$PGPASSWORD")
-fi
-
-if [[ $PGVERSION -lt 12 ]]; then
-  postgres_auth_method=md5
-else
-  postgres_auth_method=scram-sha-256
 fi
 
 # check for older postgres databases and upgrade from them if possible
@@ -121,14 +120,22 @@ for data in $(find /var/lib/postgresql/ -mindepth 1 -maxdepth 1 | sort --version
    continue
   fi
 
-  bindir="/usr/lib/postgresql/$(basename "$data")/bin"
+  old_version=$(basename "$data")
+  bindir="/usr/lib/postgresql/$old_version/bin"
   if [[ ! -d $bindir ]]; then
     echo "Old postgresql is not installed into $bindir, aborting upgrade"
     exit 1
   fi
+  # use old postgres version when starting for upgrade
+  exportPostgresVarsForVersion "$old_version"
+  if [[ $old_version -lt 12 ]]; then
+    postgres_auth_method=md5
+  else
+    postgres_auth_method=scram-sha-256
+  fi
 
   # only allow backup container to connect
-  echo -e "local  all  postgres  trust\nhost  all  backup  all  all\nhost  all  postgres  all  all\n" >"$PGDATA/pg_hba.conf"
+  echo -e "local  all  postgres  trust\nhost  all  backup  all  $postgres_auth_method\nhost  all  postgres  all  $postgres_auth_method\n" >"$data/pg_hba.conf"
   touch /tmp/in-init # fake that we are online to expose the service
   start_postgres
   PGDATABASE='' process_sql --dbname postgres -c "SELECT pg_reload_conf()"
@@ -145,6 +152,7 @@ for data in $(find /var/lib/postgresql/ -mindepth 1 -maxdepth 1 | sort --version
   fi
   stop_postgres
 
+  exportPostgresVarsForVersion "$PGVERSION"
   # pg_upgrade wants to have write permission for cwd
   cd /var/lib/postgresql
   pg_upgrade --link --jobs="$(nproc)" \
@@ -160,8 +168,16 @@ for data in $(find /var/lib/postgresql/ -mindepth 1 -maxdepth 1 | sort --version
   break
 done
 
-# set PATH env late again as it might have been overwritten in by the upgrade
-export PATH="$PGBIN:$old_path"
+# set postgres env's again if they have been overwritten in by the upgrade
+if [[ $updated_db == true ]]; then
+  exportPostgresVarsForVersion "${PGVERSION:-16}"
+fi
+
+if [[ $PGVERSION -lt 12 ]]; then
+  postgres_auth_method=md5
+else
+  postgres_auth_method=scram-sha-256
+fi
 
 # restore standard pg_hba.conf and reload the config into postgres
 cp /usr/local/share/pg_hba.conf "$PGDATA/pg_hba.conf"
