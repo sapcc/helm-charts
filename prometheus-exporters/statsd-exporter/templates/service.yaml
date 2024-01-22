@@ -44,9 +44,15 @@ spec:
       scrapeTimeout: {{ required ".Values.exporters.scrapeTimeout variable missing" $exporter.scrapeTimeout }}
       port: metrics
       scheme: http
-      relabelings:
+      metricRelabelings:
+        - action: drop
+          regex: '.+;(setup|teardown)'
+          sourceLabels:
+            - __name__
+            - phase
         - action: labeldrop
           regex: 'phase'
+      relabelings:
         - action: labelmap
           regex: '__meta_kubernetes_service_label_(.+)'
         - targetLabel: job
