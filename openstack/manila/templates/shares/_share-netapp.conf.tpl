@@ -95,6 +95,12 @@ reserved_share_extend_percentage = 100
 reserved_share_extend_percentage = {{ $share.reserved_share_extend_percentage | default 25 }}
 {{- end }}
 
+{{- if eq 100 (int $share.reserved_snapshot_percentage)}}
+reserved_snapshot_percentage = 100
+{{- else }}
+reserved_snapshot_percentage = {{ $share.reserved_snapshot_percentage | default 25 }}
+{{- end }}
+
 # Time to kepp deleted volumes in recovery queue until space is reclaimed
 netapp_delete_retention_hours = {{ $context.Values.delete_retention_hours | default 12 }}
 
