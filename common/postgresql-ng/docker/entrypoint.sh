@@ -3,7 +3,7 @@
 # heavily based and simplified on https://github.com/docker-library/postgres/blob/master/docker-entrypoint.sh which is licensed under MIT
 
 set -eou pipefail
-shopt -s nullglob # who thought it is a good idea to return the glob if it matches nothing?
+shopt -s nullglob        # who thought it is a good idea to return the glob if it matches nothing?
 shopt -s inherit_errexit # fail if any subshell fails
 
 # it is save to listen on 0.0.0.0 as the service is only exposed after the startupProbe passed
@@ -63,7 +63,7 @@ if [[ $(id -u) == 0 ]]; then
 
   # setup the default directories with correct permissions
   # we cannot change the owner of the volume mount point or make /var/lib a volume
-  if [[ ! -h /var/lib/postgresql || ! -e /data/postgresql ]]; then
+  if [[ ! -L /var/lib/postgresql || ! -e /data/postgresql ]]; then
     mkdir -p /data/postgresql
     rmdir /var/lib/postgresql
     ln -sr /data/postgresql /var/lib/
@@ -83,7 +83,7 @@ updated_db=false
 
 # always generate a new, random password on each start
 PGPASSWORD="$(head -c 30 </dev/urandom | base64)"
-echo -n "$PGPASSWORD" > /postgres-password
+echo -n "$PGPASSWORD" >/postgres-password
 export PGPASSWORD
 
 # create the database if the version file is missing. This is also required when running pg_upgrade.
@@ -104,8 +104,8 @@ for data in $(find /var/lib/postgresql/ -mindepth 1 -maxdepth 1 | sort --version
 
   # if we found the current version last run and didn't encounter a newer one, we are good to go
   if [[ $data == "$PGDATA" ]]; then
-   found_current_db=true
-   continue
+    found_current_db=true
+    continue
   fi
 
   # collect information about old postgres db, start it for a backup and then shutdown
