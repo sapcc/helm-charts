@@ -80,13 +80,18 @@ spec:
           livenessProbe:
             exec:
               command:
-              - cat
-              - /etc/designate/probe
+              - bash
+              - -c
+{{- if .Values.global_setup }}
+              - "set -e; nc -zvw3 designate-global-percona-pxc 3306; nc -zvw3 designate-global-memcached 11211"
+{{- else }}
+              - "set -e; nc -zvw3 designate-mariadb 3306; nc -zvw3 designate-memcached 11211"
+{{- end }}
             failureThreshold: 3
-            initialDelaySeconds: 60
+            initialDelaySeconds: 5
             periodSeconds: 10
             successThreshold: 1
-            timeoutSeconds: 20
+            timeoutSeconds: 5
           volumeMounts:
             - mountPath: /designate-etc
               name: designate-etc
