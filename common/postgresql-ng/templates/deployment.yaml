@@ -49,7 +49,7 @@ spec:
       - name: postgres
         image: "{{ include "preferredRegistry" . }}/postgres-ng:{{ .Values.imageTag }}"
         imagePullPolicy: "IfNotPresent"
-        args: ["-c", "config_file=/postgresql-conf/postgresql.conf"]
+        args: ["-c", "config_file=/etc/postgresql/postgresql.conf"]
         env:
         - name: DEBUG
           value: {{ .Values.debug | quote }}
@@ -66,16 +66,12 @@ spec:
             fieldRef:
               fieldPath: status.podIP
         {{- range $user, $settings := .Values.users }}
-        - name: USER_PASSWORD_{{ $user }}
+        - name: USER_PASSWORD_{{ $user | replace "-" "_" }}
           valueFrom:
             secretKeyRef:
               name: {{ $.Release.Name }}-pguser-{{ $user }}
               key: postgres-password
         {{- end }}
-        - name: POD_IP
-          valueFrom:
-            fieldRef:
-              fieldPath: status.podIP
 
         ports:
         - name: postgresql
@@ -85,27 +81,16 @@ spec:
             command:
             - sh
             - -c
-            - exec pg_isready --host $POD_IP
+            - "[[ -e /tmp/in-init ]] || exec pg_isready --host $POD_IP"
           initialDelaySeconds: 120
           timeoutSeconds: {{ .Values.probe_timeout_secs }}
           failureThreshold: {{ .Values.probe_failure_threshold }}
-        # We use the POD_IP to not have the pod become ready during the inital database setup
-        # where the docker image briefly starts the db  for creating the user,
-        # running custom setup scripts etc.
         readinessProbe:
           exec:
             command:
             - sh
             - -c
-            - exec pg_isready --host $POD_IP
-          initialDelaySeconds: 5
-          timeoutSeconds: {{ .Values.probe_timeout_secs }}
-        startupProbe:
-          exec:
-            command:
-            - test
-            - -f
-            - /tmp/init-done
+            - "[[ -e /tmp/in-init ]] || exec pg_isready --host $POD_IP"
           initialDelaySeconds: 5
           timeoutSeconds: {{ .Values.probe_timeout_secs }}
         resources: {{ toYaml .Values.resources | nindent 10 }}
@@ -113,7 +98,7 @@ spec:
         - name: data
           mountPath: /data
         - name: postgres-etc
-          mountPath: /postgresql-conf
+          mountPath: /etc/postgresql
         {{- if .Values.sqlOnCreate }}
         - name: sql-on-create
           mountPath: /sql-on-create.d

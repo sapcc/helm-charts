@@ -6,8 +6,9 @@ set -eou pipefail
 shopt -s nullglob # who thought it is a good idea to return the glob if it matches nothing?
 shopt -s inherit_errexit # fail if any subshell fails
 
-start_local_postgres() {
-  pg_ctl -D "$PGDATA" -o "$(printf '%q ' -c listen_addresses='' -p 5432)" -w start
+# it is save to listen on 0.0.0.0 as the service is only exposed after the startupProbe passed
+start_postgres() {
+  pg_ctl -D "$PGDATA" -o "$(printf '%q ' -p 5432)" -w start
 }
 
 stop_postgres() {
@@ -23,12 +24,29 @@ process_sql() {
   PGHOST='' PGHOSTADDR='' "${query_runner[@]}" "$@"
 }
 
+substituteSqlEnvs() {
+  local file="$1" sedArgs=()
+
+  for line in $(env | grep ^USER_PASSWORD_); do
+    sedArgs+=(-e "s|%$(echo "$line" | cut -d= -f1)%|$(echo "$line" | cut -d= -f2)|g")
+  done
+
+  sed -e "s/%PGDATABASE%/$PGDATABASE/g" "${sedArgs[@]}" "$file"
+}
+
+exportPostgresVarsForVersion() {
+  version="${1:-16}"
+  export PGBIN="/usr/lib/postgresql/$version/bin"
+  export PGDATA="/var/lib/postgresql/$version" # hardcoded because we are being lazy
+  export PATH="$PGBIN:$old_path"
+}
+
 [[ -n ${DEBUG:-} ]] && set -x
 
-# those are set by default in values, too but are kept here to easen testing
-export PGDATABASE="${PGDATABASE:-acme-db}"
-export PGUSER="${PGUSER:-postgres}"
-export PGVERSION="${PGVERSION:-16}"
+if [[ ! -e /usr/lib/postgresql/$PGVERSION ]]; then
+  echo "PostgreSQL $PGVERSION is not installed, aborting"
+  exit 1
+fi
 
 if [[ $(id -u) == 0 ]]; then
   for _ in /var/lib/postgresql/*; do
@@ -66,45 +84,25 @@ if [[ $(id -u) == 0 ]]; then
   exec gosu postgres "$0"
 fi
 
-# always generate a new password on each start
+# those are set by default in values, too but are kept here to easen testing
+export PGDATABASE="${PGDATABASE:-acme-db}"
+export PGUSER="${PGUSER:-postgres}"
+
+created_db=false
+updated_db=false
+old_path=$PATH
+
+# always generate a new, random password on each start
 PGPASSWORD="$(head -c 30 </dev/urandom | base64)"
 echo -n "$PGPASSWORD" > /postgres-password
 export PGPASSWORD
 
-if [[ ! -e /usr/lib/postgresql/$PGVERSION ]]; then
-  PGBIN=/usr/lib/postgresql/$PGVERSION
-  echo "Postgresql $PGVERSION is not installed, aborting"
-  exit 1
-fi
-export PGBIN="/usr/lib/postgresql/$PGVERSION/bin"
-export PATH="$PGBIN:$PATH"
-export PGDATA="/var/lib/postgresql/$PGVERSION" # hardcoded because we are being lazy
-
-if [[ -z ${PGPASSWORD:-} ]]; then
-  echo "PGPASSWORD env must be set!"
-  exit 1
-fi
-if [[ ${#PGPASSWORD} -ge 100 ]]; then
-  echo "PGPASSWORD env cannot be 100 chars long"
-  exit 1
-fi
-
-created_db=false
-updated_db=false
+exportPostgresVarsForVersion "${PGVERSION:-16}"
 
 # create the database if the version file is missing. This is also required when running pg_upgrade.
 if [[ ! -e $PGDATA/PG_VERSION ]]; then
   created_db=true
   initdb --username="$PGUSER" --pwfile=<(printf "%s\n" "$PGPASSWORD")
-fi
-
-if [[ $created_db == true ]]; then
-  if [[ $PGVERSION -lt 12 ]]; then
-    postgres_auth_method=md5
-  else
-    postgres_auth_method=scram-sha-256
-  fi
-  echo -e "host  all  all  all  $postgres_auth_method\n" >>"$PGDATA/pg_hba.conf"
 fi
 
 # check for older postgres databases and upgrade from them if possible
@@ -122,18 +120,39 @@ for data in $(find /var/lib/postgresql/ -mindepth 1 -maxdepth 1 | sort --version
    continue
   fi
 
-  bindir="/usr/lib/postgresql/$(basename "$data")/bin"
+  old_version=$(basename "$data")
+  bindir="/usr/lib/postgresql/$old_version/bin"
   if [[ ! -d $bindir ]]; then
     echo "Old postgresql is not installed into $bindir, aborting upgrade"
     exit 1
   fi
+  # use old postgres version when starting for upgrade
+  exportPostgresVarsForVersion "$old_version"
+  if [[ $old_version -lt 12 ]]; then
+    postgres_auth_method=md5
+  else
+    postgres_auth_method=scram-sha-256
+  fi
 
-  # create backup just in case anything goes wrong
-  start_local_postgres
-  # shellcheck disable=SC2154 # supplied by k8s
-  curl --no-progress-meter --fail-with-body -X POST -u "backup:$USER_PASSWORD_backup" "http://$PGBACKUP_HOST:8080/v1/backup-now"
+  # only allow backup container to connect
+  echo -e "local  all  postgres  trust\nhost  all  backup  all  $postgres_auth_method\nhost  all  postgres  all  $postgres_auth_method\n" >"$data/pg_hba.conf"
+  touch /tmp/in-init # fake that we are online to expose the service
+  start_postgres
+  PGDATABASE='' process_sql --dbname postgres -c "SELECT pg_reload_conf()"
+
+  # we need to retry loop here because the service, through which pgbackup goes, is probably not up yet
+  for i in {1..60}; do
+    # shellcheck disable=SC2154 # supplied by k8s
+    curl --no-progress-meter --fail-with-body -X POST -u "backup:$USER_PASSWORD_backup" "http://$PGBACKUP_HOST:8080/v1/backup-now" && break
+    sleep 1
+  done
+  if [[ $i == 60 ]]; then
+    echo "Backup failed"
+    exit 1
+  fi
   stop_postgres
 
+  exportPostgresVarsForVersion "$PGVERSION"
   # pg_upgrade wants to have write permission for cwd
   cd /var/lib/postgresql
   pg_upgrade --link --jobs="$(nproc)" \
@@ -149,22 +168,27 @@ for data in $(find /var/lib/postgresql/ -mindepth 1 -maxdepth 1 | sort --version
   break
 done
 
-start_local_postgres
+# set postgres env's again if they have been overwritten in by the upgrade
+if [[ $updated_db == true ]]; then
+  exportPostgresVarsForVersion "${PGVERSION:-16}"
+fi
+
+if [[ $PGVERSION -lt 12 ]]; then
+  postgres_auth_method=md5
+else
+  postgres_auth_method=scram-sha-256
+fi
+
+# restore standard pg_hba.conf and reload the config into postgres
+cp /usr/local/share/pg_hba.conf "$PGDATA/pg_hba.conf"
+echo -e "host  all  all  all  $postgres_auth_method\n" >>"$PGDATA/pg_hba.conf"
+start_postgres
+PGDATABASE='' process_sql --dbname postgres -c "SELECT pg_reload_conf()"
 
 # run the recommended optimization by pg_upgrade to not mitigate performance decreases after an upgrade
 if [[ $updated_db == true ]]; then
   vacuumdb --all --analyze-in-stages
 fi
-
-substituteSqlEnvs() {
-  local file="$1" sedArgs=()
-
-  for line in $(env | grep ^USER_PASSWORD_); do
-    sedArgs+=(-e "s|%$(echo "$line" | cut -d= -f1)%|$(echo "$line" | cut -d= -f2)|g")
-  done
-
-  sed -e "s/%PGDATABASE%/$PGDATABASE/g" "${sedArgs[@]}" "$file"
-}
 
 # if a new db was initted, create the databse inside of it and run init scripts
 if [[ $created_db == true ]]; then
@@ -193,9 +217,9 @@ for file in /sql-on-startup.d/*.sql; do
   echo
 done
 
+# stop and exec later to properly attach to forward signals and stdout/stderr properly
 stop_postgres
-
-# tell the startupProbe that we are done
+rm -f /tmp/in-init
 touch /tmp/init-done
 
 exec postgres "$@"

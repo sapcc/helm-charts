@@ -34,16 +34,20 @@ data:
       {{- $users := merge $users (dict "metrics" (dict)) }}
     {{- end }}
 
+    SET password_encryption = '{{ if ge ($.Values.postgresVersion | int) 12 }}scram-sha-256{{ else }}md5{{ end }}';
+
     {{- if lt ($.Values.postgresVersion | int) 14 }}
     SELECT 'CREATE ROLE "poor_mans_pg_read_all_data"' where not exists (select rolname from pg_authid where rolname = 'poor_mans_pg_read_all_data')\gexec
+    {{- else }}
+    DROP ROLE IF EXISTS poor_mans_pg_read_all_data;
     {{- end }}
 
     {{- range $user, $settings := $users }}
     {{- /* prevent more suffering and pain by forgotten {} in users */}}
     {{- $settings = $settings | default (dict) }}
-    SELECT 'CREATE ROLE "{{ $user }}" WITH PASSWORD ''%USER_PASSWORD_{{ $user }}%'' LOGIN' where not exists (select rolname from pg_authid where rolname = '{{ $user }}')\gexec
+    SELECT 'CREATE ROLE "{{ $user }}" WITH PASSWORD ''%USER_PASSWORD_{{ $user | replace "-" "_" }}%'' LOGIN' where not exists (select rolname from pg_authid where rolname = '{{ $user }}')\gexec
     {{- /* update password in case it changed or the password hashing format changed */}}
-    ALTER USER "{{ $user }}" WITH PASSWORD '%USER_PASSWORD_{{ $user }}%';
+    ALTER USER "{{ $user }}" WITH PASSWORD '%USER_PASSWORD_{{ $user | replace "-" "_" }}%';
 
     -- https://www.postgresql.org/docs/current/ddl-priv.html
     GRANT CREATE,CONNECT,TEMPORARY ON DATABASE "%PGDATABASE%" TO "{{ $user }}";
