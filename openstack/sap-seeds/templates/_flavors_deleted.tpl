@@ -151,7 +151,7 @@
   is_public: false
   extra_specs:
 {{- if .Values.use_hana_exclusive }}
-    {{- tuple . "vmware" | include "sap_seeds.helpers.extra_specs" | indent 4 }}
+    {{- tuple . "vmware_hana_exclusive" | include "sap_seeds.helpers.extra_specs" | indent 4 }}
 {{ else }}
     {{- tuple . "vmware_common" | include "sap_seeds.helpers.extra_specs" | indent 4 }}
     "resources:CUSTOM_BIGVM": "2"
