@@ -1,0 +1,54 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: secrets-injector
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: secrets-injector
+spec:
+  selector:
+    matchLabels:
+      app: secrets-injector
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: secrets-injector
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+    spec:
+      serviceAccountName: secrets-injector
+      containers:
+      - image: "{{required ".Values.global.registry is missing" .Values.global.registry }}/{{ .Values.image.repository }}:{{required ".Values.image.tag is missing" .Values.image.tag }}"
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        name: secret-injector
+        command: ["/secrets-injector"]
+        args:
+        - -cert-path=/certs
+        env:
+        {{ range $index, $account := .Values.config.accounts -}}
+        - name: VAULT_ROLE_ID_{{- $index }}
+          valueFrom:
+            secretKeyRef:
+              name: secrets-injector
+              key: VAULT_ROLE_ID_{{- $index }}
+        - name: VAULT_SECRET_ID_{{- $index }}
+          valueFrom:
+            secretKeyRef:
+              name: secrets-injector
+              key: VAULT_SECRET_ID_{{- $index }}
+        {{ end -}}
+        volumeMounts:
+        - name: certificate
+          mountPath: "/certs"
+          readOnly: true
+        - name: config
+          mountPath: "/config"
+          readOnly: true
+      volumes:
+        - name: certificate
+          secret:
+            secretName: secrets-injector-server-cert
+        - name: config
+          configMap:
+            name: secrets-injector
