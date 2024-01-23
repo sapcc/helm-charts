@@ -42,12 +42,16 @@ spec:
         - name: DATA_SOURCE_URI
           value: {{ $db_host }}:5432/{{ $db_name }}?sslmode=disable&application_name={{ .Release.Name }}-pgmetrics
         - name: DATA_SOURCE_USER
+          {{- if .Values.isPostgresNG }}
+          value: metrics
+          {{- else }}
           value: postgres
+          {{- end }}
         - name: DATA_SOURCE_PASS
           valueFrom:
             secretKeyRef:
               {{- if .Values.isPostgresNG }}
-              name: {{ .Release.Name }}-pguser-postgres
+              name: {{ .Release.Name }}-pguser-metrics
               {{- else }}
               name: {{ .Release.Name }}-pgmetrics
               {{- end }}
