@@ -34,13 +34,6 @@ substituteSqlEnvs() {
   sed -e "s/%PGDATABASE%/$PGDATABASE/g" "${sedArgs[@]}" "$file"
 }
 
-exportPostgresVarsForVersion() {
-  version="${1:-16}"
-  export PGBIN="/usr/lib/postgresql/$version/bin"
-  export PGDATA="/var/lib/postgresql/$version" # hardcoded because we are being lazy
-  export PATH="$PGBIN:$old_path"
-}
-
 [[ -n ${DEBUG:-} ]] && set -x
 
 if [[ ! -e /usr/lib/postgresql/$PGVERSION ]]; then
@@ -84,20 +77,14 @@ if [[ $(id -u) == 0 ]]; then
   exec gosu postgres "$0"
 fi
 
-# those are set by default in values, too but are kept here to easen testing
-export PGDATABASE="${PGDATABASE:-acme-db}"
-export PGUSER="${PGUSER:-postgres}"
-
+export PATH="$PGBIN:$PATH"
 created_db=false
 updated_db=false
-old_path=$PATH
 
 # always generate a new, random password on each start
 PGPASSWORD="$(head -c 30 </dev/urandom | base64)"
 echo -n "$PGPASSWORD" > /postgres-password
 export PGPASSWORD
-
-exportPostgresVarsForVersion "${PGVERSION:-16}"
 
 # create the database if the version file is missing. This is also required when running pg_upgrade.
 if [[ ! -e $PGDATA/PG_VERSION ]]; then
@@ -115,10 +102,13 @@ for data in $(find /var/lib/postgresql/ -mindepth 1 -maxdepth 1 | sort --version
     exit 1
   fi
 
+  # if we found the current version last run and didn't encounter a newer one, we are good to go
   if [[ $data == "$PGDATA" ]]; then
    found_current_db=true
    continue
   fi
+
+  # collect information about old postgres db, start it for a backup and then shutdown
 
   old_version=$(basename "$data")
   bindir="/usr/lib/postgresql/$old_version/bin"
@@ -126,21 +116,31 @@ for data in $(find /var/lib/postgresql/ -mindepth 1 -maxdepth 1 | sort --version
     echo "Old postgresql is not installed into $bindir, aborting upgrade"
     exit 1
   fi
-  # use old postgres version when starting for upgrade
-  exportPostgresVarsForVersion "$old_version"
+
   if [[ $old_version -lt 12 ]]; then
     postgres_auth_method=md5
   else
     postgres_auth_method=scram-sha-256
   fi
 
+  # set envs to start old postgres version
+  old_path=$PATH
+  old_pgbin=$PGBIN
+  old_pgdata=$PGDATA
+  export PGBIN="/usr/lib/postgresql/$old_version/bin"
+  export PGDATA="/var/lib/postgresql/$old_version"
+  export PATH="$PGBIN:$PATH"
+
   # only allow backup container to connect
   echo -e "local  all  postgres  trust\nhost  all  backup  all  $postgres_auth_method\nhost  all  postgres  all  $postgres_auth_method\n" >"$data/pg_hba.conf"
   touch /tmp/in-init # fake that we are online to expose the service
+
+  # start postgres and load current hba conf
   start_postgres
   PGDATABASE='' process_sql --dbname postgres -c "SELECT pg_reload_conf()"
 
-  # we need to retry loop here because the service, through which pgbackup goes, is probably not up yet
+  # create a backup
+  # we need to retry loop here a bit because the k8s service, through which pgbackup must go, is probably not yet up
   for i in {1..60}; do
     # shellcheck disable=SC2154 # supplied by k8s
     curl --no-progress-meter --fail-with-body -X POST -u "backup:$USER_PASSWORD_backup" "http://$PGBACKUP_HOST:8080/v1/backup-now" && break
@@ -150,9 +150,13 @@ for data in $(find /var/lib/postgresql/ -mindepth 1 -maxdepth 1 | sort --version
     echo "Backup failed"
     exit 1
   fi
-  stop_postgres
 
-  exportPostgresVarsForVersion "$PGVERSION"
+  # stop and restore originals envs
+  stop_postgres
+  PATH=$old_path
+  PGBIN=$old_pgbin
+  PGDATA=$old_pgdata
+
   # pg_upgrade wants to have write permission for cwd
   cd /var/lib/postgresql
   pg_upgrade --link --jobs="$(nproc)" \
@@ -168,20 +172,9 @@ for data in $(find /var/lib/postgresql/ -mindepth 1 -maxdepth 1 | sort --version
   break
 done
 
-# set postgres env's again if they have been overwritten in by the upgrade
-if [[ $updated_db == true ]]; then
-  exportPostgresVarsForVersion "${PGVERSION:-16}"
-fi
-
-if [[ $PGVERSION -lt 12 ]]; then
-  postgres_auth_method=md5
-else
-  postgres_auth_method=scram-sha-256
-fi
-
 # restore standard pg_hba.conf and reload the config into postgres
 cp /usr/local/share/pg_hba.conf "$PGDATA/pg_hba.conf"
-echo -e "host  all  all  all  $postgres_auth_method\n" >>"$PGDATA/pg_hba.conf"
+echo -e "host  all  all  all  $PGAUTHMETHOD\n" >>"$PGDATA/pg_hba.conf"
 start_postgres
 PGDATABASE='' process_sql --dbname postgres -c "SELECT pg_reload_conf()"
 

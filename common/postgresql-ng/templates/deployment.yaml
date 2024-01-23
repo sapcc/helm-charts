@@ -55,12 +55,18 @@ spec:
           value: {{ .Values.debug | quote }}
         - name: PGBACKUP_HOST
           value: '{{ .Release.Name }}-pgbackup.{{ .Release.Namespace }}.svc'
+        - name: PGBIN
+          value: "/usr/lib/postgresql/{{ .Values.postgresVersion}}/bin"
+        - name: PGDATA
+          value: "/var/lib/postgresql/{{ .Values.postgresVersion}}"
         - name: PGVERSION
           value: {{ .Values.postgresVersion | quote }}
         - name: PGDATABASE
           value: {{ .Values.postgresDatabase | quote }}
         - name: PGUSER
           value: {{ .Values.postgresUser | quote }}
+        - name: PGAUTHMETHOD
+          value: "{{ if lt (.Values.postgresVersion | int) 12 }}md5{{ else }}scram-sha-256{{ end }}"
         - name: POD_IP
           valueFrom:
             fieldRef:
