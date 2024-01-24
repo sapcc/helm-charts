@@ -14,7 +14,10 @@ metadata:
     nginx.ingress.kubernetes.io/proxy-buffer-size: 32k
     ingress.kubernetes.io/ssl-redirect: "true"
     nginx.ingress.kubernetes.io/ssl-redirect: "true"
-
+    {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+    ingress.kubernetes.io/service-upstream: "true"
+    nginx.ingress.kubernetes.io/service-upstream: "true"
+    {{- end }}
 spec:
   tls:
     - secretName: opensearch-logs
