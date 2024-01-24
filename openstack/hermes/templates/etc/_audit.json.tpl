@@ -39,7 +39,12 @@
       },
       "action" : {
         "type" : "text",
-        "analyzer": "custom_analyzer"
+        "analyzer": "custom_analyzer",
+        "fields": {
+          "keyword": {
+            "type": "keyword"
+          }
+        }
       },
       "attachments" : {
         "properties" : {
@@ -140,7 +145,12 @@
           },
           "typeURI" : {
             "type" : "text",
-            "analyzer": "custom_analyzer"
+            "analyzer": "custom_analyzer",
+            "fields": {
+              "keyword": {
+                "type": "keyword"
+              }
+            }
           }
         }
       },
@@ -148,7 +158,12 @@
         "properties" : {
           "id" : {
             "type" : "text",
-            "analyzer": "custom_analyzer"
+            "analyzer": "custom_analyzer",
+            "fields": {
+              "keyword": {
+                "type": "keyword"
+              }
+            }
           },
           "name" : {
             "type" : "text",
@@ -188,7 +203,12 @@
       },
       "requestPath" : {
         "type" : "text",
-        "analyzer": "custom_analyzer"
+        "analyzer": "custom_analyzer",
+        "fields": {
+          "keyword": {
+            "type": "keyword"
+          }
+        }
       },
       "target" : {
         "properties" : {
