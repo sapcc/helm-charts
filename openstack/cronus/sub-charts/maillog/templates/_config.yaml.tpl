@@ -47,4 +47,12 @@ maillog:
 {{- end }}
       errInterval: {{ .Values.tls.errInterval | default "60s" }}
 {{- end }}
+{{- if .Values.cors }}
+  cors:
+    enabled: {{ .Values.cors.enabled }}
+    allowedOrigins:
+{{- .Values.cors.allowedOrigins | toYaml | nindent 6 }}
+    allowedHeaders:
+{{- .Values.cors.allowedHeaders | toYaml | nindent 6 }}
+{{- end }}
 {{- end -}}
