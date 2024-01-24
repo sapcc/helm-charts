@@ -1,4 +1,5 @@
 global:
+  linkerd_requested: true
   clusterType: local
   users:
     admin:
@@ -200,9 +201,17 @@ opensearch_dashboards:
     secret: dashboard-secrets
   ingress:
     enabled: false
+    annotations:
+      ingress.kubernetes.io/service-upstream: "true"
+      nginx.ingress.kubernetes.io/service-upstream: "true"
   logs_endpoint:
     enabled: false
   resources: {}
+  podAnnotations:
+    linkerd.io/inject: enabled
+  service:
+    annotations:
+    linkerd.io/inject: enabled
 
 elastic_manager:
   enabled: false
