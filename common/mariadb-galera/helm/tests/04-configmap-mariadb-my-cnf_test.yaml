@@ -8,10 +8,10 @@ release:
   name: testrelease
   namespace: testnamespace
 templates:
-  - configmap-mariadb-my-cnf.yaml
+  - configmap-mariadb-my.cnf.yaml
 tests:
-  - it: default mariadb entrypoint script
-    template: configmap-mariadb.yaml
+  - it: default mariadb my-cnf configmap
+    template: configmap-mariadb-my.cnf.yaml
     documentIndex: 0
     set:
       mariadb.galera.clustername: "testname"
@@ -23,8 +23,83 @@ tests:
           value: testnamespace
       - equal:
           path: metadata.name
-          value: testrelease-mariadb-entrypoint-sh
-      - equal:
-          path: metadata.labels.app
-          value: testrelease
-
+          value: testrelease-mariadb-my-cnf
+      - exists:
+          path: data["my.cnf.testrelease-mariadb-g-0.tpl"]
+      - exists:
+          path: data["my.cnf.testrelease-mariadb-g-1.tpl"]
+      - exists:
+          path: data["my.cnf.testrelease-mariadb-g-2.tpl"]
+      - matchRegex:
+          path: data["my.cnf.testrelease-mariadb-g-0.tpl"]
+          pattern: "performance_schema=OFF"
+      - notMatchRegex:
+          path: data["my.cnf.testrelease-mariadb-g-0.tpl"]
+          pattern: |
+            performance_schema=ON
+            performance-schema-instrument='stage/%=ON'
+            performance-schema-consumer-events-stages-current=ON
+            performance-schema-consumer-events-stages-history=ON
+            performance-schema-consumer-events-stages-history-long=ON"
+      - matchRegex:
+          path: data["my.cnf.testrelease-mariadb-g-0.tpl"]
+          pattern: |
+            performance_schema=OFF
+            skip-name-resolve=1
+            max_connect_errors=4294967295 #to avoid failed connections because of loadbalancer health checks https://mariadb.com/kb/en/server-system-variables/#max_connect_errors
+            log_warnings=1
+      - matchRegex:
+          path: data["my.cnf.testrelease-mariadb-g-0.tpl"]
+          pattern: |
+            wsrep-provider=/usr/lib/libgalera_smm.so
+            plugin_load_add = wsrep_info #https://mariadb.com/kb/en/wsrep_info-plugin/
+            binlog_format=ROW
+            max_binlog_size=104857600
+      - matchRegex:
+          path: data["my.cnf.testrelease-mariadb-g-0.tpl"]
+          pattern: "log-bin=/opt/\\$\\{SOFTWARE_NAME\\}/log/testname_binlog"
+      - matchRegex:
+          path: data["my.cnf.testrelease-mariadb-g-0.tpl"]
+          pattern: |
+            expire_logs_days=1
+            sync_binlog=1
+            default_storage_engine=InnoDB
+            innodb_autoinc_lock_mode=2
+            innodb_flush_log_at_trx_commit=1
+            gtid-strict-mode=0
+            wsrep_gtid_mode=on
+            wsrep_gtid_domain_id=10815
+            gtid_domain_id=10816
+            expire_logs_days=1
+            wsrep-cluster-name="testname"
+            wsrep_cluster_address=gcomm://testrelease-mariadb-g-0.testnamespace:4567,testrelease-mariadb-g-1.testnamespace:4567,testrelease-mariadb-g-2.testnamespace:4567,testrelease-mariadb-g-backend.testnamespace:4567
+      - matchRegex:
+          path: data["my.cnf.testrelease-mariadb-g-0.tpl"]
+          pattern: "wsrep_provider_options=cert.log_conflicts=ON;debug=NO;gcache.recover=no;ist.recv_addr=\\$\\{CONTAINER_IP\\}:0;pc.recovery=FALSE;pc.wait_prim_timeout=PT60S;pc.weight=\\$\\{PC_WEIGHT_0\\}"
+      - matchRegex:
+          path: data["my.cnf.testrelease-mariadb-g-0.tpl"]
+          pattern: "wsrep_node_address=\\$\\{CONTAINER_IP\\}"
+      - matchRegex:
+          path: data["my.cnf.testrelease-mariadb-g-0.tpl"]
+          pattern: |
+            wsrep_node_name=testrelease-mariadb-g-0
+            wsrep-on=1
+            wsrep_log_conflicts=ON
+            wsrep_slave_threads=16
+            wsrep_auto_increment_control=0
+            auto_increment_increment=3
+            auto_increment_offset=1
+      - matchRegex:
+          path: data["my.cnf.testrelease-mariadb-g-0.tpl"]
+          pattern: "relay_log=/opt/\\$\\{SOFTWARE_NAME\\}/log/testname_relaylog"
+      - matchRegex:
+          path: data["my.cnf.testrelease-mariadb-g-0.tpl"]
+          pattern: |
+            server_id=1
+            log_slave_updates=on
+            wsrep_restart_slave=off
+            report-host=testrelease-mariadb-g-0
+            slave-parallel-threads=1
+      - matchRegex:
+          path: data["my.cnf.testrelease-mariadb-g-0.tpl"]
+          pattern: "binlog-commit-wait-count=0"
