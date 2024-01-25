@@ -24,16 +24,6 @@ data.path = "./cerebro.db"
 
 # A list of known hosts
 hosts = [
-{{- if eq .Values.global.region "qa-de-3" }}
-  {
-    host = "http://elasticsearch.hermes:9200"
-    name = "single node elasticsearch hermes"
-  }
-{{- end }}
-  {
-    host = "http://elasticsearch-hermes-http.hermes:9200"
-    name = "elasticsearch-hermes cluster"
-  }
   {
     host = "https://opensearch-hermes.hermes.svc.kubernetes.{{ .Values.global.region }}.{{ .Values.global.tld }}:9200"
     name = "OpenSearch Hermes cluster"
