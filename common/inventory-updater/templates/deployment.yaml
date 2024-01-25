@@ -1,4 +1,3 @@
-{{- if .Values.updater.enabled }}
 kind: Deployment
 apiVersion: apps/v1
 metadata:
@@ -22,8 +21,37 @@ spec:
         rollme: {{ required ".Values.updater.image.tag missing" .Values.updater.image.tag | quote }}
 
     spec:
+      volumes:
+        - name: updater-config
+          configMap:
+            name: {{ include "fullname" . }}
+
       containers:
+{{- if .Values.updater.enabled }}
       - name: {{ include "fullname" . }}
+
+        image: {{ required ".Values.global.registry missing" .Values.global.registry }}/{{ required ".Values.updater.image.name missing" .Values.updater.image.name }}:{{ required ".Values.updater.image.tag missing" .Values.updater.image.tag  }}
+
+        command:
+          - /usr/bin/python3
+
+        args:
+          - main.py
+          - -c
+          - /{{ include "fullname" . }}/config/config.yaml
+
+        volumeMounts:
+          - name: updater-config
+            mountPath: /{{ include "fullname" . }}/config
+            readOnly: true
+
+        resources:
+{{ toYaml .Values.resources | indent 10 }}
+
+{{ end -}}
+
+{{- if .Values.updater.api.enabled }}
+      - name: {{ include "fullname" . }}-api
 
         image: {{ required ".Values.global.registry missing" .Values.global.registry }}/{{ required ".Values.updater.image.name missing" .Values.updater.image.name }}:{{ required ".Values.updater.image.tag missing" .Values.updater.image.tag  }}
 
@@ -44,35 +72,8 @@ spec:
         resources:
 {{ toYaml .Values.resources | indent 10 }}
 
-{{- if .Values.updater.api.enabled }}
-      - name: {{ include "fullname" . }}-api
-
-        image: {{ required ".Values.global.registry missing" .Values.global.registry }}/{{ required ".Values.updater.image.name missing" .Values.updater.image.name }}:{{ required ".Values.updater.image.tag missing" .Values.updater.image.tag  }}
-
-        command:
-          - /usr/bin/python3
-
-        args:
-          - main.py
-          - -c
-          - /{{ include "fullname" . }}/config/config.yaml
-
-        volumeMounts:
-          - name: updater-config
-            mountPath: /{{ include "fullname" . }}/config
-            readOnly: true
-
-        resources:
-{{ toYaml .Values.resources | indent 10 }}
-
         ports:
           - name: api
             containerPort: {{ required ".Values.updater.api.port missing" .Values.updater.api.port }}
             protocol: TCP
-{{ end -}}
-
-      volumes:
-        - name: updater-config
-          configMap:
-            name: {{ include "fullname" . }}
 {{ end -}}
