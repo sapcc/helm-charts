@@ -41,7 +41,10 @@ if [[ ! -e /usr/lib/postgresql/$PGVERSION ]]; then
   exit 1
 fi
 
+# this script is run with USER root the first time; here we do some things that require root,
+# afterwards we re-exec this script with USER postgres and run the rest
 if [[ $(id -u) == 0 ]]; then
+  # check that volume is mounted at the correct location
   for _ in /var/lib/postgresql/*; do
     echo "/var/lib/postgresql must be empty otherwise data is being deleted! Mount your PVC at /data"
     exit 1
@@ -74,7 +77,7 @@ if [[ $(id -u) == 0 ]]; then
   touch /postgres-password
   chown postgres:postgres /postgres-password
 
-  exec gosu postgres "$0"
+  exec gosu postgres "$0" "$@"
 fi
 
 export PATH="$PGBIN:$PATH"
