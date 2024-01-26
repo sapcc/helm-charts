@@ -4,10 +4,13 @@ metadata:
   name: maintenance-controller
   namespace: kube-system
 data: 
-  maintenance.yaml: {{ tpl ( required "A maintenance configuration is required" .Values.config ) . | b64enc }}
+  maintenance.yaml: |
+{{ tpl ( required "A maintenance configuration is required" .Values.config ) . | indent 4 }}
   {{- if .Values.esx.enabled }}
-  esx.yaml: {{ required "A esx maintenance configuration is required" .Values.esx.config | b64enc }}
+  esx.yaml: |
+{{ required "A esx maintenance configuration is required" .Values.esx.config | indent 4 }}
   {{- end }}
   {{- if .Values.kubernikus.enabled }}
-  kubernikus.yaml: {{ required "A kubernikus configuration is required" .Values.kubernikus.config | b64enc }}
+  kubernikus.yaml: |
+{{ required "A kubernikus configuration is required" .Values.kubernikus.config | indent 4 }}
   {{- end }}
