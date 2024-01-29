@@ -55,4 +55,9 @@ maillog:
     allowedHeaders:
 {{- .Values.cors.allowedHeaders | toYaml | nindent 6 }}
 {{- end }}
+{{- if .Values.autoTagging }}
+  autoTagging:
+    enabled: {{ .Values.autoTagging.enabled }}
+    delayedAfter: {{ .Values.autoTagging.delayedAfter | default "24h" }}
+{{- end }}
 {{- end -}}
