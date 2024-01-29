@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.22.3 - 2024/01/29
+* packages timestamp updated to `20240129111302`
+* chart version bumped
+
 ## v0.22.1 - 2023/11/17
 * fixes from 0.20.4 added
   * Ubuntu packages timestamp `20231117111140`
