@@ -16,6 +16,8 @@ spec:
         app: secrets-injector
       annotations:
         checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        prometheus.io/scrape: "true"
+        prometheus.io/targets: kubernetes
     spec:
       serviceAccountName: secrets-injector
       containers:
@@ -45,6 +47,11 @@ spec:
         - name: config
           mountPath: "/config"
           readOnly: true
+        ports:
+        - name: metrics
+          containerPort: 8080
+        - name: webhook
+          containerPort: 9443
       volumes:
         - name: certificate
           secret:
