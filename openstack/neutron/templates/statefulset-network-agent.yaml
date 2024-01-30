@@ -154,8 +154,6 @@ spec:
             - name: logvol
               mountPath: /dev/log
               readOnly: false
-            - name: network-namespace
-              mountPath: /var/run/netns
             {{- include "utils.trust_bundle.volume_mount" $ | indent 12 }}
 {{- if $.Values.agent.neutron_l3 | default false }}
         - name: neutron-l3-agent
@@ -278,15 +276,11 @@ spec:
               mountPath: /etc/sudoers
               subPath: sudoers
               readOnly: true
-            - name: network-namespace
-              mountPath: /var/run/netns
             {{- include "utils.trust_bundle.volume_mount" $ | indent 12 }}
       volumes:
         - name: metadata-proxy
           hostPath:
             path: /run/metadata-proxy
-        - name: network-namespace
-          emptyDir: {}
         - name : modules
           hostPath:
             path: /lib/modules
