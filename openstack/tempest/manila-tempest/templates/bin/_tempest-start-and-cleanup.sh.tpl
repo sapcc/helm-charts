@@ -12,6 +12,7 @@ function cleanup_tempest_leftovers() {
   alt_share_network_id={{ (index .Values (print .Chart.Name | replace "-" "_")).tempest.alt_share_network_id }}
   admin_share_network_id={{ (index .Values (print .Chart.Name | replace "-" "_")).tempest.admin_share_network_id }}
   pre_created_share_networks=("$share_network_id" "$alt_share_network_id" "$admin_share_network_id")
+  alias manila='manila --service-type share-antelopev2'
 
   for i in $(seq 1 2); do
       export OS_USERNAME=manila-tempestuser${i}
