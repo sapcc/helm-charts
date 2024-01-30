@@ -129,8 +129,6 @@ spec:
               mountPath: /etc/sudoers
               subPath: sudoers
               readOnly: true
-            - name: network-namespace
-              mountPath: /var/run/netns
             {{- include "utils.trust_bundle.volume_mount" $ | indent 12 }}
         - name: neutron-linuxbridge-agent
           image: {{$.Values.global.registry}}/loci-neutron:{{$.Values.imageVersionNetworkAgentLinuxBridge | default $.Values.imageVersionNetworkAgent | default $.Values.imageVersion | required "Please set neutron.imageVersionNetworkAgentLinuxBridge or similar"}}
@@ -176,8 +174,6 @@ spec:
               mountPath: /etc/sudoers
               subPath: sudoers
               readOnly: true
-            - name: network-namespace
-              mountPath: /var/run/netns
             {{- include "utils.trust_bundle.volume_mount" $ | indent 12 }}
         - name: neutron-metadata-agent
           image: {{$.Values.global.registry}}/loci-neutron:{{$.Values.imageVersionNetworkAgentMetadata | default $.Values.imageVersionNetworkAgent | default $.Values.imageVersion | required "Please set neutron.imageVersionNetworkAgentMetadata or similar"}}
@@ -205,8 +201,6 @@ spec:
             {{- include "utils.trust_bundle.volume_mount" $ | indent 12 }}
       volumes:
         - name: metadata-proxy
-          emptyDir: {}
-        - name: network-namespace
           emptyDir: {}
         - name: modules
           hostPath:
