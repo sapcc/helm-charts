@@ -68,16 +68,6 @@ function fetchcurrentseqno {
   echo ${SEQNOARRAY[1]}
 }
 
-function checkdblogon {
-  mysql --protocol=socket --user=root --database=mysql --wait --connect-timeout=${WAIT_SECONDS} --reconnect --execute="STATUS;" | grep 'Server version:' | grep --silent "${SOFTWARE_VERSION}"
-  if [ $? -eq 0 ]; then
-    echo 'MariaDB MySQL API usable'
-  else
-    echo 'MariaDB MySQL API not usable'
-    exit 1
-  fi
-}
-
 function checkdbk8sservicelogon {
   local ONLY_RETURN_STATUS=${1-false}
 

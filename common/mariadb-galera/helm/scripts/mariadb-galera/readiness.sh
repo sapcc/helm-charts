@@ -5,6 +5,22 @@ set -o pipefail
 
 source /opt/${SOFTWARE_NAME}/bin/common-functions.sh
 
+function checkdblogon {
+  mysql --protocol=socket --user=root --database=mysql --wait --connect-timeout={{ $.Values.readinessProbe.timeoutSeconds.database }} --reconnect --execute="STATUS;" | grep 'Server version:' | grep --silent "${SOFTWARE_VERSION}"
+  if [ $? -eq 0 ]; then
+    mysql --protocol=socket --user=root --batch --connect-timeout={{ $.Values.readinessProbe.timeoutSeconds.database }} --execute="SHOW DATABASES;" | grep --silent 'mysql'
+    if [ $? -eq 0 ]; then
+      echo 'MariaDB MySQL API usable'
+    else
+      echo 'MariaDB MySQL API not usable'
+      exit 1
+    fi
+  else
+    echo 'MariaDB MySQL API not usable'
+    exit 1
+  fi
+}
+
 function checkgaleraclusterstatus {
   mysql --protocol=socket --user=root --database=mysql --connect-timeout={{ $.Values.readinessProbe.timeoutSeconds.database }} --execute="SHOW GLOBAL STATUS LIKE 'wsrep_cluster_status';" --batch --skip-column-names | grep --silent 'Primary'
   if [ $? -eq 0 ]; then

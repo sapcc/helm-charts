@@ -42,7 +42,7 @@ Docker images and Helm chart to deploy a [MariaDB](https://mariadb.com/kb/en/get
 ## Metadata
 | chart version | app version | type | url |
 |:--------------|:-------------|:-------------|:-------------|
-| 0.22.3 | 10.5.22 | application | [Git repo](https://github.com/sapcc/helm-charts/tree/mariadb-galera/common/mariadb-galera) |
+| 0.23.0 | 10.5.22 | application | [Git repo](https://github.com/sapcc/helm-charts/tree/mariadb-galera/common/mariadb-galera) |
 
 | Name | Email | Url |
 | ---- | ------ | --- |
@@ -152,7 +152,7 @@ docker build --build-arg BASE_SOFT_NAME=ubuntu --build-arg BASE_SOFT_VERSION=22.
   ```
 * [push](https://helm.sh/docs/topics/registries/#the-push-subcommand) the chart to the registry
   ```shell
-  helm push mariadb-galera-0.22.3.tgz oci://keppel.eu-de-1.cloud.sap/ccloud-helm/
+  helm push mariadb-galera-0.23.0.tgz oci://keppel.eu-de-1.cloud.sap/ccloud-helm/
   ```
 
 ### values description
@@ -253,8 +253,8 @@ docker build --build-arg BASE_SOFT_NAME=ubuntu --build-arg BASE_SOFT_VERSION=22.
 | hpa.proxy.maxReplicas | int | 5 | maximum number of replicas allowed for the ProxySQL cluster pods |
 | hpa.proxy.minReplicas | int | 3 | minimum number of replicas allowed for the ProxySQL cluster pods |
 | image.database.databasename | string | `"mariadb-galera"` | folder/container used in the image registry and also part of the image name |
-| image.database.databaseversion | string | `"10.5.22"` | database part of the image version that should be pulled |
-| image.database.imageversion | int | `20240129111302` | image part of the image version that should be pulled |
+| image.database.databaseversion | string | `"10.5.23"` | database part of the image version that should be pulled |
+| image.database.imageversion | int | `20240130112825` | image part of the image version that should be pulled |
 | image.database.project | string | `"ccloud"` | project/tenant used in the image registry |
 | image.database.pullPolicy | string | IfNotPresent | `Always` to enforce that the image will be pulled even if it is already available on the worker node |
 | image.database.pullSecret | string | `nil` | name of the defined Kubernetes secret defined in `image.pullSecrets` that should be used for container registry authentication |
@@ -267,28 +267,28 @@ docker build --build-arg BASE_SOFT_NAME=ubuntu --build-arg BASE_SOFT_VERSION=22.
 | image.haproxy.registry | string | `"keppel.eu-de-1.cloud.sap"` | hostname of the image registry used to pull the proxy image that contains the Restic backup software |
 | image.kopiabackup.databasename | string | `"mariadb-galera-kopia"` | folder/container used in the image registry and also part of the image name |
 | image.kopiabackup.databaseversion | string | `"0.12.1"` | database part of the image version that should be pulled |
-| image.kopiabackup.imageversion | int | `20240129111302` | image part of the image version that should be pulled |
+| image.kopiabackup.imageversion | int | `20240130112825` | image part of the image version that should be pulled |
 | image.kopiabackup.project | string | `"ccloud"` | project/tenant used in the image registry |
 | image.kopiabackup.pullPolicy | string | IfNotPresent | `Always` to enforce that the image will be pulled even if it is already available on the worker node |
 | image.kopiabackup.pullSecret | string | `nil` | name of the defined Kubernetes secret defined in `image.pullSecrets` that should be used for container registry authentication |
 | image.kopiabackup.registry | string | `"keppel.eu-de-1.cloud.sap"` | hostname of the image registry used to pull the proxy image that contains the Kopia backup software |
 | image.monitoring.databasename | string | `"mariadb-galera-mysqld_exporter"` | folder/container used in the image registry and also part of the image name |
 | image.monitoring.databaseversion | string | `"0.14.0"` | database part of the image version that should be pulled |
-| image.monitoring.imageversion | int | `20240129111302` | image part of the image version that should be pulled |
+| image.monitoring.imageversion | int | `20240130112825` | image part of the image version that should be pulled |
 | image.monitoring.project | string | `"ccloud"` | project/tenant used in the image registry |
 | image.monitoring.pullPolicy | string | IfNotPresent | `Always` to enforce that the image will be pulled even if it is already available on the worker node |
 | image.monitoring.pullSecret | string | `nil` | name of the defined Kubernetes secret defined in `image.pullSecrets` that should be used for container registry authentication |
 | image.monitoring.registry | string | `"keppel.eu-de-1.cloud.sap"` | hostname of the image registry used to pull the monitoring image that currently contains the MySQL exporter for Prometheus |
 | image.os.databasename | string | `"mariadb-galera-ubuntu"` | folder/container used in the image registry and also part of the image name |
 | image.os.databaseversion | float | `22.04` | database part of the image version that should be pulled |
-| image.os.imageversion | int | `20240129111302` | image part of the image version that should be pulled |
+| image.os.imageversion | int | `20240130112825` | image part of the image version that should be pulled |
 | image.os.project | string | `"ccloud"` | project/tenant used in the image registry |
 | image.os.pullPolicy | string | IfNotPresent | `Always` to enforce that the image will be pulled even if it is already available on the worker node |
 | image.os.pullSecret | string | `nil` | name of the defined Kubernetes secret defined in `image.pullSecrets` that should be used for container registry authentication |
 | image.os.registry | string | `"keppel.eu-de-1.cloud.sap"` | hostname of the image registry used to pull the basic OS image that will be used for certain init steps |
 | image.proxy.databasename | string | `"mariadb-galera-proxysql"` | folder/container used in the image registry and also part of the image name |
 | image.proxy.databaseversion | string | `"2.5.5"` | database part of the image version that should be pulled |
-| image.proxy.imageversion | int | `20240129111302` | image part of the image version that should be pulled |
+| image.proxy.imageversion | int | `20240130112825` | image part of the image version that should be pulled |
 | image.proxy.project | string | `"ccloud"` | project/tenant used in the image registry |
 | image.proxy.pullPolicy | string | IfNotPresent | `Always` to enforce that the image will be pulled even if it is already available on the worker node |
 | image.proxy.pullSecret | string | `nil` | name of the defined Kubernetes secret defined in `image.pullSecrets` that should be used for container registry authentication |
@@ -376,7 +376,7 @@ docker build --build-arg BASE_SOFT_NAME=ubuntu --build-arg BASE_SOFT_VERSION=22.
 | mariadb.galera.clustername | string | `nil` | Name of the MariaDB Galera cluster defined with the [wsrep_cluster_name](https://mariadb.com/kb/en/galera-cluster-system-variables/#wsrep_cluster_name) option. It can also be used as the prefix for all generated objects to avoid name collisions by enabling the `namePrefix.includeClusterName` option |
 | mariadb.galera.debug | bool | false | [Galera debug](https://galeracluster.com/library/documentation/galera-parameters.html#debug) |
 | mariadb.galera.gcache.recover | bool | false | `false` until [PR#624](https://github.com/codership/galera/issues/624) is fixed |
-| mariadb.galera.gtidDomainId | int | 1 | must be a positive integer [wsrep_gtid_domain_id](https://mariadb.com/kb/en/galera-cluster-system-variables/#wsrep_gtid_domain_id) |
+| mariadb.galera.gtidDomainId | int | 10817 | must be a positive integer [wsrep_gtid_domain_id](https://mariadb.com/kb/en/galera-cluster-system-variables/#wsrep_gtid_domain_id) do not set it to `1` if you want to avoid server id collisions during [asynchronous replication](#asynchronous-replication-config) |
 | mariadb.galera.gtidDomainIdCount | int | 1 | how many Galera cluster instances will be connected. Used for [asynchronous replication](#asynchronous-replication-config) setups. Maximum of `2` is supported |
 | mariadb.galera.gtidStrictMode | bool | false | enable [gtid_strict_mode](https://mariadb.com/kb/en/gtid/#gtid_strict_mode) |
 | mariadb.galera.logLevel | string | info | [wsrep_debug](https://mariadb.com/kb/en/galera-cluster-system-variables/#wsrep_debug) |
@@ -401,6 +401,8 @@ docker build --build-arg BASE_SOFT_NAME=ubuntu --build-arg BASE_SOFT_VERSION=22.
 | mariadb.job.config.ttlSecondsAfterFinished | int | 120 | After how many seconds will a stopped MariaDB config job be [deleted from the Kubernetes cluster](https://kubernetes.io/docs/concepts/workloads/controllers/job/#clean-up-finished-jobs-automatically) |
 | mariadb.job.linkerd.enabled | bool | false | enable the [annotation](https://linkerd.io/2.14/tasks/adding-your-service/#meshing-a-service-with-annotations) for linkerd to inject the sidecar container for transport encryption |
 | mariadb.linkerd.enabled | bool | false | enable the [annotation](https://linkerd.io/2.14/tasks/adding-your-service/#meshing-a-service-with-annotations) for linkerd to inject the sidecar container for transport encryption |
+| mariadb.migration.enabled | bool | `false` | if enabled the `mariadb` service will be renamed to `mariadb-replica` and the async replication from the `mariadb` service will be configured Another `mariadb` service (from another subchart) must be available in the same namespace as a source for the async replication |
+| mariadb.migration.stage | string | `"replica"` |  |
 | mariadb.performance_schema | bool | false | to enable the [Performance Schema](https://mariadb.com/kb/en/performance-schema-overview/) |
 | mariadb.roles.contentfullaccess.enabled | bool | `false` | enable this role |
 | mariadb.roles.contentfullaccess.grant | bool | `false` | allow to grant the [privileges](https://mariadb.com/kb/en/grant/#the-grant-option-privilege) to other users |

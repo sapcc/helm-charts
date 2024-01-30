@@ -5,8 +5,8 @@ set -o pipefail
 
 source /opt/${SOFTWARE_NAME}/bin/common-functions.sh
 
-function checkdblogon {
-  mysql --protocol=socket --user=root --batch --connect-timeout={{ $.Values.livenessProbe.timeoutSeconds.database }} --execute="SHOW DATABASES;" | grep --silent 'mysql'
+function checkdbconnection {
+  echo ''| socat TCP4-connect:${CONTAINER_IP}:${MYSQL_PORT} stdio | grep --binary-files=text MariaDB | grep --binary-files=text --silent "${SOFTWARE_VERSION}"
   if [ $? -eq 0 ]; then
     echo 'MariaDB MySQL API reachable'
   else
@@ -25,6 +25,6 @@ function checkgaleraport {
   fi
 }
 
-checkdblogon
 checkgaleraport
+checkdbconnection
 setconfigmap "running" "true" "Update"

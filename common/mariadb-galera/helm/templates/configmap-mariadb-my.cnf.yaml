@@ -20,12 +20,7 @@
 {{- $_ := set $wsrepProviderOptions "pc.wait_prim_timeout" (printf "pc.wait_prim_timeout=PT%dS" ($.Values.mariadb.galera.waitForPrimaryTimeoutInSeconds | default 30 | int)) }}
 {{- if hasKey $.Values.mariadb.galera "gtidDomainIdCount" }}
   {{- if or (lt ($.Values.mariadb.galera.gtidDomainIdCount | int) 1) (gt ($.Values.mariadb.galera.gtidDomainIdCount | int) 2) }}
-  fail "mariadb.galera.gtidDomainIdCount has to be 1 or 2"
-  {{- end }}
-{{- end }}
-{{- if hasKey $.Values.mariadb.galera "gtidDomainId" }}
-  {{- if or (lt ($.Values.mariadb.galera.gtidDomainId | int) 1) (gt ($.Values.mariadb.galera.gtidDomainId | int) 2) }}
-  fail "mariadb.galera.gtidDomainId has to be 1 or 2"
+    {{- fail "mariadb.galera.gtidDomainIdCount has to be 1 or 2" }}
   {{- end }}
 {{- end }}
 ---
@@ -123,7 +118,7 @@ data:
     # async replication with MariaDB instances outside of the Galera cluster
     relay_log=/opt/${SOFTWARE_NAME}/{{ $.Values.mariadb.binLogDir | default "data" }}/{{ (required "mariadb.galera.clustername is required to configure the relay_log option for MariaDB" $.Values.mariadb.galera.clustername) }}_relaylog
     {{- /* https://mariadb.com/kb/en/using-mariadb-replication-with-mariadb-galera-cluster-using-mariadb-replica/#setting-the-same-server_id-on-each-cluster-node */}}
-    server_id={{ $.Values.mariadb.galera.gtidDomainId | default 1 | int }}
+    server_id={{ (printf "%d%d%d%d%d" ($.Values.mariadb.galera.gtidDomainId | default 1 | int) 0 8 1 7) | int }}
     log_slave_updates=on
     {{- if and ($.Values.mariadb.asyncReplication.autostart) ($.Values.mariadb.asyncReplication.enabled) }}
     wsrep_restart_slave=on

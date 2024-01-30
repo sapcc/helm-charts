@@ -17,7 +17,11 @@ metadata:
   namespace: {{ .global.Release.Namespace }}
   {{- if eq .replica "notused" }}
     {{- if and (eq .type "frontend") (or (eq .component "database") (eq .component "proxysql") (eq .component "haproxy"))}}
+      {{- if .global.Values.mariadb.migration.enabled }}
+  name: {{ (printf "%s-%s" (include "commonPrefix" .global) "mariadb-replica") }}
+      {{- else }}
   name: {{ (printf "%s-%s" (include "commonPrefix" .global) "mariadb") }}
+      {{- end }}
     {{- else if and (eq .type "frontend") (eq .component "database-direct")}}
   name: {{ (printf "%s-%s-direct" (include "commonPrefix" .global) "mariadb") }}
     {{- else }}
