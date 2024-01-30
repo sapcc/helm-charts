@@ -1,4 +1,6 @@
 #!/usr/bin/env ash
+# shellcheck shell=ash
+# shellcheck disable=SC3010
 
 # This is the entrypoint script for the "generate-secrets" init container of the postgres pod.
 
