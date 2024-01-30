@@ -1,24 +1,10 @@
-#!/bin/bash
-netappsd_url=$1
-shift
-replica_hash=${HOSTNAME%-*}
-replica_hash=${replica_hash##*-}
-
-echo "fetch config from $netappsd_url/harvest.yml"
-filer=""
-lastcode=""
-while [ -z "$filer" ]; do
-  code=$(wget --post-data "{\"hash\": \"$replica_hash\"}" --header "content-type: application/json" --server-response -O harvest.yml $netappsd_url/next/harvest.yaml 2>&1 | grep "HTTP/" | awk '{print $2}')
-  if [ "$code" -eq "200" ]; then
-    filer=$(grep 'stnpca.*:' harvest.yml | cut -d: -f1 | awk '{print $1}')
-    break
-  else
-    if [ "$code" != "$lastcode" ]; then
-      echo "failed to fetch harvest.yml: $code"
-      lastcode=$code
-    fi
-  fi
-  sleep 30
+#!/bin/sh
+until [ $(find /opt/harvest/shared -name '*.yaml' | wc -l) -gt 0 ]; do
+    echo "Waiting for config file to be generated"
+    sleep 5
 done
-echo "start harvest poller $filer on port $1"
-exec bin/poller --poller $filer --promPort $1 --loglevel {{ .Values.harvest.loglevel }}
+
+# Find the config file in ./shared and run poller in it.
+#
+# The config file is generated in ./shared by netappsd-worker, and the file name is the same as the poller name.
+exec find /opt/harvest/shared -name '*.yaml' -exec sh -c 'foo=$1; /opt/harvest/bin/poller --config $foo -p $(basename $foo .yaml)' _ {} \;

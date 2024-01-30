@@ -1,34 +1,29 @@
-{{- range $app, $appValues := .Values.apps }}
+{{- range $appName, $appValues := .Values.apps }}
+{{- if $appValues.enabled }}
 {{- with $ }}
-{{- $ := set $ "appValues" (set $appValues "name" $app) }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "netapp-harvest.fullname" . }}-{{ .appValues.name }}
-  labels:
-    {{- include "netapp-harvest.labels" . | nindent 4 }}
+  name: {{ include "netapp-harvest.fullname" . }}-{{ $appName }}-worker
 spec:
-  replicas: {{ .appValues.workerCount }}
+  replicas: 1
   selector:
     matchLabels:
-      {{- include "netapp-harvest.selectorLabels" . | nindent 6 }}
+      name: "{{ include "netapp-harvest.fullname" . }}-{{ $appName }}-worker"
   template:
     metadata:
       annotations:
         configmap-hash: {{ include (print $.Template.BasePath "/configmap.yaml") . | replace .Chart.Version "0.1.5" | sha256sum }}
-        {{- include "prom-scrape-annotations" . | nindent 8 }}
+        prometheus.io/scrape: "true"
+        prometheus.io/targets: storage
       labels:
-        {{- include "netapp-harvest.selectorLabels" . | nindent 8 }}
+        name: "{{ include "netapp-harvest.fullname" . }}-{{ $appName }}-worker"
     spec:
       containers:
-        - name: harvest-poller
+        - name: poller
           image: {{ .Values.global.dockerHubMirror }}/{{ .Values.harvest.image.repository }}:{{ .Values.harvest.image.tag }}
           imagePullPolicy: {{ .Values.harvest.image.pullPolicy | default "IfNotPresent" }}
-          command: ["sh"]
-          args: 
-            - start-poller.sh
-            - {{ include "netapp-harvest.fullname" . }}-{{ .appValues.name }}-sd.{{ .Release.Namespace }}.svc:8000
-            - "13000"
+          command: ["sh", "start-poller.sh"]
           ports:
             - name: metrics
               containerPort: 13000
@@ -39,69 +34,28 @@ spec:
               subPath: start-poller.sh
               mountPath: /opt/harvest/start-poller.sh
             - name: harvest-config
-              subPath: zapi.limited.yaml
-              mountPath: /opt/harvest/conf/zapi/limited.yaml
-            - name: harvest-config
-              subPath: zapiperf.limited.yaml
-              mountPath: /opt/harvest/conf/zapiperf/limited.yaml
-            - name: harvest-config
               subPath: rest.limited.yaml
               mountPath: /opt/harvest/conf/rest/limited.yaml
             - name: harvest-config
-              subPath: restperf.limited.yaml
+              subPath: rest.custom_volume.yaml
+              mountPath: /opt/harvest/conf/rest/9.12.0/custom_volume.yaml
+            - name: harvest-config 
               mountPath: /opt/harvest/conf/restperf/limited.yaml
-      volumes:
-        - name: harvest-config
-          configMap:
-            name: {{ include "netapp-harvest.fullname" . }}
----
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name:  {{ include "netapp-harvest.fullname" . }}-{{ .appValues.name }}-sd
-  labels:
-    {{- include "netappsd.labels" . | nindent 4 }}
-spec:
-  selector:
-    matchLabels:
-      {{- include "netappsd.selectorLabels" . | nindent 6 }}
-  replicas: 1
-  template:
-    metadata:
-      annotations:
-        configmap-hash: {{ include (print $.Template.BasePath "/configmap.yaml") . | replace .Chart.Version "0.1.5" | sha256sum }}
-        {{- include "prom-scrape-annotations" . | nindent 8 }}
-      labels:
-        {{- include "netappsd.selectorLabels" . | nindent 8 }}
-    spec:
-      containers:
-        - name:  netappsd
+              subPath: restperf.limited.yaml
+            - name: shared
+              mountPath: /opt/harvest/shared
+        - name: netappsd-worker
           image: {{ .Values.global.registry }}/{{ .Values.netappsd.image.repository }}:{{ .Values.netappsd.image.tag }}
           imagePullPolicy: {{ .Values.netappsd.image.pullPolicy | default "IfNotPresent" }}
+          command: ["/app/netappsd", "worker"]
           args:
-            - -region
-            - {{ .Values.global.region }}
-            - -query
-            - {{ .appValues.queryStr | default .appValues.name }}
-            - -config-dir
-            - /etc/harvest
-            - -log-level
-            - debug
-            - -netbox-host
-            {{- if eq .Values.global.region "qa-de-1" }}
-            - netbox-test.global.cloud.sap
-            {{- else }}
-            - netbox.global.cloud.sap
-            {{- end }}
+            - --master-url
+            - http://{{ include "netapp-harvest.fullname" . }}-{{ $appName }}-master.{{ .Release.Namespace }}.svc:8000
+            - --template-file
+            - /app/harvest.yaml.tpl
+            - --output-path
+            - /app/shared
           env:
-            - name: NETAPPSD_PROMETHEUS_OBSERVE_URL
-              value: http://prometheus-{{ .Values.global.prometheus }}.{{ .Release.Namespace }}.svc:9090
-            - name: NETAPPSD_PROMETHEUS_OBSERVE_QUERY
-              value: count by (poller, pod_template_hash) (netapp_metadata_target_status{app_kubernetes_io_instance=~'.*{{ .appValues.name }}'})
-            - name: NETAPPSD_PROMETHEUS_OBSERVE_LABEL
-              value: poller
-            - name: NETAPPSD_METRICS_PREFIX
-              value: netapp_harvest
             - name: NETAPP_USERNAME
               valueFrom:
                 secretKeyRef:
@@ -112,18 +66,87 @@ spec:
                 secretKeyRef:
                   name: {{ include "netapp-harvest.fullname" . }}
                   key: netappPassword
-          ports:
-            - containerPort: 8000
-              name: metrics
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+          resources:
+            {{- toYaml .Values.harvest.resources | nindent 12 }}
           volumeMounts:
-            - mountPath: /etc/harvest/harvest.yaml.tpl
-              name: harvest-config
+            - name: harvest-config
+              mountPath: /app/harvest.yaml.tpl
               subPath: harvest.yaml.tpl
+            - name: shared
+              mountPath: /app/shared
       volumes:
         - name: harvest-config
           configMap:
             name: {{ include "netapp-harvest.fullname" . }}
+        - name: shared
+          emptyDir: {}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name:  {{ include "netapp-harvest.fullname" . }}-{{ $appName }}-master
+spec:
+  selector:
+    matchLabels:
+      name: {{ include "netapp-harvest.fullname" . }}-{{ $appName }}-master
+  replicas: 1
+  template:
+    metadata:
+      annotations:
+        configmap-hash: {{ include (print $.Template.BasePath "/configmap.yaml") . | replace .Chart.Version "0.1.5" | sha256sum }}
+      labels:
+        name: {{ include "netapp-harvest.fullname" . }}-{{ $appName }}-master
+    spec:
+      containers:
+        - name:  netappsd
+          image: {{ .Values.global.registry }}/{{ .Values.netappsd.image.repository }}:{{ .Values.netappsd.image.tag }}
+          imagePullPolicy: {{ .Values.netappsd.image.pullPolicy | default "IfNotPresent" }}
+          command: ["/app/netappsd", "master"]
+          args:
+            - --region
+            - {{ .Values.global.region }}
+            - --tag
+            - {{ $appName }}
+            - --listen-addr
+            - 0.0.0.0:8000
+            - --worker
+            - {{ include "netapp-harvest.fullname" . }}-{{ $appName }}-worker
+          env:
+            - name: NETAPP_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "netapp-harvest.fullname" . }}
+                  key: netappUsername
+            - name: NETAPP_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "netapp-harvest.fullname" . }}
+                  key: netappPassword
+            - name: NETBOX_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "netapp-harvest.fullname" . }}
+                  key: netboxToken
+            - name: NETBOX_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "netapp-harvest.fullname" . }}
+                  key: netboxHost
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+          ports:
+            - containerPort: 8000
 ---
 {{- end }}
 {{- end }}
-{{- $ := unset $ "appValues" }}
+{{- end }}
