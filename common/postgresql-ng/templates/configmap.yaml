@@ -49,13 +49,10 @@ data:
     {{- /* update password in case it changed or the password hashing format changed */}}
     ALTER USER "{{ $user }}" WITH PASSWORD '%USER_PASSWORD_{{ $user | replace "-" "_" }}%';
 
+    {{- if not (eq $user "backup" "metrics") }}
     -- https://www.postgresql.org/docs/current/ddl-priv.html
-    {{- /* TODO: on Postgres 14+, only grant pg_read_all_data to backup and metrics user, and revoke the other more explicit privileges */}}
     GRANT CREATE,CONNECT,TEMPORARY ON DATABASE "%PGDATABASE%" TO "{{ $user }}";
     GRANT SELECT,INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER ON ALL TABLES IN SCHEMA public TO "{{ $user }}";
-    {{- /* TODO: do not grant the read_all_data role to all users, only to backup and metrics (this might be easier to do once the push to 14+ everywhere has been completed and we can get rid of the version conditionals) */}}
-    {{- if lt ($.Values.postgresVersion | int) 14 }}
-    GRANT poor_mans_pg_read_all_data to "{{ $user }}";
     {{- end }}
 
     {{- range $settings.grant }}
