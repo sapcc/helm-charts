@@ -50,10 +50,16 @@ thanos-{{- $name -}}.{{- required "$root.Values.global.region missing" $root.Val
 {{- define "thanos.externalGrpcURL" -}}
 {{- $name := index . 0 -}}
 {{- $root := index . 1 -}}
-{{- if and $root.Values.ingress.hosts $root.Values.ingress.hostsFQDN -}}
-{{- fail ".Values.ingress.hosts and .Values.ingress.hostsFQDN are mutually exclusive." -}}
+{{- $firstHost := first $root.Values.grpcIngress.hosts -}}
+{{- required ".Values.grpcIngress.hosts must have at least one hostname set" $firstHost -}}.{{- required ".Values.global.region missing" $root.Values.global.region -}}.{{- required ".Values.global.tld missing" $root.Values.global.tld -}}
 {{- end -}}
-thanos-{{- $name -}}-grpc.{{- required "$root.Values.global.region missing" $root.Values.global.region -}}.{{- required "$root.Values.global.tld missing" $root.Values.global.tld -}}
+
+{{/* External gRPC URL of this Thanos. */}}
+{{- define "thanos.externalInternalURL" -}}
+{{- $name := index . 0 -}}
+{{- $root := index . 1 -}}
+{{- $firstHost := first $root.Values.internalIngress.hosts -}}
+{{- required ".Values.internalIngress.hosts must have at least one hostname set" $firstHost -}}.{{- required ".Values.global.region missing" $root.Values.global.region -}}.{{- required ".Values.global.tld missing" $root.Values.global.tld -}}
 {{- end -}}
 
 {{- define "fqdnHelper" -}}
@@ -73,6 +79,16 @@ thanos-{{- $host -}}.{{- required ".Values.global.region missing" $root.Values.g
 thanos-{{- $host -}}-grpc.{{- required ".Values.global.region missing" $root.Values.global.region -}}.{{- required ".Values.global.tld missing" $root.Values.global.tld -}}
 {{- else -}}
 {{- $host -}}-grpc.{{- required ".Values.global.region missing" $root.Values.global.region -}}.{{- required ".Values.global.tld missing" $root.Values.global.tld -}}
+{{- end -}}
+{{- end -}}
+
+{{- define "internalFqdnHelper" -}}
+{{- $host := index . 0 -}}
+{{- $root := index . 1 -}}
+{{- if not $root.Values.internalIngress.hosts -}}
+thanos-{{- $host -}}-internal.{{- required ".Values.global.region missing" $root.Values.global.region -}}.{{- required ".Values.global.tld missing" $root.Values.global.tld -}}
+{{- else -}}
+{{- $host -}}-internal.{{- required ".Values.global.region missing" $root.Values.global.region -}}.{{- required ".Values.global.tld missing" $root.Values.global.tld -}}
 {{- end -}}
 {{- end -}}
 
