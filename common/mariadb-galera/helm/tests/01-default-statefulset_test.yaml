@@ -1,5 +1,5 @@
 
----
+
 checksums:
   my.cnf: &mycnf "25a9bd0d9df58ed9bb1b2b8d3a31d6bdd2a0f6b4d4e277da2c0feec2d64ccc42"
   configmap: &configmap "f8c17888b9c86327163a41eaf4b9b07672cbfacbfe4e7c0b6bc9b2430b142205"
@@ -310,7 +310,7 @@ tests:
           value: "sysctl-tcp-keepalive"
       - equal:
           path: spec.template.spec.initContainers[0].image
-          value: "keppel.eu-de-1.cloud.sap/ccloud/mariadb-galera-ubuntu:22.04-20240129111302"
+          value: "keppel.eu-de-1.cloud.sap/ccloud/mariadb-galera-ubuntu:22.04-20231117111140"
       - equal:
           path: spec.template.spec.initContainers[0].imagePullPolicy
           value: "IfNotPresent"
@@ -340,7 +340,7 @@ tests:
       image.os.databaseversion: "databaseversion"
       image.os.imageversion: "18122005"
       image.os.pullPolicy: "always"
-      #TODO
+      #TODO 
       initContainers.tcpKeepAlive.securityContext.privileged: false #the if condition is failing, if it set to false which means the vaule is always true.
       initContainers.tcpKeepAlive.securityContext.runAsUser: 555
     asserts:
@@ -379,7 +379,7 @@ tests:
           value: "increase-map-count"
       - equal:
           path: spec.template.spec.initContainers[1].image
-          value: "keppel.eu-de-1.cloud.sap/ccloud/mariadb-galera-ubuntu:22.04-20240129111302"
+          value: "keppel.eu-de-1.cloud.sap/ccloud/mariadb-galera-ubuntu:22.04-20231117111140"
       - equal:
           path: spec.template.spec.initContainers[1].imagePullPolicy
           value: "IfNotPresent"
@@ -409,7 +409,7 @@ tests:
       image.os.databaseversion: "databaseversion"
       image.os.imageversion: "18122005"
       image.os.pullPolicy: "always"
-      #TODO
+      #TODO 
       initContainers.increaseMapCount.securityContext.privileged: false #the if condition is failing, if it set to false which means the vaule is always true.
       initContainers.increaseMapCount.securityContext.runAsUser: 555
     asserts:
@@ -471,7 +471,7 @@ tests:
           value: "clean-os-cache"
       - equal:
           path: spec.template.spec.initContainers[2].image
-          value: "keppel.eu-de-1.cloud.sap/ccloud/mariadb-galera-ubuntu:22.04-20240129111302"
+          value: "keppel.eu-de-1.cloud.sap/ccloud/mariadb-galera-ubuntu:22.04-20231117111140"
       - equal:
           path: spec.template.spec.initContainers[2].imagePullPolicy
           value: "IfNotPresent"
@@ -502,7 +502,7 @@ tests:
       image.os.databaseversion: "databaseversion"
       image.os.imageversion: "18122005"
       image.os.pullPolicy: "always"
-      #TODO
+      #TODO 
       initContainers.cleanoscache.securityContext.privileged: false #the if condition is failing, if it set to false which means the vaule is always true.
       initContainers.cleanoscache.securityContext.runAsUser: 555
     asserts:
@@ -541,7 +541,7 @@ tests:
           value: "db"
       - equal:
           path: spec.template.spec.containers[0].image
-          value: "keppel.eu-de-1.cloud.sap/ccloud/mariadb-galera:10.5.22-20240129111302"
+          value: "keppel.eu-de-1.cloud.sap/ccloud/mariadb-galera:10.5.22-20231117111140"
       - equal:
           path: spec.template.spec.containers[0].imagePullPolicy
           value: "IfNotPresent"
@@ -853,6 +853,409 @@ tests:
       - equal:
           path: spec.template.spec.containers[0].env[12].value
           value: "testvar"
+
+  - it: set db container environment variables (consistent secret names) 5 nodes
+    template: statefulset-mariadb.yaml
+    set:
+      mariadb.galera.clustername: "testclustername"
+      services.database.frontend.ports.mysql.targetPort: 7777
+      services.database.backend.ports.galera.targetPort: 8888
+      mariadb.galera.weightedQuorum: true
+      mariadb.galera.pcrecovery: true
+      env.MARIADB_MONITORING_CONNECTION_LIMIT: null
+      volumeMounts.database.data.mountPath: "/opt/test/data"
+      volumeMounts.database.log.mountPath: "/opt/test/log"
+      mariadb.users.root.secretName: test-root
+      replicas.database: 5
+      env.MARIADB_ROOT_USERNAME:
+        secretName: test-root
+        secretKey: username
+        containerType:
+          - database
+      env.MARIADB_ROOT_PASSWORD:
+        secretName: test-root
+        secretKey: password
+        containerType:
+          - database
+      env.MARIADB_TEST_VARD:
+        value: "testvar"
+        containerType:
+          - database
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].env[0].name
+          value: "MYSQL_PORT"
+      - equal:
+          path: spec.template.spec.containers[0].env[0].value
+          value: "7777"
+      - equal:
+          path: spec.template.spec.containers[0].env[1].name
+          value: "GALERA_PORT"
+      - equal:
+          path: spec.template.spec.containers[0].env[1].value
+          value: "8888"
+      - equal:
+          path: spec.template.spec.containers[0].env[2].name
+          value: "PC_WEIGHT_0"
+      - equal:
+          path: spec.template.spec.containers[0].env[2].value
+          value: "16"
+      - equal:
+          path: spec.template.spec.containers[0].env[3].name
+          value: "PC_WEIGHT_1"
+      - equal:
+          path: spec.template.spec.containers[0].env[3].value
+          value: "8"
+      - equal:
+          path: spec.template.spec.containers[0].env[4].name
+          value: "PC_WEIGHT_2"
+      - equal:
+          path: spec.template.spec.containers[0].env[4].value
+          value: "4"
+      - equal:
+          path: spec.template.spec.containers[0].env[5].name
+          value: "PC_WEIGHT_3"
+      - equal:
+          path: spec.template.spec.containers[0].env[5].value
+          value: "2"
+      - equal:
+          path: spec.template.spec.containers[0].env[6].name
+          value: "PC_WEIGHT_4"
+      - equal:
+          path: spec.template.spec.containers[0].env[6].value
+          value: "1"
+      - equal:
+          path: spec.template.spec.containers[0].env[7].name
+          value: "PC_RECOVERY"
+      - equal:
+          path: spec.template.spec.containers[0].env[7].value
+          value: "true"
+      - equal:
+          path: spec.template.spec.containers[0].env[8].name
+          value: "MARIADB_CLUSTER_NAME"
+      - equal:
+          path: spec.template.spec.containers[0].env[8].value
+          value: "testclustername"
+      - equal:
+          path: spec.template.spec.containers[0].env[9].name
+          value: "MARIADB_MONITORING_CONNECTION_LIMIT"
+      - equal:
+          path: spec.template.spec.containers[0].env[9].value
+          value: 3
+      - equal:
+          path: spec.template.spec.containers[0].env[10].name
+          value: "MARIADB_DATADIR"
+      - equal:
+          path: spec.template.spec.containers[0].env[10].value
+          value: "/opt/test/data"
+      - equal:
+          path: spec.template.spec.containers[0].env[11].name
+          value: "MARIADB_LOGDIR"
+      - equal:
+          path: spec.template.spec.containers[0].env[11].value
+          value: "/opt/test/log"
+      - equal:
+          path: spec.template.spec.containers[0].env[12].name
+          value: "MARIADB_ROOT_PASSWORD"
+      - equal:
+          path: spec.template.spec.containers[0].env[12].valueFrom.secretKeyRef.name
+          value: "testrelease-test-root"
+      - equal:
+          path: spec.template.spec.containers[0].env[12].valueFrom.secretKeyRef.key
+          value: "password"
+      - equal:
+          path: spec.template.spec.containers[0].env[13].name
+          value: "MARIADB_ROOT_USERNAME"
+      - equal:
+          path: spec.template.spec.containers[0].env[13].valueFrom.secretKeyRef.name
+          value: "testrelease-test-root"
+      - equal:
+          path: spec.template.spec.containers[0].env[14].name
+          value: "MARIADB_TEST_VARD"
+      - equal:
+          path: spec.template.spec.containers[0].env[14].value
+          value: "testvar"
+
+  - it: set db container environment variables (consistent secret names) 7 nodes
+    template: statefulset-mariadb.yaml
+    set:
+      mariadb.galera.clustername: "testclustername"
+      services.database.frontend.ports.mysql.targetPort: 7777
+      services.database.backend.ports.galera.targetPort: 8888
+      mariadb.galera.weightedQuorum: true
+      mariadb.galera.pcrecovery: true
+      env.MARIADB_MONITORING_CONNECTION_LIMIT: null
+      volumeMounts.database.data.mountPath: "/opt/test/data"
+      volumeMounts.database.log.mountPath: "/opt/test/log"
+      mariadb.users.root.secretName: test-root
+      replicas.database: 7
+      env.MARIADB_ROOT_USERNAME:
+        secretName: test-root
+        secretKey: username
+        containerType:
+          - database
+      env.MARIADB_ROOT_PASSWORD:
+        secretName: test-root
+        secretKey: password
+        containerType:
+          - database
+      env.MARIADB_TEST_VARD:
+        value: "testvar"
+        containerType:
+          - database
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].env[0].name
+          value: "MYSQL_PORT"
+      - equal:
+          path: spec.template.spec.containers[0].env[0].value
+          value: "7777"
+      - equal:
+          path: spec.template.spec.containers[0].env[1].name
+          value: "GALERA_PORT"
+      - equal:
+          path: spec.template.spec.containers[0].env[1].value
+          value: "8888"
+      - equal:
+          path: spec.template.spec.containers[0].env[2].name
+          value: "PC_WEIGHT_0"
+      - equal:
+          path: spec.template.spec.containers[0].env[2].value
+          value: "64"
+      - equal:
+          path: spec.template.spec.containers[0].env[3].name
+          value: "PC_WEIGHT_1"
+      - equal:
+          path: spec.template.spec.containers[0].env[3].value
+          value: "32"
+      - equal:
+          path: spec.template.spec.containers[0].env[4].name
+          value: "PC_WEIGHT_2"
+      - equal:
+          path: spec.template.spec.containers[0].env[4].value
+          value: "16"
+      - equal:
+          path: spec.template.spec.containers[0].env[5].name
+          value: "PC_WEIGHT_3"
+      - equal:
+          path: spec.template.spec.containers[0].env[5].value
+          value: "8"
+      - equal:
+          path: spec.template.spec.containers[0].env[6].name
+          value: "PC_WEIGHT_4"
+      - equal:
+          path: spec.template.spec.containers[0].env[6].value
+          value: "4"
+      - equal:
+          path: spec.template.spec.containers[0].env[7].name
+          value: "PC_WEIGHT_5"
+      - equal:
+          path: spec.template.spec.containers[0].env[7].value
+          value: "2"
+      - equal:
+          path: spec.template.spec.containers[0].env[8].name
+          value: "PC_WEIGHT_6"
+      - equal:
+          path: spec.template.spec.containers[0].env[8].value
+          value: "1"
+      - equal:
+          path: spec.template.spec.containers[0].env[9].name
+          value: "PC_RECOVERY"
+      - equal:
+          path: spec.template.spec.containers[0].env[9].value
+          value: "true"
+      - equal:
+          path: spec.template.spec.containers[0].env[10].name
+          value: "MARIADB_CLUSTER_NAME"
+      - equal:
+          path: spec.template.spec.containers[0].env[10].value
+          value: "testclustername"
+      - equal:
+          path: spec.template.spec.containers[0].env[11].name
+          value: "MARIADB_MONITORING_CONNECTION_LIMIT"
+      - equal:
+          path: spec.template.spec.containers[0].env[11].value
+          value: 3
+      - equal:
+          path: spec.template.spec.containers[0].env[12].name
+          value: "MARIADB_DATADIR"
+      - equal:
+          path: spec.template.spec.containers[0].env[12].value
+          value: "/opt/test/data"
+      - equal:
+          path: spec.template.spec.containers[0].env[13].name
+          value: "MARIADB_LOGDIR"
+      - equal:
+          path: spec.template.spec.containers[0].env[13].value
+          value: "/opt/test/log"
+      - equal:
+          path: spec.template.spec.containers[0].env[14].name
+          value: "MARIADB_ROOT_PASSWORD"
+      - equal:
+          path: spec.template.spec.containers[0].env[14].valueFrom.secretKeyRef.name
+          value: "testrelease-test-root"
+      - equal:
+          path: spec.template.spec.containers[0].env[14].valueFrom.secretKeyRef.key
+          value: "password"
+      - equal:
+          path: spec.template.spec.containers[0].env[15].name
+          value: "MARIADB_ROOT_USERNAME"
+      - equal:
+          path: spec.template.spec.containers[0].env[15].valueFrom.secretKeyRef.name
+          value: "testrelease-test-root"
+      - equal:
+          path: spec.template.spec.containers[0].env[16].name
+          value: "MARIADB_TEST_VARD"
+      - equal:
+          path: spec.template.spec.containers[0].env[16].value
+          value: "testvar"
+
+  - it: set db container environment variables (consistent secret names) 9 nodes
+    template: statefulset-mariadb.yaml
+    set:
+      mariadb.galera.clustername: "testclustername"
+      services.database.frontend.ports.mysql.targetPort: 7777
+      services.database.backend.ports.galera.targetPort: 8888
+      mariadb.galera.weightedQuorum: true
+      mariadb.galera.pcrecovery: true
+      env.MARIADB_MONITORING_CONNECTION_LIMIT: null
+      volumeMounts.database.data.mountPath: "/opt/test/data"
+      volumeMounts.database.log.mountPath: "/opt/test/log"
+      mariadb.users.root.secretName: test-root
+      replicas.database: 9
+      env.MARIADB_ROOT_USERNAME:
+        secretName: test-root
+        secretKey: username
+        containerType:
+          - database
+      env.MARIADB_ROOT_PASSWORD:
+        secretName: test-root
+        secretKey: password
+        containerType:
+          - database
+      env.MARIADB_TEST_VARD:
+        value: "testvar"
+        containerType:
+          - database
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].env[0].name
+          value: "MYSQL_PORT"
+      - equal:
+          path: spec.template.spec.containers[0].env[0].value
+          value: "7777"
+      - equal:
+          path: spec.template.spec.containers[0].env[1].name
+          value: "GALERA_PORT"
+      - equal:
+          path: spec.template.spec.containers[0].env[1].value
+          value: "8888"
+      - equal:
+          path: spec.template.spec.containers[0].env[2].name
+          value: "PC_WEIGHT_0"
+      - equal:
+          path: spec.template.spec.containers[0].env[2].value
+          value: "256"
+      - equal:
+          path: spec.template.spec.containers[0].env[3].name
+          value: "PC_WEIGHT_1"
+      - equal:
+          path: spec.template.spec.containers[0].env[3].value
+          value: "128"
+      - equal:
+          path: spec.template.spec.containers[0].env[4].name
+          value: "PC_WEIGHT_2"
+      - equal:
+          path: spec.template.spec.containers[0].env[4].value
+          value: "64"
+      - equal:
+          path: spec.template.spec.containers[0].env[5].name
+          value: "PC_WEIGHT_3"
+      - equal:
+          path: spec.template.spec.containers[0].env[5].value
+          value: "32"
+      - equal:
+          path: spec.template.spec.containers[0].env[6].name
+          value: "PC_WEIGHT_4"
+      - equal:
+          path: spec.template.spec.containers[0].env[6].value
+          value: "16"
+      - equal:
+          path: spec.template.spec.containers[0].env[7].name
+          value: "PC_WEIGHT_5"
+      - equal:
+          path: spec.template.spec.containers[0].env[7].value
+          value: "8"
+      - equal:
+          path: spec.template.spec.containers[0].env[8].name
+          value: "PC_WEIGHT_6"
+      - equal:
+          path: spec.template.spec.containers[0].env[8].value
+          value: "4"
+      - equal:
+          path: spec.template.spec.containers[0].env[9].name
+          value: "PC_WEIGHT_7"
+      - equal:
+          path: spec.template.spec.containers[0].env[9].value
+          value: "2"
+      - equal:
+          path: spec.template.spec.containers[0].env[10].name
+          value: "PC_WEIGHT_8"
+      - equal:
+          path: spec.template.spec.containers[0].env[10].value
+          value: "1"
+      - equal:
+          path: spec.template.spec.containers[0].env[11].name
+          value: "PC_RECOVERY"
+      - equal:
+          path: spec.template.spec.containers[0].env[11].value
+          value: "true"
+      - equal:
+          path: spec.template.spec.containers[0].env[12].name
+          value: "MARIADB_CLUSTER_NAME"
+      - equal:
+          path: spec.template.spec.containers[0].env[12].value
+          value: "testclustername"
+      - equal:
+          path: spec.template.spec.containers[0].env[13].name
+          value: "MARIADB_MONITORING_CONNECTION_LIMIT"
+      - equal:
+          path: spec.template.spec.containers[0].env[13].value
+          value: 3
+      - equal:
+          path: spec.template.spec.containers[0].env[14].name
+          value: "MARIADB_DATADIR"
+      - equal:
+          path: spec.template.spec.containers[0].env[14].value
+          value: "/opt/test/data"
+      - equal:
+          path: spec.template.spec.containers[0].env[15].name
+          value: "MARIADB_LOGDIR"
+      - equal:
+          path: spec.template.spec.containers[0].env[15].value
+          value: "/opt/test/log"
+      - equal:
+          path: spec.template.spec.containers[0].env[16].name
+          value: "MARIADB_ROOT_PASSWORD"
+      - equal:
+          path: spec.template.spec.containers[0].env[16].valueFrom.secretKeyRef.name
+          value: "testrelease-test-root"
+      - equal:
+          path: spec.template.spec.containers[0].env[16].valueFrom.secretKeyRef.key
+          value: "password"
+      - equal:
+          path: spec.template.spec.containers[0].env[17].name
+          value: "MARIADB_ROOT_USERNAME"
+      - equal:
+          path: spec.template.spec.containers[0].env[17].valueFrom.secretKeyRef.name
+          value: "testrelease-test-root"
+      - equal:
+          path: spec.template.spec.containers[0].env[18].name
+          value: "MARIADB_TEST_VARD"
+      - equal:
+          path: spec.template.spec.containers[0].env[18].value
+          value: "testvar"
+
 
   - it: set db container environment variables (inconsistent secret names)
     template: statefulset-mariadb.yaml
@@ -1640,7 +2043,7 @@ tests:
           value: "metrics"
       - equal:
           path: spec.template.spec.containers[1].image
-          value: "keppel.eu-de-1.cloud.sap/ccloud/mariadb-galera-mysqld_exporter:0.14.0-20240129111302"
+          value: "keppel.eu-de-1.cloud.sap/ccloud/mariadb-galera-mysqld_exporter:0.14.0-20231117111140"
       - equal:
           path: spec.template.spec.containers[1].imagePullPolicy
           value: "IfNotPresent"
