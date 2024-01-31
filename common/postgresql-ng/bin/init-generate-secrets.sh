@@ -5,7 +5,7 @@
 # This is the entrypoint script for the "generate-secrets" init container of the postgres pod.
 
 set -eou pipefail
-[[ -n ${DEBUG:-} ]] && set -x
+[[ ${DEBUG:-} != false ]] && set -x
 
 for USER in ${USERS:-}; do
   SECRET="$RELEASE-pguser-$USER"

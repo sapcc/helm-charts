@@ -34,7 +34,7 @@ substituteSqlEnvs() {
   sed -e "s/%PGDATABASE%/$PGDATABASE/g" "${sedArgs[@]}" "$file"
 }
 
-[[ -n ${DEBUG:-} ]] && set -x
+[[ ${DEBUG:-} != false ]] && set -x
 
 if [[ ! -e /usr/lib/postgresql/$PGVERSION ]]; then
   echo "PostgreSQL $PGVERSION is not installed, aborting"
