@@ -1,4 +1,4 @@
-FROM debian:12-slim
+FROM debian:stable-slim
 
 # locale installation based on https://github.com/docker-library/postgres/blob/master/16/bookworm/Dockerfile#L49-L59 licensed under MIT
 
