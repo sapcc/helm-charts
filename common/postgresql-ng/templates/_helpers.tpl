@@ -20,11 +20,3 @@ some space for the name suffixes on replicasets and pods.
     {{ .Values.global.registry | required ".Values.global.registry missing" -}}
   {{- end -}}
 {{- end -}}
-
-{{- define "preferredDockerHubMirror" -}}
-  {{- if .Values.useAlternateRegion -}}
-    {{ .Values.global.dockerHubMirrorAlternateRegion | required ".Values.global.dockerHubMirrorAlternateRegion missing" -}}
-  {{- else -}}
-    {{ .Values.global.dockerHubMirror | required ".Values.global.dockerHubMirror missing" -}}
-  {{- end -}}
-{{- end -}}

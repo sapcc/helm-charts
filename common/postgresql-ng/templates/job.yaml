@@ -14,8 +14,7 @@ spec:
     spec:
       containers:
       - name: delete-secrets
-        # at the time of writing, kubectl is only available in edge
-        image: "{{ include "preferredDockerHubMirror" . }}/library/alpine:edge"
+        image: "{{ include "preferredRegistry" . }}/base-images/alpine-kubectl:edge-latest"
         env:
         - name: DEBUG
           value: {{ quote .Values.debug }}
@@ -25,7 +24,6 @@ spec:
           - |
             set -eou pipefail
             [[ -n ${DEBUG:-} ]] && set -x
-            apk add --no-cache --no-progress kubectl
 
             {{- range $user, $settings := .Values.users }}
             kubectl delete secret --ignore-not-found {{ $.Release.Name }}-pguser-{{ $user }}

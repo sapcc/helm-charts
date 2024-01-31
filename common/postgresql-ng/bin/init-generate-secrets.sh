@@ -6,7 +6,6 @@
 
 set -eou pipefail
 [[ -n ${DEBUG:-} ]] && set -x
-apk add --no-cache --no-progress kubectl
 
 for USER in ${USERS:-}; do
   SECRET="$RELEASE-pguser-$USER"
