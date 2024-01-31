@@ -38,10 +38,13 @@ spec:
       #   starting a container with less than 16-32 MiB RAM limit)
       containers:
         - name: keppel
-          image: {{ include "keppel_image" . }}
+          image: "{{ include "keppel_image" . }}"
           {{ include "tmplKeepImagePulled" . }}
         - name: postgres
-          image: "{{ .Values.global.registryAlternateRegion }}/postgres:{{.Values.postgresql.imageTag}}"
+          image: "{{ .Values.global.registryAlternateRegion }}/postgres-ng:{{.Values.postgresql.imageTag}}"
+          {{ include "tmplKeepImagePulled" . }}
+        - name: postgres-kubectl
+          image: "{{ .Values.global.registryAlternateRegion }}/base-images/alpine-kubectl:edge-latest"
           {{ include "tmplKeepImagePulled" . }}
         - name: redis # NOTE: redis-metrics is a separate pod, so we don't need to care about it
           image: "{{.Values.global.registryAlternateRegion}}/shared-app-images/alpine-redis:{{.Values.redis.image.tag}}"

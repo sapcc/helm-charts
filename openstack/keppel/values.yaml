@@ -109,18 +109,23 @@ redis:
 postgresql:
   alerts:
     support_group: containers
-  imageTag: '12.17-20240212092658'
+  imageTag: '20240206103323'
   log_min_duration_statement: 250
   # We previously had 128, which should technically be enough for 6 API pods and 1 janitor pod (with max. 16 conns each)
   # as well as the pgmetrics and pgbackup pods with 1-2 conns each, but we still had a "too many clients already" issue regardless.
   max_connections: 160
   persistence:
     enabled: true
-    accessMode: ReadWriteOnce
+    accessMode: ReadWriteOnce # compatibility to allow easy upgrades
     size: 100Gi
+  postgresDatabase: keppel
   sharedMemoryLimit: 256Mi
+  users:
+    keppel: {}
+  tableOwner: keppel
 
 pgbackup:
+  isPostgresNG: true
   use_alternate_region: true
   database:
     name: keppel
@@ -128,6 +133,7 @@ pgbackup:
     support_group: containers
 
 pgmetrics:
+  isPostgresNG: true
   db_name: keppel
 
   alerts:
