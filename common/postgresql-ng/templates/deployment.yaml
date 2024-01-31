@@ -1,7 +1,7 @@
 kind: Deployment
 apiVersion: apps/v1
 metadata:
-  name: {{ template "fullname" . }}
+  name: {{ template "postgres.fullname" . }}
 spec:
   replicas: 1
   revisionHistoryLimit: 3
@@ -9,11 +9,11 @@ spec:
     type: Recreate
   selector:
     matchLabels:
-      name: {{ template "fullname" . }}
+      name: {{ template "postgres.fullname" . }}
   template:
     metadata:
       labels:
-        name: {{ template "fullname" . }}
+        name: {{ template "postgres.fullname" . }}
       annotations:
         kubectl.kubernetes.io/default-container: postgres
         checksum/etc: {{ include (print $.Template.BasePath  "/configmap.yaml") . | sha256sum }}
@@ -113,26 +113,26 @@ spec:
         - name: dev-shm
           mountPath: /dev/shm
         {{- end }}
-      serviceAccountName: {{ template "fullname" . }}
+      serviceAccountName: {{ template "postgres.fullname" . }}
       volumes:
       - name: postgres-etc
         configMap:
-          name: {{ template "fullname" . }}-etc
+          name: {{ template "postgres.fullname" . }}-etc
       - name: data
       {{- if .Values.persistence.enabled }}
         persistentVolumeClaim:
-          claimName: {{ .Values.persistence.existingClaim | default (include "fullname" .) }}
+          claimName: {{ .Values.persistence.existingClaim | default (include "postgres.fullname" .) }}
       {{- else }}
         emptyDir: {}
       {{- end }}
         {{- if .Values.sqlOnCreate }}
       - name: sql-on-create
         configMap:
-          name: {{ template "fullname" . }}-sql-on-create
+          name: {{ template "postgres.fullname" . }}-sql-on-create
       {{- end }}
       - name: sql-on-startup
         configMap:
-          name: {{ template "fullname" . }}-sql-on-startup
+          name: {{ template "postgres.fullname" . }}-sql-on-startup
       {{- if .Values.sharedMemoryLimit }}
       - name: dev-shm
         emptyDir:

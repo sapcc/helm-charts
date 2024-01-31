@@ -2,7 +2,7 @@ apiVersion: batch/v1
 kind: Job
 metadata:
 metadata:
-  name: {{ template "fullname" . }}-delete-secrets
+  name: {{ template "postgres.fullname" . }}-delete-secrets
   annotations:
     helm.sh/hook: pre-delete
     helm.sh/hook-weight: "-5"
@@ -10,7 +10,7 @@ metadata:
 spec:
   template:
     metadata:
-      name: {{ template "fullname" . }}-delete-secrets
+      name: {{ template "postgres.fullname" . }}-delete-secrets
     spec:
       containers:
       - name: delete-secrets
@@ -29,4 +29,4 @@ spec:
             kubectl delete secret --ignore-not-found {{ $.Release.Name }}-pguser-{{ $user }}
             {{- end }}
       restartPolicy: Never
-      serviceAccountName: {{ template "fullname" . }}
+      serviceAccountName: {{ template "postgres.fullname" . }}
