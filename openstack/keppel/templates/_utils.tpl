@@ -199,3 +199,19 @@
 - name:  OS_USERNAME
   value: 'keppel'
 {{- end -}}
+
+{{- define "tmplKeepImagePulled" -}}
+          imagePullPolicy: IfNotPresent
+          command: [ '/bin/sleep', 'inf' ]
+          securityContext:
+            runAsNonRoot: true
+            runAsUser:    65534 # nobody
+            runAsGroup:   65534 # nobody
+          resources:
+            requests:
+              cpu: "1m"
+              memory: "32Mi"
+            limits:
+              cpu: "1m"
+              memory: "32Mi"
+{{- end -}}
