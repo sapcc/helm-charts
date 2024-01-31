@@ -1,0 +1,35 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: vault-tec-config
+  namespace: {{ .Release.Namespace }}
+data: 
+  config.yaml: |
+    intervals:
+      period: {{ required "no intervals.period given" .Values.config.intervals.period | quote }}
+      jitter: {{ required "no intervals.jitter given" .Values.config.intervals.jitter | quote }}
+    approles:
+    {{ range $index, $approle := .Values.config.approles -}}
+    - concourse:
+        url: {{ required "no concourse.url given" $approle.concourse.url | quote }}
+        pipelineFilter: {{ $approle.concourse.pipelineFilter | default "" | quote }}
+        teamFilter: {{ $approle.concourse.teamFilter | default "" | quote }}
+        userPass:
+          username: ${CONCOURSE_USERNAME_{{- $index -}} }
+          password: ${CONCOURSE_PASSWORD_{{- $index -}} }
+      vault:
+        prefix: {{ required "no approle.prefix given" $approle.vault.prefix | quote }}
+        ttl: {{ required "no approle.ttl given" $approle.vault.ttl | quote }}
+        rotate: {{ required "no approle.rotate given" $approle.vault.rotate | quote }}
+        tokenTTL: {{ required "no approle.ttl given" $approle.vault.tokenTTL | quote }}
+        url: {{ required "no vault.url given" $approle.vault.url | quote }}
+        approleMount: {{ required "no vault.approleMount given" $approle.vault.approleMount | quote }}
+        keyValueMount: {{ required "no vault.keyValueMount given" $approle.vault.keyValueMount | quote }}
+        userPass:
+          username: ${VAULT_USERNAME_{{- $index -}} }
+          password: ${VAULT_PASSWORD_{{- $index -}} }
+        policies:
+          {{- toYaml $approle.vault.policies | nindent 8 }}
+    {{ end -}}
+    metricsAddr: 0.0.0.0:8080
+    mlock: false
