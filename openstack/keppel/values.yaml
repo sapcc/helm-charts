@@ -106,22 +106,18 @@ redis:
         cpu: 5m
 
 postgresql:
+  alerts:
+    support_group: containers
   imageTag: '12.17-20231211122240'
+  log_min_duration_statement: 250
+  # We previously had 128, which should technically be enough for 6 API pods and 1 janitor pod (with max. 16 conns each)
+  # as well as the pgmetrics and pgbackup pods with 1-2 conns each, but we still had a "too many clients already" issue regardless.
+  max_connections: 160
   persistence:
     enabled: true
     accessMode: ReadWriteOnce
     size: 100Gi
-
   sharedMemoryLimit: 256Mi
-
-  log_min_duration_statement: 250
-
-  # We previously had 128, which should technically be enough for 6 API pods and 1 janitor pod (with max. 16 conns each)
-  # as well as the pgmetrics and pgbackup pods with 1-2 conns each, but we still had a "too many clients already" issue regardless.
-  max_connections: 160
-
-  alerts:
-    support_group: containers
 
 pgbackup:
   use_alternate_region: true
