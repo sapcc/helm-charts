@@ -1,19 +1,6 @@
-{{/* vim: set filetype=mustache: */}}
-{{/*
-Expand the name of the chart.
-*/}}
+{{/* Expand the name of the chart. */}}
 {{- define "redis.name" -}}
 {{- default .Chart.Name .Values.nameOverride | trunc 63 | replace "_" "-" | trimSuffix "-" -}}
-{{- end -}}
-
-{{/*
-Create a default fully qualified app name.
-The limit is 63 chars as per RFC 1035, but we truncate to 48 chars to leave
-some space for the name suffixes on replicasets and pods.
-*/}}
-{{- define "fullname" -}}
-  {{- $name := default .Chart.Name .Values.nameOverride -}}
-  {{- printf "%s-%s" .Release.Name $name | trunc 48 | replace "_" "-" -}}
 {{- end -}}
 
 {{/*
