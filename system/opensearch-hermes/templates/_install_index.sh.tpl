@@ -47,7 +47,7 @@ if [ "${POLICY_RETURN_CODE}" -eq 404 ]; then
 Usage: grep [OPTION]... PATTERNS [FILE]...
 Try 'grep --help' for more information.
 + read i
-++ curl -s -o /dev/null -s -w '%{http_code}\n' -k -u admin:82GGIzmafkmRmdV6PFQjSOm9gWnHeACb -XGET https://opensearch-hermes.hermes.svc.kubernetes.qa-de-1.cloud.sap:9200/_plugins/_ism/policies/auditerretention
+++ curl -s -o /dev/null -s -w '%{http_code}\n' -k -u admin:${ADMINPW} -XGET https://opensearch-hermes.hermes.svc.kubernetes.qa-de-1.cloud.sap:9200/_plugins/_ism/policies/auditerretention
 + export POLICY_RETURN_CODE=404
 + POLICY_RETURN_CODE=404
 + echo -e 'Return code is 404'
@@ -58,9 +58,9 @@ inital upload of index policy
 
 + echo -e 'Upload index policy, there is no policy auditerretention installed'
 Upload index policy, there is no policy auditerretention installed
-+ curl -k -u admin:82GGIzmafkmRmdV6PFQjSOm9gWnHeACb -XPUT https://opensearch-hermes.hermes.svc.kubernetes.qa-de-1.cloud.sap:9200/_plugins/_ism/policies/auditerretention -H 'Content-Type: application/json' -d @/scripts/ilm.json
++ curl -k -u admin:${ADMINPW} -XPUT https://opensearch-hermes.hermes.svc.kubernetes.qa-de-1.cloud.sap:9200/_plugins/_ism/policies/auditerretention -H 'Content-Type: application/json' -d @/scripts/ilm.json
 {"error":{"root_cause":[{"type":"index_management_exception","reason":"New policy auditerretention has an ISM template with index pattern [audit-*] matching existing policy templates, please use a different priority than 1"}],"type":"index_management_exception","reason":"New policy auditerretention has an ISM template with index pattern [audit-*] matching existing policy templates, please use a different priority than 1","caused_by":{"type":"exception","reason":"java.lang.IllegalArgumentException: New policy auditerretention has an ISM template with index pattern [audit-*] matching existing policy templates, please use a different priority than 1"}},"status":400}+ read i
-++ curl -s -k -u admin:82GGIzmafkmRmdV6PFQjSOm9gWnHeACb -XGET https://opensearch-hermes.hermes.svc.kubernetes.qa-de-1.cloud.sap:9200/_plugins/_ism/policies/auditerretention
+++ curl -s -k -u admin:${ADMINPW} -XGET https://opensearch-hermes.hermes.svc.kubernetes.qa-de-1.cloud.sap:9200/_plugins/_ism/policies/auditerretention
 ++ jq '._version?'
 + export CLUSTER_RETENTION_SCHEMA_VERSION=null
 + CLUSTER_RETENTION_SCHEMA_VERSION=null
@@ -73,7 +73,7 @@ secret file schema_version:
 secret installed schema_version: null
 + '[' '' -gt null ']'
 ./install-index.sh: line 76: [: : integer expression expected
-++ curl -s -k -u admin:82GGIzmafkmRmdV6PFQjSOm9gWnHeACb -XGET https://opensearch-hermes.hermes.svc.kubernetes.qa-de-1.cloud.sap:9200/_plugins/_ism/policies/auditerretention
+++ curl -s -k -u admin:${ADMINPW} -XGET https://opensearch-hermes.hermes.svc.kubernetes.qa-de-1.cloud.sap:9200/_plugins/_ism/policies/auditerretention
 ++ jq '._version?'
 + export NEW_CLUSTER_RETENTION_SCHEMA_VERSION=null
 + NEW_CLUSTER_RETENTION_SCHEMA_VERSION=null
