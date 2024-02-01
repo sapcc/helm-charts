@@ -34,6 +34,13 @@ spec:
               port:
                 name: http
           pathType: ImplementationSpecific
+        - path: /-/healthy
+          backend:
+            service:
+              name:  {{ include "thanos.fullName" (list $name $root) }}-query
+              port:
+                name: http
+          pathType: ImplementationSpecific
     {{- end }}
     {{- range $host := $.Values.internalIngress.hostsFQDN }}
     - host: {{ $host }}
@@ -46,6 +53,14 @@ spec:
               port:
                 name: http
           pathType: ImplementationSpecific
+        - path: /-/healthy
+          backend:
+            service:
+              name:  {{ include "thanos.fullName" (list $name $root) }}-query
+              port:
+                name: http
+          pathType: ImplementationSpecific
+
     {{- end }}
   tls:
     - secretName: tls-{{ include "thanos.externalInternalURL" (list $name $root) | replace "." "-" }}
