@@ -22,7 +22,7 @@ export MISSING_ILM=/missing
 
 # Get a list of all indexes and put it into a file, because we are working with too many indexes
 for l in ${ILM_INDEXES}; do
-  curl -s -k -u "admin:${ADMINPW}" -XGET "${CLUSTER_HOST}/_cat/indices"|grep ${i} |awk '{ print $3 }' >>$ALL_INDEXES
+  curl -s -k -u "admin:${ADMINPW}" -XGET "${CLUSTER_HOST}/_cat/indices"|grep ${l} |awk '{ print $3 }' >>${ALL_INDEXES}
 done
 
 # Get a list of all indexes, which are not managed.
