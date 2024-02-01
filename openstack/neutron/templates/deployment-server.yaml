@@ -42,11 +42,13 @@ spec:
 {{- else }}
         configmap-bin-hash: {{ include (print $.Template.BasePath "/configmap-bin.yaml") . | sha256sum }}
 {{- end }}
+        {{- include "utils.topology.pod_label" . | indent 8 }}
         prometheus.io/scrape: "true"
         prometheus.io/targets: {{ required "$.Values.metrics.prometheus missing" $.Values.metrics.prometheus }}
     spec:
 {{ tuple . "neutron" "api" | include "kubernetes_pod_anti_affinity" | indent 6 }}
       {{- include "utils.proxysql.pod_settings" . | indent 6 }}
+      {{- tuple . (dict "name" "neutron-server") | include "utils.topology.constraints" | indent 6 }}
       containers:
         - name: neutron-server
           image: {{.Values.global.registry}}/loci-neutron:{{.Values.imageVersionServerAPI | default .Values.imageVersionServer | default .Values.imageVersion | required "Please set neutron.imageVersion or similar"}}
