@@ -78,7 +78,7 @@ thanos-{{- $host -}}.{{- required ".Values.global.region missing" $root.Values.g
 {{- if not $root.Values.grpcIngress.hosts -}}
 thanos-{{- $host -}}-grpc.{{- required ".Values.global.region missing" $root.Values.global.region -}}.{{- required ".Values.global.tld missing" $root.Values.global.tld -}}
 {{- else -}}
-{{- $host -}}-grpc.{{- required ".Values.global.region missing" $root.Values.global.region -}}.{{- required ".Values.global.tld missing" $root.Values.global.tld -}}
+{{- $host -}}.{{- required ".Values.global.region missing" $root.Values.global.region -}}.{{- required ".Values.global.tld missing" $root.Values.global.tld -}}
 {{- end -}}
 {{- end -}}
 
