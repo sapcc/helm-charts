@@ -3,5 +3,5 @@
 {{- end -}}
 
 {{- define "name" -}}
-{{- "pagerduty2slack" -}}
+{{- "schedules2slack" -}}
 {{- end -}}

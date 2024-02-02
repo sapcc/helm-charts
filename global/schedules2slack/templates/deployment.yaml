@@ -1,7 +1,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: pagerduty2slack
+  name: schedules2slack
   namespace: {{ .Values.namespace }}
   labels:
     app.kubernetes.io/name: {{ template "name" . }}
@@ -9,9 +9,9 @@ metadata:
     app.kubernetes.io/instance: {{ template "name" . }}
     app.kubernetes.io/version: "{{ $.Values.imageTag }}"
     app.kubernetes.io/component: "app"
-    app.kubernetes.io/part-of: "pagerduty2slack"
+    app.kubernetes.io/part-of: "schedules2slack"
     app.kubernetes.io/managed-by: {{ .Release.Service }}
-    alert-service: "pagerduty2slack"
+    alert-service: "schedules2slack"
 spec:
   replicas: 1
   selector:
@@ -29,9 +29,9 @@ spec:
         checksum/config: {{ include ( print $.Template.BasePath "/config.yaml" ) . | sha256sum }}
     spec:
       containers:
-        - name: pagerduty2slack
+        - name: schedules2slack
           image: "{{ required ".Values.global.registry variable missing" .Values.global.registry }}/{{ .Values.image }}:{{ $.Values.imageTag }}"
-          command: [ "pagerduty2slack" ]
+          command: [ "schedules2slack" ]
           args: ["-config", "/etc/config/config.yaml"]
           resources:
             limits:
@@ -44,32 +44,32 @@ spec:
             - name: SLACK_BOT_TOKEN
               valueFrom:
                 secretKeyRef:
-                  name: pagerduty2slack
+                  name: schedules2slack
                   key: slackBotToken
             - name: SLACK_USER_TOKEN
               valueFrom:
                 secretKeyRef:
-                  name: pagerduty2slack
+                  name: schedules2slack
                   key: slackUserToken
             - name: SLACK_SOCKET_TOKEN
               valueFrom:
                 secretKeyRef:
-                  name: pagerduty2slack
+                  name: schedules2slack
                   key: slackSocketToken
-            - name: PAGERDUTY_USER
+            - name: SERVICENOW_API_CERT_PKC12_B64
               valueFrom:
                 secretKeyRef:
-                  name: pagerduty2slack
-                  key: pagerDutyAPIUser
-            - name: PAGERDUTY_TOKEN
+                  name: schedules2slack
+                  key: serviceNowApiCertPkc12B64
+            - name: SERVICENOW_API_CERT_PKC12_PWD
               valueFrom:
                 secretKeyRef:
-                  name: pagerduty2slack
-                  key: pagerDutyAPIToken
+                  name: schedules2slack
+                  key: serviceNowApiCertPkc12Pwd
           volumeMounts:
-              - name: pagerduty2slack-config-volume
+              - name: schedules2slack-config-volume
                 mountPath: /etc/config
       volumes:
-        - name: pagerduty2slack-config-volume
+        - name: schedules2slack-config-volume
           configMap:
-            name: pagerduty2slack
+            name: schedules2slack
