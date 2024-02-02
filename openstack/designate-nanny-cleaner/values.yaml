@@ -1,0 +1,48 @@
+owner-info:
+  helm-chart-url: https://github.com/sapcc/helm-charts/tree/i583594/designate-nanny-cleaner/openstack/designate-nanny-cleaner
+  service: designate
+  support-group: network-api
+  maintainers:
+    - Florian Streibelt
+    - Dmitry Galkin
+    - David Hoeller
+
+image:
+  name: designate-nanny-cleaner
+  # image_tag: ""
+
+resources:
+  requests:
+    memory: "128Mi"
+    cpu: "100m"
+  limits:
+    memory: "512Mi"
+    cpu: "800m"
+
+global_setup: false
+
+nanny_enabled: false
+
+designate_nanny:
+  # pvclaim: xxx
+  config:
+    global:
+      dryrun: false       # do not change anything unless set in region otherwise
+      autorun: true        # globally enable autorun feature
+      enabled: true        # globally enable nanny
+      loglevel: "INFO"
+      oneshot: false       # terminate after one run (when deploying as job)
+      mdns_endpoint: auto # will be set in values per region
+    swift_backup:
+      autorun: false   # run this nanny plugin in autorun
+      enabled: false   # enable/disable this plugin
+
+    clean_bind_zonefiles:
+      backup: no
+      dryrun: yes
+      autorun: yes
+      enabled: yes
+      interval: 1d
+      min_zone_age: 7d
+      log_all: no                # by default do not spam the log with each filename
+      do_reportfile: yes         # should we write a reportfile for each run into swift?
