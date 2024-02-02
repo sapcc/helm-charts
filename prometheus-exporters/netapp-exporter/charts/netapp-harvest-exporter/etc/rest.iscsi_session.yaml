@@ -1,0 +1,29 @@
+# iscsi_session with initiator and initiator_address as instance_keys
+
+name:               ISCSISession
+query:              api/protocols/san/iscsi/sessions
+object:             iscsi_session
+
+counters:
+  - ^^connections.#.initiator_address.address => initiator_address
+  - ^^initiator.name                          => initiator
+  - ^^tsih                                    => tsih
+  # - ^host                                     => host
+  - ^svm.name                                 => svm
+
+# collect_only_labels: true
+
+plugins:
+  - LabelAgent:
+      split_regex:
+        - initiator `:(.*?)(:|$)` host,
+        # - initiator `:(.*?):` host
+
+export_options:
+  instance_keys:
+    - initiator
+    - initiator_address
+    - tsih
+  instance_labels:
+    - svm
+    - host

@@ -9,18 +9,19 @@ Exporters:
   prom1:
     exporter: Prometheus
     global_prefix: netapp_
+    port: 13000
 Pollers:{{`
   {{ .Name }}:
     addr: {{ .Host }}
     datacenter: {{ .AvailabilityZone }}
     labels:
       - availability_zone: {{ .AvailabilityZone }}
-      - cluster: {{ .Name }} 
+      - filer: {{ .Name }}`}}
     collectors:
-      - Zapi:
+      - Rest:
         - limited.yaml
-      - ZapiPerf:
-        - limited.yaml`}}
+      - RestPerf:
+        - limited.yaml
       {{- if eq .Values.global.region "qa-de-1" }}
-      - ems
+      - Ems
       {{- end }}
