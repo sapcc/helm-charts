@@ -587,8 +587,8 @@
     hosts {{.Values.opensearch.http.endpoint}}.{{.Values.global.tld}}
     scheme https
     port {{.Values.opensearch.http_port}}
-    user {{.Values.opensearch.user}}
-    password {{.Values.opensearch.password}}
+    user "#{ENV['USER']}"
+    password "#{ENV['PASSWORD']}"
     log_os_400_reason true
     ssl_verify false
     ssl_version TLSv1_2
