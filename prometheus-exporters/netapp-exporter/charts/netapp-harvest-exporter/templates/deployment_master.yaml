@@ -1,0 +1,64 @@
+{{- range $appName, $appValues := .Values.apps }}
+{{- if $appValues.enabled }}
+{{- with $ }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name:  {{ include "netapp-harvest.fullname" . }}-{{ $appName }}-master
+spec:
+  selector:
+    matchLabels:
+      name: {{ include "netapp-harvest.fullname" . }}-{{ $appName }}-master
+  replicas: 1
+  template:
+    metadata:
+      annotations:
+        configmap-hash: {{ include (print $.Template.BasePath "/configmap.yaml") . | replace .Chart.Version "0.1.5" | sha256sum }}
+      labels:
+        name: {{ include "netapp-harvest.fullname" . }}-{{ $appName }}-master
+    spec:
+      containers:
+        - name:  netappsd
+          image: {{ .Values.global.registry }}/{{ .Values.netappsd.image.repository }}:{{ .Values.netappsd.image.tag }}
+          imagePullPolicy: {{ .Values.netappsd.image.pullPolicy | default "IfNotPresent" }}
+          command: ["/app/netappsd", "master"]
+          args:
+            - --region
+            - {{ .Values.global.region }}
+            - --tag
+            - {{ $appName }}
+            - --listen-addr
+            - 0.0.0.0:8000
+            - --worker
+            - {{ include "netapp-harvest.fullname" . }}-{{ $appName }}-worker
+          env:
+            - name: NETAPP_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "netapp-harvest.fullname" . }}
+                  key: netappUsername
+            - name: NETAPP_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "netapp-harvest.fullname" . }}
+                  key: netappPassword
+            - name: NETBOX_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "netapp-harvest.fullname" . }}
+                  key: netboxToken
+            - name: NETBOX_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "netapp-harvest.fullname" . }}
+                  key: netboxHost
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+          ports:
+            - containerPort: 8000
+---
+{{- end }}
+{{- end }}
+{{- end }}
