@@ -107,8 +107,8 @@ output {
       template_overwrite => true
       auth_type => {
         type => "basic"
-        user => "{{.Values.opensearch.user}}"
-        password => "{{.Values.opensearch.password}}"
+        user => "${OPENSEARCH_USER}"
+        password => "${OPENSEARCH_PASSWORD}"
       }
       ssl => true
       ssl_certificate_verification => false
@@ -121,8 +121,8 @@ output {
       hosts => ["https://{{.Values.opensearch.http.endpoint}}.{{.Values.global.region}}.{{.Values.global.tld}}:{{.Values.opensearch.http_port}}"]
       auth_type => {
         type => "basic"
-        user => "{{.Values.opensearch.user}}"
-        password => "{{.Values.opensearch.password}}"
+        user => "${OPENSEARCH_USER}"
+        password => "${OPENSEARCH_PASSWORD}"
       }
       template => "/logstash-etc/alerts.json"
       template_name => "alerts"
@@ -138,8 +138,8 @@ output {
       hosts => ["https://{{.Values.opensearch.http.endpoint}}.{{.Values.global.region}}.{{.Values.global.tld}}:{{.Values.opensearch.http_port}}"]
       auth_type => {
         type => "basic"
-        user => "{{.Values.opensearch.user}}"
-        password => "{{.Values.opensearch.password}}"
+        user => "${OPENSEARCH_USER}"
+        password => "${OPENSEARCH_PASSWORD}"
       }
       template => "/logstash-etc/alerts.json"
       template_name => "alerts"
@@ -155,8 +155,8 @@ output {
       hosts => ["https://{{.Values.opensearch.http.endpoint}}.{{.Values.global.region}}.{{.Values.global.tld}}:{{.Values.opensearch.http_port}}"]
       auth_type => {
         type => "basic"
-        user => "{{.Values.opensearch.user}}"
-        password => "{{.Values.opensearch.password}}"
+        user => "${OPENSEARCH_USER}"
+        password => "${OPENSEARCH_PASSWORD}"
       }
       template => "/logstash-etc/alerts.json"
       template_name => "alerts"
@@ -172,8 +172,8 @@ output {
       hosts => ["https://{{.Values.opensearch.http.endpoint}}.{{.Values.global.region}}.{{.Values.global.tld}}:{{.Values.opensearch.http_port}}"]
       auth_type => {
         type => "basic"
-        user => "{{.Values.opensearch.user}}"
-        password => "{{.Values.opensearch.password}}"
+        user => "${OPENSEARCH_USER}"
+        password => "${OPENSEARCH_PASSWORD}"
       }
       template => "/logstash-etc/deployments.json"
       template_name => "deployments"
@@ -189,8 +189,8 @@ output {
       hosts => ["https://{{.Values.opensearch.http.endpoint}}.{{.Values.global.region}}.{{.Values.global.tld}}:{{.Values.opensearch.http_port}}"]
       auth_type => {
         type => 'basic'
-        user => "{{.Values.opensearch.user}}"
-        password => "{{.Values.opensearch.password}}"
+        user => "${OPENSEARCH_USER}"
+        password => "${OPENSEARCH_PASSWORD}"
       }
       ssl => true
       ssl_certificate_verification => false
@@ -203,8 +203,8 @@ output {
       hosts => ["https://{{.Values.opensearch.http.endpoint}}.{{.Values.global.region}}.{{.Values.global.tld}}:{{.Values.opensearch.http_port}}"]
       auth_type => {
         type => 'basic'
-        user => "{{.Values.opensearch.jump_user}}"
-        password => "{{.Values.opensearch.jump_password}}"
+        user => "${OPENSEARCH_JUMP_USER}"
+        password => "${OPENSEARCH_JUMP_PASSWORD}"
       }
       ssl => true
       ssl_certificate_verification => false
