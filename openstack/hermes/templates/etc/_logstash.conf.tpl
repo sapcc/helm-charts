@@ -355,32 +355,32 @@ filter {
         }
       }
     }
-    # Cleanup
+  }
+  # Cleanup
+  mutate {
+    id => "f20d_removing_domain_mapping"
+    remove_field => ["[domain_mapping]"]
+  }
+
+  # Cleanup unavailable entries
+  if [initiator][project_id] == "unavailable" {
     mutate {
-      id => "f20d_removing_domain_mapping"
-      remove_field => ["[domain_mapping]"]
+      id => "f20e_removing_initiator_project_id"
+      remove_field => ["[initiator][project_id]"]
     }
+  }
 
-    # Cleanup unavailable entries
-    if [initiator][project_id] == "unavailable" {
-      mutate {
-        id => "f20e_removing_initiator_project_id"
-        remove_field => ["[initiator][project_id]"]
-      }
+  if [target][project_id] == "unavailable" {
+    mutate {
+      id => "f20f_removing_target_project_id"
+      remove_field => ["[target][project_id]"]
     }
+  }
 
-    if [target][project_id] == "unavailable" {
-      mutate {
-        id => "f20f_removing_target_project_id"
-        remove_field => ["[target][project_id]"]
-      }
-    }
-
-    if [initiator][id] == "unavailable" {
-      mutate {
-        id => "f20g_removing_initiator_id"
-        remove_field => ["[initiator][id]"]
-      }
+  if [initiator][id] == "unavailable" {
+    mutate {
+      id => "f20g_removing_initiator_id"
+      remove_field => ["[initiator][id]"]
     }
   }
   {{- end}}
