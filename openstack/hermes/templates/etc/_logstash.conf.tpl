@@ -355,11 +355,12 @@ filter {
         }
       }
     }
-  }
-  # Cleanup
-  mutate {
-    id => "f20d_removing_domain_mapping"
-    remove_field => ["[domain_mapping]"]
+
+    # Cleanup
+    mutate {
+      id => "f20d_removing_domain_mapping"
+      remove_field => ["[domain_mapping]"]
+    }
   }
 
   # Cleanup unavailable entries
