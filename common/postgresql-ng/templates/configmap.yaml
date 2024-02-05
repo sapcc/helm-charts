@@ -73,13 +73,17 @@ data:
     GRANT pg_read_all_data to backup;
     {{- else }}
     GRANT poor_mans_pg_read_all_data to backup;
-    ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT ON TABLES TO backup;
     {{- end }}
     {{- end }}
 
     {{- if eq $user "metrics" }}
     GRANT pg_monitor to metrics;
     ALTER USER metrics SET SEARCH_PATH TO postgres_exporter,pg_catalog;
+    {{- if ge ($.Values.postgresVersion | int) 14 }}
+    GRANT pg_read_all_data to metrics;
+    {{- else }}
+    GRANT poor_mans_pg_read_all_data to metrics;
+    {{- end }}
     {{- end }}
     {{- end }}
 
