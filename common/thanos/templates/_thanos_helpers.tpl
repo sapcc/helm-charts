@@ -58,7 +58,7 @@ thanos-{{ $name }}-grpc.{{- required ".Values.global.region missing" $root.Value
 {{- end -}}
 {{- end -}}
 
-{{/* External internal URL of this Thanos. */}}
+{{/* External URL to expose Thanos API only. */}}
 {{- define "thanos.internalURL" -}}
 {{- $name := index . 0 -}}
 {{- $root := index . 1 -}}
