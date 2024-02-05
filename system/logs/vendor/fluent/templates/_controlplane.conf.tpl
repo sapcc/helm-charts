@@ -521,10 +521,10 @@
     hosts {{.Values.opensearch.http.endpoint}}.{{.Values.global.tld}}
     scheme https
     port {{.Values.opensearch.http_port}}
-    user {{.Values.opensearch.user}}
-    password {{.Values.opensearch.password}}
+    user "#{ENV['USER']}"
+    password "#{ENV['PASSWORD']}"
     log_os_400_reason true
-    ssl_verify false
+    ssl_verify true
     ssl_version TLSv1_2
     time_as_integer false
     @log_level info
@@ -590,7 +590,7 @@
     user "#{ENV['USER']}"
     password "#{ENV['PASSWORD']}"
     log_os_400_reason true
-    ssl_verify false
+    ssl_verify true
     ssl_version TLSv1_2
     time_as_integer false
     @log_level info

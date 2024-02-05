@@ -111,7 +111,7 @@ output {
         password => "${OPENSEARCH_PASSWORD}"
       }
       ssl => true
-      ssl_certificate_verification => false
+      ssl_certificate_verification => true
     }
   }
   elseif [type] == "alert" and [alerts][labels][severity] == "critical"{
@@ -128,7 +128,7 @@ output {
       template_name => "alerts"
       template_overwrite => true
       ssl => true
-      ssl_certificate_verification => false
+      ssl_certificate_verification => true
     }
   }
   elseif [type] == "alert" and [alerts][labels][severity] == "warning"{
@@ -145,7 +145,7 @@ output {
       template_name => "alerts"
       template_overwrite => true
       ssl => true
-      ssl_certificate_verification => false
+      ssl_certificate_verification => true
     }
   }
   elseif [type] == "alert"{
@@ -162,7 +162,7 @@ output {
       template_name => "alerts"
       template_overwrite => true
       ssl => true
-      ssl_certificate_verification => false
+      ssl_certificate_verification => true
     }
   }
   elseif [type] == "deployment" {
@@ -179,7 +179,7 @@ output {
       template_name => "deployments"
       template_overwrite => true
       ssl => true
-      ssl_certificate_verification => false
+      ssl_certificate_verification => true
     }
   }
   elseif  [type] == "netflow" {
@@ -193,7 +193,7 @@ output {
         password => "${OPENSEARCH_PASSWORD}"
       }
       ssl => true
-      ssl_certificate_verification => false
+      ssl_certificate_verification => true
     }
   }
   elseif  [type] == "jumpserver" {
@@ -207,7 +207,7 @@ output {
         password => "${OPENSEARCH_JUMP_PASSWORD}"
       }
       ssl => true
-      ssl_certificate_verification => false
+      ssl_certificate_verification => true
     }
   }
 }
