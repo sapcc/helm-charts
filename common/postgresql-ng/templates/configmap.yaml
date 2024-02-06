@@ -25,6 +25,10 @@ metadata:
   name: {{ template "postgres.fullname" . }}-sql-on-startup
 data:
   on-startup.sql: |
+    {{- if eq .Values.postgresDatabase "postgres" }}
+      {{- fail "postgresDatabase cannot be set to postgres because that is the name of an internal database!" }}
+    {{- end }}
+
     {{- /* duplicated with the code in rbac because the templating is to limited in its features */}}
     {{- $users := .Values.users }}
     {{- if .Values.persistence.createBackupUser }}
@@ -59,17 +63,10 @@ data:
     {{ . }} to "{{ $user }}";
     {{- end }}
 
-    {{- if $settings.setOwner }}
-    ALTER DATABASE "%PGDATABASE%" OWNER TO "{{ $user }}";
-    SELECT format('ALTER TABLE %I.%I.%I OWNER TO %I;', table_catalog, table_schema, table_name, '{{ $user }}')
-      FROM information_schema.tables
-      WHERE table_schema = '%PGDATABASE%';
-    {{- end }}
-
     {{- if eq $user "backup" }}
     GRANT CONNECT ON DATABASE "%PGDATABASE%" TO backup;
 
-    {{ if ge ($.Values.postgresVersion | int) 14 }}
+    {{- if ge ($.Values.postgresVersion | int) 14 }}
     GRANT pg_read_all_data to backup;
     {{- else }}
     GRANT poor_mans_pg_read_all_data to backup;
@@ -86,5 +83,11 @@ data:
     {{- end }}
     {{- end }}
     {{- end }}
+
+    ALTER SCHEMA public OWNER TO "{{ .Values.tableOwner | required ".Values.tableOwner must be set to one user!" }}";
+    ALTER DATABASE "%PGDATABASE%" OWNER TO "{{ .Values.tableOwner }}";
+    SELECT format('ALTER TABLE %I.%I.%I OWNER TO %I;', table_catalog, table_schema, table_name, '{{ .Values.tableOwner }}')
+      FROM information_schema.tables
+      WHERE table_schema = 'public'\gexec
 
     {{ .Values.sqlOnStartup }}

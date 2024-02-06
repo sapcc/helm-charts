@@ -1,8 +1,4 @@
-{{/* vim: set filetype=go */}}
-
-{{- if eq .Values.postgresDatabase "postgres" }}
-  {{- fail "postgresDatabase cannot be set to postgres because that is the name of an internal database!" }}
-{{- end }}
+{{/* vim: set filetype=helm */}}
 
 {{/*
 Create a default fully qualified app name.
