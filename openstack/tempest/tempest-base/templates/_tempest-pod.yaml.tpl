@@ -6,10 +6,6 @@ metadata:
   labels:
     system: openstack
     type: configuration
-  annotations:
-    {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
-    linkerd.io/inject: enabled
-    {{- end }}
 spec:
   restartPolicy: Never
   containers:
@@ -29,9 +25,9 @@ spec:
         - name: OS_PROJECT_DOMAIN_NAME
           value: "tempest"
         - name: OS_INTERFACE
-          value: "internal"
+          value: "external"
         - name: OS_ENDPOINT_TYPE
-          value: "internal"
+          value: "external"
         - name: OS_PASSWORD
           value: {{ .Values.tempestAdminPassword | quote }}
         - name: OS_IDENTITY_API_VERSION
