@@ -7,6 +7,10 @@ metadata:
   namespace: {{ .Values.namespace }}
   labels:
     {{- include "labels" . | indent 4 }}
+  annotations:
+    {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+    linkerd.io/inject: enabled
+    {{- end }}
 spec:
   selector:
     app.kubernetes.io/component: "api"
