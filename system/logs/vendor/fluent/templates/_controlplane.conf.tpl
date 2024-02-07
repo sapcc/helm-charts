@@ -143,7 +143,7 @@
   reserve_data true
   <parse>
     @type grok
-    grok_pattern %{IP:remote_addr} %{NOTSPACE:ident} %{NOTSPACE:auth} \[%{HAPROXYDATE:access_timestamp}\] "%{WORD:request_method} %{NOTSPACE:request_path} %{NOTSPACE:httpversion}" %{NUMBER:response} %{NUMBER:content_length:integer} \"(?<referer>[^\"]{,255}).*?" "%{GREEDYDATA:user_agent}" %{GREEDYDATA} \[%{NOTSPACE:service}\] %{NOTSPACE:target} %{NUMBER} %{BASE10NUM:response_time:float} %{NOTSPACE} %{NOTSPACE:requestid}
+    grok_pattern %{IP:remote_addr} %{NOTSPACE:ident} %{NOTSPACE:auth} \[%{HTTPDATE:timestamp}\] "%{WORD:request_method} %{NOTSPACE:request_path} %{NOTSPACE:httpversion}" %{NUMBER:response} %{NUMBER:content_length:integer} "(?<referer>[^\"]{,255}).*?" "%{DATA:user_agent}" %{NUMBER:request_length:integer} %{BASE10NUM:request_time:float}( \[%{NOTSPACE:service}\])? ?(\[\])? %{IP:upstream_addr}\:%{NUMBER:upstream_port} %{NUMBER:upstream_response_length:integer} %{BASE10NUM:upstream_response_time:float} %{NOTSPACE:upstream_status}
     custom_pattern_path /fluentd/etc/pattern
   </parse>
 </filter>

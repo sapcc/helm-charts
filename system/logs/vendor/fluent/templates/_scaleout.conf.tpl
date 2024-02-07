@@ -1,14 +1,3 @@
-<filter kubernetes.var.log.containers.es**>
-  @type parser
-  key_name log
-  reserve_data true
-  <parse>
-    @type grok
-    grok_pattern \[%{TIMESTAMP_ISO8601:timestamp}\]\[%{WORD:loglevel}
-    grok_pattern %{TIMESTAMP_ISO8601:timestamp} \| %{NOTSPACE:loglevel}
-  </parse>
-</filter>
-
 <filter kubernetes.var.log.containers.elk-k8s-event-exporter**>
   @type parser
   @id json_parser
@@ -23,8 +12,7 @@
   </parse>
 </filter>
 
-
-<filter kubernetes.var.log.containers.elk-fluent**>
+<filter kubernetes.var.log.containers.fluent**>
   @type parser
   key_name log
   reserve_data true
@@ -34,51 +22,12 @@
   </parse>
 </filter>
 
-<filter kubernetes.var.log.containers.elk-wall-e**>
-  @type record_transformer
-  <record>
-    process "elk-wall-e"
-  </record>
-</filter>
-
-<filter kubernetes.var.log.containers.elk-fluent**>
-  @type record_transformer
-  <record>
-    process "elk-fluent"
-  </record>
-</filter>
-
-<filter kubernetes.var.log.containers.es-client**>
-  @type record_transformer
-  <record>
-    process "es-client"
-  </record>
-</filter>
-
-<filter kubernetes.var.log.containers.es-master**>
-  @type record_transformer
-  <record>
-    process "es-master"
-  </record>
-</filter>
-
-<filter kubernetes.var.log.containers.es-data**>
-  @type record_transformer
-  <record>
-    process "es-data"
-  </record>
-</filter>
-
 <filter kubernetes.**>
   @type record_modifier
     remove_keys message,stream
 </filter>
 
 <match kubernetes.var.log.containers.fluent**>
-  @type null
-</match>
-
-<match kubernetes.var.log.containers.es-query-exporter**>
   @type null
 </match>
 
@@ -92,23 +41,12 @@
   reserve_data true
   <parse>
     @type grok
-    grok_pattern %{IP:remote_addr} %{NOTSPACE:ident} %{NOTSPACE:auth} \[%{HTTPDATE:timestamp}\] "%{WORD:request_method} %{NOTSPACE:request_path} %{NOTSPACE:httpversion}" %{NUMBER:response} %{NUMBER:content_length:integer} "(?<referer>[^\"]{,255}).*?" "%{DATA:user_agent}" %{NUMBER:request_length:integer} %{BASE10NUM:request_time:float}( \[%{NOTSPACE:service}\])? (\[\])? %{IP:upstream_addr}\:%{NUMBER:upstream_port} %{NUMBER:upstream_response_length:integer} %{BASE10NUM:upstream_response_time:float} %{NOTSPACE:upstream_status}
-  </parse>
-</filter>
-
-<filter kubernetes.var.log.containers.kube-system-nginx-ingress-controller**>
-  @type parser
-  key_name log
-  reserve_data true
-  <parse>
-    @type grok
-    grok_pattern %{IPV4:remote_addr} %{GREEDYDATA}
-    custom_pattern_path /fluentd/etc/pattern
+    grok_pattern %{IP:remote_addr} %{NOTSPACE:ident} %{NOTSPACE:auth} \[%{HTTPDATE:timestamp}\] "%{WORD:request_method} %{NOTSPACE:request_path} %{NOTSPACE:httpversion}" %{NUMBER:response} %{NUMBER:content_length:integer} "(?<referer>[^\"]{,255}).*?" "%{DATA:user_agent}" %{NUMBER:request_length:integer} %{BASE10NUM:request_time:float}( \[%{NOTSPACE:service}\])? ?(\[\])? %{IP:upstream_addr}\:%{NUMBER:upstream_port} %{NUMBER:upstream_response_length:integer} %{BASE10NUM:upstream_response_time:float} %{NOTSPACE:upstream_status}
   </parse>
 </filter>
 
 {{- if .Values.metis.enabled }}
-<filter kubernetes.var.log.containers.kube-system-nginx-ingress-controller**>
+<filter kubernetes.var.log.containers.kube-system-ingress-nginx-controller**>
   @type mysql_enrich
   host {{.Values.metis.host}}.{{.Values.global.region}}.{{.Values.global.tld}}
   port {{.Values.metis.port}}
