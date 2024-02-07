@@ -1,4 +1,3 @@
-
 [DEFAULT]
 debug = True
 use_stderr = True
@@ -34,8 +33,8 @@ max_api_microversion = 2.65
 suppress_errors_in_cleanup = True
 enable_ip_rules_for_protocols = nfs
 enable_protocols = nfs
-endpoint_type = internal
-v3_endpoint_type = internal
+endpoint_type = public
+v3_endpoint_type = public
 region = {{ .Values.global.region }}
 
 [identity]
