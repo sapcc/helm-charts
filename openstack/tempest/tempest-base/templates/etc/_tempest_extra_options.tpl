@@ -52,7 +52,7 @@ build_timeout=600
 [network]
 project_network_cidr = 10.199.0.0/16
 public_network_id = {{ .Values.tempest_common.public_network_id }}
-endpoint_type = internal
+endpoint_type = external
 shared_physical_network= {{ .Values.tempest_common.shared_physical_network | default true }}
 floating_network_name = FloatingIP-external-monsoon3-01
 build_timeout=600
@@ -74,8 +74,8 @@ driver = fake-hardware
 #image_ref_alt = CHANGEMEIMAGEREFALT
 image_ref = 84f9f266-3f11-4447-ae6c-f7940b2f5eb1
 image_ref_alt = 84f9f266-3f11-4447-ae6c-f7940b2f5eb1
-endpoint_type = internal
-v3_endpoint_type = internal
+endpoint_type = external
+v3_endpoint_type = external
 region = {{ .Values.global.region }}
 flavor_ref = 20
 flavor_ref_alt = 30
@@ -112,8 +112,8 @@ max_api_microversion = 2.49
 suppress_errors_in_cleanup = True
 enable_ip_rules_for_protocols = nfs
 enable_protocols = nfs
-endpoint_type = internalURL
-v3_endpoint_type = internalURL
+endpoint_type = externalURL
+v3_endpoint_type = externalURL
 region = {{ .Values.global.region }}
 
 [validation]
@@ -122,7 +122,7 @@ ssh_key_type = rsa
 
 [volume]
 catalog_type = volumev3
-endpoint_type = internal
+endpoint_type = external
 min_microversion = 3.0
 max_microversion = latest
 vendor_name = VMware

@@ -6,6 +6,10 @@ metadata:
   labels:
     system: openstack
     type: configuration
+  annotations:
+    {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+    linkerd.io/inject: enabled
+    {{- end }}
 spec:
   restartPolicy: Never
   containers:
