@@ -112,8 +112,8 @@ max_api_microversion = 2.49
 suppress_errors_in_cleanup = True
 enable_ip_rules_for_protocols = nfs
 enable_protocols = nfs
-endpoint_type = internalURL
-v3_endpoint_type = internalURL
+endpoint_type = publicURL
+v3_endpoint_type = publicURL
 region = {{ .Values.global.region }}
 
 [validation]
