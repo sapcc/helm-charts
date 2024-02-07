@@ -25,9 +25,9 @@ spec:
         - name: OS_PROJECT_DOMAIN_NAME
           value: "tempest"
         - name: OS_INTERFACE
-          value: "public"
+          value: "internal"
         - name: OS_ENDPOINT_TYPE
-          value: "public"
+          value: "internal"
         - name: OS_PASSWORD
           value: {{ .Values.tempestAdminPassword | quote }}
         - name: OS_IDENTITY_API_VERSION
