@@ -1,9 +1,14 @@
 {{- if .Values.nanny_enabled }}
+{{- required "missing list of bind servers in .Values.designate_nanny.cleaner.instances" .Values.designate_nanny.cleaner }}
+{{- required "missing list of bind servers in .Values.designate_nanny.cleaner.instances" .Values.designate_nanny.cleaner.instances }}
+{{- range $instance := .Values.designate_nanny.cleaner.instances}}
+#  Deployment for cleaner instance on  {{ $instance }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ .Release.Name }}
+  name: {{ .Release.Name }}-{{ $instance }}
 data:
   nanny.yaml: |
 {{ toYaml .Values.designate_nanny.config | indent 4 }}
+{{- end }}
 {{- end }}

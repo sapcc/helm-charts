@@ -1,12 +1,16 @@
 {{- if .Values.nanny_enabled }}
+{{- required "missing list of bind servers in .Values.designate_nanny.cleaner.instances" .Values.designate_nanny.cleaner }}
+{{- required "missing list of bind servers in .Values.designate_nanny.cleaner.instances" .Values.designate_nanny.cleaner.instances }}
+{{- range $instance := .Values.designate_nanny.cleaner.instances}}
+#  Deployment for cleaner instance on  {{ $instance }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ .Release.Name }}
+  name: {{ .Release.Name }}-{{ $instance }}
   labels:
-    app.kubernetes.io/name: {{ .Release.Name }}
-    app.kubernetes.io/instance: {{ .Release.Name }}
-    app: {{ .Release.Name }}
+    app.kubernetes.io/name: {{ .Release.Name }}-{{ $instance }}
+    app.kubernetes.io/instance: {{ .Release.Name }}-{{ $instance }}
+    app: {{ .Release.Name }}-{{ $instance }}
     ccloud/support-group: network-api
     system: openstack
     application: designate
@@ -14,13 +18,13 @@ spec:
   replicas: 1
   selector:
     matchLabels:
-      app.kubernetes.io/instance: {{ .Release.Name }}
-      app.kubernetes.io/name: {{ .Release.Name }}
+      app.kubernetes.io/instance: {{ .Release.Name }}-{{ $instance }}
+      app.kubernetes.io/name: {{ .Release.Name }}-{{ $instance }}
   template:
     metadata:
       labels:
-        app.kubernetes.io/instance: {{ .Release.Name }}
-        app.kubernetes.io/name: {{ .Release.Name }}
+        app.kubernetes.io/instance: {{ .Release.Name }}-{{ $instance }}
+        app.kubernetes.io/name: {{ .Release.Name }}-{{ $instance }}
       annotations:
         prometheus.io/port: "9102"
         prometheus.io/scrape: "true"
@@ -28,7 +32,7 @@ spec:
     spec:
 
       containers:
-      - name: {{ .Release.Name }}
+      - name: {{ .Release.Name }}-{{ $instance }}
         image: {{ required ".Values.global.registry is missing" .Values.global.registry }}/{{ .Values.image.name }}:{{required "missing .Values.image.image_tag" .Values.image.image_tag }}
        {{- if or (eq .Values.global.region "qa-de-1") (eq .Values.global.region "qa-de-2") }}
         imagePullPolicy: Always
@@ -54,10 +58,12 @@ spec:
         - name: OS_PASSWORD
           valueFrom:
             secretKeyRef:
-              name: {{ .Release.Name }}-os-secret
+              name: {{ .Release.Name }}-{{ $instance }}-os-secret
               key:  designate_nanny_os_password
         - name: OS_USER_DOMAIN_NAME
           value:  "{{ required "missing .Values.designate_nanny.credentials.designate_api.project_user_domain_name" .Values.designate_nanny.credentials.designate_api.project_user_domain_name}}"
+        - name: INSTANCE_NAME
+          value: "{{ $instance }}"
         ports:
         - containerPort: 9102
           name: metrics
@@ -73,8 +79,9 @@ spec:
       volumes:
       - name: nanny-conf
         configMap:
-          name: {{ .Release.Name }}
+          name: {{ .Release.Name }}-{{ $instance }}
       - name: persistent-storage
         persistentVolumeClaim:
-          claimName: {{ .Values.designate_nanny.pvclaim }}
+          claimName: {{ $instance }}-{{ required "missing .Values.global.region" .Values.global.region}}
+{{- end }}
 {{- end }}
