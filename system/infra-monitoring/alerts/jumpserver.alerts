@@ -136,3 +136,17 @@ groups:
     annotations:
       description: '{{ $labels.name }} is not running, systemd has no status'
       summary: 'Check what went wrong and restart service'
+  - alert: JumpserverUpdateNotRun
+    expr: |
+      round((node_time_seconds{job="jumpserver"} - node_boot_time_seconds{job="jumpserver"})/60/60/24) >= 8
+    for: 10m
+    labels:
+      context: availability
+      service: jumpserver
+      severity: info
+      support_group: observability
+      meta: 'Jump {{ $labels.server_name }} has not been updated since at least 8 days'
+      playbook: 'docs/support/playbook/jumpserver/jumpserver_general_issues#systemdabsent'
+    annotations:
+      description: 'Update of {{ $labels.server_name }} has not happened since {{ $value }} days. Check last run in regional slack channel.'
+      summary: 'Jumpserver update did not run'
