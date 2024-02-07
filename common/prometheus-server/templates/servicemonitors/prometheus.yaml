@@ -23,10 +23,13 @@ spec:
       scrapeTimeout: {{ required "$.Values.serviceDiscoveries.scrapeTimeout  missing" $.Values.serviceDiscoveries.scrapeTimeout }}
       port: http
       scheme: http
-      relabelings:
+      metricRelabelings:
         - action: replace
+          sourceLabels:
+            - prometheus
           targetLabel: prometheus
           replacement: {{ printf "%s/%s" $.Release.Namespace (include "prometheus.name" (list $name $root)) }}
+      relabelings:
         - action: labelmap
           regex: '__meta_kubernetes_service_label_(.+)'
         - sourceLabels:
