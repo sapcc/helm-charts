@@ -122,7 +122,7 @@ ssh_key_type = rsa
 
 [volume]
 catalog_type = volumev3
-endpoint_type = external
+endpoint_type = internal
 min_microversion = 3.0
 max_microversion = latest
 vendor_name = VMware
