@@ -85,15 +85,16 @@
 <match kubernetes.var.log.containers.logstash**>
   @type null
 </match>
-#<filter kubernetes.var.log.containers.ingress-controller**>
-#  @type parser
-#  key_name log
-#  reserve_data true
-#  <parse>
-#    @type grok
-#    grok_pattern %{IP:remote_addr} - \[%{GREEDYDATA:proxy_add_x_forwarded_for}\] - %{NOTSPACE:auth} \[%{HAPROXYDATE:timestamp}\] "%{WORD:request_method} %{NOTSPACE:request_path} %{NOTSPACE:httpversion}" %{NUMBER:response} %{NUMBER:content_length} "(?<referer>[^\"]{,255}).*?" "%{DATA:user_agent}" %{NUMBER:request_length} %{BASE10NUM:request_time:float}( \[%{NOTSPACE:service}\])? %{IP:upstream_addr}\:%{NUMBER:upstream_port} %{NUMBER:upstream_response_length} %{BASE10NUM:upstream_response_time} %{NOTSPACE:upstream_status}
-#  </parse>
-#</filter>
+
+<filter kubernetes.var.log.containers.kube-system-ingress-nginx-controller**>
+  @type parser
+  key_name log
+  reserve_data true
+  <parse>
+    @type grok
+    grok_pattern %{IP:remote_addr} %{NOTSPACE:ident} %{NOTSPACE:auth} \[%{HTTPDATE:timestamp}\] "%{WORD:request_method} %{NOTSPACE:request_path} %{NOTSPACE:httpversion}" %{NUMBER:response} %{NUMBER:content_length:integer} "(?<referer>[^\"]{,255}).*?" "%{DATA:user_agent}" %{NUMBER:request_length:integer} %{BASE10NUM:request_time:float}( \[%{NOTSPACE:service}\])? (\[\])? %{IP:upstream_addr}\:%{NUMBER:upstream_port} %{NUMBER:upstream_response_length:integer} %{BASE10NUM:upstream_response_time:float} %{NOTSPACE:upstream_status}
+  </parse>
+</filter>
 
 <filter kubernetes.var.log.containers.kube-system-nginx-ingress-controller**>
   @type parser
