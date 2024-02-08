@@ -16,8 +16,8 @@ admin_domain_scope = True
 
 [identity]
 uri_v3 = http://{{ if .Values.global.clusterDomain }}keystone.{{.Release.Namespace}}.svc.{{.Values.global.clusterDomain}}{{ else }}keystone.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}{{end}}:5000/v3
-endpoint_type = internal
-v3_endpoint_type = internal
+endpoint_type = public
+v3_endpoint_type = public
 region = {{ .Values.global.region }}
 default_domain_id = {{ .Values.tempest_common.domainId }}
 admin_domain_scope = True
@@ -49,7 +49,7 @@ security_compliance = True
 project_network_cidr = 10.199.0.0/16
 public_network_id = {{ .Values.tempest_common.public_network_id }}
 subnet_id = a5703f23-ffcb-4ca7-9dfe-ab9861d91bf5
-endpoint_type = internal
+endpoint_type = public
 shared_physical_network= {{ .Values.tempest_common.shared_physical_network | default true }}
 
 [network-feature-enabled]
@@ -67,8 +67,8 @@ driver = fake-hardware
 #image_ref_alt = CHANGEMEIMAGEREFALT
 image_ref = 84f9f266-3f11-4447-ae6c-f7940b2f5eb1
 image_ref_alt = 84f9f266-3f11-4447-ae6c-f7940b2f5eb1
-endpoint_type = internal
-v3_endpoint_type = internal
+endpoint_type = public
+v3_endpoint_type = public
 region = {{ .Values.global.region }}
 flavor_ref = 20
 flavor_ref_alt = 30
@@ -91,7 +91,7 @@ ssh_key_type = rsa
 
 [volume]
 catalog_type = volumev3
-endpoint_type = internal
+endpoint_type = public
 min_microversion = 3.0
 max_microversion = latest
 vendor_name = VMware
