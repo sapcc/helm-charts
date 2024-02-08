@@ -1,0 +1,64 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: calico-kube-controllers
+  namespace: {{ .Release.Namespace }}
+  labels:
+    k8s-app: calico-kube-controllers
+spec:
+  # The controllers can only have a single active instance.
+  replicas: 1
+  selector:
+    matchLabels:
+      k8s-app: calico-kube-controllers
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      name: calico-kube-controllers
+      namespace: {{ .Release.Namespace }}
+      labels:
+        k8s-app: calico-kube-controllers
+    spec:
+      hostNetwork: true
+      {{- with .Values.kubeControllers.nodeSelector }}
+      nodeSelector:
+      {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.kubeControllers.affinity }}
+      affinity:
+      {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- if .Values.kubeControllers.tolerations }}
+      tolerations:
+      {{- with .Values.kubeControllers.tolerations }}
+      {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- end }}
+      serviceAccountName: calico-kube-controllers
+      priorityClassName: system-cluster-critical
+      containers:
+        - name: calico-kube-controllers
+          image: "{{ required ".Values.global.dockerHubMirrorAlternateRegion is missing" $.Values.global.dockerHubMirrorAlternateRegion }}/{{ $.Values.images.calicoKubeControllers.image }}:{{ $.Values.images.calicoKubeControllers.tag }}"
+          imagePullPolicy: IfNotPresent
+          env:
+            # Choose which controllers to run.
+            - name: ENABLED_CONTROLLERS
+              value: node
+            - name: DATASTORE_TYPE
+              value: kubernetes
+          livenessProbe:
+            exec:
+              command:
+              - /usr/bin/check-status
+              - -l
+            periodSeconds: 10
+            initialDelaySeconds: 10
+            failureThreshold: 6
+            timeoutSeconds: 10
+          readinessProbe:
+            exec:
+              command:
+              - /usr/bin/check-status
+              - -r
+            periodSeconds: 10
