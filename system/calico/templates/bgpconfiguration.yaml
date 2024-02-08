@@ -1,0 +1,14 @@
+apiVersion: crd.projectcalico.org/v1
+kind: BGPConfiguration
+metadata:
+  name: default
+spec:
+  logSeverityScreen: Info
+  nodeToNodeMeshEnabled: false
+  asNumber: {{ required ".Values.bgp.asNumber is missing" .Values.bgp.asNumber }}
+  serviceExternalIPs:
+  {{- range $cidr := .Values.bgp.serviceExternalIPs }}
+    - cidr: {{ $cidr }}
+  {{- end }}
+  listenPort: 179
+  bindMode: NodeIP
