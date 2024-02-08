@@ -33,6 +33,15 @@ spec:
           image: "{{ required ".Values.global.registry variable missing" .Values.global.registry }}/{{ .Values.image }}:{{ $.Values.imageTag }}"
           command: [ "schedules2slack" ]
           args: ["-config", "/etc/config/config.yaml"]
+          livenessProbe:
+            httpGet:
+              path: /live
+              port: 2112
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 2112
+            initialDelaySeconds: 30
           resources:
             limits:
               memory: 200Mi
