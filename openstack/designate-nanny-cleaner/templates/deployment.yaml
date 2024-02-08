@@ -67,6 +67,8 @@ spec:
           value:  "{{ required "missing $top.Values.designate_nanny.credentials.designate_api.project_user_domain_name" $top.Values.designate_nanny.credentials.designate_api.project_user_domain_name}}"
         - name: INSTANCE_NAME
           value: "{{ $instance }}"
+        - name: NANNY_RNDC_SERVER
+          value: "{{ $instance }}-{{ $top.Values.global.region }}"
         ports:
         - containerPort: 9102
           name: metrics
@@ -79,6 +81,9 @@ spec:
           subPath: nanny.yaml
         - name: persistent-storage
           mountPath: {{ $top.Values.storage_mountpoint | default "/var/lib/bind" }}
+        - name: bind-keys-rndc
+          mountPath: "/etc/bind/rndc.key"
+          subPath: rndc.key
       volumes:
       - name: nanny-conf
         configMap:
@@ -86,5 +91,11 @@ spec:
       - name: persistent-storage
         persistentVolumeClaim:
           claimName: {{ $instance }}-{{ required "missing $top.Values.global.region" $top.Values.global.region}}
+      - name: bind-keys-rndc
+        configMap:
+          name: {{ $instance }}-{{ required "missing $top.Values.global.region" $top.Values.global.region}}-keys
+          items:
+          - key: rndc.key
+            path: rndc.key
 {{- end }}
 {{- end }}
