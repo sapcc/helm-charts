@@ -7,7 +7,7 @@ metadata:
     k8s-app: calico-kube-controllers
 spec:
   # The controllers can only have a single active instance.
-  replicas: 1
+  replicas: 2
   selector:
     matchLabels:
       k8s-app: calico-kube-controllers
@@ -41,6 +41,12 @@ spec:
         - name: calico-kube-controllers
           image: "{{ required ".Values.global.dockerHubMirrorAlternateRegion is missing" $.Values.global.dockerHubMirrorAlternateRegion }}/{{ $.Values.images.calicoKubeControllers.image }}:{{ $.Values.images.calicoKubeControllers.tag }}"
           imagePullPolicy: IfNotPresent
+          {{- if .Values.config.monitoring.enabled }}
+          ports:
+          - containerPort: {{ .Values.config.monitoring.kubeControllersMetricsPort }}
+            name: metrics
+            protocol: TCP
+          {{-  end }}
           env:
             # Choose which controllers to run.
             - name: ENABLED_CONTROLLERS
