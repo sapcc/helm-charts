@@ -1,0 +1,17 @@
+{{- if .Values.config.monitoring.enabled }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: calico-bird-monitoring
+  namespace: {{ .Release.Namespace }}
+  labels:
+    monitoring: calico-bird
+spec:
+  ports:
+    - port: {{ .Values.config.monitoring.birdMetricsPort }}
+      targetPort: {{ .Values.config.monitoring.birdMetricsPort }}
+      name: metrics
+  selector:
+    k8s-app: calico-node
+{{- end }}

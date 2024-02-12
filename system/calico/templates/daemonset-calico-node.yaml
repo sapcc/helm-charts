@@ -18,6 +18,7 @@ spec:
       labels:
         k8s-app: calico-node
       annotations:
+        kubectl.kubernetes.io/default-container: calico-node
         checksum/configmap-calico: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
     spec:
       {{- with .Values.node.nodeSelector }}
@@ -312,6 +313,29 @@ spec:
             - name: cni-log-dir
               mountPath: /var/log/calico/cni
               readOnly: true
+        {{- if .Values.config.monitoring.enabled }}
+        - name: exporter
+          image: "{{ required ".Values.global.registryAlternateRegion is missing" $.Values.global.registryAlternateRegion }}/{{ $.Values.images.exporter.image }}:{{ $.Values.images.exporter.tag }}"
+          args:
+            - -format.new=true
+            - -bird.socket=/var/run/calico/bird.ctl
+            - -bird.ipv6=false
+          resources:
+            limits:
+              cpu: 100m
+              memory: 32Mi
+            requests:
+              cpu: 100m
+              memory: 32Mi
+          volumeMounts:
+            - name: var-run-calico
+              mountPath: /var/run/calico
+              readOnly: true
+          ports:
+            - containerPort: 9324
+              name: metrics
+              protocol: TCP
+        {{- end }}
       volumes:
         # Used by calico-node.
         - name: lib-modules
