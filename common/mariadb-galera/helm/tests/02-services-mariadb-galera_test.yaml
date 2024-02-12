@@ -974,6 +974,7 @@ tests:
       - equal:
           path: spec.sessionAffinityConfig.clientIP.timeoutSeconds
           value: 28800
+
   - it: database service name changed if migration option is enabled
     template: service.yaml
     documentSelector:
@@ -988,9 +989,13 @@ tests:
       - equal:
           path: metadata.name
           value: testrelease-mariadb-replica
+      - notEqual:
+          path: metadata.name
+          value: testrelease-mariadb
       - equal:
           path: metadata.labels.app
           value: testrelease
+
   - it: database service name changed if migration option is disabled
     template: service.yaml
     documentSelector:
@@ -1005,6 +1010,9 @@ tests:
       - equal:
           path: metadata.name
           value: testrelease-mariadb
+      - notEqual:
+          path: metadata.name
+          value: testrelease-mariadb-replica
       - equal:
           path: metadata.labels.app
           value: testrelease
