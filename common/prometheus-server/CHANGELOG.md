@@ -1,3 +1,8 @@
+## 7.4.14
+
+* default value for shards
+* vpa scope to Prometheus resource to ensure operator compatibility with scale subresource
+
 ## 7.4.9 - 7.4.10
 
 * VPA mapping adjustment to set individual values 
