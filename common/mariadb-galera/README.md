@@ -42,7 +42,7 @@ Docker images and Helm chart to deploy a [MariaDB](https://mariadb.com/kb/en/get
 ## Metadata
 | chart version | app version | type | url |
 |:--------------|:-------------|:-------------|:-------------|
-| 0.23.0 | 10.5.22 | application | [Git repo](https://github.com/sapcc/helm-charts/tree/mariadb-galera/common/mariadb-galera) |
+| 0.23.1 | 10.5.23 | application | [Git repo](https://github.com/sapcc/helm-charts/tree/mariadb-galera/common/mariadb-galera) |
 
 | Name | Email | Url |
 | ---- | ------ | --- |
@@ -152,7 +152,7 @@ docker build --build-arg BASE_SOFT_NAME=ubuntu --build-arg BASE_SOFT_VERSION=22.
   ```
 * [push](https://helm.sh/docs/topics/registries/#the-push-subcommand) the chart to the registry
   ```shell
-  helm push mariadb-galera-0.23.0.tgz oci://keppel.eu-de-1.cloud.sap/ccloud-helm/
+  helm push mariadb-galera-0.23.1.tgz oci://keppel.eu-de-1.cloud.sap/ccloud-helm/
   ```
 
 ### values description
@@ -254,7 +254,7 @@ docker build --build-arg BASE_SOFT_NAME=ubuntu --build-arg BASE_SOFT_VERSION=22.
 | hpa.proxy.minReplicas | int | 3 | minimum number of replicas allowed for the ProxySQL cluster pods |
 | image.database.databasename | string | `"mariadb-galera"` | folder/container used in the image registry and also part of the image name |
 | image.database.databaseversion | string | `"10.5.23"` | database part of the image version that should be pulled |
-| image.database.imageversion | int | `20240130112825` | image part of the image version that should be pulled |
+| image.database.imageversion | int | `20240212072432` | image part of the image version that should be pulled |
 | image.database.project | string | `"ccloud"` | project/tenant used in the image registry |
 | image.database.pullPolicy | string | IfNotPresent | `Always` to enforce that the image will be pulled even if it is already available on the worker node |
 | image.database.pullSecret | string | `nil` | name of the defined Kubernetes secret defined in `image.pullSecrets` that should be used for container registry authentication |
@@ -267,28 +267,28 @@ docker build --build-arg BASE_SOFT_NAME=ubuntu --build-arg BASE_SOFT_VERSION=22.
 | image.haproxy.registry | string | `"keppel.eu-de-1.cloud.sap"` | hostname of the image registry used to pull the proxy image that contains the Restic backup software |
 | image.kopiabackup.databasename | string | `"mariadb-galera-kopia"` | folder/container used in the image registry and also part of the image name |
 | image.kopiabackup.databaseversion | string | `"0.12.1"` | database part of the image version that should be pulled |
-| image.kopiabackup.imageversion | int | `20240130112825` | image part of the image version that should be pulled |
+| image.kopiabackup.imageversion | int | `20240212072432` | image part of the image version that should be pulled |
 | image.kopiabackup.project | string | `"ccloud"` | project/tenant used in the image registry |
 | image.kopiabackup.pullPolicy | string | IfNotPresent | `Always` to enforce that the image will be pulled even if it is already available on the worker node |
 | image.kopiabackup.pullSecret | string | `nil` | name of the defined Kubernetes secret defined in `image.pullSecrets` that should be used for container registry authentication |
 | image.kopiabackup.registry | string | `"keppel.eu-de-1.cloud.sap"` | hostname of the image registry used to pull the proxy image that contains the Kopia backup software |
 | image.monitoring.databasename | string | `"mariadb-galera-mysqld_exporter"` | folder/container used in the image registry and also part of the image name |
 | image.monitoring.databaseversion | string | `"0.14.0"` | database part of the image version that should be pulled |
-| image.monitoring.imageversion | int | `20240130112825` | image part of the image version that should be pulled |
+| image.monitoring.imageversion | int | `20240212072432` | image part of the image version that should be pulled |
 | image.monitoring.project | string | `"ccloud"` | project/tenant used in the image registry |
 | image.monitoring.pullPolicy | string | IfNotPresent | `Always` to enforce that the image will be pulled even if it is already available on the worker node |
 | image.monitoring.pullSecret | string | `nil` | name of the defined Kubernetes secret defined in `image.pullSecrets` that should be used for container registry authentication |
 | image.monitoring.registry | string | `"keppel.eu-de-1.cloud.sap"` | hostname of the image registry used to pull the monitoring image that currently contains the MySQL exporter for Prometheus |
 | image.os.databasename | string | `"mariadb-galera-ubuntu"` | folder/container used in the image registry and also part of the image name |
 | image.os.databaseversion | float | `22.04` | database part of the image version that should be pulled |
-| image.os.imageversion | int | `20240130112825` | image part of the image version that should be pulled |
+| image.os.imageversion | int | `20240212072432` | image part of the image version that should be pulled |
 | image.os.project | string | `"ccloud"` | project/tenant used in the image registry |
 | image.os.pullPolicy | string | IfNotPresent | `Always` to enforce that the image will be pulled even if it is already available on the worker node |
 | image.os.pullSecret | string | `nil` | name of the defined Kubernetes secret defined in `image.pullSecrets` that should be used for container registry authentication |
 | image.os.registry | string | `"keppel.eu-de-1.cloud.sap"` | hostname of the image registry used to pull the basic OS image that will be used for certain init steps |
 | image.proxy.databasename | string | `"mariadb-galera-proxysql"` | folder/container used in the image registry and also part of the image name |
 | image.proxy.databaseversion | string | `"2.5.5"` | database part of the image version that should be pulled |
-| image.proxy.imageversion | int | `20240130112825` | image part of the image version that should be pulled |
+| image.proxy.imageversion | int | `20240212072432` | image part of the image version that should be pulled |
 | image.proxy.project | string | `"ccloud"` | project/tenant used in the image registry |
 | image.proxy.pullPolicy | string | IfNotPresent | `Always` to enforce that the image will be pulled even if it is already available on the worker node |
 | image.proxy.pullSecret | string | `nil` | name of the defined Kubernetes secret defined in `image.pullSecrets` that should be used for container registry authentication |
