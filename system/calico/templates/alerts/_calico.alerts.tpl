@@ -25,7 +25,7 @@ groups:
         labels:
             tier: k8s
             service: calico
-            severity: critical
+            severity: warning
             context: availability
             support_group: containers
             playbook: "docs/support/playbook/kubernetes/k8s_node_bgp_neighbor"
