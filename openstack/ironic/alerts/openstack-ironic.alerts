@@ -6,11 +6,11 @@ groups:
     for: 1m # metric is measured every 15 minutes, so this is practically identical to "for: 15m" except it appears and resolves faster
     labels:
       severity: info
-      meta: "{{ $value }} Ironic nodes do not match any Nova baremetal flavor"
+      support_group: foundation
       service: ironic
       context: test
       tier: os
-      support_group: foundation
+      meta: "{{ $value }} Ironic nodes do not match any Nova baremetal flavor"
       kibana: "app/kibana#/discover?_g=(filters:!(),refreshInterval:(display:Off,pause:!f,value:0),time:(from:now-20m,to:now))&_a=(columns:!(kubernetes_labels_name,log),filters:!(('$state':(store:appState),meta:(alias:!n,disabled:!f,index:'logstash-*',key:kubernetes_labels_name,negate:!f,params:(query:limes-collect-ccloud),type:phrase),query:(match_phrase:(kubernetes_labels_name:limes-collect-ccloud)))),index:'logstash-*',interval:auto,query:(language:lucene,query:ironic),sort:!(time,desc))"
     annotations:
       description: "{{ $value }} active/available Ironic nodes do not match any Nova
@@ -58,7 +58,7 @@ groups:
     expr: count(openstack_ironic_nodes_list_gauge{provision_state='error'}) by (name, last_error) > 0
     for: 5m
     labels:
-      severity: warning
+      severity: info
       support_group: foundation
       service: ironic
       tier: os
@@ -90,7 +90,7 @@ groups:
     expr: count(openstack_ironic_nodes_list_gauge{provision_state='clean failed'}) by (name, last_error) > 0
     for: 15m
     labels:
-      severity: warning
+      severity: info
       support_group: foundation
       tier: os
       service: ironic
