@@ -87,6 +87,11 @@ mariadb:
     # -- (bool) enable the [annotation](https://linkerd.io/2.14/tasks/adding-your-service/#meshing-a-service-with-annotations) for linkerd to inject the sidecar container for transport encryption
     # @default -- false
     enabled:
+  migration:
+    # -- (bool) if enabled the `mariadb` service will be renamed to `mariadb-replica` and the async replication from the `mariadb` service will be configured
+    # Another `mariadb` service (from another subchart) must be available in the same namespace as a source for the async replication
+    enabled: false
+    stage: replica
   job:
     config:
       # -- How many [retries](https://kubernetes.io/docs/concepts/workloads/controllers/job/#pod-backoff-failure-policy) before the MariaDB config job will be marked as failed
@@ -146,8 +151,9 @@ mariadb:
     # @default -- 4
     slaveThreads: 16
     # -- (int) must be a positive integer [wsrep_gtid_domain_id](https://mariadb.com/kb/en/galera-cluster-system-variables/#wsrep_gtid_domain_id)
-    # @default -- 1
-    gtidDomainId: 1
+    # do not set it to `1` if you want to avoid server id collisions during [asynchronous replication](#asynchronous-replication-config)
+    # @default -- 10817
+    gtidDomainId:
     # -- (int) how many Galera cluster instances will be connected. Used for [asynchronous replication](#asynchronous-replication-config) setups. Maximum of `2` is supported
     # @default -- 1
     gtidDomainIdCount: 1
@@ -718,7 +724,7 @@ image:
     # -- database part of the image version that should be pulled
     databaseversion: 22.04
     # -- image part of the image version that should be pulled
-    imageversion: 20240129111302
+    imageversion: 20240212072432
     # -- (string) `Always` to enforce that the image will be pulled even if it is already available on the worker node
     # @default -- IfNotPresent
     pullPolicy:
@@ -732,9 +738,9 @@ image:
     # -- folder/container used in the image registry and also part of the image name
     databasename: mariadb-galera
     # -- database part of the image version that should be pulled
-    databaseversion: 10.5.22
+    databaseversion: 10.5.23
     # -- image part of the image version that should be pulled
-    imageversion: 20240129111302
+    imageversion: 20240212072432
     # -- (string) `Always` to enforce that the image will be pulled even if it is already available on the worker node
     # @default -- IfNotPresent
     pullPolicy:
@@ -750,7 +756,7 @@ image:
     # -- database part of the image version that should be pulled
     databaseversion: 0.14.0
     # -- image part of the image version that should be pulled
-    imageversion: 20240129111302
+    imageversion: 20240212072432
     # -- (string) `Always` to enforce that the image will be pulled even if it is already available on the worker node
     # @default -- IfNotPresent
     pullPolicy:
@@ -766,7 +772,7 @@ image:
     # -- database part of the image version that should be pulled
     databaseversion: 2.5.5
     # -- image part of the image version that should be pulled
-    imageversion: 20240129111302
+    imageversion: 20240212072432
     # -- (string) `Always` to enforce that the image will be pulled even if it is already available on the worker node
     # @default -- IfNotPresent
     pullPolicy:
@@ -782,7 +788,7 @@ image:
     # -- database part of the image version that should be pulled
     databaseversion: 0.12.1
     # -- image part of the image version that should be pulled
-    imageversion: 20240129111302
+    imageversion: 20240212072432
     # -- (string) `Always` to enforce that the image will be pulled even if it is already available on the worker node
     # @default -- IfNotPresent
     pullPolicy:

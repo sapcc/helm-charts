@@ -1,5 +1,16 @@
 # Changelog
 
+## v0.23.1 - 2024/02/12
+* helm unit tests for migration option added
+* packages timestamp updated to `20240212072432`
+* chart version bumped
+
+## v0.23.0 - 2024/01/30
+* helm unit tests added
+* mariadb.migration.enabled chart option added
+  * to support the migration from another MariaDB instance
+* chart version bumped
+
 ## v0.22.3 - 2024/01/29
 * packages timestamp updated to `20240129111302`
 * chart version bumped
