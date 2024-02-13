@@ -85,14 +85,22 @@ spec:
               name: designate-etc
             - mountPath: /container.init
               name: container-init
+            - mountPath:
             {{- include "utils.proxysql.volume_mount" . | indent 12 }}
             {{- include "utils.trust_bundle.volume_mount" . | indent 12 }}
         {{- include "utils.proxysql.container" . | indent 8 }}
         {{- include "jaeger_agent_sidecar" . | indent 8 }}
       volumes:
         - name: designate-etc
-          configMap:
-            name: designate-etc
+          projected:
+            sources:
+            - configMap:
+                name: designate-etc
+            - secret:
+                name: designate-secrets
+                items:
+                  - key: secrets.conf
+                    path: secrets.conf
         - name: container-init
           configMap:
             name: designate-bin
