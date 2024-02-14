@@ -101,18 +101,6 @@
       replacement: vasa-exporter:{{$values.listen_port}}
 {{- end }}
 
-{{- if .Values.alertmanager_exporter.enabled }}
-- job_name: 'prometheus/alertmanager'
-  scrape_interval: {{ .Values.alertmanager_exporter.scrapeInterval }}
-  scrape_timeout: {{ .Values.alertmanager_exporter.scrapeTimeout }}
-  static_configs:
-    - targets:
-      {{- range $.Values.alertmanager_exporter.targets }}
-      - {{ . }}
-      {{- end }}
-  scheme: https
-{{- end }}
-
 {{- if .Values.netbox_exporter.enabled }}
 - job_name: 'netbox'
   scrape_interval: {{ .Values.netbox_exporter.scrapeInterval }}
