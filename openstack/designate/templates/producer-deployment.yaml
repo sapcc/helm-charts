@@ -102,8 +102,15 @@ spec:
         {{- include "utils.proxysql.container" . | indent 8 }}
       volumes:
         - name: designate-etc
-          configMap:
-            name: designate-etc
+          projected:
+            sources:
+            - configMap:
+                name: designate-etc
+            - secret:
+                name: designate-secrets
+                items:
+                  - key: secrets.conf
+                    path: secrets.conf
         - name: container-init
           configMap:
             name: designate-bin
