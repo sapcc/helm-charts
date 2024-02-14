@@ -508,7 +508,6 @@ backend_url = memcached://{{.Release.Name}}-memcached.{{.Release.Namespace}}.svc
 #   name = '%s.%s' % (func.__module__, func.__name__)
 
 # [hook_point:designate.api.v2.controllers.zones.get_one]
-{{ include "ini_sections.audit_middleware_notifications" . }}
 
 # Tracing
 {{- include "osprofiler" . }}

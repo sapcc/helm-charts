@@ -13,3 +13,5 @@ connection = {{ include "db_url_pxc" . }}
 {{- else }}
 connection = {{ include "db_url_mysql" . }}
 {{- end }}
+
+{{ include "ini_sections.audit_middleware_notifications" . }}
