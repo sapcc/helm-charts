@@ -58,7 +58,6 @@ min_pool_size = {{ .Values.min_pool_size | default .Values.global.min_pool_size 
 max_pool_size = {{ .Values.max_pool_size | default .Values.global.max_pool_size | default 100 }}
 max_overflow = {{ .Values.max_overflow | default .Values.global.max_overflow | default 50 }}
 
-
 transport_url = rabbit://{{ .Values.rabbitmq.users.default.user | default "rabbitmq" }}:{{ .Values.rabbitmq.users.default.password }}@{{ include "rabbitmq_host" . }}:{{ .Values.rabbitmq.port | default 5672 }}/
 
 [oslo_policy]
@@ -379,12 +378,6 @@ endpoint_type = publicURL
 timeout = 20
 insecure = True
 {{- end }}
-#admin_username = designate
-#admin_password = designate
-#admin_tenant_name = designate
-#auth_url = http://localhost:35357/v2.0
-#auth_strategy = keystone
-#ca_certificates_file =
 
 ########################
 ## Storage Configuration
