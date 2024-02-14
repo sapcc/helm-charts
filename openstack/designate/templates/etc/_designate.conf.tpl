@@ -297,6 +297,28 @@ query_enforce_tsig = {{ .Values.query_enforce_tsig }}
 #transfer_source = None
 #notify_delay = 0
 
+#-----------------------
+# Producer Service
+#-----------------------
+[service:producer]
+# Number of Producer worker processes to spawn (integer value)
+workers = 2
+
+# Number of Producer greenthreads to spawn (integer value)
+#threads = 1000
+
+# Enabled tasks to run (list value)
+#enabled_tasks = <None>
+
+# DEPRECATED: Whether to allow synchronous zone exports (boolean value)
+# This option is deprecated for removal.
+# Its value may be silently ignored in the future.
+# Reason: Migrated to designate-worker
+#export_synchronous = true
+
+# RPC topic name for producer (string value)
+topic = producer
+
 #------------------------
 # Deleted domains purging
 #------------------------
