@@ -63,6 +63,10 @@ policy_file = policy.yaml
 
 [oslo_messaging_rabbit]
 heartbeat_in_pthread = false
+rabbit_interval_max = 10
+kombu_reconnect_delay = 0.1
+heartbeat_timeout_threshold = 15
+heartbeat_rate = 3
 
 [oslo_messaging_notifications]
 driver = noop
