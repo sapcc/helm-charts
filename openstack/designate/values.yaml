@@ -26,6 +26,7 @@ global:
   designate_mdns_port_public: '5354'
   designate_mdns_service_ip:
   designate_mdns_akamai_ip:
+  designate_service_user: designate
   domain_seeds:
     skip_hcm_domain: false
   linkerd_requested: false
@@ -48,11 +49,37 @@ pod:
           max_unavailable: 0
           max_surge: 1
 
+# image_version_designate:  DEFINED-IN-REGION-CHART
 imageVersionTempest: "latest"
 
-bind_pools: []
-## Akamai Pool values if pool is enabled
-akamai_pools: []
+bind_pools:
+  - name: default
+    nameservers:
+      - hostname: DEFINED-IN-REGION-CHART
+        ip:  DEFINED-IN-REGION-CHART
+      - hostname: DEFINED-IN-REGION-CHART
+        ip:  DEFINED-IN-REGION-CHART
+      - hostname: DEFINED-IN-REGION-CHART
+        ip:  DEFINED-IN-REGION-CHART
+    options:
+      tsig_key_name: DEFINED-IN-REGION-CHART
+      tsig_key_secret: DEFINED-IN-REGION-CHART
+      tsig_key_algorithm: DEFINED-IN-REGION-CHART
+## Akamai Pool values if needed
+#akamai_pools:
+#  - name: akamai_pool
+#    nameservers:
+#      - hostname: DEFINED-IN-REGION-CHART
+#        ip: DEFINED-IN-REGION-CHART
+#    options:
+#      username: DEFINED-IN-REGION-CHART
+#      password: DEFINED-IN-REGION-CHART
+#      tsig_key_name: DEFINED-IN-REGION-CHART
+#      tsig_key_secret: DEFINED-IN-REGION-CHART
+#      tsig_key_algorithm: DEFINED-IN-REGION-CHART
+#    also_notifies:
+#      - host: DEFINED-IN-REGION-CHART
+#        port: DEFINED-IN-REGION-CHART
 
 rndc_keys:
 - name: DEFINED-IN-REGION-CHART
@@ -60,8 +87,6 @@ rndc_keys:
   secret: DEFINED-IN-REGION-CHART
 
 db_name: designate
-
-# default pool always has this uuid:
 pool_id: 794ccc2c-d751-44fe-b57f-8894c9f5c842
 scheduler_filters: attribute, pool_id_attribute, in_doubt_default_pool, fallback
 sink_enabled: False
@@ -286,7 +311,6 @@ rabbitmq:
     enabled: true
     sidecar:
       enabled: false 
-
 rabbitmq_cluster:
   enabled: false
   use_alternate_registry: true
@@ -301,8 +325,10 @@ rabbitmq_notifications:
   users:
     default:
       user: rabbitmq
+      password: DEFINED-IN-SECRETS
     admin:
       user: admin
+      password: DEFINED-IN-SECRETS
 
 resources:
   api:
