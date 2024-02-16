@@ -59,10 +59,18 @@ spec:
           args:
             - --master-url
             - http://{{ include "netapp-harvest.fullname" . }}-{{ $appName }}-master.{{ .Release.Namespace }}.svc:8000
+            - --listen-address
+            - :8080
             - --template-file
             - /app/harvest.yaml.tpl
             - --output-path
             - /app/shared
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+            initialDelaySeconds: 120
+            periodSeconds: 10
           env:
             - name: NETAPP_USERNAME
               valueFrom:
