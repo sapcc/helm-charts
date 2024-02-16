@@ -1,9 +1,9 @@
 [DEFAULT]
-transport_url = rabbit://{{"{{"}} resolve "vault+kvv2:///secrets/{{ .Values.global.region }}/designate/rabbitmq-user/openstack/username" {{"}}"}}:{{"{{"}} resolve "vault+kvv2:///secrets/{{ .Values.global.region }}/designate/rabbitmq-user/openstack/password" {{"}}"}}@{{ include "rabbitmq_host" . }}:{{ .Values.rabbitmq.ports.public | default 5672 }}/
+transport_url = rabbit://{{"{{"}} resolve "vault+kvv2:///secrets/{{ .Values.global.region }}/{{ .Release.Name }}/rabbitmq-user/openstack/username" {{"}}"}}:{{"{{"}} resolve "vault+kvv2:///secrets/{{ .Values.global.region }}/{{ .Release.Name }}/rabbitmq-user/openstack/password" {{"}}"}}@{{ include "rabbitmq_host" . }}:{{ .Values.rabbitmq.ports.public | default 5672 }}/
 
 [keystone_authtoken]
-username = {{ .Values.global.designate_service_user }}
-password = {{ .Values.global.designate_service_password }}
+username = {{"{{"}} resolve "vault+kvv2:///secrets/{{ .Values.global.region }}/{{ .Release.Name }}/keystone-user/service/username" {{"}}"}}
+password = {{"{{"}} resolve "vault+kvv2:///secrets/{{ .Values.global.region }}/{{ .Release.Name }}/keystone-user/service/password" {{"}}"}}
 
 [storage:sqlalchemy]
 # Database connection string - MariaDB for regional setup
