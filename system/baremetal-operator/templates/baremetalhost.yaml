@@ -1,0 +1,14 @@
+{{- range .Values.hosts }}
+apiVersion: metal3.io/v1alpha1
+kind: BareMetalHost
+metadata:
+  name: {{ .name }}
+  namespace: {{ .Release.namespace }}
+spec:
+  online: true
+  bmc:
+    address: {{ .redfishUrl }}
+    credentialsName: bmc-secret-{{ .name }}
+    disableCertificateVerification: True 
+  bootMACAddress: {{ .bootMac }}
+{{- end }}
