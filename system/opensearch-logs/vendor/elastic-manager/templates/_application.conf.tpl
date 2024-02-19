@@ -6,7 +6,7 @@ secret="{{.Values.manager_secret}}"
 basePath = "/"
 
 # Defaults to RUNNING_PID at the root directory of the app.
-# To avoid creating a PID file set this value to /dev/null
+user_group# To avoid creating a PID file set this value to /dev/null
 #pidfile.path = "/var/run/cerebro.pid"
 pidfile.path=/dev/null
 
@@ -49,7 +49,7 @@ auth = {
     group-search {
       user-attr = "sAMAccountName"
       user-attr-template = "%s"
-      group = "memberOf={{.Values.global.ldap.user_group}},{{.Values.global.ldap.suffix}}"
+      group = "memberOf={{.Values.global.ldap.user_group}},{{.Values.global.ldap.group_search_base_dns}},{{.Values.global.ldap.suffix}}"
     }
   }
 }
