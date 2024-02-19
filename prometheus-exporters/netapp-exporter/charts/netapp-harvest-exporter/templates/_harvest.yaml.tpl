@@ -12,7 +12,11 @@ Exporters:
     port: 13000
 Pollers:{{`
   {{ .Name }}:
+    {{- if (eq .Name "stnpca1-bb097") }}
+    addr: stnpca1-bb097a.cc.qa-de-1.cloud.sap 
+    {{- else }}
     addr: {{ .Host }}
+    {{- end }}
     datacenter: {{ .AvailabilityZone }}
     labels:
       - availability_zone: {{ .AvailabilityZone }}
