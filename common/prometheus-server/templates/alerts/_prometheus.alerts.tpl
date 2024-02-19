@@ -249,8 +249,13 @@ groups:
       summary: Prometheus scrapes pods multiple times
   {{- end }}
 
-  {{- if and (eq $root.Values.vpaUpdateMode "Auto") (not $root.Values.alerts.thanos.enabled) }}
-  {{/* Only affecting all prometheus-kubernetes and using Thanos alerts directive to distinguish */}}
+  {{/* Only affecting all prometheus-kubernetes and kubernikus since they have the metric natively. Rest is provided with similar Thanos rules and must not have these alerts, since they can never fire and will trigger absent alerts */}}
+  {{- if and 
+  (eq $root.Values.vpaUpdateMode "Auto")
+  (not $root.Values.alerts.thanos.enabled) 
+  (or 
+  (contains (include "prometheus.name" . ) "kubernetes")
+  (contains (include "prometheus.name" . ) "kubernikus" ))}}
   - alert: PrometheusVpaMemoryExceeded
     expr: |
       vpa_butler_vpa_container_recommendation_excess{verticalpodautoscaler=~"{{ include "prometheus.fullName" . }}",resource="memory"} / 1024 / 1024 / 1024 > 0

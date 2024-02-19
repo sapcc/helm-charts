@@ -1,3 +1,7 @@
+## 7.4.15
+
+* only deploy VPA alerts to kubernikus and kubernetes natively
+
 ## 7.4.14
 
 * default value for shards
