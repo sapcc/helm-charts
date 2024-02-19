@@ -6,7 +6,7 @@ secret="{{.Values.manager_secret}}"
 basePath = "/"
 
 # Defaults to RUNNING_PID at the root directory of the app.
-user_group# To avoid creating a PID file set this value to /dev/null
+# To avoid creating a PID file set this value to /dev/null
 #pidfile.path = "/var/run/cerebro.pid"
 pidfile.path=/dev/null
 
