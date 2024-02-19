@@ -1,7 +1,7 @@
 {{/* MariaDB services */}}
   {{/* backend */}}
     {{/* per pod service to generate per pod hostnames */}}
-    {{- range $replicaNumber, $err := until ($.Values.replicas.database|int) }}
+    {{- range $replicaNumber, $err := until ((include "replicaCount" (dict "global" $ "type" "database")) | int) }}
       {{ include "networkService" (dict "global" $ "type" "backend" "service" (required ".services.database.backend missing" $.Values.services.database.backend) "component" "database" "replica" ($replicaNumber | toString)) }}
     {{- end }}
     {{/* shared service for all pods */}}
@@ -19,7 +19,7 @@
 {{- if and ($.Values.proxy.enabled) (eq $.Values.proxy.type "proxysql") }}
   {{/* backend */}}
     {{/* per pod service to generate per pod hostnames */}}
-    {{- range $replicaNumber, $err := until ($.Values.replicas.proxy|int) }}
+    {{- range $replicaNumber, $err := until ((include "replicaCount" (dict "global" $ "type" "proxy")) | int) }}
       {{ include "networkService" (dict "global" $ "type" "backend" "service" (required ".services.proxy.proxysql.backend missing" $.Values.services.proxy.proxysql.backend) "component" "proxysql" "replica" ($replicaNumber | toString)) }}
     {{- end }}
     {{/* shared service for all pods */}}

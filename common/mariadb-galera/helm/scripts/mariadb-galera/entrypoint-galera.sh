@@ -36,12 +36,16 @@ function recovergalera {
     if [ ${SAFE_TO_BOOTSTRAP[1]} -eq 1 ] && [ ${SEQNO} -ne -1 ]; then
       loginfo "${FUNCNAME[0]}" 'positive sequence number found'
       setconfigmap "seqno" "${SEQNO}" "Update"
+      {{- if and ($.Values.mariadb.galera.multiRegion.enabled) (not $.Values.mariadb.galera.multiRegion.bootstrap) }}
+      startgalera
+      {{- else }}
       selectbootstrapnode
       if [ "${NODENAME[0]}" == "${POD_NAME}" ]; then
         bootstrapgalera
       else
         startgalera
       fi
+      {{- end }}
     else
       loginfo "${FUNCNAME[0]}" "start 'mariadbd --wsrep-recover' to find last sequence number"
       MARIADBD_RESPONSE=$(mariadbd --defaults-file=${BASE}/etc/my.cnf --basedir=/usr --skip-log-error --wsrep-recover 2>&1)
@@ -71,6 +75,9 @@ function recovergalera {
         {{ if eq $.Values.scripts.logLevel "debug" }} logdebug "${FUNCNAME[0]}" "grastate.dat file updated to '$(cat ${DATADIR}/grastate.dat)'" {{ else }} loginfo "${FUNCNAME[0]}" "grastate.dat file updated" {{ end }}
 
         setconfigmap "seqno" "${SEQNO}" "Update"
+        {{- if and ($.Values.mariadb.galera.multiRegion.enabled) (not $.Values.mariadb.galera.multiRegion.bootstrap) }}
+        startgalera
+        {{- else }}
         selectbootstrapnode
         if [ "${NODENAME[0]}" == "${POD_NAME}" ]; then
           sed --in-place "s,^safe_to_bootstrap:\s*0,safe_to_bootstrap: 1," ${DATADIR}/grastate.dat
@@ -82,6 +89,7 @@ function recovergalera {
         else
           startgalera
         fi
+        {{- end }}
       else
         logerror "${FUNCNAME[0]}" "The value '${SEQNO}' is not a valid sequence number"
         exit 1
@@ -97,24 +105,57 @@ function startgalera {
 
 function initgalera {
   if [ -f "${BASE}/etc/wipedata.flag" ]; then
+    {{- if $.Values.mariadb.galera.multiRegion.enabled }}
+      {{- if eq ((index $.Values.mariadb.galera.multiRegion.regions $.Values.mariadb.galera.multiRegion.current).segmentId | int) 1 }}
+    if [ ${HOSTNAME} == "{{ (include "nodeNamePrefix" (dict "global" $ "component" "database")) }}-0" ]; then
+      bootstrapgalera
+    else
+      loginfo "${FUNCNAME[0]}" "start sleep mode in multi region cluster because wipedata flag has been set"
+      sleep 86400
+    fi
+      {{- else }}
+    loginfo "${FUNCNAME[0]}" "start sleep mode in multi region cluster because wipedata flag has been set"
+    sleep 86400
+      {{- end }}
+    {{- else }}
     if [ ${HOSTNAME} == "{{ (include "nodeNamePrefix" (dict "global" $ "component" "database")) }}-0" ]; then
       bootstrapgalera
     else
       loginfo "${FUNCNAME[0]}" "start sleep mode because wipedata flag has been set"
       sleep 86400
     fi
+    {{- end }}
   else
+    {{- if $.Values.mariadb.galera.multiRegion.enabled }}
+      {{- if or (eq ((index $.Values.mariadb.galera.multiRegion.regions $.Values.mariadb.galera.multiRegion.current).segmentId | int) 1) ($.Values.mariadb.galera.multiRegion.bootstrap) }}
     if [ -f ${DATADIR}/grastate.dat ] && [ -s ${DATADIR}/grastate.dat ]; then
-        loginfo "${FUNCNAME[0]}" "init Galera cluster configuration already done"
-        recovergalera
+      loginfo "${FUNCNAME[0]}" "init Galera cluster configuration already done"
+      recovergalera
+    else
+      if [ ${HOSTNAME} == "{{ (include "nodeNamePrefix" (dict "global" $ "component" "database")) }}-0" ]; then
+        bootstrapgalera
       else
-        if [ ${HOSTNAME} == "{{ (include "nodeNamePrefix" (dict "global" $ "component" "database")) }}-0" ]; then
-          bootstrapgalera
-        else
-          loginfo "${FUNCNAME[0]}" "will join the Galera cluster during the initial bootstrap triggered on the first node"
-          startgalera
-        fi
+        loginfo "${FUNCNAME[0]}" "will join the Galera cluster during the initial bootstrap triggered on the first node in region with segmentId 1"
+        startgalera
+      fi
     fi
+      {{- else }}
+    loginfo "${FUNCNAME[0]}" "will join the Galera cluster during the initial bootstrap triggered on the first node in region with segmentId 1"
+    startgalera
+      {{- end }}
+    {{- else }}
+    if [ -f ${DATADIR}/grastate.dat ] && [ -s ${DATADIR}/grastate.dat ]; then
+      loginfo "${FUNCNAME[0]}" "init Galera cluster configuration already done"
+      recovergalera
+    else
+      if [ ${HOSTNAME} == "{{ (include "nodeNamePrefix" (dict "global" $ "component" "database")) }}-0" ]; then
+        bootstrapgalera
+      else
+        loginfo "${FUNCNAME[0]}" "will join the Galera cluster during the initial bootstrap triggered on the first node"
+        startgalera
+      fi
+    fi
+    {{- end }}
   fi
 }
 

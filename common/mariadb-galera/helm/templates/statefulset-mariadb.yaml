@@ -1,5 +1,5 @@
 {{- $unevenNodeCount := "" }}
-{{- if eq (mod ($.Values.replicas.database|int) 2) 1 }}
+{{- if eq (mod ((include "replicaCount" (dict "global" $ "type" "database")) | int) 2) 1 }}
     {{- $unevenNodeCount = "true" }}
 {{- end }}
 {{- $_ := (required ".replicas.database value not an uneven integer. This is required to avoid a split brain cluster state." $unevenNodeCount) }}
@@ -14,7 +14,7 @@ metadata:
     component: "database"
     release: {{ $.Release.Name }}
 spec:
-  replicas: {{ $.Values.replicas.database | default 3 }}
+  replicas: {{ ((include "replicaCount" (dict "global" $ "type" "database")) | int) | default 3 }}
   serviceName: {{ $.Release.Name }}
   selector:
     matchLabels:
@@ -146,10 +146,10 @@ spec:
         - name: GALERA_PORT
           value: "{{ (required ".services.database.backend.ports.galera.targetPort missing" $.Values.services.database.backend.ports.galera.targetPort) }}"
           {{- /* https://galeracluster.com/library/documentation/weighted-quorum.html#wq-three-nodes */}}
-          {{- range $int, $err := until ($.Values.replicas.database|int) }}
+          {{- range $int, $err := until ((include "replicaCount" (dict "global" $ "type" "database")) | int) }}
         - name: PC_WEIGHT_{{ $int }}
             {{- if and (hasKey $.Values.mariadb.galera "weightedQuorum") $.Values.mariadb.galera.weightedQuorum }}
-              {{- $weight := (sub (sub ($.Values.replicas.database|int) $int) 1) }}
+              {{- $weight := (sub (sub ((include "replicaCount" (dict "global" $ "type" "database")) | int) $int) 1) }}
               {{- $calculatedWeight := 1 }}
                 {{- range $_, $err := until ($weight|int) }}
                   {{- /* 2^n where n is the $calculatedWeight */}}
@@ -495,6 +495,8 @@ spec:
       {{- else }}
         {{- if or (and (hasKey $.Values.mariadb "wipeDataAndLog") ($.Values.mariadb.wipeDataAndLog)) (and (hasKey $.Values.mariadb.galera.restore "kopia") ($.Values.mariadb.galera.restore.kopia.enabled)) }}
       terminationGracePeriodSeconds: 15
+        {{- else if and ($.Values.mariadb.galera.multiRegion.enabled) (not $.Values.mariadb.galera.multiRegion.bootstrap) }}
+      terminationGracePeriodSeconds: 10
         {{- else }}
       terminationGracePeriodSeconds: {{ $.Values.terminationGracePeriodSeconds | default 86400 | int }}
         {{- end }}

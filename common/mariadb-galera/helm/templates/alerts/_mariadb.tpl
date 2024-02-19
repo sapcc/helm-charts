@@ -65,7 +65,7 @@
 - name: galera.alerts
   rules:
   - alert: "{{ $.Values.monitoring.prometheus.alerts.service | default $.Values.mariadb.galera.clustername | title }}GaleraClusterIncomplete"
-    expr: (mysql_global_status_wsrep_cluster_size{app="{{ $.Release.Name }}", pod=~"{{ (include "nodeNamePrefix" (dict "global" $ "component" "database")) }}.*"} < {{ ($.Values.replicas.database|int) }})
+    expr: (mysql_global_status_wsrep_cluster_size{app="{{ $.Release.Name }}", pod=~"{{ (include "nodeNamePrefix" (dict "global" $ "component" "database")) }}.*"} < {{ ((include "replicaCount" (dict "global" $ "type" "database")) | int) }})
     for: 30m
     labels:
       context: "database"
@@ -74,7 +74,7 @@
       tier: {{ required "$.Values.monitoring.prometheus.alerts missing, but required for Prometheus alert definitions" $.Values.monitoring.prometheus.alerts.tier | quote }}
       support_group: {{ required "$.Values.monitoring.prometheus.alerts.support_group missing, but required for Prometheus alert definitions" $.Values.monitoring.prometheus.alerts.support_group | quote }}
     annotations:
-      description: "{{ (include "nodeNamePrefix" (dict "global" $ "component" "database")) }} Galera cluster reports less than {{ ($.Values.replicas.database|int) }} nodes for the last 30 minutes"
+      description: "{{ (include "nodeNamePrefix" (dict "global" $ "component" "database")) }} Galera cluster reports less than {{ ((include "replicaCount" (dict "global" $ "type" "database")) | int) }} nodes for the last 30 minutes"
       summary: "{{ (include "nodeNamePrefix" (dict "global" $ "component" "database")) }} Galera cluster incomplete"
   - alert: "{{ $.Values.monitoring.prometheus.alerts.service | default $.Values.mariadb.galera.clustername | title }}GaleraClusterNodeNotReady"
     expr: (mysql_global_status_wsrep_ready{app="{{ $.Release.Name }}", pod=~"{{ (include "nodeNamePrefix" (dict "global" $ "component" "database")) }}.*"} != 1)

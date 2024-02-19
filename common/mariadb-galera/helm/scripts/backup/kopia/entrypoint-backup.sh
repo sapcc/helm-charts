@@ -94,7 +94,7 @@ function createkopiabinlogbackup {
   fi
 }
 
-{{- range $int, $err := until ($.Values.replicas.database|int) }}
+{{- range $int, $err := until ((include "replicaCount" (dict "global" $ "type" "database")) | int) }}
 fetchseqnofromremotenode {{ (printf "%s-%d" (include "nodeNamePrefix" (dict "global" $ "component" "database")) $int) }} >>/tmp/nodelist.seqno
 {{- end }}
 selectbackupnode

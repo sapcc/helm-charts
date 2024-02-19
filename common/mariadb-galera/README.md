@@ -24,6 +24,9 @@ Docker images and Helm chart to deploy a [MariaDB](https://mariadb.com/kb/en/get
     * [NFS backend](#nfs-backend)
   * [full database recovery](#full-database-recovery)
   * [point in time database recovery](#point-in-time-database-recovery)
+  * [multi region support](#multi-region-support)
+    * [multi region configuration](#multi-region-configuration)
+    * [multi region WAN tweaks](#multi-region-wan-tweaks)
   * [asynchronous replication config](#asynchronous-replication-config)
   * [MariaDB Galera flow charts](#mariadb-galera-flow-charts)
     * [node startup](#node-startup)
@@ -42,7 +45,7 @@ Docker images and Helm chart to deploy a [MariaDB](https://mariadb.com/kb/en/get
 ## Metadata
 | chart version | app version | type | url |
 |:--------------|:-------------|:-------------|:-------------|
-| 0.23.1 | 10.5.23 | application | [Git repo](https://github.com/sapcc/helm-charts/tree/mariadb-galera/common/mariadb-galera) |
+| 0.24.0 | 10.5.23 | application | [Git repo](https://github.com/sapcc/helm-charts/tree/mariadb-galera/common/mariadb-galera) |
 
 | Name | Email | Url |
 | ---- | ------ | --- |
@@ -152,7 +155,7 @@ docker build --build-arg BASE_SOFT_NAME=ubuntu --build-arg BASE_SOFT_VERSION=22.
   ```
 * [push](https://helm.sh/docs/topics/registries/#the-push-subcommand) the chart to the registry
   ```shell
-  helm push mariadb-galera-0.23.1.tgz oci://keppel.eu-de-1.cloud.sap/ccloud-helm/
+  helm push mariadb-galera-0.24.0.tgz oci://keppel.eu-de-1.cloud.sap/ccloud-helm/
   ```
 
 ### values description
@@ -254,7 +257,7 @@ docker build --build-arg BASE_SOFT_NAME=ubuntu --build-arg BASE_SOFT_VERSION=22.
 | hpa.proxy.minReplicas | int | 3 | minimum number of replicas allowed for the ProxySQL cluster pods |
 | image.database.databasename | string | `"mariadb-galera"` | folder/container used in the image registry and also part of the image name |
 | image.database.databaseversion | string | `"10.5.23"` | database part of the image version that should be pulled |
-| image.database.imageversion | int | `20240212072432` | image part of the image version that should be pulled |
+| image.database.imageversion | int | `20240419150126` | image part of the image version that should be pulled |
 | image.database.project | string | `"ccloud"` | project/tenant used in the image registry |
 | image.database.pullPolicy | string | IfNotPresent | `Always` to enforce that the image will be pulled even if it is already available on the worker node |
 | image.database.pullSecret | string | `nil` | name of the defined Kubernetes secret defined in `image.pullSecrets` that should be used for container registry authentication |
@@ -267,28 +270,28 @@ docker build --build-arg BASE_SOFT_NAME=ubuntu --build-arg BASE_SOFT_VERSION=22.
 | image.haproxy.registry | string | `"keppel.eu-de-1.cloud.sap"` | hostname of the image registry used to pull the proxy image that contains the Restic backup software |
 | image.kopiabackup.databasename | string | `"mariadb-galera-kopia"` | folder/container used in the image registry and also part of the image name |
 | image.kopiabackup.databaseversion | string | `"0.12.1"` | database part of the image version that should be pulled |
-| image.kopiabackup.imageversion | int | `20240212072432` | image part of the image version that should be pulled |
+| image.kopiabackup.imageversion | int | `20240419150126` | image part of the image version that should be pulled |
 | image.kopiabackup.project | string | `"ccloud"` | project/tenant used in the image registry |
 | image.kopiabackup.pullPolicy | string | IfNotPresent | `Always` to enforce that the image will be pulled even if it is already available on the worker node |
 | image.kopiabackup.pullSecret | string | `nil` | name of the defined Kubernetes secret defined in `image.pullSecrets` that should be used for container registry authentication |
 | image.kopiabackup.registry | string | `"keppel.eu-de-1.cloud.sap"` | hostname of the image registry used to pull the proxy image that contains the Kopia backup software |
 | image.monitoring.databasename | string | `"mariadb-galera-mysqld_exporter"` | folder/container used in the image registry and also part of the image name |
 | image.monitoring.databaseversion | string | `"0.14.0"` | database part of the image version that should be pulled |
-| image.monitoring.imageversion | int | `20240212072432` | image part of the image version that should be pulled |
+| image.monitoring.imageversion | int | `20240419150126` | image part of the image version that should be pulled |
 | image.monitoring.project | string | `"ccloud"` | project/tenant used in the image registry |
 | image.monitoring.pullPolicy | string | IfNotPresent | `Always` to enforce that the image will be pulled even if it is already available on the worker node |
 | image.monitoring.pullSecret | string | `nil` | name of the defined Kubernetes secret defined in `image.pullSecrets` that should be used for container registry authentication |
 | image.monitoring.registry | string | `"keppel.eu-de-1.cloud.sap"` | hostname of the image registry used to pull the monitoring image that currently contains the MySQL exporter for Prometheus |
 | image.os.databasename | string | `"mariadb-galera-ubuntu"` | folder/container used in the image registry and also part of the image name |
 | image.os.databaseversion | float | `22.04` | database part of the image version that should be pulled |
-| image.os.imageversion | int | `20240212072432` | image part of the image version that should be pulled |
+| image.os.imageversion | int | `20240419150126` | image part of the image version that should be pulled |
 | image.os.project | string | `"ccloud"` | project/tenant used in the image registry |
 | image.os.pullPolicy | string | IfNotPresent | `Always` to enforce that the image will be pulled even if it is already available on the worker node |
 | image.os.pullSecret | string | `nil` | name of the defined Kubernetes secret defined in `image.pullSecrets` that should be used for container registry authentication |
 | image.os.registry | string | `"keppel.eu-de-1.cloud.sap"` | hostname of the image registry used to pull the basic OS image that will be used for certain init steps |
 | image.proxy.databasename | string | `"mariadb-galera-proxysql"` | folder/container used in the image registry and also part of the image name |
 | image.proxy.databaseversion | string | `"2.5.5"` | database part of the image version that should be pulled |
-| image.proxy.imageversion | int | `20240212072432` | image part of the image version that should be pulled |
+| image.proxy.imageversion | int | `20240419150126` | image part of the image version that should be pulled |
 | image.proxy.project | string | `"ccloud"` | project/tenant used in the image registry |
 | image.proxy.pullPolicy | string | IfNotPresent | `Always` to enforce that the image will be pulled even if it is already available on the worker node |
 | image.proxy.pullSecret | string | `nil` | name of the defined Kubernetes secret defined in `image.pullSecrets` that should be used for container registry authentication |
@@ -380,6 +383,17 @@ docker build --build-arg BASE_SOFT_NAME=ubuntu --build-arg BASE_SOFT_VERSION=22.
 | mariadb.galera.gtidDomainIdCount | int | 1 | how many Galera cluster instances will be connected. Used for [asynchronous replication](#asynchronous-replication-config) setups. Maximum of `2` is supported |
 | mariadb.galera.gtidStrictMode | bool | false | enable [gtid_strict_mode](https://mariadb.com/kb/en/gtid/#gtid_strict_mode) |
 | mariadb.galera.logLevel | string | info | [wsrep_debug](https://mariadb.com/kb/en/galera-cluster-system-variables/#wsrep_debug) |
+| mariadb.galera.multiRegion.bootstrap | bool | `false` | Enable the [Galera bootstrap](https://mariadb.com/kb/en/getting-started-with-mariadb-galera-cluster/#bootstrapping-a-new-cluster). Use it **ONLY** in case all nodes are down and the cluster needs to be started from scratch. It will cause data loss if used for a region that has not held the most recent seqno |
+| mariadb.galera.multiRegion.current | string | `nil` | Name of the region where we are currently deploying the MariaDB Galera cluster components. The `global.db_region` parameter will be used if defined by the parent chart. Otherwise something like r1, r2, r3 or names like eu-de-1, eu-de-2, eu-de-3 should be used |
+| mariadb.galera.multiRegion.enabled | bool | `false` | Enable the multi-region setup. Exactly 3 regions are supported |
+| mariadb.galera.multiRegion.inactive_check_period | float | `"2.5"` | Frequency of checks in seconds for peer inactivity (looking for nodes with delayed responses), after which nodes may be added to the delayed list, and later evicted [evs.inactive_check_period](https://mariadb.com/kb/en/wsrep_provider_options/#evsinactive_check_period) |
+| mariadb.galera.multiRegion.inactive_timeout | string | `30` | Time limit in seconds that a node can be inactive before being pronounced as dead [evs.inactive_timeout](https://mariadb.com/kb/en/wsrep_provider_options/#evsinactive_timeout) |
+| mariadb.galera.multiRegion.install_timeout | string | `8` | Wait time in seconds for install message acknowledgments [evs.install_timeout](https://mariadb.com/kb/en/wsrep_provider_options/#evsinactive_timeout) |
+| mariadb.galera.multiRegion.keepalive_period | float | `"1.6"` | How often keepalive signals should be transmitted when there's no other traffic [evs.keepalive_period](https://mariadb.com/kb/en/wsrep_provider_options/#evskeepalive_period) |
+| mariadb.galera.multiRegion.regions | object | `nil` | `r1/2/3.externalIP` (external IP address of the region. Can be exposed via a load balancer or a external IP of a ClusterIP service) and `r1/2/3.segmentId` (Define which network segment([gmcast.segment](https://galeracluster.com/library/documentation/galera-parameters.html#gmcast-segment)) this node is in) |
+| mariadb.galera.multiRegion.send_window | string | `256` | Maximum number of packets that can be replicated at a time [evs.send_window](https://mariadb.com/kb/en/wsrep_provider_options/#evssend_window) |
+| mariadb.galera.multiRegion.suspect_timeout | string | `5` | A node will be suspected to be dead after these seconds of inactivity [evs.suspect_timeout](https://mariadb.com/kb/en/wsrep_provider_options/#evssuspect_timeout) |
+| mariadb.galera.multiRegion.user_send_window | string | `128` | Maximum number of data packets that can be replicated at a time [evs.user_send_window](https://mariadb.com/kb/en/wsrep_provider_options/#evsuser_send_window) |
 | mariadb.galera.pcrecovery | bool | false | [primary component recovery](https://galeracluster.com/library/documentation/pc-recovery.html) |
 | mariadb.galera.restore.beforeTimestamp | string | `nil` | without `mariab.galera.restore.pointInTimeRecovery` only the full snapshot will be recovered |
 | mariadb.galera.restore.kopia.enabled | bool | `false` | enable the [full database restore](#full-database-restore). Should be done as described in the documentation with `--set` parameters |
@@ -394,7 +408,7 @@ docker build --build-arg BASE_SOFT_NAME=ubuntu --build-arg BASE_SOFT_VERSION=22.
 | mariadb.galera.sst_method | string | `"rsync"` | `rsync` or `mariabackup` (also requires GALERA_SST_USERNAME and GALERA_SST_PASSWORD) |
 | mariadb.galera.waitForPrimaryTimeoutInSeconds | int | 30 | [pc.wait_prim_timeout](https://galeracluster.com/library/documentation/galera-parameters.html#pc.wait_prim_timeout) |
 | mariadb.galera.weightedQuorum | string | false | configure [weighted Quorum](https://galeracluster.com/library/documentation/weighted-quorum.html#wq-three-nodes) values for the DB nodes eg: db-0: 4, db-1: 2, db-2: 1 |
-| mariadb.innodbFlushLogAtTrxCommit | int | 0 | `1` to enable [innodb_flush_log_at_trx_commit for ACID compliance](https://mariadb.com/kb/en/innodb-system-variables/#innodb_flush_log_at_trx_commit) |
+| mariadb.innodbFlushLogAtTrxCommit | int | `1` | `1` to enable [innodb_flush_log_at_trx_commit for ACID compliance](https://mariadb.com/kb/en/innodb-system-variables/#innodb_flush_log_at_trx_commit) |
 | mariadb.job.config.activeDeadlineSeconds | int | 300 | Maximum [allowed runtime](https://kubernetes.io/docs/concepts/workloads/controllers/job/#job-termination-and-cleanup) before the MariaDB config job will be stopped |
 | mariadb.job.config.backoffLimit | int | 6 | How many [retries](https://kubernetes.io/docs/concepts/workloads/controllers/job/#pod-backoff-failure-policy) before the MariaDB config job will be marked as failed |
 | mariadb.job.config.jobRestartPolicy | string | OnFailure | Define how the MariaDB config job pod [will be restarted](https://kubernetes.io/docs/concepts/workloads/controllers/job/#handling-pod-and-container-failures) in case of an error. It can be on the same worker node or another |
@@ -561,8 +575,8 @@ docker build --build-arg BASE_SOFT_NAME=ubuntu --build-arg BASE_SOFT_VERSION=22.
 | readinessProbe.timeoutSeconds.kopiaserver | int | 10 | How long should Kubernetes [wait](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) for the current check of the readiness probe for the Kopia UI pod |
 | readinessProbe.timeoutSeconds.monitoring | int | 10 | How long should Kubernetes [wait](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) for the current check of the readiness probe for the MariaDB monitoring sidecar container |
 | readinessProbe.timeoutSeconds.proxy | int | 10 | How long should Kubernetes [wait](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) for the current check of the readiness probe for the ProxySQL/HAProxy pods |
-| replicas.database | int | 3 | amount of pods that will [scheduled](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#creating-a-deployment) for the MariaDB Galera cluster. An uneven number will be enforced to avoid simple split brain situations. For a good balance between the write and read performance not more than 3 pods a suggested |
-| replicas.proxy | int | 3 | amount of pods that will [scheduled](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#creating-a-deployment) for the ProxySQL cluster. An uneven number will be enforced to avoid simple split brain situations |
+| replicas.database | int | 3 | amount of pods that will [scheduled](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#creating-a-deployment) for the MariaDB Galera cluster. An uneven number will be enforced to avoid simple split brain situations. For a good balance between the write and read performance not more than 3 pods a suggested. If `mariadb.galera.multiRegion.enabled` is set to `true` the amount of pods will be set to `1` |
+| replicas.proxy | int | 3 | amount of pods that will [scheduled](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#creating-a-deployment) for the ProxySQL cluster. An uneven number will be enforced to avoid simple split brain situations. If `mariadb.galera.multiRegion.enabled` is set to `true` the amount of pods will be set to `1` |
 | resourceLimits.cpu.cronjob | int | 0.25 | CPU [resource reservation(request)](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#requests-and-limits) for the MariaDB backup cronjob |
 | resourceLimits.cpu.database | int | 0.5 | CPU [resource reservation(request)](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#requests-and-limits) for the MariaDB containers |
 | resourceLimits.cpu.databasecfgjob | float | 0.25 | CPU [resource reservation(request)](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#requests-and-limits) for the MariaDB configuration job |
@@ -583,7 +597,7 @@ docker build --build-arg BASE_SOFT_NAME=ubuntu --build-arg BASE_SOFT_VERSION=22.
 | scripts.maxRetries | int | 10 | how many times should script functions retry before failing |
 | scripts.useTimeDifferenceForSeqnoCheck | bool | `false` | fail if time difference between nodes for the last sequence number configmap update is too big |
 | scripts.waitTimeBetweenRetriesInSeconds | int | 6 | how long should script functions wait between retries |
-| services.database.backend.headless | bool | `true` | `false` or `true` if the IP adresses of the pods that are [endpoints for that service](https://kubernetes.io/docs/concepts/services-networking/service/#headless-services) should be advertised. Required to let the client make it's own load balancing decisions |
+| services.database.backend.headless | bool | `true` | `false` or `true` if the IP adresses of the pods that are [endpoints for that service](https://kubernetes.io/docs/concepts/services-networking/service/#headless-services) should be advertised. Required to let the client make it's own load balancing decisions. Will be set to `false` if `type` is set `LoadBalancer` |
 | services.database.backend.ports.galera.port | int | `4567` | exposed Galera [replication port](https://mariadb.com/kb/en/configuring-mariadb-galera-cluster/#network-ports) |
 | services.database.backend.ports.galera.protocol | string | `"TCP"` | Galera [replication port](https://mariadb.com/kb/en/configuring-mariadb-galera-cluster/#network-ports) protocol |
 | services.database.backend.ports.galera.targetPort | int | `4567` | Galera [replication port](https://mariadb.com/kb/en/configuring-mariadb-galera-cluster/#network-ports) configured in the container |
@@ -845,9 +859,135 @@ helm upgrade --install --namespace database mariadb-galera helm --set mariadb.wi
   * ProxySQL, the config job and the Backup cronjob will be enabled again (if they have been enabled before)
   * the MariaDB pods will be restarted and Galera will replicate the restored data
 
+### multi region support
+The cluster can be distributed across 3 different Kubernetes cluster instances. They can run in different regions or even in different cloud providers.
+
+#### multi region configuration
+
+* enable the multi region support for the regions `r1`, `r2` and `r3`
+* define the `externalIP` and the `segmentId`([gmcast.segment](https://mariadb.com/kb/en/wsrep_provider_options/#gmcastsegment)) for each region
+* with the service type `LoadBalancer` the `externalIP` will assigned to the requested load balancer. Your cloud provider has to support a reserved IP for the load balancer
+* the service can also be of type `ClusterIP`, but then your (for instance) service mesh has to route the traffic to the correct region
+* the initial rollout can be started from any region, the cluster with the segmentId 1 will bootstrap the Galera cluster
+
+**r1:**
+```yaml
+mariadb:
+  galera:
+    multiRegion:
+      enabled: true
+      current: r1
+      regions:
+        r1:
+          externalIP: "10.0.0.1"
+          segmentId: 1
+        r2:
+          externalIP: "10.0.0.2"
+          segmentId: 2
+        r3:
+          externalIP: "10.0.0.3"
+          segmentId: 3
+
+services:
+  database:
+    backend:
+      type: LoadBalancer
+```
+
+**r2:**
+```yaml
+mariadb:
+  galera:
+    multiRegion:
+      enabled: true
+      current: r2
+      regions:
+        r1:
+          externalIP: "10.0.0.1"
+          segmentId: 1
+        r2:
+          externalIP: "10.0.0.2"
+          segmentId: 2
+        r3:
+          externalIP: "10.0.0.3"
+          segmentId: 3
+
+services:
+  database:
+    backend:
+      type: LoadBalancer
+```
+
+**r3:**
+```yaml
+mariadb:
+  galera:
+    multiRegion:
+      enabled: true
+      current: r3
+      regions:
+        r1:
+          externalIP: "10.0.0.1"
+          segmentId: 1
+        r2:
+          externalIP: "10.0.0.2"
+          segmentId: 2
+        r3:
+          externalIP: "10.0.0.3"
+          segmentId: 3
+
+services:
+  database:
+    backend:
+      type: LoadBalancer
+```
+
+#### multi region WAN tweaks
+
+The following wsrep_provider_options can be configured to optimize the WAN communication between the Galera nodes
+* `mariadb.galera.multiRegion.suspect_timeout`: A node will be suspected to be dead after these seconds of inactivity [evs.suspect_timeout](https://mariadb.com/kb/en/wsrep_provider_options/#evssuspect_timeout)
+* `mariadb.galera.multiRegion.inactive_timeout`: Time limit in seconds that a node can be inactive before being pronounced as dead [evs.inactive_timeout](https://mariadb.com/kb/en/wsrep_provider_options/#evsinactive_timeout)
+* `mariadb.galera.multiRegion.inactive_check_period`: Frequency of checks in seconds for peer inactivity (looking for nodes with delayed responses), after which nodes may be added to the delayed list, and later evicted [evs.inactive_check_period](https://mariadb.com/kb/en/wsrep_provider_options/#evsinactive_check_period)
+* `mariadb.galera.multiRegion.keepalive_period`: How often keepalive signals should be transmitted when there's no other traffic [evs.keepalive_period](https://mariadb.com/kb/en/wsrep_provider_options/#evskeepalive_period)
+* `mariadb.galera.multiRegion.install_timeout`: Wait time in seconds for install message acknowledgments [evs.install_timeout](https://mariadb.com/kb/en/wsrep_provider_options/#evsinactive_timeout)
+* `mariadb.galera.multiRegion.send_window`: Maximum number of packets that can be replicated at a time [evs.send_window](https://mariadb.com/kb/en/wsrep_provider_options/#evssend_window)
+* `mariadb.galera.multiRegion.user_send_window`: Maximum number of data packets that can be replicated at a time [evs.user_send_window](https://mariadb.com/kb/en/wsrep_provider_options/#evsuser_send_window)
+
+#### multi region limitations
+
+* currently the Galera connections are not encrypted or secured
+* currently the cluster startup after losing the quorum (no primary partition available) is not automated
+* you have to manually check the galerastatus configmap in every region
+
+```shell
+kubectl get cm mariadb-galera-galerastatus -o yaml | yq .data
+
+mariadb-galera-mariadb-g-0.primary: |
+  mariadb-galera-mariadb-g-0:
+  timestamp:
+mariadb-galera-mariadb-g-0.running: |
+  mariadb-galera-mariadb-g-0:
+  timestamp:
+mariadb-galera-mariadb-g-0.seqno: |
+  mariadb-galera-mariadb-g-0:120
+  timestamp:1713780824
+```
+
+* than trigger the bootstrap process in the region with the highest seqno and wait for the other regions to catch up
+
+```shell
+helm upgrade --install --create-namespace --namespace database mariadb-galera helm --values ${region}.yaml --set mariadb.galera.multiRegion.bootstrap=true
+```
+
+* after the cluster is up and running again you have to remove the bootstrap option from the cluster where you have started the bootstrap process
+
+```shell
+helm upgrade --install --create-namespace --namespace database mariadb-galera helm --values ${region}.yaml
+```
+
 ### asynchronous replication config
 
-The Helm chart supports circular asynchronous replication between two Galera clusters. Other topologies are technical possible, but not tested.
+[THIS FEATURE WILL BE REMOVED IN THE FUTURE] The Helm chart supports circular asynchronous replication between two Galera clusters. Other topologies are technical possible, but not tested.
 
 * configure the `gtidDomainId` and `gtidDomainIdCount` in the custom configuration files `helm/custom/eu-de-2.yaml` and `helm/custom/eu-nl-1.yaml` of your Galera instances and make sure `asyncReplication.enabled=false` is defined
 * eu-de-2
@@ -1168,4 +1308,4 @@ flowchart TB;
   * [Kopia environment variables](https://github.com/kopia/kopia/search?p=1&q=envName)
 
 ----------------------------------------------
-Autogenerated from chart metadata using [helm-docs v1.11.3](https://github.com/norwoodj/helm-docs/releases/v1.11.3)
+Autogenerated from chart metadata using [helm-docs v1.13.1](https://github.com/norwoodj/helm-docs/releases/v1.13.1)

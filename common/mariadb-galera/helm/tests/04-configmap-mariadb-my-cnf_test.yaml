@@ -15,6 +15,9 @@ tests:
     documentIndex: 0
     set:
       mariadb.galera.clustername: "testname"
+      services.database.backend.ports.galera.port: 4567
+      services.database.backend.ports.ist.port: 4568
+      replicas.database: 3
     asserts:
       - isKind:
           of: ConfigMap
@@ -75,7 +78,7 @@ tests:
             wsrep_cluster_address=gcomm://testrelease-mariadb-g-0.testnamespace:4567,testrelease-mariadb-g-1.testnamespace:4567,testrelease-mariadb-g-2.testnamespace:4567,testrelease-mariadb-g-backend.testnamespace:4567
       - matchRegex:
           path: data["my.cnf.testrelease-mariadb-g-0.tpl"]
-          pattern: "wsrep_provider_options=cert.log_conflicts=ON;debug=NO;gcache.recover=no;ist.recv_addr=\\$\\{CONTAINER_IP\\}:0;pc.recovery=FALSE;pc.wait_prim_timeout=PT60S;pc.weight=\\$\\{PC_WEIGHT_0\\}"
+          pattern: "wsrep_provider_options=cert.log_conflicts=ON;debug=NO;gcache.recover=no;ist.recv_addr=\\$\\{CONTAINER_IP\\}:4568;pc.recovery=FALSE;pc.wait_prim_timeout=PT60S;pc.weight=\\$\\{PC_WEIGHT_0\\}"
       - matchRegex:
           path: data["my.cnf.testrelease-mariadb-g-0.tpl"]
           pattern: "wsrep_node_address=\\$\\{CONTAINER_IP\\}"
@@ -103,3 +106,408 @@ tests:
       - matchRegex:
           path: data["my.cnf.testrelease-mariadb-g-0.tpl"]
           pattern: "binlog-commit-wait-count=0"
+
+  - it: cluster address with multi-region enabled and region r1 selected
+    template: configmap-mariadb-my.cnf.yaml
+    documentIndex: 0
+    set:
+      mariadb.galera.clustername: "testname"
+      mariadb.galera.multiRegion.enabled: true
+      mariadb.galera.multiRegion.current: "r1"
+      mariadb.galera.multiRegion.regions.r1.externalIP: "10.0.0.1"
+      mariadb.galera.multiRegion.regions.r2.externalIP: "10.0.0.2"
+      mariadb.galera.multiRegion.regions.r3.externalIP: "10.0.0.3"
+      mariadb.galera.multiRegion.regions.r1.segmentId: "1"
+      mariadb.galera.multiRegion.regions.r2.segmentId: "2"
+      mariadb.galera.multiRegion.regions.r3.segmentId: "3"
+      services.database.backend.ports.galera.port: 4567
+      replicas.database: 3
+    asserts:
+      - isKind:
+          of: ConfigMap
+      - equal:
+          path: metadata.namespace
+          value: testnamespace
+      - equal:
+          path: metadata.name
+          value: testrelease-mariadb-my-cnf
+      - matchRegex:
+          path: data["my.cnf.testrelease-mariadb-g-0.tpl"]
+          pattern: wsrep_cluster_address=gcomm:\/\/10\.0\.0\.2:4567,10\.0\.0\.3:4567
+
+  - it: cluster address with multi-region enabled and region r2 selected
+    template: configmap-mariadb-my.cnf.yaml
+    documentIndex: 0
+    set:
+      mariadb.galera.clustername: "testname"
+      mariadb.galera.multiRegion.enabled: true
+      mariadb.galera.multiRegion.current: "r2"
+      mariadb.galera.multiRegion.regions.r1.externalIP: "10.0.0.1"
+      mariadb.galera.multiRegion.regions.r2.externalIP: "10.0.0.2"
+      mariadb.galera.multiRegion.regions.r3.externalIP: "10.0.0.3"
+      mariadb.galera.multiRegion.regions.r1.segmentId: "1"
+      mariadb.galera.multiRegion.regions.r2.segmentId: "2"
+      mariadb.galera.multiRegion.regions.r3.segmentId: "3"
+      services.database.backend.ports.galera.port: 4567
+      replicas.database: 3
+    asserts:
+      - isKind:
+          of: ConfigMap
+      - equal:
+          path: metadata.namespace
+          value: testnamespace
+      - equal:
+          path: metadata.name
+          value: testrelease-mariadb-my-cnf
+      - matchRegex:
+          path: data["my.cnf.testrelease-mariadb-g-0.tpl"]
+          pattern: wsrep_cluster_address=gcomm:\/\/10\.0\.0\.1:4567,10\.0\.0\.3:4567
+
+  - it: cluster address with multi-region enabled and region r3 selected
+    template: configmap-mariadb-my.cnf.yaml
+    documentIndex: 0
+    set:
+      mariadb.galera.clustername: "testname"
+      mariadb.galera.multiRegion.enabled: true
+      mariadb.galera.multiRegion.current: "r3"
+      mariadb.galera.multiRegion.regions.r1.externalIP: "10.0.0.1"
+      mariadb.galera.multiRegion.regions.r2.externalIP: "10.0.0.2"
+      mariadb.galera.multiRegion.regions.r3.externalIP: "10.0.0.3"
+      mariadb.galera.multiRegion.regions.r1.segmentId: "1"
+      mariadb.galera.multiRegion.regions.r2.segmentId: "2"
+      mariadb.galera.multiRegion.regions.r3.segmentId: "3"
+      services.database.backend.ports.galera.port: 4567
+      replicas.database: 3
+    asserts:
+      - isKind:
+          of: ConfigMap
+      - equal:
+          path: metadata.namespace
+          value: testnamespace
+      - equal:
+          path: metadata.name
+          value: testrelease-mariadb-my-cnf
+      - matchRegex:
+          path: data["my.cnf.testrelease-mariadb-g-0.tpl"]
+          pattern: wsrep_cluster_address=gcomm:\/\/10\.0\.0\.1:4567,10\.0\.0\.2:4567
+
+  - it: cluster address with multi-region enabled and region eu-de-1 selected
+    template: configmap-mariadb-my.cnf.yaml
+    documentIndex: 0
+    set:
+      mariadb.galera.clustername: "testname"
+      mariadb.galera.multiRegion.enabled: true
+      mariadb.galera.multiRegion.current: "eu-de-1"
+      mariadb.galera.multiRegion.regions.eu-de-1.externalIP: "10.0.0.1"
+      mariadb.galera.multiRegion.regions.eu-de-2.externalIP: "10.0.0.2"
+      mariadb.galera.multiRegion.regions.eu-nl-1.externalIP: "10.0.0.3"
+      mariadb.galera.multiRegion.regions.eu-de-1.segmentId: "1"
+      mariadb.galera.multiRegion.regions.eu-de-2.segmentId: "2"
+      mariadb.galera.multiRegion.regions.eu-nl-1.segmentId: "3"
+      services.database.backend.ports.galera.port: 4567
+      replicas.database: 3
+    asserts:
+      - isKind:
+          of: ConfigMap
+      - equal:
+          path: metadata.namespace
+          value: testnamespace
+      - equal:
+          path: metadata.name
+          value: testrelease-mariadb-my-cnf
+      - matchRegex:
+          path: data["my.cnf.testrelease-mariadb-g-0.tpl"]
+          pattern: wsrep_cluster_address=gcomm:\/\/10\.0\.0\.2:4567,10\.0\.0\.3:4567
+
+  - it: cluster address with multi-region enabled and region eu-de-2 selected
+    template: configmap-mariadb-my.cnf.yaml
+    documentIndex: 0
+    set:
+      mariadb.galera.clustername: "testname"
+      mariadb.galera.multiRegion.enabled: true
+      mariadb.galera.multiRegion.current: "eu-de-2"
+      mariadb.galera.multiRegion.regions.eu-de-1.externalIP: "10.0.0.1"
+      mariadb.galera.multiRegion.regions.eu-de-2.externalIP: "10.0.0.2"
+      mariadb.galera.multiRegion.regions.eu-nl-1.externalIP: "10.0.0.3"
+      mariadb.galera.multiRegion.regions.eu-de-1.segmentId: "1"
+      mariadb.galera.multiRegion.regions.eu-de-2.segmentId: "2"
+      mariadb.galera.multiRegion.regions.eu-nl-1.segmentId: "3"
+      services.database.backend.ports.galera.port: 4567
+      replicas.database: 3
+    asserts:
+      - isKind:
+          of: ConfigMap
+      - equal:
+          path: metadata.namespace
+          value: testnamespace
+      - equal:
+          path: metadata.name
+          value: testrelease-mariadb-my-cnf
+      - matchRegex:
+          path: data["my.cnf.testrelease-mariadb-g-0.tpl"]
+          pattern: wsrep_cluster_address=gcomm:\/\/10\.0\.0\.1:4567,10\.0\.0\.3:4567
+
+  - it: cluster address with multi-region enabled and region eu-nl-1 selected
+    template: configmap-mariadb-my.cnf.yaml
+    documentIndex: 0
+    set:
+      mariadb.galera.clustername: "testname"
+      mariadb.galera.multiRegion.enabled: true
+      mariadb.galera.multiRegion.current: "eu-nl-1"
+      mariadb.galera.multiRegion.regions.eu-de-1.externalIP: "10.0.0.1"
+      mariadb.galera.multiRegion.regions.eu-de-2.externalIP: "10.0.0.2"
+      mariadb.galera.multiRegion.regions.eu-nl-1.externalIP: "10.0.0.3"
+      mariadb.galera.multiRegion.regions.eu-de-1.segmentId: "1"
+      mariadb.galera.multiRegion.regions.eu-de-2.segmentId: "2"
+      mariadb.galera.multiRegion.regions.eu-nl-1.segmentId: "3"
+      services.database.backend.ports.galera.port: 4567
+      replicas.database: 3
+    asserts:
+      - isKind:
+          of: ConfigMap
+      - equal:
+          path: metadata.namespace
+          value: testnamespace
+      - equal:
+          path: metadata.name
+          value: testrelease-mariadb-my-cnf
+      - matchRegex:
+          path: data["my.cnf.testrelease-mariadb-g-0.tpl"]
+          pattern: wsrep_cluster_address=gcomm:\/\/10\.0\.0\.1:4567,10\.0\.0\.2:4567
+
+  - it: gmcast.segment added with multi-region enabled and region r1 selected
+    template: configmap-mariadb-my.cnf.yaml
+    documentIndex: 0
+    set:
+      mariadb.galera.clustername: "testname"
+      mariadb.galera.multiRegion.enabled: true
+      mariadb.galera.multiRegion.current: "r1"
+      mariadb.galera.multiRegion.regions.r1.segmentId: "1"
+      mariadb.galera.multiRegion.regions.r2.segmentId: "2"
+      mariadb.galera.multiRegion.regions.r3.segmentId: "3"
+      replicas.database: 3
+    asserts:
+      - isKind:
+          of: ConfigMap
+      - equal:
+          path: metadata.namespace
+          value: testnamespace
+      - equal:
+          path: metadata.name
+          value: testrelease-mariadb-my-cnf
+      - matchRegex:
+          path: data["my.cnf.testrelease-mariadb-g-0.tpl"]
+          pattern: wsrep_provider_options=.+;gmcast\.segment=1;.+;pc\.weight=\${PC_WEIGHT_0}
+
+  - it: gmcast.segment added with multi-region enabled and region r2 selected
+    template: configmap-mariadb-my.cnf.yaml
+    documentIndex: 0
+    set:
+      mariadb.galera.clustername: "testname"
+      mariadb.galera.multiRegion.enabled: true
+      mariadb.galera.multiRegion.current: "r2"
+      mariadb.galera.multiRegion.regions.r1.segmentId: "1"
+      mariadb.galera.multiRegion.regions.r2.segmentId: "2"
+      mariadb.galera.multiRegion.regions.r3.segmentId: "3"
+      replicas.database: 3
+    asserts:
+      - isKind:
+          of: ConfigMap
+      - equal:
+          path: metadata.namespace
+          value: testnamespace
+      - equal:
+          path: metadata.name
+          value: testrelease-mariadb-my-cnf
+      - matchRegex:
+          path: data["my.cnf.testrelease-mariadb-g-0.tpl"]
+          pattern: wsrep_provider_options=.+;gmcast\.segment=2;.+;pc\.weight=\${PC_WEIGHT_0}
+
+  - it: gmcast.segment added with multi-region enabled and region r3 selected
+    template: configmap-mariadb-my.cnf.yaml
+    documentIndex: 0
+    set:
+      mariadb.galera.clustername: "testname"
+      mariadb.galera.multiRegion.enabled: true
+      mariadb.galera.multiRegion.current: "r3"
+      mariadb.galera.multiRegion.regions.r1.segmentId: "1"
+      mariadb.galera.multiRegion.regions.r2.segmentId: "2"
+      mariadb.galera.multiRegion.regions.r3.segmentId: "3"
+      replicas.database: 3
+    asserts:
+      - isKind:
+          of: ConfigMap
+      - equal:
+          path: metadata.namespace
+          value: testnamespace
+      - equal:
+          path: metadata.name
+          value: testrelease-mariadb-my-cnf
+      - matchRegex:
+          path: data["my.cnf.testrelease-mariadb-g-0.tpl"]
+          pattern: wsrep_provider_options=.+;gmcast\.segment=3;.+;pc\.weight=\${PC_WEIGHT_0}
+
+  - it: gmcast.segment added with multi-region enabled and region eu-de-1 selected
+    template: configmap-mariadb-my.cnf.yaml
+    documentIndex: 0
+    set:
+      mariadb.galera.clustername: "testname"
+      mariadb.galera.multiRegion.enabled: true
+      mariadb.galera.multiRegion.current: "eu-de-1"
+      mariadb.galera.multiRegion.regions.eu-de-1.segmentId: "1"
+      mariadb.galera.multiRegion.regions.eu-de-2.segmentId: "2"
+      mariadb.galera.multiRegion.regions.eu-nl-1.segmentId: "3"
+      replicas.database: 3
+    asserts:
+      - isKind:
+          of: ConfigMap
+      - equal:
+          path: metadata.namespace
+          value: testnamespace
+      - equal:
+          path: metadata.name
+          value: testrelease-mariadb-my-cnf
+      - matchRegex:
+          path: data["my.cnf.testrelease-mariadb-g-0.tpl"]
+          pattern: wsrep_provider_options=.+;gmcast\.segment=1;.+;pc\.weight=\${PC_WEIGHT_0}
+
+  - it: gmcast.segment added with multi-region enabled and region eu-de-2 selected
+    template: configmap-mariadb-my.cnf.yaml
+    documentIndex: 0
+    set:
+      mariadb.galera.clustername: "testname"
+      mariadb.galera.multiRegion.enabled: true
+      mariadb.galera.multiRegion.current: "eu-de-2"
+      mariadb.galera.multiRegion.regions.eu-de-1.segmentId: "1"
+      mariadb.galera.multiRegion.regions.eu-de-2.segmentId: "2"
+      mariadb.galera.multiRegion.regions.eu-nl-1.segmentId: "3"
+      replicas.database: 3
+    asserts:
+      - isKind:
+          of: ConfigMap
+      - equal:
+          path: metadata.namespace
+          value: testnamespace
+      - equal:
+          path: metadata.name
+          value: testrelease-mariadb-my-cnf
+      - matchRegex:
+          path: data["my.cnf.testrelease-mariadb-g-0.tpl"]
+          pattern: wsrep_provider_options=.+;gmcast\.segment=2;.+;pc\.weight=\${PC_WEIGHT_0}
+
+  - it: gmcast.segment added with multi-region enabled and region eu-nl-1 selected
+    template: configmap-mariadb-my.cnf.yaml
+    documentIndex: 0
+    set:
+      mariadb.galera.clustername: "testname"
+      mariadb.galera.multiRegion.enabled: true
+      mariadb.galera.multiRegion.current: "eu-nl-1"
+      mariadb.galera.multiRegion.regions.eu-de-1.segmentId: "1"
+      mariadb.galera.multiRegion.regions.eu-de-2.segmentId: "2"
+      mariadb.galera.multiRegion.regions.eu-nl-1.segmentId: "3"
+      replicas.database: 3
+    asserts:
+      - isKind:
+          of: ConfigMap
+      - equal:
+          path: metadata.namespace
+          value: testnamespace
+      - equal:
+          path: metadata.name
+          value: testrelease-mariadb-my-cnf
+      - matchRegex:
+          path: data["my.cnf.testrelease-mariadb-g-0.tpl"]
+          pattern: wsrep_provider_options=.+;gmcast\.segment=3;.+;pc\.weight=\${PC_WEIGHT_0}
+
+  - it: Galera WAN connection tweaks added with multi-region enabled and region r1 selected
+    template: configmap-mariadb-my.cnf.yaml
+    documentIndex: 0
+    set:
+      mariadb.galera.clustername: "testname"
+      mariadb.galera.multiRegion.enabled: true
+      mariadb.galera.multiRegion.current: "r1"
+      mariadb.galera.multiRegion.regions.r1.segmentId: "1"
+      mariadb.galera.multiRegion.regions.r2.segmentId: "2"
+      mariadb.galera.multiRegion.regions.r3.segmentId: "3"
+      mariadb.galera.multiRegion.inactive_check_period: "2.5"
+      mariadb.galera.multiRegion.inactive_timeout: 30
+      mariadb.galera.multiRegion.install_timeout: 8
+      mariadb.galera.multiRegion.keepalive_period: "1.6"
+      mariadb.galera.multiRegion.send_window: 256
+      mariadb.galera.multiRegion.user_send_window: 128
+      mariadb.galera.multiRegion.suspect_timeout: 5
+      replicas.database: 3
+    asserts:
+      - isKind:
+          of: ConfigMap
+      - equal:
+          path: metadata.namespace
+          value: testnamespace
+      - equal:
+          path: metadata.name
+          value: testrelease-mariadb-my-cnf
+      - matchRegex:
+          path: data["my.cnf.testrelease-mariadb-g-0.tpl"]
+          pattern: wsrep_provider_options=.+;evs\.inactive_check_period=PT2\.50S;evs\.inactive_timeout=PT30S;evs\.install_timeout=PT8S;evs\.keepalive_period=PT1\.60S;evs\.send_window=256;evs\.suspect_timeout=PT5S;evs\.user_send_window=128.+;pc\.weight=\${PC_WEIGHT_0}
+
+  - it: Galera WAN connection tweaks added with multi-region enabled and region r2 selected
+    template: configmap-mariadb-my.cnf.yaml
+    documentIndex: 0
+    set:
+      mariadb.galera.clustername: "testname"
+      mariadb.galera.multiRegion.enabled: true
+      mariadb.galera.multiRegion.current: "r2"
+      mariadb.galera.multiRegion.regions.r1.segmentId: "1"
+      mariadb.galera.multiRegion.regions.r2.segmentId: "2"
+      mariadb.galera.multiRegion.regions.r3.segmentId: "3"
+      mariadb.galera.multiRegion.inactive_check_period: "2.5"
+      mariadb.galera.multiRegion.inactive_timeout: 30
+      mariadb.galera.multiRegion.install_timeout: 8
+      mariadb.galera.multiRegion.keepalive_period: "1.6"
+      mariadb.galera.multiRegion.send_window: 256
+      mariadb.galera.multiRegion.user_send_window: 128
+      mariadb.galera.multiRegion.suspect_timeout: 5
+      replicas.database: 3
+    asserts:
+      - isKind:
+          of: ConfigMap
+      - equal:
+          path: metadata.namespace
+          value: testnamespace
+      - equal:
+          path: metadata.name
+          value: testrelease-mariadb-my-cnf
+      - matchRegex:
+          path: data["my.cnf.testrelease-mariadb-g-0.tpl"]
+          pattern: wsrep_provider_options=.+;evs\.inactive_check_period=PT2\.50S;evs\.inactive_timeout=PT30S;evs\.install_timeout=PT8S;evs\.keepalive_period=PT1\.60S;evs\.send_window=256;evs\.suspect_timeout=PT5S;evs\.user_send_window=128.+;pc\.weight=\${PC_WEIGHT_0}
+
+  - it: Galera WAN connection tweaks added with multi-region enabled and region r3 selected
+    template: configmap-mariadb-my.cnf.yaml
+    documentIndex: 0
+    set:
+      mariadb.galera.clustername: "testname"
+      mariadb.galera.multiRegion.enabled: true
+      mariadb.galera.multiRegion.current: "r3"
+      mariadb.galera.multiRegion.regions.r1.segmentId: "1"
+      mariadb.galera.multiRegion.regions.r2.segmentId: "2"
+      mariadb.galera.multiRegion.regions.r3.segmentId: "3"
+      mariadb.galera.multiRegion.inactive_check_period: "2.5"
+      mariadb.galera.multiRegion.inactive_timeout: 30
+      mariadb.galera.multiRegion.install_timeout: 8
+      mariadb.galera.multiRegion.keepalive_period: "1.6"
+      mariadb.galera.multiRegion.send_window: 256
+      mariadb.galera.multiRegion.user_send_window: 128
+      mariadb.galera.multiRegion.suspect_timeout: 5
+      replicas.database: 3
+    asserts:
+      - isKind:
+          of: ConfigMap
+      - equal:
+          path: metadata.namespace
+          value: testnamespace
+      - equal:
+          path: metadata.name
+          value: testrelease-mariadb-my-cnf
+      - matchRegex:
+          path: data["my.cnf.testrelease-mariadb-g-0.tpl"]
+          pattern: wsrep_provider_options=.+;evs\.inactive_check_period=PT2\.50S;evs\.inactive_timeout=PT30S;evs\.install_timeout=PT8S;evs\.keepalive_period=PT1\.60S;evs\.send_window=256;evs\.suspect_timeout=PT5S;evs\.user_send_window=128.+;pc\.weight=\${PC_WEIGHT_0}

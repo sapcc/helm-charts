@@ -41,12 +41,23 @@ metadata:
   {{- if (hasKey .global.Values "OpenstackFloatingSubnetId") }}
     loadbalancer.openstack.org/floating-subnet-id: {{ .global.Values.OpenstackFloatingSubnetId }}
   {{- end }}
+  {{- if and (.global.Values.mariadb.galera.multiRegion.enabled) (eq .type "backend") (eq .component "database") (eq .service.type "LoadBalancer") (eq .replica "notused") }}
+    loadbalancer.openstack.org/enable-health-monitor: "false"
+  {{- end }}
+
   labels:
     app: {{ .global.Release.Name }}
 spec:
+  {{- if and (.service.headless) (ne .service.type "LoadBalancer") (eq .replica "notused") }}
   type: {{ required "the network service type has to be defined" .service.type }}
-  {{- if .service.headless }}
   clusterIP: None
+  {{- else if and (.service.headless) ( ne .replica "notused") }}
+  type: ClusterIP
+  clusterIP: None
+  {{- else }}
+  type: {{ required "the network service type has to be defined" .service.type }}
+  {{- end }}
+  {{- if and (.service.headless) (eq .type "backend") (eq .component "database") }}
   publishNotReadyAddresses: true {{/* create A records for not ready pods and announce the IPs on the headless service before they are ready https://kubernetes.io/docs/concepts/services-networking/dns-pod-service/#pod-s-hostname-and-subdomain-fields */}}
   {{- end }}
   selector:
@@ -71,6 +82,21 @@ spec:
       port: {{ $portValue.port }}
       targetPort: {{ $portValue.targetPort }}
       protocol: {{ $portValue.protocol | default "TCP" }}
+  {{- end }}
+  {{- if and (.global.Values.mariadb.galera.multiRegion.enabled) (eq .type "backend") (eq .component "database") (ne .service.type "LoadBalancer") (eq .replica "notused") }}
+  externalIPs:
+    {{- if and (hasKey .global.Values "global") (hasKey .global.Values.global "db_region") (.global.Values.global.db_region) }}
+  - {{ (index .global.Values.mariadb.galera.multiRegion.regions .global.Values.global.db_region).externalIP }}
+    {{- else }}
+  - {{ (index .global.Values.mariadb.galera.multiRegion.regions (required "mariadb.galera.multiRegion.current has to be defined if the multiRegion parameter is enabled" .global.Values.mariadb.galera.multiRegion.current)).externalIP }}
+    {{- end }}
+  {{- end }}
+  {{- if and (.global.Values.mariadb.galera.multiRegion.enabled) (eq .type "backend") (eq .component "database") (eq .service.type "LoadBalancer") (eq .replica "notused") }}
+    {{- if and (hasKey .global.Values "global") (hasKey .global.Values.global "db_region") (.global.Values.global.db_region) }}
+  loadBalancerIP: {{ (index .global.Values.mariadb.galera.multiRegion.regions .global.Values.global.db_region).externalIP }}
+    {{- else }}
+  loadBalancerIP: {{ (index .global.Values.mariadb.galera.multiRegion.regions (required "mariadb.galera.multiRegion.current has to be defined if the multiRegion parameter is enabled" .global.Values.mariadb.galera.multiRegion.current)).externalIP }}
+    {{- end }}
   {{- end }}
   sessionAffinity: {{ .service.sessionAffinity.type | default "None" | quote }}
   sessionAffinityConfig:
@@ -132,13 +158,23 @@ spec:
   include "wsrepClusterAddress" (dict "global" $)
 */}}
 {{- define "wsrepClusterAddress" }}
-  {{- $galeraPort := "" }}
+  {{- $galeraPort := ((required ".services.database.backend.ports.galera.targetPort missing" $.global.Values.services.database.backend.ports.galera.port) | int) }}
   {{- $nodeNames := list -}}
   {{- $nodeNamePrefix := (include "nodeNamePrefix" (dict "global" .global "component" "database")) -}}
-  {{- range $int, $err := until ($.global.Values.replicas.database|int) }}
-    {{- $nodeNames = (printf "%s-%d.%s:%d" $nodeNamePrefix $int $.global.Release.Namespace ((required ".services.database.backend.ports.galera.targetPort missing" $.global.Values.services.database.backend.ports.galera.port) | int)) | append $nodeNames -}}
+  {{- range $int, $err := until ((include "replicaCount" (dict "global" .global "type" "database")) | int) }}
+    {{- $nodeNames = (printf "%s-%d.%s:%d" $nodeNamePrefix $int $.global.Release.Namespace $galeraPort) | append $nodeNames -}}
   {{- end }}
-  {{- (printf "gcomm://%s,%s-backend.%s:%d" (join "," $nodeNames) $nodeNamePrefix $.global.Release.Namespace ((required ".services.database.backend.ports.galera.targetPort missing" $.global.Values.services.database.backend.ports.galera.port) | int)) }}
+  {{- if $.global.Values.mariadb.galera.multiRegion.enabled }}
+    {{- $nodeNames := list -}}
+    {{- range $regionKey, $regionValue := $.global.Values.mariadb.galera.multiRegion.regions }}
+        {{- if or (and (hasKey $.global.Values "global") (hasKey $.global.Values.global "db_region") (ne $.global.Values.global.db_region $regionKey)) (ne $.global.Values.mariadb.galera.multiRegion.current $regionKey) }}
+        {{- $nodeNames = (printf "%s:%d" $regionValue.externalIP $galeraPort) | append $nodeNames -}}
+      {{- end }}
+    {{- end }}
+  {{- (printf "gcomm://%s" (join "," $nodeNames)) }}
+  {{- else }}
+  {{- (printf "gcomm://%s,%s-backend.%s:%d" (join "," $nodeNames) $nodeNamePrefix $.global.Release.Namespace $galeraPort) }}
+  {{- end }}
 {{- end }}
 
 {{/*
@@ -159,18 +195,13 @@ spec:
 
 {{/*
   fetch a certain network port value
-  include "getNetworkPort" (dict "global" $ "type" "backend" "name" "ist")
+  include "getNetworkPort" (dict "global" $ "type" "backend" "component" "database" "name" "ist")
 */}}
 {{- define "getNetworkPort" }}
-  {{- range $servicesKey, $servicesValue := $.global.Values.services.database }}
-    {{- if eq $servicesValue.name $.type }}
-      {{- range $portsKey, $portsValue := $servicesValue.ports }}
-        {{- if eq $portsValue.name $.name }}
-          {{- ($portsValue.port | int) }}
-        {{- end }}
-      {{- end }}
-    {{- end }}
-  {{- end }}
+  {{- $service := index $.global.Values.services .component -}}
+  {{- $serviceType := index $service .type -}}
+  {{- $servicePort := index $serviceType.ports .name -}}
+  {{- ($servicePort.port | int) }}
 {{- end }}
 
 {{/*
@@ -179,7 +210,7 @@ spec:
 */}}
 {{- define "serverIdList" }}
   {{- $serverIds := list -}}
-  {{- range $int, $err := until ($.global.Values.replicas.database|int) }}
+  {{- range $int, $err := until ((include "replicaCount" (dict "global" .global "type" "database")) | int) }}
     {{- $serverIds = ((printf "%d%d" ($.global.Values.mariadb.galera.gtidDomainId | default 1 | int) $int) | int) | append $serverIds -}}
   {{- end }}
   {{- (join "," $serverIds) }}
@@ -261,4 +292,16 @@ metadata:
   name: {{ include "commonPrefix" .global }}-pullsecret-{{ $.name }}
 data:
   .dockerconfigjson: {{ printf "{\"auths\": {\"%s\": {\"auth\": \"%s\"}}}" (required (printf "image.pullSecrets.%s.registry is required to configure the Kubernetes pull secret '%s'" $.name $.name) $.credential.registry) (printf "%s" (required (printf "image.pullSecrets.%s.credential is required to configure the Kubernetes pull secret '%s'" $.name $.name) $.credential.credential) | b64enc) | b64enc }}
+{{- end }}
+
+{{/*
+  calculate the effective number of replicas (database/proxy)
+  include "replicaCount" (dict "global" $ "type" "database")
+*/}}
+{{- define "replicaCount" }}
+  {{- if $.global.Values.mariadb.galera.multiRegion.enabled }}
+    {{- printf "%d" 1 -}}
+  {{- else }}
+    {{- index $.global.Values.replicas $.type -}}
+  {{- end }}
 {{- end }}
