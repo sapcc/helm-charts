@@ -72,6 +72,10 @@ spec:
       targetPort: {{ $portValue.targetPort }}
       protocol: {{ $portValue.protocol | default "TCP" }}
   {{- end }}
+  {{- if and (.global.Values.mariadb.galera.multiRegion.enabled) (eq .type "backend") (eq .component "database") (ne .service.type "LoadBalancer") (eq .replica "notused") }}
+  externalIPs:
+  - {{ (index .global.Values.mariadb.galera.multiRegion.regions (required "mariadb.galera.multiRegion.current has to be defined (r1, r2, r3) if the multiRegion parameter is enabled" .global.Values.mariadb.galera.multiRegion.current)).externalIP }}
+  {{- end }}
   sessionAffinity: {{ .service.sessionAffinity.type | default "None" | quote }}
   sessionAffinityConfig:
     clientIP:
@@ -132,13 +136,20 @@ spec:
   include "wsrepClusterAddress" (dict "global" $)
 */}}
 {{- define "wsrepClusterAddress" }}
-  {{- $galeraPort := "" }}
+  {{- $galeraPort := ((required ".services.database.backend.ports.galera.targetPort missing" $.global.Values.services.database.backend.ports.galera.port) | int) }}
   {{- $nodeNames := list -}}
   {{- $nodeNamePrefix := (include "nodeNamePrefix" (dict "global" .global "component" "database")) -}}
   {{- range $int, $err := until ($.global.Values.replicas.database|int) }}
-    {{- $nodeNames = (printf "%s-%d.%s:%d" $nodeNamePrefix $int $.global.Release.Namespace ((required ".services.database.backend.ports.galera.targetPort missing" $.global.Values.services.database.backend.ports.galera.port) | int)) | append $nodeNames -}}
+    {{- $nodeNames = (printf "%s-%d.%s:%d" $nodeNamePrefix $int $.global.Release.Namespace $galeraPort) | append $nodeNames -}}
   {{- end }}
-  {{- (printf "gcomm://%s,%s-backend.%s:%d" (join "," $nodeNames) $nodeNamePrefix $.global.Release.Namespace ((required ".services.database.backend.ports.galera.targetPort missing" $.global.Values.services.database.backend.ports.galera.port) | int)) }}
+  {{- if $.global.Values.mariadb.galera.multiRegion.enabled }}
+    {{- range $regionKey, $regionValue := $.global.Values.mariadb.galera.multiRegion.regions }}
+      {{- if ne $.global.Values.mariadb.galera.multiRegion.current $regionKey}}
+        {{- $nodeNames = (printf "%s:%d" $regionValue.externalIP $galeraPort) | append $nodeNames -}}
+      {{- end }}
+    {{- end }}
+  {{- end }}
+  {{- (printf "gcomm://%s,%s-backend.%s:%d" (join "," $nodeNames) $nodeNamePrefix $.global.Release.Namespace $galeraPort) }}
 {{- end }}
 
 {{/*

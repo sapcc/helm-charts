@@ -10,6 +10,9 @@
 {{- else  }}
   {{- $_ := set $wsrepProviderOptions "gcache.recover" "gcache.recover=no" }}
 {{- end }}
+{{- if $.Values.mariadb.galera.multiRegion.enabled }}
+  {{- $_ := set $wsrepProviderOptions "gmcast.segment" (printf "gmcast.segment=%d" ((index $.Values.mariadb.galera.multiRegion.regions (required "mariadb.galera.multiRegion.current has to be defined (r1, r2, r3) if the multiRegion parameter is enabled" $.Values.mariadb.galera.multiRegion.current)).segmentId | int)) }}
+{{- end }}
 {{- $_ := set $wsrepProviderOptions "cert.log_conflicts" "cert.log_conflicts=ON"}}
 {{- if $.Values.mariadb.galera.debug }}
   {{- $_ := set $wsrepProviderOptions "debug" "debug=YES"}}
