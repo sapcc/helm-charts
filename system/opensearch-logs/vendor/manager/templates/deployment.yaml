@@ -1,7 +1,7 @@
 kind: Deployment
 apiVersion: apps/v1
 metadata:
-  name: elastic-manager
+  name: manager
   namespace: opensearch-logs
   labels:
     component: opensearch
@@ -24,7 +24,7 @@ spec:
         role: manager
       annotations:
         checksum/application.conf: {{ include  (print $.Template.BasePath "/_application.conf.tpl") . | sha256sum }}
-        kubectl.kubernetes.io/default-container: "elastic-manager"
+        kubectl.kubernetes.io/default-container: "manager"
         {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
         linkerd.io/inject: enabled
         {{- end }}
@@ -32,23 +32,23 @@ spec:
       nodeSelector:
         ccloud.sap.com/nodepool: payload
       volumes:
-        - name: elastic-etc
+        - name: manager-etc
           configMap:
-            name: elastic-manager-etc
+            name: manager-etc
         - name: opensearch-certs
           secret:
             defaultMode: 420
             secretName: opensearch-certs
       containers:
-      - name: elastic-manager
-        image: {{.Values.global.registry}}/{{.Values.image_elastic_manager}}
+      - name: manager
+        image: {{.Values.global.registry}}/{{.Values.image_manager}}
         imagePullPolicy: IfNotPresent
         command:
           - /opt/cerebro/bin/cerebro
         args:
-          - -Dconfig.file=/elastic-etc/application.conf
-          - -Dlogback.configurationFile=/elastic-etc/logback.xml
-          - -Dlogger.file=/elastic-etc/logback.xml
+          - -Dconfig.file=/manager-etc/application.conf
+          - -Dlogback.configurationFile=/manager-etc/logback.xml
+          - -Dlogger.file=/manager-etc/logback.xml
           - -Dcom.sun.jndi.ldap.object.disableEndpointIdentification=true
           - -Des.networkaddress.cache.ttl=20
           - -Des.networkaddress.cache.negative.ttl=10
@@ -58,8 +58,8 @@ spec:
               fieldRef:
                 fieldPath: metadata.namespace
         volumeMounts:
-          - mountPath: /elastic-etc
-            name: elastic-etc
+          - mountPath: /manager-etc
+            name: manager-etc
           - mountPath: /opt/certs
             name: opensearch-certs
         ports:
