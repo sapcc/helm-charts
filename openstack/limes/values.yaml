@@ -54,10 +54,14 @@ limes:
     enabled: false
 
 postgresql:
-  imageTag: '12.17-20240212092658'
+  imageTag: '20240206103323'
   persistence:
     enabled: true
     size: 10Gi
+  postgresDatabase: limes
+  users:
+    limes: {}
+  tableOwner: limes
 
   log_min_duration_statement: 250
   # less than the postgresql chart's default; I want to know early when connections start getting out of hand
@@ -67,12 +71,14 @@ postgresql:
     support_group: containers
 
 pgbackup:
+  isPostgresNG: true
   database:
     name: limes
   alerts:
     support_group: containers
 
 pgmetrics:
+  isPostgresNG: true
   db_name: limes
 
   alerts:
