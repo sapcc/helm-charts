@@ -234,6 +234,8 @@ groups:
       summary: Prometheus target scraped multiple times.
   {{- end }}
 
+  {{- if and (not (contains (include "prometheus.name" . ) "kubernetes")) or (not (contains (include "prometheus.name" . ) "kubernikus" ))) (not $root.Values.alerts.thanos.enabled) -}}
+  {{- fail "YOU LOOSE!" -}}
   {{- if and $root.Values.alerts.multiplePodScrapes.enabled (not $root.Values.alerts.thanos.enabled) }}
   - alert: PrometheusMultiplePodScrapes
     expr: sum by(pod, namespace, label_alert_service, label_alert_tier, ccloud_support_group) (label_replace((up * on(instance) group_left() (sum by(instance) (up{job=~".*{{ include "prometheus.name" . }}.*pod-sd"}) > 1)* on(pod) group_left(label_alert_tier, label_alert_service) (max without(uid) (kube_pod_labels))) , "pod", "$1", "kubernetes_pod_name", "(.*)-[0-9a-f]{8,10}-[a-z0-9]{5}"))
@@ -250,12 +252,7 @@ groups:
   {{- end }}
 
   {{/* Only affecting all prometheus-kubernetes and kubernikus since they have the metric natively. Rest is provided with similar Thanos rules and must not have these alerts, since they can never fire and will trigger absent alerts */}}
-  {{- if and 
-  (eq $root.Values.vpaUpdateMode "Auto")
-  (not $root.Values.alerts.thanos.enabled) 
-  (or 
-  (contains (include "prometheus.name" . ) "kubernetes")
-  (contains (include "prometheus.name" . ) "kubernikus" ))}}
+  {{- if and (eq $root.Values.vpaUpdateMode "Auto") (not $root.Values.alerts.thanos.enabled) }}
   - alert: PrometheusVpaMemoryExceeded
     expr: |
       vpa_butler_vpa_container_recommendation_excess{verticalpodautoscaler=~"{{ include "prometheus.fullName" . }}",resource="memory"} / 1024 / 1024 / 1024 > 0
@@ -287,6 +284,7 @@ groups:
         It is hitting the VPA maxAllowed boundary and is not ensured to run properly at its current place. Consider upgrading the VPA maxAllowed
         CPU core value if the host has enough CPU cores.
       summary: Prometheus needs more CPU.
+  {{- end }}
   {{- end }}
 
   {{- if and $root.Values.alertmanagers (gt (len $root.Values.alertmanagers) 0) }}
