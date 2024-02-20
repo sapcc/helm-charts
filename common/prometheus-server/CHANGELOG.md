@@ -1,6 +1,7 @@
 ## 7.4.15
 
-* only deploy VPA alerts to kubernikus and kubernetes natively
+* Added failsafe to Prometheus kubernetes and kubernikus specific alerts with hint to thanos ruler.
+* improved VPA alerts
 
 ## 7.4.14
 
