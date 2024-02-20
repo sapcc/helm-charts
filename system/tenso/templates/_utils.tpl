@@ -36,11 +36,13 @@
   value: ':80'
 - name: TENSO_AWX_WORKFLOW_SWIFT_CONTAINER
   value: tenso-awx-workflow-events
+- name:  TENSO_DB_USERNAME
+  value: 'tenso'
 - name:  TENSO_DB_PASSWORD
   valueFrom:
     secretKeyRef:
-      name: tenso-secret
-      key: postgres_password
+      name: '{{ $.Release.Name }}-pguser-tenso'
+      key: 'postgres-password'
 - name: TENSO_DB_HOSTNAME
   value: "{{ .Release.Name }}-postgresql"
 - name: TENSO_DB_CONNECTION_OPTIONS

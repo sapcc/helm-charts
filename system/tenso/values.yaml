@@ -32,11 +32,15 @@ prometheus:
     openstack: infra-frontend # there is no prometheus-openstack in scaleout, so we need to improvise :|
 
 postgresql:
-  imageTag: '12.17-20240212092658'
+  imageTag: '20240206103323'
   persistence:
     enabled: true
     accessMode: ReadWriteOnce
     size: 10Gi
+  postgresDatabase: tenso
+  users:
+    tenso: {}
+  tableOwner: tenso
 
   log_min_duration_statement: 250
   # less than the postgresql chart's default; I want to know early when connections start getting out of hand
@@ -57,6 +61,7 @@ postgresql:
       cpu: '0.5'
 
 pgbackup:
+  isPostgresNG: true
   database:
     name: tenso
   alerts:
@@ -64,6 +69,7 @@ pgbackup:
     support_group: containers
 
 pgmetrics:
+  isPostgresNG: true
   db_name: tenso
 
   alerts:

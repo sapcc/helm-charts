@@ -50,11 +50,13 @@
   value: '15'   # per account
 - name:  KEPPEL_BURST_TRIVY_REPORT_RETRIEVALS
   value: '50'   # per account
+- name: KEPPEL_DB_USERNAME
+  value: 'keppel'
 - name:  KEPPEL_DB_PASSWORD
   valueFrom:
     secretKeyRef:
-      name: keppel-secret
-      key: postgres_password
+      name: '{{ $.Release.Name }}-pguser-keppel'
+      key: 'postgres-password'
 - name: KEPPEL_DB_HOSTNAME
   value: "{{ .Release.Name }}-postgresql"
 - name: KEPPEL_DB_CONNECTION_OPTIONS

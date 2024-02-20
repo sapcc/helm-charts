@@ -28,11 +28,13 @@
   value: "/etc/limes/constraints-ccloud.yaml"
 - name: LIMES_DEBUG
   value: '0'
+- name: LIMES_DB_USERNAME
+  value: 'limes'
 - name: LIMES_DB_PASSWORD
   valueFrom:
     secretKeyRef:
-      name: limes-secret
-      key: postgres_password
+      name: '{{ $.Release.Name }}-pguser-limes'
+      key: 'postgres-password'
 - name: LIMES_DB_HOSTNAME
   value: "limes-postgresql.{{ .Release.Namespace }}.svc"
 - name: LIMES_DB_CONNECTION_OPTIONS
