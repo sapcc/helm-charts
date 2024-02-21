@@ -3,17 +3,19 @@ kind: Service
 apiVersion: v1
 
 metadata:
-  name: {{ include "fullname" . }}-api
+  name: {{ include "fullname" . }}-service
   namespace: {{ .Values.updater.namespace }}
   labels:
     app: {{ include "fullname" . }}
-    type: api
+    type: service
 
 spec:
+  type: LoadBalancer
   selector:
-    name: {{ include "fullname" . }}-api
+    name: {{ include "fullname" . }}
   ports:
   - name: {{ include "fullname" . }}-api
     port: {{.Values.updater.api.port}}
-    targetPort: api
+    targetPort: {{ include "fullname" . }}-port
+    protocol: TCP
 {{- end}}

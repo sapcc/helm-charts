@@ -3,7 +3,7 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 
 metadata:
-  name: {{ include "fullname" . }}
+  name: {{ include "fullname" . }}-ingress
   labels:
     chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
     release: "{{ .Release.Name }}"
@@ -16,11 +16,12 @@ metadata:
     {{ end }}
 
 spec:
+  ingressClassName: nginx
   rules:
     - host: {{ include "fullname" . }}.{{ .Values.region }}.cloud.sap
       http:
         paths:
-          - path: /
+          - path: /inventory
             pathType: Prefix
             backend:
               service:
