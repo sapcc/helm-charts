@@ -1,0 +1,17 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ template "fullname" . }}-bin
+  labels:
+    app: {{ template "fullname" . }}
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+    component: rabbitmq
+data:
+  common_functions.sh: |
+{{ include (print .Template.BasePath "/bin/_common_functions.tpl") . | indent 4 }}
+  rabbitmq_config.sh: |
+{{ include (print .Template.BasePath "/bin/_rabbitmq-config.tpl") . | indent 4 }}
+  configurator_redinesse_probe.sh: |
+{{ include (print .Template.BasePath "/bin/_configurator_redinesse_probe.tpl") . | indent 4 }}
