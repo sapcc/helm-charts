@@ -49,7 +49,7 @@ auth = {
     group-search {
       user-attr = "sAMAccountName"
       user-attr-template = "%s"
-      group = "memberOf={{.Values.global.ldap.user_group}},{{.Values.global.ldap.suffix}}"
+      group = "memberOf={{.Values.global.ldap.user_group}},{{.Values.global.ldap.group_search_base_dns}},{{.Values.global.ldap.suffix}}"
     }
   }
 }

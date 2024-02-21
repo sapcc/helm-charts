@@ -1,3 +1,5 @@
+{{- $values := .Values.ironic_exporter -}}
+{{- if $values.enabled }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -15,33 +17,34 @@ spec:
         type: exporter
       annotations:
         prometheus.io/scrape: "true"
-        prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
+        prometheus.io/targets: {{ required "$values.alerts.prometheus missing" $values.alerts.prometheus | quote }}
     spec:
       containers:
       - name: ironic-exporter
-        image: "{{ .Values.global.registry | required "Missing .Values.global.registry" }}/ironic-exporter:{{ .Values.image.tag }}"
+        image: "{{ .Values.global.registry | required "Missing .Values.global.registry" }}/ironic-exporter:{{ $values.image_tag }}"
         ports:
-        - containerPort: {{ .Values.port_number }}
+        - containerPort: {{ $values.port_number }}
           name: metrics
           protocol: TCP
         env:
         - name: LOGLEVEL
-          value: {{ .Values.log_level | quote }}
+          value: {{ $values.log_level | quote }}
         - name: PORT_NUMBER
-          value: {{ .Values.port_number | quote }}
+          value: {{ $values.port_number | quote }}
         - name: OS_VERSION
-          value: {{ .Values.image.tag | quote }}
+          value: {{ $values.image.tag | quote }}
         - name: OS_IRONIC_USERNAME
           value: {{ .Values.global.ipmi_exporter_user | required "Missing .Values.global.ipmi_exporter_user" | quote }}
         - name: OS_IRONIC_PASSWORD
           value: {{ .Values.global.ipmi_exporter_user_passwd | required "Missing .Values.global.ipmi_exporter_user_passwd" | replace "$" "$$" | quote }}{{/* Escape $. See: https://docs.openstack.org/oslo.config/latest/configuration/format.html#substitution */}}
         - name: OS_USER_DOMAIN_NAME
-          value: {{ .Values.os_user_domain_name | quote }}
+          value: {{ $values.os_user_domain_name | quote }}
         - name: OS_PROJECT_NAME
-          value: {{ .Values.os_project_name | quote }}
+          value: {{ $values.os_project_name | quote }}
         - name: OS_PROJECT_DOMAIN_NAME
-          value: {{ .Values.os_project_domain_name | quote }}
+          value: {{ $values.os_project_domain_name | quote }}
         - name: REGION
           value: {{ .Values.global.region | required "Missing .Values.global.region" | quote }}
         - name: NOTIFICATIONS
-          value: {{ .Values.notifications | required "Missing .Values.notifications" | quote }}
+          value: {{ $values.notifications | required "Missing $values.notifications" | quote }}
+{{- end }}

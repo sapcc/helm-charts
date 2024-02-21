@@ -11,11 +11,13 @@
   value: "false"
 - name: CASTELLUM_ASSET_MANAGERS
   value: "{{ $.Values.castellum.asset_managers | join "," }}"
+- name: CASTELLUM_DB_USERNAME
+  value: 'castellum'
 - name: CASTELLUM_DB_PASSWORD
   valueFrom:
     secretKeyRef:
-      name: castellum-secret
-      key: postgres_password
+      name: '{{ $.Release.Name }}-pguser-castellum'
+      key: 'postgres-password'
 - name: CASTELLUM_DB_HOSTNAME
   value: "castellum-postgresql.{{ .Release.Namespace }}.svc"
 - name: CASTELLUM_DB_CONNECTION_OPTIONS

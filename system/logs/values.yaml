@@ -70,9 +70,21 @@ fluent-bit:
   image:
     repository: keppel.global.cloud.sap/ccloud-dockerhub-mirror/fluent/fluent-bit
     pullPolicy: IfNotPresent
-  envFrom:
-  - secretRef:
-      name: fluent-bit-secrets
+  env:
+    - name: OPENSEARCH_SYSTEMD_USER
+      valueFrom:
+        secretKeyRef:
+          name: fluent-bit-secrets
+          key: OPENSEARCH_SYSTEMD_USER
+    - name: OPENSEARCH_SYSTEMD_PWD
+      valueFrom:
+        secretKeyRef:
+          name: fluent-bit-secrets
+          key: OPENSEARCH_SYSTEMD_PWD
+    - name: NODE_NAME
+      valueFrom:
+        fieldRef:
+          fieldPath: spec.nodeName
   backend:
     opensearch:
       enabled: false
@@ -95,11 +107,6 @@ fluent-bit:
       containerPort: 2021
       protocol: TCP
       name: prometheus
-  env:
-    - name: NODE_NAME
-      valueFrom:
-        fieldRef:
-          fieldPath: spec.nodeName
 
 logstash_external:
   enabled: false

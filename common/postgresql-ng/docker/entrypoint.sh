@@ -51,17 +51,21 @@ if [[ $(id -u) == 0 ]]; then
   done
 
   # do a one time migration from old postgres chart
-  if [[ -e /data/PG_VERSION ]]; then
-    old_version=$(cat /data/PG_VERSION)
+  if [[ -e /data/data/PG_VERSION ]]; then
+    old_version=$(cat /data/data/PG_VERSION)
 
     # move to a temporary directory
-    mkdir -p /data-old
-    mv /data/* /data-old/
+    mkdir -p /data/old
+    mv /data/data/* /data/old/
+    rmdir /data/data
 
     # and move back to the right place
-    mkdir "/data/postgresql/$old_version"
-    mv /data-old/* "/data/postgresql/$old_version/"
-    chown postgres:postgres -R /data/postgresql
+    mkdir -m 750 -p "/data/postgresql/$old_version"
+    mv /data/old/* "/data/postgresql/$old_version/"
+    chown -R postgres:postgres /data/postgresql
+    chmod -R 750 /data/postgresql
+
+    touch /migrated_from_old_chart
   fi
 
   # setup the default directories with correct permissions
@@ -91,8 +95,8 @@ export PGPASSWORD
 
 # create the database if the version file is missing. This is also required when running pg_upgrade.
 if [[ ! -e $PGDATA/PG_VERSION ]]; then
-  created_db=true
   initdb --username="$PGUSER" --pwfile=<(printf "%s\n" "$PGPASSWORD")
+  created_db=true
 fi
 
 # check for older postgres databases and upgrade from them if possible
@@ -120,45 +124,47 @@ for data in $(find /var/lib/postgresql/ -mindepth 1 -maxdepth 1 | sort --version
     exit 1
   fi
 
-  if [[ $old_version -lt 12 ]]; then
-    postgres_auth_method=md5
-  else
-    postgres_auth_method=scram-sha-256
+  # create a backup unless we are migrating from the old chart
+  if [[ ! -e /migrated_from_old_chart && ${PERSISTENCE_ENABLED:-false} == true ]]; then
+    if [[ $old_version -lt 12 ]]; then
+      postgres_auth_method=md5
+    else
+      postgres_auth_method=scram-sha-256
+    fi
+
+    # set envs to start old postgres version
+    old_path=$PATH
+    old_pgbin=$PGBIN
+    old_pgdata=$PGDATA
+    export PGBIN="/usr/lib/postgresql/$old_version/bin"
+    export PGDATA="/var/lib/postgresql/$old_version"
+    export PATH="$PGBIN:$PATH"
+
+    # only allow backup container to connect
+    echo -e "local  all  postgres  trust\nhost  all  backup  all  $postgres_auth_method\nhost  all  postgres  all  $postgres_auth_method\n" >"$data/pg_hba.conf"
+    touch /tmp/in-init # fake that we are online to expose the service
+
+    # start postgres and load current hba conf
+    start_postgres
+    PGDATABASE='' process_sql --dbname postgres -c "SELECT pg_reload_conf()"
+
+    # we need to retry loop here a bit because the k8s service, through which pgbackup must go, is probably not yet up
+    for i in {1..60}; do
+      # shellcheck disable=SC2154 # supplied by k8s
+      curl --no-progress-meter --fail-with-body -X POST -u "backup:$USER_PASSWORD_backup" "http://$PGBACKUP_HOST:8080/v1/backup-now" && break
+      sleep 1
+    done
+    if [[ $i == 60 ]]; then
+      echo "Backup failed"
+      exit 1
+    fi
+
+    # stop and restore originals envs
+    stop_postgres
+    PATH=$old_path
+    PGBIN=$old_pgbin
+    PGDATA=$old_pgdata
   fi
-
-  # set envs to start old postgres version
-  old_path=$PATH
-  old_pgbin=$PGBIN
-  old_pgdata=$PGDATA
-  export PGBIN="/usr/lib/postgresql/$old_version/bin"
-  export PGDATA="/var/lib/postgresql/$old_version"
-  export PATH="$PGBIN:$PATH"
-
-  # only allow backup container to connect
-  echo -e "local  all  postgres  trust\nhost  all  backup  all  $postgres_auth_method\nhost  all  postgres  all  $postgres_auth_method\n" >"$data/pg_hba.conf"
-  touch /tmp/in-init # fake that we are online to expose the service
-
-  # start postgres and load current hba conf
-  start_postgres
-  PGDATABASE='' process_sql --dbname postgres -c "SELECT pg_reload_conf()"
-
-  # create a backup
-  # we need to retry loop here a bit because the k8s service, through which pgbackup must go, is probably not yet up
-  for i in {1..60}; do
-    # shellcheck disable=SC2154 # supplied by k8s
-    curl --no-progress-meter --fail-with-body -X POST -u "backup:$USER_PASSWORD_backup" "http://$PGBACKUP_HOST:8080/v1/backup-now" && break
-    sleep 1
-  done
-  if [[ $i == 60 ]]; then
-    echo "Backup failed"
-    exit 1
-  fi
-
-  # stop and restore originals envs
-  stop_postgres
-  PATH=$old_path
-  PGBIN=$old_pgbin
-  PGDATA=$old_pgdata
 
   # pg_upgrade wants to have write permission for cwd
   cd /var/lib/postgresql

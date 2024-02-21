@@ -44,10 +44,14 @@ castellum:
   #   enabled: false
 
 postgresql:
-  imageTag: '12.17-20240212092658'
+  imageTag: '20240216135251'
   persistence:
     enabled: true
     size: 10Gi
+  postgresDatabase: castellum
+  users:
+    castellum: {}
+  tableOwner: castellum
 
   log_min_duration_statement: 250
   # 2 api * 16 + 2 workers * 16 + 1 observer * 16 + headroom for metrics/backup and admin access
@@ -66,12 +70,14 @@ alerts:
     kubernetes: kubernetes
 
 pgbackup:
+  isPostgresNG: true
   database:
     name: castellum
   alerts:
     support_group: containers
 
 pgmetrics:
+  isPostgresNG: true
   db_name: castellum
 
   alerts:
