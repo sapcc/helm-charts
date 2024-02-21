@@ -49,10 +49,10 @@ enabled = true
 # topics = notifications
 driver = messagingv2
             {{- if .Values.audit.central_service }}
-transport_url = rabbit://{{ .Values.audit.central_service.user | required "Please set audit.central_service.user" }}:{{ .Values.audit.central_service.password | required "Please set audit.central_service.password" | urlquery }}@{{ .Values.audit.central_service.host | default "hermes-rabbitmq-notifications.hermes" }}:{{.Values.audit.central_service.port | default 5672 }}/
+transport_url = rabbit://{{ .Values.audit.central_service.user | required "Please set audit.central_service.user" }}:{{ .Values.audit.central_service.password | required "Please set audit.central_service.password" }}@{{ .Values.audit.central_service.host | default "hermes-rabbitmq-notifications.hermes" }}:{{.Values.audit.central_service.port | default 5672 }}/
             {{- else if .Values.rabbitmq_notifications }}
                 {{- if and .Values.rabbitmq_notifications.ports .Values.rabbitmq_notifications.users }}
-transport_url = rabbit://{{ .Values.rabbitmq_notifications.users.default.user }}:{{ required ".Values.rabbitmq_notifications.users.default.password missing" .Values.rabbitmq_notifications.users.default.password | urlquery }}@{{ .Chart.Name }}-rabbitmq-notifications:{{ .Values.rabbitmq_notifications.ports.public }}/
+transport_url = rabbit://{{ .Values.rabbitmq_notifications.users.default.user }}:{{ required ".Values.rabbitmq_notifications.users.default.password missing" .Values.rabbitmq_notifications.users.default.password }}@{{ .Chart.Name }}-rabbitmq-notifications:{{ .Values.rabbitmq_notifications.ports.public }}/
                 {{- end }}
             {{- end }}
 mem_queue_size = {{ .Values.audit.mem_queue_size }}
@@ -76,4 +76,10 @@ backend_url = {{ if eq .Values.coordinationBackend "memcached" -}}
 {{- else }}
     {{ fail ".Values.coordinationBackend needs to be either \"memcached\" or \"file\"" }}
 {{- end }}
+{{- end }}
+
+{{- define "ini_sections.keystone_authtoken_credentials" }}
+[keystone_authtoken]
+username = {{"{{"}} resolve "vault+kvv2:///secrets/{{ .Values.global.region }}/{{ .Release.Name }}/keystone-user/service/username" {{"}}"}}
+password = {{"{{"}} resolve "vault+kvv2:///secrets/{{ .Values.global.region }}/{{ .Release.Name }}/keystone-user/service/password" {{"}}"}}
 {{- end }}
