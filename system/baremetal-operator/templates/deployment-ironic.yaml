@@ -21,8 +21,12 @@ spec:
         name: ironic
       annotations:
         kubectl.kubernetes.io/default-container: ironic
-        checksum/configmap-calico: {{ include (print $.Template.BasePath "/configmap-baremetal-operator-ironic-bmo-configmap.yaml") . | sha256sum }}
+        checksum/configmap-ironic: {{ include (print $.Template.BasePath "/configmap-ironic-config.yaml") . | sha256sum }}
+        checksum/configmap-dnsmasq: {{ include (print $.Template.BasePath "/configmap-ironic-dnsmasq.yaml") . | sha256sum }}
     spec:
+      hostNetwork: true
+      nodeSelector:
+        kubernetes.io/hostname: {{ .Values.ironic.host }}
       containers:
       - command:
         - /bin/runironic
@@ -30,9 +34,9 @@ spec:
         - secretRef:
             name: baremetal-operator-ironic-htpasswd
         - configMapRef:
-            name: baremetal-operator-ironic-bmo-configmap
+            name: ironic-config
         image: "{{ required ".Values.global.quayIoMirrorAlternateRegion is missing" $.Values.global.quayIoMirrorAlternateRegion }}/{{ $.Values.images.ironic.image }}:{{ $.Values.images.ironic.tag }}"
-        imagePullPolicy: Always
+        imagePullPolicy: IfNotPresent
         livenessProbe:
           exec:
             command:
@@ -45,6 +49,10 @@ spec:
           successThreshold: 1
           timeoutSeconds: 10
         name: ironic
+        ports:
+        - containerPort: {{ .Values.ironic.ironicPort }}
+          name: ironic
+          protocol: TCP
         readinessProbe:
           exec:
             command:
@@ -79,9 +87,13 @@ spec:
         - secretRef:
             name: baremetal-operator-ironic-inspector-htpasswd
         - configMapRef:
-            name: baremetal-operator-ironic-bmo-configmap
+            name: ironic-config
         image: "{{ required ".Values.global.quayIoMirrorAlternateRegion is missing" $.Values.global.quayIoMirrorAlternateRegion }}/{{ $.Values.images.ironicInspector.image }}:{{ $.Values.images.ironicInspector.tag }}"
-        imagePullPolicy: Always
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: {{ .Values.ironic.inspectorPort }}
+          name: inspector
+          protocol: TCP
         livenessProbe:
           exec:
             command:
@@ -124,9 +136,19 @@ spec:
         - /opt/dnsmasq/rundnsmasq
         envFrom:
         - configMapRef:
-            name: baremetal-operator-ironic-bmo-configmap
+            name: ironic-config
         image: "{{ required ".Values.global.quayIoMirrorAlternateRegion is missing" $.Values.global.quayIoMirrorAlternateRegion }}/{{ $.Values.images.ironicDnsmasq.image }}:{{ $.Values.images.ironicDnsmasq.tag }}"
-        imagePullPolicy: Always
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: {{ .Values.ironic.dhcpServerPort }}
+          name: dhcp-{{ .Values.ironic.dhcpServerPort }}
+          protocol: UDP
+        - containerPort: {{ .Values.ironic.dhcpClientPort }}
+          name: dhcp-{{ .Values.ironic.dhcpClientPort }}
+          protocol: UDP
+        - containerPort: {{ .Values.ironic.tftpPort }}
+          name: dhcp-{{ .Values.ironic.tftpPort }}
+          protocol: UDP
         livenessProbe:
           exec:
             command:
@@ -173,7 +195,7 @@ spec:
       - command:
         - /bin/runlogwatch.sh
         image: "{{ required ".Values.global.quayIoMirrorAlternateRegion is missing" $.Values.global.quayIoMirrorAlternateRegion }}/{{ $.Values.images.ironicHttpd.image }}:{{ $.Values.images.ironicHttpd.tag }}"
-        imagePullPolicy: Always
+        imagePullPolicy: IfNotPresent
         name: ironic-log-watch
         resources: {}
         securityContext:
@@ -193,9 +215,13 @@ spec:
         - /bin/runhttpd
         envFrom:
         - configMapRef:
-            name: baremetal-operator-ironic-bmo-configmap
-        image: "{{ required ".Values.global.quayIoMirrorAlternateRegion is missing" $.Values.global.quayIoMirrorAlternateRegion }}/{{ $.Values.images.proxy.image }}:{{ $.Values.images.proxy.tag }}"
-        imagePullPolicy: Always
+            name: ironic-config
+        image: "{{ required ".Values.global.quayIoMirrorAlternateRegion is missing" $.Values.global.quayIoMirrorAlternateRegion }}/{{ $.Values.images.ironicHttpd.image }}:{{ $.Values.images.ironicHttpd.tag }}"
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: {{ .Values.ironic.ipxePort }}
+          name: ipxe
+          protocol: TCP
         livenessProbe:
           exec:
             command:
@@ -234,15 +260,14 @@ spec:
         - mountPath: /shared
           name: ironic-data-volume
       dnsPolicy: ClusterFirst
-      hostNetwork: true
       initContainers:
       - command:
         - /usr/local/bin/get-resource.sh
         envFrom:
         - configMapRef:
-            name: baremetal-operator-ironic-bmo-configmap
+            name: ironic-config
         image: "{{ required ".Values.global.quayIoMirrorAlternateRegion is missing" $.Values.global.quayIoMirrorAlternateRegion }}/{{ $.Values.images.ironicIpaDownloader.image }}:{{ $.Values.images.ironicIpaDownloader.tag }}"
-        imagePullPolicy: Always
+        imagePullPolicy: IfNotPresent
         name: ironic-ipa-downloader
         resources: {}
         securityContext:
@@ -269,7 +294,7 @@ spec:
       volumes:
       - configMap:
           defaultMode: 511
-          name: baremetal-operator-ironic-dnsmasq
+          name: ironic-dnsmasq
         name: dnsmasq
       - name: ironic-auth-config
         secret:

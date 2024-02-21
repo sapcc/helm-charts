@@ -1,14 +1,28 @@
-{{- range .Values.hosts }}
+{{- range $key, $host := .Values.hosts }}
+---
 apiVersion: metal3.io/v1alpha1
 kind: BareMetalHost
 metadata:
-  name: {{ .name }}
-  namespace: {{ .Release.namespace }}
+  name: {{ $key }}
+  namespace: {{ $.Release.namespace }}
+  labels:
+    kubernetes.cloud.sap/bb: {{ $host.bb }}
+    type: {{ default "metal" $host.type }}
 spec:
-  online: true
+  online: {{ default "True" $host.online }}
   bmc:
-    address: {{ .redfishUrl }}
-    credentialsName: bmc-secret-{{ .name }}
-    disableCertificateVerification: True 
-  bootMACAddress: {{ .bootMac }}
+    address: {{ $host.redfishUrl }}
+    credentialsName: bmc-secret-{{ $key }}
+    disableCertificateVerification: {{ default "True" $host.disableCertificateVerification }}
+  bootMACAddress: {{ $host.bootMac }}
+---
+apiVersion: v1
+kind: Secret
+type: Opaque
+metadata:
+  name: bmc-secret-{{ $key }}
+  namespace: {{ $.Release.namespace }}
+data:
+  username: {{ default $.Values.remoteboard.username $host.username | b64enc }}
+  password: {{ default $.Values.remoteboard.password $host.password | b64enc }}
 {{- end }}

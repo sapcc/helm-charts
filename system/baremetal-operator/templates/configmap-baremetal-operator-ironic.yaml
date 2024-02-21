@@ -1,15 +1,13 @@
 kind: ConfigMap
 apiVersion: v1
 metadata:
-  name: baremetal-operator-ironic
+  name: baremetal-operator-ironic-config
   namespace: {{ .Values.namespace }}
 data:
-  CACHEURL: http://172.22.0.1/images
-  DEPLOY_KERNEL_URL: http://10.246.83.160:6180/images/ironic-python-agent.kernel
-  DEPLOY_RAMDISK_URL: http://10.246.83.160:6180/images/ironic-python-agent.initramfs
-  DHCP_RANGE: 10.247.21.55,10.247.21.57
-  HTTP_PORT: "6180"
-  IRONIC_ENDPOINT: http://10.246.83.160:6385/v1/
+  DEPLOY_KERNEL_URL: http://{{ .Values.ironic.externalIP }}:{{ .Values.ironic.ipxePort }}/images/ironic-python-agent.kernel
+  DEPLOY_RAMDISK_URL: http://{{ .Values.ironic.externalIP }}:{{ .Values.ironic.ipxePort }}/images/ironic-python-agent.initramfs
+  HTTP_PORT: "{{ .Values.ironic.ipxePort }}"
+  IRONIC_ENDPOINT: http://{{ .Values.ironic.externalIP }}:{{ .Values.ironic.ironicPort }}/v1/
   IRONIC_FAST_TRACK: "true"
-  IRONIC_INSPECTOR_ENDPOINT: http://10.246.83.160:5050/v1/
-  PROVISIONING_INTERFACE: ens192
+  IRONIC_INSPECTOR_ENDPOINT: http://{{ .Values.ironic.externalIP }}:{{ .Values.ironic.inspectorPort }}/v1/
+  PROVISIONING_INTERFACE: {{ .Values.ironic.provisionInterface }}

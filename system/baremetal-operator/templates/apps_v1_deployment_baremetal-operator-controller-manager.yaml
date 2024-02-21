@@ -19,7 +19,7 @@ spec:
         webhook: metal3-io-v1alpha1-baremetalhost
       annotations:
         kubectl.kubernetes.io/default-container: manager
-        checksum/configmap-calico: {{ include (print $.Template.BasePath "/configmap-baremetal-operator-ironic.yaml") . | sha256sum }}
+        checksum/configmap-bmo: {{ include (print $.Template.BasePath "/configmap-baremetal-operator-ironic.yaml") . | sha256sum }}
     spec:
       containers:
       - args:
@@ -38,9 +38,9 @@ spec:
               fieldPath: metadata.namespace
         envFrom:
         - configMapRef:
-            name: baremetal-operator-ironic
+            name: baremetal-operator-ironic-config
         image: "{{ required ".Values.global.quayIoMirrorAlternateRegion is missing" $.Values.global.quayIoMirrorAlternateRegion }}/{{ $.Values.images.operator.image }}:{{ $.Values.images.operator.tag }}"
-        imagePullPolicy: Always
+        imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 10
           httpGet:
