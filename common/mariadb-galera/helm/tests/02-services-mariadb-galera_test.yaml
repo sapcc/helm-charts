@@ -1082,3 +1082,69 @@ tests:
       - equal:
           path: spec.externalIPs[0]
           value: "10.0.0.3"
+
+  - it: database backend service external IP added for eu-de-1
+    template: service.yaml
+    documentSelector:
+      path: metadata.name
+      value: testrelease-mariadb-g-backend
+    set:
+      mariadb.galera.clustername: "testclustername"
+      mariadb.galera.multiRegion.enabled: true
+      mariadb.galera.multiRegion.current: "eu-de-1"
+      mariadb.galera.multiRegion.regions.eu-de-1.externalIP: "10.0.0.1"
+      mariadb.galera.multiRegion.regions.eu-de-2.externalIP: "10.0.0.2"
+      mariadb.galera.multiRegion.regions.eu-nl-1.externalIP: "10.0.0.3"
+    asserts:
+      - isKind:
+          of: Service
+      - equal:
+          path: metadata.labels.app
+          value: testrelease
+      - equal:
+          path: spec.externalIPs[0]
+          value: "10.0.0.1"
+
+  - it: database backend service external IP added for region eu-de-2
+    template: service.yaml
+    documentSelector:
+      path: metadata.name
+      value: testrelease-mariadb-g-backend
+    set:
+      mariadb.galera.clustername: "testclustername"
+      mariadb.galera.multiRegion.enabled: true
+      mariadb.galera.multiRegion.current: "eu-de-2"
+      mariadb.galera.multiRegion.regions.eu-de-1.externalIP: "10.0.0.1"
+      mariadb.galera.multiRegion.regions.eu-de-2.externalIP: "10.0.0.2"
+      mariadb.galera.multiRegion.regions.eu-nl-1.externalIP: "10.0.0.3"
+    asserts:
+      - isKind:
+          of: Service
+      - equal:
+          path: metadata.labels.app
+          value: testrelease
+      - equal:
+          path: spec.externalIPs[0]
+          value: "10.0.0.2"
+
+  - it: database backend service external IP added for eu-nl-1
+    template: service.yaml
+    documentSelector:
+      path: metadata.name
+      value: testrelease-mariadb-g-backend
+    set:
+      mariadb.galera.clustername: "testclustername"
+      mariadb.galera.multiRegion.enabled: true
+      mariadb.galera.multiRegion.current: "eu-nl-1"
+      mariadb.galera.multiRegion.regions.eu-de-1.externalIP: "10.0.0.1"
+      mariadb.galera.multiRegion.regions.eu-de-2.externalIP: "10.0.0.2"
+      mariadb.galera.multiRegion.regions.eu-nl-1.externalIP: "10.0.0.3"
+    asserts:
+      - isKind:
+          of: Service
+      - equal:
+          path: metadata.labels.app
+          value: testrelease
+      - equal:
+          path: spec.externalIPs[0]
+          value: "10.0.0.3"

@@ -74,7 +74,18 @@ spec:
   {{- end }}
   {{- if and (.global.Values.mariadb.galera.multiRegion.enabled) (eq .type "backend") (eq .component "database") (ne .service.type "LoadBalancer") (eq .replica "notused") }}
   externalIPs:
-  - {{ (index .global.Values.mariadb.galera.multiRegion.regions (required "mariadb.galera.multiRegion.current has to be defined (r1, r2, r3) if the multiRegion parameter is enabled" .global.Values.mariadb.galera.multiRegion.current)).externalIP }}
+    {{- if and (hasKey .global.Values "global") (hasKey .global.Values.global "db_region") (.global.Values.global.db_region) }}
+  - {{ (index .global.Values.mariadb.galera.multiRegion.regions .global.Values.global.db_region).externalIP }}
+    {{- else }}
+  - {{ (index .global.Values.mariadb.galera.multiRegion.regions (required "mariadb.galera.multiRegion.current has to be defined if the multiRegion parameter is enabled" .global.Values.mariadb.galera.multiRegion.current)).externalIP }}
+    {{- end }}
+  {{- end }}
+  {{- if and (.global.Values.mariadb.galera.multiRegion.enabled) (eq .type "backend") (eq .component "database") (eq .service.type "LoadBalancer") (eq .replica "notused") }}
+    {{- if and (hasKey .global.Values "global") (hasKey .global.Values.global "db_region") (.global.Values.global.db_region) }}
+  loadBalancerIP: {{ (index .global.Values.mariadb.galera.multiRegion.regions .global.Values.global.db_region).externalIP }}
+    {{- else }}
+  loadBalancerIP: {{ (index .global.Values.mariadb.galera.multiRegion.regions (required "mariadb.galera.multiRegion.current has to be defined if the multiRegion parameter is enabled" .global.Values.mariadb.galera.multiRegion.current)).externalIP }}
+    {{- end }}
   {{- end }}
   sessionAffinity: {{ .service.sessionAffinity.type | default "None" | quote }}
   sessionAffinityConfig:
@@ -144,7 +155,7 @@ spec:
   {{- end }}
   {{- if $.global.Values.mariadb.galera.multiRegion.enabled }}
     {{- range $regionKey, $regionValue := $.global.Values.mariadb.galera.multiRegion.regions }}
-      {{- if ne $.global.Values.mariadb.galera.multiRegion.current $regionKey}}
+        {{- if or (and (hasKey $.global.Values "global") (hasKey $.global.Values.global "db_region") (ne $.global.Values.global.db_region $regionKey)) (ne $.global.Values.mariadb.galera.multiRegion.current $regionKey) }}
         {{- $nodeNames = (printf "%s:%d" $regionValue.externalIP $galeraPort) | append $nodeNames -}}
       {{- end }}
     {{- end }}
@@ -170,18 +181,13 @@ spec:
 
 {{/*
   fetch a certain network port value
-  include "getNetworkPort" (dict "global" $ "type" "backend" "name" "ist")
+  include "getNetworkPort" (dict "global" $ "type" "backend" "component" "database" "name" "ist")
 */}}
 {{- define "getNetworkPort" }}
-  {{- range $servicesKey, $servicesValue := $.global.Values.services.database }}
-    {{- if eq $servicesValue.name $.type }}
-      {{- range $portsKey, $portsValue := $servicesValue.ports }}
-        {{- if eq $portsValue.name $.name }}
-          {{- ($portsValue.port | int) }}
-        {{- end }}
-      {{- end }}
-    {{- end }}
-  {{- end }}
+  {{- $service := index $.global.Values.services .component -}}
+  {{- $serviceType := index $service .type -}}
+  {{- $servicePort := index $serviceType.ports .name -}}
+  {{- ($servicePort.port | int) }}
 {{- end }}
 
 {{/*

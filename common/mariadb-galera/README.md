@@ -42,7 +42,7 @@ Docker images and Helm chart to deploy a [MariaDB](https://mariadb.com/kb/en/get
 ## Metadata
 | chart version | app version | type | url |
 |:--------------|:-------------|:-------------|:-------------|
-| 0.23.1 | 10.5.23 | application | [Git repo](https://github.com/sapcc/helm-charts/tree/mariadb-galera/common/mariadb-galera) |
+| 0.24.0 | 10.5.23 | application | [Git repo](https://github.com/sapcc/helm-charts/tree/mariadb-galera/common/mariadb-galera) |
 
 | Name | Email | Url |
 | ---- | ------ | --- |
@@ -152,7 +152,7 @@ docker build --build-arg BASE_SOFT_NAME=ubuntu --build-arg BASE_SOFT_VERSION=22.
   ```
 * [push](https://helm.sh/docs/topics/registries/#the-push-subcommand) the chart to the registry
   ```shell
-  helm push mariadb-galera-0.23.1.tgz oci://keppel.eu-de-1.cloud.sap/ccloud-helm/
+  helm push mariadb-galera-0.24.0.tgz oci://keppel.eu-de-1.cloud.sap/ccloud-helm/
   ```
 
 ### values description
@@ -380,14 +380,9 @@ docker build --build-arg BASE_SOFT_NAME=ubuntu --build-arg BASE_SOFT_VERSION=22.
 | mariadb.galera.gtidDomainIdCount | int | 1 | how many Galera cluster instances will be connected. Used for [asynchronous replication](#asynchronous-replication-config) setups. Maximum of `2` is supported |
 | mariadb.galera.gtidStrictMode | bool | false | enable [gtid_strict_mode](https://mariadb.com/kb/en/gtid/#gtid_strict_mode) |
 | mariadb.galera.logLevel | string | info | [wsrep_debug](https://mariadb.com/kb/en/galera-cluster-system-variables/#wsrep_debug) |
-| mariadb.galera.multiRegion.current | string | `nil` | Name of the region where we are currently deploying the MariaDB Galera cluster components (region1, region2, region3) |
+| mariadb.galera.multiRegion.current | string | `nil` | Name of the region where we are currently deploying the MariaDB Galera cluster components. The `global.db_region` parameter will be used if defined by the parent chart. Otherwise something like r1, r2, r3 or names like eu-de-1, eu-de-2, eu-de-3 should be used |
 | mariadb.galera.multiRegion.enabled | bool | `false` | Enable the multi-region setup. Exactly 3 regions are supported |
-| mariadb.galera.multiRegion.region1.externalIP | string | `nil` | external IP address of the region. Can be exposed via a load balancer or a external IP of a ClusterIP service |
-| mariadb.galera.multiRegion.region1.segmentId | string | `1` | Define which network segment([gmcast.segment](https://galeracluster.com/library/documentation/galera-parameters.html#gmcast-segment)) this node is in |
-| mariadb.galera.multiRegion.region2.externalIP | string | `nil` | external IP address of the region. Can be exposed via a load balancer or a external IP of a ClusterIP service |
-| mariadb.galera.multiRegion.region2.segmentId | string | `2` | Define which network segment([gmcast.segment](https://galeracluster.com/library/documentation/galera-parameters.html#gmcast-segment)) this node is in |
-| mariadb.galera.multiRegion.region3.externalIP | string | `nil` | external IP address of the region. Can be exposed via a load balancer or a external IP of a ClusterIP service |
-| mariadb.galera.multiRegion.region3.segmentId | string | `3` | Define which network segment([gmcast.segment](https://galeracluster.com/library/documentation/galera-parameters.html#gmcast-segment)) this node is in |
+| mariadb.galera.multiRegion.regions | object | `nil` | `r1/2/3.externalIP` (external IP address of the region. Can be exposed via a load balancer or a external IP of a ClusterIP service) and `r1/2/3.segmentId` (Define which network segment([gmcast.segment](https://galeracluster.com/library/documentation/galera-parameters.html#gmcast-segment)) this node is in) |
 | mariadb.galera.pcrecovery | bool | false | [primary component recovery](https://galeracluster.com/library/documentation/pc-recovery.html) |
 | mariadb.galera.restore.beforeTimestamp | string | `nil` | without `mariab.galera.restore.pointInTimeRecovery` only the full snapshot will be recovered |
 | mariadb.galera.restore.kopia.enabled | bool | `false` | enable the [full database restore](#full-database-restore). Should be done as described in the documentation with `--set` parameters |

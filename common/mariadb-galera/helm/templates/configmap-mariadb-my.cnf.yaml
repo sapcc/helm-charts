@@ -11,7 +11,11 @@
   {{- $_ := set $wsrepProviderOptions "gcache.recover" "gcache.recover=no" }}
 {{- end }}
 {{- if $.Values.mariadb.galera.multiRegion.enabled }}
-  {{- $_ := set $wsrepProviderOptions "gmcast.segment" (printf "gmcast.segment=%d" ((index $.Values.mariadb.galera.multiRegion.regions (required "mariadb.galera.multiRegion.current has to be defined (r1, r2, r3) if the multiRegion parameter is enabled" $.Values.mariadb.galera.multiRegion.current)).segmentId | int)) }}
+  {{- if and (hasKey $.Values "global") (hasKey $.Values.global "db_region") ($.Values.global.db_region) }}
+    {{- $_ := set $wsrepProviderOptions "gmcast.segment" (printf "gmcast.segment=%d" (required "mariadb.galera.multiRegion.<region_name>.segmentId has to be defined if the multiRegion parameter is enabled" (index $.Values.mariadb.galera.multiRegion.regions $.Values.global.db_region).segmentId | int)) }}
+  {{- else }}
+    {{- $_ := set $wsrepProviderOptions "gmcast.segment" (printf "gmcast.segment=%d" (required "mariadb.galera.multiRegion.<region_name>.segmentId has to be defined if the multiRegion parameter is enabled" (index $.Values.mariadb.galera.multiRegion.regions (required "mariadb.galera.multiRegion.current has to be defined if the multiRegion parameter is enabled" $.Values.mariadb.galera.multiRegion.current)).segmentId | int)) }}
+  {{- end }}
 {{- end }}
 {{- $_ := set $wsrepProviderOptions "cert.log_conflicts" "cert.log_conflicts=ON"}}
 {{- if $.Values.mariadb.galera.debug }}
@@ -19,7 +23,7 @@
 {{- else  }}
   {{- $_ := set $wsrepProviderOptions "debug" "debug=NO"}}
 {{- end }}
-{{- $_ := set $wsrepProviderOptions "ist.recv_addr" (printf "ist.recv_addr=${CONTAINER_IP}:%d" ((include "getNetworkPort" (dict "global" $ "type" "backend" "name" "ist")) | int)) }}
+{{- $_ := set $wsrepProviderOptions "ist.recv_addr" (printf "ist.recv_addr=${CONTAINER_IP}:%d" ((include "getNetworkPort" (dict "global" $ "type" "backend" "component" "database" "name" "ist")) | int)) }}
 {{- $_ := set $wsrepProviderOptions "pc.wait_prim_timeout" (printf "pc.wait_prim_timeout=PT%dS" ($.Values.mariadb.galera.waitForPrimaryTimeoutInSeconds | default 30 | int)) }}
 {{- if hasKey $.Values.mariadb.galera "gtidDomainIdCount" }}
   {{- if or (lt ($.Values.mariadb.galera.gtidDomainIdCount | int) 1) (gt ($.Values.mariadb.galera.gtidDomainIdCount | int) 2) }}
