@@ -1,0 +1,40 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: "opensearch-hermes-curator-close-indexes"
+  labels:
+    app.kubernetes.io/managed-by: {{ .Release.Service | quote }}
+    app.kubernetes.io/instance: {{ .Release.Name | quote }}
+    app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
+    helm.sh/chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+spec:
+  schedule: "0 10 1 * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          restartPolicy: Never
+          containers:
+          - name: opensearch-hermes-curator-close-indexes
+            image: "{{ .Values.global.registry }}/curator-opensearch:202402201130"
+            command: ["/curator/curator"]
+            args: ["--config", "/curator-etc/curator.yml", "/curator-etc/close.yml"]
+            env:
+              - name: USER
+                valueFrom:
+                  secretKeyRef:
+                    name: curator-secrets
+                    key: username
+              - name: PW
+                valueFrom:
+                  secretKeyRef:
+                    name: curator-secrets
+                    key: password
+            volumeMounts:
+            - mountPath: /curator-etc
+              name: curator-etc
+          volumes:
+          - configMap:
+              name: curator-configmap
+              defaultMode: 0555
+            name: curator-etc

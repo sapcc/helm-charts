@@ -1,24 +1,24 @@
 apiVersion: batch/v1
 kind: CronJob
 metadata:
-  name: "opensearch-hermes-curator-cleanup"
+  name: "opensearch-hermes-curator-delete-indexes"
   labels:
     app.kubernetes.io/managed-by: {{ .Release.Service | quote }}
     app.kubernetes.io/instance: {{ .Release.Name | quote }}
     app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
     helm.sh/chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
 spec:
-  schedule: "0 10 1 * *"
+  schedule: "0 10 28 * *"
   jobTemplate:
     spec:
       template:
         spec:
           restartPolicy: Never
           containers:
-          - name: opensearch-hermes-curator-cleanup
+          - name: opensearch-hermes-curator-delete-indexes
             image: "{{ .Values.global.registry }}/curator-opensearch:202402201130"
             command: ["/curator/curator"]
-            args: ["--config", "/curator-etc/curator.yml", "/curator-etc/close.yml"]
+            args: ["--config", "/curator-etc/curator.yml", "/curator-etc/delete.yml"]
             env:
               - name: USER
                 valueFrom:

@@ -40,6 +40,7 @@ data:
           timeout_override:
           continue_if_exception: False
           disable_action: False
+          ignore_empty_list: True
         filters:
         - filtertype: pattern
           kind: prefix
@@ -53,4 +54,31 @@ data:
           unit_count: 365
           exclude:
         - filtertype: closed
+          exclude: True
+  delete.yml: |
+    actions:
+      1:
+        action: delete_indices
+        description: >-
+          Delete closed audit-indices older than 365 days (based on index name), for audit-
+          prefixed indices.
+        options:
+          delete_aliases: False
+          timeout_override: 600
+          continue_if_exception: False
+          disable_action: False
+          ignore_empty_list: True
+        filters:
+        - filtertype: pattern
+          kind: prefix
+          value: audit-
+          exclude:
+        - filtertype: age
+          source: name
+          direction: older
+          timestring: '%Y.%m'
+          unit: days
+          unit_count: 365
+          exclude:
+        - filtertype: openend
           exclude: True
