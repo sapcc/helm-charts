@@ -3,19 +3,19 @@ kind: Service
 apiVersion: v1
 
 metadata:
-  name: {{ include "fullname" . }}-service
+  name: {{ include "fullname" . }}
   namespace: {{ .Values.updater.namespace }}
   labels:
     app: {{ include "fullname" . }}
     type: service
 
 spec:
-  type: LoadBalancer
+  type: ClusterIP
   selector:
     name: {{ include "fullname" . }}
   ports:
-  - name: {{ include "fullname" . }}-api
+  - name: {{ include "fullname" . }}
     port: {{.Values.updater.api.port}}
-    targetPort: updater-port
+    targetPort: {{ include "fullname" . }}
     protocol: TCP
 {{- end}}
