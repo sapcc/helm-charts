@@ -1,0 +1,19 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: {{ include "cluster-api-core.fullname" . }}-serving-cert
+  labels:
+  {{- include "cluster-api-core.labels" . | nindent 4 }}
+spec:
+  dnsNames:
+  - '{{ include "cluster-api-core.fullname" . }}-webhook-service.{{ .Release.Namespace
+    }}.svc'
+  - '{{ include "cluster-api-core.fullname" . }}-webhook-service.{{ .Release.Namespace
+    }}.svc.{{ .Values.kubernetesClusterDomain }}'
+  issuerRef:
+    kind: Issuer
+    name: '{{ include "cluster-api-core.fullname" . }}-selfsigned-issuer'
+  secretName: capi-webhook-service-cert
+  subject:
+    organizations:
+    - k8s-sig-cluster-lifecycle
