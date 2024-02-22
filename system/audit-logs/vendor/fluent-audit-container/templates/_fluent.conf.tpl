@@ -237,6 +237,19 @@
   remove_keys source
 </filter>
 
+<filter vault.**>
+  @type record_transformer
+  <record>
+    client.user.roles ${record.dig("auth", "identity_policies") ? record.dig("auth", "identity_policies") : record.dig("auth", "token_policies")}
+    client.user.name ${record.dig("auth", "metadata", "email") ? record.dig("auth", "metadata", "email") : record.dig("auth", "metadata", "role_name")}
+    client.user.id ${record.dig("auth", "display_name").gsub("oidc-", "")}
+    client.user.full_name ${record.dig('auth', 'metadata', 'first_name') && record.dig('auth', 'metadata', 'last_name') ? "#{record.dig('auth', 'metadata', 'first_name')} #{record.dig('auth', 'metadata', 'last_name')}" : record.dig("auth", "metadata", "role_name")}
+    client.ip ${record.dig("request", "remote_address")}
+    client.address ${record.dig("request", "remote_address")}
+    destination.address ${record.dig("request", "path")}
+  </record>
+</filter>
+
 <match fluent.**>
   @type null
 </match>
