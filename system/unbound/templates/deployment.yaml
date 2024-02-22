@@ -36,34 +36,6 @@ spec:
               topologyKey: "kubernetes.io/hostname"
       nodeSelector:
         topology.kubernetes.io/zone: {{ .Values.global.region}}{{ .Values.unbound.failure_domain_zone}}
-      initContainers:
-{{ if .Values.unbound.dnstap.enabled }}
-      - name: dnstap
-        image: {{ required ".Values.global.registryAlternateRegion is missing" .Values.global.registryAlternateRegion }}/{{.Values.unbound.dnstap.image}}:{{ .Values.unbound.dnstap.image_tag}}
-        imagePullPolicy: {{ .Values.unbound.image_pullPolicy }}
-        restartPolicy: Always
-        resources:
-{{ toYaml .Values.resources.dnstap | indent 10 }}
-        args:
-          - -u
-          - {{ .Values.unbound.dnstap.socket_path | default "/run/dnstap/dnstap.sock" }}
-{{ if .Values.unbound.dnstap.hec_splunk_url }}
-{{ if .Values.unbound.dnstap.hec_splunk_token }}
-          - -H
-          - {{ .Values.unbound.dnstap.hec_splunk_url }}
-          - -token
-          - {{ .Values.unbound.dnstap.hec_splunk_token }}
-{{ if .Values.unbound.dnstap.hec_splunk_server_uuid }}
-          - -server_uuid
-          - {{ .Values.unbound.dnstap.hec_splunk_server_uuid }}
-{{ end }}
-{{ end }}
-{{ end }}
-{{ toYaml .Values.unbound.dnstap.additional_cmdline_args | indent 10 }}
-        volumeMounts:
-          - name: dnstap-socket
-            mountPath: {{ .Values.unbound.dnstap.socket_path | default "/run/dnstap/dnstap.sock" | dir }}
-{{ end }}
       containers:
       - name: unbound
         image: {{ required ".Values.global.registryAlternateRegion is missing" .Values.global.registryAlternateRegion }}/{{.Values.unbound.unbound.image}}:{{ .Values.unbound.unbound.image_tag}}
@@ -123,6 +95,38 @@ spec:
         volumeMounts:
           - name: unbound-conf
             mountPath: /etc/unbound
+{{ if ge (int .Capabilities.KubeVersion.Minor) 29 }}
+      initContainers:
+{{ end }}
+{{ if .Values.unbound.dnstap.enabled }}
+      - name: dnstap
+        image: {{ required ".Values.global.registryAlternateRegion is missing" .Values.global.registryAlternateRegion }}/{{.Values.unbound.dnstap.image}}:{{ .Values.unbound.dnstap.image_tag}}
+        imagePullPolicy: {{ .Values.unbound.image_pullPolicy }}
+{{ if ge (int .Capabilities.KubeVersion.Minor) 29 }}
+        restartPolicy: Always
+{{ end }}
+        resources:
+{{ toYaml .Values.resources.dnstap | indent 10 }}
+        args:
+          - -u
+          - {{ .Values.unbound.dnstap.socket_path | default "/run/dnstap/dnstap.sock" }}
+{{ if .Values.unbound.dnstap.hec_splunk_url }}
+{{ if .Values.unbound.dnstap.hec_splunk_token }}
+          - -H
+          - {{ .Values.unbound.dnstap.hec_splunk_url }}
+          - -token
+          - {{ .Values.unbound.dnstap.hec_splunk_token }}
+{{ if .Values.unbound.dnstap.hec_splunk_server_uuid }}
+          - -server_uuid
+          - {{ .Values.unbound.dnstap.hec_splunk_server_uuid }}
+{{ end }}
+{{ end }}
+{{ end }}
+{{ toYaml .Values.unbound.dnstap.additional_cmdline_args | indent 10 }}
+        volumeMounts:
+          - name: dnstap-socket
+            mountPath: {{ .Values.unbound.dnstap.socket_path | default "/run/dnstap/dnstap.sock" | dir }}
+{{ end }}
       volumes:
       - name: unbound-conf
         configMap:
