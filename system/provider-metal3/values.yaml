@@ -1,0 +1,56 @@
+capm3Capm3FasttrackConfigmap:
+  capm3FastTrack: 'false'
+capm3ControllerManager:
+  manager:
+    args:
+      - --webhook-port=9443
+      - --enableBMHNameBasedPreallocation=false
+      - --diagnostics-address=:8443
+      - --insecure-diagnostics=false
+    containerSecurityContext:
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop:
+          - ALL
+      privileged: false
+      runAsGroup: 65532
+      runAsUser: 65532
+    image:
+      repository: quay.io/metal3-io/cluster-api-provider-metal3
+      tag: v1.6.0
+    imagePullPolicy: IfNotPresent
+capm3Manager:
+  serviceAccount:
+    annotations: {}
+capm3WebhookService:
+  ports:
+    - port: 443
+      targetPort: webhook-server
+  type: ClusterIP
+ipamControllerManager:
+  manager:
+    args:
+      - --webhook-port=9443
+      - --diagnostics-address=:8443
+      - --insecure-diagnostics=false
+    containerSecurityContext:
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop:
+          - ALL
+      privileged: false
+      runAsGroup: 65532
+      runAsUser: 65532
+    image:
+      repository: quay.io/metal3-io/ip-address-manager
+      tag: v1.6.0
+    imagePullPolicy: IfNotPresent
+ipamManager:
+  serviceAccount:
+    annotations: {}
+ipamWebhookService:
+  ports:
+    - port: 443
+      targetPort: ipam-webhook
+  type: ClusterIP
+kubernetesClusterDomain: cluster.local
