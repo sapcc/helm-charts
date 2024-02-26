@@ -1,0 +1,30 @@
+{{- if and .Values.metrics.enabled .Values.metrics.details.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: {{ template "fullname" . }}
+  labels:
+    app: {{ template "fullname" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+    type: rabbitmq
+    component: {{ .Release.Name }}
+    system: openstack
+    prometheus: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus }}
+spec:
+  podMetricsEndpoints:
+    - honorLabels: true
+      port: metrics
+      path: /metrics/detailed   # see https://www.rabbitmq.com/docs/prometheus#detailed-endpoint
+      # params:
+      #   family: [queue_coarse_metrics]
+      params:
+{{ toYaml .Values.metrics.details.params | indent 10 }}
+  namespaceSelector:
+    matchNames:
+        - {{ .Release.Namespace }}
+  selector:
+    matchLabels:
+      app: {{ template "fullname" . }}
+{{- end }}

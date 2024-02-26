@@ -1,3 +1,39 @@
+{{- if .Values.metrics.details.enabled }}
+groups:
+- name: {{ include "alerts.service" . | title }}-rabbitmq.alerts
+  rules:
+  - alert: {{ include "alerts.service" . | title }}RabbitMQDetailsRPCUnackTotal
+    expr: sum(rabbitmq_detailed_queue_messages_unacked{app=~"{{ include "alerts.service" . }}-rabbitmq"}) by (app, queue) > {{ .Values.alerts.rabbit_queue_length | default 1000 }}
+    for: {{ .Values.alerts.unacknowledged_total_wait_for | default "1m" }}
+    labels:
+      severity: critical
+      tier: {{ required ".Values.alerts.tier missing" .Values.alerts.tier }}
+      support_group: {{ required ".Values.alerts.support_group missing" .Values.alerts.support_group }}
+      service:  {{ include "alerts.service" . }}
+      context: '{{`{{ $labels.app }}`}}'
+      dashboard: rabbitmq
+      meta: '{{`{{ $labels.app }}`}} queue {{`{{ $labels.queue }}`}} has over {{ .Values.alerts.rabbit_queue_length | default 1000 }} unacknowledged messages.'
+      playbook: 'docs/devops/alert/rabbitmq/'
+    annotations:
+      description: 'RPC Messages are not being collected. {{`{{ $labels.app }}`}} queue {{`{{ $labels.queue }}`}} has over {{ .Values.alerts.rabbit_queue_length | default 1000 }} unacknowledged messages.'
+      summary: 'RPC messages are not being collected.'
+
+  - alert: {{ include "alerts.service" . | title }}RabbitMQDetailsRPCReadyTotal
+    expr: sum(rabbitmq_detailed_queue_messages_ready{app=~"{{ include "alerts.service" . }}-rabbitmq"}) by (app, queue) > {{ .Values.alerts.rabbit_queue_length | default 1000 }}
+    for: {{ .Values.alerts.ready_total_wait_for | default "1m" }}
+    labels:
+      severity: critical
+      tier: {{ required ".Values.alerts.tier missing" .Values.alerts.tier }}
+      support_group: {{ required ".Values.alerts.support_group missing" .Values.alerts.support_group }}
+      service: {{ include "alerts.service" . }}
+      context: '{{`{{ $labels.app }}`}}'
+      dashboard: rabbitmq
+      meta: 'RPC Messages are not being collected. {{`{{ $labels.app }}`}} queue {{`{{ $labels.queue }}`}} has over {{ .Values.alerts.rabbit_queue_length | default 1000 }} rpc messages waiting.'
+      playbook: 'docs/devops/alert/rabbitmq/'
+    annotations:
+      description: 'RPC Messages are not being collected. {{`{{ $labels.app }}`}} queue {{`{{ $labels.queue }}`}} has over {{ .Values.alerts.rabbit_queue_length | default 1000 }} rpc messages waiting.'
+      summary: 'RPC messages are not being collected.'
+{{- else }}
 groups:
 - name: {{ include "alerts.service" . | title }}-rabbitmq.alerts
   rules:
@@ -32,3 +68,4 @@ groups:
     annotations:
       description: 'RPC Messages are not being collected. {{`{{ $labels.app }}`}} has over {{ .Values.alerts.rabbit_queue_length | default 1000 }} rpc messages waiting.'
       summary: 'RPC messages are not being collected.'
+{{- end }}
