@@ -78,3 +78,17 @@ groups:
       annotations:
         summary: Exceeding memory limits in 8h
         description: The container {{ $labels.pod_name }}/{{ $labels.container_name }} will exceed its memory limit in 8h.
+
+    - alert: OpenstackManilaSharePodScaledDown
+      expr: kube_deployment_status_replicas{deployment=~"manila-share-netapp-.*"} == 0
+      for: 12h
+      labels:
+        tier: os
+        service: manila
+        severity: info
+        context: share-replicas
+        meta: "{{ $labels.deployment }}"
+        support_group: compute-storage-api
+      annotations:
+        summary: Deployment 0 replicas
+        description: The deployment {{ $labels.deployment }} is set to 0 replicas for more than half a day. Consider scaling back up if maintenance is over.
