@@ -51,7 +51,7 @@
 - name: CASTELLUM_SERVERGROUPS_LOCAL_ROLES
   value: "member,keymanager_viewer"
 - name: CASTELLUM_SERVERGROUPS_PROMETHEUS_URL
-  value: "https://metrics.scaleout.{{ .Values.global.region }}.cloud.sap"
+  value: "https://metrics-internal.scaleout.{{ .Values.global.region }}.cloud.sap"
 - name: CASTELLUM_SERVERGROUPS_PROMETHEUS_CERT
   value: /etc/castellum-certs/prometheus-vmware.cert.pem
 - name: CASTELLUM_SERVERGROUPS_PROMETHEUS_KEY
