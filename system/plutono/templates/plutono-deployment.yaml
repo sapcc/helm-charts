@@ -48,10 +48,10 @@ spec:
       initContainers:
       - name: fix-permissions
         image: {{.Values.global.registry}}/shared-app-images/alpine-busybox:latest-latest
-        command: ["/bin/chown","-R","65533:65533", "/tmp/git"]
+        command: ["/bin/chown","-R","65533:65533", "/git"]
         volumeMounts:
         - name: plutono-git
-          mountPath: /tmp/git
+          mountPath: /git
       containers:
         - name: "plutono"
           image: {{ .Values.global.ghcrIoMirror | required ".Values.global.ghcrIoMirror is missing" }}/{{.Values.plutono.image}}:{{.Values.plutono.image_version}}
@@ -94,25 +94,25 @@ spec:
             initialDelaySeconds: 120
             periodSeconds: 30
         - name: "gitsync"
-          image: {{.Values.global.registryK8sIoMirror}}/git-sync/git-sync:v3.6.8
+          image: {{.Values.global.registryK8sIoMirror}}/git-sync/git-sync:v4.2.1
           imagePullPolicy: {{.Values.image.pullPolicy}}
           args:
             - "--repo={{.Values.plutono.gitsync.repository}}"
-            - "--branch={{.Values.plutono.gitsync.branch}}"
-            - "--wait=30"
-            - "--max-sync-failures=-1"
+            - "--ref={{.Values.plutono.gitsync.branch}}"
+            - "--period=30s"
+            - "--max-failures=-1"
             - "--http-bind=:9090"
             - "--http-metrics"
           env:
             - name: GIT_SSL_NO_VERIFY
               value: "true"
-            - name: GIT_SYNC_USERNAME
+            - name: GITSYNC_USERNAME
               value: {{.Values.plutono.gitsync.username}}
-            - name: GIT_SYNC_PASSWORD
+            - name: GITSYNC_PASSWORD
               value: {{.Values.plutono.gitsync.password}}
           volumeMounts:
             - name: plutono-git
-              mountPath: /tmp/git
+              mountPath: /git
           resources:
             requests:
               memory: "250Mi"
