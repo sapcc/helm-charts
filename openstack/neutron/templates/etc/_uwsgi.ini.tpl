@@ -44,7 +44,8 @@ memory-report = true
 harakiri = 120
 harakiri-verbose = true
 {{ if .Values.api.uwsgi_enable_harakiri_graceful_signal -}}
-harakiri-graceful-signal = SIGWINCH
+# Send SIGWINCH signal to trigger guru_meditation report creation
+harakiri-graceful-signal = 28
 harakiri-graceful-timeout = 5
 {{ end -}}
 post-buffering = 4096
