@@ -26,13 +26,9 @@
   value: ":8080"
 - name: CASTELLUM_LOG_SCRAPES
   value: "true"
-  # ^ The Manila limit comes from the "provisioning:max_share_extend_size" setting in
-  # `openstack/manila/templates/_helpers.tpl`. The limit in Manila only applies to
-  # the "default" share type. The "hypervisor_storage" share types are not limited,
-  # but those are usually not autoscaled anyway, so it's not a problem as of now.
 {{- if $.Values.castellum.asset_managers | has "nfs-shares" }}
-- name: CASTELLUM_NFS_NETAPP_SCOUT_URL
-  value: "http://castellum-netapp-scout.{{ .Release.Namespace }}.svc:8080"
+- name: CASTELLUM_NFS_PROMETHEUS_URL
+  value: "http://prometheus-storage.infra-monitoring.svc:9090"
 {{- end }}
 - name: CASTELLUM_OSLO_POLICY_PATH
   value: /etc/castellum/policy.yaml
