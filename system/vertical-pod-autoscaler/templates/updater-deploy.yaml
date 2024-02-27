@@ -30,6 +30,11 @@ spec:
         - name: updater
           image: {{ include "updater.image" . }}
           imagePullPolicy: {{ default "IfNotPresent" .Values.updater.image.pullPolicy }}
+          command: "/updater"
+          args:
+          - "--v=4"
+          - "--stderrthreshold=info"
+          - "--min-replicas={{ .Values.updater.minReplicas }}"
           resources:
             limits:
               cpu: 200m
