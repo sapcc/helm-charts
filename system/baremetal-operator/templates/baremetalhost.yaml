@@ -1,23 +1,23 @@
 {{- range $key, $host := .Values.hosts }}
-{{- $networkdata := `networks:
-- id: $host.vlan
-  ip_address: $.host.ip
-  link: bond0
-  routes:
-  - gateway: $.host.gateway
-    netmask: 0.0.0.0
-    network: 0.0.0.0
-  type: ipv4
-` -}}
 ---
 apiVersion: v1
-data:
-  networkData: {{ tpl $networkdata $ | b64enc }}
 kind: Secret
 metadata:
   name: networkdata-{{ $key }}
   namespace: {{ $.Release.namespace }}
 type: infrastructure.cluster.x-k8s.io/secret
+stringData: 
+  networkData: |-
+    networks:
+    - id: {{ $host.vlan }}
+      ip_address: {{ $host.ip }}
+      link: {{ default "bond0" $host.bond }}
+      netmask: {{ default "255.255.255.0" $host.netmask }}
+      routes:
+      - gateway: {{ $host.gateway }}
+        netmask: 0.0.0.0
+        network: 0.0.0.0
+      type: ipv4
 ---
 apiVersion: metal3.io/v1alpha1
 kind: BareMetalHost
