@@ -7,6 +7,15 @@ data:
   unbound.conf: |
        server:
         identity: "{{ .Values.unbound.name }}.{{ .Values.global.region }}"
+
+        {{- $unbound_modules := "validator iterator" -}}
+
+        {{- if .Values.unbound.bind_rpz_proxy.enabled }}
+        {{- $unbound_modules := cat "respip" $unbound_modules -}}
+        {{- end }}
+
+        module-config: {{ $unbound_modules | quote }}
+
         interface: {{.Values.unbound.interface}}
         port: 53
         do-ip4: yes
@@ -74,6 +83,10 @@ data:
        # dnstap.conf
        include: /etc/unbound/dnstap.conf
 
+       {{- if .Values.unbound.bind_rpz_proxy.enabled }}
+       include: /etc/unbound/rpz.conf
+       {{- end }}
+
   dnstap.conf: |
        dnstap:
 {{ if .Values.unbound.dnstap.enabled }}
@@ -86,6 +99,18 @@ data:
 {{ else }}
         dnstap-enable: no
 {{ end }}
+
+{{- if .Values.unbound.bind_rpz_proxy.enabled }}
+  rpz.conf: |
+    {{- range $rpz_zone := .Values.unbound.rpz.zones }}
+       rpz:
+        name: {{ $rpz_zone | quote }}
+        # let the clients poll the zone SOA for monitoring purposes
+        for-downstream: yes
+        allow-notify: 127.0.0.1
+        primary: 127.0.0.1@55353
+    {{- end }}
+{{- end }}
 
   hosts.conf: |
        local-zone: "168.192.in-addr.arpa." transparent
