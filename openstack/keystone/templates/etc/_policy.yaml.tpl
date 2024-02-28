@@ -946,7 +946,8 @@
 # DELETE  /v3/projects/{project_id}
 # Intended scope(s): system, domain
 #"identity:delete_project": "(role:admin and system_scope:all) or (role:admin and domain_id:%(target.project.domain_id)s)"
-"identity:delete_project": "rule:cloud_admin"
+# The corresponding `prodel` service details are available on GitHub under `cc/prodel`
+"identity:delete_project": "rule:cloud_admin and http://prodel.prodel.svc/check-delete_project/%(project_id)s"
 
 # List tags for a project.
 # GET  /v3/projects/{project_id}/tags
