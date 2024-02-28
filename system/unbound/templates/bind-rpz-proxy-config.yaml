@@ -1,0 +1,40 @@
+{{- if .Values.unbound.bind_rpz_proxy.enabled }}
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: bind-rpz-proxy-conf
+
+data:
+  named.conf: |
+    include "/etc/bind/named.conf.options";
+    include "/etc/bind/named.conf.rpz";
+    include "/etc/bind/secrets/rndc.key";
+    include "/etc/bind/secrets/tsig.key";
+
+  named.conf.options: |
+    options {
+      directory "/var/cache/bind";
+      querylog no;
+
+      // we only serve (and notify) the unbound running next to us
+      listen-on    port 55353 { 127.0.0.1; };
+      listen-on-v6            { none; };
+      allow-transfer          { 127.0.0.1; };
+      also-notify             { 127.0.0.1; };
+      notify explicit;
+    };
+
+  named.conf.rpz: |
+    primaries primaries {
+    {{- range $rpz_prim := .Values.unbound.rpz.primaries }}
+      {{ $rpz_prim }} key {{ .Values.unbound.rpz.tsig.keyname | quote }};
+    {{- end }}
+    };
+
+    {{- range $rpz_zone := .Values.unbound.rpz.zones }}
+    zone {{ $rpz_zone | quote }} {
+      type secondary;
+      primaries { primaries; };
+    };
+    {{- end }}
+{{- end }}
