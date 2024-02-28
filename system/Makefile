@@ -1,6 +1,6 @@
 CLUSTER_API_VERSION ?= v1.6.2
 PROVIDER_METAL3_VERSION ?= v1.6.0
-PROVIDER_KUBERNIKUS_VERSION ?= 8d8f6fdce0f41456b23df571298186de9ed0cbb2
+PROVIDER_KUBERNIKUS_VERSION ?= 5dd4e2434f25aa2561ec192cc45ba0332f0eafab
 
 UNAME_S := $(shell uname -s)
 SED := sed
@@ -32,7 +32,7 @@ build-provider-metal3:
 build-provider-kubernikus:
 	$(call build-chart,provider-kubernikus,https://github.com/sapcc/cluster-api-control-plane-provider-kubernikus//config/default,$(PROVIDER_KUBERNIKUS_VERSION))
 	@yq -i '.controllerManager.manager.image.tag="$(PROVIDER_KUBERNIKUS_VERSION)"' provider-kubernikus/values.yaml
-	@yq -i '.version="0.1.2"' provider-kubernikus/Chart.yaml
+	@yq -i '.version="0.1.3"' provider-kubernikus/Chart.yaml
 
 # chart name, source url, tag
 define build-chart
