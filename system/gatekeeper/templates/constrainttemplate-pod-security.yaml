@@ -547,13 +547,25 @@ spec:
         ########################################################################
         # allowlist for linkerd
 
-        isContainerAllowedToUseCapability(container, capability) = true {
+        default isLinkerdCorePod = false
+        isLinkerdCorePod = true {
           iro.kind == "Deployment"
           iro.metadata.namespace == "linkerd"
           iro.metadata.name in {"linkerd-destination", "linkerd-identity", "linkerd-proxy-injector"}
           helmReleaseName == "linkerd"
+        }
+
+        isContainerAllowedToUseCapability(container, capability) = true {
+          isLinkerdCorePod
           container.name == "linkerd-init"
           capability in {"NET_ADMIN", "NET_RAW"}
+        }
+        isPodAllowedToUsePrivilegeEscalation = true {
+          isLinkerdCorePod
+        }
+        isContainerAllowedToBePrivileged(container) = true {
+          isLinkerdCorePod
+          container.name == "linkerd-init"
         }
 
         ########################################################################

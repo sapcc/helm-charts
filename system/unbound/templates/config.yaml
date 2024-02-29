@@ -2,11 +2,22 @@ kind: ConfigMap
 apiVersion: v1
 metadata:
   name: {{ .Values.unbound.name }}
-
+  labels:
+    type: configuration
+    component: unbound
 data:
   unbound.conf: |
        server:
         identity: "{{ .Values.unbound.name }}.{{ .Values.global.region }}"
+
+        {{- $unbound_modules := "validator iterator" -}}
+
+        {{- if .Values.unbound.bind_rpz_proxy.enabled }}
+        {{- $unbound_modules := cat "respip" $unbound_modules -}}
+        {{- end }}
+
+        module-config: {{ $unbound_modules | quote }}
+
         interface: {{.Values.unbound.interface}}
         port: 53
         do-ip4: yes
@@ -62,10 +73,10 @@ data:
        # Remote control config section.
        remote-control:
         control-enable: yes
-        server-key-file: /etc/unbound/unbound-server.key
-        server-cert-file: /etc/unbound/unbound-server.pem
-        control-key-file: /etc/unbound/unbound-control.key
-        control-cert-file: /etc/unbound/unbound-control.pem
+        server-key-file: /etc/unbound/secrets/unbound-server.key
+        server-cert-file: /etc/unbound/secrets/unbound-server.pem
+        control-key-file: /etc/unbound/secrets/unbound-control.key
+        control-cert-file: /etc/unbound/secrets/unbound-control.pem
 
        # Stub and Forward zones
        include: /etc/unbound/regional.conf
@@ -73,6 +84,10 @@ data:
 
        # dnstap.conf
        include: /etc/unbound/dnstap.conf
+
+       {{- if .Values.unbound.bind_rpz_proxy.enabled }}
+       include: /etc/unbound/rpz.conf
+       {{- end }}
 
   dnstap.conf: |
        dnstap:
@@ -86,6 +101,18 @@ data:
 {{ else }}
         dnstap-enable: no
 {{ end }}
+
+{{- if .Values.unbound.bind_rpz_proxy.enabled }}
+  rpz.conf: |
+    {{- range $rpz_zone := .Values.unbound.rpz.zones }}
+       rpz:
+        name: {{ $rpz_zone | quote }}
+        # let the clients poll the zone SOA for monitoring purposes
+        for-downstream: yes
+        allow-notify: 127.0.0.1
+        primary: 127.0.0.1@55353
+    {{- end }}
+{{- end }}
 
   hosts.conf: |
        local-zone: "168.192.in-addr.arpa." transparent
@@ -145,14 +172,6 @@ data:
                   {{- end}}
        {{ end}}
 
-  unbound-control.key: |
-{{.Values.unbound.unbound_control_key | indent 4}}
-  unbound-control.pem: |
-{{.Values.unbound.unbound_control_pem | indent 4}}
-  unbound-server.key: |
-{{.Values.unbound.unbound_server_key | indent 4}}
-  unbound-server.pem: |
-{{.Values.unbound.unbound_server_pem | indent 4}}
   healthz: |
     #!/bin/bash
     unbound-control status

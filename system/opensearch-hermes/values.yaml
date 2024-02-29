@@ -7,6 +7,24 @@ global:
   linkerd_requested: true
   region: DEFINED_IN_VALUES_FILE
   curator_image: "20240220151502"
+  users:
+    admin:
+      username: DEFINED_IN_VALUES_FILE
+      password: DEFINED_IN_VALUES_FILE
+    kibanaserver:
+      username: DEFINED_IN_VALUES_FILE
+      password: DEFINED_IN_VALUES_FILE
+     
+    
+  ldap:
+    host: DEFINED_IN_VALUES_FILE
+    port: DEFINED_IN_VALUES_FILE
+    search_base_dbs: DEFINED_IN_VALUES_FILE
+    bind_dn: DEFINED_IN_VALUES_FILE
+    password: DEFINED_IN_VALUES_FILE
+    userdomain: DEFINED_IN_VALUES_FILE
+    user_group: DEFINED_IN_VALUES_FILE
+    suffix: DEFINED_IN_VALUES_FILE
 
 owner-info:
   support-group: observability
@@ -22,7 +40,7 @@ alerts:
 exporter:
   enabled: false
   prometheus: DEFINED-IN-SECRETS
-tag: 2.11.1
+tag: 2.12.0
 
 linkerd-support:
   annotate_namespace: true
@@ -33,7 +51,7 @@ opensearch_hermes:
   ca:
     crt: DEFINED-IN-SECRETS
   image:
-    tag: 2.11.1
+    tag: 2.12.0
   service:
     port: 5601
   nameOverride: "opensearch-hermes"
@@ -61,12 +79,15 @@ opensearch_hermes:
   plugins:
     enabled: true
     installList:
-      - https://github.com/aiven/prometheus-exporter-plugin-for-opensearch/releases/download/2.11.1.0/prometheus-exporter-2.11.1.0.zip
+      - https://github.com/aiven/prometheus-exporter-plugin-for-opensearch/releases/download/2.12.0.0/prometheus-exporter-2.12.0.0.zip
   securityConfig:
     path: "/usr/share/opensearch/config/opensearch-security"
     enabled: true
     config:
       securityConfigSecret: "security-config"
+  extraEnvs:
+    - name: DISABLE_INSTALL_DEMO_CONFIG
+      value: "true"
 
 opensearch_hermes_master:
   enabled: false
@@ -74,7 +95,7 @@ opensearch_hermes_master:
   ca:
     crt: DEFINED-IN-SECRETS
   image:
-    tag: 2.11.1
+    tag: 2.12.0
   service:
     port: 5601
   nameOverride: "opensearch-hermes-master"
@@ -100,17 +121,20 @@ opensearch_hermes_master:
   plugins:
     enabled: true
     installList:
-      - https://github.com/aiven/prometheus-exporter-plugin-for-opensearch/releases/download/2.11.1.0/prometheus-exporter-2.11.1.0.zip
+      - https://github.com/aiven/prometheus-exporter-plugin-for-opensearch/releases/download/2.12.0.0/prometheus-exporter-2.12.0.0.zip
   securityConfig:
     path: "/usr/share/opensearch/config/opensearch-security"
     enabled: true
     config:
       securityConfigSecret: "security-config"
+  extraEnvs:
+    - name: DISABLE_INSTALL_DEMO_CONFIG
+      value: "true"
 
 opensearch_hermes_dashboards:
   enabled: false
   image:
-    tag: "2.11.1"
+    tag: "2.12.0"
   fullnameOverride: opensearch-hermes-dashboards
   nameOverride: opensearch-hermes-dashboards
   serviceAccount:

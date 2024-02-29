@@ -4,6 +4,8 @@ metadata:
   name: {{ .Values.unbound.name }}
   labels:
     app: {{ .Values.unbound.name }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
 spec:
   replicas: 2
   selector:
@@ -54,6 +56,8 @@ spec:
         volumeMounts:
           - name: unbound-conf
             mountPath: /etc/unbound
+          - name: unbound-keys
+            mountPath: /etc/unbound/secrets
 {{ if .Values.unbound.dnstap.enabled }}
           - name: dnstap-socket
             mountPath: /run/dnstap
@@ -84,17 +88,19 @@ spec:
           value: "x509ignoreCN=0"
         args:
           - -unbound.ca
-          - /etc/unbound/unbound-server.pem
+          - /etc/unbound/secrets/unbound-server.pem
           - -unbound.cert
-          - /etc/unbound/unbound-control.pem
+          - /etc/unbound/secrets/unbound-control.pem
           - -unbound.key
-          - /etc/unbound/unbound-control.key
+          - /etc/unbound/secrets/unbound-control.key
         ports:
           - name: metrics
             containerPort: {{.Values.unbound.port_unbound_exporter}}
         volumeMounts:
           - name: unbound-conf
             mountPath: /etc/unbound
+          - name: unbound-keys
+            mountPath: /etc/unbound/secrets
 {{ if ge (int .Capabilities.KubeVersion.Minor) 29 }}
       initContainers:
 {{ end }}
@@ -127,12 +133,37 @@ spec:
           - name: dnstap-socket
             mountPath: {{ .Values.unbound.dnstap.socket_path | default "/run/dnstap/dnstap.sock" | dir }}
 {{ end }}
+{{ if .Values.unbound.bind_rpz_proxy.enabled }}
+      - name: bind-rpz-proxy
+        image: {{ required ".Values.global.registryAlternateRegion is missing" .Values.global.registryAlternateRegion }}/{{.Values.unbound.bind_rpz_proxy.image}}:{{ .Values.unbound.bind_rpz_proxy.image_tag}}
+        imagePullPolicy: {{ .Values.unbound.image_pullPolicy }}
+{{ if ge (int .Capabilities.KubeVersion.Minor) 29 }}
+        restartPolicy: Always
+{{ end }}
+        resources:
+{{ toYaml .Values.resources.bind_rpz_proxy | indent 10 }}
+        volumeMounts:
+          - name: bind-rpz-proxy-conf
+            mountPath: /etc/bind
+{{ end }}
       volumes:
       - name: unbound-conf
         configMap:
           name: {{.Values.unbound.name}}
+      - name: unbound-keys
+        secret:
+          secretName: {{ .Release.Name }}-keys
 {{ if .Values.unbound.dnstap.enabled }}
       - name: dnstap-socket
         emptyDir:
           medium: Memory
+{{ end }}
+{{ if .Values.unbound.bind_rpz_proxy.enabled }}
+      - name: bind-rpz-proxy-conf
+        projected:
+          sources:
+          - configMap:
+              name: bind-rpz-proxy-conf
+          - secret:
+              name: bind-rpz-proxy-secrets
 {{ end }}

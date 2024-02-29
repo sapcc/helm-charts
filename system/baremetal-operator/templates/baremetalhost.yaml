@@ -1,5 +1,24 @@
 {{- range $key, $host := .Values.hosts }}
 ---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: networkdata-{{ $key }}
+  namespace: {{ $.Release.namespace }}
+type: infrastructure.cluster.x-k8s.io/secret
+stringData: 
+  networkData: |-
+    networks:
+    - id: {{ $host.vlan }}
+      ip_address: {{ $host.ip }}
+      link: {{ default "bond0" $host.bond }}
+      netmask: {{ default "255.255.255.0" $host.netmask }}
+      routes:
+      - gateway: {{ $host.gateway }}
+        netmask: 0.0.0.0
+        network: 0.0.0.0
+      type: ipv4
+---
 apiVersion: metal3.io/v1alpha1
 kind: BareMetalHost
 metadata:
@@ -12,12 +31,19 @@ metadata:
     kubernetes.metal.cloud.sap/az: {{ $host.az }}
     kubernetes.metal.cloud.sap/flavor: {{ $host.flavor }}
 spec:
-  online: {{ default "True" $host.online }}
+  online: {{ default "true" $host.online }}
   bmc:
     address: {{ $host.redfishUrl }}
     credentialsName: bmc-secret-{{ $key }}
     disableCertificateVerification: {{ default "True" $host.disableCertificateVerification }}
   bootMACAddress: {{ $host.bootMac }}
+  networkData: 
+    name: networkdata-{{ $key }}
+    namespace: {{ $.Release.namespace }}
+  {{- with $host.rootDeviceHints }}
+  rootDeviceHints:
+{{- toYaml . | nindent 4 }}
+  {{- end }}
 ---
 apiVersion: v1
 kind: Secret
