@@ -139,8 +139,6 @@ spec:
         volumeMounts:
           - name: bind-rpz-proxy-conf
             mountPath: /etc/bind
-          - name: bind-rpz-proxy-secrets
-            mountPath: /etc/bind/secrets
 {{ end }}
       volumes:
       - name: unbound-conf
@@ -153,9 +151,10 @@ spec:
 {{ end }}
 {{ if .Values.unbound.bind_rpz_proxy.enabled }}
       - name: bind-rpz-proxy-conf
-        configMap:
-          name: bind-rpz-proxy-conf
-      - name: bind-rpz-proxy-secrets
-        secret:
-          name: bind-rpz-proxy-secrets
+        projected:
+          sources:
+          - configMap:
+            name: bind-rpz-proxy-conf
+          - secret:
+            name: bind-rpz-proxy-secrets
 {{ end }}
