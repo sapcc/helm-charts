@@ -40,6 +40,9 @@ stats-push = dogstatsd:127.0.0.1:9125
 dogstatsd-all-gauges = true
 memory-report = true
 
+# HTTP-Socket Timeout
+http-timeout = 120
+
 # Limits, Kill requests after 120 seconds
 harakiri = 120
 harakiri-verbose = true
