@@ -2,7 +2,9 @@ kind: ConfigMap
 apiVersion: v1
 metadata:
   name: {{ .Values.unbound.name }}
-
+  labels:
+    type: configuration
+    component: unbound
 data:
   unbound.conf: |
        server:
@@ -71,10 +73,10 @@ data:
        # Remote control config section.
        remote-control:
         control-enable: yes
-        server-key-file: /etc/unbound/unbound-server.key
-        server-cert-file: /etc/unbound/unbound-server.pem
-        control-key-file: /etc/unbound/unbound-control.key
-        control-cert-file: /etc/unbound/unbound-control.pem
+        server-key-file: /etc/unbound/secrets/unbound-server.key
+        server-cert-file: /etc/unbound/secrets/unbound-server.pem
+        control-key-file: /etc/unbound/secrets/unbound-control.key
+        control-cert-file: /etc/unbound/secrets/unbound-control.pem
 
        # Stub and Forward zones
        include: /etc/unbound/regional.conf
@@ -170,14 +172,6 @@ data:
                   {{- end}}
        {{ end}}
 
-  unbound-control.key: |
-{{.Values.unbound.unbound_control_key | indent 4}}
-  unbound-control.pem: |
-{{.Values.unbound.unbound_control_pem | indent 4}}
-  unbound-server.key: |
-{{.Values.unbound.unbound_server_key | indent 4}}
-  unbound-server.pem: |
-{{.Values.unbound.unbound_server_pem | indent 4}}
   healthz: |
     #!/bin/bash
     unbound-control status

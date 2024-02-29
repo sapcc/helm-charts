@@ -4,6 +4,9 @@ metadata:
   name: {{ .Values.unbound.name }}
   labels:
     app: {{ .Values.unbound.name }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    helm.sh/chart: {{ include "unbound.chart" . }}
 spec:
   replicas: 2
   selector:
@@ -54,6 +57,8 @@ spec:
         volumeMounts:
           - name: unbound-conf
             mountPath: /etc/unbound
+          - name: unbound-keys
+            mountPath: /etc/unbound/secrets
 {{ if .Values.unbound.dnstap.enabled }}
           - name: dnstap-socket
             mountPath: /run/dnstap
@@ -84,17 +89,19 @@ spec:
           value: "x509ignoreCN=0"
         args:
           - -unbound.ca
-          - /etc/unbound/unbound-server.pem
+          - /etc/unbound/secrets/unbound-server.pem
           - -unbound.cert
-          - /etc/unbound/unbound-control.pem
+          - /etc/unbound/secrets/unbound-control.pem
           - -unbound.key
-          - /etc/unbound/unbound-control.key
+          - /etc/unbound/secrets/unbound-control.key
         ports:
           - name: metrics
             containerPort: {{.Values.unbound.port_unbound_exporter}}
         volumeMounts:
           - name: unbound-conf
             mountPath: /etc/unbound
+          - name: unbound-keys
+            mountPath: /etc/unbound/secrets
 {{ if ge (int .Capabilities.KubeVersion.Minor) 29 }}
       initContainers:
 {{ end }}
@@ -146,6 +153,9 @@ spec:
       - name: unbound-conf
         configMap:
           name: {{.Values.unbound.name}}
+      - name: unbound-keys
+        secret:
+          secretName: {{ .Release.Name }}-keys
 {{ if .Values.unbound.dnstap.enabled }}
       - name: dnstap-socket
         emptyDir:
