@@ -16,15 +16,15 @@ build-cluster-api-core:
 	$(call build-chart,cluster-api-core,https://github.com/kubernetes-sigs/cluster-api//config/default,$(CLUSTER_API_VERSION))
 	$(call fix-crd-certs,cluster-api-core)
 	@yq -i '.controllerManager.manager.image.tag="$(CLUSTER_API_VERSION)"' cluster-api-core/values.yaml
-	@yq -i '.fullnameOverride="capi"' cluster-api-core/values.yaml
-	@yq -i '.version="0.1.2"' cluster-api-core/Chart.yaml
+	@yq -i '.fullnameOverride="capi-capi"' cluster-api-core/values.yaml
+	@yq -i '.version="0.1.3"' cluster-api-core/Chart.yaml
 
 build-bootstrap-kubeadm:
 	$(call build-chart,bootstrap-kubeadm,https://github.com/kubernetes-sigs/cluster-api//bootstrap/kubeadm/config/default,$(CLUSTER_API_VERSION))
 	$(call fix-crd-certs,bootstrap-kubeadm)
 	@yq -i '.controllerManager.manager.image.tag="$(CLUSTER_API_VERSION)"' bootstrap-kubeadm/values.yaml
-	@yq -i '.fullnameOverride="capi-kubeadm-bootstrap"' bootstrap-kubeadm/values.yaml
-	@yq -i '.version="0.1.2"' bootstrap-kubeadm/Chart.yaml
+	@yq -i '.fullnameOverride="capi-capi-kubeadm-bootstrap"' bootstrap-kubeadm/values.yaml
+	@yq -i '.version="0.1.3"' bootstrap-kubeadm/Chart.yaml
 
 build-provider-metal3:
 	$(call build-chart,provider-metal3,https://github.com/metal3-io/cluster-api-provider-metal3//config/default,$(PROVIDER_METAL3_VERSION))
