@@ -1,6 +1,6 @@
 CLUSTER_API_VERSION ?= v1.6.2
 PROVIDER_METAL3_VERSION ?= v1.6.0
-PROVIDER_KUBERNIKUS_VERSION ?= 5dd4e2434f25aa2561ec192cc45ba0332f0eafab
+PROVIDER_KUBERNIKUS_VERSION ?= 55569203bb6be0406886947d3c6176c723357d54
 SHELL := bash
 .ONESHELL:
 
@@ -41,7 +41,7 @@ build-provider-kubernikus:
 	$(call build-chart,provider-kubernikus,https://github.com/sapcc/cluster-api-control-plane-provider-kubernikus//config/default,$(PROVIDER_KUBERNIKUS_VERSION))
 	@yq -i '.controllerManager.manager.image.tag="$(PROVIDER_KUBERNIKUS_VERSION)"' provider-kubernikus/values.yaml
 	@yq -i '.fullnameOverride="capi-cp-provider-kubernikus"' provider-kubernikus/values.yaml
-	@yq -i '.version="0.1.4"' provider-kubernikus/Chart.yaml
+	@yq -i '.version="0.1.5"' provider-kubernikus/Chart.yaml
 
 # chart name, source url, tag
 define build-chart
