@@ -59,7 +59,7 @@ postgresql:
   # less than the postgresql chart's default; I want to know early when connections start getting out of hand
   max_connections: 128
 
-  imageTag: "12.11"
+  imageTag: "20240206103323"
   persistence:
     enabled: true
     accessMode: ReadWriteMany
@@ -72,6 +72,10 @@ postgresql:
     requests:
       memory: "1.5Gi"
       cpu: "400m"
+  user: elektra
+  users:
+    elektra: {}
+  tableOwner: elektra
 
   probe_timeout_secs: 10 # instead of 3
 
@@ -80,6 +84,7 @@ postgresql:
     service: elektra
 
 pgbackup:
+  isPostgresNG: true
   database:
     name: monsoon-dashboard_production
   alerts:
@@ -87,6 +92,7 @@ pgbackup:
     service: elektra
 
 pgmetrics:
+  isPostgresNG: true
   db_name: monsoon-dashboard_production
   alerts:
     support_group: containers
