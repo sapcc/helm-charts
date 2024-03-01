@@ -9,7 +9,7 @@ spec:
   selector:
     matchLabels:
       app: secrets-injector
-  replicas: 1
+  replicas: {{ .Values.replicaCount }}
   template:
     metadata:
       labels:
@@ -52,6 +52,16 @@ spec:
           containerPort: 8080
         - name: webhook
           containerPort: 9443
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              - key: app
+                operator: In
+                values:
+                - secrets-injector
+            topologyKey: {{ .Values.topologyKey }}
       volumes:
         - name: certificate
           secret:
