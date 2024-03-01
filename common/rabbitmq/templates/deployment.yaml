@@ -16,11 +16,11 @@ spec:
   revisionHistoryLimit: {{ .Values.upgrades.revisionHistory }}
   strategy:
     type: {{ .Values.upgrades.podReplacementStrategy }}
-    {{ if eq .Values.upgrades.podReplacementStrategy "RollingUpdate" }}
+    {{- if eq .Values.upgrades.podReplacementStrategy "RollingUpdate" }}
     rollingUpdate:
       maxUnavailable: {{ .Values.upgrades.rollingUpdate.maxUnavailable }}
       maxSurge: {{ .Values.upgrades.rollingUpdate.maxSurge }}
-    {{ end }}
+    {{- end }}
   selector:
     matchLabels:
       app: {{ template "fullname" . }}
@@ -29,7 +29,7 @@ spec:
       labels:
         app: {{ template "fullname" . }}
       annotations:
-        checksum/container.init: {{ include (print $.Template.BasePath "/bin-secret.yaml") . | sha256sum }}
+        checksum/container.init: {{ include (print $.Template.BasePath "/bin-configmap.yaml") . | sha256sum }}
 {{- if and (and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested) $.Values.linkerd.enabled }}
         linkerd.io/inject: enabled
 {{- end }}
@@ -56,14 +56,11 @@ spec:
         runAsGroup: 999
         fsGroup: 999
         fsGroupChangePolicy: "OnRootMismatch"
+      shareProcessNamespace: true
       containers:
       - name: rabbitmq
         image: "{{include "dockerHubMirror" .}}/{{ .Values.image }}:{{.Values.imageTag }}"
         imagePullPolicy: {{ default "IfNotPresent" .Values.imagePullPolicy | quote }}
-        command:
-          - bash
-        args:
-          - /container.init/rabbitmq-start
         {{- if .Values.livenessProbe.enabled }}
         livenessProbe:
           exec:
@@ -100,13 +97,28 @@ spec:
         volumeMounts:
           - mountPath: /var/lib/rabbitmq
             name: rabbitmq-persistent-storage
-          - mountPath: /container.init
-            name: container-init
         {{- if .Values.customConfig }}
           - mountPath: /etc/rabbitmq/conf.d/20-custom.conf
             name: rabbitmq-custom-config
             subPath: 20-custom.conf
         {{- end }}
+      - name: configurator
+        image: "{{include "dockerHubMirror" .}}/{{ .Values.image }}:{{.Values.imageTag }}"
+        imagePullPolicy: {{ default "IfNotPresent" .Values.imagePullPolicy | quote }}
+        command:
+          - bash
+        args:
+          - /container.init/rabbitmq_config.sh
+        env:
+          - name: ENV_RABBIT_USERCONFIG
+            value: "/etc/rabbitmq/conf.d/users/users.yaml"
+        volumeMounts:
+          - mountPath: /container.init
+            name: container-init
+          - mountPath: /etc/rabbitmq/conf.d/users
+            name: rabbitmq-users-config
+          - mountPath: /var/lib/rabbitmq
+            name: rabbitmq-persistent-storage
 {{- if and .Values.metrics.sidecar.enabled .Values.metrics.enabled }}
       - name: metrics
         image: {{include "dockerHubMirror" .}}/{{ .Values.metrics.image }}:{{ .Values.metrics.imageTag }}
@@ -139,8 +151,11 @@ spec:
           emptyDir: {}
         {{- end }}
         - name: container-init
+          configMap:
+            name: {{ template "fullname" . }}-bin
+        - name: rabbitmq-users-config
           secret:
-            secretName: {{ template "fullname" . }}-bin
+            secretName: {{ template "fullname" . }}-users
       {{- if .Values.customConfig }}
         - name: rabbitmq-custom-config
           configMap:
