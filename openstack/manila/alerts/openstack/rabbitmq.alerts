@@ -1,0 +1,34 @@
+groups:
+- name: manila-rabbitmq.alerts
+  rules:
+  - alert: ManilaRabbitMQDetailsRPCUnackTotal
+    expr: sum(rabbitmq_detailed_queue_messages_unacked{pod=~"manila-rabbitmq.*"}) by (pod, queue) > 10
+    for: 1m
+    labels:
+      severity: critical
+      tier: os
+      support_group: compute-storage-api
+      service: manila
+      context: manila-rabbitmq
+      dashboard: rabbitmq
+      meta: '{{ $labels.pod }} queue {{ $labels.queue }} has over 10 unacknowledged messages.'
+      playbook: 'docs/devops/alert/rabbitmq/'
+    annotations:
+      description: 'RPC Messages are not being collected. {{ $labels.pod }} queue {{ $labels.queue }} has over 10 unacknowledged messages.'
+      summary: 'RPC messages are not being collected.'
+
+  - alert: ManilaRabbitMQDetailsRPCReadyTotal
+    expr: sum(rabbitmq_detailed_queue_messages_ready{pod=~"manila-rabbitmq.*"}) by (pod, queue) > 10
+    for: 1m
+    labels:
+      severity: critical
+      tier: os
+      support_group: compute-storage-api
+      service: manila
+      context: manila-rabbitmq
+      dashboard: rabbitmq
+      meta: 'RPC Messages are not being collected. {{ $labels.pod }} queue {{ $labels.queue }} has over 10 rpc messages waiting.'
+      playbook: 'docs/devops/alert/rabbitmq/'
+    annotations:
+      description: 'RPC Messages are not being collected. {{ $labels.pod }} queue {{ $labels.queue }} has over 10 rpc messages waiting.'
+      summary: 'RPC messages are not being collected.'
