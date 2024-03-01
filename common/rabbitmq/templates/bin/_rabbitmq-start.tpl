@@ -38,7 +38,7 @@ function cleanup() {
 }
 trap cleanup EXIT
 
-timeout 60 rabbitmqctl wait /var/lib/rabbitmq/mnesia/rabbit@$HOSTNAME.pid
+timeout ${RABBIT_START_TIMEOUT:-60} rabbitmqctl wait /var/lib/rabbitmq/mnesia/rabbit@$HOSTNAME.pid
 
 {{- if .Values.debug }}
 rabbitmq-plugins enable rabbitmq_tracing
