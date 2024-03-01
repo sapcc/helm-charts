@@ -60,6 +60,9 @@ spec:
       - name: rabbitmq
         image: "{{include "dockerHubMirror" .}}/{{ .Values.image }}:{{.Values.imageTag }}"
         imagePullPolicy: {{ default "IfNotPresent" .Values.imagePullPolicy | quote }}
+        env:
+          - name: RABBIT_START_TIMEOUT
+            value: {{ .Values.livenessProbe.initialDelaySeconds | quote }}
         command:
           - bash
         args:
