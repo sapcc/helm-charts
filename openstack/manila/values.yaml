@@ -165,6 +165,7 @@ mysql_metrics:
         - "id"
         - "share_instance_id"
         - "status"
+        - "snapmirror"
       name: openstack_manila_shares_size_gauge
       query: |
         SELECT
@@ -175,10 +176,12 @@ mysql_metrics:
           shares.id,
           share_instances.id AS share_instance_id,
           share_instances.status,
+          share_metadata.value AS snapmirror,
           SUM(size) size_gauge
         FROM shares
         JOIN share_instances ON shares.id=share_instances.share_id
         JOIN availability_zones ON share_instances.availability_zone_id=availability_zones.id
+        LEFT JOIN share_metadata ON shares.id=share_metadata.share_id AND share_metadata.key='snapmirror'
         WHERE share_instances.deleted = 'False'
         AND share_instances.replica_state='active'
         GROUP BY
