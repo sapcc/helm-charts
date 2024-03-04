@@ -25,7 +25,7 @@ input {
     port  => {{.Values.input_http_port}}
     user => '{{.Values.global.elk_elasticsearch_http_user}}'
     password => '{{.Values.global.elk_elasticsearch_http_password}}'
-    ssl_enabled => true
+    ssl => true
     ssl_certificate => '/tls-secret/tls.crt'
     ssl_key => '/usr/share/logstash/config/tls.key'
   }
@@ -110,7 +110,7 @@ output {
         user => "${OPENSEARCH_USER}"
         password => "${OPENSEARCH_PASSWORD}"
       }
-      ssl_enabled => true
+      ssl => true
       ssl_certificate_verification => true
     }
   }
@@ -127,7 +127,7 @@ output {
       template => "/logstash-etc/alerts.json"
       template_name => "alerts"
       template_overwrite => true
-      ssl_enabled => true
+      ssl => true
       ssl_certificate_verification => true
     }
   }
@@ -144,7 +144,7 @@ output {
       template => "/logstash-etc/alerts.json"
       template_name => "alerts"
       template_overwrite => true
-      ssl_enabled => true
+      ssl => true
       ssl_certificate_verification => true
     }
   }
@@ -161,7 +161,7 @@ output {
       template => "/logstash-etc/alerts.json"
       template_name => "alerts"
       template_overwrite => true
-      ssl_enabled => true
+      ssl => true
       ssl_certificate_verification => true
     }
   }
@@ -178,7 +178,7 @@ output {
       template => "/logstash-etc/deployments.json"
       template_name => "deployments"
       template_overwrite => true
-      ssl_enabled => true
+      ssl => true
       ssl_certificate_verification => true
     }
   }
@@ -192,7 +192,7 @@ output {
         user => "${OPENSEARCH_USER}"
         password => "${OPENSEARCH_PASSWORD}"
       }
-      ssl_enabled => true
+      ssl => true
       ssl_certificate_verification => true
     }
   }
@@ -206,7 +206,7 @@ output {
         user => "${OPENSEARCH_JUMP_USER}"
         password => "${OPENSEARCH_JUMP_PASSWORD}"
       }
-      ssl_enabled => true
+      ssl => true
       ssl_certificate_verification => true
     }
   }
