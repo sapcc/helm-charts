@@ -126,7 +126,7 @@ for data in $(find /var/lib/postgresql/ -mindepth 1 -maxdepth 1 -not -name ".*" 
 
   # create a backup unless we are migrating from the old chart
   if [[ ! -e /migrated_from_old_chart && ${PERSISTENCE_ENABLED:-false} == true ]]; then
-    if [[ $old_version -lt 12 ]]; then
+    if (( $(echo "$old_version < 12" | bc -l) )); then
       postgres_auth_method=md5
     else
       postgres_auth_method=scram-sha-256
