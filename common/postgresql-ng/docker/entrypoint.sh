@@ -66,7 +66,7 @@ if [[ $(id -u) == 0 ]]; then
     chown -R postgres:postgres /data/postgresql
     chmod -R 700 /data/postgresql
 
-    touch /migrated_from_old_chart
+    touch /data/postgresql/$old_version/migrated_from_old_chart
   fi
 
   # setup the default directories with correct permissions
@@ -126,7 +126,7 @@ for data in $(find /var/lib/postgresql/ -mindepth 1 -maxdepth 1 -not -name ".*" 
   fi
 
   # create a backup unless we are migrating from the old chart
-  if [[ ! -e /migrated_from_old_chart && ${PERSISTENCE_ENABLED:-false} == true ]]; then
+  if [[ ! -e /data/postgresql/$old_version/migrated_from_old_chart && ${PERSISTENCE_ENABLED:-false} == true ]]; then
     if (( $(echo "$old_version < 12" | bc -l) )); then
       postgres_auth_method=md5
     else
@@ -167,6 +167,9 @@ for data in $(find /var/lib/postgresql/ -mindepth 1 -maxdepth 1 -not -name ".*" 
     PGDATA=$old_pgdata
   fi
 
+  # make sure the old pg_hba.conf contains valid entries for us
+  echo -e "local  all  postgres  trust\nhost  all  backup  all  $postgres_auth_method\nhost  all  postgres  all  $postgres_auth_method\n" >"$data/pg_hba.conf"
+
   # pg_upgrade wants to have write permission for cwd
   cd /var/lib/postgresql
   pg_upgrade --link --jobs="$(nproc)" \
@@ -177,7 +180,8 @@ for data in $(find /var/lib/postgresql/ -mindepth 1 -maxdepth 1 -not -name ".*" 
   updated_db=true
   ./delete_old_cluster.sh
   # postgres 12 generates an additional shellscript which only contains vacuumdb like we run it below
-  rm -f delete_old_cluster.sh analyze_new_cluster.sh
+  # clear the old chart marker which might or might not exist and could be there from an upgrade that crashed previously
+  rm -f delete_old_cluster.sh analyze_new_cluster.sh "/data/postgresql/$old_version/migrated_from_old_chart"
   cd -
   break
 done
