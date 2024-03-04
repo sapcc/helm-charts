@@ -60,10 +60,11 @@ if [[ $(id -u) == 0 ]]; then
     rmdir /data/data
 
     # and move back to the right place
-    mkdir -m 750 -p "/data/postgresql/$old_version"
+    # shellcheck disable=SC2174
+    mkdir -m 700 -p "/data/postgresql/$old_version"
     mv /data/old/* "/data/postgresql/$old_version/"
     chown -R postgres:postgres /data/postgresql
-    chmod -R 750 /data/postgresql
+    chmod -R 700 /data/postgresql
 
     touch /migrated_from_old_chart
   fi
