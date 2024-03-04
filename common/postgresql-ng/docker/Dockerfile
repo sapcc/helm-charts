@@ -10,6 +10,8 @@ RUN apt-get update \
   && sed -ri '/\/usr\/share\/locale/d' /etc/dpkg/dpkg.cfg.d/docker \
   && ! grep -q '/usr/share/locale' /etc/dpkg/dpkg.cfg.d/docker \
   && apt-get install --no-install-recommends -y \
+    # used to compare verison numbers
+    bc \
     # required for https \
     ca-certificates \
     # create backup via API \
