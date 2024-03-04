@@ -53,8 +53,7 @@ omnitruck:
   #host:
 
 postgresql:
-  image: keppel.global.cloud.sap/ccloud/postgres
-  imageTag: "12.13"
+  imageTag: "20240206103323"
   enabled: true
   alerts:
     prometheus: openstack
@@ -67,6 +66,11 @@ postgresql:
     requests:
       memory: 256Mi
       cpu: 100m
+  user: lyra
+  postgresDatabase: monsoon-automation_production
+  users:
+    lyra: {}
+  tableOwner: lyra
 
 # Deploy Lyra Prometheus alerts.
 alerts:
@@ -75,12 +79,14 @@ alerts:
   prometheus: openstack
 
 pgbackup:
+  isPostgresNG: true
   database:
     name: monsoon-automation_production
   alerts:
     support_group: containers
 
 pgmetrics:
+  isPostgresNG: true
   db_name: monsoon-automation_production
   alerts:
     support_group: containers

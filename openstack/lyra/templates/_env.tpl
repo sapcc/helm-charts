@@ -17,8 +17,13 @@
   value: {{ .Values.auth.swift.projectName }}
 - name: MONSOON_SWIFT_PROJECT_DOMAIN_NAME
   value: {{ .Values.auth.swift.projectDomainName }}
+- name: MONSOON_DB_USER
+  value: {{ .Values.postgresql.user | quote }}
 - name: MONSOON_DB_PASSWORD
-  valueFrom: { secretKeyRef:    { name: {{ template "postgresql.fullname" . }}, key: postgres-password  } }
+  valueFrom:
+    secretKeyRef:
+      name: '{{ $.Release.Name }}-pguser-{{ .Values.postgresql.user }}'
+      key: 'postgres-password'
 - name: SECRET_KEY_BASE
   valueFrom: { secretKeyRef:    { name: {{ .Release.Name }}, key: secretKey } }
 - name: MONSOON_OPENSTACK_AUTH_API_PASSWORD
@@ -35,12 +40,12 @@
   value: {{ .Values.auth.queweb.password }}
 - name: OMNITRUCK_URL
   value: https://{{ default "omnitruck.chef.io" .Values.omnitruck.host }}
-{{- if .Values.sentryDSN }}
+  {{- if .Values.sentryDSN }}
 - name: SENTRY_DSN
 {{- if eq .Values.sentryDSN "auto" }}
   valueFrom: { secretKeyRef:    { name: sentry, key: lyra.DSN } }
 {{- else }}
   valueFrom: { secretKeyRef:    { name: {{ .Release.Name }}, key: sentryDsn } }
 {{- end }}
-{{- end }}
+  {{- end }}
 {{- end -}}
