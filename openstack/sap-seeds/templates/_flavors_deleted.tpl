@@ -410,6 +410,11 @@
     trait:CUSTOM_NUMASIZE_C48_M1459: required
     hw:cpu_cores: '24'  # cores-per-socket
     vmware:hw_version: vmx-18
+    {{- if .Values.hana_flavors_quota_separate }}
+    "quota:instance_only": "true"
+    "quota:separate": "true"
+    "limes:allow_growth": "false" # never report capacity above the current usage
+    {{- end }}
 
 - name: hana_c48_m1459
   id: "307"
@@ -428,6 +433,11 @@
     trait:CUSTOM_NUMASIZE_C48_M1459: required
     hw:cpu_cores: '48'  # cores-per-socket
     vmware:hw_version: vmx-18
+    {{- if .Values.hana_flavors_quota_separate }}
+    "quota:instance_only": "true"
+    "quota:separate": "true"
+    "limes:allow_growth": "false" # never report capacity above the current usage
+    {{- end }}
 
 - name: hana_c96_m2918
   id: "308"
@@ -446,6 +456,11 @@
     trait:CUSTOM_NUMASIZE_C48_M1459: required
     hw:cpu_cores: '48'  # cores-per-socket
     vmware:hw_version: vmx-18
+    {{- if .Values.hana_flavors_quota_separate }}
+    "quota:instance_only": "true"
+    "quota:separate": "true"
+    "limes:allow_growth": "false" # never report capacity above the current usage
+    {{- end }}
 
 - name: hana_c192_m5835
   id: "310"
@@ -464,6 +479,11 @@
     trait:CUSTOM_NUMASIZE_C48_M1459: required
     hw:cpu_cores: '48'  # cores-per-socket
     vmware:hw_version: vmx-18
+    {{- if .Values.hana_flavors_quota_separate }}
+    "quota:instance_only": "true"
+    "quota:separate": "true"
+    "limes:allow_growth": "false" # never report capacity above the current usage
+    {{- end }}
 
 - name: x1.64xlarge
   id: "251"
