@@ -29,6 +29,7 @@ spec:
         alert-service: placement
       annotations:
         configmap-etc-hash: {{ include (print $.Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
+        secrets-hash: {{ include (print $.Template.BasePath "/secrets.yaml") . | sha256sum }}
         {{- if .Values.proxysql.mode }}
         prometheus.io/scrape: "true"
         prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
@@ -60,6 +61,10 @@ spec:
         - name: PYTHONWARNINGS
           value: {{ .Values.python_warnings | quote }}
         {{- end }}
+        - name: OS_PLACEMENT_CONFIG_DIR
+          value: "/etc/placement/"
+        - name: OS_PLACEMENT_CONFIG_FILES
+          value: "placement.conf;secrets.conf"
         lifecycle:
           preStop:
               {{- include "utils.snippets.pre_stop_graceful_shutdown" . | indent 14 }}
@@ -88,8 +93,15 @@ spec:
         {{- include "utils.trust_bundle.volume_mount" . | indent 8 }}
       {{- include "utils.proxysql.container" . | indent 6 }}
       volumes:
-      - name: placement-etc
-        configMap:
-          name: placement-etc
+        - name: placement-etc
+          projected:
+            sources:
+            - configMap:
+                name: placement-etc
+            - secret:
+                name: placement-secrets
+                items:
+                  - key: secrets.conf
+                    path: secrets.conf
       {{- include "utils.proxysql.volumes" . | indent 6 }}
       {{- include "utils.trust_bundle.volumes" . | indent 6 }}
