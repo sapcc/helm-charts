@@ -104,7 +104,7 @@ spec:
           - mountPath: /root/.my.cnf
             subPath: ".my.cnf"
             name: mariadb-client
-{{- if or .Values.initdb_configmap .Values.custom_initdb_configmap }}
+{{- if or .Values.initdb_secret .Values.custom_initdb_secret }}
           - name: initdb
             mountPath: /docker-entrypoint-initdb.d
 {{ end }}
@@ -173,22 +173,22 @@ spec:
           configMap:
             name: mariadb-{{.Values.name}}-etc
         - name: mariadb-client
-          configMap:
-            name: mariadb-{{.Values.name}}-client
+          secret:
+            secretName: mariadb-{{.Values.name}}-client
             defaultMode: 0600
 {{- if .Values.persistence_claim.enabled }}
         - name: mariadb-persistent-storage
           persistentVolumeClaim:
            claimName: {{ .Values.persistence_claim.name |  default (include "fullName" . ) }}
 {{- end }}
-{{- if .Values.initdb_configmap }}
+{{- if .Values.initdb_secret }}
         - name: initdb
-          configMap:
-            name: {{ .Values.name }}-initdb
+          secret:
+            secretName: {{ .Values.name }}-initdb
             defaultMode: 0744
-{{- else if .Values.custom_initdb_configmap }}
+{{- else if .Values.custom_initdb_secret }}
         - name: initdb
-          configMap:
-            name: {{ .Values.custom_initdb_configmap }}
+          secret:
+            secretName: {{ .Values.custom_initdb_secret }}
             defaultMode: 0744
 {{ end }}
