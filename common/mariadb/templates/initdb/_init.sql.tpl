@@ -5,7 +5,7 @@ SET collation_server = '{{ .Values.collation_server }}';
 CREATE DATABASE IF NOT EXISTS {{ . }};
 {{- end }}
 
-{{- if and .Values.global.dbUser .Values.global.dbPassword (not (hasKey .Values.users (default "" .Values.global.dbUser))) (not .Values.custom_initdb_configmap) }}
+{{- if and .Values.global.dbUser .Values.global.dbPassword (not (hasKey .Values.users (default "" .Values.global.dbUser))) (not .Values.custom_initdb_secret) }}
 CREATE USER IF NOT EXISTS {{ .Values.global.dbUser }};
 GRANT ALL PRIVILEGES ON {{ .Values.name }}.* TO {{ .Values.global.dbUser }} IDENTIFIED BY '{{ include "db_password" . }}';
 {{- end }}
