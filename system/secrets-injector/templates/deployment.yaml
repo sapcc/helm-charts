@@ -52,6 +52,7 @@ spec:
           containerPort: 8080
         - name: webhook
           containerPort: 9443
+      {{ if ne .Values.topologyKey "" -}}
       affinity:
         podAntiAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
@@ -62,6 +63,7 @@ spec:
                 values:
                 - secrets-injector
             topologyKey: {{ .Values.topologyKey }}
+      {{ end -}}
       volumes:
         - name: certificate
           secret:
