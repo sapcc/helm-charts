@@ -102,7 +102,9 @@ fi
 
 # check for older postgres databases and upgrade from them if possible
 found_current_db=false
-for data in $(find /var/lib/postgresql/ -mindepth 1 -maxdepth 1 -not -name ".*" | sort --version-sort); do
+# Only directories are matched to not match accidential left behind files or /var/lib/postgresql/update_extensions.sql.
+# Also directories beginning with a dot like .cache or .local are ignored in case a login shell was ever used for the postgres user
+for data in $(find /var/lib/postgresql/ -mindepth 1 -maxdepth 1 -type dir -not -name ".*" | sort --version-sort); do
   # we found a newer postgres version than the user wants to start
   if [[ $found_current_db == true ]]; then
     echo "Found a newer postgres database than being run. This is not supported and not a valid way to rollback"
@@ -191,6 +193,12 @@ cp /usr/local/share/pg_hba.conf "$PGDATA/pg_hba.conf"
 echo -e "host  all  all  all  $PGAUTHMETHOD\n" >>"$PGDATA/pg_hba.conf"
 start_postgres
 PGDATABASE='' process_sql --dbname postgres -c "SELECT pg_reload_conf()"
+
+# there might be some extensions which we need to enable
+if [[ -f /var/lib/postgresql/update_extensions.sql ]]; then
+  process_sql -f /var/lib/postgresql/update_extensions.sql
+  rm /var/lib/postgresql/update_extensions.sql
+fi
 
 # run the recommended optimization by pg_upgrade to not mitigate performance decreases after an upgrade
 if [[ $updated_db == true ]]; then
