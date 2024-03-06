@@ -222,7 +222,8 @@ fi
 # ensure that the configured password matches the password in the database
 # this is required when upgrading the password hashing from md5 to scram-sha-256 which is the case when eg. updating from 9.5 to 15
 # this also allows password rotations with restarts
-PGDATABASE='' process_sql --dbname postgres --set user="$PGUSER" --set password="$PGPASSWORD" <<-'EOSQL'
+PGDATABASE='' process_sql --dbname postgres --set user="$PGUSER" --set password_encryption="$postgres_auth_method" --set password="$PGPASSWORD" <<-'EOSQL'
+  SET password_encryption = :'password_encryption';
   ALTER USER :user WITH PASSWORD :'password';
 EOSQL
 
