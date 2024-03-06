@@ -27,6 +27,7 @@ spec:
         configmap-etc-apod-hash: {{ include (print $.Template.BasePath "/configmap-etc-apod.yaml") $ | sha256sum }}
         prometheus.io/scrape: "true"
         prometheus.io/targets: {{ required "$.Values.metrics.prometheus missing" $.Values.metrics.prometheus }}
+        {{- include "utils.linkerd.pod_and_service_annotation" $ | indent 8 }}
       labels:
         name: neutron-swift-injector-{{ $apod }}
 {{ tuple $ "neutron" "swift-injector" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
