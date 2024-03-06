@@ -7,6 +7,10 @@ apiVersion: monitoring.banzaicloud.io/v1alpha1
 kind: StoreEndpoint
 metadata:
   name: {{ include "thanos.fullName" (list $name $root) }}
+  {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+  annotations:
+    linkerd.io/inject: enabled
+  {{- end }}
 spec:
   thanos: {{ include "thanos.fullName" (list $name $root) }}
   config:
