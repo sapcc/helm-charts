@@ -9,10 +9,6 @@ metadata:
   labels:
     prometheus: {{ include "prometheus.name" (list $name $root) }}
     common-chart: prometheus-server-{{ $.Chart.Version }}
-  {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
-  annotations:
-    linkerd.io/inject: enabled
-  {{- end }}
 
 spec:
   replicas: 1
@@ -88,6 +84,12 @@ spec:
     {{- if $.Values.externalLabels }}
 {{ toYaml $.Values.externalLabels | indent 4 }}
     {{- end }}
+
+  {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+  podMetadata:
+    annotations:
+      linkerd.io/inject: enabled
+  {{- end }}
 
   {{ if $.Values.additionalScrapeConfigs -}}
   # Inject additional scrape configurations.
