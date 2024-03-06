@@ -128,9 +128,9 @@ for data in $(find /var/lib/postgresql/ -mindepth 1 -maxdepth 1 -type dir -not -
   fi
 
   if (( $(echo "$old_version >= 12" | bc -l) )); then
-    postgres_auth_method=md5
-  else
     postgres_auth_method=scram-sha-256
+  else
+    postgres_auth_method=md5
   fi
 
   # create a backup unless we are migrating from the old chart
@@ -220,9 +220,9 @@ if [[ $created_db == true ]]; then
 fi
 
 if (( $(echo "$PGVERSION >= 12" | bc -l) )); then
-  postgres_auth_method=md5
-else
   postgres_auth_method=scram-sha-256
+else
+  postgres_auth_method=md5
 fi
 
 # ensure that the configured password matches the password in the database
