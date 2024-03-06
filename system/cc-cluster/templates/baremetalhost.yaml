@@ -1,10 +1,11 @@
-{{- range $key, $host := .Values.hosts }}
+{{- range $ckey, $cluster := .Values.clusters }}
+{{- range $key, $host := $cluster.hosts }}
 ---
 apiVersion: v1
 kind: Secret
 metadata:
   name: networkdata-{{ $key }}
-  namespace: {{ $.Release.namespace }}
+  namespace: metal-{{ $ckey }}
 type: infrastructure.cluster.x-k8s.io/secret
 stringData: 
   networkData: |-
@@ -23,7 +24,7 @@ apiVersion: metal3.io/v1alpha1
 kind: BareMetalHost
 metadata:
   name: {{ $key }}
-  namespace: {{ $.Release.namespace }}
+  namespace: metal-{{ $ckey }}
   labels:
     kubernetes.metal.cloud.sap/name: {{ $key }}
     kubernetes.metal.cloud.sap/bb: {{ $host.bb }}
@@ -39,7 +40,7 @@ spec:
   bootMACAddress: {{ $host.bootMac }}
   networkData: 
     name: networkdata-{{ $key }}
-    namespace: {{ $.Release.namespace }}
+    namespace: metal-{{ $ckey }}
   {{- with $host.rootDeviceHints }}
   rootDeviceHints:
 {{- toYaml . | nindent 4 }}
@@ -50,8 +51,9 @@ kind: Secret
 type: Opaque
 metadata:
   name: bmc-secret-{{ $key }}
-  namespace: {{ $.Release.namespace }}
+  namespace: metal-{{ $ckey }}
 data:
   username: {{ default $.Values.remoteboard.username $host.username | b64enc }}
   password: {{ default $.Values.remoteboard.password $host.password | b64enc }}
+{{- end }}
 {{- end }}
