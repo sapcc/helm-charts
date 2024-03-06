@@ -127,7 +127,7 @@ for data in $(find /var/lib/postgresql/ -mindepth 1 -maxdepth 1 -type dir -not -
     exit 1
   fi
 
-  if (( $(echo "$old_version <= 12" | bc -l) )); then
+  if (( $(echo "$old_version >= 12" | bc -l) )); then
     postgres_auth_method=md5
   else
     postgres_auth_method=scram-sha-256
