@@ -7,6 +7,11 @@ apiVersion: traefik.containo.us/v1alpha1
 kind: IngressRoute
 metadata:
   name: {{ include "thanos.fullName" (list $name $root) }}-grpc
+  {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+  annotations:
+    ingress.kubernetes.io/service-upstream: "true"
+    nginx.ingress.kubernetes.io/service-upstream: "true"
+  {{- end }}
 spec:
   entryPoints:
   - websecure
