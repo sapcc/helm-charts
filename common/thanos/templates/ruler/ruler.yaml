@@ -5,10 +5,6 @@ apiVersion: monitoring.coreos.com/v1
 kind: ThanosRuler
 metadata:
   name: {{ include "thanos.name" (list $name $root) }}
-  {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
-  annotations:
-    linkerd.io/inject: enabled
-  {{- end }}
 spec:
   image: {{ include "thanosimage" $root }}
   paused: {{ $.Values.ruler.paused }}
@@ -50,6 +46,13 @@ spec:
     name: {{ include "thanos.fullName" (list $name $root) }}-alertmanager-config
     key: alertManagerConfig.yaml
 {{- end }}
+
+{{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+  podMetadata:
+    annotations:
+      linkerd.io/inject: enabled
+{{- end }}
+
 {{ if not $.Values.ruler.queryEndpoints }}
   queryEndpoints: 
     - {{ include "thanos.fullName" (list $name $root) }}-query:10902

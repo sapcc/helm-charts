@@ -7,10 +7,6 @@ apiVersion: monitoring.banzaicloud.io/v1alpha1
 kind: ObjectStore
 metadata:
   name: {{ include "thanos.fullName" (list $name $root) }}
-  {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
-  annotations:
-    linkerd.io/inject: enabled
-  {{- end }}
 spec:
   config:
     mountFrom:
@@ -35,11 +31,20 @@ spec:
       metadata:
         labels:
           thanos: {{ default (include "thanos.name" (list $name $root)) $.Values.alerts.prometheus }}
+      {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+      annotations:
+        linkerd.io/inject: enabled
+      {{- end }}
     deploymentOverrides:
       spec:
         strategy:
           type: Recreate
         template:
+          {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+          metadata:
+            annotations:
+              linkerd.io/inject: enabled
+          {{- end }}
           spec:
             containers:
             - image: {{ include "thanosimage" $root }}
