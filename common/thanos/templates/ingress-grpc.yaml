@@ -25,6 +25,10 @@ metadata:
     {{- if $.Values.grpcIngress.annotations }}
 {{ toYaml $.Values.grpcIngress.annotations | indent 4 }}
     {{ end }}
+    {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+    ingress.kubernetes.io/service-upstream: "true"
+    nginx.ingress.kubernetes.io/service-upstream: "true"
+    {{- end }}
 spec:
   ingressClassName: nginx
   rules:

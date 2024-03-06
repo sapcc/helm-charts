@@ -85,6 +85,12 @@ spec:
 {{ toYaml $.Values.externalLabels | indent 4 }}
     {{- end }}
 
+  {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+  podMetadata:
+    annotations:
+      linkerd.io/inject: enabled
+  {{- end }}
+
   {{ if $.Values.additionalScrapeConfigs -}}
   # Inject additional scrape configurations.
   additionalScrapeConfigs:

@@ -531,7 +531,7 @@ output {
     if (([initiator][domain] == 'Default' and [initiator][name] == 'admin') or [initiator][domain] == 'ccadmin' or [target][project_domain_name] == 'ccadmin' or [initiator][project_domain_name] == 'ccadmin') or ([observer][typeURI] == 'service/security' and [action] == "authenticate" and [outcome] == 'failure') or ([observer][typeURI] == 'service/security' and ([action] == 'create/user') or [action] == 'delete/user') {
       http {
         id => "output_octobus_audit"
-        cacert => "/usr/share/logstash/config/ca.pem"
+        ssl_certificate_authorities => "/usr/share/logstash/config/ca.pem"
         url => "https://{{ .Values.global.forwarding.audit.host }}"
         format => "json"
         http_method => "post"

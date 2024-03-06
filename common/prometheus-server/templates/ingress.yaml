@@ -29,7 +29,10 @@ metadata:
     {{- if $.Values.ingress.annotations }}
 {{ toYaml $.Values.ingress.annotations | indent 4 }}
     {{ end }}
-
+    {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+    ingress.kubernetes.io/service-upstream: "true"
+    nginx.ingress.kubernetes.io/service-upstream: "true"
+    {{- end }}
 spec:
   {{- if not $.Values.traefik.enabled }}
   ingressClassName: nginx

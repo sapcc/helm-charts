@@ -87,7 +87,14 @@ data:
     ALTER SCHEMA public OWNER TO "{{ .Values.tableOwner | required ".Values.tableOwner must be set to one user!" }}";
     ALTER DATABASE "%PGDATABASE%" OWNER TO "{{ .Values.tableOwner }}";
     SELECT format('ALTER TABLE %I.%I.%I OWNER TO %I;', table_catalog, table_schema, table_name, '{{ .Values.tableOwner }}')
-      FROM information_schema.tables
-      WHERE table_schema = 'public'\gexec
+      FROM information_schema.tables WHERE table_schema = 'public'\gexec
+
+    {{- if ge ($.Values.postgresVersion | int) 14 | not }}
+    GRANT SELECT ON ALL TABLES IN SCHEMA public TO poor_mans_pg_read_all_data;
+    SELECT format('GRANT select ON %I.%I.%I TO %I;', table_catalog, table_schema, table_name, 'poor_mans_pg_read_all_data')
+      FROM information_schema.tables WHERE table_schema = 'public'\gexec
+    SELECT format('GRANT select ON %I.%I.%I TO %I;', sequence_catalog, sequence_schema, sequence_name, 'poor_mans_pg_read_all_data')
+      FROM information_schema.sequences WHERE sequence_schema = 'public'\gexec
+    {{- end }}
 
     {{ .Values.sqlOnStartup }}
