@@ -219,6 +219,12 @@ if [[ $created_db == true ]]; then
   done
 fi
 
+if (( $(echo "$PGVERSION >= 12" | bc -l) )); then
+  postgres_auth_method=md5
+else
+  postgres_auth_method=scram-sha-256
+fi
+
 # ensure that the configured password matches the password in the database
 # this is required when upgrading the password hashing from md5 to scram-sha-256 which is the case when eg. updating from 9.5 to 15
 # this also allows password rotations with restarts
