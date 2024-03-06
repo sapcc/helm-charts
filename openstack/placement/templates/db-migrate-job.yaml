@@ -48,26 +48,20 @@ spec:
           {{- end }}
         - name: PYTHONWARNINGS
           value: {{ .Values.python_warnings | quote }}
-        - name: OS_PLACEMENT_CONFIG_DIR
-          value: "/etc/placement/"
-        - name: OS_PLACEMENT_CONFIG_FILES
-          value: "placement.conf;secrets.conf"
         volumeMounts:
         - mountPath: /etc/placement
           name: placement-etc
+        - mountPath: /etc/placement/placement.conf.d
+          name: placement-etc-confd
         {{- include "utils.proxysql.volume_mount" . | indent 8 }}
         {{- include "utils.trust_bundle.volume_mount" . | indent 8 }}
       {{- include "utils.proxysql.container" . | indent 6 }}
       volumes:
-        - name: placement-etc
-          projected:
-            sources:
-            - configMap:
-                name: placement-etc
-            - secret:
-                name: placement-secrets
-                items:
-                  - key: secrets.conf
-                    path: secrets.conf
+      - name: placement-etc
+        configMap:
+          name: placement-etc
+      - name: placement-etc-confd
+        secret:
+          secretName: placement-secrets
       {{- include "utils.proxysql.volumes" . | indent 6 }}
       {{- include "utils.trust_bundle.volumes" . | indent 6 }}
