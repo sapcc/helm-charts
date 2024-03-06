@@ -33,6 +33,14 @@ spec:
                 values:
                 - operational
 
+      {{- if .Values.nodeSelector }}
+      nodeSelector: {{ toYaml .Values.nodeSelector | nindent 8 }}
+      {{- end }}
+
+      {{- if .Values.tolerations }}
+      tolerations: {{ toYaml .Values.tolerations | nindent 8 }}
+      {{- end }}
+
       initContainers:
       - name: generate-secrets
         image: "{{ include "preferredRegistry" . }}/shared-app-images/alpine-kubectl:edge-latest"
