@@ -9,6 +9,10 @@ metadata:
   labels:
     prometheus: {{ include "prometheus.name" (list $name $root) }}
     common-chart: prometheus-server-{{ $.Chart.Version }}
+  {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+  annotations:
+    linkerd.io/inject: enabled
+  {{- end }}
 
 spec:
   replicas: 1
