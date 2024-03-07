@@ -445,7 +445,7 @@ receivers:
     slack_configs:
       - channel: '#alert-metal-info'
         api_url: {{ required ".Values.slack.webhookURL undefined" .Values.slack.webhookURL | quote }}
-        username: "Pulsar"
+        username: "AlertManager"
         title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
         title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
         text: {{"'{{template \"slack.sapcc.text\" . }}'"}}
@@ -459,7 +459,7 @@ receivers:
     slack_configs:
       - channel: '#alert-metal-warning'
         api_url: {{ required ".Values.slack.metal.warningWebhookURL undefined" .Values.slack.metal.warningWebhookURL | quote }}
-        username: "Pulsar"
+        username: "AlertManager"
         title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
         title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
         text: {{"'{{template \"slack.sapcc.text\" . }}'"}}
@@ -473,7 +473,7 @@ receivers:
     slack_configs:
       - channel: '#alert-metal-critical'
         api_url: {{ required ".Values.slack.metal.criticalWebhookURL undefined" .Values.slack.metal.criticalWebhookURL | quote }}
-        username: "Pulsar"
+        username: "AlertManager"
         title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
         title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
         text: {{"'{{template \"slack.sapcc.text\" . }}'"}}
@@ -487,7 +487,7 @@ receivers:
     slack_configs:
       - channel: '#alert-ad-info'
         api_url: {{ required ".Values.slack.webhookURL undefined" .Values.slack.webhookURL | quote }}
-        username: "Pulsar"
+        username: "AlertManager"
         title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
         title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
         text: {{"'{{template \"slack.sapcc.text\" . }}'"}}
@@ -501,7 +501,7 @@ receivers:
     slack_configs:
       - channel: '#alert-ad-warning'
         api_url: {{ required ".Values.slack.webhookURL undefined" .Values.slack.webhookURL | quote }}
-        username: "Pulsar"
+        username: "AlertManager"
         title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
         title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
         text: {{"'{{template \"slack.sapcc.text\" . }}'"}}
@@ -515,7 +515,7 @@ receivers:
     slack_configs:
       - channel: '#alert-net-info'
         api_url: {{ required ".Values.slack.webhookURL undefined" .Values.slack.webhookURL | quote }}
-        username: "Pulsar"
+        username: "AlertManager"
         title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
         title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
         text: {{"'{{template \"slack.sapcc.text\" . }}'"}}
@@ -529,7 +529,7 @@ receivers:
     slack_configs:
       - channel: '#alert-net-warning'
         api_url: {{ required "slack.network.warningWebhookURL undefined" .Values.slack.network.warningWebhookURL | quote }}
-        username: "Pulsar"
+        username: "AlertManager"
         title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
         title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
         text: {{"'{{template \"slack.sapcc.text\" . }}'"}}
@@ -543,7 +543,7 @@ receivers:
     slack_configs:
       - channel: '#alert-net-critical'
         api_url: {{ required ".Values.slack.network.criticalWebhookURL undefined" .Values.slack.network.criticalWebhookURL | quote }}
-        username: "Pulsar"
+        username: "AlertManager"
         title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
         title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
         text: {{"'{{template \"slack.sapcc.text\" . }}'"}}
@@ -557,7 +557,7 @@ receivers:
     slack_configs:
       - channel: '#alert-vmware-info'
         api_url: {{ required ".Values.slack.webhookURL undefined" .Values.slack.webhookURL | quote }}
-        username: "Pulsar"
+        username: "AlertManager"
         title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
         title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
         text: {{"'{{template \"slack.sapcc.text\" . }}'"}}
@@ -571,7 +571,7 @@ receivers:
     slack_configs:
       - channel: '#alert-vmware-warning'
         api_url: {{ required ".Values.slack.vmware.warningWebhookURL undefined" .Values.slack.vmware.warningWebhookURL | quote }}
-        username: "Pulsar"
+        username: "AlertManager"
         title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
         title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
         text: {{"'{{template \"slack.sapcc.text\" . }}'"}}
@@ -585,7 +585,7 @@ receivers:
     slack_configs:
       - channel: '#alert-vmware-critical'
         api_url: {{ required ".Values.slack.vmware.criticalWebhookURL undefined" .Values.slack.vmware.criticalWebhookURL | quote }}
-        username: "Pulsar"
+        username: "AlertManager"
         title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
         title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
         text: {{"'{{template \"slack.sapcc.text\" . }}'"}}
@@ -599,7 +599,7 @@ receivers:
     slack_configs:
       - channel: '#alert-api-warning'
         api_url: {{ required ".Values.slack.api.warningWebhookURL undefined" .Values.slack.api.warningWebhookURL | quote }}
-        username: "Pulsar"
+        username: "AlertManager"
         title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
         title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
         text: {{"'{{template \"slack.sapcc.text\" . }}'"}}
@@ -613,7 +613,7 @@ receivers:
     slack_configs:
       - channel: '#alert-api-critical'
         api_url: {{ required ".Values.slack.api.criticalWebhookURL undefined" .Values.slack.api.criticalWebhookURL | quote }}
-        username: "Pulsar"
+        username: "AlertManager"
         title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
         title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
         text: {{"'{{template \"slack.sapcc.text\" . }}'"}}
@@ -627,7 +627,7 @@ receivers:
     slack_configs:
       - channel: '#alert-moni-{{"{{ .CommonLabels.severity }}"}}'
         api_url: {{ required ".Values.slack.webhookURL undefined" .Values.slack.webhookURL | quote }}
-        username: "Pulsar"
+        username: "AlertManager"
         title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
         title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
         text: {{"'{{template \"slack.sapcc.text\" . }}'"}}
@@ -640,7 +640,7 @@ receivers:
     slack_configs:
       - channel: '#alert-qa-{{"{{ .CommonLabels.severity }}"}}'
         api_url: {{ required ".Values.slack.webhookURL undefined" .Values.slack.webhookURL | quote }}
-        username: "Pulsar"
+        username: "AlertManager"
         title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
         title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
         text: {{"'{{template \"slack.sapcc.text\" . }}'"}}
@@ -654,7 +654,7 @@ receivers:
     slack_configs:
       - channel: '#alert-dev-{{"{{ .CommonLabels.severity }}"}}'
         api_url: {{ required ".Values.slack.webhookURL undefined" .Values.slack.webhookURL | quote }}
-        username: "Pulsar"
+        username: "AlertManager"
         title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
         title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
         text: {{"'{{template \"slack.sapcc.text\" . }}'"}}
@@ -668,7 +668,7 @@ receivers:
     slack_configs:
       - channel: '#cc-k8s-{{"{{ .CommonLabels.service }}"}}'
         api_url: {{ required ".Values.slack.webhookURL undefined" .Values.slack.webhookURL | quote }}
-        username: "Pulsar"
+        username: "AlertManager"
         title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
         title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
         text: {{"'{{template \"slack.sapcc.text\" . }}'"}}
@@ -681,7 +681,7 @@ receivers:
     slack_configs:
       - channel: '#cc-os-{{"{{ .CommonLabels.service }}"}}'
         api_url: {{ required ".Values.slack.webhookURL undefined" .Values.slack.webhookURL | quote }}
-        username: "Pulsar"
+        username: "AlertManager"
         title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
         title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
         text: {{"'{{template \"slack.sapcc.text\" . }}'"}}
@@ -693,7 +693,7 @@ receivers:
     slack_configs:
       - channel: '#cc-{{"{{ .CommonLabels.service }}"}}'
         api_url: {{ required ".Values.slack.webhookURL undefined" .Values.slack.webhookURL | quote }}
-        username: "Pulsar"
+        username: "AlertManager"
         title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
         title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
         text: {{"'{{template \"slack.sapcc.text\" . }}'"}}
@@ -706,7 +706,7 @@ receivers:
     slack_configs:
       - channel: '#cc-k8s-{{"{{ .CommonLabels.severity }}"}}'
         api_url: {{ required ".Values.slack.webhookURL undefined" .Values.slack.webhookURL | quote }}
-        username: "Pulsar"
+        username: "AlertManager"
         title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
         title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
         text: {{"'{{template \"slack.sapcc.text\" . }}'"}}
@@ -719,7 +719,7 @@ receivers:
     slack_configs:
       - channel: '#cc-kks-{{"{{ .CommonLabels.severity }}"}}'
         api_url: {{ required ".Values.slack.webhookURL undefined" .Values.slack.webhookURL | quote }}
-        username: "Pulsar"
+        username: "AlertManager"
         title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
         title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
         text: {{"'{{template \"slack.sapcc.text\" . }}'"}}
@@ -733,7 +733,7 @@ receivers:
     slack_configs:
       - channel: '#cc-kks-critical'
         api_url: {{ required ".Values.slack.kubernikus.criticalWebhookURL undefined" .Values.slack.kubernikus.criticalWebhookURL | quote }}
-        username: "Pulsar"
+        username: "AlertManager"
         title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
         title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
         text: {{"'{{template \"slack.sapcc.text\" . }}'"}}
@@ -747,7 +747,7 @@ receivers:
     slack_configs:
       - channel: '#cc-concourse'
         api_url: {{ required ".Values.slack.webhookURL undefined" .Values.slack.webhookURL | quote }}
-        username: "Pulsar"
+        username: "AlertManager"
         title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
         title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
         text: {{"'{{template \"slack.sapcc.text\" . }}'"}}
@@ -760,7 +760,7 @@ receivers:
     slack_configs:
       - channel: '#cc-cp'
         api_url: {{ required ".Values.slack.webhookURL undefined" .Values.slack.webhookURL | quote }}
-        username: "Pulsar"
+        username: "AlertManager"
         title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
         title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
         text: {{"'{{template \"slack.sapcc.text\" . }}'"}}
@@ -773,7 +773,7 @@ receivers:
     slack_configs:
       - channel: '#cc-nannies'
         api_url: {{ required ".Values.slack.webhookURL undefined" .Values.slack.webhookURL | quote }}
-        username: "Pulsar"
+        username: "AlertManager"
         title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
         title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
         text: {{"'{{template \"slack.sapcc.text\" . }}'"}}
@@ -786,7 +786,7 @@ receivers:
     slack_configs:
       - channel: '#cc-nannies-automation'
         api_url: {{ required ".Values.slack.webhookURL undefined" .Values.slack.webhookURL | quote }}
-        username: "Pulsar"
+        username: "AlertManager"
         title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
         title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
         text: {{"'{{template \"slack.sapcc.text\" . }}'"}}
@@ -799,7 +799,7 @@ receivers:
     slack_configs:
       - channel: '#cc-sre'
         api_url: {{ required ".Values.slack.webhookURL undefined" .Values.slack.webhookURL | quote }}
-        username: "Pulsar"
+        username: "AlertManager"
         title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
         title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
         text: {{"'{{template \"slack.sapcc.text\" . }}'"}}
@@ -812,7 +812,7 @@ receivers:
     slack_configs:
       - channel: '#cc-storage'
         api_url: {{ required ".Values.slack.webhookURL undefined" .Values.slack.webhookURL | quote }}
-        username: "Pulsar"
+        username: "AlertManager"
         title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
         title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
         text: {{"'{{template \"slack.sapcc.text\" . }}'"}}
@@ -825,7 +825,7 @@ receivers:
     slack_configs:
       - channel: '#cc-wsus'
         api_url: {{ required ".Values.slack.webhookURL undefined" .Values.slack.webhookURL | quote }}
-        username: "Pulsar"
+        username: "AlertManager"
         title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
         title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
         text: {{"'{{template \"slack.sapcc.text\" . }}'"}}
@@ -838,7 +838,7 @@ receivers:
     slack_configs:
       - channel: '#cc-os-barbican-cert-expiry'
         api_url: {{ required ".Values.slack.webhookURL undefined" .Values.slack.webhookURL | quote }}
-        username: "Pulsar"
+        username: "AlertManager"
         title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
         title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
         text: {{"'{{template \"slack.sapcc.text\" . }}'"}}
@@ -851,7 +851,7 @@ receivers:
     slack_configs:
       - channel: '#cc-os-hsm'
         api_url: {{ required ".Values.slack.webhookURL undefined" .Values.slack.webhookURL | quote }}
-        username: "Pulsar"
+        username: "AlertManager"
         title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
         title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
         text: {{"'{{template \"slack.sapcc.text\" . }}'"}}
@@ -864,7 +864,7 @@ receivers:
     slack_configs:
       - channel: '#alert-{{"{{ .CommonLabels.support_group }}"}}-{{"{{ .CommonLabels.severity }}"}}'
         api_url: {{ required ".Values.slack.compute.criticalWebhookURL undefined" .Values.slack.compute.criticalWebhookURL | quote }}
-        username: "Pulsar"
+        username: "AlertManager"
         title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
         title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
         text: {{"'{{template \"slack.sapcc.text\" . }}'"}}
@@ -878,7 +878,7 @@ receivers:
     slack_configs:
       - channel: '#alert-{{"{{ .CommonLabels.support_group }}"}}-{{"{{ .CommonLabels.severity }}"}}'
         api_url: {{ required ".Values.slack.compute_storage_api.criticalWebhookURL undefined" .Values.slack.compute_storage_api.criticalWebhookURL | quote }}
-        username: "Pulsar"
+        username: "AlertManager"
         title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
         title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
         text: {{"'{{template \"slack.sapcc.text\" . }}'"}}
@@ -892,7 +892,7 @@ receivers:
     slack_configs:
       - channel: '#alert-{{"{{ .CommonLabels.support_group }}"}}-{{"{{ .CommonLabels.severity }}"}}'
         api_url: {{ required ".Values.slack.email.criticalWebhookURL undefined" .Values.slack.email.criticalWebhookURL | quote }}
-        username: "Pulsar"
+        username: "AlertManager"
         title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
         title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
         text: {{"'{{template \"slack.sapcc.text\" . }}'"}}
@@ -906,7 +906,7 @@ receivers:
     slack_configs:
       - channel: '#alert-{{"{{ .CommonLabels.support_group }}"}}-{{"{{ .CommonLabels.severity }}"}}'
         api_url: {{ required ".Values.slack.identity.criticalWebhookURL undefined" .Values.slack.identity.criticalWebhookURL | quote }}
-        username: "Pulsar"
+        username: "AlertManager"
         title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
         title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
         text: {{"'{{template \"slack.sapcc.text\" . }}'"}}
@@ -920,7 +920,7 @@ receivers:
     slack_configs:
       - channel: '#alert-{{"{{ .CommonLabels.support_group }}"}}-{{"{{ .CommonLabels.severity }}"}}'
         api_url: {{ required ".Values.slack.foundation.criticalWebhookURL undefined" .Values.slack.foundation.criticalWebhookURL | quote }}
-        username: "Pulsar"
+        username: "AlertManager"
         title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
         title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
         text: {{"'{{template \"slack.sapcc.text\" . }}'"}}
@@ -934,7 +934,7 @@ receivers:
     slack_configs:
       - channel: '#alert-{{"{{ .CommonLabels.support_group }}"}}-{{"{{ .CommonLabels.severity }}"}}'
         api_url: {{ required ".Values.slack.network_api.criticalWebhookURL undefined" .Values.slack.network_api.criticalWebhookURL | quote }}
-        username: "Pulsar"
+        username: "AlertManager"
         title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
         title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
         text: {{"'{{template \"slack.sapcc.text\" . }}'"}}
@@ -948,7 +948,7 @@ receivers:
     slack_configs:
       - channel: '#alert-{{"{{ .CommonLabels.support_group }}"}}-{{"{{ .CommonLabels.severity }}"}}'
         api_url: {{ required ".Values.slack.observability.criticalWebhookURL undefined" .Values.slack.observability.criticalWebhookURL | quote }}
-        username: "Pulsar"
+        username: "AlertManager"
         title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
         title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
         text: {{"'{{template \"slack.sapcc.text\" . }}'"}}
@@ -962,7 +962,7 @@ receivers:
     slack_configs:
       - channel: '#alert-{{"{{ .CommonLabels.support_group }}"}}-{{"{{ .CommonLabels.severity }}"}}'
         api_url: {{ required ".Values.slack.webhookURL undefined" .Values.slack.webhookURL | quote }}
-        username: "Pulsar"
+        username: "AlertManager"
         title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
         title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
         text: {{"'{{template \"slack.sapcc.text\" . }}'"}}
@@ -976,7 +976,7 @@ receivers:
     slack_configs:
       - channel: '#alert-{{"{{ .CommonLabels.support_group }}"}}-{{"{{ .CommonLabels.severity }}"}}'
         api_url: {{ required ".Values.slack.containers.criticalWebhookURL undefined" .Values.slack.containers.criticalWebhookURL | quote }}
-        username: "Pulsar"
+        username: "AlertManager"
         title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
         title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
         text: {{"'{{template \"slack.sapcc.text\" . }}'"}}
@@ -990,7 +990,7 @@ receivers:
     slack_configs:
       - channel: '#alert-{{"{{ .CommonLabels.support_group }}"}}-{{"{{ .CommonLabels.severity }}"}}'
         api_url: {{ required ".Values.slack.webhookURL undefined" .Values.slack.webhookURL | quote }}
-        username: "Pulsar"
+        username: "AlertManager"
         title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
         title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
         text: {{"'{{template \"slack.sapcc.text\" . }}'"}}
@@ -1004,7 +1004,7 @@ receivers:
     slack_configs:
       - channel: '#alert-{{"{{ .CommonLabels.support_group }}"}}-qa'
         api_url: {{ required ".Values.slack.webhookURL undefined" .Values.slack.webhookURL | quote }}
-        username: "Pulsar"
+        username: "AlertManager"
         title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
         title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
         text: {{"'{{template \"slack.sapcc.text\" . }}'"}}
@@ -1018,7 +1018,7 @@ receivers:
     slack_configs:
       - channel: '#alert-{{"{{ .CommonLabels.support_group }}"}}-labs'
         api_url: {{ required ".Values.slack.webhookURL undefined" .Values.slack.webhookURL | quote }}
-        username: "Pulsar"
+        username: "AlertManager"
         title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
         title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
         text: {{"'{{template \"slack.sapcc.text\" . }}'"}}

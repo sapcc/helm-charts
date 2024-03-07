@@ -55,7 +55,7 @@ receivers:
     slack_configs:
       - channel: '#alert-cnmp'
         api_url: {{ required ".Values.slack.webhookURL undefined" .Values.slack.webhookURL | quote }}
-        username: "Pulsar"
+        username: "AlertManager"
         title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
         title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
         text: {{"'{{template \"slack.sapcc.text\" . }}'"}}
@@ -67,7 +67,7 @@ receivers:
   - name: dev-null
     slack_configs:
       - api_url: {{ required ".Values.slack.webhookURL undefined" .Values.slack.webhookURL | quote }}
-        username: "Pulsar"
+        username: "AlertManager"
         channel: "#dev-null"
         title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
         title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
