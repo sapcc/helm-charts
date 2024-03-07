@@ -3,7 +3,7 @@ groups:
   rules:
   - alert: OpenstackSwiftApiDown
     expr: |
-        cc3test_status{service="swift", type="api"} == 0
+        cc3test_status{service="swift", type="api", phase="call"} == 0
     for: 16m
     labels:
       severity: critical
@@ -14,14 +14,14 @@ groups:
       meta: 'Openstack Swift API is down'
       dashboard: 'cc3test-api-status?var-service={{ $labels.service }}'
       playbook: 'docs/support/playbook/swift/alerts/cc3test-alert-api/'
-      report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
+      report: 'cc3test/admin/object-storage/containers/cc3test/objects/{{ $labels.base64path }}'
     annotations:
       description: 'Openstack Swift API is down'
       summary: 'Openstack Swift API is down'
 
   - alert: OpenstackSwiftApiFlapping
     expr: |
-        changes(cc3test_status{service="swift", type="api"}[30m]) > 8
+        changes(cc3test_status{service="swift", type="api", phase="call"}[30m]) > 8
     labels:
       severity: warning
       support_group: storage
@@ -31,7 +31,7 @@ groups:
       meta: 'Openstack Swift API is flapping'
       dashboard: 'cc3test-api-status?var-service={{ $labels.service }}'
       playbook: 'docs/support/playbook/swift/alerts/cc3test-alert-api/'
-      report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
+      report: 'cc3test/admin/object-storage/containers/cc3test/objects/{{ $labels.base64path }}'
     annotations:
       description: 'Openstack Swift API is flapping'
       summary: 'Openstack Swift API is flapping'

@@ -3,7 +3,7 @@ groups:
   rules:
   - alert: OpenstackDesignateApiDown
     expr: |
-        cc3test_status{service="designate", type="api"} == 0
+        cc3test_status{service="designate", type="api", phase="call"} == 0
     for: 16m
     labels:
       severity: critical
@@ -14,14 +14,14 @@ groups:
       meta: 'Openstack Designate API is down'
       dashboard: 'cc3test-api-status?var-service={{ $labels.service }}'
       playbook: 'docs/support/playbook/designate/alerts/'
-      report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
+      report: 'cc3test/admin/object-storage/containers/cc3test/objects/{{ $labels.base64path }}'
     annotations:
       description: 'Openstack Designate API is down'
       summary: 'Openstack Designate API is down'
 
   - alert: OpenstackDesignateApiFlapping
     expr: |
-        changes(cc3test_status{service="designate", type="api"}[30m]) > 8
+        changes(cc3test_status{service="designate", type="api", phase="call"}[30m]) > 8
     labels:
       severity: warning
       support_group: network-api
@@ -31,16 +31,16 @@ groups:
       meta: 'Openstack Designate API is flapping'
       dashboard: 'cc3test-api-status?var-service={{ $labels.service }}'
       playbook: 'docs/support/playbook/designate/alerts/'
-      report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
+      report: 'cc3test/admin/object-storage/containers/cc3test/objects/{{ $labels.base64path }}'
     annotations:
       description: 'Openstack Designate API is flapping'
       summary: 'Openstack Designate API is flapping'
 
   - alert: DnsLookupBindDown
     expr: |
-        (sum by (type, service) (cc3test_status{type="datapath", name=~"TestDnsLookup_bind.+"})
+        (sum by (type, service) (cc3test_status{type="datapath", name=~"TestDnsLookup_bind.+", phase="call"})
         /
-        count by (type, service) (cc3test_status{type="datapath", name=~"TestDnsLookup_bind.+"})) == 0
+        count by (type, service) (cc3test_status{type="datapath", name=~"TestDnsLookup_bind.+", phase="call"})) == 0
     for: 10m
     labels:
       severity: critical
@@ -51,16 +51,16 @@ groups:
       meta: 'All dns lookups on bind hosts fail'
       dashboard: 'cc3test-datapath-status?var-service={{ $labels.service }}'
       playbook: 'docs/devops/alert/designate/#test_bind'
-      report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
+      report: 'cc3test/admin/object-storage/containers/cc3test/objects/{{ $labels.base64path }}'
     annotations:
       description: 'All dns lookups on bind hosts fail'
       summary: 'All dns lookups on bind hosts fail'
 
   - alert: DnsLookupBindFails
     expr: |
-        (sum by (type, service) (cc3test_status{type="datapath", name=~"TestDnsLookup_bind.+"})
+        (sum by (type, service) (cc3test_status{type="datapath", name=~"TestDnsLookup_bind.+", phase="call"})
         /
-        count by (type, service) (cc3test_status{type="datapath", name=~"TestDnsLookup_bind.+"})) > 0 < 0.2
+        count by (type, service) (cc3test_status{type="datapath", name=~"TestDnsLookup_bind.+", phase="call"})) > 0 < 0.2
     for: 10m
     labels:
       severity: warning
@@ -70,7 +70,7 @@ groups:
       context: '{{ $labels.service }}'
       meta: 'Some dns lookups on bind servers fail'
       dashboard: 'cc3test-datapath-status?var-service={{ $labels.service }}'
-      report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
+      report: 'cc3test/admin/object-storage/containers/cc3test/objects/{{ $labels.base64path }}'
       playbook: 'docs/devops/alert/designate/#test_bind'
     annotations:
       description: 'Some dns lookups on bind hosts fail'
@@ -78,9 +78,9 @@ groups:
 
   - alert: DnsLookupUnboundDown
     expr: |
-        (sum by (type, service) (cc3test_status{type="datapath", name=~"TestDnsLookup_unbound.+"})
+        (sum by (type, service) (cc3test_status{type="datapath", name=~"TestDnsLookup_unbound.+", phase="call"})
         /
-        count by (type, service) (cc3test_status{type="datapath", name=~"TestDnsLookup_unbound.+"})) == 0
+        count by (type, service) (cc3test_status{type="datapath", name=~"TestDnsLookup_unbound.+", phase="call"})) == 0
     for: 10m
     labels:
       severity: critical
@@ -91,16 +91,16 @@ groups:
       meta: 'All dns lookups on unbound hosts fail'
       dashboard: 'cc3test-datapath-status?var-service={{ $labels.service }}'
       playbook: 'docs/devops/alert/designate/#test_unbound'
-      report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
+      report: 'cc3test/admin/object-storage/containers/cc3test/objects/{{ $labels.base64path }}'
     annotations:
       description: 'All dns lookups on unbound hosts fail'
       summary: 'All dns lookups on unbound hosts fail'
 
   - alert: DnsLookupUnboundFails
     expr: |
-        (sum by (type, service) (cc3test_status{type="datapath", name=~"TestDnsLookup_unbound.+"})
+        (sum by (type, service) (cc3test_status{type="datapath", name=~"TestDnsLookup_unbound.+", phase="call"})
         /
-        count by (type, service) (cc3test_status{type="datapath", name=~"TestDnsLookup_unbound.+"})) > 0 < 0.2
+        count by (type, service) (cc3test_status{type="datapath", name=~"TestDnsLookup_unbound.+", phase="call"})) > 0 < 0.2
     for: 10m
     labels:
       severity: warning
@@ -110,7 +110,7 @@ groups:
       context: '{{ $labels.service }}'
       meta: 'Some dns lookups on unbound hosts fail'
       dashboard: 'cc3test-datapath-status?var-service={{ $labels.service }}'
-      report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
+      report: 'cc3test/admin/object-storage/containers/cc3test/objects/{{ $labels.base64path }}'
       playbook: 'docs/devops/alert/designate/#test_unbound'
     annotations:
       description: 'Some dns lookups on unbound hosts fail'
@@ -118,9 +118,9 @@ groups:
 
   - alert: DnsLookupPublicDown
     expr: |
-        (sum by (type, service) (cc3test_status{type="datapath", name=~"TestDnsLookup_public.+"})
+        (sum by (type, service) (cc3test_status{type="datapath", name=~"TestDnsLookup_public.+", phase="call"})
         /
-        count by (type, service) (cc3test_status{type="datapath", name=~"TestDnsLookup_public.+"})) == 0
+        count by (type, service) (cc3test_status{type="datapath", name=~"TestDnsLookup_public.+", phase="call"})) == 0
     for: 10m
     labels:
       severity: critical
@@ -131,16 +131,16 @@ groups:
       meta: 'No public dns server responds'
       dashboard: 'cc3test-datapath-status?var-service={{ $labels.service }}'
       playbook: 'docs/devops/alert/designate/#test_public'
-      report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
+      report: 'cc3test/admin/object-storage/containers/cc3test/objects/{{ $labels.base64path }}'
     annotations:
       description: 'no public dns server responds'
       summary: 'No public dns server responds'
 
   - alert: DnsLookupPublicFails
     expr: |
-        (sum by (type, service) (cc3test_status{type="datapath", name=~"TestDnsLookup_public.+"})
+        (sum by (type, service) (cc3test_status{type="datapath", name=~"TestDnsLookup_public.+", phase="call"})
         /
-        count by (type, service) (cc3test_status{type="datapath", name=~"TestDnsLookup_public.+"})) >0 <= 0.5
+        count by (type, service) (cc3test_status{type="datapath", name=~"TestDnsLookup_public.+", phase="call"})) >0 <= 0.5
     for: 10m
     labels:
       severity: warning
@@ -151,16 +151,16 @@ groups:
       meta: 'Half or less of public dns servers responds'
       dashboard: 'cc3test-datapath-status?var-service={{ $labels.service }}'
       playbook: 'docs/devops/alert/designate/#test_public'
-      report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
+      report: 'cc3test/admin/object-storage/containers/cc3test/objects/{{ $labels.base64path }}'
     annotations:
       description: 'half or less of public dns servers responds'
       summary: 'Half or less of SAP dns servers responds'
 
   - alert: DnsLookupSAPFails
     expr: |
-        sum (cc3test_status{type="datapath", service="designate", name=~"TestDnsLookup_sap.+"})
+        sum (cc3test_status{type="datapath", service="designate", name=~"TestDnsLookup_sap.+", phase="call"})
         /
-        count (cc3test_status{type="datapath", service="designate", name=~"TestDnsLookup_sap.+"})
+        count (cc3test_status{type="datapath", service="designate", name=~"TestDnsLookup_sap.+", phase="call"})
         > 0 <= 0.5
     for: 10m
     labels:
@@ -172,7 +172,7 @@ groups:
       meta: 'Half or less of SAP dns servers responds'
       dashboard: 'cc3test-datapath-status?var-service={{ $labels.service }}'
       playbook: 'docs/devops/alert/network/dns'
-      report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
+      report: 'cc3test/admin/object-storage/containers/cc3test/objects/{{ $labels.base64path }}'
     annotations:
       description: 'half or less of SAP dns servers responds'
       summary: 'Half or less of SAP dns servers responds'
@@ -180,7 +180,8 @@ groups:
   - alert: DnsZoneTransferAXFRFails
     expr: |
         cc3test_status{type="datapath",
-            name=~"TestDnsZone_transfer.+"
+            name=~"TestDnsZone_transfer.+",
+            phase="call"
         } == 0
     for: 10m
     labels:
@@ -192,13 +193,13 @@ groups:
       meta: 'AXFR zone transfer {{ $labels.name }} fails'
       dashboard: 'cc3test-datapath-status?var-service={{ $labels.service }}'
       playbook: 'docs/devops/alert/designate/#test_dns_axfr'
-      report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
+      report: 'cc3test/admin/object-storage/containers/cc3test/objects/{{ $labels.base64path }}'
     annotations:
       description: 'AXFR zone transfer {{ $labels.name }} fails'
       summary: 'AXFR zone transfer {{ $labels.name }} fails'
 
   - alert: OpenstackDesignateCanaryRecordsetDown
-    expr: cc3test_status{service="designate",name=~"TestDnsRecordSet.+"} == 0
+    expr: cc3test_status{service="designate",name=~"TestDnsRecordSet.+",phase="call"} == 0
     for: 3h
     labels:
       severity: warning
@@ -209,13 +210,13 @@ groups:
       meta: 'Openstack Designate Canary is down, see report for more details'
       dashboard: 'cc3test-canary-status?var-service={{ $labels.service }}'
       playbook: 'docs/devops/alert/{{ $labels.service }}'
-      report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
+      report: 'cc3test/admin/object-storage/containers/cc3test/objects/{{ $labels.base64path }}'
     annotations:
       description: 'Openstack Designate Canary is down, see report for more details'
       summary: 'Openstack Designate Canary is down, see report for more details'
 
   - alert: OpenstackDesignateCanaryRecordsetFlapping
-    expr: changes(cc3test_status{service="designate",name=~"TestDnsRecordSet.+"}[2h]) > 8
+    expr: changes(cc3test_status{service="designate",name=~"TestDnsRecordSet.+",phase="call"}[2h]) > 8
     for: 3h
     labels:
       severity: info
@@ -226,13 +227,13 @@ groups:
       meta: 'Openstack Designate Canary is flapping for 2 hours, see last three reports for more details'
       dashboard: 'cc3test-canary-status?var-service={{ $labels.service }}'
       playbook: 'docs/devops/alert/{{ $labels.service }}'
-      report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
+      report: 'cc3test/admin/object-storage/containers/cc3test/objects/{{ $labels.base64path }}'
     annotations:
       description: 'Openstack Designate Canary is flapping for 2 hours, see last three reports for more details'
       summary: 'Openstack Designate Canary is flapping for 2 hours, see last three reports for more details'
 
   - alert: OpenstackDesignateCanaryDnsZoneCreateDown
-    expr: cc3test_status{service="designate",name=~"TestDnsZone_create.+"} == 0
+    expr: cc3test_status{service="designate",name=~"TestDnsZone_create.+",phase="call"} == 0
     for: 3h
     labels:
       severity: warning
@@ -243,13 +244,13 @@ groups:
       meta: 'Openstack Designate Canary create Subzone is down, see report for more details'
       dashboard: 'cc3test-canary-status?var-service={{ $labels.service }}'
       playbook: 'docs/devops/alert/{{ $labels.service }}'
-      report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
+      report: 'cc3test/admin/object-storage/containers/cc3test/objects/{{ $labels.base64path }}'
     annotations:
       description: 'Openstack Designate Canary create Subzone is down, see report for more details'
       summary: 'Openstack Designate Canary create Subzone is down, see report for more details'
 
   - alert: OpenstackDesignateCanaryDnsZoneCreateFlapping
-    expr: changes(cc3test_status{service="designate",name=~"TestDnsZone_create.+"}[2h]) > 8
+    expr: changes(cc3test_status{service="designate",name=~"TestDnsZone_create.+",phase="call"}[2h]) > 8
     for: 3h
     labels:
       severity: info
@@ -260,7 +261,7 @@ groups:
       meta: 'Openstack Designate Canary create Subzone is flapping for 2 hours, see last three reports for more details'
       dashboard: 'cc3test-canary-status?var-service={{ $labels.service }}'
       playbook: 'docs/devops/alert/{{ $labels.service }}'
-      report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
+      report: 'cc3test/admin/object-storage/containers/cc3test/objects/{{ $labels.base64path }}'
     annotations:
       description: 'Openstack Designate Canary create Subzone is flapping for 2 hours, see last three reports for more details'
       summary: 'Openstack Designate Canary create Subzone is flapping for 2 hours, see last three reports for more details'

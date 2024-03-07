@@ -3,7 +3,7 @@ groups:
   rules:
   - alert: OpenstackBarbicanApiDown
     expr: |
-        cc3test_status{service="barbican", type="api"} == 0
+        cc3test_status{service="barbican", type="api", phase="call"} == 0
     for: 16m
     labels:
       severity: critical
@@ -14,14 +14,14 @@ groups:
       meta: 'Openstack Barbican API is down'
       dashboard: 'cc3test-api-status?var-service={{ $labels.service }}'
       playbook: 'docs/support/playbook/barbican/alerts/cc3test-alert-api/'
-      report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
+      report: 'cc3test/admin/object-storage/containers/cc3test/objects/{{ $labels.base64path }}'
     annotations:
       description: 'Openstack Barbican API is down'
       summary: 'Openstack Barbican API is down'
 
   - alert: OpenstackBarbicanApiFlapping
     expr: |
-        changes(cc3test_status{service="barbican", type="api"}[30m]) > 8
+        changes(cc3test_status{service="barbican", type="api", phase="call"}[30m]) > 8
     labels:
       severity: warning
       support_group: identity
@@ -31,13 +31,13 @@ groups:
       meta: 'Openstack Barbican API is flapping'
       dashboard: 'cc3test-api-status?var-service={{ $labels.service }}'
       playbook: 'docs/support/playbook/barbican/alerts/cc3test-alert-api/'
-      report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
+      report: 'cc3test/admin/object-storage/containers/cc3test/objects/{{ $labels.base64path }}'
     annotations:
       description: 'Openstack Barbican API is flapping'
       summary: 'Openstack Barbican API is flapping'
 
   - alert: OpenstackBarbicanCanaryCreateSecretDown
-    expr: cc3test_status{service="barbican",name=~"TestKeyManager_create_secret.+"} == 0
+    expr: cc3test_status{service="barbican",name=~"TestKeyManager_create_secret.+", phase="call"} == 0
     for: 3h
     labels:
       severity: warning
@@ -48,13 +48,13 @@ groups:
       meta: 'Openstack Barbican Canary is down, see report for more details'
       dashboard: 'cc3test-canary-status?var-service={{ $labels.service }}'
       playbook: 'docs/support/playbook/barbican/alerts/cc3test-alert-store-secret/'
-      report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
+      report: 'cc3test/admin/object-storage/containers/cc3test/objects/{{ $labels.base64path }}'
     annotations:
       description: 'Openstack Barbican Canary is down, see report for more details'
       summary: 'Openstack Barbican Canary is down, see report for more details'
 
   - alert: OpenstackBarbicanCanaryCreateSecretFlapping
-    expr: changes(cc3test_status{service="barbican",name=~"TestKeyManager_create_secret.+"}[2h]) > 8
+    expr: changes(cc3test_status{service="barbican",name=~"TestKeyManager_create_secret.+",phase="call"}[2h]) > 8
     for: 3h
     labels:
       severity: info
@@ -65,7 +65,7 @@ groups:
       meta: 'Openstack Barbican Canary is flapping for 2 hours, see last three reports for more details'
       dashboard: 'cc3test-canary-status?var-service={{ $labels.service }}'
       playbook: 'docs/support/playbook/barbican/alerts/cc3test-alert-store-secret/'
-      report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
+      report: 'cc3test/admin/object-storage/containers/cc3test/objects/{{ $labels.base64path }}'
     annotations:
       description: 'Openstack Barbican Canary is flapping for 2 hours, see last three reports for more details'
       summary: 'Openstack Barbican Canary is flapping for 2 hours, see last three reports for more details'

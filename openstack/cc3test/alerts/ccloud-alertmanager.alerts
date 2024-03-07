@@ -4,7 +4,8 @@ groups:
   - alert: CCloudAlertmanagerDown
     expr: |
         cc3test_status{
-            name=~'TestALM_datapath-alertmanager_.+'
+            name=~'TestALM_datapath-alertmanager_.+',
+            phase="call"
         } == 0
     for: 10m
     labels:
@@ -15,7 +16,7 @@ groups:
       meta: 'CCloud AlertManager {{ $labels.name }} is down'
       dashboard: 'cc3test-datapath-status?var-service={{ $labels.service }}'
       playbook: 'docs/support/playbook/prometheus/alertmanager_alerts/cc3test-alert-datapath/'
-      report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
+      report: 'cc3test/admin/object-storage/containers/cc3test/objects/{{ $labels.base64path }}'
     annotations:
       description: 'CCloud AlertManager {{ $labels.name }} is down'
       summary: 'CCloud AlertManager {{ $labels.name }} is down'
