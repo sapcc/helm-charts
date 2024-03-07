@@ -9,7 +9,7 @@ url = "https://{{.Values.hermes_elasticsearch_host}}.{{.Values.global.region}}.{
 
 [keystone]
 auth_url = "{{.Values.hermes.auth_url}}"
-username = "hermes"
+username = "{{.Values.hermes.username}}"
 password = "{{.Values.hermes.password}}"
 user_domain_name = "Default"
 project_domain_name = "Default"
