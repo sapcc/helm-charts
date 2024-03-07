@@ -70,8 +70,8 @@ admin:
   backend_roles:
   - "adminrole"
 
-kibanaserver:
-  hash: "{{ .Values.users.kibanaserver.hash }}"
+dashboard:
+  hash: "{{ .Values.users.dashboard.hash }}"
   reserved: true
   description: "Demo OpenSearch Dashboards user"
 
@@ -79,7 +79,6 @@ kibanaro:
   hash: "{{ .Values.users.kibanaro.hash }}"
   reserved: false
   backend_roles:
-  - "kibanauser"
   - "readall"
 
 maillog:
