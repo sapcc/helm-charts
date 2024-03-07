@@ -104,7 +104,7 @@ fi
 found_current_db=false
 # Only directories are matched to not match accidential left behind files or /var/lib/postgresql/update_extensions.sql.
 # Also directories beginning with a dot like .cache or .local are ignored in case a login shell was ever used for the postgres user
-for data in $(find /var/lib/postgresql/ -mindepth 1 -maxdepth 1 -type dir -not -name ".*" | sort --version-sort); do
+for data in $(find /var/lib/postgresql/ -mindepth 1 -maxdepth 1 -type d -not -name ".*" | sort --version-sort); do
   # we found a newer postgres version than the user wants to start
   if [[ $found_current_db == true ]]; then
     echo "Found a newer postgres database than being run. This is not supported and not a valid way to rollback"
