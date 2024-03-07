@@ -1,3 +1,6 @@
+global:
+  registry: keppel.global.cloud.sap/ccloud
+
 owner-info:
   support-group: containers
   helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/global/concourse-main
@@ -52,9 +55,12 @@ concourse:
         mainTeam:
           localUser: "admin"
 
+      postgres:
+        database: concourse
+
   web:
     enabled: true
-    replicas: 3
+    replicas: 0
     service:
       annotations:
         prometheus.io/targets: "kubernetes"
@@ -88,48 +94,9 @@ concourse:
   worker:
     enabled: false
 
+  # disable bitnami chart coming with concourse
   postgresql:
-    enabled: true
-    image:
-      registry: keppel.global.cloud.sap
-      repository: ccloud-dockerhub-mirror/bitnami/postgresql
-      tag: 11.22.0-debian-11-r4
-    postgresqlUsername: concourse
-    postgresqlDatabase: concourse
-    persistence:
-      enabled: true
-      size: 100Gi
-    resources:
-      requests:
-        memory: 10Gi
-        cpu: "4"
-    pgHbaConfiguration: |-
-      # TYPE  DATABASE        USER            ADDRESS                 METHOD
-      local   all             all                                     trust
-      host    all             all             127.0.0.1/32            trust
-      host    all             all             ::1/128                 trust
-      host    all             all             0.0.0.0/0               password
-    primary:
-      nodeSelector:
-        ccloud.sap.com/nodepool: "ci-system"
-      tolerations:
-        - key: "ci"
-          operator: Equal
-          value: "system"
-          effect: "NoSchedule"
-    extendedConfConfigMap: postgresql-extended-config
-    #metrics:
-    #  enabled: true
-    #  image:
-    #    registry: keppel.eu-de-2.cloud.sap
-    #    repository: ccloud-dockerhub-mirror/bitnami/postgres-exporter
-    #    tag: 0.12.0-debian-11-r71
-    #  service:
-    #    ports:
-    #      metrics: 9187
-    #    annotations:
-    #      prometheus.io/scrape: "true"
-    #      prometheus.io/port: "9187"
+    enabled: false
 
   secrets:
     create: true
@@ -146,6 +113,7 @@ alerts:
   prometheus: kubernetes
 
 pgbackup:
+  isPostgresNG: true
   global:
     registry: keppel.global.cloud.sap/ccloud
   database:
@@ -207,3 +175,29 @@ kubernetes-ingress:
       enabled: false
   defaultBackend:
     enabled: false
+
+postgresql-ng:
+  imageTag: "20240305145638"
+  postgresVersion: "12"
+  postgresUser: concourse
+  postgresDatabase: concourse
+  tableOwner: concourse
+  createMetricsUser: false
+  users:
+    concourse: {}
+  config:
+    max_connections: "150"
+  persistence:
+    enabled: true
+    #existingClaim: claimName
+  resources:
+    requests:
+      memory: 10Gi
+      cpu: "4"
+  nodeSelector:
+    ccloud.sap.com/nodepool: "ci-system"
+  tolerations:
+    - key: "ci"
+      operator: Equal
+      value: "system"
+      effect: "NoSchedule"
