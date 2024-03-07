@@ -34,6 +34,7 @@ spec:
       annotations:
         chart-version: {{.Chart.Version}}
         checksum/etc-configmap.conf: {{ include (print $.Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
+        secrets-hash: {{ include (print $.Template.BasePath "/secrets.yaml") . | sha256sum }}
         {{- if .Values.proxysql.mode }}
         prometheus.io/scrape: "true"
         prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
@@ -145,6 +146,9 @@ spec:
           mountPath: /etc/glance/logging.ini
           subPath: logging.ini
           readOnly: true
+        - name: glance-etc-confd
+          mountPath: /etc/glance/glance.conf.d
+          readOnly: true
         - mountPath: /glance_store
           name: image-store
         {{- if .Values.watcher.enabled }}
@@ -237,6 +241,9 @@ spec:
           mountPath: /etc/glance/logging.ini
           subPath: logging.ini
           readOnly: true
+        - name: glance-etc-confd
+          mountPath: /etc/glance/glance.conf.d
+          readOnly: true
         {{- if .Values.watcher.enabled }}
         - name: glance-etc
           mountPath: /etc/glance/watcher.yaml
@@ -296,5 +303,8 @@ spec:
       - name: glance-etc
         configMap:
           name: glance-etc
+      - name: glance-etc-confd
+        secret:
+          secretName: {{ .Release.Name }}-secrets
       {{- include "utils.proxysql.volumes" . | indent 6 }}
       {{- include "utils.trust_bundle.volumes" . | indent 6 }}

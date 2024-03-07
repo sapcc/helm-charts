@@ -4,6 +4,4 @@ auth_version = 3
 project_domain_name = {{.Values.swift.projectDomainName}}
 user_domain_name = {{.Values.swift.userDomainName}}
 auth_address = {{.Values.global.keystone_api_endpoint_protocol_internal | default "http"}}://{{include "keystone_api_endpoint_host_internal" .}}:{{ .Values.global.keystone_api_port_internal | default 5000}}/v3
-key = {{ required ".Values.global.glance_service_password is missing" .Values.global.glance_service_password }}
-user = {{ .Values.swift.projectName }}:{{ .Values.global.glance_service_user | default "glance" | replace "$" "$$"}}
 {{- end }}
