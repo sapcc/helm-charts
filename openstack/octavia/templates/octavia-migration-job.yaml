@@ -60,6 +60,9 @@ spec:
               mountPath: /etc/octavia/octavia.conf
               subPath: octavia.conf
               readOnly: true
+            - name: octavia-etc-confd
+              mountPath: /etc/octavia/octavia.conf.d
+              readOnly: true
             - name: octavia-etc
               mountPath: /etc/octavia/logging.ini
               subPath: logging.ini
@@ -73,7 +76,10 @@ spec:
         - name: octavia-etc
           configMap:
             name: octavia-etc
-    {{- if $proxysql }}
+        - name: octavia-etc-confd
+          secret:
+            secretName: {{ .Release.Name }}-secrets
+    {{- if $proxysql}}
         {{- include "utils.proxysql.volumes" . | indent 8 }}
     {{- end }}
         {{- include "utils.trust_bundle.volumes" . | indent 8 }}

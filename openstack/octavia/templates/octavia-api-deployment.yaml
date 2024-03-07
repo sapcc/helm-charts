@@ -33,6 +33,7 @@ spec:
         {{- include "utils.topology.pod_label" . | indent 8 }}
       annotations:
         configmap-etc-hash: {{ include (print $.Template.BasePath "/octavia-etc-configmap.yaml") . | sha256sum }}
+        secrets-hash: {{ include (print $.Template.BasePath "/secrets.yaml") . | sha256sum }}
         {{- if or .Values.watcher.enabled .Values.proxysql.mode }}
         prometheus.io/scrape: "true"
         prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
@@ -93,6 +94,9 @@ spec:
               mountPath: /etc/octavia/octavia.conf
               subPath: octavia.conf
               readOnly: true
+            - name: octavia-etc-confd
+              mountPath: /etc/octavia/octavia.conf.d
+              readOnly: true
             - name: octavia-etc
               mountPath: /etc/octavia/policy.json
               subPath: policy.json
@@ -138,5 +142,8 @@ spec:
         - name: octavia-etc
           configMap:
             name: octavia-etc
+        - name: octavia-etc-confd
+          secret:
+            secretName: {{ .Release.Name }}-secrets
         {{- include "utils.proxysql.volumes" . | indent 8 }}
         {{- include "utils.trust_bundle.volumes" . | indent 8 }}
