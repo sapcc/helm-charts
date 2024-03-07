@@ -15,7 +15,7 @@ groups:
       severity: warning
       support_group: observability
       tier: os
-      playbook: docs/operation/elastic_kibana_issues/elk_logs/fluent-logs-are-missing
+      playbook: docs/operation/opensearch_issues/opensearch_logs/fluent-logs-are-missing
     annotations:
 {{ if eq .Values.global.clusterType  "scaleout" }}
       description: 'logs-fluent-bit-systemd on `scaleout` {{`{{ $labels.nodename }}`}} is not shipping logs to {{`{{ $labels.name }}`}}. Please check'
