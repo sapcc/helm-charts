@@ -37,10 +37,10 @@
       targetLabel: kubernetes_pod_name
 {{ include "prometheus.defaultRelabelConfig" .root | indent 4 }}
 {{- if .endpoint.customRelabelings }}
-  {{ .endpoint.customRelabelings | toYaml | indent 4 }}
+{{ .endpoint.customRelabelings | toYaml | indent 4 }}
 {{- end }}
 {{- if .endpoint.customMetricRelabelings }}
   metricRelabelings:
-    {{ .endpoint.customMetricRelabelings | toYaml | indent 4 }}
+{{ .endpoint.customMetricRelabelings | toYaml | indent 4 }}
 {{- end }}
 {{- end -}}
