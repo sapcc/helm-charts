@@ -19,55 +19,60 @@ spec:
     spec:
       nodeSelector:
         zone: farm
-      volumes:
-        - name: config
-          configMap:
-            name: hermes
+
       containers:
-        - name: api
-          image: {{required ".Values.hermes.image is missing" .Values.hermes.image}}:{{.Values.hermes.image_tag | replace "string:" ""}}
-          imagePullPolicy: {{required ".Values.hermes.image_pull_policy is missing" .Values.hermes.image_pull_policy}}
-          args:
-            - -f
-            - /etc/hermes/hermes.conf
-          env:
-            - name: HERMES_DEBUG
-              value: '{{.Values.hermes.debug}}'
-            - name: HERMES_INSECURE
-              value: '{{.Values.hermes.insecure}}' # SSL certificates are hard :(
-            - name: HERMES_ES_USERNAME
-              valueFrom:
-                secretKeyRef:
-                  name: hermes-es-api
-                  key: HERMES_ES_USERNAME
-            - name: HERMES_ES_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: hermes-es-api
-                  key: HERMES_ES_PASSWORD
-          volumeMounts:
-            - mountPath: /etc/hermes
-              name: config
-          resources:
-            requests:
-              memory: {{required ".Values.resources_requests_memory_api is missing" .Values.resources_requests_memory_api}}
-              cpu: {{required ".Values.resources_requests_memory_api is missing" .Values.resources_requests_cpu_api}}
-          # livenessProbe:
-          #   #exec: 
-          #   #  command:
-          #   #    - /bin/false
-          #   #  initialDelaySeconds: 21600
-          #   #  periodSeconds: 21600 # restart api every 6 hours
-          #   httpGet:
-          #     path: /v1/
-          #     port: 80
-          #   timeoutSeconds: 10
-          #   periodSeconds: 60
-          #   initialDelaySeconds: 60
-          #   readinessProbe:
-          #     httpGet:
-          #       path: /v1/
-          #       port: 80
-          #     timeoutSeconds: 5
-          #     periodSeconds: 5
+      - name: api
+        image: {{required ".Values.hermes.image is missing" .Values.hermes.image}}:{{.Values.hermes.image_tag | replace "string:" ""}}
+        imagePullPolicy: {{required ".Values.hermes.image_pull_policy is missing" .Values.hermes.image_pull_policy}}
+        env:
+        - name: HERMES_DEBUG
+          value: '{{.Values.hermes.debug}}'
+        - name: HERMES_INSECURE
+          value: '{{.Values.hermes.insecure}}' # SSL certificates are hard :(
+        - name: HERMES_ES_URL
+          value: "https://{{.Values.hermes_elasticsearch_host}}.{{.Values.global.region}}.{{.Values.global.tld}}:{{.Values.hermes_elasticsearch_port}}"
+        - name: HERMES_ES_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: hermes-es-api
+              key: HERMES_ES_USERNAME
+        - name: HERMES_ES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: hermes-es-api
+              key: HERMES_ES_PASSWORD
+        - name: HERMES_OS_AUTH_URL
+          value: "{{.Values.hermes.auth_url}}"
+        - name: HERMES_OS_USERNAME
+          value: "{{.Values.hermes.username}}"
+        - name: HERMES_OS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: hermes-api
+              key: HERMES_OS_PASSWORD
+        - name: HERMES_OS_AUTH_URL
+          value: "{{.Values.hermes.auth_url}}"
+        - name: HERMES_OS_CATALOG_URL
+          value: "{{.Values.hermes.catalog_url}}"
+        - name: HERMES_OS_USER_DOMAIN_NAME
+          value: "Default"
+        - name: HERMES_OS_PROJECT_NAME
+          value: "service"
+        - name: HERMES_OS_PROJECT_DOMAIN_NAME
+          value: "Default"
+        - name: HERMES_API_LISTEN_ADDRESS
+          value: "0.0.0.0:80"
+        - name: HERMES_POLICY_FILE_PATH
+          value: "/etc/hermes/policy.json"
+        volumeMounts:
+        - mountPath: /etc/hermes
+          name: config
+        resources:
+          requests:
+            memory: {{required ".Values.resources_requests_memory_api is missing" .Values.resources_requests_memory_api}}
+            cpu: {{required ".Values.resources_requests_memory_api is missing" .Values.resources_requests_cpu_api}}
+      volumes:
+      - name: config
+        configMap:
+          name: hermes
 ---
