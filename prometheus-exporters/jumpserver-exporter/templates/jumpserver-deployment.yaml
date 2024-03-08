@@ -15,6 +15,9 @@ spec:
         type: exporter
       annotations:
         prometheus.io/targets: {{ required ".Values.jumpserver.alerts.prometheus missing" .Values.jumpserver.alerts.prometheus | quote }}
+        {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+        linkerd.io/inject: enabled
+        {{- end }}
     spec:
       containers:
          - name: jumpserver-exporter

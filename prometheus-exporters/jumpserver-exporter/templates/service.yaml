@@ -6,6 +6,9 @@ metadata:
   annotations:
     prometheus.io/targets: {{ required ".Values.jumpserver.alerts.prometheus missing" .Values.jumpserver.alerts.prometheus | quote }}
     prometheus.io/scrape: "true"
+    {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+    linkerd.io/inject: enabled
+    {{- end }}
 spec:
   selector:
     app: jumpserver-exporter
