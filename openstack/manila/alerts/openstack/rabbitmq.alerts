@@ -1,8 +1,14 @@
 groups:
 - name: manila-rabbitmq.alerts
   rules:
+  # queues are named like 'manila-share.manila-share-netapp-stnpca2-md004@stnpca2-md004'
+  # which is '<SERVICE>.<HOST>'
+  # we are good if either factor in the multiplication is zero, the factors are: number of unacked messages and service status (0 means disabled, 1 means enabled)
+  # e.g. no unacked messages is good
+  # a lot of unacked messages, but service disabled (==0) is good
+  # bad: a lot of unacked messages (>10), and service enabled (==1)
   - alert: ManilaRabbitMQDetailsRPCUnackTotal
-    expr: sum(rabbitmq_detailed_queue_messages_unacked{pod=~"manila-rabbitmq.*"}) by (pod, queue) > 10
+    expr: sum(rabbitmq_detailed_queue_messages_unacked{pod=~"manila-rabbitmq.*"} * on(queue) group_left label_join(manila_service_status, "queue", ".", "service", "host")) by (pod, queue) > 10
     for: 1m
     labels:
       severity: critical
@@ -18,7 +24,7 @@ groups:
       summary: 'RPC messages are not being collected.'
 
   - alert: ManilaRabbitMQDetailsRPCReadyTotal
-    expr: sum(rabbitmq_detailed_queue_messages_ready{pod=~"manila-rabbitmq.*"}) by (pod, queue) > 10
+    expr: sum(rabbitmq_detailed_queue_messages_ready{pod=~"manila-rabbitmq.*"} * on(queue) group_left label_join(manila_service_status, "queue", ".", "service", "host")) by (pod, queue) > 10
     for: 1m
     labels:
       severity: critical
