@@ -8,7 +8,7 @@ password = {{ required ".Values.global.glance_service_password is missing" .Valu
 
 
 {{- if .Values.swift.enabled }}
-{{- if .values.swift.multi_tenant }}
+{{- if .Values.swift.multi_tenant }}
 [glance_store]
 swift_store_user = service:{{ .Values.global.glance_service_user | default "glance" | replace "$" "$$"}}
 swift_store_key = {{ required ".Values.global.glance_service_password is missing" .Values.global.glance_service_password }}
