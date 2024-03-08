@@ -49,6 +49,22 @@ spec:
         runAsUser: 999
         runAsGroup: 999
         fsGroup: 999
+      {{- if .Values.persistence.enabled }}
+      initContainers:
+      - name: volume-permissions
+        image: "{{include "dockerHubMirror" .}}/library/busybox"
+        imagePullPolicy: {{ default "IfNotPresent" .Values.imagePullPolicy | quote }}
+        command:
+        - /bin/sh
+        - -c
+        - |
+          [ $(stat -c %u /var/lib/rabbitmq) -eq 999 ] || chown -R 999:999 /var/lib/rabbitmq
+        securityContext:
+          runAsUser: 0
+        volumeMounts:
+          - mountPath: /var/lib/rabbitmq
+            name: rabbitmq-persistent-storage
+      {{- end }}
       containers:
       - name: rabbitmq
         image: "{{include "dockerHubMirror" .}}/{{ .Values.image }}:{{.Values.imageTag }}"
