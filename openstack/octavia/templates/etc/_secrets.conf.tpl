@@ -9,6 +9,9 @@ password = {{ .Values.global.octavia_service_password | replace "$" "" }}
 [database]
 connection = {{ include "db_url_mysql" . }}
 
+[f5_agent]
+bigip_urls = {{ if $loadbalancer.devices -}}{{- tuple $envAll $loadbalancer.devices | include "utils.bigip_urls" -}}{{- else -}}{{ $loadbalancer.bigip_urls | join ", " }}{{- end }}
+
 {{ if .Values.audit.enabled -}}
 [audit]
 enabled = True
