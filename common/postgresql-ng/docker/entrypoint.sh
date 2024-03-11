@@ -144,6 +144,8 @@ for data in $(find /var/lib/postgresql/ -mindepth 1 -maxdepth 1 -type d -not -na
     export PATH="$PGBIN:$PATH"
 
     # only allow backup container to connect
+    # local postgres is required for pg_ctl
+    # backup and postgres user with password user is used to create the backup
     echo -e "local  all  postgres  trust\nhost  all  backup  all  $postgres_auth_method\nhost  all  postgres  all  $postgres_auth_method\n" >"$data/pg_hba.conf"
     touch /tmp/in-init # fake that we are online to expose the service
 
@@ -170,7 +172,9 @@ for data in $(find /var/lib/postgresql/ -mindepth 1 -maxdepth 1 -type d -not -na
   fi
 
   # make sure the old pg_hba.conf contains valid entries for us
-  echo -e "local  all  postgres  trust\nhost  all  backup  all  $postgres_auth_method\nhost  all  postgres  all  $postgres_auth_method\n" >"$data/pg_hba.conf"
+  # upgrades from ~12 not only connect to the postgres db but also template1
+  # backup and postgres user with password user is used to create the backup
+  echo -e "local  all  all  trust\nhost  all  backup  all  $postgres_auth_method\nhost  all  postgres  all  $postgres_auth_method\n" >"$data/pg_hba.conf"
 
   # pg_upgrade wants to have write permission for cwd
   cd /var/lib/postgresql
