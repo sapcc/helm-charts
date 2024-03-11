@@ -301,7 +301,7 @@ groups:
       summary: manila has reported new issues to Sentry
 
   - alert: OpenstackManilaServiceDown
-    expr: manila_service_state - manila_service_status > 0
+    expr: manila_service_status - manila_service_state > 0
     for: 20m
     labels:
       severity: info
@@ -310,11 +310,11 @@ groups:
       service: manila
       context: service-status
     annotations:
-      description: '{{ $labels.host }}: host is enabled but is down for 20 minutes. Either the pod should be scaled up or the service be disabled!'
+      description: '{{ $labels.host }}: host has status enabled but is in state down for 20 minutes. Either the pod should be scaled up or the service be disabled!'
       summary: '{{ $labels.host }}: host is enabled but is down'
 
   - alert: OpenstackManilaServiceUpButDisabled
-    expr: manila_service_state - manila_service_status < 0
+    expr: manila_service_status - manila_service_state < 0
     for: 20m
     labels:
       severity: info
@@ -323,5 +323,5 @@ groups:
       service: manila
       context: service-status
     annotations:
-      description: '{{ $labels.host }}: host is disabled but is up for 20 minutes. Either the pod should be scaled down or the service be enabled!'
+      description: '{{ $labels.host }}: host has status disabled but is in state up for 20 minutes. Either the pod should be scaled down or the service be enabled!'
       summary: '{{ $labels.host }}: host is disabled but is up'
