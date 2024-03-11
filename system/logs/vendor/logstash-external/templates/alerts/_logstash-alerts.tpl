@@ -16,5 +16,5 @@ groups:
       tier: os
       playbook: docs/operation/opensearch_issues/opensearch_logs/logstash_logs_increasing
     annotations:
-      description: 'ELK logstash in {{`{{ $labels.region }}`}} {{`{{ $labels.kubernetes_pod_name }}`}} pod on {{`{{ $labels.nodename }}`}} 100 % more logs'
+      description: 'logstash in {{`{{ $labels.region }}`}} {{`{{ $labels.kubernetes_pod_name }}`}} pod on {{`{{ $labels.nodename }}`}} 100 % more logs'
       summary:  logstash external receiver events increasing
