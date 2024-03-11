@@ -175,7 +175,6 @@ for data in $(find /var/lib/postgresql/ -mindepth 1 -maxdepth 1 -type d -not -na
   # pg_upgrade wants to have write permission for cwd
   cd /var/lib/postgresql
   pg_upgrade --link --jobs="$(nproc)" \
-    --username postgres \
     --old-datadir "$data" --new-datadir "$PGDATA" \
     --old-bindir "$bindir" --new-bindir "$PGBIN"
 
