@@ -112,9 +112,15 @@ spec:
             - name: GIT_SSL_NO_VERIFY
               value: "true"
             - name: GITSYNC_USERNAME
-              value: {{.Values.plutono.gitsync.username}}
+              valueFrom:
+                secretKeyRef:
+                  name: plutono-secrets
+                  key: git_sync_user
             - name: GITSYNC_PASSWORD
-              value: {{.Values.plutono.gitsync.password}}
+              valueFrom:
+                secretKeyRef:
+                  name: plutono-secrets
+                  key: git_sync_password
           volumeMounts:
             - name: plutono-git
               mountPath: /git
