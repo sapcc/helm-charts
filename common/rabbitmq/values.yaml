@@ -123,48 +123,18 @@ customConfig:
   # if not set default value of 50MB will be used
   # disk_free_limit.absolute: 500MB
 
-prometheus-monitors-metrics:
+prometheus-monitors:
   serviceMonitor:
     enabled: true
   prometheus: "openstack"
-  matchExpressions:
-    - key: "app"
-      operator: "In"
-      values:
-        - "oslo-simulator-quorum-rabbitmq"
+  matchLabels:
+    app: rabbitmq
   podMetricsEndpoints:
     - interval: 60
       scrapeTimeout: 55
       port: metrics
       path: /metrics
       scheme: http
-prometheus-monitors-detailed:
-  serviceMonitor:
-    enabled: true
-  prometheus: "openstack"
-  matchExpressions:
-    - key: "app"
-      operator: "In"
-      values:
-        - "oslo-simulator-quorum-rabbitmq"
-  podMetricsEndpoints:
-    - interval: 60
-      scrapeTimeout: 55
-      port: metrics
-      path: /metrics/detailed
-      scheme: http
-prometheus-monitors-metrics-per-object:
-  serviceMonitor:
-    enabled: true
-  prometheus: "openstack"
-  matchExpressions:
-    - key: "app"
-      operator: "In"
-      values:
-        - "oslo-simulator-quorum-rabbitmq"
-  podMetricsEndpoints:
-    - interval: 60
-      scrapeTimeout: 55
-      port: metrics
-      path: /metrics/per-object
-      scheme: http
+  additionalEndpoints:
+    - metricsPath: /metrics/detailed
+    - metricsPath: /metrics/per-object
