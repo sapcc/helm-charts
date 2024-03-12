@@ -38,6 +38,10 @@ dhcp_domain = openstack.{{ required ".Values.global.region is missing" .Values.g
 
 {{ template "utils.snippets.debug.eventlet_backdoor_ini" "nova" }}
 
+{{- if .Values.nova_bigvm_enabled -}}
+bigvm_exporter_listen_port = {{ required ".Values.nova_bigvm_exporter_port" .Values.nova_bigvm_exporter_port }}
+{{- end }}
+
 [api]
 compute_link_prefix = https://{{include "nova_api_endpoint_host_public" .}}:{{.Values.global.novaApiPortPublic}}
 {{- if (.Values.imageVersion | hasPrefix "rocky" | not) }}
