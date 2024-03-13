@@ -21,6 +21,10 @@ spec:
         component: network-generic-ssh-exporter
       annotations:
         checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+        linkerd.io/inject: enabled
+        {{- end }}
+        kubectl.kubernetes.io/default-container: "network-generic-ssh-exporter"
     spec:
       nodeSelector:
         zone: farm
