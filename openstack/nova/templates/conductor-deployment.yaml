@@ -68,7 +68,7 @@ spec:
 {{- end }}
           livenessProbe:
             exec:
-              command: ["openstack-agent-liveness", "--component", "nova", "--config-file", "/etc/nova/nova.conf"]
+              command: ["openstack-agent-liveness", "--component", "nova", "--config-file", "/etc/nova/nova.conf", "--config-file", "/etc/nova/nova.conf.d/keystoneauth-secrets.conf"]
             initialDelaySeconds: 60
             periodSeconds: 60
             timeoutSeconds: 20
@@ -117,6 +117,8 @@ spec:
               items:
               - key: db.conf
                 path: nova.conf.d/db.conf
+              - key: keystoneauth-secrets.conf
+                path: nova.conf.d/keystoneauth-secrets.conf
 {{- if .Values.conductor.config_file.DEFAULT.statsd_enabled }}
       - name: statsd-etc
         projected:
