@@ -22,13 +22,11 @@ spec:
 
       containers:
       - name: api
-        image: {{required ".Values.hermes.image is missing" .Values.hermes.image}}:{{.Values.hermes.image_tag | replace "string:" ""}}
+        image: {{required ".Values.hermes.image is missing" .Values.hermes.image}}:{{.Values.hermes.image_tag}}
         imagePullPolicy: {{required ".Values.hermes.image_pull_policy is missing" .Values.hermes.image_pull_policy}}
         env:
         - name: HERMES_DEBUG
           value: '{{.Values.hermes.debug}}'
-        - name: HERMES_INSECURE
-          value: '{{.Values.hermes.insecure}}' # SSL certificates are hard :(
         - name: HERMES_ES_URL
           value: "https://{{.Values.hermes_elasticsearch_host}}.{{.Values.global.region}}.{{.Values.global.tld}}:{{.Values.hermes_elasticsearch_port}}"
         - name: HERMES_ES_USERNAME
@@ -50,16 +48,6 @@ spec:
             secretKeyRef:
               name: hermes-api
               key: HERMES_OS_PASSWORD
-        - name: HERMES_OS_AUTH_URL
-          value: "{{.Values.hermes.auth_url}}"
-        - name: HERMES_OS_CATALOG_URL
-          value: "{{.Values.hermes.catalog_url}}"
-        - name: HERMES_OS_USER_DOMAIN_NAME
-          value: "Default"
-        - name: HERMES_OS_PROJECT_NAME
-          value: "service"
-        - name: HERMES_OS_PROJECT_DOMAIN_NAME
-          value: "Default"
         - name: HERMES_API_LISTEN_ADDRESS
           value: "0.0.0.0:80"
         - name: HERMES_POLICY_FILE_PATH
