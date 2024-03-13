@@ -18,14 +18,13 @@ spec:
   template:
     metadata:
       annotations:
+        kubectl.kubernetes.io/default-container: "octobus-query-exporter"
+        checksum/configmap.yaml: {{ include  (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
         {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
         linkerd.io/inject: enabled
         {{- end }}
       labels:
         component: octobus-query-exporter
-      annotations:
-        kubectl.kubernetes.io/default-container: "octobus-query-exporter"
-        checksum/configmap.yaml: {{ include  (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
     spec:
       nodeSelector:
         ccloud.sap.com/nodepool: payload
