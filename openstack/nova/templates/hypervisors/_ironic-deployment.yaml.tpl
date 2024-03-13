@@ -113,6 +113,11 @@ spec:
               - key: console-cell1-{{ $type }}.conf
                 path: nova.conf.d/console-cell1-{{ $type }}.conf
               {{- end }}
+          - secret:
+              name: nova-etc
+              items:
+              - key: keystoneauth-secrets.conf
+                path: nova.conf.d/keystoneauth-secrets.conf
       - name: nova-patches
         projected:
           sources:
