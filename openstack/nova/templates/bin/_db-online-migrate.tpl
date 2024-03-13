@@ -17,4 +17,4 @@ if echo "${available_commands_text}" | grep -q -E '[{,]placement[},]'; then
   $nova_manage placement sync_aggregates
 fi
 
-{{ include "utils.proxysql.proxysql_signal_stop_script" . }}
+{{ include "utils.script.job_finished_hook" . }}

@@ -108,4 +108,4 @@ nova-manage --config-file /etc/nova/nova-cell2.conf db sync --local_cell
 
 # online data migration run by online-migration-job
 
-{{ include "utils.proxysql.proxysql_signal_stop_script" . }}
+{{ include "utils.script.job_finished_hook" . }}
