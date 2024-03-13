@@ -13,7 +13,7 @@ spec:
   strategy:
     type: RollingUpdate
     rollingUpdate:
-      maxUnavailable: 0
+      maxUnavailable: 1
       maxSurge: 1
   template:
     metadata:
@@ -60,17 +60,11 @@ spec:
             - --master-url
             - http://{{ include "netapp-harvest.fullname" . }}-{{ $appName }}-master.{{ .Release.Namespace }}.svc:8000
             - --listen-addr
-            - :8080
+            - :{{ .Values.harvest.ports.liveness }}
             - --template-file
             - /app/harvest.yaml.tpl
-            - --output-path
-            - /app/shared
-          livenessProbe:
-            httpGet:
-              path: /healthz
-              port: 8080
-            initialDelaySeconds: 120
-            periodSeconds: 10
+            - --output-file
+            - /app/shared/harvest.yaml
           env:
             - name: NETAPP_USERNAME
               valueFrom:
@@ -90,6 +84,9 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.name
+          ports:
+            - name: liveness-port
+              containerPort: {{ .Values.harvest.ports.liveness }}
           resources:
             {{- toYaml .Values.harvest.resources | nindent 12 }}
           volumeMounts:
@@ -98,6 +95,19 @@ spec:
               subPath: harvest.yaml.tpl
             - name: shared
               mountPath: /app/shared
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: liveness-port
+            failureThreshold: 3
+            periodSeconds: 60
+            timeoutSeconds: 10
+          startupProbe:
+            httpGet:
+              path: /healthz
+              port: liveness-port
+            failureThreshold: 30
+            periodSeconds: 10
       volumes:
         - name: harvest-config
           configMap:
