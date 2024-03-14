@@ -55,12 +55,6 @@ spec:
           command:
             - dumb-init
             - nova-conductor
-            - --config-file
-            - /etc/nova/nova.conf
-            - --config-file
-            - /etc/nova/nova-conductor.conf
-            - --config-file
-            - /etc/nova/nova-cell2.conf
           env:
             {{- if .Values.sentry.enabled }}
             - name: SENTRY_DSN
@@ -119,11 +113,13 @@ spec:
                 path: nova-conductor.conf
               - key:  logging.ini
                 path: logging.ini
-              - key:  nova-cell2.conf
-                path: nova-cell2.conf
           - secret:
               name: nova-etc
               items:
+              - key: api-db.conf
+                path: nova.conf.d/api-db.conf
+              - key: {{ .Values.cell2.name }}.conf
+                path: nova.conf.d/{{ .Values.cell2.name }}.conf
               - key: keystoneauth-secrets.conf
                 path: nova.conf.d/keystoneauth-secrets.conf
       {{- include "utils.proxysql.volumes" . | indent 6 }}

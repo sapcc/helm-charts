@@ -34,9 +34,10 @@ prepare_empty_host_for_spawning_interval = 600
 dhcp_domain = openstack.{{ required ".Values.global.region is missing" .Values.global.region }}.{{ required ".Values.global.tld is missing" .Values.global.tld }}
 {{- end }}
 
-{{ include "ini_sections.default_transport_url" . }}
-
 {{ template "utils.snippets.debug.eventlet_backdoor_ini" "nova" }}
+
+[database]
+{{- include "ini_sections.database_options_mysql" . }}
 
 [api]
 compute_link_prefix = https://{{include "nova_api_endpoint_host_public" .}}:{{.Values.global.novaApiPortPublic}}
