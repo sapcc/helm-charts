@@ -16,13 +16,13 @@ data:
     port=0
     log-dhcp
     {{- range $key, $pool := .Values.dnsmasq.dhcpPools }}
-    dhcp-range=set:{{ $key }},{{ $pool.ipStart }},{{ $pool.ipEnd }},static,{{ $pool.mask }},{{ $.Values.dnsmasq.leaseTime }}
+    dhcp-range=set:{{ $pool.ipPool }},{{ $pool.ipPool }},static,{{ $pool.mask }},{{ $.Values.dnsmasq.leaseTime }}
     {{- end }}
 
     # It can be used when setting DNS or GW variables.
     # Set default router
     {{- range $key, $pool := .Values.dnsmasq.dhcpPools }}
-    dhcp-option=set:{{ $key }},option:router,{{ $pool.router }}
+    dhcp-option=set:{{ $pool.ipPool }},option:router,{{ $pool.router }}
     {{- end }}
 
     # Set dns servers
@@ -31,7 +31,7 @@ data:
 
     # Static IPs
     {{- range $key, $host := .Values.hosts }}
-    dhcp-host={{ $host.bootMac }},{{ $key }},{{ $host.bootip }},set:{{ $host.bb }}
+    dhcp-host={{ $host.bootMac }},{{ $key }},{{ $host.bootip }},set:{{ $host.ipPool }}
     {{- end }}
 
     # IPv4 Configuration:
