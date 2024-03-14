@@ -32,4 +32,9 @@ spec:
               - name: cc3test-secrets
                 mountPath: /cc3test/secrets
                 readOnly: true
+            {{- if not (and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested) }}
+            env:
+              - name: LINKERD_AWAIT_DISABLED
+                value: "Linkerd was not enabled or not requested"
+            {{- end }}
           restartPolicy: Never
