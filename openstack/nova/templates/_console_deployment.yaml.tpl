@@ -60,16 +60,13 @@ spec:
                 path: nova.conf
               - key:  logging.ini
                 path: logging.ini
-          {{- if $is_cell2 }}
-              - key: nova-cell2.conf
-                path: nova.conf.d/cell2.conf
-          {{- else }}
           - secret:
               name: nova-etc
               items:
-              - key: db.conf
-                path: nova.conf.d/db.conf
-          {{- end }}
+              - key: api-db.conf
+                path: nova.conf.d/api-db.conf
+              - key: {{ $cell_name }}.conf
+                path: nova.conf.d/{{ $cell_name }}.conf
           - configMap:
               name: nova-console
               items:
