@@ -78,7 +78,6 @@ project_domain_name = {{.Values.global.keystone_service_domain | default "Defaul
 http_retries = {{.Values.cinder_http_retries}}
 
 [neutron]
-metadata_proxy_shared_secret = {{ .Values.global.nova_metadata_secret }}
 service_metadata_proxy = true
 auth_url = http://{{include "keystone_api_endpoint_host_internal" .}}:{{ .Values.global.keystone_api_port_internal | default "5000" }}/v3
 auth_type = v3password
