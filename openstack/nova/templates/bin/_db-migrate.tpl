@@ -39,6 +39,28 @@ update_cell() {
 }
 
 
+get_connection_from_file() {
+	file="${1}"
+	python3 <<-EOF
+		from configparser import ConfigParser
+		c = ConfigParser()
+		c.read("${file}")
+		print(c['database']['connection'])
+	EOF
+}
+
+
+get_transport_url_from_file() {
+	file="${1}"
+	python3 <<-EOF
+		from configparser import ConfigParser
+		c = ConfigParser()
+		c.read("${file}")
+		print(c['DEFAULT']['transport_url'])
+	EOF
+}
+
+
 found_cell0="false"
 found_cell1="false"
 found_cell2="false"
@@ -60,21 +82,21 @@ while read line; do
       found_cell0="true"
       update_cell "${cell_name}" "${cell_uuid}" \
             "${transport_url}" "none:/" \
-            "${database_connection}" "{{ include "cell0_db_path" . }}"
+            "${database_connection}" "$(get_connection_from_file /etc/nova/nova-cell0.conf)"
       ;;
     cell1)
       found_cell1="true"
       update_cell "${cell_name}" "${cell_uuid}" \
-            "${transport_url}" "{{ tuple . .Values.rabbitmq | include "rabbitmq._transport_url" }}" \
-            "${database_connection}" "{{ tuple . .Values.dbName .Values.dbUser (default .Values.dbPassword .Values.global.dbPassword) | include "db_url_mysql" }}"
+            "${transport_url}" "$(get_transport_url_from_file /etc/nova/nova-cell1.conf)" \
+            "${database_connection}" "$(get_connection_from_file /etc/nova/nova-cell1.conf)"
       ;;
 {{ if .Values.cell2.enabled }}
     {{.Values.cell2.name}})
       found_cell2="true"
       echo "Found existing cell2..."
       update_cell "${cell_name}" "${cell_uuid}" \
-            "${transport_url}" "{{ include "cell2_transport_url" . }}" \
-            "${database_connection}" "{{ include "cell2_db_path" . }}"
+            "${transport_url}" "$(get_transport_url_from_file /etc/nova/nova-{{ .Values.cell2.name }}.conf)" \
+            "${database_connection}" "$(get_connection_from_file /etc/nova/nova-{{ .Values.cell2.name }}.conf)"
       ;;
 {{- end }}
   esac
@@ -83,14 +105,14 @@ done < <($nova_manage_api cell_v2 list_cells --verbose | grep ':/')
 if [ "${found_cell0}" = "false" ]; then
   echo "Creating cell0..."
   $nova_manage_api cell_v2 map_cell0 \
-      --database_connection "{{ include "cell0_db_path" . }}"
+      --database_connection "$(get_connection_from_file /etc/nova/nova-cell0.conf)"
 fi
 if [ "${found_cell1}" = "false" ]; then
   echo "Creating cell1..."
   $nova_manage_api cell_v2 create_cell --verbose \
       --name "cell1" \
-      --transport-url "{{ tuple . .Values.rabbitmq | include "rabbitmq._transport_url" }}" \
-      --database_connection "{{ tuple . .Values.dbName .Values.dbUser (default .Values.dbPassword .Values.global.dbPassword) | include "db_url_mysql" }}"
+      --transport-url "$(get_transport_url_from_file /etc/nova/nova-cell1.conf)" \
+      --database_connection "$(get_connection_from_file /etc/nova/nova-cell1.conf)"
   $nova_manage_api cell_v2 discover_hosts
 fi
 
@@ -99,8 +121,8 @@ if [ "$found_cell2" = "false" ]; then
   echo "Creating cell2..."
   $nova_manage_api cell_v2 create_cell --verbose \
       --name "{{.Values.cell2.name}}" \
-      --transport-url "{{ include "cell2_transport_url" . }}" \
-      --database_connection "{{ include "cell2_db_path" . }}"
+      --transport-url "$(get_transport_url_from_file /etc/nova/nova-{{ .Values.cell2.name }}.conf)" \
+      --database_connection "$(get_connection_from_file /etc/nova/nova-{{ .Values.cell2.name }}.conf)"
 fi
 {{- end }}
 
