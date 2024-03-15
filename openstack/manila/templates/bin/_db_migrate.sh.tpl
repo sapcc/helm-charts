@@ -7,4 +7,4 @@ set -e
 manila-status upgrade check
 manila-manage db sync
 manila-manage service cleanup
-{{ include "utils.proxysql.proxysql_signal_stop_script" . }}
+{{- include "utils.script.job_finished_hook" . }}
