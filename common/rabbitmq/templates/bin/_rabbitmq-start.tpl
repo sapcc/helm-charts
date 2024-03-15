@@ -58,9 +58,7 @@ upsert_user guest {{ .Values.users.default.password | include "rabbitmq.shell_qu
 
 {{- if .Values.addDevUser }}
 # if set in values file add temporary dev user for development purposes
-rabbitmqctl add_user dev dev
-rabbitmqctl set_permissions -p / dev ".*" ".*" ".*"
-rabbitmqctl set_user_tags dev management
+upsert_user dev dev monitoring
 {{- end}}
 
 wait $(jobs -rp) || true
