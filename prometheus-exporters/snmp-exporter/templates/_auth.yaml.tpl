@@ -68,7 +68,14 @@ auths:
     priv_password: {{ .Values.snmp_exporter.coreasr9k.priv_password }}
 {{- end }}
 {{- if .Values.snmp_exporter.n3k.enabled }}
-  n3k_v2:
+  n3k_v3:
+    version: {{ .Values.snmp_exporter.n3k.version }}
+    security_level: {{ .Values.snmp_exporter.n3k.security_level }}
+    username: {{ .Values.snmp_exporter.n3k.username }}
+    password: {{ .Values.snmp_exporter.n3k.password }}
+    auth_protocol: {{ .Values.snmp_exporter.n3k.auth_protocol }}
+    priv_protocol: {{ .Values.snmp_exporter.n3k.priv_protocol }}
+    priv_password: {{ .Values.snmp_exporter.n3k.priv_password }}
     version: {{ .Values.snmp_exporter.n3k.version }}
     community: {{ .Values.snmp_exporter.n3k.community }}
 {{- end }}
