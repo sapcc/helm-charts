@@ -4,7 +4,6 @@ set -euo pipefail
 {{- if and .Values.metrics.enabled (not .Values.metrics.sidecar.enabled) .Values.metrics.port }}
 echo "prometheus.tcp.port = {{ .Values.metrics.port }}" >> /etc/rabbitmq/conf.d/10-defaults.conf
 {{- end}}
-
 LOCKFILE=/var/lib/rabbitmq/rabbitmq-server.lock
 echo "Starting RabbitMQ with lock ${LOCKFILE}"
 exec 9>${LOCKFILE}
@@ -30,6 +29,7 @@ function upsert_user {
         fi
     fi
 }
+
 rabbitmq-server &
 PID=$!
 function cleanup() {
@@ -63,7 +63,5 @@ rabbitmqctl set_permissions -p / dev ".*" ".*" ".*"
 rabbitmqctl set_user_tags dev management
 {{- end}}
 
-
 wait $(jobs -rp) || true
 sleep inf
-
