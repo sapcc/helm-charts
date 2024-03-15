@@ -6,7 +6,7 @@ This file is used to list changes made in each version of the common chart rabbi
 0.6.7
 -----
 dusan.dordevic@sap.com
-- add switch in values.yaml that allows creating dev user that should be used for development only
+- add switch in values.yaml that allows creating user: dev / pass: dev that should be used for development only
 
 0.6.6
 -----
