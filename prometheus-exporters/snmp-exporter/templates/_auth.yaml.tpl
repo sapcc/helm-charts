@@ -76,8 +76,6 @@ auths:
     auth_protocol: {{ .Values.snmp_exporter.n3k.auth_protocol }}
     priv_protocol: {{ .Values.snmp_exporter.n3k.priv_protocol }}
     priv_password: {{ .Values.snmp_exporter.n3k.priv_password }}
-    version: {{ .Values.snmp_exporter.n3k.version }}
-    community: {{ .Values.snmp_exporter.n3k.community }}
 {{- end }}
 {{- if .Values.snmp_exporter.pxgeneric.enabled }}
   pxgeneric_v3:
