@@ -39,7 +39,7 @@ spec:
         kubectl.kubernetes.io/default-container: manila-share-netapp-{{$share.name}}
         configmap-etc-hash: {{ include (print .Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
         configmap-netapp-hash: {{ list . $share | include "share_netapp_configmap" | sha256sum }}
-        secrets-hash: {{ include (print $.Template.BasePath "/secrets.yaml") . | sha256sum }}
+        secrets-hash: {{ include (print .Template.BasePath "/secrets.yaml") . | sha256sum }}
         {{- include "utils.linkerd.pod_and_service_annotation" . | indent 8 }}
     spec:
 {{ tuple . $availability_zone | include "utils.kubernetes_pod_az_affinity" | indent 6 }}
@@ -68,11 +68,11 @@ spec:
             - --config-file
             - /etc/manila/manila.conf
             - --config-file
+            - /etc/manila/manila.conf.d/secrets.conf
+            - --config-file
             - /etc/manila/backend.conf
             - --config-file
             - /etc/manila/backend-secret.conf
-            - --config-file
-            - /etc/manila/manila.conf.d/secrets.conf
           env:
             {{- if .Values.sentry.enabled }}
             - name: SENTRY_DSN_SSL
