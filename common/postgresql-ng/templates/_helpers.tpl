@@ -6,8 +6,17 @@ The limit is 63 chars as per RFC 1035, but we truncate to 48 chars to leave
 some space for the name suffixes on replicasets and pods.
 */}}
 {{- define "postgres.fullname" -}}
-  {{- printf "%s-postgresql" .Release.Name | trunc 48 | replace "_" "-" -}}
-{{- end -}}
+  {{- if .Values.fullnameOverride }}
+    {{- .Values.fullnameOverride | trunc 48 | trimSuffix "-" }}
+  {{- else }}
+    {{- $name := default "postgresql" .Values.nameOverride }}
+    {{- if contains $name .Release.Name }}
+      {{- .Release.Name | trunc 48 | trimSuffix "-" }}
+    {{- else }}
+      {{- printf "%s-%s" .Release.Name $name | trunc 48 | trimSuffix "-" }}
+    {{- end }}
+  {{- end }}
+{{- end }}
 
 {{- define "preferredRegistry" -}}
   {{- if .Values.useAlternateRegion -}}
