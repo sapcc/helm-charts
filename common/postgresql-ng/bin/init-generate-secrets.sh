@@ -12,7 +12,7 @@ for USER in ${USERS:-}; do
 
   # if we already have a secret, we can stop here
   if [[ "$(kubectl get secrets "$SECRET" --ignore-not-found)" != "" ]]; then
-    exit 0
+    continue
   fi
 
   # create new secret with randomly generated password
