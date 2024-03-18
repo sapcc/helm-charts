@@ -17,8 +17,6 @@ storage_availability_zone = {{ .Values.default_availability_zone | default .Valu
 # rootwrap_config = /etc/manila/rootwrap.conf
 api_paste_config = /etc/manila/api-paste.ini
 
-transport_url = {{ include "rabbitmq.transport_url" . }}
-
 osapi_share_listen = 0.0.0.0
 osapi_share_base_URL = https://{{include "manila_api_endpoint_host_public" .}}
 
@@ -77,8 +75,6 @@ auth_strategy = keystone
 url = {{.Values.global.neutron_api_endpoint_protocol_internal | default "http"}}://{{include "neutron_api_endpoint_host_internal" .}}:{{ .Values.global.neutron_api_port_internal | default 9696}}
 auth_url = {{.Values.global.keystone_api_endpoint_protocol_internal | default "http"}}://{{include "keystone_api_endpoint_host_internal" .}}:{{ .Values.global.keystone_api_port_internal | default 5000}}/v3
 auth_type = v3password
-username = {{ .Values.global.manila_network_username | default "manila-neutron" | replace "$" "$$"}}
-password = {{ .Values.global.manila_network_password | default "" | replace "$" "$$"}}
 user_domain_name = {{.Values.global.keystone_service_domain | default "Default"}}
 region_name = {{.Values.global.region}}
 project_name = {{.Values.global.keystone_service_project |  default "service"}}
@@ -97,16 +93,12 @@ lock_path = /var/lib/manila/tmp
 
 {{ include "ini_sections.coordination" . }}
 
-{{- include "ini_sections.database" . }}
-
 [keystone_authtoken]
 auth_type = v3password
 auth_version = v3
 auth_interface = internal
 www_authenticate_uri = https://{{include "keystone_api_endpoint_host_public" .}}/v3
 auth_url = {{.Values.global.keystone_api_endpoint_protocol_internal | default "http"}}://{{include "keystone_api_endpoint_host_internal" .}}:{{ .Values.global.keystone_api_port_internal | default 5000}}/v3
-username = {{ .Values.global.manila_service_username | default "manila" | replace "$" "$$" }}
-password = {{ .Values.global.manila_service_password | default "" | replace "$" "$$"}}
 user_domain_name = {{.Values.global.keystone_service_domain | default "Default"}}
 region_name = {{.Values.global.region}}
 project_name = {{.Values.global.keystone_service_project |  default "service"}}
@@ -121,7 +113,6 @@ token_cache_time = 600
 include_service_catalog = true
 service_type = sharev2
 
-{{- include "ini_sections.audit_middleware_notifications" . }}
 {{- if .Values.memcached.enabled }}
 {{- include "ini_sections.cache" . }}
 {{- end }}

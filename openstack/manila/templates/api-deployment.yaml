@@ -39,6 +39,7 @@ spec:
       annotations:
         configmap-etc-hash: {{ include (print $.Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
         configmap-bin-hash: {{ include (print $.Template.BasePath "/bin-configmap.yaml") . | sha256sum }}
+        secrets-hash: {{ include (print $.Template.BasePath "/secrets.yaml") . | sha256sum }}
         kubectl.kubernetes.io/default-container: manila-api
         {{- include "utils.linkerd.pod_and_service_annotation" . | indent 8 }}
     spec:
@@ -78,7 +79,7 @@ spec:
           env:
           {{- if .Values.api_backdoor }}
             - name: COMMAND
-              value: "manila-api --config-file /etc/manila/manila.conf"
+              value: "manila-api --config-file /etc/manila/manila.conf --config-file /etc/manila/manila.conf.d/secrets.conf"
           {{- else }}
             - name: OS_OSLO_MESSAGING_RABBIT__HEARTBEAT_IN_PTHREAD
               value: "true"
@@ -132,6 +133,8 @@ spec:
               mountPath: /etc/manila/manila.conf
               subPath: manila.conf
               readOnly: true
+            - name: manila-etc-confd
+              mountPath: /etc/manila/manila.conf.d
             {{- if not .Values.api_backdoor }}
             - name: wsgi-manila
               mountPath: /var/www/cgi-bin/manila
@@ -215,6 +218,9 @@ spec:
         - name: manila-etc
           configMap:
             name: {{ .Release.Name }}-etc
+        - name: manila-etc-confd
+          secret:
+            secretName: {{ .Release.Name }}-secrets
         - name: manila-bin
           configMap:
             name: {{ .Release.Name }}-bin

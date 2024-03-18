@@ -9,11 +9,11 @@ spec:
   replicas: 1
   selector:
     matchLabels:
-      name: "{{ include "netapp-harvest.fullname" . }}-{{ $appName }}-worker"
+      name: {{ include "netapp-harvest.fullname" . }}-{{ $appName }}-worker
   strategy:
     type: RollingUpdate
     rollingUpdate:
-      maxUnavailable: 0
+      maxUnavailable: 1
       maxSurge: 1
   template:
     metadata:
@@ -22,7 +22,8 @@ spec:
         prometheus.io/scrape: "true"
         prometheus.io/targets: storage
       labels:
-        name: "{{ include "netapp-harvest.fullname" . }}-{{ $appName }}-worker"
+        app: {{ include "netapp-harvest.fullname" . }}-{{ $appName }}
+        name: {{ include "netapp-harvest.fullname" . }}-{{ $appName }}-worker
     spec:
       containers:
         - name: poller
@@ -31,7 +32,7 @@ spec:
           command: ["sh", "start-poller.sh"]
           ports:
             - name: metrics
-              containerPort: 13000
+              containerPort: {{ .Values.harvest.ports.metrics }}
           resources:
             {{- toYaml .Values.harvest.resources | nindent 12 }}
           volumeMounts:
@@ -58,19 +59,13 @@ spec:
           command: ["/app/netappsd", "worker"]
           args:
             - --master-url
-            - http://{{ include "netapp-harvest.fullname" . }}-{{ $appName }}-master.{{ .Release.Namespace }}.svc:8000
+            - http://{{ include "netapp-harvest.fullname" . }}-{{ $appName }}-master.{{ .Release.Namespace }}.svc:{{ .Values.netappsd.ports.metrics }}
             - --listen-addr
-            - :8080
+            - :{{ .Values.harvest.ports.liveness }}
             - --template-file
             - /app/harvest.yaml.tpl
-            - --output-path
-            - /app/shared
-          livenessProbe:
-            httpGet:
-              path: /healthz
-              port: 8080
-            initialDelaySeconds: 120
-            periodSeconds: 10
+            - --output-file
+            - /app/shared/harvest.yaml
           env:
             - name: NETAPP_USERNAME
               valueFrom:
@@ -90,14 +85,28 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.name
-          resources:
-            {{- toYaml .Values.harvest.resources | nindent 12 }}
+          ports:
+            - name: liveness
+              containerPort: {{ .Values.harvest.ports.liveness }}
           volumeMounts:
             - name: harvest-config
               mountPath: /app/harvest.yaml.tpl
               subPath: harvest.yaml.tpl
             - name: shared
               mountPath: /app/shared
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: liveness
+            failureThreshold: 3
+            periodSeconds: 60
+            timeoutSeconds: 10
+          startupProbe:
+            httpGet:
+              path: /healthz
+              port: liveness
+            failureThreshold: 30
+            periodSeconds: 10
       volumes:
         - name: harvest-config
           configMap:

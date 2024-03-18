@@ -5,10 +5,14 @@ owner-info:
     - "Olaf Heydorn"
   helm-chart-url: "https://github.com/sapcc/helm-charts/tree/master/system/logs"
 
+linkerd-support:
+  annotate_namespace: true
+
 global:
   region: DEFINED-IN-SECRETS
   tld: DEFINED-IN-SECRETS
   prometheus: infra-frontend
+  linkerd_requested: true
 
 fluent:
   enabled: false
@@ -57,7 +61,8 @@ fluent-bit:
   enabled: false
   podAnnotations:
     # manual versioning, raise if configmap changes
-    versioning: "12"
+    versioning: "13"
+    kubectl.kubernetes.io/default-container: "fluent-bit"
   nameOverride: "fluent-bit-systemd"
   existingConfigMap: "fluent-bit-config"
   tolerations:
@@ -143,9 +148,13 @@ logstash_external:
 
 k8s_event_logger:
   enabled: false
-  fullnameOverride: elk-k8s-event-exporter
+  fullnameOverride: logs-k8s-event-exporter
+  image:
+    tag: "20240313142953"
   env:
     KUBERNETES_API_URL: https://${KUBERNETES_SERVICE_HOST}:${KUBERNETES_SERVICE_PORT_HTTPS}
+  podAnnotations:
+    kubectl.kubernetes.io/default-container: "app"
   resources:
     requests:
     limits:

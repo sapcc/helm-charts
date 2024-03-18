@@ -17,6 +17,10 @@ spec:
         group: {{ $group.name | quote }}
       annotations:
         checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") $ | sha256sum }}
+        kubectl.kubernetes.io/default-container: "apic-exporter"
+        {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+        linkerd.io/inject: enabled
+        {{- end }}
     spec:
       volumes:
         - name: apic-exporter-config

@@ -29,7 +29,10 @@ spec:
         checksum/configmap.yaml: {{ include  (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
         prometheus.io/scrape: "true"
         prometheus.io/targets: infra-collector
-        prometheus.io/port: "9116"
+        {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+        linkerd.io/inject: enabled
+        {{- end }}
+        kubectl.kubernetes.io/default-container: "snmp-exporter"
     spec:
       nodeSelector:
         zone: farm

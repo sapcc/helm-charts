@@ -21,16 +21,12 @@ workers = {{ .Values.workers }}
 
 wsgi_default_pool_size = {{ .Values.wsgi_default_pool_size | default 100 }}
 
-{{- include "ini_sections.database" . }}
-
 [keystone_authtoken]
 auth_plugin = v3password
 auth_version = v3
 auth_interface = internal
 www_authenticate_uri = https://{{include "keystone_api_endpoint_host_public" .}}/v3
 auth_url = {{.Values.global.keystone_api_endpoint_protocol_internal | default "http"}}://{{include "keystone_api_endpoint_host_internal" .}}:{{ .Values.global.keystone_api_port_internal | default 5000}}/v3
-username = {{ .Values.global.glance_service_user | default "glance" | replace "$" "$$"}}
-password = {{ required ".Values.global.glance_service_password is missing" .Values.global.glance_service_password }}
 user_domain_name = {{.Values.global.keystone_service_domain | default "Default"}}
 region_name = {{.Values.global.region}}
 project_name = {{.Values.global.keystone_service_project |  default "service"}}
@@ -72,8 +68,6 @@ swift_store_multi_tenant = True
 # swift_store_large_object_size = 5120
 # swift_store_large_object_chunk_size = 200
 # the following are deprecated but needed here https://github.com/openstack/glance_store/blob/stable/queens/glance_store/_drivers/swift/utils.py#L128-L145
-swift_store_user = service:{{ .Values.global.glance_service_user | default "glance" | replace "$" "$$"}}
-swift_store_key = {{ required ".Values.global.glance_service_password is missing" .Values.global.glance_service_password }}
 swift_store_auth_version = 3
 swift_store_auth_address = {{.Values.global.keystone_api_endpoint_protocol_internal | default "http"}}://{{include "keystone_api_endpoint_host_internal" .}}:{{ .Values.global.keystone_api_port_internal | default 5000}}/v3
 {{- else }}
@@ -98,8 +92,6 @@ enforce_scope=False
 
 [barbican]
 auth_endpoint = {{.Values.global.keystone_api_endpoint_protocol_internal | default "http"}}://{{include "keystone_api_endpoint_host_internal" .}}:{{ .Values.global.keystone_api_port_internal | default 5000}}/v3
-
-{{- include "ini_sections.audit_middleware_notifications" . }}
 
 {{- if .Values.osprofiler.enabled }}
 {{- include "osprofiler" . }}
