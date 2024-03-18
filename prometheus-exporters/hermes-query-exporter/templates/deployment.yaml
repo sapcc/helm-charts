@@ -22,6 +22,10 @@ spec:
         component: hermes-query-exporter
       annotations:
         checksum/configmap.yaml: {{ include  (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+        linkerd.io/inject: enabled
+        {{- end }}
+        kubectl.kubernetes.io/default-container: "hermes-query-exporter"
     spec:
       restartPolicy: Always
       securityContext:
