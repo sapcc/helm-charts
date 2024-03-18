@@ -64,6 +64,9 @@ spec:
               mountPath: /etc/barbican/logging.ini
               subPath: logging.ini
               readOnly: true
+            - name: barbican-etc-confd
+              mountPath: /etc/barbican/barbican.conf.d
+              readOnly: true
             {{- include "utils.trust_bundle.volume_mount" . | indent 12 }}
       volumes:
         - name: etcbarbican
@@ -71,4 +74,10 @@ spec:
         - name: barbican-etc
           configMap:
             name: barbican-etc
+        - name: barbican-etc-confd
+          secret:
+            secretName: {{ .Release.Name }}-secrets
+            items:
+            - key: secrets.conf
+              path: secrets.conf
         {{- include "utils.trust_bundle.volumes" . | indent 8 }}
