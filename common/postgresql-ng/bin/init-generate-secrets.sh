@@ -12,7 +12,7 @@ for USER in ${USERS:-}; do
 
   # if we already have a secret, we can stop here
   if [[ "$(kubectl get secrets "$SECRET" --ignore-not-found)" != "" ]]; then
-    exit 0
+    continue
   fi
 
   # create new secret with randomly generated password
@@ -26,8 +26,8 @@ for USER in ${USERS:-}; do
         - apiVersion: v1
           blockOwnerDeletion: true
           kind: Deployment
-          name: $RELEASE-postgresql
-          uid: $(kubectl get deployment "$RELEASE-postgresql" -o jsonpath='{.metadata.uid}')
+          name: $DEPLOYMENT_NAME
+          uid: $(kubectl get deployment "$DEPLOYMENT_NAME" -o jsonpath='{.metadata.uid}')
     data:
       postgres-password: $(LC_ALL=C tr -dc '[:graph:]' </dev/urandom | head -c 30 | base64 -w0 | base64 -w0)
   " > secret.yaml

@@ -10,7 +10,7 @@ export BINDINGS_EXIT_CODE=$?
 export QUEUES_EXIT_CODE=$?
 {{- if .Values.pod.health.use_agent}}
 # service is up via database periodic report
-openstack-agent-liveness --config-dir /etc/manila
+openstack-agent-liveness --component manila --config-dir /etc/manila --config-dir /etc/manila/manila.conf.d/
 {{- end }}
 export AGENT_LIVE_CODE=$?
 exit $(($SERVICE_EXIT_CODE + $BINDINGS_EXIT_CODE + $QUEUES_EXIT_CODE + $AGENT_LIVE_CODE))
