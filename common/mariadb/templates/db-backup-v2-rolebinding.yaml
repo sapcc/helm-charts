@@ -3,6 +3,11 @@ kind: RoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: {{ .Values.name }}-db-backup-v2
+{{- if .Values.alerts.support_group }}
+  labels:
+    ccloud/support-group: {{  .Values.alerts.support_group }}
+    ccloud/service: {{ include "alerts.service" . }}
+{{- end }}
 subjects:
 - kind: ServiceAccount
   name: {{ .Values.name }}-db-backup-v2
