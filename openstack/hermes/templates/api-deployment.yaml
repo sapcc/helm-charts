@@ -16,6 +16,9 @@ spec:
         name: hermes-api
       annotations:
         checksum: {{ include "hermes/templates/api-configmap.yaml" $ | sha256sum }}
+        {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+        linkerd.io/inject: enabled
+        {{- end }}
     spec:
       nodeSelector:
         zone: farm
