@@ -1,37 +1,43 @@
 input {
   udp {
+    id => "input-udp-syslog"
     port  => {{.Values.input_syslog_port}}
     type => syslog
   }
   tcp {
+    id => "input-tcp-syslog"
     port  => {{.Values.input_syslog_port}}
     type => syslog
   }
   udp {
+    id => "input-udp-netflow"
     port  => {{.Values.input_netflow_port}}
     type => netflow
   }
   http {
+    id => "input-http"
     port  => {{.Values.input_alertmanager_port}}
     type => alert
     codec => plain
   }
   tcp {
+    id => "input-tcp"
     port  => {{.Values.input_deployments_port}}
     type => deployment
     codec => plain
   }
   http {
+    id => "input-http-secure"
     port  => {{.Values.input_http_port}}
-    user => '{{.Values.global.elk_elasticsearch_http_user}}'
-    password => '{{.Values.global.elk_elasticsearch_http_password}}'
+    user => "${HTTP_USER}"
+    password => "${HTTP_PASSWORD}"
     ssl => true
     ssl_certificate => '/tls-secret/tls.crt'
     ssl_key => '/usr/share/logstash/config/tls.key'
   }
   beats {
+    id => "input-beats"
     port => {{.Values.input_beats_port}}
-    id => "beats"
     type => "jumpserver"
   }
 }
