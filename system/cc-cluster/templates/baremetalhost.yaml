@@ -25,12 +25,10 @@ kind: BareMetalHost
 metadata:
   name: {{ $key }}
   namespace: metal-{{ $ckey }}
+{{- with $host.labels }}
   labels:
-    kubernetes.metal.cloud.sap/name: {{ $key }}
-    kubernetes.metal.cloud.sap/bb: {{ $host.bb }}
-    kubernetes.metal.cloud.sap/role: {{ default "metal" $host.role }}
-    topology.kubernetes.io/zone: {{ $host.az }}
-    topology.kubernetes.io/region: {{ $.Values.global.region }}
+{{- toYaml . | nindent 4 }}
+{{- end }}
 spec:
   online: {{ default "true" $host.online }}
   bmc:
