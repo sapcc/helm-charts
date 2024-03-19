@@ -24,8 +24,8 @@ spec:
           containers:
           - name: purge
             image: {{ required ".Values.global.registry variable missing" .Values.global.registry }}/{{ required ".Values.cc3test.image.name variable missing" .Values.cc3test.image.name }}:{{ required ".Values.cc3test.image.tag variable missing" .Values.cc3test.image.tag }}
-            command: ["/bin/sh"]
-            args: ["-c", "pytest --disable-pytest-warnings --no-header --color=yes --variables config/config.yaml --variables secrets/secrets.yaml -m 'file_shares and purge' -r ap tests/file_shares; exit 0"]
+            command: ["/linkerd-await"]
+            args: ["--shutdown", "--", "/bin/sh", "-c", "pytest --disable-pytest-warnings --no-header --color=yes --variables config/config.yaml --variables secrets/secrets.yaml -m 'file_shares and purge' -r ap tests/file_shares; exit 0"]
             volumeMounts:
               - name: cc3test-config
                 mountPath: /cc3test/config
