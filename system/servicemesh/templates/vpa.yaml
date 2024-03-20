@@ -1,0 +1,219 @@
+apiVersion: v1
+items:
+- apiVersion: autoscaling.k8s.io/v1
+  kind: VerticalPodAutoscaler
+  metadata:
+    name: linkerd-destination-deployment
+  spec:
+    resourcePolicy:
+      containerPolicies:
+      - containerName: '*'
+        controlledResources:
+        - cpu
+        - memory
+        controlledValues: RequestsOnly
+        maxAllowed:
+          cpu: 1800m
+          memory: "11833149358"
+        minAllowed:
+          cpu: 50m
+          memory: 48Mi
+    targetRef:
+      apiVersion: apps/v1
+      kind: Deployment
+      name: linkerd-destination
+    updatePolicy:
+      updateMode: Initial
+- apiVersion: autoscaling.k8s.io/v1
+  kind: VerticalPodAutoscaler
+  metadata:
+    name: linkerd-identity-deployment
+  spec:
+    resourcePolicy:
+      containerPolicies:
+      - containerName: '*'
+        controlledResources:
+        - cpu
+        - memory
+        controlledValues: RequestsOnly
+        maxAllowed:
+          cpu: 3600m
+          memory: "23666298716"
+        minAllowed:
+          cpu: 50m
+          memory: 48Mi
+    targetRef:
+      apiVersion: apps/v1
+      kind: Deployment
+      name: linkerd-identity
+    updatePolicy:
+      updateMode: Initial
+- apiVersion: autoscaling.k8s.io/v1
+  kind: VerticalPodAutoscaler
+  metadata:
+    name: linkerd-proxy-injector-deployment
+  spec:
+    resourcePolicy:
+      containerPolicies:
+      - containerName: '*'
+        controlledResources:
+        - cpu
+        - memory
+        controlledValues: RequestsOnly
+        maxAllowed:
+          cpu: 3600m
+          memory: "23666298716"
+        minAllowed:
+          cpu: 50m
+          memory: 48Mi
+    targetRef:
+      apiVersion: apps/v1
+      kind: Deployment
+      name: linkerd-proxy-injector
+    updatePolicy:
+      updateMode: Initial
+- apiVersion: autoscaling.k8s.io/v1
+  kind: VerticalPodAutoscaler
+  metadata:
+    name: metrics-api-deployment
+  spec:
+    resourcePolicy:
+      containerPolicies:
+      - containerName: '*'
+        controlledResources:
+        - cpu
+        - memory
+        controlledValues: RequestsOnly
+        maxAllowed:
+          cpu: 7200m
+          memory: "47332597432"
+        minAllowed:
+          cpu: 50m
+          memory: 48Mi
+    targetRef:
+      apiVersion: apps/v1
+      kind: Deployment
+      name: metrics-api
+    updatePolicy:
+      updateMode: Initial
+  status:
+    conditions:
+    - lastTransitionTime: "2023-12-14T08:35:20Z"
+      status: "True"
+      type: RecommendationProvided
+    recommendation:
+      containerRecommendations:
+      - containerName: linkerd-proxy
+        lowerBound:
+          cpu: 50m
+          memory: 48Mi
+        target:
+          cpu: 50m
+          memory: 48Mi
+        uncappedTarget:
+          cpu: 12m
+          memory: "25165824"
+        upperBound:
+          cpu: 50m
+          memory: 48Mi
+      - containerName: metrics-api
+        lowerBound:
+          cpu: 50m
+          memory: "892792545"
+        target:
+          cpu: 50m
+          memory: "1197997741"
+        uncappedTarget:
+          cpu: 21m
+          memory: "1197997741"
+        upperBound:
+          cpu: 50m
+          memory: "2300197359"
+- apiVersion: autoscaling.k8s.io/v1
+  kind: VerticalPodAutoscaler
+  metadata:
+    annotations:
+      ccloud/support-group-datasource: ""
+      cloud.sap/vpa-butler-version: ""
+      managedBy: vpa_butler
+    creationTimestamp: "2023-12-14T08:31:55Z"
+    generation: 12796
+    labels:
+      ccloud/support-group: containers
+    name: tap-deployment
+    namespace: linkerd
+    ownerReferences:
+    - apiVersion: apps/v1
+      kind: Deployment
+      name: tap
+      uid: 0628fa7c-c134-41df-959b-b1d813430d52
+    resourceVersion: "3953927038"
+    uid: 0ea23343-8fe3-4b54-9006-2128906d1064
+  spec:
+    resourcePolicy:
+      containerPolicies:
+      - containerName: '*'
+        controlledResources:
+        - cpu
+        - memory
+        controlledValues: RequestsOnly
+        maxAllowed:
+          cpu: 7200m
+          memory: "47332597432"
+        minAllowed:
+          cpu: 50m
+          memory: 48Mi
+    targetRef:
+      apiVersion: apps/v1
+      kind: Deployment
+      name: tap
+    updatePolicy:
+      updateMode: Initial
+- apiVersion: autoscaling.k8s.io/v1
+  kind: VerticalPodAutoscaler
+  metadata:
+    name: tap-injector-deployment
+  spec:
+    resourcePolicy:
+      containerPolicies:
+      - containerName: '*'
+        controlledResources:
+        - cpu
+        - memory
+        controlledValues: RequestsOnly
+        maxAllowed:
+          cpu: 7200m
+          memory: "47332597432"
+        minAllowed:
+          cpu: 50m
+          memory: 48Mi
+    targetRef:
+      apiVersion: apps/v1
+      kind: Deployment
+      name: tap-injector
+    updatePolicy:
+      updateMode: Initial
+- apiVersion: autoscaling.k8s.io/v1
+  kind: VerticalPodAutoscaler
+  metadata:
+    name: web-deployment
+  spec:
+    resourcePolicy:
+      containerPolicies:
+      - containerName: '*'
+        controlledResources:
+        - cpu
+        - memory
+        controlledValues: RequestsOnly
+        maxAllowed:
+          cpu: 7200m
+          memory: "47332597432"
+        minAllowed:
+          cpu: 50m
+          memory: 48Mi
+    targetRef:
+      apiVersion: apps/v1
+      kind: Deployment
+      name: web
+    updatePolicy:
+      updateMode: Initial
