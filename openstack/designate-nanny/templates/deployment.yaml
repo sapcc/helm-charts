@@ -22,7 +22,9 @@ spec:
        app.kubernetes.io/instance: {{ .Release.Name }}
        app.kubernetes.io/name: {{ .Release.Name }}
      annotations:
-       prometheus.io/port: "9102"
+       # port has to be given in the ports spec below with name metrics, otherwise
+       # the pod will be scraped multiple times as there are multiple containers with linkderd
+       # prometheus.io/port: "9102" 
        prometheus.io/scrape: "true"
        prometheus.io/targets: openstack
        {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
