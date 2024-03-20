@@ -90,7 +90,7 @@
     template_file /fluentd/etc/{{.Values.opensearch.indexname}}.json
     template_overwrite false
   {{- end }}
-    hosts {{.Values.global.opensearch.endpoint}}
+    hosts {{.Values.global.opensearch.host}}
     scheme https
     port {{.Values.global.opensearch.port}}
     user "#{ENV['USER']}"
