@@ -72,7 +72,7 @@
 - name:  TENSO_SERVICENOW_MAPPING_CONFIG_PATH
   value: /etc/tenso/servicenow-mapping.yaml
 - name:  TENSO_SERVICENOW_CLIENT_CERT
-  value: /etc/tenso/servicenow-client-cert.pem
+  value: /etc/tenso-keys/servicenow-client-cert.pem
 - name:  TENSO_SERVICENOW_PRIVATE_KEY
   value: /etc/tenso-keys/servicenow-private-key.pem
 - name:  TENSO_TERRAFORM_DEPLOYMENT_SWIFT_CONTAINER
