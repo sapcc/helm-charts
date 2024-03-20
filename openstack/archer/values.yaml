@@ -16,16 +16,30 @@ image:
 
 postgresql:
   enabled: false
-  image: keppel.eu-de-1.cloud.sap/ccloud/postgres
-  imageTag: 12.14
+  imageTag: "20240206103323"
   postgresDatabase: archer
   alerts:
     support_group: network-api
   extensions:
     pgcrypto: []
-  dbInit: archer-db-init
-  external:
-    enabled: false
+  tableOwner: archer
+  persistence:
+    accessMode: ReadWriteMany
+  users:
+    archer: {}
+
+pgbackup:
+  isPostgresNG: true
+  database:
+    name: archer
+  alerts:
+    support_group: containers
+
+pgmetrics:
+  isPostgresNG: true
+  db_name: archer
+  alerts:
+    support_group: network-api
 
 alerts:
   support_group: containers
