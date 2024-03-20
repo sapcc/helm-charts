@@ -13,6 +13,11 @@ spec:
       backoffLimit: 2
       activeDeadlineSeconds: 86400
       template:
+        {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+        metadata:
+          annotations:
+            linkerd.io/inject: enabled
+        {{- end }}
         spec:
           volumes:
             - name: cc3test-config
