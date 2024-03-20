@@ -40,7 +40,10 @@ spec:
            - name: USER
              value: {{ required ".Values.vrops.user variable is missing" $.Values.vrops.user }}
            - name: PASSWORD
-             value: {{ required ".Values.vrops.password variable is missing" $.Values.vrops.password | quote }}
+             valueFrom:
+               secretKeyRef:
+                 name: vrops-exporter
+                 key: vrops_password
            - name: PORT
              value: {{ required ".Values.vrops.inventory.port_number missing" $.Values.vrops.inventory.port_number | quote }}
            - name: DEBUG
