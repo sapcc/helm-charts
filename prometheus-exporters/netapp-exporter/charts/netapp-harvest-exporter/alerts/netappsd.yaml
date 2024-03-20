@@ -3,7 +3,7 @@ groups:
     rules:
       # info alert: more workers than discovered filers
       - alert: NetappHarvestMoreWorkersThanFilers
-        expr: netappsd_worker_replicas > on(app) count by (app) (netappsd_discovered_filer)
+        expr: netappsd_worker_replicas - on(app) count by (app) (netappsd_discovered_filer) > 0
         for: 15m
         labels:
           context: netapp-exporter
@@ -14,7 +14,7 @@ groups:
           tier: storage
         annotations:
           summary:  More Netapp Harvest workers than discovered filers
-          description: There are [[ $value ]] workers collecting metrics in [[ $labels.app ]].
+          description: There are [[ $value ]] more workers for [[ $labels.app ]].
 
       - alert: NetappHarvestExporterAuthenticationError
         expr: netapp_harvest_probe_failure{reason="authentication error"} > 0
