@@ -20,3 +20,15 @@ kubectl-v${VERSION} exec -c mariadb ${POD_NAME} -- cat /var/opt/initdb.sql
 # Run the SQL script
 echo "Running init.sql"
 kubectl-v${VERSION} exec -c mariadb ${POD_NAME} -- mariadb -uroot --batch -e "source /var/opt/initdb.sql"
+
+# shutdown linkerd containers
+{{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+if command -v curl > /dev/null; then
+  curl -X POST http://localhost:4191/shutdown || true
+else
+# this section opens a local file descriptor to the linkerd admin port and sends a POST request to /shutdown
+ ( exec 3<>/dev/tcp/localhost/4191 && 
+   printf "POST /shutdown HTTP/1.0\r\n\r\n" 1>&3  && 
+   cat <&3 || true )
+fi
+{{- end }}
