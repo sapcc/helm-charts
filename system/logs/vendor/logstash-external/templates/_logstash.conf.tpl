@@ -1,37 +1,43 @@
 input {
   udp {
-    port  => {{.Values.input_syslog_port}}
+    id => "input-udp-syslog"
+    port  => {{.Values.input.syslog_port}}
     type => syslog
   }
   tcp {
-    port  => {{.Values.input_syslog_port}}
+    id => "input-tcp-syslog"
+    port  => {{.Values.input.syslog_port}}
     type => syslog
   }
   udp {
-    port  => {{.Values.input_netflow_port}}
+    id => "input-udp-netflow"
+    port  => {{.Values.input.netflow_port}}
     type => netflow
   }
   http {
-    port  => {{.Values.input_alertmanager_port}}
+    id => "input-http"
+    port  => {{.Values.input.alertmanager_port}}
     type => alert
     codec => plain
   }
   tcp {
-    port  => {{.Values.input_deployments_port}}
+    id => "input-tcp"
+    port  => {{.Values.input.deployments_port}}
     type => deployment
     codec => plain
   }
   http {
-    port  => {{.Values.input_http_port}}
-    user => '{{.Values.global.elk_elasticsearch_http_user}}'
-    password => '{{.Values.global.elk_elasticsearch_http_password}}'
-    ssl => true
+    id => "input-http-secure"
+    port  => {{.Values.input.http_port}}
+    user => "${HTTP_USER}"
+    password => "${HTTP_PASSWORD}"
+    ssl_enabled => true
     ssl_certificate => '/tls-secret/tls.crt'
     ssl_key => '/usr/share/logstash/config/tls.key'
   }
   beats {
-    port => {{.Values.input_beats_port}}
-    id => "beats"
+    id => "input-beats"
+    port => {{.Values.input.beats_port}}
     type => "jumpserver"
   }
 }
@@ -152,7 +158,7 @@ output {
     opensearch {
       id => "opensearch-alerts"
       index => "alerts-other-%{+YYYY}"
-      hosts => ["https://{{.Values.opensearch.http.endpoint}}.{{.Values.global.region}}.{{.Values.global.tld}}:{{.Values.opensearch.http_port}}"]
+      hosts => ["https://{{.Values.global.opensearch.endpoint}}.{{.Values.global.region}}.{{.Values.global.tld}}:{{.Values.global.opensearch.port}}"]
       auth_type => {
         type => "basic"
         user => "${OPENSEARCH_USER}"
@@ -169,7 +175,7 @@ output {
     opensearch {
       id => "opensearch-deployments"
       index => "deployments-%{+YYYY}"
-      hosts => ["https://{{.Values.opensearch.http.endpoint}}.{{.Values.global.region}}.{{.Values.global.tld}}:{{.Values.opensearch.http_port}}"]
+      hosts => ["https://{{.Values.global.opensearch.endpoint}}.{{.Values.global.region}}.{{.Values.global.tld}}:{{.Values.global.opensearch.port}}"]
       auth_type => {
         type => "basic"
         user => "${OPENSEARCH_USER}"
@@ -186,7 +192,7 @@ output {
     opensearch {
       id => "opensearch-netflow"
       index => "netflow-%{+YYYY.MM.dd}"
-      hosts => ["https://{{.Values.opensearch.http.endpoint}}.{{.Values.global.region}}.{{.Values.global.tld}}:{{.Values.opensearch.http_port}}"]
+      hosts => ["https://{{.Values.global.opensearch.endpoint}}.{{.Values.global.region}}.{{.Values.global.tld}}:{{.Values.global.opensearch.port}}"]
       auth_type => {
         type => 'basic'
         user => "${OPENSEARCH_USER}"
@@ -200,7 +206,7 @@ output {
     opensearch {
       id => "opensearch-jump"
       index => "jump-%{+YYYY.MM.dd}"
-      hosts => ["https://{{.Values.opensearch.http.endpoint}}.{{.Values.global.region}}.{{.Values.global.tld}}:{{.Values.opensearch.http_port}}"]
+      hosts => ["https://{{.Values.global.opensearch.endpoint}}.{{.Values.global.region}}.{{.Values.global.tld}}:{{.Values.global.opensearch.port}}"]
       auth_type => {
         type => 'basic'
         user => "${OPENSEARCH_JUMP_USER}"
