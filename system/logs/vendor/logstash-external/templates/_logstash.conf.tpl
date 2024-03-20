@@ -31,7 +31,7 @@ input {
     port  => {{.Values.input_http_port}}
     user => "${HTTP_USER}"
     password => "${HTTP_PASSWORD}"
-    ssl => true
+    ssl_enabled => true
     ssl_certificate => '/tls-secret/tls.crt'
     ssl_key => '/usr/share/logstash/config/tls.key'
   }
