@@ -155,8 +155,8 @@
   host {{.Values.metis.host}}
   port {{.Values.metis.port}}
   database {{.Values.metis.db}}
-  username {{.Values.global.metis.user}}
-  password {{.Values.global.metis.password}}
+  username "#{ENV['METIS_USER']}"
+  password "#{ENV['METIS_PASSWORD']}"
   sql select ip_address, floating_ip_id, project, project_id, domain, domain_id, network, network_id, subnet, subnet_id, subnetpool, subnetpool_id, router, router_id, port_id, instance_id, owner from openstack_ips;
   sql_key ip_address
   record_key remote_addr
