@@ -12,6 +12,11 @@ spec:
     spec:
       backoffLimit: 2
       template:
+        {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+        metadata:
+          annotations:
+            linkerd.io/inject: enabled
+        {{- end }}
         spec:
           volumes:
             - name: cc3test-config
@@ -23,8 +28,8 @@ spec:
           containers:
           - name: base
             image: {{ required ".Values.global.registry variable missing" .Values.global.registry }}/{{ required ".Values.cc3test.image.name variable missing" .Values.cc3test.image.name }}:{{ required ".Values.cc3test.image.tag variable missing" .Values.cc3test.image.tag }}
-            command: ["/bin/sh"]
-            args: ["-c", "pytest --disable-pytest-warnings --no-header --color=yes --variables config/config.yaml --variables secrets/secrets.yaml -m 'block_storage and canary and base' -r ap tests/block_storage; exit 0"]
+            command: ["/linkerd-await"]
+            args: ["--shutdown", "--", "/bin/sh", "-c", "pytest --disable-pytest-warnings --no-header --color=yes --variables config/config.yaml --variables secrets/secrets.yaml -m 'block_storage and canary and base' -r ap tests/block_storage; exit 0"]
             volumeMounts:
               - name: cc3test-config
                 mountPath: /cc3test/config
@@ -32,4 +37,9 @@ spec:
               - name: cc3test-secrets
                 mountPath: /cc3test/secrets
                 readOnly: true
+            {{- if not (and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested) }}
+            env:
+              - name: LINKERD_AWAIT_DISABLED
+                value: "Linkerd was not enabled or not requested"
+            {{- end }}
           restartPolicy: Never
