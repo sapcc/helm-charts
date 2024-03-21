@@ -46,3 +46,48 @@ groups:
     annotations:
       summary: "Linkerd trust anchor certificate renewal pending."
       description: "Linkerd trust anchor certificate in secret {{`{{ $labels.secret }}`}} is expiring in less than 21 days. Please check certificate resource in linkerd namespace, this might be an issue with cert-manager."
+  - alert: LinkerdDestinationServicePodsDown
+    expr: count(sum by (pod) (up{job="linkerd/linkerd-controller", pod=~"linkerd-destination.*"} == 0)) > 1
+    for: 5m
+    labels:
+      tier: k8s
+      service: linkerd
+      support_group: {{ include "supportGroupFromLabelsOrDefault" "containers" }}
+      severity: warning
+      context: servicemesh
+      meta: "More than one pod of linkerd destination service is down for 5m. This could break meshing and lead to outages when destination service is not reachable. Investigate linkerd namespace why pods are not running."
+      playbook: 'docs/support/playbook/kubernetes/linkerd'
+      no_alert_on_absence: "true"
+    annotations:
+      summary: "More than one pod of linkerd destination service is down."
+      description: "More than one pod of linkerd destination service is down for 5m. This could break meshing and lead to outages when destination service is not reachable. Investigate linkerd namespace why pods are not running."
+  - alert: LinkerdIdentityServicePodsDown
+    expr: count(sum by (pod) (up{job="linkerd/linkerd-controller", pod=~"linkerd-identity.*"} == 0)) > 1
+    for: 5m
+    labels:
+      tier: k8s
+      service: linkerd
+      support_group: {{ include "supportGroupFromLabelsOrDefault" "containers" }}
+      severity: warning
+      context: servicemesh
+      meta: "More than one pod of linkerd identity service is down for 5m. This could break meshing and lead to outages when identity service is not reachable. Investigate linkerd namespace why pods are not running."
+      playbook: 'docs/support/playbook/kubernetes/linkerd'
+      no_alert_on_absence: "true"
+    annotations:
+      summary: "More than one pod of linkerd identity service is down."
+      description: "More than one pod of linkerd identity service is down for 5m. This could break meshing and lead to outages when identity service is not reachable. Investigate linkerd namespace why pods are not running."
+  - alert: LinkerdProxyInjectorPodsDown
+    expr: count(sum by (pod) (up{job="linkerd/linkerd-controller", pod=~"linkerd-proxy-injector.*"} == 0)) > 1
+    for: 5m
+    labels:
+      tier: k8s
+      service: linkerd
+      support_group: {{ include "supportGroupFromLabelsOrDefault" "containers" }}
+      severity: warning
+      context: servicemesh
+      meta: "More than one pod of linkerd proxy injector is down for 5m. This could break meshing when the proxy injector is not running. Investigate linkerd namespace why pods are not running."
+      playbook: 'docs/support/playbook/kubernetes/linkerd'
+      no_alert_on_absence: "true"
+    annotations:
+      summary: "More than one pod of linkerd proxy injector is down."
+      description: "More than one pod of linkerd proxy injector is down for 5m. This could break meshing when the proxy injector is not running. Investigate linkerd namespace why pods are not running."
