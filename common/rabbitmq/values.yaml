@@ -34,6 +34,10 @@ users:
     password: null
     tag: administrator
 
+# if set true, this will create user dev with password dev for debug and development purposes
+# DANGEROUS, please make sure it is set to false unless really needed
+addDevUser: false
+
 persistence:
   enabled: false
   accessMode: ReadWriteMany
@@ -84,6 +88,9 @@ metrics:
     requests:
       memory: 64Mi
       cpu: 100m
+  # control if you want to enable detailed and per object metrics
+  enableDetailedMetrics: false
+  enablePerObjectMetrics: false
 
 # Default Prometheus alerts and rules.
 alerts:
@@ -122,19 +129,3 @@ customConfig:
   # to set a custom limit please use the following format: 50MB or 1GB
   # if not set default value of 50MB will be used
   # disk_free_limit.absolute: 500MB
-
-prometheus-monitors:
-  serviceMonitor:
-    enabled: true
-  prometheus: "openstack"
-  matchLabels:
-    app: rabbitmq
-  podMetricsEndpoints:
-    - interval: 60
-      scrapeTimeout: 55
-      port: metrics
-      path: /metrics
-      scheme: http
-  additionalEndpoints:
-    - metricsPath: /metrics/detailed
-    - metricsPath: /metrics/per-object
