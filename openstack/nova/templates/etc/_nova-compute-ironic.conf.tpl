@@ -20,7 +20,7 @@ auth_url = {{.Values.global.keystone_api_endpoint_protocol_internal | default "h
 project_name = {{ default "service" .Values.global.keystone_service_project }}
 project_domain_name = {{ default "Default" .Values.global.keystone_service_domain }}
 username = {{ .Values.global.ironic_service_user | default "ironic" }}{{ .Values.global.user_suffix }}
-password = {{ required ".Values.global.ironic_service_password is missing" .Values.global.ironic_service_password }}
+password = {{ required ".Values.global.ironicServicePassword is missing" .Values.global.ironicServicePassword }}
 user_domain_name = {{ default "Default" .Values.global.keystone_service_domain }}
 # api endpoint is found via keystone catalog
 
