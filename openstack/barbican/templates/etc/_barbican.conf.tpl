@@ -69,7 +69,7 @@ enforce_scope=False
 {{- if .Values.hsm.multistore.enabled }}
 [secretstore]
 enable_multiple_secret_stores = True
-stores_lookup_suffix = software, pkcs11
+stores_lookup_suffix = software, pkcs11, kmip_crypto
 namespace = barbican.secretstore.plugin
 
 [secretstore:software]
@@ -79,5 +79,14 @@ crypto_plugin = simple_crypto
 [secretstore:pkcs11]
 secret_store_plugin = store_crypto
 crypto_plugin = p11_crypto
+
+[kmip_plugin]
+username = '{{ .Values.kmip.username }}'
+password = '{{ .Values.kmip.password }}'
+host = {{ .Values.kmip.host }}
+port = 5696
+keyfile = '{{ .Values.kmip.keyfile }}'
+certfile = '{{ .Values.kmip.certfile }}'
+ca_certs = '{{ .Values.kmip.ca_certs }}'
 global_default = True
 {{- end }}
