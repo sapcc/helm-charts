@@ -11,8 +11,18 @@ linkerd-support:
 global:
   region: DEFINED-IN-SECRETS
   tld: DEFINED-IN-SECRETS
-  prometheus: infra-frontend
+  prometheus: DEFINED-IN-SECRETS
   linkerd_requested: true
+  opensearch:
+    data:
+      user: DEFINED-IN-SECRETS
+      password: DEFINED-IN-SECRETS
+    syslog:
+      user: DEFINED-IN-SECRETS
+      password: DEFINED-IN-SECRETS
+    jump:
+      user: DEFINED-IN-SECRETS
+      password: DEFINED-IN-SECRETS
 
 fluent:
   enabled: false
@@ -30,10 +40,6 @@ fluent:
     db: metis
   swift:
     enabled: false
-  exporter:
-    prometheus: infra-collector
-  aggregations:
-    prometheus: infra-collector
   logs:
     unbound:
       enabled: false
@@ -51,11 +57,8 @@ fluent_prometheus:
   enabled: false
   port: 8884
   image_version: '20231213092430'
-  exporter:
-    prometheus: DEFINED-IN-SECRETS
   alerts:
     enabled: false
-    prometheus: DEFINED-IN-SECRETS
 
 fluent-bit:
   enabled: false
@@ -91,12 +94,6 @@ fluent-bit:
         fieldRef:
           fieldPath: spec.nodeName
   backend:
-    opensearch:
-      enabled: false
-      host: DEFINED-IN-SECRETS
-      http_user: DEFINED-IN-SECRETS
-      http_passwd: DEFINED-IN-SECRETS
-      port: DEFINED-IN-SECRETS
       logstash_prefix: systemd
       tls:
         enabled: "On"
@@ -104,9 +101,7 @@ fluent-bit:
         debug: '1'
   alerts:
     enabled: false
-    prometheus: infra-collector
   exporter:
-    prometheus: infra-collector
   extraPorts:
     - port: 2021
       containerPort: 2021
@@ -134,18 +129,6 @@ logstash_external:
     enabled: false
   alerts:
     enabled: false
-    prometheus: infra-collector
-  elasticsearch:
-    enabled: true
-  opensearch:
-    enabled: false
-    http_port: 9200
-    user: DEFINED-IN-SECRETS
-    password: DEFINED-IN-SECRETS
-    jump_user: DEFINED-IN-SECRETS
-    jump_password: DEFINED-IN-SECRETS
-    http:
-      endpoint: "opensearch-logs-client.scaleout"
 
 k8s_event_logger:
   enabled: false
