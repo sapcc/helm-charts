@@ -24,8 +24,10 @@ spec:
         chart-version: {{.Chart.Version}}
         checksum/etc-secret.yaml: {{ include (print $.Template.BasePath "/etc-secret.yaml") . | sha256sum }}
         prometheus.io/scrape: "true"
-        prometheus.io/port: {{ required ".Values.port_metrics missing" .Values.port_metrics | quote }}
-        prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
+        prometheus.io/targets: {{ .Values.prometheus }}
+{{- if and (and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested) $.Values.linkerd.enabled }}
+        linkerd.io/inject: enabled
+{{- end }}
     spec:
       affinity:
       {{- with .Values.nodeAffinity }}

@@ -14,7 +14,10 @@ spec:
     metadata:
       annotations:
         configmap-hash: {{ include (print $.Template.BasePath "/configmap.yaml") . | replace .Chart.Version "0.1.5" | sha256sum }}
+        prometheus.io/scrape: "true"
+        prometheus.io/targets: storage
       labels:
+        app: {{ include "netapp-harvest.fullname" . }}-{{ $appName }}
         name: {{ include "netapp-harvest.fullname" . }}-{{ $appName }}-master
     spec:
       containers:
@@ -28,7 +31,7 @@ spec:
             - --tag
             - {{ $appName }}
             - --listen-addr
-            - 0.0.0.0:8000
+            - 0.0.0.0:{{ .Values.netappsd.ports.metrics }}
             - --worker
             - {{ include "netapp-harvest.fullname" . }}-{{ $appName }}-worker
             - --worker-label
@@ -59,7 +62,10 @@ spec:
                 fieldRef:
                   fieldPath: metadata.namespace
           ports:
-            - containerPort: 8000
+            - name: metrics
+              containerPort: {{ .Values.netappsd.ports.metrics }}
+          resources:
+            {{- toYaml .Values.harvest.resources | nindent 12 }}
 ---
 {{- end }}
 {{- end }}

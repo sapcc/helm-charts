@@ -9,7 +9,7 @@ spec:
   replicas: 1
   selector:
     matchLabels:
-      name: "{{ include "netapp-harvest.fullname" . }}-{{ $appName }}-worker"
+      name: {{ include "netapp-harvest.fullname" . }}-{{ $appName }}-worker
   strategy:
     type: RollingUpdate
     rollingUpdate:
@@ -22,7 +22,8 @@ spec:
         prometheus.io/scrape: "true"
         prometheus.io/targets: storage
       labels:
-        name: "{{ include "netapp-harvest.fullname" . }}-{{ $appName }}-worker"
+        app: {{ include "netapp-harvest.fullname" . }}-{{ $appName }}
+        name: {{ include "netapp-harvest.fullname" . }}-{{ $appName }}-worker
     spec:
       containers:
         - name: poller
@@ -31,7 +32,7 @@ spec:
           command: ["sh", "start-poller.sh"]
           ports:
             - name: metrics
-              containerPort: 13000
+              containerPort: {{ .Values.harvest.ports.metrics }}
           resources:
             {{- toYaml .Values.harvest.resources | nindent 12 }}
           volumeMounts:
@@ -58,7 +59,7 @@ spec:
           command: ["/app/netappsd", "worker"]
           args:
             - --master-url
-            - http://{{ include "netapp-harvest.fullname" . }}-{{ $appName }}-master.{{ .Release.Namespace }}.svc:8000
+            - http://{{ include "netapp-harvest.fullname" . }}-{{ $appName }}-master.{{ .Release.Namespace }}.svc:{{ .Values.netappsd.ports.metrics }}
             - --listen-addr
             - :{{ .Values.harvest.ports.liveness }}
             - --template-file
@@ -85,10 +86,8 @@ spec:
                 fieldRef:
                   fieldPath: metadata.name
           ports:
-            - name: liveness-port
+            - name: liveness
               containerPort: {{ .Values.harvest.ports.liveness }}
-          resources:
-            {{- toYaml .Values.harvest.resources | nindent 12 }}
           volumeMounts:
             - name: harvest-config
               mountPath: /app/harvest.yaml.tpl
@@ -98,14 +97,14 @@ spec:
           livenessProbe:
             httpGet:
               path: /healthz
-              port: liveness-port
+              port: liveness
             failureThreshold: 3
             periodSeconds: 60
             timeoutSeconds: 10
           startupProbe:
             httpGet:
               path: /healthz
-              port: liveness-port
+              port: liveness
             failureThreshold: 30
             periodSeconds: 10
       volumes:

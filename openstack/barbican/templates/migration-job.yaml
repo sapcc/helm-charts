@@ -1,3 +1,4 @@
+{{- $secrets := lookup "v1" "Secret" .Release.Namespace (print .Release.Name "-secrets") -}}
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -64,6 +65,11 @@ spec:
               mountPath: /etc/barbican/logging.ini
               subPath: logging.ini
               readOnly: true
+{{- if $secrets }}
+            - name: barbican-etc-confd
+              mountPath: /etc/barbican/barbican.conf.d
+              readOnly: true
+{{- end }}
             {{- include "utils.trust_bundle.volume_mount" . | indent 12 }}
       volumes:
         - name: etcbarbican
@@ -71,4 +77,12 @@ spec:
         - name: barbican-etc
           configMap:
             name: barbican-etc
+{{- if $secrets }}            
+        - name: barbican-etc-confd
+          secret:
+            secretName: {{ .Release.Name }}-secrets
+            items:
+            - key: secrets.conf
+              path: secrets.conf
+{{- end }}
         {{- include "utils.trust_bundle.volumes" . | indent 8 }}

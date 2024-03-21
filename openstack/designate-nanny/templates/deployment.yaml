@@ -22,9 +22,14 @@ spec:
        app.kubernetes.io/instance: {{ .Release.Name }}
        app.kubernetes.io/name: {{ .Release.Name }}
      annotations:
-       prometheus.io/port: "9102"
+       # port has to be given in the ports spec below with name metrics, otherwise
+       # the pod will be scraped multiple times as there are multiple containers with linkderd
+       # prometheus.io/port: "9102" 
        prometheus.io/scrape: "true"
        prometheus.io/targets: openstack
+       {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+       linkerd.io/inject: enabled
+       {{- end }}
    spec:
 
      containers:
@@ -42,7 +47,7 @@ spec:
          - name: OS_AUTH_URL
            value: "{{ .Values.global.keystone_api_endpoint_protocol_public | default "https"}}://{{include "keystone_api_endpoint_host_public" .}}/v3"
          - name: PYCCLOUD_USE_DUMMY_SECRETS
-           value: "yes"          
+           value: "yes"
          - name: OS_REGION_NAME
            value: "{{ required "missing .Values.global.region" .Values.global.region}}"
          - name: OS_PROJECT_NAME
@@ -50,7 +55,10 @@ spec:
          - name: OS_PROJECT_DOMAIN_NAME
            value:  "{{ required "missing .Values.designate_nanny.credentials.designate_api.project_domain_name" .Values.designate_nanny.credentials.designate_api.project_domain_name}}"
          - name: OS_USERNAME
-           value: "{{ required "missing .Values.designate_nanny.credentials.designate_api.user" .Values.designate_nanny.credentials.designate_api.user}}"
+           valueFrom:
+             secretKeyRef:
+               name: designate-nanny-secret
+               key:  designate_nanny_os_username
          - name: OS_PASSWORD
            valueFrom:
              secretKeyRef:

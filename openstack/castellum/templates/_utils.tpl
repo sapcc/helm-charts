@@ -27,6 +27,8 @@
 - name: CASTELLUM_LOG_SCRAPES
   value: "true"
 {{- if $.Values.castellum.asset_managers | has "nfs-shares" }}
+- name: CASTELLUM_NFS_DISCOVERY_PROMETHEUS_URL
+  value: "http://prometheus-openstack.prometheus-openstack.svc:9090"
 - name: CASTELLUM_NFS_PROMETHEUS_URL
   value: "http://prometheus-storage.infra-monitoring.svc:9090"
 {{- end }}

@@ -518,9 +518,9 @@
     template_name logstash-swift
     template_file /fluentd/etc/logstashswift.json
     template_overwrite false
-    hosts {{.Values.opensearch.http.endpoint}}.{{.Values.global.tld}}
+    hosts {{.Values.global.opensearch.host}}
     scheme https
-    port {{.Values.opensearch.http_port}}
+    port {{.Values.global.opensearch.port}}
     user "#{ENV['USER']}"
     password "#{ENV['PASSWORD']}"
     log_os_400_reason true
@@ -584,9 +584,9 @@
     template_file /fluentd/etc/{{.Values.opensearch.indexname}}.json
     template_overwrite false
   {{- end }}
-    hosts {{.Values.opensearch.http.endpoint}}.{{.Values.global.tld}}
+    hosts {{.Values.global.opensearch.host}}
     scheme https
-    port {{.Values.opensearch.http_port}}
+    port {{.Values.global.opensearch.port}}
     user "#{ENV['USER']}"
     password "#{ENV['PASSWORD']}"
     log_os_400_reason true
@@ -630,5 +630,3 @@
     </metric>
   </store>
  </match>
-
-
