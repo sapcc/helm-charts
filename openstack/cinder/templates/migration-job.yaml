@@ -8,10 +8,11 @@ metadata:
     component: cinder
 spec:
   template:
-    spec:
-      restartPolicy: OnFailure
+    metadata:
       annotations:
         {{- include "utils.linkerd.pod_and_service_annotation" . | indent 8 }}
+    spec:
+      restartPolicy: OnFailure
       {{- include "utils.proxysql.job_pod_settings" . | nindent 6 }}
       initContainers:
       {{- tuple . (dict "service" (print .Release.Name "-mariadb")) | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 6 }}
