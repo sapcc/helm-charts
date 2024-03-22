@@ -1,7 +1,7 @@
 apiVersion: "openstack.stable.sap.cc/v1"
 kind: "OpenstackSeed"
 metadata:
-  name: {{ .Release.Name }}-seed
+  name: "{{ .Release.Name }}-seed"
   labels:
     component: designate
     app: {{ template "fullname" . }}
@@ -287,7 +287,7 @@ spec:
       role: cloud_dns_admin
       inherited: true
 
-- name: btp_fp
+  - name: btp_fp
     groups:
     - name: BTP_FP_DOMAIN_DNS_SUPPORT
       role_assignments:
@@ -1010,15 +1010,13 @@ spec:
     users:
     - name: "{{ required "missing user in .Values.designate_nanny.credentials.designate_api.user" .Values.designate_nanny.credentials.designate_api.user}}"
       description: Designate Nanny
-      password: {{ required "missing password in .Values.designate_nanny.credentials.designate_api.seeder_password" .Values.designate_nanny.credentials.designate_api.seeder_password }}
-
+      password: "{{ required "missing password in .Values.designate_nanny.credentials.designate_api.seeder_password" .Values.designate_nanny.credentials.designate_api.seeder_password }}"
   - name: "{{ required "missing user in .Values.designate_nanny.credentials.designate_api.project_domain_name" .Values.designate_nanny.credentials.designate_api.project_domain_name}}"
     projects:
     - name: "{{ required "missing user in .Values.designate_nanny.credentials.designate_api.project_name" .Values.designate_nanny.credentials.designate_api.project_name}}"
       role_assignments:
       - user: "{{ .Values.designate_nanny.credentials.designate_api.user}}@{{.Values.designate_nanny.credentials.designate_api.project_user_domain_name}}"
         role: cloud_dns_viewer
-
     - name: master
       role_assignments:
       - user: "{{ .Values.designate_nanny.credentials.designate_api.user}}@{{.Values.designate_nanny.credentials.designate_api.project_user_domain_name}}"
