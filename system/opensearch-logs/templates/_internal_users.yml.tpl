@@ -81,9 +81,6 @@ kibanaro:
 kibanaserver:
   hash: "{{ .Values.users.kibanaserver.hash }}"
   reserved: true
-  reserved: false
-  backend_roles:
-  - "readall"
 
 maillog:
   hash: "{{ .Values.users.maillog.hash }}"
