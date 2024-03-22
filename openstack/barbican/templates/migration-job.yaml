@@ -31,10 +31,11 @@ spec:
           image: {{required ".Values.global.registry is missing" .Values.global.registry}}/loci-barbican:{{required ".Values.imageVersionBarbicanApi is missing" .Values.imageVersionBarbicanApi}}
           imagePullPolicy: IfNotPresent
           command:
-          - barbican-manage
-          - db
-          - upgrade
-          {{- include "utils.script.job_finished_hook" . | nindent 10 }}
+          - bash
+          - c
+          - |
+            barbican-manage db upgrade
+            {{- include "utils.script.job_finished_hook" . | nindent 12 }}
           env:
           {{- if .Values.sentry.enabled }}
           - name: SENTRY_DSN
