@@ -21,3 +21,17 @@ webhooks:
       port: 9443
   admissionReviewVersions: ["v1"]
   sideEffects: None
+{{- if .Values.webhook.genericRules }}
+- name: "generic.secrets-injector.cloud.sap"
+  failurePolicy: {{ .Values.webhook.failurePolicy }}
+  rules:
+  {{- toYaml .Values.webhook.genericRules | nindent 2 }}
+  clientConfig:
+    service:
+      namespace: {{ .Release.Namespace }}
+      name: secrets-injector
+      path: /mutate-generic
+      port: 9443
+  admissionReviewVersions: ["v1"]
+  sideEffects: None
+{{- end -}}
