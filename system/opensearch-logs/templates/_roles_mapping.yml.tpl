@@ -78,7 +78,7 @@ manage_snapshots:
 kibana_server:
   reserved: true
   users:
-  - "dashboard"
+  - "kibanaserver"
 
 promrole:
   reserved: false

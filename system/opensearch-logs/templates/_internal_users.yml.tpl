@@ -77,6 +77,10 @@ dashboard:
 
 kibanaro:
   hash: "{{ .Values.users.kibanaro.hash }}"
+
+kibanaserver:
+  hash: "{{ .Values.users.kibanaserver.hash }}"
+  reserved: true
   reserved: false
   backend_roles:
   - "readall"
