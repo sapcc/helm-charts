@@ -62,6 +62,7 @@ spec:
                       /usr/bin/wget --tries=0 {{ $.Values.image.kubeadm }} -O /opt/bin/kubeadm  && break
                     done
                     /usr/bin/chmod 0755 /opt/bin/kubeadm
+                    mount --bind /opt/bin /usr/local/bin
 
                     sed -i '/After\|Requires/d' /etc/systemd/system/kubeadm.service.d/10-flatcar.conf
               - path: /etc/systemd/resolved.conf
@@ -461,12 +462,12 @@ spec:
                   ExecStartPost=systemctl disable kubelet_restart.service
                   [Install]
                   WantedBy=multi-user.target
-            users:
-            - name: {{ $.Values.user.name }}
-              passwd: {{ $.Values.user.passwordhash }}
-              sshAuthorizedKeys:
-              - {{ $.Values.user.key | quote }}
       preKubeadmCommands:
       - envsubst < /etc/kubeadm.yml > /etc/kubeadm.yml.tmp
       - mv /etc/kubeadm.yml.tmp /etc/kubeadm.yml
+      users:
+      - name: {{ $.Values.user.name }}
+        passwd: {{ $.Values.user.passwordhash }}
+        sshAuthorizedKeys:
+        - {{ $.Values.user.key | quote }}
 {{- end }}
