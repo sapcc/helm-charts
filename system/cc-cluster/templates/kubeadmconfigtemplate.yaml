@@ -63,14 +63,6 @@ spec:
                     done
                     /usr/bin/chmod 0755 /opt/bin/kubeadm
 
-                    # CNI plugins - to be removed - comes via DaemonSet
-                    CNI_PLUGINS_VERSION="v1.3.0"
-                    ARCH="amd64"
-                    DEST="/opt/cni/bin"
-                    sudo mkdir -p "$DEST"
-                    curl -L "https://github.com/containernetworking/plugins/releases/download/${CNI_PLUGINS_VERSION}/cni-plugins-linux-${ARCH}-${CNI_PLUGINS_VERSION}.tgz" | sudo tar -C "$DEST" -xz
-                    mount --bind /opt/bin /usr/local/bin
-
                     sed -i '/After\|Requires/d' /etc/systemd/system/kubeadm.service.d/10-flatcar.conf
               - path: /etc/systemd/resolved.conf
                 filesystem: root
@@ -469,12 +461,12 @@ spec:
                   ExecStartPost=systemctl disable kubelet_restart.service
                   [Install]
                   WantedBy=multi-user.target
+            users:
+            - name: {{ $.Values.user.name }}
+              passwd: {{ $.Values.user.passwordhash }}
+              sshAuthorizedKeys:
+              - {{ $.Values.user.key | quote }}
       preKubeadmCommands:
       - envsubst < /etc/kubeadm.yml > /etc/kubeadm.yml.tmp
       - mv /etc/kubeadm.yml.tmp /etc/kubeadm.yml
-      users:
-      - name: {{ $.Values.user.name }}
-        passwd: {{ $.Values.user.passwordhash }}
-        sshAuthorizedKeys:
-        - {{ $.Values.user.key | quote }}
 {{- end }}
