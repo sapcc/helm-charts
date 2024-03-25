@@ -33,7 +33,7 @@ spec:
         - name: hermes-etc
           configMap:
             name: logstash-etc
-        - name: logstash-conf
+        - name: logstash-secret
           secret:
             defaultMode: 420
             secretName: logstash-secret
@@ -48,7 +48,7 @@ spec:
             - --debug
             {{- end }}
             - -f
-            - /hermes-etc/logstash.conf
+            - /hermes-conf/logstash.conf
             - --config.reload.automatic
             - --path.settings
             - /hermes-etc/
@@ -66,8 +66,8 @@ spec:
           volumeMounts:
             - name: hermes-etc
               mountPath: /hermes-etc
-            - name: logstash-conf
-              mountPath: /hermes-etc/logstash.conf
+            - name: logstash-secret
+              mountPath: /hermes-conf/logstash.conf
               subPath: logstash.conf
           livenessProbe:
             httpGet:
