@@ -3,17 +3,17 @@ groups:
   rules:
   - alert: CCloudHermesApiDown
     expr: |
-        cc3test_status{service="hermes", type="api"} == 0
+        max(cc3test_status{service="hermes", type="api"} == 0) unless max(cc3test_status{service="keystone", type="api"} == 0)
     for: 16m
     labels:
       severity: critical
       support_group: observability
       tier: os
-      service: '{{ $labels.service }}'
+      service: hermes
       meta: 'CCloud Hermes API is down'
-      dashboard: 'cc3test-api-status?var-service={{ $labels.service }}'
+      dashboard: 'cc3test-api-status?var-service=hermes'
       playbook: 'docs/support/playbook/hermes/alerts/cc3test-alert-api/'
-      report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
+      report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/api'
     annotations:
       description: 'CCloud Hermes API is down'
       summary: 'CCloud Hermes API is down'
