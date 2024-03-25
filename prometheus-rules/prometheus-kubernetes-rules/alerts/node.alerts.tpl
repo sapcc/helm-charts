@@ -164,17 +164,3 @@ groups:
     annotations:
       description: "The node {{`{{ $labels.node }}`}} rebooted {{`{{ $value }}`}} times in the past hour. It could be stuck in a reboot/panic loop."
       summary: Node rebooted multiple times
-
-  - alert: NodeRootFilesystemAboutToRunFull
-    expr: max by (node) (predict_linear(node_filesystem_avail_bytes{mountpoint="/"}[30m], 45*60)) < 0
-    for: 5m
-    labels:
-      tier: {{ required ".Values.tier missing" .Values.tier }}
-      service: node
-      support_group: containers
-      severity: warning
-      context: node
-      meta: "The root filesystem of node {{`{{ $labels.node }}`}} is filling up quickly"
-    annotations:
-      description: "At the current rate the root filesystem of {{`{{ $labels.node }}`}} have no free space in the next 45 minutes"
-      summary: Node's root filesystem is filling up
