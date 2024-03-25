@@ -254,8 +254,8 @@ filter {
     ]
     staging_directory => "/tmp/logstash/jdbc_static/import_data"
     loader_schedule => "{{ .Values.logstash.jdbc.schedule }}"
-    jdbc_user => "{{ .Values.global.metis.user }}"
-    jdbc_password => "${METIS_PASSWORD}"
+    jdbc_user => {{ .Values.global.metis.user | default "default" | quote }}
+    jdbc_password => {{ .Values.global.metis.password | default "default" | quote }}
     jdbc_driver_class => "com.mysql.cj.jdbc.Driver"
     jdbc_driver_library => ""
     jdbc_connection_string => "jdbc:mysql://{{ .Values.logstash.jdbc.service }}.{{ .Values.logstash.jdbc.namespace }}:3306/{{ .Values.logstash.jdbc.db }}"
