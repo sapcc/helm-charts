@@ -38,7 +38,7 @@ spec:
             name: octobus-query-exporter-global
       containers:
         - name: octobus-query-exporter-global
-          image: {{ .Values.global.registry }}/{{ .Values.image.repo }}:{{ .Values.image.tag }}
+          image: {{ .Values.global.registry }}/{{ .Values.global.octobus.image.repo }}:{{ .Values.global.octobus.image.tag }}
           imagePullPolicy: IfNotPresent
           command: [ "prometheus-es-exporter",
                      "--cluster-health-disable", "--nodes-stats-disable",
@@ -48,7 +48,7 @@ spec:
                      "--log-level", "{{ .Values.log_level }}",
                      "--es-cluster", "{{ .Values.octobus.target }}" ]
           env:
-            - name: ES_API_KEY
+            - name: ES_EXPORTER_API_KEY
               valueFrom:
                 secretKeyRef:
                   name: octobus-query-exporter-global
