@@ -31,12 +31,12 @@ spec:
         zone: farm
       volumes:
         - name: hermes-etc
-          configMap:
-            name: logstash-etc
-        - name: logstash-secret
-          secret:
-            defaultMode: 420
-            secretName: logstash-secret
+            projected:
+              sources:
+              - secret:
+                  name: logstash-secret
+              - configMap:
+                name: logstash-etc
       containers:
         - name: logstash
           image: {{.Values.global.registry}}/hermes-logstash:{{.Values.hermes_image_version_logstash}}
@@ -48,7 +48,7 @@ spec:
             - --debug
             {{- end }}
             - -f
-            - /hermes-conf/logstash.conf
+            - /hermes-etc/logstash.conf
             - --config.reload.automatic
             - --path.settings
             - /hermes-etc/
@@ -66,9 +66,6 @@ spec:
           volumeMounts:
             - name: hermes-etc
               mountPath: /hermes-etc
-            - name: logstash-secret
-              mountPath: /hermes-conf/logstash.conf
-              subPath: logstash.conf
           livenessProbe:
             httpGet:
               path: /
