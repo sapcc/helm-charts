@@ -2,8 +2,11 @@ groups:
 - name: cc3test-limes.alerts
   rules:
   - alert: CCloudLimesApiDown
+    # NOTE: Limes outages are not alerted when Keystone is also down,
+    # because then the Keystone outage is the actual problem and ringing
+    # support group "containers" will not help anything.
     expr: |
-        cc3test_status{service="limes", type="api"} == 0
+        max(cc3test_status{service="limes", type="api"} == 0) unless max(cc3test_status{service="keystone", type="api"} == 0)
     for: 16m
     labels:
       severity: critical
