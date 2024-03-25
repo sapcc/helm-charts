@@ -9,8 +9,8 @@ url = "https://{{.Values.hermes_elasticsearch_host}}.{{.Values.global.region}}.{
 
 [keystone]
 auth_url = "{{.Values.hermes.auth_url}}"
-username = "{{.Values.hermes.username | default "default" | quote}}"
-password = "{{.Values.hermes.password | default "default" | quote}}"
+username = "{{.Values.hermes.username | default "default"}}"
+password = "{{.Values.hermes.password | default "default"}}"
 user_domain_name = "Default"
 project_domain_name = "Default"
 project_name = "service"
