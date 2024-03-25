@@ -46,8 +46,13 @@ spec:
                      "--config-dir", "/octobus-query-exporter-global/",
                      "--port", "{{ .Values.listen_port }}",
                      "--log-level", "{{ .Values.log_level }}",
-                     "--es-cluster", "{{ .Values.octobus.target }}",
-                     "--header", "Authorization: ApiKey {{ .Values.octobus.apikey }}" ]
+                     "--es-cluster", "{{ .Values.octobus.target }}" ]
+          env:
+            - name: ES_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: octobus-query-exporter-global
+                  key: apikey
           ports:
             - name: metrics
               containerPort: {{ .Values.listen_port }}
