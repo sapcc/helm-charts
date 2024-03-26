@@ -3,19 +3,19 @@ auths:
   aas_v3:
     version: {{ .Values.snmp_exporter.arista.snmpv3.version }}
     security_level: {{ .Values.snmp_exporter.arista.snmpv3.security_level }}
-    username: ${AAS_V3_USERNAME}
-    password: ${AAS_V3_PASSWORD}
+    username: ${ARISTA_V3_USERNAME}
+    password: ${ARISTA_V3_PASSWORD}
     auth_protocol: {{ .Values.snmp_exporter.arista.snmpv3.auth_protocol }}
     priv_protocol: {{ .Values.snmp_exporter.arista.snmpv3.priv_protocol }}
-    priv_password: ${AAS_V3_PRIV}
+    priv_password: ${ARISTA_V3_PRIV}
   ams_v3:
     version: {{ .Values.snmp_exporter.arista.snmpv3.version }}
     security_level: {{ .Values.snmp_exporter.arista.snmpv3.security_level }}
-    username: ${AMS_V3_USERNAME}
-    password: ${AMS_V3_PASSWORD}
+    username: ${ARISTA_V3_USERNAME}
+    password: ${ARISTA_V3_PASSWORD}
     auth_protocol: {{ .Values.snmp_exporter.arista.snmpv3.auth_protocol }}
     priv_protocol: {{ .Values.snmp_exporter.arista.snmpv3.priv_protocol }}
-    priv_password: ${AMS_V3_PRIV}
+    priv_password: ${ARISTA_V3_PRIV}
 {{- end }}
 {{- if .Values.snmp_exporter.asa.enabled }}
   asa_v3:
