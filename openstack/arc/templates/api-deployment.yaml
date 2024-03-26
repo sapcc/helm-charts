@@ -116,11 +116,14 @@ spec:
             - name: COMMON_NAME # use pod name as common name
               valueFrom: { fieldRef: { fieldPath: metadata.name } }
             - name: DBUSER
-              value: postgres
+              value: {{ .Values.postgresql.user | quote }}
             - name: DBHOST
               value: {{ template "postgresql.fullname" . }}
             - name: DBPASSWORD
-              valueFrom: { secretKeyRef:    { name: {{ template "postgresql.fullname" . }}, key: postgres-password } }
+              valueFrom:
+                secretKeyRef:
+                  name: '{{ $.Release.Name }}-pguser-{{ .Values.postgresql.user }}'
+                  key: 'postgres-password'
             - name: ARC_KEYSTONE_ENDPOINT
               value: {{ .Values.keystoneEndpoint }}
           volumeMounts:

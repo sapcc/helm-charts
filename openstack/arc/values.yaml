@@ -57,15 +57,30 @@ updatesProxy:
   #    container: arc-releases-stable
 
 postgresql:
-  enabled: true
+  imageTag: "20240304141806"
+  persistence:
+    enabled: true
+    accessMode: ReadWriteMany
+    size: 10Gi
+  resources:
+    requests:
+      memory: 256Mi
+      cpu: 100m
+  user: arc
+  postgresDatabase: arc_production
+  users:
+    arc: {}
+  tableOwner: arc
 
 pgbackup:
+  isPostgresNG: true
   database:
     name: arc_production
   alerts:
     support_group: containers
 
 pgmetrics:
+  isPostgresNG: true
   db_name: arc_production
   alerts:
     support_group: containers
