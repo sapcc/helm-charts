@@ -15,7 +15,18 @@ data:
     {{- range $_, $value := $volume.nfs_shares }}
     {{ $value.host }}:{{ $value.path }}
     {{- end }}
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ .Release.Name }}-volume-{{ $name }}-secret
+  labels:
+    system: openstack
+    type: configuration
+    component: cinder
+type: Opaque
+data: 
   cinder-volume.conf: |
-{{ tuple . $name $volume | include "volume_conf" | indent 4 }}
+{{ tuple . $name $volume | include "volume_conf" | b64enc | indent 4 }}
 {{- end }}
 {{- end }}
