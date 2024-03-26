@@ -42,9 +42,8 @@ groups:
 
   - alert: OpenstackCinderCreateVolumeAvzDown
     expr: |
-        cc3test_status{service="cinder",
-            name=~"^TestVolume_create.+"
-        } == 0
+        last_over_time(cc3test_status{service="cinder",
+        name=~"^TestVolume_create.+"}[60m]) == 0
     for: 30m
     labels:
       severity: warning
@@ -62,9 +61,8 @@ groups:
 
   - alert: OpenstackCinderCreateVolumeShardDown
     expr: |
-        cc3test_status{service="cinder",
-            name=~"TestVolume_attach_to_server.+"
-        } == 0
+        last_over_time(cc3test_status{service="cinder",
+        name=~"TestVolume_attach_to_server.+"}[120m]) == 0
     for: 120m
     labels:
       severity: warning
@@ -82,9 +80,8 @@ groups:
 
   - alert: OpenstackCinderCreateSnapshot
     expr: |
-        cc3test_status{service="cinder",
-            name=~"TestSnapshot_create_snapshot.+"
-        } == 0
+        last_over_time(cc3test_status{service="cinder",
+        name=~"TestSnapshot_create_snapshot.+"}[1h]) == 0
     for: 30m
     labels:
       severity: info
