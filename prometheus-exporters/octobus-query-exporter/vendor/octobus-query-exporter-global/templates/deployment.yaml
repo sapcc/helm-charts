@@ -34,8 +34,12 @@ spec:
         runAsUser: 1000
       volumes:
         - name: octobus-query-exporter-global
-          configMap:
-            name: octobus-query-exporter-global
+          projected:
+            sources:
+            - configMap:
+                name: octobus-query-exporter-global
+            - secret:
+                name: octobus-query-exporter-global
       containers:
         - name: octobus-query-exporter-global
           image: {{ .Values.global.registry }}/{{ .Values.global.octobus.image.repo }}:{{ .Values.global.octobus.image.tag }}
@@ -43,16 +47,11 @@ spec:
           command: [ "prometheus-es-exporter",
                      "--cluster-health-disable", "--nodes-stats-disable",
                      "--indices-stats-disable", "--indices-aliases-disable", "--indices-mappings-disable",
+                     "--config", "/octobus-query-exporter-global/config.cfg",
                      "--config-dir", "/octobus-query-exporter-global/",
                      "--port", "{{ .Values.listen_port }}",
                      "--log-level", "{{ .Values.log_level }}",
                      "--es-cluster", "{{ .Values.octobus.target }}" ]
-          env:
-            - name: ES_EXPORTER_API_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: octobus-query-exporter-global
-                  key: apikey
           ports:
             - name: metrics
               containerPort: {{ .Values.listen_port }}
