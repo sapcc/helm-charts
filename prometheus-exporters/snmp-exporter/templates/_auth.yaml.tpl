@@ -7,7 +7,7 @@ auths:
     password: ${ARISTA_V3_PASSWORD}
     auth_protocol: {{ .Values.snmp_exporter.arista.snmpv3.auth_protocol }}
     priv_protocol: {{ .Values.snmp_exporter.arista.snmpv3.priv_protocol }}
-    priv_password: ${ARISTA_V3_PRIV}
+    priv_password: ${ARISTA_V3_PRIV_PASSWORD}
   ams_v3:
     version: {{ .Values.snmp_exporter.arista.snmpv3.version }}
     security_level: {{ .Values.snmp_exporter.arista.snmpv3.security_level }}
@@ -15,7 +15,7 @@ auths:
     password: ${ARISTA_V3_PASSWORD}
     auth_protocol: {{ .Values.snmp_exporter.arista.snmpv3.auth_protocol }}
     priv_protocol: {{ .Values.snmp_exporter.arista.snmpv3.priv_protocol }}
-    priv_password: ${ARISTA_V3_PRIV}
+    priv_password: ${ARISTA_V3_PRIV_PASSWORD}
 {{- end }}
 {{- if .Values.snmp_exporter.asa.enabled }}
   asa_v3:
@@ -25,7 +25,7 @@ auths:
     password: ${ASA_V3_PASSWORD}
     auth_protocol: {{ .Values.snmp_exporter.asa.auth_protocol }}
     priv_protocol: {{ .Values.snmp_exporter.asa.priv_protocol }}
-    priv_password: ${ASA_V3_PRIV}
+    priv_password: ${ASA_V3_PRIV_PASSWORD}
 {{- end }}
 {{- if .Values.snmp_exporter.asr.enabled }}
   asr_v3:
@@ -35,7 +35,7 @@ auths:
     password: ${ASR_V3_PASSWORD}
     auth_protocol: {{ .Values.snmp_exporter.asr.auth_protocol }}
     priv_protocol: {{ .Values.snmp_exporter.asr.priv_protocol }}
-    priv_password: ${ASR_V3_PRIV}
+    priv_password: ${ASR_V3_PRIV_PASSWORD}
 {{- end }}
 {{- if .Values.snmp_exporter.f5.enabled }}
   f5_v3:
@@ -45,7 +45,7 @@ auths:
     password: ${F5_V3_PASSWORD}
     auth_protocol: {{ .Values.snmp_exporter.f5.auth_protocol }}
     priv_protocol: {{ .Values.snmp_exporter.f5.priv_protocol }}
-    priv_password: ${F5_V3_PRIV}
+    priv_password: ${F5_V3_PRIV_PASSWORD}
 {{- end }}
 {{- if .Values.snmp_exporter.asr03.enabled }}
   asr03_v3:
@@ -55,7 +55,7 @@ auths:
     password: ${ASR03_V3_PASSWORD}
     auth_protocol: {{ .Values.snmp_exporter.asr03.auth_protocol }}
     priv_protocol: {{ .Values.snmp_exporter.asr03.priv_protocol }}
-    priv_password: ${ASR03_V3_PRIV}
+    priv_password: ${ASR03_V3_PRIV_PASSWORD}
 {{- end }}
 {{- if .Values.snmp_exporter.coreasr9k.enabled }}
   coreasr9k_v3:
@@ -65,7 +65,7 @@ auths:
     password: ${COREASR9K_V3_PASSWORD}
     auth_protocol: {{ .Values.snmp_exporter.coreasr9k.auth_protocol }}
     priv_protocol: {{ .Values.snmp_exporter.coreasr9k.priv_protocol }}
-    priv_password: ${COREASR9K_V3_PRIV}
+    priv_password: ${COREASR9K_V3_PRIV_PASSWORD}
 {{- end }}
 {{- if .Values.snmp_exporter.n3k.enabled }}
   n3k_v3:
@@ -75,7 +75,7 @@ auths:
     password: ${N3K_V3_PASSWORD}
     auth_protocol: {{ .Values.snmp_exporter.n3k.auth_protocol }}
     priv_protocol: {{ .Values.snmp_exporter.n3k.priv_protocol }}
-    priv_password: ${N3K_V3_PRIV}
+    priv_password: ${N3K_V3_PRIV_PASSWORD}
 {{- end }}
 {{- if .Values.snmp_exporter.pxgeneric.enabled }}
   pxgeneric_v3:
@@ -85,7 +85,7 @@ auths:
     password: ${PXGENERIC_V3_PASSWORD}
     auth_protocol: {{ .Values.snmp_exporter.pxgeneric.auth_protocol }}
     priv_protocol: {{ .Values.snmp_exporter.pxgeneric.priv_protocol }}
-    priv_password: ${PXGENERIC_V3_PRIV}
+    priv_password: ${PXGENERIC_V3_PRIV_PASSWORD}
 {{- end }}
 {{- if .Values.snmp_exporter.pxdlroutergeneric.enabled }}
   pxdlroutergeneric_v3:
@@ -95,7 +95,7 @@ auths:
     password: ${PXDLROUTERGENERIC_V3_PASSWORD}
     auth_protocol: {{ .Values.snmp_exporter.pxdlroutergeneric.auth_protocol }}
     priv_protocol: {{ .Values.snmp_exporter.pxdlroutergeneric.priv_protocol }}
-    priv_password: ${PXDLROUTERGENERIC_V3_PRIV}
+    priv_password: ${PXDLROUTERGENERIC_V3_PRIV_PASSWORD}
 {{- end }}
 {{- if .Values.snmp_exporter.pxdlrouteriosxe.enabled }}
   pxdlrouteriosxe_v3:
@@ -105,7 +105,7 @@ auths:
     password: ${PXDLROUTERIOSXE_V3_PASSWORD}
     auth_protocol: {{ .Values.snmp_exporter.pxdlrouteriosxe.auth_protocol }}
     priv_protocol: {{ .Values.snmp_exporter.pxdlrouteriosxe.priv_protocol }}
-    priv_password: ${PXDLROUTERIOSXE_V3_PRIV}
+    priv_password: ${PXDLROUTERIOSXE_V3_PRIV_PASSWORD}
 {{- end }}
 {{- if .Values.snmp_exporter.pxdlrouteriosxr.enabled }}
   pxdlrouteriosxr_v3:
@@ -115,7 +115,7 @@ auths:
     password: ${PXDLROUTERIOSXR_V3_PASSWORD}
     auth_protocol: {{ .Values.snmp_exporter.pxdlrouteriosxr.auth_protocol }}
     priv_protocol: {{ .Values.snmp_exporter.pxdlrouteriosxr.priv_protocol }}
-    priv_password: ${PXDLROUTERIOSXR_V3_PRIV}
+    priv_password: ${PXDLROUTERIOSXR_V3_PRIV_PASSWORD}
 {{- end }}
 {{- if .Values.snmp_exporter.acileaf.enabled }}
   acileaf_v3:
@@ -125,7 +125,7 @@ auths:
     password: ${ACILEAF_V3_PASSWORD}
     auth_protocol: {{ .Values.snmp_exporter.acileaf.auth_protocol }}
     priv_protocol: {{ .Values.snmp_exporter.acileaf.priv_protocol }}
-    priv_password: ${ACILEAF_V3_PRIV}
+    priv_password: ${ACILEAF_V3_PRIV_PASSWORD}
 {{- end }}
 {{- if .Values.snmp_exporter.n9kpx.enabled }}
   n9kpx_v3:
@@ -135,7 +135,7 @@ auths:
     password: ${N9KPX_V3_PASSWORD}
     auth_protocol: {{ .Values.snmp_exporter.n9kpx.auth_protocol }}
     priv_protocol: {{ .Values.snmp_exporter.n9kpx.priv_protocol }}
-    priv_password: ${N9KPX_V3_PRIV}
+    priv_password: ${N9KPX_V3_PRIV_PASSWORD}
 {{- end }}
 {{- if .Values.snmp_exporter.ipn.enabled }}
   ipn_v3:
@@ -145,7 +145,7 @@ auths:
     password: ${IPN_V3_PASSWORD}
     auth_protocol: {{ .Values.snmp_exporter.ipn.auth_protocol }}
     priv_protocol: {{ .Values.snmp_exporter.ipn.priv_protocol }}
-    priv_password: ${IPN_V3_PRIV}
+    priv_password: ${IPN_V3_PRIV_PASSWORD}
 {{- end }}
 {{- if .Values.snmp_exporter.acispine.enabled }}
   acispine_v3:
@@ -155,7 +155,7 @@ auths:
     password: ${ACISPINE_V3_PASSWORD}
     auth_protocol: {{ .Values.snmp_exporter.acispine.auth_protocol }}
     priv_protocol: {{ .Values.snmp_exporter.acispine.priv_protocol }}
-    priv_password: ${ACISPINE_V3_PRIV}
+    priv_password: ${ACISPINE_V3_PRIV_PASSWORD}
 {{- end }}
 {{- if .Values.snmp_exporter.acistretch.enabled }}
   acistretch_v2:
@@ -170,7 +170,7 @@ auths:
     password: ${UCS_V3_PASSWORD}
     auth_protocol: {{ .Values.snmp_exporter.ucs.auth_protocol }}
     priv_protocol: {{ .Values.snmp_exporter.ucs.priv_protocol }}
-    priv_password: ${UCS_V3_PRIV}
+    priv_password: ${UCS_V3_PRIV_PASSWORD}
 {{- end }}
 {{- if .Values.snmp_exporter.hsm.enabled }}
   hsm_v3:
@@ -180,7 +180,7 @@ auths:
     password: ${HSM_V3_PASSWORD}
     auth_protocol: {{ .Values.snmp_exporter.hsm.auth_protocol }}
     priv_protocol: {{ .Values.snmp_exporter.hsm.priv_protocol }}
-    priv_password: ${HSM_V3_PRIV}
+    priv_password: ${HSM_V3_PRIV_PASSWORD}
 {{- end }}
 {{- if .Values.snmp_exporter.aristaevpn.enabled }}
   aristaevpn_v3:
@@ -190,7 +190,7 @@ auths:
     password: ${ARISTAEVPN_V3_PASSWORD}
     auth_protocol: {{ .Values.snmp_exporter.aristaevpn.auth_protocol }}
     priv_protocol: {{ .Values.snmp_exporter.aristaevpn.priv_protocol }}
-    priv_password: ${ARISTAEVPN_V3_PRIV}
+    priv_password: ${ARISTAEVPN_V3_PRIV_PASSWORD}
 {{- end }}
 {{- if .Values.snmp_exporter.fortinet.enabled }}
   fortinet_v3:
@@ -200,7 +200,7 @@ auths:
     password: ${FORTINET_V3_PASSWORD}
     auth_protocol: {{ .Values.snmp_exporter.fortinet.auth_protocol }}
     priv_protocol: {{ .Values.snmp_exporter.fortinet.priv_protocol }}
-    priv_password: ${FORTINET_V3_PRIV}
+    priv_password: ${FORTINET_V3_PRIV_PASSWORD}
 {{- end }}
 {{- if .Values.snmp_exporter.aristaspine.enabled }}
   aristaspine_v3:
@@ -210,5 +210,5 @@ auths:
     password: ${ARISTASPINE_V3_PASSWORD}
     auth_protocol: {{ .Values.snmp_exporter.aristaspine.auth_protocol }}
     priv_protocol: {{ .Values.snmp_exporter.aristaspine.priv_protocol }}
-    priv_password: ${ARISTASPINE_V3_PRIV}
+    priv_password: ${ARISTASPINE_V3_PRIV_PASSWORD}
 {{- end }}
