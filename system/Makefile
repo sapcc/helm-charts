@@ -52,11 +52,13 @@ build-baremetal-operator:
 	@yq -i '.images[0].newTag = "$(BAREMETAL_OPERATOR_VERSION)"' kustomization.yaml
 	@cat kustomization-m3-patches.yaml >> kustomization.yaml
 	$(call build-chart,baremetal-operator-core,https://github.com/metal3-io/baremetal-operator//config/default,$(BAREMETAL_OPERATOR_VERSION))
+	$(call fix-crd-certs,baremetal-operator-core)
 	@rm baremetal-operator-core/templates/ironic.yaml
 	@find baremetal-operator-core/crds -type f -exec $(SED) -i -e 's#baremetal-operator-system/baremetal-operator-serving-cert#baremetal-operator-system/metal3-baremetal-operator-serving-cert#g' {} \;
+	@find baremetal-operator-core/templates -type f -exec $(SED) -i -e 's#-baremetal-operator-system/#-#g' {} \;
 	@yq -i '.controllerManager.manager.image.tag="$(BAREMETAL_OPERATOR_VERSION)"' baremetal-operator-core/values.yaml
 	@yq -i '.fullnameOverride="metal3"' baremetal-operator-core/values.yaml
-	@yq -i '.version="0.0.1"' baremetal-operator-core/Chart.yaml
+	@yq -i '.version="0.0.2"' baremetal-operator-core/Chart.yaml
 
 # chart name, source url, tag
 define build-chart
