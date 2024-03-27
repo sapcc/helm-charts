@@ -19,7 +19,6 @@ override_vcmp_guest_names = {{ $loadbalancer.override_vcmp_guest_names | join ",
 
 
 [f5_agent]
-bigip_urls = {{ if $loadbalancer.devices -}}{{- tuple $envAll $loadbalancer.devices | include "utils.bigip_urls" -}}{{- else -}}{{ $loadbalancer.bigip_urls | join ", " }}{{- end }}
 bigip_verify = false
 bigip_token = true
 esd_dir = /etc/octavia/esd
