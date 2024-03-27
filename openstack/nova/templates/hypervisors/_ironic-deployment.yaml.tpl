@@ -116,6 +116,8 @@ spec:
           - secret:
               name: nova-etc
               items:
+              - key: cell1.conf
+                path: nova.conf.d/cell1-secrets.conf
               - key: keystoneauth-secrets.conf
                 path: nova.conf.d/keystoneauth-secrets.conf
       - name: nova-patches
