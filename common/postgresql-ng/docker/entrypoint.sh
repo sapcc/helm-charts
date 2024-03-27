@@ -191,6 +191,8 @@ done
 # restore standard pg_hba.conf and reload the config into postgres
 cp /usr/local/share/pg_hba.conf "$PGDATA/pg_hba.conf"
 echo -e "host  all  all  all  $PGAUTHMETHOD\n" >>"$PGDATA/pg_hba.conf"
+# update postgres.conf
+cp /etc/postgresql/postgresql.conf "$PGDATA/postgresql.conf"
 start_postgres
 PGDATABASE='' process_sql --dbname postgres -c "SELECT pg_reload_conf()"
 
