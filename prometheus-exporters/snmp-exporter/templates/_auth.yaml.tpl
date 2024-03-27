@@ -160,7 +160,7 @@ auths:
 {{- if .Values.snmp_exporter.acistretch.enabled }}
   acistretch_v2:
     version: {{ .Values.snmp_exporter.acistretch.version }}
-    community: ${ACISTRETCH_V2_COMMUNITY}
+    community: ACISTRETCH_V2_COMMUNITY
 {{- end }}
 {{- if .Values.snmp_exporter.ucs.enabled }}
   ucs_v3:
