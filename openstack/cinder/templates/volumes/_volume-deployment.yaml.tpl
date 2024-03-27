@@ -31,6 +31,7 @@ spec:
       annotations:
         configmap-etc-hash: {{ include (print .Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
         configmap-volume-hash: {{ tuple . $name $volume | include "volume_configmap" | sha256sum }}
+        secrets-hash: {{ include (print $.Template.BasePath "/secrets.yaml") . | sha256sum }}
         {{- if .Values.proxysql.mode }}
         prometheus.io/scrape: "true"
         prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
@@ -63,6 +64,8 @@ spec:
           mountPath: /etc/cinder/cinder.conf
           subPath: cinder.conf
           readOnly: true
+        - name: cinder-etc-confd
+          mountPath: /etc/cinder/cinder.conf.d
         - name: cinder-etc
           mountPath: /etc/cinder/policy.json
           subPath: policy.json
@@ -75,7 +78,7 @@ spec:
           mountPath: /etc/cinder/nfs_shares
           subPath: nfs_shares
           readOnly: true
-        - name: volume-config
+        - name: volume-secret
           mountPath: /etc/cinder/cinder-volume.conf
           subPath: cinder-volume.conf
           readOnly: true
@@ -97,9 +100,15 @@ spec:
       - name: cinder-etc
         configMap:
           name: cinder-etc
+      - name: cinder-etc-confd
+        secret:
+          secretName: {{ .Release.Name }}-secrets
       - name: volume-config
         configMap:
           name: {{ .Release.Name }}-volume-{{ $name }}
+      - name: volume-secret
+        secret:
+          secretName: {{ .Release.Name }}-volume-{{ $name }}-secret
       {{- range $_, $share := $volume.nfs_shares }}
       - name: share-{{ $share.name }}
         nfs:

@@ -38,6 +38,8 @@ template: |
         annotations:
           vcenter: {= host =}
           datacenter: {= availability_zone =}
+          configmap-etc-hash: {{ include (print $.Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
+          secrets-hash: {{ include (print $.Template.BasePath "/secrets.yaml") . | sha256sum }}
           {{- if .Values.proxysql.mode }}
           prometheus.io/scrape: "true"
           prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
@@ -66,7 +68,7 @@ template: |
             value: 'ignore:Unverified HTTPS request'
           livenessProbe:
             exec:
-              command: ["openstack-agent-liveness", "--component", "cinder", "--config-file", "/etc/cinder/cinder.conf", "--config-file", "/etc/cinder/cinder-backup.conf"]
+              command: ["openstack-agent-liveness", "--component", "cinder", "--config-file", "/etc/cinder/cinder.conf", "--config-file", "/etc/cinder/cinder-backup.conf", "--config-file", "/etc/cinder/cinder.conf.d/secrets.conf"]
             initialDelaySeconds: 60
             periodSeconds: 60
             timeoutSeconds: 20
@@ -77,6 +79,8 @@ template: |
             mountPath: /etc/cinder/cinder.conf
             subPath: cinder.conf
             readOnly: true
+          - name: cinder-etc-confd
+            mountPath: /etc/cinder/cinder.conf.d
           - name: cinder-etc
             mountPath: /etc/cinder/policy.json
             subPath: policy.json
@@ -111,6 +115,9 @@ template: |
         - name: cinder-etc
           configMap:
             name: cinder-etc
+        - name: cinder-etc-confd
+          secret:
+            secretName: {{ .Release.Name }}-secrets
         - name: backup-config
           configMap:
             name:  backup-vmware-{= name =}
