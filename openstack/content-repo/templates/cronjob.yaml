@@ -18,7 +18,6 @@ spec:
   # timeZone: {{ $.Values.timezone }}
   jobTemplate:
     spec:
-      restartPolicy: Never # restarting a failed s-h-i does not work because the linkerd-proxy sidecar has been torn down when the s-h-i container shut down
       template:
         metadata:
           labels:
@@ -29,6 +28,7 @@ spec:
             checksum/check.secrets-certs: {{ include "content-repo/templates/secret-certs.yaml" $ | sha256sum }}
             kubectl.kubernetes.io/default-container: swift-http-import
         spec:
+          restartPolicy: Never # restarting a failed s-h-i does not work because the linkerd-proxy sidecar has been torn down when the s-h-i container shut down
           volumes:
           - name: config
             configMap:
