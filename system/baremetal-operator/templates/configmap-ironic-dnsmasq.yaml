@@ -16,23 +16,18 @@ data:
     port=0
     log-dhcp
     {{- range $key, $pool := .Values.dnsmasq.dhcpPools }}
-    dhcp-range=set:{{ $pool.ipPool }},{{ $pool.ipPool }},static,{{ $pool.mask }},{{ $.Values.dnsmasq.leaseTime }}
+    dhcp-range=set:{{ $pool.ipPoolStart }},{{ $pool.ipPoolStart }},{{ $pool.ipPoolEnd }},{{ $pool.mask }},{{ $.Values.dnsmasq.leaseTime }}
     {{- end }}
 
     # It can be used when setting DNS or GW variables.
     # Set default router
     {{- range $key, $pool := .Values.dnsmasq.dhcpPools }}
-    dhcp-option=set:{{ $pool.ipPool }},option:router,{{ $pool.router }}
+    dhcp-option=set:{{ $pool.ipPoolStart }},option:router,{{ $pool.router }}
     {{- end }}
 
     # Set dns servers
     dhcp-option=6,{{ .Values.dnsmasq.dnsServers }}
     dhcp-option=option:domain-name,cc.{{ .Values.global.region }}.cloud.sap
-
-    # Static IPs
-    {{- range $key, $host := .Values.hosts }}
-    dhcp-host={{ $host.bootMac }},{{ $key }},{{ $host.bootip }},set:{{ $host.ipPool }}
-    {{- end }}
 
     # IPv4 Configuration:
     dhcp-match=ipxe,175
