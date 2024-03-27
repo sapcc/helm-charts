@@ -95,10 +95,10 @@ spec:
           - name: metrics
             containerPort: 9102
           volumeMounts:
-            - name: nova-etc
-              mountPath: /etc/statsd/statsd-exporter.yaml
-              subPath: statsd-exporter.yaml
-              readOnly: true
+          - name: statsd-etc
+            mountPath: /etc/statsd/statsd-exporter.yaml
+            subPath: statsd-exporter.yaml
+            readOnly: true
         {{- end }}
       volumes:
       - name: nova-etc
@@ -122,6 +122,16 @@ spec:
                 path: nova.conf.d/{{ .Values.cell2.name }}.conf
               - key: keystoneauth-secrets.conf
                 path: nova.conf.d/keystoneauth-secrets.conf
+      {{- if .Values.cell2.conductor.config_file.DEFAULT.statsd_enabled }}
+      - name: statsd-etc
+        projected:
+          sources:
+          - configMap:
+              name: nova-etc
+              items:
+              - key:  statsd-exporter.yaml
+                path: statsd-exporter.yaml
+      {{- end }}
       {{- include "utils.proxysql.volumes" . | indent 6 }}
       {{- include "utils.trust_bundle.volumes" . | indent 6 }}
 {{- end }}
