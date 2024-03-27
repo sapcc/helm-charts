@@ -679,6 +679,29 @@ mysql_metrics:
         WHERE deleted_at is NULL;
       values:
       - "version"
+    - help: Errored live-migrations
+      name: openstack_compute_errored_live_migration_gauge
+      labels:
+        - "instance_uuid"
+        - "migration_uuid"
+        - "vm_state"
+      query: |
+        WITH instance_migrations AS (
+            SELECT
+                m.instance_uuid,
+                m.status,
+                m.uuid,
+                ROW_NUMBER() OVER(PARTITION BY m.instance_uuid ORDER BY m.id DESC) AS rn
+            FROM migrations m
+            WHERE m.deleted = 0 AND m.migration_type='live-migration'
+        )
+        SELECT
+            i.uuid as instance_uuid,im.uuid as migration_uuid,i.vm_state,1 as gauge
+        FROM instances i
+        INNER JOIN instance_migrations im ON i.uuid = im.instance_uuid
+        WHERE i.deleted = 0 AND i.vm_state = 'error' AND im.rn = 1 AND im.status = 'error'
+      values:
+        - "gauge"
 
 postgresql:
   enabled: false
