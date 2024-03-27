@@ -30,7 +30,10 @@
 - name:  KEPPEL_AUDIT_RABBITMQ_QUEUE_NAME
   value: "{{ $.Values.keppel.rabbitmq.queue_name }}"
 - name: KEPPEL_AUDIT_RABBITMQ_USERNAME
-  value: "{{ $.Values.keppel.rabbitmq.username }}"
+  valueFrom:
+    secretKeyRef:
+      name: keppel-secret
+      key: rabbitmq_username
 - name: KEPPEL_AUDIT_RABBITMQ_PASSWORD
   valueFrom:
     secretKeyRef:

@@ -37,7 +37,10 @@
 - name: CASTELLUM_RABBITMQ_QUEUE_NAME
   value: "{{ .Values.castellum.rabbitmq.queue_name }}"
 - name: CASTELLUM_RABBITMQ_USERNAME
-  value: "{{ .Values.castellum.rabbitmq.username }}"
+  valueFrom:
+    secretKeyRef:
+      name: castellum-secret
+      key: rabbitmq_username
 - name: CASTELLUM_RABBITMQ_PASSWORD
   valueFrom:
     secretKeyRef:
