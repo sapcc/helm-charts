@@ -49,7 +49,7 @@ spec:
             - /container.init/neutron-asr1k-start
           livenessProbe:
             exec:
-              command: ["neutron-agent-liveness", "--agent-type", "ASR1K L3 Agent", "--config-file", "/etc/neutron/neutron.conf"]
+              command: ["neutron-agent-liveness", "--agent-type", "ASR1K L3 Agent", "--config-file", "/etc/neutron/neutron.conf", "--config-file", "/etc/neutron/secrets/server_agent_shared_secrets"]
             initialDelaySeconds: 30
             periodSeconds: 30
             timeoutSeconds: 10
@@ -76,6 +76,9 @@ spec:
               name: neutron-etc-asr1k
             - mountPath: /container.init
               name: container-init
+            - mountPath: /etc/neutron/secrets
+              name: neutron-secrets
+              readOnly: true
           ports:
             - containerPort: {{$context.Values.port_l3_metrics |  default 9103}}
               name: metrics-l3
@@ -90,7 +93,7 @@ spec:
             - /container.init/neutron-asr1k-ml2-start
           livenessProbe:
             exec:
-              command: ["neutron-agent-liveness", "--agent-type", "ASR1K ML2 Agent", "--config-file", "/etc/neutron/neutron.conf"]
+              command: ["neutron-agent-liveness", "--agent-type", "ASR1K ML2 Agent", "--config-file", "/etc/neutron/neutron.conf", "--config-file", "/etc/neutron/secrets/server_agent_shared_secrets"]
             initialDelaySeconds: 30
             periodSeconds: 30
             timeoutSeconds: 10
@@ -117,6 +120,9 @@ spec:
               name: neutron-etc-asr1k
             - mountPath: /container.init
               name: container-init
+            - mountPath: /etc/neutron/secrets
+              name: neutron-secrets
+              readOnly: true
           ports:
             - containerPort: {{$context.Values.port_l2_metrics |  default 9102}}
               name: metrics-l2
@@ -137,4 +143,12 @@ spec:
         - name:  neutron-etc-asr1k
           configMap:
             name: neutron-etc-asr1k-{{ $config_agent.name }}
+        - name: neutron-secrets
+          projected:
+            sources:
+              - secret:
+                  name: neutron-secrets
+                  items:
+                    - key: server_agent_shared_secrets
+                      path: server_agent_shared_secrets
 {{- end -}}

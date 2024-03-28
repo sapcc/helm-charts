@@ -48,13 +48,15 @@ spec:
           args:
             - --config-file
             - /etc/neutron/neutron.conf
+            - --config-dir
+            - /etc/neutron/secrets
             - --config-file
             - /etc/neutron/plugins/ml2/ml2-conf.ini
             - --config-file
             - /etc/neutron/plugins/ml2/ml2_conf_cc-fabric.ini
           livenessProbe:
             exec:
-              command: ["neutron-agent-liveness", "--agent-type", "CC fabric agent", "--config-file", "/etc/neutron/neutron.conf"]
+              command: ["neutron-agent-liveness", "--agent-type", "CC fabric agent", "--config-file", "/etc/neutron/neutron.conf", "--config-file", "/etc/neutron/secrets/server_agent_shared_secrets"]
             initialDelaySeconds: 30
             periodSeconds: 30
             timeoutSeconds: 10
@@ -74,6 +76,9 @@ spec:
             - mountPath: /etc/neutron/neutron.conf
               name: neutron-etc
               subPath: neutron.conf
+              readOnly: true
+            - mountPath: /etc/neutron/secrets
+              name: neutron-secrets
               readOnly: true
             - mountPath: /etc/neutron/plugins/ml2/
               name: empty-neutron-ml2
@@ -104,6 +109,14 @@ spec:
         - name: neutron-etc
           configMap:
             name: neutron-etc
+        - name: neutron-secrets
+          projected:
+            sources:
+              - secret:
+                  name: neutron-secrets
+                  items:
+                    - key: server_agent_shared_secrets
+                      path: server_agent_shared_secrets
         - name: neutron-etc-cc-fabric
           configMap:
             name: neutron-etc-cc-fabric

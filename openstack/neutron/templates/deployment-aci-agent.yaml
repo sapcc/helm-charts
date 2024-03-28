@@ -43,7 +43,7 @@ spec:
             - /container.init/neutron-aci-agent-start
           livenessProbe:
             exec:
-              command: ["neutron-agent-liveness", "--agent-type", "ACI Agent", "--config-file", "/etc/neutron/neutron.conf"]
+              command: ["neutron-agent-liveness", "--agent-type", "ACI Agent", "--config-file", "/etc/neutron/neutron.conf", "--config-file", "/etc/neutron/secrets/server_agent_shared_secrets"]
             initialDelaySeconds: 30
             periodSeconds: 30
             timeoutSeconds: 10
@@ -61,6 +61,9 @@ spec:
           volumeMounts:
             - mountPath: /neutron-etc
               name: neutron-etc
+            - mountPath: /etc/neutron/secrets
+              name: neutron-secrets
+              readOnly: true
             - mountPath: /neutron-etc-vendor
               name: neutron-etc-vendor
             - mountPath: /neutron-etc-region
@@ -72,6 +75,14 @@ spec:
         - name: neutron-etc
           configMap:
             name: neutron-etc
+        - name: neutron-secrets
+          projected:
+            sources:
+              - secret:
+                  name: neutron-secrets
+                  items:
+                    - key: server_agent_shared_secrets
+                      path: server_agent_shared_secrets.conf
         - name: neutron-etc-region
           configMap:
             name: neutron-etc-region

@@ -93,6 +93,9 @@ spec:
               mountPath: /var/run/netns
             - name: socat-proxy
               mountPath: /var/run/socat-proxy
+            - mountPath: /etc/neutron/secrets
+              name: neutron-secrets
+              readOnly: true
             {{- include "utils.trust_bundle.volume_mount" $ | indent 12 }}
           ports:
             - name: metrics-inject
@@ -118,7 +121,7 @@ spec:
             {{- include "utils.trust_bundle.env" $ | indent 12 }}
           readinessProbe:
             exec:
-              command: ["neutron-agent-liveness", "-config-file", "/etc/neutron/neutron.conf", "-agent-type", "Linux bridge agent"]
+              command: ["neutron-agent-liveness", "-config-file", "/etc/neutron/neutron.conf",  "--config-file", "/etc/neutron/secrets/server_agent_shared_secrets", "-agent-type", "Linux bridge agent"]
             initialDelaySeconds: 30
             periodSeconds: 60
             timeoutSeconds: 10
@@ -190,6 +193,16 @@ spec:
                 items:
                 - key: apod-{{ $apod }}.conf
                   path: apod-{{ $apod }}.conf
+        - name: neutron-secrets
+          projected:
+            sources:
+              - secret:
+                  name: neutron-secrets
+                  items:
+                    - key: server_secrets
+                      path: server_secrets
+                    - key: server_agent_shared_secrets
+                      path: server_agent_shared_secrets.conf
         {{- include "utils.trust_bundle.volumes" $ | indent 8 }}
 {{- end }}
 {{- end }}

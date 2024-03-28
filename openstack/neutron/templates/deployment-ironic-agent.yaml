@@ -37,7 +37,7 @@ spec:
           args: ['ironic-neutron-agent', '--config-dir', '/etc/neutron', '--config-file', '/etc/neutron/plugins/ml2/ironic_neutron_agent.ini']
           livenessProbe:
             exec:
-              command: ["openstack-agent-liveness", "--component", "neutron", "--config-file", "/etc/neutron/neutron.conf"]
+              command: ["openstack-agent-liveness", "--component", "neutron", "--config-file", "/etc/neutron/neutron.conf", "--config-file", "/etc/neutron/secrets/server_agent_shared_secrets"]
             initialDelaySeconds: 30
             periodSeconds: 30
             timeoutSeconds: 10
@@ -51,6 +51,9 @@ spec:
           volumeMounts:
             - name: etc-neutron
               mountPath: /etc/neutron
+              readOnly: true
+            - mountPath: /etc/neutron/secrets
+              name: neutron-secrets
               readOnly: true
             {{- include "utils.trust_bundle.volume_mount" . | indent 12 }}
       volumes:
@@ -70,5 +73,13 @@ spec:
                 items:
                 - key: ironic_neutron_agent.ini
                   path: plugins/ml2/ironic_neutron_agent.ini
+        - name: neutron-secrets
+          projected:
+            sources:
+              - secret:
+                  name: neutron-secrets
+                  items:
+                    - key: server_agent_shared_secrets
+                      path: server_agent_shared_secrets.conf
         {{- include "utils.trust_bundle.volumes" . | indent 8 }}
 {{- end }}

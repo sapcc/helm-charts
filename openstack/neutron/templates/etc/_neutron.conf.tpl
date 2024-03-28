@@ -60,8 +60,6 @@ auth_url = {{.Values.global.keystone_api_endpoint_protocol_internal | default "h
 auth_plugin = v3password
 auth_type = v3password
 region_name = {{.Values.global.region}}
-username = {{ .Values.global.neutron_service_user | default "neutron" | replace "$" "$$" }}
-password = {{ .Values.global.neutron_service_password | default "" | replace "$" "$$" }}
 user_domain_name = {{.Values.global.keystone_service_domain | default "Default"}}
 project_name = {{.Values.global.keystone_service_project | default "service"}}
 project_domain_name = {{.Values.global.keystone_service_domain | default "Default"}}
@@ -77,8 +75,6 @@ region_name = {{.Values.global.region}}
 user_domain_name = {{.Values.global.keystone_service_domain | default "Default"}}
 project_name = master
 project_domain_name = ccadmin
-username = {{ .Values.global.neutron_service_user | default "neutron" | replace "$" "$$" }}
-password = {{ .Values.global.neutron_service_password | default "" | replace "$" "$$" }}
 insecure = True
 allow_reverse_dns_lookup = {{.Values.global.designate_allow_reverse_dns_lookup | default "False"}}
 ipv4_ptr_zone_prefix_size = 24
@@ -101,7 +97,6 @@ root_helper = neutron-rootwrap /etc/neutron/rootwrap.conf
 {{ end }}
 
 [database]
-connection = {{ include "db_url_mysql" . }}
 {{- include "ini_sections.database_options_mysql" . }}
 
 [keystone_authtoken]
@@ -110,8 +105,6 @@ auth_version = v3
 auth_interface = internal
 www_authenticate_uri = https://{{include "keystone_api_endpoint_host_public" .}}/v3
 auth_url = {{.Values.global.keystone_api_endpoint_protocol_internal | default "http"}}://{{include "keystone_api_endpoint_host_internal" .}}:{{ .Values.global.keystone_api_port_internal | default 5000}}/v3
-username = {{ .Values.global.neutron_service_user | default "neutron" | replace "$" "$$" }}
-password = {{ .Values.global.neutron_service_password | default "" | replace "$" "$$" }}
 user_domain_name = {{.Values.global.keystone_service_domain | default "Default"}}
 project_name = {{.Values.global.keystone_service_project |  default "service"}}
 project_domain_name = {{.Values.global.keystone_service_domain | default "Default"}}

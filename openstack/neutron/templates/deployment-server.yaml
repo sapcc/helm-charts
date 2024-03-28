@@ -130,6 +130,9 @@ spec:
               name: neutron-etc
               subPath: neutron.conf
               readOnly: true
+            - mountPath: /etc/neutron/secrets
+              name: neutron-secrets
+              readOnly: true
             - mountPath: /etc/neutron/plugins/asr1k-global.ini
               name: neutron-etc
               subPath: asr1k-global.ini
@@ -264,6 +267,16 @@ spec:
         - name: neutron-etc
           configMap:
             name: neutron-etc
+        - name: neutron-secrets
+          projected: 
+            sources: 
+              - secret:
+                  name: neutron-secrets
+                  items:
+                    - key: server_secrets
+                      path: server_secrets.conf
+                    - key: server_agent_shared_secrets
+                      path: server_agent_shared_secrets.conf
 {{- if .Values.cc_fabric.enabled }}
         - name: neutron-etc-cc-fabric
           configMap:

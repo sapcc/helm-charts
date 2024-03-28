@@ -87,7 +87,7 @@ spec:
         - name: neutron-dhcp-agent
           image: {{$.Values.global.registry}}/loci-neutron:{{$.Values.imageVersionNetworkAgentDHCP | default $.Values.imageVersionNetworkAgent | default $.Values.imageVersion | required "Please set neutron.imageVersionNetworkAgentDHCP or similar"}}
           imagePullPolicy: IfNotPresent
-          command: ["dumb-init", "neutron-dhcp-agent", "--config-file", "/etc/neutron/neutron.conf", "--config-file", "/etc/neutron/dhcp-agent.ini", "--config-file", "/etc/neutron/linux-bridge.ini", "--config-file", "/etc/neutron/az-{{ $az }}.conf"]
+          command: ["dumb-init", "neutron-dhcp-agent", "--config-file", "/etc/neutron/neutron.conf", "--config-dir", "/etc/neutron/secrets", "--config-file", "/etc/neutron/dhcp-agent.ini", "--config-file", "/etc/neutron/linux-bridge.ini", "--config-file", "/etc/neutron/az-{{ $az }}.conf"]
           env:
             - name: SENTRY_DSN
               valueFrom:
@@ -103,7 +103,7 @@ spec:
             {{- include "utils.trust_bundle.env" $ | indent 12 }}
           readinessProbe:
             exec:
-              command: ["neutron-dhcp-readiness", "-config-file", "/etc/neutron/neutron.conf"]
+              command: ["neutron-dhcp-readiness", "-config-file", "/etc/neutron/neutron.conf", "--config-file", "/etc/neutron/secrets/server_agent_shared_secrets"]
             initialDelaySeconds: 30
             periodSeconds: 60
             timeoutSeconds: 10
@@ -161,7 +161,7 @@ spec:
         - name: neutron-l3-agent
           image: {{$.Values.global.registry}}/loci-neutron:{{$.Values.imageVersionNetworkAgentL3 | default $.Values.imageVersionNetworkAgent | default $.Values.imageVersion | required "Please set neutron.imageVersionNetworkAgentL3 or similar"}}
           imagePullPolicy: IfNotPresent
-          command: ["dumb-init", "neutron-l3-agent", "--config-file", "/etc/neutron/neutron.conf", "--config-file", "/etc/neutron/l3-agent.ini", "--config-file", "/etc/neutron/plugins/ml2/ml2-conf.ini", "--config-file", "/etc/neutron/linux-bridge.ini", "--config-file", "/etc/neutron/az-{{ $az }}.conf"]
+          command: ["dumb-init", "neutron-l3-agent", "--config-file", "/etc/neutron/neutron.conf", "--config-dir", "/etc/neutron/secrets", "--config-file", "/etc/neutron/l3-agent.ini", "--config-file", "/etc/neutron/plugins/ml2/ml2-conf.ini", "--config-file", "/etc/neutron/linux-bridge.ini", "--config-file", "/etc/neutron/az-{{ $az }}.conf"]
           env:
             - name: SENTRY_DSN
               valueFrom:
@@ -218,7 +218,7 @@ spec:
         - name: neutron-linuxbridge-agent
           image: {{$.Values.global.registry}}/loci-neutron:{{$.Values.imageVersionNetworkAgentLinuxBridge | default $.Values.imageVersionNetworkAgent | default $.Values.imageVersion | required "Please set neutron.imageVersionNetworkAgentLinuxBridge or similar"}}
           imagePullPolicy: IfNotPresent
-          command: ["dumb-init", "neutron-linuxbridge-agent", "--config-file", "/etc/neutron/neutron.conf", "--config-file", "/etc/neutron/plugins/ml2/ml2_conf.ini", "--config-file", "/etc/neutron/linux-bridge.ini"]
+          command: ["dumb-init", "neutron-linuxbridge-agent", "--config-file", "/etc/neutron/neutron.conf", "--config-dir", "/etc/neutron/secrets", "--config-file", "/etc/neutron/plugins/ml2/ml2_conf.ini", "--config-file", "/etc/neutron/linux-bridge.ini"]
           env:
             - name: SENTRY_DSN
               valueFrom:
@@ -234,7 +234,7 @@ spec:
             {{- include "utils.trust_bundle.env" $ | indent 12 }}
           readinessProbe:
             exec:
-              command: ["neutron-linuxbridge-readiness", "-config-file", "/etc/neutron/neutron.conf"]
+              command: ["neutron-linuxbridge-readiness", "-config-file", "/etc/neutron/neutron.conf", "--config-file", "/etc/neutron/secrets/server_secrets"]
             initialDelaySeconds: 30
             periodSeconds: 60
             timeoutSeconds: 10
@@ -257,6 +257,9 @@ spec:
             - name: neutron-etc
               mountPath: /etc/neutron/neutron.conf
               subPath: neutron.conf
+              readOnly: true
+            - mountPath: /etc/neutron/secrets
+              name: neutron-secrets
               readOnly: true
             - name: neutron-etc
               mountPath: /etc/neutron/plugins/ml2/ml2_conf.ini
@@ -295,6 +298,16 @@ spec:
         - name: host
           hostPath:
               path: "/"
+        - name: neutron-secrets
+          projected:
+            sources:
+              - secret:
+                  name: neutron-secrets
+                  items:
+                    - key: server_secrets
+                      path: server_secrets
+                    - key: server_agent_shared_secrets
+                      path: server_agent_shared_secrets.conf
         {{- include "utils.trust_bundle.volumes" $ | indent 8 }}
 {{- end }}
 {{- end }}
