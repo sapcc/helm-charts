@@ -42,14 +42,14 @@ spec:
             - kubernetes-entrypoint
           livenessProbe:
             exec:
-              command: ["neutron-agent-liveness", "--config-file", "/etc/neutron/neutron.conf"]
+              command: ["neutron-agent-liveness", "--config-file", "/etc/neutron/neutron.conf", "--config-file", "/etc/neutron/secrets/neutron-common-secrets.conf"]
             initialDelaySeconds: 30
             periodSeconds: 30
             timeoutSeconds: 10
           env:
             - name: COMMAND
 {{- if not .Values.pod.debug.cisco_ml2_ucsm_bm }}
-              value: "neutron-cisco-ml2-ucsm-bm-agent --config-file /etc/neutron/neutron.conf --config-file /etc/neutron/plugins/ml2/cisco-ucs-bm-ml2-agent.ini"
+              value: "neutron-cisco-ml2-ucsm-bm-agent --config-file /etc/neutron/neutron.conf --config-dir /etc/neutron/secrets --config-file /etc/neutron/plugins/ml2/cisco-ucs-bm-ml2-agent.ini"
 {{- else }}
               value: "sleep inf"
 {{- end }}
@@ -67,6 +67,12 @@ spec:
             - name: etc-neutron
               mountPath: /etc/neutron
               readOnly: true
+            - mountPath: /etc/neutron/secrets/neutron-common-secrets.conf
+              name: neutron-common-secrets
+              subPath: neutron-common-secrets.conf
+            - mountPath: /etc/neutron/secrets/neutron-ucs-bm-secrets.conf
+              name: neutron-ucs-bm-secrets
+              subPath: neutron-ucs-bm-secrets.conf
             {{- include "utils.trust_bundle.volume_mount" . | indent 12 }}
       volumes:
         - name: etc-neutron
@@ -87,5 +93,11 @@ spec:
                 items:
                 - key: cisco-ucs-bm-ml2-agent.ini
                   path: plugins/ml2/cisco-ucs-bm-ml2-agent.ini
+        - name: neutron-common-secrets
+          secret:
+            secretName: neutron-common-secrets
+        - name: neutron-ucs-bm-secrets
+          secret:
+            secretName: neutron-ucs-bm-secrets
         {{- include "utils.trust_bundle.volumes" . | indent 8 }}
 {{- end -}}

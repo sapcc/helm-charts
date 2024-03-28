@@ -37,7 +37,7 @@ spec:
           args: ['ironic-neutron-agent', '--config-dir', '/etc/neutron', '--config-file', '/etc/neutron/plugins/ml2/ironic_neutron_agent.ini']
           livenessProbe:
             exec:
-              command: ["openstack-agent-liveness", "--component", "neutron", "--config-file", "/etc/neutron/neutron.conf"]
+              command: ["openstack-agent-liveness", "--component", "neutron", "--config-file", "/etc/neutron/neutron.conf", "--config-file", "/etc/neutron/secrets/neutron-common-secrets.conf"]
             initialDelaySeconds: 30
             periodSeconds: 30
             timeoutSeconds: 10
@@ -70,5 +70,10 @@ spec:
                 items:
                 - key: ironic_neutron_agent.ini
                   path: plugins/ml2/ironic_neutron_agent.ini
+            - secret:
+                name: neutron-common-secrets
+                items:
+                  - key: neutron-common-secrets.conf
+                    path: secrets/neutron-common-secrets.conf
         {{- include "utils.trust_bundle.volumes" . | indent 8 }}
 {{- end }}
