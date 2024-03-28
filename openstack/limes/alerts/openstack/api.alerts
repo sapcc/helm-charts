@@ -280,3 +280,19 @@ groups:
         This may happen when someone else changes the quota in the backend service directly and increases usage before Limes intervenes, or when a cloud administrator changes quota constraints.
 
         More details can be found in <https://dashboard.{{ $labels.region }}.cloud.sap/ccadmin/cloud_admin/resources/cluster/current#/inconsistencies|the Limes Inconsistencies view in Elektra>.
+
+  - alert: OpenstackNonGrowingQuotaAlmostExhausted
+    expr: ((limes_project_usage{resource!~"instances_.*"} > 0.9 * limes_project_quota) and on (service, resource) (limes_autogrow_growth_multiplier == 1)) * on (service) group_left (support_group) (limes_support_group_mapping)
+    for: 5m
+    labels:
+      severity: warning
+      support_group: '{{ $labels.support_group }}'
+      tier: os
+      service: '{{ $labels.service_name }}'
+      playbook: docs/support/playbook/limes/alerts/non_growing_quota
+    annotations:
+      summary: Non-growing quota almost exhausted
+      description: |
+        The {{ $labels.service }}/{{ $labels.resource }} quota in project {{ $labels.project_id }} ("{{ $labels.domain }}/{{ $labels.project }}") is more than 90% used.
+        This quota does not grow automatically, so care should be taken now to ensure that the customer does not run out of quota.
+        Please check the playbook for which options you have to resolve this issue.
