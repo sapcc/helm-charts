@@ -49,7 +49,7 @@ spec:
             - /container.init/neutron-asr1k-start
           livenessProbe:
             exec:
-              command: ["neutron-agent-liveness", "--agent-type", "ASR1K L3 Agent", "--config-file", "/etc/neutron/neutron.conf"]
+              command: ["neutron-agent-liveness", "--agent-type", "ASR1K L3 Agent", "--config-file", "/etc/neutron/neutron.conf", "--config-file", "/etc/neutron/secrets/neutron-common-secrets.conf"]
             initialDelaySeconds: 30
             periodSeconds: 30
             timeoutSeconds: 10
@@ -70,6 +70,14 @@ spec:
           volumeMounts:
             - mountPath: /neutron-etc
               name: neutron-etc
+            - mountPath: /etc/neutron/secrets/neutron-common-secrets.conf
+              name: neutron-common-secrets
+              subPath: neutron-common-secrets.conf
+              readOnly: true
+            - mountPath: /etc/neutron/secrets/asr1k_secrets.conf
+              name: neutron-etc-asr1k-secrets
+              subPath: asr1k_secrets.conf
+              readOnly: true
             - mountPath: /neutron-etc-vendor
               name: neutron-etc-vendor
             - mountPath: /neutron-etc-asr1k
@@ -90,7 +98,7 @@ spec:
             - /container.init/neutron-asr1k-ml2-start
           livenessProbe:
             exec:
-              command: ["neutron-agent-liveness", "--agent-type", "ASR1K ML2 Agent", "--config-file", "/etc/neutron/neutron.conf"]
+              command: ["neutron-agent-liveness", "--agent-type", "ASR1K ML2 Agent", "--config-file", "/etc/neutron/neutron.conf", "--config-file", "/etc/neutron/secrets/neutron-common-secrets.conf"]
             initialDelaySeconds: 30
             periodSeconds: 30
             timeoutSeconds: 10
@@ -111,6 +119,14 @@ spec:
           volumeMounts:
             - mountPath: /neutron-etc
               name: neutron-etc
+            - mountPath: /etc/neutron/secrets/neutron-common-secrets.conf
+              name: neutron-common-secrets
+              subPath: neutron-common-secrets.conf
+              readOnly: true
+            - mountPath: /etc/neutron/secrets/asr1k_secrets.conf
+              name: neutron-etc-asr1k-secrets
+              subPath: asr1k_secrets.conf
+              readOnly: true
             - mountPath: /neutron-etc-vendor
               name: neutron-etc-vendor
             - mountPath: /neutron-etc-asr1k
@@ -137,4 +153,10 @@ spec:
         - name:  neutron-etc-asr1k
           configMap:
             name: neutron-etc-asr1k-{{ $config_agent.name }}
+        - name: neutron-common-secrets
+          secret:
+            secretName: neutron-common-secrets
+        - name: neutron-etc-asr1k-secrets
+          secret:
+            secretName: neutron-etc-asr1k-secrets-{{$config_agent.name}}
 {{- end -}}

@@ -50,7 +50,7 @@ template: |
           image: {{.Values.global.registry}}/loci-neutron:{{.Values.imageVersionNSXv3 | default .Values.imageVersion | required "Please set neutron.imageVersion or similar"}}
           imagePullPolicy: IfNotPresent
           command: ["dumb-init"]
-          args: ["neutron-nsxv3-agent", "--config-file", "/etc/neutron/neutron.conf", "--config-file", "/etc/neutron/plugins/ml2/ml2-conf.ini", "--config-file", "/etc/neutron/plugins/ml2/ml2-nsxv3.ini"]
+          args: ["neutron-nsxv3-agent", "--config-file", "/etc/neutron/neutron.conf", "--config-dir", "/etc/neutron/secrets", "--config-file", "/etc/neutron/plugins/ml2/ml2-conf.ini", "--config-file", "/etc/neutron/plugins/ml2/ml2-nsxv3.ini"]
           env:
           - name: SENTRY_DSN
             valueFrom:
@@ -69,7 +69,7 @@ template: |
               containerPort: 8000
           livenessProbe:
             exec:
-              command: ["neutron-agent-liveness", "--config-file", "/etc/neutron/neutron.conf", "--config-file", "/etc/neutron/plugins/ml2/ml2-nsxv3.ini", "--agent-type", "NSXv3 Agent"]
+              command: ["neutron-agent-liveness", "--config-file", "/etc/neutron/neutron.conf", "--config-file", "/etc/neutron/secrets/server_agent_shared_secrets", "--config-file", "/etc/neutron/plugins/ml2/ml2-nsxv3.ini", "--agent-type", "NSXv3 Agent"]
             initialDelaySeconds: 90
             periodSeconds: 30
             timeoutSeconds: 10
@@ -129,5 +129,10 @@ template: |
                 items:
                 - key: ml2-nsxv3.ini
                   path: plugins/ml2/ml2-nsxv3.ini
+            - secret:
+                name: neutron-common-secrets
+                items:
+                  - key: neutron-common-secrets.conf
+                    path: secrets/neutron-common-secrets.conf
         {{- include "utils.trust_bundle.volumes" . | indent 8 }}
 {{- end }}
