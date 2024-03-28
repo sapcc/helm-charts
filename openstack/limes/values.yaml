@@ -220,6 +220,22 @@ pgmetrics:
             usage: "LABEL"
             description: "Domain name"
 
+    limes_support_group:
+      query: >
+        SELECT 1 AS mapping, type AS service_type, CASE
+          WHEN type IN ('network', 'dns') THEN 'network-api'
+          ELSE 'containers' END AS support_group
+        FROM project_services GROUP BY type
+      metrics:
+        - mapping:
+            usage: "GAUGE"
+            description: "Mapping between Limes service types and support group names"
+        - service_type:
+            usage: "LABEL"
+            description: "Service type in Limes"
+        - support_group:
+            usage: "LABEL"
+            description: "Support group for alerts"
 
 # Deploy limes Prometheus alerts.
 alerts:
