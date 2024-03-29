@@ -32,6 +32,7 @@ spec:
       annotations:
         configmap-etc-hash: {{ include (print $.Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
         configmap-bin-hash: {{ include (print $.Template.BasePath "/bin-configmap.yaml") . | sha256sum }}
+        secrets-hash: {{ include (print $.Template.BasePath "/secrets.yaml") . | sha256sum }}
         {{- if .Values.proxysql.mode }}
         prometheus.io/scrape: "true"
         prometheus.io/targets: {{ required ".Values.metrics.prometheus missing" .Values.metrics.prometheus | quote }}
@@ -102,6 +103,10 @@ spec:
                     path: secrets.conf
                   - key: pools.yaml
                     path: pools.yaml
+{{- range $rndc := .Values.rndc_keys }}
+                  - key: {{ $rndc.name }}.key
+                    path: {{ $rndc.name }}.key
+{{- end }}
         - name: container-init
           configMap:
             name: designate-bin

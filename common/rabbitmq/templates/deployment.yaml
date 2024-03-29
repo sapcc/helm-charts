@@ -29,6 +29,7 @@ spec:
       labels:
         app: {{ template "fullname" . }}
       annotations:
+        kubectl.kubernetes.io/default-container: rabbitmq
         checksum/container.init: {{ include (print $.Template.BasePath "/bin-secret.yaml") . | sha256sum }}
 {{- if and (and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested) $.Values.linkerd.enabled }}
         linkerd.io/inject: enabled
@@ -56,10 +57,29 @@ spec:
         runAsGroup: 999
         fsGroup: 999
         fsGroupChangePolicy: "OnRootMismatch"
+      {{- if .Values.persistence.enabled }}
+      initContainers:
+      - name: volume-permissions
+        image: "{{include "dockerHubMirror" .}}/library/busybox"
+        imagePullPolicy: {{ default "IfNotPresent" .Values.imagePullPolicy | quote }}
+        command:
+        - /bin/sh
+        - -c
+        - |
+          [ $(stat -c %u /var/lib/rabbitmq) -eq 999 ] || chown -R 999:999 /var/lib/rabbitmq
+        securityContext:
+          runAsUser: 0
+        volumeMounts:
+          - mountPath: /var/lib/rabbitmq
+            name: rabbitmq-persistent-storage
+      {{- end }}
       containers:
       - name: rabbitmq
         image: "{{include "dockerHubMirror" .}}/{{ .Values.image }}:{{.Values.imageTag }}"
         imagePullPolicy: {{ default "IfNotPresent" .Values.imagePullPolicy | quote }}
+        env:
+          - name: RABBIT_START_TIMEOUT
+            value: {{ .Values.livenessProbe.initialDelaySeconds | quote }}
         command:
           - bash
         args:

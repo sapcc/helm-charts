@@ -47,6 +47,9 @@ enable_nullroute_sync = {{ .Values.aci.enable_nullroute_sync }}
 {{- if .Values.aci.enable_az_aware_subnet_routes_sync }}
 enable_az_aware_subnet_routes_sync = {{ .Values.aci.enable_az_aware_subnet_routes_sync }}
 {{- end }}
+{{- if .Values.aci.sync_allocations_done_file_path }}
+sync_allocations_done_file_path = {{ .Values.aci.sync_allocations_done_file_path }}
+{{- end }}
 
 {{- if .Values.aci.pc_policy_groups }}
 {{ range $i, $pc_policy_group := .Values.aci.pc_policy_groups }}

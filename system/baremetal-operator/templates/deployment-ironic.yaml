@@ -3,7 +3,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: baremetal-operator-ironic
-  namespace: {{ .Values.namespace }}
+  namespace: {{ .Release.Namespace }}
 spec:
   minReadySeconds: 10
   progressDeadlineSeconds: 600
@@ -25,8 +25,6 @@ spec:
         checksum/configmap-dnsmasq: {{ include (print $.Template.BasePath "/configmap-ironic-dnsmasq.yaml") . | sha256sum }}
     spec:
       hostNetwork: true
-      nodeSelector:
-        kubernetes.io/hostname: {{ .Values.ironic.host }}
       containers:
       - command:
         - /bin/runironic
@@ -35,7 +33,7 @@ spec:
             name: baremetal-operator-ironic-htpasswd
         - configMapRef:
             name: ironic-config
-        image: "{{ required ".Values.global.quayIoMirrorAlternateRegion is missing" $.Values.global.quayIoMirrorAlternateRegion }}/{{ $.Values.images.ironic.image }}:{{ $.Values.images.ironic.tag }}"
+        image: "{{ $.Values.images.ironic.image }}:{{ $.Values.images.ironic.tag }}"
         imagePullPolicy: IfNotPresent
         livenessProbe:
           exec:
@@ -88,7 +86,7 @@ spec:
             name: baremetal-operator-ironic-inspector-htpasswd
         - configMapRef:
             name: ironic-config
-        image: "{{ required ".Values.global.quayIoMirrorAlternateRegion is missing" $.Values.global.quayIoMirrorAlternateRegion }}/{{ $.Values.images.ironicInspector.image }}:{{ $.Values.images.ironicInspector.tag }}"
+        image: "{{ $.Values.images.ironicInspector.image }}:{{ $.Values.images.ironicInspector.tag }}"
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: {{ .Values.ironic.inspectorPort }}

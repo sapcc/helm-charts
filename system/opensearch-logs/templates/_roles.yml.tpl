@@ -121,6 +121,17 @@ data:
     - "indices:data/write/delete"
     - "indices:data/write/index"
     - "indices:data/write/update"
+  - index_patterns:
+    - "syslog-*"
+    allowed_actions:
+    - "indices:admin/template/get"
+    - "indices:admin/template/put"
+    - "indices:admin/mapping/put"
+    - "indices:admin/create"
+    - "indices:data/write/bulk*"
+    - "indices:data/write/delete"
+    - "indices:data/write/index"
+    - "indices:data/write/update"
 
 syslog:
   reserved: false

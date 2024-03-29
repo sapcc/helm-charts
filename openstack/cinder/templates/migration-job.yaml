@@ -8,6 +8,9 @@ metadata:
     component: cinder
 spec:
   template:
+    metadata:
+      annotations:
+        {{- include "utils.linkerd.pod_and_service_annotation" . | indent 8 }}
     spec:
       restartPolicy: OnFailure
       {{- include "utils.proxysql.job_pod_settings" . | nindent 6 }}
@@ -22,7 +25,7 @@ spec:
             - -c
             - |
               cinder-manage db sync
-              {{ include "utils.proxysql.proxysql_signal_stop_script" . | trim }}
+              {{- include "utils.script.job_finished_hook" . | nindent 14 }}
           volumeMounts:
             - name: etccinder
               mountPath: /etc/cinder

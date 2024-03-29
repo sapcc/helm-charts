@@ -27,6 +27,8 @@
 - name: CASTELLUM_LOG_SCRAPES
   value: "true"
 {{- if $.Values.castellum.asset_managers | has "nfs-shares" }}
+- name: CASTELLUM_NFS_DISCOVERY_PROMETHEUS_URL
+  value: "http://prometheus-openstack.prometheus-openstack.svc:9090"
 - name: CASTELLUM_NFS_PROMETHEUS_URL
   value: "http://prometheus-storage.infra-monitoring.svc:9090"
 {{- end }}
@@ -35,7 +37,10 @@
 - name: CASTELLUM_RABBITMQ_QUEUE_NAME
   value: "{{ .Values.castellum.rabbitmq.queue_name }}"
 - name: CASTELLUM_RABBITMQ_USERNAME
-  value: "{{ .Values.castellum.rabbitmq.username }}"
+  valueFrom:
+    secretKeyRef:
+      name: castellum-secret
+      key: rabbitmq_username
 - name: CASTELLUM_RABBITMQ_PASSWORD
   valueFrom:
     secretKeyRef:

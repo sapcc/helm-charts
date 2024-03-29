@@ -46,7 +46,7 @@ spec:
 
         default isPodAllowedToUseHostNetwork = false
         default isPodAllowedToUseHostPID = false
-        default isPodAllowedToUsePrivilegeEscalation = false
+        default isContainerAllowedToUsePrivilegeEscalation(container) = false
         default isContainerAllowedToBePrivileged(container) = false
         default isContainerAllowedToUseCapability(container, capability) = false
         default isContainerAllowedToAccessHostPath(container, hostPath, readOnly) = false
@@ -79,7 +79,7 @@ spec:
         violation[{"msg": add_support_labels.from_k8s_object(iro, msg)}] {
           container := containers[_]
           object.get(container, ["securityContext", "allowPrivilegeEscalation"], false)
-          not isPodAllowedToUsePrivilegeEscalation
+          not isContainerAllowedToUsePrivilegeEscalation(container)
           msg := sprintf("pod is not allowed to set spec.containers[%q].securityContext.allowPrivilegeEscalation = true", [container.name])
         }
 
@@ -230,7 +230,7 @@ spec:
 
         # TODO: Why does Concourse need its own ingress? And why does it need
         # CAP_NET_BIND_SERVICE instead of being exposed via a k8s Service?
-        isPodAllowedToUsePrivilegeEscalation = true {
+        isContainerAllowedToUsePrivilegeEscalation(container) = true {
           isConcourseKubernetesIngressPod
         }
         isContainerAllowedToUseCapability(container, capability) = true {
@@ -512,7 +512,7 @@ spec:
           # kube-system-ldap-named-user and nvidia-driver-installer need this
           isKubeSystemPod
         }
-        isPodAllowedToUsePrivilegeEscalation = true {
+        isContainerAllowedToUsePrivilegeEscalation(container) = true {
           # needed by kube-system-ingress-nginx-external-controller, in scaleout
           # also by csi-cinder-node-plugin
           isKubeSystemPod
@@ -547,24 +547,36 @@ spec:
         ########################################################################
         # allowlist for linkerd
 
-        default isLinkerdCorePod = false
-        isLinkerdCorePod = true {
+        default isPodWithLinkerdInit = false
+        isPodWithLinkerdInit = true {
+          # linkerd's own containers specify the linkerd-init container in their Deployment
           iro.kind == "Deployment"
           iro.metadata.namespace == "linkerd"
           iro.metadata.name in {"linkerd-destination", "linkerd-identity", "linkerd-proxy-injector"}
           helmReleaseName == "linkerd"
         }
+        isPodWithLinkerdInit = true {
+          # payload containers get linkerd-init via the linkerd mutation webhook, so the init container
+          # will only be visible on the Pod level, not on PodSpec-owning objects
+          iro.kind == "Pod"
+        }
+
+        default isLinkerdInitContainer(container) = false
+        isLinkerdInitContainer(container) = true {
+          isPodWithLinkerdInit
+          container.name == "linkerd-init"
+          regex.match("^keppel\\.[a-z0-9-]+\\.cloud\\.sap/ccloud/servicemesh/proxy-init:", container.image)
+        }
 
         isContainerAllowedToUseCapability(container, capability) = true {
-          isLinkerdCorePod
-          container.name == "linkerd-init"
+          isLinkerdInitContainer(container)
           capability in {"NET_ADMIN", "NET_RAW"}
         }
-        isPodAllowedToUsePrivilegeEscalation = true {
-          isLinkerdCorePod
+        isContainerAllowedToUsePrivilegeEscalation(container) = true {
+          isLinkerdInitContainer(container)
         }
         isContainerAllowedToBePrivileged(container) = true {
-          isLinkerdCorePod
+          isLinkerdInitContainer(container)
           container.name == "linkerd-init"
         }
 

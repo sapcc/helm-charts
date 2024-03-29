@@ -21,10 +21,15 @@ data:
         prefix: {{ required "no approle.prefix given" $approle.vault.prefix | quote }}
         ttl: {{ required "no approle.ttl given" $approle.vault.ttl | quote }}
         rotate: {{ required "no approle.rotate given" $approle.vault.rotate | quote }}
-        tokenTTL: {{ required "no approle.ttl given" $approle.vault.tokenTTL | quote }}
+        tokenTTL: {{ required "no approle.tokenTTL given" $approle.vault.tokenTTL | quote }}
         url: {{ required "no vault.url given" $approle.vault.url | quote }}
         approleMount: {{ required "no vault.approleMount given" $approle.vault.approleMount | quote }}
         keyValueMount: {{ required "no vault.keyValueMount given" $approle.vault.keyValueMount | quote }}
+        {{- if $approle.vault.metadata }}
+        metadata:
+          maintain: {{ $approle.vault.metadata.maintain }}
+          owner: {{ $approle.vault.metadata.owner }}
+        {{- end }}
         userPass:
           username: ${VAULT_USERNAME_{{- $index -}} }
           password: ${VAULT_PASSWORD_{{- $index -}} }

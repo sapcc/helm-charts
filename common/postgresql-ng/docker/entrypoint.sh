@@ -60,12 +60,13 @@ if [[ $(id -u) == 0 ]]; then
     rmdir /data/data
 
     # and move back to the right place
-    mkdir -m 750 -p "/data/postgresql/$old_version"
+    # shellcheck disable=SC2174
+    mkdir -m 700 -p "/data/postgresql/$old_version"
     mv /data/old/* "/data/postgresql/$old_version/"
     chown -R postgres:postgres /data/postgresql
-    chmod -R 750 /data/postgresql
+    chmod -R 700 /data/postgresql
 
-    touch /migrated_from_old_chart
+    touch /data/postgresql/$old_version/migrated_from_old_chart
   fi
 
   # setup the default directories with correct permissions
@@ -101,7 +102,9 @@ fi
 
 # check for older postgres databases and upgrade from them if possible
 found_current_db=false
-for data in $(find /var/lib/postgresql/ -mindepth 1 -maxdepth 1 -not -name ".*" | sort --version-sort); do
+# Only directories are matched to not match accidential left behind files or /var/lib/postgresql/update_extensions.sql.
+# Also directories beginning with a dot like .cache or .local are ignored in case a login shell was ever used for the postgres user
+for data in $(find /var/lib/postgresql/ -mindepth 1 -maxdepth 1 -type d -not -name ".*" | sort --version-sort); do
   # we found a newer postgres version than the user wants to start
   if [[ $found_current_db == true ]]; then
     echo "Found a newer postgres database than being run. This is not supported and not a valid way to rollback"
@@ -124,14 +127,14 @@ for data in $(find /var/lib/postgresql/ -mindepth 1 -maxdepth 1 -not -name ".*" 
     exit 1
   fi
 
-  # create a backup unless we are migrating from the old chart
-  if [[ ! -e /migrated_from_old_chart && ${PERSISTENCE_ENABLED:-false} == true ]]; then
-    if [[ $old_version -lt 12 ]]; then
-      postgres_auth_method=md5
-    else
-      postgres_auth_method=scram-sha-256
-    fi
+  if (( $(echo "$old_version >= 12" | bc -l) )); then
+    postgres_auth_method=scram-sha-256
+  else
+    postgres_auth_method=md5
+  fi
 
+  # create a backup unless we are migrating from the old chart
+  if [[ ! -e /data/postgresql/$old_version/migrated_from_old_chart && ${PERSISTENCE_ENABLED:-false} == true ]]; then
     # set envs to start old postgres version
     old_path=$PATH
     old_pgbin=$PGBIN
@@ -166,6 +169,9 @@ for data in $(find /var/lib/postgresql/ -mindepth 1 -maxdepth 1 -not -name ".*" 
     PGDATA=$old_pgdata
   fi
 
+  # make sure the old pg_hba.conf contains valid entries for us
+  echo -e "local  all  postgres  trust\nhost  all  backup  all  $postgres_auth_method\nhost  all  postgres  all  $postgres_auth_method\n" >"$data/pg_hba.conf"
+
   # pg_upgrade wants to have write permission for cwd
   cd /var/lib/postgresql
   pg_upgrade --link --jobs="$(nproc)" \
@@ -176,7 +182,8 @@ for data in $(find /var/lib/postgresql/ -mindepth 1 -maxdepth 1 -not -name ".*" 
   updated_db=true
   ./delete_old_cluster.sh
   # postgres 12 generates an additional shellscript which only contains vacuumdb like we run it below
-  rm -f delete_old_cluster.sh analyze_new_cluster.sh
+  # clear the old chart marker which might or might not exist and could be there from an upgrade that crashed previously
+  rm -f delete_old_cluster.sh analyze_new_cluster.sh "/data/postgresql/$old_version/migrated_from_old_chart"
   cd -
   break
 done
@@ -184,8 +191,16 @@ done
 # restore standard pg_hba.conf and reload the config into postgres
 cp /usr/local/share/pg_hba.conf "$PGDATA/pg_hba.conf"
 echo -e "host  all  all  all  $PGAUTHMETHOD\n" >>"$PGDATA/pg_hba.conf"
+# update postgres.conf
+cp /etc/postgresql/postgresql.conf "$PGDATA/postgresql.conf"
 start_postgres
 PGDATABASE='' process_sql --dbname postgres -c "SELECT pg_reload_conf()"
+
+# there might be some extensions which we need to enable
+if [[ -f /var/lib/postgresql/update_extensions.sql ]]; then
+  process_sql -f /var/lib/postgresql/update_extensions.sql
+  rm /var/lib/postgresql/update_extensions.sql
+fi
 
 # run the recommended optimization by pg_upgrade to not mitigate performance decreases after an upgrade
 if [[ $updated_db == true ]]; then
@@ -206,10 +221,17 @@ if [[ $created_db == true ]]; then
   done
 fi
 
+if (( $(echo "$PGVERSION >= 12" | bc -l) )); then
+  postgres_auth_method=scram-sha-256
+else
+  postgres_auth_method=md5
+fi
+
 # ensure that the configured password matches the password in the database
 # this is required when upgrading the password hashing from md5 to scram-sha-256 which is the case when eg. updating from 9.5 to 15
 # this also allows password rotations with restarts
-PGDATABASE='' process_sql --dbname postgres --set user="$PGUSER" --set password="$PGPASSWORD" <<-'EOSQL'
+PGDATABASE='' process_sql --dbname postgres --set user="$PGUSER" --set password_encryption="$postgres_auth_method" --set password="$PGPASSWORD" <<-'EOSQL'
+  SET password_encryption = :'password_encryption';
   ALTER USER :user WITH PASSWORD :'password';
 EOSQL
 

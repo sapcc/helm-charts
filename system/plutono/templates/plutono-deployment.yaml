@@ -17,6 +17,7 @@ spec:
         checksum/plutono.etc: {{ include "plutono/templates/plutono-etc-configmap.yaml" . | sha256sum }}
         checksum/plutono.bin: {{ include "plutono/templates/plutono-bin-configmap.yaml" . | sha256sum }}
         checksum/plutono.ini: {{ include "plutono/templates/_plutono.ini.tpl" . | sha256sum }}
+        checksum/plutono-secrets: {{ include "plutono/templates/plutono-secrets.yaml" . | sha256sum }}
         checksum/ldap.toml: {{ include "plutono/templates/_ldap.toml.tpl" . | sha256sum }}
         checksum/plutono-start: {{ include "plutono/templates/_plutono-start.tpl" . | sha256sum }}
         checksum/plutono-initial-setup: {{ include "plutono/templates/_plutono-initial-setup.tpl" . | sha256sum }}
@@ -65,6 +66,11 @@ spec:
           env:
             - name: PL_PATHS_PROVISIONING
               value: "/var/lib/plutono/provisioning"
+            - name: PL_DATABASE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: '{{ $.Release.Name }}-pguser-plutono'
+                  key: 'postgres-password'
           ports:
             # Note: even if the port is called metrics, Grafana UI also runs on it
             - name: metrics
@@ -107,9 +113,15 @@ spec:
             - name: GIT_SSL_NO_VERIFY
               value: "true"
             - name: GITSYNC_USERNAME
-              value: {{.Values.plutono.gitsync.username}}
+              valueFrom:
+                secretKeyRef:
+                  name: plutono-secrets
+                  key: git_sync_user
             - name: GITSYNC_PASSWORD
-              value: {{.Values.plutono.gitsync.password}}
+              valueFrom:
+                secretKeyRef:
+                  name: plutono-secrets
+                  key: git_sync_password
           volumeMounts:
             - name: plutono-git
               mountPath: /git

@@ -25,10 +25,20 @@ spec:
       metadata:
         labels:
           thanos: {{ include "thanos.name" (list $name $root) }}
+        {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+        annotations:
+          linkerd.io/inject: enabled
+        {{- end }}
     deploymentOverrides:
       spec:
         replicas: {{ $.Values.query.replicas }}
         template:
+          {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+          metadata:
+            annotations:
+              linkerd.io/inject: enabled
+              config.linkerd.io/proxy-ephemeral-storage-request: 10M
+          {{- end }}
           spec:
             containers:
             - image: {{ include "thanosimage" $root }}
@@ -94,9 +104,19 @@ spec:
       metadata:
         labels:
           thanos: {{ include "thanos.name" (list $name $root) }}
+        {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+        annotations:
+          linkerd.io/inject: enabled
+        {{- end }}
     deploymentOverrides:
       spec:
         template:
+          {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+          metadata:
+            annotations:
+              linkerd.io/inject: enabled
+              config.linkerd.io/proxy-ephemeral-storage-request: 10M
+          {{- end }}
           spec:
             containers:
             - image: {{ include "thanosimage" $root }}

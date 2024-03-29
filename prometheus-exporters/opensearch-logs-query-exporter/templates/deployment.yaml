@@ -22,6 +22,10 @@ spec:
         component: opensearch-logs-query-exporter
       annotations:
         checksum/configmap.yaml: {{ include  (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+        linkerd.io/inject: enabled
+        {{- end }}
+        kubectl.kubernetes.io/default-container: "opensearch-logs-query-exporter"
     spec:
       nodeSelector:
         ccloud.sap.com/nodepool: payload
@@ -37,7 +41,18 @@ spec:
         - name: opensearch-logs-query-exporter
           image: {{.Values.global.registry}}/prometheus-es-exporter:{{ .Values.version }}
           imagePullPolicy: Always
-          command: [ "prometheus-es-exporter", "-p", "{{.Values.listen_port}}", "--config-dir", "/opensearch-logs-query-exporter/", "--cluster-health-disable", "--indices-stats-disable", "--basic-user", "{{ .Values.global.prom_user }}", "--basic-password", "{{ .Values.global.prom_password }}", "-e", "{{.Values.protocol}}://{{.Values.hostname}}:{{.Values.port}}", "--log-level", "{{.Values.log_level}}", "--nodes-stats-disable" ]
+          command: [ "prometheus-es-exporter", "-p", "{{.Values.listen_port}}", "--config-dir", "/opensearch-logs-query-exporter/", "--cluster-health-disable", "--indices-stats-disable", "-e", "{{.Values.protocol}}://{{.Values.hostname}}:{{.Values.port}}", "--log-level", "{{.Values.log_level}}", "--nodes-stats-disable" ]
+          env:
+          - name: ES_EXPORTER_BASIC_USER
+            valueFrom:
+              secretKeyRef:
+                name: logs-query-exporter-secrets
+                key: username
+          - name: ES_EXPORTER_BASIC_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: logs-query-exporter-secrets
+                key: password
           ports:
             - name: metrics
               containerPort: {{ .Values.listen_port }}

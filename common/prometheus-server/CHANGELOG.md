@@ -1,3 +1,15 @@
+## 7.5.4
+
+* Adding linkerd eph requests
+
+## 7.5.0 - 7.5.3
+
+* Adding linkerd
+
+## 7.4.16
+
+* request ephemeral storage to avoid evicting due to minor usage
+
 ## 7.4.15
 
 * Added failsafe to Prometheus kubernetes and kubernikus specific alerts with hint to thanos ruler.

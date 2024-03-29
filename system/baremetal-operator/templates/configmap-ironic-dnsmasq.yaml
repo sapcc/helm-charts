@@ -2,7 +2,7 @@ kind: ConfigMap
 apiVersion: v1
 metadata:
   name: ironic-dnsmasq
-  namespace: {{ .Values.namespace }}
+  namespace: {{ .Release.Namespace }}
 data:
   dnsmasq.conf: |
     interface={{ .Values.dnsmasq.interface }}
@@ -16,23 +16,18 @@ data:
     port=0
     log-dhcp
     {{- range $key, $pool := .Values.dnsmasq.dhcpPools }}
-    dhcp-range=set:{{ $key }},{{ $pool.ipStart }},{{ $pool.ipEnd }},{{ $pool.mask }},{{ $.Values.dnsmasq.leaseTime }}
+    dhcp-range=set:{{ $pool.ipPoolStart }},{{ $pool.ipPoolStart }},{{ $pool.ipPoolEnd }},{{ $pool.mask }},{{ $.Values.dnsmasq.leaseTime }}
     {{- end }}
 
     # It can be used when setting DNS or GW variables.
     # Set default router
     {{- range $key, $pool := .Values.dnsmasq.dhcpPools }}
-    dhcp-option=set:{{ $key }},option:router,{{ $pool.router }}
+    dhcp-option=set:{{ $pool.ipPoolStart }},option:router,{{ $pool.router }}
     {{- end }}
 
     # Set dns servers
     dhcp-option=6,{{ .Values.dnsmasq.dnsServers }}
     dhcp-option=option:domain-name,cc.{{ .Values.global.region }}.cloud.sap
-
-    # Static IPs
-    {{- range $key, $host := .Values.hosts }}
-    dhcp-host={{ $host.bootMac }},{{ $key }},{{ $host.bootip }},set:{{ $host.bb }}
-    {{- end }}
 
     # IPv4 Configuration:
     dhcp-match=ipxe,175

@@ -21,6 +21,11 @@ spec:
         component: octobus-query-exporter-global
       annotations:
         checksum/configmap.yaml: {{ include  (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        checksum/secret.yaml: {{ include  (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
+        kubectl.kubernetes.io/default-container: "octobus-query-exporter-global"
+        {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+        linkerd.io/inject: enabled
+        {{- end }}
     spec:
       nodeSelector:
         ccloud.sap.com/nodepool: payload
@@ -32,24 +37,30 @@ spec:
         - name: octobus-query-exporter-global
           configMap:
             name: octobus-query-exporter-global
+        - name: config
+          secret:
+            secretName: octobus-query-exporter-global
       containers:
         - name: octobus-query-exporter-global
-          image: {{ .Values.global.registry }}/{{ .Values.image.repo }}:{{ .Values.image.tag }}
+          image: {{ .Values.global.registry }}/{{ .Values.global.octobus.image.repo }}:{{ .Values.global.octobus.image.tag }}
           imagePullPolicy: IfNotPresent
           command: [ "prometheus-es-exporter",
                      "--cluster-health-disable", "--nodes-stats-disable",
                      "--indices-stats-disable", "--indices-aliases-disable", "--indices-mappings-disable",
+                     "--config", "/config.cfg",
                      "--config-dir", "/octobus-query-exporter-global/",
                      "--port", "{{ .Values.listen_port }}",
                      "--log-level", "{{ .Values.log_level }}",
-                     "--es-cluster", "{{ .Values.octobus.target }}",
-                     "--header", "Authorization: ApiKey {{ .Values.octobus.apikey }}" ]
+                     "--es-cluster", "{{ .Values.octobus.target }}" ]
           ports:
             - name: metrics
               containerPort: {{ .Values.listen_port }}
           volumeMounts:
             - mountPath: /octobus-query-exporter-global
               name: octobus-query-exporter-global
+            - mountPath: /config.cfg
+              name: config
+              subPath: config.cfg
           securityContext:
             capabilities:
               drop:
