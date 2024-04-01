@@ -113,7 +113,9 @@ groups:
       summary: 'Openstack Compute Canary is flapping for 2 hours, see last three reports for more details'
 
   - alert: OpenstackComputeCanaryCreateServerDown
-    expr: cc3test_status{service="nova",name=~"TestComputeServer_create_server-.+", phase="call"} == 0
+    expr: |
+        last_over_time(cc3test_status{service="nova",
+        name=~"TestComputeServer_create_server-.+",phase="call"}[1h]) == 0
     for: 3h
     labels:
       severity: warning
@@ -146,7 +148,9 @@ groups:
       summary: 'Openstack Compute Canary is flapping for 2 hours, see last three reports for more details'
 
   - alert: OpenstackComputeCanaryServerResizeDown
-    expr: cc3test_status{service="nova",name=~"TestComputeServer_resizing.+", phase="call"} == 0
+    expr: |
+        last_over_time(cc3test_status{service="nova",
+        name=~"TestComputeServer_resizing.+",phase="call"}[1h]) == 0
     for: 3h
     labels:
       severity: warning
@@ -179,7 +183,9 @@ groups:
       summary: 'Openstack Compute Canary is flapping for 2 hours, see last three reports for more details'
 
   - alert: OpenstackComputeCanaryServerStartStopDown
-    expr: cc3test_status{service="nova",name=~"TestComputeServer_start_stop_server.+", phase="call"} == 0
+    expr: |
+        last_over_time(cc3test_status{service="nova",
+        name=~"TestComputeServer_start_stop_server.+",phase="call"}[1h]) == 0
     for: 3h
     labels:
       severity: warning
@@ -212,7 +218,9 @@ groups:
       summary: 'Openstack Compute Canary is flapping for 2 hours, see last three reports for more details'
 
   - alert: OpenstackComputeCanaryServerWithUserDataDown
-    expr: cc3test_status{service="nova",name=~"TestComputeServer_server_with_userdata.+",phase="call"} == 0
+    expr: |
+        last_over_time(cc3test_status{service="nova",
+        name=~"TestComputeServer_server_with_userdata.+",phase="call"}[1h]) == 0
     for: 3h
     labels:
       severity: warning
