@@ -1,16 +1,18 @@
 {{ $chartName := .Chart.Name }}
 {{ range $roleBinding := .Values.teamRoleBindings }}
-{{- if and $roleBinding.teamRef $roleBinding.roleRef $roleBinding.clusterName }}
+{{- if and $roleBinding.teamRef $roleBinding.roleRef $roleBinding.clusterNames }}
+{{- range $clusterName := $roleBinding.clusterNames }}
 ---
 apiVersion: greenhouse.sap/v1alpha1
 kind: TeamRoleBinding
 metadata:
-  name: {{ printf "%s-%s-%s" $roleBinding.teamRef $roleBinding.roleRef $roleBinding.clusterName | trunc 63 | trimSuffix "-" }}
+  name: {{ printf "%s-%s-%s" $roleBinding.teamRef $roleBinding.roleRef $clusterName | trunc 63 | trimSuffix "-" }}
   namespace: {{ $chartName }}
 spec:
   teamRef: {{ $roleBinding.teamRef }}
   roleRef: {{ $roleBinding.roleRef }}
-  clusterName: {{ $roleBinding.clusterName }}
+  clusterName: {{ $clusterName }}
+{{- end }}
 {{- else }}
 {{- printf "Error: Missing teamRef, roleRef, or clusterName in teamRoleBinding: %#v" $roleBinding | fail }}
 {{- end }}
