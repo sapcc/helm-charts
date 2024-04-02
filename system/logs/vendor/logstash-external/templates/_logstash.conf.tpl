@@ -45,10 +45,12 @@ input {
 filter {
  if  [type] == "syslog" {
    mutate {
+     id => "mutate-rename-hostname"
      rename => { "host" => "hostname"}
    }
 
    dns {
+     id => "dns-resolve-hostname"
      reverse => [ "hostname" ]
      action => "replace"
      hit_cache_size => "100"
@@ -75,26 +77,32 @@ filter {
 
     if [type] == "alert" {
        json {
+         id => "alert-json-decode"
          source => "message"
        }
        if "_jsonparsefailure" not in [tags] {
          split {
+           id => "alert-json-split"
            field => "alerts"
          }
          mutate {
+             id => "alert-remove-message"
              remove_field => ["message"]
          }
        }
     }
     if [type] == "deployment" {
        json {
+         id => "deployment-json-decode"
          source => "message"
        }
        if "_jsonparsefailure" not in [tags] {
          split {
+           id => "deployment-json-split"
            field => "helm-release"
          }
          mutate {
+             id => "deployment-remove-message"
              remove_field => ["message"]
          }
        }
