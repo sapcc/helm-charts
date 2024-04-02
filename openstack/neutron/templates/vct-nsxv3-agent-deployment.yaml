@@ -96,9 +96,15 @@ template: |
             - name: NSXV3_LOGIN_PORT
               value: "443"
             - name: NSXV3_LOGIN_USER
-              value: "admin"
+              valueFrom:
+                secretKeyRef:
+                  name: neutron-ml2-nsxv3-secret-{= name =}
+                  key: NSXV3_LOGIN_USER
             - name: NSXV3_LOGIN_PASSWORD
-              value: {= username | derive_password(hostname) | quote =}
+              valueFrom:
+                secretKeyRef:
+                  name: neutron-ml2-nsxv3-secret-{= name =}
+                  key: NSXV3_LOGIN_PASSWORD
             - name: NSXV3_REQUESTS_PER_SECOND
               value: "10"
             - name: NSXV3_REQUEST_TIMEOUT_SECONDS
