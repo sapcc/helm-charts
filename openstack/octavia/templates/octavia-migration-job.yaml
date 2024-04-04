@@ -1,4 +1,4 @@
-{{- $proxysql := lookup "v1" "ConfigMap" .Release.Namespace (print .Release.Name "-proxysql-etc") -}}
+{{- $proxysql := lookup "v1" "Secret" .Release.Namespace (print .Release.Name "-proxysql-etc") -}}
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -20,7 +20,7 @@ spec:
   template:
     spec:
       restartPolicy: OnFailure
-    {{- if $proxysql}}
+    {{- if $proxysql }}
       {{- include "utils.proxysql.job_pod_settings" . | nindent 6 }}
     {{- end }}
       initContainers:
@@ -34,7 +34,7 @@ spec:
             - name: DEPENDENCY_SERVICE
               value: "{{ .Release.Name }}-mariadb"
             - name: NAMESPACE
-              value: {{ .Release.Namespace }}        
+              value: {{ .Release.Namespace }}
       containers:
         - name: octavia-migration
           image: {{required ".Values.global.registry is missing" .Values.global.registry}}/loci-octavia:{{required "Values.imageVersion is missing" .Values.imageVersion}}
@@ -65,7 +65,7 @@ spec:
               subPath: logging.ini
               readOnly: true
             {{- include "utils.trust_bundle.volume_mount" . | indent 12 }}
-    {{- if $proxysql}}
+    {{- if $proxysql }}
             {{- include "utils.proxysql.volume_mount" . | indent 12 }}
         {{- include "utils.proxysql.container" . | indent 8 }}
     {{- end }}
@@ -73,7 +73,7 @@ spec:
         - name: octavia-etc
           configMap:
             name: octavia-etc
-    {{- if $proxysql}}
+    {{- if $proxysql }}
         {{- include "utils.proxysql.volumes" . | indent 8 }}
     {{- end }}
         {{- include "utils.trust_bundle.volumes" . | indent 8 }}
