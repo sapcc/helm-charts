@@ -150,8 +150,11 @@ spec:
           periodSeconds: 20
           timeoutSeconds: 10
         env:
-          - name: DATA_SOURCE_NAME # FIXME: get password from secret
-            value: root:{{ include "mariadb.root_password" . }}@tcp({{.Values.name}}-mariadb.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}:3306)/
+          - name: DATA_SOURCE_NAME
+            valueFrom:
+              secretKeyRef:
+                name: mariadb-{{.Values.name}}
+                key: metrics-data-source
           - name: LOGLEVEL
             value: {{ default "info" .Values.metrics.loglevel }}
         ports:
