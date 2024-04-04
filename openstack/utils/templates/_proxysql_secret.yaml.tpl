@@ -24,6 +24,11 @@ metadata:
     system: openstack
     type: configuration
     component: database
+  {{- if .Values.proxysql.forceSecretCreation }}
+  annotations:
+    "helm.sh/hook": pre-upgrade
+    "helm.sh/hook-weight": "-10"
+  {{- end }}
 data:
   proxysql.cnf: |
 {{ include "utils.snippets.set_proxysql_config" (dict "max_connections" $max_connections "dbs" $dbs "dbKeys" $dbKeys "global" $ )  | b64enc | trim | indent 4 }}
