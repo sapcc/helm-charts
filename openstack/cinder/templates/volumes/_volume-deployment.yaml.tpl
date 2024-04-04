@@ -78,7 +78,7 @@ spec:
           mountPath: /etc/cinder/nfs_shares
           subPath: nfs_shares
           readOnly: true
-        - name: volume-secret
+        - name: volume-config
           mountPath: /etc/cinder/cinder-volume.conf
           subPath: cinder-volume.conf
           readOnly: true
@@ -101,14 +101,21 @@ spec:
         configMap:
           name: cinder-etc
       - name: cinder-etc-confd
-        secret:
-          secretName: {{ .Release.Name }}-secrets
+        projected:
+          sources:
+          - secret:
+              name: {{ .Release.Name }}-secrets
+              items:
+                - key: secrets.conf
+                  path: secrets.conf
+          - secret:
+              name: {{ .Release.Name }}-volume-{{ $name }}-secret
+              items:
+                - key: cinder-volume-secrets.conf
+                  path: cinder-volume-secrets.conf
       - name: volume-config
         configMap:
           name: {{ .Release.Name }}-volume-{{ $name }}
-      - name: volume-secret
-        secret:
-          secretName: {{ .Release.Name }}-volume-{{ $name }}-secret
       {{- range $_, $share := $volume.nfs_shares }}
       - name: share-{{ $share.name }}
         nfs:

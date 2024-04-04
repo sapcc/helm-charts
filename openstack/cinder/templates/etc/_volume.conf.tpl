@@ -18,10 +18,6 @@
 [DEFAULT]
 enabled_backends = {{ keys $volume.backends | sortAlpha | join ", " | quote }}
 
-[backend_defaults]
-{{- $backend_defaults := merge (default (dict) $volume.backend_defaults) $envAll.Values.defaults.backends.common }}
-{{- tuple "backend_defaults" $backend_defaults | include "cinder.iniValues" }}
-
 {{- range $name, $backend := $volume.backends }}
     {{- $values := merge $backend (get $envAll.Values.defaults.backends $backend.volume_driver) }}
 
