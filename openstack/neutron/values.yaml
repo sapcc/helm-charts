@@ -547,6 +547,7 @@ mysql_metrics:
           host AS hostgroup,
           COUNT(*) AS value
         FROM aci_port_binding_allocations
+        JOIN (SELECT physical_network pn FROM ml2_vlan_allocations GROUP BY pn) AS mva ON mva.pn = host
         GROUP BY host;
       values:
       - "value"
@@ -559,6 +560,7 @@ mysql_metrics:
           host AS hostgroup,
           SUM(segment_id IS NULL) AS value
         FROM aci_port_binding_allocations
+        JOIN (SELECT physical_network pn FROM ml2_vlan_allocations GROUP BY pn) AS mva ON mva.pn = host
         GROUP BY host;
       values:
       - "value"
