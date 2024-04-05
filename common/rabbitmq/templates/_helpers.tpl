@@ -40,6 +40,10 @@ rabbit://{{ default "" $envAll.Values.global.user_suffix | print $rabbitmq.users
         {{- fail (printf "%v.password missing" $path) }}
     {{- else if hasPrefix "-" $v.password }}
         {{- fail (printf "%v.password starts with hypen" $path) }}
+    {{- else if or (contains "vault+kvv2" $v.password) (contains "vault+kvv2" $v.user)}}
+        {{- printf "%s %s %s" "upsert_user" $v.user $v.password }}
+        {{- if $v.tag }} {{ $v.tag | include "rabbitmq.shell_quote" }}
+        {{- end }}
     {{- else -}}
         upsert_user {{ $v.user | include "rabbitmq.shell_quote" }} {{ $v.password | include "rabbitmq.shell_quote" }}
         {{- if $v.tag }} {{ $v.tag | include "rabbitmq.shell_quote" }}
