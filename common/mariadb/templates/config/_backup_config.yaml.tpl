@@ -42,12 +42,12 @@ storages:
   swift:
     - name: swift-{{ .Values.global.region }}
       auth_version: 3
-      auth_url:  https://identity-3.{{ .Values.global.region }}.cloud.sap/v3
+      auth_url: "https://identity-3.{{ .Values.global.region }}.cloud.sap/v3"
       user_name: db_backup
       user_domain_name: Default
       project_name: master
       project_domain_name: ccadmin
-      password: {{ .Values.backup_v2.swift.password | required "Please set .Values.backup_v2.swift.password" | quote }}
+      password: {{ .Values.backup_v2.swift.password | required "Please set .Values.backup_v2.swift.password" }}
       region: {{ .Values.global.region }}
       container_name: "mariadb-backup-{{ .Values.global.region }}"
 verification:
