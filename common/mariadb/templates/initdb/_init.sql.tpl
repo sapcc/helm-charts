@@ -28,3 +28,12 @@ GRANT {{ . }} TO '{{ $username }}';
         {{- end }}
     {{- end }}
 {{- end }}
+
+{{- if (and (hasKey .Values "ccroot_user") (.Values.ccroot_user.enabled)) }}
+CREATE USER IF NOT EXISTS 'ccroot'@'127.0.0.1';
+GRANT ALL PRIVILEGES ON *.* TO 'ccroot'@'127.0.0.1';
+{{- else }}
+DROP USER IF EXISTS 'ccroot'@'127.0.0.1';
+{{- end }}
+
+FLUSH PRIVILEGES;
