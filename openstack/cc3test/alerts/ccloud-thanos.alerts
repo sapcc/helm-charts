@@ -4,7 +4,8 @@ groups:
   - alert: CCloudThanosQueryDown
     expr: |
         cc3test_status{type="datapath",
-            name=~"TestPrometheus_datapath-metrics.+|TestThanos_datapath-metrics.+"
+            name=~"TestPrometheus_datapath-metrics.+|TestThanos_datapath-metrics.+",
+            phase="call"
         } == 0
     for: 20m
     labels:
@@ -16,7 +17,7 @@ groups:
       meta: 'CCloud Thanos Query {{ $labels.name }} is down'
       dashboard: 'cc3test-datapath-status?var-service={{ $labels.service }}'
       playbook: 'docs/support/playbook/prometheus/alerts/cc3test-alert-thanos'
-      report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
+      report: 'cc3test/admin/object-storage/containers/cc3test/objects/{{ $labels.base64path }}'
     annotations:
       description: 'CCloud Thanos Query {{ $labels.name }} is down'
       summary: 'CCloud CCloud Thanos Query {{ $labels.name }} is down'
@@ -24,7 +25,8 @@ groups:
   - alert: CCloudThanosQueryFlapping
     expr: |
         changes(cc3test_status{type="datapath",
-            name=~"TestPrometheus_datapath-metrics.+|TestThanos_datapath-metrics.+"
+            name=~"TestPrometheus_datapath-metrics.+|TestThanos_datapath-metrics.+",
+            phase="call"
         }[30m]) > 8
     labels:
       severity: warning
@@ -35,7 +37,7 @@ groups:
       meta: 'CCloud CCloud Thanos Query {{ $labels.name }} is flapping'
       dashboard: 'cc3test-datapath-status?var-service={{ $labels.service }}'
       playbook: 'docs/support/playbook/prometheus/alerts/cc3test-alert-thanos'
-      report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
+      report: 'cc3test/admin/object-storage/containers/cc3test/objects/{{ $labels.base64path }}'
     annotations:
       description: 'CCloud CCloud Thanos Query {{ $labels.name }} is flapping'
       summary: 'CCloud CCloud Thanos Query {{ $labels.name }} is flapping'
