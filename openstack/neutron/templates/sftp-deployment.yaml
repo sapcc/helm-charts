@@ -22,7 +22,7 @@ spec:
       labels:
         component: neutron-sftp-backup
       annotations:
-        configmap-etc-hash: {{ include (print $.Template.BasePath "/sftp-configmap.yaml") . | sha256sum }}
+        configmap-etc-hash: {{ include (print $.Template.BasePath "/sftp-secrets.yaml") . | sha256sum }}
         {{- include "utils.linkerd.pod_and_service_annotation" . | indent 8 }}
     spec:
       containers:
@@ -56,7 +56,7 @@ spec:
             {{- include "utils.trust_bundle.volume_mount" . | indent 12 }}
       volumes:
         - name: neutron-sftp-backup
-          configMap:
-            name: neutron-sftp-backup
+          secret:
+            secretName: neutron-sftp-backup
         - name: cache-volume
           emptyDir: {}
