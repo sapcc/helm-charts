@@ -1,3 +1,7 @@
+## 7.5.5
+
+* VPA alerts should always go to observability support_group
+
 ## 7.5.4
 
 * Adding linkerd eph requests
