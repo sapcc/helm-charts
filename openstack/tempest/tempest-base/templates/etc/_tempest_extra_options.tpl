@@ -148,7 +148,4 @@ barbican = True
 keystone = True
 octavia = True
 
-[dns]
-build_timeout=720
-
 {{ end }}
