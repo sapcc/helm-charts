@@ -11,21 +11,13 @@
         {{- end }}
     {{- end }}
 {{- end }}
-{{- define "volume_conf" -}}
+{{- define "volume_conf_secrets" -}}
 {{- $volume := index . 2 -}}
 {{- $name := index . 1 -}}
 {{- with $envAll := index . 0 -}}
-[DEFAULT]
-enabled_backends = {{ keys $volume.backends | sortAlpha | join ", " | quote }}
-
-{{- range $name, $backend := $volume.backends }}
-    {{- $values := merge $backend (get $envAll.Values.defaults.backends $backend.volume_driver) }}
-
-[{{$name}}]
-volume_backend_name = {{ $name | quote }}
-    {{- tuple $name $values | include "cinder.iniValues" }}
-
-{{- end }}
+[backend_defaults]
+{{- $backend_defaults := merge (default (dict) $volume.backend_defaults) $envAll.Values.defaults.backends.common }}
+{{- tuple "backend_defaults" $backend_defaults | include "cinder.iniValues" }}
 
 {{- end }}
 {{- end }}
