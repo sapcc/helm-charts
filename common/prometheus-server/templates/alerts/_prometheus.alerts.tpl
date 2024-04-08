@@ -264,7 +264,7 @@ groups:
     for: 15m
     labels:
       service: {{ include "alertServiceLabelOrDefault" "metrics" }}
-      support_group: {{ include "alertSupportGroupOrDefault" "observability" }}
+      support_group: observability
       severity: info
       meta: Prometheus VPA for `{{`{{ $labels.verticalpodautoscaler }}`}}` in `{{`{{ $labels.namespace }}`}}` is recommending more memory.
     annotations:
@@ -280,7 +280,7 @@ groups:
     for: 15m
     labels:
       service: {{ include "alertServiceLabelOrDefault" "metrics" }}
-      support_group: {{ include "alertSupportGroupOrDefault" "observability" }}
+      support_group: observability
       severity: info
       meta: Prometheus VPA for `{{`{{ $labels.verticalpodautoscaler }}`}}` in `{{`{{ $labels.namespace }}`}}` is recommending more CPUs.
     annotations:
