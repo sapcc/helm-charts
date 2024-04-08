@@ -263,8 +263,8 @@ groups:
       round(vpa_butler_vpa_container_recommendation_excess{verticalpodautoscaler=~"{{ include "prometheus.fullName" . }}",resource="memory"} / 1024 / 1024 / 1024, 0.1 ) > 0.1
     for: 15m
     labels:
-      service: {{ include "alertServiceLabelOrDefault" "metrics" }}
-      support_group: observability
+      service: {{ default "metrics" $root.Values.alerts.service }}
+      support_group: {{ default "observability" $root.Values.alerts.support_group }}
       severity: info
       meta: Prometheus VPA for `{{`{{ $labels.verticalpodautoscaler }}`}}` in `{{`{{ $labels.namespace }}`}}` is recommending more memory.
     annotations:
@@ -279,8 +279,8 @@ groups:
       round(vpa_butler_vpa_container_recommendation_excess{verticalpodautoscaler=~"{{ include "prometheus.fullName" . }}",resource="cpu"}, 0.1) > 0.1
     for: 15m
     labels:
-      service: {{ include "alertServiceLabelOrDefault" "metrics" }}
-      support_group: observability
+      service: {{ default "metrics" $root.Values.alerts.service }}
+      support_group: {{ default "observability" $root.Values.alerts.support_group }}
       severity: info
       meta: Prometheus VPA for `{{`{{ $labels.verticalpodautoscaler }}`}}` in `{{`{{ $labels.namespace }}`}}` is recommending more CPUs.
     annotations:
