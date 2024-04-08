@@ -249,16 +249,6 @@
   </parse>
 </filter>
 
-<filter kubernetes.var.log.containers.elk-fluent**>
-  @type parser
-  key_name log
-  reserve_data true
-  <parse>
-    @type grok
-    grok_pattern %{TIMESTAMP_ISO8601:timestamp} \+0000 \[%{WORD:loglevel}
-  </parse>
-</filter>
-
 <filter kubernetes.var.log.containers.arc-api**>
   @type record_transformer
   <record>
@@ -342,7 +332,7 @@
   </parse>
 </filter>
 
-<filter kubernetes.var.log.containers.elk-k8s-event-exporter**>
+<filter kubernetes.var.log.containers.logs-k8s-event-exporter**>
   @type parser
   @id json_parser
   key_name log
