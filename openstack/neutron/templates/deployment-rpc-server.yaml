@@ -37,6 +37,7 @@ spec:
         configmap-bin-hash: {{ include (print $.Template.BasePath "/configmap-bin.yaml") . | sha256sum }}
         {{- if .Values.cc_fabric.enabled }}
         configmap-etc-cc-fabric: {{ include (print $.Template.BasePath "/configmap-etc-cc-fabric.yaml") . | sha256sum }}
+        secret-cc-fabric: {{ include (print $.Template.BasePath "/secret-cc-fabric.yaml") $ | sha256sum }}
         {{- end }}
         {{- if .Values.proxysql.mode }}
         prometheus.io/scrape: "true"
@@ -112,6 +113,8 @@ spec:
               name: neutron-etc-cc-fabric
               subPath: cc-fabric-driver-config.yaml
               readOnly: true
+            - mountPath: /etc/neutron/cc-fabric-secrets/
+              name: neutron-cc-fabric-secrets
 {{- end }}
             - mountPath: /etc/neutron/plugins/ml2/ml2-conf.ini
               name: neutron-etc
@@ -178,6 +181,9 @@ spec:
         - name: neutron-etc-cc-fabric
           configMap:
             name: neutron-etc-cc-fabric
+        - name: neutron-cc-fabric-secrets
+          secret:
+            secretName: neutron-cc-fabric-secrets
 {{- end }}
         - name: neutron-etc-vendor
           configMap:
