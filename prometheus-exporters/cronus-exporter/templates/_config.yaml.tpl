@@ -16,6 +16,7 @@ exporter:
   accountsDelay: {{ .Values.exporter.accountsDelay }}
   identityDelay: {{ .Values.exporter.identityDelay }}
   quotaDelay: {{ .Values.exporter.quotaDelay }}
+  clientErrorDelay: {{ .Values.exporter.clientErrorDelay }}
   maxAllowedSuppression: {{ .Values.exporter.maxAllowedSuppression }}
   getAccountsDelayHour: {{ .Values.exporter.getAccountsDelayHour }}
   applicationCredentialsProject: {{ .Values.updater.applicationCredentialsProject }}
