@@ -143,6 +143,4 @@ thread_pool_size = 3
 {{- include "osprofiler" . }}
 {{- end }}
 
-{{- include "ini_sections.audit_middleware_notifications" . }}
-
 {{- include "ini_sections.cache" . }}
