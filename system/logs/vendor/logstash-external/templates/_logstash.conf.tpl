@@ -135,8 +135,8 @@ output {
       hosts => ["https://{{.Values.global.opensearch.host}}:{{.Values.global.opensearch.port}}"]
       auth_type => {
         type => "basic"
-        user => "${OPENSEARCH_USER}"
-        password => "${OPENSEARCH_PASSWORD}"
+        user => "${OPENSEARCH_SYSLOG_USER}"
+        password => "${OPENSEARCH_SYSLOG_PASSWORD}"
       }
       template => "/logstash-etc/alerts.json"
       template_name => "alerts"
@@ -152,8 +152,8 @@ output {
       hosts => ["https://{{.Values.global.opensearch.host}}:{{.Values.global.opensearch.port}}"]
       auth_type => {
         type => "basic"
-        user => "${OPENSEARCH_USER}"
-        password => "${OPENSEARCH_PASSWORD}"
+        user => "${OPENSEARCH_SYSLOG_USER}"
+        password => "${OPENSEARCH_SYSLOG_PASSWORD}"
       }
       template => "/logstash-etc/alerts.json"
       template_name => "alerts"
@@ -169,8 +169,8 @@ output {
       hosts => ["https://{{.Values.global.opensearch.host}}:{{.Values.global.opensearch.port}}"]
       auth_type => {
         type => "basic"
-        user => "${OPENSEARCH_USER}"
-        password => "${OPENSEARCH_PASSWORD}"
+        user => "${OPENSEARCH_SYSLOG_USER}"
+        password => "${OPENSEARCH_SYSLOG_PASSWORD}"
       }
       template => "/logstash-etc/alerts.json"
       template_name => "alerts"
