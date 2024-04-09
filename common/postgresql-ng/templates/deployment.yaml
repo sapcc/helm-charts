@@ -111,7 +111,11 @@ spec:
             - "[[ -e /tmp/in-init ]] || exec pg_isready --host $POD_IP"
           initialDelaySeconds: 5
           timeoutSeconds: {{ .Values.probe_timeout_secs }}
-        resources: {{ toYaml .Values.resources | nindent 10 }}
+        resources:
+          limits: {{ toYaml .Values.resources.limits | nindent 12 }}
+          {{- if not (.Values.global.region | regexMatch "^qa-de-[2-6]$") }}
+          requests: {{ toYaml .Values.resources.requests | nindent 12 }}
+          {{- end }}
         volumeMounts:
         - name: data
           mountPath: /data
