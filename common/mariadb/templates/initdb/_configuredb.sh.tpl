@@ -16,7 +16,6 @@ cat /var/lib/initdb/init.sql > /tmp/init.sql
 echo "Copying init.sql to ${POD_NAME}:/tmp/init.sql"
 kubectl-v${VERSION} cp /tmp/init.sql ${POD_NAME}:/var/opt/initdb.sql -c mariadb
 
-kubectl-v${VERSION} exec -c mariadb ${POD_NAME} -- cat /var/opt/initdb.sql
 # Run the SQL script
 echo "Running init.sql"
 kubectl-v${VERSION} exec -c mariadb ${POD_NAME} -- mariadb -uroot --batch -e "source /var/opt/initdb.sql"
