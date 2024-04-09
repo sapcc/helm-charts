@@ -121,8 +121,8 @@ output {
       template_overwrite => true
       auth_type => {
         type => "basic"
-        user => "${OPENSEARCH_USER}"
-        password => "${OPENSEARCH_PASSWORD}"
+        user => "${OPENSEARCH_SYSLOG_USER}"
+        password => "${OPENSEARCH_SYSLOG_PASSWORD}"
       }
       ssl => true
       ssl_certificate_verification => true
