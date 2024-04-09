@@ -194,7 +194,6 @@ spec:
               readOnly: true
             - name: keystone-bin
               mountPath: /scripts
-              readOnly: true
             {{- if .Values.sapcc_rate_limit.enabled }}
             - name: keystone-etc
               mountPath: /etc/keystone/ratelimit.yaml
@@ -247,13 +246,12 @@ spec:
             defaultMode: 0444
         - name: keystone-bin
           projected:
+            defaultMode: 0555
             sources:
             - configMap:
                 name: keystone-bin
-                defaultMode: 0555
             - secret:
                 name: keystone-bin-secrets
-                defaultMode: 0555
                 items:
                   - key: bootstrap
                     path: bootstrap
