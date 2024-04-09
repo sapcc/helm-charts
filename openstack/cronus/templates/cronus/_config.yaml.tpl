@@ -108,26 +108,13 @@ cronus:
       errInterval: {{ .Values.cronus.tls.errInterval | default "60s" }}
 {{- end }}
   keystone:
-{{- if .Values.config.keystone }}
-{{- range $key, $value := .Values.config.keystone }}
-  {{- if $value }}
-    {{ $key }}: {{ $value }}
-  {{- end }}
-{{- end }}
-{{- if .Values.global.cronus_service_password }}
-    password: {{ .Values.global.cronus_service_password }}
-{{- end }}
-{{- else }}
     authUrl: {{ .Values.config.authUrl }}
     applicationCredentialID: {{ .Values.config.applicationCredentialID }}
-    applicationCredentialSecret: {{ .Values.config.applicationCredentialSecret }}
     region: {{ .Values.config.region }}
     endpointType: {{ .Values.config.endpointType }}
-{{- end }}
 {{- if .Values.config.workQueue }}
 {{- $r_host := .Values.rabbitmq.host }}
 {{- $r_user := .Values.rabbitmq.users.default.user }}
-{{- $r_creds := .Values.rabbitmq.users.default.password }}
   workQueue:
     enabled: {{ .Values.config.workQueue.enabled }}
 {{- if .Values.config.workQueue.active }}
@@ -297,7 +284,6 @@ cronus:
 {{- end }}
 {{- if .Values.hermes }}
 {{- $user := .Values.rabbitmq_notifications.users.default.user }}
-{{- $password := .Values.rabbitmq_notifications.users.default.password }}
 {{- $host := printf "%s.%s.%s:5672" "hermes-rabbitmq-notifications" .Values.global.region .Values.global.tld }}
   auditSink:
     rabbitmqUrl: amqp://{{ $user }}:{{ $password }}@{{ if .Values.config.cronusAuditSink.host }}{{ .Values.config.cronusAuditSink.host }}{{ else }}{{ $host }}{{ end }}
@@ -329,8 +315,5 @@ cronus:
 {{- end }}
 {{- end }}
     debug: {{ .Values.config.cronusAuditSink.debug | default false }}
-{{- end }}
-{{- if .Values.cronus.sentryDsn }}
-  sentryDsn: {{ .Values.cronus.sentryDsn }}
 {{- end }}
 {{- end -}}

@@ -1,0 +1,16 @@
+{{- if .Values.cronus.enabled -}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cronus
+  namespace: {{ .Release.Namespace }}
+  annotations:
+    cloud.sap/skip-template: "true"
+  labels:
+    app: cronus
+    chart: cronus
+    release: cronus
+    heritage: {{ .Values.Release.Service }}
+data:
+  config.yaml: {{ include "cronus/templates/cronus/_config.yaml.tpl" . | quote }}
+{{- end -}}
