@@ -34,6 +34,7 @@ spec:
         pod.beta.kubernetes.io/hostname:  cc-fabric-{{ $platform }}-agent
         configmap-etc-hash: {{ include (print $.Template.BasePath "/configmap-etc.yaml") $ | sha256sum }}
         configmap-etc-cc-fabric: {{ include (print $.Template.BasePath "/configmap-etc-cc-fabric.yaml") $ | sha256sum }}
+        secret-cc-fabric: {{ include (print $.Template.BasePath "/secret-cc-fabric.yaml") $ | sha256sum }}
         prometheus.io/scrape: "true"
         prometheus.io/targets: {{ required "$.Values.metrics.prometheus missing" $.Values.metrics.prometheus }}
         {{- include "utils.linkerd.pod_and_service_annotation" $ | indent 8 }}
@@ -102,6 +103,8 @@ spec:
               name: neutron-etc
               subPath: logging.conf
               readOnly: true
+            - mountPath: /etc/neutron/cc-fabric-secrets/
+              name: neutron-cc-fabric-secrets
             {{- include "utils.trust_bundle.volume_mount" $ | indent 12 }}
       volumes:
         - name: empty-neutron-ml2
@@ -115,6 +118,9 @@ spec:
         - name: neutron-etc-cc-fabric
           configMap:
             name: neutron-etc-cc-fabric
+        - name: neutron-cc-fabric-secrets
+          secret:
+            secretName: neutron-cc-fabric-secrets
         {{- include "utils.trust_bundle.volumes" $ | indent 8 }}
 {{- end }}
 {{- end }}
