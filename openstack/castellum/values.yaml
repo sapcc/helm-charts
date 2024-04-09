@@ -14,9 +14,8 @@ owner-info:
   helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/openstack/castellum
 
 castellum:
-  image_tag: null                      # must be set by CI pipeline
-  asset_managers: []                   # list of strings, see regional values.yaml
-  rabbitmq_user: notifications-default # name of Vault credential below regional hermes/rabbitmq-user
+  image_tag: null # must be set by CI pipeline
+  asset_managers: [ nfs-shares, project-quota, server-groups]
 
   # List of project seeds. Entries must follow the same format as in the castellum.yaml config file,
   # described in <https://github.com/sapcc/castellum/blob/master/README.md#building-and-running>
@@ -45,6 +44,12 @@ postgresql:
 
   alerts:
     support_group: containers
+
+  resources:
+    limits: &postgres-limits
+      memory: 512Mi
+      cpu: '1'
+    requests: *postgres-limits
 
 pgbackup:
   isPostgresNG: true
