@@ -14,19 +14,9 @@ owner-info:
   helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/openstack/castellum
 
 castellum:
-  image_tag: latest
-  image_pull_policy: Always
-  asset_managers: [] # list of strings, see regional values.yaml
-
-  service_user:
-    password: DEFINED_IN_VALUES_FILE
-
-  # Set to non-empty values to enable audit logging to Hermes.
-  rabbitmq:
-    queue_name: ""
-    username: ""
-    password: ""
-    hostname: ""
+  image_tag: null                      # must be set by CI pipeline
+  asset_managers: []                   # list of strings, see regional values.yaml
+  rabbitmq_user: notifications-default # name of Vault credential below regional hermes/rabbitmq-user
 
   # List of project seeds. Entries must follow the same format as in the castellum.yaml config file,
   # described in <https://github.com/sapcc/castellum/blob/master/README.md#building-and-running>
@@ -38,10 +28,6 @@ castellum:
   # Also, all entries must have the key "region". They will only be considered
   # if "region" has the value "any" or a value equal to .Values.global.region.
   max_asset_sizes: []
-
-  # # Whether to apply resource requests/limits to containers.
-  # resources:
-  #   enabled: false
 
 postgresql:
   persistence:
@@ -59,15 +45,6 @@ postgresql:
 
   alerts:
     support_group: containers
-
-# Deploy Castellum Prometheus alerts.
-alerts:
-  enabled: true
-  # Names of the Prometheus to which the alerts should be assigned to.
-  # Keys = directory names in alerts/ and aggregations/
-  prometheus:
-    openstack: openstack
-    kubernetes: kubernetes
 
 pgbackup:
   isPostgresNG: true
