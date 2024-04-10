@@ -4,6 +4,7 @@
 {{- $release_requires_sec_cap:= or (hasPrefix "ussuri" (default .Values.imageVersion .Values.imageVersionServerAPI)) (hasPrefix "yoga" (default .Values.imageVersion .Values.imageVersionServerAPI)) -}}
 {{ range $az_long, $apods := .Values.global.apods }}
 {{ range $k, $apod := $apods }}
+{{- if not (has $apod ($.Values.disabled_network_agents | default list )) }}
 {{- $az := trimPrefix $.Values.global.region $az_long }}
 ---
 apiVersion: apps/v1
@@ -299,6 +300,7 @@ spec:
                   - key: neutron-metadata-secrets.conf
                     path: secrets/neutron-metadata-secrets.conf
         {{- include "utils.trust_bundle.volumes" $ | indent 8 }}
+{{- end }}
 {{- end }}
 {{- end }}
 {{- end }}
