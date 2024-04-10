@@ -30,6 +30,8 @@ spec:
       app: git-resource-proxy
   template:
     metadata:
+      annotations:
+        {{- toYaml .Values.gitResourceProxy.podAnnotations | nindent 8 }}
       labels:
         app: git-resource-proxy
     spec:
@@ -54,6 +56,8 @@ metadata:
   annotations:
     ingress.kubernetes.io/load-balance: "leastconn"
     nginx.ingress.kubernetes.io/load-balance: "leastconn"
+    haproxy.org/request-set-header: |
+      l5d-dst-override git-resource-proxy-svc.concourse.svc.cluster.local:8080
 spec:
   ingressClassName: git-proxy
   rules:
