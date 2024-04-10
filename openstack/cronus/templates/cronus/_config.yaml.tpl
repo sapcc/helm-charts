@@ -108,10 +108,21 @@ cronus:
       errInterval: {{ .Values.cronus.tls.errInterval | default "60s" }}
 {{- end }}
   keystone:
+{{- if .Values.config.keystone }}
+    region: {{ .Values.config.keystone.region }}
+    authUrl: {{ .Values.config.keystone.authUrl }}
+    endpointType: {{ .Values.config.keystone.endpointType }}
+{{- end }}
+{{- if .Values.global.cronus_service_password }}
+    password: {{ .Values.global.cronus_service_password }}
+{{- end }}
+{{- else }}
     authUrl: {{ .Values.config.authUrl }}
     applicationCredentialID: {{ .Values.config.applicationCredentialID }}
+    applicationCredentialSecret: {{ .Values.config.applicationCredentialSecret }}
     region: {{ .Values.config.region }}
     endpointType: {{ .Values.config.endpointType }}
+{{- end }}
 {{- if .Values.config.workQueue }}
 {{- $r_host := .Values.rabbitmq.host }}
 {{- $r_user := .Values.rabbitmq.users.default.user }}
