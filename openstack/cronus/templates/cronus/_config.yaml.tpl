@@ -123,8 +123,6 @@ cronus:
     endpointType: {{ .Values.config.endpointType }}
 {{- end }}
 {{- if .Values.config.workQueue }}
-{{- $r_host := .Values.rabbitmq.host }}
-{{- $r_user := .Values.rabbitmq.users.default.user }}
   workQueue:
     enabled: {{ .Values.config.workQueue.enabled }}
 {{- if .Values.config.workQueue.active }}
@@ -136,7 +134,6 @@ cronus:
 {{- if .Values.config.workQueue.sendNdrs }}
     sendNdrs: {{ .Values.config.workQueue.sendNdrs }}
 {{- end }}
-    rabbitmqUri: amqp://{{ $r_user }}:{{ $r_creds }}@{{ $r_host }}/
 {{- if .Values.config.workQueue.queueName }}
     queueName: {{ .Values.config.workQueue.queueName }}
 {{- end }}
@@ -293,10 +290,7 @@ cronus:
     {{ $key }}: {{ $value }}
 {{- end }}
 {{- if .Values.hermes }}
-{{- $user := .Values.rabbitmq_notifications.users.default.user }}
-{{- $host := printf "%s.%s.%s:5672" "hermes-rabbitmq-notifications" .Values.global.region .Values.global.tld }}
   auditSink:
-    rabbitmqUrl: amqp://{{ $user }}:{{ $password }}@{{ if .Values.config.cronusAuditSink.host }}{{ .Values.config.cronusAuditSink.host }}{{ else }}{{ $host }}{{ end }}
     queueName: {{ .Values.config.cronusAuditSink.queueName }}
     internalQueueSize: {{ .Values.config.cronusAuditSink.internalQueueSize }}
     maxContentLen: {{ .Values.config.cronusAuditSink.maxContentLen | int64 }}
