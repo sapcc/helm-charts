@@ -320,4 +320,4 @@ cronus:
 {{- end }}
     debug: {{ .Values.config.cronusAuditSink.debug | default false }}
 {{- end }}
-{{- end -}}
+
