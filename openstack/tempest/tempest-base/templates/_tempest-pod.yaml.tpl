@@ -1,5 +1,5 @@
 {{- define "tempest-base.tempest_pod" }}
-{{- if hasKey .Values "tempestKubectlAccess" }} {{ .Values.tempestKubectlAccess }}
+{{- if .Values.tempestKubectlAccess }}
 apiVersion: v1
 kind: ServiceAccount
 metadata:
@@ -54,10 +54,10 @@ metadata:
     system: openstack
     type: configuration
 spec:
-  {{- if hasKey .Values "tempestKubectlAccess" }} {{ .Values.tempestKubectlAccess }}
+  restartPolicy: Never
+  {{- if .Values.tempestKubectlAccess }}
   serviceAccountName: {{ .Chart.Name }}
   {{- end }}
-  restartPolicy: Never
   containers:
     - name: {{ .Chart.Name }}
       image: {{ default "keppel.eu-de-1.cloud.sap/ccloud" .Values.global.registry}}/{{ default .Chart.Name (index .Values (print .Chart.Name | replace "-" "_")).tempest.imageNameOverride }}-plugin-python3:{{ default "latest" (index .Values (print .Chart.Name | replace "-" "_")).tempest.imageTag}}
