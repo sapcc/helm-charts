@@ -1,51 +1,4 @@
 {{- define "tempest-base.tempest_pod" }}
-{{- if hasKey .Values "tempestKubectlAccess" }} {{ .Values.tempestKubectlAccess }}
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  name: {{ .Chart.Name }}
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: Role
-metadata:
-  name: {{ .Chart.Name }}
-rules:
-- apiGroups:
-  - extensions
-  - apps
-  resources:
-  - deployments
-  verbs:
-  - get
-  - list
-- apiGroups:
-  - ""
-  resources:
-  - pods
-  verbs:
-  - get
-  - list
-- apiGroups:
-  - ""
-  resources:
-  - "pods/exec"
-  verbs:
-  - create
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: RoleBinding
-metadata:
-  name: {{ .Chart.Name }}
-subjects:
-- kind: ServiceAccount
-  name: {{ .Chart.Name }}
-  namespace: {{ .Release.Namespace }}
-roleRef:
-  kind: Role
-  name: {{ .Chart.Name }}
-  apiGroup: rbac.authorization.k8s.io
-{{- end }}
----
 apiVersion: v1
 kind: Pod
 metadata:
@@ -54,9 +7,6 @@ metadata:
     system: openstack
     type: configuration
 spec:
-  {{- if hasKey .Values "tempestKubectlAccess" }} {{ .Values.tempestKubectlAccess }}
-  serviceAccountName: {{ .Chart.Name }}
-  {{- end }}
   restartPolicy: Never
   containers:
     - name: {{ .Chart.Name }}
