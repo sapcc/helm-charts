@@ -41,9 +41,10 @@ build-provider-ipam:
 	$(call build-chart,provider-ipam,https://github.com/kubernetes-sigs/cluster-api-ipam-provider-in-cluster//config/default,$(PROVIDER_IPAM_VERSION))
 	$(call fix-crds,provider-ipam)
 	@find provider-ipam/crds -type f -exec $(SED) -i -e 's#capi-capi-#capi-#g' {} \;
+	@find provider-ipam/templates -type f -exec $(SED) -i -e 's#capi-capi-#capi-#g' {} \;
 	@yq -i '.controllerManager.manager.image.tag="$(PROVIDER_IPAM_VERSION)"' provider-ipam/values.yaml
 	@yq -i '.fullnameOverride="capi-capi-provider-ipam"' provider-ipam/values.yaml
-	@yq -i '.version="0.0.2"' provider-ipam/Chart.yaml
+	@yq -i '.version="0.0.3"' provider-ipam/Chart.yaml
 
 build-provider-metal3:
 	$(call build-chart,provider-metal3,https://github.com/metal3-io/cluster-api-provider-metal3//config/default,$(PROVIDER_METAL3_VERSION))
@@ -94,5 +95,5 @@ define fix-crds
 @echo "Fixing webhook certs for $(1)"
 @# delete pre-filled caBundle
 @find $(1)/crds -type f | xargs -n1 yq -i 'del(.spec.conversion.webhook.clientConfig.caBundle)'
-@find $(1)/crds -type f | xargs -n1 yq -i 'del(.metadata.labels["clusterctl.cluster.x-k8s.io/move-hierarchy"])'
+@find $(1)/crds -type f | xargs -n1 yq -i 'del(.metadata.creationTimestamp)'
 endef
