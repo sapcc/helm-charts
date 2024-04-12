@@ -49,7 +49,11 @@ spec:
             - name: MY_POD_NAMESPACE
               value: {{ quote .Release.Namespace }}
             - name: OS_AUTH_URL
+              {{- if .Values.use_internal_keystone_endpoint }}
+              value: {{ printf "http://keystone.%s.svc:5000/v3" (.Values.global.keystoneNamespace | default .Release.Namespace) | quote -}}
+              {{- else }}
               value: {{ printf "https://identity-3.%s.cloud.sap/v3" $region | quote }}
+              {{- end }}
             - name: OS_AUTH_VERSION
               value: "3"
             - name: OS_USERNAME
