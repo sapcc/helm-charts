@@ -1,5 +1,7 @@
 CLUSTER_API_VERSION ?= v1.6.2
 PROVIDER_METAL3_VERSION ?= v1.6.0
+PROVIDER_VSPHERE_VERSION ?= v1.9.3
+PROVIDER_IPAM_VERSION ?= v0.1.0
 PROVIDER_KUBERNIKUS_VERSION ?= 69dc6afe5c6f161b145dea31141d5f0145b65ea1
 BAREMETAL_OPERATOR_VERSION ?= v0.5.0
 SHELL := bash
@@ -26,6 +28,22 @@ build-bootstrap-kubeadm:
 	@yq -i '.controllerManager.manager.image.tag="$(CLUSTER_API_VERSION)"' bootstrap-kubeadm/values.yaml
 	@yq -i '.fullnameOverride="capi-capi-kubeadm-bootstrap"' bootstrap-kubeadm/values.yaml
 	@yq -i '.version="0.1.3"' bootstrap-kubeadm/Chart.yaml
+
+build-provider-vsphere:
+	$(call build-chart,provider-vsphere,https://github.com/kubernetes-sigs/cluster-api-provider-vsphere//config/default,$(PROVIDER_VSPHERE_VERSION))
+	$(call fix-crd-certs,provider-vsphere)
+	@find provider-vsphere/crds -type f -exec $(SED) -i -e 's#capi-capi-#capi-#g' {} \;
+	@yq -i '.controllerManager.manager.image.tag="$(PROVIDER_VSPHERE_VERSION)"' provider-vsphere/values.yaml
+	@yq -i '.fullnameOverride="capi-capi-provider-vsphere"' provider-vsphere/values.yaml
+	@yq -i '.version="0.0.1"' provider-vsphere/Chart.yaml
+
+build-provider-ipam:
+	$(call build-chart,provider-ipam,https://github.com/kubernetes-sigs/cluster-api-ipam-provider-in-cluster//config/default,$(PROVIDER_IPAM_VERSION))
+	$(call fix-crd-certs,provider-ipam)
+	@find provider-ipam/crds -type f -exec $(SED) -i -e 's#capi-capi-#capi-#g' {} \;
+	@yq -i '.controllerManager.manager.image.tag="$(PROVIDER_IPAM_VERSION)"' provider-ipam/values.yaml
+	@yq -i '.fullnameOverride="capi-capi-provider-ipam"' provider-ipam/values.yaml
+	@yq -i '.version="0.0.1"' provider-ipam/Chart.yaml
 
 build-provider-metal3:
 	$(call build-chart,provider-metal3,https://github.com/metal3-io/cluster-api-provider-metal3//config/default,$(PROVIDER_METAL3_VERSION))
