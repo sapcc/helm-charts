@@ -42,6 +42,11 @@ logstash:
   backend_roles:
   - "logstash"
 
+storage:
+  reserved: false
+  backend_roles:
+  - "storage"
+
 jaeger:
   reserved: false
   users:
