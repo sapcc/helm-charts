@@ -1,0 +1,30 @@
+controllerManager:
+  manager:
+    args:
+      - --leader-elect
+      - --diagnostics-address=:8443
+      - --insecure-diagnostics=false
+      - --v=4
+      - --enable-keep-alive
+      - --feature-gates=NodeAntiAffinity=false
+    containerSecurityContext:
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop:
+          - ALL
+      runAsGroup: 65532
+      runAsUser: 65532
+    image:
+      repository: gcr.io/k8s-staging-capi-vsphere/cluster-api-vsphere-controller
+      tag: v1.9.3
+    imagePullPolicy: IfNotPresent
+  replicas: 1
+kubernetesClusterDomain: cluster.local
+managerBootstrapCredentials:
+  credentialsYaml: ""
+webhookService:
+  ports:
+    - port: 443
+      targetPort: webhook-server
+  type: ClusterIP
+fullnameOverride: capi-capi-provider-vsphere
