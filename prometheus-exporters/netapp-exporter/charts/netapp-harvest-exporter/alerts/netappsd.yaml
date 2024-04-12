@@ -1,6 +1,21 @@
 groups:
   - name: netappsd
     rules:
+      # info alert: more workers than discovered filers
+      - alert: NetappHarvestMoreWorkersThanFilers
+        expr: netappsd_worker_replicas - on(app) count by (app) (netappsd_discovered_filer) > 0
+        for: 15m
+        labels:
+          context: netapp-exporter
+          no_alert_on_absence: "true"
+          service: exporter
+          severity: info
+          support_group: compute-storage-api
+          tier: storage
+        annotations:
+          summary:  More Netapp Harvest workers than discovered filers
+          description: There are [[ $value ]] more workers for [[ $labels.app ]].
+
       - alert: NetappHarvestExporterAuthenticationError
         expr: netapp_harvest_probe_failure{reason="authentication error"} > 0
         for: 15m
@@ -31,6 +46,7 @@ groups:
           summary: Probe failure during NetApp Filer discovery.
           description: Filer [[ $labels.host ]] can't be accessed due to [[ $labels.reason ]].
 
+      # warning alert: multiple instances of netapp-harvest-exporter
       - alert: NetappHarvestMultipleInstances
         expr: count (netapp_metadata_exporter_count) by (pod_template_hash, poller) > 1
         for: 15m
@@ -38,23 +54,23 @@ groups:
           context: netapp-exporter
           no_alert_on_absence: "true"
           service: exporter
-          severity: info
+          severity: warning
           support_group: compute-storage-api
           tier: storage
         annotations:
           summary:  Multiple Netapp Harvest poller instances for [[ $labels.poller ]]
           description: There are [[ $value ]] pollers collecting metrics from NetApp Filer [[ $labels.poller ]].
 
-      - alert: NetappHarvestCinderNotWorking
-        expr: absent(count ({__name__=~"netapp_.*", name="netapp-harvest-exporter-cinder-worker"}))
-        for: 15m
-        labels:
-          context: netapp-exporter
-          no_alert_on_absence: "true"
-          service: exporter
-          severity: info
-          support_group: compute-storage-api
-          tier: storage
-        annotations:
-          summary:  Netapp Harvest (Cinder) not working
-          description: No metrics with netapp_* scraped from app netapp-harvest-exporter-cinder.
+      # - alert: NetappHarvestCinderNotWorking
+      #   expr: absent(count ({__name__=~"netapp_.*", name="netapp-harvest-exporter-cinder-worker"}))
+      #   for: 15m
+      #   labels:
+      #     context: netapp-exporter
+      #     no_alert_on_absence: "true"
+      #     service: exporter
+      #     severity: info
+      #     support_group: compute-storage-api
+      #     tier: storage
+      #   annotations:
+      #     summary:  Netapp Harvest (Cinder) not working
+      #     description: No metrics with netapp_* scraped from app netapp-harvest-exporter-cinder.

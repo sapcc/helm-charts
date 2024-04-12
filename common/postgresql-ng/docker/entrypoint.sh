@@ -104,7 +104,7 @@ fi
 found_current_db=false
 # Only directories are matched to not match accidential left behind files or /var/lib/postgresql/update_extensions.sql.
 # Also directories beginning with a dot like .cache or .local are ignored in case a login shell was ever used for the postgres user
-for data in $(find /var/lib/postgresql/ -mindepth 1 -maxdepth 1 -type dir -not -name ".*" | sort --version-sort); do
+for data in $(find /var/lib/postgresql/ -mindepth 1 -maxdepth 1 -type d -not -name ".*" | sort --version-sort); do
   # we found a newer postgres version than the user wants to start
   if [[ $found_current_db == true ]]; then
     echo "Found a newer postgres database than being run. This is not supported and not a valid way to rollback"
@@ -128,9 +128,9 @@ for data in $(find /var/lib/postgresql/ -mindepth 1 -maxdepth 1 -type dir -not -
   fi
 
   if (( $(echo "$old_version >= 12" | bc -l) )); then
-    postgres_auth_method=md5
-  else
     postgres_auth_method=scram-sha-256
+  else
+    postgres_auth_method=md5
   fi
 
   # create a backup unless we are migrating from the old chart
@@ -191,6 +191,8 @@ done
 # restore standard pg_hba.conf and reload the config into postgres
 cp /usr/local/share/pg_hba.conf "$PGDATA/pg_hba.conf"
 echo -e "host  all  all  all  $PGAUTHMETHOD\n" >>"$PGDATA/pg_hba.conf"
+# update postgres.conf
+cp /etc/postgresql/postgresql.conf "$PGDATA/postgresql.conf"
 start_postgres
 PGDATABASE='' process_sql --dbname postgres -c "SELECT pg_reload_conf()"
 
@@ -217,6 +219,12 @@ if [[ $created_db == true ]]; then
     process_sql -f <(substituteSqlEnvs "$file")
     echo
   done
+fi
+
+if (( $(echo "$PGVERSION >= 12" | bc -l) )); then
+  postgres_auth_method=scram-sha-256
+else
+  postgres_auth_method=md5
 fi
 
 # ensure that the configured password matches the password in the database

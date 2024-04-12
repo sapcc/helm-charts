@@ -21,6 +21,8 @@ spec:
       annotations:
         chart-version: {{.Chart.Version}}
         checksum/etc-configmap.conf: {{ include (print $.Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
+        secrets-hash: {{ include (print $.Template.BasePath "/secrets.yaml") . | sha256sum }}
+{{- include "utils.linkerd.pod_and_service_annotation" . | indent 8 }}
     spec:
       restartPolicy: OnFailure
       {{- include "utils.proxysql.job_pod_settings" . | indent 6 }}
@@ -36,10 +38,10 @@ spec:
         - -c
         - |
           glance-manage db_sync
-          {{ include "utils.proxysql.proxysql_signal_stop_script" . | trim }}
+          {{- include "utils.script.job_finished_hook" . | nindent 10 }}
         env:
         {{- include "utils.trust_bundle.env" . | indent 8 }}
-        {{- if .Values.api.resources.enabled }}
+        {{- if .Values.migration_job_resources.enabled }}
         resources:
           limits:
             cpu: {{ .Values.api.resources.limits.cpu | quote }}
@@ -54,6 +56,9 @@ spec:
           - mountPath: /etc/glance/glance.conf
             name: glance-etc
             subPath: glance-api.conf
+            readOnly: true
+          - name: glance-etc-confd
+            mountPath: /etc/glance/glance.conf.d
             readOnly: true
           {{- if not .Values.swift.multi_tenant }}
           - mountPath: /etc/glance/swift-store.conf
@@ -73,5 +78,8 @@ spec:
       - name: glance-etc
         configMap:
           name: glance-etc
+      - name: glance-etc-confd
+        secret:
+          secretName: {{ .Release.Name }}-secrets
       {{- include "utils.proxysql.volumes" . | indent 6 }}
       {{- include "utils.trust_bundle.volumes" . | indent 6 }}

@@ -254,8 +254,8 @@ filter {
     ]
     staging_directory => "/tmp/logstash/jdbc_static/import_data"
     loader_schedule => "{{ .Values.logstash.jdbc.schedule }}"
-    jdbc_user => "{{ .Values.global.metis.user }}"
-    jdbc_password => "${METIS_PASSWORD}"
+    jdbc_user => {{ .Values.global.metis.user | default "default" | quote }}
+    jdbc_password => {{ .Values.global.metis.password | default "default" | quote }}
     jdbc_driver_class => "com.mysql.cj.jdbc.Driver"
     jdbc_driver_library => ""
     jdbc_connection_string => "jdbc:mysql://{{ .Values.logstash.jdbc.service }}.{{ .Values.logstash.jdbc.namespace }}:3306/{{ .Values.logstash.jdbc.db }}"
@@ -402,25 +402,32 @@ filter {
       add_field => { "[@metadata][index]" => "%{[initiator][project_id]}" }
       id => "f22a_calculate_index_name_primary_project_id"
     }
+  } else if [target][project_id] and ![initiator][project_id] {
+    mutate {
+      add_field => { "[@metadata][index]" => "%{[target][project_id]}" }
+      id => "f22b_calculate_index_name_primary_target_project_id"
+    }
   } else if [initiator][domain_id] {
     mutate {
       add_field => { "[@metadata][index]" => "%{[initiator][domain_id]}" }
-      id => "f22b_calculate_index_name_primary_domain_id"
+      id => "f22c_calculate_index_name_primary_domain_id"
     }
   }
 
   # secondary index
-  if [target][project_id] {
+  # Only add the secondary index if it's different from the primary index
+  if [target][project_id] and [@metadata][index] != "%{[target][project_id]}" {
     mutate {
       add_field => { "[@metadata][index2]" => "%{[target][project_id]}" }
       id => "f23a_calculate_index_name_secondary_project_id"
     }
-  } else if [target][domain_id] {
+  } else if [target][domain_id] and [@metadata][index] != "%{[target][domain_id]}" {
     mutate {
       add_field => { "[@metadata][index2]" => "%{[target][domain_id]}" }
       id => "f23b_calculate_index_name_secondary_domain_id"
     }
   }
+
 
   # remove keystone specific fields after they have been mapped to standard attachments
   mutate {

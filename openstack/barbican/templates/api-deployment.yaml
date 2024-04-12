@@ -109,6 +109,9 @@ spec:
               mountPath: /etc/barbican/logging.ini
               subPath: logging.ini
               readOnly: true
+            - mountPath: /etc/barbican/barbican.conf.d
+              name: barbican-etc-confd
+              readOnly: true
             {{- if .Values.watcher.enabled }}
             - name: barbican-etc
               mountPath: /etc/barbican/watcher.yaml
@@ -195,13 +198,22 @@ spec:
         - name: barbican-etc
           configMap:
             name: barbican-etc
+        - name: barbican-etc-confd
+          secret:
+            secretName: {{ .Release.Name }}-secrets
+            items:
+            - key: secrets.conf
+              path: secrets.conf
         - name: etcbarbican
           emptyDir: {}
         {{- if .Values.hsm.enabled }}
         - name: hsm
-          configMap:
-            name: barbican-etc
+          secret:
+            secretName: {{ .Release.Name }}-secrets
             defaultMode: 0744
+            items:
+            - key: barbican_lunaclient.sh
+              path: barbican_lunaclient.sh
         - name: luna
           emptyDir: {}
         {{ end }}

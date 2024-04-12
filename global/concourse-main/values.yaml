@@ -54,7 +54,7 @@ concourse:
 
   web:
     enabled: true
-    replicas: 3
+    replicas: 1
     service:
       annotations:
         prometheus.io/targets: "kubernetes"
@@ -164,8 +164,10 @@ gitResourceProxy:
   timeout: 60s
   debug: true
   image: keppel.global.cloud.sap/ccloud/concourse-git-resource-proxy
-  imageTag: 0.5.1
-  imagePullPolicy: IfNotPresent
+  imageTag: 0.6.0
+  imagePullPolicy: Always
+  podAnnotations:
+    linkerd.io/inject: disabled
 
 kubernetes-ingress:
   controller:
@@ -205,5 +207,7 @@ kubernetes-ingress:
         facility: "daemon"
     defaultTLSSecret:
       enabled: false
+    podAnnotations:
+      linkerd.io/inject: disabled
   defaultBackend:
     enabled: false

@@ -7,7 +7,7 @@ global:
   domain_seeds:
     skip_hcm_domain: false
  
-  linkerd_requested: false
+  linkerd_requested: true
   osprofiler: {}
   imagePullPolicy: IfNotPresent
 
@@ -118,6 +118,8 @@ mariadb:
   max_connections: 2048
   buffer_pool_size: "2048M"
   log_file_size: "512M"
+  ccroot_user:
+    enabled: true
   name: cinder
   databases:
   - cinder
@@ -127,7 +129,7 @@ mariadb:
       password: null
       grants:
       - "ALL PRIVILEGES on cinder.*"
-  initdb_configmap: cinder-initdb
+  initdb_secret: true
   persistence_claim:
     name: db-cinder-pvclaim
   extraConfigFiles:
@@ -324,6 +326,8 @@ rabbitmq:
     enabled: &metrics true
     sidecar:
       enabled: *metrics
+  enableDetailedMetrics: true
+  enablePerObjectMetrics: true 
 rabbitmq_notifications:
   name: cinder
 logging:

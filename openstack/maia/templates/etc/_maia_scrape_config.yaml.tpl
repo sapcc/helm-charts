@@ -210,7 +210,7 @@
     key_file: /etc/prometheus/secrets/prometheus-auth-sso-cert/sso.key
   static_configs:
     - targets:
-      - "prometheus-infra.scaleout.{{ .Values.global.region }}.cloud.sap"
+      - "prometheus-infra-internal.scaleout.{{ .Values.global.region }}.cloud.sap"
   metrics_path: '/federate'
   params:
     'match[]':

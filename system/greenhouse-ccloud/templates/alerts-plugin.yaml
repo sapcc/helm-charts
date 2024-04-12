@@ -1,0 +1,29 @@
+{{- if.Values.alerts.enabled }}
+apiVersion: greenhouse.sap/v1alpha1
+kind: Plugin
+metadata:
+  name: alerts
+  namespace: {{ .Chart.Name }}
+spec:
+  pluginDefinition: alerts
+  disabled: false
+  displayName: Alerts
+  optionValues:
+    - name: endpoint
+      value: {{ required ".Values.alerts.endpoint missing" .Values.alerts.endpoint }}
+    - name: alerts.alertmanager.enabled
+      value: {{ .Values.alerts.alertmanager.enabled }}
+    - name: alerts.alertmanager.ingress.enabled
+      value: {{ .Values.alerts.alertmanager.enabled }}
+    - name: alerts.defaultRules.create
+      value: {{ .Values.alerts.alertmanager.enabled }}
+    - name: filterLabels
+      value: 
+        {{ .Values.alerts.filterLabels | toYaml | nindent 8 }}
+    - name: silenceExcludedLabels
+      value: 
+        {{ .Values.alerts.silenceExcludedLabels | toYaml | nindent 8 }}
+    - name: silenceTemplates
+      value:
+        {{ include (print .Template.BasePath "/_silence.conf.tpl") . | nindent 8 }}
+{{ end }}

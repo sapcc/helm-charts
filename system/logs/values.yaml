@@ -5,17 +5,34 @@ owner-info:
     - "Olaf Heydorn"
   helm-chart-url: "https://github.com/sapcc/helm-charts/tree/master/system/logs"
 
+linkerd-support:
+  annotate_namespace: true
+
 global:
   region: DEFINED-IN-SECRETS
   tld: DEFINED-IN-SECRETS
-  prometheus: infra-frontend
+  prometheus: DEFINED-IN-SECRETS
+  linkerd_requested: true
+  opensearch:
+    data:
+      user: DEFINED-IN-SECRETS
+      password: DEFINED-IN-SECRETS
+    syslog:
+      user: DEFINED-IN-SECRETS
+      password: DEFINED-IN-SECRETS
+    jump:
+      user: DEFINED-IN-SECRETS
+      password: DEFINED-IN-SECRETS
+  metis:
+    user: DEFINED-IN-SECRETS
+    password: DEFINED-IN-SECRETS
 
 fluent:
   enabled: false
   port: 8885
   logstash_shards: 3
   indexname: logstash
-  image_version: '20240227111845'
+  image_version: '20240328111331'
   alerts:
     enabled: false
     prometheus: infra-collector
@@ -26,10 +43,6 @@ fluent:
     db: metis
   swift:
     enabled: false
-  exporter:
-    prometheus: infra-collector
-  aggregations:
-    prometheus: infra-collector
   logs:
     unbound:
       enabled: false
@@ -46,18 +59,16 @@ fluent:
 fluent_prometheus:
   enabled: false
   port: 8884
-  image_version: '20231213092430'
-  exporter:
-    prometheus: DEFINED-IN-SECRETS
+  image_version: '20240328111331'
   alerts:
     enabled: false
-    prometheus: DEFINED-IN-SECRETS
 
 fluent-bit:
   enabled: false
   podAnnotations:
     # manual versioning, raise if configmap changes
-    versioning: "12"
+    versioning: "14"
+    kubectl.kubernetes.io/default-container: "fluent-bit"
   nameOverride: "fluent-bit-systemd"
   existingConfigMap: "fluent-bit-config"
   tolerations:
@@ -87,11 +98,6 @@ fluent-bit:
           fieldPath: spec.nodeName
   backend:
     opensearch:
-      enabled: false
-      host: DEFINED-IN-SECRETS
-      http_user: DEFINED-IN-SECRETS
-      http_passwd: DEFINED-IN-SECRETS
-      port: DEFINED-IN-SECRETS
       logstash_prefix: systemd
       tls:
         enabled: "On"
@@ -99,9 +105,7 @@ fluent-bit:
         debug: '1'
   alerts:
     enabled: false
-    prometheus: infra-collector
   exporter:
-    prometheus: infra-collector
   extraPorts:
     - port: 2021
       containerPort: 2021
@@ -112,13 +116,14 @@ logstash_external:
   enabled: false
   image_version: '20240227090739'
   replicas: 1
-  input_netflow_port: 2055
-  input_syslog_port: 514
-  input_bigiplogs_port: 1513
-  input_alertmanager_port: 1515
-  input_deployments_port: 1516
-  input_http_port: 443
-  input_beats_port: 5044
+  input:
+    netflow_port: 2055
+    syslog_port: 514
+    bigiplogs_port: 1513
+    alertmanager_port: 1515
+    deployments_port: 1516
+    http_port: 443
+    beats_port: 5044
   syslog:
     enabled: false
   tls:
@@ -128,24 +133,16 @@ logstash_external:
     enabled: false
   alerts:
     enabled: false
-    prometheus: infra-collector
-  elasticsearch:
-    enabled: true
-  opensearch:
-    enabled: false
-    http_port: 9200
-    user: DEFINED-IN-SECRETS
-    password: DEFINED-IN-SECRETS
-    jump_user: DEFINED-IN-SECRETS
-    jump_password: DEFINED-IN-SECRETS
-    http:
-      endpoint: "opensearch-logs-client.scaleout"
 
 k8s_event_logger:
   enabled: false
-  fullnameOverride: elk-k8s-event-exporter
+  fullnameOverride: logs-k8s-event-exporter
+  image:
+    tag: "20240313142953"
   env:
     KUBERNETES_API_URL: https://${KUBERNETES_SERVICE_HOST}:${KUBERNETES_SERVICE_PORT_HTTPS}
+  podAnnotations:
+    kubectl.kubernetes.io/default-container: "app"
   resources:
     requests:
     limits:
@@ -155,8 +152,8 @@ k8s_event_logger:
 
 fluent_testing:
   enabled: false
-  image_version: '20240227111845'
+  image_version: '20240328111331'
 
 fluent_daemonset_testing:
   enabled: false
-  image_version: '20240227111845'
+  image_version: '20240328111331'

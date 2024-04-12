@@ -1,4 +1,7 @@
-{{- $domains := list "cc3test" "bs" "cis" "cp" "fsn" "hcm" "hcp03" "hda" "hec" "kyma" "monsoon3" "neo" "s4" "wbs" }}
+{{- $vbase  := .Values.global.vaultBaseURL | required "missing value for .Values.global.vaultBaseURL" -}}
+{{- $region := .Values.global.region       | required "missing value for .Values.global.region"       -}}
+
+{{- $domains := list "cc3test" "bs" "btp_fp" "cis" "cp" "fsn" "hcm" "hcp03" "hda" "hec" "kyma" "monsoon3" "neo" "s4" "wbs" }}
 
 apiVersion: "openstack.stable.sap.cc/v1"
 kind: OpenstackSeed
@@ -7,11 +10,11 @@ metadata:
 
 spec:
   requires:
-  - {{ default .Release.Namespace .Values.global.keystoneNamespace }}/keystone-seed
+  - {{ .Values.global.keystoneNamespace }}/keystone-seed
   - monsoon3/domain-default-seed
   - monsoon3/domain-ccadmin-seed
   {{- range $domains }}
-  - monsoon3/domain-{{.}}-seed
+  - monsoon3/domain-{{replace "_" "-" .}}-seed
   {{- end }}
 
   roles:
@@ -26,21 +29,21 @@ spec:
       description: 'Multi-tenant container image registry'
       enabled:     true
       endpoints:
-        - region:    '{{ $.Values.global.region }}'
+        - region:    '{{ $region }}'
           interface: public
           enabled:   true
-          url:       'https://keppel.{{ $.Values.global.region }}.{{ $.Values.global.tld }}'
-        - region:    '{{ $.Values.global.region }}'
+          url:       'https://keppel.{{ $region }}.{{ .Values.global.tld }}'
+        - region:    '{{ $region }}'
           interface: internal
           enabled:   true
-          url:       'http://keppel-api.{{ $.Release.Namespace }}.svc'
+          url:       'http://keppel-api.{{ .Release.Namespace }}.svc'
 
   domains:
     - name: Default
       users:
         - name: keppel
           description: Keppel Service
-          password: '{{.Values.keppel.service_password}}'
+          password: {{ printf "%s/%s/keppel/keystone-user/service/password" $vbase $region | quote }}
           role_assignments:
             - project: service
               role:    service
@@ -48,10 +51,10 @@ spec:
               role:    admin          # for keppel-health-monitor (creating a Keppel account includes creating role assignments)
             - project: service
               role:    registry_admin # for keppel-health-monitor
-        {{- if .Values.keppel.e2e_test_password }}
+        {{- if eq $region "qa-de-1" }}
         - name: keppel_e2e
           description: Keppel End-to-End Test User
-          password: '{{.Values.keppel.e2e_test_password}}'
+          password: {{ printf "%s/%s/keppel/keystone-user/e2e-test/password" $vbase $region | quote }}
         {{- end }}
 
     - name: ccadmin
@@ -72,7 +75,7 @@ spec:
               role: registry_admin
             - domain: ccadmin
               role: registry_viewer # technically unnecessary, but allows creating application credentials with read-only permissions
-        {{- if not (.Values.global.region | hasPrefix "qa-") }}
+        {{- if not ($region | hasPrefix "qa-") }}
         - name: CCADMIN_KEPPEL_IMAGE_PUSHERS
           role_assignments:
             - project: master
@@ -91,7 +94,7 @@ spec:
           role_assignments:
             - user: keppel@Default
               role: objectstore_admin # to write into the "keppel_federation_db" container
-            {{- if .Values.keppel.e2e_test_password }}
+            {{- if eq $region "qa-de-1" }}
             - user: keppel_e2e@Default
               role: admin # to create Keppel accounts
             - user: keppel_e2e@Default

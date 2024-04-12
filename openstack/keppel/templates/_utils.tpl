@@ -26,18 +26,21 @@
 - name:  KEPPEL_API_PUBLIC_FQDN
   value: 'keppel.{{$.Values.global.region}}.{{$.Values.global.tld}}'
 - name:  KEPPEL_AUDIT_SILENT
-  value: "{{ ne $.Values.keppel.rabbitmq.queue_name "" }}"
+  value: "true" # because hermes-rabbitmq connection is enabled
 - name:  KEPPEL_AUDIT_RABBITMQ_QUEUE_NAME
-  value: "{{ $.Values.keppel.rabbitmq.queue_name }}"
+  value: notifications.info
 - name: KEPPEL_AUDIT_RABBITMQ_USERNAME
-  value: "{{ $.Values.keppel.rabbitmq.username }}"
+  valueFrom:
+    secretKeyRef:
+      name: keppel-secret
+      key: rabbitmq_username
 - name: KEPPEL_AUDIT_RABBITMQ_PASSWORD
   valueFrom:
     secretKeyRef:
       name: keppel-secret
       key: rabbitmq_password
 - name: KEPPEL_AUDIT_RABBITMQ_HOSTNAME
-  value: "{{ $.Values.keppel.rabbitmq.hostname }}"
+  value: hermes-rabbitmq-notifications.hermes.svc
 - name:  KEPPEL_BURST_ANYCAST_BLOB_PULL_BYTES
   value: '4718592000' # 4500 MiB per account (see below, near the corresponding ratelimit, for rationale)
 - name:  KEPPEL_BURST_BLOB_PULLS # burst budgets for regular pull/push are all ~30% of the rate limit per minute

@@ -18,6 +18,7 @@ spec:
         component: logstash-external
       annotations:
         checksum/configmap.yaml: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        kubectl.kubernetes.io/default-container: "logstash"
     spec:
       nodeSelector:
         zone: farm
@@ -44,25 +45,25 @@ spec:
           imagePullPolicy: IfNotPresent
           ports:
             - name: netflow
-              containerPort: {{ .Values.input_netflow_port }}
+              containerPort: {{ .Values.input.netflow_port }}
               protocol: UDP
             - name: syslogudp
-              containerPort: {{ .Values.input_syslog_port }}
+              containerPort: {{ .Values.input.syslog_port }}
               protocol: UDP
             - name: syslogtcp
-              containerPort: {{ .Values.input_syslog_port }}
+              containerPort: {{ .Values.input.syslog_port }}
               protocol: TCP
             - name: bigiplogsudp
-              containerPort: {{ .Values.input_bigiplogs_port }}
+              containerPort: {{ .Values.input.bigiplogs_port }}
               protocol: UDP
             - name: alertmanagertcp
-              containerPort: {{ .Values.input_alertmanager_port }}
+              containerPort: {{ .Values.input.alertmanager_port }}
               protocol: TCP
             - name: deploymentstcp
-              containerPort: {{ .Values.input_deployments_port }}
+              containerPort: {{ .Values.input.deployments_port }}
               protocol: TCP
             - name: https
-              containerPort: {{ .Values.input_http_port }}
+              containerPort: {{ .Values.input.http_port }}
               protocol: TCP
           command: ["/bin/bash","/logstash-etc/start.sh"]
           env:
@@ -90,6 +91,26 @@ spec:
                 secretKeyRef:
                   name: logstash-external-secret
                   key: opensearch_jump_password
+            - name: OPENSEARCH_SYSLOG_USER
+              valueFrom:
+                secretKeyRef:
+                  name: logstash-external-secret
+                  key: opensearch_syslog_user
+            - name: OPENSEARCH_SYSLOG_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: logstash-external-secret
+                  key: opensearch_syslog_password
+            - name: HTTP_USER 
+              valueFrom:
+                secretKeyRef:
+                  name: logstash-external-secret
+                  key: http_user
+            - name: HTTP_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: logstash-external-secret
+                  key: http_password
           volumeMounts:
             - name: logstash-etc
               mountPath: /logstash-etc

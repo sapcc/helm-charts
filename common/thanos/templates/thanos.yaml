@@ -37,6 +37,7 @@ spec:
           metadata:
             annotations:
               linkerd.io/inject: enabled
+              config.linkerd.io/proxy-ephemeral-storage-request: 10M
           {{- end }}
           spec:
             containers:
@@ -108,13 +109,14 @@ spec:
           linkerd.io/inject: enabled
         {{- end }}
     deploymentOverrides:
-      {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
-      metadata:
-        annotations:
-          linkerd.io/inject: enabled
-      {{- end }}
       spec:
         template:
+          {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+          metadata:
+            annotations:
+              linkerd.io/inject: enabled
+              config.linkerd.io/proxy-ephemeral-storage-request: 10M
+          {{- end }}
           spec:
             containers:
             - image: {{ include "thanosimage" $root }}

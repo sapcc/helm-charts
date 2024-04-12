@@ -10,7 +10,7 @@ metadata:
     component: content-repo
 
 spec:
-  concurrencyPolicy: Forbid
+  concurrencyPolicy: Replace # restarting a hung s-h-i should be safe (Swift will not store objects if the upload connection resets)
   successfulJobsHistoryLimit: 3
   failedJobsHistoryLimit: 3
   schedule: "TZ={{ $.Values.timezone }} {{ $config.schedule | default "59 23 * * *" }}"
@@ -28,7 +28,7 @@ spec:
             checksum/check.secrets-certs: {{ include "content-repo/templates/secret-certs.yaml" $ | sha256sum }}
             kubectl.kubernetes.io/default-container: swift-http-import
         spec:
-          restartPolicy: OnFailure
+          restartPolicy: Never # restarting a failed s-h-i does not work because the linkerd-proxy sidecar has been torn down when the s-h-i container shut down
           volumes:
           - name: config
             configMap:
@@ -66,12 +66,13 @@ spec:
             resources:
               # observed usage in qa-de-1: CPU = 300-400m, RAM = 200-1100 MiB
               # Note that we can live with the job running throttled since it's a background job anyway.
+              # We also have seen RAM spike as high as 1600 MiB if large repo indexes need to be held in memory.
               limits:
                 cpu: '300m'
-                memory: '1536Mi'
+                memory: '2048Mi'
               requests:
-                cpu: '300m'
-                memory: '1536Mi'
+                cpu: '150m'
+                memory: '2048Mi'
 ---
 {{- end }}
 {{- end }}

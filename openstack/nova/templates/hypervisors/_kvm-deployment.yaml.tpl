@@ -106,6 +106,10 @@ spec:
               name: nova-etc
               subPath: rootwrap.conf
               readOnly: true
+            - mountPath: /etc/nova/nova.conf.d/keystoneauth-secrets.conf
+              name: nova-etc-secret
+              subPath: keystoneauth-secrets.conf
+              readOnly: true
             {{- include "utils.trust_bundle.volume_mount" . | indent 12 }}
         - name: nova-libvirt
           image: {{ tuple . "libvirt" | include "container_image_nova" }}
@@ -155,6 +159,10 @@ spec:
               readOnly: true
             - mountPath: /container.init
               name: nova-container-init
+            - mountPath: /etc/nova/nova.conf.d/keystoneauth-secrets.conf
+              name: nova-etc-secret
+              subPath: keystoneauth-secrets.conf
+              readOnly: true
             {{- include "utils.trust_bundle.volume_mount" . | indent 12 }}
         - name: nova-virtlog
           image: {{ tuple . "libvirt" | include "container_image_nova" }}
@@ -204,6 +212,10 @@ spec:
               readOnly: true
             - mountPath: /container.init
               name: nova-container-init
+            - mountPath: /etc/nova/nova.conf.d/keystoneauth-secrets.conf
+              name: nova-etc-secret
+              subPath: keystoneauth-secrets.conf
+              readOnly: true
             {{- include "utils.trust_bundle.volume_mount" . | indent 12 }}
         - name: neutron-openvswitch-agent
           image: {{ required ".Values.global.registry is missing" .Values.global.registry}}/loci-neutron:{{.Values.imageVersionNeutron | required "Please set nova.imageVersionNeutron or similar" }}
@@ -279,6 +291,9 @@ spec:
           emptyDir: {}
         - name: nova-etc
           configMap:
+            name: nova-etc
+        - name: nova-etc-secret
+          secret:
             name: nova-etc
         - name: nova-patches
           configMap:

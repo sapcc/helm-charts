@@ -11,8 +11,10 @@
   valueFrom: { secretKeyRef: { name: {{ template "redis.fullname" . }}, key: redis-password } }
 - name: SENTRY_SECRET_KEY
   valueFrom: { secretKeyRef: { name: {{ template "fullname" . }}, key: sentry-secret-key } }
+- name: SENTRY_DB_USER
+  value: "sentry"
 - name: SENTRY_DB_PASSWORD
-  valueFrom: { secretKeyRef: { name: {{ template "postgresql.fullname" . }}, key: postgres-password } }
+  valueFrom: { secretKeyRef: { name: '{{ $.Release.Name }}-pguser-sentry', key: postgres-password } }
 {{- if .Values.emailHost }}
 - name: SENTRY_EMAIL_HOST
   value: {{ .Values.emailHost | squote }}

@@ -2,6 +2,11 @@ global:
   region: '@/cc/secrets'
   domain: '@/cc/secrets'
 
+  linkerd_requested: true
+
+linkerd-support:
+  annotate_namespace: true
+
 ldap:
   host: '@/cc/secrets'
   port: 636
@@ -18,9 +23,6 @@ ldap:
   monitoring_user: '@/cc/secrets'
   monitoring_editor: '@/cc/secrets'
   monitoring_admin: '@/cc/secrets'
-
-alertmanager:
-  password: '@/cc/secrets'
 
 image:
   pullPolicy: IfNotPresent
@@ -85,17 +87,21 @@ nginx:
       public: '@/cc/secrets'
 
 postgresql:
-  imageTag: '12.17-20240201085155'
+  imageTag: '20240311135631'
   postgresDatabase: plutono
-  postgresUser: postgres
+  postgresUser: plutono
   postgresPassword: '@/cc/secrets'
   persistence:
     enabled: false
   alerts:
     support_group: observability
+  users:
+    plutono: {}
+  tableOwner: plutono
 
 pgbackup:
   enabled: false # can be enabled in values.yaml
+  isPostgresNG: true
   database:
     name: plutono
   alerts:

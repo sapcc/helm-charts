@@ -2,7 +2,6 @@
 log_config_append = /etc/ironic-inspector/logging.ini
 {{- include "ini_sections.logging_format" . }}
 
-{{- include "ini_sections.default_transport_url" . }}
 clean_up_period = 120
 # Timeout after which introspection is considered failed, set to 0 to
 # disable. (integer value)
@@ -24,8 +23,6 @@ host = https://{{ include "ironic_inspector_endpoint_host_public" .}}
 region_name = {{.Values.global.region}}
 auth_url = {{.Values.global.keystone_api_endpoint_protocol_internal | default "http"}}://{{include "keystone_api_endpoint_host_internal" .}}:{{ .Values.global.keystone_api_port_internal | default 5000}}/v3
 auth_type = v3password
-username = {{ .Values.global.ironicServiceUser }}{{ .Values.global.user_suffix }}
-password = {{ required ".Values.global.ironicServicePassword is missing" .Values.global.ironicServicePassword }}
 user_domain_name = {{.Values.global.keystone_service_domain | default "Default"}}
 project_name = {{.Values.global.keystone_service_project | default "service"}}
 project_domain_name = {{.Values.global.keystone_service_domain | default "Default"}}
@@ -55,19 +52,13 @@ enroll_node_fields = conductor_group:testing
 driver = noop
 
 [database]
-#connection = mysql+pymysql://ironic_inspector:{{.Values.inspectordbPassword}}@ironic-mariadb.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}/ironic_inspector?charset=utf8
-connection = {{ tuple . .Values.mariadb.users.ironic_inspector.name .Values.mariadb.users.ironic_inspector.name .Values.mariadb.users.ironic_inspector.password | include "db_url_mysql" }}
 {{- include "ini_sections.database_options_mysql" . }}
-
-{{- include "ini_sections.audit_middleware_notifications" . }}
 
 [keystone_authtoken]
 www_authenticate_uri = https://{{include "keystone_api_endpoint_host_public" .}}/v3
 auth_url = {{.Values.global.keystone_api_endpoint_protocol_internal | default "http"}}://{{include "keystone_api_endpoint_host_internal" .}}:{{ .Values.global.keystone_api_port_internal | default 5000}}/v3
 auth_type = v3password
 auth_interface = internal
-username = {{ .Values.global.ironicServiceUser }}{{ .Values.global.user_suffix }}
-password = {{ required ".Values.global.ironicServicePassword is missing" .Values.global.ironicServicePassword }}
 user_domain_name = {{.Values.global.keystone_service_domain | default "Default"}}
 project_name = {{.Values.global.keystone_service_project | default "service"}}
 project_domain_name = {{.Values.global.keystone_service_domain | default "Default"}}

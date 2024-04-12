@@ -16,6 +16,8 @@ spec:
         alert-tier: os
         alert-service: placement
 {{ tuple . "placement" "db-online-migrate" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
+      annotations:
+        {{- include "utils.linkerd.pod_and_service_annotation" . | indent 8 }}
     spec:
       restartPolicy: OnFailure
       {{- include "utils.proxysql.job_pod_settings" . | indent 6 }}
@@ -37,7 +39,7 @@ spec:
               # wait for proxysql to start so we can properly kill it
               sleep 5
           fi
-          {{ include "utils.proxysql.proxysql_signal_stop_script" . | trim }}
+          {{- include "utils.script.job_finished_hook" . | nindent 10 }}
         env:
           {{- if .Values.sentry.enabled }}
         - name: SENTRY_DSN
@@ -51,6 +53,8 @@ spec:
         volumeMounts:
         - mountPath: /etc/placement
           name: placement-etc
+        - mountPath: /etc/placement/placement.conf.d
+          name: placement-etc-confd
         {{- include "utils.proxysql.volume_mount" . | indent 8 }}
         {{- include "utils.trust_bundle.volume_mount" . | indent 8 }}
       {{- include "utils.proxysql.container" . | indent 6 }}
@@ -58,5 +62,8 @@ spec:
       - name: placement-etc
         configMap:
           name: placement-etc
+      - name: placement-etc-confd
+        secret:
+          secretName: placement-etc
       {{- include "utils.proxysql.volumes" . | indent 6 }}
       {{- include "utils.trust_bundle.volumes" . | indent 6 }}

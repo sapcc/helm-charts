@@ -4,7 +4,8 @@ groups:
   - alert: CCloudKeppelDown
     expr: |
         cc3test_status{type="datapath",
-            name=~"TestKeppel_datapath.+"
+            name=~"TestKeppel_datapath.+",
+            phase="call"
         } == 0
     for: 10m
     labels:
@@ -16,7 +17,7 @@ groups:
       meta: 'CCloud Keppel is down'
       dashboard: 'cc3test-datapath-status?var-service={{ $labels.service }}'
       playbook: 'docs/devops/alert/keppel/#keppel_datapath'
-      report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
+      report: 'cc3test/admin/object-storage/containers/cc3test/objects/{{ $labels.base64path }}'
     annotations:
       description: 'CCloud Keppel is down'
       summary: 'CCloud Keppel is down'
@@ -24,7 +25,8 @@ groups:
   - alert: CCloudKeppellapping
     expr: |
         changes(cc3test_status{type="datapath",
-            name=~"TestKeppel_datapath.+"
+            name=~"TestKeppel_datapath.+",
+            phase="call"
         }[30m]) > 8
     labels:
       severity: warning
@@ -35,7 +37,7 @@ groups:
       meta: 'CCloud Keppel is flapping'
       dashboard: 'cc3test-datapath-status?var-service={{ $labels.service }}'
       playbook: 'docs/devops/alert/keppel/#keppel_datapath'
-      report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
+      report: 'cc3test/admin/object-storage/containers/cc3test/objects/{{ $labels.base64path }}'
     annotations:
       description: 'CCloud Keppel is flapping'
       summary: 'CCloud Keppel is flapping'

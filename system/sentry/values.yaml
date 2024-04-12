@@ -1,6 +1,7 @@
 # Default values for sentry.
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
+---
 serverReplicaCount: 1
 workerReplicaCount: 1
 
@@ -9,15 +10,15 @@ global:
 
 #  SENTRY_FILESTORE_DIR
 #
-#secretKey: $(docker run --rm sentry config generate-secret-key)
-#emailHost:
-#serverEmail: '"Sentry" <root@localhost>'
-#singleOrganization: false
-#githubAppId:
-#githubApiSecret:
-#useSsl: false
+# secretKey: $(docker run --rm sentry config generate-secret-key)
+# emailHost:
+# serverEmail: '"Sentry" <root@localhost>'
+# singleOrganization: false
+# githubAppId:
+# githubApiSecret:
+# useSsl: false
 #
-#extraEnvVars:
+# extraEnvVars:
 #  e.g.
 #  GITHUB_BASE_DOMAIN: github.example.com
 #  GITHUB_API_DOMAIN: api.github.example.com
@@ -25,145 +26,155 @@ global:
 # initial user:
 # adminEmail:
 # adminPassword:
+# yamllint disable-line rule:line-length
 # Generate with: python -c 'import sys,uuid; sys.stdout.write(uuid.uuid4().hex+ uuid.uuid4().hex)
 # adminToken:
 organizationName: Monsoon
 organizationSlug: monsoon
 image:
-  repository: sentry
-  tag: 9.1.2-r4
-  pullPolicy: IfNotPresent
+    repository: sentry
+    tag: 9.1.2-r4
+    pullPolicy: IfNotPresent
 service:
-  name: sentry
-  type: ClusterIP
-  externalPort: 80
-  internalPort: 9000
+    name: sentry
+    type: ClusterIP
+    externalPort: 80
+    internalPort: 9000
 pruning_time: '0315'
 
 owner-info:
-  support-group: identity
-  service: sentry
-  maintainers:
-    - Rajiv Mucheli
-    - Olaf Heydorn
-  helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/system/sentry
+    support-group: identity
+    service: sentry
+    maintainers:
+        - Rajiv Mucheli
+        - Olaf Heydorn
+    helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/system/sentry
 
 ingress:
-  enabled: false
+    enabled: false
 #  host:
 #  tls_crt:
 #  tls_key:
 
 rbac:
-  create: true
+    create: true
 
 operator:
-  #sentryEndpoint: https://sentry.$region.cloud.sap/api/0/
-  enabled: false
-  image:
-    repository: kube-sentry
-    tag: 0.3.0
-    pullPolicy: IfNotPresent
+# sentryEndpoint: https://sentry.$region.cloud.sap/api/0/
+    enabled: false
+    image:
+        repository: kube-sentry
+        tag: 0.3.0
+        pullPolicy: IfNotPresent
 
 postgresql:
-  postgresDatabase: sentry
-  persistence:
-    enabled: true
-    accessMode: ReadWriteMany
-    size: 50Gi
-  resources:
-    requests:
-      memory: 10Gi
-      cpu: 4
-    limits:
-      memory: 10Gi
-      cpu: 4
-  alerts:
-    support_group: identity
-  #postgresql image:
-  imageTag: 9.5
+    postgresVersion: 12
+    postgresDatabase: sentry
+    persistence:
+        enabled: true
+        accessMode: ReadWriteMany
+        size: 50Gi
+    resources:
+        requests:
+            memory: 10Gi
+            cpu: 4
+        limits:
+            memory: 10Gi
+            cpu: 4
+    alerts:
+        support_group: identity
+  # postgresql image:
+    imageTag: '20240307100654'
+    users:
+        sentry: {}
+    tableOwner: sentry
+    debug: true
 
 redis:
-  # redisPassword:
-  persistence:
-    enabled: true
+# redisPassword:
+    persistence:
+        enabled: true
     accessMode: ReadWriteMany
     size: 10Gi
-  resources:
-    requests:
-      memory: 5Gi
-      cpu: 2
-    limits:
-      memory: 10Gi
-      cpu: 2
+    resources:
+        requests:
+            memory: 5Gi
+            cpu: 2
+        limits:
+            memory: 10Gi
+            cpu: 2
 
 sentry:
-  resources:
-    requests:
-      memory: 5Gi
-      cpu: 4
-    limits:
-      memory: 10Gi
-      cpu: 4
+    resources:
+        requests:
+            memory: 5Gi
+            cpu: 4
+        limits:
+            memory: 10Gi
+            cpu: 4
 
 serviceAccount:
-  annotations: {}
-  enabled: true
-  name: "sentry"
-  automountServiceAccountToken: true
+    annotations: {}
+    enabled: true
+    name: "sentry"
+    automountServiceAccountToken: true
 
 # Deploy Sentry Prometheus alerts.
 alerts:
-  enabled: true
+    enabled: true
   # Name of the Prometheus to which the alerts should be assigned to.
-  prometheus: openstack
+    prometheus: openstack
 
 pgbackup:
-  database:
-    name: sentry
-  alerts:
-    support_group: identity
+    isPostgresNG: true
+    database:
+        name: sentry
+    alerts:
+        support_group: identity
 
 pgmetrics:
-  db_name: sentry
-  alerts:
-    large_database_size_enabled: false
-    support_group: identity
+    isPostgresNG: true
+    db_name: sentry
+    alerts:
+        large_database_size_enabled: false
+        support_group: identity
 
-  customMetrics:
-    sentry_unresolved_issues:
-      query: >
-        SELECT o.slug AS organization, p.slug AS project, COUNT(*) FROM sentry_groupedmessage gm
-          JOIN sentry_project p ON gm.project_id = p.id
-          JOIN sentry_organization o ON p.organization_id = o.id
-         WHERE gm.status = 0
-         GROUP BY o.slug, p.slug
-      metrics:
-        - organization: {usage: LABEL, description: "Sentry organization"}
-        - project:      {usage: LABEL, description: "Sentry project"}
-        - gauge:        {usage: GAUGE, description: "Number of unresolved issues in project"}
+    customMetrics:
+        sentry_unresolved_issues:
+            query: >
+                SELECT o.slug AS organization, p.slug AS project, COUNT(*) FROM sentry_groupedmessage gm
+                    JOIN sentry_project p ON gm.project_id = p.id
+                    JOIN sentry_organization o ON p.organization_id = o.id
+                WHERE gm.status = 0
+                GROUP BY o.slug, p.slug
+            metrics:
+                - organization: {usage: LABEL, description: "Sentry organization"}
+                - project: {usage: LABEL, description: "Sentry project"}
+                - gauge: {usage: GAUGE, description: "Number of unresolved issues in project"}
 
-    sentry_unresolved_issues_nova:
-      query: >
-        SELECT o.slug AS organization, p.slug AS project, message, COUNT(*) FROM sentry_groupedmessage gm
-          JOIN sentry_project p ON gm.project_id = p.id
-          JOIN sentry_organization o ON p.organization_id = o.id
-         WHERE gm.status = 0 AND p.slug = 'nova'
-         GROUP BY o.slug, p.slug, message
-      metrics:
-        - organization: {usage: LABEL, description: "Sentry organization"}
-        - project:      {usage: LABEL, description: "Sentry project"}
-        - message:      {usage: LABEL, description: "Issue message"}
-        - gauge:        {usage: GAUGE, description: "Number of unresolved issues in project"}
+        sentry_unresolved_issues_nova:
+            query: >
+                SELECT o.slug AS organization, p.slug AS project, message, COUNT(*) FROM sentry_groupedmessage gm
+                    JOIN sentry_project p ON gm.project_id = p.id
+                    JOIN sentry_organization o ON p.organization_id = o.id
+                WHERE gm.status = 0 AND p.slug = 'nova'
+                GROUP BY o.slug, p.slug, message
+            metrics:
+                - organization: {usage: LABEL, description: "Sentry organization"}
+                - project: {usage: LABEL, description: "Sentry project"}
+                - message: {usage: LABEL, description: "Issue message"}
+                - gauge: {usage: GAUGE, description: "Number of unresolved issues in project"}
 
 probe:
-  enabled: false
+    enabled: false
 
+# yamllint disable-line rule:line-length
+# yamllint disable-line rule:line-length
 # enable when Sentry version is upgraded, also validate if GEOIP_PATH_MMDB is configured.
 databaseUpgrade:
-  enabled: false
+    enabled: false
 
 # sentry-sentry-tls is used, keeping the config for future reference.
 secretIngress:
-  tls_crt:
-    enabled: false
+    tls_crt:
+        enabled: false

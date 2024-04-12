@@ -21,7 +21,9 @@ spec:
           resources:
             requests:
               storage: {{ $.Values.compactor.dataVolume.size }}
+          {{- if $.Values.compactor.dataVolume.storageClassName }}
           storageClassName: {{ $.Values.compactor.dataVolume.storageClassName }}
+          {{- end }}
     {{ end }}
     consistencyDelay: {{ required "thanos.compactor.consistencyDelay" $.Values.compactor.consistencyDelay }}
     retentionResolutionRaw: {{ mul 24 (required "thanos.compactor.retentionResolutionRaw" $.Values.compactor.retentionResolutionRaw) }}h
@@ -44,6 +46,7 @@ spec:
           metadata:
             annotations:
               linkerd.io/inject: enabled
+              config.linkerd.io/proxy-ephemeral-storage-request: 10M
           {{- end }}
           spec:
             containers:

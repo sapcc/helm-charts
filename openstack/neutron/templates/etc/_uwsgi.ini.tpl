@@ -1,7 +1,7 @@
 [uwsgi]
 # This is running standalone
 master = true
-pyargv = --config-file /etc/neutron/neutron.conf --config-file /etc/neutron/plugins/ml2/ml2-conf.ini --config-file /etc/neutron/plugins/ml2/ml2-conf-aci.ini --config-file /etc/neutron/plugins/ml2/ml2-conf-manila.ini --config-file /etc/neutron/plugins/ml2/ml2-conf-arista.ini --config-file /etc/neutron/plugins/ml2/ml2-conf-asr1k.ini --config-file /etc/neutron/plugins/asr1k-global.ini {{- if .Values.bgp_vpn.enabled }} --config-file /etc/neutron/networking-bgpvpn.conf{{- end }}{{- if .Values.interconnection.enabled }} --config-file /etc/neutron/networking-interconnection.conf{{- end }}{{- if .Values.fwaas.enabled }} --config-file /etc/neutron/neutron-fwaas.ini{{- end }}{{- if .Values.cc_fabric.enabled }} --config-file /etc/neutron/plugins/ml2/ml2_conf_cc-fabric.ini {{- end }}
+pyargv = --config-file /etc/neutron/neutron.conf --config-dir /etc/neutron/secrets --config-file /etc/neutron/plugins/ml2/ml2-conf.ini --config-file /etc/neutron/plugins/ml2/ml2-conf-aci.ini --config-file /etc/neutron/plugins/ml2/ml2-conf-manila.ini --config-file /etc/neutron/plugins/ml2/ml2-conf-arista.ini --config-file /etc/neutron/plugins/ml2/ml2-conf-asr1k.ini --config-file /etc/neutron/plugins/asr1k-global.ini {{- if .Values.bgp_vpn.enabled }} --config-file /etc/neutron/networking-bgpvpn.conf{{- end }}{{- if .Values.interconnection.enabled }} --config-file /etc/neutron/networking-interconnection.conf{{- end }}{{- if .Values.fwaas.enabled }} --config-file /etc/neutron/neutron-fwaas.ini{{- end }}{{- if .Values.cc_fabric.enabled }} --config-file /etc/neutron/plugins/ml2/ml2_conf_cc-fabric.ini {{- end }}
 wsgi-file = /var/lib/openstack/bin/neutron-api
 enable-threads = true
 processes = {{.Values.api.processes}}

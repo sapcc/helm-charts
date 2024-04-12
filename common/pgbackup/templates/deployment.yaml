@@ -1,11 +1,10 @@
+{{- $region   := .Values.global.region                   | required "missing value for .Values.global.region"       -}}
 {{- $registry := .Values.global.registry                 | required "missing value for .Values.global.registry" -}}
 {{- if .Values.use_alternate_region -}}
   {{- $registry = .Values.global.registryAlternateRegion | required "missing value for .Values.global.registryAlternateRegion" -}}
 {{- end -}}
 {{- $db_name  := .Values.database.name                   | default .Release.Name -}}
 {{- $db_host  := .Values.database.host                   | default (printf "%s-postgresql" .Release.Name) -}}
-{{- $auth_url := .Values.swift.os_auth_url               | default (printf "http://keystone.%s.svc:5000/v3" (.Values.global.keystoneNamespace | default .Release.Namespace)) -}}
-{{- $region   := .Values.swift.os_region_name            | default .Values.global.region -}}
 
 apiVersion: apps/v1
 kind: Deployment
@@ -50,7 +49,7 @@ spec:
             - name: MY_POD_NAMESPACE
               value: {{ quote .Release.Namespace }}
             - name: OS_AUTH_URL
-              value: {{ quote $auth_url }}
+              value: {{ printf "https://identity-3.%s.cloud.sap/v3" $region | quote }}
             - name: OS_AUTH_VERSION
               value: "3"
             - name: OS_USERNAME
@@ -92,6 +91,8 @@ spec:
             limits:
               memory: {{ .Values.resources.memory_limit }}
               cpu: {{ .Values.resources.cpu_limit }}
+            {{- if not (.Values.global.region | regexMatch "^qa-de-[2-6]$") }}
             requests:
               memory: {{ .Values.resources.memory_limit }}
               cpu: {{ .Values.resources.cpu_request }}
+            {{- end }}

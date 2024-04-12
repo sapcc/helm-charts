@@ -1,0 +1,43 @@
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: ironic-rundnsmasq
+  namespace: {{ .Release.Namespace }}
+data:
+  rundnsmasq: |
+    #!/usr/bin/bash
+
+    set -eux
+
+    # shellcheck disable=SC1091
+    . /bin/ironic-common.sh
+
+    export HTTP_PORT=${HTTP_PORT:-80}
+    DNSMASQ_EXCEPT_INTERFACE=${DNSMASQ_EXCEPT_INTERFACE:-lo}
+    export DNS_PORT=${DNS_PORT:-0}
+
+    wait_for_interface_or_ip
+    if [[ "${DNS_IP:-}" == "provisioning" ]]; then
+        export DNS_IP="$IRONIC_URL_HOST"
+    fi
+
+    mkdir -p /shared/tftpboot
+    mkdir -p /shared/html/images
+    mkdir -p /shared/html/pxelinux.cfg
+
+    # Copy files to shared mount
+    cp /tftpboot/undionly.kpxe /tftpboot/snponly.efi /shared/tftpboot
+
+    # Template and write dnsmasq.conf
+    # we template via /tmp as sed otherwise creates temp files in /etc directory
+    # where we can't write
+    python3 -c 'import os; import sys; import jinja2; sys.stdout.write(jinja2.Template(sys.stdin.read()).render(env=os.environ))' </etc/dnsmasq.conf.j2 >/tmp/dnsmasq.conf
+
+    for iface in $(echo "$DNSMASQ_EXCEPT_INTERFACE" | tr ',' ' '); do
+        sed -i -e "/^interface=.*/ a\except-interface=${iface}" /tmp/dnsmasq.conf
+    done
+    #cat /tmp/dnsmasq.conf > /etc/dnsmasq.conf
+    #rm /tmp/dnsmasq.conf
+    cat /opt/dnsmasq/dnsmasq.conf > /etc/dnsmasq.conf
+
+    exec /usr/sbin/dnsmasq -d -q -C /etc/dnsmasq.conf

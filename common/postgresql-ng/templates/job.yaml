@@ -6,6 +6,7 @@ metadata:
     helm.sh/hook: pre-delete
     helm.sh/hook-weight: "-5"
     helm.sh/hook-delete-policy: hook-succeeded
+    linkerd.io/inject: disabled # this only talks to the kube-apiserver via HTTPS, so no additional mTLS is required
 spec:
   template:
     metadata:
@@ -13,7 +14,7 @@ spec:
     spec:
       containers:
       - name: delete-secrets
-        image: "{{ include "preferredRegistry" . }}/shared-app-images/alpine-kubectl:edge-latest"
+        image: "{{ include "preferredRegistry" . }}/shared-app-images/alpine-kubectl:3.19-latest"
         env:
         - name: DEBUG
           value: {{ quote .Values.debug }}

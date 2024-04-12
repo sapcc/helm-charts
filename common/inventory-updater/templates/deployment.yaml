@@ -6,6 +6,7 @@ metadata:
   labels:
     chart: "{{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}"
     release: {{ .Release.Name }}
+    app: {{ include "fullname" . }}
 spec:
   replicas: {{ required ".Values.updater.replicas missing" .Values.updater.replicas }}
   selector:
@@ -73,7 +74,7 @@ spec:
 {{ toYaml .Values.resources | indent 10 }}
 
         ports:
-          - name: {{ include "fullname" . }}
+          - name: http
             containerPort: {{ required ".Values.updater.api.port missing" .Values.updater.api.port }}
             protocol: TCP
 {{ end -}}

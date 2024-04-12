@@ -1,8 +1,8 @@
 {{- define "castellum_image" -}}
-  {{- if contains "DEFINED" $.Values.castellum.image_tag -}}
-    {{ required "This release should be installed by the deployment pipeline!" "" }}
-  {{- else -}}
+  {{- if $.Values.castellum.image_tag -}}
     {{$.Values.global.registry}}/castellum:{{$.Values.castellum.image_tag}}
+  {{- else -}}
+    {{ required "This release should be installed by the deployment pipeline!" "" }}
   {{- end -}}
 {{- end -}}
 
@@ -27,22 +27,27 @@
 - name: CASTELLUM_LOG_SCRAPES
   value: "true"
 {{- if $.Values.castellum.asset_managers | has "nfs-shares" }}
+- name: CASTELLUM_NFS_DISCOVERY_PROMETHEUS_URL
+  value: "http://prometheus-openstack.prometheus-openstack.svc:9090"
 - name: CASTELLUM_NFS_PROMETHEUS_URL
   value: "http://prometheus-storage.infra-monitoring.svc:9090"
 {{- end }}
 - name: CASTELLUM_OSLO_POLICY_PATH
   value: /etc/castellum/policy.yaml
 - name: CASTELLUM_RABBITMQ_QUEUE_NAME
-  value: "{{ .Values.castellum.rabbitmq.queue_name }}"
+  value: notifications.info
 - name: CASTELLUM_RABBITMQ_USERNAME
-  value: "{{ .Values.castellum.rabbitmq.username }}"
+  valueFrom:
+    secretKeyRef:
+      name: castellum-secret
+      key: rabbitmq_username
 - name: CASTELLUM_RABBITMQ_PASSWORD
   valueFrom:
     secretKeyRef:
       name: castellum-secret
       key: rabbitmq_password
 - name: CASTELLUM_RABBITMQ_HOSTNAME
-  value: "{{ .Values.castellum.rabbitmq.hostname }}"
+  value: hermes-rabbitmq-notifications.hermes.svc
 {{- if $.Values.castellum.asset_managers | has "server-groups" }}
 - name: CASTELLUM_SERVERGROUPS_LOCAL_ROLES
   value: "member,keymanager_viewer"

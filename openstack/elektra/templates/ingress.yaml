@@ -16,9 +16,6 @@ apiVersion: networking.k8s.io/v1
 metadata:
   name: elektra
   annotations:
-    #ingress.kubernetes.io/custom-http-errors: "500,503"
-    #ingress.kubernetes.io/default-backend: error-pages
-
     {{- if .Values.ingress.ca }}
     ingress.kubernetes.io/auth-tls-pass-certificate-to-upstream: {{ default true .Values.ingress.pass_certificate_to_upstream | quote }}
     nginx.ingress.kubernetes.io/auth-tls-pass-certificate-to-upstream: {{ default true .Values.ingress.pass_certificate_to_upstream | quote }}
@@ -29,7 +26,7 @@ metadata:
     ingress.kubernetes.io/auth-tls-verify-depth: "3"
     nginx.ingress.kubernetes.io/auth-tls-verify-depth: "3"
     {{- end }}
-    {{- if .Values.enable_linkerd }}
+    {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
     ingress.kubernetes.io/service-upstream: "true"
     nginx.ingress.kubernetes.io/service-upstream: "true"
     {{- end }}
@@ -80,7 +77,7 @@ metadata:
     ingress.kubernetes.io/auth-tls-verify-depth: "3"
     nginx.ingress.kubernetes.io/auth-tls-verify-depth: "3"
     {{- end }}
-    {{- if .Values.enable_linkerd }}
+    {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
     ingress.kubernetes.io/service-upstream: "true"
     nginx.ingress.kubernetes.io/service-upstream: "true"
     {{- end }}

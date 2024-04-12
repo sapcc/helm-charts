@@ -16,7 +16,7 @@ Add `owner-info` as a dependency to your chart's `Chart.yaml` file:
 ```yaml
 dependencies:
   - name: owner-info
-    repository: https://charts.eu-de-2.cloud.sap
+    repository: oci://keppel.eu-de-1.cloud.sap/ccloud-helm
     version: # use owner-info's current version from Chart.yaml
 ```
 

@@ -5,7 +5,7 @@ SET collation_server = '{{ .Values.collation_server }}';
 CREATE DATABASE IF NOT EXISTS {{ . }};
 {{- end }}
 
-{{- if and .Values.global.dbUser .Values.global.dbPassword (not (hasKey .Values.users (default "" .Values.global.dbUser))) (not .Values.custom_initdb_configmap) }}
+{{- if and .Values.global.dbUser .Values.global.dbPassword (not (hasKey .Values.users (default "" .Values.global.dbUser))) (not .Values.custom_initdb_secret) }}
 CREATE USER IF NOT EXISTS {{ .Values.global.dbUser }};
 GRANT ALL PRIVILEGES ON {{ .Values.name }}.* TO {{ .Values.global.dbUser }} IDENTIFIED BY '{{ include "db_password" . }}';
 {{- end }}
@@ -28,3 +28,12 @@ GRANT {{ . }} TO '{{ $username }}';
         {{- end }}
     {{- end }}
 {{- end }}
+
+{{- if (and (hasKey .Values "ccroot_user") (.Values.ccroot_user.enabled)) }}
+CREATE USER IF NOT EXISTS 'ccroot'@'127.0.0.1';
+GRANT ALL PRIVILEGES ON *.* TO 'ccroot'@'127.0.0.1';
+{{- else }}
+DROP USER IF EXISTS 'ccroot'@'127.0.0.1';
+{{- end }}
+
+FLUSH PRIVILEGES;

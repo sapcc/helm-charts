@@ -30,9 +30,7 @@ data:
     - "indices:admin/mapping/put"
     - "indices:admin/create"
     - "indices:data/write/bulk*"
-    - "indices:data/write/delete"
     - "indices:data/write/index"
-    - "indices:data/write/update"
   - index_patterns:
     - "systemd-*"
     allowed_actions:
@@ -41,9 +39,7 @@ data:
     - "indices:admin/mapping/put"
     - "indices:admin/create"
     - "indices:data/write/bulk*"
-    - "indices:data/write/delete"
     - "indices:data/write/index"
-    - "indices:data/write/update"
   - index_patterns:
     - "kubernikus-*"
     allowed_actions:
@@ -52,9 +48,7 @@ data:
     - "indices:admin/mapping/put"
     - "indices:admin/create"
     - "indices:data/write/bulk*"
-    - "indices:data/write/delete"
     - "indices:data/write/index"
-    - "indices:data/write/update"
   - index_patterns:
     - "scaleout-*"
     allowed_actions:
@@ -63,9 +57,7 @@ data:
     - "indices:admin/mapping/put"
     - "indices:admin/create"
     - "indices:data/write/bulk*"
-    - "indices:data/write/delete"
     - "indices:data/write/index"
-    - "indices:data/write/update"
   - index_patterns:
     - "qade2-logstash-*"
     allowed_actions:
@@ -74,9 +66,7 @@ data:
     - "indices:admin/mapping/put"
     - "indices:admin/create"
     - "indices:data/write/bulk*"
-    - "indices:data/write/delete"
     - "indices:data/write/index"
-    - "indices:data/write/update"
   - index_patterns:
     - "qade3-logstash-*"
     allowed_actions:
@@ -85,9 +75,7 @@ data:
     - "indices:admin/mapping/put"
     - "indices:admin/create"
     - "indices:data/write/bulk*"
-    - "indices:data/write/delete"
     - "indices:data/write/index"
-    - "indices:data/write/update"
   - index_patterns:
     - "qade5-logstash-*"
     allowed_actions:
@@ -96,9 +84,7 @@ data:
     - "indices:admin/mapping/put"
     - "indices:admin/create"
     - "indices:data/write/bulk*"
-    - "indices:data/write/delete"
     - "indices:data/write/index"
-    - "indices:data/write/update"
   - index_patterns:
     - "virtual-*"
     allowed_actions:
@@ -107,9 +93,7 @@ data:
     - "indices:admin/mapping/put"
     - "indices:admin/create"
     - "indices:data/write/bulk*"
-    - "indices:data/write/delete"
     - "indices:data/write/index"
-    - "indices:data/write/update"
   - index_patterns:
     - "admin-*"
     allowed_actions:
@@ -118,9 +102,16 @@ data:
     - "indices:admin/mapping/put"
     - "indices:admin/create"
     - "indices:data/write/bulk*"
-    - "indices:data/write/delete"
     - "indices:data/write/index"
-    - "indices:data/write/update"
+  - index_patterns:
+    - "syslog-*"
+    allowed_actions:
+    - "indices:admin/template/get"
+    - "indices:admin/template/put"
+    - "indices:admin/mapping/put"
+    - "indices:admin/create"
+    - "indices:data/write/bulk*"
+    - "indices:data/write/index"
 
 syslog:
   reserved: false
@@ -141,9 +132,7 @@ syslog:
     - "indices:admin/mapping/put"
     - "indices:admin/create"
     - "indices:data/write/bulk*"
-    - "indices:data/write/delete"
     - "indices:data/write/index"
-    - "indices:data/write/update"
   - index_patterns:
     - "alerts-*"
     allowed_actions:
@@ -152,9 +141,7 @@ syslog:
     - "indices:admin/mapping/put"
     - "indices:admin/create"
     - "indices:data/write/bulk*"
-    - "indices:data/write/delete"
     - "indices:data/write/index"
-    - "indices:data/write/update"
   - index_patterns:
     - "deployments-*"
     allowed_actions:
@@ -163,9 +150,7 @@ syslog:
     - "indices:admin/mapping/put"
     - "indices:admin/create"
     - "indices:data/write/bulk*"
-    - "indices:data/write/delete"
     - "indices:data/write/index"
-    - "indices:data/write/update"
   - index_patterns:
     - "nsxt-*"
     allowed_actions:
@@ -174,9 +159,7 @@ syslog:
     - "indices:admin/mapping/put"
     - "indices:admin/create"
     - "indices:data/write/bulk*"
-    - "indices:data/write/delete"
     - "indices:data/write/index"
-    - "indices:data/write/update"
   - index_patterns:
     - "netflow-*"
     allowed_actions:
@@ -185,9 +168,7 @@ syslog:
     - "indices:admin/mapping/put"
     - "indices:admin/create"
     - "indices:data/write/bulk*"
-    - "indices:data/write/delete"
     - "indices:data/write/index"
-    - "indices:data/write/update"
 greenhouse:
   reserved: false
   cluster_permissions:
@@ -207,9 +188,7 @@ greenhouse:
     - "indices:admin/mapping/put"
     - "indices:admin/create"
     - "indices:data/write/bulk*"
-    - "indices:data/write/delete"
     - "indices:data/write/index"
-    - "indices:data/write/update"
 jump:
   reserved: false
   cluster_permissions:
@@ -229,9 +208,7 @@ jump:
     - "indices:admin/mapping/put"
     - "indices:admin/create"
     - "indices:data/write/bulk*"
-    - "indices:data/write/delete"
     - "indices:data/write/index"
-    - "indices:data/write/update"
 jaeger:
   reserved: false
   cluster_permissions:
@@ -250,9 +227,7 @@ jaeger:
     - "indices:admin/mapping/put"
     - "indices:admin/create"
     - "indices:data/write/bulk*"
-    - "indices:data/write/delete"
     - "indices:data/write/index"
-    - "indices:data/write/update"
   - index_patterns:
     - "jaeger-span-*"
     allowed_actions:
@@ -261,9 +236,7 @@ jaeger:
     - "indices:admin/mapping/put"
     - "indices:admin/create"
     - "indices:data/write/bulk*"
-    - "indices:data/write/delete"
     - "indices:data/write/index"
-    - "indices:data/write/update"
 
 
 adminrole:
@@ -368,6 +341,27 @@ maillog:
     - "read"
     - "indices:monitor/settings/get"
     - "indices:monitor/stats"
+
+storage:
+  reserved: false
+  cluster_permissions:
+  - "cluster_monitor"
+  - "cluster_composite_ops"
+  - "cluster:admin/ingest/pipeline/put"
+  - "cluster:admin/ingest/pipeline/get"
+  - "indices:admin/template/get"
+  - "cluster_manage_index_templates"
+  - "cluster:admin/opensearch/ml/predict"
+  index_permissions:
+  - index_patterns:
+    - "storage-*"
+    allowed_actions:
+    - "indices:admin/template/get"
+    - "indices:admin/template/put"
+    - "indices:admin/mapping/put"
+    - "indices:admin/create"
+    - "indices:data/write/bulk*"
+    - "indices:data/write/index"
 
 jupyterhub:
   reserved: false

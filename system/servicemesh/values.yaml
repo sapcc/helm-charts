@@ -1,3 +1,7 @@
+alerts:
+  enabled: true
+  prometheus: kubernetes
+
 owner-info:
   support-group: containers
   helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/system/servicemesh
@@ -78,7 +82,7 @@ linkerd-control-plane:
       cpu:
         request: 100m
       memory:
-        limit: 250Mi
+        limit: ""
         request: 100Mi
 
   # controller configuration
@@ -88,7 +92,7 @@ linkerd-control-plane:
       limit: ""
       request: 100m
     memory:
-      limit: 1500Mi
+      limit: ""
       request: 500Mi
   destinationResources: *controller_resources
 
@@ -96,7 +100,7 @@ linkerd-control-plane:
   identityResources:
     cpu: *controller_resources_cpu
     memory:
-      limit: 250Mi
+      limit: ""
       request: 50Mi
 
   # heartbeat configuration
@@ -106,7 +110,7 @@ linkerd-control-plane:
   proxyInjectorResources:
     cpu: *controller_resources_cpu
     memory:
-      limit: 500Mi
+      limit: ""
       request: 250Mi
 
   webhookFailurePolicy: Ignore
@@ -119,6 +123,8 @@ linkerd-control-plane:
     enabled: false
     labels:
       prometheus: kubernetes
+    scrapeInterval: 20s
+    scrapeTimeout: 20s
 
 linkerd-viz:
   enabled: false
@@ -147,10 +153,6 @@ linkerd-viz:
       memory:
         request: 50Mi
 
+  prometheusUrl: http://prometheus-kubernetes.kube-monitoring.svc:9090
   prometheus:
-    enabled: true
-    image:
-      registry: keppel.global.cloud.sap/ccloud-dockerhub-mirror/prom
-    resources:
-      memory:
-        request: 1000Mi
+    enabled: false

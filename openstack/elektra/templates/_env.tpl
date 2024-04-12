@@ -45,8 +45,13 @@
   value: {{ .Values.two_factor_radius_secret | quote }}
 - name: TWO_FACTOR_AUTH_DOMAINS
   value: {{ .Values.two_factor_auth_domains | quote }}
+- name: MONSOON_DB_USER
+  value: {{ .Values.postgresql.user | quote }}
 - name: MONSOON_DB_PASSWORD
-  valueFrom: { secretKeyRef:    { name: {{ template "postgresql.fullname" . }}, key: postgres-password } }
+  valueFrom:
+    secretKeyRef:
+      name: '{{ $.Release.Name }}-pguser-{{ .Values.postgresql.user }}'
+      key: 'postgres-password'
 - name: MONSOON_OPENSTACK_AUTH_API_PASSWORD
   valueFrom: { secretKeyRef:    { name: elektra, key: monsoon.openstack.auth.api.password } }
 - name: MONSOON_RAILS_SECRET_TOKEN
@@ -63,4 +68,3 @@
   value: hcp03,monsoon3
 - name: CEREBRO_CUSTOM_ENDPOINT
   value: {{ .Values.cerebro_custom_endpoint | quote }}
-

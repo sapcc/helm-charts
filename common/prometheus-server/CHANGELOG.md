@@ -1,4 +1,16 @@
-## 7.5.0 - 7.5.1
+## 7.5.6
+
+* Adapting swift credential for kvv2 vault
+
+## 7.5.5
+
+* VPA alerts should always go to observability support_group
+
+## 7.5.4
+
+* Adding linkerd eph requests
+
+## 7.5.0 - 7.5.3
 
 * Adding linkerd
 

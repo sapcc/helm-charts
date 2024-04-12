@@ -1,7 +1,8 @@
+{{- $deployment_name := include "postgres.fullname" . -}}
 kind: Deployment
 apiVersion: apps/v1
 metadata:
-  name: {{ template "postgres.fullname" . }}
+  name: {{ $deployment_name }}
 spec:
   replicas: 1
   revisionHistoryLimit: 3
@@ -43,12 +44,14 @@ spec:
 
       initContainers:
       - name: generate-secrets
-        image: "{{ include "preferredRegistry" . }}/shared-app-images/alpine-kubectl:edge-latest"
+        image: "{{ include "preferredRegistry" . }}/shared-app-images/alpine-kubectl:3.19-latest"
         env:
         - name: DEBUG
           value: {{ quote .Values.debug }}
         - name: RELEASE
           value: {{ quote .Release.Name }}
+        - name: DEPLOYMENT_NAME
+          value: {{ $deployment_name }}
         - name: USERS
           value: {{ keys (.Values.users | required ".Values.users must be configured") | sortAlpha | join " " | quote }}
         command: [ ash, -c, {{ .Files.Get "bin/init-generate-secrets.sh" | quote }} ]
@@ -73,7 +76,7 @@ spec:
         - name: PGDATABASE
           value: {{ .Values.postgresDatabase | quote }}
         - name: PGUSER
-          value: {{ .Values.postgresUser | quote }}
+          value: postgres
         - name: PGAUTHMETHOD
           value: "{{ if ge ($.Values.postgresVersion | int) 12 }}scram-sha-256{{ else }}md5{{ end }}"
         - name: POD_IP
@@ -108,7 +111,11 @@ spec:
             - "[[ -e /tmp/in-init ]] || exec pg_isready --host $POD_IP"
           initialDelaySeconds: 5
           timeoutSeconds: {{ .Values.probe_timeout_secs }}
-        resources: {{ toYaml .Values.resources | nindent 10 }}
+        resources:
+          limits: {{ toYaml .Values.resources.limits | nindent 12 }}
+          {{- if not (.Values.global.region | regexMatch "^qa-de-[2-6]$") }}
+          requests: {{ toYaml .Values.resources.requests | nindent 12 }}
+          {{- end }}
         volumeMounts:
         - name: data
           mountPath: /data

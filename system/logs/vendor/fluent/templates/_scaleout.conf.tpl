@@ -1,4 +1,4 @@
-<filter kubernetes.var.log.containers.elk-k8s-event-exporter**>
+<filter kubernetes.var.log.containers.logs-k8s-event-exporter**>
   @type parser
   @id json_parser
   key_name log
@@ -90,9 +90,9 @@
     template_file /fluentd/etc/{{.Values.opensearch.indexname}}.json
     template_overwrite false
   {{- end }}
-    hosts {{.Values.opensearch.http.endpoint}}
+    hosts {{.Values.global.opensearch.host}}
     scheme https
-    port {{.Values.opensearch.http_port}}
+    port {{.Values.global.opensearch.port}}
     user "#{ENV['USER']}"
     password "#{ENV['PASSWORD']}"
     ssl_verify false
