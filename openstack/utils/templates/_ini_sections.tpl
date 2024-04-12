@@ -6,8 +6,22 @@ heartbeat_in_pthread = False
 {{- end }}
 
 {{- define "ini_sections.default_transport_url" }}
-transport_url = {{ include "rabbitmq.transport_url" . }}
+{{- $data := merge (pick .Values.rabbitmq "port" "virtual_host") .Values.rabbitmq.users.default }}
+{{- $_ := required ".Values.rabbitmq.users.default.user is required" .Values.rabbitmq.users.default.user }}
+{{- $_ := required ".Values.rabbitmq.users.default.password is required" .Values.rabbitmq.users.default.password }}
+{{- include "ini_sections._transport_url" (tuple . $data) }}
 {{- end }}
+
+{{- define "ini_sections._transport_url" }}
+transport_url = {{ include "utils.rabbitmq_url" . }}
+{{- end }}
+
+
+{{- define "utils.rabbitmq_url" -}}
+{{- $envAll := index . 0 -}}
+{{- $data := index . 1 -}}
+rabbit://{{ include "resolve_secret_urlquery" $data.user }}:{{ include "resolve_secret_urlquery" $data.password }}@{{ $data.host | default (print $envAll.Release.Name "-rabbitmq") }}:{{ $data.port | default 5672 }}/{{ $data.virtual_host | default "" }}
+{{- end -}}
 
 {{- define "ini_sections.database_options_mysql" }}
 max_pool_size = {{ .Values.max_pool_size | default .Values.global.max_pool_size | default 50 }}
@@ -49,10 +63,17 @@ enabled = true
 # topics = notifications
 driver = messagingv2
             {{- if .Values.audit.central_service }}
-transport_url = rabbit://{{ .Values.audit.central_service.user | required "Please set audit.central_service.user" }}:{{ include "resolve_secret" .Values.audit.central_service.password | required "Please set audit.central_service.password" }}@{{ .Values.audit.central_service.host | default "hermes-rabbitmq-notifications.hermes" }}:{{.Values.audit.central_service.port | default 5672 }}/
+                {{- $data := pick .Values.audit.central_service "user" "password" "host" "port" }}
+                {{- $_ := required ".Values.audit.central_service.user is required" $data.user }}
+                {{- $_ := required ".Values.audit.central_service.password is required" $data.password }}
+                {{- $_ := set $data "host" ($data.host | default "hermes-rabbitmq-notifications.hermes") }}
+                {{- include "ini_sections._transport_url" (tuple . $data) }}
             {{- else if .Values.rabbitmq_notifications }}
                 {{- if and .Values.rabbitmq_notifications.ports .Values.rabbitmq_notifications.users }}
-transport_url = rabbit://{{ .Values.rabbitmq_notifications.users.default.user }}:{{ include "resolve_secret" .Values.rabbitmq_notifications.users.default.password | required ".Values.rabbitmq_notifications.users.default.password missing" }}@{{ .Chart.Name }}-rabbitmq-notifications:{{ .Values.rabbitmq_notifications.ports.public }}/
+                    {{- $data := dict "user" .Values.rabbitmq_notifications.users.default.user "password" .Values.rabbitmq_notifications.users.default.password "host" (print .Release.Name "-rabbitmq-notifications") "port" .Values.rabbitmq_notifications.ports.public }}
+                    {{- $_ := required ".Values.rabbitmq_notifications.users.default.user is required" $data.user }}
+                    {{- $_ := required ".Values.rabbitmq_notifications.users.default.password is required" $data.password }}
+                    {{- include "ini_sections._transport_url" (tuple . $data) }}
                 {{- end }}
             {{- end }}
 mem_queue_size = {{ .Values.audit.mem_queue_size }}
