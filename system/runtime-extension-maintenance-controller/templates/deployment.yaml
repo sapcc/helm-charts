@@ -20,6 +20,10 @@ spec:
         {{- end }}
     spec:
       serviceAccountName: runtime-extension-maintenance-controller
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
       containers:
       - image: "{{required ".Values.global.registry is missing" .Values.global.registry }}/{{ .Values.image.repository }}:{{required ".Values.image.tag is missing" .Values.image.tag }}"
         imagePullPolicy: {{ .Values.image.pullPolicy }}
