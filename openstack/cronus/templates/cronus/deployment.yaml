@@ -47,7 +47,7 @@ spec:
             - "-config=/cronus/config.yaml"
           envFrom:
             - secretRef:
-                name: cronus
+                name: cronus-secrets
           env:
           - name: GODEBUG
             value: {{ .Values.cronus.godebug | quote }}
@@ -102,9 +102,9 @@ spec:
         - name: ndots
           value: "1"
       volumes:
-        - name: cronus
-          secret:
-            secretName: cronus
+        - name: cronus-config
+          configMap:
+            secretName: cronus-config
 {{- if or .Values.cronus.fileBufferPath .Values.global.fileBufferPath }}
         - name: cronus-file-buffer
           persistentVolumeClaim:
