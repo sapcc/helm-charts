@@ -61,16 +61,34 @@ groups:
           summary:  Multiple Netapp Harvest poller instances for [[ $labels.poller ]]
           description: There are [[ $value ]] pollers collecting metrics from NetApp Filer [[ $labels.poller ]].
 
-      # - alert: NetappHarvestCinderNotWorking
-      #   expr: absent(count ({__name__=~"netapp_.*", name="netapp-harvest-exporter-cinder-worker"}))
-      #   for: 15m
-      #   labels:
-      #     context: netapp-exporter
-      #     no_alert_on_absence: "true"
-      #     service: exporter
-      #     severity: info
-      #     support_group: compute-storage-api
-      #     tier: storage
-      #   annotations:
-      #     summary:  Netapp Harvest (Cinder) not working
-      #     description: No metrics with netapp_* scraped from app netapp-harvest-exporter-cinder.
+
+      # compare scraped filers by netapp-harvest-exporter and netapp-capacity-exporter
+      # netapp-harvest-exporter automatically discovers filers, netapp-capacity-exporter uses static configuration
+      # netapp_volume_total_bytes is a metric from netapp_capacity_exporter, netapp_volume_size_total is a metric from netapp-harvest-exporter
+      - alert: NetappHarvestFilersMissing
+        expr: count (label_replace(netapp_volume_total_bytes, "filer", "$1", "host", "(.*).cc.*")) by (filer) unless count (netapp_volume_size_total{app="netapp-harvest-exporter-manila"}) by (filer)
+        for: 15m
+        labels:
+          context: netapp-exporter
+          no_alert_on_absence: "true"
+          service: exporter
+          severity: info
+          support_group: compute-storage-api
+          tier: storage
+        annotations:
+          description: Filer [[ $labels.filer ]] is scraped by Netapp Capacity but not by Netapp Harvest.
+
+      - alert: NetappHarvestFilerNotInCapacityExporter
+        expr: count (netapp_volume_size_total{app="netapp-harvest-exporter-manila"}) by (filer) unless count (label_replace(netapp_volume_total_bytes, "filer", "$1", "host", "(.*).cc.*")) by (filer)
+        for: 15m
+        labels:
+          context: netapp-exporter
+          no_alert_on_absence: "true"
+          service: info
+          severity: warning
+          support_group: compute-storage-api
+          tier: storage
+        annotations:
+          summary:  Mismatch in discovered filers between Netapp Harvest and Netapp Capacity
+          description: Filer [[ $labels.filer ]] is scraped by Netapp Harvest but not by Netapp Capacity.
+
