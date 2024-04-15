@@ -1,0 +1,22 @@
+groups:
+- name: manila
+  rules:
+    # 1. substract reserved capacity from reported overall free capacity to get usable capacity
+    # 2. only look at hardware state "live"
+    # 3. sum by host, i.e. look at NetApp cluster, summing up the aggregates aka pools
+    # 4. look at availability zones, joined in through manila service metrics
+  - alert: ManilaAvailabilityZoneUsageHigh
+    expr: count by(zone) (sum by (zone, host)((manila_free_capacity_gb{hardware_state="live"} - (manila_reserved_percentage/100 * manila_total_capacity_gb)) * on(host) group_left(zone) manila_service_state{service="manila-share"}) > 5*1024) < 3 # less than 3 clusters per zone with more than 5 TB free capacity
+    for: 1h
+    labels:
+        severity: warning
+        tier: os
+        support_group: compute-storage-api
+        service: manila
+        context: netapp-az-usage
+        meta: '{{ $labels.zone }} usage high'
+        playbook: 'docs/support/playbook/manila/az_usage_high'
+        support_component: manila_netapp
+    annotations:
+        description: '{{ $labels.zone }} has less than 3 clusters with 5 TB capacity left for new shares'
+        summary: '{{ $labels.zone }} usage high'
