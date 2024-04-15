@@ -19,6 +19,9 @@ spec:
     metadata:
       annotations:
         configmap-hash: {{ include (print $.Template.BasePath "/configmap.yaml") . | replace .Chart.Version "0.1.5" | sha256sum }}
+        {{- if and .Values.global.linkerd_enabled .Values.global.linkerd_requested }}
+        linkerd.io/inject: enabled
+        {{- end }}
         prometheus.io/scrape: "true"
         prometheus.io/targets: storage
       labels:

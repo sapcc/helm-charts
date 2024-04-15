@@ -30,6 +30,9 @@ spec:
         prometheus.io/scrape: {{ $.Values.prometheus.scrape | quote }}
         prometheus.io/targets: {{ $.Values.global.prometheus | quote }}
         checksum/configmap.yaml: {{ include $configmapTemplate (dict "fullname" $.Values.fullname "component" $app.component "netappHarvestConf" $netappHarvestConf "graphiteConf" $graphiteConf "netappFilerYaml" $netappFilerYaml) | sha256sum }}
+        {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+        linkerd.io/inject: enabled
+        {{- end }}
     spec:
       containers:
       - name: harvest

@@ -29,6 +29,9 @@ spec:
       {{- if eq $shortAppName "manila" }}
       annotations:
         checksum/configmap.yaml: {{ include $configmapTemplate (dict "fullname" $.Values.fullname "appComponent" $app.component "manilaFilerYaml" $manilaFilerYaml) | sha256sum }}
+        {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+        linkerd.io/inject: enabled
+        {{- end }}
       {{- end }}
     spec:
       volumes:
