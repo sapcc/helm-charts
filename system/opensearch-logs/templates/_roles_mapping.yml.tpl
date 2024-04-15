@@ -89,6 +89,8 @@ promrole:
   reserved: false
   users:
   - "promuser"
+  backend_roles:
+  - CC_IAS_OPERATIONS_UI_KIBANA_SUPPORT
 
 jupyterhub:
   reserved: false
