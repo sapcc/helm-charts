@@ -11,6 +11,7 @@ metadata:
     type: rabbitmq
     component: {{ .Release.Name }}
     system: openstack
+    {{- include "sharedservices.labels" . | indent 4 }}
 spec:
   replicas: {{ .Values.replicas }}
   revisionHistoryLimit: {{ .Values.upgrades.revisionHistory }}
@@ -28,6 +29,7 @@ spec:
     metadata:
       labels:
         app: {{ template "fullname" . }}
+      {{- include "sharedservices.labels" . | indent 8 }}  
       annotations:
         kubectl.kubernetes.io/default-container: rabbitmq
         checksum/container.init: {{ include (print $.Template.BasePath "/bin-secret.yaml") . | sha256sum }}
