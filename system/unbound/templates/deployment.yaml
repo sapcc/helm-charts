@@ -112,7 +112,9 @@ spec:
         restartPolicy: Always
 {{ end }}
         resources:
+{{- if .Values.resources.dnstap }}
 {{ toYaml .Values.resources.dnstap | indent 10 }}
+{{- end }}
         args:
           - -u
           - {{ .Values.unbound.dnstap.socket_path | default "/run/dnstap/dnstap.sock" }}
@@ -128,7 +130,9 @@ spec:
 {{ end }}
 {{ end }}
 {{ end }}
+{{- if .Values.unbound.dnstap.additional_cmdline_args }}
 {{ toYaml .Values.unbound.dnstap.additional_cmdline_args | indent 10 }}
+{{- end }}
         volumeMounts:
           - name: dnstap-socket
             mountPath: {{ .Values.unbound.dnstap.socket_path | default "/run/dnstap/dnstap.sock" | dir }}
@@ -141,7 +145,9 @@ spec:
         restartPolicy: Always
 {{ end }}
         resources:
+{{- if  .Values.resources.bind_rpz_proxy }}
 {{ toYaml .Values.resources.bind_rpz_proxy | indent 10 }}
+{{- end }}
         volumeMounts:
           - name: bind-rpz-proxy-conf
             mountPath: /etc/bind
