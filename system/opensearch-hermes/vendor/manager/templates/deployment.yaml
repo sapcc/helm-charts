@@ -34,14 +34,18 @@ spec:
       nodeSelector:
         zone: farm
       volumes:
-        - name: es-etc
+        - name: manager-config
           configMap:
             name: opensearch-hermes-manager-configmap
 {{- if .Values.global.truststore.enabled}}
         - name: truststore
           secret:
             defaultMode: 420
-            secretName: truststore
+            secretName: manager-secret
+        - name: start
+          secret:
+            defaultMode: 420
+            secretName: manager-secret
 {{ else }}
         - name: opensearch-certs
           secret:
@@ -53,17 +57,18 @@ spec:
         image: {{.Values.global.registry}}/elk-elasticsearch-manager:{{.Values.image_version}}
         imagePullPolicy: IfNotPresent
         command:
+{{- if .Values.global.truststore.enabled}}
+          - /bin/bash
+        args:
+          - /script/start.sh
+{{ else }}
           - /opt/cerebro/bin/cerebro
         args:
-          - -Dconfig.file=/es-etc/elasticsearch-application.conf
-          - -Dlogback.configurationFile=/es-etc/logback.xml
-          - -Dlogger.file=/es-etc/logback.xml
+          - -Dconfig.file=/manager-config/application.conf
+          - -Dlogback.configurationFile=/manager-config/logback.xml
+          - -Dlogger.file=/manager-config/logback.xml
           - -Dcom.sun.jndi.ldap.object.disableEndpointIdentification=true
           - -Des.networkaddress.cache.ttl=20
-          - -Des.networkaddress.cache.negative.ttl=10
-{{- if .Values.global.truststore.enabled}}
-          - -Djavax.net.ssl.trustStore=/truststore/truststore
-          - -Djavax.net.ssl.trustStorePassword={{.Values.global.truststore.cert_pw }}
 {{- end }}
         env:
           - name: NAMESPACE
@@ -71,14 +76,26 @@ spec:
               fieldRef:
                 fieldPath: metadata.namespace
         volumeMounts:
-          - mountPath: /es-etc
-            name: es-etc
+          - mountPath: /manager-config
+            name: manager-config
 {{- if .Values.global.truststore.enabled}}
-          - mountPath: /truststore
+          - mountPath: /truststore/truststore.crypt
             name: truststore
+            subPath: /truststore/crypt
+          - mountPath: /start.sh
+            name: start
+            subPath: start.sh
 {{ else }}
           - mountPath: /opt/certs
             name: opensearch-certs
+{{- end }}
+{{- if .Values.global.truststore.enabled}}
+          env:
+          - name: TRUSTSTORE_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: manager-secrets
+                key: TRUSTSTORE_PASSWORD
 {{- end }}
         ports:
           - name: manager
