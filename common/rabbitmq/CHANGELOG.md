@@ -3,6 +3,11 @@ Rabbitmq CHANGELOG
 
 This file is used to list changes made in each version of the common chart rabbitmq.
 
+0.6.13
+------
+dusan.dordevic@sap.com
+-Adding standardized labels to all objects, according to https://kubernetes.io/docs/concepts/overview/working-with-objects/common-labels/#labels
+
 0.6.9
 -----
 b.alkhateeb@sap.com
