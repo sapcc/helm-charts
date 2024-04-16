@@ -74,9 +74,15 @@ spec:
           initialDelaySeconds: 5
           timeoutSeconds: 3
           periodSeconds: 10
+{{- if ge (int .Capabilities.KubeVersion.Minor) 29 }}
+      initContainers:
+{{- end }}
       - name: metric
         image: {{ required ".Values.global.registryAlternateRegion is missing" .Values.global.registryAlternateRegion }}/{{.Values.unbound.unbound_exporter.image}}:{{ .Values.unbound.unbound_exporter.image_tag}}
         imagePullPolicy: {{ .Values.unbound.image_pullPolicy }}
+{{- if ge (int .Capabilities.KubeVersion.Minor) 29 }}
+        restartPolicy: Always
+{{- end }}
         resources:
 {{ toYaml .Values.resources.metric | indent 10 }}
         args: [ '-unbound.ca', '', '-unbound.cert', '', '-unbound.key', '', '-unbound.host', 'unix:{{ .Values.unbound.control.socket_path | default "/run/unbound/control.sock" }}' ]
@@ -86,9 +92,6 @@ spec:
         volumeMounts:
           - name: "control-socket"
             mountPath: {{ .Values.unbound.control.socket_path | default "/run/unbound/control.sock" | dir }}
-{{- if ge (int .Capabilities.KubeVersion.Minor) 29 }}
-      initContainers:
-{{- end }}
 {{- if .Values.unbound.dnstap.enabled }}
       - name: dnstap
         image: {{ required ".Values.global.registryAlternateRegion is missing" .Values.global.registryAlternateRegion }}/{{.Values.unbound.dnstap.image}}:{{ .Values.unbound.dnstap.image_tag}}
