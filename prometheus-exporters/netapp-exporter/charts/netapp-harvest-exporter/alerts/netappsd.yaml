@@ -94,7 +94,11 @@ groups:
 
       # compare scraped volumes by netapp-harvest-exporter and netapp-capacity-exporter
       - alert: NetappHarvestVolumesMissing
-        expr: count (label_replace(netapp_volume_total_bytes, "filer", "$1", "host", "(.*).cc.*")) by (filer) - on (filer) count (netapp_volume_size{app="netapp-harvest-exporter-manila"}) by (filer) > 0 
+        expr: |
+          (
+            count by (filer) (label_replace(netapp_volume_total_bytes{volume=~"share.*"}, "filer", "$1", "host", "(.*).cc.*"))
+            - count by (filer) (netapp_volume_size{app="netapp-harvest-exporter-manila", volume=~"share.*"})
+          ) > 0 
         for: 15m
         labels:
           context: netapp-exporter
