@@ -1,0 +1,26 @@
+apiVersion: ceph.rook.io/v1
+kind: CephObjectStore
+metadata:
+  name: {{ .Values.objectstore.name }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  dataPool: {{ toYaml .Values.objectstore.dataPool | nindent 4 }}
+  gateway:
+    instances: 3
+    {{- if .Values.objectstore.gateway.port }}
+    port: {{ .Values.objectstore.gateway.port }}
+    {{- end }}
+    {{- if .Values.objectstore.gateway.securePort }}
+    securePort: {{ .Values.objectstore.gateway.securePort }}
+    {{- end }}
+    priorityClassName: system-cluster-critical
+    sslCertificateRef: {{ .Values.objectstore.gateway.sslCertificateRef }}
+    resources:
+      requests:
+        cpu: 1000m
+        memory: 1Gi
+  metadataPool:
+    failureDomain: host
+    replicated:
+      size: 3
+  preservePoolsOnDelete: true

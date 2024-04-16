@@ -1,0 +1,24 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+    disco: "true"
+    kubernetes.io/tls-acme: "true"
+  name: {{ .Values.dashboard.ingress.name }}
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: {{ .Values.dashboard.ingress.host }}
+      http:
+        paths:
+          - backend:
+              service:
+                name: {{ .Release.Name }}-{{ .Values.dashboard.ingress.name }}
+                port:
+                  number: 7000
+            path: /
+            pathType: Prefix
+  tls:
+    - hosts:
+        - {{ .Values.dashboard.ingress.host }}
+      secretName: tls-{{ .Values.dashboard.ingress.name }}
