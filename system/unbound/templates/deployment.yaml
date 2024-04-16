@@ -58,10 +58,10 @@ spec:
             mountPath: /etc/unbound
           - name: unbound-keys
             mountPath: /etc/unbound/secrets
-{{ if .Values.unbound.dnstap.enabled }}
+{{- if .Values.unbound.dnstap.enabled }}
           - name: dnstap-socket
             mountPath: /run/dnstap
-{{ end }}
+{{- end }}
         livenessProbe:
           exec:
             command:
@@ -101,16 +101,16 @@ spec:
             mountPath: /etc/unbound
           - name: unbound-keys
             mountPath: /etc/unbound/secrets
-{{ if ge (int .Capabilities.KubeVersion.Minor) 29 }}
+{{- if ge (int .Capabilities.KubeVersion.Minor) 29 }}
       initContainers:
-{{ end }}
-{{ if .Values.unbound.dnstap.enabled }}
+{{- end }}
+{{- if .Values.unbound.dnstap.enabled }}
       - name: dnstap
         image: {{ required ".Values.global.registryAlternateRegion is missing" .Values.global.registryAlternateRegion }}/{{.Values.unbound.dnstap.image}}:{{ .Values.unbound.dnstap.image_tag}}
         imagePullPolicy: {{ .Values.unbound.image_pullPolicy }}
-{{ if ge (int .Capabilities.KubeVersion.Minor) 29 }}
+{{- if ge (int .Capabilities.KubeVersion.Minor) 29 }}
         restartPolicy: Always
-{{ end }}
+{{- end }}
         resources:
 {{- if .Values.resources.dnstap }}
 {{ toYaml .Values.resources.dnstap | indent 10 }}
@@ -118,32 +118,32 @@ spec:
         args:
           - -u
           - {{ .Values.unbound.dnstap.socket_path | default "/run/dnstap/dnstap.sock" }}
-{{ if .Values.unbound.dnstap.hec_splunk_url }}
-{{ if .Values.unbound.dnstap.hec_splunk_token }}
+{{- if .Values.unbound.dnstap.hec_splunk_url }}
+{{- if .Values.unbound.dnstap.hec_splunk_token }}
           - -H
           - {{ .Values.unbound.dnstap.hec_splunk_url }}
           - -token
           - {{ .Values.unbound.dnstap.hec_splunk_token }}
-{{ if .Values.unbound.dnstap.hec_splunk_server_uuid }}
+{{- if .Values.unbound.dnstap.hec_splunk_server_uuid }}
           - -server_uuid
           - {{ .Values.unbound.dnstap.hec_splunk_server_uuid }}
-{{ end }}
-{{ end }}
-{{ end }}
+{{- end }}
+{{- end }}
+{{- end }}
 {{- if .Values.unbound.dnstap.additional_cmdline_args }}
 {{ toYaml .Values.unbound.dnstap.additional_cmdline_args | indent 10 }}
 {{- end }}
         volumeMounts:
           - name: dnstap-socket
             mountPath: {{ .Values.unbound.dnstap.socket_path | default "/run/dnstap/dnstap.sock" | dir }}
-{{ end }}
+{{- end }}
 {{ if .Values.unbound.bind_rpz_proxy.enabled }}
       - name: bind-rpz-proxy
         image: {{ required ".Values.global.registryAlternateRegion is missing" .Values.global.registryAlternateRegion }}/{{.Values.unbound.bind_rpz_proxy.image}}:{{ .Values.unbound.bind_rpz_proxy.image_tag}}
         imagePullPolicy: {{ .Values.unbound.image_pullPolicy }}
-{{ if ge (int .Capabilities.KubeVersion.Minor) 29 }}
+{{- if ge (int .Capabilities.KubeVersion.Minor) 29 }}
         restartPolicy: Always
-{{ end }}
+{{- end }}
         resources:
 {{- if  .Values.resources.bind_rpz_proxy }}
 {{ toYaml .Values.resources.bind_rpz_proxy | indent 10 }}
@@ -151,7 +151,7 @@ spec:
         volumeMounts:
           - name: bind-rpz-proxy-conf
             mountPath: /etc/bind
-{{ end }}
+{{- end }}
       volumes:
       - name: unbound-conf
         configMap:
@@ -159,12 +159,12 @@ spec:
       - name: unbound-keys
         secret:
           secretName: {{ .Release.Name }}-keys
-{{ if .Values.unbound.dnstap.enabled }}
+{{- if .Values.unbound.dnstap.enabled }}
       - name: dnstap-socket
         emptyDir:
           medium: Memory
-{{ end }}
-{{ if .Values.unbound.bind_rpz_proxy.enabled }}
+{{- end }}
+{{- if .Values.unbound.bind_rpz_proxy.enabled }}
       - name: bind-rpz-proxy-conf
         projected:
           sources:
@@ -172,4 +172,4 @@ spec:
               name: {{.Release.Name}}-bind-rpz-proxy-conf
           - secret:
               name: {{.Release.Name}}-bind-rpz-proxy-secrets
-{{ end }}
+{{- end }}
