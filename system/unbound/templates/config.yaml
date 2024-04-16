@@ -73,10 +73,7 @@ data:
        # Remote control config section.
        remote-control:
         control-enable: yes
-        server-key-file: /etc/unbound/secrets/unbound-server.key
-        server-cert-file: /etc/unbound/secrets/unbound-server.pem
-        control-key-file: /etc/unbound/secrets/unbound-control.key
-        control-cert-file: /etc/unbound/secrets/unbound-control.pem
+        control-interface: {{ .Values.unbound.control.socket_path | default "/run/unbound/control.sock" }}
 
        # Stub and Forward zones
        include: /etc/unbound/regional.conf
@@ -171,11 +168,6 @@ data:
                         stub-addr: {{ $addr.stub_addr}}
                   {{- end}}
        {{ end}}
-
-  healthz: |
-    #!/bin/bash
-    unbound-control status
-    return $?
 
   root.hints: |
 {{ include (print .Template.BasePath "/etc/_root.hints.tpl") . | indent 4 }}

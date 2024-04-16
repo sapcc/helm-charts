@@ -56,25 +56,21 @@ spec:
         volumeMounts:
           - name: unbound-conf
             mountPath: /etc/unbound
-          - name: unbound-keys
-            mountPath: /etc/unbound/secrets
+          - name: control-socket
+            mountPath: {{ .Values.unbound.control.socket_path | default "/run/unbound/control.sock" }}
 {{- if .Values.unbound.dnstap.enabled }}
           - name: dnstap-socket
             mountPath: /run/dnstap
 {{- end }}
         livenessProbe:
           exec:
-            command:
-              - sh
-              - /etc/unbound/healthz
+            command: [ '/usr/sbin/unbound-control', '-s', '{{ .Values.unbound.control.socket_path | default "/run/unbound/control.sock" }}', 'status' ]
           initialDelaySeconds: 5
           timeoutSeconds: 5
           periodSeconds: 10
         readinessProbe:
           exec:
-            command:
-              - sh
-              - /etc/unbound/healthz
+            command: [ '/usr/sbin/unbound-control', '-s', '{{ .Values.unbound.control.socket_path | default "/run/unbound/control.sock" }}', 'status' ]
           initialDelaySeconds: 5
           timeoutSeconds: 3
           periodSeconds: 10
@@ -83,24 +79,13 @@ spec:
         imagePullPolicy: {{ .Values.unbound.image_pullPolicy }}
         resources:
 {{ toYaml .Values.resources.metric | indent 10 }}
-        env:
-        - name: GODEBUG
-          value: "x509ignoreCN=0"
-        args:
-          - -unbound.ca
-          - /etc/unbound/secrets/unbound-server.pem
-          - -unbound.cert
-          - /etc/unbound/secrets/unbound-control.pem
-          - -unbound.key
-          - /etc/unbound/secrets/unbound-control.key
+        args: [ '-unbound.ca', '', '-unbound.cert', '', '-unbound.key', '', '-unbound.host', 'unix:{{ .Values.unbound.control.socket_path | default "/run/unbound/control.sock" }}' ]
         ports:
           - name: metrics
             containerPort: {{.Values.unbound.port_unbound_exporter}}
         volumeMounts:
-          - name: unbound-conf
-            mountPath: /etc/unbound
-          - name: unbound-keys
-            mountPath: /etc/unbound/secrets
+          - name: "control-socket"
+            mountPath: {{ .Values.unbound.control.socket_path | default "/run/unbound/control.sock" | dir }}
 {{- if ge (int .Capabilities.KubeVersion.Minor) 29 }}
       initContainers:
 {{- end }}
@@ -156,9 +141,9 @@ spec:
       - name: unbound-conf
         configMap:
           name: {{.Values.unbound.name}}
-      - name: unbound-keys
-        secret:
-          secretName: {{ .Release.Name }}-keys
+      - name: control-socket
+        emptyDir:
+          medium: Memory
 {{- if .Values.unbound.dnstap.enabled }}
       - name: dnstap-socket
         emptyDir:
