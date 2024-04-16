@@ -37,16 +37,10 @@ spec:
         - name: manager-config
           configMap:
             name: opensearch-hermes-manager-configmap
-{{- if .Values.global.truststore.enabled}}
-        - name: truststore
+        - name: application
           secret:
             defaultMode: 420
             secretName: manager-secret
-        - name: start
-          secret:
-            defaultMode: 420
-            secretName: manager-secret
-{{ else }}
         - name: opensearch-certs
           secret:
             defaultMode: 420
@@ -75,12 +69,23 @@ spec:
             valueFrom:
               fieldRef:
                 fieldPath: metadata.namespace
+{{- if .Values.global.truststore.enabled}}
+          - name: TRUSTSTORE_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: manager-secret
+                key: TRUSTSTORE_PASSWORD
+{{- end }}
         volumeMounts:
-          - mountPath: /manager-config
+          - mountPath: /manager-config/logback.xml
             name: manager-config
+            subPath: logback.xml
+          - mountPath: /manager-config/application.conf
+            name: manager-secret
+            subPath: application.conf
 {{- if .Values.global.truststore.enabled}}
           - mountPath: /truststore/truststore.crypt
-            name: truststore
+            name: manager-secret
             subPath: truststore.crypt
           - mountPath: /start.sh
             name: start
@@ -88,14 +93,6 @@ spec:
 {{ else }}
           - mountPath: /opt/certs
             name: opensearch-certs
-{{- end }}
-{{- if .Values.global.truststore.enabled}}
-          env:
-          - name: TRUSTSTORE_PASSWORD
-            valueFrom:
-              secretKeyRef:
-                name: manager-secrets
-                key: TRUSTSTORE_PASSWORD
 {{- end }}
         ports:
           - name: manager
