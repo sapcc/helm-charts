@@ -9,6 +9,10 @@ metadata:
     system: openstack
     type: backend
     component: nova
+  {{- if .Values.vpa.set_main_container }}
+  annotations:
+    vpa-butler.cloud.sap/main-container: nova-compute
+  {{- end }}
 spec:
   replicas: 1
   revisionHistoryLimit: {{ .Values.pod.lifecycle.upgrades.deployments.revision_history }}
@@ -109,6 +113,13 @@ spec:
               - key: console-cell1-{{ $type }}.conf
                 path: nova.conf.d/console-cell1-{{ $type }}.conf
               {{- end }}
+          - secret:
+              name: nova-etc
+              items:
+              - key: cell1.conf
+                path: nova.conf.d/cell1-secrets.conf
+              - key: keystoneauth-secrets.conf
+                path: nova.conf.d/keystoneauth-secrets.conf
       - name: nova-patches
         projected:
           sources:

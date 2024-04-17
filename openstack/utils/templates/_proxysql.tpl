@@ -77,8 +77,8 @@
 - name: runproxysql
   emptyDir: {}
 - name: etcproxysql
-  configMap:
-    name: {{ .Release.Name }}-proxysql-etc
+  secret:
+    secretName: {{ .Release.Name }}-proxysql-etc
     {{- end }}
   {{- end }}
 {{- end }}

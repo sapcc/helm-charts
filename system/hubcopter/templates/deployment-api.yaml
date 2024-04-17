@@ -50,8 +50,8 @@ spec:
             - &HUBCOPTER_GLAS_URL
               name:  HUBCOPTER_GLAS_URL
               value: "http://glas-api.hubcopter.svc:8081"
-          image: "{{ required ".Values.global.dockerHubMirror variable missing" $.Values.global.dockerHubMirror }}/library/alpine:latest"
-          imagePullPolicy: IfNotPresent
+          image: "{{ required ".Values.global.registry variable missing" $.Values.global.registry }}/shared-app-images/alpine-busybox:3.19-latest"
+          imagePullPolicy: Always # -> if this pod shows up as having a vulnerable image, a rebuild and restart should suffice to get it back to Clean
           command: ["sh", "-c", "until wget -O- $HUBCOPTER_GLAS_URL/healthcheck; do echo waiting for glas; sleep 1; done"]
           securityContext:
             runAsNonRoot: true

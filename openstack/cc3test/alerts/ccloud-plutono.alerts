@@ -4,7 +4,8 @@ groups:
   - alert: CCloudPlutonoDown
     expr: |
         cc3test_status{type="datapath",
-            name=~"TestPlutono_datapath.+"
+            name=~"TestPlutono_datapath.+",
+            phase="call"
         } == 0
     for: 30m
     labels:
@@ -16,7 +17,7 @@ groups:
       meta: 'CCloud Plutono {{ $labels.name }} is down'
       dashboard: 'cc3test-datapath-status?var-service={{ $labels.service }}'
       playbook: 'docs/support/playbook/plutono'
-      report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
+      report: 'cc3test/admin/object-storage/containers/cc3test/objects/{{ $labels.base64path }}'
     annotations:
       description: 'CCloud Plutono {{ $labels.name }} is down'
       summary: 'CCloud Plutono {{ $labels.name }} is down'
@@ -24,7 +25,8 @@ groups:
   - alert: CCloudPlutonoFlapping
     expr: |
         changes(cc3test_status{type="datapath",
-            name=~"TestPlutono_datapath.+"
+            name=~"TestPlutono_datapath.+",
+            phase="call"
         }[30m]) > 8
     labels:
       severity: warning
@@ -35,7 +37,7 @@ groups:
       meta: 'CCloud Plutono is flapping'
       dashboard: 'cc3test-datapath-status?var-service={{ $labels.service }}'
       playbook: 'docs/support/playbook/plutono'
-      report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
+      report: 'cc3test/admin/object-storage/containers/cc3test/objects/{{ $labels.base64path }}'
     annotations:
       description: 'CCloud Plutono {{ $labels.name }} is flapping'
       summary: 'CCloud Plutono {{ $labels.name }} is flapping'

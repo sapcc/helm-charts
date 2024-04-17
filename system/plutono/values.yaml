@@ -2,6 +2,11 @@ global:
   region: '@/cc/secrets'
   domain: '@/cc/secrets'
 
+  linkerd_requested: true
+
+linkerd-support:
+  annotate_namespace: true
+
 ldap:
   host: '@/cc/secrets'
   port: 636
@@ -19,9 +24,6 @@ ldap:
   monitoring_editor: '@/cc/secrets'
   monitoring_admin: '@/cc/secrets'
 
-alertmanager:
-  password: '@/cc/secrets'
-
 image:
   pullPolicy: IfNotPresent
 
@@ -29,7 +31,7 @@ plutono:
   tls: true
   disco: true
   image: credativ/plutono
-  image_version: v7.5.26
+  image_version: latest
   minitrue_version: v1.0.1
   log_level: 'Info'
   admin:
@@ -76,8 +78,6 @@ ingress:
 # For kiosk mode
 nginx:
   enabled: false
-  image: nginx
-  image_version: 1.15-alpine
   port:
     public: '3001'
   endpoint:
@@ -87,17 +87,21 @@ nginx:
       public: '@/cc/secrets'
 
 postgresql:
-  imageTag: '12.17-20231110092142'
+  imageTag: '20240311135631'
   postgresDatabase: plutono
-  postgresUser: postgres
+  postgresUser: plutono
   postgresPassword: '@/cc/secrets'
   persistence:
     enabled: false
   alerts:
     support_group: observability
+  users:
+    plutono: {}
+  tableOwner: plutono
 
 pgbackup:
   enabled: false # can be enabled in values.yaml
+  isPostgresNG: true
   database:
     name: plutono
   alerts:

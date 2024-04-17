@@ -1,0 +1,45 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: cc3test-network-segmentation
+  namespace: {{ .Values.cc3test.namespace }}
+spec:
+    schedule: {{ .Values.schedules.cc3test_network_segmentation | quote }}
+    concurrencyPolicy: Forbid
+    successfulJobsHistoryLimit: 1
+    failedJobsHistoryLimit: 1
+    jobTemplate:
+      spec:
+        backoffLimit: 2
+        template:
+          {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+          metadata:
+            annotations:
+              linkerd.io/inject: enabled
+          {{- end }}
+          spec:
+            volumes:
+              - name: cc3test-config
+                configMap:
+                  name: cc3test-config
+              - name: cc3test-secrets
+                secret:
+                  secretName: cc3test-secrets
+            containers:
+              - name: cc3test-network-segmentation
+                image: {{ required ".Values.global.registry variable missing" .Values.global.registry }}/{{ required ".Values.cc3test.image.name variable missing" .Values.cc3test.image.name }}:{{ required ".Values.cc3test.image.tag variable missing" .Values.cc3test.image.tag }}
+                command: [ "/linkerd-await" ]
+                args: [ "--shutdown", "--", "/bin/sh", "-c", "pytest --disable-pytest-warnings --no-header --color=yes --variables config/config.yaml --variables secrets/secrets.yaml -m 'logical_network_separation' -r ap tests/logical_network_separation; exit 0" ]
+                volumeMounts:
+                  - name: cc3test-config
+                    mountPath: /cc3test/config
+                    readOnly: true
+                  - name: cc3test-secrets
+                    mountPath: /cc3test/secrets
+                    readOnly: true
+              {{- if not (and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested) }}
+                env:
+                  - name: LINKERD_AWAIT_DISABLED
+                    value: "Linkerd was not enabled or not requested"
+              {{- end }}
+            restartPolicy: Never

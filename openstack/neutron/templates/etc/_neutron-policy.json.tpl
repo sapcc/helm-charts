@@ -236,13 +236,13 @@
     "create_flavor": "rule:context_is_admin",
     "update_flavor": "rule:context_is_admin",
     "delete_flavor": "rule:context_is_admin",
-    "get_flavors": "rule:context_is_admin",
-    "get_flavor": "rule:context_is_admin",
+    "get_flavors": "rule:network_view_all",
+    "get_flavor": "rule:network_view_all",
     "create_service_profile": "rule:context_is_admin",
     "update_service_profile": "rule:context_is_admin",
     "delete_service_profile": "rule:context_is_admin",
-    "get_service_profiles": "rule:context_is_admin",
-    "get_service_profile": "rule:context_is_admin",
+    "get_service_profiles": "rule:network_view_all",
+    "get_service_profile": "rule:network_view_all",
 
     "get_policy": "rule:context_is_admin",
     "create_policy": "rule:context_is_admin",
@@ -268,7 +268,7 @@
 
     "create_flavor_service_profile": "rule:context_is_admin",
     "delete_flavor_service_profile": "rule:context_is_admin",
-    "get_flavor_service_profile": "rule:context_is_admin",
+    "get_flavor_service_profile": "rule:network_view_all",
     "get_auto_allocated_topology": "rule:context_is_network_admin",
 
     "create_trunk": "rule:context_is_network_admin",

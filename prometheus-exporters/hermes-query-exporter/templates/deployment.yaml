@@ -22,6 +22,10 @@ spec:
         component: hermes-query-exporter
       annotations:
         checksum/configmap.yaml: {{ include  (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+        linkerd.io/inject: enabled
+        {{- end }}
+        kubectl.kubernetes.io/default-container: "hermes-query-exporter"
     spec:
       restartPolicy: Always
       securityContext:
@@ -35,10 +39,21 @@ spec:
         - name: hermes-query-exporter
           image: {{.Values.global.registry}}/prometheus-es-exporter:{{ .Values.version }}
           imagePullPolicy: Always
-          command: [ "prometheus-es-exporter", "-p", "{{.Values.listen_port}}", "--config-dir", "/hermes-query-exporter/", "--cluster-health-disable", "--indices-stats-disable", "--basic-user", "{{ .Values.global.prom_user }}", "--basic-password", "{{ .Values.global.prom_password }}", "-e", "{{.Values.protocol}}://{{.Values.hostname}}:{{.Values.port}}", "--log-level", "{{.Values.log_level}}", "--nodes-stats-disable" ]
+          command: [ "prometheus-es-exporter", "-p", "{{.Values.listen_port}}", "--config-dir", "/hermes-query-exporter/", "--cluster-health-disable", "--indices-stats-disable", "-e", "{{.Values.protocol}}://{{.Values.hostname}}.{{.Values.global.region}}.{{.Values.global.tld}}:{{.Values.port}}", "--log-level", "{{.Values.log_level}}", "--nodes-stats-disable" ]
           ports:
             - name: metrics
               containerPort: {{ .Values.listen_port }}
+          env:
+          - name: ES_EXPORTER_BASIC_USER
+            valueFrom:
+              secretKeyRef:
+                name: hermes-query-exporter-secrets
+                key: username
+          - name: ES_EXPORTER_BASIC_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: hermes-query-exporter-secrets
+                key: password
           volumeMounts:
             - mountPath: /hermes-query-exporter
               name: hermes-query-exporter

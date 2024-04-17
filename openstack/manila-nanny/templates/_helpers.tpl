@@ -107,8 +107,22 @@ value: {{ .Values.dependencyService }}
 
 {{/* Volume mounts */}}
 {{- define "mountManilaConfig" -}}
-mountPath: /manila-etc
-name: manila-etc
+- name: manila-etc
+  mountPath: /etc/manila/manila.conf
+  subPath: manila.conf
+  readOnly: true
+- name: manila-etc
+  mountPath: /etc/manila/logging.ini
+  subPath: logging.ini
+  readOnly: true
+- name: manila-etc-secrets
+  mountPath: /etc/manila/secrets.conf
+  subPath: secrets.conf
+  readOnly: true
+- name: manila-netapp-filers
+  mountPath: /etc/manila/netapp-filers.yaml
+  subPath: netapp-filers.yaml
+  readOnly: true
 {{- end -}}
 
 {{/* Start shell command or sleep */}}

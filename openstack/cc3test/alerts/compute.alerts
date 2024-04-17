@@ -3,7 +3,7 @@ groups:
   rules:
   - alert: OpenstackNovaApiDown
     expr: |
-        cc3test_status{service="nova", type="api",name!~"TestVcenterApi_.+"} == 0
+        cc3test_status{service="nova", type="api",name!~"TestVcenterApi_.+", phase="call"} == 0
     for: 16m
     labels:
       severity: critical
@@ -14,14 +14,14 @@ groups:
       meta: 'Openstack Nova API is down'
       dashboard: 'cc3test-api-status?var-service={{ $labels.service }}'
       playbook: 'docs/support/playbook/nova/alerts'
-      report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
+      report: 'cc3test/admin/object-storage/containers/cc3test/objects/{{ $labels.base64path }}'
     annotations:
       description: 'Openstack Nova API is down: {{ $labels.name }}'
       summary: 'Openstack Nova API is down'
 
   - alert: OpenstackNovaApiFlapping
     expr: |
-        changes(cc3test_status{service="nova", type="api",name!~"TestVcenterApi_.+"}[30m]) > 8
+        changes(cc3test_status{service="nova", type="api",name!~"TestVcenterApi_.+", phase="call"}[30m]) > 8
     labels:
       severity: warning
       support_group: compute-storage-api
@@ -31,7 +31,7 @@ groups:
       meta: 'Openstack Nova API is flapping'
       dashboard: 'cc3test-api-status?var-service={{ $labels.service }}'
       playbook: 'docs/support/playbook/nova/alerts'
-      report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
+      report: 'cc3test/admin/object-storage/containers/cc3test/objects/{{ $labels.base64path }}'
     annotations:
       description: 'Openstack Nova API is flapping: {{ $labels.name }}'
       summary: 'Openstack Nova API is flapping'
@@ -41,7 +41,8 @@ groups:
   - alert: VcenterApiDown
     expr: |
         cc3test_status{type="api",
-            name=~"TestVcenterApi_.+"
+            name=~"TestVcenterApi_.+",
+            phase="call"
         } == 0
     for: 20m
     labels:
@@ -53,7 +54,7 @@ groups:
       meta: 'VMWare vcenter API is down: {{ $labels.name }}'
       dashboard: 'cc3test-api-status?var-service={{ $labels.service }}'
       playbook: 'docs/devops/alert/vcenter/#vcenterapidown'
-      report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
+      report: 'cc3test/admin/object-storage/containers/cc3test/objects/{{ $labels.base64path }}'
     annotations:
       description: 'VMWare vcenter API is down: {{ $labels.name }}'
       summary: 'VMWare vcenter API is down'
@@ -61,7 +62,8 @@ groups:
   - alert: VcenterApiFlapping
     expr: |
         changes(cc3test_status{type="api",
-            name=~"TestVcenterApi_.+"
+            name=~"TestVcenterApi_.+",
+            phase="call"
         }[30m]) > 8
     labels:
       severity: warning
@@ -72,13 +74,13 @@ groups:
       meta: 'VMWare vcenter API is flapping'
       dashboard: 'cc3test-api-status?var-service={{ $labels.service }}'
       playbook: 'docs/devops/alert/vcenter/#vcenterapidown'
-      report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
+      report: 'cc3test/admin/object-storage/containers/cc3test/objects/{{ $labels.base64path }}'
     annotations:
       description: 'VMWare vcenter API is flapping: {{ $labels.name }}'
       summary: 'VMWare vcenter API is flapping'
 
   - alert: OpenstackComputeCanaryCreateServerAZDown
-    expr: cc3test_status{service="nova",name=~"TestComputeServer_create_server_az.+"} == 0
+    expr: cc3test_status{service="nova",name=~"TestComputeServer_create_server_az.+", phase="call"} == 0
     for: 3h
     labels:
       severity: warning
@@ -89,15 +91,15 @@ groups:
       meta: 'Openstack Compute Canary: {{ $labels.name }} is down, see report for more details'
       dashboard: cc3test-canary-status?var-service={{ $labels.service }}
       playbook: 'docs/devops/alert/{{ $labels.service }}/#test_create_server'
-      report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
+      report: 'cc3test/admin/object-storage/containers/cc3test/objects/{{ $labels.base64path }}'
     annotations:
       description: 'Openstack Compute Canary: {{ $labels.name }} is down, see report for more details'
       summary: 'Openstack Compute Canary: {{ $labels.name }} is down, see report for more details'
 
   - alert: OpenstackComputeCanaryCreateServerAZFlapping
-    expr: changes(cc3test_status{service="nova",name=~"TestComputeServer_create_server_az.+"}[2h]) > 8
+    expr: changes(cc3test_status{service="nova",name=~"TestComputeServer_create_server_az.+", phase="call"}[2h]) > 8
     labels:
-      severity: info
+      severity: warning
       support_group: compute-storage-api
       tier: os
       service: '{{ $labels.service }}'
@@ -105,83 +107,15 @@ groups:
       meta: 'Openstack Compute Canary is flapping for 2 hours, see last three reports for more details'
       dashboard: cc3test-canary-status?var-service={{ $labels.service }}
       playbook: 'docs/devops/alert/{{ $labels.service }}/#test_create_server'
-      report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
-    annotations:
-      description: 'Openstack Compute Canary is flapping for 2 hours, see last three reports for more details'
-      summary: 'Openstack Compute Canary is flapping for 2 hours, see last three reports for more details'
-
-# TODO - this alert seems to be no longer required as we do not have this metric anymore
-  - alert: OpenstackComputeCanaryCreateRegularServerDown
-    expr: cc3test_status{service="nova",name=~"TestComputeServer_create_server_regular.+"} == 0
-    for: 3h
-    labels:
-      severity: warning
-      support_group: compute-storage-api
-      tier: os
-      service: '{{ $labels.service }}'
-      context: '{{ $labels.service }}'
-      meta: 'Openstack Compute Canary: {{ $labels.name }} is down, see report for more details'
-      dashboard: cc3test-api-status?var-service={{ $labels.service }}
-      playbook: 'docs/support/playbook/{{ $labels.service }}/alerts/cc3test-alert-create-server-bb/'
-      report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
-    annotations:
-      description: 'Openstack Compute Canary: {{ $labels.name }} is down, see report for more details'
-      summary: 'Openstack Compute Canary: {{ $labels.name }} is down, see report for more details'
-
-# TODO - this alert seems to be no longer required as we do not have this metric anymore
-  - alert: OpenstackComputeCanaryCreateRegularServerFlapping
-    expr: changes(cc3test_status{service="nova",name=~"TestComputeServer_create_server_regular.+"}[2h]) > 8
-    labels:
-      severity: info
-      support_group: compute-storage-api
-      tier: os
-      service: '{{ $labels.service }}'
-      context: '{{ $labels.service }}'
-      meta: 'Openstack Compute Canary is flapping for 2 hours, see last three reports for more details'
-      dashboard: cc3test-api-status?var-service={{ $labels.service }}
-      playbook: 'docs/support/playbook/{{ $labels.service }}/alerts/cc3test-alert-create-server-bb/'
-      report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
-    annotations:
-      description: 'Openstack Compute Canary is flapping for 2 hours, see last three reports for more details'
-      summary: 'Openstack Compute Canary is flapping for 2 hours, see last three reports for more details'
-
-# TODO - this alert seems to be no longer required as we do not have this metric anymore
-  - alert: OpenstackComputeCanaryCreateHanaServerDown
-    expr: cc3test_status{service="nova",name=~"TestComputeServer_create_server_hana.+"} == 0
-    for: 3h
-    labels:
-      severity: warning
-      support_group: compute-storage-api
-      tier: os
-      service: '{{ $labels.service }}'
-      context: '{{ $labels.service }}'
-      meta: 'Openstack Compute Canary: {{ $labels.name }} is down, see report for more details'
-      dashboard: cc3test-api-status?var-service={{ $labels.service }}
-      playbook: 'docs/support/playbook/{{ $labels.service }}/alerts/cc3test-alert-create-server-bb/'
-      report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
-    annotations:
-      description: 'Openstack Compute Canary: {{ $labels.name }} is down, see report for more details'
-      summary: 'Openstack Compute Canary: {{ $labels.name }} is down, see report for more details'
-
-# TODO - this alert seems to be no longer required as we do not have this metric anymore
-  - alert: OpenstackComputeCanaryCreateHanaServerFlapping
-    expr: changes(cc3test_status{service="nova",name=~"TestComputeServer_create_server_hana.+"}[2h]) > 8
-    labels:
-      severity: info
-      support_group: compute-storage-api
-      tier: os
-      service: '{{ $labels.service }}'
-      context: '{{ $labels.service }}'
-      meta: 'Openstack Compute Canary is flapping for 2 hours, see last three reports for more details'
-      dashboard: cc3test-api-status?var-service={{ $labels.service }}
-      playbook: 'docs/support/playbook/{{ $labels.service }}/alerts/cc3test-alert-create-server-bb/'
-      report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
+      report: 'cc3test/admin/object-storage/containers/cc3test/objects/{{ $labels.base64path }}'
     annotations:
       description: 'Openstack Compute Canary is flapping for 2 hours, see last three reports for more details'
       summary: 'Openstack Compute Canary is flapping for 2 hours, see last three reports for more details'
 
   - alert: OpenstackComputeCanaryCreateServerDown
-    expr: cc3test_status{service="nova",name=~"TestComputeServer_create_server-.+"} == 0
+    expr: |
+        last_over_time(cc3test_status{service="nova",
+        name=~"TestComputeServer_create_server-.+",phase="call"}[1h]) == 0
     for: 3h
     labels:
       severity: warning
@@ -192,15 +126,15 @@ groups:
       meta: 'Openstack Compute Canary: {{ $labels.name }} is down, see report for more details'
       dashboard: cc3test-bb-vc-canary-status?var-service={{ $labels.service }}
       playbook: 'docs/support/playbook/{{ $labels.service }}/alerts/cc3test-alert-create-server-bb/'
-      report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
+      report: 'cc3test/admin/object-storage/containers/cc3test/objects/{{ $labels.base64path }}'
     annotations:
       description: 'Openstack Compute Canary: {{ $labels.name }} is down, see report for more details'
       summary: 'Openstack Compute Canary: {{ $labels.name }} is down, see report for more details'
 
   - alert: OpenstackComputeCanaryCreateServerFlapping
-    expr: changes(cc3test_status{service="nova",name=~"TestComputeServer_create_server-.+"}[2h]) > 8
+    expr: changes(cc3test_status{service="nova",name=~"TestComputeServer_create_server-.+", phase="call"}[2h]) > 8
     labels:
-      severity: info
+      severity: warning
       support_group: compute-storage-api
       tier: os
       service: '{{ $labels.service }}'
@@ -208,16 +142,18 @@ groups:
       meta: 'Openstack Compute Canary is flapping for 2 hours, see last three reports for more details'
       dashboard: cc3test-bb-vc-canary-status?var-service={{ $labels.service }}
       playbook: 'docs/support/playbook/{{ $labels.service }}/alerts/cc3test-alert-create-server-bb/'
-      report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
+      report: 'cc3test/admin/object-storage/containers/cc3test/objects/{{ $labels.base64path }}'
     annotations:
       description: 'Openstack Compute Canary is flapping for 2 hours, see last three reports for more details'
       summary: 'Openstack Compute Canary is flapping for 2 hours, see last three reports for more details'
 
   - alert: OpenstackComputeCanaryServerResizeDown
-    expr: cc3test_status{service="nova",name=~"TestComputeServer_resizing.+"} == 0
+    expr: |
+        last_over_time(cc3test_status{service="nova",
+        name=~"TestComputeServer_resizing.+",phase="call"}[1h]) == 0
     for: 3h
     labels:
-      severity: info
+      severity: warning
       support_group: compute-storage-api
       tier: os
       service: '{{ $labels.service }}'
@@ -225,15 +161,15 @@ groups:
       meta: 'Openstack Compute Canary: {{ $labels.name }} is down, see report for more details'
       dashboard: cc3test-canary-status?var-service={{ $labels.service }}
       playbook: 'docs/devops/alert/{{ $labels.service }}/#test_server_resize'
-      report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
+      report: 'cc3test/admin/object-storage/containers/cc3test/objects/{{ $labels.base64path }}'
     annotations:
       description: 'Openstack Compute Canary: {{ $labels.name }} is down, see report for more details'
       summary: 'Openstack Compute Canary: {{ $labels.name }} is down, see report for more details'
 
   - alert: OpenstackComputeCanaryServerResizeFlapping
-    expr: changes(cc3test_status{service="nova",name=~"TestComputeServer_resizing.+"}[2h]) > 8
+    expr: changes(cc3test_status{service="nova",name=~"TestComputeServer_resizing.+", phase="call"}[2h]) > 8
     labels:
-      severity: info
+      severity: warning
       support_group: compute-storage-api
       tier: os
       service: '{{ $labels.service }}'
@@ -241,16 +177,18 @@ groups:
       meta: 'Openstack Compute Canary is flapping for 2 hours, see last three reports for more details'
       dashboard: cc3test-canary-status?var-service={{ $labels.service }}
       playbook: 'docs/devops/alert/{{ $labels.service }}/#test_server_resize'
-      report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
+      report: 'cc3test/admin/object-storage/containers/cc3test/objects/{{ $labels.base64path }}'
     annotations:
       description: 'Openstack Compute Canary is flapping for 2 hours, see last three reports for more details'
       summary: 'Openstack Compute Canary is flapping for 2 hours, see last three reports for more details'
 
   - alert: OpenstackComputeCanaryServerStartStopDown
-    expr: cc3test_status{service="nova",name=~"TestComputeServer_start_stop_server.+"} == 0
+    expr: |
+        last_over_time(cc3test_status{service="nova",
+        name=~"TestComputeServer_start_stop_server.+",phase="call"}[1h]) == 0
     for: 3h
     labels:
-      severity: info
+      severity: warning
       support_group: compute-storage-api
       tier: os
       service: '{{ $labels.service }}'
@@ -258,15 +196,15 @@ groups:
       meta: 'Openstack Compute Canary: {{ $labels.name }} is down, see report for more details'
       dashboard: cc3test-canary-status?var-service={{ $labels.service }}
       playbook: 'docs/devops/alert/{{ $labels.service }}/#test_server_start_stop'
-      report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
+      report: 'cc3test/admin/object-storage/containers/cc3test/objects/{{ $labels.base64path }}'
     annotations:
       description: 'Openstack Compute Canary: {{ $labels.name }} is down, see report for more details'
       summary: 'Openstack Compute Canary: {{ $labels.name }} is down, see report for more details'
 
   - alert: OpenstackComputeCanaryServerStartStopFlapping
-    expr: changes(cc3test_status{service="nova",name=~"TestComputeServer_start_stop_server.+"}[2h]) > 8
+    expr: changes(cc3test_status{service="nova",name=~"TestComputeServer_start_stop_server.+", phase="call"}[2h]) > 8
     labels:
-      severity: info
+      severity: warning
       support_group: compute-storage-api
       tier: os
       service: '{{ $labels.service }}'
@@ -274,16 +212,18 @@ groups:
       meta: 'Openstack Compute Canary is flapping for 2 hours, see last three reports for more details'
       dashboard: cc3test-canary-status?var-service={{ $labels.service }}
       playbook: 'docs/devops/alert/{{ $labels.service }}/#test_server_start_stop'
-      report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
+      report: 'cc3test/admin/object-storage/containers/cc3test/objects/{{ $labels.base64path }}'
     annotations:
       description: 'Openstack Compute Canary is flapping for 2 hours, see last three reports for more details'
       summary: 'Openstack Compute Canary is flapping for 2 hours, see last three reports for more details'
 
   - alert: OpenstackComputeCanaryServerWithUserDataDown
-    expr: cc3test_status{service="nova",name=~"TestComputeServer_server_with_userdata.+"} == 0
+    expr: |
+        last_over_time(cc3test_status{service="nova",
+        name=~"TestComputeServer_server_with_userdata.+",phase="call"}[1h]) == 0
     for: 3h
     labels:
-      severity: info
+      severity: warning
       support_group: compute-storage-api
       tier: os
       service: '{{ $labels.service }}'
@@ -291,15 +231,15 @@ groups:
       meta: 'Openstack Compute Canary: {{ $labels.name }} is down, see report for more details'
       dashboard: cc3test-canary-status?var-service={{ $labels.service }}
       playbook: 'docs/devops/alert/{{ $labels.service }}/#test_server_with_user_data'
-      report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
+      report: 'cc3test/admin/object-storage/containers/cc3test/objects/{{ $labels.base64path }}'
     annotations:
       description: 'Openstack Compute Canary: {{ $labels.name }} is down, see report for more details'
       summary: 'Openstack Compute Canary: {{ $labels.name }} is down, see report for more details'
 
   - alert: OpenstackComputeCanaryServerWithUserDataFlapping
-    expr: changes(cc3test_status{service="nova",name=~"TestComputeServer_server_with_userdata.+"}[2h]) > 8
+    expr: changes(cc3test_status{service="nova",name=~"TestComputeServer_server_with_userdata.+",phase="call"}[2h]) > 8
     labels:
-      severity: info
+      severity: warning
       support_group: compute-storage-api
       tier: os
       service: '{{ $labels.service }}'
@@ -307,13 +247,13 @@ groups:
       meta: 'Openstack Compute Canary is flapping for 2 hours, see last three reports for more details'
       dashboard: cc3test-canary-status?var-service={{ $labels.service }}
       playbook: 'docs/devops/alert/{{ $labels.service }}/#test_server_user_with_data'
-      report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
+      report: 'cc3test/admin/object-storage/containers/cc3test/objects/{{ $labels.base64path }}'
     annotations:
       description: 'Openstack Compute Canary is flapping for 2 hours, see last three reports for more details'
       summary: 'Openstack Compute Canary is flapping for 2 hours, see last three reports for more details'
 
   - alert: OpenstackNovaComputeAgentDown
-    expr: cc3test_compute_host_status{type="host_status"} == 2
+    expr: cc3test_compute_host_status{type="host_status", phase="call"} == 2
     for: 20m
     labels:
       severity: warning
@@ -321,19 +261,19 @@ groups:
       tier: os
       service: '{{ $labels.service }}'
       context: '{{ $labels.service }}'
-      meta: '{{ $labels.host }}: nova-compute node is enabled but is down for 20 minutes. see last three reports for more details'
+      meta: '{{ $labels.host }}: nova-compute node is enabled but is down for 20 minutes.. see last three reports for more details'
       dashboard: cc3test-bb-vc-canary-status?var-service={{ $labels.service }}
       playbook: 'docs/devops/alert/{{ $labels.service }}/#openstacknovaintegrityhost_status'
-      report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.check }}'
+      report: 'cc3test/admin/object-storage/containers/cc3test/objects/{{ $labels.base64path }}'
     annotations:
       description: '{{ $labels.host }}: host is enabled but is down for 20 minutes. see last three reports for more details'
       summary: '{{ $labels.host }}: host is enabled but is down'
 
   - alert: OpenstackNovaComputeServiceDisabled
-    expr: cc3test_compute_host_status{type="host_status"} == 3
+    expr: cc3test_compute_host_status{type="host_status", phase="call"} == 3
     for: 20m
     labels:
-      severity: info
+      severity: warning
       support_group: compute-storage-api
       tier: os
       service: '{{ $labels.service }}'
@@ -341,7 +281,7 @@ groups:
       meta: '{{ $labels.host }}: nova-compute host is disabled without reason. see last three reports for more details'
       dashboard: cc3test-bb-vc-canary-status?var-service={{ $labels.service }}
       playbook: 'docs/devops/alert/{{ $labels.service }}/#openstacknovaintegrityhost_status'
-      report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.check }}'
+      report: 'cc3test/admin/object-storage/containers/cc3test/objects/{{ $labels.base64path }}'
     annotations:
       description: '{{ $labels.host }}: host is disabled without reason. see last three reports for more details'
       summary: '{{ $labels.host }}: host is disabled without reason'

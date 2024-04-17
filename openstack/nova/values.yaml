@@ -241,7 +241,6 @@ consoles:
     enabled: true
     portInternal: '6090'
     args: '--web /usr/local/noVNC-mks --verbose'
-    inject_nova_credentials: true
 
 scheduler:
   driver: "filter_scheduler"
@@ -281,7 +280,7 @@ compute:
       max_concurrent_builds_per_project: 20
       max_concurrent_builds: 50
       ram_allocation_ratio: 1.0
-      cpu_allocation_ratio: 4.0
+      cpu_allocation_ratio: 3.0
       # this will set a 15 mins timeout for blockdevice mapping
       block_device_allocate_retries: 300
       rpc_statsd_port: 9125
@@ -700,10 +699,12 @@ mariadb:
   buffer_pool_size: "4096M"
   log_file_size: "1024M"
   name: nova
-  initdb_configmap: true
+  initdb_secret: true
   long_query_time: 8
   vpa:
     set_main_container: true
+  ccroot_user:
+    enabled: true
   databases:
   - nova
   - nova_cell0
@@ -740,10 +741,12 @@ mariadb_api:
   buffer_pool_size: "4096M"
   log_file_size: "1024M"
   name: nova-api
-  initdb_configmap: true
+  initdb_secret: true
   long_query_time: 8
   vpa:
     set_main_container: true
+  ccroot_user:
+    enabled: true
   databases:
   - nova_api
   users:
@@ -773,10 +776,12 @@ mariadb_cell2:
   enabled: false
   buffer_pool_size: "4096M"
   log_file_size: "1024M"
-  initdb_configmap: true
+  initdb_secret: true
   long_query_time: 8
   vpa:
     set_main_container: true
+  ccroot_user:
+    enabled: true
   persistence_claim:
     name: db-nova-cell2-pvc
     size: "50Gi"
@@ -802,6 +807,8 @@ rabbitmq_cell2:
     enabled: true
     sidecar:
       enabled: false
+    enableDetailedMetrics: true
+    enablePerObjectMetrics: true
 audit:
   central_service:
     user: rabbitmq
@@ -825,6 +832,8 @@ rabbitmq:
     enabled: true
     sidecar:
       enabled: false
+    enableDetailedMetrics: true
+    enablePerObjectMetrics: true
   resources:
     requests:
       memory: 2Gi
@@ -934,3 +943,9 @@ default:
 utils:
   trust_bundle:
     enabled: true
+
+vpa:
+  # https://github.com/sapcc/vpa_butler
+  # The maximum available capacity is split evenly across containers specified in the Deployment, StatefulSet or DaemonSet to derive the upper recommendation bound. This does not work out for pods with a single resource-hungry container with several sidecar containers
+  # Annotate the Deployment, StatefulSet or DaemonSet with vpa-butler.cloud.sap/main-container=$MAIN_CONTAINER. That will distribute 75% of the maximum available capacity to the main container and the rest evenly across all others
+  set_main_container: true

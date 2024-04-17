@@ -29,6 +29,10 @@ metadata:
   {{- if .Values.coordinationBackendStorageClass }}
     volume.beta.kubernetes.io/storage-class: {{ .Values.coordinationBackendStorageClass | quote }}
   {{- end }}
+  {{- if  index .Values "owner-info" }}
+    ccloud/support-group: {{  index .Values "owner-info" "support-group" | quote }}
+    ccloud/service: {{  index .Values "owner-info" "service" | quote }}
+  {{- end }}
 spec:
   accessModes:
   - ReadWriteMany

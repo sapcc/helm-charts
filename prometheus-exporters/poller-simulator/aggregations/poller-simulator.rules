@@ -12,6 +12,6 @@ groups:
   - record: cronus_event_mails_sent_provider_rate_perminute
     expr: sum (irate(cronus_event_mails_sent[2m])*60) by (project_id,project_name,domain_id, provider)
   - record: cronus_event_mails_sent_success_provider_rate_perminute
-    expr: sum (irate(cronus_event_mails_sent {status_code="250"}[2m]) * 60) by (project_id,project_name,domain_id, provider)
+    expr: sum (irate(cronus_event_mails_sent {status_code=~"2.*"}[2m]) * 60) by (project_id,project_name,domain_id, provider)
   - record: cronus_event_mails_sent_error_provider_rate_perminute
-    expr: sum (irate(cronus_event_mails_sent {status_code!="250"}[2m]) * 60) by (project_id,project_name,domain_id, provider)
+    expr: sum (irate(cronus_event_mails_sent {status_code!~"2.*"}[2m]) * 60) by (project_id,project_name,domain_id, provider)

@@ -19,6 +19,7 @@ spec:
       annotations:
         checksum/etc: {{ include (print $.Template.BasePath  "/configmap.yaml") $ | sha256sum }}
         checksum/etc-f5: {{ include (print $.Template.BasePath  "/configmap-f5.yaml") $ | sha256sum }}
+        kubectl.kubernetes.io/default-container: {{ $.Chart.Name }}-agent-f5
         {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
         linkerd.io/inject: enabled
         {{- end }}
@@ -63,6 +64,26 @@ spec:
                 secretKeyRef:
                   name: sentry
                   key: archer.DSN
+            - name: PGPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: archer-pguser-archer
+                  key: postgres-password
+            - name: OS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: archer-secret
+                  key: service_user_password
+            - name: BIGIP_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: archer-secret
+                  key: bigip_password
+            - name: BIGIP_USER
+              valueFrom:
+                secretKeyRef:
+                  name: archer-secret
+                  key: bigip_username
           ports:
             - name: metrics
               containerPort: {{ required ".Values.metrics.port missing" $.Values.metrics.port }}

@@ -4,7 +4,7 @@ kind: PodMonitor
 metadata:
   name: logs-fluent-exporter
   labels:
-    prometheus: {{ .Values.exporter.prometheus }}
+    prometheus: {{ .Values.global.prometheus }}
 
 spec:
   jobLabel: logs-fluent-exporter
@@ -58,6 +58,16 @@ spec:
           regex: fluentd_output_status_num_records_total;kubernetes.var.log.containers.([a-zA-Z0-9 \d\.-]+)_([a-zA-Z0-9 \d\.-]+)_([a-zA-Z0-9 \d\.-]+)-[a-z0-9]{64}.log
           replacement: $3
           targetLabel: input_container
+          action: replace
+        - sourceLabels: [__name__,tag]
+          regex: 'fluentd_(.+);swift.(.+)'
+          replacement: swift
+          targetLabel: source
+          action: replace
+        - sourceLabels: [__name__,tag]
+          regex: 'fluentd_(.+);kubernetes.(.+)'
+          replacement: all
+          targetLabel: source
           action: replace
         - regex: 'tag'
           action: labeldrop

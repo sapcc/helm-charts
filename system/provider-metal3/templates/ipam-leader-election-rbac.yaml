@@ -1,0 +1,30 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ include "provider-metal3.fullname" . }}-ipam-leader-election-role
+  labels:
+    cluster.x-k8s.io/provider: infrastructure-metal3
+  {{- include "provider-metal3.labels" . | nindent 4 }}
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - events
+  verbs:
+  - create
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ include "provider-metal3.fullname" . }}-ipam-leader-election-rolebinding
+  labels:
+    cluster.x-k8s.io/provider: infrastructure-metal3
+  {{- include "provider-metal3.labels" . | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: '{{ include "provider-metal3.fullname" . }}-ipam-leader-election-role'
+subjects:
+- kind: ServiceAccount
+  name: '{{ include "provider-metal3.fullname" . }}-ipam-manager'
+  namespace: '{{ .Release.Namespace }}'

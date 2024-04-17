@@ -18,11 +18,15 @@ spec:
             command: ['sh', '-c']
             args:
             - >
-              papermill api-availability.ipynb - -r swift_url $(swift_url) \
+              papermill api-availability.ipynb - -r swift_url $(swift_url) && /linkerd-await --shutdown echo "shutdown linkerd-proxy" \
             volumeMounts:
             - name: notebooks-git
               mountPath: /home/jovyan
             env:
+            {{- if not (and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested) }}
+            - name: LINKERD_AWAIT_DISABLED
+              value: "Linkerd was not enabled or not requested"
+            {{- end }}
             - name: approle_role_id
               valueFrom:
                 secretKeyRef:
@@ -38,6 +42,8 @@ spec:
                 secretKeyRef:
                   name: jupyter-cron-reports-secrets
                   key: swift_url
+            securityContext:
+              allowPrivilegeEscalation: false
           initContainers:
           - name: "clone-notebooks"
             volumeMounts:

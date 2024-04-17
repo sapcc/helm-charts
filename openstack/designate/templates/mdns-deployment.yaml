@@ -8,6 +8,10 @@ metadata:
     application: designate
     type: backend
     component: mdns
+  {{- if .Values.vpa.set_main_container }}
+  annotations:
+    vpa-butler.cloud.sap/main-container: designate-mdns
+  {{- end }}
 spec:
   replicas: {{ .Values.pod.replicas.mdns }}
   revisionHistoryLimit: {{ .Values.pod.lifecycle.upgrades.deployments.revision_history }}
@@ -26,8 +30,10 @@ spec:
       labels:
         app: designate-mdns
       annotations:
+        kubectl.kubernetes.io/default-container: designate-mdns
         configmap-etc-hash: {{ include (print $.Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
         configmap-bin-hash: {{ include (print $.Template.BasePath "/bin-configmap.yaml") . | sha256sum }}
+        secrets-hash: {{ include (print $.Template.BasePath "/secrets.yaml") . | sha256sum }}
         {{- if .Values.proxysql.mode }}
         prometheus.io/scrape: "true"
         prometheus.io/targets: {{ required ".Values.metrics.prometheus missing" .Values.metrics.prometheus | quote }}
@@ -97,8 +103,21 @@ spec:
         {{- include "utils.proxysql.container" . | indent 8 }}
       volumes:
         - name: designate-etc
-          configMap:
-            name: designate-etc
+          projected:
+            sources:
+            - configMap:
+                name: designate-etc
+            - secret:
+                name: designate-secrets
+                items:
+                  - key: secrets.conf
+                    path: secrets.conf
+                  - key: pools.yaml
+                    path: pools.yaml
+{{- range $rndc := .Values.rndc_keys }}
+                  - key: {{ $rndc.name }}.key
+                    path: {{ $rndc.name }}.key
+{{- end }}
         - name: container-init
           configMap:
             name: designate-bin

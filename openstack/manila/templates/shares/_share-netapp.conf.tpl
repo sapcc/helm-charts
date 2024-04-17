@@ -26,7 +26,8 @@ netapp_vserver={{ $share.vserver }}
 driver_handles_share_servers = true
 automatic_share_server_cleanup = true
 # Unallocated share servers reclamation time interval (minutes).
-unused_share_server_cleanup_interval = {{ $share.share_server_cleanup_interval | default 60 }}
+# Should match netapp_delete_retention_hours, otherwise vservers may be cleaned up too early
+unused_share_server_cleanup_interval = {{ $share.share_server_cleanup_interval | default 720 }}
 netapp_vserver_name_template = {{ $share.netapp_vserver_name_template | default $context.Values.netapp_vserver_name_template | default "ma_%s" }}
 {{- end }}
 
@@ -34,8 +35,6 @@ netapp_storage_family=ontap_cluster
 netapp_server_hostname={{$share.host}}
 netapp_server_port={{ $share.port | default 443 }}
 netapp_transport_type={{ $share.protocol | default "https" }}
-netapp_login={{$share.username}}
-netapp_password={{$share.password}}
 netapp_mtu={{$share.mtu | default 9000 }}
 netapp_enabled_share_protocols={{$share.enabled_protocols | default "nfs3, nfs4.1" }}
 
@@ -48,6 +47,9 @@ netapp_lif_name_template = os_%(net_allocation_id)s
 netapp_port_name_search_pattern = {{ $share.port_search_pattern  | default "(a0b)" }}
 
 neutron_physical_net_name={{$share.physical_network}}
+{{ if hasKey $share "binding_host" }}
+neutron_host_id={{$share.binding_host}}
+{{- end }}
 network_api_class=manila.network.neutron.neutron_network_plugin.NeutronBindNetworkPlugin
 {{- if $share.debug }}
 netapp_trace_flags=api,method
@@ -60,13 +62,19 @@ netapp_volume_snapshot_reserve_percent = {{ $share.netapp_volume_snapshot_reserv
 # Enable logical space reporting
 netapp_enable_logical_space_reporting = False
 
-# Set last transfer size limit to 1 PB (1024 * 1024 * 1024 * 1024 KB), effectively disabling that setting
-netapp_snapmirror_last_transfer_size_limit = 1099511627776
+# Set the last transfer size limit to 1 GB (1024 * 1024 KB). We need to find a sweet
+# spot for this value. Our goal is to alert customers about large data copies occurring,
+# allowing them to take preventive actions before replica promotion. While 1GB is a
+# relatively high value, it helps to avoid too many 'out-of-sync' replicas. We could
+# also consider lowering this value to 512MB, but we need to be careful about the
+# impact.
+netapp_snapmirror_last_transfer_size_limit = 1048576
 
-# Set asynchronous SnapMirror schedule to 10 minutes
-netapp_snapmirror_schedule = "10min"
-# set waiting time for snapmirror to complete on replica promote to 20 min (double the value of netapp_snapmirror_schedule), this is in line with our RPO
-netapp_snapmirror_quiesce_timeout = 1200
+# Set asynchronous SnapMirror schedule to one hour, and configure the waiting time for
+# snapmirror to complete on replica promote to be double of this value, alligning with
+# our RPO (Recovery Point Objective) of 2 hours.
+netapp_snapmirror_schedule = "hourly"
+netapp_snapmirror_quiesce_timeout = 7200
 
 # state, that will be reported as pool property. Valid values are `in_build`, `live`, `in_decom` and `replacing_decom`
 netapp_hardware_state = {{ $share.hardware_state | default "live" }}
@@ -76,13 +84,19 @@ netapp_hardware_state = {{ $share.hardware_state | default "live" }}
 {{- if eq 100 (int $share.reserved_share_percentage)}}
 reserved_share_percentage = 100
 {{- else }}
-reserved_share_percentage = {{ $share.reserved_share_percentage | default 50 }}
+reserved_share_percentage = {{ $share.reserved_share_percentage | default 30 }}
 {{- end }}
 
 {{- if eq 100 (int $share.reserved_share_extend_percentage)}}
 reserved_share_extend_percentage = 100
 {{- else }}
 reserved_share_extend_percentage = {{ $share.reserved_share_extend_percentage | default 25 }}
+{{- end }}
+
+{{- if eq 100 (int $share.reserved_snapshot_percentage)}}
+reserved_snapshot_percentage = 100
+{{- else }}
+reserved_snapshot_percentage = {{ $share.reserved_snapshot_percentage | default 25 }}
 {{- end }}
 
 # Time to kepp deleted volumes in recovery queue until space is reclaimed

@@ -1,7 +1,8 @@
+{{- $deployment_name := include "postgres.fullname" . -}}
 kind: Deployment
 apiVersion: apps/v1
 metadata:
-  name: {{ template "fullname" . }}
+  name: {{ $deployment_name }}
 spec:
   replicas: 1
   revisionHistoryLimit: 3
@@ -9,11 +10,12 @@ spec:
     type: Recreate
   selector:
     matchLabels:
-      app: {{ template "fullname" . }}
+      app: {{ template "postgres.fullname" . }}
   template:
     metadata:
       labels:
-        app: {{ template "fullname" . }}
+        app: {{ template "postgres.fullname" . }} # backwards compability because selector cannot be changed
+        name: {{ template "postgres.fullname" . }}
       annotations:
         kubectl.kubernetes.io/default-container: postgres
         checksum/etc: {{ include (print $.Template.BasePath  "/configmap.yaml") . | sha256sum }}
@@ -32,48 +34,62 @@ spec:
                 values:
                 - operational
 
+      {{- if .Values.nodeSelector }}
+      nodeSelector: {{ toYaml .Values.nodeSelector | nindent 8 }}
+      {{- end }}
+
+      {{- if .Values.tolerations }}
+      tolerations: {{ toYaml .Values.tolerations | nindent 8 }}
+      {{- end }}
+
       initContainers:
       - name: generate-secrets
-        # at the time of writing, kubectl is only available in edge
-        image: "{{ include "preferredDockerHubMirror" . }}/library/alpine:edge"
+        image: "{{ include "preferredRegistry" . }}/shared-app-images/alpine-kubectl:3.19-latest"
         env:
         - name: DEBUG
           value: {{ quote .Values.debug }}
         - name: RELEASE
           value: {{ quote .Release.Name }}
+        - name: DEPLOYMENT_NAME
+          value: {{ $deployment_name }}
         - name: USERS
-          value: {{ keys (.Values.users | required ".Values.users must be configured") | join " " | quote }}
+          value: {{ keys (.Values.users | required ".Values.users must be configured") | sortAlpha | join " " | quote }}
         command: [ ash, -c, {{ .Files.Get "bin/init-generate-secrets.sh" | quote }} ]
 
       containers:
       - name: postgres
         image: "{{ include "preferredRegistry" . }}/postgres-ng:{{ .Values.imageTag }}"
         imagePullPolicy: "IfNotPresent"
-        args: ["-c", "config_file=/postgresql-conf/postgresql.conf"]
         env:
         - name: DEBUG
           value: {{ .Values.debug | quote }}
+        - name: PERSISTENCE_ENABLED
+          value: {{ .Values.persistence.enabled | quote }}
+        - name: PGBACKUP_HOST
+          value: '{{ .Release.Name }}-pgbackup.{{ .Release.Namespace }}.svc'
+        - name: PGBIN
+          value: "/usr/lib/postgresql/{{ .Values.postgresVersion}}/bin"
+        - name: PGDATA
+          value: "/var/lib/postgresql/{{ .Values.postgresVersion}}"
         - name: PGVERSION
           value: {{ .Values.postgresVersion | quote }}
         - name: PGDATABASE
           value: {{ .Values.postgresDatabase | quote }}
         - name: PGUSER
-          value: {{ .Values.postgresUser | quote }}
+          value: postgres
+        - name: PGAUTHMETHOD
+          value: "{{ if ge ($.Values.postgresVersion | int) 12 }}scram-sha-256{{ else }}md5{{ end }}"
         - name: POD_IP
           valueFrom:
             fieldRef:
               fieldPath: status.podIP
         {{- range $user, $settings := .Values.users }}
-        - name: USER_PASSWORD_{{ $user }}
+        - name: USER_PASSWORD_{{ $user | replace "-" "_" }}
           valueFrom:
             secretKeyRef:
               name: {{ $.Release.Name }}-pguser-{{ $user }}
               key: postgres-password
         {{- end }}
-        - name: POD_IP
-          valueFrom:
-            fieldRef:
-              fieldPath: status.podIP
 
         ports:
         - name: postgresql
@@ -81,37 +97,30 @@ spec:
         livenessProbe:
           exec:
             command:
-            - sh
+            - bash
             - -c
-            - exec pg_isready --host $POD_IP
+            - "[[ -e /tmp/in-init ]] || exec pg_isready --host $POD_IP"
           initialDelaySeconds: 120
           timeoutSeconds: {{ .Values.probe_timeout_secs }}
           failureThreshold: {{ .Values.probe_failure_threshold }}
-        # We use the POD_IP to not have the pod become ready during the inital database setup
-        # where the docker image briefly starts the db  for creating the user,
-        # running custom setup scripts etc.
         readinessProbe:
           exec:
             command:
-            - sh
+            - bash
             - -c
-            - exec pg_isready --host $POD_IP
+            - "[[ -e /tmp/in-init ]] || exec pg_isready --host $POD_IP"
           initialDelaySeconds: 5
           timeoutSeconds: {{ .Values.probe_timeout_secs }}
-        startupProbe:
-          exec:
-            command:
-            - test
-            - -f
-            - /tmp/init-done
-          initialDelaySeconds: 5
-          timeoutSeconds: {{ .Values.probe_timeout_secs }}
-        resources: {{ toYaml .Values.resources | nindent 10 }}
+        resources:
+          limits: {{ toYaml .Values.resources.limits | nindent 12 }}
+          {{- if not (.Values.global.region | regexMatch "^qa-de-[2-6]$") }}
+          requests: {{ toYaml .Values.resources.requests | nindent 12 }}
+          {{- end }}
         volumeMounts:
         - name: data
           mountPath: /data
         - name: postgres-etc
-          mountPath: /postgresql-conf
+          mountPath: /etc/postgresql
         {{- if .Values.sqlOnCreate }}
         - name: sql-on-create
           mountPath: /sql-on-create.d
@@ -122,26 +131,26 @@ spec:
         - name: dev-shm
           mountPath: /dev/shm
         {{- end }}
-      serviceAccountName: {{ template "fullname" . }}
+      serviceAccountName: {{ template "postgres.fullname" . }}
       volumes:
       - name: postgres-etc
         configMap:
-          name: {{ template "fullname" . }}-etc
+          name: {{ template "postgres.fullname" . }}-etc
       - name: data
       {{- if .Values.persistence.enabled }}
         persistentVolumeClaim:
-          claimName: {{ .Values.persistence.existingClaim | default (include "fullname" .) }}
+          claimName: {{ .Values.persistence.existingClaim | default (include "postgres.fullname" .) }}
       {{- else }}
         emptyDir: {}
       {{- end }}
         {{- if .Values.sqlOnCreate }}
       - name: sql-on-create
         configMap:
-          name: {{ template "fullname" . }}-sql-on-create
+          name: {{ template "postgres.fullname" . }}-sql-on-create
       {{- end }}
       - name: sql-on-startup
         configMap:
-          name: {{ template "fullname" . }}-sql-on-startup
+          name: {{ template "postgres.fullname" . }}-sql-on-startup
       {{- if .Values.sharedMemoryLimit }}
       - name: dev-shm
         emptyDir:

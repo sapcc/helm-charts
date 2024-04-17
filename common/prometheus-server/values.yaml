@@ -19,6 +19,7 @@ global:
   # Optional targets to create Prometheus names.
   # targets:
 
+  linkerd_requested: false
 
 # The image for the Prometheus server. The tag equals the .Chart.appVersion.
 image:
@@ -121,7 +122,8 @@ ingress:
       authTLSVerifyClient: on
 
   # Additional annotations for the ingress.
-  annotations: {}
+  annotations:
+    cloud.sap/no-http-keep-alive-monitor: "true"
 
 # Optional additional ingress for this Prometheus.
 internalIngress:
@@ -160,7 +162,8 @@ internalIngress:
       authTLSVerifyClient: on
 
   # Additional annotations for the ingress.
-  annotations: {}
+  annotations:
+    cloud.sap/no-http-keep-alive-monitor: "true"
 
 # Enable persistent storage.
 # If disabled, data will be stored in memory.
@@ -280,9 +283,29 @@ resources:
   requests:
     cpu: "1"
     memory: 8Gi
+    ephemeral-storage: 200M
 
-# VerticalPodAutoscaler UpdateMode defaults to Off.
-# vpaUpdateMode: "Initial"
+# specifying container specific maximal values.
+vpaResources:
+  # if prometheus needs more than 10Gi memory, this needs to be increased otherwise the VPA will not set it accordingly
+  prometheus:
+    containerName: "prometheus"
+    maxAllowed:
+      cpu: "3"
+      memory: "10Gi"
+  configReloader:
+    containerName: "config-reloader"
+    maxAllowed:
+      cpu: "100"
+      memory: "200Mi"
+  thanosSidecar:
+    containerName: "thanos-sidecar"
+    maxAllowed:
+      cpu: "1"
+      memory: "3Gi"
+
+# If set to Auto, make sure to enable alerts.thanos.enabled and alerts.thanos.name if you are in any Prometheus but kubernetes and kubernikus. This will deploy needed alerts to Thanos Ruler.
+vpaUpdateMode: "Off"
 
 # A security context defines privilege and access control settings for a Pod or Container.
 # See: https://kubernetes.io/docs/tasks/configure-pod-container/security-context .

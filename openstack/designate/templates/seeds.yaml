@@ -1,7 +1,7 @@
 apiVersion: "openstack.stable.sap.cc/v1"
 kind: "OpenstackSeed"
 metadata:
-  name: {{ .Release.Name }}-seed
+  name: "{{ .Release.Name }}-seed"
   labels:
     component: designate
     app: {{ template "fullname" . }}
@@ -20,6 +20,7 @@ spec:
   - {{ .Release.Namespace }}/domain-cc3test-seed
   - {{ .Release.Namespace }}/domain-ccadmin-seed
   - {{ .Release.Namespace }}/domain-bs-seed
+  - {{ .Release.Namespace }}/domain-btp-fp-seed
   - {{ .Release.Namespace }}/domain-cis-seed
   - {{ .Release.Namespace }}/domain-cp-seed
   - {{ .Release.Namespace }}/domain-fsn-seed
@@ -108,12 +109,12 @@ spec:
         inherited: true
       - project: admin
         role: cloud_dns_admin
-    - name: designate
-      description: Designate Service User
-      password: {{ .Values.global.designate_service_password }}
-      role_assignments:
-      - project: service
-        role: service
+    #- name: designate
+    #  description: Designate Service User
+    #  password: {{ .Values.global.designate_service_password }}
+    #  role_assignments:
+    #  - project: service
+    #    role: service
 
   - name: ccadmin
     projects:
@@ -137,12 +138,12 @@ spec:
         zone_records: 10000
         zone_recordsets: 10000
         zones: 1000
-      dns_tsigkeys:
-      - name: '{{ .Values.tsig_key_name }}'
-        algorithm: hmac-sha256
-        secret: '{{ .Values.tsig_key }}'
-        scope: POOL
-        resource_id: '{{ .Values.pool_id }}'
+      #dns_tsigkeys:
+      #- name: '{{ .Values.tsig_key_name }}'
+      #  algorithm: hmac-sha256
+      #  secret: '{{ .Values.tsig_key }}'
+      #  scope: POOL
+      #  resource_id: '{{ .Values.pool_id }}'
     groups:
     - name: CCADMIN_CLOUD_ADMINS
       role_assignments:
@@ -279,6 +280,54 @@ spec:
     - name: BS_SERVICE_DESK
       role_assignments:
       - domain: bs
+        role: cloud_dns_ops
+        inherited: true
+    role_assignments:
+    - user: admin@Default
+      role: cloud_dns_admin
+      inherited: true
+
+  - name: btp_fp
+    groups:
+    - name: BTP_FP_DOMAIN_DNS_SUPPORT
+      role_assignments:
+      - domain: btp_fp
+        role: cloud_dns_support
+        inherited: true
+    - name: BTP_FP_DOMAIN_DNS_OPS
+      role_assignments:
+      - domain: btp_fp
+        role: cloud_dns_ops
+        inherited: true
+      - domain: btp_fp
+        role: role_viewer
+        inherited: true
+      - domain: btp_fp
+        role: audit_viewer
+        inherited: true
+    - name: BTP_FP_API_SUPPORT
+      role_assignments:
+      - domain: btp_fp
+        role: cloud_dns_admin
+        inherited: true
+    - name: BTP_FP_COMPUTE_SUPPORT
+      role_assignments:
+      - domain: btp_fp
+        role: cloud_dns_ops
+        inherited: true
+    - name: BTP_FP_NETWORK_SUPPORT
+      role_assignments:
+      - domain: btp_fp
+        role: cloud_dns_ops
+        inherited: true
+    - name: BTP_FP_STORAGE_SUPPORT
+      role_assignments:
+      - domain: btp_fp
+        role: cloud_dns_ops
+        inherited: true
+    - name: BTP_FP_SERVICE_DESK
+      role_assignments:
+      - domain: btp_fp
         role: cloud_dns_ops
         inherited: true
     role_assignments:
@@ -937,4 +986,40 @@ spec:
     - user: admin@Default
       role: cloud_dns_admin
       inherited: true
+{{- end }}
+
+{{- if .Values.nanny_enabled }}
+---
+apiVersion: "openstack.stable.sap.cc/v1"
+kind: "OpenstackSeed"
+metadata:
+  name: {{ .Release.Name }}-nanny-seed
+spec:
+  requires:
+  - {{ .Release.Namespace }}/domain-default-seed
+  - {{ .Release.Namespace }}/domain-ccadmin-seed
+{{- if .Values.global_setup }}
+  - {{ .Release.Namespace }}/designate-global-seed
+  - {{ .Release.Namespace }}/domain-global-seed
+{{- else}}
+  - {{ .Release.Namespace }}/designate-seed
+{{- end }}
+
+  domains:
+  - name: {{ required "missing user domain in .Values.designate_nanny.credentials.designate_api.project_user_domain_name" .Values.designate_nanny.credentials.designate_api.project_user_domain_name }}
+    users:
+    - name: {{ required "missing user in .Values.designate_nanny.credentials.designate_api.user" .Values.designate_nanny.credentials.designate_api.user }}
+      description: Designate Nanny
+      password: {{ required "missing initial password in .Values.designate_nanny.credentials.designate_api.seeder_password" .Values.designate_nanny.credentials.designate_api.seeder_password }}
+  - name: {{ required "missing project domain name in .Values.designate_nanny.credentials.designate_api.project_domain_name" .Values.designate_nanny.credentials.designate_api.project_domain_name }}
+    projects:
+    - name: {{ required "missing project name in .Values.designate_nanny.credentials.designate_api.project_name" .Values.designate_nanny.credentials.designate_api.project_name }}
+      role_assignments:
+      - user: {{ .Values.designate_nanny.credentials.designate_api.user}}@{{.Values.designate_nanny.credentials.designate_api.project_user_domain_name }}
+        role: cloud_dns_viewer
+    - name: master
+      role_assignments:
+      - user: {{ .Values.designate_nanny.credentials.designate_api.user}}@{{.Values.designate_nanny.credentials.designate_api.project_user_domain_name }}
+        role: objectstore_admin
+
 {{- end }}

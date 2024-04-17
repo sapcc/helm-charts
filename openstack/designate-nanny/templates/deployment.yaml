@@ -1,4 +1,4 @@
-{{- if .Values.nanny.enabled }}
+{{- if .Values.nanny_enabled }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -22,37 +22,50 @@ spec:
        app.kubernetes.io/instance: {{ .Release.Name }}
        app.kubernetes.io/name: {{ .Release.Name }}
      annotations:
-       prometheus.io/port: "9102"
+       # port has to be given in the ports spec below with name metrics, otherwise
+       # the pod will be scraped multiple times as there are multiple containers with linkderd
+       # prometheus.io/port: "9102" 
        prometheus.io/scrape: "true"
        prometheus.io/targets: openstack
+       {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+       linkerd.io/inject: enabled
+       {{- end }}
    spec:
 
      containers:
      - name: {{ .Release.Name }}
        image: {{ required ".Values.global.registry is missing" .Values.global.registry }}/{{ .Values.image.name }}:{{required "missing .Values.image.image_tag" .Values.image.image_tag }}
+       {{- if or (eq .Values.global.region "qa-de-1") (eq .Values.global.region "qa-de-2") }}
+       imagePullPolicy: Always
+       {{- else }}
+       imagePullPolicy: IfNotPresent
+       {{- end }}
        command: ["/opt/venv/bin/designate-nanny", "autorun"]
        env:
          - name: NANNY_CONFIG
            value: "/srv/nanny.yaml"
          - name: OS_AUTH_URL
-           value: "https://{{ include "keystone_api_endpoint_host_public" . }}/v3"
+           value: "{{ .Values.global.keystone_api_endpoint_protocol_public | default "https"}}://{{include "keystone_api_endpoint_host_public" .}}/v3"
          - name: PYCCLOUD_USE_DUMMY_SECRETS
-           value: "yes"          
+           value: "yes"
          - name: OS_REGION_NAME
-           value: "{{.Values.global.region}}"
+           value: "{{ required "missing .Values.global.region" .Values.global.region}}"
          - name: OS_PROJECT_NAME
-           value:  "{{ .Values.credentials.designate_api.project_name}}"
+           value:  "{{ required "missing .Values.designate_nanny.credentials.designate_api.project_name" .Values.designate_nanny.credentials.designate_api.project_name}}"
          - name: OS_PROJECT_DOMAIN_NAME
-           value:  "{{ .Values.credentials.designate_api.project_domain_name}}"
+           value:  "{{ required "missing .Values.designate_nanny.credentials.designate_api.project_domain_name" .Values.designate_nanny.credentials.designate_api.project_domain_name}}"
          - name: OS_USERNAME
-           value: "{{ .Values.credentials.designate_api.user}}"
+           valueFrom:
+             secretKeyRef:
+               name: designate-nanny-secret
+               key:  designate_nanny_os_username
          - name: OS_PASSWORD
            valueFrom:
              secretKeyRef:
                name: designate-nanny-secret
                key:  designate_nanny_os_password
          - name: OS_USER_DOMAIN_NAME
-           value:  "{{ .Values.credentials.designate_api.project_user_domain_name}}"
+           value:  "{{ required "missing .Values.designate_nanny.credentials.designate_api.project_user_domain_name" .Values.designate_nanny.credentials.designate_api.project_user_domain_name}}"
        ports:
        - containerPort: 9102
          name: metrics

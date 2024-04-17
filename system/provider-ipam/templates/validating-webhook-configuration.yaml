@@ -1,0 +1,55 @@
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingWebhookConfiguration
+metadata:
+  name: {{ include "provider-ipam.fullname" . }}-validating-webhook-configuration
+  annotations:
+    cert-manager.io/inject-ca-from: {{ .Release.Namespace }}/{{ include "provider-ipam.fullname" . }}-serving-cert
+  labels:
+  {{- include "provider-ipam.labels" . | nindent 4 }}
+webhooks:
+- admissionReviewVersions:
+  - v1
+  - v1beta1
+  clientConfig:
+    service:
+      name: '{{ include "provider-ipam.fullname" . }}-webhook-service'
+      namespace: '{{ .Release.Namespace }}'
+      path: /validate-ipam-cluster-x-k8s-io-v1alpha2-inclusterippool
+  failurePolicy: Fail
+  matchPolicy: Equivalent
+  name: validation.inclusterippool.ipam.cluster.x-k8s.io
+  rules:
+  - apiGroups:
+    - ipam.cluster.x-k8s.io
+    apiVersions:
+    - v1alpha2
+    operations:
+    - CREATE
+    - UPDATE
+    - DELETE
+    resources:
+    - inclusterippools
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  - v1beta1
+  clientConfig:
+    service:
+      name: '{{ include "provider-ipam.fullname" . }}-webhook-service'
+      namespace: '{{ .Release.Namespace }}'
+      path: /validate-ipam-cluster-x-k8s-io-v1alpha2-globalinclusterippool
+  failurePolicy: Fail
+  matchPolicy: Equivalent
+  name: validation.globalinclusterippool.ipam.cluster.x-k8s.io
+  rules:
+  - apiGroups:
+    - ipam.cluster.x-k8s.io
+    apiVersions:
+    - v1alpha2
+    operations:
+    - CREATE
+    - UPDATE
+    - DELETE
+    resources:
+    - globalinclusterippools
+  sideEffects: None

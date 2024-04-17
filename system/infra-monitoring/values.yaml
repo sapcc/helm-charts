@@ -25,6 +25,8 @@ global:
     enabled: true
     prometheus: infra-collector
 
+  linkerd_requested: true
+
 rbac:
   create: true
   name: infra-monitoring-edit
@@ -63,6 +65,11 @@ prometheus_infra_collector:
     hosts:
       - prometheus-infra-collector
 
+  internalIngress:
+    enabled: true
+    hosts:
+      - prometheus-infra-collector-internal
+
   persistence:
     enabled: true
     # prom-operator does not support other accessModes than RWO
@@ -76,6 +83,13 @@ prometheus_infra_collector:
   rbac:
     create: true
 
+  vpaUpdateMode: "Auto"
+  vpaResources:
+    prometheus:
+      containerName: "prometheus"
+      maxAllowed:
+        memory: "20Gi"
+
   serviceAccount:
     create: true
 
@@ -85,8 +99,8 @@ prometheus_infra_collector:
       enabled: false
 
     hosts:
-      - alertmanager.scaleout.eu-de-1.cloud.sap
-      - alertmanager.scaleout.eu-nl-1.cloud.sap
+      - alertmanager-internal.scaleout.eu-de-1.cloud.sap
+      - alertmanager-internal.scaleout.eu-nl-1.cloud.sap
 
   alerts:
 
@@ -133,12 +147,7 @@ thanos:
   grpcIngress:
     enabled: true
     hosts:
-      - thanos-infra-collector
-
-alertmanager_exporter:
-  enabled: false
-  scrapeInterval: 1m
-  scrapeTimeout: 55s
+      - thanos-infra-collector-grpc
 
 netbox_exporter:
   enabled: false
@@ -167,9 +176,6 @@ netapp_cap_exporter:
       fullname: "netapp-capacity-exporter-control-plane"
 
 vcenter-exporters:
-  enabled: false
-
-thousandeyes_exporter:
   enabled: false
 
 ipmi_exporter:

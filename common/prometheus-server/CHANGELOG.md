@@ -1,3 +1,54 @@
+## 7.5.6
+
+* Adapting swift credential for kvv2 vault
+
+## 7.5.5
+
+* VPA alerts should always go to observability support_group
+
+## 7.5.4
+
+* Adding linkerd eph requests
+
+## 7.5.0 - 7.5.3
+
+* Adding linkerd
+
+## 7.4.16
+
+* request ephemeral storage to avoid evicting due to minor usage
+
+## 7.4.15
+
+* Added failsafe to Prometheus kubernetes and kubernikus specific alerts with hint to thanos ruler.
+* improved VPA alerts
+
+## 7.4.14
+
+* default value for shards
+* vpa scope to Prometheus resource to ensure operator compatibility with scale subresource
+
+## 7.4.9 - 7.4.10
+
+* VPA mapping adjustment to set individual values 
+* minReplicas set to 1
+
+## 7.4.8
+
+* VPA memory and cpu alerts added
+
+## 7.4.7
+
+* corrected VPA memory directive 
+
+## 7.4.6
+
+* bump to v2.47.2
+
+## 7.4.5
+
+* preparing VPA for rollout (make maxAllowed configurable)
+
 ## 7.4.4
 
 * Soften out-of-order alert 

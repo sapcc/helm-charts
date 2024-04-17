@@ -1,0 +1,76 @@
+owner-info:
+  support-group: containers
+  helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/system/cc-ceph
+
+ceph:
+  registry:
+  image: "ceph/ceph"
+  version:
+
+clusterName: ceph-cluster
+
+mon:
+  count: 3
+  nodeRole: ceph-mon
+
+osd:
+  nodeRole: ceph-osd
+
+prepareosd:
+  nodeRole: ceph-osd
+
+pool:
+  mgr:
+    replicated: 3
+
+mgr:
+  nodeRole: ceph-mon
+
+storage:
+  deviceFilter: "^sd[a-m]+$"
+  config:
+    osdsPerDevice: "1"
+    metadataDevice: "nvme0n1"
+    databaseSizeMB: "120000"
+    encryptedDevice: "true"
+  nodes: null
+  # - name: a
+  #   config:
+  #     metadataDevice: "nvme0n1"
+  # - name: b
+  #   config:
+  #     metadataDevice: "nvme1n1"
+  # - name: c
+  #   config:
+  #     metadataDevice: "nvme0n1"
+
+cephConfig:
+  global:
+    osd_pool_default_size: "3"
+
+dashboard:
+  ingress:
+    name: manager-dashboard
+    host: "mydash.local.domain"
+
+objectstore:
+  enabled: true
+  name: objectstore
+  gateway:
+    port: 80
+    securePort: 443
+    sslCertificateRef: ""
+  dataPool:
+    # choose between replicated and erasureCoded
+    erasureCoded:
+      codingChunks: 1
+      dataChunks: 2
+    failureDomain: host
+    # replicated:
+    #   size: 3
+  service:
+    port: 80
+    externalIPs:
+      - 10.0.0.1
+  user:
+    name: test-user

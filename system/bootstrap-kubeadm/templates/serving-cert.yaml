@@ -1,0 +1,19 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: {{ include "bootstrap-kubeadm.fullname" . }}-serving-cert
+  labels:
+  {{- include "bootstrap-kubeadm.labels" . | nindent 4 }}
+spec:
+  dnsNames:
+  - '{{ include "bootstrap-kubeadm.fullname" . }}-webhook-service.{{ .Release.Namespace
+    }}.svc'
+  - '{{ include "bootstrap-kubeadm.fullname" . }}-webhook-service.{{ .Release.Namespace
+    }}.svc.{{ .Values.kubernetesClusterDomain }}'
+  issuerRef:
+    kind: Issuer
+    name: '{{ include "bootstrap-kubeadm.fullname" . }}-selfsigned-issuer'
+  secretName: capi-capi-kubeadm-bootstrap-webhook-service-cert
+  subject:
+    organizations:
+    - k8s-sig-cluster-lifecycle

@@ -47,6 +47,7 @@ labels:
 {{ tuple . .Release.Name $name | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 2 }}
 annotations:
   bin-hash: {{ include (print .Template.BasePath "/bin/_" $name ".tpl") . | sha256sum }}
+  {{- include "utils.linkerd.pod_and_service_annotation" . | indent 2 }}
   {{- end }}
 {{- end }}
 

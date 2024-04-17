@@ -12,6 +12,7 @@ metadata:
 
 spec:
   replicas: 1
+  shards: 1
 
   {{ if $.Values.rbac.create -}}
   serviceAccountName: {{ include "serviceAccount.name" (list $name $root) }}
@@ -83,6 +84,13 @@ spec:
     {{- if $.Values.externalLabels }}
 {{ toYaml $.Values.externalLabels | indent 4 }}
     {{- end }}
+
+  {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+  podMetadata:
+    annotations:
+      linkerd.io/inject: enabled
+      config.linkerd.io/proxy-ephemeral-storage-request: 10M
+  {{- end }}
 
   {{ if $.Values.additionalScrapeConfigs -}}
   # Inject additional scrape configurations.

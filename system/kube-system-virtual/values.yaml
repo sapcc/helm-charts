@@ -48,8 +48,8 @@ disco:
 cert-manager:
   installCRDs: true
   image:
-    repository: keppel.global.cloud.sap/ccloud/cert-manager-controller
-    tag: v1.5.5-p1
+    repository: keppel.global.cloud.sap/ccloud-quay-mirror/jetstack/cert-manager-controller
+    tag: v1.13.3
   webhook:
     image:
       repository: keppel.global.cloud.sap/ccloud-quay-mirror/jetstack/cert-manager-webhook
@@ -63,7 +63,7 @@ cert-manager:
       repository: keppel.global.cloud.sap/ccloud-quay-mirror/jetstack/cert-manager-ctl
   ingressShim:
     defaultIssuerName: digicert-issuer
-    defaultIssuerKind: DigicertIssuer
+    defaultIssuerKind: ClusterIssuer
     defaultIssuerGroup: certmanager.cloud.sap
   prometheus:
     enabled: true
@@ -71,9 +71,6 @@ cert-manager:
     prometheus.io/targets: kubernetes
   extraArgs:
     - --enable-certificate-owner-ref=true
-
-digicert-issuer:
-  enableLeaderElection: "false"
 
 # For now enabled via regional values.
 maintenance-controller:
@@ -152,3 +149,11 @@ velero:
       template:
         ttl: "720h"
         storageLocation: swift
+        excludedResources:
+        - events
+        - pods
+        - nodeleases
+        - endpoints
+
+secrets-injector:
+  enabled: false

@@ -39,26 +39,15 @@ keppel:
   # that all Keppels accept HTTP requests for this domain name)
   anycast_domain_name: ""
 
-  service_password: DEFINED_IN_VALUES_FILE
   dashboard_url_pattern: '' # optional, DEFINED_IN_VALUES_FILE
 
   # name of Keppel account reserved for keppel-health-monitor
   healthcheck_account: healthcheck
 
-  # credentials for E2E test user (optional; user only gets created when a password is given)
-  e2e_test_password: '' # DEFINED_IN_VALUES_FILE
-
   issuer_key.pem: DEFINED_IN_VALUES_FILE
   previous_issuer_key.pem: ''         # empty = no key rotation in progress
   anycast_issuer_key.pem: ''          # empty = anycast not enabled
   anycast_previous_issuer_key.pem: '' # empty = no key rotation in progress
-
-  # Set to non-empty values to enable audit logging to Hermes.
-  rabbitmq:
-    queue_name: ""
-    username: ""
-    password: ""
-    hostname: ""
 
 # This refers to the region holding the shared Swift container where the
 # "swift" federation driver tracks account name claims.
@@ -73,7 +62,8 @@ redis:
   persistence:
     enabled: false
   image:
-    tag: 7.2.3-alpine-20231114141244
+    tag: 7.2-20240412113045
+  useAlternateRegion: true
   redisPassword: DEFINED_IN_VALUES_FILE
 
   # evict unused keys automatically
@@ -106,24 +96,25 @@ redis:
         cpu: 5m
 
 postgresql:
-  imageTag: '12.17-20231211122240'
-  persistence:
-    enabled: true
-    accessMode: ReadWriteOnce
-    size: 100Gi
-
-  sharedMemoryLimit: 256Mi
-
-  log_min_duration_statement: 250
-
-  # We previously had 128, which should technically be enough for 6 API pods and 1 janitor pod (with max. 16 conns each)
-  # as well as the pgmetrics and pgbackup pods with 1-2 conns each, but we still had a "too many clients already" issue regardless.
-  max_connections: 160
-
   alerts:
     support_group: containers
+  config:
+    log_min_duration_statement: 250
+    # We previously had 128, which should technically be enough for 6 API pods and 1 janitor pod (with max. 16 conns each)
+    # as well as the pgmetrics and pgbackup pods with 1-2 conns each, but we still had a "too many clients already" issue regardless.
+    max_connections: 160
+  persistence:
+    enabled: true
+    accessMode: ReadWriteOnce # compatibility to allow easy upgrades
+    size: 100Gi
+  postgresDatabase: keppel
+  sharedMemoryLimit: 256Mi
+  users:
+    keppel: {}
+  tableOwner: keppel
 
 pgbackup:
+  isPostgresNG: true
   use_alternate_region: true
   database:
     name: keppel
@@ -131,6 +122,7 @@ pgbackup:
     support_group: containers
 
 pgmetrics:
+  isPostgresNG: true
   db_name: keppel
 
   alerts:

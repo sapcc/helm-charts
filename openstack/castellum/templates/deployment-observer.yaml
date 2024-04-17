@@ -27,7 +27,7 @@ spec:
         checksum/secrets: {{ include "castellum/templates/secret.yaml" $ | sha256sum }}
         kubectl.kubernetes.io/default-container: observer
         prometheus.io/scrape: "true"
-        prometheus.io/targets: {{ quote .Values.alerts.prometheus.openstack }}
+        prometheus.io/targets: openstack
     spec:
       volumes:
         - name: config
@@ -39,7 +39,7 @@ spec:
       containers:
         - name: observer
           image: {{ include "castellum_image" . }}
-          imagePullPolicy: {{ .Values.castellum.image_pull_policy }}
+          imagePullPolicy: IfNotPresent
           args:
             - observer
             - /etc/castellum/castellum.yaml
@@ -57,11 +57,11 @@ spec:
           {{- include "castellum_liveness_readiness_probes" . | indent 10 }}
           # NOTE: observed usage in eu-de-2 (as of 2021-08)
           # - CPU: 170m sustained average (less in regions with fewer resources)
-          # - RAM: 50Mi baseline, spikes up to 80Mi
+          # - RAM: 200Mi baseline in large regions, but startup phase needs more headroom
           resources:
             requests:
-              cpu: "200m"
-              memory: "150Mi"
+              cpu: "300m"
+              memory: "512Mi"
             limits:
               cpu: "1"
-              memory: "150Mi"
+              memory: "512Mi"

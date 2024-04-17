@@ -1,10 +1,14 @@
 ## Bitnami Redis image version
 ## ref: https://hub.docker.com/r/bitnami/redis/tags/
 ##
+
+# If enabled, image references use `.Values.registryAlternateRegion` etc. instead of `.Values.registry` etc.
+useAlternateRegion: false
+
 image:
-  repository: library/redis
-  tag: 7.2.3-alpine
-  pullPolicy: IfNotPresent
+  # This tag must be valid within the Keppel repo ccloud/shared-app-images/alpine-redis.
+  # To pin to a specific image, replace this with a timestamped tag from there in values.yaml of the parent chart.
+  tag: 7.2-latest
 
 # Port for the Redis.
 redisPort: 6379
@@ -38,9 +42,8 @@ metrics:
   enabled: true
 
   image:
-    repository: oliver006/redis_exporter
-    tag: v1.55.0
-    pullPolicy: IfNotPresent
+    # This tag must be valid within the Docker Hub repo oliver006/redis_exporter.
+    tag: v1.58.0
 
   # Port to expose metrics on.
   port: 9121
@@ -57,9 +60,3 @@ metrics:
     requests:
       memory: 128Mi
       cpu: 10m
-
-alerts:
-  enabled: true
-
-  tier: os
-  service: "" # Configurable service label of the alerts. Defaults to `.Release.Name`.

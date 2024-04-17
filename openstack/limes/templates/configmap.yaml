@@ -13,6 +13,8 @@ data:
 {{ toYaml .Values.limes.clusters.ccloud | indent 4 }}
   constraints-ccloud.yaml: |
 {{ toYaml .Values.limes.constraints.ccloud | indent 4 }}
+  quota-overrides.yaml: |
+{{ toYaml .Values.quota_overrides | indent 4 }}
 
   policy.yaml: |
     project_scope: project_domain_id:%(domain_id)s and project_id:%(project_id)s
@@ -24,7 +26,6 @@ data:
     domain_viewer: rule:cluster_viewer or (rule:domain_scope and role:resource_viewer) or rule:domain_editor
     project_editor: rule:domain_editor or (rule:project_scope and role:resource_admin)
     project_viewer: rule:domain_viewer or (rule:project_scope and (role:member or role:_member_ or role:Member or role:resource_viewer)) or rule:project_editor
-    is_compute_ram: "'compute':%(service_type)s and 'ram':%(resource_name)s"
 
     project:list: rule:domain_viewer
     project:show: rule:project_viewer
@@ -44,8 +45,7 @@ data:
     domain:sync: rule:domain_editor
     domain:raise: rule:cluster_editor
     domain:raise_lowpriv: rule:domain_editor
-    # For compute/ram, we forbid domain quota lowering without approval from the cloud admin level to enable tighter control over capacity distribution.
-    domain:lower: rule:cluster_editor or (rule:domain_editor and (not rule:is_compute_ram))
+    domain:lower: rule:domain_editor
     domain:lower_lowpriv: rule:domain_editor
     domain:discover: rule:cluster_editor
 

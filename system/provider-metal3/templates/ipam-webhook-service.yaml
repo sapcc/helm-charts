@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "provider-metal3.fullname" . }}-ipam-webhook-service
+  labels:
+    cluster.x-k8s.io/provider: infrastructure-metal3
+  {{- include "provider-metal3.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.ipamWebhookService.type }}
+  selector:
+    cluster.x-k8s.io/provider: infrastructure-metal3
+  {{- include "provider-metal3.selectorLabels" . | nindent 4 }}
+  ports:
+	{{- .Values.ipamWebhookService.ports | toYaml | nindent 2 }}

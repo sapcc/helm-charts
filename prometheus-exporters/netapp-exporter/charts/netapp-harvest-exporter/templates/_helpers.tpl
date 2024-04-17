@@ -57,7 +57,7 @@ Selector labels
 {{- define "netapp-harvest.selectorLabels" -}}
 {{- if .appValues -}}
 app.kubernetes.io/name: {{ include "netapp-harvest.name" . }}
-app.kubernetes.io/instance: {{ include "netapp-harvest.fullname" . }}-{{ .appValues.name }}
+app.kubernetes.io/instance: {{ include "netapp-harvest.fullname" . }}
 {{- else -}}
 app.kubernetes.io/name: {{ include "netapp-harvest.name" . }}
 app.kubernetes.io/instance: {{ .Release.Name }}
@@ -67,7 +67,7 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 {{- define "netappsd.selectorLabels" -}}
 {{- if .appValues -}}
 app.kubernetes.io/name: {{ include "netapp-harvest.name" . }}
-app.kubernetes.io/instance: {{ include "netapp-harvest.fullname" . }}-{{ .appValues.name }}-sd
+app.kubernetes.io/instance: {{ include "netapp-harvest.fullname" . }}-sd
 {{- else -}}
 app.kubernetes.io/name: {{ include "netapp-harvest.name" . }}
 app.kubernetes.io/instance: {{ .Release.Name }}
