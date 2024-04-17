@@ -9,10 +9,10 @@ metadata:
     chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
     release: "{{ .Release.Name }}"
     heritage: "{{ .Release.Service }}"
-    type: api
+    type: nanny
     component: glance
 spec:
-  replicas: {{ .Values.replicas }}
+  replicas: {{ .Values.glance_nanny.replicas }}
   revisionHistoryLimit: {{ .Values.upgrades.revisionHistory }}
   strategy:
     type: {{ .Values.upgrades.podReplacementStrategy }}
@@ -43,15 +43,11 @@ spec:
         {{- include "utils.linkerd.pod_and_service_annotation" . | indent 8 }}
     spec:
       {{ include "utils.proxysql.pod_settings" . | indent 6 }}
-      {{- tuple . (dict "name" "glance") | include "utils.topology.constraints" | indent 6 }}
 {{- if .Values.glance_nanny.db_purge.enabled }}
       containers:
       - name: db-consistency-and-purge
         image: {{ required ".Values.global.registry is missing" .Values.global.registry }}/loci-glance:{{.Values.imageVersionGlanceApi | default .Values.imageVersion | default .Values.image_version | required "Please set glance.imageVersion or similar"}}
         imagePullPolicy: IfNotPresent
-        lifecycle:
-          preStop:
-            {{- include "utils.snippets.pre_stop_graceful_shutdown" . | indent 12 }}
         command:
         - dumb-init
         - kubernetes-entrypoint
@@ -73,15 +69,13 @@ spec:
               name: sentry
               key: glance.DSN.python
         {{- end }}
-        {{- if .Values.api.resources.enabled }}
-        resources:
-          limits:
-            cpu: {{ .Values.api.resources.limits.cpu | quote }}
-            memory: {{ .Values.api.resources.limits.memory | quote }}
-          requests:
-            cpu: {{ .Values.api.resources.requests.cpu | quote }}
-            memory: {{ .Values.api.resources.requests.memory | quote }}
-        {{- end }}
+          resources:
+            requests:
+              memory: "250Mi"
+              cpu: "25m"
+            limits:
+              memory: "250Mi"
+              cpu: "100m"
         volumeMounts:
         - name: glance-scripts
           mountPath: /scripts/glance-db-consistency-and-purge.sh
@@ -100,7 +94,7 @@ spec:
           readOnly: true
         {{- include "utils.proxysql.volume_mount" . | indent 8 }}
         {{- include "utils.trust_bundle.volume_mount" . | indent 8 }}
-      {{- tuple . (add .Values.rpc_workers .Values.workers) | include "utils.proxysql.container" | indent 6 }}
+      {{- tuple . (add .Values.glance_nanny.replicas) | include "utils.proxysql.container" | indent 6 }}
       volumes:
       - name: glance-etc
         configMap:
