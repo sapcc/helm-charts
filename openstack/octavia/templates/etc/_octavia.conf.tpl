@@ -105,8 +105,6 @@ auth_url = {{.Values.global.keystone_api_endpoint_protocol_internal | default "h
 project_name = service
 project_domain_id = default
 user_domain_id = default
-username = {{ .Release.Name }}{{ .Values.global.user_suffix }}
-password = {{ .Values.global.octavia_service_password | replace "$" "" }}
 
 [keystone_authtoken]
 auth_type = v3password
