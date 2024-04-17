@@ -2,7 +2,7 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ template "fullname" . }}-etc
+  name: {{ template "postgres.fullname" . }}-etc
 data:
   postgresql.conf: |
     {{- include (print .Template.BasePath "/_postgresql.conf.tpl") . | nindent 4 }}
@@ -12,7 +12,7 @@ data:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ template "fullname" . }}-sql-on-create
+  name: {{ template "postgres.fullname" . }}-sql-on-create
 data:
   on-create.sql: |
     {{ .Values.sqlOnCreate }}
@@ -22,9 +22,13 @@ data:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ template "fullname" . }}-sql-on-startup
+  name: {{ template "postgres.fullname" . }}-sql-on-startup
 data:
   on-startup.sql: |
+    {{- if eq .Values.postgresDatabase "postgres" }}
+      {{- fail "postgresDatabase cannot be set to postgres because that is the name of an internal database!" }}
+    {{- end }}
+
     {{- /* duplicated with the code in rbac because the templating is to limited in its features */}}
     {{- $users := .Values.users }}
     {{- if .Values.persistence.createBackupUser }}
@@ -34,44 +38,63 @@ data:
       {{- $users := merge $users (dict "metrics" (dict)) }}
     {{- end }}
 
-    -- pw_method is set in the entrypoint where psql executes this sql file
-    SET password_encryption = :'pw_method';
+    SET password_encryption = '{{ if ge ($.Values.postgresVersion | int) 12 }}scram-sha-256{{ else }}md5{{ end }}';
+
+    {{- if lt ($.Values.postgresVersion | int) 14 }}
+    SELECT 'CREATE ROLE "poor_mans_pg_read_all_data"' where not exists (select rolname from pg_authid where rolname = 'poor_mans_pg_read_all_data')\gexec
+    {{- else }}
+    DROP ROLE IF EXISTS poor_mans_pg_read_all_data;
+    {{- end }}
 
     {{- range $user, $settings := $users }}
     {{- /* prevent more suffering and pain by forgotten {} in users */}}
     {{- $settings = $settings | default (dict) }}
-    do $$ begin
-      if not exists (select from pg_catalog.pg_roles where rolname = '{{ $user }}') then
-        CREATE ROLE "{{ $user }}" WITH PASSWORD '%USER_PASSWORD_{{ $user }}%' LOGIN;
-      end if;
-    end $$;
+    SELECT 'CREATE ROLE "{{ $user }}" WITH PASSWORD ''%USER_PASSWORD_{{ $user | replace "-" "_" }}%'' LOGIN' where not exists (select rolname from pg_authid where rolname = '{{ $user }}')\gexec
+    {{- /* update password in case it changed or the password hashing format changed */}}
+    ALTER USER "{{ $user }}" WITH PASSWORD '%USER_PASSWORD_{{ $user | replace "-" "_" }}%';
 
+    {{- if not (eq $user "backup" "metrics") }}
     -- https://www.postgresql.org/docs/current/ddl-priv.html
-    {{- if $.Values.persistence.createBackupUser }}
     GRANT CREATE,CONNECT,TEMPORARY ON DATABASE "%PGDATABASE%" TO "{{ $user }}";
     GRANT SELECT,INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER ON ALL TABLES IN SCHEMA public TO "{{ $user }}";
     {{- end }}
 
-    {{- if $settings.grant }}
-    {{ $settings.grant }} to "{{ $user }}";
-    {{- end }}
-
-    {{- if $settings.setOwnerOnTable }}
-    SELECT format('ALTER TABLE %I.%I.%I OWNER TO %I;', table_catalog, table_schema, table_name, "{{ $user }}")
-      FROM information_schema.tables
-      WHERE table_schema = '%PGDATABASE%';
+    {{- range $settings.grant }}
+    {{ . }} to "{{ $user }}";
     {{- end }}
 
     {{- if eq $user "backup" }}
-    GRANT CONNECT ON DATABASE "%PGDATABASE%" to backup;
-    GRANT SELECT ON ALL TABLES IN SCHEMA public TO backup;
-    GRANT SELECT ON ALL SEQUENCES IN SCHEMA public TO backup;
+    GRANT CONNECT ON DATABASE "%PGDATABASE%" TO backup;
+
+    {{- if ge ($.Values.postgresVersion | int) 14 }}
+    GRANT pg_read_all_data to backup;
+    {{- else }}
+    GRANT poor_mans_pg_read_all_data to backup;
+    {{- end }}
     {{- end }}
 
     {{- if eq $user "metrics" }}
     GRANT pg_monitor to metrics;
-    ALTER USER metrics SET SEARCH_PATH TO postgres_exporter,pg_catalog;
+    -- pg_read_all_data is required for custom metrics
+    {{- if ge ($.Values.postgresVersion | int) 14 }}
+    GRANT pg_read_all_data to metrics;
+    {{- else }}
+    GRANT poor_mans_pg_read_all_data to metrics;
     {{- end }}
+    {{- end }}
+    {{- end }}
+
+    ALTER SCHEMA public OWNER TO "{{ .Values.tableOwner | required ".Values.tableOwner must be set to one user!" }}";
+    ALTER DATABASE "%PGDATABASE%" OWNER TO "{{ .Values.tableOwner }}";
+    SELECT format('ALTER TABLE %I.%I.%I OWNER TO %I;', table_catalog, table_schema, table_name, '{{ .Values.tableOwner }}')
+      FROM information_schema.tables WHERE table_schema = 'public'\gexec
+
+    {{- if ge ($.Values.postgresVersion | int) 14 | not }}
+    GRANT SELECT ON ALL TABLES IN SCHEMA public TO poor_mans_pg_read_all_data;
+    SELECT format('GRANT select ON %I.%I.%I TO %I;', table_catalog, table_schema, table_name, 'poor_mans_pg_read_all_data')
+      FROM information_schema.tables WHERE table_schema = 'public'\gexec
+    SELECT format('GRANT select ON %I.%I.%I TO %I;', sequence_catalog, sequence_schema, sequence_name, 'poor_mans_pg_read_all_data')
+      FROM information_schema.sequences WHERE sequence_schema = 'public'\gexec
     {{- end }}
 
     {{ .Values.sqlOnStartup }}

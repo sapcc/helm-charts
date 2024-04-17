@@ -1,0 +1,17 @@
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: GkDeprecatedApiVersion
+metadata:
+  name: deprecatedapiversion-k8s1.32
+  annotations:
+    {{- include "sources" (tuple "deprecated-api-version" "deprecated-api-version-k8s1.32") | indent 4 }}
+    {{- include "docstring" (tuple $ "GkDeprecatedApiVersion") | indent 4 }}
+  labels:
+    severity: 'warning'
+spec:
+  enforcementAction: dryrun # set to 'deny' to enforce
+  match: {{ include "match_active_helm_releases" . | indent 4 }}
+  parameters:
+    helmManifestParserURL: {{ quote .Values.helm_manifest_parser_url }}
+    kubernetesVersion: '1.32'
+    apiVersions:
+      - flowcontrol.apiserver.k8s.io/v1beta3

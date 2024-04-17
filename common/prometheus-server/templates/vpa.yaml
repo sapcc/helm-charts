@@ -8,24 +8,21 @@ metadata:
   namespace: {{ $.Release.Namespace }}
 spec:
   targetRef:
-    apiVersion: apps/v1
-    kind: StatefulSet
-    name: prometheus-{{ include "prometheus.name" (list $name $root) }}
+    apiVersion: monitoring.coreos.com/v1
+    kind: Prometheus
+    name: {{ include "prometheus.name" (list $name $root) }}
   updatePolicy:
     updateMode: {{ default "Off" $.Values.vpaUpdateMode | quote }}
+    minReplicas: 1
   resourcePolicy:
     containerPolicies:
-      - containerName: 'prometheus'
+{{- range $_, $vpa := $.Values.vpaResources }}
+      - containerName: {{ $vpa.containerName }}
         controlledValues: RequestsOnly
         controlledResources:
           - cpu
           - memory
-{{- if and $.Values.resources $.Values.resources.requests }}
-        minAllowed:
-{{ toYaml $.Values.resources.requests | indent 10 }}
-{{- end }}
-{{- if and $.Values.resources $.Values.resources.limits }}
         maxAllowed:
-{{ toYaml $.Values.resources.limits | indent 10 }}
+{{ toYaml $vpa.maxAllowed | indent 10 }}
 {{- end }}
 {{- end }}

@@ -8,6 +8,10 @@ metadata:
     system: openstack
     type: backend
     component: designate
+  {{- if .Values.vpa.set_main_container }}
+  annotations:
+    vpa-butler.cloud.sap/main-container: designate-producer
+  {{- end }}
 spec:
   replicas: {{ .Values.pod.replicas.producer }}
   revisionHistoryLimit: {{ .Values.pod.lifecycle.upgrades.deployments.revision_history }}
@@ -26,8 +30,10 @@ spec:
       labels:
         app: designate-producer
       annotations:
+        kubectl.kubernetes.io/default-container: designate-producer
         configmap-etc-hash: {{ include (print $.Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
         configmap-bin-hash: {{ include (print $.Template.BasePath "/bin-configmap.yaml") . | sha256sum }}
+        secrets-hash: {{ include (print $.Template.BasePath "/secrets.yaml") . | sha256sum }}
         {{- if .Values.proxysql.mode }}
         prometheus.io/scrape: "true"
         prometheus.io/targets: {{ required ".Values.metrics.prometheus missing" .Values.metrics.prometheus | quote }}
@@ -59,7 +65,7 @@ spec:
             - name: DEPENDENCY_SERVICE
 {{- if .Values.percona_cluster.enabled }}
               value: "{{ .Release.Name }}-percona-pxc,{{ .Release.Name }}-rabbitmq,{{ .Release.Name }}-memcached"
-{{- else if .Values.percona_cluster.enabled }}
+{{- else if .Values.rabbitmq_cluster.enabled }}
               value: "{{ .Release.Name }}-mariadb,{{ .Release.Name }}-rabbitmq-cluster,{{ .Release.Name }}-memcached"
 {{- else }}
               value: "{{ .Release.Name }}-mariadb,{{ .Release.Name }}-rabbitmq,{{ .Release.Name }}-memcached"
@@ -73,6 +79,21 @@ spec:
                   name: sentry
                   key: {{ .Release.Name }}.DSN.python
             {{- end }}
+          livenessProbe:
+            exec:
+              command:
+              - bash
+              - -c
+{{- if .Values.global_setup }}
+              - "set -e; nc -zvw3 designate-global-percona-pxc 3306; nc -zvw3 designate-global-memcached 11211"
+{{- else }}
+              - "set -e; nc -zvw3 designate-mariadb 3306; nc -zvw3 designate-memcached 11211"
+{{- end }}
+            failureThreshold: 3
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 5
           volumeMounts:
             - mountPath: /designate-etc
               name: designate-etc
@@ -83,8 +104,19 @@ spec:
         {{- include "utils.proxysql.container" . | indent 8 }}
       volumes:
         - name: designate-etc
-          configMap:
-            name: designate-etc
+          projected:
+            sources:
+            - configMap:
+                name: designate-etc
+            - secret:
+                name: designate-secrets
+                items:
+                  - key: secrets.conf
+                    path: secrets.conf
+{{- range $rndc := .Values.rndc_keys }}
+                  - key: {{ $rndc.name }}.key
+                    path: {{ $rndc.name }}.key
+{{- end }}
         - name: container-init
           configMap:
             name: designate-bin

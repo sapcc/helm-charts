@@ -1,3 +1,7 @@
+## 3.0.3
+
+* adding AM health check alerts (observability issue #44)
+
 ## 3.0.2
 
 * make version for operator customizable 

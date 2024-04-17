@@ -14,8 +14,7 @@ global:
   metrics_port: 9102
   domain_seeds:
     skip_hcm_domain: false
-
-  linkerd_requested: false
+  linkerd_requested: true
 
 loci:
   imageNamespace: monsoon
@@ -165,6 +164,7 @@ mysql_metrics:
         - "id"
         - "share_instance_id"
         - "status"
+        - "snapmirror"
       name: openstack_manila_shares_size_gauge
       query: |
         SELECT
@@ -175,10 +175,12 @@ mysql_metrics:
           shares.id,
           share_instances.id AS share_instance_id,
           share_instances.status,
+          coalesce(share_metadata.value, 'N/A') AS snapmirror,
           SUM(size) size_gauge
         FROM shares
         JOIN share_instances ON shares.id=share_instances.share_id
         JOIN availability_zones ON share_instances.availability_zone_id=availability_zones.id
+        LEFT JOIN share_metadata ON shares.id=share_metadata.share_id AND share_metadata.key='snapmirror'
         WHERE share_instances.deleted = 'False'
         AND share_instances.replica_state='active'
         GROUP BY
@@ -605,7 +607,7 @@ mariadb:
   query_cache_size: "1M"
   query_cache_type: "1"
   name: manila
-  initdb_configmap: manila-initdb
+  initdb_secret: true
   databases:
   - manila
   users:
@@ -643,17 +645,25 @@ mariadb:
 postgresql:
   enabled: false
 
+utils:
+  trust_bundle:
+    enabled: true
+
 rabbitmq:
   name: manila
   alerts:
+    enabled: false
     rabbit_queue_length: 10
     support_group: compute-storage-api
   persistence:
-    enabled: false
+    enabled: true
   metrics:
     enabled: true
     sidecar:
       enabled: false
+  enableDetailedMetrics: false
+  enablePerObjectMetrics: false
+
 sentry:
   enabled: true
 seeds:

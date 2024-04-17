@@ -25,10 +25,15 @@ spec:
       labels:
         app.kubernetes.io/name: octavia-worker-{{ $name }}
         app.kubernetes.io/instance: {{ .Release.Name }}
-        f5-device-model: {{ $v.model }} # used by Limes for capacity discovery (via Prometheus metric "kube_pod_labels")
+        # Labels used by Limes for capacity discovery (via Prometheus metric "kube_pod_labels")
+        f5-device-model: {{ $v.model }}
+        # AZ value "any" corresponds to the enum symbol used by Limes: https://pkg.go.dev/github.com/sapcc/go-api-declarations/limes#AvailabilityZone
+        availability-zone: {{ $v.availability_zone | default "any" }}
       annotations:
         configmap-etc-hash: {{ include (print $.Template.BasePath "/octavia-etc-configmap.yaml") . | sha256sum }}
         configmap-worker-hash: {{ include (print $.Template.BasePath "/octavia-worker-configmap.yaml") . | sha256sum }}
+        secrets-hash: {{ include (print $.Template.BasePath "/secrets.yaml") . | sha256sum }}
+        secrets-worker-hash: {{ include (print $.Template.BasePath "/secrets-worker.yaml") . | sha256sum }}
         prometheus.io/scrape: "true"
         prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
         {{- include "utils.linkerd.pod_and_service_annotation" . | indent 8 }}
@@ -67,7 +72,7 @@ spec:
             {{- include "utils.trust_bundle.volume_mount" . | indent 12 }}
           env:
             - name: COMMAND
-              value: "octavia-worker --config-file /etc/octavia/octavia.conf --config-file /etc/octavia/octavia-worker.conf"
+              value: "octavia-worker --config-file /etc/octavia/octavia.conf --config-file /etc/octavia/octavia.conf.d/secrets.conf --config-file /etc/octavia/octavia-worker.conf --config-file /etc/octavia/octavia-worker-secret.conf"
             - name: DEPENDENCY_JOBS
               value: octavia-migration
             - name: NAMESPACE
@@ -104,7 +109,7 @@ spec:
             {{- include "utils.trust_bundle.volume_mount" . | indent 12 }}
           env:
             - name: COMMAND
-              value: "octavia-driver-agent --config-file /etc/octavia/octavia.conf"
+              value: "octavia-driver-agent --config-file /etc/octavia/octavia.conf --config-file /etc/octavia/octavia.conf.d/secrets.conf"
             - name: DEPENDENCY_JOBS
               value: octavia-migration
             - name: NAMESPACE
@@ -130,9 +135,16 @@ spec:
               mountPath: /etc/octavia/octavia.conf
               subPath: octavia.conf
               readOnly: true
+            - name: octavia-etc-confd
+              mountPath: /etc/octavia/octavia.conf.d
+              readOnly: true
             - name: octavia-etc-worker
               mountPath: /etc/octavia/octavia-worker.conf
               subPath: octavia-worker.conf
+              readOnly: true
+            - name: octavia-etc-worker-secret
+              mountPath: /etc/octavia/octavia-worker-secret.conf
+              subPath: secrets-worker.conf
               readOnly: true
             - name: octavia-etc
               mountPath: /etc/octavia/logging.ini
@@ -142,7 +154,7 @@ spec:
             {{- include "utils.trust_bundle.volume_mount" . | indent 12 }}
           env:
             - name: COMMAND
-              value: "octavia-f5-status-manager --config-file /etc/octavia/octavia.conf --config-file /etc/octavia/octavia-worker.conf"
+              value: "octavia-f5-status-manager --config-file /etc/octavia/octavia.conf --config-file /etc/octavia/octavia.conf.d/secrets.conf --config-file /etc/octavia/octavia-worker.conf --config-file /etc/octavia/octavia-worker-secret.conf"
             - name: DEPENDENCY_JOBS
               value: octavia-migration
             - name: NAMESPACE
@@ -165,9 +177,15 @@ spec:
         - name: octavia-etc
           configMap:
             name: octavia-etc
+        - name: octavia-etc-confd
+          secret:
+            secretName: {{ .Release.Name }}-secrets
         - name: octavia-etc-worker
           configMap:
             name: octavia-etc-{{ $name }}
+        - name: octavia-etc-worker-secret
+          secret:
+            secretName: {{ .Release.Name }}-secrets-{{ $name }}
         - name: octavia-var
           emptyDir: {}
         {{- include "utils.proxysql.volumes" . | indent 8 }}

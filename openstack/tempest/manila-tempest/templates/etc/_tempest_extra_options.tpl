@@ -1,4 +1,3 @@
-
 [DEFAULT]
 debug = True
 use_stderr = True
@@ -34,14 +33,14 @@ max_api_microversion = 2.65
 suppress_errors_in_cleanup = True
 enable_ip_rules_for_protocols = nfs
 enable_protocols = nfs
-endpoint_type = internal
-v3_endpoint_type = internal
+endpoint_type = public
+v3_endpoint_type = public
 region = {{ .Values.global.region }}
 
 [identity]
 uri_v3 = http://{{ if .Values.global.clusterDomain }}keystone.{{.Release.Namespace}}.svc.{{.Values.global.clusterDomain}}{{ else }}keystone.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}{{end}}:5000/v3
-endpoint_type = internal
-v3_endpoint_type = internal
+endpoint_type = public
+v3_endpoint_type = public
 region = {{ .Values.global.region }}
 default_domain_id = {{ .Values.tempest_common.domainId }}
 admin_domain_scope = True

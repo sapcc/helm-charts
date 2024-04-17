@@ -8,6 +8,10 @@ metadata:
     application: designate
     type: api
     component: api
+  {{- if .Values.vpa.set_main_container }}
+  annotations:
+    vpa-butler.cloud.sap/main-container: designate-api
+  {{- end }}
 spec:
   replicas: {{ .Values.pod.replicas.api }}
   revisionHistoryLimit: {{ .Values.pod.lifecycle.upgrades.deployments.revision_history }}
@@ -26,8 +30,10 @@ spec:
       labels:
         app: {{ .Release.Name }}-api
       annotations:
+        kubectl.kubernetes.io/default-container: designate-api
         configmap-etc-hash: {{ include (print $.Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
         configmap-bin-hash: {{ include (print $.Template.BasePath "/bin-configmap.yaml") . | sha256sum }}
+        secrets-hash: {{ include (print $.Template.BasePath "/secrets.yaml") . | sha256sum }}
         {{- if .Values.proxysql.mode }}
         prometheus.io/scrape: "true"
         prometheus.io/targets: {{ required ".Values.metrics.prometheus missing" .Values.metrics.prometheus | quote }}
@@ -121,6 +127,11 @@ spec:
               name: container-init
             - name: wsgi-designate
               mountPath: /var/www/cgi-bin/designate
+{{- if .Values.global_setup }}
+            - mountPath: /var/www/html/test.html
+              name: designate-etc
+              subPath: test.html
+{{- end }}
             - name: designate-etc-wsgi
               mountPath: /etc/apache2/conf-enabled/wsgi-designate.conf
               subPath: wsgi-designate.conf
@@ -145,8 +156,19 @@ spec:
  {{- include "jaeger_agent_sidecar" . | indent 8 }}
       volumes:
         - name: designate-etc
-          configMap:
-            name: designate-etc
+          projected:
+            sources:
+            - configMap:
+                name: designate-etc
+            - secret:
+                name: designate-secrets
+                items:
+                  - key: secrets.conf
+                    path: secrets.conf
+{{- range $rndc := .Values.rndc_keys }}
+                  - key: {{ $rndc.name }}.key
+                    path: {{ $rndc.name }}.key
+{{- end }}
         - name: designate-etc-wsgi
           configMap:
             name: designate-etc-wsgi

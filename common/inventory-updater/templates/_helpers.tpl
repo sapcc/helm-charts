@@ -6,15 +6,6 @@ Expand the name of the chart.
 {{- default .Chart.Name .Values.nameOverride | trunc 63 | trimSuffix "-" -}}
 {{- end -}}
 
-{{- define "lenovo_console" -}}
-{{- if .Values.updater.lenovo_console -}}
-{{- .Values.updater.lenovo_console -}}
-{{- else -}}
-{{- printf "lxca.%s.cloud.sap" .Values.global.region -}}
-{{- end -}}
-{{- end -}}
-
-
 {{/*
 Create a default fully qualified app name.
 We truncate at 63 chars because some Kubernetes name fields are limited to this (by the DNS naming spec).

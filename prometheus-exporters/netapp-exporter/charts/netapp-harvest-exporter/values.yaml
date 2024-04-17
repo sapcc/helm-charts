@@ -1,31 +1,46 @@
 apps:
-  manila:
-    workerCount: 10
+  apod:
+    enabled: false
+    objects:
+      Volume: volume.yaml
   cinder:
-    workerCount: 10
+    enabled: false
+    objects:
+      Lun: lun.yaml
+      ISCSISession: iscsi_session.yaml
+      Volume: volume.yaml
+  manila:
+    enabled: false
+    objects:
+      SnapMirror: snapmirror.yaml
+      Volume: custom_volume.yaml
 
 harvest:
   image:
     repository: rahulguptajss/harvest
-    tag: 22.11.1-1
+    tag: 23.11.0-1
   loglevel: 2
-  promPort: 13000
+  ports:
+    liveness: 8080
+    metrics: 13000
   resources:
     requests:
-      cpu: 200m
+      cpu: 100m
       memory: 128Mi
     limits:
-      cpu: 400m
-      memory: 256Mi
+      cpu: 500m
+      memory: 512Mi
 
 netappsd:
   image:
     repository: netappsd
-    tag: 20230905101743-go_1.20-e37af0a
+    tag: v2-20240411084029
+  ports:
+    metrics: 8000
   resources:
-    limits:
-      cpu: 400m
-      memory: 256Mi
     requests:
-      cpu: 200m
+      cpu: 100m
       memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi

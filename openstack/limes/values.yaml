@@ -24,6 +24,7 @@ limes:
   #
   #   cluster_id:
   #     auth_password: swordfish
+  #     rabbitmq_user: hare
   #     rabbitmq_password: blowfish
   passwords: DEFINED_IN_VALUES_FILE
 
@@ -52,26 +53,36 @@ limes:
   resources:
     enabled: false
 
+# Map with entries being the contents of a Limes quota overrides file.
+# See `LIMES_QUOTA_OVERRIDES_PATH` in <https://github.com/sapcc/limes/blob/master/docs/operators/config.md>
+quota_overrides: {}
+
 postgresql:
-  imageTag: '12.17-20231211122240'
   persistence:
     enabled: true
     size: 10Gi
+  postgresDatabase: limes
+  users:
+    limes: {}
+  tableOwner: limes
 
-  log_min_duration_statement: 250
-  # less than the postgresql chart's default; I want to know early when connections start getting out of hand
-  max_connections: 64
+  config:
+    log_min_duration_statement: 250
+    # less than the postgresql chart's default; I want to know early when connections start getting out of hand
+    max_connections: 64
 
   alerts:
     support_group: containers
 
 pgbackup:
+  isPostgresNG: true
   database:
     name: limes
   alerts:
     support_group: containers
 
 pgmetrics:
+  isPostgresNG: true
   db_name: limes
 
   alerts:
@@ -208,6 +219,25 @@ pgmetrics:
             usage: "LABEL"
             description: "Domain name"
 
+    limes_support_group:
+      query: >
+        SELECT 1 AS mapping, type AS service, CASE
+          WHEN type IN ('compute', 'sharev2', 'volumev2')      THEN 'compute-storage-api'
+          WHEN type IN ('network', 'dns', 'endpoint-services') THEN 'network-api'
+          WHEN type IN ('email-aws')                           THEN 'email'
+          WHEN type IN ('object-store')                        THEN 'storage'
+          ELSE 'containers' END AS support_group
+        FROM project_services GROUP BY type
+      metrics:
+        - mapping:
+            usage: "GAUGE"
+            description: "Mapping between Limes service types and support group names"
+        - service:
+            usage: "LABEL"
+            description: "Service type in Limes"
+        - support_group:
+            usage: "LABEL"
+            description: "Support group for alerts"
 
 # Deploy limes Prometheus alerts.
 alerts:

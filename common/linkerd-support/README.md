@@ -58,6 +58,8 @@ metadata:
 
 Use exactly this conditional statement around each such annotation.
 
+Affected pods need to be restarted to get the sidecar webhook injection.
+
 ### Simplified option: This Helm release is the only one in its namespace
 
 If your Helm release is the only one on its namespace, you can annotate the entire namespace instead of each individual pod and service.

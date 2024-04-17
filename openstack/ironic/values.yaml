@@ -34,7 +34,7 @@ kos_conductor: true
 
 cert_robot:
   image_tag: "latest"
-  schedule: "@weekly"
+  schedule: "0 8 * * 1,3,5" # Monday, Wednesday, and Friday at 8:00 (am)
   env:
     issuer:
     designate:
@@ -365,7 +365,9 @@ mariadb:
       - ironic_inspector.nodes
 
   root_password: "AHardPa55w0rd!"
-  initdb_configmap: ironic-mariadb-init
+  initdb_secret: true
+  ccroot_user:
+    enabled: true
   persistence_claim:
     name: db-ironic-pvclaim
 
@@ -439,3 +441,9 @@ alerts:
 utils:
   trust_bundle:
     enabled: true
+
+ironic-exporter:
+  enabled: true
+  notifications: false
+  image:
+    tag: cd8c3866

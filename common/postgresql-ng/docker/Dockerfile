@@ -1,4 +1,4 @@
-FROM debian:12-slim
+FROM debian:stable-slim
 
 # locale installation based on https://github.com/docker-library/postgres/blob/master/16/bookworm/Dockerfile#L49-L59 licensed under MIT
 
@@ -10,9 +10,13 @@ RUN apt-get update \
   && sed -ri '/\/usr\/share\/locale/d' /etc/dpkg/dpkg.cfg.d/docker \
   && ! grep -q '/usr/share/locale' /etc/dpkg/dpkg.cfg.d/docker \
   && apt-get install --no-install-recommends -y \
+    # used to compare verison numbers
+    bc \
     # required for https \
     ca-certificates \
-    # drop privilges easy
+    # create backup via API \
+    curl \
+    # drop privilges easy \
     gosu \
     # required utf-8 encoding \
     locales \
@@ -33,6 +37,7 @@ RUN apt-get update \
   && localedef -i en_US -c -f UTF-8 -A /usr/share/locale/locale.alias en_US.UTF-8 \
   && mkdir -p /sql-on-create.d /sql-on-startup.d /var/lib/postgresql
 
+COPY ./pg_hba.conf /usr/local/share/
 COPY ./entrypoint.sh /usr/local/bin/
 
 ENV LANG en_US.utf8

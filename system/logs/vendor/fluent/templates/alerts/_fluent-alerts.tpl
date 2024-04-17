@@ -15,7 +15,7 @@ groups:
       severity: warning
       support_group: observability
       tier: os
-      playbook: docs/operation/elastic_kibana_issues/elk_logs/fluent-logs-are-missing
+      playbook: 'docs/support/playbook/opensearch/opensearch_logs/container-logs-are-missing'
     annotations:
 {{ if eq .Values.global.clusterType  "scaleout" }}
       description: 'No fluent container logs from  `scaleout` {{`{{ $labels.nodename }}`}} is not shipping any log line. Please check'

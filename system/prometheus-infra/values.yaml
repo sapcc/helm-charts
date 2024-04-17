@@ -20,6 +20,8 @@ global:
     prometheus: infra-frontend
   aggregations:
     prometheus: infra-frontend
+  linkerd_requested: true
+
 # Values for Infrastructure Prometheus Frontend.
 prometheus-infra-frontend:
   name: infra-frontend
@@ -29,6 +31,12 @@ prometheus-infra-frontend:
     enabled: true
     hosts:
       - prometheus-infra.scaleout
+
+  internalIngress:
+    enabled: true
+    hosts:
+      - prometheus-infra-internal.scaleout
+
   persistence:
     enabled: true
     # prom-operator does not support other accessModes than RWO
@@ -42,8 +50,8 @@ prometheus-infra-frontend:
     authentication:
       enabled: false
     hosts:
-      - alertmanager.scaleout.eu-de-1.cloud.sap
-      - alertmanager.scaleout.eu-nl-1.cloud.sap
+      - alertmanager-internal.scaleout.eu-de-1.cloud.sap
+      - alertmanager-internal.scaleout.eu-nl-1.cloud.sap
 
   alerts:
 
@@ -60,6 +68,14 @@ prometheus-infra-frontend:
     requests:
       cpu: 200m
       memory: 16Gi
+
+  vpaUpdateMode: "Auto"
+  vpaResources:
+    prometheus:
+      containerName: "prometheus"
+      maxAllowed:
+        memory: "25Gi"
+
   serviceDiscoveries:
     pods:
       enabled: true

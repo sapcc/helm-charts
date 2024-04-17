@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ironic-config
+  namespace: {{ .Release.Namespace }}
+data:
+  DEPLOY_KERNEL_URL: http://{{ .Values.ironic.externalIP }}:{{ .Values.ironic.ipxePort }}/images/ironic-python-agent.kernel
+  DEPLOY_RAMDISK_URL: http://{{ .Values.ironic.externalIP }}:{{ .Values.ironic.ipxePort }}/images/ironic-python-agent.initramfs
+  HTTP_PORT: "{{ .Values.ironic.ipxePort }}"
+  INSPECTOR_REVERSE_PROXY_SETUP: "false"
+  IRONIC_ENDPOINT: http://{{ .Values.ironic.externalIP }}:{{ .Values.ironic.ironicPort }}/v1/
+  IRONIC_FAST_TRACK: "true"
+  IRONIC_INSPECTOR_ENDPOINT: http://{{ .Values.ironic.externalIP }}:{{ .Values.ironic.inspectorPort }}/v1/
+  IRONIC_INSPECTOR_VLAN_INTERFACES: all
+  IRONIC_KERNEL_PARAMS: console=ttyS0
+  PROVISIONING_INTERFACE: {{ .Values.ironic.provisionInterface }}
+  RESTART_CONTAINER_CERTIFICATE_UPDATED: "false"
+  IRONIC_RAMDISK_SSH_KEY: {{ .Values.ironic.auth.ipaSshKey }}
+  IRONIC_URL_HOST: {{ .Values.ironic.externalIP }}
+  IRONIC_IP: {{ .Values.ironic.externalIP }}
+  IPA_BASEURI: {{ .Values.ironic.ipa.baseUri }} 
+  IPA_BRANCH: {{ .Values.ironic.ipa.branch }}

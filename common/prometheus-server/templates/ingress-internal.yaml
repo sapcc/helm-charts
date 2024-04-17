@@ -25,9 +25,12 @@ metadata:
     ingress.kubernetes.io/auth-tls-verify-client: {{ required "$.Values.internalIngress.authentication.sso.authTLSVerifyClient missing" $.Values.internalIngress.authentication.sso.authTLSVerifyClient | quote }}
     nginx.ingress.kubernetes.io/auth-tls-verify-client: {{ required "$.Values.internalIngress.authentication.sso.authTLSVerifyClient missing" $.Values.internalIngress.authentication.sso.authTLSVerifyClient | quote }}
     {{ end }}
-    {{- if $.Values.internalIngress.annotations }}
+     {{- if $.Values.internalIngress.annotations }}
 {{ toYaml $.Values.internalIngress.annotations | indent 4 }}
     {{ end }}
+    {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+    linkerd.io/inject: enabled
+    {{- end }}
 
 spec:
   {{- if not $.Values.traefik.enabled }}

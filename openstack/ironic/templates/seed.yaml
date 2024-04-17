@@ -8,6 +8,7 @@ spec:
   - monsoon3/domain-cc3test-seed
   - monsoon3/domain-ccadmin-seed
   - monsoon3/domain-bs-seed
+  - monsoon3/domain-btp-fp-seed
   - monsoon3/domain-cis-seed
   - monsoon3/domain-cp-seed
   - monsoon3/domain-fsn-seed
@@ -76,6 +77,7 @@ spec:
       instances_hv_s2_c20_m384: 0
       instances_hv_s2_c26_m384: 0
       instances_hv_s2_c26_m768: 0
+      instances_bm_s2_c26_m768: 0
       instances_hv_s4_c24_m3072: 0
       instances_hv_s4_c24_m6144: 0
       instances_hv_s8_c24_m6144: 0
@@ -86,6 +88,8 @@ spec:
       instances_bm_s2_c32_m1024_v0: 0
       instances_hv_s4_c32_m4096_v0: 0
       instances_bm_s4_c32_m4096_v0: 0
+      instances_bm_s4_c32_m2048_v0: 0
+      instances_hv_s1_c32_m512_v0: 0
 
 ## we decided to count up the flavor ID continously for baremetal
 ## new bm flavors start at 1000 historically and are public (former zh*, zg*; now bm_*, bg_*)
@@ -388,6 +392,22 @@ spec:
       "resources:DISK_GB": "0"
       "resources:VCPU": "0"
 
+  - name: "bm_s2_c26_m768"
+    id: "22024"
+    vcpus: 52
+    ram: 786432
+    disk: 240
+    is_public: true
+    extra_specs:
+      "catalog:description": Baremetal Host 2 sockets, 26 cores, 768GB RAM
+      "capabilities:cpu_arch": "x86_64"
+      "quota:separate": "true"
+      "quota:instance_only": "true"
+      "resources:CUSTOM_BM_S2_C26_M768": "1"
+      "resources:MEMORY_MB": "0"
+      "resources:DISK_GB": "0"
+      "resources:VCPU": "0"
+
   # Cisco UCSC-C240-M4S2
   - name: "hv_s2_c14_m256"
     id: "2025"
@@ -568,11 +588,11 @@ spec:
     disk: 480
     is_public: true
     extra_specs:
-      "catalog:description": GPU Baremetal 2 Socket Sapphire Rapids 5x Nvidia Tesla H100
+      "catalog:description": GPU Baremetal 2 Socket Sapphire Rapids 8x Nvidia Tesla H100
       "capabilities:cpu_arch": "x86_64"
       "quota:separate": "true"
       "quota:instance_only": "true"
-      "resources:CUSTOM_BG_S2_C48_M_V0": "1"
+      "resources:CUSTOM_BG_S2_C48_M1024_V0": "1"
       "resources:MEMORY_MB": "0"
       "resources:DISK_GB": "0"
       "resources:VCPU": "0"
@@ -607,6 +627,41 @@ spec:
       "quota:separate": "true"
       "quota:instance_only": "true"
       "resources:CUSTOM_BM_S4_C32_M4096_V0": "1"
+      "resources:MEMORY_MB": "0"
+      "resources:DISK_GB": "0"
+      "resources:VCPU": "0"
+
+  # New Sapphire Rapids 4S2T only for HDA nto as hypervisor
+  # Therefore only as baremetal flavor and not as hypervisor flavor
+  - name: "bm_s4_c32_m2048_v0"
+    id: "22035"
+    vcpus: 128
+    ram: 2097152
+    disk: 447
+    is_public: true
+    extra_specs:
+      "catalog:description": BareMetal 4 sockets, 32 cores, 2TB RAM, Sapphire Rapids
+      "capabilities:cpu_arch": "x86_64"
+      "quota:separate": "true"
+      "quota:instance_only": "true"
+      "resources:CUSTOM_BM_S4_C32_M2048_V0": "1"
+      "resources:MEMORY_MB": "0"
+      "resources:DISK_GB": "0"
+      "resources:VCPU": "0"
+
+  # New Sapphire Rapids aPOD servers
+  - name: "hv_s1_c32_m512_v0"
+    id: "2036"
+    vcpus: 32
+    ram: 524288
+    disk: 447
+    is_public: false
+    extra_specs:
+      "catalog:description": Hypervisor 1 socket, 32 cores, 512GB RAM, Sapphire Rapids
+      "capabilities:cpu_arch": "x86_64"
+      "quota:separate": "true"
+      "quota:instance_only": "true"
+      "resources:CUSTOM_HV_S1_C32_M512_V0": "1"
       "resources:MEMORY_MB": "0"
       "resources:DISK_GB": "0"
       "resources:VCPU": "0"
@@ -800,6 +855,34 @@ spec:
       - project: service_desk
         role: baremetal_admin
       - domain: bs
+        role: baremetal_viewer
+        inherited: true
+
+  - name: btp_fp
+    groups:
+    - name: BTP_FP_API_SUPPORT
+      role_assignments:
+      - domain: btp_fp
+        role: baremetal_admin
+        inherited: true
+    - name: BTP_FP_COMPUTE_SUPPORT
+      role_assignments:
+      - domain: btp_fp
+        role: baremetal_admin
+        inherited: true
+    - name: BTP_FP_NETWORK_SUPPORT
+      role_assignments:
+      - domain: btp_fp
+        role: baremetal_viewer
+        inherited: true
+    - name: BTP_FP_STORAGE_SUPPORT
+      role_assignments:
+      - domain: btp_fp
+        role: baremetal_viewer
+        inherited: true
+    - name: BTP_FP_SERVICE_DESK
+      role_assignments:
+      - domain: btp_fp
         role: baremetal_viewer
         inherited: true
 

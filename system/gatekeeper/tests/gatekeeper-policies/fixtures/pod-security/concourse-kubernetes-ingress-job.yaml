@@ -1,0 +1,32 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  annotations:
+    meta.helm.sh/release-name: concourse-ci3
+    meta.helm.sh/release-namespace: concourse
+  labels:
+    app.kubernetes.io/managed-by: Helm
+  name: concourse-ci3-kubernetes-ingress-crdjob-1 # NOTE: the number at the end is {{ $.Release.Revision }}
+  namespace: concourse
+spec:
+  template:
+    spec:
+      containers:
+        - name: crd
+          image: "keppel.global.cloud.sap/ccloud-dockerhub-mirror/haproxytech/kubernetes-ingress:1.10.10"
+          securityContext:
+            runAsNonRoot: true
+            runAsUser:  1000
+            runAsGroup: 1000
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+              add:
+                - NET_BIND_SERVICE
+            seccompProfile:
+              type: RuntimeDefault
+      securityContext:
+        runAsNonRoot: true
+        runAsUser:  1000
+        runAsGroup: 1000

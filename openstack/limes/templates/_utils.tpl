@@ -20,7 +20,10 @@
       name: limes-secret
       key: rabbitmq_password
 - name: LIMES_AUDIT_RABBITMQ_USERNAME
-  value: "rabbitmq"
+  valueFrom:
+    secretKeyRef:
+      name: limes-secret
+      key: rabbitmq_username
 {{- end }}
 - name: LIMES_AUTHORITATIVE
   value: "true"
@@ -28,11 +31,13 @@
   value: "/etc/limes/constraints-ccloud.yaml"
 - name: LIMES_DEBUG
   value: '0'
+- name: LIMES_DB_USERNAME
+  value: 'limes'
 - name: LIMES_DB_PASSWORD
   valueFrom:
     secretKeyRef:
-      name: limes-secret
-      key: postgres_password
+      name: '{{ $.Release.Name }}-pguser-limes'
+      key: 'postgres-password'
 - name: LIMES_DB_HOSTNAME
   value: "limes-postgresql.{{ .Release.Namespace }}.svc"
 - name: LIMES_DB_CONNECTION_OPTIONS
@@ -41,6 +46,8 @@
   value: "true"
 - name: LIMES_COLLECTOR_DATA_METRICS_SKIP_ZERO
   value: "true"
+- name: LIMES_QUOTA_OVERRIDES_PATH
+  value: "/etc/limes/quota-overrides.yaml"
 - name: OS_AUTH_URL
   value: "http://keystone.{{ $.Values.global.keystoneNamespace }}.svc.kubernetes.{{ $.Values.global.region }}.{{ $.Values.global.tld }}:5000/v3"
 - name: OS_INTERFACE

@@ -42,12 +42,16 @@ spec:
         - name: DATA_SOURCE_URI
           value: {{ $db_host }}:5432/{{ $db_name }}?sslmode=disable&application_name={{ .Release.Name }}-pgmetrics
         - name: DATA_SOURCE_USER
+          {{- if .Values.isPostgresNG }}
+          value: metrics
+          {{- else }}
           value: postgres
+          {{- end }}
         - name: DATA_SOURCE_PASS
           valueFrom:
             secretKeyRef:
               {{- if .Values.isPostgresNG }}
-              name: {{ .Release.Name }}-pguser-postgres
+              name: {{ .Release.Name }}-pguser-metrics
               {{- else }}
               name: {{ .Release.Name }}-pgmetrics
               {{- end }}
@@ -69,9 +73,11 @@ spec:
           limits:
             cpu:    {{ quote .Values.resources.limits.cpu }}
             memory: {{ quote .Values.resources.limits.memory }}
+          {{- if not (.Values.global.region | regexMatch "^qa-de-[2-6]$") }}
           requests:
             cpu:    {{ quote .Values.resources.requests.cpu }}
             memory: {{ quote .Values.resources.requests.memory }}
+          {{- end }}
       volumes:
       - name: custom-metrics
         configMap:

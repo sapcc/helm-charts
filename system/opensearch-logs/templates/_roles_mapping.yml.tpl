@@ -27,6 +27,11 @@ syslog:
   users:
   - "syslog"
 
+greenhouse:
+  reserved: false
+  users:
+  - "greenhouse"
+
 jump:
   reserved: false
   users:
@@ -36,6 +41,11 @@ logstash:
   reserved: false
   backend_roles:
   - "logstash"
+
+storage:
+  reserved: false
+  backend_roles:
+  - "storage"
 
 jaeger:
   reserved: false
@@ -79,6 +89,8 @@ promrole:
   reserved: false
   users:
   - "promuser"
+  backend_roles:
+  - CC_IAS_OPERATIONS_UI_KIBANA_SUPPORT
 
 jupyterhub:
   reserved: false

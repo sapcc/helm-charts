@@ -1,9 +1,16 @@
+global:
+  linkerd_requested: true
+
+linkerd-support:
+  annotate_namespace: true
+
 owner-info:
   support-group: observability
   service: jupyter
   maintainers:
   - "Timo Johner"
   helm-chart-url: "https://github.com/sapcc/helm-charts/tree/master/system/jupyterhub"
+
 jupyterhub_cron:
   image:
     name: notebook-cron
@@ -30,15 +37,15 @@ jupyterhub:
       Authenticator:
         auto_login: true
     authenticatePrometheus: false
-
-
+    containerSecurityContext:
+      allowPrivilegeEscalation: false
   singleuser:
     cloudMetadata:
       blockWithIptables: false
     networkPolicy:
       enabled: false
-
-
+    allowPrivilegeEscalation: false
+    startTimeout: 600
   cull:
     enabled: true
     users: true # --cull-users

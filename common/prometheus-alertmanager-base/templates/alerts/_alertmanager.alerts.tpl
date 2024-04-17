@@ -69,3 +69,29 @@ groups:
     annotations:
       description: 'Alertmanager {{`{{ $labels.alertmanager }}`}} receives invalid alerts and discards them. Check the Alertmanagers log for details.'
       summary: Alertmanager receives invalid alerts.
+
+  - alert: AlertmanagerClusterHealthDegraded
+    expr: alertmanager_cluster_health_score{alertmanager="{{ include "alertmanager.name" . }}"} != 0
+    for: 15m
+    labels:
+      context: availability
+      service: alerting
+      severity: info
+      meta: 'Alertmanager {{`{{ $labels.alertmanager }}`}} cluster health is degraded.'
+      support_group: {{ include "alerts.support_group" . }}
+    annotations:
+      description: 'Alertmanager {{`{{ $labels.alertmanager }}`}} cluster has problems. Check AM logs.'
+      summary: Alertmanager cluster health degraded.
+
+  - alert: AlertmanagerPeerReconnectFailed
+    expr: rate(alertmanager_cluster_reconnections_failed_total{alertmanager="{{ include "alertmanager.name" . }}"}[5m]) != 0
+    for: 15m
+    labels:
+      context: availability
+      service: alerting
+      severity: info
+      meta: 'Alertmanager {{`{{ $labels.alertmanager }}`}} failed to reconnect to peer.'
+      support_group: {{ include "alerts.support_group" . }}
+    annotations:
+      description: 'Alertmanager {{`{{ $labels.alertmanager }}`}} failed to reconnect to its peer. Check AM logs.'
+      summary: Alertmanager failed to reconnect to peer. 

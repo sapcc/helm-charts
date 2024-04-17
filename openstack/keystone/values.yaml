@@ -278,7 +278,7 @@ dbName: keystone
 mariadb:
   enabled: true
   name: keystone
-  initdb_configmap: keystone-initdb
+  initdb_secret: keystone-initdb
   use_alternate_registry: true
   alerts:
     support_group: identity
@@ -304,6 +304,11 @@ mariadb:
     # The maximum available capacity is split evenly across containers specified in the Deployment, StatefulSet or DaemonSet to derive the upper recommendation bound. This does not work out for pods with a single resource-hungry container with several sidecar containers
     # Annotate the Deployment, StatefulSet or DaemonSet with vpa-butler.cloud.sap/main-container=$MAIN_CONTAINER. That will distribute 75% of the maximum available capacity to the main container and the rest evenly across all others
     set_main_container: true
+
+# MariaDB Galera cluster as database backend
+# mariadb.enabled has to be false if Galera is enabled
+mariadb_galera:
+  enabled: false
 
 mysql_metrics:
   enabled: true
@@ -516,3 +521,7 @@ sapcc_rate_limit:
   openstack: {}
   resources: {}
   podAnnotations: {}
+
+prodel:
+  # This should be an endpoint implementing oslo.policy HTTPCheck
+  url: "http://prodel.prodel.svc/check-delete_project/%(project_id)s"

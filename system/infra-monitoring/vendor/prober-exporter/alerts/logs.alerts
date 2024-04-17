@@ -1,30 +1,31 @@
 groups:
-  - name: elk
+  - name: OpenSearchLogsProbes
     rules:
-      - alert: ELKLogsDashboardDown
-        expr: probe_success{target=~"https://logs.+"} == 0
+      - alert: OpenSearchLogsDashboardDown
+        expr: 'probe_success{target=~"https://logs.+"} == 0'
         for: 15m
         labels:
-          severity: info
+          severity: warning
           tier: os
-          service: elk
-          meta: "ELK logs dashboard down"
-          dashboard: elasticsearch?var-cluster=elkelasticsearch
-          playbook: docs/support/playbook/elastic_kibana_issues
+          service: logs
+          support_group: observability
+          meta: "OpenSearch logs dashboard down"
+          dashboard: opensearch-logshipping
+          playbook: 'docs/support/playbook/opensearch/generic'
         annotations:
-          description: "ELK is down"
-          summary: "ELK is down"
-
-      - alert: ELKElasticsearchDown
-        expr: probe_success{target=~"https://elk-elasticsearch.+"} == 0
+          description: "OpenSearchLogs dashboard is down"
+          summary: "OpenSearchLogs dashboard is down"
+      - alert: OpenSearchLogsClientEndpointDown
+        expr: 'probe_success{target=~"https://opensearch-logs-client.+"} == 0'
         for: 15m
         labels:
-          severity: info
+          severity: warning
           tier: os
-          service: elk
-          meta: "ELK elasticsearch cluster down"
-          dashboard: elasticsearch?var-cluster=elkelasticsearch
-          playbook: docs/support/playbook/elastic_kibana_issues
+          service: logs
+          support_group: observability
+          meta: "OpenSearch-Logs client nodes down"
+          dashboard: opensearch-logshipping
+          playbook: 'docs/support/playbook/opensearch/generic'
         annotations:
-          description: "ELK elasticsearch is down"
-          summary: "ELK elasticsearch is down"
+          description: "OpenSearch Logs client nodes are down"
+          summary: "OpenSearch Logs client nodes are down"

@@ -1,0 +1,26 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: {{ .Release.Name }}-rabbitmq
+  labels:
+    app: {{ .Release.Name }}-rabbitmq
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+    type: rabbitmq
+    component: {{ .Release.Name }}
+    system: openstack
+    prometheus: {{ required ".Values.alerts.prometheus.openstack missing" .Values.alerts.prometheus.openstack }}
+spec:
+  podMetricsEndpoints:
+    - honorLabels: true
+      port: metrics
+      path: /metrics/detailed   # see https://www.rabbitmq.com/docs/prometheus#detailed-endpoint
+      params:
+         family: [queue_coarse_metrics]
+  namespaceSelector:
+    matchNames:
+        - {{ .Release.Namespace }}
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}-rabbitmq

@@ -55,14 +55,26 @@ spec:
             timeoutSeconds: 30
             periodSeconds: 60
           env:
+          - name: NEUTRON_DB_USER
+            valueFrom:
+              secretKeyRef:
+                name: neutron-nsxv3-logstash-secret
+                key: NEUTRON_DB_USER
+          - name: NEUTRON_DB_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: neutron-nsxv3-logstash-secret
+                key: NEUTRON_DB_PASSWORD
           - name: XPACK_MONITORING_ENABLED
             value: "false"
+          {{- include "utils.trust_bundle.env" . | indent 10 }}
           ports:
           - containerPort: 5514
           volumeMounts:
           - mountPath: /usr/share/logstash/pipeline/logstash.conf
             subPath: pipeline.conf
             name: logger-config
+          {{- include "utils.trust_bundle.volume_mount" . | indent 10 }}
         {{- if .Values.logger.persistence.enabled }}
           - name: logstash-data
             mountPath: /data
@@ -93,4 +105,5 @@ spec:
           persistentVolumeClaim:
             claimName: neutron-nsxv3-logstash
         {{- end }}
+        {{- include "utils.trust_bundle.volumes" . | indent 8 }}
 {{- end -}}

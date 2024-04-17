@@ -13,12 +13,14 @@ kube-fip-controller:
 
 ccauth:
   enabled: false
+  image:
+    repository: keppel.global.cloud.sap/ccloud/ccauth
 
 cert-manager:
   installCRDs: true
   ingressShim:
     defaultIssuerName: digicert-issuer
-    defaultIssuerKind: DigicertIssuer
+    defaultIssuerKind: ClusterIssuer
     defaultIssuerGroup: certmanager.cloud.sap
   prometheus:
     enabled: true
@@ -27,8 +29,9 @@ cert-manager:
   extraArgs:
     - --enable-certificate-owner-ref=true
 
-digicert-issuer:
-  enableLeaderElection: "false"
+endpoint-watcher:
+  image:
+    repository: keppel.global.cloud.sap/ccloud/endpoint-watcher
 
 ingress-nginx-internet:
   enabled: false
@@ -68,3 +71,12 @@ vpa-butler:
 
 vertical-pod-autoscaler:
   enabled: true
+
+secrets-injector:
+  enabled: false
+
+reloader:
+  enabled: false
+  image:
+    name: keppel.global.cloud.sap/ccloud-ghcr-io-mirror/stakater/reloader
+    tag: v1.0.72

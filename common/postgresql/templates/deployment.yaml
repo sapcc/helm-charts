@@ -8,7 +8,7 @@ metadata:
   name: {{ template "fullname" . }}
   labels:
     app: {{ template "fullname" . }}
-    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}"
     release: "{{ .Release.Name }}"
     heritage: "{{ .Release.Service }}"
 spec:
@@ -24,6 +24,7 @@ spec:
       labels:
         app: {{ template "fullname" . }}
         component: "{{ .Values.postgresDatabase }}"
+        name: {{ template "fullname" . }} # just to make the ci pipeline easier, not actually used anywhere
         type: database
         {{- if .Values.alerts.enabled }}
         alert-tier: {{ required ".Values.alerts.tier missing" .Values.alerts.tier }}

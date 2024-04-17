@@ -1,0 +1,75 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    apiserver: "true"
+    k8s-app: calico-apiserver
+  name: calico-apiserver
+  namespace: {{ .Values.namespace }}
+spec:
+  replicas: {{ .Values.replicas }}
+  selector:
+    matchLabels:
+      apiserver: "true"
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        apiserver: "true"
+        k8s-app: calico-apiserver
+      name: calico-apiserver
+      namespace: {{ .Values.namespace }}
+    spec:
+      containers:
+      - args:
+        - --secure-port=5443
+        - -v=5
+        env:
+        - name: DATASTORE_TYPE
+          value: kubernetes
+        image: "{{ required ".Values.global.dockerHubMirrorAlternateRegion is missing" $.Values.global.dockerHubMirrorAlternateRegion }}/{{ $.Values.images.apiserver.image }}:{{ $.Values.images.apiserver.tag }}"
+        livenessProbe:
+          httpGet:
+            path: /version
+            port: 5443
+            scheme: HTTPS
+          initialDelaySeconds: 90
+          periodSeconds: 10
+        name: calico-apiserver
+        readinessProbe:
+          exec:
+            command:
+            - /code/filecheck
+          failureThreshold: 5
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        securityContext:
+          privileged: false
+          runAsUser: 0
+        volumeMounts:
+        - mountPath: /code/apiserver.local.config/certificates
+          name: calico-apiserver-certs
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      serviceAccount: calico-apiserver
+      serviceAccountName: calico-apiserver
+      hostNetwork: true
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+      {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+      {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- if .Values.tolerations }}
+      tolerations:
+      {{- with .Values.tolerations }}
+      {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- end }}
+      volumes:
+      - name: calico-apiserver-certs
+        secret:
+          secretName: calico-apiserver-certs

@@ -21,15 +21,18 @@ spec:
     spec:
       containers:
         - args:
-            - --enable-leader-election={{ default "true" .Values.enableLeaderElection }}
             - --metrics-addr=:{{ required ".Values.metrics.port missing" .Values.metrics.port }}
             - --disable-root-ca={{ default "false" .Values.provisioner.disableRootCA }}
-            - --default-provider-namespace={{ .Release.Namespace }}
           command:
             - /digicert-issuer
           image: {{ include "image" . }}
           imagePullPolicy: {{ default "IfNotPresent" .Values.image.pullPolicy }}
           name: digicert-issuer
+          env:
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
 {{- if .Values.resources }}
           resources:
 {{ toYaml .Values.resources | indent 12 }}
@@ -38,5 +41,4 @@ spec:
             - name: metrics
               containerPort: {{ required ".Values.metrics.port missing" .Values.metrics.port }}
       terminationGracePeriodSeconds: 10
-      serviceAccount: digicert-issuer
       serviceAccountName: digicert-issuer

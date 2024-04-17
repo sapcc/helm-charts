@@ -21,6 +21,10 @@ spec:
         component: network-generic-ssh-exporter
       annotations:
         checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+        linkerd.io/inject: enabled
+        {{- end }}
+        kubectl.kubernetes.io/default-container: "network-generic-ssh-exporter"
     spec:
       nodeSelector:
         zone: farm
@@ -32,17 +36,24 @@ spec:
         - name: network-generic-ssh-exporter-config
           configMap:
             name: network-generic-ssh-exporter-config
+        - name: network-generic-ssh-exporter-credentials
+          secret:
+            secretName: network-generic-ssh-exporter-credentials
       containers:
         - name: network-generic-ssh-exporter
           image:  {{ .Values.global.registry}}/generic_ssh_exporter:{{ required "A version must be passed via CLI" .Values.version }}
           imagePullPolicy: IfNotPresent
-          args: [ "--config.file=/config/config.yaml", "--web.listen-address=:{{ .Values.listen_port }}", "--log.level={{ .Values.log_level }}"]
+          args: [ "--config.file=/config/config.yaml", "--config.file=/config/credentials.yaml", "--web.listen-address=:{{ .Values.listen_port }}", "--log.level={{ .Values.log_level }}"]
           ports:
             - name: metrics
               containerPort: {{ .Values.listen_port }}
           volumeMounts:
-            - mountPath: /config
+            - mountPath: /config/config.yaml
               name: network-generic-ssh-exporter-config
+              subPath: config.yaml
+            - mountPath: /config/credentials.yaml
+              name: network-generic-ssh-exporter-credentials
+              subPath: credentials.yaml
           securityContext:
             capabilities:
               drop:

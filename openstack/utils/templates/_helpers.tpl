@@ -70,3 +70,9 @@ trace_sqlalchemy = {{ .Values.global.osprofiler.trace_sqlalchemy }}
 {{- end }}
 {{- end }}
 
+# Place this in job scripts when your script stops normally, but not abnormally
+# as this causes the side-car pod finish normally, but we need it for the re-runs
+{{- define "utils.script.job_finished_hook" }}
+{{- include "utils.proxysql.proxysql_signal_stop_script" . }}
+{{- include "utils.linkerd.signal_stop_script" . }}
+{{- end }}

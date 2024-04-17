@@ -19,7 +19,7 @@ global:
   rpc_response_timeout: 60
   osprofiler: {}
   linkerd_requested: true
-  
+
 osprofiler:
   enabled: false
 
@@ -27,6 +27,7 @@ db_name: octavia
 
 proxysql:
   mode: ""
+  forceSecretCreation: true
 
 rabbitmq:
   alerts:
@@ -53,7 +54,7 @@ mariadb:
     support_group: network-api
   enabled: true
   name: octavia
-  initdb_configmap: octavia-initdb
+  initdb_secret: true
   persistence_claim:
     name: db-octavia-pvclaim
   databases:
@@ -156,14 +157,21 @@ mysql_metrics:
       labels:
         - "loadbalancer_status"
         - "loadbalancer_host"
+        - "loadbalancer_project"
+        - "loadbalancer_availabilityzone"
       help: Total Load Balancer count
+      # We select 'any' for availability_zone if it is null, because it
+      # corresponds to the enum symbol used by Limes:
+      # https://pkg.go.dev/github.com/sapcc/go-api-declarations/limes#AvailabilityZone
       query: |
         SELECT
           COUNT(*) AS count_gauge,
           provisioning_status AS loadbalancer_status,
-          server_group_id as loadbalancer_host
+          server_group_id as loadbalancer_host,
+          project_id as loadbalancer_project,
+          IFNULL(availability_zone, 'any') as loadbalancer_availabilityzone
         FROM load_balancer
-        GROUP BY loadbalancer_host, loadbalancer_status;
+        GROUP BY loadbalancer_host, loadbalancer_status, loadbalancer_project, loadbalancer_availabilityzone;
       values:
         - "count_gauge"
     - name: octavia_seconds_since_last_nonpending_status
@@ -173,6 +181,7 @@ mysql_metrics:
         - "loadbalancer_name"
         - "loadbalancer_host"
         - "loadbalancer_network"
+        - "loadbalancer_project"
       help: Seconds since last non-pending state of LB
       query: |
         (SELECT
@@ -180,6 +189,7 @@ mysql_metrics:
           lb.id AS loadbalancer_id,
           lb.provisioning_status AS loadbalancer_status,
           lb.name AS loadbalancer_name,
+          lb.project_id AS loadbalancer_project,
           lb.server_group_id AS loadbalancer_host,
           v.network_id AS loadbalancer_network
         FROM load_balancer AS lb

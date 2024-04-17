@@ -12,10 +12,6 @@ managed_physnets = {{ required "A valid .Values.arista required!" .Values.arista
 coordinator_url = memcached://neutron-memcached.{{ include "svc_fqdn" . }}:{{ .Values.memcached.memcached.port }}
 
 region_name = {{ .Values.global.region }}
-switch_info = {{ range $i, $switch := .Values.arista.switches }}
-  {{- $switch.host }}:{{ $switch.user }}:{{ $switch.password | urlquery -}}
-  {{- if lt $i (sub (len $.Values.arista.switches) 1) }},{{ end -}}
-{{- end }}
 {{- if .Values.arista.disable_sec_group_support_on_device_ids }}
 disable_sec_group_support_on_device_ids = {{ .Values.arista.disable_sec_group_support_on_device_ids | join "," }}
 {{- end }}

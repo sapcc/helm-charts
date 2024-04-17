@@ -38,6 +38,7 @@ spec:
         configmap-etc-api-hash: {{ include (print $.Template.BasePath "/configmap-etc-api.yaml") . | sha256sum }}
 {{- if .Values.cc_fabric.enabled }}
         configmap-etc-cc-fabric: {{ include (print $.Template.BasePath "/configmap-etc-cc-fabric.yaml") . | sha256sum }}
+        secret-cc-fabric: {{ include (print $.Template.BasePath "/secret-cc-fabric.yaml") $ | sha256sum }}
 {{- end }}
 {{- else }}
         configmap-bin-hash: {{ include (print $.Template.BasePath "/configmap-bin.yaml") . | sha256sum }}
@@ -112,6 +113,7 @@ spec:
                   fieldPath: metadata.name
             - name: PYTHONWARNINGS
               value: "ignore:Unverified HTTPS request"
+            {{- include "utils.trust_bundle.env" . | indent 12 }}
           resources:
 {{- if .Values.api.uwsgi }}
 {{ toYaml .Values.pod.resources.uwsgi_server | indent 12 }}
@@ -129,6 +131,18 @@ spec:
               name: neutron-etc
               subPath: neutron.conf
               readOnly: true
+            - mountPath: /etc/neutron/secrets/neutron-server-secrets.conf
+              name: neutron-server-secrets
+              subPath: neutron-server-secrets.conf
+            - mountPath: /etc/neutron/secrets/neutron-common-secrets.conf
+              name: neutron-common-secrets
+              subPath: neutron-common-secrets.conf
+            - mountPath: /etc/neutron/secrets/neutron-interconnection-secrets.conf
+              name: neutron-interconnection-secrets
+              subPath: neutron-interconnection-secrets.conf
+            - mountPath: /etc/neutron/secrets/neutron-arista-secrets.conf
+              name: neutron-arista-secrets
+              subPath: neutron-arista-secrets.conf
             - mountPath: /etc/neutron/plugins/asr1k-global.ini
               name: neutron-etc
               subPath: asr1k-global.ini
@@ -158,6 +172,8 @@ spec:
               name: neutron-etc-cc-fabric
               subPath: cc-fabric-driver-config.yaml
               readOnly: true
+            - mountPath: /etc/neutron/cc-fabric-secrets/
+              name: neutron-cc-fabric-secrets
 {{- end }}
             - mountPath: /etc/neutron/plugins/ml2/ml2-conf.ini
               name: neutron-etc
@@ -232,6 +248,7 @@ spec:
               name: container-init
 {{- end }}
             {{- include "utils.proxysql.volume_mount" . | indent 12 }}
+            {{- include "utils.trust_bundle.volume_mount" . | indent 12 }}
             {{- include "utils.coordination.volume_mount"  . | indent 12 }}
 {{- if not .Values.api.uwsgi }}
         {{- tuple . (add .Values.api_workers .Values.rpc_workers .Values.rpc_state_workers) | include "utils.proxysql.container" | indent 8 }}
@@ -262,10 +279,25 @@ spec:
         - name: neutron-etc
           configMap:
             name: neutron-etc
+        - name: neutron-server-secrets
+          secret:
+            secretName: neutron-server-secrets
+        - name: neutron-common-secrets
+          secret:
+            secretName: neutron-common-secrets
+        - name: neutron-interconnection-secrets
+          secret:
+            secretName: neutron-interconnection-secrets
+        - name: neutron-arista-secrets
+          secret:
+            secretName: neutron-arista-secrets
 {{- if .Values.cc_fabric.enabled }}
         - name: neutron-etc-cc-fabric
           configMap:
             name: neutron-etc-cc-fabric
+        - name: neutron-cc-fabric-secrets
+          secret:
+            secretName: neutron-cc-fabric-secrets
 {{- end }}
         - name: neutron-etc-vendor
           configMap:
@@ -283,4 +315,5 @@ spec:
             name: neutron-bin
             defaultMode: 0755
         {{- include "utils.proxysql.volumes" . | indent 8 }}
+        {{- include "utils.trust_bundle.volumes" . | indent 8 }}
         {{- include "utils.coordination.volumes" . | indent 8 }}

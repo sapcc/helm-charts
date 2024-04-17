@@ -2,7 +2,7 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: {{ .Release.Name }}-job-bootstrap
+  name: "{{ tuple . "job-bootstrap" | include "job_name" }}"
   labels:
     app: {{ template "fullname" . }}
     chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
@@ -18,7 +18,7 @@ spec:
   template:
     metadata:
       labels:
-        name: {{ .Release.Name }}-job-bootstrap
+        name: "{{ tuple . "job-bootstrap" | include "job_name" }}"
         system: openstack
         component: keystone
         type: job
@@ -26,6 +26,8 @@ spec:
         chart-version: {{.Chart.Version}}
         configmap-bin-hash: {{ include (print $.Template.BasePath "/configmap-bin.yaml") . | sha256sum }}
         configmap-etc-hash: {{ include (print $.Template.BasePath "/configmap-etc.yaml") . | sha256sum }}
+        secrets-bin-hash: {{ include (print $.Template.BasePath "/secret-bin.yaml") . | sha256sum }}
+        secrets-hash: {{ include (print $.Template.BasePath "/secrets.yaml") . | sha256sum }}
         # only run once on initial install
         "helm.sh/hook": post-install
     spec:
@@ -52,7 +54,7 @@ spec:
               value: "{{ .Release.Name }}-mariadb"
 {{- end }}
             - name: DEPENDENCY_JOBS
-              value: {{ .Release.Name }}-job-migration
+              value: "{{ tuple . "job-migration" | include "job_name" }}"
             {{- if .Values.sentry.enabled }}
             - name: SENTRY_DSN
             {{- if .Values.sentry.dsn }}
@@ -71,6 +73,8 @@ spec:
               mountPath: /etc/keystone/keystone.conf
               subPath: keystone.conf
               readOnly: true
+            - name: keystone-etc-confd
+              mountPath: /etc/keystone/keystone.conf.d
 {{- if ne .Values.api.policy "json" }}
             - name: keystone-etc
               mountPath: /etc/keystone/policy.yaml
@@ -105,10 +109,20 @@ spec:
           configMap:
             name: keystone-etc
             defaultMode: 0444
+        - name: keystone-etc-confd
+          secret:
+            secretName: {{ .Release.Name }}-secrets
+            defaultMode: 0444
         - name: keystone-bin
-          configMap:
-            name: keystone-bin
-            defaultMode: 0555
+          projected:
+            sources:
+            - configMap:
+                name: keystone-bin
+            - secret:
+                name: keystone-bin-secrets
+                items:
+                  - key: bootstrap
+                    path: bootstrap
         - name: fernet
           secret:
             secretName: keystone-fernet
