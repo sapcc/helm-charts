@@ -46,15 +46,13 @@ spec:
             defaultMode: 420
             secretName: certs
       containers:
-      - name: es-manager
+      - name: manager
         image: {{.Values.global.registry}}/elk-elasticsearch-manager:{{.Values.image_version}}
         imagePullPolicy: IfNotPresent
-        command:
 {{- if .Values.global.truststore.enabled}}
-          - /bin/bash
-        args:
-          - /script/start.sh
+        command: ["/bin/bash", "/start.sh"]
 {{ else }}
+        command:
           - /opt/cerebro/bin/cerebro
         args:
           - -Dconfig.file=/manager-config/application.conf
