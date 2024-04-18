@@ -36,7 +36,7 @@ spec:
 {{ tuple . "ironic" "conductor" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
       annotations:
         configmap-etc-hash: {{ include (print .Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
-        secrets-hash: {{ include (print $.Template.BasePath "/secrets.yaml") . | sha256sum }}
+        secrets-hash: {{ include (print .Template.BasePath "/secrets.yaml") . | sha256sum }}
         configmap-etc-conductor-hash: {{ tuple . $conductor | include "ironic_conductor_configmap" | sha256sum }}{{- if $conductor.jinja2 }}{{`
         configmap-etc-jinja2-hash: {{ block | safe | sha256sum }}
 `}}{{- end }}
