@@ -342,6 +342,27 @@ maillog:
     - "indices:monitor/settings/get"
     - "indices:monitor/stats"
 
+storage:
+  reserved: false
+  cluster_permissions:
+  - "cluster_monitor"
+  - "cluster_composite_ops"
+  - "cluster:admin/ingest/pipeline/put"
+  - "cluster:admin/ingest/pipeline/get"
+  - "indices:admin/template/get"
+  - "cluster_manage_index_templates"
+  - "cluster:admin/opensearch/ml/predict"
+  index_permissions:
+  - index_patterns:
+    - "storage-*"
+    allowed_actions:
+    - "indices:admin/template/get"
+    - "indices:admin/template/put"
+    - "indices:admin/mapping/put"
+    - "indices:admin/create"
+    - "indices:data/write/bulk*"
+    - "indices:data/write/index"
+
 jupyterhub:
   reserved: false
   hidden: false

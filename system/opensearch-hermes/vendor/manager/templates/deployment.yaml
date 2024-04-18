@@ -34,48 +34,59 @@ spec:
       nodeSelector:
         zone: farm
       volumes:
-        - name: es-etc
+        - name: manager-config
           configMap:
             name: opensearch-hermes-manager-configmap
-{{- if .Values.global.truststore.enabled}}
-        - name: truststore
+        - name: manager-secret
           secret:
             defaultMode: 420
-            secretName: truststore
-{{ else }}
+            secretName: manager-secret
         - name: opensearch-certs
           secret:
             defaultMode: 420
             secretName: certs
-{{- end }}
       containers:
-      - name: es-manager
+      - name: manager
         image: {{.Values.global.registry}}/elk-elasticsearch-manager:{{.Values.image_version}}
         imagePullPolicy: IfNotPresent
+{{- if .Values.global.truststore.enabled}}
+        command: ["/bin/bash", "/start.sh"]
+{{ else }}
         command:
           - /opt/cerebro/bin/cerebro
         args:
-          - -Dconfig.file=/es-etc/elasticsearch-application.conf
-          - -Dlogback.configurationFile=/es-etc/logback.xml
-          - -Dlogger.file=/es-etc/logback.xml
+          - -Dconfig.file=/manager-config/application.conf
+          - -Dlogback.configurationFile=/manager-config/logback.xml
+          - -Dlogger.file=/manager-config/logback.xml
           - -Dcom.sun.jndi.ldap.object.disableEndpointIdentification=true
           - -Des.networkaddress.cache.ttl=20
-          - -Des.networkaddress.cache.negative.ttl=10
-{{- if .Values.global.truststore.enabled}}
-          - -Djavax.net.ssl.trustStore=/truststore/truststore
-          - -Djavax.net.ssl.trustStorePassword={{.Values.global.truststore.cert_pw }}
 {{- end }}
         env:
           - name: NAMESPACE
             valueFrom:
               fieldRef:
                 fieldPath: metadata.namespace
-        volumeMounts:
-          - mountPath: /es-etc
-            name: es-etc
 {{- if .Values.global.truststore.enabled}}
-          - mountPath: /truststore
-            name: truststore
+          - name: TRUSTSTORE_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: manager-secret
+                key: TRUSTSTORE_PASSWORD
+{{- end }}
+        volumeMounts:
+          - mountPath: /manager-config/logback.xml
+            name: manager-config
+            subPath: logback.xml
+          - mountPath: /manager-config/application.conf
+            name: manager-secret
+            subPath: application.conf
+{{- if .Values.global.truststore.enabled}}
+          - mountPath: /truststore/truststore.crypt
+            name: manager-secret
+            subPath: truststore.crypt
+          - mountPath: /start.sh
+            name: manager-config
+            subPath: start.sh
 {{ else }}
           - mountPath: /opt/certs
             name: opensearch-certs

@@ -20,6 +20,11 @@ spec:
         {{- end }}
     spec:
       serviceAccountName: runtime-extension-maintenance-controller
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 999
+        seccompProfile:
+          type: RuntimeDefault
       containers:
       - image: "{{required ".Values.global.registry is missing" .Values.global.registry }}/{{ .Values.image.repository }}:{{required ".Values.image.tag is missing" .Values.image.tag }}"
         imagePullPolicy: {{ .Values.image.pullPolicy }}
@@ -28,6 +33,11 @@ spec:
         ports:
         - name: metrics
           containerPort: 8080
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - "ALL"
       {{ if ne .Values.topologyKey "" -}}
       affinity:
         podAntiAffinity:
