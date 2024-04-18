@@ -1,6 +1,5 @@
 {{- $values := .Values }}
 {{- if $values.alerts.enabled }}
-{{- range $i, $target := $values.alerts.prometheus }}
 {{- range $path, $bytes := $.Files.Glob (printf "alerts/%s/*.alerts" $target.name) }}
 ---
 apiVersion: monitoring.coreos.com/v1
@@ -12,10 +11,9 @@ metadata:
     app: octobus-query-exporter-global
     tier: infra
     type: alerting-rules
-    {{ $target.type | required (printf "$values.alerts.prometheus.[%v].type missing" $i) }}: {{ $target.name | required (printf "$values.alerts.prometheus.[%v].name missing" $i) }}
+    prometheus: {{ required "$values.alerts.prometheus missing" $values.alerts.prometheus }}
 spec:
 {{ printf "%s" $bytes | indent 2 }}
 
-{{- end }}
 {{- end }}
 {{- end }}
