@@ -13,6 +13,10 @@ metadata:
     system: openstack
     type: configuration
     component: ironic
+  options:
+    jinja2_options:
+      variable_start_string: '{='
+      variable_end_string: '=}'
 data:
   ironic-conductor.conf: |
 {{ list . $conductor | include "ironic_conductor_conf" | indent 4 }}
