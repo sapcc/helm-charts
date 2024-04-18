@@ -215,20 +215,13 @@ spec:
         configMap:
           name: ironic-etc
       - name: ironic-conductor-etc
-        projected:
-          sources:
-          - configMap:
-          {{- if $conductor.name }}
-              name: ironic-conductor-{{$conductor.name}}-etc
-          {{- else }}
-              name: ironic-conductor-etc
-          {{- end }}
-          - secret:
-          {{- if $conductor.name }}
-              name: ironic-conductor-{{$conductor.name}}-etc-secret
-          {{- else }}
-              name: ironic-conductor-etc-secret
-          {{- end }}
+        configMap:
+        {{- if $conductor.name }}
+          name: ironic-conductor-{{$conductor.name}}-etc
+        {{- else }}
+          name: ironic-conductor-etc
+        {{- end }}
+
       - name: ironic-console
         configMap:
           name: ironic-console
