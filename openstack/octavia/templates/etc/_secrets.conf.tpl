@@ -3,7 +3,7 @@
 {{ include "ini_sections.default_transport_url" . }}
 
 [service_auth]
-username = {{ .Release.Name }}{{ .Values.global.user_suffix }}
+username = {{ .Release.Name }}
 password = {{ .Values.global.octavia_service_password | replace "$" "" }}
 
 [keystone_authtoken]
