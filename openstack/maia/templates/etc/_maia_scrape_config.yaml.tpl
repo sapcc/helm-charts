@@ -214,6 +214,7 @@
   metrics_path: '/federate'
   params:
     'match[]':
+      - '{__name__="aws_sending_counter_cronus_provider"}'
       - '{__name__="aws_sending_cronus_provider"}'
       - '{__name__="aws_receiving_cronus_provider"}'
       - '{__name__="aws_ses_cronus_provider_bounce"}'
