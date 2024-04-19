@@ -74,7 +74,6 @@ function start_tempest_tests {
   openstack object create reports/{{ index (split "-" .Chart.Name)._0 }} /tmp/report.html --name $(echo $OS_REGION_NAME)-latest.html
   openstack object create reports/{{ index (split "-" .Chart.Name)._0 }} /tmp/report.json --name $(echo $OS_REGION_NAME)-$(echo $MYTIMESTAMP).json
   openstack object create reports/{{ index (split "-" .Chart.Name)._0 }} /tmp/report.json --name $(echo $OS_REGION_NAME)-latest.json
-  export SERVICE_NAME={{ index (split "-" .Chart.Name)._0 }}
   export VERIFICIATION_ID=$(jq -r '.verifications | keys[0]' /tmp/report.json)
   export STATUS=$(jq -r '.verifications."'${VERIFICIATION_ID}'".status' /tmp/report.json)
   export FAILED=$(jq -r '.verifications."'${VERIFICIATION_ID}'".failures' /tmp/report.json)
