@@ -33,6 +33,7 @@ max_api_microversion = 2.78
 suppress_errors_in_cleanup = True
 enable_ip_rules_for_protocols = nfs
 enable_protocols = nfs
+capability_storage_protocol = NFS_CIFS
 endpoint_type = public
 v3_endpoint_type = public
 region = {{ .Values.global.region }}
