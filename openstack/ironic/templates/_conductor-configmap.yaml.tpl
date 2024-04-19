@@ -16,25 +16,11 @@ metadata:
 data:
   ironic-conductor.conf: |
 {{ list . $conductor | include "ironic_conductor_conf" | indent 4 }}
----
-apiVersion: v1
-kind: Secret
-metadata:
-{{- if $conductor.name }}
-  name: ironic-conductor-{{$conductor.name}}-etc-secret
-{{- else }}
-  name: ironic-conductor-etc-secret
-{{- end }}
-  labels:
-    system: openstack
-    type: configuration
-    component: ironic
-data:
   ipxe_config.template: |
     {{- if $conductor.jinja2 }}
     {% raw -%}
     {{- end }}
-{{ list . $conductor | include "ipxe_config_template" | b64enc | indent 4 }}
+{{ list . $conductor | include "ipxe_config_template" | indent 4 }}
     {{- if $conductor.jinja2 }}
     {%- endraw %}
     {{- end }}
