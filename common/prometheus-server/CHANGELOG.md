@@ -1,3 +1,7 @@
+## 7.5.7
+
+* softening VPA alerts 
+
 ## 7.5.6
 
 * Adapting swift credential for kvv2 vault
