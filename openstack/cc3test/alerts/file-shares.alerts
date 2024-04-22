@@ -3,7 +3,7 @@ groups:
   rules:
   - alert: OpenstackManilaApiDown
     expr: |
-        cc3test_status{service="manila", type="api"} == 0
+        cc3test_status{service="manila", type="api", phase="call"} == 0
     for: 16m
     labels:
       severity: critical
@@ -13,15 +13,15 @@ groups:
       context: '{{ $labels.service }}'
       meta: 'Openstack Manila API is down'
       dashboard: 'cc3test-api-status?var-service={{ $labels.service }}'
-      playbook: 'docs/support/playbook/manila/alerts/'
-      report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
+      playbook: 'docs/support/playbook/manila/alerts/cc3test-alert-api/'
+      report: 'cc3test/admin/object-storage/containers/cc3test/objects/{{ $labels.base64path }}'
     annotations:
       description: 'Openstack Manila API is down'
       summary: 'Openstack Manila API is down'
 
   - alert: OpenstackManilaApiFlapping
     expr: |
-        changes(cc3test_status{service="manila", type="api"}[30m]) > 8
+        changes(cc3test_status{service="manila", type="api", phase="call"}[30m]) > 8
     labels:
       severity: warning
       support_group: compute-storage-api
@@ -30,8 +30,8 @@ groups:
       context: '{{ $labels.service }}'
       meta: 'Openstack Manila API is flapping'
       dashboard: 'cc3test-api-status?var-service={{ $labels.service }}'
-      playbook: 'docs/support/playbook/manila/alerts/'
-      report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
+      playbook: 'docs/support/playbook/manila/alerts/cc3test-alert-api/'
+      report: 'cc3test/admin/object-storage/containers/cc3test/objects/{{ $labels.base64path }}'
     annotations:
       description: 'Openstack Manila API is flapping'
       summary: 'Openstack Manila API is flapping'
@@ -39,7 +39,8 @@ groups:
   - alert: FileShareDatapathDown
     expr: |
         cc3test_status{type="datapath",
-            name=~"TestFileShareMount_static.+"
+            name=~"TestFileShareMount_static.+",
+            phase="call"
         } == 0
     for: 15m
     labels:
@@ -50,8 +51,8 @@ groups:
       context: '{{ $labels.service }}'
       meta: 'Datapath to mounted file share is down'
       dashboard: 'cc3test-datapath-status?var-service={{ $labels.service }}'
-      playbook: 'docs/devops/alert/manila/#filesharedatapathdown'
-      report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
+      playbook: 'docs/support/playbook/manila/alerts/cc3test-alert-datapath/#filesharedatapathdown'
+      report: 'cc3test/admin/object-storage/containers/cc3test/objects/{{ $labels.base64path }}'
     annotations:
       description: 'Datapath to mounted file share is down'
       summary: 'Datapath to mounted file share is down'
@@ -59,7 +60,8 @@ groups:
   - alert: FileShareDatapathDebug
     expr: |
         cc3test_status{type="datapath",
-            name=~"TestFileShareMount_debug_static.+"
+            name=~"TestFileShareMount_debug_static.+",
+            phase="call"
         } == 0
     for: 15m
     labels:
@@ -70,8 +72,8 @@ groups:
       context: '{{ $labels.service }}'
       meta: 'Datapath to mounted file share is down'
       dashboard: 'cc3test-datapath-status?var-service={{ $labels.service }}'
-      playbook: 'docs/devops/alert/manila/#filesharedatapathdown'
-      report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
+      playbook: 'docs/support/playbook/manila/alerts/cc3test-alert-datapath/#filesharedatapathdebugnfs'
+      report: 'cc3test/admin/object-storage/containers/cc3test/objects/{{ $labels.base64path }}'
     annotations:
       description: 'Datapath to mounted file share is down - debug for more details'
       summary: 'Datapath to mounted file share is down - debug for more details'
@@ -111,7 +113,7 @@ groups:
       summary: Certificate expires
 
   - alert: OpenstackFileShareCanaryAttachShareDown
-    expr: cc3test_status{service="manila",name=~"TestFileShare_attach_share.+"} == 0
+    expr: cc3test_status{service="manila",name=~"TestFileShare_attach_share.+", phase="call"} == 0
     for: 2h
     labels:
       severity: warning
@@ -121,8 +123,8 @@ groups:
       context: '{{ $labels.service }}'
       meta: 'Openstack File Share Canary: {{ $labels.name }} is down, see report for more details'
       dashboard: cc3test-canary-status?var-service={{ $labels.service }}
-      playbook: 'docs/devops/alert/{{ $labels.service }}/#test_attach_share'
-      report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
+      playbook: 'docs/support/playbook/manila/alerts/cc3test-alert-attach-share/'
+      report: 'cc3test/admin/object-storage/containers/cc3test/objects/{{ $labels.base64path }}'
     annotations:
       description: 'Openstack File Share Canary: {{ $labels.name }} is down, see report for more details'
       summary: 'Openstack File Share Canary: {{ $labels.name }} is down, see report for more details'

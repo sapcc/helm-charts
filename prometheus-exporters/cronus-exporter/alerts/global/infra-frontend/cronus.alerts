@@ -36,8 +36,32 @@ groups:
       tier: os
       support_group: email
     annotations:
-      description: dashboard - https://plutono.global.cloud.sap/d/s5NfHYvSk/email-sending-health?orgId=1, email health tests
+      description: dashboard - https://plutono.global.cloud.sap/d/lTV6MbxIz/email-sending-health?orgId=1, email health tests
       summary: email health tests
+
+  - alert: WarningEmailSESSendingQuotaUsage
+    expr: sum (aws_sending_cronus_provider{metric="daily-sending-quota-usage"}) by (project_name, project_id) > 50
+    for: 10m
+    labels:
+      service: email
+      severity: warning
+      tier: os
+      support_group: email
+    annotations:
+      description: dashboard - https://plutono.global.cloud.sap/d/lTV6MbxIz/email-sending-health?orgId=1, {{ $labels.project_name }} sending email usage quota above 50% 
+      summary: Warning SES daily sending quota usage
+
+  - alert: CriticalEmailSESSendingQuotaUsage
+    expr: sum (aws_sending_cronus_provider{metric="daily-sending-quota-usage"}) by (project_name, project_id) > 80
+    for: 10m
+    labels:
+      service: email
+      severity: critical
+      tier: os
+      support_group: email
+    annotations:
+      description: dashboard - https://plutono.global.cloud.sap/d/lTV6MbxIz/email-sending-health?orgId=1, {{ $labels.project_name }} sending email usage quota above 80% 
+      summary: Critical SES daily sending quota usage
       
 - name: Nebula
   rules:

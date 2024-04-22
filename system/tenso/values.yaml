@@ -22,17 +22,14 @@ tenso:
 
   # all provided by regional values.yaml (or, if not given, ServiceNow delivery is disabled)
   servicenow:
-    client_cert: null
-    private_key: null
-    create_change_url: null
-    mapping_config: '' # will be written into $TENSO_SERVICENOW_MAPPING_CONFIG_PATH
+    secrets: {}
+    mapping_config: {} # will be written into $TENSO_SERVICENOW_MAPPING_CONFIG_PATH
 
 prometheus:
   targets:
     openstack: infra-frontend # there is no prometheus-openstack in scaleout, so we need to improvise :|
 
 postgresql:
-  imageTag: '20240226094551'
   persistence:
     enabled: true
     accessMode: ReadWriteOnce
@@ -42,9 +39,10 @@ postgresql:
     tenso: {}
   tableOwner: tenso
 
-  log_min_duration_statement: 250
-  # less than the postgresql chart's default; I want to know early when connections start getting out of hand
-  max_connections: 128
+  config:
+    log_min_duration_statement: 250
+    # less than the postgresql chart's default; I want to know early when connections start getting out of hand
+    max_connections: 128
 
   alerts:
     prometheus: infra-frontend # see above

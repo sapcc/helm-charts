@@ -10,16 +10,8 @@ backdoor_socket = /var/lib/octavia/backdoor.socket
 {{- if $loadbalancer.physical_interface_mapping }}
 physical_interface_mapping = {{ $loadbalancer.physical_interface_mapping }}
 {{- end }}
-{{- if $loadbalancer.vcmps }}
-vcmp_urls = {{ tuple $envAll $loadbalancer.vcmps | include "utils.bigip_urls" -}}
-{{- end }}
-{{- if $loadbalancer.override_vcmp_guest_names }}
-override_vcmp_guest_names = {{ $loadbalancer.override_vcmp_guest_names | join ", " -}}
-{{- end }}
-
 
 [f5_agent]
-bigip_urls = {{ if $loadbalancer.devices -}}{{- tuple $envAll $loadbalancer.devices | include "utils.bigip_urls" -}}{{- else -}}{{ $loadbalancer.bigip_urls | join ", " }}{{- end }}
 bigip_verify = false
 bigip_token = true
 esd_dir = /etc/octavia/esd

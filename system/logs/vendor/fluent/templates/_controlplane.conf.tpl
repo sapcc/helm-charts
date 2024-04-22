@@ -155,8 +155,8 @@
   host {{.Values.metis.host}}
   port {{.Values.metis.port}}
   database {{.Values.metis.db}}
-  username {{.Values.global.metis.user}}
-  password {{.Values.global.metis.password}}
+  username "#{ENV['METIS_USER']}"
+  password "#{ENV['METIS_PASSWORD']}"
   sql select ip_address, floating_ip_id, project, project_id, domain, domain_id, network, network_id, subnet, subnet_id, subnetpool, subnetpool_id, router, router_id, port_id, instance_id, owner from openstack_ips;
   sql_key ip_address
   record_key remote_addr
@@ -249,16 +249,6 @@
   </parse>
 </filter>
 
-<filter kubernetes.var.log.containers.elk-fluent**>
-  @type parser
-  key_name log
-  reserve_data true
-  <parse>
-    @type grok
-    grok_pattern %{TIMESTAMP_ISO8601:timestamp} \+0000 \[%{WORD:loglevel}
-  </parse>
-</filter>
-
 <filter kubernetes.var.log.containers.arc-api**>
   @type record_transformer
   <record>
@@ -342,7 +332,7 @@
   </parse>
 </filter>
 
-<filter kubernetes.var.log.containers.elk-k8s-event-exporter**>
+<filter kubernetes.var.log.containers.logs-k8s-event-exporter**>
   @type parser
   @id json_parser
   key_name log
@@ -518,9 +508,9 @@
     template_name logstash-swift
     template_file /fluentd/etc/logstashswift.json
     template_overwrite false
-    hosts {{.Values.opensearch.http.endpoint}}.{{.Values.global.tld}}
+    hosts {{.Values.global.opensearch.host}}
     scheme https
-    port {{.Values.opensearch.http_port}}
+    port {{.Values.global.opensearch.port}}
     user "#{ENV['USER']}"
     password "#{ENV['PASSWORD']}"
     log_os_400_reason true
@@ -584,9 +574,9 @@
     template_file /fluentd/etc/{{.Values.opensearch.indexname}}.json
     template_overwrite false
   {{- end }}
-    hosts {{.Values.opensearch.http.endpoint}}.{{.Values.global.tld}}
+    hosts {{.Values.global.opensearch.host}}
     scheme https
-    port {{.Values.opensearch.http_port}}
+    port {{.Values.global.opensearch.port}}
     user "#{ENV['USER']}"
     password "#{ENV['PASSWORD']}"
     log_os_400_reason true
@@ -630,5 +620,3 @@
     </metric>
   </store>
  </match>
-
-

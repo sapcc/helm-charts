@@ -10,10 +10,10 @@ spec:
       joinConfiguration:
         nodeRegistration:
           kubeletExtraArgs:
-            node-labels: kubernikus.cloud.sap/cni=true,metal3.io/uuid=${uuid},kubernetes.metal.cloud.sap/host=${name_bmh},kubernetes.metal.cloud.sap/bb=${bb},kubernetes.metal.cloud.sap/role=${role},topology.kubernetes.io/region=${region},topology.kubernetes.io/zone=${zone}
+            node-labels: kubernikus.cloud.sap/cni=true,metal3.io/uuid=${uuid},kubernetes.metal.cloud.sap/node-ip=${IP},kubernetes.metal.cloud.sap/host=${name_bmh},kubernetes.metal.cloud.sap/bb=${bb},kubernetes.metal.cloud.sap/role=${role},topology.kubernetes.io/region=${region},topology.kubernetes.io/zone=${zone},cloud.sap/maintenance-profile=capi
             cloud-provider: ""
             node-ip: ${IP}
-          name: ${name_machine}
+          name: ${name_bmh}
       format: ignition
       ignition:
         containerLinuxConfig:
@@ -62,13 +62,6 @@ spec:
                       /usr/bin/wget --tries=0 {{ $.Values.image.kubeadm }} -O /opt/bin/kubeadm  && break
                     done
                     /usr/bin/chmod 0755 /opt/bin/kubeadm
-
-                    # CNI plugins - to be removed - comes via DaemonSet
-                    CNI_PLUGINS_VERSION="v1.3.0"
-                    ARCH="amd64"
-                    DEST="/opt/cni/bin"
-                    sudo mkdir -p "$DEST"
-                    curl -L "https://github.com/containernetworking/plugins/releases/download/${CNI_PLUGINS_VERSION}/cni-plugins-linux-${ARCH}-${CNI_PLUGINS_VERSION}.tgz" | sudo tar -C "$DEST" -xz
                     mount --bind /opt/bin /usr/local/bin
 
                     sed -i '/After\|Requires/d' /etc/systemd/system/kubeadm.service.d/10-flatcar.conf
@@ -276,8 +269,8 @@ spec:
                       export $s
                     done
 
-                    hostnamectl set-hostname $name_machine
-                    echo $name_machine>/etc/hostname
+                    hostnamectl set-hostname $name_bmh
+                    echo $name_bmh>/etc/hostname
                     
                     BONDFILTER=$(cat $CONFIGDRIVE/network_data.json | jq -r .networks[0].link)
                     VLAN=$(cat $CONFIGDRIVE/network_data.json | jq -r .networks[0].id)

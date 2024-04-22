@@ -39,6 +39,8 @@ spec:
         chart-version: {{.Chart.Version}}
         configmap-etc-hash: {{ include (print $.Template.BasePath "/configmap-etc.yaml") . | sha256sum }}
         configmap-bin-hash: {{ include (print $.Template.BasePath "/configmap-bin.yaml") . | sha256sum }}
+        secrets-bin-hash: {{ include (print $.Template.BasePath "/secret-bin.yaml") . | sha256sum }}
+        secrets-hash: {{ include (print $.Template.BasePath "/secrets.yaml") . | sha256sum }}
         {{- if .Values.proxysql.mode }}
         prometheus.io/scrape: "true"
         prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
@@ -139,6 +141,8 @@ spec:
           volumeMounts:
             - name: etc-keystone
               mountPath: /etc/keystone
+            - name: keystone-etc-confd
+              mountPath: /etc/keystone/keystone.conf.d
             - name: wsgi-keystone
               mountPath: /var/www/cgi-bin/keystone
             - name: keystone-etc
@@ -190,7 +194,6 @@ spec:
               readOnly: true
             - name: keystone-bin
               mountPath: /scripts
-              readOnly: true
             {{- if .Values.sapcc_rate_limit.enabled }}
             - name: keystone-etc
               mountPath: /etc/keystone/ratelimit.yaml
@@ -237,10 +240,21 @@ spec:
           configMap:
             name: keystone-etc
             defaultMode: 0444
+        - name: keystone-etc-confd
+          secret:
+            secretName: {{ .Release.Name }}-secrets
+            defaultMode: 0444
         - name: keystone-bin
-          configMap:
-            name: keystone-bin
+          projected:
             defaultMode: 0555
+            sources:
+            - configMap:
+                name: keystone-bin
+            - secret:
+                name: keystone-bin-secrets
+                items:
+                  - key: bootstrap
+                    path: bootstrap
         - name: fernet
           secret:
             secretName: keystone-fernet

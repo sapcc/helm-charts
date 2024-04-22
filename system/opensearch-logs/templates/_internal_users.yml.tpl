@@ -20,6 +20,12 @@ greenhouse:
   backend_roles:
   - "greenhouse"
 
+storage:
+  hash: "{{ .Values.users.storage.hash }}"
+  reserved: true
+  backend_roles:
+  - "storage"
+
 {{- if .Values.qalogs.enabled }}
 dataqade2:
   hash: "{{ .Values.users.dataqade2.hash }}"
@@ -77,9 +83,10 @@ dashboard:
 
 kibanaro:
   hash: "{{ .Values.users.kibanaro.hash }}"
-  reserved: false
-  backend_roles:
-  - "readall"
+
+kibanaserver:
+  hash: "{{ .Values.users.kibanaserver.hash }}"
+  reserved: true
 
 maillog:
   hash: "{{ .Values.users.maillog.hash }}"

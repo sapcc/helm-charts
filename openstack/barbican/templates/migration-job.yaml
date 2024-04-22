@@ -21,6 +21,8 @@ spec:
         alert-tier: os
         alert-service: barbican
 {{ tuple . "barbican" "migration" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
+      annotations:
+{{- include "utils.linkerd.pod_and_service_annotation" . | indent 8 }}
     spec:
       restartPolicy: OnFailure
       initContainers:
@@ -30,9 +32,11 @@ spec:
           image: {{required ".Values.global.registry is missing" .Values.global.registry}}/loci-barbican:{{required ".Values.imageVersionBarbicanApi is missing" .Values.imageVersionBarbicanApi}}
           imagePullPolicy: IfNotPresent
           command:
-          - barbican-manage
-          - db
-          - upgrade
+          - bash
+          - -c
+          - |
+            barbican-manage db upgrade
+            {{- include "utils.script.job_finished_hook" . | nindent 12 }}
           env:
           {{- if .Values.sentry.enabled }}
           - name: SENTRY_DSN

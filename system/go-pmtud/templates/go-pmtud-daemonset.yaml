@@ -1,11 +1,8 @@
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
-  annotations:
-{{ include "helm3-helper.annotations" . | indent 4 }}
   labels:
     k8s-app: pmtud
-{{ include "helm3-helper.labels" . | indent 4 }}
   name: pmtud
 spec:
   selector:
@@ -63,6 +60,7 @@ spec:
           - name: pmtud
             mountPath: /scripts/pmtud
       hostNetwork: true
+      serviceAccountName: pmtud
       terminationGracePeriodSeconds: 5
       tolerations:
         - operator: "Exists"

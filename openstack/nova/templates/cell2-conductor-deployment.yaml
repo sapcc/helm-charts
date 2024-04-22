@@ -55,12 +55,6 @@ spec:
           command:
             - dumb-init
             - nova-conductor
-            - --config-file
-            - /etc/nova/nova.conf
-            - --config-file
-            - /etc/nova/nova-conductor.conf
-            - --config-file
-            - /etc/nova/nova-cell2.conf
           env:
             {{- if .Values.sentry.enabled }}
             - name: SENTRY_DSN
@@ -75,7 +69,7 @@ spec:
             {{- end }}
           livenessProbe:
             exec:
-              command: ["openstack-agent-liveness", "--component", "nova", "--config-file", "/etc/nova/nova.conf"]
+              command: ["openstack-agent-liveness", "--component", "nova", "--config-file", "/etc/nova/nova.conf", "--config-file", "/etc/nova/nova.conf.d/keystoneauth-secrets.conf"]
             initialDelaySeconds: 60
             periodSeconds: 60
             timeoutSeconds: 20
@@ -84,26 +78,10 @@ spec:
 {{ toYaml .Values.pod.resources.conductor | indent 12 }}
           {{- end }}
           volumeMounts:
-            - mountPath: /etc/nova
-              name: etcnova
-            - mountPath: /etc/nova/nova.conf
-              name: nova-etc
-              subPath: nova.conf
-              readOnly: true
-            - mountPath: /etc/nova/nova-cell2.conf
-              name: nova-etc
-              subPath: nova-cell2.conf
-              readOnly: true
-            - mountPath: /etc/nova/nova-conductor.conf
-              name: nova-etc
-              subPath: nova-conductor.conf
-              readOnly: true
-            - mountPath: /etc/nova/logging.ini
-              name: nova-etc
-              subPath: logging.ini
-              readOnly: true
-            {{- include "utils.proxysql.volume_mount" . | indent 12 }}
-            {{- include "utils.trust_bundle.volume_mount" . | indent 12 }}
+          - name: nova-etc
+            mountPath: /etc/nova
+          {{- include "utils.proxysql.volume_mount" . | indent 10 }}
+          {{- include "utils.trust_bundle.volume_mount" . | indent 10 }}
         {{- tuple . .Values.conductor.config_file.conductor.workers | include "utils.proxysql.container" | indent 8 }}
         {{- if .Values.cell2.conductor.config_file.DEFAULT.statsd_enabled }}
         - name: statsd
@@ -117,17 +95,43 @@ spec:
           - name: metrics
             containerPort: 9102
           volumeMounts:
-            - name: nova-etc
-              mountPath: /etc/statsd/statsd-exporter.yaml
-              subPath: statsd-exporter.yaml
-              readOnly: true
+          - name: statsd-etc
+            mountPath: /etc/statsd/statsd-exporter.yaml
+            subPath: statsd-exporter.yaml
+            readOnly: true
         {{- end }}
       volumes:
-        - name: etcnova
-          emptyDir: {}
-        - name: nova-etc
-          configMap:
-            name: nova-etc
-        {{- include "utils.proxysql.volumes" . | indent 8 }}
-        {{- include "utils.trust_bundle.volumes" . | indent 8 }}
+      - name: nova-etc
+        projected:
+          sources:
+          - configMap:
+              name: nova-etc
+              items:
+              - key:  nova.conf
+                path: nova.conf
+              - key:  nova-conductor.conf
+                path: nova-conductor.conf
+              - key:  logging.ini
+                path: logging.ini
+          - secret:
+              name: nova-etc
+              items:
+              - key: api-db.conf
+                path: nova.conf.d/api-db.conf
+              - key: {{ .Values.cell2.name }}.conf
+                path: nova.conf.d/{{ .Values.cell2.name }}.conf
+              - key: keystoneauth-secrets.conf
+                path: nova.conf.d/keystoneauth-secrets.conf
+      {{- if .Values.cell2.conductor.config_file.DEFAULT.statsd_enabled }}
+      - name: statsd-etc
+        projected:
+          sources:
+          - configMap:
+              name: nova-etc
+              items:
+              - key:  statsd-exporter.yaml
+                path: statsd-exporter.yaml
+      {{- end }}
+      {{- include "utils.proxysql.volumes" . | indent 6 }}
+      {{- include "utils.trust_bundle.volumes" . | indent 6 }}
 {{- end }}

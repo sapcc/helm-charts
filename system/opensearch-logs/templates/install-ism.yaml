@@ -30,8 +30,16 @@ spec:
         env:
           - name: ILM_INDEXES
             value: "{{ .Values.global.ilm_indexes }}"
-          - name: ADMINPW
-            value: "{{ .Values.users.admin.password }}"
+          - name: ADMIN_USER
+            valueFrom:
+              secretKeyRef:
+                name: cron-secrets
+                key: ADMIN_USER
+          - name: ADMIN_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: cron-secrets
+                key: ADMIN_PASSWORD
           - name: CLUSTER_HOST
             value: "https://opensearch-logs-client.{{ .Values.global.clusterType }}.{{ .Values.global.region }}.{{ .Values.global.tld }}:{{ .Values.httpPort }}"
           - name: RETENTION_NAME

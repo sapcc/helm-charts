@@ -34,6 +34,7 @@ spec:
         pod.beta.kubernetes.io/hostname:  cc-fabric-{{ $platform }}-agent
         configmap-etc-hash: {{ include (print $.Template.BasePath "/configmap-etc.yaml") $ | sha256sum }}
         configmap-etc-cc-fabric: {{ include (print $.Template.BasePath "/configmap-etc-cc-fabric.yaml") $ | sha256sum }}
+        secret-cc-fabric: {{ include (print $.Template.BasePath "/secret-cc-fabric.yaml") $ | sha256sum }}
         prometheus.io/scrape: "true"
         prometheus.io/targets: {{ required "$.Values.metrics.prometheus missing" $.Values.metrics.prometheus }}
         {{- include "utils.linkerd.pod_and_service_annotation" $ | indent 8 }}
@@ -48,13 +49,15 @@ spec:
           args:
             - --config-file
             - /etc/neutron/neutron.conf
+            - --config-dir
+            - /etc/neutron/secrets
             - --config-file
             - /etc/neutron/plugins/ml2/ml2-conf.ini
             - --config-file
             - /etc/neutron/plugins/ml2/ml2_conf_cc-fabric.ini
           livenessProbe:
             exec:
-              command: ["neutron-agent-liveness", "--agent-type", "CC fabric agent", "--config-file", "/etc/neutron/neutron.conf"]
+              command: ["neutron-agent-liveness", "--agent-type", "CC fabric agent", "--config-file", "/etc/neutron/neutron.conf", "--config-file", "/etc/neutron/secrets/neutron-common-secrets.conf"]
             initialDelaySeconds: 30
             periodSeconds: 30
             timeoutSeconds: 10
@@ -75,6 +78,9 @@ spec:
               name: neutron-etc
               subPath: neutron.conf
               readOnly: true
+            - mountPath: /etc/neutron/secrets/neutron-common-secrets.conf
+              name: neutron-common-secrets
+              subPath: neutron-common-secrets.conf
             - mountPath: /etc/neutron/plugins/ml2/
               name: empty-neutron-ml2
             - mountPath: /etc/neutron/plugins/ml2/ml2_conf_cc-fabric.ini
@@ -97,6 +103,8 @@ spec:
               name: neutron-etc
               subPath: logging.conf
               readOnly: true
+            - mountPath: /etc/neutron/cc-fabric-secrets/
+              name: neutron-cc-fabric-secrets
             {{- include "utils.trust_bundle.volume_mount" $ | indent 12 }}
       volumes:
         - name: empty-neutron-ml2
@@ -104,9 +112,15 @@ spec:
         - name: neutron-etc
           configMap:
             name: neutron-etc
+        - name: neutron-common-secrets
+          secret:
+            secretName: neutron-common-secrets
         - name: neutron-etc-cc-fabric
           configMap:
             name: neutron-etc-cc-fabric
+        - name: neutron-cc-fabric-secrets
+          secret:
+            secretName: neutron-cc-fabric-secrets
         {{- include "utils.trust_bundle.volumes" $ | indent 8 }}
 {{- end }}
 {{- end }}

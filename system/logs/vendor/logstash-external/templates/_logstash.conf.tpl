@@ -1,43 +1,43 @@
 input {
   udp {
     id => "input-udp-syslog"
-    port  => {{.Values.input_syslog_port}}
+    port  => {{.Values.input.syslog_port}}
     type => syslog
   }
   tcp {
     id => "input-tcp-syslog"
-    port  => {{.Values.input_syslog_port}}
+    port  => {{.Values.input.syslog_port}}
     type => syslog
   }
   udp {
     id => "input-udp-netflow"
-    port  => {{.Values.input_netflow_port}}
+    port  => {{.Values.input.netflow_port}}
     type => netflow
   }
   http {
     id => "input-http"
-    port  => {{.Values.input_alertmanager_port}}
+    port  => {{.Values.input.alertmanager_port}}
     type => alert
     codec => plain
   }
   tcp {
     id => "input-tcp"
-    port  => {{.Values.input_deployments_port}}
+    port  => {{.Values.input.deployments_port}}
     type => deployment
     codec => plain
   }
   http {
     id => "input-http-secure"
-    port  => {{.Values.input_http_port}}
+    port  => {{.Values.input.http_port}}
     user => "${HTTP_USER}"
     password => "${HTTP_PASSWORD}"
-    ssl => true
+    ssl_enabled => true
     ssl_certificate => '/tls-secret/tls.crt'
     ssl_key => '/usr/share/logstash/config/tls.key'
   }
   beats {
     id => "input-beats"
-    port => {{.Values.input_beats_port}}
+    port => {{.Values.input.beats_port}}
     type => "jumpserver"
   }
 }
@@ -45,10 +45,12 @@ input {
 filter {
  if  [type] == "syslog" {
    mutate {
+     id => "mutate-rename-hostname"
      rename => { "host" => "hostname"}
    }
 
    dns {
+     id => "dns-resolve-hostname"
      reverse => [ "hostname" ]
      action => "replace"
      hit_cache_size => "100"
@@ -75,26 +77,32 @@ filter {
 
     if [type] == "alert" {
        json {
+         id => "alert-json-decode"
          source => "message"
        }
        if "_jsonparsefailure" not in [tags] {
          split {
+           id => "alert-json-split"
            field => "alerts"
          }
          mutate {
+             id => "alert-remove-message"
              remove_field => ["message"]
          }
        }
     }
     if [type] == "deployment" {
        json {
+         id => "deployment-json-decode"
          source => "message"
        }
        if "_jsonparsefailure" not in [tags] {
          split {
+           id => "deployment-json-split"
            field => "helm-release"
          }
          mutate {
+             id => "deployment-remove-message"
              remove_field => ["message"]
          }
        }
@@ -107,14 +115,14 @@ output {
     opensearch {
       id => "opensearch-syslog"
       index => "syslog-%{+YYYY.MM.dd}"
-      hosts => ["https://{{.Values.opensearch.http.endpoint}}.{{.Values.global.region}}.{{.Values.global.tld}}:{{.Values.opensearch.http_port}}"]
+      hosts => ["https://{{.Values.global.opensearch.host}}:{{.Values.global.opensearch.port}}"]
       template => "/logstash-etc/syslog.json"
       template_name => "syslog"
       template_overwrite => true
       auth_type => {
         type => "basic"
-        user => "${OPENSEARCH_USER}"
-        password => "${OPENSEARCH_PASSWORD}"
+        user => "${OPENSEARCH_SYSLOG_USER}"
+        password => "${OPENSEARCH_SYSLOG_PASSWORD}"
       }
       ssl => true
       ssl_certificate_verification => true
@@ -124,11 +132,11 @@ output {
     opensearch {
       id => "opensearch-critical-alerts"
       index => "alerts-critical-%{+YYYY}"
-      hosts => ["https://{{.Values.opensearch.http.endpoint}}.{{.Values.global.region}}.{{.Values.global.tld}}:{{.Values.opensearch.http_port}}"]
+      hosts => ["https://{{.Values.global.opensearch.host}}:{{.Values.global.opensearch.port}}"]
       auth_type => {
         type => "basic"
-        user => "${OPENSEARCH_USER}"
-        password => "${OPENSEARCH_PASSWORD}"
+        user => "${OPENSEARCH_SYSLOG_USER}"
+        password => "${OPENSEARCH_SYSLOG_PASSWORD}"
       }
       template => "/logstash-etc/alerts.json"
       template_name => "alerts"
@@ -141,11 +149,11 @@ output {
     opensearch {
       id => "opensearch-warnings"
       index => "alerts-warnings-%{+YYYY}"
-      hosts => ["https://{{.Values.opensearch.http.endpoint}}.{{.Values.global.region}}.{{.Values.global.tld}}:{{.Values.opensearch.http_port}}"]
+      hosts => ["https://{{.Values.global.opensearch.host}}:{{.Values.global.opensearch.port}}"]
       auth_type => {
         type => "basic"
-        user => "${OPENSEARCH_USER}"
-        password => "${OPENSEARCH_PASSWORD}"
+        user => "${OPENSEARCH_SYSLOG_USER}"
+        password => "${OPENSEARCH_SYSLOG_PASSWORD}"
       }
       template => "/logstash-etc/alerts.json"
       template_name => "alerts"
@@ -158,11 +166,11 @@ output {
     opensearch {
       id => "opensearch-alerts"
       index => "alerts-other-%{+YYYY}"
-      hosts => ["https://{{.Values.opensearch.http.endpoint}}.{{.Values.global.region}}.{{.Values.global.tld}}:{{.Values.opensearch.http_port}}"]
+      hosts => ["https://{{.Values.global.opensearch.host}}:{{.Values.global.opensearch.port}}"]
       auth_type => {
         type => "basic"
-        user => "${OPENSEARCH_USER}"
-        password => "${OPENSEARCH_PASSWORD}"
+        user => "${OPENSEARCH_SYSLOG_USER}"
+        password => "${OPENSEARCH_SYSLOG_PASSWORD}"
       }
       template => "/logstash-etc/alerts.json"
       template_name => "alerts"
@@ -175,11 +183,11 @@ output {
     opensearch {
       id => "opensearch-deployments"
       index => "deployments-%{+YYYY}"
-      hosts => ["https://{{.Values.opensearch.http.endpoint}}.{{.Values.global.region}}.{{.Values.global.tld}}:{{.Values.opensearch.http_port}}"]
+      hosts => ["https://{{.Values.global.opensearch.host}}:{{.Values.global.opensearch.port}}"]
       auth_type => {
         type => "basic"
-        user => "${OPENSEARCH_USER}"
-        password => "${OPENSEARCH_PASSWORD}"
+        user => "${OPENSEARCH_SYSLOG_USER}"
+        password => "${OPENSEARCH_SYSLOG_PASSWORD}"
       }
       template => "/logstash-etc/deployments.json"
       template_name => "deployments"
@@ -192,7 +200,7 @@ output {
     opensearch {
       id => "opensearch-netflow"
       index => "netflow-%{+YYYY.MM.dd}"
-      hosts => ["https://{{.Values.opensearch.http.endpoint}}.{{.Values.global.region}}.{{.Values.global.tld}}:{{.Values.opensearch.http_port}}"]
+      hosts => ["https://{{.Values.global.opensearch.host}}:{{.Values.global.opensearch.port}}"]
       auth_type => {
         type => 'basic'
         user => "${OPENSEARCH_USER}"
@@ -206,7 +214,7 @@ output {
     opensearch {
       id => "opensearch-jump"
       index => "jump-%{+YYYY.MM.dd}"
-      hosts => ["https://{{.Values.opensearch.http.endpoint}}.{{.Values.global.region}}.{{.Values.global.tld}}:{{.Values.opensearch.http_port}}"]
+      hosts => ["https://{{.Values.global.opensearch.host}}:{{.Values.global.opensearch.port}}"]
       auth_type => {
         type => 'basic'
         user => "${OPENSEARCH_JUMP_USER}"

@@ -3,6 +3,10 @@ DISCO - Designate IngresS Cname Operator
 
 Install the [DISCO](https://github.com/sapcc/kubernetes-operators/tree/master/disco) which automatically discovers Ingresses in the Kubernetes cluster and creates corresponding CNAMEs in OpenStack Desginate.
 
+## Requirements
+
+- `cert-manager >= v1.0.0` for the webhook to work securely
+
 ## Configuration
 
 For a full list of configurable parameters and more details see the [values](./values.yaml).

@@ -7,9 +7,6 @@ log_config_append = /etc/octavia/logging.ini
 # Plugin options are hot_plug_plugin (Hot-pluggable controller plugin)
 octavia_plugins = f5_plugin
 
-# AMQP Transport URL
-{{ include "ini_sections.default_transport_url" . }}
-
 # Tracing
 {{- include "osprofiler" . }}
 
@@ -81,7 +78,6 @@ f5_network_segment_physical_network = {{ .Values.network_segment_physical_networ
 max_workers = {{ .Values.max_workers | default "10" }}
 
 [database]
-connection = {{ include "db_url_mysql" . }}
 max_pool_size = 30
 max_overflow = 50
 
@@ -109,8 +105,6 @@ auth_url = {{.Values.global.keystone_api_endpoint_protocol_internal | default "h
 project_name = service
 project_domain_id = default
 user_domain_id = default
-username = {{ .Release.Name }}{{ .Values.global.user_suffix }}
-password = {{ .Values.global.octavia_service_password | replace "$" "" }}
 
 [keystone_authtoken]
 auth_type = v3password
@@ -118,8 +112,6 @@ auth_version = v3
 auth_interface = internal
 www_authenticate_uri = https://{{include "keystone_api_endpoint_host_public" .}}/v3
 auth_url = {{.Values.global.keystone_api_endpoint_protocol_internal | default "http"}}://{{include "keystone_api_endpoint_host_internal" .}}:{{ .Values.global.keystone_api_port_internal | default 5000}}/v3
-username = {{ .Release.Name }}{{ .Values.global.user_suffix }}
-password = {{ .Values.global.octavia_service_password | replace "$" "" }}
 user_domain_id = default
 project_name = service
 project_domain_id = default
@@ -146,14 +138,3 @@ enabled = true
 service_type = loadbalancer
 config_file = /etc/octavia/watcher.yaml
 {{- end }}
-
-{{ if .Values.audit.enabled -}}
-[audit]
-enabled = True
-audit_map_file = /etc/octavia/octavia_api_audit_map.yaml
-ignore_req_list = GET, HEAD
-record_payloads = {{ if .Values.audit.record_payloads -}}True{{- else -}}False{{- end }}
-metrics_enabled = {{ if .Values.audit.metrics_enabled -}}True{{- else -}}False{{- end }}
-{{- include "ini_sections.audit_middleware_notifications" . }}
-{{- end }}
-

@@ -4,7 +4,8 @@ groups:
   - alert: OpenstackCinderApiDown
     expr: |
         cc3test_status{service="cinder",
-            type="api"
+            type="api",
+            phase="call"
         } == 0
     for: 16m
     labels:
@@ -16,7 +17,7 @@ groups:
       meta: 'Openstack Cinder API is down'
       dashboard: 'cc3test-api-status?var-service={{ $labels.service }}'
       playbook: 'docs/support/playbook/cinder/alerts/cc3test-alert-api/'
-      report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
+      report: 'cc3test/admin/object-storage/containers/cc3test/objects/{{ $labels.base64path }}'
     annotations:
       description: 'Cinder API is down'
       summary: 'Cinder API is down'
@@ -24,7 +25,8 @@ groups:
   - alert: OpenstackCinderApiFlapping
     expr: |
         changes(cc3test_status{service="cinder",
-            type="api"
+            type="api",
+            phase="call"
         }[30m]) > 8
     labels:
       severity: warning
@@ -35,16 +37,15 @@ groups:
       meta: 'Openstack Cinder API is flapping'
       dashboard: 'cc3test-api-status?var-service={{ $labels.service }}'
       playbook: 'docs/support/playbook/cinder/alerts/cc3test-alert-api/'
-      report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
+      report: 'cc3test/admin/object-storage/containers/cc3test/objects/{{ $labels.base64path }}'
     annotations:
       description: 'Flapping Cinder API'
       summary: 'Flapping Cinder API'
 
   - alert: OpenstackCinderCreateVolumeAvzDown
     expr: |
-        cc3test_status{service="cinder",
-            name=~"^TestVolume_create.+"
-        } == 0
+        last_over_time(cc3test_status{service="cinder",
+        name=~"^TestVolume_create.+",phase="call"}[60m]) == 0
     for: 30m
     labels:
       severity: warning
@@ -55,16 +56,15 @@ groups:
       meta: 'Cinder create volume test fails'
       dashboard: 'cc3test-canary-status?var-service={{ $labels.service }}'
       playbook: 'docs/support/playbook/cinder/alerts/cc3test-alert-create-volume/'
-      report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
+      report: 'cc3test/admin/object-storage/containers/cc3test/objects/{{ $labels.base64path }}'
     annotations:
       description: 'Cinder create volume test fails: {{ $labels.name }}'
       summary: 'Cinder create volume test fails: {{ $labels.name }}'
 
   - alert: OpenstackCinderCreateVolumeShardDown
     expr: |
-        cc3test_status{service="cinder",
-            name=~"TestVolume_attach_to_server.+"
-        } == 0
+        last_over_time(cc3test_status{service="cinder",
+        name=~"TestVolume_attach_to_server.+",phase="call"}[120m]) == 0
     for: 120m
     labels:
       severity: warning
@@ -75,16 +75,15 @@ groups:
       meta: 'Cinder create volume test fails'
       dashboard: 'cc3test-bb-vc-canary-status?var-service={{ $labels.service }}'
       playbook: 'docs/support/playbook/cinder/alerts/cc3test-alert-create-volume-shard/'
-      report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
+      report: 'cc3test/admin/object-storage/containers/cc3test/objects/{{ $labels.base64path }}'
     annotations:
       description: 'Cinder create volume test fails: {{ $labels.name }}'
       summary: 'Cinder create volume test fails: {{ $labels.name }}'
 
   - alert: OpenstackCinderCreateSnapshot
     expr: |
-        cc3test_status{service="cinder",
-            name=~"TestSnapshot_create_snapshot.+"
-        } == 0
+        last_over_time(cc3test_status{service="cinder",
+        name=~"TestSnapshot_create_snapshot.+",phase="call"}[1h]) == 0
     for: 30m
     labels:
       severity: info
@@ -95,7 +94,7 @@ groups:
       meta: 'Cinder create snapshot test fails'
       dashboard: 'cc3test-canary-status?var-service={{ $labels.service }}'
       playbook: 'docs/support/playbook/cinder/alerts/cc3test-alert-create-snapshot/'
-      report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
+      report: 'cc3test/admin/object-storage/containers/cc3test/objects/{{ $labels.base64path }}'
     annotations:
       description: 'Cinder create snapshot test fails - please ignore: {{ $labels.name }}'
       summary: 'Cinder create snapshot test fails - please ignore: {{ $labels.name }}'

@@ -136,23 +136,29 @@ spec:
                 path: rootwrap.d/api-metadata.filters
               - key:  release
                 path: release
-{{- if .Values.api.use_uwsgi }}
+              {{- if .Values.api.use_uwsgi }}
               - key:  api_uwsgi.ini
                 path: api_uwsgi.ini
-{{- end }}
-{{- if .Values.audit.enabled }}
+              {{- end }}
+              {{- if .Values.audit.enabled }}
               - key:  nova_audit_map.yaml
                 path: nova_audit_map.yaml
-{{- end }}
-{{- if .Values.watcher.enabled }}
+              {{- end }}
+              {{- if .Values.watcher.enabled }}
               - key:  watcher.yaml
                 path: watcher.yaml
-{{- end }}
+              {{- end }}
           - secret:
               name: nova-etc
               items:
-              - key: db.conf
-                path: nova.conf.d/db.conf
+              - key: api-db.conf
+                path: nova.conf.d/api-db.conf
+              - key: cell1.conf
+                path: nova.conf.d/cell1.conf
+              - key: keystoneauth-secrets.conf
+                path: nova.conf.d/keystoneauth-secrets.conf
+              - key: nova-api-metadata-secrets.conf
+                path: nova.conf.d/nova-api-metadata-secrets.conf
       - name: statsd-etc
         projected:
           sources:

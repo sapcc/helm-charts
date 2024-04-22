@@ -95,6 +95,16 @@ spec:
                   key: archer.DSN
             - name: AVAILABILITY_ZONE
               value: {{ $az_long }}
+            - name: PGPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: archer-pguser-archer
+                  key: postgres-password
+            - name: OS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: archer-secret
+                  key: service_user_password
           ports:
             - name: metrics
               containerPort: {{ required ".Values.metrics.port missing" $.Values.metrics.port }}
@@ -110,7 +120,7 @@ spec:
         - name: neutron-linuxbridge-agent
           image: "{{ $.Values.global.registry }}/loci-neutron:{{ $.Values.image.neutron_version | default "latest" }}"
           imagePullPolicy: IfNotPresent
-          command: ["dumb-init", "neutron-linuxbridge-agent", "--config-file", "/etc/neutron/neutron.conf", "--config-file", "/etc/neutron/ml2-conf.ini", "--config-file", "/etc/neutron/linux-bridge.ini"]
+          command: ["dumb-init", "neutron-linuxbridge-agent", "--config-file", "/etc/neutron/neutron.conf", "--config-dir", "/etc/neutron/secrets", "--config-file", "/etc/neutron/ml2-conf.ini", "--config-file", "/etc/neutron/linux-bridge.ini"]
           env:
             - name: SENTRY_DSN
               valueFrom:
@@ -125,7 +135,7 @@ spec:
               value: archer-agent-{{ $name }}-{{ $az_long }}
           readinessProbe:
             exec:
-              command: ["neutron-agent-liveness", "-config-file", "/etc/neutron/neutron.conf", "-agent-type", "Linux bridge agent"]
+              command: ["neutron-agent-liveness", "-config-file", "/etc/neutron/neutron.conf", "--config-file", "/etc/neutron/secrets/neutron-common-secrets.conf", "-agent-type", "Linux bridge agent"]
             initialDelaySeconds: 30
             periodSeconds: 60
             timeoutSeconds: 10
@@ -143,7 +153,7 @@ spec:
             - mountPath: /lib/modules
               name: modules
               readOnly: true
-            - name: neutron-etc
+            - name: etc-neutron-linuxbridge-agent
               mountPath: /etc/neutron
               readOnly: true
             - name: neutron-etc
@@ -170,6 +180,28 @@ spec:
         - name: neutron-etc
           configMap:
             name: neutron-etc
+        - name: etc-neutron-linuxbridge-agent
+          projected:
+            defaultMode: 420
+            sources:
+            - configMap:
+                name: neutron-etc
+                items:
+                  - key: neutron.conf
+                    path: neutron.conf
+                  - key: logging.conf
+                    path: logging.conf
+                  - key: rootwrap.conf
+                    path: rootwrap.conf
+                  - key: ml2-conf.ini
+                    path: ml2-conf.ini
+                  - key: linux-bridge.ini
+                    path: linux-bridge.ini
+            - secret:
+                name: neutron-common-secrets
+                items:
+                  - key: neutron-common-secrets.conf
+                    path: secrets/neutron-common-secrets.conf
         - name: etc-archer
           projected:
             defaultMode: 420

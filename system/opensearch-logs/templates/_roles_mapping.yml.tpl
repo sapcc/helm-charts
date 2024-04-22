@@ -42,6 +42,11 @@ logstash:
   backend_roles:
   - "logstash"
 
+storage:
+  reserved: false
+  backend_roles:
+  - "storage"
+
 jaeger:
   reserved: false
   users:
@@ -78,12 +83,14 @@ manage_snapshots:
 kibana_server:
   reserved: true
   users:
-  - "dashboard"
+  - "kibanaserver"
 
 promrole:
   reserved: false
   users:
   - "promuser"
+  backend_roles:
+  - CC_IAS_OPERATIONS_UI_KIBANA_SUPPORT
 
 jupyterhub:
   reserved: false

@@ -36,6 +36,7 @@ spec:
 {{ tuple . "ironic" "conductor" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
       annotations:
         configmap-etc-hash: {{ include (print .Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
+        secrets-hash: {{ include (print .Template.BasePath "/secrets.yaml") . | sha256sum }}
         configmap-etc-conductor-hash: {{ tuple . $conductor | include "ironic_conductor_configmap" | sha256sum }}{{- if $conductor.jinja2 }}{{`
         configmap-etc-jinja2-hash: {{ block | safe | sha256sum }}
 `}}{{- end }}
@@ -105,6 +106,8 @@ spec:
         volumeMounts:
         - mountPath: /etc/ironic
           name: etcironic
+        - mountPath: /etc/ironic/ironic.conf.d
+          name: ironic-etc-confd
         - mountPath: /etc/ironic/ironic.conf
           name: ironic-etc
           subPath: ironic.conf
@@ -202,6 +205,12 @@ spec:
         emptyDir: {}
       - name: shellinabox
         emptyDir: {}
+      - name: ironic-etc-confd
+        secret:
+          secretName: {{ .Release.Name }}-secrets
+          items:
+          - key: secrets.conf
+            path: secrets.conf
       - name: ironic-etc
         configMap:
           name: ironic-etc
@@ -212,6 +221,7 @@ spec:
         {{- else }}
           name: ironic-conductor-etc
         {{- end }}
+
       - name: ironic-console
         configMap:
           name: ironic-console

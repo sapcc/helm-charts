@@ -4,7 +4,8 @@ groups:
   - alert: CCloudElektraDown
     expr: |
         cc3test_status{type="datapath",
-            name=~"TestElektra_datapath.+"
+            name=~"TestElektra_datapath.+",
+            phase="call"
         } == 0
     for: 10m
     labels:
@@ -15,8 +16,8 @@ groups:
       context: '{{ $labels.service }}'
       meta: 'CCloud Elektra is down'
       dashboard: 'cc3test-datapath-status?var-service={{ $labels.service }}'
-      playbook: 'docs/devops/alert/elektra/#test_api'
-      report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
+      playbook: 'docs/support/playbook/elektra/alerts/cc3test-alert-datapath/#ccloudelektradown--ccloudelektraflapping'
+      report: 'cc3test/admin/object-storage/containers/cc3test/objects/{{ $labels.base64path }}'
     annotations:
       description: 'CCloud Elektra is down'
       summary: 'CCloud Elektra is down'
@@ -24,7 +25,8 @@ groups:
   - alert: CCloudElektraFlapping
     expr: |
         changes(cc3test_status{type="datapath",
-            name=~"TestElektra_datapath.+"
+            name=~"TestElektra_datapath.+",
+            phase="call"
         }[30m]) > 8
     labels:
       severity: warning
@@ -34,8 +36,8 @@ groups:
       context: '{{ $labels.service }}'
       meta: 'CCloud Elektra is flapping'
       dashboard: 'cc3test-datapath-status?var-service={{ $labels.service }}'
-      playbook: 'docs/devops/alert/elektra/#test_api'
-      report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
+      playbook: 'docs/support/playbook/elektra/alerts/cc3test-alert-datapath/#openstackelektradatapath'
+      report: 'cc3test/admin/object-storage/containers/cc3test/objects/{{ $labels.base64path }}'
     annotations:
       description: 'CCloud Elektra is flapping'
       summary: 'CCloud Elektra is flapping'

@@ -32,6 +32,8 @@ spec:
       annotations:
         configmap-etc-hash: {{ include (print $.Template.BasePath "/octavia-etc-configmap.yaml") . | sha256sum }}
         configmap-worker-hash: {{ include (print $.Template.BasePath "/octavia-worker-configmap.yaml") . | sha256sum }}
+        secrets-hash: {{ include (print $.Template.BasePath "/secrets.yaml") . | sha256sum }}
+        secrets-worker-hash: {{ include (print $.Template.BasePath "/secrets-worker.yaml") . | sha256sum }}
         prometheus.io/scrape: "true"
         prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
         {{- include "utils.linkerd.pod_and_service_annotation" . | indent 8 }}
@@ -64,13 +66,20 @@ spec:
               mountPath: /etc/octavia/octavia-worker.conf
               subPath: octavia-worker.conf
               readOnly: true
+            - name: octavia-etc-confd
+              mountPath: /etc/octavia/octavia.conf.d
+              readOnly: true
+            - name: octavia-etc-worker-secret
+              mountPath: /etc/octavia/octavia-worker-secret.conf
+              subPath: secrets-worker.conf
+              readOnly: true
             - mountPath: /var/run/octavia
               name: octavia-var
             {{- include "utils.proxysql.volume_mount" . | indent 12 }}
             {{- include "utils.trust_bundle.volume_mount" . | indent 12 }}
           env:
             - name: COMMAND
-              value: "octavia-worker --config-file /etc/octavia/octavia.conf --config-file /etc/octavia/octavia-worker.conf"
+              value: "octavia-worker --config-file /etc/octavia/octavia.conf --config-file /etc/octavia/octavia.conf.d/secrets.conf --config-file /etc/octavia/octavia-worker.conf --config-file /etc/octavia/octavia-worker-secret.conf"
             - name: DEPENDENCY_JOBS
               value: octavia-migration
             - name: NAMESPACE
@@ -79,39 +88,6 @@ spec:
               value: "ignore:Unverified HTTPS request"
             - name: REQUESTS_CA_BUNDLE
               value: ""
-            {{- if .Values.sentry.enabled }}
-            - name: SENTRY_DSN
-              valueFrom:
-                secretKeyRef:
-                  name: sentry
-                  key: octavia.DSN.python
-            {{- end }}
-        - name: octavia-driver-agent
-          image: {{required ".Values.global.registry is missing" .Values.global.registry}}/loci-octavia:{{required "Values.imageVersion is missing" .Values.imageVersion}}
-          imagePullPolicy: IfNotPresent
-          command: ['dumb-init', 'kubernetes-entrypoint']
-          resources:
-{{ toYaml .Values.pod.resources.driver_agent | indent 12 }}
-          volumeMounts:
-            - name: octavia-etc
-              mountPath: /etc/octavia/octavia.conf
-              subPath: octavia.conf
-              readOnly: true
-            - name: octavia-etc
-              mountPath: /etc/octavia/logging.ini
-              subPath: logging.ini
-              readOnly: true
-            - mountPath: /var/run/octavia
-              name: octavia-var
-            {{- include "utils.proxysql.volume_mount" . | indent 12 }}
-            {{- include "utils.trust_bundle.volume_mount" . | indent 12 }}
-          env:
-            - name: COMMAND
-              value: "octavia-driver-agent --config-file /etc/octavia/octavia.conf"
-            - name: DEPENDENCY_JOBS
-              value: octavia-migration
-            - name: NAMESPACE
-              value: {{ .Release.Namespace }}
             {{- if .Values.sentry.enabled }}
             - name: SENTRY_DSN
               valueFrom:
@@ -133,9 +109,16 @@ spec:
               mountPath: /etc/octavia/octavia.conf
               subPath: octavia.conf
               readOnly: true
+            - name: octavia-etc-confd
+              mountPath: /etc/octavia/octavia.conf.d
+              readOnly: true
             - name: octavia-etc-worker
               mountPath: /etc/octavia/octavia-worker.conf
               subPath: octavia-worker.conf
+              readOnly: true
+            - name: octavia-etc-worker-secret
+              mountPath: /etc/octavia/octavia-worker-secret.conf
+              subPath: secrets-worker.conf
               readOnly: true
             - name: octavia-etc
               mountPath: /etc/octavia/logging.ini
@@ -145,7 +128,7 @@ spec:
             {{- include "utils.trust_bundle.volume_mount" . | indent 12 }}
           env:
             - name: COMMAND
-              value: "octavia-f5-status-manager --config-file /etc/octavia/octavia.conf --config-file /etc/octavia/octavia-worker.conf"
+              value: "octavia-f5-status-manager --config-file /etc/octavia/octavia.conf --config-file /etc/octavia/octavia.conf.d/secrets.conf --config-file /etc/octavia/octavia-worker.conf --config-file /etc/octavia/octavia-worker-secret.conf"
             - name: DEPENDENCY_JOBS
               value: octavia-migration
             - name: NAMESPACE
@@ -168,9 +151,15 @@ spec:
         - name: octavia-etc
           configMap:
             name: octavia-etc
+        - name: octavia-etc-confd
+          secret:
+            secretName: {{ .Release.Name }}-secrets
         - name: octavia-etc-worker
           configMap:
             name: octavia-etc-{{ $name }}
+        - name: octavia-etc-worker-secret
+          secret:
+            secretName: {{ .Release.Name }}-secrets-{{ $name }}
         - name: octavia-var
           emptyDir: {}
         {{- include "utils.proxysql.volumes" . | indent 8 }}

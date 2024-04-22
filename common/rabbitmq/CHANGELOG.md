@@ -3,6 +3,16 @@ Rabbitmq CHANGELOG
 
 This file is used to list changes made in each version of the common chart rabbitmq.
 
+0.6.9
+-----
+b.alkhateeb@sap.com
+- update rabbitMQ to version 3.13.0-management
+
+0.6.8
+-----
+dusan.dordevic@sap.com
+- Add /metric/detailed and /metrics/per-object prometheus endpoints. They can be enabled/disabled from values.yaml, metrics section
+
 0.6.7
 -----
 dusan.dordevic@sap.com

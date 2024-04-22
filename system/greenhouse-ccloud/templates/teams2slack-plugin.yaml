@@ -1,0 +1,35 @@
+{{- if .Values.teams2slack.enabled }}
+apiVersion: greenhouse.sap/v1alpha1
+kind: Plugin
+metadata:
+  name: teams2slack
+  namespace: {{ .Chart.Name }}
+spec:
+  disabled: false
+  pluginDefinition: teams2slack
+  displayName: {{ required ".Values.teams2slack.displayName missing" .Values.teams2slack.displayName | quote }}
+  optionValues:
+    - name: dryRun
+      value: {{ required ".Values.teams2slack.dryRun missing" .Values.teams2slack.dryRun }}
+    - name: endpoint
+      value: {{ required ".Values.teams2slack.endpoint missing" .Values.teams2slack.endpoint }}
+    - name: groupNamePrefix
+      value: {{ required ".Values.teams2slack.groupNamePrefix missing" .Values.teams2slack.groupNamePrefix }}
+    - name: groupNameSuffix
+      value: {{ required ".Values.teams2slack.groupNameSuffix missing" .Values.teams2slack.groupNameSuffix }}
+    - name: infoChannelID
+      value: {{ required ".Values.teams2slack.infoChannelID missing" .Values.teams2slack.infoChannelID }}
+    - name: token
+      valueFrom:
+        secret:
+          key: SLACK_TOKEN
+          name: teams2slack
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: teams2slack
+  namespace: {{ .Chart.Name }}
+data:
+  SLACK_TOKEN: {{ required ".Values.teams2slack.slackToken missing" .Values.teams2slack.slackToken | b64enc }}
+{{ end }}

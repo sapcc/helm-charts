@@ -49,16 +49,15 @@ limes:
   constraints:
     ccloud: {}
 
-  # Map with entries being the contents of a Limes quota overrides file.
-  # See `LIMES_QUOTA_OVERRIDES_PATH` in <https://github.com/sapcc/limes/blob/master/docs/operators/config.md>
-  quota_overrides: {}
-
   # Whether to apply resource requests/limits to containers.
   resources:
     enabled: false
 
+# Map with entries being the contents of a Limes quota overrides file.
+# See `LIMES_QUOTA_OVERRIDES_PATH` in <https://github.com/sapcc/limes/blob/master/docs/operators/config.md>
+quota_overrides: {}
+
 postgresql:
-  imageTag: '20240226094551'
   persistence:
     enabled: true
     size: 10Gi
@@ -67,9 +66,10 @@ postgresql:
     limes: {}
   tableOwner: limes
 
-  log_min_duration_statement: 250
-  # less than the postgresql chart's default; I want to know early when connections start getting out of hand
-  max_connections: 64
+  config:
+    log_min_duration_statement: 250
+    # less than the postgresql chart's default; I want to know early when connections start getting out of hand
+    max_connections: 64
 
   alerts:
     support_group: containers
@@ -219,6 +219,25 @@ pgmetrics:
             usage: "LABEL"
             description: "Domain name"
 
+    limes_support_group:
+      query: >
+        SELECT 1 AS mapping, type AS service, CASE
+          WHEN type IN ('compute', 'sharev2', 'volumev2')      THEN 'compute-storage-api'
+          WHEN type IN ('network', 'dns', 'endpoint-services') THEN 'network-api'
+          WHEN type IN ('email-aws')                           THEN 'email'
+          WHEN type IN ('object-store')                        THEN 'storage'
+          ELSE 'containers' END AS support_group
+        FROM project_services GROUP BY type
+      metrics:
+        - mapping:
+            usage: "GAUGE"
+            description: "Mapping between Limes service types and support group names"
+        - service:
+            usage: "LABEL"
+            description: "Service type in Limes"
+        - support_group:
+            usage: "LABEL"
+            description: "Support group for alerts"
 
 # Deploy limes Prometheus alerts.
 alerts:
