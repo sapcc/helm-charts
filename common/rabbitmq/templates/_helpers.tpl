@@ -94,5 +94,4 @@ app.kubernetes.io/instance: {{ .Chart.Name }}-{{ .Release.Name }}
 app.kubernetes.io/version: {{ .Chart.Version }}
 app.kubernetes.io/component: RabbitMQ
 app.kubernetes.io/part-of: {{ .Release.Name }}
-app.kubernetes.io/managed-by: Helm
 {{- end }}
