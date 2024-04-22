@@ -31,9 +31,17 @@ spec:
       nodeSelector:
         zone: farm
       volumes:
-        - name: cinder-etc
-          configMap:
-            name: cinder-etc
+      - name: cinder-etc
+        projected:
+          defaultMode: 420
+          sources:
+          - configMap:
+              name: cinder-etc
+          - secret:
+              items:
+              - key: secrets.conf
+                path: cinder.conf.d/secrets.conf
+              name: cinder-secrets
       containers:
 {{- if .Values.cinder_nanny.db_purge.enabled }}
         - name: db-consistency-and-purge
