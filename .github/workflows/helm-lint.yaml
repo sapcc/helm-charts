@@ -30,21 +30,21 @@ jobs:
         - name: Run chart-testing (list-changed)
           id: list-changed
           run: |
-            changed=$(ct list-changed --config .github/ct.yaml --target-branch ${{ github.event.repository.default_branch }})
+            changed=$(ct list-changed --config ci/config.yaml --target-branch ${{ github.event.repository.default_branch }})
             if [[ -n "$changed" ]]; then
               echo "changed=true" >> "$GITHUB_OUTPUT"
             fi
   
         - name: Run chart-testing (lint)
           if: steps.list-changed.outputs.changed == 'true'
-          run: ct lint --config .github/ct.yaml --target-branch ${{ github.event.repository.default_branch }}
+          run: ct lint --chart-yaml-schema ci/chart_schema.yaml --lint-conf ci/lintconf.yaml --config ci/config.yaml --target-branch ${{ github.event.repository.default_branch }}
   
         - name: Check version bump
           id: check-bump
           if: steps.list-changed.outputs.changed == 'true'
           continue-on-error: true
           run: |
-            for chart in $(ct list-changed --config .github/ct.yaml --target-branch ${{ github.event.repository.default_branch }}); do
+            for chart in $(ct list-changed --config ct/config.yaml --target-branch ${{ github.event.repository.default_branch }}); do
               chart_version=$(yq .version "$chart/Chart.yaml")
               if helm pull "oci://${{ env.REGISTRY }}/${{ github.repository }}/charts/$(basename $chart)" --version $chart_version; then
                 echo "chart=$(basename $chart)" >> "$GITHUB_OUTPUT"
