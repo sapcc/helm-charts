@@ -185,8 +185,8 @@ function selectbootstrapnode {
   for (( int=${MAX_RETRIES}; int >=1; int-=1));
     do
     loginfo "${FUNCNAME[0]}" "Find Galera node with highest sequence number (${int} retries left)"
-    SEQNO_FILE_COUNT=$(grep -c '{{ (include "nodeNamePrefix" (dict "global" $ "component" "database")) }}-*' ${SEQNO_FILES} | grep -c -e ${BASE}/etc/galerastatus/{{ (include "nodeNamePrefix" (dict "global" $ "component" "database")) }}-.*.seqno:1)
-    if [ ${SEQNO_FILE_COUNT} -ge {{ ($.Values.replicas.database|int) }} ]; then
+    SEQNO_FILE_COUNT=$(grep --no-filename --count '{{ (include "nodeNamePrefix" (dict "global" $ "component" "database")) }}-*' ${SEQNO_FILES} | grep --count '1')
+    if [ ${SEQNO_FILE_COUNT} -ge {{ ((include "replicaCount" (dict "global" $ "type" "database")) | int) }} ]; then
       IFS=":" SEQNO_OLDEST_TIMESTAMP=($(grep --no-filename --perl-regex --regexp='^timestamp:\d+$' ${SEQNO_FILES} | sort --key=2 --numeric-sort --field-separator=: | head --lines=1))
       IFS="${oldIFS}"
       if ! [ -z ${SEQNO_OLDEST_TIMESTAMP[1]+x} ]; then
@@ -217,14 +217,14 @@ function selectbootstrapnode {
         sleep  $(( ${WAIT_SECONDS} * (${MAX_RETRIES} - ${int} + 1) ))
       fi
     else
-      loginfo "${FUNCNAME[0]}" "${SEQNO_FILE_COUNT} of {{ ($.Values.replicas.database|int) }} sequence numbers found. Will wait $(( ${WAIT_SECONDS} * (${MAX_RETRIES} - ${int} + 1) ))s"
+      loginfo "${FUNCNAME[0]}" "${SEQNO_FILE_COUNT} of {{ ((include "replicaCount" (dict "global" $ "type" "database")) | int) }} sequence numbers found. Will wait $(( ${WAIT_SECONDS} * (${MAX_RETRIES} - ${int} + 1) ))s"
       sleep  $(( ${WAIT_SECONDS} * (${MAX_RETRIES} - ${int} + 1) ))
     fi
     setconfigmap "seqno" "${SEQNO}" "Update"
   done
 
   if [ ${int} -eq 0 ]; then
-    logerror "${FUNCNAME[0]}" "Sequence number search finally incomplete(${SEQNO_FILE_COUNT}/{{ ($.Values.replicas.database|int)}})"
+    logerror "${FUNCNAME[0]}" "Sequence number search finally incomplete(${SEQNO_FILE_COUNT}/{{ ((include "replicaCount" (dict "global" $ "type" "database")) | int)}})"
     exit 1
   fi
   loginfo "${FUNCNAME[0]}" "Sequence number search done"

@@ -1,5 +1,15 @@
 # Changelog
 
+## v0.24.0 - 2024/04/22
+* multi region support for Galera added
+  * MariaDB Galera cluster can be deployed in 3 regions
+  * currently limited to one cluster node per region, will be extended in the future
+  * WAN configuration tweaks added
+  * helm unit tests added
+  * [documentation](README.md#multi-region-support) added
+* packages timestamp updated to `20240419150126`
+* chart version bumped
+
 ## v0.23.1 - 2024/02/12
 * helm unit tests for migration option added
 * packages timestamp updated to `20240212072432`

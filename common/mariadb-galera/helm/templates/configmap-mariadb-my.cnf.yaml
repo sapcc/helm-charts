@@ -10,13 +10,41 @@
 {{- else  }}
   {{- $_ := set $wsrepProviderOptions "gcache.recover" "gcache.recover=no" }}
 {{- end }}
+{{- if $.Values.mariadb.galera.multiRegion.enabled }}
+  {{- if and (hasKey $.Values "global") (hasKey $.Values.global "db_region") ($.Values.global.db_region) }}
+    {{- $_ := set $wsrepProviderOptions "gmcast.segment" (printf "gmcast.segment=%d" (required "mariadb.galera.multiRegion.<region_name>.segmentId has to be defined if the multiRegion parameter is enabled" (index $.Values.mariadb.galera.multiRegion.regions $.Values.global.db_region).segmentId | int)) }}
+  {{- else }}
+    {{- $_ := set $wsrepProviderOptions "gmcast.segment" (printf "gmcast.segment=%d" (required "mariadb.galera.multiRegion.<region_name>.segmentId has to be defined if the multiRegion parameter is enabled" (index $.Values.mariadb.galera.multiRegion.regions (required "mariadb.galera.multiRegion.current has to be defined if the multiRegion parameter is enabled" $.Values.mariadb.galera.multiRegion.current)).segmentId | int)) }}
+  {{- end }}
+{{- end }}
 {{- $_ := set $wsrepProviderOptions "cert.log_conflicts" "cert.log_conflicts=ON"}}
 {{- if $.Values.mariadb.galera.debug }}
   {{- $_ := set $wsrepProviderOptions "debug" "debug=YES"}}
 {{- else  }}
   {{- $_ := set $wsrepProviderOptions "debug" "debug=NO"}}
 {{- end }}
-{{- $_ := set $wsrepProviderOptions "ist.recv_addr" (printf "ist.recv_addr=${CONTAINER_IP}:%d" ((include "getNetworkPort" (dict "global" $ "type" "backend" "name" "ist")) | int)) }}
+{{- if $.Values.mariadb.galera.multiRegion.enabled }}
+  {{- if ge ($.Values.mariadb.galera.multiRegion.user_send_window | int) ($.Values.mariadb.galera.multiRegion.send_window | int) }}
+    {{- fail "mariadb.galera.multiRegion.user_send_window has to be smaller or equal to mariadb.galera.multiRegion.send_window" }}
+  {{- end }}
+  {{- if gt ($.Values.mariadb.galera.multiRegion.inactive_check_period | float64) 2.5 }}
+    {{- fail "mariadb.galera.multiRegion.inactive_check_period has to be smaller or equal to 2.5" }}
+  {{- end }}
+  {{- if gt ($.Values.mariadb.galera.multiRegion.keepalive_period | float64) 1.6 }}
+    {{- fail "mariadb.galera.multiRegion.keepalive_period has to be smaller or equal to 1.6" }}
+  {{- end }}
+  {{- $_ := set $wsrepProviderOptions "ist.recv_addr" (printf "ist.recv_addr=%s:%d" (index $.Values.mariadb.galera.multiRegion.regions $.Values.mariadb.galera.multiRegion.current).externalIP ((include "getNetworkPort" (dict "global" $ "type" "backend" "component" "database" "name" "ist")) | int)) }}
+  {{- $_ := set $wsrepProviderOptions "ist.recv_bind" "ist.recv_bind=${CONTAINER_IP}" }}
+  {{- $_ := set $wsrepProviderOptions "evs.suspect_timeout" (printf "evs.suspect_timeout=PT%dS" ($.Values.mariadb.galera.multiRegion.suspect_timeout | int)) }}
+  {{- $_ := set $wsrepProviderOptions "evs.inactive_timeout" (printf "evs.inactive_timeout=PT%dS" ($.Values.mariadb.galera.multiRegion.inactive_timeout | int)) }}
+  {{- $_ := set $wsrepProviderOptions "evs.inactive_check_period" (printf "evs.inactive_check_period=PT%.2fS" ($.Values.mariadb.galera.multiRegion.inactive_check_period | float64)) }}
+  {{- $_ := set $wsrepProviderOptions "evs.install_timeout" (printf "evs.install_timeout=PT%dS" ($.Values.mariadb.galera.multiRegion.install_timeout | int)) }}
+  {{- $_ := set $wsrepProviderOptions "evs.keepalive_period" (printf "evs.keepalive_period=PT%.2fS" ($.Values.mariadb.galera.multiRegion.keepalive_period | float64)) }}
+  {{- $_ := set $wsrepProviderOptions "evs.send_window" (printf "evs.send_window=%d" ($.Values.mariadb.galera.multiRegion.send_window | int)) }}
+  {{- $_ := set $wsrepProviderOptions "evs.user_send_window" (printf "evs.user_send_window=%d" ($.Values.mariadb.galera.multiRegion.user_send_window | int)) }}
+{{- else  }}
+  {{- $_ := set $wsrepProviderOptions "ist.recv_addr" (printf "ist.recv_addr=${CONTAINER_IP}:%d" ((include "getNetworkPort" (dict "global" $ "type" "backend" "component" "database" "name" "ist")) | int)) }}
+{{- end }}
 {{- $_ := set $wsrepProviderOptions "pc.wait_prim_timeout" (printf "pc.wait_prim_timeout=PT%dS" ($.Values.mariadb.galera.waitForPrimaryTimeoutInSeconds | default 30 | int)) }}
 {{- if hasKey $.Values.mariadb.galera "gtidDomainIdCount" }}
   {{- if or (lt ($.Values.mariadb.galera.gtidDomainIdCount | int) 1) (gt ($.Values.mariadb.galera.gtidDomainIdCount | int) 2) }}
@@ -30,7 +58,7 @@ metadata:
   name: {{ include "commonPrefix" $ }}-mariadb-my-cnf
   namespace: {{ $.Release.Namespace }}
 data:
-{{- range $int, $err := until ($.Values.replicas.database|int) }}
+{{- range $int, $err := until ((include "replicaCount" (dict "global" $ "type" "database")) | int) }}
   my.cnf.{{ $nodeNamePrefix }}-{{ $int }}.tpl: |-
     [mysqld]
     {{- if $.Values.mariadb.performance_schema }}
@@ -57,7 +85,11 @@ data:
     sync_binlog={{ $.Values.mariadb.binLogSync | default 0 | int }}
     default_storage_engine=InnoDB
     innodb_autoinc_lock_mode=2
-    innodb_flush_log_at_trx_commit={{ $.Values.mariadb.innodbFlushLogAtTrxCommit | default 0 | int }}
+    {{- if $.Values.mariadb.galera.multiRegion.enabled }}
+    innodb_flush_log_at_trx_commit=0
+    {{- else }}
+    innodb_flush_log_at_trx_commit={{ $.Values.mariadb.innodbFlushLogAtTrxCommit | int }}
+    {{- end }}
     {{- if $.Values.mariadb.galera.gtidStrictMode }}
     gtid-strict-mode=1
     {{- else }}
@@ -72,8 +104,14 @@ data:
     wsrep_cluster_address={{ include "wsrepClusterAddress" (dict "global" $) }}
     {{- $_ := set $wsrepProviderOptions "pc.weight" (printf "pc.weight=${PC_WEIGHT_%d}" $int)}}
     wsrep_provider_options={{ (join ";" (values $wsrepProviderOptions | sortAlpha)) }}
+    {{- if $.Values.mariadb.galera.multiRegion.enabled }}
+    wsrep_node_address={{ (index $.Values.mariadb.galera.multiRegion.regions $.Values.mariadb.galera.multiRegion.current).externalIP }}
+    wsrep_sst_receive_address={{ (index $.Values.mariadb.galera.multiRegion.regions $.Values.mariadb.galera.multiRegion.current).externalIP }}
+    {{- else }}
     wsrep_node_address=${CONTAINER_IP}
-    wsrep_node_name={{ $nodeNamePrefix }}-{{ $int }}
+    {{- end }}
+    wsrep_node_incoming_address=${CONTAINER_IP}
+    wsrep_node_name={{ if $.Values.mariadb.galera.multiRegion.enabled }}{{- (printf "%d-" ((index $.Values.mariadb.galera.multiRegion.regions $.Values.mariadb.galera.multiRegion.current).segmentId|int))}}{{end}}{{ $nodeNamePrefix }}-{{ $int }}
     wsrep-on=1
     wsrep_log_conflicts=ON
     {{- if eq $.Values.mariadb.galera.logLevel "debug" }}wsrep_debug=1{{- end }}
@@ -92,7 +130,7 @@ data:
       replicas(5) * DomainCount(2) = 10
       replicas(5) * DomainCount(1) = 5
     */}}
-    auto_increment_increment={{ mul ($.Values.replicas.database|int) ($.Values.mariadb.galera.gtidDomainIdCount| default 1 | int) }}
+    auto_increment_increment={{ mul ((include "replicaCount" (dict "global" $ "type" "database")) | int) ($.Values.mariadb.galera.gtidDomainIdCount| default 1 | int) }}
     {{- /*
       calculate the auto increment offset based on ((Galera domain count - Galera domain id) * amount of pod replicas + (current replica number + 1)) to ensure unique values across all database nodes in all connected clusters
       (DomainCount(2) - domainId(2) * replicas(3) + (replica(0) + 1) = 1
@@ -113,7 +151,7 @@ data:
       (DomainCount(2) - domainId(1) * replicas(5) + (replica(3) + 1) = 9
       (DomainCount(2) - domainId(1) * replicas(5) + (replica(4) + 1) = 10
     */}}
-    auto_increment_offset={{ (add (mul (sub ($.Values.mariadb.galera.gtidDomainIdCount| default 1 | int) ($.Values.mariadb.galera.gtidDomainId | default 1 | int)) ($.Values.replicas.database|int)) (add1 ($int | int))) | int }}
+    auto_increment_offset={{ (add (mul (sub ($.Values.mariadb.galera.gtidDomainIdCount| default 1 | int) ($.Values.mariadb.galera.gtidDomainId | default 1 | int)) ((include "replicaCount" (dict "global" $ "type" "database")) | int)) (add1 ($int | int))) | int }}
 
     # async replication with MariaDB instances outside of the Galera cluster
     relay_log=/opt/${SOFTWARE_NAME}/{{ $.Values.mariadb.binLogDir | default "data" }}/{{ (required "mariadb.galera.clustername is required to configure the relay_log option for MariaDB" $.Values.mariadb.galera.clustername) }}_relaylog

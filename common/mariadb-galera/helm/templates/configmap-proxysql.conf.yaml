@@ -56,8 +56,8 @@ metadata:
   namespace: {{ $.Release.Namespace }}
 data:
   proxysql_servers.cfg.tpl: |-
-    {{- range $int, $err := until ($.Values.replicas.proxy|int) }}
-      {{- $weight := (sub (sub ($.Values.replicas.database|int) $int) 1) }}
+    {{- range $int, $err := until ((include "replicaCount" (dict "global" $ "type" "proxy")) | int) }}
+      {{- $weight := (sub (sub ((include "replicaCount" (dict "global" $ "type" "database")) | int) $int) 1) }}
       {{- $calculatedWeight := 1 }}
       {{- range $_, $err := until ($weight|int) }}
         {{- /* 2^n where n is the $calculatedWeight */}}
@@ -67,7 +67,7 @@ data:
         hostname="{{ (printf "%s-%d.%s" (include "nodeNamePrefix" (dict "global" $ "component" "proxysql")) $int $.Release.Namespace) }}"
         port={{ $proxysqlAdminPort }}
         weight={{ $calculatedWeight }}
-      {{- if eq (add1 $int) ($.Values.replicas.database|int) }}
+      {{- if eq (add1 $int) ((include "replicaCount" (dict "global" $ "type" "database")) | int) }}
       }
       {{- else }}
       },
@@ -86,8 +86,8 @@ data:
       active=1
     }
   mysql_servers.cfg.tpl: |-
-    {{- range $int, $err := until ($.Values.replicas.database|int) }}
-    {{- $weight := (sub (sub ($.Values.replicas.database|int) $int) 1) }}
+    {{- range $int, $err := until ((include "replicaCount" (dict "global" $ "type" "database")) | int) }}
+    {{- $weight := (sub (sub ((include "replicaCount" (dict "global" $ "type" "database")) | int) $int) 1) }}
       {{- $calculatedWeight := 1 }}
       {{- range $_, $err := until ($weight|int) }}
         {{- /* 2^n where n is the $calculatedWeight */}}
@@ -102,7 +102,7 @@ data:
         max_connections=100
         max_replication_lag=0
         max_latency_ms=0
-      {{- if eq (add1 $int) ($.Values.replicas.database|int) }}
+      {{- if eq (add1 $int) ((include "replicaCount" (dict "global" $ "type" "database")) | int) }}
       }
       {{- else }}
       },

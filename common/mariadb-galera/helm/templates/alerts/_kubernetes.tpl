@@ -1,7 +1,7 @@
 - name: kubernetes.alerts
   rules:
   - alert: "{{ $.Values.monitoring.prometheus.alerts.service | default $.Values.mariadb.galera.clustername | title }}DBClusterNodeNotReady"
-    expr: (sum(kube_pod_status_ready_normalized{ condition="true", pod=~"{{ (include "nodeNamePrefix" (dict "global" $ "component" "database")) }}.*" }) < {{ ($.Values.replicas.database|int) }})
+    expr: (sum(kube_pod_status_ready_normalized{ condition="true", pod=~"{{ (include "nodeNamePrefix" (dict "global" $ "component" "database")) }}.*" }) < {{ ((include "replicaCount" (dict "global" $ "type" "database")) | int) }})
     for: 30m
     labels:
       context: "availability"

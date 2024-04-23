@@ -15,7 +15,7 @@ spec:
 {{- else if and (hasKey $.Values.mariadb "wipeDataAndLog") ($.Values.mariadb.wipeDataAndLog) }}
 {{- else if and ($.Values.proxy.enabled) (eq $.Values.proxy.type "proxysql") }}
   {{- $unevenNodeCount := "" }}
-  {{- if eq (mod ($.Values.replicas.proxy|int) 2) 1 }}
+  {{- if eq (mod ((include "replicaCount" (dict "global" $ "type" "proxy")) | int) 2) 1 }}
     {{- $unevenNodeCount = "true" }}
   {{- end }}
   {{- $_ := (required ".replicas value not an uneven integer. This is required to avoid a split brain cluster state." $unevenNodeCount) }}

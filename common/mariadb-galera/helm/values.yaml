@@ -75,7 +75,6 @@ mariadb:
   # @default -- 0
   binLogSync: 1
   # -- `1` to enable [innodb_flush_log_at_trx_commit for ACID compliance](https://mariadb.com/kb/en/innodb-system-variables/#innodb_flush_log_at_trx_commit)
-  # @default -- 0
   innodbFlushLogAtTrxCommit: 1
   # -- to enable the [Performance Schema](https://mariadb.com/kb/en/performance-schema-overview/)
   # @default -- false
@@ -164,6 +163,30 @@ mariadb:
     # eg: db-0: 4, db-1: 2, db-2: 1
     # @default -- false
     weightedQuorum:
+    multiRegion:
+      # -- (bool) Enable the multi-region setup. Exactly 3 regions are supported
+      enabled: false
+      # -- (string) Name of the region where we are currently deploying the MariaDB Galera cluster components. The `global.db_region` parameter will be used if defined by the parent chart. Otherwise something like r1, r2, r3 or names like eu-de-1, eu-de-2, eu-de-3 should be used
+      current:
+      # -- (object) `r1/2/3.externalIP` (external IP address of the region. Can be exposed via a load balancer or a external IP of a ClusterIP service) and `r1/2/3.segmentId` (Define which network segment([gmcast.segment](https://galeracluster.com/library/documentation/galera-parameters.html#gmcast-segment)) this node is in)
+      regions:
+      # -- (string) A node will be suspected to be dead after these seconds of inactivity [evs.suspect_timeout](https://mariadb.com/kb/en/wsrep_provider_options/#evssuspect_timeout)
+      suspect_timeout: 5
+      # -- (string) Time limit in seconds that a node can be inactive before being pronounced as dead [evs.inactive_timeout](https://mariadb.com/kb/en/wsrep_provider_options/#evsinactive_timeout)
+      inactive_timeout: 30
+      # -- (float) Frequency of checks in seconds for peer inactivity (looking for nodes with delayed responses), after which nodes may be added to the delayed list, and later evicted [evs.inactive_check_period](https://mariadb.com/kb/en/wsrep_provider_options/#evsinactive_check_period)
+      inactive_check_period: "2.5"
+      # -- (float) How often keepalive signals should be transmitted when there's no other traffic [evs.keepalive_period](https://mariadb.com/kb/en/wsrep_provider_options/#evskeepalive_period)
+      keepalive_period: "1.6"
+      # -- (string) Wait time in seconds for install message acknowledgments [evs.install_timeout](https://mariadb.com/kb/en/wsrep_provider_options/#evsinactive_timeout)
+      install_timeout: 8
+      # -- (string) Maximum number of packets that can be replicated at a time [evs.send_window](https://mariadb.com/kb/en/wsrep_provider_options/#evssend_window)
+      send_window: 256
+      # -- (string) Maximum number of data packets that can be replicated at a time [evs.user_send_window](https://mariadb.com/kb/en/wsrep_provider_options/#evsuser_send_window)
+      user_send_window: 128
+      # -- (bool) Enable the [Galera bootstrap](https://mariadb.com/kb/en/getting-started-with-mariadb-galera-cluster/#bootstrapping-a-new-cluster).
+      # Use it **ONLY** in case all nodes are down and the cluster needs to be started from scratch. It will cause data loss if used for a region that has not held the most recent seqno
+      bootstrap: false
     backup:
       # -- enable the [database backup](#database-backup). Should be done within custom instance configuration files
       enabled: false
@@ -724,7 +747,7 @@ image:
     # -- database part of the image version that should be pulled
     databaseversion: 22.04
     # -- image part of the image version that should be pulled
-    imageversion: 20240212072432
+    imageversion: 20240419150126
     # -- (string) `Always` to enforce that the image will be pulled even if it is already available on the worker node
     # @default -- IfNotPresent
     pullPolicy:
@@ -740,7 +763,7 @@ image:
     # -- database part of the image version that should be pulled
     databaseversion: 10.5.23
     # -- image part of the image version that should be pulled
-    imageversion: 20240212072432
+    imageversion: 20240419150126
     # -- (string) `Always` to enforce that the image will be pulled even if it is already available on the worker node
     # @default -- IfNotPresent
     pullPolicy:
@@ -756,7 +779,7 @@ image:
     # -- database part of the image version that should be pulled
     databaseversion: 0.14.0
     # -- image part of the image version that should be pulled
-    imageversion: 20240212072432
+    imageversion: 20240419150126
     # -- (string) `Always` to enforce that the image will be pulled even if it is already available on the worker node
     # @default -- IfNotPresent
     pullPolicy:
@@ -772,7 +795,7 @@ image:
     # -- database part of the image version that should be pulled
     databaseversion: 2.5.5
     # -- image part of the image version that should be pulled
-    imageversion: 20240212072432
+    imageversion: 20240419150126
     # -- (string) `Always` to enforce that the image will be pulled even if it is already available on the worker node
     # @default -- IfNotPresent
     pullPolicy:
@@ -788,7 +811,7 @@ image:
     # -- database part of the image version that should be pulled
     databaseversion: 0.12.1
     # -- image part of the image version that should be pulled
-    imageversion: 20240212072432
+    imageversion: 20240419150126
     # -- (string) `Always` to enforce that the image will be pulled even if it is already available on the worker node
     # @default -- IfNotPresent
     pullPolicy:
@@ -838,7 +861,8 @@ services:
     backend:
       # -- `ClusterIP` to configure a Kubernetes internal service or `LoadBalancer` to publish the service outside of the [Kubernetes cluster network](https://kubernetes.io/docs/concepts/services-networking/service/#publishing-services-service-types)
       type: ClusterIP
-      # -- `false` or `true` if the IP adresses of the pods that are [endpoints for that service](https://kubernetes.io/docs/concepts/services-networking/service/#headless-services) should be advertised. Required to let the client make it's own load balancing decisions
+      # -- `false` or `true` if the IP adresses of the pods that are [endpoints for that service](https://kubernetes.io/docs/concepts/services-networking/service/#headless-services) should be advertised.
+      # Required to let the client make it's own load balancing decisions. Will be set to `false` if `type` is set `LoadBalancer`
       headless: true
       ports:
         galera:
@@ -1116,11 +1140,13 @@ resourceLimits:
 # Deployment rules
 replicas:
   # -- amount of pods that will [scheduled](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#creating-a-deployment) for the MariaDB Galera cluster.
-  # An uneven number will be enforced to avoid simple split brain situations. For a good balance between the write and read performance not more than 3 pods a suggested
+  # An uneven number will be enforced to avoid simple split brain situations. For a good balance between the write and read performance not more than 3 pods a suggested.
+  # If `mariadb.galera.multiRegion.enabled` is set to `true` the amount of pods will be set to `1`
   # @default -- 3
   database: 3
   # -- amount of pods that will [scheduled](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#creating-a-deployment) for the ProxySQL cluster.
-  # An uneven number will be enforced to avoid simple split brain situations
+  # An uneven number will be enforced to avoid simple split brain situations.
+  # If `mariadb.galera.multiRegion.enabled` is set to `true` the amount of pods will be set to `1`
   # @default -- 3
   proxy: 3
 maxUnavailable:

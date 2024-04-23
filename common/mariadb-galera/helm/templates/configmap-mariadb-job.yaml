@@ -1,4 +1,9 @@
----
+{{- if and (hasKey $.Values.mariadb "autostart") (not $.Values.mariadb.autostart) }}
+{{- else if and ($.Values.command) (hasKey $.Values.command "database") }}
+{{- else if and (hasKey $.Values.mariadb.galera.restore "kopia") ($.Values.mariadb.galera.restore.kopia.enabled) }}
+{{- else if and (hasKey $.Values.mariadb "wipeDataAndLog") ($.Values.mariadb.wipeDataAndLog) }}
+{{- else if and ($.Values.mariadb.galera.multiRegion.enabled) (ne ((index $.Values.mariadb.galera.multiRegion.regions $.Values.mariadb.galera.multiRegion.current).segmentId | int) 1) }}
+{{- else }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -8,3 +13,4 @@ metadata:
     app: {{ $.Release.Name }}
 data:
 {{ tpl (.Files.Glob "scripts/mariadb-galera/entrypoint-job-config.sh").AsConfig . | indent 2 }}
+{{- end }}

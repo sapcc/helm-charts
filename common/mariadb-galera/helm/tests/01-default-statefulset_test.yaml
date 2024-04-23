@@ -1,8 +1,8 @@
 
 ---
 checksums:
-  my.cnf: &mycnf "5154f9752a947d04e0b5884536fb7d7b488072890bba3c875b6c2afe5316bb0a"
-  configmap: &configmap "3ce595230ab36cda233e0d33a9f1ca9825d78080ada86a99198b093e6d2a7c5a"
+  my.cnf: &mycnf "1772e8e7434166eaeb4fd56eaa9ff33a358680736b225b9f1e6e67d18a5a9fb2"
+  configmap: &configmap "2e05b0bfa976ce23f9ee36612c9b42b6972b7e82ad503b27ceb85c504bf946fe"
 
 suite: statefulset-mariadb
 values:
@@ -310,7 +310,7 @@ tests:
           value: "sysctl-tcp-keepalive"
       - equal:
           path: spec.template.spec.initContainers[0].image
-          value: "keppel.eu-de-1.cloud.sap/ccloud/mariadb-galera-ubuntu:22.04-20240212072432"
+          value: "keppel.eu-de-1.cloud.sap/ccloud/mariadb-galera-ubuntu:22.04-20240419150126"
       - equal:
           path: spec.template.spec.initContainers[0].imagePullPolicy
           value: "IfNotPresent"
@@ -379,7 +379,7 @@ tests:
           value: "increase-map-count"
       - equal:
           path: spec.template.spec.initContainers[1].image
-          value: "keppel.eu-de-1.cloud.sap/ccloud/mariadb-galera-ubuntu:22.04-20240212072432"
+          value: "keppel.eu-de-1.cloud.sap/ccloud/mariadb-galera-ubuntu:22.04-20240419150126"
       - equal:
           path: spec.template.spec.initContainers[1].imagePullPolicy
           value: "IfNotPresent"
@@ -471,7 +471,7 @@ tests:
           value: "clean-os-cache"
       - equal:
           path: spec.template.spec.initContainers[2].image
-          value: "keppel.eu-de-1.cloud.sap/ccloud/mariadb-galera-ubuntu:22.04-20240212072432"
+          value: "keppel.eu-de-1.cloud.sap/ccloud/mariadb-galera-ubuntu:22.04-20240419150126"
       - equal:
           path: spec.template.spec.initContainers[2].imagePullPolicy
           value: "IfNotPresent"
@@ -541,7 +541,7 @@ tests:
           value: "db"
       - equal:
           path: spec.template.spec.containers[0].image
-          value: "keppel.eu-de-1.cloud.sap/ccloud/mariadb-galera:10.5.23-20240212072432"
+          value: "keppel.eu-de-1.cloud.sap/ccloud/mariadb-galera:10.5.23-20240419150126"
       - equal:
           path: spec.template.spec.containers[0].imagePullPolicy
           value: "IfNotPresent"
@@ -1640,7 +1640,7 @@ tests:
           value: "metrics"
       - equal:
           path: spec.template.spec.containers[1].image
-          value: "keppel.eu-de-1.cloud.sap/ccloud/mariadb-galera-mysqld_exporter:0.14.0-20240212072432"
+          value: "keppel.eu-de-1.cloud.sap/ccloud/mariadb-galera-mysqld_exporter:0.14.0-20240419150126"
       - equal:
           path: spec.template.spec.containers[1].imagePullPolicy
           value: "IfNotPresent"
@@ -2265,3 +2265,102 @@ tests:
       - equal:
           path: spec.volumeClaimTemplates[1].spec.resources.requests.storage
           value: "30Gi"
+
+  - it: MariaDB statefulset 1 replica limit if multi-region enabled and region r1 selected
+    template: statefulset-mariadb.yaml
+    documentIndex: 0
+    set:
+      mariadb.galera.clustername: "testname"
+      mariadb.galera.multiRegion.enabled: true
+      mariadb.galera.multiRegion.current: "r1"
+      mariadb.galera.multiRegion.regions.r1.segmentId: "1"
+      mariadb.galera.multiRegion.regions.r2.segmentId: "2"
+      mariadb.galera.multiRegion.regions.r3.segmentId: "3"
+      replicas.database: 3
+    asserts:
+      - isKind:
+          of: StatefulSet
+      - equal:
+          path: metadata.namespace
+          value: "testnamespace"
+      - equal:
+          path: metadata.name
+          value: "testrelease-mariadb-g"
+      - equal:
+          path: metadata.labels.app
+          value: "testrelease"
+      - equal:
+          path: metadata.labels.component
+          value: "database"
+      - equal:
+          path: metadata.labels.release
+          value: "testrelease"
+      - equal:
+          path: spec.replicas
+          value: 1
+
+  - it: MariaDB statefulset 1 replica limit if multi-region enabled and region r2 selected
+    template: statefulset-mariadb.yaml
+    documentIndex: 0
+    set:
+      mariadb.galera.clustername: "testname"
+      mariadb.galera.multiRegion.enabled: true
+      mariadb.galera.multiRegion.current: "r2"
+      mariadb.galera.multiRegion.regions.r1.segmentId: "1"
+      mariadb.galera.multiRegion.regions.r2.segmentId: "2"
+      mariadb.galera.multiRegion.regions.r3.segmentId: "3"
+      replicas.database: 3
+    asserts:
+      - isKind:
+          of: StatefulSet
+      - equal:
+          path: metadata.namespace
+          value: "testnamespace"
+      - equal:
+          path: metadata.name
+          value: "testrelease-mariadb-g"
+      - equal:
+          path: metadata.labels.app
+          value: "testrelease"
+      - equal:
+          path: metadata.labels.component
+          value: "database"
+      - equal:
+          path: metadata.labels.release
+          value: "testrelease"
+      - equal:
+          path: spec.replicas
+          value: 1
+
+  - it: MariaDB statefulset 1 replica limit if multi-region enabled and region r3 selected
+    template: statefulset-mariadb.yaml
+    documentIndex: 0
+    set:
+      mariadb.galera.clustername: "testname"
+      mariadb.galera.multiRegion.enabled: true
+      mariadb.galera.multiRegion.current: "r3"
+      mariadb.galera.multiRegion.regions.r1.segmentId: "1"
+      mariadb.galera.multiRegion.regions.r2.segmentId: "2"
+      mariadb.galera.multiRegion.regions.r3.segmentId: "3"
+      replicas.database: 3
+    asserts:
+      - isKind:
+          of: StatefulSet
+      - equal:
+          path: metadata.namespace
+          value: "testnamespace"
+      - equal:
+          path: metadata.name
+          value: "testrelease-mariadb-g"
+      - equal:
+          path: metadata.labels.app
+          value: "testrelease"
+      - equal:
+          path: metadata.labels.component
+          value: "database"
+      - equal:
+          path: metadata.labels.release
+          value: "testrelease"
+      - equal:
+          path: spec.replicas
+          value: 1

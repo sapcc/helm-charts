@@ -23,6 +23,9 @@
     * [NFS backend](#nfs-backend)
   * [full database recovery](#full-database-recovery)
   * [point in time database recovery](#point-in-time-database-recovery)
+  * [multi region support](#multi-region-support)
+    * [multi region configuration](#multi-region-configuration)
+    * [multi region WAN tweaks](#multi-region-wan-tweaks)
   * [asynchronous replication config](#asynchronous-replication-config)
   * [MariaDB Galera flow charts](#mariadb-galera-flow-charts)
     * [node startup](#node-startup)
@@ -309,9 +312,135 @@ helm upgrade --install --namespace database mariadb-galera helm --set mariadb.wi
   * ProxySQL, the config job and the Backup cronjob will be enabled again (if they have been enabled before)
   * the MariaDB pods will be restarted and Galera will replicate the restored data
 
+### multi region support
+The cluster can be distributed across 3 different Kubernetes cluster instances. They can run in different regions or even in different cloud providers.
+
+#### multi region configuration
+
+* enable the multi region support for the regions `r1`, `r2` and `r3`
+* define the `externalIP` and the `segmentId`([gmcast.segment](https://mariadb.com/kb/en/wsrep_provider_options/#gmcastsegment)) for each region
+* with the service type `LoadBalancer` the `externalIP` will assigned to the requested load balancer. Your cloud provider has to support a reserved IP for the load balancer
+* the service can also be of type `ClusterIP`, but then your (for instance) service mesh has to route the traffic to the correct region
+* the initial rollout can be started from any region, the cluster with the segmentId 1 will bootstrap the Galera cluster
+
+**r1:**
+```yaml
+mariadb:
+  galera:
+    multiRegion:
+      enabled: true
+      current: r1
+      regions:
+        r1:
+          externalIP: "10.0.0.1"
+          segmentId: 1
+        r2:
+          externalIP: "10.0.0.2"
+          segmentId: 2
+        r3:
+          externalIP: "10.0.0.3"
+          segmentId: 3
+
+services:
+  database:
+    backend:
+      type: LoadBalancer
+```
+
+**r2:**
+```yaml
+mariadb:
+  galera:
+    multiRegion:
+      enabled: true
+      current: r2
+      regions:
+        r1:
+          externalIP: "10.0.0.1"
+          segmentId: 1
+        r2:
+          externalIP: "10.0.0.2"
+          segmentId: 2
+        r3:
+          externalIP: "10.0.0.3"
+          segmentId: 3
+
+services:
+  database:
+    backend:
+      type: LoadBalancer
+```
+
+**r3:**
+```yaml
+mariadb:
+  galera:
+    multiRegion:
+      enabled: true
+      current: r3
+      regions:
+        r1:
+          externalIP: "10.0.0.1"
+          segmentId: 1
+        r2:
+          externalIP: "10.0.0.2"
+          segmentId: 2
+        r3:
+          externalIP: "10.0.0.3"
+          segmentId: 3
+
+services:
+  database:
+    backend:
+      type: LoadBalancer
+```
+
+#### multi region WAN tweaks
+
+The following wsrep_provider_options can be configured to optimize the WAN communication between the Galera nodes
+* `mariadb.galera.multiRegion.suspect_timeout`: A node will be suspected to be dead after these seconds of inactivity [evs.suspect_timeout](https://mariadb.com/kb/en/wsrep_provider_options/#evssuspect_timeout)
+* `mariadb.galera.multiRegion.inactive_timeout`: Time limit in seconds that a node can be inactive before being pronounced as dead [evs.inactive_timeout](https://mariadb.com/kb/en/wsrep_provider_options/#evsinactive_timeout)
+* `mariadb.galera.multiRegion.inactive_check_period`: Frequency of checks in seconds for peer inactivity (looking for nodes with delayed responses), after which nodes may be added to the delayed list, and later evicted [evs.inactive_check_period](https://mariadb.com/kb/en/wsrep_provider_options/#evsinactive_check_period)
+* `mariadb.galera.multiRegion.keepalive_period`: How often keepalive signals should be transmitted when there's no other traffic [evs.keepalive_period](https://mariadb.com/kb/en/wsrep_provider_options/#evskeepalive_period)
+* `mariadb.galera.multiRegion.install_timeout`: Wait time in seconds for install message acknowledgments [evs.install_timeout](https://mariadb.com/kb/en/wsrep_provider_options/#evsinactive_timeout)
+* `mariadb.galera.multiRegion.send_window`: Maximum number of packets that can be replicated at a time [evs.send_window](https://mariadb.com/kb/en/wsrep_provider_options/#evssend_window)
+* `mariadb.galera.multiRegion.user_send_window`: Maximum number of data packets that can be replicated at a time [evs.user_send_window](https://mariadb.com/kb/en/wsrep_provider_options/#evsuser_send_window)
+
+#### multi region limitations
+
+* currently the Galera connections are not encrypted or secured
+* currently the cluster startup after losing the quorum (no primary partition available) is not automated
+* you have to manually check the galerastatus configmap in every region
+
+```shell
+kubectl get cm mariadb-galera-galerastatus -o yaml | yq .data
+
+mariadb-galera-mariadb-g-0.primary: |
+  mariadb-galera-mariadb-g-0:
+  timestamp:
+mariadb-galera-mariadb-g-0.running: |
+  mariadb-galera-mariadb-g-0:
+  timestamp:
+mariadb-galera-mariadb-g-0.seqno: |
+  mariadb-galera-mariadb-g-0:120
+  timestamp:1713780824
+```
+
+* than trigger the bootstrap process in the region with the highest seqno and wait for the other regions to catch up
+
+```shell
+helm upgrade --install --create-namespace --namespace database mariadb-galera helm --values ${region}.yaml --set mariadb.galera.multiRegion.bootstrap=true
+```
+
+* after the cluster is up and running again you have to remove the bootstrap option from the cluster where you have started the bootstrap process
+
+```shell
+helm upgrade --install --create-namespace --namespace database mariadb-galera helm --values ${region}.yaml
+```
+
 ### asynchronous replication config
 
-The Helm chart supports circular asynchronous replication between two Galera clusters. Other topologies are technical possible, but not tested.
+[THIS FEATURE WILL BE REMOVED IN THE FUTURE] The Helm chart supports circular asynchronous replication between two Galera clusters. Other topologies are technical possible, but not tested.
 
 * configure the `gtidDomainId` and `gtidDomainIdCount` in the custom configuration files `helm/custom/eu-de-2.yaml` and `helm/custom/eu-nl-1.yaml` of your Galera instances and make sure `asyncReplication.enabled=false` is defined
 * eu-de-2
@@ -524,6 +653,7 @@ flowchart TB;
     id5 & id7--No-->id666[exit 1];
   end
 ```
+
 ##### recover Galera
 
 ```mermaid

@@ -60,7 +60,9 @@ checkgaleraclusterstate
 checkgaleranodeconnected
 checkgaleralocalstate
 rejectnewconnectionstogaleranode
+{{- if not $.Values.mariadb.galera.multiRegion.enabled }}
 setconfigmap "seqno" "" "Reset"
+{{- end }}
 setconfigmap "primary" "" "Reset"
 setconfigmap "running" "" "Reset"
 loginfo "null" "preStop hook done"
