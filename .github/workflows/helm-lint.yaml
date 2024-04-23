@@ -1,0 +1,66 @@
+name: "Helm lint"
+on:
+  pull_request:
+    types: [ opened, synchronize, reopened ]
+
+env:
+  REGISTRY: ghcr.io
+
+jobs:
+    helm-lint:
+      runs-on: [ default ]
+      steps:
+        - uses: actions/checkout@v4
+          with:
+            fetch-depth: 0
+            token: ${{ secrets.GITHUB_TOKEN }}
+  
+        - name: Set up Helm
+          uses: azure/setup-helm@v4.2.0
+  
+        - uses: actions/setup-python@v5
+          with:
+            python-version: 3.9
+            check-latest: true
+            token: ${{ secrets.GITHUB_TOKEN }}
+  
+        - name: Set up chart-testing
+          uses: helm/chart-testing-action@v2.6.1
+  
+        - name: Run chart-testing (list-changed)
+          id: list-changed
+          run: |
+            changed=$(ct list-changed --config .github/ct.yaml --target-branch ${{ github.event.repository.default_branch }})
+            if [[ -n "$changed" ]]; then
+              echo "changed=true" >> "$GITHUB_OUTPUT"
+            fi
+  
+        - name: Run chart-testing (lint)
+          if: steps.list-changed.outputs.changed == 'true'
+          run: ct lint --config .github/ct.yaml --target-branch ${{ github.event.repository.default_branch }}
+  
+        - name: Check version bump
+          id: check-bump
+          if: steps.list-changed.outputs.changed == 'true'
+          continue-on-error: true
+          run: |
+            for chart in $(ct list-changed --config .github/ct.yaml --target-branch ${{ github.event.repository.default_branch }}); do
+              chart_version=$(yq .version "$chart/Chart.yaml")
+              if helm pull "oci://${{ env.REGISTRY }}/${{ github.repository }}/charts/$(basename $chart)" --version $chart_version; then
+                echo "chart=$(basename $chart)" >> "$GITHUB_OUTPUT"
+                echo "chart_version=${chart_version}" >> "$GITHUB_OUTPUT"
+                echo "needsbump=true" >> "$GITHUB_OUTPUT"
+                exit 1
+              fi
+            done
+        
+        - uses: actions/github-script@v6
+          if: steps.check-bump.outputs.needsbump == 'true'
+          with:
+            script: |
+              github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: ':warning: Chart `oci://${{ env.REGISTRY }}/${{ github.repository }}/charts/${{ steps.check-bump.outputs.chart }}:${{ steps.check-bump.outputs.chart_version }}` already exists in registry. Please increment the chart version.'
+              })
