@@ -47,7 +47,7 @@
 - name: LIMES_COLLECTOR_DATA_METRICS_SKIP_ZERO
   value: "true"
 - name: LIMES_QUOTA_OVERRIDES_PATH
-  value: "/etc/limes/quota-overrides.yaml"
+  value: "/etc/limes/quota-overrides.json"
 - name: OS_AUTH_URL
   value: "http://keystone.{{ $.Values.global.keystoneNamespace }}.svc.kubernetes.{{ $.Values.global.region }}.{{ $.Values.global.tld }}:5000/v3"
 - name: OS_INTERFACE
