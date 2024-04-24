@@ -12,6 +12,7 @@ metadata:
   labels:
     app: {{ $.Release.Name }}
     release: {{ $.Release.Name }}
+    {{- include "sharedservices.labels" . | indent 4 }}
 spec:
   backoffLimit: {{ $.Values.mariadb.job.config.backoffLimit | default 6 | int }}
   activeDeadlineSeconds: {{ $.Values.mariadb.job.config.activeDeadlineSeconds | default 300 | int }}
@@ -21,6 +22,7 @@ spec:
       labels:
         app: {{ $.Release.Name }}
         release: {{ $.Release.Name }}
+        {{- include "sharedservices.labels" . | indent 8 }}
       annotations:
         {{- if or (and (hasKey $.Values "global") (and (hasKey $.Values.global "linkerd_enabled") $.Values.global.linkerd_enabled) (and (hasKey $.Values.global "linkerd_requested") $.Values.global.linkerd_requested)) $.Values.mariadb.job.linkerd.enabled }}
         linkerd.io/inject: enabled

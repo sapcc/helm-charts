@@ -305,3 +305,11 @@ data:
     {{- index $.global.Values.replicas $.type -}}
   {{- end }}
 {{- end }}
+
+{{- define "sharedservices.labels" }}
+app.kubernetes.io/name: {{ .Chart.Name }}
+app.kubernetes.io/instance: {{ .Chart.Name }}-{{ .Release.Name }}
+app.kubernetes.io/version: {{ .Chart.Version }}
+app.kubernetes.io/component: MariaDB-Galera
+app.kubernetes.io/part-of: {{ .Release.Name }}
+{{- end }}
