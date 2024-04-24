@@ -94,10 +94,7 @@ spec:
         livenessProbe:
           exec:
             command:
-            - bash
-            - -c
-            - curl -u {{ .Values.rabbitmq.metrics.user }}:{{ .Values.rabbitmq.metrics.password }} ironic-rabbitmq:{{ .Values.rabbitmq.ports.management }}/api/consumers | sed 's/,/\n/g' | grep ironic-conductor-{{$conductor.name}} >/dev/null
-              && openstack-agent-liveness -c ironic --config-file /etc/ironic/ironic.conf --ironic_conductor_host ironic-conductor-{{$conductor.name}}
+              openstack-agent-liveness -c ironic --config-file /etc/ironic/ironic.conf --config-file /etc/ironic/ironic.conf.d/secrets.conf  --ironic_conductor_host ironic-conductor-{{$conductor.name}}
           periodSeconds: 120
           failureThreshold: 3
           timeoutSeconds: 12
