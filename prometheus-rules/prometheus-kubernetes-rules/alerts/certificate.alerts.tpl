@@ -5,7 +5,7 @@ groups:
     expr: (x509_cert_not_after - time()) / 60 / 60 / 24 <= 30
     for: 1h
     labels:
-      tier: {{ required ".Values.alerts.tier missing" .Values.alerts.tier }}
+      tier: {{ required ".Values.tier missing" .Values.tier }}
       context: availability
       service: certificates
       severity: info
