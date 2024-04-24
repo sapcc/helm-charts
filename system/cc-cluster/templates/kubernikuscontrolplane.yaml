@@ -1,4 +1,5 @@
 {{- range $key, $cluster := .Values.clusters }}
+---
 apiVersion: controlplane.cluster.x-k8s.io/v1alpha1
 kind: KubernikusControlPlane
 metadata:
@@ -6,7 +7,7 @@ metadata:
   namespace: metal-{{ $key }}
 spec:
   version: {{ $cluster.version }}
-  backup: {{ $cluster.backup }}
+  backup: {{ $cluster.backup | quote }}
   serviceCidr: {{ $cluster.serviceCidr }}
   clusterCidr: {{ $cluster.clusterCidr }}
   {{- with $.Values.controlplane.oidc }}
