@@ -16,16 +16,20 @@ data:
     port=0
     log-dhcp
     {{ range $pool := .Values.dnsmasq.dhcpPools }}
-    {{- $ipPoolStart := printf "%s.126" $pool.subnetPrefix -}}
-    {{- $ipPoolEnd := printf "%s.250" $pool.subnetPrefix -}}
+    {{- if ne $pool.dualAz false -}}
+    {{- $ipPoolStart := $pool.ipPoolStart | default (printf "%s.126" $pool.subnetPrefix) -}}
+    {{- $ipPoolEnd := $pool.ipPoolEnd | default (printf "%s.250" $pool.subnetPrefix) -}}
     dhcp-range=set:{{ $pool.subnetPrefix }},{{ $ipPoolStart }},{{ $ipPoolEnd }},{{ $pool.mask }},{{ $.Values.dnsmasq.leaseTime }}
+    {{ end -}}
     {{ end }}
 
     # It can be used when setting DNS or GW variables.
     # Set default router
     {{ range $pool := .Values.dnsmasq.dhcpPools }}
-    {{- $router := printf "%s.1" $pool.subnetPrefix -}}
+    {{- if ne $pool.dualAz false -}}
+    {{- $router := $pool.router | default (printf "%s.1" $pool.subnetPrefix) -}}
     dhcp-option=set:{{ $pool.subnetPrefix }},option:router,{{ $router }}
+    {{ end -}}
     {{ end }}
 
     # Set dns servers
