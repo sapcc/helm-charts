@@ -93,8 +93,7 @@ spec:
           failureThreshold: 30
         livenessProbe:
           exec:
-            command:
-              openstack-agent-liveness -c ironic --config-file /etc/ironic/ironic.conf --config-file /etc/ironic/ironic.conf.d/secrets.conf  --ironic_conductor_host ironic-conductor-{{$conductor.name}}
+            command: [ "openstack-agent-liveness",  "--component", "ironic",  "--config-file", "/etc/ironic/ironic.conf", "--config-file", "/etc/ironic/ironic.conf.d/secrets.conf", "--ironic_conductor_host", "ironic-conductor-{{$conductor.name}}" ]
           periodSeconds: 120
           failureThreshold: 3
           timeoutSeconds: 12
