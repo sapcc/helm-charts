@@ -1,8 +1,8 @@
 owner-info:
   helm-chart-url: 'https://github.com/sapcc/helm-charts/tree/master/global/prometheus-alertmanager-operated'
   maintainers:
-    - Martin Vossen
-    - Bassel Zeidan
+    - Tommy Sauer
+    - Richard Tief
   support-group: observability
   service: alertmanager
 
@@ -41,25 +41,60 @@ prometheus-alertmanager:
   alerts:
     prometheus: infra-frontend
 
+groupBy:
+  - region
+  - service
+  - alertname
+  - cluster
+  - support_group
+groupWait: 1m
+groupInterval: 7m
+repeatInterval: 12h
+
 # Values for Slack receivers.
 slack:
-  api:
-  kubernikus:
-  metal:
-  network:
-  vmware:
-  compute:
-  compute_storage_api:
-  email:
-  identity:
-  network_api:
-  observability:
-  containers:
-  storage:
-  network-data:
-  network-security:
-  network-lb:
-  network-wan:
+  global:
+    webhookURL:
+    devnullWebhookURL:
+
+  channels:
+    - name: api
+      criticalWebhookURL:
+      warningWebhookURL:
+    - name: kubernikus
+      warningWebhookURL:
+      criticalWebhookURL:
+    - name: metal
+      criticalWebhookURL:
+    - name: network
+      criticalWebhookURL:
+    - name: vmware
+      warningWebhookURL:
+      crtiticalWebhookURL:
+    - name: compute
+      criticalWebhookURL:
+    - name: compute_storage_api
+      criticalWebhookURL:
+    - name: email
+      criticalWebhookURL:
+    - name: identity
+      criticalWebhookURL:
+    - name: network_api
+      criticalWebhookURL:
+    - name: observability
+      criticalWebhookURL:
+    - name: containers
+      criticalWebhookURL:
+    - name: storage
+      criticalWebhookURL:
+    - name: network-data
+      criticalWebhookURL:
+    - name: network-security
+      criticalWebhookURL:
+    - name: network-lb
+      criticalWebhookURL:
+    - name: network-wan
+      criticalWebhookURL:
 
 # Values for cc_email_receiver receiver
 cc_email_receiver:
@@ -69,3 +104,11 @@ cc_email_receiver:
   auth_username:
   auth_password:
   email_from_address:
+
+octobus:
+  gcpInstance:
+
+awx:
+  basicAuthUser:
+  basicAuthPwd:
+  listenerURL:

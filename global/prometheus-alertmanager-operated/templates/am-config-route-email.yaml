@@ -1,0 +1,49 @@
+{{- if .Values.cc_email_receiver.enabled }}
+apiVersion: monitoring.coreos.com/v1alpha1
+kind: AlertmanagerConfig
+metadata:
+  name: route-email
+  labels:
+    alertmanager: {{ include "alertmanagerRelease.name" . }}
+spec:
+  route:
+    matchers:
+      - name: alertname
+        matchType: "="
+        value: "KubernikusKlusterLowOnObjectStoreQuota"
+      - name: primary_email_recipients
+        matchType: "!="
+        value: ""
+    receiver: cc_email
+  receivers:
+  - name: cc_email
+    emailConfigs:
+      - to: {{"'{{.CommonLabels.primary_email_recipients}},{{.CommonLabels.cc_email_recipients}},{{.CommonLabels.bcc_email_recipients}}'"}}
+        from: {{ required ".Values.cc_email_receiver.email_from_address undefined" .Values.cc_email_receiver.email_from_address | quote }}
+        headers:
+          - key: subject
+            value: {{"'{{ .CommonAnnotations.mail_subject }}'"}}
+          - key: To
+            value: {{"'{{.CommonLabels.primary_email_recipients}}'"}}
+          - key: CC
+            value: {{"'{{.CommonLabels.cc_email_recipients}}'"}}
+        html: {{"'{{template \"cc_email_receiver.KubernikusKlusterLowOnObjectStoreQuota\" . }}'"}}
+        text: {{"'{{ .CommonAnnotations.mail_body }}'"}}
+        smarthost: {{ required ".Values.cc_email_receiver.smtp_host undefined" .Values.cc_email_receiver.smtp_host | quote }}
+        authUsername: {{ required ".Values.cc_email_receiver.auth_username undefined" .Values.cc_email_receiver.auth_username }}
+        authPassword:
+          name: alertmanager-{{ include "alertmanagerRelease.name" . }}-email-secrets 
+          key: password
+        requireTLS: true
+        sendResolved: false
+---
+kind: Secret
+apiVersion: v1
+type: Opaque
+metadata:
+  name: alertmanager-{{ include "alertmanagerRelease.name" . }}-email-secrets
+  labels:
+    alertmanager: {{ include "alertmanagerRelease.name" . }}
+data:
+  password: {{ required ".Values.cc_email_receiver.auth_password undefined" .Values.cc_email_receiver.auth_password | b64enc }}
+{{- end }}
