@@ -5,7 +5,7 @@ groups:
   rules:
 
   - alert: OpenstackManilaShareAffinityViolated
-    expr: count (manila_nanny_affinity_rule_violation{share_id!="none"}) > 0
+    expr: count(max by (share_id)(rate(manila_nanny_affinity_rule_violation{share_id!="none"}[15m]))) > 0
     for: 12h
     labels:
       dashboard: manila
@@ -20,7 +20,7 @@ groups:
       summary: Share affinity rules violated
 
   - alert: OpenstackManilaShareAntiAffinityViolated
-    expr: count (manila_nanny_anti_affinity_rule_violation{share_id!="none"}) > 0
+    expr: count(max by (share_id)(rate(manila_nanny_anti_affinity_rule_violation{share_id!="none"}[15m]))) > 0
     for: 12h
     labels:
       dashboard: manila
