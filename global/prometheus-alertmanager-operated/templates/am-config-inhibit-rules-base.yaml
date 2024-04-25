@@ -1,0 +1,83 @@
+apiVersion: monitoring.coreos.com/v1alpha1
+kind: AlertmanagerConfig
+metadata:
+  name: inhibit-rules-base
+  labels:
+    alertmanager: {{ include "alertmanagerRelease.name" . }}
+spec:
+  inhibitRules:
+    - sourceMatch:
+        - matchType: "="
+          name: severity
+          value: 'critical'
+      targetMatch:
+        - matchType: "="
+          name: severity
+          value: 'warning'
+      equal:
+        - 'region'
+        - 'alertname'
+        - 'cluster'
+    - sourceMatch:
+        - matchType: "=~"
+          name: severity
+          value: 'critical|warning'
+      targetMatch:
+        - matchType: "="
+          name: severity
+          value: 'info'
+      equal:
+        - 'region'
+        - 'alertname'
+        - 'cluster'
+    - sourceMatch:
+       - matchType: "="
+         name: severity
+         value: 'critical'
+       - matchType: "="
+         name: context
+         value: '.+'
+      targetMatch:
+        - matchType: "="
+          name: severity
+          value: 'warning'
+        - matchType: "="
+          name: context
+          value: '.+'
+      equal:
+        - 'region'
+        - 'context'
+        - 'cluster'
+    - sourceMatch:
+        - matchType: "=~"
+          name: severity
+          value: 'critical|warning'
+      targetMatch:
+        - matchType: "="
+          name: severity
+          value: 'info'
+      equal:
+        - 'region'
+        - 'context'
+        - 'cluster'
+    - sourceMatch:
+        - matchType: "=~"
+          name: alertname
+          value: '.*KubeletDown'
+      targetMatch:
+        - matchType: "=~"
+          name: alertname
+          value: 'PodNotReady|ManyPodsNotReadyOnNode'
+      equal:
+        - 'node'
+    # If the alert NodeInMaintenance is firing other alerts with the label inhibited-by: node-maintenance are being inhibited on the same node.
+    - sourceMatch:
+       - matchType: "="
+         name: alertname
+         value: NodeInMaintenance
+      targetMatch:
+        - matchType: "="
+          name: inhibited_by
+          value: node-maintenance
+      equal:
+        - 'node'
