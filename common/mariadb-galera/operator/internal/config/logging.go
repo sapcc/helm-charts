@@ -4,101 +4,64 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/sirupsen/logrus"
+	"go.elastic.co/ecszap"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
+	"k8s.io/component-base/version"
 )
 
 var (
-	LogOutput     *bool
-	LogLevel      *string
-	ErrorOccurred bool
+	LogEnable       *bool   = CmdLineOptions.LogEnable
+	LogBuildInfo    *bool   = CmdLineOptions.LogBuildInfo
+	LogStackTrace   *bool   = CmdLineOptions.LogStackTrace
+	MinimumLogLevel *string = CmdLineOptions.LogLevel
+	loglevel        zap.AtomicLevel
+	logger          *zap.Logger
 )
 
-func ActivateECSLog() *logrus.Logger {
-	// map command line parameters to the related variables
-	LogOutput = CmdLineOptions.LogOutput
-	LogLevel = CmdLineOptions.LogLevel
-
-	// activate ECS logging
-	ecsLog := logrus.New()
-	ecsLog.SetOutput(os.Stdout)
-	ecsLog.ReportCaller = false
-
-	if *LogOutput {
+func Log() *zap.Logger {
+	if *LogEnable {
 		switch {
-		case *LogLevel == "trace":
-			ecsLog.SetLevel(logrus.TraceLevel)
-		case *LogLevel == "debug":
-			ecsLog.SetLevel(logrus.DebugLevel)
-		case *LogLevel == "info":
-			ecsLog.SetLevel(logrus.InfoLevel)
-		case *LogLevel == "warning":
-			ecsLog.SetLevel(logrus.WarnLevel)
-		case *LogLevel == "error":
-			ecsLog.SetLevel(logrus.ErrorLevel)
-		case *LogLevel == "fatal":
-			ecsLog.SetLevel(logrus.FatalLevel)
-		case *LogLevel == "panic":
-			ecsLog.SetLevel(logrus.PanicLevel)
+		case *MinimumLogLevel == "debug":
+			loglevel = zap.NewAtomicLevelAt(zap.DebugLevel)
+		case *MinimumLogLevel == "info":
+			loglevel = zap.NewAtomicLevelAt(zap.InfoLevel)
+		case *MinimumLogLevel == "warning":
+			loglevel = zap.NewAtomicLevelAt(zap.WarnLevel)
+		case *MinimumLogLevel == "error":
+			loglevel = zap.NewAtomicLevelAt(zap.ErrorLevel)
+		case *MinimumLogLevel == "panic":
+			loglevel = zap.NewAtomicLevelAt(zap.PanicLevel)
+		case *MinimumLogLevel == "fatal":
+			loglevel = zap.NewAtomicLevelAt(zap.FatalLevel)
 		default:
-			fmt.Printf("%s is a not a valid log level\n", *LogLevel)
+			fmt.Printf("%s is a not a valid log level\n", *MinimumLogLevel)
 			os.Exit(1)
 		}
+	}
+
+	stdout := zapcore.AddSync(os.Stdout)
+	ecsEncoderConfig := ecszap.EncoderConfig{
+		EncodeLevel:      zapcore.LowercaseLevelEncoder,
+		EncodeDuration:   zapcore.MillisDurationEncoder,
+		EncodeCaller:     ecszap.ShortCallerEncoder,
+		EnableCaller:     true,
+		EnableStackTrace: *LogStackTrace,
+	}
+	core := ecszap.NewCore(ecsEncoderConfig, stdout, loglevel)
+
+	if *LogStackTrace {
+		logger = zap.New(core, zap.AddCaller(), zap.AddStacktrace(zapcore.ErrorLevel))
 	} else {
-		ecsLog.SetLevel(logrus.ErrorLevel)
+		logger = zap.New(core, zap.AddCaller())
 	}
 
-	return ecsLog
-}
-
-func ECSLogOutput(message interface{}, loglevel string) {
-	ecsLog := ActivateECSLog()
-
-	switch message.(type) {
-	case error:
-		switch {
-		case loglevel == "trace":
-			ecsLog.WithField(MetadataList.Name+".version", MetadataList.Version).Trace(message)
-		case loglevel == "debug":
-			ecsLog.WithField(MetadataList.Name+".version", MetadataList.Version).Debug(message)
-		case loglevel == "info":
-			ecsLog.WithField(MetadataList.Name+".version", MetadataList.Version).Info(message)
-		case loglevel == "warning":
-			ecsLog.WithField(MetadataList.Name+".version", MetadataList.Version).Warn(message)
-		case loglevel == "error":
-			ecsLog.WithField(MetadataList.Name+".version", MetadataList.Version).Error(message)
-			ErrorOccurred = true
-		case loglevel == "fatal":
-			ecsLog.WithField(MetadataList.Name+".version", MetadataList.Version).Fatal(message)
-			ErrorOccurred = true
-		case loglevel == "panic":
-			ecsLog.WithField(MetadataList.Name+".version", MetadataList.Version).Panic(message)
-			os.Exit(1)
-		default:
-			ecsLog.WithField(MetadataList.Name+".version", MetadataList.Version).Panic(message)
-			os.Exit(1)
-		}
-	case string:
-		switch {
-		case loglevel == "trace":
-			ecsLog.WithField(MetadataList.Name+".version", MetadataList.Version).Trace(message)
-		case loglevel == "debug":
-			ecsLog.WithField(MetadataList.Name+".version", MetadataList.Version).Debug(message)
-		case loglevel == "info":
-			ecsLog.WithField(MetadataList.Name+".version", MetadataList.Version).Info(message)
-		case loglevel == "warning":
-			ecsLog.WithField(MetadataList.Name+".version", MetadataList.Version).Warn(message)
-		case loglevel == "error":
-			ecsLog.WithField(MetadataList.Name+".version", MetadataList.Version).Error(message)
-			ErrorOccurred = true
-		case loglevel == "fatal":
-			ecsLog.WithField(MetadataList.Name+".version", MetadataList.Version).Fatal(message)
-			ErrorOccurred = true
-		case loglevel == "panic":
-			ecsLog.WithField(MetadataList.Name+".version", MetadataList.Version).Panic(message)
-			os.Exit(1)
-		default:
-			ecsLog.WithField(MetadataList.Name+".version", MetadataList.Version).Panic(message)
-			os.Exit(1)
-		}
+	if *LogBuildInfo {
+		logger = logger.With(zap.String("package.name", MetadataList.Name), zap.String("package.version", MetadataList.Version), zap.String("package.build_version", version.Get().GitCommit), zap.String("package.buildDate", version.Get().BuildDate), zap.String("package.architecture", version.Get().Platform))
+	} else {
+		logger = logger.With(zap.String("package.name", MetadataList.Name), zap.String("package.version", MetadataList.Version))
 	}
+
+	defer logger.Sync()
+	return logger
 }

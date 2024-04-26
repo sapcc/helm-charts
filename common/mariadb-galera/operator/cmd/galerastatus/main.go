@@ -3,11 +3,11 @@ package main
 import (
 	_ "embed"
 	"fmt"
-	"net/http"
 	"os"
 
 	api "github.com/sapcc/helm-charts/common/mariadb-galera/operator/api/handler"
 	"github.com/sapcc/helm-charts/common/mariadb-galera/operator/internal/config"
+	"go.uber.org/zap"
 	"gopkg.in/yaml.v3"
 )
 
@@ -18,8 +18,10 @@ var metadataFile []byte
 
 func main() {
 	// parse the metadata information
-	metadataParseErr := yaml.Unmarshal(metadataFile, &config.MetadataList)
-	config.ECSLogOutput(metadataParseErr, "error")
+	err := yaml.Unmarshal(metadataFile, &config.MetadataList)
+	if err != nil {
+		config.Log().Error("metadata parsing failed", zap.Error(err))
+	}
 
 	// If requested display the version and exit
 	if *config.CmdLineOptions.Version {
@@ -33,6 +35,6 @@ func main() {
 		os.Exit(0)
 	}
 
-	http.HandleFunc("/status", api.GetGaleraStatus)
-	http.ListenAndServe(":8080", nil)
+	// start the webserver to serve the Galera status
+	api.StartWebServer()
 }

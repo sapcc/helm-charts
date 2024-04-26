@@ -12,7 +12,9 @@ type CmdLineFlags struct {
 	DBName           *string
 	DBSocket         *string
 	DBConnectionType *string
-	LogOutput        *bool
+	LogEnable        *bool
+	LogBuildInfo     *bool
+	LogStackTrace    *bool
 	LogLevel         *string
 	Version          *bool
 	BuildInfo        *bool
@@ -31,8 +33,10 @@ func ParseCmdLine() CmdLineFlags {
 	Options.DBName = flag.String("dbname", "mysql", "database name")
 	Options.DBSocket = flag.String("dbsocket", "/opt/mariadb/run/mariadbd.sock", "database socket")
 	Options.DBConnectionType = flag.String("dbconnectiontype", "", "socket or host")
-	Options.LogOutput = flag.Bool("logoutput", false, "display structured log events")
-	Options.LogLevel = flag.String("loglevel", "info", "trace, debug, info, warning, error, fatal, panic")
+	Options.LogEnable = flag.Bool("logenable", true, "display structured log events")
+	Options.LogBuildInfo = flag.Bool("logbuildinfo", false, "add build information to log output")
+	Options.LogStackTrace = flag.Bool("logstacktrace", false, "add stacktrace to log output")
+	Options.LogLevel = flag.String("loglevel", "error", "debug, info, warning, error, panic, fatal")
 	Options.Version = flag.Bool("version", false, "display galerastatus version")
 	Options.BuildInfo = flag.Bool("buildinfo", false, "display galerastatus build information")
 	flag.Parse()

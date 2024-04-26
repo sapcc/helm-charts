@@ -3,75 +3,103 @@ package database
 import (
 	"database/sql"
 	"strings"
+	"time"
 
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/sapcc/helm-charts/common/mariadb-galera/operator/internal/config"
+	"go.uber.org/zap"
 )
 
-type GaleraStatus struct {
-	Cluster Cluster `json:"cluster"`
-	Node    Node    `json:"node"`
+type galeraStatus struct {
+	Cluster    cluster `json:"cluster"`
+	Node       node    `json:"node"`
+	LastUpdate string  `json:"last_update"`
 }
 
-type Cluster struct {
+type cluster struct {
 	Size      int    `json:"size"`
 	Status    string `json:"status"`
 	Partition string `json:"partition"`
 }
 
-type Node struct {
+type node struct {
 	State     string `json:"state"`
 	Connected string `json:"connected"`
 	Ready     string `json:"ready"`
 	Seqno     int    `json:"seqno"`
 }
 
-func QueryGaleraStatus() (*GaleraStatus, error) {
-	var preparedStatement *sql.Stmt
-	var galeraStatus GaleraStatus
-	var columnName string
+func QueryGaleraStatus() (*galeraStatus, error) {
+	var (
+		preparedStatement *sql.Stmt
+		status            galeraStatus
+		columnName        string
+		queryValue        string
+		updateTime        time.Time = time.Now()
+	)
 
 	preparedStatement, err := DB().Prepare("SHOW GLOBAL STATUS WHERE variable_name=?")
 	if err != nil {
-		config.ECSLogOutput(err, "error")
+		config.Log().Error("creating prepared statement for database query failed", zap.Error(err))
+		return nil, err
 	}
 	defer preparedStatement.Close()
 
-	err = preparedStatement.QueryRow("wsrep_cluster_size").Scan(&columnName, &galeraStatus.Cluster.Size)
+	queryValue = "wsrep_cluster_size"
+	err = preparedStatement.QueryRow(queryValue).Scan(&columnName, &status.Cluster.Size)
 	if err != nil {
-		config.ECSLogOutput("wsrep_cluster_size query failed because of '"+err.Error()+"'", "error")
-	}
-
-	err = preparedStatement.QueryRow("wsrep_cluster_status").Scan(&columnName, &galeraStatus.Cluster.Partition)
-	if err != nil {
-		config.ECSLogOutput("wsrep_cluster_status query failed because of '"+err.Error()+"'", "error")
-	}
-
-	err = preparedStatement.QueryRow("wsrep_local_state_comment").Scan(&columnName, &galeraStatus.Node.State)
-	if err != nil {
-		config.ECSLogOutput("wsrep_local_state_comment query failed because of '"+err.Error()+"'", "error")
-	}
-
-	err = preparedStatement.QueryRow("wsrep_connected").Scan(&columnName, &galeraStatus.Node.Connected)
-	if err != nil {
-		config.ECSLogOutput("wsrep_connected query failed because of '"+err.Error()+"'", "error")
-	}
-
-	err = preparedStatement.QueryRow("wsrep_ready").Scan(&columnName, &galeraStatus.Node.Ready)
-	if err != nil {
-		config.ECSLogOutput("wsrep_ready query failed because of '"+err.Error()+"'", "error")
-	}
-
-	err = preparedStatement.QueryRow("wsrep_last_committed").Scan(&columnName, &galeraStatus.Node.Seqno)
-	if err != nil {
-		config.ECSLogOutput("wsrep_last_committed query failed because of '"+err.Error()+"'", "error")
-	}
-
-	if strings.ToLower(galeraStatus.Cluster.Partition) == "primary" && galeraStatus.Node.State == "Synced" && galeraStatus.Node.Connected == "ON" && galeraStatus.Node.Ready == "ON" {
-		galeraStatus.Cluster.Status = "healthy"
+		config.Log().Error(queryValue+" query failed", zap.Error(err))
 	} else {
-		galeraStatus.Cluster.Status = "unhealthy"
+		config.Log().Info(queryValue + " query successful")
 	}
 
-	return &galeraStatus, nil
+	queryValue = "wsrep_cluster_status"
+	err = preparedStatement.QueryRow(queryValue).Scan(&columnName, &status.Cluster.Partition)
+	if err != nil {
+		config.Log().Error(queryValue+" query failed", zap.Error(err))
+	} else {
+		config.Log().Info(queryValue + " query successful")
+	}
+
+	queryValue = "wsrep_local_state_comment"
+	err = preparedStatement.QueryRow(queryValue).Scan(&columnName, &status.Node.State)
+	if err != nil {
+		config.Log().Error(queryValue+" query failed", zap.Error(err))
+	} else {
+		config.Log().Info(queryValue + " query successful")
+	}
+
+	queryValue = "wsrep_connected"
+	err = preparedStatement.QueryRow(queryValue).Scan(&columnName, &status.Node.Connected)
+	if err != nil {
+		config.Log().Error(queryValue+" query failed", zap.Error(err))
+	} else {
+		config.Log().Info(queryValue + " query successful")
+	}
+
+	queryValue = "wsrep_ready"
+	err = preparedStatement.QueryRow(queryValue).Scan(&columnName, &status.Node.Ready)
+	if err != nil {
+		config.Log().Error(queryValue+" query failed", zap.Error(err))
+	} else {
+		config.Log().Info(queryValue + " query successful")
+	}
+
+	queryValue = "wsrep_last_committed"
+	err = preparedStatement.QueryRow(queryValue).Scan(&columnName, &status.Node.Seqno)
+	if err != nil {
+		config.Log().Error(queryValue+" query failed", zap.Error(err))
+	} else {
+		config.Log().Info(queryValue + " query successful")
+	}
+
+	if strings.ToLower(status.Cluster.Partition) == "primary" && status.Node.State == "Synced" && status.Node.Connected == "ON" && status.Node.Ready == "ON" {
+		status.Cluster.Status = "healthy"
+	} else {
+		status.Cluster.Status = "unhealthy"
+	}
+
+	status.LastUpdate = updateTime.Format(time.RFC3339)
+
+	return &status, nil
 }
