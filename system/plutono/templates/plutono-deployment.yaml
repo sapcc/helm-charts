@@ -14,8 +14,8 @@ spec:
         app: plutono
         component: plutono
       annotations:
-        checksum/plutono.etc: {{ include "plutono/templates/plutono-etc-configmap.yaml" . | sha256sum }}
-        checksum/plutono.bin: {{ include "plutono/templates/plutono-bin-configmap.yaml" . | sha256sum }}
+        checksum/plutono.etc: {{ include "plutono/templates/plutono-etc-secret.yaml" . | sha256sum }}
+        checksum/plutono.bin: {{ include "plutono/templates/plutono-bin-secret.yaml" . | sha256sum }}
         checksum/plutono.ini: {{ include "plutono/templates/_plutono.ini.tpl" . | sha256sum }}
         checksum/plutono-secrets: {{ include "plutono/templates/plutono-secrets.yaml" . | sha256sum }}
         checksum/ldap.toml: {{ include "plutono/templates/_ldap.toml.tpl" . | sha256sum }}
@@ -27,11 +27,11 @@ spec:
         zone: farm
       volumes:
         - name: plutono-bin
-          configMap:
-            name: plutono-bin
+          secret:
+            secretName: plutono-bin
         - name: plutono-etc
-          configMap:
-            name: plutono-etc
+          secret:
+            secretName: plutono-etc
 {{- if .Values.authentication.enabled }}
         - name: plutono-secrets
           secret:
@@ -56,7 +56,7 @@ spec:
       containers:
         - name: "plutono"
           image: {{ .Values.global.ghcrIoMirror | required ".Values.global.ghcrIoMirror is missing" }}/{{.Values.plutono.image}}:{{.Values.plutono.image_version}}
-          imagePullPolicy: {{.Values.image.pullPolicy}}
+          imagePullPolicy: {{.Values.image.pullPolicy }}
           command:
             - /bin/bash
           args:
