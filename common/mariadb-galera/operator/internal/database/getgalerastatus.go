@@ -10,7 +10,7 @@ import (
 	"go.uber.org/zap"
 )
 
-type galeraStatus struct {
+type GaleraStatus struct {
 	Cluster    cluster `json:"cluster"`
 	Node       node    `json:"node"`
 	LastUpdate string  `json:"last_update"`
@@ -29,10 +29,10 @@ type node struct {
 	Seqno     int    `json:"seqno"`
 }
 
-func QueryGaleraStatus() (*galeraStatus, error) {
+func QueryGaleraStatus() (*GaleraStatus, error) {
 	var (
 		preparedStatement *sql.Stmt
-		status            galeraStatus
+		status            GaleraStatus
 		columnName        string
 		queryValue        string
 		updateTime        time.Time = time.Now()
