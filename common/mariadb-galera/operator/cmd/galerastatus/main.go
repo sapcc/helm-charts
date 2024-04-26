@@ -9,7 +9,7 @@ import (
 	"github.com/sapcc/helm-charts/common/mariadb-galera/operator/api"
 	"github.com/sapcc/helm-charts/common/mariadb-galera/operator/internal/config"
 	"github.com/sapcc/helm-charts/common/mariadb-galera/operator/internal/database"
-	"github.com/sapcc/helm-charts/common/mariadb-galera/operator/state"
+	"github.com/sapcc/helm-charts/common/mariadb-galera/operator/internal/state"
 	"go.uber.org/zap"
 	"gopkg.in/yaml.v3"
 )

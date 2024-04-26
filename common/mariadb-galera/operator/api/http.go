@@ -14,20 +14,6 @@ func GetGaleraStatus(w http.ResponseWriter, r *http.Request) {
 		filename string = *config.CmdLineOptions.StatusFile
 		jsonMap  map[string]interface{}
 	)
-	// galeraStatus, err := database.QueryGaleraStatus()
-	// if err != nil {
-	// 	config.Log().Error("database query has been failed", zap.Error(err))
-	// 	http.Error(w, "database backend problem occured", http.StatusInternalServerError)
-	// 	return
-	// }
-
-	// bytes, err := json.Marshal(galeraStatus)
-	// if err != nil {
-	// 	config.Log().Error("json parsing for the Galera status failed", zap.Error(err))
-	// 	http.Error(w, "data parsing problem occured", http.StatusInternalServerError)
-	// 	return
-	// }
-
 	file, err := os.ReadFile(filename)
 	if err != nil {
 		config.Log().Error("could not read "+filename, zap.Error(err))
