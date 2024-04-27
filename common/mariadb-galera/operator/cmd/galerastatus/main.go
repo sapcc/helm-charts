@@ -38,6 +38,8 @@ func main() {
 		os.Exit(0)
 	}
 
+	config.LogInfo().Info(config.MetadataList.Name + " started")
+
 	// query the Galera status and store it in the local state file every 5 seconds
 	ticker := time.NewTicker(5 * time.Second)
 	done := make(chan struct{})

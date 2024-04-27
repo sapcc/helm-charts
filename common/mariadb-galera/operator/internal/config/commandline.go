@@ -16,8 +16,9 @@ type CmdLineFlags struct {
 	DBConnectionType *string
 	StatusFile       *string
 	LogEnable        *bool
-	LogBuildInfo     *bool
 	LogStackTrace    *bool
+	LogCaller        *bool
+	LogBuildInfo     *bool
 	LogLevel         *string
 	Version          *bool
 	BuildInfo        *bool
@@ -46,8 +47,9 @@ func ParseCmdLine() CmdLineFlags {
 	Options.DBConnectionType = flag.String("dbconnectiontype", "", "socket or host")
 	Options.StatusFile = flag.String("statusfile", UserHome+"/galerastatus.json", "status file location")
 	Options.LogEnable = flag.Bool("logenable", true, "display structured log events")
-	Options.LogBuildInfo = flag.Bool("logbuildinfo", false, "add build information to log output")
 	Options.LogStackTrace = flag.Bool("logstacktrace", false, "add stacktrace to log output")
+	Options.LogCaller = flag.Bool("logcaller", false, "add caller information to log output")
+	Options.LogBuildInfo = flag.Bool("logbuildinfo", false, "add build information to log output")
 	Options.LogLevel = flag.String("loglevel", "error", "debug, info, warning, error, panic, fatal")
 	Options.Version = flag.Bool("version", false, "display galerastatus version")
 	Options.BuildInfo = flag.Bool("buildinfo", false, "display galerastatus build information")

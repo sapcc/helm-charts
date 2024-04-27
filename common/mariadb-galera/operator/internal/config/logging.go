@@ -11,12 +11,21 @@ import (
 )
 
 var (
-	LogEnable       *bool   = CmdLineOptions.LogEnable
-	LogBuildInfo    *bool   = CmdLineOptions.LogBuildInfo
-	LogStackTrace   *bool   = CmdLineOptions.LogStackTrace
-	MinimumLogLevel *string = CmdLineOptions.LogLevel
-	loglevel        zap.AtomicLevel
-	logger          *zap.Logger
+	LogEnable        *bool   = CmdLineOptions.LogEnable
+	LogCaller        *bool   = CmdLineOptions.LogCaller
+	LogStackTrace    *bool   = CmdLineOptions.LogStackTrace
+	LogBuildInfo     *bool   = CmdLineOptions.LogBuildInfo
+	MinimumLogLevel  *string = CmdLineOptions.LogLevel
+	loglevel         zap.AtomicLevel
+	logger           *zap.Logger
+	stdout           zapcore.WriteSyncer = zapcore.AddSync(os.Stdout)
+	ecsEncoderConfig                     = ecszap.EncoderConfig{
+		EncodeLevel:      zapcore.LowercaseLevelEncoder,
+		EncodeDuration:   zapcore.MillisDurationEncoder,
+		EncodeCaller:     ecszap.ShortCallerEncoder,
+		EnableCaller:     *LogCaller,
+		EnableStackTrace: *LogStackTrace,
+	}
 )
 
 func Log() *zap.Logger {
@@ -40,28 +49,25 @@ func Log() *zap.Logger {
 		}
 	}
 
-	stdout := zapcore.AddSync(os.Stdout)
-	ecsEncoderConfig := ecszap.EncoderConfig{
-		EncodeLevel:      zapcore.LowercaseLevelEncoder,
-		EncodeDuration:   zapcore.MillisDurationEncoder,
-		EncodeCaller:     ecszap.ShortCallerEncoder,
-		EnableCaller:     true,
-		EnableStackTrace: *LogStackTrace,
-	}
 	core := ecszap.NewCore(ecsEncoderConfig, stdout, loglevel)
-
-	if *LogStackTrace {
-		logger = zap.New(core, zap.AddCaller(), zap.AddStacktrace(zapcore.ErrorLevel))
-	} else {
-		logger = zap.New(core, zap.AddCaller())
-	}
+	logger = zap.New(core, zap.AddStacktrace(zapcore.ErrorLevel))
+	logger = logger.With(zap.String("package.name", MetadataList.Name), zap.String("package.version", MetadataList.Version))
 
 	if *LogBuildInfo {
-		logger = logger.With(zap.String("package.name", MetadataList.Name), zap.String("package.version", MetadataList.Version), zap.String("package.build_version", version.Get().GitCommit), zap.String("package.buildDate", version.Get().BuildDate), zap.String("package.architecture", version.Get().Platform))
-	} else {
-		logger = logger.With(zap.String("package.name", MetadataList.Name), zap.String("package.version", MetadataList.Version))
+		logger = logger.With(zap.String("package.build_version", version.Get().GitCommit), zap.String("package.buildDate", version.Get().BuildDate), zap.String("package.architecture", version.Get().Platform))
 	}
 
 	defer logger.Sync()
+	return logger
+}
+
+// Sets the minimum log level to info to log info messages even if the log level is set to a lower level.
+// This is useful for logging startup messages and other important information
+func LogInfo() *zap.Logger {
+	infoLevel := zap.WrapCore(func(zapcore.Core) zapcore.Core {
+		return ecszap.NewCore(ecsEncoderConfig, stdout, zap.NewAtomicLevelAt(zap.InfoLevel))
+	})
+
+	logger := Log().WithOptions(infoLevel)
 	return logger
 }
