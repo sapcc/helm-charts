@@ -20,9 +20,12 @@ type cluster struct {
 	Size      int    `json:"size"`
 	Status    string `json:"status"`
 	Partition string `json:"partition"`
+	SegmentId int    `json:"segment_id"`
 }
 
 type node struct {
+	WsrepName string `json:"wsrepname"`
+	Hostname  string `json:"hostname"`
 	State     string `json:"state"`
 	Connected string `json:"connected"`
 	Ready     string `json:"ready"`
@@ -31,22 +34,31 @@ type node struct {
 
 func QueryGaleraStatus() (*GaleraStatus, error) {
 	var (
-		preparedStatement *sql.Stmt
-		status            GaleraStatus
-		columnName        string
-		queryValue        string
-		updateTime        time.Time = time.Now()
+		globalStatus *sql.Stmt
+		globalVars   *sql.Stmt
+		status       GaleraStatus
+		columnName   string
+		queryValue   string
+		updateTime   time.Time = time.Now()
+		err          error
 	)
 
-	preparedStatement, err := DB().Prepare("SHOW GLOBAL STATUS WHERE variable_name=?")
+	globalStatus, err = DB().Prepare("SHOW GLOBAL STATUS WHERE variable_name=?")
 	if err != nil {
-		config.Log().Error("creating prepared statement for database query failed", zap.Error(err))
+		config.Log().Error("prepared statement for global status query failed", zap.Error(err))
 		return nil, err
 	}
-	defer preparedStatement.Close()
+	defer globalStatus.Close()
+
+	globalVars, err = DB().Prepare("SHOW GLOBAL VARIABLES WHERE variable_name=?")
+	if err != nil {
+		config.Log().Error("prepared statement for global variables query failed", zap.Error(err))
+		return nil, err
+	}
+	defer globalVars.Close()
 
 	queryValue = "wsrep_cluster_size"
-	err = preparedStatement.QueryRow(queryValue).Scan(&columnName, &status.Cluster.Size)
+	err = globalStatus.QueryRow(queryValue).Scan(&columnName, &status.Cluster.Size)
 	if err != nil {
 		config.Log().Error(queryValue+" query failed", zap.Error(err))
 	} else {
@@ -54,7 +66,7 @@ func QueryGaleraStatus() (*GaleraStatus, error) {
 	}
 
 	queryValue = "wsrep_cluster_status"
-	err = preparedStatement.QueryRow(queryValue).Scan(&columnName, &status.Cluster.Partition)
+	err = globalStatus.QueryRow(queryValue).Scan(&columnName, &status.Cluster.Partition)
 	if err != nil {
 		config.Log().Error(queryValue+" query failed", zap.Error(err))
 	} else {
@@ -62,7 +74,7 @@ func QueryGaleraStatus() (*GaleraStatus, error) {
 	}
 
 	queryValue = "wsrep_local_state_comment"
-	err = preparedStatement.QueryRow(queryValue).Scan(&columnName, &status.Node.State)
+	err = globalStatus.QueryRow(queryValue).Scan(&columnName, &status.Node.State)
 	if err != nil {
 		config.Log().Error(queryValue+" query failed", zap.Error(err))
 	} else {
@@ -70,7 +82,7 @@ func QueryGaleraStatus() (*GaleraStatus, error) {
 	}
 
 	queryValue = "wsrep_connected"
-	err = preparedStatement.QueryRow(queryValue).Scan(&columnName, &status.Node.Connected)
+	err = globalStatus.QueryRow(queryValue).Scan(&columnName, &status.Node.Connected)
 	if err != nil {
 		config.Log().Error(queryValue+" query failed", zap.Error(err))
 	} else {
@@ -78,7 +90,7 @@ func QueryGaleraStatus() (*GaleraStatus, error) {
 	}
 
 	queryValue = "wsrep_ready"
-	err = preparedStatement.QueryRow(queryValue).Scan(&columnName, &status.Node.Ready)
+	err = globalStatus.QueryRow(queryValue).Scan(&columnName, &status.Node.Ready)
 	if err != nil {
 		config.Log().Error(queryValue+" query failed", zap.Error(err))
 	} else {
@@ -86,7 +98,31 @@ func QueryGaleraStatus() (*GaleraStatus, error) {
 	}
 
 	queryValue = "wsrep_last_committed"
-	err = preparedStatement.QueryRow(queryValue).Scan(&columnName, &status.Node.Seqno)
+	err = globalStatus.QueryRow(queryValue).Scan(&columnName, &status.Node.Seqno)
+	if err != nil {
+		config.Log().Error(queryValue+" query failed", zap.Error(err))
+	} else {
+		config.Log().Info(queryValue + " query successful")
+	}
+
+	queryValue = "wsrep_gmcast_segment"
+	err = globalStatus.QueryRow(queryValue).Scan(&columnName, &status.Cluster.SegmentId)
+	if err != nil {
+		config.Log().Error(queryValue+" query failed", zap.Error(err))
+	} else {
+		config.Log().Info(queryValue + " query successful")
+	}
+
+	queryValue = "wsrep_node_name"
+	err = globalVars.QueryRow(queryValue).Scan(&columnName, &status.Node.WsrepName)
+	if err != nil {
+		config.Log().Error(queryValue+" query failed", zap.Error(err))
+	} else {
+		config.Log().Info(queryValue + " query successful")
+	}
+
+	queryValue = "hostname"
+	err = globalVars.QueryRow(queryValue).Scan(&columnName, &status.Node.Hostname)
 	if err != nil {
 		config.Log().Error(queryValue+" query failed", zap.Error(err))
 	} else {
