@@ -23,7 +23,7 @@ spec:
             value: info
           - name: region
             matchType: "=~"
-            value: {{ include "regionsWithQA1" . }} 
+            value: {{ .Values.regions | join "|" }} 
 
       # review for slack_by_cc_service
       - receiver: slack_barbican_certificate
@@ -40,7 +40,7 @@ spec:
             value: info
           - name: region
             matchType: "=~"
-            value: {{ include "regionsWithQA1" . }}  
+            value: {{ .Values.regions | join "|" }} 
 
       # review for slack_by_cc_service
       - receiver: slack_nannies
@@ -54,7 +54,7 @@ spec:
             value: critical|warning|info
           - name: region
             matchType: "=~"
-            value: {{ include "regions" . }}
+            value: {{ without .Values.regions "qa-de-1" | join "|" }}
 
       # review for slack_by_cc_service
       - receiver: slack_nannies_automation
@@ -65,7 +65,7 @@ spec:
             value: nanny-automation
           - name: region
             matchType: "=~"
-            value: {{ include "regions" . }}
+            value: {{ without .Values.regions "qa-de-1" | join "|" }}
 
       - receiver: slack_k8s
         continue: true
@@ -78,10 +78,10 @@ spec:
             value: critical|warning|info
           - name: cluster_type
             matchType: "=~"
-            value: abapcloud|admin|controlplane|customer|internet|kubernikus|metal|scaleout|virtual
+            value: {{ .Values.clusterTypes | join "|" }}
           - name: region
             matchType: "=~"
-            value: {{ include "regions" . }}
+            value: {{ without .Values.regions "qa-de-1" | join "|" }}
 
       - receiver: slack_kks_default
         continue: true
@@ -94,7 +94,7 @@ spec:
             value: warning|info
           - name: region
             matchType: "=~"
-            value: {{ include "regions" . }}
+            value: {{ without .Values.regions "qa-de-1" | join "|" }}
 
       - receiver: slack_kks_critical
         continue: true
@@ -107,7 +107,7 @@ spec:
             value: critical
           - name: region
             matchType: "=~"
-            value: {{ include "regions" . }}
+            value: {{ without .Values.regions "qa-de-1" | join "|" }}
 
       - receiver: slack_concourse
         continue: true
@@ -144,7 +144,7 @@ spec:
             value: vault
           - name: region
             matchType: "=~"
-            value: {{ include "regions" . }}
+            value: {{ without .Values.regions "qa-de-1" | join "|" }}
 
       - receiver: slack_by_os_service
         continue: true
@@ -160,7 +160,7 @@ spec:
             value: arc|barbican|cinder|cronus|designate|documentation|elektra|elk|glance|ironic|lyra|manila|neutron|nova|octavia|placement|sentry|snmp
           - name: region
             matchType: "=~"
-            value: {{ include "regions" . }}
+            value: {{ without .Values.regions "qa-de-1" | join "|" }}
 
       - receiver: slack_by_cc_service
         continue: true
@@ -173,7 +173,7 @@ spec:
             value: alerting|backup|castellum|cc3test|exporter|gatekeeper|grafana|hermes|jumpserver|keppel|limes|logs|maia|metis|metrics|repo|slack-alert-reactions|swift|tenso
           - name: region
             matchType: "=~"
-            value: {{ include "regions" . }}
+            value: {{ without .Values.regions "qa-de-1" | join "|" }}
 
       # to be reviewed
       - receiver: slack_sre
@@ -207,10 +207,10 @@ spec:
             value: critical
           - name: cluster_type
             matchType: "=~"
-            value: {{ include "clusterTypes" . }}
+            value: {{ .Values.clusterTypes | join "|" }}
           - name: region
             matchType: "=~"
-            value: {{ include "regionsWithGlobal" . }}
+            value: global|{{ without .Values.regions "qa-de-1" | join "|" }}
           - name: support_group
             matchType: "="
             value: compute
@@ -223,10 +223,10 @@ spec:
             value: critical
           - name: cluster_type
             matchType: "=~"
-            value: {{ include "clusterTypes" . }}
+            value: {{ .Values.clusterTypes | join "|" }}
           - name: region
             matchType: "=~"
-            value: {{ include "regionsWithGlobal" . }}
+            value: global|{{ without .Values.regions "qa-de-1" | join "|" }}
           - name: support_group
             matchType: "="
             value: compute-storage-api
@@ -239,10 +239,10 @@ spec:
             value: critical
           - name: cluster_type
             matchType: "=~"
-            value: {{ include "clusterTypes" . }}
+            value: {{ .Values.clusterTypes | join "|" }}
           - name: region
             matchType: "=~"
-            value: {{ include "regionsWithGlobal" . }}
+            value: global|{{ without .Values.regions "qa-de-1" | join "|" }}
           - name: support_group
             matchType: "="
             value: containers
@@ -255,10 +255,10 @@ spec:
             value: critical
           - name: cluster_type
             matchType: "=~"
-            value: {{ include "clusterTypes" . }}
+            value: {{ .Values.clusterTypes | join "|" }}
           - name: region
             matchType: "=~"
-            value: {{ include "regionsWithGlobal" . }}
+            value: global|{{ without .Values.regions "qa-de-1" | join "|" }}
           - name: support_group
             matchType: "="
             value: email
@@ -271,10 +271,10 @@ spec:
             value: critical
           - name: cluster_type
             matchType: "=~"
-            value: {{ include "clusterTypes" . }}
+            value: {{ .Values.clusterTypes | join "|" }}
           - name: region
             matchType: "=~"
-            value: {{ include "regionsWithGlobal" . }}
+            value: global|{{ without .Values.regions "qa-de-1" | join "|" }}
           - name: support_group
             matchType: "="
             value: identity
@@ -287,10 +287,10 @@ spec:
             value: critical
           - name: cluster_type
             matchType: "=~"
-            value: {{ include "clusterTypes" . }}
+            value: {{ .Values.clusterTypes | join "|" }}
           - name: region
             matchType: "=~"
-            value: {{ include "regionsWithGlobal" . }}
+            value: global|{{ without .Values.regions "qa-de-1" | join "|" }}
           - name: support_group
             matchType: "="
             value: foundation
@@ -303,10 +303,10 @@ spec:
             value: critical
           - name: cluster_type
             matchType: "=~"
-            value: {{ include "clusterTypes" . }}
+            value: {{ .Values.clusterTypes | join "|" }}
           - name: region
             matchType: "=~"
-            value: {{ include "regionsWithGlobal" . }}
+            value: global|{{ without .Values.regions "qa-de-1" | join "|" }}
           - name: support_group
             matchType: "="
             value: network-api
@@ -319,10 +319,10 @@ spec:
             value: critical
           - name: cluster_type
             matchType: "=~"
-            value: {{ include "clusterTypes" . }}
+            value: {{ .Values.clusterTypes | join "|" }}
           - name: region
             matchType: "=~"
-            value: {{ include "regionsWithGlobal" . }}
+            value: global|{{ without .Values.regions "qa-de-1" | join "|" }}
           - name: support_group
             matchType: "="
             value: observability
@@ -335,10 +335,10 @@ spec:
             value: critical
           - name: cluster_type
             matchType: "=~"
-            value: {{ include "clusterTypes" . }}
+            value: {{ .Values.clusterTypes | join "|" }}
           - name: region
             matchType: "=~"
-            value: {{ include "regionsWithGlobal" . }}
+            value: global|{{ without .Values.regions "qa-de-1" | join "|" }}
           - name: support_group
             matchType: "="
             value: src
@@ -351,13 +351,13 @@ spec:
             value: warning
           - name: cluster_type
             matchType: "=~"
-            value: {{ include "clusterTypes" . }}
+            value: {{ .Values.clusterTypes | join "|" }}
           - name: region
             matchType: "=~"
-            value: {{ include "regionsWithGlobal" . }}
+            value: global|{{ without .Values.regions "qa-de-1" | join "|" }}
           - name: support_group
             matchType: "=~"
-            value: {{ include "supportGroups" . }}
+            value: {{ .Values.supportGroups | join "|" }}
 
       - receiver: support_group_alerts_qa
         continue: true
@@ -370,7 +370,7 @@ spec:
             value: qa-de-1
           - name: support_group
             matchType: "=~"
-            value: {{ include "supportGroups" . }}
+            value: {{ .Values.supportGroups | join "|" }}
 
       - receiver: support_group_alerts_labs
         continue: true
@@ -383,7 +383,7 @@ spec:
             value: qa-de-2|qa-de-3|qa-de-4|qa-de-5|qa-de-6
           - name: support_group
             matchType: "=~"
-            value: {{ include "supportGroups" . }}
+            value: {{ .Values.supportGroups | join "|" }}
 
       - receiver: slack_ad_warning
         continue: true
@@ -396,7 +396,7 @@ spec:
             value: warning
           - name: region
             matchType: "=~"
-            value: {{ include "regionsWithQA1" . }}
+            value: {{ .Values.regions | join "|" }}
 
       - receiver: slack_ad_info
         continue: true
@@ -409,7 +409,7 @@ spec:
             value: info
           - name: region
             matchType: "=~"
-            value: {{ include "regionsWithQA1" . }}
+            value: {{ .Values.regions | join "|" }}
 
       - receiver: slack_vmware_critical
         continue: true
@@ -422,7 +422,7 @@ spec:
             value: critical
           - name: region
             matchType: "=~"
-            value: {{ include "regions" . }}
+            value: {{ without .Values.regions "qa-de-1" | join "|" }}
           - name: support_group
             matchType: "="
             value: compute
@@ -438,7 +438,7 @@ spec:
             value: warning
           - name: region
             matchType: "=~"
-            value: {{ include "regions" . }}
+            value: {{ without .Values.regions "qa-de-1" | join "|" }}
           - name: support_group
             matchType: "="
             value: compute
@@ -455,7 +455,7 @@ spec:
             value: info
           - name: region
             matchType: "=~"
-            value: {{ include "regions" . }}
+            value: {{ without .Values.regions "qa-de-1" | join "|" }}
           - name: support_group
             matchType: "="
             value: compute
@@ -632,7 +632,7 @@ spec:
             name: alertmanager-{{ include "alertmanagerRelease.name" $ }}-slack-secrets
             key: {{ printf "%s_%s_%s" "slack" $slack.name "criticalwebhookURL" }}
           {{- include "slack.template" . | nindent 10 }}
-    {{- end }}
+    {{ end }}
 
     - name: support_group_alerts_critical
       slackConfigs:

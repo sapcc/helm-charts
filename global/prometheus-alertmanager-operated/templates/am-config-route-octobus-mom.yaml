@@ -1,7 +1,7 @@
 apiVersion: monitoring.coreos.com/v1alpha1
 kind: AlertmanagerConfig
 metadata:
-  name: alertmanager-{{ include "alertmanagerRelease.name" . }}-route-octobus-mom
+  name: route-octobus-mom
   labels:
     alertmanager: {{ include "alertmanagerRelease.name" . }}
 spec:
@@ -13,7 +13,7 @@ spec:
         value: "info|warning|critical"
       - name: region
         matchType: "=~"
-        value: {{ include "regions" . }}
+        value: {{ without .Values.regions "qa-de-1" | join "|" }}
   receivers:
     - name: octobus
       webhookConfigs:
