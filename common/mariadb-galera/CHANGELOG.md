@@ -1,9 +1,9 @@
 # Changelog
 
-## v0.25.0 - 24.04.2024
+## v0.25.0 - 2024/04/24
 * Add standardised Kubernetes labels accorting to:
-  * https://kubernetes.io/docs/concepts/overview/working-with-objects/common-labels/#labels
-  * https://helm.sh/docs/chart_best_practices/labels/
+  * [Kubernetes recommended labels](https://kubernetes.io/docs/concepts/overview/working-with-objects/common-labels/#labels)
+  * [Helm standard labels](https://helm.sh/docs/chart_best_practices/labels/#standard-labels)
 
 ## v0.24.0 - 2024/04/22
 * multi region support for Galera added
