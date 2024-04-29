@@ -13,6 +13,7 @@ metadata:
     app: {{ $.Release.Name }}
     component: "database"
     release: {{ $.Release.Name }}
+    {{- include "sharedservices.labels" . | indent 4 }}
 spec:
   replicas: {{ ((include "replicaCount" (dict "global" $ "type" "database")) | int) | default 3 }}
   serviceName: {{ $.Release.Name }}
@@ -29,6 +30,7 @@ spec:
         app: {{ $.Release.Name }}
         component: "database"
         release: {{ $.Release.Name }}
+        {{- include "sharedservices.labels" . | indent 8 }}
       annotations:
         {{- if $.Values.monitoring.mysqld_exporter.enabled }}
         prometheus.io/scrape: "true"
