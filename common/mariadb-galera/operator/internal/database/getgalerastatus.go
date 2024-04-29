@@ -45,14 +45,14 @@ func QueryGaleraStatus() (*GaleraStatus, error) {
 
 	globalStatus, err = DB().Prepare("SHOW GLOBAL STATUS WHERE variable_name=?")
 	if err != nil {
-		config.Log().Error("prepared statement for global status query failed", zap.Error(err))
+		config.Log().Error("prepare statement for global status query failed", zap.Error(err))
 		return nil, err
 	}
 	defer globalStatus.Close()
 
 	globalVars, err = DB().Prepare("SHOW GLOBAL VARIABLES WHERE variable_name=?")
 	if err != nil {
-		config.Log().Error("prepared statement for global variables query failed", zap.Error(err))
+		config.Log().Error("prepare statement for global variables query failed", zap.Error(err))
 		return nil, err
 	}
 	defer globalVars.Close()
