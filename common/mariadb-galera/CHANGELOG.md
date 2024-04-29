@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.26.0 - 2024/04/30
+* [wsrep_sync_wait](https://mariadb.com/kb/en/galera-cluster-system-variables/#wsrep_sync_wait) option added for Galera
+  * unit tests added
+* packages timestamp updated to `20240429103636`
+* chart version bumped
+
 ## v0.25.0 - 2024/04/24
 * Add standardised Kubernetes labels accorting to:
   * [Kubernetes recommended labels](https://kubernetes.io/docs/concepts/overview/working-with-objects/common-labels/#labels)
