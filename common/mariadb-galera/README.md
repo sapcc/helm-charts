@@ -45,7 +45,7 @@ Docker images and Helm chart to deploy a [MariaDB](https://mariadb.com/kb/en/get
 ## Metadata
 | chart version | app version | type | url |
 |:--------------|:-------------|:-------------|:-------------|
-| 0.26.0 | 10.5.23 | application | [Git repo](https://github.com/sapcc/helm-charts/tree/mariadb-galera/common/mariadb-galera) |
+| 0.27.0 | 10.5.23 | application | [Git repo](https://github.com/sapcc/helm-charts/tree/mariadb-galera/common/mariadb-galera) |
 
 | Name | Email | Url |
 | ---- | ------ | --- |
@@ -155,7 +155,7 @@ docker build --build-arg BASE_SOFT_NAME=ubuntu --build-arg BASE_SOFT_VERSION=22.
   ```
 * [push](https://helm.sh/docs/topics/registries/#the-push-subcommand) the chart to the registry
   ```shell
-  helm push mariadb-galera-0.26.0.tgz oci://keppel.eu-de-1.cloud.sap/ccloud-helm/
+  helm push mariadb-galera-0.27.0.tgz oci://keppel.eu-de-1.cloud.sap/ccloud-helm/
   ```
 
 ### values description
@@ -336,6 +336,7 @@ docker build --build-arg BASE_SOFT_NAME=ubuntu --build-arg BASE_SOFT_VERSION=22.
 | mariadb.databases.sb_oltp_ro.enabled | bool | `false` | enable this database |
 | mariadb.databases.sb_oltp_ro.overwrite | bool | false | overwrite the database if it already exists |
 | mariadb.errorLogWarningVerbosity | int | 2 | to define the [verbosity](https://mariadb.com/kb/en/error-log/#configuring-the-error-log-verbosity) of the MariaDB logs |
+| mariadb.galera.backup.desyncBackupNode | bool | `true` | Enable [wsrep_desync](https://mariadb.com/kb/en/galera-cluster-system-variables/#wsrep_desync) before the backup and disable it after the backup. This can avoid performance issues during the backup, because flow control will be disabled for the backup node. The disadvantage is that the backup node is not usable for queries during the backup. |
 | mariadb.galera.backup.enabled | bool | `false` | enable the [database backup](#database-backup). Should be done within custom instance configuration files |
 | mariadb.galera.backup.kopia.backend | string | `"s3"` | Openstack Swift and others provide an S3 compatible interface |
 | mariadb.galera.backup.kopia.enabled | bool | `false` | enable [kopia](https://kopia.io/) for the Galera backup |

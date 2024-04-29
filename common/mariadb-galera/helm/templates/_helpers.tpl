@@ -44,9 +44,9 @@ metadata:
   {{- if and (.global.Values.mariadb.galera.multiRegion.enabled) (eq .type "backend") (eq .component "database") (eq .service.type "LoadBalancer") (eq .replica "notused") }}
     loadbalancer.openstack.org/enable-health-monitor: "false"
   {{- end }}
-
   labels:
     app: {{ .global.Release.Name }}
+    {{- include "sharedservices.labels" .global | indent 4 }}
 spec:
   {{- if and (.service.headless) (ne .service.type "LoadBalancer") (eq .replica "notused") }}
   type: {{ required "the network service type has to be defined" .service.type }}
@@ -257,6 +257,8 @@ type: kubernetes.io/basic-auth
 metadata:
   namespace: {{ $.global.Release.Namespace }}
   name: {{ include "commonPrefix" .global }}-{{ $.suffix }}-{{ $.name }}
+  labels:
+    {{- include "sharedservices.labels" .global | indent 4 }}
 data:
   username: {{ (required (printf "%s.users.%s.username is required to configure the Kubernetes secret for the '%s' user" $.suffix $.name $.name) $.credential.username) | b64enc }}
   password: {{ (required (printf "%s.users.%s.password is required to configure the Kubernetes secret for the '%s' user" $.suffix $.name $.name) $.credential.password) | b64enc }}
@@ -307,9 +309,9 @@ data:
 {{- end }}
 
 {{- define "sharedservices.labels" }}
-app.kubernetes.io/name: {{ .Chart.Name }}
-app.kubernetes.io/instance: {{ .Chart.Name }}-{{ .Release.Name }}
-app.kubernetes.io/version: {{ .Chart.Version }}
+app.kubernetes.io/name: {{ $.Chart.Name }}
+app.kubernetes.io/instance: {{ $.Chart.Name }}-{{ $.Release.Name }}
+app.kubernetes.io/version: {{ $.Chart.Version }}
 app.kubernetes.io/component: MariaDB-Galera
-app.kubernetes.io/part-of: {{ .Release.Name }}
+app.kubernetes.io/part-of: {{ $.Release.Name }}
 {{- end }}

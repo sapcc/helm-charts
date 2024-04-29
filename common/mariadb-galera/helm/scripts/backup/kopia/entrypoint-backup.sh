@@ -100,13 +100,9 @@ fetchseqnofromremotenode {{ (printf "%s-%d" (include "nodeNamePrefix" (dict "glo
 selectbackupnode
 initkopiarepo
 setkopiapolicy
-setclusterdesyncmode ${NODENAME[0]} ON
+{{ if $.Values.mariadb.galera.backup.desyncBackupNode }}setclusterdesyncmode ${NODENAME[0]} ON{{ else }}#setclusterdesyncmode ${NODENAME[0]} ON{{- end }}
 createkopiadbbackup ${NODENAME[0]} ${NODENAME[1]}
 createkopiabinlogbackup ${NODENAME[0]} ${NODENAME[1]}
-setclusterdesyncmode ${NODENAME[0]} OFF
-{{- if $.Values.mariadb.galera.backup.kopia.expireBackups }}
-expirekopiabackups
-{{- end }}
-{{- if $.Values.mariadb.galera.backup.kopia.listBackups }}
-listkopiabackups
-{{- end }}
+{{ if $.Values.mariadb.galera.backup.desyncBackupNode }}setclusterdesyncmode ${NODENAME[0]} OFF{{ else }}#setclusterdesyncmode ${NODENAME[0]} OFF{{- end }}
+{{ if $.Values.mariadb.galera.backup.kopia.expireBackups }}expirekopiabackups{{ else }}#expirekopiabackups{{- end }}
+{{ if $.Values.mariadb.galera.backup.kopia.listBackups }}listkopiabackups{{ else }}#listkopiabackups{{- end }}

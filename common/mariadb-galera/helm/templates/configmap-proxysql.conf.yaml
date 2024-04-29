@@ -54,6 +54,8 @@ kind: ConfigMap
 metadata:
   name: {{ include "commonPrefix" $ }}-proxysql-conf
   namespace: {{ $.Release.Namespace }}
+  labels:
+    {{- include "sharedservices.labels" $ | indent 4 }}
 data:
   proxysql_servers.cfg.tpl: |-
     {{- range $int, $err := until ((include "replicaCount" (dict "global" $ "type" "proxy")) | int) }}

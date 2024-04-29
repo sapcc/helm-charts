@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.27.0 - 2024/04/30
+* [wsrep_desync](https://mariadb.com/kb/en/galera-cluster-system-variables/#wsrep_desync) for backups made optional
+  * `mariadb.galera.backup.desyncBackupNode` controls that feature
+  * unit tests added
+* standardized labels added to more components
+* chart version bumped
+
 ## v0.26.0 - 2024/04/30
 * [wsrep_sync_wait](https://mariadb.com/kb/en/galera-cluster-system-variables/#wsrep_sync_wait) option added for Galera
   * unit tests added
