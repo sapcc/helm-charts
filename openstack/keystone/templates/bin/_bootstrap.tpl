@@ -25,4 +25,4 @@ keystone-manage --config-file=/etc/keystone/keystone.conf --config-file=/etc/key
 {{- end }}
     --bootstrap-region-id {{ .Values.global.region }}
 
-{{- include "utils.script.job_finished_hook" . | trim }}
+{{ include "utils.script.job_finished_hook" . | trim }}
