@@ -1,0 +1,683 @@
+apiVersion: monitoring.coreos.com/v1alpha1
+kind: AlertmanagerConfig
+metadata:
+  name: route-slack
+  labels:
+    alertmanager: {{ include "alertmanagerRelease.name" . }}
+spec:
+  route:
+    receiver: slack
+    routes:
+      # review for slack_by_cc_service
+      - receiver: slack_hsm
+        continue: true
+        matchers:
+          - name: service
+            matchType: "="
+            value: barbican
+          - name: context
+            matchType: "="
+            value: hsm
+          - name: severity
+            matchType: "="
+            value: info
+          - name: region
+            matchType: "=~"
+            value: {{ .Values.regions | join "|" }} 
+
+      # review for slack_by_cc_service
+      - receiver: slack_barbican_certificate
+        continue: true
+        matchers:
+          - name: service
+            matchType: "="
+            value: barbican
+          - name: context
+            matchType: "="
+            value: certificate
+          - name: severity
+            matchType: "="
+            value: info
+          - name: region
+            matchType: "=~"
+            value: {{ .Values.regions | join "|" }} 
+
+      # review for slack_by_cc_service
+      - receiver: slack_nannies
+        continue: true
+        matchers:
+          - name: context
+            matchType: "="
+            value: nanny
+          - name: severity
+            matchType: "=~"
+            value: critical|warning|info
+          - name: region
+            matchType: "=~"
+            value: {{ without .Values.regions "qa-de-1" | join "|" }}
+
+      # review for slack_by_cc_service
+      - receiver: slack_nannies_automation
+        continue: true
+        matchers:
+          - name: context
+            matchType: "="
+            value: nanny-automation
+          - name: region
+            matchType: "=~"
+            value: {{ without .Values.regions "qa-de-1" | join "|" }}
+
+      - receiver: slack_k8s
+        continue: true
+        matchers:
+          - name: tier
+            matchType: "="
+            value: k8s
+          - name: severity
+            matchType: "=~"
+            value: critical|warning|info
+          - name: cluster_type
+            matchType: "=~"
+            value: {{ .Values.clusterTypes | join "|" }}
+          - name: region
+            matchType: "=~"
+            value: {{ without .Values.regions "qa-de-1" | join "|" }}
+
+      - receiver: slack_kks_default
+        continue: true
+        matchers:
+          - name: tier
+            matchType: "="
+            value: kks
+          - name: severity
+            matchType: "=~"
+            value: warning|info
+          - name: region
+            matchType: "=~"
+            value: {{ without .Values.regions "qa-de-1" | join "|" }}
+
+      - receiver: slack_kks_critical
+        continue: true
+        matchers:
+          - name: tier
+            matchType: "="
+            value: kks
+          - name: severity
+            matchType: "="
+            value: critical
+          - name: region
+            matchType: "=~"
+            value: {{ without .Values.regions "qa-de-1" | join "|" }}
+
+      - receiver: slack_concourse
+        continue: true
+        matchers:
+          - name: service
+            matchType: "="
+            value: concourse
+          - name: severity
+            matchType: "=~"
+            value: info|warning|critical
+
+      # review for slack_by_cc_service
+      - receiver: slack_cc-cp
+        continue: true
+        matchers:
+          - name: severity
+            matchType: "=~"
+            value: info|warning|critical
+          - name: service
+            matchType: "="
+            value: cc-cp
+
+      - receiver: slack_by_k8s_service
+        continue: true
+        matchers:
+          - name: tier
+            matchType: "="
+            value: k8s
+          - name: severity
+            matchType: "=~"
+            value: info|warning|critical
+          - name: service
+            matchType: "=~"
+            value: vault
+          - name: region
+            matchType: "=~"
+            value: {{ without .Values.regions "qa-de-1" | join "|" }}
+
+      - receiver: slack_by_os_service
+        continue: true
+        matchers:
+          - name: tier
+            matchType: "="
+            value: os
+          - name: severity
+            matchType: "=~"
+            value: info|warning|critical
+          - name: service
+            matchType: "=~"
+            value: arc|barbican|cinder|cronus|designate|documentation|elektra|elk|glance|ironic|lyra|manila|neutron|nova|octavia|placement|sentry|snmp
+          - name: region
+            matchType: "=~"
+            value: {{ without .Values.regions "qa-de-1" | join "|" }}
+
+      - receiver: slack_by_cc_service
+        continue: true
+        matchers:
+          - name: severity
+            matchType: "=~"
+            value: info|warning|critical
+          - name: service
+            matchType: "="
+            value: alerting|backup|castellum|cc3test|exporter|gatekeeper|grafana|hermes|jumpserver|keppel|limes|logs|maia|metis|metrics|repo|slack-alert-reactions|swift|tenso
+          - name: region
+            matchType: "=~"
+            value: {{ without .Values.regions "qa-de-1" | join "|" }}
+
+      # to be reviewed
+      - receiver: slack_sre
+        continue: true
+        matchers:
+          - name: context
+            matchType: "="
+            value: sre
+
+      # to be reviewed
+      - receiver: slack_storage
+        continue: true
+        matchers:
+          - name: tier
+            matchType: "="
+            value: storage
+
+      # review for slack_by_cc_service
+      - receiver: slack_wsus
+        continue: true
+        matchers:
+          - name: service
+            matchType: "="
+            value: wsus
+
+      - receiver: support_group_alerts_critical_compute
+        continue: true
+        matchers:
+          - name: severity
+            matchType: "="
+            value: critical
+          - name: cluster_type
+            matchType: "=~"
+            value: {{ .Values.clusterTypes | join "|" }}
+          - name: region
+            matchType: "=~"
+            value: global|{{ without .Values.regions "qa-de-1" | join "|" }}
+          - name: support_group
+            matchType: "="
+            value: compute
+
+      - receiver: support_group_alerts_critical_compute_storage_api
+        continue: true
+        matchers:
+          - name: severity
+            matchType: "="
+            value: critical
+          - name: cluster_type
+            matchType: "=~"
+            value: {{ .Values.clusterTypes | join "|" }}
+          - name: region
+            matchType: "=~"
+            value: global|{{ without .Values.regions "qa-de-1" | join "|" }}
+          - name: support_group
+            matchType: "="
+            value: compute-storage-api
+
+      - receiver: support_group_alerts_critical_containers
+        continue: true
+        matchers:
+          - name: severity
+            matchType: "="
+            value: critical
+          - name: cluster_type
+            matchType: "=~"
+            value: {{ .Values.clusterTypes | join "|" }}
+          - name: region
+            matchType: "=~"
+            value: global|{{ without .Values.regions "qa-de-1" | join "|" }}
+          - name: support_group
+            matchType: "="
+            value: containers
+
+      - receiver: support_group_alerts_critical_email
+        continue: true
+        matchers:
+          - name: severity
+            matchType: "="
+            value: critical
+          - name: cluster_type
+            matchType: "=~"
+            value: {{ .Values.clusterTypes | join "|" }}
+          - name: region
+            matchType: "=~"
+            value: global|{{ without .Values.regions "qa-de-1" | join "|" }}
+          - name: support_group
+            matchType: "="
+            value: email
+
+      - receiver: support_group_alerts_critical_identity
+        continue: true
+        matchers:
+          - name: severity
+            matchType: "="
+            value: critical
+          - name: cluster_type
+            matchType: "=~"
+            value: {{ .Values.clusterTypes | join "|" }}
+          - name: region
+            matchType: "=~"
+            value: global|{{ without .Values.regions "qa-de-1" | join "|" }}
+          - name: support_group
+            matchType: "="
+            value: identity
+
+      - receiver: support_group_alerts_critical_foundation
+        continue: true
+        matchers:
+          - name: severity
+            matchType: "="
+            value: critical
+          - name: cluster_type
+            matchType: "=~"
+            value: {{ .Values.clusterTypes | join "|" }}
+          - name: region
+            matchType: "=~"
+            value: global|{{ without .Values.regions "qa-de-1" | join "|" }}
+          - name: support_group
+            matchType: "="
+            value: foundation
+
+      - receiver: support_group_alerts_critical_network_api
+        continue: true
+        matchers:
+          - name: severity
+            matchType: "="
+            value: critical
+          - name: cluster_type
+            matchType: "=~"
+            value: {{ .Values.clusterTypes | join "|" }}
+          - name: region
+            matchType: "=~"
+            value: global|{{ without .Values.regions "qa-de-1" | join "|" }}
+          - name: support_group
+            matchType: "="
+            value: network-api
+
+      - receiver: support_group_alerts_critical_observability
+        continue: true
+        matchers:
+          - name: severity
+            matchType: "="
+            value: critical
+          - name: cluster_type
+            matchType: "=~"
+            value: {{ .Values.clusterTypes | join "|" }}
+          - name: region
+            matchType: "=~"
+            value: global|{{ without .Values.regions "qa-de-1" | join "|" }}
+          - name: support_group
+            matchType: "="
+            value: observability
+
+      - receiver: support_group_alerts_critical
+        continue: true
+        matchers:
+          - name: severity
+            matchType: "="
+            value: critical
+          - name: cluster_type
+            matchType: "=~"
+            value: {{ .Values.clusterTypes | join "|" }}
+          - name: region
+            matchType: "=~"
+            value: global|{{ without .Values.regions "qa-de-1" | join "|" }}
+          - name: support_group
+            matchType: "="
+            value: src
+
+      - receiver: support_group_alerts_warning
+        continue: true
+        matchers:
+          - name: severity
+            matchType: "="
+            value: warning
+          - name: cluster_type
+            matchType: "=~"
+            value: {{ .Values.clusterTypes | join "|" }}
+          - name: region
+            matchType: "=~"
+            value: global|{{ without .Values.regions "qa-de-1" | join "|" }}
+          - name: support_group
+            matchType: "=~"
+            value: {{ .Values.supportGroups | join "|" }}
+
+      - receiver: support_group_alerts_qa
+        continue: true
+        matchers:
+          - name: severity
+            matchType: "=~"
+            value: critical|warning
+          - name: region
+            matchType: "="
+            value: qa-de-1
+          - name: support_group
+            matchType: "=~"
+            value: {{ .Values.supportGroups | join "|" }}
+
+      - receiver: support_group_alerts_labs
+        continue: true
+        matchers:
+          - name: severity
+            matchType: "=~"
+            value: critical|warning
+          - name: region
+            matchType: "=~"
+            value: qa-de-2|qa-de-3|qa-de-4|qa-de-5|qa-de-6
+          - name: support_group
+            matchType: "=~"
+            value: {{ .Values.supportGroups | join "|" }}
+
+      - receiver: slack_ad_warning
+        continue: true
+        matchers:
+          - name: tier
+            matchType: "="
+            value: ad
+          - name: severity
+            matchType: "="
+            value: warning
+          - name: region
+            matchType: "=~"
+            value: {{ .Values.regions | join "|" }}
+
+      - receiver: slack_ad_info
+        continue: true
+        matchers:
+          - name: tier
+            matchType: "="
+            value: ad
+          - name: severity
+            matchType: "="
+            value: info
+          - name: region
+            matchType: "=~"
+            value: {{ .Values.regions | join "|" }}
+
+      - receiver: slack_vmware_critical
+        continue: true
+        matchers:
+          - name: tier
+            matchType: "="
+            value: vmware
+          - name: severity
+            matchType: "="
+            value: critical
+          - name: region
+            matchType: "=~"
+            value: {{ without .Values.regions "qa-de-1" | join "|" }}
+          - name: support_group
+            matchType: "="
+            value: compute
+
+      - receiver: slack_vmware_warning
+        continue: true
+        matchers:
+          - name: tier
+            matchType: "="
+            value: vmware
+          - name: severity
+            matchType: "="
+            value: warning
+          - name: region
+            matchType: "=~"
+            value: {{ without .Values.regions "qa-de-1" | join "|" }}
+          - name: support_group
+            matchType: "="
+            value: compute
+
+      # rework to match support group compute needed
+      - receiver: slack_vmware_info
+        continue: true
+        matchers:
+          - name: tier
+            matchType: "="
+            value: vmware
+          - name: severity
+            matchType: "="
+            value: info
+          - name: region
+            matchType: "=~"
+            value: {{ without .Values.regions "qa-de-1" | join "|" }}
+          - name: support_group
+            matchType: "="
+            value: compute
+
+  receivers:
+    - name: slack
+      continue: true
+
+    - name: slack_ad_info
+      slackConfigs:
+        - channel: '#alert-ad-info'
+          apiURL:
+            name: alertmanager-{{ include "alertmanagerRelease.name" . }}-slack-secrets
+            key: slack_webhookURL
+          {{- include "slack.template" . | nindent 10 }}
+
+    - name: slack_ad_warning
+      slackConfigs:
+        - channel: '#alert-ad-warning'
+          apiURL:
+            name: alertmanager-{{ include "alertmanagerRelease.name" . }}-slack-secrets
+            key: slack_webhookURL
+          {{- include "slack.template" . | nindent 10 }}
+
+    - name: slack_vmware_info
+      slackConfigs:
+        - channel: '#alert-vmware-info'
+          apiURL:
+            name: alertmanager-{{ include "alertmanagerRelease.name" . }}-slack-secrets
+            key: slack_webhookURL
+          {{- include "slack.template" . | nindent 10 }}
+
+    - name: slack_vmware_warning
+      slackConfigs:
+        - channel: '#alert-vmware-warning'
+          apiURL:
+            name: alertmanager-{{ include "alertmanagerRelease.name" . }}-slack-secrets 
+            key: slack_vmware_warningwebhookURL
+          {{- include "slack.template" . | nindent 10 }}
+
+    - name: slack_vmware_critical
+      slackConfigs:
+        - channel: '#alert-vmware-critical'
+          apiURL:
+            name: alertmanager-{{ include "alertmanagerRelease.name" . }}-slack-secrets 
+            key: slack_vmware_criticalwebhookURL
+          {{- include "slack.template" . | nindent 10 }}
+
+    - name: slack_by_k8s_service
+      slackConfigs:
+        - channel: '#cc-k8s-{{"{{ .CommonLabels.service }}"}}'
+          apiURL:
+            name: alertmanager-{{ include "alertmanagerRelease.name" . }}-slack-secrets
+            key: slack_webhookURL
+          {{- include "slack.template" . | nindent 10 }}
+
+    - name: slack_by_os_service
+      slackConfigs:
+        - channel: '#cc-os-{{"{{ .CommonLabels.service }}"}}'
+          apiURL:
+            name: alertmanager-{{ include "alertmanagerRelease.name" . }}-slack-secrets
+            key: slack_webhookURL
+          {{- include "slack.template" . | nindent 10 }}
+
+    - name: slack_by_cc_service
+      slackConfigs:
+        - channel: '#cc-{{"{{ .CommonLabels.service }}"}}'
+          apiURL:
+            name: alertmanager-{{ include "alertmanagerRelease.name" . }}-slack-secrets
+            key: slack_webhookURL
+          {{- include "slack.template" . | nindent 10 }}
+
+    - name: slack_k8s
+      slackConfigs:
+        - channel: '#cc-k8s-{{"{{ .CommonLabels.severity }}"}}'
+          apiURL:
+            name: alertmanager-{{ include "alertmanagerRelease.name" . }}-slack-secrets
+            key: slack_webhookURL
+          {{- include "slack.template" . | nindent 10 }}
+
+    - name: slack_kks_default
+      slackConfigs:
+        - channel: '#cc-kks-{{"{{ .CommonLabels.severity }}"}}'
+          apiURL:
+            name: alertmanager-{{ include "alertmanagerRelease.name" . }}-slack-secrets
+            key: slack_webhookURL
+          {{- include "slack.template" . | nindent 10 }}
+
+    - name: slack_kks_critical
+      slackConfigs:
+        - channel: '#cc-kks-critical'
+          apiURL: 
+            name: alertmanager-{{ include "alertmanagerRelease.name" . }}-slack-secrets
+            key: slack_kubernikus_criticalwebhookURL 
+          {{- include "slack.template" . | nindent 10 }}
+
+    - name: slack_concourse
+      slackConfigs:
+        - channel: '#cc-concourse'
+          apiURL:
+            name: alertmanager-{{ include "alertmanagerRelease.name" . }}-slack-secrets
+            key: slack_webhookURL
+          {{- include "slack.template" . | nindent 10 }}
+
+    - name: slack_cc-cp
+      slackConfigs:
+        - channel: '#cc-cp'
+          apiURL:
+            name: alertmanager-{{ include "alertmanagerRelease.name" . }}-slack-secrets
+            key: slack_webhookURL
+          {{- include "slack.template" . | nindent 10 }}
+
+    - name: slack_nannies
+      slackConfigs:
+        - channel: '#cc-nannies'
+          apiURL:
+            name: alertmanager-{{ include "alertmanagerRelease.name" . }}-slack-secrets
+            key: slack_webhookURL
+          {{- include "slack.template" . | nindent 10 }}
+
+    - name: slack_nannies_automation
+      slackConfigs:
+        - channel: '#cc-nannies-automation'
+          apiURL:
+            name: alertmanager-{{ include "alertmanagerRelease.name" . }}-slack-secrets
+            key: slack_webhookURL
+          {{- include "slack.template" . | nindent 10 }}
+
+    - name: slack_sre
+      slackConfigs:
+        - channel: '#cc-sre'
+          apiURL:
+            name: alertmanager-{{ include "alertmanagerRelease.name" . }}-slack-secrets
+            key: slack_webhookURL
+          {{- include "slack.template" . | nindent 10 }}
+
+    - name: slack_storage
+      slackConfigs:
+        - channel: '#cc-storage'
+          apiURL:
+            name: alertmanager-{{ include "alertmanagerRelease.name" . }}-slack-secrets
+            key: slack_webhookURL
+          {{- include "slack.template" . | nindent 10 }}
+
+    - name: slack_wsus
+      slackConfigs:
+        - channel: '#cc-wsus'
+          apiURL:
+            name: alertmanager-{{ include "alertmanagerRelease.name" . }}-slack-secrets
+            key: slack_webhookURL
+          {{- include "slack.template" . | nindent 10 }}
+
+    - name: slack_barbican_certificate
+      slackConfigs:
+        - channel: '#cc-os-barbican-cert-expiry'
+          apiURL:
+            name: alertmanager-{{ include "alertmanagerRelease.name" . }}-slack-secrets
+            key: slack_webhookURL
+          {{- include "slack.template" . | nindent 10 }}
+
+    - name: slack_hsm
+      slackConfigs:
+        - channel: '#cc-os-hsm'
+          apiURL:
+            name: alertmanager-{{ include "alertmanagerRelease.name" . }}-slack-secrets
+            key: slack_webhookURL
+          {{- include "slack.template" . | nindent 10 }}
+
+    {{- range $slack := .Values.slack.channels }}   
+    - name: {{ printf "%s%s" "support_group_alerts_critical_" $slack.name }}
+      slackConfigs:
+        - channel: '#alert-{{"{{ .CommonLabels.support_group }}"}}-{{"{{ .CommonLabels.severity }}"}}'
+          apiURL:
+            name: alertmanager-{{ include "alertmanagerRelease.name" $ }}-slack-secrets
+            key: {{ printf "%s_%s_%s" "slack" $slack.name "criticalwebhookURL" }}
+          {{- include "slack.template" . | nindent 10 }}
+    {{ end }}
+
+    - name: support_group_alerts_critical
+      slackConfigs:
+        - channel: '#alert-{{"{{ .CommonLabels.support_group }}"}}-{{"{{ .CommonLabels.severity }}"}}'
+          apiURL:
+            name: alertmanager-{{ include "alertmanagerRelease.name" . }}-slack-secrets
+            key: slack_webhookURL 
+          {{- include "slack.template" . | nindent 10 }}
+
+    - name: support_group_alerts_warning
+      slackConfigs:
+        - channel: '#alert-{{"{{ .CommonLabels.support_group }}"}}-{{"{{ .CommonLabels.severity }}"}}'
+          apiURL:
+            name: alertmanager-{{ include "alertmanagerRelease.name" . }}-slack-secrets
+            key: slack_webhookURL 
+          {{- include "slack.template" . | nindent 10 }}
+
+    - name: support_group_alerts_qa
+      slackConfigs:
+        - channel: '#alert-{{"{{ .CommonLabels.support_group }}"}}-qa'
+          apiURL:
+            name: alertmanager-{{ include "alertmanagerRelease.name" . }}-slack-secrets
+            key: slack_webhookURL 
+          {{- include "slack.template" . | nindent 10 }}
+
+    - name: support_group_alerts_labs
+      slackConfigs:
+        - channel: '#alert-{{"{{ .CommonLabels.support_group }}"}}-labs'
+          apiURL:
+            name: alertmanager-{{ include "alertmanagerRelease.name" . }}-slack-secrets
+            key: slack_webhookURL
+          {{- include "slack.template" . | nindent 10 }}
+---
+kind: Secret
+apiVersion: v1
+type: Opaque
+metadata:
+  name: alertmanager-{{ include "alertmanagerRelease.name" . }}-slack-secrets
+  labels:
+    alertmanager: {{ include "alertmanagerRelease.name" . }}
+data:
+  slack_webhookURL: {{ required ".Values.slack.global.webhookURL undefined" .Values.slack.global.webhookURL | b64enc }}
+  {{- range $slack := .Values.slack.channels }}
+  {{ printf "%s_%s_%s" "slack" $slack.name "criticalwebhookURL" }}: {{ $slack.criticalWebhookURL | b64enc }}
+  {{ if $slack.warningWebhookURL }}
+  {{ printf "%s_%s_%s" "slack" $slack.name "warningwebhookURL" }}: {{ $slack.warningWebhookURL | b64enc }}
+  {{- end }}
+  {{- end }}
