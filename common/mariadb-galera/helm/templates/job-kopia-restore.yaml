@@ -11,6 +11,7 @@ metadata:
     app: {{ $.Release.Name }}
     release: {{ $.Release.Name }}
     backupsoftware: kopia
+    {{- include "sharedservices.labels" $ | indent 4 }}
 spec:
   backoffLimit: {{ $.Values.mariadb.galera.restore.kopia.job.backoffLimit | default 0 | int }}
   activeDeadlineSeconds: {{ $.Values.mariadb.galera.restore.kopia.job.activeDeadlineSeconds | default 3600 | int }}
@@ -20,7 +21,7 @@ spec:
       labels:
         app: {{ $.Release.Name }}
         release: {{ $.Release.Name }}
-        {{- include "sharedservices.labels" . | indent 8 }}
+        {{- include "sharedservices.labels" $ | indent 8 }}
       annotations:
         {{- if or (and (hasKey $.Values "global") (and (hasKey $.Values.global "linkerd_enabled") $.Values.global.linkerd_enabled) (and (hasKey $.Values.global "linkerd_requested") $.Values.global.linkerd_requested)) $.Values.mariadb.galera.restore.kopia.linkerd.enabled }}
         linkerd.io/inject: enabled
