@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 trap "{{ include "utils.proxysql.proxysql_signal_stop_script" . | trim }}" EXIT
+trap "{{- include "utils.script.job_finished_hook" . | trim }}" EXIT
 
 echo "Status before migration:"
 keystone-status --config-file=/etc/keystone/keystone.conf --config-file=/etc/keystone/keystone.conf.d/secrets.conf upgrade check
