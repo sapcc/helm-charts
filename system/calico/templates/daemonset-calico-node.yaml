@@ -147,7 +147,7 @@ spec:
         # container programs network policy and routes on each
         # host.
         - name: calico-node
-          image: "{{ required ".Values.global.registryAlternateRegion is missing" $.Values.global.registryAlternateRegion }}/{{ $.Values.images.calicoNode.image }}:{{ $.Values.images.calicoNode.tag }}"
+          image: "{{ required ".Values.global.dockerHubMirrorAlternateRegion is missing" $.Values.global.dockerHubMirrorAlternateRegion }}/{{ $.Values.images.calicoNode.image }}:{{ $.Values.images.calicoNode.tag }}"
           imagePullPolicy: IfNotPresent
           envFrom:
           - configMapRef:
@@ -192,16 +192,16 @@ spec:
               value: "true"
             # Enable IPIP
             - name: CALICO_IPV4POOL_IPIP
-              value: "Never"
+              value: {{ .Values.ipip.mode | quote }}
             # Controls NAT Outgoing for the IPv4 Pool created at start up
             - name: CALICO_IPV4POOL_NAT_OUTGOING
               value: "Never"
             # Enable or Disable VXLAN on the default IP pool.
             - name: CALICO_IPV4POOL_VXLAN
-              value: "Never"
+              value: {{ .Values.vxlan.mode | quote }}
             # Enable or Disable VXLAN on the default IPv6 IP pool.
             - name: CALICO_IPV6POOL_VXLAN
-              value: "Never"
+              value: {{ .Values.vxlan.mode | quote }}
             # Log level
             - name: CALICO_STARTUP_LOGLEVEL
               value: "Info"
@@ -237,7 +237,7 @@ spec:
             - name: FELIX_IPINIPENABLED
               value: "{{ .Values.config.felix.ipinip.enabled }}"
             - name: FELIX_VXLANENABLED
-              value: "false"
+              value: "{{ .Values.config.felix.vxlan.enabled }}"
             - name: FELIX_BPFENABLED
               value: "{{ .Values.config.felix.bpf.enabled }}"
             - name: FELIX_IPTABLESBACKEND
