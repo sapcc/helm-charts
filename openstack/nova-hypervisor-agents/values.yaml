@@ -1,0 +1,122 @@
+global:
+  nova_service_password:
+  dockerHubMirror:
+  registry:
+
+osprofiler: {}
+sentry: {}
+rabbitmq:
+  nameOverride: null
+  users:
+    default: {}
+
+identity_service_url: https://identity-3/v3
+
+imageName: loci-nova
+imageVersion: null
+
+cross_az_attach: 'False'
+
+default:
+  password_all_group_samples: 2
+  rpc_ping_enabled: true
+
+pod:
+  lifecycle:
+    upgrades:
+      deployments:
+        revision_history: 5
+  tolerations: {}
+
+defaults:
+  default:
+    graceful_shutdown_timeout: 60
+  hypervisor:
+    common:
+      pod:
+        tolerations: {}
+        nodeSelector: {}
+      default:
+        reserved_host_memory_mb: 512
+        disk_allocation_ratio: "1.0"
+        reserved_host_disk_mb: "0"
+        statsd_port: 9125
+    kvm:
+      default:
+        compute_driver: libvirt.LibvirtDriver
+        firewall_driver: nova.virt.firewall.NoopFirewallDriver
+        resume_guests_state_on_host_boot: true
+        # enables collecting metrics for RPC calls
+        statsd_enabled: true
+      config_file:
+        libvirt:
+          volume_use_multipath: true
+          connection_uri: "qemu:///system"
+        os_vif_ovs:
+          ovsdb_connection: "unix:/run/openvswitch/db.sock"
+
+scheduler:
+  track_instance_changes: false
+  scheduler_instance_sync_interval: 120
+
+logging:
+  formatters:
+    context:
+      class: oslo_log.formatters.ContextFormatter
+    default:
+      format: "%(message)s"
+  handlers:
+    stdout:
+      class: StreamHandler
+      args: "(sys.stdout,)"
+      formatter: context
+    "null":
+      class: logging.NullHandler
+      args: "()"
+      formatter: default
+    sentry:
+      class: raven.handlers.logging.SentryHandler
+      level: ERROR
+      args: "()"
+  loggers:
+    root:
+      handlers: stdout, sentry
+      level: WARNING
+    migrate:
+      handlers: stdout, sentry
+      level: INFO
+    nova:
+      handlers: stdout, sentry
+      level: INFO
+    nova.scheduler:
+      handlers: stdout, sentry
+      level: DEBUG
+    nova.scheduler.host_manager: # You might get problems with unicodedecode errors if you decrease that
+      handlers: stdout, sentry
+      level: INFO
+    nova.virt.vmwareapi:
+      handlers: stdout, sentry
+      level: DEBUG
+    eventlet.wsgi.server:
+      handlers: stdout, sentry
+      level: INFO
+    oslo.privsep:
+      handlers: stdout, sentry
+      level: INFO
+    suds:
+      handlers: "null"
+      level: ERROR
+    oslo_vmware.common.loopingcall:
+      handlers: "null"
+      level: ERROR
+
+owner-info:
+  support-group: compute-storage-api
+  service: nova
+  maintainers:
+  - Johannes Kulik
+  - Jakob Karge
+  - Andrew Karpow
+  - Fabian Wiesel
+  - mchristianl
+  helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/openstack/nova-compute-agent
