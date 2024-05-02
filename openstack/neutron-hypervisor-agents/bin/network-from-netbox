@@ -1,0 +1,48 @@
+#!/var/lib/openstack/bin/python3
+import pathlib
+import os
+import textwrap
+import uuid
+
+import requests
+import yaml
+
+def get_hostname():
+    try:
+        node = uuid.getnode()
+        query = f'{{ interface_list(mac_address: "{node:012x}") {{ device {{ name }} }} }}'
+
+        response = requests.post(
+            "https://netbox.global.cloud.sap/graphql/", json={"query": query}
+        )
+
+        response.raise_for_status()
+        json = response.json()
+        name = json['data']['interface_list'][0]['device']['name']
+
+        return "kvm-" + name
+    except (IndexError, KeyError):
+        return os.environ["HOSTNAME"].split(".", 1)[0]
+
+
+def get_network(hostname):
+    with open('segment-names.yaml', 'r') as f:
+        segments = yaml.safe_load(f)
+        for segment_name, hosts in segments.items():
+            if hostname in hosts:
+                return segment_name
+        else:
+            return None
+
+
+hostname = get_hostname()
+network_name = get_network(hostname)
+
+
+pathlib.Path('ovs.conf').write_text(textwrap.dedent(f"""\
+    [DEFAULT]
+    host={hostname}
+
+    [OVS]
+    bridge_mappings={network_name}:br-ex
+    """))
