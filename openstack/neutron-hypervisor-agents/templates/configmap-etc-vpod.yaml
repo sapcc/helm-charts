@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-etc-vpod
+  labels:
+    system: openstack
+    type: configuration
+    component: neutron
+data:
+  segment-names.yaml: |
+    {{- range $v := .Values.aci.aci_hostgroups.hostgroups }}
+    {{ $v.name }}: {{ toJson $v.hosts }}
+    {{- end }}
+  {{- $vpods_conf := default (dict) .Values.vpods_conf }}
+  vpod.conf: |
+    {{- include "util.helpers.valuesToIni" $vpods_conf | nindent 4 }}
