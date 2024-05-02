@@ -1,44 +1,16 @@
 groups:
 - name: cc3test-quota.alerts
   rules:
-  - alert: CC3TestQuotaConsumption90Pct
-    expr: limes_project_usage{domain="cc3test", project=~"admin|test"} / limes_project_quota{domain="cc3test", project=~"admin|test"} > 0.9
+  - alert: CC3TestQuotaConsumptionPct
+    expr: limes_project_usage{domain="cc3test", project=~"admin|test"} / limes_project_quota{domain="cc3test", project=~"admin|test"} > 0.99
     for: 60m
     labels:
       severity: critical
       support_group: observability
       service: cc3test
       dashboard: cc3test-quota-status
-      meta: 'More than 90% of {{ $labels.service }} / {{ $labels.resource }} quota consumed in project {{ $labels.domain }} / {{ $labels.project }}'
+      meta: 'More than 99% of {{ $labels.service }} / {{ $labels.resource }} quota consumed in project {{ $labels.domain }} / {{ $labels.project }}'
       playbook: 'docs/support/playbook/cc3test/alerts'
     annotations:
-      description: 'More than 90% of {{ $labels.service }} / {{ $labels.resource }} quota consumed in project {{ $labels.domain }} / {{ $labels.project }}'
-      summary: '90% of {{ $labels.service }} / {{ $labels.resource }} quota consumed'
-
-  - alert: CC3TestQuotaConsumption75Pct
-    expr: limes_project_usage{domain="cc3test", project=~"admin|test"} / limes_project_quota{domain="cc3test", project=~"admin|test"} > 0.75
-    for: 60m
-    labels:
-      severity: warning
-      support_group: observability
-      service: cc3test
-      dashboard: cc3test-quota-status
-      meta: 'More than 75% of {{ $labels.service }} / {{ $labels.resource }} quota consumed in project {{ $labels.domain }} / {{ $labels.project }}'
-      playbook: 'docs/support/playbook/cc3test/alerts'
-    annotations:
-      description: 'More than 75% of {{ $labels.service }} / {{ $labels.resource }} quota consumed in project {{ $labels.domain }} / {{ $labels.project }}'
-      summary: '75% of {{ $labels.service }} / {{ $labels.resource }} quota consumed'
-
-  - alert: CC3TestRegressionQuotaConsumption75Pct
-    expr: limes_project_usage{domain="cc3test", project=~"^regression", resource!~"^instances_z.*"} / limes_project_quota{domain="cc3test", project=~"^regression", resource!~"^instances_z.*"} > 0.75
-    for: 60m
-    labels:
-      severity: info
-      support_group: observability
-      service: cc3test
-      dashboard: cc3test-quota-status
-      meta: 'More than 75% of {{ $labels.service }} / {{ $labels.resource }} quota consumed in project {{ $labels.domain }} / {{ $labels.project }}'
-      playbook: 'docs/support/playbook/cc3test/alerts'
-    annotations:
-      description: 'More than 75% of {{ $labels.service }} / {{ $labels.resource }} quota consumed in project {{ $labels.domain }} / {{ $labels.project }}'
-      summary: '75% of {{ $labels.service }} / {{ $labels.resource }} quota consumed'
+      description: 'More than 99% of {{ $labels.service }} / {{ $labels.resource }} quota consumed in project {{ $labels.domain }} / {{ $labels.project }}'
+      summary: '99% of {{ $labels.service }} / {{ $labels.resource }} quota consumed'
