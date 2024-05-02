@@ -1,0 +1,32 @@
+#!/usr/bin/env python
+import pathlib
+import os
+import textwrap
+import uuid
+
+import requests
+
+def get_hostname():
+    try:
+        node = uuid.getnode()
+        query = f'{{ interface_list(mac_address: "{node:012x}") {{ device {{ name }} }} }}'
+
+        response = requests.post(
+            "https://netbox.global.cloud.sap/graphql/", json={"query": query}
+        )
+
+        response.raise_for_status()
+        json = response.json()
+        name = json['data']['interface_list'][0]['device']['name']
+
+        return "kvm-" + name
+    except (IndexError, KeyError):
+        return os.environ["HOSTNAME"].split(".", 1)[0]
+
+
+hostname = get_hostname()
+
+pathlib.Path('hostname.conf').write_text(textwrap.dedent(f"""\
+    [DEFAULT]
+    host={hostname}
+    """))
