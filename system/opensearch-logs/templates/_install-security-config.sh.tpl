@@ -9,7 +9,9 @@ export PWS=`cat /usr/share/opensearch/config/security/internal_users.yml |grep "
 
 for i in $PWS; do
   PW=`/usr/share/opensearch/plugins/opensearch-security/tools/hash.sh -p "$i" | tail -1`
-  sed -ei 's/'"$i"'/'"$PW"'/' /usr/share/opensearch/config/security/internal_users.yml
+  echo pw=$PW
+  echo i=$i
+  sed -i 's/'"$i"'/'"$PW"'/' /usr/share/opensearch/config/security/internal_users.yml
 done
 
 /usr/share/opensearch/plugins/opensearch-security/tools/securityadmin.sh -icl -key /usr/share/opensearch/config/certs/admin/tls.key -cert  /usr/share/opensearch/config/certs/admin/tls.crt -cacert /usr/share/opensearch/config/certs/admin/ca.crt -cd /usr/share/opensearch/config/security/ -h opensearch-logs-client.{{ .Values.global.clusterType}}.{{ .Values.global.region }}.{{ .Values.global.tld }}
