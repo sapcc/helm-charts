@@ -9,8 +9,6 @@ export PWS=`cat /usr/share/opensearch/config/security/internal_users.yml |grep "
 
 for i in $PWS; do
   PW=`/usr/share/opensearch/plugins/opensearch-security/tools/hash.sh -p "$i" | tail -1`
-  echo pw=$PW
-  echo i=$i
   sed -i -e 's|'"$i"'|'"$PW"'|' /usr/share/opensearch/config/security/internal_users.yml
 done
 
