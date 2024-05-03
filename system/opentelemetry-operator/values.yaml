@@ -1,0 +1,38 @@
+owner-info:
+  service: prometheus
+  support-group: observability
+  maintainers:
+    - Richard Tief
+    - Tommy Sauer
+  helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/system/opentelemetry-operator
+
+installCRDs: true
+
+opentelemetry-operator:
+  manager:
+    image:
+      repository: keppel.eu-de-1.cloud.sap/ccloud-ghcr-io-mirror/open-telemetry/opentelemetry-operator/opentelemetry-operator
+      tag: v0.98.0  
+    collectorImage: 
+      repository: keppel.eu-de-1.cloud.sap/ccloud-ghcr-io-mirror/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib
+      tag: 0.99.0
+
+    deploymentAnnotations: 
+      vpa-butler.cloud.sap/update-mode: Auto
+
+    prometheusRule:
+      enabled: true
+      defaultRules:
+        enabled: true
+    serviceMonitor:
+      enabled: true
+      extraLabels:
+        prometheus: infra-frontend
+
+  kubeRBACProxy:
+    enabled: false
+
+  testFramework:
+    image:
+      repository: keppel.eu-de-1.cloud.sap/ccloud-dockerhub-mirror/library/busybox
+      tag: latest
