@@ -1,0 +1,44 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  labels:
+    app.kubernetes.io/name: netbox-ztp
+  name: netbox-ztp
+data:
+  dhcp-init.sh: |
+    #!/usr/bin/env bash
+
+    set -euxo pipefail
+
+    # make sure to update dhcp-stop script to keep commands aligned
+
+    export INTERFACE=$(/sbin/ip route | grep -v cbr | awk '/default/ { print $5 }')
+
+    echo "Outgoing inteface is ${INTERFACE}"
+
+    echo "Adding rule for SNAT DHCP Reply to correct server IP address"
+
+    if iptables-nft -t nat -I POSTROUTING 1 -p udp --sport 67 --dport 68 -j SNAT --to-source ${DHCPSERVERIP} ; then
+    echo "Rule for SNAT DHCP Reply already present - skipping"
+    else
+    echo "Rule for SNAT DHCP Reply already not present - creating rule"
+    iptables-nft -t nat -I POSTROUTING 1 -p udp --sport 67 --dport 68 -j SNAT --to-source ${DHCPSERVERIP}
+    fi
+
+    if iptables-nft -t nat -I POSTROUTING 1 -p udp --sport 69 --dport 69 -j SNAT --to-source ${DHCPSERVERIP} ; then
+    echo "Rule for SNAT TFTP Reply already present - skipping"
+    else
+    echo "Rule for SNAT TFTP Reply already not present - creating rule"
+    iptables-nft -t nat -I POSTROUTING 1 -p udp --sport 69 --dport 69 -j SNAT --to-source ${DHCPSERVERIP}
+    fi
+  dhcp-stop.sh: |
+    #!/usr/bin/env bash
+
+    set -euxo pipefail
+    # make sure to update dhcp-init script to keep commands aligned
+
+    echo "Deleting rule for SNAT DHCP Reply"
+    iptables-nft -t nat -D POSTROUTING -p udp --sport 67 --dport 68 -j SNAT --to-source ${DHCPSERVERIP}
+
+    echo "Deleting rule for SNAT TFTP Reply"
+    iptables-nft -t nat -D POSTROUTING -p udp --sport 69 --dport 69 -j SNAT --to-source ${DHCPSERVERIP}
