@@ -38,6 +38,10 @@ data:
       {{- $users := merge $users (dict "metrics" (dict)) }}
     {{- end }}
 
+    {{- if hasKey .Values.extensions "pg_stat_statements" }}
+    CREATE EXTENSION IF NOT EXISTS pg_stat_statements;
+    {{- end }}
+
     SET password_encryption = '{{ if ge ($.Values.postgresVersion | int) 12 }}scram-sha-256{{ else }}md5{{ end }}';
 
     {{- if lt ($.Values.postgresVersion | int) 14 }}
