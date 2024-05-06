@@ -105,6 +105,10 @@ spec:
       role_assignments:
         - user: masterdata_scanner@Default
           role: cloud_identity_viewer
+        {{- if (.Values.global.region | contains "qa" ) }}
+        - user: {{ .Values.ccadmin.readonlyUserForIBP }}@ccadmin
+          role: cloud_resource_viewer
+        {{- end }}
     {{- end }}
     groups:
     {{- if eq . "monsoon3" }}
