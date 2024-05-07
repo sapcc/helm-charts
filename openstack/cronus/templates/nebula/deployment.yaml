@@ -49,6 +49,9 @@ spec:
           imagePullPolicy: {{ .Values.nebula.image.pullPolicy }}
           args:
             - "-config=/nebula/config.yaml"
+          envFrom:
+            - secretRef:
+                name: nebula-secrets  
           volumeMounts:
             - name: nebula
               mountPath: "/nebula/config.yaml"
@@ -71,8 +74,8 @@ spec:
       terminationGracePeriodSeconds: {{ .Values.config.accountStatusTimeout }}
       volumes:
         - name: nebula
-          secret:
-            secretName: nebula
+          configMap:
+            name: nebula-config
 {{- if .Values.postfix.postfixEnabled }}
         - name: certs
           projected:

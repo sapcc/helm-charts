@@ -123,9 +123,6 @@ nebula:
 {{- end }}
     debug: {{ .Values.config.nebulaAuditSink.debug | default false }}
 {{- end }}
-{{- if .Values.nebula.sentryDsn }}
-  sentryDsn: {{ .Values.nebula.sentryDsn }}
-{{- end }}
 {{- if .Values.nebula.secAttrsUpdateAfter }}
   secAttrsUpdateAfter: {{ .Values.nebula.secAttrsUpdateAfter }}
 {{- end }}
