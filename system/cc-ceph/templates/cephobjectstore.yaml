@@ -14,8 +14,17 @@ spec:
     {{- if .Values.objectstore.gateway.securePort }}
     securePort: {{ .Values.objectstore.gateway.securePort }}
     {{- end }}
-    hosting:
-      dnsNames: {{ toYaml .Values.objectstore.gateway.dnsNames | nindent 8 }}
+    placement:
+      hosting:
+        dnsNames: {{ toYaml .Values.objectstore.gateway.dnsNames | nindent 8 }}
+      nodeAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          nodeSelectorTerms:
+            - matchExpressions:
+                - key: kubernetes.metal.cloud.sap/role
+                  operator: In
+                  values:
+                    - {{ .Values.osd.nodeRole }}
     priorityClassName: system-cluster-critical
     sslCertificateRef: {{ .Values.objectstore.gateway.sslCertificateRef }}
     resources: {{ toYaml .Values.objectstore.gateway.resources | nindent 6 }}
