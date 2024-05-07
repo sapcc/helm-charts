@@ -13,6 +13,13 @@ ceph:
   image: "ceph/ceph"
   version:
 
+cephConfig:
+  global:
+    osd_pool_default_size: "3"
+    bdev_flock_retry: "20"
+    bluefs_buffered_io: "false"
+    mon_data_avail_warn: "10"
+
 clusterName: ceph-cluster
 
 mon:
@@ -72,9 +79,21 @@ objectstore:
   enabled: true
   name: objectstore
   gateway:
+    instances: 3
     port: 80
     securePort: 443
     sslCertificateRef: ""
+    dnsNames: []
+    # - dns1
+    # - dns2
+    resources:
+      requests:
+        cpu: 1000m
+        memory: 1Gi
+  metadataPool:
+    failureDomain: host
+    replicated:
+      size: 4
   dataPool:
     # choose between replicated and erasureCoded
     erasureCoded:
