@@ -6,21 +6,24 @@ metadata:
 spec:
   dataPool: {{ toYaml .Values.objectstore.dataPool | nindent 4 }}
   gateway:
-    instances: 3
+    instances: 6
     {{- if .Values.objectstore.gateway.port }}
     port: {{ .Values.objectstore.gateway.port }}
     {{- end }}
     {{- if .Values.objectstore.gateway.securePort }}
     securePort: {{ .Values.objectstore.gateway.securePort }}
     {{- end }}
+    hosting:
+         dnsNames:
+           {{- if .Values.wildcard.dns.value???TODO??? }}
     priorityClassName: system-cluster-critical
     sslCertificateRef: {{ .Values.objectstore.gateway.sslCertificateRef }}
     resources:
       requests:
-        cpu: 1000m
-        memory: 1Gi
+        cpu: 10000m
+        memory: 16Gi
   metadataPool:
     failureDomain: host
     replicated:
-      size: 3
+      size: 4
   preservePoolsOnDelete: true
