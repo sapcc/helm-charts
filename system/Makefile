@@ -2,7 +2,7 @@ CLUSTER_API_VERSION ?= v1.6.2
 PROVIDER_METAL3_VERSION ?= v1.6.0
 PROVIDER_VSPHERE_VERSION ?= v1.9.3
 PROVIDER_IPAM_VERSION ?= v0.1.0
-PROVIDER_KUBERNIKUS_VERSION ?= 1a4bfb5bcc5768593ff5b46d33faf6d252eec672
+PROVIDER_KUBERNIKUS_VERSION ?= 9fd81475b828971913b3b27addf51fdbd0511d85
 BAREMETAL_OPERATOR_VERSION ?= v0.5.0
 SHELL := bash
 .ONESHELL:
@@ -62,7 +62,7 @@ build-provider-kubernikus:
 	$(call build-chart,provider-kubernikus,https://github.com/sapcc/cluster-api-control-plane-provider-kubernikus//config/default,$(PROVIDER_KUBERNIKUS_VERSION))
 	@yq -i '.controllerManager.manager.image.tag="$(PROVIDER_KUBERNIKUS_VERSION)"' provider-kubernikus/values.yaml
 	@yq -i '.fullnameOverride="capi-cp-provider-kubernikus"' provider-kubernikus/values.yaml
-	@yq -i '.version="0.1.7"' provider-kubernikus/Chart.yaml
+	@yq -i '.version="0.1.8"' provider-kubernikus/Chart.yaml
 
 build-baremetal-operator:
 	@yq -i '.namespace = "baremetal-operator=system"' kustomization.yaml
