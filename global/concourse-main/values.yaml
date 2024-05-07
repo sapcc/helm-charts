@@ -106,7 +106,11 @@ concourse:
 
 webhook-broadcaster:
   image: keppel.global.cloud.sap/ccloud/concourse-webhook-broadcaster
+<<<<<<< HEAD
   imageTag: "0.10.0"
+=======
+  imageTag: "0.9.3"
+>>>>>>> 3305641ab5 (Bump stuff)
   pullPolicy: IfNotPresent
 
 # Deploy Concourse Prometheus alerts.
@@ -126,8 +130,6 @@ pgbackup:
     prometheus: kubernetes
     support_group: containers
     service: concourse
-  swift:
-    os_region_name: eu-de-2
 
 gitResourceProxy:
   enabled: true
@@ -136,9 +138,7 @@ gitResourceProxy:
   debug: true
   image: keppel.global.cloud.sap/ccloud/concourse-git-resource-proxy
   imageTag: 0.6.0
-  imagePullPolicy: Always
-  podAnnotations:
-    linkerd.io/inject: disabled
+  imagePullPolicy: IfNotPresent
 
 kubernetes-ingress:
   controller:
@@ -184,8 +184,8 @@ kubernetes-ingress:
     enabled: false
 
 postgresql-ng:
-  imageTag: "20240305145638"
-  postgresVersion: "12"
+  imageTag: "20240424050232"
+  postgresVersion: "16"
   postgresUser: concourse
   postgresDatabase: concourse
   tableOwner: concourse
@@ -194,9 +194,12 @@ postgresql-ng:
     concourse: {}
   config:
     max_connections: "150"
+    shared_buffers: 4GB
   persistence:
     enabled: true
     #existingClaim: claimName
+    size: 100Gi
+    accessMode: ReadWriteOnce
   resources:
     requests:
       memory: 10Gi
