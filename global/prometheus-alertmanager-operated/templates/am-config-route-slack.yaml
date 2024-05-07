@@ -411,6 +411,46 @@ spec:
             matchType: "=~"
             value: {{ .Values.regions | join "|" }}
 
+      - receiver: slack_metal_critical
+        continue: true
+        matchers:
+          - name: tier
+            matchType: "="
+            value: metal
+          - name: severity
+            matchType: "="
+            value: critical
+          - name: region
+            matchType: "=~"
+            value: {{ without .Values.regions "qa-de-1" | join "|" }}
+
+      - receiver: slack_metal_warning
+        continue: true
+        matchers:
+          - name: tier
+            matchType: "="
+            value: metal
+          - name: severity
+            matchType: "="
+            value: warning
+          - name: region
+            matchType: "=~"
+            value: {{ without .Values.regions "qa-de-1" | join "|" }}
+
+      # rework to match support group compute needed
+      - receiver: slack_metal_info
+        continue: true
+        matchers:
+          - name: tier
+            matchType: "="
+            value: metal
+          - name: severity
+            matchType: "="
+            value: info
+          - name: region
+            matchType: "=~"
+            value: {{ without .Values.regions "qa-de-1" | join "|" }}
+
       - receiver: slack_vmware_critical
         continue: true
         matchers:
@@ -624,7 +664,7 @@ spec:
             key: slack_webhookURL
           {{- include "slack.template" . | nindent 10 }}
 
-    {{- range $slack := .Values.slack.channels }}   
+    {{- range $slack := .Values.slack.supportChannels }}
     - name: {{ printf "%s%s" "support_group_alerts_critical_" $slack.name }}
       slackConfigs:
         - channel: '#alert-{{"{{ .CommonLabels.support_group }}"}}-{{"{{ .CommonLabels.severity }}"}}'
@@ -632,7 +672,28 @@ spec:
             name: alertmanager-{{ include "alertmanagerRelease.name" $ }}-slack-secrets
             key: {{ printf "%s_%s_%s" "slack" $slack.name "criticalwebhookURL" }}
           {{- include "slack.template" . | nindent 10 }}
-    {{ end }}
+    {{- end }}
+
+    {{- range $slack := .Values.slack.channels }}
+    {{/* Skip kubernikus slack channel - moved to #cc-kks */}}
+    {{- if not (eq $slack.name "kubernikus") }}
+    {{- range $severity := tuple "critical" "warning" "info" }}
+    - name: {{ printf "%s_%s_%s" "slack" $slack.name $severity }}
+      slackConfigs:
+        - channel: '#alert-{{ $slack.name }}-{{"{{ .CommonLabels.severity }}"}}'
+          apiURL:
+            name: alertmanager-{{ include "alertmanagerRelease.name" $ }}-slack-secrets
+          {{- if eq $severity "info" }}
+            key: slack_webhookURL
+          {{- else if eq $severity "warning" }}
+            key: {{ printf "%s_%s_%s" "slack" $slack.name "warningwebhookURL" }}
+          {{- else if eq $severity "critical" }}
+            key: {{ printf "%s_%s_%s" "slack" $slack.name "criticalwebhookURL" }}
+          {{- end }}
+          {{- include "slack.template" . | nindent 10 }}
+    {{- end }}
+    {{- end }}
+    {{- end }}
 
     - name: support_group_alerts_critical
       slackConfigs:
@@ -680,4 +741,7 @@ data:
   {{ if $slack.warningWebhookURL }}
   {{ printf "%s_%s_%s" "slack" $slack.name "warningwebhookURL" }}: {{ $slack.warningWebhookURL | b64enc }}
   {{- end }}
+  {{- end }}
+  {{- range $slack := .Values.slack.supportChannels }}
+  {{ printf "%s_%s_%s" "slack" $slack.name "criticalwebhookURL" }}: {{ $slack.criticalWebhookURL | b64enc }}
   {{- end }}
