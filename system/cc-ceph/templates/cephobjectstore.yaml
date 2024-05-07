@@ -4,23 +4,19 @@ metadata:
   name: {{ .Values.objectstore.name }}
   namespace: {{ .Release.Namespace }}
 spec:
+  metadataPool: {{ toYaml .Values.objectstore.metadataPool | nindent 4 }}
   dataPool: {{ toYaml .Values.objectstore.dataPool | nindent 4 }}
   gateway:
-    instances: 3
+    instances: {{ .Values.objectstore.gateway.instances }}
     {{- if .Values.objectstore.gateway.port }}
     port: {{ .Values.objectstore.gateway.port }}
     {{- end }}
     {{- if .Values.objectstore.gateway.securePort }}
     securePort: {{ .Values.objectstore.gateway.securePort }}
     {{- end }}
+    hosting:
+      dnsNames: {{ toYaml .Values.objectstore.gateway.dnsNames | nindent 8 }}
     priorityClassName: system-cluster-critical
     sslCertificateRef: {{ .Values.objectstore.gateway.sslCertificateRef }}
-    resources:
-      requests:
-        cpu: 1000m
-        memory: 1Gi
-  metadataPool:
-    failureDomain: host
-    replicated:
-      size: 3
+    resources: {{ toYaml .Values.objectstore.gateway.resources | nindent 6 }}
   preservePoolsOnDelete: true
