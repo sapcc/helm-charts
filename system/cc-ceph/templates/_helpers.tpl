@@ -66,9 +66,10 @@ Create the name of the service account to use
 {{- define "cc-ceph.escapePassword" -}}
     {{- $value := . -}}
     {{- $escaped := "" -}}
-    {{- range $value | split "" -}}
-        {{- $char := . -}}
-        {{- if or (eq $char "=") (eq $char "#") (eq $char ";") (eq $char "[") -}}
+    {{- $length := len $value -}}
+    {{- range $index := until $length -}}
+        {{- $char := index $value $index -}}
+        {{- if or (eq $char '=') (eq $char '#') (eq $char ';') (eq $char '[') -}}
             {{- $escaped = printf "%s\\%s" $escaped $char -}}
         {{- else -}}
             {{- $escaped = printf "%s%s" $escaped $char -}}
