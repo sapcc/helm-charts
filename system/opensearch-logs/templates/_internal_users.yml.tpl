@@ -9,93 +9,93 @@ _meta:
 # Define your internal users here
 
 data:
-  hash: "{{ .Values.users.data.nohash }}"
+  hash: "{{ .Values.users.data.hash }}"
   reserved: true
   backend_roles:
   - "data"
 
 greenhouse:
-  hash: "{{ .Values.users.greenhouse.nohash }}"
+  hash: "{{ .Values.users.greenhouse.hash }}"
   reserved: true
   backend_roles:
   - "greenhouse"
 
 storage:
-  hash: "{{ .Values.users.storage.nohash }}"
+  hash: "{{ .Values.users.storage.hash }}"
   reserved: true
   backend_roles:
   - "storage"
 
 {{- if .Values.qalogs.enabled }}
 dataqade2:
-  hash: "{{ .Values.users.dataqade2.nohash }}"
+  hash: "{{ .Values.users.dataqade2.hash }}"
   reserved: true
   backend_roles:
   - "qade2"
 
 dataqade3:
-  hash: "{{ .Values.users.dataqade3.nohash }}"
+  hash: "{{ .Values.users.dataqade3.hash }}"
   reserved: true
   backend_roles:
   - "qade3"
 
 dataqade5:
-  hash: "{{ .Values.users.dataqade5.nohash }}"
+  hash: "{{ .Values.users.dataqade5.hash }}"
   reserved: true
   backend_roles:
   - "qade5"
 {{- end }}
 
 jump:
-  hash: "{{ .Values.users.jump.nohash }}"
+  hash: "{{ .Values.users.jump.hash }}"
   reserved: true
   backend_roles:
   - "jump"
 
 jaeger:
-  hash: "{{ .Values.users.jaeger.nohash }}"
+  hash: "{{ .Values.users.jaeger.hash }}"
   reserved: true
   backend_roles:
   - "jaeger"
 
 syslog:
-  hash: "{{ .Values.users.syslog.nohash }}"
+  hash: "{{ .Values.users.syslog.hash }}"
   reserved: true
   backend_roles:
   - "syslog"
 
 promuser:
-  hash: "{{ .Values.users.promuser.nohash }}"
+  hash: "{{ .Values.users.promuser.hash }}"
   reserved: true
   backend_roles:
   - "promuser"
 
 admin:
-  hash: "{{ .Values.users.admin.nohash }}"
+  hash: "{{ .Values.users.admin.hash }}"
   reserved: true
   backend_roles:
   - "adminrole"
 
 dashboard:
-  hash: "{{ .Values.users.dashboard.nohash }}"
+  hash: "{{ .Values.users.dashboard.hash }}"
   reserved: true
   description: "Demo OpenSearch Dashboards user"
 
 kibanaro:
-  hash: "{{ .Values.users.kibanaro.nohash }}"
+  hash: "{{ .Values.users.kibanaro.hash }}"
 
 kibanaserver:
-  hash: "{{ .Values.users.kibanaserver.nohash }}"
+  hash: "{{ .Values.users.kibanaserver.hash }}"
   reserved: true
 
 maillog:
-  hash: "{{ .Values.users.maillog.nohash }}"
+  hash: "{{ .Values.users.maillog.hash }}"
   reserved: true
   backend_roles:
   - "maillog"
 
 jupyterhub:
-  hash: "{{ .Values.users.jupyterhub.nohash }}"
+  hash: "{{ .Values.users.jupyterhub.hash }}"
   reserved: true
   backend_roles:
   - "jupyterhub"
