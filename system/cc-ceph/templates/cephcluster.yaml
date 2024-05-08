@@ -52,13 +52,7 @@ spec:
     {{- toYaml .Values.resources | nindent 4 }}
   disruptionManagement:
     managePodBudgets: true
-  cephConfig:
-    global:
-      osd_pool_default_size: {{ .Values.cephConfig.global.osd_pool_default_size | quote }}
-      mon_warn_on_pool_no_redundancy: "false"
-      bdev_flock_retry: "20"
-      bluefs_buffered_io: "false"
-      mon_data_avail_warn: "10"
+  cephConfig: {{ toYaml .Values.cephConfig | nindent 4 }}
   placement:
     mgr:
       nodeAffinity:
@@ -87,6 +81,7 @@ spec:
                   operator: In
                   values:
                     - {{ .Values.osd.nodeRole }}
+                    - {{ .Values.mon.nodeRole }}
     prepareosd:
       nodeAffinity:
         requiredDuringSchedulingIgnoredDuringExecution:
@@ -96,3 +91,4 @@ spec:
                   operator: In
                   values:
                     - {{ .Values.prepareosd.nodeRole }}
+                    - {{ .Values.mon.nodeRole }}

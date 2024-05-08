@@ -13,6 +13,15 @@ ceph:
   image: "ceph/ceph"
   version:
 
+cephConfig:
+  global:
+    osd_pool_default_size: "3"
+    bdev_flock_retry: "20"
+    bluefs_buffered_io: "false"
+    mon_data_avail_warn: "10"
+    osd_op_queue: "wpq"
+    osd_pool_default_pg_autoscale_mode: "off"
+
 clusterName: ceph-cluster
 
 mon:
@@ -59,11 +68,6 @@ storage:
   #   config:
   #     metadataDevice: "nvme0n1"
 
-    
-cephConfig:
-  global:
-    osd_pool_default_size: "3"
-
 dashboard:
   ingress:
     host: "mydash.local.domain"
@@ -72,15 +76,27 @@ objectstore:
   enabled: true
   name: objectstore
   gateway:
+    instances: 3
     port: 80
     securePort: 443
     sslCertificateRef: ""
+    dnsNames: []
+    # - dns1
+    # - dns2
+    resources:
+      requests:
+        cpu: 1000m
+        memory: 1Gi
+  metadataPool:
+    failureDomain: host
+    replicated:
+      size: 4
   dataPool:
     # choose between replicated and erasureCoded
-    erasureCoded:
-      codingChunks: 1
-      dataChunks: 2
-    failureDomain: host
+    # erasureCoded:
+    #   codingChunks: 1
+    #   dataChunks: 2
+    # failureDomain: host
     # replicated:
     #   size: 3
   service:
@@ -88,3 +104,18 @@ objectstore:
     port: 80
     externalIPs:
       - 10.0.0.1
+  keystone:
+    enabled: true
+    url: https://identity-3.qa-de-1.cloud.sap
+    verify_ssl: true
+    implicit_tenants: true
+    sqift_account_in_url: true
+    accepted_roles:
+      - objectstore_admin
+      - objectstore_viewer
+    token_cache_size: 1000
+    admin_user: XXX
+    admin_password: XXX
+    admin_domain: XXX
+    admin_project: XXX
+    revocation_interval: 25200 # 7h

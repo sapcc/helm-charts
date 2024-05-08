@@ -1,0 +1,27 @@
+{{ if .Values.objectstore.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: rook-config-override
+data:
+{{ if .Values.objectstore.keystone.enabled }}
+{{- with .Values.objectstore.keystone }}
+  config: |
+    [client]
+    rgw keystone api version = 3
+    rgw s3 auth use keystone = true
+    rgw keystone url = {{ .url }}
+    rgw keystone verify ssl = {{ .verify_ssl }}
+    rgw keystone implicit tenants = {{ .implicit_tenants }}
+    rgw swift account in url = {{ .swift_account_in_url }}
+    rgw keystone accepted roles = {{ join "," .accepted_roles }}
+    rgw keystone token cache size = {{ .token_cache_size }}
+    rgw keystone admin user = {{ .admin_user }}
+    rgw keystone admin password = {{ .admin_password }}
+    rgw keystone admin domain = {{ .admin_domain }}
+    rgw keystone admin project = {{ .admin_project }}
+{{ end }}
+{{ else }}
+  config: ""
+{{ end }}
+{{ end }}
