@@ -70,9 +70,9 @@ Create the name of the service account to use
     {{- range $index := until $length -}}
         {{- $char := index $value $index -}}
         {{- if or (eq $char '=') (eq $char '#') (eq $char ';') (eq $char '[') -}}
-            {{- $escaped = printf "%s\\%s" $escaped $char -}}
+            {{- $escaped = printf "%s\\%c" $escaped $char -}}
         {{- else -}}
-            {{- $escaped = printf "%s%s" $escaped $char -}}
+            {{- $escaped = printf "%s%c" $escaped $char -}}
         {{- end -}}
     {{- end -}}
     {{- $escaped -}}
