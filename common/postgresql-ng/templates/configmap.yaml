@@ -79,7 +79,9 @@ data:
 
     {{- if eq $user "metrics" }}
     GRANT pg_monitor to metrics;
+    {{- if ge ($.Values.postgresVersion | int) 16 }}
     GRANT pg_use_reserved_connections to metrics;
+    {{- end }}
     -- pg_read_all_data is required for custom metrics
     {{- if ge ($.Values.postgresVersion | int) 14 }}
     GRANT pg_read_all_data to metrics;
