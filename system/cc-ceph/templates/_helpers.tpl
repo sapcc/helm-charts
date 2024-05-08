@@ -60,3 +60,19 @@ Create the name of the service account to use
 {{- default "default" .Values.serviceAccount.name }}
 {{- end }}
 {{- end }}
+
+{{/* Function to escape CEPH special characters */}}
+{{/* following the https://docs.ceph.com/en/latest/rados/configuration/ceph-conf docs */}}
+{{- define "cc-ceph.escapePassword" -}}
+    {{- $value := . -}}
+    {{- $escaped := "" -}}
+    {{- range $value | split "" -}}
+        {{- $char := . -}}
+        {{- if or (eq $char "=") (eq $char "#") (eq $char ";") (eq $char "[") -}}
+            {{- $escaped = printf "%s\\%s" $escaped $char -}}
+        {{- else -}}
+            {{- $escaped = printf "%s%s" $escaped $char -}}
+        {{- end -}}
+    {{- end -}}
+    {{- $escaped -}}
+{{- end -}}
