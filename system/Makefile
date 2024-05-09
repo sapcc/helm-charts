@@ -3,7 +3,7 @@ PROVIDER_METAL3_VERSION ?= v1.6.0
 PROVIDER_VSPHERE_VERSION ?= v1.9.3
 PROVIDER_IPAM_VERSION ?= v0.1.0
 PROVIDER_KUBERNIKUS_VERSION ?= 9fd81475b828971913b3b27addf51fdbd0511d85
-BAREMETAL_OPERATOR_VERSION ?= v0.5.0
+BAREMETAL_OPERATOR_VERSION ?= v0.6.0
 SHELL := bash
 .ONESHELL:
 
@@ -78,7 +78,7 @@ build-baremetal-operator:
 	@find baremetal-operator-core/templates -type f -exec $(SED) -i -e 's#-baremetal-operator-system/#-#g' {} \;
 	@yq -i '.controllerManager.manager.image.tag="$(BAREMETAL_OPERATOR_VERSION)"' baremetal-operator-core/values.yaml
 	@yq -i '.fullnameOverride="metal3"' baremetal-operator-core/values.yaml
-	@yq -i '.version="0.0.2"' baremetal-operator-core/Chart.yaml
+	@yq -i '.version="1.0.0"' baremetal-operator-core/Chart.yaml
 
 # chart name, source url, tag
 define build-chart
