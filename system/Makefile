@@ -78,7 +78,7 @@ build-baremetal-operator:
 	@find baremetal-operator-core/templates -type f -exec $(SED) -i -e 's#-baremetal-operator-system/#-#g' {} \;
 	@yq -i '.controllerManager.manager.image.tag="$(BAREMETAL_OPERATOR_VERSION)"' baremetal-operator-core/values.yaml
 	@yq -i '.fullnameOverride="metal3"' baremetal-operator-core/values.yaml
-	@yq -i '.version="1.0.0"' baremetal-operator-core/Chart.yaml
+	@yq -i '.version="1.0.1"' baremetal-operator-core/Chart.yaml
 
 # chart name, source url, tag
 define build-chart
