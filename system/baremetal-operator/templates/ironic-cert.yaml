@@ -4,13 +4,13 @@ metadata:
   name: ironic-cert
 spec:
   dnsNames:
+  - metal3-ironic.{{ .Values.global.region }}.{{ .Values.global.tld }}
+  uris:
   - ironic
   - ironic.{{ .Release.Namespace }}.svc
   - ironic.{{ .Release.Namespace }}.svc.cluster.local
-  ipAddresses:
-  - {{ .Values.ironic.externalIP }}
-  isCA: true
   issuerRef:
-    kind: Issuer
-    name: ironic-selfsigned-issuer
+    group: certmanager.cloud.sap
+    kind: ClusterIssuer
+    name: digicert-issuer
   secretName: tls-ironic-service
