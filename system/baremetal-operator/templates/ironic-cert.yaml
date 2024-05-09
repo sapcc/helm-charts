@@ -1,0 +1,16 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: ironic-cert
+spec:
+  dnsNames:
+  - ironic
+  - ironic.{{ .Release.Namespace }}.svc
+  - ironic.{{ .Release.Namespace }}.svc.cluster.local
+  ipAddresses:
+  - {{ .Values.ironic.externalIP }}
+  isCA: true
+  issuerRef:
+    kind: Issuer
+    name: ironic-selfsigned-issuer
+  secretName: tls-ironic-service
