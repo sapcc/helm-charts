@@ -3,31 +3,20 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.12.1
-  name: preprovisioningimages.metal3.io
+  name: hostfirmwarecomponents.metal3.io
 spec:
   group: metal3.io
   names:
-    kind: PreprovisioningImage
-    listKind: PreprovisioningImageList
-    plural: preprovisioningimages
-    shortNames:
-      - ppimg
-    singular: preprovisioningimage
+    kind: HostFirmwareComponents
+    listKind: HostFirmwareComponentsList
+    plural: hostfirmwarecomponents
+    singular: hostfirmwarecomponents
   scope: Namespaced
   versions:
-    - additionalPrinterColumns:
-        - description: Whether the image is ready
-          jsonPath: .status.conditions[?(@.type=='Ready')].status
-          name: Ready
-          type: string
-        - description: The reason for the image readiness status
-          jsonPath: .status.conditions[?(@.type=='Ready')].reason
-          name: Reason
-          type: string
-      name: v1alpha1
+    - name: v1alpha1
       schema:
         openAPIV3Schema:
-          description: PreprovisioningImage is the Schema for the preprovisioningimages API.
+          description: HostFirmwareComponents is the Schema for the hostfirmwarecomponents API.
           properties:
             apiVersion:
               description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
@@ -38,32 +27,50 @@ spec:
             metadata:
               type: object
             spec:
-              description: PreprovisioningImageSpec defines the desired state of PreprovisioningImage.
+              description: HostFirmwareComponentsSpec defines the desired state of HostFirmwareComponents.
               properties:
-                acceptFormats:
-                  description: acceptFormats is a list of acceptable image formats.
+                updates:
                   items:
-                    description: ImageFormat enumerates the allowed image formats
-                    enum:
-                      - iso
-                      - initrd
-                    type: string
+                    description: FirmwareUpdate defines a firmware update specification.
+                    properties:
+                      component:
+                        type: string
+                      url:
+                        type: string
+                    required:
+                      - component
+                      - url
+                    type: object
                   type: array
-                architecture:
-                  description: architecture is the processor architecture for which to build the image.
-                  type: string
-                networkDataName:
-                  description: networkDataName is the name of a Secret in the local namespace that contains network data to build in to the image.
-                  type: string
+              required:
+                - updates
               type: object
             status:
-              description: PreprovisioningImageStatus defines the observed state of PreprovisioningImage.
+              description: HostFirmwareComponentsStatus defines the observed state of HostFirmwareComponents.
               properties:
-                architecture:
-                  description: architecture is the processor architecture for which the image is built
-                  type: string
+                components:
+                  description: Components is the list of all available firmware components and their information.
+                  items:
+                    description: FirmwareComponentStatus defines the status of a firmware component.
+                    properties:
+                      component:
+                        type: string
+                      currentVersion:
+                        type: string
+                      initialVersion:
+                        type: string
+                      lastVersionFlashed:
+                        type: string
+                      updatedAt:
+                        format: date-time
+                        type: string
+                    required:
+                      - component
+                      - initialVersion
+                    type: object
+                  type: array
                 conditions:
-                  description: conditions describe the state of the built image
+                  description: Track whether updates stored in the spec are valid based on the schema
                   items:
                     description: "Condition contains details for one aspect of the current state of this API Resource. --- This struct is intended for direct use as an array at the field path .status.conditions.  For example, \n type FooStatus struct{ // Represents the observations of a foo's current state. // Known .status.conditions.type are: \"Available\", \"Progressing\", and \"Degraded\" // +patchMergeKey=type // +patchStrategy=merge // +listType=map // +listMapKey=type Conditions []metav1.Condition `json:\"conditions,omitempty\" patchStrategy:\"merge\" patchMergeKey:\"type\" protobuf:\"bytes,1,rep,name=conditions\"` \n // other fields }"
                     properties:
@@ -109,29 +116,27 @@ spec:
                   x-kubernetes-list-map-keys:
                     - type
                   x-kubernetes-list-type: map
-                extraKernelParams:
-                  description: extraKernelParams is a string with extra parameters to pass to the kernel when booting the image over network. Only makes sense for initrd images.
+                lastUpdated:
+                  description: Time that the status was last updated
+                  format: date-time
                   type: string
-                format:
-                  description: 'format is the type of image that is available at the download url: either iso or initrd.'
-                  enum:
-                    - iso
-                    - initrd
-                  type: string
-                imageUrl:
-                  description: imageUrl is the URL from which the built image can be downloaded.
-                  type: string
-                kernelUrl:
-                  description: kernelUrl is the URL from which the kernel of the image can be downloaded. Only makes sense for initrd images.
-                  type: string
-                networkData:
-                  description: networkData is a reference to the version of the Secret containing the network data used to build the image.
-                  properties:
-                    name:
-                      type: string
-                    version:
-                      type: string
-                  type: object
+                updates:
+                  description: Updates is the list of all firmware components that should be updated they are specified via name and url fields.
+                  items:
+                    description: FirmwareUpdate defines a firmware update specification.
+                    properties:
+                      component:
+                        type: string
+                      url:
+                        type: string
+                    required:
+                      - component
+                      - url
+                    type: object
+                  type: array
+              required:
+                - components
+                - updates
               type: object
           type: object
       served: true
