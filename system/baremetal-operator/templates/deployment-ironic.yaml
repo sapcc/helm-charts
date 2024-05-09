@@ -73,62 +73,8 @@ spec:
         terminationMessagePath: /dev/termination-log
         terminationMessagePolicy: File
         volumeMounts:
-        - mountPath: /auth/ironic-inspector
-          name: ironic-inspector-auth-config
-          readOnly: true
         - mountPath: /shared
           name: ironic-data-volume
-      - command:
-        - /bin/runironic-inspector
-        envFrom:
-        - secretRef:
-            name: baremetal-operator-ironic-inspector-htpasswd
-        - configMapRef:
-            name: ironic-config
-        image: "{{ $.Values.images.ironicInspector.image }}:{{ $.Values.images.ironicInspector.tag }}"
-        imagePullPolicy: IfNotPresent
-        ports:
-        - containerPort: {{ .Values.ironic.inspectorPort }}
-          name: inspector
-          protocol: TCP
-        livenessProbe:
-          exec:
-            command:
-            - sh
-            - -c
-            - curl -sSf http://127.0.0.1:5050 || curl -sSf -k https://127.0.0.1:5050
-          failureThreshold: 10
-          initialDelaySeconds: 30
-          periodSeconds: 30
-          successThreshold: 1
-          timeoutSeconds: 10
-        name: ironic-inspector
-        readinessProbe:
-          exec:
-            command:
-            - sh
-            - -c
-            - curl -sSf http://127.0.0.1:5050 || curl -sSf -k https://127.0.0.1:5050
-          failureThreshold: 10
-          initialDelaySeconds: 30
-          periodSeconds: 30
-          successThreshold: 1
-          timeoutSeconds: 10
-        resources: {}
-        securityContext:
-          allowPrivilegeEscalation: false
-          capabilities:
-            drop:
-            - ALL
-          privileged: false
-          runAsGroup: 993
-          runAsUser: 996
-        terminationMessagePath: /dev/termination-log
-        terminationMessagePolicy: File
-        volumeMounts:
-        - mountPath: /auth/ironic
-          name: ironic-auth-config
-          readOnly: true
       - command:
         - /bin/runlogwatch.sh
         image: "{{ required ".Values.global.quayIoMirrorAlternateRegion is missing" $.Values.global.quayIoMirrorAlternateRegion }}/{{ $.Values.images.ironicHttpd.image }}:{{ $.Values.images.ironicHttpd.tag }}"
@@ -233,10 +179,6 @@ spec:
         secret:
           defaultMode: 420
           secretName: baremetal-operator-ironic-auth-config
-      - name: ironic-inspector-auth-config
-        secret:
-          defaultMode: 420
-          secretName: baremetal-operator-ironic-inspector-auth-config
       - name: ironic-data-volume
         emptyDir: {}
       - name: cert
