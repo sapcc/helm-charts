@@ -27,7 +27,7 @@ spec:
       hostNetwork: true
       containers:
       - command:
-        - /bin/runironic
+        - /opt/runironic
         envFrom:
         - secretRef:
             name: baremetal-operator-ironic-htpasswd
@@ -79,6 +79,9 @@ spec:
         - mountPath: /certs/ironic
           name: cert
           readOnly: true
+        - mountPath: /opt/runironic
+          name: ironic-config
+          subPath: runironic
       - command:
         - /bin/runlogwatch.sh
         image: "{{ required ".Values.global.quayIoMirrorAlternateRegion is missing" $.Values.global.quayIoMirrorAlternateRegion }}/{{ $.Values.images.ironicHttpd.image }}:{{ $.Values.images.ironicHttpd.tag }}"
@@ -197,6 +200,10 @@ spec:
         secret:
           defaultMode: 420
           secretName: tls-ironic-service
+      - configMap:
+          defaultMode: 511
+          name: ironic-config
+        name: ironic-config
       - configMap:
           defaultMode: 511
           name: ironic-config-httpd
