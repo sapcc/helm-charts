@@ -22,6 +22,7 @@ spec:
       annotations:
         kubectl.kubernetes.io/default-container: ironic
         checksum/configmap-ironic: {{ include (print $.Template.BasePath "/configmap-ironic-config.yaml") . | sha256sum }}
+        checksum/configmap-httpd: {{ include (print $.Template.BasePath "/configmap-ironic-httpd.yaml") . | sha256sum }}
     spec:
       hostNetwork: true
       containers:
@@ -101,7 +102,9 @@ spec:
         - /bin/runhttpd
         envFrom:
         - configMapRef:
-            name: ironic-config
+            name: ironic-config-httpd
+        - secretRef:
+            name: baremetal-operator-ironic-htpasswd
         image: "{{ required ".Values.global.quayIoMirrorAlternateRegion is missing" $.Values.global.quayIoMirrorAlternateRegion }}/{{ $.Values.images.ironicHttpd.image }}:{{ $.Values.images.ironicHttpd.tag }}"
         imagePullPolicy: IfNotPresent
         ports:
@@ -113,7 +116,7 @@ spec:
             command:
             - sh
             - -c
-            - curl -sSfk http://127.0.0.1:6180/images
+            - curl -sSfk https://127.0.0.1:6180/images
           failureThreshold: 10
           initialDelaySeconds: 30
           periodSeconds: 30
@@ -125,7 +128,7 @@ spec:
             command:
             - sh
             - -c
-            - curl -sSfk http://127.0.0.1:6180/images
+            - curl -sSfk https://127.0.0.1:6180/images
           failureThreshold: 10
           initialDelaySeconds: 30
           periodSeconds: 30
@@ -145,6 +148,12 @@ spec:
         volumeMounts:
         - mountPath: /shared
           name: ironic-data-volume
+        - mountPath: /certs/ipxe
+          name: cert
+          readOnly: true
+        - mountPath: /tmp/inspector.ipxe.j2
+          name: ironic-httpd
+          subPath: inspector.ipxe.j2
       dnsPolicy: ClusterFirst
       initContainers:
       - command:
@@ -188,3 +197,7 @@ spec:
         secret:
           defaultMode: 420
           secretName: tls-ironic-service
+      - configMap:
+          defaultMode: 511
+          name: ironic-config-httpd
+        name: ironic-httpd
