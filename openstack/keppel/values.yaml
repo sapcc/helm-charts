@@ -163,7 +163,7 @@ pgmetrics:
             usage: "GAUGE"
             description: "UNIX timestamp of next scheduled federation announcement, or 0 if no accounts have ever been announced to federation"
     keppel_blobs:
-      query: "SELECT COUNT(*) AS count, COALESCE(EXTRACT(epoch FROM MIN(can_be_deleted_at)), 0) AS min_can_be_deleted_at, EXTRACT(epoch FROM MIN(validated_at)) AS min_validated_at, SUM(CASE WHEN validation_error_message = '' THEN 0 ELSE 1 END) AS validation_errors FROM blobs WHERE storage_id != ''"
+      query: "SELECT COUNT(*) AS count, COALESCE(EXTRACT(epoch FROM MIN(can_be_deleted_at)), 0) AS min_can_be_deleted_at, EXTRACT(epoch FROM MIN(next_validation_at)) AS min_next_validation_at, SUM(CASE WHEN validation_error_message = '' THEN 0 ELSE 1 END) AS validation_errors FROM blobs WHERE storage_id != ''"
       metrics:
         - count:
             usage: "GAUGE"
@@ -171,7 +171,7 @@ pgmetrics:
         - min_can_be_deleted_at:
             usage: "GAUGE"
             description: "UNIX timestamp of next scheduled blob deletion, or 0 if no blobs are currently marked for deletion"
-        - min_validated_at:
+        - min_next_validation_at:
             usage: "GAUGE"
             description: "UNIX timestamp of oldest blob validation"
         - validation_errors:
@@ -207,7 +207,7 @@ pgmetrics:
     keppel_manifests:
       query: >
         SELECT COUNT(*) AS count,
-               EXTRACT(epoch FROM MIN(validated_at)) AS min_validated_at,
+               EXTRACT(epoch FROM MIN(next_validation_at)) AS min_next_validation_at,
                SUM(CASE WHEN validation_error_message = '' THEN 0 ELSE 1 END) AS validation_errors,
                COALESCE(EXTRACT(epoch FROM MIN(trivy_security_info.next_check_at)), 0) AS min_next_trivy_check_at,
                SUM(CASE WHEN trivy_security_info.next_check_at > NOW() THEN 0 ELSE 1 END) AS pending_trivy_checks
@@ -217,7 +217,7 @@ pgmetrics:
         - count:
             usage: "GAUGE"
             description: "Total number of manifests stored in Keppel"
-        - min_validated_at:
+        - min_next_validation_at:
             usage: "GAUGE"
             description: "UNIX timestamp of oldest manifest validation"
         - validation_errors:
