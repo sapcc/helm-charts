@@ -21,10 +21,6 @@ spec:
         app: {{ .Release.Name }}-pgmetrics
         component: {{ $db_name }}
         type: metrics
-        {{- if .Values.alerts.enabled }}
-        alert-tier: {{ required ".Values.alerts.tier missing" .Values.alerts.tier }}
-        alert-service: {{ .Values.alerts.service | default .Release.Name }}
-        {{- end }}
       annotations:
         kubectl.kubernetes.io/default-container: metrics
         configmap-etc-hash: {{ include (print $.Template.BasePath "/configmap-etc.yaml") . | sha256sum }}
