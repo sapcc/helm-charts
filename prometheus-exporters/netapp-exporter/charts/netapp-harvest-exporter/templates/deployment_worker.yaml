@@ -57,6 +57,9 @@ spec:
               subPath: restperf.limited.yaml
             - name: shared
               mountPath: /opt/harvest/shared
+            - name: harvest-secret
+              mountPath: /opt/harvest/credentials.yaml
+              subPath: credentials.yaml
         - name: worker
           image: {{ .Values.global.registry }}/{{ .Values.netappsd.image.repository }}:{{ .Values.netappsd.image.tag }}
           imagePullPolicy: {{ .Values.netappsd.image.pullPolicy | default "IfNotPresent" }}
@@ -104,6 +107,9 @@ spec:
             name: {{ include "netapp-harvest.fullname" . }}
         - name: shared
           emptyDir: {}
+        - name: harvest-secret
+          secret:
+            secretName: {{ include "netapp-harvest.fullname" . }}
 ---
 {{- end }}
 {{- end }}
