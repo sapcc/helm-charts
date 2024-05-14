@@ -22,6 +22,9 @@ spec:
         release: "{{ .Release.Name }}"
         heritage: "{{ .Release.Service }}"
       annotations:
+        {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+        linkerd.io/inject: enabled
+        {{- end }}
         prometheus.io/scrape: "true"
         prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
     {{- if .Values.podAnnotations }}
