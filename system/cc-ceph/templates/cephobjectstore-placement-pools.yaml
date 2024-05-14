@@ -5,12 +5,20 @@ kind: CephBlockPool
 metadata:
   name: {{ $target.name }}.rgw.buckets.data
 spec:
+  {{- if not $target.failureDomain.nilString }}
   failureDomain: {{ $target.failureDomain | default "host"  }}
+  {{- end -}}
   replicated:
     size: {{ $target.size | default 3 }}
+    {{- if not $target.replicasPerFailureDomain.nilString }}
     replicasPerFailureDomain: {{ $target.replicasPerFailureDomain | default 1 }}
+    {{- end -}}
+    {{- if not $target.subFailureDomain.nilString }}
     subFailureDomain: {{ $target.subFailureDomain | default "host" }}
+    {{- end -}}
+  {{- if not $target.crushRoot.nilString }}
   crushRoot: {{ $target.crushRoot | default "default" }} 
+  {{- end -}}
   deviceClass: hdd
   application: rgw
   parameters:
@@ -22,12 +30,20 @@ kind: CephBlockPool
 metadata:
   name: {{ $target.name }}.rgw.buckets.index
 spec:
+  {{- if not $target.failureDomain.nilString }}
   failureDomain: {{ $target.failureDomain | default "host"  }}
+  {{- end -}}
   replicated:
     size: {{ $target.size | default 3 }}
+    {{- if not $target.replicasPerFailureDomain.nilString }}
     replicasPerFailureDomain: {{ $target.replicasPerFailureDomain | default 1 }}
+    {{- end -}}
+    {{- if not $target.subFailureDomain.nilString }}
     subFailureDomain: {{ $target.subFailureDomain | default "host" }}
+    {{- end -}}
+  {{- if not $target.crushRoot.nilString }}
   crushRoot: {{ $target.crushRoot | default "default" }} 
+  {{- end -}}
   deviceClass: nvme
   application: rgw
   parameters:
@@ -42,9 +58,15 @@ spec:
   failureDomain: {{ $target.failureDomain | default "host"  }}
   replicated:
     size: {{ $target.size | default 3 }}
+    {{- if not $target.replicasPerFailureDomain.nilString }}
     replicasPerFailureDomain: {{ $target.replicasPerFailureDomain | default 1 }}
+    {{- end -}}
+    {{- if not $target.subFailureDomain.nilString }}
     subFailureDomain: {{ $target.subFailureDomain | default "host" }}
+    {{- end -}}
+  {{- if not $target.crushRoot.nilString }}
   crushRoot: {{ $target.crushRoot | default "default" }} 
+  {{- end -}}
   deviceClass: nvme
   application: rgw
   parameters:
