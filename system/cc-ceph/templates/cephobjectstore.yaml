@@ -6,6 +6,8 @@ metadata:
 spec:
   metadataPool: {{ toYaml .Values.objectstore.metadataPool | nindent 4 }}
   dataPool: {{ toYaml .Values.objectstore.dataPool | nindent 4 }}
+  hosting:
+    dnsNames: {{ toYaml .Values.objectstore.gateway.dnsNames | nindent 8 }}
   gateway:
     instances: {{ .Values.objectstore.gateway.instances }}
     {{- if .Values.objectstore.gateway.port }}
@@ -15,8 +17,6 @@ spec:
     securePort: {{ .Values.objectstore.gateway.securePort }}
     {{- end }}
     placement:
-      hosting:
-        dnsNames: {{ toYaml .Values.objectstore.gateway.dnsNames | nindent 8 }}
       nodeAffinity:
         requiredDuringSchedulingIgnoredDuringExecution:
           nodeSelectorTerms:
