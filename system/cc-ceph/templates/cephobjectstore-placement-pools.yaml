@@ -5,10 +5,12 @@ kind: CephBlockPool
 metadata:
   name: {{ $target.name }}.rgw.buckets.data
 spec:
-  failureDomain: {{ $target.failureDomain }}
+  failureDomain: {{ $target.failureDomain | default "host"  }}
   replicated:
-    size: {{ $target.size }}
-  crushRoot: {{ $target.crushRoot }} 
+    size: {{ $target.size | default 3 }}
+    replicasPerFailureDomain: {{ $target.replicasPerFailureDomain | default 1 }}
+    subFailureDomain: {{ $target.subFailureDomain | default "host" }}
+  crushRoot: {{ $target.crushRoot | default "default" }} 
   deviceClass: hdd
   application: rgw
   parameters:
@@ -20,10 +22,12 @@ kind: CephBlockPool
 metadata:
   name: {{ $target.name }}.rgw.buckets.index
 spec:
-  failureDomain: {{ $target.failureDomain }}
+  failureDomain: {{ $target.failureDomain | default "host"  }}
   replicated:
-    size: {{ $target.size }}
-  crushRoot: {{ $target.crushRoot }} 
+    size: {{ $target.size | default 3 }}
+    replicasPerFailureDomain: {{ $target.replicasPerFailureDomain | default 1 }}
+    subFailureDomain: {{ $target.subFailureDomain | default "host" }}
+  crushRoot: {{ $target.crushRoot | default "default" }} 
   deviceClass: nvme
   application: rgw
   parameters:
@@ -35,10 +39,12 @@ kind: CephBlockPool
 metadata:
   name: {{ $target.name }}.rgw.buckets.non-ec
 spec:
-  failureDomain: {{ $target.failureDomain }}
+  failureDomain: {{ $target.failureDomain | default "host"  }}
   replicated:
-    size: {{ $target.size }}
-  crushRoot: {{ $target.crushRoot }} 
+    size: {{ $target.size | default 3 }}
+    replicasPerFailureDomain: {{ $target.replicasPerFailureDomain | default 1 }}
+    subFailureDomain: {{ $target.subFailureDomain | default "host" }}
+  crushRoot: {{ $target.crushRoot | default "default" }} 
   deviceClass: nvme
   application: rgw
   parameters:
