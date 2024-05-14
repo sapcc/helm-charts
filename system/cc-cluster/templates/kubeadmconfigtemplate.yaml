@@ -56,13 +56,9 @@ spec:
                     set -o pipefail
 
                     while true;do
-                      docker run --rm -v /opt/bin:/opt/bin {{ $.Values.image.kubelet }}:v{{ $cluster.version }} cp --preserve=mode /usr/local/bin/kubelet /opt/bin/kubelet && break
+                      docker run --rm -v /opt/bin:/opt/bin {{ $.Values.image.kubelet }}:v{{ $cluster.version }} cp --preserve=mode /usr/local/bin/{kubeadm,kubelet} /opt/bin/ && break
                     done
 
-                    while true;do
-                      /usr/bin/wget --tries=0 {{ $.Values.image.kubeadm }} -O /opt/bin/kubeadm  && break
-                    done
-                    /usr/bin/chmod 0755 /opt/bin/kubeadm
                     mount --bind /opt/bin /usr/local/bin
 
                     sed -i '/After\|Requires/d' /etc/systemd/system/kubeadm.service.d/10-flatcar.conf
