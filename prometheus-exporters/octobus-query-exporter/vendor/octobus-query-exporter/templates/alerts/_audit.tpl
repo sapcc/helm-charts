@@ -8,8 +8,7 @@ metadata:
     app: octobus-query-exporter
     tier: infra
     type: alerting-rules
-    prometheus: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
-
+    prometheus: infra-frontend
 spec:
   groups:
     - name: audit
@@ -23,7 +22,7 @@ spec:
             support_group: "observability"
             meta: "Audit events have no source set"
             dashboard: audit-log-shipping
-            playbook: 'docs/operation/elastic_kibana_issues/octobus/audit-source-missing/#audit-source-for-event-missing'
+            playbook: 'docs/support/playbook/opensearch/octobus/audit-source-missing/#audit-source-for-event-missing'
           annotations:
             description: "Audit Logs should have field `sap.cc.audit.source`"
             summary: "Audit Logs indexed without source field"
@@ -36,7 +35,7 @@ spec:
             support_group: "observability"
             meta: "Audit events send to deadletter index"
             dashboard: audit-log-shipping
-            playbook: 'docs/operation/elastic_kibana_issues/octobus/audit-source-missing/#audit-events-in-deadletter-index'
+            playbook: 'docs/support/playbook/opensearch/octobus/audit-source-missing/#audit-events-in-deadletter-index'
           annotations:
             description: "Audit Logs are not indexed correctly"
             summary: "Check `*deadletter*` index for the reason"
@@ -56,7 +55,7 @@ spec:
             support_group: "observability"
             meta: "Audit events for {{ .name }} missing"
             dashboard: audit-log-shipping
-            playbook: 'docs/operation/elastic_kibana_issues/octobus/audit-source-missing/#audit-events-missing'
+            playbook: 'docs/support/playbook/opensearch/octobus/audit-source-missing/#audit-events-missing'
           annotations:
             description: "There have been no logs for {{ .name }} in the last {{ .interval }}"
             summary: "Audit logs missing for {{ .name }}"
@@ -78,7 +77,7 @@ spec:
             support_group: "observability"
             meta: "Audit events for {{ .name }} missing"
             dashboard: audit-log-shipping
-            playbook: 'docs/operation/elastic_kibana_issues/octobus/audit-source-missing/#audit-events-missing'
+            playbook: 'docs/support/playbook/opensearch/octobus/audit-source-missing/#audit-events-missing'
           annotations:
             description: "There have been no logs for {{ .name }} in the last {{ .interval }}"
             summary: "Audit logs missing for {{ .name }}"

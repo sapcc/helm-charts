@@ -14,9 +14,15 @@ spec:
     metadata:
       labels:
         app.kubernetes.io/name: vpa-butler
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/targets: kubernetes
+        {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+        linkerd.io/inject: enabled
+        {{- end }}
     spec:
       containers:
-      - image: {{ required ".Values.image.repository missing" .Values.image.repository }}:{{ required ".Chart.AppVersion missing" .Chart.AppVersion }}
+      - image: {{ required ".Values.image.repository missing" .Values.image.repository }}:{{ .Values.image.tag }}
         imagePullPolicy: IfNotPresent
         name: vpa-butler
         args:
@@ -29,4 +35,13 @@ spec:
           requests:
             cpu: {{ .Values.limits.cpu }}
             memory: {{ .Values.limits.memory }}
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8081
+          initialDelaySeconds: 3
+          periodSeconds: 3
+        ports:
+          - name: metrics
+            containerPort: 8080
       serviceAccountName: vpa-butler

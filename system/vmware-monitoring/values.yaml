@@ -9,6 +9,8 @@ global:
     enabled: true
     prometheus: vmware
 
+  linkerd_requested: true
+
 owner-info:
   service: vrops-exporter
   support-group: observability
@@ -17,14 +19,19 @@ owner-info:
     - Tommy Sauer
   helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/system/vmware-monitoring
 
+linkerd-support:
+  annotate_namespace: true
+
 thanos:
   vmware: true
   deployWholeThanos: true
 
+  compactor:
+    dataVolume:
+      enabled: true
+
 prometheus-server:
   vmware: true
-
-  retentionTime: 7d
 
   additionalScrapeConfigs: {}
 
@@ -71,12 +78,28 @@ prometheus-server:
       cpu: 500m
       memory: 4Gi
 
+  vpaUpdateMode: "Auto"
+  vpaResources:
+    prometheus:
+      containerName: "prometheus"
+      maxAllowed:
+        memory: "25Gi"
+
   securityContext:
     fsGroup: 0
     runAsUser: 0
 
   thanos:
     enabled: true
+
+  alerts:
+    multiplePodScrapes:
+      enabled: false
+    multipleTargetScrapes:
+      enabled: false
+    thanos:
+      enabled: true
+      name: scaleout
 
   remoteWriteTargets:
     - url: https://vmagent-cc.mon-pro.cerebro.c.eu-de-1.cloud.sap/api/v1/write

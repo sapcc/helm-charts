@@ -1,6 +1,11 @@
 global:
   tld: cloud.sap
   region: local
+  linkerd_requested: true
+
+linkerd:
+  # linkerd annotation for the mysql metrics pod (true/false)
+  enabled: true
 
 db_type: maria
 #db_name: DEFINED-IN-COMPONENT-CHART
@@ -8,6 +13,8 @@ db_type: maria
 #db_password: null
 
 port_metrics: '9237'
+# Name of the Prometheus supposed to scrape the metrics
+prometheus: openstack
 loglevel: info
 image: sql-exporter
 imageTag: 0.3.0
@@ -34,16 +41,3 @@ customSources: []
 
 ## nova-only switch for adding cell2 db as another source for exporter:
 queryCell2: false
-
-# Default Prometheus alerts and rules.
-alerts:
-  enabled: true
-
-  # Name of the Prometheus supposed to scrape the metrics and to which alerts are assigned.
-  prometheus: openstack
-
-  # The tier of the alert.
-  tier: os
-
-  # Configurable service label of the alerts. Defaults to `.Release.Name`.
-  # service:

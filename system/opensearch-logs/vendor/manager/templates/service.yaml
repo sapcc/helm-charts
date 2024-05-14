@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: manager
+  namespace: opensearch-logs
+  labels:
+    system: openstack
+    service: logging
+    component: opensearch
+    role:  manager
+  {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+  annotations:
+    linkerd.io/inject: enabled
+  {{- end }}  
+spec:
+  selector:
+    component: opensearch
+    role:  manager
+  ports:
+    - name: manager
+      port: {{.Values.port_internal}}

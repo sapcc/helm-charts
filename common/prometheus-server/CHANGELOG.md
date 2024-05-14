@@ -1,3 +1,86 @@
+## 7.5.7
+
+* softening VPA alerts 
+
+## 7.5.6
+
+* Adapting swift credential for kvv2 vault
+
+## 7.5.5
+
+* VPA alerts should always go to observability support_group
+
+## 7.5.4
+
+* Adding linkerd eph requests
+
+## 7.5.0 - 7.5.3
+
+* Adding linkerd
+
+## 7.4.16
+
+* request ephemeral storage to avoid evicting due to minor usage
+
+## 7.4.15
+
+* Added failsafe to Prometheus kubernetes and kubernikus specific alerts with hint to thanos ruler.
+* improved VPA alerts
+
+## 7.4.14
+
+* default value for shards
+* vpa scope to Prometheus resource to ensure operator compatibility with scale subresource
+
+## 7.4.9 - 7.4.10
+
+* VPA mapping adjustment to set individual values 
+* minReplicas set to 1
+
+## 7.4.8
+
+* VPA memory and cpu alerts added
+
+## 7.4.7
+
+* corrected VPA memory directive 
+
+## 7.4.6
+
+* bump to v2.47.2
+
+## 7.4.5
+
+* preparing VPA for rollout (make maxAllowed configurable)
+
+## 7.4.4
+
+* Soften out-of-order alert 
+
+## 7.4.3
+
+* Thanos sidecar to v0.31.0 to match Thanos environment 
+
+## 7.4.2
+
+* playbook link adjusted
+
+## 7.4.1
+
+* switch Ingress nginx-annotation
+
+## 7.4.0
+
+* updating Prometheus to v2.46.0
+
+## 7.3.0
+
+* Swift container userName and containerName now can be set explicitly
+
+## 7.2.16
+
+* If no `kube_` metrics available within the Prometheus, send `PrometheusMultiplePodScrape` alerts to specified Thanos Rule
+
 ## 7.2.15
 
 * Removal of Prometheus limit warnings, as no limits are defined at all

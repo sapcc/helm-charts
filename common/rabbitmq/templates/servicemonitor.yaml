@@ -1,0 +1,36 @@
+{{- if or (.Values.metrics.enablePerObjectMetrics) (.Values.metrics.enableDetailedMetrics)  }}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ template "fullname" . }}
+  labels:
+    app: {{ template "fullname" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+    type: rabbitmq
+    component: {{ .Release.Name }}
+    system: openstack
+    prometheus: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus }}
+    {{- include "sharedservices.labels" . | indent 4 }}
+spec:
+  endpoints:
+    {{- if .Values.metrics.enableDetailedMetrics }}
+    - honorLabels: true
+      targetPort: {{ .Values.metrics.port }}
+      path: /metrics/detailed   # see https://www.rabbitmq.com/docs/prometheus#detailed-endpoint
+      # params:
+      #   family: [queue_coarse_metrics]
+    {{- end }}
+    {{- if .Values.metrics.enablePerObjectMetrics }}
+    - honorLabels: true
+      targetPort: {{ .Values.metrics.port }}
+      path: /metrics/per-object   # see https://www.rabbitmq.com/docs/prometheus#detailed-endpoint
+    {{- end }}
+  namespaceSelector:
+    matchNames:
+        - {{ .Release.Namespace }}
+  selector:
+    matchLabels:
+      app: {{ template "fullname" . }}
+{{- end }}

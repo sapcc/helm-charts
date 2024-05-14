@@ -23,6 +23,7 @@ global:
     image: "monsoon/fernet-router:latest"
   domain_seeds:
     skip_hcm_domain: false
+  linkerd_requested: false
 
 imageVersion: rocky-20200214123740
 imageVersionStaticdhcpd: rocky-20201012110713
@@ -33,7 +34,7 @@ kos_conductor: true
 
 cert_robot:
   image_tag: "latest"
-  schedule: "@weekly"
+  schedule: "0 8 * * 1,3,5" # Monday, Wednesday, and Friday at 8:00 (am)
   env:
     issuer:
     designate:
@@ -364,7 +365,9 @@ mariadb:
       - ironic_inspector.nodes
 
   root_password: "AHardPa55w0rd!"
-  initdb_configmap: ironic-mariadb-init
+  initdb_secret: true
+  ccroot_user:
+    enabled: true
   persistence_claim:
     name: db-ironic-pvclaim
 
@@ -426,7 +429,14 @@ watcher:
   enabled: false
 
 audit:
+  central_service:
+    user: rabbitmq
+    password: DEFINED-IN-SECRETS
   enabled: false
+  # how many messages to buffer before dumping to log (when rabbit is down or too slow)
+  mem_queue_size: 100
+  record_payloads: false
+  metrics_enabled: true
 
 # Deploy Ironic Prometheus alerts.
 alerts:
@@ -434,3 +444,13 @@ alerts:
   # Name of the Prometheus to which the alerts should be assigned to.
   prometheus: openstack
   support_group: foundation
+
+utils:
+  trust_bundle:
+    enabled: true
+
+ironic-exporter:
+  enabled: true
+  notifications: false
+  image:
+    tag: cd8c3866

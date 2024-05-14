@@ -51,29 +51,6 @@ data:
      };
 {{ end }}
 ---
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: {{ .Release.Name }}-keys
-data:
-  rndc.key: |
-    key "{{ .Values.rndc_key_name | default "rndc-key" }}" {
-        algorithm "{{ .Values.rndc_key_algorithm | default "hmac-md5" }}";
-        secret "{{ .Values.rndc_key }}";
-    };
-  tsig.key: |
-    key "tsig-key" {
-        algorithm hmac-md5;
-        secret "{{ .Values.tsig_key }}";
-    };
-  {{- if .Values.nsi_key }}
-  nsi.key: |
-    key "nsi-key" {
-        algorithm hmac-sha512;
-        secret "{{ .Values.nsi_key }}";
-    };
-  {{- end }}
----
 {{ if .Values.zabbix.enabled }}
 apiVersion: v1
 kind: ConfigMap
@@ -100,5 +77,7 @@ data:
      UserParameter=bind.zones[*],/usr/bin/bind/scripts/bind-stats.sh zones $1
      UserParameter=bind.git,/usr/bin/bind/scripts/check_bind_git.sh
      UserParameter=bind.stats[*],/usr/bin/curl -s http://localhost:8653/json | jq '. | {$1: .$1}'
+     UserParameter=bind.stats.memory,/usr/bin/curl -s http://localhost:8653/json | jq '. | del(.memory.contexts) | {memory: .memory}'
      Server={{ .Values.zabbix.server }}
+     ServerActive=
 {{ end }}

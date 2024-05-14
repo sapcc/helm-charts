@@ -10,7 +10,7 @@ groups:
       severity: info
       tier: os
       support_group: observability
-      playbook: docs/operation/monitor/elk_query
+      playbook: docs/operation/monitor/opensearch_query
     annotations:
       description: 'opensearch-logs-query-exporter in {{ $labels.region }} is missing.'
       summary: 'opensearch-logs-query-exporter in {{ $labels.region }} is missing.'
@@ -58,7 +58,7 @@ groups:
       severity: warning
       support_group: observability
       tier: os
-      playbook: docs/support/playbook/elastic_kibana_issues
+      playbook: docs/operation/monitor/opensearch_query
       dashboard: health-opensearch?var-cluster={{ $labels.elastic_cluster }}
     annotations:
       description: 'cluster *{{ $labels.elastic_cluster }}* opensearch-logs-query-exporter in `{{ $labels.region }}` is missing.'
@@ -77,3 +77,17 @@ groups:
     annotations:
       description: 'The siem-rules-updater service pod has error logs.'
       summary: 'The siem-rules-updater service pod has error logs.'
+
+  - alert: OpenstackManilaPromotedReplicaError
+    expr: count_over_time(opensearch_logs_manila_replica_error_doc_count{}[2h]) > 0
+    for: 5m
+    labels:
+      no_alert_on_absence: "true"
+      service: manila
+      severity: info
+      support_group: compute-storage-api
+      tier: os
+      kibana: "app/discover#/?_g=(filters:!(),refreshInterval:(pause:!t,value:0),time:(from:now-15m,to:now))&_a=(columns:!(_source),filters:!(),index:'logstash-*',interval:auto,query:(language:kuery,query:'\"to%20the%20promoted%20replica\"'),sort:!())"
+    annotations:
+      description: "Exception while applying properties to promoted Replica"
+      summary: "Exception while applying properties to promoted Replica"

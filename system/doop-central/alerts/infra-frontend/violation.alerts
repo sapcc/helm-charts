@@ -1,0 +1,51 @@
+# vim: set ft=yaml:
+
+groups:
+  - name: doop-violation.alerts
+    rules:
+      # alert for vulnerable images in productive deployments of workgroup "Storage & Resource Services"
+      - alert: GkVulnerableImagesForSRS
+        # NOTE: The max_over_time() ensures that the alert does not flap when doop-central is restarted.
+        # (There appear to be gaps in the metrics for one or two minutes on each deployment.)
+        expr: 'sum by (template_kind, service) (max_over_time(doop_raw_violations{template_kind="GkVulnerableImages",cluster!~".*qa.*",support_group="containers",service=~"backup|castellum|gatekeeper|hubcopter|keppel|limes|repo|tenso"}[10m])) > 0'
+        for: 1h # When new images are deployed, we sometimes see a false positive because GkVulnerableImages sees vulnerability status "Pending".
+        labels:
+          context: GkVulnerableImagesForSRS
+          support_group: containers
+          service: "{{ $labels.service }}"
+          severity: info
+          meta: "Vulnerable images in prod deployments of {{ title $labels.service }}"
+        annotations:
+          summary: "Vulnerable images in prod deployments of {{ title $labels.service }}"
+          description: |
+            Please check <https://ccloud.dashboard.greenhouse.global.cloud.sap/?__s=(doop:(f:((key:check~Isupport~Sgroup,label:support_group,value:containers),(key:check~Iservice,value:{{ $labels.service }}),(key:cluster~Ilayer,value:prod)),s:-+,v:GkVulnerableImages),greenhouse~Fdashboard:(a:doop),supernova:(d:-+,f:(support~Sgroup:(containers)),p:prod,s:%27%27))|this view in Greenhouse> for which images are vulnerable.
+
+      # alert for vulnerable images in productive deployments of support group "storage" (currently just Swift)
+      - alert: GkVulnerableImagesForStorage
+        expr: 'sum by (template_kind, service) (max_over_time(doop_raw_violations{template_kind="GkVulnerableImages",support_group="storage"}[10m])) > 0'
+        for: 1h # When new images are deployed, we sometimes see a false positive because GkVulnerableImages sees vulnerability status "Pending".
+        labels:
+          context: GkVulnerableImagesForStorage
+          support_group: storage
+          service: "{{ $labels.service }}"
+          severity: warning
+          meta: "Vulnerable images in prod deployments of {{ title $labels.service }}"
+        annotations:
+          summary: "Vulnerable images in prod deployments of {{ title $labels.service }}"
+          description: |
+            Please check <https://ccloud.dashboard.greenhouse.global.cloud.sap/?__s=(doop:(f:((key:check~Isupport~Sgroup,label:support_group,value:storage)),s:-+,v:GkVulnerableImages),greenhouse~Fdashboard:(a:doop),supernova:(d:-+,f:(support~Sgroup:(swift)),p:prod,s:%27%27))|this view in Greenhouse> for which images are vulnerable.
+
+      # alert for vulnerable images in productive deployments of support group "foundation"
+      - alert: GkVulnerableImagesForFoundation
+        expr: 'sum by (template_kind, service) (max_over_time(doop_raw_violations{template_kind="GkVulnerableImages",support_group="foundation"}[10m])) > 0'
+        for: 1h # When new images are deployed, we sometimes see a false positive because GkVulnerableImages sees vulnerability status "Pending".
+        labels:
+          context: GkVulnerableImagesForFoundation
+          support_group: foundation
+          service: "{{ $labels.service }}"
+          severity: info
+          meta: "Vulnerable images in prod deployments of {{ title $labels.service }}"
+        annotations:
+          summary: "Vulnerable images in prod deployments of {{ title $labels.service }}"
+          description: |
+            Please check <https://ccloud.dashboard.greenhouse.global.cloud.sap/?__s=(doop:(f:((key:check~Isupport~Sgroup,label:support_group,value:foundation),(key:check~Iservice,value:{{ $labels.service }}),(key:cluster~Ilayer,value:prod)),s:-+,v:GkVulnerableImages),greenhouse~Fdashboard:(a:doop),supernova:(d:-+,f:(support~Sgroup:(foundation)),p:prod,s:%27%27))|this view in Greenhouse> for which images are vulnerable.

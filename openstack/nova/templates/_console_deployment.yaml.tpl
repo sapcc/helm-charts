@@ -14,6 +14,10 @@ metadata:
     system: openstack
     type: backend
     component: nova
+  {{- if .Values.vpa.set_main_container }}
+  annotations:
+    vpa-butler.cloud.sap/main-container: nova-console-{{ $type }}
+  {{- end }}
 spec:
   replicas: {{ .Values.pod.replicas.console }}
   revisionHistoryLimit: {{ .Values.pod.lifecycle.upgrades.deployments.revision_history }}
@@ -39,6 +43,7 @@ spec:
         prometheus.io/scrape: "true"
         prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
         {{- end }}
+        {{- include "utils.linkerd.pod_and_service_annotation" . | indent 8 }}
     spec:
       {{- tuple . "nova" (print "console-" $name) | include "kubernetes_pod_anti_affinity" | nindent 6 }}
       {{- include "utils.proxysql.pod_settings" . | nindent 6 }}
@@ -55,22 +60,20 @@ spec:
                 path: nova.conf
               - key:  logging.ini
                 path: logging.ini
-          {{- if $is_cell2 }}
-              - key: nova-cell2.conf
-                path: nova.conf.d/cell2.conf
-          {{- else }}
           - secret:
               name: nova-etc
               items:
-              - key: db.conf
-                path: nova.conf.d/db.conf
-          {{- end }}
+              - key: api-db.conf
+                path: nova.conf.d/api-db.conf
+              - key: {{ $cell_name }}.conf
+                path: nova.conf.d/{{ $cell_name }}.conf
           - configMap:
               name: nova-console
               items:
               - key: console-{{ $cell_name }}-{{ $type }}.conf
                 path: nova.conf.d/console-{{ $cell_name }}-{{ $type }}.conf
       {{- include "utils.proxysql.volumes" . | indent 6 }}
+      {{- include "utils.trust_bundle.volumes" . | indent 6 }}
       containers:
       - name: nova-console-{{ $type }}
         image: {{ tuple . (print (title $type) "proxy") | include "container_image_nova" }}
@@ -90,16 +93,6 @@ spec:
         - name: PYTHONWARNINGS
           value: {{ .Values.python_warnings | quote }}
 {{- end }}
-{{- if $config.inject_nova_credentials }}
-        - name: OS_USERNAME
-          value: {{ .Values.global.nova_service_user | default "nova" }}
-        - name: OS_PASSWORD
-          value: {{ required ".Values.global.nova_service_password is missing" .Values.global.nova_service_password }}
-        - name: OS_PROJECT_NAME
-          value: {{.Values.global.keystone_service_project | default "service" }}
-        - name: OS_AUTH_URL
-          value: {{.Values.global.keystone_api_endpoint_protocol_internal | default "http"}}://{{include "keystone_api_endpoint_host_internal" .}}:{{ .Values.global.keystone_api_port_internal | default 5000}}/v3
-{{- end }}
         ports:
         - name: {{ $type }}
           containerPort: {{ $config.portInternal }}
@@ -107,6 +100,7 @@ spec:
         - name: nova-etc
           mountPath: /etc/nova
         {{- include "utils.proxysql.volume_mount" . | indent 8 }}
+        {{- include "utils.trust_bundle.volume_mount" . | indent 8 }}
       {{- include "utils.proxysql.container" . | indent 6 }}
 {{- end }}
 {{- end }}

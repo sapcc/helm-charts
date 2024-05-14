@@ -12,10 +12,10 @@ input {
   http {
     port  => {{.Values.input_http_port}}
     tags => ["audit"]
-    user => '{{.Values.global.elk_elasticsearch_http_user}}'
-    password => '{{.Values.global.elk_elasticsearch_http_password}}'
+    user => '{{.Values.global.logstash_external_http_user}}'
+    password => '${AUDIT_HTTP_IN}'
 {{ if eq .Values.global.clusterType "metal" -}}
-    ssl => true
+    ssl_enabled => true
     ssl_certificate => '/tls-secret/tls.crt'
     ssl_key => '/usr/share/logstash/config/tls.key'
     threads => 12
@@ -188,21 +188,21 @@ filter {
 output {
   if [sap][cc][audit][source] == "awx" {
     http {
-      cacert => "/usr/share/logstash/config/ca.pem"
+      ssl_certificate_authorities => ["/usr/share/logstash/config/ca.pem"]
       url => "https://{{ .Values.global.forwarding.audit_awx.host }}"
       format => "json"
       http_method => "post"
     }
   } else if [sap][cc][audit][source] == "flatcar" {
     http {
-      cacert => "/usr/share/logstash/config/ca.pem"
+      ssl_certificate_authorities => ["/usr/share/logstash/config/ca.pem"]
       url => "https://{{ .Values.global.forwarding.audit_auditbeat.host }}"
       format => "json"
       http_method => "post"
     }
   } else if [type] == "audit" or "audit" in [tags] {
     http {
-      cacert => "/usr/share/logstash/config/ca.pem"
+      ssl_certificate_authorities => ["/usr/share/logstash/config/ca.pem"]
       url => "https://{{ .Values.global.forwarding.audit.host }}"
       format => "json"
       http_method => "post"

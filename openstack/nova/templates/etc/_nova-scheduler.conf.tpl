@@ -19,6 +19,9 @@ bigvm_host_size_filter_uses_flavor_extra_specs = true
 bigvm_host_size_filter_host_fractions = full:1,half:0.5,two_thirds:0.71
 vm_size_threshold_vm_size_mb = {{ .Values.scheduler.vm_size_threshold_vm_size_mb }}
 vm_size_threshold_hv_size_mb = {{ .Values.scheduler.vm_size_threshold_hv_size_mb }}
+{{- if .Values.nova_bigvm_enabled }}
+hana_detection_strategy = memory_mb
+{{- end }}
 
 cpu_weight_multiplier = {{ .Values.scheduler.cpu_weight_multiplier }}
 ram_weight_multiplier = {{ .Values.scheduler.ram_weight_multiplier }}

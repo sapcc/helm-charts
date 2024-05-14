@@ -1,0 +1,27 @@
+groups:
+- name: CronusQueue
+  rules:
+  - alert: CronusRabbitMqMetricPodMalfunction
+    expr: (kube_pod_container_status_running{namespace="cronus", pod=~"cronus-rabbitmq.*", container=~"metrics"} != 1) or (count(kube_pod_container_status_running{namespace="cronus", pod=~"cronus-rabbitmq.*", container=~"metrics"}) == 0)
+    for: 15m
+    labels:
+      service: email
+      severity: warning
+      tier: os
+      playbook: docs/devops/alert/cronus
+      support_group: email
+    annotations:
+      description: rabbitmq metric pod malfunction
+      summary: rabbitmq metric pod malfunction
+  - alert: CronusRabbitMqRabbitMqPodMalfunction
+    expr: (kube_pod_container_status_running{namespace="cronus", pod=~"cronus-rabbitmq.*", container=~"rabbitmq"} != 1) or (count(kube_pod_container_status_running{namespace="cronus", pod=~"cronus-rabbitmq.*", container=~"rabbitmq"}) == 0)
+    for: 15m
+    labels:
+      service: email
+      severity: warning
+      tier: os
+      playbook: docs/devops/alert/cronus
+      support_group: email
+    annotations:
+      description: rabbitmq metric pod malfunction
+      summary: rabbitmq metric pod malfunction

@@ -7,6 +7,10 @@ metadata:
     system: openstack
     type: backend
     component: nova
+  {{- if .Values.vpa.set_main_container }}
+  annotations:
+    vpa-butler.cloud.sap/main-container: nova-scheduler
+  {{- end }}
 spec:
   replicas: {{ .Values.pod.replicas.scheduler }}
   revisionHistoryLimit: {{ .Values.pod.lifecycle.upgrades.deployments.revision_history }}
@@ -32,6 +36,7 @@ spec:
         prometheus.io/scrape: "true"
         prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
         {{- end }}
+        {{- include "utils.linkerd.pod_and_service_annotation" . | indent 8 }}
         configmap-etc-hash: {{ include (print $.Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
         configmap-scheduler-etc-hash: {{ include (print $.Template.BasePath "/scheduler-etc-configmap.yaml") . | sha256sum }}
     spec:
@@ -62,7 +67,7 @@ spec:
           {{- end }}
           livenessProbe:
             exec:
-              command: ["openstack-agent-liveness", "--component", "nova", "--config-file", "/etc/nova/nova.conf"]
+              command: ["openstack-agent-liveness", "--component", "nova", "--config-file", "/etc/nova/nova.conf", "--config-file", "/etc/nova/nova.conf.d/keystoneauth-secrets.conf"]
             initialDelaySeconds: 60
             periodSeconds: 60
             timeoutSeconds: 20
@@ -74,6 +79,7 @@ spec:
           - name: nova-etc
             mountPath: /etc/nova
           {{- include "utils.proxysql.volume_mount" . | indent 10 }}
+          {{- include "utils.trust_bundle.volume_mount" . | indent 10 }}
         {{- tuple . .Values.scheduler.workers | include "utils.proxysql.container" | indent 8 }}
         {{- if .Values.scheduler.rpc_statsd_enabled }}
         - name: statsd
@@ -106,8 +112,12 @@ spec:
           - secret:
               name: nova-etc
               items:
-              - key:  db.conf
-                path: nova.conf.d/db.conf
+              - key:  api-db.conf
+                path: nova.conf.d/api-db.conf
+              - key: cell1.conf
+                path: nova.conf.d/cell1.conf
+              - key: keystoneauth-secrets.conf
+                path: nova.conf.d/keystoneauth-secrets.conf
           - configMap:
               name: nova-scheduler-etc
               items:
@@ -124,3 +134,4 @@ spec:
                 path: statsd-exporter.yaml
 {{- end }}
       {{- include "utils.proxysql.volumes" . | indent 6 }}
+      {{- include "utils.trust_bundle.volumes" . | indent 6 }}

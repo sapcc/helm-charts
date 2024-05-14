@@ -3,6 +3,7 @@ namespace: metis
 global:
   dbUser: "metis"
   #dbPassword: <defined-in-secrets>
+  linkerd_requested: false
 
 alerts:
   prometheus: "infra-collector"
@@ -30,7 +31,9 @@ mariadb:
   name: metisdb
   enabled: true
   dbName: metis
-  initdb_configmap: metis-initdb
+  initdb_secret: true
+  ccroot_user:
+    enabled: true
   ronly_user: ronly
   ronly_password: DEFINED-IN-REGION
   long_query_time: 10
@@ -80,6 +83,9 @@ mariadb:
     prometheus: "infra-collector"
     alert_db_not_ready: false
     support_group: "observability"
+
+  vpa:
+    set_main_container: true
 
 ingress:
   disco: true
@@ -135,7 +141,7 @@ metis:
   prometheus:
     enabled: false
   releaseLocks: false
-  migration_version: 8
+  migration_version: 9
   requiredDatabases:
     - "keystone"
     - "nova"

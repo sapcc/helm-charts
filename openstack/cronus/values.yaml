@@ -26,7 +26,7 @@ cronus:
   smtps: 587
   prometheus: 2772
   listenProxyProtocol: false
-  proxyHeaderTimeout: 1000ms
+  proxyHeaderTimeout: 2000ms
   readTimeout: 30
   writeTimeout: 30
   keepAliveTimeout: 61
@@ -441,6 +441,7 @@ rhea:
   queue:
     maxTTL: 0s
     maxTries: 5
+    maxMessages: 0
   tls:
     serverTlsName: tls-secret-rhea
     clientTlsAuth: VerifyClientCertIfGiven
@@ -511,6 +512,7 @@ rhea_rabbitmq:
     size: 10Gi
   metrics:
     enabled: false
+
 poller: # service that handles received emails
   enabled: false
   # all below can be used only with a deployment style
@@ -626,7 +628,10 @@ poller: # service that handles received emails
   prometheus: 2112 # relevant for action: simulator
   charSet: UTF-8 # relevant for action: simulator
   period: 60 # in seconds, relevant for action: simulator
-
+  cors:
+    enabled: false
+    allowedOrigins:
+    allowedHeaders:
 notifier:
   enabled: false
   host: test
@@ -663,7 +668,7 @@ postfix:
     url: ldaps://ldapmaster-ext-svc.management.svc.{{.Values.global.region}}.cronus-pbe.only.sap:636
     clientKeyPath: /etc/certs/ldap.key
     clientCertPath: /etc/certs/ldap.crt
-    baseDN: ou=postfix,dc=cm,dc=net,dc=sap
+    baseDN: dc=cm,dc=net,dc=sap
     projectAttributes:
       - top
       - x-sap-ccloudProject

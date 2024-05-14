@@ -16,21 +16,26 @@ global:
   # clusterType:
 # Name of the Prometheus to publish to
   alerts:
+    enabled: false
     prometheus: infra-frontend
   aggregations:
     prometheus: infra-frontend
+  linkerd_requested: true
+
 # Values for Infrastructure Prometheus Frontend.
 prometheus-infra-frontend:
   name: infra-frontend
   enabled: true
-  retentionTime: 14d
-  additionalScrapeConfigs:
-    name: prometheus-infra-frontend-additional-scrape-config
-    key: scrape-config.yaml
   ingress:
     enabled: true
     hosts:
       - prometheus-infra.scaleout
+
+  internalIngress:
+    enabled: true
+    hosts:
+      - prometheus-infra-internal.scaleout
+
   persistence:
     enabled: true
     # prom-operator does not support other accessModes than RWO
@@ -44,22 +49,32 @@ prometheus-infra-frontend:
     authentication:
       enabled: false
     hosts:
-      - alertmanager.scaleout.eu-de-1.cloud.sap
-      - alertmanager.scaleout.eu-nl-1.cloud.sap
-  # send alerts to dedicated tier
+      - alertmanager-internal.scaleout.eu-de-1.cloud.sap
+      - alertmanager-internal.scaleout.eu-nl-1.cloud.sap
+
   alerts:
-    multipleTargetScrapes:
+
+    # thanos name that picks up the alerts from Prometheus - mainly used when kube_ metrics needs to be present
+    thanos:
       enabled: true
-      # List of exceptions for scrape jobs. This is joined together with a `|`.
-      exceptions:
-        # prometheus-infra-collector and prometheus-infra-snmp scrape the same target but different metrics
-        - "prometheus-infra.*"
+      name: scaleout
+
+    multipleTargetScrapes:
+      enabled: false
 
   # Kubernetes resource requests and limits for this Prometheus.
   resources:
     requests:
       cpu: 200m
       memory: 16Gi
+
+  vpaUpdateMode: "Auto"
+  vpaResources:
+    prometheus:
+      containerName: "prometheus"
+      maxAllowed:
+        memory: "40Gi"
+
   serviceDiscoveries:
     pods:
       enabled: true
@@ -67,12 +82,22 @@ prometheus-infra-frontend:
     scrapeTimeout: 55s
 
   thanos:
-    enabled: false
+    enabled: true
 
-# Import metrics from kubernetes Prometheus
-kube_state_metrics_exporter:
-  enabled: true
-  prometheusName: infra-frontend
+  # Frontend should not be in the name anymore, so this is the overwritten name without frontend.
+  # Eventually this naming is going to fade out and this section can be removed.
+  thanosSeeds:
+    swiftStorageConfig:
+      containerName: prometheus-infra-scaleout-thanos
+      userName: prometheus-infra-scaleout-thanos
+
+
+thanos:
+  name: infra-frontend
+  deployWholeThanos: true
+  compactor:
+    dataVolume:
+      enabled: true
 
 # Collector Prometheus are only accessible after presenting a valid SSO certificate.
 authentication:
@@ -85,12 +110,6 @@ collector:
   scrapeInterval: 2m
   scrapeTimeout: 115s
 interconnect_sre:
-  enabled: false
-
-cronus:
-  enabled: false
-
-pushgateway_infra:
   enabled: false
 
 # migration to thanos directives

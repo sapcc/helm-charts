@@ -8,6 +8,10 @@ metadata:
   labels:
     {{- include "statsd-exporter.labels" $exporter.name | nindent 4 }}
   annotations:
+    {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+    ingress.kubernetes.io/service-upstream: "true"
+    nginx.ingress.kubernetes.io/service-upstream: "true"
+    {{- end }}
     kubernetes.io/tls-acme: {{ required ".Values.ingress.tls variable missing" $.Values.ingress.tls | quote }}
     disco: {{ required ".Values.ingress.disco variable missing" $.Values.ingress.disco | quote }}
 spec:

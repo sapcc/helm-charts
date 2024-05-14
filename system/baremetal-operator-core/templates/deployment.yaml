@@ -1,0 +1,106 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "baremetal-operator-core.fullname" . }}-baremetal-operator-controller-manager
+  labels:
+    control-plane: controller-manager
+    webhook: metal3-io-v1alpha1-baremetalhost
+  {{- include "baremetal-operator-core.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.baremetalOperatorControllerManager.replicas }}
+  selector:
+    matchLabels:
+      control-plane: controller-manager
+    {{- include "baremetal-operator-core.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        control-plane: controller-manager
+        webhook: metal3-io-v1alpha1-baremetalhost
+      {{- include "baremetal-operator-core.selectorLabels" . | nindent 8 }}
+    spec:
+      containers:
+      - args: {{- toYaml .Values.baremetalOperatorControllerManager.manager.args | nindent
+          8 }}
+        command:
+        - /baremetal-operator
+        env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: KUBERNETES_CLUSTER_DOMAIN
+          value: {{ quote .Values.kubernetesClusterDomain }}
+        envFrom:
+        - configMapRef:
+            name: {{ include "baremetal-operator-core.fullname" . }}-ironic
+        image: {{ .Values.baremetalOperatorControllerManager.manager.image.repository }}:{{
+          .Values.baremetalOperatorControllerManager.manager.image.tag | default .Chart.AppVersion
+          }}
+        imagePullPolicy: {{ .Values.baremetalOperatorControllerManager.manager.imagePullPolicy
+          }}
+        livenessProbe:
+          failureThreshold: 10
+          httpGet:
+            path: /healthz
+            port: 9440
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 2
+        name: manager
+        ports:
+        - containerPort: 9443
+          name: webhook-server
+          protocol: TCP
+        readinessProbe:
+          failureThreshold: 10
+          httpGet:
+            path: /readyz
+            port: 9440
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 2
+        resources: {}
+        securityContext: {{- toYaml .Values.baremetalOperatorControllerManager.manager.containerSecurityContext
+          | nindent 10 }}
+        volumeMounts:
+        - mountPath: /tmp/k8s-webhook-server/serving-certs
+          name: cert
+          readOnly: true
+        - mountPath: /opt/metal3/auth/ironic
+          name: ironic-credentials
+          readOnly: true
+      - args: {{- toYaml .Values.baremetalOperatorControllerManager.kubeRbacProxy.args
+          | nindent 8 }}
+        env:
+        - name: KUBERNETES_CLUSTER_DOMAIN
+          value: {{ quote .Values.kubernetesClusterDomain }}
+        image: {{ .Values.baremetalOperatorControllerManager.kubeRbacProxy.image.repository
+          }}:{{ .Values.baremetalOperatorControllerManager.kubeRbacProxy.image.tag | default
+          .Chart.AppVersion }}
+        name: kube-rbac-proxy
+        ports:
+        - containerPort: 8443
+          name: https
+        resources: {}
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      serviceAccountName: {{ include "baremetal-operator-core.fullname" . }}-baremetal-operator-controller-manager
+      terminationGracePeriodSeconds: 10
+      volumes:
+      - name: cert
+        secret:
+          defaultMode: 420
+          secretName: bmo-webhook-server-cert
+      - name: ironic-credentials
+        secret:
+          defaultMode: 420
+          secretName: ironic-credentials

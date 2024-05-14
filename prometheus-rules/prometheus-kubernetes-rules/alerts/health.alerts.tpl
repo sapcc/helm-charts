@@ -3,7 +3,7 @@ groups:
 - name: kubernetes.alerts
   rules:
   - alert: KubernetesNodeManyNotReady
-    expr: count((kube_node_status_condition{condition="Ready",status="true"} unless on (node) kube_node_labels{label_cloud_sap_maintenance_state="in-maintenance"}) == 0) > 2
+    expr: count((kube_node_status_condition{condition="Ready",status="true"} unless on (node) (kube_node_labels{label_cloud_sap_maintenance_state="in-maintenance"} or kube_node_labels{label_kubernetes_cloud_sap_role="storage"})) == 0) > 4
     for: 1h
     labels:
       tier: {{ required ".Values.tier missing" .Values.tier }}
@@ -77,6 +77,20 @@ groups:
     annotations:
       description: Container {{`{{ $labels.container }}`}} of pod {{`{{ $labels.namespace }}`}}/{{`{{ $labels.pod }}`}} is restarting constantly.{{`{{ if eq $labels.support_group "containers"}}`}} Is `owner-info` set --> Contact respective service owner! If not, try finding him/her and make sure, `owner-info` is set!{{`{{ end }}`}}
       summary: Pod is in a restart loop
+
+  - alert: KubernetesPodCannotPullImage
+    expr: label_replace((sum by(pod_name, namespace) (rate(kube_pod_image_pull_backoff_total[15m]))), "pod", "$1", "pod_name", "(.*)") * on (pod) group_left(label_alert_tier, label_alert_service, label_ccloud_support_group, label_ccloud_service) (max without (uid) (kube_pod_labels)) > 0
+    for: 1h
+    labels:
+      tier: {{ include "alertTierLabelOrDefault" .Values.tier }}
+      service: {{ include "serviceFromLabelsOrDefault" "k8s" }}
+      support_group: {{ include "supportGroupFromLabelsOrDefault" "containers" }}
+      severity: warning
+      context: pod
+      meta: "Pod {{`{{ $labels.namespace }}`}}/{{`{{ $labels.pod }}`}} cannot pull all images"
+    annotations:
+      description: The pod {{`{{ $labels.namespace }}`}}/{{`{{ $labels.pod }}`}} cannot pull all images.{{`{{ if eq $labels.support_group "containers"}}`}} Is `owner-info` set --> Contact respective service owner! If not, try finding him/her and make sure, `owner-info` is set!{{`{{ end }}`}}
+      summary: Pod cannot pull all iamges
 
   - alert: KubernetesTooManyOpenFiles
     expr: 100*process_open_fds{job=~"kubernetes-kubelet|kubernetes-apiserver"} / process_max_fds > 50

@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ template "postgres.fullname" . }}
+  annotations:
+    {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+    linkerd.io/inject: enabled
+    {{- end }}
+spec:
+  selector:
+    app: {{ template "postgres.fullname" . }}
+  ports:
+  - name: postgresql
+    port: 5432
+    targetPort: postgresql

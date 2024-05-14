@@ -12,11 +12,14 @@ metadata:
   name: {{ .Release.Name }}
   annotations:
     kubernetes.io/tls-acme: "true"
-    disco: "true"
     ingress.kubernetes.io/auth-url: "https://auth-internal.eu-de-2.{{ $tld }}/oauth2/auth"
+    nginx.ingress.kubernetes.io/auth-url: "https://auth-internal.eu-de-2.{{ $tld }}/oauth2/auth"
     ingress.kubernetes.io/auth-signin: "https://auth-internal.eu-de-2.{{ $tld }}/oauth2/start"
+    nginx.ingress.kubernetes.io/auth-signin: "https://auth-internal.eu-de-2.{{ $tld }}/oauth2/start"
     ingress.kubernetes.io/auth-request-redirect: $escaped_request_uri
+    nginx.ingress.kubernetes.io/auth-request-redirect: $escaped_request_uri
     {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+    ingress.kubernetes.io/service-upstream: "true"
     nginx.ingress.kubernetes.io/service-upstream: "true"
     {{- end }}
 
@@ -32,10 +35,17 @@ spec:
       http:
         paths:
           - path: /
-            pathType: Prefix
+            pathType: Exact
             backend:
               service:
-                name: {{ .Release.Name }}
+                name: {{ .Release.Name }}-landing-page
+                port:
+                  number: 80
+          - path: /logo.svg
+            pathType: Exact
+            backend:
+              service:
+                name: {{ .Release.Name }}-landing-page
                 port:
                   number: 80
           - path: /v2/
@@ -61,9 +71,10 @@ metadata:
   name: {{ .Release.Name }}-api
   annotations:
     kubernetes.io/tls-acme: "true"
-    disco: "true"
     ingress.kubernetes.io/enable-cors: "true"
+    nginx.ingress.kubernetes.io/enable-cors: "true"
     ingress.kubernetes.io/cors-allow-origin: '*'
+    nginx.ingress.kubernetes.io/cors-allow-origin: '*'
 
 spec:
   tls:
@@ -76,14 +87,7 @@ spec:
       host: '{{ $domain }}-api.global.{{ $tld }}'
       http:
         paths:
-          - path: /json
-            pathType: Prefix
-            backend:
-              service:
-                name: {{ .Release.Name }}
-                port:
-                  number: 80
-          - path: /v2/violations
+          - path: /v2/
             pathType: Prefix
             backend:
               service:

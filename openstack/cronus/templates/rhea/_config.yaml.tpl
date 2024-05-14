@@ -30,6 +30,7 @@ rhea:
     uri: amqp://{{ $r_user }}:{{ $r_creds }}@{{ $r_host }}/
     maxTTL: {{ .Values.rhea.queue.maxTTL | default "0s" }}
     maxTries: {{ .Values.rhea.queue.maxTries | default 5 }}
+    maxMessages: {{ .Values.rhea.queue.maxMessages | default 0 }}
   server:
     http: {{ .Values.rhea.server.http }}
     maxRequestSize: {{ mul (.Values.rhea.server.maxRequestSize | default .Values.global.maxBodySize) 1 }}

@@ -16,6 +16,21 @@ groups:
       description: 'Certificate {{ $labels.certificate_name }} created by {{ $labels.full_name }} in Project_id {{ $labels.project_id }} will expire in {{ $value }} Days'
       summary: 'Certificate will expire soon'
 
+  - alert: OpenstackBarbicanUserOpaqueCertificateExpiresIn30days
+    expr: 'label_replace(label_replace(openstack_user_last_active_at{email_id!~"No Email-ID"}, "email", "$1", "email_id","(?:\\[\")(.*)(?:\"\\])"),"full_name","$1","user_name","(?:\\[\")(.*)(?:\"\\])") +on (user_id) group_right (email, full_name) (0 <= round((label_replace(openstack_barbican_opaque_certificate_expiration_date, "user_id", "$1", "creator_id","(.+)") - time()) / 86400 <= 30))'
+    for: 1h
+    labels:
+      severity: info
+      tier: os
+      service: 'barbican'
+      context: 'certificate'
+      dashboard: barbican
+      support_group: foundation
+      meta: 'Certificate {{ $labels.certificate_name }} will expire in {{ $value }} Days'
+    annotations:
+      description: 'Opaque Certificate {{ $labels.certificate_name }} created by {{ $labels.full_name }} in Project_id {{ $labels.project_id }} will expire in {{ $value }} Days'
+      summary: 'Opaque Certificate will expire soon'
+
   - alert: OpenstackBarbicanUnresolvedSentryIssues
     expr: sentry_unresolved_issues_count{project="barbican"} > 0
     for: 10m

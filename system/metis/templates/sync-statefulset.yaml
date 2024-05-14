@@ -15,6 +15,10 @@ metadata:
     app.kubernetes.io/managed-by: {{ $.Release.Service }}
     app.kubernetes.io/version: "{{ $.Values.backup_v2.image_version }}"
     alert-service: "metis"
+  annotations:
+    {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+    linkerd.io/inject: enabled
+    {{- end }}
 spec:
   ports:
   - port: 8080
@@ -53,6 +57,10 @@ spec:
       annotations:
         {{- $data := dict "common" $common "backup" $backup "mariadb" $.Values.mariadb "root" $ }}
         checksum/config: {{ include "sync.configmap" $data | sha256sum }}
+        kubectl.kubernetes.io/default-container: "sync"
+        {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+        linkerd.io/inject: enabled
+        {{- end }}
     spec:
       affinity:
         podAntiAffinity:
@@ -67,6 +75,10 @@ spec:
                   values:
                   - mariadb-replication
                   - mariadb-sync
+                - key: app
+                  operator: In
+                  values:
+                  - {{ $backup.name }}-mariadb
       terminationGracePeriodSeconds: 10
       containers:
       - name: sync

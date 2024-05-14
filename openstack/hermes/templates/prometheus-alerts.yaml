@@ -14,8 +14,12 @@ metadata:
     service: hermes
     support_group: observability
     type: alerting-rules
+    {{- if contains "thanos" $target }}
+    # alerts, which combine metrics from openstack and kubernetes, are available from the thanos metal query.
+    {{ $target }}: {{ index $values.alerts.prometheus $target | required (printf "$values.alerts.prometheus.%s missing" $target) }}
+    {{- else }}
     prometheus: {{ index $values.alerts.prometheus $target | required (printf "$values.alerts.prometheus.%s missing" $target) }}
-
+    {{- end }}
 spec:
 {{ printf "%s" $bytes | indent 2 }}
 

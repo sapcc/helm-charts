@@ -4,12 +4,16 @@
 kind: Deployment
 apiVersion: apps/v1
 metadata:
-  name: manila-share-netapp-{{$share.name}}-ensure
+  name: {{ .Release.Name }}-share-netapp-{{$share.name}}-ensure
   labels:
     system: openstack
     component: manila
+  {{- if .Values.vpa.set_main_container }}
+  annotations:
+    vpa-butler.cloud.sap/main-container: reexport
+  {{- end }}
 spec:
-  replicas: 1
+  replicas: {{ .Values.pod.replicas.ensure }}
   revisionHistoryLimit: 2
   strategy:
     type: RollingUpdate
@@ -18,17 +22,20 @@ spec:
       maxSurge: 1
   selector:
     matchLabels:
-        name: manila-share-netapp-{{$share.name}}-ensure
+        name: {{ .Release.Name }}-share-netapp-{{$share.name}}-ensure
   template:
     metadata:
       labels:
-        name: manila-share-netapp-{{$share.name}}-ensure
+        name: {{ .Release.Name }}-share-netapp-{{$share.name}}-ensure
         alert-tier: os
         alert-service: manila
       annotations:
         configmap-etc-hash: {{ include (print .Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
         configmap-netapp-hash: {{ list . $share | include "share_netapp_configmap" | sha256sum }}
+        kubectl.kubernetes.io/default-container: reexport
         netapp_deployment-hash: {{ list . $share | include "share_netapp" | sha256sum }}
+        secrets-hash: {{ include (print .Template.BasePath "/secrets.yaml") . | sha256sum }}
+        {{- include "utils.linkerd.pod_and_service_annotation" . | indent 8 }}
     spec:
       affinity:
         podAffinity:
@@ -40,21 +47,30 @@ spec:
                 - key: name
                   operator: In
                   values:
-                  - manila-share-netapp-{{$share.name}}
+                  - {{ .Release.Name }}-share-netapp-{{$share.name}}
               topologyKey: kubernetes.io/hostname
       initContainers:
       {{- tuple . (dict "service" (print .Release.Name "-mariadb")) | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 8 }}
       containers:
         - name: reexport
-          image: "{{.Values.global.registry}}/manila-ensure:{{.Values.loci.imageVersionEnsure}}"
+          image: "{{.Values.global.registry}}/loci-manila:{{.Values.loci.imageVersion}}"
           imagePullPolicy: IfNotPresent
           command:
             - dumb-init
-            - /bin/bash
-            - /scripts/manila-ensure-reexport.sh
+            {{- if .Values.pyreloader_enabled }}
+            - pyreloader
+            {{- end }}
+            - manila-share
+            - --config-file
+            - /etc/manila/manila.conf
+            - --config-file
+            - /etc/manila/manila.conf.d/secrets.conf
+            - --config-file
+            - /etc/manila/backend.conf
+            - --config-file
+            - /etc/manila/backend-secret.conf
+            - --reexport
           env:
-            - name: MANILA_NETAPP_ENSURE_INTERVAL
-              value: "240"
             {{- if .Values.sentry.enabled }}
             - name: SENTRY_DSN_SSL
               valueFrom:
@@ -69,6 +85,8 @@ spec:
               name: manila-etc
             - name: etcmanila
               mountPath: /etc/manila
+            - name: manila-etc-confd
+              mountPath: /etc/manila/manila.conf.d
             - name: manila-etc
               mountPath: /etc/manila/manila.conf
               subPath: manila.conf
@@ -81,7 +99,12 @@ spec:
               mountPath: /etc/manila/backend.conf
               subPath: backend.conf
               readOnly: true
+            - name: backend-secret
+              mountPath: /etc/manila/backend-secret.conf
+              subPath: backend-secret.conf
+              readOnly: true
             {{- include "utils.proxysql.volume_mount" . | indent 12 }}
+            {{- include "utils.trust_bundle.volume_mount" . | indent 12 }}
           {{- if .Values.pod.resources.share_ensure }}
           resources:
             {{ toYaml .Values.pod.resources.share_ensure | nindent 13 }}
@@ -110,9 +133,16 @@ spec:
         - name: manila-etc
           configMap:
             name: manila-etc
+        - name: manila-etc-confd
+          secret:
+            secretName: {{ .Release.Name }}-secrets
         - name: backend-config
           configMap:
-            name: share-netapp-{{$share.name}}
+            name: {{ .Release.Name }}-share-netapp-{{$share.name}}
+        - name: backend-secret
+          secret:
+            secretName: {{ .Release.Name }}-share-netapp-{{$share.name}}-secret
         {{- include "utils.proxysql.volumes" . | indent 8 }}
+        {{- include "utils.trust_bundle.volumes" . | indent 8 }}
 {{ end }}
 {{- end -}}

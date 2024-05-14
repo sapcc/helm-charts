@@ -14,9 +14,10 @@ spec:
         app: plutono
         component: plutono
       annotations:
-        checksum/plutono.etc: {{ include "plutono/templates/plutono-etc-configmap.yaml" . | sha256sum }}
-        checksum/plutono.bin: {{ include "plutono/templates/plutono-bin-configmap.yaml" . | sha256sum }}
+        checksum/plutono.etc: {{ include "plutono/templates/plutono-etc-secret.yaml" . | sha256sum }}
+        checksum/plutono.bin: {{ include "plutono/templates/plutono-bin-secret.yaml" . | sha256sum }}
         checksum/plutono.ini: {{ include "plutono/templates/_plutono.ini.tpl" . | sha256sum }}
+        checksum/plutono-secrets: {{ include "plutono/templates/plutono-secrets.yaml" . | sha256sum }}
         checksum/ldap.toml: {{ include "plutono/templates/_ldap.toml.tpl" . | sha256sum }}
         checksum/plutono-start: {{ include "plutono/templates/_plutono-start.tpl" . | sha256sum }}
         checksum/plutono-initial-setup: {{ include "plutono/templates/_plutono-initial-setup.tpl" . | sha256sum }}
@@ -26,11 +27,11 @@ spec:
         zone: farm
       volumes:
         - name: plutono-bin
-          configMap:
-            name: plutono-bin
+          secret:
+            secretName: plutono-bin
         - name: plutono-etc
-          configMap:
-            name: plutono-etc
+          secret:
+            secretName: plutono-etc
 {{- if .Values.authentication.enabled }}
         - name: plutono-secrets
           secret:
@@ -47,15 +48,15 @@ spec:
           emptyDir: {}
       initContainers:
       - name: fix-permissions
-        image: {{ .Values.global.dockerHubMirror | required ".Values.global.dockerHubMirror is missing" }}/library/busybox:1.34
-        command: ["/bin/chown","-R","65533:65533", "/tmp/git"]
+        image: {{.Values.global.registry}}/shared-app-images/alpine-busybox:latest-latest
+        command: ["/bin/chown","-R","65533:65533", "/git"]
         volumeMounts:
         - name: plutono-git
-          mountPath: /tmp/git
+          mountPath: /git
       containers:
         - name: "plutono"
           image: {{ .Values.global.ghcrIoMirror | required ".Values.global.ghcrIoMirror is missing" }}/{{.Values.plutono.image}}:{{.Values.plutono.image_version}}
-          imagePullPolicy: {{.Values.image.pullPolicy}}
+          imagePullPolicy: {{.Values.image.pullPolicy }}
           command:
             - /bin/bash
           args:
@@ -65,6 +66,11 @@ spec:
           env:
             - name: PL_PATHS_PROVISIONING
               value: "/var/lib/plutono/provisioning"
+            - name: PL_DATABASE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: '{{ $.Release.Name }}-pguser-plutono'
+                  key: 'postgres-password'
           ports:
             # Note: even if the port is called metrics, Grafana UI also runs on it
             - name: metrics
@@ -94,25 +100,31 @@ spec:
             initialDelaySeconds: 120
             periodSeconds: 30
         - name: "gitsync"
-          image: {{.Values.global.registry}}/git-sync:v3.1.6
+          image: {{.Values.global.registryK8sIoMirror}}/git-sync/git-sync:v4.2.1
           imagePullPolicy: {{.Values.image.pullPolicy}}
           args:
             - "--repo={{.Values.plutono.gitsync.repository}}"
-            - "--branch={{.Values.plutono.gitsync.branch}}"
-            - "--wait=30"
-            - "--max-sync-failures=-1"
+            - "--ref={{.Values.plutono.gitsync.branch}}"
+            - "--period=30s"
+            - "--max-failures=-1"
             - "--http-bind=:9090"
             - "--http-metrics"
           env:
             - name: GIT_SSL_NO_VERIFY
               value: "true"
-            - name: GIT_SYNC_USERNAME
-              value: {{.Values.plutono.gitsync.username}}
-            - name: GIT_SYNC_PASSWORD
-              value: {{.Values.plutono.gitsync.password}}
+            - name: GITSYNC_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: plutono-secrets
+                  key: git_sync_user
+            - name: GITSYNC_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: plutono-secrets
+                  key: git_sync_password
           volumeMounts:
             - name: plutono-git
-              mountPath: /tmp/git
+              mountPath: /git
           resources:
             requests:
               memory: "250Mi"
@@ -149,7 +161,7 @@ spec:
               cpu: "150m"
 {{- if .Values.nginx.enabled }}
         - name: nginx
-          image: {{ .Values.global.dockerHubMirror | required ".Values.global.dockerHubMirror is missing" }}/library/{{ .Values.nginx.image }}:{{ .Values.nginx.image_version }}
+          image: {{.Values.global.registry}}/shared-app-images/alpine-nginx:mainline-slim-latest
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           volumeMounts:
             - name: plutono-etc

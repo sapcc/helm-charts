@@ -17,8 +17,6 @@ storage_availability_zone = {{ .Values.default_availability_zone | default .Valu
 # rootwrap_config = /etc/manila/rootwrap.conf
 api_paste_config = /etc/manila/api-paste.ini
 
-transport_url = {{ include "rabbitmq.transport_url" . }}
-
 osapi_share_listen = 0.0.0.0
 osapi_share_base_URL = https://{{include "manila_api_endpoint_host_public" .}}
 
@@ -43,6 +41,10 @@ delete_share_server_with_last_share = {{ .Values.delete_share_server_with_last_s
 
 use_scheduler_creating_share_from_snapshot = {{ .Values.use_scheduler_creating_share_from_snapshot | default false }}
 
+is_deferred_deletion_enabled = {{ .Values.is_deferred_deletion_enabled | default false }}
+
+periodic_deferred_delete_interval = {{ .Values.periodic_deferred_delete_interval | default 300 }}
+
 scheduler_default_filters = {{ .Values.scheduler_default_filters | default "AvailabilityZoneFilter,CapacityFilter,CapabilitiesFilter,ShareReplicationFilter,AffinityFilter,AntiAffinityFilter,OnlyHostFilter" }}
 scheduler_default_weighers = CapacityWeigher,GoodnessWeigher,HostAffinityWeigher
 scheduler_default_share_group_filters = AvailabilityZoneFilter,ConsistentSnapshotFilter,CapabilitiesFilter,DriverFilter
@@ -51,33 +53,32 @@ migration_ignore_scheduler = True
 # default time to wait for access rules to become active in migration cutover was 180 seconds
 migration_wait_access_rules_timeout = 3600
 
+# options for manila.share.manager
 server_migration_driver_continue_update_interval = {{ .Values.server_migration_driver_continue_update_interval | default 900 }}
 server_migration_extend_neutron_network = {{ .Values.server_migration_extend_neutron_network | default true }}
+ensure_driver_resources_interval = {{ .Values.ensure_driver_resources_interval | default 14400 }}
 
 statsd_port = {{ .Values.rpc_statsd_port }}
 statsd_enabled = {{ .Values.rpc_statsd_enabled }}
 
 {{- template "utils.snippets.debug.eventlet_backdoor_ini" "manila" }}
 
-# all default quotas are 0 to enforce usage of the Resource Management tool in Elektra
 [quota]
-shares = 0
-gigabytes = 0
-snapshots = 0
-snapshot_gigabytes = 0
-share_networks = 0
-share_groups = 0
-share_group_snapshots = 0
-share_replicas = 0
-replica_gigabytes = 0
+shares = {{ .Values.quota.shares }}
+gigabytes = {{ .Values.quota.gigabytes }}
+snapshots = {{ .Values.quota.snapshots }}
+snapshot_gigabytes = {{ .Values.quota.snapshot_gigabytes }}
+share_networks = {{ .Values.quota.share_networks }}
+share_groups = {{ .Values.quota.share_groups }}
+share_group_snapshots = {{ .Values.quota.share_group_snapshots }}
+share_replicas = {{ .Values.quota.share_replicas }}
+replica_gigabytes = {{ .Values.quota.replica_gigabytes }}
 
 [neutron]
 auth_strategy = keystone
 url = {{.Values.global.neutron_api_endpoint_protocol_internal | default "http"}}://{{include "neutron_api_endpoint_host_internal" .}}:{{ .Values.global.neutron_api_port_internal | default 9696}}
 auth_url = {{.Values.global.keystone_api_endpoint_protocol_internal | default "http"}}://{{include "keystone_api_endpoint_host_internal" .}}:{{ .Values.global.keystone_api_port_internal | default 5000}}/v3
 auth_type = v3password
-username = {{ .Values.global.neutron_service_user | default "neutron" | replace "$" "$$"}}
-password = {{ .Values.global.neutron_service_password | default "" | replace "$" "$$"}}
 user_domain_name = {{.Values.global.keystone_service_domain | default "Default"}}
 region_name = {{.Values.global.region}}
 project_name = {{.Values.global.keystone_service_project |  default "service"}}
@@ -96,16 +97,12 @@ lock_path = /var/lib/manila/tmp
 
 {{ include "ini_sections.coordination" . }}
 
-{{- include "ini_sections.database" . }}
-
 [keystone_authtoken]
 auth_type = v3password
 auth_version = v3
 auth_interface = internal
 www_authenticate_uri = https://{{include "keystone_api_endpoint_host_public" .}}/v3
 auth_url = {{.Values.global.keystone_api_endpoint_protocol_internal | default "http"}}://{{include "keystone_api_endpoint_host_internal" .}}:{{ .Values.global.keystone_api_port_internal | default 5000}}/v3
-username = {{ .Values.global.manila_service_user | default "manila" | replace "$" "$$" }}
-password = {{ .Values.global.manila_service_password | default "" | replace "$" "$$"}}
 user_domain_name = {{.Values.global.keystone_service_domain | default "Default"}}
 region_name = {{.Values.global.region}}
 project_name = {{.Values.global.keystone_service_project |  default "service"}}
@@ -120,7 +117,6 @@ token_cache_time = 600
 include_service_catalog = true
 service_type = sharev2
 
-{{- include "ini_sections.audit_middleware_notifications" . }}
 {{- if .Values.memcached.enabled }}
 {{- include "ini_sections.cache" . }}
 {{- end }}

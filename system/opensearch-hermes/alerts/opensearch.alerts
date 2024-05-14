@@ -1,0 +1,65 @@
+groups:
+- name: opensearch-hermes.alerts
+  rules:
+  - alert: OpenSearchHermesClusterLowDiskSpace
+    expr: sum (opensearch_fs_path_available_bytes{elastic_cluster="opensearch-hermes"} / (opensearch_fs_path_total_bytes{elastic_cluster="opensearch-hermes"}) * 100) / count(opensearch_fs_path_available_bytes{elastic_cluster="opensearch-hermes"}) < 30
+    for: 60m
+    labels:
+      context: diskspace
+      service: opensearch-hermes
+      severity: warning
+      tier: os
+      support_group: observability
+      playbook: 'docs/support/playbook/opensearch/generic/lowdiskspace-alert'
+      dashboard: health-opensearch?var-cluster=opensearch-hermes&var-datasource=prometheus-openstack
+    annotations:
+      description: 'OpenSearch-logs cluster more than 70 % full.
+                   Please consider adding more nodes to opensearch-hermes.'
+      summary: '*opensearch-hermes cluster* is low on disk space'
+
+  - alert: OpenSearchHermesClusterOutOfDiskSpace
+    expr: sum (opensearch_fs_path_available_bytes{elastic_cluster="opensearch-hermes"} / (opensearch_fs_path_total_bytes{elastic_cluster="opensearch-hermes"}) * 100) / count(opensearch_fs_path_available_bytes{elastic_cluster="opensearch-hermes"}) < 20
+    for: 60m
+    labels:
+      context: diskspace
+      service: opensearch-hermes
+      support_group: observability
+      severity: critical
+      tier: os
+      playbook: 'docs/support/playbook/opensearch/generic/lowdiskspace-alert'
+      dashboard: health-opensearch?var-cluster=opensearch-hermes&var-datasource=prometheus-openstack
+    annotations:
+      description: 'opensearch-hermes cluster 80 % is more than 80 % full.
+                   Please consider adding more data nodes to opensearch-hermes.'
+      summary: '*opensearch-hermes cluster* in is out of disk space'
+
+  - alert: OpenSearchHermesClusterRed
+    expr: sum (opensearch_cluster_status{elastic_cluster="opensearch-hermes"}) / count(opensearch_cluster_status{elastic_cluster="opensearch-hermes"})  == 2
+    for: 30m
+    labels:
+      context: nodes
+      service: opensearch-hermes
+      severity: critical
+      support_group: observability
+      tier: os
+      playbook: 'docs/support/playbook/opensearch/generic/cluster-red'
+      dashboard: health-opensearch?var-cluster=opensearch-hermes&var-datasource=prometheus-openstack
+    annotations:
+      description: 'Opensearch cluster *opensearch-hermes* is RED. Please check all nodes.'
+      summary: '*opensearch-hermes* cluster is RED'
+
+  - alert: OpenSearchLogsClusterYellow
+    expr: sum (opensearch_cluster_status{elastic_cluster="opensearch-hermes"}) / count(opensearch_cluster_status{elastic_cluster="opensearch-hermes"}) == 1
+    for: 30m
+    labels:
+      context: nodes
+      service: opensearch-hermes
+      severity: warning
+      support_group: observability
+      tier: os
+      playbook: 'docs/support/playbook/opensearch/generic/cluster-yellow-no-resync'
+      dashboard: health-opensearch?var-cluster=opensearch-hermes&var-datasource=prometheus-openstack
+    annotations:
+      description: 'Opensearch cluster *opensearch-hermes* is YELLOW. Please check all nodes.
+        nodes one or more are missing.'
+      summary: 'Opensearch cluster *opensearch-hermes* is YELLOW'

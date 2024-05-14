@@ -1,8 +1,25 @@
+global:
+  linkerd_requested: true
+  clusterType: local
+  users:
+    admin:
+      name: admin
+
+hermes_image_version_logstash: "20240306151752"
+      
+owner-info:
+  support-group: observability
+  service: hermes
+  maintainers:
+    - Nathan Oyler
+  helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/openstack/hermes
+
 # global.region: DEFINED_IN_VALUES_FILE
 hermes:
   debug: 0
   insecure: 0
   name: hermes
+  username: hermes
   rabbitmq:
     port: 5672
     user: rabbitmq
@@ -65,10 +82,27 @@ rabbitmq_notifications:
       # password: DEFINED-IN-SECRETS
   alerts:
     support_group: observability
+  livenessProbe:
+    enabled: true
+    failureThreshold: 3
+    initialDelaySeconds: 60
+    periodSeconds: 10
+    successThreshold: 1
+    timeoutSeconds: 10
+  readinessProbe:
+    enabled: true
+    failureThreshold: 3
+    initialDelaySeconds: 60 # default 15, need for crash recovery
+    periodSeconds: 10
+    successThreshold: 1
+    timeoutSeconds: 5
 
 # Pod Monitor
 exporter:
   enabled: false
+  prometheus: openstack
+
+metrics:
   prometheus: openstack
 
 # Deploy hermes Prometheus alerts.
@@ -80,13 +114,7 @@ alerts:
   prometheus:
     openstack: openstack
     kubernetes: kubernetes
-
-owner-info:
-  support-group: observability
-  maintainers:
-    - Nathan Oyler
-  helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/openstack/hermes
-
+    thanos-ruler: metal
 
 elasticsearch_hermes:
   enabled: false
@@ -110,47 +138,3 @@ elasticsearch_hermes_kibana:
 
 opensearch_hermes:
   enabled: false
-  ca:
-    crt: DEFINED-IN-SECRETS
-  image:
-    tag: 2.9.0
-  nameOverride: "opensearch-hermes"
-  fullnameOverride: "opensearch-hermes"
-  nodeGroup: "data"
-  masterService: "opensearch-hermes"
-  roles:
-    - master
-    - client
-    - ingest
-    - data
-  replicas: 3
-  opensearchJavaOpts: "-Dlog4j2.formatMsgNoLookups=true -XX:MaxRAM=7g -XX:MaxGCPauseMillis=500 -Xms5g -Xmx5g"
-  persistence:
-    enabled: true
-    enableInitChown: true
-    size: 100Gi
-    image: "library/busybox"
-  clusterName: "opensearch-hermes"
-  secretMounts:
-    - name: opensearch-certificates
-      secretName: cert-manager
-      path: /usr/share/opensearch/config/certs/
-      defaultMode: 0700
-  plugins:
-    enabled: true
-    installList:
-      - https://github.com/aiven/prometheus-exporter-plugin-for-opensearch/releases/download/2.9.0.0/prometheus-exporter-2.9.0.0.zip
-  securityConfig:
-    path: "/usr/share/opensearch/config/opensearch-security"
-    enabled: true
-    config:
-      securityConfigSecret: "security-config"
-
-opensearch_hermes_dashboards:
-  enabled: false
-
-global:
-  clusterType: local
-  users:
-    admin:
-      name: admin

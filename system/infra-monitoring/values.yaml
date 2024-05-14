@@ -25,6 +25,8 @@ global:
     enabled: true
     prometheus: infra-collector
 
+  linkerd_requested: true
+
 rbac:
   create: true
   name: infra-monitoring-edit
@@ -37,7 +39,7 @@ rbac:
     namespace: infra-monitoring
 
   http_sd_configs:
-    netbox_staging_url: https://netbox.staging.cloud.sap/api/plugins/atlas
+    netbox_staging_url: https://netbox-test.global.cloud.sap/api/plugins/atlas
     netbox_production_url: https://netbox.global.cloud.sap/api/plugins/atlas
     refresh_interval: 60m
 
@@ -45,7 +47,6 @@ prometheus_infra_collector:
   name: infra-collector
   enabled: true
 
-  retentionTime: 1h
   scrapeInterval: "60s"
 
   serviceDiscoveries:
@@ -63,6 +64,11 @@ prometheus_infra_collector:
     hosts:
       - prometheus-infra-collector
 
+  internalIngress:
+    enabled: true
+    hosts:
+      - prometheus-infra-collector-internal
+
   persistence:
     enabled: true
     # prom-operator does not support other accessModes than RWO
@@ -76,6 +82,13 @@ prometheus_infra_collector:
   rbac:
     create: true
 
+  vpaUpdateMode: "Auto"
+  vpaResources:
+    prometheus:
+      containerName: "prometheus"
+      maxAllowed:
+        memory: "40Gi"
+
   serviceAccount:
     create: true
 
@@ -85,30 +98,41 @@ prometheus_infra_collector:
       enabled: false
 
     hosts:
-      - alertmanager.scaleout.eu-de-1.cloud.sap
-      - alertmanager.scaleout.eu-nl-1.cloud.sap
+      - alertmanager-internal.scaleout.eu-de-1.cloud.sap
+      - alertmanager-internal.scaleout.eu-nl-1.cloud.sap
 
   alerts:
+
+    # thanos name that picks up the alerts from Prometheus - mainly used when kube_ metrics needs to be present
+    thanos:
+      enabled: true
+      name: metal
+
     multipleTargetScrapes:
       # List of exceptions for scrape jobs. This is joined together with a `|`.
       exceptions:
-        # job `snmp` scrapes targets multiple times for different modules
-        - snmp
-        # job `network/ssh` scrapes some instances that snmp already does for different metrics
-        - network/ssh
-        # jobs `redfish/bb` and `vmware-esxi` scrape the same nodes for different metrics
-        - redfish/bb
+        # job `snmp-exporter` scrapes targets multiple times for different modules
+        - .*snmp-exporter-pxgeneric
+        - .*snmp-exporter-pxdlroutergeneric
+        - .*snmp-exporter-pxdlrouteriosxr
+        - .*snmp-exporter-n9kpx
+        - .*snmp-exporter-acileaf-cc
+        # job `snmp-exporter-aas` and arista `asw-eapi` scrape targets multipe times for different metrics
+        - asw-eapi
+        - .*snmp-exporter-aas
+        # job `generic-network-ssh-exporter` scrapes some instances that snmp already does for different metrics
+        - .*network-generic-ssh-exporter-aci-leaf
+        - .*network-generic-ssh-exporter-cisco-ios-xr-core-router
+        - .*network-generic-ssh-exporter-neutron-router
+        # jobs `vmware-esxi` scrape the same nodes for different metrics
         - vmware-esxi
-        # jobs `cp/netbox` and `redfish/cp` scrape the same instances for different metrics
+        # jobs `cp/netbox` scrape the same instances for different metrics
         - cp/netbox
-        - redfish/cp
-        # jobs `redfish/bm` and `ipmi/ironic` scrape the same nodes for different metrics
-        - redfish/bm
+        # jobs `ipmi/ironic` and `redfish-*` scrape the same nodes for different metrics
         - ipmi/ironic
-        # jobs `redfish/*` and `redfish-fw` scrape the same nodes for different metrics
-        - redfish/bb
-        - redfish/cp
-        - redfish/bm
+        - redfish-bb
+        - redfish-cp
+        - redfish-bm
         - redfish-fw
  
   thanos:
@@ -119,55 +143,12 @@ thanos:
   deployWholeThanos: true
   clusterDomain: kubernetes
 
-kube_state_metrics_exporter:
-  enabled: true
-  prometheusName: infra-collector
+  grpcIngress:
+    enabled: true
+    hosts:
+      - thanos-infra-collector-grpc
 
-alertmanager_exporter:
-  enabled: false
-  scrapeInterval: 1m
-  scrapeTimeout: 55s
-
-netbox_exporter:
-  enabled: false
-  scrapeInterval: 1m
-  scrapeTimeout: 55s
-
-netapp_cap_exporter:
-  # default to true for transition. Value was not checked so it was enabled by default.
-  enabled: true
-  apps:
-    manila:
-      scrapeInterval: 2m
-      scrapeTimeout: 110s
-      fullname: "netapp-capacity-exporter-manila"
-    cinder:
-      scrapeInterval: 2m
-      scrapeTimeout: 110s
-      fullname: "netapp-capacity-exporter-cinder"
-    baremetal:
-      scrapeInterval: 2m
-      scrapeTimeout: 110s
-      fullname: "netapp-capacity-exporter-bare-metal"
-    controlplane:
-      scrapeInterval: 2m
-      scrapeTimeout: 110s
-      fullname: "netapp-capacity-exporter-control-plane"
-
-arista_sd:
-  enabled: false
-
-arista_exporter:
-  enabled: false
-  scrapeInterval: 2m
-  scrapeTimeout: 55s
-
-vcenter-exporters:
-  enabled: false
-
-thousandeyes_exporter:
-  enabled: false
-
+# TODO: this is using a dedicated chart now and needs to be moved
 ipmi_exporter:
   enabled: false
   ironic_scrapeInterval: 2m
@@ -178,35 +159,18 @@ ipmi_exporter:
   esxi_scrapeTimeout: 55s
   listen_port: 9290
 
+# used for scrapeconfig only
 kvm:
   enabled: false
   scrapeInterval: 1m
   scrapeTimeout: 55s
 
-vcenter_exporters:
-  enabled: false
-
 blackbox_exporter:
   enabled: false
-
-vasa_exporter:
-  enabled: false
-  scrapeInterval: 200s
-  scrapeTimeout: 195s
 
 px_exporter:
   enabled: false
   alerts:
-    enabled: false
-
-redfish_exporter:
-  listen_port: 9220
-  scrapeInterval: 4m
-  scrapeTimeout: 230s
-  enabled: false
-  firmware:
-    scrapeInterval: 1h
-    scrapeTimeout: 230s
     enabled: false
 
 firmware_exporter:
@@ -214,21 +178,12 @@ firmware_exporter:
   scrapeInterval: 5m
   scrapeTimeout: 255s
 
-snmp_exporter:
-  scrapeInterval: 2m
-  scrapeTimeout: 115s
-  listen_port: 9116
-  operatoroff: true
-
-snmp_exporter_apod:
-  scrapeInterval: 10m
-  scrapeTimeout: 120s
-
 netbox_exporters:
   enabled: false
   scrapeInterval: 1m
   scrapeTimeout: 55s
 
+# federation from ask1k proms
 ask1k_tests:
   enabled: false
 
@@ -246,9 +201,6 @@ windows_exporter:
 prober_exporter:
   enabled: false
 
-network_generic_ssh_exporter:
-  enabled: false
-
 prometheus_vmware:
   scrapeInterval: 1m
   scrapeTimeout: 55s
@@ -257,6 +209,6 @@ atlas_url: http://atlas:8080/service_discovery/netbox
 atlas_ironic_url: http://atlas:8080/service_discovery/ironic
 
 http_sd_configs:
-  netbox_staging_url: https://netbox.staging.cloud.sap/api/plugins/atlas
+  netbox_staging_url: https://netbox-test.global.cloud.sap/api/plugins/atlas
   netbox_production_url: https://netbox.global.cloud.sap/api/plugins/atlas
   refresh_interval: 60m

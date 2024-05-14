@@ -86,9 +86,10 @@ spec:
 
         # allowed role assignments for the `cloud_resource_viewer` role:
         # - user billing@Default               in project billing@ccadmin (for data transfer from Limes to CBR)
+        # - user $IBP_READONLY@Dccadmin        in project cloud_admin@ccadmin (for data transfer from Limes to IBP)
         # - group CCADMIN_CLOUD_ADMINS@ccadmin in project cloud_admin@ccadmin
         - alert: OpenstackLimesUnexpectedCloudViewerRoleAssignments
-          expr: max(openstack_assignments_per_role{role_name="cloud_resource_viewer"}) > 2
+          expr: max(openstack_assignments_per_role{role_name="cloud_resource_viewer"}) > 3
           for: 10m
           labels:
             support_group: containers
@@ -102,9 +103,9 @@ spec:
             description: 'The Keystone role "cloud_resource_viewer" is assigned to more users/groups than expected.'
 
         # allowed role assignments for the `cloud_dns_resource_admin` role:
-        # - group ${DOMAIN}_DOMAIN_DNS_OPS     in all 14 customer domains
+        # - group ${DOMAIN}_DOMAIN_DNS_OPS     in all 16 customer domains
         - alert: OpenstackLimesUnexpectedCloudDnsAdminRoleAssignments
-          expr: max(openstack_assignments_per_role{role_name="cloud_dns_resource_admin"}) > 15
+          expr: max(openstack_assignments_per_role{role_name="cloud_dns_resource_admin"}) > 16
           for: 10m
           labels:
             support_group: containers

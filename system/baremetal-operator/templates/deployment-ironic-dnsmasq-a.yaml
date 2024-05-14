@@ -1,0 +1,116 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: baremetal-operator-dnsmasq-a
+  namespace: {{ .Release.Namespace }}
+spec:
+  minReadySeconds: 10
+  progressDeadlineSeconds: 600
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      name: ironic-dnsmasq-a
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        name: ironic-dnsmasq-a
+        app.kubernetes.io/component: dnsmasq
+        app.kubernetes.io/name: ironic-dnsmasq
+      annotations:
+        kubectl.kubernetes.io/default-container: ironic
+        checksum/configmap-dnsmasq: {{ include (print $.Template.BasePath "/configmap-ironic-dnsmasq-a.yaml") . | sha256sum }}
+    spec:
+      hostNetwork: true
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app.kubernetes.io/name
+                  operator: In
+                  values:
+                  - ironic-dnsmasq
+              topologyKey: "kubernetes.io/hostname"
+            weight: 10
+      containers:
+      - command:
+        - /opt/rundnsmasq/rundnsmasq
+        envFrom:
+        - configMapRef:
+            name: ironic-config
+        image: "{{ $.Values.images.ironicDnsmasq.image }}:{{ $.Values.images.ironicDnsmasq.tag }}"
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: {{ .Values.ironic.dhcpServerPort }}
+          name: dhcp-{{ .Values.ironic.dhcpServerPort }}
+          protocol: UDP
+        - containerPort: {{ .Values.ironic.tftpPort }}
+          name: dhcp-{{ .Values.ironic.tftpPort }}
+          protocol: UDP
+        livenessProbe:
+          exec:
+            command:
+            - sh
+            - -c
+            - ss -lun | grep :67 && ss -lun | grep :69
+          failureThreshold: 10
+          initialDelaySeconds: 30
+          periodSeconds: 30
+          successThreshold: 1
+          timeoutSeconds: 10
+        name: ironic-dnsmasq
+        readinessProbe:
+          exec:
+            command:
+            - sh
+            - -c
+            - ss -lun | grep :67 && ss -lun | grep :69
+          failureThreshold: 10
+          initialDelaySeconds: 30
+          periodSeconds: 30
+          successThreshold: 1
+          timeoutSeconds: 10
+        resources: {}
+        securityContext:
+          allowPrivilegeEscalation: true
+          capabilities:
+            add:
+            - NET_ADMIN
+            - NET_BIND_SERVICE
+            - NET_RAW
+            drop:
+            - ALL
+          privileged: false
+          runAsGroup: 994
+          runAsUser: 997
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /opt/dnsmasq
+          name: dnsmasq
+        - mountPath: /opt/rundnsmasq
+          name: rundnsmasq
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext:
+        fsGroup: 994
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      terminationGracePeriodSeconds: 30
+      volumes:
+      - configMap:
+          defaultMode: 511
+          name: ironic-dnsmasq-a
+        name: dnsmasq
+      - configMap:
+          defaultMode: 511
+          name: ironic-rundnsmasq
+        name: rundnsmasq

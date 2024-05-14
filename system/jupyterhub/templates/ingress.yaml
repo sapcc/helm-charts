@@ -5,12 +5,19 @@ metadata:
   name: jupyterhub
   namespace: jupyterhub
   annotations:
+    {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+    ingress.kubernetes.io/service-upstream: "true"
+    nginx.ingress.kubernetes.io/service-upstream: "true"
+    {{- end }}
     kubernetes.io/tls-acme: "true"
     disco: "true"
     disco/zone-name: global.cloud.sap.
     ingress.kubernetes.io/affinity: cookie
+    nginx.ingress.kubernetes.io/affinity: cookie
     ingress.kubernetes.io/proxy-buffer-size: 32k
+    nginx.ingress.kubernetes.io/proxy-buffer-size: 32k
     ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
 
 spec:
   tls:

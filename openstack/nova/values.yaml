@@ -21,6 +21,8 @@ global:
   hypervisors_ironic: []
   osprofiler: {}
 
+  linkerd_requested: false
+
 osprofiler: {}
 
 auto_assign_aggregates: 'dry_run'
@@ -239,7 +241,6 @@ consoles:
     enabled: true
     portInternal: '6090'
     args: '--web /usr/local/noVNC-mks --verbose'
-    inject_nova_credentials: true
 
 scheduler:
   driver: "filter_scheduler"
@@ -249,7 +250,7 @@ scheduler:
   rpc_statsd_port: 9125
   # enables collecting metrics for RPC calls
   rpc_statsd_enabled: true
-  default_filters: "CpuInfoMigrationFilter, ShardFilter, AggregateMultiTenancyIsolation, ComputeFilter, ComputeCapabilitiesFilter, BigVmFlavorHostSizeFilter, VmSizeThresholdFilter, ImagePropertiesFilter, ServerGroupAntiAffinityFilter, ServerGroupAffinityFilter"
+  default_filters: "CpuInfoMigrationFilter, ShardFilter, AggregateMultiTenancyIsolation, ComputeFilter, ComputeCapabilitiesFilter, HANAMemoryMaxUnitFilter, BigVmFlavorHostSizeFilter, VmSizeThresholdFilter, ImagePropertiesFilter, ServerGroupAntiAffinityFilter, ServerGroupAffinityFilter"
   vm_size_threshold_vm_size_mb: "16385"
   vm_size_threshold_hv_size_mb: "819200"
   ram_weight_multiplier: 1.0
@@ -270,6 +271,9 @@ scheduler:
   hv_ram_class_weight_multiplier: 100.0
   # this is a DictOpt and takes the form key1:value1,key2:value2
   hv_ram_class_weights_gib: "1024:1"
+  # Hosts having the CUSTOM_DECOMMISSIONING trait should be used only if it's
+  # absolutely necessary. Positive values are decreasing the weight in this case.
+  decommissioning_weight_multiplier: 150.0
   image_properties_default_architecture: "x86_64"
 
 compute:
@@ -279,7 +283,7 @@ compute:
       max_concurrent_builds_per_project: 20
       max_concurrent_builds: 50
       ram_allocation_ratio: 1.0
-      cpu_allocation_ratio: 4.0
+      cpu_allocation_ratio: 3.0
       # this will set a 15 mins timeout for blockdevice mapping
       block_device_allocate_retries: 300
       rpc_statsd_port: 9125
@@ -348,10 +352,11 @@ mysql_metrics:
           instances.project_id,
           COUNT(*) AS gauge,
           instances.vm_state,
-          coalesce(instance_types.name,'N/A') AS flavor_name
+          coalesce(JSON_VALUE(instance_extra.flavor, '$.cur."nova_object.data".name'),'N/A') AS flavor_name
         FROM instances
-        JOIN instance_types ON instances.instance_type_id=instance_types.id
-        GROUP BY instances.vm_state, instances.host, instances.project_id, instance_types.name;
+        LEFT JOIN instance_extra ON instances.uuid=instance_extra.instance_uuid
+        WHERE instances.deleted = 0
+        GROUP BY instances.vm_state, instances.host, instances.project_id, flavor_name;
       values:
       - "gauge"
     - help: Total Nova VM Stuck count
@@ -530,11 +535,12 @@ mysql_metrics:
           instances.project_id,
           instances.hostname,
           instances.vm_state,
-          coalesce(instance_types.name,'N/A') AS flavor_name,
+          coalesce(JSON_VALUE(instance_extra.flavor, '$.cur."nova_object.data".name'),'N/A') AS flavor_name,
           COUNT(*) AS gauge
         FROM instances
-        JOIN instance_types ON instances.instance_type_id=instance_types.id where host LIKE 'nova-compute-ironic%'
-        GROUP BY instances.vm_state, instances.project_id, instance_types.name, instances.uuid, instances.hostname, instances.node;
+        LEFT JOIN instance_extra ON instances.uuid=instance_extra.instance_uuid
+        WHERE host LIKE 'nova-compute-ironic%' AND instances.deleted = 0
+        GROUP BY instances.vm_state, instances.project_id, flavor_name, instances.uuid, instances.hostname, instances.node;
       values:
       - "gauge"
     - help: Stats on compute nodes
@@ -696,8 +702,12 @@ mariadb:
   buffer_pool_size: "4096M"
   log_file_size: "1024M"
   name: nova
-  initdb_configmap: true
+  initdb_secret: true
   long_query_time: 8
+  vpa:
+    set_main_container: true
+  ccroot_user:
+    enabled: true
   databases:
   - nova
   - nova_cell0
@@ -734,8 +744,12 @@ mariadb_api:
   buffer_pool_size: "4096M"
   log_file_size: "1024M"
   name: nova-api
-  initdb_configmap: true
+  initdb_secret: true
   long_query_time: 8
+  vpa:
+    set_main_container: true
+  ccroot_user:
+    enabled: true
   databases:
   - nova_api
   users:
@@ -765,8 +779,12 @@ mariadb_cell2:
   enabled: false
   buffer_pool_size: "4096M"
   log_file_size: "1024M"
-  initdb_configmap: true
+  initdb_secret: true
   long_query_time: 8
+  vpa:
+    set_main_container: true
+  ccroot_user:
+    enabled: true
   persistence_claim:
     name: db-nova-cell2-pvc
     size: "50Gi"
@@ -792,6 +810,8 @@ rabbitmq_cell2:
     enabled: true
     sidecar:
       enabled: false
+    enableDetailedMetrics: true
+    enablePerObjectMetrics: true
 audit:
   central_service:
     user: rabbitmq
@@ -815,6 +835,8 @@ rabbitmq:
     enabled: true
     sidecar:
       enabled: false
+    enableDetailedMetrics: true
+    enablePerObjectMetrics: true
   resources:
     requests:
       memory: 2Gi
@@ -920,3 +942,13 @@ owner-info:
 default:
   password_all_group_samples: 2
   rpc_ping_enabled: true
+
+utils:
+  trust_bundle:
+    enabled: true
+
+vpa:
+  # https://github.com/sapcc/vpa_butler
+  # The maximum available capacity is split evenly across containers specified in the Deployment, StatefulSet or DaemonSet to derive the upper recommendation bound. This does not work out for pods with a single resource-hungry container with several sidecar containers
+  # Annotate the Deployment, StatefulSet or DaemonSet with vpa-butler.cloud.sap/main-container=$MAIN_CONTAINER. That will distribute 75% of the maximum available capacity to the main container and the rest evenly across all others
+  set_main_container: true

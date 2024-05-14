@@ -1,0 +1,15 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: {{ include "provider-metal3.fullname" . }}-ipam-serving-cert
+  labels:
+  {{- include "provider-metal3.labels" . | nindent 4 }}
+spec:
+  dnsNames:
+  - '{{ include "provider-metal3.fullname" . }}-ipam-webhook-service.capi.svc'
+  - '{{ include "provider-metal3.fullname" . }}-ipam-webhook-service.capi.svc.{{
+    .Values.kubernetesClusterDomain }}'
+  issuerRef:
+    kind: Issuer
+    name: '{{ include "provider-metal3.fullname" . }}-ipam-selfsigned-issuer'
+  secretName: ipam-webhook-service-cert

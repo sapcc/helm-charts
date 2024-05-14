@@ -1,6 +1,5 @@
 {{- $mirror  := .Values.global.quayIoMirror | required "missing value for .Values.global.quayIoMirror" -}}
 {{- $db_name := .Values.db_name             | default .Release.Name -}}
-{{- $db_pass := .Values.db_password         | required "missing value for .Values.db_password" -}}
 {{- $db_host := .Values.db_host             | default (printf "%s-postgresql" .Release.Name) -}}
 {{- $db_host = printf "%s.%s.svc" $db_host .Release.Namespace -}}
 
@@ -8,8 +7,6 @@ kind: Deployment
 apiVersion: apps/v1
 metadata:
   name: {{ .Release.Name }}-pgmetrics
-  labels:
-    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
 spec:
   replicas: 1
   revisionHistoryLimit: 3
@@ -23,13 +20,13 @@ spec:
       labels:
         app: {{ .Release.Name }}-pgmetrics
         component: {{ $db_name }}
-        chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
         type: metrics
         {{- if .Values.alerts.enabled }}
         alert-tier: {{ required ".Values.alerts.tier missing" .Values.alerts.tier }}
         alert-service: {{ .Values.alerts.service | default .Release.Name }}
         {{- end }}
       annotations:
+        kubectl.kubernetes.io/default-container: metrics
         configmap-etc-hash: {{ include (print $.Template.BasePath "/configmap-etc.yaml") . | sha256sum }}
         {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
         linkerd.io/inject: enabled
@@ -39,11 +36,26 @@ spec:
     spec:
       containers:
       - name: metrics
-        image: "{{ $mirror }}/prometheuscommunity/postgres-exporter:v0.13.2"
+        image: "{{ $mirror }}/{{ .Values.image.repository }}:{{ .Values.image.tag }}"
         imagePullPolicy: IfNotPresent
         env:
-        - name: DATA_SOURCE_NAME
-          value: postgresql://postgres:{{ $db_pass }}@{{ $db_host }}:5432/{{ $db_name }}?sslmode=disable&application_name={{ .Release.Name }}-pgmetrics
+        - name: DATA_SOURCE_URI
+          value: {{ $db_host }}:5432/{{ $db_name }}?sslmode=disable&application_name={{ .Release.Name }}-pgmetrics
+        - name: DATA_SOURCE_USER
+          {{- if .Values.isPostgresNG }}
+          value: metrics
+          {{- else }}
+          value: postgres
+          {{- end }}
+        - name: DATA_SOURCE_PASS
+          valueFrom:
+            secretKeyRef:
+              {{- if .Values.isPostgresNG }}
+              name: {{ .Release.Name }}-pguser-metrics
+              {{- else }}
+              name: {{ .Release.Name }}-pgmetrics
+              {{- end }}
+              key: postgres-password
         ports:
           - name: metrics
             containerPort: 9187
@@ -61,9 +73,11 @@ spec:
           limits:
             cpu:    {{ quote .Values.resources.limits.cpu }}
             memory: {{ quote .Values.resources.limits.memory }}
+          {{- if not (.Values.global.region | regexMatch "^qa-de-[2-6]$") }}
           requests:
             cpu:    {{ quote .Values.resources.requests.cpu }}
             memory: {{ quote .Values.resources.requests.memory }}
+          {{- end }}
       volumes:
       - name: custom-metrics
         configMap:

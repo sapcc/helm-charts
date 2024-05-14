@@ -39,10 +39,13 @@ spec:
         chart-version: {{.Chart.Version}}
         configmap-etc-hash: {{ include (print $.Template.BasePath "/configmap-etc.yaml") . | sha256sum }}
         configmap-bin-hash: {{ include (print $.Template.BasePath "/configmap-bin.yaml") . | sha256sum }}
+        secrets-bin-hash: {{ include (print $.Template.BasePath "/secret-bin.yaml") . | sha256sum }}
+        secrets-hash: {{ include (print $.Template.BasePath "/secrets.yaml") . | sha256sum }}
         {{- if .Values.proxysql.mode }}
         prometheus.io/scrape: "true"
         prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
         {{- end }}
+        {{- include "utils.linkerd.pod_and_service_annotation" . | indent 8 }}
     spec:
 {{- if .Values.rbac.enabled }}
       serviceAccountName: {{ .Release.Name }}
@@ -62,11 +65,11 @@ spec:
           value: {{ .Release.Namespace }}
 {{- if .Release.IsInstall }}
         - name: DEPENDENCY_JOBS
-          value: {{ .Release.Name }}-job-migration,{{ .Release.Name }}-job-bootstrap
+          value: "{{ tuple . "job-migration" | include "job_name" }},{{ tuple . "job-bootstrap" | include "job_name" }}"
 {{- else }}
   {{- if or .Values.run_db_migration }}
         - name: DEPENDENCY_JOBS
-          value: {{ .Release.Name }}-job-migration
+          value: "{{ tuple . "job-migration" | include "job_name" }}"
   {{- end }}
 {{- end }}
         - name: DEPENDENCY_SERVICE
@@ -138,6 +141,8 @@ spec:
           volumeMounts:
             - name: etc-keystone
               mountPath: /etc/keystone
+            - name: keystone-etc-confd
+              mountPath: /etc/keystone/keystone.conf.d
             - name: wsgi-keystone
               mountPath: /var/www/cgi-bin/keystone
             - name: keystone-etc
@@ -189,7 +194,6 @@ spec:
               readOnly: true
             - name: keystone-bin
               mountPath: /scripts
-              readOnly: true
             {{- if .Values.sapcc_rate_limit.enabled }}
             - name: keystone-etc
               mountPath: /etc/keystone/ratelimit.yaml
@@ -197,6 +201,7 @@ spec:
               readOnly: true
             {{- end }}
             {{- include "utils.proxysql.volume_mount" . | indent 12 }}
+            {{- include "utils.trust_bundle.volume_mount" . | indent 12 }}
           {{- if .Values.api.resources }}
           resources:
 {{ toYaml .Values.api.resources | indent 12 }}
@@ -235,10 +240,21 @@ spec:
           configMap:
             name: keystone-etc
             defaultMode: 0444
+        - name: keystone-etc-confd
+          secret:
+            secretName: {{ .Release.Name }}-secrets
+            defaultMode: 0444
         - name: keystone-bin
-          configMap:
-            name: keystone-bin
+          projected:
             defaultMode: 0555
+            sources:
+            - configMap:
+                name: keystone-bin
+            - secret:
+                name: keystone-bin-secrets
+                items:
+                  - key: bootstrap
+                    path: bootstrap
         - name: fernet
           secret:
             secretName: keystone-fernet
@@ -248,3 +264,4 @@ spec:
             secretName: keystone-credential-keys
             defaultMode: 0555
         {{- include "utils.proxysql.volumes" . | indent 8 }}
+        {{- include "utils.trust_bundle.volumes" . | indent 8 }}

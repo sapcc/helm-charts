@@ -1,3 +1,11 @@
+## 6.5.8
+
+* Adapting swift credential for kvv2 vault
+
+## 6.5.4
+
+* prepare to switch ingress annotation prefix
+
 ## 6.5.3
 
 * bump Thanos version to v0.30.1

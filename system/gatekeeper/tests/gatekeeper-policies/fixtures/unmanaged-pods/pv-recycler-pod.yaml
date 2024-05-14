@@ -1,0 +1,29 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: recycler-for-pv-063
+  namespace: default
+spec:
+  containers:
+  - args:
+    - -c
+    - test -e /scrub && find /scrub -mindepth 1 -delete && test -z "$(ls -A /scrub)"
+      || exit 1
+    command:
+    - /bin/sh
+    image: registry.k8s.io/debian-base:v2.0.0
+    imagePullPolicy: IfNotPresent
+    name: pv-recycler
+    volumeMounts:
+    - mountPath: /scrub
+      name: vol
+  dnsPolicy: ClusterFirst
+  enableServiceLinks: true
+  preemptionPolicy: PreemptLowerPriority
+  priority: 0
+  restartPolicy: Never
+  volumes:
+  - name: vol
+    nfs:
+      path: /redacted
+      server: 192.168.0.1

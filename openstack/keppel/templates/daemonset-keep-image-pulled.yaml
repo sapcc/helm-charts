@@ -38,48 +38,17 @@ spec:
       #   starting a container with less than 16-32 MiB RAM limit)
       containers:
         - name: keppel
-          image: {{ include "keppel_image" . }}
-          imagePullPolicy: IfNotPresent
-          command: [ '/bin/sleep', 'inf' ]
-          securityContext:
-            runAsNonRoot: true
-          resources:
-            requests:
-              cpu: "1m"
-              memory: "32Mi"
-            limits:
-              cpu: "1m"
-              memory: "32Mi"
+          image: "{{ include "keppel_image" . }}"
+          {{ include "tmplKeepImagePulled" . }}
         - name: postgres
-          image: "{{ .Values.global.registryAlternateRegion }}/postgres:{{.Values.postgresql.imageTag}}"
-          imagePullPolicy: IfNotPresent
-          command: [ '/bin/sleep', 'inf' ]
-          securityContext:
-            runAsNonRoot: true
-            runAsUser:    65534 # nobody
-            runAsGroup:   65534 # nobody
-          resources:
-            requests:
-              cpu: "1m"
-              memory: "32Mi"
-            limits:
-              cpu: "1m"
-              memory: "32Mi"
+          image: "{{ .Values.global.registryAlternateRegion }}/postgres-ng:{{.Values.postgresql.imageTag}}"
+          {{ include "tmplKeepImagePulled" . }}
+        - name: postgres-kubectl
+          image: "{{ .Values.global.registryAlternateRegion }}/shared-app-images/alpine-kubectl:3.19-latest"
+          {{ include "tmplKeepImagePulled" . }}
         - name: redis # NOTE: redis-metrics is a separate pod, so we don't need to care about it
-          image: "{{.Values.redis.image.repository}}:{{.Values.redis.image.tag}}"
-          imagePullPolicy: IfNotPresent
-          command: [ '/bin/sleep', 'inf' ]
-          securityContext:
-            runAsNonRoot: true
-            runAsUser:    65534 # nobody
-            runAsGroup:   65534 # nobody
-          resources:
-            requests:
-              cpu: "1m"
-              memory: "32Mi"
-            limits:
-              cpu: "1m"
-              memory: "32Mi"
+          image: "{{.Values.global.registryAlternateRegion}}/shared-app-images/alpine-redis:{{.Values.redis.image.tag}}"
+          {{ include "tmplKeepImagePulled" . }}
       # sleep(1) doesn't seem to react to SIGTERM at all, so skip right ahead to SIGKILL
       terminationGracePeriodSeconds: 1
 

@@ -1,0 +1,52 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: runtime-extension-maintenance-controller
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: runtime-extension-maintenance-controller
+spec:
+  selector:
+    matchLabels:
+      app: runtime-extension-maintenance-controller
+  replicas: {{ .Values.replicaCount }}
+  template:
+    metadata:
+      labels:
+        app: runtime-extension-maintenance-controller
+      annotations:
+        {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+        linkerd.io/inject: enabled
+        {{- end }}
+    spec:
+      serviceAccountName: runtime-extension-maintenance-controller
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 999
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+      - image: "{{required ".Values.global.registry is missing" .Values.global.registry }}/{{ .Values.image.repository }}:{{required ".Values.image.tag is missing" .Values.image.tag }}"
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        name: runtime-extension-maintenance-controller
+        command: ["/runtime-extension-maintenance-controller"]
+        ports:
+        - name: metrics
+          containerPort: 8080
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - "ALL"
+      {{ if ne .Values.topologyKey "" -}}
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              - key: app
+                operator: In
+                values:
+                - runtime-extension-maintenance-controller
+            topologyKey: {{ .Values.topologyKey }}
+      {{ end -}}

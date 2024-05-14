@@ -21,7 +21,9 @@ spec:
           resources:
             requests:
               storage: {{ $.Values.compactor.dataVolume.size }}
+          {{- if $.Values.compactor.dataVolume.storageClassName }}
           storageClassName: {{ $.Values.compactor.dataVolume.storageClassName }}
+          {{- end }}
     {{ end }}
     consistencyDelay: {{ required "thanos.compactor.consistencyDelay" $.Values.compactor.consistencyDelay }}
     retentionResolutionRaw: {{ mul 24 (required "thanos.compactor.retentionResolutionRaw" $.Values.compactor.retentionResolutionRaw) }}h
@@ -31,9 +33,21 @@ spec:
       metadata:
         labels:
           thanos: {{ default (include "thanos.name" (list $name $root)) $.Values.alerts.prometheus }}
+        {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+        annotations:
+          linkerd.io/inject: enabled
+        {{- end }}
     deploymentOverrides:
       spec:
+        strategy:
+          type: Recreate
         template:
+          {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+          metadata:
+            annotations:
+              linkerd.io/inject: enabled
+              config.linkerd.io/proxy-ephemeral-storage-request: 10M
+          {{- end }}
           spec:
             containers:
             - image: {{ include "thanosimage" $root }}
@@ -44,6 +58,15 @@ spec:
                 - {{ $arg }}
                 {{- end }}
               {{- end }}
+              {{- if not $.Values.compactor.dataVolume.enabled }}
+              resources:
+                requests:
+                  ephemeral-storage: {{ $.Values.compactor.resources.requests.ephemeralStorage }}
+              {{- end }}
+            securityContext:
+              fsGroup: 0
+              runAsGroup: 0
+              runAsUser: 0
 {{ end }}
 {{ end }}
 {{ end }}

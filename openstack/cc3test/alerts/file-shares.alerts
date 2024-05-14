@@ -3,7 +3,7 @@ groups:
   rules:
   - alert: OpenstackManilaApiDown
     expr: |
-        cc3test_status{service="manila", type="api"} == 0
+        cc3test_status{service="manila", type="api", phase="call"} == 0
     for: 16m
     labels:
       severity: critical
@@ -12,16 +12,16 @@ groups:
       service: '{{ $labels.service }}'
       context: '{{ $labels.service }}'
       meta: 'Openstack Manila API is down'
-      dashboard: 'cc3test-overview?var-service={{ $labels.service }}'
-      playbook: 'docs/support/playbook/manila/alerts/'
-      report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
+      dashboard: 'cc3test-api-status?var-service={{ $labels.service }}'
+      playbook: 'docs/support/playbook/manila/alerts/cc3test-alert-api/'
+      report: 'cc3test/admin/object-storage/containers/cc3test/objects/{{ $labels.base64path }}'
     annotations:
       description: 'Openstack Manila API is down'
       summary: 'Openstack Manila API is down'
 
   - alert: OpenstackManilaApiFlapping
     expr: |
-        changes(cc3test_status{service="manila", type="api"}[30m]) > 8
+        changes(cc3test_status{service="manila", type="api", phase="call"}[30m]) > 8
     labels:
       severity: warning
       support_group: compute-storage-api
@@ -29,9 +29,9 @@ groups:
       service: '{{ $labels.service }}'
       context: '{{ $labels.service }}'
       meta: 'Openstack Manila API is flapping'
-      dashboard: 'cc3test-overview?var-service={{ $labels.service }}'
-      playbook: 'docs/support/playbook/manila/alerts/'
-      report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
+      dashboard: 'cc3test-api-status?var-service={{ $labels.service }}'
+      playbook: 'docs/support/playbook/manila/alerts/cc3test-alert-api/'
+      report: 'cc3test/admin/object-storage/containers/cc3test/objects/{{ $labels.base64path }}'
     annotations:
       description: 'Openstack Manila API is flapping'
       summary: 'Openstack Manila API is flapping'
@@ -39,7 +39,8 @@ groups:
   - alert: FileShareDatapathDown
     expr: |
         cc3test_status{type="datapath",
-            name=~"TestFileShareMount_static.+"
+            name=~"TestFileShareMount_static.+",
+            phase="call"
         } == 0
     for: 15m
     labels:
@@ -49,12 +50,33 @@ groups:
       service: '{{ $labels.service }}'
       context: '{{ $labels.service }}'
       meta: 'Datapath to mounted file share is down'
-      dashboard: 'cc3test-overview?var-service={{ $labels.service }}'
-      playbook: 'docs/devops/alert/manila/#test_nfs'
-      report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
+      dashboard: 'cc3test-datapath-status?var-service={{ $labels.service }}'
+      playbook: 'docs/support/playbook/manila/alerts/cc3test-alert-datapath/#filesharedatapathdown'
+      report: 'cc3test/admin/object-storage/containers/cc3test/objects/{{ $labels.base64path }}'
     annotations:
       description: 'Datapath to mounted file share is down'
       summary: 'Datapath to mounted file share is down'
+
+  - alert: FileShareDatapathDebug
+    expr: |
+        cc3test_status{type="datapath",
+            name=~"TestFileShareMount_debug_static.+",
+            phase="call"
+        } == 0
+    for: 15m
+    labels:
+      severity: warning
+      support_group: compute-storage-api
+      tier: os
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.service }}'
+      meta: 'Datapath to mounted file share is down'
+      dashboard: 'cc3test-datapath-status?var-service={{ $labels.service }}'
+      playbook: 'docs/support/playbook/manila/alerts/cc3test-alert-datapath/#filesharedatapathdebugnfs'
+      report: 'cc3test/admin/object-storage/containers/cc3test/objects/{{ $labels.base64path }}'
+    annotations:
+      description: 'Datapath to mounted file share is down - debug for more details'
+      summary: 'Datapath to mounted file share is down - debug for more details'
 
   - alert: FilerCertificateExpiresInLessThan1Week
     expr: cc3test_cert_expires_in_days{type="filer"} < 8
@@ -66,6 +88,7 @@ groups:
       service: manila
       context: filer
       meta: 'Certificate on {{ $labels.host }} expires in less than 8 days'
+      dashboard: cc3test-certificate-status?var-service={{ $labels.service }}
       playbook: 'docs/support/playbook/manila/filer_cert_expired'
       support_component: manila_netapp
     annotations:
@@ -82,6 +105,7 @@ groups:
       service: manila
       context: filer
       meta: 'Certificate on {{ $labels.host }} expires in less than 15 days'
+      dashboard: cc3test-certificate-status?var-service={{ $labels.service }}
       playbook: 'docs/support/playbook/manila/filer_cert_expired'
       support_component: manila_netapp
     annotations:
@@ -89,7 +113,7 @@ groups:
       summary: Certificate expires
 
   - alert: OpenstackFileShareCanaryAttachShareDown
-    expr: cc3test_status{service="manila",name=~"TestFileShare_attach_share.+"} == 0
+    expr: cc3test_status{service="manila",name=~"TestFileShare_attach_share.+", phase="call"} == 0
     for: 2h
     labels:
       severity: warning
@@ -98,9 +122,9 @@ groups:
       service: '{{ $labels.service }}'
       context: '{{ $labels.service }}'
       meta: 'Openstack File Share Canary: {{ $labels.name }} is down, see report for more details'
-      dashboard: cc3test-overview?var-service={{ $labels.service }}
-      playbook: 'docs/devops/alert/{{ $labels.service }}/#test_attach_share'
-      report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
+      dashboard: cc3test-canary-status?var-service={{ $labels.service }}
+      playbook: 'docs/support/playbook/manila/alerts/cc3test-alert-attach-share/'
+      report: 'cc3test/admin/object-storage/containers/cc3test/objects/{{ $labels.base64path }}'
     annotations:
       description: 'Openstack File Share Canary: {{ $labels.name }} is down, see report for more details'
       summary: 'Openstack File Share Canary: {{ $labels.name }} is down, see report for more details'

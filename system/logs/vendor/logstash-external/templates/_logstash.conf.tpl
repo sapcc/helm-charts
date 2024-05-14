@@ -1,37 +1,43 @@
 input {
   udp {
-    port  => {{.Values.input_syslog_port}}
+    id => "input-udp-syslog"
+    port  => {{.Values.input.syslog_port}}
     type => syslog
   }
   tcp {
-    port  => {{.Values.input_syslog_port}}
+    id => "input-tcp-syslog"
+    port  => {{.Values.input.syslog_port}}
     type => syslog
   }
   udp {
-    port  => {{.Values.input_netflow_port}}
+    id => "input-udp-netflow"
+    port  => {{.Values.input.netflow_port}}
     type => netflow
   }
   http {
-    port  => {{.Values.input_alertmanager_port}}
+    id => "input-http"
+    port  => {{.Values.input.alertmanager_port}}
     type => alert
     codec => plain
   }
   tcp {
-    port  => {{.Values.input_deployments_port}}
+    id => "input-tcp"
+    port  => {{.Values.input.deployments_port}}
     type => deployment
     codec => plain
   }
   http {
-    port  => {{.Values.input_http_port}}
-    user => '{{.Values.global.elk_elasticsearch_http_user}}'
-    password => '{{.Values.global.elk_elasticsearch_http_password}}'
-    ssl => true
+    id => "input-http-secure"
+    port  => {{.Values.input.http_port}}
+    user => "${HTTP_USER}"
+    password => "${HTTP_PASSWORD}"
+    ssl_enabled => true
     ssl_certificate => '/tls-secret/tls.crt'
     ssl_key => '/usr/share/logstash/config/tls.key'
   }
   beats {
-    port => {{.Values.input_beats_port}}
-    id => "beats"
+    id => "input-beats"
+    port => {{.Values.input.beats_port}}
     type => "jumpserver"
   }
 }
@@ -39,10 +45,12 @@ input {
 filter {
  if  [type] == "syslog" {
    mutate {
+     id => "mutate-rename-hostname"
      rename => { "host" => "hostname"}
    }
 
    dns {
+     id => "dns-resolve-hostname"
      reverse => [ "hostname" ]
      action => "replace"
      hit_cache_size => "100"
@@ -69,26 +77,32 @@ filter {
 
     if [type] == "alert" {
        json {
+         id => "alert-json-decode"
          source => "message"
        }
        if "_jsonparsefailure" not in [tags] {
          split {
+           id => "alert-json-split"
            field => "alerts"
          }
          mutate {
+             id => "alert-remove-message"
              remove_field => ["message"]
          }
        }
     }
     if [type] == "deployment" {
        json {
+         id => "deployment-json-decode"
          source => "message"
        }
        if "_jsonparsefailure" not in [tags] {
          split {
+           id => "deployment-json-split"
            field => "helm-release"
          }
          mutate {
+             id => "deployment-remove-message"
              remove_field => ["message"]
          }
        }
@@ -101,101 +115,113 @@ output {
     opensearch {
       id => "opensearch-syslog"
       index => "syslog-%{+YYYY.MM.dd}"
-      hosts => ["https://{{.Values.opensearch.http.endpoint}}.{{.Values.global.region}}.{{.Values.global.tld}}:{{.Values.opensearch.http_port}}"]
+      hosts => ["https://{{.Values.global.opensearch.host}}:{{.Values.global.opensearch.port}}"]
       template => "/logstash-etc/syslog.json"
       template_name => "syslog"
       template_overwrite => true
       auth_type => {
         type => "basic"
-        user => "{{.Values.opensearch.user}}"
-        password => "{{.Values.opensearch.password}}"
+        user => "${OPENSEARCH_SYSLOG_USER}"
+        password => "${OPENSEARCH_SYSLOG_PASSWORD}"
       }
       ssl => true
-      ssl_certificate_verification => false
+      ssl_certificate_verification => true
     }
   }
   elseif [type] == "alert" and [alerts][labels][severity] == "critical"{
     opensearch {
       id => "opensearch-critical-alerts"
       index => "alerts-critical-%{+YYYY}"
-      hosts => ["https://{{.Values.opensearch.http.endpoint}}.{{.Values.global.region}}.{{.Values.global.tld}}:{{.Values.opensearch.http_port}}"]
+      hosts => ["https://{{.Values.global.opensearch.host}}:{{.Values.global.opensearch.port}}"]
       auth_type => {
         type => "basic"
-        user => "{{.Values.opensearch.user}}"
-        password => "{{.Values.opensearch.password}}"
+        user => "${OPENSEARCH_SYSLOG_USER}"
+        password => "${OPENSEARCH_SYSLOG_PASSWORD}"
       }
+      template => "/logstash-etc/alerts.json"
+      template_name => "alerts"
+      template_overwrite => true
       ssl => true
-      ssl_certificate_verification => false
+      ssl_certificate_verification => true
     }
   }
   elseif [type] == "alert" and [alerts][labels][severity] == "warning"{
     opensearch {
       id => "opensearch-warnings"
       index => "alerts-warnings-%{+YYYY}"
-      hosts => ["https://{{.Values.opensearch.http.endpoint}}.{{.Values.global.region}}.{{.Values.global.tld}}:{{.Values.opensearch.http_port}}"]
+      hosts => ["https://{{.Values.global.opensearch.host}}:{{.Values.global.opensearch.port}}"]
       auth_type => {
         type => "basic"
-        user => "{{.Values.opensearch.user}}"
-        password => "{{.Values.opensearch.password}}"
+        user => "${OPENSEARCH_SYSLOG_USER}"
+        password => "${OPENSEARCH_SYSLOG_PASSWORD}"
       }
+      template => "/logstash-etc/alerts.json"
+      template_name => "alerts"
+      template_overwrite => true
       ssl => true
-      ssl_certificate_verification => false
+      ssl_certificate_verification => true
     }
   }
   elseif [type] == "alert"{
     opensearch {
       id => "opensearch-alerts"
       index => "alerts-other-%{+YYYY}"
-      hosts => ["https://{{.Values.opensearch.http.endpoint}}.{{.Values.global.region}}.{{.Values.global.tld}}:{{.Values.opensearch.http_port}}"]
+      hosts => ["https://{{.Values.global.opensearch.host}}:{{.Values.global.opensearch.port}}"]
       auth_type => {
         type => "basic"
-        user => "{{.Values.opensearch.user}}"
-        password => "{{.Values.opensearch.password}}"
+        user => "${OPENSEARCH_SYSLOG_USER}"
+        password => "${OPENSEARCH_SYSLOG_PASSWORD}"
       }
+      template => "/logstash-etc/alerts.json"
+      template_name => "alerts"
+      template_overwrite => true
       ssl => true
-      ssl_certificate_verification => false
+      ssl_certificate_verification => true
     }
   }
   elseif [type] == "deployment" {
     opensearch {
       id => "opensearch-deployments"
       index => "deployments-%{+YYYY}"
-      hosts => ["https://{{.Values.opensearch.http.endpoint}}.{{.Values.global.region}}.{{.Values.global.tld}}:{{.Values.opensearch.http_port}}"]
+      hosts => ["https://{{.Values.global.opensearch.host}}:{{.Values.global.opensearch.port}}"]
       auth_type => {
         type => "basic"
-        user => "{{.Values.opensearch.user}}"
-        password => "{{.Values.opensearch.password}}"
+        user => "${OPENSEARCH_SYSLOG_USER}"
+        password => "${OPENSEARCH_SYSLOG_PASSWORD}"
       }
+      template => "/logstash-etc/deployments.json"
+      template_name => "deployments"
+      template_overwrite => true
       ssl => true
-      ssl_certificate_verification => false
+      ssl_certificate_verification => true
     }
   }
   elseif  [type] == "netflow" {
     opensearch {
       id => "opensearch-netflow"
       index => "netflow-%{+YYYY.MM.dd}"
-      hosts => ["https://{{.Values.opensearch.http.endpoint}}.{{.Values.global.region}}.{{.Values.global.tld}}:{{.Values.opensearch.http_port}}"]
+      hosts => ["https://{{.Values.global.opensearch.host}}:{{.Values.global.opensearch.port}}"]
       auth_type => {
         type => 'basic'
-        user => "{{.Values.opensearch.user}}"
-        password => "{{.Values.opensearch.password}}"
+        user => "${OPENSEARCH_USER}"
+        password => "${OPENSEARCH_PASSWORD}"
       }
       ssl => true
-      ssl_certificate_verification => false
+      ssl_certificate_verification => true
     }
   }
   elseif  [type] == "jumpserver" {
     opensearch {
       id => "opensearch-jump"
       index => "jump-%{+YYYY.MM.dd}"
-      hosts => ["https://{{.Values.opensearch.http.endpoint}}.{{.Values.global.region}}.{{.Values.global.tld}}:{{.Values.opensearch.http_port}}"]
+      hosts => ["https://{{.Values.global.opensearch.host}}:{{.Values.global.opensearch.port}}"]
       auth_type => {
         type => 'basic'
-        user => "{{.Values.opensearch.jump_user}}"
-        password => "{{.Values.opensearch.jump_password}}"
+        user => "${OPENSEARCH_JUMP_USER}"
+        password => "${OPENSEARCH_JUMP_PASSWORD}"
       }
       ssl => true
-      ssl_certificate_verification => false
+      ssl_certificate_verification => true
     }
   }
 }

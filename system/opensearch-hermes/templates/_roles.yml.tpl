@@ -87,6 +87,7 @@ audit:
   - "cluster:monitor/main"
   - "cluster:monitor/health"
   - "cluster:monitor/state"
+  - "indices:monitor/settings/get"
   - "indices:data/read/scroll*"
   - "indices:data/read/msearch"
   - "indices:monitor/settings/get"
@@ -99,6 +100,7 @@ audit:
     - "indices:admin/template/put"
     - "indices:admin/mappings/get"
     - "indices:admin/mapping/put"
+    - "indices:admin/refresh*"
     - "indices:admin/delete"
     - "indices:admin/create"
     - "indices:data/write/bulk*"
@@ -106,9 +108,13 @@ audit:
     - "indices:data/write/delete/byquery"
     - "indices:data/write/index"
     - "indices:data/write/reindex"
-
     - "indices:data/write/update"
     - "indices:data/write/update/byquery"
     - "read"
+    - "indices:monitor/settings/get"
+    - "indices:monitor/stats"
+  - index_patterns:
+    - "*"
+    allowed_actions:
     - "indices:monitor/settings/get"
     - "indices:monitor/stats"

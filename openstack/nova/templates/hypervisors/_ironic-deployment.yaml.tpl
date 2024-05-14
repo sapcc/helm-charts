@@ -9,6 +9,10 @@ metadata:
     system: openstack
     type: backend
     component: nova
+  {{- if .Values.vpa.set_main_container }}
+  annotations:
+    vpa-butler.cloud.sap/main-container: nova-compute
+  {{- end }}
 spec:
   replicas: 1
   revisionHistoryLimit: {{ .Values.pod.lifecycle.upgrades.deployments.revision_history }}
@@ -33,6 +37,7 @@ spec:
         prometheus.io/scrape: "true"
         prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
         {{- end }}
+        {{- include "utils.linkerd.pod_and_service_annotation" . | indent 8 }}
         configmap-etc-hash: {{ include (print .Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
         configmap-ironic-etc-hash: {{ tuple . $hypervisor | include "ironic_configmap" | sha256sum }}
     spec:
@@ -65,6 +70,7 @@ spec:
               name: nova-etc
             - mountPath: /nova-patches
               name: nova-patches
+            {{- include "utils.trust_bundle.volume_mount" . | indent 12 }}
         {{- if $hypervisor.default.statsd_enabled }}
         - name: statsd
           image: {{ required ".Values.global.dockerHubMirror is missing" .Values.global.dockerHubMirror}}/prom/statsd-exporter:v0.8.1
@@ -107,6 +113,13 @@ spec:
               - key: console-cell1-{{ $type }}.conf
                 path: nova.conf.d/console-cell1-{{ $type }}.conf
               {{- end }}
+          - secret:
+              name: nova-etc
+              items:
+              - key: cell1.conf
+                path: nova.conf.d/cell1-secrets.conf
+              - key: keystoneauth-secrets.conf
+                path: nova.conf.d/keystoneauth-secrets.conf
       - name: nova-patches
         projected:
           sources:
@@ -122,5 +135,6 @@ spec:
               - key:  statsd-exporter.yaml
                 path: statsd-exporter.yaml
       {{- end }}
+      {{- include "utils.trust_bundle.volumes" . | indent 6 }}
 {{- end -}}
 {{- end -}}

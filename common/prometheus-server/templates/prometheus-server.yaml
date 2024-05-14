@@ -12,6 +12,7 @@ metadata:
 
 spec:
   replicas: 1
+  shards: 1
 
   {{ if $.Values.rbac.create -}}
   serviceAccountName: {{ include "serviceAccount.name" (list $name $root) }}
@@ -84,6 +85,13 @@ spec:
 {{ toYaml $.Values.externalLabels | indent 4 }}
     {{- end }}
 
+  {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+  podMetadata:
+    annotations:
+      linkerd.io/inject: enabled
+      config.linkerd.io/proxy-ephemeral-storage-request: 10M
+  {{- end }}
+
   {{ if $.Values.additionalScrapeConfigs -}}
   # Inject additional scrape configurations.
   additionalScrapeConfigs:
@@ -128,7 +136,7 @@ spec:
   {{- end }}
 
   # The retention time of the Prometheus.
-  retention: {{ default "7d" $.Values.retentionTime }}
+  retention: {{ default "12h" $.Values.retentionTime }}
 
   # The log level of the Prometheus.
   logLevel: {{ default "warn" $.Values.logLevel }}

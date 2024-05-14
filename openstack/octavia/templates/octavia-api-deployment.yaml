@@ -7,6 +7,10 @@ metadata:
     helm.sh/chart: {{ include "octavia.chart" . }}
     app.kubernetes.io/instance: {{ .Release.Name }}
     app.kubernetes.io/managed-by: {{ .Release.Service }}
+  {{- if .Values.vpa.set_main_container }}
+  annotations:
+    vpa-butler.cloud.sap/main-container: {{ .Chart.Name }}-api
+  {{- end }}
 spec:
   replicas: {{ .Values.pod.replicas.api }}
   revisionHistoryLimit: {{ .Values.pod.lifecycle.upgrades.deployments.revision_history }}
@@ -29,10 +33,13 @@ spec:
         {{- include "utils.topology.pod_label" . | indent 8 }}
       annotations:
         configmap-etc-hash: {{ include (print $.Template.BasePath "/octavia-etc-configmap.yaml") . | sha256sum }}
+        secrets-hash: {{ include (print $.Template.BasePath "/secrets.yaml") . | sha256sum }}
         {{- if or .Values.watcher.enabled .Values.proxysql.mode }}
         prometheus.io/scrape: "true"
         prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
         {{- end }}
+        {{- include "utils.linkerd.pod_and_service_annotation" . | indent 8 }}
+        
     spec:
       {{- include "utils.proxysql.pod_settings" . | nindent 6 }}
       {{- tuple . (dict "app.kubernetes.io/name" "octavia-api") | include "utils.topology.constraints" | indent 6 }}
@@ -49,7 +56,7 @@ spec:
             - name: COMMAND
               value: "/usr/sbin/apachectl -D FOREGROUND"
             - name: DEPENDENCY_JOBS
-              value: "{{ include "octavia.migration_job_name" . }}"
+              value: octavia-migration
             - name: NAMESPACE
               value: {{ .Release.Namespace }}
             - name: PYTHONWARNINGS
@@ -87,6 +94,9 @@ spec:
               mountPath: /etc/octavia/octavia.conf
               subPath: octavia.conf
               readOnly: true
+            - name: octavia-etc-confd
+              mountPath: /etc/octavia/octavia.conf.d
+              readOnly: true
             - name: octavia-etc
               mountPath: /etc/octavia/policy.json
               subPath: policy.json
@@ -112,6 +122,7 @@ spec:
               readOnly: true
             {{- end }}
             {{- include "utils.proxysql.volume_mount" . | indent 12 }}
+            {{- include "utils.trust_bundle.volume_mount" . | indent 12 }}
         {{- include "utils.proxysql.container" . | indent 8 }}
         {{- include "jaeger_agent_sidecar" . | indent 8 }}
 {{- if .Values.watcher.enabled }}
@@ -131,4 +142,8 @@ spec:
         - name: octavia-etc
           configMap:
             name: octavia-etc
+        - name: octavia-etc-confd
+          secret:
+            secretName: {{ .Release.Name }}-secrets
         {{- include "utils.proxysql.volumes" . | indent 8 }}
+        {{- include "utils.trust_bundle.volumes" . | indent 8 }}

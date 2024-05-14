@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Values.name }}-configuredb-bin
+  labels:
+    app: {{ template "fullName" . }}
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+    system: openstack
+    type: configuration
+    component: database
+    {{- include "sharedservices.labels" . | indent 4 }}
+  annotations:
+    "helm.sh/hook": pre-upgrade
+    "helm.sh/hook-weight": "2"
+data:
+  configuredb.sh: |
+{{ include (print .Template.BasePath "/initdb/_configuredb.sh.tpl") . | indent 4 }}

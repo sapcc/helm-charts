@@ -12,15 +12,6 @@ data:
 {{ include (print .Template.BasePath "/etc/_api-paste.ini.tpl") . | indent 4 }}
   designate.conf: |
 {{ include (print .Template.BasePath "/etc/_designate.conf.tpl") . | indent 4 }}
-{{- range $rndc := .Values.rndc_keys }}
-  {{ $rndc.name }}.key: |
-    key "{{ $rndc.name }}" {
-      algorithm "{{ $rndc.algorithm }}";
-      secret "{{ $rndc.secret }}";
-    };
-{{- end}}
-  pools.yaml: |
-{{ include (print .Template.BasePath "/etc/_pools.yaml.tpl") . | indent 4 }}
   policy.yaml: |
 {{ include (print .Template.BasePath "/etc/_designate-policy.yaml.tpl") . | indent 4 }}
   logging.conf: |
@@ -29,6 +20,11 @@ data:
 {{- if .Values.audit.enabled }}
   designate_audit_map.yaml: |
 {{ include (print .Template.BasePath "/etc/_designate_audit_map.yaml") . | indent 4 }}
+{{- end }}
+
+{{- if .Values.global_setup }}
+  test.html: |
+{{ include (print .Template.BasePath "/etc/_test.html") . | indent 4 }}
 {{- end }}
 
 {{- if .Values.tempest_enabled }}

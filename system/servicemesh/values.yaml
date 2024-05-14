@@ -1,3 +1,7 @@
+alerts:
+  enabled: true
+  prometheus: kubernetes
+
 owner-info:
   support-group: containers
   helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/system/servicemesh
@@ -17,6 +21,7 @@ linkerd-control-plane:
   identity:
     issuer:
       scheme: kubernetes.io/tls
+      issuanceLifetime: 72h0m0s
 
   controllerImage: keppel.global.cloud.sap/ccloud/linkerd/controller
 
@@ -27,6 +32,10 @@ linkerd-control-plane:
   proxyInit:
     image:
       name: keppel.global.cloud.sap/ccloud/linkerd/proxy-init
+    iptablesMode: "nft"
+    closeWaitTimeoutSecs: 3600
+    privileged: true
+    runAsRoot: true
 
   debugContainer:
     image:
@@ -64,40 +73,58 @@ linkerd-control-plane:
     image:
       name: keppel.global.cloud.sap/ccloud/linkerd/proxy
 
+    outboundConnectTimeout: 300s
+    inboundConnectTimeout: 300s
+    outboundDiscoveryCacheUnusedTimeout: 60s
+    inboundDiscoveryCacheUnusedTimeout: 120s
+
     resources:
       cpu:
         request: 100m
       memory:
-        limit: 250Mi
+        limit: ""
         request: 100Mi
 
   # controller configuration
-  controllerReplicas: 3
+  controllerReplicas: 5
   controllerResources: &controller_resources
     cpu: &controller_resources_cpu
       limit: ""
       request: 100m
     memory:
-      limit: 250Mi
-      request: 100Mi
+      limit: ""
+      request: 500Mi
   destinationResources: *controller_resources
 
   # identity configuration
   identityResources:
     cpu: *controller_resources_cpu
     memory:
-      limit: 250Mi
+      limit: ""
       request: 50Mi
 
   # heartbeat configuration
   heartbeatResources: *controller_resources
 
   # proxy injector configuration
-  proxyInjectorResources: *controller_resources
+  proxyInjectorResources:
+    cpu: *controller_resources_cpu
+    memory:
+      limit: ""
+      request: 250Mi
+
   webhookFailurePolicy: Ignore
 
   # service profile validator configuration
   spValidatorResources: *controller_resources
+
+  # for now in ./templates/podmonitor.yaml until upstream labels are fixed
+  podMonitor:
+    enabled: false
+    labels:
+      prometheus: kubernetes
+    scrapeInterval: 20s
+    scrapeTimeout: 20s
 
 linkerd-viz:
   enabled: false
@@ -126,9 +153,6 @@ linkerd-viz:
       memory:
         request: 50Mi
 
+  prometheusUrl: http://prometheus-kubernetes.kube-monitoring.svc:9090
   prometheus:
-    image:
-      registry: keppel.global.cloud.sap/ccloud/prom
-    resources:
-      memory:
-        request: 1000Mi
+    enabled: false

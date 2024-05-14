@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: opensearch-hermes-manager
+  namespace: hermes
+  labels:
+    system: opensearch-hermes
+    service: audit
+    component: opensearch-hermes-manager
+    role: manager
+  {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+  annotations:
+    linkerd.io/inject: enabled
+  {{- end }}
+spec:
+  selector:
+    component: opensearch-hermes-manager
+    role: manager
+  ports:
+    - name: manager
+      port: {{.Values.port_internal}}

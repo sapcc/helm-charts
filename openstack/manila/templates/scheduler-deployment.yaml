@@ -2,11 +2,15 @@ kind: Deployment
 apiVersion: apps/v1
 
 metadata:
-  name: manila-scheduler
+  name: {{ .Release.Name }}-scheduler
   labels:
     system: openstack
     type: backend
     component: manila
+  {{- if .Values.vpa.set_main_container }}
+  annotations:
+    vpa-butler.cloud.sap/main-container: manila-scheduler
+  {{- end }}
 spec:
   replicas: {{ .Values.pod.replicas.scheduler }}
   revisionHistoryLimit: 5
@@ -17,11 +21,11 @@ spec:
       maxSurge: 3
   selector:
     matchLabels:
-      name: manila-scheduler
+      name: {{ .Release.Name }}-scheduler
   template:
     metadata:
       labels:
-        name: manila-scheduler
+        name: {{ .Release.Name }}-scheduler
         alert-tier: os
         alert-service: manila
       annotations:
@@ -31,6 +35,9 @@ spec:
         {{- end }}
         kubectl.kubernetes.io/default-container: manila-scheduler
         configmap-etc-hash: {{ include (print .Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
+        secrets-hash: {{ include (print $.Template.BasePath "/secrets.yaml") . | sha256sum }}
+        {{- include "utils.linkerd.pod_and_service_annotation" . | indent 8 }}
+
     spec:
       {{ include "utils.proxysql.pod_settings" . | indent 6 }}
       affinity:
@@ -43,7 +50,7 @@ spec:
                 - key: name
                   operator: In
                   values:
-                  - manila-scheduler
+                  - {{ .Release.Name }}-scheduler
               topologyKey: "topology.kubernetes.io/zone"
       initContainers:
         {{- tuple . (dict "jobs" (print .Release.Name "-migration") "service" (print .Release.Name "-mariadb," .Release.Name "-rabbitmq")) | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 8 }}
@@ -65,6 +72,8 @@ spec:
             - manila-scheduler
             - --config-file
             - /etc/manila/manila.conf
+            - --config-file
+            - /etc/manila/manila.conf.d/secrets.conf
           env:
             {{- if .Values.sentry.enabled }}
             - name: SENTRY_DSN_SSL
@@ -87,7 +96,7 @@ spec:
             exec:
               command:
               - sh
-              - /etc/manila/healthz
+              - /etc/manila/manila.conf.d/healthz
             timeoutSeconds: 10
             periodSeconds: 5
             initialDelaySeconds: 5
@@ -99,6 +108,8 @@ spec:
               mountPath: /etc/manila/manila.conf
               subPath: manila.conf
               readOnly: true
+            - name: manila-etc-confd
+              mountPath: /etc/manila/manila.conf.d
             - name: manila-etc
               mountPath: /etc/manila/policy.yaml
               subPath: policy.yaml
@@ -107,12 +118,9 @@ spec:
               mountPath: /etc/manila/logging.ini
               subPath: logging.ini
               readOnly: true
-            - name: manila-etc
-              mountPath: /etc/manila/healthz
-              subPath: healthz
-              readOnly: true
             {{- include "utils.coordination.volume_mount" . | indent 12 }}
             {{- include "utils.proxysql.volume_mount" . | indent 12 }}
+            {{- include "utils.trust_bundle.volume_mount" . | indent 12 }}
           {{- if .Values.pod.resources.scheduler }}
           resources:
 {{ toYaml .Values.pod.resources.scheduler | indent 13 }}
@@ -141,10 +149,14 @@ spec:
           emptyDir: {}
         - name: manila-bin
           configMap:
-            name: manila-bin
+            name: {{ .Release.Name }}-bin
             defaultMode: 0555
         - name: manila-etc
           configMap:
-            name: manila-etc
+            name: {{ .Release.Name }}-etc
+        - name: manila-etc-confd
+          secret:
+            secretName: {{ .Release.Name }}-secrets
         {{- include "utils.coordination.volumes" . | indent 8 }}
         {{- include "utils.proxysql.volumes" . | indent 8 }}
+        {{- include "utils.trust_bundle.volumes" . | indent 8 }}

@@ -10,9 +10,11 @@ global:
   dbUser: keystone
   dbPassword: ""
 # registryAlternateRegion: keppel.$REGION.cloud.sap
+  linkerd_requested: false
 
 owner-info:
   support-group: identity
+  service: keystone
   maintainers:
     - Boris Bobrov
     - Rajiv Mucheli
@@ -29,7 +31,7 @@ run_db_migration: true
 skipRepairRoleAssignments: false
 
 # current keystone release
-release: xena
+release: zed
 
 ## Affinity for pod assignment
 ## Ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#affinity-and-anti-affinity
@@ -193,7 +195,7 @@ tempest:
   enabled: false
   image: "rally-openstack"
   #imageTag: "ccloud-1.5.0"
-  imageTag: "ccloud-xena"
+  imageTag: "ccloud-zed"
   adminPassword: ""
   userPassword: ""
   # tempest domain-id  -- do not set in production environments!
@@ -222,7 +224,7 @@ services:
       issuer_attribute: HTTP_SSL_CLIENT_I_DN
       #trusted_issuer: CN=SSO_CA,O=SAP-AG,C=DE
 
-    disco: true
+    disco: false
 
   public:
     scheme: http
@@ -276,7 +278,7 @@ dbName: keystone
 mariadb:
   enabled: true
   name: keystone
-  initdb_configmap: keystone-initdb
+  initdb_secret: keystone-initdb
   use_alternate_registry: true
   alerts:
     support_group: identity
@@ -297,6 +299,16 @@ mariadb:
       memory: 500Mi
 
   nodeAffinity: {}
+  vpa:
+    # https://github.com/sapcc/vpa_butler
+    # The maximum available capacity is split evenly across containers specified in the Deployment, StatefulSet or DaemonSet to derive the upper recommendation bound. This does not work out for pods with a single resource-hungry container with several sidecar containers
+    # Annotate the Deployment, StatefulSet or DaemonSet with vpa-butler.cloud.sap/main-container=$MAIN_CONTAINER. That will distribute 75% of the maximum available capacity to the main container and the rest evenly across all others
+    set_main_container: true
+
+# MariaDB Galera cluster as database backend
+# mariadb.enabled has to be false if Galera is enabled
+mariadb_galera:
+  enabled: false
 
 mysql_metrics:
   enabled: true
@@ -509,3 +521,7 @@ sapcc_rate_limit:
   openstack: {}
   resources: {}
   podAnnotations: {}
+
+prodel:
+  # This should be an endpoint implementing oslo.policy HTTPCheck
+  url: "http://prodel.prodel.svc/check-delete_project/%(project_id)s"

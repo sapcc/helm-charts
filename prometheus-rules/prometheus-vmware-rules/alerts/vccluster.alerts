@@ -70,13 +70,14 @@ groups:
       unless on (vccluster) vrops_cluster_summary_custom_tag_openstack_nova_traits_hana_exclusive_host{summary_custom_tag_openstack_nova_traits_hana_exclusive_host="true"}
     for: 10m
     labels:
-      severity: warning
+      severity: critical
       tier: vmware
       service: compute
       support_group: compute
       context: "Cluster DRS configuration"
       meta: "Cluster {{ $labels.vccluster }} DRS configuration is not set to fully automated."
       playbook: docs/devops/alert/vcenter/#cluster-drs-not-set-to-fully-automated
+      no_alert_on_absence: "true"
     annotations:
       description: "Cluster {{ $labels.vccluster }} DRS configuration is not set to fully automated."
       summary: "Cluster {{ $labels.vccluster }} DRS configuration is not set to fully automated."
@@ -99,3 +100,20 @@ groups:
     annotations:
       description: "Cluster {{ $labels.vccluster }} cannot evenly distribute new NSX-T controllers. {{ $labels.vcenter}}"
       summary: "Cluster {{ $labels.vccluster }} cannot evenly distribute new NSX-T controllers. {{ $labels.vcenter }}"
+
+  - alert: HanaExclusiveVCClusterDRSNotPartiallyAutomated
+    expr: |
+      vrops_cluster_configuration_drsconfig_defaultvmbehavior{vccluster=~"productionbb.+", state != "partiallyAutomated"}
+      and on (vccluster) vrops_cluster_summary_custom_tag_openstack_nova_traits_hana_exclusive_host{summary_custom_tag_openstack_nova_traits_hana_exclusive_host="true"}
+    labels:
+      severity: warning
+      tier: vmware
+      service: compute
+      support_group: compute
+      context: "Cluster DRS configuration"
+      meta: "The HANA-exclusive {{ $labels.vccluster }} cluster DRS configuration is not set to partially automated in the *{{ $labels.datacenter }}* availability zone\nLink to the vCenter: --> <https://{{ $labels.vcenter }}|{{ $labels.vcenter }}>"
+      playbook: docs/devops/alert/vcenter/#hanaexclusivevcclusterdrsnotpartiallyautomated
+      no_alert_on_absence: "true"
+    annotations:
+      description: "The HANA-exclusive {{ $labels.vccluster }} cluster DRS configuration is not set to partially automated in the *{{ $labels.datacenter }}* availability zone\nLink to the vCenter: --> <https://{{ $labels.vcenter }}|{{ $labels.vcenter }}>"
+      summary: "The HANA-exclusive {{ $labels.vccluster }} cluster DRS configuration is not set to partially automated in the *{{ $labels.datacenter }}* availability zone\nLink to the vCenter: --> <https://{{ $labels.vcenter }}|{{ $labels.vcenter }}>"

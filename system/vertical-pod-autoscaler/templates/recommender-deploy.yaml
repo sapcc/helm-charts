@@ -16,6 +16,9 @@ spec:
         {{- if .Values.additionalPodAnnotations }}
         {{- toYaml .Values.additionalPodAnnotations | nindent 8 -}}
         {{ end }}
+        {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+        linkerd.io/inject: enabled
+        {{- end }}
     spec:
       serviceAccountName: vpa-recommender
       securityContext:
@@ -40,6 +43,12 @@ spec:
             - --container-namespace-label={{ required ".Values.recommender.prometheus.containerNamespaceLabel missing" .Values.recommender.prometheus.containerNamespaceLabel }}
             - --container-pod-name-label={{ required ".Values.recommender.prometheus.containerPodNameLabel missing" .Values.recommender.prometheus.containerPodNameLabel }}
             - --container-name-label={{ required ".Values.recommender.prometheus.containerNameLabel missing" .Values.recommender.prometheus.containerNameLabel }}
+            {{- end }}
+            {{- if .Values.recommender.marginFraction }}
+            - --recommendation-margin-fraction={{ .Values.recommender.marginFraction }}
+            {{- end }}
+            {{- if .Values.recommender.podMinMemoryMB }}
+            - --pod-recommendation-min-memory-mb={{ .Values.recommender.podMinMemoryMB }}
             {{- end }}
           resources:
             limits:

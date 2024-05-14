@@ -27,6 +27,8 @@ spec:
         # ensure deployment's annotation section is updated if support-configmap file changes
         # this logic ensure pod recreation when the configmap changes and elektra is initialized with the new values
         checksum/configmap: {{ include "elektra/templates/support-config-map.yaml" . | sha256sum }}
+        # ensure mail port is skipeed by linkerd. This is required to allow the mail server to be accessed
+        config.linkerd.io/skip-outbound-ports: {{ .Values.monsoon_dashboard_mail_server_port | quote }}
     spec:
       affinity:
         podAntiAffinity:
@@ -111,7 +113,7 @@ spec:
               cpu: "2000m"
               memory: "2Gi"                
         - name: puma-metrics
-          image: {{.Values.global.registry}}/puma-exporter:1.0.0
+          image: {{.Values.global.registry}}/puma-exporter:1.0.1
           ports:
             - name: metrics-puma
               containerPort: 9235

@@ -2,7 +2,7 @@ This check finds alert rules that do not have all required labels and annotation
 
 #### Why is this a problem?
 
-Without the `severity` and `tier` label, alerts cannot be routed to the right Slack channels. Without the `playbook`
+Without the `severity` and `support_group` label, alerts cannot be routed to the right Slack channels. Without the `playbook`
 label, operators will not know how to fix the alert. Without the `summary` and `description` annotations, operators
 will not know what the alert is about.
 

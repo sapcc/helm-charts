@@ -7,6 +7,7 @@ debug: "True"
 
 global_setup: false
 tempest_enabled: false
+nanny_enabled: false
 
 sentry:
   enabled: true
@@ -28,14 +29,15 @@ global:
   designate_service_user: designate
   domain_seeds:
     skip_hcm_domain: false
-
+  linkerd_requested: false
+  
 pod:
   replicas:
     api: 3
     central: 3
     mdns: 2
     poolmanager: 1
-    producer: 1
+    producer: 4
     worker: 3
     sink: 1
   lifecycle:
@@ -52,32 +54,8 @@ imageVersionTempest: "latest"
 
 bind_pools:
   - name: default
-    nameservers:
-      - hostname: DEFINED-IN-REGION-CHART
-        ip:  DEFINED-IN-REGION-CHART
-      - hostname: DEFINED-IN-REGION-CHART
-        ip:  DEFINED-IN-REGION-CHART
-      - hostname: DEFINED-IN-REGION-CHART
-        ip:  DEFINED-IN-REGION-CHART
-    options:
-      tsig_key_name: DEFINED-IN-REGION-CHART
-      tsig_key_secret: DEFINED-IN-REGION-CHART
-      tsig_key_algorithm: DEFINED-IN-REGION-CHART
-## Akamai Pool values if needed
-#akamai_pools:
-#  - name: akamai_pool
-#    nameservers:
-#      - hostname: DEFINED-IN-REGION-CHART
-#        ip: DEFINED-IN-REGION-CHART
-#    options:
-#      username: DEFINED-IN-REGION-CHART
-#      password: DEFINED-IN-REGION-CHART
-#      tsig_key_name: DEFINED-IN-REGION-CHART
-#      tsig_key_secret: DEFINED-IN-REGION-CHART
-#      tsig_key_algorithm: DEFINED-IN-REGION-CHART
-#    also_notifies:
-#      - host: DEFINED-IN-REGION-CHART
-#        port: DEFINED-IN-REGION-CHART
+    nameservers: []
+    options: {}
 
 rndc_keys:
 - name: DEFINED-IN-REGION-CHART
@@ -106,16 +84,23 @@ percona_cluster:
   alerts:
     support_group: network-api
 
+proxysql:
+  connect_retries_delay: 1000
+  mode: null
+  max_connections_per_proc: 15
+
 mariadb:
   enabled: true
   name: designate
-  initdb_configmap: designate-initdb
+  initdb_secret: designate-initdb
   persistence_claim:
     name: db-designate-pvclaim
   alerts:
     support_group: network-api
   backup:
     enabled: false
+  databases:
+  - designate
   users:
     designate:
       name: designate
@@ -285,6 +270,9 @@ memcached:
 rabbitmq:
   enabled: true
   use_alternate_registry: true
+  ports:
+    public: 5672
+    management: 15672
   name: designate
   users:
     default:
@@ -299,6 +287,9 @@ rabbitmq:
     enabled: true
     sidecar:
       enabled: false 
+    enableDetailedMetrics: true
+    enablePerObjectMetrics: true
+
 rabbitmq_cluster:
   enabled: false
   use_alternate_registry: true
@@ -355,15 +346,23 @@ watcher:
 rbac:
   enabled: true
 
+metrics:
+  prometheus: openstack
+
 # Deploy Designate Prometheus alerts.
 alerts:
   enabled: true
   # Name of the Prometheus to which the alerts should be assigned to.
-  prometheus: openstack
+  # Keys = directory names in alerts/ and aggregations/
+  prometheus:
+    openstack: openstack
+    kubernetes: kubernetes
   support_group: network-api
 
 osprofiler:
   enabled: false
+
+coordinationBackend: "file"
 
 owner-info:
   support-group: network-api
@@ -372,3 +371,13 @@ owner-info:
     - David Hoeller
     - Benjamin Tinney
   helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/openstack/designate
+
+utils:
+  trust_bundle:
+    enabled: true
+    
+vpa:
+  # https://github.com/sapcc/vpa_butler
+  # The maximum available capacity is split evenly across containers specified in the Deployment, StatefulSet or DaemonSet to derive the upper recommendation bound. This does not work out for pods with a single resource-hungry container with several sidecar containers
+  # Annotate the Deployment, StatefulSet or DaemonSet with vpa-butler.cloud.sap/main-container=$MAIN_CONTAINER. That will distribute 75% of the maximum available capacity to the main container and the rest evenly across all others
+  set_main_container: true

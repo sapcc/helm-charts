@@ -22,7 +22,7 @@ groups:
 - name: metal-redfish-esxi.alerts
   rules:      
   - alert: MetalESXiRedfishWarning
-    expr: count(max_over_time(redfish_health{job="redfish/bb", type=~"(disk|storage)"}[30m]) == 1) by (server_name, type, exported_name, serial) * on(server_name) group_left count(label_replace(max_over_time(vrops_hostsystem_runtime_maintenancestate{state="notInMaintenance"}[15m]), "server_name", "$1", "hostsystem", "(.*).cc.*")) by (server_name)
+    expr: count(max_over_time(redfish_health{job="redfish-bb", type=~"(disk|storage)"}[30m]) == 1) by (server_name, type, exported_name, serial) * on(server_name) group_left count(label_replace(max_over_time(vrops_hostsystem_runtime_maintenancestate{state="notInMaintenance"}[15m]), "server_name", "$1", "hostsystem", "(.*).cc.*")) by (server_name)
     for: 10m
     labels:
       severity: warning
@@ -37,7 +37,7 @@ groups:
       summary: "Hardware error for server: {{ $labels.server_name }}"
 
   - alert: MetalESXiRedfishInfo
-    expr: count(max_over_time(redfish_health{job="redfish/bb", type=~"(disk|storage)"}[30m]) == 1) by (server_name, type, exported_name, serial) * on(server_name) group_left count(label_replace(max_over_time(vrops_hostsystem_runtime_maintenancestate{state="InMaintenance"}[15m]), "server_name", "$1", "hostsystem", "(.*).cc.*")) by (server_name)
+    expr: count(max_over_time(redfish_health{job="redfish-bb", type=~"(disk|storage)"}[30m]) == 1) by (server_name, type, exported_name, serial) * on(server_name) group_left count(label_replace(max_over_time(vrops_hostsystem_runtime_maintenancestate{state="InMaintenance"}[15m]), "server_name", "$1", "hostsystem", "(.*).cc.*")) by (server_name)
     for: 10m
     labels:
       severity: info

@@ -15,9 +15,7 @@ adminrole:
   users:
   -  "admin"
   backend_roles:
-  {{- range .Values.global.ldap.opensearch_admin_groups }}
-  - {{ . | title }}
-  {{- end }}
+  - CC_IAS_TEAM_SUPERVISION
 
 data:
   reserved: false
@@ -29,6 +27,11 @@ syslog:
   users:
   - "syslog"
 
+greenhouse:
+  reserved: false
+  users:
+  - "greenhouse"
+
 jump:
   reserved: false
   users:
@@ -39,6 +42,11 @@ logstash:
   backend_roles:
   - "logstash"
 
+storage:
+  reserved: false
+  backend_roles:
+  - "storage"
+
 jaeger:
   reserved: false
   users:
@@ -48,19 +56,19 @@ complex-role:
   reserved: false
   hidden: false
   backend_roles:
-  {{- range .Values.global.ldap.opensearch_admin_groups }}
-  - {{ . | title }}
-  {{- end }}
-  {{- range .Values.global.ldap.opensearch_dashboard_groups }}
-  - {{ . | title }}
-  {{- end }}
+  #- CC_IAS_TEAM_SUPERVISION
+  - CC_IAS_OPERATIONS_UI_KIBANA_SUPPORT
 
 kibana_user:
   reserved: false
   backend_roles:
-  {{- range .Values.global.ldap.opensearch_dashboard_groups }}
-  - {{ . | title }}
-  {{- end }}
+  - CC_IAS_OPERATIONS_UI_KIBANA_SUPPORT
+
+ml_full_access:
+  reserved: true
+  backend_roles:
+  - CC_IAS_OPERATIONS_UI_KIBANA_SUPPORT
+
 
 readall:
   reserved: false
@@ -81,6 +89,13 @@ promrole:
   reserved: false
   users:
   - "promuser"
+  backend_roles:
+  - CC_IAS_OPERATIONS_UI_KIBANA_SUPPORT
+
+jupyterhub:
+  reserved: false
+  users:
+  - "jupyterhub"
 
 maillog:
   reserved: false

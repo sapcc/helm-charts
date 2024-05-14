@@ -1,0 +1,97 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "fullName" . }}
+{{- $values := .Values.redfish_exporter -}}
+{{- if $values.namespace }}
+  namespace: {{ $values.namespace }}
+{{- end }}
+  labels:
+    app: {{ include "fullName" . }}
+    type: exporter
+spec:
+  selector:
+    matchLabels:
+      app: {{ include "fullName" . }}
+      type: exporter
+  replicas: {{ required "$values.replicas missing" $values.replicas }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
+  template:
+    metadata:
+      annotations:
+        rollme: {{ randAlphaNum 5 | quote }}
+      labels:
+        app: {{ include "fullName" . }} 
+        type: exporter
+    spec:
+      containers:
+      - name: {{ include "fullName" . }}
+        image: {{ required ".Values.global.registry missing" .Values.global.registry }}/{{ required "$values.image.name missing" $values.image.name }}:{{ required "$values.image.tag missing" $values.image.tag  }}
+        imagePullPolicy: Always
+        ports:
+          - name: metrics
+            containerPort: {{ $values.listen_port }}
+        command:
+          - /usr/bin/python3
+        args:
+{{ toYaml $values.args | indent 10 }}
+
+        env:
+        - name: LISTEN_PORT
+          value: "{{ required "listen_port needs to be defined in resfish_exporter values" $values.listen_port }}"
+        - name: TIMEOUT
+          value: "5"
+        {{- if $values.users.redfish_bm_username }}
+        - name: REDFISH_BM_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "fullName" . }}
+              key: redfish_bm_username
+        - name: REDFISH_BM_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "fullName" . }}
+              key: redfish_bm_password
+        {{- end }}
+        {{- if $values.users.redfish_cp_username }}
+        - name: REDFISH_CP_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "fullName" . }}
+              key: redfish_cp_username
+        - name: REDFISH_CP_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "fullName" . }}
+              key: redfish_cp_password
+        {{- end }}
+        {{- if $values.users.redfish_bb_username }}
+        - name: REDFISH_BB_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "fullName" . }}
+              key: redfish_bb_username
+        - name: REDFISH_BB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "fullName" . }}
+              key: redfish_bb_password
+        {{- end }}
+        {{- if $values.users.redfish_fw_username }}
+        - name: REDFISH_FW_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "fullName" . }}
+              key: redfish_fw_username
+        - name: REDFISH_FW_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "fullName" . }}
+              key: redfish_fw_password
+        {{- end }}
+        resources:
+{{ toYaml $values.resources | indent 10 }}

@@ -1,0 +1,31 @@
+apiVersion: ceph.rook.io/v1
+kind: CephObjectStore
+metadata:
+  name: {{ .Values.objectstore.name }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  metadataPool: {{ toYaml .Values.objectstore.metadataPool | nindent 4 }}
+  dataPool: {{ toYaml .Values.objectstore.dataPool | nindent 4 }}
+  gateway:
+    instances: {{ .Values.objectstore.gateway.instances }}
+    {{- if .Values.objectstore.gateway.port }}
+    port: {{ .Values.objectstore.gateway.port }}
+    {{- end }}
+    {{- if .Values.objectstore.gateway.securePort }}
+    securePort: {{ .Values.objectstore.gateway.securePort }}
+    {{- end }}
+    placement:
+      hosting:
+        dnsNames: {{ toYaml .Values.objectstore.gateway.dnsNames | nindent 8 }}
+      nodeAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          nodeSelectorTerms:
+            - matchExpressions:
+                - key: kubernetes.metal.cloud.sap/role
+                  operator: In
+                  values:
+                    - {{ .Values.osd.nodeRole }}
+    priorityClassName: system-cluster-critical
+    sslCertificateRef: {{ .Values.objectstore.gateway.sslCertificateRef }}
+    resources: {{ toYaml .Values.objectstore.gateway.resources | nindent 6 }}
+  preservePoolsOnDelete: true

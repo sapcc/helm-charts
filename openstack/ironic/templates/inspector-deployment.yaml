@@ -28,10 +28,12 @@ spec:
       annotations:
         configmap-etc-hash: {{ include (print $.Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
         configmap-inspector-etc-hash: {{ include (print $.Template.BasePath "/inspector-etc-configmap.yaml") . | sha256sum }}
+        secrets-hash: {{ include (print $.Template.BasePath "/secrets.yaml") . | sha256sum }}
         {{- if or .Values.inspector.rpc_statsd_enabled .Values.proxysql.mode }}
         prometheus.io/scrape: "true"
         prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
         {{- end }}
+        {{- include "utils.linkerd.pod_and_service_annotation" . | indent 8 }}
     spec:
 {{ tuple . "ironic" "inspector" | include "kubernetes_pod_anti_affinity" | indent 6 }}
       {{- include "utils.proxysql.pod_settings" . | indent 6 }}
@@ -68,6 +70,8 @@ spec:
         volumeMounts:
         - mountPath: /etc/ironic-inspector
           name: etcironic
+        - mountPath: /etc/ironic-inspector/ironic-inspector.conf.d
+          name: ironic-inspector-etc-confd
         - mountPath: /etc/ironic-inspector/ironic-inspector.conf
           name: ironic-inspector-etc
           subPath: ironic-inspector.conf
@@ -93,6 +97,7 @@ spec:
           subPath: ironic-inspector.filters
           readOnly: true
         {{- include "utils.proxysql.volume_mount" . | indent 8 }}
+        {{- include "utils.trust_bundle.volume_mount" . | indent 8 }}
       {{- tuple . .Values.api.api_workers | include "utils.proxysql.container" | indent 6 }}
       {{- if and .Values.global.ironic_tftp_ip .Values.inspector.dhcp.range .Values.inspector.dhcp.options.router }}
       - name: dhcp
@@ -144,6 +149,12 @@ spec:
         configMap:
           name: ironic-etc
           defaultMode: 0444
+      - name: ironic-inspector-etc-confd
+        secret:
+          secretName: {{ .Release.Name }}-secrets
+          items:
+          - key: inspector_secrets.conf
+            path: inspector_secrets.conf
       - name: ironic-inspector-etc
         configMap:
           name: ironic-inspector-etc
@@ -159,3 +170,4 @@ spec:
           defaultMode: 0444
       {{- end }}
       {{- include "utils.proxysql.volumes" . | indent 6 }}
+      {{- include "utils.trust_bundle.volumes" . | indent 6 }}

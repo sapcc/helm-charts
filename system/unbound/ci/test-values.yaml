@@ -7,19 +7,43 @@ global:
 
 unbound:
   name: "testunbound"
-  image_unbound: sapcc/unbound
-  image_unbound_exporter: sapcc/unbound_exporter
-  image_unbound_tag: latest 
-  image_unbound_exporter_tag: latest 
-  image_pullPolicy: IfNotPresent
+
+  unbound:
+    image: sapcc/unbound
+    image_tag: latest
+
+  unbound_exporter:
+    image: sapcc/unbound_exporter
+    image_tag: latest
+
+  dnstap:
+    image: sapcc/dnstap
+    image_tag: latest
+
+  bind_rpz_proxy:
+    image: sapcc/bind-rpz-proxy
+    image_tag: latest
+    enabled: true
+
+    rndc:
+      keyname: rndc-key
+      algo:    hmac-sha512
+      secret:  MDEyMzQ1Njc4OWFiY2RlZg==
+
+  rpz:
+    tsig:
+      keyname: tsig-key
+      algo:    hmac-sha512
+      secret:  MDEyMzQ1Njc4OWFiY2RlZg==
+    zones: []
+
+  image_pullPolicy: Always
   port_unbound_exporter: 9107
   interface: 0.0.0.0
   failure_domain_zone: a
   externalIP: 127.0.0.1
-  unbound_control_key: "test"
-  unbound_control_pem: "test"
-  unbound_server_key: "test"
-  unbound_server_pem: "test"
+  control:
+    socket_path: "/run/unbound/control.sock"
 
 alerts:
   prometheus: openstack

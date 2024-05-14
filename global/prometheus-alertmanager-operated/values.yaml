@@ -1,8 +1,8 @@
 owner-info:
   helm-chart-url: 'https://github.com/sapcc/helm-charts/tree/master/global/prometheus-alertmanager-operated'
   maintainers:
-    - Martin Vossen
-    - Bassel Zeidan
+    - Tommy Sauer
+    - Richard Tief
   support-group: observability
   service: alertmanager
 
@@ -12,6 +12,11 @@ global:
 
   # The TLD as used in the URL.
   domain:
+
+  linkerd_requested: true
+
+linkerd-support:
+  annotate_namespace: true
 
 # Name of the Alertmanager instance. Used to deploy additional configuration via Secret.
 alertmanagerName:
@@ -36,37 +41,38 @@ prometheus-alertmanager:
   alerts:
     prometheus: infra-frontend
 
+groupBy:
+  - region
+  - service
+  - alertname
+  - cluster
+  - support_group
+groupWait: 1m
+groupInterval: 7m
+repeatInterval: 12h
+
 # Values for Slack receivers.
 slack:
-  api:
-  kubernikus:
-  metal:
-  network:
-  vmware:
-  compute:
-  compute_storage_api:
-  email:
-  identity:
-  network_api:
-  observability:
-  containers:
+  global:
+    webhookURL:
+    devnullWebhookURL:
 
-# Values for PagerDuty receivers.
-pagerduty_sap:
-  api:
-  alertTest:
-  metal:
-  network:
-  vmware:
-  osd_mom_network:
-  osd_mom_compute:
-  compute:
-  compute_storage_api:
-  identity:
-  email:
-  containers:
-  network_api:
-  observability:
+  channels:
+    - name: tier-1
+      criticalWebhookURL:
+      warningWebhookURL:
+    - name: tier-2
+      warningWebhookURL:
+      criticalWebhookURL:
+
+  supportChannels:
+    - name: team-1
+      criticalWebhookURL:
+      warningWebhookURL:
+    - name: team-2
+      warningWebhookURL:
+      criticalWebhookURL:
+
 
 # Values for cc_email_receiver receiver
 cc_email_receiver:
@@ -76,3 +82,56 @@ cc_email_receiver:
   auth_username:
   auth_password:
   email_from_address:
+
+octobus:
+  gcpInstance:
+
+awx:
+  basicAuthUser:
+  basicAuthPwd:
+  listenerURL:
+
+regions:
+  - ap-ae-1
+  - ap-au-1
+  - ap-cn-1
+  - ap-jp-1
+  - ap-jp-2
+  - ap-sa-1
+  - ap-sa-2
+  - eu-de-1
+  - eu-de-2
+  - eu-nl-1
+  - la-br-1
+  - na-ca-1
+  - na-us-1
+  - na-us-2
+  - na-us-3
+  - qa-de-1
+
+clusterTypes:
+  - abapcloud
+  - admin
+  - controlplane
+  - customer
+  - internet
+  - kubernikus
+  - metal
+  - scaleout
+  - virtual
+
+supportGroups:
+  - compute
+  - compute-storage-api
+  - containers
+  - email
+  - identity
+  - foundation
+  - network-api
+  - observability
+  - src
+  - network-data
+  - network-security
+  - network-lb
+  - network-wan
+  - storage

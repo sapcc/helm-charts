@@ -27,6 +27,10 @@ spec:
       annotations:
         checksum/config: {{ include ( print $.Template.BasePath "/metis-etc-configmap.yaml" ) . | sha256sum }}
         checksum/secret: {{ include ( print $.Template.BasePath "/metis-secrets.yaml" ) . | sha256sum }}
+        kubectl.kubernetes.io/default-container: "metis"
+      {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+        linkerd.io/inject: enabled
+      {{- end }}
     spec:
       containers:
       - name: metis
@@ -38,10 +42,7 @@ spec:
         resources:
           requests:
             memory: 50Mi
-            cpu: 10m
-          limits:
-            memory: 250Mi
-            cpu: 200m
+            cpu: 50m
 
         env:
           - name: API_TOKEN
@@ -69,24 +70,14 @@ spec:
             valueFrom:
               secretKeyRef:
                 name: metis-secrets
-                key: vcenterMasterPW
+                key: vcenterPW
 {{- end }}
         volumeMounts:
           - name: metis-etc
             mountPath: /config
             readOnly: true
-{{- if .Values.metis.prometheus.enabled }}
-          - name: certs-volume
-            mountPath: "/etc/certs"
-            readOnly: true
-{{- end }}
       volumes:
         - name: metis-etc
           configMap:
             name: metis-etc
-{{- if .Values.metis.prometheus.enabled }}
-        - name: certs-volume
-          secret:
-            secretName: metis-prom-certs
-{{- end }}
 {{- end }}

@@ -159,6 +159,12 @@ resources:
             disable: disable
             disable-log-reason: disable
             enable: enable
+        custom_attributes:
+            host: compute/service/host
+            state: compute/service/state
+            status: compute/service/status
+            disabled_reason: compute/service/disabled_reason
+            zone: compute/service/zone
+            forced_down: compute/service/forced_down
     usage:
         api_name: os-simple-tenant-usage
-

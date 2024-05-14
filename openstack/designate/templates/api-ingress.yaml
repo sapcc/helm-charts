@@ -12,6 +12,7 @@ metadata:
     {{- if .Values.global_setup }}
     kubernetes.io/ingress.class: "nginx-external"
     {{- end }}
+    {{- include "utils.linkerd.ingress_annotation" . | indent 4 }}
 spec:
 {{- if .Values.global_setup }}
   ingressClassName: "nginx-external"
@@ -39,3 +40,12 @@ spec:
               name: {{ if .Values.global_setup }}designate-global-api{{ else }}designate-api{{ end }}
               port:
                 number: {{.Values.global.designate_api_port_internal}}
+{{- if .Values.global_setup }}
+        - path: /test.html
+          pathType: Exact
+          backend:
+            service:
+              name: {{ if .Values.global_setup }}designate-global-api{{ else }}designate-api{{ end }}
+              port:
+                number: 80
+{{- end }}

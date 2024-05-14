@@ -17,8 +17,8 @@ admin_domain_scope = True
 
 [identity]
 uri_v3 = http://{{ if .Values.global.clusterDomain }}keystone.{{.Release.Namespace}}.svc.{{.Values.global.clusterDomain}}{{ else }}keystone.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}{{end}}:5000/v3
-endpoint_type = internal
-v3_endpoint_type = internal
+endpoint_type = public
+v3_endpoint_type = public
 region = {{ .Values.global.region }}
 default_domain_id = {{ .Values.tempest_common.domainId }}
 admin_domain_scope = True
@@ -52,7 +52,7 @@ build_timeout=600
 [network]
 project_network_cidr = 10.199.0.0/16
 public_network_id = {{ .Values.tempest_common.public_network_id }}
-endpoint_type = internal
+endpoint_type = public
 shared_physical_network= {{ .Values.tempest_common.shared_physical_network | default true }}
 floating_network_name = FloatingIP-external-monsoon3-01
 build_timeout=600
@@ -70,10 +70,12 @@ driver = fake-hardware
 
 [compute]
 # image_ref and image_ref_alt will be changed to the image-id during init-script as the image-id can change over time.
-image_ref = CHANGE_ME_IMAGE_REF
-image_ref_alt = CHANGEMEIMAGEREFALT
-endpoint_type = internal
-v3_endpoint_type = internal
+#image_ref = CHANGE_ME_IMAGE_REF
+#image_ref_alt = CHANGEMEIMAGEREFALT
+image_ref = 84f9f266-3f11-4447-ae6c-f7940b2f5eb1
+image_ref_alt = 84f9f266-3f11-4447-ae6c-f7940b2f5eb1
+endpoint_type = public
+v3_endpoint_type = public
 region = {{ .Values.global.region }}
 flavor_ref = 20
 flavor_ref_alt = 30
@@ -110,8 +112,8 @@ max_api_microversion = 2.49
 suppress_errors_in_cleanup = True
 enable_ip_rules_for_protocols = nfs
 enable_protocols = nfs
-endpoint_type = internalURL
-v3_endpoint_type = internalURL
+endpoint_type = publicURL
+v3_endpoint_type = publicURL
 region = {{ .Values.global.region }}
 
 [validation]
@@ -120,7 +122,7 @@ ssh_key_type = rsa
 
 [volume]
 catalog_type = volumev3
-endpoint_type = internal
+endpoint_type = public
 min_microversion = 3.0
 max_microversion = latest
 vendor_name = VMware

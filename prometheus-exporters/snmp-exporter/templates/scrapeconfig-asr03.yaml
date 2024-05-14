@@ -1,4 +1,4 @@
-{{- if .Values.snmp_exporter.operator }}
+{{- if .Values.snmp_exporter.asr03.enabled }}
 apiVersion: monitoring.coreos.com/v1alpha1
 kind: ScrapeConfig
 metadata:
@@ -9,9 +9,11 @@ metadata:
     app.kubernetes.io/name: snmp-exporter-asr03
 spec:
   httpSDConfigs:
-    - url: {{ .Values.global.http_sd_configs.netbox_url }}/devices/?custom_labels=__param_module=asr03&manufacturer=cisco&status=active&region={{ .Values.global.region }}&q=asr03
-      refresh_interval: {{ .Values.global.http_sd_configs.refresh_interval }}
+    - url: {{ .Values.global.http_sd_configs.netbox_url }}/devices/?custom_labels=__param_module=asr03;__param_auth=asr03_v3&manufacturer=cisco&status=active&region={{ .Values.global.region }}&q=asr03
+      refreshInterval: {{ .Values.global.http_sd_configs.refresh_interval }}
   metricsPath: /snmp
+  scrapeInterval: 60s
+  scrapeTimeout: 50s
   relabelings:
     - sourceLabels: [__address__]
       targetLabel: __param_target
@@ -19,6 +21,10 @@ spec:
       targetLabel: instance
     - targetLabel: __address__
       replacement: snmp-exporter:{{.Values.snmp_exporter.listen_port}}
+    - targetLabel: module
+      replacement: asr03
+    - targetLabel: __param_auth
+      replacement: asr03_v3
   metricRelabelings:
     - sourceLabels: [name]
       targetLabel:  devicename

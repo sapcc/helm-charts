@@ -5,7 +5,7 @@ metadata:
   name: vpa-admission-controller
   namespace: {{ .Release.Namespace }}
 spec:
-  replicas: 1
+  replicas: {{ required ".Values.admission.replicas missing" .Values.admission.replicas }}
   selector:
     matchLabels:
       app: vpa-admission-controller
@@ -18,11 +18,22 @@ spec:
         {{- if .Values.additionalPodAnnotations }}
         {{- toYaml .Values.additionalPodAnnotations | nindent 8 -}}
         {{ end }}
+        {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+        linkerd.io/inject: enabled
+        {{- end }}
+        checksum/certificate: {{ include (print $.Template.BasePath "/admission-certificate.yaml") . | sha256sum }}
     spec:
       serviceAccountName: vpa-admission-controller
       securityContext:
         runAsNonRoot: true
         runAsUser: 65534 # nobody
+      topologySpreadConstraints:
+      - maxSkew: 1
+        topologyKey: kubernetes.io/hostname
+        whenUnsatisfiable: DoNotSchedule
+        labelSelector:
+          matchLabels:
+            app: vpa-admission-controller
       containers:
         - name: admission-controller
           image: {{ include "admission.image" . }}

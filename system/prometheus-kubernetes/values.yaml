@@ -1,3 +1,6 @@
+global:
+  linkerd_requested: true
+
 owner-info:
   service: prometheus
   support-group: observability
@@ -8,8 +11,6 @@ owner-info:
 
 prometheus-server:
   name: kubernetes
-
-  retentionTime: 7d
 
   persistence:
     enabled: true
@@ -23,11 +24,18 @@ prometheus-server:
         - kubernetes-cadvisors
         - kubernetes-kubelet
 
+  vpaUpdateMode: "Auto"
+  vpaResources:
+    prometheus:
+      containerName: "prometheus"
+      maxAllowed:
+        memory: "40Gi"
+
 thanos:
   name: kubernetes
-
-prometheus_collector:
-  enabled: false
+  compactor:
+    dataVolume:
+      enabled: true
 
 extraScrapeConfig:
   enabled: false

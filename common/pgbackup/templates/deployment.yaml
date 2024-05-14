@@ -1,19 +1,16 @@
+{{- $region   := .Values.global.region                   | required "missing value for .Values.global.region"       -}}
 {{- $registry := .Values.global.registry                 | required "missing value for .Values.global.registry" -}}
 {{- if .Values.use_alternate_region -}}
   {{- $registry = .Values.global.registryAlternateRegion | required "missing value for .Values.global.registryAlternateRegion" -}}
 {{- end -}}
 {{- $db_name  := .Values.database.name                   | default .Release.Name -}}
 {{- $db_host  := .Values.database.host                   | default (printf "%s-postgresql" .Release.Name) -}}
-{{- $auth_url := .Values.swift.os_auth_url               | default (printf "http://keystone.%s.svc:5000/v3" (.Values.global.keystoneNamespace | default .Release.Namespace)) -}}
-{{- $region   := .Values.swift.os_region_name            | default .Values.global.region -}}
 
 apiVersion: apps/v1
 kind: Deployment
 
 metadata:
   name: "{{ .Release.Name }}-pgbackup"
-  labels:
-    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
 
 spec:
   replicas: 1
@@ -27,6 +24,7 @@ spec:
       labels:
         name: "{{ .Release.Name }}-pgbackup"
       annotations:
+        kubectl.kubernetes.io/default-container: pgbackup
         checksum/secret:       {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
         {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
         linkerd.io/inject: enabled
@@ -35,7 +33,7 @@ spec:
         prometheus.io/targets: {{ quote .Values.alerts.prometheus }}
     spec:
       containers:
-        - name: backup
+        - name: pgbackup
           {{- if eq .Release.Namespace "postgresql-test" }}
           {{/* The E2E test pipeline is allowed to use unreleased pgbackup versions. */}}
           image: '{{ $registry }}/backup-tools:{{ .Values.image_tag | default .Chart.AppVersion }}'
@@ -51,7 +49,7 @@ spec:
             - name: MY_POD_NAMESPACE
               value: {{ quote .Release.Namespace }}
             - name: OS_AUTH_URL
-              value: {{ quote $auth_url }}
+              value: {{ printf "https://identity-3.%s.cloud.sap/v3" $region | quote }}
             - name: OS_AUTH_VERSION
               value: "3"
             - name: OS_USERNAME
@@ -72,11 +70,19 @@ spec:
             - name: PGSQL_HOST
               value: '{{ $db_host }}.{{ .Release.Namespace }}.svc'
             - name: PGSQL_USER
+              {{- if .Values.isPostgresNG }}
+              value: backup
+              {{- else }}
               value: {{ quote .Values.database.username }}
+              {{- end }}
             - name: PGPASSWORD
               valueFrom:
                 secretKeyRef:
+                  {{- if .Values.isPostgresNG }}
+                  name: "{{ .Release.Name }}-pguser-backup"
+                  {{- else }}
                   name: "{{ .Release.Name }}-pgbackup"
+                  {{- end }}
                   key: postgres-password
           ports:
           - name: metrics
@@ -85,6 +91,8 @@ spec:
             limits:
               memory: {{ .Values.resources.memory_limit }}
               cpu: {{ .Values.resources.cpu_limit }}
+            {{- if not (.Values.global.region | regexMatch "^qa-de-[2-6]$") }}
             requests:
               memory: {{ .Values.resources.memory_limit }}
               cpu: {{ .Values.resources.cpu_request }}
+            {{- end }}

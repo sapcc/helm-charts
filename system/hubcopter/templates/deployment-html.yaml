@@ -23,6 +23,7 @@ spec:
         alert-service: hubcopter
       annotations:
         checksum/configmap: {{ include "hubcopter/templates/configmap-html.yaml" . | sha256sum }}
+        kubectl.kubernetes.io/default-container: html
     spec:
       affinity:
         podAntiAffinity:
@@ -42,8 +43,8 @@ spec:
             name: hubcopter-html
       containers:
         - name: html
-          image: {{ $.Values.global.dockerHubMirror }}/library/nginx:latest
-          imagePullPolicy: Always # -> if this pod shows up as having a vulnerable image, a restart should suffice to get it back to Clean
+          image: {{ .Values.global.registry | required ".Values.global.registry not found" }}/shared-app-images/alpine-nginx:mainline-slim-latest
+          imagePullPolicy: Always # -> if this pod shows up as having a vulnerable image, a rebuild and restart should suffice to get it back to Clean
           args: [ ]
           # TODO: securityContext: { runAsNonRoot: true }
           volumeMounts:

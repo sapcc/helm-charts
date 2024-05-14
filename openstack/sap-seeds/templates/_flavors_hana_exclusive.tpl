@@ -1,3 +1,4 @@
+# Cascade-Lake HANA Flavors
 - name: "hana_c24_m365"
   id: "300"
   vcpus: 24
@@ -7,6 +8,11 @@
     {{- tuple . "vmware_hana_exclusive" | include "sap_seeds.helpers.extra_specs" | indent 4 }}
     "trait:CUSTOM_NUMASIZE_C48_M729": "required"
     "hw:cpu_cores": "24"  # used in nova-vmware as cores-per-socket (12pCPU = 24vCPU)
+    # "reservation:cpu": "22"
+    {{- if ( .Values.hana_flavors_quota_separate ) }}
+    "quota:instance_only": "true"
+    "quota:separate": "true"
+    {{- end }}
 - name: "hana_c48_m729"
   id: "301"
   vcpus: 48
@@ -16,6 +22,11 @@
     {{- tuple . "vmware_hana_exclusive" | include "sap_seeds.helpers.extra_specs" | indent 4 }}
     "trait:CUSTOM_NUMASIZE_C48_M729": "required"
     "hw:cpu_cores": "48"  # used in nova-vmware as cores-per-socket (24pCPU = 48vCPU)
+    # "reservation:cpu": "45"
+    {{- if ( .Values.hana_flavors_quota_separate ) }}
+    "quota:instance_only": "true"
+    "quota:separate": "true"
+    {{- end }}
 - name: "hana_c96_m1458"
   id: "302"
   vcpus: 96
@@ -25,6 +36,11 @@
     {{- tuple . "vmware_hana_exclusive" | include "sap_seeds.helpers.extra_specs" | indent 4 }}
     "trait:CUSTOM_NUMASIZE_C48_M729": "required"
     "hw:cpu_cores": "48"  # used in nova-vmware as cores-per-socket (24pCPU = 48vCPU)
+    # "reservation:cpu": "91"
+    {{- if ( .Values.hana_flavors_quota_separate ) }}
+    "quota:instance_only": "true"
+    "quota:separate": "true"
+    {{- end }}
 - name: "hana_c144_m2188"
   id: "303"
   vcpus: 144
@@ -34,7 +50,12 @@
     {{- tuple . "vmware_hana_exclusive" | include "sap_seeds.helpers.extra_specs" | indent 4 }}
     "trait:CUSTOM_NUMASIZE_C48_M729": "required"
     "hw:cpu_cores": "48"  # used in nova-vmware as cores-per-socket (24pCPU = 48vCPU)
+    # "reservation:cpu": "136"
     "vmware:hw_version": "vmx-18"
+    {{- if ( .Values.hana_flavors_quota_separate ) }}
+    "quota:instance_only": "true"
+    "quota:separate": "true"
+    {{- end }}
 - name: "hana_c192_m2917"
   id: "304"
   vcpus: 192
@@ -44,7 +65,12 @@
     {{- tuple . "vmware_hana_exclusive" | include "sap_seeds.helpers.extra_specs" | indent 4 }}
     "trait:CUSTOM_NUMASIZE_C48_M729": "required"
     "hw:cpu_cores": "48"  # used in nova-vmware as cores-per-socket (24pCPU = 48vCPU)
+    # "reservation:cpu": "182"
     "vmware:hw_version": "vmx-18"
+    {{- if ( .Values.hana_flavors_quota_separate ) }}
+    "quota:instance_only": "true"
+    "quota:separate": "true"
+    {{- end }}
 - name: "hana_c384_m5835"
   id: "305"
   vcpus: 384
@@ -54,7 +80,12 @@
     {{- tuple . "vmware_hana_exclusive" | include "sap_seeds.helpers.extra_specs" | indent 4 }}
     "trait:CUSTOM_NUMASIZE_C48_M729": "required"
     "hw:cpu_cores": "48"  # used in nova-vmware as cores-per-socket (24pCPU = 48vCPU)
+    # "reservation:cpu": "364"
     "vmware:hw_version": "vmx-18"
+    {{- if ( .Values.hana_flavors_quota_separate ) }}
+    "quota:instance_only": "true"
+    "quota:separate": "true"
+    {{- end }}
 - name: "hana_c288_m4377"
   id: "311"
   vcpus: 288
@@ -64,7 +95,12 @@
     {{- tuple . "vmware_hana_exclusive" | include "sap_seeds.helpers.extra_specs" | indent 4 }}
     "trait:CUSTOM_NUMASIZE_C48_M729": "required"
     "hw:cpu_cores": "48"  # used in nova-vmware as cores-per-socket (24pCPU = 48vCPU)
+    # "reservation:cpu": "273"
     "vmware:hw_version": "vmx-18"
+    {{- if ( .Values.hana_flavors_quota_separate ) }}
+    "quota:instance_only": "true"
+    "quota:separate": "true"
+    {{- end }}
 - name: "hana_c448_m11671"
   id: "313"
   vcpus: 448
@@ -74,26 +110,123 @@
     {{- tuple . "vmware_hana_exclusive" | include "sap_seeds.helpers.extra_specs" | indent 4 }}
     "trait:CUSTOM_NUMASIZE_C56_M1459": "required"
     "hw:cpu_cores": "56"  # used in nova-vmware as cores-per-socket (24pCPU = 48vCPU)
+    # "reservation:cpu": "425"
     "vmware:hw_version": "vmx-18"
+    {{- if ( .Values.hana_flavors_quota_separate ) }}
+    "quota:instance_only": "true"
+    "quota:separate": "true"
+    {{- end }}
 
-{{- if .Values.hana_exclusive_contains_legacy_bigvm_flavors }}
-### Deprecated BigVM flavors
-- name: "m5.96xlarge"
-  id: "270"
-  vcpus: 90
-  ram: 1468416
+# Sapphire-Rapids HANA Flavors
+- name: "hana_c30_m240_v2"
+  id: "320"
+  vcpus: 30
+  ram: 245760
   disk: 64
-  is_public: true
   extra_specs:
-    {{- tuple . "vmware" | include "sap_seeds.helpers.extra_specs" | indent 4 }}
-    "host_fraction": "1/4,3/4,1/2,1"
-- name: "x1.32xlarge"
-  id: "250"
-  vcpus: 128
-  ram: 1991680
+    {{ tuple . "vmware_hana_exclusive" | include "sap_seeds.helpers.extra_specs" | indent 4 }}
+    "trait:CUSTOM_NUMASIZE_C60_M480": "required"
+    "hw:cpu_cores": "30"   # used in nova-vmware as cores-per-socket (15pCPU = 30vCPU)
+    "vmware:hw_version": "vmx-18"
+    {{- if ( .Values.hana_flavors_quota_separate ) }}
+    "quota:instance_only": "true"
+    "quota:separate": "true"
+    {{- end }}
+- name: "hana_c60_m480_v2"
+  id: "321"
+  vcpus: 60
+  ram: 491520
   disk: 64
-  is_public: true
   extra_specs:
-    {{- tuple . "vmware" | include "sap_seeds.helpers.extra_specs" | indent 4 }}
-    "host_fraction": "1,0.67,0.34"
-{{- end }}
+    {{ tuple . "vmware_hana_exclusive" | include "sap_seeds.helpers.extra_specs" | indent 4 }}
+    "trait:CUSTOM_NUMASIZE_C60_M480": "required"
+    "hw:cpu_cores": "60"   # used in nova-vmware as cores-per-socket (30pCPU = 60vCPU)
+    "vmware:hw_version": "vmx-18"
+    {{- if ( .Values.hana_flavors_quota_separate ) }}
+    "quota:instance_only": "true"
+    "quota:separate": "true"
+    {{- end }}
+- name: "hana_c120_m960_v2"
+  id: "322"
+  vcpus: 120
+  ram: 983040
+  disk: 64
+  extra_specs:
+    {{ tuple . "vmware_hana_exclusive" | include "sap_seeds.helpers.extra_specs" | indent 4 }}
+    "trait:CUSTOM_NUMASIZE_C60_M480": "required"
+    "hw:cpu_cores": "60"   # used in nova-vmware as cores-per-socket (30pCPU = 60vCPU)
+    "vmware:hw_version": "vmx-18"
+    {{- if ( .Values.hana_flavors_quota_separate ) }}
+    "quota:instance_only": "true"
+    "quota:separate": "true"
+    {{- end }}
+- name: "hana_c30_m480_v2"
+  id: "323"
+  vcpus: 30
+  ram: 491520
+  disk: 64
+  extra_specs:
+    {{ tuple . "vmware_hana_exclusive" | include "sap_seeds.helpers.extra_specs" | indent 4 }}
+    "trait:CUSTOM_NUMASIZE_C60_M960": "required"
+    "hw:cpu_cores": "30"   # used in nova-vmware as cores-per-socket (15pCPU = 30vCPU)
+    "vmware:hw_version": "vmx-18"
+    {{- if ( .Values.hana_flavors_quota_separate ) }}
+    "quota:instance_only": "true"
+    "quota:separate": "true"
+    {{- end }}
+- name: "hana_c60_m960_v2"
+  id: "324"
+  vcpus: 60
+  ram: 983040
+  disk: 64
+  extra_specs:
+    {{ tuple . "vmware_hana_exclusive" | include "sap_seeds.helpers.extra_specs" | indent 4 }}
+    "trait:CUSTOM_NUMASIZE_C60_M960": "required"
+    "hw:cpu_cores": "60"   # used in nova-vmware as cores-per-socket (30pCPU = 60vCPU)
+    "vmware:hw_version": "vmx-18"
+    {{- if ( .Values.hana_flavors_quota_separate ) }}
+    "quota:instance_only": "true"
+    "quota:separate": "true"
+    {{- end }}
+- name: "hana_c120_m1920_v2"
+  id: "325"
+  vcpus: 120
+  ram: 1966080
+  disk: 64
+  extra_specs:
+    {{ tuple . "vmware_hana_exclusive" | include "sap_seeds.helpers.extra_specs" | indent 4 }}
+    "trait:CUSTOM_NUMASIZE_C60_M960": "required"
+    "hw:cpu_cores": "60"   # used in nova-vmware as cores-per-socket (30pCPU = 60vCPU)
+    "vmware:hw_version": "vmx-18"
+    {{- if ( .Values.hana_flavors_quota_separate ) }}
+    "quota:instance_only": "true"
+    "quota:separate": "true"
+    {{- end }}
+- name: "hana_c180_m2880_v2"
+  id: "326"
+  vcpus: 180
+  ram: 2949120
+  disk: 64
+  extra_specs:
+    {{ tuple . "vmware_hana_exclusive" | include "sap_seeds.helpers.extra_specs" | indent 4 }}
+    "trait:CUSTOM_NUMASIZE_C60_M960": "required"
+    "hw:cpu_cores": "60"   # used in nova-vmware as cores-per-socket (30pCPU = 60vCPU)
+    "vmware:hw_version": "vmx-18"
+    {{- if ( .Values.hana_flavors_quota_separate ) }}
+    "quota:instance_only": "true"
+    "quota:separate": "true"
+    {{- end }}
+- name: "hana_c240_m3840_v2"
+  id: "327"
+  vcpus: 240
+  ram: 3932160
+  disk: 64
+  extra_specs:
+    {{ tuple . "vmware_hana_exclusive" | include "sap_seeds.helpers.extra_specs" | indent 4 }}
+    "trait:CUSTOM_NUMASIZE_C60_M960": "required"
+    "hw:cpu_cores": "60"   # used in nova-vmware as cores-per-socket (30pCPU = 60vCPU)
+    "vmware:hw_version": "vmx-18"
+    {{- if ( .Values.hana_flavors_quota_separate ) }}
+    "quota:instance_only": "true"
+    "quota:separate": "true"
+    {{- end }}

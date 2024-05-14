@@ -1,0 +1,57 @@
+{{- range $ckey, $cluster := .Values.clusters }}
+{{- range $key, $host := $cluster.hosts }}
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: networkdata-{{ $key }}
+  namespace: metal-{{ $ckey }}
+type: infrastructure.cluster.x-k8s.io/secret
+stringData: 
+  networkData: |-
+    networks:
+    - id: {{ $host.vlan }}
+      ip_address: {{ $host.ip }}
+      link: {{ $host.bondfilter }}
+      netmask: {{ default "255.255.255.0" $host.netmask }}
+      routes:
+      - gateway: {{ $host.gateway }}
+        netmask: 0.0.0.0
+        network: 0.0.0.0
+      type: ipv4
+---
+apiVersion: metal3.io/v1alpha1
+kind: BareMetalHost
+metadata:
+  name: {{ $key }}
+  namespace: metal-{{ $ckey }}
+{{- with $host.labels }}
+  labels:
+{{- toYaml . | nindent 4 }}
+{{- end }}
+spec:
+  online: {{ default "true" $host.online }}
+  bmc:
+    address: {{ $host.redfishUrl }}
+    credentialsName: bmc-secret-{{ $key }}
+    disableCertificateVerification: {{ default "True" $host.disableCertificateVerification }}
+  bootMACAddress: {{ $host.bootMac }}
+  networkData: 
+    name: networkdata-{{ $key }}
+    namespace: metal-{{ $ckey }}
+  {{- with $host.rootDeviceHints }}
+  rootDeviceHints:
+{{- toYaml . | nindent 4 }}
+  {{- end }}
+---
+apiVersion: v1
+kind: Secret
+type: Opaque
+metadata:
+  name: bmc-secret-{{ $key }}
+  namespace: metal-{{ $ckey }}
+data:
+  username: {{ default $.Values.remoteboard.username $host.username | b64enc }}
+  password: {{ default $.Values.remoteboard.password $host.password | b64enc }}
+{{- end }}
+{{- end }}

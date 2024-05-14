@@ -3,6 +3,11 @@
   "template": "alerts-*",
   "settings": {
     "index": {
+      "mapping": {
+        "total_fields": {
+          "limit": "4000"
+        }
+      },
       "refresh_interval": "10s",
       "unassigned": {
         "node_left": {

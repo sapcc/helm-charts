@@ -1,0 +1,110 @@
+{{- range $appName, $appValues := .Values.apps }}
+{{- if $appValues.enabled }}
+{{- with $ }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "netapp-harvest.fullname" . }}-{{ $appName }}-worker
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: {{ include "netapp-harvest.fullname" . }}-{{ $appName }}-worker
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
+  template:
+    metadata:
+      annotations:
+        configmap-hash: {{ include (print $.Template.BasePath "/configmap.yaml") . | replace .Chart.Version "0.1.5" | sha256sum }}
+        kubectl.kubernetes.io/default-container: worker
+        {{- if and .Values.global.linkerd_enabled .Values.global.linkerd_requested }}
+        linkerd.io/inject: enabled
+        {{- end }}
+        prometheus.io/scrape: "true"
+        prometheus.io/targets: storage
+      labels:
+        app: {{ include "netapp-harvest.fullname" . }}-{{ $appName }}
+        name: {{ include "netapp-harvest.fullname" . }}-{{ $appName }}-worker
+    spec:
+      containers:
+        - name: poller
+          image: {{ .Values.global.dockerHubMirror }}/{{ .Values.harvest.image.repository }}:{{ .Values.harvest.image.tag }}
+          imagePullPolicy: {{ .Values.harvest.image.pullPolicy | default "IfNotPresent" }}
+          command: ["sh", "start-poller.sh"]
+          ports:
+            - name: metrics
+              containerPort: {{ .Values.harvest.ports.metrics }}
+          resources:
+            {{- toYaml .Values.harvest.resources | nindent 12 }}
+          volumeMounts:
+            - name: harvest-config
+              subPath: start-poller.sh
+              mountPath: /opt/harvest/start-poller.sh
+            - name: harvest-config
+              subPath: rest.limited.yaml.{{ $appName }}
+              mountPath: /opt/harvest/conf/rest/limited.yaml
+            - name: harvest-config
+              subPath: rest.custom_volume.yaml
+              mountPath: /opt/harvest/conf/rest/9.12.0/custom_volume.yaml
+            - name: harvest-config
+              subPath: rest.iscsi_session.yaml
+              mountPath: /opt/harvest/conf/rest/9.6.0/iscsi_session.yaml
+            - name: harvest-config
+              mountPath: /opt/harvest/conf/restperf/limited.yaml
+              subPath: restperf.limited.yaml
+            - name: shared
+              mountPath: /opt/harvest/shared
+        - name: worker
+          image: {{ .Values.global.registry }}/{{ .Values.netappsd.image.repository }}:{{ .Values.netappsd.image.tag }}
+          imagePullPolicy: {{ .Values.netappsd.image.pullPolicy | default "IfNotPresent" }}
+          command: ["/app/netappsd", "worker"]
+          args:
+            - --master-url
+            - http://{{ include "netapp-harvest.fullname" . }}-{{ $appName }}-master.{{ .Release.Namespace }}.svc:{{ .Values.netappsd.ports.metrics }}
+            - --listen-addr
+            - :{{ .Values.harvest.ports.liveness }}
+            - --template-file
+            - /app/harvest.yaml.tpl
+            - --output-file
+            - /app/shared/harvest.yaml
+          env:
+            - name: NETAPP_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "netapp-harvest.fullname" . }}
+                  key: netappUsername
+            - name: NETAPP_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "netapp-harvest.fullname" . }}
+                  key: netappPassword
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+          ports:
+            - name: liveness
+              containerPort: {{ .Values.harvest.ports.liveness }}
+          volumeMounts:
+            - name: harvest-config
+              mountPath: /app/harvest.yaml.tpl
+              subPath: harvest.yaml.tpl
+            - name: shared
+              mountPath: /app/shared
+      volumes:
+        - name: harvest-config
+          configMap:
+            name: {{ include "netapp-harvest.fullname" . }}
+        - name: shared
+          emptyDir: {}
+---
+{{- end }}
+{{- end }}
+{{- end }}

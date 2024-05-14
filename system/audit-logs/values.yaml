@@ -7,14 +7,19 @@ owner-info:
   helm-chart-url: "https://github.com/sapcc/helm-charts/tree/master/system/audit-logs"
 
 global:
+  linkerd_requested: false
   https_port: 443
   prometheus: kubernetes
   forwarding:
     audit:
       host: Non
+
+linkerd-support:
+  annotate_namespace: true
+
 logstash_audit_external:
   enabled: false
-  image_version: "20220110143833"
+  image_version: "20240227090739"
   replicas: 1
   input_netflow_port: 2055
   input_syslog_port: 514
@@ -44,7 +49,7 @@ fluent_audit_container:
   enabled: false
   port: 8887
   metrics_port: 24231
-  image_version: "20230216092201"
+  image_version: "20240227111845"
   resources:
     limits:
       memory: 500Mi
@@ -56,12 +61,17 @@ fluent_audit_container:
       host: none
   alerts:
     enabled: false
-    prometheus: infra-collector
+    # Keys = directory names in alerts/ and aggregations/
+    prometheus:
+      - name: infra-collector
+        type: prometheus
+      - name: metal
+        type: thanos-ruler
   default_container_logs: []
 
 fluent_audit_systemd:
   enabled: false
-  image_version: "20230216092201"
+  image_version: "20240227111845"
   resources:
     limits:
       memory: 500Mi

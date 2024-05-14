@@ -1,30 +1,70 @@
-# global.region: DEFINED_IN_VALUES_FILE
+global:
+  clusterType: local
+  truststore:
+    enabled: false
+    cert_pw: DEFINIED-IN-REGIONS
+    cert: DEFINIED-IN-REGIONS
+  linkerd_requested: true
+  region: DEFINED_IN_VALUES_FILE
+  curator_image: "20240220151502"
+  users:
+    admin:
+      username: DEFINED_IN_VALUES_FILE
+      password: DEFINED_IN_VALUES_FILE
+    kibanaserver:
+      username: DEFINED_IN_VALUES_FILE
+      password: DEFINED_IN_VALUES_FILE
+     
+    
+  ldap:
+    host: DEFINED_IN_VALUES_FILE
+    port: DEFINED_IN_VALUES_FILE
+    search_base_dbs: DEFINED_IN_VALUES_FILE
+    bind_dn: DEFINED_IN_VALUES_FILE
+    password: DEFINED_IN_VALUES_FILE
+    userdomain: DEFINED_IN_VALUES_FILE
+    user_group: DEFINED_IN_VALUES_FILE
+    suffix: DEFINED_IN_VALUES_FILE
 
 owner-info:
   support-group: observability
+  service: hermes
   maintainers:
     - Olaf Heydorn
   helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/system/opensearch-hermes
 
+alerts:
+  enabled: false
+  prometheus: DEFINED-IN-SECRETS
+# Pod Monitor
+exporter:
+  enabled: false
+  prometheus: DEFINED-IN-SECRETS
+tag: 2.12.0
+
+linkerd-support:
+  annotate_namespace: true
+
 opensearch_hermes:
   enabled: false
+  antiAffinityTopologyKey: "kubernetes.io/host"
   ca:
     crt: DEFINED-IN-SECRETS
   image:
-    tag: 2.9.0
+    tag: 2.12.0
   service:
     port: 5601
   nameOverride: "opensearch-hermes"
   fullnameOverride: "opensearch-hermes"
   nodeGroup: "data"
-  masterService: "opensearch-hermes"
+  masterService: "opensearch-hermes-master"
   roles:
-    - master
     - client
     - ingest
     - data
   replicas: 3
   opensearchJavaOpts: "-Dlog4j2.formatMsgNoLookups=true -XX:MaxRAM=20g -XX:MaxGCPauseMillis=500 -Xms20g -Xmx20g"
+  updateStrategy: RollingUpdate
   persistence:
     enabled: true
     enableInitChown: true
@@ -39,21 +79,62 @@ opensearch_hermes:
   plugins:
     enabled: true
     installList:
-      - https://github.com/aiven/prometheus-exporter-plugin-for-opensearch/releases/download/2.9.0.0/prometheus-exporter-2.9.0.0.zip
+      - https://github.com/aiven/prometheus-exporter-plugin-for-opensearch/releases/download/2.12.0.0/prometheus-exporter-2.12.0.0.zip
   securityConfig:
     path: "/usr/share/opensearch/config/opensearch-security"
     enabled: true
     config:
       securityConfigSecret: "security-config"
-  # Pod Monitor
-  exporter:
-    enabled: false
-    prometheus: openstack
+  extraEnvs:
+    - name: DISABLE_INSTALL_DEMO_CONFIG
+      value: "true"
+
+opensearch_hermes_master:
+  enabled: false
+  antiAffinityTopologyKey: "kubernetes.io/host"
+  ca:
+    crt: DEFINED-IN-SECRETS
+  image:
+    tag: 2.12.0
+  service:
+    port: 5601
+  nameOverride: "opensearch-hermes-master"
+  fullnameOverride: "opensearch-hermes-master"
+  nodeGroup: "master"
+  masterService: "opensearch-hermes-master"
+  roles:
+    - master
+  replicas: 3
+  opensearchJavaOpts: "-Dlog4j2.formatMsgNoLookups=true -XX:MaxRAM=5g -XX:MaxGCPauseMillis=500 -Xms5g -Xmx5g"
+  updateStrategy: RollingUpdate
+  persistence:
+    enabled: true
+    enableInitChown: true
+    size: 1Gi
+    image: "library/busybox"
+  clusterName: "opensearch-hermes"
+  secretMounts:
+    - name: opensearch-certificates
+      secretName: cert-manager
+      path: /usr/share/opensearch/config/certs/
+      defaultMode: 0700
+  plugins:
+    enabled: true
+    installList:
+      - https://github.com/aiven/prometheus-exporter-plugin-for-opensearch/releases/download/2.12.0.0/prometheus-exporter-2.12.0.0.zip
+  securityConfig:
+    path: "/usr/share/opensearch/config/opensearch-security"
+    enabled: true
+    config:
+      securityConfigSecret: "security-config"
+  extraEnvs:
+    - name: DISABLE_INSTALL_DEMO_CONFIG
+      value: "true"
 
 opensearch_hermes_dashboards:
   enabled: false
   image:
-    tag: "2.9.0"
+    tag: "2.12.0"
   fullnameOverride: opensearch-hermes-dashboards
   nameOverride: opensearch-hermes-dashboards
   serviceAccount:
@@ -63,9 +144,18 @@ opensearch_hermes_dashboards:
     secret: dashboard-secrets
   ingress:
     enabled: false
+  resources:
+    limits:
+      memory: 4096M
+  envFrom:
+    - secretRef:
+        name: openid-secrets
 
-global:
-  clusterType: local
-  users:
-    admin:
-      name: admin
+
+elasticdump:
+  enabled: false
+
+opensearch_hermes_manager:
+  enabled: false
+  port_internal: 9000 
+  image_version: "20240214094510"

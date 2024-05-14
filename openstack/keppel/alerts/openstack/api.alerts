@@ -6,12 +6,12 @@ groups:
 
   - alert: OpenstackKeppelDown
     expr: max(keppel_healthmonitor_result) != 1 or absent(keppel_healthmonitor_result)
-    for: 3m
+    for: 10m
     labels:
       context: api
       dashboard: keppel-overview
       service: keppel
-      severity: warning # TODO raise to critical at some point
+      severity: critical
       support_group: containers
       tier: os
       meta: 'Keppel health check is not reporting success'
@@ -35,12 +35,14 @@ groups:
       severity: info
       support_group: containers
       tier: os
+      # meta is part of an alertmanager inhibition rule
       meta: 'Keppel anycast health check failing for {{ $labels.account }}'
     annotations:
       summary: 'Keppel anycast health check failing for {{ $labels.account }}'
       description: |
-        The Keppel anycast health check is failing for some peers. Check the
-        logs of the "keppel-anycast-monitor" pod for details.
+        The Keppel anycast health check is failing for some peers.
+        If there are other alerts for {{ $labels.account }} itself being down, this is probably an aftereffect; please investigate the broken region first.
+        If only anycast is broken, check the logs of the "keppel-anycast-monitor" pod for details.
 
   # This alert is disabled for QA because the QA anycast looks kind of broken.
   - alert: OpenstackKeppelAnycastMembership
@@ -73,6 +75,7 @@ groups:
       severity: info
       support_group: containers
       tier: os
+      # meta is part of an alertmanager inhibition rule
       meta: 'Keppel cannot peer with {{ $labels.hostname }}'
     annotations:
       summary: 'Keppel cannot peer with {{ $labels.hostname }}'
@@ -103,7 +106,7 @@ groups:
         to allow another replication to take place.
 
   - alert: OpenstackKeppelDBConnectionPoolNearlyFull
-    expr: max by (pod) (avg_over_time(go_sql_stats_connections_in_use{db_name="keppel"}[1h]) > 8)
+    expr: max by (pod) (avg_over_time(go_sql_stats_connections_in_use{db_name="keppel"}[1h]) > 12)
     for: 5m
     labels:
       context: dbconnpool

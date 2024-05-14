@@ -12,6 +12,9 @@ thanos:
   query:
     replicas: 5
 
+    extraArgs:
+      - --query.promql-engine=thanos
+
     stores:
       - thanos-kubernetes-internet-grpc.eu-de-2
       - thanos-kubernetes-customer-grpc.qa-de-1
@@ -19,7 +22,16 @@ thanos:
       - thanos-kubernetes-ci-grpc.eu-de-2
       - thanos-kubernetes-ci2-grpc.eu-de-2
       - thanos-kubernetes-ci3-grpc.eu-de-2
+      - thanos-kubernetes-gh-actions-grpc.eu-de-2
       - thanos-kubernetes-k-master-grpc.eu-nl-1
+      - thanos-kubernetes-metal-grpc.qa-de-2
+      - thanos-kubernetes-metal-grpc.qa-de-3
+      - thanos-kubernetes-virtual-grpc.qa-de-2
+      - thanos-kubernetes-virtual-grpc.qa-de-3
+      - thanos-infra-collector-grpc.qa-de-2
+      - thanos-infra-collector-grpc.qa-de-3
+      - thanos-openstack-grpc.qa-de-2
+      - thanos-openstack-grpc.qa-de-3
 
   deployWholeThanos: false
   useQueryRegions: true
@@ -40,13 +52,14 @@ thanos:
     - na-us-2
     - na-us-3
     - qa-de-1
-    # - qa-de-2
-    # - qa-de-3
-    # - qa-de-5
 
-  clusterTypes:
-    - metal
+  queryStoreAPIs:
+    # scaleout includes prometheus-infra, kubernetes-scaleout, vmware-*-*
     - scaleout
+    - openstack
+    - infra-collector
+    - storage
+    - kubernetes-metal
     - kubernetes-virtual
     - kubernetes-admin
     - kubernetes-kubernikus
@@ -58,10 +71,27 @@ thanos:
   ingress:
     enabled: true
     hosts:
-      - thanos
       - metrics
+      - thanos
     annotations:
       disco/zone-name: "global.cloud.sap."
-  
+
+  internalIngress:
+    enabled: true
+    hosts:
+      - metrics-internal
+      - thanos-internal
+    annotations:
+      disco/zone-name: "global.cloud.sap."
+
   alerts:
     prometheus: kubernetes
+
+  ruler:
+    enabled: true
+    loglevel: warn
+    evaluationInterval: 60s
+    alertmanagers:
+      hosts:
+        - alertmanager-internal.scaleout.eu-de-1.cloud.sap
+        - alertmanager-internal.scaleout.eu-nl-1.cloud.sap

@@ -1,33 +1,21 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: cinder-migration-{{.Values.imageVersion | required "Please set cinder.imageVersion or similar"}}{{- if .Values.proxysql.mode}}-{{ .Values.proxysql.mode | replace "_" "-" }}{{ end }}
+  name: {{ include "cinder.migration_job_name" . }}
   labels:
     system: openstack
     type: configuration
     component: cinder
 spec:
   template:
+    metadata:
+      annotations:
+        {{- include "utils.linkerd.pod_and_service_annotation" . | indent 8 }}
     spec:
       restartPolicy: OnFailure
-{{ include "utils.proxysql.job_pod_settings" . | indent 6 }}
+      {{- include "utils.proxysql.job_pod_settings" . | nindent 6 }}
       initContainers:
-        - name: dependencies
-          image: {{required ".Values.global.registry is missing" .Values.global.registry}}/loci-cinder:{{.Values.imageVersionCinderApi | default .Values.imageVersion | required "Please set cinder.imageVersion or similar" }}
-          imagePullPolicy: IfNotPresent
-          command:
-            - kubernetes-entrypoint
-          env:
-            - name: COMMAND
-              value: "true"
-            - name: NAMESPACE
-              value: {{ .Release.Namespace }}
-            - name: DEPENDENCY_SERVICE
-{{- if eq .Values.mariadb.enabled true }}
-              value: "{{ .Release.Name }}-mariadb"
-{{- else }}
-              value: "{{ .Release.Name }}-postgresql"
-{{- end }}
+      {{- tuple . (dict "service" (print .Release.Name "-mariadb")) | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 6 }}
       containers:
         - name: cinder-migration
           image: {{required ".Values.global.registry is missing" .Values.global.registry}}/loci-cinder:{{.Values.imageVersionCinderApi | default .Values.imageVersion | required "Please set cinder.imageVersion or similar" }}
@@ -36,8 +24,8 @@ spec:
             - bash
             - -c
             - |
-              trap "{{ include "utils.proxysql.proxysql_signal_stop_script" . | trim }}" EXIT
               cinder-manage db sync
+              {{- include "utils.script.job_finished_hook" . | nindent 14 }}
           volumeMounts:
             - name: etccinder
               mountPath: /etc/cinder
@@ -45,6 +33,8 @@ spec:
               mountPath: /etc/cinder/cinder.conf
               subPath: cinder.conf
               readOnly: true
+            - name: cinder-etc-confd
+              mountPath: /etc/cinder/cinder.conf.d
             - name: cinder-etc
               mountPath: /etc/cinder/api-paste.ini
               subPath: api-paste.ini
@@ -65,4 +55,7 @@ spec:
         - name: cinder-etc
           configMap:
             name: cinder-etc
+        - name: cinder-etc-confd
+          secret:
+            secretName: {{ .Release.Name }}-secrets
       {{- include "utils.proxysql.volumes" . | indent 8 }}

@@ -57,7 +57,7 @@ groups:
       summary: Limes is not scraping
 
   - alert: OpenstackLimesFailedCapacityScrapes
-    expr: sum(increase(limes_capacity_scrapes{task_outcome="failure"}[5m])) BY (capacitor) > 0
+    expr: sum(increase(limes_capacity_scrapes{task_outcome="failure"}[5m])) BY (capacitor_id) > 0
     for: 1h
     labels:
       context: failedcapacityscrapes
@@ -67,20 +67,17 @@ groups:
       support_group: containers
       tier: os
     annotations:
-      description: Limes cannot scrape capapcity from {{ title $labels.capacitor }}
+      description: Limes cannot scrape capacity from {{ title $labels.capacitor_id }}
         for more than an hour.
         The `kubectl logs` for limes-collect-ccloud contain additional info.
       summary: Limes cannot scrape capacity {{ title $labels.capacitor }}
 
   - alert: OpenstackLimesMissingCapacity
-    # This ignores baremetal capacity ("compute/instances_<flavorname>")
-    # since many of these are zero legitimately (we do not have all BM server
-    # types in all regions).
-    #
-    # The check for non-zero domain quota skips resources that only report
-    # usage, not quota nor capacity (at the moment, those are
-    # "compute/{cores,ram}_{bigvm,regular}").
-    expr: global:limes_consolidated_cluster_capacity{full_resource!~"compute/instances_.*"} == 0 and on (full_resource) global:limes_consolidated_domain_quota{full_resource!~"compute/instances_*"} > 0
+    # This excludes:
+    # - (explicitly) NoQuota resources
+    # - (implicitly) resources that technically exist, but legitimately do not have capacity
+    #   (e.g. HANA flavors for hypervisor types that do not exist in the region)
+    expr: (global:limes_consolidated_cluster_capacity{full_resource!="sharev2/snapmirror_capacity"} == 0) and (max by (full_resource) (global:limes_consolidated_domain_usage) > 0)
     for: 1h
     labels:
       context: failedcapacityscrapes
@@ -91,10 +88,10 @@ groups:
       support_group: containers
       tier: os
     annotations:
-      description: Limes reports no capacity for {{ $labels.full_resource }}.
-        This usually means that the backend service reported weirdly-shaped data
-        to Limes' capacity scanner.
+      description: Limes reports no capacity for {{ $labels.full_resource }} even though there is assigned domain quota and/or usage.
+        This usually happens because the backend service reported weirdly-shaped data to Limes' capacity scanner.
         The `kubectl logs` for limes-collect-ccloud may contain additional info.
+        If not, running `limes test-scan-capacity` on the respective region and capacitor may provide additional insight.
       summary: Limes reports zero capacity for {{ $labels.full_resource }}
 
   - alert: OpenstackLimesFailedScrapes
@@ -105,7 +102,7 @@ groups:
       dashboard: limes-overview
       service: '{{ $labels.service_name }}'
       severity: info
-      support_group: containers
+      support_group: '{{ if eq $labels.service_name "cinder" "nova" "manila" -}} compute-storage-api {{- else if eq $labels.service_name "designate" "neutron" "octavia" -}} network-api {{- else if eq $labels.service_name "swift" -}} storage {{- else -}} containers {{- end -}}'
       tier: os
       playbook: docs/support/playbook/limes/alerts/failed_scrapes
     annotations:
@@ -122,7 +119,7 @@ groups:
       dashboard: limes-overview
       service: '{{ $labels.service_name }}'
       severity: warning
-      support_group: containers
+      support_group: '{{ if eq $labels.service_name "cinder" "nova" "manila" -}} compute-storage-api {{- else if eq $labels.service_name "designate" "neutron" "octavia" -}} network-api {{- else if eq $labels.service_name "swift" -}} storage {{- else -}} containers {{- end -}}'
       tier: os
       playbook: docs/support/playbook/limes/alerts/failed_scrapes
     annotations:
@@ -139,7 +136,7 @@ groups:
       dashboard: limes-overview
       service: '{{ $labels.service_name }}'
       severity: info
-      support_group: containers
+      support_group: '{{ if eq $labels.service_name "cronus" -}} email {{- else -}} containers {{- end -}}'
       tier: os
       playbook: docs/support/playbook/limes/alerts/failed_scrapes
     annotations:
@@ -156,7 +153,7 @@ groups:
       dashboard: limes-overview
       service: '{{ $labels.service_name }}'
       severity: warning
-      support_group: containers
+      support_group: '{{ if eq $labels.service_name "cronus" -}} email {{- else -}} containers {{- end -}}'
       tier: os
       playbook: docs/support/playbook/limes/alerts/failed_scrapes
     annotations:
@@ -215,22 +212,6 @@ groups:
       summary: "{{ $labels.pod }} cannot publish audit events"
       description: "Audit events from {{ $labels.pod }} could not be published to the RabbitMQ server. Check the pod log for details. Once the underlying issue was addressed, delete the offending pod to clear this alert."
 
-  - alert: OpenstackLimesPodSchedulingFailedInsufficientCPU
-    expr: sum(rate(kube_pod_failed_scheduling_cpu_total{pod_name=~"limes-.+"}[30m])) by (pod_name) > 0
-    for: 15m
-    labels:
-      severity: warning
-      support_group: containers
-      tier: os
-      service: limes
-      context: cpu
-      dashboard: limes-overview
-      meta: "{{ $labels.pod_name }}"
-      no_alert_on_absence: "true" # the underlying metric is only generated when scheduling fails
-    annotations:
-      summary: Scheduling failed due to insufficient cpu
-      description: The pod {{ $labels.pod_name }} failed to be scheduled. Insuffient CPU!
-
   - alert: OpenstackLimesIncompleteProjectResourceData
     expr: max by (service, resource) (limes_project_resources_by_type_count) != on () group_left max(limes_project_count)
     # Do not trigger too fast! When a new resource is added, it takes one full scrape cycle to create all resource records.
@@ -266,22 +247,6 @@ groups:
 
         More details can be found in <https://dashboard.{{ $labels.region }}.cloud.sap/ccadmin/cloud_admin/resources/cluster/current#/inconsistencies|the Limes Inconsistencies view in Elektra>.
 
-  - alert: OpenstackLimesOvercommittedDomainQuota
-    expr: limes_overcommitted_domain_quota_count > 0
-    for: 5m # this can trigger quickly since Limes cannot do anything by itself to fix this
-    labels:
-      severity: info
-      support_group: containers
-      tier: os
-      service: limes
-    annotations:
-      summary: Overcommitted Domain Quota
-      description: Limes detected that the total quota of some resource across all projects in some domain exceeds the quota of that resource for the domain.
-        (In other words, the domain has distributed more quota to its projects than it has been given.)
-        This may happen when new projects are created and their quota is initialized because of constraints configured by a cloud administrator.
-
-        More details can be found in <https://dashboard.{{ $labels.region }}.cloud.sap/ccadmin/cloud_admin/resources/cluster/current#/inconsistencies|the Limes Inconsistencies view in Elektra>.
-
   - alert: OpenstackLimesOverspentProjectQuota
     expr: limes_overspent_project_quota_count > 0
     for: 60m # every 30m, limes-collect scrapes quota/usage on each project service; give it 1-2 chances to observe a consistent usage value before alerting
@@ -296,3 +261,21 @@ groups:
         This may happen when someone else changes the quota in the backend service directly and increases usage before Limes intervenes, or when a cloud administrator changes quota constraints.
 
         More details can be found in <https://dashboard.{{ $labels.region }}.cloud.sap/ccadmin/cloud_admin/resources/cluster/current#/inconsistencies|the Limes Inconsistencies view in Elektra>.
+
+  - alert: OpenstackNonGrowingQuotaAlmostExhausted
+    expr: max by (support_group, service_name, service, resource, domain, project_id, project) (
+        ((limes_project_usage{resource!~"instances_.*"} > 0.9 * limes_project_quota) and on (service, resource) (limes_autogrow_growth_multiplier == 1)) * on (service) group_left (support_group) (limes_support_group_mapping)
+      )
+    for: 5m
+    labels:
+      severity: warning
+      support_group: '{{ $labels.support_group }}'
+      tier: os
+      service: '{{ $labels.service_name }}'
+      playbook: docs/support/playbook/limes/alerts/non_growing_quota
+    annotations:
+      summary: Non-growing quota almost exhausted
+      description: |
+        The {{ $labels.service }}/{{ $labels.resource }} quota in project {{ $labels.project_id }} ("{{ $labels.domain }}/{{ $labels.project }}") is more than 90% used.
+        This quota does not grow automatically, so care should be taken now to ensure that the customer does not run out of quota.
+        Please check the playbook for which options you have to resolve this issue.

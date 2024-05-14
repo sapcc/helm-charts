@@ -12,7 +12,6 @@ metadata:
     # job is considered part of the release.
     "helm.sh/hook": post-install,post-upgrade
     "helm.sh/hook-weight": "-5"
-    "helm.sh/hook-delete-policy": hook-succeeded
 spec:
   template:
     metadata:
@@ -26,25 +25,28 @@ spec:
       containers:
       - name: security-config
         image: "{{ .Values.global.dockerRegistry }}opensearchproject/opensearch:2.6.0"
-        command: ["/usr/share/opensearch/plugins/opensearch-security/tools/securityadmin.sh","-icl","-key","/usr/share/opensearch/config/certs/admin/tls.key","-cert","/usr/share/opensearch/config/certs/admin/tls.crt","-cacert","/usr/share/opensearch/config/certs/admin/ca.crt","-cd","/usr/share/opensearch/config/opensearch-security/","-h","opensearch-logs-client.{{ .Values.global.clusterType}}.{{ .Values.global.region }}.{{ .Values.global.tld }}"]
+        command: ["/bin/bash","/scripts/install-security-config.sh"]
         volumeMounts:
         - mountPath: /usr/share/opensearch/config/opensearch-security/action_groups.yml
-          name: action-groups
+          name: security-config
           subPath: action_groups.yml
         - mountPath: /usr/share/opensearch/config/opensearch-security/config.yml
           name: security-config
           subPath: config.yml
         - mountPath: /usr/share/opensearch/config/opensearch-security/internal_users.yml
-          name: internal-users-config
+          name: security-config
           subPath: internal_users.yml
         - mountPath: /usr/share/opensearch/config/opensearch-security/roles.yml
-          name: roles
+          name: security-config
           subPath: roles.yml
         - mountPath: /usr/share/opensearch/config/opensearch-security/roles_mapping.yml
-          name: role-mapping
+          name: security-config
           subPath: roles_mapping.yml
+        - mountPath: /scripts/install-security-config.sh
+          name: security-config
+          subPath: install-security-config.sh
         - mountPath: /usr/share/opensearch/config/opensearch-security/tenants.yml
-          name: tenants
+          name: security-config
           subPath: tenants.yml
         - mountPath: /usr/share/opensearch/config/certs/admin
           name: admin-cert-manager
@@ -53,27 +55,7 @@ spec:
         secret:
           defaultMode: 420
           secretName: admin-cert-manager
-      - name: action-groups
-        secret:
-          defaultMode: 420
-          secretName: security-config
       - name: security-config
-        secret:
-          defaultMode: 420
-          secretName: security-config
-      - name: internal-users-config
-        secret:
-          defaultMode: 420
-          secretName: security-config
-      - name: roles
-        secret:
-          defaultMode: 420
-          secretName: security-config
-      - name: role-mapping
-        secret:
-          defaultMode: 420
-          secretName: security-config
-      - name: tenants
         secret:
           defaultMode: 420
           secretName: security-config

@@ -31,10 +31,25 @@ spec:
       containers:
       - name: {{ .Chart.Name }}
         image: "{{required ".Values.global.registry is missing" .Values.global.registry }}/{{ .Values.image.repository }}:{{.Values.image.tag }}"
-        command: [mosquitto, -c, /mosquitto/mosquitto.conf]
+        command:
+          - sh
+          - -ec
+          - |
+            cp /mosquitto_tls/tls.crt /tmp/mosquitto_tls_crt.livenessprobe
+            exec mosquitto -c /mosquitto/mosquitto.conf
         imagePullPolicy: {{ .Values.image.pullPolicy }}
         ports:
         - containerPort: {{ .Values.service.internalPort }}
+        livenessProbe:
+          exec:
+            command:
+            - cmp
+            - -s
+            - /mosquitto_tls/tls.crt
+            - /tmp/mosquitto_tls_crt.livenessprobe
+          initialDelaySeconds: 60
+          periodSeconds: 60
+          timeoutSeconds: 3
         #readinessProbe:
         #  httpGet:
         #    path: /

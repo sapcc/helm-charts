@@ -48,8 +48,8 @@ disco:
 cert-manager:
   installCRDs: true
   image:
-    repository: keppel.global.cloud.sap/ccloud/cert-manager-controller
-    tag: v1.5.5-p1
+    repository: keppel.global.cloud.sap/ccloud-quay-mirror/jetstack/cert-manager-controller
+    tag: v1.13.3
   webhook:
     image:
       repository: keppel.global.cloud.sap/ccloud-quay-mirror/jetstack/cert-manager-webhook
@@ -63,7 +63,7 @@ cert-manager:
       repository: keppel.global.cloud.sap/ccloud-quay-mirror/jetstack/cert-manager-ctl
   ingressShim:
     defaultIssuerName: digicert-issuer
-    defaultIssuerKind: DigicertIssuer
+    defaultIssuerKind: ClusterIssuer
     defaultIssuerGroup: certmanager.cloud.sap
   prometheus:
     enabled: true
@@ -71,9 +71,6 @@ cert-manager:
     prometheus.io/targets: kubernetes
   extraArgs:
     - --enable-certificate-owner-ref=true
-
-digicert-issuer:
-  enableLeaderElection: "false"
 
 # For now enabled via regional values.
 maintenance-controller:
@@ -103,3 +100,60 @@ metrics-server:
 owner-info:
   support-group: containers
   helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/system/kube-system-virtual
+
+velero:
+  enabled: false
+
+  metrics:
+    podAnnotations:
+      prometheus.io/scrape: "true"
+      prometheus.io/path: "/metrics"
+      prometheus.io/port: null
+
+  image:
+    repository: keppel.global.cloud.sap/ccloud-dockerhub-mirror/velero/velero
+    tag: v1.11.1
+
+  kubectl:
+    image:
+      repository: keppel.global.cloud.sap/ccloud-dockerhub-mirror/bitnami/kubectl
+      tag: 1.28.3
+
+  initContainers:
+  - name: velero-plugin-openstack
+    image: keppel.global.cloud.sap/ccloud-dockerhub-mirror/lirt/velero-plugin-for-openstack:v0.6.0
+    imagePullPolicy: IfNotPresent
+    volumeMounts:
+      - mountPath: /target
+        name: plugins
+
+  snapshotsEnabled: false
+  backupsEnabled: true
+  deployNodeAgent: true
+
+  credentials:
+    extraSecretRef: velero-credentials
+
+  configuration:
+    backupStorageLocation:
+    - name: swift
+      provider: community.openstack.org/openstack
+      bucket: velero-virtual
+      config:
+        resticRepoPrefix: swift:velero-virtual:/restic
+
+  schedules:
+    clusterbackup:
+      disabled: false
+      schedule: "0 3 * * *"
+      template:
+        ttl: "720h"
+        storageLocation: swift
+        excludedResources:
+        - events
+        - pods
+        - nodeleases
+        - endpoints
+
+secrets-injector:
+  enabled: false

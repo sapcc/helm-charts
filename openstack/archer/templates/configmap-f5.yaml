@@ -1,5 +1,6 @@
 {{- $envAll := . }}
-{{- range $name, $val := .Values.agents.f5 -}}
+{{- range $name, $val := .Values.agents.f5 }}
+---
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -10,13 +11,16 @@ data:
   f5.ini: |
     [DEFAULT]
     host = {{ $name }}
+    {{- if $val.availability_zone }}
+    availability_zone = {{ $val.availability_zone }}
+    {{- end }}
 
     [agent]
-{{- range $i, $value := $val.devices }}
-    device[] = {{ tuple $envAll $value | include "utils.bigip_url" }}
-{{- end }}
-{{- range $i, $value := $val.vcmps }}
-    vcmp[] = {{ tuple $envAll $value | include "utils.bigip_url" }}
-{{- end }}
+    {{- range $val.devices }}
+    device[] = https://{{.}}
+    {{- end }}
+    {{- range $val.vcmps }}
+    vcmp[] = https://{{.}}
+    {{- end }}
     physical_network = {{ .physical_network }}
 {{- end }}

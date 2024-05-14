@@ -10,6 +10,9 @@ metadata:
     prometheus.io/probe_path: /_health/?full
     kubernetes.io/tls-acme: "true"
     disco: "true"
+    {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+    nginx.ingress.kubernetes.io/service-upstream: "true"
+    {{- end }}
   {{- end}}
 spec:
   {{- if or .Values.ingress.tls_crt .Values.ingress.tls}}

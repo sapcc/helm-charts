@@ -2,6 +2,8 @@ global:
   domain: cloud.sap
   clusterType: metal
 
+  linkerd_requested: true
+
 owner-info:
   service: prometheus
   support-group: observability
@@ -13,12 +15,10 @@ owner-info:
 prometheus-server:
   name: storage
 
-  retentionTime: 1d
-
   alertmanagers:
     hosts:
-      - alertmanager.scaleout.eu-de-1.cloud.sap
-      - alertmanager.scaleout.eu-nl-1.cloud.sap
+      - alertmanager-internal.scaleout.eu-de-1.cloud.sap
+      - alertmanager-internal.scaleout.eu-nl-1.cloud.sap
   ingress:
     enabled: true
     authentication:
@@ -40,6 +40,14 @@ prometheus-server:
     requests:
       cpu: 500m
       memory: 3Gi
+
+  vpaUpdateMode: "Auto"
+  vpaResources:
+    prometheus:
+      containerName: "prometheus"
+      maxAllowed:
+        memory: "40Gi"
+
   thanos:
     enabled: true
 
@@ -53,12 +61,22 @@ prometheus-server:
     pods:
       enabled: true
 
+  alerts:
+    thanos:
+      enabled: true
+      name: metal
+
 thanos:
   name: storage
   deployWholeThanos: true
   clusterDomain: kubernetes
   serviceAccount:
     create: false
+
+  grpcIngress:
+    enabled: true
+    hosts:
+      - thanos-storage-grpc
 
 netapp_cap_exporter:
   enabled: false

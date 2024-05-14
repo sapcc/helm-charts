@@ -1,0 +1,36 @@
+{{- if .Values.updater.api.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+
+metadata:
+  name: {{ include "fullname" . }}
+  labels:
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    app: {{ include "fullname" . }}
+    type: api
+
+  annotations:
+    kubernetes.io/tls-acme: "true"
+    disco: "true"
+    ingress.kubernetes.io/auth-tls-secret: kube-system/ingress-cacrt
+    nginx.ingress.kubernetes.io/auth-tls-secret: kube-system/ingress-cacrt
+    ingress.kubernetes.io/auth-tls-verify-client: optional
+    nginx.ingress.kubernetes.io/auth-tls-verify-client: optional
+    ingress.kubernetes.io/auth-tls-verify-depth: "3"
+    nginx.ingress.kubernetes.io/auth-tls-verify-depth: "3"
+
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: {{ include "fullname" . }}.{{ .Values.global.region }}.cloud.sap
+      http:
+        paths:
+          - path: /inventory
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "fullname" . }}
+                port:
+                  number: {{.Values.updater.api.port}}
+{{ end }}

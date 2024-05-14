@@ -1,0 +1,98 @@
+kind: Deployment
+apiVersion: apps/v1
+
+metadata:
+  name: limes-api-ccloud
+  labels:
+    app: limes-api
+    release: "{{$.Release.Name}}"
+
+spec:
+  revisionHistoryLimit: 5
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 2
+  selector:
+    matchLabels:
+      name: limes-api-ccloud
+  template:
+    metadata:
+      labels:
+        name: limes-api-ccloud
+        app: limes-api
+        alert-tier: os
+        alert-service: limes
+      annotations:
+        checksum/configmap: {{ include "limes/templates/configmap.yaml" . | sha256sum }}
+        checksum/secret: {{ include "limes/templates/secret.yaml" . | sha256sum }}
+        kubectl.kubernetes.io/default-container: api
+    spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: name
+                  operator: In
+                  values:
+                  - limes-api-ccloud
+              topologyKey: "kubernetes.io/hostname"
+            weight: 10
+      volumes:
+        - name: config
+          configMap:
+            name: limes
+      containers:
+        - name: api
+          image: {{ include "limes_image" . }}
+          imagePullPolicy: IfNotPresent
+          args:
+            - serve
+            - /etc/limes/limes.yaml
+          env:
+            {{ include "limes_common_envvars" . | indent 12 }}
+          securityContext:
+            runAsNonRoot: true
+          volumeMounts:
+            - mountPath: /etc/limes
+              name: config
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 80
+            timeoutSeconds: 10
+            periodSeconds: 60
+            initialDelaySeconds: 60
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 80
+            timeoutSeconds: 5
+            periodSeconds: 5
+          {{- if .Values.limes.resources.enabled }}
+          resources:
+            # observed usage: CPU <= 50m, RAM = 25-70 MiB
+            #
+            # However, we have some very significant spikes esp. when billing
+            # scrapes us, so we give some extra headroom to stay performant.
+            limits:
+              {{- if eq .Values.global.region "qa-de-1" }}
+              # In qa-de-1, we also need some extra headroom because of the sheer size
+              # of some reports rendered by billing. The "tempest" domain has
+              # ~2000 projects in order to test the behavior of large-scale
+              # deployments. A full project report with `?detail` for that
+              # domain is about 160 MiB of pure JSON.
+              cpu: '1'
+              memory: '500Mi'
+              {{- else }}
+              cpu: '500m'
+              memory: '500Mi'
+              {{- end }}
+            requests:
+              cpu: '250m'
+              memory: '500Mi'
+          {{- end }}

@@ -161,6 +161,12 @@ nebula:
 {{- end }}
 {{- if .Values.postfix.postfixEnabled }}
   postfixEnabled: {{ .Values.postfix.postfixEnabled }}
+  postfixDNS:
+    zoneID: {{ .Values.postfixDNS.zoneID }}
+    auth:
+      auth_url: {{ .Values.postfixDNS.auth.auth_url }}
+      application_credential_id: {{ .Values.postfixDNS.auth.application_credential_id }}
+      application_credential_secret: {{ .Values.postfixDNS.auth.application_credential_secret }}
   ldap:
     url: "{{ tpl .Values.postfix.ldap.url $ }}"
     {{- if .Values.postfix.ldap.clientKeyPath }}
@@ -180,6 +186,12 @@ nebula:
   {{- end }}
 {{- end }}
 {{- end }}
-
+{{- if .Values.nebula.cors }}
+  cors:
+    enabled: {{ .Values.nebula.cors.enabled }}
+    allowedOrigins:
+{{- .Values.nebula.cors.allowedOrigins | toYaml | nindent 6 }}
+    allowedHeaders:
+{{- .Values.nebula.cors.allowedHeaders | toYaml | nindent 6 }}
+{{- end }}
 {{- end -}}
-

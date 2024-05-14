@@ -1,0 +1,87 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/name: netbox-ztp
+  name: netbox-ztp
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: netbox-ztp
+  replicas: 1
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: netbox-ztp
+      annotations:
+        configmap-pmtud-hash: {{ include (print $.Template.BasePath "/configmap.yaml") $ | sha256sum }}
+    spec:
+      initContainers:
+        - name: init
+          image: "{{ required ".Values.images.iptables.image is missing" .Values.images.iptables.image }}:{{ required ".Values.images.iptables.image is missing" .Values.images.iptables.tag }}"
+          command:
+            - /scripts/dhcp-init.sh
+          env:
+          - name: DHCPSERVERIP
+            value: '{{ .Values.dhcp.externalip }}'
+          securityContext:
+            privileged: true
+          volumeMounts:
+            - name: scripts
+              mountPath: /scripts
+      containers:
+        - name: server
+          image: "{{ required ".Values.images.server.image is missing" .Values.images.server.image }}:{{ required ".Values.images.server.tag is missing" .Values.images.server.tag }}"
+          imagePullPolicy: IfNotPresent
+          args:
+            - --dhcp-ip={{ required ".Values.dhcp.externalip missing" .Values.dhcp.externalip }}
+            - --interface={{ required ".Values.dhcp.interface missing" .Values.dhcp.interface }}
+            - --webcfg-url=netbox-ztp-web.{{ .Values.global.region }}.cloud.sap
+            - --ntp-servers={{ required ".Values.dhcp.ntpServers missing" .Values.dhcp.ntpServers }}
+            - --dns-servers={{ required ".Values.dhcp.dnsServers missing" .Values.dhcp.dnsServers }}
+          env:
+          - name: NETBOX_URL
+            valueFrom:
+              secretKeyRef:
+                key: netbox-url
+                name: netbox-ztp-config
+          - name: NETBOX_TOKEN
+            valueFrom:
+              secretKeyRef:
+                key: netbox-token
+                name: netbox-ztp-config
+          lifecycle:
+            preStop:
+              exec:
+                command: ["/scripts/dhcp-stop.sh"]
+          securityContext:
+            privileged: true
+          ports:
+            - containerPort: 67
+              name: dhcp
+            - containerPort: 69
+              name: tftp
+            - containerPort: 8080
+              name: http
+          volumeMounts:
+            - name: scripts
+              mountPath: /scripts
+      hostNetwork: true
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+      {{- toYaml . | nindent 8 }}
+      {{- end }}
+      volumes:
+        - name: scripts
+          projected:
+            defaultMode: 0744
+            sources:
+              - configMap:
+                  name: netbox-ztp
+                  items:
+                    - key: dhcp-init.sh
+                      path: dhcp-init.sh
+                    - key: dhcp-stop.sh
+                      path: dhcp-stop.sh

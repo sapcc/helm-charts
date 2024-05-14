@@ -10,6 +10,10 @@ spec:
   selector:
     matchLabels:
       k8s-app: ldap-named-user
+  updateStrategy:
+    rollingUpdate:
+      maxUnavailable: '10%'
+    type: RollingUpdate
   template:
     metadata:
       labels:
@@ -21,7 +25,7 @@ spec:
       hostPID: true
       initContainers:
       - name: enable-sssd-named-user
-        image: keppel.eu-de-1.cloud.sap/ccloud-dockerhub-mirror/library/alpine:latest
+        image: keppel.global.cloud.sap/ccloud-dockerhub-mirror/library/alpine:latest
         securityContext:
           privileged: true
         command:
@@ -30,21 +34,21 @@ spec:
         args:
         - |-
           set -xe
-          cp -f /secret/sssd.conf /hostfs/etc/sssd
-          cp -f /secret/sudoers-ldap /hostfs/etc/sudoers.d
-          chroot /hostfs systemctl enable sssd
-          chroot /hostfs systemctl restart sssd
+          cp -f /secret/sssd.conf /hostmount/etc/sssd
+          cp -f /secret/sudoers-ldap /hostmount/etc/sudoers.d
+          chroot /hostmount systemctl enable sssd
+          chroot /hostmount systemctl restart sssd
         volumeMounts:
-        - name: hostfs
-          mountPath: /hostfs
+        - name: hostmount
+          mountPath: /hostmount
           readOnly: false
         - name: secret
-          mountPath: /secret  
+          mountPath: /secret
       containers:
         - name: pause
-          image: keppel.eu-de-1.cloud.sap/ccloud-dockerhub-mirror/sapcc/pause-amd64:3.1
+          image: keppel.global.cloud.sap/ccloud-dockerhub-mirror/sapcc/pause-amd64:3.1
       volumes:
-      - name: hostfs
+      - name: hostmount
         hostPath:
           path: /
       - name: secret

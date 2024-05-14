@@ -1,0 +1,24 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    meta.helm.sh/release-name: linkerd
+    meta.helm.sh/release-namespace: linkerd
+  name: linkerd-identity
+  namespace: linkerd
+spec:
+  template:
+    spec:
+      containers:
+      - name: linkerd-init
+        image: keppel.global.cloud.sap/ccloud/servicemesh/proxy-init:v2.2.3-20240216104117
+        securityContext:
+          allowPrivilegeEscalation: true
+          capabilities:
+            add:
+            - NET_ADMIN
+            - NET_RAW
+          privileged: true
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault

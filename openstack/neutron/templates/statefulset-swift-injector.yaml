@@ -26,7 +26,8 @@ spec:
         configmap-etc-hash: {{ include (print $.Template.BasePath "/configmap-etc.yaml") $ | sha256sum }}
         configmap-etc-apod-hash: {{ include (print $.Template.BasePath "/configmap-etc-apod.yaml") $ | sha256sum }}
         prometheus.io/scrape: "true"
-        prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" $.Values.alerts.prometheus | quote }}
+        prometheus.io/targets: {{ required "$.Values.metrics.prometheus missing" $.Values.metrics.prometheus }}
+        {{- include "utils.linkerd.pod_and_service_annotation" $ | indent 8 }}
       labels:
         name: neutron-swift-injector-{{ $apod }}
 {{ tuple $ "neutron" "swift-injector" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
@@ -75,15 +76,22 @@ spec:
             - name: OS_DOMAIN_NAME
               value: {{ $.Values.global.keystone_service_domain | default "Default" }}
             - name: OS_USERNAME
-              value: {{ $.Values.global.neutron_service_user | default "neutron" | replace "$" "$$" }}
+              valueFrom:
+                secretKeyRef:
+                  name: neutron-swift-injector-secrets
+                  key: OS_USERNAME
             - name: OS_PASSWORD
-              value: {{ $.Values.global.neutron_service_password | default "" | replace "$" "$$" }}
+              valueFrom:
+                secretKeyRef:
+                  name: neutron-swift-injector-secrets
+                  key: OS_PASSWORD
             - name: OS_REGION_NAME
               value: {{ $.Values.global.region }}
             - name: OS_TENANT_NAME
               value: {{ $.Values.global.keystone_service_project |  default "service" }}
             - name: OS_USER_DOMAIN_NAME
               value: {{ $.Values.global.keystone_service_domain | default "Default" }}
+            {{- include "utils.trust_bundle.env" $ | indent 12 }}
           securityContext:
             privileged: true
           volumeMounts:
@@ -91,6 +99,7 @@ spec:
               mountPath: /var/run/netns
             - name: socat-proxy
               mountPath: /var/run/socat-proxy
+            {{- include "utils.trust_bundle.volume_mount" $ | indent 12 }}
           ports:
             - name: metrics-inject
               containerPort: 8080
@@ -101,7 +110,7 @@ spec:
         - name: neutron-linuxbridge-agent
           image: {{$.Values.global.registry}}/loci-neutron:{{$.Values.imageVersionNetworkAgentLinuxBridge | default $.Values.imageVersionNetworkAgent | default $.Values.imageVersion | required "Please set neutron.imageVersionNetworkAgentLinuxBridge or similar"}}
           imagePullPolicy: IfNotPresent
-          command: ["dumb-init", "neutron-linuxbridge-agent", "--config-file", "/etc/neutron/neutron.conf", "--config-file", "/etc/neutron/plugins/ml2/ml2_conf.ini", "--config-file", "/etc/neutron/linux-bridge.ini", "--config-file", "/etc/neutron/apod-{{ $apod }}.conf"]
+          command: ["dumb-init", "neutron-linuxbridge-agent", "--config-file", "/etc/neutron/neutron.conf", "--config-dir", "/etc/neutron/secrets", "--config-file", "/etc/neutron/plugins/ml2/ml2_conf.ini", "--config-file", "/etc/neutron/linux-bridge.ini", "--config-file", "/etc/neutron/apod-{{ $apod }}.conf"]
           env:
             - name: SENTRY_DSN
               valueFrom:
@@ -112,9 +121,10 @@ spec:
               value: "false"
             - name: PYTHONWARNINGS
               value: "ignore:Unverified HTTPS request"
+            {{- include "utils.trust_bundle.env" $ | indent 12 }}
           readinessProbe:
             exec:
-              command: ["neutron-agent-liveness", "-config-file", "/etc/neutron/neutron.conf", "-agent-type", "Linux bridge agent"]
+              command: ["neutron-agent-liveness", "--config-file", "/etc/neutron/neutron.conf",  "--config-file", "/etc/neutron/secrets/neutron-common-secrets.conf", "-agent-type", "Linux bridge agent"]
             initialDelaySeconds: 30
             periodSeconds: 60
             timeoutSeconds: 10
@@ -141,6 +151,7 @@ spec:
               readOnly: true
             - name: network-namespace
               mountPath: /var/run/netns
+            {{- include "utils.trust_bundle.volume_mount" $ | indent 12 }}
         - name: socat
           image: {{ $.Values.global.registry }}/network-injector:{{ $.Values.imageVersionNetworkInjector | default "latest" }}
           imagePullPolicy: IfNotPresent
@@ -185,6 +196,12 @@ spec:
                 items:
                 - key: apod-{{ $apod }}.conf
                   path: apod-{{ $apod }}.conf
+            - secret:
+                name: neutron-common-secrets
+                items:
+                  - key: neutron-common-secrets.conf
+                    path: secrets/neutron-common-secrets.conf
+        {{- include "utils.trust_bundle.volumes" $ | indent 8 }}
 {{- end }}
 {{- end }}
 {{- end }}

@@ -1,0 +1,38 @@
+apiVersion: monitoring.coreos.com/v1alpha1
+kind: ScrapeConfig
+metadata:
+  name: network-generic-ssh-exporter-aci-leaf
+  namespace: infra-monitoring
+  labels:
+    prometheus: {{ .Values.network_generic_ssh_exporter.aggregations.prometheus }}
+    app.kubernetes.io/name: network-generic-ssh-exporter-aci-leaf
+spec:
+  httpSDConfigs:
+    - url: {{ .Values.global.http_sd_configs.netbox_url }}/devices/?custom_labels=__param_batch=aci-leaf;__param_credential=apic;__param_device=cisco-aci&status=active&region={{ .Values.global.region }}&tenant=converged-cloud&role=aci-leaf&manufacturer=cisco
+      refreshInterval: {{ .Values.global.http_sd_configs.refresh_interval }}
+  metricsPath: /ssh
+  scrapeInterval: 120s
+  scrapeTimeout: 60s
+  relabelings:
+    - sourceLabels: [__address__]
+      targetLabel: __param_target
+    - targetLabel: __param_batch
+      replacement: aci-leaf
+    - targetLabel: __param_credential
+      replacement: apic
+    - targetLabel: __param_device
+      replacement: cisco-aci
+    - sourceLabels: [__param_target]
+      targetLabel: instance
+    - targetLabel: __address__
+      replacement: network-generic-ssh-exporter:9116
+  metricRelabelings:
+    - action: labeldrop
+      regex: "metrics_label"
+    - sourceLabels: [cluster]
+      targetLabel: cluster_router
+    - sourceLabels: [__name__, name]
+      regex: '^ssh_[A-za-z0-9]+;.*((rt|asr)[0-9]+)[a|b]$'
+      replacement: '$1'
+      targetLabel: asr_pair
+      action: replace
