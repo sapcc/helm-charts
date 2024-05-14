@@ -107,28 +107,13 @@ groups:
           description: '{{ $labels.availability_zone }} has less than 5% capacity for new shares'
           summary: '{{ $labels.availability_zone }} usage above 60%'
 
-      - alert: ManilaShareInodeUsageHigh
-        expr: max_over_time(netapp_volume_inode_files_used_percentage{app="netapp-capacity-exporter-manila",volume_type!="dp"}[1h]) > 0.85
-        for: 1h
+      - alert: ManilaShareInodeUsageVeryHigh
+        expr: max_over_time(netapp_volume_inode_files_used_percentage{app="netapp-capacity-exporter-manila"}[1h]) > 0.95
+        for: 2d
         labels:
             severity: info
             tier: os
-            support_group: storage
-            service: manila
-            context: netapp-volume-inode-usage
-            support_component: manila_netapp
-            playbook: 'docs/support/playbook/manila/share_inode_usage'
-        annotations:
-            summary: 'inode usage above 85%'
-            description: 'inode usage of Manila share {{ $labels.share_id }} is high'
-
-      - alert: ManilaShareInodeUsageVeryHigh
-        expr: max_over_time(netapp_volume_inode_files_used_percentage{app="netapp-capacity-exporter-manila"}[1h]) > 0.95
-        for: 1h
-        labels:
-            severity: warning
-            tier: os
-            support_group: storage
+            support_group: compute-storage-api
             service: manila
             context: netapp-volume-inode-usage
             support_component: manila_netapp
