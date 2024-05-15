@@ -5,15 +5,17 @@ metadata:
   name: rook-config-override
 data:
 {{ if .Values.objectstore.keystone.enabled }}
+{{ $name := .Values.objectstore.name | replace "-" "." }}
 {{- with .Values.objectstore.keystone }}
   config: |
-    [client]
+    [client.rgw.{{ $name }}.a]
     rgw keystone api version = 3
     rgw s3 auth use keystone = true
     rgw keystone url = {{ .url }}
     rgw keystone verify ssl = {{ .verify_ssl }}
     rgw keystone implicit tenants = {{ .implicit_tenants }}
     rgw swift account in url = {{ .swift_account_in_url }}
+    rgw swift versioning enabled = {{ .swift_versioning_enabled }}
     rgw keystone accepted roles = {{ join "," .accepted_roles }}
     rgw keystone token cache size = {{ .token_cache_size }}
     rgw keystone admin user = {{ .admin_user }}
