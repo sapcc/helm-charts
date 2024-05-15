@@ -1,0 +1,49 @@
+{{- if and (hasKey $.Values.mariadb "autostart") (not $.Values.mariadb.autostart) }}
+{{- else if and ($.Values.command) (hasKey $.Values.command "database") }}
+{{- else if and (and (hasKey $.Values.mariadb.galera "backup") ($.Values.mariadb.galera.backup.enabled)) (and (hasKey $.Values.mariadb.galera.backup "kopia") ($.Values.mariadb.galera.backup.kopia.enabled)) }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  namespace: {{ $.Release.Namespace }}
+  name: {{ include "commonPrefix" $ }}-kopia-common-functions-extended-sh
+  labels:
+    app: {{ $.Release.Name }}
+    {{- include "sharedservices.labels" $ | indent 4 }}
+data:
+{{ tpl (.Files.Glob "scripts/backup/common-functions-extended.sh").AsConfig . | indent 2 }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  namespace: {{ $.Release.Namespace }}
+  name: {{ include "commonPrefix" $ }}-kopia-job-entrypoint-restore-sh
+  labels:
+    app: {{ $.Release.Name }}
+    {{- include "sharedservices.labels" $ | indent 4 }}
+data:
+{{ tpl (.Files.Glob "scripts/backup/kopia/entrypoint-job-restore.sh").AsConfig . | indent 2 }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  namespace: {{ $.Release.Namespace }}
+  name: {{ include "commonPrefix" $ }}-kopia-entrypoint-sh
+  labels:
+    app: {{ $.Release.Name }}
+    {{- include "sharedservices.labels" $ | indent 4 }}
+data:
+{{ tpl (.Files.Glob "scripts/backup/kopia/entrypoint-backup.sh").AsConfig . | indent 2 }}
+{{ tpl (.Files.Glob "scripts/backup/kopia/entrypoint-restore.sh").AsConfig . | indent 2 }}
+{{ tpl (.Files.Glob "scripts/backup/kopia/entrypoint-server.sh").AsConfig . | indent 2 }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "commonPrefix" $ }}-kopia-probes-sh
+  namespace: {{ $.Release.Namespace }}
+data:
+{{ tpl (.Files.Glob "scripts/backup/kopia/startup.sh").AsConfig . | indent 2 }}
+{{ tpl (.Files.Glob "scripts/backup/kopia/liveness.sh").AsConfig . | indent 2 }}
+{{ tpl (.Files.Glob "scripts/backup/kopia/readiness.sh").AsConfig . | indent 2 }}
+{{- end }}
