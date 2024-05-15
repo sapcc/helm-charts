@@ -8,7 +8,11 @@ data:
 {{ $name := .Values.objectstore.name | replace "-" "." }}
 {{- with .Values.objectstore.keystone }}
   config: |
+{{- if .global_config }}
+    [client]
+{{- else }}
     [client.rgw.{{ $name }}.a]
+{{- end }}
     rgw keystone api version = 3
     rgw s3 auth use keystone = true
     rgw s3 auth order = {{ join "," .auth_order }}
