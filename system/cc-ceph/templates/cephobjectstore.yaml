@@ -9,6 +9,8 @@ spec:
   hosting:
     dnsNames: {{ toYaml .Values.objectstore.gateway.dnsNames | nindent 8 }}
   gateway:
+    annotations:
+      checksum/config: {{ include (print $.Template.BasePath "/ceph-config-override.yaml") . | sha256sum }}
     instances: {{ .Values.objectstore.gateway.instances }}
     {{- if .Values.objectstore.gateway.port }}
     port: {{ .Values.objectstore.gateway.port }}
