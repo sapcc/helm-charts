@@ -4,6 +4,7 @@ PROVIDER_VSPHERE_VERSION ?= v1.9.3
 PROVIDER_IPAM_VERSION ?= v0.1.0
 PROVIDER_KUBERNIKUS_VERSION ?= 9fd81475b828971913b3b27addf51fdbd0511d85
 BAREMETAL_OPERATOR_VERSION ?= v0.6.0
+METAL_OPERATOR_VERSION ?= 94572fae2e01b8a1cb0247a4ff407e90dd484f5f
 SHELL := bash
 .ONESHELL:
 
@@ -79,6 +80,12 @@ build-baremetal-operator:
 	@yq -i '.controllerManager.manager.image.tag="$(BAREMETAL_OPERATOR_VERSION)"' baremetal-operator-core/values.yaml
 	@yq -i '.fullnameOverride="metal3"' baremetal-operator-core/values.yaml
 	@yq -i '.version="1.0.1"' baremetal-operator-core/Chart.yaml
+
+build-metal-operator:
+	$(call build-chart,metal-operator-core,https://github.com/afritzler/metal-operator//config/default,$(METAL_OPERATOR_VERSION))
+	@yq -i '.controllerManager.manager.image.tag="$(METAL_OPERATOR_VERSION)"' metal-operator-core/values.yaml
+	@yq -i '.fullnameOverride="metal-operator"' metal-operator-core/values.yaml
+	@yq -i '.version="0.0.1"' metal-operator-core/Chart.yaml
 
 # chart name, source url, tag
 define build-chart
