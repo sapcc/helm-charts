@@ -1,0 +1,65 @@
+---
+suite: kopia-configmaps
+values:
+  - default_values.yaml
+set:
+  mariadb.galera.clustername: "testname"
+release:
+  name: testrelease
+  namespace: testnamespace
+templates:
+  - configmap-kopia.yaml
+tests:
+  - it: Galera wsrep_desync enabled
+    documentSelector:
+      path: metadata.name
+      value: testrelease-kopia-entrypoint-sh
+    set:
+      mariadb.galera.clustername: "testname"
+      mariadb.galera.backup.enabled: true
+      mariadb.galera.backup.kopia.enabled: true
+      mariadb.galera.backup.kopia.backend: s3
+      mariadb.galera.backup.kopia.s3.endpoint: "https://s3.fqdn"
+      mariadb.galera.backup.kopia.s3.region: "region1"
+      mariadb.galera.backup.kopia.s3.bucket: "bucket1"
+      mariadb.galera.backup.desyncBackupNode: true
+    asserts:
+      - isKind:
+          of: ConfigMap
+      - equal:
+          path: metadata.namespace
+          value: testnamespace
+      - matchRegex:
+          path: data["entrypoint-backup.sh"]
+          pattern: |
+            setclusterdesyncmode \${NODENAME\[0\]} ON
+            createkopiadbbackup \${NODENAME\[0\]} \${NODENAME\[1\]}
+            createkopiabinlogbackup \${NODENAME\[0\]} \${NODENAME\[1\]}
+            setclusterdesyncmode \${NODENAME\[0\]} OFF
+
+  - it: Galera wsrep_desync disabled
+    documentSelector:
+      path: metadata.name
+      value: testrelease-kopia-entrypoint-sh
+    set:
+      mariadb.galera.clustername: "testname"
+      mariadb.galera.backup.enabled: true
+      mariadb.galera.backup.kopia.enabled: true
+      mariadb.galera.backup.kopia.backend: s3
+      mariadb.galera.backup.kopia.s3.endpoint: "https://s3.fqdn"
+      mariadb.galera.backup.kopia.s3.region: "region1"
+      mariadb.galera.backup.kopia.s3.bucket: "bucket1"
+      mariadb.galera.backup.desyncBackupNode: false
+    asserts:
+      - isKind:
+          of: ConfigMap
+      - equal:
+          path: metadata.namespace
+          value: testnamespace
+      - matchRegex:
+          path: data["entrypoint-backup.sh"]
+          pattern: |-
+            #setclusterdesyncmode \${NODENAME\[0\]} ON
+            createkopiadbbackup \${NODENAME\[0\]} \${NODENAME\[1\]}
+            createkopiabinlogbackup \${NODENAME\[0\]} \${NODENAME\[1\]}
+            #setclusterdesyncmode \${NODENAME\[0\]} OFF

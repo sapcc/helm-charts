@@ -1,0 +1,26 @@
+{{- range $volumeClaimTemplatesKey, $volumeClaimTemplatesValue := $.Values.volumeClaimTemplates }}
+  {{- range $volumeMountsKey, $volumeMountsValue := $.Values.volumeMounts.backup.kopia }}
+    {{- if $volumeMountsValue.enabled }}
+      {{- if (hasKey $volumeMountsValue "claimName") }}
+        {{- if eq $volumeClaimTemplatesKey $volumeMountsValue.claimName }}
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: {{ include "commonPrefix" $ }}-{{ $volumeMountsKey }}-{{ $volumeMountsValue.claimName | lower }}
+  namespace: {{ $.Release.Namespace }}
+  labels:
+    {{- include "sharedservices.labels" $ | indent 4 }}
+spec:
+  accessModes: {{ $volumeClaimTemplatesValue.accessModes }}
+  resources:
+    requests:
+      storage: {{ $volumeClaimTemplatesValue.capacity }}
+          {{- if $volumeClaimTemplatesValue.storageClassName }}
+  storageClassName: {{ include "commonPrefix" $ }}-{{ $volumeClaimTemplatesValue.storageClassName }}
+          {{- end }}
+        {{- end }}
+      {{- end }}
+    {{- end }}
+  {{- end }}
+{{- end }}
