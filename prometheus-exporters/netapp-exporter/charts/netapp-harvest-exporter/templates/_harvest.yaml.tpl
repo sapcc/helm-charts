@@ -1,7 +1,6 @@
 Defaults:
   auth_style: basic_auth
-  username: {{ .Values.global.netapp_exporter_user }}
-  password: {{ .Values.global.netapp_exporter_password }}
+  credentials_file: /opt/harvest/credentials.yaml
   use_insecure_tls: true
   exporters:
     - prom1
