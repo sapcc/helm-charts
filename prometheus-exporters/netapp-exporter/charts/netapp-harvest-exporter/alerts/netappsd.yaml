@@ -110,3 +110,18 @@ groups:
         annotations:
           summary:  Volumes missing in Netapp Harvest
           description: Volumes are missing in Netapp Harvest for filer [[ $labels.filer ]].
+
+      - alert: NetappHarvestFilerNotScraped
+        expr: count (netappsd_discovered_filer) by (app, filer) unless count (netapp_volume_size) by (app, filer)
+        for: 15m
+        labels:
+          context: netapp-exporter
+          no_alert_on_absence: "true"
+          service: exporter
+          severity: info
+          support_group: compute-storage-api
+          tier: storage
+        annotations:
+          summary:  Filer not scraped by Netapp Harvest
+          description: Filer [[ $labels.filer ]] is not scraped by Netapp Harvest [[ $labels.app ]].
+
