@@ -175,6 +175,11 @@ conductor:
     port: 8088
     erase_devices_priority: 0
   defaults:
+    # Default image for ESP. Can be overridden with `driver_info.bootloader`
+    # on a node-by-node basis. OS needs to match `grub_config_path`
+    # (as long as the image is based on grub and not syslinux)
+    esp_image_path: ironic-tftp/esp-ubuntu-x86_64.img
+
     default:
       enabled_hardware_types: ipmi, idrac, redfish
       enabled_boot_interfaces: pxe, ipxe, idrac-redfish-virtual-media, redfish-virtual-media
@@ -192,6 +197,11 @@ conductor:
       # enables collecting metrics for rpc calls
       statsd_enabled: false
       statsd_port: 9125
+
+      # That depends on os version used in the bootloader image / inspector
+      # Since the our loci images are based on ubuntu default to that for now
+      # Cross-check os name with `esp_image_path`
+      grub_config_path: 'EFI/ubuntu/grub.cfg'
     dhcp: {}
     pxe:
       kernel_append_params: "ipa-hardware-initialization-delay=120 console=tty0 console=ttyS0,115200 nofb nomodeset vga=normal"
