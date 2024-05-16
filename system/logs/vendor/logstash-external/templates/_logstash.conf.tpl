@@ -80,6 +80,9 @@ filter {
         split => { "[host][hostname]" => "-" }
         add_field => { "fqdn" => "%{[host][hostname][0]}.cc.%{[host][hostname][1]}-%{[host][hostname][2]}-%{[host][hostname][3]}.cloud.sap" }
     }
+    drop {
+        remove_field => [ "[host][hostname]" ]
+    }
   }
 
   if [type] == "alert" {
