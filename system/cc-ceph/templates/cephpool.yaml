@@ -5,5 +5,24 @@ metadata:
   namespace: {{ .Release.Namespace }}
 spec:
   name: .mgr
+  {{- if $target.failureDomain }}
+  failureDomain: {{ $target.failureDomain | default "host"  }}
+  {{- end }}
   replicated:
     size: {{ .Values.pool.mgr.replicated }}
+    {{- if $target.replicasPerFailureDomain }}
+    replicasPerFailureDomain: {{ $target.replicasPerFailureDomain | default 1 }}
+    {{- end }}
+    {{- if $target.subFailureDomain }}
+    subFailureDomain: {{ $target.subFailureDomain | default "host" }}
+    {{- end }}
+  {{- if $target.crushRoot }}
+  crushRoot: {{ $target.crushRoot | default "default" }} 
+  {{- end }}
+  deviceClass: nvme
+  parameters:
+    pg_num: "4"
+    pgp_num: "4"
+
+
+    
