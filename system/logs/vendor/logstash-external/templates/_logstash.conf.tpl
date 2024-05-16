@@ -81,10 +81,7 @@ filter {
         id => "jump-split"
         split => { "[host][hostname]" => "-" }
         add_field => { "fqdn" => "%{[host][hostname][0]}.cc.%{[host][hostname][1]}-%{[host][hostname][2]}-%{[host][hostname][3]}.cloud.sap" }
-    }
-    drop {
-        id => "jump-drop"
-        remove_field => [ "[host][hostname]" ]
+        remove_field => "[host][hostname]"
     }
   }
 
