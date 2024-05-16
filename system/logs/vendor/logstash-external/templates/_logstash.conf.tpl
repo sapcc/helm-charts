@@ -75,22 +75,29 @@ filter {
     }
   }
 
-    if [type] == "alert" {
-       json {
-         id => "alert-json-decode"
-         source => "message"
-       }
-       if "_jsonparsefailure" not in [tags] {
-         split {
-           id => "alert-json-split"
-           field => "alerts"
-         }
-         mutate {
-             id => "alert-remove-message"
-             remove_field => ["message"]
-         }
-       }
+  if  [type] == "jumpserver" {
+    mutate {
+        split => { "[host][hostname]" => "-" }
+        add_field => { "fqdn" => "%{[host][hostname][0]}.%{[host][hostname][1]}-%{[host][hostname][2]}-%{[host][hostname][2]}-%{[host][hostname][4]}.cc.cloud.sap" }
     }
+  }
+
+  if [type] == "alert" {
+     json {
+       id => "alert-json-decode"
+       source => "message"
+     }
+     if "_jsonparsefailure" not in [tags] {
+       split {
+         id => "alert-json-split"
+         field => "alerts"
+       }
+       mutate {
+           id => "alert-remove-message"
+           remove_field => ["message"]
+       }
+     }
+  }
     if [type] == "deployment" {
        json {
          id => "deployment-json-decode"
