@@ -78,7 +78,7 @@ filter {
   if  [type] == "jumpserver" {
     mutate {
         split => { "[host][hostname]" => "-" }
-        add_field => { "fqdn" => "%{[host][hostname][0]}.cc.%{[host][hostname][1]}-%{[host][hostname][2]}-%{[host][hostname][3]}.cc.cloud.sap" }
+        add_field => { "fqdn" => "%{[host][hostname][0]}.cc.%{[host][hostname][1]}-%{[host][hostname][2]}-%{[host][hostname][3]}.cloud.sap" }
     }
   }
 
