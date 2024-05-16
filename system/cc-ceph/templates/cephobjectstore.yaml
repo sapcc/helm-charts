@@ -27,6 +27,16 @@ spec:
                   operator: In
                   values:
                     - {{ .Values.osd.nodeRole }}
+      # since the CephCluster's network provider is "host", we need to isolate 80/443 port listeners from each other
+      podAntiAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+        - labelSelector:
+            matchExpressions:
+            - key: app
+              operator: In
+              values:
+              - rook-ceph-rgw
+          topologyKey: kubernetes.io/hostname
     priorityClassName: system-cluster-critical
     sslCertificateRef: {{ .Values.objectstore.gateway.sslCertificateRef }}
     resources: {{ toYaml .Values.objectstore.gateway.resources | nindent 6 }}
