@@ -3,16 +3,8 @@ DEFAULT:
   transport_url: nats://andromeda-nats:4222
 
 database:
-{{- if .Values.database_override.enabled }}
-  {{- if .Values.database_override.connection }}
-  connection: {{ .Values.database_override.connection }}
-  {{- else }}
-  connection: postgresql://postgres:{{ required ".Values.database_override.password variable missing" .Values.database_override.password | urlquery }}@{{ .Values.database_override.host }}/andromeda?sslmode=disable
-  {{- end }}
-{{- else if .Values.mariadb.enabled }}
+{{- if .Values.mariadb.enabled }}
   connection: mysql://andromeda:{{ required ".Values.mariadb.users.andromeda.password variable missing" .Values.mariadb.users.andromeda.password | urlquery }}@{{.Release.Name}}-mariadb/andromeda?sql_mode=%27ANSI_QUOTES%27
-{{- else if .Values.postgresql.enabled }}
-  connection: postgresql://postgres:{{ required ".Values.postgresql.postgresPassword variable missing" .Values.postgresql.postgresPassword | urlquery }}@andromeda-postgresql:5432/andromeda?sslmode=disable
 {{- end }}
 
 api_settings:
