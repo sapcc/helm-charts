@@ -1,6 +1,6 @@
 {{- $values := .Values.openstack.alerts }}
 {{- if $values.enabled }}
-{{- range $path, $bytes := .Files.Glob "alerts/*.alerts" }}
+{{- range $path, $bytes := .Files.Glob "aggregations/*.rules" }}
 ---
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
@@ -8,6 +8,7 @@ kind: PrometheusRule
 metadata:
   name: {{ printf "openstack-exporter-%s" $path | replace "/" "-" }}
   labels:
+    type: aggregation-rules
     app.kubernetes.io/name: openstack-exporter
     prometheus: {{ required "$values.prometheus missing" $values.prometheus }}
 
