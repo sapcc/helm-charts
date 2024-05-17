@@ -93,10 +93,10 @@ reserved_share_extend_percentage = 100
 reserved_share_extend_percentage = {{ $share.reserved_share_extend_percentage | default 25 }}
 {{- end }}
 
-{{- if eq 100 (int $share.reserved_snapshot_percentage)}}
-reserved_snapshot_percentage = 100
+{{- if eq 100 (int $share.reserved_share_from_snapshot_percentage)}}
+reserved_share_from_snapshot_percentage = 100
 {{- else }}
-reserved_snapshot_percentage = {{ $share.reserved_snapshot_percentage | default 25 }}
+reserved_share_from_snapshot_percentage = {{ $share.reserved_share_from_snapshot_percentage | default 25 }}
 {{- end }}
 
 # Time to kepp deleted volumes in recovery queue until space is reclaimed
@@ -112,7 +112,7 @@ netapp_delete_retention_hours = {{ $context.Values.delete_retention_hours | defa
 max_over_subscription_ratio = {{ $share.max_over_subscription_ratio | default $context.Values.max_over_subscription_ratio | default 3.0 }}
 
 # maximum number of volumes created in a SVM
-max_shares_per_share_server = {{ $share.max_shares_per_share_server | default $context.Values.max_shares_per_share_server | default 20 }}
+max_shares_per_share_server = {{ $share.max_shares_per_share_server | default $context.Values.max_shares_per_share_server | default 50 }}
 # maximum sum of gigabytes a SVM can have considering all its share instances and snapshots
 max_share_server_size  = {{ $share.max_share_server_size | default $context.Values.max_share_server_size | default 10240 }}
 

@@ -72,16 +72,16 @@ redis:
     maxmemory-policy: allkeys-lru
     maxmemory-samples: 5
 
-  # observed resource usage for keppel-redis pod as of 2022-03:
-  #   CPU up to 0.32% = 3.2m (average!)
+  # observed resource usage for keppel-redis pod as of 2024-05:
+  #   CPU up to 0.32% = 5m (average, but we must avoid throttling)
   #   MEM up to 16Mi
   resources:
     limits:
       memory: 128Mi
-      cpu: 100m
+      cpu: 200m
     requests:
       memory: 128Mi
-      cpu: 10m
+      cpu: 100m
 
   metrics:
   # observed resource usage for keppel-redis-metrics pod as of 2022-03:
@@ -108,6 +108,7 @@ postgresql:
     accessMode: ReadWriteOnce # compatibility to allow easy upgrades
     size: 100Gi
   postgresDatabase: keppel
+  probe_timeout_secs: 5
   sharedMemoryLimit: 256Mi
   users:
     keppel: {}
@@ -115,11 +116,15 @@ postgresql:
 
 pgbackup:
   isPostgresNG: true
-  use_alternate_region: true
-  database:
-    name: keppel
   alerts:
     support_group: containers
+  database:
+    name: keppel
+  resources:
+    # complete backups rather fast, to relieve strain on the postgres
+    cpu_limit: 2
+    cpu_request: 500m
+  use_alternate_region: true
 
 pgmetrics:
   isPostgresNG: true
@@ -128,8 +133,12 @@ pgmetrics:
   alerts:
     support_group: containers
 
-  collectors:
-    stat_bgwriter: false
+  # observed resource usage for keppel-pgmetrics pod as of 2024-05:
+  #   CPU up to 0.15m but constantly throttling
+  #   MEM up to 20Mi
+  resources:
+    limits:
+      cpu: 200m
 
   customMetrics:
     keppel_accounts:
@@ -153,7 +162,7 @@ pgmetrics:
             usage: "GAUGE"
             description: "UNIX timestamp of next scheduled federation announcement, or 0 if no accounts have ever been announced to federation"
     keppel_blobs:
-      query: "SELECT COUNT(*) AS count, COALESCE(EXTRACT(epoch FROM MIN(can_be_deleted_at)), 0) AS min_can_be_deleted_at, EXTRACT(epoch FROM MIN(validated_at)) AS min_validated_at, SUM(CASE WHEN validation_error_message = '' THEN 0 ELSE 1 END) AS validation_errors FROM blobs WHERE storage_id != ''"
+      query: "SELECT COUNT(*) AS count, COALESCE(EXTRACT(epoch FROM MIN(can_be_deleted_at)), 0) AS min_can_be_deleted_at, EXTRACT(epoch FROM MIN(next_validation_at)) AS min_next_validation_at, SUM(CASE WHEN validation_error_message = '' THEN 0 ELSE 1 END) AS validation_errors FROM blobs WHERE storage_id != ''"
       metrics:
         - count:
             usage: "GAUGE"
@@ -161,7 +170,7 @@ pgmetrics:
         - min_can_be_deleted_at:
             usage: "GAUGE"
             description: "UNIX timestamp of next scheduled blob deletion, or 0 if no blobs are currently marked for deletion"
-        - min_validated_at:
+        - min_next_validation_at:
             usage: "GAUGE"
             description: "UNIX timestamp of oldest blob validation"
         - validation_errors:
@@ -197,7 +206,7 @@ pgmetrics:
     keppel_manifests:
       query: >
         SELECT COUNT(*) AS count,
-               EXTRACT(epoch FROM MIN(validated_at)) AS min_validated_at,
+               EXTRACT(epoch FROM MIN(next_validation_at)) AS min_next_validation_at,
                SUM(CASE WHEN validation_error_message = '' THEN 0 ELSE 1 END) AS validation_errors,
                COALESCE(EXTRACT(epoch FROM MIN(trivy_security_info.next_check_at)), 0) AS min_next_trivy_check_at,
                SUM(CASE WHEN trivy_security_info.next_check_at > NOW() THEN 0 ELSE 1 END) AS pending_trivy_checks
@@ -207,7 +216,7 @@ pgmetrics:
         - count:
             usage: "GAUGE"
             description: "Total number of manifests stored in Keppel"
-        - min_validated_at:
+        - min_next_validation_at:
             usage: "GAUGE"
             description: "UNIX timestamp of oldest manifest validation"
         - validation_errors:

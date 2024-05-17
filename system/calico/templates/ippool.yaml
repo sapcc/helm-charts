@@ -1,4 +1,5 @@
 {{- if .Values.config.ipv4.enabled -}}
+{{- if .Values.bgp.enabled }}
 ---
 apiVersion: crd.projectcalico.org/v1
 kind: IPPool
@@ -14,4 +15,41 @@ spec:
   natOutgoing: true
   nodeSelector: all()
   vxlanMode: Never
+{{- end }}
+{{- if .Values.vxlan.enabled }}
+# host-local ipam + vxlan not supported
+# https://github.com/projectcalico/calico/issues/4294
+---
+apiVersion: crd.projectcalico.org/v1
+kind: IPPool
+metadata:
+  name: default-ipv4-ippool
+spec:
+  allowedUses:
+  - Workload
+  - Tunnel
+  blockSize: 24
+  cidr: "{{ .Values.global.clusterCIDR }}"
+  ipipMode: Never
+  natOutgoing: true
+  nodeSelector: all()
+  vxlanMode: {{ .Values.vxlan.mode }}
+{{- end -}}
+{{- if .Values.ipip.enabled }}
+---
+apiVersion: crd.projectcalico.org/v1
+kind: IPPool
+metadata:
+  name: default-ipv4-ippool
+spec:
+  allowedUses:
+  - Workload
+  - Tunnel
+  blockSize: 24
+  cidr: "{{ .Values.global.clusterCIDR }}"
+  ipipMode: {{ .Values.ipip.mode }}
+  natOutgoing: true
+  nodeSelector: all()
+  vxlanMode: Never
+{{- end -}}
 {{- end -}}

@@ -1,0 +1,34 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+    disco: "true"
+    kubernetes.io/tls-acme: "true"
+
+    ingress.kubernetes.io/auth-url: "https://auth.{{ .Values.global.region}}.{{ .Values.global.tld}}/oauth2/auth"
+    nginx.ingress.kubernetes.io/auth-url: "https://auth.{{ .Values.global.region}}.{{ .Values.global.tld}}/oauth2/auth"
+    ingress.kubernetes.io/auth-signin: "https://auth.{{ .Values.global.region}}.{{ .Values.global.tld}}/oauth2/start"
+    nginx.ingress.kubernetes.io/auth-signin: "https://auth.{{ .Values.global.region}}.{{ .Values.global.tld}}/oauth2/start"
+    ingress.kubernetes.io/auth-request-redirect: $escaped_request_uri
+    nginx.ingress.kubernetes.io/auth-request-redirect: $escaped_request_uri
+    ingress.kubernetes.io/auth-response-headers: "Authorization, X-Auth-Request-Email, X-Auth-Request-User, X-Forwarded-Access-Token"
+    nginx.ingress.kubernetes.io/auth-response-headers: "Authorization, X-Auth-Request-Email, X-Auth-Request-User, X-Forwarded-Access-Token"
+  name: prometheus
+  namespace: {{ required ".Values.prometheus.namespace is unset" .Values.prometheus.namespace }}
+spec:
+  ingressClassName: nginx
+  rules:
+  - host: prometheus.st1.{{ .Values.global.region }}.cloud.sap
+    http:
+      paths:
+      - backend:
+          service:
+            name: kube-monitoring-{{ .Values.global.cluster }}-prometheus
+            port:
+              number: 9090
+        path: /
+        pathType: Prefix
+  tls:
+  - hosts:
+    - prometheus.st1.{{ .Values.global.region }}.cloud.sap
+    secretName: tls-prometheus-{{ .Values.global.cluster }}-cloud-sap

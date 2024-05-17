@@ -7,6 +7,7 @@ metadata:
     chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
     release: "{{ .Release.Name }}"
     heritage: "{{ .Release.Service }}"
+    {{- include "sharedservices.labels" . | indent 4 }}
 spec:
   replicas: {{ .Values.replicas }}
   revisionHistoryLimit: {{ .Values.upgrades.revisionHistory }}
@@ -25,6 +26,7 @@ spec:
       labels:
         app: {{ template "fullname" . }}
         component: memcached
+        {{- include "sharedservices.labels" . | indent 8 }}
       annotations:
         {{- if and (and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested) $.Values.linkerd.enabled }}
         linkerd.io/inject: enabled

@@ -16,8 +16,6 @@ spec:
     metadata:
       labels:
         name: glas-api
-        alert-tier: os
-        alert-service: hubcopter
       annotations:
         kubectl.kubernetes.io/default-container: api
     spec:
@@ -45,7 +43,7 @@ spec:
           securityContext:
             runAsUser: 0
           image: "{{ required ".Values.global.registry variable missing" $.Values.global.registry }}/shared-app-images/alpine-busybox:3.19-latest"
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always # -> if this pod shows up as having a vulnerable image, a rebuild and restart should suffice to get it back to Clean
           command: ["sh", "-c", "chown -R 4200:4200 /tmp/glas/"]
           volumeMounts:
             - name: cache

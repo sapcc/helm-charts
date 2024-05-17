@@ -1,3 +1,6 @@
+{{- $vbase  := .Values.global.vaultBaseURL | required "missing value for .Values.global.vaultBaseURL" -}}
+{{- $region := .Values.global.region       | required "missing value for .Values.global.region"       -}}
+
 {{- $domains := list "bs" "btp_fp" "cc3test" "cp" "cis" "fsn" "hcm" "hcp03" "hda" "hec" "kyma" "monsoon3" "neo" "s4" "wbs" -}}
 {{- /* WARNING: When adding a new domain, also increment the domain count in the OpenstackLimesUnexpectedCloudDnsAdminRoleAssignments alert. */ -}}
 
@@ -72,6 +75,12 @@ spec:
           role_assignments:
             - project: service
               role:    service
+        - name: limes-validation
+          description: User account for pre-deployment validation in CI
+          password: {{ printf "%s/%s/limes/keystone-user/validation/password" $vbase $region | quote }}
+          role_assignments:
+            - project: service
+              role:    resource_viewer # needs to be able to run `limesctl project show`
 
     - name: ccadmin
       projects:

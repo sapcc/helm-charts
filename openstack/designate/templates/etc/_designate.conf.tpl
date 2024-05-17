@@ -495,13 +495,7 @@ disable_by_file_path = /etc/designate/healthcheck_disable
 ########################
 ## Coordination
 ########################
-[coordination]
-# URL for the coordination backend to use.
-{{- if .Values.global_setup }}
-backend_url = memcached://{{.Release.Name}}-memcached.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.db_region}}.{{.Values.global.tld}}:{{.Values.global.memcached_port_public | default 11211}}
-{{- else }}
-backend_url = memcached://{{.Release.Name}}-memcached.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}:{{.Values.global.memcached_port_public | default 11211}}
-{{- end }}
+{{ include "ini_sections.coordination" . }}
 
 ########################
 ## Hook Points

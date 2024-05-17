@@ -33,6 +33,18 @@ spec:
 
         image: {{ required ".Values.global.registry missing" .Values.global.registry }}/{{ required ".Values.updater.image.name missing" .Values.updater.image.name }}:{{ required ".Values.updater.image.tag missing" .Values.updater.image.tag  }}
 
+        env:
+        - name: REDFISH_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "fullname" . }}
+              key: redfish_username
+        - name: REDFISH_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "fullname" . }}
+              key: redfish_password
+
         command:
           - /usr/bin/python3
 
@@ -55,6 +67,18 @@ spec:
       - name: {{ include "fullname" . }}-api
 
         image: {{ required ".Values.global.registry missing" .Values.global.registry }}/{{ required ".Values.updater.image.name missing" .Values.updater.image.name }}:{{ required ".Values.updater.image.tag missing" .Values.updater.image.tag  }}
+
+        env:
+        - name: REDFISH_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "fullname" . }}
+              key: redfish_username
+        - name: REDFISH_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "fullname" . }}
+              key: redfish_password
 
         command:
           - /usr/bin/python3

@@ -36,7 +36,7 @@ spec:
 {{ tuple . "ironic" "conductor" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
       annotations:
         configmap-etc-hash: {{ include (print .Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
-        secrets-hash: {{ include (print $.Template.BasePath "/secrets.yaml") . | sha256sum }}
+        secrets-hash: {{ include (print .Template.BasePath "/secrets.yaml") . | sha256sum }}
         configmap-etc-conductor-hash: {{ tuple . $conductor | include "ironic_conductor_configmap" | sha256sum }}{{- if $conductor.jinja2 }}{{`
         configmap-etc-jinja2-hash: {{ block | safe | sha256sum }}
 `}}{{- end }}
@@ -93,11 +93,7 @@ spec:
           failureThreshold: 30
         livenessProbe:
           exec:
-            command:
-            - bash
-            - -c
-            - curl -u {{ .Values.rabbitmq.metrics.user }}:{{ .Values.rabbitmq.metrics.password }} ironic-rabbitmq:{{ .Values.rabbitmq.ports.management }}/api/consumers | sed 's/,/\n/g' | grep ironic-conductor-{{$conductor.name}} >/dev/null
-              && openstack-agent-liveness -c ironic --config-file /etc/ironic/ironic.conf --ironic_conductor_host ironic-conductor-{{$conductor.name}}
+            command: [ "openstack-agent-liveness",  "--component", "ironic",  "--config-file", "/etc/ironic/ironic.conf", "--config-file", "/etc/ironic/ironic.conf.d/secrets.conf", "--ironic_conductor_host", "ironic-conductor-{{$conductor.name}}" ]
           periodSeconds: 120
           failureThreshold: 3
           timeoutSeconds: 12
@@ -215,20 +211,13 @@ spec:
         configMap:
           name: ironic-etc
       - name: ironic-conductor-etc
-        projected:
-          sources:
-          - configMap:
-          {{- if $conductor.name }}
-              name: ironic-conductor-{{$conductor.name}}-etc
-          {{- else }}
-              name: ironic-conductor-etc
-          {{- end }}
-          - secret:
-          {{- if $conductor.name }}
-              name: ironic-conductor-{{$conductor.name}}-etc-secret
-          {{- else }}
-              name: ironic-conductor-etc-secret
-          {{- end }}
+        configMap:
+        {{- if $conductor.name }}
+          name: ironic-conductor-{{$conductor.name}}-etc
+        {{- else }}
+          name: ironic-conductor-etc
+        {{- end }}
+
       - name: ironic-console
         configMap:
           name: ironic-console

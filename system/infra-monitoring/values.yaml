@@ -47,7 +47,6 @@ prometheus_infra_collector:
   name: infra-collector
   enabled: true
 
-  retentionTime: 1h
   scrapeInterval: "60s"
 
   serviceDiscoveries:
@@ -88,7 +87,7 @@ prometheus_infra_collector:
     prometheus:
       containerName: "prometheus"
       maxAllowed:
-        memory: "20Gi"
+        memory: "40Gi"
 
   serviceAccount:
     create: true
@@ -149,35 +148,7 @@ thanos:
     hosts:
       - thanos-infra-collector-grpc
 
-netbox_exporter:
-  enabled: false
-  scrapeInterval: 1m
-  scrapeTimeout: 55s
-
-netapp_cap_exporter:
-  # default to true for transition. Value was not checked so it was enabled by default.
-  enabled: true
-  apps:
-    manila:
-      scrapeInterval: 2m
-      scrapeTimeout: 110s
-      fullname: "netapp-capacity-exporter-manila"
-    cinder:
-      scrapeInterval: 2m
-      scrapeTimeout: 110s
-      fullname: "netapp-capacity-exporter-cinder"
-    baremetal:
-      scrapeInterval: 2m
-      scrapeTimeout: 110s
-      fullname: "netapp-capacity-exporter-bare-metal"
-    controlplane:
-      scrapeInterval: 2m
-      scrapeTimeout: 110s
-      fullname: "netapp-capacity-exporter-control-plane"
-
-vcenter-exporters:
-  enabled: false
-
+# TODO: this is using a dedicated chart now and needs to be moved
 ipmi_exporter:
   enabled: false
   ironic_scrapeInterval: 2m
@@ -188,21 +159,14 @@ ipmi_exporter:
   esxi_scrapeTimeout: 55s
   listen_port: 9290
 
+# used for scrapeconfig only
 kvm:
   enabled: false
   scrapeInterval: 1m
   scrapeTimeout: 55s
 
-vcenter_exporters:
-  enabled: false
-
 blackbox_exporter:
   enabled: false
-
-vasa_exporter:
-  enabled: false
-  scrapeInterval: 200s
-  scrapeTimeout: 195s
 
 px_exporter:
   enabled: false
@@ -219,6 +183,7 @@ netbox_exporters:
   scrapeInterval: 1m
   scrapeTimeout: 55s
 
+# federation from ask1k proms
 ask1k_tests:
   enabled: false
 

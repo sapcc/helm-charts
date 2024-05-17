@@ -6,6 +6,8 @@ metadata:
   labels:
     app: limes-collect
     release: "{{.Release.Name}}"
+  annotations:
+    configmap.reloader.stakater.com/reload: limes-auto-overrides
 
 spec:
   minReadySeconds: 10 # to capture errors from config/constraint parsing
@@ -21,8 +23,6 @@ spec:
       labels:
         name: limes-collect-ccloud
         app: limes-collect
-        alert-tier: os
-        alert-service: limes
       annotations:
         checksum/configmap: {{ include "limes/templates/configmap.yaml" . | sha256sum }}
         checksum/secret: {{ include "limes/templates/secret.yaml" . | sha256sum }}
@@ -34,6 +34,9 @@ spec:
         - name: config
           configMap:
             name: limes
+        - name: config-auto-overrides
+          configMap:
+            name: limes-auto-overrides
       containers:
         - name: collect
           image: {{ include "limes_image" . }}
@@ -43,21 +46,25 @@ spec:
             - /etc/limes/limes.yaml
           env:
             {{ include "limes_common_envvars" . | indent 12 }}
+            - name: LIMES_QUOTA_OVERRIDES_PATH
+              value: "/etc/limes-auto-overrides/quota-overrides.json"
           securityContext:
             runAsNonRoot: true
           volumeMounts:
             - mountPath: /etc/limes
               name: config
+            - mountPath: /etc/limes-auto-overrides
+              name: config-auto-overrides
           ports:
             - name: metrics
               containerPort: 8080
           {{- if .Values.limes.resources.enabled }}
           resources:
-            # observed usage: CPU = 50m-500m, RAM = 100-250 MiB
+            # observed usage: CPU = 50m-500m, RAM = 100 MiB in small regions, spikes up to more than 750 MiB in large regions
             limits:
                 cpu: '1000m'
-                memory: '500Mi'
+                memory: '1000Mi'
             requests:
                 cpu: '400m'
-                memory: '500Mi'
+                memory: '1000Mi'
           {{- end }}

@@ -2,8 +2,9 @@ CLUSTER_API_VERSION ?= v1.6.2
 PROVIDER_METAL3_VERSION ?= v1.6.0
 PROVIDER_VSPHERE_VERSION ?= v1.9.3
 PROVIDER_IPAM_VERSION ?= v0.1.0
-PROVIDER_KUBERNIKUS_VERSION ?= 1a4bfb5bcc5768593ff5b46d33faf6d252eec672
-BAREMETAL_OPERATOR_VERSION ?= v0.5.0
+PROVIDER_KUBERNIKUS_VERSION ?= 9fd81475b828971913b3b27addf51fdbd0511d85
+BAREMETAL_OPERATOR_VERSION ?= v0.6.0
+METAL_OPERATOR_VERSION ?= 94572fae2e01b8a1cb0247a4ff407e90dd484f5f
 SHELL := bash
 .ONESHELL:
 
@@ -62,7 +63,7 @@ build-provider-kubernikus:
 	$(call build-chart,provider-kubernikus,https://github.com/sapcc/cluster-api-control-plane-provider-kubernikus//config/default,$(PROVIDER_KUBERNIKUS_VERSION))
 	@yq -i '.controllerManager.manager.image.tag="$(PROVIDER_KUBERNIKUS_VERSION)"' provider-kubernikus/values.yaml
 	@yq -i '.fullnameOverride="capi-cp-provider-kubernikus"' provider-kubernikus/values.yaml
-	@yq -i '.version="0.1.7"' provider-kubernikus/Chart.yaml
+	@yq -i '.version="0.1.8"' provider-kubernikus/Chart.yaml
 
 build-baremetal-operator:
 	@yq -i '.namespace = "baremetal-operator=system"' kustomization.yaml
@@ -78,7 +79,13 @@ build-baremetal-operator:
 	@find baremetal-operator-core/templates -type f -exec $(SED) -i -e 's#-baremetal-operator-system/#-#g' {} \;
 	@yq -i '.controllerManager.manager.image.tag="$(BAREMETAL_OPERATOR_VERSION)"' baremetal-operator-core/values.yaml
 	@yq -i '.fullnameOverride="metal3"' baremetal-operator-core/values.yaml
-	@yq -i '.version="0.0.2"' baremetal-operator-core/Chart.yaml
+	@yq -i '.version="1.0.1"' baremetal-operator-core/Chart.yaml
+
+build-metal-operator:
+	$(call build-chart,metal-operator-core,https://github.com/afritzler/metal-operator//config/default,$(METAL_OPERATOR_VERSION))
+	@yq -i '.controllerManager.manager.image.tag="$(METAL_OPERATOR_VERSION)"' metal-operator-core/values.yaml
+	@yq -i '.fullnameOverride="metal-operator"' metal-operator-core/values.yaml
+	@yq -i '.version="0.0.1"' metal-operator-core/Chart.yaml
 
 # chart name, source url, tag
 define build-chart

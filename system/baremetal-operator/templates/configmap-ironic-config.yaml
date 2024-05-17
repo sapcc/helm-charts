@@ -4,19 +4,53 @@ metadata:
   name: ironic-config
   namespace: {{ .Release.Namespace }}
 data:
-  DEPLOY_KERNEL_URL: http://{{ .Values.ironic.externalIP }}:{{ .Values.ironic.ipxePort }}/images/ironic-python-agent.kernel
-  DEPLOY_RAMDISK_URL: http://{{ .Values.ironic.externalIP }}:{{ .Values.ironic.ipxePort }}/images/ironic-python-agent.initramfs
+  DEPLOY_KERNEL_URL: https://metal3-ironic.{{ .Values.global.region }}.{{ .Values.global.tld }}:{{ .Values.ironic.ipxePort }}/images/ironic-python-agent.kernel
+  DEPLOY_RAMDISK_URL: https://metal3-ironic.{{ .Values.global.region }}.{{ .Values.global.tld }}:{{ .Values.ironic.ipxePort }}/images/ironic-python-agent.initramfs
   HTTP_PORT: "{{ .Values.ironic.ipxePort }}"
-  INSPECTOR_REVERSE_PROXY_SETUP: "false"
-  IRONIC_ENDPOINT: http://{{ .Values.ironic.externalIP }}:{{ .Values.ironic.ironicPort }}/v1/
+  IRONIC_ENDPOINT: https://metal3-ironic.{{ .Values.global.region }}.{{ .Values.global.tld }}:{{ .Values.ironic.ironicPort }}/v1/
   IRONIC_FAST_TRACK: "true"
-  IRONIC_INSPECTOR_ENDPOINT: http://{{ .Values.ironic.externalIP }}:{{ .Values.ironic.inspectorPort }}/v1/
-  IRONIC_INSPECTOR_VLAN_INTERFACES: all
+  IRONIC_ENABLE_VLAN_INTERFACES: all
+  USE_IRONIC_INSPECTOR: "false"
   IRONIC_KERNEL_PARAMS: console=ttyS0
   PROVISIONING_INTERFACE: {{ .Values.ironic.provisionInterface }}
   RESTART_CONTAINER_CERTIFICATE_UPDATED: "false"
   IRONIC_RAMDISK_SSH_KEY: {{ .Values.ironic.auth.ipaSshKey }}
-  IRONIC_URL_HOST: {{ .Values.ironic.externalIP }}
+  IRONIC_URL_HOST: metal3-ironic.{{ .Values.global.region }}.{{ .Values.global.tld }}
+  IRONIC_EXTERNAL_IP: metal3-ironic.{{ .Values.global.region }}.{{ .Values.global.tld }}
   IRONIC_IP: {{ .Values.ironic.externalIP }}
   IPA_BASEURI: {{ .Values.ironic.ipa.baseUri }} 
   IPA_BRANCH: {{ .Values.ironic.ipa.branch }}
+  RESTART_CONTAINER_CERTIFICATE_UPDATED: "true"
+  IRONIC_SCHEME: "https"
+  IRONIC_TLS_SETUP: "true"
+  IRONIC_CACERT_FILE: "/certs/ironic/ca.crt"
+  runironic: |
+    #!/usr/bin/bash
+
+    # This setting must go before configure-ironic since it has different defaults.
+    export IRONIC_USE_MARIADB=${IRONIC_USE_MARIADB:-false}
+
+    # shellcheck disable=SC1091
+    . /bin/configure-ironic.sh
+
+    # Ramdisk logs
+    mkdir -p /shared/log/ironic/deploy
+
+    run_ironic_dbsync
+
+    if [[ "$IRONIC_TLS_SETUP" == "true" ]] && [[ "${RESTART_CONTAINER_CERTIFICATE_UPDATED}" == "true" ]]; then
+        # shellcheck disable=SC2034
+        inotifywait -m -e delete_self "${IRONIC_CERT_FILE}" | while read -r file event; do
+            kill $(pgrep ironic)
+        done &
+    fi
+
+    IRONIC_CONFIG=/etc/ironic/ironic.conf
+    sed -i 's/http:\/\/{{ .Values.ironic.externalIP }}/https:\/\/metal3-ironic.{{ .Values.global.region }}.{{ .Values.global.tld }}/' $IRONIC_CONFIG
+    sed -i 's/https:\/\/{{ .Values.ironic.externalIP }}/https:\/\/metal3-ironic.{{ .Values.global.region }}.{{ .Values.global.tld }}/' $IRONIC_CONFIG
+    sed -i 's/http:\/\/metal3-ironic.{{ .Values.global.region }}.{{ .Values.global.tld }}/https:\/\/metal3-ironic.{{ .Values.global.region }}.{{ .Values.global.tld }}/' $IRONIC_CONFIG
+
+    configure_ironic_auth
+
+    exec /usr/bin/ironic
+

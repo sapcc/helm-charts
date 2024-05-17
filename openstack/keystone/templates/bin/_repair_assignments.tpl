@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-trap "{{ include "utils.proxysql.proxysql_signal_stop_script" . | trim }}" EXIT
 export STDOUT=${STDOUT:-/proc/1/fd/1}
 export STDERR=${STDERR:-/proc/1/fd/2}
 

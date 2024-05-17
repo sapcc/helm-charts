@@ -1,0 +1,29 @@
+apiVersion: "openstack.stable.sap.cc/v1"
+kind: OpenstackSeed
+metadata:
+  name: ceph-seed
+
+spec:
+  services:
+    - name:        ceph
+      type:        object-store-ceph
+      description: 'CEPH Object Store'
+      enabled:     true
+      endpoints:
+        - region:    '{{ $.Values.global.region }}'
+          interface: public
+          enabled:   true
+          url:       'https://rgw.st1.{{ $.Values.global.region }}.{{ $.Values.global.tld }}/swift/v1/AUTH_%(tenant_id)s'
+
+  domains:
+    - name: Default
+      users:
+        - name: ceph
+          description: CEPH Object Store Service
+          password: '{{ $.Values.global.ceph_service_password }}'
+    - name: Default
+      projects:
+      - name: admin
+        role_assignments:
+        - user: ceph@Default
+          role: service # for s3tokens auth access

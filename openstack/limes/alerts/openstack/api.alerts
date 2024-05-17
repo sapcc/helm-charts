@@ -247,22 +247,6 @@ groups:
 
         More details can be found in <https://dashboard.{{ $labels.region }}.cloud.sap/ccadmin/cloud_admin/resources/cluster/current#/inconsistencies|the Limes Inconsistencies view in Elektra>.
 
-  - alert: OpenstackLimesOvercommittedDomainQuota
-    expr: limes_overcommitted_domain_quota_count > 0
-    for: 5m # this can trigger quickly since Limes cannot do anything by itself to fix this
-    labels:
-      severity: info
-      support_group: containers
-      tier: os
-      service: limes
-    annotations:
-      summary: Overcommitted Domain Quota
-      description: Limes detected that the total quota of some resource across all projects in some domain exceeds the quota of that resource for the domain.
-        (In other words, the domain has distributed more quota to its projects than it has been given.)
-        This may happen when new projects are created and their quota is initialized because of constraints configured by a cloud administrator.
-
-        More details can be found in <https://dashboard.{{ $labels.region }}.cloud.sap/ccadmin/cloud_admin/resources/cluster/current#/inconsistencies|the Limes Inconsistencies view in Elektra>.
-
   - alert: OpenstackLimesOverspentProjectQuota
     expr: limes_overspent_project_quota_count > 0
     for: 60m # every 30m, limes-collect scrapes quota/usage on each project service; give it 1-2 chances to observe a consistent usage value before alerting
@@ -279,7 +263,9 @@ groups:
         More details can be found in <https://dashboard.{{ $labels.region }}.cloud.sap/ccadmin/cloud_admin/resources/cluster/current#/inconsistencies|the Limes Inconsistencies view in Elektra>.
 
   - alert: OpenstackNonGrowingQuotaAlmostExhausted
-    expr: ((limes_project_usage{resource!~"instances_.*"} > 0.9 * limes_project_quota) and on (service, resource) (limes_autogrow_growth_multiplier == 1)) * on (service) group_left (support_group) (limes_support_group_mapping)
+    expr: max by (support_group, service_name, service, resource, domain, project_id, project) (
+        ((limes_project_usage{resource!~"instances_.*"} > 0.9 * limes_project_quota) and on (service, resource) (limes_autogrow_growth_multiplier == 1)) * on (service) group_left (support_group) (limes_support_group_mapping)
+      )
     for: 5m
     labels:
       severity: warning

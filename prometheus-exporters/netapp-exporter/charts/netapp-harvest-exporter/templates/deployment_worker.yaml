@@ -19,6 +19,7 @@ spec:
     metadata:
       annotations:
         configmap-hash: {{ include (print $.Template.BasePath "/configmap.yaml") . | replace .Chart.Version "0.1.5" | sha256sum }}
+        kubectl.kubernetes.io/default-container: poller
         {{- if and .Values.global.linkerd_enabled .Values.global.linkerd_requested }}
         linkerd.io/inject: enabled
         {{- end }}
@@ -51,11 +52,14 @@ spec:
             - name: harvest-config
               subPath: rest.iscsi_session.yaml
               mountPath: /opt/harvest/conf/rest/9.6.0/iscsi_session.yaml
-            - name: harvest-config 
+            - name: harvest-config
               mountPath: /opt/harvest/conf/restperf/limited.yaml
               subPath: restperf.limited.yaml
             - name: shared
               mountPath: /opt/harvest/shared
+            - name: harvest-secret
+              mountPath: /opt/harvest/credentials.yaml
+              subPath: credentials.yaml
         - name: worker
           image: {{ .Values.global.registry }}/{{ .Values.netappsd.image.repository }}:{{ .Values.netappsd.image.tag }}
           imagePullPolicy: {{ .Values.netappsd.image.pullPolicy | default "IfNotPresent" }}
@@ -97,25 +101,15 @@ spec:
               subPath: harvest.yaml.tpl
             - name: shared
               mountPath: /app/shared
-          livenessProbe:
-            httpGet:
-              path: /healthz
-              port: liveness
-            failureThreshold: 3
-            periodSeconds: 60
-            timeoutSeconds: 10
-          startupProbe:
-            httpGet:
-              path: /healthz
-              port: liveness
-            failureThreshold: 30
-            periodSeconds: 10
       volumes:
         - name: harvest-config
           configMap:
             name: {{ include "netapp-harvest.fullname" . }}
         - name: shared
           emptyDir: {}
+        - name: harvest-secret
+          secret:
+            secretName: {{ include "netapp-harvest.fullname" . }}
 ---
 {{- end }}
 {{- end }}

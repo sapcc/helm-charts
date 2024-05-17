@@ -66,6 +66,13 @@ spec:
               mountPath: /etc/octavia/octavia-worker.conf
               subPath: octavia-worker.conf
               readOnly: true
+            - name: octavia-etc-confd
+              mountPath: /etc/octavia/octavia.conf.d
+              readOnly: true
+            - name: octavia-etc-worker-secret
+              mountPath: /etc/octavia/octavia-worker-secret.conf
+              subPath: secrets-worker.conf
+              readOnly: true
             - mountPath: /var/run/octavia
               name: octavia-var
             {{- include "utils.proxysql.volume_mount" . | indent 12 }}
@@ -81,39 +88,6 @@ spec:
               value: "ignore:Unverified HTTPS request"
             - name: REQUESTS_CA_BUNDLE
               value: ""
-            {{- if .Values.sentry.enabled }}
-            - name: SENTRY_DSN
-              valueFrom:
-                secretKeyRef:
-                  name: sentry
-                  key: octavia.DSN.python
-            {{- end }}
-        - name: octavia-driver-agent
-          image: {{required ".Values.global.registry is missing" .Values.global.registry}}/loci-octavia:{{required "Values.imageVersion is missing" .Values.imageVersion}}
-          imagePullPolicy: IfNotPresent
-          command: ['dumb-init', 'kubernetes-entrypoint']
-          resources:
-{{ toYaml .Values.pod.resources.driver_agent | indent 12 }}
-          volumeMounts:
-            - name: octavia-etc
-              mountPath: /etc/octavia/octavia.conf
-              subPath: octavia.conf
-              readOnly: true
-            - name: octavia-etc
-              mountPath: /etc/octavia/logging.ini
-              subPath: logging.ini
-              readOnly: true
-            - mountPath: /var/run/octavia
-              name: octavia-var
-            {{- include "utils.proxysql.volume_mount" . | indent 12 }}
-            {{- include "utils.trust_bundle.volume_mount" . | indent 12 }}
-          env:
-            - name: COMMAND
-              value: "octavia-driver-agent --config-file /etc/octavia/octavia.conf --config-file /etc/octavia/octavia.conf.d/secrets.conf"
-            - name: DEPENDENCY_JOBS
-              value: octavia-migration
-            - name: NAMESPACE
-              value: {{ .Release.Namespace }}
             {{- if .Values.sentry.enabled }}
             - name: SENTRY_DSN
               valueFrom:
