@@ -363,7 +363,7 @@ enabled = {{.Values.worker_enabled}}
 workers = 2
 
 # Number of Worker greenthreads to spawn
-threads = 1000
+threads = 200
 
 # The percentage of servers requiring a successful update for a zone change
 # to be considered active
@@ -381,7 +381,7 @@ poll_retry_interval = {{ .Values.worker_poll_retry_interval }}
 poll_max_retries = {{ .Values.worker_poll_max_retries }}
 
 # The time to wait before sending the first request to a server
-poll_delay = 2
+poll_delay = 0.5
 
 # Whether to allow worker to send NOTIFYs. NOTIFY requests to mdns will noop
 notify = {{ .Values.worker_notify }}
@@ -397,7 +397,7 @@ all_tcp = {{ .Values.worker_all_tcp }}
 {{- if eq .Values.global_setup false }}
 endpoints = {{ .Values.global.region }}|https://network-3.{{ .Values.global.region }}.{{ .Values.global.tld }}
 endpoint_type = publicURL
-timeout = 20
+timeout = 30
 insecure = True
 {{- end }}
 
