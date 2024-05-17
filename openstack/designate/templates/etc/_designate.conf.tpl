@@ -381,7 +381,7 @@ poll_retry_interval = {{ .Values.worker_poll_retry_interval }}
 poll_max_retries = {{ .Values.worker_poll_max_retries }}
 
 # The time to wait before sending the first request to a server
-poll_delay = 0
+poll_delay = 1
 
 # Whether to allow worker to send NOTIFYs. NOTIFY requests to mdns will noop
 notify = {{ .Values.worker_notify }}
