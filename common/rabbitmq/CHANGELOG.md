@@ -3,6 +3,12 @@ Rabbitmq CHANGELOG
 
 This file is used to list changes made in each version of the common chart rabbitmq.
 
+0.7.1
+------
+birk.bohne@sap.com
+- `app.kubernetes.io/component` label fixed by using the `.Chart.Name` variable instead of a hardcoded value
+- defined functions are shared between all (sub)charts and because of that hardcoded values will cause unexpected behavior
+
 0.6.13
 ------
 dusan.dordevic@sap.com

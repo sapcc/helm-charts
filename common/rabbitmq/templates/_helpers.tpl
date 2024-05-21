@@ -92,6 +92,6 @@ rabbit://{{ default "" $envAll.Values.global.user_suffix | print $rabbitmq.users
 app.kubernetes.io/name: {{ .Chart.Name }}
 app.kubernetes.io/instance: {{ .Chart.Name }}-{{ .Release.Name }}
 app.kubernetes.io/version: {{ .Chart.Version }}
-app.kubernetes.io/component: RabbitMQ
+app.kubernetes.io/component: {{ .Chart.Name }}
 app.kubernetes.io/part-of: {{ .Release.Name }}
 {{- end }}
