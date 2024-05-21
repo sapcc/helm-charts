@@ -1,0 +1,124 @@
+{{- if ne .Values.global_setup true }}
+apiVersion: "openstack.stable.sap.cc/v1"
+kind: "OpenstackSeed"
+metadata:
+  name: domain-iaas-ec5a3e-seed
+  labels:
+    app: {{ template "fullname" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+spec:
+  requires:
+  - {{.Values.global.keystoneNamespace}}/keystone-seed
+
+  domains:
+  - name: iaas-ec5a3e
+    description: External Customer Domain iaas-ec5a3e
+
+    projects:
+    - name: admin
+      description: 'iaas-ec5a3e Administrators Project'
+    - name: iaas-ec5a3e-net-infra
+      description: 'Home of address-scopes, subnetpools, external networks, subnets for the iaas-ec5a3e domain'
+    - name: iaas-ec5a3e-shared-infra
+      description: 'Home of private networks, backup networks and routers for the iaas-ec5a3e domain'
+
+    groups:
+    - name: iaas-ec5a3e_API_SUPPORT
+      role_assignments:
+      - domain: iaas-ec5a3e
+        role: admin
+      - domain: iaas-ec5a3e
+        role: cloud_identity_viewer
+        inherited: true
+
+    - name: iaas-ec5a3e_COMPUTE_SUPPORT
+      role_assignments:
+      - domain: iaas-ec5a3e
+        role: cloud_identity_viewer
+        inherited: true
+
+    - name: iaas-ec5a3e_STORAGE_SUPPORT
+      role_assignments:
+      - domain: iaas-ec5a3e
+        role: cloud_identity_viewer
+        inherited: true
+
+    - name: iaas-ec5a3e_NETWORK_SUPPORT
+      role_assignments:
+      - domain: iaas-ec5a3e
+        role: cloud_identity_viewer
+        inherited: true
+
+    - name: iaas-ec5a3e_SERVICE_DESK
+      role_assignments:
+      - domain: iaas-ec5a3e
+        role: cloud_identity_viewer
+        inherited: true
+
+    - name: iaas-ec5a3e_DOMAIN_MEMBERS
+      role_assignments:
+      - domain: iaas-ec5a3e
+        role: member
+
+    - name: iaas-ec5a3e_DOMAIN_ADMINS
+      role_assignments:
+      - domain: iaas-ec5a3e
+        role: admin
+      - domain: iaas-ec5a3e
+        role: member
+      - project: admin
+        role: admin
+      - project: admin
+        role: member
+
+    - name: iaas-ec5a3e_DOMAIN_NETWORK_ADMINS
+      role_assignments:
+      - project: iaas-ec5a3e-net-infra
+        role: admin
+      - project: iaas-ec5a3e-shared-infra
+        role: admin
+
+    - name: iaas-ec5a3e_DOMAIN_RESOURCE_ADMINS
+      role_assignments:
+      - domain: iaas-ec5a3e
+        role: admin
+
+    config:
+      identity:
+        driver: {{ .Values.ldapDriver | default "cc_ldap" }}
+      ldap:
+        page_size: 1000
+        use_tls: false
+        tls_req_cert: allow
+        url: {{ .Values.ldapUrl | quote }}
+        user: {{ .Values.ldapUser | quote }}
+        password: {{ required "A valid .Values.ldapPassword required!" .Values.ldapPassword | quote }}
+        suffix: {{ .Values.ldapSuffix | quote }}
+        query_scope: one
+        user_tree_dn: OU=Identities,{{ .Values.ldapSuffix }}
+        user_objectclass: user
+        user_id_attribute: cn
+        user_name_attribute: name
+        user_mail_attribute: mail
+        user_pass_attribute: userPassword
+        user_description_attribute: displayName
+        user_enabled_attribute: userAccountControl
+        user_enabled_mask: 2
+        user_enabled_default: "512"
+        user_attribute_ignore: default_project_id
+        user_filter: (memberOf=CN=iaas-ec5a3e_DOMAIN_USERS,OU=iaas-ec5a3e,OU=OSDomains,OU=CCloud,{{ .Values.ldapSuffix }})
+        group_objectclass: group
+        group_id_attribute: cn
+        group_name_attribute: name
+        group_desc_attribute: description
+        group_member_attribute: member
+        group_tree_dn: OU=iaas-ec5a3e,OU=OSDomains,OU=CCloud,{{ .Values.ldapSuffix }}
+        use_pool: {{ .Values.ldapUsePool }}
+        pool_size: 100
+        use_auth_pool: {{ .Values.ldapUseAuthPool }}
+        auth_pool_size: 100
+        auth_pool_connection_lifetime: 60
+        debug_level: {{ .Values.ldapDebugLevel }}
+{{- end }}
