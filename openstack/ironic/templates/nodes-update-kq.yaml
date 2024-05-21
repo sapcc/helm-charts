@@ -11,33 +11,5 @@ requirements:
 - name: ironic-seed
   kind: OpenstackSeed
 python: |
-    from ironicclient import client as bmclient
-    bm = bmclient.get_client(1, session=os.session, os_ironic_api_version='1.78')
-
-    states = ['enroll', 'active', 'manageable', 'available']
-    patch = [{'op': 'replace',
-             'value': 'ipxe',
-             'path': '/boot_interface'}]
-
-    for node in bm.node.list(
-            limit=0,
-            fields=['uuid', 'name','driver','properties','conductor_group',
-                    'provision_state','maintenance','boot_interface']):
-        unset_maintenance = False
-        if node.boot_interface == 'ipxe':
-            continue
-        if node.driver == 'cisco-ucs-managed':
-            continue
-        if node.provision_state not in states:
-            continue
-        try:
-            if not node.maintenance:
-                bm.node.set_maintenance(node.uuid, 'true', maint_reason='set boot_interface to ipxe')
-                unset_maintenance = True
-            bm.node.update(node_id=node.uuid, patch=patch)
-        except Exception as e:
-            print(e)
-        finally:
-            if unset_maintenance:
-                bm.node.set_maintenance(node.uuid, 'false')
+    {{- .Files.Get "py/ironic-node-update.py" | nindent 4 }}
 {{- end  }}
