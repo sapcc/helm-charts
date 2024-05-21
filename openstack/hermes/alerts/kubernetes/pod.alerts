@@ -4,7 +4,7 @@ groups:
 - name: openstack-hermes-pod.alerts
   rules:
       - alert: OpenstackHermesPodCPUThrottling
-        expr: rate(container_cpu_cfs_throttled_seconds_total{namespace="hermes"}[1h]) > 1
+        expr: rate(container_cpu_cfs_throttled_periods_total{namespace="hermes"}[1h]) / rate(container_cpu_cfs_periods_total{namespace="hermes"}[1h]) > 0.8
         for: 15m
         labels:
           no_alert_on_absence: "true" # small regions may have no throttled containers at all, so this may legitimately occur
