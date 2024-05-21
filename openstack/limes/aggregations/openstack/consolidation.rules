@@ -39,3 +39,10 @@ groups:
 
     - record: limes_domain_usage
       expr: sum without (project_id) (max by (domain,domain_id,project_id,service,resource) (limes_project_usage))
+
+    ############################################################################
+    # for capacity alerts
+
+    # How much capacity of a resource is blocked by existing usage and/or confirmed commitments.
+    - record: limes_capacity_blocked_percent
+      expr: 100 * sum by (availability_zone, service, resource) (limes_project_used_and_or_committed_per_az) / max by (availability_zone, service, resource) (limes_cluster_capacity_per_az)
