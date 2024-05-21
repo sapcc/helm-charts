@@ -1,0 +1,32 @@
+# vim: set ft=yaml:
+
+groups:
+- name: openstack-limes-capacity.alerts
+  rules:
+
+  - alert: LimesBlockedCapacityAbove80Percent
+    expr: limes_capacity_blocked_percent > 80 and on (service, resource) (limes_autogrow_growth_multiplier) > 1
+    for: 10m
+    labels:
+      severity: info
+      service: capacity-ops
+      support_group: capacity-ops
+    annotations:
+      summary: "Blocked capacity above 80% on an autogrowing resource"
+      description: |
+        In AZ {{ $labels.availability_zone }}, more than 80% of all {{ $labels.service }}/{{ $labels.resource }}
+        capacity is blocked by commitments or provisioned usage. Please check if hardware needs to be ordered.
+
+  - alert: LimesPendingCommitments
+    expr: sum by (availability_zone, service, resource) (limes_project_committed_per_az{state="pending"}) > 0
+    for: 10m
+    labels:
+      severity: warning
+      service: capacity-ops
+      support_group: capacity-ops
+    annotations:
+      summary: "Pending commitments cannot be confirmed"
+      description: |
+        In AZ {{ $labels.availability_zone }}, there are pending commitments for {{ $labels.service }}/{{ $labels.resource }}
+        that Limes is unable to confirm. Please check if there is a capacity shortage and hardware needs to be ordered.
+        The problematic commitments can be located through the cloud-admin Resource Management UI. Look for the `+pending` label.
