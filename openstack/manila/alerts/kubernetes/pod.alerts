@@ -19,7 +19,7 @@ groups:
         description: The pod {{ $labels.pod_name }} failed to be scheduled. Insuffient CPU!
 
     - alert: OpenstackManilaPodCPUThrottling
-      expr: rate(container_cpu_cfs_throttled_seconds_total{pod_name=~"manila-.+"}[1h]) > 1
+      expr: rate(container_cpu_cfs_throttled_periods_total{pod_name=~"manila-.+"}[1h]) / rate(container_cpu_cfs_periods_total{pod_name=~"manila-.+"}[1h]) > 0.8
       for: 15m
       labels:
         tier: os
