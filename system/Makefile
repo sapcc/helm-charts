@@ -86,7 +86,7 @@ build-metal-operator:
 	$(call build-chart,metal-operator-core,https://github.com/afritzler/metal-operator//config/default,$(METAL_OPERATOR_VERSION))
 	@yq -i '.controllerManager.manager.image.tag="$(METAL_OPERATOR_VERSION)"' metal-operator-core/values.yaml
 	@yq -i '.fullnameOverride="metal-operator"' metal-operator-core/values.yaml
-	@yq -i '.version="0.0.3"' metal-operator-core/Chart.yaml
+	@yq -i '.version="0.0.4"' metal-operator-core/Chart.yaml
 
 # chart name, source url, tag
 define build-chart
