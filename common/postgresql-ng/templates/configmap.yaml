@@ -47,6 +47,8 @@ data:
     {{- if lt ($.Values.postgresVersion | int) 14 }}
     SELECT 'CREATE ROLE "poor_mans_pg_read_all_data"' where not exists (select rolname from pg_authid where rolname = 'poor_mans_pg_read_all_data')\gexec
     {{- else }}
+    REASSIGN OWNED BY poor_mans_pg_read_all_data TO pg_read_all_data;
+    DROP OWNED BY poor_mans_pg_read_all_data;
     DROP ROLE IF EXISTS poor_mans_pg_read_all_data;
     {{- end }}
 
