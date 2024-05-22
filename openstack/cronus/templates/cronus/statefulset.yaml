@@ -48,18 +48,11 @@ spec:
                 secretKeyRef:
                   name: cronus-secret
                   key: sentryDsn
-            - name: rabbitmqUri
-              valueFrom:
-                secretKeyRef:
-                  name: cronus-secret
-                  key: rabbitmqUri
-            - name: rabbitmqUrl
-              valueFrom:
-                secretKeyRef:
-                  name: cronus-secret
-                  key: rabbitmqUrl
             - name: GODEBUG
               value: {{ .Values.cronus.godebug | quote }}
+          envFrom:
+            - secretRef:
+                name: cronus-secret
           volumeMounts:
             - name: cronus-config
               mountPath: "/cronus/config.yaml"
