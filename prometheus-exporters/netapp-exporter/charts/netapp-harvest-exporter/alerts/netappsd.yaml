@@ -66,7 +66,7 @@ groups:
       # netapp-harvest-exporter automatically discovers filers, netapp-capacity-exporter uses static configuration
       # netapp_volume_total_bytes is a metric from netapp_capacity_exporter, netapp_volume_size_total is a metric from netapp-harvest-exporter
       - alert: NetappHarvestFilersMissing
-        expr: count (label_replace(netapp_volume_total_bytes, "filer", "$1", "host", "(.*).cc.*")) by (filer) unless count (netapp_volume_size_total{app="netapp-harvest-exporter-manila"}) by (filer)
+        expr: count (label_replace(netapp_volume_total_bytes, "cluster", "$1", "host", "(.*).cc.*")) by (cluster) unless count (netapp_volume_size_total{app="netapp-harvest-exporter-manila"}) by (cluster)
         for: 15m
         labels:
           context: netapp-exporter
@@ -76,10 +76,10 @@ groups:
           support_group: compute-storage-api
           tier: storage
         annotations:
-          description: Filer [[ $labels.filer ]] is scraped by Netapp Capacity but not by Netapp Harvest.
+          description: Filer [[ $labels.cluster ]] is scraped by Netapp Capacity but not by Netapp Harvest.
 
       - alert: NetappHarvestFilerNotInCapacityExporter
-        expr: count (netapp_volume_size_total{app="netapp-harvest-exporter-manila"}) by (filer) unless count (label_replace(netapp_volume_total_bytes, "filer", "$1", "host", "(.*).cc.*")) by (filer)
+        expr: count (netapp_volume_size_total{app="netapp-harvest-exporter-manila"}) by (cluster) unless count (label_replace(netapp_volume_total_bytes, "cluster", "$1", "host", "(.*).cc.*")) by (cluster)
         for: 15m
         labels:
           context: netapp-exporter
@@ -90,14 +90,14 @@ groups:
           tier: storage
         annotations:
           summary:  Mismatch in discovered filers between Netapp Harvest and Netapp Capacity
-          description: Filer [[ $labels.filer ]] is scraped by Netapp Harvest but not by Netapp Capacity.
+          description: Filer [[ $labels.cluster ]] is scraped by Netapp Harvest but not by Netapp Capacity.
 
       # compare scraped volumes by netapp-harvest-exporter and netapp-capacity-exporter
       - alert: NetappHarvestVolumesMissing
         expr: |
           (
-            count by (filer) (label_replace(netapp_volume_total_bytes{volume=~"share.*"}, "filer", "$1", "host", "(.*).cc.*"))
-            - count by (filer) (netapp_volume_size{app="netapp-harvest-exporter-manila", volume=~"share.*"})
+            count by (cluster) (label_replace(netapp_volume_total_bytes{volume=~"share.*"}, "cluster", "$1", "host", "(.*).cc.*"))
+            - count by (cluster) (netapp_volume_size{app="netapp-harvest-exporter-manila", volume=~"share.*"})
           ) > 0 
         for: 15m
         labels:
@@ -109,7 +109,7 @@ groups:
           tier: storage
         annotations:
           summary:  Volumes missing in Netapp Harvest
-          description: Volumes are missing in Netapp Harvest for filer [[ $labels.filer ]].
+          description: Volumes are missing in Netapp Harvest for Filer [[ $labels.cluster ]].
 
       - alert: NetappHarvestFilerNotScraped
         expr: count (netappsd_discovered_filer) by (app, filer) unless count (netapp_volume_size) by (app, filer)
