@@ -37,6 +37,7 @@ function cleanup_tempest_leftovers() {
   for share in $(manila list | grep -E 'tempest|share' | awk '{ print $2 }'); do manila reset-state ${share} && manila delete ${share}; done
   for share in $(manila list | grep -E 'tempest|share' | awk '{ print $2 }'); do manila reset-task-state ${share} && manila delete ${share}; done
   for ss in $(manila security-service-list --detailed 1 --columns "id,name,user"| grep -E 'tempest|None' | awk '{ print $2 }'); do manila security-service-delete ${ss}; done
+  for group-type in $(manila share-group-type-list | grep -E 'tempest' | awk '{ print $2 }'); do manila share-group-type-delete ${group-type}; done
   for type in $(manila type-list | grep -E 'tempest' | awk '{ print $2 }'); do manila type-delete ${type}; done
   for net in $(manila share-network-list | grep -E 'tempest|None' | awk '{ print $2 }')
   do
