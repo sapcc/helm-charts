@@ -23,6 +23,9 @@ spec:
               directories:
               - path: /etc/kubernetes/manifests
                 overwrite: true
+{{- if $cluster.ignitionDirectories }}
+{{- toYaml $cluster.ignitionDirectories | nindent 14 }}
+{{- end }}
               files:
               - path: /etc/containerd/config.toml
                 filesystem: root
@@ -55,9 +58,30 @@ spec:
                     set -o errexit
                     set -o pipefail
 
+                    function _with_image_cleanup {
+                       umount -l ${TMPMOUNT} || true
+                       rmdir  ${TMPMOUNT}
+                    }
+
+                    function with_image {
+                      (
+                         TMPMOUNT=$(mktemp -d --suffix=.ctrcp)
+                         trap _with_image_cleanup EXIT
+                         IMAGE=$1
+                         shift
+                         ctr image mount $IMAGE $TMPMOUNT >/dev/null
+                         cd $TMPMOUNT
+                         "$@"
+                         cd /
+                      )
+                    }
+
+                    # loop to ensure network connectivity
                     while true;do
-                      docker run --rm -v /opt/bin:/opt/bin {{ $.Values.image.kubelet }}:v{{ $cluster.version }} cp --preserve=mode /usr/local/bin/{kubeadm,kubelet} /opt/bin/ && break
+                      ctr image pull {{ $.Values.image.kubelet }}:v{{ $cluster.version }} && break
                     done
+
+                    with_image {{ $.Values.image.kubelet }}:v{{ $cluster.version }} cp --preserve=mode usr/local/bin/{kubeadm,kubelet} /opt/bin/
 
                     mount --bind /opt/bin /usr/local/bin
 
@@ -324,6 +348,9 @@ spec:
                     EOF
 
                     umount /tmp/configdrive
+{{- if $cluster.ignitionFiles }}
+{{- toYaml $cluster.ignitionFiles | nindent 14 }}
+{{- end }}
             systemd:
               units:
               - name: kubeadm.service
@@ -458,12 +485,18 @@ spec:
                   ExecStartPost=systemctl disable kubelet_restart.service
                   [Install]
                   WantedBy=multi-user.target
+{{- if $cluster.ignitionSystemdUnits }}
+{{- toYaml $cluster.ignitionSystemdUnits | nindent 14 }}
+{{- end }}
       preKubeadmCommands:
       - envsubst < /etc/kubeadm.yml > /etc/kubeadm.yml.tmp
       - mv /etc/kubeadm.yml.tmp /etc/kubeadm.yml
       users:
-      - name: {{ $.Values.user.name }}
-        passwd: {{ $.Values.user.passwordhash }}
+      - name: {{ $cluster.userName | default $.Values.user.name }}
+        passwd: {{ $cluster.userPasswordhash | default $.Values.user.passwordhash }}
         sshAuthorizedKeys:
-        - {{ $.Values.user.key | quote }}
+        - {{ $cluster.userKey | default $.Values.user.key | quote }}
+{{- if $cluster.additionalUsers }}
+{{- toYaml $cluster.additionalUsers | nindent 6 }}
+{{- end }}
 {{- end }}

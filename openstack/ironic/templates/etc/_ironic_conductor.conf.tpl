@@ -6,6 +6,9 @@
 {{- $deploy_port :=  $conductor.tftp_ip | default .Values.tftp_ip | default .Values.global.ironic_tftp_ip }}
 [DEFAULT]
 host = ironic-conductor-{{$conductor.name}}
+{{- if $conductor.esp_image_path }}
+esp_image = https://repo.{{ .Values.global.region }}.{{ .Values.global.tld }}/{{ trimPrefix "/" $conductor.esp_image_path }}
+{{- end }}
 
 {{- if $conductor.enabled_drivers }}
 enabled_drivers = {{ $conductor.enabled_drivers}}

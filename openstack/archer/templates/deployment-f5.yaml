@@ -31,13 +31,13 @@ spec:
         cloud.sap/host: {{ $host }}
     spec:
       initContainers:
-        - name: wait-for-server
+        - name: wait-for-migration
           image: "{{ $.Values.global.registry }}/kubernetes-entrypoint:{{ $.Values.image.kubernetes_entrypoint_version }}"
           env:
             - name: NAMESPACE
               value: "monsoon3"
-            - name: DEPENDENCY_SERVICE
-              value: {{ include "archer.fullname" $ }}
+            - name: DEPENDENCY_JOBS
+              value: {{ include "archer.fullname" . }}-migration-{{ $.Values.image.tag | required ".Values.image.tag is required" }}
             - name: COMMAND
               value: "true"
       containers:

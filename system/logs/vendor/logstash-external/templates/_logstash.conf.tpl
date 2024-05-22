@@ -45,12 +45,12 @@ input {
 filter {
  if  [type] == "syslog" {
    mutate {
-     id => "mutate-rename-hostname"
+     id => "syslog-rename-hostname"
      rename => { "host" => "hostname"}
    }
 
    dns {
-     id => "dns-resolve-hostname"
+     id => "syslog-dns-resolve"
      reverse => [ "hostname" ]
      action => "replace"
      hit_cache_size => "100"
@@ -59,6 +59,7 @@ filter {
      failed_cache_ttl => "3600"
    }
     grok {
+      id => "syslog-grok"
       match => {
         "message" => [
                       "<%{NONNEGINT:syslog_pri}>: %{SYSLOGCISCOTIMESTAMP:syslog_timestamp}: %{SYSLOGCISCOSTRING}:",
@@ -75,22 +76,31 @@ filter {
     }
   }
 
-    if [type] == "alert" {
-       json {
-         id => "alert-json-decode"
-         source => "message"
-       }
-       if "_jsonparsefailure" not in [tags] {
-         split {
-           id => "alert-json-split"
-           field => "alerts"
-         }
-         mutate {
-             id => "alert-remove-message"
-             remove_field => ["message"]
-         }
-       }
+  if  [type] == "jumpserver" {
+    mutate {
+        id => "jump-split"
+        split => { "[host][hostname]" => "-" }
+        add_field => { "fqdn" => "%{[host][hostname][0]}.cc.%{[host][hostname][1]}-%{[host][hostname][2]}-%{[host][hostname][3]}.cloud.sap" }
+        remove_field => "[host][hostname]"
     }
+  }
+
+  if [type] == "alert" {
+     json {
+       id => "alert-json-decode"
+       source => "message"
+     }
+     if "_jsonparsefailure" not in [tags] {
+       split {
+         id => "alert-json-split"
+         field => "alerts"
+       }
+       mutate {
+           id => "alert-remove-message"
+           remove_field => ["message"]
+       }
+     }
+  }
     if [type] == "deployment" {
        json {
          id => "deployment-json-decode"

@@ -19,7 +19,7 @@ groups:
         description: The pod {{ $labels.pod_name }} failed to be scheduled. Insuffient CPU!
 
     - alert: OpenstackSwiftPodCPUThrottling
-      expr: rate(container_cpu_cfs_throttled_seconds_total{namespace="swift"}[1h]) > 1
+      expr: rate(container_cpu_cfs_throttled_periods_total{namespace="swift"}[1h]) / rate(container_cpu_cfs_periods_total{namespace="swift"}[1h]) > 0.8
       for: 15m
       labels:
         no_alert_on_absence: "true" # small regions may have no throttled containers at all, so this may legitimately occur

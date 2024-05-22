@@ -9,65 +9,6 @@ image:
   kubernetes_entrypoint_version: v0.3.1
   pullPolicy: IfNotPresent
 
-cockroachdb:
-  image:
-    repository: keppel.eu-de-1.cloud.sap/ccloud-dockerhub-mirror/cockroachdb/cockroach
-  statefulset:
-    updateStrategy:
-      type: Recreate
-    customLivenessProbe:
-      failureThreshold: 5
-      initialDelaySeconds: 60
-      periodSeconds: 60
-      successThreshold: 1
-      timeoutSeconds: 5
-      httpGet:
-        path: /health
-        port: http
-    customReadinessProbe:
-      failureThreshold: 2
-      initialDelaySeconds: 60
-      periodSeconds: 60
-      successThreshold: 1
-      timeoutSeconds: 5
-      httpGet:
-        path: /health?ready=1
-        port: http
-    replicas: 1
-    resources:
-      limits:
-        cpu: 100m
-        memory: 512Mi
-      requests:
-        cpu: 100m
-        memory: 512Mi
-  storage:
-    persistentVolume:
-      size: 10Gi
-  tls:
-    enabled: false
-  ingress:
-    enabled: true
-    annotations:
-      kubernetes.io/tls-acme: "true"
-      disco: "true"
-  serviceMonitor:
-    enabled: true
-  service:
-    public:
-      annotations:
-        disco: "true"
-
-  init:
-    provisioning:
-      enabled: true
-      databases:
-        - name: andromeda
-          options: [encoding='utf-8']
-          owners: []
-      clusterSettings:
-        cluster.organization: "Andromeda - Test Instance"
-
 postgresql:
   enabled: false
   image: keppel.eu-de-1.cloud.sap/ccloud/postgres
@@ -90,7 +31,7 @@ mariadb:
     support_group: network-api
   enabled: false
   name: andromeda
-  initdb_configmap: true
+  initdb_configmap: false
   persistence_claim:
     name: db-andromeda-pvclaim
     autoprovision: true
@@ -99,10 +40,25 @@ mariadb:
     enabled: false
   backup_v2:
     enabled: false
+    verification:
+      enabled: false
+      run_after_inc_backups: 12
+    databases:
+      - andromeda
+    verify_tables:
+      - andromeda.agents
+      - andromeda.schema_migration
+    oauth:
+      client_id: "andromeda"
   users:
     andromeda:
       grants:
       - "ALL PRIVILEGES on andromeda.*"
+
+mysql_metrics:
+  enabled: false
+  db_name: andromeda
+  db_user: andromeda
 
 database_override:
   enabled: false
@@ -119,8 +75,16 @@ nats:
   auth:
     enabled: false
 
+audit:
+  enabled: false
+  user: rabbitmq
+  host: hermes-rabbitmq-notifications.hermes
+  port: 5672
+  queue_name: notifications.info
+
 debug: false
 seed: false
+qa: false
 
 imagePullSecrets: []
 nameOverride: ""
