@@ -109,6 +109,11 @@ cronus:
     region: {{ .Values.config.keystone.region }}
     authUrl: {{ .Values.config.keystone.authUrl }}
     endpointType: {{ .Values.config.keystone.endpointType }}
+    username: {{ .Values.config.keystone.username }}
+    userDomainName: {{ .Values.config.keystone.userDomainName }}
+    projectName: {{ .Values.config.keystone.projectName }}
+    projectDomainName: {{ .Values.config.keystone.projectDomainName }}
+    enabled: {{ .Values.config.keystone.enabled }}
 {{- end }}
 {{- else }}
     authUrl: {{ .Values.config.authUrl }}
