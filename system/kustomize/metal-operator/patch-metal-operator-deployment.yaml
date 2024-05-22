@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: controller-manager
+  namespace: system
+spec:
+  strategy:
+    type: Recreate
+  template:
+    spec:
+      hostNetwork: true
+      containers:
+        - name: manager
+          args:
+          - --leader-elect
+          - --mac-prefixes-file=/etc/macdb/macdb.yaml
+          - --probe-image=ghcr.io/afritzler/metalprobe:latest
+          - --probe-os-image=ghcr.io/ironcore-dev/os-images/gardenlinux:1443.3
+          - --insecure=false
+          - --registry-url=http://[2a10:afc0:e013:d002::]:30010
+#          env:
+#            - name: REGISTRY_ADDRESS
+#              valueFrom:
+#                fieldRef:
+#                  fieldPath: status.podIP
+          volumeMounts:
+            - mountPath: /etc/macdb/
+              name: macdb
+          resources:
+            limits:
+              cpu: 300m
+              memory: 200Mi
+            requests:
+              cpu: 300m
+              memory: 50Mi
+      volumes:
+        - name: macdb
+          secret:
+            secretName: macdb
