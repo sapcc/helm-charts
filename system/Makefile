@@ -82,6 +82,7 @@ build-baremetal-operator:
 	@yq -i '.version="1.0.1"' baremetal-operator-core/Chart.yaml
 
 build-metal-operator:
+	@cat kustomize/metal-operator/kustomization.yaml >> kustomization.yaml
 	$(call build-chart,metal-operator-core,https://github.com/afritzler/metal-operator//config/default,$(METAL_OPERATOR_VERSION))
 	@yq -i '.controllerManager.manager.image.tag="$(METAL_OPERATOR_VERSION)"' metal-operator-core/values.yaml
 	@yq -i '.fullnameOverride="metal-operator"' metal-operator-core/values.yaml
