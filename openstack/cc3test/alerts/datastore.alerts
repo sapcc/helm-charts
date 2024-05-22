@@ -37,3 +37,19 @@ groups:
     annotations:
       description: 'Host {{ $labels.vc_hs }} of cluster {{ $labels.vc_cs }} missing in datastore {{ $labels.vc_ds }}'
       summary: 'Host missing in datastore'
+
+  - alert: DatastoreMountedFailed
+    expr: |
+        cc3test_status{service="vcenter", type="mounted", name=~"TestDatastore_mounted-.*", phase="call"} == 0
+    for: 15m
+    labels:
+      severity: info
+      support_group: compute
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.type }}'
+      meta: 'Datastore mount fails'
+      playbook: 'docs/support/playbook/cinder/alerts/cc3test-alert-datastore-host-not-accessible/'
+      report: 'cc3test/admin/object-storage/containers/cc3test/objects/{{ $labels.base64path }}'
+    annotations:
+      description: 'Datastore mount failed'
+      summary: 'datastore test_mounted test fails'
