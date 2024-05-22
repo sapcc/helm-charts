@@ -53,7 +53,7 @@ spec:
             - secretRef:
                 name: nebula  
           volumeMounts:
-            - name: nebula
+            - name: nebula-config
               mountPath: "/nebula/config.yaml"
               subPath: config.yaml
             {{- if .Values.postfix.postfixEnabled }}
@@ -73,9 +73,12 @@ spec:
             periodSeconds: 2
       terminationGracePeriodSeconds: {{ .Values.config.accountStatusTimeout }}
       volumes:
-        - name: nebula
+        - name: nebula-config
           configMap:
             name: nebula-config
+            items:
+            - key: config.yaml
+              path: config.yaml
 {{- if .Values.postfix.postfixEnabled }}
         - name: certs
           projected:
