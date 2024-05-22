@@ -99,9 +99,6 @@ cronus:
       serverTlsName: {{ .Values.cronus.tls.serverTlsName }}
 {{- if or .Values.cronus.tls.clientCA .Values.global.clientCA .Values.cronus.tls.clientTlsAuth .Values.global.clientTlsAuth }}
       clientTlsAuth: {{ .Values.cronus.tls.clientTlsAuth | default .Values.global.clientTlsAuth }}
-{{- if or .Values.cronus.tls.clientCertOU .Values.global.clientCertOU }}
-      clientCertOU: {{ .Values.cronus.tls.clientCertOU | default .Values.global.clientCertOU }}
-{{- end }}
       clientCA: |
 {{ .Values.cronus.tls.clientCA | default .Values.global.clientCA | indent 8 }}
 {{- end }}
@@ -112,9 +109,6 @@ cronus:
     region: {{ .Values.config.keystone.region }}
     authUrl: {{ .Values.config.keystone.authUrl }}
     endpointType: {{ .Values.config.keystone.endpointType }}
-{{- end }}
-{{- if .Values.global.cronus_service_password }}
-    password: {{ .Values.global.cronus_service_password }}
 {{- end }}
 {{- else }}
     authUrl: {{ .Values.config.authUrl }}
