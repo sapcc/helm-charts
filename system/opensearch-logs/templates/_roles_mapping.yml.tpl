@@ -47,6 +47,21 @@ storage:
   backend_roles:
   - "storage"
 
+compute:
+  reserved: false
+  backend_roles:
+  - "compute"
+
+otel:
+  reserved: false
+  backend_roles:
+  - "otel"
+
+otellogs:
+  reserved: false
+  backend_roles:
+  - "otellogs"
+
 jaeger:
   reserved: false
   users:
