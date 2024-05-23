@@ -1,0 +1,41 @@
+apiVersion: monitoring.coreos.com/v1alpha1
+kind: AlertmanagerConfig
+metadata:
+  name: inhibit-rules-keppel
+  labels:
+    alertmanager: {{ include "alertmanagerRelease.name" . }}
+spec:
+  inhibitRules:
+{{- range .Values.regions }}
+    - sourceMatch:
+        - matchType: "="
+          name: alertname
+          value: OpenstackKeystoneApiDown
+        - matchType: "="
+          name: region
+          value: '{{ . }}'
+      targetMatch:
+        - matchType: "=~"
+          name: alertname
+          value: '^(Openstack|CCloud)(?:(?!Keystone).)*?ApiDown$'
+        - matchType: "="
+          name: region
+          value: '{{ . }}'
+    - sourceMatch:
+        - matchType: "="
+          name: alertname
+          value: OpenstackDesignateCanaryRecordsetDown
+        - matchType: "="
+          name: region
+          value: '{{ . }}'
+      targetMatch:
+        - matchType: "="
+          name: alertname
+          value: CCloudHermesAuditEventMissing
+        - matchType: "="
+          name: meta
+          value: 'Hermes: TestHermes_hermes_designate missing audit events, see report for more details'
+        - matchType: "="
+          name: region
+          value: '{{ . }}'
+{{- end }}
