@@ -44,12 +44,6 @@ otellogs:
   backend_roles:
   - "otellogs"
 
-storage:
-  hash: "{{ .Values.users.storage.hash }}"
-  reserved: true
-  backend_roles:
-  - "storage"
-
 {{- if .Values.qalogs.enabled }}
 dataqade2:
   hash: "{{ .Values.users.dataqade2.hash }}"
