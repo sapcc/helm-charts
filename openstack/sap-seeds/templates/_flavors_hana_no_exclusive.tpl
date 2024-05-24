@@ -115,7 +115,6 @@
   disk: 64
   extra_specs:
     {{ tuple . "vmware_common" | include "sap_seeds.helpers.extra_specs" | indent 4 }}
-    "resources:CUSTOM_BIGVM": "2"
     "trait:CUSTOM_NUMASIZE_C60_M480": "required"
     "hw:cpu_cores": "30"   # used in nova-vmware as cores-per-socket (15pCPU = 30vCPU)
     "vmware:hw_version": "vmx-18"
@@ -130,7 +129,6 @@
   disk: 64
   extra_specs:
     {{ tuple . "vmware_common" | include "sap_seeds.helpers.extra_specs" | indent 4 }}
-    "resources:CUSTOM_BIGVM": "2"
     "trait:CUSTOM_NUMASIZE_C60_M480": "required"
     "hw:cpu_cores": "60"   # used in nova-vmware as cores-per-socket (30pCPU = 60vCPU)
     "vmware:hw_version": "vmx-18"
@@ -145,7 +143,6 @@
   disk: 64
   extra_specs:
     {{ tuple . "vmware_common" | include "sap_seeds.helpers.extra_specs" | indent 4 }}
-    "resources:CUSTOM_BIGVM": "2"
     "trait:CUSTOM_NUMASIZE_C60_M480": "required"
     "hw:cpu_cores": "60"   # used in nova-vmware as cores-per-socket (30pCPU = 60vCPU)
     "vmware:hw_version": "vmx-18"
@@ -160,7 +157,6 @@
   disk: 64
   extra_specs:
     {{ tuple . "vmware_common" | include "sap_seeds.helpers.extra_specs" | indent 4 }}
-    "resources:CUSTOM_BIGVM": "2"
     "trait:CUSTOM_NUMASIZE_C60_M960": "required"
     "hw:cpu_cores": "30"   # used in nova-vmware as cores-per-socket (15pCPU = 30vCPU)
     "vmware:hw_version": "vmx-18"
@@ -175,7 +171,6 @@
   disk: 64
   extra_specs:
     {{ tuple . "vmware_common" | include "sap_seeds.helpers.extra_specs" | indent 4 }}
-    "resources:CUSTOM_BIGVM": "2"
     "trait:CUSTOM_NUMASIZE_C60_M960": "required"
     "hw:cpu_cores": "60"   # used in nova-vmware as cores-per-socket (30pCPU = 60vCPU)
     "vmware:hw_version": "vmx-18"
