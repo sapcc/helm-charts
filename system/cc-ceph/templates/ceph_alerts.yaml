@@ -34,7 +34,7 @@ spec:
       rules:
         - alert: "CephMonDownQuorumAtRisk"
           annotations:
-            description: "{{ $min := query \"floor(count(ceph_mon_metadata) / 2) + 1\" | first | value }}Quorum requires a majority of monitors (x {{ $min }}) to be active. Without quorum the cluster will become inoperable, affecting all services and connected clients. The following monitors are down: {{- range query \"(ceph_mon_quorum_status == 0) + on(ceph_daemon) group_left(hostname) (ceph_mon_metadata * 0)\" }} - {{ .Labels.ceph_daemon }} on {{ .Labels.hostname }} {{- end }}"
+            description: '{{ $min := query "floor(count(ceph_mon_metadata) / 2) + 1" | first | value }}Quorum requires a majority of monitors (x {{ $min }}) to be active. Without quorum the cluster will become inoperable, affecting all services and connected clients. The following monitors are down: {{- range query "(ceph_mon_quorum_status == 0) + on(ceph_daemon) group_left(hostname) (ceph_mon_metadata * 0)" }} - {{ .Labels.ceph_daemon }} on {{ .Labels.hostname }} {{- end }}'
             documentation: "https://docs.ceph.com/en/latest/rados/operations/health-checks#mon-down"
             summary: "Monitor quorum is at risk"
           expr: |
