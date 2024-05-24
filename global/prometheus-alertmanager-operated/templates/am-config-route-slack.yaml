@@ -175,6 +175,19 @@ spec:
             matchType: "=~"
             value: {{ without .Values.regions "qa-de-1" | join "|" }}
 
+      - receiver: slack_ceph_qa
+        continue: true
+        matchers:
+          - name: service
+            matchType: "="
+            value: ceph
+          - name: severity
+            matchType: "=~"
+            value: "info|critical|warning"
+          - name: region
+            matchType: "="
+            value: qa-de-1
+
       # to be reviewed
       - receiver: slack_sre
         continue: true
@@ -619,6 +632,14 @@ spec:
     - name: slack_nannies_automation
       slackConfigs:
         - channel: '#cc-nannies-automation'
+          apiURL:
+            name: alertmanager-{{ include "alertmanagerRelease.name" . }}-slack-secrets
+            key: slack_webhookURL
+          {{- include "slack.template" . | nindent 10 }}
+
+    - name: slack_ceph_qa
+      slackConfigs:
+        - channel: '#cc-ceph-qa'
           apiURL:
             name: alertmanager-{{ include "alertmanagerRelease.name" . }}-slack-secrets
             key: slack_webhookURL
