@@ -7,8 +7,8 @@ groups:
     for: 10m
     labels:
       tier: {{ required ".Values.tier missing" .Values.tier }}
+      support_group: {{ required ".Values.supportGroup missing" .Values.supportGroup }}
       service: kubelet
-      support_group: containers
       severity: critical
       context: kubelet
       dashboard: kubernetes-health
@@ -22,8 +22,8 @@ groups:
     for: 10m
     labels:
       tier: {{ required ".Values.tier missing" .Values.tier }}
+      support_group: {{ required ".Values.supportGroup missing" .Values.supportGroup }}
       service: kubelet
-      support_group: containers
       severity: warning
       context: kubelet
       meta: "{{`{{ $labels.node }}`}}"
@@ -39,8 +39,8 @@ groups:
     for: 1h
     labels:
       tier: {{ required ".Values.tier missing" .Values.tier }}
+      support_group: {{ required ".Values.supportGroup missing" .Values.supportGroup }}
       service: kubelet
-      support_group: containers
       severity: warning
       context: kubelet
       meta: "{{`{{ $labels.node }}`}}"
@@ -54,8 +54,8 @@ groups:
     for: 1h
     labels:
       tier: {{ required ".Values.tier missing" .Values.tier }}
+      support_group: {{ required ".Values.supportGroup missing" .Values.supportGroup }}
       service: kubelet
-      support_group: containers
       severity: warning
       context: kubelet
       meta: "{{`{{ $labels.node }}`}}"
@@ -69,8 +69,8 @@ groups:
     for: 5m
     labels:
       tier: {{ required ".Values.tier missing" .Values.tier }}
+      support_group: {{ required ".Values.supportGroup missing" .Values.supportGroup }}
       service: k8s
-      support_group: containers
       severity: warning
       context: kubelet
       meta: "{{`{{ $labels.node }}`}}"
@@ -83,8 +83,8 @@ groups:
     for: 5m
     labels:
       tier: {{ required ".Values.tier missing" .Values.tier }}
+      support_group: {{ required ".Values.supportGroup missing" .Values.supportGroup }}
       service: k8s
-      support_group: containers
       severity: warning
       context: kubelet
       meta: "{{`{{ $labels.node }}`}}"
@@ -101,8 +101,8 @@ groups:
     for: 10m
     labels:
       tier: {{ required ".Values.tier missing" .Values.tier }}
+      support_group: {{ required ".Values.supportGroup missing" .Values.supportGroup }}
       service: k8s
-      support_group: containers
       severity: warning
       context: kubelet
       meta: "Many 5xx responses for Kubelet on {{`{{ $labels.node }}`}} "
