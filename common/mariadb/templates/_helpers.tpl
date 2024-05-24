@@ -70,6 +70,6 @@
 app.kubernetes.io/name: {{ .Chart.Name }}
 app.kubernetes.io/instance: {{ .Chart.Name }}-{{ .Release.Name }}
 app.kubernetes.io/version: {{ .Chart.Version }}
-app.kubernetes.io/component: MariaDB
+app.kubernetes.io/component: {{ .Chart.Name }}
 app.kubernetes.io/part-of: {{ .Release.Name }}
 {{- end }}

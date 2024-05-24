@@ -22,9 +22,12 @@ controllerManager:
         memory: 64Mi
   manager:
     args:
-      - --health-probe-bind-address=:8081
-      - --metrics-bind-address=127.0.0.1:8080
       - --leader-elect
+      - --mac-prefixes-file=/etc/macdb/macdb.yaml
+      - --probe-image=ghcr.io/afritzler/metalprobe:latest
+      - --probe-os-image=ghcr.io/ironcore-dev/os-images/gardenlinux:1443.3
+      - --insecure=false
+      - --registry-url=http://[2a10:afc0:e013:d002::]:30010
     containerSecurityContext:
       allowPrivilegeEscalation: false
       capabilities:
@@ -35,11 +38,11 @@ controllerManager:
       tag: 94572fae2e01b8a1cb0247a4ff407e90dd484f5f
     resources:
       limits:
-        cpu: 500m
-        memory: 128Mi
+        cpu: 300m
+        memory: 200Mi
       requests:
-        cpu: 10m
-        memory: 64Mi
+        cpu: 300m
+        memory: 50Mi
   replicas: 1
   serviceAccount:
     annotations: {}
