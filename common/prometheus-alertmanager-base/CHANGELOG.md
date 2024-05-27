@@ -1,3 +1,19 @@
+## 3.0.3
+
+* adding AM health check alerts (observability issue #44)
+
+## 3.0.2
+
+* make version for operator customizable 
+
+## 3.0.0
+
+* upgrading to v0.26.0
+
+## 2.2.8
+
+* explicitly set version for to avoid operator assumptions
+
 ## 2.0.1
 
 * Specify prometheus to pick up the alerts

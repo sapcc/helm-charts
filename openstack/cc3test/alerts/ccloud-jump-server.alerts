@@ -4,11 +4,12 @@ groups:
   - alert: CC3TestJumpServerDown
     expr: |
         cc3test_status{type="datapath",
-            name=~"TestJumpServer_datapath.+"
+            name=~"TestJumpServer_datapath.+",
+            phase="call"
         } == 0
     for: 20m
     labels:
-      severity: critical
+      severity: warning
       support_group: observability
       tier: os
       service: '{{ $labels.service }}'
@@ -16,7 +17,7 @@ groups:
       meta: 'CC3Test Jump Server {{ $labels.name }} is down'
       dashboard: 'cc3test-datapath-status?var-service={{ $labels.service }}'
       playbook: 'docs/support/playbook/jumpserver/cc3test_alerts/cc3test-alert-datapath/'
-      report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
+      report: 'cc3test/admin/object-storage/containers/cc3test/objects/{{ $labels.base64path }}'
     annotations:
       description: 'CC3Test Jump Server {{ $labels.name }} is down'
       summary: 'CC3Test Jump Server {{ $labels.name }} is down'
@@ -24,7 +25,8 @@ groups:
   - alert: CC3TestJumpServerFlapping
     expr: |
         changes(cc3test_status{type="datapath",
-            name=~"TestJumpServer_datapath.+"
+            name=~"TestJumpServer_datapath.+",
+            phase="call"
         }[30m]) > 8
     labels:
       severity: warning
@@ -35,7 +37,7 @@ groups:
       meta: 'CC3Test Jump Server {{ $labels.name }} is flapping'
       dashboard: 'cc3test-datapath-status?var-service={{ $labels.service }}'
       playbook: 'docs/support/playbook/jumpserver/cc3test_alerts/cc3test-alert-datapath/'
-      report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
+      report: 'cc3test/admin/object-storage/containers/cc3test/objects/{{ $labels.base64path }}'
     annotations:
       description: 'CC3Test Jump Server {{ $labels.name }} is flapping'
       summary: 'CC3Test Jump Server {{ $labels.name }} is flapping'

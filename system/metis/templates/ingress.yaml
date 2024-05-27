@@ -11,7 +11,10 @@ metadata:
     app.kubernetes.io/managed-by: {{ .Release.Service }}
     kubernetes.io/tls-acme: "true"
     disco: {{ default true .Values.ingress.disco | quote }}
-
+    {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+    ingress.kubernetes.io/service-upstream: "true"
+    nginx.ingress.kubernetes.io/service-upstream: "true"
+    {{- end }}
 spec:
   tls:
      - secretName: metisdb

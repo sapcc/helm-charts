@@ -1,0 +1,127 @@
+owner-info:
+  support-group: containers
+  helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/system/cc-ceph
+
+rook-ceph:
+  monitoring:
+    enabled: true
+  crds:
+    enabled: false
+
+ceph:
+  registry:
+  image: "ceph/ceph"
+  version:
+
+cephConfig:
+  global:
+    osd_pool_default_size: "3"
+    mon_data_avail_warn: "10"
+    osd_op_queue: "wpq"
+    osd_pool_default_pg_autoscale_mode: "off"
+
+clusterName: ceph-cluster
+
+mon:
+  count: 3
+  nodeRole: ceph-mon
+
+resources:
+  osd:
+    limits:
+      memory: 8192Mi #no limits for osds leads to osd taking all available memory
+    requests:
+      memory: 8192Mi
+
+osd:
+  nodeRole: ceph-osd
+
+prepareosd:
+  nodeRole: ceph-osd
+
+pool:
+  mgr:
+    replicated: 3
+
+mgr:
+  nodeRole: ceph-mon
+
+storage:
+  useAllNodes: false
+  useAllDevices: false
+  deviceFilter: "^sd[a-q]+$"
+  config:
+    osdsPerDevice: "1"
+  #  metadataDevice: "nvme0n1"
+    databaseSizeMB: "120000"
+    encryptedDevice: "true"
+  nodes: null
+  # - name: a
+  #   config:
+  #     metadataDevice: "nvme0n1"
+  # - name: b
+  #   config:
+  #     metadataDevice: "nvme1n1"
+  # - name: c
+  #   config:
+  #     metadataDevice: "nvme0n1"
+
+dashboard:
+  ingress:
+    host: "mydash.local.domain"
+
+objectstore:
+  enabled: true
+  name: objectstore
+  gateway:
+    instances: 3
+    port: 80
+    securePort: 443
+    sslCertificateRef: ""
+    dnsNames: []
+    # - dns1
+    # - dns2
+    resources:
+      requests:
+        cpu: 1000m
+        memory: 1Gi
+  metadataPool:
+    failureDomain: host
+    replicated:
+      size: 4
+  dataPool:
+    # choose between replicated and erasureCoded
+    # erasureCoded:
+    #   codingChunks: 1
+    #   dataChunks: 2
+    # failureDomain: host
+    # replicated:
+    #   size: 3
+  service:
+    name: ceph-objectstore-external
+    port: 80
+    externalIPs:
+      - 10.0.0.1
+  keystone:
+    enabled: true
+    global_config: true
+    auth_order:
+      - local
+      - external
+    url: http://keystone.local:8083
+    verify_ssl: true
+    implicit_tenants: true
+    swift_account_in_url: true
+    swift_versioning_enabled: true
+    accepted_roles:
+      - objectstore_admin
+      - objectstore_viewer
+    token_cache_size: 1000
+    admin_user: XXX
+    admin_password: XXX
+    admin_domain: XXX
+    admin_project: XXX
+    revocation_interval: 25200 # 7h
+
+rgwTargetPlacements:
+  enabled: false 

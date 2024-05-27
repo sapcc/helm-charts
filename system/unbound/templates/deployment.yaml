@@ -4,6 +4,8 @@ metadata:
   name: {{ .Values.unbound.name }}
   labels:
     app: {{ .Values.unbound.name }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
 spec:
   replicas: 2
   selector:
@@ -38,7 +40,7 @@ spec:
         topology.kubernetes.io/zone: {{ .Values.global.region}}{{ .Values.unbound.failure_domain_zone}}
       containers:
       - name: unbound
-        image: {{ required ".Values.global.registryAlternateRegion is missing" .Values.global.registryAlternateRegion }}/{{.Values.unbound.image_unbound}}:{{ .Values.unbound.image_unbound_tag}}
+        image: {{ required ".Values.global.registryAlternateRegion is missing" .Values.global.registryAlternateRegion }}/{{.Values.unbound.unbound.image}}:{{ .Values.unbound.unbound.image_tag}}
         imagePullPolicy: {{ .Values.unbound.image_pullPolicy }}
         resources:
 {{ toYaml .Values.resources.unbound | indent 10 }}
@@ -54,44 +56,108 @@ spec:
         volumeMounts:
           - name: unbound-conf
             mountPath: /etc/unbound
+          - name: control-socket
+            mountPath: {{ .Values.unbound.control.socket_path | default "/run/unbound/control.sock" | dir }}
+{{- if .Values.unbound.dnstap.enabled }}
+          - name: dnstap-socket
+            mountPath: /run/dnstap
+{{- end }}
         livenessProbe:
           exec:
-            command:
-              - sh
-              - /etc/unbound/healthz
+            command: [ '/usr/sbin/unbound-control', '-s', '{{ .Values.unbound.control.socket_path | default "/run/unbound/control.sock" }}', 'status' ]
           initialDelaySeconds: 5
           timeoutSeconds: 5
           periodSeconds: 10
         readinessProbe:
           exec:
-            command:
-              - sh
-              - /etc/unbound/healthz
+            command: [ '/usr/sbin/unbound-control', '-s', '{{ .Values.unbound.control.socket_path | default "/run/unbound/control.sock" }}', 'status' ]
           initialDelaySeconds: 5
           timeoutSeconds: 3
           periodSeconds: 10
+{{- if ge (int .Capabilities.KubeVersion.Minor) 29 }}
+      initContainers:
+{{- end }}
       - name: metric
-        image: {{ required ".Values.global.registryAlternateRegion is missing" .Values.global.registryAlternateRegion }}/{{.Values.unbound.image_unbound_exporter}}:{{ .Values.unbound.image_unbound_exporter_tag}}
+        image: {{ required ".Values.global.registryAlternateRegion is missing" .Values.global.registryAlternateRegion }}/{{.Values.unbound.unbound_exporter.image}}:{{ .Values.unbound.unbound_exporter.image_tag}}
         imagePullPolicy: {{ .Values.unbound.image_pullPolicy }}
+{{- if ge (int .Capabilities.KubeVersion.Minor) 29 }}
+        restartPolicy: Always
+{{- end }}
         resources:
 {{ toYaml .Values.resources.metric | indent 10 }}
-        env:
-        - name: GODEBUG
-          value: "x509ignoreCN=0"
-        args:
-          - -unbound.ca
-          - /etc/unbound/unbound-server.pem
-          - -unbound.cert
-          - /etc/unbound/unbound-control.pem
-          - -unbound.key
-          - /etc/unbound/unbound-control.key
+        args: [ '-unbound.ca', '', '-unbound.cert', '', '-unbound.key', '', '-unbound.host', 'unix:{{ .Values.unbound.control.socket_path | default "/run/unbound/control.sock" }}' ]
         ports:
           - name: metrics
             containerPort: {{.Values.unbound.port_unbound_exporter}}
         volumeMounts:
-          - name: unbound-conf
-            mountPath: /etc/unbound
+          - name: "control-socket"
+            mountPath: {{ .Values.unbound.control.socket_path | default "/run/unbound/control.sock" | dir }}
+{{- if .Values.unbound.dnstap.enabled }}
+      - name: dnstap
+        image: {{ required ".Values.global.registryAlternateRegion is missing" .Values.global.registryAlternateRegion }}/{{.Values.unbound.dnstap.image}}:{{ .Values.unbound.dnstap.image_tag}}
+        imagePullPolicy: {{ .Values.unbound.image_pullPolicy }}
+{{- if ge (int .Capabilities.KubeVersion.Minor) 29 }}
+        restartPolicy: Always
+{{- end }}
+        resources:
+{{- if .Values.resources.dnstap }}
+{{ toYaml .Values.resources.dnstap | indent 10 }}
+{{- end }}
+        args:
+          - -u
+          - {{ .Values.unbound.dnstap.socket_path | default "/run/dnstap/dnstap.sock" }}
+{{- if .Values.unbound.dnstap.hec_splunk_url }}
+{{- if .Values.unbound.dnstap.hec_splunk_token }}
+          - -H
+          - {{ .Values.unbound.dnstap.hec_splunk_url }}
+          - -token
+          - {{ .Values.unbound.dnstap.hec_splunk_token }}
+{{- if .Values.unbound.dnstap.hec_splunk_server_uuid }}
+          - -server_uuid
+          - {{ .Values.unbound.dnstap.hec_splunk_server_uuid }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- if .Values.unbound.dnstap.additional_cmdline_args }}
+{{ toYaml .Values.unbound.dnstap.additional_cmdline_args | indent 10 }}
+{{- end }}
+        volumeMounts:
+          - name: dnstap-socket
+            mountPath: {{ .Values.unbound.dnstap.socket_path | default "/run/dnstap/dnstap.sock" | dir }}
+{{- end }}
+{{- if .Values.unbound.bind_rpz_proxy.enabled }}
+      - name: bind-rpz-proxy
+        image: {{ required ".Values.global.registryAlternateRegion is missing" .Values.global.registryAlternateRegion }}/{{.Values.unbound.bind_rpz_proxy.image}}:{{ .Values.unbound.bind_rpz_proxy.image_tag}}
+        imagePullPolicy: {{ .Values.unbound.image_pullPolicy }}
+{{- if ge (int .Capabilities.KubeVersion.Minor) 29 }}
+        restartPolicy: Always
+{{- end }}
+        resources:
+{{- if  .Values.resources.bind_rpz_proxy }}
+{{ toYaml .Values.resources.bind_rpz_proxy | indent 10 }}
+{{- end }}
+        volumeMounts:
+          - name: bind-rpz-proxy-conf
+            mountPath: /etc/bind
+{{- end }}
       volumes:
       - name: unbound-conf
         configMap:
           name: {{.Values.unbound.name}}
+      - name: control-socket
+        emptyDir:
+          medium: Memory
+{{- if .Values.unbound.dnstap.enabled }}
+      - name: dnstap-socket
+        emptyDir:
+          medium: Memory
+{{- end }}
+{{- if .Values.unbound.bind_rpz_proxy.enabled }}
+      - name: bind-rpz-proxy-conf
+        projected:
+          sources:
+          - configMap:
+              name: {{.Release.Name}}-bind-rpz-proxy-conf
+          - secret:
+              name: {{.Release.Name}}-bind-rpz-proxy-secrets
+{{- end }}

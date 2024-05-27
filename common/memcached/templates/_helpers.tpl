@@ -51,3 +51,11 @@ We truncate at 63 chars because some Kubernetes name fields are limited to this 
                 values:
                 - reinstalling
 {{- end }}
+
+{{- define "sharedservices.labels" }}
+app.kubernetes.io/name: {{ .Chart.Name }}
+app.kubernetes.io/instance: {{ .Chart.Name }}-{{ .Release.Name }}
+app.kubernetes.io/version: {{ .Chart.Version }}
+app.kubernetes.io/component: {{ .Chart.Name }}
+app.kubernetes.io/part-of: {{ .Release.Name }}
+{{- end }}

@@ -1,0 +1,33 @@
+apiVersion: monitoring.coreos.com/v1alpha1
+kind: AlertmanagerConfig
+metadata:
+  name: route-octobus-mom
+  labels:
+    alertmanager: {{ include "alertmanagerRelease.name" . }}
+spec:
+  route:
+    receiver: octobus
+    matchers:
+      - name: severity
+        matchType: "=~"
+        value: "info|warning|critical"
+      - name: region
+        matchType: "=~"
+        value: {{ without .Values.regions "qa-de-1" | join "|" }}
+  receivers:
+    - name: octobus
+      webhookConfigs:
+      - sendResolved: true
+        urlSecret:
+          name: alertmanager-{{ include "alertmanagerRelease.name" . }}-octobus-mom-secrets
+          key: url
+---
+kind: Secret
+apiVersion: v1
+type: Opaque
+metadata:
+  name: alertmanager-{{ include "alertmanagerRelease.name" . }}-octobus-mom-secrets
+  labels:
+    alertmanager: {{ include "alertmanagerRelease.name" . }}
+data:
+  url: {{ required ".Values.octobus.gcpInstance undefined" .Values.octobus.gcpInstance | b64enc | quote }}

@@ -1,0 +1,28 @@
+apiVersion: ceph.rook.io/v1
+kind: CephBlockPool
+metadata:
+  name: builtin-mgr
+  namespace: {{ .Release.Namespace }}
+spec:
+  name: .mgr
+  {{- if .Values.pool.mgr.failureDomain }}
+  failureDomain: {{ .Values.pool.mgr.failureDomain | default "host"  }}
+  {{- end }}
+  replicated:
+    size: {{ .Values.pool.mgr.replicated }}
+    {{- if .Values.pool.mgr.replicasPerFailureDomain }}
+    replicasPerFailureDomain: {{ .Values.pool.mgr.replicasPerFailureDomain | default 1 }}
+    {{- end }}
+    {{- if .Values.pool.mgr.subFailureDomain }}
+    subFailureDomain: {{ .Values.pool.mgr.subFailureDomain | default "host" }}
+    {{- end }}
+  {{- if .Values.pool.mgr.crushRoot }}
+  crushRoot: {{ .Values.pool.mgr.crushRoot | default "default" }} 
+  {{- end }}
+  deviceClass: nvme
+  parameters:
+    pg_num: "4"
+    pgp_num: "4"
+
+
+    

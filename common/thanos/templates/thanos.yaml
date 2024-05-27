@@ -25,10 +25,20 @@ spec:
       metadata:
         labels:
           thanos: {{ include "thanos.name" (list $name $root) }}
+        {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+        annotations:
+          linkerd.io/inject: enabled
+        {{- end }}
     deploymentOverrides:
       spec:
         replicas: {{ $.Values.query.replicas }}
         template:
+          {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+          metadata:
+            annotations:
+              linkerd.io/inject: enabled
+              config.linkerd.io/proxy-ephemeral-storage-request: 10M
+          {{- end }}
           spec:
             containers:
             - image: {{ include "thanosimage" $root }}
@@ -64,6 +74,10 @@ spec:
               {{- end }}
               - name: sd-config
                 mountPath: /conf/sd
+            securityContext:
+              fsGroup: 0
+              runAsGroup: 0
+              runAsUser: 0
             volumes:
             {{- if $.Values.authentication.enabled }}
             - name: client-certificate
@@ -90,13 +104,27 @@ spec:
       metadata:
         labels:
           thanos: {{ include "thanos.name" (list $name $root) }}
+        {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+        annotations:
+          linkerd.io/inject: enabled
+        {{- end }}
     deploymentOverrides:
       spec:
         template:
+          {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+          metadata:
+            annotations:
+              linkerd.io/inject: enabled
+              config.linkerd.io/proxy-ephemeral-storage-request: 10M
+          {{- end }}
           spec:
             containers:
             - image: {{ include "thanosimage" $root }}
               name: store
+            securityContext:
+              fsGroup: 0
+              runAsGroup: 0
+              runAsUser: 0
   {{- end }}
 {{- end }}
 {{- end }}

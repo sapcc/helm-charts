@@ -14,7 +14,7 @@ $ cat Chart.yaml
 dependencies:
   - name: linkerd-support
     repository: oci://keppel.eu-de-1.cloud.sap/ccloud-helm
-    version: 0.1.3
+    version: ~1
 ```
 
 Run `helm dep up` in the chart's root directory to generate the `Chart.lock` file.
@@ -57,6 +57,8 @@ metadata:
 ```
 
 Use exactly this conditional statement around each such annotation.
+
+Affected pods need to be restarted to get the sidecar webhook injection.
 
 ### Simplified option: This Helm release is the only one in its namespace
 

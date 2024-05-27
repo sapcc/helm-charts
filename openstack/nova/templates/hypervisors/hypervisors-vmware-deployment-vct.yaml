@@ -3,12 +3,25 @@ apiVersion: vcenter-operator.stable.sap.cc/v1
 kind: VCenterTemplate
 metadata:
   name: 'vcenter-cluster-nova-compute-deployment'
+  {{- if .Values.vpa.set_main_container }}
+  annotations:
+    vpa-butler.cloud.sap/main-container: nova-compute
+  {{- end }}
 options:
   scope: 'cluster'
   jinja2_options:
     variable_start_string: '{='
     variable_end_string: '=}'
 template: |
+  {%- if cells is not defined %}
+    {%- set cell_name = 'cell1' %}
+  {%- elif 'cell-' + availability_zone in cells %}
+    {%- set cell_name = 'cell-' + availability_zone %}
+  {%- elif 'cell-' + vcenter_name in cells %}
+    {%- set cell_name = 'cell-' + vcenter_name %}
+  {%- else %}
+    {%- set cell_name = 'cell1' %}
+  {%- endif %}
   apiVersion: apps/v1
   kind: Deployment
   metadata:
@@ -124,19 +137,22 @@ template: |
             - configMap:
                 name: nova-console
                 items:
-                {%- if cells is not defined %}
-                  {%- set cell_name = 'cell1' %}
-                {%- elif 'cell-' + availability_zone in cells %}
-                  {%- set cell_name = 'cell-' + availability_zone %}
-                {%- elif 'cell-' + vcenter_name in cells %}
-                  {%- set cell_name = 'cell-' + vcenter_name %}
-                {%- else %}
-                  {%- set cell_name = 'cell1' %}
-                {%- endif %}
                 {{- range $type := list "novnc" "spice" "mks" }}
                 - key: console-{= cell_name =}-{{ $type }}.conf
                   path: nova.conf.d/console-{= cell_name =}-{{ $type }}.conf
                 {{- end }}
+            - secret:
+                name: nova-etc
+                items:
+                - key: {= cell_name =}.conf
+                  path: nova.conf.d/{= cell_name =}-secrets.conf
+                - key: keystoneauth-secrets.conf
+                  path: nova.conf.d/keystoneauth-secrets.conf
+            - secret:
+                name: nova-compute-vmware-{= name =}
+                items:
+                - key: nova-compute-secrets.conf
+                  path: nova.conf.d/nova-compute-secrets.conf
         - name: sudoers
           projected:
             sources:

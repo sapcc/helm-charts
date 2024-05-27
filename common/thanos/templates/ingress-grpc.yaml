@@ -10,7 +10,7 @@ metadata:
   annotations:
     disco: "true"
     kubernetes.io/tls-acme: "true"
-    {{- if $.Values.ingress.authentication.sso.enabled}}
+    {{- if $.Values.grpcIngress.authentication.sso.enabled}}
     ingress.kubernetes.io/auth-tls-secret: {{ required "$.Values.grpcIngress.authentication.sso.authTLSSecret missing" $.Values.grpcIngress.authentication.sso.authTLSSecret | quote }}
     nginx.ingress.kubernetes.io/auth-tls-secret: {{ required "$.Values.grpcIngress.authentication.sso.authTLSSecret missing" $.Values.grpcIngress.authentication.sso.authTLSSecret | quote }}
     ingress.kubernetes.io/auth-tls-verify-depth: {{ required "$.Values.grpcIngress.authentication.sso.authTLSVerifyDepth missing" $.Values.grpcIngress.authentication.sso.authTLSVerifyDepth | quote }}
@@ -25,6 +25,10 @@ metadata:
     {{- if $.Values.grpcIngress.annotations }}
 {{ toYaml $.Values.grpcIngress.annotations | indent 4 }}
     {{ end }}
+    {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+    ingress.kubernetes.io/service-upstream: "true"
+    nginx.ingress.kubernetes.io/service-upstream: "true"
+    {{- end }}
 spec:
   ingressClassName: nginx
   rules:
@@ -53,7 +57,7 @@ spec:
           pathType: ImplementationSpecific
     {{- end }}
   tls:
-    - secretName: tls-{{ include "thanos.externalGrpcURL" (list $name $root) | replace "." "-" }}
+    - secretName: tls-{{ include "thanos.grpcURL" (list $name $root) | replace "." "-" }}
       hosts:
         {{- range $host := coalesce $.Values.grpcIngress.hosts (list $name) }}
         - {{ include "grpcFqdnHelper" (list $host $root) }}

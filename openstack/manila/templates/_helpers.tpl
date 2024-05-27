@@ -17,6 +17,4 @@ netapp:thin_provisioned: "True"     # netapp_flexvol_encryption: "True"
 create_share_from_snapshot_support: "True"
 revert_to_snapshot_support: "True"
 replication_type: "dr"
-provisioning:max_share_size: "16384"
-provisioning:max_share_extend_size: "20480" # keep this in sync with value "max_asset_sizes" of "- asset_type: 'nfs-shares.*'" in openstack/castellum/templates/configmap.yaml
 {{- end }}

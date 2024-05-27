@@ -27,22 +27,16 @@ two_factor_authentication: "off"
 two_factor_auth_domains: "hcp03,cp,s4,wbs,fsn"
 # When to delete old sessions every day
 session_cleanup_time: "0415" #4:15 UTC
-#arc_updates_url:
-#arc_pki_url:
-#arc_broker_url:
 
-#monsoon_openstack_auth_api_password:
-#monsoon_rails_secret_token:
-#sentryDSN:
+global:
+  # No Linkerd annotations will be rendered unless this flag is set to true. This allows you to control when to add your service to the mesh.
+  linkerd_requested: true
+
 ingress:
   enabled: false
   probe: true
   oauth_proxy: true
-#  host: dashboard.staging.cloud.sap
-#  tls_crt:
-#  tls_key:
-#  pass_certificate_to_upstream:
-#  ca: <your sso ca>
+
 tempest:
   enabled: false
 
@@ -54,12 +48,16 @@ alerts:
 
 galvani: DEFINED_IN_VALUES_FILE
 
+bedrock: DEFINED_IN_VALUES_FILE
+
 postgresql:
   log_min_duration_statement: 250
   # less than the postgresql chart's default; I want to know early when connections start getting out of hand
   max_connections: 128
-
-  imageTag: "12.11"
+  
+  # Please update following imageTag witgh the latest version of the postgresql (see in elektras keppel plugin under path ccloud/postgres-ng)
+  # It may happen in the future that PostgreSQL versions are removed, causing PostgreSQL to crash when deploying. In such cases, a rollback should suffice.
+  imageTag: "20240312034735"
   persistence:
     enabled: true
     accessMode: ReadWriteMany
@@ -72,6 +70,11 @@ postgresql:
     requests:
       memory: "1.5Gi"
       cpu: "400m"
+  user: elektra
+  postgresDatabase: monsoon-dashboard_production
+  users:
+    elektra: {}
+  tableOwner: elektra
 
   probe_timeout_secs: 10 # instead of 3
 
@@ -80,6 +83,7 @@ postgresql:
     service: elektra
 
 pgbackup:
+  isPostgresNG: true
   database:
     name: monsoon-dashboard_production
   alerts:
@@ -87,6 +91,7 @@ pgbackup:
     service: elektra
 
 pgmetrics:
+  isPostgresNG: true
   db_name: monsoon-dashboard_production
   alerts:
     support_group: containers
@@ -103,4 +108,7 @@ owner-info:
     - Andreas Pfau
     - Hoda Noori
 
-enable_linkerd: false
+# Annotate the entire namespace instead of each individual pod and service. The annotation on the namespace level to make Linkerd inject itself into all pods and services at once
+# The annotations cause Linkerd to add a sidecar container to all respective pods
+linkerd-support:
+  annotate_namespace: true

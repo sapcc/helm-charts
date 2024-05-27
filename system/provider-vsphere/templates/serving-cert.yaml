@@ -1,0 +1,16 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: {{ include "provider-vsphere.fullname" . }}-serving-cert
+  labels:
+  {{- include "provider-vsphere.labels" . | nindent 4 }}
+spec:
+  dnsNames:
+  - '{{ include "provider-vsphere.fullname" . }}-webhook-service.{{ .Release.Namespace
+    }}.svc'
+  - '{{ include "provider-vsphere.fullname" . }}-webhook-service.{{ .Release.Namespace
+    }}.svc.{{ .Values.kubernetesClusterDomain }}'
+  issuerRef:
+    kind: Issuer
+    name: '{{ include "provider-vsphere.fullname" . }}-selfsigned-issuer'
+  secretName: capi-capv-webhook-service-cert

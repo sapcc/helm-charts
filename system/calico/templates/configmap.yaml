@@ -1,0 +1,107 @@
+# Source: calico/templates/calico-config.yaml
+# This ConfigMap is used to configure a self-hosted Calico installation.
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: calico-config
+  namespace: {{ .Release.Namespace }}
+data:
+  # You must set a non-zero value for Typha replicas below.
+  typha_service_name: "calico-typha"
+  # Configure the backend to use.
+  calico_backend: "{{ .Values.config.backend }}"
+
+  # Configure the MTU to use for workload interfaces and tunnels.
+  # By default, MTU is auto-detected, and explicitly setting this field should not be required.
+  # You can override auto-detection by providing a non-zero value.
+  veth_mtu: "{{ .Values.config.veth_mtu }}"
+  
+  {{ if .Values.bgp.enabled }}
+  enable_bgp: "true"
+  {{ end }}
+
+  # The CNI network configuration to install on each node. The special
+  # values in this config will be automatically populated.
+  # testing usePodCidr: ref https://docs.tigera.io/calico/latest/reference/configure-cni-plugins#using-host-local-ipam
+{{- if .Values.config.multus }}
+  cni_network_config: |-
+    {
+      "name": "k8s-pod-network",
+      "type": "multus-cni",
+      "cniVersion": "0.3.1",
+      "kubeconfig": {{ .Values.config.kubeConfig | quote }},
+      "log_file_path": "/var/lib/cni/multus.log",
+      "log_level": "error",
+      "delegates": [
+        {
+          "cniVersion": "0.3.1",
+          "name": "calico",
+          "type": "calico",
+          "datastore_type": "kubernetes",
+          "nodename": "__KUBERNETES_NODE_NAME__",
+          "mtu": 8950,
+          "log_level": "info",
+          "log_file_path": "/var/log/calico/cni/cni.log",
+          "policy": {
+            "type": "k8s"
+          },
+          "kubernetes": {
+            "kubeconfig": "__KUBECONFIG_FILEPATH__"
+          },
+          "addIf": "eth0",
+          "isGateway": true,
+          "ipMasq": false,
+          "hairpinMode": true,
+          "promiscMode": false,
+          "ipam": {
+            "type": "host-local",
+            "subnet": "usePodCidr",
+            "routes": [
+              {
+                "dst": "0.0.0.0/0"
+              }
+            ]
+          }
+        }
+      ]
+    }
+{{- else }}
+  cni_network_config: |-
+    {
+      "name": "k8s-pod-network",
+      "cniVersion": "0.3.1",
+      "plugins": [
+        {
+          "type": "calico",
+          "log_level": "error",
+          "log_file_path": "/var/log/calico/cni/cni.log",
+          "datastore_type": "kubernetes",
+          "nodename": "__KUBERNETES_NODE_NAME__",
+          "mtu": __CNI_MTU__,
+          "ipam": {
+            "type": "{{ .Values.config.ipam.type }}",
+            "assign_ipv4": "{{ .Values.config.ipam.assign_ipv4 }}",
+            "assign_ipv6": "{{ .Values.config.ipam.assign_ipv6 }}"
+        {{- if .Values.config.ipam.subnet }},
+            "subnet": "{{ .Values.config.ipam.subnet }}"
+        {{- end }}
+          },
+          "policy": {
+            "type": "k8s"
+          },
+          "kubernetes": {
+            "kubeconfig": "__KUBECONFIG_FILEPATH__"
+          }
+        },
+        {
+          "type": "portmap",
+          "snat": true,
+          "capabilities": {"portMappings": true}
+        },
+        {
+          "type": "bandwidth",
+          "capabilities": {"bandwidth": true}
+        }
+      ]
+    }
+{{- end }}

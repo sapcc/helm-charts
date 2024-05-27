@@ -1,0 +1,38 @@
+apiVersion: monitoring.coreos.com/v1alpha1
+kind: AlertmanagerConfig
+metadata:
+  name: inhibit-rules-keppel
+  labels:
+    alertmanager: {{ include "alertmanagerRelease.name" . }}
+spec:
+  inhibitRules:
+{{- range .Values.regions }}
+    - sourceMatch:
+        - matchType: "="
+          name: alertname
+          value: OpenstackKeppelDown
+        - matchType: "="
+          name: region
+          value: '{{ . }}'
+      targetMatch:
+        - matchType: "="
+          name: alertname
+          value: OpenstackKeppelAnycastDown
+        - matchType: "="
+          name: meta
+          value: 'Keppel anycast health check failing for healthcheck-{{ . }}'
+    - sourceMatch:
+        - matchType: "="
+          name: alertname
+          value: OpenstackKeppelSlowPeering
+        - matchType: "="
+          name: region
+          value: '{{ . }}'
+      targetMatch:
+        - matchType: "="
+          name: alertname
+          value: OpenstackKeppelSlowPeering
+        - matchType: "="
+          name: meta
+          value: 'Keppel cannot peer with keppel.{{ . }}.cloud.sap'
+{{- end }}

@@ -1,0 +1,40 @@
+apiVersion: monitoring.coreos.com/v1alpha1
+kind: AlertmanagerConfig
+metadata:
+  name: route-awx
+  labels:
+    alertmanager: {{ include "alertmanagerRelease.name" . }}
+spec:
+  route:
+    receiver: awx
+    matchers:
+      - name: tier
+        matchType: "="
+        value: "vmware"
+  receivers:
+    - name: awx
+      webhookConfigs:
+      - sendResolved: true
+        httpConfig:
+          basicAuth:
+            username:
+              name: alertmanager-{{ include "alertmanagerRelease.name" . }}-awx-secrets
+              key: username
+            password:
+              name: alertmanager-{{ include "alertmanagerRelease.name" . }}-awx-secrets
+              key: password
+        urlSecret:
+          name: alertmanager-{{ include "alertmanagerRelease.name" . }}-awx-secrets
+          key: url
+---
+kind: Secret
+apiVersion: v1
+type: Opaque
+metadata:
+  name: alertmanager-{{ include "alertmanagerRelease.name" . }}-awx-secrets
+  labels:
+    alertmanager: {{ include "alertmanagerRelease.name" . }}
+data:
+  username: {{ required ".Values.awx.basicAuthUser undefined" .Values.awx.basicAuthUser | b64enc | quote }}
+  password: {{ required ".Values.awx.basicAuthPwd undefined" .Values.awx.basicAuthPwd | b64enc }}
+  url: {{ required ".Values.awx.listenerURL undefined" .Values.awx.listenerURL | b64enc | quote }}

@@ -14,6 +14,36 @@ data:
   backend_roles:
   - "data"
 
+greenhouse:
+  hash: "{{ .Values.users.greenhouse.hash }}"
+  reserved: true
+  backend_roles:
+  - "greenhouse"
+
+storage:
+  hash: "{{ .Values.users.storage.hash }}"
+  reserved: true
+  backend_roles:
+  - "storage"
+
+compute:
+  hash: "{{ .Values.users.compute.hash }}"
+  reserved: true
+  backend_roles:
+  - "compute"
+
+otel:
+  hash: "{{ .Values.users.otel.hash }}"
+  reserved: true
+  backend_roles:
+  - "otel"
+
+otellogs:
+  hash: "{{ .Values.users.otellogs.hash }}"
+  reserved: true
+  backend_roles:
+  - "otellogs"
+
 {{- if .Values.qalogs.enabled }}
 dataqade2:
   hash: "{{ .Values.users.dataqade2.hash }}"
@@ -64,17 +94,17 @@ admin:
   backend_roles:
   - "adminrole"
 
-kibanaserver:
-  hash: "{{ .Values.users.kibanaserver.hash }}"
+dashboard:
+  hash: "{{ .Values.users.dashboard.hash }}"
   reserved: true
   description: "Demo OpenSearch Dashboards user"
 
 kibanaro:
   hash: "{{ .Values.users.kibanaro.hash }}"
-  reserved: false
-  backend_roles:
-  - "kibanauser"
-  - "readall"
+
+kibanaserver:
+  hash: "{{ .Values.users.kibanaserver.hash }}"
+  reserved: true
 
 maillog:
   hash: "{{ .Values.users.maillog.hash }}"

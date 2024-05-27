@@ -23,6 +23,7 @@ global:
     image: "monsoon/fernet-router:latest"
   domain_seeds:
     skip_hcm_domain: false
+  linkerd_requested: false
 
 imageVersion: rocky-20200214123740
 imageVersionStaticdhcpd: rocky-20201012110713
@@ -33,7 +34,7 @@ kos_conductor: true
 
 cert_robot:
   image_tag: "latest"
-  schedule: "@weekly"
+  schedule: "0 8 * * 1,3,5" # Monday, Wednesday, and Friday at 8:00 (am)
   env:
     issuer:
     designate:
@@ -174,6 +175,11 @@ conductor:
     port: 8088
     erase_devices_priority: 0
   defaults:
+    # Default image for ESP. Can be overridden with `driver_info.bootloader`
+    # on a node-by-node basis. OS needs to match `grub_config_path`
+    # (as long as the image is based on grub and not syslinux)
+    esp_image_path: ironic-tftp/esp-ubuntu-x86_64.img
+
     default:
       enabled_hardware_types: ipmi, idrac, redfish
       enabled_boot_interfaces: pxe, ipxe, idrac-redfish-virtual-media, redfish-virtual-media
@@ -191,6 +197,11 @@ conductor:
       # enables collecting metrics for rpc calls
       statsd_enabled: false
       statsd_port: 9125
+
+      # That depends on os version used in the bootloader image / inspector
+      # Since the our loci images are based on ubuntu default to that for now
+      # Cross-check os name with `esp_image_path`
+      grub_config_path: 'EFI/ubuntu/grub.cfg'
     dhcp: {}
     pxe:
       kernel_append_params: "ipa-hardware-initialization-delay=120 console=tty0 console=ttyS0,115200 nofb nomodeset vga=normal"
@@ -364,7 +375,9 @@ mariadb:
       - ironic_inspector.nodes
 
   root_password: "AHardPa55w0rd!"
-  initdb_configmap: ironic-mariadb-init
+  initdb_secret: true
+  ccroot_user:
+    enabled: true
   persistence_claim:
     name: db-ironic-pvclaim
 
@@ -426,7 +439,14 @@ watcher:
   enabled: false
 
 audit:
+  central_service:
+    user: rabbitmq
+    password: DEFINED-IN-SECRETS
   enabled: false
+  # how many messages to buffer before dumping to log (when rabbit is down or too slow)
+  mem_queue_size: 100
+  record_payloads: false
+  metrics_enabled: true
 
 # Deploy Ironic Prometheus alerts.
 alerts:
@@ -438,3 +458,9 @@ alerts:
 utils:
   trust_bundle:
     enabled: true
+
+ironic-exporter:
+  enabled: true
+  notifications: false
+  image:
+    tag: cd8c3866

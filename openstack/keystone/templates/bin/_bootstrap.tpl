@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -ex
-trap "{{ include "utils.proxysql.proxysql_signal_stop_script" . | trim }}" EXIT
+
 # seed just enough to have a functional v3 api
-keystone-manage --config-file=/etc/keystone/keystone.conf bootstrap \
+keystone-manage --config-file=/etc/keystone/keystone.conf --config-file=/etc/keystone/keystone.conf.d/secrets.conf bootstrap \
     --bootstrap-username {{ .Values.api.adminUser }} \
     --bootstrap-password {{ required "A valid .Values.api.adminPassword required!" .Values.api.adminPassword }} \
     --bootstrap-project-name {{ .Values.api.adminProjectName }} \
@@ -24,3 +24,5 @@ keystone-manage --config-file=/etc/keystone/keystone.conf bootstrap \
     --bootstrap-internal-url http://keystone.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}:5000/v3 \
 {{- end }}
     --bootstrap-region-id {{ .Values.global.region }}
+
+{{ include "utils.script.job_finished_hook" . | trim }}

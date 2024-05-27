@@ -24,14 +24,16 @@ spec:
       labels:
         component: maia
       annotations:
-        checksum/maia-templates-maia-configmap.yaml: {{ include "maia/templates/maia-configmap.yaml" . | sha256sum }}
+        checksum/maia-templates-maia-api-secret.yaml: {{ include "maia/templates/maia-api-secret.yaml" . | sha256sum }}
+        kubectl.kubernetes.io/default-container: "maia"
     spec:
       nodeSelector:
         zone: farm
       volumes:
         - name: maia-etc
-          configMap:
-            name: maia
+          secret:
+            secretName: maia-api-secret
+            defaultMode: 420
       containers:
         - name: maia
           # remove the "string:" prefix which is used to prevent helm's --set option from reformatting plain numbers into floats in scientific notation

@@ -1,0 +1,112 @@
+{{- if .Values.glance_nanny.enabled }}
+{{- if .Values.glance_nanny.db_purge.enabled }}
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: glance-nanny
+  labels:
+    app: {{ template "name" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+    type: nanny
+    component: glance
+spec:
+  replicas: {{ .Values.glance_nanny.replicas }}
+  revisionHistoryLimit: {{ .Values.upgrades.revisionHistory }}
+  strategy:
+    type: {{ .Values.upgrades.podReplacementStrategy }}
+    {{ if eq .Values.upgrades.podReplacementStrategy "RollingUpdate" }}
+    rollingUpdate:
+      maxUnavailable: {{ .Values.upgrades.rollingUpdate.maxUnavailable }}
+      maxSurge: {{ .Values.upgrades.rollingUpdate.maxSurge }}
+    {{ end }}
+  selector:
+    matchLabels:
+      app: glance-nanny
+  template:
+    metadata:
+      labels:
+        app: glance-nanny
+        name: glance
+        alert-tier: os
+        alert-service: glance
+        {{- include "utils.topology.pod_label" . | indent 8 }}
+      annotations:
+        chart-version: {{.Chart.Version}}
+        checksum/etc-configmap.conf: {{ include (print $.Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
+        secrets-hash: {{ include (print $.Template.BasePath "/secrets.yaml") . | sha256sum }}
+        {{- if .Values.proxysql.mode }}
+        prometheus.io/scrape: "true"
+        prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
+        {{- end }}
+        {{- include "utils.linkerd.pod_and_service_annotation" . | indent 8 }}
+    spec:
+      {{ include "utils.proxysql.pod_settings" . | indent 6 }}
+{{- if .Values.glance_nanny.db_purge.enabled }}
+      containers:
+      - name: db-consistency-and-purge
+        image: {{ required ".Values.global.registry is missing" .Values.global.registry }}/loci-glance:{{.Values.imageVersionGlanceApi | default .Values.imageVersion | default .Values.image_version | required "Please set glance.imageVersion or similar"}}
+        imagePullPolicy: IfNotPresent
+        command:
+        - dumb-init
+        - kubernetes-entrypoint
+        env:
+        - name: COMMAND
+          value: "{{ if not .Values.glance_nanny.debug }}/bin/bash /scripts/glance-db-consistency-and-purge.sh{{ else }}sleep inf{{ end }}"
+        - name: GLANCE_DB_PURGE_ENABLED
+          value: {{ .Values.glance_nanny.db_purge.enabled | quote }}
+        - name: GLANCE_DB_PURGE_OLDER_THAN
+          value: {{ .Values.glance_nanny.db_purge.older_than | quote }}
+        - name: GLANCE_DB_PURGE_MAX_NUMBER
+          value: {{ .Values.glance_nanny.db_purge.max_number | quote }}
+        - name: GLANCE_NANNY_INTERVAL
+          value: {{ .Values.glance_nanny.interval | quote }}
+        {{- if .Values.sentry.enabled }}
+        - name: SENTRY_DSN
+          valueFrom:
+            secretKeyRef:
+              name: sentry
+              key: glance.DSN.python
+        {{- end }}
+        resources:
+          requests:
+            memory: "250Mi"
+            cpu: "25m"
+          limits:
+            memory: "250Mi"
+            cpu: "100m"
+        volumeMounts:
+        - name: glance-scripts
+          mountPath: /scripts/glance-db-consistency-and-purge.sh
+          subPath: glance-db-consistency-and-purge.sh
+          readOnly: true
+        - name: glance-etc
+          mountPath: /etc/glance/glance-api.conf
+          subPath: glance-api.conf
+          readOnly: true
+        - name: glance-etc
+          mountPath: /etc/glance/logging.ini
+          subPath: logging.ini
+          readOnly: true
+        - name: glance-etc-confd
+          mountPath: /etc/glance/glance.conf.d
+          readOnly: true
+        {{- include "utils.proxysql.volume_mount" . | indent 8 }}
+        {{- include "utils.trust_bundle.volume_mount" . | indent 8 }}
+      {{- tuple . 1 | include "utils.proxysql.container" | indent 6 }}
+      volumes:
+      - name: glance-etc
+        configMap:
+          name: glance-etc
+      - name: glance-etc-confd
+        secret:
+          secretName: {{ .Release.Name }}-secrets
+      - name: glance-scripts
+        configMap:
+          name: glance-scripts
+      {{- include "utils.proxysql.volumes" . | indent 6 }}
+      {{- include "utils.trust_bundle.volumes" . | indent 6 }}
+{{- end }}
+{{- end }}
+{{- end }}

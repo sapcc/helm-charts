@@ -18,6 +18,9 @@ spec:
         {{- if .Values.additionalPodAnnotations }}
         {{- toYaml .Values.additionalPodAnnotations | nindent 8 -}}
         {{ end }}
+        {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+        linkerd.io/inject: enabled
+        {{- end }}
     spec:
       serviceAccountName: vpa-updater
       securityContext:
@@ -27,6 +30,11 @@ spec:
         - name: updater
           image: {{ include "updater.image" . }}
           imagePullPolicy: {{ default "IfNotPresent" .Values.updater.image.pullPolicy }}
+          command: ["/updater"]
+          args:
+          - "--v=4"
+          - "--stderrthreshold=info"
+          - "--min-replicas={{ .Values.updater.minReplicas }}"
           resources:
             limits:
               cpu: 200m

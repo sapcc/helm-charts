@@ -7,13 +7,18 @@ apiVersion: traefik.containo.us/v1alpha1
 kind: IngressRoute
 metadata:
   name: {{ include "thanos.fullName" (list $name $root) }}-grpc
+  {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+  annotations:
+    ingress.kubernetes.io/service-upstream: "true"
+    nginx.ingress.kubernetes.io/service-upstream: "true"
+  {{- end }}
 spec:
   entryPoints:
   - websecure
   routes:
   {{- range $host := $root.Values.grpcIngress.hosts }}
   - kind: Rule
-    match: Host(`{{ $host }}-grpc.{{ $root.Values.global.region }}.{{ $root.Values.global.tld }}`) && Headers(`Content-Type`,`application/grpc`)
+    match: Host(`{{ $host }}.{{ $root.Values.global.region }}.{{ $root.Values.global.tld }}`) && Headers(`Content-Type`,`application/grpc`)
     priority: 11
     services:
     - kind: Service
@@ -22,7 +27,7 @@ spec:
       scheme: h2c
   {{- end }}
   tls:
-    secretName: tls-{{ include "thanos.externalGrpcURL" (list $name $root) | replace "." "-" }}
+    secretName: tls-{{ include "thanos.grpcURL" (list $name $root) | replace "." "-" }}
 {{- end }}
 {{- end }}
 {{- end }}

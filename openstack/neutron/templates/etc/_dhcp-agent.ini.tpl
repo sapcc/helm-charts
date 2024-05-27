@@ -11,6 +11,7 @@ dnsmasq_dns_servers = {{required "A valid .Values.dns_forwarders required!" .Val
 dhcp_domain = {{required "A valid .Values.dns_local_domain required!" .Values.dns_local_domain}}
 dns_domain = {{required "A valid .Values.dns_local_domain required!" .Values.dns_local_domain}}
 num_sync_threads = {{.Values.agent.dhcp.num_sync_threads | default 4 }}
+edns_client_fingerprint = {{.Values.agent.dhcp.edns_client_fingerprint | default "False" }}
 
 rpc_response_timeout = {{ .Values.rpc_response_timeout | default .Values.global.rpc_response_timeout | default 50 }}
 rpc_workers = {{ .Values.rpc_workers | default .Values.global.rpc_workers | default 5 }}

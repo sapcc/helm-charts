@@ -1,8 +1,25 @@
+global:
+  linkerd_requested: true
+  clusterType: local
+  users:
+    admin:
+      name: admin
+
+hermes_image_version_logstash: "20240306151752"
+      
+owner-info:
+  support-group: observability
+  service: hermes
+  maintainers:
+    - Nathan Oyler
+  helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/openstack/hermes
+
 # global.region: DEFINED_IN_VALUES_FILE
 hermes:
   debug: 0
   insecure: 0
   name: hermes
+  username: hermes
   rabbitmq:
     port: 5672
     user: rabbitmq
@@ -65,6 +82,20 @@ rabbitmq_notifications:
       # password: DEFINED-IN-SECRETS
   alerts:
     support_group: observability
+  livenessProbe:
+    enabled: true
+    failureThreshold: 3
+    initialDelaySeconds: 60
+    periodSeconds: 10
+    successThreshold: 1
+    timeoutSeconds: 10
+  readinessProbe:
+    enabled: true
+    failureThreshold: 3
+    initialDelaySeconds: 60 # default 15, need for crash recovery
+    periodSeconds: 10
+    successThreshold: 1
+    timeoutSeconds: 5
 
 # Pod Monitor
 exporter:
@@ -84,13 +115,6 @@ alerts:
     openstack: openstack
     kubernetes: kubernetes
     thanos-ruler: metal
-
-owner-info:
-  support-group: observability
-  maintainers:
-    - Nathan Oyler
-  helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/openstack/hermes
-
 
 elasticsearch_hermes:
   enabled: false
@@ -114,9 +138,3 @@ elasticsearch_hermes_kibana:
 
 opensearch_hermes:
   enabled: false
-
-global:
-  clusterType: local
-  users:
-    admin:
-      name: admin

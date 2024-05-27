@@ -18,6 +18,10 @@ spec:
         {{- if .Values.additionalPodAnnotations }}
         {{- toYaml .Values.additionalPodAnnotations | nindent 8 -}}
         {{ end }}
+        {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+        linkerd.io/inject: enabled
+        {{- end }}
+        checksum/certificate: {{ include (print $.Template.BasePath "/admission-certificate.yaml") . | sha256sum }}
     spec:
       serviceAccountName: vpa-admission-controller
       securityContext:

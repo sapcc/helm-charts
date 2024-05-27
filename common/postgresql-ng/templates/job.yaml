@@ -1,0 +1,32 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ template "postgres.fullname" . }}-delete-secrets
+  annotations:
+    helm.sh/hook: pre-delete
+    helm.sh/hook-weight: "-5"
+    helm.sh/hook-delete-policy: hook-succeeded
+    linkerd.io/inject: disabled # this only talks to the kube-apiserver via HTTPS, so no additional mTLS is required
+spec:
+  template:
+    metadata:
+      name: {{ template "postgres.fullname" . }}-delete-secrets
+    spec:
+      containers:
+      - name: delete-secrets
+        image: "{{ include "preferredRegistry" . }}/shared-app-images/alpine-kubectl:3.19-latest"
+        env:
+        - name: DEBUG
+          value: {{ quote .Values.debug }}
+        command:
+          - ash
+          - -c
+          - |
+            set -eou pipefail
+            [[ ${DEBUG:-} != false ]] && set -x
+
+            {{- range $user, $settings := .Values.users }}
+            kubectl delete secret --ignore-not-found {{ $.Release.Name }}-pguser-{{ $user }}
+            {{- end }}
+      restartPolicy: Never
+      serviceAccountName: {{ template "postgres.fullname" . }}

@@ -1,0 +1,39 @@
+global:
+  registry: docker.io
+image:
+  repository: ccloud/vault-tec
+  tag: "3b705bcd87afd4ec8553152a686f393b69641cab"
+  pullPolicy: IfNotPresent
+limits:
+  cpu: 200m
+  memory: 256Mi
+rbac:
+  create: true
+  serviceAccountName: vault-tec
+config:
+  intervals:
+    period: 5m
+    jitter: 1.1
+  approles:
+  - concourse:
+      url: https://example.com
+      userPass:
+        username: concourse-user
+        password: pw
+    vault:
+      userPass:
+        username: vault-user
+        password: pw
+      metadata:
+        maintain: true
+        owner: ghi
+      prefix: vt-generic
+      ttl: 48h
+      rotate: 24h
+      tokenTTL: 4h
+      url: https://example.com
+      approleMount: approle
+      keyValueMount: kv
+      policies:
+      - a
+      - b

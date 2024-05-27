@@ -8,6 +8,12 @@ kind: StoreEndpoint
 metadata:
   name: {{ include "thanos.fullName" (list $name $root) }}
 spec:
+  {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+  serviceOverrides:
+    metadata:
+      annotations:
+        linkerd.io/inject: enabled
+  {{- end }}
   thanos: {{ include "thanos.fullName" (list $name $root) }}
   config:
     mountFrom:

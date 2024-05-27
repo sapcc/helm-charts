@@ -3,7 +3,7 @@ groups:
   rules:
   - alert: OpenstackNeutronApiDown
     expr: |
-        cc3test_status{service="neutron", type="api"} == 0
+        cc3test_status{service="neutron", type="api", phase="call"} == 0
     for: 16m
     labels:
       severity: critical
@@ -13,15 +13,15 @@ groups:
       context: '{{ $labels.service }}'
       meta: 'Openstack Neutron API is down'
       dashboard: 'cc3test-api-status?var-service={{ $labels.service }}'
-      playbook: 'docs/support/playbook/neutron/alerts/'
-      report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
+      playbook: 'docs/support/playbook/neutron/alerts/cc3test-alert-api'
+      report: 'cc3test/admin/object-storage/containers/cc3test/objects/{{ $labels.base64path }}'
     annotations:
       description: 'Openstack Neutron API is down'
       summary: 'Openstack Neutron API is down'
 
   - alert: OpenstackNeutronApiFlapping
     expr: |
-        changes(cc3test_status{service="neutron", type="api"}[30m]) > 8
+        changes(cc3test_status{service="neutron", type="api", phase="call"}[30m]) > 8
     labels:
       severity: warning
       support_group: network-api
@@ -30,8 +30,8 @@ groups:
       context: '{{ $labels.service }}'
       meta: 'Openstack Neutron API is flapping'
       dashboard: 'cc3test-api-status?var-service={{ $labels.service }}'
-      playbook: 'docs/support/playbook/neutron/alerts/'
-      report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
+      playbook: 'docs/support/playbook/neutron/alerts/cc3test-alert-api'
+      report: 'cc3test/admin/object-storage/containers/cc3test/objects/{{ $labels.base64path }}'
     annotations:
       description: 'Openstack Neutron API is flapping'
       summary: 'Openstack Neutron API is flapping'
@@ -39,7 +39,8 @@ groups:
   - alert: OpenstackNeutronLBApiDown
     expr: |
         cc3test_status{type="api",
-            name="TestNetworkApi_api_lb"
+            name="TestNetworkApi_api_lb",
+            phase="call"
         } == 0
     for: 10m
     labels:
@@ -51,7 +52,7 @@ groups:
       meta: 'Openstack Neutron Loadbalancer API is down'
       dashboard: 'cc3test-api-status?var-service={{ $labels.service }}'
       playbook: 'docs/devops/alert/neutron/#test_api'
-      report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
+      report: 'cc3test/admin/object-storage/containers/cc3test/objects/{{ $labels.base64path }}'
     annotations:
       description: 'Openstack Neutron Loadbalancer API is down'
       summary: 'Openstack Neutron Loadbalancer API is down'
@@ -59,7 +60,8 @@ groups:
   - alert: OpenstackNeutronLBApiFlapping
     expr: |
         changes(cc3test_status{type="api",
-            name="TestNetworkApi_api_lb"
+            name="TestNetworkApi_api_lb",
+            phase="call"
         }[30m]) > 8
     labels:
       severity: warning
@@ -70,7 +72,7 @@ groups:
       meta: 'Openstack Neutron Loadbalancer API is flapping'
       dashboard: 'cc3test-api-status?var-service={{ $labels.service }}'
       playbook: 'docs/devops/alert/neutron/#test_api'
-      report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
+      report: 'cc3test/admin/object-storage/containers/cc3test/objects/{{ $labels.base64path }}'
     annotations:
       description: 'Openstack Neutron Loadbalancer API is flapping'
       summary: 'Openstack Neutron Loadbalancer API is flapping'
@@ -80,7 +82,8 @@ groups:
   - alert: OpenstackNeutronDatapathPrivateIPDown
     expr: |
         cc3test_status{type="datapath",
-            name=~"TestFixedIp_datapath.+"
+            name=~"TestFixedIp_datapath.+",
+            phase="call"
         } == 0
     for: 20m
     labels:
@@ -92,7 +95,7 @@ groups:
       meta: 'Network path to private ip address is down'
       dashboard: 'cc3test-datapath-status?var-service={{ $labels.service }}'
       playbook: 'docs/devops/alert/neutron/#test_server_ip'
-      report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
+      report: 'cc3test/admin/object-storage/containers/cc3test/objects/{{ $labels.base64path }}'
     annotations:
       description: 'Network path to private ip address is down'
       summary: 'Network path to private ip address is down'
@@ -100,7 +103,8 @@ groups:
   - alert: OpenstackNeutronDatapathPrivateIPFlapping
     expr: |
         changes(cc3test_status{type="datapath",
-            name=~"TestFixedIp_datapath.+"
+            name=~"TestFixedIp_datapath.+",
+            phase="call"
         }[30m]) > 8
     labels:
       severity: warning
@@ -111,7 +115,7 @@ groups:
       meta: 'Network path to private ip address is flapping'
       dashboard: 'cc3test-datapath-status?var-service={{ $labels.service }}'
       playbook: 'docs/devops/alert/neutron/#test_server_ip'
-      report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
+      report: 'cc3test/admin/object-storage/containers/cc3test/objects/{{ $labels.base64path }}'
     annotations:
       description: 'Network path to private ip address is flapping'
       summary: 'Network path to private ip address is flapping'
@@ -119,7 +123,8 @@ groups:
   - alert: OpenstackNeutronDatapathPublicIPDown
     expr: |
         cc3test_status{type="datapath",
-            name=~"TestFloatingIp_datapath.+"
+            name=~"TestFloatingIp_datapath.+",
+            phase="call"
         } == 0
     for: 20m
     labels:
@@ -131,7 +136,7 @@ groups:
       meta: 'Network path to public ip address is down'
       dashboard: 'cc3test-datapath-status?var-service={{ $labels.service }}'
       playbook: 'docs/devops/alert/neutron/#test_server_fip'
-      report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
+      report: 'cc3test/admin/object-storage/containers/cc3test/objects/{{ $labels.base64path }}'
     annotations:
       description: 'Network path to public ip address is down'
       summary: 'Network path to public ip address is down'
@@ -139,7 +144,8 @@ groups:
   - alert: OpenstackNeutronDatapathPublicIPFlapping
     expr: |
         changes(cc3test_status{type="datapath",
-            name=~"TestFloatingIp_datapath.+"
+            name=~"TestFloatingIp_datapath.+",
+            phase="call"
         }[30m]) > 8
     labels:
       severity: warning
@@ -150,7 +156,7 @@ groups:
       meta: 'Network path to public ip address is flapping'
       dashboard: 'cc3test-datapath-status?var-service={{ $labels.service }}'
       playbook: 'docs/devops/alert/neutron/#test_server_fip'
-      report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
+      report: 'cc3test/admin/object-storage/containers/cc3test/objects/{{ $labels.base64path }}'
     annotations:
       description: 'Network path to public ip address is flapping'
       summary: 'Network path to public ip address is flapping'
@@ -160,7 +166,8 @@ groups:
   - alert: OpenstackNeutronDHCPDown
     expr: |
         cc3test_status{type="datapath",
-            name=~"TestFixedIp_dhcp.+"
+            name=~"TestFixedIp_dhcp.+",
+            phase="call"
         } == 0
     for: 20m
     labels:
@@ -171,8 +178,8 @@ groups:
       context: '{{ $labels.service }}'
       meta: 'DHCP service is down'
       dashboard: 'cc3test-datapath-status?var-service={{ $labels.service }}'
-      playbook: 'docs/devops/alert/neutron/#test_dhcp'
-      report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
+      playbook: 'docs/support/playbook/neutron/alerts/cc3test-alert-dhcp-service'
+      report: 'cc3test/admin/object-storage/containers/cc3test/objects/{{ $labels.base64path }}'
     annotations:
       description: 'DHCP service is down'
       summary: 'DHCP service is down'
@@ -182,7 +189,8 @@ groups:
   - alert: OpenstackNeutronMetadataServiceDown
     expr: |
         cc3test_status{type="datapath",
-            name=~"TestFixedIp_metadata.+"
+            name=~"TestFixedIp_metadata.+",
+            phase="call"
         } == 0
     for: 20m
     labels:
@@ -193,8 +201,8 @@ groups:
       context: '{{ $labels.service }}'
       meta: 'Metadata service is down'
       dashboard: 'cc3test-datapath-status?var-service={{ $labels.service }}'
-      playbook: 'docs/devops/alert/neutron/#test_meta'
-      report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
+      playbook: 'docs/support/playbook/neutron/alerts/cc3test-alert-metadata-service'
+      report: 'cc3test/admin/object-storage/containers/cc3test/objects/{{ $labels.base64path }}'
     annotations:
       description: 'Metadata service is down'
       summary: 'Metadata service is down'
@@ -214,7 +222,7 @@ groups:
 # TODO - we first will have to bring the integrity tests into one of the dashboards
 #      dashboard: cc3test-api-status?var-service={{ $labels.service }}
       playbook: 'docs/devops/alert/{{ $labels.service }}/#OpenstackNeutronPredictOutOfFIP'
-      report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.check }}'
+      report: 'cc3test/admin/object-storage/containers/cc3test/objects/{{ $labels.base64path }}'
     annotations:
       description: 'Network name {{ $labels.network_name }} and network id {{ $labels.network_id }}: get exhausted. see last three reports for more details'
       summary: 'Network name {{ $labels.network_name }} and network id {{ $labels.network_id }}: get exhausted'

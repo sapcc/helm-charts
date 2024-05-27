@@ -1,0 +1,53 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: "install-index-pattern"
+  labels:
+    app.kubernetes.io/managed-by: {{ .Release.Service | quote }}
+    app.kubernetes.io/instance: {{ .Release.Name | quote }}
+    app.kubernetes.io/version: {{ .Chart.AppVersion }}
+    helm.sh/chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+  annotations:
+    # This is what defines this resource as a hook. Without this line, the
+    # job is considered part of the release.
+    "helm.sh/hook": post-install,post-upgrade
+    "helm.sh/hook-weight": "-5"
+    "helm.sh/hook-delete-policy": hook-succeeded
+spec:
+  template:
+    metadata:
+      name: "install-index-pattern"
+      labels:
+        app.kubernetes.io/managed-by: {{ .Release.Service | quote }}
+        app.kubernetes.io/instance: {{ .Release.Name | quote }}
+        helm.sh/chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: install-index-pattern 
+        image: "{{ .Values.global.registry }}/unified-kubernetes-toolbox:latest"
+        command: ["/bin/bash", "/scripts/install-index-pattern.sh"]
+        env:
+          - name: ADMIN_USER
+            valueFrom:
+              secretKeyRef:
+                name: cron-secrets
+                key: ADMIN_USER
+          - name: ADMIN_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: cron-secrets
+                key: ADMIN_PASSWORD
+          - name: CLUSTER_HOST
+            value: "https://opensearch-logs-client.{{ .Values.global.clusterType }}.{{ .Values.global.region }}.{{ .Values.global.tld }}:{{ .Values.httpPort }}"
+          - name: DASHBOARD_HOST
+            value: "https://logs.{{ .Values.global.region }}.{{ .Values.global.tld }}"
+        volumeMounts:
+        - mountPath: /scripts/install-index-pattern.sh
+          name: security-config
+          subPath: install-index-pattern.sh
+      volumes:
+      - name: security-config
+        secret:
+          defaultMode: 420
+          secretName: security-config

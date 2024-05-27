@@ -16,10 +16,13 @@ metadata:
   annotations:
     kubernetes.io/tls-acme: "true"
     disco: "true"
-    {{- if .Values.ingress.authentication.oauth.enabled }}
-    ingress.kubernetes.io/auth-url: {{ required ".Values.ingress.authentication.oauth.authURL missing" .Values.ingress.authentication.oauth.authURL }}
-    nginx.ingress.kubernetes.io/auth-url: {{ required ".Values.ingress.authentication.oauth.authURL missing" .Values.ingress.authentication.oauth.authURL }}
-    {{ if .Values.ingress.authentication.oauth.authSignInURL }}ingress.kubernetes.io/auth-signin: {{ .Values.ingress.authentication.oauth.authSignInURL }} {{ end }}
+    {{- if $.Values.ingress.authentication.oauth.enabled }}
+    ingress.kubernetes.io/auth-url: {{ required "$.Values.ingress.authentication.oauth.authURL missing" $.Values.ingress.authentication.oauth.authURL }}
+    nginx.ingress.kubernetes.io/auth-url: {{ required "$.Values.ingress.authentication.oauth.authURL missing" $.Values.ingress.authentication.oauth.authURL }}
+    {{- if $.Values.ingress.authentication.oauth.authSignInURL }}
+    ingress.kubernetes.io/auth-signin: {{ $.Values.ingress.authentication.oauth.authSignInURL }}
+    nginx.ingress.kubernetes.io/auth-signin: {{ $.Values.ingress.authentication.oauth.authSignInURL }}
+    {{- end }}
     {{ end }}
     {{- if .Values.ingress.authentication.sso.enabled}}
     ingress.kubernetes.io/auth-tls-secret: {{ required ".Values.ingress.authentication.sso.authTLSSecret missing" .Values.ingress.authentication.sso.authTLSSecret | quote }}

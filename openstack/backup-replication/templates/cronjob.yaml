@@ -8,7 +8,7 @@ metadata:
     component: backup-replication
 
 spec:
-  concurrencyPolicy: Forbid
+  concurrencyPolicy: Replace # restarting a hung s-h-i should be safe (Swift will not store objects if the upload connection resets)
   successfulJobsHistoryLimit: 3
   failedJobsHistoryLimit: 3
   schedule: "59 * * * *"
@@ -26,7 +26,7 @@ spec:
             linkerd.io/inject: enabled
             {{- end }}
         spec:
-          restartPolicy: OnFailure
+          restartPolicy: Never # restarting a failed s-h-i does not work because the linkerd-proxy sidecar has been torn down when the s-h-i container shut down
           volumes:
           - name: config
             configMap:

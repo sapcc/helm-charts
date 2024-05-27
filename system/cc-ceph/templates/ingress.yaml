@@ -1,0 +1,25 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+    disco: "true"
+    kubernetes.io/tls-acme: "true"
+  name: manager-dashboard
+  namespace: {{ .Release.Namespace }}
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: {{ .Values.dashboard.ingress.host }}
+      http:
+        paths:
+          - backend:
+              service:
+                name: {{ .Release.Name }}-mgr-dashboard
+                port:
+                  number: 7000
+            path: /
+            pathType: Prefix
+  tls:
+    - hosts:
+        - {{ .Values.dashboard.ingress.host }}
+      secretName: tls-mgr-dashboard

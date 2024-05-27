@@ -9,6 +9,11 @@ global:
 image:
   repository: keppel.eu-de-1.cloud.sap/ccloud-dockerhub-mirror/prom/alertmanager
 
+# custom specified version only to be set as version string in the alertmanager spec. The image can be different.
+# used to explicitly avoid newly introduced operator settings which might not fit.
+# defaults to .Chart.AppVersion
+version:
+
 # Mandatory name for this Alertmanager.
 name:
 
@@ -26,6 +31,13 @@ additionalPeers: []
 
 # Optional ClusterAdvertiseAddress is the explicit address to advertise in the Alertmanager cluster.
 # clusterAdvertiseAddress:
+
+# Feature added in v0.26.0. When additionalPeers is used and AMs need to gossip between clusters, they need to have the same clusterLabel set to communicate.
+# If omitted it is generated automatically, which usually leads to different clusterLabels.
+clusterLabel: ccloud
+
+# OnNamespace or None to match all namespaces. Default to None here to be independent from the deployed namespace since it would be locked to release namespace otherwise.
+alertmanagerConfigMatcherStrategy: None
 
 # Alertmanager mesh.
 mesh:

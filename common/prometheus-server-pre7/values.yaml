@@ -239,16 +239,25 @@ thanos:
   # Specification for Thanos components.
   compactor:
     # How long to retain raw samples in bucket. 0d - disables this retention.
-    retentionResolutionRaw: 30d
+    retentionResolutionRaw: 90
 
     # How long to retain samples of resolution 1 (5 minutes) in bucket. 0d - disables this retention.
-    retentionResolution5m: 30d
+    retentionResolution5m: 90
 
     # How long to retain samples of resolution 2 (1 hour) in bucket. 0d - disables this retention.
-    retentionResolution1h: 1y
+    retentionResolution1h: 365
 
-    # Minimum age of fresh (non-compacted) blocks before they are being processed. Malformed blocks older than the maximum of consistency-delay and 30m0s will be removed.
-    consistencyDelay: 30m
+    # Minimum age of fresh (non-compacted) blocks before they are being processed.
+    # Malformed blocks older than the maximum of consistency-delay and 30m0s will be removed.
+    consistencyDelay: 1800s
+
+    # How often we should clean up partially uploaded blocks and blocks with deletion mark in the
+    # background when --wait has been enabled. Setting it to "0s" disables it - the cleaning will only
+    # happen at the end of an iteration.
+    cleanupInterval: 1800s
+
+    # Wait interval between consecutive compaction runs and bucket refreshes. Only works when --wait flag specified.
+    waitInterval: 900s
 
     service:
       httpPort: 9090

@@ -2,9 +2,12 @@
      deployment has already deployed the corresponding configmap.
      So if we want to switch to or from a proxysql.mode=unix_socket setting, we need
      first to deploy with proxysql.mode=host_alias as an intermediate step,
-     so this script can still work with the previous setting
+     so this script can still work with the previous setting.
+     Similarily we can only use the secret if a previous helm deployment added
+     it.
 */}}
-{{- $proxysql := lookup "v1" "ConfigMap" .Release.Namespace (print .Release.Name "-proxysql-etc") -}}
+{{- $proxysql := lookup "v1" "Secret" .Release.Namespace (print .Release.Name "-proxysql-etc") -}}
+{{- $secrets := lookup "v1" "Secret" .Release.Namespace (print .Release.Name "-secrets") -}}
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -15,15 +18,18 @@ metadata:
     component: manila
     alert-tier: os
     alert-service: manila
+    # hooks are not labeled as belonging to the Helm release, so we cannot rely on owner-info injection
+    ccloud/support-group: compute-storage-api
+    ccloud/service: manila
   annotations:
     "helm.sh/hook": "post-install,pre-upgrade"
     "helm.sh/hook-weight": "-1"
     "helm.sh/hook-delete-policy": "before-hook-creation"
-    # hooks are not annotated as belonging to the Helm release, so we cannot rely on owner-info injection
-    ccloud/support-group: compute-storage-api
-    ccloud/service: manila
 spec:
   template:
+    metadata:
+      annotations:
+        {{- include "utils.linkerd.pod_and_service_annotation" . | indent 8 }}
     spec:
       restartPolicy: OnFailure
 {{- if $proxysql }}
@@ -54,6 +60,10 @@ spec:
               mountPath: /etc/manila/manila.conf
               subPath: manila.conf
               readOnly: true
+{{- if $secrets }}
+            - name: manila-etc-confd
+              mountPath: /etc/manila/manila.conf.d
+{{- end }}
             - name: manila-etc
               mountPath: /etc/manila/policy.yaml
               subPath: policy.yaml
@@ -75,6 +85,11 @@ spec:
         - name: manila-etc
           configMap:
             name: {{ .Release.Name }}-etc
+{{- if $secrets }}
+        - name: manila-etc-confd
+          secret:
+            secretName: {{ .Release.Name }}-secrets
+{{- end }}
         - name: container-init
           configMap:
             name: {{ .Release.Name }}-bin

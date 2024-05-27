@@ -1,3 +1,4 @@
+{{- $secrets := lookup "v1" "Secret" .Release.Namespace (print .Release.Name "-secrets") -}}
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -20,6 +21,8 @@ spec:
         alert-tier: os
         alert-service: barbican
 {{ tuple . "barbican" "migration" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
+      annotations:
+{{- include "utils.linkerd.pod_and_service_annotation" . | indent 8 }}
     spec:
       restartPolicy: OnFailure
       initContainers:
@@ -29,9 +32,11 @@ spec:
           image: {{required ".Values.global.registry is missing" .Values.global.registry}}/loci-barbican:{{required ".Values.imageVersionBarbicanApi is missing" .Values.imageVersionBarbicanApi}}
           imagePullPolicy: IfNotPresent
           command:
-          - barbican-manage
-          - db
-          - upgrade
+          - bash
+          - -c
+          - |
+            barbican-manage db upgrade
+            {{- include "utils.script.job_finished_hook" . | nindent 12 }}
           env:
           {{- if .Values.sentry.enabled }}
           - name: SENTRY_DSN
@@ -64,6 +69,11 @@ spec:
               mountPath: /etc/barbican/logging.ini
               subPath: logging.ini
               readOnly: true
+{{- if $secrets }}
+            - name: barbican-etc-confd
+              mountPath: /etc/barbican/barbican.conf.d
+              readOnly: true
+{{- end }}
             {{- include "utils.trust_bundle.volume_mount" . | indent 12 }}
       volumes:
         - name: etcbarbican
@@ -71,4 +81,12 @@ spec:
         - name: barbican-etc
           configMap:
             name: barbican-etc
+{{- if $secrets }}            
+        - name: barbican-etc-confd
+          secret:
+            secretName: {{ .Release.Name }}-secrets
+            items:
+            - key: secrets.conf
+              path: secrets.conf
+{{- end }}
         {{- include "utils.trust_bundle.volumes" . | indent 8 }}

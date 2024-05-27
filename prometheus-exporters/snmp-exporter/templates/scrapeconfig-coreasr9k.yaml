@@ -1,3 +1,4 @@
+{{- if .Values.snmp_exporter.coreasr9k.enabled }}
 apiVersion: monitoring.coreos.com/v1alpha1
 kind: ScrapeConfig
 metadata:
@@ -8,7 +9,7 @@ metadata:
     app.kubernetes.io/name: snmp-exporter-coreasr9k
 spec:
   httpSDConfigs:
-    - url: {{ .Values.global.http_sd_configs.netbox_url }}/devices/?custom_labels=__param_module=coreasr9k&manufacturer=cisco&status=active&region={{ .Values.global.region }}&role=core-router&tenant=cnd-netbb&platform=cisco-ios-xr
+    - url: {{ .Values.global.http_sd_configs.netbox_url }}/devices/?custom_labels=__param_module=coreasr9k;__param_auth=coreasr9k_v3&manufacturer=cisco&status=active&region={{ .Values.global.region }}&role=core-router&tenant=cnd-netbb&platform=cisco-ios-xr
       refreshInterval: {{ .Values.global.http_sd_configs.refresh_interval }}
   metricsPath: /snmp
   scrapeInterval: 60s
@@ -22,6 +23,8 @@ spec:
       replacement: snmp-exporter:{{.Values.snmp_exporter.listen_port}}
     - targetLabel: module
       replacement: coreasr9k
+    - targetLabel: __param_auth
+      replacement: coreasr9k_v3
   metricRelabelings:
     - sourceLabels: [name]
       targetLabel:  devicename
@@ -37,3 +40,4 @@ spec:
       regex: 'snmp_coreasr9k_sysDescr;(?s)(.*)(Version )([0-9.]*)(.*)'
       replacement: '$3'
       targetLabel: image_version
+{{- end }}

@@ -34,14 +34,6 @@ backlog = 4096
 max_allowed_secret_in_bytes = 20000
 max_allowed_request_size_in_bytes = 1000000
 
-{{ if eq .Values.postgresql.enabled false }}
-sql_connection = {{ include "db_url_mysql" . }}
-{{ else }}
-sql_connection = {{ include "db_url" . }}
-{{ end }}
-
-{{ include "ini_sections.default_transport_url" . }}
-
 rpc_response_timeout = {{ .Values.rpc_response_timeout | default .Values.global.rpc_response_timeout | default 60 }}
 rpc_workers = {{ .Values.rpc_workers | default .Values.global.rpc_workers | default 1 }}
 
@@ -57,8 +49,6 @@ auth_version = v3
 auth_interface = internal
 www_authenticate_uri = https://{{include "keystone_api_endpoint_host_public" .}}/v3
 auth_url = {{.Values.global.keystone_api_endpoint_protocol_internal | default "http"}}://{{include "keystone_api_endpoint_host_internal" .}}:{{ .Values.global.keystone_api_port_internal | default 5000}}/v3
-username = {{ .Release.Name }}{{ .Values.global.user_suffix }}
-password = {{ required ".Values.global.barbican_service_password is missing" .Values.global.barbican_service_password }}
 user_domain_id = default
 project_name = service
 project_domain_id = default
@@ -68,8 +58,6 @@ service_token_roles_required = True
 token_cache_time = 600
 include_service_catalog = true
 service_type = key-manager
-
-{{- include "ini_sections.audit_middleware_notifications" . }}
 
 {{- include "ini_sections.cache" . }}
 
@@ -92,12 +80,4 @@ crypto_plugin = simple_crypto
 secret_store_plugin = store_crypto
 crypto_plugin = p11_crypto
 global_default = True
-
-[p11_crypto_plugin]
-library_path = {{ .Values.lunaclient.conn.library_path }}
-login = {{ .Values.lunaclient.conn.login }}
-mkek_label = {{ .Values.lunaclient.conn.mkek_label }}
-mkek_length = {{ .Values.lunaclient.conn.mkek_length }}
-hmac_label = {{ .Values.lunaclient.conn.hmac_label }}
-slot_id = {{ .Values.lunaclient.conn.slot_id }}
 {{- end }}

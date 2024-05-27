@@ -1,0 +1,23 @@
+{{- if .Values.config.monitoring.enabled }}
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: calico-controllers-metrics
+  namespace: {{ .Release.Namespace }}
+  labels:
+    prometheus: kubernetes
+spec:
+  selector:
+    matchLabels:
+      monitoring: calico-kube-controllers
+  namespaceSelector:
+    matchNames:
+    - {{ .Release.Namespace }}
+  endpoints:
+  - port: metrics
+    relabelings:
+    - sourceLabels:
+      - __meta_kubernetes_endpoint_node_name
+      targetLabel: node
+{{- end }}

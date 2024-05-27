@@ -46,6 +46,7 @@ internal_client_conf_path = /etc/swift/internal-client-no-cache.conf
 # production; do not set this option to true in a production cluster.
 auto_shard = false
 internal_client_conf_path = /etc/swift/internal-client-no-cache.conf
+recon_candidates_limit = -1
 
 [filter:healthcheck]
 use = egg:swift#healthcheck

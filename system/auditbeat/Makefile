@@ -1,9 +1,8 @@
-VERSION=7.17.12-amd64
+VERSION_EXPORTER=202404181135
+all: build-exporter push-exporter
 
-all: build push
+build-exporter:
+	docker build -t keppel.eu-de-1.cloud.sap/ccloud/auditbeat-exporter:${VERSION_EXPORTER} -f ./Dockerfile.exporter --platform linux/amd64 .
 
-build:
-	docker build --network=host -t keppel.eu-de-1.cloud.sap/ccloud/auditbeat-oss:${VERSION} --build-arg IMAGE=docker.elastic.co/beats/auditbeat-oss:${VERSION} .
-
-push:
-	docker push keppel.eu-de-1.cloud.sap/ccloud/auditbeat-oss:${VERSION}
+push-exporter:
+	docker push keppel.eu-de-1.cloud.sap/ccloud/auditbeat-exporter:${VERSION_EXPORTER}

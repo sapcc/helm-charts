@@ -299,3 +299,29 @@ groups:
         them to Sentry. Please have a look at the list of unresolved issues,
         it has been growing in the last 24 hours.
       summary: manila has reported new issues to Sentry
+
+  - alert: OpenstackManilaServiceDown
+    expr: manila_service_status{service="manila-share"} - manila_service_state{service="manila-share"} > 0
+    for: 20m
+    labels:
+      severity: info
+      support_group: compute-storage-api
+      tier: os
+      service: manila
+      context: service-status
+    annotations:
+      description: '{{ $labels.host }}: host has status enabled but is in state down for 20 minutes. Either the pod should be scaled up or the service be disabled!'
+      summary: '{{ $labels.host }}: host is enabled but is down'
+
+  - alert: OpenstackManilaServiceUpButDisabled
+    expr: manila_service_status{service="manila-share"} - manila_service_state{service="manila-share"} < 0
+    for: 20m
+    labels:
+      severity: info
+      support_group: compute-storage-api
+      tier: os
+      service: manila
+      context: service-status
+    annotations:
+      description: '{{ $labels.host }}: host has status disabled but is in state up for 20 minutes. Either the pod should be scaled down or the service be enabled!'
+      summary: '{{ $labels.host }}: host is disabled but is up'

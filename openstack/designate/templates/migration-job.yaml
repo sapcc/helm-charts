@@ -41,16 +41,23 @@ spec:
               name: container-init
       {{- if $proxysql}}
             {{- include "utils.proxysql.volume_mount" . | indent 12 }}
+            {{- include "utils.trust_bundle.volume_mount" . | indent 12 }}
         {{- include "utils.proxysql.container" . | indent 8 }}
       {{- end }}
       volumes:
         - name: designate-etc
-          configMap:
-            name: designate-etc
+          projected:
+            sources:
+            - configMap:
+                name: designate-etc
+            - secret:
+                name: {{ .Release.Name }}-secrets
+                items:
+                  - key: secrets.conf
+                    path: secrets.conf
         - name: container-init
           configMap:
             name: designate-bin
             defaultMode: 0755
-      {{- if $proxysql }}
         {{- include "utils.proxysql.volumes" . | indent 8 }}
-      {{- end }}
+        {{- include "utils.trust_bundle.volumes" . | indent 8 }}

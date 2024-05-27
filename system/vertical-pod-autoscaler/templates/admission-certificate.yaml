@@ -1,4 +1,5 @@
 {{- if .Values.admission.enabled }}
+{{- if lookup "cert-manager.io/v1" "Issuer" .Release.Namespace "vpa-admission" | not }}
 apiVersion: cert-manager.io/v1
 kind: Issuer
 metadata:
@@ -6,9 +7,12 @@ metadata:
   namespace: {{ .Release.Namespace }}
   annotations:
     "helm.sh/hook": pre-install,pre-upgrade
+    "helm.sh/hook-delete-policy": hook-failed
 spec:
   selfSigned: {}
+{{ end -}}
 ---
+{{- if lookup "cert-manager.io/v1" "Certificate" .Release.Namespace "vpa-admission" | not }}
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
@@ -16,7 +20,9 @@ metadata:
   namespace: {{ .Release.Namespace }}
   annotations:
     "helm.sh/hook": pre-install,pre-upgrade
+    "helm.sh/hook-delete-policy": hook-failed
 spec:
+  duration: {{ .Values.admission.certificate.duration | quote }}
   dnsNames:
     - vpa-webhook.{{ .Release.Namespace }}.svc
     - vpa-webhook.{{ .Release.Namespace }}.svc.cluster.local
@@ -24,4 +30,5 @@ spec:
     kind: Issuer
     name: vpa-admission
   secretName: vpa-admission-tls-certs
+{{ end -}}
 {{ end -}}

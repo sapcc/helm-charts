@@ -12,8 +12,6 @@ prune_orphans=True
 
 # Hostname:port list of APIC controllers
 apic_hosts = {{required "A valid .Values.aci required!" .Values.aci.apic_hosts}}
-apic_username = {{required "A valid .Values.aci required!" .Values.aci.apic_user}}
-apic_password = {{required "A valid .Values.aci required!" .Values.aci.apic_password}}
 apic_use_ssl = True
 apic_application_profile = {{required "A valid .Values.aci required!" .Values.aci.apic_application_profile}}
 
@@ -46,6 +44,9 @@ enable_nullroute_sync = {{ .Values.aci.enable_nullroute_sync }}
 {{- end }}
 {{- if .Values.aci.enable_az_aware_subnet_routes_sync }}
 enable_az_aware_subnet_routes_sync = {{ .Values.aci.enable_az_aware_subnet_routes_sync }}
+{{- end }}
+{{- if .Values.aci.sync_allocations_done_file_path }}
+sync_allocations_done_file_path = {{ .Values.aci.sync_allocations_done_file_path }}
 {{- end }}
 
 {{- if .Values.aci.pc_policy_groups }}

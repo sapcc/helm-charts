@@ -37,7 +37,8 @@ spec:
       containers:
       {{- range $release, $config := .Values.rhn_entitlement_checks }}
       - name: check-{{ $release }}
-        image: {{$.Values.global.dockerHubMirror}}/library/alpine:{{$.Values.image_version_auxiliary_alpine}}
+        image: {{$.Values.global.registry}}/shared-app-images/alpine-curl:3.19-latest
+        imagePullPolicy: Always
         args:
           - /bin/sh
           - /bin-check/check-rhn
@@ -56,13 +57,13 @@ spec:
           - mountPath: /bin-check
             name: bin
         resources:
-          # observed usage in qa-de-1: CPU <= 0.1m, RAM = 3-4 MiB
+          # apk add was bottled necked with 32MB taking over 2 minutes
           limits:
-            cpu: '10m'
-            memory: '32Mi'
+            cpu: '100m'
+            memory: '64Mi'
           requests:
-            cpu: '1m'
-            memory: '32Mi'
+            cpu: '10m'
+            memory: '64Mi'
       {{- end}}
       terminationGracePeriodSeconds: 1 # no need to wait long for a graceful shutdown
 {{- end }}

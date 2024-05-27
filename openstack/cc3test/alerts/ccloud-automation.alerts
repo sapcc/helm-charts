@@ -4,7 +4,8 @@ groups:
   - alert: CCloudArcApiDown
     expr: |
         cc3test_status{type="api",
-            name=~"TestArc_api.+"
+            name=~"TestArc_api.+",
+            phase="call"
         } == 0
     for: 16m
     labels:
@@ -16,7 +17,7 @@ groups:
       meta: 'CCloud Arc API is down'
       dashboard: 'cc3test-api-status?var-service={{ $labels.service }}'
       playbook: 'docs/support/playbook/automation/alerts/cc3test-alert-arc-api/'
-      report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
+      report: 'cc3test/admin/object-storage/containers/cc3test/objects/{{ $labels.base64path }}'
     annotations:
       description: 'CCloud Arc API is down'
       summary: 'CCloud Arc API is down'
@@ -24,7 +25,8 @@ groups:
   - alert: CCloudArcApiFlapping
     expr: |
         changes(cc3test_status{type="api",
-            name=~"TestArc_api.+"
+            name=~"TestArc_api.+",
+            phase="call"
         }[30m]) > 8
     labels:
       severity: warning
@@ -35,7 +37,7 @@ groups:
       meta: 'CCloud Arc API is flapping'
       dashboard: 'cc3test-api-status?var-service={{ $labels.service }}'
       playbook: 'docs/support/playbook/automation/alerts/cc3test-alert-arc-api/'
-      report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
+      report: 'cc3test/admin/object-storage/containers/cc3test/objects/{{ $labels.base64path }}'
     annotations:
       description: 'CCloud Arc API is flapping'
       summary: 'CCloud Arc API is flapping'
@@ -75,7 +77,8 @@ groups:
   - alert: CCloudLyraApiDown
     expr: |
         cc3test_status{type="api",
-            name=~"TestLyra_.api+"
+            name=~"TestLyra_.api+",
+            phase="call"
         } == 0
     for: 10m
     labels:
@@ -87,7 +90,7 @@ groups:
       meta: 'CCloud Lyra API is down'
       dashboard: 'cc3test-api-status?var-service={{ $labels.service }}'
       playbook: 'docs/support/playbook/automation/alerts/cc3test-alert-lyra-api/'
-      report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
+      report: 'cc3test/admin/object-storage/containers/cc3test/objects/{{ $labels.base64path }}'
     annotations:
       description: 'CCloud Lyra API is down'
       summary: 'CCloud Lyra API is down'
@@ -95,7 +98,8 @@ groups:
   - alert: CCloudLyraApiFlapping
     expr: |
         changes(cc3test_status{type="api",
-            name=~"TestArc_api.+"
+            name=~"TestArc_api.+",
+            phase="call"
         }[30m]) > 8
     labels:
       severity: warning
@@ -106,7 +110,7 @@ groups:
       meta: 'CCloud Lyra API is flapping'
       dashboard: 'cc3test-api-status?var-service={{ $labels.service }}'
       playbook: 'docs/support/playbook/automation/alerts/cc3test-alert-lyra-api/'
-      report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
+      report: 'cc3test/admin/object-storage/containers/cc3test/objects/{{ $labels.base64path }}'
     annotations:
       description: 'CCloud Lyra API is flapping'
       summary: 'CCloud Lyra API is flapping'
@@ -115,7 +119,8 @@ groups:
     expr: |
         cc3test_status{service="lyra",
             type="lyra_and_canary",
-            name=~"TestLyra_automation-.*"
+            name=~"TestLyra_automation-.*",
+            phase="call"
         } == 0
     for: 1h
     labels:
@@ -127,7 +132,7 @@ groups:
       meta: 'CCloud (Arc/Lyra) automation run failed'
       dashboard: 'cc3test-canary-status?var-service={{ $labels.service }}'
       playbook: 'docs/support/playbook/automation/alerts/cc3test-alert-automation/'
-      report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
+      report: 'cc3test/admin/object-storage/containers/cc3test/objects/{{ $labels.base64path }}'
     annotations:
       description: 'CCloud (Arc/Lyra) automation run failed'
       summary: 'CCloud (Arc/Lyra) automation run failed'

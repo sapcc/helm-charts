@@ -20,6 +20,8 @@
 {{- required ".Values.root_password missing" .Values.root_password }}
 {{- end -}}
 
+{{ define "mariadb.metrics_data_source" }}root:{{ required ".Values.root_password missing" .Values.root_password }}@tcp({{.Values.name}}-mariadb.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}:3306)/{{ end }}
+
 {{- define "db_password" -}}
 {{- .Values.global.dbPassword }}
 {{- end -}}
@@ -63,3 +65,11 @@
 {{/* Needed for testing purposes only. */}}
 {{define "RELEASE-NAME_db_host"}}testRelease-mariadb.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}{{end}}
 {{define "testRelease_db_host"}}testRelease-mariadb.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}{{end}}
+
+{{- define "sharedservices.labels" }}
+app.kubernetes.io/name: {{ .Chart.Name }}
+app.kubernetes.io/instance: {{ .Chart.Name }}-{{ .Release.Name }}
+app.kubernetes.io/version: {{ .Chart.Version }}
+app.kubernetes.io/component: {{ .Chart.Name }}
+app.kubernetes.io/part-of: {{ .Release.Name }}
+{{- end }}

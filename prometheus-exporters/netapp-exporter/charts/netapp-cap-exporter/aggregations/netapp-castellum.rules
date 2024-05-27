@@ -1,58 +1,82 @@
 # vim: set ft=yaml:
 
 groups:
-- name: castellum_manila
-  rules:
+  - name: castellum_manila
+    rules:
+      # Case one: default provision style, where snapshot reserve is allocated AS PART OF the target share size and snapshot reserve percentage is 5.
+      # Logical space reporting and enforcement are always disabled for them. Once resized, the share will be converted to case two or three.
+      # Share size = netapp_volume_total_bytes + netapp_volume_snapshot_reserved_bytes
+      # Share usage = netapp_volume_used_bytes
+      # Share minimal size = netapp_volume_used_bytes + netapp_volume_snapshot_reserved_bytes
 
-  # Case one: old provision style, where snapshot reserve is allocated AS PART OF the target share size and snapshot reserve percentage is 5.
-  # The logical space reporting/enforcement is always disabled for them.
-  # Share size = netapp_volume_total_bytes + netapp_volume_snapshot_reserved_bytes
-  # Share usage = netapp_volume_used_bytes
-  - record: netapp_volume_provision_case_one
-    expr: netapp_volume_percentage_snapshot_reserve{share_id!="", volume=~"share.*"} / 5 == 1
+      - record: netapp_volume_provision_case_one
+        expr: netapp_volume_percentage_snapshot_reserve{share_id!="", volume=~"share_[0-9a-f]{8}_[0-9a-f]{4}_[0-9a-f]{4}_[0-9a-f]{4}_[0-9a-f]{12}", volume_type="rw"} / 5 == 1
 
-  - record: manila_share_size_bytes_for_castellum
-    expr: netapp_volume_provision_case_one * (netapp_volume_total_bytes + netapp_volume_snapshot_reserved_bytes)
+      - record: manila_share_size_bytes_for_castellum
+        expr: netapp_volume_provision_case_one * (netapp_volume_total_bytes + netapp_volume_snapshot_reserved_bytes)
 
-  - record: manila_share_used_bytes_for_castellum
-    expr: netapp_volume_provision_case_one * netapp_volume_used_bytes
+      - record: manila_share_used_bytes_for_castellum
+        expr: netapp_volume_provision_case_one * netapp_volume_used_bytes
 
-  # We don't monitor snapshot usage for the minimal size in case one, they trun to other cases once resized.
-  - record: manila_share_minimal_size_bytes_for_castellum
-    expr: netapp_volume_provision_case_one * (netapp_volume_used_bytes + netapp_volume_snapshot_reserved_bytes)
+      - record: manila_share_minimal_size_bytes_for_castellum
+        expr: netapp_volume_provision_case_one * (netapp_volume_used_bytes + netapp_volume_snapshot_reserved_bytes)
 
-  # Case two: new provision style and logical space is NOT enabled
-  # New provision style means snapshot reserve is allocated IN ADDTION TO share size, and sanpshot reserve percentage is 50
-  # To avoid snapshot spill, share's minimal size must be larger than the snapshot used size.
-  # Share size = netapp_volume_total_bytes
-  # Share usage = netapp_volume_used_bytes
-  # Share minimal size = max(netapp_volume_used_bytes, netapp_volume_snapshot_used_bytes)
-  - record: netapp_volume_provision_case_two
-    expr: (netapp_volume_percentage_snapshot_reserve{share_id!="", volume=~"share.*"} / 50 == 1) * ((1 + netapp_volume_is_space_enforcement_logical) == 1)
+      # Case two: new provision style and logical space is NOT enabled
+      # New provision style means snapshot reserve is allocated side by side to the share space.
+      # The volume is provisioned with double of share size and sanpshot reserve percentage is set to 50.
+      # To avoid snapshot spill, share's minimal size must be larger than the snapshot used size or share used size, whichever is larger.
+      # Share size = netapp_volume_total_bytes
+      # Share usage = netapp_volume_used_bytes
+      # Share minimal size = max(netapp_volume_used_bytes, netapp_volume_snapshot_used_bytes)
+      - record: netapp_volume_provision_case_two
+        expr: (netapp_volume_percentage_snapshot_reserve{share_id!="", volume=~"share_[0-9a-f]{8}_[0-9a-f]{4}_[0-9a-f]{4}_[0-9a-f]{4}_[0-9a-f]{12}", volume_type="rw"} / 50 == 1) * ((1 + netapp_volume_is_space_enforcement_logical) == 1)
 
-  - record: manila_share_size_bytes_for_castellum
-    expr: netapp_volume_provision_case_two * netapp_volume_total_bytes
+      - record: manila_share_size_bytes_for_castellum
+        expr: netapp_volume_provision_case_two * netapp_volume_total_bytes
 
-  - record: manila_share_used_bytes_for_castellum
-    expr: netapp_volume_provision_case_two * netapp_volume_used_bytes
+      - record: manila_share_used_bytes_for_castellum
+        expr: netapp_volume_provision_case_two * netapp_volume_used_bytes
 
-  - record: manila_share_minimal_size_bytes_for_castellum
-    expr: netapp_volume_provision_case_two * on (share_id) group_left max({__name__=~"netapp_volume_used_bytes|netapp_volume_snapshot_used_bytes"}) by (share_id)
+      - record: manila_share_minimal_size_bytes_for_castellum
+        expr: netapp_volume_provision_case_two * on (share_id) group_left max({__name__=~"netapp_volume_used_bytes|netapp_volume_snapshot_used_bytes"}) by (share_id)
 
-  # Case three: new provision style and logical space enabled
-  # To avoid snapshot spill, share's minimal size must be larger than the snapshot used size.
-  # Share size = netapp_volume_total_bytes
-  # Share usage = netapp_volume_logical_used_bytes
-  # Share minimal size = max(netapp_volume_logical_used_bytes, netapp_volume_snapshot_used_bytes)
-  - record: netapp_volume_provision_case_three
-    expr: (netapp_volume_percentage_snapshot_reserve{share_id!="", volume=~"share.*"} / 50 == 1) * (netapp_volume_is_space_enforcement_logical == 1)
+      # Case three: same as case two, but logical space reporting and enforcement are enabled.
+      # Share size = netapp_volume_total_bytes
+      # Share usage = netapp_volume_logical_used_bytes
+      # Share minimal size = max(netapp_volume_logical_used_bytes, netapp_volume_snapshot_used_bytes)
+      - record: netapp_volume_provision_case_three
+        expr: (netapp_volume_percentage_snapshot_reserve{share_id!="", volume=~"share_[0-9a-f]{8}_[0-9a-f]{4}_[0-9a-f]{4}_[0-9a-f]{4}_[0-9a-f]{12}", volume_type="rw"} / 50 == 1) * (netapp_volume_is_space_enforcement_logical == 1)
 
-  - record: manila_share_size_bytes_for_castellum
-    expr: netapp_volume_provision_case_three * netapp_volume_total_bytes
+      - record: manila_share_size_bytes_for_castellum
+        expr: netapp_volume_provision_case_three * netapp_volume_total_bytes
 
-  - record: manila_share_used_bytes_for_castellum
-    expr: netapp_volume_provision_case_three * netapp_volume_logical_used_bytes
+      - record: manila_share_used_bytes_for_castellum
+        expr: netapp_volume_provision_case_three * netapp_volume_logical_used_bytes
 
-  - record: manila_share_minimal_size_bytes_for_castellum
-    expr: netapp_volume_provision_case_three * on (share_id) group_left max({__name__=~"netapp_volume_logical_used_bytes|netapp_volume_snapshot_used_bytes"}) by (share_id)
+      - record: manila_share_minimal_size_bytes_for_castellum
+        expr: netapp_volume_provision_case_three * on (share_id) group_left max({__name__=~"netapp_volume_logical_used_bytes|netapp_volume_snapshot_used_bytes"}) by (share_id)
 
+      # If the `manila_share_exclusion_reasons_for_castellum` metric has entries, Castellum will ignore the respective share.
+      # This is required because Castellum discovers shares through the Manila API, but some shares do not have
+      # size/usage metrics in the `..._for_castellum` metrics above because they are not supposed to be autoscaled.
+      # This exclusion mechanism is required to keep Castellum from being confused about the shares it's not supposed to
+      # be interested in.
+      #
+      # The `reason` label in the final aggregation rule is used by Castellum for logging ignored shares.
+
+      # Scraping will fail on shares in state "offline" because their size is always reported as 0.
+      - record: netapp_volume_exclusion_reason_offline
+        expr: count(netapp_volume_total_bytes{project_id!="", share_id!="", volume_state="offline"}) by (project_id, share_id) unless (count(netapp_volume_total_bytes{volume_state="online"}) by (project_id, share_id))
+      - record: manila_share_exclusion_reasons_for_castellum
+        expr: label_replace(netapp_volume_exclusion_reason_offline, "reason", "volume_state = offline", "share_id", ".*")
+
+      # We want to ignore "shares" that are actually snapmirror targets. It's possible that we have both metrics with
+      # volume_type="dp" and other volume_type values, in which case Castellum will only use the non-dp metrics.
+      # This check is specifically about excluding shares that are *only* snapmirrors.
+      #
+      # NOTE: Not having any useful metrics at all is not a valid reason for ignoring the share.
+      # If we lack metrics about a share, we want to be alerted by the failing scrape.
+      - record: netapp_volume_exclusion_reason_dponly
+        expr: (count(netapp_volume_total_bytes{project_id!="",share_id!="",volume_type="dp"}) by (project_id, share_id) > 0) unless (count(netapp_volume_total_bytes{project_id!="",share_id!="",volume_type!="dp"}) by (project_id, share_id) > 0)
+      - record: manila_share_exclusion_reasons_for_castellum
+        expr: label_replace(netapp_volume_exclusion_reason_dponly, "reason", "volume_type = dp", "share_id", ".*")

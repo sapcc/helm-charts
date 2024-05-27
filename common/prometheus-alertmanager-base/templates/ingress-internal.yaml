@@ -51,6 +51,19 @@ spec:
             serviceName: {{ include "alertmanager.fullname" . }}
             servicePort: 9093
           {{- end }}
+        - path: /-/healthy
+          {{- if .Capabilities.APIVersions.Has "networking.k8s.io/v1/Ingress" }}
+          pathType: ImplementationSpecific
+          backend:
+            service:
+              name: {{ include "alertmanager.fullname" . }}
+              port:
+                number: 9093
+          {{- else }}
+          backend:
+            serviceName: {{ include "alertmanager.fullname" . }}
+            servicePort: 9093
+          {{- end }}
   tls:
     - secretName: tls-internal-{{ include "fqdnHelper" (list .Values.internalIngress.host . ) | replace "." "-" }}
       hosts: [{{ include "fqdnHelper" (list .Values.internalIngress.host . ) }}]

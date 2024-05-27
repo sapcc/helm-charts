@@ -17,6 +17,7 @@ spec:
       labels:
         component: logstash-audit-external
       annotations:
+        kubectl.kubernetes.io/default-container: "logstash"
         checksum/configmap.yaml: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
         kubectl.kubernetes.io/default-container: "logstash"
     spec:
@@ -74,8 +75,13 @@ spec:
             - name: https
               containerPort: {{ .Values.input_http_port }}
               protocol: TCP
-          command: ["dumb-init","/bin/bash","/audit-etc/start.sh"]
+          command: ["/bin/bash","/audit-etc/start.sh"]
           env:
+            - name: AUDIT_HTTP_IN
+              valueFrom:
+                secretKeyRef:
+                  name: logstash-audit-external
+                  key: auditHTTPIn
             - name: NAMESPACE
               valueFrom:
                 fieldRef:

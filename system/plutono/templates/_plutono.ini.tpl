@@ -67,7 +67,8 @@ plugins = /var/lib/plutono/plugins
 type={{.Values.plutono.db.type}}
 host={{.Release.Name}}-postgresql.{{.Release.Namespace}}
 user={{.Values.postgresql.postgresUser}}
-password={{.Values.postgresql.postgresPassword}}
+# moved into the deployment ENV variables
+;password=xyz
 
 ssl_mode=disable
 #type=sqlite3
@@ -84,8 +85,9 @@ provider = postgres
 # file: session dir path, is relative to plutono data_path
 # redis: config like redis server e.g. `addr=127.0.0.1:6379,pool_size=100,db=plutono`
 # mysql: go-sql-driver/mysql dsn config string, e.g. `user:password@tcp(127.0.0.1:3306)/database_name`
+# not needed
 #;provider_config = sessions
-provider_config = user={{.Values.postgresql.postgresUser}} password={{.Values.postgresql.postgresPassword}} host={{.Release.Name}}-postgresql.{{.Release.Namespace}} port=5432 dbname=plutono sslmode=disable
+; provider_config = user={{.Values.postgresql.postgresUser}} password={{.Values.postgresql.postgresPassword}} host={{.Release.Name}}-postgresql.{{.Release.Namespace}} port=5432 dbname=plutono sslmode=disable
 #provider_config = .
 
 # Session cookie name

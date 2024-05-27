@@ -1,3 +1,4 @@
+{{- if .Values.snmp_exporter.pxdlrouteriosxr.enabled }}
 apiVersion: monitoring.coreos.com/v1alpha1
 kind: ScrapeConfig
 metadata:
@@ -8,7 +9,7 @@ metadata:
     app.kubernetes.io/name: snmp-exporter-pxdlrouteriosxr
 spec:
   httpSDConfigs:
-    - url: {{ .Values.global.http_sd_configs.netbox_url }}/devices/?custom_labels=__param_module=pxdlrouteriosxr&platform=cisco-ios-xr&status=active&region={{ .Values.global.region }}&role=directlink-router
+    - url: {{ .Values.global.http_sd_configs.netbox_url }}/devices/?custom_labels=__param_module=pxdlrouteriosxr;__param_auth=pxdlrouteriosxr_v3&platform=cisco-ios-xr&status=active&region={{ .Values.global.region }}&role=directlink-router
       refreshInterval: {{ .Values.global.http_sd_configs.refresh_interval }}
   metricsPath: /snmp
   scrapeInterval: 60s
@@ -22,6 +23,8 @@ spec:
       replacement: snmp-exporter:{{.Values.snmp_exporter.listen_port}}
     - targetLabel: module
       replacement: pxdlrouteriosxr
+    - targetLabel: __param_auth
+      replacement: pxdlrouteriosxr_v3
   metricRelabelings:
     - sourceLabels: [name]
       targetLabel:  devicename
@@ -33,3 +36,4 @@ spec:
       regex: '(\w*-\w*-\w*)-(\S*)'
       replacement: '$2'
       targetLabel: device
+{{- end }}

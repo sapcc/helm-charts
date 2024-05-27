@@ -1,0 +1,57 @@
+controllerManager:
+  kubeRbacProxy:
+    args:
+      - --secure-listen-address=0.0.0.0:8443
+      - --upstream=http://127.0.0.1:8080/
+      - --logtostderr=true
+      - --v=0
+    containerSecurityContext:
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop:
+          - ALL
+    image:
+      repository: gcr.io/kubebuilder/kube-rbac-proxy
+      tag: v0.15.0
+    resources:
+      limits:
+        cpu: 500m
+        memory: 128Mi
+      requests:
+        cpu: 5m
+        memory: 64Mi
+  manager:
+    args:
+      - --leader-elect
+      - --mac-prefixes-file=/etc/macdb/macdb.yaml
+      - --probe-image=ghcr.io/afritzler/metalprobe:latest
+      - --probe-os-image=ghcr.io/ironcore-dev/os-images/gardenlinux:1443.3
+      - --insecure=false
+      - --registry-url=http://[2a10:afc0:e013:d002::]:30010
+    containerSecurityContext:
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop:
+          - ALL
+    image:
+      repository: controller
+      tag: 94572fae2e01b8a1cb0247a4ff407e90dd484f5f
+    resources:
+      limits:
+        cpu: 300m
+        memory: 200Mi
+      requests:
+        cpu: 300m
+        memory: 50Mi
+  replicas: 1
+  serviceAccount:
+    annotations: {}
+kubernetesClusterDomain: cluster.local
+metricsService:
+  ports:
+    - name: https
+      port: 8443
+      protocol: TCP
+      targetPort: https
+  type: ClusterIP
+fullnameOverride: metal-operator

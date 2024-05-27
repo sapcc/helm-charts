@@ -1,0 +1,18 @@
+patches:
+- target:
+    kind: Deployment
+    labelSelector: "control-plane=controller-manager"
+  patch: |-
+    - op: add
+      path: /spec/template/spec/volumes/-
+      value:
+        name: ironic-credentials
+        secret:
+          defaultMode: 420
+          secretName: ironic-credentials
+    - op: add
+      path: /spec/template/spec/containers/0/volumeMounts/-
+      value:
+        name: ironic-credentials
+        mountPath: /opt/metal3/auth/ironic
+        readOnly: true

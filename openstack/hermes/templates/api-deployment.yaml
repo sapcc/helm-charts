@@ -15,14 +15,18 @@ spec:
       labels:
         name: hermes-api
       annotations:
-        checksum: {{ include "hermes/templates/api-configmap.yaml" $ | sha256sum }}
+        {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+        linkerd.io/inject: enabled
+        {{- end }}
+        kubectl.kubernetes.io/default-container: "api"
     spec:
       nodeSelector:
         zone: farm
       volumes:
         - name: config
-          configMap:
-            name: hermes
+          secret:
+            secretName: api-conf
+            defaultMode: 420
       containers:
         - name: api
           image: {{required ".Values.hermes.image is missing" .Values.hermes.image}}:{{.Values.hermes.image_tag | replace "string:" ""}}
@@ -46,7 +50,7 @@ spec:
                   name: hermes-es-api
                   key: HERMES_ES_PASSWORD
           volumeMounts:
-            - mountPath: /etc/hermes
+            - mountPath: "/etc/hermes"
               name: config
           resources:
             requests:

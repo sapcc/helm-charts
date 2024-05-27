@@ -1,0 +1,77 @@
+{{- if .Values.rgwTargetPlacements.enabled }}
+{{- range $target := .Values.rgwTargetPlacements.placements }}
+---
+apiVersion: ceph.rook.io/v1
+kind: CephBlockPool
+metadata:
+  name: {{ $target.name }}.rgw.buckets.data
+spec:
+  {{- if $target.failureDomain }}
+  failureDomain: {{ $target.failureDomain | default "host"  }}
+  {{- end }}
+  replicated:
+    size: {{ $target.size | default 3 }}
+    {{- if $target.replicasPerFailureDomain }}
+    replicasPerFailureDomain: {{ $target.replicasPerFailureDomain | default 1 }}
+    {{- end }}
+    {{- if $target.subFailureDomain }}
+    subFailureDomain: {{ $target.subFailureDomain | default "host" }}
+    {{- end }}
+  {{- if $target.crushRoot }}
+  crushRoot: {{ $target.crushRoot | default "default" }} 
+  {{- end }}
+  deviceClass: hdd
+  application: rgw
+  parameters:
+    pg_num: "256"
+    pgp_num: "256"
+---
+apiVersion: ceph.rook.io/v1
+kind: CephBlockPool
+metadata:
+  name: {{ $target.name }}.rgw.buckets.index
+spec:
+  {{- if $target.failureDomain }}
+  failureDomain: {{ $target.failureDomain | default "host"  }}
+  {{- end }}
+  replicated:
+    size: {{ $target.size | default 3 }}
+    {{- if $target.replicasPerFailureDomain }}
+    replicasPerFailureDomain: {{ $target.replicasPerFailureDomain | default 1 }}
+    {{- end }}
+    {{- if $target.subFailureDomain }}
+    subFailureDomain: {{ $target.subFailureDomain | default "host" }}
+    {{- end }}
+  {{- if $target.crushRoot }}
+  crushRoot: {{ $target.crushRoot | default "default" }} 
+  {{- end }}
+  deviceClass: nvme
+  application: rgw
+  parameters:
+    pg_num: "128"
+    pgp_num: "128"
+---
+apiVersion: ceph.rook.io/v1
+kind: CephBlockPool
+metadata:
+  name: {{ $target.name }}.rgw.buckets.non-ec
+spec:
+  failureDomain: {{ $target.failureDomain | default "host"  }}
+  replicated:
+    size: {{ $target.size | default 3 }}
+    {{- if $target.replicasPerFailureDomain }}
+    replicasPerFailureDomain: {{ $target.replicasPerFailureDomain | default 1 }}
+    {{- end }}
+    {{- if $target.subFailureDomain }}
+    subFailureDomain: {{ $target.subFailureDomain | default "host" }}
+    {{- end }}
+  {{- if $target.crushRoot }}
+  crushRoot: {{ $target.crushRoot | default "default" }} 
+  {{- end }}
+  deviceClass: nvme
+  application: rgw
+  parameters:
+    pg_num: "32"
+    pg_num: "32"
+{{- end }}
+{{- end }}

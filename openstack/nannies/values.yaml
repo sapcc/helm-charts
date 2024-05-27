@@ -1,37 +1,10 @@
+global:
+  linkerd_requested: false
+
 nannies:
   vcenter_username: DEFINED-IN-REGION-CHART
   netapp_username: DEFINED-IN-REGION-CHART
   netapp_password: DEFINED-IN-REGION-CHART
-
-vcenter_nanny:
-  enabled: false
-  docker_repo: DEFINED-IN-REGION-CHART
-  image_version: DEFINED-IN-REGION-CHART
-  debug: true
-  # dry run mode, i.e. just pretend to cleanup the entries
-  dry_run: true
-  # power off machines discovered as orphaned
-  power_off: false
-  # unregister machines discovered as orphaned
-  unregister: false
-  # delete machines discovered as orphaned
-  delete: false
-  # detach discovered ghost volumes
-  detach_ghost_volumes: false
-  # detach discovered ghost ports
-  detach_ghost_ports: false
-  # how many ghost volumes or ports to detach at maximum - if more: deny to delete any
-  detach_ghost_limit: 3
-  # enable or disable volume attachment consistency check
-  vol_check: false
-  # size of vms considered a bigvm for drs disablement in gb
-  bigvm_size: 1024
-  # size of vms considered a bigvm for setting memory shares to high in gb
-  bigvm_shares_action_size: 255
-  # run the db cleanup every n minutes
-  interval: 720
-  # really delete entities after how many iterations
-  iterations: 14
 
 # these are used by the vcenter-nanny, but set during deployment via helm --set-string
 from_cinder:
@@ -42,26 +15,9 @@ from_nova:
     dbPassword: "will_be_set_by_helm_deployment"
 current_region: "will_be_set_by_helm_deployment"
 
-vcenter_nanny_consistency:
-  enabled: false
-  # this one we use from the vcenter nanny entry above as we use the same docker repo
-  # docker_repo: DEFINED-IN-REGION-CHART
-  consistency_image_version: DEFINED-IN-REGION-CHART
-  debug: true
-  # dry run mode, i.e. just pretend to cleanup the entries
-  dry_run: true
-  # run the db consistency check every minutes
-  interval: 60
-  # do something after how many iterations
-  iterations: 6
-  # maximum number of inconsistent volumes to fix automatically - otherwise fixing will be denied
-  fix_limit: 30
-  # if cells are enabled, put the VCENTER_CONSISTENCY_HOST here as a reference to the az with an own cell db - false if not relevant
-  cell2_vc: false
-
 # nova nanny
 nova_nanny:
-  image_version: DEFINED-IN-REGION-CHART
+  image_version: '20240422090613'
   new_config: false
   enabled: false
   # run the pod with an infinite sleep loop for debugging
@@ -102,21 +58,13 @@ nova_nanny:
     interval: 720
     # really delete entities after how many iterations
     iterations: 14
-  sync_neutron_cache:
-    enabled: false
-    # dry run mode, i.e. just pretend to cleanup the entries
-    dry_run: true
-    # run the db cleanup every n minutes
-    interval: 360
-    # sync the neutron cache for bare metal nodes as well?
-    baremetal: false
   cell2:
     # this should be true if we have a second cell defined in this region
     enabled: false
 
 # cinder nanny
 cinder_nanny:
-  image_version: DEFINED-IN-REGION-CHART
+  image_version: '20240422090632'
   enabled: false
   # run the pod with an infinite sleep loop for debugging
   debug: false
@@ -145,7 +93,7 @@ cinder_nanny:
 
 # glance nanny
 glance_nanny:
-  image_version: DEFINED-IN-REGION-CHART
+  image_version: '20240422090631'
   enabled: false
   # debug mode - no script run in the containers, just a sleep loop
   debug: true
@@ -160,7 +108,7 @@ glance_nanny:
 
 # barbican nanny
 barbican_nanny:
-  image_version: DEFINED-IN-REGION-CHART
+  image_version: '20240422090632'
   enabled: false
   # debug mode - no script run in the containers, just a sleep loop
   debug: true
@@ -170,123 +118,6 @@ barbican_nanny:
     enabled: true
     # purge deleted db entries older than n days
     older_than: 100
-
-# neutron nanny
-neutron_nanny:
-  image_version: DEFINED-IN-REGION-CHART
-  enabled: false
-  # run the pod with an infinite sleep loop for debugging
-  debug: false
-  cleanup_pending_lb:
-    enabled: false
-    # dry run mode, i.e. just pretend to cleanup the entries
-    dry_run: true
-    # run the db cleanup every n minutes
-    interval: 60
-    # really delete entities after how many iterations
-    iterations: 3
-  # is mariadb enabled in manila deployment or not
-  mariadb:
-    enabled: false
-
-# big_vm balance nannies
-vm_balance_nanny:
-  enabled: false
-  debug: true
-  image_version: '20211213080711'
-  interval: 120
-  automation: false
-  denial_list: ""
-  recommender_endpoint: "disabled"
-  recommender_max_retries: 3
-  recommender_timeout: 120
-
-vmfs_balance_nanny:
-  enabled: false
-  debug: false
-  # dry run mode - do not do anything potentially harmful
-  dry_run: true
-  image_version: '20210421150210'
-  # min usage of a vmfs ds in percent to be below to still move volumes to it
-  min_usage: 70
-  # max usage of a vmfs ds in percent to be above to still move volumes away from it
-  max_usage: 80
-  # stop balancing when min and max used ds are that close in usage in percent
-  min_max_difference: 2
-  # always keep this amount of free space in gb on the target ds
-  min_freespace: 2500
-  # do not move any volumes smaller than this size in gb (legacy value)
-  volume_min_size: 20
-  # do not move any volumes larger than this size in gb (legacy value)
-  volume_max_size: 2500
-  # do not move any volumes smaller than this size in gb for aggr balancing
-  aggr_volume_min_size: 20
-  # do not move any volumes larger than this size in gb for aggr balancing
-  aggr_volume_max_size: 2500
-  # do not move any volumes smaller than this size in gb for ds balancing
-  ds_volume_min_size: 20
-  # do not move any volumes larger than this size in gb for ds balancing
-  ds_volume_max_size: 2500
-  # at max move this number of vms in one run
-  max_move_vms: 50
-  # how many minutes to wait until the next nanny run
-  interval: 120
-  # disable min_usage and max_usage and balance until they are in autopilot_range around the initial average usage across all ds
-  autopilot: true
-  autopilot_range: 4
-  # print that number of largest volumes per ds as debugging info
-  print_max: 3
-  # do hdd ds balancing as well
-  hdd: false
-  # space separated list of project ids to ignore for the balancing or false to disable
-  project_denylist: false
-  # space separated list of netapps to ignore for the balancing or false to disable
-  netapp_denylist: false
-  # space separated list of datastores to ignore for the balancing or false to disable
-  datastore_denylist: false
-
-vvol_balance_nanny:
-  enabled: false
-  debug: false
-  # dry run mode - do not do anything potentially harmful
-  dry_run: true
-  image_version: '20210421145920'
-  # min usage of a vmfs ds in percent to be below to still move volumes to it
-  min_usage: 70
-  # max usage of a vmfs ds in percent to be above to still move volumes away from it
-  max_usage: 80
-  # stop balancing when min and max used ds are that close in usage in percent
-  min_max_difference: 2
-  # always keep this amount of free space in gb on the target ds
-  min_freespace: 2500
-  # do not move any volumes smaller than this size in gb (legacy value)
-  volume_min_size: 20
-  # do not move any volumes larger than this size in gb (legacy value)
-  volume_max_size: 2500
-  # do not move any volumes smaller than this size in gb for aggr balancing
-  aggr_volume_min_size: 20
-  # do not move any volumes larger than this size in gb for aggr balancing
-  aggr_volume_max_size: 2500
-  # do not move any volumes smaller than this size in gb for ds balancing
-  ds_volume_min_size: 20
-  # do not move any volumes larger than this size in gb for ds balancing
-  ds_volume_max_size: 2500
-  # min usage of a flexvol in gb to move volumes away from it
-  # about 90% of the typical flexvol size of 5tb to avoid it autoextending early on
-  flexvol_volume_max_size: 4600
-  # at max move this number of vms in one run
-  max_move_vms: 50
-  # how many minutes to wait until the next nanny run
-  interval: 120
-  # disable min_usage and max_usage and balance until they are in autopilot_range around the initial average usage across all ds
-  autopilot: true
-  autopilot_range: 4
-  # print that number of largest volumes per ds as debugging info
-  print_max: 3
-  # space separated list of project ids to ignore for the balancing or false to disable
-  project_denylist: false
-  # space separated list of netapps to ignore for the balancing or false to disable
-  netapp_denylist: false
 
 # Deploy Nanny Prometheus alerts.
 alerts:

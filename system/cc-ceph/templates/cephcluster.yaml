@@ -1,0 +1,95 @@
+apiVersion: ceph.rook.io/v1
+kind: CephCluster
+metadata:
+  name: {{ .Values.clusterName }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  dataDirHostPath: /var/lib/rook
+  cephVersion:
+    image: {{ .Values.ceph.registry }}{{  .Values.ceph.image }}:{{ .Values.ceph.version }}
+    allowUnsupported: true
+  mon:
+    count: {{ .Values.mon.count }}
+    allowMultiplePerNode: false
+  mgr:
+    count: 1
+    allowMultiplePerNode: false
+    modules:
+      - name: rook
+        enabled: true
+  dashboard:
+    enabled: true
+  crashCollector:
+    disable: true
+  storage:
+    useAllNodes: false
+    useAllDevices: false
+    deviceFilter: {{ .Values.storage.deviceFilter | quote }}
+    config:
+      osdsPerDevice: {{ .Values.storage.config.osdsPerDevice | quote }}
+      metadataDevice: {{ .Values.storage.config.metadataDevice | quote }}
+      databaseSizeMB: {{ .Values.storage.config.databaseSizeMB | quote }}
+      encryptedDevice: {{ .Values.storage.config.encryptedDevice | quote }}
+    {{- if .Values.storage.nodes }}
+    nodes: {{ toYaml .Values.storage.nodes | nindent 4 }}
+    {{- end }}
+  monitoring:
+    enabled: true
+    createPrometheusRules: true
+  labels:
+    monitoring:
+      plugin: kube-monitoring-{{ .Values.global.cluster }}
+  network:
+    provider: host
+  healthCheck:
+    daemonHealth:
+      mon:
+        interval: 45s
+        timeout: 600s
+  priorityClassNames:
+    all: system-node-critical
+    mgr: system-cluster-critical
+  resources:
+    {{- toYaml .Values.resources | nindent 4 }}
+  disruptionManagement:
+    managePodBudgets: true
+  cephConfig: {{ toYaml .Values.cephConfig | nindent 4 }}
+  placement:
+    mgr:
+      nodeAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          nodeSelectorTerms:
+            - matchExpressions:
+                - key: kubernetes.metal.cloud.sap/role
+                  operator: In
+                  values:
+                    - {{ .Values.mgr.nodeRole }}
+    mon:
+      nodeAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          nodeSelectorTerms:
+            - matchExpressions:
+                - key: kubernetes.metal.cloud.sap/role
+                  operator: In
+                  values:
+                    - {{ .Values.mon.nodeRole }}
+    osd:
+      nodeAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          nodeSelectorTerms:
+            - matchExpressions:
+                - key: kubernetes.metal.cloud.sap/role
+                  operator: In
+                  values:
+                    - {{ .Values.osd.nodeRole }}
+                    - {{ .Values.mon.nodeRole }}
+    prepareosd:
+      nodeAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          nodeSelectorTerms:
+            - matchExpressions:
+                - key: kubernetes.metal.cloud.sap/role
+                  operator: In
+                  values:
+                    - {{ .Values.prepareosd.nodeRole }}
+                    - {{ .Values.mon.nodeRole }}

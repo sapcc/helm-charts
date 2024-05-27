@@ -29,7 +29,6 @@ spec:
         app.kubernetes.io/component: server
         {{- include "codimd.labels" . | nindent 8 }}
       annotations:
-        checksum/db-secret: {{ include (print $.Template.BasePath "/db-secret.yaml") . | sha256sum | quote }}
         checksum/auth-secret: {{ include (print $.Template.BasePath "/auth-secret.yaml") . | sha256sum | quote }}
         {{ if .Values.codimd.security.sessionSecret }}
         checksum/session-secret: {{ include (print $.Template.BasePath "/session-secret.yaml") . | sha256sum | quote }}
@@ -76,11 +75,23 @@ spec:
               value: {{ .Values.codimd.connection.protocolUseSSL | quote }}
             - name: CMD_USECDN
               value: {{ .Values.codimd.security.useCDN | quote }}
-            - name: CMD_DB_URL
+
+            - name: CMD_DB_DIALECT
+              value: {{ .Values.codimd.database.type | quote }}
+            - name: CMD_DB_HOST
+              value: {{ .Values.codimd.database.host | quote }}
+            - name: CMD_DB_PORT
+              value: {{ .Values.codimd.database.port | quote }}
+            - name: CMD_DB_DATABASE
+              value: {{ .Values.codimd.database.databaseName | quote }}
+            - name: CMD_DB_USERNAME
+              value: {{ .Values.codimd.database.username | quote }}
+            - name: CMD_DB_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: {{ template "codimd.shortName" . }}-db-secret
-                  key: connection
+                  name: '{{ .Release.Name }}-pguser-codimd'
+                  key: 'postgres-password'
+
             - name: CMD_SESSION_LIFE
               value: {{ .Values.codimd.security.sessionLife | quote }}
             - name: CMD_HSTS_ENABLE

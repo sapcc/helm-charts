@@ -1,8 +1,8 @@
+{{- if .Capabilities.APIVersions.Has "autoscaling.k8s.io/v1/VerticalPodAutoscaler" }}
 apiVersion: autoscaling.k8s.io/v1
 kind: VerticalPodAutoscaler
 metadata:
   name: disco
-  namespace: kube-system
 spec:
   targetRef:
     apiVersion: apps/v1
@@ -16,7 +16,12 @@ spec:
         controlledResources:
           - cpu
           - memory
+{{- if and .Values.resources .Values.resources.requests }}
+        minAllowed:
+          {{- toYaml .Values.resources.requests | nindent 10 }}
+{{- end }}
 {{- if and .Values.resources .Values.resources.limits }}
         maxAllowed:
-{{ toYaml .Values.resources.limits | indent 10 }}
+          {{- toYaml .Values.resources.limits | nindent 10 }}
 {{- end }}
+{{ end }}

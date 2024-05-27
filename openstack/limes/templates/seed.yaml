@@ -1,4 +1,7 @@
-{{- $domains := list "bs" "cc3test" "cp" "cis" "fsn" "hcm" "hcp03" "hda" "hec" "kyma" "monsoon3" "neo" "s4" "wbs" -}}
+{{- $vbase  := .Values.global.vaultBaseURL | required "missing value for .Values.global.vaultBaseURL" -}}
+{{- $region := .Values.global.region       | required "missing value for .Values.global.region"       -}}
+
+{{- $domains := list "bs" "btp_fp" "cc3test" "cp" "cis" "fsn" "hcm" "hcp03" "hda" "hec" "kyma" "monsoon3" "neo" "s4" "wbs" -}}
 {{- /* WARNING: When adding a new domain, also increment the domain count in the OpenstackLimesUnexpectedCloudDnsAdminRoleAssignments alert. */ -}}
 
 apiVersion: "openstack.stable.sap.cc/v1"
@@ -9,21 +12,11 @@ metadata:
 spec:
   requires:
   - {{ default .Release.Namespace .Values.global.keystoneNamespace }}/keystone-seed
-  - monsoon3/domain-bs-seed
-  - monsoon3/domain-cis-seed
-  - monsoon3/domain-cp-seed
-  - monsoon3/domain-cc3test-seed
   - monsoon3/domain-ccadmin-seed
   - monsoon3/domain-default-seed
-  - monsoon3/domain-fsn-seed
-  - monsoon3/domain-hcm-seed
-  - monsoon3/domain-hcp03-seed
-  - monsoon3/domain-hec-seed
-  - monsoon3/domain-kyma-seed
-  - monsoon3/domain-monsoon3-seed
-  - monsoon3/domain-neo-seed
-  - monsoon3/domain-s4-seed
-  - monsoon3/domain-wbs-seed
+  {{- range $domains }}
+  - monsoon3/domain-{{replace "_" "-" .}}-seed
+  {{- end }}
 
   roles:
     # our own roles
@@ -82,6 +75,12 @@ spec:
           role_assignments:
             - project: service
               role:    service
+        - name: limes-validation
+          description: User account for pre-deployment validation in CI
+          password: {{ printf "%s/%s/limes/keystone-user/validation/password" $vbase $region | quote }}
+          role_assignments:
+            - project: service
+              role:    resource_viewer # needs to be able to run `limesctl project show`
 
     - name: ccadmin
       projects:

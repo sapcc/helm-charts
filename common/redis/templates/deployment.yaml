@@ -1,3 +1,8 @@
+{{- $registry := .Values.global.registry | required ".Values.global.registry missing" -}}
+{{- if .Values.useAlternateRegion -}}
+  {{- $registry = .Values.global.registryAlternateRegion | required ".Values.global.registryAlternateRegion missing" -}}
+{{- end -}}
+
 kind: Deployment
 apiVersion: apps/v1
 metadata:
@@ -19,10 +24,6 @@ spec:
     metadata:
       labels:
         app: {{ template "redis.fullname" . }}
-        {{- if .Values.alerts.enabled }}
-        alert-tier: {{ required ".Values.alerts.tier missing" .Values.alerts.tier }}
-        alert-service: {{ include "alerts.service" . }}
-        {{- end }}
       annotations:
         kubectl.kubernetes.io/default-container: {{ template "redis.fullname" . }}
         {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
@@ -31,8 +32,8 @@ spec:
     spec:
       containers:
       - name: {{ template "redis.fullname" . }}
-        image: {{ template "redis.image" . }}
-        imagePullPolicy: {{ default "" .Values.image.pullPolicy | quote }}
+        image: {{ $registry }}/shared-app-images/alpine-redis:{{ .Values.image.tag }}
+        imagePullPolicy: {{ if contains "latest" .Values.image.tag }}Always{{ else }}IfNotPresent{{ end }}
         args:
         {{- if .Values.config }}
         - /etc/redis/redis.conf

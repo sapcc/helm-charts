@@ -22,8 +22,6 @@ spec:
     metadata:
       labels:
         name: tenso-worker
-        alert-tier: os
-        alert-service: tenso
       annotations:
         kubectl.kubernetes.io/default-container: worker
         checksum/configmap: {{ include "tenso/templates/configmap.yaml" . | sha256sum }}
@@ -36,13 +34,8 @@ spec:
           configMap:
             name: tenso
         - name: keys
-          projected:
-            sources:
-              - secret:
-                  name: tenso-secret
-                  items:
-                    - key:  servicenow-private-key.pem
-                      path: servicenow-private-key.pem
+          secret:
+            secretName: tenso-keys
       containers:
         - name: worker
           image: {{ include "tenso_image" $ }}
