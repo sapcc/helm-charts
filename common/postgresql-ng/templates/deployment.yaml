@@ -131,6 +131,19 @@ spec:
         - name: dev-shm
           mountPath: /dev/shm
         {{- end }}
+      {{- if .Values.crontab }}
+      - name: cron
+        image: "{{ include "preferredRegistry" . }}/shared-app-images/alpine-psql:3.20-latest"
+        command:
+          - /bin/sh
+          - -c
+          - |
+            /usr/bin/crontab /crontab/root
+            exec crond -f -d8
+        volumeMounts:
+        - name: crontab
+          mountPath: /crontab
+      {{- end }}
       serviceAccountName: {{ template "postgres.fullname" . }}
       volumes:
       - name: postgres-etc
@@ -143,7 +156,12 @@ spec:
       {{- else }}
         emptyDir: {}
       {{- end }}
-        {{- if .Values.sqlOnCreate }}
+      {{- if .Values.crontab }}
+      - name: crontab
+        configMap:
+          name: {{ template "postgres.fullname" . }}-crontab
+      {{- end }}
+      {{- if .Values.sqlOnCreate }}
       - name: sql-on-create
         configMap:
           name: {{ template "postgres.fullname" . }}-sql-on-create
