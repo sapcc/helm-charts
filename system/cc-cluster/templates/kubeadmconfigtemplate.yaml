@@ -23,6 +23,9 @@ spec:
               directories:
               - path: /etc/kubernetes/manifests
                 overwrite: true
+              - path: /etc/systemd/system/kubeadm.service.d
+                mode: 0755
+                overwrite: true
 {{- if $cluster.ignitionDirectories }}
 {{- toYaml $cluster.ignitionDirectories | nindent 14 }}
 {{- end }}
@@ -294,17 +297,12 @@ spec:
                   inline: |
                     net.bridge.bridge-nf-call-ip6tables = 1
                     net.bridge.bridge-nf-call-iptables = 1
-              - path: /opt/bin/kubeadm_patch.sh
+              - path: /etc/systemd/system/kubeadm.service.d/10-flatcar.conf
                 filesystem: root
-                mode: 0744
+                mode: 0644
                 contents:
                   inline: |
                     #!/bin/bash
-                    PATH=$PATH:/bin
-
-                    /usr/bin/mkdir --parent /etc/systemd/system/kubeadm.service.d
-
-                    /bin/cat > /etc/systemd/system/kubeadm.service.d/10-flatcar.conf << EOF
                     [Unit]
                     # kubeadm must run after coreos-metadata populated /run/metadata directory.
                     Requires=kube_up.service
@@ -312,7 +310,6 @@ spec:
                     [Service]
                     # Make metadata environment variables available for pre-kubeadm commands.
                     EnvironmentFile=/run/metadata/*
-                    EOF
               - path: /opt/network_up.sh
                 filesystem: root
                 mode: 0744
@@ -399,21 +396,6 @@ spec:
 {{- end }}
             systemd:
               units:
-              - name: kubeadm-patch.service
-                enabled: true
-                contents: |
-                  [Unit]
-                  Description=Patch kubeadm
-                  Before=kubeadm.service
-                  
-                  [Service]
-                  Type=oneshot
-                  ExecStart=/opt/bin/kubeadm_patch.sh
-                  ExecStartPost=systemctl daemon-reload
-                  ExecStartPost=systemctl disable kubeadm-patch.service
-                  
-                  [Install]
-                  WantedBy=multi-user.target kubeadm.service
               - name: kubelet.service
                 enable: true
                 contents: |
