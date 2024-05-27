@@ -14,12 +14,14 @@ spec:
     metadata:
       labels:
         app: maintenance-controller
+        {{- .Values.deployment.extraLabels | toYaml | nindent 8 }}
       annotations:
         prometheus.io/scrape: "true"
         prometheus.io/targets: kubernetes
         {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
         linkerd.io/inject: enabled
         {{- end }}
+        {{- .Values.deployment.extraAnnotations | toYaml | nindent 8 }}
     spec:
       affinity:
         podAntiAffinity:
