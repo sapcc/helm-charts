@@ -112,14 +112,14 @@ for node in bm.node.list(
 
     manufacturer = (node.properties.get("manufacturer") or "").lower()
 
-    if manufacturer == "dell" and node.resource_class != "zh2mlx1.large":
+    if manufacturer != "dell" or node.resource_class == "zh2mlx1.large":
         # zh2mlx1.large is too old
-        patch = patch_idrac
+        patch = patch_ipxe
     else:
         address = node.driver_info["ipmi_address"]
         username = node.driver_info["ipmi_username"]
         password = node.driver_info["ipmi_password"]
-        patch = patch_ipxe + [
+        patch = patch_idrac + [
             {
                 "path": "/driver_info/redfish_address",
                 "value": "https://" + address,
