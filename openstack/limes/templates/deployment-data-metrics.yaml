@@ -2,31 +2,29 @@ kind: Deployment
 apiVersion: apps/v1
 
 metadata:
-  name: limes-collect-ccloud
+  name: limes-data-metrics
   labels:
-    app: limes-collect
+    app: limes-data-metrics
     release: "{{.Release.Name}}"
-  annotations:
-    configmap.reloader.stakater.com/reload: limes-auto-overrides
 
 spec:
-  minReadySeconds: 10 # to capture errors from config/override parsing
   revisionHistoryLimit: 5
   replicas: 1
   strategy:
-    type: Recreate
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
   selector:
     matchLabels:
-      name: limes-collect-ccloud
+      name: limes-data-metrics
   template:
     metadata:
       labels:
-        name: limes-collect-ccloud
-        app: limes-collect
+        name: limes-data-metrics
       annotations:
         checksum/configmap: {{ include "limes/templates/configmap.yaml" . | sha256sum }}
         checksum/secret: {{ include "limes/templates/secret.yaml" . | sha256sum }}
-        kubectl.kubernetes.io/default-container: collect
+        kubectl.kubernetes.io/default-container: metrics
         prometheus.io/scrape: "true"
         prometheus.io/targets: {{ required ".Values.alerts.prometheus.openstack missing" .Values.alerts.prometheus.openstack | quote }}
     spec:
@@ -34,20 +32,17 @@ spec:
         - name: config
           configMap:
             name: limes
-        - name: config-auto-overrides
-          configMap:
-            name: limes-auto-overrides
       containers:
-        - name: collect
+        - name: metrics
           image: {{ include "limes_image" . }}
           imagePullPolicy: IfNotPresent
           args:
-            - collect
+            - serve-data-metrics
             - /etc/limes/limes.yaml
           env:
             {{ include "limes_common_envvars" . | indent 12 }}
-            - name: LIMES_QUOTA_OVERRIDES_PATH
-              value: "/etc/limes-auto-overrides/quota-overrides.json"
+            - name: LIMES_DATA_METRICS_SKIP_ZERO
+              value: "true"
           livenessProbe:
             httpGet:
               path: /healthcheck
@@ -60,18 +55,15 @@ spec:
           volumeMounts:
             - mountPath: /etc/limes
               name: config
-            - mountPath: /etc/limes-auto-overrides
-              name: config-auto-overrides
           ports:
             - name: metrics
               containerPort: 8080
           {{- if .Values.limes.resources.enabled }}
           resources:
-            # observed usage: CPU = 50m-500m, RAM = 100 MiB in small regions, spikes up to more than 750 MiB in large regions
             limits:
-                cpu: '1000m'
-                memory: '1000Mi'
+                cpu: '500m'
+                memory: '500Mi'
             requests:
-                cpu: '300m'
-                memory: '1000Mi'
+                cpu: '100m'
+                memory: '500Mi'
           {{- end }}
