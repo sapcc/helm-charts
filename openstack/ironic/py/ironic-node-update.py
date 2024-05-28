@@ -106,7 +106,7 @@ for node in bm.node.list(
     if node.provision_state not in states:
         continue
 
-    manufacturer = (node.properties.get("manufacturer") or "").lower()
+    manufacturer = (node.properties.get("manufacturer") or "").split(" ")[0].lower()
 
     if manufacturer != "dell" or node.resource_class == "zh2mlx1.large":
         # zh2mlx1.large is too old
