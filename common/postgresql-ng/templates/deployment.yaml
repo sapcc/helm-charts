@@ -53,7 +53,8 @@ spec:
         - name: DEPLOYMENT_NAME
           value: {{ $deployment_name }}
         - name: USERS
-          value: {{ keys (.Values.users | required ".Values.users must be configured") | sortAlpha | join " " | quote }}
+          {{- $allUserNames := keys (.Values.users | required ".Values.users must be configured") | sortAlpha }}
+          value: "{{ range $user := $allUserNames }}{{ $settings := index $.Values.users $user }}{{ if typeIs "map[string]interface {}" $settings }}{{ if hasKey $settings "secretName" }}{{ $user }} {{ end }}{{ end }}{{ end }}"
         command: [ ash, -c, {{ .Files.Get "bin/init-generate-secrets.sh" | quote }} ]
 
       containers:
@@ -87,8 +88,13 @@ spec:
         - name: USER_PASSWORD_{{ $user | replace "-" "_" }}
           valueFrom:
             secretKeyRef:
+        {{- if not (and (typeIs "map[string]interface {}" $settings) (and (hasKey $settings "secretName") (hasKey $settings "secretKey"))) }}
               name: {{ $.Release.Name }}-pguser-{{ $user }}
               key: postgres-password
+        {{- else }}
+              name: {{ $settings.secretName }}
+              key:  {{ $settings.secretKey }}
+        {{- end }}
         {{- end }}
 
         ports:
