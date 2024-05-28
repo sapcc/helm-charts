@@ -1,5 +1,5 @@
 {{- if .Values.barbican_nanny.enabled }}
-{{- if .Values.barbican_nanny.db_purge.enabled }}
+{{- if .Values.barbican_nanny.db_secret_move.enabled }}
 kind: Deployment
 apiVersion: apps/v1
 metadata:
@@ -43,7 +43,7 @@ spec:
         {{- include "utils.linkerd.pod_and_service_annotation" . | indent 8 }}
     spec:
       {{ include "utils.proxysql.pod_settings" . | indent 6 }}
-{{- if .Values.barbican_nanny.db_purge.enabled }}
+{{- if .Values.barbican_nanny.db_secret_move.enabled }}
       containers:
       - name: db-consistency-and-purge
         image: {{ required ".Values.global.registry is missing" .Values.global.registry }}/loci-barbican:{{.Values.imageVersionbarbicanApi | default .Values.imageVersion | default .Values.image_version | required "Please set barbican.imageVersion or similar"}}
@@ -54,12 +54,12 @@ spec:
         env:
         - name: COMMAND
           value: "{{ if not .Values.barbican_nanny.debug }}/bin/bash /scripts/barbican-db-consistency-and-purge.sh{{ else }}sleep inf{{ end }}"
-        - name: BARBICAN_DB_PURGE_ENABLED
-          value: {{ .Values.barbican_nanny.db_purge.enabled | quote }}
-        - name: BARBICAN_DB_PURGE_OLDER_THAN
-          value: {{ .Values.barbican_nanny.db_purge.older_than | quote }}
-        - name: BARBICAN_DB_PURGE_MAX_NUMBER
-          value: {{ .Values.barbican_nanny.db_purge.max_number | quote }}
+        - name: BARBICAN_DB_SECRET_MOVE_ENABLED
+          value: {{ .Values.barbican_nanny.db_secret_move.enabled | quote }}
+        - name: BARBICAN_DB_OLD_PROJECT_ID
+          value: {{ .Values.barbican_nanny.db_secret_move.old_project_id | quote }}
+        - name: BARBICAN_DB_NEW_PROJECT_ID
+          value: {{ .Values.barbican_nanny.db_secret_move.new_project_id | quote }}
         - name: BARBICAN_NANNY_INTERVAL
           value: {{ .Values.barbican_nanny.interval | quote }}
         {{- if .Values.sentry.enabled }}

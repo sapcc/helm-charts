@@ -16,19 +16,21 @@
 #    under the License.
 #
 
-echo "INFO: moving secrets in the barbican db"
+set -e
 
-export OS_USER_DOMAIN_NAME
-export OS_PROJECT_NAME
-export OS_PASSWORD
-export OS_AUTH_URL
-export OS_USERNAME
-export OS_PROJECT_DOMAIN_NAME
+unset http_proxy https_proxy all_proxy no_proxy
 
-if [ "$BARBICAN_DB_CLEANUP_DRY_RUN" = "False" ] || [ "$BARBICAN_DB_CLEANUP_DRY_RUN" = "false" ]; then
-    DRY_RUN=""
-else
-    DRY_RUN="--dry-run"
-fi
+# we run an endless loop to run the script periodically
+echo "INFO: starting a loop to periodically run the nanny job for the BARBICAN secret movement"
+while true; do
 
-python3 /scripts/db-cleanup.py $DRY_RUN --iterations $BARBICAN_DB_CLEANUP_ITERATIONS --interval $BARBICAN_DB_CLEANUP_INTERVAL --BARBICAN
+    # there is no consistency check for BARBICAN yet
+
+    if [ "$BARBICAN_DB_SECRET_MOVE_ENABLED" = "True" ] || [ "$BARBICAN_DB_SECRET_MOVE_ENABLED" = "true" ]; then
+        date
+        /var/lib/openstack/bin/barbican-manage sap move_secrets --old-project-id $BARBICAN_DB_OLD_PROJECT_ID --new-project-id $BARBICAN_DB_NEW_PROJECT_ID
+    fi
+    echo -n "INFO: waiting $BARBICAN_NANNY_INTERVAL minutes before starting the next loop run - "
+    date
+    sleep $(( 60 * $BARBICAN_NANNY_INTERVAL ))
+done
