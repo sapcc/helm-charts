@@ -23,6 +23,9 @@ spec:
               directories:
               - path: /etc/kubernetes/manifests
                 overwrite: true
+              - path: /etc/systemd/system/kubeadm.service.d
+                mode: 0755
+                overwrite: true
 {{- if $cluster.ignitionDirectories }}
 {{- toYaml $cluster.ignitionDirectories | nindent 14 }}
 {{- end }}
@@ -49,6 +52,33 @@ spec:
                         runtime_type = "io.containerd.runc.v2"
                       [plugins."io.containerd.grpc.v1.cri".containerd.runtimes.runc.options]
                         SystemdCgroup = true
+              - path: /etc/ssh/sshd_config
+                filesystem: root
+                mode: 393
+                overwrite: true
+                contents:
+                  inline: |
+                    # Use most defaults for sshd configuration.
+                    #Subsystem sftp internal-sftp
+                    ClientAliveInterval 180
+                    UseDNS no
+                    UsePAM yes
+
+                    # handled by PAM
+                    PrintLastLog no
+
+                    # handled by PAM
+                    PrintMotd no
+
+                    Ciphers chacha20-poly1305@openssh.com,aes128-ctr,aes192-ctr,aes256-ctr,aes128-gcm@openssh.com,aes256-gcm@openssh.com
+                    MACs hmac-sha2-256-etm@openssh.com,hmac-sha2-512-etm@openssh.com,hmac-sha2-256,hmac-sha2-512,umac-128-etm@openssh.com,umac-128@openssh.com
+                    KexAlgorithms curve25519-sha256,curve25519-sha256@libssh.org,ecdh-sha2-nistp256,ecdh-sha2-nistp384,ecdh-sha2-nistp521,diffie-hellman-group-exchange-sha256,diffie-hellman-group16-sha512,diffie-hellman-group18-sha512,diffie-hellman-group14-sha256
+              - path: /etc/modprobe.d/blacklist.conf
+                filesystem: root
+                mode: 393
+                contents:
+                  inline: |
+                    blacklist nfs_layout_nfsv41_files
               - path: /opt/bin/kube.sh
                 filesystem: root
                 mode: 393
@@ -267,6 +297,18 @@ spec:
                   inline: |
                     net.bridge.bridge-nf-call-ip6tables = 1
                     net.bridge.bridge-nf-call-iptables = 1
+              - path: /etc/systemd/system/kubeadm.service.d/10-flatcar.conf
+                filesystem: root
+                mode: 0644
+                contents:
+                  inline: |
+                    [Unit]
+                    # kubeadm must run after coreos-metadata populated /run/metadata directory.
+                    Requires=kube_up.service
+                    After=kube_up.service
+                    [Service]
+                    # Make metadata environment variables available for pre-kubeadm commands.
+                    EnvironmentFile=/run/metadata/*
               - path: /opt/network_up.sh
                 filesystem: root
                 mode: 0744
@@ -353,18 +395,6 @@ spec:
 {{- end }}
             systemd:
               units:
-              - name: kubeadm.service
-                enabled: true
-                dropins:
-                - name: 10-flatcar.conf
-                  contents: |
-                    [Unit]
-                    # kubeadm must run after coreos-metadata populated /run/metadata directory.
-                    Requires=kube_up.service
-                    After=kube_up.service
-                    [Service]
-                    # Make metadata environment variables available for pre-kubeadm commands.
-                    EnvironmentFile=/run/metadata/*
               - name: kubelet.service
                 enable: true
                 contents: |
@@ -470,6 +500,8 @@ spec:
                   ExecStartPre=/usr/bin/sleep 10
                   ExecStart=/opt/bin/kube.sh
                   ExecStartPost=systemctl disable kube_up.service
+                  [Install]
+                  WantedBy=kubeadm.service
               # needed to register node after kubeadm
               - name: kubelet_restart.service
                 enabled: true
@@ -494,6 +526,7 @@ spec:
       users:
       - name: {{ $cluster.userName | default $.Values.user.name }}
         passwd: {{ $cluster.userPasswordhash | default $.Values.user.passwordhash }}
+        groups: "sudo"
         sshAuthorizedKeys:
         - {{ $cluster.userKey | default $.Values.user.key | quote }}
 {{- if $cluster.additionalUsers }}
