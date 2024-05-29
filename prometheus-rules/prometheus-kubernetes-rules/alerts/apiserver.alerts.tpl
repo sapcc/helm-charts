@@ -35,7 +35,7 @@ groups:
       summary: An ApiServer is DOWN
 
   - alert: KubernetesApiServerScrapeMissing
-    expr: absent(up{job="kubernetes-apiserver"})
+    expr: up{job=~".*apiserver.*"} == 0 or absent(up{job=~".*apiserver.*"})
     for: 1h
     labels:
       tier: {{ required ".Values.tier missing" .Values.tier }}
