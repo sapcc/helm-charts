@@ -41,11 +41,6 @@ if [[ ! -e /usr/lib/postgresql/$PGVERSION ]]; then
   exit 1
 fi
 
-# make sure that we never accidentially start multiple postgres on the same PVC
-LOCKFILE=${PGDATA}/lock
-exec 9>${LOCKFILE} || exit 4
-flock -n 9
-
 # this script is run with USER root the first time; here we do some things that require root,
 # afterwards we re-exec this script with USER postgres and run the rest
 if [[ $(id -u) == 0 ]]; then
@@ -93,6 +88,11 @@ fi
 export PATH="$PGBIN:$PATH"
 created_db=false
 updated_db=false
+
+# make sure that we never accidentially start multiple postgres on the same PVC
+LOCKFILE=${PGDATA}/lock
+exec 9>${LOCKFILE} || exit 4
+flock -n 9
 
 # always generate a new, random password on each start
 PGPASSWORD="$(head -c 30 </dev/urandom | base64)"
