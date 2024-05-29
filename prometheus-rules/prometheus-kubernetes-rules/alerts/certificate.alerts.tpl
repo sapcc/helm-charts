@@ -7,7 +7,7 @@ groups:
     labels:
       tier: {{ required ".Values.tier missing" .Values.tier }}
       context: availability
-      service: certificates
+      service: {{ required ".Values.service missing" .Values.service }}
       severity: info
       support_group: {{ include "supportGroupFromLabelsOrDefault" . }}
     annotations:

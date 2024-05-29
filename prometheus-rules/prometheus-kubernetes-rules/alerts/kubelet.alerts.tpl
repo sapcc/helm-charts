@@ -8,7 +8,7 @@ groups:
     labels:
       tier: {{ required ".Values.tier missing" .Values.tier }}
       support_group: {{ required ".Values.supportGroup missing" .Values.supportGroup }}
-      service: kubelet
+      service: {{ required ".Values.service missing" .Values.service }}
       severity: critical
       context: kubelet
       dashboard: kubernetes-health
@@ -23,7 +23,7 @@ groups:
     labels:
       tier: {{ required ".Values.tier missing" .Values.tier }}
       support_group: {{ required ".Values.supportGroup missing" .Values.supportGroup }}
-      service: kubelet
+      service: {{ required ".Values.service missing" .Values.service }}
       severity: warning
       context: kubelet
       meta: "{{`{{ $labels.node }}`}}"
@@ -40,7 +40,7 @@ groups:
     labels:
       tier: {{ required ".Values.tier missing" .Values.tier }}
       support_group: {{ required ".Values.supportGroup missing" .Values.supportGroup }}
-      service: kubelet
+      service: {{ required ".Values.service missing" .Values.service }}
       severity: warning
       context: kubelet
       meta: "{{`{{ $labels.node }}`}}"
@@ -55,7 +55,7 @@ groups:
     labels:
       tier: {{ required ".Values.tier missing" .Values.tier }}
       support_group: {{ required ".Values.supportGroup missing" .Values.supportGroup }}
-      service: kubelet
+      service: {{ required ".Values.service missing" .Values.service }}
       severity: warning
       context: kubelet
       meta: "{{`{{ $labels.node }}`}}"
