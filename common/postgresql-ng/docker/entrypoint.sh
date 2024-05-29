@@ -90,7 +90,7 @@ created_db=false
 updated_db=false
 
 # make sure that we never accidentially start multiple postgres on the same PVC
-LOCKFILE=${PGDATA}/lock
+LOCKFILE=/var/lib/postgresql/lock
 exec 9>${LOCKFILE} || exit 4
 flock -n 9
 
