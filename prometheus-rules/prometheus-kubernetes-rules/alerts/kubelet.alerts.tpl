@@ -70,7 +70,7 @@ groups:
     labels:
       tier: {{ required ".Values.tier missing" .Values.tier }}
       support_group: {{ required ".Values.supportGroup missing" .Values.supportGroup }}
-      service: k8s
+      service: {{ required ".Values.service missing" .Values.service }}
       severity: warning
       context: kubelet
       meta: "{{`{{ $labels.node }}`}}"
@@ -84,7 +84,7 @@ groups:
     labels:
       tier: {{ required ".Values.tier missing" .Values.tier }}
       support_group: {{ required ".Values.supportGroup missing" .Values.supportGroup }}
-      service: k8s
+      service: {{ required ".Values.service missing" .Values.service }}
       severity: warning
       context: kubelet
       meta: "{{`{{ $labels.node }}`}}"
@@ -102,7 +102,7 @@ groups:
     labels:
       tier: {{ required ".Values.tier missing" .Values.tier }}
       support_group: {{ required ".Values.supportGroup missing" .Values.supportGroup }}
-      service: k8s
+      service: {{ required ".Values.service missing" .Values.service }}
       severity: warning
       context: kubelet
       meta: "Many 5xx responses for Kubelet on {{`{{ $labels.node }}`}} "
