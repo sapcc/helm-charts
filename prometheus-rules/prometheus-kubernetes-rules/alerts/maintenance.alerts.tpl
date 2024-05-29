@@ -9,7 +9,7 @@ groups:
     labels:
       tier: {{ required ".Values.tier missing" .Values.tier }}
       support_group: {{ required ".Values.supportGroup missing" .Values.supportGroup }}
-      service: node
+      service: {{ required ".Values.service missing" .Values.service }}
       severity: none
       context: node
       meta: "Node {{`{{ $labels.node }}`}} is in maintenance."
@@ -29,7 +29,7 @@ groups:
     labels:
       tier: {{ required ".Values.tier missing" .Values.tier }}
       support_group: {{ required ".Values.supportGroup missing" .Values.supportGroup }}
-      service: node
+      service: {{ required ".Values.service missing" .Values.service }}
       severity: warning
       context: maintenance-controller
       meta: "Node {{`{{ $labels.node }}`}} is stuck in maintenance for 1 hour."
@@ -44,7 +44,7 @@ groups:
     labels:
       tier: {{ required ".Values.tier missing" .Values.tier }}
       support_group: {{ required ".Values.supportGroup missing" .Values.supportGroup }}
-      service: node
+      service: {{ required ".Values.service missing" .Values.service }}
       severity: warning
       context: maintenance-controller
       meta: "Cluster {{`{{ $labels.cluster }}`}} has a disparity in flatcar versions."
