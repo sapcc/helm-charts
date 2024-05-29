@@ -13,13 +13,13 @@ metadata:
     component: barbican
 spec:
   replicas: {{ .Values.barbican_nanny.replicas }}
-  revisionHistoryLimit: {{ .Values.upgrades.revisionHistory }}
+  revisionHistoryLimit: {{ .Values.pod.lifecycle.upgrades.deployments.revisionHistory }}
   strategy:
-    type: {{ .Values.upgrades.podReplacementStrategy }}
-    {{ if eq .Values.upgrades.podReplacementStrategy "RollingUpdate" }}
+    type: {{ .Values.pod.lifecycle.upgrades.deployments.podReplacementStrategy }}
+    {{ if eq .Values.pod.lifecycle.upgrades.deployments.podReplacementStrategy "RollingUpdate" }}
     rollingUpdate:
-      maxUnavailable: {{ .Values.upgrades.rollingUpdate.maxUnavailable }}
-      maxSurge: {{ .Values.upgrades.rollingUpdate.maxSurge }}
+      maxUnavailable: {{ .Values.pod.lifecycle.upgrades.deployments.rollingUpdate.maxUnavailable }}
+      maxSurge: {{ .Values.pod.lifecycle.upgrades.deployments.rollingUpdate.maxSurge }}
     {{ end }}
   selector:
     matchLabels:
@@ -45,15 +45,15 @@ spec:
       {{ include "utils.proxysql.pod_settings" . | indent 6 }}
 {{- if .Values.barbican_nanny.db_secret_move.enabled }}
       containers:
-      - name: db-consistency-and-purge
-        image: {{ required ".Values.global.registry is missing" .Values.global.registry }}/loci-barbican:{{.Values.imageVersionbarbicanApi | default .Values.imageVersion | default .Values.image_version | required "Please set barbican.imageVersion or similar"}}
+      - name: db-check
+        image: {{ required ".Values.global.registry is missing" .Values.global.registry }}/loci-barbican:{{.Values.imageVersionBarbicanApi | default .Values.imageVersionBarbicanApi | required "Please set barbican.imageVersion or similar"}}
         imagePullPolicy: IfNotPresent
         command:
         - dumb-init
         - kubernetes-entrypoint
         env:
         - name: COMMAND
-          value: "{{ if not .Values.barbican_nanny.debug }}/bin/bash /scripts/barbican-db-consistency-and-purge.sh{{ else }}sleep inf{{ end }}"
+          value: "{{ if not .Values.barbican_nanny.debug }}/bin/bash /scripts/barbican-db-check.sh{{ else }}sleep inf{{ end }}"
         - name: BARBICAN_DB_SECRET_MOVE_ENABLED
           value: {{ .Values.barbican_nanny.db_secret_move.enabled | quote }}
         - name: BARBICAN_DB_OLD_PROJECT_ID
@@ -78,8 +78,8 @@ spec:
             cpu: "100m"
         volumeMounts:
         - name: barbican-scripts
-          mountPath: /scripts/barbican-db-consistency-and-purge.sh
-          subPath: barbican-db-consistency-and-purge.sh
+          mountPath: /scripts/barbican-db-check.sh
+          subPath: barbican-db-check.sh
           readOnly: true
         - name: barbican-etc
           mountPath: /etc/barbican/barbican-api.conf

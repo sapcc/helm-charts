@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (c) 2018 SAP SE
+# Copyright (c) 2024 SAP SE
 # All Rights Reserved.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
