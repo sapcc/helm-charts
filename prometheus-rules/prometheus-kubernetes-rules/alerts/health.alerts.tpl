@@ -8,7 +8,7 @@ groups:
     labels:
       tier: {{ required ".Values.tier missing" .Values.tier }}
       support_group: {{ required ".Values.supportGroup missing" .Values.supportGroup }}
-      service: k8s
+      service: {{ required ".Values.service missing" .Values.service }}
       severity: critical
       context: node
       meta: "{{`{{ $value }}`}} nodes NotReady"
@@ -24,7 +24,7 @@ groups:
     labels:
       tier: {{ required ".Values.tier missing" .Values.tier }}
       support_group: {{ required ".Values.supportGroup missing" .Values.supportGroup }}
-      service: k8s
+      service: {{ required ".Values.service missing" .Values.service }}
       severity: warning
       context: node
       meta: "{{`{{ $labels.node }}`}} is NotReady"
@@ -41,7 +41,7 @@ groups:
     labels:
       tier: {{ required ".Values.tier missing" .Values.tier }}
       support_group: {{ required ".Values.supportGroup missing" .Values.supportGroup }}
-      service: k8s
+      service: {{ required ".Values.service missing" .Values.service }}
       severity: warning
       context: node
       meta: "{{`{{ $labels.node }}`}}"
@@ -56,7 +56,7 @@ groups:
     labels:
       tier: {{ required ".Values.tier missing" .Values.tier }}
       support_group: {{ required ".Values.supportGroup missing" .Values.supportGroup }}
-      service: k8s
+      service: {{ required ".Values.service missing" .Values.service }}
       severity: warning
       context: node
       dashboard: kubernetes-health
@@ -99,7 +99,7 @@ groups:
     labels:
       tier: {{ required ".Values.tier missing" .Values.tier }}
       support_group: {{ required ".Values.supportGroup missing" .Values.supportGroup }}
-      service: k8s
+      service: {{ required ".Values.service missing" .Values.service }}
       severity: warning
       context: system
       meta: "{{`{{ $labels.node }}`}}"
