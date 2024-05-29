@@ -51,7 +51,7 @@ groups:
       description: Node {{`{{ $labels.node }}`}} is flapping between Ready and NotReady
 
   - alert: KubernetesKubeStateMetricsScrapeFailed
-    expr: absent(up{app="kube-state-metrics"})
+    expr: up{job=~".*kube-state-metrics.*"} == 0 or absent(up{job=~".*kube-state-metrics.*"})
     for: 1h
     labels:
       tier: {{ required ".Values.tier missing" .Values.tier }}
