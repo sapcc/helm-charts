@@ -1,7 +1,7 @@
-{{- $mirror  := .Values.global.quayIoMirror | required "missing value for .Values.global.quayIoMirror" -}}
-{{- $db_name := .Values.db_name             | default .Release.Name -}}
-{{- $db_host := .Values.db_host             | default (printf "%s-postgresql" .Release.Name) -}}
-{{- $db_host = printf "%s.%s.svc" $db_host .Release.Namespace -}}
+{{- $registry := .Values.global.registry | required "missing value for .Values.global.registry" -}}
+{{- $db_name  := .Values.db_name         | default .Release.Name -}}
+{{- $db_host  := .Values.db_host         | default (printf "%s-postgresql" .Release.Name) -}}
+{{- $db_host  = printf "%s.%s.svc" $db_host .Release.Namespace -}}
 
 kind: Deployment
 apiVersion: apps/v1
@@ -32,7 +32,7 @@ spec:
     spec:
       containers:
       - name: metrics
-        image: "{{ $mirror }}/{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+        image: "{{ $registry }}/{{ .Values.image.repository }}:{{ .Values.image.tag }}"
         imagePullPolicy: IfNotPresent
         env:
         - name: DATA_SOURCE_URI
