@@ -11,3 +11,8 @@
 - action: replace
   target_label: cluster
   replacement: {{ if $root.Values.global.cluster }}{{ $root.Values.global.cluster }}{{ else }}{{ $root.Values.global.region }}{{ end }}
+
+- action: replace
+  source_labels: [alertname]
+  target_label: incident_group_key
+  replacement: {{ printf "%s_%s_$1" $root.Values.global.region ($root.Values.global.cluster | default $root.Values.global.region) }}
