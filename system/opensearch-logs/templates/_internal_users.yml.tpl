@@ -26,6 +26,24 @@ storage:
   backend_roles:
   - "storage"
 
+compute:
+  hash: "{{ .Values.users.compute.hash }}"
+  reserved: true
+  backend_roles:
+  - "compute"
+
+otel:
+  hash: "{{ .Values.users.otel.hash }}"
+  reserved: true
+  backend_roles:
+  - "otel"
+
+otellogs:
+  hash: "{{ .Values.users.otellogs.hash }}"
+  reserved: true
+  backend_roles:
+  - "otellogs"
+
 {{- if .Values.qalogs.enabled }}
 dataqade2:
   hash: "{{ .Values.users.dataqade2.hash }}"

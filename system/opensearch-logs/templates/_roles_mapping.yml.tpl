@@ -39,13 +39,28 @@ jump:
 
 logstash:
   reserved: false
-  backend_roles:
+  users:
   - "logstash"
 
 storage:
   reserved: false
-  backend_roles:
+  users:
   - "storage"
+
+compute:
+  reserved: false
+  users:
+  - "compute"
+
+otel:
+  reserved: false
+  users:
+  - "otel"
+
+otellogs:
+  reserved: false
+  users:
+  - "otellogs"
 
 jaeger:
   reserved: false
@@ -56,7 +71,6 @@ complex-role:
   reserved: false
   hidden: false
   backend_roles:
-  #- CC_IAS_TEAM_SUPERVISION
   - CC_IAS_OPERATIONS_UI_KIBANA_SUPPORT
 
 kibana_user:
@@ -68,7 +82,6 @@ ml_full_access:
   reserved: true
   backend_roles:
   - CC_IAS_OPERATIONS_UI_KIBANA_SUPPORT
-
 
 readall:
   reserved: false

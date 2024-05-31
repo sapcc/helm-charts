@@ -76,9 +76,6 @@ spec:
           - name: severity
             matchType: "=~"
             value: critical|warning|info
-          - name: cluster_type
-            matchType: "=~"
-            value: {{ .Values.clusterTypes | join "|" }}
           - name: region
             matchType: "=~"
             value: {{ without .Values.regions "qa-de-1" | join "|" }}
@@ -170,7 +167,7 @@ spec:
             value: info|warning|critical
           - name: service
             matchType: "=~"
-            value: alerting|backup|castellum|cc3test|exporter|gatekeeper|grafana|hermes|jumpserver|keppel|limes|logs|maia|metis|metrics|repo|slack-alert-reactions|swift|tenso
+            value: alerting|backup|castellum|cc3test|ceph|exporter|gatekeeper|grafana|hermes|jumpserver|keppel|limes|logs|maia|metis|metrics|repo|slack-alert-reactions|swift|tenso
           - name: region
             matchType: "=~"
             value: {{ without .Values.regions "qa-de-1" | join "|" }}
@@ -205,9 +202,6 @@ spec:
           - name: severity
             matchType: "="
             value: critical
-          - name: cluster_type
-            matchType: "=~"
-            value: {{ .Values.clusterTypes | join "|" }}
           - name: region
             matchType: "=~"
             value: global|{{ without .Values.regions "qa-de-1" | join "|" }}
@@ -221,9 +215,6 @@ spec:
           - name: severity
             matchType: "="
             value: critical
-          - name: cluster_type
-            matchType: "=~"
-            value: {{ .Values.clusterTypes | join "|" }}
           - name: region
             matchType: "=~"
             value: global|{{ without .Values.regions "qa-de-1" | join "|" }}
@@ -237,9 +228,6 @@ spec:
           - name: severity
             matchType: "="
             value: critical
-          - name: cluster_type
-            matchType: "=~"
-            value: {{ .Values.clusterTypes | join "|" }}
           - name: region
             matchType: "=~"
             value: global|{{ without .Values.regions "qa-de-1" | join "|" }}
@@ -253,9 +241,6 @@ spec:
           - name: severity
             matchType: "="
             value: critical
-          - name: cluster_type
-            matchType: "=~"
-            value: {{ .Values.clusterTypes | join "|" }}
           - name: region
             matchType: "=~"
             value: global|{{ without .Values.regions "qa-de-1" | join "|" }}
@@ -269,9 +254,6 @@ spec:
           - name: severity
             matchType: "="
             value: critical
-          - name: cluster_type
-            matchType: "=~"
-            value: {{ .Values.clusterTypes | join "|" }}
           - name: region
             matchType: "=~"
             value: global|{{ without .Values.regions "qa-de-1" | join "|" }}
@@ -285,9 +267,6 @@ spec:
           - name: severity
             matchType: "="
             value: critical
-          - name: cluster_type
-            matchType: "=~"
-            value: {{ .Values.clusterTypes | join "|" }}
           - name: region
             matchType: "=~"
             value: global|{{ without .Values.regions "qa-de-1" | join "|" }}
@@ -301,9 +280,6 @@ spec:
           - name: severity
             matchType: "="
             value: critical
-          - name: cluster_type
-            matchType: "=~"
-            value: {{ .Values.clusterTypes | join "|" }}
           - name: region
             matchType: "=~"
             value: global|{{ without .Values.regions "qa-de-1" | join "|" }}
@@ -317,9 +293,6 @@ spec:
           - name: severity
             matchType: "="
             value: critical
-          - name: cluster_type
-            matchType: "=~"
-            value: {{ .Values.clusterTypes | join "|" }}
           - name: region
             matchType: "=~"
             value: global|{{ without .Values.regions "qa-de-1" | join "|" }}
@@ -333,15 +306,12 @@ spec:
           - name: severity
             matchType: "="
             value: critical
-          - name: cluster_type
-            matchType: "=~"
-            value: {{ .Values.clusterTypes | join "|" }}
           - name: region
             matchType: "=~"
             value: global|{{ without .Values.regions "qa-de-1" | join "|" }}
           - name: support_group
-            matchType: "="
-            value: src
+            matchType: "=~"
+            value: src|network-data|network-security|network-lb|network-wan|storage|capacity-ops
 
       - receiver: support_group_alerts_warning
         continue: true
@@ -349,9 +319,6 @@ spec:
           - name: severity
             matchType: "="
             value: warning
-          - name: cluster_type
-            matchType: "=~"
-            value: {{ .Values.clusterTypes | join "|" }}
           - name: region
             matchType: "=~"
             value: global|{{ without .Values.regions "qa-de-1" | join "|" }}
@@ -502,7 +469,6 @@ spec:
 
   receivers:
     - name: slack
-      continue: true
 
     - name: slack_ad_info
       slackConfigs:
@@ -518,30 +484,6 @@ spec:
           apiURL:
             name: alertmanager-{{ include "alertmanagerRelease.name" . }}-slack-secrets
             key: slack_webhookURL
-          {{- include "slack.template" . | nindent 10 }}
-
-    - name: slack_vmware_info
-      slackConfigs:
-        - channel: '#alert-vmware-info'
-          apiURL:
-            name: alertmanager-{{ include "alertmanagerRelease.name" . }}-slack-secrets
-            key: slack_webhookURL
-          {{- include "slack.template" . | nindent 10 }}
-
-    - name: slack_vmware_warning
-      slackConfigs:
-        - channel: '#alert-vmware-warning'
-          apiURL:
-            name: alertmanager-{{ include "alertmanagerRelease.name" . }}-slack-secrets 
-            key: slack_vmware_warningwebhookURL
-          {{- include "slack.template" . | nindent 10 }}
-
-    - name: slack_vmware_critical
-      slackConfigs:
-        - channel: '#alert-vmware-critical'
-          apiURL:
-            name: alertmanager-{{ include "alertmanagerRelease.name" . }}-slack-secrets 
-            key: slack_vmware_criticalwebhookURL
           {{- include "slack.template" . | nindent 10 }}
 
     - name: slack_by_k8s_service
