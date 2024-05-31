@@ -309,6 +309,15 @@ spec:
                     [Service]
                     # Make metadata environment variables available for pre-kubeadm commands.
                     EnvironmentFile=/run/metadata/*
+             - path: /opt/bin/garp_update.sh
+                filesystem: root
+                mode: 0744
+                contents:
+                  inline: |
+                    #!/bin/bash
+                    UPLINK_INTERFACE=$(/usr/bin/ip route | grep -v cbr | awk '/default/ { print $5 }')
+                    MY_IP=$(/usr/bin/ip route | grep $UPLINK_INTERFACE | awk '/src/ { print $9 }')
+                    /usr/bin/arping -c 5 -U $MY_IP -I $UPLINK_INTERFACE
               - path: /opt/network_up.sh
                 filesystem: root
                 mode: 0744
@@ -515,6 +524,21 @@ spec:
                   ExecStartPre=/usr/bin/sleep 60
                   ExecStart=systemctl restart kubelet
                   ExecStartPost=systemctl disable kubelet_restart.service
+                  [Install]
+                  WantedBy=multi-user.target
+              # send a Gratuitous ARP to upsteam switches when System Boots
+              # this is needed for ACI switches to update their entries in case of MAC address change
+              - name: garp_update.service
+                enabled: true
+                contents: |
+                  [Unit]
+                  Description=Gratuitous ARP notify upstream switches
+                  Wants=network_up.target
+                  After=network_up.target
+                  [Service]
+                  Type=oneshot
+                  ExecStartPre=/usr/bin/sleep 10
+                  ExecStart=/opt/bin/garp_update.sh
                   [Install]
                   WantedBy=multi-user.target
 {{- if $cluster.ignitionSystemdUnits }}
