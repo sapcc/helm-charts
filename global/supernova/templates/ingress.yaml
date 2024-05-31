@@ -10,6 +10,15 @@ metadata:
     nginx.ingress.kubernetes.io/affinity: "cookie"
     ingress.kubernetes.io/ssl-redirect: "true"
     nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    {{ if eq .Values.region "qa-de-1" }}
+    nginx.ingress.kubernetes.io/permanent-redirect: "https://dashboard.greenhouse-qa.eu-nl-1.cloud.sap"
+    ingress.kubernetes.io/permanent-redirect: "https://dashboard.greenhouse-qa.eu-nl-1.cloud.sap/"
+    # Code für production-Umgebung
+    {{ else }}
+    nginx.ingress.kubernetes.io/permanent-redirect: "https://dashboard.greenhouse.global.cloud.sap"
+    ingress.kubernetes.io/permanent-redirect: "https://dashboard.greenhouse.global.cloud.sap"
+    # Code für andere Umgebungen
+    {{ end }}
     kubernetes.io/tls-acme: "true"
     
     {{- if .Values.ingress.internet_facing }}
