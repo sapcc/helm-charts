@@ -64,7 +64,7 @@ def disabled_console(bm, node):
             bm.node.set_console_mode(node.uuid, "true")
 
 
-def _filtered_patch(node, patch):
+def filtered_patch(node, patch):
     for pi in patch:
         _, *path = pi["path"].split("/")
         target_value = pi["value"]
@@ -77,10 +77,6 @@ def _filtered_patch(node, patch):
                 yield {"op": "replace", **pi}
         except KeyError:
             yield {"op": "add", **pi}
-
-
-def filtered_patch(node, patch):
-    return list(_filtered_patch(node, patch))
 
 
 for node in bm.node.list(
@@ -110,7 +106,7 @@ for node in bm.node.list(
     if node.provision_state not in states:
         continue
 
-    manufacturer = (node.properties.get("manufacturer") or "").lower()
+    manufacturer = (node.properties.get("manufacturer") or "").split(" ")[0].lower()
 
     if manufacturer != "dell" or node.resource_class == "zh2mlx1.large":
         # zh2mlx1.large is too old
@@ -134,7 +130,7 @@ for node in bm.node.list(
             },
         ]
 
-    patch = filtered_patch(node, patch)
+    patch = list(filtered_patch(node, patch))
     if not patch:
         continue
 
