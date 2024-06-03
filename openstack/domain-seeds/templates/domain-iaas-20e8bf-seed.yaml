@@ -1,8 +1,11 @@
+
 {{- if ne .Values.global_setup true }}
-apiVersion: "openstack.stable.sap.cc/v1"
-kind: "OpenstackSeed"
+apiVersion: seeder.cloud.sap/v1
+kind: CcloudSeed
 metadata:
   name: domain-iaas-20e8bf-seed
+  annotations:
+    operatorVersion: "1.0"
   labels:
     app: {{ template "fullname" . }}
     chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
@@ -11,80 +14,9 @@ metadata:
 spec:
   requires:
   - {{.Values.global.keystoneNamespace}}/keystone-seed
-
   domains:
   - name: iaas-20e8bf
     description: External Customer Domain iaas-20e8bf
-
-    projects:
-    - name: admin
-      description: 'iaas-20e8bf Administrators Project'
-    - name: iaas-20e8bf-net-infra
-      description: 'Home of address-scopes, subnetpools, external networks, subnets for the iaas-20e8bf domain'
-    - name: iaas-20e8bf-shared-infra
-      description: 'Home of private networks, backup networks and routers for the iaas-20e8bf domain'
-
-    groups:
-    - name: iaas-20e8bf_API_SUPPORT
-      role_assignments:
-      - domain: iaas-20e8bf
-        role: admin
-      - domain: iaas-20e8bf
-        role: cloud_identity_viewer
-        inherited: true
-
-    - name: iaas-20e8bf_COMPUTE_SUPPORT
-      role_assignments:
-      - domain: iaas-20e8bf
-        role: cloud_identity_viewer
-        inherited: true
-
-    - name: iaas-20e8bf_STORAGE_SUPPORT
-      role_assignments:
-      - domain: iaas-20e8bf
-        role: cloud_identity_viewer
-        inherited: true
-
-    - name: iaas-20e8bf_NETWORK_SUPPORT
-      role_assignments:
-      - domain: iaas-20e8bf
-        role: cloud_identity_viewer
-        inherited: true
-
-    - name: iaas-20e8bf_SERVICE_DESK
-      role_assignments:
-      - domain: iaas-20e8bf
-        role: cloud_identity_viewer
-        inherited: true
-
-    - name: iaas-20e8bf_DOMAIN_MEMBERS
-      role_assignments:
-      - domain: iaas-20e8bf
-        role: member
-
-    - name: iaas-20e8bf_DOMAIN_ADMINS
-      role_assignments:
-      - domain: iaas-20e8bf
-        role: admin
-      - domain: iaas-20e8bf
-        role: member
-      - project: admin
-        role: admin
-      - project: admin
-        role: member
-
-    - name: iaas-20e8bf_DOMAIN_NETWORK_ADMINS
-      role_assignments:
-      - project: iaas-20e8bf-net-infra
-        role: admin
-      - project: iaas-20e8bf-shared-infra
-        role: admin
-
-    - name: iaas-20e8bf_DOMAIN_RESOURCE_ADMINS
-      role_assignments:
-      - domain: iaas-20e8bf
-        role: admin
-
     config:
       identity:
         driver: {{ .Values.ldapDriver | default "cc_ldap" }}
@@ -121,4 +53,75 @@ spec:
         auth_pool_size: 100
         auth_pool_connection_lifetime: 60
         debug_level: {{ .Values.ldapDebugLevel }}
+  projects:
+  - name: admin
+    domain: iaas-20e8bf
+    description: 'iaas-20e8bf Administrators Project'
+  - name: iaas-20e8bf-net-infra
+    domain: iaas-20e8bf
+    description: 'Home of address-scopes, subnetpools, external networks, subnets for the iaas-20e8bf domain'
+  - name: iaas-20e8bf-shared-infra
+    domain: iaas-20e8bf
+    description: 'Home of private networks, backup networks and routers for the iaas-20e8bf domain'
+
+  groups:
+  - name: iaas-20e8bf_API_SUPPORT
+    domain: iaas-20e8bf
+  - name: iaas-20e8bf_COMPUTE_SUPPORT
+    domain: iaas-20e8bf
+  - name: iaas-20e8bf_STORAGE_SUPPORT
+    domain: iaas-20e8bf
+  - name: iaas-20e8bf_NETWORK_SUPPORT
+    domain: iaas-20e8bf
+  - name: iaas-20e8bf_SERVICE_DESK
+    domain: iaas-20e8bf
+  - name: iaas-20e8bf_DOMAIN_MEMBERS
+    domain: iaas-20e8bf
+  - name: iaas-20e8bf_DOMAIN_ADMINS
+    domain: iaas-20e8bf
+  - name: iaas-20e8bf_DOMAIN_NETWORK_ADMINS
+    domain: iaas-20e8bf
+  - name: iaas-20e8bf_DOMAIN_RESOURCE_ADMINS
+    domain: iaas-20e8bf
+
+  role_assignments:
+  - group: "iaas-20e8bf_API_SUPPORT@iaas-20e8bf"
+    role: admin
+  - group: "iaas-20e8bf_API_SUPPORT@iaas-20e8bf"
+    role: cloud_identity_viewer
+  - group: "iaas-20e8bf_COMPUTE_SUPPORT@iaas-20e8bf"
+    role: cloud_identity_viewer
+    inherited: true
+  - group: "iaas-20e8bf_STORAGE_SUPPORT@iaas-20e8bf"
+    role: cloud_identity_viewer
+    inherited: true
+  - group: "iaas-20e8bf_NETWORK_SUPPORT@iaas-20e8bf"
+    role: cloud_identity_viewer
+    inherited: true
+  - group: "iaas-20e8bf_SERVICE_DESK@iaas-20e8bf"
+    role: cloud_identity_viewer
+    inherited: true
+  - group: "iaas-20e8bf_DOMAIN_MEMBERS@iaas-20e8bf"
+    role: member
+  - group: "iaas-20e8bf_DOMAIN_ADMINS@iaas-20e8bf"
+    role: admin
+  - group: "iaas-20e8bf_DOMAIN_ADMINS@iaas-20e8bf"
+    role: member
+  
+  - group: "iaas-20e8bf_DOMAIN_ADMINS@iaas-20e8bf"
+    project: admin@iaas-20e8bf
+    role: admin
+  - group: "iaas-20e8bf_DOMAIN_ADMINS@iaas-20e8bf"
+    project: admin@iaas-20e8bf
+    role: member
+
+  - group: "iaas-20e8bf_DOMAIN_NETWORK_ADMINS@iaas-20e8bf"
+    project: iaas-20e8bf-net-infra@iaas-20e8bf
+    role: admin
+  - group: "iaas-20e8bf_DOMAIN_NETWORK_ADMINS@iaas-20e8bf"
+    project: iaas-20e8bf-shared-infra@iaas-20e8bf
+    role: admin
+  - group: "iaas-20e8bf_DOMAIN_RESOURCE_ADMINS@iaas-20e8bf"
+    role: admin
+  
 {{- end }}

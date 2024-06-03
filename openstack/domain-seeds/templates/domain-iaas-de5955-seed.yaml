@@ -1,8 +1,11 @@
+
 {{- if ne .Values.global_setup true }}
-apiVersion: "openstack.stable.sap.cc/v1"
-kind: "OpenstackSeed"
+apiVersion: seeder.cloud.sap/v1
+kind: CcloudSeed
 metadata:
   name: domain-iaas-de5955-seed
+  annotations:
+    operatorVersion: "1.0"
   labels:
     app: {{ template "fullname" . }}
     chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
@@ -11,80 +14,9 @@ metadata:
 spec:
   requires:
   - {{.Values.global.keystoneNamespace}}/keystone-seed
-
   domains:
   - name: iaas-de5955
     description: External Customer Domain iaas-de5955
-
-    projects:
-    - name: admin
-      description: 'iaas-de5955 Administrators Project'
-    - name: iaas-de5955-net-infra
-      description: 'Home of address-scopes, subnetpools, external networks, subnets for the iaas-de5955 domain'
-    - name: iaas-de5955-shared-infra
-      description: 'Home of private networks, backup networks and routers for the iaas-de5955 domain'
-
-    groups:
-    - name: iaas-de5955_API_SUPPORT
-      role_assignments:
-      - domain: iaas-de5955
-        role: admin
-      - domain: iaas-de5955
-        role: cloud_identity_viewer
-        inherited: true
-
-    - name: iaas-de5955_COMPUTE_SUPPORT
-      role_assignments:
-      - domain: iaas-de5955
-        role: cloud_identity_viewer
-        inherited: true
-
-    - name: iaas-de5955_STORAGE_SUPPORT
-      role_assignments:
-      - domain: iaas-de5955
-        role: cloud_identity_viewer
-        inherited: true
-
-    - name: iaas-de5955_NETWORK_SUPPORT
-      role_assignments:
-      - domain: iaas-de5955
-        role: cloud_identity_viewer
-        inherited: true
-
-    - name: iaas-de5955_SERVICE_DESK
-      role_assignments:
-      - domain: iaas-de5955
-        role: cloud_identity_viewer
-        inherited: true
-
-    - name: iaas-de5955_DOMAIN_MEMBERS
-      role_assignments:
-      - domain: iaas-de5955
-        role: member
-
-    - name: iaas-de5955_DOMAIN_ADMINS
-      role_assignments:
-      - domain: iaas-de5955
-        role: admin
-      - domain: iaas-de5955
-        role: member
-      - project: admin
-        role: admin
-      - project: admin
-        role: member
-
-    - name: iaas-de5955_DOMAIN_NETWORK_ADMINS
-      role_assignments:
-      - project: iaas-de5955-net-infra
-        role: admin
-      - project: iaas-de5955-shared-infra
-        role: admin
-
-    - name: iaas-de5955_DOMAIN_RESOURCE_ADMINS
-      role_assignments:
-      - domain: iaas-de5955
-        role: admin
-
     config:
       identity:
         driver: {{ .Values.ldapDriver | default "cc_ldap" }}
@@ -121,4 +53,75 @@ spec:
         auth_pool_size: 100
         auth_pool_connection_lifetime: 60
         debug_level: {{ .Values.ldapDebugLevel }}
+  projects:
+  - name: admin
+    domain: iaas-de5955
+    description: 'iaas-de5955 Administrators Project'
+  - name: iaas-de5955-net-infra
+    domain: iaas-de5955
+    description: 'Home of address-scopes, subnetpools, external networks, subnets for the iaas-de5955 domain'
+  - name: iaas-de5955-shared-infra
+    domain: iaas-de5955
+    description: 'Home of private networks, backup networks and routers for the iaas-de5955 domain'
+
+  groups:
+  - name: iaas-de5955_API_SUPPORT
+    domain: iaas-de5955
+  - name: iaas-de5955_COMPUTE_SUPPORT
+    domain: iaas-de5955
+  - name: iaas-de5955_STORAGE_SUPPORT
+    domain: iaas-de5955
+  - name: iaas-de5955_NETWORK_SUPPORT
+    domain: iaas-de5955
+  - name: iaas-de5955_SERVICE_DESK
+    domain: iaas-de5955
+  - name: iaas-de5955_DOMAIN_MEMBERS
+    domain: iaas-de5955
+  - name: iaas-de5955_DOMAIN_ADMINS
+    domain: iaas-de5955
+  - name: iaas-de5955_DOMAIN_NETWORK_ADMINS
+    domain: iaas-de5955
+  - name: iaas-de5955_DOMAIN_RESOURCE_ADMINS
+    domain: iaas-de5955
+
+  role_assignments:
+  - group: "iaas-de5955_API_SUPPORT@iaas-de5955"
+    role: admin
+  - group: "iaas-de5955_API_SUPPORT@iaas-de5955"
+    role: cloud_identity_viewer
+  - group: "iaas-de5955_COMPUTE_SUPPORT@iaas-de5955"
+    role: cloud_identity_viewer
+    inherited: true
+  - group: "iaas-de5955_STORAGE_SUPPORT@iaas-de5955"
+    role: cloud_identity_viewer
+    inherited: true
+  - group: "iaas-de5955_NETWORK_SUPPORT@iaas-de5955"
+    role: cloud_identity_viewer
+    inherited: true
+  - group: "iaas-de5955_SERVICE_DESK@iaas-de5955"
+    role: cloud_identity_viewer
+    inherited: true
+  - group: "iaas-de5955_DOMAIN_MEMBERS@iaas-de5955"
+    role: member
+  - group: "iaas-de5955_DOMAIN_ADMINS@iaas-de5955"
+    role: admin
+  - group: "iaas-de5955_DOMAIN_ADMINS@iaas-de5955"
+    role: member
+  
+  - group: "iaas-de5955_DOMAIN_ADMINS@iaas-de5955"
+    project: admin@iaas-de5955
+    role: admin
+  - group: "iaas-de5955_DOMAIN_ADMINS@iaas-de5955"
+    project: admin@iaas-de5955
+    role: member
+
+  - group: "iaas-de5955_DOMAIN_NETWORK_ADMINS@iaas-de5955"
+    project: iaas-de5955-net-infra@iaas-de5955
+    role: admin
+  - group: "iaas-de5955_DOMAIN_NETWORK_ADMINS@iaas-de5955"
+    project: iaas-de5955-shared-infra@iaas-de5955
+    role: admin
+  - group: "iaas-de5955_DOMAIN_RESOURCE_ADMINS@iaas-de5955"
+    role: admin
+  
 {{- end }}

@@ -1,8 +1,10 @@
 {{- if ne .Values.global_setup true }}
-apiVersion: "openstack.stable.sap.cc/v1"
-kind: "OpenstackSeed"
+apiVersion: seeder.cloud.sap/v1
+kind: CcloudSeed
 metadata:
   name: domain-iaas-ec5a3e-seed
+  annotations:
+    operatorVersion: "1.0"
   labels:
     app: {{ template "fullname" . }}
     chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
@@ -11,80 +13,9 @@ metadata:
 spec:
   requires:
   - {{.Values.global.keystoneNamespace}}/keystone-seed
-
   domains:
   - name: iaas-ec5a3e
     description: External Customer Domain iaas-ec5a3e
-
-    projects:
-    - name: admin
-      description: 'iaas-ec5a3e Administrators Project'
-    - name: iaas-ec5a3e-net-infra
-      description: 'Home of address-scopes, subnetpools, external networks, subnets for the iaas-ec5a3e domain'
-    - name: iaas-ec5a3e-shared-infra
-      description: 'Home of private networks, backup networks and routers for the iaas-ec5a3e domain'
-
-    groups:
-    - name: iaas-ec5a3e_API_SUPPORT
-      role_assignments:
-      - domain: iaas-ec5a3e
-        role: admin
-      - domain: iaas-ec5a3e
-        role: cloud_identity_viewer
-        inherited: true
-
-    - name: iaas-ec5a3e_COMPUTE_SUPPORT
-      role_assignments:
-      - domain: iaas-ec5a3e
-        role: cloud_identity_viewer
-        inherited: true
-
-    - name: iaas-ec5a3e_STORAGE_SUPPORT
-      role_assignments:
-      - domain: iaas-ec5a3e
-        role: cloud_identity_viewer
-        inherited: true
-
-    - name: iaas-ec5a3e_NETWORK_SUPPORT
-      role_assignments:
-      - domain: iaas-ec5a3e
-        role: cloud_identity_viewer
-        inherited: true
-
-    - name: iaas-ec5a3e_SERVICE_DESK
-      role_assignments:
-      - domain: iaas-ec5a3e
-        role: cloud_identity_viewer
-        inherited: true
-
-    - name: iaas-ec5a3e_DOMAIN_MEMBERS
-      role_assignments:
-      - domain: iaas-ec5a3e
-        role: member
-
-    - name: iaas-ec5a3e_DOMAIN_ADMINS
-      role_assignments:
-      - domain: iaas-ec5a3e
-        role: admin
-      - domain: iaas-ec5a3e
-        role: member
-      - project: admin
-        role: admin
-      - project: admin
-        role: member
-
-    - name: iaas-ec5a3e_DOMAIN_NETWORK_ADMINS
-      role_assignments:
-      - project: iaas-ec5a3e-net-infra
-        role: admin
-      - project: iaas-ec5a3e-shared-infra
-        role: admin
-
-    - name: iaas-ec5a3e_DOMAIN_RESOURCE_ADMINS
-      role_assignments:
-      - domain: iaas-ec5a3e
-        role: admin
-
     config:
       identity:
         driver: {{ .Values.ldapDriver | default "cc_ldap" }}
@@ -121,4 +52,75 @@ spec:
         auth_pool_size: 100
         auth_pool_connection_lifetime: 60
         debug_level: {{ .Values.ldapDebugLevel }}
+  projects:
+  - name: admin
+    domain: iaas-ec5a3e
+    description: 'iaas-ec5a3e Administrators Project'
+  - name: iaas-ec5a3e-net-infra
+    domain: iaas-ec5a3e
+    description: 'Home of address-scopes, subnetpools, external networks, subnets for the iaas-ec5a3e domain'
+  - name: iaas-ec5a3e-shared-infra
+    domain: iaas-ec5a3e
+    description: 'Home of private networks, backup networks and routers for the iaas-ec5a3e domain'
+
+  groups:
+  - name: iaas-ec5a3e_API_SUPPORT
+    domain: iaas-ec5a3e
+  - name: iaas-ec5a3e_COMPUTE_SUPPORT
+    domain: iaas-ec5a3e
+  - name: iaas-ec5a3e_STORAGE_SUPPORT
+    domain: iaas-ec5a3e
+  - name: iaas-ec5a3e_NETWORK_SUPPORT
+    domain: iaas-ec5a3e
+  - name: iaas-ec5a3e_SERVICE_DESK
+    domain: iaas-ec5a3e
+  - name: iaas-ec5a3e_DOMAIN_MEMBERS
+    domain: iaas-ec5a3e
+  - name: iaas-ec5a3e_DOMAIN_ADMINS
+    domain: iaas-ec5a3e
+  - name: iaas-ec5a3e_DOMAIN_NETWORK_ADMINS
+    domain: iaas-ec5a3e
+  - name: iaas-ec5a3e_DOMAIN_RESOURCE_ADMINS
+    domain: iaas-ec5a3e
+
+  role_assignments:
+  - group: "iaas-ec5a3e_API_SUPPORT@iaas-ec5a3e"
+    role: admin
+  - group: "iaas-ec5a3e_API_SUPPORT@iaas-ec5a3e"
+    role: cloud_identity_viewer
+  - group: "iaas-ec5a3e_COMPUTE_SUPPORT@iaas-ec5a3e"
+    role: cloud_identity_viewer
+    inherited: true
+  - group: "iaas-ec5a3e_STORAGE_SUPPORT@iaas-ec5a3e"
+    role: cloud_identity_viewer
+    inherited: true
+  - group: "iaas-ec5a3e_NETWORK_SUPPORT@iaas-ec5a3e"
+    role: cloud_identity_viewer
+    inherited: true
+  - group: "iaas-ec5a3e_SERVICE_DESK@iaas-ec5a3e"
+    role: cloud_identity_viewer
+    inherited: true
+  - group: "iaas-ec5a3e_DOMAIN_MEMBERS@iaas-ec5a3e"
+    role: member
+  - group: "iaas-ec5a3e_DOMAIN_ADMINS@iaas-ec5a3e"
+    role: admin
+  - group: "iaas-ec5a3e_DOMAIN_ADMINS@iaas-ec5a3e"
+    role: member
+  
+  - group: "iaas-ec5a3e_DOMAIN_ADMINS@iaas-ec5a3e"
+    project: admin@iaas-ec5a3e
+    role: admin
+  - group: "iaas-ec5a3e_DOMAIN_ADMINS@iaas-ec5a3e"
+    project: admin@iaas-ec5a3e
+    role: member
+
+  - group: "iaas-ec5a3e_DOMAIN_NETWORK_ADMINS@iaas-ec5a3e"
+    project: iaas-ec5a3e-net-infra@iaas-ec5a3e
+    role: admin
+  - group: "iaas-ec5a3e_DOMAIN_NETWORK_ADMINS@iaas-ec5a3e"
+    project: iaas-ec5a3e-shared-infra@iaas-ec5a3e
+    role: admin
+  - group: "iaas-ec5a3e_DOMAIN_RESOURCE_ADMINS@iaas-ec5a3e"
+    role: admin
+  
 {{- end }}
