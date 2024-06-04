@@ -3,6 +3,7 @@ rhea:
   debug: {{ .Values.rhea.debug }}
   auth:
     keystone:
+{{- if .Values.config.keystone }}
       region: {{ .Values.config.keystone.region }}
       authUrl: {{ .Values.config.keystone.authUrl }}
       endpointType: {{ .Values.config.keystone.endpointType }}
