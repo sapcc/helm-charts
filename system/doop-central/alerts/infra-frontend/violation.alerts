@@ -49,3 +49,18 @@ groups:
           summary: "Vulnerable images in prod deployments of {{ title $labels.service }}"
           description: |
             Please check <https://ccloud.dashboard.greenhouse.global.cloud.sap/?__s=(doop:(f:((key:check~Isupport~Sgroup,label:support_group,value:foundation),(key:check~Iservice,value:{{ $labels.service }}),(key:cluster~Ilayer,value:prod)),s:-+,v:GkVulnerableImages),greenhouse~Fdashboard:(a:doop),supernova:(d:-+,f:(support~Sgroup:(foundation)),p:prod,s:%27%27))|this view in Greenhouse> for which images are vulnerable.
+
+      # alert for vulnerable images in productive deployments of support group "observability"
+      - alert: GkVulnerableImagesForObservability
+        expr: 'sum by (template_kind, service) (max_over_time(doop_raw_violations{template_kind="GkVulnerableImages",support_group="observability"}[10m])) > 0'
+        for: 1h # When new images are deployed, we sometimes see a false positive because GkVulnerableImages sees vulnerability status "Pending".
+        labels:
+          context: GkVulnerableImagesForOberservability
+          support_group: observability
+          service: "{{ $labels.service }}"
+          severity: info
+          meta: "Vulnerable images in prod deployments of {{ title $labels.service }}"
+        annotations:
+          summary: "Vulnerable images in prod deployments of {{ title $labels.service }}"
+          description: |
+            Please check <https://ccloud.dashboard.greenhouse.global.cloud.sap/?__s=(doop:(f:((key:check~Isupport~Sgroup,label:support_group,value:observability),(key:check~Iservice,value:{{ $labels.service }}),(key:cluster~Ilayer,value:prod)),s:-+,v:GkVulnerableImages),greenhouse~Fdashboard:(a:doop),supernova:(d:-+,f:(support~Sgroup:(observability)),p:prod,s:%27%27))|this view in Greenhouse> for which images are vulnerable.
