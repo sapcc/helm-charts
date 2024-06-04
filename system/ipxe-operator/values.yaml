@@ -1,0 +1,60 @@
+controllerManager:
+  kubeRbacProxy:
+    args:
+      - --secure-listen-address=0.0.0.0:8443
+      - --upstream=http://127.0.0.1:8080/
+      - --logtostderr=true
+      - --v=0
+    containerSecurityContext:
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop:
+          - ALL
+    image:
+      repository: gcr.io/kubebuilder/kube-rbac-proxy
+      tag: v0.15.0
+    resources:
+      limits:
+        cpu: 500m
+        memory: 128Mi
+      requests:
+        cpu: 5m
+        memory: 64Mi
+  manager:
+    args:
+      - --health-probe-bind-address=:8081
+      - --metrics-bind-address=127.0.0.1:8080
+      - --leader-elect
+      - --default-ipxe-server-url=http://[2a10:afc0:e013:d002::]:30007
+      - --default-kernel-url=http://[2a10:afc0:e013:d002::]:30007/image?imageName=ghcr.io/ironcore-dev/os-images/gardenlinux&version=1443.3&layerName=vmlinuz
+      - --default-initrd-url=http://[2a10:afc0:e013:d002::]:30007/image?imageName=ghcr.io/ironcore-dev/os-images/gardenlinux&version=1443.3&layerName=initramfs
+      - --default-squashfs-url=http://[2a10:afc0:e013:d002::]:30007/image?imageName=ghcr.io/ironcore-dev/os-images/gardenlinux&version=1443.3&layerName=squashfs
+      - --ipxe-service-url=http://[2a10:afc0:e013:d002::]:30007
+      - --controllers=ipxebootconfig,serverbootconfig,httpbootconfig
+    containerSecurityContext:
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop:
+          - ALL
+    image:
+      repository: controller
+      tag: d65b790ee247bd53ce1e6028cdb718805480d19a
+    resources:
+      limits:
+        cpu: 500m
+        memory: 128Mi
+      requests:
+        cpu: 10m
+        memory: 64Mi
+  replicas: 1
+  serviceAccount:
+    annotations: {}
+kubernetesClusterDomain: cluster.local
+metricsService:
+  ports:
+    - name: https
+      port: 8443
+      protocol: TCP
+      targetPort: https
+  type: ClusterIP
+fullnameOverride: ipxe-operator
