@@ -17,7 +17,7 @@ metadata:
 spec:
   ingressClassName: nginx
   rules:
-    - host: {{ include "fullname" . }}.{{ .Values.global.region }}.cloud.sap
+    - host: {{ include "fullname" . }}.{{ .Values.global.region }}.{{ .Values.global.tld }}
       http:
         paths:
           - path: /inventory
@@ -27,4 +27,7 @@ spec:
                 name: {{ include "fullname" . }}
                 port:
                   number: {{.Values.updater.api.port}}
+  tls:
+    - secretName: tls-{{ include "fullname" . }}-api
+      hosts: [ {{ include "fullname" . }}.{{ .Values.global.region }}.{{ .Values.global.tld }} ]
 {{ end }}
