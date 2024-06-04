@@ -124,4 +124,25 @@ objectstore:
     revocation_interval: 25200 # 7h
 
 rgwTargetPlacements:
-  enabled: false 
+  enabled: false
+
+metrics-server:
+  image:
+    repository: keppel.global.cloud.sap/ccloud-registry-k8s-io-mirror/metrics-server/metrics-server
+
+  # Workaround for qa landscapes.
+  args:
+    - --kubelet-insecure-tls
+
+  replicas: 3
+  podLabels:
+    k8s-app: metrics-server
+  affinity:
+    podAntiAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        - labelSelector:
+            matchLabels:
+              k8s-app: metrics-server
+          namespaces:
+            - kube-system
+          topologyKey: kubernetes.io/hostname
