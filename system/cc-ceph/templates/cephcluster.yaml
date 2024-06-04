@@ -12,7 +12,7 @@ spec:
     count: {{ .Values.mon.count }}
     allowMultiplePerNode: false
   mgr:
-    count: 1
+    count: 2
     allowMultiplePerNode: false
     modules:
       - name: rook
@@ -35,9 +35,10 @@ spec:
     {{- end }}
   monitoring:
     enabled: true
+    createPrometheusRules: true
   labels:
     monitoring:
-      pluginconfig: kube-monitoring-{{ .Values.global.cluster }}
+      plugin: kube-monitoring-{{ .Values.global.cluster }}
   network:
     provider: host
   healthCheck:
@@ -63,6 +64,15 @@ spec:
                   operator: In
                   values:
                     - {{ .Values.mgr.nodeRole }}
+      podAntiAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+        - labelSelector:
+            matchExpressions:
+            - key: app
+              operator: In
+              values:
+              - rook-ceph-mgr
+          topologyKey: kubernetes.io/hostname
     mon:
       nodeAffinity:
         requiredDuringSchedulingIgnoredDuringExecution:
@@ -72,6 +82,15 @@ spec:
                   operator: In
                   values:
                     - {{ .Values.mon.nodeRole }}
+      podAntiAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+        - labelSelector:
+            matchExpressions:
+            - key: app
+              operator: In
+              values:
+              - rook-ceph-mon
+          topologyKey: kubernetes.io/hostname
     osd:
       nodeAffinity:
         requiredDuringSchedulingIgnoredDuringExecution:

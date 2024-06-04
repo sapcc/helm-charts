@@ -23,6 +23,12 @@ spec:
               directories:
               - path: /etc/kubernetes/manifests
                 overwrite: true
+              - path: /etc/systemd/system/kubeadm.service.d
+                mode: 0755
+                overwrite: true
+{{- if $cluster.ignitionDirectories }}
+{{- toYaml $cluster.ignitionDirectories | nindent 14 }}
+{{- end }}
               files:
               - path: /etc/containerd/config.toml
                 filesystem: root
@@ -46,6 +52,33 @@ spec:
                         runtime_type = "io.containerd.runc.v2"
                       [plugins."io.containerd.grpc.v1.cri".containerd.runtimes.runc.options]
                         SystemdCgroup = true
+              - path: /etc/ssh/sshd_config
+                filesystem: root
+                mode: 393
+                overwrite: true
+                contents:
+                  inline: |
+                    # Use most defaults for sshd configuration.
+                    #Subsystem sftp internal-sftp
+                    ClientAliveInterval 180
+                    UseDNS no
+                    UsePAM yes
+
+                    # handled by PAM
+                    PrintLastLog no
+
+                    # handled by PAM
+                    PrintMotd no
+
+                    Ciphers chacha20-poly1305@openssh.com,aes128-ctr,aes192-ctr,aes256-ctr,aes128-gcm@openssh.com,aes256-gcm@openssh.com
+                    MACs hmac-sha2-256-etm@openssh.com,hmac-sha2-512-etm@openssh.com,hmac-sha2-256,hmac-sha2-512,umac-128-etm@openssh.com,umac-128@openssh.com
+                    KexAlgorithms curve25519-sha256,curve25519-sha256@libssh.org,ecdh-sha2-nistp256,ecdh-sha2-nistp384,ecdh-sha2-nistp521,diffie-hellman-group-exchange-sha256,diffie-hellman-group16-sha512,diffie-hellman-group18-sha512,diffie-hellman-group14-sha256
+              - path: /etc/modprobe.d/blacklist.conf
+                filesystem: root
+                mode: 393
+                contents:
+                  inline: |
+                    blacklist nfs_layout_nfsv41_files
               - path: /opt/bin/kube.sh
                 filesystem: root
                 mode: 393
@@ -55,9 +88,30 @@ spec:
                     set -o errexit
                     set -o pipefail
 
+                    function _with_image_cleanup {
+                       umount -l ${TMPMOUNT} || true
+                       rmdir  ${TMPMOUNT}
+                    }
+
+                    function with_image {
+                      (
+                         TMPMOUNT=$(mktemp -d --suffix=.ctrcp)
+                         trap _with_image_cleanup EXIT
+                         IMAGE=$1
+                         shift
+                         ctr image mount $IMAGE $TMPMOUNT >/dev/null
+                         cd $TMPMOUNT
+                         "$@"
+                         cd /
+                      )
+                    }
+
+                    # loop to ensure network connectivity
                     while true;do
-                      docker run --rm -v /opt/bin:/opt/bin {{ $.Values.image.kubelet }}:v{{ $cluster.version }} cp --preserve=mode /usr/local/bin/{kubeadm,kubelet} /opt/bin/ && break
+                      ctr image pull {{ $.Values.image.kubelet }}:v{{ $cluster.version }} && break
                     done
+
+                    with_image {{ $.Values.image.kubelet }}:v{{ $cluster.version }} cp --preserve=mode usr/local/bin/{kubeadm,kubelet} /opt/bin/
 
                     mount --bind /opt/bin /usr/local/bin
 
@@ -243,6 +297,27 @@ spec:
                   inline: |
                     net.bridge.bridge-nf-call-ip6tables = 1
                     net.bridge.bridge-nf-call-iptables = 1
+              - path: /etc/systemd/system/kubeadm.service.d/10-flatcar.conf
+                filesystem: root
+                mode: 0644
+                contents:
+                  inline: |
+                    [Unit]
+                    # kubeadm must run after coreos-metadata populated /run/metadata directory.
+                    Requires=kube_up.service
+                    After=kube_up.service
+                    [Service]
+                    # Make metadata environment variables available for pre-kubeadm commands.
+                    EnvironmentFile=/run/metadata/*
+              - path: /opt/bin/garp_update.sh
+                filesystem: root
+                mode: 0744
+                contents:
+                  inline: |
+                    #!/bin/bash
+                    UPLINK_INTERFACE=$(/usr/bin/ip route | grep -v cbr | awk '/default/ { print $5 }')
+                    MY_IP=$(/usr/bin/ip route | grep $UPLINK_INTERFACE | awk '/src/ { print $9 }')
+                    /usr/bin/arping -c 5 -U $MY_IP -I $UPLINK_INTERFACE
               - path: /opt/network_up.sh
                 filesystem: root
                 mode: 0744
@@ -324,20 +399,11 @@ spec:
                     EOF
 
                     umount /tmp/configdrive
+{{- if $cluster.ignitionFiles }}
+{{- toYaml $cluster.ignitionFiles | nindent 14 }}
+{{- end }}
             systemd:
               units:
-              - name: kubeadm.service
-                enabled: true
-                dropins:
-                - name: 10-flatcar.conf
-                  contents: |
-                    [Unit]
-                    # kubeadm must run after coreos-metadata populated /run/metadata directory.
-                    Requires=kube_up.service
-                    After=kube_up.service
-                    [Service]
-                    # Make metadata environment variables available for pre-kubeadm commands.
-                    EnvironmentFile=/run/metadata/*
               - name: kubelet.service
                 enable: true
                 contents: |
@@ -443,6 +509,8 @@ spec:
                   ExecStartPre=/usr/bin/sleep 10
                   ExecStart=/opt/bin/kube.sh
                   ExecStartPost=systemctl disable kube_up.service
+                  [Install]
+                  WantedBy=kubeadm.service
               # needed to register node after kubeadm
               - name: kubelet_restart.service
                 enabled: true
@@ -458,12 +526,34 @@ spec:
                   ExecStartPost=systemctl disable kubelet_restart.service
                   [Install]
                   WantedBy=multi-user.target
+              # send a Gratuitous ARP to upsteam switches when System Boots
+              # this is needed for ACI switches to update their entries in case of MAC address change
+              - name: garp_update.service
+                enabled: true
+                contents: |
+                  [Unit]
+                  Description=Gratuitous ARP notify upstream switches
+                  Wants=network-pre.target
+                  After=network-pre.target
+                  [Service]
+                  Type=oneshot
+                  ExecStartPre=/usr/bin/sleep 10
+                  ExecStart=/opt/bin/garp_update.sh
+                  [Install]
+                  WantedBy=multi-user.target
+{{- if $cluster.ignitionSystemdUnits }}
+{{- toYaml $cluster.ignitionSystemdUnits | nindent 14 }}
+{{- end }}
       preKubeadmCommands:
       - envsubst < /etc/kubeadm.yml > /etc/kubeadm.yml.tmp
       - mv /etc/kubeadm.yml.tmp /etc/kubeadm.yml
       users:
-      - name: {{ $.Values.user.name }}
-        passwd: {{ $.Values.user.passwordhash }}
+      - name: {{ $cluster.userName | default $.Values.user.name }}
+        passwd: {{ $cluster.userPasswordhash | default $.Values.user.passwordhash }}
+        groups: "sudo"
         sshAuthorizedKeys:
-        - {{ $.Values.user.key | quote }}
+        - {{ $cluster.userKey | default $.Values.user.key | quote }}
+{{- if $cluster.additionalUsers }}
+{{- toYaml $cluster.additionalUsers | nindent 6 }}
+{{- end }}
 {{- end }}

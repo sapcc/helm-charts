@@ -8,8 +8,8 @@ groups:
     for: 2m
     labels:
       tier: {{ required ".Values.tier missing" .Values.tier }}
-      service: node
-      support_group: containers
+      support_group: {{ required ".Values.supportGroup missing" .Values.supportGroup }}
+      service: {{ required ".Values.service missing" .Values.service }}
       severity: none
       context: node
       meta: "Node {{`{{ $labels.node }}`}} is in maintenance."
@@ -28,8 +28,8 @@ groups:
     for: 1h
     labels:
       tier: {{ required ".Values.tier missing" .Values.tier }}
-      service: node
-      support_group: containers
+      support_group: {{ required ".Values.supportGroup missing" .Values.supportGroup }}
+      service: {{ required ".Values.service missing" .Values.service }}
       severity: warning
       context: maintenance-controller
       meta: "Node {{`{{ $labels.node }}`}} is stuck in maintenance for 1 hour."
@@ -43,8 +43,8 @@ groups:
     for: 1h
     labels:
       tier: {{ required ".Values.tier missing" .Values.tier }}
-      service: node
-      support_group: containers
+      support_group: {{ required ".Values.supportGroup missing" .Values.supportGroup }}
+      service: {{ required ".Values.service missing" .Values.service }}
       severity: warning
       context: maintenance-controller
       meta: "Cluster {{`{{ $labels.cluster }}`}} has a disparity in flatcar versions."

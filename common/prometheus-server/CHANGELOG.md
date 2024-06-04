@@ -1,3 +1,11 @@
+## 7.5.9
+
+* Introducing a new alert label `incident_group_key` that makes it possible to group alerts in ServiceNow by alertname, region and cluster.
+
+## 7.5.8
+
+* Lower default retention time
+
 ## 7.5.7
 
 * softening VPA alerts 

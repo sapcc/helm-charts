@@ -10,7 +10,7 @@ metadata:
     configmap.reloader.stakater.com/reload: limes-auto-overrides
 
 spec:
-  minReadySeconds: 10 # to capture errors from config/constraint parsing
+  minReadySeconds: 10 # to capture errors from config/override parsing
   revisionHistoryLimit: 5
   replicas: 1
   strategy:
@@ -48,6 +48,13 @@ spec:
             {{ include "limes_common_envvars" . | indent 12 }}
             - name: LIMES_QUOTA_OVERRIDES_PATH
               value: "/etc/limes-auto-overrides/quota-overrides.json"
+          livenessProbe:
+            httpGet:
+              path: /healthcheck
+              port: 8080
+            timeoutSeconds: 10
+            periodSeconds: 60
+            initialDelaySeconds: 60
           securityContext:
             runAsNonRoot: true
           volumeMounts:
@@ -65,6 +72,6 @@ spec:
                 cpu: '1000m'
                 memory: '1000Mi'
             requests:
-                cpu: '400m'
+                cpu: '300m'
                 memory: '1000Mi'
           {{- end }}

@@ -44,7 +44,7 @@ spec:
 
       initContainers:
       - name: generate-secrets
-        image: "{{ include "preferredRegistry" . }}/shared-app-images/alpine-kubectl:3.19-latest"
+        image: "{{ include "preferredRegistry" . }}/shared-app-images/alpine-kubectl:3.20-latest"
         env:
         - name: DEBUG
           value: {{ quote .Values.debug }}
@@ -131,6 +131,24 @@ spec:
         - name: dev-shm
           mountPath: /dev/shm
         {{- end }}
+      {{- if .Values.crontab }}
+      - name: cron
+        image: "{{ include "preferredRegistry" . }}/shared-app-images/alpine-psql:3.20-latest"
+        command:
+          - /bin/sh
+          - -c
+          - |
+            /usr/bin/crontab /crontab/root
+            exec crond -f -d8
+        env:
+        - name: PGHOSTADDR
+          value: 127.0.0.1
+        - name: PGUSER
+          value: postgres
+        volumeMounts:
+        - name: crontab
+          mountPath: /crontab
+      {{- end }}
       serviceAccountName: {{ template "postgres.fullname" . }}
       volumes:
       - name: postgres-etc
@@ -143,7 +161,12 @@ spec:
       {{- else }}
         emptyDir: {}
       {{- end }}
-        {{- if .Values.sqlOnCreate }}
+      {{- if .Values.crontab }}
+      - name: crontab
+        configMap:
+          name: {{ template "postgres.fullname" . }}-crontab
+      {{- end }}
+      {{- if .Values.sqlOnCreate }}
       - name: sql-on-create
         configMap:
           name: {{ template "postgres.fullname" . }}-sql-on-create

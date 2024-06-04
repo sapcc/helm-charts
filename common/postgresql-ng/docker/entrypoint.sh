@@ -89,6 +89,11 @@ export PATH="$PGBIN:$PATH"
 created_db=false
 updated_db=false
 
+# make sure that we never accidentially start multiple postgres on the same PVC
+LOCKFILE=/var/lib/postgresql/lock
+exec 9>${LOCKFILE} || exit 4
+flock -n 9
+
 # always generate a new, random password on each start
 PGPASSWORD="$(head -c 30 </dev/urandom | base64)"
 echo -n "$PGPASSWORD" >/postgres-password
