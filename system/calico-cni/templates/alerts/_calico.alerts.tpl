@@ -9,7 +9,7 @@ groups:
       for: 30m
       labels:
         tier: k8s
-        service: calico
+        service: {{ .Values.alerts.service }}
         severity: warning
         context: availability
         support_group: {{ .Values.alerts.supportGroup }}
@@ -24,7 +24,7 @@ groups:
       for: 10m
       labels:
         tier: k8s
-        service: calico
+        service: {{ .Values.alerts.service }}
         severity: critical
         context: availability
         support_group: {{ .Values.alerts.supportGroup }}
@@ -38,7 +38,7 @@ groups:
       for: 30m
       labels:
         tier: k8s
-        service: calico
+        service: {{ .Values.alerts.service }}
         severity: warning
         context: availability
         support_group: {{ .Values.alerts.supportGroup }}
