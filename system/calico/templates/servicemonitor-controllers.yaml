@@ -6,7 +6,10 @@ metadata:
   name: calico-controllers-metrics
   namespace: {{ .Release.Namespace }}
   labels:
-    prometheus: kubernetes
+    prometheus: {{ .Values.monitoring.prometheus }}
+    {{- if $.Values.monitoring.extraLabels }}
+{{ toYaml $.Values.monitoring.extraLabels | indent 4 }}
+    {{- end }}
 spec:
   selector:
     matchLabels:
