@@ -70,7 +70,7 @@ groups:
     labels:
       tier: {{ include "alertTierLabelOrDefault" .Values.tier }}
       service: {{ include "serviceFromLabelsOrDefault" "k8s" }}
-      support_group: {{ include "supportGroupFromLabelsOrDefault" . }}
+      support_group: {{ include "supportGroupFromLabelsOrDefault" .Values.supportGroup }}
       severity: warning
       context: pod
       meta: "Pod {{`{{ $labels.namespace }}`}}/{{`{{ $labels.pod }}`}} is restarting constantly"
@@ -85,7 +85,7 @@ groups:
     labels:
       tier: {{ include "alertTierLabelOrDefault" .Values.tier }}
       service: {{ include "serviceFromLabelsOrDefault" "k8s" }}
-      support_group: {{ include "supportGroupFromLabelsOrDefault" . }}
+      support_group: {{ include "supportGroupFromLabelsOrDefault" .Values.supportGroup }}
       severity: warning
       context: pod
       meta: "Pod {{`{{ $labels.namespace }}`}}/{{`{{ $labels.pod }}`}} cannot pull all images"
@@ -114,7 +114,7 @@ groups:
     labels:
       tier: {{ required ".Values.tier missing" .Values.tier }}
       service: {{ include "serviceFromLabelsOrDefault" "k8s" }}
-      support_group: {{ include "supportGroupFromLabelsOrDefault" . }}
+      support_group: {{ include "supportGroupFromLabelsOrDefault" .Values.supportGroup }}
       severity: warning
       context: deployment
       meta: "{{`{{ $labels.namespace }}`}}/{{`{{ $labels.deployment }}`}} has insufficient replicas"
@@ -129,7 +129,7 @@ groups:
     labels:
       tier: {{ include "alertTierLabelOrDefault" .Values.tier }}
       service: {{ include "serviceFromLabelsOrDefault" "k8s" }}
-      support_group: {{ include "supportGroupFromLabelsOrDefault" . }}
+      support_group: {{ include "supportGroupFromLabelsOrDefault" .Values.supportGroup }}
       severity: info
     annotations:
       description: "The pod {{`{{ $labels.namespace }}`}}/{{`{{ $labels.pod }}`}} is not ready for more then 2h."
@@ -141,7 +141,7 @@ groups:
     labels:
       tier: {{ include "alertTierLabelOrDefault" .Values.tier }}
       service: {{ include "serviceFromLabelsOrDefault" "k8s" }}
-      support_group: {{ include "supportGroupFromLabelsOrDefault" . }}
+      support_group: {{ include "supportGroupFromLabelsOrDefault" .Values.supportGroup }}
       severity: warning
       playbook: docs/support/playbook/kubernetes/target_scraped_multiple_times
       meta: 'Prometheus is scraping {{`{{ $labels.pod }}`}} pods more than once.'

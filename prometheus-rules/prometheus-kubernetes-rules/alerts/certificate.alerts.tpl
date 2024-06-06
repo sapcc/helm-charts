@@ -9,7 +9,7 @@ groups:
       context: availability
       service: {{ required ".Values.service missing" .Values.service }}
       severity: info
-      support_group: {{ include "supportGroupFromLabelsOrDefault" . }}
+      support_group: {{ include "supportGroupFromLabelsOrDefault" .Values.supportGroup }}
     annotations:
       description: The certificate for {{`{{ $labels.subject_CN }}`}} expires in {{`{{ $value | humanizeDuration }}`}}. See secret {{`{{ $labels.secret_namespace }}`}}/{{`{{ $labels.secret_name }}`}}, key {{`{{ $labels.secret_key }}`}}.
       summary: Certificate expires
