@@ -155,7 +155,7 @@ groups:
     labels:
       tier: {{ include "alertTierLabelOrDefault" .Values.tier }}
       service: {{ include "serviceFromLabelsOrDefault" "k8s" }}
-      support_group: {{ include "supportGroupFromLabelsOrDefault" . }}
+      support_group: containers
       severity: info
     annotations:
       description: "The service {{`{{ $labels.namespace }}`}}/{{`{{ $labels.endpoint }}`}} has no active endpoints for 15m. The service might not be reachable."
