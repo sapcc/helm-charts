@@ -25,7 +25,6 @@ maillog:
       projectDomainName: {{.Values.keystone.projectDomainName}}
       userDomainName: {{.Values.keystone.userDomainName}}
       username: {{.Values.keystone.username}}
-      password: {{.Values.keystone.password}}
     policy:
 {{- range $key, $value := .Values.policy }}
       {{ $key }}: {{ $value }}
