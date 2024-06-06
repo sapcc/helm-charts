@@ -2,7 +2,7 @@ groups:
 - name: plutono.alerts
   rules:
   - alert: PlutonoContentSyncError
-    expr: rate(git_sync_count_total{status="error"}[5m]) > 0
+    expr: rate(git_sync_count_total{status!="success", job=~".*{{ $.Release.Name }}.*"}[5m]) > 0
     for: 60m
     labels:
       service: grafana
