@@ -18,13 +18,15 @@ groups:
     # sum available_bytes and logical_used_bytes when only space reporting is enabled
     # details see https://operations.global.cloud.sap/docs/operation/storage/manila/300-logical-space/
     - record: netapp_volume_total_bytes:maia2
-      expr: ( netapp_volume_size_available:manila + netapp_volume_space_logical_used) * on (app, aggr, svm, volume) group_left()
-              netapp_volume_labels{is_space_reporting_logical="true", is_space_enforcement_logical="false"}
+      expr: (
+        (netapp_volume_size_available:manila + netapp_volume_space_logical_used) * on (app, aggr, svm, volume) group_left()
+        netapp_volume_labels{is_space_reporting_logical="true", is_space_enforcement_logical="false"}
         ) or netapp_volume_size_total:manila
 
     # use logical used bytes when logical space reporting is enabled
     - record: netapp_volume_used_bytes:maia2
-      expr: (netapp_volume_space_logical_used:manila * on (app, aggr, svm, volume) group_left() netapp_volume_labels{is_space_reporting_logical="true"}
+      expr: (
+        netapp_volume_space_logical_used:manila * on (app, aggr, svm, volume) group_left() netapp_volume_labels{is_space_reporting_logical="true"}
         ) or netapp_volume_size_used:manila
 
     - record: netapp_volume_available_bytes:maia2
