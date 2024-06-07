@@ -1,7 +1,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: metal-operator-dnsmasq-a
+  name: metal-operator-dnsmasq
   namespace: {{ .Release.Namespace }}
 spec:
   minReadySeconds: 10
@@ -10,19 +10,19 @@ spec:
   revisionHistoryLimit: 10
   selector:
     matchLabels:
-      name: metal-dnsmasq-a
+      name: metal-dnsmasq
   strategy:
     type: Recreate
   template:
     metadata:
       creationTimestamp: null
       labels:
-        name: metal-dnsmasq-a
+        name: metal-dnsmasq
         app.kubernetes.io/component: dnsmasq
         app.kubernetes.io/name: metal-dnsmasq
       annotations:
         kubectl.kubernetes.io/default-container: metal
-        checksum/configmap-dnsmasq: {{ include (print $.Template.BasePath "/configmap-dnsmasq-a.yaml") . | sha256sum }}
+        checksum/configmap-dnsmasq: {{ include (print $.Template.BasePath "/configmap-dnsmasq.yaml") . | sha256sum }}
     spec:
       hostNetwork: true
       affinity:
@@ -107,7 +107,7 @@ spec:
       volumes:
       - configMap:
           defaultMode: 511
-          name: metal-dnsmasq-a
+          name: metal-dnsmasq
         name: dnsmasq
       - configMap:
           defaultMode: 511

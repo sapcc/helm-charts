@@ -1,7 +1,7 @@
 kind: ConfigMap
 apiVersion: v1
 metadata:
-  name: metal-dnsmasq-a
+  name: metal-dnsmasq
   namespace: {{ .Release.Namespace }}
 data:
   dnsmasq.conf: |
@@ -35,7 +35,7 @@ data:
     # IPv4 Configuration:
     dhcp-match=ipxe,175
     # Client is already running iPXE; move to next stage of chainloading
-    dhcp-boot=tag:ipxe,https://metal.{{ .Values.global.region }}.{{ .Values.global.tld }}:{{ .Values.dnsmasq.ipxePort }}/boot.ipxe
+    dhcp-boot=tag:ipxe,http://{{ .Values.ipxe.host }}:{{ .Values.ipxe.port }}/boot.ipxe
 
     # Note: Need to test EFI booting
     dhcp-match=set:efi,option:client-arch,7
