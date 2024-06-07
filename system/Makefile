@@ -94,7 +94,7 @@ build-ipxe-operator:
 	$(call build-chart,ipxe-operator,https://github.com/ironcore-dev/ipxe-operator//config/default,$(IPXE_OPERATOR_VERSION))
 	@yq -i '.controllerManager.manager.image.tag="$(IPXE_OPERATOR_VERSION)"' ipxe-operator/values.yaml
 	@yq -i '.fullnameOverride="ipxe-operator"' ipxe-operator/values.yaml
-	@yq -i '.version="0.0.1"' ipxe-operator/Chart.yaml
+	@yq -i '.version="0.0.2"' ipxe-operator/Chart.yaml
 
 # chart name, source url, tag
 define build-chart
