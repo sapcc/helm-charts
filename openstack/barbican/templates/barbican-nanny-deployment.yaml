@@ -34,7 +34,6 @@ spec:
         {{- include "utils.topology.pod_label" . | indent 8 }}
       annotations:
         chart-version: {{.Chart.Version}}
-        checksum/etc-configmap.conf: {{ include (print $.Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
         checksum/etc-configmap.conf: {{ include (print $.Template.BasePath "/scripts-configmap.yaml") . | sha256sum }}
         secrets-hash: {{ include (print $.Template.BasePath "/secrets.yaml") . | sha256sum }}
         {{- if .Values.proxysql.mode }}
@@ -44,8 +43,8 @@ spec:
         {{- include "utils.linkerd.pod_and_service_annotation" . | indent 8 }}
     spec:
       {{ include "utils.proxysql.pod_settings" . | indent 6 }}
-{{- if .Values.barbican_nanny.db_secret_move.enabled }}
       containers:
+{{- if .Values.barbican_nanny.db_secret_move.enabled }}
       - name: move-secrets
         image: {{required ".Values.global.registry is missing" .Values.global.registry }}/loci-barbican:{{required "Values.imageVersionBarbicanApi is missing" .Values.imageVersionBarbicanApi}}
         imagePullPolicy: IfNotPresent
@@ -54,7 +53,7 @@ spec:
         - kubernetes-entrypoint
         env:
         - name: COMMAND
-          value: "{{ if not .Values.barbican_nanny.debug }}/bin/bash /scripts/barbican-db-check.sh{{ else }}sleep inf{{ end }}"
+          value: "{{ if not .Values.barbican_nanny.debug }}/bin/bash /scripts/move-secrets.sh{{ else }}sleep inf{{ end }}"
         - name: BARBICAN_DB_SECRET_MOVE_ENABLED
           value: {{ .Values.barbican_nanny.db_secret_move.enabled | quote }}
         - name: BARBICAN_DB_OLD_PROJECT_ID
@@ -79,12 +78,8 @@ spec:
             cpu: "100m"
         volumeMounts:
         - name: barbican-scripts
-          mountPath: /scripts/barbican-db-check.sh
-          subPath: barbican-db-check.sh
-          readOnly: true
-        - name: barbican-etc
-          mountPath: /etc/barbican/barbican-api.conf
-          subPath: barbican-api.conf
+          mountPath: /scripts/move-secrets.sh
+          subPath: move-secrets.sh
           readOnly: true
         - name: barbican-etc
           mountPath: /etc/barbican/logging.ini
