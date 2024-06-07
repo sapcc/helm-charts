@@ -1,10 +1,15 @@
 from contextlib import contextmanager
+from urllib.parse import urlparse
+
 from ironicclient import client as bmclient
 
 # import openstack # To test it locally
 # os = openstack.connect()
 
 bm = bmclient.get_client(1, session=os.session, os_ironic_api_version="1.78")
+
+parsed = urlparse(os.session.auth.auth_url)
+domain = parsed.netloc.split(".", 1)[-1]
 
 states = ["enroll", "active", "manageable", "available"]
 
@@ -127,6 +132,10 @@ for node in bm.node.list(
             {
                 "path": "/driver_info/redfish_password",
                 "value": password,
+            },
+            {
+                "path": "/driver_info/bootloader",
+                "value": f"https://repo.{domain}/ironic-tftp/esp-ubuntu-x86_64.img",
             },
         ]
 
