@@ -99,9 +99,6 @@ cronus:
       serverTlsName: {{ .Values.cronus.tls.serverTlsName }}
 {{- if or .Values.cronus.tls.clientCA .Values.global.clientCA .Values.cronus.tls.clientTlsAuth .Values.global.clientTlsAuth }}
       clientTlsAuth: {{ .Values.cronus.tls.clientTlsAuth | default .Values.global.clientTlsAuth }}
-{{- if or .Values.cronus.tls.clientCertOU .Values.global.clientCertOU }}
-      clientCertOU: {{ .Values.cronus.tls.clientCertOU | default .Values.global.clientCertOU }}
-{{- end }}
       clientCA: |
 {{ .Values.cronus.tls.clientCA | default .Values.global.clientCA | indent 8 }}
 {{- end }}
@@ -109,25 +106,22 @@ cronus:
 {{- end }}
   keystone:
 {{- if .Values.config.keystone }}
-{{- range $key, $value := .Values.config.keystone }}
-  {{- if $value }}
-    {{ $key }}: {{ $value }}
-  {{- end }}
-{{- end }}
-{{- if .Values.global.cronus_service_password }}
-    password: {{ .Values.global.cronus_service_password }}
+    region: {{ .Values.config.keystone.region }}
+    authUrl: {{ .Values.config.keystone.authUrl }}
+    endpointType: {{ .Values.config.keystone.endpointType }}
+    username: {{ .Values.config.keystone.username }}
+    userDomainName: {{ .Values.config.keystone.userDomainName }}
+    projectName: {{ .Values.config.keystone.projectName }}
+    projectDomainName: {{ .Values.config.keystone.projectDomainName }}
+    enabled: {{ .Values.config.keystone.enabled }}
 {{- end }}
 {{- else }}
     authUrl: {{ .Values.config.authUrl }}
     applicationCredentialID: {{ .Values.config.applicationCredentialID }}
-    applicationCredentialSecret: {{ .Values.config.applicationCredentialSecret }}
     region: {{ .Values.config.region }}
     endpointType: {{ .Values.config.endpointType }}
 {{- end }}
 {{- if .Values.config.workQueue }}
-{{- $r_host := .Values.rabbitmq.host }}
-{{- $r_user := .Values.rabbitmq.users.default.user }}
-{{- $r_creds := .Values.rabbitmq.users.default.password }}
   workQueue:
     enabled: {{ .Values.config.workQueue.enabled }}
 {{- if .Values.config.workQueue.active }}
@@ -139,7 +133,6 @@ cronus:
 {{- if .Values.config.workQueue.sendNdrs }}
     sendNdrs: {{ .Values.config.workQueue.sendNdrs }}
 {{- end }}
-    rabbitmqUri: amqp://{{ $r_user }}:{{ $r_creds }}@{{ $r_host }}/
 {{- if .Values.config.workQueue.queueName }}
     queueName: {{ .Values.config.workQueue.queueName }}
 {{- end }}
@@ -296,11 +289,7 @@ cronus:
     {{ $key }}: {{ $value }}
 {{- end }}
 {{- if .Values.hermes }}
-{{- $user := .Values.rabbitmq_notifications.users.default.user }}
-{{- $password := .Values.rabbitmq_notifications.users.default.password }}
-{{- $host := printf "%s.%s.%s:5672" "hermes-rabbitmq-notifications" .Values.global.region .Values.global.tld }}
   auditSink:
-    rabbitmqUrl: amqp://{{ $user }}:{{ $password }}@{{ if .Values.config.cronusAuditSink.host }}{{ .Values.config.cronusAuditSink.host }}{{ else }}{{ $host }}{{ end }}
     queueName: {{ .Values.config.cronusAuditSink.queueName }}
     internalQueueSize: {{ .Values.config.cronusAuditSink.internalQueueSize }}
     maxContentLen: {{ .Values.config.cronusAuditSink.maxContentLen | int64 }}
@@ -330,7 +319,4 @@ cronus:
 {{- end }}
     debug: {{ .Values.config.cronusAuditSink.debug | default false }}
 {{- end }}
-{{- if .Values.cronus.sentryDsn }}
-  sentryDsn: {{ .Values.cronus.sentryDsn }}
-{{- end }}
-{{- end -}}
+
