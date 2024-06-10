@@ -60,6 +60,11 @@ tftp_root = /tftpboot
 
 ipxe_config_template = /etc/ironic/ipxe_config.template
 
+[redfish]
+{{- range $k, $v :=  $conductor.redfish }}
+{{ $k }} = {{ $v }}
+{{- end }}
+
 {{- if $conductor.jinja2 }}
 {{`
 {%- for section in block %}
