@@ -11,7 +11,11 @@ Exporters:
     port: 13000
 Pollers:{{`
   {{ .Name }}:
+    {{- if .Ip }}
     addr: {{ .Ip }}
+    {{- else }}
+    addr: {{ .Host }}
+    {{- end }}
     datacenter: {{ .AvailabilityZone }}
     labels:
       - availability_zone: {{ .AvailabilityZone }}
