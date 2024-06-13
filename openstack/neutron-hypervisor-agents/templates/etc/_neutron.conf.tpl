@@ -25,7 +25,7 @@ periodic_fuzzy_delay = 10
 {{- template "utils.snippets.debug.eventlet_backdoor_ini" "neutron" }}
 
 [nova]
-auth_url = {{ .Values.identity_service_url }}
+auth_url = https://identity-3.{{.Values.global.region}}.{{.Values.global.tld}}/v3
 # DEPRECATED: auth_plugin
 auth_plugin = v3password
 auth_type = v3password
@@ -59,7 +59,7 @@ root_helper = neutron-rootwrap /etc/neutron/rootwrap.conf
 auth_plugin = v3password
 auth_version = v3
 auth_interface = internal
-www_authenticate_uri = {{ .Values.identity_service_url }}
+www_authenticate_uri = https://identity-3.{{.Values.global.region}}.{{.Values.global.tld}}/v3
 username = {{ .Values.global.neutron_service_user | default "neutron" | replace "$" "$$" }}
 password = {{ .Values.global.neutron_service_password | default "" | replace "$" "$$" }}
 user_domain_name = {{.Values.global.keystone_service_domain | default "Default"}}
