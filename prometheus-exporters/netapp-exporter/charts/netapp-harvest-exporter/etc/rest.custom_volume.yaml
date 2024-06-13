@@ -96,8 +96,10 @@ plugins:
       replace:
         - svm_root root_volume `false` `No`
         - svm_root root_volume `true` `Yes`
-      split_pairs:
-        - comment `, ` `:`
+      split_regex:
+        - comment `.*project:\ (.*?),.*` project_id
+        - comment `.*share_id:\ (.*?),.*` share_id
+        - comment `.*share_name:\ (.*?),.*` share_name
       # To prevent visibility of transient volumes, uncomment the following lines
 #      exclude_regex:
 #        # Exclude SnapProtect/CommVault Intellisnap, Clone volumes have a “_CVclone” suffix
@@ -121,9 +123,9 @@ export_options:
     - style
     - svm
     - volume
+    - project_id
     - share_id
     - share_name
-    - project
   instance_labels:
     - antiRansomwareState
     - clone_parent_snapshot
