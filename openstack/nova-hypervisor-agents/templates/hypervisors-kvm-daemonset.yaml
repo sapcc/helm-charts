@@ -46,17 +46,8 @@ spec:
         hostnames:
         - {{ default "rabbitmq" $.Values.rabbitmq.nameOverride | printf "nova-%s" | trunc 63 | replace "_" "-" | trimSuffix "-" }}
       {{- end }}
-      initContainers:
-      - name: hostname-from-netbox
-        image: {{ required ".Values.global.registry is missing" .Values.global.registry }}/{{ .Values.imageName }}:{{ .Values.imageVersion | required "Please set imageVersion similar" }}
-        command: ["/container.init/hostname-from-netbox"]
-        workingDir: "/etc/nova/nova-compute.conf.d"
-        volumeMounts:
-          - mountPath: /container.init
-            name: bin
-          - mountPath: /etc/nova/nova-compute.conf.d
-            name: nova-compute-etc
       {{- if not .Values.hypervisor_on_host }}
+      initContainers:
       - name: load-kernel-mod
         image: {{ required ".Values.global.dockerHubMirror is missing" .Values.global.dockerHubMirror }}/library/busybox
         command:
@@ -105,9 +96,6 @@ spec:
             name: run
           - mountPath: /etc/nova
             name: nova-etc
-          - mountPath: /etc/nova/nova-compute.conf.d
-            name: nova-compute-etc
-            readOnly: true
           - mountPath: /var/lib/nova/mnt
             mountPropagation: Bidirectional
             name: mnt
@@ -290,9 +278,6 @@ spec:
                 path: nova.conf.d/cell.conf
               - key: keystoneauth-secrets.conf
                 path: nova.conf.d/keystoneauth-secrets.conf
-      - name: nova-compute-etc
-        emptyDir:
-          medium: Memory
       - name: statsd-etc
         projected:
           sources:
