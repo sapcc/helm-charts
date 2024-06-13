@@ -1,0 +1,14 @@
+{{- if .Values.sidecars.ipmasq }}
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: ipmasq
+  namespace: kube-system
+data:
+  ip-masq-agent: |-
+    nonMasqueradeCIDRs:
+      - {{ required ".Values.clusterCIDR missing" .Values.clusterCIDR }}
+    masqLinkLocal: false
+    masqLinkLocalIPv6: false
+    resyncInterval: 60s
+{{- end }}
