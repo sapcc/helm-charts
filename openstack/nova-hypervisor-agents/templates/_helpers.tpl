@@ -1,4 +1,4 @@
-{{- define "identity_service_url" }}
+{{- define "identity_service_url" -}}
 https://identity-3.{{.Values.global.region}}.{{.Values.global.tld}}/v3
 {{- end }}
 
