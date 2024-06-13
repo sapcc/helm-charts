@@ -63,10 +63,10 @@ filesystem:
 
 {{/* create a list of exclusions */}}
 {{- define "compute_exclusions" -}}
-{{- if (((.Values).metisAPI).exclusions) -}}
+{{- if ((((.Values).metisAPI).compute).exclusions) -}}
 compute:
   exclusions:
-{{- range $excl := .Values.metisAPI.exclusions }}
+{{- range $excl := .Values.metisAPI.compute.exclusions }}
   {{- range $project := $excl.projectUUIDs }}
     - domainUUID: {{ required "domain uuid missing" $excl.domainUUID | quote }}
       projectUUID: {{ required "project uuid missing" $project | quote }}
