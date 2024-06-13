@@ -49,7 +49,7 @@ num_retries = 10
 [cinder]
 os_region_name = {{.Values.global.region}}
 cross_az_attach = {{.Values.cross_az_attach}}
-auth_url = {{ .Values.identity_service_url }}
+auth_url = {{ include "identity_service_url" . }}
 auth_type = v3password
 username = {{ .Values.global.nova_service_user | default "nova" }}
 password = {{ required ".Values.global.nova_service_password is missing" .Values.global.nova_service_password }}
@@ -62,7 +62,7 @@ http_retries = {{.Values.cinder_http_retries}}
 [neutron]
 metadata_proxy_shared_secret = {{ .Values.global.nova_metadata_secret }}
 service_metadata_proxy = true
-auth_url = {{ .Values.identity_service_url }}
+auth_url = {{ include "identity_service_url" . }}
 auth_type = v3password
 username = {{ .Values.global.nova_service_user | default "nova" }}{{ .Values.global.user_suffix }}
 password = {{ required ".Values.global.nova_service_password is missing" .Values.global.nova_service_password }}
@@ -77,8 +77,8 @@ timeout = {{.Values.neutron_timeout}}
 auth_type = v3password
 auth_version = v3
 auth_interface = internal
-www_authenticate_uri = {{ .Values.identity_service_url }}
-auth_url = {{ .Values.identity_service_url }}
+www_authenticate_uri = {{ include "identity_service_url" . }}
+auth_url = {{ include "identity_service_url" . }}
 username = {{ .Values.global.nova_service_user | default "nova" }}{{ .Values.global.user_suffix }}
 password = {{ required ".Values.global.nova_service_password is missing" .Values.global.nova_service_password }}
 user_domain_name = "{{.Values.global.keystone_service_domain | default "Default" }}"
@@ -104,7 +104,7 @@ enable_proxy_headers_parsing = true
 [placement]
 auth_type = v3password
 auth_version = v3
-auth_url = {{ .Values.identity_service_url }}
+auth_url = {{ include "identity_service_url" . }}
 username = {{ .Values.global.nova_service_user | default "nova" }}{{ .Values.global.user_suffix }}
 password = {{ required ".Values.global.nova_service_password is missing" .Values.global.nova_service_password }}
 user_domain_name = "{{.Values.global.keystone_service_domain | default "Default" }}"
@@ -118,14 +118,14 @@ region_name = {{.Values.global.region}}
 
 [barbican]
 backend = barbican
-auth_endpoint = {{ .Values.identity_service_url }}
+auth_endpoint = {{ include "identity_service_url" . }}
 
 [service_user]
 send_service_user_token = true
 auth_type = v3password
 auth_version = v3
 auth_interface = internal
-auth_url = {{ .Values.identity_service_url }}
+auth_url = {{ include "identity_service_url" . }}
 username = {{ .Values.global.nova_service_user | default "nova" }}{{ .Values.global.user_suffix }}
 password = {{ required ".Values.global.nova_service_password is missing" .Values.global.nova_service_password }}
 user_domain_name = "{{.Values.global.keystone_service_domain | default "Default" }}"

@@ -1,3 +1,7 @@
+{{- define "identity_service_url" }}
+https://identity-3.{{.Values.global.region}}.{{.Values.global.tld}}/v3
+{{- end }}
+
 {{- define "nova.helpers.ini_sections.api_database" }}
 
 [api_database]
