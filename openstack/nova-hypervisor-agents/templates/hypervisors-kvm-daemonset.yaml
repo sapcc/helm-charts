@@ -126,6 +126,8 @@ spec:
             name: ssh
           - mountPath: /usr/share/qemu
             name: usr-share-qemu
+          - mountPath: /etc/sudoers.d
+            name: sudoers-etc
           {{- end }}
 {{- if not .Values.hypervisor_on_host }}
         - name: nova-libvirt
@@ -252,6 +254,14 @@ spec:
       - name: nfs
         hostPath:
           path: /var/lib/nfs
+      - name: sudoers-etc
+        projected:
+          sources:
+          - configMap:
+              name: {{ .Release.Name }}-etc
+              items:
+              - key: sudoers-nova
+                path: nova
       - name: nova-etc
         projected:
           sources:
