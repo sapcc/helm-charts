@@ -51,9 +51,27 @@ app.kubernetes.io/managed-by: {{ .Release.Service }}
 
 {{/* create a list of netapp filers*/}}
 {{- define "netapp_filers" -}}
-filer:
+{{- if (((.Values.global).netapp).filers) -}}
+filesystem:
+  filer:
 {{- range  $share := .Values.global.netapp.filers }}
-  - name: {{ $share.name }}
-    host: {{ $share.host }}
-{{- end }}
+    - name: {{ $share.name }}
+      host: {{ $share.host }}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+
+{{/* create a list of exclusions */}}
+{{- define "compute_exclusions" -}}
+{{- if (((.Values).metisAPI).exclusions) -}}
+compute:
+  exclusions:
+{{- range $excl := .Values.metisAPI.exclusions }}
+  {{- range $project := $excl.projectUUIDs }}
+    - domainUUID: {{ required "domain uuid missing" $excl.domainUUID | quote }}
+      projectUUID: {{ required "project uuid missing" $project | quote }}
+      resourcePrefix: {{ required "resource prefix missing" $excl.prefix | quote }}
+  {{- end -}}
+{{- end -}}
+{{- end -}}
 {{- end -}}
