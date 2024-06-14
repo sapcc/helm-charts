@@ -100,7 +100,7 @@ if [ "${DATA_STREAM_ENABLED}" -eq 1 ]; then
      if  grep -q "$e" "${e}-${DS_TEMPLATE}" ; then
          curl -vv -u "${ADMIN_USER}:${ADMIN_PASSWORD}" -H 'Content-Type: application/json' -XPUT "${CLUSTER_HOST}/_index_template/${e}-ds" -d @${e}-${DS_TEMPLATE}
      else
-       echo "${FILE} is missing or the replacement wasn't successful."
+       echo "${FILE} is missing or the replacement was not successful."
        exit 1
      fi
    done;
