@@ -1,10 +1,13 @@
----
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.14.0
+    meta.helm.sh/release-name: opentelemetry-operator
+    meta.helm.sh/release-namespace: otel
   name: instrumentations.opentelemetry.io
+  labels:
+    app.kubernetes.io/managed-by: Helm
 spec:
   group: opentelemetry.io
   names:
@@ -51,8 +54,7 @@ spec:
           metadata:
             type: object
           spec:
-            description: InstrumentationSpec defines the desired state of OpenTelemetry
-              SDK and instrumentation.
+            description: InstrumentationSpec defines the desired state of OpenTelemetry SDK and instrumentation.
             properties:
               apacheHttpd:
                 description: ApacheHttpd defines configuration for Apache HTTPD auto-instrumentation.
@@ -63,12 +65,10 @@ spec:
                       `agent default attributes` > `instrument spec attributes` .
                       Attributes are documented at https://github.
                     items:
-                      description: EnvVar represents an environment variable present
-                        in a Container.
+                      description: EnvVar represents an environment variable present in a Container.
                       properties:
                         name:
-                          description: Name of the environment variable. Must be a
-                            C_IDENTIFIER.
+                          description: Name of the environment variable. Must be a C_IDENTIFIER.
                           type: string
                         value:
                           description: |-
@@ -77,8 +77,7 @@ spec:
                             any service environment variables.
                           type: string
                         valueFrom:
-                          description: Source for the environment variable's value.
-                            Cannot be used if value is not empty.
+                          description: Source for the environment variable's value. Cannot be used if value is not empty.
                           properties:
                             configMapKeyRef:
                               description: Selects a key of a ConfigMap.
@@ -93,8 +92,7 @@ spec:
                                     TODO: Add other useful fields. apiVersion, kind, uid?
                                   type: string
                                 optional:
-                                  description: Specify whether the ConfigMap or its
-                                    key must be defined
+                                  description: Specify whether the ConfigMap or its key must be defined
                                   type: boolean
                               required:
                               - key
@@ -106,12 +104,10 @@ spec:
                                 spec.nodeName, spec.serviceAccountName, status.hostIP, status.
                               properties:
                                 apiVersion:
-                                  description: Version of the schema the FieldPath
-                                    is written in terms of, defaults to "v1".
+                                  description: Version of the schema the FieldPath is written in terms of, defaults to "v1".
                                   type: string
                                 fieldPath:
-                                  description: Path of the field to select in the
-                                    specified API version.
+                                  description: Path of the field to select in the specified API version.
                                   type: string
                               required:
                               - fieldPath
@@ -123,15 +119,13 @@ spec:
                                 (limits.cpu, limits.memory, limits.ephemeral-storage, requests.cpu, requests.memory and requests.
                               properties:
                                 containerName:
-                                  description: 'Container name: required for volumes,
-                                    optional for env vars'
+                                  description: 'Container name: required for volumes, optional for env vars'
                                   type: string
                                 divisor:
                                   anyOf:
                                   - type: integer
                                   - type: string
-                                  description: Specifies the output format of the
-                                    exposed resources, defaults to "1"
+                                  description: Specifies the output format of the exposed resources, defaults to "1"
                                   pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
                                   x-kubernetes-int-or-string: true
                                 resource:
@@ -142,12 +136,10 @@ spec:
                               type: object
                               x-kubernetes-map-type: atomic
                             secretKeyRef:
-                              description: Selects a key of a secret in the pod's
-                                namespace
+                              description: Selects a key of a secret in the pod's namespace
                               properties:
                                 key:
-                                  description: The key of the secret to select from.  Must
-                                    be a valid secret key.
+                                  description: The key of the secret to select from.  Must be a valid secret key.
                                   type: string
                                 name:
                                   description: |-
@@ -156,8 +148,7 @@ spec:
                                     TODO: Add other useful fields. apiVersion, kind, uid?
                                   type: string
                                 optional:
-                                  description: Specify whether the Secret or its key
-                                    must be defined
+                                  description: Specify whether the Secret or its key must be defined
                                   type: boolean
                               required:
                               - key
@@ -176,12 +167,10 @@ spec:
                   env:
                     description: Env defines Apache HTTPD specific env vars.
                     items:
-                      description: EnvVar represents an environment variable present
-                        in a Container.
+                      description: EnvVar represents an environment variable present in a Container.
                       properties:
                         name:
-                          description: Name of the environment variable. Must be a
-                            C_IDENTIFIER.
+                          description: Name of the environment variable. Must be a C_IDENTIFIER.
                           type: string
                         value:
                           description: |-
@@ -190,8 +179,7 @@ spec:
                             any service environment variables.
                           type: string
                         valueFrom:
-                          description: Source for the environment variable's value.
-                            Cannot be used if value is not empty.
+                          description: Source for the environment variable's value. Cannot be used if value is not empty.
                           properties:
                             configMapKeyRef:
                               description: Selects a key of a ConfigMap.
@@ -206,8 +194,7 @@ spec:
                                     TODO: Add other useful fields. apiVersion, kind, uid?
                                   type: string
                                 optional:
-                                  description: Specify whether the ConfigMap or its
-                                    key must be defined
+                                  description: Specify whether the ConfigMap or its key must be defined
                                   type: boolean
                               required:
                               - key
@@ -219,12 +206,10 @@ spec:
                                 spec.nodeName, spec.serviceAccountName, status.hostIP, status.
                               properties:
                                 apiVersion:
-                                  description: Version of the schema the FieldPath
-                                    is written in terms of, defaults to "v1".
+                                  description: Version of the schema the FieldPath is written in terms of, defaults to "v1".
                                   type: string
                                 fieldPath:
-                                  description: Path of the field to select in the
-                                    specified API version.
+                                  description: Path of the field to select in the specified API version.
                                   type: string
                               required:
                               - fieldPath
@@ -236,15 +221,13 @@ spec:
                                 (limits.cpu, limits.memory, limits.ephemeral-storage, requests.cpu, requests.memory and requests.
                               properties:
                                 containerName:
-                                  description: 'Container name: required for volumes,
-                                    optional for env vars'
+                                  description: 'Container name: required for volumes, optional for env vars'
                                   type: string
                                 divisor:
                                   anyOf:
                                   - type: integer
                                   - type: string
-                                  description: Specifies the output format of the
-                                    exposed resources, defaults to "1"
+                                  description: Specifies the output format of the exposed resources, defaults to "1"
                                   pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
                                   x-kubernetes-int-or-string: true
                                 resource:
@@ -255,12 +238,10 @@ spec:
                               type: object
                               x-kubernetes-map-type: atomic
                             secretKeyRef:
-                              description: Selects a key of a secret in the pod's
-                                namespace
+                              description: Selects a key of a secret in the pod's namespace
                               properties:
                                 key:
-                                  description: The key of the secret to select from.  Must
-                                    be a valid secret key.
+                                  description: The key of the secret to select from.  Must be a valid secret key.
                                   type: string
                                 name:
                                   description: |-
@@ -269,8 +250,7 @@ spec:
                                     TODO: Add other useful fields. apiVersion, kind, uid?
                                   type: string
                                 optional:
-                                  description: Specify whether the Secret or its key
-                                    must be defined
+                                  description: Specify whether the Secret or its key must be defined
                                   type: boolean
                               required:
                               - key
@@ -329,13 +309,11 @@ spec:
                           - type: string
                           pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
                           x-kubernetes-int-or-string: true
-                        description: Requests describes the minimum amount of compute
-                          resources required.
+                        description: Requests describes the minimum amount of compute resources required.
                         type: object
                     type: object
                   version:
-                    description: Apache HTTPD server version. One of 2.4 or 2.2. Default
-                      is 2.4
+                    description: Apache HTTPD server version. One of 2.4 or 2.2. Default is 2.4
                     type: string
                   volumeLimitSize:
                     anyOf:
@@ -353,12 +331,10 @@ spec:
                   env:
                     description: Env defines DotNet specific env vars.
                     items:
-                      description: EnvVar represents an environment variable present
-                        in a Container.
+                      description: EnvVar represents an environment variable present in a Container.
                       properties:
                         name:
-                          description: Name of the environment variable. Must be a
-                            C_IDENTIFIER.
+                          description: Name of the environment variable. Must be a C_IDENTIFIER.
                           type: string
                         value:
                           description: |-
@@ -367,8 +343,7 @@ spec:
                             any service environment variables.
                           type: string
                         valueFrom:
-                          description: Source for the environment variable's value.
-                            Cannot be used if value is not empty.
+                          description: Source for the environment variable's value. Cannot be used if value is not empty.
                           properties:
                             configMapKeyRef:
                               description: Selects a key of a ConfigMap.
@@ -383,8 +358,7 @@ spec:
                                     TODO: Add other useful fields. apiVersion, kind, uid?
                                   type: string
                                 optional:
-                                  description: Specify whether the ConfigMap or its
-                                    key must be defined
+                                  description: Specify whether the ConfigMap or its key must be defined
                                   type: boolean
                               required:
                               - key
@@ -396,12 +370,10 @@ spec:
                                 spec.nodeName, spec.serviceAccountName, status.hostIP, status.
                               properties:
                                 apiVersion:
-                                  description: Version of the schema the FieldPath
-                                    is written in terms of, defaults to "v1".
+                                  description: Version of the schema the FieldPath is written in terms of, defaults to "v1".
                                   type: string
                                 fieldPath:
-                                  description: Path of the field to select in the
-                                    specified API version.
+                                  description: Path of the field to select in the specified API version.
                                   type: string
                               required:
                               - fieldPath
@@ -413,15 +385,13 @@ spec:
                                 (limits.cpu, limits.memory, limits.ephemeral-storage, requests.cpu, requests.memory and requests.
                               properties:
                                 containerName:
-                                  description: 'Container name: required for volumes,
-                                    optional for env vars'
+                                  description: 'Container name: required for volumes, optional for env vars'
                                   type: string
                                 divisor:
                                   anyOf:
                                   - type: integer
                                   - type: string
-                                  description: Specifies the output format of the
-                                    exposed resources, defaults to "1"
+                                  description: Specifies the output format of the exposed resources, defaults to "1"
                                   pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
                                   x-kubernetes-int-or-string: true
                                 resource:
@@ -432,12 +402,10 @@ spec:
                               type: object
                               x-kubernetes-map-type: atomic
                             secretKeyRef:
-                              description: Selects a key of a secret in the pod's
-                                namespace
+                              description: Selects a key of a secret in the pod's namespace
                               properties:
                                 key:
-                                  description: The key of the secret to select from.  Must
-                                    be a valid secret key.
+                                  description: The key of the secret to select from.  Must be a valid secret key.
                                   type: string
                                 name:
                                   description: |-
@@ -446,8 +414,7 @@ spec:
                                     TODO: Add other useful fields. apiVersion, kind, uid?
                                   type: string
                                 optional:
-                                  description: Specify whether the Secret or its key
-                                    must be defined
+                                  description: Specify whether the Secret or its key must be defined
                                   type: boolean
                               required:
                               - key
@@ -506,8 +473,7 @@ spec:
                           - type: string
                           pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
                           x-kubernetes-int-or-string: true
-                        description: Requests describes the minimum amount of compute
-                          resources required.
+                        description: Requests describes the minimum amount of compute resources required.
                         type: object
                     type: object
                   volumeLimitSize:
@@ -523,8 +489,7 @@ spec:
               env:
                 description: Env defines common env vars.
                 items:
-                  description: EnvVar represents an environment variable present in
-                    a Container.
+                  description: EnvVar represents an environment variable present in a Container.
                   properties:
                     name:
                       description: Name of the environment variable. Must be a C_IDENTIFIER.
@@ -536,8 +501,7 @@ spec:
                         any service environment variables.
                       type: string
                     valueFrom:
-                      description: Source for the environment variable's value. Cannot
-                        be used if value is not empty.
+                      description: Source for the environment variable's value. Cannot be used if value is not empty.
                       properties:
                         configMapKeyRef:
                           description: Selects a key of a ConfigMap.
@@ -552,8 +516,7 @@ spec:
                                 TODO: Add other useful fields. apiVersion, kind, uid?
                               type: string
                             optional:
-                              description: Specify whether the ConfigMap or its key
-                                must be defined
+                              description: Specify whether the ConfigMap or its key must be defined
                               type: boolean
                           required:
                           - key
@@ -565,12 +528,10 @@ spec:
                             spec.nodeName, spec.serviceAccountName, status.hostIP, status.
                           properties:
                             apiVersion:
-                              description: Version of the schema the FieldPath is
-                                written in terms of, defaults to "v1".
+                              description: Version of the schema the FieldPath is written in terms of, defaults to "v1".
                               type: string
                             fieldPath:
-                              description: Path of the field to select in the specified
-                                API version.
+                              description: Path of the field to select in the specified API version.
                               type: string
                           required:
                           - fieldPath
@@ -582,15 +543,13 @@ spec:
                             (limits.cpu, limits.memory, limits.ephemeral-storage, requests.cpu, requests.memory and requests.
                           properties:
                             containerName:
-                              description: 'Container name: required for volumes,
-                                optional for env vars'
+                              description: 'Container name: required for volumes, optional for env vars'
                               type: string
                             divisor:
                               anyOf:
                               - type: integer
                               - type: string
-                              description: Specifies the output format of the exposed
-                                resources, defaults to "1"
+                              description: Specifies the output format of the exposed resources, defaults to "1"
                               pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
                               x-kubernetes-int-or-string: true
                             resource:
@@ -604,8 +563,7 @@ spec:
                           description: Selects a key of a secret in the pod's namespace
                           properties:
                             key:
-                              description: The key of the secret to select from.  Must
-                                be a valid secret key.
+                              description: The key of the secret to select from.  Must be a valid secret key.
                               type: string
                             name:
                               description: |-
@@ -614,8 +572,7 @@ spec:
                                 TODO: Add other useful fields. apiVersion, kind, uid?
                               type: string
                             optional:
-                              description: Specify whether the Secret or its key must
-                                be defined
+                              description: Specify whether the Secret or its key must be defined
                               type: boolean
                           required:
                           - key
@@ -639,12 +596,10 @@ spec:
                   env:
                     description: Env defines Go specific env vars.
                     items:
-                      description: EnvVar represents an environment variable present
-                        in a Container.
+                      description: EnvVar represents an environment variable present in a Container.
                       properties:
                         name:
-                          description: Name of the environment variable. Must be a
-                            C_IDENTIFIER.
+                          description: Name of the environment variable. Must be a C_IDENTIFIER.
                           type: string
                         value:
                           description: |-
@@ -653,8 +608,7 @@ spec:
                             any service environment variables.
                           type: string
                         valueFrom:
-                          description: Source for the environment variable's value.
-                            Cannot be used if value is not empty.
+                          description: Source for the environment variable's value. Cannot be used if value is not empty.
                           properties:
                             configMapKeyRef:
                               description: Selects a key of a ConfigMap.
@@ -669,8 +623,7 @@ spec:
                                     TODO: Add other useful fields. apiVersion, kind, uid?
                                   type: string
                                 optional:
-                                  description: Specify whether the ConfigMap or its
-                                    key must be defined
+                                  description: Specify whether the ConfigMap or its key must be defined
                                   type: boolean
                               required:
                               - key
@@ -682,12 +635,10 @@ spec:
                                 spec.nodeName, spec.serviceAccountName, status.hostIP, status.
                               properties:
                                 apiVersion:
-                                  description: Version of the schema the FieldPath
-                                    is written in terms of, defaults to "v1".
+                                  description: Version of the schema the FieldPath is written in terms of, defaults to "v1".
                                   type: string
                                 fieldPath:
-                                  description: Path of the field to select in the
-                                    specified API version.
+                                  description: Path of the field to select in the specified API version.
                                   type: string
                               required:
                               - fieldPath
@@ -699,15 +650,13 @@ spec:
                                 (limits.cpu, limits.memory, limits.ephemeral-storage, requests.cpu, requests.memory and requests.
                               properties:
                                 containerName:
-                                  description: 'Container name: required for volumes,
-                                    optional for env vars'
+                                  description: 'Container name: required for volumes, optional for env vars'
                                   type: string
                                 divisor:
                                   anyOf:
                                   - type: integer
                                   - type: string
-                                  description: Specifies the output format of the
-                                    exposed resources, defaults to "1"
+                                  description: Specifies the output format of the exposed resources, defaults to "1"
                                   pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
                                   x-kubernetes-int-or-string: true
                                 resource:
@@ -718,12 +667,10 @@ spec:
                               type: object
                               x-kubernetes-map-type: atomic
                             secretKeyRef:
-                              description: Selects a key of a secret in the pod's
-                                namespace
+                              description: Selects a key of a secret in the pod's namespace
                               properties:
                                 key:
-                                  description: The key of the secret to select from.  Must
-                                    be a valid secret key.
+                                  description: The key of the secret to select from.  Must be a valid secret key.
                                   type: string
                                 name:
                                   description: |-
@@ -732,8 +679,7 @@ spec:
                                     TODO: Add other useful fields. apiVersion, kind, uid?
                                   type: string
                                 optional:
-                                  description: Specify whether the Secret or its key
-                                    must be defined
+                                  description: Specify whether the Secret or its key must be defined
                                   type: boolean
                               required:
                               - key
@@ -792,8 +738,7 @@ spec:
                           - type: string
                           pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
                           x-kubernetes-int-or-string: true
-                        description: Requests describes the minimum amount of compute
-                          resources required.
+                        description: Requests describes the minimum amount of compute resources required.
                         type: object
                     type: object
                   volumeLimitSize:
@@ -812,12 +757,10 @@ spec:
                   env:
                     description: Env defines java specific env vars.
                     items:
-                      description: EnvVar represents an environment variable present
-                        in a Container.
+                      description: EnvVar represents an environment variable present in a Container.
                       properties:
                         name:
-                          description: Name of the environment variable. Must be a
-                            C_IDENTIFIER.
+                          description: Name of the environment variable. Must be a C_IDENTIFIER.
                           type: string
                         value:
                           description: |-
@@ -826,8 +769,7 @@ spec:
                             any service environment variables.
                           type: string
                         valueFrom:
-                          description: Source for the environment variable's value.
-                            Cannot be used if value is not empty.
+                          description: Source for the environment variable's value. Cannot be used if value is not empty.
                           properties:
                             configMapKeyRef:
                               description: Selects a key of a ConfigMap.
@@ -842,8 +784,7 @@ spec:
                                     TODO: Add other useful fields. apiVersion, kind, uid?
                                   type: string
                                 optional:
-                                  description: Specify whether the ConfigMap or its
-                                    key must be defined
+                                  description: Specify whether the ConfigMap or its key must be defined
                                   type: boolean
                               required:
                               - key
@@ -855,12 +796,10 @@ spec:
                                 spec.nodeName, spec.serviceAccountName, status.hostIP, status.
                               properties:
                                 apiVersion:
-                                  description: Version of the schema the FieldPath
-                                    is written in terms of, defaults to "v1".
+                                  description: Version of the schema the FieldPath is written in terms of, defaults to "v1".
                                   type: string
                                 fieldPath:
-                                  description: Path of the field to select in the
-                                    specified API version.
+                                  description: Path of the field to select in the specified API version.
                                   type: string
                               required:
                               - fieldPath
@@ -872,15 +811,13 @@ spec:
                                 (limits.cpu, limits.memory, limits.ephemeral-storage, requests.cpu, requests.memory and requests.
                               properties:
                                 containerName:
-                                  description: 'Container name: required for volumes,
-                                    optional for env vars'
+                                  description: 'Container name: required for volumes, optional for env vars'
                                   type: string
                                 divisor:
                                   anyOf:
                                   - type: integer
                                   - type: string
-                                  description: Specifies the output format of the
-                                    exposed resources, defaults to "1"
+                                  description: Specifies the output format of the exposed resources, defaults to "1"
                                   pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
                                   x-kubernetes-int-or-string: true
                                 resource:
@@ -891,12 +828,10 @@ spec:
                               type: object
                               x-kubernetes-map-type: atomic
                             secretKeyRef:
-                              description: Selects a key of a secret in the pod's
-                                namespace
+                              description: Selects a key of a secret in the pod's namespace
                               properties:
                                 key:
-                                  description: The key of the secret to select from.  Must
-                                    be a valid secret key.
+                                  description: The key of the secret to select from.  Must be a valid secret key.
                                   type: string
                                 name:
                                   description: |-
@@ -905,8 +840,7 @@ spec:
                                     TODO: Add other useful fields. apiVersion, kind, uid?
                                   type: string
                                 optional:
-                                  description: Specify whether the Secret or its key
-                                    must be defined
+                                  description: Specify whether the Secret or its key must be defined
                                   type: boolean
                               required:
                               - key
@@ -924,12 +858,10 @@ spec:
                     items:
                       properties:
                         dir:
-                          description: Dir is a directory with extensions auto-instrumentation
-                            JAR.
+                          description: Dir is a directory with extensions auto-instrumentation JAR.
                           type: string
                         image:
-                          description: Image is a container image with extensions
-                            auto-instrumentation JAR.
+                          description: Image is a container image with extensions auto-instrumentation JAR.
                           type: string
                       required:
                       - dir
@@ -937,8 +869,7 @@ spec:
                       type: object
                     type: array
                   image:
-                    description: Image is a container image with javaagent auto-instrumentation
-                      JAR.
+                    description: Image is a container image with javaagent auto-instrumentation JAR.
                     type: string
                   resources:
                     description: Resources describes the compute resource requirements.
@@ -985,8 +916,7 @@ spec:
                           - type: string
                           pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
                           x-kubernetes-int-or-string: true
-                        description: Requests describes the minimum amount of compute
-                          resources required.
+                        description: Requests describes the minimum amount of compute resources required.
                         type: object
                     type: object
                   volumeLimitSize:
@@ -1008,12 +938,10 @@ spec:
                       `agent default attributes` > `instrument spec attributes` .
                       Attributes are documented at https://github.
                     items:
-                      description: EnvVar represents an environment variable present
-                        in a Container.
+                      description: EnvVar represents an environment variable present in a Container.
                       properties:
                         name:
-                          description: Name of the environment variable. Must be a
-                            C_IDENTIFIER.
+                          description: Name of the environment variable. Must be a C_IDENTIFIER.
                           type: string
                         value:
                           description: |-
@@ -1022,8 +950,7 @@ spec:
                             any service environment variables.
                           type: string
                         valueFrom:
-                          description: Source for the environment variable's value.
-                            Cannot be used if value is not empty.
+                          description: Source for the environment variable's value. Cannot be used if value is not empty.
                           properties:
                             configMapKeyRef:
                               description: Selects a key of a ConfigMap.
@@ -1038,8 +965,7 @@ spec:
                                     TODO: Add other useful fields. apiVersion, kind, uid?
                                   type: string
                                 optional:
-                                  description: Specify whether the ConfigMap or its
-                                    key must be defined
+                                  description: Specify whether the ConfigMap or its key must be defined
                                   type: boolean
                               required:
                               - key
@@ -1051,12 +977,10 @@ spec:
                                 spec.nodeName, spec.serviceAccountName, status.hostIP, status.
                               properties:
                                 apiVersion:
-                                  description: Version of the schema the FieldPath
-                                    is written in terms of, defaults to "v1".
+                                  description: Version of the schema the FieldPath is written in terms of, defaults to "v1".
                                   type: string
                                 fieldPath:
-                                  description: Path of the field to select in the
-                                    specified API version.
+                                  description: Path of the field to select in the specified API version.
                                   type: string
                               required:
                               - fieldPath
@@ -1068,15 +992,13 @@ spec:
                                 (limits.cpu, limits.memory, limits.ephemeral-storage, requests.cpu, requests.memory and requests.
                               properties:
                                 containerName:
-                                  description: 'Container name: required for volumes,
-                                    optional for env vars'
+                                  description: 'Container name: required for volumes, optional for env vars'
                                   type: string
                                 divisor:
                                   anyOf:
                                   - type: integer
                                   - type: string
-                                  description: Specifies the output format of the
-                                    exposed resources, defaults to "1"
+                                  description: Specifies the output format of the exposed resources, defaults to "1"
                                   pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
                                   x-kubernetes-int-or-string: true
                                 resource:
@@ -1087,12 +1009,10 @@ spec:
                               type: object
                               x-kubernetes-map-type: atomic
                             secretKeyRef:
-                              description: Selects a key of a secret in the pod's
-                                namespace
+                              description: Selects a key of a secret in the pod's namespace
                               properties:
                                 key:
-                                  description: The key of the secret to select from.  Must
-                                    be a valid secret key.
+                                  description: The key of the secret to select from.  Must be a valid secret key.
                                   type: string
                                 name:
                                   description: |-
@@ -1101,8 +1021,7 @@ spec:
                                     TODO: Add other useful fields. apiVersion, kind, uid?
                                   type: string
                                 optional:
-                                  description: Specify whether the Secret or its key
-                                    must be defined
+                                  description: Specify whether the Secret or its key must be defined
                                   type: boolean
                               required:
                               - key
@@ -1121,12 +1040,10 @@ spec:
                   env:
                     description: Env defines Nginx specific env vars.
                     items:
-                      description: EnvVar represents an environment variable present
-                        in a Container.
+                      description: EnvVar represents an environment variable present in a Container.
                       properties:
                         name:
-                          description: Name of the environment variable. Must be a
-                            C_IDENTIFIER.
+                          description: Name of the environment variable. Must be a C_IDENTIFIER.
                           type: string
                         value:
                           description: |-
@@ -1135,8 +1052,7 @@ spec:
                             any service environment variables.
                           type: string
                         valueFrom:
-                          description: Source for the environment variable's value.
-                            Cannot be used if value is not empty.
+                          description: Source for the environment variable's value. Cannot be used if value is not empty.
                           properties:
                             configMapKeyRef:
                               description: Selects a key of a ConfigMap.
@@ -1151,8 +1067,7 @@ spec:
                                     TODO: Add other useful fields. apiVersion, kind, uid?
                                   type: string
                                 optional:
-                                  description: Specify whether the ConfigMap or its
-                                    key must be defined
+                                  description: Specify whether the ConfigMap or its key must be defined
                                   type: boolean
                               required:
                               - key
@@ -1164,12 +1079,10 @@ spec:
                                 spec.nodeName, spec.serviceAccountName, status.hostIP, status.
                               properties:
                                 apiVersion:
-                                  description: Version of the schema the FieldPath
-                                    is written in terms of, defaults to "v1".
+                                  description: Version of the schema the FieldPath is written in terms of, defaults to "v1".
                                   type: string
                                 fieldPath:
-                                  description: Path of the field to select in the
-                                    specified API version.
+                                  description: Path of the field to select in the specified API version.
                                   type: string
                               required:
                               - fieldPath
@@ -1181,15 +1094,13 @@ spec:
                                 (limits.cpu, limits.memory, limits.ephemeral-storage, requests.cpu, requests.memory and requests.
                               properties:
                                 containerName:
-                                  description: 'Container name: required for volumes,
-                                    optional for env vars'
+                                  description: 'Container name: required for volumes, optional for env vars'
                                   type: string
                                 divisor:
                                   anyOf:
                                   - type: integer
                                   - type: string
-                                  description: Specifies the output format of the
-                                    exposed resources, defaults to "1"
+                                  description: Specifies the output format of the exposed resources, defaults to "1"
                                   pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
                                   x-kubernetes-int-or-string: true
                                 resource:
@@ -1200,12 +1111,10 @@ spec:
                               type: object
                               x-kubernetes-map-type: atomic
                             secretKeyRef:
-                              description: Selects a key of a secret in the pod's
-                                namespace
+                              description: Selects a key of a secret in the pod's namespace
                               properties:
                                 key:
-                                  description: The key of the secret to select from.  Must
-                                    be a valid secret key.
+                                  description: The key of the secret to select from.  Must be a valid secret key.
                                   type: string
                                 name:
                                   description: |-
@@ -1214,8 +1123,7 @@ spec:
                                     TODO: Add other useful fields. apiVersion, kind, uid?
                                   type: string
                                 optional:
-                                  description: Specify whether the Secret or its key
-                                    must be defined
+                                  description: Specify whether the Secret or its key must be defined
                                   type: boolean
                               required:
                               - key
@@ -1274,8 +1182,7 @@ spec:
                           - type: string
                           pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
                           x-kubernetes-int-or-string: true
-                        description: Requests describes the minimum amount of compute
-                          resources required.
+                        description: Requests describes the minimum amount of compute resources required.
                         type: object
                     type: object
                   volumeLimitSize:
@@ -1294,12 +1201,10 @@ spec:
                   env:
                     description: Env defines nodejs specific env vars.
                     items:
-                      description: EnvVar represents an environment variable present
-                        in a Container.
+                      description: EnvVar represents an environment variable present in a Container.
                       properties:
                         name:
-                          description: Name of the environment variable. Must be a
-                            C_IDENTIFIER.
+                          description: Name of the environment variable. Must be a C_IDENTIFIER.
                           type: string
                         value:
                           description: |-
@@ -1308,8 +1213,7 @@ spec:
                             any service environment variables.
                           type: string
                         valueFrom:
-                          description: Source for the environment variable's value.
-                            Cannot be used if value is not empty.
+                          description: Source for the environment variable's value. Cannot be used if value is not empty.
                           properties:
                             configMapKeyRef:
                               description: Selects a key of a ConfigMap.
@@ -1324,8 +1228,7 @@ spec:
                                     TODO: Add other useful fields. apiVersion, kind, uid?
                                   type: string
                                 optional:
-                                  description: Specify whether the ConfigMap or its
-                                    key must be defined
+                                  description: Specify whether the ConfigMap or its key must be defined
                                   type: boolean
                               required:
                               - key
@@ -1337,12 +1240,10 @@ spec:
                                 spec.nodeName, spec.serviceAccountName, status.hostIP, status.
                               properties:
                                 apiVersion:
-                                  description: Version of the schema the FieldPath
-                                    is written in terms of, defaults to "v1".
+                                  description: Version of the schema the FieldPath is written in terms of, defaults to "v1".
                                   type: string
                                 fieldPath:
-                                  description: Path of the field to select in the
-                                    specified API version.
+                                  description: Path of the field to select in the specified API version.
                                   type: string
                               required:
                               - fieldPath
@@ -1354,15 +1255,13 @@ spec:
                                 (limits.cpu, limits.memory, limits.ephemeral-storage, requests.cpu, requests.memory and requests.
                               properties:
                                 containerName:
-                                  description: 'Container name: required for volumes,
-                                    optional for env vars'
+                                  description: 'Container name: required for volumes, optional for env vars'
                                   type: string
                                 divisor:
                                   anyOf:
                                   - type: integer
                                   - type: string
-                                  description: Specifies the output format of the
-                                    exposed resources, defaults to "1"
+                                  description: Specifies the output format of the exposed resources, defaults to "1"
                                   pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
                                   x-kubernetes-int-or-string: true
                                 resource:
@@ -1373,12 +1272,10 @@ spec:
                               type: object
                               x-kubernetes-map-type: atomic
                             secretKeyRef:
-                              description: Selects a key of a secret in the pod's
-                                namespace
+                              description: Selects a key of a secret in the pod's namespace
                               properties:
                                 key:
-                                  description: The key of the secret to select from.  Must
-                                    be a valid secret key.
+                                  description: The key of the secret to select from.  Must be a valid secret key.
                                   type: string
                                 name:
                                   description: |-
@@ -1387,8 +1284,7 @@ spec:
                                     TODO: Add other useful fields. apiVersion, kind, uid?
                                   type: string
                                 optional:
-                                  description: Specify whether the Secret or its key
-                                    must be defined
+                                  description: Specify whether the Secret or its key must be defined
                                   type: boolean
                               required:
                               - key
@@ -1447,8 +1343,7 @@ spec:
                           - type: string
                           pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
                           x-kubernetes-int-or-string: true
-                        description: Requests describes the minimum amount of compute
-                          resources required.
+                        description: Requests describes the minimum amount of compute resources required.
                         type: object
                     type: object
                   volumeLimitSize:
@@ -1485,12 +1380,10 @@ spec:
                   env:
                     description: Env defines python specific env vars.
                     items:
-                      description: EnvVar represents an environment variable present
-                        in a Container.
+                      description: EnvVar represents an environment variable present in a Container.
                       properties:
                         name:
-                          description: Name of the environment variable. Must be a
-                            C_IDENTIFIER.
+                          description: Name of the environment variable. Must be a C_IDENTIFIER.
                           type: string
                         value:
                           description: |-
@@ -1499,8 +1392,7 @@ spec:
                             any service environment variables.
                           type: string
                         valueFrom:
-                          description: Source for the environment variable's value.
-                            Cannot be used if value is not empty.
+                          description: Source for the environment variable's value. Cannot be used if value is not empty.
                           properties:
                             configMapKeyRef:
                               description: Selects a key of a ConfigMap.
@@ -1515,8 +1407,7 @@ spec:
                                     TODO: Add other useful fields. apiVersion, kind, uid?
                                   type: string
                                 optional:
-                                  description: Specify whether the ConfigMap or its
-                                    key must be defined
+                                  description: Specify whether the ConfigMap or its key must be defined
                                   type: boolean
                               required:
                               - key
@@ -1528,12 +1419,10 @@ spec:
                                 spec.nodeName, spec.serviceAccountName, status.hostIP, status.
                               properties:
                                 apiVersion:
-                                  description: Version of the schema the FieldPath
-                                    is written in terms of, defaults to "v1".
+                                  description: Version of the schema the FieldPath is written in terms of, defaults to "v1".
                                   type: string
                                 fieldPath:
-                                  description: Path of the field to select in the
-                                    specified API version.
+                                  description: Path of the field to select in the specified API version.
                                   type: string
                               required:
                               - fieldPath
@@ -1545,15 +1434,13 @@ spec:
                                 (limits.cpu, limits.memory, limits.ephemeral-storage, requests.cpu, requests.memory and requests.
                               properties:
                                 containerName:
-                                  description: 'Container name: required for volumes,
-                                    optional for env vars'
+                                  description: 'Container name: required for volumes, optional for env vars'
                                   type: string
                                 divisor:
                                   anyOf:
                                   - type: integer
                                   - type: string
-                                  description: Specifies the output format of the
-                                    exposed resources, defaults to "1"
+                                  description: Specifies the output format of the exposed resources, defaults to "1"
                                   pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
                                   x-kubernetes-int-or-string: true
                                 resource:
@@ -1564,12 +1451,10 @@ spec:
                               type: object
                               x-kubernetes-map-type: atomic
                             secretKeyRef:
-                              description: Selects a key of a secret in the pod's
-                                namespace
+                              description: Selects a key of a secret in the pod's namespace
                               properties:
                                 key:
-                                  description: The key of the secret to select from.  Must
-                                    be a valid secret key.
+                                  description: The key of the secret to select from.  Must be a valid secret key.
                                   type: string
                                 name:
                                   description: |-
@@ -1578,8 +1463,7 @@ spec:
                                     TODO: Add other useful fields. apiVersion, kind, uid?
                                   type: string
                                 optional:
-                                  description: Specify whether the Secret or its key
-                                    must be defined
+                                  description: Specify whether the Secret or its key must be defined
                                   type: boolean
                               required:
                               - key
@@ -1638,8 +1522,7 @@ spec:
                           - type: string
                           pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
                           x-kubernetes-int-or-string: true
-                        description: Requests describes the minimum amount of compute
-                          resources required.
+                        description: Requests describes the minimum amount of compute resources required.
                         type: object
                     type: object
                   volumeLimitSize:
@@ -1653,12 +1536,10 @@ spec:
                     x-kubernetes-int-or-string: true
                 type: object
               resource:
-                description: Resource defines the configuration for the resource attributes,
-                  as defined by the OpenTelemetry specification.
+                description: Resource defines the configuration for the resource attributes, as defined by the OpenTelemetry specification.
                 properties:
                   addK8sUIDAttributes:
-                    description: AddK8sUIDAttributes defines whether K8s UID attributes
-                      should be collected (e.g. k8s.deployment.uid).
+                    description: AddK8sUIDAttributes defines whether K8s UID attributes should be collected (e.g. k8s.deployment.uid).
                     type: boolean
                   resourceAttributes:
                     additionalProperties:
