@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: esxi-host-exporter
+  namespace: infra-monitoring
+
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: esxi-host-exporter
+      type: exporter
+  template:
+    metadata:
+      labels:
+        app: esxi-host-exporter
+        type: exporter
+    spec:
+      containers:
+        - name: esxi-host-exporter
+          imagePullPolicy: IfNotPresent
+          image: {{ Values.docker_repo }}/esxi-host-exporter:{{ Values.image_version | replace "string:" "" }}
+          command:
+            - python3
+          args:
+            - i
+          ports:
+            - name: metrics
+              containerPort: {{ $.Values.listen_port }}
+          env:
+            - name: VCENTER_USER
+              value: {{ Values.vcenter_user | quote }}
+            - name: VCENTER_PASSWORD
+              value: {{ Values.vcenter_password }}
+            - name: ESXI_USER
+              value: {{ Values.esxi_user | quote }}
+            - name: ESXI_PASSWORD
+              value: {{ Values.esxi_password | quote }}
+            - name: VCENTER_URL
+              value: {{ Values.vcenter_url | quote }}
+            - name: NETBOX_URL
+              value: {{ Values.netbox_url | quote }}
