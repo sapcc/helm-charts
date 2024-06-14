@@ -6,7 +6,7 @@ set -o pipefail
 source /opt/${SOFTWARE_NAME}/bin/common-functions.sh
 
 function checkdbconnection {
-  echo ''| socat TCP4-connect:${CONTAINER_IP}:${MYSQL_PORT} stdio | grep --binary-files=text MariaDB | grep --binary-files=text --silent "${SOFTWARE_VERSION}"
+  echo ''| socat TCP4-connect:${CONTAINER_IP}:${MYSQL_PORT} stdio | grep --binary-files=text MariaDB | grep --binary-files=text --silent "${SOFTWARE_VERSION_CLEAN}"
   if [ $? -eq 0 ]; then
     echo 'MariaDB MySQL API reachable'
   else
