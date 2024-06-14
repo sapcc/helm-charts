@@ -5,7 +5,7 @@ PROVIDER_IPAM_VERSION ?= v0.1.0
 PROVIDER_KUBERNIKUS_VERSION ?= 9fd81475b828971913b3b27addf51fdbd0511d85
 BAREMETAL_OPERATOR_VERSION ?= v0.6.0
 METAL_OPERATOR_VERSION ?= 94572fae2e01b8a1cb0247a4ff407e90dd484f5f
-IPXE_OPERATOR_VERSION ?= d65b790ee247bd53ce1e6028cdb718805480d19a
+IPXE_OPERATOR_VERSION ?= 39c46945066a80b1afa0408bc5af1866ff5fad2b
 SHELL := bash
 .ONESHELL:
 
@@ -94,7 +94,7 @@ build-ipxe-operator:
 	$(call build-chart,ipxe-operator,https://github.com/ironcore-dev/ipxe-operator//config/default,$(IPXE_OPERATOR_VERSION))
 	@yq -i '.controllerManager.manager.image.tag="$(IPXE_OPERATOR_VERSION)"' ipxe-operator/values.yaml
 	@yq -i '.fullnameOverride="ipxe-operator"' ipxe-operator/values.yaml
-	@yq -i '.version="0.0.3"' ipxe-operator/Chart.yaml
+	@yq -i '.version="0.0.4"' ipxe-operator/Chart.yaml
 
 # chart name, source url, tag
 define build-chart
