@@ -1,7 +1,7 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: "update-security-config"
+  name: "install-security-config"
   labels:
     app.kubernetes.io/managed-by: {{ .Release.Service | quote }}
     app.kubernetes.io/instance: {{ .Release.Name | quote }}
@@ -15,7 +15,7 @@ metadata:
 spec:
   template:
     metadata:
-      name: "update-security-config"
+      name: "install-security-config"
       labels:
         app.kubernetes.io/managed-by: {{ .Release.Service | quote }}
         app.kubernetes.io/instance: {{ .Release.Name | quote }}
@@ -23,8 +23,8 @@ spec:
     spec:
       restartPolicy: Never
       containers:
-      - name: security-config
-        image: "{{ .Values.global.dockerRegistry }}opensearchproject/opensearch:2.6.0"
+      - name: install-security-config
+        image: "{{ .Values.global.dockerRegistry }}opensearchproject/opensearch:2.14.0"
         command: ["/bin/bash","/scripts/install-security-config.sh"]
         volumeMounts:
         - mountPath: /usr/share/opensearch/config/opensearch-security/action_groups.yml
