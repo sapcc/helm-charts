@@ -92,15 +92,15 @@ if [ "${DATA_STREAM_ENABLED}" -eq 1 ]; then
    for e in ${DATA_STREAMS}; do
      export FILEPATH=/tmp
      export DS_TEMPLATE=ds.json
-     echo "cp file FILE=${FILE)/${e}"
-     cp /scripts/${DS_TEMPLATE} ${FILE}/${e}-${DS_TEMPLATE}
+     echo "cp file FILE=${FILEPATH}/${e}"
+     cp /scripts/${DS_TEMPLATE} ${FILEPATH}/${e}-${DS_TEMPLATE}
      ls -la /tmp/
      echo "Applying ${e}-${DS_TEMPLATE} to ${CLUSTER_HOST}"
-     sed -i "s/DS_STREAM_NAME/${e}/g" ${FILE}/${e}-${DS_TEMPLATE}
+     sed -i "s/DS_STREAM_NAME/${e}/g" ${FILEPATH}/${e}-${DS_TEMPLATE}
      if  grep -q "$e" "${e}-${DS_TEMPLATE}" ; then
          curl -vv -u "${ADMIN_USER}:${ADMIN_PASSWORD}" -H 'Content-Type: application/json' -XPUT "${CLUSTER_HOST}/_index_template/${e}-ds" -d @${e}-${DS_TEMPLATE}
      else
-       echo "${FILE} is missing or the replacement was not successful."
+       echo "${FILEPATH} is missing or the replacement was not successful."
        exit 1
      fi
    done;
