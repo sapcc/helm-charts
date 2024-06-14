@@ -26,6 +26,17 @@ setuprole {{ $roleKey | squote }} {{ $roleValue.privileges | join ", " | squote 
   {{- end }}
 {{- end }}
 
+{{- if (and (hasKey .Values.mariadb "ccroot_user") (.Values.mariadb.ccroot_user.enabled)) }}
+setupuser "ccroot" "" 'fullaccess' 0 '127.0.0.1' 'mysql_native_password' " "
+setdefaultrole 'fullaccess' 'ccroot' '127.0.0.1'
+{{- else }}
+$(${MYSQL_SVC_CONNECT}) --execute="DROP USER IF EXISTS 'ccroot'@'127.0.0.1';" --batch --skip-column-names
+if [ $? -ne 0 ]; then
+  logerror "${FUNCNAME[0]}" "drop user 'ccroot' failed"
+  exit 1
+fi
+{{- end }}
+
 {{- /* user configuration */}}
 {{- $usernameEnvVar := "" }}
 {{- $passwordEnvVar := "" }}

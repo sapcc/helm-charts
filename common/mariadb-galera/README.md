@@ -340,6 +340,7 @@ docker build --build-arg BASE_SOFT_NAME=ubuntu --build-arg BASE_SOFT_VERSION=22.
 | mariadb.autostart | bool | `true` | run the default entrypoint.sh script or just sleep to be able to troubleshoot and debug |
 | mariadb.binLogDir | string | `"log"` | if not defined the data dir will be used. Needs a log volume mount to be configured too |
 | mariadb.binLogSync | int | 0 | `1` to enable [sync_binlog for ACID compliance](https://mariadb.com/kb/en/replication-and-binary-log-system-variables/#sync_binlog) |
+| mariadb.ccroot_user.enabled | bool | `false` | enable the passwordless `ccroot` user. If enabled a 'ccroot'@'127.0.0.1' user with all privileges and without password will be created to allow passwordless local connections. If disabled, the user will be dropped from the DB if existing |
 | mariadb.databases.sb_oltp_ro.CharacterSetName | string | utf8 | database character set |
 | mariadb.databases.sb_oltp_ro.collationName | string | utf8_general_ci | database collation |
 | mariadb.databases.sb_oltp_ro.comment | string | custom DB | database comment |

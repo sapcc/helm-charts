@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.28.0 - 2024/06/14
+* ccroot user added
+  * for passwordless local root access
+  * unit tests added
+* packages timestamp updated to `20240529172107`
+* chart version bumped
+
 ## v0.27.0 - 2024/04/30
 * [wsrep_desync](https://mariadb.com/kb/en/galera-cluster-system-variables/#wsrep_desync) for backups made optional
   * `mariadb.galera.backup.desyncBackupNode` controls that feature
