@@ -1,0 +1,21 @@
+{{- if .Values.sidecars.frr_exporter }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: frr-metrics
+  labels:
+    app: frrouting-core
+
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: 30038
+    prometheus.io/targets: "kubernetes"
+
+spec:
+  ports:
+  - name: metrics
+    port: 30038
+
+  selector:
+    service: frrouting-core
+{{- end }}
