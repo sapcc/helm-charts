@@ -54,7 +54,7 @@ spec:
           {{- end }}
           env:
             - name: COMMAND
-              value: "/usr/sbin/apachectl -D FOREGROUND"
+              value: "uwsgi --ini /etc/octavia/uwsgi.ini"
             - name: DEPENDENCY_JOBS
               value: octavia-migration
             - name: NAMESPACE
@@ -117,8 +117,8 @@ spec:
             {{- end }}
             {{- if not .Values.api_backdoor }}
             - name: octavia-etc
-              mountPath: /etc/apache2/conf-enabled/octavia-api.conf
-              subPath: octavia-api.conf
+              mountPath: /etc/octavia/uwsgi.ini
+              subPath: uwsgi.ini
               readOnly: true
             {{- end }}
             {{- include "utils.proxysql.volume_mount" . | indent 12 }}
