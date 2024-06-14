@@ -1,0 +1,16 @@
+groups:
+- name: openstack-manila-pod.alerts
+  rules:
+    - alert: OpenstackManilaSharePodScaledDown
+      expr: max by (deployment) (kube_deployment_status_replicas{deployment=~"manila-share-netapp-.*"}) == 0 and min by (deployment) (label_replace(min_over_time(manila_reserved_percentage{name=~"manila-share-netapp-.*"}[7d]), "deployment", "$1", "name", "(.*)@.*")) < 100
+      for: 12h
+      labels:
+        tier: os
+        service: manila
+        severity: info
+        context: share-replicas
+        meta: "{{ $labels.deployment }}"
+        support_group: compute-storage-api
+      annotations:
+        summary: Deployment 0 replicas
+        description: The deployment {{ $labels.deployment }} is set to 0 replicas for more than half a day. Consider scaling back up if maintenance is over.
