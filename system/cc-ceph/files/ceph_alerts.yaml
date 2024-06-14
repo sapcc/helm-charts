@@ -13,7 +13,7 @@
             severity: "critical"
             type: "ceph_default"
             service: ceph
-            support_group: storage
+            #support_group: storage
         - alert: "CephHealthWarning"
           annotations:
             description: "The cluster state has been HEALTH_WARN for more than 15 minutes. Please check 'ceph health detail' for more information."
@@ -24,7 +24,7 @@
             severity: "warning"
             type: "ceph_default"
             service: ceph
-            support_group: storage
+            #support_group: storage
     - name: "mon"
       rules:
         - alert: "CephMonDownQuorumAtRisk"
@@ -44,7 +44,7 @@
             severity: "critical"
             type: "ceph_default"
             service: ceph
-            support_group: storage
+            #support_group: storage
         - alert: "CephMonDown"
           annotations:
             description: |
@@ -58,7 +58,7 @@
             severity: "warning"
             type: "ceph_default"
             service: ceph
-            support_group: storage
+            #support_group: storage
         - alert: "CephMonDiskspaceCritical"
           annotations:
             description: "The free space available to a monitor's store is critically low. You should increase the space available to the monitor(s). The default directory is /var/lib/ceph/mon-*/data/store.db on traditional deployments, and /var/lib/rook/mon-*/data/store.db on the mon pod's worker node for Rook. Look for old, rotated versions of *.log and MANIFEST*. Do NOT touch any *.sst files. Also check any other directories under /var/lib/rook and other directories on the same filesystem, often /var/log and /var/tmp are culprits. Your monitor hosts are; {{- range query \"ceph_mon_metadata\"}} - {{ .Labels.hostname }} {{- end }}"
@@ -71,7 +71,7 @@
             severity: "critical"
             type: "ceph_default"
             service: ceph
-            support_group: storage
+            #support_group: storage
         - alert: "CephMonDiskspaceLow"
           annotations:
             description: "The space available to a monitor's store is approaching full (>70% is the default). You should increase the space available to the monitor(s). The default directory is /var/lib/ceph/mon-*/data/store.db on traditional deployments, and /var/lib/rook/mon-*/data/store.db on the mon pod's worker node for Rook. Look for old, rotated versions of *.log and MANIFEST*.  Do NOT touch any *.sst files. Also check any other directories under /var/lib/rook and other directories on the same filesystem, often /var/log and /var/tmp are culprits. Your monitor hosts are; {{- range query \"ceph_mon_metadata\"}} - {{ .Labels.hostname }} {{- end }}"
@@ -83,7 +83,7 @@
             severity: "warning"
             type: "ceph_default"
             service: ceph
-            support_group: storage
+            #support_group: storage
         - alert: "CephMonClockSkew"
           annotations:
             description: "Ceph monitors rely on closely synchronized time to maintain quorum and cluster consistency. This event indicates that the time on at least one mon has drifted too far from the lead mon. Review cluster status with ceph -s. This will show which monitors are affected. Check the time sync status on each monitor host with 'ceph time-sync-status' and the state and peers of your ntpd or chrony daemon."
@@ -95,7 +95,7 @@
             severity: "warning"
             type: "ceph_default"
             service: ceph
-            support_group: storage
+            #support_group: storage
     - name: "osd"
       rules:
         - alert: "CephOSDDownHigh"
@@ -108,7 +108,7 @@
             severity: "critical"
             type: "ceph_default"
             service: ceph
-            support_group: storage
+            #support_group: storage
         - alert: "CephOSDHostDown"
           annotations:
             description: "The following OSDs are down: {{- range query \"(ceph_osd_up * on(ceph_daemon) group_left(hostname) ceph_osd_metadata) == 0\" }} - {{ .Labels.hostname }} : {{ .Labels.ceph_daemon }} {{- end }}"
@@ -120,7 +120,7 @@
             severity: "warning"
             type: "ceph_default"
             service: ceph
-            support_group: storage
+            #support_group: storage
         - alert: "CephOSDDown"
           annotations:
             description: |
@@ -134,7 +134,7 @@
             severity: "warning"
             type: "ceph_default"
             service: ceph
-            support_group: storage
+            #support_group: storage
         - alert: "CephOSDNearFull"
           annotations:
             description: "One or more OSDs have reached the NEARFULL threshold. Use 'ceph health detail' and 'ceph osd df' to identify the problem. To resolve, add capacity to the affected OSD's failure domain, restore down/out OSDs, or delete unwanted data."
@@ -147,7 +147,7 @@
             severity: "warning"
             type: "ceph_default"
             service: ceph
-            support_group: storage
+            #support_group: storage
         - alert: "CephOSDFull"
           annotations:
             description: "An OSD has reached the FULL threshold. Writes to pools that share the affected OSD will be blocked. Use 'ceph health detail' and 'ceph osd df' to identify the problem. To resolve, add capacity to the affected OSD's failure domain, restore down/out OSDs, or delete unwanted data."
@@ -160,7 +160,7 @@
             severity: "critical"
             type: "ceph_default"
             service: ceph
-            support_group: storage
+            #support_group: storage
         - alert: "CephOSDBackfillFull"
           annotations:
             description: "An OSD has reached the BACKFILL FULL threshold. This will prevent rebalance operations from completing. Use 'ceph health detail' and 'ceph osd df' to identify the problem. To resolve, add capacity to the affected OSD's failure domain, restore down/out OSDs, or delete unwanted data."
@@ -172,7 +172,7 @@
             severity: "warning"
             type: "ceph_default"
             service: ceph
-            support_group: storage
+            #support_group: storage
         - alert: "CephOSDTooManyRepairs"
           annotations:
             description: "Reads from an OSD have used a secondary PG to return data to the client, indicating a potential failing drive."
@@ -184,7 +184,7 @@
             severity: "warning"
             type: "ceph_default"
             service: ceph
-            support_group: storage
+            #support_group: storage
         - alert: "CephOSDTimeoutsPublicNetwork"
           annotations:
             description: "OSD heartbeats on the cluster's 'public' network (frontend) are running slow. Investigate the network for latency or loss issues. Use 'ceph health detail' to show the affected OSDs."
@@ -195,7 +195,7 @@
             severity: "warning"
             type: "ceph_default"
             service: ceph
-            support_group: storage
+            #support_group: storage
         - alert: "CephOSDTimeoutsClusterNetwork"
           annotations:
             description: "OSD heartbeats on the cluster's 'cluster' network (backend) are slow. Investigate the network for latency issues on this subnet. Use 'ceph health detail' to show the affected OSDs."
@@ -206,7 +206,7 @@
             severity: "warning"
             type: "ceph_default"
             service: ceph
-            support_group: storage
+            #support_group: storage
         - alert: "CephOSDInternalDiskSizeMismatch"
           annotations:
             description: "One or more OSDs have an internal inconsistency between metadata and the size of the device. This could lead to the OSD(s) crashing in future. You should redeploy the affected OSDs."
@@ -218,7 +218,7 @@
             severity: "warning"
             type: "ceph_default"
             service: ceph
-            support_group: storage
+            #support_group: storage
         - alert: "CephDeviceFailurePredicted"
           annotations:
             description: "The device health module has determined that one or more devices will fail soon. To review device status use 'ceph device ls'. To show a specific device use 'ceph device info <dev id>'. Mark the OSD out so that data may migrate to other OSDs. Once the OSD has drained, destroy the OSD, replace the device, and redeploy the OSD."
@@ -230,7 +230,7 @@
             severity: "warning"
             type: "ceph_default"
             service: ceph
-            support_group: storage
+            #support_group: storage
         - alert: "CephDeviceFailurePredictionTooHigh"
           annotations:
             description: "The device health module has determined that devices predicted to fail can not be remediated automatically, since too many OSDs would be removed from the cluster to ensure performance and availabililty. Prevent data integrity issues by adding new OSDs so that data may be relocated."
@@ -243,7 +243,7 @@
             severity: "critical"
             type: "ceph_default"
             service: ceph
-            support_group: storage
+            #support_group: storage
         - alert: "CephDeviceFailureRelocationIncomplete"
           annotations:
             description: "The device health module has determined that one or more devices will fail soon, but the normal process of relocating the data on the device to other OSDs in the cluster is blocked. \nEnsure that the cluster has available free space. It may be necessary to add capacity to the cluster to allow data from the failing device to successfully migrate, or to enable the balancer."
@@ -255,7 +255,7 @@
             severity: "warning"
             type: "ceph_default"
             service: ceph
-            support_group: storage
+            #support_group: storage
         - alert: "CephOSDFlapping"
           annotations:
             description: "OSD {{ $labels.ceph_daemon }} on {{ $labels.hostname }} was marked down and back up {{ $value | humanize }} times once a minute for 5 minutes. This may indicate a network issue (latency, packet loss, MTU mismatch) on the cluster network, or the public network if no cluster network is deployed. Check the network stats on the listed host(s)."
@@ -267,7 +267,7 @@
             severity: "warning"
             type: "ceph_default"
             service: ceph
-            support_group: storage
+            #support_group: storage
         - alert: "CephOSDReadErrors"
           annotations:
             description: "An OSD has encountered read errors, but the OSD has recovered by retrying the reads. This may indicate an issue with hardware or the kernel."
@@ -279,7 +279,7 @@
             severity: "warning"
             type: "ceph_default"
             service: ceph
-            support_group: storage
+            #support_group: storage
         - alert: "CephAPodNodePGImbalance"
           annotations:
             description: "OSD {{ $labels.ceph_daemon }} on apod node {{ $labels.hostname }} deviates by more than 30% from average PG count."
@@ -296,7 +296,7 @@
             severity: "warning"
             type: "ceph_default"
             service: ceph
-            support_group: storage
+            #support_group: storage
         - alert: "CephStorageNodePGImbalance"
           annotations:
             description: "OSD {{ $labels.ceph_daemon }} on storage node {{ $labels.hostname }} deviates by more than 30% from average PG count."
@@ -313,7 +313,7 @@
             severity: "warning"
             type: "ceph_default"
             service: ceph
-            support_group: storage
+            #support_group: storage
  #   - name: "mds"
  #     rules:
  #      - alert: "CephFilesystemDamaged"
@@ -405,7 +405,7 @@
             severity: "critical"
             type: "ceph_default"
             service: ceph
-            support_group: storage
+            #support_group: storage
         - alert: "CephMgrPrometheusModuleInactive"
           annotations:
             description: "The mgr/prometheus module at {{ $labels.instance }} is unreachable. This could mean that the module has been disabled or the mgr daemon itself is down. Without the mgr/prometheus module metrics and alerts will no longer function. Open a shell to an admin node or toolbox pod and use 'ceph -s' to to determine whether the mgr is active. If the mgr is not active, restart it, otherwise you can determine module status with 'ceph mgr module ls'. If it is not listed as enabled, enable it with 'ceph mgr module enable prometheus'."
@@ -417,7 +417,7 @@
             severity: "critical"
             type: "ceph_default"
             service: ceph
-            support_group: storage
+            #support_group: storage
     - name: "pgs"
       rules:
         - alert: "CephPGsInactive"
@@ -431,7 +431,7 @@
             severity: "critical"
             type: "ceph_default"
             service: ceph
-            support_group: storage
+            #support_group: storage
         - alert: "CephPGsUnclean"
           annotations:
             description: "{{ $value }} PGs have been unclean for more than 15 minutes in pool {{ $labels.name }}. Unclean PGs have not recovered from a previous failure."
@@ -443,7 +443,7 @@
             severity: "warning"
             type: "ceph_default"
             service: ceph
-            support_group: storage
+            #support_group: storage
         - alert: "CephPGsDamaged"
           annotations:
             description: "During data consistency checks (scrub), at least one PG has been flagged as being damaged or inconsistent. Check to see which PG is affected, and attempt a manual repair if necessary. To list problematic placement groups, use 'rados list-inconsistent-pg <pool>'. To repair PGs use the 'ceph pg repair <pg_num>' command."
@@ -456,7 +456,7 @@
             severity: "critical"
             type: "ceph_default"
             service: ceph
-            support_group: storage
+            #support_group: storage
         - alert: "CephPGRecoveryAtRisk"
           annotations:
             description: "Data redundancy is at risk since one or more OSDs are at or above the 'full' threshold. Add more capacity to the cluster, restore down/out OSDs, or delete unwanted data."
@@ -469,7 +469,7 @@
             severity: "critical"
             type: "ceph_default"
             service: ceph
-            support_group: storage
+            #support_group: storage
         - alert: "CephPGUnavilableBlockingIO"
           annotations:
             description: "Data availability is reduced, impacting the cluster's ability to service I/O. One or more placement groups (PGs) are in a state that blocks I/O."
@@ -482,7 +482,7 @@
             severity: "critical"
             type: "ceph_default"
             service: ceph
-            support_group: storage
+            #support_group: storage
         - alert: "CephPGBackfillAtRisk"
           annotations:
             description: "Data redundancy may be at risk due to lack of free space within the cluster. One or more OSDs have reached the 'backfillfull' threshold. Add more capacity, or delete unwanted data."
@@ -495,7 +495,7 @@
             severity: "critical"
             type: "ceph_default"
             service: ceph
-            support_group: storage
+            #support_group: storage
         - alert: "CephPGNotScrubbed"
           annotations:
             description: "One or more PGs have not been scrubbed recently. Scrubs check metadata integrity, protecting against bit-rot. They check that metadata is consistent across data replicas. When PGs miss their scrub interval, it may indicate that the scrub window is too small, or PGs were not in a 'clean' state during the scrub window. You can manually initiate a scrub with: ceph pg scrub <pgid>"
@@ -507,7 +507,7 @@
             severity: "warning"
             type: "ceph_default"
             service: ceph
-            support_group: storage
+            #support_group: storage
         - alert: "CephPGsHighPerOSD"
           annotations:
             description: "The number of placement groups per OSD is too high (exceeds the mon_max_pg_per_osd setting).\n Check that the pg_autoscaler has not been disabled for any pools with 'ceph osd pool autoscale-status', and that the profile selected is appropriate. You may also adjust the target_size_ratio of a pool to guide the autoscaler based on the expected relative size of the pool ('ceph osd pool set cephfs.cephfs.meta target_size_ratio .1') or set the pg_autoscaler mode to 'warn' and adjust pg_num appropriately for one or more pools."
@@ -519,7 +519,7 @@
             severity: "warning"
             type: "ceph_default"
             service: ceph
-            support_group: storage
+            #support_group: storage
         - alert: "CephPGNotDeepScrubbed"
           annotations:
             description: "One or more PGs have not been deep scrubbed recently. Deep scrubs protect against bit-rot. They compare data replicas to ensure consistency. When PGs miss their deep scrub interval, it may indicate that the window is too small or PGs were not in a 'clean' state during the deep-scrub window."
@@ -531,7 +531,7 @@
             severity: "warning"
             type: "ceph_default"
             service: ceph
-            support_group: storage
+            #support_group: storage
     - name: "nodes"
       rules:
         - alert: "CephNodeRootFilesystemFull"
@@ -545,49 +545,49 @@
             severity: "critical"
             type: "ceph_default"
             service: ceph
-            support_group: storage
+            #support_group: storage
         - alert: "CephNodeNetworkPacketDrops"
           annotations:
             description: "Node {{ $labels.instance }} experiences packet drop > 0.5% or > 10 packets/s on interface {{ $labels.device }}."
             summary: "One or more NICs reports packet drops"
           expr: |
             (
-              rate(node_network_receive_drop_total{device!="lo"}[1m]) +
-              rate(node_network_transmit_drop_total{device!="lo"}[1m])
+              rate(node_network_receive_drop_total{device="bond0"}[1m]) +
+              rate(node_network_transmit_drop_total{device="bond0"}[1m])
             ) / (
-              rate(node_network_receive_packets_total{device!="lo"}[1m]) +
-              rate(node_network_transmit_packets_total{device!="lo"}[1m])
+              rate(node_network_receive_packets_total{device="bond0"}[1m]) +
+              rate(node_network_transmit_packets_total{device="bond0"}[1m])
             ) >= 0.0050000000000000001 and (
-              rate(node_network_receive_drop_total{device!="lo"}[1m]) +
-              rate(node_network_transmit_drop_total{device!="lo"}[1m])
+              rate(node_network_receive_drop_total{device="bond0"}[1m]) +
+              rate(node_network_transmit_drop_total{device="bond0"}[1m])
             ) >= 10
           labels:
             oid: "1.3.6.1.4.1.50495.1.2.1.8.2"
             severity: "warning"
             type: "ceph_default"
             service: ceph
-            support_group: storage
+            #support_group: storage
         - alert: "CephNodeNetworkPacketErrors"
           annotations:
             description: "Node {{ $labels.instance }} experiences packet errors > 0.01% or > 10 packets/s on interface {{ $labels.device }}."
             summary: "One or more NICs reports packet errors"
           expr: |
             (
-              rate(node_network_receive_errs_total{device!="lo"}[1m]) +
-              rate(node_network_transmit_errs_total{device!="lo"}[1m])
+              rate(node_network_receive_errs_total{device="bond0"}[1m]) +
+              rate(node_network_transmit_errs_total{device="bond0"}[1m])
             ) / (
-              rate(node_network_receive_packets_total{device!="lo"}[1m]) +
-              rate(node_network_transmit_packets_total{device!="lo"}[1m])
+              rate(node_network_receive_packets_total{device="bond0"}[1m]) +
+              rate(node_network_transmit_packets_total{device="bond0"}[1m])
             ) >= 0.0001 or (
-              rate(node_network_receive_errs_total{device!="lo"}[1m]) +
-              rate(node_network_transmit_errs_total{device!="lo"}[1m])
+              rate(node_network_receive_errs_total{device="bond0"}[1m]) +
+              rate(node_network_transmit_errs_total{device="bond0"}[1m])
             ) >= 10
           labels:
             oid: "1.3.6.1.4.1.50495.1.2.1.8.3"
             severity: "warning"
             type: "ceph_default"
             service: ceph
-            support_group: storage
+            #support_group: storage
         - alert: "CephNodeNetworkBondDegraded"
           annotations:
             summary: "Degraded Bond on Node {{ $labels.instance }}"
@@ -598,7 +598,7 @@
             severity: "warning"
             type: "ceph_default"
             service: ceph
-            support_group: storage
+            #support_group: storage
         - alert: "CephNodeDiskspaceWarning"
           annotations:
             description: "Mountpoint {{ $labels.mountpoint }} on {{ $labels.nodename }} will be full in less than 5 days based on the 48 hour trailing fill rate."
@@ -609,7 +609,7 @@
             severity: "warning"
             type: "ceph_default"
             service: ceph
-            support_group: storage
+            #support_group: storage
         # - alert: "CephNodeInconsistentMTU"
         #   annotations:
         #     description: "Node {{ $labels.instance }} has a different MTU size ({{ $value }}) than the median of devices named {{ $labels.device }}."
@@ -631,7 +631,7 @@
             severity: "warning"
             type: "ceph_default"
             service: ceph
-            support_group: storage
+            #support_group: storage
         - alert: "CephPoolFull"
           annotations:
             description: "A pool has reached its MAX quota, or OSDs supporting the pool have reached the FULL threshold. Until this is resolved, writes to the pool will be blocked. Pool Breakdown (top 5) {{- range query \"topk(5, sort_desc(ceph_pool_percent_used * on(pool_id) group_right ceph_pool_metadata))\" }} - {{ .Labels.name }} at {{ .Value }}% {{- end }} Increase the pool's quota, or add capacity to the cluster first then increase the pool's quota (e.g. ceph osd pool set quota <pool_name> max_bytes <bytes>)"
@@ -644,7 +644,7 @@
             severity: "critical"
             type: "ceph_default"
             service: ceph
-            support_group: storage
+            #support_group: storage
         - alert: "CephPoolNearFull"
           annotations:
             description: "A pool has exceeded the warning (percent full) threshold, or OSDs supporting the pool have reached the NEARFULL threshold. Writes may continue, but you are at risk of the pool going read-only if more capacity isn't made available. Determine the affected pool with 'ceph df detail', looking at QUOTA BYTES and STORED. Increase the pool's quota, or add capacity to the cluster first then increase the pool's quota (e.g. ceph osd pool set quota <pool_name> max_bytes <bytes>). Also ensure that the balancer is active."
@@ -655,7 +655,7 @@
             severity: "warning"
             type: "ceph_default"
             service: ceph
-            support_group: storage
+            #support_group: storage
     - name: "healthchecks"
       rules:
         - alert: "CephSlowOps"
@@ -669,7 +669,7 @@
             severity: "warning"
             type: "ceph_default"
             service: ceph
-            support_group: storage
+            #support_group: storage
         - alert: "CephDaemonSlowOps"
           for: "30s"
           expr: "ceph_daemon_health_metrics{type=\"SLOW_OPS\"} > 0"
@@ -677,7 +677,7 @@
             severity: 'warning'
             type: 'ceph_default'
             service: ceph
-            support_group: storage
+            #support_group: storage
           annotations:
             summary: "{{ $labels.ceph_daemon }} operations are slow to complete"
             description: "{{ $labels.ceph_daemon }} operations are taking too long to process (complaint time exceeded)"
@@ -696,7 +696,7 @@
             severity: "critical"
             type: "ceph_default"
             service: ceph
-            support_group: storage
+            #support_group: storage
     - name: "generic"
       rules:
         - alert: "CephDaemonCrash"
@@ -711,4 +711,4 @@
             severity: "critical"
             type: "ceph_default"
             service: ceph
-            support_group: storage
+            #support_group: storage

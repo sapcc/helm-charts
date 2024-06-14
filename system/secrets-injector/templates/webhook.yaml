@@ -40,6 +40,8 @@ webhooks:
     expression: 'object.metadata.?ownerReferences.optMap(l, !("Alertmanager" in l.map(r, r.kind))).orValue(true)'
   - name: 'exclude-owner-helm'
     expression: 'object.metadata.?labels["owner"].orValue("") != "helm"'
+  - name: 'exclude-terraform-state'
+    expression: 'object.metadata.?labels["tfstate"].orValue("") != "true"'
   - name: 'exclude-namespace-kubernikus'
     expression: 'object.metadata.namespace != "kubernikus"'
   {{- end }}

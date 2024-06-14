@@ -1,0 +1,304 @@
+{{- if and (hasKey $.Values.mariadb "autostart") (not $.Values.mariadb.autostart) }}
+{{- else if and ($.Values.command) (hasKey $.Values.command "database") }}
+{{- else if and (and (hasKey $.Values.mariadb.galera "backup") ($.Values.mariadb.galera.backup.enabled)) (and (hasKey $.Values.mariadb.galera.backup "kopia") ($.Values.mariadb.galera.backup.kopia.enabled)) }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: {{ $.Release.Namespace }}
+  name: {{ include "commonPrefix" $ }}-backup-kopiaserver
+  labels:
+    app: {{ $.Release.Name }}
+    release: {{ $.Release.Name }}
+    component: "kopiaserver"
+    backupsoftware: "kopia"
+    {{- include "sharedservices.labels" $ | indent 4 }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ $.Release.Name }}
+  revisionHistoryLimit: {{ $.Values.revisionHistoryLimit | default 10 | int }}
+  strategy:
+    type: {{ $.Values.updateStrategy | default "RollingUpdate" | quote }}
+  template:
+    metadata:
+      labels:
+        app: {{ $.Release.Name }}
+        release: {{ $.Release.Name }}
+        component: "kopiaserver"
+        backupsoftware: "kopia"
+        {{- include "sharedservices.labels" $ | indent 8 }}
+      annotations:
+        {{- if $.Values.monitoring.kopia.enabled }}
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8080"
+        prometheus.io/targets: {{ $.Values.monitoring.prometheus.instance.database | default "prometheus" | quote }}
+        {{- end }}
+        {{- if or (and (hasKey $.Values "global") (and (hasKey $.Values.global "linkerd_enabled") $.Values.global.linkerd_enabled) (and (hasKey $.Values.global "linkerd_requested") $.Values.global.linkerd_requested)) $.Values.mariadb.galera.backup.kopia.linkerd.enabled }}
+        linkerd.io/inject: enabled
+        {{- end }}
+        checksum/configmap: {{ include (print $.Template.BasePath "/configmap-kopia.yaml") $ | sha256sum }}
+    spec:
+      serviceAccount: {{ include "commonPrefix" $ }}-mariadb-galera
+      automountServiceAccountToken: false
+      securityContext:
+        runAsUser:  {{ $.Values.userId.backup | default 3200 | int }}
+        runAsGroup: {{ $.Values.groupId.backup | default 3200 | int }}
+        fsGroup:  {{ $.Values.groupId.backup | default 3200 | int }}
+      {{- if and (hasKey $.Values.image.kopiabackup "pullSecret") $.Values.image.kopiabackup.pullSecret }}
+      imagePullSecrets:
+      - name: {{ include "commonPrefix" $ }}-{{$.Values.image.kopiabackup.pullSecret}}
+      {{- end }}
+      initContainers:
+      - name: sysctl-tcp-keepalive
+        image: "{{ $.Values.image.os.registry }}/{{ $.Values.image.os.project }}/{{ $.Values.image.os.databasename }}:{{ $.Values.image.os.databaseversion }}-{{ $.Values.image.os.imageversion | int }}"
+        imagePullPolicy: {{ $.Values.image.os.pullPolicy | default "IfNotPresent" | quote }}
+        command:
+        - sh
+        - -c
+        - 'sysctl -w net.ipv4.tcp_keepalive_time=60 net.ipv4.tcp_keepalive_intvl=60 net.ipv4.tcp_keepalive_probes=5'
+        securityContext:
+          privileged: {{ $.Values.initContainers.tcpKeepAlive.securityContext.privileged | default true }}
+          runAsUser: {{ $.Values.initContainers.tcpKeepAlive.securityContext.runAsUser | default 0 | int }}
+      containers:
+      - name: backup
+        image: "{{ $.Values.image.kopiabackup.registry }}/{{ $.Values.image.kopiabackup.project }}/{{ $.Values.image.kopiabackup.databasename }}:{{ $.Values.image.kopiabackup.databaseversion }}-{{ $.Values.image.kopiabackup.imageversion | int }}"
+        imagePullPolicy: {{ $.Values.image.kopiabackup.pullPolicy | default "IfNotPresent" | quote }}
+        securityContext:
+          runAsUser:  {{ $.Values.userId.backup | default 3200 | int }}
+          runAsGroup: {{ $.Values.groupId.backup | default 3200 | int }}
+        # disabled because not whitelisted
+        # sysctls:
+        # - name: net.ipv4.tcp_keepalive_time
+        #   value: "60"
+        # - name: net.ipv4.tcp_keepalive_intvl
+        #   value: "60"
+        # - name: net.ipv4.tcp_keepalive_probes
+        #   value: "5"
+        {{- if and ($.Values.command) (hasKey $.Values.command "kopiaserver") }}
+        command:
+{{ $.Values.command.kopiaserver | toYaml | indent 8 }}
+        {{- end }}
+        env:
+        - name: KOPIA_REPOSITORY_TYPE
+          value: {{ required "Values.mariadb.galera.backup.kopia.backend is missing, but required for the Kopia backend configuration." $.Values.mariadb.galera.backup.kopia.backend | quote }}
+        {{- if and (hasKey $.Values.mariadb.galera.backup.kopia "backend") (eq $.Values.mariadb.galera.backup.kopia.backend "s3") }}
+        - name: KOPIA_S3_ENDPOINT
+          value: {{ required "Values.mariadb.galera.backup.kopia.s3.endpoint is missing, but required for the S3 API authentication." $.Values.mariadb.galera.backup.kopia.s3.endpoint | quote }}
+        - name: KOPIA_S3_REGION
+          value: {{ required "Values.mariadb.galera.backup.kopia.s3.region is missing, but required for the S3 API authentication." $.Values.mariadb.galera.backup.kopia.s3.region | quote }}
+        - name: KOPIA_S3_BUCKET
+          value: {{ required "Values.mariadb.galera.backup.kopia.s3.bucket is missing, but required for the S3 API authentication." $.Values.mariadb.galera.backup.kopia.s3.bucket | quote }}
+        {{- end }}
+        {{- if and (hasKey $.Values.mariadb.galera.backup.kopia "backend") (eq $.Values.mariadb.galera.backup.kopia.backend "s3") }}
+        - name: KOPIA_REPOSITORY_OPTIONS
+          value: "--endpoint=${KOPIA_S3_ENDPOINT} --region=${KOPIA_S3_REGION} --bucket=${KOPIA_S3_BUCKET} --access-key=${KOPIA_S3_USERNAME} --secret-access-key=${KOPIA_S3_PASSWORD}"
+        {{- else if and (hasKey $.Values.mariadb.galera.backup.kopia "backend") (eq $.Values.mariadb.galera.backup.kopia.backend "filesystem") }}
+          {{- range $volumeMountsKey, $volumeMountsValue := $.Values.volumeMounts.backup.kopia }}
+            {{- if eq $volumeMountsKey (required "mariadb.galera.backup.kopia.filesystem.name is required to configure the Kopia backup filesystem backend type" $.Values.mariadb.galera.backup.kopia.filesystem.name) }}
+              {{- if $volumeMountsValue.enabled }}
+        - name: KOPIA_REPOSITORY_OPTIONS
+          value: "--path={{ $volumeMountsValue.mountPath }}"
+              {{- end }}
+            {{- end }}
+          {{- end }}
+        {{- end }}
+        - name: MARIADB_CLUSTER_NAME
+          value: {{ (required "mariadb.galera.clustername is required to configure the wsrep-cluster-name option for MariaDB" $.Values.mariadb.galera.clustername) | quote }}
+        - name: MYSQL_PORT
+          value: {{ (required ".services.database.frontend.ports.mysql.targetPort missing" $.Values.services.database.frontend.ports.mysql.targetPort) | quote }}
+        - name: KOPIA_PORT
+          value: "{{ (required ".services.kopiaserver.frontend.ports.kopia.targetPort missing" $.Values.services.kopiaserver.frontend.ports.kopia.targetPort) }}"
+        - name: KOPIA_UI_TITLE_PREFIX
+          value: {{ (required "mariadb.galera.clustername is required to configure the wsrep-cluster-name option for MariaDB" $.Values.mariadb.galera.clustername) | quote }}
+        {{- range $envKey, $envValue := $.Values.env }}
+          {{- if (has "kopiaserver" $envValue.containerType) }}
+            {{- if $envValue.value }}
+        - name: {{ $envKey }}
+          value: {{ $envValue.value | quote }}
+            {{- end }}
+            {{- if $envValue.secretName }}
+              {{- range $userKey, $userValue := $.Values.mariadb.galera.backup.kopia.users }}
+                {{- if $userValue.enabled }}
+                  {{- if eq $userValue.secretName $envValue.secretName }}
+        - name: {{ $envKey }}
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "commonPrefix" $ }}-{{ $envValue.secretName }}
+              key: {{ $envValue.secretKey }}
+                  {{- end }}
+                {{- end }}
+              {{- end }}
+            {{- end }}
+          {{- end }}
+        {{- end }}
+        resources:
+          requests:
+            cpu: {{ $.Values.resourceLimits.cpu.kopiaserver | default 0.5 }}
+          limits:
+            memory: {{ $.Values.resourceLimits.memory.kopiaserver | default "64Mi" | quote }}
+        ports:
+          {{- range $portsKey, $portsValue := $.Values.services.kopiaserver.frontend.ports }}
+          - containerPort: {{ $portsValue.targetPort }}
+            name: {{ $portsKey }}
+            protocol: {{ $portsValue.protocol | default "TCP" }}
+          {{- end }}
+          {{- if $.Values.monitoring.kopia.enabled }}
+          - name: metrics
+            containerPort: 8080
+          {{- end }}
+        startupProbe:
+          exec:
+            command:
+              - sh
+              - -c
+              - '/opt/kopia/bin/startup.sh'
+          {{- if $.Values.startupProbe }}
+          {{ if $.Values.startupProbe.initialDelaySeconds.kopiaserver }} {{- (printf "initialDelaySeconds: %d" (int64 $.Values.startupProbe.initialDelaySeconds.kopiaserver)) }} {{ else }}initialDelaySeconds: 60 {{end}}
+          {{ if $.Values.startupProbe.periodSeconds.kopiaserver }} {{- (printf "periodSeconds: %d" (int64 $.Values.startupProbe.periodSeconds.kopiaserver)) }} {{ else }}periodSeconds: 30 {{end}}
+          {{ if $.Values.startupProbe.failureThreshold.kopiaserver }} {{- (printf "failureThreshold: %d" (int64 $.Values.startupProbe.failureThreshold.kopiaserver)) }} {{ else }}failureThreshold: 4 {{end}}
+          {{ if $.Values.startupProbe.timeoutSeconds.kopiaserver }} {{- (printf "timeoutSeconds: %d" (int64 $.Values.startupProbe.timeoutSeconds.kopiaserver)) }} {{ else }}timeoutSeconds: 20 {{end}}
+          {{- else }}
+          initialDelaySeconds: 60
+          periodSeconds: 30
+          failureThreshold: 4
+          timeoutSeconds: 20
+          {{- end }}
+        livenessProbe:
+          exec:
+            command:
+              - sh
+              - -c
+              - '/opt/kopia/bin/liveness.sh'
+          {{- if $.Values.livenessProbe }}
+          {{ if $.Values.livenessProbe.initialDelaySeconds.kopiaserver }} {{- (printf "initialDelaySeconds: %d" (int64 $.Values.livenessProbe.initialDelaySeconds.kopiaserver)) }} {{ else }}initialDelaySeconds: 60 {{end}}
+          {{ if $.Values.livenessProbe.periodSeconds.kopiaserver }} {{- (printf "periodSeconds: %d" (int64 $.Values.livenessProbe.periodSeconds.kopiaserver)) }} {{ else }}periodSeconds: 30 {{end}}
+          {{ if $.Values.livenessProbe.failureThreshold.kopiaserver }} {{- (printf "failureThreshold: %d" (int64 $.Values.livenessProbe.failureThreshold.kopiaserver)) }} {{ else }}failureThreshold: 4 {{end}}
+          {{ if $.Values.livenessProbe.timeoutSeconds.kopiaserver }} {{- (printf "timeoutSeconds: %d" (int64 $.Values.livenessProbe.timeoutSeconds.kopiaserver)) }} {{ else }}timeoutSeconds: 20 {{end}}
+          {{- else }}
+          initialDelaySeconds: 60
+          periodSeconds: 30
+          failureThreshold: 4
+          timeoutSeconds: 20
+          {{- end }}
+        readinessProbe:
+          exec:
+            command:
+              - sh
+              - -c
+              - '/opt/kopia/bin/readiness.sh'
+          {{- if $.Values.readinessProbe }}
+          {{ if $.Values.readinessProbe.initialDelaySeconds.kopiaserver }} {{- (printf "initialDelaySeconds: %d" (int64 $.Values.readinessProbe.initialDelaySeconds.kopiaserver)) }} {{ else }}initialDelaySeconds: 90 {{ end }}
+          {{ if $.Values.readinessProbe.periodSeconds.kopiaserver }} {{- (printf "periodSeconds: %d" (int64 $.Values.readinessProbe.periodSeconds.kopiaserver)) }} {{ else }}periodSeconds: 20 {{ end }}
+          {{ if $.Values.readinessProbe.successThreshold.kopiaserver }} {{- (printf "successThreshold: %d" (int64 $.Values.readinessProbe.successThreshold.kopiaserver)) }} {{ else }}successThreshold: 1 {{ end }}
+          {{ if $.Values.readinessProbe.failureThreshold.kopiaserver }} {{- (printf "failureThreshold: %d" (int64 $.Values.readinessProbe.failureThreshold.kopiaserver)) }} {{ else }}failureThreshold: 3 {{ end }}
+          {{ if $.Values.readinessProbe.timeoutSeconds.kopiaserver }} {{- (printf "timeoutSeconds: %d" (int64 $.Values.readinessProbe.timeoutSeconds.kopiaserver)) }} {{ else }}timeoutSeconds: 10 {{ end }}
+          {{- else }}
+          initialDelaySeconds: 90
+          periodSeconds: 20
+          successThreshold: 1
+          failureThreshold: 2
+          timeoutSeconds: 10
+          {{- end }}
+        volumeMounts:
+          {{- range $volumeMountsKey, $volumeMountsValue := $.Values.volumeMounts.backup.kopia }}
+            {{- if $volumeMountsValue.enabled }}
+              {{- if (hasKey $volumeMountsValue "claimName") }}
+                {{- range $volumeClaimTemplatesKey, $volumeClaimTemplatesValue := $.Values.volumeClaimTemplates }}
+                  {{- if eq $volumeClaimTemplatesKey $volumeMountsValue.claimName }}
+          - name: {{ include "commonPrefix" $ }}-{{ $volumeMountsKey }}-{{ $volumeMountsValue.claimName | lower }}
+            mountPath: {{ $volumeMountsValue.mountPath }}
+                    {{- if $volumeMountsValue.readOnly }}
+            readOnly: {{ $volumeMountsValue.readOnly }}
+                    {{- end }}
+                  {{- end }}
+                {{- end }}
+              {{- else }}
+          - name: {{ include "commonPrefix" $ }}-{{ $volumeMountsKey | lower }}
+            mountPath: {{ $volumeMountsValue.mountPath }}
+                {{- if $volumeMountsValue.readOnly }}
+            readOnly: {{ $volumeMountsValue.readOnly }}
+                {{- end }}
+              {{- end }}
+            {{- end }}
+          {{- end }}
+          {{- range $volumeMountsKey, $volumeMountsValue := $.Values.volumeMounts.kopiaserver }}
+          - name: {{ include "commonPrefix" $ }}-{{ $volumeMountsKey | lower }}
+            mountPath: {{ $volumeMountsValue.mountPath }}
+            {{- if $volumeMountsValue.readOnly }}
+            readOnly: {{ $volumeMountsValue.readOnly }}
+            {{- end }}
+          {{- end }}
+          - name: {{ include "commonPrefix" $ }}-kopia-entrypoint-sh
+            mountPath: /opt/kopia/bin/entrypoint.sh
+            subPath: entrypoint-server.sh
+            readOnly: true
+          - name: {{ include "commonPrefix" $ }}-kopia-probes-sh
+            mountPath: /opt/kopia/bin/startup.sh
+            subPath: startup.sh
+            readOnly: true
+          - name: {{ include "commonPrefix" $ }}-kopia-probes-sh
+            mountPath: /opt/kopia/bin/liveness.sh
+            subPath: liveness.sh
+            readOnly: true
+          - name: {{ include "commonPrefix" $ }}-kopia-probes-sh
+            mountPath: /opt/kopia/bin/readiness.sh
+            subPath: readiness.sh
+            readOnly: true
+          - name: {{ include "commonPrefix" $ }}-kopia-common-functions-extended-sh
+            mountPath: /opt/kopia/bin/common-functions-extended.sh
+            subPath: common-functions-extended.sh
+            readOnly: true
+      terminationGracePeriodSeconds: 5
+      volumes:
+        {{- range $volumeMountsKey, $volumeMountsValue := $.Values.volumeMounts.backup.kopia }}
+          {{- if $volumeMountsValue.enabled }}
+            {{- if $volumeMountsValue.type }}
+              {{- if ne $volumeMountsValue.type "persistentVolume" }}
+        - name: {{ include "commonPrefix" $ }}-{{ $volumeMountsKey }}
+                {{- if eq $volumeMountsValue.type "secret"}}
+          {{ $volumeMountsValue.type }}:
+            secretName: {{ include "commonPrefix" $ }}-{{ $volumeMountsKey }}
+                {{- else if eq $volumeMountsValue.type "hostPath" }}
+          {{ $volumeMountsValue.type }}:
+            path: {{ $volumeMountsValue.hostPath }}
+                {{- else }}
+            name: {{ include "commonPrefix" $ }}-{{ $volumeMountsKey }}
+                {{- end }}
+              {{- else }}
+        - name: {{ include "commonPrefix" $ }}-{{ $volumeMountsKey }}-{{ $volumeMountsValue.claimName | lower }}
+          persistentVolumeClaim:
+            claimName: {{ include "commonPrefix" $ }}-{{ $volumeMountsKey }}-{{ $volumeMountsValue.claimName | lower }}
+              {{- end }}
+            {{- end }}
+          {{- end }}
+        {{- end }}
+        {{- range $volumeMountsKey, $volumeMountsValue := $.Values.volumeMounts.kopiaserver }}
+          {{- if $volumeMountsValue.type }}
+            {{- if ne $volumeMountsValue.type "persistentVolume" }}
+        - name: {{ include "commonPrefix" $ }}-{{ $volumeMountsKey }}
+              {{- if eq $volumeMountsValue.type "secret"}}
+          {{ $volumeMountsValue.type }}:
+            secretName: {{ include "commonPrefix" $ }}-{{ $volumeMountsKey }}
+              {{- else if eq $volumeMountsValue.type "hostPath" }}
+          {{ $volumeMountsValue.type }}:
+            path: {{ $volumeMountsValue.hostPath }}
+              {{- else }}
+            name: {{ include "commonPrefix" $ }}-{{ $volumeMountsKey }}
+              {{- end }}
+            {{- end }}
+          {{- end }}
+        {{- end }}
+        - name: {{ include "commonPrefix" $ }}-kopia-entrypoint-sh
+          configMap:
+            name: {{ include "commonPrefix" $ }}-kopia-entrypoint-sh
+            defaultMode: 0755
+        - name: {{ include "commonPrefix" $ }}-kopia-probes-sh
+          configMap:
+            name: {{ include "commonPrefix" $ }}-kopia-probes-sh
+            defaultMode: 0755
+        - name: {{ include "commonPrefix" $ }}-kopia-common-functions-extended-sh
+          configMap:
+            name: {{ include "commonPrefix" $ }}-kopia-common-functions-extended-sh
+            defaultMode: 0755
+{{- end }}
