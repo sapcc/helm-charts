@@ -1,33 +1,83 @@
-
+# document: https://documentation.global.cloud.sap/docs/customer/monitoring/operational-metrics--maia/metrics-metrics/#nfs-manila---capacity
 groups:
   - name: manila-maia
     rules:
-
-    - record: netapp_volume_size_total:manila
-      expr: netapp_volume_size_total{app="netapp-harvest-exporter-manila"}
-
-    - record: netapp_volume_size_used:manila
-      expr: netapp_volume_size_used{app="netapp-harvest-exporter-manila"}
-
-    - record: netapp_volume_size_available:manila
-      expr: netapp_volume_size_available{app="netapp-harvest-exporter-manila"}
-
-    - record: netapp_volume_space_logical_used:manila
-      expr: netapp_volume_space_logical_used{app="netapp-harvest-exporter-manila"}
+    #
+    # capacity metrics
+    #
 
     # sum available_bytes and logical_used_bytes when only space reporting is enabled
     # details see https://operations.global.cloud.sap/docs/operation/storage/manila/300-logical-space/
-    - record: netapp_volume_total_bytes:maia2
-      expr: (
-        (netapp_volume_size_available:manila + netapp_volume_space_logical_used) * on (app, aggr, svm, volume) group_left()
-        netapp_volume_labels{is_space_reporting_logical="true", is_space_enforcement_logical="false"}
-        ) or netapp_volume_size_total:manila
+    - record: netapp_volume_total_bytes:pre
+      expr: label_replace(
+        (
+          (netapp_volume_size_available{app="netapp-harvest-exporter-manila"} + netapp_volume_space_logical_used) * on (app, aggr, svm, volume) group_left()
+          netapp_volume_labels{is_space_reporting_logical="true", is_space_enforcement_logical="false"}
+        ) or netapp_volume_size_total{app="netapp-harvest-exporter-manila"}, "vserver", "$1", "svm", "(.*)")
 
     # use logical used bytes when logical space reporting is enabled
+    - record: netapp_volume_used_bytes:pre
+      expr: label_replace(
+        (
+          netapp_volume_space_logical_used{app="netapp-harvest-exporter-manila"} * on (app, aggr, svm, volume) group_left() netapp_volume_labels{is_space_reporting_logical="true"}
+        ) or netapp_volume_size_used{app="netapp-harvest-exporter-manila"}, "vserver", "$1", "svm", "(.*)")
+
+    - record: netapp_volume_used_percentage:pre
+      expr: label_replace(round(netapp_volume_used_bytes:pre / netapp_volume_total_bytes:pre * 100), "vserver", "$1", "svm", "(.*)")
+
+    - record: netapp_volume_snapshot_reserved_bytes:pre
+      expr: label_replace(netapp_volume_snapshot_reserve_size{app="netapp-harvest-exporter-manila"}, "vserver", "$1", "svm", "(.*)")
+
+    - record: netapp_volume_snapshot_available_bytes:pre
+      expr: label_replace(netapp_volume_snapshot_reserve_available{app="netapp-harvest-exporter-manila"}, "vserver", "$1", "svm", "(.*)")
+
+    - record: netapp_volume_snapshot_used_bytes:pre
+      expr: label_replace(netapp_volume_snapshots_size_used{app="netapp-harvest-exporter-manila"}, "vserver", "$1", "svm", "(.*)")
+
+    - record: netapp_volume_inode_files_total:pre
+      expr: label_replace(netapp_volume_inode_files_total{app="netapp-harvest-exporter-manila"}, "vserver", "$1", "svm", "(.*)")
+
+    - record: netapp_volume_inode_files_used:pre
+      expr: label_replace(netapp_volume_inode_files_used{app="netapp-harvest-exporter-manila"}, "vserver", "$1", "svm", "(.*)")
+
+    #
+    # performance metrics
+    #
+
+    - record: netapp_volume_total_ops:pre
+      expr: netapp_volume_total_ops{app="netapp-harvest-exporter-manila"} * on (filer, svm, volume) group_left(project_id, share_id, share_name, share_type) netapp_volume_labels{app="netapp-harvest-exporter-manila"}
+
+    - record: netapp_volume_read_ops:pre
+      expr: netapp_volume_read_ops{app="netapp-harvest-exporter-manila"} * on (filer, svm, volume) group_left(project_id, share_id, share_name, share_type) netapp_volume_labels{app="netapp-harvest-exporter-manila"}
+
+    - record: netapp_volume_write_ops:pre
+      expr: netapp_volume_write_ops{app="netapp-harvest-exporter-manila"} * on (filer, svm, volume) group_left(project_id, share_id, share_name, share_type) netapp_volume_labels{app="netapp-harvest-exporter-manila"}
+
+    # volume read throughput in bytes per second
+    - record: netapp_volume_read_throughput:pre
+      expr: netapp_volume_read_data{app="netapp-harvest-exporter-manila"} * on (filer, svm, volume) group_left(project_id, share_id, share_name, share_type) netapp_volume_labels{app="netapp-harvest-exporter-manila"}
+
+    # volume write throughput in bytes per second
+    - record: netapp_volume_write_throughput:pre
+      expr: netapp_volume_write_data{app="netapp-harvest-exporter-manila"} * on (filer, svm, volume) group_left(project_id, share_id, share_name, share_type) netapp_volume_labels{app="netapp-harvest-exporter-manila"}
+
+    - record: netapp_volume_read_latency_milliseconds:pre
+      expr: netapp_volume_read_latency{app="netapp-harvest-exporter-manila"} * on (filer, svm, volume) group_left(project_id, share_id, share_name, share_type) netapp_volume_labels{app="netapp-harvest-exporter-manila"}
+
+    - record: netapp_volume_write_latency_milliseconds:pre
+      expr: netapp_volume_write_latency{app="netapp-harvest-exporter-manila"} * on (filer, svm, volume) group_left(project_id, share_id, share_name, share_type) netapp_volume_labels{app="netapp-harvest-exporter-manila"}
+
+
+    #
+    # only keep necessary labels visible to users
+    #
+
+    # We need to take average of the metrics scraped from different exporters, to avodid exporting multiplied values
+    - record: netapp_volume_total_bytes:maia2
+      expr: sum by (filer, vserver, volume, share_name, share_id, share_type, project_id) (netapp_volume_total_bytes:pre{project_id!=""}) / count by (filer, vserver, volume, share_name, share_id, share_type, project_id) (netapp_volume_total_bytes:pre)
+
     - record: netapp_volume_used_bytes:maia2
-      expr: (
-        netapp_volume_space_logical_used:manila * on (app, aggr, svm, volume) group_left() netapp_volume_labels{is_space_reporting_logical="true"}
-        ) or netapp_volume_size_used:manila
+      expr: sum by (filer, vserver, volume, share_name, share_id, share_type, project_id) (netapp_volume_used_bytes:pre{project_id!=""}) / count by (filer, vserver, volume, share_name, share_id, share_type, project_id) (netapp_volume_used_bytes:pre)
 
     - record: netapp_volume_available_bytes:maia2
       expr: netapp_volume_total_bytes:maia2 - netapp_volume_used_bytes:maia2
@@ -36,19 +86,79 @@ groups:
       expr: round(netapp_volume_used_bytes:maia2 / netapp_volume_total_bytes:maia2 * 100)
 
     - record: netapp_volume_snapshot_reserved_bytes:maia2
-      expr: netapp_volume_snapshot_reserve_size{app="netapp-harvest-exporter-manila"}
+      expr: sum by (filer, vserver, volume, share_name, share_id, share_type, project_id) (netapp_volume_snapshot_reserved_bytes:pre{project_id!=""}) / count by (filer, vserver, volume, share_name, share_id, share_type, project_id) (netapp_volume_snapshot_reserved_bytes:pre)
 
     - record: netapp_volume_snapshot_available_bytes:maia2
-      expr: netapp_volume_snapshot_reserve_available{app="netapp-harvest-exporter-manila"}
+      expr: sum by (filer, vserver, volume, share_name, share_id, share_type, project_id) (netapp_volume_snapshot_available_bytes:pre{project_id!=""}) / count by (filer, vserver, volume, share_name, share_id, share_type, project_id) (netapp_volume_snapshot_available_bytes:pre)
 
+    # note: snapshot used is NOT snapshot reserved minus snapshot available, because snapshot split can happen
     - record: netapp_volume_snapshot_used_bytes:maia2
-      expr: netapp_volume_snapshots_size_used{app="netapp-harvest-exporter-manila"}
+      expr: sum by (filer, vserver, volume, share_name, share_id, share_type, project_id) (netapp_volume_snapshot_used_bytes:pre{project_id!=""}) / count by (filer, vserver, volume, share_name, share_id, share_type, project_id) (netapp_volume_snapshot_used_bytes:pre)
 
     - record: netapp_volume_inode_files_total:maia2
-      expr: netapp_volume_inode_files_total{app="netapp-harvest-exporter-manila"}
+      expr: sum by (filer, vserver, volume, share_name, share_id, share_type, project_id) (netapp_volume_inode_files_total:pre{project_id!=""}) / count by (filer, vserver, volume, share_name, share_id, share_type, project_id) (netapp_volume_inode_files_total:pre)
 
     - record: netapp_volume_inode_files_used:maia2
-      expr: netapp_volume_inode_files_used{app="netapp-harvest-exporter-manila"}
+      expr: sum by (filer, vserver, volume, share_name, share_id, share_type, project_id) (netapp_volume_inode_files_used:pre{project_id!=""}) / count by (filer, vserver, volume, share_name, share_id, share_type, project_id) (netapp_volume_inode_files_used:pre)
 
     - record: netapp_volume_inode_files_used_percentage:maia2
-      expr: netapp_volume_inode_files_used_percent{app="netapp-harvest-exporter-manila"}
+      expr: round(netapp_volume_inode_files_used:maia2 / netapp_volume_inode_files_total:maia2 * 100)
+
+    - record: netapp_volume_total_ops:maia2
+      expr: sum by (filer, vserver, volume, share_name, share_id, share_type, project_id) (netapp_volume_total_ops:pre{project_id!=""}) / count by (filer, vserver, volume, share_name, share_id, share_type, project_id) (netapp_volume_total_ops:pre)
+
+    - record: netapp_volume_read_ops:maia
+      expr: sum by (filer, vserver, volume, share_name, share_id, share_type, project_id) (netapp_volume_read_ops:pre{project_id!=""}) / count by (filer, vserver, volume, share_name, share_id, share_type, project_id) (netapp_volume_read_ops:pre)
+
+    - record: netapp_volume_write_ops:maia
+      expr: sum by (filer, vserver, volume, share_name, share_id, share_type, project_id) (netapp_volume_write_ops:pre{project_id!=""}) / count by (filer, vserver, volume, share_name, share_id, share_type, project_id) (netapp_volume_write_ops:pre)
+
+    - record: netapp_volume_read_throughput:maia
+      expr: sum by (filer, vserver, volume, share_name, share_id, share_type, project_id) (netapp_volume_read_throughput:pre{project_id!=""}) / count by (filer, vserver, volume, share_name, share_id, share_type, project_id) (netapp_volume_read_throughput:pre)
+
+    - record: netapp_volume_write_throughput:maia
+      expr: sum by (filer, vserver, volume, share_name, share_id, share_type, project_id) (netapp_volume_write_throughput:pre{project_id!=""}) / count by (filer, vserver, volume, share_name, share_id, share_type, project_id) (netapp_volume_write_throughput:pre)
+
+    - record: netapp_volume_read_latency_milliseconds:maia
+      expr: sum by (filer, vserver, volume, share_name, share_id, share_type, project_id) (netapp_volume_read_latency_milliseconds:pre{project_id!=""}) / count by (filer, vserver, volume, share_name, share_id, share_type, project_id) (netapp_volume_read_latency_milliseconds:pre)
+
+    - record: netapp_volume_write_latency_milliseconds:maia
+      expr: sum by (filer, vserver, volume, share_name, share_id, share_type, project_id) (netapp_volume_write_latency_milliseconds:pre{project_id!=""}) / count by (filer, vserver, volume, share_name, share_id, share_type, project_id) (netapp_volume_write_latency_milliseconds:pre)
+
+    #
+    # fall back to old metrics
+    #
+
+    - record: netapp_volume_total_bytes:maia
+      expr: netapp_volume_total_bytes:maia2 or netapp_volume_total_bytes:maia1{project_id!=""}
+
+    - record: netapp_volume_used_bytes:maia
+      expr: netapp_volume_used_bytes:maia2 or netapp_volume_used_bytes:maia1{project_id!=""}
+
+    - record: netapp_volume_available_bytes:maia
+      expr: netapp_volume_available_bytes:maia2 or netapp_volume_available_bytes:maia1{project_id!=""}
+
+    - record: netapp_volume_used_percentage:maia
+      expr: netapp_volume_used_percentage:maia2 or netapp_volume_used_percentage:maia1{project_id!=""}
+
+    - record: netapp_volume_snapshot_reserved_bytes:maia
+      expr: netapp_volume_snapshot_reserved_bytes:maia2 or netapp_volume_snapshot_reserved_bytes:maia1{project_id!=""}
+
+    - record: netapp_volume_snapshot_available_bytes:maia
+      expr: netapp_volume_snapshot_available_bytes:maia2 or netapp_volume_snapshot_available_bytes:maia1{project_id!=""}
+
+    - record: netapp_volume_snapshot_used_bytes:maia
+      expr: netapp_volume_snapshot_used_bytes:maia2 or netapp_volume_snapshot_used_bytes:maia1{project_id!=""}
+
+    - record: netapp_volume_inode_files_total:maia
+      expr: netapp_volume_inode_files_total:maia2 or netapp_volume_inode_files_total:maia1{project_id!=""}
+
+    - record: netapp_volume_inode_files_used:maia
+      expr: netapp_volume_inode_files_used:maia2 or netapp_volume_inode_files_used:maia1{project_id!=""}
+
+    - record: netapp_volume_inode_files_used_percentage:maia
+      expr: netapp_volume_inode_files_used_percentage:maia2 or netapp_volume_inode_files_used_percentage:maia1{project_id!=""}
+
+    - record: netapp_volume_total_ops:maia
+      expr: netapp_volume_total_ops:maia2 or netapp_volume_total_ops:maia1{project_id!=""}
+
