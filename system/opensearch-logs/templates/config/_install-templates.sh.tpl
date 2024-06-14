@@ -97,10 +97,10 @@ if [ "${DATA_STREAM_ENABLED}" -eq 1 ]; then
      ls -la /tmp/
      echo "Applying ${e}-${DS_TEMPLATE} to ${CLUSTER_HOST}"
      sed -i "s/DS_STREAM_NAME/${e}/g" ${FILEPATH}/${e}-${DS_TEMPLATE}
-     if  grep -q "$e" "${e}-${DS_TEMPLATE}" ; then
-         curl -vv -u "${ADMIN_USER}:${ADMIN_PASSWORD}" -H 'Content-Type: application/json' -XPUT "${CLUSTER_HOST}/_index_template/${e}-ds" -d @${e}-${DS_TEMPLATE}
+     if  grep -q "$e" "${FILEPATH}/${e}-${DS_TEMPLATE}" ; then
+         curl -vv -u "${ADMIN_USER}:${ADMIN_PASSWORD}" -H 'Content-Type: application/json' -XPUT "${CLUSTER_HOST}/_index_template/${e}-ds" -d @${FILEPATH}/${e}-${DS_TEMPLATE}
      else
-       echo "${FILEPATH} is missing or the replacement was not successful."
+       echo "${FILEPATH}/${e}-${DS_TEMPLATE} is missing or the replacement was not successful."
        exit 1
      fi
    done;
