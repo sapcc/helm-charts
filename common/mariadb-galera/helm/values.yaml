@@ -64,6 +64,8 @@ scripts:
   # -- fail if time difference between nodes for the last sequence number configmap update is too big
   useTimeDifferenceForSeqnoCheck: false
 mariadb:
+  # -- fix the permissions of the persistent volumes and set the ownership of the FS to mariadb the value defined in `mariadb.database.userId:mariadb.database.groupId` or to default `uid:gid - 101:101`
+  fixFsPermissions: false
   # -- run the default entrypoint.sh script or just sleep to be able to troubleshoot and debug
   autostart: true
   # -- will trigger a pod restart and remove all content from the data and log dir. This option will cause data loss and should only be used before triggering a [full database restore](#full-database-restore)
@@ -691,6 +693,8 @@ proxy:
       # @default -- false
       enabled:
   proxysql:
+    # -- fix the permissions of the persistent volumes and set the ownership of the FS to mariadb the value defined in `Values.userId.proxy:Values.groupId.proxy` or to default `uid:gid - 3100:3100`
+    fixFsPermissions: false
     restapi:
       # -- the [ProxySQL RestAPI](https://proxysql.com/documentation/REST-API/)
       enabled: true
@@ -860,6 +864,21 @@ initContainers:
       # -- (int) required to configure `/proc/sys/vm/drop_caches` in the init phase
       # @default -- 0
       runAsUser:
+  fixMariaDBFsPermissions:
+    securityContext:
+      # -- (bool) required to fix FS permissions of mariadb persistent volumes in the init phase
+      privileged: true
+      # -- (int) required to fix FS permissions of mariadb persistent volumes in the init phase
+      # @default -- 0
+      runAsUser:
+  fixProxysqlFsPermissions:
+    securityContext:
+      # -- (bool) required to fix FS permissions of porxysql persistent volumes in the init phase
+      privileged: true
+      # -- (int) required to fix FS permissions of porxysql persistent volumes in the init phase
+      # @default -- 0
+      runAsUser:
+
 
 # network services
 services:

@@ -107,6 +107,33 @@ spec:
         securityContext:
           privileged: {{ $.Values.initContainers.increaseMapCount.securityContext.privileged | default true }}
           runAsUser: {{ $.Values.initContainers.increaseMapCount.securityContext.runAsUser | default 0 | int }}
+      {{- if $.Values.proxy.proxysql.fixFsPermissions}}
+      - name: fix-proxysql-fs-permissions
+        image: "{{ $.Values.image.os.regiostry }}/{{ $.Values.image.os.project }}/{{ $.Values.image.os.databasename }}:{{ $.Values.image.os.databaseversion }}-{{ $.Values.image.os.imageversion | int }}"
+        imagePullPolicy: {{ $.Values.image.os.pullPolicy | default "IfNotPresent" | quote }}
+        command:
+        - sh
+        - -c
+        - 'chown -R {{ $.Values.userId.proxy | default 3100 | int }}:{{ $.Values.groupId.proxy | default 3100 | int }} /mnt/*'
+        securityContext:
+          runAsUser: {{ $.Values.initContainers.fixProxysqlFsPermissions.securityContext.runAsUser | default 0 | int }}
+        volumeMounts:
+        {{- range $volumeMountsKey, $volumeMountsValue := $.Values.volumeMounts.proxy.proxysql }}
+          {{- if $volumeMountsValue.enabled }}
+            {{- if (hasKey $volumeMountsValue "claimName") }}
+              {{- range $volumeClaimTemplatesKey, $volumeClaimTemplatesValue := $.Values.volumeClaimTemplates }}
+                {{- if eq $volumeClaimTemplatesKey $volumeMountsValue.claimName }}
+          - name: {{ include "commonPrefix" $ }}-{{ $volumeMountsKey }}-{{ $volumeMountsValue.claimName | lower }}
+            mountPath: "/mnt{{ $volumeMountsValue.mountPath }}"
+                {{- end }}
+              {{- end }}
+            {{- else }}
+          - name: {{ include "commonPrefix" $ }}-{{ $volumeMountsKey | lower }}
+            mountPath: "/mnt{{ $volumeMountsValue.mountPath }}"
+            {{- end }}
+          {{- end }}
+        {{- end }}
+      {{- end }}
       containers:
       - name: {{ (include "nodeNamePrefix" (dict "global" $ "component" "proxysql")) }}
         image: "{{ $.Values.image.proxy.registry }}/{{ $.Values.image.proxy.project }}/{{ $.Values.image.proxy.databasename }}:{{ $.Values.image.proxy.databaseversion }}-{{ $.Values.image.proxy.imageversion | int }}"

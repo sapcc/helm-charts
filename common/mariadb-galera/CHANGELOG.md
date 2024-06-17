@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.27.1 - 2024/06/18
+* fix fs permissions of persistent volumes
+  * add privileged init container to mariadb statefulset to change files owner of the persistent volumes
+  * add privileged init container to proxysql statefulset to change files owner of the persistent volumes
 ## v0.27.0 - 2024/04/30
 * [wsrep_desync](https://mariadb.com/kb/en/galera-cluster-system-variables/#wsrep_desync) for backups made optional
   * `mariadb.galera.backup.desyncBackupNode` controls that feature
