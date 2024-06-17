@@ -115,6 +115,33 @@ spec:
           privileged: {{ $.Values.initContainers.cleanoscache.securityContext.privileged }}
           runAsUser: {{ $.Values.initContainers.cleanoscache.securityContext.runAsUser | default 0 | int }}
       {{- end }}
+      {{- if $.Values.mariadb.fixFsPermissions}}
+      - name: fix-mariadb-fs-permissions
+        image: "{{ $.Values.image.os.registry }}/{{ $.Values.image.os.project }}/{{ $.Values.image.os.databasename }}:{{ $.Values.image.os.databaseversion }}-{{ $.Values.image.os.imageversion | int }}"
+        imagePullPolicy: {{ $.Values.image.os.pullPolicy | default "IfNotPresent" | quote }}
+        command:
+        - sh
+        - -c
+        - 'chown -R {{ $.Values.userId.database | default 101 | int }}:{{ $.Values.groupId.database | default 101 | int }} /mnt/*'
+        securityContext:
+          runAsUser: {{ $.Values.initContainers.fixMariaDBFsPermissions.securityContext.runAsUser | default 0 | int }}
+        volumeMounts:
+          {{- range $volumeMountsKey, $volumeMountsValue := $.Values.volumeMounts.database }}
+            {{- if $volumeMountsValue.enabled }}
+              {{- if (hasKey $volumeMountsValue "claimName") }}
+                {{- range $volumeClaimTemplatesKey, $volumeClaimTemplatesValue := $.Values.volumeClaimTemplates }}
+                  {{- if eq $volumeClaimTemplatesKey $volumeMountsValue.claimName }}
+          - name: {{ include "commonPrefix" $ }}-{{ $volumeMountsKey }}-{{ $volumeMountsValue.claimName | lower }}
+            mountPath: "/mnt{{ $volumeMountsValue.mountPath }}"
+                  {{- end }}
+                {{- end }}
+              {{- else }}
+          - name: {{ include "commonPrefix" $ }}-{{ $volumeMountsKey | lower }}
+            mountPath: "/mnt{{ $volumeMountsValue.mountPath }}"
+              {{- end }}
+            {{- end }}
+          {{- end }}
+      {{- end }}
       containers:
       - name: db
         image: "{{ $.Values.image.database.registry }}/{{ $.Values.image.database.project }}/{{ $.Values.image.database.databasename }}:{{ $.Values.image.database.databaseversion }}-{{ $.Values.image.database.imageversion | int }}"
