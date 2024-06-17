@@ -78,7 +78,9 @@ poller:
     {{- range .Values.simulator.poller.simulatorTests }}
     - test:
     {{- range $k, $v := . }}
-      {{ $k }}: {{ $v }}
+      {{- if and (ne $k "ec2Secret") (ne $k "smtpPassword") (ne $k "ec2User") }}
+        {{ $k }}: {{ $v }}
+      {{- end }}
     {{- end }}
     {{- end }}
     executionTime: {{ .Values.simulator.poller.executionTime }}
@@ -98,14 +100,7 @@ poller:
     headerFrom: {{ .Values.simulator.poller.headerFrom }}
     {{- end }}
     insecureTLS: {{ .Values.simulator.poller.insecureTLS }}
-    certPem: |
-    {{ .Values.simulator.poller.certPem | nindent 6 }}
-    keyPem: |
-    {{ .Values.simulator.poller.keyPem | nindent 6 }}
-    cert: |
-    {{ .Values.simulator.poller.cert | nindent 6 }}
-    key: |
-    {{ .Values.simulator.poller.key | nindent 6 }}
+
 
     recipients:
     {{- range $key, $value := .Values.simulator.poller.recipients }}
