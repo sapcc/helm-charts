@@ -123,3 +123,17 @@ annotations:
 {{- $rabbitmq := index . 1 -}}
 rabbit://{{ default "" $envAll.Values.global.user_suffix | print $rabbitmq.users.default.user }}:{{ required "$rabbitmq.users.default.password missing" $rabbitmq.users.default.password }}@nova-rabbitmq:{{ $rabbitmq.port | default 5672 }}{{ $rabbitmq.virtual_host | default "/" }}
 {{- end}}
+
+{{- define "console-novnc.conf" }}
+{{- $cell_name := index . 1 }}
+{{- $config := index . 2 }}
+{{- with index . 0 }}
+[vnc]
+enabled = {{ $config.enabled }}
+{{- if $config.enabled }}
+server_listen = $my_ip
+server_proxyclient_address = $my_ip
+novncproxy_base_url = https://{{include "nova_console_endpoint_host_public" .}}:{{ .Values.global.novaConsolePortPublic }}/{{ $cell_name }}/novnc/vnc_auto.html?path=/{{ $cell_name }}/novnc/websockify
+{{- end }}
+{{- end }}
+{{- end }}
