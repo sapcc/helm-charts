@@ -1,0 +1,1651 @@
+userId:
+  # -- run the MariaDB containers with that [user id](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-container)
+  # @default -- 101
+  database:
+  # -- run the MariaDB monitoring containers with that [user id](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-container)
+  # @default -- 3000
+  monitoring:
+  # -- run the ProxySQL/HAProxy containers with that [user id](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-container)
+  # @default -- 3100
+  proxy:
+  # -- run the Kopia containers with that [user id](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-container)
+  # @default -- 3200
+  backup:
+groupId:
+  # -- run the MariaDB containers with that [group id](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-container)
+  # @default -- 101
+  database:
+  # -- run the MariaDB monitoring containers with that [group id](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-container)
+  # @default -- 3000
+  monitoring:
+  # -- run the ProxySQL/HAProxy containers with that [group id](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-container)
+  # @default -- 3100
+  proxy:
+  # -- run the Kopia containers with that [group id](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-container)
+  # @default -- 3200
+  backup:
+
+
+namePrefix:
+  # -- name prefix used for the MariaDB pods, services etc.
+  # **CRITICAL**: *Enabling or changing this setting after the Galera cluster has been rolled out will cause (temporary) data loss, because pods with new names and new persistant volumes will be created*
+  # @default mariadb-g
+  database:
+  proxy:
+    # -- name prefix used for the ProxySQL pods, services etc.
+    # @default proxysql
+    proxysql:
+    # -- name prefix used for the HAProxy pods, services etc.
+    # @default haproxy
+    haproxy:
+  # -- name prefix used for the Kopia pods, services etc.
+  # @default backup-kopiaserver
+  kopiaserver:
+  # -- Use `mariadb.galera.clustername` as additional prefix for all generated Kubernetes objects. The Helm chart release name (for instance `mariadb-galera`) will be added every time
+  # **CRITICAL**: *Enabling or changing this setting after the Galera cluster has been rolled out will cause (temporary) data loss, because pods with new names and new persistant volumes will be created*
+  # @default -- false
+  includeClusterName:
+# -- only useful for benchmarking [www.kernel.org drop_caches](https://www.kernel.org/doc/html/latest/admin-guide/sysctl/vm.html?highlight=drop_caches#drop-caches)
+cleanOsCacheAtStartup: false
+scripts:
+  # -- how many times should script functions retry before failing
+  # @default -- 10
+  maxRetries: 20
+  # -- how long should script functions wait between retries
+  # @default -- 6
+  waitTimeBetweenRetriesInSeconds: 6
+  # -- Log level of shell scripts used in the Helm chart.
+  # Can be `info` or `debug`
+  # @default -- info
+  logLevel:
+  # -- to multiply with `readinessProbe.timeoutSeconds.database` as the maximum allowed time difference between nodes for the last sequence number configmap update
+  # @default -- 3
+  maxAllowedTimeDifferenceFactor: 12
+  # -- fail if time difference between nodes for the last sequence number configmap update is too big
+  useTimeDifferenceForSeqnoCheck: false
+mariadb:
+  # -- run the default entrypoint.sh script or just sleep to be able to troubleshoot and debug
+  autostart: true
+  # -- will trigger a pod restart and remove all content from the data and log dir. This option will cause data loss and should only be used before triggering a [full database restore](#full-database-restore)
+  # @default -- false
+  wipeDataAndLog: false
+  # -- if not defined the data dir will be used. Needs a log volume mount to be configured too
+  binLogDir: log
+  # -- `1` to enable [sync_binlog for ACID compliance](https://mariadb.com/kb/en/replication-and-binary-log-system-variables/#sync_binlog)
+  # @default -- 0
+  binLogSync: 1
+  # -- `1` to enable [innodb_flush_log_at_trx_commit for ACID compliance](https://mariadb.com/kb/en/innodb-system-variables/#innodb_flush_log_at_trx_commit)
+  innodbFlushLogAtTrxCommit: 1
+  # -- to enable the [Performance Schema](https://mariadb.com/kb/en/performance-schema-overview/)
+  # @default -- false
+  performance_schema: false
+  # -- to define the [verbosity](https://mariadb.com/kb/en/error-log/#configuring-the-error-log-verbosity) of the MariaDB logs
+  # @default -- 2
+  errorLogWarningVerbosity: 1
+  linkerd:
+    # -- (bool) enable the [annotation](https://linkerd.io/2.14/tasks/adding-your-service/#meshing-a-service-with-annotations) for linkerd to inject the sidecar container for transport encryption
+    # @default -- false
+    enabled:
+  migration:
+    # -- (bool) if enabled the `mariadb` service will be renamed to `mariadb-replica` and the async replication from the `mariadb` service will be configured
+    # Another `mariadb` service (from another subchart) must be available in the same namespace as a source for the async replication
+    enabled: false
+    stage: replica
+  job:
+    config:
+      # -- How many [retries](https://kubernetes.io/docs/concepts/workloads/controllers/job/#pod-backoff-failure-policy) before the MariaDB config job will be marked as failed
+      # @default -- 6
+      backoffLimit: 12
+      # -- Maximum [allowed runtime](https://kubernetes.io/docs/concepts/workloads/controllers/job/#job-termination-and-cleanup) before the MariaDB config job will be stopped
+      # @default -- 300
+      activeDeadlineSeconds: 600
+      # -- After how many seconds will a stopped MariaDB config job be [deleted from the Kubernetes cluster](https://kubernetes.io/docs/concepts/workloads/controllers/job/#clean-up-finished-jobs-automatically)
+      # @default -- 120
+      ttlSecondsAfterFinished: 7200
+      # -- Define how the MariaDB config job pod [will be restarted](https://kubernetes.io/docs/concepts/workloads/controllers/job/#handling-pod-and-container-failures) in case of an error.
+      # It can be on the same worker node or another
+      # @default -- OnFailure
+      jobRestartPolicy: OnFailure
+    linkerd:
+      # -- (bool) enable the [annotation](https://linkerd.io/2.14/tasks/adding-your-service/#meshing-a-service-with-annotations) for linkerd to inject the sidecar container for transport encryption
+      # @default -- false
+      enabled:
+  asyncReplication:
+    # -- to enable the [asynchronous replication config](#asynchronous-replication-config). Should be done within custom instance configuration files
+    # @default -- false
+    enabled: false
+    # -- reset the replica configuration. Use with care, because the currently used GTID binlog position value will be deleted. That can cause missing or duplicate data on the replica later
+    resetConfig: false
+    # -- start configured slave during database node startup [wsrep_restart_slave](https://mariadb.com/kb/en/galera-cluster-system-variables/#wsrep_restart_slave)
+    # @default -- false
+    autostart: false
+    # -- #Hostname or IP of the replication source [master_host](https://mariadb.com/kb/en/change-master-to/#master_host)
+    primaryHost: false
+    # -- (int) how many [slave_parallel_threads](https://mariadb.com/kb/en/replication-and-binary-log-system-variables/#slave_parallel_threads) should be used for async replication
+    # @default -- 1
+    slaveReplicaThreads:
+  galera:
+    # -- (string) Name of the MariaDB Galera cluster defined with the [wsrep_cluster_name](https://mariadb.com/kb/en/galera-cluster-system-variables/#wsrep_cluster_name) option.
+    # It can also be used as the prefix for all generated objects to avoid name collisions by enabling the `namePrefix.includeClusterName` option
+    clustername:
+    # -- [Galera debug](https://galeracluster.com/library/documentation/galera-parameters.html#debug)
+    # @default -- false
+    debug: false
+    # -- (int) [pc.wait_prim_timeout](https://galeracluster.com/library/documentation/galera-parameters.html#pc.wait_prim_timeout)
+    # @default -- 30
+    waitForPrimaryTimeoutInSeconds: 60
+    # -- (string) [wsrep_debug](https://mariadb.com/kb/en/galera-cluster-system-variables/#wsrep_debug)
+    # @default -- info
+    logLevel: info
+    # -- [primary component recovery](https://galeracluster.com/library/documentation/pc-recovery.html)
+    # @default -- false
+    pcrecovery: false
+    gcache:
+      # -- `false` until [PR#624](https://github.com/codership/galera/issues/624) is fixed
+      # @default -- false
+      recover: false
+    # -- `rsync` or `mariabackup` (also requires GALERA_SST_USERNAME and GALERA_SST_PASSWORD)
+    sst_method: rsync
+    # -- (int) [wsrep-slave-threads](https://galeracluster.com/library/documentation/mysql-wsrep-options.html#wsrep-slave-threads)
+    # @default -- 4
+    slaveThreads: 16
+    # -- (int) must be a positive integer [wsrep_gtid_domain_id](https://mariadb.com/kb/en/galera-cluster-system-variables/#wsrep_gtid_domain_id)
+    # do not set it to `1` if you want to avoid server id collisions during [asynchronous replication](#asynchronous-replication-config)
+    # @default -- 10817
+    gtidDomainId:
+    # -- (int) how many Galera cluster instances will be connected. Used for [asynchronous replication](#asynchronous-replication-config) setups. Maximum of `2` is supported
+    # @default -- 1
+    gtidDomainIdCount: 1
+    # -- enable [gtid_strict_mode](https://mariadb.com/kb/en/gtid/#gtid_strict_mode)
+    # @default -- false
+    gtidStrictMode: false
+    # -- configure [weighted Quorum](https://galeracluster.com/library/documentation/weighted-quorum.html#wq-three-nodes) values for the DB nodes
+    # eg: db-0: 4, db-1: 2, db-2: 1
+    # @default -- false
+    weightedQuorum:
+    # -- (bool) enable [wsrep_sync_wait](https://mariadb.com/kb/en/galera-cluster-system-variables/#wsrep_sync_wait) to delay queries until the cluster is in sync
+    waitForClusterSync: false
+    multiRegion:
+      # -- (bool) Enable the multi-region setup. Exactly 3 regions are supported
+      enabled: false
+      # -- (string) Name of the region where we are currently deploying the MariaDB Galera cluster components. The `global.db_region` parameter will be used if defined by the parent chart. Otherwise something like r1, r2, r3 or names like eu-de-1, eu-de-2, eu-de-3 should be used
+      current:
+      # -- (object) `r1/2/3.externalIP` (external IP address of the region. Can be exposed via a load balancer or a external IP of a ClusterIP service) and `r1/2/3.segmentId` (Define which network segment([gmcast.segment](https://galeracluster.com/library/documentation/galera-parameters.html#gmcast-segment)) this node is in)
+      regions:
+      # -- (string) A node will be suspected to be dead after these seconds of inactivity [evs.suspect_timeout](https://mariadb.com/kb/en/wsrep_provider_options/#evssuspect_timeout)
+      suspect_timeout: 5
+      # -- (string) Time limit in seconds that a node can be inactive before being pronounced as dead [evs.inactive_timeout](https://mariadb.com/kb/en/wsrep_provider_options/#evsinactive_timeout)
+      inactive_timeout: 30
+      # -- (float) Frequency of checks in seconds for peer inactivity (looking for nodes with delayed responses), after which nodes may be added to the delayed list, and later evicted [evs.inactive_check_period](https://mariadb.com/kb/en/wsrep_provider_options/#evsinactive_check_period)
+      inactive_check_period: "2.5"
+      # -- (float) How often keepalive signals should be transmitted when there's no other traffic [evs.keepalive_period](https://mariadb.com/kb/en/wsrep_provider_options/#evskeepalive_period)
+      keepalive_period: "1.6"
+      # -- (string) Wait time in seconds for install message acknowledgments [evs.install_timeout](https://mariadb.com/kb/en/wsrep_provider_options/#evsinactive_timeout)
+      install_timeout: 8
+      # -- (string) Maximum number of packets that can be replicated at a time [evs.send_window](https://mariadb.com/kb/en/wsrep_provider_options/#evssend_window)
+      send_window: 256
+      # -- (string) Maximum number of data packets that can be replicated at a time [evs.user_send_window](https://mariadb.com/kb/en/wsrep_provider_options/#evsuser_send_window)
+      user_send_window: 128
+      # -- (bool) Enable the [Galera bootstrap](https://mariadb.com/kb/en/getting-started-with-mariadb-galera-cluster/#bootstrapping-a-new-cluster).
+      # Use it **ONLY** in case all nodes are down and the cluster needs to be started from scratch. It will cause data loss if used for a region that has not held the most recent seqno
+      bootstrap: false
+    backup:
+      # -- enable the [database backup](#database-backup). Should be done within custom instance configuration files
+      enabled: false
+      # -- (bool) Enable [wsrep_desync](https://mariadb.com/kb/en/galera-cluster-system-variables/#wsrep_desync) before the backup and disable it after the backup.
+      # This can avoid performance issues during the backup, because flow control will be disabled for the backup node.
+      # The disadvantage is that the backup node is not usable for queries during the backup.
+      desyncBackupNode: true
+      kopia:
+        # -- enable [kopia](https://kopia.io/) for the Galera backup
+        enabled: false
+        job:
+          schedule:
+            # -- [Schedule](https://kubernetes.io/docs/tasks/job/automated-tasks-with-cron-jobs/#schedule) for the Kopia full backup job based on that [syntax](https://kubernetes.io/docs/concepts/workloads/controllers/cron-jobs/#cron-schedule-syntax)
+            # @default -- 15 2 * * *
+            full:
+            # -- [Schedule](https://kubernetes.io/docs/tasks/job/automated-tasks-with-cron-jobs/#schedule) for the Kopia transaction log backup job based on that [syntax](https://kubernetes.io/docs/concepts/workloads/controllers/cron-jobs/#cron-schedule-syntax)
+            # @default -- */30 * * * *
+            binlog:
+          # -- (int) Define how many seconds [after a missed schedule](https://kubernetes.io/docs/concepts/workloads/controllers/cron-jobs/#job-creation) the job should still be scheduled or skipped
+          # @default -- 15
+          startingDeadlineSeconds:
+          # -- Define how the Kopia backup job pod [will be restarted](https://kubernetes.io/docs/concepts/workloads/controllers/job/#handling-pod-and-container-failures) in case of an error.
+          # It can be on the same worker node or another
+          # @default -- OnFailure
+          jobRestartPolicy: OnFailure
+          # -- Define if and how Kopia backup jobs can run in [parallel](https://kubernetes.io/docs/tasks/job/automated-tasks-with-cron-jobs/#concurrency-policy)
+          # @default -- Forbid
+          concurrencyPolicy: Forbid
+          # -- Define how how many completed Kopia backup jobs [should be kept](https://kubernetes.io/docs/tasks/job/automated-tasks-with-cron-jobs/#jobs-history-limits)
+          # @default -- 1
+          successfulJobsHistoryLimit: 1
+          # -- Define how how many failed Kopia backup jobs [should be kept](https://kubernetes.io/docs/tasks/job/automated-tasks-with-cron-jobs/#jobs-history-limits)
+          # @default -- 1
+          failedJobsHistoryLimit: 1
+        # --  (string) How often to update progress information [--progress-update-interval](https://kopia.io/docs/reference/command-line/flags/)
+        # @default -- 300ms
+        progressUpdateInterval:
+        # -- [expire backup snapshots](https://kopia.io/docs/reference/command-line/common/snapshot-expire/)
+        # @default -- false
+        expireBackups: false
+        # -- [list backup snapshots](https://kopia.io/docs/reference/command-line/common/snapshot-list/)
+        # @default -- false
+        listBackups: false
+        # -- (bool) [purge binlogs](https://mariadb.com/kb/en/purge-binary-logs/) after a full backup.
+        purgeBinlogsAfterFullBackup: false
+        linkerd:
+          # -- (bool) enable the [annotation](https://linkerd.io/2.14/tasks/adding-your-service/#meshing-a-service-with-annotations) for linkerd to inject the sidecar container for transport encryption
+          # @default -- false
+          enabled:
+        users:
+          repository:
+            # -- (bool) enable this user
+            enabled: false
+            # -- (string) Kopia repository password
+            password:
+            # -- (string) the [secret](https://kubernetes.io/docs/concepts/configuration/secret/) name that contains the Kopia repository password
+            secretName: kopia-repository
+          s3:
+            # -- enable this S3 API user
+            enabled: false
+            # -- (string) S3 API username
+            username:
+            # -- (string) S3 API user password
+            password:
+            # -- (string) the [secret](https://kubernetes.io/docs/concepts/configuration/secret/) name that contains the S3 API user password
+            secretName: kopia-s3
+          admin:
+            # -- enable this Kopia server user
+            enabled: false
+            # -- (string) Kopia server username
+            username:
+            # -- (string) Kopia server user password
+            password:
+            # -- (string) the [secret](https://kubernetes.io/docs/concepts/configuration/secret/) name that contains the Kopia server user password
+            secretName: kopia-admin
+          control:
+            # -- enable this Kopia server control user
+            enabled: false
+            # -- (string) Kopia server control username
+            username:
+            # -- (string) Kopia server control user password
+            password:
+            # -- (string) the [secret](https://kubernetes.io/docs/concepts/configuration/secret/) name that contains the Kopia server control user password
+            secretName: kopia-control
+        keep:
+          # -- (int) [keep-latest](https://kopia.io/docs/reference/command-line/common/policy-set/)
+          # @default -- 2
+          last: 2
+          # -- (int) [keep-hourly](https://kopia.io/docs/reference/command-line/common/policy-set/)
+          # @default -- 24
+          hourly: 24
+          # -- (int) [keep-daily](https://kopia.io/docs/reference/command-line/common/policy-set/)
+          # @default -- 1
+          daily: 1
+          # -- (int) [keep-weekly](https://kopia.io/docs/reference/command-line/common/policy-set/)
+          # @default -- 0
+          weekly: 0
+          # -- (int) [keep-monthly](https://kopia.io/docs/reference/command-line/common/policy-set/)
+          # @default -- 0
+          monthly: 0
+          # -- (int) [keep-yearly](https://kopia.io/docs/reference/command-line/common/policy-set/)
+          # @default -- 0
+          yearly: 0
+        # -- (string) `s3` to use an AWS S3 compatible backend or `filesystem` to store the backups directly into a (mounted) folder
+        # -- currently only AWS S3 and local folders are supported, but Kopia provides more [backends|https://kopia.io/docs/repositories/]
+        # -- Openstack Swift and others provide an S3 compatible interface
+        backend: s3
+        s3:
+          # -- (string) S3 endpoint FQDN
+          # @default -- s3.amazonaws.com
+          endpoint:
+          # -- (string) S3 [region name|https://docs.aws.amazon.com/general/latest/gr/s3.html]
+          region:
+          # -- (string) S3 bucket name
+          bucket:
+        filesystem:
+          # -- (string) persistent volume to be used
+          # -- looked up from `volumeMounts.backup.kopia`
+          name: data
+    restore:
+      # -- define the backup timestamp that should be used for the restore. Only the `%Y-%m-%d %H:%M:%S+%Z` format (e.g 2023-07-18 20:59:00+CEST) is currently supported and the backup created nearest before will be used
+      # -- without `mariab.galera.restore.pointInTimeRecovery` only the full snapshot will be recovered
+      beforeTimestamp:
+      # -- (bool) use binlog backups to recover the database to the defined `mariab.galera.restore.beforeTimestamp` and not only the nearest full backup. The `snapshotId` value will be ignored
+      pointInTimeRecovery:
+      kopia:
+        # -- enable the [full database restore](#full-database-restore). Should be done as described in the documentation with `--set` parameters
+        enabled: false
+        job:
+          # -- How many [retries](https://kubernetes.io/docs/concepts/workloads/controllers/job/#pod-backoff-failure-policy) before the Kopia restore job will be marked as failed
+          # @default -- 0
+          backoffLimit: 0
+          # -- Maximum [allowed runtime](https://kubernetes.io/docs/concepts/workloads/controllers/job/#job-termination-and-cleanup) before the Kopia restore job will be stopped
+          # @default -- 3600
+          activeDeadlineSeconds: 7200
+          # -- After how many seconds will a stopped Kopia restore job be [deleted from the Kubernetes cluster](https://kubernetes.io/docs/concepts/workloads/controllers/job/#clean-up-finished-jobs-automatically)
+          # @default -- 43200
+          ttlSecondsAfterFinished: 86400
+          # -- Define how the Kopia restore job pod [will be restarted](https://kubernetes.io/docs/concepts/workloads/controllers/job/#handling-pod-and-container-failures) in case of an error.
+          # It can be on the same worker node or another
+          # @default -- Never
+          jobRestartPolicy: Never
+        # -- If set the beforeTimestamp option will be ignored and the configured id(".rootEntry.obj" or "Root" column in the snapshot list) will be used
+        snapshotId: false
+        linkerd:
+          # -- (bool) enable the [annotation](https://linkerd.io/2.14/tasks/adding-your-service/#meshing-a-service-with-annotations) for linkerd to inject the sidecar container for transport encryption
+          # @default -- false
+          enabled:
+  users:
+    root:
+      # -- (bool) enable this user
+      enabled: true
+      # -- (string) MariaDB root username
+      username:
+      # -- (string) MariaDB root user password
+      password:
+      # -- (string) the [secret](https://kubernetes.io/docs/concepts/configuration/secret/) name that contains the MariaDB root user password
+      secretName: mariadb-root
+      # -- (list) list of allowed hostnames like "%", "::1"
+      # -- "localhost" and "127.0.0.1" will be ignored to not break the local socket authentication
+      hostnames:
+        - '%'
+        - '::1'
+        - '127.0.0.1'
+        - 'localhost'
+      # -- (string) MariaDB authentication plugin ([mysql_native_password](https://mariadb.com/kb/en/authentication-plugin-mysql_native_password/)|[ed25519](https://mariadb.com/kb/en/authentication-plugin-ed25519/))
+      authplugin: ed25519
+      # -- (bool) grant the [admin option](https://mariadb.com/kb/en/grant/#roles) to that user
+      # -- that allows the user to grant his own permissions to other users
+      adminoption: true
+      # -- (int) [maximum number of connections](https://mariadb.com/kb/en/create-user/#resource-limit-options) for that user
+      maxconnections: 0
+      # -- (string) [default role](https://mariadb.com/kb/en/set-default-role/) for that user
+      defaultrole: fullaccess
+      # -- (list) additional [roles](https://mariadb.com/kb/en/set-role/) for that user
+      additionalroles:
+      proxysql:
+        # -- (bool) enable the [ProxySQL fastforward](https://proxysql.com/documentation/main-runtime/#mysql_users) feature for that user
+        fastforward: false
+    monitor:
+      # -- (bool) enable this user
+      enabled: false
+      # -- (string) Username for the monitoring user (used by the mysqld_exporter and ProxySQL)
+      username:
+      # -- (string) Password for the monitoring user
+      password:
+      # -- (string) the [secret](https://kubernetes.io/docs/concepts/configuration/secret/) name that contains the MariaDB monitor user password
+      secretName: mariadb-monitor
+      # -- (list) list of allowed hostnames like "%", "::1" or "localhost"
+      hostnames:
+        - '%'
+        - '::1'
+        - '127.0.0.1'
+        - 'localhost'
+      # -- (string) MariaDB authentication plugin ([mysql_native_password](https://mariadb.com/kb/en/authentication-plugin-mysql_native_password/)|[ed25519](https://mariadb.com/kb/en/authentication-plugin-ed25519/))
+      authplugin: mysql_native_password
+      # -- (bool) grant the [admin option](https://mariadb.com/kb/en/grant/#roles) to that user
+      # -- that allows the user to grant his own permissions to other users
+      adminoption: false
+      # -- (int) [maximum number of connections](https://mariadb.com/kb/en/create-user/#resource-limit-options) for that user
+      maxconnections: 0
+      # -- (string) [default role](https://mariadb.com/kb/en/set-default-role/) for that user
+      defaultrole: monitor
+      # -- (list) additional [roles](https://mariadb.com/kb/en/set-role/) for that user
+      additionalroles:
+      proxysql:
+        # -- (bool) enable the [ProxySQL fastforward](https://proxysql.com/documentation/main-runtime/#mysql_users) feature for that user
+        fastforward: false
+    mariabackup:
+      # -- (bool) enable the user (required if `mariabackup` is used as `sst_method`)
+      enabled: false
+      # -- (string) MariaDB backup username
+      username:
+      # -- (string) MariaDB backup user password
+      password:
+      # -- (string) the [secret](https://kubernetes.io/docs/concepts/configuration/secret/) name that contains the MariaDB mariabackup user password
+      secretName: mariadb-mariabackup
+      # -- (list) list of allowed hostnames like "%", "::1" or "localhost"
+      hostnames:
+        - "%"
+        - "::1"
+        - "localhost"
+      # -- (string) MariaDB authentication plugin ([mysql_native_password](https://mariadb.com/kb/en/authentication-plugin-mysql_native_password/)|[ed25519](https://mariadb.com/kb/en/authentication-plugin-ed25519/))
+      authplugin: mysql_native_password
+      # -- (bool) grant the [admin option](https://mariadb.com/kb/en/grant/#roles) to that user
+      # -- that allows the user to grant his own permissions to other users
+      adminoption: false
+      # -- (int) [maximum number of connections](https://mariadb.com/kb/en/create-user/#resource-limit-options) for that user
+      maxconnections: 0
+      # -- (string) [default role](https://mariadb.com/kb/en/set-default-role/) for that user
+      defaultrole: sstbackup
+      # -- (list) additional [roles](https://mariadb.com/kb/en/set-role/) for that user
+      additionalroles:
+      proxysql:
+        # -- (bool) enable the [ProxySQL fastforward](https://proxysql.com/documentation/main-runtime/#mysql_users) feature for that user
+        fastforward: false
+    openstack_citest:
+      # -- (bool) enable the user
+      enabled: false
+      # -- (string) MariaDB user username
+      username:
+      # -- (string) MariaDB user password
+      password:
+      # -- (string) the [secret](https://kubernetes.io/docs/concepts/configuration/secret/) name that contains the MariaDB openstack_citest user password
+      secretName: mariadb-openstack-citest
+      # -- (list) list of allowed hostnames like "%", "::1" or "localhost"
+      hostnames:
+        - "%"
+        - "::1"
+        - "localhost"
+      # -- (string) MariaDB authentication plugin ([mysql_native_password](https://mariadb.com/kb/en/authentication-plugin-mysql_native_password/)|[ed25519](https://mariadb.com/kb/en/authentication-plugin-ed25519/))
+      authplugin: mysql_native_password
+      # -- (bool) grant the [admin option](https://mariadb.com/kb/en/grant/#roles) to that user
+      # -- that allows the user to grant his own permissions to other users
+      adminoption: false
+      # -- (int) [maximum number of connections](https://mariadb.com/kb/en/create-user/#resource-limit-options) for that user
+      maxconnections: 0
+      # -- (string) [default role](https://mariadb.com/kb/en/set-default-role/) for that user
+      defaultrole: contentfullaccess
+      # -- (list) additional [roles](https://mariadb.com/kb/en/set-role/) for that user
+      additionalroles:
+        - replication
+      proxysql:
+        # -- (bool) enable the [ProxySQL fastforward](https://proxysql.com/documentation/main-runtime/#mysql_users) feature for that user
+        fastforward: false
+    replicator:
+      # -- (bool) enable the user (required if asyncReplication.enabled is true)
+      enabled: false
+      # -- (string) MariaDB user username
+      username:
+      # -- (string) MariaDB user password
+      password:
+      # -- (string) the [secret](https://kubernetes.io/docs/concepts/configuration/secret/) name that contains the MariaDB replicator user password
+      secretName: mariadb-replicator
+      # -- (list) list of allowed hostnames like "%", "::1" or "localhost"
+      hostnames:
+        - "%"
+        - "::1"
+        - "localhost"
+      # -- (string) MariaDB authentication plugin ([mysql_native_password](https://mariadb.com/kb/en/authentication-plugin-mysql_native_password/)|[ed25519](https://mariadb.com/kb/en/authentication-plugin-ed25519/))
+      authplugin: mysql_native_password
+      # -- (bool) grant the [admin option](https://mariadb.com/kb/en/grant/#roles) to that user
+      # -- that allows the user to grant his own permissions to other users
+      adminoption: false
+      # -- (int) [maximum number of connections](https://mariadb.com/kb/en/create-user/#resource-limit-options) for that user
+      maxconnections: 0
+      # -- (string) [default role](https://mariadb.com/kb/en/set-default-role/) for that user
+      defaultrole: replication
+      # -- (list) additional [roles](https://mariadb.com/kb/en/set-role/) for that user
+      additionalroles:
+      proxysql:
+        # -- (bool) enable the [ProxySQL fastforward](https://proxysql.com/documentation/main-runtime/#mysql_users) feature for that user
+        fastforward: false
+    sysbench:
+      # -- (bool) enable the user
+      enabled: false
+      # -- (string) MariaDB user username
+      username:
+      # -- (string) MariaDB user password
+      password:
+      # -- (string) the [secret](https://kubernetes.io/docs/concepts/configuration/secret/) name that contains the MariaDB sysbench user password
+      secretName: mariadb-sysbench
+      # -- (list) list of allowed hostnames like "%", "::1" or "localhost"
+      hostnames:
+        - "%"
+        - "::1"
+        - "localhost"
+      # -- (string) MariaDB authentication plugin ([mysql_native_password](https://mariadb.com/kb/en/authentication-plugin-mysql_native_password/)|[ed25519](https://mariadb.com/kb/en/authentication-plugin-ed25519/))
+      authplugin: mysql_native_password
+      # -- (bool) grant the [admin option](https://mariadb.com/kb/en/grant/#roles) to that user
+      # -- that allows the user to grant his own permissions to other users
+      adminoption: false
+      # -- (int) [maximum number of connections](https://mariadb.com/kb/en/create-user/#resource-limit-options) for that user
+      maxconnections: 0
+      # -- (string) [default role](https://mariadb.com/kb/en/set-default-role/) for that user
+      defaultrole: contentfullaccess
+      # -- (list) additional [roles](https://mariadb.com/kb/en/set-role/) for that user
+      additionalroles:
+      proxysql:
+        # -- (bool) enable the [ProxySQL fastforward](https://proxysql.com/documentation/main-runtime/#mysql_users) feature for that user
+        fastforward: false
+  roles:
+    fullaccess:
+      # -- enable this role
+      enabled: true
+      # -- (list) list of [privileges](https://mariadb.com/kb/en/grant/#global-privileges) that should be granted to the role
+      privileges:
+        - ALL PRIVILEGES
+      # -- (list) list of [objects](https://mariadb.com/kb/en/grant/#syntax) for the privileges are allowed to use like "*.*", "database.table" or "database.*"
+      object: "*.*"
+      # -- (bool) allow to grant the [privileges](https://mariadb.com/kb/en/grant/#the-grant-option-privilege) to other users
+      grant: true
+    monitor:
+      # -- enable this role
+      enabled: true
+      # -- (list) list of [privileges](https://mariadb.com/kb/en/grant/#global-privileges) that should be granted to the role
+      privileges:
+        - SHOW DATABASES
+        - SLAVE MONITOR
+        - BINLOG MONITOR
+        - PROCESS
+        - REPLICA MONITOR
+        - SELECT
+      # -- (list) list of [objects](https://mariadb.com/kb/en/grant/#syntax) for the privileges are allowed to use like "*.*", "database.table" or "database.*"
+      object: "*.*"
+      # -- (bool) allow to grant the [privileges](https://mariadb.com/kb/en/grant/#the-grant-option-privilege) to other users
+      grant: false
+    replication:
+      # -- enable this role (required if asyncReplication.enabled is true)
+      enabled: false
+      # -- (list) list of [privileges](https://mariadb.com/kb/en/grant/#global-privileges) that should be granted to the role
+      privileges:
+        - REPLICATION SLAVE
+      # -- (list) list of [objects](https://mariadb.com/kb/en/grant/#syntax) for the privileges are allowed to use like "*.*", "database.table" or "database.*"
+      object: "*.*"
+      # -- (bool) allow to grant the [privileges](https://mariadb.com/kb/en/grant/#the-grant-option-privilege) to other users
+      grant: false
+    contentfullaccess:
+      # -- enable this role
+      enabled: false
+      # -- (list) list of [privileges](https://mariadb.com/kb/en/grant/#global-privileges) that should be granted to the role
+      privileges:
+        - SHOW DATABASES
+        - SELECT
+        - CREATE
+        - UPDATE
+        - ALTER
+        - INSERT
+        - DELETE
+        - DROP
+        - INDEX
+        - CREATE VIEW
+        - SHOW VIEW
+        - CREATE ROUTINE
+        - ALTER ROUTINE
+        - EXECUTE
+        - CREATE TEMPORARY TABLES
+        - EVENT
+        - LOCK TABLES
+      # -- (list) list of [objects](https://mariadb.com/kb/en/grant/#syntax) for the privileges are allowed to use like "*.*", "database.table" or "database.*"
+      object: "*.*"
+      # -- (bool) allow to grant the [privileges](https://mariadb.com/kb/en/grant/#the-grant-option-privilege) to other users
+      grant: false
+    sstbackup:
+      # -- enable this role (required if `mariabackup` is used as `sst_method`)
+      enabled: false
+      # -- (list) list of [privileges](https://mariadb.com/kb/en/grant/#global-privileges) that should be granted to the role
+      privileges:
+        - RELOAD
+        - PROCESS
+        - LOCK TABLES
+        - BINLOG MONITOR
+      # -- (list) list of [objects](https://mariadb.com/kb/en/grant/#syntax) for the privileges are allowed to use like "*.*", "database.table" or "database.*"
+      object: "*.*"
+      # -- (bool) allow to grant the [privileges](https://mariadb.com/kb/en/grant/#the-grant-option-privilege) to other users
+      grant: false
+  databases:
+    sb_oltp_ro:
+      # -- enable this database
+      enabled: false
+      # -- (string) database comment
+      # @default -- custom DB
+      comment:
+      # -- (string) database collation
+      # @default -- utf8_general_ci
+      collationName:
+      # -- (string) database character set
+      # @default -- utf8
+      CharacterSetName:
+      # -- (bool) overwrite the database if it already exists
+      # @default -- false
+      overwrite:
+      # -- (bool) delete the database if it is disabled
+      # @default -- false
+      deleteIfDisabled:
+monitoring:
+  mysqld_exporter:
+    # -- run the default entrypoint.sh script or just sleep to be able to troubleshoot and debug
+    autostart: true
+    # -- enable the [Prometheus MySQL exporter](https://github.com/prometheus/mysqld_exporter) as sidecar container
+    # @default -- false
+    enabled: false
+    # -- (int) [MySQL Prometheus exporter](https://github.com/prometheus/mysqld_exporter) port
+    # @default -- 9104
+    metricsPort:
+    linkerd:
+      # -- (bool) enable the [annotation](https://linkerd.io/2.14/tasks/adding-your-service/#meshing-a-service-with-annotations) for linkerd to inject the sidecar container for transport encryption
+      # @default -- false
+      enabled:
+  prometheus:
+    instance:
+      # -- (string) name of the Prometheus instance that should import alert definitions for Kubernetes (pod, deployment etc.) metrics
+      # @default -- prometheus
+      kubernetes:
+      # -- (string) name of the Prometheus instance that should pull database (DB, Proxy, Backup) metrics
+      # @default -- prometheus
+      database:
+    # Default Prometheus alerts and rules.
+    alerts:
+      # -- (bool) enable Prometheus alert definitions
+      enabled:
+      # -- (string) The `tier` label to be used for the alert definitions
+      tier:
+      # -- (string) The `support_group` label to be used for the alert definitions
+      support_group:
+      # -- (string) The `service` label to be used for the alert definitions
+      # @default -- `$.Values.mariadb.galera.clustername`
+      service:
+  elasticBeatsAutoDiscoveryAnnotations:
+    # -- (not yet implemented) add annotations to allow [automatic configuration](https://www.elastic.co/guide/en/beats/metricbeat/current/configuration-autodiscover-hints.html) of Elastic Beats agents
+    enabled: false
+  proxy:
+    # -- enable the ProxySQL/HAProxy [/metrics endpoint](https://proxysql.com/documentation/prometheus-exporter/) to be scraped by Prometheus
+    # @default -- false
+    enabled: false
+    haproxy:
+      # -- (int) [HAProxy Prometheus exporter](https://github.com/prometheus/mysqld_exporter) port
+      # @default -- 8404
+      metricsPort:
+  kopia:
+    # -- enable the Kopia [/metrics endpoint](https://kopia.io/docs/reference/command-line/flags/) to be scraped by Prometheus
+    # @default -- false
+    enabled: false
+proxy:
+  # -- (bool) use ProxySQL in front of the MariaDB Galera pods to reduce the service downtimes for the clients
+  # @default -- false
+  enabled:
+  # -- (string) type of the proxy service which will be deployed, we support two options: proxysql | haproxy (only one can be configured)
+  type: "proxysql"
+  haproxy:
+    # -- (int) [connection retries](http://docs.haproxy.org/2.8/configuration.html#4-retries) on a server after a failure
+    # @default -- 2
+    retries:
+    timeout:
+      # -- (string) [connection timeout](http://docs.haproxy.org/2.8/configuration.html#4.2-timeout%20connect) to a server
+      # @default -- 3s
+      connect:
+      # -- (string) [server timeout](http://docs.haproxy.org/2.8/configuration.html#3.9-timeout%20server) for pending data staying in the output buffer
+      # @default -- 5s
+      server:
+      # -- (string) [inactivity timeout](http://docs.haproxy.org/2.8/configuration.html#3.10-timeout%20client) on the client side
+      # @default -- 5s
+      client:
+    backend:
+      # -- (string) [load balancing algorithm](http://docs.haproxy.org/2.8/configuration.html#4.2-balance) to be used for the MariaDB connections
+      # @default -- source
+      balance:
+    users:
+      stats:
+        # -- enable this user
+        enabled: false
+        # -- (string) HAProxy stats user username
+        username:
+        # -- (string) HAProxy stats user password
+        password:
+        # -- (string) the [secret](https://kubernetes.io/docs/concepts/configuration/secret/) name that contains the HAProxy stats user password
+        secretName: haproxy-stats
+    linkerd:
+      # -- (bool) enable the [annotation](https://linkerd.io/2.14/tasks/adding-your-service/#meshing-a-service-with-annotations) for linkerd to inject the sidecar container for transport encryption
+      # @default -- false
+      enabled:
+  proxysql:
+    restapi:
+      # -- the [ProxySQL RestAPI](https://proxysql.com/documentation/REST-API/)
+      enabled: true
+    adminui:
+      # -- the [ProxySQL Admin UI](https://proxysql.com/documentation/http-web-server/)
+      enabled: true
+      # -- the variable defines the [verbosity level](https://proxysql.com/documentation/global-variables/admin-variables/#admin-web_verbosity) of the web server
+      verbosity: 0
+    queryRules:
+      genericReadWriteSplit:
+        # -- check the "Generic Read/Write split using regex" section in the [howto](https://proxysql.com/documentation/proxysql-read-write-split-howto/) for details
+        enabled: false
+    users:
+      admin:
+        # -- enable this user
+        enabled: true
+        # -- (string) Proxy admin user username
+        username:
+        # -- (string) Proxy admin user password
+        password:
+        # -- (string) the [secret](https://kubernetes.io/docs/concepts/configuration/secret/) name that contains the ProxySQL admin user password
+        secretName: proxysql-admin
+        proxysql:
+          # -- (bool) enable the [ProxySQL fastforward](https://proxysql.com/documentation/main-runtime/#mysql_users) feature for that user
+          fastforward: false
+      stats:
+        # -- enable this user
+        enabled: false
+        # -- (string) Proxy stats user username
+        username:
+        # -- (string) Proxy stats user password
+        password:
+        # -- (string) the [secret](https://kubernetes.io/docs/concepts/configuration/secret/) name that contains the ProxySQL stats user password
+        secretName: proxysql-stats
+        proxysql:
+          # -- (bool) enable the [ProxySQL fastforward](https://proxysql.com/documentation/main-runtime/#mysql_users) feature for that user
+          fastforward: false
+    linkerd:
+      # -- (bool) enable the [annotation](https://linkerd.io/2.14/tasks/adding-your-service/#meshing-a-service-with-annotations) for linkerd to inject the sidecar container for transport encryption
+      # @default -- false
+      enabled:
+
+# Docker image
+image:
+  pullSecrets:
+    secretname:
+      # -- (bool) enable this [Kubernetes pull secret](https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/)
+      enabled:
+      # -- (string) the hostname of the container registry that should be used for the pull secret
+      registry:
+      # -- (string) the combined username & password string that is valid for the container registry
+      credential:
+  os:
+    # -- hostname of the image registry used to pull the basic OS image that will be used for certain init steps
+    registry: keppel.eu-de-1.cloud.sap
+    # -- project/tenant used in the image registry
+    project: ccloud
+    # -- folder/container used in the image registry and also part of the image name
+    databasename: mariadb-galera-ubuntu
+    # -- database part of the image version that should be pulled
+    databaseversion: 22.04
+    # -- image part of the image version that should be pulled
+    imageversion: 20240429103636
+    # -- (string) `Always` to enforce that the image will be pulled even if it is already available on the worker node
+    # @default -- IfNotPresent
+    pullPolicy:
+    # -- name of the defined Kubernetes secret defined in `image.pullSecrets` that should be used for container registry authentication
+    pullSecret:
+  database:
+    # -- hostname of the image registry used to pull the database image that contains `MariaDB`, `Galera` and the helper `yq`
+    registry: keppel.eu-de-1.cloud.sap
+    # -- project/tenant used in the image registry
+    project: ccloud
+    # -- folder/container used in the image registry and also part of the image name
+    databasename: mariadb-galera
+    # -- database part of the image version that should be pulled
+    databaseversion: 10.5.23
+    # -- image part of the image version that should be pulled
+    imageversion: 20240429103636
+    # -- (string) `Always` to enforce that the image will be pulled even if it is already available on the worker node
+    # @default -- IfNotPresent
+    pullPolicy:
+    # -- name of the defined Kubernetes secret defined in `image.pullSecrets` that should be used for container registry authentication
+    pullSecret:
+  monitoring:
+    # -- hostname of the image registry used to pull the monitoring image that currently contains the MySQL exporter for Prometheus
+    registry: keppel.eu-de-1.cloud.sap
+    # -- project/tenant used in the image registry
+    project: ccloud
+    # -- folder/container used in the image registry and also part of the image name
+    databasename: mariadb-galera-mysqld_exporter
+    # -- database part of the image version that should be pulled
+    databaseversion: 0.14.0
+    # -- image part of the image version that should be pulled
+    imageversion: 20240429103636
+    # -- (string) `Always` to enforce that the image will be pulled even if it is already available on the worker node
+    # @default -- IfNotPresent
+    pullPolicy:
+    # -- name of the defined Kubernetes secret defined in `image.pullSecrets` that should be used for container registry authentication
+    pullSecret:
+  proxy:
+    # -- hostname of the image registry used to pull the proxy image that contains the ProxySQL software to load balance MariaDB connections
+    registry: keppel.eu-de-1.cloud.sap
+    # -- project/tenant used in the image registry
+    project: ccloud
+    # -- folder/container used in the image registry and also part of the image name
+    databasename: mariadb-galera-proxysql
+    # -- database part of the image version that should be pulled
+    databaseversion: 2.5.5
+    # -- image part of the image version that should be pulled
+    imageversion: 20240429103636
+    # -- (string) `Always` to enforce that the image will be pulled even if it is already available on the worker node
+    # @default -- IfNotPresent
+    pullPolicy:
+    # -- name of the defined Kubernetes secret defined in `image.pullSecrets` that should be used for container registry authentication
+    pullSecret:
+  kopiabackup:
+    # -- hostname of the image registry used to pull the proxy image that contains the Kopia backup software
+    registry: keppel.eu-de-1.cloud.sap
+    # -- project/tenant used in the image registry
+    project: ccloud
+    # -- folder/container used in the image registry and also part of the image name
+    databasename: mariadb-galera-kopia
+    # -- database part of the image version that should be pulled
+    databaseversion: 0.12.1
+    # -- image part of the image version that should be pulled
+    imageversion: 20240429103636
+    # -- (string) `Always` to enforce that the image will be pulled even if it is already available on the worker node
+    # @default -- IfNotPresent
+    pullPolicy:
+    # -- name of the defined Kubernetes secret defined in `image.pullSecrets` that should be used for container registry authentication
+    pullSecret:
+  haproxy:
+    # -- hostname of the image registry used to pull the proxy image that contains the Restic backup software
+    registry: keppel.eu-de-1.cloud.sap
+    # -- project/tenant used in the image registry
+    project: ccloud-dockerhub-mirror
+    # -- folder/container used in the image registry and also part of the image name
+    databasename: library/haproxy
+    # -- database part of the image version that should be pulled
+    databaseversion: 2.8.2-alpine
+    # -- (string) `Always` to enforce that the image will be pulled even if it is already available on the worker node
+    # @default -- IfNotPresent
+    pullPolicy:
+    # -- name of the defined Kubernetes secret defined in `image.pullSecrets` that should be used for container registry authentication
+    pullSecret:
+
+initContainers:
+  increaseMapCount:
+    securityContext:
+      # -- (bool) required to configure `/proc/sys/vm/max_map_count` in the init phase
+      privileged: true
+      # -- (int) required to configure `/proc/sys/vm/max_map_count` in the init phase
+      # @default -- 0
+      runAsUser:
+  tcpKeepAlive:
+    securityContext:
+      # -- (bool) required to configure `net.ipv4.tcp_keepalive_time` in the init phase
+      privileged: true
+      # -- (int) required to configure `net.ipv4.tcp_keepalive_time` in the init phase
+      # @default -- 0
+      runAsUser:
+  cleanoscache:
+    securityContext:
+      # -- (bool) required to configure `/proc/sys/vm/drop_caches` in the init phase
+      privileged: true
+      # -- (int) required to configure `/proc/sys/vm/drop_caches` in the init phase
+      # @default -- 0
+      runAsUser:
+
+# network services
+services:
+  database:
+    backend:
+      # -- `ClusterIP` to configure a Kubernetes internal service or `LoadBalancer` to publish the service outside of the [Kubernetes cluster network](https://kubernetes.io/docs/concepts/services-networking/service/#publishing-services-service-types)
+      type: ClusterIP
+      # -- `false` or `true` if the IP adresses of the pods that are [endpoints for that service](https://kubernetes.io/docs/concepts/services-networking/service/#headless-services) should be advertised.
+      # Required to let the client make it's own load balancing decisions. Will be set to `false` if `type` is set `LoadBalancer`
+      headless: true
+      ports:
+        galera:
+          # -- exposed Galera [replication port](https://mariadb.com/kb/en/configuring-mariadb-galera-cluster/#network-ports)
+          port: 4567
+          # -- Galera [replication port](https://mariadb.com/kb/en/configuring-mariadb-galera-cluster/#network-ports) configured in the container
+          targetPort: 4567
+          # -- Galera [replication port](https://mariadb.com/kb/en/configuring-mariadb-galera-cluster/#network-ports) protocol
+          protocol: TCP
+        ist:
+          # -- exposed Galera [incremental state transfer port](http://galeracluster.com/library/documentation/galera-parameters.html#ist-recv-addr)
+          port: 4568
+          # -- Galera [incremental state transfer port](http://galeracluster.com/library/documentation/galera-parameters.html#ist-recv-addr) configured in the container
+          targetPort: 4568
+          # -- Galera [incremental state transfer port](http://galeracluster.com/library/documentation/galera-parameters.html#ist-recv-addr) protocol
+          protocol: TCP
+        sst:
+          # -- exposed Galera [state snapshot transfer port](https://mariadb.com/kb/en/introduction-to-state-snapshot-transfers-ssts/)
+          port: 4444
+          # -- Galera [state snapshot transfer port](https://mariadb.com/kb/en/introduction-to-state-snapshot-transfers-ssts/) configured in the container
+          targetPort: 4444
+          # -- Galera [state snapshot transfer port](https://mariadb.com/kb/en/introduction-to-state-snapshot-transfers-ssts/) protocol
+          protocol: TCP
+      sessionAffinity:
+        # -- `None` or `ClientIP` if connections from a single client should be [routed to the same endpoint](https://kubernetes.io/docs/reference/networking/virtual-ips/#session-affinity) every time.
+        type: None
+    frontend:
+      # -- `ClusterIP` to configure a Kubernetes internal service or `LoadBalancer` to publish the service outside of the [Kubernetes cluster network](https://kubernetes.io/docs/concepts/services-networking/service/#publishing-services-service-types)
+      type: ClusterIP
+      # -- `false` or `true` if the IP adresses of the pods that are [endpoints for that service](https://kubernetes.io/docs/concepts/services-networking/service/#headless-services) should be advertised. Required to let the client make it's own load balancing decisions
+      headless: false
+      ports:
+        mysql:
+          # -- exposed MariaDB [SQL port](https://mariadb.com/kb/en/connecting-to-mariadb/#port)
+          port: 3306
+          # -- MariaDB [SQL port](https://mariadb.com/kb/en/connecting-to-mariadb/#port) configured in the container
+          targetPort: 3306
+          # -- MariaDB [SQL port](https://mariadb.com/kb/en/connecting-to-mariadb/#port) protocol
+          protocol: TCP
+      sessionAffinity:
+        # -- `None` or `ClientIP` if connections from a single client should be [routed to the same endpoint](https://kubernetes.io/docs/reference/networking/virtual-ips/#session-affinity) every time.
+        type: ClientIP
+        # -- [Session stickiness timeout](https://kubernetes.io/docs/reference/networking/virtual-ips/#session-affinity) for the `sessionAffinity` option
+        # @default -- 10800
+        ClientIpTimeoutSeconds: 28800
+  proxy:
+    proxysql:
+      backend:
+        # -- `ClusterIP` to configure a Kubernetes internal service or `LoadBalancer` to publish the service outside of the [Kubernetes cluster network](https://kubernetes.io/docs/concepts/services-networking/service/#publishing-services-service-types)
+        type: ClusterIP
+        # -- `false` or `true` if the IP adresses of the pods that are [endpoints for that service](https://kubernetes.io/docs/concepts/services-networking/service/#headless-services) should be advertised. Required to let the client make it's own load balancing decisions
+        headless: true
+        ports:
+          proxy:
+            # -- exposed ProxySQL [Admin SQL port](https://proxysql.com/Documentation/global-variables/admin-variables/#admin-mysql_ifaces)
+            port: 6032
+            # -- ProxySQL [Admin SQL port](https://proxysql.com/Documentation/global-variables/admin-variables/#admin-mysql_ifaces) configured in the container
+            targetPort: 6032
+            # -- ProxySQL [Admin SQL port](https://proxysql.com/Documentation/global-variables/admin-variables/#admin-mysql_ifaces) protocol
+            protocol: TCP
+          restapi:
+            # -- exposed ProxySQL [Rest API port](https://proxysql.com/documentation/REST-API/)
+            port: 6070
+            # -- ProxySQL [Rest API port](https://proxysql.com/documentation/REST-API/) configured in the container
+            targetPort: 6070
+            # -- ProxySQL [Rest API port](https://proxysql.com/documentation/REST-API/) protocol
+            protocol: TCP
+          adminui:
+            # -- exposed ProxySQL [Admin UI port](https://proxysql.com/documentation/http-web-server/)
+            port: 6080
+            # -- ProxySQL [Admin UI port](https://proxysql.com/documentation/http-web-server/) configured in the container
+            targetPort: 6080
+            # -- ProxySQL [Admin UI port](https://proxysql.com/documentation/http-web-server/) protocol
+            protocol: TCP
+        sessionAffinity:
+          # -- `None` or `ClientIP` if connections from a single client should be [routed to the same endpoint](https://kubernetes.io/docs/reference/networking/virtual-ips/#session-affinity) every time.
+          type: None
+      frontend:
+        # -- `ClusterIP` to configure a Kubernetes internal service or `LoadBalancer` to publish the service outside of the [Kubernetes cluster network](https://kubernetes.io/docs/concepts/services-networking/service/#publishing-services-service-types)
+        type: ClusterIP
+        # -- `false` or `true` if the IP adresses of the pods that are [endpoints for that service](https://kubernetes.io/docs/concepts/services-networking/service/#headless-services) should be advertised. Required to let the client make it's own load balancing decisions
+        headless: false
+        ports:
+          proxy:
+            # -- exposed ProxySQL [SQL port](https://proxysql.com/Documentation/global-variables/mysql-variables/#mysql-interfaces)
+            port: 3306
+            # -- ProxySQL [SQL port](https://proxysql.com/Documentation/global-variables/mysql-variables/#mysql-interfaces) configured in the container
+            targetPort: 6033
+            # -- ProxySQL [SQL port](https://proxysql.com/Documentation/global-variables/mysql-variables/#mysql-interfaces) protocol
+            protocol: TCP
+        sessionAffinity:
+          # -- `None` or `ClientIP` if connections from a single client should be [routed to the same endpoint](https://kubernetes.io/docs/reference/networking/virtual-ips/#session-affinity) every time.
+          type: None
+    haproxy:
+      backend:
+        # -- `ClusterIP` to configure a Kubernetes internal service or `LoadBalancer` to publish the service outside of the [Kubernetes cluster network](https://kubernetes.io/docs/concepts/services-networking/service/#publishing-services-service-types)
+        type: LoadBalancer
+        # -- `false` or `true` if the IP adresses of the pods that are [endpoints for that service](https://kubernetes.io/docs/concepts/services-networking/service/#headless-services) should be advertised. Required to let the client make it's own load balancing decisions
+        headless: false
+        ports:
+          stats:
+            # -- exposed HAProxy [statistics](http://docs.haproxy.org/2.8/configuration.html#4.2-stats%20enable) port
+            port: 8080
+            # -- HAProxy [statistics](http://docs.haproxy.org/2.8/configuration.html#4.2-stats%20enable) port configured in the container
+            targetPort: 8080
+            # -- HAProxy [statistics](http://docs.haproxy.org/2.8/configuration.html#4.2-stats%20enable) protocol
+            protocol: TCP
+        sessionAffinity:
+          # -- `None` or `ClientIP` if connections from a single client should be [routed to the same endpoint](https://kubernetes.io/docs/reference/networking/virtual-ips/#session-affinity) every time.
+          type: None
+      frontend:
+        # -- `ClusterIP` to configure a Kubernetes internal service or `LoadBalancer` to publish the service outside of the [Kubernetes cluster network](https://kubernetes.io/docs/concepts/services-networking/service/#publishing-services-service-types)
+        type: ClusterIP
+        # -- `false` or `true` if the IP adresses of the pods that are [endpoints for that service](https://kubernetes.io/docs/concepts/services-networking/service/#headless-services) should be advertised. Required to let the client make it's own load balancing decisions
+        headless: false
+        ports:
+          proxy:
+            # -- exposed HAProxy [SQL port](http://docs.haproxy.org/2.8/configuration.html#2.7)
+            port: 3306
+            # -- HAProxy [SQL port](http://docs.haproxy.org/2.8/configuration.html#2.7) configured in the container
+            targetPort: 3306
+            # -- HAProxy [SQL port](http://docs.haproxy.org/2.8/configuration.html#2.7) protocol
+            protocol: TCP
+        sessionAffinity:
+          # -- `None` or `ClientIP` if connections from a single client should be [routed to the same endpoint](https://kubernetes.io/docs/reference/networking/virtual-ips/#session-affinity) every time.
+          type: ClientIP
+  kopiaserver:
+    frontend:
+      # -- `ClusterIP` to configure a Kubernetes internal service or `LoadBalancer` to publish the service outside of the [Kubernetes cluster network](https://kubernetes.io/docs/concepts/services-networking/service/#publishing-services-service-types)
+      type: LoadBalancer
+      ports:
+        kopia:
+          # -- exposed Kopia [UI port](https://kopia.io/docs/reference/command-line/common/server-start/)
+          port: 80
+          # -- Kopia [UI port](https://kopia.io/docs/reference/command-line/common/server-start/) configured in the container
+          targetPort: 51515
+          # -- Kopia [UI port](https://kopia.io/docs/reference/command-line/common/server-start/) protocol
+          protocol: TCP
+      sessionAffinity:
+        # -- `None` or `ClientIP` if connections from a single client should be [routed to the same endpoint](https://kubernetes.io/docs/reference/networking/virtual-ips/#session-affinity) every time.
+        type: ClientIP
+        # -- [Session stickiness timeout](https://kubernetes.io/docs/reference/networking/virtual-ips/#session-affinity) for the `sessionAffinity` option
+        # @default -- 10800
+        ClientIpTimeoutSeconds: 28800
+
+# Storage
+volumeMounts:
+  database:
+    data:
+      # -- enable this volume
+      enabled: true
+      # -- name for the [persistent volume claim](https://kubernetes.io/docs/concepts/storage/persistent-volumes/#persistentvolumeclaims) requested for the MariaDB [data directory](https://mariadb.com/kb/en/server-system-variables/#datadir)
+      claimName: mariadb
+      # -- mount path of the persistent volume in the container used for the MariaDB data directory
+      mountPath: /opt/mariadb/data
+      # -- volume type [(persistent)](https://kubernetes.io/docs/concepts/storage/persistent-volumes/)
+      type: persistentVolume
+    log:
+      # -- enable this volume
+      enabled: true
+      claimName: marialog
+      # -- mount path of the persistent volume in the container used for the MariaDB log directory
+      mountPath: /opt/mariadb/log
+      # -- volume type [(persistent)](https://kubernetes.io/docs/concepts/storage/persistent-volumes/)
+      type: persistentVolume
+    cert-wildcard:
+      # -- enable this volume
+      enabled: false
+      # -- if a `cert-wildcard` Kubernetes secret has been defined it will be mounted into that directory
+      mountPath: /opt/mariadb/etc/certs
+      # -- volume type [(secret)](https://kubernetes.io/docs/concepts/storage/volumes/#secret)
+      type: secret
+      # -- `true` to [mount the secret](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-files-from-a-pod) in read only mode
+      readOnly: true
+  proxy:
+    proxysql:
+      data:
+        # -- enable this volume
+        enabled: true
+        # -- name for the [persistent volume claim](https://kubernetes.io/docs/concepts/storage/persistent-volumes/#persistentvolumeclaims) requested for the ProxySQL [data directory](https://proxysql.com/documentation/configuration-file/#general-variables)
+        claimName: proxysql
+        # -- mount path of the persistent volume in the container used for the for the ProxySQL data directory
+        mountPath: /opt/proxysql/data
+        # -- volume type [(persistent)](https://kubernetes.io/docs/concepts/storage/persistent-volumes/)
+        type: persistentVolume
+  backup:
+    kopia:
+      data:
+        # -- enable this volume
+        enabled: false
+        # -- name for the [persistent volume claim](https://kubernetes.io/docs/concepts/storage/persistent-volumes/#persistentvolumeclaims) requested for the Kopia [data directory](https://mariadb.com/kb/en/server-system-variables/#datadir)
+        claimName: mariabackup
+        # -- mount path of the persistent volume in the container used for the MariaDB data directory
+        mountPath: /opt/kopia/data
+        # -- volume type [(persistent)](https://kubernetes.io/docs/concepts/storage/persistent-volumes/)
+        type: persistentVolume
+
+volumeClaimTemplates:
+  mariadb:
+    # -- [access mode](https://kubernetes.io/docs/concepts/storage/persistent-volumes/#access-modes) for the MariaDB data volume
+    accessModes: [ReadWriteOnce]
+    # -- capacity for the MariaDB data volume
+    capacity: 10Gi
+    # -- custom storageclass (currently `cinder` and `nfs` are supported) for the MariaDB data volume
+    storageClassName: false
+  marialog:
+    # -- [access mode](https://kubernetes.io/docs/concepts/storage/persistent-volumes/#access-modes) for the MariaDB log volume
+    accessModes: [ReadWriteOnce]
+    # -- capacity for the MariaDB log volume
+    capacity: 30Gi
+    # -- custom storageclass (currently `cinder` and `nfs` are supported) for the MariaDB log volume
+    storageClassName: false
+  mariabackup:
+    # -- [access mode](https://kubernetes.io/docs/concepts/storage/persistent-volumes/#access-modes) for the MariaDB backup volume (used by Kopia)
+    accessModes: [ReadWriteMany]
+    # -- capacity for the MariaDB backup volume
+    capacity: 100Gi
+    # -- custom storageclass (currently `nfs` is supported) for the MariaDB backup volume to allow the shared access for all Kopia pods
+    storageClassName: nfs
+  proxysql:
+    # -- [access mode](https://kubernetes.io/docs/concepts/storage/persistent-volumes/#access-modes) for the ProxySQL data volume
+    accessModes: [ReadWriteOnce]
+    # -- capacity for the ProxySQL data volume
+    capacity: 128Mi
+    # -- custom storageclass (currently `cinder` and `nfs` are supported) for the ProxySQL data volume
+    storageClassName: false
+
+# Resource limits per container
+resourceLimits:
+  cpu:
+    # -- CPU [resource reservation(request)](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#requests-and-limits) for the MariaDB containers
+    # @default -- 0.5
+    database: 2
+    # -- CPU [resource reservation(request)](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#requests-and-limits) for the Monitoring sidecar containers for MariaDB
+    # @default -- 0.25
+    monitoring: 0.5
+    # -- CPU [resource reservation(request)](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#requests-and-limits) for the MariaDB configuration job
+    # @default -- 0.25
+    databasecfgjob: 0.5
+    # -- CPU [resource reservation(request)](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#requests-and-limits) for the MariaDB restore job
+    # @default -- 0.25
+    jobrestore: 0.5
+    # -- CPU [resource reservation(request)](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#requests-and-limits) for the MariaDB backup cronjob
+    # @default -- 0.25
+    cronjob: 2
+    # -- CPU [resource reservation(request)](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#requests-and-limits) for the ProxySQL containers
+    # @default -- 0.5
+    proxy: 2
+    # -- CPU [resource reservation(request)](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#requests-and-limits) for the Haproxy containers
+    # @default -- 0.5
+    kopiaserver: 0.25
+  memory:
+    # -- RAM [resource limit](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#requests-and-limits) for the MariaDB containers
+    # @default -- 64Mi
+    database: 1024Mi
+    # -- RAM [resource limit](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#requests-and-limits) for the Monitoring sidecar containers for MariaDB
+    # @default -- 32Mi
+    monitoring: 48Mi
+    # -- RAM [resource limit](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#requests-and-limits) for the MariaDB configuration job
+    # @default -- 32Mi
+    databasecfgjob: 48Mi
+    # -- RAM [resource limit](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#requests-and-limits) for the MariaDB restore job
+    # @default -- 128Mi
+    jobrestore: 256Mi
+    # -- RAM [resource limit](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#requests-and-limits) for the MariaDB backup cronjob
+    # @default -- 32Mi
+    cronjob: 1024Mi
+    # -- RAM [resource limit](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#requests-and-limits) for the ProxySQL containers
+    # @default -- 64Mi
+    proxy: 256Mi
+    # -- RAM [resource limit](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#requests-and-limits) for the Haproxy containers
+    # @default -- 64Mi
+    kopiaserver: 256Mi
+
+# Deployment rules
+replicas:
+  # -- amount of pods that will [scheduled](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#creating-a-deployment) for the MariaDB Galera cluster.
+  # An uneven number will be enforced to avoid simple split brain situations. For a good balance between the write and read performance not more than 3 pods a suggested.
+  # If `mariadb.galera.multiRegion.enabled` is set to `true` the amount of pods will be set to `1`
+  # @default -- 3
+  database: 3
+  # -- amount of pods that will [scheduled](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#creating-a-deployment) for the ProxySQL cluster.
+  # An uneven number will be enforced to avoid simple split brain situations.
+  # If `mariadb.galera.multiRegion.enabled` is set to `true` the amount of pods will be set to `1`
+  # @default -- 3
+  proxy: 3
+maxUnavailable:
+  # -- number of MariaDB pods that can be [unavailable](https://kubernetes.io/docs/tasks/run-database/configure-pdb/#specifying-a-poddisruptionbudget) during a rolling upgrade
+  # @default -- 1
+  database: 1
+  # -- number of ProxySQL pods that can be [unavailable](https://kubernetes.io/docs/tasks/run-database/configure-pdb/#specifying-a-poddisruptionbudget) during a rolling upgrade
+  # @default -- 1
+  proxy: 1
+  # -- number of Kopia UI pods that can be [unavailable](https://kubernetes.io/docs/tasks/run-database/configure-pdb/#specifying-a-poddisruptionbudget) during a rolling upgrade
+  # @default -- 1
+  kopiaserver: 1
+
+hpa:
+  database:
+    # -- enable [horizontal pod autoscaling](https://kubernetes.io/docs/tasks/run-database/horizontal-pod-autoscale/) for the MariaDB Galera pods.
+    # Currently not suggested because even replica numbers cannot be avoided
+    # @default -- false
+    enabled: false
+    # -- minimum number of replicas allowed for the MariaDB Galera pods
+    # @default -- 3
+    minReplicas: 3
+    # -- maximum number of replicas allowed for the MariaDB Galera pods
+    # @default -- 5
+    maxReplicas: 3
+    # -- average CPU usage in percent across all MariaDB Galera pods that triggers the scaling process
+    # @default -- 66
+    maxCpuPercent: 50
+  proxy:
+    # -- enable [horizontal pod autoscaling](https://kubernetes.io/docs/tasks/run-database/horizontal-pod-autoscale/) for the ProxySQL cluster pods.
+    # Currently not suggested because even replica numbers cannot be avoided
+    # @default -- false
+    enabled: false
+    # -- minimum number of replicas allowed for the ProxySQL cluster pods
+    # @default -- 3
+    minReplicas: 3
+    # -- maximum number of replicas allowed for the ProxySQL cluster pods
+    # @default -- 5
+    maxReplicas: 3
+    # -- average CPU usage in percent across all ProxySQL cluster pods that triggers the scaling process
+    # @default -- 66
+    maxCpuPercent: 50
+
+# -- [Update strategy](https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/#update-strategies) for the MariaDB Galera and ProxySQL cluster pods.
+# @default -- RollingUpdate
+updateStrategy: RollingUpdate
+# -- [Pod Management Policy](https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/#pod-management-policies) for the MariaDB Galera and ProxySQL cluster pods.
+# @default -- OrderedReady
+podManagementPolicy: Parallel
+# -- how many [versions](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#clean-up-policy) of the rolled out statefulsets for the MariaDB Galera and ProxySQL cluster pods should be kept
+# @default -- 10
+revisionHistoryLimit: 3
+# -- how many seconds should [Kubernetes wait](https://kubernetes.io/docs/concepts/containers/container-lifecycle-hooks/#hook-handler-execution) before forcefully stopping a MariaDB Galera and ProxySQL cluster pod.
+# During the MariaDB [full database restore](#full-database-restore) process that value will be reduced to 15 seconds
+# @default -- 86400
+terminationGracePeriodSeconds: 600
+
+
+#Container Health Checks
+startupProbe:
+  initialDelaySeconds:
+    # -- Define the [initial delay](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) of the startup probe for MariaDB Galera pods
+    # @default -- 60
+    database: 15
+    # -- Define the [initial delay](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) of the startup probe for ProxySQL/HAProxy pods
+    # @default -- 60
+    proxy: 15
+    # -- Define the [initial delay](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) of the startup probe for the Kopia UI pod
+    # @default -- 60
+    kopiaserver: 5
+  periodSeconds:
+    # -- Define the [check interval](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) of the startup probe for MariaDB Galera pods
+    # @default -- 30
+    database: 10
+    # -- Define the [check interval](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) of the startup probe for ProxySQL/HAProxy pods
+    # @default -- 30
+    proxy: 10
+    # -- Define the [check interval](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) of the startup probe for Kopia UI pod
+    # @default -- 30
+    kopiaserver: 10
+  failureThreshold:
+    # -- How many [retries](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) are allowed before the startup probe for the MariaDB Galera pods are marked as failed
+    # @default -- 4
+    database: 12
+    # -- How many [retries](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) are allowed before the startup probe for the ProxySQL/HAProxy pods are marked as failed
+    # @default -- 4
+    proxy: 12
+    # -- How many [retries](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) are allowed before the startup probe for the Kopia UI pod is marked as failed
+    # @default -- 4
+    kopiaserver: 12
+  timeoutSeconds:
+    # -- How long should Kubernetes [wait](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) for the current check of the startup probe for the MariaDB Galera pods
+    # @default -- 20
+    database: 20
+    # -- How long should Kubernetes [wait](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) for the current check of the startup probe for the ProxySQL/HAProxy pods
+    # @default -- 20
+    proxy: 20
+    # -- How long should Kubernetes [wait](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) for the current check of the startup probe for the Kopia UI pod
+    # @default -- 20
+    kopiaserver: 20
+livenessProbe:
+  initialDelaySeconds:
+    # -- Define the [initial delay](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) of the liveness probe for MariaDB Galera pods
+    # @default -- 60
+    database: 15
+    # -- Define the [initial delay](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) of the liveness probe for MariaDB monitoring sidecar container
+    # @default -- 5
+    monitoring: 5
+    # -- Define the [initial delay](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) of the liveness probe for ProxySQL/HAProxy pods
+    # @default -- 60
+    proxy: 15
+    # -- Define the [initial delay](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) of the liveness probe for Kopia UI pod
+    # @default -- 60
+    kopiaserver: 5
+  periodSeconds:
+    # -- Define the [check interval](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) of the liveness probe for MariaDB Galera pods
+    # @default -- 30
+    database: 30
+    # -- Define the [check interval](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) of the liveness probe for MariaDB monitoring sidecar container
+    # @default -- 30
+    monitoring: 30
+    # -- Define the [check interval](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) of the liveness probe for ProxySQL/HAProxy pods
+    # @default -- 30
+    proxy: 30
+    # -- Define the [check interval](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) of the liveness probe for Kopia UI pod
+    # @default -- 30
+    kopiaserver: 30
+  failureThreshold:
+    # -- How many [retries](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) are allowed before the liveness probe for the MariaDB Galera pods are marked as failed
+    # @default -- 4
+    database: 4
+    # -- How many [retries](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) are allowed before the liveness probe for the MariaDB monitoring sidecar container is marked as failed
+    # @default -- 4
+    monitoring: 4
+    # -- How many [retries](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) are allowed before the liveness probe for the ProxySQL/HAProxy pods are marked as failed
+    # @default -- 4
+    proxy: 4
+    # -- How many [retries](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) are allowed before the liveness probe for the Kopia UI pod is marked as failed
+    # @default -- 4
+    kopiaserver: 4
+  timeoutSeconds:
+    # -- How long should Kubernetes [wait](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) for the current check of the liveness probe for the MariaDB Galera pods
+    # @default -- 20
+    database: 20
+    # -- How long should Kubernetes [wait](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) for the current check of the liveness probe for the MariaDB monitoring sidecar container
+    # @default -- 20
+    monitoring: 20
+    # -- How long should Kubernetes [wait](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) for the current check of the liveness probe for the ProxySQL/HAProxy pods
+    # @default -- 20
+    proxy: 20
+    # -- How long should Kubernetes [wait](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) for the current check of the liveness probe for the Kopia UI pod
+    # @default -- 20
+    kopiaserver: 20
+readinessProbe:
+  initialDelaySeconds:
+    # -- Define the [initial delay](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) of the readiness probe for MariaDB Galera pods
+    # @default -- 90
+    database: 30
+    # -- Define the [initial delay](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) of the readiness probe for MariaDB monitoring sidecar container
+    # @default -- 10
+    monitoring: 10
+    # -- Define the [initial delay](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) of the readiness probe for ProxySQL/HAProxy pods
+    # @default -- 90
+    proxy: 30
+    # -- Define the [initial delay](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) of the readiness probe for Kopia UI pod
+    # @default -- 90
+    kopiaserver: 10
+  periodSeconds:
+    # -- Define the [check interval](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) of the readiness probe for MariaDB Galera pods
+    # @default -- 20
+    database: 20
+    # -- Define the [check interval](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) of the readiness probe for MariaDB monitoring sidecar container
+    # @default -- 20
+    monitoring: 20
+    # -- Define the [check interval](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) of the readiness probe for ProxySQL/HAProxy pods
+    # @default -- 20
+    proxy: 20
+    # -- Define the [check interval](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) of the readiness probe for Kopia UI pod
+    # @default -- 20
+    kopiaserver: 20
+  successThreshold:
+    # -- After [how many](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) checks the readiness probe for the MariaDB Galera pods will be marked as successful
+    # @default -- 1
+    database: 1
+    # -- After [how many](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) checks the readiness probe for the MariaDB monitoring sidecar container will be marked as successful
+    # @default -- 1
+    monitoring: 1
+    # -- After [how many](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) checks the readiness probe for the ProxySQL/HAProxy pods will be marked as successful
+    # @default -- 1
+    proxy: 1
+    # -- After [how many](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) checks the readiness probe for the Kopia UI pod will be marked as successful
+    # @default -- 1
+    kopiaserver: 1
+  failureThreshold:
+    # -- How many [retries](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) are allowed before the readiness probe for the MariaDB Galera pods are marked as failed
+    # @default -- 2
+    database: 3
+    # -- How many [retries](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) are allowed before the readiness probe for the MariaDB monitoring sidecar container is marked as failed
+    # @default -- 2
+    monitoring: 3
+    # -- How many [retries](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) are allowed before the readiness probe for the ProxySQL/HAProxy pods are marked as failed
+    # @default -- 2
+    proxy: 3
+    # -- How many [retries](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) are allowed before the readiness probe for the Kopia UI pod is marked as failed
+    # @default -- 2
+    kopiaserver: 3
+  timeoutSeconds:
+    # -- How long should Kubernetes [wait](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) for the current check of the readiness probe for the MariaDB Galera pods
+    # @default -- 10
+    database: 10
+    # -- How long should Kubernetes [wait](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) for the current check of the readiness probe for the MariaDB monitoring sidecar container
+    # @default -- 10
+    monitoring: 10
+    # -- How long should Kubernetes [wait](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) for the current check of the readiness probe for the ProxySQL/HAProxy pods
+    # @default -- 10
+    proxy: 10
+    # -- How long should Kubernetes [wait](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) for the current check of the readiness probe for the Kopia UI pod
+    # @default -- 10
+    kopiaserver: 10
+
+env:
+  MARIADB_ROOT_USERNAME:
+    # -- Name of the [Kubernetes secret](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-environment-variables) that contains the key for the `username` of the `MariaDB root user`
+    secretName: mariadb-root
+    # -- Name of the key of the predefined Kubernetes secret that contains the `username` for the `MariaDB root user`
+    secretKey: username
+    # -- for which containers this environment variable will be used
+    containerType:
+      - database
+      - databasecfgjob
+      - proxysql
+      - cronjob-kopia
+      - jobrestore-kopia
+  MARIADB_ROOT_PASSWORD:
+    # -- Name of the [Kubernetes secret](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-environment-variables) that contains the key for the `password` of the `MariaDB root user`
+    secretName: mariadb-root
+    # -- Name of the key of the predefined Kubernetes secret that contains the `password` for the `MariaDB root user`
+    secretKey: password
+    # -- for which containers this environment variable will be used
+    containerType:
+      - database
+      - databasecfgjob
+      - proxysql
+      - cronjob-kopia
+      - jobrestore-kopia
+  GALERA_SST_USERNAME:
+    # -- Name of the [Kubernetes secret](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-environment-variables) that contains the key for the `username` of the `MariaDB Galera state snapshot transfer user`
+    secretName: mariadb-mariabackup
+    # -- Name of the key of the predefined Kubernetes secret that contains the `username` for the `MariaDB Galera state snapshot transfer user`
+    secretKey: username
+    # -- for which containers this environment variable will be used
+    containerType:
+      - database
+      - databasecfgjob
+      - proxysql
+  GALERA_SST_PASSWORD:
+    # -- Name of the [Kubernetes secret](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-environment-variables) that contains the key for the `password` of the `MariaDB Galera state snapshot transfer user`
+    secretName: mariadb-mariabackup
+    # -- Name of the key of the predefined Kubernetes secret that contains the `password` for the `MariaDB Galera state snapshot transfer user`
+    secretKey: password
+    # -- for which containers this environment variable will be used
+    containerType:
+      - database
+      - databasecfgjob
+      - proxysql
+  MARIADB_MONITORING_USERNAME:
+    # -- Name of the [Kubernetes secret](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-environment-variables) that contains the key for the `username` of the `MariaDB monitoring user`
+    secretName: mariadb-monitor
+    # -- Name of the key of the predefined Kubernetes secret that contains the `username` for the `MariaDB monitoring user`
+    secretKey: username
+    # -- for which containers this environment variable will be used
+    containerType:
+      - database
+      - monitoring
+      - databasecfgjob
+      - proxysql
+  MARIADB_MONITORING_PASSWORD:
+    # -- Name of the [Kubernetes secret](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-environment-variables) that contains the key for the `password` of the `MariaDB monitoring user`
+    secretName: mariadb-monitor
+    # -- Name of the key of the predefined Kubernetes secret that contains the `password` for the `MariaDB monitoring user`
+    secretKey: password
+    # -- for which containers this environment variable will be used
+    containerType:
+      - database
+      - monitoring
+      - databasecfgjob
+      - proxysql
+  MARIADB_MONITORING_CONNECTION_LIMIT:
+    # -- maximum number of allowed parallel connections for the `MariaDB monitoring user` defined within the [MAX_USER_CONNECTIONS](https://mariadb.com/kb/en/create-user/#resource-limit-options) option
+    value: 6
+    # -- for which containers this environment variable will be used
+    containerType:
+      - database
+      - databasecfgjob
+  WEB_TELEMETRY_PATH:
+    # -- The MySQL exporter monitoring sidecar container will expose the [Prometheus metrics](https://github.com/prometheus/mysqld_exporter#general-flags) under that path
+    value: /metrics
+    # -- for which containers this environment variable will be used
+    containerType:
+      - monitoring
+  PROXYSQL_ADMIN_USERNAME:
+    # -- Name of the [Kubernetes secret](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-environment-variables) that contains the key for the `username` of the `ProxySQL admin user`
+    secretName: proxysql-admin
+    # -- Name of the key of the predefined Kubernetes secret that contains the `username` for the `ProxySQL admin user`
+    secretKey: username
+    # -- for which containers this environment variable will be used
+    containerType:
+      - proxysql
+  PROXYSQL_ADMIN_PASSWORD:
+    # -- Name of the [Kubernetes secret](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-environment-variables) that contains the key for the `password` of the `ProxySQL admin user`
+    secretName: proxysql-admin
+    # -- Name of the key of the predefined Kubernetes secret that contains the `password` for the `ProxySQL admin user`
+    secretKey: password
+    # -- for which containers this environment variable will be used
+    containerType:
+      - proxysql
+  PROXYSQL_STATS_USERNAME:
+    # -- Name of the [Kubernetes secret](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-environment-variables) that contains the key for the `username` of the `ProxySQL statistics user`
+    secretName: proxysql-stats
+    # -- Name of the key of the predefined Kubernetes secret that contains the `username` for the `ProxySQL statistics user`
+    secretKey: username
+    # -- for which containers this environment variable will be used
+    containerType:
+      - proxysql
+  PROXYSQL_STATS_PASSWORD:
+    # -- Name of the [Kubernetes secret](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-environment-variables) that contains the key for the `password` of the `ProxySQL statistics user`
+    secretName: proxysql-stats
+    # -- Name of the key of the predefined Kubernetes secret that contains the `password` for the `ProxySQL statistics user`
+    secretKey: password
+    # -- for which containers this environment variable will be used
+    containerType:
+      - proxysql
+  OPENSTACK_CITEST_USERNAME:
+    # -- Name of the [Kubernetes secret](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-environment-variables) that contains the key for the `username` of the `Openstack oslo.db unit test user`
+    secretName: mariadb-openstack_citest
+    # -- Name of the key of the predefined Kubernetes secret that contains the `username` for the `Openstack oslo.db unit test user`
+    secretKey: username
+    # -- for which containers this environment variable will be used
+    containerType:
+      - databasecfgjob
+      - proxysql
+  OPENSTACK_CITEST_PASSWORD:
+    # -- Name of the [Kubernetes secret](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-environment-variables) that contains the key for the `password` of the `Openstack oslo.db unit test user`
+    secretName: mariadb-openstack_citest
+    # -- Name of the key of the predefined Kubernetes secret that contains the `password` for the `Openstack oslo.db unit test user`
+    secretKey: password
+    # -- for which containers this environment variable will be used
+    containerType:
+      - databasecfgjob
+      - proxysql
+  SYSBENCH_USERNAME:
+    # -- Name of the [Kubernetes secret](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-environment-variables) that contains the key for the `username` of the `sysbench user`
+    secretName: mariadb-sysbench
+    # -- Name of the key of the predefined Kubernetes secret that contains the `username` for the `sysbench user`
+    secretKey: username
+    # -- for which containers this environment variable will be used
+    containerType:
+      - databasecfgjob
+      - proxysql
+  SYSBENCH_PASSWORD:
+    # -- Name of the [Kubernetes secret](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-environment-variables) that contains the key for the `password` of the `sysbench user`
+    secretName: mariadb-sysbench
+    # -- Name of the key of the predefined Kubernetes secret that contains the `password` for the `sysbench user`
+    secretKey: password
+    # -- for which containers this environment variable will be used
+    containerType:
+      - databasecfgjob
+      - proxysql
+  REPLICA_USERNAME:
+    # -- Name of the [Kubernetes secret](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-environment-variables) that contains the key for the `username` of the `MariaDB async replication user`
+    secretName: mariadb-replicator
+    # -- Name of the key of the predefined Kubernetes secret that contains the `username` for the `MariaDB async replication user`
+    secretKey: username
+    # -- for which containers this environment variable will be used
+    containerType:
+      - database
+      - databasecfgjob
+      - proxysql
+  REPLICA_PASSWORD:
+    # -- Name of the [Kubernetes secret](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-environment-variables) that contains the key for the `password` of the `MariaDB async replication user`
+    secretName: mariadb-replicator
+    # -- Name of the key of the predefined Kubernetes secret that contains the `password` for the `MariaDB async replication user`
+    secretKey: password
+    # -- for which containers this environment variable will be used
+    containerType:
+      - database
+      - databasecfgjob
+      - proxysql
+  KOPIA_PASSWORD:
+    # -- Name of the [Kubernetes secret](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-environment-variables) that contains the key for the `password` of the `Kopia repository encryption key`
+    secretName: kopia-repository
+    # -- Name of the key of the predefined Kubernetes secret that contains the `password` for the `Kopia repository encryption key`
+    secretKey: password
+    # -- for which containers this environment variable will be used
+    containerType:
+      - cronjob-kopia
+      - jobrestore-kopia
+      - kopiaserver
+  KOPIA_S3_USERNAME:
+    # -- Name of the [Kubernetes secret](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-environment-variables) that contains the key for the `username` of the `Kopia EC2 secret for the s3 bucket`
+    secretName: kopia-s3
+    # -- Name of the key of the predefined Kubernetes secret that contains the `username` of the `Kopia EC2 secret for the s3 bucket`
+    secretKey: username
+    # -- for which containers this environment variable will be used
+    containerType:
+      - cronjob-kopia
+      - jobrestore-kopia
+      - kopiaserver
+  KOPIA_S3_PASSWORD:
+    # -- Name of the [Kubernetes secret](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-environment-variables) that contains the key for the `password` of the `Kopia EC2 secret for the s3 bucket`
+    secretName: kopia-s3
+    # -- Name of the key of the predefined Kubernetes secret that contains the `password` of the `Kopia EC2 secret for the s3 bucket`
+    secretKey: password
+    # -- for which containers this environment variable will be used
+    containerType:
+      - cronjob-kopia
+      - jobrestore-kopia
+      - kopiaserver
+  KOPIA_SERVER_USERNAME:
+    # -- Name of the [Kubernetes secret](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-environment-variables) that contains the key for the `username` of the `Kopia UI admin`
+    secretName: kopia-admin
+    # -- Name of the key of the predefined Kubernetes secret that contains the key for the `username` of the `Kopia UI admin`
+    secretKey: username
+    # -- for which containers this environment variable will be used
+    containerType:
+      - kopiaserver
+  KOPIA_SERVER_PASSWORD:
+    # -- Name of the [Kubernetes secret](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-environment-variables) that contains the key for the `password` of the `Kopia UI admin`
+    secretName: kopia-admin
+    # -- Name of the key of the predefined Kubernetes secret that contains the key for the `password` of the `Kopia UI admin`
+    secretKey: password
+    # -- for which containers this environment variable will be used
+    containerType:
+      - kopiaserver
+  KOPIA_SERVER_CONTROL_USERNAME:
+    # -- Name of the [Kubernetes secret](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-environment-variables) that contains the key for the `username` of the `Kopia UI admin`
+    secretName: kopia-control
+    # -- Name of the key of the predefined Kubernetes secret that contains the key for the `username` of the `Kopia server control user`
+    secretKey: username
+    # -- for which containers this environment variable will be used
+    containerType:
+      - kopiaserver
+  KOPIA_SERVER_CONTROL_PASSWORD:
+    # -- Name of the [Kubernetes secret](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-environment-variables) that contains the key for the `password` of the `Kopia UI admin`
+    secretName: kopia-control
+    # -- Name of the key of the predefined Kubernetes secret that contains the key for the `password` of the `Kopia server control user`
+    secretKey: password
+    # -- for which containers this environment variable will be used
+    containerType:
+      - kopiaserver
+  COLLECT_INFO_SCHEMA_INNODB_TABLESPACES:
+    value: enable
+    containerType:
+      - monitoring
+  HAPROXY_STATS_USERNAME:
+    # -- Name of the [Kubernetes secret](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-environment-variables) that contains the key for the `username` of the `HAProxy statistics user`
+    secretName: haproxy-stats
+    # -- Name of the key of the predefined Kubernetes secret that contains the `username` for the [HAProxy statistics user](http://docs.haproxy.org/2.8/configuration.html#4.2-stats%20enable)
+    secretKey: username
+    # -- for which containers this environment variable will be used
+    containerType:
+      - haproxy
+  HAPROXY_STATS_PASSWORD:
+    # -- Name of the [Kubernetes secret](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-environment-variables) that contains the key for the `password` of the `HAProxy statistics user`
+    secretName: haproxy-stats
+    # -- Name of the key of the predefined Kubernetes secret that contains the `password` for the [HAProxy statistics user](http://docs.haproxy.org/2.8/configuration.html#4.2-stats%20enable)
+    secretKey: password
+    # -- for which containers this environment variable will be used
+    containerType:
+      - haproxy
+
+# command:
+#   database:
+#     - "sh"
+#     - "-c"
+#     - "/bin/sleep 3600"
+#   monitoring:
+#     - "sh"
+#     - "-c"
+#     - "/bin/sleep 3600"
+#   databasecfgjob:
+#     - "sh"
+#     - "-c"
+#     - "/bin/sleep 3600"
+#   jobrestore:
+#     - "sh"
+#     - "-c"
+#     - "/bin/sleep 3600"
+#   cronjob:
+#     - "sh"
+#     - "-c"
+#     - "/bin/sleep 3600"
+# proxy:
+#   - "sh"
+#   - "-c"
+#   - "/bin/sleep 3600"

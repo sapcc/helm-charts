@@ -6,6 +6,7 @@ PROVIDER_KUBERNIKUS_VERSION ?= 9fd81475b828971913b3b27addf51fdbd0511d85
 BAREMETAL_OPERATOR_VERSION ?= v0.6.0
 METAL_OPERATOR_VERSION ?= 473e299852969d7041d5a176d6e118b160d18eb5
 IPXE_OPERATOR_VERSION ?= 61c6898bfd7772008835bdcca8d8a64c1dfc3b32
+
 SHELL := bash
 .ONESHELL:
 
@@ -95,6 +96,7 @@ build-ipxe-operator:
 	@yq -i '.controllerManager.manager.image.tag="$(IPXE_OPERATOR_VERSION)"' ipxe-operator/values.yaml
 	@yq -i '.fullnameOverride="ipxe-operator"' ipxe-operator/values.yaml
 	@yq -i '.version="0.0.5"' ipxe-operator/Chart.yaml
+
 
 # chart name, source url, tag
 define build-chart

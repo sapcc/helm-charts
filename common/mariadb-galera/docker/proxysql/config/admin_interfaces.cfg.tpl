@@ -1,0 +1,1 @@
+mysql_ifaces="0.0.0.0:${PROXYSQL_ADMIN_PORT};/opt/proxysql/run/proxysql_admin.sock"

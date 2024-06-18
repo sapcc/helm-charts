@@ -517,8 +517,8 @@ output {
     s3 {
       id => "output_s3_for_swift"
       endpoint => "{{.Values.logstash.endpoint}}"
-      access_key_id => "{{.Values.logstash.access_key_id}}"
-      secret_access_key => "{{.Values.logstash.secret_access_key}}"
+      access_key_id => "{{.Values.logstash.access_key_id_conf}}"
+      secret_access_key => "{{.Values.logstash.secret_access_key_conf}}"
       region => "{{.Values.logstash.region}}"
       bucket => "{{.Values.logstash.bucket}}"
       prefix => "{{.Values.logstash.prefix}}"
