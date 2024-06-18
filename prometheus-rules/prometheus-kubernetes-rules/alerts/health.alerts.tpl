@@ -148,16 +148,3 @@ groups:
     annotations:
       description: Prometheus is scraping `{{`{{ $labels.pod }}`}}` pods in namespace `{{`{{ $labels.namespace }}`}}` multiple times. This is likely caused due to incorrectly placed scrape annotations.
       summary: Prometheus scrapes pods multiple times
-
-  - alert: MissingServiceEndpoints
-    expr: kube_endpoint_address_not_ready > 0
-    for: 15m
-    labels:
-      tier: {{ include "alertTierLabelOrDefault" .Values.tier }}
-      service: {{ include "serviceFromLabelsOrDefault" "k8s" }}
-      support_group: containers
-      playbook: docs/support/playbook/kubernetes/missing_service_endpoint
-      severity: warning
-    annotations:
-      description: "The service {{`{{ $labels.namespace }}`}}/{{`{{ $labels.endpoint }}`}} has no active endpoints for 15m. The service might not be reachable."
-      summary: "Service has no active endpoints"
