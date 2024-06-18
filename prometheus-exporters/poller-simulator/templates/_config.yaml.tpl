@@ -66,9 +66,13 @@ poller:
   {{- end -}}
   {{- if .Values.simulator.poller.keystone.enabled }}
   keystone:
-  {{- range $key, $value := .Values.simulator.poller.keystone }}
-    {{ $key }}: {{ $value }}
-  {{- end -}}
+    authUrl: {{ .Values.poller.keystone.authUrl }}
+    endpointType: {{ .Values.poller.keystone.endpointType }}
+    projectDomainName: {{ .Values.poller.keystone.projectDomainName }}
+    projectName: {{ .Values.poller.keystone.projectName }}
+    region: {{ .Values.poller.keystone.region }}
+    userDomainName: {{ .Values.poller.keystone.userDomainName }}
+    username: {{ .Values.poller.keystone.username }}
   {{- end -}}
   {{- if eq .Values.simulator.poller.action "simulator" }}
   simulator:
@@ -87,11 +91,6 @@ poller:
     loaderThreads: {{ .Values.simulator.poller.loaderThreads }}
     sleepDuration: {{ .Values.simulator.poller.sleepDuration }}
     sleepThreads: {{ .Values.simulator.poller.sleepThreads }}
-    sesUsername: {{ .Values.simulator.sesUsername }}
-    sesSecret: {{ .Values.simulator.sesSecret }}
-    smtpPassword: {{ .Values.simulator.smtpPassword }}
-    ec2User: {{ .Values.simulator.sesUsername }}
-    ec2Secret: {{ .Values.simulator.sesSecret }}
     smtpHost: cronus.{{ .Values.config.keystone.region }}.cloud.sap
     sesApiEndpoint: https://cronus.{{ .Values.config.keystone.region }}.cloud.sap
     sesRegion: {{ .Values.config.allowedServices.email }}
