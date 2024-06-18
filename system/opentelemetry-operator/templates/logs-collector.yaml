@@ -11,6 +11,9 @@ spec:
   - name: varlog
     hostPath:
       path: /var/log
+  envFrom:
+    - secretRef:
+         name: otel
   config: |
     receivers:
       filelog:
@@ -69,8 +72,8 @@ spec:
     extensions:
       basicauth:
         client_auth:
-          password: {{ .Values.open_telemetry.opensearch_logs.password }}
-          username: {{ .Values.open_telemetry.opensearch_logs.username }}
+          password: ${env:password}
+          username: ${env:username}
     service:
       extensions:
         - basicauth
