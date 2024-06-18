@@ -66,13 +66,13 @@ poller:
   {{- end -}}
   {{- if .Values.simulator.poller.keystone.enabled }}
   keystone:
-    authUrl: {{ .Values.poller.keystone.authUrl }}
-    endpointType: {{ .Values.poller.keystone.endpointType }}
-    projectDomainName: {{ .Values.poller.keystone.projectDomainName }}
-    projectName: {{ .Values.poller.keystone.projectName }}
-    region: {{ .Values.poller.keystone.region }}
-    userDomainName: {{ .Values.poller.keystone.userDomainName }}
-    username: {{ .Values.poller.keystone.username }}
+    authUrl: {{ .Values.simulator.poller.keystone.authUrl }}
+    endpointType: {{ .Values..simulator.poller.keystone.endpointType }}
+    projectDomainName: {{ .Values..simulator.poller.keystone.projectDomainName }}
+    projectName: {{ .Values..simulator.poller.keystone.projectName }}
+    region: {{ .Values..simulator.poller.keystone.region }}
+    userDomainName: {{ .Values..simulator.poller.keystone.userDomainName }}
+    username: {{ .Values..simulator.poller.keystone.username }}
   {{- end -}}
   {{- if eq .Values.simulator.poller.action "simulator" }}
   simulator:
