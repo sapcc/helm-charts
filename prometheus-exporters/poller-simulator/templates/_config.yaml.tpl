@@ -83,9 +83,9 @@ poller:
     {{- range .Values.simulator.poller.simulatorTests }}
     - test:
     {{- range $k, $v := . }}
-      {{- if and (ne $k "ec2Secret") (ne $k "smtpPassword") (ne $k "ec2User") }}
-        {{ $k }}: {{ $v }}
-      {{- end }}
+    {{- if and (ne $k "ec2Secret") (ne $k "smtpPassword") (ne $k "ec2User") }}
+      {{ $k }}: {{ $v }}
+    {{- end }}
     {{- end }}
     {{- end }}
     executionTime: {{ .Values.simulator.poller.executionTime }}
