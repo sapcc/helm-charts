@@ -54,7 +54,9 @@
   "andromeda:sync:post": "rule:context_is_admin",
 
   "andromeda:quota:get_all": "rule:context_is_viewer",
+  "andromeda:quota:get_all-global": "rule:cloud_admin",
   "andromeda:quota:get_one": "rule:context_is_viewer",
+  "andromeda:quota:get_one-global": "rule:cloud_admin",
   "andromeda:quota:put": "rule:context_is_admin",
   "andromeda:quota:delete": "rule:context_is_admin"
 }
