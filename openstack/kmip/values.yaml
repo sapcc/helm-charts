@@ -1,0 +1,105 @@
+# Default values for kmip.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+global:
+  dbUser: kmip
+  imageNamespace: monsoon
+  linkerd_requested: false
+
+owner-info:
+  support-group: identity
+  service: barbican
+  maintainers:
+    - Rajiv Mucheli
+    - Csaba Seres
+  helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/openstack/kmip
+
+pod:
+  lifecycle:
+    upgrades:
+      deployments:
+        revisionHistory: 5
+        podReplacementStrategy: RollingUpdate
+        rollingUpdate:
+          maxUnavailable: 0
+          maxSurge: 1
+
+replicaCount: 1
+
+image:
+  pullPolicy: IfNotPresent
+  # Overrides the image tag whose default is the chart appVersion.
+  # tag: "2024061705"
+
+
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: true
+  # Automatically mount a ServiceAccount's API credentials?
+  automount: true
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: ""
+
+podAnnotations:
+  prometheus.io/scrape: "true"
+  prometheus.io/targets: "openstack"
+
+service:
+  type: ClusterIP
+  port: 80
+
+ingress:
+  enabled: true
+
+livenessProbe:
+  httpGet:
+    path: /healthz
+    port: 8080
+readinessProbe:
+  httpGet:
+    path: /readiness
+    port: 8080
+
+# Additional volumes on the output Deployment definition.
+volumes: []
+# - name: foo
+#   secret:
+#     secretName: mysecret
+#     optional: false
+
+# Additional volumeMounts on the output Deployment definition.
+volumeMounts: []
+# - name: foo
+#   mountPath: "/etc/foo"
+#   readOnly: true
+
+mariadb:
+  enabled: true
+  name: kmip
+  initdb_secret: kmip-initdb
+  persistence_claim:
+    name: db-kmip-pvclaim
+  databases:
+  - kmip
+  users:
+    kmip:
+      name: kmip
+      grants:
+      - "ALL PRIVILEGES ON kmip.*"
+  metrics:
+    resources:
+      enabled: true
+      limits:
+        cpu: 250m
+        memory: 256Mi
+      requests:
+        cpu: 100m
+        memory: 64Mi
+
+mysql_metrics:
+  db_name: glance
+  db_user: glance
