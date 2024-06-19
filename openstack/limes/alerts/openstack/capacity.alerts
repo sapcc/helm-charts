@@ -1,13 +1,11 @@
 # vim: set ft=yaml:
 
-# NOTE: All metrics in these alert expressions are wrapped in `last_over_time(...[15m])` to avoid alert flapping when Limes restarts e.g. due to a deployment.
-
 groups:
 - name: openstack-limes-capacity.alerts
   rules:
 
   - alert: LimesBlockedCapacityAbove80Percent
-    expr: (last_over_time(limes_capacity_blocked_percent[15m]) > 80) and on (service, resource) (last_over_time(limes_autogrow_growth_multiplier[15m]) > 1)
+    expr: (stabilized:limes_capacity_blocked_percent_per_az > 80) and on (service, resource) (stabilized:limes_autogrow_growth_multiplier > 1)
     for: 10m
     labels:
       severity: info
@@ -20,7 +18,7 @@ groups:
         capacity is blocked by commitments or provisioned usage. Please check if hardware needs to be ordered.
 
   - alert: LimesBlockedCapacityDangerouslyHigh
-    expr: (last_over_time(limes_capacity_blocked_percent[15m]) > on (service, resource) last_over_time(limes_autogrow_quota_overcommit_threshold_percent[15m])) and on (service, resource) (last_over_time(limes_autogrow_growth_multiplier[15m]) > 1)
+    expr: (stabilized:limes_capacity_blocked_percent_per_az > on (service, resource) stabilized:limes_autogrow_quota_overcommit_threshold_percent) and on (service, resource) (stabilized:limes_autogrow_growth_multiplier > 1)
     for: 10m
     labels:
       severity: warning
@@ -35,7 +33,7 @@ groups:
         Please check if hardware needs to be ordered.
 
   - alert: LimesPendingCommitments
-    expr: sum by (availability_zone, service, resource) (last_over_time(limes_project_committed_per_az{state="pending"}[15m])) > 0
+    expr: stabilized:limes_pending_commitments_per_az > 0
     for: 10m
     labels:
       severity: warning
