@@ -26,11 +26,9 @@ pod:
 
 replicaCount: 1
 
-image:
+kmip:
+  image: kmip-barbican
   pullPolicy: IfNotPresent
-  # Overrides the image tag whose default is the chart appVersion.
-  # tag: "2024061705"
-
 
 serviceAccount:
   # Specifies whether a service account should be created
@@ -49,7 +47,7 @@ podAnnotations:
 
 service:
   type: ClusterIP
-  port: 80
+  port: 5696
 
 ingress:
   enabled: true
@@ -74,6 +72,8 @@ mariadb:
   root_password: topSecret
   initdb_secret: kmip-initdb
   persistence_claim:
+    enabled: true
+    autoprovision: true
     name: db-kmip-pvclaim
   databases:
   - kmip
@@ -97,3 +97,4 @@ mariadb:
 mysql_metrics:
   db_name: kmip
   db_user: kmip
+  enabled: false

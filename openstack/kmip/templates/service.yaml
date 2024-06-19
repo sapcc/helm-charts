@@ -15,8 +15,11 @@ metadata:
   annotations:
     {{- include "utils.linkerd.pod_and_service_annotation" . | indent 4 }}
 spec:
+  type : {{ .Values.service.type }}
   selector:
     name: kmip-barbican
   ports:
-    - name: kmip-barbican
-      port: 5696
+    - port: {{ .Values.service.port }}
+      targetPort: 5696
+      protocol: TCP
+      name: http

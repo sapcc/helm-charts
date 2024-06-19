@@ -15,41 +15,38 @@ spec:
   replicas: {{ .Values.replicaCount }}
   revisionHistoryLimit: {{ .Values.pod.lifecycle.upgrades.deployments.revisionHistory }}
   strategy:
-  type: {{ .Values.pod.lifecycle.upgrades.deployments.podReplacementStrategy }}
-  {{ if eq .Values.pod.lifecycle.upgrades.deployments.podReplacementStrategy "RollingUpdate" }}
-  rollingUpdate:
-    maxUnavailable: {{ .Values.pod.lifecycle.upgrades.deployments.rollingUpdate.maxUnavailable }}
-    maxSurge: {{ .Values.pod.lifecycle.upgrades.deployments.rollingUpdate.maxSurge }}
-  {{ end }}
+    type: {{ .Values.pod.lifecycle.upgrades.deployments.podReplacementStrategy }}
+    {{- if eq .Values.pod.lifecycle.upgrades.deployments.podReplacementStrategy "RollingUpdate" }}
+    rollingUpdate:
+      maxUnavailable: {{ .Values.pod.lifecycle.upgrades.deployments.rollingUpdate.maxUnavailable }}
+      maxSurge: {{ .Values.pod.lifecycle.upgrades.deployments.rollingUpdate.maxSurge }}
+    {{- end }}
   selector:
     matchLabels:
       {{- include "kmip.selectorLabels" . | nindent 6 }}
   template:
     metadata:
       labels:
+        {{- include "kmip.labels" . | nindent 8 }}
         app: {{ include "kmip.fullname" . }}-barbican
         name: {{ include "kmip.fullname" . }}-barbican
         alert-tier: os
         alert-service: barbican
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
       {{- with .Values.podAnnotations }}
       annotations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      labels:
-        {{- include "kmip.labels" . | nindent 8 }}
-        {{- with .Values.podLabels }}
-        {{- toYaml . | nindent 8 }}
-        {{- end }}
     spec:
-      serviceAccountName: {{ include "kmip.serviceAccountName" . }}
-      securityContext:
-        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      serviceAccountName: {{ include "kmip.serviceAccountName" . }}-barbican
       containers:
-        - name: {{ .Chart.Name }}
+        - name: kmip-barbican
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
-          image: "keppel.qa-de-1.cloud.sap/i322709/kmip:2024061705"
-          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          image: {{required ".Values.global.registry is missing" .Values.global.registry }}/loci-barbican:{{required "Values.kmip.image is missing" .Values.kmip.image }}
+          imagePullPolicy: {{ .Values.kmip.pullPolicy }}
           ports:
             - name: http
               containerPort: {{ .Values.service.port }}
@@ -59,7 +56,9 @@ spec:
           readinessProbe:
             {{- toYaml .Values.readinessProbe | nindent 12 }}
           resources:
-            {{- toYaml .Values.resources | nindent 12 }}
+            requests:
+              memory: 0
+              cpu: 0
           {{- with .Values.volumeMounts }}
           volumeMounts:
             {{- toYaml . | nindent 12 }}
@@ -68,4 +67,3 @@ spec:
       volumes:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-
