@@ -84,11 +84,12 @@ spec:
             requests:
               memory: 0
               cpu: 0
-          {{- with .Values.volumeMounts }}
           volumeMounts:
-            {{- toYaml . | nindent 12 }}
-          {{- end }}
-      {{- with .Values.volumes }}
+          - name: kmip-barbican-etc
+            mountPath: /etc/kmip/server.conf
+            subPath: server.conf
+            readOnly: true
       volumes:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
+      - name: kmip-barbican-etc
+        configMap:
+          name: kmip-barbican-etc
