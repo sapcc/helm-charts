@@ -1,9 +1,23 @@
 # Changelog
 
+## v0.28.0 - 2024/06/18
+* ccroot user added
+  * for passwordless local root access
+  * unit tests added
+* software versions bumped
+  * Ubuntu packages timestamp `20240618114008`
+  * MariaDB [10.5.25](https://mariadb.com/kb/en/mariadb-10-5-25-release-notes/)
+  * Galera [26.4.18](https://mariadb.com/kb/en/meta/galera4-versions/)
+  * ProxySQL [2.6.3](https://github.com/sysown/proxysql/releases/tag/v2.6.3)
+  * Kopia [0.17.0](https://github.com/kopia/kopia/releases/tag/v0.17.0)
+  * HAProxy [2.8.10](https://www.mail-archive.com/search?l=haproxy%40formilux.org&q=announce+subject%3A%22[ANNOUNCE]+haproxy-2.8.10%22+-subject%3A%22re:%22)
+* chart version bumped
+
 ## v0.27.1 - 2024/06/18
 * fix fs permissions of persistent volumes
   * add privileged init container to mariadb statefulset to change files owner of the persistent volumes
   * add privileged init container to proxysql statefulset to change files owner of the persistent volumes
+
 ## v0.27.0 - 2024/04/30
 * [wsrep_desync](https://mariadb.com/kb/en/galera-cluster-system-variables/#wsrep_desync) for backups made optional
   * `mariadb.galera.backup.desyncBackupNode` controls that feature

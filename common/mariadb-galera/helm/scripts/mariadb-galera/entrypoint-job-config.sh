@@ -26,6 +26,13 @@ setuprole {{ $roleKey | squote }} {{ $roleValue.privileges | join ", " | squote 
   {{- end }}
 {{- end }}
 
+{{- if (and (hasKey .Values.mariadb "ccroot_user") (.Values.mariadb.ccroot_user.enabled)) }}
+setupuser "ccroot" "" 'fullaccess' 0 '127.0.0.1' 'mysql_native_password' " "
+setdefaultrole 'fullaccess' 'ccroot' '127.0.0.1'
+{{- else }}
+removeuser 'ccroot' '127.0.0.1'
+{{- end }}
+
 {{- /* user configuration */}}
 {{- $usernameEnvVar := "" }}
 {{- $passwordEnvVar := "" }}

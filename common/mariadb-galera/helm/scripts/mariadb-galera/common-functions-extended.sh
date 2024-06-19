@@ -71,7 +71,7 @@ function fetchcurrentseqno {
 function checkdbk8sservicelogon {
   local ONLY_RETURN_STATUS=${1-false}
 
-  ${MYSQL_SVC_CONNECT} --execute="STATUS;" | grep 'Server version:' | grep --silent "${SOFTWARE_VERSION}"
+  ${MYSQL_SVC_CONNECT} --execute="STATUS;" | grep 'Server version:' | grep --silent "${SOFTWARE_VERSION_CLEAN}"
   if [ $? -eq 0 ]; then
     if [ "${ONLY_RETURN_STATUS}" == "true" ]; then
       return 0

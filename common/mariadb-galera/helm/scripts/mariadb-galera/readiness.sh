@@ -6,7 +6,7 @@ set -o pipefail
 source /opt/${SOFTWARE_NAME}/bin/common-functions.sh
 
 function checkdblogon {
-  mysql --protocol=socket --user=root --database=mysql --wait --connect-timeout={{ $.Values.readinessProbe.timeoutSeconds.database }} --reconnect --execute="STATUS;" | grep 'Server version:' | grep --silent "${SOFTWARE_VERSION}"
+  mysql --protocol=socket --user=root --database=mysql --wait --connect-timeout={{ $.Values.readinessProbe.timeoutSeconds.database }} --reconnect --execute="STATUS;" | grep 'Server version:' | grep --silent "${SOFTWARE_VERSION_CLEAN}"
   if [ $? -eq 0 ]; then
     mysql --protocol=socket --user=root --batch --connect-timeout={{ $.Values.readinessProbe.timeoutSeconds.database }} --execute="SHOW DATABASES;" | grep --silent 'mysql'
     if [ $? -eq 0 ]; then

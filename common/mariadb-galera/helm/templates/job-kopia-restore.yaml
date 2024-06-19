@@ -40,7 +40,7 @@ spec:
       {{- end }}
       containers:
       - name: restore
-        image: "{{ $.Values.image.kopiabackup.registry }}/{{ $.Values.image.kopiabackup.project }}/{{ $.Values.image.kopiabackup.databasename }}:{{ $.Values.image.kopiabackup.databaseversion }}-{{ $.Values.image.kopiabackup.imageversion | int }}"
+        image: "{{ $.Values.image.kopiabackup.registry }}/{{ $.Values.image.kopiabackup.project }}/{{ $.Values.image.kopiabackup.softwarename }}:{{ $.Values.image.kopiabackup.softwareversion }}-{{ $.Values.image.kopiabackup.imageversion | int }}"
         imagePullPolicy: {{ $.Values.image.kopiabackup.pullPolicy | default "IfNotPresent" | quote }}
         securityContext:
           runAsUser:  {{ $.Values.userId.backup | default 3200 | int }}
@@ -74,7 +74,7 @@ spec:
           {{- end }}
         {{- end }}
         - name: MARIADB_VERSION
-          value: {{ (required ".image.database.databaseversion" $.Values.image.database.databaseversion) | quote }}
+          value: {{ (required ".image.database.softwareversion" $.Values.image.database.softwareversion) | quote }}
         - name: MYSQL_PORT
           value: {{ (required ".services.database.frontend.ports.mysql.targetPort missing" $.Values.services.database.frontend.ports.mysql.targetPort) | quote }}
         - name: DB_HOST
