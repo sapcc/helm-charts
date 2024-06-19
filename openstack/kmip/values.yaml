@@ -63,15 +63,15 @@ readinessProbe:
     path: /readiness
     port: 8080
 
+api_port_internal: "9311"
+
 alerts:
   support_group: identity
 
 mariadb:
-  alerts:
-    support_group: identity
-  root_password: topSecret
   enabled: true
   name: kmip
+  root_password: topSecret
   initdb_secret: kmip-initdb
   persistence_claim:
     name: db-kmip-pvclaim
@@ -84,13 +84,15 @@ mariadb:
       - "ALL PRIVILEGES ON kmip.*"
   metrics:
     resources:
-      enabled: true
-      limits:
-        cpu: 250m
-        memory: 256Mi
       requests:
-        cpu: 100m
-        memory: 64Mi
+        memory: 0
+        cpu: 0
+  alerts:
+    support_group: identity
+  resources:
+    requests:
+      memory: 0
+      cpu: 0
 
 mysql_metrics:
   db_name: kmip
