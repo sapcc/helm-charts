@@ -206,7 +206,6 @@
 {{- end -}}
 
 {{- define "tmplKeepImagePulled" -}}
-          imagePullPolicy: IfNotPresent
           command: [ '/bin/sleep', 'inf' ]
           securityContext:
             runAsNonRoot: true
