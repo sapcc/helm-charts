@@ -271,6 +271,54 @@ function setupuser {
   fi
 }
 
+# remove user from the database if exists
+# removeuser "user1" "127.0.0.1"
+function removeuser {
+  local tplfile=removeuser.sql.tpl
+  if [ -f "${BASE}/etc/sql/${tplfile}" ] && [ -n "${1}" ] && [ -n "${2}" ]; then
+    local int
+    export DB_USERNAME=${1}
+    export DB_HOST=${2}
+
+    loginfo "${FUNCNAME[0]}" "remove '${DB_USERNAME}@${DB_HOST}' from database"
+    for (( int=${MAX_RETRIES}; int >=1; int-=1));
+      do
+      if [ "$0" == "/opt/mariadb/bin/entrypoint-job-config.sh" ]; then
+        cat ${BASE}/etc/sql/${tplfile} | envsubst | $(${MYSQL_SVC_CONNECT})
+      else
+        cat ${BASE}/etc/sql/${tplfile} | envsubst | mysql --protocol=socket --user=root --batch
+      fi
+      if [ $? -ne 0 ]; then
+        logerror "${FUNCNAME[0]}" "'${DB_USERNAME}@${DB_HOST}' user removal has been failed(${int} retries left)"
+        sleep ${WAIT_SECONDS}
+      else
+        if [ "$0" == "/opt/mariadb/bin/entrypoint-job-config.sh" ]; then
+          ${MYSQL_SVC_CONNECT} --execute="FLUSH PRIVILEGES;" --batch --skip-column-names
+        else
+          mysql --protocol=socket --user=root --execute="FLUSH PRIVILEGES;" --batch --skip-column-names
+        fi
+        if [ $? -ne 0 ]; then
+          logerror "${FUNCNAME[0]}" "flush privileges failed(${int} retries left)"
+          sleep ${WAIT_SECONDS}
+        else
+          loginfo "${FUNCNAME[0]}" "'${DB_USERNAME}@${DB_HOST}' user removal done"
+          break
+        fi
+      fi
+    done
+
+    if [ ${int} -eq 0 ]; then
+      logerror "${FUNCNAME[0]}" "user removal has been finally failed"
+      exit 1
+    fi
+    loginfo "${FUNCNAME[0]}" "user removal done"
+    export -n DB_USERNAME
+    export -n DB_HOST
+  else
+    loginfo "${FUNCNAME[0]}" "user removal skipped because of missing ${BASE}/etc/sql/${tplfile} file"
+  fi
+}
+
 function listdbandusers {
   local int
   for (( int=${MAX_RETRIES}; int >=1; int-=1));

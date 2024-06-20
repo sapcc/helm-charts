@@ -173,7 +173,7 @@ function startmaintenancedb {
   for (( int=${MAX_RETRIES}; int >=1; int-=1));
     do
     loginfo "${FUNCNAME[0]}" "check if mariadbd is usable for maintenance(${int} retries left)"
-    mysql --protocol=socket --user=root --database=mysql --execute='STATUS;' | grep 'Server version:' | grep --silent "${SOFTWARE_VERSION}"
+    mysql --protocol=socket --user=root --database=mysql --execute='STATUS;' | grep 'Server version:' | grep --silent "${SOFTWARE_VERSION_CLEAN}"
     if [ $? -ne 0 ]; then
       logerror "${FUNCNAME[0]}" "mariadbd check failed"
       sleep ${WAIT_SECONDS}

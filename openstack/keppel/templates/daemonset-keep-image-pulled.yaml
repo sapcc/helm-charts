@@ -37,15 +37,19 @@ spec:
       containers:
         - name: keppel
           image: "{{ include "keppel_image" . }}"
+          imagePullPolicy: IfNotPresent
           {{ include "tmplKeepImagePulled" . }}
         - name: postgres
           image: "{{ .Values.global.registryAlternateRegion }}/postgres-ng:{{.Values.postgresql.imageTag}}"
+          imagePullPolicy: IfNotPresent
           {{ include "tmplKeepImagePulled" . }}
         - name: postgres-kubectl
           image: "{{ .Values.global.registryAlternateRegion }}/shared-app-images/alpine-kubectl:3.20-latest"
+          imagePullPolicy: Always
           {{ include "tmplKeepImagePulled" . }}
         - name: redis # NOTE: redis-metrics is a separate pod, so we don't need to care about it
           image: "{{.Values.global.registryAlternateRegion}}/shared-app-images/alpine-redis:{{.Values.redis.image.tag}}"
+          imagePullPolicy: IfNotPresent
           {{ include "tmplKeepImagePulled" . }}
       # sleep(1) doesn't seem to react to SIGTERM at all, so skip right ahead to SIGKILL
       terminationGracePeriodSeconds: 1

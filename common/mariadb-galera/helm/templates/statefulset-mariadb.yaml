@@ -84,7 +84,7 @@ spec:
       {{- end }}
       initContainers:
       - name: sysctl-tcp-keepalive
-        image: "{{ $.Values.image.os.registry }}/{{ $.Values.image.os.project }}/{{ $.Values.image.os.databasename }}:{{ $.Values.image.os.databaseversion }}-{{ $.Values.image.os.imageversion | int }}"
+        image: "{{ $.Values.image.os.registry }}/{{ $.Values.image.os.project }}/{{ $.Values.image.os.softwarename }}:{{ $.Values.image.os.softwareversion }}-{{ $.Values.image.os.imageversion | int }}"
         imagePullPolicy: {{ $.Values.image.os.pullPolicy | default "IfNotPresent" | quote }}
         command:
         - sh
@@ -94,7 +94,7 @@ spec:
           privileged: {{ $.Values.initContainers.tcpKeepAlive.securityContext.privileged }}
           runAsUser: {{ $.Values.initContainers.tcpKeepAlive.securityContext.runAsUser | default 0 | int }}
       - name: increase-map-count
-        image: "{{ $.Values.image.os.registry }}/{{ $.Values.image.os.project }}/{{ $.Values.image.os.databasename }}:{{ $.Values.image.os.databaseversion }}-{{ $.Values.image.os.imageversion | int }}"
+        image: "{{ $.Values.image.os.registry }}/{{ $.Values.image.os.project }}/{{ $.Values.image.os.softwarename }}:{{ $.Values.image.os.softwareversion }}-{{ $.Values.image.os.imageversion | int }}"
         imagePullPolicy: {{ $.Values.image.os.pullPolicy | default "IfNotPresent" | quote }}
         command:
         - sh
@@ -105,7 +105,7 @@ spec:
           runAsUser: {{ $.Values.initContainers.increaseMapCount.securityContext.runAsUser | default 0 | int }}
       {{- if $.Values.cleanOsCacheAtStartup }}
       - name: clean-os-cache
-        image: "{{ $.Values.image.os.registry }}/{{ $.Values.image.os.project }}/{{ $.Values.image.os.databasename }}:{{ $.Values.image.os.databaseversion }}-{{ $.Values.image.os.imageversion | int }}"
+        image: "{{ $.Values.image.os.registry }}/{{ $.Values.image.os.project }}/{{ $.Values.image.os.softwarename }}:{{ $.Values.image.os.softwareversion }}-{{ $.Values.image.os.imageversion | int }}"
         imagePullPolicy: {{ $.Values.image.os.pullPolicy | default "IfNotPresent" | quote }}
         command:
         - sh
@@ -115,9 +115,36 @@ spec:
           privileged: {{ $.Values.initContainers.cleanoscache.securityContext.privileged }}
           runAsUser: {{ $.Values.initContainers.cleanoscache.securityContext.runAsUser | default 0 | int }}
       {{- end }}
+      {{- if $.Values.mariadb.fixFsPermissions}}
+      - name: fix-mariadb-fs-permissions
+        image: "{{ $.Values.image.os.registry }}/{{ $.Values.image.os.project }}/{{ $.Values.image.os.databasename }}:{{ $.Values.image.os.databaseversion }}-{{ $.Values.image.os.imageversion | int }}"
+        imagePullPolicy: {{ $.Values.image.os.pullPolicy | default "IfNotPresent" | quote }}
+        command:
+        - sh
+        - -c
+        - 'chown -R {{ $.Values.userId.database | default 101 | int }}:{{ $.Values.groupId.database | default 101 | int }} /mnt/*'
+        securityContext:
+          runAsUser: {{ $.Values.initContainers.fixMariaDBFsPermissions.securityContext.runAsUser | default 0 | int }}
+        volumeMounts:
+          {{- range $volumeMountsKey, $volumeMountsValue := $.Values.volumeMounts.database }}
+            {{- if $volumeMountsValue.enabled }}
+              {{- if (hasKey $volumeMountsValue "claimName") }}
+                {{- range $volumeClaimTemplatesKey, $volumeClaimTemplatesValue := $.Values.volumeClaimTemplates }}
+                  {{- if eq $volumeClaimTemplatesKey $volumeMountsValue.claimName }}
+          - name: {{ include "commonPrefix" $ }}-{{ $volumeMountsKey }}-{{ $volumeMountsValue.claimName | lower }}
+            mountPath: "/mnt{{ $volumeMountsValue.mountPath }}"
+                  {{- end }}
+                {{- end }}
+              {{- else }}
+          - name: {{ include "commonPrefix" $ }}-{{ $volumeMountsKey | lower }}
+            mountPath: "/mnt{{ $volumeMountsValue.mountPath }}"
+              {{- end }}
+            {{- end }}
+          {{- end }}
+      {{- end }}
       containers:
       - name: db
-        image: "{{ $.Values.image.database.registry }}/{{ $.Values.image.database.project }}/{{ $.Values.image.database.databasename }}:{{ $.Values.image.database.databaseversion }}-{{ $.Values.image.database.imageversion | int }}"
+        image: "{{ $.Values.image.database.registry }}/{{ $.Values.image.database.project }}/{{ $.Values.image.database.softwarename }}:{{ $.Values.image.database.softwareversion }}-{{ $.Values.image.database.imageversion | int }}"
         imagePullPolicy: {{ $.Values.image.database.pullPolicy | default "IfNotPresent" | quote }}
         securityContext:
           runAsUser:  {{ $.Values.userId.database | default 101 | int }}
@@ -356,7 +383,7 @@ spec:
         {{- else if and (hasKey $.Values.mariadb.galera.restore "kopia") ($.Values.mariadb.galera.restore.kopia.enabled) }}
         {{- else if $.Values.monitoring.mysqld_exporter.enabled }}
       - name: metrics
-        image: "{{ $.Values.image.monitoring.registry }}/{{ $.Values.image.monitoring.project }}/{{ $.Values.image.monitoring.databasename }}:{{ $.Values.image.monitoring.databaseversion }}-{{ $.Values.image.monitoring.imageversion | int }}"
+        image: "{{ $.Values.image.monitoring.registry }}/{{ $.Values.image.monitoring.project }}/{{ $.Values.image.monitoring.softwarename }}:{{ $.Values.image.monitoring.softwareversion }}-{{ $.Values.image.monitoring.imageversion | int }}"
         imagePullPolicy: {{ $.Values.image.monitoring.pullPolicy | default "IfNotPresent" | quote }}
         securityContext:
           runAsUser:  {{ $.Values.userId.monitoring | default 3000 | int }}

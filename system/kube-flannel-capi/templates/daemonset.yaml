@@ -1,7 +1,7 @@
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
-  name: kube-flannel
+  name: kube-flannel-capi
   labels:
     tier: node
     k8s-app: flannel
@@ -30,7 +30,7 @@ spec:
             nodeSelectorTerms:
             - matchExpressions:
               - key: kubernikus.cloud.sap/cni
-                operator: DoesNotExist
+                operator: Exists
 {{- if (semverCompare ">= 1.10-0" .Capabilities.KubeVersion.GitVersion) }} 
       priorityClassName: system-node-critical
 {{- end }}
@@ -84,7 +84,12 @@ spec:
           - name: etc-kubernetes
             mountPath: /etc/kubernetes
             readOnly: true
+          - name: kubelet-dir
+            mountPath: /var/lib/kubelet
+            readOnly: true
       hostNetwork: true
+      tolerations:
+      - operator: Exists
       volumes:
         - name: run
           hostPath:
@@ -98,3 +103,6 @@ spec:
         - name: etc-kubernetes
           hostPath:
             path: /etc/kubernetes
+        - name: kubelet-dir
+          hostPath:
+            path: /var/lib/kubelet

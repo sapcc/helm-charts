@@ -46,7 +46,7 @@ Docker images and Helm chart to deploy a [MariaDB](https://mariadb.com/kb/en/get
 ## Metadata
 | chart version | app version | type | url |
 |:--------------|:-------------|:-------------|:-------------|
-| 0.27.0 | 10.5.23 | application | [Git repo](https://github.com/sapcc/helm-charts/tree/mariadb-galera/common/mariadb-galera) |
+| 0.28.0 | 10.5.25 | application | [Git repo](https://github.com/sapcc/helm-charts/tree/master/common/mariadb-galera) |
 
 | Name | Email | Url |
 | ---- | ------ | --- |
@@ -78,11 +78,11 @@ Kubernetes: `>=1.18`
 
 * productive version
   ```bash
-  docker build --build-arg BASE_REGISTRY=keppel.eu-de-1.cloud.sap --build-arg BASE_ACCOUNT=ccloud --build-arg BASE_SOFT_NAME=mariadb-galera-ubuntu --build-arg BASE_SOFT_VERSION=20.04 --build-arg BASE_IMG_VERSION=20240429103636 --build-arg SOFT_NAME=mariadb --build-arg SOFT_VERSION=10.5.20+maria~ubu2004 --build-arg IMG_VERSION=20240429103636 --build-arg GALERA_VERSION=26.4.14-ubu2004 --build-arg YQ_VERSION=4.33.3 -t keppel.eu-de-1.cloud.sap/ccloud/mariadb-galera:10.5.20-20240429103636 ./docker/mariadb-galera/
+  docker build --build-arg BASE_REGISTRY=keppel.eu-de-1.cloud.sap --build-arg BASE_ACCOUNT=ccloud --build-arg BASE_SOFT_NAME=mariadb-galera-ubuntu --build-arg BASE_SOFT_VERSION=20.04 --build-arg BASE_IMG_VERSION=20240618114008 --build-arg SOFT_NAME=mariadb --build-arg SOFT_VERSION=10.5.25+maria~ubu2004 --build-arg IMG_VERSION=20240618114008 --build-arg GALERA_VERSION=26.4.18-ubu2004 --build-arg YQ_VERSION=4.44.1 -t keppel.eu-de-1.cloud.sap/ccloud/mariadb-galera:10.5.25-20240618114008 ./docker/mariadb-galera/
   ```
 * debug version
   ```bash
-  docker build --build-arg BASE_REGISTRY=keppel.eu-de-1.cloud.sap --build-arg BASE_ACCOUNT=ccloud --build-arg BASE_SOFT_NAME=mariadb-galera-ubuntu --build-arg BASE_SOFT_VERSION=20.04 --build-arg BASE_IMG_VERSION=20240429103636 --build-arg SOFT_NAME=mariadb --build-arg SOFT_VERSION=10.5.20+maria~ubu2004 --build-arg IMG_VERSION=20240429103636 --build-arg GALERA_VERSION=26.4.14-ubu2004 --build-arg YQ_VERSION=4.33.3 --build-arg GALERA_DEBUG=true -t keppel.eu-de-1.cloud.sap/ccloud/mariadb-galera-debug:10.5.20-20240429103636 ./docker/mariadb-galera/
+  docker build --build-arg BASE_REGISTRY=keppel.eu-de-1.cloud.sap --build-arg BASE_ACCOUNT=ccloud --build-arg BASE_SOFT_NAME=mariadb-galera-ubuntu --build-arg BASE_SOFT_VERSION=20.04 --build-arg BASE_IMG_VERSION=20240618114008 --build-arg SOFT_NAME=mariadb --build-arg SOFT_VERSION=10.5.25+maria~ubu2004 --build-arg IMG_VERSION=20240618114008 --build-arg GALERA_VERSION=26.4.18-ubu2004 --build-arg YQ_VERSION=4.44.1 --build-arg GALERA_DEBUG=true -t keppel.eu-de-1.cloud.sap/ccloud/mariadb-galera-debug:10.5.25-20240618114008 ./docker/mariadb-galera/
   ```
 
 ### MySQL Exporter image
@@ -91,7 +91,7 @@ Kubernetes: `>=1.18`
 | USERID | id of the user that should run the binary |
 
 ```bash
-docker build --build-arg BASE_REGISTRY=keppel.eu-de-1.cloud.sap --build-arg BASE_ACCOUNT=ccloud --build-arg BASE_SOFT_NAME=mariadb-galera-ubuntu --build-arg BASE_SOFT_VERSION=22.04 --build-arg BASE_IMG_VERSION=20240429103636 --build-arg SOFT_NAME=mysqld_exporter --build-arg SOFT_VERSION=0.14.0 --build-arg IMG_VERSION=20240429103636 --build-arg USERID=3000 -t keppel.eu-de-1.cloud.sap/ccloud/mariadb-galera-mysqld_exporter:0.14.0-20240429103636 ./docker/mysqld_exporter/
+docker build --build-arg BASE_REGISTRY=keppel.eu-de-1.cloud.sap --build-arg BASE_ACCOUNT=ccloud --build-arg BASE_SOFT_NAME=mariadb-galera-ubuntu --build-arg BASE_SOFT_VERSION=22.04 --build-arg BASE_IMG_VERSION=20240618114008 --build-arg SOFT_NAME=mysqld_exporter --build-arg SOFT_VERSION=0.14.0 --build-arg IMG_VERSION=20240618114008 --build-arg USERID=3000 -t keppel.eu-de-1.cloud.sap/ccloud/mariadb-galera-mysqld_exporter:0.14.0-20240618114008 ./docker/mysqld_exporter/
 ```
 
 ### ProxySQL image
@@ -100,7 +100,7 @@ docker build --build-arg BASE_REGISTRY=keppel.eu-de-1.cloud.sap --build-arg BASE
 | USERID | id of the user that should run the binary |
 
 ```bash
-docker build --build-arg BASE_REGISTRY=keppel.eu-de-1.cloud.sap --build-arg BASE_ACCOUNT=ccloud --build-arg BASE_SOFT_NAME=mariadb-galera-ubuntu --build-arg BASE_SOFT_VERSION=22.04 --build-arg BASE_IMG_VERSION=20240429103636 --build-arg SOFT_NAME=proxysql --build-arg SOFT_VERSION=2.5.2 --build-arg IMG_VERSION=20240429103636 --build-arg USERID=3100 -t keppel.eu-de-1.cloud.sap/ccloud/mariadb-galera-proxysql:2.5.2-20240429103636 ./docker/proxysql/
+docker build --build-arg BASE_REGISTRY=keppel.eu-de-1.cloud.sap --build-arg BASE_ACCOUNT=ccloud --build-arg BASE_SOFT_NAME=mariadb-galera-ubuntu --build-arg BASE_SOFT_VERSION=22.04 --build-arg BASE_IMG_VERSION=20240618114008 --build-arg SOFT_NAME=proxysql --build-arg SOFT_VERSION=2.6.3 --build-arg IMG_VERSION=20240618114008 --build-arg USERID=3100 -t keppel.eu-de-1.cloud.sap/ccloud/mariadb-galera-proxysql:2.6.3-20240618114008 ./docker/proxysql/
 ```
 
 ### HAProxy image
@@ -110,7 +110,7 @@ docker build --build-arg BASE_REGISTRY=keppel.eu-de-1.cloud.sap --build-arg BASE
 | USERID | id of the user that should run the binary |
 
 ```bash
-docker build --build-arg BASE_REGISTRY=keppel.eu-de-1.cloud.sap --build-arg BASE_ACCOUNT=ccloud --build-arg BASE_SOFT_NAME=mariadb-galera --build-arg BASE_SOFT_VERSION=10.5.23 --build-arg BASE_IMG_VERSION=20240429103636 --build-arg SOFT_NAME=haproxy --build-arg SOFT_VERSION=2.8.9 --build-arg IMG_VERSION=20240429103636 --build-arg USERID=3100 --build-arg MARIADB_VERSION=10.5.23+maria~ubu2004 -t keppel.eu-de-1.cloud.sap/ccloud/mariadb-galera-haproxy:2.8.9-20240429103636 ./docker/haproxy/
+docker build --build-arg BASE_REGISTRY=keppel.eu-de-1.cloud.sap --build-arg BASE_ACCOUNT=ccloud --build-arg BASE_SOFT_NAME=mariadb-galera --build-arg BASE_SOFT_VERSION=10.5.25 --build-arg BASE_IMG_VERSION=20240618114008 --build-arg SOFT_NAME=haproxy --build-arg SOFT_VERSION=2.8.10 --build-arg IMG_VERSION=20240618114008 --build-arg USERID=3100 --build-arg MARIADB_VERSION=10.5.23+maria~ubu2004 -t keppel.eu-de-1.cloud.sap/ccloud/mariadb-galera-haproxy:2.8.10-20240618114008 ./docker/haproxy/
 ```
 
 ### Kopia image
@@ -120,14 +120,14 @@ docker build --build-arg BASE_REGISTRY=keppel.eu-de-1.cloud.sap --build-arg BASE
 | USERID | id of the user that should run the binary |
 
 ```bash
-docker build --build-arg BASE_REGISTRY=keppel.eu-de-1.cloud.sap --build-arg BASE_ACCOUNT=ccloud --build-arg BASE_SOFT_NAME=mariadb-galera --build-arg BASE_SOFT_VERSION=10.5.20 --build-arg BASE_IMG_VERSION=20240429103636 --build-arg SOFT_NAME=kopia --build-arg SOFT_VERSION=0.12.1 --build-arg IMG_VERSION=20240429103636 --build-arg USERID=3200 --build-arg MARIADB_VERSION=10.5.20+maria~ubu2004 -t keppel.eu-de-1.cloud.sap/ccloud/mariadb-galera-kopiabackup:0.12.1-20240429103636 ./docker/kopia/
+docker build --build-arg BASE_REGISTRY=keppel.eu-de-1.cloud.sap --build-arg BASE_ACCOUNT=ccloud --build-arg BASE_SOFT_NAME=mariadb-galera --build-arg BASE_SOFT_VERSION=10.5.25 --build-arg BASE_IMG_VERSION=20240618114008 --build-arg SOFT_NAME=kopia --build-arg SOFT_VERSION=0.17.0 --build-arg IMG_VERSION=20240618114008 --build-arg USERID=3200 --build-arg MARIADB_VERSION=10.5.20+maria~ubu2004 -t keppel.eu-de-1.cloud.sap/ccloud/mariadb-galera-kopiabackup:0.17.0-20240618114008 ./docker/kopia/
 ```
 
 ### Ubuntu image
 
 ```bash
-docker build --build-arg BASE_SOFT_NAME=ubuntu --build-arg BASE_SOFT_VERSION=20.04 --build-arg IMG_VERSION=20240429103636 -t keppel.eu-de-1.cloud.sap/ccloud/mariadb-galera-ubuntu:20.04-20240429103636 ./docker/ubuntu/
-docker build --build-arg BASE_SOFT_NAME=ubuntu --build-arg BASE_SOFT_VERSION=22.04 --build-arg IMG_VERSION=20240429103636 -t keppel.eu-de-1.cloud.sap/ccloud/mariadb-galera-ubuntu:22.04-20240429103636 ./docker/ubuntu/
+docker build --build-arg BASE_SOFT_NAME=ubuntu --build-arg BASE_SOFT_VERSION=20.04 --build-arg IMG_VERSION=20240618114008 -t keppel.eu-de-1.cloud.sap/ccloud/mariadb-galera-ubuntu:20.04-20240618114008 ./docker/ubuntu/
+docker build --build-arg BASE_SOFT_NAME=ubuntu --build-arg BASE_SOFT_VERSION=22.04 --build-arg IMG_VERSION=20240618114008 -t keppel.eu-de-1.cloud.sap/ccloud/mariadb-galera-ubuntu:22.04-20240618114008 ./docker/ubuntu/
 ```
 
 ## Helm chart
@@ -166,7 +166,7 @@ docker build --build-arg BASE_SOFT_NAME=ubuntu --build-arg BASE_SOFT_VERSION=22.
   ```
 * [push](https://helm.sh/docs/topics/registries/#the-push-subcommand) the chart to the registry
   ```shell
-  helm push mariadb-galera-0.27.0.tgz oci://keppel.eu-de-1.cloud.sap/ccloud-helm/
+  helm push mariadb-galera-0.28.0.tgz oci://keppel.eu-de-1.cloud.sap/ccloud-helm/
   ```
 
 ### values description
@@ -266,52 +266,57 @@ docker build --build-arg BASE_SOFT_NAME=ubuntu --build-arg BASE_SOFT_VERSION=22.
 | hpa.proxy.maxCpuPercent | int | 66 | average CPU usage in percent across all ProxySQL cluster pods that triggers the scaling process |
 | hpa.proxy.maxReplicas | int | 5 | maximum number of replicas allowed for the ProxySQL cluster pods |
 | hpa.proxy.minReplicas | int | 3 | minimum number of replicas allowed for the ProxySQL cluster pods |
-| image.database.databasename | string | `"mariadb-galera"` | folder/container used in the image registry and also part of the image name |
-| image.database.databaseversion | string | `"10.5.23"` | database part of the image version that should be pulled |
-| image.database.imageversion | int | `20240429103636` | image part of the image version that should be pulled |
+| image.database.imageversion | int | `20240618114008` | image part of the image version that should be pulled |
 | image.database.project | string | `"ccloud"` | project/tenant used in the image registry |
 | image.database.pullPolicy | string | IfNotPresent | `Always` to enforce that the image will be pulled even if it is already available on the worker node |
 | image.database.pullSecret | string | `nil` | name of the defined Kubernetes secret defined in `image.pullSecrets` that should be used for container registry authentication |
 | image.database.registry | string | `"keppel.eu-de-1.cloud.sap"` | hostname of the image registry used to pull the database image that contains `MariaDB`, `Galera` and the helper `yq` |
-| image.haproxy.databasename | string | `"library/haproxy"` | folder/container used in the image registry and also part of the image name |
-| image.haproxy.databaseversion | string | `"2.8.2-alpine"` | database part of the image version that should be pulled |
-| image.haproxy.project | string | `"ccloud-dockerhub-mirror"` | project/tenant used in the image registry |
+| image.database.softwarename | string | `"mariadb-galera"` | folder/container used in the image registry and also part of the image name |
+| image.database.softwareversion | string | `"10.5.25"` | software version part of the image version that should be pulled |
+| image.haproxy.imageversion | int | `20240614163411` | image part of the image version that should be pulled |
+| image.haproxy.project | string | `"ccloud"` | project/tenant used in the image registry |
 | image.haproxy.pullPolicy | string | IfNotPresent | `Always` to enforce that the image will be pulled even if it is already available on the worker node |
 | image.haproxy.pullSecret | string | `nil` | name of the defined Kubernetes secret defined in `image.pullSecrets` that should be used for container registry authentication |
 | image.haproxy.registry | string | `"keppel.eu-de-1.cloud.sap"` | hostname of the image registry used to pull the proxy image that contains the Restic backup software |
-| image.kopiabackup.databasename | string | `"mariadb-galera-kopia"` | folder/container used in the image registry and also part of the image name |
-| image.kopiabackup.databaseversion | string | `"0.12.1"` | database part of the image version that should be pulled |
-| image.kopiabackup.imageversion | int | `20240429103636` | image part of the image version that should be pulled |
+| image.haproxy.softwarename | string | `"mariadb-galera-haproxy"` | folder/container used in the image registry and also part of the image name |
+| image.haproxy.softwareversion | string | `"2.8.10"` | software version part of the image version that should be pulled |
+| image.kopiabackup.imageversion | int | `20240618114008` | image part of the image version that should be pulled |
 | image.kopiabackup.project | string | `"ccloud"` | project/tenant used in the image registry |
 | image.kopiabackup.pullPolicy | string | IfNotPresent | `Always` to enforce that the image will be pulled even if it is already available on the worker node |
 | image.kopiabackup.pullSecret | string | `nil` | name of the defined Kubernetes secret defined in `image.pullSecrets` that should be used for container registry authentication |
 | image.kopiabackup.registry | string | `"keppel.eu-de-1.cloud.sap"` | hostname of the image registry used to pull the proxy image that contains the Kopia backup software |
-| image.monitoring.databasename | string | `"mariadb-galera-mysqld_exporter"` | folder/container used in the image registry and also part of the image name |
-| image.monitoring.databaseversion | string | `"0.14.0"` | database part of the image version that should be pulled |
-| image.monitoring.imageversion | int | `20240429103636` | image part of the image version that should be pulled |
+| image.kopiabackup.softwarename | string | `"mariadb-galera-kopia"` | folder/container used in the image registry and also part of the image name |
+| image.kopiabackup.softwareversion | string | `"0.17.0"` | software version part of the image version that should be pulled |
+| image.monitoring.imageversion | int | `20240618114008` | image part of the image version that should be pulled |
 | image.monitoring.project | string | `"ccloud"` | project/tenant used in the image registry |
 | image.monitoring.pullPolicy | string | IfNotPresent | `Always` to enforce that the image will be pulled even if it is already available on the worker node |
 | image.monitoring.pullSecret | string | `nil` | name of the defined Kubernetes secret defined in `image.pullSecrets` that should be used for container registry authentication |
 | image.monitoring.registry | string | `"keppel.eu-de-1.cloud.sap"` | hostname of the image registry used to pull the monitoring image that currently contains the MySQL exporter for Prometheus |
-| image.os.databasename | string | `"mariadb-galera-ubuntu"` | folder/container used in the image registry and also part of the image name |
-| image.os.databaseversion | float | `22.04` | database part of the image version that should be pulled |
-| image.os.imageversion | int | `20240429103636` | image part of the image version that should be pulled |
+| image.monitoring.softwarename | string | `"mariadb-galera-mysqld_exporter"` | folder/container used in the image registry and also part of the image name |
+| image.monitoring.softwareversion | string | `"0.14.0"` | software version part of the image version that should be pulled |
+| image.os.imageversion | int | `20240618114008` | image part of the image version that should be pulled |
 | image.os.project | string | `"ccloud"` | project/tenant used in the image registry |
 | image.os.pullPolicy | string | IfNotPresent | `Always` to enforce that the image will be pulled even if it is already available on the worker node |
 | image.os.pullSecret | string | `nil` | name of the defined Kubernetes secret defined in `image.pullSecrets` that should be used for container registry authentication |
 | image.os.registry | string | `"keppel.eu-de-1.cloud.sap"` | hostname of the image registry used to pull the basic OS image that will be used for certain init steps |
-| image.proxy.databasename | string | `"mariadb-galera-proxysql"` | folder/container used in the image registry and also part of the image name |
-| image.proxy.databaseversion | string | `"2.5.5"` | database part of the image version that should be pulled |
-| image.proxy.imageversion | int | `20240429103636` | image part of the image version that should be pulled |
+| image.os.softwarename | string | `"mariadb-galera-ubuntu"` | folder/container used in the image registry and also part of the image name |
+| image.os.softwareversion | float | `22.04` | software version part of the image version that should be pulled |
+| image.proxy.imageversion | int | `20240618114008` | image part of the image version that should be pulled |
 | image.proxy.project | string | `"ccloud"` | project/tenant used in the image registry |
 | image.proxy.pullPolicy | string | IfNotPresent | `Always` to enforce that the image will be pulled even if it is already available on the worker node |
 | image.proxy.pullSecret | string | `nil` | name of the defined Kubernetes secret defined in `image.pullSecrets` that should be used for container registry authentication |
 | image.proxy.registry | string | `"keppel.eu-de-1.cloud.sap"` | hostname of the image registry used to pull the proxy image that contains the ProxySQL software to load balance MariaDB connections |
+| image.proxy.softwarename | string | `"mariadb-galera-proxysql"` | folder/container used in the image registry and also part of the image name |
+| image.proxy.softwareversion | string | `"2.6.3"` | software version part of the image version that should be pulled |
 | image.pullSecrets.secretname.credential | string | `nil` | the combined username & password string that is valid for the container registry |
 | image.pullSecrets.secretname.enabled | bool | `nil` | enable this [Kubernetes pull secret](https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/) |
 | image.pullSecrets.secretname.registry | string | `nil` | the hostname of the container registry that should be used for the pull secret |
 | initContainers.cleanoscache.securityContext.privileged | bool | `true` | required to configure `/proc/sys/vm/drop_caches` in the init phase |
 | initContainers.cleanoscache.securityContext.runAsUser | int | 0 | required to configure `/proc/sys/vm/drop_caches` in the init phase |
+| initContainers.fixMariaDBFsPermissions.securityContext.privileged | bool | `true` | required to fix FS permissions of mariadb persistent volumes in the init phase |
+| initContainers.fixMariaDBFsPermissions.securityContext.runAsUser | int | 0 | required to fix FS permissions of mariadb persistent volumes in the init phase |
+| initContainers.fixProxysqlFsPermissions.securityContext.privileged | bool | `true` | required to fix FS permissions of porxysql persistent volumes in the init phase |
+| initContainers.fixProxysqlFsPermissions.securityContext.runAsUser | int | 0 | required to fix FS permissions of porxysql persistent volumes in the init phase |
 | initContainers.increaseMapCount.securityContext.privileged | bool | `true` | required to configure `/proc/sys/vm/max_map_count` in the init phase |
 | initContainers.increaseMapCount.securityContext.runAsUser | int | 0 | required to configure `/proc/sys/vm/max_map_count` in the init phase |
 | initContainers.tcpKeepAlive.securityContext.privileged | bool | `true` | required to configure `net.ipv4.tcp_keepalive_time` in the init phase |
@@ -340,6 +345,7 @@ docker build --build-arg BASE_SOFT_NAME=ubuntu --build-arg BASE_SOFT_VERSION=22.
 | mariadb.autostart | bool | `true` | run the default entrypoint.sh script or just sleep to be able to troubleshoot and debug |
 | mariadb.binLogDir | string | `"log"` | if not defined the data dir will be used. Needs a log volume mount to be configured too |
 | mariadb.binLogSync | int | 0 | `1` to enable [sync_binlog for ACID compliance](https://mariadb.com/kb/en/replication-and-binary-log-system-variables/#sync_binlog) |
+| mariadb.ccroot_user.enabled | bool | `false` | enable the passwordless `ccroot` user. If enabled a 'ccroot'@'127.0.0.1' user with all privileges and without password will be created to allow passwordless local connections. If disabled, the user will be dropped from the DB if existing |
 | mariadb.databases.sb_oltp_ro.CharacterSetName | string | utf8 | database character set |
 | mariadb.databases.sb_oltp_ro.collationName | string | utf8_general_ci | database collation |
 | mariadb.databases.sb_oltp_ro.comment | string | custom DB | database comment |
@@ -347,6 +353,7 @@ docker build --build-arg BASE_SOFT_NAME=ubuntu --build-arg BASE_SOFT_VERSION=22.
 | mariadb.databases.sb_oltp_ro.enabled | bool | `false` | enable this database |
 | mariadb.databases.sb_oltp_ro.overwrite | bool | false | overwrite the database if it already exists |
 | mariadb.errorLogWarningVerbosity | int | 2 | to define the [verbosity](https://mariadb.com/kb/en/error-log/#configuring-the-error-log-verbosity) of the MariaDB logs |
+| mariadb.fixFsPermissions | bool | `false` | fix the permissions of the persistent volumes and set the ownership of the FS to mariadb the value defined in `mariadb.database.userId:mariadb.database.groupId` or to default `uid:gid - 101:101` |
 | mariadb.galera.backup.desyncBackupNode | bool | `true` | Enable [wsrep_desync](https://mariadb.com/kb/en/galera-cluster-system-variables/#wsrep_desync) before the backup and disable it after the backup. This can avoid performance issues during the backup, because flow control will be disabled for the backup node. The disadvantage is that the backup node is not usable for queries during the backup. |
 | mariadb.galera.backup.enabled | bool | `false` | enable the [database backup](#database-backup). Should be done within custom instance configuration files |
 | mariadb.galera.backup.kopia.backend | string | `"s3"` | Openstack Swift and others provide an S3 compatible interface |
@@ -554,6 +561,7 @@ docker build --build-arg BASE_SOFT_NAME=ubuntu --build-arg BASE_SOFT_VERSION=22.
 | proxy.haproxy.users.stats.username | string | `nil` | HAProxy stats user username |
 | proxy.proxysql.adminui.enabled | bool | `true` | the [ProxySQL Admin UI](https://proxysql.com/documentation/http-web-server/) |
 | proxy.proxysql.adminui.verbosity | int | `0` | the variable defines the [verbosity level](https://proxysql.com/documentation/global-variables/admin-variables/#admin-web_verbosity) of the web server |
+| proxy.proxysql.fixFsPermissions | bool | `false` | fix the permissions of the persistent volumes and set the ownership of the FS to mariadb the value defined in `Values.userId.proxy:Values.groupId.proxy` or to default `uid:gid - 3100:3100` |
 | proxy.proxysql.linkerd.enabled | bool | false | enable the [annotation](https://linkerd.io/2.14/tasks/adding-your-service/#meshing-a-service-with-annotations) for linkerd to inject the sidecar container for transport encryption |
 | proxy.proxysql.queryRules.genericReadWriteSplit.enabled | bool | `false` | check the "Generic Read/Write split using regex" section in the [howto](https://proxysql.com/documentation/proxysql-read-write-split-howto/) for details |
 | proxy.proxysql.restapi.enabled | bool | `true` | the [ProxySQL RestAPI](https://proxysql.com/documentation/REST-API/) |
