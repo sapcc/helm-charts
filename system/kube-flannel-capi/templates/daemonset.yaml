@@ -40,7 +40,7 @@ spec:
 {{- end }}
       initContainers:
       - name: flannel-cni
-        image: "{{ .Values.flannel.repository }}:{{ .Values.flannel.tag }}"
+        image: "{{ required ".Values.image.image is missing" .Values.image.image }}:{{ required ".Values.image.tag is missing" .Values.image.tag }}"
         command:
         - cp
         args:
@@ -52,19 +52,6 @@ spec:
           mountPath: /tmp/flannel/
         - name: cni
           mountPath: /etc/cni/net.d/
-      - name: net-conf-cni
-        image: "{{ .Values.flannel.repository }}:{{ .Values.flannel.tag }}"
-        command:
-        - cp
-        args:
-        - -f
-        - /tmp/flannel/net-conf.json
-        - /etc/kube-flannel/net-conf.json
-        volumeMounts:
-        - name: flannel-cfg
-          mountPath: /tmp/flannel/
-        - name: etc-kube-flannel
-          mountPath: /etc/kube-flannel/
       containers:
       - name: kube-flannel
         image: "{{ required ".Values.image.image is missing" .Values.image.image }}:{{ required ".Values.image.tag is missing" .Values.image.tag }}"
@@ -121,9 +108,6 @@ spec:
         - name: run
           hostPath:
             path: /run
-        - name: etc-kube-flannel
-          hostPath:
-            path: /etc/kube-flannel/
         - name: cni-cfg
           hostPath:
             path: /etc/cni/net.d
