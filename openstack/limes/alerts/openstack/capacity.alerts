@@ -5,7 +5,7 @@ groups:
   rules:
 
   - alert: LimesBlockedCapacityAbove80Percent
-    expr: (stabilized:limes_capacity_blocked_percent_per_az > 80) and on (service, resource) (stabilized:limes_autogrow_growth_multiplier > 1)
+    expr: (stabilized:limes_capacity_blocked_percent_per_az > 80) and on (service, resource) group_left (stabilized:limes_autogrow_growth_multiplier > 1)
     for: 10m
     labels:
       severity: info
@@ -18,7 +18,7 @@ groups:
         capacity is blocked by commitments or provisioned usage. Please check if hardware needs to be ordered.
 
   - alert: LimesBlockedCapacityDangerouslyHigh
-    expr: (stabilized:limes_capacity_blocked_percent_per_az > on (service, resource) stabilized:limes_autogrow_quota_overcommit_threshold_percent) and on (service, resource) (stabilized:limes_autogrow_growth_multiplier > 1)
+    expr: (stabilized:limes_capacity_blocked_percent_per_az > on (service, resource) group_left stabilized:limes_autogrow_quota_overcommit_threshold_percent) and on (service, resource) group_left (stabilized:limes_autogrow_growth_multiplier > 1)
     for: 10m
     labels:
       severity: warning
