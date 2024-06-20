@@ -3,7 +3,7 @@
 ####
 ### Datastream template creation
 ####
-if [ "${DATA_STREAM_ENABLED}" -eq 1 ]; then
+if [ "${DATA_STREAM_ENABLED}" = true ]; then
    for e in ${DATA_STREAMS}; do
      export FILEPATH=/scripts
      export TMPPATH=/scripts
