@@ -4,12 +4,12 @@ input {
 {{- $user := $value.user | default $.Values.hermes.rabbitmq.user }}
 {{- $host := printf "%s-rabbitmq.monsoon3.svc.kubernetes.%s.%s" $key $.Values.global.region $.Values.global.tld}}
 rabbitmq {
-    id => {{ printf "logstash_hermes_%s" $key | quote }}
-    host => {{ $value.host | default (printf $.Values.hermes.rabbitmq.host_template $key) | quote }}
-    user => {{ $user | quote }}
-    password => {{ $value.password | quote }}
+    id => "{{ printf "logstash_hermes_%s" $key }}"
+    host => "{{ $value.host | default (printf $.Values.hermes.rabbitmq.host_template $key) }}"
+    user => "{{ $user }}"
+    password => "{{ $value.password }}"
     port => {{ $.Values.hermes.rabbitmq.port }}
-    queue => {{ $value.queue_name | default $.Values.hermes.rabbitmq.queue_name | quote }}
+    queue => "{{ $value.queue_name | default $.Values.hermes.rabbitmq.queue_name }}"
     subscription_retry_interval_seconds => 60
     automatic_recovery => true
     connection_timeout => 1000
@@ -254,8 +254,8 @@ filter {
     ]
     staging_directory => "/tmp/logstash/jdbc_static/import_data"
     loader_schedule => "{{ .Values.logstash.jdbc.schedule }}"
-    jdbc_user => {{ .Values.global.metis.user | default "default" | quote }}
-    jdbc_password => {{ .Values.global.metis.password | default "default" | quote }}
+    jdbc_user => "{{ .Values.global.metis.user | default "default" }}"
+    jdbc_password => "{{ .Values.global.metis.password | default "default" }}"
     jdbc_driver_class => "com.mysql.cj.jdbc.Driver"
     jdbc_driver_library => ""
     jdbc_connection_string => "jdbc:mysql://{{ .Values.logstash.jdbc.service }}.{{ .Values.logstash.jdbc.namespace }}:3306/{{ .Values.logstash.jdbc.db }}"
