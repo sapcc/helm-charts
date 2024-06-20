@@ -38,6 +38,33 @@ spec:
       imagePullSecrets:
 {{ toYaml .Values.imagePullSecrets | indent 8 }}
 {{- end }}
+      initContainers:
+      - name: flannel-cni
+        image: "{{ .Values.flannel.repository }}:{{ .Values.flannel.tag }}"
+        command:
+        - cp
+        args:
+        - -f
+        - /tmp/flannel/flannel-cni.conf
+        - /etc/cni/net.d/flannel-cni.conf
+        volumeMounts:
+        - name: flannel-cfg
+          mountPath: /tmp/flannel/
+        - name: cni
+          mountPath: /etc/cni/net.d/
+      - name: net-conf-cni
+        image: "{{ .Values.flannel.repository }}:{{ .Values.flannel.tag }}"
+        command:
+        - cp
+        args:
+        - -f
+        - /tmp/flannel/net-conf.json
+        - /etc/kube-flannel/net-conf.json
+        volumeMounts:
+        - name: flannel-cfg
+          mountPath: /tmp/flannel/
+        - name: etc-kube-flannel
+          mountPath: /etc/kube-flannel/
       containers:
       - name: kube-flannel
         image: "{{ required ".Values.image.image is missing" .Values.image.image }}:{{ required ".Values.image.tag is missing" .Values.image.tag }}"
@@ -94,7 +121,7 @@ spec:
         - name: run
           hostPath:
             path: /run
-        - name: flannel-cfg
+        - name: etc-kube-flannel
           hostPath:
             path: /etc/kube-flannel/
         - name: cni-cfg
@@ -106,3 +133,6 @@ spec:
         - name: kubelet-dir
           hostPath:
             path: /var/lib/kubelet
+        - name: flannel-cfg
+          configMap:
+            name: flannel-cfg
