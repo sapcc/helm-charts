@@ -76,20 +76,31 @@ spec:
             - name: http
               containerPort: {{ .Values.service.port }}
               protocol: TCP
-          livenessProbe:
-            {{- toYaml .Values.livenessProbe | nindent 12 }}
-          readinessProbe:
-            {{- toYaml .Values.readinessProbe | nindent 12 }}
           resources:
             requests:
               memory: 0
               cpu: 0
           volumeMounts:
-          - name: kmip-barbican-etc
-            mountPath: /etc/kmip/server.conf
-            subPath: server.conf
-            readOnly: true
+            - name: kmip-barbican-etc
+              mountPath: /etc/kmip/server.conf
+              subPath: server.conf
+              readOnly: true
+            - name: kmip-certificates
+              mountPath: /etc/kmip/certs/server.crt
+              subPath: server.crt
+              readOnly: true
+            - name: kmip-certificates
+              mountPath: /etc/kmip/certs/server.key
+              subPath: server.key
+              readOnly: true
+            - name: kmip-certificates
+              mountPath: /etc/kmip/certs/ca.crt
+              subPath: ca.crt
+              readOnly: true
       volumes:
-      - name: kmip-barbican-etc
-        configMap:
-          name: kmip-barbican-etc
+        - name: kmip-barbican-etc
+          configMap:
+            name: kmip-barbican-etc
+        - name: kmip-certificates
+          secret:
+            secretName: kmip-certificates
