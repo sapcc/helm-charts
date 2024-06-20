@@ -1,6 +1,6 @@
 {
   "index_patterns": [
-    "DS_STREAM_NAME-datastream*"
+    "otel-_DS_NAME_-datastream*"
   ],
   "template": {
     "settings": {
@@ -9,7 +9,7 @@
       "index.refresh_interval": "15s"
     },
     "aliases": {
-      "DS_STREAM_NAME-ds": {}
+      "otel-_DS_NAME_-ds": {}
     }
   },
   "composed_of": [],
