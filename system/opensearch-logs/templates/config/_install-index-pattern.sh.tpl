@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # 0. Check for index policy
-for i in $(curl -s --insecure -u ${ADMIN_USER}:${ADMIN_PASSWORD} "${CLUSTER_HOST}/_cat/indices?v"|awk '{ print $3 }'|awk -F- '{ print $1 }'|sort|uniq|grep -v "\."|grep -v "index")
+for i in $(curl -s -u ${ADMIN_USER}:${ADMIN_PASSWORD} "${CLUSTER_HOST}/_cat/indices?v"|awk '{ print $3 }'|awk -F- '{ print $1 }'|sort|uniq|grep -v "\."|grep -v "index")
   do
     echo "using index $i from Opensearch-Logs"
     echo "setting OpenSearch dashboard index mapping for index $i"
