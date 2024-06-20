@@ -112,8 +112,12 @@ for node in bm.node.list(
         continue
 
     manufacturer = (node.properties.get("manufacturer") or "").split(" ")[0].lower()
+    uefi = "boot_mode:uefi" in node.properties.get("capabilities", "")
 
-    if manufacturer != "dell" or node.resource_class == "zh2mlx1.large":
+
+    if (not uefi
+            or manufacturer != "dell"
+            or node.resource_class == "zh2mlx1.large"):
         # zh2mlx1.large is too old
         patch = patch_ipxe
     else:
