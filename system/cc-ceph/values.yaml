@@ -96,15 +96,18 @@ objectstore:
       requests:
         cpu: 10
         memory: 16Gi
-  metadataPool:
-    failureDomain: host
-    replicated:
-      size: 4
   dataPool:
     failureDomain: host
     replicated:
       size: 3
     deviceClass: "hdd"
+  metadataPool:
+    replicated:
+      size: 4
+      replicasPerFailureDomain: 2
+      subFailureDomain: "host"
+    failureDomain: "zone"
+    deviceClass: "nvme"
   service:
     name: ceph-objectstore-external
     port: 443
