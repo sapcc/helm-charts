@@ -137,7 +137,7 @@ mysql_metrics:
       query: |
         SELECT
           coalesce(share_instances.share_type_id, 'N/A') AS share_type_id,
-          availability_zones.name AS availability_zone_name,
+          coalesce(availability_zones.name, 'N/A') AS availability_zone_name,
           share_instances.host AS manila_host,
           shares.project_id,
           shares.id,
@@ -146,7 +146,7 @@ mysql_metrics:
           COUNT(*) AS count_gauge
         FROM shares
         JOIN share_instances ON shares.id=share_instances.share_id
-        JOIN availability_zones ON share_instances.availability_zone_id=availability_zones.id
+        LEFT OUTER JOIN availability_zones ON share_instances.availability_zone_id=availability_zones.id
         WHERE share_instances.deleted = 'False'
         AND share_instances.replica_state='active'
         GROUP BY
@@ -172,7 +172,7 @@ mysql_metrics:
       query: |
         SELECT
           coalesce(share_instances.share_type_id, 'N/A') AS share_type_id,
-          availability_zones.name AS availability_zone_name,
+          coalesce(availability_zones.name, 'N/A') AS availability_zone_name,
           share_instances.host AS manila_host,
           shares.project_id,
           shares.id,
@@ -182,8 +182,8 @@ mysql_metrics:
           SUM(size) size_gauge
         FROM shares
         JOIN share_instances ON shares.id=share_instances.share_id
-        JOIN availability_zones ON share_instances.availability_zone_id=availability_zones.id
-        LEFT JOIN share_metadata ON shares.id=share_metadata.share_id AND share_metadata.key='snapmirror'
+        LEFT OUTER JOIN availability_zones ON share_instances.availability_zone_id=availability_zones.id
+        LEFT OUTER JOIN share_metadata ON shares.id=share_metadata.share_id AND share_metadata.key='snapmirror'
         WHERE share_instances.deleted = 'False'
         AND share_instances.replica_state='active'
         GROUP BY
@@ -211,12 +211,12 @@ mysql_metrics:
           snap.id as id,
           si.status as status,
           coalesce(share_instances.share_type_id, 'N/A') AS share_type_id,
-          availability_zones.name AS availability_zone_name,
+          coalesce(availability_zones.name, 'N/A') AS availability_zone_name,
           COUNT(*) AS count_gauge
         FROM share_snapshots AS snap
         INNER JOIN share_snapshot_instances AS si ON snap.id=si.snapshot_id
         INNER JOIN share_instances ON si.share_instance_id=share_instances.id
-        INNER JOIN availability_zones ON share_instances.availability_zone_id=availability_zones.id
+        LEFT OUTER JOIN availability_zones ON share_instances.availability_zone_id=availability_zones.id
         WHERE snap.deleted = 'False'
         AND (share_instances.replica_state='active' OR share_instances.replica_state IS NULL)
         GROUP BY
@@ -251,12 +251,12 @@ mysql_metrics:
           share_snapshots.id,
           share_snapshot_instances.status,
           coalesce(share_instances.share_type_id, 'N/A') AS share_type_id,
-          availability_zones.name AS availability_zone_name,
+          coalesce(availability_zones.name, 'N/A') AS availability_zone_name,
           SUM(share_snapshots.size) size_gauge
         FROM share_snapshots
         INNER JOIN share_snapshot_instances ON share_snapshots.id=share_snapshot_instances.snapshot_id
         INNER JOIN share_instances ON share_snapshot_instances.share_instance_id=share_instances.id
-        INNER JOIN availability_zones ON share_instances.availability_zone_id=availability_zones.id
+        LEFT OUTER JOIN availability_zones ON share_instances.availability_zone_id=availability_zones.id
         WHERE share_snapshots.deleted = 'False'
         AND (share_instances.replica_state='active' OR share_instances.replica_state IS NULL)
         GROUP BY
@@ -281,7 +281,7 @@ mysql_metrics:
       query: |
         SELECT
           coalesce(replicas.share_type_id, 'N/A') AS share_type_id,
-          availability_zones.name AS availability_zone_name,
+          coalesce(availability_zones.name, 'N/A') AS availability_zone_name,
           replicas.host AS manila_host,
           shares.project_id,
           replicas.id,
@@ -290,7 +290,7 @@ mysql_metrics:
           replicas.replica_state,
           COUNT(*) AS count_gauge
         FROM share_instances AS replicas
-        JOIN availability_zones ON replicas.availability_zone_id=availability_zones.id
+        LEFT OUTER JOIN availability_zones ON replicas.availability_zone_id=availability_zones.id
         JOIN shares ON replicas.share_id=shares.id
         WHERE replicas.deleted = 'False' AND replicas.replica_state IS NOT NULL
         GROUP BY
@@ -318,7 +318,7 @@ mysql_metrics:
       query: |
         SELECT
           coalesce(replicas.share_type_id, 'N/A') AS share_type_id,
-          availability_zones.name AS availability_zone_name,
+          coalesce(availability_zones.name, 'N/A') AS availability_zone_name,
           replicas.host AS manila_host,
           shares.project_id,
           replicas.id,
@@ -327,7 +327,7 @@ mysql_metrics:
           replicas.replica_state,
           SUM(shares.size) size_gauge
         FROM share_instances AS replicas
-        JOIN availability_zones ON replicas.availability_zone_id=availability_zones.id
+        LEFT OUTER JOIN availability_zones ON replicas.availability_zone_id=availability_zones.id
         JOIN shares ON replicas.share_id=shares.id
         WHERE replicas.deleted = 'False' AND replicas.replica_state IS NOT NULL
         GROUP BY
@@ -632,6 +632,8 @@ mariadb:
   resources:
     requests:
       memory: 6144Mi
+  vpa:
+    set_main_container: true
   backup_v2:
     enabled: true
     databases:

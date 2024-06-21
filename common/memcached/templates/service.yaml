@@ -19,9 +19,13 @@ metadata:
     prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
     {{- end }}
 spec:
+  selector:
+    app: {{ template "fullname" . }}
   ports:
   - name: memcache
     port: {{ default "11211" .Values.memcached.port }}
     targetPort: memcache
-  selector:
-    app: {{ template "fullname" . }}
+{{- if .Values.external_ip }}
+  externalIPs:
+    - {{ .Values.external_ip }}
+{{- end }}

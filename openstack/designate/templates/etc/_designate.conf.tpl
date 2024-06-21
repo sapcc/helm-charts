@@ -196,7 +196,7 @@ project_name = {{.Values.global.keystone_service_project | default "service"}}
 project_domain_name = {{.Values.global.keystone_service_domain | default "Default"}}
 region_name = {{.Values.global.region}}
 {{- if .Values.global_setup }}
-memcached_servers = {{.Release.Name}}-memcached.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.db_region}}.{{.Values.global.tld}}:{{.Values.global.memcached_port_public | default 11211}}
+memcached_servers = "{{ include "helm-toolkit.utils.joinListWithComma" .Values.memcached.server_ips_ports }}"
 {{- else }}
 memcached_servers = {{.Release.Name}}-memcached.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}:{{.Values.global.memcached_port_public | default 11211}}
 {{- end }}

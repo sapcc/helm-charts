@@ -4,7 +4,9 @@ PROVIDER_VSPHERE_VERSION ?= v1.9.3
 PROVIDER_IPAM_VERSION ?= v0.1.0
 PROVIDER_KUBERNIKUS_VERSION ?= 9fd81475b828971913b3b27addf51fdbd0511d85
 BAREMETAL_OPERATOR_VERSION ?= v0.6.0
-METAL_OPERATOR_VERSION ?= 94572fae2e01b8a1cb0247a4ff407e90dd484f5f
+METAL_OPERATOR_VERSION ?= 473e299852969d7041d5a176d6e118b160d18eb5
+IPXE_OPERATOR_VERSION ?= 61c6898bfd7772008835bdcca8d8a64c1dfc3b32
+
 SHELL := bash
 .ONESHELL:
 
@@ -86,7 +88,15 @@ build-metal-operator:
 	$(call build-chart,metal-operator-core,https://github.com/afritzler/metal-operator//config/default,$(METAL_OPERATOR_VERSION))
 	@yq -i '.controllerManager.manager.image.tag="$(METAL_OPERATOR_VERSION)"' metal-operator-core/values.yaml
 	@yq -i '.fullnameOverride="metal-operator"' metal-operator-core/values.yaml
-	@yq -i '.version="0.0.4"' metal-operator-core/Chart.yaml
+	@yq -i '.version="0.0.8"' metal-operator-core/Chart.yaml
+
+build-ipxe-operator:
+	@cat kustomize/ipxe-operator/kustomization.yaml >> kustomization.yaml
+	$(call build-chart,ipxe-operator,https://github.com/ironcore-dev/ipxe-operator//config/default,$(IPXE_OPERATOR_VERSION))
+	@yq -i '.controllerManager.manager.image.tag="$(IPXE_OPERATOR_VERSION)"' ipxe-operator/values.yaml
+	@yq -i '.fullnameOverride="ipxe-operator"' ipxe-operator/values.yaml
+	@yq -i '.version="0.0.5"' ipxe-operator/Chart.yaml
+
 
 # chart name, source url, tag
 define build-chart
