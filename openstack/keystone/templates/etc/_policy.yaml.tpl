@@ -923,8 +923,8 @@
 # Intended scope(s): system, domain
 #"identity:list_projects": "(role:reader and system_scope:all) or (role:reader and domain_id:%(target.domain_id)s)"
 "identity:list_projects": "rule:cloud_reader or
-  (role:reader and domain_id:%(target.domain_id)s) or
-  (role:reader and project_id:%(target.parent_id)s)"
+  (role:reader and domain_id:%(domain_id)s) or
+  (role:reader and project_id:%(parent_id)s)"
 
 # List projects for user.
 # GET  /v3/users/{user_id}/projects
@@ -1364,8 +1364,8 @@
 #"identity:list_users": "(role:reader and system_scope:all) or (role:reader and domain_id:%(target.domain_id)s)"
 "identity:list_users": "rule:cloud_reader or
   (role:reader and domain_id:%(target.domain_id)s) or
-  project_domain_id:%(target.domain_id)s or
-  user_domain_id:%(target.domain_id)s"
+  project_domain_id:%(domain_id)s or
+  user_domain_id:%(domain_id)s"
 
 # List all projects a user has access to via role assignments.
 # GET   /v3/auth/projects
