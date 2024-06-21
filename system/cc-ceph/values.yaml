@@ -85,7 +85,7 @@ objectstore:
   enabled: true
   name: objectstore
   gateway:
-    instances: 3
+    instances: 6
     port: 80
     securePort: 443
     sslCertificateRef: ""
@@ -94,23 +94,23 @@ objectstore:
     # - dns2
     resources:
       requests:
-        cpu: 1000m
-        memory: 1Gi
-  metadataPool:
+        cpu: 10
+        memory: 16Gi
+  dataPool:
     failureDomain: host
     replicated:
+      size: 3
+    deviceClass: "hdd"
+  metadataPool:
+    replicated:
       size: 4
-  dataPool:
-    # choose between replicated and erasureCoded
-    # erasureCoded:
-    #   codingChunks: 1
-    #   dataChunks: 2
-    # failureDomain: host
-    # replicated:
-    #   size: 3
+      replicasPerFailureDomain: 2
+      subFailureDomain: "host"
+    failureDomain: "zone"
+    deviceClass: "nvme"
   service:
     name: ceph-objectstore-external
-    port: 80
+    port: 443
     externalIPs:
       - 10.0.0.1
   keystone:
