@@ -1,7 +1,7 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: "install-index-pattern"
+  name: "install-dashboard-pattern"
   labels:
     app.kubernetes.io/managed-by: {{ .Release.Service | quote }}
     app.kubernetes.io/instance: {{ .Release.Name | quote }}
@@ -16,7 +16,7 @@ metadata:
 spec:
   template:
     metadata:
-      name: "install-index-pattern"
+      name: "install-dashboard-pattern"
       labels:
         app.kubernetes.io/managed-by: {{ .Release.Service | quote }}
         app.kubernetes.io/instance: {{ .Release.Name | quote }}
@@ -24,9 +24,9 @@ spec:
     spec:
       restartPolicy: Never
       containers:
-      - name: install-index-pattern 
+      - name: install-dashboard-pattern 
         image: "{{ .Values.global.registry }}/unified-kubernetes-toolbox:latest"
-        command: ["/bin/bash", "/scripts/install-index-pattern.sh"]
+        command: ["/bin/bash", "/scripts/install-dashboard-pattern.sh"]
         env:
           - name: ADMIN_USER
             valueFrom:
@@ -43,9 +43,9 @@ spec:
           - name: DASHBOARD_HOST
             value: "https://logs.{{ .Values.global.region }}.{{ .Values.global.tld }}"
         volumeMounts:
-        - mountPath: /scripts/install-index-pattern.sh
+        - mountPath: /scripts/install-dashboard-pattern.sh
           name: security-config
-          subPath: install-index-pattern.sh
+          subPath: install-dashboard-pattern.sh
       volumes:
       - name: security-config
         secret:
