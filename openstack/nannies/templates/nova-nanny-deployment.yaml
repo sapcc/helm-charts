@@ -1,5 +1,5 @@
 {{- if .Values.nova_nanny.enabled }}
-{{- if or .Values.nova_nanny.db_purge.enabled .Values.nova_nanny.consistency.enabled .Values.nova_nanny.quota_sync.enabled .Values.nova_nanny.db_cleanup.enabled }}
+{{- if or .Values.nova_nanny.db_purge.enabled .Values.nova_nanny.consistency.enabled }}
 kind: Deployment
 apiVersion: apps/v1
 metadata:
@@ -215,87 +215,6 @@ spec:
               memory: "1000Mi"
               cpu: "100m"
 {{- end }}
-{{- end }}
-{{- if .Values.nova_nanny.quota_sync.enabled_disabled_for_now_as_not_used }}
-        - name: quota-sync
-          image: {{.Values.global.registry}}/nova-nanny:{{.Values.nova_nanny.image_version}}
-          imagePullPolicy: IfNotPresent
-          command:
-            - dumb-init
-            - kubernetes-entrypoint
-          env:
-            - name: COMMAND
-              value: "{{ if not .Values.nova_nanny.debug }}/bin/bash /scripts/nova-quota-sync.sh{{ else }}sleep inf{{ end }}"
-            - name: NAMESPACE
-              valueFrom:
-                fieldRef:
-                  fieldPath: metadata.namespace
-            - name: DEPENDENCY_SERVICE
-              {{- if .Values.nova.mariadb.enabled }}
-              value: "nova-mariadb,nova-api"
-              {{- else }}
-              value: "nova-postgresql,nova-api"
-              {{- end }}
-            - name: NOVA_QUOTA_SYNC_ENABLED
-              value: {{ .Values.nova_nanny.quota_sync.enabled | quote }}
-            - name: NOVA_QUOTA_SYNC_DRY_RUN
-              value: {{ .Values.nova_nanny.quota_sync.dry_run | quote }}
-            - name: NOVA_NANNY_INTERVAL
-              value: {{ .Values.nova_nanny.nanny.interval | quote }}
-          volumeMounts:
-            - mountPath: /nova-etc
-              name: nova-etc
-{{- end }}
-{{- if .Values.nova_nanny.db_cleanup.enabled }}
-        - name: db-cleanup
-          image: {{.Values.global.registry}}/nova-nanny:{{.Values.nova_nanny.image_version}}
-          imagePullPolicy: IfNotPresent
-          command:
-            - dumb-init
-            - kubernetes-entrypoint
-          env:
-            - name: COMMAND
-              value: "{{ if not .Values.nova_nanny.debug }}/bin/bash /scripts/nova-db-cleanup.sh{{ else }}sleep inf{{ end }}"
-            - name: NAMESPACE
-              valueFrom:
-                fieldRef:
-                  fieldPath: metadata.namespace
-            - name: DEPENDENCY_SERVICE
-              {{- if .Values.nova.mariadb.enabled }}
-              value: "nova-mariadb,nova-api"
-              {{- else }}
-              value: "nova-postgresql,nova-api"
-              {{- end }}
-            - name: NOVA_DB_CLEANUP_ENABLED
-              value: {{ .Values.nova_nanny.db_cleanup.enabled | quote }}
-            - name: NOVA_DB_CLEANUP_DRY_RUN
-              value: {{ .Values.nova_nanny.db_cleanup.dry_run | quote }}
-            - name: NOVA_DB_CLEANUP_INTERVAL
-              value: {{ .Values.nova_nanny.db_cleanup.interval | quote }}
-            - name: NOVA_DB_CLEANUP_ITERATIONS
-              value: {{ .Values.nova_nanny.db_cleanup.iterations | quote }}
-            - name: OS_AUTH_URL
-              value: "https://{{ include "keystone_api_endpoint_host_public" . }}:443/v3"
-            - name: OS_PROJECT_NAME
-              value: "cloud_admin"
-            - name: OS_PROJECT_DOMAIN_NAME
-              value: "ccadmin"
-            - name: OS_USERNAME
-              value: "nova_nanny"
-            - name: OS_USER_DOMAIN_NAME
-              value: "Default"
-            - name: OS_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: nova-nanny-secret
-                  key:  nova_nanny_os_password
-          resources:
-            requests:
-              memory: "3000Mi"
-              cpu: "25m"
-            limits:
-              memory: "3000Mi"
-              cpu: "100m"
 {{- end }}
 {{- end }}
 {{- end }}
