@@ -1,7 +1,7 @@
 {
     "policy": {
-        "policy_id": "otel-_DS_NAME_-ism",
-        "description": "Datastream ism policy for otel-_DS_NAME_ds",
+        "policy_id": "_DS_NAME_-ism",
+        "description": "Datastream ism policy for _DS_NAME_ds",
         "schema_version": _SCHEMAVERSION_,
         "default_state": "initial",
         "states": [
@@ -60,7 +60,7 @@
         "ism_template": 
             {
                 "index_patterns": [
-                    "otel-_DS_NAME_-datastream"
+                    "_DS_NAME_-datastream"
                 ],
                 "priority": 1
             }

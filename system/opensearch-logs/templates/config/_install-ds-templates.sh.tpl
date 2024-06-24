@@ -40,7 +40,7 @@ if [ "${DATA_STREAM_ENABLED}" = true ]; then
      export DS_ISM_TEMPLATE=ds-ism.json
      cp /${FILEPATH}/${DS_ISM_TEMPLATE} ${TMPPATH}/${e}-${DS_ISM_TEMPLATE}
      echo "Applying ${e}-${DS_ISM_TEMPLATE} to ${CLUSTER_HOST}"
-     sed -i "s/_DS_NAME_/${e}/g" ${FILEPATH}/${e}-${DS_ISM_TEMPLATE}
+     sed -i "s/_DS_NAME_/${e}/g" ${TMPPATH}/${e}-${DS_ISM_TEMPLATE}
      sed -i "s/_SCHEMAVERSION_/${SCHEMA_VERSION}/g" ${TMPPATH}/${e}-${DS_ISM_TEMPLATE}
      # initial upload or test if ism policy exists
      export POLICY_RETURN_CODE=$( curl -s -o /dev/null -s -w "%{http_code}\n" -u "${ADMIN_USER}:${ADMIN_PASSWORD}" -XGET "${CLUSTER_HOST}/_plugins/_ism/policies/ds-${e}-ism")
