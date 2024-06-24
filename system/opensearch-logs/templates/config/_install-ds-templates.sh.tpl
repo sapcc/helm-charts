@@ -13,7 +13,7 @@ if [ "${DATA_STREAM_ENABLED}" = true ]; then
      cp /${FILEPATH}/${DS_TEMPLATE} ${TMPPATH}/${e}-${DS_TEMPLATE}
      echo "Applying ${e}-${DS_TEMPLATE} to ${CLUSTER_HOST}"
      sed -i "s/_DS_NAME_/${e}/g" ${TMPPATH}/${e}-${DS_TEMPLATE}
-     if  grep -q "$e" "${FILEPATH}/${e}-${DS_TEMPLATE}" ; then
+     if  grep -q "$e" "${TMPPATH}/${e}-${DS_TEMPLATE}" ; then
          curl -u "${ADMIN_USER}:${ADMIN_PASSWORD}" -H 'Content-Type: application/json' -XPUT "${CLUSTER_HOST}/_index_template/${e}-datastream" -d @${TMPPATH}/${e}-${DS_TEMPLATE}
          echo "\nUpload of ds template for datastream ${e} done"
      else
