@@ -6,7 +6,7 @@
 if [ "${DATA_STREAM_ENABLED}" = true ]; then
    for e in ${DATA_STREAMS}; do
      export FILEPATH=/scripts
-     export TMPPATH=/scripts
+     export TMPPATH=/tmp
      export DS_TEMPLATE=ds.json
 
      echo "creating file FILE=${TMPPATH}/${e}"
