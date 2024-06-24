@@ -69,7 +69,7 @@ if [ "${DATA_STREAM_ENABLED}" = true ]; then
        if [ -z ${CLUSTER_RETENTION_SCHEMA_VERSION+x} ]; then
          echo -e "secret database schema_version: ${CLUSTER_RETENTION_SCHEMA_VERSION}\n"
        else
-         echo -e variable CLUSTER_RETENTION_SCHEMA_VERSION is empty or not existing\n"
+         echo -e "variable CLUSTER_RETENTION_SCHEMA_VERSION is empty or not existing\n"
        fi
 
        if [ "${FILE_RETENTION_SCHEMA_VERSION}" -gt "${CLUSTER_RETENTION_SCHEMA_VERSION}" ]; then
