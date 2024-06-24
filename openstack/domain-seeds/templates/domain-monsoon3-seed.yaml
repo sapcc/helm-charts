@@ -1,183 +1,253 @@
 {{- if ne .Values.global_setup true }}
-apiVersion: "openstack.stable.sap.cc/v1"
-kind: "OpenstackSeed"
+apiVersion: seeder.cloud.sap/v1
+kind: CcloudSeed
 metadata:
   name: domain-monsoon3-seed
+  annotations:
+    operatorVersion: "1.0"
   labels:
     app: {{ template "fullname" . }}
     chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
     release: "{{ .Release.Name }}"
     heritage: "{{ .Release.Service }}"
 spec:
-  requires:
-    - {{.Values.global.keystoneNamespace}}/keystone-seed
-
+  openstack:
   domains:
-  - name: monsoon3
-    description: 'Monsoon Converged Cloud Domain'
+    - name: monsoon3
+      description: 'Monsoon Converged Cloud Domain'
+      config:
+        identity:
+          driver: {{ .Values.ldapDriver | default "cc_ldap" }}
+        ldap:
+          page_size: 1000
+          use_tls: false
+          tls_req_cert: allow
+          url: {{ .Values.ldapUrl | quote }}
+          user: {{ .Values.ldapUser | quote }}
+          password: {{ required "A valid .Values.ldapPassword required!" .Values.ldapPassword | quote }}
+          suffix: {{ .Values.ldapSuffix | quote }}
+          query_scope: one
+          user_tree_dn: OU=Identities,{{ .Values.ldapSuffix }}
+          user_objectclass: user
+          user_id_attribute: cn
+          user_name_attribute: name
+          user_mail_attribute: mail
+          user_pass_attribute: userPassword
+          user_description_attribute: displayName
+          user_enabled_attribute: userAccountControl
+          user_enabled_mask: 2
+          user_enabled_default: "512"
+          user_attribute_ignore: default_project_id
+          user_filter: (|(memberOf=CN=MONSOON3_DOMAIN_USERS,OU=MONSOON3,OU=OSDomains,OU=CCloud,{{ .Values.ldapSuffix }})(memberOf=CN=MONSOON3_TECHNICAL_USERS,OU=MONSOON3,OU=OSDomains,OU=CCloud,{{ .Values.ldapSuffix }}))
+          group_tree_dn: OU=MONSOON3,OU=OSDomains,OU=CCloud,{{ .Values.ldapSuffix }}
+          group_objectclass: group
+          group_id_attribute: cn
+          group_name_attribute: name
+          group_desc_attribute: description
+          group_member_attribute: member
+          use_pool: {{ .Values.ldapUsePool }}
+          pool_size: 100
+          use_auth_pool: {{ .Values.ldapUseAuthPool }}
+          auth_pool_size: 100
+          auth_pool_connection_lifetime: 60
+          debug_level: {{ .Values.ldapDebugLevel }}
 
     projects:
     - name: admin
+      domain: monsoon3
       description: 'Monsoon 3 Administrators Project'
     - name: monsoon3-net-infra
+      domain: monsoon3
       description: 'Home of address-scopes, subnetpools, external networks, subnets for the monsoon3 domain'
     - name: monsoon3-shared-infra
+      domain: monsoon3
       description: 'Home of private networks, backup networks and routers for the monsoon3 domain'
     - name: cc-demo
+      domain: monsoon3
       description: 'Demos and Tests'
     - name: os-image-testing
+      domain: monsoon3
       description: 'Manually testing and automatically build OS images.'
     - name: os-image-blackbox
+      domain: monsoon3
       description: 'Automatically blackbox testing in image publishing process'
     - name: support
+      domain: monsoon3
       description: 'Support Teams'
     - name: api_support
+      domain: monsoon3
       description: 'Core API Support'
       parent: support
     - name: compute_support
+      domain: monsoon3
       description: 'Compute Support'
       parent: support
     - name: storage_support
+      domain: monsoon3
       description: 'Storage Support'
       parent: support
     - name: network_support
+      domain: monsoon3
       description: 'Network Support'
       parent: support
     - name: service_desk
+      domain: monsoon3
       description: 'Service Desk'
       parent: support
 
     groups:
     - name: MONSOON3_API_SUPPORT
-      role_assignments:
-      - domain: monsoon3
-        role: admin
-      - domain: monsoon3
-        role: cloud_identity_viewer
-        inherited: true
-      - project: api_support
-        role: admin
-      - project: api_support
-        role: member
-
+      domain: monsoon3
     - name: MONSOON3_COMPUTE_SUPPORT
-      role_assignments:
-      - domain: monsoon3
-        role: cloud_identity_viewer
-        inherited: true
-      - project: compute_support
-        role: admin
-      - project: compute_support
-        role: member
-
+      domain: monsoon3
     - name: MONSOON3_STORAGE_SUPPORT
-      role_assignments:
-      - domain: monsoon3
-        role: cloud_identity_viewer
-        inherited: true
-      - project: storage_support
-        role: admin
-      - project: storage_support
-        role: member
-
+      domain: monsoon3
     - name: MONSOON3_NETWORK_SUPPORT
-      role_assignments:
-      - domain: monsoon3
-        role: cloud_identity_viewer
-        inherited: true
-      - project: network_support
-        role: admin
-      - project: network_support
-        role: member
-
+      domain: monsoon3
     - name: MONSOON3_SERVICE_DESK
-      role_assignments:
-      - domain: monsoon3
-        role: cloud_identity_viewer
-        inherited: true
-      - project: service_desk
-        role: admin
-      - project: service_desk
-        role: member
-
+      domain: monsoon3
     - name: MONSOON3_DOMAIN_ADMINS
-      role_assignments:
-      - domain: monsoon3
-        role: admin
-      - domain: monsoon3
-        role: member
-      - project: admin
-        role: admin
-      - project: admin
-        role: member
-      - project: cc-demo
-        role: admin
-      - project: cc-demo
-        role: member
-      - project: support
-        role: member
-      - project: support
-        role: admin
-      - project: os-image-testing
-        role: admin
-      - project: os-image-testing
-        role: member
-      - project: os-image-blackbox
-        role: admin
-      - project: os-image-blackbox
-        role: member
-
+      domain: monsoon3
     - name: MONSOON3_DOMAIN_MEMBERS
-      role_assignments:
-      - domain: monsoon3
-        role: member
-
+      domain: monsoon3
     - name: MONSOON3_DOMAIN_NETWORK_ADMINS
-      role_assignments:
-      - project: monsoon3-net-infra
-        role: admin
-      - project: monsoon3-shared-infra
-        role: admin
-
+      domain: monsoon3
     - name: MONSOON3_DOMAIN_RESOURCE_ADMINS
-      role_assignments:
-      - domain: monsoon3
-        role: admin
+      domain: monsoon3
 
-    config:
-      identity:
-        driver: {{ .Values.ldapDriver | default "cc_ldap" }}
-      ldap:
-        page_size: 1000
-        use_tls: false
-        tls_req_cert: allow
-        url: {{ .Values.ldapUrl | quote }}
-        user: {{ .Values.ldapUser | quote }}
-        password: {{ required "A valid .Values.ldapPassword required!" .Values.ldapPassword | quote }}
-        suffix: {{ .Values.ldapSuffix | quote }}
-        query_scope: one
-        user_tree_dn: OU=Identities,{{ .Values.ldapSuffix }}
-        user_objectclass: user
-        user_id_attribute: cn
-        user_name_attribute: name
-        user_mail_attribute: mail
-        user_pass_attribute: userPassword
-        user_description_attribute: displayName
-        user_enabled_attribute: userAccountControl
-        user_enabled_mask: 2
-        user_enabled_default: "512"
-        user_attribute_ignore: default_project_id
-        user_filter: (|(memberOf=CN=MONSOON3_DOMAIN_USERS,OU=MONSOON3,OU=OSDomains,OU=CCloud,{{ .Values.ldapSuffix }})(memberOf=CN=MONSOON3_TECHNICAL_USERS,OU=MONSOON3,OU=OSDomains,OU=CCloud,{{ .Values.ldapSuffix }}))
-        group_tree_dn: OU=MONSOON3,OU=OSDomains,OU=CCloud,{{ .Values.ldapSuffix }}
-        group_objectclass: group
-        group_id_attribute: cn
-        group_name_attribute: name
-        group_desc_attribute: description
-        group_member_attribute: member
-        use_pool: {{ .Values.ldapUsePool }}
-        pool_size: 100
-        use_auth_pool: {{ .Values.ldapUseAuthPool }}
-        auth_pool_size: 100
-        auth_pool_connection_lifetime: 60
-        debug_level: {{ .Values.ldapDebugLevel }}
+    role_assignments:
+    - group: "MONSOON3_API_SUPPORT"
+      domain: monsoon3
+      role: admin
+    - group: "MONSOON3_API_SUPPORT"
+      domain: monsoon3
+      role: cloud_identity_viewer
+      inherited: true
+    - group: "MONSOON3_API_SUPPORT"
+      domain: monsoon3
+      project: api_support
+      role: admin
+    - group: "MONSOON3_API_SUPPORT"
+      domain: monsoon3
+      project: api_support
+      role: member
+
+    - group: "MONSOON3_COMPUTE_SUPPORT"
+      domain: monsoon3
+      role: cloud_identity_viewer
+      inherited: true
+    - group: "MONSOON3_COMPUTE_SUPPORT"
+      domain: monsoon3
+      project: compute_support
+      role: admin
+    - group: "MONSOON3_COMPUTE_SUPPORT"
+      domain: monsoon3
+      project: compute_support
+      role: member
+
+    - group: "MONSOON3_STORAGE_SUPPORT"
+      domain: monsoon3
+      role: cloud_identity_viewer
+      inherited: true
+    - group: "MONSOON3_STORAGE_SUPPORT"
+      domain: monsoon3
+      project: storage_support
+      role: admin
+    - group: "MONSOON3_STORAGE_SUPPORT"
+      domain: monsoon3
+      project: storage_support
+      role: member
+
+    - group: "MONSOON3_NETWORK_SUPPORT"
+      domain: monsoon3
+      role: cloud_identity_viewer
+      inherited: true
+    - group: "MONSOON3_NETWORK_SUPPORT"
+      domain: monsoon3
+      project: network_support
+      role: admin
+    - group: "MONSOON3_NETWORK_SUPPORT"
+      domain: monsoon3
+      project: network_support
+      role: member
+
+    - group: "MONSOON3_SERVICE_DESK"
+      domain: monsoon3
+      role: cloud_identity_viewer
+      inherited: true
+    - group: "MONSOON3_SERVICE_DESK"
+      domain: monsoon3
+      project: service_desk
+      role: admin
+    - group: "MONSOON3_SERVICE_DESK"
+      domain: monsoon3
+      project: service_desk
+      role: member
+
+    - group: "MONSOON3_DOMAIN_ADMINS"
+      domain: monsoon3
+      role: admin
+    - group: "MONSOON3_DOMAIN_ADMINS"
+      domain: monsoon3
+      role: member
+    - group: "MONSOON3_DOMAIN_ADMINS"
+      domain: monsoon3
+      project: admin
+    - group: "MONSOON3_DOMAIN_ADMINS"
+      domain: monsoon3
+      role: admin
+    - group: "MONSOON3_DOMAIN_ADMINS"
+      domain: monsoon3
+      project: admin
+      role: member
+    - group: "MONSOON3_DOMAIN_ADMINS"
+      domain: monsoon3
+      project: cc-demo
+      role: admin
+    - group: "MONSOON3_DOMAIN_ADMINS"
+      domain: monsoon3
+      project: cc-demo
+      role: member
+    - group: "MONSOON3_DOMAIN_ADMINS"
+      domain: monsoon3
+      project: support
+      role: member
+    - group: "MONSOON3_DOMAIN_ADMINS"
+      domain: monsoon3
+      project: support
+      role: admin
+    - group: "MONSOON3_DOMAIN_ADMINS"
+      domain: monsoon3
+      project: os-image-testing
+      role: admin
+    - group: "MONSOON3_DOMAIN_ADMINS"
+      domain: monsoon3
+      project: os-image-testing
+      role: member
+    - group: "MONSOON3_DOMAIN_ADMINS"
+      domain: monsoon3
+      project: os-image-blackbox
+      role: admin
+    - group: "MONSOON3_DOMAIN_ADMINS"
+      domain: monsoon3
+      project: os-image-blackbox
+      role: member
+
+    - group: "MONSOON3_DOMAIN_MEMBERS"
+      domain: monsoon3
+      role: member
+
+    - group: "MONSOON3_DOMAIN_NETWORK_ADMINS"
+      domain: monsoon3
+      project: monsoon3-net-infra
+      role: admin
+    - group: "MONSOON3_DOMAIN_NETWORK_ADMINS"
+      domain: monsoon3
+      project: monsoon3-shared-infra
+      role: admin
+
+    - group: "MONSOON3_DOMAIN_RESOURCE_ADMINS"
+      domain: monsoon3
+      role: admin
+
 {{- end }}
