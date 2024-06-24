@@ -8,6 +8,7 @@ if [ "${DATA_STREAM_ENABLED}" = true ]; then
      export FILEPATH=/scripts
      export TMPPATH=/tmp
      export DS_TEMPLATE=ds.json
+     export DS_ISM_TEMPLATE=ds-ism.json
 
      echo "creating file FILE=${TMPPATH}/${e}"
      cp /${FILEPATH}/${DS_TEMPLATE} ${TMPPATH}/${e}-${DS_TEMPLATE}
@@ -22,7 +23,7 @@ if [ "${DATA_STREAM_ENABLED}" = true ]; then
      fi
    done;
 
-       ####
+   ####
    ### Datastream ism template creation
    ####
    # simple script to update ism ds policy.
@@ -37,9 +38,9 @@ if [ "${DATA_STREAM_ENABLED}" = true ]; then
    # After a new ds ism template is installed, it is only active after a rollover of the datastream, This means after the default 24h period or a manuall rover, which can also be triggered by a job.
    echo "Datastream ism template creation"
    for e in ${DATA_STREAMS}; do
-     export DS_ISM_TEMPLATE=ds-ism.json
+     # we have to copy the template from the scripts secrets to a directory, where we can change the template.
      cp /${FILEPATH}/${DS_ISM_TEMPLATE} ${TMPPATH}/${e}-${DS_ISM_TEMPLATE}
-     echo "Applying ${e}-${DS_ISM_TEMPLATE} to ${CLUSTER_HOST}"
+     echo "Applying ${TMPPATH}/${e}-${DS_ISM_TEMPLATE} to ${CLUSTER_HOST}"
      sed -i "s/_DS_NAME_/${e}/g" ${TMPPATH}/${e}-${DS_ISM_TEMPLATE}
      sed -i "s/_SCHEMAVERSION_/${SCHEMA_VERSION}/g" ${TMPPATH}/${e}-${DS_ISM_TEMPLATE}
      # initial upload or test if ism policy exists
@@ -59,9 +60,17 @@ if [ "${DATA_STREAM_ENABLED}" = true ]; then
        export CLUSTER_RETENTION_SCHEMA_VERSION=$(echo ${CLUSTER_RETENTION_RESPONSE} | jq .policy.schema_version?)
        export CLUSTER_RETENTION_RUN_PRIM_TERM=$(echo ${CLUSTER_RETENTION_RESPONSE} | jq ._primary_term?)
        export CLUSTER_RETENTION_SEQ_NUMBER=$(echo ${CLUSTER_RETENTION_RESPONSE} | jq ._seq_no?)
-
-       echo -e "\nsecret file schema_version: ${FILE_RETENTION_SCHEMA_VERSION}"
-       echo -e "\nsecret installed schema_version: ${CLUSTER_RETENTION_SCHEMA_VERSION}"
+      
+       if [ -z ${FILE_RETENTION_SCHEMA_VERSION+x} ]; then
+         echo -e "secret env variable schema_version: ${FILE_RETENTION_SCHEMA_VERSION}"
+       else
+         echo -e "Variable FILE_RETENTION_SCHEMA_VERSION is empty or not existing\n"
+       fi
+       if [ -z ${CLUSTER_RETENTION_SCHEMA_VERSION+x} ]; then
+         echo -e "secret database schema_version: ${CLUSTER_RETENTION_SCHEMA_VERSION}\n"
+       else
+         echo -e variable CLUSTER_RETENTION_SCHEMA_VERSION is empty or not existing\n"
+       fi
 
        if [ "${FILE_RETENTION_SCHEMA_VERSION}" -gt "${CLUSTER_RETENTION_SCHEMA_VERSION}" ]; then
          echo -e "\nupload of new ism template with primary number: ${CLUSTER_RETENTION_RUN_PRIM_TERM} and existing sequence number: ${CLUSTER_RETENTION_SEQ_NUMBER}\n"
