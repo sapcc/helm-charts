@@ -72,6 +72,8 @@ if [ "${DATA_STREAM_ENABLED}" = true ]; then
          echo "secret database schema_version: ${CLUSTER_RETENTION_SCHEMA_VERSION}"
        fi
        if [ "${FILE_RETENTION_SCHEMA_VERSION}" -gt "${CLUSTER_RETENTION_SCHEMA_VERSION}" ]; then
+         echo "Deleting old policy ds-${e}-ism"
+         curl -u "${ADMIN_USER}:${ADMIN_PASSWORD}" -XDELETE "${CLUSTER_HOST}/_plugins/_ism/policies/ds-${e}-ism"
          echo -e "\nupload of new ism template with primary number: ${CLUSTER_RETENTION_RUN_PRIM_TERM} and existing sequence number: ${CLUSTER_RETENTION_SEQ_NUMBER}\n"
          curl -u "${ADMIN_USER}:${ADMIN_PASSWORD}" -XPUT "${CLUSTER_HOST}/_plugins/_ism/policies/ds-${e}-ism?if_seq_no=${CLUSTER_RETENTION_SEQ_NUMBER}&if_primary_term=${CLUSTER_RETENTION_RUN_PRIM_TERM}" -H 'Content-Type: application/json' -d @${TMPPATH}/ds-${e}-${DS_ISM_TEMPLATE}
          cat ${TMPPATH}/ds-${e}-${DS_ISM_TEMPLATE}
