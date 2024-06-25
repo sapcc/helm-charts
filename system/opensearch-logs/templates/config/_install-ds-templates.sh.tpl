@@ -16,7 +16,7 @@ if [ "${DATA_STREAM_ENABLED}" = true ]; then
      sed -i "s/_DS_NAME_/${e}/g" ${TMPPATH}/${e}-${DS_TEMPLATE}
      if  grep -q "$e" "${TMPPATH}/${e}-${DS_TEMPLATE}" ; then
          curl -u "${ADMIN_USER}:${ADMIN_PASSWORD}" -H 'Content-Type: application/json' -XPUT "${CLUSTER_HOST}/_index_template/${e}-datastream" -d @${TMPPATH}/${e}-${DS_TEMPLATE}
-         echo "\nUpload of ds template for datastream ${e} done"
+         echo -e "\nUpload of ds template for datastream ${e} done"
      else
        echo "\n${TMPPATH}/${e}-${DS_TEMPLATE} is missing or the replacement was not successful."
        exit 1
@@ -61,12 +61,12 @@ if [ "${DATA_STREAM_ENABLED}" = true ]; then
        export CLUSTER_RETENTION_RUN_PRIM_TERM=$(echo ${CLUSTER_RETENTION_RESPONSE} | jq ._primary_term?)
        export CLUSTER_RETENTION_SEQ_NUMBER=$(echo ${CLUSTER_RETENTION_RESPONSE} | jq ._seq_no?)
       
-       if [ -z ${FILE_RETENTION_SCHEMA_VERSION+x} ]; then
+       if [ -z ${FILE_RETENTION_SCHEMA_VERSION} ]; then
          echo -e "secret env variable schema_version: ${FILE_RETENTION_SCHEMA_VERSION}"
        else
          echo -e "Variable FILE_RETENTION_SCHEMA_VERSION is empty or not existing\n"
        fi
-       if [ -z ${CLUSTER_RETENTION_SCHEMA_VERSION+x} ]; then
+       if [ -z ${CLUSTER_RETENTION_SCHEMA_VERSION} ]; then
          echo -e "secret database schema_version: ${CLUSTER_RETENTION_SCHEMA_VERSION}\n"
        else
          echo -e "variable CLUSTER_RETENTION_SCHEMA_VERSION is empty or not existing\n"
