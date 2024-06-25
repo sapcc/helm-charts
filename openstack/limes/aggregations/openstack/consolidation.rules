@@ -52,8 +52,12 @@ groups:
       expr: 100 * sum by (availability_zone, service, resource) (max by (project_id, availability_zone, service, resource) (last_over_time(limes_project_used_and_or_committed_per_az[15m]))) / max by (availability_zone, service, resource) (last_over_time(limes_cluster_capacity_per_az[15m]))
 
     # Total amount of all commitments pending confirmation for a resource.
+    #
+    # The `or 0 * ...` part ensures that this metric family always has entries. Without this, we would get an absent metric alert for this metric family when there are no commitments in state "pending".
     - record: stabilized:limes_pending_commitments_per_az
-      expr: sum by (availability_zone, service, resource) (max by (project_id, availability_zone, service, resource) (last_over_time(limes_project_committed_per_az{state="pending"}[15m])))
+      expr: >
+        sum by (availability_zone, service, resource) (max by (project_id, availability_zone, service, resource) (last_over_time(limes_project_committed_per_az{state="pending"}[15m])))
+        or 0 * sum by (availability_zone, service, resource) (max by (project_id, availability_zone, service, resource) (last_over_time(limes_project_committed_per_az{state="active"}[15m])))
 
     # misc.
     - record: stabilized:limes_autogrow_quota_overcommit_threshold_percent
