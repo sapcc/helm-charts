@@ -61,17 +61,17 @@ if [ "${DATA_STREAM_ENABLED}" = true ]; then
        export CLUSTER_RETENTION_RUN_PRIM_TERM=$(echo ${CLUSTER_RETENTION_RESPONSE} | jq ._primary_term?)
        export CLUSTER_RETENTION_SEQ_NUMBER=$(echo ${CLUSTER_RETENTION_RESPONSE} | jq ._seq_no?)
       
-       if [ -z ${FILE_RETENTION_SCHEMA_VERSION} ]; then
-         echo -e "Variable FILE_RETENTION_SCHEMA_VERSION is empty or not existing\n"
+       if [ -z ${SCHEMA_VERSION} ]; then
+         echo -e "Variable SCHEMA_VERSION is empty or not existing\n"
        else
-         echo -e "secret env variable schema_version: ${FILE_RETENTION_SCHEMA_VERSION}"
+         echo -e "secret env variable schema_version: ${SCHEMA_VERSION}"
        fi
        if [ -z ${CLUSTER_RETENTION_SCHEMA_VERSION} ]; then
          echo -e "variable CLUSTER_RETENTION_SCHEMA_VERSION is empty or not existing\n"
        else
          echo "secret database schema_version: ${CLUSTER_RETENTION_SCHEMA_VERSION}"
        fi
-       if [ "${FILE_RETENTION_SCHEMA_VERSION}" -gt "${CLUSTER_RETENTION_SCHEMA_VERSION}" ]; then
+       if [ "${SCHEMA_VERSION}" -gt "${CLUSTER_RETENTION_SCHEMA_VERSION}" ]; then
          echo -e "\nupload of new ism template with primary number: ${CLUSTER_RETENTION_RUN_PRIM_TERM} and existing sequence number: ${CLUSTER_RETENTION_SEQ_NUMBER}\n"
          curl -u "${ADMIN_USER}:${ADMIN_PASSWORD}" -XPUT "${CLUSTER_HOST}/_plugins/_ism/policies/ds-${e}-ism?if_seq_no=${CLUSTER_RETENTION_SEQ_NUMBER}&if_primary_term=${CLUSTER_RETENTION_RUN_PRIM_TERM}" -H 'Content-Type: application/json' -d @${TMPPATH}/ds-${e}-${DS_ISM_TEMPLATE}
          export NEW_CLUSTER_RETENTION_SCHEMA_VERSION=$(curl -s -u "${ADMIN_USER}:${ADMIN_PASSWORD}" -XGET "${CLUSTER_HOST}/_plugins/_ism/policies/ds-${e}-ism"|jq .policy.schema_version?)
