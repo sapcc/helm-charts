@@ -2,7 +2,7 @@
     "policy": {
         "policy_id": "otel-_DS_NAME_-ism",
         "description": "Datastream ism policy for _DS_NAME_-ds",
-        "schema_version": _FILE_RETENTION_SCHEMA_VERSION_,
+        "schema_version": _SCHEMAVERSION_,
         "default_state": "initial",
         "states": [
             {
