@@ -47,9 +47,10 @@ if [ "${DATA_STREAM_ENABLED}" = true ]; then
      export POLICY_RETURN_CODE=$( curl -s -o /dev/null -s -w "%{http_code}\n" -u "${ADMIN_USER}:${ADMIN_PASSWORD}" -XGET "${CLUSTER_HOST}/_plugins/_ism/policies/ds-${e}-ism")
      echo -e "\nReturn code is $POLICY_RETURN_CODE\n"
      if [ "${POLICY_RETURN_CODE}" -eq 404 ]; then
-        # 1. Part: install of new ds policy
-        echo -e "inital upload of ds policy"
+        # 1. Part: install of new ds ism policy
+        echo -e "inital upload of datastream ism policy"
         echo -e "Upload ds policy, there is no policy "ds-${e}-ism" installed"
+        cat ${TMPPATH}/ds-${e}-${DS_ISM_TEMPLATE}
         curl -u "${ADMIN_USER}:${ADMIN_PASSWORD}" -XPUT "${CLUSTER_HOST}/_plugins/_ism/policies/ds-${e}-ism" -H 'Content-Type: application/json' -d @${TMPPATH}/ds-${e}-${DS_ISM_TEMPLATE}
      else
        # update of existing policy
