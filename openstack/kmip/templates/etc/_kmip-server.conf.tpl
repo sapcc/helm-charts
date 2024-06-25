@@ -2,9 +2,9 @@
 database_path=mysql://kmip:{{ .Values.kmip.database.password }}@{{include "db_host" .}}:3306/kmip
 hostname=0.0.0.0
 port=5696
-certificate_path=/etc/kmip/certs/server.crt
-key_path=/etc/kmip/certs/server.key
-ca_path=/etc/kmip/certs/ca.crt
+certificate_path=/etc/pykmip/certs/server.crt
+key_path=/etc/pykmip/certs/server.key
+ca_path=/etc/pykmip/certs/ca.crt
 auth_suite=TLS1.2
 policy_path=/etc/pykmip/policies
 enable_tls_client_auth=False
