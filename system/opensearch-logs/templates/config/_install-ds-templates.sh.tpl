@@ -74,6 +74,7 @@ if [ "${DATA_STREAM_ENABLED}" = true ]; then
        if [ "${FILE_RETENTION_SCHEMA_VERSION}" -gt "${CLUSTER_RETENTION_SCHEMA_VERSION}" ]; then
          echo -e "\nupload of new ism template with primary number: ${CLUSTER_RETENTION_RUN_PRIM_TERM} and existing sequence number: ${CLUSTER_RETENTION_SEQ_NUMBER}\n"
          curl -u "${ADMIN_USER}:${ADMIN_PASSWORD}" -XPUT "${CLUSTER_HOST}/_plugins/_ism/policies/ds-${e}-ism?if_seq_no=${CLUSTER_RETENTION_SEQ_NUMBER}&if_primary_term=${CLUSTER_RETENTION_RUN_PRIM_TERM}" -H 'Content-Type: application/json' -d @${TMPPATH}/ds-${e}-${DS_ISM_TEMPLATE}
+         cat ${TMPPATH}/ds-${e}-${DS_ISM_TEMPLATE}
          export NEW_CLUSTER_RETENTION_SCHEMA_VERSION=$(curl -s -u "${ADMIN_USER}:${ADMIN_PASSWORD}" -XGET "${CLUSTER_HOST}/_plugins/_ism/policies/ds-${e}-ism"|jq .policy.schema_version?)
          echo -e "\nNew schema_version is: ${NEW_CLUSTER_RETENTION_SCHEMA_VERSION}\n, increase this value by 1 to install new ism policy for ds-${e}-ism\n"
        else
