@@ -145,6 +145,8 @@ nebula:
     zoneID: {{ .Values.postfixDNS.zoneID }}
     auth:
       auth_url: {{ .Values.postfixDNS.auth.auth_url }}
+  postfixMgmt:
+    url: {{ .Values.postfixMgmt.url }}
   ldap:
     url: "{{ tpl .Values.postfix.ldap.url $ }}"
     {{- if .Values.postfix.ldap.clientKeyPath }}
