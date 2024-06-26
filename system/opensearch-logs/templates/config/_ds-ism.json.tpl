@@ -1,7 +1,7 @@
 {
     "policy": {
         "policy_id": "otel-_DS_NAME_-ism",
-        "description": "Datastream ism policy for otel-_DS_NAME_ds",
+        "description": "Datastream (ds) ism policy for _DS_NAME_-ds",
         "schema_version": _SCHEMAVERSION_,
         "default_state": "initial",
         "states": [
@@ -22,7 +22,7 @@
                 "actions": [
                     {
                         "retry": {
-                            "count": 3,
+                            "count": 5,
                             "backoff": "exponential",
                             "delay": "1m"
                         },
@@ -57,7 +57,7 @@
                 "transitions": []
             }
         ],
-        "ism_template": 
+        "ism_template":
             {
                 "index_patterns": [
                     "otel-_DS_NAME_-datastream"
