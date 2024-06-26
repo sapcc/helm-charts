@@ -7,8 +7,6 @@ simulator:
   smtpHost: {{ .Values.simulator.smtpHost }}
   smtpPort: {{ .Values.simulator.smtpPort }}
   sesUsername: {{ .Values.simulator.sesUsername }}
-  sesSecret: {{ .Values.simulator.sesSecret }}
-  smtpPassword: {{ .Values.simulator.smtpPassword }}
   sesApiEndpoint: {{ .Values.simulator.sesApiEndpoint }}
   nebulaApiEndpoint: {{ .Values.simulator.nebulaApiEndpoint }}
   pushgatewayUrl: {{ .Values.simulator.pushgatewayUrl }}
@@ -41,5 +39,4 @@ simulator:
       region: {{ .Values.config.keystone.region }}
       userDomainName: {{ .Values.config.keystone.userDomainName }}
       username: {{ .Values.config.keystone.username }}
-      password: {{ .Values.global.cronus_service_password }}
 {{- end }}
