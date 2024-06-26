@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.29.0 - 2024/06/26
+* the supported storageclasses `cinder` and `nfs` will only be enabled if a persistent volume has been defined with `volumeClaimTemplates.volume.storageClassName` option
+  * to avoid unexpected and not required storageclasses in the cluster
+  * unit tests added
+* chart version bumped
+
 ## v0.28.0 - 2024/06/18
 * ccroot user added
   * for passwordless local root access

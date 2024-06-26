@@ -46,7 +46,7 @@ Docker images and Helm chart to deploy a [MariaDB](https://mariadb.com/kb/en/get
 ## Metadata
 | chart version | app version | type | url |
 |:--------------|:-------------|:-------------|:-------------|
-| 0.28.0 | 10.5.25 | application | [Git repo](https://github.com/sapcc/helm-charts/tree/master/common/mariadb-galera) |
+| 0.29.0 | 10.5.25 | application | [Git repo](https://github.com/sapcc/helm-charts/tree/master/common/mariadb-galera) |
 
 | Name | Email | Url |
 | ---- | ------ | --- |
@@ -166,7 +166,7 @@ docker build --build-arg BASE_SOFT_NAME=ubuntu --build-arg BASE_SOFT_VERSION=22.
   ```
 * [push](https://helm.sh/docs/topics/registries/#the-push-subcommand) the chart to the registry
   ```shell
-  helm push mariadb-galera-0.28.0.tgz oci://keppel.eu-de-1.cloud.sap/ccloud-helm/
+  helm push mariadb-galera-0.29.0.tgz oci://keppel.eu-de-1.cloud.sap/ccloud-helm/
   ```
 
 ### values description
@@ -693,16 +693,16 @@ docker build --build-arg BASE_SOFT_NAME=ubuntu --build-arg BASE_SOFT_VERSION=22.
 | userId.proxy | string | 3100 | run the ProxySQL/HAProxy containers with that [user id](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-container) |
 | volumeClaimTemplates.mariabackup.accessModes | list | `["ReadWriteMany"]` | [access mode](https://kubernetes.io/docs/concepts/storage/persistent-volumes/#access-modes) for the MariaDB backup volume (used by Kopia) |
 | volumeClaimTemplates.mariabackup.capacity | string | `"100Gi"` | capacity for the MariaDB backup volume |
-| volumeClaimTemplates.mariabackup.storageClassName | string | `"nfs"` | custom storageclass (currently `nfs` is supported) for the MariaDB backup volume to allow the shared access for all Kopia pods |
+| volumeClaimTemplates.mariabackup.storageClassName | string | `nil` | custom storageclass (currently `nfs` is supported) for the MariaDB backup volume to allow the shared access for all Kopia pods |
 | volumeClaimTemplates.mariadb.accessModes | list | `["ReadWriteOnce"]` | [access mode](https://kubernetes.io/docs/concepts/storage/persistent-volumes/#access-modes) for the MariaDB data volume |
 | volumeClaimTemplates.mariadb.capacity | string | `"10Gi"` | capacity for the MariaDB data volume |
-| volumeClaimTemplates.mariadb.storageClassName | bool | `false` | custom storageclass (currently `cinder` and `nfs` are supported) for the MariaDB data volume |
+| volumeClaimTemplates.mariadb.storageClassName | string | `nil` | custom storageclass (currently `cinder` and `nfs` are supported) for the MariaDB data volume |
 | volumeClaimTemplates.marialog.accessModes | list | `["ReadWriteOnce"]` | [access mode](https://kubernetes.io/docs/concepts/storage/persistent-volumes/#access-modes) for the MariaDB log volume |
 | volumeClaimTemplates.marialog.capacity | string | `"30Gi"` | capacity for the MariaDB log volume |
-| volumeClaimTemplates.marialog.storageClassName | bool | `false` | custom storageclass (currently `cinder` and `nfs` are supported) for the MariaDB log volume |
+| volumeClaimTemplates.marialog.storageClassName | string | `nil` | custom storageclass (currently `cinder` and `nfs` are supported) for the MariaDB log volume |
 | volumeClaimTemplates.proxysql.accessModes | list | `["ReadWriteOnce"]` | [access mode](https://kubernetes.io/docs/concepts/storage/persistent-volumes/#access-modes) for the ProxySQL data volume |
 | volumeClaimTemplates.proxysql.capacity | string | `"128Mi"` | capacity for the ProxySQL data volume |
-| volumeClaimTemplates.proxysql.storageClassName | bool | `false` | custom storageclass (currently `cinder` and `nfs` are supported) for the ProxySQL data volume |
+| volumeClaimTemplates.proxysql.storageClassName | string | `nil` | custom storageclass (currently `cinder` and `nfs` are supported) for the ProxySQL data volume |
 | volumeMounts.backup.kopia.data.claimName | string | `"mariabackup"` | name for the [persistent volume claim](https://kubernetes.io/docs/concepts/storage/persistent-volumes/#persistentvolumeclaims) requested for the Kopia [data directory](https://mariadb.com/kb/en/server-system-variables/#datadir) |
 | volumeMounts.backup.kopia.data.enabled | bool | `false` | enable this volume |
 | volumeMounts.backup.kopia.data.mountPath | string | `"/opt/kopia/data"` | mount path of the persistent volume in the container used for the MariaDB data directory |
