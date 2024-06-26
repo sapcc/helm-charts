@@ -315,3 +315,37 @@ app.kubernetes.io/version: {{ $.Chart.Version }}
 app.kubernetes.io/component: MariaDB-Galera
 app.kubernetes.io/part-of: {{ $.Release.Name }}
 {{- end }}
+
+{{- define "storageclassCinder" }}
+---
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: {{ include "commonPrefix" $ }}-cinder
+  labels:
+    {{- include "sharedservices.labels" $ | indent 4 }}
+parameters:
+  type: vmware
+provisioner: cinder.csi.openstack.org
+reclaimPolicy: Delete
+volumeBindingMode: WaitForFirstConsumer
+allowVolumeExpansion: true
+{{- end }}
+
+{{- define "storageclassNfs" }}
+---
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: {{ include "commonPrefix" $ }}-nfs
+  labels:
+    {{- include "sharedservices.labels" $ | indent 4 }}
+parameters:
+  pathPattern: "${.PVC.namespace}-${.PVC.name}"
+  onDelete: "delete"
+  archiveOnDelete: "true"
+provisioner: cluster.local/nfs-subdir-external-provisioner
+reclaimPolicy: Delete
+volumeBindingMode: WaitForFirstConsumer
+allowVolumeExpansion: true
+{{- end }}
