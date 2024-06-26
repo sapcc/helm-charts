@@ -870,33 +870,37 @@ logging:
       args: "()"
       formatter: default
     sentry:
-      class: raven.handlers.logging.SentryHandler
+      class: raven.handlers.logging.EventHandler
       level: ERROR
+      args: "()"
+    sentry_breadcrumb:
+      class: raven.handlers.logging.BreadcrumbHandler
+      level: DEBUG
       args: "()"
   loggers:
     root:
-      handlers: stdout, sentry
+      handlers: stdout, sentry, sentry_breadcrumb
       level: WARNING
     migrate:
-      handlers: stdout, sentry
+      handlers: stdout, sentry, sentry_breadcrumb
       level: INFO
     nova:
-      handlers: stdout, sentry
+      handlers: stdout, sentry, sentry_breadcrumb
       level: INFO
     nova.scheduler:
-      handlers: stdout, sentry
+      handlers: stdout, sentry, sentry_breadcrumb
       level: DEBUG
     nova.scheduler.host_manager: # You might get problems with unicodedecode errors if you decrease that
-      handlers: stdout, sentry
+      handlers: stdout, sentry, sentry_breadcrumb
       level: INFO
     nova.virt.vmwareapi:
-      handlers: stdout, sentry
+      handlers: stdout, sentry, sentry_breadcrumb
       level: DEBUG
     eventlet.wsgi.server:
-      handlers: stdout, sentry
+      handlers: stdout, sentry, sentry_breadcrumb
       level: INFO
     oslo.privsep:
-      handlers: stdout, sentry
+      handlers: stdout, sentry, sentry_breadcrumb
       level: INFO
     suds:
       handlers: "null"
