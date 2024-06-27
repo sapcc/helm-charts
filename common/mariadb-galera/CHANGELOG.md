@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.29.1 - 2024/06/27
+* container image path for `fix-fs-permissions` init container fixed
+  * unit tests added
+* chart version bumped
+
 ## v0.29.0 - 2024/06/26
 * the supported storageclasses `cinder` and `nfs` will only be enabled if a persistent volume has been defined with `volumeClaimTemplates.volume.storageClassName` option
   * to avoid unexpected and not required storageclasses in the cluster
