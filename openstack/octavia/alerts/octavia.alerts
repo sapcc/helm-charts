@@ -73,9 +73,40 @@ groups:
     annotations:
       description: Loadbalancers in {{ $labels.loadbalancer_host }} gone to ERROR state
       summary: Openstack Octavia Metric to monitor erroneous loadbalancers
+  - alert: OctaviaLoadBalancerStuckInPendingKubeServices
+    expr: octavia_seconds_since_last_nonpending_status{loadbalancer_name=~"kube_service_e2e.*|kube_service_shoot.*"} > 30 * 60
+    labels:
+      no_alert_on_absence: "true"
+      context: Load-Balancer stuck
+      dashboard: octavia
+      service: octavia
+      severity: warning
+      support_group: network-api
+      tier: os
+      meta: 'Load Balancer for agent {{ $labels.loadbalancer_host }} stuck in `{{ $labels.loadbalancer_status }}` state'
+      playbook: docs/support/playbook/octavia/stuck_pending
+      cloudops: "?searchTerm={{ $labels.loadbalancer_id }}&type=loadbalancer"
+    annotations:
+      description: 'The Load Balancer `{{ $labels.loadbalancer_name }} ({{ $labels.loadbalancer_id }})` of agent `{{ $labels.loadbalancer_host }}` stuck in {{ $labels.loadbalancer_status }} state (<https://dashboard.{{ $externalLabels.region }}.cloud.sap/ccadmin/cloud_admin/cloudops#/universal-search/?searchTerm={{ $labels.loadbalancer_id }}&type=loadbalancer|Dashboard>)'
+      summary: Octavia Load-Balancer stuck in PENDING_*_KubeServices state
+  - alert: OctaviaLoadBalancerStuckInPendingcc3test
+    expr: octavia_seconds_since_last_nonpending_status{loadbalancer_name=~"c3test.*"} > 30 * 60
+    labels:
+      no_alert_on_absence: "true"
+      context: Load-Balancer stuck
+      dashboard: octavia
+      service: octavia
+      severity: warning
+      support_group: network-api
+      tier: os
+      meta: 'Load Balancer for agent {{ $labels.loadbalancer_host }} stuck in `{{ $labels.loadbalancer_status }}` state'
+      playbook: docs/support/playbook/octavia/stuck_pending
+      cloudops: "?searchTerm={{ $labels.loadbalancer_id }}&type=loadbalancer"
+    annotations:
+      description: 'The Load Balancer `{{ $labels.loadbalancer_name }} ({{ $labels.loadbalancer_id }})` of agent `{{ $labels.loadbalancer_host }}` stuck in {{ $labels.loadbalancer_status }} state (<https://dashboard.{{ $externalLabels.region }}.cloud.sap/ccadmin/cloud_admin/cloudops#/universal-search/?searchTerm={{ $labels.loadbalancer_id }}&type=loadbalancer|Dashboard>)'
+      summary: Octavia Load-Balancer stuck in PENDING_*_c3test state
   - alert: OctaviaLoadBalancerStuckInPending
-    expr: octavia_seconds_since_last_nonpending_status > 30 * 60
-    for: 1s
+    expr: octavia_seconds_since_last_nonpending_status{loadbalancer_name!~"kube_service_e2e.*|kube_service_shoot.*|c3test.*"} > 30 * 60 
     labels:
       no_alert_on_absence: "true"
       context: Load-Balancer stuck
