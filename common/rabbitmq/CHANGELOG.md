@@ -3,6 +3,11 @@ Rabbitmq CHANGELOG
 
 This file is used to list changes made in each version of the common chart rabbitmq.
 
+0.7.4
+-----
+dusan.dordevic@sap.com
+- Adding support for special characters in passwords
+
 0.7.3
 -----
 - add option enableAllFeatureFlags to enable all stable feature flags after service has started
@@ -20,7 +25,7 @@ birk.bohne@sap.com
 0.6.13
 ------
 dusan.dordevic@sap.com
--Adding standardized labels to all objects, according to https://kubernetes.io/docs/concepts/overview/working-with-objects/common-labels/#labels and https://helm.sh/docs/chart_best_practices/labels/
+- Adding standardized labels to all objects, according to https://kubernetes.io/docs/concepts/overview/working-with-objects/common-labels/#labels and https://helm.sh/docs/chart_best_practices/labels/
 
 0.6.9
 -----
