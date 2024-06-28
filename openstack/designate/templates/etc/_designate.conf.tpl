@@ -380,6 +380,9 @@ poll_retry_interval = {{ .Values.worker_poll_retry_interval }}
 # response from a server
 poll_max_retries = {{ .Values.worker_poll_max_retries }}
 
+# The maximum times to consider PENDING zone as stale and try recovery
+poll_max_prop_time = {{ .Values.worker_poll_max_prop_time }}
+
 # The time to wait before sending the first request to a server
 poll_delay = {{ .Values.worker_poll_delay }}
 
