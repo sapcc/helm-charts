@@ -3,6 +3,10 @@ Rabbitmq CHANGELOG
 
 This file is used to list changes made in each version of the common chart rabbitmq.
 
+0.7.3
+-----
+- add option enableAllFeatureFlags to enable all stable feature flags after service has started
+
 0.7.2
 -----
 - Fix RabbitMQRPCUnackTotal alert to support both old and new unack metric name
