@@ -3,6 +3,10 @@ Rabbitmq CHANGELOG
 
 This file is used to list changes made in each version of the common chart rabbitmq.
 
+0.7.3
+-----
+- add forcedFeatureFlags with default list of 3.13.0 features to allow forced feature activation on rabbitmq instance init
+
 0.7.2
 -----
 - Fix RabbitMQRPCUnackTotal alert to support both old and new unack metric name

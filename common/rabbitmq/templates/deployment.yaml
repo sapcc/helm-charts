@@ -82,6 +82,10 @@ spec:
         env:
           - name: RABBIT_START_TIMEOUT
             value: {{ .Values.livenessProbe.initialDelaySeconds | quote }}
+          {{- if and .Values.forcedFeatureFlags.enabled .Values.persistence.enabled }}
+          - name: RABBITMQ_FEATURE_FLAGS
+            value: {{ join "," .Values.forcedFeatureFlags.flags | quote }}
+          {{- end }}
         command:
           - bash
         args:
