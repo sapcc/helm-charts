@@ -49,6 +49,10 @@ rabbitmq-plugins enable rabbitmq_tracing
 rabbitmqctl trace_on
 {{- end }}
 
+{{- if and .Values.enableAllFeatureFlags .Values.persistence.enabled }}
+rabbitmqctl enable_feature_flag all
+{{- end }}
+
 eval $(timeout 5.0 rabbitmqctl list_users -q | awk '{printf "users[\"%s\"]=\"%s\"\n", $1, substr($2, 2, length($2)-2)}')
 
 {{- range $k, $v := .Values.users }}
