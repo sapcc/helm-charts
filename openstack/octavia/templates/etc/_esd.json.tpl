@@ -52,5 +52,9 @@
   },
   "ccloud_special_fastl4_noaging": {
     "lbaas_fastl4": "cc_fastL4_noaging_profile"
+  },
+  "ccloud_special_xfh_override": {
+    "lbaas_ctcp": "cc_tcp_profile",
+    "lbaas_irule": ["cc_xfh_override"]
   }
 }
