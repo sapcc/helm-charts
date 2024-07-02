@@ -1,3 +1,7 @@
+## 7.6.0
+
+* Upgrade to v2.53.0
+
 ## 7.5.9
 
 * Introducing a new alert label `incident_group_key` that makes it possible to group alerts in ServiceNow by alertname, region and cluster.

@@ -1,61 +1,30 @@
-apiVersion: batch/v1
-kind: Job
+{{- if .Values.scaleout.enabled }}
+apiVersion: v1
+kind: Secret
+
 metadata:
-  name: "update-security-config"
-  labels:
-    app.kubernetes.io/managed-by: {{ .Release.Service | quote }}
-    app.kubernetes.io/instance: {{ .Release.Name | quote }}
-    app.kubernetes.io/version: {{ .Chart.AppVersion }}
-    helm.sh/chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
-  annotations:
-    # This is what defines this resource as a hook. Without this line, the
-    # job is considered part of the release.
-    "helm.sh/hook": post-install,post-upgrade
-    "helm.sh/hook-weight": "-5"
-spec:
-  template:
-    metadata:
-      name: "update-security-config"
-      labels:
-        app.kubernetes.io/managed-by: {{ .Release.Service | quote }}
-        app.kubernetes.io/instance: {{ .Release.Name | quote }}
-        helm.sh/chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
-    spec:
-      restartPolicy: Never
-      containers:
-      - name: security-config
-        image: "{{ .Values.global.dockerRegistry }}opensearchproject/opensearch:2.6.0"
-        command: ["/bin/bash","/scripts/install-security-config.sh"]
-        volumeMounts:
-        - mountPath: /usr/share/opensearch/config/opensearch-security/action_groups.yml
-          name: security-config
-          subPath: action_groups.yml
-        - mountPath: /usr/share/opensearch/config/opensearch-security/config.yml
-          name: security-config
-          subPath: config.yml
-        - mountPath: /usr/share/opensearch/config/opensearch-security/internal_users.yml
-          name: security-config
-          subPath: internal_users.yml
-        - mountPath: /usr/share/opensearch/config/opensearch-security/roles.yml
-          name: security-config
-          subPath: roles.yml
-        - mountPath: /usr/share/opensearch/config/opensearch-security/roles_mapping.yml
-          name: security-config
-          subPath: roles_mapping.yml
-        - mountPath: /scripts/install-security-config.sh
-          name: security-config
-          subPath: install-security-config.sh
-        - mountPath: /usr/share/opensearch/config/opensearch-security/tenants.yml
-          name: security-config
-          subPath: tenants.yml
-        - mountPath: /usr/share/opensearch/config/certs/admin
-          name: admin-cert-manager
-      volumes:
-      - name: admin-cert-manager
-        secret:
-          defaultMode: 420
-          secretName: admin-cert-manager
-      - name: security-config
-        secret:
-          defaultMode: 420
-          secretName: security-config
+  name: security-config
+
+data:
+  user: {{ .Values.users.promuser.username | b64enc}}
+  password: {{ .Values.users.promuser.password | b64enc }}
+  config.yml: {{ include (print .Template.BasePath  "/config/_config.yml.tpl") . | b64enc }}
+  internal_users.yml: {{ include (print .Template.BasePath  "/config/_internal_users.yml.tpl") . | b64enc }}
+  roles.yml: {{ include (print .Template.BasePath  "/config/_roles.yml.tpl") . | b64enc }}
+  roles_mapping.yml: {{ include (print .Template.BasePath  "/config/_roles_mapping.yml.tpl") . | b64enc }}
+  action_groups.yml: {{ include (print .Template.BasePath  "/config/_action_groups.yml.tpl") . | b64enc }}
+  tenants.yml: {{ include (print .Template.BasePath  "/config/_tenants.yml.tpl") . | b64enc }}
+  whitelist.yml: {{ include (print .Template.BasePath  "/config/_whitelist.yml.tpl") . | b64enc }}
+  nodes_dn.yml: {{ include (print .Template.BasePath  "/config/_nodes_dn.yml.tpl") . | b64enc }}
+  audit.yml: {{ include (print .Template.BasePath  "/config/_audit.yml.tpl") . | b64enc }}
+  index_cleanup.sh: {{ include (print .Template.BasePath  "/config/_index_cleanup.sh.tpl") . | b64enc }}
+  install-index-templates.sh: {{ include (print .Template.BasePath  "/config/_install-index-templates.sh.tpl") . | b64enc }}
+  install-ds-templates.sh: {{ include (print .Template.BasePath  "/config/_install-ds-templates.sh.tpl") . | b64enc }}
+  install-dashboard-pattern.sh: {{ include (print .Template.BasePath  "/config/_install-dashboard-pattern.sh.tpl") . | b64enc }}
+  install-security-config.sh: {{ include (print .Template.BasePath  "/config/_install-security-config.sh.tpl") . | b64enc }}
+  index-ism.json: {{ include (print .Template.BasePath  "/config/_index-ism.json.tpl") . | b64enc }}
+  {{- if .Values.global.data_stream.enabled }}
+  ds-ism.json: {{ include (print .Template.BasePath  "/config/_ds-ism.json.tpl") . | b64enc }}
+  ds.json: {{ include (print .Template.BasePath  "/config/_ds.json.tpl") . | b64enc }}
+  {{- end }}
+{{- end }}

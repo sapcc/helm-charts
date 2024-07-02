@@ -78,20 +78,6 @@ groups:
         annotations:
           description: Filer [[ $labels.cluster ]] is scraped by Netapp Capacity but not by Netapp Harvest.
 
-      - alert: NetappHarvestFilerNotInCapacityExporter
-        expr: count (netapp_volume_size_total{app="netapp-harvest-exporter-manila"}) by (cluster) unless count (label_replace(netapp_volume_total_bytes, "cluster", "$1", "host", "(.*).cc.*")) by (cluster)
-        for: 15m
-        labels:
-          context: netapp-exporter
-          no_alert_on_absence: "true"
-          service: exporter
-          severity: info
-          support_group: compute-storage-api
-          tier: storage
-        annotations:
-          summary:  Mismatch in discovered filers between Netapp Harvest and Netapp Capacity
-          description: Filer [[ $labels.cluster ]] is scraped by Netapp Harvest but not by Netapp Capacity.
-
       # compare scraped volumes by netapp-harvest-exporter and netapp-capacity-exporter
       - alert: NetappHarvestVolumesMissing
         expr: |

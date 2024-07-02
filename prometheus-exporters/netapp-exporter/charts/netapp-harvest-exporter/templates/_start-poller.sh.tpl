@@ -8,5 +8,8 @@ echo "Config file found, starting harvest..."
 echo "Use bin/harvest to manage the service"
 echo "Logs will be written to /var/log/harvest/"
 
-# Find the config file in ./shared and start poller. The config file is rendered by the netappsd-worker container
-exec find /opt/harvest/shared -name '*.yaml' -exec sh -c 'ln -s -f $0 /opt/harvest/harvest.yml && /opt/harvest/bin/harvest start' {} \;
+# Config file is rendered by worker sidecar, move it to harvest working directory
+find /opt/harvest/shared -type f -name '*yaml' -exec ln -s -f {} /opt/harvest/harvest.yml \;
+
+# Start harvest in the front
+exec /opt/harvest/bin/harvest start -f --debug=false

@@ -13,17 +13,11 @@ metadata:
   annotations:
     kubernetes.io/tls-acme: "true"
     disco: "true"
-    ingress.kubernetes.io/auth-tls-secret: kube-system/ingress-cacrt
-    nginx.ingress.kubernetes.io/auth-tls-secret: kube-system/ingress-cacrt
-    ingress.kubernetes.io/auth-tls-verify-client: optional
-    nginx.ingress.kubernetes.io/auth-tls-verify-client: optional
-    ingress.kubernetes.io/auth-tls-verify-depth: "3"
-    nginx.ingress.kubernetes.io/auth-tls-verify-depth: "3"
 
 spec:
   ingressClassName: nginx
   rules:
-    - host: {{ include "fullname" . }}.{{ .Values.global.region }}.cloud.sap
+    - host: {{ include "fullname" . }}.{{ .Values.global.region }}.{{ .Values.global.tld }}
       http:
         paths:
           - path: /inventory
@@ -33,4 +27,7 @@ spec:
                 name: {{ include "fullname" . }}
                 port:
                   number: {{.Values.updater.api.port}}
+  tls:
+    - secretName: tls-{{ include "fullname" . }}-api
+      hosts: [ {{ include "fullname" . }}.{{ .Values.global.region }}.{{ .Values.global.tld }} ]
 {{ end }}

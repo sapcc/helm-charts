@@ -8,7 +8,7 @@ groups:
       dashboard: manila
       playbook: docs/support/playbook/manila/shares_stuck
       service: manila
-      context: share_stuck
+      context: manila-shares-stuck
       severity: info
       tier: os
       support_group: compute-storage-api
@@ -26,6 +26,7 @@ groups:
       severity: info
       tier: os
       support_group: compute-storage-api
+      context:  manila-snapshots-stuck
     annotations:
       description: Sum of Openstack Manila Share Snapshots Stuck is more than 1
       summary: Manila share snapshots in stuck state
@@ -40,6 +41,7 @@ groups:
       tier: os
       playbook: docs/support/playbook/manila/snapshots_missing
       support_group: compute-storage-api
+      context:  manila-snapshots-missing
     annotations:
       description: Share Snapshot does not exist on backend filer
       summary: Manila Share Snapshots missing
@@ -52,7 +54,7 @@ groups:
       dashboard: manila
       playbook: docs/support/playbook/manila/shares_stuck
       service: manila
-      context: share_stuck
+      context: manila-shares-stuck
       severity: warning
       tier: os
       support_group: compute-storage-api
@@ -68,7 +70,7 @@ groups:
       dashboard: manila
       playbook: docs/support/playbook/manila/shares_stuck
       service: manila
-      context: share_stuck
+      context: manila-shares-stuck
       severity: warning
       tier: os
       support_group: compute-storage-api
@@ -84,7 +86,7 @@ groups:
       dashboard: manila
       playbook: docs/support/playbook/manila/shares_stuck
       service: manila
-      context: share_stuck
+      context: manila-shares-stuck
       severity: warning
       tier: os
       support_group: compute-storage-api
@@ -100,7 +102,7 @@ groups:
       dashboard: manila
       playbook: docs/support/playbook/manila/shares_stuck
       service: manila
-      context: share_stuck
+      context: manila-shares-stuck
       severity: info
       tier: os
       support_group: compute-storage-api
@@ -114,7 +116,7 @@ groups:
     labels:
       dashboard: manila
       service: manila
-      context: share_stuck
+      context: manila-shares-stuck
       severity: info
       tier: os
       support_group: compute-storage-api
@@ -128,7 +130,7 @@ groups:
     labels:
       dashboard: manila
       service: manila
-      context: share_server_stuck
+      context: manila-share-server-stuck
       severity: info
       tier: os
       support_group: compute-storage-api
@@ -142,13 +144,27 @@ groups:
     labels:
       dashboard: manila
       service: manila
-      context: share_server_stuck
+      context: manila-share-server-stuck
       severity: info
       tier: os
       support_group: compute-storage-api
     annotations:
       description: More than 5 percent of total Share servers stuck
       summary: Manila share servers in stuck state
+
+  - alert: OpenstackManilaShareServersStuckCreate
+    expr: max(manila_share_servers_stuck_duration_seconds{status="creating"}) BY (id, manila_host) > 120
+    for: 24h
+    labels:
+      dashboard: manila
+      service: manila
+      context: manila-share-server-stuck
+      severity: info
+      tier: os
+      support_group: compute-storage-api
+    annotations:
+      description: Manila Share server {{ $labels.id }} stuck in creating on {{ $labels.manila_host }} for a day
+      summary: Manila Share servers taking too long to create
 
   - alert: OpenstackManilaSharesError
     expr: count(openstack_manila_shares_size_gauge{status='error'})/count(openstack_manila_shares_size_gauge) > 0.01
@@ -159,6 +175,7 @@ groups:
       severity: info
       tier: os
       support_group: compute-storage-api
+      context: manila-shares-error
     annotations:
       description: More than 1 percent of total shares are in error state
       summary: Manila shares in error
@@ -174,6 +191,7 @@ groups:
       severity: info
       tier: os
       support_group: compute-storage-api
+      context: manila-replicas-error
     annotations:
       description: More than 5 percent of total share replicas are in error state
       summary: Manila share replicas in error
@@ -187,23 +205,10 @@ groups:
       severity: info
       tier: os
       support_group: compute-storage-api
+      context: manila-snapshot-error
     annotations:
       description: More than 5 percent of total snapshots are in error state
       summary: Manila share snapshots in error
-
-  - alert: OpenstackManilaShareServersStuckCreate
-    expr: max(manila_share_servers_stuck_duration_seconds{status="creating"}) BY (id, manila_host) > 120
-    for: 24h
-    labels:
-      dashboard: manila
-      service: manila
-      context: share_server_stuck
-      severity: info
-      tier: os
-      support_group: compute-storage-api
-    annotations:
-      description: Manila Share server {{ $labels.id }} stuck in creating on {{ $labels.manila_host }} for a day
-      summary: Manila Share servers taking too long to create
 
   - alert: OpenstackManilaShareServerHigh
     expr: label_replace(count(manila_share_servers_count_gauge{status!="deleted"}) BY (manila_host),
@@ -214,7 +219,7 @@ groups:
       service: manila
       severity: warning
       tier: os
-      context: share-server-limit
+      context: manila-share-server-limit
       support_group: compute-storage-api
     annotations:
       description: 'Panel: Share Server netapp host distribution'
@@ -229,7 +234,7 @@ groups:
       service: manila
       severity: critical
       tier: os
-      context: share-server-limit
+      context: manila-share-server-limit
       support_group: compute-storage-api
     annotations:
       description: 'Panel: Share Server netapp host distribution'
@@ -239,7 +244,7 @@ groups:
     expr: up{component="manila",type="api"} == 0
     for: 10m
     labels:
-      context: availability
+      context: manila-availability
       dashboard: manila
       meta: a manila api instance went down
       service: manila
@@ -257,12 +262,12 @@ groups:
       ) * on(project_id) group_left(project_name, domain_name)(openstack_projects_count_gauge) > 0
     for: 2m
     labels:
-      context: api
+      context: manila-rate-limit
       dashboard: manila
       meta: manila api rate limits exceeded
       service: manila
       severity: info
-      no_alert_on_absence: true
+      no_alert_on_absence: "true"
       tier: os
       support_group: compute-storage-api
     annotations:
@@ -276,8 +281,8 @@ groups:
     labels:
       severity: info
       tier: os
-      service: '{{ $labels.service }}'
-      context: '{{ $labels.service }}'
+      service: manila-db-locks
+      context: manila
       meta: '{{ $labels.service }} db row locks'
       support_group: compute-storage-api
     annotations:
@@ -288,7 +293,7 @@ groups:
     expr: delta(sentry_unresolved_issues_count{project="manila"}[1d]) > 0
     for: 10m
     labels:
-      context: sentry-metrics
+      context: manila-sentry-metrics
       service: manila
       severity: info
       tier: os
@@ -308,7 +313,7 @@ groups:
       support_group: compute-storage-api
       tier: os
       service: manila
-      context: service-status
+      context: manila-service-status
     annotations:
       description: '{{ $labels.host }}: host has status enabled but is in state down for 20 minutes. Either the pod should be scaled up or the service be disabled!'
       summary: '{{ $labels.host }}: host is enabled but is down'
@@ -321,7 +326,7 @@ groups:
       support_group: compute-storage-api
       tier: os
       service: manila
-      context: service-status
+      context: manila-service-status
     annotations:
       description: '{{ $labels.host }}: host has status disabled but is in state up for 20 minutes. Either the pod should be scaled down or the service be enabled!'
       summary: '{{ $labels.host }}: host is disabled but is up'

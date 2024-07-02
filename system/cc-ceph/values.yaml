@@ -15,15 +15,30 @@ ceph:
 
 cephConfig:
   global:
+    bdev_flock_retry: "20"
+    bluefs_buffered_io: "false"
+    mon_allow_pool_delete: "false"
+    mon_allow_pool_size_one: "false"
     osd_pool_default_size: "3"
     mon_data_avail_warn: "10"
     osd_op_queue: "wpq"
     osd_pool_default_pg_autoscale_mode: "off"
+    rgw_enable_ops_log: "true"
+    rgw_ops_log_rados: "false"
+    rgw_ops_log_file_path: "/dev/stderr"
+    rgw_enable_usage_log: "true"
+  mon:
+    ms_client_mode: "secure"
+    ms_cluster_mode: "secure"
+    ms_service_mode: "secure"
+    ms_mon_cluster_mode: "secure"
+    ms_mon_client_mode: "secure"
+    ms_mon_service_mode: "secure"
 
 clusterName: ceph-cluster
 
 mon:
-  count: 3
+  count: 5
   nodeRole: ceph-mon
 
 resources:
@@ -74,7 +89,7 @@ objectstore:
   enabled: true
   name: objectstore
   gateway:
-    instances: 3
+    instances: 6
     port: 80
     securePort: 443
     sslCertificateRef: ""
@@ -83,12 +98,15 @@ objectstore:
     # - dns2
     resources:
       requests:
-        cpu: 1000m
-        memory: 1Gi
+        cpu: 10
+        memory: 16Gi
   metadataPool:
-    failureDomain: host
-    replicated:
-      size: 4
+    # replicated:
+    #   size: 4
+    #   replicasPerFailureDomain: 2
+    #   subFailureDomain: "host"
+    # failureDomain: "zone"
+    # deviceClass: "nvme"
   dataPool:
     # choose between replicated and erasureCoded
     # erasureCoded:
@@ -99,7 +117,7 @@ objectstore:
     #   size: 3
   service:
     name: ceph-objectstore-external
-    port: 80
+    port: 443
     externalIPs:
       - 10.0.0.1
   keystone:
@@ -125,3 +143,12 @@ objectstore:
 
 rgwTargetPlacements:
   enabled: false 
+
+defaultRgwPools:
+  enabled: false # create default rgw pools, see: https://github.com/sapcc/helm-charts/issues/6670
+  crushRoot: default 
+  failureDomain: zone
+  replicated: 4
+  replicasPerFailureDomain: 2
+  subFailureDomain: host
+  deviceClass: nvme

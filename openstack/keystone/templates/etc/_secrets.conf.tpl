@@ -2,10 +2,15 @@
 # Database connection string - MariaDB for regional setup
 # and Percona Cluster for inter-regional setup:
 {{ if .Values.percona_cluster.enabled -}}
+  {{/* in caase percona is active and we need to switch the connection string to mariadb-galera cluster without removing the percona cluster objects */}}
+  {{- if and .Values.mariadb_galera.enabled .Values.databaseKind (eq .Values.databaseKind "galera") -}}
+connection = mysql+pymysql://{{ .Values.mariadb_galera.mariadb.users.keystone.username }}:{{.Values.mariadb_galera.mariadb.users.keystone.password }}@{{include "db_host" .}}/{{ .Values.mariadb_galera.mariadb.galera.clustername }}?charset=utf8
+  {{- else }}
 connection = {{ include "db_url_pxc" . }}
+  {{- end }}
 {{- else if .Values.global.clusterDomain -}}
 connection = mysql+pymysql://{{ default .Release.Name .Values.global.dbUser }}:{{.Values.global.dbPassword }}@{{include "db_host" .}}/{{ default .Release.Name .Values.mariadb.name }}?charset=utf8
-{{- else if .Values.mariadb_galera.enabled -}}
+{{- else if and .Values.mariadb_galera.enabled .Values.databaseKind (eq .Values.databaseKind "galera") -}}
 connection = mysql+pymysql://{{ .Values.mariadb_galera.mariadb.users.keystone.username }}:{{.Values.mariadb_galera.mariadb.users.keystone.password }}@{{include "db_host" .}}/{{ .Values.mariadb_galera.mariadb.galera.clustername }}?charset=utf8
 {{- else }}
 connection = {{ include "db_url_mysql" . }}

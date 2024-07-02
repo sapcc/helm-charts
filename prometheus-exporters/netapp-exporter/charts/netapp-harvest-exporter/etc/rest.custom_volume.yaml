@@ -11,6 +11,8 @@ counters:
   - ^clone_volume                                 => is_flexclone
   - ^is_encrypted                                 => isEncrypted
   - ^is_sis_volume                                => is_sis_volume
+  - ^is_space_reporting_logical                   => is_space_reporting_logical
+  - ^is-space-enforcement-logical                 => is_space_enforcement_logical
   - ^junction_path                                => junction_path
   - ^nodes                                        => node
   - ^snaplock_type                                => snaplock_type
@@ -94,8 +96,11 @@ plugins:
       replace:
         - svm_root root_volume `false` `No`
         - svm_root root_volume `true` `Yes`
-      split_pairs:
-        - comment `, ` `:`
+      split_regex:
+        - comment `.*project:\ (.*?),.*` project_id
+        - comment `.*share_id:\ (.*?),.*` share_id
+        - comment `.*share_name:\ (.*?),.*` share_name
+        - comment `.*share_type:\ (.*)` share_type
       # To prevent visibility of transient volumes, uncomment the following lines
 #      exclude_regex:
 #        # Exclude SnapProtect/CommVault Intellisnap, Clone volumes have a “_CVclone” suffix
@@ -119,9 +124,10 @@ export_options:
     - style
     - svm
     - volume
+    - project_id
     - share_id
     - share_name
-    - project
+    - share_type
   instance_labels:
     - antiRansomwareState
     - clone_parent_snapshot
@@ -130,6 +136,8 @@ export_options:
     - isEncrypted
     - isHardwareEncrypted
     - is_sis_volume
+    - is_space_reporting_logical
+    - is_space_enforcement_logical
     - junction_path
     - root_volume
     - snaplock_type
