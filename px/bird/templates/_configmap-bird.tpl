@@ -10,7 +10,7 @@ apiVersion: v1
 metadata:
     name: cfg-{{ $config_name }}
 data:
-    "{{ $config_name }}.conf": |
+    "bird.conf": |
 {{- if not ($files.Glob $config_path) -}}
 {{- fail (printf "bird config file %s does not exist."  $config_path ) -}}
 {{- end }}

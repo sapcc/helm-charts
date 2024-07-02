@@ -1,0 +1,161 @@
+---
+kind: ConfigMap
+apiVersion: v1
+metadata:
+    name: cfg-alice-lg
+data:
+    alice.conf: |
+        # ======================================
+        # Alice-LG configuration example
+        # ======================================
+
+        [server]
+        # configures the built-in webserver and provides global application settings
+        listen_http = 0.0.0.0:7340
+        # configures the built-in webserver timeout in seconds (default 120s)
+        # http_timeout = 60
+
+        # enable the prefix-lookup endpoint / the global search feature
+        enable_prefix_lookup = true
+
+        # Try to refresh the neighbor status on every request to /neighbors
+        enable_neighbors_status_refresh = false
+
+        # this ASN is used as a fallback value in the RPKI feature and for route
+        # filtering evaluation with large BGP communities
+        asn = 9033
+
+
+        # how many route servers will be refreshed at the same time
+        # if set to 0 (or for the matter of fact 1), refresh will be
+        # sequential. 
+        # Default: 1
+        routes_store_refresh_parallelism = 5
+        neighbors_store_refresh_parallelism = 10000
+
+        # how much time should pass between refreshes (in minutes)
+        # Default: 5
+        routes_store_refresh_interval = 1
+        neighbors_store_refresh_interval = 1
+
+        # store_backend = postgres
+
+        # [postgres]
+        # url = "postgres://postgres:postgres@localhost:5432/alice"
+        # min_connections = 2
+        # max_connections = 128
+
+        [housekeeping]
+        # Interval for the housekeeping routine in minutes
+        interval = 5
+        # Try to release memory via a forced GC/SCVG run on every housekeeping run
+        force_release_memory = true
+
+        #[theme]
+        # path = /path/to/my/alice/theme/files
+        # Optional:
+        # url_base = /theme
+
+        [pagination]
+        # Routes tables can be paginated, which comes in handy with
+        # peers announcing a lot of routes. Set to 0 to disable
+        # pagination.
+        routes_filtered_page_size = 250
+        routes_accepted_page_size = 250
+        routes_not_exported_page_size = 250
+
+        [rejection_reasons]
+        # a pair of a large BGP community value and a string to signal the processing
+        # results of route filtering
+        9033:65666:1 = An IP Bogon was detected
+        9033:65666:2 = Prefix is longer than 64
+        9033:65666:3 = Prefix is longer than 24
+        9033:65666:4 = AS path contains a bogon AS
+        9033:65666:5 = AS path length is longer than 64
+        9033:65666:6 = First AS in path is not the same as the Peer AS
+        9033:65666:7 = ECIX prefix hijack
+        9033:65666:8 = Origin AS not found in IRRDB for Peer AS-SET
+        9033:65666:9 = Prefix not found in IRRDB for Origin AS
+        9033:65666:10 = Advertised nexthop address is not the same as the peer
+
+        23:42:1 = Some made up reason
+
+        #
+        # Optional: Define communities which might be filtered
+        #           in the future.
+        [rejection_candidates]
+        communities = 6695:1102:14, 6695:1102:15, 23:42:46
+
+        [noexport]
+        load_on_demand = true # Default: false
+
+        [noexport_reasons]
+        # a pair of a large BGP community value and a string to signal the processing
+        # results of route distribution and the distribution policy applied to a route
+        9033:65667:1 = The target peer policy is Fairly-open and the sender ASN is an exception
+        9033:65667:2 = The target peer policy is Selective and the sender ASN is no exception
+        9033:65667:3 = The target peer policy is set to restrictive
+        9033:65667:4 = The sender has specifically refused export to the target peer, either through sending 65000:AS, or through the portal
+        9033:65667:5 = The sender has refused export to all peers and the target is no exception, either through sending 65000:0, or through the portal
+        9033:65667:6 = The Sender has set (peerRTTHigherDeny:ms) and the targets RTT ms >= then the ms in the community
+        9033:65667:7 = The Sender has set (peerRTTLowerDeny:ms) and the targets RTT ms <= then the ms in the community
+
+        23:46:1 = Some other made up reason
+
+
+        # Define other known bgp communities
+        [bgp_communities]
+        1:23 = some tag
+        9033:65666:1 = ip bogon detected
+        # Wildcards are supported aswell:
+        0:* = do not redistribute to AS$1
+
+        #
+        # Define columns for neighbours and routes table,
+        # with <key> = <Table Header>
+        #
+        # and <key> := <object.path> Implicitly referencing the object,
+        #                            e.g. route.bgp.as_path -> bgp.as_path)
+        #           |= <Widget>      A widget with special rendering features,
+        #                            to which the object is applied. E.g.
+        #                            Uptime, which will be rendered as
+        #                            Uptime(neighbour).
+        #
+        # As per convention: Widgets are in Uppercase, object properties are
+        # in lowercase.
+        #
+        # Available Widgets for Neighbours:
+        #
+        # Uptime        Displays the relative uptime of this neighbour
+        # Description   The neighbour's description with link to routes page
+        #
+
+        [neighbours_columns]
+        address = Neighbour
+        asn = ASN
+        state = State
+        Uptime = Uptime
+        Description = Description
+        routes_received = Routes Received
+        routes_filtered = Filtered
+
+        # 
+
+        [routes_columns]
+        flags = 
+        network = Network
+        gateway = Gateway
+        interface = Interface
+        metric = Metric
+        bgp.as_path = AS Path
+
+
+        [lookup_columns]
+        flags = 
+        network = Networks
+        gateway = Gateway
+        neighbour.asn = ASN
+        neighbour.description = Description
+        bgp.as_path = AS Path
+        routeserver.name = RS
+{{ tuple $.Values.global.region | include "alicelg_conf" | indent 8 }}

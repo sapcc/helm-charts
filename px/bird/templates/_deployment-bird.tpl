@@ -6,14 +6,16 @@
 {{- $domain_number := index . 4}}
 {{- $domain_config := index . 5 }}
 initContainers:
-- name: {{ $deployment_name }}-init
+- name: init
   image: keppel.{{ required "A registry mus be set" $values.registry }}.cloud.sap/ccloud-dockerhub-mirror/library/alpine:latest
   command: ["sh", "-c", "ip link set vlan{{ $domain_config.multus_vlan }} promisc on"]
   securityContext:
     privileged: true
 containers:
-- name: {{ $deployment_name }}
+- name: bird
   image: keppel.{{ required "A registry mus be set" $values.registry }}.cloud.sap/{{ required "A bird_image must be set" $values.bird_image }}
+  command: ["bird"]
+  args: ["-c", "/etc/bird/bird.conf", "-s", "/var/run/bird/bird.ctl", "-P", "/var/run/bird/bird.pid", "-d"]
   securityContext:
     capabilities:
       add: ["NET_ADMIN"]
@@ -30,7 +32,7 @@ containers:
     periodSeconds: 5
   resources:
 {{ toYaml $values.resources.bird | indent 4 }}
-- name: {{ $deployment_name }}-exporter
+- name: exporter
   image: keppel.{{ $values.registry }}.cloud.sap/{{required "bird_exporter_image must be set" $values.bird_exporter_image}}
   args: ["-format.new=true", "-bird.v2", "-bird.socket=/var/run/bird/bird.ctl", "-proto.ospf=false", "-proto.direct=false"]
   resources:
@@ -42,7 +44,7 @@ containers:
   ports:
   - containerPort: 9324
     name: metrics
-- name: {{ $deployment_name }}-lgproxy
+- name: lgproxy
   image: keppel.{{ $values.registry }}.cloud.sap/{{ required "lg_image must be set" $values.lg_image }}
   command: ["python3"]
   args: ["lgproxy.py"]
@@ -55,7 +57,7 @@ containers:
   ports:
   - containerPort: 5000
     name: lgproxy
-- name: {{ $deployment_name }}-lgadminproxy
+- name: lgadminproxy
   image: keppel.{{ $values.registry }}.cloud.sap/{{ $values.lg_image }}
   command: ["python3"]
   args: ["lgproxy.py", "priv"]
@@ -68,10 +70,30 @@ containers:
   ports:
   - containerPort: 5005
     name: lgadminproxy
+- name: birdwatcher
+  image: keppel.{{ required "A registry mus be set" $values.registry }}.cloud.sap/{{ required "A bird_image must be set" $values.bird_image }}
+  command: ["birdwatcher"]
+  resources:
+{{ toYaml $values.resources.birdwatcher | indent 4 }}
+  volumeMounts:
+  - name: bird-socket
+    subPath: bird.ctl
+    mountPath: /usr/local/var/run/bird.ctl
+    readOnly: true
+  - name: vol-{{ $deployment_name }}
+    mountPath: /etc/bird
+  - name: cfg-birdwatcher
+    mountPath: /etc/birdwatcher
+  ports:
+  - containerPort: 29184
+    name: birdwatcher
 volumes:
   - name: vol-{{ $deployment_name }}
     configMap:
       name: cfg-{{ $values.global.region }}-pxrs-{{ $domain_number }}-s{{ $service_number }}
+  - name: cfg-birdwatcher
+    configMap:
+      name: cfg-birdwatcher-domain{{$domain_number}}
   - name: bird-socket
     emptyDir: {}
 {{- end }}
