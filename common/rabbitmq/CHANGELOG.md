@@ -3,6 +3,11 @@ Rabbitmq CHANGELOG
 
 This file is used to list changes made in each version of the common chart rabbitmq.
 
+0.7.2
+------
+dusan.dordevic@sap.com
+- Adding support for special characters in passwords
+
 0.7.1
 ------
 birk.bohne@sap.com
