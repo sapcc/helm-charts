@@ -3,6 +3,10 @@ Rabbitmq CHANGELOG
 
 This file is used to list changes made in each version of the common chart rabbitmq.
 
+0.7.2
+-----
+- Fix RabbitMQRPCUnackTotal alert to support both old and new unack metric name
+
 0.7.1
 ------
 birk.bohne@sap.com

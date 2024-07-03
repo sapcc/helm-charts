@@ -2,7 +2,14 @@ groups:
 - name: {{ include "alerts.service" . | title }}-rabbitmq.alerts
   rules:
   - alert: {{ include "alerts.service" . | title }}RabbitMQRPCUnackTotal
-    expr: sum(rabbitmq_queue_messages_unacknowledged{app=~"{{ include "alerts.service" . }}-rabbitmq"}) by (app) > {{ .Values.alerts.rabbit_queue_length | default 1000 }}
+    expr: |
+      (
+        sum(rabbitmq_queue_messages_unacknowledged{app=~"{{ include "alerts.service" . }}-rabbitmq"}) by (app) > {{ .Values.alerts.rabbit_queue_length | default 1000 }}
+      )
+      or
+      (
+        sum(rabbitmq_queue_messages_unacked{app=~"{{ include "alerts.service" . }}-rabbitmq"}) by (app) > {{ .Values.alerts.rabbit_queue_length | default 1000 }}
+      )
     for: {{ .Values.alerts.unacknowledged_total_wait_for | default "1m" }}
     labels:
       severity: critical
