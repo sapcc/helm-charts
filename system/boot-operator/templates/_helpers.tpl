@@ -1,7 +1,7 @@
 {{/*
 Expand the name of the chart.
 */}}
-{{- define "ipxe-operator.name" -}}
+{{- define "boot-operator.name" -}}
 {{- default .Chart.Name .Values.nameOverride | trunc 63 | trimSuffix "-" }}
 {{- end }}
 
@@ -10,7 +10,7 @@ Create a default fully qualified app name.
 We truncate at 63 chars because some Kubernetes name fields are limited to this (by the DNS naming spec).
 If release name contains chart name it will be used as a full name.
 */}}
-{{- define "ipxe-operator.fullname" -}}
+{{- define "boot-operator.fullname" -}}
 {{- if .Values.fullnameOverride }}
 {{- .Values.fullnameOverride | trunc 63 | trimSuffix "-" }}
 {{- else }}
@@ -26,16 +26,16 @@ If release name contains chart name it will be used as a full name.
 {{/*
 Create chart name and version as used by the chart label.
 */}}
-{{- define "ipxe-operator.chart" -}}
+{{- define "boot-operator.chart" -}}
 {{- printf "%s-%s" .Chart.Name .Chart.Version | replace "+" "_" | trunc 63 | trimSuffix "-" }}
 {{- end }}
 
 {{/*
 Common labels
 */}}
-{{- define "ipxe-operator.labels" -}}
-helm.sh/chart: {{ include "ipxe-operator.chart" . }}
-{{ include "ipxe-operator.selectorLabels" . }}
+{{- define "boot-operator.labels" -}}
+helm.sh/chart: {{ include "boot-operator.chart" . }}
+{{ include "boot-operator.selectorLabels" . }}
 {{- if .Chart.AppVersion }}
 app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
 {{- end }}
@@ -45,17 +45,17 @@ app.kubernetes.io/managed-by: {{ .Release.Service }}
 {{/*
 Selector labels
 */}}
-{{- define "ipxe-operator.selectorLabels" -}}
-app.kubernetes.io/name: {{ include "ipxe-operator.name" . }}
+{{- define "boot-operator.selectorLabels" -}}
+app.kubernetes.io/name: {{ include "boot-operator.name" . }}
 app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}
 
 {{/*
 Create the name of the service account to use
 */}}
-{{- define "ipxe-operator.serviceAccountName" -}}
+{{- define "boot-operator.serviceAccountName" -}}
 {{- if .Values.serviceAccount.create }}
-{{- default (include "ipxe-operator.fullname" .) .Values.serviceAccount.name }}
+{{- default (include "boot-operator.fullname" .) .Values.serviceAccount.name }}
 {{- else }}
 {{- default "default" .Values.serviceAccount.name }}
 {{- end }}
