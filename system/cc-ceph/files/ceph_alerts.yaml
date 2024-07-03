@@ -314,6 +314,39 @@
             type: "ceph_default"
             service: ceph
             #support_group: storage
+        - alert: "CephOSDCommitHDDLatency"
+          annotations:
+            description: "For hdd ( < 80 ms), hdd with flash DB/WAL ( < 30 ms ) and pure nvme (< 10 ms) we expect different commmit latency thresholds."
+            summary: "More than 30 ms commit latency "
+          expr: "sum(topk(5,avg_over_time(ceph_osd_commit_latency_ms[5m]))) > 30"
+          labels:
+            oid: "1.3.6.1.4.1.50495.1.2.1.4.6"
+            severity: "warning"
+            type: "ceph_default"
+            service: ceph
+            #support_group: storage            
+        - alert: "CephOSDApplyHDDLatency"
+          annotations:
+            description: "For hdd (>50 ms), hdd with flash DB/WAL ( < 30 ms ) and pure nvme (< 10 ms) we expect different apply latency thresholds."
+            summary: "More than 30 ms commit latency "
+          expr: "sum(topk(5,avg_over_time(ceph_osd_apply_latency_ms[5m]))) > 30"
+          labels:
+            oid: "1.3.6.1.4.1.50495.1.2.1.4.7"
+            severity: "warning"
+            type: "ceph_default"
+            service: ceph
+            #support_group: storage            
+        - alert: "CephOSDTooHighApplyLatencyDifference"
+          annotations:
+            description: "Too High Apply Latency Diffence can be a indicator for network or node setup differences, than can slow down the whole cluster performance"
+            summary: "More than 30 ms commit latency "
+          expr: "(sum(topk(5,avg_over_time(ceph_osd_apply_latency_ms[5m]))) -  sum(bottomk(5,avg_over_time(ceph_osd_apply_latency_ms[5m])))) > ( 30 * 5 )"
+          labels:
+            oid: "1.3.6.1.4.1.50495.1.2.1.4.8"
+            severity: "warning"
+            type: "ceph_default"
+            service: ceph
+            #support_group: storage            
  #   - name: "mds"
  #     rules:
  #      - alert: "CephFilesystemDamaged"
