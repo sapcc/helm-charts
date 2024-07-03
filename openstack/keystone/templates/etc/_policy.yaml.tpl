@@ -923,6 +923,7 @@
 # Intended scope(s): system, domain
 #"identity:list_projects": "(role:reader and system_scope:all) or (role:reader and domain_id:%(target.domain_id)s)"
 "identity:list_projects": "rule:cloud_reader or
+  (role:reader and domain_id:%(target.domain_id)s) or
   (role:reader and domain_id:%(domain_id)s) or
   (role:reader and project_id:%(parent_id)s)"
 
