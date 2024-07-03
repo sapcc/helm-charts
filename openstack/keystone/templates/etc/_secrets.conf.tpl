@@ -16,6 +16,13 @@ connection = mysql+pymysql://{{ .Values.mariadb_galera.mariadb.users.keystone.us
 connection = {{ include "db_url_mysql" . }}
 {{- end }}
 
+{{- if and .Values.memcached.auth.username .Values.memcached.auth.password }}
+[cache]
+memcache_sasl_enabled = True
+memcache_username = {{ .Values.memcached.auth.username }}
+memcache_password = {{ .Values.memcached.auth.password }}
+{{- end }}
+
 {{- if not (and (hasKey $.Values "oslo_messaging_notifications") ($.Values.oslo_messaging_notifications.disabled)) }}
 [oslo_messaging_notifications]
 driver = messaging

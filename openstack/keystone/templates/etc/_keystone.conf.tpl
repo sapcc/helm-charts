@@ -80,7 +80,9 @@ access_token_duration = {{ .Values.api.oauth1.access_token_duration | default "0
 
 [cache]
 backend = dogpile.cache.memcached
-{{- if .Values.memcached.host }}
+{{- if .Values.global_setup }}
+memcached_servers = "{{ include "helm-toolkit.utils.joinListWithComma" .Values.memcached.server_ips_ports }}"
+{{- else if .Values.memcached.host }}
 memcache_servers = {{ .Values.memcached.host }}:{{.Values.memcached.port | default 11211}}
 {{ else }}
 memcache_servers = {{ include "memcached_host" . }}:{{.Values.memcached.port | default 11211}}
