@@ -57,48 +57,35 @@ rules:
   - patch
   - update
 - apiGroups:
-  - boot.ironcore.dev
+  - metal.ironcore.dev
   resources:
-  - ipxebootconfig
+  - bootconfigurations
   verbs:
-  - create
-  - delete
   - get
   - list
-  - patch
   - watch
 - apiGroups:
-  - boot.ironcore.dev
+  - metal.ironcore.dev
   resources:
-  - ipxebootconfig/status
+  - bootconfigurations/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - metal.ironcore.dev
+  resources:
+  - bootconfigurations/status
   verbs:
   - get
+  - patch
+  - update
 - apiGroups:
-  - boot.ironcore.dev
+  - metal.ironcore.dev
   resources:
-  - ipxebootconfigs
+  - machines
   verbs:
-  - create
-  - delete
   - get
   - list
-  - patch
-  - update
   - watch
-- apiGroups:
-  - boot.ironcore.dev
-  resources:
-  - ipxebootconfigs/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - boot.ironcore.dev
-  resources:
-  - ipxebootconfigs/status
-  verbs:
-  - get
-  - patch
-  - update
 - apiGroups:
   - metal.ironcore.dev
   resources:
@@ -136,8 +123,8 @@ metadata:
   name: {{ include "boot-operator.fullname" . }}-manager-rolebinding
   labels:
     app.kubernetes.io/component: rbac
-    app.kubernetes.io/created-by: ipxe-operator
-    app.kubernetes.io/part-of: ipxe-operator
+    app.kubernetes.io/created-by: boot-operator
+    app.kubernetes.io/part-of: boot-operator
   {{- include "boot-operator.labels" . | nindent 4 }}
 roleRef:
   apiGroup: rbac.authorization.k8s.io
