@@ -111,7 +111,36 @@ mariadb:
 mysql_metrics:
   db_name: kmip
   db_user: kmip
-  enabled: false
+  customMetrics:
+    - help: Count managed_objects
+      labels:
+      - "uid"
+      - "object_type"
+      - "class_type"
+      - "value"
+      - "name_index"
+      - "operation_policy_name"
+      - "sensitive"
+      - "initial_date"
+      - "owner"
+      name: openstack_kmip_managed_objects_gauge
+      query: |
+        SELECT
+          uid,
+          object_type,
+          class_type,
+          value,
+          name_index,
+          operation_policy_name,
+          `sensitive`,
+          initial_date,
+          owner,
+          COUNT(*) AS gauge
+        FROM managed_objects
+        GROUP BY uid, object_type, class_type, value, name_index, operation_policy_name, `sensitive`, initial_date, owner;
+      values:
+      - "gauge"
+
 
 proxysql:
   mode: ""
