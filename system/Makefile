@@ -89,7 +89,7 @@ build-metal-operator:
 	$(call build-chart,metal-operator-core,https://github.com/ironcore-dev/metal-operator//config/default,$(METAL_OPERATOR_VERSION))
 	@yq -i '.controllerManager.manager.image.tag="$(METAL_OPERATOR_VERSION)"' metal-operator-core/values.yaml
 	@yq -i '.fullnameOverride="metal-operator"' metal-operator-core/values.yaml
-	@yq -i '.version="1.0.0"' metal-operator-core/Chart.yaml
+	@yq -i '.version="1.0.1"' metal-operator-core/Chart.yaml
 
 build-boot-operator:
 	@cat kustomize/boot-operator/kustomization.yaml >> kustomization.yaml
