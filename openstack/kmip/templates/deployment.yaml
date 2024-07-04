@@ -13,6 +13,7 @@ metadata:
     component: barbican
 spec:
   replicas: {{ .Values.replicaCount }}
+
   revisionHistoryLimit: {{ .Values.pod.lifecycle.upgrades.deployments.revisionHistory }}
   strategy:
     type: {{ .Values.pod.lifecycle.upgrades.deployments.podReplacementStrategy }}
@@ -35,10 +36,12 @@ spec:
         {{- with .Values.podLabels }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
-      {{- with .Values.podAnnotations }}
       annotations:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
+        configmap-etc-hash: {{ include (print $.Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
+        {{- if .Values.proxysql.mode }}
+        prometheus.io/scrape: "true"
+        prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
+        {{- end }}        
     spec:
       serviceAccountName: {{ include "kmip.serviceAccountName" . }}-barbican
       containers:
