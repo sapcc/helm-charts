@@ -6,6 +6,7 @@ PROVIDER_KUBERNIKUS_VERSION ?= 9fd81475b828971913b3b27addf51fdbd0511d85
 BAREMETAL_OPERATOR_VERSION ?= v0.6.0
 METAL_OPERATOR_VERSION ?= 59fa5118ded38b711bbe940838552f4696151269
 BOOT_OPERATOR_VERSION ?= 425c27bcf9f02bc49ced6050f353755a32dbfb5f
+IPXE_OPERATOR_VERSION ?= 61c6898bfd7772008835bdcca8d8a64c1dfc3b32
 FEDHCP_VERSION ?= a59539c62aaa11a96c82fe792c87daaac4cb75bf
 
 SHELL := bash
@@ -97,6 +98,13 @@ build-boot-operator:
 	@yq -i '.controllerManager.manager.image.tag="$(BOOT_OPERATOR_VERSION)"' boot-operator/values.yaml
 	@yq -i '.fullnameOverride="boot-operator"' boot-operator/values.yaml
 	@yq -i '.version="0.0.6"' boot-operator/Chart.yaml
+
+build-ipxe-operator:
+	@cat kustomize/ipxe-operator/kustomization.yaml >> kustomization.yaml
+	$(call build-chart,ipxe-operator,https://github.com/ironcore-dev/ipxe-operator//config/default,$(IPXE_OPERATOR_VERSION))
+	@yq -i '.controllerManager.manager.image.tag="$(BOOT_OPERATOR_VERSION)"' ipxe-operator/values.yaml
+	@yq -i '.fullnameOverride="ipxe-operator"' ipxe-operator/values.yaml
+	@yq -i '.version="0.0.6"' ipxe-operator/Chart.yaml
 
 build-fedhcp:
 	@cat kustomize/fedhcp/kustomization.yaml >> kustomization.yaml
