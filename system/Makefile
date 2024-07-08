@@ -104,7 +104,7 @@ build-ipxe-operator:
 	$(call build-chart,ipxe-operator,https://github.com/ironcore-dev/ipxe-operator//config/default,$(IPXE_OPERATOR_VERSION))
 	@yq -i '.controllerManager.manager.image.tag="$(BOOT_OPERATOR_VERSION)"' ipxe-operator/values.yaml
 	@yq -i '.fullnameOverride="ipxe-operator"' ipxe-operator/values.yaml
-	@yq -i '.version="0.0.6"' ipxe-operator/Chart.yaml
+	@yq -i '.version="0.0.7"' ipxe-operator/Chart.yaml
 
 build-fedhcp:
 	@cat kustomize/fedhcp/kustomization.yaml >> kustomization.yaml
