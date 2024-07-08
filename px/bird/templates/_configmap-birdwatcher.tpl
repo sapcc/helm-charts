@@ -1,0 +1,100 @@
+{{- define "configmap_birdwatcher" -}}
+{{- $domain_number := index . 0}}
+---
+kind: ConfigMap
+apiVersion: v1
+metadata:
+    name: cfg-birdwatcher-domain{{$domain_number}}
+data:
+    "birdwatcher.conf": |
+        # Birdwatcher Configuration
+        #
+
+        [server]
+        # Restrict access to certain IPs. Leave empty to allow from all.
+        allow_from = []
+        # Allow queries that bypass the cache
+        allow_uncached = true
+
+        # Available modules:
+        ## low-level modules (translation from birdc output to JSON objects)
+        #   status
+        #   symbols
+        #   symbols_tables
+        #   symbols_protocols
+        #   protocols
+        #   protocols_bgp
+        #   protocols_short
+        #   routes_protocol
+        #   routes_peer
+        #   routes_table
+        #   routes_table_filtered
+        #   routes_table_peer
+        #   routes_count_protocol
+        #   routes_count_table
+        #   routes_count_primary
+        #   routes_filtered
+        #   routes_prefixed
+        #   routes_export
+        #   routes_noexport
+        #   route_net
+        #   routes_pipe_filtered_count
+        #   routes_pipe_filtered
+
+
+        modules_enabled = ["status",
+                        "protocols",
+                        "protocols_bgp",
+                        "protocols_short",
+                        "routes_protocol",
+                        "routes_peer",
+                        "routes_table",
+                        "routes_table_filtered",
+                        "routes_table_peer",
+                        "routes_filtered",
+                        "routes_prefixed",
+                        "routes_noexport",
+                        ]
+
+        [status]
+        #
+        # Where to get the reconfigure timestamp from:
+        # Available sources: bird, config_regex, config_modified
+        #
+        reconfig_timestamp_source = "bird"
+        reconfig_timestamp_match = "# Created: (.*)"
+
+        # Remove fields e.g. last_reboot
+        filter_fields = []
+
+        [ratelimit]
+        enabled = true
+        requests_per_minute = 10
+
+
+        [bird]
+        listen ="0.0.0.0:29184"
+        config = "/etc/bird/bird.conf"
+        birdc  = "birdc"
+        ttl = 5 # time to live (in minutes) for caching of cli output
+
+        [parser]
+        # Remove fields e.g. interface
+        filter_fields = []
+
+        [cache]
+        use_redis = false # if not using redis cache, activate housekeeping to save memory! 
+        redis_server = "myredis:6379"
+        redis_db = 0
+
+        # Maximum numbers of keys in the cache, if the
+        # memory cache is used. Does not apply to redis.
+        # max_keys = 60
+
+        # Housekeeping expires old cache entries (memory cache backend) and performs a GC/SCVG run if configured.
+        [housekeeping]
+        # Interval for the housekeeping routine in minutes
+        interval = 5
+        # Try to release memory via a forced GC/SCVG run on every housekeeping run
+        force_release_memory = true
+{{ end }}

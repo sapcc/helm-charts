@@ -1,0 +1,13 @@
+{{- $domains := list -}} 
+{{- range $service, $service_config := .Values.config -}}
+{{- range $domain, $domain_config := $service_config -}}
+{{- if and (hasPrefix "domain_" $domain) (has $domain $.Values.deploy) -}}
+{{- $domains = append $domains $domain -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+{{- $domains = uniq $domains -}}
+{{- range $domain := $domains -}}
+{{- $domain_number := trimPrefix "domain_" $domain | int -}}
+{{ tuple $domain_number | include "configmap_birdwatcher" }}
+{{- end -}}
