@@ -37,6 +37,7 @@ spec:
         containers := traversal.find_container_specs(iro)
 
         helmReleaseName := object.get(iro.metadata, ["annotations", "meta.helm.sh/release-name"], "<none>")
+        helmReleaseNamespace := object.get(iro.metadata, ["annotations", "meta.helm.sh/release-namespace"], "<none>")
 
         ########################################################################
         # allowlists: match pods that may use certain privileged features
@@ -165,6 +166,17 @@ spec:
           container.name == "enable-pamd-tty"
         }
         {{- end }}
+
+        ########################################################################
+        # allowlist for Calico
+        # NOTE: Most of Calico is covered by the blanket rule for kube-system.
+
+        isPodAllowedToUseHostNetwork = true {
+          iro.kind == "Job"
+          iro.metadata.namespace == "cni-nanny"
+          regex.match("^bgp-peer-discovery-.+$", iro.metadata.name)
+          object.get(iro.metadata.labels, ["app.kubernetes.io/managed-by"], "<none>") == "cni-nanny"
+        }
 
         ########################################################################
         # allowlist for Cinder pods
@@ -328,7 +340,7 @@ spec:
           iro.metadata.namespace == "kube-monitoring"
         }
 
-        # falco monitors container runtimes and wants to access it's kernel module
+        # falco monitors container runtimes and wants to access its kernel module
         isContainerAllowedToAccessHostPath(container, hostPath, readOnly) = true {
           isFalcoPod
           container.name == "falco"
@@ -501,6 +513,12 @@ spec:
           # NOTE: In scaleout, this includes daemonsets and deployments that are
           # injected by Kubernikus (CNI, Wormhole, kube-proxy, etc.).
           # NOTE: "CronJob" refers to "k3s-backup" in the a-clusters.
+        }
+        isKubeSystemPod = true {
+          # The calico-cni Helm deployment in kube-system includes some
+          # components that need to be placed in other namespaces.
+          iro.kind in {"CronJob", "DaemonSet", "Deployment"}
+          helmReleaseNamespace == "kube-system"
         }
 
         # Many kube-system components need broad node-level access (e.g.

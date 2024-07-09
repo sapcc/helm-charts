@@ -1,0 +1,20 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  labels:
+    app.kubernetes.io/component: DiscoveryJob
+    app.kubernetes.io/managed-by: cni-nanny
+    topology.cninanny.sap.cc/value: bb123
+  name: bgp-peer-discovery-bb123
+  namespace: cni-nanny
+spec:
+  template:
+    spec:
+      containers:
+      - name: discover
+        image: keppel.global.cloud.sap/ccloud/cni-nanny-discovery:latest
+        securityContext: {}
+      hostNetwork: true
+      nodeSelector:
+        kubernetes.cloud.sap/apod: bb123
+      securityContext: {}
