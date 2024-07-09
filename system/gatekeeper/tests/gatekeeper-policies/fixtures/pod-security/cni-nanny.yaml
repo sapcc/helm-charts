@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    meta.helm.sh/release-name: calico-cni
+    meta.helm.sh/release-namespace: kube-system
+  labels:
+    app.kubernetes.io/managed-by: Helm
+    ccloud/support-group: containers
+  name: cni-nanny
+  namespace: cni-nanny
+spec:
+  template:
+    spec:
+      containers:
+      - name: kube-rbac-proxy
+        image: keppel.eu-de-1.cloud.sap/ccloud-gcr-mirror/kubebuilder/kube-rbac-proxy:v0.15.0
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+      - name: manager
+        image: keppel.eu-de-1.cloud.sap/ccloud/cni-nanny:20240416152734
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+      hostNetwork: true
+      securityContext:
+        runAsNonRoot: true
