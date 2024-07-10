@@ -1,0 +1,143 @@
+# Default values for masakari
+# This is a YAML-formatted file.
+# Declare name/value pairs to be passed into your templates.
+# name: value
+global:
+  dbUser: masakari
+  masakari_service_user: masakari
+  linkerd_requested: false
+
+  osprofiler: {}
+
+osprofiler: {}
+
+use_tls_acme: true
+
+proxysql:
+  mode: ""
+
+masakariApiPortAdmin: '8778'
+masakariApiPortInternal: '8778'
+masakariApiPortPublic: '443'
+
+defaults:
+  default:
+    graceful_shutdown_timeout: 60
+
+pod:
+  replicas:
+    masakari: 2
+  lifecycle:
+    upgrades:
+      deployments:
+        revision_history: 5
+        podRemasakariStrategy: RollingUpdate
+        rollingUpdate:
+          maxUnavailable: 0
+          maxSurge: 1
+  resources:
+    masakari:
+      requests:
+        cpu: "400m"
+        memory: "150Mi"
+
+uwsgi:
+  processes: 10
+  wsgi_file: "/var/lib/openstack/bin/masakari-api"
+
+max_pool_size: 10
+max_overflow: 5
+
+mariadb:
+  enabled: true
+  name: masakari
+  alerts:
+    support_group: "compute-storage-api"
+  ccroot_user:
+    enabled: true
+  databases:
+  - masakari
+  users:
+    masakari:
+      name: masakari
+      password: null
+      grants:
+      - "ALL PRIVILEGES on masakari.*"
+  initdb_secret: true
+  persistence_claim:
+    name: db-masakari-pvclaim
+  alerts:
+    support_group: compute-storage-api
+  persistence_claim:
+    name: db-masakari-pvclaim
+    enabled: true
+    autoprovision: true
+  livenessProbe:
+    enabled: false
+  readinessProbe:
+    enabled: false
+
+
+memcached:
+  alerts:
+    support_group: "compute-storage-api"
+
+logging:
+  formatters:
+    context:
+      class: oslo_log.formatters.ContextFormatter
+    default:
+      format: "%(message)s"
+  handlers:
+    stdout:
+      class: StreamHandler
+      args: "(sys.stdout,)"
+      formatter: context
+    "null":
+      class: logging.NullHandler
+      args: "()"
+      formatter: default
+    sentry:
+      class: raven.handlers.logging.SentryHandler
+      level: ERROR
+      args: "()"
+  loggers:
+    root:
+      handlers: stdout, sentry
+      level: WARNING
+    migrate:
+      handlers: stdout, sentry
+      level: INFO
+    masakari:
+      handlers: stdout, sentry
+      level: INFO
+
+# Deploy Prometheus alerts.
+alerts:
+  enabled: true
+  # Name of the Prometheus to which metrics should be exported
+  prometheus: openstack
+
+sentry:
+  enabled: true
+
+utils:
+  trust_bundle:
+    enabled: true
+
+# Additional sections and values for the masakari.conf file
+# Each first level item will become a section, and only on the second-level
+# we have key value pairs
+masakari_conf: {}
+
+owner-info:
+  support-group: compute-storage-api
+  service: masakari
+  maintainers:
+    - Fabian Wiesel
+    - Christian Lehmann
+  helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/openstack/masakari
+
+rabbitmq:
+  alerts:
+    support_group: compute-storage-api
