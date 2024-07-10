@@ -42,7 +42,7 @@ data:
     dhcp-match=set:efi,option:client-arch,9
     dhcp-match=set:efi,option:client-arch,11
     # Client is PXE booting over EFI without iPXE ROM; send EFI version of iPXE chainloader
-    dhcp-boot=tag:efi,tag:!ipxe,snponly.efi
+    dhcp-boot=tag:efi,tag:!ipxe,{{ .Values.ipxe.efi.file }}
 
     # Client is running PXE over BIOS; send BIOS version of iPXE chainloader
     dhcp-boot=/undionly.kpxe,{{ .Values.dnsmasq.externalIP }}
@@ -69,6 +69,9 @@ data:
 
     # Copy files to shared mount
     cp /tftpboot/undionly.kpxe /tftpboot/snponly.efi /shared/tftpboot
+
+    # use ironcore efi
+    curl -o /shared/tftpboot/{{ .Values.ipxe.efi.file }} {{ .Values.ipxe.efi.host }}/{{ .Values.ipxe.efi.file }}
 
     # Template and write dnsmasq.conf
     # we template via /tmp as sed otherwise creates temp files in /etc directory
