@@ -137,20 +137,19 @@ groups:
       description: "Very high number of threads on {{`{{ $labels.node }}`}}. Forking problems are imminent."
       summary: Very high number of threads
 
-  - alert: NodeReadonlyFilesystem
-    expr: kube_node_status_condition_normalized{condition="ReadonlyFilesystem", status="true"} == 1
+  - alert: NodeReadOnlyRootFilesystem
+    expr: sum by (node) (node_filesystem_readonly{mountpoint="/"}) > 0
     for: 15m
     labels:
       tier: {{ required ".Values.tier missing" .Values.tier }}
       support_group: {{ required ".Values.supportGroup missing" .Values.supportGroup }}
       service: {{ required ".Values.service missing" .Values.service }}
-      severity: info
+      severity: warning
       context: availability
-      meta: "Node {{`{{ $labels.node }}`}} has a read-only filesystem."
-      playbook: docs/support/playbook/k8s_node_read_only_filesystem
+      meta: "Node {{`{{ $labels.node }}`}} has a read-only root filesystem."
     annotations:
-      description: Node {{`{{ $labels.node }}`}} has a read-only filesystem.
-      summary: Read-only file system on node
+      description: Node {{`{{ $labels.node }}`}} has a read-only root filesystem. This could lead to unforeseeable problems. A reboot of the node is advised to fix the issue.
+      summary: Read-only root filesystem on node
 
   - alert: NodeRebootsTooFast
     expr: max by (node) (changes(node_boot_time_seconds[1h])) > 2
