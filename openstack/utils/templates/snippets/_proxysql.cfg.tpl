@@ -57,8 +57,8 @@ mysql_users =
   {{- range $userKey, $user := $db.users }}
     {{- if ne $userKey "proxysql_monitor"  }}
     {
-        username = "{{ $user.name | required (print "user name needs to be set for " $dbKey " and user " $userKey)  }}"
-        password = "{{ $user.password | required "password needs to be set for all extra dbs" }}"
+        username = "{{ $user.name | required (print "user name needs to be set for " $dbKey " and user " $userKey) }}"
+        password = "{{ $user.password | required (print "password needs to be set for " $dbKey " and user " $userKey)  }}"
         default_hostgroup = {{ $index }}
     },
     {{- end }}
