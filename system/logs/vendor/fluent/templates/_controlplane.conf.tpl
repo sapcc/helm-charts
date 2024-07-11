@@ -332,6 +332,22 @@
   </parse>
 </filter>
 
+<filter kubernetes.var.log.containers.opensearch**>
+  @type parser
+  key_name log
+  reserve_data true
+  <parse>
+    @type grok
+    grok_failure_key grok_opensearch_parser
+    <grok>
+      pattern .*\[internal:coordination\/fault_detection\/%{WORD:fault_detection}\], node \[{%{USERNAME:opensearch_name}
+    </grok>
+    <grok>
+      pattern Caused by: org.opensearch.transport.RemoteTransportException: \[%{USERNAME:opensearch_name}\]\[%{IP}:%{NUMBER}\]\[internal:coordination/fault_detection/%{WORD:fault_detection}\]
+    </grok>
+  </parse>
+</filter>
+
 <filter kubernetes.var.log.containers.logs-k8s-event-exporter**>
   @type parser
   @id json_parser
