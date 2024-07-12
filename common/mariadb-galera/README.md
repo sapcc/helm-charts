@@ -46,7 +46,7 @@ Docker images and Helm chart to deploy a [MariaDB](https://mariadb.com/kb/en/get
 ## Metadata
 | chart version | app version | type | url |
 |:--------------|:-------------|:-------------|:-------------|
-| 0.29.1 | 10.5.25 | application | [Git repo](https://github.com/sapcc/helm-charts/tree/master/common/mariadb-galera) |
+| 0.29.2 | 10.5.25 | application | [Git repo](https://github.com/sapcc/helm-charts/tree/master/common/mariadb-galera) |
 
 | Name | Email | Url |
 | ---- | ------ | --- |
@@ -166,7 +166,7 @@ docker build --build-arg BASE_SOFT_NAME=ubuntu --build-arg BASE_SOFT_VERSION=22.
   ```
 * [push](https://helm.sh/docs/topics/registries/#the-push-subcommand) the chart to the registry
   ```shell
-  helm push mariadb-galera-0.29.1.tgz oci://keppel.eu-de-1.cloud.sap/ccloud-helm/
+  helm push mariadb-galera-0.29.2.tgz oci://keppel.eu-de-1.cloud.sap/ccloud-helm/
   ```
 
 ### values description
@@ -346,6 +346,7 @@ docker build --build-arg BASE_SOFT_NAME=ubuntu --build-arg BASE_SOFT_VERSION=22.
 | mariadb.binLogDir | string | `"log"` | if not defined the data dir will be used. Needs a log volume mount to be configured too |
 | mariadb.binLogSync | int | 0 | `1` to enable [sync_binlog for ACID compliance](https://mariadb.com/kb/en/replication-and-binary-log-system-variables/#sync_binlog) |
 | mariadb.ccroot_user.enabled | bool | `false` | enable the passwordless `ccroot` user. If enabled a 'ccroot'@'127.0.0.1' user with all privileges and without password will be created to allow passwordless local connections. If disabled, the user will be dropped from the DB if existing |
+| mariadb.database_name_to_connect | string | `""` | database name to be used in connection string of the service |
 | mariadb.databases.sb_oltp_ro.CharacterSetName | string | utf8 | database character set |
 | mariadb.databases.sb_oltp_ro.collationName | string | utf8_general_ci | database collation |
 | mariadb.databases.sb_oltp_ro.comment | string | custom DB | database comment |
