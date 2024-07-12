@@ -21,6 +21,12 @@ data:
     dhcp-range=set:{{ $pool.subnetPrefix }},{{ $ipPoolStart }},{{ $ipPoolEnd }},{{ $pool.mask }},{{ $.Values.dnsmasq.leaseTime }}
     {{ end }}
 
+    {{- if .Values.dnsmasq.staticHosts }}
+    {{- range .Values.dnsmasq.staticHosts }}
+    {{ . }}
+    {{- end }} 
+    {{- end }} 
+
     # It can be used when setting DNS or GW variables.
     # Set default router
     {{ range $pool := .Values.dnsmasq.dhcpPools }}
