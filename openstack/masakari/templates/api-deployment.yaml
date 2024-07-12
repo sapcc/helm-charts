@@ -7,6 +7,9 @@ metadata:
     system: openstack
     type: api
     component: {{ .Chart.Name }}
+  annotations:
+    vpa-butler.cloud.sap/main-container: {{ .Chart.Name }}-api
+    vpa-butler.cloud.sap/update-mode: "Off"
 spec:
   replicas: {{ .Values.pod.replicas.masakari }}
   revisionHistoryLimit: {{ .Values.pod.lifecycle.upgrades.deployments.revision_history }}
@@ -28,6 +31,7 @@ spec:
         alert-tier: os
         alert-service: {{ .Chart.Name }}
       annotations:
+        kubectl.kubernetes.io/default-container: {{ .Chart.Name }}-api
         configmap-etc-hash: {{ include (print $.Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
         secrets-hash: {{ include (print $.Template.BasePath "/secrets.yaml") . | sha256sum }}
         {{- if .Values.proxysql.mode }}
@@ -45,9 +49,8 @@ spec:
         image: {{ required ".Values.global.registry is missing" .Values.global.registry}}/loci-masakari:{{.Values.imageVersion | required "Please set .imageVersion or similar" }}
         imagePullPolicy: IfNotPresent
         command:
-        - bash
-        - -c
-        - "while true; do sleep 1; echo -n .; done"
+        - sleep
+        - inf
         # - dumb-init
         # - uwsgi
         # - --ini
@@ -68,21 +71,6 @@ spec:
         lifecycle:
           preStop:
               {{- include "utils.snippets.pre_stop_graceful_shutdown" . | indent 14 }}
-        livenessProbe:
-          enabled: false
-          httpGet:
-            path: /
-            port: {{.Values.masakariApiPortInternal}}
-          initialDelaySeconds: 60
-          timeoutSeconds: 30
-          periodSeconds: 30
-        readinessProbe:
-          enabled: false
-          httpGet:
-            path: /
-            port: {{.Values.masakariApiPortInternal}}
-          initialDelaySeconds: 15
-          timeoutSeconds: 5
         resources:
 {{ toYaml .Values.pod.resources.masakari | indent 10 }}
         ports:
