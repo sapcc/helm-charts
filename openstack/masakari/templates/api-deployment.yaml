@@ -45,10 +45,14 @@ spec:
         image: {{ required ".Values.global.registry is missing" .Values.global.registry}}/loci-masakari:{{.Values.imageVersion | required "Please set .imageVersion or similar" }}
         imagePullPolicy: IfNotPresent
         command:
-        - dumb-init
-        - uwsgi
-        - --ini
-        - /etc/masakari/uwsgi.ini
+        - bash
+        - -c
+        - "while true; do sleep 1; echo -n .; done"
+        # - dumb-init
+        # - uwsgi
+        # - --ini
+        # - /etc/masakari/uwsgi.ini
+        # /var/lib/openstack/bin/masakari-api --config-file /etc/masakari/masakari.conf --config-dir /etc/masakari/masakari.conf.d/
         env:
         {{- if .Values.sentry.enabled }}
         - name: SENTRY_DSN
@@ -65,6 +69,7 @@ spec:
           preStop:
               {{- include "utils.snippets.pre_stop_graceful_shutdown" . | indent 14 }}
         livenessProbe:
+          enabled: false
           httpGet:
             path: /
             port: {{.Values.masakariApiPortInternal}}
@@ -72,6 +77,7 @@ spec:
           timeoutSeconds: 30
           periodSeconds: 30
         readinessProbe:
+          enabled: false
           httpGet:
             path: /
             port: {{.Values.masakariApiPortInternal}}

@@ -1,6 +1,5 @@
 SET character_set_server = '{{ .Values.character_set_server }}';
 SET collation_server = '{{ .Values.collation_server }}';
-ALTER USER 'root'@'localhost' IDENTIFIED BY '{{ include "mariadb.root_password" . }}'
 
 {{- $dbs := coalesce .Values.databases (list .Values.name) }}
 {{- range $dbs }}

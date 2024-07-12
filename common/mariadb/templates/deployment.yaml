@@ -63,13 +63,10 @@ spec:
         lifecycle:
           postStart:
             exec:
-              command: ["sh", "-c", "while ! mysqladmin ping -uroot -p$MYSQL_ROOT_PASSWORD --silent; do sleep 1; done; mysql_upgrade --password=$MYSQL_ROOT_PASSWORD"]
+              command: ["sh", "-c", "while ! mysqladmin ping --silent; do sleep 1; done; mysql_upgrade"]
         env:
-        - name: MYSQL_ROOT_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              name: mariadb-{{.Values.name}}
-              key: root-password
+        - name: MARIADB_ALLOW_EMPTY_ROOT_PASSWORD
+          value: "1"
         ports:
           - name: mariadb
             containerPort: 3306
