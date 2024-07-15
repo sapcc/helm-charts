@@ -3,6 +3,11 @@ Rabbitmq CHANGELOG
 
 This file is used to list changes made in each version of the common chart rabbitmq.
 
+0.7.4
+-----
+- Don't try create metrics user if metrics are enabled, but metrics password is not set
+- Enable metrics/alerts in ci/test-values.yaml
+
 0.7.3
 -----
 - add option enableAllFeatureFlags to enable all stable feature flags after service has started

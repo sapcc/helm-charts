@@ -59,7 +59,7 @@ eval $(timeout 5.0 rabbitmqctl list_users -q | awk '{printf "users[\"%s\"]=\"%s\
 {{ list (printf ".Values.users.%v" $k) $v | include "rabbitmq.upsert_user" }}
 {{- end }}
 
-{{- if and .Values.metrics.enabled (not .Values.users.metrics) }}
+{{- if and .Values.metrics.enabled (not .Values.users.metrics) .Values.metrics.password }}
 {{ list ".Values.metrics" .Values.metrics | include "rabbitmq.upsert_user" }} monitoring
 {{- end }}
 {{- $guestUser := dict "user" "guest" "password" .Values.users.default.password "tag" "monitoring" }}
